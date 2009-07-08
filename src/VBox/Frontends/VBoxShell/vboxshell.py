@@ -103,7 +103,7 @@ class VBoxMonitor:
     
     def onExtraDataCanChange(self, id, key, value):
         print "onExtraDataCanChange: %s %s=>%s" %(id, key, value)
-	return True, ""
+        return True, ""
 
     def onExtraDataChange(self, id, key, value):
         print "onExtraDataChange: %s %s=>%s" %(id, key, value)
@@ -235,8 +235,9 @@ def startVm(ctx,mach,type):
     uuid = mach.id
     progress = vb.openRemoteSession(session, uuid, type, "")
     progress.waitForCompletion(-1)
-    rc = long(progress.resultCode)
-    #print "Completed:", progress.completed, "rc:",hex(rc&0xffffffff)
+    completed = progress.completed
+    rc = int(progress.resultCode)
+    print "Completed:", completed, "rc:",hex(rc&0xffffffff)
     if rc == 0:
         # we ignore exceptions to allow starting VM even if
         # perf collector cannot be started
@@ -255,14 +256,8 @@ def startVm(ctx,mach,type):
         if not ctx['remote']:
             print session.QueryErrorObject(rc)
 
-def getArray(ctx, obj, field):
-    return ctx['global'].getArray(obj, field)
-
 def getMachines(ctx):
-    return getArray(ctx, ctx['vb'], 'machines')
-
-def getArray(ctx, obj, field):
-    return ctx['global'].getArray(obj, field)
+    return ctx['global'].getArray(ctx['vb'], 'machines')
 
 def asState(var):
     if var:
@@ -335,14 +330,14 @@ def cmdExistingVm(ctx,mach,cmd,args):
         print 'Trying to use local only functionality, ignored'
         return
     console=session.console    
-    ops={'pause' :     lambda: console.pause(),
-         'resume':     lambda: console.resume(),
-         'powerdown':  lambda: console.powerDown().waitForCompletion(-1),
-         'powerbutton':  lambda: console.powerButton(),
-         'stats':      lambda: guestStats(ctx, mach),
-         'guest':      lambda: guestExec(ctx, mach, console, args),
-         'monitorGuest': lambda: monitorGuest(ctx, mach, console, args),
-         'save' :     lambda: console.saveState().waitForCompletion(-1)
+    ops={'pause':           lambda: console.pause(),
+         'resume':          lambda: console.resume(),
+         'powerdown':       lambda: console.powerDown(),
+         'powerbutton':     lambda: console.powerButton(),
+         'stats':           lambda: guestStats(ctx, mach),
+         'guest':           lambda: guestExec(ctx, mach, console, args),
+         'monitorGuest':    lambda: monitorGuest(ctx, mach, console, args),
+         'save':            lambda: console.saveState().waitForCompletion(-1)
          }
     try:
         ops[cmd]()
@@ -408,26 +403,35 @@ def infoCmd(ctx,args):
         return 0
     os = ctx['vb'].getGuestOSType(mach.OSTypeId)
     print " One can use setvar <mach> <var> <value> to change variable, using name in []."
-    print "  Name [name]: ",mach.name
-    print "  ID [n/a]: ",mach.id
-    print "  OS Type [n/a]: ",os.description
-    print "  CPUs [CPUCount]:  %d" %(mach.CPUCount)
-    print "  RAM [memorySize]:  %dM" %(mach.memorySize)
-    print "  VRAM [VRAMSize]:  %dM" %(mach.VRAMSize)
-    print "  Monitors [monitorCount]:  %d" %(mach.monitorCount)
-    print "  Clipboard mode [clipboardMode]:  %d" %(mach.clipboardMode)
-    print "  Machine status [n/a]: " ,mach.sessionState
-    # getArray(ctx, mach, 'hardDiskAttachments')
+    print "  Name [name]: " + mach.name
+    print "  ID [n/a]: " + mach.id
+    print "  OS Type [n/a]: " + os.description
+    print "  CPUs [CPUCount]: %d" %(mach.CPUCount)
+    print "  RAM [memorySize]: %dM" %(mach.memorySize)
+    print "  VRAM [VRAMSize]: %dM" %(mach.VRAMSize)
+    print "  Monitors [monitorCount]: %d" %(mach.monitorCount)
+    print "  Clipboard mode [clipboardMode]: %d" %(mach.clipboardMode)
+    print "  Machine status [n/a]: %d" % (mach.sessionState)
     bios = mach.BIOSSettings
     print "  ACPI [BIOSSettings.ACPIEnabled]: %s" %(asState(bios.ACPIEnabled))
     print "  APIC [BIOSSettings.IOAPICEnabled]: %s" %(asState(bios.IOAPICEnabled))
     print "  PAE [PAEEnabled]: %s" %(asState(mach.PAEEnabled))
-    print "  Hardware virtualization [HWVirtExEnabled]: ",asState(mach.HWVirtExEnabled)
-    print "  VPID support [HWVirtExVPIDEnabled]: ",asState(mach.HWVirtExVPIDEnabled)
-    print "  Hardware 3d acceleration[accelerate3DEnabled]: ",asState(mach.accelerate3DEnabled)
-    print "  Nested paging [HWVirtExNestedPagingEnabled]: ",asState(mach.HWVirtExNestedPagingEnabled)
-    print "  Last changed [n/a]: ",time.asctime(time.localtime(mach.lastStateChange/1000))
+    print "  Hardware virtualization [HWVirtExEnabled]: " + asState(mach.HWVirtExEnabled)
+    print "  VPID support [HWVirtExVPIDEnabled]: " + asState(mach.HWVirtExVPIDEnabled)
+    print "  Hardware 3d acceleration[accelerate3DEnabled]: " + asState(mach.accelerate3DEnabled)
+    print "  Nested paging [HWVirtExNestedPagingEnabled]: " + asState(mach.HWVirtExNestedPagingEnabled)
+    print "  Last changed [n/a]: " + time.asctime(time.localtime(mach.lastStateChange/1000))
 
+    disks = ctx['global'].getArray(mach, 'hardDiskAttachments')
+    if disks:
+        print
+    for disk in disks:
+        print "  Controller: %s port: %d device: %d:" % (disk.controller, disk.port, disk.device)
+        hd = disk.hardDisk
+        print "    id: " + hd.id
+        print "    location: " +  hd.location
+        print "    name: " +  hd.name
+        print "    format: " +  hd.format
     return 0
 
 def startCmd(ctx, args):
@@ -680,42 +684,19 @@ def reloadExtCmd(ctx, args):
 
 
 def runScriptCmd(ctx, args):
-    import time
-    if (len(args) < 2 or len (args) > 4):
-        print "usage: runScript <script> <times> <pause>"
+    if (len(args) != 2):
+        print "usage: runScript <script>"
         return 0
-
-    if len (args) >= 3:
-        times = int(args[2])
-        if g_verbose:
-            print "repeating %d times" %(times)
-    else:
-        times = 1
-
-    if len (args) >= 4:
-        pause = int(args[3])
-    else:
-        pause = 0
-    
     try:
         lf = open(args[1], 'r')
     except IOError,e:
         print "cannot open:",args[1], ":",e
         return 0
 
-    script = []
     try:
         for line in lf:
-            script.append(line)
-
-        for i in range(times):
-            for line in script:
-                done = runCommand(ctx, line)
-                if done != 0: break
-            if g_verbose:
-                print "%d done" %(i)
-            if i != times - 1 and pause != 0:
-                time.sleep(pause)
+            done = runCommand(ctx, line)
+            if done != 0: break
     except Exception,e:
         print "error:",e
         if g_verbose:
@@ -723,18 +704,6 @@ def runScriptCmd(ctx, args):
     lf.close()
     return 0
 
-
-def runShellCmd(ctx, args):
-    if len (args) < 2:
-        print "usage: shell <command>"
-    expr = ' '.join(args[1:])
-    try:
-        os.system(expr)
-    except Exception,e:
-        print "error:",e
-        if g_verbose:
-                traceback.print_exc()
-    return 0
 
 aliases = {'s':'start',
            'i':'info',
@@ -768,8 +737,7 @@ commands = {'help':['Prints help information', helpCmd, 0],
             'portForward':['Setup permanent port forwarding for a VM, takes adapter number host port and guest port: portForward Win32 0 8080 80', portForwardCmd, 0],
             'showLog':['Show log file of the VM, : showLog Win32', showLogCmd, 0],
             'reloadExt':['Reload custom extensions: reloadExt', reloadExtCmd, 0],
-            'runScript':['Run VBox script: runScript script.vbox <times>', runScriptCmd, 0],
-            'shell':['Execute system shell command: shell ls -l', runShellCmd, 0],
+            'runScript':['Run VBox script: runScript script.vbox', runScriptCmd, 0],
             }
 
 def runCommand(ctx, cmd):
