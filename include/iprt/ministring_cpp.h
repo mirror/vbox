@@ -34,6 +34,8 @@
 #include <iprt/mem.h>
 #include <iprt/string.h>
 
+#include <new>
+
 /**
  *  "ministring" is a small C++ string class that does not depend on anything
  *  else except IPRT memory management functions. This is used as the base of
@@ -68,6 +70,9 @@ public:
      * @param s
      */
     ministring(const ministring &s)
+#ifdef RT_EXCEPTIONS_ENABLED
+        throw(std::bad_alloc)
+#endif
     {
         copyFrom(s);
     }
@@ -78,6 +83,9 @@ public:
      * @param pcsz
      */
     ministring(const char *pcsz)
+#ifdef RT_EXCEPTIONS_ENABLED
+        throw(std::bad_alloc)
+#endif
     {
         copyFrom(pcsz);
     }
@@ -118,12 +126,19 @@ public:
      * @param cb new minimum size of member memory buffer
      */
     void reserve(size_t cb)
+#ifdef RT_EXCEPTIONS_ENABLED
+        throw(std::bad_alloc)
+#endif
     {
         if (    (cb != m_cbAllocated)
              && (cb > m_cbLength + 1)
            )
         {
             m_psz = (char*)RTMemRealloc(m_psz, cb);
+#ifdef RT_EXCEPTIONS_ENABLED
+            if (!m_psz)
+                throw std::bad_alloc();
+#endif
             m_cbAllocated = cb;
         }
     }
@@ -176,6 +191,9 @@ public:
      * @return
      */
     ministring& operator=(const char *pcsz)
+#ifdef RT_EXCEPTIONS_ENABLED
+        throw(std::bad_alloc)
+#endif
     {
         if (m_psz != pcsz)
         {
@@ -191,6 +209,9 @@ public:
      * @return
      */
     ministring& operator=(const ministring &s)
+#ifdef RT_EXCEPTIONS_ENABLED
+        throw(std::bad_alloc)
+#endif
     {
         if (this != &s)
         {
@@ -244,25 +265,6 @@ public:
     inline operator const char*() const
     {
         return c_str();
-    }
-
-    /**
-     * Returns true if the member string has no length. This states nothing about
-     * how much memory might be allocated.
-     * @return
-     */
-    bool isEmpty() const
-    {
-        return length() == 0;
-    }
-
-    /**
-     * Returns true if no memory is currently allocated.
-     * @return
-     */
-    bool isNull() const
-    {
-        return m_psz == NULL;
     }
 
     enum CaseSensitivity
@@ -343,11 +345,18 @@ protected:
      * @param s
      */
     void copyFrom(const ministring &s)
+#ifdef RT_EXCEPTIONS_ENABLED
+        throw(std::bad_alloc)
+#endif
     {
         if ((m_cbLength = s.m_cbLength))
         {
             m_cbAllocated = m_cbLength + 1;
             m_psz = (char*)RTMemAlloc(m_cbAllocated);
+#ifdef RT_EXCEPTIONS_ENABLED
+            if (!m_psz)
+                throw std::bad_alloc();
+#endif
             memcpy(m_psz, s.m_psz, m_cbAllocated);      // include 0 terminator
         }
         else
@@ -367,12 +376,19 @@ protected:
      * @param pcsz
      */
     void copyFrom(const char *pcsz)
+#ifdef RT_EXCEPTIONS_ENABLED
+        throw(std::bad_alloc)
+#endif
     {
         if (pcsz)
         {
             m_cbLength = strlen(pcsz);
             m_cbAllocated = m_cbLength + 1;
             m_psz = (char*)RTMemAlloc(m_cbAllocated);
+#ifdef RT_EXCEPTIONS_ENABLED
+            if (!m_psz)
+                throw std::bad_alloc();
+#endif
             memcpy(m_psz, pcsz, m_cbAllocated);      // include 0 terminator
         }
         else

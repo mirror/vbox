@@ -1083,9 +1083,14 @@ HRESULT Console::doEnumerateGuestProperties (CBSTR aPatterns,
     int vrc = VERR_BUFFER_OVERFLOW;
     for (unsigned i = 0; i < 10 && (VERR_BUFFER_OVERFLOW == vrc); ++i)
     {
-        Utf8Buf.reserve(cchBuf + 1024);
-        if (Utf8Buf.isNull())
+        try
+        {
+            Utf8Buf.reserve(cchBuf + 1024);
+        }
+        catch(...)
+        {
             return E_OUTOFMEMORY;
+        }
         parm[1].type = VBOX_HGCM_SVC_PARM_PTR;
         parm[1].u.pointer.addr = Utf8Buf.mutableRaw();
         parm[1].u.pointer.size = (uint32_t)cchBuf + 1024;
@@ -3870,42 +3875,48 @@ HRESULT Console::getGuestProperty (IN_BSTR aName, BSTR *aValue,
     HRESULT rc = E_UNEXPECTED;
     using namespace guestProp;
 
-    VBOXHGCMSVCPARM parm[4];
-    Utf8Str Utf8Name = aName;
-    AssertReturn(!Utf8Name.isNull(), E_OUTOFMEMORY);
-    char pszBuffer[MAX_VALUE_LEN + MAX_FLAGS_LEN];
-
-    parm[0].type = VBOX_HGCM_SVC_PARM_PTR;
-    parm[0].u.pointer.addr = (void*)Utf8Name.c_str();
-    /* The + 1 is the null terminator */
-    parm[0].u.pointer.size = (uint32_t)Utf8Name.length() + 1;
-    parm[1].type = VBOX_HGCM_SVC_PARM_PTR;
-    parm[1].u.pointer.addr = pszBuffer;
-    parm[1].u.pointer.size = sizeof(pszBuffer);
-    int vrc = mVMMDev->hgcmHostCall ("VBoxGuestPropSvc", GET_PROP_HOST,
-                                     4, &parm[0]);
-    /* The returned string should never be able to be greater than our buffer */
-    AssertLogRel (vrc != VERR_BUFFER_OVERFLOW);
-    AssertLogRel (RT_FAILURE(vrc) || VBOX_HGCM_SVC_PARM_64BIT == parm[2].type);
-    if (RT_SUCCESS (vrc) || (VERR_NOT_FOUND == vrc))
+    try
     {
-        rc = S_OK;
-        if (vrc != VERR_NOT_FOUND)
+        VBOXHGCMSVCPARM parm[4];
+        Utf8Str Utf8Name = aName;
+        char pszBuffer[MAX_VALUE_LEN + MAX_FLAGS_LEN];
+
+        parm[0].type = VBOX_HGCM_SVC_PARM_PTR;
+        parm[0].u.pointer.addr = (void*)Utf8Name.c_str();
+        /* The + 1 is the null terminator */
+        parm[0].u.pointer.size = (uint32_t)Utf8Name.length() + 1;
+        parm[1].type = VBOX_HGCM_SVC_PARM_PTR;
+        parm[1].u.pointer.addr = pszBuffer;
+        parm[1].u.pointer.size = sizeof(pszBuffer);
+        int vrc = mVMMDev->hgcmHostCall ("VBoxGuestPropSvc", GET_PROP_HOST,
+                                        4, &parm[0]);
+        /* The returned string should never be able to be greater than our buffer */
+        AssertLogRel (vrc != VERR_BUFFER_OVERFLOW);
+        AssertLogRel (RT_FAILURE(vrc) || VBOX_HGCM_SVC_PARM_64BIT == parm[2].type);
+        if (RT_SUCCESS (vrc) || (VERR_NOT_FOUND == vrc))
         {
-            Utf8Str strBuffer(pszBuffer);
-            strBuffer.cloneTo(aValue);
+            rc = S_OK;
+            if (vrc != VERR_NOT_FOUND)
+            {
+                Utf8Str strBuffer(pszBuffer);
+                strBuffer.cloneTo(aValue);
 
-            *aTimestamp = parm[2].u.uint64;
+                *aTimestamp = parm[2].u.uint64;
 
-            size_t iFlags = strBuffer.length() + 1;
-            Utf8Str(pszBuffer + iFlags).cloneTo(aFlags);
+                size_t iFlags = strBuffer.length() + 1;
+                Utf8Str(pszBuffer + iFlags).cloneTo(aFlags);
+            }
+            else
+                aValue = NULL;
         }
         else
-            aValue = NULL;
+            rc = setError (E_UNEXPECTED,
+                tr ("The service call failed with the error %Rrc"), vrc);
     }
-    else
-        rc = setError (E_UNEXPECTED,
-            tr ("The service call failed with the error %Rrc"), vrc);
+    catch(std::bad_alloc &e)
+    {
+        rc = E_OUTOFMEMORY;
+    }
     return rc;
 #endif /* else !defined (VBOX_WITH_GUEST_PROPS) */
 }
@@ -4391,7 +4402,7 @@ HRESULT Console::consoleInitReleaseLog (const ComPtr <IMachine> aMachine)
     Utf8Str logDir = logFolder;
 
     /* make sure the Logs folder exists */
-    Assert (!logDir.isEmpty());
+    Assert(logDir.length());
     if (!RTDirExists (logDir))
         RTDirCreateFullPath (logDir, 0777);
 
@@ -6190,7 +6201,7 @@ Console::setVMErrorCallback (PVM pVM, void *pvUser, int rc, RT_SRC_POS_DECL,
     va_copy (va2, args); /* Have to make a copy here or GCC will break. */
 
     /* append to the existing error message if any */
-    if (!task->mErrorMsg.isEmpty())
+    if (task->mErrorMsg.length())
         task->mErrorMsg = Utf8StrFmt ("%s.\n%N (%Rrc)", task->mErrorMsg.raw(),
                                       pszFormat, &va2, rc, rc);
     else
@@ -6665,7 +6676,7 @@ DECLCALLBACK (int) Console::powerUpThread (RTTHREAD Thread, void *pvUser)
                 alock.leave();
 
                 /* Load saved state? */
-                if (!task->mSavedStateFile.isEmpty())
+                if (task->mSavedStateFile.length())
                 {
                     LogFlowFunc (("Restoring saved state from '%s'...\n",
                                   task->mSavedStateFile.raw()));
@@ -6748,7 +6759,7 @@ DECLCALLBACK (int) Console::powerUpThread (RTTHREAD Thread, void *pvUser)
              * However since that happens via a callback, the rc status code in
              * this function is not updated.
              */
-            if (task->mErrorMsg.isNull())
+            if (!task->mErrorMsg.length())
             {
                 /* If the error message is not set but we've got a failure,
                  * convert the VBox status code into a meaningfulerror message.
@@ -7094,8 +7105,8 @@ DECLCALLBACK (int) Console::saveStateThread (RTTHREAD Thread, void *pvUser)
     std::auto_ptr <VMSaveTask> task (static_cast <VMSaveTask *> (pvUser));
     AssertReturn (task.get(), VERR_INVALID_PARAMETER);
 
-    Assert (!task->mSavedStateFile.isNull());
-    Assert (!task->mProgress.isNull());
+    Assert(task->mSavedStateFile.length());
+    Assert(!task->mProgress.isNull());
 
     const ComObjPtr <Console> &that = task->mConsole;
 
@@ -7251,9 +7262,11 @@ DECLCALLBACK (int) Console::saveStateThread (RTTHREAD Thread, void *pvUser)
         task->mProgress->notifyComplete (S_OK);
     else
     {
-        if (!errMsg.isNull())
-            task->mProgress->notifyComplete (rc,
-                COM_IIDOF(IConsole), Console::getComponentName(), errMsg);
+        if (errMsg.length())
+            task->mProgress->notifyComplete(rc,
+                                            COM_IIDOF(IConsole),
+                                            Console::getComponentName(),
+                                            errMsg);
         else
             task->mProgress->notifyComplete (rc);
     }

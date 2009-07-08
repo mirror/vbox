@@ -1177,7 +1177,7 @@ void VBoxSDLFB::paintSecureLabel(int x, int y, int w, int h, bool fForce)
 
     /* now the text */
     if (    mLabelFont != NULL
-         && !mSecureLabelText.isEmpty()
+         && mSecureLabelText.length()
        )
     {
         SDL_Color clrFg = {(mSecureLabelColorFG & 0x00FF0000) >> 16,
