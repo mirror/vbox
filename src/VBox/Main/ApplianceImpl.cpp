@@ -1474,7 +1474,7 @@ STDMETHODIMP Appliance::Interpret()
                                Utf8StrFmt("%RI64", (uint64_t)ullMemSizeVBox));
 
             /* Audio */
-            if (!vsysThis.strSoundCardType.isNull())
+            if (!vsysThis.strSoundCardType.isEmpty())
                 /* Currently we set the AC97 always.
                    @todo: figure out the hardware which could be possible */
                 pNewDesc->addEntry(VirtualSystemDescriptionType_SoundCard,

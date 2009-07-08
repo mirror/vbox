@@ -2779,8 +2779,8 @@ STDMETHODIMP Machine::DeleteSettings()
          * some private files there that we don't want to delete) */
         Utf8Str logFolder;
         getLogFolder (logFolder);
-        Assert (!logFolder.isEmpty());
-        if (RTDirExists (logFolder))
+        Assert(logFolder.length());
+        if (RTDirExists(logFolder))
         {
             /* Delete all VBox.log[.N] files from the Logs folder
              * (this must be in sync with the rotation logic in
@@ -2804,10 +2804,10 @@ STDMETHODIMP Machine::DeleteSettings()
         /* delete the Snapshots folder, nothing important should be left
          * there (we don't check for errors because the user might have
          * some private files there that we don't want to delete) */
-        Utf8Str snapshotFolder = mUserData->mSnapshotFolderFull;
-        Assert (!snapshotFolder.isEmpty());
-        if (RTDirExists (snapshotFolder))
-            RTDirRemove (snapshotFolder);
+        Utf8Str snapshotFolder(mUserData->mSnapshotFolderFull);
+        Assert(snapshotFolder.length());
+        if (RTDirExists(snapshotFolder))
+            RTDirRemove(snapshotFolder);
 
         /* delete the directory that contains the settings file, but only
          * if it matches the VM name (i.e. a structure created by default in
@@ -3055,7 +3055,9 @@ STDMETHODIMP Machine::GetGuestPropertyTimestamp (IN_BSTR aName, ULONG64 *aTimest
     return GetGuestProperty (aName, &dummyValue, aTimestamp, &dummyFlags);
 }
 
-STDMETHODIMP Machine::SetGuestProperty (IN_BSTR aName, IN_BSTR aValue, IN_BSTR aFlags)
+STDMETHODIMP Machine::SetGuestProperty(IN_BSTR aName,
+                                       IN_BSTR aValue,
+                                       IN_BSTR aFlags)
 {
 #if !defined (VBOX_WITH_GUEST_PROPS)
     ReturnComNotImplemented();
@@ -3067,116 +3069,124 @@ STDMETHODIMP Machine::SetGuestProperty (IN_BSTR aName, IN_BSTR aValue, IN_BSTR a
     if ((aFlags != NULL) && !VALID_PTR (aFlags))
         return E_INVALIDARG;
 
-    Utf8Str utf8Name (aName);
-    Utf8Str utf8Flags (aFlags);
-    Utf8Str utf8Patterns (mHWData->mGuestPropertyNotificationPatterns);
-    if (   utf8Name.isNull()
-        || ((aFlags != NULL) && utf8Flags.isNull())
-        || utf8Patterns.isNull()
-       )
-        return E_OUTOFMEMORY;
-    bool matchAll = false;
-    if (0 == utf8Patterns.length())
-        matchAll = true;
+    HRESULT rc = S_OK;
 
-    uint32_t fFlags = NILFLAG;
-    if ((aFlags != NULL) && RT_FAILURE (validateFlags (utf8Flags.raw(), &fFlags))
-       )
-        return setError (E_INVALIDARG, tr ("Invalid flag values: '%ls'"),
-                aFlags);
-
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
-
-    AutoWriteLock alock (this);
-
-    HRESULT rc = checkStateDependency (MutableStateDep);
-    CheckComRCReturnRC (rc);
-
-    rc = S_OK;
-
-    if (!mHWData->mPropertyServiceActive)
+    try
     {
-        bool found = false;
-        HWData::GuestProperty property;
-        property.mFlags = NILFLAG;
-        if (fFlags & TRANSIENT)
-            rc = setError (VBOX_E_INVALID_OBJECT_STATE,
-                tr ("Cannot set a transient property when the "
-                    "machine is not running"));
-        if (SUCCEEDED (rc))
+        Utf8Str utf8Name(aName);
+        Utf8Str utf8Flags(aFlags);
+        Utf8Str utf8Patterns(mHWData->mGuestPropertyNotificationPatterns);
+
+        bool matchAll = false;
+        if (utf8Patterns.isEmpty())
+            matchAll = true;
+
+        uint32_t fFlags = NILFLAG;
+        if (    (aFlags != NULL)
+             && RT_FAILURE (validateFlags (utf8Flags.raw(), &fFlags))
+           )
+            return setError(E_INVALIDARG,
+                            tr("Invalid flag values: '%ls'"),
+                            aFlags);
+
+        AutoCaller autoCaller(this);
+        CheckComRCReturnRC(autoCaller.rc());
+
+        AutoWriteLock alock(this);
+
+        rc = checkStateDependency(MutableStateDep);
+        CheckComRCReturnRC (rc);
+
+        rc = S_OK;
+
+        if (!mHWData->mPropertyServiceActive)
         {
-            for (HWData::GuestPropertyList::iterator it =
-                    mHWData->mGuestProperties.begin();
-                 it != mHWData->mGuestProperties.end(); ++ it)
-                if (it->mName == aName)
-                {
-                    property = *it;
-                    if (it->mFlags & (RDONLYHOST))
-                        rc = setError (E_ACCESSDENIED,
-                            tr ("The property '%ls' cannot be changed by the host"),
-                            aName);
-                    else
+            bool found = false;
+            HWData::GuestProperty property;
+            property.mFlags = NILFLAG;
+            if (fFlags & TRANSIENT)
+                rc = setError(VBOX_E_INVALID_OBJECT_STATE,
+                              tr("Cannot set a transient property when the machine is not running"));
+
+            if (SUCCEEDED (rc))
+            {
+                for (HWData::GuestPropertyList::iterator it =
+                        mHWData->mGuestProperties.begin();
+                    it != mHWData->mGuestProperties.end(); ++ it)
+                    if (it->mName == aName)
                     {
-                        mHWData.backup();
-                        /* The backup() operation invalidates our iterator, so
-                         * get a new one. */
-                        for (it = mHWData->mGuestProperties.begin();
-                            it->mName != aName; ++ it)
-                            ;
-                        mHWData->mGuestProperties.erase (it);
+                        property = *it;
+                        if (it->mFlags & (RDONLYHOST))
+                            rc = setError (E_ACCESSDENIED,
+                                tr ("The property '%ls' cannot be changed by the host"),
+                                aName);
+                        else
+                        {
+                            mHWData.backup();
+                            /* The backup() operation invalidates our iterator, so
+                            * get a new one. */
+                            for (it = mHWData->mGuestProperties.begin();
+                                it->mName != aName; ++ it)
+                                ;
+                            mHWData->mGuestProperties.erase (it);
+                        }
+                        found = true;
+                        break;
                     }
-                    found = true;
-                    break;
+            }
+            if (found && SUCCEEDED (rc))
+            {
+                if (*aValue)
+                {
+                    RTTIMESPEC time;
+                    property.mValue = aValue;
+                    property.mTimestamp = RTTimeSpecGetNano (RTTimeNow (&time));
+                    if (aFlags != NULL)
+                        property.mFlags = fFlags;
+                    mHWData->mGuestProperties.push_back (property);
                 }
-        }
-        if (found && SUCCEEDED (rc))
-        {
-            if (*aValue)
+            }
+            else if (SUCCEEDED (rc) && *aValue)
             {
                 RTTIMESPEC time;
+                mHWData.backup();
+                property.mName = aName;
                 property.mValue = aValue;
                 property.mTimestamp = RTTimeSpecGetNano (RTTimeNow (&time));
-                if (aFlags != NULL)
-                    property.mFlags = fFlags;
+                property.mFlags = fFlags;
                 mHWData->mGuestProperties.push_back (property);
             }
+            if (   SUCCEEDED (rc)
+                && (   matchAll
+                    || RTStrSimplePatternMultiMatch (utf8Patterns.raw(), RTSTR_MAX,
+                                                    utf8Name.raw(), RTSTR_MAX, NULL)
+                )
+            )
+                mParent->onGuestPropertyChange (mData->mUuid, aName, aValue, aFlags);
         }
-        else if (SUCCEEDED (rc) && *aValue)
-        {
-            RTTIMESPEC time;
-            mHWData.backup();
-            property.mName = aName;
-            property.mValue = aValue;
-            property.mTimestamp = RTTimeSpecGetNano (RTTimeNow (&time));
-            property.mFlags = fFlags;
-            mHWData->mGuestProperties.push_back (property);
-        }
-        if (   SUCCEEDED (rc)
-            && (   matchAll
-                || RTStrSimplePatternMultiMatch (utf8Patterns.raw(), RTSTR_MAX,
-                                                utf8Name.raw(), RTSTR_MAX, NULL)
-              )
-          )
-            mParent->onGuestPropertyChange (mData->mUuid, aName, aValue, aFlags);
-    }
-    else
-    {
-        ComPtr <IInternalSessionControl> directControl =
-            mData->mSession.mDirectControl;
-
-        /* just be on the safe side when calling another process */
-        alock.leave();
-
-        BSTR dummy = NULL;
-        ULONG64 dummy64;
-        if (!directControl)
-            rc = E_FAIL;
         else
-            rc = directControl->AccessGuestProperty (aName, aValue, aFlags,
-                                                     true /* isSetter */,
-                                                     &dummy, &dummy64, &dummy);
+        {
+            ComPtr <IInternalSessionControl> directControl =
+                mData->mSession.mDirectControl;
+
+            /* just be on the safe side when calling another process */
+            alock.leave();
+
+            BSTR dummy = NULL;
+            ULONG64 dummy64;
+            if (!directControl)
+                rc = E_FAIL;
+            else
+                rc = directControl->AccessGuestProperty(aName, aValue, aFlags,
+                                                        true /* isSetter */,
+                                                        &dummy, &dummy64, &dummy);
+        }
     }
+    catch (std::bad_alloc &e)
+    {
+        rc = E_OUTOFMEMORY;
+    }
+
     return rc;
 #endif /* else !defined (VBOX_WITH_GUEST_PROPS) */
 }
@@ -5400,6 +5410,7 @@ HRESULT Machine::loadHardware (const settings::Key &aNode)
 
 #ifdef VBOX_WITH_GUEST_PROPS
     /* Guest properties (optional) */
+    try
     {
         using namespace guestProp;
 
@@ -5421,9 +5432,7 @@ HRESULT Machine::loadHardware (const settings::Key &aNode)
                 ULONG64 timestamp = (*it).value<ULONG64> ("timestamp");
                 /* property flags (optional, defaults to empty) */
                 Bstr flags = (*it).stringValue ("flags");
-                Utf8Str utf8Flags (flags);
-                if (utf8Flags.isNull ())
-                    return E_OUTOFMEMORY;
+                Utf8Str utf8Flags(flags);
                 validateFlags (utf8Flags.raw(), &fFlags);
                 HWData::GuestProperty property = { name, value, timestamp, fFlags };
                 mHWData->mGuestProperties.push_back (property);
@@ -5441,6 +5450,10 @@ HRESULT Machine::loadHardware (const settings::Key &aNode)
         mHWData->mGuestPropertyNotificationPatterns = notificationPatterns;
         if (mHWData->mGuestPropertyNotificationPatterns.isNull ())
             return E_OUTOFMEMORY;
+    }
+    catch(std::bad_alloc &e)
+    {
+        return E_OUTOFMEMORY;
     }
 #endif /* VBOX_WITH_GUEST_PROPS defined */
 
@@ -9615,53 +9628,54 @@ STDMETHODIMP SessionMachine::PushGuestProperty (IN_BSTR aName, IN_BSTR aValue,
     if ((aValue != NULL) && (!VALID_PTR (aValue) || !VALID_PTR (aFlags)))
         return E_POINTER;  /* aValue can be NULL to indicate deletion */
 
-    Utf8Str utf8Name (aName);
-    Utf8Str utf8Flags (aFlags);
-    Utf8Str utf8Patterns (mHWData->mGuestPropertyNotificationPatterns);
-    if (   utf8Name.isNull()
-        || ((aFlags != NULL) && utf8Flags.isNull())
-        || utf8Patterns.isNull()
-       )
-        return E_OUTOFMEMORY;
-
-    uint32_t fFlags = NILFLAG;
-    if ((aFlags != NULL) && RT_FAILURE (validateFlags (utf8Flags.raw(), &fFlags)))
-        return E_INVALIDARG;
-
-    bool matchAll = false;
-    if (utf8Patterns.length() == 0)
-        matchAll = true;
-
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
-
-    AutoWriteLock alock (this);
-
-    HRESULT rc = checkStateDependency (MutableStateDep);
-    CheckComRCReturnRC (rc);
-
-    mHWData.backup();
-    for (HWData::GuestPropertyList::iterator iter = mHWData->mGuestProperties.begin();
-         iter != mHWData->mGuestProperties.end(); ++iter)
-        if (aName == iter->mName)
-        {
-            mHWData->mGuestProperties.erase (iter);
-            break;
-        }
-    if (aValue != NULL)
+    try
     {
-        HWData::GuestProperty property = { aName, aValue, aTimestamp, fFlags };
-        mHWData->mGuestProperties.push_back (property);
+        Utf8Str utf8Name(aName);
+        Utf8Str utf8Flags(aFlags);
+        Utf8Str utf8Patterns(mHWData->mGuestPropertyNotificationPatterns);
+
+        uint32_t fFlags = NILFLAG;
+        if ((aFlags != NULL) && RT_FAILURE (validateFlags (utf8Flags.raw(), &fFlags)))
+            return E_INVALIDARG;
+
+        bool matchAll = false;
+        if (utf8Patterns.isEmpty())
+            matchAll = true;
+
+        AutoCaller autoCaller (this);
+        CheckComRCReturnRC (autoCaller.rc());
+
+        AutoWriteLock alock (this);
+
+        HRESULT rc = checkStateDependency (MutableStateDep);
+        CheckComRCReturnRC (rc);
+
+        mHWData.backup();
+        for (HWData::GuestPropertyList::iterator iter = mHWData->mGuestProperties.begin();
+            iter != mHWData->mGuestProperties.end(); ++iter)
+            if (aName == iter->mName)
+            {
+                mHWData->mGuestProperties.erase (iter);
+                break;
+            }
+        if (aValue != NULL)
+        {
+            HWData::GuestProperty property = { aName, aValue, aTimestamp, fFlags };
+            mHWData->mGuestProperties.push_back (property);
+        }
+
+        /* send a callback notification if appropriate */
+        alock.leave();
+        if (   matchAll
+            || RTStrSimplePatternMultiMatch (utf8Patterns.raw(), RTSTR_MAX,
+                                            utf8Name.raw(), RTSTR_MAX, NULL)
+        )
+            mParent->onGuestPropertyChange (mData->mUuid, aName, aValue, aFlags);
     }
-
-    /* send a callback notification if appropriate */
-    alock.leave();
-    if (   matchAll
-        || RTStrSimplePatternMultiMatch (utf8Patterns.raw(), RTSTR_MAX,
-                                         utf8Name.raw(), RTSTR_MAX, NULL)
-       )
-        mParent->onGuestPropertyChange (mData->mUuid, aName, aValue, aFlags);
-
+    catch(std::bad_alloc &e)
+    {
+        return E_OUTOFMEMORY;
+    }
     return S_OK;
 #else
     ReturnComNotImplemented();

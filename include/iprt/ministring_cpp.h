@@ -34,6 +34,8 @@
 #include <iprt/mem.h>
 #include <iprt/string.h>
 
+#include <new>
+
 /**
  *  "ministring" is a small C++ string class that does not depend on anything
  *  else except IPRT memory management functions. This is used as the base of
@@ -124,6 +126,10 @@ public:
            )
         {
             m_psz = (char*)RTMemRealloc(m_psz, cb);
+#ifdef RT_EXCEPTIONS_ENABLED
+            if (!m_psz)
+                throw std::bad_alloc();
+#endif
             m_cbAllocated = cb;
         }
     }
@@ -256,15 +262,6 @@ public:
         return length() == 0;
     }
 
-    /**
-     * Returns true if no memory is currently allocated.
-     * @return
-     */
-    bool isNull() const
-    {
-        return m_psz == NULL;
-    }
-
     enum CaseSensitivity
     {
         CaseSensitive,
@@ -348,6 +345,10 @@ protected:
         {
             m_cbAllocated = m_cbLength + 1;
             m_psz = (char*)RTMemAlloc(m_cbAllocated);
+#ifdef RT_EXCEPTIONS_ENABLED
+            if (!m_psz)
+                throw std::bad_alloc();
+#endif
             memcpy(m_psz, s.m_psz, m_cbAllocated);      // include 0 terminator
         }
         else
@@ -373,6 +374,10 @@ protected:
             m_cbLength = strlen(pcsz);
             m_cbAllocated = m_cbLength + 1;
             m_psz = (char*)RTMemAlloc(m_cbAllocated);
+#ifdef RT_EXCEPTIONS_ENABLED
+            if (!m_psz)
+                throw std::bad_alloc();
+#endif
             memcpy(m_psz, pcsz, m_cbAllocated);      // include 0 terminator
         }
         else
