@@ -505,7 +505,8 @@
 #endif
 
 /** @def RT_THROW
- * How to express that a method or function throws a type of exceptions.
+ * How to express that a method or function throws a type of exceptions. Some
+ * compilers does not want this kind of information and will warning about it.
  *
  * @param   type    The type exception.
  *
@@ -513,10 +514,18 @@
  *          \#ifdef RT_EXCEPTIONS_ENABLED ... \#else ... \#endif so the header
  *          compiles cleanly without exceptions enabled.
  *
- * @remarks Do NOT use this for the actual throwing of exceptions!
+ *          Do NOT use this for the actual throwing of exceptions!
  */
-#ifdef RT_EXCEPTIONS_ENABLED
-# define RT_THROW(type)         throw(type)
+#if defined(RT_EXCEPTIONS_ENABLED)
+# ifdef _MSC_VER
+#  if _MSC_VER >= 1400
+#   define RT_THROW(type)
+#  else
+#   define RT_THROW(type)       throw(type)
+#  endif
+# else
+#  define RT_THROW(type)        throw(type)
+# endif
 #else
 # define RT_THROW(type)
 #endif
