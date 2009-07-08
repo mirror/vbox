@@ -260,7 +260,8 @@ static DECLCALLBACK(int) rtTimerLRThread(RTTHREAD hThread, void *pvUser)
         }
         else
         {
-            const uint64_t u64NanoTS = RTTimeNanoTS();
+            uint64_t        cNanoSeconds;
+            const uint64_t  u64NanoTS = RTTimeNanoTS();
             if (u64NanoTS >= pThis->u64NextTS)
             {
                 pThis->iTick++;
@@ -278,28 +279,40 @@ static DECLCALLBACK(int) rtTimerLRThread(RTTHREAD hThread, void *pvUser)
                     continue;
                 }
 
-                /* calc the next time we should fire. */
+                /*
+                 * Calc the next time we should fire.
+                 *
+                 * If we're more than 60 intervals behind, just skip ahead. We
+                 * don't want the timer thread running wild just because the
+                 * clock changed in an unexpected way. As seen in #3611 this
+                 * does happen during suspend/resume, but it may also happen
+                 * if we're using a non-monotonic clock as time source.
+                 */
                 pThis->u64NextTS = pThis->u64StartTS + pThis->iTick * pThis->u64NanoInterval;
-                if (pThis->u64NextTS < u64NanoTS)
-#ifdef IN_RING3 /* In ring-3 we'll catch up lost ticks immediately. */
-                    pThis->u64NextTS = u64NanoTS + 1;
+                if (RT_LIKELY(pThis->u64NextTS > u64NanoTS))
+                    cNanoSeconds = pThis->u64NextTS - u64NanoTS;
+                else
+                {
+                    uint64_t iActualTick = (u64NanoTS - pThis->u64StartTS) / pThis->u64NanoInterval;
+                    if (iActualTick - pThis->iTick > 60)
+                        pThis->iTick = iActualTick - 1;
+#ifdef IN_RING0
+                    cNanoSeconds = RTTimerGetSystemGranularity() / 2;
 #else
-                    pThis->u64NextTS = u64NanoTS + RTTimerGetSystemGranularity() / 2;
+                    cNanoSeconds = 1000000; /* 1ms */
 #endif
+                    pThis->u64NextTS = u64NanoTS + cNanoSeconds;
+                }
             }
+            else
+                cNanoSeconds = pThis->u64NextTS - u64NanoTS;
 
             /* block. */
-            uint64_t cNanoSeconds = pThis->u64NextTS - u64NanoTS;
-#ifdef IN_RING3 /* In ring-3 we'll catch up lost ticks immediately. */
-            if (cNanoSeconds > 10)
-#endif
+            int rc = RTSemEventWait(pThis->hEvent, cNanoSeconds < 1000000 ? 1 : cNanoSeconds / 1000000);
+            if (RT_FAILURE(rc) && rc != VERR_INTERRUPTED && rc != VERR_TIMEOUT)
             {
-                int rc = RTSemEventWait(pThis->hEvent, cNanoSeconds < 1000000 ? 1 : cNanoSeconds / 1000000);
-                if (RT_FAILURE(rc) && rc != VERR_INTERRUPTED && rc != VERR_TIMEOUT)
-                {
-                    AssertRC(rc);
-                    RTThreadSleep(1000); /* Don't cause trouble! */
-                }
+                AssertRC(rc);
+                RTThreadSleep(1000); /* Don't cause trouble! */
             }
         }
     }
