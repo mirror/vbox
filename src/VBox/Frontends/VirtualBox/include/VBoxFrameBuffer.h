@@ -493,7 +493,7 @@ private:
 class VBoxVHWASurfaceBase
 {
 public:
-    VBoxVHWASurfaceBase(class VBoxVHWAGlContextState *aState, bool aIsYInverted, GLsizei aWidth, GLsizei aHeight,
+    VBoxVHWASurfaceBase(class VBoxVHWAGlContextState *aState, bool aIsYInverted, const QSize * aSize, const QSize * aTargetSize,
             VBoxVHWAColorFormat & aColorFormat,
             VBoxVHWAColorKey * pSrcBltCKey, VBoxVHWAColorKey * pDstBltCKey,
             VBoxVHWAColorKey * pSrcOverlayCKey, VBoxVHWAColorKey * pDstOverlayCKey);
@@ -515,6 +515,9 @@ public:
     void updatedMem(const QRect * aRect);
 
     void performDisplay();
+
+    void setRects(const QRect * aTargRect, const QRect * aSrcRect);
+    void setTargetRectPosition(const QPoint * aPoint);
 
     static ulong calcBytesPerPixel(GLenum format, GLenum type);
 
@@ -563,7 +566,7 @@ public:
 
     bool isFrontBuffer() {return !mIsYInverted; }
 
-    bool isOverlay() { return mIsOverlay; }
+//    bool isOverlay() { return mIsOverlay; }
 
 #ifdef VBOX_WITH_VIDEOHWACCEL
     virtual class VBoxVHWAGlProgramMngr * getGlProgramMngr() = 0;
@@ -572,6 +575,9 @@ public:
 private:
     void initDisplay();
     void deleteDisplay();
+    void initDisplay(bool bInverted);
+    void deleteDisplay(bool bInverted);
+    GLuint createDisplay(bool bInverted);
     void synchTex(const QRect * aRect);
     void synchTexMem(const QRect * aRect);
     void synchTexFB(const QRect * aRect);
@@ -579,14 +585,23 @@ private:
     void synchFB(const QRect * aRect);
     void synch(const QRect * aRect);
 
-    void doTex2FB(const QRect * aRect);
+//    void doTex2FB(const QRect * aRect);
+    void doTex2FB(const QRect * pDstRect, const QRect * pSrcRect);
 
-    void doSetupModelView(bool bInverted);
+    void doSetupMatrix(const QSize * pSize, bool bInverted);
 
-    QRect mRect;
+    QRect mRect; /* == Inv FB size */
+    QRect mTexRect; /* texture size */
 
-    GLuint mDisplay;
-    bool mDisplayInitialized;
+    QRect mSrcRect;
+    QRect mTargRect; /* == Vis FB size */
+    QRect mTargSize;
+
+    GLuint mYInvertedDisplay;
+    GLuint mVisibleDisplay;
+
+    bool mYInvertedDisplayInitialized;
+    bool mVisibleDisplayInitialized;
 
     uchar * mAddress;
     GLuint mTexture;
@@ -625,7 +640,7 @@ private:
 
     bool mIsYInverted;
 
-    bool mIsOverlay;
+//    bool mIsOverlay;
 
 protected:
     virtual void init(uchar *pvMem, bool bInverted);
@@ -675,7 +690,11 @@ public:
     {
         pCurr->invert();
         pTarg->invert();
-        if(pTarg->isOverlay())
+        if(pCurr == mSurfPrimary) /* flip of the primary surface */
+        {
+            mSurfPrimary = pTarg;
+        }
+        else /* flip of the overlay */
         {
             for (OverlayList::iterator it = mOverlays.begin();
                  it != mOverlays.end(); ++ it)
@@ -685,10 +704,6 @@ public:
                     (*it) = pTarg;
                 }
             }
-        }
-        else
-        {
-            mSurfPrimary = pTarg;
         }
     }
 
@@ -780,13 +795,13 @@ private:
 class VBoxVHWASurfaceQGL : public VBoxVHWASurfaceBase
 {
 public:
-    VBoxVHWASurfaceQGL(class VBoxVHWAGlContextState *aState, GLsizei aWidth, GLsizei aHeight,
+    VBoxVHWASurfaceQGL(class VBoxVHWAGlContextState *aState, const QSize * aSize, const QSize * aTargetSize,
             VBoxVHWAColorFormat & aColorFormat,
             VBoxVHWAColorKey * pSrcBltCKey, VBoxVHWAColorKey * pDstBltCKey,
             VBoxVHWAColorKey * pSrcOverlayCKey, VBoxVHWAColorKey * pDstOverlayCKey,
             class VBoxGLWidget *pWidget,
             bool bInvisibleBuffer) :
-                VBoxVHWASurfaceBase(aState, bInvisibleBuffer, aWidth, aHeight,
+                VBoxVHWASurfaceBase(aState, bInvisibleBuffer, aSize, aTargetSize,
                         aColorFormat,
                         pSrcBltCKey, pDstBltCKey, pSrcOverlayCKey, pDstOverlayCKey),
                 mWidget(pWidget),
