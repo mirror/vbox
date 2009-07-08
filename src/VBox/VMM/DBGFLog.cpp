@@ -143,7 +143,7 @@ VMMR3DECL(int) DBGFR3LogModifyDestinations(PVM pVM, const char *pszDestSettings)
  */
 static DECLCALLBACK(int) dbgfR3LogModifyDestinations(PVM pVM, const char *pszDestSettings)
 {
-    int rc = VERR_NOT_IMPLEMENTED; //RTLogDestination(NULL, pszDestSettings);
+    int rc = RTLogDestinations(NULL, pszDestSettings);
     if (RT_SUCCESS(rc))
         rc = VMMR3UpdateLoggers(pVM);
     return rc;
