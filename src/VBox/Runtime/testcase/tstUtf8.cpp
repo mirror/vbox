@@ -986,10 +986,10 @@ void testMinistring(RTTEST hTest)
     CHECK( (copy1 == copy2) );
 
     copy1 = NULL;
-    CHECK( (copy1.isNull()) );
+    CHECK( (copy1.length() == 0) );
 
     copy1 = "";
-    CHECK( (copy1.isEmpty()) );
+    CHECK( (copy1.length() == 0) );
 
     CHECK( (ministring("abc") < ministring("def")) );
     CHECK( (ministring("abc") != ministring("def")) );

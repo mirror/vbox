@@ -178,7 +178,7 @@ int SVCHlpClient::write (const Utf8Str &aVal)
         return VERR_WRONG_ORDER;
 
     /* write -1 for NULL strings */
-    if (aVal.isNull())
+    if (aVal.isEmpty())
         return write ((size_t) ~0);
 
     size_t len = aVal.length();
