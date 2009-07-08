@@ -1,6 +1,8 @@
 #! /bin/sh
 # Sun VirtualBox
-# Linux Additions kernel module init script
+# Linux Additions kernel module init script ($Revision$)
+#
+
 #
 # Copyright (C) 2006-2009 Sun Microsystems, Inc.
 #
@@ -31,7 +33,7 @@
 ### END INIT INFO
 
 PATH=$PATH:/bin:/sbin:/usr/sbin
-BUILDVBOXADD=`/bin/ls /usr/src/vboxadd*/build_in_tmp 2>/dev/null|cut -d' ' -f1`
+BUILDVBOXGUEST=`/bin/ls /usr/src/vboxguest*/build_in_tmp 2>/dev/null|cut -d' ' -f1`
 BUILDVBOXVFS=`/bin/ls /usr/src/vboxvfs*/build_in_tmp 2>/dev/null|cut -d' ' -f1`
 BUILDVBOXVIDEO=`/bin/ls /usr/src/vboxvideo*/build_in_tmp 2>/dev/null|cut -d' ' -f1`
 LOG="/var/log/vboxadd-install.log"
@@ -141,7 +143,7 @@ if [ "$system" = "other" ]; then
     }
 fi
 
-dev=/dev/vboxadd
+dev=/dev/vboxguest
 userdev=/dev/vboxuser
 owner=vboxadd
 group=1
@@ -157,9 +159,9 @@ fail()
     exit 1
 }
 
-running_vboxadd()
+running_vboxguest()
 {
-    lsmod | grep -q "vboxadd[^_-]"
+    lsmod | grep -q "vboxguest[^_-]"
 }
 
 running_vboxvfs()
@@ -170,7 +172,7 @@ running_vboxvfs()
 start()
 {
     begin "Starting VirtualBox Additions ";
-    running_vboxadd || {
+    running_vboxguest || {
         rm -f $dev || {
             fail "Cannot remove $dev"
         }
@@ -179,35 +181,35 @@ start()
             fail "Cannot remove $userdev"
         }
 
-        modprobe vboxadd >/dev/null 2>&1 || {
-            fail "modprobe vboxadd failed"
+        modprobe vboxguest >/dev/null 2>&1 || {
+            fail "modprobe vboxguest failed"
         }
         sleep .5
     }
     if [ ! -c $dev ]; then
-        maj=`sed -n 's;\([0-9]\+\) vboxadd;\1;p' /proc/devices`
+        maj=`sed -n 's;\([0-9]\+\) vboxguest;\1;p' /proc/devices`
         if [ ! -z "$maj" ]; then
             min=0
         else
-            min=`sed -n 's;\([0-9]\+\) vboxadd;\1;p' /proc/misc`
+            min=`sed -n 's;\([0-9]\+\) vboxguest;\1;p' /proc/misc`
             if [ ! -z "$min" ]; then
                 maj=10
             fi
         fi
         test -z "$maj" && {
-            rmmod vboxadd 2>/dev/null
+            rmmod vboxguest 2>/dev/null
             fail "Cannot locate the VirtualBox device"
         }
 
         mknod -m 0664 $dev c $maj $min || {
-            rmmod vboxadd 2>/dev/null
+            rmmod vboxguest 2>/dev/null
             fail "Cannot create device $dev with major $maj and minor $min"
         }
     fi
     chown $owner:$group $dev 2>/dev/null || {
         rm -f $dev 2>/dev/null
         rm -f $userdev 2>/dev/null
-        rmmod vboxadd 2>/dev/null
+        rmmod vboxguest 2>/dev/null
         fail "Cannot change owner $owner:$group for device $dev"
     }
 
@@ -217,13 +219,13 @@ start()
         if [ ! -z "$min" ]; then
             mknod -m 0666 $userdev c $maj $min || {
                 rm -f $dev 2>/dev/null
-                rmmod vboxadd 2>/dev/null
+                rmmod vboxguest 2>/dev/null
                 fail "Cannot create device $userdev with major $maj and minor $min"
             }
             chown $owner:$group $userdev 2>/dev/null || {
                 rm -f $dev 2>/dev/null
                 rm -f $userdev 2>/dev/null
-                rmmod vboxadd 2>/dev/null
+                rmmod vboxguest 2>/dev/null
                 fail "Cannot change owner $owner:$group for device $userdev"
             }
         fi
@@ -262,8 +264,8 @@ stop()
             rmmod vboxvfs 2>/dev/null || fail "Cannot unload module vboxvfs"
         fi
     fi
-    if running_vboxadd; then
-        rmmod vboxadd 2>/dev/null || fail "Cannot unload module vboxadd"
+    if running_vboxguest; then
+        rmmod vboxguest 2>/dev/null || fail "Cannot unload module vboxguest"
         rm -f $userdev || fail "Cannot unlink $userdev"
         rm -f $dev || fail "Cannot unlink $dev"
     fi
@@ -285,27 +287,27 @@ setup()
         find /lib/modules/`uname -r` -name "vboxvfs\.*" 2>/dev/null|xargs rm -f 2>/dev/null
         succ_msg
     fi
-    if find /lib/modules/`uname -r` -name "vboxadd\.*" 2>/dev/null|grep -q vboxadd; then
-        begin "Removing old VirtualBox vboxadd kernel module"
-        find /lib/modules/`uname -r` -name "vboxadd\.*" 2>/dev/null|xargs rm -f 2>/dev/null
+    if find /lib/modules/`uname -r` -name "vboxguest\.*" 2>/dev/null|grep -q vboxguest; then
+        begin "Removing old VirtualBox vboxguest kernel module"
+        find /lib/modules/`uname -r` -name "vboxguest\.*" 2>/dev/null|xargs rm -f 2>/dev/null
         succ_msg
     fi
     begin "Recompiling VirtualBox kernel modules"
-    if ! $BUILDVBOXADD \
-        --save-module-symvers /tmp/vboxadd-Module.symvers \
+    if ! $BUILDVBOXGUEST \
+        --save-module-symvers /tmp/vboxguest-Module.symvers \
         --no-print-directory install > $LOG 2>&1; then
         fail "Look at $LOG to find out what went wrong"
     fi
     if [ -n "$BUILDVBOXVFS" ]; then
         if ! $BUILDVBOXVFS \
-            --use-module-symvers /tmp/vboxadd-Module.symvers \
+            --use-module-symvers /tmp/vboxguest-Module.symvers \
             --no-print-directory install >> $LOG 2>&1; then
             fail "Look at $LOG to find out what went wrong"
         fi
     fi
     if [ -n "$BUILDVBOXVIDEO" ]; then
         if ! $BUILDVBOXVIDEO \
-            --use-module-symvers /tmp/vboxadd-Module.symvers \
+            --use-module-symvers /tmp/vboxguest-Module.symvers \
             --no-print-directory install >> $LOG 2>&1; then
             fail "Look at $LOG to find out what went wrong"
         fi
@@ -318,7 +320,7 @@ setup()
 
 dmnstatus()
 {
-    if running_vboxadd; then
+    if running_vboxguest; then
         echo "The VirtualBox Additions are currently running."
     else
         echo "The VirtualBox Additions are not currently running."

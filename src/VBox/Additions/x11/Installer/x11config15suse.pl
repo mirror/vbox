@@ -133,7 +133,7 @@ foreach $cfg (@cfg_files) {
             print TMP "Section \"InputDevice\"\n";
             print TMP "        Identifier  \"VBoxMouse\"\n";
             print TMP "        Driver      \"$mousedrv\"\n";
-            print TMP "        Option      \"Device\"     \"\/dev\/vboxadd\"\n";
+            print TMP "        Option      \"Device\"     \"\/dev\/vboxguest\"\n";
             print TMP "        Option      \"SendCoreEvents\"  \"on\"\n";
             print TMP "EndSection\n";
         }

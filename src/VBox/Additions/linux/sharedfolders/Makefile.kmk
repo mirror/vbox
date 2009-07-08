@@ -58,7 +58,6 @@ vboxvfs_NOINST          = 1
 vboxvfs_CFLAGS          = -fshort-wchar
 vboxvfs_DEFS            = \
 	MODULE IN_RT_R0 VBOXGUEST VBOX_WITH_HGCM \
-	$(if-expr defined(VBOX_WITH_COMMON_VBOXGUEST_ON_LINUX),VBOX_WITH_COMMON_VBOXGUEST_ON_LINUX,) \
 	KBUILD_MODNAME=KBUILD_STR\(vboxvfs\) \
         KBUILD_BASENAME=KBUILD_STR\(vboxvfs\)
 vboxvfs_INCS            = \
@@ -108,9 +107,7 @@ $$(PATH_vboxvfs-mod)/dkms.conf: \
 		$(VBOX_VERSION_STAMP) \
 		| $$(dir $$@)
 	$(call MSG_TOOL,Creating,,$@)
-	$(QUIET)$(SED) -e "s;_VERSION_;${VBOX_VERSION_STRING};g" \
-		$(if-expr defined(VBOX_WITH_COMMON_VBOXGUEST_ON_LINUX), -e 's/vboxadd/vboxguest/',) \
-		--output $@ $<
+	$(QUIET)$(SED) -e "s;_VERSION_;${VBOX_VERSION_STRING};g" --output $@ $<
 
 include	$(KBUILD_PATH)/subfooter.kmk
 

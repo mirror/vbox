@@ -414,7 +414,7 @@ if1of ($(KBUILD_TARGET), darwin solaris linux win freebsd)
 endif
 # Enables the Python<->XPCOM and Python<->COM bindings.
 VBOX_WITH_PYTHON ?= 1
-# Build multiple Python<->XPCOM bridges for different Python version 
+# Build multiple Python<->XPCOM bridges for different Python version
 ifn1of ($(KBUILD_TARGET), darwin)
  VBOX_WITH_MULTIVERSION_PYTHON ?= 1
 endif
@@ -3418,9 +3418,6 @@ ifeq ($(KBUILD_TARGET),linux) # As few libs as possible on linux.
 endif
 if1of ($(KBUILD_TARGET), freebsd netbsd openbsd)
  TEMPLATE_VBOXGUESTR3EXE_LIBS     = $(TEMPLATE_VBOXR3EXE_LIBS) iconv
-endif
-ifdef VBOX_WITH_COMMON_VBOXGUEST_ON_LINUX ## tempoary, remove soon.
- TEMPLATE_VBOXGUESTR3EXE_DEFS    += VBOX_WITH_COMMON_VBOXGUEST_ON_LINUX
 endif
 
 

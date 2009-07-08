@@ -37,9 +37,6 @@
 #include <iprt/assert.h>
 #include <VBox/VMMDev2.h>
 #include <VBox/VBoxGuest2.h>
-#if 0
-#include <VBox/VMMDev.h> /* Temporarily. */
-#endif
 
 
 /** @defgroup grp_vboxguest     VirtualBox Guest Additions Driver Interface
@@ -68,11 +65,7 @@
 /** Device name. */
 # define VBOXGUEST_DEVICE_NAME_DOS      L"\\DosDevices\\VBoxGuest"
 
-#elif defined(RT_OS_LINUX) && !defined(VBOX_WITH_COMMON_VBOXGUEST_ON_LINUX)
-# define VBOXGUEST_DEVICE_NAME          "/dev/vboxadd"
-# define VBOXGUEST_USER_DEVICE_NAME     "/dev/vboxuser"
-
-#else /* PORTME */
+#else /* (PORTME) */
 # define VBOXGUEST_DEVICE_NAME          "/dev/vboxguest"
 # if defined(RT_OS_LINUX)
 #  define VBOXGUEST_USER_DEVICE_NAME    "/dev/vboxuser"
@@ -394,11 +387,6 @@ typedef VBOXGUESTOS2IDCCONNECT *PVBOXGUESTOS2IDCCONNECT;
 
 /** @} */
 #endif /* !defined(IN_RC) && !defined(IN_RING0_AGNOSTIC) && !defined(IPRT_NO_CRT) */
-
-
-#if 0 /*def IN_RING3*/
-# include <VBox/VBoxGuestLib.h> /** @todo eliminate this. */
-#endif /* IN_RING3 */
 
 #endif
 

@@ -25,7 +25,7 @@
         <append key="info.capabilities" type="strlist">input</append>
         <append key="info.capabilities" type="strlist">input.mouse</append>
         <merge key="input.x11_driver" type="string">vboxmouse</merge>
-        <merge key="input.device" type="string">/dev/vboxadd</merge>
+        <merge key="input.device" type="string">/dev/vboxguest</merge>
       </match>
     </match>
   </device>

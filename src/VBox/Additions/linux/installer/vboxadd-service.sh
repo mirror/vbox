@@ -244,7 +244,7 @@ test -x "$binary" || {
 }
 
 vboxaddrunning() {
-    lsmod | grep -q "vboxadd[^_-]"
+    lsmod | grep -q "vboxguest[^_-]"
 }
 
 start() {

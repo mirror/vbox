@@ -29,8 +29,7 @@
 
 #ifdef VBGL_VBOXGUEST
 
-#if !defined (RT_OS_WINDOWS) \
- && (!defined (RT_OS_LINUX) || defined (VBOX_WITH_COMMON_VBOXGUEST_ON_LINUX))
+#if !defined (RT_OS_WINDOWS)
 # include <iprt/memobj.h>
 #endif
 
@@ -91,23 +90,6 @@ int vbglLockLinear (void **ppvCtx, void *pv, uint32_t u32Size, bool fWriteAccess
         }
     }
 
-#elif defined (RT_OS_LINUX) && !defined (VBOX_WITH_COMMON_VBOXGUEST_ON_LINUX)
-    /** @todo r=frank: Linux: pv is at least in some cases, e.g. with VBoxMapFolder,
-     *  an R0 address -- the memory was allocated with kmalloc(). I don't know
-     *  if this is true in any case.
-     * r=michael: on Linux, we sometimes have R3 addresses (e.g. shared
-     *  clipboard) and sometimes R0 (e.g. shared folders).  We really ought
-     *  to have two separate paths here - at any rate, Linux R0 shouldn't
-     *  end up calling this API.  In practice, Linux R3 does it's own thing
-     *  before winding up in the R0 path - which calls this stub API.
-     *
-     * bird: this will soon be obsoleted.
-     */
-    NOREF(ppvCtx);
-    NOREF(pv);
-    NOREF(u32Size);
-    NOREF(fFlags);
-
 #else
     /*
      * Lock depending on context.
@@ -147,9 +129,6 @@ void vbglUnlockLinear (void *pvCtx, void *pv, uint32_t u32Size)
         IoFreeMdl (pMdl);
     }
 
-#elif defined (RT_OS_LINUX) && !defined (VBOX_WITH_COMMON_VBOXGUEST_ON_LINUX)
-    NOREF(pvCtx);
-
 #else
     RTR0MEMOBJ MemObj = (RTR0MEMOBJ)pvCtx;
     int rc = RTR0MemObjFree(MemObj, false);
@@ -159,21 +138,6 @@ void vbglUnlockLinear (void *pvCtx, void *pv, uint32_t u32Size)
 }
 
 #else  /* !VBGL_VBOXGUEST */
-
-# if defined (RT_OS_LINUX) && !defined (__KERNEL__) /** @todo r=bird: What is this for?????? */
-#  include <unistd.h>
-#  include <errno.h>
-#  include <sys/fcntl.h>
-#  include <sys/ioctl.h>
-# endif
-
-# if defined (RT_OS_LINUX) && !defined (VBOX_WITH_COMMON_VBOXGUEST_ON_LINUX)
-RT_C_DECLS_BEGIN
-extern DECLVBGL(void *) vboxadd_cmc_open (void);
-extern DECLVBGL(void) vboxadd_cmc_close (void *);
-extern DECLVBGL(int) vboxadd_cmc_call (void *opaque, uint32_t func, void *data);
-RT_C_DECLS_END
-# endif /* RT_OS_LINUX */
 
 # ifdef RT_OS_OS2
 RT_C_DECLS_BEGIN
@@ -187,8 +151,7 @@ RT_C_DECLS_END
 # endif
 
 # if !defined(RT_OS_OS2) \
-  && !defined(RT_OS_WINDOWS) \
-  && (!defined (RT_OS_LINUX) || defined (VBOX_WITH_COMMON_VBOXGUEST_ON_LINUX))
+  && !defined(RT_OS_WINDOWS)
 RT_C_DECLS_BEGIN
 extern DECLVBGL(void *) VBoxGuestIDCOpen (uint32_t *pu32Version);
 extern DECLVBGL(void)   VBoxGuestIDCClose (void *pvOpaque);
@@ -218,18 +181,6 @@ int vbglDriverOpen (VBGLDRIVER *pDriver)
     /** @todo return RTErrConvertFromNtStatus(rc)! */
     Log(("vbglDriverOpen VBoxGuest failed with ntstatus=%x\n", rc));
     return rc;
-
-# elif defined (RT_OS_LINUX) && !defined (VBOX_WITH_COMMON_VBOXGUEST_ON_LINUX)
-
-    void *opaque;
-
-    opaque = (void *) vboxadd_cmc_open ();
-    if (!opaque)
-    {
-        return VERR_NOT_IMPLEMENTED;
-    }
-    pDriver->opaque = opaque;
-    return VINF_SUCCESS;
 
 # elif defined (RT_OS_OS2)
     /*
@@ -339,9 +290,6 @@ int vbglDriverIOCtl (VBGLDRIVER *pDriver, uint32_t u32Function, void *pvData, ui
 
     return NT_SUCCESS(rc)? VINF_SUCCESS: VERR_VBGL_IOCTL_FAILED;
 
-# elif defined (RT_OS_LINUX) && !defined (VBOX_WITH_COMMON_VBOXGUEST_ON_LINUX)
-    return vboxadd_cmc_call (pDriver->opaque, u32Function, pvData);
-
 # elif defined (RT_OS_OS2)
     if (    pDriver->u32Session
         &&  pDriver->u32Session == g_VBoxGuestIDC.u32Session)
@@ -360,9 +308,6 @@ void vbglDriverClose (VBGLDRIVER *pDriver)
 # ifdef RT_OS_WINDOWS
     Log(("vbglDriverClose pDeviceObject=%x\n", pDriver->pDeviceObject));
     ObDereferenceObject (pDriver->pFileObject);
-
-# elif defined (RT_OS_LINUX) && !defined (VBOX_WITH_COMMON_VBOXGUEST_ON_LINUX)
-    vboxadd_cmc_close (pDriver->opaque);
 
 # elif defined (RT_OS_OS2)
     pDriver->u32Session = 0;
