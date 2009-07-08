@@ -504,6 +504,23 @@
 # define RT_NO_THROW
 #endif
 
+/** @def RT_THROW
+ * How to express that a method or function throws a type of exceptions.
+ *
+ * @param   type    The type exception.
+ *
+ * @remarks If the actual throwing is done from the header, enclose it by
+ *          \#ifdef RT_EXCEPTIONS_ENABLED ... \#else ... \#endif so the header
+ *          compiles cleanly without exceptions enabled.
+ *
+ * @remarks Do NOT use this for the actual throwing of exceptions!
+ */
+#ifdef RT_EXCEPTIONS_ENABLED
+# define RT_THROW(type)         throw(type)
+#else
+# define RT_THROW(type)
+#endif
+
 /** @def RTCALL
  * The standard calling convention for the Runtime interfaces.
  */
