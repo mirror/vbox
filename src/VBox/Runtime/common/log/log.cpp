@@ -1524,6 +1524,9 @@ RTDECL(int) RTLogDestinations(PRTLOGGER pLogger, char const *pszVar)
      */
     while (*pszVar)
     {
+        bool fNo;
+        unsigned i;
+
         /* skip blanks. */
         while (RT_C_IS_SPACE(*pszVar))
             pszVar++;
@@ -1531,7 +1534,7 @@ RTDECL(int) RTLogDestinations(PRTLOGGER pLogger, char const *pszVar)
             break;
 
         /* check no prefix. */
-        bool fNo = false;
+        fNo = false;
         if (pszVar[0] == 'n' && pszVar[1] == 'o')
         {
             fNo = true;
@@ -1539,7 +1542,6 @@ RTDECL(int) RTLogDestinations(PRTLOGGER pLogger, char const *pszVar)
         }
 
         /* instruction. */
-        unsigned i;
         for (i = 0; i < RT_ELEMENTS(s_aLogDst); i++)
         {
             size_t cchInstr = strlen(s_aLogDst[i].pszInstr);
@@ -1556,8 +1558,10 @@ RTDECL(int) RTLogDestinations(PRTLOGGER pLogger, char const *pszVar)
                     pszVar++;
                 if (*pszVar == '=' || *pszVar == ':')
                 {
+                    const char *pszEnd;
+
                     pszVar++;
-                    const char *pszEnd = strchr(pszVar, ';');
+                    pszEnd = strchr(pszVar, ';');
                     if (!pszEnd)
                         pszEnd = strchr(pszVar, '\0');
 #ifndef IN_RING0
