@@ -1590,6 +1590,7 @@ RTDECL(int) RTLogDestinations(PRTLOGGER pLogger, char const *pszVar)
                         cch = strlen(pLogger->pszFilename);
                         pLogger->pszFilename[cch++] = '/';
                         memcpy(&pLogger->pszFilename[cch], szTmp, cchFile);
+                        pLogger->pszFilename[cch+cchFile] = '\0';
                     }
                     else
                         AssertMsgFailedReturn(("Invalid destination value! %s%s doesn't take a value!\n",
