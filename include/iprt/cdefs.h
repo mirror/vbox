@@ -85,6 +85,7 @@
 #define RT_STRICT
 #define Breakpoint
 #define RT_NO_DEPRECATED_MACROS
+#define RT_EXCEPTIONS_ENABLED
 #endif /* DOXYGEN_RUNNING */
 
 /** @def RT_ARCH_X86
@@ -481,6 +482,53 @@
  */
 #define RT_NOTHING
 
+/** @def RT_EXCEPTIONS_ENABLED
+ * Defined when C++ exceptions are enabled.
+ */
+#if !defined(RT_EXCEPTIONS_ENABLED) \
+ &&  defined(__cplusplus) \
+ && (   (defined(_MSC_VER) && defined(_CPPUNWIND)) \
+     || (defined(__GNUC__) && defined(__EXCEPTIONS)))
+# define RT_EXCEPTIONS_ENABLED
+#endif
+
+/** @def RT_NO_THROW
+ * How to express that a function doesn't throw C++ exceptions
+ * and the compiler can thus save itself the bother of trying
+ * to catch any of them. Put this between the closing parenthesis
+ * and the semicolon in function prototypes (and implementation if C++).
+ */
+#ifdef RT_EXCEPTIONS_ENABLED
+# define RT_NO_THROW            throw()
+#else
+# define RT_NO_THROW
+#endif
+
+/** @def RT_THROW
+ * How to express that a method or function throws a type of exceptions.
+ *
+ * @param   type    The type exception.
+ *
+ * @remarks If the actual throwing is done from the header, enclose it by
+ *          \#ifdef RT_EXCEPTIONS_ENABLED ... \#else ... \#endif so the header
+ *          compiles cleanly without exceptions enabled.
+ *
+ * @remarks Do NOT use this for the actual throwing of exceptions!
+ */
+#ifdef RT_EXCEPTIONS_ENABLED
+# define RT_THROW(type)         throw(type)
+#else
+# define RT_THROW(type)
+#endif
+
+/** @def RT_THROW_BAD_ALLOC
+ * How to express that a method or function throws a std::bad_alloc exception.
+ */
+#ifdef RT_EXCEPTIONS_ENABLED
+# define RT_THROW_BAD_ALLOC     throw(std::bad_alloc)
+#else
+# define RT_THROW_BAD_ALLOC
+#endif
 
 /** @def RTCALL
  * The standard calling convention for the Runtime interfaces.
@@ -491,20 +539,6 @@
 # define RTCALL     __attribute__((cdecl,regparm(0)))
 #else
 # define RTCALL
-#endif
-
-/** @def RT_NO_THROW
- * How to express that a function doesn't throw C++ exceptions
- * and the compiler can thus save itself the bother of trying
- * to catch any of them. Put this between the closing parenthesis
- * and the semicolon in function prototypes (and implementation if C++).
- */
-#if defined(__cplusplus) \
- && (   (defined(_MSC_VER) && defined(_CPPUNWIND)) \
-     || (defined(__GNUC__) && defined(__EXCEPTIONS)))
-# define RT_NO_THROW    throw()
-#else
-# define RT_NO_THROW
 #endif
 
 /** @def DECLEXPORT
