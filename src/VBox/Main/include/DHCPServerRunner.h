@@ -63,14 +63,14 @@ public:
             return VERR_INVALID_STATE;
 
 #ifdef RT_OS_WINDOWS
-        if(val && strlen(val))
+        if (val && *val)
         {
             mOptions[opt] = "\"";
             mOptions[opt].append(val);
             mOptions[opt].append("\"");
         }
-#endif
         else
+#endif
         {
             mOptions[opt] = val;
         }
