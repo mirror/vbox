@@ -26,6 +26,15 @@ all:
 	@$(MAKE) KBUILD_VERBOSE=$(KBUILD_VERBOSE) -C vboxadd
 	@cp vboxadd/vboxadd.*o .
 	@echo
+	@if [ -d vboxguest ]; then \
+	    if [ -f vboxadd/Module.symvers ]; then \
+	        cp vboxadd/Module.symvers vboxguest; \
+	    fi; \
+	    echo "*** Building 'vboxguest' module ***"; \
+	    $(MAKE) KBUILD_VERBOSE=$(KBUILD_VERBOSE) -C vboxguest; \
+	    cp vboxguest/vboxguest.*o .; \
+	    echo; \
+	fi
 	@if [ -d vboxvfs ]; then \
 	    if [ -f vboxadd/Module.symvers ]; then \
 	        cp vboxadd/Module.symvers vboxvfs; \
@@ -44,6 +53,9 @@ install:
 
 clean:
 	@$(MAKE) -C vboxadd clean
+	@if [ -d vboxguest ]; then \
+	    $(MAKE) -C vboxguest clean; \
+	fi
 	@if [ -d vboxvfs ]; then \
 	    $(MAKE) -C vboxvfs clean; \
 	fi
