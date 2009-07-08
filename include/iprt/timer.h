@@ -230,8 +230,8 @@ RTDECL(int) RTTimerReleaseSystemGranularity(uint32_t u32Granted);
  * @param   hTimerLR    The low resolution timer handle.
  * @param   pvUser      User argument.
  * @param   iTick       The current timer tick. This is always 1 on the first
- *                      callback after the timer was started. For omni timers
- *                      this will be 1 when a cpu comes back online.
+ *                      callback after the timer was started. Will jump if we've
+ *                      skipped ticks when lagging behind.
  */
 typedef DECLCALLBACK(void) FNRTTIMERLR(RTTIMERLR hTimerLR, void *pvUser, uint64_t iTick);
 /** Pointer to FNRTTIMER() function. */
