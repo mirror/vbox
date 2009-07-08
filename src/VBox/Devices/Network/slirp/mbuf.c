@@ -187,6 +187,7 @@ m_inc(struct mbuf *m, int size)
 void
 m_adj(struct mbuf *m, int len)
 {
+    int mlen = m->m_len;
     if (m == NULL)
         return;
     if (len >= 0)
@@ -201,6 +202,7 @@ m_adj(struct mbuf *m, int len)
         len = -len;
         m->m_len -= len;
     }
+    Assert(m->m_len > 0);
 }
 
 

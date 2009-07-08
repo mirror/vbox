@@ -575,7 +575,7 @@ sorecvfrom(PNATState pData, struct socket *so)
             return;
         }
         /* adjust both parameters to maks M_FREEROOM calculate correct */
-        m_adj(m, if_maxlinkhdr + sizeof(struct udphdr) + sizeof(struct ip));
+        m->m_data += if_maxlinkhdr + sizeof(struct udphdr) + sizeof(struct ip);
 
         /*
          * XXX Shouldn't FIONREAD packets destined for port 53,

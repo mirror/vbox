@@ -200,7 +200,7 @@ ip_output(PNATState pData, struct socket *so, struct mbuf *m0)
                 ipstat.ips_odropped++;
                 goto sendorfree;
             }
-            m_adj(m, if_maxlinkhdr);
+            m->m_data += if_maxlinkhdr;
             mhip = mtod(m, struct ip *);
             *mhip = *ip;
 #ifdef VBOX_WITHOUT_SLIRP_CLIENT_ETHER
