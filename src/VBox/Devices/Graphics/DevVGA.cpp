@@ -5379,7 +5379,11 @@ static DECLCALLBACK(void)  vgaR3Reset(PPDMDEVINS pDevIns)
 # endif
                     RTLogPrintf("%c", ch);
 
+#ifndef VBOX
                     src += 4;
+#else
+                    src += 8; /* Every second byte of a plane is used in text mode. */
+#endif
                 }
                 if (cx_max != -1)
                     RTLogPrintf("\n");
