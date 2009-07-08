@@ -22,22 +22,13 @@
 KBUILD_VERBOSE =
 
 all:
-	@echo "*** Building 'vboxadd' module ***"
-	@$(MAKE) KBUILD_VERBOSE=$(KBUILD_VERBOSE) -C vboxadd
-	@cp vboxadd/vboxadd.*o .
+	@echo "*** Building 'vboxguest' module ***"
+	@$(MAKE) KBUILD_VERBOSE=$(KBUILD_VERBOSE) -C vboxguest
+	@cp vboxguest/vboxguest.*o .
 	@echo
-	@if [ -d vboxguest ]; then \
-	    if [ -f vboxadd/Module.symvers ]; then \
-	        cp vboxadd/Module.symvers vboxguest; \
-	    fi; \
-	    echo "*** Building 'vboxguest' module ***"; \
-	    $(MAKE) KBUILD_VERBOSE=$(KBUILD_VERBOSE) -C vboxguest; \
-	    cp vboxguest/vboxguest.*o .; \
-	    echo; \
-	fi
 	@if [ -d vboxvfs ]; then \
-	    if [ -f vboxadd/Module.symvers ]; then \
-	        cp vboxadd/Module.symvers vboxvfs; \
+	    if [ -f vboxguest/Module.symvers ]; then \
+	        cp vboxguest/Module.symvers vboxvfs; \
 	    fi; \
 	    echo "*** Building 'vboxvfs' module ***"; \
 	    $(MAKE) KBUILD_VERBOSE=$(KBUILD_VERBOSE) -C vboxvfs; \
@@ -46,23 +37,20 @@ all:
 
 
 install:
-	@$(MAKE) KBUILD_VERBOSE=$(KBUILD_VERBOSE) -C vboxadd install
+	@$(MAKE) KBUILD_VERBOSE=$(KBUILD_VERBOSE) -C vboxguest install
 	@if [ -d vboxvfs ]; then \
 	    $(MAKE) KBUILD_VERBOSE=$(KBUILD_VERBOSE) -C vboxvfs install; \
 	fi
 
 clean:
-	@$(MAKE) -C vboxadd clean
-	@if [ -d vboxguest ]; then \
-	    $(MAKE) -C vboxguest clean; \
-	fi
+	@$(MAKE) -C vboxguest clean
 	@if [ -d vboxvfs ]; then \
 	    $(MAKE) -C vboxvfs clean; \
 	fi
-	rm -f vboxadd.ko vboxvfs.ko
+	rm -f vboxguest.ko vboxvfs.ko
 
 load:
 	@/sbin/rmmod vboxvfs || true
-	@/sbin/rmmod vboxadd || true
-	@/sbin/insmod vboxadd.ko
+	@/sbin/rmmod vboxguest || true
+	@/sbin/insmod vboxguest.ko
 	@if [ -f vboxvfs.ko ]; then /sbin/insmod vboxvfs.ko; fi

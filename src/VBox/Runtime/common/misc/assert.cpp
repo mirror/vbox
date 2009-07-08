@@ -43,9 +43,7 @@
 #endif
 
 
-#if defined(IN_GUEST_R0) \
- && (  (defined(RT_OS_LINUX) && !defined(VBOX_WITH_COMMON_VBOXGUEST_ON_LINUX)) \
-     || defined(RT_OS_WINDOWS))
+#if defined(IN_GUEST_R0) && defined(RT_OS_WINDOWS) /** @todo remove this, see defect XYZ. */
 /*
  * This is legacy that should be eliminated. OS specific code deals with
  * R0 assertions now and it will do the backdoor printfs in addition to

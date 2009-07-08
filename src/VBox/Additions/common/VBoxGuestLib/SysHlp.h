@@ -55,8 +55,6 @@ typedef struct _VBGLDRIVER
 #ifdef RT_OS_WINDOWS
     PDEVICE_OBJECT pDeviceObject;
     PFILE_OBJECT pFileObject;
-#elif defined (RT_OS_LINUX) && !defined(VBOX_WITH_COMMON_VBOXGUEST_ON_LINUX)
-    void *opaque;
 #elif defined (RT_OS_OS2)
     uint32_t u32Session; /**< just for sanity checking. */
 #else /* PORTME */

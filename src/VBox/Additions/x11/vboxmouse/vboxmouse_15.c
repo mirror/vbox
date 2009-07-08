@@ -194,7 +194,7 @@ VBoxPreInit(InputDriverPtr drv, IDevPtr dev, int flags)
     xf86ProcessCommonOptions(pInfo, pInfo->options);
 
     device = xf86CheckStrOption(dev->commonOptions, "Device",
-                                "/dev/vboxadd");
+                                "/dev/vboxguest");
 
     xf86Msg(X_CONFIG, "%s: Device: \"%s\"\n", pInfo->name, device);
     do {
