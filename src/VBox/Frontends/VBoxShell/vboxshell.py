@@ -768,7 +768,7 @@ def runCommand(ctx, cmd):
 # This file also will be read automatically on startup.
 #
 def checkUserExtensions(ctx, cmds, folder):
-    name =  os.path.join(folder, "shellext.py")
+    name =  os.path.join(str(folder), "shellext.py")
     if not os.path.isfile(name):
         return
     d = {}
