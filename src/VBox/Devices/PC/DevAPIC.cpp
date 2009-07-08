@@ -1526,7 +1526,7 @@ static DECLCALLBACK(void) apicTimerCallback(PPDMDEVINS pDevIns, PTMTIMER pTimer,
 
         if (pThis->lvt[APIC_LVT_TIMER] & APIC_LVT_TIMER_PERIODIC) {
             /* new interval. */
-            pThis->next_time += (uint64_t)pThis->initial_count + 1;
+            pThis->next_time += (((uint64_t)pThis->initial_count + 1) << pThis->count_shift);
             TMTimerSet(pThis->CTX_SUFF(pTimer), pThis->next_time);
             pThis->fTimerArmed = true;
         } else {
