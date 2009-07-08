@@ -158,7 +158,7 @@ crServerDispatchWindowDestroy( GLint window )
         }
     }
 
-    if (cr_server.currentWindow = window)
+    if (cr_server.currentWindow == window)
     {
         cr_server.currentWindow = -1;
     }
