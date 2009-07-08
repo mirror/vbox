@@ -187,7 +187,6 @@ m_inc(struct mbuf *m, int size)
 void
 m_adj(struct mbuf *m, int len)
 {
-    int mlen = m->m_len;
     if (m == NULL)
         return;
     if (len >= 0)
