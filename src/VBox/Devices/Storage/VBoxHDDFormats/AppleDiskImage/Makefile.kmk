@@ -1,0 +1,34 @@
+# $Id$
+## @file
+# VBoxHDDAppleDMG - Apple Disk Image.
+#
+
+#
+# Copyright (C) 2009 Sun Microsystems, Inc.
+#
+# Sun Microsystems, Inc. confidential
+# All rights reserved
+#
+
+SUB_DEPTH = ../../../../../..
+include $(KBUILD_PATH)/subheader.kmk
+
+#
+# The Apple Disk Image Plugin.
+#
+DLLS += VBoxHDDAppleDMG
+VBoxHDDAppleDMG_TEMPLATE = VBOXR3
+VBoxHDDAppleDMG_SOURCES = \
+	VBoxDMG.cpp
+VBoxHDDAppleDMG_LIBS = \
+	$(LIB_RUNTIME)
+
+PROGRAMS += tstVBoxDMG
+tstVBoxDMG_TEMPLATE = VBOXR3TSTEXE
+tstVBoxDMG_DEFS = VBOXDMG_TESTING
+tstVBoxDMG_SOURCES = \
+	VBoxDMG.cpp
+
+
+include $(KBUILD_PATH)/subfooter.kmk
+
