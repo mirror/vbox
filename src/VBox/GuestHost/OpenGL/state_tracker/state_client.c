@@ -1314,7 +1314,7 @@ void STATE_APIENTRY crStateFlushVertexArrayRangeNV(void)
 /*Returns if the given clientpointer could be used on server side directly*/
 #define CRSTATE_IS_SERVER_CP(cp) (!(cp).enabled || !(cp).p || ((cp).buffer && (cp).buffer->name))
 
-static crStateDumpClientPointer(CRClientPointer *cp, const char *name, int i)
+static void crStateDumpClientPointer(CRClientPointer *cp, const char *name, int i)
 {
   if (i<0 && cp->enabled)
   {
