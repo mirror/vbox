@@ -124,9 +124,9 @@ static volatile bool            g_fLoggerCreated;
 static char                     g_szLogGrp[128];
 /** Release logger flags settings. */
 static char                     g_szLogFlags[128];
-# if 0
 /** Release logger destination settings. */
 static char                     g_szLogDst[128];
+# if 0
 /** Debug logger group settings. */
 static char                     g_szDbgLogGrp[128];
 /** Debug logger flags settings. */
@@ -483,7 +483,7 @@ static int __init vboxguestLinuxModInit(void)
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
         RTLogGroupSettings(pRelLogger, g_szLogGrp);
         RTLogFlags(pRelLogger, g_szLogFlags);
-        //RTLogDestination(pRelLogger, g_szLogDst);
+        RTLogDestinations(pRelLogger, g_szLogDst);
 #endif
         RTLogRelSetDefaultInstance(pRelLogger);
     }
@@ -830,9 +830,11 @@ static int vboxguestLinuxParamLogGrpSet(const char *pszValue, struct kernel_para
 /** log and dbg_log parameter getter. */
 static int vboxguestLinuxParamLogGrpGet(char *pszBuf, struct kernel_param *pParam)
 {
-    /** @todo add a serializer */
+    PRTLOGGER pLogger = pParam->name[0] == 'd' ? RTLogDefaultInstance() : RTLogRelDefaultInstance();
     *pszBuf = '\0';
-    return 0;
+    if (pLogger)
+        RTLogGetGroupSettings(pLogger, pszBuf, _4K);
+    return strlen(pszBuf);
 }
 
 
@@ -854,16 +856,25 @@ static int vboxguestLinuxParamLogFlagsSet(const char *pszValue, struct kernel_pa
 /** log and dbg_log_flags parameter getter. */
 static int vboxguestLinuxParamLogFlagsGet(char *pszBuf, struct kernel_param *pParam)
 {
-    /** @todo add a flags serializer */
+    PRTLOGGER pLogger = pParam->name[0] == 'd' ? RTLogDefaultInstance() : RTLogRelDefaultInstance();
     *pszBuf = '\0';
-    return 0;
+    if (pLogger)
+        RTLogGetFlags(pLogger, pszBuf, _4K);
+    return strlen(pszBuf);
 }
 
 
 /** log and dbg_log_dest parameter setter. */
 static int vboxguestLinuxParamLogDstSet(const char *pszValue, struct kernel_param *pParam)
 {
-    /** @todo  */
+    if (g_fLoggerCreated)
+    {
+        PRTLOGGER pLogger = pParam->name[0] == 'd' ? RTLogDefaultInstance() : RTLogRelDefaultInstance();
+        if (pLogger)
+            RTLogDestinations(pLogger, pszValue);
+    }
+    else if (pParam->name[0] != 'd')
+        strlcpy(&g_szLogDst[0], pszValue, sizeof(g_szLogDst));
     return 0;
 }
 
@@ -871,9 +882,11 @@ static int vboxguestLinuxParamLogDstSet(const char *pszValue, struct kernel_para
 /** log and dbg_log_dest parameter getter. */
 static int vboxguestLinuxParamLogDstGet(char *pszBuf, struct kernel_param *pParam)
 {
-    /** @todo add a destination serializer */
+    PRTLOGGER pLogger = pParam->name[0] == 'd' ? RTLogDefaultInstance() : RTLogRelDefaultInstance();
     *pszBuf = '\0';
-    return 0;
+    if (pLogger)
+        RTLogGetDestinations(pLogger, pszBuf, _4K);
+    return strlen(pszBuf);
 }
 
 /*

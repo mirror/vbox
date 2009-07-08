@@ -284,7 +284,7 @@ struct RTLOGGER
     /** Handle to log file (if open). */
     RTFILE                  File;
     /** Pointer to filename.
-     * (The memory is allocated in the smae block as RTLOGGER.) */
+     * (The memory is allocated in the same block as RTLOGGER.) */
     char                   *pszFilename;
     /** Pointer to the group name array.
      * (The data is readonly and provided by the user.) */
@@ -1444,6 +1444,17 @@ RTDECL(int) RTLogSetCustomPrefixCallback(PRTLOGGER pLogger, PFNRTLOGPREFIX pfnCa
 RTDECL(int) RTLogCopyGroupsAndFlags(PRTLOGGER pDstLogger, PCRTLOGGER pSrcLogger, unsigned fFlagsOr, unsigned fFlagsAnd);
 
 /**
+ * Get the current log group settings as a string.
+ *
+ * @returns VINF_SUCCESS or VERR_BUFFER_OVERFLOW.
+ * @param   pLogger             Logger instance (NULL for default logger).
+ * @param   pszBuf              The output buffer.
+ * @param   cchBuf              The size of the output buffer. Must be greater
+ *                              than zero.
+ */
+RTDECL(int) RTLogGetGroupSettings(PRTLOGGER pLogger, char *pszBuf, size_t cchBuf);
+
+/**
  * Updates the group settings for the logger instance using the specified
  * specification string.
  *
@@ -1465,6 +1476,39 @@ RTDECL(int) RTLogGroupSettings(PRTLOGGER pLogger, const char *pszVar);
  * @param   pszVar      Value to parse.
  */
 RTDECL(int) RTLogFlags(PRTLOGGER pLogger, const char *pszVar);
+
+#ifndef IN_RC
+/**
+ * Get the current log flags as a string.
+ *
+ * @returns VINF_SUCCESS or VERR_BUFFER_OVERFLOW.
+ * @param   pLogger             Logger instance (NULL for default logger).
+ * @param   pszBuf              The output buffer.
+ * @param   cchBuf              The size of the output buffer. Must be greater
+ *                              than zero.
+ */
+RTDECL(int) RTLogGetFlags(PRTLOGGER pLogger, char *pszBuf, size_t cchBuf);
+
+/**
+ * Updates the logger desination using the specified string.
+ *
+ * @returns VINF_SUCCESS or VERR_BUFFER_OVERFLOW.
+ * @param   pLogger             Logger instance (NULL for default logger).
+ * @param   pszVar              The value to parse.
+ */
+RTDECL(int) RTLogDestinations(PRTLOGGER pLogger, char const *pszVar);
+
+/**
+ * Get the current log destinations as a string.
+ *
+ * @returns VINF_SUCCESS or VERR_BUFFER_OVERFLOW.
+ * @param   pLogger             Logger instance (NULL for default logger).
+ * @param   pszBuf              The output buffer.
+ * @param   cchBuf              The size of the output buffer. Must be greater
+ *                              than 0.
+ */
+RTDECL(int) RTLogGetDestinations(PRTLOGGER pLogger, char *pszBuf, size_t cchBuf);
+#endif /* !IN_RC */
 
 /**
  * Flushes the specified logger.
