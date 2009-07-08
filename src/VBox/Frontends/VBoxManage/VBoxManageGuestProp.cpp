@@ -166,10 +166,8 @@ public:
                                      IN_BSTR flags)
     {
         HRESULT rc = S_OK;
-        Utf8Str utf8Name (name);
+        Utf8Str utf8Name(name);
         Guid uuid(machineId);
-        if (utf8Name.isNull())
-            rc = E_OUTOFMEMORY;
         if (   SUCCEEDED (rc)
             && uuid == mUuid
             && RTStrSimplePatternMultiMatch(mPatterns, RTSTR_MAX,

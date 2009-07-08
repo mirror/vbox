@@ -138,14 +138,14 @@ bool Utf8Str::contains(const Utf8Str &that, CaseSensitivity cs /*= CaseSensitive
 
 Utf8Str& Utf8Str::toLower()
 {
-    if (!isEmpty())
+    if (length())
         ::RTStrToLower(m_psz);
     return *this;
 }
 
 Utf8Str& Utf8Str::toUpper()
 {
-    if (!isEmpty())
+    if (length())
         ::RTStrToUpper(m_psz);
     return *this;
 }

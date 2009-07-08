@@ -749,7 +749,7 @@ static int CmdListPartitions(int argc, char **argv, ComPtr<IVirtualBox> aVirtual
         }
     }
 
-    if (rawdisk.isEmpty())
+    if (!rawdisk.length())
         return errorSyntax(USAGE_LISTPARTITIONS, "Mandatory parameter -rawdisk missing");
 
     RTFILE RawFile;
@@ -864,7 +864,7 @@ static int CmdCreateRawVMDK(int argc, char **argv, ComPtr<IVirtualBox> aVirtualB
 
     if (filename.isEmpty())
         return errorSyntax(USAGE_CREATERAWVMDK, "Mandatory parameter -filename missing");
-    if (rawdisk.isEmpty())
+    if (!rawdisk.length())
         return errorSyntax(USAGE_CREATERAWVMDK, "Mandatory parameter -rawdisk missing");
     if (!pszPartitions && pszMBRFilename)
         return errorSyntax(USAGE_CREATERAWVMDK, "The parameter -mbr is only valid when the parameter -partitions is also present");
