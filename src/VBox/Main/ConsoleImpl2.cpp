@@ -1843,11 +1843,13 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                 utf8Values.push_back(Bstr(valuesOut[i]));
                 timestamps.push_back(timestampsOut[i]);
                 utf8Flags.push_back(Bstr(flagsOut[i]));
+#if 0 /** @todo r=bird: Who is gonna catch this? Why does it trigger now? */
                 if (   utf8Names.back().isNull()
                     || utf8Values.back().isNull()
                     || utf8Flags.back().isNull()
                    )
                     throw std::bad_alloc();
+#endif
             }
             for (unsigned i = 0; i < cProps && RT_SUCCESS(rc); ++i)
             {
