@@ -88,8 +88,6 @@ public:
     STDMETHOD(COMSETTER(RemoteDisplayAuthLibrary)) (IN_BSTR aRemoteDisplayAuthLibrary);
     STDMETHOD(COMGETTER(WebServiceAuthLibrary)) (BSTR *aWebServiceAuthLibrary);
     STDMETHOD(COMSETTER(WebServiceAuthLibrary)) (IN_BSTR aWebServiceAuthLibrary);
-    STDMETHOD(COMGETTER(HWVirtExEnabled)) (BOOL *enabled);
-    STDMETHOD(COMSETTER(HWVirtExEnabled)) (BOOL enabled);
     STDMETHOD(COMGETTER(LogHistoryCount)) (ULONG *count);
     STDMETHOD(COMSETTER(LogHistoryCount)) (ULONG count);
     STDMETHOD(COMGETTER(DefaultAudioDriver)) (AudioDriverType_T *aAudioDriver);
@@ -142,7 +140,6 @@ private:
 
     Bstr mRemoteDisplayAuthLibrary;
     Bstr mWebServiceAuthLibrary;
-    BOOL mHWVirtExEnabled;
     ULONG mLogHistoryCount;
     AudioDriverType_T mDefaultAudioDriver;
 };

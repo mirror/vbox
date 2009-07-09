@@ -346,19 +346,6 @@
   -->
 
   <enum
-    name="TSBool"
-    uuid="523ff64d-842a-4b1a-80e7-c311b028cb3a"
-  >
-    <desc>
-      Boolean variable having a third state, default.
-    </desc>
-
-    <const name="False"   value="0"/>
-    <const name="True"    value="1"/>
-    <const name="Default" value="2"/>
-  </enum>
-
-  <enum
        name="AccessMode"
        uuid="1da0007c-ddf7-4be8-bcac-d84a1558785f"
        >
@@ -4159,7 +4146,7 @@
 
   <interface
      name="IMachine" extends="$unknown"
-     uuid="4d1df26d-d9c1-4c7e-b689-15e85ecf8ffc"
+     uuid="540dcfda-3df2-49c6-88fa-033a28c2ff85"
      wsmap="managed"
      >
     <desc>
@@ -4388,7 +4375,7 @@
       <desc>Object containing all BIOS settings.</desc>
     </attribute>
 
-    <attribute name="HWVirtExEnabled" type="TSBool">
+    <attribute name="HWVirtExEnabled" type="boolean">
       <desc>
         This setting determines whether VirtualBox will try to make use of
         the host CPU's hardware virtualization extensions such as Intel VT-x
@@ -7532,7 +7519,7 @@
   <interface
      name="ISystemProperties"
      extends="$unknown"
-     uuid="63bfd184-df69-4949-9159-a923cf7b1207"
+     uuid="9ca0f712-83f3-4631-b143-b75ef6568332"
      wsmap="managed"
      >
     <desc>
@@ -7784,16 +7771,6 @@
           Setting this property to @c null or empty string will restore the
           initial value.
         </note>
-      </desc>
-    </attribute>
-
-    <attribute name="HWVirtExEnabled" type="boolean">
-      <desc>
-        This specifies the default value for hardware virtualization
-        extensions. If enabled, virtual machines will make use of
-        hardware virtualization extensions such as Intel VT-x and
-        AMD-V by default. This value can be overridden by each VM
-        using their <link to="IMachine::HWVirtExEnabled" /> property.
       </desc>
     </attribute>
 

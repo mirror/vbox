@@ -937,15 +937,11 @@ int handleModifyVM(HandlerArg *a)
         {
             if (!strcmp(hwvirtex, "on"))
             {
-                CHECK_ERROR(machine, COMSETTER(HWVirtExEnabled)(TSBool_True));
+                CHECK_ERROR(machine, COMSETTER(HWVirtExEnabled)(TRUE));
             }
             else if (!strcmp(hwvirtex, "off"))
             {
-                CHECK_ERROR(machine, COMSETTER(HWVirtExEnabled)(TSBool_False));
-            }
-            else if (!strcmp(hwvirtex, "default"))
-            {
-                CHECK_ERROR(machine, COMSETTER(HWVirtExEnabled)(TSBool_Default));
+                CHECK_ERROR(machine, COMSETTER(HWVirtExEnabled)(FALSE));
             }
             else
             {

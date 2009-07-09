@@ -174,11 +174,11 @@ void VBoxVMSettingsSystem::getFrom (const CMachine &aMachine)
 
     /* VT-x/AMD-V */
     mCbVirt->setEnabled (fVTxAMDVSupported);
-    mCbVirt->setChecked (aMachine.GetHWVirtExEnabled() == KTSBool_True);
+    mCbVirt->setChecked (aMachine.GetHWVirtExEnabled());
 
     /* Nested Paging */
     mCbNestedPaging->setEnabled (fVTxAMDVSupported &&
-                                 aMachine.GetHWVirtExEnabled() == KTSBool_True);
+                                 aMachine.GetHWVirtExEnabled());
     mCbNestedPaging->setChecked (aMachine.GetHWVirtExNestedPagingEnabled());
 
     if (mValidator)
@@ -231,8 +231,7 @@ void VBoxVMSettingsSystem::putBackTo()
 
     /* VT-x/AMD-V */
     mMachine.SetHWVirtExEnabled (mCbVirt->checkState() == Qt::Checked ||
-                                 mSlCPU->value() > 1 ?
-                                 KTSBool_True : KTSBool_False);
+                                 mSlCPU->value() > 1);
 
     /* Nested Paging */
     mMachine.SetHWVirtExNestedPagingEnabled (mCbNestedPaging->isChecked());

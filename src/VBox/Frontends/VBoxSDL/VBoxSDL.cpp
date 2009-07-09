@@ -1072,7 +1072,7 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
     unsigned fRawR3 = ~0U;
     unsigned fPATM  = ~0U;
     unsigned fCSAM  = ~0U;
-    TSBool_T fHWVirt = TSBool_Default;
+    unsigned fHWVirt = ~0U;
     uint32_t u32WarpDrive = 0;
 #endif
 #ifdef VBOX_WIN32_UI
@@ -1586,10 +1586,10 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
             fCSAM = false;
         else if (   !strcmp(argv[curArg], "--hwvirtex")
                  || !strcmp(argv[curArg], "-hwvirtex"))
-            fHWVirt = TSBool_True;
+            fHWVirt = true;
         else if (   !strcmp(argv[curArg], "--nohwvirtex")
                  || !strcmp(argv[curArg], "-nohwvirtex"))
-            fHWVirt = TSBool_False;
+            fHWVirt = false;
         else if (   !strcmp(argv[curArg], "--warpdrive")
                  || !strcmp(argv[curArg], "-warpdrive"))
         {
@@ -2148,7 +2148,7 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         }
         gMachineDebugger->COMSETTER(CSAMEnabled)(fCSAM);
     }
-    if (fHWVirt != TSBool_Default)
+    if (fHWVirt != ~0U)
     {
         gMachine->COMSETTER(HWVirtExEnabled)(fHWVirt);
     }

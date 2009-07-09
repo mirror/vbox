@@ -193,7 +193,7 @@ Machine::HWData::HWData()
     mVRAMSize = 8;
     mAccelerate3DEnabled = false;
     mMonitorCount = 1;
-    mHWVirtExEnabled = TSBool_False;
+    mHWVirtExEnabled = true;
     mHWVirtExNestedPagingEnabled = false;
     mHWVirtExVPIDEnabled = false;
     mPAEEnabled = false;
@@ -499,9 +499,6 @@ HRESULT Machine::init (VirtualBox *aParent, CBSTR aConfigFile,
                 {
                     /* Store OS type */
                     mUserData->mOSTypeId = aOsType->id();
-
-                    /* Apply HWVirtEx default; always true (used to rely on aOsType->recommendedVirtEx())  */
-                    mHWData->mHWVirtExEnabled = TSBool_True;
 
                     /* Apply BIOS defaults */
                     mBIOSSettings->applyDefaults (aOsType);
@@ -1236,7 +1233,7 @@ STDMETHODIMP Machine::COMGETTER(BIOSSettings)(IBIOSSettings **biosSettings)
     return S_OK;
 }
 
-STDMETHODIMP Machine::COMGETTER(HWVirtExEnabled)(TSBool_T *enabled)
+STDMETHODIMP Machine::COMGETTER(HWVirtExEnabled)(BOOL *enabled)
 {
     if (!enabled)
         return E_POINTER;
@@ -1251,7 +1248,7 @@ STDMETHODIMP Machine::COMGETTER(HWVirtExEnabled)(TSBool_T *enabled)
     return S_OK;
 }
 
-STDMETHODIMP Machine::COMSETTER(HWVirtExEnabled)(TSBool_T enable)
+STDMETHODIMP Machine::COMSETTER(HWVirtExEnabled)(BOOL enable)
 {
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
@@ -5172,7 +5169,7 @@ HRESULT Machine::loadHardware (const settings::Key &aNode)
     /* CPU node (currently not required) */
     {
         /* default value in case the node is not there */
-        mHWData->mHWVirtExEnabled             = TSBool_Default;
+        mHWData->mHWVirtExEnabled             = true;
         mHWData->mHWVirtExNestedPagingEnabled = false;
         mHWData->mHWVirtExVPIDEnabled         = false;
         mHWData->mPAEEnabled                  = false;
@@ -5184,12 +5181,10 @@ HRESULT Machine::loadHardware (const settings::Key &aNode)
             if (!hwVirtExNode.isNull())
             {
                 const char *enabled = hwVirtExNode.stringValue ("enabled");
-                if      (strcmp (enabled, "false") == 0)
-                    mHWData->mHWVirtExEnabled = TSBool_False;
-                else if (strcmp (enabled, "true") == 0)
-                    mHWData->mHWVirtExEnabled = TSBool_True;
+                if      (strcmp (enabled, "true") == 0)
+                    mHWData->mHWVirtExEnabled = true;
                 else
-                    mHWData->mHWVirtExEnabled = TSBool_Default;
+                    mHWData->mHWVirtExEnabled = false;
             }
             /* HardwareVirtExNestedPaging (optional, default is false) */
             Key HWVirtExNestedPagingNode = cpuNode.findKey ("HardwareVirtExNestedPaging");
@@ -6731,18 +6726,10 @@ HRESULT Machine::saveHardware (settings::Key &aNode)
         Key cpuNode = aNode.createKey ("CPU");
         Key hwVirtExNode = cpuNode.createKey ("HardwareVirtEx");
         const char *value = NULL;
-        switch (mHWData->mHWVirtExEnabled)
-        {
-            case TSBool_False:
-                value = "false";
-                break;
-            case TSBool_True:
-                value = "true";
-                break;
-            case TSBool_Default:
-                value = "default";
-                break;
-        }
+        if (mHWData->mHWVirtExEnabled)
+            value = "true";
+        else
+            value = "false";
         hwVirtExNode.setStringValue ("enabled", value);
 
         /* Nested paging (optional, default is false) */
