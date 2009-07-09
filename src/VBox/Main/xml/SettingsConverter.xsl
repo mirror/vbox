@@ -832,6 +832,18 @@ Value '<xsl:value-of select="@type"/>' of 'HardDisk::type' attribute is invalid.
   <!-- just remove the node -->
 </xsl:template>
 
+<xsl:template match="vb:VirtualBox[substring-before(@version,'-')='1.5']/
+                     vb:Machine//vb:Hardware/vb:CPU"
+              mode="v1.6">
+  <xsl:copy>
+    <!-- copy all, and if HardwareVirtEx is not present, add one with enabled = false -->
+    <xsl:apply-templates select="node()" mode="v1.6"/>
+    <xsl:if test="not(./vb:HardwareVirtEx)">
+      <HardwareVirtEx enabled="false" />
+    </xsl:if>
+  </xsl:copy>
+</xsl:template>
+
 
 <!--
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -859,20 +871,20 @@ Value '<xsl:value-of select="@type"/>' of 'HardDisk::type' attribute is invalid.
            <DHCPServers>
               <xsl:choose>
                 <xsl:when test="substring-after(../@version,'-')='windows'">
-                   <DHCPServer networkName="HostInterfaceNetworking-VirtualBox Host-Only Ethernet Adapter" 
+                   <DHCPServer networkName="HostInterfaceNetworking-VirtualBox Host-Only Ethernet Adapter"
                         IPAddress="192.168.56.100" networkMask="255.255.255.0"
                         lowerIP="192.168.56.101" upperIP="192.168.56.254"
                         enabled="1"/>
                 </xsl:when>
                 <xsl:otherwise>
-                   <DHCPServer networkName="HostInterfaceNetworking-vboxnet0" 
+                   <DHCPServer networkName="HostInterfaceNetworking-vboxnet0"
                         IPAddress="192.168.56.2" networkMask="255.255.255.0"
                         lowerIP="192.168.56.3" upperIP="192.168.56.255"
                         enabled="1"/>
                 </xsl:otherwise>
               </xsl:choose>
            </DHCPServers>
-        </NetserviceRegistry>              
+        </NetserviceRegistry>
     </xsl:copy>
 </xsl:template>
 
