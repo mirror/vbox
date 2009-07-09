@@ -1556,9 +1556,10 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
         }
 
         /*
-         * Implemented in 3.1.0. The ring-0 VBoxGuestLib uses this to check
-         * whether VMMDevHGCMParmType_PhysAddr and VMMDevHGCMParmType_PageList
-         * are known to work.
+         * Implemented in 3.1.0.
+         *
+         * Note! The ring-0 VBoxGuestLib uses this to check whether
+         *       VMMDevHGCMParmType_PageList is supported.
          */
         case VMMDevReq_GetHostVersion:
         {
@@ -1570,7 +1571,7 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
             pReqHostVer->minor = VBOX_VERSION_MINOR;
             pReqHostVer->build = VBOX_VERSION_BUILD;
             pReqHostVer->revision = VBOX_SVN_REV;
-            pReqHostVer->features = VMMDEV_HVF_PHYS_HGCM_PARAM;
+            pReqHostVer->features = VMMDEV_HVF_HGCM_PHYS_PAGE_LIST;
             pReqHostVer->header.rc = VINF_SUCCESS;
             break;
         }

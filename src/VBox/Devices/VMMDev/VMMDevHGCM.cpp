@@ -596,11 +596,11 @@ int vmmdevHGCMCall (VMMDevState *pVMMDevState, VMMDevHGCMCall *pHGCMCall, uint32
 
                 case VMMDevHGCMParmType_32bit:
                 case VMMDevHGCMParmType_64bit:
-                case VMMDevHGCMParmType_PhysAddr:
                 {
                 } break;
 
                 default:
+                case VMMDevHGCMParmType_PhysAddr:
                 {
                     AssertMsgFailed(("vmmdevHGCMCall: invalid parameter type %x\n", pGuestParm->type));
                     rc = VERR_INVALID_PARAMETER;
@@ -648,7 +648,6 @@ int vmmdevHGCMCall (VMMDevState *pVMMDevState, VMMDevHGCMCall *pHGCMCall, uint32
 
                 case VMMDevHGCMParmType_32bit:
                 case VMMDevHGCMParmType_64bit:
-                case VMMDevHGCMParmType_PhysAddr:
                 {
                 } break;
 
@@ -750,23 +749,6 @@ int vmmdevHGCMCall (VMMDevState *pVMMDevState, VMMDevHGCMCall *pHGCMCall, uint32
                          break;
                      }
 
-                     case VMMDevHGCMParmType_PhysAddr:
-                     {
-                         uint32_t size = pGuestParm->u.Pointer.size;
-#ifdef LOG_ENABLED
-                         RTGCPHYS physAddr = pGuestParm->u.Pointer.u.physAddr;
-#endif
-
-                         pHostParm->type = VBOX_HGCM_SVC_PARM_PTR;
-                         pHostParm->u.pointer.size = size;
-
-                         AssertFailed();
-                         /* rc = PDMDevHlpPhys2HCVirt (pVMMDevState->pDevIns, physAddr, size, &pHostParm->u.pointer.addr); */
-
-                         Log(("vmmdevHGCMCall: PhysAddr guest parameter %RGp\n", physAddr));
-                         break;
-                     }
-
                      case VMMDevHGCMParmType_LinAddr_In:  /* In (read) */
                      case VMMDevHGCMParmType_LinAddr_Out: /* Out (write) */
                      case VMMDevHGCMParmType_LinAddr:     /* In & Out */
@@ -869,6 +851,7 @@ int vmmdevHGCMCall (VMMDevState *pVMMDevState, VMMDevHGCMCall *pHGCMCall, uint32
 
                     /* just to shut up gcc */
                     default:
+                        AssertFailed();
                         break;
                 }
             }
@@ -907,23 +890,6 @@ int vmmdevHGCMCall (VMMDevState *pVMMDevState, VMMDevHGCMCall *pHGCMCall, uint32
                          break;
                      }
 
-                     case VMMDevHGCMParmType_PhysAddr:
-                     {
-                         uint32_t size = pGuestParm->u.Pointer.size;
-#ifdef LOG_ENABLED
-                         RTGCPHYS physAddr = pGuestParm->u.Pointer.u.physAddr;
-#endif
-
-                         pHostParm->type = VBOX_HGCM_SVC_PARM_PTR;
-                         pHostParm->u.pointer.size = size;
-
-                         AssertFailed();
-                         /* rc = PDMDevHlpPhys2HCVirt (pVMMDevState->pDevIns, physAddr, size, &pHostParm->u.pointer.addr); */
-
-                         Log(("vmmdevHGCMCall: PhysAddr guest parameter %RGp\n", physAddr));
-                         break;
-                     }
-
                      case VMMDevHGCMParmType_LinAddr_In:  /* In (read) */
                      case VMMDevHGCMParmType_LinAddr_Out: /* Out (write) */
                      case VMMDevHGCMParmType_LinAddr:     /* In & Out */
@@ -1026,6 +992,7 @@ int vmmdevHGCMCall (VMMDevState *pVMMDevState, VMMDevHGCMCall *pHGCMCall, uint32
 
                     /* just to shut up gcc */
                     default:
+                        AssertFailed();
                         break;
                 }
             }
@@ -1139,23 +1106,6 @@ static int vmmdevHGCMCallSaved (VMMDevState *pVMMDevState, VMMDevHGCMCall *pHGCM
                          break;
                      }
 
-                     case VMMDevHGCMParmType_PhysAddr:
-                     {
-                         uint32_t size = pGuestParm->u.Pointer.size;
-#ifdef LOG_ENABLED
-                         RTGCPHYS physAddr = pGuestParm->u.Pointer.u.physAddr;
-#endif
-
-                         pHostParm->type = VBOX_HGCM_SVC_PARM_PTR;
-                         pHostParm->u.pointer.size = size;
-
-                         AssertFailed();
-                         /* rc = PDMDevHlpPhys2HCVirt (pVMMDevState->pDevIns, physAddr, size, &pHostParm->u.pointer.addr); */
-
-                         Log(("vmmdevHGCMCall: PhysAddr guest parameter %RGp\n", physAddr));
-                         break;
-                     }
-
                      case VMMDevHGCMParmType_LinAddr_In:  /* In (read) */
                      case VMMDevHGCMParmType_LinAddr_Out: /* Out (write) */
                      case VMMDevHGCMParmType_LinAddr:     /* In & Out */
@@ -1297,6 +1247,7 @@ static int vmmdevHGCMCallSaved (VMMDevState *pVMMDevState, VMMDevHGCMCall *pHGCM
 
                     /* just to shut up gcc */
                     default:
+                        AssertFailed();
                         break;
                 }
             }
@@ -1335,23 +1286,6 @@ static int vmmdevHGCMCallSaved (VMMDevState *pVMMDevState, VMMDevHGCMCall *pHGCM
                          break;
                      }
 
-                     case VMMDevHGCMParmType_PhysAddr:
-                     {
-                         uint32_t size = pGuestParm->u.Pointer.size;
-#ifdef LOG_ENABLED
-                         RTGCPHYS physAddr = pGuestParm->u.Pointer.u.physAddr;
-#endif
-
-                         pHostParm->type = VBOX_HGCM_SVC_PARM_PTR;
-                         pHostParm->u.pointer.size = size;
-
-                         AssertFailed();
-                         /* rc = PDMDevHlpPhys2HCVirt (pVMMDevState->pDevIns, physAddr, size, &pHostParm->u.pointer.addr); */
-
-                         Log(("vmmdevHGCMCall: PhysAddr guest parameter %RGp\n", physAddr));
-                         break;
-                     }
-
                      case VMMDevHGCMParmType_LinAddr_In:  /* In (read) */
                      case VMMDevHGCMParmType_LinAddr_Out: /* Out (write) */
                      case VMMDevHGCMParmType_LinAddr:     /* In & Out */
@@ -1493,6 +1427,7 @@ static int vmmdevHGCMCallSaved (VMMDevState *pVMMDevState, VMMDevHGCMCall *pHGCM
 
                     /* just to shut up gcc */
                     default:
+                        AssertFailed();
                         break;
                 }
             }
@@ -1687,11 +1622,6 @@ DECLCALLBACK(void) hgcmCompletedWorker (PPDMIHGCMPORT pInterface, int32_t result
                             pGuestParm->u.value64 = pHostParm->u.uint64;
                         } break;
 
-                        case VMMDevHGCMParmType_PhysAddr:
-                        {
-                            /* do nothing */
-                        } break;
-
                         case VMMDevHGCMParmType_LinAddr_In:  /* In (read) */
                         case VMMDevHGCMParmType_LinAddr_Out: /* Out (write) */
                         case VMMDevHGCMParmType_LinAddr:     /* In & Out */
@@ -1790,11 +1720,6 @@ DECLCALLBACK(void) hgcmCompletedWorker (PPDMIHGCMPORT pInterface, int32_t result
                             pGuestParm->u.value64 = pHostParm->u.uint64;
                         } break;
 
-                        case VMMDevHGCMParmType_PhysAddr:
-                        {
-                            /* do nothing */
-                        } break;
-
                         case VMMDevHGCMParmType_LinAddr_In:  /* In (read) */
                         case VMMDevHGCMParmType_LinAddr_Out: /* Out (write) */
                         case VMMDevHGCMParmType_LinAddr:     /* In & Out */
@@ -1891,11 +1816,6 @@ DECLCALLBACK(void) hgcmCompletedWorker (PPDMIHGCMPORT pInterface, int32_t result
                         case VMMDevHGCMParmType_64bit:
                         {
                             pGuestParm->u.value64 = pHostParm->u.uint64;
-                        } break;
-
-                        case VMMDevHGCMParmType_PhysAddr:
-                        {
-                            /* do nothing */
                         } break;
 
                         case VMMDevHGCMParmType_LinAddr_In:  /* In (read) */
