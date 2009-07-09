@@ -229,13 +229,15 @@ VBoxRegistrationDlg::VBoxRegistrationDlg (VBoxRegistrationDlg **aSelf, QWidget *
     QRegExp passwordExp ("[a-zA-Z0-9_\\-\\+=`~!@#$%^&\\*\\(\\)?\\[\\]:;,\\./]+");
 
     mLeOldEmail->setMaxLength (50);
-    mLeOldEmail->setValidator (new QRegExpValidator (emailExp, this));
+    /* New accounts *must* have a valid email as user name. Thats not the case
+     * for old existing accounts. So we don't force the email format, so that
+     * old accounts could be used for registration also. */
+    mLeOldEmail->setValidator (new QRegExpValidator (nameExp, this));
 
     mLeOldPassword->setMaxLength (20);
     mLeOldPassword->setValidator (new QRegExpValidator (passwordExp, this));
 
     mLeNewFirstName->setMaxLength (50);
-
     mLeNewFirstName->setValidator (new QRegExpValidator (nameExp, this));
 
     mLeNewLastName->setMaxLength (50);
