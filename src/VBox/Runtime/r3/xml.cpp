@@ -167,19 +167,18 @@ EIPRTFailure::EIPRTFailure(int aRC)
 struct File::Data
 {
     Data()
-        : fileName (NULL), handle (NIL_RTFILE), opened (false) {}
+        : handle(NIL_RTFILE), opened(false)
+    { }
 
-    char *fileName;
+    iprt::MiniString strFileName;
     RTFILE handle;
     bool opened : 1;
 };
 
 File::File(Mode aMode, const char *aFileName)
-    : m (new Data())
+    : m(new Data())
 {
-    m->fileName = RTStrDup (aFileName);
-    if (m->fileName == NULL)
-        throw ENoMemory();
+    m->strFileName = aFileName;
 
     unsigned flags = 0;
     switch (aMode)
@@ -204,8 +203,8 @@ File::File(Mode aMode, const char *aFileName)
     m->opened = true;
 }
 
-File::File (RTFILE aHandle, const char *aFileName /* = NULL */)
-    : m (new Data())
+File::File(RTFILE aHandle, const char *aFileName /* = NULL */)
+    : m(new Data())
 {
     if (aHandle == NIL_RTFILE)
         throw EInvalidArg (RT_SRC_POS);
@@ -213,11 +212,7 @@ File::File (RTFILE aHandle, const char *aFileName /* = NULL */)
     m->handle = aHandle;
 
     if (aFileName)
-    {
-        m->fileName = RTStrDup (aFileName);
-        if (m->fileName == NULL)
-            throw ENoMemory();
-    }
+        m->strFileName = aFileName;
 
     setPos (0);
 }
@@ -225,14 +220,12 @@ File::File (RTFILE aHandle, const char *aFileName /* = NULL */)
 File::~File()
 {
     if (m->opened)
-        RTFileClose (m->handle);
-
-    RTStrFree (m->fileName);
+        RTFileClose(m->handle);
 }
 
-const char *File::uri() const
+const char* File::uri() const
 {
-    return m->fileName;
+    return m->strFileName.c_str();
 }
 
 uint64_t File::pos() const
@@ -795,7 +788,7 @@ ElementNode* ElementNode::createChild(const char *pcszElementName)
     xmlNode *plibNode;
     if (!(plibNode = xmlNewNode(NULL,        // namespace
                                 (const xmlChar*)pcszElementName)))
-        throw ENoMemory();
+        throw std::bad_alloc();
     xmlAddChild(m->plibNode, plibNode);
 
     // now wrap this in C++
@@ -822,7 +815,7 @@ ContentNode* ElementNode::addContent(const char *pcszContent)
     // libxml side: create new node
     xmlNode *plibNode;
     if (!(plibNode = xmlNewText((const xmlChar*)pcszContent)))
-        throw ENoMemory();
+        throw std::bad_alloc();
     xmlAddChild(m->plibNode, plibNode);
 
     // now wrap this in C++
@@ -1045,7 +1038,7 @@ ElementNode* Document::createRootElement(const char *pcszRootElementName)
     xmlNode *plibRootNode;
     if (!(plibRootNode = xmlNewNode(NULL,        // namespace
                                     (const xmlChar*)pcszRootElementName)))
-        throw ENoMemory();
+        throw std::bad_alloc();
     xmlDocSetRootElement(m->plibDocument, plibRootNode);
 
     // now wrap this in C++
@@ -1066,7 +1059,7 @@ XmlParserBase::XmlParserBase()
 {
     m_ctxt = xmlNewParserCtxt();
     if (m_ctxt == NULL)
-        throw ENoMemory();
+        throw std::bad_alloc();
 }
 
 XmlParserBase::~XmlParserBase()
@@ -1089,7 +1082,7 @@ struct XmlFileParser::Data
     Data()
     {
         if (!(ctxt = xmlNewParserCtxt()))
-            throw xml::ENoMemory();
+            throw std::bad_alloc();
     }
 
     ~Data()

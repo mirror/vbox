@@ -121,7 +121,7 @@ class RT_DECL_CLASS XmlError : public RuntimeError
 public:
     XmlError(xmlErrorPtr aErr);
 
-    static char *Format(xmlErrorPtr aErr);
+    static char* Format(xmlErrorPtr aErr);
 };
 
 // Logical errors
@@ -157,13 +157,6 @@ public:
 
 // Runtime errors
 //////////////////////////////////////////////////////////////////////////////
-
-class RT_DECL_CLASS ENoMemory : public RuntimeError, public std::bad_alloc
-{
-public:
-    ENoMemory(const char *aMsg = NULL) : RuntimeError (aMsg) {}
-    virtual ~ENoMemory() throw() {}
-};
 
 class RT_DECL_CLASS EIPRTFailure : public RuntimeError
 {
