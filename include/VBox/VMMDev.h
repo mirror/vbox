@@ -104,7 +104,8 @@ RT_C_DECLS_BEGIN
  * additions_major == vmmdev_current && additions_minor <= vmmdev_current.
  * Additions version is reported to host (VMMDev) by VMMDevReq_ReportGuestInfo.
  *
- * @remark  These defines also live in the 16-bit and assembly versions of this header.
+ * @remarks These defines also live in the 16-bit and assembly versions of this
+ *          header.
  */
 #define VMMDEV_VERSION                      0x00010004
 #define VMMDEV_VERSION_MAJOR                (VMMDEV_VERSION >> 16)
@@ -1004,12 +1005,13 @@ typedef enum
     VMMDevHGCMParmType_32bit              = 1,
     VMMDevHGCMParmType_64bit              = 2,
     VMMDevHGCMParmType_PhysAddr           = 3,
-    VMMDevHGCMParmType_LinAddr            = 4, /**< In and Out */
-    VMMDevHGCMParmType_LinAddr_In         = 5, /**< In  (read;  host<-guest) */
-    VMMDevHGCMParmType_LinAddr_Out        = 6, /**< Out (write; host->guest) */
-    VMMDevHGCMParmType_LinAddr_Locked     = 7, /**< Locked In and Out */
-    VMMDevHGCMParmType_LinAddr_Locked_In  = 8, /**< Locked In  (read;  host<-guest) */
-    VMMDevHGCMParmType_LinAddr_Locked_Out = 9, /**< Locked Out (write; host->guest) */
+    VMMDevHGCMParmType_LinAddr            = 4,  /**< In and Out */
+    VMMDevHGCMParmType_LinAddr_In         = 5,  /**< In  (read;  host<-guest) */
+    VMMDevHGCMParmType_LinAddr_Out        = 6,  /**< Out (write; host->guest) */
+    VMMDevHGCMParmType_LinAddr_Locked     = 7,  /**< Locked In and Out */
+    VMMDevHGCMParmType_LinAddr_Locked_In  = 8,  /**< Locked In  (read;  host<-guest) */
+    VMMDevHGCMParmType_LinAddr_Locked_Out = 9,  /**< Locked Out (write; host->guest) */
+    VMMDevHGCMParmType_PageList           = 10, /**< Physical addresses of locked pages for a buffer. */
     VMMDevHGCMParmType_SizeHack           = 0x7fffffff
 } HGCMFunctionParameterType;
 AssertCompileSize(HGCMFunctionParameterType, 4);
@@ -1035,6 +1037,11 @@ typedef struct
                 RTGCPTR32  linearAddr;
             } u;
         } Pointer;
+        struct
+        {
+            uint32_t size;   /**< Size of the buffer described by the page list. */
+            uint32_t offset; /**< Relative to the request header, valid if size != 0. */
+        } PageList;
     } u;
 #  ifdef __cplusplus
     void SetUInt32(uint32_t u32)
@@ -1100,6 +1107,11 @@ typedef struct
                 RTGCPTR64  linearAddr;
             } u;
         } Pointer;
+        struct
+        {
+            uint32_t size;   /**< Size of the buffer described by the page list. */
+            uint32_t offset; /**< Relative to the request header, valid if size != 0. */
+        } PageList;
     } u;
 #  ifdef __cplusplus
     void SetUInt32(uint32_t u32)
@@ -1180,6 +1192,11 @@ typedef struct
                 RTGCPTR32  linearAddr;
             } u;
         } Pointer;
+        struct
+        {
+            uint32_t size;   /**< Size of the buffer described by the page list. */
+            uint32_t offset; /**< Relative to the request header, valid if size != 0. */
+        } PageList;
     } u;
 #  ifdef __cplusplus
     void SetUInt32(uint32_t u32)
@@ -1245,6 +1262,27 @@ typedef struct
     /** Parameters follow in form: HGCMFunctionParameter aParms[X]; */
 } VMMDevHGCMCall;
 AssertCompileSize(VMMDevHGCMCall, 32+12);
+
+/** @name Direction of data transfer (HGCMPageListInfo::flags). Bit flags.
+ * @{ */
+#define VBOX_HGCM_F_PARM_DIRECTION_NONE      UINT32_C(0x00000000)
+#define VBOX_HGCM_F_PARM_DIRECTION_TO_HOST   UINT32_C(0x00000001)
+#define VBOX_HGCM_F_PARM_DIRECTION_FROM_HOST UINT32_C(0x00000002)
+#define VBOX_HGCM_F_PARM_DIRECTION_BOTH      UINT32_C(0x00000003)
+/** @} */
+
+/**
+ * VMMDevHGCMParmType_PageList points to this structure to actually describe the
+ * buffer.
+ */
+typedef struct _HGCMPageListInfo
+{
+    uint32_t flags;        /* VBOX_HGCM_F_PARM_*. */
+    uint16_t offFirstPage; /* Offset in the first page where data begins. */
+    uint16_t cPages;       /* Number of pages. */
+    RTGCPHYS64 aPages[1];  /* Page addesses. */
+} HGCMPageListInfo;
+AssertCompileSize(HGCMPageListInfo, 4+2+2+8);
 
 # pragma pack()
 

@@ -1107,7 +1107,7 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
                 bool f64Bits = false;
 #endif /* VBOX_WITH_64_BITS_GUESTS */
 
-                pRequestHeader->rc = vmmdevHGCMCall (pThis, pHGCMCall, (RTGCPHYS)u32, f64Bits);
+                pRequestHeader->rc = vmmdevHGCMCall (pThis, pHGCMCall, requestHeader.size, (RTGCPHYS)u32, f64Bits);
             }
             break;
         }

@@ -1191,7 +1191,9 @@ NTSTATUS VBoxGuestDeviceControl(PDEVICE_OBJECT pDevObj, PIRP pIrp)
             VBoxGuestHGCMCallInfo *ptr = (VBoxGuestHGCMCallInfo *)pBuf;
             uint32_t fFlags = pIrp->RequestorMode == KernelMode ? VBGLR0_HGCMCALL_F_KERNEL : VBGLR0_HGCMCALL_F_USER;
 
-            rc = VbglR0HGCMInternalCall32(ptr, fFlags, pIrp->RequestorMode == KernelMode? VBoxHGCMCallbackKernelMode :VBoxHGCMCallback, pDevExt, RT_INDEFINITE_WAIT);
+            rc = VbglR0HGCMInternalCall32(ptr, pStack->Parameters.DeviceIoControl.InputBufferLength, fFlags,
+                                          pIrp->RequestorMode == KernelMode? VBoxHGCMCallbackKernelMode :VBoxHGCMCallback,
+                                          pDevExt, RT_INDEFINITE_WAIT);
 
             if (RT_FAILURE(rc))
             {
@@ -1224,7 +1226,8 @@ NTSTATUS VBoxGuestDeviceControl(PDEVICE_OBJECT pDevObj, PIRP pIrp)
             VBoxGuestHGCMCallInfo *ptr = (VBoxGuestHGCMCallInfo *)pBuf;
             uint32_t fFlags = pIrp->RequestorMode == KernelMode ? VBGLR0_HGCMCALL_F_KERNEL : VBGLR0_HGCMCALL_F_USER;
 
-            rc = VbglR0HGCMInternalCall (ptr, fFlags, pIrp->RequestorMode == KernelMode? VBoxHGCMCallbackKernelMode :VBoxHGCMCallback,
+            rc = VbglR0HGCMInternalCall (ptr, pStack->Parameters.DeviceIoControl.InputBufferLength, fFlags,
+                                         pIrp->RequestorMode == KernelMode? VBoxHGCMCallbackKernelMode :VBoxHGCMCallback,
                                          pDevExt, RT_INDEFINITE_WAIT);
 
             if (RT_FAILURE(rc))
@@ -1262,13 +1265,15 @@ NTSTATUS VBoxGuestDeviceControl(PDEVICE_OBJECT pDevObj, PIRP pIrp)
             {
                 dprintf(("VBoxGuest::VBoxGuestDeviceControl: calling VBoxHGCMCall interruptible, timeout %lu ms\n",
                          pInfo->u32Timeout));
-                rc = VbglR0HGCMInternalCall (ptr, fFlags, VBoxHGCMCallbackInterruptible, pDevExt, pInfo->u32Timeout);
+                rc = VbglR0HGCMInternalCall (ptr, pStack->Parameters.DeviceIoControl.InputBufferLength, fFlags,
+                                             VBoxHGCMCallbackInterruptible, pDevExt, pInfo->u32Timeout);
             }
             else
             {
                 dprintf(("VBoxGuest::VBoxGuestDeviceControl: calling VBoxHGCMCall, timeout %lu ms\n",
                          pInfo->u32Timeout));
-                rc = VbglR0HGCMInternalCall (ptr, fFlags, VBoxHGCMCallback, pDevExt, pInfo->u32Timeout);
+                rc = VbglR0HGCMInternalCall (ptr, pStack->Parameters.DeviceIoControl.InputBufferLength, fFlags,
+                                             VBoxHGCMCallback, pDevExt, pInfo->u32Timeout);
             }
 
             if (RT_FAILURE(rc))

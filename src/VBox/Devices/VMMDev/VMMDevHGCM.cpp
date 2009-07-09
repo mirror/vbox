@@ -337,6 +337,80 @@ static int vmmdevHGCMWriteLinPtr (PPDMDEVINS pDevIns,
     return rc;
 }
 
+static int vmmdevHGCMPageListRead(PPDMDEVINSR3 pDevIns, void *pvDst, uint32_t cbDst, const HGCMPageListInfo *pPageListInfo)
+{
+    int rc = VINF_SUCCESS;
+
+    uint8_t *pu8Dst = (uint8_t *)pvDst;
+    uint32_t offPage = pPageListInfo->offFirstPage;
+    size_t cbRemaining = (size_t)cbDst;
+
+    uint32_t iPage;
+    for (iPage = 0; iPage < pPageListInfo->cPages; iPage++)
+    {
+        if (cbRemaining == 0)
+        {
+            break;
+        }
+
+        size_t cbChunk = PAGE_SIZE - offPage;
+
+        if (cbChunk > cbRemaining)
+        {
+            cbChunk = cbRemaining;
+        }
+
+        rc = PDMDevHlpPhysRead(pDevIns,
+                               pPageListInfo->aPages[iPage] + offPage,
+                               pu8Dst, cbChunk);
+
+        AssertRCBreak(rc);
+
+        offPage = 0; /* A next page is read from 0 offset. */
+        cbRemaining -= cbChunk;
+        pu8Dst += cbChunk;
+    }
+
+    return rc;
+}
+
+static int vmmdevHGCMPageListWrite(PPDMDEVINSR3 pDevIns, const HGCMPageListInfo *pPageListInfo, const void *pvSrc, uint32_t cbSrc)
+{
+    int rc = VINF_SUCCESS;
+
+    uint8_t *pu8Src = (uint8_t *)pvSrc;
+    uint32_t offPage = pPageListInfo->offFirstPage;
+    size_t cbRemaining = (size_t)cbSrc;
+
+    uint32_t iPage;
+    for (iPage = 0; iPage < pPageListInfo->cPages; iPage++)
+    {
+        if (cbRemaining == 0)
+        {
+            break;
+        }
+
+        size_t cbChunk = PAGE_SIZE - offPage;
+
+        if (cbChunk > cbRemaining)
+        {
+            cbChunk = cbRemaining;
+        }
+
+        rc = PDMDevHlpPhysWrite(pDevIns,
+                                pPageListInfo->aPages[iPage] + offPage,
+                                pu8Src, cbChunk);
+
+        AssertRCBreak(rc);
+
+        offPage = 0; /* A next page is read from 0 offset. */
+        cbRemaining -= cbChunk;
+        pu8Src += cbChunk;
+    }
+
+    return rc;
+}
+
 static void logRelSavedCmdSizeMismatch (const char *pszFunction, uint32_t cbExpected, uint32_t cbCmdSize)
 {
     LogRel(("Warning: VMMDev %s command length %d (expected %d)\n",
@@ -455,8 +529,7 @@ static int vmmdevHGCMDisconnectSaved (VMMDevState *pVMMDevState, VMMDevHGCMDisco
     return rc;
 }
 
-
-int vmmdevHGCMCall (VMMDevState *pVMMDevState, VMMDevHGCMCall *pHGCMCall, RTGCPHYS GCPhys, bool f64Bits)
+int vmmdevHGCMCall (VMMDevState *pVMMDevState, VMMDevHGCMCall *pHGCMCall, uint32_t cbHGCMCall, RTGCPHYS GCPhys, bool f64Bits)
 {
     int rc = VINF_SUCCESS;
 
@@ -515,6 +588,12 @@ int vmmdevHGCMCall (VMMDevState *pVMMDevState, VMMDevHGCMCall *pHGCMCall, RTGCPH
                     Log(("vmmdevHGCMCall: linptr size = %d\n", pGuestParm->u.Pointer.size));
                 } break;
 
+                case VMMDevHGCMParmType_PageList:
+                {
+                    cbCmdSize += pGuestParm->u.PageList.size;
+                    Log(("vmmdevHGCMCall: pagelist size = %d\n", pGuestParm->u.PageList.size));
+                } break;
+
                 case VMMDevHGCMParmType_32bit:
                 case VMMDevHGCMParmType_64bit:
                 case VMMDevHGCMParmType_PhysAddr:
@@ -559,6 +638,12 @@ int vmmdevHGCMCall (VMMDevState *pVMMDevState, VMMDevHGCMCall *pHGCMCall, RTGCPH
                     }
 
                     Log(("vmmdevHGCMCall: linptr size = %d\n", pGuestParm->u.Pointer.size));
+                } break;
+
+                case VMMDevHGCMParmType_PageList:
+                {
+                    cbCmdSize += pGuestParm->u.PageList.size;
+                    Log(("vmmdevHGCMCall: pagelist size = %d\n", pGuestParm->u.PageList.size));
                 } break;
 
                 case VMMDevHGCMParmType_32bit:
@@ -726,6 +811,62 @@ int vmmdevHGCMCall (VMMDevState *pVMMDevState, VMMDevHGCMCall *pHGCMCall, RTGCPH
                          break;
                      }
 
+                     case VMMDevHGCMParmType_PageList:
+                     {
+                         uint32_t size = pGuestParm->u.PageList.size;
+
+                         /* Check that the page list info is within the request. */
+                         if (   cbHGCMCall < sizeof (HGCMPageListInfo)
+                             || pGuestParm->u.PageList.offset > cbHGCMCall - sizeof (HGCMPageListInfo))
+                         {
+                             rc = VERR_INVALID_PARAMETER;
+                             break;
+                         }
+
+                         /* At least the structure is within. */
+                         HGCMPageListInfo *pPageListInfo = (HGCMPageListInfo *)((uint8_t *)pHGCMCall + pGuestParm->u.PageList.offset);
+
+                         uint32_t cbPageListInfo = sizeof (HGCMPageListInfo) + (pPageListInfo->cPages - 1) * sizeof (pPageListInfo->aPages[0]);
+
+                         if (   pPageListInfo->cPages == 0
+                             || cbHGCMCall < pGuestParm->u.PageList.offset + cbPageListInfo)
+                         {
+                             rc = VERR_INVALID_PARAMETER;
+                             break;
+                         }
+
+                         pHostParm->type = VBOX_HGCM_SVC_PARM_PTR;
+                         pHostParm->u.pointer.size = size;
+
+                         /* Copy guest data to an allocated buffer, so
+                          * services can use the data.
+                          */
+
+                         if (size == 0)
+                         {
+                             pHostParm->u.pointer.addr = NULL;
+                         }
+                         else
+                         {
+                             if (pPageListInfo->flags & VBOX_HGCM_F_PARM_DIRECTION_TO_HOST)
+                             {
+                                 /* Copy pages to the pcBuf[size]. */
+                                 rc = vmmdevHGCMPageListRead(pVMMDevState->pDevIns, pcBuf, size, pPageListInfo);
+                             }
+                             else
+                                 rc = VINF_SUCCESS;
+
+                             if (RT_SUCCESS(rc))
+                             {
+                                 pHostParm->u.pointer.addr = pcBuf;
+                                 pcBuf += size;
+                             }
+                         }
+
+                         Log(("vmmdevHGCMCall: PageList guest parameter rc = %Rrc\n", rc));
+                         break;
+                     }
+
                     /* just to shut up gcc */
                     default:
                         break;
@@ -827,6 +968,62 @@ int vmmdevHGCMCall (VMMDevState *pVMMDevState, VMMDevHGCMCall *pHGCMCall, RTGCPH
                          break;
                      }
 
+                     case VMMDevHGCMParmType_PageList:
+                     {
+                         uint32_t size = pGuestParm->u.PageList.size;
+
+                         /* Check that the page list info is within the request. */
+                         if (   cbHGCMCall < sizeof (HGCMPageListInfo)
+                             || pGuestParm->u.PageList.offset > cbHGCMCall - sizeof (HGCMPageListInfo))
+                         {
+                             rc = VERR_INVALID_PARAMETER;
+                             break;
+                         }
+
+                         /* At least the structure is within. */
+                         HGCMPageListInfo *pPageListInfo = (HGCMPageListInfo *)((uint8_t *)pHGCMCall + pGuestParm->u.PageList.offset);
+
+                         uint32_t cbPageListInfo = sizeof (HGCMPageListInfo) + (pPageListInfo->cPages - 1) * sizeof (pPageListInfo->aPages[0]);
+
+                         if (   pPageListInfo->cPages == 0
+                             || cbHGCMCall < pGuestParm->u.PageList.offset + cbPageListInfo)
+                         {
+                             rc = VERR_INVALID_PARAMETER;
+                             break;
+                         }
+
+                         pHostParm->type = VBOX_HGCM_SVC_PARM_PTR;
+                         pHostParm->u.pointer.size = size;
+
+                         /* Copy guest data to an allocated buffer, so
+                          * services can use the data.
+                          */
+
+                         if (size == 0)
+                         {
+                             pHostParm->u.pointer.addr = NULL;
+                         }
+                         else
+                         {
+                             if (pPageListInfo->flags & VBOX_HGCM_F_PARM_DIRECTION_TO_HOST)
+                             {
+                                 /* Copy pages to the pcBuf[size]. */
+                                 rc = vmmdevHGCMPageListRead(pVMMDevState->pDevIns, pcBuf, size, pPageListInfo);
+                             }
+                             else
+                                 rc = VINF_SUCCESS;
+
+                             if (RT_SUCCESS(rc))
+                             {
+                                 pHostParm->u.pointer.addr = pcBuf;
+                                 pcBuf += size;
+                             }
+                         }
+
+                         Log(("vmmdevHGCMCall: PageList guest parameter rc = %Rrc\n", rc));
+                         break;
+                     }
+
                     /* just to shut up gcc */
                     default:
                         break;
@@ -868,7 +1065,7 @@ static void logRelLoadStateBufferSizeMismatch (uint32_t size, uint32_t iPage, ui
 }
 
 
-static int vmmdevHGCMCallSaved (VMMDevState *pVMMDevState, VMMDevHGCMCall *pHGCMCall, bool f64Bits, bool *pfHGCMCalled, VBOXHGCMCMD *pSavedCmd)
+static int vmmdevHGCMCallSaved (VMMDevState *pVMMDevState, VMMDevHGCMCall *pHGCMCall, uint32_t cbHGCMCall, bool f64Bits, bool *pfHGCMCalled, VBOXHGCMCMD *pSavedCmd)
 {
     int rc = VINF_SUCCESS;
 
@@ -1042,6 +1239,62 @@ static int vmmdevHGCMCallSaved (VMMDevState *pVMMDevState, VMMDevHGCMCall *pHGCM
                          break;
                      }
 
+                     case VMMDevHGCMParmType_PageList:
+                     {
+                         uint32_t size = pGuestParm->u.PageList.size;
+
+                         /* Check that the page list info is within the request. */
+                         if (   cbHGCMCall < sizeof (HGCMPageListInfo)
+                             || pGuestParm->u.PageList.offset > cbHGCMCall - sizeof (HGCMPageListInfo))
+                         {
+                             rc = VERR_INVALID_PARAMETER;
+                             break;
+                         }
+
+                         /* At least the structure is within. */
+                         HGCMPageListInfo *pPageListInfo = (HGCMPageListInfo *)((uint8_t *)pHGCMCall + pGuestParm->u.PageList.offset);
+
+                         uint32_t cbPageListInfo = sizeof (HGCMPageListInfo) + (pPageListInfo->cPages - 1) * sizeof (pPageListInfo->aPages[0]);
+
+                         if (   pPageListInfo->cPages == 0
+                             || cbHGCMCall < pGuestParm->u.PageList.offset + cbPageListInfo)
+                         {
+                             rc = VERR_INVALID_PARAMETER;
+                             break;
+                         }
+
+                         pHostParm->type = VBOX_HGCM_SVC_PARM_PTR;
+                         pHostParm->u.pointer.size = size;
+
+                         /* Copy guest data to an allocated buffer, so
+                          * services can use the data.
+                          */
+
+                         if (size == 0)
+                         {
+                             pHostParm->u.pointer.addr = NULL;
+                         }
+                         else
+                         {
+                             if (pPageListInfo->flags & VBOX_HGCM_F_PARM_DIRECTION_TO_HOST)
+                             {
+                                 /* Copy pages to the pcBuf[size]. */
+                                 rc = vmmdevHGCMPageListRead(pVMMDevState->pDevIns, pu8Buf, size, pPageListInfo);
+                             }
+                             else
+                                 rc = VINF_SUCCESS;
+
+                             if (RT_SUCCESS(rc))
+                             {
+                                 pHostParm->u.pointer.addr = pu8Buf;
+                                 pu8Buf += size;
+                             }
+                         }
+
+                         Log(("vmmdevHGCMCall: PageList guest parameter rc = %Rrc\n", rc));
+                         break;
+                     }
+
                     /* just to shut up gcc */
                     default:
                         break;
@@ -1179,6 +1432,62 @@ static int vmmdevHGCMCallSaved (VMMDevState *pVMMDevState, VMMDevHGCMCall *pHGCM
 
                          Log(("vmmdevHGCMCall: LinAddr guest parameter %RGv, rc = %Rrc\n",
                               pGuestParm->u.Pointer.u.linearAddr, rc));
+                         break;
+                     }
+
+                     case VMMDevHGCMParmType_PageList:
+                     {
+                         uint32_t size = pGuestParm->u.PageList.size;
+
+                         /* Check that the page list info is within the request. */
+                         if (   cbHGCMCall < sizeof (HGCMPageListInfo)
+                             || pGuestParm->u.PageList.offset > cbHGCMCall - sizeof (HGCMPageListInfo))
+                         {
+                             rc = VERR_INVALID_PARAMETER;
+                             break;
+                         }
+
+                         /* At least the structure is within. */
+                         HGCMPageListInfo *pPageListInfo = (HGCMPageListInfo *)((uint8_t *)pHGCMCall + pGuestParm->u.PageList.offset);
+
+                         uint32_t cbPageListInfo = sizeof (HGCMPageListInfo) + (pPageListInfo->cPages - 1) * sizeof (pPageListInfo->aPages[0]);
+
+                         if (   pPageListInfo->cPages == 0
+                             || cbHGCMCall < pGuestParm->u.PageList.offset + cbPageListInfo)
+                         {
+                             rc = VERR_INVALID_PARAMETER;
+                             break;
+                         }
+
+                         pHostParm->type = VBOX_HGCM_SVC_PARM_PTR;
+                         pHostParm->u.pointer.size = size;
+
+                         /* Copy guest data to an allocated buffer, so
+                          * services can use the data.
+                          */
+
+                         if (size == 0)
+                         {
+                             pHostParm->u.pointer.addr = NULL;
+                         }
+                         else
+                         {
+                             if (pPageListInfo->flags & VBOX_HGCM_F_PARM_DIRECTION_TO_HOST)
+                             {
+                                 /* Copy pages to the pcBuf[size]. */
+                                 rc = vmmdevHGCMPageListRead(pVMMDevState->pDevIns, pu8Buf, size, pPageListInfo);
+                             }
+                             else
+                                 rc = VINF_SUCCESS;
+
+                             if (RT_SUCCESS(rc))
+                             {
+                                 pHostParm->u.pointer.addr = pu8Buf;
+                                 pu8Buf += size;
+                             }
+                         }
+
+                         Log(("vmmdevHGCMCall: PageList guest parameter rc = %Rrc\n", rc));
                          break;
                      }
 
@@ -1404,6 +1713,46 @@ DECLCALLBACK(void) hgcmCompletedWorker (PPDMIHGCMPORT pInterface, int32_t result
                             }
                         } break;
 
+                        case VMMDevHGCMParmType_PageList:
+                        {
+                            uint32_t cbHGCMCall = pCmd->cbSize; /* Size of the request. */
+
+                            uint32_t size = pGuestParm->u.PageList.size;
+
+                            /* Check that the page list info is within the request. */
+                            if (   cbHGCMCall < sizeof (HGCMPageListInfo)
+                                || pGuestParm->u.PageList.offset > cbHGCMCall - sizeof (HGCMPageListInfo))
+                            {
+                                rc = VERR_INVALID_PARAMETER;
+                                break;
+                            }
+
+                            /* At least the structure is within. */
+                            HGCMPageListInfo *pPageListInfo = (HGCMPageListInfo *)((uint8_t *)pHGCMCall + pGuestParm->u.PageList.offset);
+
+                            uint32_t cbPageListInfo = sizeof (HGCMPageListInfo) + (pPageListInfo->cPages - 1) * sizeof (pPageListInfo->aPages[0]);
+
+                            if (   pPageListInfo->cPages == 0
+                                || cbHGCMCall < pGuestParm->u.PageList.offset + cbPageListInfo)
+                            {
+                                rc = VERR_INVALID_PARAMETER;
+                                break;
+                            }
+
+                            if (size > 0)
+                            {
+                                if (pPageListInfo->flags & VBOX_HGCM_F_PARM_DIRECTION_FROM_HOST)
+                                {
+                                    /* Copy pHostParm->u.pointer.addr[pHostParm->u.pointer.size] to pages. */
+                                    rc = vmmdevHGCMPageListWrite(pVMMDevState->pDevIns, pPageListInfo, pHostParm->u.pointer.addr, size);
+                                }
+                                else
+                                    rc = VINF_SUCCESS;
+                            }
+
+                            Log(("vmmdevHGCMCall: PageList guest parameter rc = %Rrc\n", rc));
+                        } break;
+
                         default:
                         {
                             /* This indicates that the guest request memory was corrupted. */
@@ -1467,6 +1816,46 @@ DECLCALLBACK(void) hgcmCompletedWorker (PPDMIHGCMPORT pInterface, int32_t result
                             }
                         } break;
 
+                        case VMMDevHGCMParmType_PageList:
+                        {
+                            uint32_t cbHGCMCall = pCmd->cbSize; /* Size of the request. */
+
+                            uint32_t size = pGuestParm->u.PageList.size;
+
+                            /* Check that the page list info is within the request. */
+                            if (   cbHGCMCall < sizeof (HGCMPageListInfo)
+                                || pGuestParm->u.PageList.offset > cbHGCMCall - sizeof (HGCMPageListInfo))
+                            {
+                                rc = VERR_INVALID_PARAMETER;
+                                break;
+                            }
+
+                            /* At least the structure is within. */
+                            HGCMPageListInfo *pPageListInfo = (HGCMPageListInfo *)((uint8_t *)pHGCMCall + pGuestParm->u.PageList.offset);
+
+                            uint32_t cbPageListInfo = sizeof (HGCMPageListInfo) + (pPageListInfo->cPages - 1) * sizeof (pPageListInfo->aPages[0]);
+
+                            if (   pPageListInfo->cPages == 0
+                                || cbHGCMCall < pGuestParm->u.PageList.offset + cbPageListInfo)
+                            {
+                                rc = VERR_INVALID_PARAMETER;
+                                break;
+                            }
+
+                            if (size > 0)
+                            {
+                                if (pPageListInfo->flags & VBOX_HGCM_F_PARM_DIRECTION_FROM_HOST)
+                                {
+                                    /* Copy pHostParm->u.pointer.addr[pHostParm->u.pointer.size] to pages. */
+                                    rc = vmmdevHGCMPageListWrite(pVMMDevState->pDevIns, pPageListInfo, pHostParm->u.pointer.addr, size);
+                                }
+                                else
+                                    rc = VINF_SUCCESS;
+                            }
+
+                            Log(("vmmdevHGCMCall: PageList guest parameter rc = %Rrc\n", rc));
+                        } break;
+
                         default:
                         {
                             /* This indicates that the guest request memory was corrupted. */
@@ -1528,6 +1917,46 @@ DECLCALLBACK(void) hgcmCompletedWorker (PPDMIHGCMPORT pInterface, int32_t result
                                 /* All linptrs with size > 0 were saved. Advance the index to the next linptr. */
                                 iLinPtr++;
                             }
+                        } break;
+
+                        case VMMDevHGCMParmType_PageList:
+                        {
+                            uint32_t cbHGCMCall = pCmd->cbSize; /* Size of the request. */
+
+                            uint32_t size = pGuestParm->u.PageList.size;
+
+                            /* Check that the page list info is within the request. */
+                            if (   cbHGCMCall < sizeof (HGCMPageListInfo)
+                                || pGuestParm->u.PageList.offset > cbHGCMCall - sizeof (HGCMPageListInfo))
+                            {
+                                rc = VERR_INVALID_PARAMETER;
+                                break;
+                            }
+
+                            /* At least the structure is within. */
+                            HGCMPageListInfo *pPageListInfo = (HGCMPageListInfo *)((uint8_t *)pHGCMCall + pGuestParm->u.PageList.offset);
+
+                            uint32_t cbPageListInfo = sizeof (HGCMPageListInfo) + (pPageListInfo->cPages - 1) * sizeof (pPageListInfo->aPages[0]);
+
+                            if (   pPageListInfo->cPages == 0
+                                || cbHGCMCall < pGuestParm->u.PageList.offset + cbPageListInfo)
+                            {
+                                rc = VERR_INVALID_PARAMETER;
+                                break;
+                            }
+
+                            if (size > 0)
+                            {
+                                if (pPageListInfo->flags & VBOX_HGCM_F_PARM_DIRECTION_FROM_HOST)
+                                {
+                                    /* Copy pHostParm->u.pointer.addr[pHostParm->u.pointer.size] to pages. */
+                                    rc = vmmdevHGCMPageListWrite(pVMMDevState->pDevIns, pPageListInfo, pHostParm->u.pointer.addr, size);
+                                }
+                                else
+                                    rc = VINF_SUCCESS;
+                            }
+
+                            Log(("vmmdevHGCMCall: PageList guest parameter rc = %Rrc\n", rc));
                         } break;
 
                         default:
@@ -2008,7 +2437,7 @@ int vmmdevHGCMLoadStateDone(VMMDevState *pVMMDevState, PSSMHANDLE pSSM)
 #else
                                 bool f64Bits = false;
 #endif /* VBOX_WITH_64_BITS_GUESTS */
-                                requestHeader->header.rc = vmmdevHGCMCallSaved (pVMMDevState, pHGCMCall, f64Bits, &fHGCMCalled, pIter);
+                                requestHeader->header.rc = vmmdevHGCMCallSaved (pVMMDevState, pHGCMCall, requestHeader->header.size, f64Bits, &fHGCMCalled, pIter);
                             }
                             break;
                         }
@@ -2092,7 +2521,7 @@ int vmmdevHGCMLoadStateDone(VMMDevState *pVMMDevState, PSSMHANDLE pSSM)
 #else
                                         bool f64Bits = false;
 #endif /* VBOX_WITH_64_BITS_GUESTS */
-                                        requestHeader->header.rc = vmmdevHGCMCall (pVMMDevState, pHGCMCall, pIter->GCPhys, f64Bits);
+                                        requestHeader->header.rc = vmmdevHGCMCall (pVMMDevState, pHGCMCall, requestHeader->header.size, pIter->GCPhys, f64Bits);
                                     }
                                     break;
                                 }
