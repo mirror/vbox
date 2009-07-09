@@ -1206,31 +1206,6 @@ private:
 } /* namespace settings */
 
 
-/*
- * VBoxXml
- *
- *
- */
-
-
-class VBoxXmlBase
-{
-protected:
-    VBoxXmlBase();
-
-    ~VBoxXmlBase();
-
-    xmlParserCtxtPtr m_ctxt;
-};
-
-class VBoxXmlFile : public VBoxXmlBase
-{
-public:
-    VBoxXmlFile();
-    ~VBoxXmlFile();
-};
-
-
 
 #if defined(_MSC_VER)
 #pragma warning (default:4251)
