@@ -463,7 +463,7 @@ void PACK_APIENTRY
 crPackDrawElements(GLenum mode, GLsizei count, GLenum type, const GLvoid *indices)
 {
     unsigned char *data_ptr, *start_ptr;
-    int packet_length = sizeof(int) + sizeof(mode) + sizeof(count) + sizeof(type) + sizeof(GLintptrARB);
+    int packet_length = sizeof(int) + sizeof(mode) + sizeof(count) + sizeof(type) + sizeof(GLuint);
     GLsizei indexsize;
 #ifdef CR_ARB_vertex_buffer_object
     CRBufferObject *elementsBuffer = crStateGetCurrent()->bufferobject.elementsBuffer;
@@ -491,9 +491,9 @@ crPackDrawElements(GLenum mode, GLsizei count, GLenum type, const GLvoid *indice
     WRITE_DATA_AI(GLenum, mode );
     WRITE_DATA_AI(GLsizei, count);
     WRITE_DATA_AI(GLenum, type);
-    WRITE_DATA_AI(GLsizeiptrARB, (GLsizeiptrARB) indices );
+    WRITE_DATA_AI(GLuint, (GLuint) indices );
 #ifdef CR_ARB_vertex_buffer_object
-    WRITE_DATA_AI(GLboolean, (GLboolean) indexsize>0);
+    WRITE_DATA_AI(GLboolean, (GLboolean)(indexsize>0));
 #endif
     if (indexsize>0)
     {
@@ -509,7 +509,7 @@ crPackDrawRangeElements(GLenum mode, GLuint start, GLuint end, GLsizei count,
 {
     unsigned char *data_ptr, *start_ptr;
     int packet_length = sizeof(int) + sizeof(mode) + sizeof(start)
-        + sizeof(end) + sizeof(count) + sizeof(type) + sizeof(GLintptrARB);
+        + sizeof(end) + sizeof(count) + sizeof(type) + sizeof(GLuint);
     GLsizei indexsize;
 
 #ifdef CR_ARB_vertex_buffer_object
@@ -540,9 +540,9 @@ crPackDrawRangeElements(GLenum mode, GLuint start, GLuint end, GLsizei count,
     WRITE_DATA_AI(GLuint, end);
     WRITE_DATA_AI(GLsizei, count);
     WRITE_DATA_AI(GLenum, type);
-    WRITE_DATA_AI(GLsizeiptrARB, (GLsizeiptr) indices);
+    WRITE_DATA_AI(GLuint, (GLuint) indices);
 #ifdef CR_ARB_vertex_buffer_object
-    WRITE_DATA_AI(GLboolean, (GLboolean) indexsize>0);
+    WRITE_DATA_AI(GLboolean, (GLboolean) (indexsize>0));
 #endif
     if (indexsize>0)
     {

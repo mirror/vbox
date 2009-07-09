@@ -40,7 +40,7 @@ crPackBufferDataARB( GLenum target, GLsizeiptrARB size,
     int packet_length;
 
     packet_length = sizeof(GLenum)
-        + sizeof(target) + sizeof(size) + sizeof(usage) + sizeof(GLboolean);
+        + sizeof(target) + sizeof(GLuint) + sizeof(usage) + sizeof(GLboolean);
 
     /*Note: it's valid to pass a NULL pointer here, which tells GPU drivers to allocate memory for the VBO*/
     if (data) packet_length += size;
@@ -49,7 +49,7 @@ crPackBufferDataARB( GLenum target, GLsizeiptrARB size,
 
     WRITE_DATA_AI(GLenum, CR_BUFFERDATAARB_EXTEND_OPCODE);
     WRITE_DATA_AI(GLenum, target);
-    WRITE_DATA_AI(GLsizeiptrARB, size);
+    WRITE_DATA_AI(GLuint, (GLuint) size);
     WRITE_DATA_AI(GLenum, usage);
     WRITE_DATA_AI(GLboolean, (GLboolean) (data!=NULL));
     if (data)
@@ -71,19 +71,35 @@ crPackBufferSubDataARB( GLenum target, GLintptrARB offset, GLsizeiptrARB size,
         return;
 
     packet_length = sizeof(GLenum)
-        + sizeof(target) + sizeof(offset) + sizeof(size) + size;
+        + sizeof(target) + sizeof(GLuint) + sizeof(GLuint) + size;
 
     start_ptr = data_ptr = (unsigned char *) crPackAlloc(packet_length);
     WRITE_DATA_AI(GLenum, CR_BUFFERSUBDATAARB_EXTEND_OPCODE);
     WRITE_DATA_AI(GLenum, target);
-    WRITE_DATA_AI(GLintptrARB, offset);
-    WRITE_DATA_AI(GLsizeiptrARB, size);
+    WRITE_DATA_AI(GLuint, (GLuint) offset);
+    WRITE_DATA_AI(GLuint, (GLuint) size);
     crMemcpy(data_ptr, data, size);
 
     crHugePacket(CR_EXTEND_OPCODE, start_ptr);
     crPackFree(start_ptr);
 }
 
+void PACK_APIENTRY 
+crPackGetBufferSubDataARB( GLenum target, GLintptrARB offset, GLsizeiptrARB size, void * data, int * writeback )
+{
+	GET_PACKER_CONTEXT(pc);
+	unsigned char *data_ptr;
+	(void) pc;
+	GET_BUFFERED_POINTER( pc, 36 );
+	WRITE_DATA( 0, GLint, 36 );
+	WRITE_DATA( 4, GLenum, CR_GETBUFFERSUBDATAARB_EXTEND_OPCODE );
+	WRITE_DATA( 8, GLenum, target );
+	WRITE_DATA( 12, GLuint, (GLuint) offset );
+	WRITE_DATA( 16, GLuint, (GLuint) size );
+	WRITE_NETWORK_POINTER( 20, (void *) data );
+	WRITE_NETWORK_POINTER( 28, (void *) writeback );
+	WRITE_OPCODE( pc, CR_EXTEND_OPCODE );
+}
 
 void PACK_APIENTRY
 crPackDeleteBuffersARB(GLsizei n, const GLuint * buffers)
