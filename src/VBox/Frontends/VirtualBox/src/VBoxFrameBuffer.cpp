@@ -296,6 +296,14 @@ void VBoxFrameBuffer::doProcessVHWACommand(struct _VBOXVHWACMD * pCommand)
 VBoxQImageFrameBuffer::VBoxQImageFrameBuffer (VBoxConsoleView *aView) :
     VBoxFrameBuffer (aView)
 {
+    /* There are some buggy/strange driver/compiz combinations which lead to
+     * transparent backgrounds on ARGB visuals. Try to fix it by painting
+     * always a black background. */
+    aView->setAttribute (Qt::WA_OpaquePaintEvent);
+    QPalette pal = aView->palette();
+    pal.setColor (QPalette::Window, Qt::black);
+    aView->setPalette (pal);
+    /* Initialize the framebuffer the first time */
     resizeEvent (new VBoxResizeEvent (FramebufferPixelFormat_Opaque,
                                       NULL, 0, 0, 640, 480));
 }
@@ -371,7 +379,7 @@ void VBoxQImageFrameBuffer::resizeEvent (VBoxResizeEvent *re)
         QImage::Format format;
         switch (re->bitsPerPixel())
         {
-            /* 32-, 8- and 1-bpp are the only depths suported by QImage */
+            /* 32-, 8- and 1-bpp are the only depths supported by QImage */
             case 32:
                 format = QImage::Format_RGB32;
                 break;
