@@ -553,65 +553,6 @@ static void tstASMAtomicXchgU64(void)
 }
 
 
-#ifdef RT_ARCH_AMD64
-static void tstASMAtomicXchgU128(void)
-{
-    struct
-    {
-        RTUINT128U  u128Dummy0;
-        RTUINT128U  u128;
-        RTUINT128U  u128Dummy1;
-    } s;
-    RTUINT128U u128Ret;
-    RTUINT128U u128Arg;
-
-
-    s.u128Dummy0.s.Lo = s.u128Dummy0.s.Hi = 0x1122334455667788;
-    s.u128.s.Lo = 0;
-    s.u128.s.Hi = 0;
-    s.u128Dummy1 = s.u128Dummy0;
-
-    u128Arg.s.Lo = 1;
-    u128Arg.s.Hi = 0;
-    u128Ret.u = ASMAtomicXchgU128(&s.u128.u, u128Arg.u);
-    CHECKVAL(u128Ret.s.Lo, 0ULL, "%#llx");
-    CHECKVAL(u128Ret.s.Hi, 0ULL, "%#llx");
-    CHECKVAL(s.u128.s.Lo, 1ULL, "%#llx");
-    CHECKVAL(s.u128.s.Hi, 0ULL, "%#llx");
-
-    u128Arg.s.Lo = 0;
-    u128Arg.s.Hi = 0;
-    u128Ret.u = ASMAtomicXchgU128(&s.u128.u, u128Arg.u);
-    CHECKVAL(u128Ret.s.Lo, 1ULL, "%#llx");
-    CHECKVAL(u128Ret.s.Hi, 0ULL, "%#llx");
-    CHECKVAL(s.u128.s.Lo, 0ULL, "%#llx");
-    CHECKVAL(s.u128.s.Hi, 0ULL, "%#llx");
-
-    u128Arg.s.Lo = ~0ULL;
-    u128Arg.s.Hi = ~0ULL;
-    u128Ret.u = ASMAtomicXchgU128(&s.u128.u, u128Arg.u);
-    CHECKVAL(u128Ret.s.Lo, 0ULL, "%#llx");
-    CHECKVAL(u128Ret.s.Hi, 0ULL, "%#llx");
-    CHECKVAL(s.u128.s.Lo, ~0ULL, "%#llx");
-    CHECKVAL(s.u128.s.Hi, ~0ULL, "%#llx");
-
-
-    u128Arg.s.Lo = 0xfedcba0987654321ULL;
-    u128Arg.s.Hi = 0x8897a6b5c4d3e2f1ULL;
-    u128Ret.u = ASMAtomicXchgU128(&s.u128.u, u128Arg.u);
-    CHECKVAL(u128Ret.s.Lo, ~0ULL, "%#llx");
-    CHECKVAL(u128Ret.s.Hi, ~0ULL, "%#llx");
-    CHECKVAL(s.u128.s.Lo, 0xfedcba0987654321ULL, "%#llx");
-    CHECKVAL(s.u128.s.Hi, 0x8897a6b5c4d3e2f1ULL, "%#llx");
-
-    CHECKVAL(s.u128Dummy0.s.Lo, 0x1122334455667788, "%#llx");
-    CHECKVAL(s.u128Dummy0.s.Hi, 0x1122334455667788, "%#llx");
-    CHECKVAL(s.u128Dummy1.s.Lo, 0x1122334455667788, "%#llx");
-    CHECKVAL(s.u128Dummy1.s.Hi, 0x1122334455667788, "%#llx");
-}
-#endif
-
-
 static void tstASMAtomicXchgPtr(void)
 {
     void *pv = NULL;
@@ -1239,9 +1180,6 @@ int main(int argc, char *argv[])
     tstASMAtomicXchgU16();
     tstASMAtomicXchgU32();
     tstASMAtomicXchgU64();
-#ifdef RT_ARCH_AMD64
-    tstASMAtomicXchgU128();
-#endif
     tstASMAtomicXchgPtr();
     tstASMAtomicCmpXchgU32();
     tstASMAtomicCmpXchgU64();
