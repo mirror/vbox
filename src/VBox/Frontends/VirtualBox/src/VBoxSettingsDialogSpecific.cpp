@@ -432,7 +432,7 @@ void VBoxVMSettingsDlg::putBackTo()
         qobject_cast <VBoxVMSettingsSystem*> (mSelector->idToPage (SystemId));
     if (generalPage && systemPage &&
         generalPage->is64BitOSTypeSelected() && !systemPage->isHWVirtExEnabled())
-        mMachine.SetHWVirtExEnabled (KTSBool_True);
+        mMachine.SetHWVirtExEnabled (true);
 
     /* Clear the "GUI_FirstRun" extra data key in case if the boot order
      * and/or disk configuration were changed */

@@ -1412,15 +1412,6 @@ static int handleSetProperty(HandlerArg *a)
         else
             CHECK_ERROR(systemProperties, COMSETTER(WebServiceAuthLibrary)(Bstr(a->argv[1])));
     }
-    else if (!strcmp(a->argv[0], "hwvirtexenabled"))
-    {
-        if (!strcmp(a->argv[1], "yes"))
-            CHECK_ERROR(systemProperties, COMSETTER(HWVirtExEnabled)(TRUE));
-        else if (!strcmp(a->argv[1], "no"))
-            CHECK_ERROR(systemProperties, COMSETTER(HWVirtExEnabled)(FALSE));
-        else
-            return errorArgument("Invalid value '%s' for hardware virtualization extension flag", a->argv[1]);
-    }
     else if (!strcmp(a->argv[0], "loghistorycount"))
     {
         uint32_t uVal;

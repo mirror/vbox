@@ -762,8 +762,6 @@ int handleList(HandlerArg *a)
             RTPrintf("VRDP authentication library: %lS\n", str.raw());
             systemProperties->COMGETTER(WebServiceAuthLibrary)(str.asOutParam());
             RTPrintf("Webservice auth. library:    %lS\n", str.raw());
-            systemProperties->COMGETTER(HWVirtExEnabled)(&flag);
-            RTPrintf("Hardware virt. extensions:   %s\n", flag ? "yes" : "no");
             systemProperties->COMGETTER(LogHistoryCount)(&ulValue);
             RTPrintf("Log history count:           %u\n", ulValue);
 

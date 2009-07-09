@@ -82,7 +82,6 @@ HRESULT SystemProperties::init (VirtualBox *aParent)
 
     setRemoteDisplayAuthLibrary (NULL);
 
-    mHWVirtExEnabled = false;
     mLogHistoryCount = 3;
 
     HRESULT rc = S_OK;
@@ -515,36 +514,6 @@ STDMETHODIMP SystemProperties::COMSETTER(WebServiceAuthLibrary) (IN_BSTR aWebSer
     return rc;
 }
 
-STDMETHODIMP SystemProperties::COMGETTER(HWVirtExEnabled) (BOOL *enabled)
-{
-    if (!enabled)
-        return E_POINTER;
-
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
-
-    AutoReadLock alock (this);
-
-    *enabled = mHWVirtExEnabled;
-
-    return S_OK;
-}
-
-STDMETHODIMP SystemProperties::COMSETTER(HWVirtExEnabled) (BOOL enabled)
-{
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
-
-    /* VirtualBox::saveSettings() needs a write lock */
-    AutoMultiWriteLock2 alock (mParent, this);
-
-    mHWVirtExEnabled = enabled;
-
-    HRESULT rc = mParent->saveSettings();
-
-    return rc;
-}
-
 STDMETHODIMP SystemProperties::COMGETTER(LogHistoryCount) (ULONG *count)
 {
     if (!count)
@@ -630,9 +599,6 @@ HRESULT SystemProperties::loadSettings (const settings::Key &aGlobal)
     rc = setWebServiceAuthLibrary (bstr);
     CheckComRCReturnRC (rc);
 
-    /* Note: not <BOOL> because Win32 defines BOOL as int */
-    mHWVirtExEnabled = properties.valueOr <bool> ("HWVirtExEnabled", false);
-
     mLogHistoryCount = properties.valueOr <ULONG> ("LogHistoryCount", 3);
 
     return S_OK;
@@ -670,8 +636,6 @@ HRESULT SystemProperties::saveSettings (settings::Key &aGlobal)
 
     if (mWebServiceAuthLibrary)
         properties.setValue <Bstr> ("webServiceAuthLibrary", mWebServiceAuthLibrary);
-
-    properties.setValue <bool> ("HWVirtExEnabled", !!mHWVirtExEnabled);
 
     properties.setValue <ULONG> ("LogHistoryCount", mLogHistoryCount);
 

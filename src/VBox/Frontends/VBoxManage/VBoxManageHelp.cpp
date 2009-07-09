@@ -130,7 +130,7 @@ void printUsage(USAGECATEGORY u64Cmd)
                  "                            [--acpi on|off]\n"
                  "                            [--ioapic on|off]\n"
                  "                            [--pae on|off]\n"
-                 "                            [--hwvirtex on|off|default]\n"
+                 "                            [--hwvirtex on|off]\n"
                  "                            [--nestedpaging on|off]\n"
                  "                            [--vtxvpid on|off]\n"
                  "                            [--cpus <number>]\n"
@@ -430,7 +430,6 @@ void printUsage(USAGECATEGORY u64Cmd)
                  "                            machinefolder default|<folder> |\n"
                  "                            vrdpauthlibrary default|<library> |\n"
                  "                            websrvauthlibrary default|null|<library> |\n"
-                 "                            hwvirtexenabled yes|no\n"
                  "                            loghistorycount <value>\n"
                  "\n");
     }
