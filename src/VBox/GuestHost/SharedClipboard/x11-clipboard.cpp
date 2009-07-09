@@ -332,7 +332,7 @@ static CLIPX11FORMAT clipGetTextFormatFromTargets(CLIPBACKEND *pCtx,
     CLIPX11FORMAT bestTextFormat = NIL_CLIPX11FORMAT;
     CLIPFORMAT enmBestTextTarget = INVALID;
     AssertPtrReturn(pCtx, NIL_CLIPX11FORMAT);
-    AssertPtrReturn(pTargets, NIL_CLIPX11FORMAT);
+    AssertReturn(VALID_PTR(pTargets) || cTargets == 0, NIL_CLIPX11FORMAT);
     for (unsigned i = 0; i < cTargets; ++i)
     {
         CLIPX11FORMAT format = clipFindX11FormatByAtom(pCtx->widget,
@@ -389,7 +389,7 @@ static void clipGetFormatsFromTargets(CLIPBACKEND *pCtx, Atom *pTargets,
 {
     bool changed = false;
     AssertPtrReturnVoid(pCtx);
-    AssertPtrReturnVoid(pTargets);
+    AssertReturnVoid(VALID_PTR(pTargets) || cTargets == 0);
     CLIPX11FORMAT bestTextFormat;
     bestTextFormat = clipGetTextFormatFromTargets(pCtx, pTargets, cTargets);
     if (pCtx->X11TextFormat != bestTextFormat)
@@ -413,6 +413,27 @@ static void clipGetFormatsFromTargets(CLIPBACKEND *pCtx, Atom *pTargets,
 }
 
 /**
+ * Update the context's information about targets currently supported by X11,
+ * based on an array of X11 atoms.
+ * @param  pCtx      the context to be updated
+ * @param  pTargets  the array of atoms describing the targets supported
+ * @param  cTargets  the size of the array @a pTargets
+ */
+static void clipUpdateX11Targets(CLIPBACKEND *pCtx, Atom *pTargets,
+                                 size_t cTargets)
+{
+    bool changed = true;
+
+    Log3 (("%s: called\n", __PRETTY_FUNCTION__));
+    if (pCtx->fOwnsClipboard)
+        /* VBox raced us and we lost.  So we don't want to report anything. */
+        return;
+    clipGetFormatsFromTargets(pCtx, pTargets, cTargets, &changed);
+    if (changed)
+        clipReportFormatsToVBox(pCtx);
+}
+
+/**
  * Notify the VBox clipboard about available data formats, based on the
  * "targets" information obtained from the X11 clipboard.
  * @note  callback for XtGetSelectionValue, called on a polling loop
@@ -424,21 +445,10 @@ static void clipConvertX11Targets(Widget, XtPointer pClientData,
 {
     CLIPBACKEND *pCtx =
             reinterpret_cast<CLIPBACKEND *>(pClientData);
-    Atom *pTargets = reinterpret_cast<Atom *>(pValue);
-    size_t cTargets = *pcLen;
-    bool changed = true;
-
-    Log3 (("%s: called\n", __PRETTY_FUNCTION__));
-    if (pCtx->fOwnsClipboard)
-        /* VBox raced us and we lost.  So we don't want to report anything. */
-        changed = false;
-    else if (   (*atomType == XT_CONVERT_FAIL)  /* timeout */
-             || !pTargets  /* Conversion failed */)
-        clipResetX11Formats(pCtx);
-    else
-        clipGetFormatsFromTargets(pCtx, pTargets, cTargets, &changed);
-    if (changed)
-        clipReportFormatsToVBox(pCtx);
+    Atom *pTargets = (*atomType == XT_CONVERT_FAIL) ? NULL  /* timeout */
+                                                    : (Atom *)pValue;
+    size_t cTargets = pTargets ? *pcLen : 0;
+    clipUpdateX11Targets(pCtx, pTargets, cTargets);
     XtFree(reinterpret_cast<char *>(pValue));
 }
 
@@ -1587,14 +1597,6 @@ void clipSchedulePoller(CLIPBACKEND *pCtx,
     g_pPollerData = (XtPointer)pCtx;
 }
 
-static bool clipPollTargets()
-{
-    if (!g_pfnPoller)
-        return false;
-    g_pfnPoller(g_pPollerData, NULL);
-    return true;
-}
-
 /* For the purpose of the test case, we just execute the procedure to be
  * scheduled, as we are running single threaded. */
 void clipQueueToEventThread(XtAppContext app_context,
@@ -1956,6 +1958,11 @@ static void clipSetSelectionValues(const char *pcszTarget, Atom type,
     g_fTargetsFailure = false;
 }
 
+static void clipSendTargetUpdate(CLIPBACKEND *pCtx)
+{
+    clipUpdateX11Targets(pCtx, g_selTarget, RT_ELEMENTS(g_selTarget));
+}
+
 /* Configure if and how the X11 TARGETS clipboard target will fail */
 static void clipSetTargetsFailure(bool fTimeout, bool fFailure)
 {
@@ -2052,9 +2059,8 @@ static bool testStringFromX11(CLIPBACKEND *pCtx, const char *pcszExp,
                               int rcExp)
 {
     bool retval = false;
-    if (!clipPollTargets())
-        RTPrintf("Failed to poll for targets\n");
-    else if (clipQueryFormats() != VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT)
+    clipSendTargetUpdate(pCtx);
+    if (clipQueryFormats() != VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT)
         RTPrintf("Wrong targets reported: %02X\n", clipQueryFormats());
     else
     {
@@ -2111,9 +2117,8 @@ static bool testLatin1FromX11(CLIPBACKEND *pCtx,const char *pcszExp,
                               int rcExp)
 {
     bool retval = false;
-    if (!clipPollTargets())
-        RTPrintf("Failed to poll for targets\n");
-    else if (clipQueryFormats() != VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT)
+    clipSendTargetUpdate(pCtx);
+    if (clipQueryFormats() != VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT)
         RTPrintf("Wrong targets reported: %02X\n", clipQueryFormats());
     else
     {
@@ -2334,12 +2339,8 @@ int main()
     clipInvalidateFormats();
     clipSetSelectionValues("CLIPBOARD", XA_STRING, "Test",
                            sizeof("Test"), 8);
-    if (!clipPollTargets())
-    {
-        RTPrintf("Failed to poll for targets\n");
-        ++cErrs;
-    }
-    else if (clipQueryFormats() != 0)
+    clipSendTargetUpdate(pCtx);
+    if (clipQueryFormats() != 0)
     {
         RTPrintf("Failed to send a format update notification\n");
         ++cErrs;
@@ -2397,33 +2398,13 @@ int main()
         ++cErrs;
     }
 
-    /*** Targets timeout from X11 ***/
-    RTPrintf(TEST_NAME ": TESTING X11 targets timeout\n");
-    clipSetSelectionValues("UTF8_STRING", XA_STRING, "hello world",
-                           sizeof("hello world"), 8);
-    clipSetTargetsFailure(true, false);
-    if (!clipPollTargets())
-    {
-        RTPrintf("Failed to poll for targets\n");
-        ++cErrs;
-    }
-    else if (clipQueryFormats() != 0)
-    {
-        RTPrintf("Wrong targets reported: %02X\n", clipQueryFormats());
-        ++cErrs;
-    }
-
     /*** Targets failure from X11 ***/
     RTPrintf(TEST_NAME ": TESTING X11 targets conversion failure\n");
     clipSetSelectionValues("UTF8_STRING", XA_STRING, "hello world",
                            sizeof("hello world"), 8);
     clipSetTargetsFailure(false, true);
-    if (!clipPollTargets())
-    {
-        RTPrintf("Failed to poll for targets\n");
-        ++cErrs;
-    }
-    else if (clipQueryFormats() != 0)
+    clipUpdateX11Targets(pCtx, NULL, 0);
+    if (clipQueryFormats() != 0)
     {
         RTPrintf("Wrong targets reported: %02X\n", clipQueryFormats());
         ++cErrs;
