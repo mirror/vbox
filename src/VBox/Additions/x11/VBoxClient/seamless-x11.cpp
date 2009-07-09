@@ -196,11 +196,6 @@ void VBoxGuestSeamlessX11::addClientWindow(const Window hWin)
     }
     if (fAddWin && (winAttrib.map_state == IsUnmapped))
         fAddWin = false;
-    if (fAddWin && (XFetchName(mDisplay, hClient, &pszWinName) != 0) && (pszWinName != NULL))
-        XFree(pszWinName);
-    else
-        /* kwin sometimes creates temporary fullscreen windows with no name. */
-        fAddWin = false;
     if (fAddWin)
     {
         VBoxGuestX11Pointer<XRectangle> rects;
