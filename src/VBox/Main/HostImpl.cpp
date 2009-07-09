@@ -314,115 +314,118 @@ STDMETHODIMP Host::COMGETTER(DVDDrives) (ComSafeArrayOut (IHostDVDDrive *, aDriv
     CHECK_READY();
     std::list <ComObjPtr <HostDVDDrive> > list;
     HRESULT rc = S_OK;
-
-#if defined(RT_OS_WINDOWS)
-    int sz = GetLogicalDriveStrings(0, NULL);
-    TCHAR *hostDrives = new TCHAR[sz+1];
-    GetLogicalDriveStrings(sz, hostDrives);
-    wchar_t driveName[3] = { '?', ':', '\0' };
-    TCHAR *p = hostDrives;
-    do
+    try
     {
-        if (GetDriveType(p) == DRIVE_CDROM)
+#if defined(RT_OS_WINDOWS)
+        int sz = GetLogicalDriveStrings(0, NULL);
+        TCHAR *hostDrives = new TCHAR[sz+1];
+        GetLogicalDriveStrings(sz, hostDrives);
+        wchar_t driveName[3] = { '?', ':', '\0' };
+        TCHAR *p = hostDrives;
+        do
         {
-            driveName[0] = *p;
-            ComObjPtr <HostDVDDrive> hostDVDDriveObj;
-            hostDVDDriveObj.createObject();
-            hostDVDDriveObj->init (Bstr (driveName));
-            list.push_back (hostDVDDriveObj);
+            if (GetDriveType(p) == DRIVE_CDROM)
+            {
+                driveName[0] = *p;
+                ComObjPtr <HostDVDDrive> hostDVDDriveObj;
+                hostDVDDriveObj.createObject();
+                hostDVDDriveObj->init (Bstr (driveName));
+                list.push_back (hostDVDDriveObj);
+            }
+            p += _tcslen(p) + 1;
         }
-        p += _tcslen(p) + 1;
-    }
-    while (*p);
-    delete[] hostDrives;
+        while (*p);
+        delete[] hostDrives;
 
 #elif defined(RT_OS_SOLARIS)
 # ifdef VBOX_USE_LIBHAL
-    if (!getDVDInfoFromHal(list))
+        if (!getDVDInfoFromHal(list))
 # endif
-    // Not all Solaris versions ship with libhal.
-    // So use a fallback approach similar to Linux.
-    {
-        if (RTEnvGet("VBOX_CDROM"))
+        // Not all Solaris versions ship with libhal.
+        // So use a fallback approach similar to Linux.
         {
-            char *cdromEnv = strdup(RTEnvGet("VBOX_CDROM"));
-            char *cdromDrive;
-            cdromDrive = strtok(cdromEnv, ":"); /** @todo use strtok_r. */
-            while (cdromDrive)
+            if (RTEnvGet("VBOX_CDROM"))
             {
-                if (validateDevice(cdromDrive, true))
+                char *cdromEnv = strdup(RTEnvGet("VBOX_CDROM"));
+                char *cdromDrive;
+                cdromDrive = strtok(cdromEnv, ":"); /** @todo use strtok_r. */
+                while (cdromDrive)
+                {
+                    if (validateDevice(cdromDrive, true))
+                    {
+                        ComObjPtr <HostDVDDrive> hostDVDDriveObj;
+                        hostDVDDriveObj.createObject();
+                        hostDVDDriveObj->init (Bstr (cdromDrive));
+                        list.push_back (hostDVDDriveObj);
+                    }
+                    cdromDrive = strtok(NULL, ":");
+                }
+                free(cdromEnv);
+            }
+            else
+            {
+                // this might work on Solaris version older than Nevada.
+                if (validateDevice("/cdrom/cdrom0", true))
                 {
                     ComObjPtr <HostDVDDrive> hostDVDDriveObj;
                     hostDVDDriveObj.createObject();
-                    hostDVDDriveObj->init (Bstr (cdromDrive));
+                    hostDVDDriveObj->init (Bstr ("cdrom/cdrom0"));
                     list.push_back (hostDVDDriveObj);
                 }
-                cdromDrive = strtok(NULL, ":");
-            }
-            free(cdromEnv);
-        }
-        else
-        {
-            // this might work on Solaris version older than Nevada.
-            if (validateDevice("/cdrom/cdrom0", true))
-            {
-                ComObjPtr <HostDVDDrive> hostDVDDriveObj;
-                hostDVDDriveObj.createObject();
-                hostDVDDriveObj->init (Bstr ("cdrom/cdrom0"));
-                list.push_back (hostDVDDriveObj);
-            }
 
-            // check the mounted drives
-            parseMountTable(MNTTAB, list);
+                // check the mounted drives
+                parseMountTable(MNTTAB, list);
+            }
         }
-    }
 
 #elif defined(RT_OS_LINUX)
-    if (RT_SUCCESS (mHostDrives.updateDVDs()))
-        for (DriveInfoList::const_iterator it = mHostDrives.DVDBegin();
-             SUCCEEDED (rc) && it != mHostDrives.DVDEnd(); ++it)
+        if (RT_SUCCESS (mHostDrives.updateDVDs()))
+            for (DriveInfoList::const_iterator it = mHostDrives.DVDBegin();
+                SUCCEEDED (rc) && it != mHostDrives.DVDEnd(); ++it)
+            {
+                ComObjPtr<HostDVDDrive> hostDVDDriveObj;
+                Bstr device(it->mDevice);
+                Bstr udi(it->mUdi);
+                Bstr description(it->mDescription);
+                if (SUCCEEDED (rc))
+                    rc = hostDVDDriveObj.createObject();
+                if (SUCCEEDED (rc))
+                    rc = hostDVDDriveObj->init (device, udi, description);
+                if (SUCCEEDED (rc))
+                    list.push_back(hostDVDDriveObj);
+            }
+#elif defined(RT_OS_DARWIN)
+        PDARWINDVD cur = DarwinGetDVDDrives();
+        while (cur)
         {
             ComObjPtr<HostDVDDrive> hostDVDDriveObj;
-            Bstr device (it->mDevice.c_str());
-            Bstr udi (it->mUdi.empty() ? NULL : it->mUdi.c_str());
-            Bstr description (it->mDescription.empty() ? NULL : it->mDescription.c_str());
-            if (device.isNull() || (!it->mUdi.empty() && udi.isNull()) ||
-                (!it->mDescription.empty() && description.isNull()))
-                rc = E_OUTOFMEMORY;
-            if (SUCCEEDED (rc))
-                rc = hostDVDDriveObj.createObject();
-            if (SUCCEEDED (rc))
-                rc = hostDVDDriveObj->init (device, udi, description);
-            if (SUCCEEDED (rc))
-                list.push_back(hostDVDDriveObj);
-        }
-#elif defined(RT_OS_DARWIN)
-    PDARWINDVD cur = DarwinGetDVDDrives();
-    while (cur)
-    {
-        ComObjPtr<HostDVDDrive> hostDVDDriveObj;
-        hostDVDDriveObj.createObject();
-        hostDVDDriveObj->init(Bstr(cur->szName));
-        list.push_back(hostDVDDriveObj);
+            hostDVDDriveObj.createObject();
+            hostDVDDriveObj->init(Bstr(cur->szName));
+            list.push_back(hostDVDDriveObj);
 
-        /* next */
-        void *freeMe = cur;
-        cur = cur->pNext;
-        RTMemFree(freeMe);
-    }
+            /* next */
+            void *freeMe = cur;
+            cur = cur->pNext;
+            RTMemFree(freeMe);
+        }
 #elif defined(RT_OS_FREEBSD)
 # ifdef VBOX_USE_LIBHAL
-    if (!getDVDInfoFromHal(list))
+        if (!getDVDInfoFromHal(list))
 # endif
-    {
-        /** @todo: Scan for accessible /dev/cd* devices. */
-    }
+        {
+            /** @todo: Scan for accessible /dev/cd* devices. */
+        }
 #else
     /* PORTME */
 #endif
 
-    SafeIfaceArray <IHostDVDDrive> array (list);
-    array.detachTo(ComSafeArrayOutArg(aDrives));
+        SafeIfaceArray <IHostDVDDrive> array (list);
+        array.detachTo(ComSafeArrayOutArg(aDrives));
+    }
+    catch(std::bad_alloc &e)
+    {
+        rc = E_OUTOFMEMORY;
+    }
     return rc;
 }
 
@@ -441,51 +444,55 @@ STDMETHODIMP Host::COMGETTER(FloppyDrives) (ComSafeArrayOut (IHostFloppyDrive *,
     std::list <ComObjPtr <HostFloppyDrive> > list;
     HRESULT rc = S_OK;
 
-#ifdef RT_OS_WINDOWS
-    int sz = GetLogicalDriveStrings(0, NULL);
-    TCHAR *hostDrives = new TCHAR[sz+1];
-    GetLogicalDriveStrings(sz, hostDrives);
-    wchar_t driveName[3] = { '?', ':', '\0' };
-    TCHAR *p = hostDrives;
-    do
+    try
     {
-        if (GetDriveType(p) == DRIVE_REMOVABLE)
+#ifdef RT_OS_WINDOWS
+        int sz = GetLogicalDriveStrings(0, NULL);
+        TCHAR *hostDrives = new TCHAR[sz+1];
+        GetLogicalDriveStrings(sz, hostDrives);
+        wchar_t driveName[3] = { '?', ':', '\0' };
+        TCHAR *p = hostDrives;
+        do
         {
-            driveName[0] = *p;
-            ComObjPtr <HostFloppyDrive> hostFloppyDriveObj;
-            hostFloppyDriveObj.createObject();
-            hostFloppyDriveObj->init (Bstr (driveName));
-            list.push_back (hostFloppyDriveObj);
+            if (GetDriveType(p) == DRIVE_REMOVABLE)
+            {
+                driveName[0] = *p;
+                ComObjPtr <HostFloppyDrive> hostFloppyDriveObj;
+                hostFloppyDriveObj.createObject();
+                hostFloppyDriveObj->init (Bstr (driveName));
+                list.push_back (hostFloppyDriveObj);
+            }
+            p += _tcslen(p) + 1;
         }
-        p += _tcslen(p) + 1;
-    }
-    while (*p);
-    delete[] hostDrives;
+        while (*p);
+        delete[] hostDrives;
 #elif defined(RT_OS_LINUX)
-    if (RT_SUCCESS (mHostDrives.updateFloppies()))
-        for (DriveInfoList::const_iterator it = mHostDrives.FloppyBegin();
-             SUCCEEDED (rc) && it != mHostDrives.FloppyEnd(); ++it)
-        {
-            ComObjPtr<HostFloppyDrive> hostFloppyDriveObj;
-            Bstr device (it->mDevice.c_str());
-            Bstr udi (it->mUdi.empty() ? NULL : it->mUdi.c_str());
-            Bstr description (it->mDescription.empty() ? NULL : it->mDescription.c_str());
-            if (device.isNull() || (!it->mUdi.empty() && udi.isNull()) ||
-                (!it->mDescription.empty() && description.isNull()))
-                rc = E_OUTOFMEMORY;
-            if (SUCCEEDED (rc))
-                rc = hostFloppyDriveObj.createObject();
-            if (SUCCEEDED (rc))
-                rc = hostFloppyDriveObj->init (device, udi, description);
-            if (SUCCEEDED (rc))
-                list.push_back(hostFloppyDriveObj);
-        }
+        if (RT_SUCCESS (mHostDrives.updateFloppies()))
+            for (DriveInfoList::const_iterator it = mHostDrives.FloppyBegin();
+                SUCCEEDED (rc) && it != mHostDrives.FloppyEnd(); ++it)
+            {
+                ComObjPtr<HostFloppyDrive> hostFloppyDriveObj;
+                Bstr device(it->mDevice);
+                Bstr udi(it->mUdi);
+                Bstr description(it->mDescription);
+                if (SUCCEEDED (rc))
+                    rc = hostFloppyDriveObj.createObject();
+                if (SUCCEEDED (rc))
+                    rc = hostFloppyDriveObj->init (device, udi, description);
+                if (SUCCEEDED (rc))
+                    list.push_back(hostFloppyDriveObj);
+            }
 #else
     /* PORTME */
 #endif
 
-    SafeIfaceArray<IHostFloppyDrive> collection (list);
-    collection.detachTo(ComSafeArrayOutArg (aDrives));
+        SafeIfaceArray<IHostFloppyDrive> collection (list);
+        collection.detachTo(ComSafeArrayOutArg (aDrives));
+    }
+    catch(std::bad_alloc &e)
+    {
+        rc = E_OUTOFMEMORY;
+    }
     return rc;
 }
 

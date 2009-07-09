@@ -58,9 +58,9 @@ int main()
          it != driveInfo.FloppyEnd(); ++it)
     {
         RTPrintf ("  device: %s", it->mDevice.c_str());
-        if (!it->mUdi.empty())
+        if (!it->mUdi.isEmpty())
             RTPrintf (", udi: %s", it->mUdi.c_str());
-        if (!it->mDescription.empty())
+        if (!it->mDescription.isEmpty())
             RTPrintf (", description: %s", it->mDescription.c_str());
         RTPrintf ("\n");
     }
@@ -69,9 +69,9 @@ int main()
          it != driveInfo.DVDEnd(); ++it)
     {
         RTPrintf ("  device: %s", it->mDevice.c_str());
-        if (!it->mUdi.empty())
+        if (!it->mUdi.isEmpty())
             RTPrintf (", udi: %s", it->mUdi.c_str());
-        if (!it->mDescription.empty())
+        if (!it->mDescription.isEmpty())
             RTPrintf (", description: %s", it->mDescription.c_str());
         RTPrintf ("\n");
     }
@@ -117,7 +117,7 @@ int main()
                           it2->c_str(), it->mDevice.c_str(), strerror(errno));
                 return 1;
             }
-            if (RTLinuxSysFsExists("%s/driver", it2->c_str()) != (size != -1))            
+            if (RTLinuxSysFsExists("%s/driver", it2->c_str()) != (size != -1))
             {
                 RTPrintf ("RTLinuxSysFsExists did not return the expected value for the driver link of interface %s of device %s.\n",
                           it2->c_str(), it->mDevice.c_str());
@@ -143,7 +143,7 @@ int main()
     {
         RTPrintf("Failed!\n");
         exit(1);
-    }    
+    }
 #endif  /* VBOX_USB_WITH_SYSFS */
     return 0;
 }
