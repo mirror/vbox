@@ -28,16 +28,20 @@
 
 #include <VBox/log.h>
 
-/** @todo dprintf() -> Log() */
+
+#ifdef RT_OS_WINDOWS /** @todo dprintf() -> Log() */
 #if (defined(DEBUG) && !defined(NO_LOGGING)) || defined(LOG_ENABLED)
 # define dprintf(a) RTLogBackdoorPrintf a
 #else
 # define dprintf(a) do {} while (0)
 #endif
+#else
+# define dprintf(a) Log(a)
+#endif
 
 #include "SysHlp.h"
 
-#pragma pack(4)
+#pragma pack(4) /** @todo r=bird: What do we need packing for here? None of these structures are shared between drivers AFAIK. */
 
 struct _VBGLPHYSHEAPBLOCK;
 typedef struct _VBGLPHYSHEAPBLOCK VBGLPHYSHEAPBLOCK;
@@ -59,6 +63,10 @@ enum VbglLibStatus
     VbglStatusReady
 };
 
+/**
+ * Global VBGL ring-0 data.
+ * Lives in VbglR0Init.cpp.
+ */
 typedef struct _VBGLDATA
 {
     enum VbglLibStatus status;
@@ -79,6 +87,12 @@ typedef struct _VBGLDATA
     RTSEMFASTMUTEX mutexHeap;
     /** @} */
 
+    /**
+     * The host version data.
+     */
+    VMMDevReqHostVersion hostVersion;
+
+
 #ifndef VBGL_VBOXGUEST
     /**
      * Fast heap for HGCM handles data.
@@ -93,23 +107,28 @@ typedef struct _VBGLDATA
 #endif
 } VBGLDATA;
 
+
 #pragma pack()
 
 #ifndef VBGL_DECL_DATA
 extern VBGLDATA g_vbgldata;
 #endif
 
-/* Check if library has been initialized before entering
- * a public library function.
+/**
+ * Internal macro for checking whether we can pass phyical page lists to the
+ * host.
+ *
+ * ASSUMES that vbglR0Enter has been called already.
  */
-int VbglEnter (void);
+#define VBGLR0_CAN_USE_PHYS_PAGE_LIST() \
+    ( !!(g_vbgldata.hostVersion.features & VMMDEV_HVF_HGCM_PHYS_PAGE_LIST) )
+
+int vbglR0Enter (void);
 
 #ifdef VBOX_WITH_HGCM
 # ifndef VBGL_VBOXGUEST
-/* Initialize HGCM subsystem. */
-int vbglHGCMInit (void);
-/* Terminate HGCM subsystem. */
-int vbglHGCMTerminate (void);
+int vbglR0HGCMInit (void);
+int vbglR0HGCMTerminate (void);
 # endif
 #endif /* VBOX_WITH_HGCM */
 

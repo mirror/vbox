@@ -57,7 +57,9 @@ VBoxGuestR0Lib_SOURCES      = \
 	Init.cpp \
 	VMMDev.cpp \
 	HGCM.cpp \
-	VBoxCalls.c
+	VBoxCalls.c \
+	VbglR0CanUsePhysPageList.cpp
+
 
 #
 # VBoxGuestR0LibBase
@@ -72,7 +74,8 @@ VBoxGuestR0LibBase_SOURCES  = \
 	PhysHeap.cpp \
 	Init.cpp \
 	VMMDev.cpp \
-	HGCMInternal.cpp
+	HGCMInternal.cpp \
+	VbglR0CanUsePhysPageList.cpp
 
 #
 # VBoxGuestR3Lib

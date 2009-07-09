@@ -19,21 +19,58 @@
  * additional information or have any questions.
  */
 
-
+/*******************************************************************************
+*   Header Files                                                               *
+*******************************************************************************/
 #define VBGL_DECL_DATA
 #include "VBGLInternal.h"
 
 #include <iprt/string.h>
 #include <iprt/assert.h>
 
+/*******************************************************************************
+*   Global Variables                                                           *
+*******************************************************************************/
+/** The global VBGL instance data.  */
 VBGLDATA g_vbgldata;
 
+/**
+ * Used by vbglQueryVMMDevPort and VbglInit to try get the host feature mask and
+ * version information (g_vbgldata::hostVersion).
+ *
+ * This was first implemented by the host in 3.1 and we quietly ignore failures
+ * for that reason.
+ */
+static void vbglR0QueryHostVersion (void)
+{
+    VMMDevReqHostVersion *pReq;
+
+    int rc = VbglGRAlloc ((VMMDevRequestHeader **) &pReq, sizeof (*pReq), VMMDevReq_GetHostVersion);
+
+    if (RT_SUCCESS (rc))
+    {
+        rc = VbglGRPerform (&pReq->header);
+
+        if (RT_SUCCESS (rc))
+        {
+            g_vbgldata.hostVersion = *pReq;
+            Log (("vbglR0QueryHostVersion: %u.%u.%ur%u %#x\n",
+                  pReq->major, pReq->minor, pReq->build, pReq->revision, pReq->features));
+        }
+
+        VbglGRFree (&pReq->header);
+    }
+}
+
 #ifndef VBGL_VBOXGUEST
-/* The guest library uses lazy initialization for VMMDev port and memory,
+/**
+ * The guest library uses lazy initialization for VMMDev port and memory,
  * because these values are provided by the VBoxGuest driver and it might
  * be loaded later than other drivers.
+ *
  * The VbglEnter checks the current library status, tries to retrive these
  * values and fails if they are unavailable.
+ *
  */
 static void vbglQueryVMMDevPort (void)
 {
@@ -45,6 +82,9 @@ static void vbglQueryVMMDevPort (void)
 
     if (RT_SUCCESS(rc))
     {
+        /*
+         * Try query the port info.
+         */
         VBoxGuestPortInfo port;
 
         rc = vbglDriverIOCtl (&driver, VBOXGUEST_IOCTL_GETVMMDEVPORT, &port, sizeof (port));
@@ -57,6 +97,8 @@ static void vbglQueryVMMDevPort (void)
             g_vbgldata.pVMMDevMemory = port.pVMMDevMemory;
 
             g_vbgldata.status = VbglStatusReady;
+
+            vbglR0QueryHostVersion();
         }
 
         vbglDriverClose (&driver);
@@ -64,9 +106,16 @@ static void vbglQueryVMMDevPort (void)
 
     dprintf (("vbglQueryVMMDevPort rc = %d\n", rc));
 }
-#endif
+#endif /* !VBGL_VBOXGUEST */
 
-int VbglEnter (void)
+/**
+ * Checks if VBGL has been initialized.
+ *
+ * The the client library, this will lazily complete the initialization.
+ *
+ * @return VINF_SUCCESS or VERR_VBGL_NOT_INITIALIZED.
+ */
+int vbglR0Enter (void)
 {
     int rc;
 
@@ -120,6 +169,7 @@ DECLVBGL(int) VbglInit (VBGLIOPORT portVMMDev, VMMDevMemory *pVMMDevMemory)
 {
     int rc = VINF_SUCCESS;
 
+# ifdef RT_OS_WINDOWS /** @todo r=bird: this doesn't make sense. Is there something special going on on windows? */
     dprintf(("vbglInit: starts g_vbgldata.status %d\n", g_vbgldata.status));
 
     if (g_vbgldata.status == VbglStatusInitializing
@@ -128,6 +178,9 @@ DECLVBGL(int) VbglInit (VBGLIOPORT portVMMDev, VMMDevMemory *pVMMDevMemory)
         /* Initialization is already in process. */
         return rc;
     }
+# else
+    dprintf(("vbglInit: starts\n"));
+# endif
 
     rc = vbglInitCommon ();
 
@@ -137,6 +190,8 @@ DECLVBGL(int) VbglInit (VBGLIOPORT portVMMDev, VMMDevMemory *pVMMDevMemory)
         g_vbgldata.pVMMDevMemory = pVMMDevMemory;
 
         g_vbgldata.status = VbglStatusReady;
+
+        vbglR0QueryHostVersion();
     }
     else
     {
@@ -174,9 +229,9 @@ DECLVBGL(int) VbglInit (void)
         /* Try to obtain VMMDev port via IOCTL to VBoxGuest main driver. */
         vbglQueryVMMDevPort ();
 
-#ifdef VBOX_WITH_HGCM
-        rc = vbglHGCMInit ();
-#endif /* VBOX_WITH_HGCM */
+# ifdef VBOX_WITH_HGCM
+        rc = vbglR0HGCMInit ();
+# endif /* VBOX_WITH_HGCM */
 
         if (RT_FAILURE(rc))
         {
@@ -191,9 +246,9 @@ DECLVBGL(void) VbglTerminate (void)
 {
     vbglTerminateCommon ();
 
-#ifdef VBOX_WITH_HGCM
-    vbglHGCMTerminate ();
-#endif
+# ifdef VBOX_WITH_HGCM
+    vbglR0HGCMTerminate ();
+# endif
 
     return;
 }
