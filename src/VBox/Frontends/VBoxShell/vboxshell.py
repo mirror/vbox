@@ -393,6 +393,24 @@ def listCmd(ctx, args):
         print "Machine '%s' [%s], state=%s" %(m.name,m.id,m.sessionState)
     return 0
 
+def getControllerType(type):
+    if type == 0:
+        return "Null"
+    elif  type == 1:
+        return "LsiLogic"
+    elif type == 2:
+        return "BusLogic"
+    elif type == 3:
+        return "IntelAhci"
+    elif type == 4:
+        return "PIIX3"
+    elif type == 5:
+        return "PIIX4"
+    elif type == 6:
+        return "ICH6"
+    else:
+        return "Unknown"
+
 def infoCmd(ctx,args):
     import time
     if (len(args) < 2):
@@ -406,12 +424,15 @@ def infoCmd(ctx,args):
     print "  Name [name]: " + mach.name
     print "  ID [n/a]: " + mach.id
     print "  OS Type [n/a]: " + os.description
+    print
     print "  CPUs [CPUCount]: %d" %(mach.CPUCount)
     print "  RAM [memorySize]: %dM" %(mach.memorySize)
     print "  VRAM [VRAMSize]: %dM" %(mach.VRAMSize)
     print "  Monitors [monitorCount]: %d" %(mach.monitorCount)
+    print
     print "  Clipboard mode [clipboardMode]: %d" %(mach.clipboardMode)
     print "  Machine status [n/a]: %d" % (mach.sessionState)
+    print
     bios = mach.BIOSSettings
     print "  ACPI [BIOSSettings.ACPIEnabled]: %s" %(asState(bios.ACPIEnabled))
     print "  APIC [BIOSSettings.IOAPICEnabled]: %s" %(asState(bios.IOAPICEnabled))
@@ -421,17 +442,27 @@ def infoCmd(ctx,args):
     print "  Hardware 3d acceleration[accelerate3DEnabled]: " + asState(mach.accelerate3DEnabled)
     print "  Nested paging [HWVirtExNestedPagingEnabled]: " + asState(mach.HWVirtExNestedPagingEnabled)
     print "  Last changed [n/a]: " + time.asctime(time.localtime(mach.lastStateChange/1000))
+    print "  VRDP server [VRDPServer.enabled]: %s" %(asState(mach.VRDPServer.enabled))
+
+    controllers = ctx['global'].getArray(mach, 'storageControllers')
+    if controllers:
+        print
+        print "  Controllers:"
+    for controller in controllers:
+        print "      %s %s bus: %d" % (controller.name, getControllerType(controller.controllerType), controller.bus)
 
     disks = ctx['global'].getArray(mach, 'hardDiskAttachments')
     if disks:
         print
+        print "  Disks:"
     for disk in disks:
-        print "  Controller: %s port: %d device: %d:" % (disk.controller, disk.port, disk.device)
+        print "    Controller: %s port: %d device: %d:" % (disk.controller, disk.port, disk.device)
         hd = disk.hardDisk
         print "    id: " + hd.id
         print "    location: " +  hd.location
         print "    name: " +  hd.name
         print "    format: " +  hd.format
+        print
     return 0
 
 def startCmd(ctx, args):
