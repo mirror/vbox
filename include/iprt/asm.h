@@ -2831,67 +2831,6 @@ DECLINLINE(int64_t) ASMAtomicXchgS64(volatile int64_t *pi64, int64_t i64)
 }
 
 
-#ifdef RT_ARCH_AMD64
-/**
- * Atomically Exchange an unsigned 128-bit value, ordered.
- *
- * @returns Current *pu128.
- * @param   pu128   Pointer to the 128-bit variable to update.
- * @param   u128    The 128-bit value to assign to *pu128.
- *
- * @remark  We cannot really assume that any hardware supports this. Nor do I have
- *          GAS support for it. So, for the time being we'll BREAK the atomic
- *          bit of this function and use two 64-bit exchanges instead.
- */
-# if 0 /* see remark RT_INLINE_ASM_EXTERNAL */
-DECLASM(uint128_t) ASMAtomicXchgU128(volatile uint128_t *pu128, uint128_t u128);
-# else
-DECLINLINE(uint128_t) ASMAtomicXchgU128(volatile uint128_t *pu128, uint128_t u128)
-{
-   if (true)/*ASMCpuId_ECX(1) & RT_BIT(13))*/
-   {
-       /** @todo this is clumsy code */
-       RTUINT128U u128Ret;
-       u128Ret.u = u128;
-       u128Ret.s.Lo = ASMAtomicXchgU64(&((PRTUINT128U)(uintptr_t)pu128)->s.Lo, u128Ret.s.Lo);
-       u128Ret.s.Hi = ASMAtomicXchgU64(&((PRTUINT128U)(uintptr_t)pu128)->s.Hi, u128Ret.s.Hi);
-       return u128Ret.u;
-   }
-#if 0  /* later? */
-   else
-   {
-#  if RT_INLINE_ASM_GNU_STYLE
-        __asm__ __volatile__("1:\n\t"
-                             "lock; cmpxchg8b %1\n\t"
-                             "jnz 1b\n\t"
-                             : "=A" (u128),
-                               "=m" (*pu128)
-                             : "0" (*pu128),
-                               "b" ( (uint64_t)u128 ),
-                               "c" ( (uint64_t)(u128 >> 64) ));
-#  else
-        __asm
-        {
-            mov     rbx, dword ptr [u128]
-            mov     rcx, dword ptr [u128 + 8]
-            mov     rdi, pu128
-            mov     rax, dword ptr [rdi]
-            mov     rdx, dword ptr [rdi + 8]
-        retry:
-            lock cmpxchg16b [rdi]
-            jnz retry
-            mov     dword ptr [u128], rax
-            mov     dword ptr [u128 + 8], rdx
-        }
-#  endif
-    }
-    return u128;
-#endif
-}
-# endif
-#endif /* RT_ARCH_AMD64 */
-
-
 /**
  * Atomically Exchange a pointer value, ordered.
  *
