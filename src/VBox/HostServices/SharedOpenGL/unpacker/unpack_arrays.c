@@ -23,7 +23,7 @@ void crUnpackExtendVertexPointer(void)
     GLint size = READ_DATA( 8, GLint );
     GLenum type = READ_DATA( 12, GLenum );
     GLsizei stride = READ_DATA( 16, GLsizei );
-    GLintptrARB pointer = READ_DATA( 20, GLintptrARB );
+    GLintptrARB pointer = (GLintptrARB) READ_DATA( 20, GLuint );
     cr_unpackDispatch.VertexPointer( size, type, stride, (void *) pointer );
 }
 
@@ -32,7 +32,7 @@ void crUnpackExtendTexCoordPointer(void)
     GLint size = READ_DATA( 8, GLint );
     GLenum type = READ_DATA( 12, GLenum );
     GLsizei stride = READ_DATA( 16, GLsizei );
-    GLintptrARB pointer = READ_DATA( 20, GLintptrARB );
+    GLintptrARB pointer = READ_DATA( 20, GLuint );
     cr_unpackDispatch.TexCoordPointer( size, type, stride, (void *) pointer );
 }
 
@@ -40,7 +40,7 @@ void crUnpackExtendNormalPointer(void)
 {
     GLenum type = READ_DATA( 8, GLenum );
     GLsizei stride = READ_DATA( 12, GLsizei );
-    GLintptrARB pointer = READ_DATA( 16, GLintptrARB );
+    GLintptrARB pointer = READ_DATA( 16, GLuint );
     cr_unpackDispatch.NormalPointer( type, stride, (void *) pointer );
 }
 
@@ -48,14 +48,14 @@ void crUnpackExtendIndexPointer(void)
 {
     GLenum type = READ_DATA( 8, GLenum );
     GLsizei stride = READ_DATA( 12, GLsizei );
-    GLintptrARB pointer = READ_DATA( 16, GLintptrARB );
+    GLintptrARB pointer = READ_DATA( 16, GLuint );
     cr_unpackDispatch.IndexPointer( type, stride, (void *) pointer );
 }
 
 void crUnpackExtendEdgeFlagPointer(void)
 {
     GLsizei stride = READ_DATA( 8, GLsizei );
-    GLintptrARB pointer = READ_DATA( 12, GLintptrARB );
+    GLintptrARB pointer = READ_DATA( 12, GLuint );
     cr_unpackDispatch.EdgeFlagPointer( stride, (void *) pointer );
 }
 
@@ -64,7 +64,7 @@ void crUnpackExtendColorPointer(void)
     GLint size = READ_DATA( 8, GLint );
     GLenum type = READ_DATA( 12, GLenum );
     GLsizei stride = READ_DATA( 16, GLsizei );
-    GLintptrARB pointer = READ_DATA( 20, GLintptrARB );
+    GLintptrARB pointer = READ_DATA( 20, GLuint );
     cr_unpackDispatch.ColorPointer( size, type, stride, (void *) pointer );
 }
 
@@ -72,7 +72,7 @@ void crUnpackExtendFogCoordPointerEXT(void)
 {
     GLenum type = READ_DATA( 8, GLenum );
     GLsizei stride = READ_DATA( 12, GLsizei );
-    GLintptrARB pointer = READ_DATA( 16, GLintptrARB );
+    GLintptrARB pointer = READ_DATA( 16, GLuint );
     cr_unpackDispatch.FogCoordPointerEXT( type, stride, (void *) pointer );
 }
 
@@ -81,7 +81,7 @@ void crUnpackExtendSecondaryColorPointerEXT(void)
     GLint size = READ_DATA( 8, GLint );
     GLenum type = READ_DATA( 12, GLenum );
     GLsizei stride = READ_DATA( 16, GLsizei );
-    GLintptrARB pointer = READ_DATA( 20, GLintptrARB );
+    GLintptrARB pointer = READ_DATA( 20, GLuint );
     cr_unpackDispatch.SecondaryColorPointerEXT( size, type, stride, (void *) pointer );
 }
 
@@ -92,7 +92,7 @@ void crUnpackExtendVertexAttribPointerARB(void)
     GLenum type = READ_DATA( 16, GLenum );
     GLboolean normalized = READ_DATA( 20, GLboolean );
     GLsizei stride = READ_DATA( 24, GLsizei );
-    GLintptrARB pointer = READ_DATA( 28, GLintptrARB );
+    GLintptrARB pointer = READ_DATA( 28, GLuint );
     cr_unpackDispatch.VertexAttribPointerARB( index, size, type, normalized, stride, (void *) pointer );
 }
 
@@ -102,7 +102,7 @@ void crUnpackExtendVertexAttribPointerNV(void)
     GLint size = READ_DATA( 12, GLint );
     GLenum type = READ_DATA( 16, GLenum );
     GLsizei stride = READ_DATA( 20, GLsizei );
-    GLintptrARB pointer = READ_DATA( 24, GLintptrARB );
+    GLintptrARB pointer = READ_DATA( 24, GLuint );
     cr_unpackDispatch.VertexAttribPointerNV( index, size, type, stride, (void *) pointer );
 }
 
@@ -110,7 +110,7 @@ void crUnpackExtendInterleavedArrays(void)
 {
     GLenum format = READ_DATA( 8, GLenum );
     GLsizei stride = READ_DATA( 12, GLsizei );
-    GLintptrARB pointer = READ_DATA( 16, GLintptrARB );
+    GLintptrARB pointer = READ_DATA( 16, GLuint );
     cr_unpackDispatch.InterleavedArrays( format, stride, (void *) pointer );
 }
 
@@ -119,7 +119,7 @@ void crUnpackExtendDrawElements(void)
     GLenum mode         = READ_DATA( 8, GLenum );
     GLsizei count       = READ_DATA( 12, GLsizei );
     GLenum type         = READ_DATA( 16, GLenum );
-    GLintptrARB indices = READ_DATA( 20, GLintptrARB );
+    GLintptrARB indices = READ_DATA( 20, GLuint );
     void * indexptr;
 #ifdef CR_ARB_vertex_buffer_object
     GLboolean hasidxdata = READ_DATA(24, GLboolean);
@@ -127,7 +127,6 @@ void crUnpackExtendDrawElements(void)
 #else
     indexptr = DATA_POINTER(24, void);
 #endif
-    /*crDebug("DrawElements: count=%i, indexptr=%p, hasidx=%p", count, indexptr, hasidxdata);*/
     cr_unpackDispatch.DrawElements(mode, count, type, indexptr);
 }
 
@@ -138,7 +137,7 @@ void crUnpackExtendDrawRangeElements(void)
     GLuint end          = READ_DATA( 16, GLuint );
     GLsizei count       = READ_DATA( 20, GLsizei );
     GLenum type         = READ_DATA( 24, GLenum );
-    GLintptrARB indices = READ_DATA( 28, GLintptrARB );
+    GLintptrARB indices = READ_DATA( 28, GLuint );
     void * indexptr;
 #ifdef CR_ARB_vertex_buffer_object
     GLboolean hasidxdata = READ_DATA(32, GLboolean);
