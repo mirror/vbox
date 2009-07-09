@@ -96,8 +96,9 @@ public:
             int posMaxErr = QStyle::sliderPositionFromValue (opt.minimum, opt.maximum, mMaxErr, available);
             p.fillRect (ticks.x() + posMinErr, ticks.y(), posMaxErr - posMinErr + 1, ticks.height(), mErrColor);
         }
-
+        p.end();
 #endif /* !Q_WS_MAC */
+
         QSlider::paintEvent (aEvent);
     }
 
