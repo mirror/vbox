@@ -6974,7 +6974,7 @@ HRESULT Machine::saveHardware (settings::Key &aNode)
                                                mHWData->mGuestPropertyNotificationPatterns,
                                                emptyStr);
     }
-    catch (xml::ENoMemory e)
+    catch(std::bad_alloc &e)
     {
         return E_OUTOFMEMORY;
     }
