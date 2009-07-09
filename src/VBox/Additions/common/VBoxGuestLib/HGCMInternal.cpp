@@ -144,7 +144,7 @@ DECLR0VBGL(int) VbglR0HGCMInternalCall (VBoxGuestHGCMCallInfo *pCallInfo, uint32
         /* Caller did not specify the size (a valid value should be at least sizeof(VBoxGuestHGCMCallInfo)).
          * Compute the size.
          */
-        cbParms = pCallInfo->cParms * sizeof (HGCMFunctionParameter32);
+        cbParms = pCallInfo->cParms * sizeof (HGCMFunctionParameter);
     }
     else if (cbCallInfo < sizeof (VBoxGuestHGCMCallInfo))
     {
