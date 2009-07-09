@@ -720,8 +720,11 @@ static int CSAMR3AnalyseCallback(PVM pVM, DISCPUSTATE *pCpu, RCPTRTYPE(uint8_t *
     {
         uint32_t     cbInstr = 0;
         uint32_t     opsize  = pCpu->opsize;
+        bool         fCode32 = pPage->fCode32;
 
-        PATMR3AddHint(pVM, pCurInstrGC, (pPage->fCode32) ? PATMFL_CODE32 : 0);
+        Assert(fCode32);
+
+        PATMR3AddHint(pVM, pCurInstrGC, (fCode32) ? PATMFL_CODE32 : 0);
 
         /* Make sure the instructions that follow the cli have not been encountered before. */
         while (true)
@@ -749,7 +752,7 @@ static int CSAMR3AnalyseCallback(PVM pVM, DISCPUSTATE *pCpu, RCPTRTYPE(uint8_t *
             }
             Assert(VALID_PTR(pCurInstrHC));
 
-            cpu.mode = (pPage->fCode32) ? CPUMODE_32BIT : CPUMODE_16BIT;
+            cpu.mode = (fCode32) ? CPUMODE_32BIT : CPUMODE_16BIT;
             rc = CSAMR3DISInstr(pVM, &cpu, pCurInstrGC, pCurInstrHC, &opsize, NULL);
             Assert(RT_SUCCESS(rc));
             if (RT_FAILURE(rc))
