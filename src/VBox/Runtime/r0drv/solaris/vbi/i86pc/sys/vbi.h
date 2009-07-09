@@ -330,6 +330,11 @@ extern void *vbi_lowmem_alloc(uint64_t phys, size_t size);
 extern void vbi_lowmem_free(void *va, size_t size);
 /* end of interfaces defined for version 5 */
 
+/* begin interfaces defined for version 6 */
+extern int vbi_is_preempt_pending(void);
+
+/* end of interfaces defined for version 6 */
+
 #ifdef	__cplusplus
 }
 #endif
