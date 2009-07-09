@@ -137,11 +137,11 @@
     </message>
     <message>
         <source>The VirtualBox kernel modules do not fit to this version of VirtualBox. The installation of VirtualBox was apparently not successful. It may help to completely uninstall and re-install VirtualBox.</source>
-        <translation type="unfinished"></translation>
+        <translation>Modul jádra pro VirtualBox není shodný s verzí aplikace VirtualBox. Pravděpodobně nebyla úspěšně dokončena instalace VirtualBoxu. Většinou pomůže kompletně vše odinstalovat a nainstalovat znovu.</translation>
     </message>
     <message>
         <source>The VirtualBox kernel modules do not fit to this version of VirtualBox. The installation of VirtualBox was apparently not successful. Executing&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;should fix that problem. Make sure that you don&apos;t mix the OSE version and the PUEL version of VirtualBox.</source>
-        <translation type="unfinished"></translation>
+        <translation>Modul jádra pro VirtualBox není shodný s verzí aplikace VirtualBox. Pravděpodobně nebyla úspěšně dokončena instalace VirtualBoxu. Spuštěním příkazu&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;můžete problém vyřešit. Ujistěte se, že nepoužíváte současně OSE a PUEL verzi aplikace Virtualbox.</translation>
     </message>
 </context>
 <context>
@@ -159,11 +159,11 @@
     <name>QIFileDialog</name>
     <message>
         <source>Select a directory</source>
-        <translation type="unfinished">Vyberte složku</translation>
+        <translation>Vyberte složku</translation>
     </message>
     <message>
         <source>Select a file</source>
-        <translation type="unfinished">Vyberte soubor</translation>
+        <translation>Vyberte soubor</translation>
     </message>
 </context>
 <context>
@@ -1311,12 +1311,12 @@ Verze %1</translation>
     <message>
         <source>Indicates the status of the hardware virtualization features used by this virtual machine:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;</source>
         <comment>Virtualization Stuff LED</comment>
-        <translation type="unfinished"></translation>
+        <translation>Indikuje stav virtualizačních rozšíření použitých tímto virtuálním počítačem:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;</source>
         <comment>Virtualization Stuff LED</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;</translation>
     </message>
 </context>
 <context>
@@ -1699,59 +1699,59 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Please choose a filename to export the OVF in.</source>
-        <translation type="unfinished"></translation>
+        <translation>Zadejte prosím název soubor pro export OVF.</translation>
     </message>
     <message>
         <source>Please complete the additionally fields like the username, password and the bucket. Finally you have to provide a filename for the OVF target.</source>
-        <translation type="unfinished"></translation>
+        <translation>Vyplňte prosím následující položky jako je jméno uživatele, jeho heslo a sektor. Nakonec zadejte cíl, kam se bude OVF exportovat.</translation>
     </message>
     <message>
         <source>Please complete the additionally fields like the username, password, hostname and the bucket. Finally you have to provide a filename for the OVF target.</source>
-        <translation type="unfinished"></translation>
+        <translation>Vyplňte prosím následující položky jako je jméno uživatele, jeho heslo, název počítače a sektor. Nakonec zadejte cíl, kam se bude OVF exportovat.</translation>
     </message>
     <message>
         <source>Checking files ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Kontrola souborů...</translation>
     </message>
     <message>
         <source>Removing files ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Odstraňování souborů...</translation>
     </message>
     <message>
         <source>Please specify the target for the OVF export. You can choose between a local file system export, the uploading of the OVF to the Sun Cloud service or an S3 storage server.</source>
-        <translation type="unfinished"></translation>
+        <translation>Prosím zadejte cíl pro export OVF. Můžete si vybrat mezi lokálním souborovým systémem, nahráním OVF na Sun Cloud nebo použítím S3 služby pro ukládání.</translation>
     </message>
     <message>
         <source>&amp;Local Filesystem </source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Lokální souborový systém</translation>
     </message>
     <message>
         <source>Sun &amp;Cloud</source>
-        <translation type="unfinished"></translation>
+        <translation>Sun &amp;Cloud</translation>
     </message>
     <message>
         <source>&amp;Simple Storage System (S3)</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Simple Storage System (S3)</translation>
     </message>
     <message>
         <source>&amp;Username:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Jméno uživatele:</translation>
     </message>
     <message>
         <source>&amp;Password:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Heslo:</translation>
     </message>
     <message>
         <source>&amp;File:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Soubor:</translation>
     </message>
     <message>
         <source>&amp;Bucket:</source>
-        <translation type="unfinished"></translation>
+        <translation>Se&amp;ktor:</translation>
     </message>
     <message>
         <source>&amp;Hostname:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Název počítače:</translation>
     </message>
 </context>
 <context>
@@ -3164,47 +3164,47 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>&lt;nobr&gt;%1 MB&lt;/nobr&gt;</source>
         <comment>details report</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;%1 MB&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>Processor(s)</source>
         <comment>details report</comment>
-        <translation type="unfinished"></translation>
+        <translation>Procesor(y)</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;%1&lt;/nobr&gt;</source>
         <comment>details report</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;%1&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>System</source>
         <comment>details report</comment>
-        <translation type="unfinished"></translation>
+        <translation>Systém</translation>
     </message>
     <message>
         <source>Remote Display Server Port</source>
         <comment>details report (VRDP Server)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Port vzdáleného serveru</translation>
     </message>
     <message>
         <source>Remote Display Server</source>
         <comment>details report (VRDP Server)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Vzdálený server</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details report (VRDP Server)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Zakázán</translation>
     </message>
     <message>
         <source>Display</source>
         <comment>details report</comment>
-        <translation type="unfinished"></translation>
+        <translation>Plocha</translation>
     </message>
     <message>
         <source>Raw File</source>
         <comment>PortMode</comment>
-        <translation type="unfinished"></translation>
+        <translation>Přímý soubor</translation>
     </message>
 </context>
 <context>
@@ -3810,15 +3810,15 @@ p, li { white-space: pre-wrap; }
     <name>VBoxMiniToolBar</name>
     <message>
         <source>Always show the toolbar</source>
-        <translation type="unfinished"></translation>
+        <translation>Vždy zobrazovat nástrojovou lištu</translation>
     </message>
     <message>
         <source>Exit Full Screen or Seamless Mode</source>
-        <translation type="unfinished"></translation>
+        <translation>Opustit celoobrazovkový nebo bezešvý režim</translation>
     </message>
     <message>
         <source>Close VM</source>
-        <translation type="unfinished">Zavřít virtuální počítač</translation>
+        <translation>Zavřít virtuální počítač</translation>
     </message>
 </context>
 <context>
@@ -4315,7 +4315,7 @@ krok a připojit pevné disky později použitím dialogu Nastavení VM.&lt;/p&g
     </message>
     <message>
         <source>&amp;Version:</source>
-        <translation type="unfinished"></translation>
+        <translation>V&amp;erze:</translation>
     </message>
 </context>
 <context>
@@ -5243,27 +5243,27 @@ krok a připojit pevné disky později použitím dialogu Nastavení VM.&lt;/p&g
     </message>
     <message>
         <source>A file named &lt;b&gt;%1&lt;/b&gt; already exists. Are you sure you want to replace it?&lt;br /&gt;&lt;br /&gt;Replacing it will overwrite its contents.</source>
-        <translation type="unfinished"></translation>
+        <translation>Následující soubor již existuje:&lt;b&gt;%1&lt;b&gt;. Opravdu jej chcete nahradit?&lt;br /&gt;&lt;br /&gt; Nahrazením souboru přepíšete jeho obsah.</translation>
     </message>
     <message>
         <source>&lt;p&gt;VT-x/AMD-V hardware acceleration has been enabled, but is not operational. Certain guests (e.g. OS/2 and QNX) require this feature.&lt;/p&gt;&lt;p&gt;Please ensure that you have enabled VT-x/AMD-V properly in the BIOS of your host computer.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Hardwarová akcelerace VT-x/AMD-V byla povolena, ale nefunguje. Některé virtuální počítače (např. OS/2 a QNX) tuto volbu vyžadují.&lt;/p&gt;&lt;p&gt;Prosím ujistěte se, že jste správně povolili VT-x/AMD-V v BIOSu na vašem hostitelském počítači.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Invalid e-mail address or password specified.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Zadána neplatná e-mailová adresa nebo heslo.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Failed to register the VirtualBox product.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Nepodařilo se zaregistrovat produkt VirtualBox.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Failed to check files.</source>
-        <translation type="unfinished"></translation>
+        <translation>Selhala kontrola souborů.</translation>
     </message>
     <message>
         <source>Failed to remove file.</source>
-        <translation type="unfinished"></translation>
+        <translation>Selhalo odstranění souboru.</translation>
     </message>
 </context>
 <context>
@@ -5274,7 +5274,7 @@ krok a připojit pevné disky později použitím dialogu Nastavení VM.&lt;/p&g
     </message>
     <message>
         <source>Time remaining: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Zbývající čas: %1</translation>
     </message>
 </context>
 <context>
@@ -5345,59 +5345,59 @@ krok a připojit pevné disky později použitím dialogu Nastavení VM.&lt;/p&g
     </message>
     <message>
         <source>Select Country/Territory</source>
-        <translation type="unfinished"></translation>
+        <translation>Vyberte zemi/teritorium</translation>
     </message>
     <message>
         <source>&lt;p&gt;Please fill out this registration form to let us know that you use VirtualBox and, optionally, to keep you informed about VirtualBox news and updates.&lt;/p&gt;&lt;p&gt;Please use the Latin characters to fill the fields below. Please note that Sun Microsystems will use this information only to gather product usage statistics and to send you VirtualBox newsletters. In particular, Sun Microsystems will never pass your data to third parties. Detailed information about how we use your personal data can be found in the &lt;b&gt;Privacy Policy&lt;/b&gt; section of the VirtualBox Manual or on the &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt; page of the VirtualBox web-site.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Prosíme vyplňte registrační formulář a dejte nám vědět že používáte VirtualBox a, volitelně, budete informováni o novinkách a aktualizacích VirtualBoxu.&lt;/p&gt;&lt;p&gt;Vložte vaše celé jméno pomocí latinské abecedy a váš e-mail do políčka níže. Vězte že Sun Microsystems použije tyto informace pouze získávání statistik o používání produktu a pro odesílání novinek o Virtualboxu. Sun Microsystems nikdy nepředá vaše data třetím stranám. Detailní informace o tom, jak používáme vaše osobní data můlžete nalézt v sekci &lt;b&gt;Privacy Policy&lt;/b&gt; manuálu VirtualBoxu, nebo na webové stránce &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt; VirtualBoxu.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>I &amp;have a Sun Online account already:</source>
-        <translation type="unfinished"></translation>
+        <translation>Již &amp;mám účet na Sun Online:</translation>
     </message>
     <message>
         <source>&amp;E-mail:</source>
-        <translation type="unfinished"></translation>
+        <translation>E-&amp;mail:</translation>
     </message>
     <message>
         <source>&amp;Password:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Heslo:</translation>
     </message>
     <message>
         <source>I &amp;would like to register creating a new Sun Online account:</source>
-        <translation type="unfinished"></translation>
+        <translation>Chci se re&amp;gistrovat a vytvořit nový účet na Sun Online:</translation>
     </message>
     <message>
         <source>&amp;First Name:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Křestní jméno:</translation>
     </message>
     <message>
         <source>&amp;Last Name:</source>
-        <translation type="unfinished"></translation>
+        <translation>Pří&amp;jmení:</translation>
     </message>
     <message>
         <source>&amp;Company:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Firma:</translation>
     </message>
     <message>
         <source>Co&amp;untry:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Země:</translation>
     </message>
     <message>
         <source>E-&amp;mail:</source>
-        <translation type="unfinished"></translation>
+        <translation>E-&amp;mail:</translation>
     </message>
     <message>
         <source>P&amp;assword:</source>
-        <translation type="unfinished"></translation>
+        <translation>H&amp;eslo:</translation>
     </message>
     <message>
         <source>Co&amp;nfirm Password:</source>
-        <translation type="unfinished"></translation>
+        <translation>Po&amp;tvrdit heslo:</translation>
     </message>
     <message>
         <source>&amp;Register</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Registrovat</translation>
     </message>
 </context>
 <context>
@@ -6941,75 +6941,75 @@ p, li { white-space: pre-wrap; }
     <name>VBoxVMSettingsDisplay</name>
     <message>
         <source>you have assigned less than &lt;b&gt;%1&lt;/b&gt; for video memory which is the minimum amount required to switch the virtual machine to fullscreen or seamless mode.</source>
-        <translation type="unfinished">Přiřadili jste méně než &lt;b&gt;%1&lt;/b&gt; video paměti pro virtuální počítač, což je méně než potřebné množství pro přepnutí do celoobrazovkého režimu. </translation>
+        <translation>přiřadili jste méně než &lt;b&gt;%1&lt;/b&gt; video paměti pro virtuální počítač, což je méně než potřebné množství pro přepnutí do celoobrazovkého nebo bezešvého režimu.</translation>
     </message>
     <message>
         <source>&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</source>
-        <translation type="unfinished">&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</translation>
+        <translation>&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&amp;Video</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Video</translation>
     </message>
     <message>
         <source>Video &amp;Memory:</source>
-        <translation type="unfinished"></translation>
+        <translation>Video &amp;paměť:</translation>
     </message>
     <message>
         <source>Controls the amount of video memory provided to the virtual machine.</source>
-        <translation type="unfinished">Ovládá množství videopaměti poskytnuté virtuálnímu počítači.</translation>
+        <translation>Ovládá množství videopaměti poskytnuté virtuálnímu počítači.</translation>
     </message>
     <message>
         <source>MB</source>
-        <translation type="unfinished">MB</translation>
+        <translation>MB</translation>
     </message>
     <message>
         <source>Extended Features:</source>
-        <translation type="unfinished">Rozšířené možnosti:</translation>
+        <translation>Rozšířené možnosti:</translation>
     </message>
     <message>
         <source>When checked, the virtual machine will get access to the 3D graphics capabilities available on the host.</source>
-        <translation type="unfinished">Je-li zatrženo, bude mít hostovaný operační systém přístup ke schopnostem 3D grafiky na hostitelském počítači.</translation>
+        <translation>Je-li zatrženo, bude mít hostovaný operační systém přístup ke schopnostem 3D grafiky na hostitelském počítači.</translation>
     </message>
     <message>
         <source>Enable &amp;3D Acceleration</source>
-        <translation type="unfinished">Povolit &amp;3D akceleraci</translation>
+        <translation>Povolit &amp;3D akceleraci</translation>
     </message>
     <message>
         <source>&amp;Remote Display</source>
-        <translation type="unfinished"></translation>
+        <translation>V&amp;zdálená obrazovka</translation>
     </message>
     <message>
         <source>When checked, the VM will act as a Remote Desktop Protocol (RDP) server, allowing remote clients to connect and operate the VM (when it is running) using a standard RDP client.</source>
-        <translation type="unfinished">Je-li zatrženo, virtuální počítač se bude chovat jako Remote Desktop Protocol (RDP) server a umožní vzdáleným klientům připojení a práci s virtuálním počítačem (když běží) použitím standardního RDP klienta.</translation>
+        <translation>Je-li zatrženo, virtuální počítač se bude chovat jako Remote Desktop Protocol (RDP) server a umožní vzdáleným klientům připojení a práci s virtuálním počítačem (když běží) použitím standardního RDP klienta.</translation>
     </message>
     <message>
         <source>&amp;Enable Server</source>
-        <translation type="unfinished">Povolit &amp;server</translation>
+        <translation>Povolit &amp;server</translation>
     </message>
     <message>
         <source>Server &amp;Port:</source>
-        <translation type="unfinished">Po&amp;rt serveru:</translation>
+        <translation>Po&amp;rt serveru:</translation>
     </message>
     <message>
         <source>Displays the VRDP Server port number. You may specify &lt;tt&gt;0&lt;/tt&gt; (zero) to reset the port to the default value.</source>
-        <translation type="unfinished">Zobrazuje číslo portu pro VRDP server. Můžete uvést &lt;tt&gt;0&lt;/tt&gt; (nulu) pro nastavení čísla portu na standardní hodnotu.</translation>
+        <translation>Zobrazuje číslo portu pro VRDP server. Můžete uvést &lt;tt&gt;0&lt;/tt&gt; (nulu) pro nastavení čísla portu na standardní hodnotu.</translation>
     </message>
     <message>
         <source>Authentication &amp;Method:</source>
-        <translation type="unfinished">&amp;Metoda autentizace:</translation>
+        <translation>&amp;Metoda autentizace:</translation>
     </message>
     <message>
         <source>Defines the VRDP authentication method.</source>
-        <translation type="unfinished"></translation>
+        <translation>Určuje autentizační metodu VRDP.</translation>
     </message>
     <message>
         <source>Authentication &amp;Timeout:</source>
-        <translation type="unfinished">Čas vypršení au&amp;tentizace:</translation>
+        <translation>Čas vypršení au&amp;tentizace:</translation>
     </message>
     <message>
         <source>Specifies the timeout for guest authentication, in milliseconds.</source>
-        <translation type="unfinished"></translation>
+        <translation>Určuje čas vypršení autentizace hosta v milisekundách.</translation>
     </message>
 </context>
 <context>
@@ -7661,19 +7661,19 @@ ukáže hostovanému OS zvukovou kartu, ale každý přístup bude ignorován.&l
     </message>
     <message>
         <source>System</source>
-        <translation type="unfinished"></translation>
+        <translation>Systém</translation>
     </message>
     <message>
         <source>Display</source>
-        <translation type="unfinished"></translation>
+        <translation>Obrazovka</translation>
     </message>
     <message>
         <source>you have selected a 64-bit guest OS type for this VM. As such guests require hardware virtualization (VT-x/AMD-V), this feature will be enabled automatically.</source>
-        <translation type="unfinished"></translation>
+        <translation>zvolili jste 64bitový OS pro tento virtuální počítač. Protože je nutná podpora hardwarové virtualizace (VT-x/AMD-V), byla tato volba automaticky nastavena.</translation>
     </message>
     <message>
         <source>you have selected a 64-bit guest OS type for this VM. VirtualBox does not currently support more than one virtual CPU for 64-bit guests executed on 32-bit hosts.</source>
-        <translation type="unfinished"></translation>
+        <translation>zvolili jste 64bitový OS pro tento virtuální počítač. VirtualBox aktuálně nepodporuje více jak jeden virtuální 64bitový CPU na 32bitovém hostitelském počítači.</translation>
     </message>
 </context>
 <context>
@@ -7943,23 +7943,23 @@ ukáže hostovanému OS zvukovou kartu, ale každý přístup bude ignorován.&l
     </message>
     <message>
         <source>Removable Media:</source>
-        <translation type="unfinished"></translation>
+        <translation>Výjímatelná média:</translation>
     </message>
     <message>
         <source>&amp;Remember Runtime Changes</source>
-        <translation type="unfinished"></translation>
+        <translation>Pamatovat si &amp;změny provedené za běhu</translation>
     </message>
     <message>
         <source>Mini ToolBar:</source>
-        <translation type="unfinished"></translation>
+        <translation>Mini nástrojová lišta:</translation>
     </message>
     <message>
         <source>If checked, show the Mini ToolBar in Fullscreen and Seamless modes.</source>
-        <translation type="unfinished"></translation>
+        <translation>Je-li zatrženo, bude se v celoobrazovkovém a bezešvém režimu zobrazovat malá nástrojová lišta.</translation>
     </message>
     <message>
         <source>Show In &amp;Fullscreen/Seamless</source>
-        <translation type="unfinished"></translation>
+        <translation>Zobrazit v &amp;celoobrazovkovém/bezešvém režimu</translation>
     </message>
 </context>
 <context>
@@ -8026,7 +8026,7 @@ ukáže hostovanému OS zvukovou kartu, ale každý přístup bude ignorován.&l
     </message>
     <message>
         <source>If checked, it will show differencing hard disks actually attached to the slots instead of their base hard disks (shown in case of indirect attachments) and will also let attach other differencing hard disks explicitly. Check this only if you need a complex hard disk setup.</source>
-        <translation type="unfinished"></translation>
+        <translation>Je-li zatrženo, zobrazí seznam rozdílových pevných disků připojených ke slotu místo původních pevných disků a umožní připojit explicitně další rozdílové disky. Zvolte pouze pokud potřebujete komplexní přehled o discích.</translation>
     </message>
     <message>
         <source>&amp;Show Differencing Hard Disks</source>
@@ -8034,11 +8034,11 @@ ukáže hostovanému OS zvukovou kartu, ale každý přístup bude ignorován.&l
     </message>
     <message>
         <source>IDE &amp;Controller Type</source>
-        <translation type="unfinished"></translation>
+        <translation>Typ &amp;IDE řadiče</translation>
     </message>
     <message>
         <source>Defines the type of the virtual IDE controller. Depending on this value, VirtualBox will provide different virtual IDE hardware devices to the guest OS.</source>
-        <translation type="unfinished">Definuje typy virtuálních IDE řadičů. Na základě této hodnoty VirtualBox poskytne hostovanému OS různé ovladače pro IDE hardware.</translation>
+        <translation>Definuje typy virtuálních IDE řadičů. Na základě této hodnoty VirtualBox poskytne hostovanému OS různé ovladače pro IDE hardware.</translation>
     </message>
 </context>
 <context>
@@ -8552,7 +8552,7 @@ ukáže hostovanému OS zvukovou kartu, ale každý přístup bude ignorován.&l
     </message>
     <message>
         <source>Port/File &amp;Path:</source>
-        <translation type="unfinished"></translation>
+        <translation>Port/Cesta k sou&amp;boru:</translation>
     </message>
 </context>
 <context>
@@ -8574,145 +8574,145 @@ ukáže hostovanému OS zvukovou kartu, ale každý přístup bude ignorován.&l
     <name>VBoxVMSettingsSystem</name>
     <message>
         <source>you have assigned more than &lt;b&gt;%1%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%2&lt;/b&gt;) to the virtual machine. Not enough memory is left for your host operating system. Please select a smaller amount.</source>
-        <translation type="unfinished">přiřadili jste více jak &lt;b&gt;%1%&lt;/b&gt; fyzické paměti (&lt;b&gt;%2%&lt;/b&gt;) počítače pro virtuální počítač. Pro běh hostujícího operačního systému nezbývá potřebné množství. Zadejte prosím menší hodnotu.</translation>
+        <translation>přiřadili jste více jak &lt;b&gt;%1%&lt;/b&gt; fyzické paměti (&lt;b&gt;%2%&lt;/b&gt;) počítače pro virtuální počítač. Pro běh hostujícího operačního systému nezbývá potřebné množství. Zadejte prosím menší hodnotu.</translation>
     </message>
     <message>
         <source>you have assigned more than &lt;b&gt;%1%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%2&lt;/b&gt;) to the virtual machine. Not enough memory might be left for your host operating system. Continue at your own risk.</source>
-        <translation type="unfinished">přiřadili jste více jak &lt;b&gt;%1%&lt;/b&gt; fyzické paměti (&lt;b&gt;%2%&lt;/b&gt;) počítače pro virtuální počítač. Pro běh hostujícího operačního systému nemusí zbýt potřebné množství paměti. Pokračujte na vlastní riziko.</translation>
+        <translation>přiřadili jste více jak &lt;b&gt;%1%&lt;/b&gt; fyzické paměti (&lt;b&gt;%2%&lt;/b&gt;) počítače pro virtuální počítač. Pro běh hostujícího operačního systému nemusí zbýt potřebné množství paměti. Pokračujte na vlastní riziko.</translation>
     </message>
     <message>
         <source>for performance reasons, the number of virtual CPUs attached to the virtual machine may not be more than twice the number of physical CPUs on the host (&lt;b&gt;%1&lt;/b&gt;). Please reduce the number of virtual CPUs.</source>
-        <translation type="unfinished"></translation>
+        <translation>z důvodu rychlosti nemůže být počet virtuálních CPU přiřazených virtuálnímu počítači vyšší než dvojnásobek počtu fyzických CPU hostitelského počítače (&lt;b&gt;%1&lt;/b&gt;).Zmenšete prosím počet virtuálních CPU.</translation>
     </message>
     <message>
         <source>you have assigned more virtual CPUs to the virtual machine than the number of physical CPUs on your host system (&lt;b&gt;%1&lt;/b&gt;). This is likely to degrade the performance of your virtual machine. Please consider reducing the number of virtual CPUs.</source>
-        <translation type="unfinished"></translation>
+        <translation>přiřadili jste více virtuálních CPU pro virtuální počítač než je počet fyzických CPU na hostitelském systému. (&lt;b&gt;%1&lt;/b&gt;). To pravděpodobně způsobí degradaci rychlosti virtuálního počítače. Prosím zvažte zmenšení počtu virtuálních CPU.</translation>
     </message>
     <message>
         <source>you have assigned more than one virtual CPU to this VM. This will not work unless the IO-APIC feature is also enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
-        <translation type="unfinished"></translation>
+        <translation>přiřadili jste více jak jeden virtuální CPU tomuto virtuálnímu počítači a pro správnou funkci SMP je vyžadována také podpora IO-APIC, která bude automaticky povolena po odsouhlasení nastavení virtuálního počítače klepnutím na tlačítko OK.</translation>
     </message>
     <message>
         <source>you have assigned more than one virtual CPU to this VM. This will not work unless hardware virtualization (VT-x/AMD-V) is also enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
-        <translation type="unfinished"></translation>
+        <translation>přiřadili jste více jak jeden virtuální CPU tomuto virtuálnímu počítači a pro správnou funkci SMP je také vyžadována podpora hardwarové virtualizace (VT-x/AMD-V), která bude automaticky povolena po odsouhlasení nastavení virtuálního počítače klepnutím na tlačítko OK.</translation>
     </message>
     <message>
         <source>&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</source>
-        <translation type="unfinished">&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</translation>
+        <translation>&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&lt;qt&gt;%1&amp;nbsp;CPU&lt;/qt&gt;</source>
         <comment>%1 is 1 for now</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;%1&amp;nbsp;CPU&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&lt;qt&gt;%1&amp;nbsp;CPUs&lt;/qt&gt;</source>
         <comment>%1 is 32 for now</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;%1&amp;nbsp;CPU&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&amp;Motherboard</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Základní deska</translation>
     </message>
     <message>
         <source>Base &amp;Memory:</source>
-        <translation type="unfinished"></translation>
+        <translation>Operační pa&amp;měť</translation>
     </message>
     <message>
         <source>Controls the amount of memory provided to the virtual machine. If you assign too much, the machine might not start.</source>
-        <translation type="unfinished">Ovládá množství paměti poskytnuté virtuálnímu počítači. Když přiřadíte příliš, nemusí počítač naběhnout.</translation>
+        <translation>Ovládá množství paměti poskytnuté virtuálnímu počítači. Když přiřadíte příliš, nemusí počítač naběhnout.</translation>
     </message>
     <message>
         <source>MB</source>
-        <translation type="unfinished">MB</translation>
+        <translation>MB</translation>
     </message>
     <message>
         <source>&amp;Boot Order:</source>
-        <translation type="unfinished"></translation>
+        <translation>Pořadí &amp;bootování:</translation>
     </message>
     <message>
         <source>Defines the boot device order. Use checkboxes to the left to enable or disable individual boot devices. Move items up and down to change the device order.</source>
-        <translation type="unfinished"></translation>
+        <translation>Určuje pořadí pořadí bootovacích zařízení. Použijte zaškrtávací políčka vlevo pro povolení či zakázání jednotlivých bootovacích zařízení. Posuňte položky nahoru a dolů pro změnu pořadí zařízení.</translation>
     </message>
     <message>
         <source>Move Down (Ctrl-Down)</source>
-        <translation type="unfinished">Posunout dolů (Ctrl-Dolů)</translation>
+        <translation>Posunout dolů (Ctrl-Dolů)</translation>
     </message>
     <message>
         <source>Moves the selected boot device down.</source>
-        <translation type="unfinished">Posune vybrané bootovací zařízení dolů.</translation>
+        <translation>Posune vybrané bootovací zařízení dolů.</translation>
     </message>
     <message>
         <source>Move Up (Ctrl-Up)</source>
-        <translation type="unfinished">Posunout nahoru (Ctrl-Nahoru)</translation>
+        <translation>Posunout nahoru (Ctrl-Nahoru)</translation>
     </message>
     <message>
         <source>Moves the selected boot device up.</source>
-        <translation type="unfinished">Posune vybrané bootovací zařízení nahoru.</translation>
+        <translation>Posune vybrané bootovací zařízení nahoru.</translation>
     </message>
     <message>
         <source>Extended Features:</source>
-        <translation type="unfinished">Rozšířené možnosti:</translation>
+        <translation>Rozšířené možnosti:</translation>
     </message>
     <message>
         <source>When checked, the virtual machine will support the Advanced Configuration and Power Management Interface (ACPI). &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable this feature after having installed a Windows guest operating system!</source>
-        <translation type="unfinished">Je-li zatrženo, virtuální počítač bude podporovat Advanced Configuration and Power Management Interface (ACPI). &lt;b&gt;Poznámka:&lt;/b&gt; nevypínejte tuto možnost po nainstalování hostovaného operačního systému Windows!</translation>
+        <translation>Je-li zatrženo, virtuální počítač bude podporovat Advanced Configuration and Power Management Interface (ACPI). &lt;b&gt;Poznámka:&lt;/b&gt; nevypínejte tuto možnost po nainstalování hostovaného operačního systému Windows!</translation>
     </message>
     <message>
         <source>Enable &amp;ACPI</source>
-        <translation type="unfinished"></translation>
+        <translation>Povolit A&amp;CPI</translation>
     </message>
     <message>
         <source>When checked, the virtual machine will support the Input Output APIC (IO APIC), which may slightly decrease the VM performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable this feature after having installed a Windows guest operating system!</source>
-        <translation type="unfinished">Je-li zatrženo, virtuální počítač bude podporovat Input Output APIC (IO APIC), což může mírně snížit výkon virtuálního počítače. &lt;b&gt;Poznámka:&lt;/b&gt; nevypínejte tuto možnost po nainstalování hostovaného operačního systému Windows!</translation>
+        <translation>Je-li zatrženo, virtuální počítač bude podporovat Input Output APIC (IO APIC), což může mírně snížit výkon virtuálního počítače. &lt;b&gt;Poznámka:&lt;/b&gt; nevypínejte tuto možnost po nainstalování hostovaného operačního systému Windows!</translation>
     </message>
     <message>
         <source>Enable &amp;IO APIC</source>
-        <translation type="unfinished"></translation>
+        <translation>Povolit IO A&amp;PIC</translation>
     </message>
     <message>
         <source>&amp;Processor</source>
-        <translation type="unfinished"></translation>
+        <translation>Proce&amp;sor</translation>
     </message>
     <message>
         <source>&amp;Processor(s):</source>
-        <translation type="unfinished"></translation>
+        <translation>Pro&amp;cessor(y):</translation>
     </message>
     <message>
         <source>Controls the number of virtual CPUs in the virtual machine.</source>
-        <translation type="unfinished"></translation>
+        <translation>Nastavení počtu virtuálních CPU pro tento virtuální počítač.</translation>
     </message>
     <message>
         <source>When checked, the Physical Address Extension (PAE) feature of the host CPU will be exposed to the virtual machine.</source>
-        <translation type="unfinished">Je-li zatrženo, vlastnost Physical Address Extension (PAE) hostitelského CPU bude předána do virtuálního počítače.</translation>
+        <translation>Je-li zatrženo, vlastnost Physical Address Extension (PAE) hostitelského CPU bude předána do virtuálního počítače.</translation>
     </message>
     <message>
         <source>Enable PA&amp;E/NX</source>
-        <translation type="unfinished">Povolit PA&amp;E/NX</translation>
+        <translation>Povolit PA&amp;E/NX</translation>
     </message>
     <message>
         <source>Acce&amp;leration</source>
-        <translation type="unfinished"></translation>
+        <translation>Ak&amp;celerace</translation>
     </message>
     <message>
         <source>Hardware Virtualization:</source>
-        <translation type="unfinished"></translation>
+        <translation>Hardwarová virtualizace:</translation>
     </message>
     <message>
         <source>When checked, the virtual machine will try to make use of the host CPU&apos;s hardware virtualization extensions such as Intel VT-x and AMD-V.</source>
-        <translation type="unfinished">Je-li zatrženo, virtuální počítač se bude standardně snažit využít virtualizační rozšíření hostitelova CPU jako Intel VT-x a AMD-V.</translation>
+        <translation>Je-li zatrženo, virtuální počítač se bude standardně snažit využít virtualizační rozšíření hostitelova CPU jako Intel VT-x a AMD-V.</translation>
     </message>
     <message>
         <source>Enable &amp;VT-x/AMD-V</source>
-        <translation type="unfinished">Povolit &amp;VT-x/AMD-V</translation>
+        <translation>Povolit &amp;VT-x/AMD-V</translation>
     </message>
     <message>
         <source>When checked, the virtual machine will try to make use of the nested paging extension of Intel VT-x and AMD-V.</source>
-        <translation type="unfinished">Je-li zatrženo, virtuální počítač se bude standardně snažit využít rozšíření Intel VT-x a AMD-V pro přímou komunikaci s hardwarem.</translation>
+        <translation>Je-li zatrženo, virtuální počítač se bude standardně snažit využít rozšíření Intel VT-x a AMD-V pro přímou komunikaci s hardwarem.</translation>
     </message>
     <message>
         <source>Enable Nested Pa&amp;ging</source>
-        <translation type="unfinished">Použít přímou &amp;komunikaci s hardware</translation>
+        <translation>Použít přímou &amp;komunikaci s hardware</translation>
     </message>
 </context>
 <context>
