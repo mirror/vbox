@@ -422,7 +422,7 @@ static void clipGetFormatsFromTargets(CLIPBACKEND *pCtx, Atom *pTargets,
 static void clipUpdateX11Targets(CLIPBACKEND *pCtx, Atom *pTargets,
                                  size_t cTargets)
 {
-    bool changed = true;
+    bool changed = false;
 
     Log3 (("%s: called\n", __PRETTY_FUNCTION__));
     if (pCtx->fOwnsClipboard)
@@ -432,6 +432,29 @@ static void clipUpdateX11Targets(CLIPBACKEND *pCtx, Atom *pTargets,
     if (changed)
         clipReportFormatsToVBox(pCtx);
 }
+
+#ifdef TESTCASE
+static bool clipTestTargetUpdate(CLIPBACKEND *pCtx)
+{
+    bool success = true;
+    bool changed = true;
+    clipGetFormatsFromTargets(pCtx, NULL, 0, &changed);
+    clipGetFormatsFromTargets(pCtx, NULL, 0, &changed);  /* twice */
+    if (changed)
+        success = false;
+    Atom targets[3];
+    targets[0] = clipGetAtom(NULL, "COMPOUND_TEXT");
+    targets[1] = clipGetAtom(NULL, "text/plain");
+    targets[2] = clipGetAtom(NULL, "TARGETS");
+    clipGetFormatsFromTargets(pCtx, targets, RT_ELEMENTS(targets), &changed);
+    if (!changed)
+        success = false;
+    clipGetFormatsFromTargets(pCtx, targets, RT_ELEMENTS(targets), &changed);
+    if (changed)
+        success = false;
+    return success;
+}
+#endif
 
 /**
  * Notify the VBox clipboard about available data formats, based on the
@@ -1478,8 +1501,8 @@ static void clipConvertX11CB(Widget widget, XtPointer pClientData,
          * data, as we have no way of telling when new data really does
          * arrive. */
         clipReportFormatsToVBox(pCtx);
-    else
-        clipReportEmptyX11CB(pCtx);
+    // else
+    //     clipReportEmptyX11CB(pCtx);
     LogFlowFunc(("rc=%Rrc\n", rc));
 }
 
@@ -2411,10 +2434,15 @@ int main()
     }
 
     /*** X11 text format conversion ***/
-    RTPrintf(TEST_NAME ": TESTING selection of X11 text formats\n");
+    RTPrintf(TEST_NAME ": TESTING handling of X11 selection targets\n");
     if (!clipTestTextFormatConversion(pCtx))
     {
         RTPrintf(TEST_NAME ": Failed to select the right X11 text formats\n");
+        ++cErrs;
+    }
+    if (!clipTestTargetUpdate(pCtx))
+    {
+        RTPrintf(TEST_NAME ": Incorrect reporting of new selection targets\n");
         ++cErrs;
     }
 
