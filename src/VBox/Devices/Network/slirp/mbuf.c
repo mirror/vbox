@@ -201,7 +201,7 @@ m_adj(struct mbuf *m, int len)
         len = -len;
         m->m_len -= len;
     }
-    Assert(m->m_len > 0);
+    Assert(m->m_len >= 0);
 }
 
 
