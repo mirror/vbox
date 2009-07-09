@@ -1064,18 +1064,28 @@ static Boolean clipXtConvertSelectionProc(Widget widget, Atom *atomSelection,
 }
 
 /**
+ * Notify VBox that we have returned the clipboard to X11.
+ */
+static void clipReleaseCB(CLIPBACKEND *pCtx)
+{
+    LogFlowFunc (("\n"));
+    /* The formats should be set to the right values as soon as we start
+     * polling */
+    clipReportEmptyX11CB(pCtx);
+    pCtx->fOwnsClipboard = false;
+}
+
+/**
  * This is called by the X toolkit intrinsics to let us know that another
  * X11 client has taken the clipboard.  In this case we notify VBox that
- * we want ownership of the clipboard.
+ * X11 wants ownership of the clipboard.
  * @note  X11 backend code, callback for XtOwnSelection
  */
 static void clipXtLoseSelectionProc(Widget widget, Atom *)
 {
     CLIPBACKEND *pCtx = clipLookupContext(widget);
     LogFlowFunc (("\n"));
-    /* These should be set to the right values as soon as we start polling */
-    clipResetX11Formats(pCtx);
-    pCtx->fOwnsClipboard = false;
+    clipReleaseCB(pCtx);
 }
 
 /** Structure used to pass information about formats that VBox supports */
@@ -1865,6 +1875,11 @@ static uint32_t clipQueryFormats()
     return g_fX11Formats;
 }
 
+static void clipInvalidateFormats()
+{
+    g_fX11Formats = ~0;
+}
+
 /* Does our clipboard code currently own the selection? */
 static bool g_ownsSel = false;
 /* The procedure that is called when we should convert the selection to a
@@ -2314,6 +2329,21 @@ int main()
     if (!testLatin1FromX11(pCtx, "Georges Dupr\xEA", VINF_SUCCESS))
         ++cErrs;
 
+    /*** Unknown X11 format ***/
+    RTPrintf(TEST_NAME ": TESTING handling of an unknown X11 format\n");
+    clipInvalidateFormats();
+    clipSetSelectionValues("CLIPBOARD", XA_STRING, "Test",
+                           sizeof("Test"), 8);
+    if (!clipPollTargets())
+    {
+        RTPrintf("Failed to poll for targets\n");
+        ++cErrs;
+    }
+    else if (clipQueryFormats() != 0)
+    {
+        RTPrintf("Failed to send a format update notification\n");
+        ++cErrs;
+    }
 
     /*** Timeout from X11 ***/
     RTPrintf(TEST_NAME ": TESTING X11 timeout\n");
@@ -2338,6 +2368,16 @@ int main()
     {
         RTPrintf("Wrong returned request data, expected %p, got %p\n",
                  pReq, pReqRet);
+        ++cErrs;
+    }
+
+    /*** Ensure that VBox is notified when we return the CB to X11 ***/
+    RTPrintf(TEST_NAME ": TESTING notification of switch to X11 clipboard\n");
+    clipInvalidateFormats();
+    clipReleaseCB(pCtx);
+    if (clipQueryFormats() != 0)
+    {
+        RTPrintf("Failed to send a format update (release) notification\n");
         ++cErrs;
     }
 
