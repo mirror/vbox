@@ -198,6 +198,43 @@
  *
  *
  *
+ * @subsection sec_vbox_guideline_compulsory_cppmain   C++ guidelines for Main
+ *
+ * Main is currently (2009) full of hard-to-maintain code that uses complicated
+ * templates. The new mid-term goal for Main is to have less custom templates
+ * instead of more for the following reasons:
+ *
+ *  -  Template code is harder to read and understand. Custom templates create
+ *     territories which only the code writer understands.
+ *
+ *  -  Errors in using templates create terrible C++ compiler messages.
+ *
+ *  -  Template code is really hard to look at in a debugger.
+ *
+ *  -  Templates slow down the compiler a lot.
+ *
+ *  In particular, the following bits should be considered deprecated and should
+ *  NOT be used in new code:
+ *
+ *  -  everything in include/iprt/cpputils.h (auto_ref_ptr, exception_trap_base,
+ *     char_auto_ptr and friends)
+ *
+ *  Generally, in many cases, a simple class with a proper destructor can achieve
+ *  the same effect as a 1,000-line template include file, and the code is
+ *  much more accessible that way.
+ *
+ *  Using standard STL templates like std::list, std::vector and std::map is OK.
+ *  Exceptions are:
+ *
+ *  -  Guest Additions because we don't want to link against libstdc++ there.
+ *
+ *  -  std::string should not be used because we have iprt::MiniString and
+ *     com::Utf8Str which can convert efficiently with COM's UTF-16 strings.
+ *
+ *  -  std::auto_ptr<> in general; that part of the C++ standard is just broken.
+ *     Write a destructor that calls delete.
+ *
+ *
  * @section sec_vbox_guideline_optional         Optional
  *
  * First part is the actual coding style and all the prefixes. The second part
