@@ -1563,7 +1563,7 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
          */
         case VMMDevReq_GetHostVersion:
         {
-            AssertMsgBreakStmt(pRequestHeader->size == sizeof(VMMDevReqLogString),
+            AssertMsgBreakStmt(pRequestHeader->size == sizeof(VMMDevReqHostVersion),
                                ("%#x < %#x\n", pRequestHeader->size, sizeof(VMMDevReqLogString)),
                                pRequestHeader->rc = VERR_INVALID_PARAMETER);
             VMMDevReqHostVersion *pReqHostVer = (VMMDevReqHostVersion*)pRequestHeader;
