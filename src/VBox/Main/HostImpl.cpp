@@ -255,11 +255,10 @@ HRESULT Host::init (VirtualBox *aParent)
     /* Test for 3D hardware acceleration support */
     f3DAccelerationSupported = false;
 
-#if 0
 #ifdef VBOX_WITH_CROGL
     f3DAccelerationSupported = is3DAccelerationSupported();
 #endif /* VBOX_WITH_CROGL */
-#endif
+
     setReady(true);
     return S_OK;
 }
