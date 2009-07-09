@@ -55,6 +55,7 @@
 #include <sys/sunddi.h>
 #include <sys/modctl.h>
 #include <sys/machparam.h>
+#include <sys/utsname.h>
 
 #include "vbi.h"
 
@@ -110,7 +111,7 @@ typedef struct vbi_cpuset {
  * module linkage stuff
  */
 static struct modlmisc vbi_modlmisc = {
-	&mod_miscops, "VirtualBox Interfaces V5"
+	&mod_miscops, "VirtualBox Interfaces V6"
 };
 
 static struct modlinkage vbi_modlinkage = {
@@ -123,6 +124,68 @@ extern uintptr_t kernelbase;
 static int vbi_verbose = 0;
 
 #define VBI_VERBOSE(msg) {if (vbi_verbose) cmn_err(CE_WARN, msg);}
+
+/* Introduced in v6 */
+static int vbi_is_nevada = 0;
+
+#ifdef _LP64
+/* 64-bit Solaris 10 offsets */
+/* CPU */
+static int off_s10_cpu_runrun   = 232;
+static int off_s10_cpu_kprunrun = 233;
+/* kthread_t */
+static int off_s10_t_preempt    = 42;
+
+/* 64-bit Solaris 11 (Nevada/OpenSolaris) offsets */
+/* CPU */
+static int off_s11_cpu_runrun   = 216;
+static int off_s11_cpu_kprunrun = 217;
+/* kthread_t */
+static int off_s11_t_preempt    = 42;
+#else
+/* 32-bit Solaris 10 offsets */
+/* CPU */
+static int off_s10_cpu_runrun   = 124;
+static int off_s10_cpu_kprunrun = 125;
+/* kthread_t */
+static int off_s10_t_preempt    = 26;
+
+/* 32-bit Solaris 11 (Nevada/OpenSolaris) offsets */
+/* CPU */
+static int off_s11_cpu_runrun   = 112;
+static int off_s11_cpu_kprunrun = 113;
+/* kthread_t */
+static int off_s11_t_preempt    = 26;
+#endif
+
+
+/* Which offsets will be used */
+static int off_cpu_runrun       = -1;
+static int off_cpu_kprunrun     = -1;
+static int off_t_preempt        = -1;
+
+#define VBI_T_PREEMPT            (*((char *)curthread + off_t_preempt))
+#define VBI_CPU_KPRUNRUN         (*((char *)CPU + off_cpu_kprunrun))
+#define VBI_CPU_RUNRUN           (*((char *)CPU + off_cpu_runrun))
+
+#undef kpreempt_disable
+#undef kpreempt_enable
+
+#define	VBI_PREEMPT_DISABLE()			\
+	{									\
+		VBI_T_PREEMPT++;				\
+		ASSERT(VBI_T_PREEMPT >= 1);		\
+	}
+#define	VBI_PREEMPT_ENABLE()			\
+	{									\
+		ASSERT(VBI_T_PREEMPT >= 1);		\
+		if (--VBI_T_PREEMPT == 0 &&	\
+		    VBI_CPU_RUNRUN)				\
+			kpreempt(KPREEMPT_SYNC);	\
+	}
+
+/* End of v6 intro */
+
 
 int
 _init(void)
@@ -158,6 +221,49 @@ _init(void)
 			cmn_err(CE_NOTE, " contig_free() not found in kernel");
 			return (EINVAL);
 		}
+	}
+
+	/*
+	 * Check if this is S10 or Nevada
+	 */
+	if (!strncmp(utsname.release, "5.11", sizeof("5.11") - 1))
+	{
+		/* Nevada detected... */
+		vbi_is_nevada = 1;
+
+		off_cpu_runrun = off_s11_cpu_runrun;
+		off_cpu_kprunrun = off_s11_cpu_kprunrun;
+		off_t_preempt = off_s11_t_preempt;
+	}
+	else
+	{
+		/* Solaris 10 detected... */
+		vbi_is_nevada = 0;
+
+		off_cpu_runrun = off_s10_cpu_runrun;
+		off_cpu_kprunrun = off_s10_cpu_kprunrun;
+		off_t_preempt = off_s10_t_preempt;
+	}
+
+	/*
+	 * Sanity checking...
+	 */
+	/* CPU */
+	char crr = VBI_CPU_RUNRUN;
+	char krr = VBI_CPU_KPRUNRUN;
+	if (   (crr < 0 || crr > 1)
+		|| (krr < 0 || krr > 1))
+	{
+		cmn_err(CE_NOTE, ":CPU structure sanity check failed! OS version mismatch.\n");
+		return EINVAL;
+	}
+
+	/* Thread */
+	char t_preempt = VBI_T_PREEMPT;
+	if (t_preempt < 0 || t_preempt > 32)
+	{
+		cmn_err(CE_NOTE, ":Thread structure sanity check failed! OS version mismatch.\n");
+		return EINVAL;
 	}
 
 	err = mod_install(&vbi_modlinkage);
@@ -286,10 +392,14 @@ vbi_yield(void)
 {
 	int rv = 0;
 
-	kpreempt_disable();
-	if (curthread->t_preempt == 1 && CPU->cpu_kprunrun)
+	vbi_preempt_disable();
+
+	char tpr = VBI_T_PREEMPT;
+	char kpr = VBI_CPU_KPRUNRUN;
+	if (tpr == 1 && kpr)
 		rv = 1;
-	kpreempt_enable();
+
+	vbi_preempt_enable();
 	return (rv);
 }
 
@@ -473,13 +583,13 @@ vbi_cpu_online(int c)
 void
 vbi_preempt_disable(void)
 {
-	kpreempt_disable();
+	VBI_PREEMPT_DISABLE();
 }
 
 void
 vbi_preempt_enable(void)
 {
-	kpreempt_enable();
+	VBI_PREEMPT_ENABLE();
 }
 
 void
@@ -1068,7 +1178,8 @@ vbi_gtimer_end(vbi_gtimer_t *t)
 int
 vbi_is_preempt_enabled(void)
 {
-	return (curthread->t_preempt == 0);
+	char tpr = VBI_T_PREEMPT;
+	return (tpr == 0);
 }
 
 void
@@ -1083,7 +1194,7 @@ vbi_poke_cpu(int c)
  * they should go after this point in the file and the revision level
  * increased. Also change vbi_modlmisc at the top of the file.
  */
-uint_t vbi_revision_level = 5;
+uint_t vbi_revision_level = 6;
 
 void *
 vbi_lowmem_alloc(uint64_t phys, size_t size)
@@ -1096,3 +1207,16 @@ vbi_lowmem_free(void *va, size_t size)
 {
 	p_contig_free(va, size);
 }
+
+/*
+ * This is revision 6 of the interface.
+ */
+
+int
+vbi_is_preempt_pending(void)
+{
+	char crr = VBI_CPU_RUNRUN;
+	char krr = VBI_CPU_KPRUNRUN;
+	return crr != 0 || krr != 0;
+}
+

@@ -107,8 +107,7 @@ RTDECL(bool) RTThreadPreemptIsPending(RTTHREAD hThread)
 {
     Assert(hThread == NIL_RTTHREAD);
     /** @todo Review this! */
-    return CPU->cpu_runrun   != 0
-        || CPU->cpu_kprunrun != 0;
+    return !!vbi_is_preempt_pending();
 }
 
 
