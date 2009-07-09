@@ -318,24 +318,21 @@ static void clipReportEmptyX11CB(CLIPBACKEND *pCtx)
 }
 
 /**
- * Go through an array of X11 clipboard targets to see if we can support any
- * of them and if relevant to choose the ones we prefer (e.g. we like Utf8
- * better than compound text).
+ * Go through an array of X11 clipboard targets to see if they contain a text
+ * format we can support, and if so choose the ones we prefer (e.g. we like
+ * Utf8 better than compound text).
  * @param  pCtx      the clipboard backend context structure
  * @param  pTargets  the list of targets
  * @param  cTargets  the size of the list in @a pTargets
- * @param  pChanged  This is set to true if the formats available have changed
- *                   from VBox's point of view, and to false otherwise.
- *                   Somehow this didn't feel right as a return value.
  */
-void clipGetFormatsFromTargets(CLIPBACKEND *pCtx, Atom *pTargets,
-                               size_t cTargets, bool *pChanged)
+static CLIPX11FORMAT clipGetTextFormatFromTargets(CLIPBACKEND *pCtx,
+                                                  Atom *pTargets,
+                                                  size_t cTargets)
 {
-    bool changed = false;
     CLIPX11FORMAT bestTextFormat = NIL_CLIPX11FORMAT;
     CLIPFORMAT enmBestTextTarget = INVALID;
-    AssertPtrReturnVoid(pCtx);
-    AssertPtrReturnVoid(pTargets);
+    AssertPtrReturn(pCtx, NIL_CLIPX11FORMAT);
+    AssertPtrReturn(pTargets, NIL_CLIPX11FORMAT);
     for (unsigned i = 0; i < cTargets; ++i)
     {
         CLIPX11FORMAT format = clipFindX11FormatByAtom(pCtx->widget,
@@ -351,6 +348,50 @@ void clipGetFormatsFromTargets(CLIPBACKEND *pCtx, Atom *pTargets,
             }
         }
     }
+    return bestTextFormat;
+}
+
+#ifdef TESTCASE
+static bool clipTestTextFormatConversion(CLIPBACKEND *pCtx)
+{
+    bool success = true;
+    Atom targets[3];
+    CLIPX11FORMAT x11Format;
+    targets[0] = clipGetAtom(NULL, "COMPOUND_TEXT");
+    targets[1] = clipGetAtom(NULL, "text/plain");
+    targets[2] = clipGetAtom(NULL, "TARGETS");
+    x11Format = clipGetTextFormatFromTargets(pCtx, targets, 3);
+    if (clipRealFormatForX11Format(x11Format) != CTEXT)
+        success = false;
+    targets[0] = clipGetAtom(NULL, "UTF8_STRING");
+    targets[1] = clipGetAtom(NULL, "text/plain");
+    targets[2] = clipGetAtom(NULL, "COMPOUND_TEXT");
+    x11Format = clipGetTextFormatFromTargets(pCtx, targets, 3);
+    if (clipRealFormatForX11Format(x11Format) != UTF8)
+        success = false;
+    return success;
+}
+#endif
+
+/**
+ * Go through an array of X11 clipboard targets to see if we can support any
+ * of them and if relevant to choose the ones we prefer (e.g. we like Utf8
+ * better than compound text).
+ * @param  pCtx      the clipboard backend context structure
+ * @param  pTargets  the list of targets
+ * @param  cTargets  the size of the list in @a pTargets
+ * @param  pChanged  This is set to true if the formats available have changed
+ *                   from VBox's point of view, and to false otherwise.
+ *                   Somehow this didn't feel right as a return value.
+ */
+static void clipGetFormatsFromTargets(CLIPBACKEND *pCtx, Atom *pTargets,
+                                      size_t cTargets, bool *pChanged)
+{
+    bool changed = false;
+    AssertPtrReturnVoid(pCtx);
+    AssertPtrReturnVoid(pTargets);
+    CLIPX11FORMAT bestTextFormat;
+    bestTextFormat = clipGetTextFormatFromTargets(pCtx, pTargets, cTargets);
     if (pCtx->X11TextFormat != bestTextFormat)
     {
         changed = true;
@@ -1056,17 +1097,6 @@ static void clipInvalidateVBoxCBCache(CLIPBACKEND *pCtx)
     }
 }
 
-/** Gives up ownership of the X11 clipboard */
-static void clipGiveUpX11CB(CLIPBACKEND *pCtx)
-{
-    XtDisownSelection(pCtx->widget, clipGetAtom(pCtx->widget, "CLIPBOARD"),
-                      CurrentTime);
-    XtDisownSelection(pCtx->widget, clipGetAtom(pCtx->widget, "PRIMARY"),
-                      CurrentTime);
-    pCtx->fOwnsClipboard = false;
-    pCtx->vboxFormats = 0;
-}
-
 /**
  * Take possession of the X11 clipboard (and middle-button selection).
  */
@@ -1766,7 +1796,7 @@ Boolean XtConvertAndStore(Widget widget, _Xconst _XtString from_type,
 
 /* The current values of the X selection, which will be returned to the
  * XtGetSelectionValue callback. */
-static Atom g_selTarget[3] = { 0 };
+static Atom g_selTarget[1] = { 0 };
 static Atom g_selType = 0;
 static const void *g_pSelData = NULL;
 static unsigned long g_cSelData = 0;
@@ -1900,8 +1930,6 @@ static void clipSetSelectionValues(const char *pcszTarget, Atom type,
 {
     Atom clipAtom = clipGetAtom(NULL, "CLIPBOARD");
     g_selTarget[0] = clipGetAtom(NULL, pcszTarget);
-    g_selTarget[1] = clipGetAtom(NULL, "text/plain");
-    g_selTarget[2] = clipGetAtom(NULL, "TARGETS");
     g_selType = type;
     g_pSelData = data;
     g_cSelData = count;
@@ -2358,6 +2386,14 @@ int main()
     else if (clipQueryFormats() != 0)
     {
         RTPrintf("Wrong targets reported: %02X\n", clipQueryFormats());
+        ++cErrs;
+    }
+
+    /*** X11 text format conversion ***/
+    RTPrintf(TEST_NAME ": TESTING selection of X11 text formats\n");
+    if (!clipTestTextFormatConversion(pCtx))
+    {
+        RTPrintf(TEST_NAME ": Failed to select the right X11 text formats\n");
         ++cErrs;
     }
 
