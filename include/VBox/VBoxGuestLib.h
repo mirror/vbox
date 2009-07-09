@@ -367,6 +367,7 @@ DECLVBGL(RTCCPHYS) VbglPhysHeapGetPhysAddr (void *p);
 DECLVBGL(void) VbglPhysHeapFree (void *p);
 
 DECLVBGL(int) VbglQueryVMMDevMemory (VMMDevMemory **ppVMMDevMemory);
+DECLR0VBGL(bool)    VbglR0CanUsePhysPageList(void);
 
 #endif /* IN_RING0 && !IN_RING0_AGNOSTIC */
 /** @} */

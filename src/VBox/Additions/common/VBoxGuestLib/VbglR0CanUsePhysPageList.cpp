@@ -1,5 +1,6 @@
+/* $Revision$ */
 /** @file
- * VBoxGuestLibR0 - VMMDev device related functions.
+ * VBoxGuestLibR0 - Physical memory heap.
  */
 
 /*
@@ -21,18 +22,15 @@
 #include "VBGLInternal.h"
 
 
-DECLVBGL(int) VbglQueryVMMDevMemory (VMMDevMemory **ppVMMDevMemory)
+/**
+ * Checks whether the host supports physical page lists or not.
+ *
+ * @returns true if it does, false if it doesn't.
+ */
+DECLR0VBGL(bool) VbglR0CanUsePhysPageList(void)
 {
-    int rc = vbglR0Enter ();
-
-    if (RT_FAILURE(rc))
-        return rc;
-
-    /* If the memory was not found, return an error. */
-    if (!g_vbgldata.pVMMDevMemory)
-        return VERR_NOT_SUPPORTED;
-
-    *ppVMMDevMemory = g_vbgldata.pVMMDevMemory;
-    return rc;
+    int rc = vbglR0Enter();
+    return RT_SUCCESS(rc)
+        && VBGLR0_CAN_USE_PHYS_PAGE_LIST();
 }
 
