@@ -34,6 +34,7 @@
 #include <VBox/pgm.h>
 #include <VBox/err.h>
 #include <VBox/vm.h> /* for VM_IS_EMT */
+#include <VBox/version.h>
 
 #include <iprt/assert.h>
 #include <iprt/string.h>
@@ -1551,6 +1552,26 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
 
                 pRequestHeader->rc = VINF_SUCCESS;
             }
+            break;
+        }
+
+        /*
+         * Implemented in 3.1.0. The ring-0 VBoxGuestLib uses this to check
+         * whether VMMDevHGCMParmType_PhysAddr and VMMDevHGCMParmType_PageList
+         * are known to work.
+         */
+        case VMMDevReq_GetHostVersion:
+        {
+            AssertMsgBreakStmt(pRequestHeader->size == sizeof(VMMDevReqLogString),
+                               ("%#x < %#x\n", pRequestHeader->size, sizeof(VMMDevReqLogString)),
+                               pRequestHeader->rc = VERR_INVALID_PARAMETER);
+            VMMDevReqHostVersion *pReqHostVer = (VMMDevReqHostVersion*)pRequestHeader;
+            pReqHostVer->major = VBOX_VERSION_MAJOR;
+            pReqHostVer->minor = VBOX_VERSION_MINOR;
+            pReqHostVer->build = VBOX_VERSION_BUILD;
+            pReqHostVer->revision = VBOX_SVN_REV;
+            pReqHostVer->features = VMMDEV_HVF_PHYS_HGCM_PARAM;
+            pReqHostVer->header.rc = VINF_SUCCESS;
             break;
         }
 

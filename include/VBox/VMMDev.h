@@ -338,19 +338,32 @@ AssertCompileSize(VMMDevReqLogString, 24+4);
  * VirtualBox host version request structure.
  *
  * Used by VMMDevReq_GetHostVersion.
+ *
+ * @remarks VBGL uses this to detect the precense of new features in the
+ *          interface.
  */
 typedef struct
 {
     /** Header. */
     VMMDevRequestHeader header;
     /** Major version. */
-    uint32_t major;
+    uint16_t major;
     /** Minor version. */
-    uint32_t minor;
+    uint16_t minor;
     /** Build number. */
     uint32_t build;
+    /** SVN revision. */
+    uint32_t revision;
+    /** Feature mask. */
+    uint32_t features;
 } VMMDevReqHostVersion;
-AssertCompileSize(VMMDevReqHostVersion, 24+12);
+AssertCompileSize(VMMDevReqHostVersion, 24+16);
+
+/** @name VMMDevReqHostVersion::features
+ * @{ */
+/** Physical buffers and page lists are supported by HGCM. */
+#define VMMDEV_HVF_PHYS_HGCM_PARAM      RT_BIT(0)
+/** @} */
 
 
 /**
