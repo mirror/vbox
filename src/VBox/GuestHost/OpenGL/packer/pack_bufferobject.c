@@ -40,7 +40,7 @@ crPackBufferDataARB( GLenum target, GLsizeiptrARB size,
     int packet_length;
 
     packet_length = sizeof(GLenum)
-        + sizeof(target) + sizeof(GLuint) + sizeof(usage) + sizeof(GLboolean);
+        + sizeof(target) + sizeof(GLuint) + sizeof(usage) + sizeof(GLint);
 
     /*Note: it's valid to pass a NULL pointer here, which tells GPU drivers to allocate memory for the VBO*/
     if (data) packet_length += size;
@@ -51,7 +51,7 @@ crPackBufferDataARB( GLenum target, GLsizeiptrARB size,
     WRITE_DATA_AI(GLenum, target);
     WRITE_DATA_AI(GLuint, (GLuint) size);
     WRITE_DATA_AI(GLenum, usage);
-    WRITE_DATA_AI(GLboolean, (GLboolean) (data!=NULL));
+    WRITE_DATA_AI(GLint, (GLint) (data!=NULL));
     if (data)
          crMemcpy(data_ptr, data, size);
 

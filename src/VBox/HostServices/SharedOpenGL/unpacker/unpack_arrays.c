@@ -122,8 +122,8 @@ void crUnpackExtendDrawElements(void)
     GLintptrARB indices = READ_DATA( 20, GLuint );
     void * indexptr;
 #ifdef CR_ARB_vertex_buffer_object
-    GLboolean hasidxdata = READ_DATA(24, GLboolean);
-    indexptr = hasidxdata ? DATA_POINTER(24+sizeof(GLboolean), void) : (void*)indices;
+    GLboolean hasidxdata = READ_DATA(24, GLint);
+    indexptr = hasidxdata ? DATA_POINTER(28, void) : (void*)indices;
 #else
     indexptr = DATA_POINTER(24, void);
 #endif
@@ -140,8 +140,8 @@ void crUnpackExtendDrawRangeElements(void)
     GLintptrARB indices = READ_DATA( 28, GLuint );
     void * indexptr;
 #ifdef CR_ARB_vertex_buffer_object
-    GLboolean hasidxdata = READ_DATA(32, GLboolean);
-    indexptr = hasidxdata ? DATA_POINTER(32+sizeof(GLboolean), void) : (void*)indices;
+    GLboolean hasidxdata = READ_DATA(32, GLint);
+    indexptr = hasidxdata ? DATA_POINTER(36, void) : (void*)indices;
 #else
     indexptr = DATA_POINTER(32, void);
 #endif

@@ -467,7 +467,7 @@ crPackDrawElements(GLenum mode, GLsizei count, GLenum type, const GLvoid *indice
     GLsizei indexsize;
 #ifdef CR_ARB_vertex_buffer_object
     CRBufferObject *elementsBuffer = crStateGetCurrent()->bufferobject.elementsBuffer;
-    packet_length += sizeof(GLboolean);
+    packet_length += sizeof(GLint);
     if (elementsBuffer && elementsBuffer->name)
     {
         /*@todo not sure it's possible, and not sure what to do*/
@@ -493,7 +493,7 @@ crPackDrawElements(GLenum mode, GLsizei count, GLenum type, const GLvoid *indice
     WRITE_DATA_AI(GLenum, type);
     WRITE_DATA_AI(GLuint, (GLuint) indices );
 #ifdef CR_ARB_vertex_buffer_object
-    WRITE_DATA_AI(GLboolean, (GLboolean)(indexsize>0));
+    WRITE_DATA_AI(GLint, (GLint)(indexsize>0));
 #endif
     if (indexsize>0)
     {
@@ -514,7 +514,7 @@ crPackDrawRangeElements(GLenum mode, GLuint start, GLuint end, GLsizei count,
 
 #ifdef CR_ARB_vertex_buffer_object
     CRBufferObject *elementsBuffer = crStateGetCurrent()->bufferobject.elementsBuffer;
-    packet_length += sizeof(GLboolean);
+    packet_length += sizeof(GLint);
     if (elementsBuffer && elementsBuffer->name)
     {
         /*@todo not sure it's possible, and not sure what to do*/
@@ -542,7 +542,7 @@ crPackDrawRangeElements(GLenum mode, GLuint start, GLuint end, GLsizei count,
     WRITE_DATA_AI(GLenum, type);
     WRITE_DATA_AI(GLuint, (GLuint) indices);
 #ifdef CR_ARB_vertex_buffer_object
-    WRITE_DATA_AI(GLboolean, (GLboolean) (indexsize>0));
+    WRITE_DATA_AI(GLint, (GLint) (indexsize>0));
 #endif
     if (indexsize>0)
     {
