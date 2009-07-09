@@ -32,7 +32,11 @@ all:
 	    fi; \
 	    echo "*** Building 'vboxvfs' module ***"; \
 	    $(MAKE) KBUILD_VERBOSE=$(KBUILD_VERBOSE) -C vboxvfs; \
-	    cp vboxvfs/vboxvfs.*o .; \
+	    if [ -f vboxvfs/vboxvfs.o ]; then \
+	      cp vboxvfs/vboxvfs.o .; \
+	    else \
+	      cp vboxvfs/vboxvfs.ko .; \
+	    fi; \
 	fi
 
 
@@ -47,7 +51,7 @@ clean:
 	@if [ -d vboxvfs ]; then \
 	    $(MAKE) -C vboxvfs clean; \
 	fi
-	rm -f vboxguest.ko vboxvfs.ko
+	rm -f vboxguest.*o vboxvfs.*o
 
 load:
 	@/sbin/rmmod vboxvfs || true
