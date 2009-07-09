@@ -2718,15 +2718,13 @@ HRESULT Appliance::writeImpl(int aFormat, Utf8Str aPath, ComObjPtr<Progress> &aP
         /* Check the URI for the target format */
         if (m->strPath.startsWith("SunCloud://", Utf8Str::CaseInsensitive)) /* Sun Cloud service */
         {
-            throw E_NOTIMPL;
-//            task->storageType = VFSType_S3;
-//            strProtocol = "SunCloud://";
+            task->storageType = VFSType_S3;
+            strProtocol = "SunCloud://";
         }
         else if (m->strPath.startsWith("S3://", Utf8Str::CaseInsensitive)) /* S3 service */
         {
-            throw E_NOTIMPL;
-//            task->storageType = VFSType_S3;
-//            strProtocol = "S3://";
+            task->storageType = VFSType_S3;
+            strProtocol = "S3://";
         }
         else if (m->strPath.startsWith("webdav://", Utf8Str::CaseInsensitive)) /* webdav service */
             throw E_NOTIMPL;
