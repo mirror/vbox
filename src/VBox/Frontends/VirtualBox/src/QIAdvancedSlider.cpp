@@ -268,7 +268,7 @@ int QIAdvancedSlider::snapValue(int val)
         val > 2)
     {
         float l2 = log ((float)val)/log (2.0);
-        int newVal = pow ((float)2, (int)qRound (l2)); /* The value to snap on */
+        int newVal = (int) pow ((float)2, (int)qRound (l2)); /* The value to snap on */
         int pos = mSlider->positionForValue (val); /* Get the relative screen pos for the original value */
         int newPos = mSlider->positionForValue (newVal); /* Get the relative screen pos for the snap value */
         if (abs (newPos - pos) < 5) /* 10 pixel snapping range */
