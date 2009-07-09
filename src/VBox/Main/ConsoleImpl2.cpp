@@ -160,6 +160,9 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
     /* lock the console because we widely use internal fields and methods */
     AutoWriteLock alock (pConsole);
 
+    /* Save the VM pointer in the machine object */
+    pConsole->mpVM = pVM;
+
     ComPtr <IMachine> pMachine = pConsole->machine();
 
     int             rc;
@@ -2030,9 +2033,6 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
     AssertRC (rc2);
     if (RT_SUCCESS (rc))
         rc = rc2;
-
-    /* Save the VM pointer in the machine object */
-    pConsole->mpVM = pVM;
 
     LogFlowFunc (("vrc = %Rrc\n", rc));
     LogFlowFuncLeave();
