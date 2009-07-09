@@ -125,7 +125,6 @@ typedef enum
     VMMDevReq_GetMouseStatus             =  1,
     VMMDevReq_SetMouseStatus             =  2,
     VMMDevReq_SetPointerShape            =  3,
-    /** @todo implement on host side */
     VMMDevReq_GetHostVersion             =  4,
     VMMDevReq_Idle                       =  5,
     VMMDevReq_GetHostTime                = 10,
@@ -361,8 +360,8 @@ AssertCompileSize(VMMDevReqHostVersion, 24+16);
 
 /** @name VMMDevReqHostVersion::features
  * @{ */
-/** Physical buffers and page lists are supported by HGCM. */
-#define VMMDEV_HVF_PHYS_HGCM_PARAM      RT_BIT(0)
+/** Physical page lists are supported by HGCM. */
+#define VMMDEV_HVF_HGCM_PHYS_PAGE_LIST  RT_BIT(0)
 /** @} */
 
 
@@ -1017,7 +1016,7 @@ typedef enum
     VMMDevHGCMParmType_Invalid            = 0,
     VMMDevHGCMParmType_32bit              = 1,
     VMMDevHGCMParmType_64bit              = 2,
-    VMMDevHGCMParmType_PhysAddr           = 3,
+    VMMDevHGCMParmType_PhysAddr           = 3,  /**< @deprecated Doesn't work, use PageList. */
     VMMDevHGCMParmType_LinAddr            = 4,  /**< In and Out */
     VMMDevHGCMParmType_LinAddr_In         = 5,  /**< In  (read;  host<-guest) */
     VMMDevHGCMParmType_LinAddr_Out        = 6,  /**< Out (write; host->guest) */
