@@ -121,7 +121,7 @@ DECLR0VBGL(int) VbglR0HGCMInternalDisconnect (VBoxGuestHGCMDisconnectInfo *pDisc
 
 
 /** @todo merge with the one below (use a header file). Too lazy now. */
-DECLR0VBGL(int) VbglR0HGCMInternalCall (VBoxGuestHGCMCallInfo *pCallInfo, uint32_t fFlags,
+DECLR0VBGL(int) VbglR0HGCMInternalCall (VBoxGuestHGCMCallInfo *pCallInfo, uint32_t cbCallInfo, uint32_t fFlags,
                                         VBGLHGCMCALLBACK *pAsyncCallback, void *pvAsyncData, uint32_t u32AsyncData)
 {
     VMMDevHGCMCall *pHGCMCall;
@@ -139,7 +139,21 @@ DECLR0VBGL(int) VbglR0HGCMInternalCall (VBoxGuestHGCMCallInfo *pCallInfo, uint32
 
     pHGCMCall = NULL;
 
-    cbParms = pCallInfo->cParms * sizeof (HGCMFunctionParameter);
+    if (cbCallInfo == 0)
+    {
+        /* Caller did not specify the size (a valid value should be at least sizeof(VBoxGuestHGCMCallInfo)).
+         * Compute the size.
+         */
+        cbParms = pCallInfo->cParms * sizeof (HGCMFunctionParameter32);
+    }
+    else if (cbCallInfo < sizeof (VBoxGuestHGCMCallInfo))
+    {
+        return VERR_INVALID_PARAMETER;
+    }
+    else
+    {
+        cbParms = cbCallInfo - sizeof (VBoxGuestHGCMCallInfo);
+    }
 
     /* Allocate request */
     rc = VbglGRAlloc ((VMMDevRequestHeader **)&pHGCMCall, sizeof (VMMDevHGCMCall) + cbParms, VMMDevReq_HGCMCall);
@@ -194,6 +208,11 @@ DECLR0VBGL(int) VbglR0HGCMInternalCall (VBoxGuestHGCMCallInfo *pCallInfo, uint32
                         rc = VERR_INVALID_PARAMETER;
                     else
                         pParm->type = VMMDevHGCMParmType_LinAddr;
+                    break;
+
+                case VMMDevHGCMParmType_PageList:
+                    if ((fFlags & VBGLR0_HGCMCALL_F_MODE_MASK) == VBGLR0_HGCMCALL_F_USER)
+                        rc = VERR_INVALID_PARAMETER;
                     break;
 
                 case VMMDevHGCMParmType_LinAddr_In:
@@ -306,7 +325,7 @@ DECLR0VBGL(int) VbglR0HGCMInternalCall (VBoxGuestHGCMCallInfo *pCallInfo, uint32
 }
 # if ARCH_BITS == 64
 /** @todo merge with the one above (use a header file). Too lazy now. */
-DECLR0VBGL(int) VbglR0HGCMInternalCall32 (VBoxGuestHGCMCallInfo *pCallInfo, uint32_t fFlags,
+DECLR0VBGL(int) VbglR0HGCMInternalCall32 (VBoxGuestHGCMCallInfo *pCallInfo, uint32_t cbCallInfo, uint32_t fFlags,
                                           VBGLHGCMCALLBACK *pAsyncCallback, void *pvAsyncData, uint32_t u32AsyncData)
 {
     VMMDevHGCMCall *pHGCMCall;
@@ -324,7 +343,21 @@ DECLR0VBGL(int) VbglR0HGCMInternalCall32 (VBoxGuestHGCMCallInfo *pCallInfo, uint
 
     pHGCMCall = NULL;
 
-    cbParms = pCallInfo->cParms * sizeof (HGCMFunctionParameter32);
+    if (cbCallInfo == 0)
+    {
+        /* Caller did not specify the size (a valid value should be at least sizeof(VBoxGuestHGCMCallInfo)).
+         * Compute the size.
+         */
+        cbParms = pCallInfo->cParms * sizeof (HGCMFunctionParameter32);
+    }
+    else if (cbCallInfo < sizeof (VBoxGuestHGCMCallInfo))
+    {
+        return VERR_INVALID_PARAMETER;
+    }
+    else
+    {
+        cbParms = cbCallInfo - sizeof (VBoxGuestHGCMCallInfo);
+    }
 
     /* Allocate request */
     rc = VbglGRAlloc ((VMMDevRequestHeader **)&pHGCMCall, sizeof (VMMDevHGCMCall) + cbParms, VMMDevReq_HGCMCall32);
@@ -379,6 +412,11 @@ DECLR0VBGL(int) VbglR0HGCMInternalCall32 (VBoxGuestHGCMCallInfo *pCallInfo, uint
                         rc = VERR_INVALID_PARAMETER;
                     else
                         pParm->type = VMMDevHGCMParmType_LinAddr;
+                    break;
+
+                case VMMDevHGCMParmType_PageList:
+                    if ((fFlags & VBGLR0_HGCMCALL_F_MODE_MASK) == VBGLR0_HGCMCALL_F_USER)
+                        rc = VERR_INVALID_PARAMETER;
                     break;
 
                 case VMMDevHGCMParmType_LinAddr_In:
