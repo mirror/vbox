@@ -142,14 +142,7 @@ int VBoxMainDriveInfo::updateDVDs ()
         {
             // this is a good guess usually
             if (validateDevice("/dev/cdrom", true))
-                try
-                {
-                    mDVDList.push_back (DriveInfo ("/dev/cdrom"));
-                }
-                catch (std::bad_alloc)
-                {
-                    rc = VERR_NO_MEMORY;
-                }
+                mDVDList.push_back(DriveInfo ("/dev/cdrom"));
 
             // check the mounted drives
             rc = getDVDInfoFromMTab((char*)"/etc/mtab", &mDVDList);
@@ -160,7 +153,7 @@ int VBoxMainDriveInfo::updateDVDs ()
         }
 #endif
     }
-    catch (std::bad_alloc)
+    catch(std::bad_alloc &e)
     {
         rc = VERR_NO_MEMORY;
     }
@@ -199,19 +192,12 @@ int VBoxMainDriveInfo::updateFloppies ()
             {
                 RTStrPrintf(devName, sizeof(devName), "/dev/fd%d", i);
                 if (validateDevice(devName, false))
-                    try
-                    {
-                        mFloppyList.push_back (DriveInfo (devName));
-                    }
-                    catch (std::bad_alloc)
-                    {
-                        rc = VERR_NO_MEMORY;
-                    }
+                    mFloppyList.push_back (DriveInfo (devName));
             }
         }
 #endif
     }
-    catch (std::bad_alloc)
+    catch(std::bad_alloc &e)
     {
         rc = VERR_NO_MEMORY;
     }
@@ -243,7 +229,7 @@ int VBoxMainUSBDeviceInfo::UpdateDevices ()
 #endif /* VBOX_WITH_DBUS defined */
 #endif /* RT_OS_LINUX */
     }
-    catch (std::bad_alloc)
+    catch(std::bad_alloc &e)
     {
         rc = VERR_NO_MEMORY;
     }
@@ -441,45 +427,46 @@ int getDriveInfoFromEnv(const char *pszVar, DriveInfoList *pList,
                   pList, isDVD, pfSuccess));
     int rc = VINF_SUCCESS;
     bool success = false;
-    RTMemAutoPtr<char, RTStrFree> drive;
-    const char *pszValue = RTEnvGet (pszVar);
-    if (pszValue != NULL)
+
+    try
     {
-        drive = RTStrDup (pszValue);
-        if (!drive)
-            rc = VERR_NO_MEMORY;
-    }
-    if (pszValue != NULL && RT_SUCCESS (rc))
-    {
-        char *pDrive = drive.get();
-        char *pDriveNext = strchr (pDrive, ':');
-        while (pDrive != NULL && *pDrive != '\0')
+        RTMemAutoPtr<char, RTStrFree> drive;
+        const char *pszValue = RTEnvGet (pszVar);
+        if (pszValue != NULL)
         {
-            if (pDriveNext != NULL)
-                *pDriveNext = '\0';
-            if (validateDevice(pDrive, isDVD))
+            drive = RTStrDup (pszValue);
+            if (!drive)
+                rc = VERR_NO_MEMORY;
+        }
+        if (pszValue != NULL && RT_SUCCESS (rc))
+        {
+            char *pDrive = drive.get();
+            char *pDriveNext = strchr (pDrive, ':');
+            while (pDrive != NULL && *pDrive != '\0')
             {
-                try
+                if (pDriveNext != NULL)
+                    *pDriveNext = '\0';
+                if (validateDevice(pDrive, isDVD))
                 {
                     pList->push_back (DriveInfo (pDrive));
+                    success = true;
                 }
-                catch (std::bad_alloc)
+                if (pDriveNext != NULL)
                 {
-                    rc = VERR_NO_MEMORY;
+                    pDrive = pDriveNext + 1;
+                    pDriveNext = strchr (pDrive, ':');
                 }
-                success = true;
+                else
+                    pDrive = NULL;
             }
-            if (pDriveNext != NULL)
-            {
-                pDrive = pDriveNext + 1;
-                pDriveNext = strchr (pDrive, ':');
-            }
-            else
-                pDrive = NULL;
         }
+        if (pfSuccess != NULL)
+            *pfSuccess = success;
     }
-    if (pfSuccess != NULL)
-        *pfSuccess = success;
+    catch(std::bad_alloc &e)
+    {
+        rc = VERR_NO_MEMORY;
+    }
     LogFlowFunc (("rc=%Rrc, success=%d\n", rc, success));
     return rc;
 }
@@ -499,73 +486,73 @@ int getDVDInfoFromMTab(char *mountTable, DriveInfoList *pList)
     FILE *mtab = setmntent(mountTable, "r");
     if (mtab)
     {
-        struct mntent *mntent;
-        RTMemAutoPtr <char, RTStrFree> mnt_type, mnt_dev;
-        char *tmp;
-        while (RT_SUCCESS (rc) && (mntent = getmntent(mtab)))
+        try
         {
-            mnt_type = RTStrDup (mntent->mnt_type);
-            mnt_dev = RTStrDup (mntent->mnt_fsname);
-            if (!mnt_type || !mnt_dev)
-                rc = VERR_NO_MEMORY;
-            // supermount fs case
-            if (RT_SUCCESS (rc) && strcmp(mnt_type.get(), "supermount") == 0)
+            struct mntent *mntent;
+            RTMemAutoPtr <char, RTStrFree> mnt_type, mnt_dev;
+            char *tmp;
+            while (RT_SUCCESS (rc) && (mntent = getmntent(mtab)))
             {
-                tmp = strstr(mntent->mnt_opts, "fs=");
-                if (tmp)
+                mnt_type = RTStrDup (mntent->mnt_type);
+                mnt_dev = RTStrDup (mntent->mnt_fsname);
+                if (!mnt_type || !mnt_dev)
+                    rc = VERR_NO_MEMORY;
+                // supermount fs case
+                if (RT_SUCCESS (rc) && strcmp(mnt_type.get(), "supermount") == 0)
                 {
-                    mnt_type = RTStrDup(tmp + strlen("fs="));
-                    if (!mnt_type)
-                        rc = VERR_NO_MEMORY;
-                    else
+                    tmp = strstr(mntent->mnt_opts, "fs=");
+                    if (tmp)
                     {
-                        tmp = strchr(mnt_type.get(), ',');
-                        if (tmp)
-                            *tmp = '\0';
-                    }
-                }
-                tmp = strstr(mntent->mnt_opts, "dev=");
-                if (tmp)
-                {
-                    mnt_dev = RTStrDup(tmp + strlen("dev="));
-                    if (!mnt_dev)
-                        rc = VERR_NO_MEMORY;
-                    else
-                    {
-                        tmp = strchr(mnt_dev.get(), ',');
-                        if (tmp)
-                            *tmp = '\0';
-                    }
-                }
-            }
-            // use strstr here to cover things fs types like "udf,iso9660"
-            if (RT_SUCCESS (rc) && strstr(mnt_type.get(), "iso9660") == 0)
-            {
-                if (validateDevice(mnt_dev.get(), true))
-                {
-                    bool insert = true;
-                    struct stat srcInfo;
-                    if (stat (mnt_dev.get(), &srcInfo) < 0)
-                        insert = false;
-                    for (DriveInfoList::const_iterator it = pList->begin();
-                         insert && it != pList->end(); ++it)
-                    {
-                        struct stat destInfo;
-                        if (   (stat (it->mDevice.c_str(), &destInfo) == 0)
-                            && (srcInfo.st_rdev == destInfo.st_rdev))
-                            insert = false;
-                    }
-                    if (insert)
-                        try
-                        {
-                            pList->push_back (DriveInfo (mnt_dev.get()));
-                        }
-                        catch (std::bad_alloc)
-                        {
+                        mnt_type = RTStrDup(tmp + strlen("fs="));
+                        if (!mnt_type)
                             rc = VERR_NO_MEMORY;
+                        else
+                        {
+                            tmp = strchr(mnt_type.get(), ',');
+                            if (tmp)
+                                *tmp = '\0';
                         }
+                    }
+                    tmp = strstr(mntent->mnt_opts, "dev=");
+                    if (tmp)
+                    {
+                        mnt_dev = RTStrDup(tmp + strlen("dev="));
+                        if (!mnt_dev)
+                            rc = VERR_NO_MEMORY;
+                        else
+                        {
+                            tmp = strchr(mnt_dev.get(), ',');
+                            if (tmp)
+                                *tmp = '\0';
+                        }
+                    }
+                }
+                // use strstr here to cover things fs types like "udf,iso9660"
+                if (RT_SUCCESS (rc) && strstr(mnt_type.get(), "iso9660") == 0)
+                {
+                    if (validateDevice(mnt_dev.get(), true))
+                    {
+                        bool insert = true;
+                        struct stat srcInfo;
+                        if (stat (mnt_dev.get(), &srcInfo) < 0)
+                            insert = false;
+                        for (DriveInfoList::const_iterator it = pList->begin();
+                            insert && it != pList->end(); ++it)
+                        {
+                            struct stat destInfo;
+                            if (   (stat (it->mDevice.c_str(), &destInfo) == 0)
+                                && (srcInfo.st_rdev == destInfo.st_rdev))
+                                insert = false;
+                        }
+                        if (insert)
+                            pList->push_back (DriveInfo (mnt_dev.get()));
+                    }
                 }
             }
+        }
+        catch(std::bad_alloc &e)
+        {
+            rc = VERR_NO_MEMORY;
         }
         endmntent(mtab);
     }
@@ -881,7 +868,7 @@ int halFindDeviceStringMatchVector (DBusConnection *pConnection,
         {
             pMatches->push_back(pszUdi);
         }
-        catch (std::bad_alloc)
+        catch(std::bad_alloc &e)
         {
             rc = VERR_NO_MEMORY;
         }
@@ -1039,7 +1026,7 @@ int halGetPropertyStringsVector (DBusConnection *pConnection,
         {
             pMatches->push_back(fMatches ? values[i] : "");
         }
-        catch (std::bad_alloc)
+        catch(std::bad_alloc &e)
         {
             rc = VERR_NO_MEMORY;
         }
@@ -1127,7 +1114,7 @@ int getDriveInfoFromHal(DriveInfoList *pList, bool isDVD, bool *pfSuccess)
             {
                 pList->push_back (DriveInfo (pszDevice, pszUdi, description));
             }
-            catch (std::bad_alloc)
+            catch(std::bad_alloc &e)
             {
                 rc = VERR_NO_MEMORY;
             }
@@ -1212,7 +1199,7 @@ int getUSBDeviceInfoFromHal(USBDeviceInfoList *pList, bool *pfSuccess)
                 {
                     pList->push_back (info);
                 }
-                catch (std::bad_alloc)
+                catch(std::bad_alloc &e)
                 {
                     rc = VERR_NO_MEMORY;
                 }
@@ -1298,7 +1285,7 @@ int getOldUSBDeviceInfoFromHal(USBDeviceInfoList *pList, bool *pfSuccess)
                 {
                     pList->push_back (info);
                 }
-                catch (std::bad_alloc)
+                catch(std::bad_alloc &e)
                 {
                     rc = VERR_NO_MEMORY;
                 }
@@ -1387,7 +1374,7 @@ int getUSBInterfacesFromHal(std::vector <std::string> *pList,
             {
                 pList->push_back (pszSysfsPath);
             }
-            catch (std::bad_alloc)
+            catch(std::bad_alloc &e)
             {
                rc = VERR_NO_MEMORY;
             }
