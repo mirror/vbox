@@ -27,8 +27,8 @@ void crUnpackExtendBufferDataARB( void )
     GLenum target      = READ_DATA(sizeof(int) + 4, GLenum);
     GLsizeiptrARB size = READ_DATA(sizeof(int) + 8, GLuint);
     GLenum usage       = READ_DATA(sizeof(int) + 12, GLenum);
-    GLboolean hasdata  = READ_DATA(sizeof(int) + 16, GLboolean);
-    GLvoid *data       = DATA_POINTER(sizeof(int) + 16 + sizeof(GLboolean), GLvoid);
+    GLboolean hasdata  = READ_DATA(sizeof(int) + 16, GLint);
+    GLvoid *data       = DATA_POINTER(sizeof(int) + 20, GLvoid);
 
     cr_unpackDispatch.BufferDataARB(target, size, hasdata ? data:NULL, usage);
 }
