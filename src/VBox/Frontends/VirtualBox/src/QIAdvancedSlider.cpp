@@ -57,8 +57,9 @@ public:
         return QStyle::sliderPositionFromValue (opt.minimum, opt.maximum, aVal, available);
     }
 
-    virtual void paintEvent ( QPaintEvent * event )
+    virtual void paintEvent (QPaintEvent *aEvent)
     {
+#ifndef Q_WS_MAC
         QPainter p(this);
 
         QStyleOptionSlider opt;
@@ -96,7 +97,8 @@ public:
             p.fillRect (ticks.x() + posMinErr, ticks.y(), posMaxErr - posMinErr + 1, ticks.height(), mErrColor);
         }
 
-        QSlider::paintEvent (event);
+#endif /* !Q_WS_MAC */
+        QSlider::paintEvent (aEvent);
     }
 
     QColor mOptColor;
@@ -260,6 +262,7 @@ void QIAdvancedSlider::init (Qt::Orientation aOrientation /* = Qt::Horizontal */
 
 int QIAdvancedSlider::snapValue(int val)
 {
+#ifndef Q_WS_MAC
     if (mSnappingEnabled &&
         val > 2)
     {
@@ -276,6 +279,7 @@ int QIAdvancedSlider::snapValue(int val)
                 val = mSlider->minimum();
         }
     }
+#endif /* !Q_WS_MAC */
     return val;
 }
 
