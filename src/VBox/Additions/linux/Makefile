@@ -24,7 +24,11 @@ KBUILD_VERBOSE =
 all:
 	@echo "*** Building 'vboxguest' module ***"
 	@$(MAKE) KBUILD_VERBOSE=$(KBUILD_VERBOSE) -C vboxguest
-	@cp vboxguest/vboxguest.*o .
+	@if [ -f vboxguest/vboxguest.ko ]; then \
+	    cp vboxguest/vboxguest.ko .; \
+	 else \
+	    cp vboxguest/vboxguest.o .; \
+	 fi
 	@echo
 	@if [ -d vboxvfs ]; then \
 	    if [ -f vboxguest/Module.symvers ]; then \
@@ -32,10 +36,10 @@ all:
 	    fi; \
 	    echo "*** Building 'vboxvfs' module ***"; \
 	    $(MAKE) KBUILD_VERBOSE=$(KBUILD_VERBOSE) -C vboxvfs; \
-	    if [ -f vboxvfs/vboxvfs.o ]; then \
-	      cp vboxvfs/vboxvfs.o .; \
+	    if [ -f vboxvfs/vboxvfs.ko ]; then \
+	        cp vboxvfs/vboxvfs.ko .; \
 	    else \
-	      cp vboxvfs/vboxvfs.ko .; \
+	        cp vboxvfs/vboxvfs.o .; \
 	    fi; \
 	fi
 
