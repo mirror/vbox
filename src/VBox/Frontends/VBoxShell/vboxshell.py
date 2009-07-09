@@ -441,7 +441,7 @@ def infoCmd(ctx,args):
     print "  VPID support [HWVirtExVPIDEnabled]: " + asState(mach.HWVirtExVPIDEnabled)
     print "  Hardware 3d acceleration[accelerate3DEnabled]: " + asState(mach.accelerate3DEnabled)
     print "  Nested paging [HWVirtExNestedPagingEnabled]: " + asState(mach.HWVirtExNestedPagingEnabled)
-    print "  Last changed [n/a]: " + time.asctime(time.localtime(mach.lastStateChange/1000))
+    print "  Last changed [n/a]: " + time.asctime(time.localtime(long(mach.lastStateChange)/1000))
     print "  VRDP server [VRDPServer.enabled]: %s" %(asState(mach.VRDPServer.enabled))
 
     controllers = ctx['global'].getArray(mach, 'storageControllers')
