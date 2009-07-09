@@ -228,7 +228,7 @@ if test ! -z "$xorgbin"; then
             7.1.* | 7.2.* | 6.9.* | 7.0.* | 1.3.* )
                 $vboxadditions_path/x11config.pl
                 ;;
-            1.5.* )
+            1.5.* | 1.6.* )
                 $vboxadditions_path/x11config15sol.pl
                 ;;
         esac
