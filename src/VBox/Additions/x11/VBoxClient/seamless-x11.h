@@ -288,6 +288,8 @@ private:
     bool mSupportsShape;
     /** Is seamles mode currently enabled?  */
     bool mEnabled;
+    /** Have there been changes since the last time we sent a notification? */
+    bool mChanged;
 
     // Private methods
 

@@ -148,6 +148,7 @@ void VBoxGuestSeamlessX11::rebuildWindowTree(void)
     LogFlowThisFunc(("called\n"));
     freeWindowTree();
     addClients(DefaultRootWindow(mDisplay.get()));
+    mChanged = true;
 }
 
 
@@ -284,7 +285,9 @@ void VBoxGuestSeamlessX11::nextEvent(void)
     LogFlowThisFunc(("\n"));
     /* Start by sending information about the current window setup to the host.  We do this
        here because we want to send all such information from a single thread. */
-    mObserver->notify();
+    if (mChanged)
+        mObserver->notify();
+    mChanged = false;
     XNextEvent(mDisplay, &event);
     switch (event.type)
     {
@@ -339,6 +342,7 @@ void VBoxGuestSeamlessX11::doConfigureEvent(Window hWin)
             iter->second->mcRects = cRects;
             iter->second->mapRects = rects;
         }
+        mChanged = true;
     }
     LogFlowThisFunc(("returning\n"));
 }
@@ -357,6 +361,7 @@ void VBoxGuestSeamlessX11::doMapEvent(Window hWin)
     if (mGuestWindows.end() == iter)
     {
         addClientWindow(hWin);
+        mChanged = true;
     }
     LogFlowThisFunc(("returning\n"));
 }
@@ -383,6 +388,7 @@ void VBoxGuestSeamlessX11::doShapeEvent(Window hWin)
         iter->second->mhasShape = true;
         iter->second->mcRects = cRects;
         iter->second->mapRects = rects;
+        mChanged = true;
     }
     LogFlowThisFunc(("returning\n"));
 }
@@ -401,6 +407,7 @@ void VBoxGuestSeamlessX11::doUnmapEvent(Window hWin)
     if (mGuestWindows.end() != iter)
     {
         mGuestWindows.removeWindow(iter);
+        mChanged = true;
     }
     LogFlowThisFunc(("returning\n"));
 }
