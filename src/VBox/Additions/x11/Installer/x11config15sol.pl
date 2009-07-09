@@ -113,7 +113,7 @@ foreach $cfg (@cfg_files)
             print TMP "        Driver      \"vboxmouse\"\n";
             if ($os_type eq 'SunOS')
             {
-                print TMP "        Option      \"Device\"     \"\/dev\/mouse\"\n";
+                print TMP "        Option      \"Device\"     \"\/dev\/vboxguest\"\n";
             }
             print TMP "        Option      \"CorePointer\"\n";
             print TMP "EndSection\n";
