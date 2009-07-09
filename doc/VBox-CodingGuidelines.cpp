@@ -115,6 +115,9 @@
  *      - Headers in /include/VBox shall not contain any slash-slash C++
  *        comments, only ANSI C comments!
  *
+ *      - Comments on \#else indicates what begins while the comment on a
+ *        \#endif indicates what ended.
+ *
  *
  * (1) It is common practice on Unix to have a single symbol namespace for an
  *     entire process. If one is careless symbols might be resolved in a
@@ -124,7 +127,6 @@
  *     shared libraries. The Windows / PE __declspect(import) and
  *     __declspect(export) constructs are the main reason for this.
  *     OTOH, we do perhaps have a bit too detailed graining of this in VMM...
- *
  *
  *
  * @subsection sec_vbox_guideline_compulsory_sub64  64-bit and 32-bit
@@ -197,7 +199,6 @@
  *        @endcode
  *
  *
- *
  * @subsection sec_vbox_guideline_compulsory_cppmain   C++ guidelines for Main
  *
  * Main is currently (2009) full of hard-to-maintain code that uses complicated
@@ -233,6 +234,7 @@
  *
  *  -  std::auto_ptr<> in general; that part of the C++ standard is just broken.
  *     Write a destructor that calls delete.
+ *
  *
  *
  * @section sec_vbox_guideline_optional         Optional
@@ -413,6 +415,7 @@
  * Some of the warnings can seem kind of innocent at first glance. So, let's take the
  * most common ones and explain them.
  *
+ *
  * @subsection sec_vbox_guideline_warnings_signed_unsigned_compare      Signed / Unsigned Compare
  *
  * GCC says: "warning: comparison between signed and unsigned integer expressions"
@@ -436,6 +439,7 @@ int main()
  * unsigned long before doing the compare.
  *
  *
+ *
  * @section sec_vbox_guideline_svn          Subversion Commit Rules
  *
  *
@@ -453,6 +457,9 @@ int main()
  *
  *      - If you make a user visible change, such as fixing a reported bug,
  *        make sure you add an entry to doc/manual/user_ChangeLogImpl.xml.
+ *
+ *      - If you are adding files make sure set the right attributes.
+ *        svn-ps.sh/cmd was created for this purpose, please make use of it.
  *
  *
  * After checking in:
