@@ -1477,7 +1477,8 @@ bool VBoxGuestCommonISR(PVBOXGUESTDEVEXT pDevExt)
              */
             fEvents |= pDevExt->f32PendingEvents;
             for (pWait = pDevExt->WaitList.pHead; pWait; pWait = pWait->pNext)
-                if (!pWait->fResEvents)
+                if (    (pWait->fReqEvents & fEvents)
+                    &&  !pWait->fResEvents)
                 {
                     pWait->fResEvents = pWait->fReqEvents & fEvents;
                     fEvents &= ~pWait->fResEvents;
