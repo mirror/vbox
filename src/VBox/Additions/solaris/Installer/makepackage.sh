@@ -62,7 +62,7 @@ echo 'i depend=./vboxguest.depend' >> prototype
 if test -f "./vboxguest.copyright"; then
     echo 'i copyright=./vboxguest.copyright' >> prototype
 fi
-find . -print | $VBOX_GGREP -v -E 'prototype|makepackage.sh|vboxguest.pkginfo|postinstall.sh|preremove.sh|vboxguest.space|vboxguest.copyright' | pkgproto >> prototype
+find . -print | $VBOX_GGREP -v -E 'prototype|makepackage.sh|vboxguest.pkginfo|postinstall.sh|preremove.sh|vboxguest.space|vboxguest.depend|vboxguest.copyright' | pkgproto >> prototype
 
 # don't grok for the class files
 filelist_fixup prototype '$2 == "none"'                                                     '$5 = "root"; $6 = "bin"'
