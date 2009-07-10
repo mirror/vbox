@@ -140,19 +140,22 @@ typedef uint64_t SHFLHANDLE;
 /** Hardcoded maximum number of shared folder mapping available to the guest. */
 #define SHFL_MAX_MAPPINGS    (64)
 
-/** Shared Folders strings. They can be either UTF8 or Unicode.
- *  @{
+/** @name Shared Folders strings. They can be either UTF-8 or UTF-16.
+ * @{
  */
 
+/**
+ * Shared folder string buffer structure.
+ */
 typedef struct _SHFLSTRING
 {
-    /** Size of string String buffer in bytes. */
+    /** Size of the String member in bytes. */
     uint16_t u16Size;
 
     /** Length of string without trailing nul in bytes. */
     uint16_t u16Length;
 
-    /** UTF8 or Unicode16 string. Nul terminated. */
+    /** UTF-8 or UTF-16 string. Nul terminated. */
     union
     {
         uint8_t  utf8[1];
@@ -160,15 +163,18 @@ typedef struct _SHFLSTRING
     } String;
 } SHFLSTRING;
 
+/** Pointer to a shared folder string buffer. */
 typedef SHFLSTRING *PSHFLSTRING;
+/** Pointer to a const shared folder string buffer. */
+typedef const SHFLSTRING *PCSHFLSTRING;
 
 /** Calculate size of the string. */
-DECLINLINE(uint32_t) ShflStringSizeOfBuffer (PSHFLSTRING pString)
+DECLINLINE(uint32_t) ShflStringSizeOfBuffer (PCSHFLSTRING pString)
 {
     return pString? sizeof (SHFLSTRING) - sizeof (pString->String) + pString->u16Size: 0;
 }
 
-DECLINLINE(uint32_t) ShflStringLength (PSHFLSTRING pString)
+DECLINLINE(uint32_t) ShflStringLength (PCSHFLSTRING pString)
 {
     return pString? pString->u16Length: 0;
 }
@@ -190,6 +196,42 @@ DECLINLINE(PSHFLSTRING) ShflStringInitBuffer(void *pvBuffer, uint32_t u32Size)
     }
 
     return pString;
+}
+
+/**
+ * Validates a HGCM string parameter.
+ *
+ * @returns true if valid, false if not.
+ *
+ * @param   pString     The string buffer pointer.
+ * @param   cbBuf       The buffer size from the parameter.
+ */
+DECLINLINE(bool) ShflStringIsValid(PCSHFLSTRING pString, uint32_t cbBuf)
+{
+    if (RT_UNLIKELY(cbBuf <= RT_UOFFSETOF(SHFLSTRING, String)))
+        return false;
+    if (RT_UNLIKELY((uint32_t)pString->u16Size + RT_UOFFSETOF(SHFLSTRING, String) > cbBuf))
+        return false;
+    if (RT_UNLIKELY(pString->u16Length >= pString->u16Size))
+        return false;
+    return true;
+}
+
+/**
+ * Validates an optional HGCM string parameter.
+ *
+ * @returns true if valid, false if not.
+ *
+ * @param   pString     The string buffer pointer. Can be NULL.
+ * @param   cbBuf       The buffer size from the parameter.
+ */
+DECLINLINE(bool) ShflStringIsValidOrNull(PCSHFLSTRING pString, uint32_t cbBuf)
+{
+    if (pString)
+        return ShflStringIsValid(pString, cbBuf);
+    if (RT_UNLIKELY(cbBuf > 0))
+        return false;
+    return true;
 }
 
 /** @} */

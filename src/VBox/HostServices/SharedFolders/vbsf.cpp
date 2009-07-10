@@ -241,7 +241,7 @@ static int vbsfPathCheck(const char *pUtf8Path, size_t cbPath)
     return rc;
 }
 
-static int vbsfBuildFullPath (SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLSTRING *pPath,
+static int vbsfBuildFullPath (SHFLCLIENTDATA *pClient, SHFLROOT root, PSHFLSTRING pPath,
                               uint32_t cbPath, char **ppszFullPath, uint32_t *pcbFullPathRoot, bool fWildCard = false)
 {
     int rc = VINF_SUCCESS;
@@ -264,7 +264,7 @@ static int vbsfBuildFullPath (SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLSTRING
         char *utf8Root;
 
         /* Verify that the path is under the root directory. */
-        rc = vbsfPathCheck((char *)&pPath->String.utf8[0], pPath->u16Length);
+        rc = vbsfPathCheck((const char *)&pPath->String.utf8[0], pPath->u16Length);
 
         if (RT_SUCCESS (rc))
         {
@@ -1444,8 +1444,8 @@ int vbsfFlush(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE Handle)
     return rc;
 }
 
-int vbsfDirList(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE Handle, SHFLSTRING *pPath, uint32_t flags, uint32_t *pcbBuffer, uint8_t *pBuffer,
-                uint32_t *pIndex, uint32_t *pcFiles)
+int vbsfDirList(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE Handle, SHFLSTRING *pPath, uint32_t flags,
+                uint32_t *pcbBuffer, uint8_t *pBuffer, uint32_t *pIndex, uint32_t *pcFiles)
 {
     SHFLFILEHANDLE *pHandle = (SHFLFILEHANDLE *)vbsfQueryHandle(Handle, SHFL_HF_TYPE_DIR);
     PRTDIRENTRYEX  pDirEntry = 0, pDirEntryOrg;
