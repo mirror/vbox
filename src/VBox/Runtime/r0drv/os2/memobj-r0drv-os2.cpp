@@ -309,6 +309,13 @@ int rtR0MemObjNativeMapKernel(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ pMemToMap, 
     AssertMsgReturn(!offSub && !cbSub, ("%#x %#x\n", offSub, cbSub), VERR_NOT_SUPPORTED);
     AssertMsgReturn(pvFixed == (void *)-1, ("%p\n", pvFixed), VERR_NOT_SUPPORTED);
 
+    /*
+     * Check that the specified alignment is supported.
+     */
+    if (uAlignment > PAGE_SIZE)
+        return VERR_NOT_SUPPORTED;
+
+
 /** @todo finish the implementation. */
 
     int rc;
@@ -330,7 +337,6 @@ int rtR0MemObjNativeMapKernel(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ pMemToMap, 
             if (!pvR0)
             {
                 /* no ring-0 mapping, so allocate a mapping in the process. */
-                AssertMsgReturn(uAlignment == PAGE_SIZE, ("%#zx\n", uAlignment), VERR_NOT_SUPPORTED);
                 AssertMsgReturn(fProt & RTMEM_PROT_WRITE, ("%#x\n", fProt), VERR_NOT_SUPPORTED);
                 Assert(!pMemToMapOs2->Core.u.Phys.fAllocated);
                 ULONG ulPhys = pMemToMapOs2->Core.u.Phys.PhysBase;
@@ -382,6 +388,8 @@ int rtR0MemObjNativeMapUser(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ pMemToMap, RT
 {
     AssertMsgReturn(R0Process == RTR0ProcHandleSelf(), ("%p != %p\n", R0Process, RTR0ProcHandleSelf()), VERR_NOT_SUPPORTED);
     AssertMsgReturn(R3PtrFixed == (RTR3PTR)-1, ("%p\n", R3PtrFixed), VERR_NOT_SUPPORTED);
+    if (uAlignment > PAGE_SIZE)
+        return VERR_NOT_SUPPORTED;
 
     int rc;
     void *pvR0;
@@ -404,7 +412,6 @@ int rtR0MemObjNativeMapUser(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ pMemToMap, RT
             if (!pvR0)
             {
                 /* no ring-0 mapping, so allocate a mapping in the process. */
-                AssertMsgReturn(uAlignment == PAGE_SIZE, ("%#zx\n", uAlignment), VERR_NOT_SUPPORTED);
                 AssertMsgReturn(fProt & RTMEM_PROT_WRITE, ("%#x\n", fProt), VERR_NOT_SUPPORTED);
                 Assert(!pMemToMapOs2->Core.u.Phys.fAllocated);
                 ULONG ulPhys = pMemToMapOs2->Core.u.Phys.PhysBase;

@@ -321,7 +321,7 @@ int rtR0MemObjNativeReserveUser(PPRTR0MEMOBJINTERNAL ppMem, RTR3PTR R3PtrFixed, 
 int rtR0MemObjNativeMapKernel(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ pMemToMap, void *pvFixed, size_t uAlignment,
                               unsigned fProt, size_t offSub, size_t cbSub)
 {
-    /* @todo rtR0MemObjNativeMapKernel / Solaris - Should be fairly simple alloc kernel memory and memload it. */
+    /** @todo rtR0MemObjNativeMapKernel / Solaris - Should be fairly simple alloc kernel memory and memload it. */
     return VERR_NOT_IMPLEMENTED;
 }
 
@@ -356,6 +356,8 @@ int rtR0MemObjNativeMapUser(PPRTR0MEMOBJINTERNAL ppMem, PRTR0MEMOBJINTERNAL pMem
     {
         as_rangeunlock(useras);
         cmn_err(CE_NOTE, "rtR0MemObjNativeMapUser: map_addr alignment(%ld) failed.\n", uAlignment);
+        if (uAlignment > PAGE_SIZE)
+            return VERR_NOT_SUPPORTED;
         return VERR_MAP_FAILED;
     }
 
