@@ -198,32 +198,28 @@ static int vmmdevHGCMRemoveCommand (VMMDevState *pVMMDevState, PVBOXHGCMCMD pCmd
 }
 
 
-static PVBOXHGCMCMD vmmdevHGCMFindCommand (VMMDevState *pVMMDevState, RTGCPHYS GCPhys)
+/**
+ * Find a HGCM command by its physical address.
+ *
+ * The caller is responsible for taking the command list lock before calling
+ * this function.
+ *
+ * @returns Pointer to the command on success, NULL otherwise.
+ * @param   pThis           The VMMDev instance data.
+ * @param   GCPhys          The physical address of the command we're looking
+ *                          for.
+ */
+DECLINLINE(PVBOXHGCMCMD) vmmdevHGCMFindCommandLocked (VMMDevState *pThis, RTGCPHYS GCPhys)
 {
-    PVBOXHGCMCMD pCmd = NULL;
-
-    int rc = vmmdevHGCMCmdListLock (pVMMDevState);
-
-    if (RT_SUCCESS (rc))
+    for (PVBOXHGCMCMD pCmd = pThis->pHGCMCmdList;
+         pCmd;
+         pCmd = pCmd->pNext)
     {
-        pCmd = pVMMDevState->pHGCMCmdList;
-
-        while (pCmd)
-        {
-            if (pCmd->GCPhys == GCPhys)
-            {
-                break;
-            }
-            pCmd = pCmd->pNext;
-        }
-
-        vmmdevHGCMCmdListUnlock (pVMMDevState);
+         if (pCmd->GCPhys == GCPhys)
+             return pCmd;
     }
-
-    LogFlowFunc(("%p\n", pCmd));
-    return pCmd;
+    return NULL;
 }
-
 
 static int vmmdevHGCMSaveLinPtr (PPDMDEVINS pDevIns,
                                  uint32_t iParm,
@@ -1004,7 +1000,8 @@ int vmmdevHGCMCall (VMMDevState *pVMMDevState, VMMDevHGCMCall *pHGCMCall, uint32
         vmmdevHGCMAddCommand (pVMMDevState, pCmd, GCPhys, pHGCMCall->header.header.size, VBOXHGCMCMDTYPE_CALL);
 
         /* Pass the function call to HGCM connector for actual processing */
-        rc = pVMMDevState->pHGCMDrv->pfnCall (pVMMDevState->pHGCMDrv, pCmd, pHGCMCall->u32ClientID, pHGCMCall->u32Function, cParms, pCmd->paHostParms);
+        rc = pVMMDevState->pHGCMDrv->pfnCall (pVMMDevState->pHGCMDrv, pCmd, pHGCMCall->u32ClientID,
+                                              pHGCMCall->u32Function, cParms, pCmd->paHostParms);
     }
     else
     {
@@ -1447,27 +1444,57 @@ static int vmmdevHGCMCallSaved (VMMDevState *pVMMDevState, VMMDevHGCMCall *pHGCM
     return rc;
 }
 
-/* @thread EMT */
+/**
+ * VMMDevReq_HGCMCancel worker.
+ *
+ * @thread EMT
+ */
 int vmmdevHGCMCancel (VMMDevState *pVMMDevState, VMMDevHGCMCancel *pHGCMCancel, RTGCPHYS GCPhys)
 {
-    int rc = VINF_SUCCESS;
-
     NOREF(pHGCMCancel);
+    int rc = vmmdevHGCMCancel2(pVMMDevState, GCPhys);
+    return rc == VERR_NOT_FOUND ? VERR_INVALID_PARAMETER : rc;
+}
 
-    Log(("vmmdevHGCMCancel\n"));
+/**
+ * VMMDevReq_HGCMCancel2 worker.
+ *
+ * @retval  VINF_SUCCESS on success.
+ * @retval  VERR_NOT_FOUND if the request was not found.
+ * @retval  VERR_INVALID_PARAMETER if the request address is invalid.
+ *
+ * @param   pThis       The VMMDev instance data.
+ * @param   GCPhys      The address of the request that should be cancelled.
+ *
+ * @thread EMT
+ */
+int vmmdevHGCMCancel2 (VMMDevState *pThis, RTGCPHYS GCPhys)
+{
+    if (    GCPhys == 0
+        ||  GCPhys == NIL_RTGCPHYS
+        ||  GCPhys == NIL_RTGCPHYS32)
+    {
+        Log(("vmmdevHGCMCancel2: GCPhys=%#x\n", GCPhys));
+        return VERR_INVALID_PARAMETER;
+    }
 
-    /* Find the command in the list. */
-    PVBOXHGCMCMD pCmd = vmmdevHGCMFindCommand (pVMMDevState, GCPhys);
+    /*
+     * Locate the command and cancel it while under the protection of
+     * the lock. hgcmCompletedWorker makes assumptions about this.
+     */
+    int rc = vmmdevHGCMCmdListLock (pThis);
+    AssertRCReturn(rc, rc);
 
+    PVBOXHGCMCMD pCmd = vmmdevHGCMFindCommandLocked (pThis, GCPhys);
     if (pCmd)
     {
         pCmd->fCancelled = true;
+        Log(("vmmdevHGCMCancel2: Cancelled pCmd=%p / GCPhys=%#x\n", pCmd, GCPhys));
     }
     else
-    {
-        rc = VERR_INVALID_PARAMETER;
-    }
+        rc = VERR_NOT_FOUND;
 
+    vmmdevHGCMCmdListUnlock (pThis);
     return rc;
 }
 
@@ -1528,15 +1555,16 @@ DECLCALLBACK(void) hgcmCompletedWorker (PPDMIHGCMPORT pInterface, int32_t result
         return;
     }
 
-    /* Check whether the command has been already cancelled by the guest.
-     * If it was cancelled, then the data must not be written back to the
-     * guest RAM.
+    /*
+     * The cancellation protocol requires us to remove the command here
+     * and then check the flag. Cancelled commands must not be written
+     * back to guest memory.
      */
+    vmmdevHGCMRemoveCommand (pVMMDevState, pCmd);
+
     if (pCmd->fCancelled)
     {
-        /* Just remove the command from the internal list, so the memory can be freed. */
         LogFlowFunc(("A cancelled command %p\n", pCmd));
-        vmmdevHGCMRemoveCommand (pVMMDevState, pCmd);
     }
     else
     {
@@ -1556,13 +1584,12 @@ DECLCALLBACK(void) hgcmCompletedWorker (PPDMIHGCMPORT pInterface, int32_t result
         else
         {
             pHeader = (VMMDevHGCMRequestHeader *)RTMemAlloc (pCmd->cbSize);
-            Assert(pHeader);
             if (pHeader == NULL)
             {
-                LogRel(("VMMDev: Failed to allocate %d bytes for HGCM request completion!!!\n", pCmd->cbSize));
+                LogRel(("VMMDev: Failed to allocate %u bytes for HGCM request completion!!!\n", pCmd->cbSize));
 
-                /* Do some cleanup. The command have to be excluded from list of active commands anyway. */
-                vmmdevHGCMRemoveCommand (pVMMDevState, pCmd);
+                /* Free it. The command have to be excluded from list of active commands anyway. */
+                RTMemFree (pCmd);
                 return;
             }
         }
@@ -1577,6 +1604,7 @@ DECLCALLBACK(void) hgcmCompletedWorker (PPDMIHGCMPORT pInterface, int32_t result
         /** @todo It would be faster if this interface would use MMIO2 memory and we
          *        didn't have to mess around with PDMDevHlpPhysRead/Write. We're
          *        reading the header 3 times now and writing the request back twice. */
+
         PDMCritSectEnter(&pVMMDevState->CritSect, VERR_SEM_BUSY);
         PDMCritSectLeave(&pVMMDevState->CritSect);
 
@@ -1634,7 +1662,8 @@ DECLCALLBACK(void) hgcmCompletedWorker (PPDMIHGCMPORT pInterface, int32_t result
                                 if (pGuestParm->type != VMMDevHGCMParmType_LinAddr_In)
                                 {
                                     /* Use the saved page list to write data back to the guest RAM. */
-                                    rc = vmmdevHGCMWriteLinPtr (pVMMDevState->pDevIns, i, pHostParm->u.pointer.addr, size, iLinPtr, pCmd->paLinPtrs);
+                                    rc = vmmdevHGCMWriteLinPtr (pVMMDevState->pDevIns, i, pHostParm->u.pointer.addr,
+                                                                size, iLinPtr, pCmd->paLinPtrs);
                                     AssertReleaseRC(rc);
                                 }
 
@@ -1915,9 +1944,6 @@ DECLCALLBACK(void) hgcmCompletedWorker (PPDMIHGCMPORT pInterface, int32_t result
 
         /* Write back the request */
         PDMDevHlpPhysWrite(pVMMDevState->pDevIns, pCmd->GCPhys, pHeader, pCmd->cbSize);
-
-        /* The command has been completely processed and can be removed from the list. */
-        vmmdevHGCMRemoveCommand (pVMMDevState, pCmd);
 
         /* Now, when the command was removed from the internal list, notify the guest. */
         VMMDevNotifyGuest (pVMMDevState, VMMDEV_EVENT_HGCM);
