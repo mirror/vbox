@@ -903,7 +903,8 @@ int rtR0MemObjNativeReserveKernel(PPRTR0MEMOBJINTERNAL ppMem, void *pvFixed, siz
 
     /* check for unsupported stuff. */
     AssertMsgReturn(pvFixed == (void *)-1, ("%p\n", pvFixed), VERR_NOT_SUPPORTED);
-    AssertMsgReturn(uAlignment <= PAGE_SIZE, ("%#x\n", uAlignment), VERR_NOT_SUPPORTED);
+    if (uAlignment > PAGE_SIZE)
+        return VERR_NOT_SUPPORTED;
 
     /*
      * Allocate a dummy page and create a page pointer array for vmap such that
@@ -1017,6 +1018,12 @@ int rtR0MemObjNativeReserveUser(PPRTR0MEMOBJINTERNAL ppMem, RTR3PTR R3PtrFixed, 
         return VERR_NOT_SUPPORTED;
 
     /*
+     * Check that the specified alignment is supported.
+     */
+    if (uAlignment > PAGE_SIZE)
+        return VERR_NOT_SUPPORTED;
+
+    /*
      * Let rtR0MemObjLinuxDoMmap do the difficult bits.
      */
     down_write(&pTask->mm->mmap_sem);
@@ -1050,7 +1057,8 @@ int rtR0MemObjNativeMapKernel(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ pMemToMap, 
     /* Fail if requested to do something we can't. */
     AssertMsgReturn(!offSub && !cbSub, ("%#x %#x\n", offSub, cbSub), VERR_NOT_SUPPORTED);
     AssertMsgReturn(pvFixed == (void *)-1, ("%p\n", pvFixed), VERR_NOT_SUPPORTED);
-    AssertMsgReturn(uAlignment <= PAGE_SIZE, ("%#x\n", uAlignment), VERR_NOT_SUPPORTED);
+    if (uAlignment > PAGE_SIZE)
+        return VERR_NOT_SUPPORTED;
 
     /*
      * Create the IPRT memory object.
@@ -1134,6 +1142,8 @@ int rtR0MemObjNativeMapUser(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ pMemToMap, RT
      * Check for restrictions.
      */
     if (!pTask)
+        return VERR_NOT_SUPPORTED;
+    if (uAlignment > PAGE_SIZE)
         return VERR_NOT_SUPPORTED;
 
     /*

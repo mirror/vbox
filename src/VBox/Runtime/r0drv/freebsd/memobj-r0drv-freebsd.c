@@ -441,6 +441,12 @@ static int rtR0MemObjNativeReserveInMap(PPRTR0MEMOBJINTERNAL ppMem, void *pvFixe
         return VERR_INVALID_PARAMETER;
 
     /*
+     * Check that the specified alignment is supported.
+     */
+    if (uAlignment > PAGE_SIZE)
+        return VERR_NOT_SUPPORTED;
+
+    /*
      * Create the object.
      */
     PRTR0MEMOBJFREEBSD pMemFreeBSD = (PRTR0MEMOBJFREEBSD)rtR0MemObjNew(sizeof(*pMemFreeBSD), RTR0MEMOBJTYPE_RES_VIRT, NULL, cb);
@@ -513,6 +519,14 @@ int rtR0MemObjNativeMapKernel(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ pMemToMap, 
 {
     AssertMsgReturn(!offSub && !cbSub, ("%#x %#x\n", offSub, cbSub), VERR_NOT_SUPPORTED);
     AssertMsgReturn(pvFixed == (void *)-1, ("%p\n", pvFixed), VERR_NOT_SUPPORTED);
+
+    /*
+     * Check that the specified alignment is supported.
+     */
+    if (uAlignment > PAGE_SIZE)
+        return VERR_NOT_SUPPORTED;
+
+
 
 /* Phys: see pmap_mapdev in i386/i386/pmap.c (http://fxr.watson.org/fxr/source/i386/i386/pmap.c?v=RELENG62#L2860) */
 
@@ -587,8 +601,13 @@ int rtR0MemObjNativeMapKernel(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ pMemToMap, 
 /* see http://markmail.org/message/udhq33tefgtyfozs */
 int rtR0MemObjNativeMapUser(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ pMemToMap, RTR3PTR R3PtrFixed, size_t uAlignment, unsigned fProt, RTR0PROCESS R0Process)
 {
+    /*
+     * Check for unsupported stuff.
+     */
     AssertMsgReturn(R0Process == RTR0ProcHandleSelf(), ("%p != %p\n", R0Process, RTR0ProcHandleSelf()), VERR_NOT_SUPPORTED);
     AssertMsgReturn(R3PtrFixed == (RTR3PTR)-1, ("%p\n", R3PtrFixed), VERR_NOT_SUPPORTED);
+    if (uAlignment > PAGE_SIZE)
+        return VERR_NOT_SUPPORTED;
 
     int             rc;
     vm_object_t     pObjectToMap = ((PRTR0MEMOBJFREEBSD)pMemToMap)->pObject;

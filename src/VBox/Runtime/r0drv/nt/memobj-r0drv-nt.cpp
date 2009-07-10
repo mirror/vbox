@@ -653,6 +653,12 @@ static int rtR0MemObjNtMap(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ pMemToMap, voi
     int rc = VERR_MAP_FAILED;
 
     /*
+     * Check that the specified alignment is supported.
+     */
+    if (uAlignment > PAGE_SIZE)
+        return VERR_NOT_SUPPORTED;
+
+    /*
      * There are two basic cases here, either we've got an MDL and can
      * map it using MmMapLockedPages, or we've got a contiguous physical
      * range (MMIO most likely) and can use MmMapIoSpace.
