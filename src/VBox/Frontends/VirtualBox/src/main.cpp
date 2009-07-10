@@ -330,8 +330,8 @@ extern "C" DECLEXPORT(int) TrustedMain (int argc, char **argv, char ** /*envp*/)
          * restore the original environment, so that others like the OpenGL
          * service will proper work. */
         char *pchOldVar = NULL;
-        if (!RTEnvExist ("VBOX_NO_ARGB_VISUALS_HACK") &&
-            VBoxGlobal::qtRTVersion() >= 0x040500)
+        bool fHackARGB = !RTEnvExist ("VBOX_NO_ARGB_VISUALS_HACK") && VBoxGlobal::qtRTVersion() >= 0x040500;
+        if (fHackARGB)
         {
             const char *pchVar = RTEnvGet ("XLIB_SKIP_ARGB_VISUALS");
             if (pchVar)
@@ -341,12 +341,16 @@ extern "C" DECLEXPORT(int) TrustedMain (int argc, char **argv, char ** /*envp*/)
         /* Now create the application object */
         QIApplication a (argc, argv);
         /* Restore previous environment */
-        if (pchOldVar)
+        if (fHackARGB)
         {
-            RTEnvSet ("XLIB_SKIP_ARGB_VISUALS", pchOldVar);
-            RTStrFree (pchOldVar);
-        }else
-            RTEnvUnset ("XLIB_SKIP_ARGB_VISUALS");
+            if (pchOldVar)
+            {
+                RTEnvSet ("XLIB_SKIP_ARGB_VISUALS", pchOldVar);
+                RTStrFree (pchOldVar);
+            }
+            else
+                RTEnvUnset ("XLIB_SKIP_ARGB_VISUALS");
+        }
 #else /* defined(Q_WS_X11) && (QT_VERSION >= 0x040500) */
         QIApplication a (argc, argv);
 #endif /* defined(Q_WS_X11) && (QT_VERSION >= 0x040500) */
