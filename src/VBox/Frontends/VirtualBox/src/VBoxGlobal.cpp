@@ -721,15 +721,9 @@ VBoxConsoleWnd &VBoxGlobal::consoleWnd()
          *  to avoid recursion, since this method may be (and will be) called
          *  from the below constructor or from constructors/methods it calls.
          */
-#ifdef Q_WS_X11
-        setenv ("XLIB_SKIP_ARGB_VISUALS", "1", 1);
-#endif
         VBoxConsoleWnd *w = new VBoxConsoleWnd (&mConsoleWnd, 0);
         Assert (w == mConsoleWnd);
         NOREF(w);
-#ifdef Q_WS_X11
-        unsetenv ("XLIB_SKIP_ARGB_VISUALS");
-#endif
     }
 
     return *mConsoleWnd;

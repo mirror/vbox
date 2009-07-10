@@ -296,15 +296,6 @@ void VBoxFrameBuffer::doProcessVHWACommand(struct _VBOXVHWACMD * pCommand)
 VBoxQImageFrameBuffer::VBoxQImageFrameBuffer (VBoxConsoleView *aView) :
     VBoxFrameBuffer (aView)
 {
-    /* There are some buggy/strange driver/compiz combinations which lead to
-     * transparent backgrounds on ARGB visuals. Try to fix it by painting
-     * always a black background. */
-    aView->viewport()->setAttribute (Qt::WA_OpaquePaintEvent, false);
-    aView->viewport()->setAttribute (Qt::WidgetAttribute(120), false);
-    aView->viewport()->setAttribute (Qt::WA_NoSystemBackground, false);
-    QPalette pal = aView->viewport()->palette();
-    pal.setColor (QPalette::Window, Qt::black);
-    aView->viewport()->setPalette (pal);
     /* Initialize the framebuffer the first time */
     resizeEvent (new VBoxResizeEvent (FramebufferPixelFormat_Opaque,
                                       NULL, 0, 0, 640, 480));
