@@ -63,13 +63,162 @@ static DECLCALLBACK(void) VBoxGuestHGCMAsyncWaitCallback(VMMDevHGCMRequestHeader
  */
 static int vboxGuestInitFixateGuestMappings(PVBOXGUESTDEVEXT pDevExt)
 {
-    /** @todo implement this using RTR0MemObjReserveKernel() (it needs to be implemented everywhere too). */
+    /*
+     * Query the required space.
+     */
+    VMMDevReqHypervisorInfo *pReq;
+    int rc = VbglGRAlloc((VMMDevRequestHeader **)&pReq, sizeof(VMMDevReqHypervisorInfo), VMMDevReq_GetHypervisorInfo);
+    if (RT_FAILURE(rc))
+        return rc;
+    pReq->hypervisorStart = 0;
+    pReq->hypervisorSize  = 0;
+    rc = VbglGRPerform(&pReq->header);
+    if (RT_FAILURE(rc)) /* this shouldn't happen! */
+    {
+        VbglGRFree(&pReq->header);
+        return rc;
+    }
+
+    /*
+     * The VMM will report back if there is nothing it wants to map, like for
+     * insance in VT-x and AMD-V mode.
+     */
+    if (pReq->hypervisorSize == 0)
+        Log(("vboxGuestInitFixateGuestMappings: nothing to do\n"));
+    else
+    {
+        /*
+         * We have to try several times since the host can be picky
+         * about certain addresses.
+         */
+        RTR0MEMOBJ  hFictive     = NIL_RTR0MEMOBJ;
+        uint32_t    cbHypervisor = pReq->hypervisorSize;
+        RTR0MEMOBJ  ahTries[5];
+        uint32_t    iTry;
+        Log(("vboxGuestInitFixateGuestMappings: cbHypervisor=%#x\n", cbHypervisor));
+        for (iTry = 0; iTry < RT_ELEMENTS(ahTries); iTry++)
+        {
+            /*
+             * Reserve space, or if that isn't supported, create a object for
+             * some fictive physical memory and map that in to kernel space.
+             *
+             * To make the code a bit uglier, most systems cannot help with
+             * 4MB alignment, so we have to deal with that in addition to
+             * having two ways of getting the memory.
+             */
+            uint32_t    uAlignment = _4M;
+            RTR0MEMOBJ  hObj;
+            rc = RTR0MemObjReserveKernel(&hObj, (void *)-1, RT_ALIGN_32(cbHypervisor, _4M), uAlignment);
+            if (rc == VERR_NOT_SUPPORTED)
+            {
+                uAlignment = PAGE_SIZE;
+                rc = RTR0MemObjReserveKernel(&hObj, (void *)-1, RT_ALIGN_32(cbHypervisor, _4M) + _4M, uAlignment);
+            }
+            if (rc == VERR_NOT_SUPPORTED)
+            {
+                if (hFictive == NIL_RTR0MEMOBJ)
+                {
+                    rc = RTR0MemObjEnterPhys(&hObj, VBOXGUEST_HYPERVISOR_PHYSICAL_START, cbHypervisor + _4M);
+                    if (RT_FAILURE(rc))
+                        break;
+                    hFictive = hObj;
+                }
+                uAlignment = _4M;
+                rc = RTR0MemObjMapKernel(&hObj, hFictive, (void *)-1, uAlignment, RTMEM_PROT_READ | RTMEM_PROT_WRITE);
+                if (rc == VERR_NOT_SUPPORTED)
+                {
+                    uAlignment = PAGE_SIZE;
+                    rc = RTR0MemObjMapKernel(&hObj, hFictive, (void *)-1, uAlignment, RTMEM_PROT_READ | RTMEM_PROT_WRITE);
+                }
+            }
+            if (RT_FAILURE(rc))
+            {
+                LogRel(("VBoxGuest: Failed to reserve memory for the hypervisor: rc=%Rrc (cbHypervisor=%#x uAlignment=%#x iTry=%u)\n",
+                        rc, cbHypervisor, uAlignment, iTry));
+                break;
+            }
+
+            /*
+             * Try set it.
+             */
+            pReq->header.requestType = VMMDevReq_SetHypervisorInfo;
+            pReq->header.rc          = VERR_INTERNAL_ERROR;
+            pReq->hypervisorSize     = cbHypervisor;
+            pReq->hypervisorStart    = (uintptr_t)RTR0MemObjAddress(hObj);
+            if (    uAlignment == PAGE_SIZE
+                &&  pReq->hypervisorStart & (_4M - 1))
+                pReq->hypervisorStart = RT_ALIGN_32(pReq->hypervisorStart, _4M);
+                (pReq->hypervisorStart | (_4M - 1)) + 1;
+            AssertMsg(RT_ALIGN_32(pReq->hypervisorStart, _4M) == pReq->hypervisorStart, ("%#x\n", pReq->hypervisorStart));
+
+            rc = VbglGRPerform(&pReq->header);
+            if (RT_SUCCESS(rc))
+            {
+                pDevExt->hGuestMappings = hFictive != NIL_RTR0MEMOBJ ? hFictive : hObj;
+                Log(("vboxGuestInitFixateGuestMappings: %p LB %#x; uAlignment=%#x iTry=%u hGuestMappings=%p (%s)\n",
+                     RTR0MemObjAddress(pDevExt->hGuestMappings),
+                     RTR0MemObjSize(pDevExt->hGuestMappings),
+                     uAlignment, iTry, pDevExt->hGuestMappings, hFictive != NIL_RTR0PTR ? "fictive" : "reservation"));
+                break;
+            }
+            ahTries[iTry] = hObj;
+        }
+
+        /*
+         * Cleanup failed attempts.
+         */
+        while (iTry-- > 0)
+            RTR0MemObjFree(ahTries[iTry], false /* fFreeMappings */);
+        if (    RT_FAILURE(rc)
+            &&  hFictive != NIL_RTR0PTR)
+            RTR0MemObjFree(hFictive, false /* fFreeMappings */);
+    }
+    VbglGRFree(&pReq->header);
+
+    /*
+     * We ignore failed attempts for now.
+     */
     return VINF_SUCCESS;
 }
 
 
 /**
- * Initializes the interrupt filter mask.
+ * Undo what vboxGuestInitFixateGuestMappings did.
+ *
+ * @param   pDevExt     The device extension.
+ */
+static void vboxGuestTermUnfixGuestMappings(PVBOXGUESTDEVEXT pDevExt)
+{
+    if (pDevExt->hGuestMappings != NIL_RTR0PTR)
+    {
+        /*
+         * Tell the host that we're going to free the memory we reserved for
+         * it, the free it up. (Leak the memory if anything goes wrong here.)
+         */
+        VMMDevReqHypervisorInfo *pReq;
+        int rc = VbglGRAlloc((VMMDevRequestHeader **)&pReq, sizeof(VMMDevReqHypervisorInfo), VMMDevReq_SetHypervisorInfo);
+        if (RT_SUCCESS(rc))
+        {
+            pReq->hypervisorStart = 0;
+            pReq->hypervisorSize  = 0;
+            rc = VbglGRPerform(&pReq->header);
+            VbglGRFree(&pReq->header);
+        }
+        if (RT_SUCCESS(rc))
+        {
+            rc = RTR0MemObjFree(pDevExt->hGuestMappings, true /* fFreeMappings */);
+            AssertRC(rc);
+        }
+        else
+            LogRel(("vboxGuestTermUnfixGuestMappings: Failed to unfix the guest mappings! rc=%Rrc\n", rc));
+
+        pDevExt->hGuestMappings = NIL_RTR0MEMOBJ;
+    }
+}
+
+
+/**
+ * Sets the interrupt filter mask during initialization and termination.
  *
  * This will ASSUME that we're the ones in carge over the mask, so
  * we'll simply clear all bits we don't set.
@@ -78,18 +227,18 @@ static int vboxGuestInitFixateGuestMappings(PVBOXGUESTDEVEXT pDevExt)
  * @param   pDevExt     The device extension.
  * @param   fMask       The new mask.
  */
-static int vboxGuestInitFilterMask(PVBOXGUESTDEVEXT pDevExt, uint32_t fMask)
+static int vboxGuestSetFilterMask(PVBOXGUESTDEVEXT pDevExt, uint32_t fMask)
 {
     VMMDevCtlGuestFilterMask *pReq;
     int rc = VbglGRAlloc((VMMDevRequestHeader **)&pReq, sizeof(*pReq), VMMDevReq_CtlGuestFilterMask);
     if (RT_SUCCESS(rc))
     {
         pReq->u32OrMask = fMask;
-        pReq->u32NotMask = ~fMask; /* It's an AND mask. */
+        pReq->u32NotMask = ~fMask;
         rc = VbglGRPerform(&pReq->header);
         if (    RT_FAILURE(rc)
             ||  RT_FAILURE(pReq->header.rc))
-            LogRel(("vboxGuestInitCtlFilterMask: failed with rc=%Rrc and VMMDev rc=%Rrc\n",
+            LogRel(("vboxGuestSetFilterMask: failed with rc=%Rrc and VMMDev rc=%Rrc\n",
                     rc, pReq->header.rc));
         VbglGRFree(&pReq->header);
     }
@@ -162,6 +311,7 @@ int VBoxGuestInitDevExt(PVBOXGUESTDEVEXT pDevExt, uint16_t IOPortBase,
     pDevExt->IOPortBase = IOPortBase;
     pDevExt->pVMMDevMemory = NULL;
     pDevExt->fFixedEvents = fFixedEvents;
+    pDevExt->hGuestMappings = NIL_RTR0MEMOBJ;
     pDevExt->pIrqAckEvents = NULL;
     pDevExt->PhysIrqAckEvents = NIL_RTCCPHYS;
     pDevExt->WaitList.pHead = NULL;
@@ -227,7 +377,7 @@ int VBoxGuestInitDevExt(PVBOXGUESTDEVEXT pDevExt, uint16_t IOPortBase,
             rc = vboxGuestInitReportGuestInfo(pDevExt, enmOSType);
             if (RT_SUCCESS(rc))
             {
-                rc = vboxGuestInitFilterMask(pDevExt, fFixedEvents);
+                rc = vboxGuestSetFilterMask(pDevExt, fFixedEvents);
                 if (RT_SUCCESS(rc))
                 {
                     /*
@@ -296,12 +446,19 @@ void VBoxGuestDeleteDevExt(PVBOXGUESTDEVEXT pDevExt)
 {
     int rc2;
     Log(("VBoxGuestDeleteDevExt:\n"));
+    LogRel(("VBoxGuest: The additions driver is terminating.\n"));
 
-/** @todo tell VMMDev that the guest additions are no longer running (clear all capability masks).
- * Like calling VBoxGuestSetGuestCapabilities. This wasn't done initially since it was not
- * relevant for OS/2. On solaris modules can be unloaded, so we should implement it.
- */
+    /*
+     * Unfix the guest mappings, filter all events and clear
+     * all capabilities.
+     */
+    vboxGuestTermUnfixGuestMappings(pDevExt);
+    VBoxGuestSetGuestCapabilities(0, UINT32_MAX);
+    vboxGuestSetFilterMask(pDevExt, 0);
 
+    /*
+     * Cleanup resources.
+     */
     rc2 = RTSpinlockDestroy(pDevExt->EventSpinlock); AssertRC(rc2);
     rc2 = RTSpinlockDestroy(pDevExt->SessionSpinlock); AssertRC(rc2);
 

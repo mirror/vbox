@@ -87,6 +87,8 @@ typedef struct VBOXGUESTDEVEXT
     VMMDevMemory volatile      *pVMMDevMemory;
     /** Events we won't permit anyone to filter out. */
     uint32_t                    fFixedEvents;
+    /** The memory object reserving space for the guest mappings. */
+    RTR0MEMOBJ                  hGuestMappings;
 
     /** Spinlock protecting the signaling and resetting of the wait-for-event
      * semaphores as well as the event acking in the ISR. */
