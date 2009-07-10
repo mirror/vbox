@@ -345,7 +345,8 @@ extern "C" DECLEXPORT(int) TrustedMain (int argc, char **argv, char ** /*envp*/)
         {
             RTEnvSet ("XLIB_SKIP_ARGB_VISUALS", pchOldVar);
             RTStrFree (pchOldVar);
-        }
+        }else
+            RTEnvUnset ("XLIB_SKIP_ARGB_VISUALS");
 #else /* defined(Q_WS_X11) && (QT_VERSION >= 0x040500) */
         QIApplication a (argc, argv);
 #endif /* defined(Q_WS_X11) && (QT_VERSION >= 0x040500) */
