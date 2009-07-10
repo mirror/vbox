@@ -806,7 +806,13 @@ bool VBoxConsoleWnd::openView (const CSession &session)
     CConsole cconsole = csession.GetConsole();
     AssertWrapperOk (csession);
 
+#ifdef Q_WS_X11
+    setenv ("XLIB_SKIP_ARGB_VISUALS", "1", 1);
+#endif
     console = new VBoxConsoleView (this, cconsole, mode, centralWidget());
+#ifdef Q_WS_X11
+    unsetenv ("XLIB_SKIP_ARGB_VISUALS");
+#endif
     static_cast <QGridLayout*> (centralWidget()->layout())->addWidget (console, 1, 1, Qt::AlignVCenter | Qt::AlignHCenter);
 
     CMachine cmachine = csession.GetMachine();
