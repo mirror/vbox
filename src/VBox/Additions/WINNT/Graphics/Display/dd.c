@@ -1385,8 +1385,29 @@ DWORD APIENTRY DdFreeDriverMemory(PDD_FREEDRIVERMEMORYDATA lpFreeDriverMemory)
 #ifdef VBOX_WITH_VIDEOHWACCEL
 DWORD APIENTRY DdSetColorKey(PDD_SETCOLORKEYDATA  lpSetColorKey)
 {
+    PPDEV pDev = (PPDEV)lpSetColorKey->lpDD->dhpdev;
+    DD_SURFACE_LOCAL*   lpSurfaceLocal = lpSetColorKey->lpDDSurface;
+    DD_SURFACE_GLOBAL*  lpSurfaceGlobal = lpSurfaceLocal->lpGbl;
+    VBOXVHWACMD* pCmd;
+
     DISPDBG((0, "%s\n", __FUNCTION__));
-    lpSetColorKey->ddRVal = DD_OK;
+
+    pCmd = vboxVHWACommandCreate (pDev, VBOXVHWACMD_TYPE_SURF_COLORKEY_SET, sizeof(VBOXVHWACMD_SURF_COLORKEY_SET));
+    //    int rc = VERR_GENERAL_FAILURE;
+    if(pCmd)
+    {
+        VBOXVHWACMD_SURF_COLORKEY_SET * pBody = VBOXVHWACMD_BODY(pCmd, VBOXVHWACMD_SURF_COLORKEY_SET);
+        PVBOXVHWASURFDESC pDesc = (PVBOXVHWASURFDESC)lpSurfaceGlobal->dwReserved1;
+        memset(pBody, 0, sizeof(VBOXVHWACMD_SURF_COLORKEY_SET));
+
+        pBody->u.in.offSurface = (uint64_t)lpSurfaceGlobal->fpVidMem;
+        pBody->u.in.hSurf = pDesc->hHostHandle;
+        pBody->u.in.flags = vboxVHWAFromDDCKEYs(lpSetColorKey->dwFlags);
+        vboxVHWAFromDDCOLORKEY(&pBody->u.in.CKey, &lpSetColorKey->ckNew);
+
+        vboxVHWACommandSubmitAsynch(pDev, pCmd, vboxVHWAFreeCmdCompletion, NULL);
+        lpSetColorKey->ddRVal = DD_OK;
+    }
     return DDHAL_DRIVER_HANDLED;
 }
 
@@ -1399,7 +1420,6 @@ DWORD APIENTRY DdAddAttachedSurface(PDD_ADDATTACHEDSURFACEDATA  lpAddAttachedSur
 
 DWORD APIENTRY DdBlt(PDD_BLTDATA  lpBlt)
 {
-#ifdef VBOX_WITH_VIDEOHWACCEL
     PPDEV pDev = (PPDEV)lpBlt->lpDD->dhpdev;
     DISPDBG((0, "%s\n", __FUNCTION__));
 #if DX9_DDI
@@ -1456,10 +1476,6 @@ DWORD APIENTRY DdBlt(PDD_BLTDATA  lpBlt)
     }
 
     return DDHAL_DRIVER_HANDLED;
-#else
-    lpBlt->ddRVal = DDERR_GENERIC;
-    return DDHAL_DRIVER_NOTHANDLED;
-#endif
 }
 
 //DWORD APIENTRY DdDestroySurface(PDD_DESTROYSURFACEDATA  lpDestroySurface)
@@ -1471,7 +1487,6 @@ DWORD APIENTRY DdBlt(PDD_BLTDATA  lpBlt)
 
 DWORD APIENTRY DdFlip(PDD_FLIPDATA  lpFlip)
 {
-#ifdef VBOX_WITH_VIDEOHWACCEL
     PPDEV pDev = (PPDEV)lpFlip->lpDD->dhpdev;
     DD_SURFACE_LOCAL*   lpTargSurfaceLocal = lpFlip->lpSurfTarg;
     DD_SURFACE_GLOBAL*  lpTargSurfaceGlobal = lpTargSurfaceLocal->lpGbl;
@@ -1523,14 +1538,8 @@ DWORD APIENTRY DdFlip(PDD_FLIPDATA  lpFlip)
         ASMAtomicIncU32(&pCurrDesc->cPendingFlipsCurr);
         ASMAtomicIncU32(&pTargDesc->cPendingFlipsTarg);
 
-//            if(VBOXDD_CHECKFLAG(lpBlt->dwFlags, DDBLT_ASYNC))
-//            {
-                vboxVHWACommandSubmitAsynch(pDev, pCmd, vboxVHWASurfFlipCompletion, NULL);
-//            }
-//            else
-//            {
-//                vboxVHWACommandSubmit(pDev, pCmd);
-//            }
+        vboxVHWACommandSubmitAsynch(pDev, pCmd, vboxVHWASurfFlipCompletion, NULL);
+
         lpFlip->ddRVal = DD_OK;
     }
     else
@@ -1538,11 +1547,6 @@ DWORD APIENTRY DdFlip(PDD_FLIPDATA  lpFlip)
         lpFlip->ddRVal = DDERR_GENERIC;
     }
     return DDHAL_DRIVER_HANDLED;
-#else
-    DISPDBG((0, "%s\n", __FUNCTION__));
-    lpFlip->ddRVal = DDERR_GENERIC;
-    return DDHAL_DRIVER_NOTHANDLED;
-#endif
 }
 
 DWORD APIENTRY DdGetBltStatus(PDD_GETBLTSTATUSDATA  lpGetBltStatus)
@@ -1623,17 +1627,90 @@ DWORD APIENTRY DdGetFlipStatus(PDD_GETFLIPSTATUSDATA  lpGetFlipStatus)
 
 DWORD APIENTRY DdSetOverlayPosition(PDD_SETOVERLAYPOSITIONDATA  lpSetOverlayPosition)
 {
+    PPDEV pDev = (PPDEV)lpSetOverlayPosition->lpDD->dhpdev;
+    DD_SURFACE_LOCAL*   lpDestSurfaceLocal = lpSetOverlayPosition->lpDDDestSurface;
+    DD_SURFACE_GLOBAL*  lpDestSurfaceGlobal = lpDestSurfaceLocal->lpGbl;
+    DD_SURFACE_LOCAL*   lpSrcSurfaceLocal = lpSetOverlayPosition->lpDDSrcSurface;
+    DD_SURFACE_GLOBAL*  lpSrcSurfaceGlobal = lpSrcSurfaceLocal->lpGbl;
+    VBOXVHWACMD* pCmd;
+    PVBOXVHWASURFDESC pSrcDesc = (PVBOXVHWASURFDESC)lpSrcSurfaceGlobal->dwReserved1;
+    PVBOXVHWASURFDESC pDestDesc = (PVBOXVHWASURFDESC)lpDestSurfaceGlobal->dwReserved1;
+
     DISPDBG((0, "%s\n", __FUNCTION__));
 
-    lpSetOverlayPosition->ddRVal = DD_OK;
+    if(pSrcDesc->bHidden)
+    {
+        lpSetOverlayPosition->ddRVal = DDERR_GENERIC;
+        return DDHAL_DRIVER_HANDLED;
+    }
+
+    pCmd = vboxVHWACommandCreate (pDev, VBOXVHWACMD_TYPE_SURF_OVERLAY_SETPOSITION, sizeof(VBOXVHWACMD_SURF_OVERLAY_SETPOSITION));
+    //    int rc = VERR_GENERAL_FAILURE;
+    if(pCmd)
+    {
+        VBOXVHWACMD_SURF_OVERLAY_SETPOSITION * pBody = VBOXVHWACMD_BODY(pCmd, VBOXVHWACMD_SURF_OVERLAY_SETPOSITION);
+
+        memset(pBody, 0, sizeof(VBOXVHWACMD_SURF_OVERLAY_SETPOSITION));
+
+        pBody->u.in.offSrcSurface = (uint64_t)lpSrcSurfaceGlobal->fpVidMem;
+        pBody->u.in.offDstSurface = (uint64_t)lpDestSurfaceGlobal->fpVidMem;
+
+        pBody->u.in.hDstSurf = pDestDesc->hHostHandle;
+        pBody->u.in.hSrcSurf = pSrcDesc->hHostHandle;
+
+        pBody->u.in.xPos = lpSetOverlayPosition->lXPos;
+        pBody->u.in.yPos = lpSetOverlayPosition->lYPos;
+
+        vboxVHWACommandSubmitAsynch(pDev, pCmd, vboxVHWAFreeCmdCompletion, NULL);
+        lpSetOverlayPosition->ddRVal = DD_OK;
+    }
+
     return DDHAL_DRIVER_HANDLED;
 }
 
 DWORD APIENTRY DdUpdateOverlay(PDD_UPDATEOVERLAYDATA  lpUpdateOverlay)
 {
+    PPDEV pDev = (PPDEV)lpUpdateOverlay->lpDD->dhpdev;
+    DD_SURFACE_LOCAL*   lpDestSurfaceLocal = lpUpdateOverlay->lpDDDestSurface;
+    DD_SURFACE_GLOBAL*  lpDestSurfaceGlobal = lpDestSurfaceLocal->lpGbl;
+    DD_SURFACE_LOCAL*   lpSrcSurfaceLocal = lpUpdateOverlay->lpDDSrcSurface;
+    DD_SURFACE_GLOBAL*  lpSrcSurfaceGlobal = lpSrcSurfaceLocal->lpGbl;
+    VBOXVHWACMD* pCmd;
+    PVBOXVHWASURFDESC pSrcDesc = (PVBOXVHWASURFDESC)lpSrcSurfaceGlobal->dwReserved1;
+    PVBOXVHWASURFDESC pDestDesc = (PVBOXVHWASURFDESC)lpDestSurfaceGlobal->dwReserved1;
+
     DISPDBG((0, "%s\n", __FUNCTION__));
 
-    lpUpdateOverlay->ddRVal = DD_OK;
+    if(pSrcDesc->bHidden)
+    {
+        lpUpdateOverlay->ddRVal = DDERR_GENERIC;
+        return DDHAL_DRIVER_HANDLED;
+    }
+
+    pCmd = vboxVHWACommandCreate (pDev, VBOXVHWACMD_TYPE_SURF_OVERLAY_UPDATE, sizeof(VBOXVHWACMD_SURF_OVERLAY_UPDATE));
+    //    int rc = VERR_GENERAL_FAILURE;
+    if(pCmd)
+    {
+        VBOXVHWACMD_SURF_OVERLAY_UPDATE * pBody = VBOXVHWACMD_BODY(pCmd, VBOXVHWACMD_SURF_OVERLAY_UPDATE);
+
+        memset(pBody, 0, sizeof(VBOXVHWACMD_SURF_OVERLAY_UPDATE));
+
+        pBody->u.in.offSrcSurface = (uint64_t)lpSrcSurfaceGlobal->fpVidMem;
+        pBody->u.in.offDstSurface = (uint64_t)lpDestSurfaceGlobal->fpVidMem;
+
+        pBody->u.in.hDstSurf = pDestDesc->hHostHandle;
+        pBody->u.in.hSrcSurf = pSrcDesc->hHostHandle;
+
+        vboxVHWAFromRECTL(&pBody->u.in.dstRect, &lpUpdateOverlay->rDest);
+        vboxVHWAFromRECTL(&pBody->u.in.srcRect, &lpUpdateOverlay->rSrc);
+
+        pBody->u.in.flags = vboxVHWAFromDDOVERs(lpUpdateOverlay->dwFlags);
+        vboxVHWAFromDDOVERLAYFX(&pBody->u.in.desc, &lpUpdateOverlay->overlayFX);
+
+        vboxVHWACommandSubmitAsynch(pDev, pCmd, vboxVHWAFreeCmdCompletion, NULL);
+        lpUpdateOverlay->ddRVal = DD_OK;
+    }
+
     return DDHAL_DRIVER_HANDLED;
 }
 
@@ -1779,7 +1856,7 @@ getDDHALInfo(
     // 2. YUV->RGB conversion
     // 3. Mirroring in X and Y
     // 4. ColorKeying from a source color and a source color space
-    if((VBOXVHWA_CAP(pDev, VBOXVHWA_CAPS_BLT) || VBOXVHWA_CAP(pDev, VBOXVHWA_CAPS_OVERLAY))
+    if(VBOXVHWA_CAP(pDev, VBOXVHWA_CAPS_BLT)
             && VBOXVHWA_CAP(pDev, VBOXVHWA_CAPS_BLTSTRETCH))
     {
         // Special effects caps
@@ -1793,10 +1870,31 @@ getDDHALInfo(
                                     DDFXCAPS_BLTSHRINKYN  |
                                     DDFXCAPS_BLTSHRINKXN;
 
+        //        DDFXCAPS_BLTARITHSTRETCHY
+        //        DDFXCAPS_BLTARITHSTRETCHYN
+        //        DDFXCAPS_BLTMIRRORLEFTRIGHT
+        //        DDFXCAPS_BLTMIRRORUPDOWN
+        //        DDFXCAPS_BLTROTATION90
+    }
 
-        //mirroring with blitting
-        pHALInfo->ddCaps.dwFXCaps |= DDFXCAPS_BLTMIRRORUPDOWN
-                                     | DDFXCAPS_BLTMIRRORLEFTRIGHT;
+    if(VBOXVHWA_CAP(pDev, VBOXVHWA_CAPS_OVERLAY)
+            && VBOXVHWA_CAP(pDev, VBOXVHWA_CAPS_OVERLAYSTRETCH))
+    {
+        // Special effects caps
+        //TODO: filter them out
+        pHALInfo->ddCaps.dwFXCaps |= DDFXCAPS_OVERLAYSTRETCHY  |
+                                    DDFXCAPS_OVERLAYSTRETCHX  |
+                                    DDFXCAPS_OVERLAYSTRETCHYN |
+                                    DDFXCAPS_OVERLAYSTRETCHXN |
+                                    DDFXCAPS_OVERLAYSHRINKY   |
+                                    DDFXCAPS_OVERLAYSHRINKX   |
+                                    DDFXCAPS_OVERLAYSHRINKYN  |
+                                    DDFXCAPS_OVERLAYSHRINKXN;
+
+        //        DDFXCAPS_OVERLAYARITHSTRETCHY
+        //        DDFXCAPS_OVERLAYARITHSTRETCHYN
+        //        DDFXCAPS_OVERLAYMIRRORLEFTRIGHT
+        //        DDFXCAPS_OVERLAYMIRRORUPDOWN
 
     }
 

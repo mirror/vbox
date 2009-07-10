@@ -108,6 +108,8 @@ typedef struct _VBOXVHWASURFDESC
     volatile uint32_t cPendingFlipsCurr;
     volatile uint32_t cPendingFlipsTarg;
     uint32_t cBitsPerPixel;
+    bool bHidden;
+    VBOXVHWAREGION DirtyRegion;
 }VBOXVHWASURFDESC, *PVBOXVHWASURFDESC;
 
 typedef struct _VBOXVHWAINFO
@@ -325,6 +327,13 @@ uint32_t vboxVHWAFromDDBLTs(uint32_t caps);
 void vboxVHWAFromDDBLTFX(VBOXVHWA_BLTFX *pVHWABlt, DDBLTFX *pDdBlt);
 
 void vboxVHWAFromDDCOLORKEY(VBOXVHWA_COLORKEY *pVHWACKey, DDCOLORKEY  *pDdCKey);
+
+uint32_t vboxVHWAFromDDOVERs(uint32_t caps);
+uint32_t vboxVHWAToDDOVERs(uint32_t caps);
+uint32_t vboxVHWAFromDDCKEYs(uint32_t caps);
+uint32_t vboxVHWAToDDCKEYs(uint32_t caps);
+
+void vboxVHWAFromDDOVERLAYFX(VBOXVHWA_OVERLAYFX *pVHWAOverlay, DDOVERLAYFX *pDdOverlay);
 
 uint32_t vboxVHWAFromDDCAPS(uint32_t caps);
 uint32_t vboxVHWAToDDCAPS(uint32_t caps);
