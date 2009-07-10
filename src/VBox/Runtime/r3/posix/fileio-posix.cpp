@@ -212,7 +212,7 @@ RTR3DECL(int)  RTFileOpen(PRTFILE pFile, const char *pszFilename, unsigned fOpen
             iErr = 0;
             /* Switch direct I/O on now if requested */
             if (fOpen & RTFILE_O_NO_CACHE)
-# if defined(RT_OS_SOLARIS)
+# if defined(RT_OS_SOLARIS) && !defined(IN_GUEST)
                 iErr = directio(fh, DIRECTIO_ON);
 # elif defined(RT_OS_DARWIN)
                 iErr = fcntl(fh, F_NOCACHE);
