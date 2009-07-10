@@ -166,7 +166,9 @@ endif
 ifdef VBOX_WITH_PDM_ASYNC_COMPLETION
  VMMR3_SOURCES += \
  	PDMAsyncCompletion.cpp \
- 	PDMAsyncCompletionFile.cpp
+ 	PDMAsyncCompletionFile.cpp \
+ 	PDMAsyncCompletionFileFailsafe.cpp \
+ 	PDMAsyncCompletionFileNormal.cpp
 endif
 
 VMMR3_SOURCES.x86 += \

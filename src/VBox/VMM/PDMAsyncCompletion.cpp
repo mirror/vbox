@@ -752,7 +752,8 @@ static PPDMASYNCCOMPLETIONTASK pdmR3AsyncCompletionGetTask(PPDMASYNCCOMPLETIONEN
     PPDMASYNCCOMPLETIONTASK pTask = NULL;
 
     /* Try the small per endpoint cache first. */
-    if (pEndpoint->pTasksFreeHead == pEndpoint->pTasksFreeTail)
+    uint32_t cTasksCached = ASMAtomicReadU32(&pEndpoint->cTasksCached);
+    if (cTasksCached == 0)
     {
         /* Try the bigger per endpoint class cache. */
         PPDMASYNCCOMPLETIONEPCLASS pEndpointClass = pEndpoint->pEpClass;
