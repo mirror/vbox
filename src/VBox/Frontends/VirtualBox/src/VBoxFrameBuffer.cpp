@@ -299,13 +299,12 @@ VBoxQImageFrameBuffer::VBoxQImageFrameBuffer (VBoxConsoleView *aView) :
     /* There are some buggy/strange driver/compiz combinations which lead to
      * transparent backgrounds on ARGB visuals. Try to fix it by painting
      * always a black background. */
-#if (QT_VERSION >= 0x040500)
-    aView->viewport()->setAttribute (Qt::WA_TranslucentBackground, false);
-#endif /* QT_VERSION >= 0x040400 */
-//    aView->viewport()->setAttribute (Qt::WA_OpaquePaintEvent, false);
-//    QPalette pal = aView->viewport()->palette();
-//    pal.setColor (QPalette::Window, Qt::black);
-//    aView->viewport()->setPalette (pal);
+    aView->viewport()->setAttribute (Qt::WA_OpaquePaintEvent, false);
+    aView->viewport()->setAttribute (120, false);
+    aView->viewport()->setAutoFillBackground (true);
+    QPalette pal = aView->viewport()->palette();
+    pal.setColor (QPalette::Window, Qt::black);
+    aView->viewport()->setPalette (pal);
     /* Initialize the framebuffer the first time */
     resizeEvent (new VBoxResizeEvent (FramebufferPixelFormat_Opaque,
                                       NULL, 0, 0, 640, 480));
