@@ -45,7 +45,7 @@
 *   Internal Functions                                                         *
 *******************************************************************************/
 #ifdef VBOX_WITH_HGCM
-static DECLCALLBACK(void) VBoxGuestHGCMAsyncWaitCallback(VMMDevHGCMRequestHeader *pHdrNonVolatile, void *pvUser, uint32_t u32User);
+static DECLCALLBACK(int) VBoxGuestHGCMAsyncWaitCallback(VMMDevHGCMRequestHeader *pHdrNonVolatile, void *pvUser, uint32_t u32User);
 #endif
 
 
@@ -1048,7 +1048,7 @@ static int VBoxGuestCommonIOCtl_CtlFilterMask(PVBOXGUESTDEVEXT pDevExt, VBoxGues
 AssertCompile(RT_INDEFINITE_WAIT == (uint32_t)RT_INDEFINITE_WAIT); /* assumed by code below */
 
 /** Worker for VBoxGuestHGCMAsyncWaitCallback*. */
-static void VBoxGuestHGCMAsyncWaitCallbackWorker(VMMDevHGCMRequestHeader volatile *pHdr, PVBOXGUESTDEVEXT pDevExt,
+static int VBoxGuestHGCMAsyncWaitCallbackWorker(VMMDevHGCMRequestHeader volatile *pHdr, PVBOXGUESTDEVEXT pDevExt,
                                                  bool fInterruptible, uint32_t cMillies)
 {
 
@@ -1067,7 +1067,7 @@ static void VBoxGuestHGCMAsyncWaitCallbackWorker(VMMDevHGCMRequestHeader volatil
         if ((pHdr->fu32Flags & VBOX_HGCM_REQ_DONE) != 0)
         {
             RTSpinlockReleaseNoInts(pDevExt->EventSpinlock, &Tmp);
-            return;
+            return VINF_SUCCESS;
         }
         RTSpinlockReleaseNoInts(pDevExt->EventSpinlock, &Tmp);
 
@@ -1075,7 +1075,7 @@ static void VBoxGuestHGCMAsyncWaitCallbackWorker(VMMDevHGCMRequestHeader volatil
         if (pWait)
             break;
         if (fInterruptible)
-            return;
+            return VERR_INTERRUPTED;
         RTThreadSleep(1);
     }
     pWait->fReqEvents = VMMDEV_EVENT_HGCM;
@@ -1091,7 +1091,7 @@ static void VBoxGuestHGCMAsyncWaitCallbackWorker(VMMDevHGCMRequestHeader volatil
     {
         VBoxGuestWaitFreeLocked(pDevExt, pWait);
         RTSpinlockReleaseNoInts(pDevExt->EventSpinlock, &Tmp);
-        return;
+        return VINF_SUCCESS;
     }
     VBoxGuestWaitAppend(&pDevExt->HGCMWaitList, pWait);
     RTSpinlockReleaseNoInts(pDevExt->EventSpinlock, &Tmp);
@@ -1101,20 +1101,23 @@ static void VBoxGuestHGCMAsyncWaitCallbackWorker(VMMDevHGCMRequestHeader volatil
         rc = RTSemEventMultiWaitNoResume(pWait->Event, cMillies);
     else
         rc = RTSemEventMultiWait(pWait->Event, cMillies);
+    if (rc == VERR_SEM_DESTROYED)
+        return rc;
 
     /*
-     * This shouldn't ever return failure...
      * Unlink, free and return.
      */
-    if (rc == VERR_SEM_DESTROYED)
-        return;
-    if (RT_FAILURE(rc))
+    if (    RT_FAILURE(rc)
+        &&  rc != VERR_TIMEOUT
+        &&  (    !fInterruptible
+             ||  rc != VERR_INTERRUPTED))
         LogRel(("VBoxGuestHGCMAsyncWaitCallback: wait failed! %Rrc\n", rc));
 
     RTSpinlockAcquireNoInts(pDevExt->EventSpinlock, &Tmp);
     VBoxGuestWaitUnlink(&pDevExt->HGCMWaitList, pWait);
     VBoxGuestWaitFreeLocked(pDevExt, pWait);
     RTSpinlockReleaseNoInts(pDevExt->EventSpinlock, &Tmp);
+    return rc;
 }
 
 
@@ -1123,14 +1126,14 @@ static void VBoxGuestHGCMAsyncWaitCallbackWorker(VMMDevHGCMRequestHeader volatil
  *
  * It operates in a manner similar to VBoxGuestCommonIOCtl_WaitEvent.
  */
-static DECLCALLBACK(void) VBoxGuestHGCMAsyncWaitCallback(VMMDevHGCMRequestHeader *pHdr, void *pvUser, uint32_t u32User)
+static DECLCALLBACK(int) VBoxGuestHGCMAsyncWaitCallback(VMMDevHGCMRequestHeader *pHdr, void *pvUser, uint32_t u32User)
 {
     PVBOXGUESTDEVEXT pDevExt = (PVBOXGUESTDEVEXT)pvUser;
     Log(("VBoxGuestHGCMAsyncWaitCallback: requestType=%d\n", pHdr->header.requestType));
-    VBoxGuestHGCMAsyncWaitCallbackWorker((VMMDevHGCMRequestHeader volatile *)pHdr,
-                                         pDevExt,
-                                         false /* fInterruptible */,
-                                         u32User  /* cMillies */);
+    return VBoxGuestHGCMAsyncWaitCallbackWorker((VMMDevHGCMRequestHeader volatile *)pHdr,
+                                                pDevExt,
+                                                false /* fInterruptible */,
+                                                u32User  /* cMillies */);
 }
 
 
@@ -1139,15 +1142,16 @@ static DECLCALLBACK(void) VBoxGuestHGCMAsyncWaitCallback(VMMDevHGCMRequestHeader
  *
  * It operates in a manner similar to VBoxGuestCommonIOCtl_WaitEvent.
  */
-static DECLCALLBACK(void) VBoxGuestHGCMAsyncWaitCallbackInterruptible(VMMDevHGCMRequestHeader *pHdr,
+static DECLCALLBACK(int) VBoxGuestHGCMAsyncWaitCallbackInterruptible(VMMDevHGCMRequestHeader *pHdr,
                                                                       void *pvUser, uint32_t u32User)
 {
     PVBOXGUESTDEVEXT pDevExt = (PVBOXGUESTDEVEXT)pvUser;
     Log(("VBoxGuestHGCMAsyncWaitCallbackInterruptible: requestType=%d\n", pHdr->header.requestType));
-    VBoxGuestHGCMAsyncWaitCallbackWorker((VMMDevHGCMRequestHeader volatile *)pHdr,
-                                         pDevExt,
-                                         true /* fInterruptible */,
-                                         u32User /* cMillies */ );
+    return VBoxGuestHGCMAsyncWaitCallbackWorker((VMMDevHGCMRequestHeader volatile *)pHdr,
+                                                pDevExt,
+                                                true /* fInterruptible */,
+                                                u32User /* cMillies */ );
+
 }
 
 

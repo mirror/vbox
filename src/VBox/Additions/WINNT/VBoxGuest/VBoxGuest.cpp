@@ -453,20 +453,22 @@ static void VBoxHGCMCallbackWorker (VMMDevHGCMRequestHeader *pHeader, PVBOXGUEST
     return;
 }
 
-DECLVBGL(void) VBoxHGCMCallback (VMMDevHGCMRequestHeader *pHeader, void *pvData, uint32_t u32Data)
+DECLVBGL(int) VBoxHGCMCallback (VMMDevHGCMRequestHeader *pHeader, void *pvData, uint32_t u32Data)
 {
     PVBOXGUESTDEVEXT pDevExt = (PVBOXGUESTDEVEXT)pvData;
 
     dprintf(("VBoxHGCMCallback\n"));
     VBoxHGCMCallbackWorker (pHeader, pDevExt, u32Data, false, UserMode);
+    return VINF_SUCCESS;
 }
 
-DECLVBGL(void) VBoxHGCMCallbackKernelMode (VMMDevHGCMRequestHeader *pHeader, void *pvData, uint32_t u32Data)
+DECLVBGL(int) VBoxHGCMCallbackKernelMode (VMMDevHGCMRequestHeader *pHeader, void *pvData, uint32_t u32Data)
 {
     PVBOXGUESTDEVEXT pDevExt = (PVBOXGUESTDEVEXT)pvData;
 
     dprintf(("VBoxHGCMCallback\n"));
     VBoxHGCMCallbackWorker (pHeader, pDevExt, u32Data, false, KernelMode);
+    return VINF_SUCCESS;
 }
 
 DECLVBGL(void) VBoxHGCMCallbackInterruptible (VMMDevHGCMRequestHeader *pHeader, void *pvData,

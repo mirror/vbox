@@ -27,10 +27,14 @@
 *******************************************************************************/
 #include "VBGLInternal.h"
 #include <iprt/alloca.h>
+#include <iprt/asm.h>
 #include <iprt/assert.h>
 #include <iprt/mem.h>
 #include <iprt/memobj.h>
 #include <iprt/string.h>
+#include <iprt/thread.h>
+#include <iprt/time.h>
+
 
 /*******************************************************************************
 *   Defined Constants And Macros                                               *
@@ -44,6 +48,7 @@
  *  side effects. */
 # define USE_BOUNCH_BUFFERS
 #endif
+
 
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
@@ -69,13 +74,12 @@ struct VbglR0ParmInfo
 /* These functions can be only used by VBoxGuest. */
 
 DECLVBGL(int) VbglR0HGCMInternalConnect (VBoxGuestHGCMConnectInfo *pConnectInfo,
-                                         VBGLHGCMCALLBACK *pAsyncCallback, void *pvAsyncData,
-                                         uint32_t u32AsyncData)
+                                         PFNVBGLHGCMCALLBACK pfnAsyncCallback, void *pvAsyncData, uint32_t u32AsyncData)
 {
     VMMDevHGCMConnect *pHGCMConnect;
     int rc;
 
-    if (!pConnectInfo || !pAsyncCallback)
+    if (!pConnectInfo || !pfnAsyncCallback)
         return VERR_INVALID_PARAMETER;
 
     pHGCMConnect = NULL;
@@ -100,7 +104,7 @@ DECLVBGL(int) VbglR0HGCMInternalConnect (VBoxGuestHGCMConnectInfo *pConnectInfo,
             if (rc == VINF_HGCM_ASYNC_EXECUTE)
             {
                 /* Wait for request completion interrupt notification from host */
-                pAsyncCallback (&pHGCMConnect->header, pvAsyncData, u32AsyncData);
+                pfnAsyncCallback (&pHGCMConnect->header, pvAsyncData, u32AsyncData);
             }
 
             pConnectInfo->result = pHGCMConnect->header.result;
@@ -117,12 +121,12 @@ DECLVBGL(int) VbglR0HGCMInternalConnect (VBoxGuestHGCMConnectInfo *pConnectInfo,
 
 
 DECLR0VBGL(int) VbglR0HGCMInternalDisconnect (VBoxGuestHGCMDisconnectInfo *pDisconnectInfo,
-                                              VBGLHGCMCALLBACK *pAsyncCallback, void *pvAsyncData, uint32_t u32AsyncData)
+                                              PFNVBGLHGCMCALLBACK pfnAsyncCallback, void *pvAsyncData, uint32_t u32AsyncData)
 {
     VMMDevHGCMDisconnect *pHGCMDisconnect;
     int rc;
 
-    if (!pDisconnectInfo || !pAsyncCallback)
+    if (!pDisconnectInfo || !pfnAsyncCallback)
         return VERR_INVALID_PARAMETER;
 
     pHGCMDisconnect = NULL;
@@ -146,7 +150,7 @@ DECLR0VBGL(int) VbglR0HGCMInternalDisconnect (VBoxGuestHGCMDisconnectInfo *pDisc
             if (rc == VINF_HGCM_ASYNC_EXECUTE)
             {
                 /* Wait for request completion interrupt notification from host */
-                pAsyncCallback (&pHGCMDisconnect->header, pvAsyncData, u32AsyncData);
+                pfnAsyncCallback (&pHGCMDisconnect->header, pvAsyncData, u32AsyncData);
             }
 
             pDisconnectInfo->result = pHGCMDisconnect->header.result;
@@ -608,9 +612,11 @@ static void vbglR0HGCMInternalInitCall(VMMDevHGCMCall *pHGCMCall, VBoxGuestHGCMC
  *                              to complete.
  * @param   pvAsyncData         Argument for the callback.
  * @param   u32AsyncData        Argument for the callback.
+ * @param   pfLeakIt            Where to return the leak it / free it,
+ *                              indicator. Cancellation fun.
  */
-static int vbglR0HGCMInternalDoCall(VMMDevHGCMCall *pHGCMCall, VBGLHGCMCALLBACK *pfnAsyncCallback,
-                                    void *pvAsyncData, uint32_t u32AsyncData)
+static int vbglR0HGCMInternalDoCall(VMMDevHGCMCall *pHGCMCall, PFNVBGLHGCMCALLBACK pfnAsyncCallback,
+                                    void *pvAsyncData, uint32_t u32AsyncData, bool *pfLeakIt)
 {
     int rc;
 
@@ -633,28 +639,92 @@ static int vbglR0HGCMInternalDoCall(VMMDevHGCMCall *pHGCMCall, VBGLHGCMCALLBACK 
      * Check if host decides to process the request asynchronously,
      * if so, we wait for it to complete using the caller supplied callback.
      */
-    if (    RT_SUCCESS(rc)
-        &&  rc == VINF_HGCM_ASYNC_EXECUTE)
+    *pfLeakIt = false;
+    if (rc == VINF_HGCM_ASYNC_EXECUTE)
     {
         Log(("Processing HGCM call asynchronously\n"));
-        /** @todo timeout vs. interrupted. */
-        pfnAsyncCallback(&pHGCMCall->header, pvAsyncData, u32AsyncData);
-
-        /*
-         * If the request isn't completed by the time the callback returns
-         * we will have to try cancel it.
-         */
-        if (!(pHGCMCall->header.fu32Flags & VBOX_HGCM_REQ_DONE))
+        rc = pfnAsyncCallback(&pHGCMCall->header, pvAsyncData, u32AsyncData);
+        if (pHGCMCall->header.fu32Flags & VBOX_HGCM_REQ_DONE)
         {
-            /** @todo use a new request for this! See @bugref{4052}. */
-            pHGCMCall->header.fu32Flags |= VBOX_HGCM_REQ_CANCELLED;
-            pHGCMCall->header.header.requestType = VMMDevReq_HGCMCancel;
-            VbglGRPerform(&pHGCMCall->header.header);
-            rc = VERR_INTERRUPTED;
+            Assert(!(pHGCMCall->header.fu32Flags & VBOX_HGCM_REQ_CANCELLED));
+            rc = VINF_SUCCESS;
+        }
+        else
+        {
+            /*
+             * The request didn't complete in time or the call was interrupted,
+             * the RC from the callback indicates which. Try cancel the request.
+             *
+             * This is a bit messy because we're racing request completion. Sorry.
+             */
+            /** @todo It would be nice if we could use the waiter callback to do further
+             *  waiting in case of a completion race. If it wasn't for WINNT having its own
+             *  version of all that stuff, I would've done it already. */
+            VMMDevHGCMCancel2 *pCancelReq;
+            int rc2 = VbglGRAlloc((VMMDevRequestHeader **)&pCancelReq, sizeof(*pCancelReq), VMMDevReq_HGCMCancel2);
+            if (RT_SUCCESS(rc2))
+            {
+                pCancelReq->physReqToCancel = VbglPhysHeapGetPhysAddr(pHGCMCall);
+                rc2 = VbglGRPerform(&pCancelReq->header);
+                VbglGRFree(&pCancelReq->header);
+            }
+#if 1 /** @todo ADDVER: Remove this on next minor version change. */
+            if (rc2 == VERR_NOT_IMPLEMENTED)
+            {
+                /* host is too old, or we're out of heap. */
+                pHGCMCall->header.fu32Flags |= VBOX_HGCM_REQ_CANCELLED;
+                pHGCMCall->header.header.requestType = VMMDevReq_HGCMCancel;
+                rc2 = VbglGRPerform(&pHGCMCall->header.header);
+                if (rc2 == VERR_INVALID_PARAMETER)
+                    rc2 = VERR_NOT_FOUND;
+                else if (RT_SUCCESS(rc))
+                    RTThreadSleep(1);
+            }
+#endif
+            if (RT_SUCCESS(rc)) rc = VERR_INTERRUPTED; /** @todo weed this out from the WINNT VBoxGuest code. */
+            if (RT_SUCCESS(rc2))
+            {
+                Log(("vbglR0HGCMInternalDoCall: successfully cancelled\n"));
+                pHGCMCall->header.fu32Flags |= VBOX_HGCM_REQ_CANCELLED;
+            }
+            else
+            {
+                /*
+                 * Wait for a bit while the host (hopefully) completes it.
+                 */
+                uint64_t u64Start       = RTTimeSystemMilliTS();
+                uint32_t cMilliesToWait = rc2 == VERR_NOT_FOUND || rc2 == VERR_SEM_DESTROYED ? 500 : 2000;
+                uint64_t cElapsed       = 0;
+                if (rc2 != VERR_NOT_FOUND)
+                    LogRel(("vbglR0HGCMInternalDoCall: Failed to cancel the HGCM call on %Rrc: rc2=%Rrc\n", rc, rc2));
+                else
+                    Log(("vbglR0HGCMInternalDoCall: Cancel race rc=%Rrc rc2=%Rrc\n", rc, rc2));
+
+                do
+                {
+                    ASMCompilerBarrier();       /* paranoia */
+                    if (pHGCMCall->header.fu32Flags & VBOX_HGCM_REQ_DONE)
+                        break;
+                    RTThreadSleep(1);
+                    cElapsed = RTTimeSystemMilliTS() - u64Start;
+                } while (cElapsed < cMilliesToWait);
+
+                ASMCompilerBarrier();           /* paranoia^2 */
+                if (pHGCMCall->header.fu32Flags & VBOX_HGCM_REQ_DONE)
+                    rc = VINF_SUCCESS;
+                else
+                {
+                    LogRel(("vbglR0HGCMInternalDoCall: Leaking %u bytes. Pending call to %u with %u parms. (rc2=%Rrc)\n",
+                            pHGCMCall->header.header.size, pHGCMCall->u32Function, pHGCMCall->cParms, rc2));
+                    *pfLeakIt = true;
+                }
+                Log(("vbglR0HGCMInternalDoCall: Cancel race ended with rc=%Rrc (rc2=%Rrc) after %llu ms\n", rc, rc2, cElapsed));
+            }
         }
     }
 
-    Log(("GstHGCMCall: rc=%Rrc result=%Rrc fu32Flags=%#x\n", rc, pHGCMCall->header.result, pHGCMCall->header.fu32Flags));
+    Log(("GstHGCMCall: rc=%Rrc result=%Rrc fu32Flags=%#x fLeakIt=%d\n",
+         rc, pHGCMCall->header.result, pHGCMCall->header.fu32Flags, *pfLeakIt));
     return rc;
 }
 
@@ -766,7 +836,7 @@ static int vbglR0HGCMInternalCopyBackResult(VBoxGuestHGCMCallInfo *pCallInfo, VM
 
 
 DECLR0VBGL(int) VbglR0HGCMInternalCall(VBoxGuestHGCMCallInfo *pCallInfo, uint32_t cbCallInfo, uint32_t fFlags,
-                                       VBGLHGCMCALLBACK *pfnAsyncCallback, void *pvAsyncData, uint32_t u32AsyncData)
+                                       PFNVBGLHGCMCALLBACK pfnAsyncCallback, void *pvAsyncData, uint32_t u32AsyncData)
 {
     bool                    fIsUser = (fFlags & VBGLR0_HGCMCALL_F_MODE_MASK) == VBGLR0_HGCMCALL_F_USER;
     struct VbglR0ParmInfo   ParmInfo;
@@ -805,12 +875,13 @@ DECLR0VBGL(int) VbglR0HGCMInternalCall(VBoxGuestHGCMCallInfo *pCallInfo, uint32_
                          VMMDevReq_HGCMCall);
         if (RT_SUCCESS(rc))
         {
+            bool fLeakIt;
             vbglR0HGCMInternalInitCall(pHGCMCall, pCallInfo, cbCallInfo, fIsUser, &ParmInfo);
 
             /*
              * Perform the call.
              */
-            rc = vbglR0HGCMInternalDoCall(pHGCMCall, pfnAsyncCallback, pvAsyncData, u32AsyncData);
+            rc = vbglR0HGCMInternalDoCall(pHGCMCall, pfnAsyncCallback, pvAsyncData, u32AsyncData, &fLeakIt);
             if (RT_SUCCESS(rc))
             {
                 /*
@@ -819,7 +890,8 @@ DECLR0VBGL(int) VbglR0HGCMInternalCall(VBoxGuestHGCMCallInfo *pCallInfo, uint32_
                 rc = vbglR0HGCMInternalCopyBackResult(pCallInfo, pHGCMCall, &ParmInfo, fIsUser, rc);
             }
 
-            VbglGRFree(&pHGCMCall->header.header);
+            if (!fLeakIt)
+                VbglGRFree(&pHGCMCall->header.header);
         }
     }
 
@@ -841,7 +913,7 @@ DECLR0VBGL(int) VbglR0HGCMInternalCall(VBoxGuestHGCMCallInfo *pCallInfo, uint32_
 
 #if ARCH_BITS == 64
 DECLR0VBGL(int) VbglR0HGCMInternalCall32(VBoxGuestHGCMCallInfo *pCallInfo, uint32_t cbCallInfo, uint32_t fFlags,
-                                         VBGLHGCMCALLBACK *pfnAsyncCallback, void *pvAsyncData, uint32_t u32AsyncData)
+                                         PFNVBGLHGCMCALLBACK pfnAsyncCallback, void *pvAsyncData, uint32_t u32AsyncData)
 {
     VBoxGuestHGCMCallInfo   *pCallInfo64;
     HGCMFunctionParameter   *pParm64;
@@ -857,7 +929,7 @@ DECLR0VBGL(int) VbglR0HGCMInternalCall32(VBoxGuestHGCMCallInfo *pCallInfo, uint3
                     ||  !pfnAsyncCallback
                     ||  pCallInfo->cParms > VBOX_HGCM_MAX_PARMS
                     || !(fFlags & ~VBGLR0_HGCMCALL_F_MODE_MASK),
-                    ("pCallInfo=%p pAsyncCallback=%p fFlags=%#x\n", pCallInfo, pfnAsyncCallback, fFlags),
+                    ("pCallInfo=%p pfnAsyncCallback=%p fFlags=%#x\n", pCallInfo, pfnAsyncCallback, fFlags),
                     VERR_INVALID_PARAMETER);
     AssertReturn(   cbCallInfo >= sizeof(VBoxGuestHGCMCallInfo)
                  || cbCallInfo >= pCallInfo->cParms * sizeof(HGCMFunctionParameter32),

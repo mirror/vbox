@@ -150,6 +150,7 @@ typedef enum
     VMMDevReq_HGCMCall                   = 62,
 #endif /* VBOX_WITH_64_BITS_GUESTS */
     VMMDevReq_HGCMCancel                 = 64,
+    VMMDevReq_HGCMCancel2                = 65,
 #endif
     VMMDevReq_VideoAccelEnable           = 70,
     VMMDevReq_VideoAccelFlush            = 71,
@@ -952,7 +953,8 @@ AssertCompileSize(VMMDevVideoSetVisibleRegion, 24+4+16);
 /** @name HGCM flags.
  * @{
  */
-# define VBOX_HGCM_REQ_DONE      (0x1)
+# define VBOX_HGCM_REQ_DONE      RT_BIT_32(VBOX_HGCM_REQ_DONE_BIT)
+# define VBOX_HGCM_REQ_DONE_BIT  0
 # define VBOX_HGCM_REQ_CANCELLED (0x2)
 /** @} */
 
@@ -1331,6 +1333,24 @@ typedef struct
     VMMDevHGCMRequestHeader header;
 } VMMDevHGCMCancel;
 AssertCompileSize(VMMDevHGCMCancel, 32);
+
+/**
+ * HGCM cancel request structure, version 2.
+ *
+ * Used by VMMDevReq_HGCMCancel2.
+ *
+ * VINF_SUCCESS when cancelled.
+ * VERR_NOT_FOUND if the specified request cannot be found.
+ * VERR_INVALID_PARAMETER if the address is invalid valid.
+ */
+typedef struct
+{
+    /** Header. */
+    VMMDevRequestHeader header;
+    /** The physical address of the request to cancel. */
+    RTGCPHYS32 physReqToCancel;
+} VMMDevHGCMCancel2;
+AssertCompileSize(VMMDevHGCMCancel2, 24+4);
 
 #endif /* VBOX_WITH_HGCM */
 

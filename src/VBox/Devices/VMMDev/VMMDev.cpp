@@ -1136,6 +1136,28 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
             break;
         }
 
+        case VMMDevReq_HGCMCancel2:
+        {
+            if (pRequestHeader->size != sizeof(VMMDevHGCMCancel2))
+            {
+                AssertMsgFailed(("VMMDevReq_HGCMCancel structure has invalid size!\n"));
+                pRequestHeader->rc = VERR_INVALID_PARAMETER;
+            }
+            else if (!pThis->pHGCMDrv)
+            {
+                Log(("VMMDevReq_HGCMCancel HGCM Connector is NULL!\n"));
+                pRequestHeader->rc = VERR_NOT_SUPPORTED;
+            }
+            else
+            {
+                VMMDevHGCMCancel2 *pHGCMCancel2 = (VMMDevHGCMCancel2 *)pRequestHeader;
+
+                Log(("VMMDevReq_VMMDevHGCMCancel\n"));
+                pRequestHeader->rc = vmmdevHGCMCancel2 (pThis, pHGCMCancel2->physReqToCancel);
+            }
+            break;
+        }
+
         case VMMDevReq_VideoAccelEnable:
         {
             if (pRequestHeader->size < sizeof(VMMDevVideoAccelEnable))
@@ -1586,14 +1608,9 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
             }
             else
             {
-                VMMDevReqLogString *pReqLogString = (VMMDevReqLogString*)pRequestHeader;
-#undef LOG_GROUP
-#define LOG_GROUP LOG_GROUP_DEV_VMM_BACKDOOR
-//                Log(("Guest Log: %s", pReqLogString->szString));
-                Log(("DEBUG LOG: %s", pReqLogString->szString));
-
-#undef LOG_GROUP
-#define LOG_GROUP LOG_GROUP_DEV_VMM
+                VMMDevReqLogString *pReqLogString = (VMMDevReqLogString *)pRequestHeader;
+                LogIt(LOG_INSTANCE, RTLOGGRPFLAGS_LEVEL_1, LOG_GROUP_DEV_VMM_BACKDOOR,
+                      ("DEBUG LOG: %s", pReqLogString->szString));
                 pRequestHeader->rc = VINF_SUCCESS;
             }
             break;

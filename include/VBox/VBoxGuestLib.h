@@ -165,11 +165,13 @@ DECLVBGL(void) VbglGRFree (VMMDevRequestHeader *pReq);
  * Callback function called from HGCM helpers when a wait for request
  * completion IRQ is required.
  *
- * @param pvData     VBoxGuest pointer to be passed to callback.
- * @param u32Data    VBoxGuest 32 bit value to be passed to callback.
+ * @returns VINF_SUCCESS, VERR_INTERRUPT or VERR_TIMEOUT.
+ * @param   pvData      VBoxGuest pointer to be passed to callback.
+ * @param   u32Data     VBoxGuest 32 bit value to be passed to callback.
  */
-
-typedef DECLVBGL(void) VBGLHGCMCALLBACK(VMMDevHGCMRequestHeader *pHeader, void *pvData, uint32_t u32Data);
+typedef DECLVBGL(int) FNVBGLHGCMCALLBACK(VMMDevHGCMRequestHeader *pHeader, void *pvData, uint32_t u32Data);
+/** Pointer to a FNVBGLHGCMCALLBACK. */
+typedef FNVBGLHGCMCALLBACK *PFNVBGLHGCMCALLBACK;
 
 /**
  * Perform a connect request. That is locate required service and
@@ -177,18 +179,18 @@ typedef DECLVBGL(void) VBGLHGCMCALLBACK(VMMDevHGCMRequestHeader *pHeader, void *
  *
  * @note This function can NOT handle cancelled requests!
  *
- * @param pConnectInfo    The request data.
- * @param pAsyncCallback  Required pointer to function that is called when
- *                        host returns VINF_HGCM_ASYNC_EXECUTE. VBoxGuest
- *                        implements waiting for an IRQ in this function.
- * @param pvAsyncData     An arbitrary VBoxGuest pointer to be passed to callback.
- * @param u32AsyncData    An arbitrary VBoxGuest 32 bit value to be passed to callback.
+ * @param   pConnectInfo        The request data.
+ * @param   pfnAsyncCallback    Required pointer to function that is calledwhen
+ *                              host returns VINF_HGCM_ASYNC_EXECUTE. VBoxGuest
+ *                              implements waiting for an IRQ in this function.
+ * @param   pvAsyncData         An arbitrary VBoxGuest pointer to be passed to callback.
+ * @param   u32AsyncData        An arbitrary VBoxGuest 32 bit value to be passed to callback.
  *
- * @return VBox status code.
+ * @return  VBox status code.
  */
 
 DECLR0VBGL(int) VbglR0HGCMInternalConnect (VBoxGuestHGCMConnectInfo *pConnectInfo,
-                                           VBGLHGCMCALLBACK *pAsyncCallback, void *pvAsyncData, uint32_t u32AsyncData);
+                                           PFNVBGLHGCMCALLBACK pfnAsyncCallback, void *pvAsyncData, uint32_t u32AsyncData);
 
 
 /**
@@ -197,52 +199,53 @@ DECLR0VBGL(int) VbglR0HGCMInternalConnect (VBoxGuestHGCMConnectInfo *pConnectInf
  *
  * @note This function can NOT handle cancelled requests!
  *
- * @param pDisconnectInfo The request data.
- * @param pAsyncCallback  Required pointer to function that is called when
- *                        host returns VINF_HGCM_ASYNC_EXECUTE. VBoxGuest
- *                        implements waiting for an IRQ in this function.
- * @param pvAsyncData     An arbitrary VBoxGuest pointer to be passed to callback.
- * @param u32AsyncData    An arbitrary VBoxGuest 32 bit value to be passed to callback.
+ * @param   pDisconnectInfo     The request data.
+ * @param   pfnAsyncCallback    Required pointer to function that is called when
+ *                              host returns VINF_HGCM_ASYNC_EXECUTE. VBoxGuest
+ *                              implements waiting for an IRQ in this function.
+ * @param   pvAsyncData         An arbitrary VBoxGuest pointer to be passed to callback.
+ * @param   u32AsyncData        An arbitrary VBoxGuest 32 bit value to be passed to
+ *                              callback.
  *
- * @return VBox status code.
+ * @return  VBox status code.
  */
 
 DECLR0VBGL(int) VbglR0HGCMInternalDisconnect (VBoxGuestHGCMDisconnectInfo *pDisconnectInfo,
-                                              VBGLHGCMCALLBACK *pAsyncCallback, void *pvAsyncData, uint32_t u32AsyncData);
+                                              PFNVBGLHGCMCALLBACK pfnAsyncCallback, void *pvAsyncData, uint32_t u32AsyncData);
 
 /** Call a HGCM service.
  *
  * @note This function can deal with cancelled requests.
  *
- * @param pCallInfo       The request data.
- * @param fFlags          Flags, see VBGLR0_HGCMCALL_F_XXX.
- * @param pAsyncCallback  Required pointer to function that is called when
- *                        host returns VINF_HGCM_ASYNC_EXECUTE. VBoxGuest
- *                        implements waiting for an IRQ in this function.
- * @param pvAsyncData     An arbitrary VBoxGuest pointer to be passed to callback.
- * @param u32AsyncData    An arbitrary VBoxGuest 32 bit value to be passed to callback.
+ * @param   pCallInfo           The request data.
+ * @param   fFlags              Flags, see VBGLR0_HGCMCALL_F_XXX.
+ * @param   pfnAsyncCallback    Required pointer to function that is called when
+ *                              host returns VINF_HGCM_ASYNC_EXECUTE. VBoxGuest
+ *                              implements waiting for an IRQ in this function.
+ * @param   pvAsyncData         An arbitrary VBoxGuest pointer to be passed to callback.
+ * @param   u32AsyncData        An arbitrary VBoxGuest 32 bit value to be passed to callback.
  *
  * @return VBox status code.
  */
 DECLR0VBGL(int) VbglR0HGCMInternalCall (VBoxGuestHGCMCallInfo *pCallInfo, uint32_t cbCallInfo, uint32_t fFlags,
-                                        VBGLHGCMCALLBACK *pAsyncCallback, void *pvAsyncData, uint32_t u32AsyncData);
+                                        PFNVBGLHGCMCALLBACK pfnAsyncCallback, void *pvAsyncData, uint32_t u32AsyncData);
 
 /** Call a HGCM service. (32 bits packet structure in a 64 bits guest)
  *
  * @note This function can deal with cancelled requests.
  *
- * @param pCallInfo       The request data.
- * @param fFlags          Flags, see VBGLR0_HGCMCALL_F_XXX.
- * @param pAsyncCallback  Required pointer to function that is called when
- *                        host returns VINF_HGCM_ASYNC_EXECUTE. VBoxGuest
- *                        implements waiting for an IRQ in this function.
- * @param pvAsyncData     An arbitrary VBoxGuest pointer to be passed to callback.
- * @param u32AsyncData    An arbitrary VBoxGuest 32 bit value to be passed to callback.
+ * @param   pCallInfo           The request data.
+ * @param   fFlags              Flags, see VBGLR0_HGCMCALL_F_XXX.
+ * @param   pfnAsyncCallback    Required pointer to function that is called when
+ *                              host returns VINF_HGCM_ASYNC_EXECUTE. VBoxGuest
+ *                              implements waiting for an IRQ in this function.
+ * @param   pvAsyncData         An arbitrary VBoxGuest pointer to be passed to callback.
+ * @param   u32AsyncData        An arbitrary VBoxGuest 32 bit value to be passed to callback.
  *
- * @return VBox status code.
+ * @return  VBox status code.
  */
 DECLR0VBGL(int) VbglR0HGCMInternalCall32 (VBoxGuestHGCMCallInfo *pCallInfo, uint32_t cbCallInfo, uint32_t fFlags,
-                                          VBGLHGCMCALLBACK *pAsyncCallback, void *pvAsyncData, uint32_t u32AsyncData);
+                                          PFNVBGLHGCMCALLBACK pfnAsyncCallback, void *pvAsyncData, uint32_t u32AsyncData);
 
 /** @name VbglR0HGCMInternalCall flags
  * @{ */
