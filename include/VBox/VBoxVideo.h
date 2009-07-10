@@ -265,6 +265,7 @@ typedef enum
     VBOXVHWACMD_TYPE_SURF_FLIP,
     VBOXVHWACMD_TYPE_SURF_OVERLAY_UPDATE,
     VBOXVHWACMD_TYPE_SURF_OVERLAY_SETPOSITION,
+    VBOXVHWACMD_TYPE_SURF_COLORKEY_SET,
     VBOXVHWACMD_TYPE_QUERY_INFO1,
     VBOXVHWACMD_TYPE_QUERY_INFO2,
     VBOXVHWACMD_TYPE_ENABLE,
@@ -379,7 +380,7 @@ typedef struct _VBOXVHWA_OVERLAYFX
 {
     uint32_t flags;
     uint32_t Reserved1;
-    uint32_t rotationOp;
+    uint32_t fxFlags;
     uint32_t Reserved2;
     VBOXVHWA_COLORKEY DstCK;
     VBOXVHWA_COLORKEY SrcCK;
@@ -465,6 +466,27 @@ typedef struct _VBOXVHWA_OVERLAYFX
 #define VBOXVHWA_BLT_ROP                            0x00020000
 
 
+#define VBOXVHWA_OVER_DDFX                          0x00080000
+#define VBOXVHWA_OVER_HIDE                          0x00000200
+#define VBOXVHWA_OVER_KEYDEST                       0x00000400
+#define VBOXVHWA_OVER_KEYDESTOVERRIDE               0x00000800
+#define VBOXVHWA_OVER_KEYSRC                        0x00001000
+#define VBOXVHWA_OVER_KEYSRCOVERRIDE                0x00002000
+#define VBOXVHWA_OVER_SHOW                          0x00004000
+
+#define VBOXVHWA_CKEY_COLORSPACE                    0x00000001
+#define VBOXVHWA_CKEY_DESTBLT                       0x00000002
+#define VBOXVHWA_CKEY_DESTOVERLAY                   0x00000004
+#define VBOXVHWA_CKEY_SRCBLT                        0x00000008
+#define VBOXVHWA_CKEY_SRCOVERLAY                    0x00000010
+
+#define VBOXVHWA_BLT_ARITHSTRETCHY                  0x00000001
+#define VBOXVHWA_BLT_MIRRORLEFTRIGHT                0x00000002
+#define VBOXVHWA_BLT_MIRRORUPDOWN                   0x00000004
+
+#define VBOXVHWA_OVERFX_ARITHSTRETCHY               0x00000001
+#define VBOXVHWA_OVERFX_MIRRORLEFTRIGHT             0x00000002
+#define VBOXVHWA_OVERFX_MIRRORUPDOWN                0x00000004
 
 
 #define VBOXVHWA_OFFSET64_VOID        (~0L)
@@ -599,6 +621,21 @@ typedef struct _VBOXVHWACMD_SURF_FLIP
         } in;
     } u;
 } VBOXVHWACMD_SURF_FLIP;
+
+typedef struct _VBOXVHWACMD_SURF_COLORKEY_SET
+{
+    union
+    {
+        struct
+        {
+            VBOXVHWA_SURFHANDLE hSurf;
+            uint64_t offSurface;
+            VBOXVHWA_COLORKEY CKey;
+            uint32_t flags;
+            uint32_t reserved;
+        } in;
+    } u;
+} VBOXVHWACMD_SURF_COLORKEY_SET;
 
 typedef struct _VBOXVHWACMD_SURF_OVERLAY_UPDATE
 {

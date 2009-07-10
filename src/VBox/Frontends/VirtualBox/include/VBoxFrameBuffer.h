@@ -407,10 +407,30 @@ public:
 
     uint32_t upper() const {return mUpper; }
     uint32_t lower() const {return mLower; }
+
+    bool operator==(const VBoxVHWAColorKey & other) const { return mUpper == other.mUpper && mLower == other.mLower; }
 private:
     uint32_t mUpper;
     uint32_t mLower;
 };
+
+//class VBoxVHWAColorKeyRef
+//{
+//public:
+//    VBoxVHWAColorKeyRef() : mValid(false){}
+//
+//    bool isValid() {return mValid; }
+//
+//    VBoxVHWAColorKey * ckey() { isVreturn mpCKey; }
+//    const VBoxVHWAColorKey * constckey() const { return mpCKey; }
+//
+//    void invalidate() { mValid = false; }
+//    void set(VBoxVHWAColorKey * pKey) { mValid = false; }
+//
+//private:
+//    VBoxVHWAColorKey * mpCKey;
+//    bool mValid;
+//};
 
 class VBoxVHWAColorComponent
 {
@@ -507,6 +527,7 @@ public:
     static void globalInit();
 
     int blt(const QRect * aDstRect, VBoxVHWASurfaceBase * aSrtSurface, const QRect * aSrcRect, const VBoxVHWAColorKey * pDstCKeyOverride, const VBoxVHWAColorKey * pSrcCKeyOverride);
+    int overlay(VBoxVHWASurfaceBase * aOverlaySurface);
 
     virtual int lock(const QRect * pRect, uint32_t flags);
 
@@ -540,10 +561,94 @@ public:
     ulong  bitsPerPixel() { return mColorFormat.bitsPerPixel(); }
     ulong  bytesPerLine() { return mBytesPerLine; }
 
-    const VBoxVHWAColorKey * dstBltCKey() { return mDstBltCKeyValid ? &mDstBltCKey : NULL; }
-    const VBoxVHWAColorKey * srcBltCKey() { return mSrcBltCKeyValid ? &mSrcBltCKey : NULL; }
-    const VBoxVHWAColorKey * dstOverlayCKey() { return mDstOverlayCKeyValid ? &mDstOverlayCKey : NULL; }
-    const VBoxVHWAColorKey * srcOverlayCKey() { return mSrcOverlayCKeyValid ? &mSrcOverlayCKey : NULL; }
+    const VBoxVHWAColorKey * dstBltCKey() const { return mpDstBltCKey; }
+    const VBoxVHWAColorKey * srcBltCKey() const { return mpSrcBltCKey; }
+    const VBoxVHWAColorKey * dstOverlayCKey() const { return mpDstOverlayCKey; }
+    const VBoxVHWAColorKey * defaultSrcOverlayCKey() const { return mpDefaultSrcOverlayCKey; }
+    const VBoxVHWAColorKey * defaultDstOverlayCKey() const { return mpDefaultDstOverlayCKey; }
+    const VBoxVHWAColorKey * srcOverlayCKey() const { return mpSrcOverlayCKey; }
+    void resetDefaultSrcOverlayCKey() { mpSrcOverlayCKey = mpDefaultSrcOverlayCKey; }
+    void resetDefaultDstOverlayCKey() { mpDstOverlayCKey = mpDefaultDstOverlayCKey; }
+
+    void setDstBltCKey(const VBoxVHWAColorKey * ckey)
+    {
+        if(ckey)
+        {
+            mDstBltCKey = *ckey;
+            mpDstBltCKey = &mDstBltCKey;
+        }
+        else
+        {
+            mpDstBltCKey = NULL;
+        }
+    }
+
+    void setSrcBltCKey(const VBoxVHWAColorKey * ckey)
+    {
+        if(ckey)
+        {
+            mSrcBltCKey = *ckey;
+            mpSrcBltCKey = &mSrcBltCKey;
+        }
+        else
+        {
+            mpSrcBltCKey = NULL;
+        }
+    }
+
+    void setDefaultDstOverlayCKey(const VBoxVHWAColorKey * ckey)
+    {
+        if(ckey)
+        {
+            mDefaultDstOverlayCKey = *ckey;
+            mpDefaultDstOverlayCKey = &mDefaultDstOverlayCKey;
+        }
+        else
+        {
+            mpDefaultDstOverlayCKey = NULL;
+        }
+    }
+
+    void setDefaultSrcOverlayCKey(const VBoxVHWAColorKey * ckey)
+    {
+        if(ckey)
+        {
+            mDefaultSrcOverlayCKey = *ckey;
+            mpDefaultSrcOverlayCKey = &mDefaultSrcOverlayCKey;
+        }
+        else
+        {
+            mpDefaultSrcOverlayCKey = NULL;
+        }
+    }
+
+    void setOverriddenDstOverlayCKey(const VBoxVHWAColorKey * ckey)
+    {
+        if(ckey)
+        {
+            mOverriddenDstOverlayCKey = *ckey;
+            mpDstOverlayCKey = &mOverriddenDstOverlayCKey;
+        }
+        else
+        {
+            mpDstOverlayCKey = NULL;
+        }
+    }
+
+    void setOverriddenSrcOverlayCKey(const VBoxVHWAColorKey * ckey)
+    {
+        if(ckey)
+        {
+            mOverriddenSrcOverlayCKey = *ckey;
+            mpSrcOverlayCKey = &mOverriddenSrcOverlayCKey;
+        }
+        else
+        {
+            mpSrcOverlayCKey = NULL;
+        }
+    }
+
+
     const VBoxVHWAColorFormat & colorFormat() {return mColorFormat; }
 
     /* clients should treat the returned texture as read-only */
@@ -561,6 +666,9 @@ public:
     virtual void makeYInvertedCurrent() = 0;
 
     bool isYInverted() {return mIsYInverted; }
+
+    bool isHidden() {return mIsHidden; }
+    void setHidden(bool hidden) { mIsHidden = hidden; }
 
     int invert();
 
@@ -585,6 +693,8 @@ private:
     void synchFB(const QRect * aRect);
     void synch(const QRect * aRect);
 
+    int performBlt(const QRect * pDstRect, VBoxVHWASurfaceBase * pSrcSurface, const QRect * pSrcRect, const VBoxVHWAColorKey * pDstCKey, const VBoxVHWAColorKey * pSrcCKey, bool blt);
+
 //    void doTex2FB(const QRect * aRect);
     void doTex2FB(const QRect * pDstRect, const QRect * pSrcRect);
 
@@ -607,14 +717,23 @@ private:
     GLuint mTexture;
 
     VBoxVHWAColorFormat mColorFormat;
+
+    VBoxVHWAColorKey *mpSrcBltCKey;
+    VBoxVHWAColorKey *mpDstBltCKey;
+    VBoxVHWAColorKey *mpSrcOverlayCKey;
+    VBoxVHWAColorKey *mpDstOverlayCKey;
+
+    VBoxVHWAColorKey *mpDefaultDstOverlayCKey;
+    VBoxVHWAColorKey *mpDefaultSrcOverlayCKey;
+
     VBoxVHWAColorKey mSrcBltCKey;
     VBoxVHWAColorKey mDstBltCKey;
-    VBoxVHWAColorKey mSrcOverlayCKey;
-    VBoxVHWAColorKey mDstOverlayCKey;
-    bool mSrcBltCKeyValid;
-    bool mDstBltCKeyValid;
-    bool mSrcOverlayCKeyValid;
-    bool mDstOverlayCKeyValid;
+    VBoxVHWAColorKey mOverriddenSrcOverlayCKey;
+    VBoxVHWAColorKey mOverriddenDstOverlayCKey;
+    VBoxVHWAColorKey mDefaultDstOverlayCKey;
+    VBoxVHWAColorKey mDefaultSrcOverlayCKey;
+
+
     GLenum mFormat;
     GLint  mInternalFormat;
     GLenum mType;
@@ -639,6 +758,8 @@ private:
     bool mFreeAddress;
 
     bool mIsYInverted;
+
+    bool mIsHidden;
 
 //    bool mIsOverlay;
 
@@ -669,6 +790,11 @@ public:
     VBoxVHWASurfaceBase * getVGA()
     {
         return mSurfVGA;
+    }
+
+    VBoxVHWASurfaceBase * getPrimary()
+    {
+        return mSurfPrimary;
     }
 
     void setPrimary(VBoxVHWASurfaceBase * pSurf)
@@ -714,7 +840,7 @@ public:
         for (OverlayList::const_iterator it = mOverlays.begin();
              it != mOverlays.end(); ++ it)
         {
-            (*it)->performDisplay();
+            mSurfPrimary->overlay(*it);
         }
     }
 
@@ -780,6 +906,18 @@ public:
                 aContext->makeCurrent();
                 mInverted = false;
             }
+        }
+    }
+
+    void makeCurrent(class VBoxVHWASurfaceBase *aContext, bool mInverted)
+    {
+        if(mInverted)
+        {
+            makeYInvertedCurrent(aContext);
+        }
+        else
+        {
+            makeCurrent(aContext);
         }
     }
 
@@ -908,6 +1046,9 @@ private:
     int vhwaSurfaceUnlock(struct _VBOXVHWACMD_SURF_UNLOCK *pCmd);
     int vhwaSurfaceBlt(struct _VBOXVHWACMD_SURF_BLT *pCmd);
     int vhwaSurfaceFlip(struct _VBOXVHWACMD_SURF_FLIP *pCmd);
+    int vhwaSurfaceOverlayUpdate(struct _VBOXVHWACMD_SURF_OVERLAY_UPDATE *pCmf);
+    int vhwaSurfaceOverlaySetPosition(struct _VBOXVHWACMD_SURF_OVERLAY_SETPOSITION *pCmd);
+    int vhwaSurfaceColorkeySet(struct _VBOXVHWACMD_SURF_COLORKEY_SET *pCmd);
     int vhwaQueryInfo1(struct _VBOXVHWACMD_QUERYINFO1 *pCmd);
     int vhwaQueryInfo2(struct _VBOXVHWACMD_QUERYINFO2 *pCmd);
 #endif
