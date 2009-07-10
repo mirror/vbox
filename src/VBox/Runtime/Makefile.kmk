@@ -367,7 +367,6 @@ RuntimeR3_SOURCES.win = \
 	r3/win/utf16locale-win.cpp \
 	r3/win/utf8-win.cpp \
 	r3/win/RTUuidCreate-win.cpp \
-	r3/win/fileaio-win.cpp \
 	win/errmsgwin.cpp \
 	win/RTErrConvertFromWin32.cpp
 
@@ -409,8 +408,7 @@ RuntimeR3_SOURCES.linux = \
 	r3/posix/timelocal-posix.cpp \
 	r3/posix/timer-posix.cpp \
 	r3/posix/tls-posix.cpp \
-	r3/posix/utf8-posix.cpp \
-	r3/linux/fileaio-linux.cpp
+	r3/posix/utf8-posix.cpp
 RuntimeR3_SOURCES.linux.x86 += \
 	r3/posix/semevent-posix.cpp \
 	r3/posix/semeventmulti-posix.cpp \
@@ -507,8 +505,7 @@ RuntimeR3_SOURCES.darwin = \
 	r3/posix/thread-posix.cpp \
 	r3/posix/timelocal-posix.cpp \
 	r3/posix/tls-posix.cpp \
-	r3/posix/utf8-posix.cpp \
-	r3/posix/fileaio-posix.cpp
+	r3/posix/utf8-posix.cpp
 
 ## @todo Make BSD sched, implement RTMP*.
 RuntimeR3_SOURCES.freebsd = \
@@ -536,7 +533,6 @@ RuntimeR3_SOURCES.freebsd = \
 	r3/freebsd/mp-freebsd.cpp \
 	r3/freebsd/alloc-freebsd.cpp \
 	r3/freebsd/rtProcInitExePath-freebsd.cpp \
-	r3/freebsd/fileaio-freebsd.cpp \
 	r3/posix/RTSystemQueryOSInfo-posix.cpp \
 	r3/posix/dir-posix.cpp \
 	r3/posix/env-posix.cpp \
@@ -597,7 +593,6 @@ RuntimeR3_SOURCES.solaris = \
 	r3/solaris/alloc-solaris.cpp \
 	r3/solaris/mp-solaris.cpp \
 	r3/solaris/rtProcInitExePath-solaris.cpp \
-	r3/solaris/fileaio-solaris.cpp
 
 ## PORTME: Porters add their selection of platform specific files for Ring-3 here.
 
@@ -792,7 +787,18 @@ VBoxRT_SOURCES                += \
 VBoxRT_SOURCES.$(KBUILD_TARGET) = $(RuntimeR3_SOURCES.$(KBUILD_TARGET))
 VBoxRT_SOURCES.$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH) = $(RuntimeR3_SOURCES.$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH))
 VBoxRT_SOURCES.$(KBUILD_TARGET_ARCH) = $(RuntimeR3_SOURCES.$(KBUILD_TARGET_ARCH))
-VBoxRT_SOURCES.win            += r3/win/dllmain-win.cpp $(VBoxRT_0_OUTDIR)/VBoxRT.def
+VBoxRT_SOURCES.win            += \
+	r3/win/dllmain-win.cpp \
+	r3/win/fileaio-win.cpp \
+	$(VBoxRT_0_OUTDIR)/VBoxRT.def
+VBoxRT_SOURCES.linux          += \
+	r3/linux/fileaio-linux.cpp
+VBoxRT_SOURCES.solaris        += \
+	r3/solaris/fileaio-solaris.cpp
+VBoxRT_SOURCES.darwin         += \
+	r3/posix/fileaio-posix.cpp
+VBoxRT_SOURCES.freebsd        += \
+	r3/freebsd/fileaio-freebsd.cpp
 VBoxRT_INCS                    = $(RuntimeR3_INCS)
 VBoxRT_INCS.$(KBUILD_TARGET)   = $(RuntimeR3_INCS.$(KBUILD_TARGET))
 VBoxRT_INCS.$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH) = $(RuntimeR3_INCS.$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH))
