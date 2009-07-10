@@ -214,7 +214,7 @@ ifdef VBOX_WITH_COMBINED_SOLARIS_GUEST_PACKAGE
 	$(QUIET)$(INSTALL) -s -m 0755 $(SOLARIS_ADD_BIN_64)/VBoxOGL.so                                      $(SOLARIS_ADD_INST_DIR_64)/VBoxOGL.so
 	$(QUIET)$(INSTALL) -s -m 0755 $(SOLARIS_ADD_BIN_64)/VBoxOGLcrutil.so                                $(SOLARIS_ADD_INST_DIR_64)/VBoxOGLcrutil.so
 	$(QUIET)$(INSTALL) -s -m 0755 $(SOLARIS_ADD_BIN_64)/VBoxOGLfeedbackspu.so                           $(SOLARIS_ADD_INST_DIR_64)/VBoxOGLfeedbackspu.so
-	$(QUIET)$(INSTALL) -s -m 0755 $(SOLARIS_ADD_BIN_32)/VBoxOGLpassthroughspu.so                        $(SOLARIS_ADD_INST_DIR_64)/VBoxOGLpassthroughspu.so
+	$(QUIET)$(INSTALL) -s -m 0755 $(SOLARIS_ADD_BIN_64)/VBoxOGLpassthroughspu.so                        $(SOLARIS_ADD_INST_DIR_64)/VBoxOGLpassthroughspu.so
 	$(QUIET)$(INSTALL) -s -m 0755 $(SOLARIS_ADD_BIN_64)/VBoxOGLarrayspu.so                              $(SOLARIS_ADD_INST_DIR_64)/VBoxOGLarrayspu.so
 	$(QUIET)$(INSTALL) -s -m 0755 $(SOLARIS_ADD_BIN_64)/VBoxOGLerrorspu.so                              $(SOLARIS_ADD_INST_DIR_64)/VBoxOGLerrorspu.so
 	$(QUIET)$(INSTALL) -s -m 0755 $(SOLARIS_ADD_BIN_64)/VBoxOGLpackspu.so                               $(SOLARIS_ADD_INST_DIR_64)/VBoxOGLpackspu.so
