@@ -302,10 +302,6 @@ VBoxQImageFrameBuffer::VBoxQImageFrameBuffer (VBoxConsoleView *aView) :
     aView->viewport()->setAttribute (Qt::WA_OpaquePaintEvent, false);
     aView->viewport()->setAttribute (Qt::WidgetAttribute(120), false);
     aView->viewport()->setAttribute (Qt::WA_NoSystemBackground, false);
-    aView->setAttribute (Qt::WA_OpaquePaintEvent, false);
-    aView->setAttribute (Qt::WidgetAttribute(120), false);
-    aView->setAttribute (Qt::WA_NoSystemBackground, false);
-    aView->setAutoFillBackground (true);
     QPalette pal = aView->viewport()->palette();
     pal.setColor (QPalette::Window, Qt::black);
     aView->viewport()->setPalette (pal);
