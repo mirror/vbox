@@ -1287,12 +1287,12 @@ AssertCompileSize(VMMDevHGCMCall, 32+12);
  * VMMDevHGCMParmType_PageList points to this structure to actually describe the
  * buffer.
  */
-typedef struct _HGCMPageListInfo
+typedef struct
 {
-    uint32_t flags;        /* VBOX_HGCM_F_PARM_*. */
-    uint16_t offFirstPage; /* Offset in the first page where data begins. */
-    uint16_t cPages;       /* Number of pages. */
-    RTGCPHYS64 aPages[1];  /* Page addesses. */
+    uint32_t flags;        /**< VBOX_HGCM_F_PARM_*. */
+    uint16_t offFirstPage; /**< Offset in the first page where data begins. */
+    uint16_t cPages;       /**< Number of pages. */
+    RTGCPHYS64 aPages[1];  /**< Page addesses. */
 } HGCMPageListInfo;
 AssertCompileSize(HGCMPageListInfo, 4+2+2+8);
 
