@@ -158,7 +158,6 @@ DECLR0VBGL(int) VbglR0HGCMInternalDisconnect (VBoxGuestHGCMDisconnectInfo *pDisc
     return rc;
 }
 
-#if 0 /* new code using page list and whatnot. */
 
 /**
  * Preprocesses the HGCM call, validating and locking/buffering parameters.
@@ -211,7 +210,8 @@ static int vbglR0HGCMInternalPreprocessCall(VBoxGuestHGCMCallInfo const *pCallIn
                     uint32_t            cPages;
                     uint32_t            u32;
 
-                    AssertMsgReturn(cb <= VBGLR0_MAX_HGCM_KERNEL_PARM, ("%#x > %#x\n", cb, VBGLR0_MAX_HGCM_KERNEL_PARM), VERR_OUT_OF_RANGE);
+                    AssertMsgReturn(cb <= VBGLR0_MAX_HGCM_KERNEL_PARM, ("%#x > %#x\n", cb, VBGLR0_MAX_HGCM_KERNEL_PARM),
+                                    VERR_OUT_OF_RANGE);
                     AssertMsgReturn(   off >= pCallInfo->cParms * sizeof(HGCMFunctionParameter)
                                     && off < cbCallInfo - sizeof(HGCMPageListInfo),
                                     ("offset=%#x cParms=%#x cbCallInfo=%#x\n", off, pCallInfo->cParms, cbCallInfo),
@@ -226,10 +226,9 @@ static int vbglR0HGCMInternalPreprocessCall(VBoxGuestHGCMCallInfo const *pCallIn
                     AssertMsgReturn(pPgLst->offFirstPage < PAGE_SIZE, ("#x\n", pPgLst->offFirstPage), VERR_INVALID_PARAMETER);
                     u32 = RT_ALIGN_32(pPgLst->offFirstPage + cb, PAGE_SIZE) >> PAGE_SHIFT;
                     AssertMsgReturn(cPages == u32, ("cPages=%#x u32=%#x\n", cPages, u32), VERR_INVALID_PARAMETER);
-                    AssertMsgReturn(pPgLst->flags > VBOX_HGCM_F_PARM_DIRECTION_NONE && pPgLst->flags <= VBOX_HGCM_F_PARM_DIRECTION_BOTH,
-                                    ("%#x\n", pPgLst->flags),
-                                    VERR_INVALID_PARAMETER);
-                    Log4(("GstHGCMCall: parm=%u type=pglst: cb=%#010x cPgs=%u offPg0=%#x flags=%#x\n", iParm, cb, cPages, pPgLst->offFirstPage, pPgLst->flags));
+                    AssertMsgReturn(VBOX_HGCM_F_PARM_ARE_VALID(pPgLst->flags), ("%#x\n", pPgLst->flags), VERR_INVALID_PARAMETER);
+                    Log4(("GstHGCMCall: parm=%u type=pglst: cb=%#010x cPgs=%u offPg0=%#x flags=%#x\n",
+                          iParm, cb, cPages, pPgLst->offFirstPage, pPgLst->flags));
                     u32 = cPages;
                     while (u32-- > 0)
                     {
@@ -253,9 +252,11 @@ static int vbglR0HGCMInternalPreprocessCall(VBoxGuestHGCMCallInfo const *pCallIn
                 if (!VBGLR0_CAN_USE_PHYS_PAGE_LIST())
                 {
                     cb = pSrcParm->u.Pointer.size;
-                    AssertMsgReturn(cb <= VBGLR0_MAX_HGCM_KERNEL_PARM, ("%#x > %#x\n", cb, VBGLR0_MAX_HGCM_KERNEL_PARM), VERR_OUT_OF_RANGE);
+                    AssertMsgReturn(cb <= VBGLR0_MAX_HGCM_KERNEL_PARM, ("%#x > %#x\n", cb, VBGLR0_MAX_HGCM_KERNEL_PARM),
+                                    VERR_OUT_OF_RANGE);
                     if (cb != 0)
-                        Log4(("GstHGCMCall: parm=%u type=%#x: cb=%#010x pv=%p\n", iParm, pSrcParm->type, cb, pSrcParm->u.Pointer.u.linearAddr));
+                        Log4(("GstHGCMCall: parm=%u type=%#x: cb=%#010x pv=%p\n",
+                              iParm, pSrcParm->type, cb, pSrcParm->u.Pointer.u.linearAddr));
                     else
                         Log4(("GstHGCMCall: parm=%u type=%#x: cb=0\n", iParm, pSrcParm->type));
                     break;
@@ -278,7 +279,8 @@ static int vbglR0HGCMInternalPreprocessCall(VBoxGuestHGCMCallInfo const *pCallIn
                     AssertReturn(iLockBuf < RT_ELEMENTS(pParmInfo->aLockBufs), VERR_INVALID_PARAMETER);
                     if (!fIsUser)
                     {
-                        AssertMsgReturn(cb <= VBGLR0_MAX_HGCM_KERNEL_PARM, ("%#x > %#x\n", cb, VBGLR0_MAX_HGCM_KERNEL_PARM), VERR_OUT_OF_RANGE);
+                        AssertMsgReturn(cb <= VBGLR0_MAX_HGCM_KERNEL_PARM, ("%#x > %#x\n", cb, VBGLR0_MAX_HGCM_KERNEL_PARM),
+                                        VERR_OUT_OF_RANGE);
                         rc = RTR0MemObjLockKernel(&hObj, (void *)pSrcParm->u.Pointer.u.linearAddr, cb);
                         if (RT_FAILURE(rc))
                         {
@@ -286,14 +288,16 @@ static int vbglR0HGCMInternalPreprocessCall(VBoxGuestHGCMCallInfo const *pCallIn
                                  pCallInfo->u32ClientID, pCallInfo->u32Function, iParm, pSrcParm->u.Pointer.u.linearAddr, cb, rc));
                             return rc;
                         }
-                        Log3(("GstHGCMCall: parm=%u type=%#x: cb=%#010x pv=%p locked kernel -> %p\n", iParm, pSrcParm->type, cb, pSrcParm->u.Pointer.u.linearAddr, hObj));
+                        Log3(("GstHGCMCall: parm=%u type=%#x: cb=%#010x pv=%p locked kernel -> %p\n",
+                              iParm, pSrcParm->type, cb, pSrcParm->u.Pointer.u.linearAddr, hObj));
                     }
                     else
                     {
                         if (cb > VBGLR0_MAX_HGCM_USER_PARM)
                         {
                             Log(("GstHGCMCall: id=%#x fn=%u parm=%u pv=%p cb=%#x > %#x -> out of range\n",
-                                 pCallInfo->u32ClientID, pCallInfo->u32Function, iParm, pSrcParm->u.Pointer.u.linearAddr, cb, VBGLR0_MAX_HGCM_USER_PARM));
+                                 pCallInfo->u32ClientID, pCallInfo->u32Function, iParm, pSrcParm->u.Pointer.u.linearAddr,
+                                 cb, VBGLR0_MAX_HGCM_USER_PARM));
                             return VERR_OUT_OF_RANGE;
                         }
 
@@ -305,7 +309,8 @@ static int vbglR0HGCMInternalPreprocessCall(VBoxGuestHGCMCallInfo const *pCallIn
                                  pCallInfo->u32ClientID, pCallInfo->u32Function, iParm, pSrcParm->u.Pointer.u.linearAddr, cb, rc));
                             return rc;
                         }
-                        Log3(("GstHGCMCall: parm=%u type=%#x: cb=%#010x pv=%p locked user -> %p\n", iParm, pSrcParm->type, cb, pSrcParm->u.Pointer.u.linearAddr, hObj));
+                        Log3(("GstHGCMCall: parm=%u type=%#x: cb=%#010x pv=%p locked user -> %p\n",
+                              iParm, pSrcParm->type, cb, pSrcParm->u.Pointer.u.linearAddr, hObj));
 
 #else  /* USE_BOUNCH_BUFFERS */
                         /*
@@ -332,7 +337,8 @@ static int vbglR0HGCMInternalPreprocessCall(VBoxGuestHGCMCallInfo const *pCallIn
                                 {
                                     RTMemTmpFree(pvSmallBuf);
                                     Log(("GstHGCMCall: id=%#x fn=%u parm=%u RTR0MemUserCopyFrom(,%p,%#x) -> %Rrc\n",
-                                         pCallInfo->u32ClientID, pCallInfo->u32Function, iParm, pSrcParm->u.Pointer.u.linearAddr, cb, rc));
+                                         pCallInfo->u32ClientID, pCallInfo->u32Function, iParm,
+                                         pSrcParm->u.Pointer.u.linearAddr, cb, rc));
                                     return rc;
                                 }
                             }
@@ -340,10 +346,12 @@ static int vbglR0HGCMInternalPreprocessCall(VBoxGuestHGCMCallInfo const *pCallIn
                             if (RT_FAILURE(rc))
                             {
                                 RTMemTmpFree(pvSmallBuf);
-                                Log(("GstHGCMCall: RTR0MemObjLockKernel failed for small buffer: rc=%Rrc pvSmallBuf=%p cb=%#x\n", rc, pvSmallBuf, cb));
+                                Log(("GstHGCMCall: RTR0MemObjLockKernel failed for small buffer: rc=%Rrc pvSmallBuf=%p cb=%#x\n",
+                                     rc, pvSmallBuf, cb));
                                 return rc;
                             }
-                            Log3(("GstHGCMCall: parm=%u type=%#x: cb=%#010x pv=%p small buffer %p -> %p\n", iParm, pSrcParm->type, cb, pSrcParm->u.Pointer.u.linearAddr, pvSmallBuf, hObj));
+                            Log3(("GstHGCMCall: parm=%u type=%#x: cb=%#010x pv=%p small buffer %p -> %p\n",
+                                  iParm, pSrcParm->type, cb, pSrcParm->u.Pointer.u.linearAddr, pvSmallBuf, hObj));
                         }
                         else
                         {
@@ -359,11 +367,13 @@ static int vbglR0HGCMInternalPreprocessCall(VBoxGuestHGCMCallInfo const *pCallIn
                                 {
                                     RTR0MemObjFree(hObj, false /*fFreeMappings*/);
                                     Log(("GstHGCMCall: id=%#x fn=%u parm=%u RTR0MemUserCopyFrom(,%p,%#x) -> %Rrc\n",
-                                         pCallInfo->u32ClientID, pCallInfo->u32Function, iParm, pSrcParm->u.Pointer.u.linearAddr, cb, rc));
+                                         pCallInfo->u32ClientID, pCallInfo->u32Function, iParm,
+                                         pSrcParm->u.Pointer.u.linearAddr, cb, rc));
                                     return rc;
                                 }
                             }
-                            Log3(("GstHGCMCall: parm=%u type=%#x: cb=%#010x pv=%p big buffer -> %p\n", iParm, pSrcParm->type, cb, pSrcParm->u.Pointer.u.linearAddr, hObj));
+                            Log3(("GstHGCMCall: parm=%u type=%#x: cb=%#010x pv=%p big buffer -> %p\n",
+                                  iParm, pSrcParm->type, cb, pSrcParm->u.Pointer.u.linearAddr, hObj));
                         }
 #endif /* USE_BOUNCH_BUFFERS */
                     }
@@ -393,6 +403,7 @@ static int vbglR0HGCMInternalPreprocessCall(VBoxGuestHGCMCallInfo const *pCallIn
     return VINF_SUCCESS;
 }
 
+
 /**
  * Translates locked linear address to the normal type.
  * The locked types are only for the guest side and not handled by the host.
@@ -414,6 +425,7 @@ static HGCMFunctionParameterType vbglR0HGCMInternalConvertLinAddrType(HGCMFuncti
             return enmType;
     }
 }
+
 
 /**
  * Translates linear address types to page list direction flags.
@@ -452,8 +464,8 @@ static uint32_t vbglR0HGCMInternalLinAddrTypeToPageListFlags(HGCMFunctionParamet
  * @param   pcbExtra        Where to return the extra request space needed for
  *                          physical page lists.
  */
-static void vbglR0HGCMInternalInitCall(VMMDevHGCMCall *pHGCMCall, VBoxGuestHGCMCallInfo const *pCallInfo, uint32_t cbCallInfo,
-                                       bool fIsUser, struct VbglR0ParmInfo *pParmInfo)
+static void vbglR0HGCMInternalInitCall(VMMDevHGCMCall *pHGCMCall, VBoxGuestHGCMCallInfo const *pCallInfo,
+                                       uint32_t cbCallInfo, bool fIsUser, struct VbglR0ParmInfo *pParmInfo)
 {
     HGCMFunctionParameter const *pSrcParm = VBOXGUEST_HGCM_CALL_PARMS(pCallInfo);
     HGCMFunctionParameter       *pDstParm = VMMDEV_HGCM_CALL_PARMS(pHGCMCall);
@@ -597,7 +609,8 @@ static void vbglR0HGCMInternalInitCall(VMMDevHGCMCall *pHGCMCall, VBoxGuestHGCMC
  * @param   pvAsyncData         Argument for the callback.
  * @param   u32AsyncData        Argument for the callback.
  */
-static int vbglR0HGCMInternalDoCall(VMMDevHGCMCall *pHGCMCall, VBGLHGCMCALLBACK *pfnAsyncCallback, void *pvAsyncData, uint32_t u32AsyncData)
+static int vbglR0HGCMInternalDoCall(VMMDevHGCMCall *pHGCMCall, VBGLHGCMCALLBACK *pfnAsyncCallback,
+                                    void *pvAsyncData, uint32_t u32AsyncData)
 {
     int rc;
 
@@ -751,6 +764,7 @@ static int vbglR0HGCMInternalCopyBackResult(VBoxGuestHGCMCallInfo *pCallInfo, VM
     return rc;
 }
 
+
 DECLR0VBGL(int) VbglR0HGCMInternalCall(VBoxGuestHGCMCallInfo *pCallInfo, uint32_t cbCallInfo, uint32_t fFlags,
                                        VBGLHGCMCALLBACK *pfnAsyncCallback, void *pvAsyncData, uint32_t u32AsyncData)
 {
@@ -762,7 +776,10 @@ DECLR0VBGL(int) VbglR0HGCMInternalCall(VBoxGuestHGCMCallInfo *pCallInfo, uint32_
     /*
      * Basic validation.
      */
-    AssertMsgReturn(!pCallInfo || !pfnAsyncCallback || pCallInfo->cParms > VBOX_HGCM_MAX_PARMS || !(fFlags & ~VBGLR0_HGCMCALL_F_MODE_MASK),
+    AssertMsgReturn(   !pCallInfo
+                    || !pfnAsyncCallback
+                    || pCallInfo->cParms > VBOX_HGCM_MAX_PARMS
+                    || !(fFlags & ~VBGLR0_HGCMCALL_F_MODE_MASK),
                     ("pCallInfo=%p pfnAsyncCallback=%p fFlags=%#x\n", pCallInfo, pfnAsyncCallback, fFlags),
                     VERR_INVALID_PARAMETER);
     AssertReturn(   cbCallInfo >= sizeof(VBoxGuestHGCMCallInfo)
@@ -822,7 +839,7 @@ DECLR0VBGL(int) VbglR0HGCMInternalCall(VBoxGuestHGCMCallInfo *pCallInfo, uint32_
 }
 
 
-#  if ARCH_BITS == 64
+#if ARCH_BITS == 64
 DECLR0VBGL(int) VbglR0HGCMInternalCall32(VBoxGuestHGCMCallInfo *pCallInfo, uint32_t cbCallInfo, uint32_t fFlags,
                                          VBGLHGCMCALLBACK *pfnAsyncCallback, void *pvAsyncData, uint32_t u32AsyncData)
 {
@@ -836,7 +853,10 @@ DECLR0VBGL(int) VbglR0HGCMInternalCall32(VBoxGuestHGCMCallInfo *pCallInfo, uint3
     /*
      * Input validation.
      */
-    AssertMsgReturn(!pCallInfo || !pfnAsyncCallback || pCallInfo->cParms > VBOX_HGCM_MAX_PARMS || !(fFlags & ~VBGLR0_HGCMCALL_F_MODE_MASK),
+    AssertMsgReturn(    !pCallInfo
+                    ||  !pfnAsyncCallback
+                    ||  pCallInfo->cParms > VBOX_HGCM_MAX_PARMS
+                    || !(fFlags & ~VBGLR0_HGCMCALL_F_MODE_MASK),
                     ("pCallInfo=%p pAsyncCallback=%p fFlags=%#x\n", pCallInfo, pfnAsyncCallback, fFlags),
                     VERR_INVALID_PARAMETER);
     AssertReturn(   cbCallInfo >= sizeof(VBoxGuestHGCMCallInfo)
@@ -923,410 +943,7 @@ DECLR0VBGL(int) VbglR0HGCMInternalCall32(VBoxGuestHGCMCallInfo *pCallInfo, uint3
     RTMemTmpFree(pCallInfo64);
     return rc;
 }
-#  endif /* ARCH_BITS == 64 */
-
-# else /* old code: */
-
-/** @todo merge with the one below (use a header file). Too lazy now. */
-DECLR0VBGL(int) VbglR0HGCMInternalCall (VBoxGuestHGCMCallInfo *pCallInfo, uint32_t cbCallInfo, uint32_t fFlags,
-                                        VBGLHGCMCALLBACK *pAsyncCallback, void *pvAsyncData, uint32_t u32AsyncData)
-{
-    VMMDevHGCMCall *pHGCMCall;
-    uint32_t cbParms;
-    HGCMFunctionParameter *pParm;
-    unsigned iParm;
-    int rc;
-
-    AssertMsgReturn(!pCallInfo || !pAsyncCallback || pCallInfo->cParms > VBOX_HGCM_MAX_PARMS || !(fFlags & ~VBGLR0_HGCMCALL_F_MODE_MASK),
-                    ("pCallInfo=%p pAsyncCallback=%p fFlags=%#x\n", pCallInfo, pAsyncCallback, fFlags),
-                    VERR_INVALID_PARAMETER);
-
-    Log (("GstHGCMCall: pCallInfo->cParms = %d, pHGCMCall->u32Function = %d, fFlags=%#x\n",
-          pCallInfo->cParms, pCallInfo->u32Function, fFlags));
-
-    pHGCMCall = NULL;
-
-    if (cbCallInfo == 0)
-    {
-        /* Caller did not specify the size (a valid value should be at least sizeof(VBoxGuestHGCMCallInfo)).
-         * Compute the size.
-         */
-        cbParms = pCallInfo->cParms * sizeof (HGCMFunctionParameter);
-    }
-    else if (cbCallInfo < sizeof (VBoxGuestHGCMCallInfo))
-    {
-        return VERR_INVALID_PARAMETER;
-    }
-    else
-    {
-        cbParms = cbCallInfo - sizeof (VBoxGuestHGCMCallInfo);
-    }
-
-    /* Allocate request */
-    rc = VbglGRAlloc ((VMMDevRequestHeader **)&pHGCMCall, sizeof (VMMDevHGCMCall) + cbParms, VMMDevReq_HGCMCall);
-
-    Log (("GstHGCMCall: Allocated gr %p, rc = %Rrc, cbParms = %d\n", pHGCMCall, rc, cbParms));
-
-    if (RT_SUCCESS(rc))
-    {
-        void *apvCtx[VBOX_HGCM_MAX_PARMS];
-        memset (apvCtx, 0, sizeof(void *) * pCallInfo->cParms);
-
-        /* Initialize request memory */
-        pHGCMCall->header.fu32Flags = 0;
-        pHGCMCall->header.result    = VINF_SUCCESS;
-
-        pHGCMCall->u32ClientID = pCallInfo->u32ClientID;
-        pHGCMCall->u32Function = pCallInfo->u32Function;
-        pHGCMCall->cParms      = pCallInfo->cParms;
-
-        if (cbParms)
-        {
-            /* Lock user buffers. */
-            pParm = VBOXGUEST_HGCM_CALL_PARMS(pCallInfo);
-
-            for (iParm = 0; iParm < pCallInfo->cParms; iParm++, pParm++)
-            {
-                switch (pParm->type)
-                {
-                case VMMDevHGCMParmType_32bit:
-                case VMMDevHGCMParmType_64bit:
-                    break;
-
-                case VMMDevHGCMParmType_LinAddr_Locked_In:
-                    if ((fFlags & VBGLR0_HGCMCALL_F_MODE_MASK) == VBGLR0_HGCMCALL_F_USER)
-                        rc = VERR_INVALID_PARAMETER;
-                    else
-                        pParm->type = VMMDevHGCMParmType_LinAddr_In;
-                    break;
-                case VMMDevHGCMParmType_LinAddr_Locked_Out:
-                    if ((fFlags & VBGLR0_HGCMCALL_F_MODE_MASK) == VBGLR0_HGCMCALL_F_USER)
-                        rc = VERR_INVALID_PARAMETER;
-                    else
-                        pParm->type = VMMDevHGCMParmType_LinAddr_Out;
-                    break;
-                case VMMDevHGCMParmType_LinAddr_Locked:
-                    if ((fFlags & VBGLR0_HGCMCALL_F_MODE_MASK) == VBGLR0_HGCMCALL_F_USER)
-                        rc = VERR_INVALID_PARAMETER;
-                    else
-                        pParm->type = VMMDevHGCMParmType_LinAddr;
-                    break;
-
-                case VMMDevHGCMParmType_PageList:
-                    if ((fFlags & VBGLR0_HGCMCALL_F_MODE_MASK) == VBGLR0_HGCMCALL_F_USER)
-                        rc = VERR_INVALID_PARAMETER;
-                    break;
-
-                case VMMDevHGCMParmType_LinAddr_In:
-                case VMMDevHGCMParmType_LinAddr_Out:
-                case VMMDevHGCMParmType_LinAddr:
-                    /* PORTME: When porting this to Darwin and other systems where the entire kernel isn't mapped
-                       into every process, all linear address will have to be converted to physical SG lists at
-                       this point. Care must also be taken on these guests to not mix kernel and user addresses
-                       in HGCM calls, or we'll end up locking the wrong memory. If VMMDev/HGCM gets a linear address
-                       it will assume that it's in the current memory context (i.e. use CR3 to translate it).
-
-                       These kind of problems actually applies to some patched linux kernels too, including older
-                       fedora releases. (The patch is the infamous 4G/4G patch, aka 4g4g, by Ingo Molnar.) */
-                    rc = vbglLockLinear (&apvCtx[iParm], (void *)pParm->u.Pointer.u.linearAddr, pParm->u.Pointer.size,
-                                         (pParm->type == VMMDevHGCMParmType_LinAddr_In) ? false : true /* write access */,
-                                         fFlags);
-                    break;
-
-                default:
-                    rc = VERR_INVALID_PARAMETER;
-                    break;
-                }
-                if (RT_FAILURE (rc))
-                    break;
-            }
-            memcpy (VMMDEV_HGCM_CALL_PARMS(pHGCMCall), VBOXGUEST_HGCM_CALL_PARMS(pCallInfo), cbParms);
-        }
-
-        /* Check that the parameter locking was ok. */
-        if (RT_SUCCESS(rc))
-        {
-            Log (("calling VbglGRPerform\n"));
-
-            /* Issue request */
-            rc = VbglGRPerform (&pHGCMCall->header.header);
-
-            Log (("VbglGRPerform rc = %Rrc (header rc=%d)\n", rc, pHGCMCall->header.result));
-
-            /** If the call failed, but as a result of the request itself, then pretend success
-             *  Upper layers will interpret the result code in the packet.
-             */
-            if (RT_FAILURE(rc) && rc == pHGCMCall->header.result)
-            {
-                Assert(pHGCMCall->header.fu32Flags & VBOX_HGCM_REQ_DONE);
-                rc = VINF_SUCCESS;
-            }
-
-            if (RT_SUCCESS(rc))
-            {
-                /* Check if host decides to process the request asynchronously. */
-                if (rc == VINF_HGCM_ASYNC_EXECUTE)
-                {
-                    /* Wait for request completion interrupt notification from host */
-                    Log (("Processing HGCM call asynchronously\n"));
-                    pAsyncCallback (&pHGCMCall->header, pvAsyncData, u32AsyncData);
-                }
-
-                if (pHGCMCall->header.fu32Flags & VBOX_HGCM_REQ_DONE)
-                {
-                    if (cbParms)
-                    {
-                        memcpy (VBOXGUEST_HGCM_CALL_PARMS(pCallInfo), VMMDEV_HGCM_CALL_PARMS(pHGCMCall), cbParms);
-                    }
-                    pCallInfo->result = pHGCMCall->header.result;
-                }
-                else
-                {
-                    /* The callback returns without completing the request,
-                     * that means the wait was interrrupted. That can happen
-                     * if the request times out, the system reboots or the
-                     * VBoxService ended abnormally.
-                     *
-                     * Cancel the request, the host will not write to the
-                     * memory related to the cancelled request.
-                     */
-                    Log (("Cancelling HGCM call\n"));
-                    pHGCMCall->header.fu32Flags |= VBOX_HGCM_REQ_CANCELLED;
-
-                    pHGCMCall->header.header.requestType = VMMDevReq_HGCMCancel;
-                    VbglGRPerform (&pHGCMCall->header.header);
-                }
-            }
-        }
-
-        /* Unlock user buffers. */
-        pParm = VBOXGUEST_HGCM_CALL_PARMS(pCallInfo);
-
-        for (iParm = 0; iParm < pCallInfo->cParms; iParm++, pParm++)
-        {
-            if (   pParm->type == VMMDevHGCMParmType_LinAddr_In
-                || pParm->type == VMMDevHGCMParmType_LinAddr_Out
-                || pParm->type == VMMDevHGCMParmType_LinAddr)
-            {
-                if (apvCtx[iParm] != NULL)
-                {
-                    vbglUnlockLinear (apvCtx[iParm], (void *)pParm->u.Pointer.u.linearAddr, pParm->u.Pointer.size);
-                }
-            }
-            else
-                Assert(!apvCtx[iParm]);
-        }
-
-        if ((pHGCMCall->header.fu32Flags & VBOX_HGCM_REQ_CANCELLED) == 0)
-            VbglGRFree (&pHGCMCall->header.header);
-        else
-            rc = VERR_INTERRUPTED;
-    }
-
-    return rc;
-}
-
-#  if ARCH_BITS == 64
-/** @todo merge with the one above (use a header file). Too lazy now. */
-DECLR0VBGL(int) VbglR0HGCMInternalCall32 (VBoxGuestHGCMCallInfo *pCallInfo, uint32_t cbCallInfo, uint32_t fFlags,
-                                          VBGLHGCMCALLBACK *pAsyncCallback, void *pvAsyncData, uint32_t u32AsyncData)
-{
-    VMMDevHGCMCall *pHGCMCall;
-    uint32_t cbParms;
-    HGCMFunctionParameter32 *pParm;
-    unsigned iParm;
-    int rc;
-
-    AssertMsgReturn(!pCallInfo || !pAsyncCallback || pCallInfo->cParms > VBOX_HGCM_MAX_PARMS || !(fFlags & ~VBGLR0_HGCMCALL_F_MODE_MASK),
-                    ("pCallInfo=%p pAsyncCallback=%p fFlags=%#x\n", pCallInfo, pAsyncCallback, fFlags),
-                    VERR_INVALID_PARAMETER);
-
-    Log (("GstHGCMCall32: pCallInfo->cParms = %d, pHGCMCall->u32Function = %d, fFlags=%#x\n",
-          pCallInfo->cParms, pCallInfo->u32Function, fFlags));
-
-    pHGCMCall = NULL;
-
-    if (cbCallInfo == 0)
-    {
-        /* Caller did not specify the size (a valid value should be at least sizeof(VBoxGuestHGCMCallInfo)).
-         * Compute the size.
-         */
-        cbParms = pCallInfo->cParms * sizeof (HGCMFunctionParameter32);
-    }
-    else if (cbCallInfo < sizeof (VBoxGuestHGCMCallInfo))
-    {
-        return VERR_INVALID_PARAMETER;
-    }
-    else
-    {
-        cbParms = cbCallInfo - sizeof (VBoxGuestHGCMCallInfo);
-    }
-
-    /* Allocate request */
-    rc = VbglGRAlloc ((VMMDevRequestHeader **)&pHGCMCall, sizeof (VMMDevHGCMCall) + cbParms, VMMDevReq_HGCMCall32);
-
-    Log (("GstHGCMCall32: Allocated gr %p, rc = %Rrc, cbParms = %d\n", pHGCMCall, rc, cbParms));
-
-    if (RT_SUCCESS(rc))
-    {
-        void *apvCtx[VBOX_HGCM_MAX_PARMS];
-        memset (apvCtx, 0, sizeof(void *) * pCallInfo->cParms);
-
-        /* Initialize request memory */
-        pHGCMCall->header.fu32Flags = 0;
-        pHGCMCall->header.result    = VINF_SUCCESS;
-
-        pHGCMCall->u32ClientID = pCallInfo->u32ClientID;
-        pHGCMCall->u32Function = pCallInfo->u32Function;
-        pHGCMCall->cParms      = pCallInfo->cParms;
-
-        if (cbParms)
-        {
-            /* Lock user buffers. */
-            pParm = VBOXGUEST_HGCM_CALL_PARMS32(pCallInfo);
-
-            for (iParm = 0; iParm < pCallInfo->cParms; iParm++, pParm++)
-            {
-                switch (pParm->type)
-                {
-                case VMMDevHGCMParmType_32bit:
-                case VMMDevHGCMParmType_64bit:
-                    break;
-
-                case VMMDevHGCMParmType_LinAddr_Locked_In:
-                    if ((fFlags & VBGLR0_HGCMCALL_F_MODE_MASK) == VBGLR0_HGCMCALL_F_USER)
-                        rc = VERR_INVALID_PARAMETER;
-                    else
-                        pParm->type = VMMDevHGCMParmType_LinAddr_In;
-                    break;
-                case VMMDevHGCMParmType_LinAddr_Locked_Out:
-                    if ((fFlags & VBGLR0_HGCMCALL_F_MODE_MASK) == VBGLR0_HGCMCALL_F_USER)
-                        rc = VERR_INVALID_PARAMETER;
-                    else
-                        pParm->type = VMMDevHGCMParmType_LinAddr_Out;
-                    break;
-                case VMMDevHGCMParmType_LinAddr_Locked:
-                    if ((fFlags & VBGLR0_HGCMCALL_F_MODE_MASK) == VBGLR0_HGCMCALL_F_USER)
-                        rc = VERR_INVALID_PARAMETER;
-                    else
-                        pParm->type = VMMDevHGCMParmType_LinAddr;
-                    break;
-
-                case VMMDevHGCMParmType_PageList:
-                    if ((fFlags & VBGLR0_HGCMCALL_F_MODE_MASK) == VBGLR0_HGCMCALL_F_USER)
-                        rc = VERR_INVALID_PARAMETER;
-                    break;
-
-                case VMMDevHGCMParmType_LinAddr_In:
-                case VMMDevHGCMParmType_LinAddr_Out:
-                case VMMDevHGCMParmType_LinAddr:
-                    /* PORTME: When porting this to Darwin and other systems where the entire kernel isn't mapped
-                       into every process, all linear address will have to be converted to physical SG lists at
-                       this point. Care must also be taken on these guests to not mix kernel and user addresses
-                       in HGCM calls, or we'll end up locking the wrong memory. If VMMDev/HGCM gets a linear address
-                       it will assume that it's in the current memory context (i.e. use CR3 to translate it).
-
-                       These kind of problems actually applies to some patched linux kernels too, including older
-                       fedora releases. (The patch is the infamous 4G/4G patch, aka 4g4g, by Ingo Molnar.) */
-                    rc = vbglLockLinear (&apvCtx[iParm], (void *)pParm->u.Pointer.u.linearAddr, pParm->u.Pointer.size,
-                                         (pParm->type == VMMDevHGCMParmType_LinAddr_In) ? false : true /* write access */,
-                                         fFlags);
-                    break;
-
-                default:
-                    rc = VERR_INVALID_PARAMETER;
-                    break;
-                }
-                if (RT_FAILURE (rc))
-                    break;
-            }
-            memcpy (VMMDEV_HGCM_CALL_PARMS32(pHGCMCall), VBOXGUEST_HGCM_CALL_PARMS32(pCallInfo), cbParms);
-        }
-
-        /* Check that the parameter locking was ok. */
-        if (RT_SUCCESS(rc))
-        {
-            Log (("calling VbglGRPerform\n"));
-
-            /* Issue request */
-            rc = VbglGRPerform (&pHGCMCall->header.header);
-
-            Log (("VbglGRPerform rc = %Rrc (header rc=%d)\n", rc, pHGCMCall->header.result));
-
-            /** If the call failed, but as a result of the request itself, then pretend success
-             *  Upper layers will interpret the result code in the packet.
-             */
-            if (RT_FAILURE(rc) && rc == pHGCMCall->header.result)
-            {
-                Assert(pHGCMCall->header.fu32Flags & VBOX_HGCM_REQ_DONE);
-                rc = VINF_SUCCESS;
-            }
-
-            if (RT_SUCCESS(rc))
-            {
-                /* Check if host decides to process the request asynchronously. */
-                if (rc == VINF_HGCM_ASYNC_EXECUTE)
-                {
-                    /* Wait for request completion interrupt notification from host */
-                    Log (("Processing HGCM call asynchronously\n"));
-                    pAsyncCallback (&pHGCMCall->header, pvAsyncData, u32AsyncData);
-                }
-
-                if (pHGCMCall->header.fu32Flags & VBOX_HGCM_REQ_DONE)
-                {
-                    if (cbParms)
-                        memcpy (VBOXGUEST_HGCM_CALL_PARMS32(pCallInfo), VMMDEV_HGCM_CALL_PARMS32(pHGCMCall), cbParms);
-
-                    pCallInfo->result = pHGCMCall->header.result;
-                }
-                else
-                {
-                    /* The callback returns without completing the request,
-                     * that means the wait was interrrupted. That can happen
-                     * if the request times out, the system reboots or the
-                     * VBoxService ended abnormally.
-                     *
-                     * Cancel the request, the host will not write to the
-                     * memory related to the cancelled request.
-                     */
-                    Log (("Cancelling HGCM call\n"));
-                    pHGCMCall->header.fu32Flags |= VBOX_HGCM_REQ_CANCELLED;
-
-                    pHGCMCall->header.header.requestType = VMMDevReq_HGCMCancel;
-                    VbglGRPerform (&pHGCMCall->header.header);
-                }
-            }
-        }
-
-        /* Unlock user buffers. */
-        pParm = VBOXGUEST_HGCM_CALL_PARMS32(pCallInfo);
-
-        for (iParm = 0; iParm < pCallInfo->cParms; iParm++, pParm++)
-        {
-            if (   pParm->type == VMMDevHGCMParmType_LinAddr_In
-                || pParm->type == VMMDevHGCMParmType_LinAddr_Out
-                || pParm->type == VMMDevHGCMParmType_LinAddr)
-            {
-                if (apvCtx[iParm] != NULL)
-                {
-                    vbglUnlockLinear (apvCtx[iParm], (void *)pParm->u.Pointer.u.linearAddr, pParm->u.Pointer.size);
-                }
-            }
-            else
-                Assert(!apvCtx[iParm]);
-        }
-
-        if ((pHGCMCall->header.fu32Flags & VBOX_HGCM_REQ_CANCELLED) == 0)
-            VbglGRFree (&pHGCMCall->header.header);
-        else
-            rc = VERR_INTERRUPTED;
-    }
-
-    return rc;
-}
-#  endif /* ARCH_BITS == 64 */
-
-# endif /* old code */
+#endif /* ARCH_BITS == 64 */
 
 #endif /* VBGL_VBOXGUEST */
 
