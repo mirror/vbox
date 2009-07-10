@@ -937,6 +937,9 @@ int Service::getNotification(VBOXHGCMCALLHANDLE callHandle, uint32_t cParms,
     if (   (cParms != 4)  /* Hardcoded value as the next lines depend on it. */
         || RT_FAILURE(paParms[0].getPointer ((void **) &pszPatterns, &cchPatterns))  /* patterns */
         || pszPatterns[cchPatterns - 1] != '\0'  /* The patterns string must be zero-terminated */
+/** @todo r=bird: What if cchPatterns is 0? pszPatterns is NULL then, and if it wasn't, you'd access memory
+ * before what it points to. Add a getString() method? Please, check *all* similar cases.
+ * Remember that the guest is not trusted. :-) */
         || RT_FAILURE(paParms[1].getUInt64 (&u64Timestamp))  /* timestamp */
         || RT_FAILURE(paParms[2].getPointer ((void **) &pchBuf, &cchBuf))  /* return buffer */
         || cchBuf < 1
