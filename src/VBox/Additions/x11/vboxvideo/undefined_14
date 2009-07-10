@@ -143,3 +143,7 @@ stat
 nl_langinfo
 strpbrk
 __iob
+__udivdi3
+__divdi3
+__umoddi3
+__moddi3

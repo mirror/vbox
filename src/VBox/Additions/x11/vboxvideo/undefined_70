@@ -137,3 +137,7 @@ open
 stat
 strpbrk
 __iob
+__umoddi3
+__udivdi3
+__moddi3
+__divdi3
