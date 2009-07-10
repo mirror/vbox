@@ -647,6 +647,36 @@ VBoxGlobal::~VBoxGlobal()
     qDeleteAll (mVMStateColors);
 }
 
+/* static */
+QString VBoxGlobal::qtRTVersionString()
+{
+    return QString::fromLatin1 (qVersion());
+}
+
+/* static */
+uint VBoxGlobal::qtRTVersion()
+{
+    QString rt_ver_str = VBoxGlobal::qtRTVersionString();
+    return (rt_ver_str.section ('.', 0, 0).toInt() << 16) +
+           (rt_ver_str.section ('.', 1, 1).toInt() << 8) +
+           rt_ver_str.section ('.', 2, 2).toInt();
+}
+
+/* static */
+QString VBoxGlobal::qtCTVersionString()
+{
+    return QString::fromLatin1 (QT_VERSION_STR);
+}
+
+/* static */
+uint VBoxGlobal::qtCTVersion()
+{
+    QString ct_ver_str = VBoxGlobal::qtCTVersionString();
+    return (ct_ver_str.section ('.', 0, 0).toInt() << 16) +
+           (ct_ver_str.section ('.', 1, 1).toInt() << 8) +
+           ct_ver_str.section ('.', 2, 2).toInt();
+}
+
 /**
  *  Sets the new global settings and saves them to the VirtualBox server.
  */

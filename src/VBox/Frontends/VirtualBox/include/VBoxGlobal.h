@@ -265,6 +265,11 @@ public:
 
     bool isValid() { return mValid; }
 
+    static QString qtRTVersionString();
+    static uint qtRTVersion();
+    static QString qtCTVersionString();
+    static uint qtCTVersion();
+
     QString versionString() { return mVerString; }
 
     CVirtualBox virtualBox() const { return mVBox; }
