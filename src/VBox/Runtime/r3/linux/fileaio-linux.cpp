@@ -62,10 +62,6 @@
 #include <iprt/thread.h>
 #include "internal/fileaio.h"
 
-/* Prevent including some header files the C++ compiler doesn't like. */
-#define _LINUX_BYTEORDER_LITTLE_ENDIAN_H
-#define _LINUX_BYTEORDER_SWABB_H
-#include <linux/aio_abi.h>
 #include <unistd.h>
 #include <sys/syscall.h>
 #include <errno.h>
@@ -76,6 +72,18 @@
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
 *******************************************************************************/
+/** The async I/O context handle */
+typedef unsigned long LNXKAIOCONTEXT;
+
+/**
+ * Supported commands for the iocbs
+ */
+enum
+{
+    LNXKAIO_IOCB_CMD_READ = 0,
+    LNXKAIO_IOCB_CMD_WRITE
+};
+
 /**
  * The iocb structure of a request which is passed to the kernel.
  *
@@ -166,7 +174,7 @@ typedef struct LNXKAIOIOEVENT
 typedef struct RTFILEAIOCTXINTERNAL
 {
     /** Handle to the async I/O context. */
-    aio_context_t       AioContext;
+    LNXKAIOCONTEXT      AioContext;
     /** Maximum number of requests this context can handle. */
     int                 cRequestsMax;
     /** Current number of requests active on this context. */
@@ -194,7 +202,7 @@ typedef struct RTFILEAIOREQINTERNAL
     /** Current state the request is in. */
     RTFILEAIOREQSTATE     enmState;
     /** The I/O context this request is associated with. */
-    aio_context_t         AioContext;
+    LNXKAIOCONTEXT        AioContext;
     /** Return code the request completed with. */
     int                   Rc;
     /** Number of bytes actually trasnfered. */
@@ -218,7 +226,7 @@ typedef RTFILEAIOREQINTERNAL *PRTFILEAIOREQINTERNAL;
 /**
  * Creates a new async I/O context.
  */
-DECLINLINE(int) rtFileAsyncIoLinuxCreate(unsigned cEvents, aio_context_t *pAioContext)
+DECLINLINE(int) rtFileAsyncIoLinuxCreate(unsigned cEvents, LNXKAIOCONTEXT *pAioContext)
 {
     int rc = syscall(__NR_io_setup, cEvents, pAioContext);
     if (RT_UNLIKELY(rc == -1))
@@ -230,7 +238,7 @@ DECLINLINE(int) rtFileAsyncIoLinuxCreate(unsigned cEvents, aio_context_t *pAioCo
 /**
  * Destroys a async I/O context.
  */
-DECLINLINE(int) rtFileAsyncIoLinuxDestroy(aio_context_t AioContext)
+DECLINLINE(int) rtFileAsyncIoLinuxDestroy(LNXKAIOCONTEXT AioContext)
 {
     int rc = syscall(__NR_io_destroy, AioContext);
     if (RT_UNLIKELY(rc == -1))
@@ -242,7 +250,7 @@ DECLINLINE(int) rtFileAsyncIoLinuxDestroy(aio_context_t AioContext)
 /**
  * Submits an array of I/O requests to the kernel.
  */
-DECLINLINE(int) rtFileAsyncIoLinuxSubmit(aio_context_t AioContext, long cReqs, LNXKAIOIOCB **ppIoCB, int *pcSubmitted)
+DECLINLINE(int) rtFileAsyncIoLinuxSubmit(LNXKAIOCONTEXT AioContext, long cReqs, LNXKAIOIOCB **ppIoCB, int *pcSubmitted)
 {
     int rc = syscall(__NR_io_submit, AioContext, cReqs, ppIoCB);
     if (RT_UNLIKELY(rc == -1))
@@ -256,7 +264,7 @@ DECLINLINE(int) rtFileAsyncIoLinuxSubmit(aio_context_t AioContext, long cReqs, L
 /**
  * Cancels a I/O request.
  */
-DECLINLINE(int) rtFileAsyncIoLinuxCancel(aio_context_t AioContext, PLNXKAIOIOCB pIoCB, PLNXKAIOIOEVENT pIoResult)
+DECLINLINE(int) rtFileAsyncIoLinuxCancel(LNXKAIOCONTEXT AioContext, PLNXKAIOIOCB pIoCB, PLNXKAIOIOEVENT pIoResult)
 {
     int rc = syscall(__NR_io_cancel, AioContext, pIoCB, pIoResult);
     if (RT_UNLIKELY(rc == -1))
@@ -269,7 +277,7 @@ DECLINLINE(int) rtFileAsyncIoLinuxCancel(aio_context_t AioContext, PLNXKAIOIOCB 
  * Waits for I/O events.
  * @returns Number of events (natural number w/ 0), IPRT error code (negative).
  */
-DECLINLINE(int) rtFileAsyncIoLinuxGetEvents(aio_context_t AioContext, long cReqsMin, long cReqs,
+DECLINLINE(int) rtFileAsyncIoLinuxGetEvents(LNXKAIOCONTEXT AioContext, long cReqsMin, long cReqs,
                                             PLNXKAIOIOEVENT paIoResults, struct timespec *pTimeout)
 {
     int rc = syscall(__NR_io_getevents, AioContext, cReqsMin, cReqs, paIoResults, pTimeout);
@@ -288,7 +296,7 @@ RTR3DECL(int) RTFileAioGetLimits(PRTFILEAIOLIMITS pAioLimits)
      * Check if the API is implemented by creating a
      * completion port.
      */
-    aio_context_t AioContext = 0;
+    LNXKAIOCONTEXT AioContext = 0;
     rc = rtFileAsyncIoLinuxCreate(1, &AioContext);
     if (RT_FAILURE(rc))
         return rc;
@@ -384,7 +392,7 @@ DECLINLINE(int) rtFileAioReqPrepareTransfer(RTFILEAIOREQ hReq, RTFILE hFile,
 RTDECL(int) RTFileAioReqPrepareRead(RTFILEAIOREQ hReq, RTFILE hFile, RTFOFF off,
                                     void *pvBuf, size_t cbRead, void *pvUser)
 {
-    return rtFileAioReqPrepareTransfer(hReq, hFile, IOCB_CMD_PREAD,
+    return rtFileAioReqPrepareTransfer(hReq, hFile, LNXKAIO_IOCB_CMD_READ,
                                        off, pvBuf, cbRead, pvUser);
 }
 
@@ -392,7 +400,7 @@ RTDECL(int) RTFileAioReqPrepareRead(RTFILEAIOREQ hReq, RTFILE hFile, RTFOFF off,
 RTDECL(int) RTFileAioReqPrepareWrite(RTFILEAIOREQ hReq, RTFILE hFile, RTFOFF off,
                                      void *pvBuf, size_t cbWrite, void *pvUser)
 {
-    return rtFileAioReqPrepareTransfer(hReq, hFile, IOCB_CMD_PWRITE,
+    return rtFileAioReqPrepareTransfer(hReq, hFile, LNXKAIO_IOCB_CMD_WRITE,
                                        off, pvBuf, cbWrite, pvUser);
 }
 
