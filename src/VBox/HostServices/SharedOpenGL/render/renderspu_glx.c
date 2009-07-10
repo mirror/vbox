@@ -495,7 +495,7 @@ renderspu_SystemInitVisual( VisualInfo *visual )
     }
 
     if (visual->visual) {
-            crDebug( "Render SPU: Chose visual id=0x%x: RGBA=(%d,%d,%d,%d) Z=%d"
+            crDebug( "Render SPU: Choose visual id=0x%x: RGBA=(%d,%d,%d,%d) Z=%d"
                      " stencil=%d double=%d stereo=%d accum=(%d,%d,%d,%d)",
                      (int) visual->visual->visualid,
                      Attrib( visual, GLX_RED_SIZE ),
