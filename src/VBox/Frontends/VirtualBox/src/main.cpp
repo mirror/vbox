@@ -36,6 +36,7 @@
 
 #ifdef Q_WS_X11
 #include <QFontDatabase>
+#include <iprt/env.h>
 #endif
 
 #include <QCleanlooksStyle>
@@ -322,7 +323,35 @@ extern "C" DECLEXPORT(int) TrustedMain (int argc, char **argv, char ** /*envp*/)
 
     /* scope the QIApplication variable */
     {
+#if defined(Q_WS_X11) && (QT_VERSION >= 0x040500)
+        /* There are some buggy/strange driver/compiz combinations which lead
+         * to transparent backgrounds on ARGB visuals. Try to fix it by not
+         * allowing an ARGB visual with the help of the Xlib. After that we
+         * restore the original environment, so that others like the OpenGL
+         * service will proper work. */
+        RTENV env = NIL_RTENV;
+        char envval[1024];
+        bool found = false;
+        int rc = RTEnvClone (&env, RTENV_DEFAULT);
+        if (RT_SUCCESS (rc))
+        {
+            found = RTEnvGetEx (env, "XLIB_SKIP_ARGB_VISUALS", envval, sizeof(envval), NULL) == VINF_SUCCESS;
+            RTEnvSetEx (env, "XLIB_SKIP_ARGB_VISUALS", "1");
+        }
+        /* Now create the application object */
         QIApplication a (argc, argv);
+        /* Restore previous environment */
+        if (env != NIL_RTENV)
+        {
+            if (found)
+                RTEnvSetEx (env, "XLIB_SKIP_ARGB_VISUALS", envval);
+            else
+                RTEnvUnsetEx (env, "XLIB_SKIP_ARGB_VISUALS");
+            RTEnvDestroy (env);
+        }
+#else /* defined(Q_WS_X11) && (QT_VERSION >= 0x040500) */
+        QIApplication a (argc, argv);
+#endif /* defined(Q_WS_X11) && (QT_VERSION >= 0x040500) */
 
         /* Qt4.3 version has the QProcess bug which freezing the application
          * for 30 seconds. This bug is internally used at initialization of
