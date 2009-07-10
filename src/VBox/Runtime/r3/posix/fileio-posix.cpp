@@ -147,6 +147,11 @@ RTR3DECL(int)  RTFileOpen(PRTFILE pFile, const char *pszFilename, unsigned fOpen
     if (fOpen & RTFILE_O_ASYNC_IO)
         fOpenMode |= O_DIRECT;
 #endif
+#if defined(O_DIRECT) && (defined(RT_OS_LINUX) || defined(RT_OS_FREEBSD))
+    /* Disable the kernel cache. */
+    if (fOpen & RTFILE_O_NO_CACHE)
+        fOpenMode |= O_DIRECT;
+#endif
 
     /* create/truncate file */
     switch (fOpen & RTFILE_O_ACTION_MASK)
@@ -203,11 +208,26 @@ RTR3DECL(int)  RTFileOpen(PRTFILE pFile, const char *pszFilename, unsigned fOpen
 #endif
             ||  fcntl(fh, F_SETFD, FD_CLOEXEC) >= 0)
         {
-            *pFile = (RTFILE)fh;
-            Assert((int)*pFile == fh);
-            LogFlow(("RTFileOpen(%p:{%RTfile}, %p:{%s}, %#x): returns %Rrc\n",
-                     pFile, *pFile, pszFilename, pszFilename, fOpen, rc));
-            return VINF_SUCCESS;
+#if defined(RT_OS_SOLARIS) || defined(RT_OS_DARWIN)
+            iErr = 0;
+            /* Switch direct I/O on now if requested */
+            if (fOpen & RTFILE_O_NO_CACHE)
+# if defined(RT_OS_SOLARIS)
+                iErr = directio(fh, DIRECTIO_ON);
+# elif defined(RT_OS_DARWIN)
+                iErr = fcntl(fh, F_NOCACHE);
+# endif
+            if (iErr < 0)
+                iErr = errno;
+            else
+#endif
+            {
+                *pFile = (RTFILE)fh;
+                Assert((int)*pFile == fh);
+                LogFlow(("RTFileOpen(%p:{%RTfile}, %p:{%s}, %#x): returns %Rrc\n",
+                         pFile, *pFile, pszFilename, pszFilename, fOpen, rc));
+                return VINF_SUCCESS;
+            }
         }
         iErr = errno;
         close(fh);
