@@ -139,3 +139,7 @@ lseek
 stat
 strpbrk
 __iob
+__divdi3
+__umoddi3
+__udivdi3
+__moddi3

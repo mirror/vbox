@@ -135,3 +135,7 @@ __register_frame_info_bases
 ___errno
 strpbrk
 __iob
+__moddi3
+__umoddi3
+__udivdi3
+__divdi3

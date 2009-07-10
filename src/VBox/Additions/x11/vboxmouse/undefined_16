@@ -80,3 +80,7 @@ ___errno
 ftruncate
 strpbrk
 __iob
+__divdi3
+__umoddi3
+__moddi3
+__udivdi3
