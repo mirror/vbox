@@ -488,12 +488,11 @@ RTDECL(int) RTFileAioCtxWait(RTFILEAIOCTX hAioCtx, size_t cMinReqs, unsigned cMi
     /*
      * Clear the wakeup flag and set rc.
      */
-    if (    pCtxInt->fWokenUp
+    bool fWokenUp = ASMAtomicXchgBool(&pCtxInt->fWokenUp, false);
+
+    if (    fWokenUp
         &&  RT_SUCCESS(rc))
-    {
-        ASMAtomicXchgBool(&pCtxInt->fWokenUp, false);
         rc = VERR_INTERRUPTED;
-    }
 
     return rc;
 }
