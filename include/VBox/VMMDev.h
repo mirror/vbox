@@ -1281,6 +1281,10 @@ AssertCompileSize(VMMDevHGCMCall, 32+12);
 #define VBOX_HGCM_F_PARM_DIRECTION_TO_HOST   UINT32_C(0x00000001)
 #define VBOX_HGCM_F_PARM_DIRECTION_FROM_HOST UINT32_C(0x00000002)
 #define VBOX_HGCM_F_PARM_DIRECTION_BOTH      UINT32_C(0x00000003)
+/** Macro for validating that the specified flags are valid. */
+#define VBOX_HGCM_F_PARM_ARE_VALID(fFlags) \
+    (   (fFlags) > VBOX_HGCM_F_PARM_DIRECTION_NONE \
+     && (fFlags) < VBOX_HGCM_F_PARM_DIRECTION_BOTH )
 /** @} */
 
 /**
