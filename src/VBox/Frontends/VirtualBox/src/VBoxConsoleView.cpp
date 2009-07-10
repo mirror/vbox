@@ -685,13 +685,13 @@ public:
         : QWidget (aParent)
     {
         /* No need for background drawing */
-        setAttribute (Qt::WA_OpaquePaintEvent);
+//        setAttribute (Qt::WA_OpaquePaintEvent);
     }
     virtual QPaintEngine * paintEngine() const
     {
-        if (testAttribute (Qt::WA_PaintOnScreen))
-            return NULL;
-        else
+//        if (testAttribute (Qt::WA_PaintOnScreen))
+//            return NULL;
+//        else
             return QWidget::paintEngine();
     }
 };
