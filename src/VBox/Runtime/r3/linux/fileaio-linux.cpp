@@ -62,6 +62,8 @@
 #include <iprt/thread.h>
 #include "internal/fileaio.h"
 
+/* Prevent including some header files the C++ compiler doesn't like. */
+#define _LINUX_BYTEORDER_LITTLE_ENDIAN_H
 #define _LINUX_BYTEORDER_SWABB_H
 #include <linux/aio_abi.h>
 #include <unistd.h>
