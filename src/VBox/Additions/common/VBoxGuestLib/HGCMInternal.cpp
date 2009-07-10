@@ -45,6 +45,25 @@
 # define USE_BOUNCH_BUFFERS
 #endif
 
+/*******************************************************************************
+*   Structures and Typedefs                                                    *
+*******************************************************************************/
+/**
+ * Lock info structure used by VbglR0HGCMInternalCall and its helpers.
+ */
+struct VbglR0ParmInfo
+{
+    uint32_t cLockBufs;
+    struct
+    {
+        uint32_t    iParm;
+        RTR0MEMOBJ  hObj;
+#ifdef USE_BOUNCH_BUFFERS
+        void       *pvSmallBuf;
+#endif
+    } aLockBufs[10];
+};
+
 
 
 /* These functions can be only used by VBoxGuest. */
@@ -142,19 +161,6 @@ DECLR0VBGL(int) VbglR0HGCMInternalDisconnect (VBoxGuestHGCMDisconnectInfo *pDisc
 #if 0 /* new code using page list and whatnot. */
 
 /**
- * Lock info structure used by VbglR0HGCMInternalCall and its helpers.
- */
-struct VbglR0ParmInfo
-{
-    uint32_t cLockBufs;
-    struct
-    {
-        uint32_t    iParm;
-        RTR0MEMOBJ  hObj;
-    } aLockBufs[10];
-};
-
-/**
  * Preprocesses the HGCM call, validating and locking/buffering parameters.
  *
  * @returns VBox status code.
@@ -171,10 +177,14 @@ static int vbglR0HGCMInternalPreprocessCall(VBoxGuestHGCMCallInfo const *pCallIn
     HGCMFunctionParameter const *pSrcParm = VBOXGUEST_HGCM_CALL_PARMS(pCallInfo);
     uint32_t    cParms = pCallInfo->cParms;
     uint32_t    iParm;
+    uint32_t    cb;
 
     /*
      * Lock down the any linear buffers so we can get their addresses
      * and figure out how much extra storage we need for page lists.
+     *
+     * Note! With kernel mode users we can be assertive. For user mode users
+     *       we should just (debug) log it and fail without any fanfare.
      */
     *pcbExtra = 0;
     pParmInfo->cLockBufs = 0;
@@ -183,27 +193,56 @@ static int vbglR0HGCMInternalPreprocessCall(VBoxGuestHGCMCallInfo const *pCallIn
         switch (pSrcParm->type)
         {
             case VMMDevHGCMParmType_32bit:
+                Log4(("GstHGCMCall: parm=%u type=32bit: %#010x\n", iParm, pSrcParm->u.value32));
+                break;
+
             case VMMDevHGCMParmType_64bit:
+                Log4(("GstHGCMCall: parm=%u type=64bit: %#018x\n", iParm, pSrcParm->u.value64));
                 break;
 
             case VMMDevHGCMParmType_PageList:
                 if (fIsUser)
                     return VERR_INVALID_PARAMETER;
-                if (pSrcParm->u.PageList.size)
+                cb = pSrcParm->u.PageList.size;
+                if (cb)
                 {
-                    HGCMPageListInfo *pPgLst;
+                    uint32_t            off = pSrcParm->u.PageList.offset;
+                    HGCMPageListInfo   *pPgLst;
+                    uint32_t            cPages;
+                    uint32_t            u32;
 
-                    if (pSrcParm->u.Pointer.size > VBGLR0_MAX_HGCM_KERNEL_PARM)
-                        return VERR_OUT_OF_RANGE;
-                    AssertReturn(   pSrcParm->u.PageList.offset >= pCallInfo->cParms * sizeof(HGCMFunctionParameter)
-                                 && pSrcParm->u.PageList.offset < cbCallInfo - sizeof(HGCMPageListInfo), VERR_INVALID_PARAMETER);
-                    pPgLst = (HGCMPageListInfo *)((uint8_t *)pCallInfo + pSrcParm->u.PageList.offset);
-                    AssertReturn(RT_OFFSETOF(HGCMPageListInfo, aPages[pPgLst->cPages]) + pSrcParm->u.PageList.offset <= cbCallInfo, VERR_INVALID_PARAMETER);
-                    AssertReturn(pPgLst->offFirstPage < PAGE_SIZE, VERR_INVALID_PARAMETER);
-                    AssertReturn(pPgLst->flags > VBOX_HGCM_F_PARM_DIRECTION_NONE && pPgLst->flags <= VBOX_HGCM_F_PARM_DIRECTION_BOTH, VERR_INVALID_PARAMETER);
+                    AssertMsgReturn(cb <= VBGLR0_MAX_HGCM_KERNEL_PARM, ("%#x > %#x\n", cb, VBGLR0_MAX_HGCM_KERNEL_PARM), VERR_OUT_OF_RANGE);
+                    AssertMsgReturn(   off >= pCallInfo->cParms * sizeof(HGCMFunctionParameter)
+                                    && off < cbCallInfo - sizeof(HGCMPageListInfo),
+                                    ("offset=%#x cParms=%#x cbCallInfo=%#x\n", off, pCallInfo->cParms, cbCallInfo),
+                                    VERR_INVALID_PARAMETER);
+
+                    pPgLst = (HGCMPageListInfo *)((uint8_t *)pCallInfo + off);
+                    cPages = pPgLst->cPages;
+                    u32    = RT_OFFSETOF(HGCMPageListInfo, aPages[cPages]) + off;
+                    AssertMsgReturn(u32 <= cbCallInfo,
+                                    ("u32=%#x (cPages=%#x offset=%#x) cbCallInfo=%#x\n", u32, cPages, off, cbCallInfo),
+                                    VERR_INVALID_PARAMETER);
+                    AssertMsgReturn(pPgLst->offFirstPage < PAGE_SIZE, ("#x\n", pPgLst->offFirstPage), VERR_INVALID_PARAMETER);
+                    u32 = RT_ALIGN_32(pPgLst->offFirstPage + cb, PAGE_SIZE) >> PAGE_SHIFT;
+                    AssertMsgReturn(cPages == u32, ("cPages=%#x u32=%#x\n", cPages, u32), VERR_INVALID_PARAMETER);
+                    AssertMsgReturn(pPgLst->flags > VBOX_HGCM_F_PARM_DIRECTION_NONE && pPgLst->flags <= VBOX_HGCM_F_PARM_DIRECTION_BOTH,
+                                    ("%#x\n", pPgLst->flags),
+                                    VERR_INVALID_PARAMETER);
+                    Log4(("GstHGCMCall: parm=%u type=pglst: cb=%#010x cPgs=%u offPg0=%#x flags=%#x\n", iParm, cb, cPages, pPgLst->offFirstPage, pPgLst->flags));
+                    u32 = cPages;
+                    while (u32-- > 0)
+                    {
+                        Log4(("GstHGCMCall:   pg#%u=%RHp\n", u32, pPgLst->aPages[u32]));
+                        AssertMsgReturn(!(pPgLst->aPages[u32] & (PAGE_OFFSET_MASK | UINT64_C(0xfff0000000000000))),
+                                        ("pg#%u=%RHp\n", u32, pPgLst->aPages[u32]),
+                                        VERR_INVALID_PARAMETER);
+                    }
 
                     *pcbExtra += RT_OFFSETOF(HGCMPageListInfo, aPages[pPgLst->cPages]);
                 }
+                else
+                    Log4(("GstHGCMCall: parm=%u type=pglst: cb=0\n", iParm));
                 break;
 
             case VMMDevHGCMParmType_LinAddr_Locked_In:
@@ -213,8 +252,12 @@ static int vbglR0HGCMInternalPreprocessCall(VBoxGuestHGCMCallInfo const *pCallIn
                     return VERR_INVALID_PARAMETER;
                 if (!VBGLR0_CAN_USE_PHYS_PAGE_LIST())
                 {
-                    if (pSrcParm->u.Pointer.size > VBGLR0_MAX_HGCM_KERNEL_PARM)
-                        return VERR_OUT_OF_RANGE;
+                    cb = pSrcParm->u.Pointer.size;
+                    AssertMsgReturn(cb <= VBGLR0_MAX_HGCM_KERNEL_PARM, ("%#x > %#x\n", cb, VBGLR0_MAX_HGCM_KERNEL_PARM), VERR_OUT_OF_RANGE);
+                    if (cb != 0)
+                        Log4(("GstHGCMCall: parm=%u type=%#x: cb=%#010x pv=%p\n", iParm, pSrcParm->type, cb, pSrcParm->u.Pointer.u.linearAddr));
+                    else
+                        Log4(("GstHGCMCall: parm=%u type=%#x: cb=0\n", iParm, pSrcParm->type));
                     break;
                 }
                 /* fall thru */
@@ -222,47 +265,115 @@ static int vbglR0HGCMInternalPreprocessCall(VBoxGuestHGCMCallInfo const *pCallIn
             case VMMDevHGCMParmType_LinAddr_In:
             case VMMDevHGCMParmType_LinAddr_Out:
             case VMMDevHGCMParmType_LinAddr:
-                if (pSrcParm->u.Pointer.size > (fIsUser ? VBGLR0_MAX_HGCM_USER_PARM : VBGLR0_MAX_HGCM_KERNEL_PARM))
-                    return VERR_OUT_OF_RANGE;
-                if (pSrcParm->u.Pointer.size != 0)
+                cb = pSrcParm->u.Pointer.size;
+                if (cb != 0)
                 {
-                    RTR0MEMOBJ hObj;
-                    int rc;
+#ifdef USE_BOUNCH_BUFFERS
+                    void       *pvSmallBuf = NULL;
+#endif
+                    uint32_t    iLockBuf   = pParmInfo->cLockBufs;
+                    RTR0MEMOBJ  hObj;
+                    int         rc;
 
-                    AssertReturn(pParmInfo->cLockBufs < RT_ELEMENTS(pParmInfo->aLockBufs), VERR_INVALID_PARAMETER);
+                    AssertReturn(iLockBuf < RT_ELEMENTS(pParmInfo->aLockBufs), VERR_INVALID_PARAMETER);
                     if (!fIsUser)
-                        rc = RTR0MemObjLockKernel(&hObj,
-                                                  (void *)pSrcParm->u.Pointer.u.linearAddr,
-                                                  pSrcParm->u.Pointer.size);
+                    {
+                        AssertMsgReturn(cb <= VBGLR0_MAX_HGCM_KERNEL_PARM, ("%#x > %#x\n", cb, VBGLR0_MAX_HGCM_KERNEL_PARM), VERR_OUT_OF_RANGE);
+                        rc = RTR0MemObjLockKernel(&hObj, (void *)pSrcParm->u.Pointer.u.linearAddr, cb);
+                        if (RT_FAILURE(rc))
+                        {
+                            Log(("GstHGCMCall: id=%#x fn=%u parm=%u RTR0MemObjLockKernel(,%p,%#x) -> %Rrc\n",
+                                 pCallInfo->u32ClientID, pCallInfo->u32Function, iParm, pSrcParm->u.Pointer.u.linearAddr, cb, rc));
+                            return rc;
+                        }
+                        Log3(("GstHGCMCall: parm=%u type=%#x: cb=%#010x pv=%p locked kernel -> %p\n", iParm, pSrcParm->type, cb, pSrcParm->u.Pointer.u.linearAddr, hObj));
+                    }
                     else
                     {
-#ifdef USE_BOUNCH_BUFFERS
-                        rc = RTR0MemObjAllocPage(&hObj,
-                                                 pSrcParm->u.Pointer.size,
-                                                 false /*fExecutable*/);
-                        if (    RT_SUCCESS(rc)
-                            &&  pSrcParm->type != VMMDevHGCMParmType_LinAddr_Out
-                            &&  pSrcParm->type != VMMDevHGCMParmType_LinAddr_Locked_Out)
+                        if (cb > VBGLR0_MAX_HGCM_USER_PARM)
                         {
-                            rc = RTR0MemUserCopyFrom(RTR0MemObjAddress(hObj),
-                                                     pSrcParm->u.Pointer.u.linearAddr,
-                                                     pSrcParm->u.Pointer.size + 2);
-                            if (RT_FAILURE(rc))
-                                RTR0MemObjFree(hObj, false /*fFreeMappings*/);
+                            Log(("GstHGCMCall: id=%#x fn=%u parm=%u pv=%p cb=%#x > %#x -> out of range\n",
+                                 pCallInfo->u32ClientID, pCallInfo->u32Function, iParm, pSrcParm->u.Pointer.u.linearAddr, cb, VBGLR0_MAX_HGCM_USER_PARM));
+                            return VERR_OUT_OF_RANGE;
                         }
-#else
-                        rc = RTR0MemObjLockUser(&hObj,
-                                                (RTR3PTR)pSrcParm->u.Pointer.u.linearAddr,
-                                                pSrcParm->u.Pointer.size,
-                                                NIL_RTR0PROCESS);
-#endif
-                    }
-                    if (RT_FAILURE(rc))
-                        return rc;
 
-                    pParmInfo->aLockBufs[pParmInfo->cLockBufs].iParm = iParm;
-                    pParmInfo->aLockBufs[pParmInfo->cLockBufs].hObj  = hObj;
-                    pParmInfo->cLockBufs++;
+#ifndef USE_BOUNCH_BUFFERS
+                        rc = RTR0MemObjLockUser(&hObj, (RTR3PTR)pSrcParm->u.Pointer.u.linearAddr, cb, NIL_RTR0PROCESS);
+                        if (RT_FAILURE(rc))
+                        {
+                            Log(("GstHGCMCall: id=%#x fn=%u parm=%u RTR0MemObjLockUser(,%p,%#x,nil) -> %Rrc\n",
+                                 pCallInfo->u32ClientID, pCallInfo->u32Function, iParm, pSrcParm->u.Pointer.u.linearAddr, cb, rc));
+                            return rc;
+                        }
+                        Log3(("GstHGCMCall: parm=%u type=%#x: cb=%#010x pv=%p locked user -> %p\n", iParm, pSrcParm->type, cb, pSrcParm->u.Pointer.u.linearAddr, hObj));
+
+#else  /* USE_BOUNCH_BUFFERS */
+                        /*
+                         * This is a bit massive, but we don't want to waste a
+                         * whole page for a 3 byte string buffer (guest props).
+                         *
+                         * The threshold is ASSUMING sizeof(RTMEMHDR) == 16 and
+                         * the system is using some power of two allocator.
+                         */
+                        /** @todo A more efficient strategy would be to combine buffers. However it
+                         *        is probably going to be more massive than the current code, so
+                         *        it can wait till later.   */
+                        bool fCopyIn = pSrcParm->type != VMMDevHGCMParmType_LinAddr_Out
+                                    && pSrcParm->type != VMMDevHGCMParmType_LinAddr_Locked_Out;
+                        if (cb <= PAGE_SIZE / 2 - 16)
+                        {
+                            pvSmallBuf = fCopyIn ? RTMemTmpAlloc(cb) : RTMemTmpAllocZ(cb);
+                            if (RT_UNLIKELY(!pvSmallBuf))
+                                return VERR_NO_MEMORY;
+                            if (fCopyIn)
+                            {
+                                rc = RTR0MemUserCopyFrom(pvSmallBuf, pSrcParm->u.Pointer.u.linearAddr, cb);
+                                if (RT_FAILURE(rc))
+                                {
+                                    RTMemTmpFree(pvSmallBuf);
+                                    Log(("GstHGCMCall: id=%#x fn=%u parm=%u RTR0MemUserCopyFrom(,%p,%#x) -> %Rrc\n",
+                                         pCallInfo->u32ClientID, pCallInfo->u32Function, iParm, pSrcParm->u.Pointer.u.linearAddr, cb, rc));
+                                    return rc;
+                                }
+                            }
+                            rc = RTR0MemObjLockKernel(&hObj, pvSmallBuf, cb);
+                            if (RT_FAILURE(rc))
+                            {
+                                RTMemTmpFree(pvSmallBuf);
+                                Log(("GstHGCMCall: RTR0MemObjLockKernel failed for small buffer: rc=%Rrc pvSmallBuf=%p cb=%#x\n", rc, pvSmallBuf, cb));
+                                return rc;
+                            }
+                            Log3(("GstHGCMCall: parm=%u type=%#x: cb=%#010x pv=%p small buffer %p -> %p\n", iParm, pSrcParm->type, cb, pSrcParm->u.Pointer.u.linearAddr, pvSmallBuf, hObj));
+                        }
+                        else
+                        {
+                            rc = RTR0MemObjAllocPage(&hObj, cb, false /*fExecutable*/);
+                            if (RT_FAILURE(rc))
+                                return rc;
+                            if (!fCopyIn)
+                                memset(RTR0MemObjAddress(hObj), '\0', cb);
+                            else
+                            {
+                                rc = RTR0MemUserCopyFrom(RTR0MemObjAddress(hObj), pSrcParm->u.Pointer.u.linearAddr, cb);
+                                if (RT_FAILURE(rc))
+                                {
+                                    RTR0MemObjFree(hObj, false /*fFreeMappings*/);
+                                    Log(("GstHGCMCall: id=%#x fn=%u parm=%u RTR0MemUserCopyFrom(,%p,%#x) -> %Rrc\n",
+                                         pCallInfo->u32ClientID, pCallInfo->u32Function, iParm, pSrcParm->u.Pointer.u.linearAddr, cb, rc));
+                                    return rc;
+                                }
+                            }
+                            Log3(("GstHGCMCall: parm=%u type=%#x: cb=%#010x pv=%p big buffer -> %p\n", iParm, pSrcParm->type, cb, pSrcParm->u.Pointer.u.linearAddr, hObj));
+                        }
+#endif /* USE_BOUNCH_BUFFERS */
+                    }
+
+                    pParmInfo->aLockBufs[iLockBuf].iParm      = iParm;
+                    pParmInfo->aLockBufs[iLockBuf].hObj       = hObj;
+#ifdef USE_BOUNCH_BUFFERS
+                    pParmInfo->aLockBufs[iLockBuf].pvSmallBuf = pvSmallBuf;
+#endif
+                    pParmInfo->cLockBufs = iLockBuf + 1;
 
                     if (VBGLR0_CAN_USE_PHYS_PAGE_LIST())
                     {
@@ -270,6 +381,8 @@ static int vbglR0HGCMInternalPreprocessCall(VBoxGuestHGCMCallInfo const *pCallIn
                         *pcbExtra += RT_OFFSETOF(HGCMPageListInfo, aPages[cPages]);
                     }
                 }
+                else
+                    Log4(("GstHGCMCall: parm=%u type=%#x: cb=0\n", iParm, pSrcParm->type));
                 break;
 
             default:
@@ -314,11 +427,11 @@ static uint32_t vbglR0HGCMInternalLinAddrTypeToPageListFlags(HGCMFunctionParamet
     {
         case VMMDevHGCMParmType_LinAddr_In:
         case VMMDevHGCMParmType_LinAddr_Locked_In:
-            return VBOX_HGCM_F_PARM_DIRECTION_FROM_HOST;
+            return VBOX_HGCM_F_PARM_DIRECTION_TO_HOST;
 
         case VMMDevHGCMParmType_LinAddr_Out:
         case VMMDevHGCMParmType_LinAddr_Locked_Out:
-            return VBOX_HGCM_F_PARM_DIRECTION_TO_HOST;
+            return VBOX_HGCM_F_PARM_DIRECTION_FROM_HOST;
 
         default: AssertFailed();
         case VMMDevHGCMParmType_LinAddr:
@@ -410,7 +523,10 @@ static void vbglR0HGCMInternalInitCall(VMMDevHGCMCall *pHGCMCall, VBoxGuestHGCMC
             case VMMDevHGCMParmType_LinAddr:
                 if (pSrcParm->u.Pointer.size != 0)
                 {
-                    RTR0MEMOBJ hObj = pParmInfo->aLockBufs[iLockBuf].hObj;
+#ifdef USE_BOUNCH_BUFFERS
+                    void      *pvSmallBuf = pParmInfo->aLockBufs[iLockBuf].pvSmallBuf;
+#endif
+                    RTR0MEMOBJ hObj       = pParmInfo->aLockBufs[iLockBuf].hObj;
                     Assert(iParm == pParmInfo->aLockBufs[iLockBuf].iParm);
 
                     if (VBGLR0_CAN_USE_PHYS_PAGE_LIST())
@@ -425,7 +541,7 @@ static void vbglR0HGCMInternalInitCall(VMMDevHGCMCall *pHGCMCall, VBoxGuestHGCMC
                         pDstPgLst->flags            = vbglR0HGCMInternalLinAddrTypeToPageListFlags(pSrcParm->type);
 #ifdef USE_BOUNCH_BUFFERS
                         if (fIsUser)
-                            pDstPgLst->offFirstPage = 0;
+                            pDstPgLst->offFirstPage = (uintptr_t)pvSmallBuf & PAGE_OFFSET_MASK;
                         else
 #endif
                             pDstPgLst->offFirstPage = pSrcParm->u.Pointer.u.linearAddr & PAGE_OFFSET_MASK;
@@ -444,7 +560,9 @@ static void vbglR0HGCMInternalInitCall(VMMDevHGCMCall *pHGCMCall, VBoxGuestHGCMC
                         pDstParm->u.Pointer.size = pSrcParm->u.Pointer.size;
 #ifdef USE_BOUNCH_BUFFERS
                         if (fIsUser)
-                            pDstParm->u.Pointer.u.linearAddr = (uintptr_t)RTR0MemObjAddress(hObj);
+                            pDstParm->u.Pointer.u.linearAddr = pvSmallBuf
+                                                             ? (uintptr_t)pvSmallBuf
+                                                             : (uintptr_t)RTR0MemObjAddress(hObj);
                         else
 #endif
                             pDstParm->u.Pointer.u.linearAddr = pSrcParm->u.Pointer.u.linearAddr;
@@ -522,6 +640,8 @@ static int vbglR0HGCMInternalDoCall(VMMDevHGCMCall *pHGCMCall, VBGLHGCMCALLBACK 
             rc = VERR_INTERRUPTED;
         }
     }
+
+    Log(("GstHGCMCall: rc=%Rrc result=%Rrc fu32Flags=%#x\n", rc, pHGCMCall->header.result, pHGCMCall->header.fu32Flags));
     return rc;
 }
 
@@ -596,13 +716,15 @@ static int vbglR0HGCMInternalCopyBackResult(VBoxGuestHGCMCallInfo *pCallInfo, VM
 #ifdef USE_BOUNCH_BUFFERS
                 if (fIsUser)
                 {
-                    if (    pSrcParm->u.Pointer.size != 0
-                        &&  pDstParm->u.Pointer.size != 0)
+                    size_t cbOut = RT_MIN(pSrcParm->u.Pointer.size, pDstParm->u.Pointer.size);
+                    if (cbOut)
                     {
                         Assert(pParmInfo->aLockBufs[iLockBuf].iParm == iParm);
                         int rc2 = RTR0MemUserCopyTo((RTR3PTR)pDstParm->u.Pointer.u.linearAddr,
-                                                    RTR0MemObjAddress(pParmInfo->aLockBufs[iLockBuf].hObj),
-                                                    RT_MIN(pSrcParm->u.Pointer.size, pDstParm->u.Pointer.size));
+                                                    pParmInfo->aLockBufs[iLockBuf].pvSmallBuf
+                                                    ? pParmInfo->aLockBufs[iLockBuf].pvSmallBuf
+                                                    : RTR0MemObjAddress(pParmInfo->aLockBufs[iLockBuf].hObj),
+                                                    cbOut);
                         if (RT_FAILURE(rc2))
                             return rc2;
                         iLockBuf++;
@@ -647,11 +769,12 @@ DECLR0VBGL(int) VbglR0HGCMInternalCall(VBoxGuestHGCMCallInfo *pCallInfo, uint32_
                  || cbCallInfo >= pCallInfo->cParms * sizeof(HGCMFunctionParameter),
                  VERR_INVALID_PARAMETER);
 
-    Log (("VbglR0HGCMInternalCall: pCallInfo->cParms = %d, pHGCMCall->u32Function = %d, fFlags=%#x\n",
-          pCallInfo->cParms, pCallInfo->u32Function, fFlags));
+    Log(("GstHGCMCall: u32ClientID=%#x u32Function=%u cParms=%u cbCallInfo=%#x fFlags=%#x\n",
+         pCallInfo->u32ClientID, pCallInfo->u32ClientID, pCallInfo->u32Function, pCallInfo->cParms, cbCallInfo, fFlags));
 
     /*
-     * Preprocess the parameters, locking/buffering stuff.
+     * Validate, lock and buffer the parameters for the call.
+     * This will calculate the amount of extra space for physical page list.
      */
     rc = vbglR0HGCMInternalPreprocessCall(pCallInfo, cbCallInfo, fIsUser, &ParmInfo, &cbExtra);
     if (RT_SUCCESS(rc))
@@ -684,11 +807,16 @@ DECLR0VBGL(int) VbglR0HGCMInternalCall(VBoxGuestHGCMCallInfo *pCallInfo, uint32_
     }
 
     /*
-     * Copy back buffered data and release buffers & locks.
+     * Release locks and free bounce buffers.
      */
     if (ParmInfo.cLockBufs)
         while (ParmInfo.cLockBufs-- > 0)
+        {
             RTR0MemObjFree(ParmInfo.aLockBufs[ParmInfo.cLockBufs].hObj, false /*fFreeMappings*/);
+#ifdef USE_BOUNCH_BUFFERS
+            RTMemTmpFree(ParmInfo.aLockBufs[ParmInfo.cLockBufs].pvSmallBuf);
+#endif
+        }
 
     return rc;
 }
@@ -813,7 +941,7 @@ DECLR0VBGL(int) VbglR0HGCMInternalCall (VBoxGuestHGCMCallInfo *pCallInfo, uint32
                     ("pCallInfo=%p pAsyncCallback=%p fFlags=%#x\n", pCallInfo, pAsyncCallback, fFlags),
                     VERR_INVALID_PARAMETER);
 
-    Log (("VbglR0HGCMInternalCall: pCallInfo->cParms = %d, pHGCMCall->u32Function = %d, fFlags=%#x\n",
+    Log (("GstHGCMCall: pCallInfo->cParms = %d, pHGCMCall->u32Function = %d, fFlags=%#x\n",
           pCallInfo->cParms, pCallInfo->u32Function, fFlags));
 
     pHGCMCall = NULL;
@@ -837,7 +965,7 @@ DECLR0VBGL(int) VbglR0HGCMInternalCall (VBoxGuestHGCMCallInfo *pCallInfo, uint32
     /* Allocate request */
     rc = VbglGRAlloc ((VMMDevRequestHeader **)&pHGCMCall, sizeof (VMMDevHGCMCall) + cbParms, VMMDevReq_HGCMCall);
 
-    Log (("VbglR0HGCMInternalCall: Allocated gr %p, rc = %Rrc, cbParms = %d\n", pHGCMCall, rc, cbParms));
+    Log (("GstHGCMCall: Allocated gr %p, rc = %Rrc, cbParms = %d\n", pHGCMCall, rc, cbParms));
 
     if (RT_SUCCESS(rc))
     {
@@ -1013,7 +1141,7 @@ DECLR0VBGL(int) VbglR0HGCMInternalCall32 (VBoxGuestHGCMCallInfo *pCallInfo, uint
                     ("pCallInfo=%p pAsyncCallback=%p fFlags=%#x\n", pCallInfo, pAsyncCallback, fFlags),
                     VERR_INVALID_PARAMETER);
 
-    Log (("VbglR0HGCMInternalCall32: pCallInfo->cParms = %d, pHGCMCall->u32Function = %d, fFlags=%#x\n",
+    Log (("GstHGCMCall32: pCallInfo->cParms = %d, pHGCMCall->u32Function = %d, fFlags=%#x\n",
           pCallInfo->cParms, pCallInfo->u32Function, fFlags));
 
     pHGCMCall = NULL;
@@ -1037,7 +1165,7 @@ DECLR0VBGL(int) VbglR0HGCMInternalCall32 (VBoxGuestHGCMCallInfo *pCallInfo, uint
     /* Allocate request */
     rc = VbglGRAlloc ((VMMDevRequestHeader **)&pHGCMCall, sizeof (VMMDevHGCMCall) + cbParms, VMMDevReq_HGCMCall32);
 
-    Log (("VbglR0HGCMInternalCall32: Allocated gr %p, rc = %Rrc, cbParms = %d\n", pHGCMCall, rc, cbParms));
+    Log (("GstHGCMCall32: Allocated gr %p, rc = %Rrc, cbParms = %d\n", pHGCMCall, rc, cbParms));
 
     if (RT_SUCCESS(rc))
     {
