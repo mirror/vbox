@@ -276,6 +276,7 @@ static void VBoxGuestDeleteWaitList(PVBOXGUESTWAITLIST pList)
         pWait->pPrev = NULL;
         rc2 = RTSemEventMultiDestroy(pWait->Event); AssertRC(rc2);
         pWait->Event = NIL_RTSEMEVENTMULTI;
+        pWait->pSession = NULL;
         RTMemFree(pWait);
     }
     pList->pHead = NULL;
@@ -457,8 +458,9 @@ DECLINLINE(void) VBoxGuestWaitUnlink(PVBOXGUESTWAITLIST pList, PVBOXGUESTWAIT pW
  *
  * @returns The wait-for-event entry.
  * @param   pDevExt         The device extension.
+ * @param   pSession        The session that's allocating this. Can be NULL.
  */
-static PVBOXGUESTWAIT VBoxGuestWaitAlloc(PVBOXGUESTDEVEXT pDevExt)
+static PVBOXGUESTWAIT VBoxGuestWaitAlloc(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSION pSession)
 {
     /*
      * Allocate it one way or the other.
@@ -505,6 +507,7 @@ static PVBOXGUESTWAIT VBoxGuestWaitAlloc(PVBOXGUESTDEVEXT pDevExt)
     pWait->pPrev = NULL;
     pWait->fReqEvents = 0;
     pWait->fResEvents = 0;
+    pWait->pSession = pSession;
 #ifdef VBOX_WITH_HGCM
     pWait->pHGCMReq = NULL;
 #endif
@@ -640,8 +643,8 @@ DECLINLINE(int) WaitEventCheckCondition(PVBOXGUESTDEVEXT pDevExt, VBoxGuestWaitE
 }
 
 
-static int VBoxGuestCommonIOCtl_WaitEvent(PVBOXGUESTDEVEXT pDevExt, VBoxGuestWaitEventInfo *pInfo, size_t *pcbDataReturned,
-                                          bool fInterruptible)
+static int VBoxGuestCommonIOCtl_WaitEvent(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSION pSession,
+                                          VBoxGuestWaitEventInfo *pInfo,  size_t *pcbDataReturned, bool fInterruptible)
 {
     pInfo->u32EventFlagsOut = 0;
     pInfo->u32Result = VBOXGUEST_WAITEVENT_ERROR;
@@ -676,7 +679,7 @@ static int VBoxGuestCommonIOCtl_WaitEvent(PVBOXGUESTDEVEXT pDevExt, VBoxGuestWai
         return VERR_TIMEOUT;
     }
 
-    PVBOXGUESTWAIT pWait = VBoxGuestWaitAlloc(pDevExt);
+    PVBOXGUESTWAIT pWait = VBoxGuestWaitAlloc(pDevExt, pSession);
     if (!pWait)
         return VERR_NO_MEMORY;
     pWait->fReqEvents = fReqEvents;
@@ -723,7 +726,8 @@ static int VBoxGuestCommonIOCtl_WaitEvent(PVBOXGUESTDEVEXT pDevExt, VBoxGuestWai
     /*
      * Now deal with the return code.
      */
-    if (fResEvents)
+    if (    fResEvents
+        &&  fResEvents != UINT32_MAX)
     {
         pInfo->u32EventFlagsOut = fResEvents;
         pInfo->u32Result = VBOXGUEST_WAITEVENT_OK;
@@ -733,15 +737,17 @@ static int VBoxGuestCommonIOCtl_WaitEvent(PVBOXGUESTDEVEXT pDevExt, VBoxGuestWai
             Log(("VBoxGuestCommonIOCtl: WAITEVENT: returns %#x/%d\n", pInfo->u32EventFlagsOut, iEvent));
         rc = VINF_SUCCESS;
     }
+    else if (   fResEvents == UINT32_MAX
+             || rc == VERR_INTERRUPTED)
+    {
+        pInfo->u32Result = VBOXGUEST_WAITEVENT_INTERRUPTED;
+        rc == VERR_INTERRUPTED;
+        Log(("VBoxGuestCommonIOCtl: WAITEVENT: returns VERR_INTERRUPTED\n"));
+    }
     else if (rc == VERR_TIMEOUT)
     {
         pInfo->u32Result = VBOXGUEST_WAITEVENT_TIMEOUT;
         Log(("VBoxGuestCommonIOCtl: WAITEVENT: returns VERR_TIMEOUT\n"));
-    }
-    else if (rc == VERR_INTERRUPTED)
-    {
-        pInfo->u32Result = VBOXGUEST_WAITEVENT_INTERRUPTED;
-        Log(("VBoxGuestCommonIOCtl: WAITEVENT: returns VERR_INTERRUPTED\n"));
     }
     else
     {
@@ -757,6 +763,31 @@ static int VBoxGuestCommonIOCtl_WaitEvent(PVBOXGUESTDEVEXT pDevExt, VBoxGuestWai
     }
 
     return rc;
+}
+
+
+static int VBoxGuestCommonIOCtl_CancelAllWaitEvents(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSION pSession)
+{
+    RTSPINLOCKTMP   Tmp = RTSPINLOCKTMP_INITIALIZER;
+    PVBOXGUESTWAIT  pWait;
+    int             rc = 0;
+
+    Log(("VBoxGuestCommonIOCtl: CANCEL_ALL_WAITEVENTS\n"));
+
+    /*
+     * Walk the event list and wake up anyone with a matching session.
+     */
+    RTSpinlockAcquireNoInts(pDevExt->EventSpinlock, &Tmp);
+    for (pWait = pDevExt->WaitList.pHead; pWait; pWait = pWait->pNext)
+        if (pWait->pSession == pSession)
+        {
+            pWait->fResEvents = UINT32_MAX;
+            rc |= RTSemEventMultiSignal(pWait->Event);
+        }
+    RTSpinlockReleaseNoInts(pDevExt->EventSpinlock, &Tmp);
+    Assert(rc == 0);
+
+    return VINF_SUCCESS;
 }
 
 
@@ -883,7 +914,7 @@ static void VBoxGuestHGCMAsyncWaitCallbackWorker(VMMDevHGCMRequestHeader volatil
         }
         RTSpinlockReleaseNoInts(pDevExt->EventSpinlock, &Tmp);
 
-        pWait = VBoxGuestWaitAlloc(pDevExt);
+        pWait = VBoxGuestWaitAlloc(pDevExt, NULL);
         if (pWait)
             break;
         if (fInterruptible)
@@ -1353,8 +1384,14 @@ int VBoxGuestCommonIOCtl(unsigned iFunction, PVBOXGUESTDEVEXT pDevExt, PVBOXGUES
 
             case VBOXGUEST_IOCTL_WAITEVENT:
                 CHECKRET_MIN_SIZE("WAITEVENT", sizeof(VBoxGuestWaitEventInfo));
-                rc = VBoxGuestCommonIOCtl_WaitEvent(pDevExt, (VBoxGuestWaitEventInfo *)pvData, pcbDataReturned,
-                                                    pSession->R0Process != NIL_RTR0PROCESS);
+                rc = VBoxGuestCommonIOCtl_WaitEvent(pDevExt, pSession, (VBoxGuestWaitEventInfo *)pvData,
+                                                    pcbDataReturned, pSession->R0Process != NIL_RTR0PROCESS);
+                break;
+
+            case VBOXGUEST_IOCTL_CANCEL_ALL_WAITEVENTS:
+                if (cbData != 0)
+                    rc = VERR_INVALID_PARAMETER;
+                rc = VBoxGuestCommonIOCtl_CancelAllWaitEvents(pDevExt, pSession);
                 break;
 
             case VBOXGUEST_IOCTL_CTL_FILTER_MASK:

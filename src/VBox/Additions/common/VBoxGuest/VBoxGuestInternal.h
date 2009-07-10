@@ -30,6 +30,9 @@
 #include <VBox/VBoxGuestLib.h>
 
 
+/** Pointer to the VBoxGuest per session data. */
+typedef struct VBOXGUESTSESSION *PVBOXGUESTSESSION;
+
 /** Pointer to a wait-for-event entry. */
 typedef struct VBOXGUESTWAIT *PVBOXGUESTWAIT;
 
@@ -51,6 +54,8 @@ typedef struct VBOXGUESTWAIT
     uint32_t                    fReqEvents;
     /** The events we received. */
     uint32_t volatile           fResEvents;
+    /** The session that's waiting. */
+    PVBOXGUESTSESSION           pSession;
 #ifdef VBOX_WITH_HGCM
     /** The HGCM request we're waiting for to complete. */
     VMMDevHGCMRequestHeader volatile *pHGCMReq;
@@ -116,9 +121,6 @@ typedef struct VBOXGUESTDEVEXT
 /** Pointer to the VBoxGuest driver data. */
 typedef VBOXGUESTDEVEXT *PVBOXGUESTDEVEXT;
 
-
-/** Pointer to the VBoxGuest per session data. */
-typedef struct VBOXGUESTSESSION *PVBOXGUESTSESSION;
 
 /**
  * The VBoxGuest per session data.
