@@ -323,31 +323,28 @@ extern "C" DECLEXPORT(int) TrustedMain (int argc, char **argv, char ** /*envp*/)
 
     /* scope the QIApplication variable */
     {
-#if defined(Q_WS_X11) && (QT_VERSION >= 0x040500)
+#ifdef Q_WS_X11
         /* There are some buggy/strange driver/compiz combinations which lead
          * to transparent backgrounds on ARGB visuals. Try to fix it by not
          * allowing an ARGB visual with the help of the Xlib. After that we
          * restore the original environment, so that others like the OpenGL
          * service will proper work. */
-        RTENV env = NIL_RTENV;
-        char envval[1024];
-        bool found = false;
-        int rc = RTEnvClone (&env, RTENV_DEFAULT);
-        if (RT_SUCCESS (rc))
+        char *pchOldVar = NULL;
+        if (!RTEnvExist ("VBOX_NO_ARGB_VISUALS_HACK") &&
+            VBoxGlobal::qtRTVersion() >= 0x040500)
         {
-            found = RTEnvGetEx (env, "XLIB_SKIP_ARGB_VISUALS", envval, sizeof(envval), NULL) == VINF_SUCCESS;
-            RTEnvSetEx (env, "XLIB_SKIP_ARGB_VISUALS", "1");
+            const char *pchVar = RTEnvGet ("XLIB_SKIP_ARGB_VISUALS");
+            if (pchVar)
+                pchOldVar = RTStrDup (pchVar);
+            RTEnvSet ("XLIB_SKIP_ARGB_VISUALS", "1");
         }
         /* Now create the application object */
         QIApplication a (argc, argv);
         /* Restore previous environment */
-        if (env != NIL_RTENV)
+        if (pchOldVar)
         {
-            if (found)
-                RTEnvSetEx (env, "XLIB_SKIP_ARGB_VISUALS", envval);
-            else
-                RTEnvUnsetEx (env, "XLIB_SKIP_ARGB_VISUALS");
-            RTEnvDestroy (env);
+            RTEnvSet ("XLIB_SKIP_ARGB_VISUALS", pchOldVar);
+            RTStrFree (pchOldVar);
         }
 #else /* defined(Q_WS_X11) && (QT_VERSION >= 0x040500) */
         QIApplication a (argc, argv);
@@ -421,24 +418,13 @@ extern "C" DECLEXPORT(int) TrustedMain (int argc, char **argv, char ** /*envp*/)
 
 #ifdef Q_WS_X11
         /* version check (major.minor are sensitive, fix number is ignored) */
-        QString ver_str = QString::fromLatin1 (QT_VERSION_STR);
-        QString ver_str_base = ver_str.section ('.', 0, 1);
-        QString rt_ver_str = QString::fromLatin1 (qVersion());
-        uint ver =
-            (ver_str.section ('.', 0, 0).toInt() << 16) +
-            (ver_str.section ('.', 1, 1).toInt() << 8) +
-            ver_str.section ('.', 2, 2).toInt();
-        uint rt_ver =
-            (rt_ver_str.section ('.', 0, 0).toInt() << 16) +
-            (rt_ver_str.section ('.', 1, 1).toInt() << 8) +
-            rt_ver_str.section ('.', 2, 2).toInt();
-        if (rt_ver < (ver & 0xFFFF00))
+        if (VBoxGlobal::qtRTVersion() < (VBoxGlobal::qtCTVersion() & 0xFFFF00))
         {
             QString msg =
                 QApplication::tr ("Executable <b>%1</b> requires Qt %2.x, found Qt %3.")
                                   .arg (qAppName())
-                                  .arg (ver_str_base)
-                                  .arg (rt_ver_str);
+                                  .arg (VBoxGlobal::qtCTVersionString().section ('.', 0, 1))
+                                  .arg (VBoxGlobal::qtRTVersionString());
             QMessageBox::critical (
                 0, QApplication::tr ("Incompatible Qt Library Error"),
                 msg, QMessageBox::Abort, 0);
