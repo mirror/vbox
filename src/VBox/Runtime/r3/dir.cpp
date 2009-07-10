@@ -700,9 +700,15 @@ RTDECL(int) RTDirOpenFiltered(PRTDIR *ppDir, const char *pszPath, RTDIRFILTER en
     /*
      * Find the last component, i.e. where the filter criteria starts and the dir name ends.
      */
-    const char *pszFilter = enmFilter != RTDIRFILTER_NONE
-        ? RTPathFilename(pszPath)
-        : NULL;
+    const char *pszFilter;
+    if (enmFilter == RTDIRFILTER_NONE)
+        pszFilter = NULL;
+    else
+    {
+        pszFilter = RTPathFilename(pszPath);
+        if (!pszFilter) /* trailing slash => directory to read => no filter. */
+            enmFilter = RTDIRFILTER_NONE;
+    }
 
     /*
      * Call worker common with RTDirOpen which will verify the path, allocate
@@ -771,7 +777,7 @@ RTDECL(int) RTDirRemoveRecursive(const char *pszPath)
             rc = VINF_SUCCESS;
 
         RTDirClose(pDir);
-        rc = RTDirRemove(szAbsPath);    
+        rc = RTDirRemove(szAbsPath);
     }
 
     LogFlow(("RTDirRemoveRecursive(%p:{%s}): returns %Rrc\n", pszPath, pszPath, rc));
