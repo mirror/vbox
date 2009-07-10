@@ -355,14 +355,14 @@ extern "C" DECLEXPORT(int) TrustedMain (int argc, char **argv, char ** /*envp*/)
          * Cleanlooks style. So we have to change this style to another one.
          * See http://trolltech.com/developer/task-tracker/index_html?id=179200&method=entry
          * for details. */
-        if (QString (qVersion()).startsWith ("4.3") &&
+        if (VBoxGlobal::qtRTVersionString().startsWith ("4.3") &&
             qobject_cast <QCleanlooksStyle*> (QApplication::style()))
             QApplication::setStyle (new QPlastiqueStyle);
 
 #ifdef Q_OS_SOLARIS
         /* Solaris have some issue with cleanlooks style which leads to application
          * crash in case of using it on Qt4.4 version, lets make the same substitute */
-        if (QString (qVersion()).startsWith ("4.4") &&
+        if (VBoxGlobal::qtRTVersionString().startsWith ("4.4") &&
             qobject_cast <QCleanlooksStyle*> (QApplication::style()))
             QApplication::setStyle (new QPlastiqueStyle);
 #endif
