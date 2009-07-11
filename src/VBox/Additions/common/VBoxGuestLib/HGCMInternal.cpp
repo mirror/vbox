@@ -217,7 +217,7 @@ static int vbglR0HGCMInternalPreprocessCall(VBoxGuestHGCMCallInfo const *pCallIn
                     AssertMsgReturn(cb <= VBGLR0_MAX_HGCM_KERNEL_PARM, ("%#x > %#x\n", cb, VBGLR0_MAX_HGCM_KERNEL_PARM),
                                     VERR_OUT_OF_RANGE);
                     AssertMsgReturn(   off >= pCallInfo->cParms * sizeof(HGCMFunctionParameter)
-                                    && off < cbCallInfo - sizeof(HGCMPageListInfo),
+                                    && off <= cbCallInfo - sizeof(HGCMPageListInfo),
                                     ("offset=%#x cParms=%#x cbCallInfo=%#x\n", off, pCallInfo->cParms, cbCallInfo),
                                     VERR_INVALID_PARAMETER);
 
