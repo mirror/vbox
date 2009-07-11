@@ -73,7 +73,7 @@ static VOID     vboxIdleThread(PVOID context);
 }
 
 #ifdef VBOX_WITH_HGCM
-DECLVBGL(void) VBoxHGCMCallback(VMMDevHGCMRequestHeader *pHeader, void *pvData, uint32_t u32Data);
+DECLVBGL(int) VBoxHGCMCallback(VMMDevHGCMRequestHeader *pHeader, void *pvData, uint32_t u32Data);
 #endif
 
 /*******************************************************************************
@@ -471,13 +471,14 @@ DECLVBGL(int) VBoxHGCMCallbackKernelMode (VMMDevHGCMRequestHeader *pHeader, void
     return VINF_SUCCESS;
 }
 
-DECLVBGL(void) VBoxHGCMCallbackInterruptible (VMMDevHGCMRequestHeader *pHeader, void *pvData,
-                                              uint32_t u32Data)
+DECLVBGL(int) VBoxHGCMCallbackInterruptible (VMMDevHGCMRequestHeader *pHeader, void *pvData,
+                                             uint32_t u32Data)
 {
     PVBOXGUESTDEVEXT pDevExt = (PVBOXGUESTDEVEXT)pvData;
 
     dprintf(("VBoxHGCMCallbackInterruptible\n"));
     VBoxHGCMCallbackWorker (pHeader, pDevExt, u32Data, true, UserMode);
+    return VINF_SUCCESS;
 }
 
 NTSTATUS vboxHGCMVerifyIOBuffers (PIO_STACK_LOCATION pStack, unsigned cb)
