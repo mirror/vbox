@@ -333,8 +333,39 @@ static int vmmdevHGCMWriteLinPtr (PPDMDEVINS pDevIns,
     return rc;
 }
 
+DECLINLINE(bool) vmmdevHGCMPageListIsContiguous(const HGCMPageListInfo *pPgLst)
+{
+    if (pPgLst->cPages == 1)
+        return true;
+    RTGCPHYS64 Phys = pPgLst->aPages[0] + PAGE_SIZE;
+    if (Phys != pPgLst->aPages[1])
+        return false;
+    if (pPgLst->cPages > 2)
+    {
+        uint32_t iPage = 2;
+        do
+        {
+            Phys += PAGE_SIZE;
+            if (Phys != pPgLst->aPages[iPage])
+                return false;
+            iPage++;
+        } while (iPage < pPgLst->cPages);
+    }
+    return true;
+}
+
 static int vmmdevHGCMPageListRead(PPDMDEVINSR3 pDevIns, void *pvDst, uint32_t cbDst, const HGCMPageListInfo *pPageListInfo)
 {
+    /*
+     * Try detect contiguous buffers.
+     */
+    /** @todo We need a flag for indicating this. */
+    if (vmmdevHGCMPageListIsContiguous(pPageListInfo))
+        return PDMDevHlpPhysRead(pDevIns, pPageListInfo->aPages[0] | pPageListInfo->offFirstPage, pvDst, cbDst);
+
+    /*
+     * Page by page fallback
+     */
     int rc = VINF_SUCCESS;
 
     uint8_t *pu8Dst = (uint8_t *)pvDst;
@@ -342,6 +373,7 @@ static int vmmdevHGCMPageListRead(PPDMDEVINSR3 pDevIns, void *pvDst, uint32_t cb
     size_t cbRemaining = (size_t)cbDst;
 
     uint32_t iPage;
+
     for (iPage = 0; iPage < pPageListInfo->cPages; iPage++)
     {
         if (cbRemaining == 0)
