@@ -29,6 +29,7 @@
 # include "VBoxCalls.h"
 #endif
 #include <iprt/time.h>
+#include <iprt/mem.h>
 #include <iprt/path.h>
 #include <iprt/string.h>
 
@@ -462,6 +463,53 @@ DECLVBGL(int) vboxCallWrite(PVBSFCLIENT pClient, PVBSFMAP pMap, SHFLHANDLE hFile
         *pcbBuffer = data.cb.u.value32;
     }
     return rc;
+}
+
+DECLVBGL(int) VbglR0SfWritePhysCont(PVBSFCLIENT pClient, PVBSFMAP pMap, SHFLHANDLE hFile, uint64_t offset, uint32_t *pcbBuffer, RTCCPHYS PhysBuffer)
+{
+    uint32_t            cbToWrite = *pcbBuffer;
+    uint32_t            cPages    = RT_ALIGN_32((PhysBuffer & PAGE_OFFSET_MASK) + cbToWrite, PAGE_SIZE) >> PAGE_SHIFT;
+    uint32_t            cbData    = sizeof(VBoxSFWrite) + RT_UOFFSETOF(HGCMPageListInfo, aPages[cPages]);
+    VBoxSFWrite        *pData     = (VBoxSFWrite *)RTMemTmpAlloc(cbData);
+    HGCMPageListInfo   *pPgLst    = (HGCMPageListInfo *)(pData + 1);
+    uint32_t            iPage;
+    int                 rc;
+
+    if (RT_UNLIKELY(!pData))
+        return VERR_NO_TMP_MEMORY;
+
+    VBOX_INIT_CALL(&pData->callInfo, WRITE, pClient);
+
+    pData->root.type                      = VMMDevHGCMParmType_32bit;
+    pData->root.u.value32                 = pMap->root;
+
+    pData->handle.type                    = VMMDevHGCMParmType_64bit;
+    pData->handle.u.value64               = hFile;
+    pData->offset.type                    = VMMDevHGCMParmType_64bit;
+    pData->offset.u.value64               = offset;
+    pData->cb.type                        = VMMDevHGCMParmType_32bit;
+    pData->cb.u.value32                   = cbToWrite;
+    pData->buffer.type                    = VMMDevHGCMParmType_PageList;
+    pData->buffer.u.PageList.size         = cbToWrite;
+    pData->buffer.u.PageList.offset       = sizeof(VBoxSFWrite);
+
+    pPgLst->flags = VBOX_HGCM_F_PARM_DIRECTION_TO_HOST;
+    pPgLst->offFirstPage = PhysBuffer & PAGE_OFFSET_MASK;
+    pPgLst->cPages = cPages;
+    PhysBuffer &= ~(RTCCPHYS)PAGE_OFFSET_MASK;
+    for (iPage = 0; iPage < cPages; iPage++, PhysBuffer += PAGE_SIZE)
+        pPgLst->aPages[iPage] = PhysBuffer;
+
+    rc = VbglHGCMCall (pClient->handle, &pData->callInfo, cbData);
+    if (RT_SUCCESS (rc))
+    {
+        rc = pData->callInfo.result;
+        *pcbBuffer = pData->cb.u.value32;
+    }
+
+    RTMemTmpFree(pData);
+    return rc;
+
 }
 
 DECLVBGL(int) vboxCallFlush(PVBSFCLIENT pClient, PVBSFMAP pMap, SHFLHANDLE hFile)

@@ -26,7 +26,38 @@
 
 #include "vfsmod.h"
 
-#define CHUNK_SIZE 4096
+
+static void *alloc_bounch_buffer (size_t *tmp_sizep, PRTCCPHYS physp, size_t xfer_size, const char *caller)
+{
+    size_t tmp_size;
+    void *tmp;
+
+    /* try for big first. */
+    tmp_size = RT_ALIGN_Z(xfer_size, PAGE_SIZE);
+    if (tmp_size > 16U*_1K)
+        tmp_size = 16U*_1K;
+    tmp = kmalloc (tmp_size, GFP_KERNEL);
+    if (!tmp) {
+
+        /* fall back on a page sized buffer. */
+        tmp = kmalloc (PAGE_SIZE, GFP_KERNEL);
+        if (!tmp) {
+            LogRel(("%s: could not allocate bounce buffer for xfer_size=%zu %s\n", caller, xfer_size));
+            return NULL;
+        }
+        tmp_size = PAGE_SIZE;
+    }
+
+    *tmp_sizep = tmp_size;
+    *physp = virt_to_phys(tmp);
+    return tmp;
+}
+
+static void free_bounch_buffer (void *tmp)
+{
+    kfree (tmp);
+}
+
 
 /* fops */
 static int
@@ -70,6 +101,8 @@ sf_reg_read (struct file *file, char *buf, size_t size, loff_t *off)
 {
         int err;
         void *tmp;
+        RTCCPHYS tmp_phys;
+        size_t tmp_size;
         size_t left = size;
         ssize_t total_bytes_read = 0;
         struct inode *inode = file->f_dentry->d_inode;
@@ -89,16 +122,14 @@ sf_reg_read (struct file *file, char *buf, size_t size, loff_t *off)
                 return 0;
         }
 
-        tmp = kmalloc (CHUNK_SIZE, GFP_KERNEL);
-        if (!tmp) {
-                LogRelFunc(("could not allocate bounce buffer memory %d bytes\n", CHUNK_SIZE));
-                return -ENOMEM;
-        }
+        tmp = alloc_bounch_buffer (&tmp_size, &tmp_phys, size, __PRETTY_FUNCTION__);
+        if (!tmp)
+            return -ENOMEM;
 
         while (left) {
                 uint32_t to_read, nread;
 
-                to_read = CHUNK_SIZE;
+                to_read = tmp_size;
                 if (to_read > left) {
                         to_read = (uint32_t) left;
                 }
@@ -123,11 +154,11 @@ sf_reg_read (struct file *file, char *buf, size_t size, loff_t *off)
         }
 
         *off += total_bytes_read;
-        kfree (tmp);
+        free_bounch_buffer (tmp);
         return total_bytes_read;
 
  fail:
-        kfree (tmp);
+        free_bounch_buffer (tmp);
         return err;
 }
 
@@ -136,6 +167,8 @@ sf_reg_write (struct file *file, const char *buf, size_t size, loff_t *off)
 {
         int err;
         void *tmp;
+        RTCCPHYS tmp_phys;
+        size_t tmp_size;
         size_t left = size;
         ssize_t total_bytes_written = 0;
         struct inode *inode = file->f_dentry->d_inode;
@@ -163,16 +196,14 @@ sf_reg_write (struct file *file, const char *buf, size_t size, loff_t *off)
         if (!size)
                 return 0;
 
-        tmp = kmalloc (CHUNK_SIZE, GFP_KERNEL);
-        if (!tmp) {
-                LogRelFunc(("could not allocate bounce buffer memory %d bytes\n", CHUNK_SIZE));
+        tmp = alloc_bounch_buffer (&tmp_size, &tmp_phys, size, __PRETTY_FUNCTION__);
+        if (!tmp)
                 return -ENOMEM;
-        }
 
         while (left) {
                 uint32_t to_write, nwritten;
 
-                to_write = CHUNK_SIZE;
+                to_write = tmp_size;
                 if (to_write > left) {
                         to_write = (uint32_t) left;
                 }
@@ -183,7 +214,14 @@ sf_reg_write (struct file *file, const char *buf, size_t size, loff_t *off)
                         goto fail;
                 }
 
-                err = sf_reg_write_aux (__func__, sf_g, sf_r, tmp, &nwritten, pos);
+#if 1
+                if (VbglR0CanUsePhysPageList()) {
+                    err = VbglR0SfWritePhysCont (&client_handle, &sf_g->map, sf_r->handle,
+                                                 pos, &nwritten, tmp_phys);
+                    err = RT_FAILURE(err) ? -EPROTO : 0;
+                } else
+#endif
+                    err = sf_reg_write_aux (__func__, sf_g, sf_r, tmp, &nwritten, pos);
                 if (err)
                         goto fail;
 
@@ -201,11 +239,11 @@ sf_reg_write (struct file *file, const char *buf, size_t size, loff_t *off)
         file->f_pos += total_bytes_written;
 #endif
         sf_i->force_restat = 1;
-        kfree (tmp);
+        free_bounch_buffer (tmp);
         return total_bytes_written;
 
  fail:
-        kfree (tmp);
+        free_bounch_buffer (tmp);
         return err;
 }
 
