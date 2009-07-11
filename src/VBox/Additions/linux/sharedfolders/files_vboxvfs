@@ -65,6 +65,7 @@ FILES_VBOXVFS_NOBIN=" \
     ${PATH_ROOT}/src/VBox/Additions/common/VBoxGuestLib/VBoxCalls.h=>VBoxCalls.h \
     ${PATH_ROOT}/src/VBox/Additions/common/VBoxGuestLib/VBoxGuestLog.h=>VBoxGuestLog.h \
     ${PATH_ROOT}/src/VBox/Additions/common/VBoxGuestLib/VMMDev.cpp=>VMMDev.c \
+    ${PATH_ROOT}/src/VBox/Additions/common/VBoxGuestLib/VbglR0CanUsePhysPageList.cpp=>VbglR0CanUsePhysPageList.c \
     ${PATH_ROOT}/src/VBox/Runtime/common/math/gcc/divdi3.c=>divdi3.c \
     ${PATH_ROOT}/src/VBox/Runtime/common/math/gcc/moddi3.c=>moddi3.c \
     ${PATH_ROOT}/src/VBox/Runtime/common/math/gcc/qdivrem.c=>qdivrem.c \

@@ -74,7 +74,8 @@ OBJS   = \
 	Init.o \
 	VMMDev.o \
 	HGCM.o \
-	VBoxCalls.o
+	VBoxCalls.o \
+	VbglR0CanUsePhysPageList.o
 ifeq ($(BUILD_TARGET_ARCH),x86)
 OBJS  += \
 	divdi3.o \
