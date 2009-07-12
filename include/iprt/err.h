@@ -728,6 +728,8 @@ RTDECL(PCRTCOMERRMSG) RTErrCOMGet(uint32_t rc);
 #define VERR_DEADLOCK                       (-365)
 /** Ping-Pong listen or speak out of turn error. */
 #define VERR_SEM_OUT_OF_TURN                (-366)
+/** Tried to take a semaphore in a bad context. */
+#define VERR_SEM_BAD_CONTEXT                (-367)
 /** @} */
 
 
