@@ -58,8 +58,6 @@ typedef struct UVMCPU
         uint8_t                     padding[768];
     } vm;
 } UVMCPU;
-/** Pointer to the per virtual CPU ring-3 (user mode) data. */
-typedef UVMCPU *PUVMCPU;
 
 
 /**
