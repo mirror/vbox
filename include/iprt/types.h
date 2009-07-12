@@ -1157,7 +1157,7 @@ typedef RTSEMEVENTMULTI                            *PRTSEMEVENTMULTI;
 /** @typedef RTSEMFASTMUTEX
  * Fast mutex Semaphore handle. */
 typedef R3R0PTRTYPE(struct RTSEMFASTMUTEXINTERNAL *) RTSEMFASTMUTEX;
-/** Pointer to a mutex semaphore handle. */
+/** Pointer to a fast mutex semaphore handle. */
 typedef RTSEMFASTMUTEX                             *PRTSEMFASTMUTEX;
 /** Nil fast mutex semaphore handle. */
 #define NIL_RTSEMFASTMUTEX                          0
@@ -1169,6 +1169,14 @@ typedef R3R0PTRTYPE(struct RTSEMMUTEXINTERNAL *)    RTSEMMUTEX;
 typedef RTSEMMUTEX                                 *PRTSEMMUTEX;
 /** Nil mutex semaphore handle. */
 #define NIL_RTSEMMUTEX                              0
+
+/** @typedef RTSEMSPINMUTEX
+ * Spinning mutex Semaphore handle. */
+typedef R3R0PTRTYPE(struct RTSEMSPINMUTEXINTERNAL *) RTSEMSPINMUTEX;
+/** Pointer to a spinning mutex semaphore handle. */
+typedef RTSEMSPINMUTEX                             *PRTSEMSPINMUTEX;
+/** Nil spinning mutex semaphore handle. */
+#define NIL_RTSEMSPINMUTEX                          0
 
 /** @typedef RTSEMRW
  * Read/Write Semaphore handle. */

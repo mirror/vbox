@@ -42,6 +42,9 @@ RT_C_DECLS_BEGIN
  */
 
 
+/** @defgroup grp_rt_sems_event    RTSemEvent - Single Release Event Semaphores
+ * @{ */
+
 /**
  * Create a event semaphore.
  *
@@ -94,7 +97,11 @@ RTDECL(int)  RTSemEventWait(RTSEMEVENT EventSem, unsigned cMillies);
  */
 RTDECL(int)  RTSemEventWaitNoResume(RTSEMEVENT EventSem, unsigned cMillies);
 
+/** @} */
 
+
+/** @defgroup grp_rt_sems_event_multi   RTSemEventMulti - Multiple Release Event Semaphores
+ * @{ */
 
 /**
  * Create a event multi semaphore.
@@ -153,7 +160,15 @@ RTDECL(int)  RTSemEventMultiWait(RTSEMEVENTMULTI EventMultiSem, unsigned cMillie
  */
 RTDECL(int)  RTSemEventMultiWaitNoResume(RTSEMEVENTMULTI EventMultiSem, unsigned cMillies);
 
+/** @} */
 
+
+/** @defgroup grp_rt_sems_mutex     RTMutex - Mutex semaphores.
+ *
+ * @remarks These can be pretty heavy handed. Fast mutexes or critical sections
+ *          is usually what you need.
+ *
+ * @{ */
 
 /**
  * Create a mutex semaphore.
@@ -212,6 +227,11 @@ RTDECL(int)  RTSemMutexRequestNoResume(RTSEMMUTEX MutexSem, unsigned cMillies);
  */
 RTDECL(int)  RTSemMutexRelease(RTSEMMUTEX MutexSem);
 
+/** @} */
+
+
+/** @defgroup grp_rt_sems_fast_mutex    RTSemFastMutex - Fast Mutex Semaphores
+ * @{ */
 
 /**
  * Create a fast mutex semaphore.
@@ -252,6 +272,104 @@ RTDECL(int)  RTSemFastMutexRequest(RTSEMFASTMUTEX MutexSem);
  */
 RTDECL(int)  RTSemFastMutexRelease(RTSEMFASTMUTEX MutexSem);
 
+/** @} */
+
+
+/** @defgroup grp_rt_sems_spin_mutex RTSemSpinMutex - Spinning Mutex Semaphores
+ *
+ * Very adaptive kind of mutex semaphore tailored for the ring-0 logger.
+ *
+ * @{ */
+
+/**
+ * Creates a spinning mutex semaphore.
+ *
+ * @returns iprt status code.
+ * @retval  VERR_INVALID_PARAMETER on invalid flags.
+ * @retval  VERR_NO_MEMORY if out of memory for the semaphore structure and
+ *          handle.
+ *
+ * @param   phSpinMtx   Where to return the handle to the create semaphore.
+ * @param   fFlags      Flags, see RTSEMSPINMUTEX_FLAGS_XXX.
+ */
+RTDECL(int) RTSemSpinMutexCreate(PRTSEMSPINMUTEX phSpinMtx, uint32_t fFlags);
+
+/** @name RTSemSpinMutexCreate flags.
+ * @{ */
+/** Always take the semaphore in a IRQ safe way.
+ * (In plain words: always disable interrupts.) */
+#define RTSEMSPINMUTEX_FLAGS_IRQ_SAFE       RT_BIT_32(0)
+/** Mask of valid flags. */
+#define RTSEMSPINMUTEX_FLAGS_VALID_MASK     UINT32_C(0x00000001)
+/** @} */
+
+/**
+ * Destroys a spinning mutex semaphore.
+ *
+ * @returns iprt status code.
+ * @retval  VERR_INVALID_HANDLE (or crash) if the handle is invalid. (NIL will
+ *          not cause this status.)
+ *
+ * @param   hSpinMtx    The semaphore handle. NIL_RTSEMSPINMUTEX is ignored
+ *                      quietly (VINF_SUCCESS).
+ */
+RTDECL(int) RTSemSpinMutexDestroy(RTSEMSPINMUTEX hSpinMtx);
+
+/**
+ * Request the spinning mutex semaphore.
+ *
+ * This may block if the context we're called in allows this. If not it will
+ * spin. If called in an interrupt context, we will only spin if the current
+ * owner isn't interrupted. Also, on some systems it is not always possible to
+ * wake up blocking threads in all contexts, so, which will either be indicated
+ * by returning VERR_SEM_BAD_CONTEXT or by temporarily switching the semaphore
+ * into pure spinlock state.
+ *
+ * Preemption will be disabled upon return. IRQs may also be disabled.
+ *
+ * @returns iprt status code.
+ * @retval  VERR_SEM_BAD_CONTEXT if the context it's called in isn't suitable
+ *          for releasing it if someone is sleeping on it.
+ * @retval  VERR_SEM_DESTROYED if destroyed.
+ * @retval  VERR_SEM_NESTED if held by the caller. Asserted.
+ * @retval  VERR_INVALID_HANDLE if the handle is invalid. Asserted
+ *
+ * @param   hSpinMtx    The semaphore handle.
+ */
+RTDECL(int) RTSemSpinMutexRequest(RTSEMSPINMUTEX hSpinMtx);
+
+/**
+ * Like RTSemSpinMutexRequest but it won't block or spin if the semaphore is
+ * held by someone else.
+ *
+ * @returns iprt status code.
+ * @retval  VERR_SEM_BUSY if held by someone else.
+ * @retval  VERR_SEM_DESTROYED if destroyed.
+ * @retval  VERR_SEM_NESTED if held by the caller. Asserted.
+ * @retval  VERR_INVALID_HANDLE if the handle is invalid. Asserted
+ *
+ * @param   hSpinMtx    The semaphore handle.
+ */
+RTDECL(int) RTSemSpinMutexTryRequest(RTSEMSPINMUTEX hSpinMtx);
+
+/**
+ * Releases the semaphore previously acquired by RTSemSpinMutexRequest or
+ * RTSemSpinMutexTryRequest.
+ *
+ * @returns iprt status code.
+ * @retval  VERR_SEM_DESTROYED if destroyed.
+ * @retval  VERR_NOT_OWNER if not owner. Asserted.
+ * @retval  VERR_INVALID_HANDLE if the handle is invalid. Asserted.
+ *
+ * @param   hSpinMtx    The semaphore handle.
+ */
+RTDECL(int) RTSemSpinMutexRelease(RTSEMSPINMUTEX hSpinMtx);
+
+/** @} */
+
+
+/** @defgroup grp_rt_sem_rw             RTSemRW - Read / Write Semaphores
+ * @{ */
 
 /**
  * Creates a read/write semaphore.
@@ -364,7 +482,11 @@ RTDECL(uint32_t) RTSemRWGetWriteRecursion(RTSEMRW RWSem);
  */
 RTDECL(uint32_t) RTSemRWGetWriterReadRecursion(RTSEMRW RWSem);
 
+/** @} */
 
+
+/** @defgroup grp_rt_sems_pingpong      RTSemPingPong - Ping-Pong Construct
+ * @{ */
 
 /**
  * Ping-pong speaker
@@ -523,6 +645,7 @@ DECLINLINE(bool) RTSemPongShouldWait(PRTPINGPONG pPP)
         || enmSpeaker == RTPINGPONGSPEAKER_PONG_SIGNALED;
 }
 
+/** @} */
 
 /** @} */
 
