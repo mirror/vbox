@@ -30,7 +30,8 @@ cpp_hdrs := \
 	VBox/settings.h \
 	iprt/autores.h \
 	iprt/cpputils.h \
-	iprt/lock.h
+	iprt/lock.h \
+	$(wildcard iprt/*_cpp.h iprt/*.hpp)
 
 r3_only_hdrs := \
 	VBox/vrdpapi.h \
@@ -41,6 +42,7 @@ r3_only_hdrs := \
 
 hdrs := $(filter-out \
 	VBox/VBoxGuest16.h \
+	VBox/WinNetConfig.h \
 	VBox/usblib-win.h \
 	VBox/usblib-solaris.h, \
 	$(wildcard VBox/*.h iprt/*.h))
