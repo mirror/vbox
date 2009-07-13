@@ -42,7 +42,9 @@
  *  Base class for all frame buffer implementations.
  */
 
-#if !defined (Q_OS_WIN32)
+#if defined (Q_OS_WIN32)
+static CComModule _Module;
+#else
 NS_DECL_CLASSINFO (VBoxFrameBuffer)
 NS_IMPL_THREADSAFE_ISUPPORTS1_CI (VBoxFrameBuffer, IFramebuffer)
 #endif
