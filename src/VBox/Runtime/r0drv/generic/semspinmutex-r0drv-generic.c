@@ -389,7 +389,7 @@ RTDECL(int) RTSemSpinMutexRelease(RTSEMSPINMUTEX hSpinMtx)
      */
     State = pThis->SavedState;
     ASMCompilerBarrier();
-    ASMAtomicCmpXchgHandle(&pThis->hOwner, hSelf, NIL_RTNATIVETHREAD, fRc);
+    ASMAtomicCmpXchgHandle(&pThis->hOwner, NIL_RTNATIVETHREAD, hSelf, fRc);
     AssertReturn(fRc, VERR_NOT_OWNER);
 
     cLockers = ASMAtomicDecS32(&pThis->cLockers);
