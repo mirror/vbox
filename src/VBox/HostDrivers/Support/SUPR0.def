@@ -127,6 +127,8 @@ EXPORTS
     RTThreadPreemptIsPending
     RTThreadPreemptDisable
     RTThreadPreemptRestore
+    RTThreadPreemptPossible
+    RTThreadIsInInterrupt
     RTMpOnAll
     RTMpOnOthers
     RTMpOnSpecific
