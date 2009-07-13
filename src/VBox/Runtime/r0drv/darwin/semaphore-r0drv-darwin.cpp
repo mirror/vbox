@@ -29,7 +29,6 @@
  */
 
 
-
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
@@ -179,6 +178,8 @@ RTDECL(int)  RTSemEventSignal(RTSEMEVENT EventSem)
                     ("pEventInt=%p u32Magic=%#x\n", pEventInt, pEventInt->u32Magic),
                     VERR_INVALID_HANDLE);
 
+    /** @todo should probably disable interrupts here... update
+     *        semspinmutex-r0drv-generic.c when done. */
     lck_spin_lock(pEventInt->pSpinlock);
 
     if (pEventInt->cWaiters > 0)
@@ -188,7 +189,7 @@ RTDECL(int)  RTSemEventSignal(RTSEMEVENT EventSem)
         thread_wakeup_prim((event_t)pEventInt, TRUE /* one thread */, THREAD_AWAKENED);
 		/** @todo this isn't safe. a scheduling interrupt on the other cpu while we're in here
          * could cause the thread to be timed out before we manage to wake it up and the event
-         * ends up in the wrong state. ditto for posix signals. 
+         * ends up in the wrong state. ditto for posix signals.
 		 * Update: check the return code; it will return KERN_NOT_WAITING if no one is around. */
     }
     else
