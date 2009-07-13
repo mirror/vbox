@@ -252,6 +252,7 @@ RTDECL(int) RTSemSpinMutexTryRequest(RTSEMSPINMUTEX hSpinMtx)
     bool                    fRc;
     int                     rc;
 
+    Assert(hSelf != NIL_RTNATIVETHREAD);
     RTSEMSPINMUTEX_VALIDATE_RETURN(pThis);
 
     /*
@@ -297,13 +298,14 @@ RTDECL(int) RTSemSpinMutexRequest(RTSEMSPINMUTEX hSpinMtx)
     bool                    fRc;
     int                     rc;
 
+    Assert(hSelf != NIL_RTNATIVETHREAD);
     RTSEMSPINMUTEX_VALIDATE_RETURN(pThis);
 
     /*
      * Check context, disable preemption and save flags if necessary.
      */
     rc = rtSemSpinMutexEnter(&State, pThis);
-    if (RT_SUCCESS(rc))
+    if (RT_FAILURE(rc))
         return rc;
 
     /*
@@ -369,6 +371,7 @@ RTDECL(int) RTSemSpinMutexRequest(RTSEMSPINMUTEX hSpinMtx)
      * We're the semaphore owner.
      */
     pThis->SavedState = State;
+    Assert(pThis->hOwner == hSelf);
     return VINF_SUCCESS;
 }
 RT_EXPORT_SYMBOL(RTSemSpinMutexRequest);
@@ -382,6 +385,7 @@ RTDECL(int) RTSemSpinMutexRelease(RTSEMSPINMUTEX hSpinMtx)
     RTSEMSPINMUTEXSTATE     State;
     bool                    fRc;
 
+    Assert(hSelf != NIL_RTNATIVETHREAD);
     RTSEMSPINMUTEX_VALIDATE_RETURN(pThis);
 
     /*
@@ -390,9 +394,12 @@ RTDECL(int) RTSemSpinMutexRelease(RTSEMSPINMUTEX hSpinMtx)
     State = pThis->SavedState;
     ASMCompilerBarrier();
     ASMAtomicCmpXchgHandle(&pThis->hOwner, NIL_RTNATIVETHREAD, hSelf, fRc);
-    AssertReturn(fRc, VERR_NOT_OWNER);
+    AssertMsgReturn(fRc,
+                    ("hOwner=%p hSelf=%p cLockers=%d\n", pThis->hOwner, hSelf, pThis->cLockers),
+                    VERR_NOT_OWNER);
 
     cLockers = ASMAtomicDecS32(&pThis->cLockers);
+    rtSemSpinMutexLeave(&State);
     if (cLockers > 0)
     {
         int rc = RTSemEventSignal(pThis->hEventSem);
