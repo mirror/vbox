@@ -273,8 +273,8 @@ struct RTLOGGER
     PFNRTLOGPREFIX          pfnPrefix;
     /** Prefix callback argument. */
     void                   *pvPrefixUserArg;
-    /** Mutex. */
-    RTSEMFASTMUTEX          MutexSem;
+    /** Spinning mutex semaphore. */
+    RTSEMSPINMUTEX          hSpinMtx;
     /** Magic number. */
     uint32_t                u32Magic;
     /** Logger instance flags - RTLOGFLAGS. */
