@@ -258,9 +258,8 @@ struct PCNetState_st
     /** The shared memory used for the private interface - RC. */
     RCPTRTYPE(PPCNETGUESTSHAREDMEMORY)  pSharedMMIORC;
 
-#if HC_ARCH_BITS == 64
-    uint32_t                            Alignment6;
-#endif
+    /** Error counter for bad receive descriptors. */
+    uint32_t                            uCntBadRMD;
 
     /** True if host and guest admitted to use the private interface. */
     bool                                fPrivIfEnabled;
@@ -1723,9 +1722,13 @@ static void pcnetRdtePoll(PCNetState *pThis, bool fSkipCurrent=false)
             else
             {
                 STAM_PROFILE_ADV_STOP(&pThis->CTXSUFF(StatRdtePoll), a);
-                /* This is not problematic since we don't own the descriptor */
-                LogRel(("PCNet#%d: BAD RMD ENTRIES AT %#010x (i=%d)\n",
-                        PCNET_INST_NR, addr, i));
+                /* This is not problematic since we don't own the descriptor
+                 * We actually do own it, otherwise pcnetRmdLoad would have returned false.
+                 * Don't flood the release log with errors.
+                 */
+                if (++pThis->uCntBadRMD < 50)
+                    LogRel(("PCNet#%d: BAD RMD ENTRIES AT %#010x (i=%d)\n",
+                            PCNET_INST_NR, addr, i));
                 return;
             }
         }
@@ -1753,9 +1756,13 @@ static void pcnetRdtePoll(PCNetState *pThis, bool fSkipCurrent=false)
         else
         {
             STAM_PROFILE_ADV_STOP(&pThis->CTXSUFF(StatRdtePoll), a);
-            /* This is not problematic since we don't own the descriptor */
-            LogRel(("PCNet#%d: BAD RMD ENTRIES + AT %#010x (i=%d)\n",
-                    PCNET_INST_NR, addr, i));
+            /* This is not problematic since we don't own the descriptor
+             * We actually do own it, otherwise pcnetRmdLoad would have returned false.
+             * Don't flood the release log with errors.
+             */
+            if (++pThis->uCntBadRMD < 50)
+                LogRel(("PCNet#%d: BAD RMD ENTRIES + AT %#010x (i=%d)\n",
+                        PCNET_INST_NR, addr, i));
             return;
         }
 
@@ -3193,6 +3200,9 @@ static void pcnetHardReset(PCNetState *pThis)
     pThis->aBCR[BCR_PCIVID] = PCIDevGetVendorId(&pThis->PciDev);
     pThis->aBCR[BCR_PCISID] = PCIDevGetSubSystemId(&pThis->PciDev);
     pThis->aBCR[BCR_PCISVID] = PCIDevGetSubSystemVendorId(&pThis->PciDev);
+
+    /* Reset the error counter. */
+    pThis->uCntBadRMD      = 0;
 
     pcnetSoftReset(pThis);
 }
