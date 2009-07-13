@@ -1500,6 +1500,22 @@ DECLINLINE(RTCCUINTREG) ASMIntDisableFlags(void)
 
 
 /**
+ * Are interrupts enabled?
+ *
+ * @returns true / false.
+ */
+#if RT_INLINE_ASM_EXTERNAL
+DECLASM(RTCCUINTREG) ASMIntAreEnabled(void);
+#else
+DECLINLINE(RTCCUINTREG) ASMIntAreEnabled(void)
+{
+    RTCCUINTREG uFlags = ASMGetFlags();
+    return uFlags & 0x200 /* X86_EFL_IF */ ? true : false;
+}
+#endif
+
+
+/**
  * Halts the CPU until interrupted.
  */
 #if RT_INLINE_ASM_EXTERNAL
@@ -1512,6 +1528,26 @@ DECLINLINE(void) ASMHalt(void)
 # else
     __asm {
         hlt
+    }
+# endif
+}
+#endif
+
+
+/**
+ * The PAUSE variant of NOP for helping hyperthreaded CPUs detecing spin locks.
+ */
+#if RT_INLINE_ASM_EXTERNAL
+DECLASM(void) ASMNopPause(void);
+#else
+DECLINLINE(void) ASMNopPause(void)
+{
+# if RT_INLINE_ASM_GNU_STYLE
+    __asm__ __volatile__(".byte 0xf3,0x90\n\t");
+# else
+    __asm {
+        _emit 0f3h
+        _emit 090h
     }
 # endif
 }
@@ -2913,16 +2949,16 @@ DECLINLINE(RTR3PTR) ASMAtomicXchgR3Ptr(RTR3PTR volatile *ppvR3, RTR3PTR pvR3)
 #if HC_ARCH_BITS == 32
 # define ASMAtomicXchgHandle(ph, hNew, phRes) \
    do { \
-       *(uint32_t *)(phRes) = ASMAtomicXchgU32((uint32_t volatile *)(ph), (const uint32_t)(hNew)); \
        AssertCompile(sizeof(*(ph))    == sizeof(uint32_t)); \
        AssertCompile(sizeof(*(phRes)) == sizeof(uint32_t)); \
+       *(uint32_t *)(phRes) = ASMAtomicXchgU32((uint32_t volatile *)(ph), (const uint32_t)(hNew)); \
    } while (0)
 #elif HC_ARCH_BITS == 64
 # define ASMAtomicXchgHandle(ph, hNew, phRes) \
    do { \
-       *(uint64_t *)(phRes) = ASMAtomicXchgU64((uint64_t volatile *)(ph), (const uint64_t)(hNew)); \
        AssertCompile(sizeof(*(ph))    == sizeof(uint64_t)); \
        AssertCompile(sizeof(*(phRes)) == sizeof(uint64_t)); \
+       *(uint64_t *)(phRes) = ASMAtomicXchgU64((uint64_t volatile *)(ph), (const uint64_t)(hNew)); \
    } while (0)
 #else
 # error HC_ARCH_BITS
@@ -3190,14 +3226,14 @@ DECLINLINE(bool) ASMAtomicCmpXchgPtr(void * volatile *ppv, const void *pvNew, co
 #if HC_ARCH_BITS == 32
 # define ASMAtomicCmpXchgHandle(ph, hNew, hOld, fRc) \
    do { \
-       (fRc) = ASMAtomicCmpXchgU32((uint32_t volatile *)(ph), (const uint32_t)(hNew), (const uint32_t)(hOld)); \
        AssertCompile(sizeof(*(ph)) == sizeof(uint32_t)); \
+       (fRc) = ASMAtomicCmpXchgU32((uint32_t volatile *)(ph), (const uint32_t)(hNew), (const uint32_t)(hOld)); \
    } while (0)
 #elif HC_ARCH_BITS == 64
 # define ASMAtomicCmpXchgHandle(ph, hNew, hOld, fRc) \
    do { \
-       (fRc) = ASMAtomicCmpXchgU64((uint64_t volatile *)(ph), (const uint64_t)(hNew), (const uint64_t)(hOld)); \
        AssertCompile(sizeof(*(ph)) == sizeof(uint64_t)); \
+       (fRc) = ASMAtomicCmpXchgU64((uint64_t volatile *)(ph), (const uint64_t)(hNew), (const uint64_t)(hOld)); \
    } while (0)
 #else
 # error HC_ARCH_BITS
@@ -3438,16 +3474,16 @@ DECLINLINE(bool) ASMAtomicCmpXchgExS64(volatile int64_t *pi64, const int64_t i64
 #if HC_ARCH_BITS == 32
 # define ASMAtomicCmpXchgExHandle(ph, hNew, hOld, fRc, phOldVal) \
     do { \
-        (fRc) = ASMAtomicCmpXchgExU32((volatile uint32_t *)(pu), (uint32_t)(uNew), (uint32_t)(uOld), (uint32_t *)(puOldVal)); \
         AssertCompile(sizeof(*ph)       == sizeof(uint32_t)); \
         AssertCompile(sizeof(*phOldVal) == sizeof(uint32_t)); \
+        (fRc) = ASMAtomicCmpXchgExU32((volatile uint32_t *)(pu), (uint32_t)(uNew), (uint32_t)(uOld), (uint32_t *)(puOldVal)); \
     } while (0)
 #elif HC_ARCH_BITS == 64
 # define ASMAtomicCmpXchgExHandle(ph, hNew, hOld, fRc, phOldVal) \
     do { \
-        (fRc) = ASMAtomicCmpXchgExU64((volatile uint64_t *)(pu), (uint64_t)(uNew), (uint64_t)(uOld), (uint64_t *)(puOldVal)); \
         AssertCompile(sizeof(*(ph))       == sizeof(uint64_t)); \
         AssertCompile(sizeof(*(phOldVal)) == sizeof(uint64_t)); \
+        (fRc) = ASMAtomicCmpXchgExU64((volatile uint64_t *)(pu), (uint64_t)(uNew), (uint64_t)(uOld), (uint64_t *)(puOldVal)); \
     } while (0)
 #else
 # error HC_ARCH_BITS
@@ -4347,16 +4383,16 @@ DECLINLINE(bool) ASMAtomicUoReadBool(volatile bool *pf)
 #if HC_ARCH_BITS == 32
 # define ASMAtomicReadHandle(ph, phRes) \
     do { \
-        *(uint32_t *)(phRes) = ASMAtomicReadU32((uint32_t volatile *)(ph)); \
         AssertCompile(sizeof(*(ph))    == sizeof(uint32_t)); \
         AssertCompile(sizeof(*(phRes)) == sizeof(uint32_t)); \
+        *(uint32_t *)(phRes) = ASMAtomicReadU32((uint32_t volatile *)(ph)); \
     } while (0)
 #elif HC_ARCH_BITS == 64
 # define ASMAtomicReadHandle(ph, phRes) \
     do { \
-        *(uint64_t *)(phRes) = ASMAtomicReadU64((uint64_t volatile *)(ph)); \
         AssertCompile(sizeof(*(ph))    == sizeof(uint64_t)); \
         AssertCompile(sizeof(*(phRes)) == sizeof(uint64_t)); \
+        *(uint64_t *)(phRes) = ASMAtomicReadU64((uint64_t volatile *)(ph)); \
     } while (0)
 #else
 # error HC_ARCH_BITS
@@ -4374,16 +4410,16 @@ DECLINLINE(bool) ASMAtomicUoReadBool(volatile bool *pf)
 #if HC_ARCH_BITS == 32
 # define ASMAtomicUoReadHandle(ph, phRes) \
     do { \
-        *(uint32_t *)(phRes) = ASMAtomicUoReadU32((uint32_t volatile *)(ph)); \
         AssertCompile(sizeof(*(ph))    == sizeof(uint32_t)); \
         AssertCompile(sizeof(*(phRes)) == sizeof(uint32_t)); \
+        *(uint32_t *)(phRes) = ASMAtomicUoReadU32((uint32_t volatile *)(ph)); \
     } while (0)
 #elif HC_ARCH_BITS == 64
 # define ASMAtomicUoReadHandle(ph, phRes) \
     do { \
-        *(uint64_t *)(phRes) = ASMAtomicUoReadU64((uint64_t volatile *)(ph)); \
         AssertCompile(sizeof(*(ph))    == sizeof(uint64_t)); \
         AssertCompile(sizeof(*(phRes)) == sizeof(uint64_t)); \
+        *(uint64_t *)(phRes) = ASMAtomicUoReadU64((uint64_t volatile *)(ph)); \
     } while (0)
 #else
 # error HC_ARCH_BITS
@@ -4707,14 +4743,14 @@ DECLINLINE(void) ASMAtomicUoWritePtr(void * volatile *ppv, const void *pv)
 #if HC_ARCH_BITS == 32
 # define ASMAtomicWriteHandle(ph, hNew) \
     do { \
-        ASMAtomicWriteU32((uint32_t volatile *)(ph), (const uint32_t)(hNew)); \
         AssertCompile(sizeof(*(ph)) == sizeof(uint32_t)); \
+        ASMAtomicWriteU32((uint32_t volatile *)(ph), (const uint32_t)(hNew)); \
     } while (0)
 #elif HC_ARCH_BITS == 64
 # define ASMAtomicWriteHandle(ph, hNew) \
     do { \
-        ASMAtomicWriteU64((uint64_t volatile *)(ph), (const uint64_t)(hNew)); \
         AssertCompile(sizeof(*(ph)) == sizeof(uint64_t)); \
+        ASMAtomicWriteU64((uint64_t volatile *)(ph), (const uint64_t)(hNew)); \
     } while (0)
 #else
 # error HC_ARCH_BITS
@@ -4732,14 +4768,14 @@ DECLINLINE(void) ASMAtomicUoWritePtr(void * volatile *ppv, const void *pv)
 #if HC_ARCH_BITS == 32
 # define ASMAtomicUoWriteHandle(ph, hNew) \
     do { \
-        ASMAtomicUoWriteU32((uint32_t volatile *)(ph), (const uint32_t)hNew); \
         AssertCompile(sizeof(*(ph)) == sizeof(uint32_t)); \
+        ASMAtomicUoWriteU32((uint32_t volatile *)(ph), (const uint32_t)hNew); \
     } while (0)
 #elif HC_ARCH_BITS == 64
 # define ASMAtomicUoWriteHandle(ph, hNew) \
     do { \
-        ASMAtomicUoWriteU64((uint64_t volatile *)(ph), (const uint64_t)hNew); \
         AssertCompile(sizeof(*(ph)) == sizeof(uint64_t)); \
+        ASMAtomicUoWriteU64((uint64_t volatile *)(ph), (const uint64_t)hNew); \
     } while (0)
 #else
 # error HC_ARCH_BITS
