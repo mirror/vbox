@@ -256,9 +256,11 @@ process_mount_opts (const char *s, struct opts *opts)
                     opts->remount = 1;
                     break;
                 case HOUID:
+                    /** @todo convert string to id. */
                     opts->uid = safe_atoi (val, val_len, 10);
                     break;
                 case HOGID:
+                    /** @todo convert string to id. */
                     opts->gid = safe_atoi (val, val_len, 10);
                     break;
                 case HOTTL:
