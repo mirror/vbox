@@ -205,15 +205,9 @@ VBOXCrtcResize(ScrnInfoPtr scrn, int width, int height)
     Bool rc = TRUE;
 
     TRACE_LOG("width=%d, height=%d\n", width, height);
-    /* We only support horizontal resolutions which are a multiple of 8.  Round down if
-       necessary. */
-    if (width % 8 != 0)
-    {
-        xf86DrvMsg(scrn->scrnIndex, X_WARNING,
-                   "VirtualBox only supports virtual screen widths which are a multiple of 8.  Rounding down from %d to %d\n",
-                   width, width - (width % 8));
-        width = width - (width % 8);
-    }
+    /* We only support horizontal resolutions which are a multiple of 8. 
+     * Round up if necessary. */
+    width = (width + 7) & ~7;
     if (width * height * bpp / 8 >= scrn->videoRam * 1024)
     {
         xf86DrvMsg(scrn->scrnIndex, X_ERROR,
@@ -853,30 +847,8 @@ VBOXPreInit(ScrnInfoPtr pScrn, int flags)
     /* Set up our single virtual output. */
     output = xf86OutputCreate(pScrn, &VBOXOutputFuncs, "VBOX1");
 
-    /* Set a sane minimum mode size and the maximum allowed by the available VRAM */
-    {
-#if 0
-        unsigned maxSize, trySize = 512;
-
-        do {
-            maxSize = trySize;
-            trySize += 128;
-        } while (trySize * trySize * pScrn->bitsPerPixel / 8 < pScrn->videoRam * 1024);
-#else
-        unsigned maxSize = 32000;
-#endif
-
-        xf86CrtcSetSizeRange(pScrn, 64, 64, maxSize, maxSize);
-
-        /* I don't know exactly what these are for (and they are only used in a couple
-           of places in the X server code), but due to a bug in RandR 1.2 they place
-           an upper limit on possible resolutions.  To add to the fun, they get set
-           automatically if we don't do it ourselves. */
-        pScrn->display->virtualX = maxSize;
-        pScrn->display->virtualY = maxSize;
-        xf86DrvMsg(pScrn->scrnIndex, X_INFO,
-                   "The maximum supported resolution is currently %dx%d\n", maxSize, maxSize);
-    }
+    /* Set a sane minimum and maximum mode size */
+    xf86CrtcSetSizeRange(pScrn, 64, 64, 32000, 32000);
 
     /* We are not interested in the monitor section in the configuration file. */
     xf86OutputUseScreenMonitor(output, FALSE);
@@ -990,6 +962,7 @@ VBOXScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
         return (FALSE);
 
     /* Needed before we initialise DRI. */
+    pScrn->virtualX = (pScrn->virtualX + 7) & ~7;
     pScrn->displayWidth = pScrn->virtualX;
 
 #ifdef VBOX_DRI
@@ -1261,7 +1234,8 @@ VBOXSetMode(ScrnInfoPtr pScrn, DisplayModePtr pMode)
     Bool rc = TRUE;
 
     int bpp = pScrn->depth == 24 ? 32 : 16;
-    TRACE_LOG("HDisplay=%d, VDisplay=%d\n", pMode->HDisplay, pMode->VDisplay);
+    TRACE_LOG("HDisplay=%d, VDisplay=%d, displayWidth=%d\n",
+              pMode->HDisplay, pMode->VDisplay, pScrn->displayWidth);
     pVBox = VBOXGetRec(pScrn);
     /* Don't fiddle with the hardware if we are switched
      * to a virtual terminal. */
