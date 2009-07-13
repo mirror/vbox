@@ -400,7 +400,7 @@ RTDECL(int) RTSemSpinMutexRelease(RTSEMSPINMUTEX hSpinMtx)
 
     cLockers = ASMAtomicDecS32(&pThis->cLockers);
     rtSemSpinMutexLeave(&State);
-    if (cLockers > 0)
+    if (cLockers >= 0)
     {
         int rc = RTSemEventSignal(pThis->hEventSem);
         AssertReleaseMsg(RT_SUCCESS(rc), ("RTSemEventSignal -> %Rrc\n", rc));
