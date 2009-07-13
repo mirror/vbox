@@ -151,7 +151,7 @@ static int rtSemEventWait(PRTSEMEVENTINTERNAL pEventInt, unsigned cMillies, bool
 #endif
     for (;;)
     {
-        /* make everything thru schedule() atomic scheduling wise. */
+        /* make everything thru schedule_timeout() atomic scheduling wise. */
         prepare_to_wait(&pEventInt->Head, &Wait, fInterruptible ? TASK_INTERRUPTIBLE : TASK_UNINTERRUPTIBLE);
 
         /* check the condition. */
