@@ -1391,7 +1391,7 @@ struct SafeIfaceArrayTraits
 {
 protected:
 
-    static VARTYPE VarType() { return VT_UNKNOWN; }
+    static VARTYPE VarType() { return VT_DISPATCH; }
     static ULONG VarCount (size_t aSize) { return (ULONG) aSize; }
     static size_t Size (ULONG aVarCount) { return (size_t) aVarCount; }
 
@@ -1409,7 +1409,7 @@ protected:
     static SAFEARRAY *CreateSafeArray (VARTYPE aVarType, SAFEARRAYBOUND *aBound)
     {
         NOREF (aVarType);
-        return SafeArrayCreateEx (VT_UNKNOWN, 1, aBound, (PVOID) &_ATL_IIDOF (I));
+        return SafeArrayCreateEx (VT_DISPATCH, 1, aBound, (PVOID) &_ATL_IIDOF (I));
     }
 };
 
@@ -1487,7 +1487,7 @@ public:
             VARTYPE vt;
             HRESULT rc = SafeArrayGetVartype (arg, &vt);
             AssertComRCReturnVoid (rc);
-            AssertMsgReturnVoid (vt == VT_UNKNOWN,
+            AssertMsgReturnVoid (vt == VT_UNKNOWN || vt == VT_DISPATCH,
                                  ("Expected vartype VT_UNKNOWN, got %d.\n",
                                   VarType(), vt));
             GUID guid;
