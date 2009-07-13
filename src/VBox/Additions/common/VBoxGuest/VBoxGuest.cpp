@@ -1335,7 +1335,8 @@ static int VBoxGuestCommonIOCtl_HGCMCall(PVBOXGUESTDEVEXT pDevExt,
         if (pcbDataReturned)
             *pcbDataReturned = cbActual;
     }
-    Log(("VBoxGuestCommonIOCtl: HGCM_CALL: Failed. rc=%Rrc.\n", rc));
+    else
+        Log(("VBoxGuestCommonIOCtl: HGCM_CALL: Failed. rc=%Rrc.\n", rc));
     return rc;
 }
 
