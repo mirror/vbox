@@ -325,11 +325,7 @@ VMMR3DECL(int) TMR3Init(PVM pVM)
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
     {
         if (!pVM->tm.s.fTSCUseRealTSC)
-        {
-            /* @todo simple case for guest SMP; always emulate RDTSC */
-            if (pVM->cCPUs == 1)
-                pVM->tm.s.fMaybeUseOffsettedHostTSC = tmR3HasFixedTSC(pVM);
-        }
+            pVM->tm.s.fMaybeUseOffsettedHostTSC = tmR3HasFixedTSC(pVM);
         else
             pVM->tm.s.fMaybeUseOffsettedHostTSC = true;
     }
