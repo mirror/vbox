@@ -90,6 +90,10 @@
 #define RTSEMMUTEX_MAGIC            0x19520311
 /** Dead magic for the mutex semaphore structure. */
 #define RTSEMMUTEX_MAGIC_DEAD       0x20010511
+/** Magic for the spinning mutex semaphore structure. (Natsume Soseki) */
+#define RTSEMSPINMUTEX_MAGIC        0x18670209
+/** Dead magic value for RTSEMSPINMUTEXINTERNAL::u32Magic. */
+#define RTSEMSPINMUTEX_MAGIC_DEAD   0x19161209
 /** RTSEMRWINTERNAL::u32Magic value. (Kosuke Fujishima) */
 #define RTSEMRW_MAGIC               0x19640707
 /** Magic value for RTSPINLOCKINTERNAL::u32Magic. (Terry Pratchett) */
