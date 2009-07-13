@@ -2892,7 +2892,7 @@ static int vboxNetFltSolarisRecv(PVBOXNETFLTINS pThis, vboxnetflt_stream_t *pStr
     /*
      * Paranoia...
      */
-    if (MBLKL(pMsg) < sizeof(RTNETETHERHDR))
+    if (RT_UNLIKELY(MBLKL(pMsg) < sizeof(RTNETETHERHDR)))
     {
         size_t cbMsg = msgdsize(pMsg);
         if (cbMsg < sizeof(RTNETETHERHDR))
