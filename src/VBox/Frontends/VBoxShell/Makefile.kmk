@@ -26,7 +26,10 @@ INSTALLS += VBoxShell
 VBoxShell_INST = $(INST_SDK)/bindings
 VBoxShell_SOURCES = \
 	vboxshell.py=>glue/python/sample/vboxshell.py \
-        vboxinfo.vbs=>mscom/vbs/sample/vboxinfo.vbs
+        vboxinfo.vbs=>mscom/vbs/sample/vboxinfo.vbs   \
+        vboxinfo.vb=>mscom/vb/sample/vboxinfo.vb
+
+
 
 include $(KBUILD_PATH)/subfooter.kmk
 
