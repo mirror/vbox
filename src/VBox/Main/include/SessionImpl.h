@@ -44,13 +44,10 @@ class ATL_NO_VTABLE Session :
     public VirtualBoxBaseNEXT,
     public VirtualBoxSupportErrorInfoImpl <Session, ISession>,
     public VirtualBoxSupportTranslation <Session>,
-#ifdef RT_OS_WINDOWS
     VBOX_SCRIPTABLE_IMPL(ISession),
-    VBOX_SCRIPTABLE_IMPL(IInternalSessionControl),
-    public CComCoClass<Session, &CLSID_Session>
-#else
-    public ISession,
-    public IInternalSessionControl
+    VBOX_SCRIPTABLE_IMPL(IInternalSessionControl)
+#ifdef RT_OS_WINDOWS
+    , public CComCoClass<Session, &CLSID_Session>
 #endif
 {
 public:

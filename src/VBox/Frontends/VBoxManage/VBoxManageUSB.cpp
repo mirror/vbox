@@ -78,6 +78,10 @@ public:
         Guid guid(iid);
         if (guid == Guid(NS_GET_IID(IUnknown)))
             *ppvObject = (IUnknown *)this;
+#ifdef RT_OS_WINDOWS
+        else if (guid == Guid(NS_GET_IID(IDispatch)))
+            *ppvObject = (IDispatch *)this;
+#endif
         else if (guid == Guid(NS_GET_IID(IUSBDevice)))
             *ppvObject = (IUSBDevice *)this;
         else

@@ -177,24 +177,8 @@ public:
             delete this;
         return cnt;
     }
-
-    STDMETHOD(QueryInterface) (REFIID riid , void **ppObj)
-    {
-        if (riid == IID_IUnknown) {
-            *ppObj = this;
-            AddRef();
-            return S_OK;
-        }
-        if (riid == IID_IFramebuffer) {
-            *ppObj = this;
-            AddRef();
-            return S_OK;
-        }
-        *ppObj = NULL;
-        return E_NOINTERFACE;
-    }
-
 #endif
+    VBOX_SCRIPTABLE_DISPATCH_IMPL(IFramebuffer)
 
     // IFramebuffer COM methods
     STDMETHOD(COMGETTER(Address)) (BYTE **aAddress);

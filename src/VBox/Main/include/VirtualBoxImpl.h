@@ -65,12 +65,9 @@ class ATL_NO_VTABLE VirtualBox :
     public VirtualBoxBaseWithChildrenNEXT,
     public VirtualBoxSupportErrorInfoImpl <VirtualBox, IVirtualBox>,
     public VirtualBoxSupportTranslation <VirtualBox>,
+    VBOX_SCRIPTABLE_IMPL(IVirtualBox)
 #ifdef RT_OS_WINDOWS
-    public IDispatchImpl<IVirtualBox, &IID_IVirtualBox, &LIBID_VirtualBox,
-                         kTypeLibraryMajorVersion, kTypeLibraryMinorVersion>,
-    public CComCoClass<VirtualBox, &CLSID_VirtualBox>
-#else
-    public IVirtualBox
+    , public CComCoClass<VirtualBox, &CLSID_VirtualBox>
 #endif
 {
 
