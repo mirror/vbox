@@ -115,6 +115,7 @@ typedef struct _VBOXVHWASURFDESC
 typedef struct _VBOXVHWAINFO
 {
     uint32_t caps;
+    uint32_t caps2;
     uint32_t colorKeyCaps;
     uint32_t stretchCaps;
     uint32_t surfaceCaps;
@@ -323,6 +324,9 @@ uint32_t vboxVHWASupportedDDCEYCAPS(uint32_t caps);
 
 uint32_t vboxVHWAToDDBLTs(uint32_t caps);
 uint32_t vboxVHWAFromDDBLTs(uint32_t caps);
+
+uint32_t vboxVHWAFromDDCAPS2(uint32_t caps);
+uint32_t vboxVHWAToDDCAPS2(uint32_t caps);
 
 void vboxVHWAFromDDBLTFX(VBOXVHWA_BLTFX *pVHWABlt, DDBLTFX *pDdBlt);
 

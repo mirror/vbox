@@ -791,6 +791,25 @@ public:
         mOverlays.push_back(pSurf);
     }
 
+    void checkAddOverlay(VBoxVHWASurfaceBase * pSurf)
+    {
+        if(!hasOverlay(pSurf))
+            addOverlay(pSurf);
+    }
+
+    bool hasOverlay(VBoxVHWASurfaceBase * pSurf)
+    {
+        for (OverlayList::iterator it = mOverlays.begin();
+             it != mOverlays.end(); ++ it)
+        {
+            if((*it) == pSurf)
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
     void removeOverlay(VBoxVHWASurfaceBase * pSurf)
     {
         mOverlays.remove(pSurf);
@@ -812,6 +831,8 @@ public:
                 if((*it) == pCurr)
                 {
                     (*it) = pTarg;
+                    pCurr->setHidden(false);
+                    break;
                 }
             }
         }
