@@ -43,6 +43,7 @@
 #define SHCRGL_GUEST_FN_WRITE       (2)
 #define SHCRGL_GUEST_FN_READ        (3)
 #define SHCRGL_GUEST_FN_WRITE_READ  (4)
+#define SHCRGL_GUEST_FN_SET_VERSION (6)
 
 /* Parameters count */
 #define SHCRGL_CPARMS_SET_FRAMEBUFFER (1)
@@ -50,6 +51,7 @@
 #define SHCRGL_CPARMS_WRITE      (1)
 #define SHCRGL_CPARMS_READ       (2)
 #define SHCRGL_CPARMS_WRITE_READ (3)
+#define SHCRGL_CPARMS_SET_VERSION (2)
 
 /**
  * SHCRGL_GUEST_FN_WRITE
@@ -104,5 +106,22 @@ typedef struct
     HGCMFunctionParameter   cbWriteback;
 
 } CRVBOXHGCMWRITEREAD;
+
+/** GUEST_FN_SET_VERSION Parameters structure. */
+typedef struct
+{
+    VBoxGuestHGCMCallInfo   hdr;
+
+    /** 32bit, in
+     *  Major version
+     */
+    HGCMFunctionParameter   vMajor;
+
+    /** 32bit, in
+     *  Minor version
+     */
+    HGCMFunctionParameter   vMinor;
+
+} CRVBOXHGCMSETVERSION;
 
 #endif

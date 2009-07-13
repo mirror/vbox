@@ -670,6 +670,36 @@ static void crVBoxHGCMAccept( CRConnection *conn, const char *hostname, unsigned
 #endif
 }
 
+static int crVBoxHGCMSetVersion(CRConnection *conn, unsigned int vMajor, unsigned int vMinor)
+{
+    CRVBOXHGCMSETVERSION parms;
+    int rc;
+
+    parms.hdr.result      = VINF_SUCCESS;
+    parms.hdr.u32ClientID = conn->u32ClientID;
+    parms.hdr.u32Function = SHCRGL_GUEST_FN_SET_VERSION;
+    parms.hdr.cParms      = SHCRGL_CPARMS_SET_VERSION;
+
+    parms.vMajor.type      = VMMDevHGCMParmType_32bit;
+    parms.vMajor.u.value32 = CR_PROTOCOL_VERSION_MAJOR;
+    parms.vMinor.type      = VMMDevHGCMParmType_32bit;
+    parms.vMinor.u.value32 = CR_PROTOCOL_VERSION_MINOR;
+
+    rc = crVBoxHGCMCall(&parms, sizeof(parms));
+
+    if (RT_FAILURE(rc) || RT_FAILURE(parms.hdr.result))
+    {
+        crWarning("Host doesn't accept our version %d.%d. Make sure you have appropriate additions installed!",
+                  parms.vMajor.u.value32, parms.vMinor.u.value32);
+        return FALSE;
+    }
+
+    conn->vMajor = CR_PROTOCOL_VERSION_MAJOR;
+    conn->vMinor = CR_PROTOCOL_VERSION_MINOR;
+
+    return TRUE;
+}
+
 /**
  * The function that actually connects.  This should only be called by clients,
  * guests in vbox case.
@@ -743,6 +773,8 @@ static int crVBoxHGCMDoConnect( CRConnection *conn )
         {
             conn->u32ClientID = info.u32ClientID;
             crDebug("HGCM connect was successful: client id =0x%x\n", conn->u32ClientID);
+
+            return crVBoxHGCMSetVersion(conn, CR_PROTOCOL_VERSION_MAJOR, CR_PROTOCOL_VERSION_MINOR);
         }
         else
         {

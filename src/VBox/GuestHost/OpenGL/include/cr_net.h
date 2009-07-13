@@ -226,6 +226,8 @@ struct CRConnection {
      * is blocked by another client, which has send us glBegin call and we're waiting to recieve glEnd.
      */
     uint8_t  allow_redir_ptr;
+
+    uint32_t vMajor, vMinor; /*Protocol version*/
 };
 
 
