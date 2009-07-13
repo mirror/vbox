@@ -1504,15 +1504,11 @@ DECLINLINE(RTCCUINTREG) ASMIntDisableFlags(void)
  *
  * @returns true / false.
  */
-#if RT_INLINE_ASM_EXTERNAL
-DECLASM(RTCCUINTREG) ASMIntAreEnabled(void);
-#else
 DECLINLINE(RTCCUINTREG) ASMIntAreEnabled(void)
 {
     RTCCUINTREG uFlags = ASMGetFlags();
     return uFlags & 0x200 /* X86_EFL_IF */ ? true : false;
 }
-#endif
 
 
 /**
