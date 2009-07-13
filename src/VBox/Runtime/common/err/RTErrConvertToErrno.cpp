@@ -1,10 +1,10 @@
-/* $Rev$ */
+/* $Id$ */
 /** @file
  * IPRT - Convert iprt status codes to errno.
  */
 
 /*
- * Copyright (C) 2007 Sun Microsystems, Inc.
+ * Copyright (C) 2007-2009 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -111,7 +111,7 @@ RTDECL(int) RTErrConvertToErrno(int iErr)
         //case ENOTBLK:           return VERR_;
 #endif
 #ifdef EBUSY
-        //case VERR_DEV_IO_ERROR:                     return EBUSY;
+        case VERR_RESOURCE_BUSY:                    return EBUSY;
 #endif
 #ifdef EEXIST
         case VERR_ALREADY_EXISTS:                   return EEXIST;

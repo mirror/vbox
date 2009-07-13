@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2009 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -109,7 +109,7 @@ RTDECL(int)  RTErrConvertFromErrno(unsigned uNativeCode)
         //case ENOTBLK:           return VERR_;
 #endif
 #ifdef EBUSY
-        case EBUSY:             return VERR_DEV_IO_ERROR; /**@todo fix duplicate error */
+        case EBUSY:             return VERR_RESOURCE_BUSY;
 #endif
 #ifdef EEXIST
         case EEXIST:            return VERR_ALREADY_EXISTS;
