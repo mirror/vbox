@@ -197,21 +197,15 @@ static struct
 /**
  * Locks the logger instance.
  *
- * @returns See RTSemFastMutexRequest().
+ * @returns See RTSemSpinMutexRequest().
  * @param   pLogger     The logger instance.
  */
 DECLINLINE(int) rtlogLock(PRTLOGGER pLogger)
 {
 #ifndef IN_RC
-    if (pLogger->MutexSem != NIL_RTSEMFASTMUTEX)
+    if (pLogger->hSpinMtx != NIL_RTSEMSPINMUTEX)
     {
-        int rc;
-# if defined(IN_RING0) \
-  && (defined(RT_OS_WINDOWS) || defined(RT_OS_SOLARIS) || defined(RT_OS_LINUX))
-        if (!RTThreadPreemptIsEnabled(NIL_RTTHREAD))
-            return VERR_PREEMPT_DISABLED;
-# endif
-        rc = RTSemFastMutexRequest(pLogger->MutexSem);
+        int rc = RTSemSpinMutexRequest(pLogger->hSpinMtx);
         if (RT_FAILURE(rc))
             return rc;
     }
@@ -227,8 +221,8 @@ DECLINLINE(int) rtlogLock(PRTLOGGER pLogger)
 DECLINLINE(void) rtlogUnlock(PRTLOGGER pLogger)
 {
 #ifndef IN_RC
-    if (pLogger->MutexSem != NIL_RTSEMFASTMUTEX)
-        RTSemFastMutexRelease(pLogger->MutexSem);
+    if (pLogger->hSpinMtx != NIL_RTSEMFASTMUTEX)
+        RTSemSpinMutexRelease(pLogger->hSpinMtx);
 #endif
     return;
 }
@@ -406,7 +400,7 @@ RTDECL(int) RTLogCreateExV(PRTLOGGER *ppLogger, uint32_t fFlags, const char *psz
              */
             if (RT_SUCCESS(rc))
             {
-                rc = RTSemFastMutexCreate(&pLogger->MutexSem);
+                rc = RTSemSpinMutexCreate(&pLogger->hSpinMtx, RTSEMSPINMUTEX_FLAGS_IRQ_SAFE);
                 if (RT_SUCCESS(rc))
                 {
 #ifdef IN_RING3 /** @todo do counters in ring-0 too? */
@@ -414,9 +408,9 @@ RTDECL(int) RTLogCreateExV(PRTLOGGER *ppLogger, uint32_t fFlags, const char *psz
                     if (Thread != NIL_RTTHREAD)
                     {
                         int32_t c = RTThreadGetWriteLockCount(Thread);
-                        RTSemFastMutexRequest(pLogger->MutexSem);
+                        RTSemSpinMutexRequest(pLogger->hSpinMtx);
                         c = RTThreadGetWriteLockCount(Thread) - c;
-                        RTSemFastMutexRelease(pLogger->MutexSem);
+                        RTSemSpinMutexRelease(pLogger->hSpinMtx);
                         ASMAtomicWriteU32(&g_cLoggerLockCount, c);
                     }
 #endif
@@ -527,9 +521,9 @@ RT_EXPORT_SYMBOL(RTLogCreateEx);
  */
 RTDECL(int) RTLogDestroy(PRTLOGGER pLogger)
 {
-    int            rc;
-    uint32_t       iGroup;
-    RTSEMFASTMUTEX MutexSem;
+    int             rc;
+    uint32_t        iGroup;
+    RTSEMSPINMUTEX  hSpinMtx;
 
     /*
      * Validate input.
@@ -543,7 +537,7 @@ RTDECL(int) RTLogDestroy(PRTLOGGER pLogger)
      * Acquire logger instance sem and disable all logging. (paranoia)
      */
     rc = rtlogLock(pLogger);
-    AssertMsgReturn(RT_SUCCESS(rc) || rc == VERR_PREEMPT_DISABLED, ("%Rrc\n", rc), rc);
+    AssertMsgRCReturn(rc, ("%Rrc\n", rc), rc);
 
     pLogger->fFlags |= RTLOGFLAGS_DISABLED;
     iGroup = pLogger->cGroups;
@@ -572,13 +566,13 @@ RTDECL(int) RTLogDestroy(PRTLOGGER pLogger)
     /*
      * Free the mutex, the wrapper and the instance memory.
      */
-    MutexSem = pLogger->MutexSem;
-    pLogger->MutexSem = NIL_RTSEMFASTMUTEX;
-    if (MutexSem != NIL_RTSEMFASTMUTEX)
+    hSpinMtx = pLogger->hSpinMtx;
+    pLogger->hSpinMtx = NIL_RTSEMSPINMUTEX;
+    if (hSpinMtx != NIL_RTSEMSPINMUTEX)
     {
         int rc2;
-        RTSemFastMutexRelease(MutexSem);
-        rc2 = RTSemFastMutexDestroy(MutexSem);
+        RTSemSpinMutexRelease(hSpinMtx);
+        rc2 = RTSemSpinMutexDestroy(hSpinMtx);
         AssertRC(rc2);
         if (RT_FAILURE(rc2) && RT_SUCCESS(rc))
             rc = rc2;
@@ -768,7 +762,7 @@ RTDECL(int) RTLogCreateForR0(PRTLOGGER pLogger, size_t cbLogger, PFNRTLOGGER pfn
     pLogger->fPendingPrefix = false;
     pLogger->pfnLogger    = pfnLogger;
     pLogger->pfnFlush     = pfnFlush;
-    pLogger->MutexSem     = NIL_RTSEMFASTMUTEX; /* Not serialized. */
+    pLogger->hSpinMtx     = NIL_RTSEMSPINMUTEX; /* Not serialized. */
     pLogger->u32Magic     = RTLOGGER_MAGIC;
     pLogger->fFlags       = fFlags;
     pLogger->fDestFlags   = fDestFlags & ~RTLOGDEST_FILE;

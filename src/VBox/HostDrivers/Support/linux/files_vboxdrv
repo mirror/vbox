@@ -127,6 +127,7 @@ FILES_VBOXDRV_NOBIN=" \
     ${PATH_ROOT}/src/VBox/Runtime/r0drv/linux/thread2-r0drv-linux.c=>r0drv/linux/thread2-r0drv-linux.c \
     ${PATH_ROOT}/src/VBox/Runtime/r0drv/linux/time-r0drv-linux.c=>r0drv/linux/time-r0drv-linux.c \
     ${PATH_ROOT}/src/VBox/Runtime/r0drv/linux/timer-r0drv-linux.c=>r0drv/linux/timer-r0drv-linux.c \
+    ${PATH_ROOT}/src/VBox/Runtime/r0drv/generic/semspinmutex-r0drv-generic.c=>r0drv/generic/semspinmutex-r0drv-generic.c \
     ${PATH_ROOT}/src/VBox/Runtime/r0drv/memobj-r0drv.cpp=>r0drv/memobj-r0drv.c \
     ${PATH_ROOT}/src/VBox/Runtime/VBox/log-vbox.cpp=>VBox/log-vbox.c \
     ${PATH_ROOT}/src/VBox/Runtime/VBox/strformat-vbox.cpp=>VBox/strformat-vbox.c \

@@ -93,6 +93,7 @@ OBJS   = \
 	r0drv/linux/thread-r0drv-linux.o \
 	r0drv/linux/time-r0drv-linux.o \
 	r0drv/linux/RTLogWriteDebugger-r0drv-linux.o \
+	r0drv/generic/semspinmutex-r0drv-generic.o \
 	common/err/RTErrConvertFromErrno.o \
 	common/err/RTErrConvertToErrno.o \
 	common/log/log.o \
@@ -272,6 +273,6 @@ install: $(MODULE)
 endif # eq($(MAKECMDGOALS),clean)
 
 clean:
-	for f in . linux r0drv r0drv/linux VBox common/err common/string common/log generic common/math/gcc; \
+	for f in . linux r0drv r0drv/linux r0drv/generic VBox common/err common/string common/log generic common/math/gcc; \
             do rm -f $$f/*.o $$f/.*.cmd $$f/.*.flags; done
 	rm -rf .vboxguest* .tmp_ver* vboxguest.* Module.symvers Modules.symvers modules.order
