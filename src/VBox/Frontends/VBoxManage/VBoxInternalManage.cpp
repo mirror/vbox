@@ -869,6 +869,9 @@ static int CmdCreateRawVMDK(int argc, char **argv, ComPtr<IVirtualBox> aVirtualB
     if (!pszPartitions && pszMBRFilename)
         return errorSyntax(USAGE_CREATERAWVMDK, "The parameter -mbr is only valid when the parameter -partitions is also present");
 
+#ifdef RT_OS_DARWIN
+    fRelative = true;
+#endif /* RT_OS_DARWIN */
     RTFILE RawFile;
     int vrc = RTFileOpen(&RawFile, rawdisk.raw(), RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_WRITE);
     if (RT_FAILURE(vrc))
@@ -1108,6 +1111,20 @@ static int CmdCreateRawVMDK(int argc, char **argv, ComPtr<IVirtualBox> aVirtualB
                     /* Refer to the correct partition and use offset 0. */
                     char *pszRawName;
                     vrc = RTStrAPrintf(&pszRawName, "%s%u", rawdisk.raw(),
+                                       partitions.aPartitions[i].uIndex);
+                    if (RT_FAILURE(vrc))
+                    {
+                        RTPrintf("Error creating reference to individual partition %u, rc=%Rrc\n",
+                                 partitions.aPartitions[i].uIndex, vrc);
+                        goto out;
+                    }
+                    RawDescriptor.pPartitions[i].pszRawDevice = pszRawName;
+                    RawDescriptor.pPartitions[i].uPartitionStartOffset = 0;
+                    RawDescriptor.pPartitions[i].uPartitionStart = partitions.aPartitions[i].uStart * 512;
+#elif defined(RT_OS_DARWIN)
+                    /* Refer to the correct partition and use offset 0. */
+                    char *pszRawName;
+                    vrc = RTStrAPrintf(&pszRawName, "%ss%u", rawdisk.raw(),
                                        partitions.aPartitions[i].uIndex);
                     if (RT_FAILURE(vrc))
                     {
