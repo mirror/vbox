@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2009 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -588,8 +588,10 @@ RTDECL(PCRTCOMERRMSG) RTErrCOMGet(uint32_t rc);
 #define VERR_FILE_AIO_NOT_SUBMITTED         (-135)
 /** A request was not prepared and thus could not be submitted. */
 #define VERR_FILE_AIO_NOT_PREPARED          (-136)
-/** Not all requests could be submitted due to ressource shortage. */
+/** Not all requests could be submitted due to resource shortage. */
 #define VERR_FILE_AIO_INSUFFICIENT_RESSOURCES (-137)
+/** Device or resource is busy. */
+#define VERR_RESOURCE_BUSY                  (-138)
 /** @} */
 
 
