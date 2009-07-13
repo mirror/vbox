@@ -28,14 +28,17 @@
  * additional information or have any questions.
  */
 
+
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
 #include "the-solaris-kernel.h"
 
 #include <iprt/thread.h>
-#include <iprt/err.h>
+#include <iprt/asm.h>
 #include <iprt/assert.h>
+#include <iprt/err.h>
+
 
 RTDECL(RTNATIVETHREAD) RTThreadNativeSelf(void)
 {
@@ -99,14 +102,16 @@ RTDECL(bool) RTThreadYield(void)
 RTDECL(bool) RTThreadPreemptIsEnabled(RTTHREAD hThread)
 {
     Assert(hThread == NIL_RTTHREAD);
-    return vbi_is_preempt_enabled() != 0;
+    if (    vbi_is_preempt_enabled()
+        &&  ASMIntAreEnabled())
+        return true;
+    return false;
 }
 
 
 RTDECL(bool) RTThreadPreemptIsPending(RTTHREAD hThread)
 {
     Assert(hThread == NIL_RTTHREAD);
-    /** @todo Review this! */
     return !!vbi_is_preempt_pending();
 }
 
@@ -114,6 +119,13 @@ RTDECL(bool) RTThreadPreemptIsPending(RTTHREAD hThread)
 RTDECL(bool) RTThreadPreemptIsPendingTrusty(void)
 {
     /* yes, RTThreadPreemptIsPending is reliable. */
+    return true;
+}
+
+
+RTDECL(bool) RTThreadPreemptIsPossible(void)
+{
+    /* yes, kernel preemption is possible. */
     return true;
 }
 
@@ -133,5 +145,14 @@ RTDECL(void) RTThreadPreemptRestore(PRTTHREADPREEMPTSTATE pState)
     Assert(pState->uchDummy == 42);
     pState->uchDummy = 0;
     vbi_preempt_enable();
+}
+
+
+RTDECL(bool) RTThreadIsInInterrupt(RTTHREAD hThread)
+{
+    Assert(hThread == NIL_RTTHREAD); NOREF(hThread);
+    /** @todo Solaris: Implement RTThreadIsInInterrupt. Required for guest
+     *        additions! */
+    return !ASMIntAreEnabled();
 }
 
