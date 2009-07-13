@@ -29,6 +29,7 @@
 import os,sys
 import traceback
 import shlex
+import time
 
 # Simple implementation of IConsoleCallback, one can use it as skeleton 
 # for custom implementations
@@ -275,7 +276,6 @@ def guestExec(ctx, machine, console, cmds):
     exec cmds
 
 def monitorGuest(ctx, machine, console, dur):
-    import time
     cb = ctx['global'].createCallback('IConsoleCallback', GuestMonitor, machine)
     console.registerCallback(cb)
     if dur == -1:
@@ -292,7 +292,6 @@ def monitorGuest(ctx, machine, console, dur):
 
 
 def monitorVbox(ctx, dur):
-    import time
     vbox = ctx['vb']
     cb = ctx['global'].createCallback('IVirtualBoxCallback', VBoxMonitor, vbox)
     vbox.registerCallback(cb)
@@ -412,7 +411,6 @@ def getControllerType(type):
         return "Unknown"
 
 def infoCmd(ctx,args):
-    import time
     if (len(args) < 2):
         print "usage: info [vmname|uuid]"
         return 0
@@ -735,6 +733,12 @@ def runScriptCmd(ctx, args):
     lf.close()
     return 0
 
+def sleepCmd(ctx, args):
+    if (len(args) != 2):
+        print "usage: sleep <secs>"
+        return 0
+
+    time.sleep(float(args[1]))
 
 aliases = {'s':'start',
            'i':'info',
@@ -769,12 +773,10 @@ commands = {'help':['Prints help information', helpCmd, 0],
             'showLog':['Show log file of the VM, : showLog Win32', showLogCmd, 0],
             'reloadExt':['Reload custom extensions: reloadExt', reloadExtCmd, 0],
             'runScript':['Run VBox script: runScript script.vbox', runScriptCmd, 0],
+            'sleep':['Sleep for specified number of seconds: sleep <secs>', sleepCmd, 0],
             }
 
-def runCommand(ctx, cmd):
-    if len(cmd) == 0: return 0
-    args = split_no_quotes(cmd)
-    if len(args) == 0: return 0
+def runCommandArgs(ctx, args):
     c = args[0]
     if aliases.get(c, None) != None:
         c = aliases[c]
@@ -783,6 +785,13 @@ def runCommand(ctx, cmd):
         print "Unknown command: '%s', type 'help' for list of known commands" %(c)
         return 0
     return ci[1](ctx, args)
+
+
+def runCommand(ctx, cmd):
+    if len(cmd) == 0: return 0
+    args = split_no_quotes(cmd)
+    if len(args) == 0: return 0
+    return runCommandArgs(ctx, args)
 
 #
 # To write your own custom commands to vboxshell, create
@@ -852,6 +861,10 @@ def interpret(ctx):
     except:
         pass
 
+def runCommandCb(ctx, cmd, args):
+    args.insert(0, cmd)
+    return runCommandArgs(ctx, args)
+
 def main(argv):
     style = None
     autopath = False
@@ -879,7 +892,8 @@ def main(argv):
            'vb':g_virtualBoxManager.vbox, 
            'ifaces':g_virtualBoxManager.constants,
            'remote':g_virtualBoxManager.remote, 
-           'type':g_virtualBoxManager.type
+           'type':g_virtualBoxManager.type,
+           'run':runCommandCb
            }
     interpret(ctx)
     g_virtualBoxManager.deinit()
