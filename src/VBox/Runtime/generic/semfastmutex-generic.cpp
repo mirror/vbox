@@ -48,7 +48,12 @@ RTDECL(int) RTSemFastMutexCreate(PRTSEMFASTMUTEX pMutexSem)
         return VERR_NO_MEMORY;
     int rc = RTCritSectInit(pCritSect);
     if (RT_SUCCESS(rc))
+    {
+        /** @todo pCritSect->fFlags |= RTCRITSECT_FLAGS_NO_NESTING; */
         *pMutexSem = (RTSEMFASTMUTEX)pCritSect;
+    }
+    else
+        RTMemFree(pCritSect);
     return rc;
 }
 RT_EXPORT_SYMBOL(RTSemFastMutexCreate);

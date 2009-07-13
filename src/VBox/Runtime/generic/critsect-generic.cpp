@@ -472,7 +472,7 @@ RTDECL(int) RTCritSectDelete(PRTCRITSECT pCritSect)
     pCritSect->cNestings        = 0;
     pCritSect->NativeThreadOwner= NIL_RTNATIVETHREAD;
     RTSEMEVENT EventSem = pCritSect->EventSem;
-    pCritSect->EventSem         = NULL;
+    pCritSect->EventSem         = NIL_RTSEMEVENT;
     while (pCritSect->cLockers-- >= 0)
         RTSemEventSignal(EventSem);
     ASMAtomicWriteS32(&pCritSect->cLockers, -1);
