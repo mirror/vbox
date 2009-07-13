@@ -97,6 +97,7 @@ OBJS   = \
 	r0drv/linux/thread2-r0drv-linux.o \
 	r0drv/linux/time-r0drv-linux.o \
 	r0drv/linux/timer-r0drv-linux.o \
+	r0drv/generic/semspinmutex-r0drv-generic.o \
 	common/err/RTErrConvertFromErrno.o \
 	common/err/RTErrConvertToErrno.o \
 	common/log/log.o \
@@ -265,6 +266,6 @@ install_rpm: $(MODULE)
 endif # eq($(MAKECMDGOALS),clean)
 
 clean:
-	for f in . linux r0drv r0drv/linux VBox common/err common/string common/log generic math/gcc; \
+	for f in . linux r0drv r0drv/generic r0drv/linux VBox common/err common/string common/log generic math/gcc; \
 	    do rm -f $$f/*.o $$f/.*.cmd $$f/.*.flags; done
 	rm -rf .vboxdrv* .tmp_ver* vboxdrv.* Module.symvers Modules.symvers modules.order
