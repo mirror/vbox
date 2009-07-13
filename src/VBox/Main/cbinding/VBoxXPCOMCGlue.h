@@ -31,7 +31,7 @@
 #ifndef ___VBoxXPCOMC_cglue_h
 #define ___VBoxXPCOMC_cglue_h
 
-#include "VBoxCAPI_v3_0.h"
+#include "VBoxCAPI_v3_1.h"
 
 #ifdef __cplusplus
 extern "C" {
