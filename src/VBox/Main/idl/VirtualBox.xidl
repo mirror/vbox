@@ -10802,7 +10802,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
      name="IDisplay" extends="$unknown"
-     uuid="26881797-bc98-444d-ac69-820633b93ec7"
+     uuid="e2a38ebc-d854-4a3e-bc2e-fdf5ac4a0000"
      wsmap="managed"
      >
     <desc>
