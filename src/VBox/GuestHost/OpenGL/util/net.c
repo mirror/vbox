@@ -277,6 +277,7 @@ crNetConnectToServer( const char *server, unsigned short default_port,
         #ifdef CHROMIUM_THREADSAFE
             crFreeMutex( &conn->messageList.lock );
         #endif
+        conn->Disconnect(conn);
         crFree( conn );
         return NULL;
     }

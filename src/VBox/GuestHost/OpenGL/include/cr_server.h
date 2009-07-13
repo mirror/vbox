@@ -212,10 +212,11 @@ extern DECLEXPORT(void) crServerSetPort(int port);
 
 extern DECLEXPORT(GLboolean) crVBoxServerInit(void);
 extern DECLEXPORT(void) crVBoxServerTearDown(void);
-extern DECLEXPORT(void) crVBoxServerAddClient(uint32_t u32ClientID);
+extern DECLEXPORT(int32_t) crVBoxServerAddClient(uint32_t u32ClientID);
 extern DECLEXPORT(void) crVBoxServerRemoveClient(uint32_t u32ClientID);
-extern DECLEXPORT(void) crVBoxServerClientWrite(uint32_t u32ClientID, uint8_t *pBuffer, uint32_t cbBuffer);
+extern DECLEXPORT(int32_t) crVBoxServerClientWrite(uint32_t u32ClientID, uint8_t *pBuffer, uint32_t cbBuffer);
 extern DECLEXPORT(int32_t) crVBoxServerClientRead(uint32_t u32ClientID, uint8_t *pBuffer, uint32_t *pcbBuffer);
+extern DECLEXPORT(int32_t) crVBoxServerClientSetVersion(uint32_t u32ClientID, uint32_t vMajor, uint32_t vMinor);
 
 extern DECLEXPORT(int32_t) crVBoxServerSaveState(PSSMHANDLE pSSM);
 extern DECLEXPORT(int32_t) crVBoxServerLoadState(PSSMHANDLE pSSM);

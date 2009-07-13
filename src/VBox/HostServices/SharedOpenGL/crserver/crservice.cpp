@@ -130,7 +130,7 @@ static DECLCALLBACK(int) svcConnect (void *, uint32_t u32ClientID, void *pvClien
 #else
     g_pFrameBuffer->COMGETTER(WinId)(&g_winId);
     renderspuSetWindowId((uint32_t)g_winId);
-    crVBoxServerAddClient(u32ClientID);
+    rc = crVBoxServerAddClient(u32ClientID);
 #endif
 
     return rc;
@@ -221,6 +221,12 @@ static DECLCALLBACK(int) svcLoadState(void *, uint32_t u32ClientID, void *pvClie
     return VINF_SUCCESS;
 }
 
+static void svcClientVersionUnsupported(uint32_t minor, uint32_t major)
+{
+    LogRel(("SHARED_CROPENGL: unsupported client version %d.%d\n", minor, major));
+    /*todo add warning window*/
+}
+
 static DECLCALLBACK(void) svcCall (void *, VBOXHGCMCALLHANDLE callHandle, uint32_t u32ClientID, void *pvClient, uint32_t u32Function, uint32_t cParms, VBOXHGCMSVCPARM paParms[])
 {
     int rc = VINF_SUCCESS;
@@ -263,7 +269,13 @@ static DECLCALLBACK(void) svcCall (void *, VBOXHGCMCALLHANDLE callHandle, uint32
                 uint32_t cbBuffer = paParms[0].u.pointer.size;
 
                 /* Execute the function. */
-                crVBoxServerClientWrite(u32ClientID, pBuffer, cbBuffer);
+                rc = crVBoxServerClientWrite(u32ClientID, pBuffer, cbBuffer);
+                if (!RT_SUCCESS(rc))
+                {
+                    Assert(VERR_NOT_SUPPORTED==rc);
+                    svcClientVersionUnsupported(0, 0);
+                }
+
             }
             break;
         }
@@ -296,6 +308,9 @@ static DECLCALLBACK(void) svcCall (void *, VBOXHGCMCALLHANDLE callHandle, uint32
             {
                 /* Update parameters.*/
                 paParms[0].u.pointer.size = cbBuffer; //@todo guest doesn't see this change somehow?
+            } else if (VERR_NOT_SUPPORTED==rc)
+            {
+                svcClientVersionUnsupported(0, 0);
             }
 
             /* Return the required buffer size always */
@@ -331,7 +346,13 @@ static DECLCALLBACK(void) svcCall (void *, VBOXHGCMCALLHANDLE callHandle, uint32
                 uint32_t cbWriteback = paParms[1].u.pointer.size;
 
                 /* Execute the function. */
-                crVBoxServerClientWrite(u32ClientID, pBuffer, cbBuffer);
+                rc = crVBoxServerClientWrite(u32ClientID, pBuffer, cbBuffer);
+                if (!RT_SUCCESS(rc))
+                {
+                    Assert(VERR_NOT_SUPPORTED==rc);
+                    svcClientVersionUnsupported(0, 0);
+                }
+
                 rc = crVBoxServerClientRead(u32ClientID, pWriteback, &cbWriteback);
 
                 if (RT_SUCCESS(rc))
@@ -342,6 +363,41 @@ static DECLCALLBACK(void) svcCall (void *, VBOXHGCMCALLHANDLE callHandle, uint32
                 /* Return the required buffer size always */
                 paParms[2].u.uint32 = cbWriteback;
             }
+            break;
+        }
+
+        case SHCRGL_GUEST_FN_SET_VERSION:
+        {
+            Log(("svcCall: SHCRGL_GUEST_FN_SET_VERSION\n"));
+
+            /* Verify parameter count and types. */
+            if (cParms != SHCRGL_CPARMS_SET_VERSION)
+            {
+                rc = VERR_INVALID_PARAMETER;
+            }
+            else
+            if (    paParms[0].type != VBOX_HGCM_SVC_PARM_32BIT     /* vMajor */
+                 || paParms[1].type != VBOX_HGCM_SVC_PARM_32BIT     /* vMinor */
+               )
+            {
+                rc = VERR_INVALID_PARAMETER;
+            }
+            else
+            {
+                /* Fetch parameters. */
+                uint32_t vMajor    = paParms[0].u.uint32;
+                uint32_t vMinor    = paParms[1].u.uint32;
+
+                /* Execute the function. */
+                rc = crVBoxServerClientSetVersion(u32ClientID, vMajor, vMinor);
+
+                if (!RT_SUCCESS(rc))
+                {
+                    /*@todo, add warning window*/
+                    svcClientVersionUnsupported(vMajor, vMinor);
+                }
+            }
+
             break;
         }
 
