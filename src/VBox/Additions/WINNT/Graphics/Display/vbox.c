@@ -901,13 +901,13 @@ int vboxVHWAInitHostInfo1(PPDEV ppdev)
     }
 
     ppdev->vhwaInfo.caps = pInfo->caps;
+    ppdev->vhwaInfo.caps2 = pInfo->caps2;
     ppdev->vhwaInfo.colorKeyCaps = pInfo->colorKeyCaps;
     ppdev->vhwaInfo.stretchCaps = pInfo->stretchCaps;
     ppdev->vhwaInfo.surfaceCaps = pInfo->surfaceCaps;
     ppdev->vhwaInfo.numOverlays = pInfo->numOverlays;
     ppdev->vhwaInfo.numFourCC = pInfo->numFourCC;
     ppdev->vhwaInfo.bVHWAEnabled = (pInfo->cfgFlags & VBOXVHWA_CFG_ENABLED);
-
     vboxVHWAFreeHostInfo1(ppdev, pInfo);
     return VINF_SUCCESS;
 }

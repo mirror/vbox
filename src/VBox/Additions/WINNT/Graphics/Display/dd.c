@@ -643,7 +643,7 @@ DWORD APIENTRY DdCreateSurface(PDD_CREATESURFACEDATA  lpCreateSurface)
 
         DISPDBG((0, "New surface (%d,%d)\n", lpSurfaceGlobal->wWidth, lpSurfaceGlobal->wHeight));
         DISPDBG((0, "BPP %d lPitch=%d\n", lBpp, lPitch));
-#if 0
+#if 1
         lpSurfaceGlobal->dwBlockSizeX   = lPitch;
         lpSurfaceGlobal->dwBlockSizeY   = lpSurfaceGlobal->wHeight;
         lpSurfaceGlobal->lPitch         = lPitch;
@@ -653,7 +653,7 @@ DWORD APIENTRY DdCreateSurface(PDD_CREATESURFACEDATA  lpCreateSurface)
         lpSurfaceGlobal->lPitch         = lPitch;
 #endif
 
-#if 0
+#if 1
         lpSurfaceDesc->lPitch   = lpSurfaceGlobal->lPitch;
         lpSurfaceDesc->dwFlags |= DDSD_PITCH;
 #endif
@@ -1184,7 +1184,7 @@ DWORD APIENTRY DdUnlock(PDD_UNLOCKDATA lpUnlock)
             lpUnlock->ddRVal = DDERR_GENERIC;
         }
 
-        return DDHAL_DRIVER_HANDLED;
+        return DDHAL_DRIVER_NOTHANDLED;
     }
 #endif
     if (pDev->ddLock.bLocked)
@@ -1672,20 +1672,18 @@ DWORD APIENTRY DdUpdateOverlay(PDD_UPDATEOVERLAYDATA  lpUpdateOverlay)
 {
     PPDEV pDev = (PPDEV)lpUpdateOverlay->lpDD->dhpdev;
     DD_SURFACE_LOCAL*   lpDestSurfaceLocal = lpUpdateOverlay->lpDDDestSurface;
-    DD_SURFACE_GLOBAL*  lpDestSurfaceGlobal = lpDestSurfaceLocal->lpGbl;
     DD_SURFACE_LOCAL*   lpSrcSurfaceLocal = lpUpdateOverlay->lpDDSrcSurface;
     DD_SURFACE_GLOBAL*  lpSrcSurfaceGlobal = lpSrcSurfaceLocal->lpGbl;
     VBOXVHWACMD* pCmd;
     PVBOXVHWASURFDESC pSrcDesc = (PVBOXVHWASURFDESC)lpSrcSurfaceGlobal->dwReserved1;
-    PVBOXVHWASURFDESC pDestDesc = (PVBOXVHWASURFDESC)lpDestSurfaceGlobal->dwReserved1;
 
     DISPDBG((0, "%s\n", __FUNCTION__));
 
-    if(pSrcDesc->bHidden)
-    {
-        lpUpdateOverlay->ddRVal = DDERR_GENERIC;
-        return DDHAL_DRIVER_HANDLED;
-    }
+//    if(pSrcDesc->bHidden)
+//    {
+//        lpUpdateOverlay->ddRVal = DDERR_GENERIC;
+//        return DDHAL_DRIVER_HANDLED;
+//    }
 
     pCmd = vboxVHWACommandCreate (pDev, VBOXVHWACMD_TYPE_SURF_OVERLAY_UPDATE, sizeof(VBOXVHWACMD_SURF_OVERLAY_UPDATE));
     //    int rc = VERR_GENERAL_FAILURE;
@@ -1696,9 +1694,7 @@ DWORD APIENTRY DdUpdateOverlay(PDD_UPDATEOVERLAYDATA  lpUpdateOverlay)
         memset(pBody, 0, sizeof(VBOXVHWACMD_SURF_OVERLAY_UPDATE));
 
         pBody->u.in.offSrcSurface = (uint64_t)lpSrcSurfaceGlobal->fpVidMem;
-        pBody->u.in.offDstSurface = (uint64_t)lpDestSurfaceGlobal->fpVidMem;
 
-        pBody->u.in.hDstSurf = pDestDesc->hHostHandle;
         pBody->u.in.hSrcSurf = pSrcDesc->hHostHandle;
 
         vboxVHWAFromRECTL(&pBody->u.in.dstRect, &lpUpdateOverlay->rDest);
@@ -1706,6 +1702,23 @@ DWORD APIENTRY DdUpdateOverlay(PDD_UPDATEOVERLAYDATA  lpUpdateOverlay)
 
         pBody->u.in.flags = vboxVHWAFromDDOVERs(lpUpdateOverlay->dwFlags);
         vboxVHWAFromDDOVERLAYFX(&pBody->u.in.desc, &lpUpdateOverlay->overlayFX);
+
+        if(lpUpdateOverlay->dwFlags & DDOVER_HIDE)
+        {
+            pSrcDesc->bHidden = true;
+        }
+        else if(lpUpdateOverlay->dwFlags & DDOVER_SHOW)
+        {
+            pSrcDesc->bHidden = false;
+        }
+
+        if(lpDestSurfaceLocal)
+        {
+            DD_SURFACE_GLOBAL* lpDestSurfaceGlobal = lpDestSurfaceLocal->lpGbl;
+            PVBOXVHWASURFDESC pDestDesc = (PVBOXVHWASURFDESC)lpDestSurfaceGlobal->dwReserved1;
+            pBody->u.in.hDstSurf = pDestDesc->hHostHandle;
+            pBody->u.in.offDstSurface = (uint64_t)lpDestSurfaceGlobal->fpVidMem;
+        }
 
         vboxVHWACommandSubmitAsynch(pDev, pCmd, vboxVHWAFreeCmdCompletion, NULL);
         lpUpdateOverlay->ddRVal = DD_OK;
@@ -1814,7 +1827,9 @@ getDDHALInfo(
 //    pHALInfo->ddCaps.ddsCaps.dwCaps |= DDSCAPS_3DDEVICE |
 //                                       DDSCAPS_ZBUFFER |
 //                                       DDSCAPS_ALPHA;
-    pHALInfo->ddCaps.dwCaps2 = 0;
+    pHALInfo->ddCaps.dwCaps2 = vboxVHWAToDDCAPS2(pDev->vhwaInfo.caps2);
+
+
 
 //#if DX7_TEXMANAGEMENT
     // We need to set this bit up in order to be able to do

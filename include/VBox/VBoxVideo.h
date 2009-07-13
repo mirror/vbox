@@ -400,8 +400,6 @@ typedef struct _VBOXVHWA_OVERLAYFX
 #define VBOXVHWA_CAPS_COLORKEYHWASSIST         0x00020000
 
 
-#define VBOXVHWA_CAPS2_COPYFOURCC   0x00000001
-
 #define VBOXVHWA_SCAPS_FLIP             0x00000001
 #define VBOXVHWA_SCAPS_PRIMARYSURFACE   0x00000002
 #define VBOXVHWA_SCAPS_OFFSCREENPLAIN   0x00000004
@@ -488,6 +486,12 @@ typedef struct _VBOXVHWA_OVERLAYFX
 #define VBOXVHWA_OVERFX_MIRRORLEFTRIGHT             0x00000002
 #define VBOXVHWA_OVERFX_MIRRORUPDOWN                0x00000004
 
+#define VBOXVHWA_CAPS2_CANRENDERWINDOWED            0x00080000
+#define VBOXVHWA_CAPS2_WIDESURFACES                 0x00001000
+#define VBOXVHWA_CAPS2_COPYFOURCC                   0x00008000
+//#define VBOXVHWA_CAPS2_FLIPINTERVAL                 0x00200000
+//#define VBOXVHWA_CAPS2_FLIPNOVSYNC                  0x00400000
+
 
 #define VBOXVHWA_OFFSET64_VOID        (~0L)
 
@@ -495,6 +499,7 @@ typedef struct _VBOXVHWACMD_QUERYINFO1
 {
     uint32_t cfgFlags;
     uint32_t caps;
+    uint32_t caps2;
     uint32_t colorKeyCaps;
     uint32_t stretchCaps;
     uint32_t surfaceCaps;
