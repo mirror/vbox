@@ -36,8 +36,18 @@
 #include "internal/iprt.h"
 
 #include <iprt/thread.h>
-#include <iprt/err.h>
+#include <iprt/asm.h>
 #include <iprt/assert.h>
+#include <iprt/err.h>
+
+
+/*******************************************************************************
+*   Global Variables                                                           *
+*******************************************************************************/
+#ifndef CONFIG_PREEMPT
+/** Per-cpu preemption counters. */
+static int32_t volatile g_acPreemptDisabled[NR_CPUS];
+#endif
 
 
 RTDECL(RTNATIVETHREAD) RTThreadNativeSelf(void)
@@ -75,15 +85,20 @@ RT_EXPORT_SYMBOL(RTThreadYield);
 
 RTDECL(bool) RTThreadPreemptIsEnabled(RTTHREAD hThread)
 {
-    Assert(hThread == NIL_RTTHREAD);
 #ifdef CONFIG_PREEMPT
+    Assert(hThread == NIL_RTTHREAD);
 # ifdef preemptible
     return preemptible();
 # else
     return preempt_count() == 0 && !in_atomic() && !irqs_disabled();
 # endif
 #else
-    return false;
+    int32_t c;
+
+    Assert(hThread == NIL_RTTHREAD);
+    c = g_acPreemptDisabled[smp_processor_id()];
+    AssertMsg(c >= 0 && c < 32, ("%d\n", c));
+    return c == 0 && !in_atomic() && !irqs_disabled();
 #endif
 }
 RT_EXPORT_SYMBOL(RTThreadPreemptIsEnabled);
@@ -116,29 +131,65 @@ RTDECL(bool) RTThreadPreemptIsPendingTrusty(void)
 RT_EXPORT_SYMBOL(RTThreadPreemptIsPendingTrusty);
 
 
+RTDECL(bool) RTThreadPreemptIsPossible(void)
+{
+#ifdef CONFIG_PREEMPT
+    return true;    /* yes, kernel preemption is possible. */
+#else
+    return false;   /* no kernel preemption */
+#endif
+}
+RT_EXPORT_SYMBOL(RTThreadPreemptIsPossible);
+
+
 RTDECL(void) RTThreadPreemptDisable(PRTTHREADPREEMPTSTATE pState)
 {
+#ifdef CONFIG_PREEMPT
     AssertPtr(pState);
     Assert(pState->uchDummy != 42);
     pState->uchDummy = 42;
-
-    /*
-     * Note: This call is a NOP if CONFIG_PREEMPT is not enabled in the Linux kernel
-     * configuration. In that case, schedule() is only called need_resched() is set
-     * which is tested just before we return to R3 (not when returning from R0 to R0).
-     */
     preempt_disable();
+
+#else /* !CONFIG_PREEMPT */
+    int32_t c;
+    AssertPtr(pState);
+
+    /* Do our own accounting. */
+    c = ASMAtomicIncS32(&g_acPreemptDisabled[smp_processor_id()]);
+    AssertMsg(c > 0 && c < 32, ("%d\n", c));
+    pState->uchDummy = (unsigned char )c;
+#endif
 }
 RT_EXPORT_SYMBOL(RTThreadPreemptDisable);
 
 
 RTDECL(void) RTThreadPreemptRestore(PRTTHREADPREEMPTSTATE pState)
 {
+#ifdef CONFIG_PREEMPT
     AssertPtr(pState);
     Assert(pState->uchDummy == 42);
     pState->uchDummy = 0;
-
     preempt_enable();
+
+#else
+    int32_t volatile *pc;
+    AssertPtr(pState);
+    AssertMsg(pState->uchDummy > 0 && pState->uchDummy < 32, ("%d\n", pState->uchDummy));
+
+    /* Do our own accounting. */
+    pc = &g_acPreemptDisabled[smp_processor_id()];
+    AssertMsg(pState->uchDummy == (uint32_t)*pc, ("uchDummy=%d *pc=%d \n", pState->uchDummy, *pc));
+    ASMAtomicUoWriteS32(pc, pState->uchDummy - 1);
+#endif
 }
 RT_EXPORT_SYMBOL(RTThreadPreemptRestore);
+
+
+RTDECL(bool) RTThreadIsInInterrupt(RTTHREAD hThread)
+{
+    Assert(hThread == NIL_RTTHREAD); NOREF(hThread);
+
+    return in_interrupt() != 0;
+}
+RT_EXPORT_SYMBOL(RTThreadIsInInterrupt);
 

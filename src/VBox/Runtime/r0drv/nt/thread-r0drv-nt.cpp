@@ -81,10 +81,8 @@ RTDECL(bool) RTThreadPreemptIsEnabled(RTTHREAD hThread)
     KIRQL Irql = KeGetCurrentIrql();
     if (Irql > APC_LEVEL)
         return false;
-#if defined(RT_ARCH_X86) || defined(RT_ARCH_AMD64)
-    if (!(ASMGetFlags() & 0x00000200 /* X86_EFL_IF */))
+    if (!ASMIntAreEnabled())
         return false;
-#endif
     return true;
 }
 
@@ -156,6 +154,13 @@ RTDECL(bool) RTThreadPreemptIsPendingTrusty(void)
 }
 
 
+RTDECL(bool) RTThreadPreemptIsPossible(void)
+{
+    /* yes, kernel preemption is possible. */
+    return true;
+}
+
+
 RTDECL(void) RTThreadPreemptDisable(PRTTHREADPREEMPTSTATE pState)
 {
     AssertPtr(pState);
@@ -172,5 +177,14 @@ RTDECL(void) RTThreadPreemptRestore(PRTTHREADPREEMPTSTATE pState)
 
     KeLowerIrql(pState->uchOldIrql);
     pState->uchOldIrql = 255;
+}
+
+
+RTDECL(bool) RTThreadIsInInterrupt(RTTHREAD hThread)
+{
+    Assert(hThread == NIL_RTTHREAD); NOREF(hThread);
+
+    KIRQL CurIrql = KeGetCurrentIrql();
+    return CurIrql > PASSIVE_LEVEL; /** @todo Is there a more correct way? */
 }
 

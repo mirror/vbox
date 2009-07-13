@@ -34,8 +34,9 @@
 #include "the-freebsd-kernel.h"
 
 #include <iprt/thread.h>
-#include <iprt/err.h>
+#include <iprt/asm.h>
 #include <iprt/assert.h>
+#include <iprt/err.h>
 
 #include "internal/thread.h"
 
@@ -111,7 +112,8 @@ RTDECL(bool) RTThreadPreemptIsEnabled(RTTHREAD hThread)
 {
     Assert(hThread == NIL_RTTHREAD);
 
-    return curthread->td_critnest == 0;
+    return curthread->td_critnest == 0
+        && ASMIntAreEnabled(); /** @todo is there a native freebsd function/macro for this? */
 }
 
 
@@ -126,6 +128,13 @@ RTDECL(bool) RTThreadPreemptIsPending(RTTHREAD hThread)
 RTDECL(bool) RTThreadPreemptIsPendingTrusty(void)
 {
     /* yes, RTThreadPreemptIsPending is reliable. */
+    return true;
+}
+
+
+RTDECL(bool) RTThreadPreemptIsPossible(void)
+{
+    /* yes, kernel preemption is possible. */
     return true;
 }
 
@@ -147,5 +156,14 @@ RTDECL(void) RTThreadPreemptRestore(PRTTHREADPREEMPTSTATE pState)
     pState->uchDummy = 0;
 
     critical_exit();
+}
+
+
+RTDECL(bool) RTThreadIsInInterrupt(RTTHREAD hThread)
+{
+    Assert(hThread == NIL_RTTHREAD); NOREF(hThread);
+    /** @todo FreeBSD: Implement RTThreadIsInInterrupt. Required for guest
+     *        additions! */
+    return !ASMIntAreEnabled();
 }
 

@@ -431,8 +431,12 @@ RTDECL(int) RTThreadPoke(RTTHREAD hThread);
 /**
  * Check if preemption is currently enabled or not for the current thread.
  *
+ * @note    This may return true even on systems where preemption isn't
+ *          possible. In that case, it means no call to RTThreadPreemptDisable
+ *          has been made and interrupts are still enabled.
+ *
  * @returns true if preemtion is enabled, false if preemetion is disabled.
- * @param       hThread         Must be NIL_RTTHREAD for now.
+ * @param   hThread             Must be NIL_RTTHREAD for now.
  */
 RTDECL(bool) RTThreadPreemptIsEnabled(RTTHREAD hThread);
 
@@ -450,9 +454,16 @@ RTDECL(bool) RTThreadPreemptIsPending(RTTHREAD hThread);
 /**
  * Is RTThreadPreemptIsPending reliable?
  *
- * @returns true if pending, false if not.
+ * @returns true if reliable, false if not.
  */
 RTDECL(bool) RTThreadPreemptIsPendingTrusty(void);
+
+/**
+ * Is preemption possible on this system.
+ *
+ * @returns true if possible, false if not.
+ */
+RTDECL(bool) RTThreadPreemptIsPossible(void);
 
 /**
  * Preemption state saved by RTThreadPreemptDisable and used by
@@ -493,6 +504,14 @@ RTDECL(void) RTThreadPreemptDisable(PRTTHREADPREEMPTSTATE pState);
  * @param  pState               The state return by RTThreadPreemptDisable.
  */
 RTDECL(void) RTThreadPreemptRestore(PRTTHREADPREEMPTSTATE pState);
+
+/**
+ * Check if the thread is executing in interrupt context.
+ *
+ * @returns true if in interrupt context, false if not.
+ * @param       hThread         Must be NIL_RTTHREAD for now.
+ */
+RTDECL(bool) RTThreadIsInInterrupt(RTTHREAD hThread);
 
 #endif /* IN_RING0 */
 
