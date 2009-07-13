@@ -144,6 +144,7 @@ int main(int argc, char **argv)
     /*
      * Stay in ring-0 until preemption is pending.
      */
+RTThreadSleep(250); /** @todo fix GIP initialization? */
     RTTestSub(hTest, "Pending Preemption");
     for (int i = 0; ; i++)
     {

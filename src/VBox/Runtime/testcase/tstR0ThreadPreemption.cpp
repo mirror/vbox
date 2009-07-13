@@ -76,15 +76,20 @@ DECLEXPORT(int) TSTR0ThreadPreemptionSrvReqHandler(PSUPDRVSESSION pSession, uint
 
         case TSTR0THREADPREMEPTION_BASIC:
         {
-            RTTHREADPREEMPTSTATE State = RTTHREADPREEMPTSTATE_INITIALIZER;
-            if (!RTThreadPreemptIsEnabled(NIL_RTTHREAD))
-                RTStrPrintf(pszErr, cchErr, "RTThreadPreemptIsEnabled returns false by default");
-            RTThreadPreemptDisable(&State);
-            if (RTThreadPreemptIsEnabled(NIL_RTTHREAD))
-                RTStrPrintf(pszErr, cchErr, "!RTThreadPreemptIsEnabled returns true after RTThreadPreemptDisable");
-            else if (!ASMIntAreEnabled())
+            if (!ASMIntAreEnabled())
                 RTStrPrintf(pszErr, cchErr, "!Interrupts disabled");
-            RTThreadPreemptRestore(&State);
+            else if (!RTThreadPreemptIsEnabled(NIL_RTTHREAD))
+                RTStrPrintf(pszErr, cchErr, "!RTThreadPreemptIsEnabled returns false by default");
+            else
+            {
+                RTTHREADPREEMPTSTATE State = RTTHREADPREEMPTSTATE_INITIALIZER;
+                RTThreadPreemptDisable(&State);
+                if (RTThreadPreemptIsEnabled(NIL_RTTHREAD))
+                    RTStrPrintf(pszErr, cchErr, "!RTThreadPreemptIsEnabled returns true after RTThreadPreemptDisable");
+                else if (!ASMIntAreEnabled())
+                    RTStrPrintf(pszErr, cchErr, "!Interrupts disabled");
+                RTThreadPreemptRestore(&State);
+            }
             break;
         }
 
@@ -96,8 +101,8 @@ DECLEXPORT(int) TSTR0ThreadPreemptionSrvReqHandler(PSUPDRVSESSION pSession, uint
             {
                 if (ASMIntAreEnabled())
                 {
-                    uint64_t    u64StartSysTS = RTTimeSystemNanoTS();
                     uint64_t    u64StartTS    = RTTimeNanoTS();
+                    uint64_t    u64StartSysTS = RTTimeSystemNanoTS();
                     uint64_t    cLoops        = 0;
                     uint64_t    cNanosSysElapsed;
                     uint64_t    cNanosElapsed;
@@ -105,7 +110,7 @@ DECLEXPORT(int) TSTR0ThreadPreemptionSrvReqHandler(PSUPDRVSESSION pSession, uint
                     do
                     {
                         fPending         = RTThreadPreemptIsPending(NIL_RTTHREAD);
-                        cNanosElapsed    = RTTimeNanoTS() - u64StartTS;
+                        cNanosElapsed    = RTTimeNanoTS()       - u64StartTS;
                         cNanosSysElapsed = RTTimeSystemNanoTS() - u64StartSysTS;
                         cLoops++;
                     } while (   !fPending
