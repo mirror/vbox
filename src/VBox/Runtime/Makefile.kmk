@@ -132,7 +132,8 @@ RuntimeWin64ASM_SOURCES = \
 	win/amd64/ASMGetDR3.asm \
 	win/amd64/ASMGetDR6.asm \
 	win/amd64/ASMGetDR7.asm \
-	common/asm/ASMMultU64ByU32DivByU32.asm
+	common/asm/ASMMultU64ByU32DivByU32.asm \
+	common/asm/ASMNopPause.asm
 
 #
 # Win32 assembly sources.
@@ -303,7 +304,8 @@ RuntimeR3_SOURCES       = \
 	r3/stream.cpp \
 	r3/test.cpp \
 	r3/testi.cpp \
-	r3/tcp.cpp
+	r3/tcp.cpp \
+	r3/generic/semspinmutex-r3-generic.cpp
 
 #if1of ($(KBUILD_TARGET_ARCH),amd64 x86)
 # RuntimeR3_SOURCES += common/time/timesupA.asm
@@ -1091,6 +1093,7 @@ RuntimeR0Drv_SOURCES    = \
 	generic/uuid-generic.cpp \
 	r0drv/alloc-r0drv.cpp \
 	r0drv/initterm-r0drv.cpp \
+	r0drv/generic/semspinmutex-r0drv-generic.c \
 	VBox/log-vbox.cpp \
 	VBox/strformat-vbox.cpp
 
