@@ -25,7 +25,8 @@
 #include <iprt/dir.h>
 #include <iprt/file.h>
 #include <iprt/s3.h>
-#include "iprt/xml_cpp.h"
+
+#include "ovfreader.h"
 
 #include <VBox/param.h>
 #include <VBox/version.h>
@@ -44,164 +45,6 @@ using namespace std;
 
 ////////////////////////////////////////////////////////////////////////////////
 //
-// hardware definitions
-//
-////////////////////////////////////////////////////////////////////////////////
-
-struct DiskImage
-{
-    Utf8Str strDiskId;              // value from DiskSection/Disk/@diskId
-    int64_t iCapacity;              // value from DiskSection/Disk/@capacity;
-                                    // (maximum size for dynamic images, I guess; we always translate this to bytes)
-    int64_t iPopulatedSize;         // optional value from DiskSection/Disk/@populatedSize
-                                    // (actual used size of disk, always in bytes; can be an estimate of used disk
-                                    // space, but cannot be larger than iCapacity; -1 if not set)
-    Utf8Str strFormat;              // value from DiskSection/Disk/@format
-                // typically http://www.vmware.com/specifications/vmdk.html#sparse
-
-    // fields from /References/File; the spec says the file reference from disk can be empty,
-    // so in that case, strFilename will be empty, then a new disk should be created
-    Utf8Str strHref;                // value from /References/File/@href (filename); if empty, then the remaining fields are ignored
-    int64_t iSize;                  // value from /References/File/@size (optional according to spec; then we set -1 here)
-    int64_t iChunkSize;             // value from /References/File/@chunkSize (optional, unsupported)
-    Utf8Str strCompression;         // value from /References/File/@compression (optional, can be "gzip" according to spec)
-};
-
-struct VirtualHardwareItem
-{
-    Utf8Str strDescription;
-    Utf8Str strCaption;
-    Utf8Str strElementName;
-
-    uint32_t ulInstanceID;
-    uint32_t ulParent;
-
-    OVFResourceType_T resourceType;
-    Utf8Str strOtherResourceType;
-    Utf8Str strResourceSubType;
-
-    Utf8Str strHostResource;            // "Abstractly specifies how a device shall connect to a resource on the deployment platform.
-                                        // Not all devices need a backing." Used with disk items, for which this references a virtual
-                                        // disk from the Disks section.
-    bool fAutomaticAllocation;
-    bool fAutomaticDeallocation;
-    Utf8Str strConnection;              // "All Ethernet adapters that specify the same abstract network connection name within an OVF
-                                        // package shall be deployed on the same network. The abstract network connection name shall be
-                                        // listed in the NetworkSection at the outermost envelope level." We ignore this and only set up
-                                        // a network adapter depending on the network name.
-    Utf8Str strAddress;                 // "Device-specific. For an Ethernet adapter, this specifies the MAC address."
-    Utf8Str strAddressOnParent;         // "For a device, this specifies its location on the controller."
-    Utf8Str strAllocationUnits;         // "Specifies the units of allocation used. For example, “byte * 2^20”."
-    uint64_t ullVirtualQuantity;        // "Specifies the quantity of resources presented. For example, “256”."
-    uint64_t ullReservation;            // "Specifies the minimum quantity of resources guaranteed to be available."
-    uint64_t ullLimit;                  // "Specifies the maximum quantity of resources that will be granted."
-    uint64_t ullWeight;                 // "Specifies a relative priority for this allocation in relation to other allocations."
-
-    Utf8Str strConsumerVisibility;
-    Utf8Str strMappingBehavior;
-    Utf8Str strPoolID;
-    uint32_t ulBusNumber;               // seen with IDE controllers, but not listed in OVF spec
-
-    uint32_t ulLineNumber;              // line number of <Item> element in XML source; cached for error messages
-
-    VirtualHardwareItem()
-        : ulInstanceID(0), fAutomaticAllocation(false), fAutomaticDeallocation(false), ullVirtualQuantity(0), ullReservation(0), ullLimit(0), ullWeight(0), ulBusNumber(0), ulLineNumber(0)
-    {};
-};
-
-typedef map<Utf8Str, DiskImage> DiskImagesMap;
-
-struct VirtualSystem;
-
-typedef map<uint32_t, VirtualHardwareItem> HardwareItemsMap;
-
-struct HardDiskController
-{
-    uint32_t             idController;           // instance ID (Item/InstanceId); this gets referenced from HardDisk
-    enum ControllerSystemType { IDE, SATA, SCSI };
-    ControllerSystemType system;                 // one of IDE, SATA, SCSI
-    Utf8Str              strControllerType;      // controller subtype (Item/ResourceSubType); e.g. "LsiLogic"; can be empty (esp. for IDE)
-    Utf8Str              strAddress;             // for IDE
-    uint32_t             ulBusNumber;            // for IDE
-
-    HardDiskController()
-        : idController(0),
-          ulBusNumber(0)
-    {
-    }
-};
-
-typedef map<uint32_t, HardDiskController> ControllersMap;
-
-struct VirtualDisk
-{
-    uint32_t            idController;           // SCSI (or IDE) controller this disk is connected to;
-                                                // points into VirtualSystem.mapControllers
-    uint32_t            ulAddressOnParent;      // parsed strAddressOnParent of hardware item; will be 0 or 1 for IDE
-                                                // and possibly higher for disks attached to SCSI controllers (untested)
-    Utf8Str             strDiskId;              // if the hard disk has an ovf:/disk/<id> reference,
-                                                // this receives the <id> component; points to one of the
-                                                // references in Appliance::Data.mapDisks
-};
-
-typedef map<Utf8Str, VirtualDisk> VirtualDisksMap;
-
-struct EthernetAdapter
-{
-    Utf8Str             strAdapterType;         // "PCNet32" or "E1000" or whatever; from <rasd:ResourceSubType>
-    Utf8Str             strNetworkName;         // from <rasd:Connection>
-};
-
-typedef list<EthernetAdapter> EthernetAdaptersList;
-
-struct VirtualSystem
-{
-    Utf8Str             strName;                // copy of VirtualSystem/@id
-
-    Utf8Str             strDescription;         // copy of VirtualSystem/Info content
-
-    CIMOSType_T         cimos;
-    Utf8Str             strCimosDesc;           // readable description of the cimos type in the case of cimos = 0/1/102
-    Utf8Str             strVirtualSystemType;   // generic hardware description; OVF says this can be something like "vmx-4" or "xen";
-                                                // VMware Workstation 6.5 is "vmx-07"
-
-    HardwareItemsMap    mapHardwareItems;       // map of virtual hardware items, sorted by unique instance ID
-
-    uint64_t            ullMemorySize;          // always in bytes, copied from llHardwareItems; default = 0 (unspecified)
-    uint16_t            cCPUs;                  // no. of CPUs, copied from llHardwareItems; default = 1
-
-    EthernetAdaptersList llEthernetAdapters;    // (one for each VirtualSystem/Item[@ResourceType=10]element)
-
-    ControllersMap      mapControllers;
-            // list of hard disk controllers
-            // (one for each VirtualSystem/Item[@ResourceType=6] element with accumulated data from children)
-
-    VirtualDisksMap     mapVirtualDisks;
-            // (one for each VirtualSystem/Item[@ResourceType=17] element with accumulated data from children)
-
-    bool                fHasFloppyDrive;        // true if there's a floppy item in mapHardwareItems
-    bool                fHasCdromDrive;         // true if there's a CD-ROM item in mapHardwareItems; ISO images are not yet supported by OVFtool
-    bool                fHasUsbController;      // true if there's a USB controller item in mapHardwareItems
-
-    Utf8Str             strSoundCardType;       // if not empty, then the system wants a soundcard; this then specifies the hardware;
-                                                // VMware Workstation 6.5 uses "ensoniq1371" for example
-
-    Utf8Str             strLicenseText;         // license info if any; receives contents of VirtualSystem/EulaSection/License
-
-    Utf8Str             strProduct;             // product info if any; receives contents of VirtualSystem/ProductSection/Product
-    Utf8Str             strVendor;              // product info if any; receives contents of VirtualSystem/ProductSection/Vendor
-    Utf8Str             strVersion;             // product info if any; receives contents of VirtualSystem/ProductSection/Version
-    Utf8Str             strProductUrl;          // product info if any; receives contents of VirtualSystem/ProductSection/ProductUrl
-    Utf8Str             strVendorUrl;           // product info if any; receives contents of VirtualSystem/ProductSection/VendorUrl
-
-    VirtualSystem()
-        : ullMemorySize(0), cCPUs(1), fHasFloppyDrive(false), fHasCdromDrive(false), fHasUsbController(false)
-    {
-    }
-};
-
-////////////////////////////////////////////////////////////////////////////////
-//
 // Appliance data definition
 //
 ////////////////////////////////////////////////////////////////////////////////
@@ -209,17 +52,27 @@ struct VirtualSystem
 // opaque private instance data of Appliance class
 struct Appliance::Data
 {
-    Utf8Str                 strPath;            // file name last given to either read() or write()
-
-    DiskImagesMap           mapDisks;           // map of DiskImage structs, sorted by DiskImage.strDiskId
-
-    list<VirtualSystem>     llVirtualSystems;   // list of virtual systems, created by and valid after read()
+    OVFReader *pReader;
 
     list< ComObjPtr<VirtualSystemDescription> > virtualSystemDescriptions; //
 
     list<Utf8Str> llWarnings;
 
     ULONG                   ulWeightPerOperation;   // for progress calculations
+
+    Data()
+        : pReader(NULL)
+    {
+    }
+
+    ~Data()
+    {
+        if (pReader)
+        {
+            delete pReader;
+            pReader = NULL;
+        }
+    }
 };
 
 struct VirtualSystemDescription::Data
@@ -485,673 +338,6 @@ void Appliance::uninit()
 
 ////////////////////////////////////////////////////////////////////////////////
 //
-// Appliance private methods
-//
-////////////////////////////////////////////////////////////////////////////////
-
-/**
- * Private helper method that goes thru the elements of the given "current" element in the OVF XML
- * and handles the contained child elements (which can be "Section" or "Content" elements).
- *
- * @param pcszPath Path spec of the XML file, for error messages.
- * @param pReferencesElement "References" element from OVF, for looking up file specifications; can be NULL if no such element is present.
- * @param pCurElem Element whose children are to be analyzed here.
- * @return
- */
-HRESULT Appliance::LoopThruSections(const char *pcszPath,
-                                    const xml::ElementNode *pReferencesElem,
-                                    const xml::ElementNode *pCurElem)
-{
-    HRESULT rc;
-
-    xml::NodesLoop loopChildren(*pCurElem);
-    const xml::ElementNode *pElem;
-    while ((pElem = loopChildren.forAllNodes()))
-    {
-        const char *pcszElemName = pElem->getName();
-        const char *pcszTypeAttr = "";
-        const xml::AttributeNode *pTypeAttr;
-        if ((pTypeAttr = pElem->findAttribute("type")))
-            pcszTypeAttr = pTypeAttr->getValue();
-
-        if (    (!strcmp(pcszElemName, "DiskSection"))
-             || (    (!strcmp(pcszElemName, "Section"))
-                  && (!strcmp(pcszTypeAttr, "ovf:DiskSection_Type"))
-                )
-           )
-        {
-            if (!(SUCCEEDED((rc = HandleDiskSection(pcszPath, pReferencesElem, pElem)))))
-                return rc;
-        }
-       else if (    (!strcmp(pcszElemName, "NetworkSection"))
-                  || (    (!strcmp(pcszElemName, "Section"))
-                       && (!strcmp(pcszTypeAttr, "ovf:NetworkSection_Type"))
-                     )
-                )
-        {
-            if (!(SUCCEEDED((rc = HandleNetworkSection(pcszPath, pElem)))))
-                return rc;
-        }
-        else if (    (!strcmp(pcszElemName, "DeploymentOptionSection")))
-        {
-            // TODO
-        }
-        else if (    (!strcmp(pcszElemName, "Info")))
-        {
-            // child of VirtualSystemCollection -- TODO
-        }
-        else if (    (!strcmp(pcszElemName, "ResourceAllocationSection")))
-        {
-            // child of VirtualSystemCollection -- TODO
-        }
-        else if (    (!strcmp(pcszElemName, "StartupSection")))
-        {
-            // child of VirtualSystemCollection -- TODO
-        }
-        else if (    (!strcmp(pcszElemName, "VirtualSystem"))
-                  || (    (!strcmp(pcszElemName, "Content"))
-                       && (!strcmp(pcszTypeAttr, "ovf:VirtualSystem_Type"))
-                     )
-                )
-        {
-            if (!(SUCCEEDED((rc = HandleVirtualSystemContent(pcszPath, pElem)))))
-                return rc;
-        }
-        else if (    (!strcmp(pcszElemName, "VirtualSystemCollection"))
-                  || (    (!strcmp(pcszElemName, "Content"))
-                       && (!strcmp(pcszTypeAttr, "ovf:VirtualSystemCollection_Type"))
-                     )
-                )
-        {
-            // TODO ResourceAllocationSection
-
-            // recurse for this, since it has VirtualSystem elements as children
-            if (!(SUCCEEDED((rc = LoopThruSections(pcszPath, pReferencesElem, pElem)))))
-                return rc;
-        }
-    }
-
-    return S_OK;
-}
-
-/**
- * Private helper method that handles disk sections in the OVF XML.
- * Gets called indirectly from IAppliance::read().
- *
- * @param pcszPath Path spec of the XML file, for error messages.
- * @param pReferencesElement "References" element from OVF, for looking up file specifications; can be NULL if no such element is present.
- * @param pSectionElem Section element for which this helper is getting called.
- * @return
- */
-HRESULT Appliance::HandleDiskSection(const char *pcszPath,
-                                     const xml::ElementNode *pReferencesElem,
-                                     const xml::ElementNode *pSectionElem)
-{
-    // contains "Disk" child elements
-    xml::NodesLoop loopDisks(*pSectionElem, "Disk");
-    const xml::ElementNode *pelmDisk;
-    while ((pelmDisk = loopDisks.forAllNodes()))
-    {
-        DiskImage d;
-        const char *pcszBad = NULL;
-        const char *pcszDiskId;
-        const char *pcszFormat;
-        if (!(pelmDisk->getAttributeValue("diskId", pcszDiskId)))
-            pcszBad = "diskId";
-        else if (!(pelmDisk->getAttributeValue("format", pcszFormat)))
-            pcszBad = "format";
-        else if (!(pelmDisk->getAttributeValue("capacity", d.iCapacity)))
-            pcszBad = "capacity";
-        else
-        {
-            d.strDiskId = pcszDiskId;
-            d.strFormat = pcszFormat;
-
-            if (!(pelmDisk->getAttributeValue("populatedSize", d.iPopulatedSize)))
-                // optional
-                d.iPopulatedSize = -1;
-
-            const char *pcszFileRef;
-            if (pelmDisk->getAttributeValue("fileRef", pcszFileRef)) // optional
-            {
-                // look up corresponding /References/File nodes (list built above)
-                const xml::ElementNode *pFileElem;
-                if (    pReferencesElem
-                     && ((pFileElem = pReferencesElem->findChildElementFromId(pcszFileRef)))
-                   )
-                {
-                    // copy remaining values from file node then
-                    const char *pcszBadInFile = NULL;
-                    const char *pcszHref;
-                    if (!(pFileElem->getAttributeValue("href", pcszHref)))
-                        pcszBadInFile = "href";
-                    else if (!(pFileElem->getAttributeValue("size", d.iSize)))
-                        d.iSize = -1;       // optional
-
-                    d.strHref = pcszHref;
-
-                    // if (!(pFileElem->getAttributeValue("size", d.iChunkSize))) TODO
-                    d.iChunkSize = -1;       // optional
-                    const char *pcszCompression;
-                    if (pFileElem->getAttributeValue("compression", pcszCompression))
-                        d.strCompression = pcszCompression;
-
-                    if (pcszBadInFile)
-                        return setError(VBOX_E_FILE_ERROR,
-                                        tr("Error reading \"%s\": missing or invalid attribute '%s' in 'File' element, line %d"),
-                                        pcszPath,
-                                        pcszBadInFile,
-                                        pFileElem->getLineNumber());
-                }
-                else
-                    return setError(VBOX_E_FILE_ERROR,
-                                    tr("Error reading \"%s\": cannot find References/File element for ID '%s' referenced by 'Disk' element, line %d"),
-                                    pcszPath,
-                                    pcszFileRef,
-                                    pelmDisk->getLineNumber());
-            }
-        }
-
-        if (pcszBad)
-            return setError(VBOX_E_FILE_ERROR,
-                            tr("Error reading \"%s\": missing or invalid attribute '%s' in 'DiskSection' element, line %d"),
-                            pcszPath,
-                            pcszBad,
-                            pelmDisk->getLineNumber());
-
-        m->mapDisks[d.strDiskId] = d;
-    }
-
-    return S_OK;
-}
-
-/**
- * Private helper method that handles network sections in the OVF XML.
- * Gets called indirectly from IAppliance::read().
- *
- * @param pcszPath Path spec of the XML file, for error messages.
- * @param pSectionElem Section element for which this helper is getting called.
- * @return
- */
-HRESULT Appliance::HandleNetworkSection(const char * /* pcszPath */,
-                                        const xml::ElementNode * /* pSectionElem */)
-{
-    // we ignore network sections for now
-
-//     xml::NodesLoop loopNetworks(*pSectionElem, "Network");
-//     const xml::Node *pelmNetwork;
-//     while ((pelmNetwork = loopNetworks.forAllNodes()))
-//     {
-//         Network n;
-//         if (!(pelmNetwork->getAttributeValue("name", n.strNetworkName)))
-//             return setError(VBOX_E_FILE_ERROR,
-//                             tr("Error reading \"%s\": missing 'name' attribute in 'Network', line %d"),
-//                             pcszPath,
-//                             pelmNetwork->getLineNumber());
-//
-//         m->mapNetworks[n.strNetworkName] = n;
-//     }
-
-    return S_OK;
-}
-
-/**
- * Private helper method that handles a "VirtualSystem" element in the OVF XML.
- * Gets called indirectly from IAppliance::read().
- *
- * @param pcszPath
- * @param pContentElem
- * @return
- */
-HRESULT Appliance::HandleVirtualSystemContent(const char *pcszPath,
-                                              const xml::ElementNode *pelmVirtualSystem)
-{
-    VirtualSystem vsys;
-
-    const xml::AttributeNode *pIdAttr = pelmVirtualSystem->findAttribute("id");
-    if (pIdAttr)
-        vsys.strName = pIdAttr->getValue();
-
-    xml::NodesLoop loop(*pelmVirtualSystem);      // all child elements
-    const xml::ElementNode *pelmThis;
-    while ((pelmThis = loop.forAllNodes()))
-    {
-        const char *pcszElemName = pelmThis->getName();
-        const xml::AttributeNode *pTypeAttr = pelmThis->findAttribute("type");
-        const char *pcszTypeAttr = (pTypeAttr) ? pTypeAttr->getValue() : "";
-
-        if (    (!strcmp(pcszElemName, "EulaSection"))
-             || (!strcmp(pcszTypeAttr, "ovf:EulaSection_Type"))
-           )
-        {
-         /* <EulaSection>
-                <Info ovf:msgid="6">License agreement for the Virtual System.</Info>
-                <License ovf:msgid="1">License terms can go in here.</License>
-            </EulaSection> */
-
-            const xml::ElementNode *pelmLicense;
-            if ((pelmLicense = pelmThis->findChildElement("License")))
-                vsys.strLicenseText = pelmLicense->getValue();
-        }
-        if (    (!strcmp(pcszElemName, "ProductSection"))
-             || (!strcmp(pcszTypeAttr, "ovf:ProductSection_Type"))
-           )
-        {
-            /* <Section ovf:required="false" xsi:type="ovf:ProductSection_Type">
-                <Info>Meta-information about the installed software</Info>
-                <Product>VAtest</Product>
-                <Vendor>SUN Microsystems</Vendor>
-                <Version>10.0</Version>
-                <ProductUrl>http://blogs.sun.com/VirtualGuru</ProductUrl>
-                <VendorUrl>http://www.sun.com</VendorUrl>
-               </Section> */
-            const xml::ElementNode *pelmProduct;
-            if ((pelmProduct = pelmThis->findChildElement("Product")))
-                vsys.strProduct = pelmProduct->getValue();
-            const xml::ElementNode *pelmVendor;
-            if ((pelmVendor = pelmThis->findChildElement("Vendor")))
-                vsys.strVendor = pelmVendor->getValue();
-            const xml::ElementNode *pelmVersion;
-            if ((pelmVersion = pelmThis->findChildElement("Version")))
-                vsys.strVersion = pelmVersion->getValue();
-            const xml::ElementNode *pelmProductUrl;
-            if ((pelmProductUrl = pelmThis->findChildElement("ProductUrl")))
-                vsys.strProductUrl = pelmProductUrl->getValue();
-            const xml::ElementNode *pelmVendorUrl;
-            if ((pelmVendorUrl = pelmThis->findChildElement("VendorUrl")))
-                vsys.strVendorUrl = pelmVendorUrl->getValue();
-        }
-        else if (    (!strcmp(pcszElemName, "VirtualHardwareSection"))
-                  || (!strcmp(pcszTypeAttr, "ovf:VirtualHardwareSection_Type"))
-                )
-        {
-            const xml::ElementNode *pelmSystem, *pelmVirtualSystemType;
-            if ((pelmSystem = pelmThis->findChildElement("System")))
-            {
-             /* <System>
-                    <vssd:Description>Description of the virtual hardware section.</vssd:Description>
-                    <vssd:ElementName>vmware</vssd:ElementName>
-                    <vssd:InstanceID>1</vssd:InstanceID>
-                    <vssd:VirtualSystemIdentifier>MyLampService</vssd:VirtualSystemIdentifier>
-                    <vssd:VirtualSystemType>vmx-4</vssd:VirtualSystemType>
-                </System>*/
-                if ((pelmVirtualSystemType = pelmSystem->findChildElement("VirtualSystemType")))
-                    vsys.strVirtualSystemType = pelmVirtualSystemType->getValue();
-            }
-
-            xml::NodesLoop loopVirtualHardwareItems(*pelmThis, "Item");      // all "Item" child elements
-            const xml::ElementNode *pelmItem;
-            while ((pelmItem = loopVirtualHardwareItems.forAllNodes()))
-            {
-                VirtualHardwareItem i;
-
-                i.ulLineNumber = pelmItem->getLineNumber();
-
-                xml::NodesLoop loopItemChildren(*pelmItem);      // all child elements
-                const xml::ElementNode *pelmItemChild;
-                while ((pelmItemChild = loopItemChildren.forAllNodes()))
-                {
-                    const char *pcszItemChildName = pelmItemChild->getName();
-                    if (!strcmp(pcszItemChildName, "Description"))
-                        i.strDescription = pelmItemChild->getValue();
-                    else if (!strcmp(pcszItemChildName, "Caption"))
-                        i.strCaption = pelmItemChild->getValue();
-                    else if (!strcmp(pcszItemChildName, "ElementName"))
-                        i.strElementName = pelmItemChild->getValue();
-                    else if (    (!strcmp(pcszItemChildName, "InstanceID"))
-                              || (!strcmp(pcszItemChildName, "InstanceId"))
-                            )
-                        pelmItemChild->copyValue(i.ulInstanceID);
-                    else if (!strcmp(pcszItemChildName, "HostResource"))
-                        i.strHostResource = pelmItemChild->getValue();
-                    else if (!strcmp(pcszItemChildName, "ResourceType"))
-                    {
-                        uint32_t ulType;
-                        pelmItemChild->copyValue(ulType);
-                        i.resourceType = (OVFResourceType_T)ulType;
-                    }
-                    else if (!strcmp(pcszItemChildName, "OtherResourceType"))
-                        i.strOtherResourceType = pelmItemChild->getValue();
-                    else if (!strcmp(pcszItemChildName, "ResourceSubType"))
-                        i.strResourceSubType = pelmItemChild->getValue();
-                    else if (!strcmp(pcszItemChildName, "AutomaticAllocation"))
-                        i.fAutomaticAllocation = (!strcmp(pelmItemChild->getValue(), "true")) ? true : false;
-                    else if (!strcmp(pcszItemChildName, "AutomaticDeallocation"))
-                        i.fAutomaticDeallocation = (!strcmp(pelmItemChild->getValue(), "true")) ? true : false;
-                    else if (!strcmp(pcszItemChildName, "Parent"))
-                        pelmItemChild->copyValue(i.ulParent);
-                    else if (!strcmp(pcszItemChildName, "Connection"))
-                        i.strConnection = pelmItemChild->getValue();
-                    else if (!strcmp(pcszItemChildName, "Address"))
-                        i.strAddress = pelmItemChild->getValue();
-                    else if (!strcmp(pcszItemChildName, "AddressOnParent"))
-                        i.strAddressOnParent = pelmItemChild->getValue();
-                    else if (!strcmp(pcszItemChildName, "AllocationUnits"))
-                        i.strAllocationUnits = pelmItemChild->getValue();
-                    else if (!strcmp(pcszItemChildName, "VirtualQuantity"))
-                        pelmItemChild->copyValue(i.ullVirtualQuantity);
-                    else if (!strcmp(pcszItemChildName, "Reservation"))
-                        pelmItemChild->copyValue(i.ullReservation);
-                    else if (!strcmp(pcszItemChildName, "Limit"))
-                        pelmItemChild->copyValue(i.ullLimit);
-                    else if (!strcmp(pcszItemChildName, "Weight"))
-                        pelmItemChild->copyValue(i.ullWeight);
-                    else if (!strcmp(pcszItemChildName, "ConsumerVisibility"))
-                        i.strConsumerVisibility = pelmItemChild->getValue();
-                    else if (!strcmp(pcszItemChildName, "MappingBehavior"))
-                        i.strMappingBehavior = pelmItemChild->getValue();
-                    else if (!strcmp(pcszItemChildName, "PoolID"))
-                        i.strPoolID = pelmItemChild->getValue();
-                    else if (!strcmp(pcszItemChildName, "BusNumber"))
-                        pelmItemChild->copyValue(i.ulBusNumber);
-                    else
-                        return setError(VBOX_E_FILE_ERROR,
-                                        tr("Error reading \"%s\": unknown element \"%s\" under Item element, line %d"),
-                                        pcszPath,
-                                        pcszItemChildName,
-                                        i.ulLineNumber);
-                }
-
-                // store!
-                vsys.mapHardwareItems[i.ulInstanceID] = i;
-            }
-
-            // now go thru all hardware items and handle them according to their type;
-            // in this first loop we handle all items _except_ hard disk images,
-            // which we'll handle in a second loop below
-            HardwareItemsMap::const_iterator itH;
-            for (itH = vsys.mapHardwareItems.begin();
-                 itH != vsys.mapHardwareItems.end();
-                 ++itH)
-            {
-                const VirtualHardwareItem &i = itH->second;
-
-                // do some analysis
-                switch (i.resourceType)
-                {
-                    case OVFResourceType_Processor:     // 3
-                        /*  <rasd:Caption>1 virtual CPU</rasd:Caption>
-                            <rasd:Description>Number of virtual CPUs</rasd:Description>
-                            <rasd:ElementName>virtual CPU</rasd:ElementName>
-                            <rasd:InstanceID>1</rasd:InstanceID>
-                            <rasd:ResourceType>3</rasd:ResourceType>
-                            <rasd:VirtualQuantity>1</rasd:VirtualQuantity>*/
-                        if (i.ullVirtualQuantity < UINT16_MAX)
-                            vsys.cCPUs = (uint16_t)i.ullVirtualQuantity;
-                        else
-                            return setError(VBOX_E_FILE_ERROR,
-                                            tr("Error reading \"%s\": CPU count %RI64 is larger than %d, line %d"),
-                                            pcszPath,
-                                            i.ullVirtualQuantity,
-                                            UINT16_MAX,
-                                            i.ulLineNumber);
-                    break;
-
-                    case OVFResourceType_Memory:        // 4
-                        if (    (i.strAllocationUnits == "MegaBytes")           // found in OVF created by OVF toolkit
-                             || (i.strAllocationUnits == "MB")                  // found in MS docs
-                             || (i.strAllocationUnits == "byte * 2^20")         // suggested by OVF spec DSP0243 page 21
-                           )
-                            vsys.ullMemorySize = i.ullVirtualQuantity * 1024 * 1024;
-                        else
-                            return setError(VBOX_E_FILE_ERROR,
-                                            tr("Error reading \"%s\": Invalid allocation unit \"%s\" specified with memory size item, line %d"),
-                                            pcszPath,
-                                            i.strAllocationUnits.c_str(),
-                                            i.ulLineNumber);
-                    break;
-
-                    case OVFResourceType_IDEController:          // 5
-                    {
-                        /*  <Item>
-                                <rasd:Caption>ideController0</rasd:Caption>
-                                <rasd:Description>IDE Controller</rasd:Description>
-                                <rasd:InstanceId>5</rasd:InstanceId>
-                                <rasd:ResourceType>5</rasd:ResourceType>
-                                <rasd:Address>0</rasd:Address>
-                                <rasd:BusNumber>0</rasd:BusNumber>
-                            </Item> */
-                        HardDiskController hdc;
-                        hdc.system = HardDiskController::IDE;
-                        hdc.idController = i.ulInstanceID;
-                        hdc.strControllerType = i.strResourceSubType;
-                        hdc.strAddress = i.strAddress;
-                        hdc.ulBusNumber = i.ulBusNumber;
-
-                        vsys.mapControllers[i.ulInstanceID] = hdc;
-                    }
-                    break;
-
-                    case OVFResourceType_ParallelSCSIHBA:        // 6       SCSI controller
-                    {
-                        /*  <Item>
-                                <rasd:Caption>SCSI Controller 0 - LSI Logic</rasd:Caption>
-                                <rasd:Description>SCI Controller</rasd:Description>
-                                <rasd:ElementName>SCSI controller</rasd:ElementName>
-                                <rasd:InstanceID>4</rasd:InstanceID>
-                                <rasd:ResourceSubType>LsiLogic</rasd:ResourceSubType>
-                                <rasd:ResourceType>6</rasd:ResourceType>
-                            </Item> */
-                        HardDiskController hdc;
-                        hdc.system = HardDiskController::SCSI;
-                        hdc.idController = i.ulInstanceID;
-                        hdc.strControllerType = i.strResourceSubType;
-
-                        vsys.mapControllers[i.ulInstanceID] = hdc;
-                    }
-                    break;
-
-                    case OVFResourceType_EthernetAdapter: // 10
-                    {
-                        /*  <Item>
-                            <rasd:Caption>Ethernet adapter on 'Bridged'</rasd:Caption>
-                            <rasd:AutomaticAllocation>true</rasd:AutomaticAllocation>
-                            <rasd:Connection>Bridged</rasd:Connection>
-                            <rasd:InstanceID>6</rasd:InstanceID>
-                            <rasd:ResourceType>10</rasd:ResourceType>
-                            <rasd:ResourceSubType>E1000</rasd:ResourceSubType>
-                            </Item>
-
-                            OVF spec DSP 0243 page 21:
-                           "For an Ethernet adapter, this specifies the abstract network connection name
-                            for the virtual machine. All Ethernet adapters that specify the same abstract
-                            network connection name within an OVF package shall be deployed on the same
-                            network. The abstract network connection name shall be listed in the NetworkSection
-                            at the outermost envelope level." */
-
-                        // only store the name
-                        EthernetAdapter ea;
-                        ea.strAdapterType = i.strResourceSubType;
-                        ea.strNetworkName = i.strConnection;
-                        vsys.llEthernetAdapters.push_back(ea);
-                    }
-                    break;
-
-                    case OVFResourceType_FloppyDrive: // 14
-                        vsys.fHasFloppyDrive = true;           // we have no additional information
-                    break;
-
-                    case OVFResourceType_CDDrive:       // 15
-                        /*  <Item ovf:required="false">
-                                <rasd:Caption>cdrom1</rasd:Caption>
-                                <rasd:InstanceId>7</rasd:InstanceId>
-                                <rasd:ResourceType>15</rasd:ResourceType>
-                                <rasd:AutomaticAllocation>true</rasd:AutomaticAllocation>
-                                <rasd:Parent>5</rasd:Parent>
-                                <rasd:AddressOnParent>0</rasd:AddressOnParent>
-                            </Item> */
-                            // I tried to see what happens if I set an ISO for the CD-ROM in VMware Workstation,
-                            // but then the ovftool dies with "Device backing not supported". So I guess if
-                            // VMware can't export ISOs, then we don't need to be able to import them right now.
-                        vsys.fHasCdromDrive = true;           // we have no additional information
-                    break;
-
-                    case OVFResourceType_HardDisk: // 17
-                        // handled separately in second loop below
-                    break;
-
-                    case OVFResourceType_OtherStorageDevice:        // 20       SATA controller
-                    {
-                        /* <Item>
-                            <rasd:Description>SATA Controller</rasd:Description>
-                            <rasd:Caption>sataController0</rasd:Caption>
-                            <rasd:InstanceID>4</rasd:InstanceID>
-                            <rasd:ResourceType>20</rasd:ResourceType>
-                            <rasd:ResourceSubType>AHCI</rasd:ResourceSubType>
-                            <rasd:Address>0</rasd:Address>
-                            <rasd:BusNumber>0</rasd:BusNumber>
-                        </Item> */
-                        if (i.strCaption.startsWith ("sataController", Utf8Str::CaseInsensitive) &&
-                            !i.strResourceSubType.compare ("AHCI", Utf8Str::CaseInsensitive))
-                        {
-                            HardDiskController hdc;
-                            hdc.system = HardDiskController::SATA;
-                            hdc.idController = i.ulInstanceID;
-                            hdc.strControllerType = i.strResourceSubType;
-
-                            vsys.mapControllers[i.ulInstanceID] = hdc;
-                        }
-                        else
-                            return setError(VBOX_E_FILE_ERROR,
-                                            tr("Error reading \"%s\": Host resource of type \"Other Storage Device (%d)\" is supported with SATA AHCI controllers only, line %d"),
-                                            pcszPath,
-                                            OVFResourceType_OtherStorageDevice,
-                                            i.ulLineNumber);
-                    }
-                    break;
-
-                    case OVFResourceType_USBController: // 23
-                        /*  <Item ovf:required="false">
-                                <rasd:Caption>usb</rasd:Caption>
-                                <rasd:Description>USB Controller</rasd:Description>
-                                <rasd:InstanceId>3</rasd:InstanceId>
-                                <rasd:ResourceType>23</rasd:ResourceType>
-                                <rasd:Address>0</rasd:Address>
-                                <rasd:BusNumber>0</rasd:BusNumber>
-                            </Item> */
-                        vsys.fHasUsbController = true;           // we have no additional information
-                    break;
-
-                    case OVFResourceType_SoundCard: // 35
-                        /*  <Item ovf:required="false">
-                                <rasd:Caption>sound</rasd:Caption>
-                                <rasd:Description>Sound Card</rasd:Description>
-                                <rasd:InstanceId>10</rasd:InstanceId>
-                                <rasd:ResourceType>35</rasd:ResourceType>
-                                <rasd:ResourceSubType>ensoniq1371</rasd:ResourceSubType>
-                                <rasd:AutomaticAllocation>false</rasd:AutomaticAllocation>
-                                <rasd:AddressOnParent>3</rasd:AddressOnParent>
-                            </Item> */
-                        vsys.strSoundCardType = i.strResourceSubType;
-                    break;
-
-                    default:
-                        return setError(VBOX_E_FILE_ERROR,
-                                        tr("Error reading \"%s\": Unknown resource type %d in hardware item, line %d"),
-                                        pcszPath,
-                                        i.resourceType,
-                                        i.ulLineNumber);
-                } // end switch
-            }
-
-            // now run through the items for a second time, but handle only
-            // hard disk images; otherwise the code would fail if a hard
-            // disk image appears in the OVF before its hard disk controller
-            for (itH = vsys.mapHardwareItems.begin();
-                 itH != vsys.mapHardwareItems.end();
-                 ++itH)
-            {
-                const VirtualHardwareItem &i = itH->second;
-
-                // do some analysis
-                switch (i.resourceType)
-                {
-                    case OVFResourceType_HardDisk: // 17
-                    {
-                        /*  <Item>
-                                <rasd:Caption>Harddisk 1</rasd:Caption>
-                                <rasd:Description>HD</rasd:Description>
-                                <rasd:ElementName>Hard Disk</rasd:ElementName>
-                                <rasd:HostResource>ovf://disk/lamp</rasd:HostResource>
-                                <rasd:InstanceID>5</rasd:InstanceID>
-                                <rasd:Parent>4</rasd:Parent>
-                                <rasd:ResourceType>17</rasd:ResourceType>
-                            </Item> */
-
-                        // look up the hard disk controller element whose InstanceID equals our Parent;
-                        // this is how the connection is specified in OVF
-                        ControllersMap::const_iterator it = vsys.mapControllers.find(i.ulParent);
-                        if (it == vsys.mapControllers.end())
-                            return setError(VBOX_E_FILE_ERROR,
-                                            tr("Error reading \"%s\": Hard disk item with instance ID %d specifies invalid parent %d, line %d"),
-                                            pcszPath,
-                                            i.ulInstanceID,
-                                            i.ulParent,
-                                            i.ulLineNumber);
-                        //const HardDiskController &hdc = it->second;
-
-                        VirtualDisk vd;
-                        vd.idController = i.ulParent;
-                        i.strAddressOnParent.toInt(vd.ulAddressOnParent);
-                        // ovf://disk/lamp
-                        // 123456789012345
-                        if (i.strHostResource.substr(0, 11) == "ovf://disk/")
-                            vd.strDiskId = i.strHostResource.substr(11);
-                        else if (i.strHostResource.substr(0, 10) == "ovf:/disk/")
-                            vd.strDiskId = i.strHostResource.substr(10);
-                        else if (i.strHostResource.substr(0, 6) == "/disk/")
-                            vd.strDiskId = i.strHostResource.substr(6);
-
-                        if (    !(vd.strDiskId.length())
-                             || (m->mapDisks.find(vd.strDiskId) == m->mapDisks.end())
-                           )
-                            return setError(VBOX_E_FILE_ERROR,
-                                            tr("Error reading \"%s\": Hard disk item with instance ID %d specifies invalid host resource \"%s\", line %d"),
-                                            pcszPath,
-                                            i.ulInstanceID,
-                                            i.strHostResource.c_str(),
-                                            i.ulLineNumber);
-
-                        vsys.mapVirtualDisks[vd.strDiskId] = vd;
-                    }
-                    break;
-                }
-            }
-        }
-        else if (    (!strcmp(pcszElemName, "OperatingSystemSection"))
-                  || (!strcmp(pcszTypeAttr, "ovf:OperatingSystemSection_Type"))
-                )
-        {
-            uint64_t cimos64;
-            if (!(pelmThis->getAttributeValue("id", cimos64)))
-                return setError(VBOX_E_FILE_ERROR,
-                                tr("Error reading \"%s\": missing or invalid 'ovf:id' attribute in operating system section element, line %d"),
-                                pcszPath,
-                                pelmThis->getLineNumber());
-
-            vsys.cimos = (CIMOSType_T)cimos64;
-            const xml::ElementNode *pelmCIMOSDescription;
-            if ((pelmCIMOSDescription = pelmThis->findChildElement("Description")))
-                vsys.strCimosDesc = pelmCIMOSDescription->getValue();
-        }
-        else if (    (!strcmp(pcszElemName, "AnnotationSection"))
-                  || (!strcmp(pcszTypeAttr, "ovf:AnnotationSection_Type"))
-                )
-        {
-            const xml::ElementNode *pelmAnnotation;
-            if ((pelmAnnotation = pelmThis->findChildElement("Annotation")))
-                vsys.strDescription = pelmAnnotation->getValue();
-        }
-    }
-
-    // now create the virtual system
-    m->llVirtualSystems.push_back(vsys);
-
-    return S_OK;
-}
-
-////////////////////////////////////////////////////////////////////////////////
-//
 // IAppliance public methods
 //
 ////////////////////////////////////////////////////////////////////////////////
@@ -1171,8 +357,13 @@ STDMETHODIMP Appliance::COMGETTER(Path)(BSTR *aPath)
 
     AutoReadLock alock(this);
 
-    Bstr bstrPath(m->strPath);
-    bstrPath.cloneTo(aPath);
+    if (m->pReader)     // OVFReader instantiated?
+    {
+        Bstr bstrPath(m->pReader->m_strPath);
+        bstrPath.cloneTo(aPath);
+    }
+    else
+        Bstr("").cloneTo(aPath);
 
     return S_OK;
 }
@@ -1191,43 +382,46 @@ STDMETHODIMP Appliance::COMGETTER(Disks)(ComSafeArrayOut(BSTR, aDisks))
 
     AutoReadLock alock(this);
 
-    size_t c = m->mapDisks.size();
-    com::SafeArray<BSTR> sfaDisks(c);
-
-    DiskImagesMap::const_iterator it;
-    size_t i = 0;
-    for (it = m->mapDisks.begin();
-         it != m->mapDisks.end();
-         ++it, ++i)
+    if (m->pReader) // OVFReader instantiated?
     {
-        // create a string representing this disk
-        const DiskImage &d = it->second;
-        char *psz = NULL;
-        RTStrAPrintf(&psz,
-                     "%s\t"
-                     "%RI64\t"
-                     "%RI64\t"
-                     "%s\t"
-                     "%s\t"
-                     "%RI64\t"
-                     "%RI64\t"
-                     "%s",
-                     d.strDiskId.c_str(),
-                     d.iCapacity,
-                     d.iPopulatedSize,
-                     d.strFormat.c_str(),
-                     d.strHref.c_str(),
-                     d.iSize,
-                     d.iChunkSize,
-                     d.strCompression.c_str());
-        Utf8Str utf(psz);
-        Bstr bstr(utf);
-        // push to safearray
-        bstr.cloneTo(&sfaDisks[i]);
-        RTStrFree(psz);
-    }
+        size_t c = m->pReader->m_mapDisks.size();
+        com::SafeArray<BSTR> sfaDisks(c);
 
-    sfaDisks.detachTo(ComSafeArrayOutArg(aDisks));
+        DiskImagesMap::const_iterator it;
+        size_t i = 0;
+        for (it = m->pReader->m_mapDisks.begin();
+            it != m->pReader->m_mapDisks.end();
+            ++it, ++i)
+        {
+            // create a string representing this disk
+            const DiskImage &d = it->second;
+            char *psz = NULL;
+            RTStrAPrintf(&psz,
+                        "%s\t"
+                        "%RI64\t"
+                        "%RI64\t"
+                        "%s\t"
+                        "%s\t"
+                        "%RI64\t"
+                        "%RI64\t"
+                        "%s",
+                        d.strDiskId.c_str(),
+                        d.iCapacity,
+                        d.iPopulatedSize,
+                        d.strFormat.c_str(),
+                        d.strHref.c_str(),
+                        d.iSize,
+                        d.iChunkSize,
+                        d.strCompression.c_str());
+            Utf8Str utf(psz);
+            Bstr bstr(utf);
+            // push to safearray
+            bstr.cloneTo(&sfaDisks[i]);
+            RTStrFree(psz);
+        }
+
+        sfaDisks.detachTo(ComSafeArrayOutArg(aDisks));
+    }
 
     return S_OK;
 }
@@ -1259,8 +453,6 @@ STDMETHODIMP Appliance::COMGETTER(VirtualSystemDescriptions)(ComSafeArrayOut(IVi
  */
 STDMETHODIMP Appliance::Read(IN_BSTR path)
 {
-    HRESULT rc = S_OK;
-
     if (!path)
         return E_POINTER;
 
@@ -1269,42 +461,21 @@ STDMETHODIMP Appliance::Read(IN_BSTR path)
 
     AutoWriteLock alock(this);
 
+    if (m->pReader)
+    {
+        delete m->pReader;
+        m->pReader = NULL;
+    }
+
+    Utf8Str strPath(path);
     // see if we can handle this file; for now we insist it has an ".ovf" extension
-    m->strPath = path;
-    if (!m->strPath.endsWith(".ovf", Utf8Str::CaseInsensitive))
+    if (!strPath.endsWith(".ovf", Utf8Str::CaseInsensitive))
         return setError(VBOX_E_FILE_ERROR,
                         tr("Appliance file must have .ovf extension"));
 
     try
     {
-        xml::XmlFileParser parser;
-        xml::Document doc;
-        parser.read(m->strPath.raw(),
-                    doc);
-
-        const xml::ElementNode *pRootElem = doc.getRootElement();
-        if (strcmp(pRootElem->getName(), "Envelope"))
-            return setError(VBOX_E_FILE_ERROR,
-                            tr("Root element in OVF file must be \"Envelope\"."));
-
-        // OVF has the following rough layout:
-        /*
-            -- <References> ....  files referenced from other parts of the file, such as VMDK images
-            -- Metadata, comprised of several section commands
-            -- virtual machines, either a single <VirtualSystem>, or a <VirtualSystemCollection>
-            -- optionally <Strings> for localization
-        */
-
-        // get all "File" child elements of "References" section so we can look up files easily;
-        // first find the "References" sections so we can look up files
-        xml::ElementNodesList listFileElements;      // receives all /Envelope/References/File nodes
-        const xml::ElementNode *pReferencesElem;
-        if ((pReferencesElem = pRootElem->findChildElement("References")))
-            pReferencesElem->getChildElements(listFileElements, "File");
-
-        // now go though the sections
-        if (!(SUCCEEDED(rc = LoopThruSections(m->strPath.raw(), pReferencesElem, pRootElem))))
-            return rc;
+        m->pReader = new OVFReader(strPath);
     }
     catch(xml::Error &x)
     {
@@ -1342,13 +513,17 @@ STDMETHODIMP Appliance::Interpret()
     rc = systemProps->COMGETTER(DefaultHardDiskFolder)(bstrDefaultHardDiskLocation.asOutParam());
     CheckComRCReturnRC(rc);
 
+    if (!m->pReader)
+        return setError(E_FAIL,
+                        tr("Cannot interpret appliance without reading it first (call read() before interpret())"));
+
     /* Try/catch so we can clean up on error */
     try
     {
         list<VirtualSystem>::const_iterator it;
         /* Iterate through all virtual systems */
-        for (it = m->llVirtualSystems.begin();
-             it != m->llVirtualSystems.end();
+        for (it = m->pReader->m_llVirtualSystems.begin();
+             it != m->pReader->m_llVirtualSystems.end();
              ++it)
         {
             const VirtualSystem &vsysThis = *it;
@@ -1542,7 +717,7 @@ STDMETHODIMP Appliance::Interpret()
                     else if (!ea.strAdapterType.compare("E1000", Utf8Str::CaseInsensitive))
                     {
                         /* Check if this OVF was written by VirtualBox */
-                        if (vsysThis.strVirtualSystemType.contains("virtualbox", Utf8Str::CaseInsensitive))
+                        if (Utf8Str(vsysThis.strVirtualSystemType).contains("virtualbox", Utf8Str::CaseInsensitive))
                         {
                             /* If the default adapter is already one of the three
                              * E1000 adapters use the default one. If not use the
@@ -1692,7 +867,7 @@ STDMETHODIMP Appliance::Interpret()
                 {
                     const VirtualDisk &hd = itVD->second;
                     /* Get the associated disk image */
-                    const DiskImage &di = m->mapDisks[hd.strDiskId];
+                    const DiskImage &di = m->pReader->m_mapDisks[hd.strDiskId];
 
                     // @todo:
                     //  - figure out all possible vmdk formats we also support
@@ -1803,11 +978,15 @@ STDMETHODIMP Appliance::ImportMachines(IProgress **aProgress)
 
     HRESULT rc = S_OK;
 
+    if (!m->pReader)
+        return setError(E_FAIL,
+                        tr("Cannot import machines without reading it first (call read() before importMachines())"));
+
     ComObjPtr<Progress> progress;
     try
     {
         Bstr progressDesc = BstrFmt(tr("Import appliance '%s'"),
-                                    m->strPath.raw());
+                                       m->pReader->m_strPath.raw());
         rc = setUpProgress(progress, progressDesc);
         if (FAILED(rc)) throw rc;
 
@@ -1877,13 +1056,17 @@ DECLCALLBACK(int) Appliance::taskThreadImportMachines(RTTHREAD /* aThread */, vo
     rc = session.createInprocObject(CLSID_Session);
     CheckComRCReturnRC(rc);
 
+    const OVFReader reader = *pAppliance->m->pReader;
+            // this is safe to access because this thread only gets started
+            // if pReader != NULL
+
     list<VirtualSystem>::const_iterator it;
     list< ComObjPtr<VirtualSystemDescription> >::const_iterator it1;
     /* Iterate through all virtual systems of that appliance */
     size_t i = 0;
-    for (it = pAppliance->m->llVirtualSystems.begin(),
+    for (it = reader.m_llVirtualSystems.begin(),
             it1 = pAppliance->m->virtualSystemDescriptions.begin();
-         it != pAppliance->m->llVirtualSystems.end();
+         it != reader.m_llVirtualSystems.end();
          ++it, ++it1, ++i)
     {
         const VirtualSystem &vsysThis = *it;
@@ -2239,7 +1422,7 @@ DECLCALLBACK(int) Appliance::taskThreadImportMachines(RTTHREAD /* aThread */, vo
 
                     /* The disk image has to be on the same place as the OVF file. So
                      * strip the filename out of the full file path. */
-                    Utf8Str strSrcDir(pAppliance->m->strPath);
+                    Utf8Str strSrcDir(reader.m_strPath);
                     strSrcDir.stripFilename();
 
                     /* Iterate over all given disk images */
@@ -2262,12 +1445,12 @@ DECLCALLBACK(int) Appliance::taskThreadImportMachines(RTTHREAD /* aThread */, vo
                                               pcszDstFilePath));
 
                         /* Find the disk from the OVF's disk list */
-                        DiskImagesMap::const_iterator itDiskImage = pAppliance->m->mapDisks.find(vsdeHD->strRef);
+                        DiskImagesMap::const_iterator itDiskImage = reader.m_mapDisks.find(vsdeHD->strRef);
                         /* vsdeHD->strRef contains the disk identifier (e.g. "vmdisk1"), which should exist
                            in the virtual system's disks map under that ID and also in the global images map. */
                         VirtualDisksMap::const_iterator itVirtualDisk = vsysThis.mapVirtualDisks.find(vsdeHD->strRef);
 
-                        if (    itDiskImage == pAppliance->m->mapDisks.end()
+                        if (    itDiskImage == reader.m_mapDisks.end()
                              || itVirtualDisk == vsysThis.mapVirtualDisks.end()
                            )
                             throw setError(E_FAIL,
@@ -2540,8 +1723,11 @@ struct Appliance::TaskWriteOVF
         Write
     };
 
-    TaskWriteOVF(OVFFormat aFormat, Appliance *aThat)
-        : taskType(Write),
+    TaskWriteOVF(const Utf8Str &aFile,
+                 OVFFormat aFormat,
+                 Appliance *aThat)
+        : strOutputFile(aFile),
+          taskType(Write),
           storageType(VFSType_File),
           enFormat(aFormat),
           pAppliance(aThat),
@@ -2552,6 +1738,7 @@ struct Appliance::TaskWriteOVF
     int startThread();
     static int uploadProgress(unsigned uPercent, void *pvUser);
 
+    Utf8Str strOutputFile;
     TaskType taskType;
     VFSType_T storageType;
     Utf8Str filepath;
@@ -2705,33 +1892,37 @@ void Appliance::parseURI(Utf8Str strUri, const Utf8Str &strProtocol, Utf8Str &st
     strFilepath = strUri;
 }
 
-HRESULT Appliance::writeImpl(int aFormat, Utf8Str aPath, ComObjPtr<Progress> &aProgress)
+HRESULT Appliance::writeImpl(int aFormat,
+                             const Utf8Str &aPath,
+                             ComObjPtr<Progress> &aProgress)
 {
     HRESULT rc = S_OK;
     try
     {
-        m->strPath = aPath;
+//         m->strPath = aPath;
 
         /* Initialize our worker task */
-        std::auto_ptr<TaskWriteOVF> task(new TaskWriteOVF((TaskWriteOVF::OVFFormat)aFormat, this));
+        std::auto_ptr<TaskWriteOVF> task(new TaskWriteOVF(aPath,
+                                                          (TaskWriteOVF::OVFFormat)aFormat,
+                                                          this));
 
         /* Check which kind of export the user has requested */
         Utf8Str strProtocol = "";
         /* Check the URI for the target format */
-        if (m->strPath.startsWith("SunCloud://", Utf8Str::CaseInsensitive)) /* Sun Cloud service */
+        if (aPath.startsWith("SunCloud://", Utf8Str::CaseInsensitive)) /* Sun Cloud service */
         {
             task->storageType = VFSType_S3;
             strProtocol = "SunCloud://";
         }
-        else if (m->strPath.startsWith("S3://", Utf8Str::CaseInsensitive)) /* S3 service */
+        else if (aPath.startsWith("S3://", Utf8Str::CaseInsensitive)) /* S3 service */
         {
             task->storageType = VFSType_S3;
             strProtocol = "S3://";
         }
-        else if (m->strPath.startsWith("webdav://", Utf8Str::CaseInsensitive)) /* webdav service */
+        else if (aPath.startsWith("webdav://", Utf8Str::CaseInsensitive)) /* webdav service */
             throw E_NOTIMPL;
 
-        parseURI(m->strPath, strProtocol, task->filepath, task->hostname, task->username, task->password);
+        parseURI(aPath, strProtocol, task->filepath, task->hostname, task->username, task->password);
         Bstr progressDesc = BstrFmt(tr("Export appliance '%s'"),
                                     task->filepath.c_str());
 
@@ -3514,7 +2705,7 @@ int Appliance::writeFS(TaskWriteOVF *pTask)
             // output filename
             const Utf8Str &strTargetFileNameOnly = pDiskEntry->strOvf;
             // target path needs to be composed from where the output OVF is
-            Utf8Str strTargetFilePath(m->strPath);
+            Utf8Str strTargetFilePath(pTask->strOutputFile);
             strTargetFilePath.stripFilename();
             strTargetFilePath.append("/");
             strTargetFilePath.append(strTargetFileNameOnly);
@@ -3594,7 +2785,7 @@ int Appliance::writeFS(TaskWriteOVF *pTask)
 
         // now go write the XML
         xml::XmlFileWriter writer(doc);
-        writer.write(m->strPath.c_str());
+        writer.write(pTask->strOutputFile.c_str());
     }
     catch(xml::Error &x)
     {
@@ -3714,7 +2905,7 @@ int Appliance::writeS3(TaskWriteOVF *pTask)
             {
                 const Utf8Str &strTargetFileNameOnly = (*itH)->strOvf;
                 /* Target path needs to be composed from where the output OVF is */
-                Utf8Str strTargetFilePath(m->strPath);
+                Utf8Str strTargetFilePath(pTask->strOutputFile);
                 strTargetFilePath.stripFilename();
                 strTargetFilePath.append("/");
                 strTargetFilePath.append(strTargetFileNameOnly);

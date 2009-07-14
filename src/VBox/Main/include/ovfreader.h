@@ -1,0 +1,398 @@
+/* $Id$ */
+/** @file
+ *
+ * OVF reader declarations. Depends only on IPRT, including the iprt::MiniString
+ * and IPRT XML classes.
+ */
+
+/*
+ * Copyright (C) 2008-2009 Sun Microsystems, Inc.
+ *
+ * This file is part of VirtualBox Open Source Edition (OSE), as
+ * available from http://www.virtualbox.org. This file is free software;
+ * you can redistribute it and/or modify it under the terms of the GNU
+ * General Public License (GPL) as published by the Free Software
+ * Foundation, in version 2 as it comes in the "COPYING" file of the
+ * VirtualBox OSE distribution. VirtualBox OSE is distributed in the
+ * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+ *
+ * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa
+ * Clara, CA 95054 USA or visit http://www.sun.com if you need
+ * additional information or have any questions.
+ */
+
+#ifndef ____H_OVFREADER
+#define ____H_OVFREADER
+
+#include "iprt/xml_cpp.h"
+#include <map>
+
+using namespace std;
+
+////////////////////////////////////////////////////////////////////////////////
+//
+// Enumerations
+//
+////////////////////////////////////////////////////////////////////////////////
+
+enum CIMOSType_T
+{   CIMOSType_CIMOS_Unknown = 0,
+    CIMOSType_CIMOS_Other   = 1,
+    CIMOSType_CIMOS_MACOS   = 2,
+    CIMOSType_CIMOS_ATTUNIX = 3,
+    CIMOSType_CIMOS_DGUX    = 4,
+    CIMOSType_CIMOS_DECNT   = 5,
+    CIMOSType_CIMOS_Tru64UNIX   = 6,
+    CIMOSType_CIMOS_OpenVMS = 7,
+    CIMOSType_CIMOS_HPUX    = 8,
+    CIMOSType_CIMOS_AIX = 9,
+    CIMOSType_CIMOS_MVS = 10,
+    CIMOSType_CIMOS_OS400   = 11,
+    CIMOSType_CIMOS_OS2 = 12,
+    CIMOSType_CIMOS_JavaVM  = 13,
+    CIMOSType_CIMOS_MSDOS   = 14,
+    CIMOSType_CIMOS_WIN3x   = 15,
+    CIMOSType_CIMOS_WIN95   = 16,
+    CIMOSType_CIMOS_WIN98   = 17,
+    CIMOSType_CIMOS_WINNT   = 18,
+    CIMOSType_CIMOS_WINCE   = 19,
+    CIMOSType_CIMOS_NCR3000 = 20,
+    CIMOSType_CIMOS_NetWare = 21,
+    CIMOSType_CIMOS_OSF = 22,
+    CIMOSType_CIMOS_DCOS    = 23,
+    CIMOSType_CIMOS_ReliantUNIX = 24,
+    CIMOSType_CIMOS_SCOUnixWare = 25,
+    CIMOSType_CIMOS_SCOOpenServer   = 26,
+    CIMOSType_CIMOS_Sequent = 27,
+    CIMOSType_CIMOS_IRIX    = 28,
+    CIMOSType_CIMOS_Solaris = 29,
+    CIMOSType_CIMOS_SunOS   = 30,
+    CIMOSType_CIMOS_U6000   = 31,
+    CIMOSType_CIMOS_ASERIES = 32,
+    CIMOSType_CIMOS_HPNonStopOS = 33,
+    CIMOSType_CIMOS_HPNonStopOSS    = 34,
+    CIMOSType_CIMOS_BS2000  = 35,
+    CIMOSType_CIMOS_LINUX   = 36,
+    CIMOSType_CIMOS_Lynx    = 37,
+    CIMOSType_CIMOS_XENIX   = 38,
+    CIMOSType_CIMOS_VM  = 39,
+    CIMOSType_CIMOS_InteractiveUNIX = 40,
+    CIMOSType_CIMOS_BSDUNIX = 41,
+    CIMOSType_CIMOS_FreeBSD = 42,
+    CIMOSType_CIMOS_NetBSD  = 43,
+    CIMOSType_CIMOS_GNUHurd = 44,
+    CIMOSType_CIMOS_OS9 = 45,
+    CIMOSType_CIMOS_MACHKernel  = 46,
+    CIMOSType_CIMOS_Inferno = 47,
+    CIMOSType_CIMOS_QNX = 48,
+    CIMOSType_CIMOS_EPOC    = 49,
+    CIMOSType_CIMOS_IxWorks = 50,
+    CIMOSType_CIMOS_VxWorks = 51,
+    CIMOSType_CIMOS_MiNT    = 52,
+    CIMOSType_CIMOS_BeOS    = 53,
+    CIMOSType_CIMOS_HPMPE   = 54,
+    CIMOSType_CIMOS_NextStep    = 55,
+    CIMOSType_CIMOS_PalmPilot   = 56,
+    CIMOSType_CIMOS_Rhapsody    = 57,
+    CIMOSType_CIMOS_Windows2000 = 58,
+    CIMOSType_CIMOS_Dedicated   = 59,
+    CIMOSType_CIMOS_OS390   = 60,
+    CIMOSType_CIMOS_VSE = 61,
+    CIMOSType_CIMOS_TPF = 62,
+    CIMOSType_CIMOS_WindowsMe   = 63,
+    CIMOSType_CIMOS_CalderaOpenUNIX = 64,
+    CIMOSType_CIMOS_OpenBSD = 65,
+    CIMOSType_CIMOS_NotApplicable   = 66,
+    CIMOSType_CIMOS_WindowsXP   = 67,
+    CIMOSType_CIMOS_zOS = 68,
+    CIMOSType_CIMOS_MicrosoftWindowsServer2003  = 69,
+    CIMOSType_CIMOS_MicrosoftWindowsServer2003_64   = 70,
+    CIMOSType_CIMOS_WindowsXP_64    = 71,
+    CIMOSType_CIMOS_WindowsXPEmbedded   = 72,
+    CIMOSType_CIMOS_WindowsVista    = 73,
+    CIMOSType_CIMOS_WindowsVista_64 = 74,
+    CIMOSType_CIMOS_WindowsEmbeddedforPointofService    = 75,
+    CIMOSType_CIMOS_MicrosoftWindowsServer2008  = 76,
+    CIMOSType_CIMOS_MicrosoftWindowsServer2008_64   = 77,
+    CIMOSType_CIMOS_FreeBSD_64  = 78,
+    CIMOSType_CIMOS_RedHatEnterpriseLinux   = 79,
+    CIMOSType_CIMOS_RedHatEnterpriseLinux_64    = 80,
+    CIMOSType_CIMOS_Solaris_64  = 81,
+    CIMOSType_CIMOS_SUSE    = 82,
+    CIMOSType_CIMOS_SUSE_64 = 83,
+    CIMOSType_CIMOS_SLES    = 84,
+    CIMOSType_CIMOS_SLES_64 = 85,
+    CIMOSType_CIMOS_NovellOES   = 86,
+    CIMOSType_CIMOS_NovellLinuxDesktop  = 87,
+    CIMOSType_CIMOS_SunJavaDesktopSystem    = 88,
+    CIMOSType_CIMOS_Mandriva    = 89,
+    CIMOSType_CIMOS_Mandriva_64 = 90,
+    CIMOSType_CIMOS_TurboLinux  = 91,
+    CIMOSType_CIMOS_TurboLinux_64   = 92,
+    CIMOSType_CIMOS_Ubuntu  = 93,
+    CIMOSType_CIMOS_Ubuntu_64   = 94,
+    CIMOSType_CIMOS_Debian  = 95,
+    CIMOSType_CIMOS_Debian_64   = 96,
+    CIMOSType_CIMOS_Linux_2_4_x = 97,
+    CIMOSType_CIMOS_Linux_2_4_x_64  = 98,
+    CIMOSType_CIMOS_Linux_2_6_x = 99,
+    CIMOSType_CIMOS_Linux_2_6_x_64  = 100,
+    CIMOSType_CIMOS_Linux_64    = 101,
+    CIMOSType_CIMOS_Other_64    = 102
+};
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+// Hardware definition structs
+//
+////////////////////////////////////////////////////////////////////////////////
+
+struct DiskImage
+{
+    iprt::MiniString strDiskId;     // value from DiskSection/Disk/@diskId
+    int64_t iCapacity;              // value from DiskSection/Disk/@capacity;
+                                    // (maximum size for dynamic images, I guess; we always translate this to bytes)
+    int64_t iPopulatedSize;         // optional value from DiskSection/Disk/@populatedSize
+                                    // (actual used size of disk, always in bytes; can be an estimate of used disk
+                                    // space, but cannot be larger than iCapacity; -1 if not set)
+    iprt::MiniString strFormat;              // value from DiskSection/Disk/@format
+                // typically http://www.vmware.com/specifications/vmdk.html#sparse
+
+    // fields from /References/File; the spec says the file reference from disk can be empty,
+    // so in that case, strFilename will be empty, then a new disk should be created
+    iprt::MiniString strHref;       // value from /References/File/@href (filename); if empty, then the remaining fields are ignored
+    int64_t iSize;                  // value from /References/File/@size (optional according to spec; then we set -1 here)
+    int64_t iChunkSize;             // value from /References/File/@chunkSize (optional, unsupported)
+    iprt::MiniString strCompression; // value from /References/File/@compression (optional, can be "gzip" according to spec)
+};
+
+enum OVFResourceType_T
+{   OVFResourceType_Other   = 1,
+    OVFResourceType_ComputerSystem  = 2,
+    OVFResourceType_Processor   = 3,
+    OVFResourceType_Memory  = 4,
+    OVFResourceType_IDEController   = 5,
+    OVFResourceType_ParallelSCSIHBA = 6,
+    OVFResourceType_FCHBA   = 7,
+    OVFResourceType_iSCSIHBA    = 8,
+    OVFResourceType_IBHCA   = 9,
+    OVFResourceType_EthernetAdapter = 10,
+    OVFResourceType_OtherNetworkAdapter = 11,
+    OVFResourceType_IOSlot  = 12,
+    OVFResourceType_IODevice    = 13,
+    OVFResourceType_FloppyDrive = 14,
+    OVFResourceType_CDDrive = 15,
+    OVFResourceType_DVDDrive    = 16,
+    OVFResourceType_HardDisk    = 17,
+    OVFResourceType_OtherStorageDevice  = 20,
+    OVFResourceType_USBController   = 23,
+    OVFResourceType_SoundCard   = 35
+};
+
+struct VirtualHardwareItem
+{
+    iprt::MiniString strDescription;
+    iprt::MiniString strCaption;
+    iprt::MiniString strElementName;
+
+    uint32_t ulInstanceID;
+    uint32_t ulParent;
+
+    OVFResourceType_T resourceType;
+    iprt::MiniString strOtherResourceType;
+    iprt::MiniString strResourceSubType;
+
+    iprt::MiniString strHostResource;   // "Abstractly specifies how a device shall connect to a resource on the deployment platform.
+                                        // Not all devices need a backing." Used with disk items, for which this references a virtual
+                                        // disk from the Disks section.
+    bool fAutomaticAllocation;
+    bool fAutomaticDeallocation;
+    iprt::MiniString strConnection;     // "All Ethernet adapters that specify the same abstract network connection name within an OVF
+                                        // package shall be deployed on the same network. The abstract network connection name shall be
+                                        // listed in the NetworkSection at the outermost envelope level." We ignore this and only set up
+                                        // a network adapter depending on the network name.
+    iprt::MiniString strAddress;                 // "Device-specific. For an Ethernet adapter, this specifies the MAC address."
+    iprt::MiniString strAddressOnParent;         // "For a device, this specifies its location on the controller."
+    iprt::MiniString strAllocationUnits;         // "Specifies the units of allocation used. For example, “byte * 2^20”."
+    uint64_t ullVirtualQuantity;        // "Specifies the quantity of resources presented. For example, “256”."
+    uint64_t ullReservation;            // "Specifies the minimum quantity of resources guaranteed to be available."
+    uint64_t ullLimit;                  // "Specifies the maximum quantity of resources that will be granted."
+    uint64_t ullWeight;                 // "Specifies a relative priority for this allocation in relation to other allocations."
+
+    iprt::MiniString strConsumerVisibility;
+    iprt::MiniString strMappingBehavior;
+    iprt::MiniString strPoolID;
+    uint32_t ulBusNumber;               // seen with IDE controllers, but not listed in OVF spec
+
+    uint32_t ulLineNumber;              // line number of <Item> element in XML source; cached for error messages
+
+    VirtualHardwareItem()
+        : ulInstanceID(0), fAutomaticAllocation(false), fAutomaticDeallocation(false), ullVirtualQuantity(0), ullReservation(0), ullLimit(0), ullWeight(0), ulBusNumber(0), ulLineNumber(0)
+    {};
+};
+
+typedef map<iprt::MiniString, DiskImage> DiskImagesMap;
+
+struct VirtualSystem;
+
+typedef map<uint32_t, VirtualHardwareItem> HardwareItemsMap;
+
+struct HardDiskController
+{
+    uint32_t            idController;           // instance ID (Item/InstanceId); this gets referenced from HardDisk
+    enum ControllerSystemType { IDE, SATA, SCSI };
+    ControllerSystemType system;                 // one of IDE, SATA, SCSI
+    iprt::MiniString    strControllerType;      // controller subtype (Item/ResourceSubType); e.g. "LsiLogic"; can be empty (esp. for IDE)
+    iprt::MiniString    strAddress;             // for IDE
+    uint32_t            ulBusNumber;            // for IDE
+
+    HardDiskController()
+        : idController(0),
+          ulBusNumber(0)
+    {
+    }
+};
+
+typedef map<uint32_t, HardDiskController> ControllersMap;
+
+struct VirtualDisk
+{
+    uint32_t            idController;           // SCSI (or IDE) controller this disk is connected to;
+                                                // points into VirtualSystem.mapControllers
+    uint32_t            ulAddressOnParent;      // parsed strAddressOnParent of hardware item; will be 0 or 1 for IDE
+                                                // and possibly higher for disks attached to SCSI controllers (untested)
+    iprt::MiniString    strDiskId;              // if the hard disk has an ovf:/disk/<id> reference,
+                                                // this receives the <id> component; points to one of the
+                                                // references in Appliance::Data.mapDisks
+};
+
+typedef map<iprt::MiniString, VirtualDisk> VirtualDisksMap;
+
+/**
+ * A list of EthernetAdapters is contained in VirtualSystem, representing the
+ * ethernet adapters in the virtual system.
+ */
+struct EthernetAdapter
+{
+    iprt::MiniString    strAdapterType;         // "PCNet32" or "E1000" or whatever; from <rasd:ResourceSubType>
+    iprt::MiniString    strNetworkName;         // from <rasd:Connection>
+};
+
+typedef list<EthernetAdapter> EthernetAdaptersList;
+
+/**
+ * A list of VirtualSystem structs is created by OVFReader::read(). Each refers to
+ * a <VirtualSystem> block in the OVF file.
+ */
+struct VirtualSystem
+{
+    iprt::MiniString    strName;                // copy of VirtualSystem/@id
+
+    iprt::MiniString    strDescription;         // copy of VirtualSystem/Info content
+
+    CIMOSType_T         cimos;
+    iprt::MiniString    strCimosDesc;           // readable description of the cimos type in the case of cimos = 0/1/102
+    iprt::MiniString    strVirtualSystemType;   // generic hardware description; OVF says this can be something like "vmx-4" or "xen";
+                                                // VMware Workstation 6.5 is "vmx-07"
+
+    HardwareItemsMap    mapHardwareItems;       // map of virtual hardware items, sorted by unique instance ID
+
+    uint64_t            ullMemorySize;          // always in bytes, copied from llHardwareItems; default = 0 (unspecified)
+    uint16_t            cCPUs;                  // no. of CPUs, copied from llHardwareItems; default = 1
+
+    EthernetAdaptersList llEthernetAdapters;    // (one for each VirtualSystem/Item[@ResourceType=10]element)
+
+    ControllersMap      mapControllers;
+            // list of hard disk controllers
+            // (one for each VirtualSystem/Item[@ResourceType=6] element with accumulated data from children)
+
+    VirtualDisksMap     mapVirtualDisks;
+            // (one for each VirtualSystem/Item[@ResourceType=17] element with accumulated data from children)
+
+    bool                fHasFloppyDrive;        // true if there's a floppy item in mapHardwareItems
+    bool                fHasCdromDrive;         // true if there's a CD-ROM item in mapHardwareItems; ISO images are not yet supported by OVFtool
+    bool                fHasUsbController;      // true if there's a USB controller item in mapHardwareItems
+
+    iprt::MiniString    strSoundCardType;       // if not empty, then the system wants a soundcard; this then specifies the hardware;
+                                                // VMware Workstation 6.5 uses "ensoniq1371" for example
+
+    iprt::MiniString    strLicenseText;         // license info if any; receives contents of VirtualSystem/EulaSection/License
+
+    iprt::MiniString    strProduct;             // product info if any; receives contents of VirtualSystem/ProductSection/Product
+    iprt::MiniString    strVendor;              // product info if any; receives contents of VirtualSystem/ProductSection/Vendor
+    iprt::MiniString    strVersion;             // product info if any; receives contents of VirtualSystem/ProductSection/Version
+    iprt::MiniString    strProductUrl;          // product info if any; receives contents of VirtualSystem/ProductSection/ProductUrl
+    iprt::MiniString    strVendorUrl;           // product info if any; receives contents of VirtualSystem/ProductSection/VendorUrl
+
+    VirtualSystem()
+        : ullMemorySize(0), cCPUs(1), fHasFloppyDrive(false), fHasCdromDrive(false), fHasUsbController(false)
+    {
+    }
+};
+
+////////////////////////////////////////////////////////////////////////////////
+//
+// Class OVFReader
+//
+////////////////////////////////////////////////////////////////////////////////
+
+/**
+ * OVFReader attempts to open, read in and parse an OVF XML file. This is all done
+ * in the constructor; if there is any kind of error in the file -- filesystem error
+ * from IPRT, XML parsing errors from libxml, or OVF logical errors --, exceptions
+ * are thrown. These are all based on xml::Error.
+ *
+ * Hence, use this class as follows:
+<code>
+    OVFReader *pReader = NULL;
+    try
+    {
+        pReader = new("/path/to/file.ovf");
+    }
+    catch (xml::Error &e)
+    {
+        printf("A terrible thing happened: %s", e.what());
+    }
+    // now go look at pReader->m_llVirtualSystem and what's in there
+    if (pReader)
+        delete pReader;
+</code>
+ */
+
+class OVFReader
+{
+public:
+    OVFReader(const iprt::MiniString &path);
+    ~OVFReader();
+
+    void LoopThruSections(const xml::ElementNode *pReferencesElem, const xml::ElementNode *pCurElem);
+    void HandleDiskSection(const xml::ElementNode *pReferencesElem, const xml::ElementNode *pSectionElem);
+    void HandleNetworkSection(const xml::ElementNode *pSectionElem);
+    void HandleVirtualSystemContent(const xml::ElementNode *pContentElem);
+
+    // Data fields
+    iprt::MiniString        m_strPath;            // file name given to constructor
+    DiskImagesMap           m_mapDisks;           // map of DiskImage structs, sorted by DiskImage.strDiskId
+    list<VirtualSystem>     m_llVirtualSystems;   // list of virtual systems, created by and valid after read()
+};
+
+////////////////////////////////////////////////////////////////////////////////
+//
+// Errors
+//
+////////////////////////////////////////////////////////////////////////////////
+
+/**
+ * Thrown by OVFReader for any kind of error that is not an XML error but
+ * still makes the OVF impossible to parse. Based on xml::LogicError so
+ * that one catch() for all xml::LogicError can handle all possible errors.
+ */
+
+class OVFLogicError : public xml::LogicError
+{
+public:
+    OVFLogicError(const char *aFormat, ...);
+};
+
+#endif // ____H_OVFREADER

@@ -36,107 +36,6 @@ const Bstr Bstr::Null; /* default ctor is OK */
 /* static */
 const Utf8Str Utf8Str::Null; /* default ctor is OK */
 
-const size_t Utf8Str::npos = (size_t)-1;
-
-size_t Utf8Str::find(const char *pcszFind,
-                     size_t pos /*= 0*/)
-    const
-{
-    const char *pszThis, *p;
-
-    if (    ((pszThis = c_str()))
-         && (pos < length())
-         && ((p = strstr(pszThis + pos, pcszFind)))
-       )
-        return p - pszThis;
-
-    return npos;
-}
-
-Utf8Str Utf8Str::substr(size_t pos /*= 0*/, size_t n /*= npos*/)
-    const
-{
-    Utf8Str ret;
-
-    if (n)
-    {
-        const char *psz;
-
-        if ((psz = c_str()))
-        {
-            RTUNICP cp;
-
-            // walk the UTF-8 characters until where the caller wants to start
-            size_t i = pos;
-            while (*psz && i--)
-                if (RT_FAILURE(RTStrGetCpEx(&psz, &cp)))
-                    return ret;     // return empty string on bad encoding
-
-            const char *pFirst = psz;
-
-            if (n == npos)
-                // all the rest:
-                ret = pFirst;
-            else
-            {
-                i = n;
-                while (*psz && i--)
-                    if (RT_FAILURE(RTStrGetCpEx(&psz, &cp)))
-                        return ret;     // return empty string on bad encoding
-
-                size_t cbCopy = psz - pFirst;
-                ret.reserve(cbCopy + 1);
-                memcpy(ret.m_psz, pFirst, cbCopy);
-                ret.m_cbLength = cbCopy;
-                ret.m_psz[cbCopy] = '\0';
-            }
-        }
-    }
-
-    return ret;
-}
-
-bool Utf8Str::endsWith(const Utf8Str &that, CaseSensitivity cs /*= CaseSensitive*/) const
-{
-    size_t l1 = length();
-    if (l1 == 0)
-        return false;
-
-    size_t l2 = that.length();
-    if (l1 < l2)
-        return false;
-
-    size_t l = l1 - l2;
-    if (cs == CaseSensitive)
-        return ::RTStrCmp(&m_psz[l], that.m_psz) == 0;
-    else
-        return ::RTStrICmp(&m_psz[l], that.m_psz) == 0;
-}
-
-bool Utf8Str::startsWith(const Utf8Str &that, CaseSensitivity cs /*= CaseSensitive*/) const
-{
-    size_t l1 = length();
-    size_t l2 = that.length();
-    if (l1 == 0 || l2 == 0)
-        return false;
-
-    if (l1 < l2)
-        return false;
-
-    if (cs == CaseSensitive)
-        return ::RTStrNCmp(m_psz, that.m_psz, l2) == 0;
-    else
-        return ::RTStrNICmp(m_psz, that.m_psz, l2) == 0;
-}
-
-bool Utf8Str::contains(const Utf8Str &that, CaseSensitivity cs /*= CaseSensitive*/) const
-{
-    if (cs == CaseSensitive)
-        return ::RTStrStr(m_psz, that.m_psz) != NULL;
-    else
-        return ::RTStrIStr(m_psz, that.m_psz) != NULL;
-}
-
 Utf8Str& Utf8Str::toLower()
 {
     if (length())
@@ -167,20 +66,6 @@ void Utf8Str::stripExt()
 {
     RTPathStripExt(m_psz);
     jolt();
-}
-
-int Utf8Str::toInt(uint64_t &i) const
-{
-    if (!m_psz)
-        return VERR_NO_DIGITS;
-    return RTStrToUInt64Ex(m_psz, NULL, 0, &i);
-}
-
-int Utf8Str::toInt(uint32_t &i) const
-{
-    if (!m_psz)
-        return VERR_NO_DIGITS;
-    return RTStrToUInt32Ex(m_psz, NULL, 0, &i);
 }
 
 struct FormatData
