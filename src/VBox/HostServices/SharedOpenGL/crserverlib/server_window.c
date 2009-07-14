@@ -143,19 +143,49 @@ crServerDispatchWindowDestroy( GLint window )
 
     if (cr_server.curClient)
     {
+        if (cr_server.curClient->currentMural == mural)
+        {
+            cr_server.curClient->currentMural = NULL;
+            cr_server.curClient->currentWindow = -1;
+        }
+
         for (pos = 0; pos < CR_MAX_WINDOWS; ++pos)
             if (cr_server.curClient->windowList[pos] == window)
             {
                 cr_server.curClient->windowList[pos] = 0;
                 break;
             }
-        CRASSERT(pos<CR_MAX_WINDOWS);
 
-        if (cr_server.curClient->currentMural == mural)
+        /*Same as with contexts, some apps destroy it not in a thread where it was created*/
+        if (CR_MAX_WINDOWS==pos)
         {
-            cr_server.curClient->currentMural = NULL;
-            cr_server.curClient->currentWindow = -1;
+            int32_t client;
+
+            for (client=0; client<cr_server.numClients; ++client)
+            {
+                if (cr_server.clients[client]==cr_server.curClient)
+                    continue;
+
+                for (pos = 0; pos < CR_MAX_WINDOWS; ++pos)
+                    if (cr_server.clients[client]->windowList[pos] == window)
+                    {
+                        cr_server.clients[client]->windowList[pos] = 0;
+                        break;
+                    }
+
+                if (pos<CR_MAX_WINDOWS)
+                {
+                    if (cr_server.clients[client]->currentMural == mural)
+                    {
+                        cr_server.clients[client]->currentMural = NULL;
+                        cr_server.clients[client]->currentWindow = -1;
+                    }
+                    break;
+                }
+            }
         }
+
+        CRASSERT(pos<CR_MAX_WINDOWS);
     }
 
     if (cr_server.currentWindow == window)
