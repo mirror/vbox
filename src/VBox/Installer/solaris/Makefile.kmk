@@ -35,12 +35,12 @@ VBOX_SOL_INST_DEP_ON_MAKEFILE := $(MAKEFILE_CURRENT)
 ifdef VBOX_WITH_COMBINED_SOLARIS_PACKAGE ## @todo remove this when tinderclient.pl is updated.
  VBOX_WITH_COMBINED_PACKAGE := 1
 endif
-VBOX_PATH_SOL_INST_SRC := $(PATH_SUB_CURRENT)
-SOLARIS_DIR_NAME_64    := amd64
-SOLARIS_DIR_NAME_32    := i386
-SOLARIS_INST_OUT_DIR   := $(PATH_TARGET)/Installer
-SOLARIS_BASEINST_DIR   := $(PATH_TARGET)/Installer/BasePkg
-SOLARIS_VBOXINST_SUBDIR    := /opt/VirtualBox
+VBOX_PATH_SOL_INST_SRC     := $(PATH_SUB_CURRENT)
+SOLARIS_DIR_NAME_64        := amd64
+SOLARIS_DIR_NAME_32        := i386
+SOLARIS_INST_OUT_DIR       := $(PATH_TARGET)/Installer
+SOLARIS_BASEINST_DIR       := $(PATH_TARGET)/Installer/BasePkg
+SOLARIS_VBOXINST_SUBDIR    := opt/VirtualBox
 SOLARIS_VBOXINST_DIR       := $(SOLARIS_BASEINST_DIR)/$(SOLARIS_VBOXINST_SUBDIR)
 SOLARIS_VBOXINST_DIR_32    := $(SOLARIS_VBOXINST_DIR)/$(SOLARIS_DIR_NAME_32)
 SOLARIS_VBOXINST_DIR_64    := $(SOLARIS_VBOXINST_DIR)/$(SOLARIS_DIR_NAME_64)
@@ -54,28 +54,28 @@ SOLARIS_USRSHR_PIXMAPS_DIR := $(SOLARIS_USR_DIR)/share/pixmaps
 SOLARIS_VBOXSMF_DIR        := $(SOLARIS_BASEINST_DIR)/var/svc/manifest/application/virtualbox
 SOLARIS_ETC_DIR            := $(SOLARIS_BASEINST_DIR)/etc
 
-SOLARIS_OUT_BIN_64     := $(PATH_OUT_BASE)/solaris.amd64/$(KBUILD_TYPE)/bin
-SOLARIS_OUT_BIN_32     := $(PATH_OUT_BASE)/solaris.x86/$(KBUILD_TYPE)/bin
-SOLARIS_OUT_BIN        := $(PATH_BIN)
+SOLARIS_OUT_BIN_64         := $(PATH_OUT_BASE)/solaris.amd64/$(KBUILD_TYPE)/bin
+SOLARIS_OUT_BIN_32         := $(PATH_OUT_BASE)/solaris.x86/$(KBUILD_TYPE)/bin
+SOLARIS_OUT_BIN            := $(PATH_BIN)
 
-SOLARIS_DBG_DIR        := $(PATH_TARGET)/Installer/DebugPkg
-SOLARIS_DBG_DIR_32     := $(SOLARIS_DBG_DIR)/$(SOLARIS_DIR_NAME_32)
-SOLARIS_DBG_DIR_64     := $(SOLARIS_DBG_DIR)/$(SOLARIS_DIR_NAME_64)
-SOLARIS_VBI_DIR        := $(PATH_TARGET)/Installer/KernelPkg
+SOLARIS_DBG_DIR            := $(PATH_TARGET)/Installer/DebugPkg
+SOLARIS_DBG_DIR_32         := $(SOLARIS_DBG_DIR)/$(SOLARIS_DIR_NAME_32)
+SOLARIS_DBG_DIR_64         := $(SOLARIS_DBG_DIR)/$(SOLARIS_DIR_NAME_64)
+SOLARIS_VBI_DIR            := $(PATH_TARGET)/Installer/KernelPkg
 
 ifeq ($(KBUILD_TARGET_ARCH),amd64)
  SOLARIS_VBOXINST_DIR_ISA    := $(SOLARIS_VBOXINST_DIR_64)
  SOLARIS_DRIVERINST_DIR_ISA  := $(SOLARIS_DRIVERINST_DIR_64)
- SOLARIS_DBG_DIR_ISA   := $(SOLARIS_DBG_DIR_64)
- SOL_DBG_OBJCOPY       := /usr/sfw/bin/gobjcopy --only-keep-debug
+ SOLARIS_DBG_DIR_ISA         := $(SOLARIS_DBG_DIR_64)
+ SOL_DBG_OBJCOPY             := /usr/sfw/bin/gobjcopy --only-keep-debug
  SOL64_PKG := 1
 else
  SOLARIS_VBOXINST_DIR_ISA    := $(SOLARIS_VBOXINST_DIR_32)
  SOLARIS_DRIVERINST_DIR_ISA  := $(SOLARIS_DRIVERINST_DIR_32)
- SOLARIS_DBG_DIR_ISA   := $(SOLARIS_DBG_DIR_32)
- SOL_DBG_OBJCOPY       := $(CP) -p    # Solaris ld/gobjcopy(2.15) don't get along on x86, works only on amd64. So just using cp for now.
+ SOLARIS_DBG_DIR_ISA         := $(SOLARIS_DBG_DIR_32)
+ SOL_DBG_OBJCOPY             := $(CP) -p    # Solaris ld/gobjcopy(2.15) don't get along on x86, works only on amd64. So just using cp for now.
 endif
-SOL_OBJCOPY            := /usr/sfw/bin/gobjcopy --strip-unneeded -R .comment
+SOL_OBJCOPY                  := /usr/sfw/bin/gobjcopy --strip-unneeded -R .comment
 
 
 # Figure out the paths to the two platform specific Qt4 directories
@@ -101,7 +101,7 @@ VBIPKG_FILENAME  = VirtualBoxKern-$(VBOX_VERSION_STRING)-SunOS-r$(VBOX_SVN_REV)
 # Targets
 #
 PROGRAMS         += VBoxZoneAccess VBoxISAExec
-INSTALLS         += solaris-doc solaris-bin
+INSTALLS         += solaris-doc solaris-bin solaris-drv-confs
 
 BLDDIRS          += \
 	$(SOLARIS_INST_OUT_DIR) \
@@ -155,6 +155,14 @@ solaris-bin_MODE = a+rx,u+w
 solaris-bin_SOURCES = \
 	$(if $(VBOX_WITH_PYTHON),$(PATH_ROOT)/src/VBox/Frontends/VBoxShell/vboxshell.py=>vboxshell.py,)
 
+solaris-drv-confs_INST = bin/
+solaris-drv-confs_MODE = a+r,u+w
+solaris-drv-confs_SOURCES = \
+	$(PATH_ROOT)/src/VBox/HostDrivers/Support/solaris/vboxdrv.conf=>vboxdrv.conf \
+	$(if $(VBOX_WITH_NETFLT),$(PATH_ROOT)/src/VBox/HostDrivers/VBoxNetFlt/solaris/vboxflt.conf=>vboxflt.conf) \
+	$(if $(VBOX_WITH_NETADP),$(PATH_ROOT)/src/VBox/HostDrivers/VBoxNetAdp/solaris/vboxnet.conf=>vboxnet.conf) \
+	$(if $(VBOX_WITH_USB),$(PATH_ROOT)/src/VBox/HostDrivers/VBoxUSB/solaris/vboxusbmon.conf=>vboxusbmon.conf)
+
 #
 # Note: Other than the files produced during packing (.pkg, .gzip etc.) all files that
 # go into the temporary install folder $(SOLARIS_VBOXINST_DIR) should be part of $(SOLARIS_ARCH_FILES).
@@ -181,6 +189,12 @@ SOLARIS_DRIVER_BINS = \
 	$(if $(VBOX_WITH_NETFLT),vboxflt,) \
 	$(if $(VBOX_WITH_NETADP),vboxnet,) \
 	$(if $(VBOX_WITH_USB),vboxusbmon,)
+
+SOLARIS_DRIVER_CONFS = \
+	vboxdrv.conf \
+	$(if $(VBOX_WITH_NETFLT),vboxflt.conf,) \
+	$(if $(VBOX_WITH_NETADP),vboxnet.conf,) \
+	$(if $(VBOX_WITH_USB),vboxusbmon.conf,)
 
 # Strip these binaries
 SOLARIS_STRIP_BINS = \
@@ -253,11 +267,6 @@ SOLARIS_EXTRAS = \
 	$(if $(VBOX_OSE),,LICENSE) \
 	VBox.png \
 	autoresponse \
-	vboxdrv.conf \
-	$(if $(VBOX_WITH_NETFLT),vboxflt.conf,) \
-	$(if $(VBOX_WITH_NETADP),vboxnet.conf,) \
-	$(if $(VBOX_WITH_NETADP),hostname.vboxnet0,) \
-	$(if $(VBOX_WITH_USB),vboxusbmon.conf,) \
 	vboxdrv.sh \
 	VBox.sh \
 	ipsinstall.sh \
@@ -342,6 +351,7 @@ endif
 SOLARIS_ARCH_FILES := \
 	$(SOLARIS_STRIP_EXES) \
 	$(SOLARIS_DRIVER_BINS) \
+	$(SOLARIS_DRIVER_CONFS) \
 	$(SOLARIS_USRBIN_LINKS) \
 	$(SOLARIS_STRIP_BINS) \
 	$(SOLARIS_STRIP_OBJS) \
@@ -388,6 +398,7 @@ else
  SOLARIS_ARCH_DEPFILES = $(addprefix $(SOLARIS_VBOXINST_DIR_ISA)/,$(SOLARIS_STRIP_EXES)) \
 	$(addprefix $(SOLARIS_VBOXINST_DIR_ISA)/,$(SOLARIS_STRIP_BINS)) \
 	$(addprefix $(SOLARIS_DRIVERINST_DIR_ISA)/,$(SOLARIS_DRIVER_BINS)) \
+	$(addprefix $(SOLARIS_DRIVERINST_DIR)/,$(SOLARIS_DRIVER_CONFS)) \
 	$(ifeq ($(KBUILD_TARGET_ARCH),x86),$(addprefix $(SOLARIS_VBOXINST_DIR_ISA)/,$(SOLARIS_STRIP_BIN_32)),) \
 	$(ifeq ($(KBUILD_TARGET_ARCH),amd64),$(addprefix $(SOLARIS_VBOXINST_DIR_ISA)/,$(SOLARIS_STRIP_OBJ_64)),) \
 	$(addprefix $(SOLARIS_VBOXINST_DIR_ISA)/,$(SOLARIS_STRIP_OBJS)) \
@@ -395,8 +406,9 @@ else
 	$(addprefix $(SOLARIS_VBOXINST_DIR_ISA)/,$(SOLARIS_QTLIBS))
  SOLARIS_DBG_DEPFILES = $(addprefix $(SOLARIS_DBG_DIR_ISA)/,$(SOLARIS_DBG_FILES))
 endif
-SOLARIS_ARCH_DEPFILES += $(addprefix $(SOLARIS_VBOXINST_DIR)/,$(SOLARIS_COMMON))
-SOLARIS_ARCH_DEPFILES += $(addprefix $(SOLARIS_USRBIN_DIR)/,$(SOLARIS_USRBIN_LINKS))
+SOLARIS_ARCH_DEPFILES += $(addprefix $(SOLARIS_VBOXINST_DIR)/,$(SOLARIS_COMMON)) \
+	$(addprefix $(SOLARIS_DRIVERINST_DIR)/,$(SOLARIS_DRIVER_CONFS)) \
+	$(addprefix $(SOLARIS_USRBIN_DIR)/,$(SOLARIS_USRBIN_LINKS))
 
 BLDDIRS += $(foreach d,\
 	additions \
@@ -466,11 +478,7 @@ $(PATH_BIN)/$(PKG_FILENAME).tar.gz: \
 		$(if $(VBOX_OSE),,$(VBOX_BRAND_LICENSE_TXT)) \
 		$(if $(VBOX_OSE),,$(PATH_BIN)/LICENSE) \
 		$(if $(and $(VBOX_LICENSE_BINS),$(VBOX_WITH_QTGUI)),$(VBOX_LICENSE_BINS),) \
-		$(PATH_ROOT)/src/VBox/HostDrivers/Support/solaris/vboxdrv.conf \
-		$(if $(VBOX_WITH_NETFLT),$(PATH_ROOT)/src/VBox/HostDrivers/VBoxNetFlt/solaris/vboxflt.conf,) \
-		$(if $(VBOX_WITH_NETADP),$(PATH_ROOT)/src/VBox/HostDrivers/VBoxNetAdp/solaris/vboxnet.conf,) \
 		$(if $(VBOX_WITH_NETADP),$(PATH_ROOT)/src/VBox/HostDrivers/VBoxNetAdp/solaris/hostname.vboxnet0,) \
-		$(if $(VBOX_WITH_USB),$(PATH_ROOT)/src/VBox/HostDrivers/VBoxUSB/solaris/vboxusbmon.conf,) \
 		$(if $(not $(VBOX_WITH_NETFLT))$(PATH_ROOT)/src/VBox/Devices/Network/solaris/vnicinit_solaris.sh,) \
 		$(if $(not $(VBOX_WITH_NETFLT))$(PATH_ROOT)/src/VBox/Devices/Network/solaris/vnicterm_solaris.sh,) \
 		$(addprefix $(PATH_BIN)/,$(filter-out $(SOLARIS_EXTRAS) $(SOLARIS_QTLIBS),$(SOLARIS_ARCH_FILES))) \
@@ -495,11 +503,7 @@ endif
 	$(QUIET)$(MKDIR) -p $(SOLARIS_VBOXSMF_DIR)
 	$(QUIET)$(if $(VBOX_WITH_QTGUI),$(MKDIR) -p $(SOLARIS_USRSHR_APPS_DIR),)
 	$(QUIET)$(MKDIR) -p $(SOLARIS_USRSHR_PIXMAPS_DIR)
-	$(QUIET)$(INSTALL) -m 0644 $(PATH_ROOT)/src/VBox/HostDrivers/Support/solaris/vboxdrv.conf                                     $(SOLARIS_DRIVERINST_DIR)/vboxdrv.conf
-	$(QUIET)$(if $(VBOX_WITH_NETFLT),$(INSTALL) -m 0644 $(PATH_ROOT)/src/VBox/HostDrivers/VBoxNetFlt/solaris/vboxflt.conf         $(SOLARIS_DRIVERINST_DIR)/vboxflt.conf,)
-	$(QUIET)$(if $(VBOX_WITH_NETADP),$(INSTALL) -m 0644 $(PATH_ROOT)/src/VBox/HostDrivers/VBoxNetAdp/solaris/vboxnet.conf         $(SOLARIS_DRIVERINST_DIR)/vboxnet.conf,)
 	$(QUIET)$(if $(VBOX_WITH_NETADP),$(INSTALL) -m 0644 $(PATH_ROOT)/src/VBox/HostDrivers/VBoxNetAdp/solaris/hostname.vboxnet0    $(SOLARIS_ETC_DIR)/hostname.vboxnet0,)
-	$(QUIET)$(if $(VBOX_WITH_USB),$(INSTALL) -m 0644 $(PATH_ROOT)/src/VBox/HostDrivers/VBoxUSB/solaris/vboxusbmon.conf            $(SOLARIS_DRIVERINST_DIR)/vboxusbmon.conf,)
 	$(QUIET)$(if $(VBOX_OSE),,$(INSTALL) -m 0644 $(PATH_BIN)/LICENSE                                        $(SOLARIS_VBOXINST_DIR)/LICENSE)
 	$(QUIET)$(if $(VBOX_OSE),,$(INSTALL) -m 0644 $(PATH_BIN)/LICENSE                                        $(SOLARIS_BASEINST_DIR)/vbox.copyright)
 ifdef VBOX_WITH_COMBINED_PACKAGE
@@ -531,17 +535,17 @@ else
 	$(QUIET)$(if $(VBOX_WITH_QTGUI),$(LN_SYMLINK) -f ../additions                                                        $(SOLARIS_VBOXINST_DIR_ISA)/additions,)
 	$(QUIET)$(if $(VBOX_WITH_QTGUI),$(LN_SYMLINK) -f ../VirtualBox.chm                                                   $(SOLARIS_VBOXINST_DIR_ISA)/VirtualBox.chm,)
 endif
-	$(QUIET)$(if $(VBOX_WITH_QTGUI),$(LN_SYMLINK) -f ../..$(SOLARIS_VBOXINST_SUBDIR)/VBox.sh                                $(SOLARIS_USRBIN_DIR)/VBoxQtconfig,)
+	$(QUIET)$(if $(VBOX_WITH_QTGUI),$(LN_SYMLINK) -f ../../$(SOLARIS_VBOXINST_SUBDIR)/VBox.sh                            $(SOLARIS_USRBIN_DIR)/VBoxQtconfig,)
 	$(QUIET)$(INSTALL) -m 0644 $(VBOX_PATH_SOL_INST_SRC)/virtualbox-zoneaccess.xml                                       $(SOLARIS_VBOXSMF_DIR)/virtualbox-zoneaccess.xml
 	$(QUIET)$(if $(VBOX_WITH_WEBSERVICES),$(INSTALL) -m 0644 $(VBOX_PATH_SOL_INST_SRC)/virtualbox-webservice.xml         $(SOLARIS_VBOXSMF_DIR)/virtualbox-webservice.xml,)
 	$(QUIET)$(if $(VBOX_WITH_WEBSERVICES),$(INSTALL) -m 0755 $(VBOX_PATH_SOL_INST_SRC)/smf-vboxwebsrv.sh                 $(SOLARIS_VBOXINST_DIR)/smf-vboxwebsrv.sh,)
 	$(QUIET)$(if $(not $(VBOX_WITH_NETFLT))$(INSTALL) -m 0755 $(PATH_ROOT)/src/VBox/Devices/Network/solaris/vnicinit_solaris.sh            $(SOLARIS_VBOXINST_DIR)/vnic_setup.sh,)
 	$(QUIET)$(if $(not $(VBOX_WITH_NETFLT))$(INSTALL) -m 0755 $(PATH_ROOT)/src/VBox/Devices/Network/solaris/vnicterm_solaris.sh            $(SOLARIS_VBOXINST_DIR)/vnic_term.sh,)
 	$(QUIET)$(SED) \
-		-e "s/_HARDENED_/$(if $(VBOX_WITH_HARDENED),hardened,))/" \
+		-e "s/_HARDENED_/$(if $(VBOX_WITH_HARDENED),hardened,)/" \
 		--output $(SOLARIS_VBOXINST_DIR)/vboxdrv.sh.tmp \
 		 $(VBOX_PATH_SOL_INST_SRC)/vboxdrv.sh
-	$(QUIET)$(INSTALL) -m 0755 $(SOLARIS_VBOXINST_DIR)/vboxdrv.sh.tmp                                           $(SOLARIS_VBOXINST_DIR)/vboxdrv.sh
+	$(QUIET)$(INSTALL) -m 0755 $(SOLARIS_VBOXINST_DIR)/vboxdrv.sh.tmp                                       $(SOLARIS_VBOXINST_DIR)/vboxdrv.sh
 	$(QUIET)$(RM) -f $(SOLARIS_VBOXINST_DIR)/vboxdrv.sh.tmp
 	$(QUIET)$(INSTALL) -m 0755 $(VBOX_PATH_SOL_INST_SRC)/VBox.sh                                            $(SOLARIS_VBOXINST_DIR)/VBox.sh
 	$(QUIET)$(INSTALL) -m 0755 $(VBOX_PATH_SOL_INST_SRC)/ipsinstall.sh                                      $(SOLARIS_VBOXINST_DIR)/ipsinstall.sh
@@ -645,6 +649,12 @@ $(addprefix $(SOLARIS_VBOXINST_DIR)/,$(SOLARIS_COMMON)): \
 		$(SOLARIS_VBOXINST_DIR)/% : $(PATH_BIN)/% | $$(dir $$@)
 	$(INSTALL) -m 0644 $< $@
 
+# Driver configuration files
+$(addprefix $(SOLARIS_DRIVERINST_DIR)/,$(SOLARIS_DRIVER_CONFS)): \
+		$(SOLARIS_DRIVERINST_DIR)/% : $(PATH_BIN)/% | $$(dir $$@)
+	$(INSTALL) -m 0644 $< $@
+
+
 #
 # Common (relative symlinks to /opt/VirtualBox/ from /usr/bin/)
 # Some symlinks are created manually in the prepackage steps above (eg. VBoxQtconfig)
@@ -652,7 +662,7 @@ $(addprefix $(SOLARIS_VBOXINST_DIR)/,$(SOLARIS_COMMON)): \
 #
 $(addprefix $(SOLARIS_USRBIN_DIR)/,$(SOLARIS_USRBIN_LINKS)): \
 		$(SOLARIS_USRBIN_DIR)/% : % | $$(dir $$@)
-	$(LN_SYMLINK) -f ../..$(SOLARIS_VBOXINST_SUBDIR)/VBox.sh $@
+	$(LN_SYMLINK) -f ../../$(SOLARIS_VBOXINST_SUBDIR)/VBox.sh $@
 
 
 #
