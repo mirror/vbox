@@ -251,7 +251,7 @@ bool VBoxProblemReporter::showModalProgressDialog (
     VBoxProgressDialog progressDlg (aProgress, aTitle, aMinDuration, aParent);
 
     /* run the dialog with the 100 ms refresh interval */
-    progressDlg.run (100);
+    progressDlg.run (350);
 
     return true;
 }
