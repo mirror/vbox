@@ -41,6 +41,7 @@ EXPORTS
     ASMProbeReadByte
     ASMSetFlags
     ASMMultU64ByU32DivByU32
+    ASMNopPause
 
     RTTimeNanoTSLegacySync
     RTTimeNanoTSLegacyAsync
