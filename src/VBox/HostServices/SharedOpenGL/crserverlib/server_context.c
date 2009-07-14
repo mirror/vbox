@@ -143,6 +143,36 @@ crServerDispatchDestroyContext( GLint ctx )
                 cr_server.curClient->contextList[pos] = 0;
                 break;
             }
+
+        /*Some application call destroy context not in a thread where it was created...have do deal with it.*/
+        if (CR_MAX_CONTEXTS==pos)
+        {
+            int32_t client;
+
+            for (client=0; client<cr_server.numClients; ++client)
+            {
+                if (cr_server.clients[client]==cr_server.curClient)
+                    continue;
+
+                for (pos = 0; pos < CR_MAX_CONTEXTS; ++pos)
+                    if (cr_server.clients[client]->contextList[pos] == ctx)
+                    {
+                        cr_server.clients[client]->contextList[pos] = 0;
+                        break;
+                    }
+
+                if (pos<CR_MAX_CONTEXTS)
+                {
+                    if (cr_server.clients[client]->currentCtx == crCtx)
+                    {
+                        cr_server.clients[client]->currentContextNumber = -1;
+                        cr_server.clients[client]->currentCtx = cr_server.DummyContext;
+                    }
+                    break;
+                }
+            }
+        }
+
         CRASSERT(pos<CR_MAX_CONTEXTS);
     }
 }

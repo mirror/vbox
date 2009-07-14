@@ -349,9 +349,6 @@ LRESULT CALLBACK stubCBWindowMessageHookProc(int nCode, WPARAM wParam, LPARAM lP
 
     if (nCode>=0 && pMsgInfo)
     {
-#ifdef CHROMIUM_THREADSAFE
-        crLockMutex(&stub.mutex);
-#endif
         switch (pMsgInfo->message)
         {
             case WM_MOVING:
@@ -377,9 +374,6 @@ LRESULT CALLBACK stubCBWindowMessageHookProc(int nCode, WPARAM wParam, LPARAM lP
                 break;
             }
         }
-#ifdef CHROMIUM_THREADSAFE
-        crUnlockMutex(&stub.mutex);
-#endif
     }
 
     return CallNextHookEx(stub.hMessageHook, nCode, wParam, lParam);
