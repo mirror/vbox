@@ -253,6 +253,7 @@ RuntimeR3_SOURCES       = \
 	common/string/unidata.cpp \
 	common/string/utf-16.cpp \
 	common/string/utf-8.cpp \
+	common/string/ministring.cpp \
 	common/table/avlgcptr.cpp \
 	common/table/avlhcphys.cpp \
 	common/table/avllu32.cpp \

@@ -94,11 +94,6 @@ private:
     struct Data;            // opaque, defined in ApplianceImpl.cpp
     Data *m;
 
-    HRESULT LoopThruSections(const char *pcszPath, const xml::ElementNode *pReferencesElem, const xml::ElementNode *pCurElem);
-    HRESULT HandleDiskSection(const char *pcszPath, const xml::ElementNode *pReferencesElem, const xml::ElementNode *pSectionElem);
-    HRESULT HandleNetworkSection(const char *pcszPath, const xml::ElementNode *pSectionElem);
-    HRESULT HandleVirtualSystemContent(const char *pcszPath, const xml::ElementNode *pContentElem);
-
     HRESULT searchUniqueVMName(Utf8Str& aName) const;
     HRESULT searchUniqueDiskImageFilePath(Utf8Str& aName) const;
     HRESULT setUpProgress(ComObjPtr<Progress> &pProgress, const Bstr &bstrDescription);
@@ -107,7 +102,7 @@ private:
     void addWarning(const char* aWarning, ...);
 
     void parseURI(Utf8Str strUri, const Utf8Str &strProtocol, Utf8Str &strFilepath, Utf8Str &strHostname, Utf8Str &strUsername, Utf8Str &strPassword);
-    HRESULT writeImpl(int aFormat, Utf8Str aPath, ComObjPtr<Progress> &aProgress);
+    HRESULT writeImpl(int aFormat, const Utf8Str &aPath, ComObjPtr<Progress> &aProgress);
 
     struct TaskImportMachines;  /* Worker thread for import */
     static DECLCALLBACK(int) taskThreadImportMachines(RTTHREAD thread, void *pvUser);

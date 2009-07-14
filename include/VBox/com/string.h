@@ -329,7 +329,7 @@ public:
 
     Utf8Str() {}
 
-    Utf8Str(const Utf8Str &that)
+    Utf8Str(const MiniString &that)
         : MiniString(that)
     {}
 
@@ -347,7 +347,7 @@ public:
         copyFrom(that);
     }
 
-    Utf8Str& operator=(const Utf8Str &that)
+    Utf8Str& operator=(const MiniString &that)
     {
         MiniString::operator=(that);
         return *this;
@@ -417,46 +417,6 @@ public:
         return *this;
     }
 
-    static const size_t npos;
-
-    /**
-     * Looks for pcszFind in "this" starting at "pos" and returns its position,
-     * counting from the beginning of "this" at 0. Returns npos if not found.
-     */
-    size_t find(const char *pcszFind, size_t pos = 0) const;
-
-    /**
-     * Returns a substring of "this" as a new Utf8Str. Works exactly like
-     * its equivalent in std::string except that this interprets pos and n
-     * as UTF-8 codepoints instead of bytes. With the default parameters "0"
-     * and "npos", this always copies the entire string.
-     * @param pos Index of first codepoint to copy from "this", counting from 0.
-     * @param n Number of codepoints to copy, starting with the one at "pos".
-     */
-    Utf8Str substr(size_t pos = 0, size_t n = npos) const;
-
-    /**
-     * Returns true if "this" ends with "that".
-     * @param that
-     * @param cs
-     * @return
-     */
-    bool endsWith(const Utf8Str &that, CaseSensitivity cs = CaseSensitive) const;
-
-    /**
-     * Returns true if "this" begins with "that".
-     * @return
-     */
-    bool startsWith(const Utf8Str &that, CaseSensitivity cs = CaseSensitive) const;
-
-    /**
-     * Returns true if "this" contains "that" (strstr).
-     * @param that
-     * @param cs
-     * @return
-     */
-    bool contains(const Utf8Str &that, CaseSensitivity cs = CaseSensitive) const;
-
     /**
      * Converts "this" to lower case by calling RTStrToLower().
      * @return
@@ -508,42 +468,6 @@ public:
     {
         return RTStrToUInt32(m_psz);
     }
-
-    /**
-     * Attempts to convert the member string into an 64-bit integer.
-     *
-     * @returns 64-bit unsigned number on success.
-     * @returns 0 on failure.
-     */
-    int64_t toInt64() const
-    {
-        return RTStrToInt64(m_psz);
-    }
-
-    /**
-     * Attempts to convert the member string into an unsigned 64-bit integer.
-     *
-     * @returns 64-bit unsigned number on success.
-     * @returns 0 on failure.
-     */
-    uint64_t toUInt64() const
-    {
-        return RTStrToUInt64(m_psz);
-    }
-
-    /**
-     * Attempts to convert the member string into an unsigned 64-bit integer.
-     * @return IPRT error code.
-     * @param i Output buffer.
-     */
-    int toInt(uint64_t &i) const;
-
-    /**
-     * Attempts to convert the member string into an unsigned 32-bit integer.
-     * @return IPRT error code.
-     * @param i Output buffer.
-     */
-    int toInt(uint32_t &i) const;
 
     /**
      *  Intended to pass instances as out (|char **|) parameters to methods.
