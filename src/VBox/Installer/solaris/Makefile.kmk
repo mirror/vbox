@@ -477,7 +477,6 @@ $(PATH_BIN)/$(PKG_FILENAME).tar.gz: \
 		$(VBOX_PATH_SOL_INST_SRC)/vbox.pkginfo \
 		$(VBOX_PATH_SOL_INST_SRC)/vbox.space \
 		$(VBOX_PATH_SOL_INST_SRC)/vbox.pkgresponse \
-		$(VBOX_PATH_SOL_INST_SRC)/ipsinstall.sh \
 		$(VBOX_PATH_SOL_INST_SRC)/virtualbox.desktop \
 		$(PATH_ROOT)/doc/ReadMe-Solaris.txt \
 		$(VBOX_PATH_SOL_INST_SRC)/Makefile.kmk \
