@@ -95,7 +95,7 @@ mail=
         if test -f "/usr/bin/gnome-terminal"; then
             # use su/pfexec
             if test -z "$subin"; then
-                /usr/bin/gnome-terminal --title "Installing VirtualBox Additions" --command "/bin/sh -c '$pfexecbin $pkgaddbin -G -d $installfile -n -a /tmp/vbox.autoinstall SUNWvboxguest; /bin/echo press ENTER to close this window; /bin/read; /bin/rm -f /tmp/vbox.autoinstall"
+                /usr/bin/gnome-terminal --title "Installing VirtualBox Additions" --command "/bin/sh -c '$pfexecbin $pkgaddbin -G -d $installfile -n -a /tmp/vbox.autoinstall SUNWvboxguest; /bin/echo press ENTER to close this window; /bin/read; /bin/rm -f /tmp/vbox.autoinstall'"
             else
                 /usr/bin/gnome-terminal --title "Installing VirtualBox Additions: Root password required." --command "/bin/sh -c '$subin - root -c \"$pkgaddbin -G -d $installfile -n -a /tmp/vbox.autoinstall SUNWvboxguest\"; /bin/echo press ENTER to close this window; /bin/read; /bin/rm -f /tmp/vbox.autoinstall'"
             fi
