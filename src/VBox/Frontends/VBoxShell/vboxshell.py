@@ -447,12 +447,12 @@ def infoCmd(ctx,args):
         print
         print "  Controllers:"
     for controller in controllers:
-        print "      %s %s bus: %d" % (controller.name, getControllerType(controller.controllerType), controller.bus)
+        print "    %s %s bus: %d" % (controller.name, getControllerType(controller.controllerType), controller.bus)
 
     disks = ctx['global'].getArray(mach, 'hardDiskAttachments')
     if disks:
         print
-        print "  Disks:"
+        print "  Hard disk(s):"
     for disk in disks:
         print "    Controller: %s port: %d device: %d:" % (disk.controller, disk.port, disk.device)
         hd = disk.hardDisk
@@ -461,6 +461,35 @@ def infoCmd(ctx,args):
         print "    name: " +  hd.name
         print "    format: " +  hd.format
         print
+
+    dvd = mach.DVDDrive
+    if dvd.getHostDrive() is not None:
+        hdvd = dvd.getHostDrive()
+        print "  DVD:"
+        print "    Host disk:",hdvd.name
+        print
+
+    if dvd.getImage() is not None:
+        vdvd = dvd.getImage()
+        print "  DVD:"
+        print "    Image at:",vdvd.location
+        print "    Size:",vdvd.size
+        print
+
+    floppy = mach.floppyDrive
+    if floppy.getHostDrive() is not None:
+        hfloppy = floppy.getHostDrive()
+        print "  Floppy:"
+        print "    Host disk:",hfloppy.name
+        print
+
+    if floppy.getImage() is not None:
+        vfloppy = floppy.getImage()
+        print "  Floppy:"
+        print "    Image at:",vfloppy.location
+        print "    Size:",vfloppy.size
+        print
+
     return 0
 
 def startCmd(ctx, args):
