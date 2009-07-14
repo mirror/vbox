@@ -3888,7 +3888,7 @@ static void vmxR0FlushVPID(PVM pVM, PVMCPU pVCpu, VMX_FLUSH enmFlush, RTGCPTR GC
     if (   CPUMIsGuestInLongMode(pVCpu)
         && !VMX_IS_64BIT_HOST_MODE())
     {
-        pVCpu->hwaccm.s.fForceTLBFlush = true;
+        VMCPU_FF_SET(pVCpu, VMCPU_FF_TLB_FLUSH);
     }
     else
 #endif
