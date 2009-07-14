@@ -597,7 +597,16 @@ void STATE_APIENTRY crStateSecondaryColorPointerEXT(GLint size,
         return;
     }
 
-    if (size != 3)
+    /*Note: According to opengl spec, only size==3 should be accepted here.
+     *But it turns out that most drivers accept size==4 here as well, and 4th value
+     *could even be accessed in shaders code.
+     *Having a strict check here, leads to difference between guest and host gpu states, which
+     *in turn could lead to crashes when using server side VBOs.
+     *@todo: add error reporting to state's VBO related functions and abort dispatching to
+     *real gpu on any failure to prevent other possible issues.
+     */
+
+    if ((size != 3) && (size != 4))
     {
         crStateError(__LINE__, __FILE__, GL_INVALID_VALUE, "glSecondaryColorPointerEXT: invalid size: %d", size);
         return;
