@@ -148,28 +148,31 @@ RT_C_DECLS_BEGIN
  *          and will be ignored on those.
  */
 #define RTFILE_O_ASYNC_IO           0x00040000
-/** Disables caching of the opened file on the host.
- * Useful when using very big files which might
- * bring the host I/O scheduler to its knees
- * during high I/O load.
- * @remark  This flag might impose restrictions
+/** Disables caching.
+ *
+ * Useful when using very big files which might bring the host I/O scheduler to
+ * its knees during high I/O load.
+ *
+ * @remarks This flag might impose restrictions
  *          on the buffer alignment, start offset and/or transfer size.
+ *
  *          On Linux the buffer needs to be aligned to the 512 sector
  *          boundary.
- *          On Windows the FILE_FLAG_NO_BUFFERING is used
- *          (see here for more details
- *          http://msdn.microsoft.com/en-us/library/cc644950(VS.85).aspx)
+ *
+ *          On Windows the FILE_FLAG_NO_BUFFERING is used (see
+ *          http://msdn.microsoft.com/en-us/library/cc644950(VS.85).aspx ).
  *          The buffer address, the transfer size and offset needs to be
  *          aligned to the sector size of the volume.
- * @remark  This might not be implemented on all platforms,
+ *
+ * @remarks This might not be implemented on all platforms,
  *          and will be ignored on those.
  */
-#define RTFILE_O_NO_CACHE      0x00080000
+#define RTFILE_O_NO_CACHE           0x00080000
 
 /** Mask of all valid flags.
  * @remark  This doesn't validate the access mode properly.
  */
-#define RTFILE_O_VALID_MASK          0x1ffFFB73
+#define RTFILE_O_VALID_MASK         0x1ffFFB73
 
 /** @} */
 
