@@ -3145,14 +3145,16 @@ static void gen_debug(DisasContext *s, target_ulong cur_eip)
    if needed */
 static void gen_eob(DisasContext *s)
 {
-#ifdef VBOX
-    gen_check_external_event(s);
-#endif /* VBOX */
     if (s->cc_op != CC_OP_DYNAMIC)
         gen_op_set_cc_op(s->cc_op);
     if (s->tb->flags & HF_INHIBIT_IRQ_MASK) {
         tcg_gen_helper_0_0(helper_reset_inhibit_irq);
     }
+
+#ifdef VBOX
+    gen_check_external_event(s);
+#endif /* VBOX */
+
     if (s->singlestep_enabled) {
         tcg_gen_helper_0_0(helper_debug);
     } else if (s->tf) {
