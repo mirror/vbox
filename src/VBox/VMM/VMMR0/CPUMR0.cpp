@@ -183,6 +183,7 @@ VMMR0DECL(int) CPUMR0LoadGuestFPU(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     {
 #ifndef CPUM_CAN_HANDLE_NM_TRAPS_IN_KERNEL_MODE
 # if defined(VBOX_WITH_HYBRID_32BIT_KERNEL) || defined(VBOX_WITH_KERNEL_USING_XMM) /** @todo remove the #else here and move cpumHandleLazyFPUAsm back to VMMGC after branching out 3.0!!. */
+        Assert(!(pVCpu->cpum.s.fUseFlags & CPUM_MANUAL_XMM_RESTORE));
         /** @todo Move the FFXR handling down into
          *        cpumR0SaveHostRestoreguestFPUState to optimize the
          *        VBOX_WITH_KERNEL_USING_XMM handling. */
