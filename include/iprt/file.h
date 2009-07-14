@@ -66,6 +66,12 @@ RT_C_DECLS_BEGIN
  * @remark The value 0 is invalid. */
 #define RTFILE_O_ACCESS_MASK        0x00000003
 
+/** Open file in APPEND mode, so all writes to the file handle will
+ * append data at the end of the file.
+ * @remark  It is ignored if write access is not requested, that is RTFILE_O_WRITE is not set.
+ */
+#define RTFILE_O_APPEND             0x00000004
+
 /** Sharing mode: deny none (the default mode). */
 #define RTFILE_O_DENY_NONE          0x00000000
 /** Sharing mode: deny read. */
@@ -137,17 +143,18 @@ RT_C_DECLS_BEGIN
 /** The file attributes access mask. */
 #define RTFILE_O_ACCESS_ATTR_MASK   0x00030000
 
+/** Open file for async I/O
+ * @remark  This flag may not be needed on all platforms,
+ *          and will be ignored on those.
+ */
+#define RTFILE_O_ASYNC_IO           0x00040000
+
 /** Unix file mode mask for use when creating files. */
 #define RTFILE_O_CREATE_MODE_MASK   0x1ff00000
 /** The number of bits to shift to get the file mode mask.
  * To extract it: (fFlags & RTFILE_O_CREATE_MODE_MASK) >> RTFILE_O_CREATE_MODE_SHIFT.
  */
 #define RTFILE_O_CREATE_MODE_SHIFT  20
-/** Open file for async I/O
- * @remark  This flag may not be needed on all platforms,
- *          and will be ignored on those.
- */
-#define RTFILE_O_ASYNC_IO           0x00040000
 /** Disables caching.
  *
  * Useful when using very big files which might bring the host I/O scheduler to
@@ -172,7 +179,7 @@ RT_C_DECLS_BEGIN
 /** Mask of all valid flags.
  * @remark  This doesn't validate the access mode properly.
  */
-#define RTFILE_O_VALID_MASK         0x1ffFFB73
+#define RTFILE_O_VALID_MASK         0x1ffFFB77
 
 /** @} */
 

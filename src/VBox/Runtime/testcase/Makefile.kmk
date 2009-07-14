@@ -60,6 +60,7 @@ PROGRAMS += \
 	tstEnv \
 	tstErrUnique \
 	tstFile \
+	tstFileAppend-1 \
 	tstFileLock \
 	tstFork \
 	tstGetOpt \
@@ -182,6 +183,8 @@ tstErrUnique_INCS = $(IPRT_OUT_DIR)/
 tstErrUnique.cpp_DEPS = $(IPRT_OUT_DIR)/errmsgdata.h
 
 tstFile_SOURCES = tstFile.cpp
+
+tstFileAppend-1_SOURCES = tstFileAppend-1.cpp
 
 tstFileAppendWin-1_SOURCES = tstFileAppendWin-1.cpp
 
