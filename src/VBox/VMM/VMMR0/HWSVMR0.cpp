@@ -2778,7 +2778,7 @@ VMMR0DECL(int) SVMR0InvalidatePage(PVM pVM, PVMCPU pVCpu, RTGCPTR GCVirt)
 #if HC_ARCH_BITS == 32
         /* If we get a flush in 64 bits guest mode, then force a full TLB flush. Invlpga takes only 32 bits addresses. */
         if (CPUMIsGuestInLongMode(pVCpu))
-            pVCpu->hwaccm.s.fForceTLBFlush = true;
+            VMCPU_FF_SET(pVCpu, VMCPU_FF_TLB_FLUSH);
         else
 #endif
             SVMR0InvlpgA(GCVirt, pVMCB->ctrl.TLBCtrl.n.u32ASID);
@@ -2800,7 +2800,7 @@ VMMR0DECL(int) SVMR0InvalidatePhysPage(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhys)
 {
     Assert(pVM->hwaccm.s.fNestedPaging);
     /* invlpga only invalidates TLB entries for guest virtual addresses; we have no choice but to force a TLB flush here. */
-    pVCpu->hwaccm.s.fForceTLBFlush = true;
+    VMCPU_FF_ISSET(pVCpu, VMCPU_FF_TLB_FLUSH);
     STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatFlushTLBInvlpga);
     return VINF_SUCCESS;
 }
