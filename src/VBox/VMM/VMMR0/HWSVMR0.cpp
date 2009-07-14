@@ -2772,8 +2772,7 @@ VMMR0DECL(int) SVMR0InvalidatePage(PVM pVM, PVMCPU pVCpu, RTGCPTR GCVirt)
         AssertReturn(pVM, VERR_INVALID_PARAMETER);
         Assert(pVM->hwaccm.s.svm.fSupported);
 
-        /* @todo SMP */
-        pVMCB = (SVM_VMCB *)pVM->aCpus[0].hwaccm.s.svm.pVMCB;
+        pVMCB = (SVM_VMCB *)pVCpu->hwaccm.s.svm.pVMCB;
         AssertMsgReturn(pVMCB, ("Invalid pVMCB\n"), VERR_EM_INTERNAL_ERROR);
 
 #if HC_ARCH_BITS == 32
