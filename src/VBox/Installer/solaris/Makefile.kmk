@@ -153,15 +153,19 @@ solaris-doc_SOURCES = \
 solaris-bin_INST = bin/
 solaris-bin_MODE = a+rx,u+w
 solaris-bin_SOURCES = \
-	$(if $(VBOX_WITH_PYTHON),$(PATH_ROOT)/src/VBox/Frontends/VBoxShell/vboxshell.py=>vboxshell.py,)
+	$(if $(VBOX_WITH_PYTHON),$(PATH_ROOT)/src/VBox/Frontends/VBoxShell/vboxshell.py,) \
+	$(VBOX_PATH_SOL_INST_SRC)/vboxdrv.sh \
+	$(VBOX_PATH_SOL_INST_SRC)/VBox.sh \
+	$(VBOX_PATH_SOL_INST_SRC)/ipsinstall.sh \
+	$(if $(VBOX_WITH_WEBSERVICES),$(VBOX_PATH_SOL_INST_SRC)/smf-vboxwebsrv.sh,)
 
 solaris-drv-confs_INST = bin/
 solaris-drv-confs_MODE = a+r,u+w
 solaris-drv-confs_SOURCES = \
-	$(PATH_ROOT)/src/VBox/HostDrivers/Support/solaris/vboxdrv.conf=>vboxdrv.conf \
-	$(if $(VBOX_WITH_NETFLT),$(PATH_ROOT)/src/VBox/HostDrivers/VBoxNetFlt/solaris/vboxflt.conf=>vboxflt.conf) \
-	$(if $(VBOX_WITH_NETADP),$(PATH_ROOT)/src/VBox/HostDrivers/VBoxNetAdp/solaris/vboxnet.conf=>vboxnet.conf) \
-	$(if $(VBOX_WITH_USB),$(PATH_ROOT)/src/VBox/HostDrivers/VBoxUSB/solaris/vboxusbmon.conf=>vboxusbmon.conf)
+	$(PATH_ROOT)/src/VBox/HostDrivers/Support/solaris/vboxdrv.conf \
+	$(if $(VBOX_WITH_NETFLT),$(PATH_ROOT)/src/VBox/HostDrivers/VBoxNetFlt/solaris/vboxflt.conf) \
+	$(if $(VBOX_WITH_NETADP),$(PATH_ROOT)/src/VBox/HostDrivers/VBoxNetAdp/solaris/vboxnet.conf) \
+	$(if $(VBOX_WITH_USB),$(PATH_ROOT)/src/VBox/HostDrivers/VBoxUSB/solaris/vboxusbmon.conf)
 
 #
 # Note: Other than the files produced during packing (.pkg, .gzip etc.) all files that
@@ -254,7 +258,6 @@ SOLARIS_NO_STRIP = \
 	components/VBoxXPCOMBase.xpt \
 	components/VirtualBox_XPCOM.xpt \
 	$(if $(and $(VBOX_LICENSE_FILES),$(VBOX_WITH_QTGUI)),$(VBOX_LICENSE_FILES)) \
-	$(if $(VBOX_WITH_PYTHON),vboxshell.py,)
 
 SOLARIS_USRBIN_LINKS = \
 	$(if $(VBOX_WITH_QTGUI),VirtualBox,) \
@@ -262,21 +265,24 @@ SOLARIS_USRBIN_LINKS = \
 	$(if $(VBOX_WITH_VBOXSDL),VBoxSDL,) \
 	VBoxManage
 
+SOLARIS_COMMON_EXES = \
+	vboxdrv.sh \
+	VBox.sh \
+	ipsinstall.sh \
+	$(if $(VBOX_WITH_PYTHON),vboxshell.py,) \
+	$(if $(VBOX_WITH_WEBSERVICES),smf-vboxwebsrv.sh,) \
+
 # Things packed explicitly, not from $(PATH_BIN), track these to clean-up properly
 SOLARIS_EXTRAS = \
 	$(if $(VBOX_OSE),,LICENSE) \
 	VBox.png \
 	autoresponse \
-	vboxdrv.sh \
-	VBox.sh \
-	ipsinstall.sh \
 	$(if $(VBOX_WITH_VBOXSDL),libSDL-1.2.so.0,) \
 	$(if $(not $(VBOX_WITH_NETFLT))vnic_setup.sh,) \
 	$(if $(not $(VBOX_WITH_NETFLT))vnic_term.sh,) \
 	$(if $(VBOX_WITH_QTGUI),virtualbox.desktop,) \
 	virtualbox-webservice.xml \
 	virtualbox-zoneaccess.xml \
-	smf-vboxwebsrv.sh \
 	VBoxQtconfig \
 	VBoxISAExec \
 	vbox.copyright \
@@ -358,6 +364,7 @@ SOLARIS_ARCH_FILES := \
 	$(SOLARIS_NO_STRIP) \
 	$(SOLARIS_EXTRAS) \
 	$(SOLARIS_QTLIBS) \
+	$(SOLARIS_COMMON_EXES) \
 	$(SOLARIS_COMMON)
 
 SOLARIS_DBG_FILES := \
@@ -408,6 +415,7 @@ else
 endif
 SOLARIS_ARCH_DEPFILES += $(addprefix $(SOLARIS_VBOXINST_DIR)/,$(SOLARIS_COMMON)) \
 	$(addprefix $(SOLARIS_DRIVERINST_DIR)/,$(SOLARIS_DRIVER_CONFS)) \
+	$(addprefix $(SOLARIS_VBOXINST_DIR)/,$(SOLARIS_COMMON_EXES)) \
 	$(addprefix $(SOLARIS_USRBIN_DIR)/,$(SOLARIS_USRBIN_LINKS))
 
 BLDDIRS += $(foreach d,\
@@ -469,7 +477,6 @@ $(PATH_BIN)/$(PKG_FILENAME).tar.gz: \
 		$(VBOX_PATH_SOL_INST_SRC)/vbox.pkginfo \
 		$(VBOX_PATH_SOL_INST_SRC)/vbox.space \
 		$(VBOX_PATH_SOL_INST_SRC)/vbox.pkgresponse \
-		$(VBOX_PATH_SOL_INST_SRC)/VBox.sh \
 		$(VBOX_PATH_SOL_INST_SRC)/ipsinstall.sh \
 		$(VBOX_PATH_SOL_INST_SRC)/virtualbox.desktop \
 		$(PATH_ROOT)/doc/ReadMe-Solaris.txt \
@@ -538,17 +545,14 @@ endif
 	$(QUIET)$(if $(VBOX_WITH_QTGUI),$(LN_SYMLINK) -f ../../$(SOLARIS_VBOXINST_SUBDIR)/VBox.sh                            $(SOLARIS_USRBIN_DIR)/VBoxQtconfig,)
 	$(QUIET)$(INSTALL) -m 0644 $(VBOX_PATH_SOL_INST_SRC)/virtualbox-zoneaccess.xml                                       $(SOLARIS_VBOXSMF_DIR)/virtualbox-zoneaccess.xml
 	$(QUIET)$(if $(VBOX_WITH_WEBSERVICES),$(INSTALL) -m 0644 $(VBOX_PATH_SOL_INST_SRC)/virtualbox-webservice.xml         $(SOLARIS_VBOXSMF_DIR)/virtualbox-webservice.xml,)
-	$(QUIET)$(if $(VBOX_WITH_WEBSERVICES),$(INSTALL) -m 0755 $(VBOX_PATH_SOL_INST_SRC)/smf-vboxwebsrv.sh                 $(SOLARIS_VBOXINST_DIR)/smf-vboxwebsrv.sh,)
 	$(QUIET)$(if $(not $(VBOX_WITH_NETFLT))$(INSTALL) -m 0755 $(PATH_ROOT)/src/VBox/Devices/Network/solaris/vnicinit_solaris.sh            $(SOLARIS_VBOXINST_DIR)/vnic_setup.sh,)
 	$(QUIET)$(if $(not $(VBOX_WITH_NETFLT))$(INSTALL) -m 0755 $(PATH_ROOT)/src/VBox/Devices/Network/solaris/vnicterm_solaris.sh            $(SOLARIS_VBOXINST_DIR)/vnic_term.sh,)
 	$(QUIET)$(SED) \
 		-e "s/_HARDENED_/$(if $(VBOX_WITH_HARDENED),hardened,)/" \
 		--output $(SOLARIS_VBOXINST_DIR)/vboxdrv.sh.tmp \
-		 $(VBOX_PATH_SOL_INST_SRC)/vboxdrv.sh
+		 $(PATH_BIN)/vboxdrv.sh
 	$(QUIET)$(INSTALL) -m 0755 $(SOLARIS_VBOXINST_DIR)/vboxdrv.sh.tmp                                       $(SOLARIS_VBOXINST_DIR)/vboxdrv.sh
 	$(QUIET)$(RM) -f $(SOLARIS_VBOXINST_DIR)/vboxdrv.sh.tmp
-	$(QUIET)$(INSTALL) -m 0755 $(VBOX_PATH_SOL_INST_SRC)/VBox.sh                                            $(SOLARIS_VBOXINST_DIR)/VBox.sh
-	$(QUIET)$(INSTALL) -m 0755 $(VBOX_PATH_SOL_INST_SRC)/ipsinstall.sh                                      $(SOLARIS_VBOXINST_DIR)/ipsinstall.sh
 	$(QUIET)$(if $(VBOX_WITH_QTGUI),$(INSTALL) -m 0644 $(VBOX_PATH_SOL_INST_SRC)/virtualbox.desktop         $(SOLARIS_USRSHR_APPS_DIR)/virtualbox.desktop,)
 	$(QUIET)$(INSTALL) -m 0644 $(SOLARIS_OUT_BIN)/VBox.png                                                  $(SOLARIS_USRSHR_PIXMAPS_DIR)/VBox.png
 	$(QUIET)$(INSTALL) -m 0755 $(VBOX_PATH_SOL_INST_SRC)/postinstall.sh                                     $(SOLARIS_BASEINST_DIR)/postinstall.sh
@@ -653,6 +657,12 @@ $(addprefix $(SOLARIS_VBOXINST_DIR)/,$(SOLARIS_COMMON)): \
 $(addprefix $(SOLARIS_DRIVERINST_DIR)/,$(SOLARIS_DRIVER_CONFS)): \
 		$(SOLARIS_DRIVERINST_DIR)/% : $(PATH_BIN)/% | $$(dir $$@)
 	$(INSTALL) -m 0644 $< $@
+
+# Common executables
+$(addprefix $(SOLARIS_VBOXINST_DIR)/,$(SOLARIS_COMMON_EXES)): \
+		$(SOLARIS_VBOXINST_DIR)/% : $(PATH_BIN)/% | $$(dir $$@)
+	$(INSTALL) -m 0755 $< $@
+
 
 
 #
