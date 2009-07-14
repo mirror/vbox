@@ -163,7 +163,7 @@ void PACKSPU_APIENTRY
 packspu_ArrayElement( GLint index )
 {
 /*@todo cash guest/host pointers calculation and use appropriate path here without crStateUseServerArrays call*/
-#if 0
+#if 1
     GLboolean serverArrays = GL_FALSE;
 
 #if CR_ARB_vertex_buffer_object
