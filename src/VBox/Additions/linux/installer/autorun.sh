@@ -89,7 +89,7 @@ idepend=quit
 rdepend=quit
 space=quit
 mail= 
-" >> /tmp/vbox.autoinstall
+" > /tmp/vbox.autoinstall
 
         # check gnome-terminal, use it if it exists.
         if test -f "/usr/bin/gnome-terminal"; then
