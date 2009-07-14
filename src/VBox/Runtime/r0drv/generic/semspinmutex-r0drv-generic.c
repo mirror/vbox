@@ -149,6 +149,8 @@ RT_EXPORT_SYMBOL(RTSemSpinMutexCreate);
  */
 static int rtSemSpinMutexEnter(RTSEMSPINMUTEXSTATE *pState, RTSEMSPINMUTEXINTERNAL *pThis)
 {
+    int rc = VINF_SUCCESS;
+
     /** @todo Later #1: When entering in interrupt context and we're not able to
      *        wake up threads from it, we could try switch the lock into pure
      *        spinlock mode. This would require that there are no other threads
@@ -186,7 +188,7 @@ static int rtSemSpinMutexEnter(RTSEMSPINMUTEXSTATE *pState, RTSEMSPINMUTEXINTERN
     if (RTThreadIsInInterrupt(NIL_RTTHREAD))
     {
         if (!(pThis->fFlags & RTSEMSPINMUTEX_FLAGS_IRQ_SAFE))
-            return VERR_SEM_BAD_CONTEXT;
+            rc = VINF_SEM_BAD_CONTEXT; /* Try, but owner might be interrupted. */
         pState->fSpin = true;
     }
     RTThreadPreemptDisable(&pState->PreemptState);
@@ -211,7 +213,7 @@ static int rtSemSpinMutexEnter(RTSEMSPINMUTEXSTATE *pState, RTSEMSPINMUTEXINTERN
     else
         pState->fSavedFlags = 0;
 
-    return VINF_SUCCESS;
+    return rc;
 }
 
 
@@ -269,7 +271,7 @@ RTDECL(int) RTSemSpinMutexTryRequest(RTSEMSPINMUTEX hSpinMtx)
     if (!fRc)
     {
         /* Busy, too bad. Check for attempts at nested access. */
-        int rc = VERR_SEM_BUSY;
+        rc = VERR_SEM_BUSY;
         if (RT_UNLIKELY(pThis->hOwner == hSelf))
         {
             AssertMsgFailed(("%p attempt at nested access\n"));
@@ -328,41 +330,79 @@ RTDECL(int) RTSemSpinMutexRequest(RTSEMSPINMUTEX hSpinMtx)
         }
 
         /*
+         * Return if we're in interrupt context and the semaphore isn't
+         * configure to be interrupt safe.
+         */
+        if (rc == VINF_SEM_BAD_CONTEXT)
+        {
+            rtSemSpinMutexLeave(&State);
+            return VERR_SEM_BAD_CONTEXT;
+        }
+
+        /*
          * Ok, we have to wait.
          */
-        for (cSpins = 0;; cSpins++)
+        if (State.fSpin)
         {
-            ASMAtomicCmpXchgHandle(&pThis->hOwner, hSelf, NIL_RTNATIVETHREAD, fRc);
-            if (fRc)
-                break;
-
-            if (RT_UNLIKELY(pThis->u32Magic != RTSEMSPINMUTEX_MAGIC))
+            for (cSpins = 0; ; cSpins++)
             {
-                rtSemSpinMutexLeave(&State);
-                return VERR_SEM_DESTROYED;
-            }
-
-            if (    State.fSpin
-                ||  (cSpins & 15) != 15 /* spin a bit everytime we wake up. */)
+                ASMAtomicCmpXchgHandle(&pThis->hOwner, hSelf, NIL_RTNATIVETHREAD, fRc);
+                if (fRc)
+                    break;
                 ASMNopPause();
-            else
-            {
-                rtSemSpinMutexLeave(&State);
-
-                rc = RTSemEventWait(pThis->hEventSem, RT_INDEFINITE_WAIT);
-                ASMCompilerBarrier();
-                if (RT_SUCCESS(rc))
-                    AssertReturn(pThis->u32Magic == RTSEMSPINMUTEX_MAGIC, VERR_SEM_DESTROYED);
-                else if (rc == VERR_INTERRUPTED)
-                    AssertRC(rc);       /* shouldn't happen */
-                else
+                if (RT_UNLIKELY(pThis->u32Magic != RTSEMSPINMUTEX_MAGIC))
                 {
-                    AssertRC(rc);
-                    return rc;
+                    rtSemSpinMutexLeave(&State);
+                    return VERR_SEM_DESTROYED;
                 }
 
-                rc = rtSemSpinMutexEnter(&State, pThis);
-                AssertRCReturn(rc, rc);
+                /*
+                 * "Yield" once in a while. This may lower our IRQL/PIL which
+                 * may preempting us, and it will certainly stop the hammering
+                 * of hOwner for a little while.
+                 */
+                if ((cSpins & 0x7f) == 0x1f)
+                {
+                    rtSemSpinMutexLeave(&State);
+                    rtSemSpinMutexEnter(&State, pThis);
+                    Assert(State.fSpin);
+                }
+            }
+        }
+        else
+        {
+            for (cSpins = 0;; cSpins++)
+            {
+                ASMAtomicCmpXchgHandle(&pThis->hOwner, hSelf, NIL_RTNATIVETHREAD, fRc);
+                if (fRc)
+                    break;
+                ASMNopPause();
+                if (RT_UNLIKELY(pThis->u32Magic != RTSEMSPINMUTEX_MAGIC))
+                {
+                    rtSemSpinMutexLeave(&State);
+                    return VERR_SEM_DESTROYED;
+                }
+
+                if ((cSpins & 15) == 15) /* spin a bit before going sleep (again). */
+                {
+                    rtSemSpinMutexLeave(&State);
+
+                    rc = RTSemEventWait(pThis->hEventSem, RT_INDEFINITE_WAIT);
+                    ASMCompilerBarrier();
+                    if (RT_SUCCESS(rc))
+                        AssertReturn(pThis->u32Magic == RTSEMSPINMUTEX_MAGIC, VERR_SEM_DESTROYED);
+                    else if (rc == VERR_INTERRUPTED)
+                        AssertRC(rc);       /* shouldn't happen */
+                    else
+                    {
+                        AssertRC(rc);
+                        return rc;
+                    }
+
+                    rc = rtSemSpinMutexEnter(&State, pThis);
+                    AssertRCReturn(rc, rc);
+                    Assert(!State.fSpin);
+                }
             }
         }
     }

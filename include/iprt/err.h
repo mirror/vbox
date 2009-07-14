@@ -732,6 +732,8 @@ RTDECL(PCRTCOMERRMSG) RTErrCOMGet(uint32_t rc);
 #define VERR_SEM_OUT_OF_TURN                (-366)
 /** Tried to take a semaphore in a bad context. */
 #define VERR_SEM_BAD_CONTEXT                (-367)
+/** Don't spin for the semaphore, but it is safe to try grab it. */
+#define VINF_SEM_BAD_CONTEXT                (367)
 /** @} */
 
 
