@@ -34,6 +34,15 @@
 
 #include "VMMDevHGCM.h"
 
+#ifdef VBOX_WITH_DTRACE
+# include "VBoxDD-dtrace.h"
+#else
+# define VBOXDD_HGCMCALL_ENTER(a,b,c,d)             do { } while (0)
+# define VBOXDD_HGCMCALL_COMPLETED_REQ(a,b)         do { } while (0)
+# define VBOXDD_HGCMCALL_COMPLETED_EMT(a,b)         do { } while (0)
+# define VBOXDD_HGCMCALL_COMPLETED_DONE(a,b,c,d)    do { } while (0)
+#endif
+
 typedef enum _VBOXHGCMCMDTYPE
 {
     VBOXHGCMCMDTYPE_LOADSTATE = 0,
@@ -723,6 +732,8 @@ int vmmdevHGCMCall (VMMDevState *pVMMDevState, VMMDevHGCMCall *pHGCMCall, uint32
     {
         pCmd->paLinPtrs = NULL;
     }
+
+    VBOXDD_HGCMCALL_ENTER(pCmd, pHGCMCall->u32Function, pHGCMCall->u32ClientID, cbCmdSize);
 
     /* Process parameters, changing them to host context pointers for easy
      * processing by connector. Guest must insure that the pointed data is actually
@@ -1570,6 +1581,10 @@ static int vmmdevHGCMCmdVerify (PVBOXHGCMCMD pCmd, VMMDevHGCMRequestHeader *pHea
 DECLCALLBACK(void) hgcmCompletedWorker (PPDMIHGCMPORT pInterface, int32_t result, PVBOXHGCMCMD pCmd)
 {
     VMMDevState *pVMMDevState = PDMIHGCMPORT_2_VMMDEVSTATE(pInterface);
+#ifdef VBOX_WITH_DTRACE
+    uint32_t idFunction = 0;
+    uint32_t idClient   = 0;
+#endif
 
     int rc = VINF_SUCCESS;
 
@@ -1592,6 +1607,7 @@ DECLCALLBACK(void) hgcmCompletedWorker (PPDMIHGCMPORT pInterface, int32_t result
      * and then check the flag. Cancelled commands must not be written
      * back to guest memory.
      */
+    VBOXDD_HGCMCALL_COMPLETED_EMT(pCmd, result);
     vmmdevHGCMRemoveCommand (pVMMDevState, pCmd);
 
     if (pCmd->fCancelled)
@@ -1751,6 +1767,10 @@ DECLCALLBACK(void) hgcmCompletedWorker (PPDMIHGCMPORT pInterface, int32_t result
                         }
                     }
                 }
+# ifdef VBOX_WITH_DTRACE
+                idFunction = pHGCMCall->u32Function;
+                idClient   = pHGCMCall->u32ClientID;
+# endif
                 break;
             }
 
@@ -1849,6 +1869,10 @@ DECLCALLBACK(void) hgcmCompletedWorker (PPDMIHGCMPORT pInterface, int32_t result
                         }
                     }
                 }
+# ifdef VBOX_WITH_DTRACE
+                idFunction = pHGCMCall->u32Function;
+                idClient   = pHGCMCall->u32ClientID;
+# endif
                 break;
             }
 #else
@@ -1947,6 +1971,10 @@ DECLCALLBACK(void) hgcmCompletedWorker (PPDMIHGCMPORT pInterface, int32_t result
                         }
                     }
                 }
+# ifdef VBOX_WITH_DTRACE
+                idFunction = pHGCMCall->u32Function;
+                idClient   = pHGCMCall->u32ClientID;
+# endif
                 break;
             }
 #endif /* VBOX_WITH_64_BITS_GUESTS */
@@ -1995,12 +2023,15 @@ DECLCALLBACK(void) hgcmCompletedWorker (PPDMIHGCMPORT pInterface, int32_t result
 
     RTMemFree (pCmd);
 
+    VBOXDD_HGCMCALL_COMPLETED_DONE(pCmd, idFunction, idClient, result);
     return;
 }
 
 DECLCALLBACK(void) hgcmCompleted (PPDMIHGCMPORT pInterface, int32_t result, PVBOXHGCMCMD pCmd)
 {
     VMMDevState *pVMMDevState = PDMIHGCMPORT_2_VMMDEVSTATE(pInterface);
+
+    VBOXDD_HGCMCALL_COMPLETED_REQ(pCmd, result);
 
 /** @todo no longer necessary to forward to EMT, but it might be more
  *        efficient...? */
