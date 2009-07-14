@@ -2761,7 +2761,7 @@ static int svmR0InterpretInvpg(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, ui
  */
 VMMR0DECL(int) SVMR0InvalidatePage(PVM pVM, PVMCPU pVCpu, RTGCPTR GCVirt)
 {
-    bool fFlushPending = pVM->hwaccm.s.svm.fAlwaysFlushTLB | pVCpu->hwaccm.s.fForceTLBFlush;
+    bool fFlushPending = pVM->hwaccm.s.svm.fAlwaysFlushTLB | VMCPU_FF_ISSET(pVCpu, VMCPU_FF_TLB_FLUSH);
 
     /* Skip it if a TLB flush is already pending. */
     if (!fFlushPending)

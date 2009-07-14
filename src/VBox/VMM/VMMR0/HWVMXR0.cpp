@@ -3914,7 +3914,7 @@ static void vmxR0FlushVPID(PVM pVM, PVMCPU pVCpu, VMX_FLUSH enmFlush, RTGCPTR GC
  */
 VMMR0DECL(int) VMXR0InvalidatePage(PVM pVM, PVMCPU pVCpu, RTGCPTR GCVirt)
 {
-    bool fFlushPending = pVCpu->hwaccm.s.fForceTLBFlush;
+    bool fFlushPending = VMCPU_FF_ISSET(pVCpu, VMCPU_FF_TLB_FLUSH);
 
     Log2(("VMXR0InvalidatePage %RGv\n", GCVirt));
 
@@ -3944,7 +3944,7 @@ VMMR0DECL(int) VMXR0InvalidatePage(PVM pVM, PVMCPU pVCpu, RTGCPTR GCVirt)
  */
 VMMR0DECL(int) VMXR0InvalidatePhysPage(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhys)
 {
-    bool fFlushPending = pVCpu->hwaccm.s.fForceTLBFlush;
+    bool fFlushPending = VMCPU_FF_ISSET(pVCpu, VMCPU_FF_TLB_FLUSH);
 
     Assert(pVM->hwaccm.s.fNestedPaging);
 
