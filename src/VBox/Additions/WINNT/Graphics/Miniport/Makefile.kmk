@@ -61,5 +61,9 @@ VBoxVideo_LIBS         += \
 VBoxVideo_DEFS += VBOX_WITH_HGSMI
 endif
 
+ifdef VBOX_WITH_VIDEOHWACCEL
+VBoxVideo_DEFS += VBOX_WITH_VIDEOHWACCEL
+endif
+
 include	$(KBUILD_PATH)/subfooter.kmk
 

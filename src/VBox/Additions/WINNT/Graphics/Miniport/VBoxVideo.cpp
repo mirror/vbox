@@ -73,7 +73,11 @@ ULONG DriverEntry(IN PVOID Context1, IN PVOID Context2)
     InitData.HwInitDataSize = sizeof(VIDEO_HW_INITIALIZATION_DATA);
     InitData.HwFindAdapter = VBoxVideoFindAdapter;
     InitData.HwInitialize = VBoxVideoInitialize;
+#if defined(VBOX_WITH_HGSMI) && defined(VBOX_WITH_VIDEOHWACCEL)
+    InitData.HwInterrupt = VBoxVideoInterrupt;
+#else
     InitData.HwInterrupt = NULL;
+#endif
     InitData.HwStartIO = VBoxVideoStartIO;
     InitData.HwResetHw = VBoxVideoResetHW;
     InitData.HwDeviceExtensionSize = 0;
@@ -1197,7 +1201,29 @@ VP_STATUS VBoxVideoFindAdapter(IN PVOID HwDeviceExtension,
          L"HardwareInformation.BiosString",
          VBoxBiosString,
          sizeof(VBoxBiosString));
+#if defined(VBOX_WITH_HGSMI) && defined(VBOX_WITH_VIDEOHWACCEL)
+      VIDEO_ACCESS_RANGE tmpRanges[1];
+      ULONG slot;
 
+      /* need to call VideoPortGetAccessRanges to ensure interrupt info in ConfigInfo gets set up */
+      VP_STATUS status = VideoPortGetAccessRanges(HwDeviceExtension,
+                                        0,
+                                        NULL,
+                                        1,
+                                        tmpRanges,
+                                        NULL,
+                                        NULL,
+                                        (PULONG) &slot);
+      Assert(status == NO_ERROR );
+//      Assert(AccessRanges[0].RangeStart.QuadPart == tmpRanges[0].RangeStart.QuadPart);
+//      Assert(AccessRanges[0].RangeLength == tmpRanges[0].RangeLength);
+//      Assert(AccessRanges[0].RangeInIoSpace == tmpRanges[0].RangeInIoSpace);
+//      Assert(AccessRanges[0].RangeVisible == tmpRanges[0].RangeVisible);
+//      Assert(AccessRanges[0].RangeShareable == tmpRanges[0].RangeShareable);
+//      Assert(AccessRanges[0].RangePassive == tmpRanges[0].RangePassive);
+
+      /* no matter what we get with VideoPortGetAccessRanges, we assert the default ranges */
+#endif
       rc = VideoPortVerifyAccessRanges(HwDeviceExtension, 1, AccessRanges);
       dprintf(("VBoxVideo::VBoxVideoFindAdapter: VideoPortVerifyAccessRanges returned 0x%x\n", rc));
       // @todo for some reason, I get an ERROR_INVALID_PARAMETER from NT4 SP0
@@ -1287,6 +1313,29 @@ BOOLEAN VBoxVideoInitialize(PVOID HwDeviceExtension)
 
    return TRUE;
 }
+
+#if defined(VBOX_WITH_HGSMI) && defined(VBOX_WITH_VIDEOHWACCEL)
+
+BOOLEAN VBoxVideoInterrupt(PVOID  HwDeviceExtension)
+{
+    PDEVICE_EXTENSION devExt = (PDEVICE_EXTENSION)HwDeviceExtension;
+    PDEVICE_EXTENSION PrimaryExtension = devExt->pPrimary;
+    uint32_t flags = PrimaryExtension->u.primary.pHostFlags->u32HostFlags;
+    if((flags & HGSMIHOSTFLAGS_IRQ) != 0)
+    {
+        if((flags & HGSMIHOSTFLAGS_COMMANDS_PENDING) != 0)
+        {
+            /* schedule a DPC*/
+            BOOLEAN bResult = VideoPortQueueDpc(PrimaryExtension, VBoxVideoHGSMIDpc, NULL);
+            Assert(bResult);
+        }
+        /* clear the IRQ */
+        HGSMIClearIrq (PrimaryExtension);
+        return TRUE;
+    }
+    return FALSE;
+}
+#endif
 
 /**
  * VBoxVideoStartIO

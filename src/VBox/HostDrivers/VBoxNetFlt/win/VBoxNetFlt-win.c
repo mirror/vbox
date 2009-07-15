@@ -2184,7 +2184,7 @@ DECLHIDDEN(NDIS_STATUS) vboxNetFltWinPtInitBind(PADAPT *ppAdapt, PNDIS_STRING pO
         int rc;
         PVBOXNETFLTINS pInstance;
         USHORT cbAnsiName = pBindToMiniportName->Length;/* the lenght is is bytes ; *2 ;RtlUnicodeStringToAnsiSize(pBindToMiniportName)*/
-        char* pAnsiName = alloca(cbAnsiName);
+//        char* pAnsiName = alloca(cbAnsiName);
         CREATE_INSTANCE_CONTEXT Context;
         RTSPINLOCKTMP Tmp = RTSPINLOCKTMP_INITIALIZER;
 
@@ -2197,20 +2197,21 @@ DECLHIDDEN(NDIS_STATUS) vboxNetFltWinPtInitBind(PADAPT *ppAdapt, PNDIS_STRING pO
 # endif
         Context.Status = NDIS_STATUS_SUCCESS;
 
-        AnsiString.Buffer = pAnsiName;
+//        AnsiString.Buffer = pAnsiName;
         AnsiString.Length = 0;
         AnsiString.MaximumLength = cbAnsiName;
 
         Assert(KeGetCurrentIrql() == PASSIVE_LEVEL);
 
-        Status = RtlUnicodeStringToAnsiString(&AnsiString, pBindToMiniportName, false);
+        Status = RtlUnicodeStringToAnsiString(&AnsiString, pBindToMiniportName, true);
 
         if(Status != STATUS_SUCCESS)
         {
             break;
         }
 
-        rc = vboxNetFltSearchCreateInstance(&g_VBoxNetFltGlobals, pAnsiName, &pInstance, &Context);
+        rc = vboxNetFltSearchCreateInstance(&g_VBoxNetFltGlobals, AnsiString.Buffer, &pInstance, &Context);
+        RtlFreeAnsiString(&AnsiString);
         if(RT_FAILURE(rc))
         {
         	Assert(0);

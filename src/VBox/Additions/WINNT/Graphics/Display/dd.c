@@ -1054,6 +1054,7 @@ DWORD APIENTRY DdLock(PDD_LOCKDATA lpLock)
         if(pCmd)
         {
             VBOXVHWACMD_SURF_LOCK * pBody = VBOXVHWACMD_BODY(pCmd, VBOXVHWACMD_SURF_LOCK);
+            RECT tmpRect, *pRect;
             memset(pBody, 0, sizeof(VBOXVHWACMD_SURF_LOCK));
 
             pBody->u.in.offSurface = (uint64_t)lpSurfaceGlobal->fpVidMem;
@@ -1074,6 +1075,25 @@ DWORD APIENTRY DdLock(PDD_LOCKDATA lpLock)
             if(VBOXDD_CHECKFLAG(lpLock->dwFlags, DDLOCK_DISCARDCONTENTS))
             {
                 pBody->u.in.flags |= VBOXVHWA_LOCK_DISCARDCONTENTS;
+//                if(lpLock->bHasRect)
+//                {
+//                    pRect = &lpLock->rArea;
+//                }
+//                else
+//                {
+//                    tmpRect.left=0;
+//                    tmpRect.top=0;
+//                    tmpRect.right=lpSurfaceGlobal->wWidth-1;
+//                    tmpRect.bottom=lpSurfaceGlobal->wHeight-1;
+//                    pRect = &tmpRect;
+//                }
+//
+//                if(vboxVHWARegionIncluded(&pDesc->DirtyRegion, pRect))
+//                {
+//                    vboxVHWARegionClear(&pDesc->DirtyRegion);
+//                }
+//            }
+//            else if(vboxVHWARegionInterse)
                 /* we're not interested in completion, just send the command */
                 vboxVHWACommandSubmitAsynch(pDev, pCmd, vboxVHWAFreeCmdCompletion, NULL);
             }
