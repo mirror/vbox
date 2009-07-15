@@ -24,6 +24,12 @@
  */
 
 
+/** @todo Use some header that we have in common with VBoxGuestLib.h... */
+DECLVBGL(void *) VBoxGuestIDCOpen(uint32_t *pu32Version);
+DECLVBGL(int) VBoxGuestIDCClose(void *pvSession);
+DECLVBGL(int) VBoxGuestIDCCall(void *pvSession, unsigned iCmd, void *pvData, size_t cbData, size_t *pcbDataReturned);
+
+
 /**
  * Open a new IDC connection.
  *
