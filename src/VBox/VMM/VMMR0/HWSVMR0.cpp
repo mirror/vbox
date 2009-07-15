@@ -54,6 +54,7 @@
 *******************************************************************************/
 static int svmR0InterpretInvpg(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, uint32_t uASID);
 static int svmR0ReplaceTprInstr(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx);
+static int svmR0EmulateTprVMMCall(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx);
 
 /*******************************************************************************
 *   Global Variables                                                           *
@@ -2261,10 +2262,17 @@ ResumeExecution:
         AssertMsg(rc == VERR_EM_INTERPRETER || rc == VINF_EM_HALT, ("EMU: mwait failed with %Rrc\n", rc));
         break;
 
+    case SVM_EXIT_VMMCALL:
+        rc = svmR0EmulateTprVMMCall(pVM, pVCpu, pCtx);
+        if (rc == VINF_SUCCESS)
+        {
+            goto ResumeExecution;   /* rip already updated. */
+        }
+        /* no break */
+
     case SVM_EXIT_RSM:
     case SVM_EXIT_INVLPGA:
     case SVM_EXIT_VMRUN:
-    case SVM_EXIT_VMMCALL:
     case SVM_EXIT_VMLOAD:
     case SVM_EXIT_VMSAVE:
     case SVM_EXIT_STGI:
@@ -2435,6 +2443,67 @@ static int svmR0EmulateTprMov(PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTX pCtx, un
 }
 
 /**
+ * Emulate simple mov tpr instruction
+ *
+ * @returns VBox status code.
+ * @param   pVM         The VM to operate on.
+ * @param   pVCpu       The VM CPU to operate on.
+ * @param   pCtx        CPU context
+ */
+static int svmR0EmulateTprVMMCall(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
+{
+    int rc;
+
+    Log(("Emulated VMMCall TPR access replacement at %RGv\n", pCtx->rip));
+
+    while (true)
+    {
+        bool    fPending;
+        uint8_t u8Tpr;
+
+        PHWACCMTPRPATCH pPatch = (PHWACCMTPRPATCH)RTAvloU32Get(&pVM->hwaccm.s.svm.PatchTree, (AVLOU32KEY)pCtx->eip);
+        if (!pPatch)
+            break;
+
+        switch(pPatch->enmType)
+        {
+        case HWACCMTPRINSTR_READ:
+            /* TPR caching in CR8 */
+            rc = PDMApicGetTPR(pVCpu, &u8Tpr, &fPending);
+            AssertRC(rc);
+
+            rc = DISWriteReg32(CPUMCTX2CORE(pCtx), pPatch->uDstOperand, u8Tpr);
+            AssertRC(rc);
+
+            Log(("Emulated read successfully\n"));
+            pCtx->rip += pPatch->cbOp;
+            break;
+
+        case HWACCMTPRINSTR_WRITE_REG:
+        case HWACCMTPRINSTR_WRITE_IMM:
+            /* Fetch the new TPR value */
+            if (pPatch->enmType == HWACCMTPRINSTR_WRITE_REG)
+            {
+                uint32_t val;
+
+                rc = DISFetchReg32(CPUMCTX2CORE(pCtx), pPatch->uSrcOperand, &val);
+                AssertRC(rc);
+                u8Tpr = val;
+            }
+            else
+                u8Tpr = (uint8_t)pPatch->uSrcOperand;
+
+            rc = PDMApicSetTPR(pVCpu, u8Tpr);
+            AssertRC(rc);
+            Log(("Emulated write successfully\n"));
+            pCtx->rip += pPatch->cbOp;
+            break;
+        }
+    }
+    return VINF_SUCCESS;
+}
+
+/**
  * Attempt to patch TPR mmio instructions
  *
  * @returns VBox status code.
@@ -2455,112 +2524,42 @@ static int svmR0ReplaceTprInstr(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     if (    rc == VINF_SUCCESS
         &&  pDis->pCurInstr->opcode == OP_MOV)
     {
-#if 0
-        uint8_t szInstr[15];
-        if (    cbOp == 10
-            &&  pDis->param1.flags == USE_DISPLACEMENT32
-            &&  pDis->param2.flags == USE_IMMEDIATE32)
+        if (pVM->hwaccm.s.svm.cPatches < RT_ELEMENTS(pVM->hwaccm.s.svm.aPatches))
         {
-            /* Found:
-             *   mov [fffe0080], immediate_dword                (10 bytes)
-             *
-             * Replace with:
-             *   mov free_register, immediate_dword >> 4        (5 bytes)
-             *   mov cr8, free_register                         (4 bytes)
-             *   nop                                            (1 byte)
-             *
-             */
-            uint32_t    u32tpr = (uint32_t)pDis->param2.parval;
+            uint8_t         aVMMCall[3] = { 0xf, 0x1, 0xd9};
+            uint32_t        idx = pVM->hwaccm.s.svm.cPatches;
+            PHWACCMTPRPATCH pPatch = &pVM->hwaccm.s.svm.aPatches[idx];
 
-            u32tpr = (u32tpr >> 4) & 0xf;
+            rc = PGMPhysSimpleReadGCPtr(pVCpu, pPatch->aOpcode, pCtx->rip, cbOp);
+            AssertRC(rc);
 
-            /* Check if the next instruction overwrites a general purpose register. If
-             * it does, then we can safely use it ourselves.
-             */
-            pCtx->rip += cbOp;
-            rc = EMInterpretDisasOne(pVM, pVCpu, CPUMCTX2CORE(pCtx), pDis, &cbOp);
-            pCtx->rip = oldrip;
-            if (    rc == VINF_SUCCESS
-                &&  pDis->pCurInstr->opcode == OP_MOV
-                &&  pDis->param1.flags == USE_REG_GEN32)
+            pPatch->cbOp     = cbOp;
+
+            if (pDis->param1.flags == USE_DISPLACEMENT32)
             {
-                /* 0xB8, dword immediate  = mov eax, dword immediate */
-                szInstr[0] = 0xB8 + pDis->param1.base.reg_gen;
-                szInstr[1] = (uint8_t)u32tpr;
-                szInstr[2] = 0;
-                szInstr[3] = 0;
-                szInstr[4] = 0;
-
-                /* 0xF0, 0x0F, 0x22, 0xC0 = mov cr8, eax */
-                szInstr[5] = 0xF0;
-                szInstr[6] = 0x0F;
-                szInstr[7] = 0x22;
-                szInstr[8] = 0xC0 | pDis->param1.base.reg_gen;
-                szInstr[9] = 0x90; /* nop */
-
-                rc = PGMPhysSimpleWriteGCPtr(pVCpu, pCtx->rip, szInstr, 10);
-                AssertRC(rc);
-
-                Log(("Acceptable write candidate!\n"));
-                return VINF_SUCCESS;
-            }
-        }
-        else
-        {
-            if (    pDis->param2.flags == USE_REG_GEN32
-                &&  cbOp == 6)
-            {
-                RTGCPTR  GCPtrTpr = (uint32_t)pDis->param1.disp32;
-                uint32_t uMmioReg = pDis->param2.base.reg_gen;
-
-                /* Found:
-                 *   mov dword [fffe0080], eax        (6 bytes)
-                 * Check if next instruction is a TPR read:
-                 *   mov ecx, dword [fffe0080]        (5 bytes)
-                 */
-                pCtx->rip += cbOp;
-                rc = EMInterpretDisasOne(pVM, pVCpu, CPUMCTX2CORE(pCtx), pDis, &cbOp);
-                pCtx->rip = oldrip;
-                if (    rc == VINF_SUCCESS
-                    &&  pDis->pCurInstr->opcode == OP_MOV
-                    &&  pDis->param1.flags == USE_REG_GEN32
-                    &&  pDis->param2.flags == USE_DISPLACEMENT32
-                    &&  pDis->param2.disp32 == (uint32_t)GCPtrTpr
-                    &&  cbOp == 5)
+                /* write. */
+                if (pDis->param2.flags == USE_REG_GEN32)
                 {
-                    /* mov new_reg, uMmioReg */
-                    szInstr[0] = 0x89;
-                    szInstr[1] = MAKE_MODRM(3, uMmioReg, pDis->param1.base.reg_gen);
-
-                    /* Let's hope the guest won't mind us trashing the source register...
-                     * shr uMmioReg, 4
-                     */
-                    szInstr[2] = 0xC1;
-                    szInstr[3] = 0xE8 | uMmioReg;
-                    szInstr[4] = 4;
-
-                    /* 0xF0, 0x0F, 0x22, 0xC0 = mov cr8, eax */
-                    szInstr[5] = 0xF0;
-                    szInstr[6] = 0x0F;
-                    szInstr[7] = 0x22;
-                    szInstr[8] = 0xC0 | uMmioReg;
-
-                    /* Two nop instructions */
-                    szInstr[9] = 0x90;
-                    szInstr[10] = 0x90;
-
-                    rc = PGMPhysSimpleWriteGCPtr(pVCpu, pCtx->rip, szInstr, 6+cbOp);
-                    AssertRC(rc);
-
-                    Log(("Acceptable read/write candidate!\n"));
-                    return VINF_SUCCESS;
+                    pPatch->enmType     = HWACCMTPRINSTR_WRITE_REG;
+                    pPatch->uSrcOperand = pDis->param2.base.reg_gen;
                 }
+                else
+                {
+                    Assert(pDis->param2.flags == USE_IMMEDIATE32);
+                    pPatch->enmType     = HWACCMTPRINSTR_WRITE_IMM;
+                    pPatch->uSrcOperand = pDis->param2.parval;
+                }
+                rc = PGMPhysSimpleWriteGCPtr(pVCpu, pCtx->rip, aVMMCall, sizeof(aVMMCall));
+                AssertRC(rc);
             }
             else
-            if (    pDis->param1.flags == USE_REG_GEN32
-                &&  cbOp == 5)
             {
+                RTGCPTR  oldrip   = pCtx->rip;
+                uint32_t oldcbOp  = cbOp;
                 uint32_t uMmioReg = pDis->param1.base.reg_gen;
+
+                /* read */
+                Assert(pDis->param1.flags == USE_REG_GEN32);
 
                 /* Found:
                  *   mov eax, dword [fffe0080]        (5 bytes)
@@ -2575,8 +2574,17 @@ static int svmR0ReplaceTprInstr(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
                     &&  pDis->param1.flags == USE_REG_GEN32
                     &&  pDis->param1.base.reg_gen == uMmioReg
                     &&  pDis->param2.flags == USE_IMMEDIATE8
-                    &&  pDis->param2.parval == 4)
+                    &&  pDis->param2.parval == 4
+                    &&  oldcbOp + cbOp < sizeof(pVM->hwaccm.s.svm.aPatches[idx]))
                 {
+                    uint8_t szInstr[15];
+
+                    /* Replacing two instructions now. */
+                    rc = PGMPhysSimpleReadGCPtr(pVCpu, &pPatch->aOpcode, pCtx->rip, oldcbOp + cbOp);
+                    AssertRC(rc);
+
+                    pPatch->cbOp = oldcbOp + cbOp;
+
                     /* 0xF0, 0x0F, 0x20, 0xC0 = mov eax, cr8 */
                     szInstr[0] = 0xF0;
                     szInstr[1] = 0x0F;
@@ -2588,18 +2596,27 @@ static int svmR0ReplaceTprInstr(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
                     rc = PGMPhysSimpleWriteGCPtr(pVCpu, pCtx->rip, szInstr, 5+cbOp);
                     AssertRC(rc);
 
-                    Log(("Acceptable read candidate!\n"));
-                    return VINF_SUCCESS;
+                    Log(("Acceptable read/shr candidate!\n"));
+                    pPatch->enmType = HWACCMTPRINSTR_READ_SHR4;
+                }
+                else
+                {
+                    pPatch->enmType     = HWACCMTPRINSTR_READ;
+                    pPatch->uDstOperand = pDis->param1.base.reg_gen;
+
+                    rc = PGMPhysSimpleWriteGCPtr(pVCpu, pCtx->rip, aVMMCall, sizeof(aVMMCall));
+                    AssertRC(rc);
                 }
             }
-        }
-#endif
-        rc = svmR0EmulateTprMov(pVCpu, pDis, pCtx, cbOp);
-        if (rc != VINF_SUCCESS)
-            return rc;
 
-        /* Emulated successfully, so continue. */
-        return VINF_SUCCESS;
+            pPatch->Core.Key = pCtx->eip;
+            rc = RTAvloU32Insert(&pVM->hwaccm.s.svm.PatchTree, &pPatch->Core);
+            AssertRC(rc);
+
+            pVM->hwaccm.s.svm.cPatches++;
+            return VINF_SUCCESS;
+        }
+        return svmR0EmulateTprMov(pVCpu, pDis, pCtx, cbOp);
     }
     return VERR_ACCESS_DENIED;
 }

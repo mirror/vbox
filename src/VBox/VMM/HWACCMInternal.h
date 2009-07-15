@@ -33,6 +33,7 @@
 #include <iprt/memobj.h>
 #include <iprt/cpuset.h>
 #include <iprt/mp.h>
+#include <iprt/avl.h>
 
 #if HC_ARCH_BITS == 64 || defined(VBOX_WITH_HYBRID_32BIT_KERNEL) || defined (VBOX_WITH_64_BITS_GUESTS)
 /* Enable 64 bits guest support. */
@@ -178,6 +179,38 @@ typedef enum
     /** The usual 32-bit paranoia. */
     HWACCMPENDINGIO_32BIT_HACK   = 0x7fffffff
 } HWACCMPENDINGIO;
+
+
+typedef enum
+{
+    HWACCMTPRINSTR_READ,
+    HWACCMTPRINSTR_READ_SHR4,
+    HWACCMTPRINSTR_WRITE_REG,
+    HWACCMTPRINSTR_WRITE_IMM,
+    HWACCMTPRINSTR_MOV,
+    /** The usual 32-bit paranoia. */
+    HWACCMTPRINSTR_32BIT_HACK   = 0x7fffffff
+} HWACCMTPRINSTR;
+
+typedef struct
+{
+    /** The key is the address of patched instruction. (32 bits GC ptr) */
+    AVLOU32NODECORE         Core;
+    /** Original opcode. */
+    uint8_t                 aOpcode[16];
+    /** Instruction size. */
+    uint32_t                cbOp;
+    /** Instruction type. */
+    HWACCMTPRINSTR          enmType;
+    /** Source operand. */
+    uint32_t                uSrcOperand;
+    /** Destination operand. */
+    uint32_t                uDstOperand;
+    /** Number of times the instruction caused a fault. */
+    uint32_t                cFaults;
+} HWACCMTPRPATCH;
+/** Pointer to HWACCMTPRPATCH. */
+typedef HWACCMTPRPATCH *PHWACCMTPRPATCH;
 
 /**
  * Switcher function, HC to RC.
@@ -372,6 +405,14 @@ typedef struct HWACCM
 
         /** SVM feature bits from cpuid 0x8000000a */
         uint32_t                    u32Features;
+
+        /**
+         * AVL tree with all patches (active or disabled) sorted by guest instruction address
+         */
+        AVLOU32TREE                 PatchTree;
+
+        uint32_t                    cPatches;
+        HWACCMTPRPATCH              aPatches[64];
     } svm;
 
     struct
