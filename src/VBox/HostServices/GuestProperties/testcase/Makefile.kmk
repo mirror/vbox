@@ -22,32 +22,27 @@
 SUB_DEPTH = ../../../../..
 include $(KBUILD_PATH)/subheader.kmk
 
-ifdef VBOX_WITH_TESTCASES
-#
-# Case conversion testcase.
-#
-PROGRAMS += tstGuestPropSvc
-tstGuestPropSvc_TEMPLATE = VBOXR3TSTEXE
-# The second define here is to ensure that the testcase will run fast, without
-# waiting for any thread synchronisation.
-tstGuestPropSvc_DEFS     = VBOX_WITH_HGCM VBOX_GUEST_PROP_TEST_NOTHREAD
-tstGuestPropSvc_SOURCES  = tstGuestPropSvc.cpp ../service.cpp
-tstGuestPropSvc_LIBS     = $(LIB_RUNTIME)
+if defined(VBOX_WITH_TESTCASES) && !defined(VBOX_ONLY_ADDITIONS) && !defined(VBOX_ONLY_SDK)
 
-# Set this in LocalConfig.kmk if you are working on the guest property service
-# to automatically run the testcase at build time.
-ifdef VBOX_RUN_GUEST_PROPERTY_TEST
- ifndef VBOX_ONLY_SDK
-  TESTING  += $(PATH_tstGuestPropSvc)/tstGuestPropSvc.run
-  OTHERS += $(PATH_tstGuestPropSvc)/tstGuestPropSvc.run
+ # Set this in LocalConfig.kmk if you are working on the guest property
+ # service to automatically run the testcase at build time.
+ #    OTHERS += $(PATH_tstGuestPropSvc)/tstGuestPropSvc.run
+ #
+
+ PROGRAMS += tstGuestPropSvc
+ TESTING  += $(PATH_tstGuestPropSvc)/tstGuestPropSvc.run
+ tstGuestPropSvc_TEMPLATE = VBOXR3TSTEXE
+ # The second define here is to ensure that the testcase will run fast,
+ # without waiting for any thread synchronisation.
+ tstGuestPropSvc_DEFS     = VBOX_WITH_HGCM VBOX_GUEST_PROP_TEST_NOTHREAD
+ tstGuestPropSvc_SOURCES  = tstGuestPropSvc.cpp ../service.cpp
+ tstGuestPropSvc_LIBS     = $(LIB_RUNTIME)
+
 $$(PATH_tstGuestPropSvc)/tstGuestPropSvc.run: $$(INSTARGET_tstGuestPropSvc)
 	export VBOX_LOG_DEST=nofile; $(INSTARGET_tstGuestPropSvc) quiet
 	$(QUIET)$(APPEND) -t "$@" "done"
- endif
+
 endif
-
-endif # VBOX_WITH_TESTCASES
-
 
 include $(KBUILD_PATH)/subfooter.kmk
 
