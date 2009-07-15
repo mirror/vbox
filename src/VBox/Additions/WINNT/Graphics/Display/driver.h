@@ -96,7 +96,7 @@ typedef struct
 #ifdef VBOX_WITH_VIDEOHWACCEL
 typedef struct _VBOXVHWAREGION
 {
-    RECT Rect;
+    RECTL Rect;
     bool bValid;
 }VBOXVHWAREGION, *PVBOXVHWAREGION;
 
@@ -294,6 +294,18 @@ void vboxVBVAHostCommandComplete(PPDEV ppdev, VBVAHOSTCMD * pCmd);
 
 typedef DECLCALLBACK(void) FNVBOXVHWACMDCOMPLETION(PPDEV ppdev, VBOXVHWACMD * pCmd, void * pContext);
 typedef FNVBOXVHWACMDCOMPLETION *PFNVBOXVHWACMDCOMPLETION;
+
+void vboxVHWARectUnited(RECTL * pDst, RECTL * pRect1, RECTL * pRect2);
+bool vboxVHWARectIsEmpty(RECTL * pRect);
+bool vboxVHWARectIntersect(RECTL * pRect1, RECTL * pRect2);
+bool vboxVHWARectInclude(RECTL * pRect1, RECTL * pRect2);
+bool vboxVHWARegionIntersects(PVBOXVHWAREGION pReg, RECTL * pRect);
+bool vboxVHWARegionIncludes(PVBOXVHWAREGION pReg, RECTL * pRect);
+bool vboxVHWARegionIncluded(PVBOXVHWAREGION pReg, RECTL * pRect);
+void vboxVHWARegionSet(PVBOXVHWAREGION pReg, RECTL * pRect);
+void vboxVHWARegionAdd(PVBOXVHWAREGION pReg, RECTL * pRect);
+void vboxVHWARegionInit(PVBOXVHWAREGION pReg);
+void vboxVHWARegionClear(PVBOXVHWAREGION pReg);
 
 VBOXVHWACMD* vboxVHWACommandCreate (PPDEV ppdev, VBOXVHWACMD_TYPE enmCmd, VBOXVHWACMD_LENGTH cbCmd);
 void vboxVHWACommandFree (PPDEV ppdev, VBOXVHWACMD* pCmd);
