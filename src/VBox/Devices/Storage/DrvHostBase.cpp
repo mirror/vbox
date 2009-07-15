@@ -24,6 +24,8 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_DRV_HOST_BASE
+/* We need this for UINT32_C for RTSTR_VALIDATE_ENCODING_ZERO_TERMINATED */
+#include <iprt/stdint.h>
 #ifdef RT_OS_DARWIN
 # include <mach/mach.h>
 # include <Carbon/Carbon.h>
