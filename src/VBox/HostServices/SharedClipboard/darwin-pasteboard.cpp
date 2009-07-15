@@ -19,6 +19,8 @@
  * additional information or have any questions.
  */
 
+#include <iprt/stdint.h>
+
 #include <Carbon/Carbon.h>
 
 #include <iprt/mem.h>
