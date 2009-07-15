@@ -210,22 +210,27 @@ RTR3DECL(int) RTPathQueryInfo(const char *pszPath, PRTFSOBJINFO pObjInfo, RTFSOB
     /*
      * Query file info.
      */
-    WIN32_FILE_ATTRIBUTE_DATA Data;
 #ifndef RT_DONT_CONVERT_FILENAMES
     PRTUTF16 pwszPath;
     int rc = RTStrToUtf16(pszPath, &pwszPath);
     if (RT_FAILURE(rc))
         return rc;
-    if (!GetFileAttributesExW(pwszPath, GetFileExInfoStandard, &Data))
+    WIN32_FIND_DATAW Data;
+    HANDLE hDir = FindFirstFileW(pwszPath, &Data);
+    if (hDir == INVALID_HANDLE_VALUE)
     {
         rc = RTErrConvertFromWin32(GetLastError());
         RTUtf16Free(pwszPath);
         return rc;
     }
+    FindClose(hDir);
     RTUtf16Free(pwszPath);
 #else
-    if (!GetFileAttributesExA(pszPath, GetFileExInfoStandard, &Data))
+    WIN32_FIND_DATAA Data;
+    HANDLE hDir = FindFirstFileA(pszPath, &Data);
+    if (hDir == INVALID_HANDLE_VALUE)
         return RTErrConvertFromWin32(GetLastError());
+    FindClose(hDir);
 #endif
 
     /*
