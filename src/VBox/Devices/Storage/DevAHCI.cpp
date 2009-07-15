@@ -293,7 +293,7 @@ typedef struct AHCIPort
     /** FIS Base Address upper bits. */
     uint32_t                        regFBU;
     /** Interrupt Status. */
-    uint32_t                        regIS;
+    volatile uint32_t               regIS;
     /** Interrupt Enable. */
     uint32_t                        regIE;
     /** Command. */
@@ -1028,12 +1028,17 @@ static int PortSActive_r(PAHCI ahci, PAHCIPort pAhciPort, uint32_t iReg, uint32_
 static int PortSError_w(PAHCI ahci, PAHCIPort pAhciPort, uint32_t iReg, uint32_t u32Value)
 {
     ahciLog(("%s: write u32Value=%#010x\n", __FUNCTION__, u32Value));
-    pAhciPort->regSERR &= ~u32Value;
-    if (u32Value & AHCI_PORT_SERR_X)
+
+    if (   (u32Value & AHCI_PORT_SERR_X)
+        && (pAhciPort->regSERR & AHCI_PORT_SERR_X))
     {
+        ASMAtomicAndU32(&pAhciPort->regIS, ~AHCI_PORT_IS_PCS);
         pAhciPort->regTFD |= ATA_STAT_ERR;
         pAhciPort->regTFD &= ~(ATA_STAT_DRQ | ATA_STAT_BUSY);
     }
+
+    pAhciPort->regSERR &= ~u32Value;
+
     return VINF_SUCCESS;
 }
 
@@ -1097,14 +1102,14 @@ static int PortSControl_w(PAHCI ahci, PAHCIPort pAhciPort, uint32_t iReg, uint32
             }
 
             /* We received a COMINIT from the device. Tell the guest. */
-            pAhciPort->regIS   |= AHCI_PORT_IS_PCS;
+            ASMAtomicOrU32(&pAhciPort->regIS, AHCI_PORT_IS_PCS);
             pAhciPort->regSERR |= AHCI_PORT_SERR_X;
             pAhciPort->regTFD  |= ATA_STAT_BUSY;
 
             if ((pAhciPort->regCMD & AHCI_PORT_CMD_FRE) && (!pAhciPort->fFirstD2HFisSend))
             {
                 ahciPostFirstD2HFisIntoMemory(pAhciPort);
-                pAhciPort->regIS |= AHCI_PORT_IS_DHRS;
+                ASMAtomicOrU32(&pAhciPort->regIS, AHCI_PORT_IS_DHRS);
 
                 if (pAhciPort->regIE & AHCI_PORT_IE_DHRE)
                     ahciHbaSetInterrupt(pAhciPort->CTX_SUFF(pAhci), pAhciPort->iLUN);
@@ -1246,7 +1251,7 @@ static int PortCmd_w(PAHCI ahci, PAHCIPort pAhciPort, uint32_t iReg, uint32_t u3
                 return VINF_IOM_HC_MMIO_WRITE;
 #else
                 ahciPostFirstD2HFisIntoMemory(pAhciPort);
-                pAhciPort->regIS |= AHCI_PORT_IS_DHRS;
+                ASMAtomicOrU32(&pAhciPort->regIS, AHCI_PORT_IS_DHRS);
 
                 if (pAhciPort->regIE & AHCI_PORT_IE_DHRE)
                     ahciHbaSetInterrupt(pAhciPort->CTX_SUFF(pAhci), pAhciPort->iLUN);
@@ -1363,10 +1368,8 @@ static int PortIntrSts_r(PAHCI ahci, PAHCIPort pAhciPort, uint32_t iReg, uint32_
 static int PortIntrSts_w(PAHCI ahci, PAHCIPort pAhciPort, uint32_t iReg, uint32_t u32Value)
 {
     ahciLog(("%s: write u32Value=%#010x\n", __FUNCTION__, u32Value));
-    pAhciPort->regIS &= ~u32Value;
+    ASMAtomicAndU32(&pAhciPort->regIS, ~(u32Value & AHCI_PORT_IS_READONLY));
 
-    if (u32Value & AHCI_PORT_IS_PCS)
-        pAhciPort->regSERR &= ~AHCI_PORT_SERR_X;
     return VINF_SUCCESS;
 }
 
@@ -1501,10 +1504,36 @@ static int HbaInterruptStatus_w(PAHCI ahci, uint32_t iReg, uint32_t u32Value)
          * an interrupt and the guest has cleared all set interrupt
          * notification bits.
          */
+        bool fClear = true;
 
         ahci->regHbaIs &= ~(u32Value);
 
-        if ((!ahci->u32PortsInterrupted) && (!ahci->regHbaIs))
+        fClear = (!ahci->u32PortsInterrupted) && (!ahci->regHbaIs);
+        if (fClear)
+        {
+            unsigned i = 0;
+
+            /* Check if the cleared ports have a interrupt status bit set. */
+            while (u32Value > 0)
+            {
+                if (u32Value & 0x01)
+                {
+                    PAHCIPort pAhciPort = &ahci->ahciPort[i];
+
+                    if (pAhciPort->regIE & pAhciPort->regIS)
+                    {
+                        Log(("%s: Interrupt status of port %u set -> Set interrupt again\n", __FUNCTION__, i));
+                        ASMAtomicOrU32(&ahci->u32PortsInterrupted, 1 << i);
+                        fClear = false;
+                        break;
+                    }
+                }
+                u32Value = u32Value >> 1;
+                i++;
+            }
+        }
+
+        if (fClear)
             ahciHbaClearInterrupt(ahci);
         else
         {
@@ -1790,8 +1819,6 @@ static void ahciPortSwReset(PAHCIPort pAhciPort)
     {
         pAhciPort->regCMD |= AHCI_PORT_CMD_CPS; /* Indicate that there is a device on that port */
         /* We received a COMINIT signal */
-        pAhciPort->regSERR |= AHCI_PORT_SERR_X;
-        pAhciPort->regIS   |= AHCI_PORT_IS_PCS;
         pAhciPort->regTFD  |= ATA_STAT_BUSY;
 
         if (pAhciPort->fPoweredOn)
@@ -3821,14 +3848,14 @@ static void ahciSendD2HFis(PAHCIPort pAhciPort, PAHCIPORTTASKSTATE pAhciPortTask
         if (pAhciPortTaskState->uATARegStatus & ATA_STAT_ERR)
         {
             /* Error bit is set. */
-            pAhciPort->regIS |= AHCI_PORT_IS_TFES;
+            ASMAtomicOrU32(&pAhciPort->regIS, AHCI_PORT_IS_TFES);
             if (pAhciPort->regIE & AHCI_PORT_IE_TFEE)
                 fAssertIntr = true;
         }
 
         if (fInterrupt)
         {
-            pAhciPort->regIS |= AHCI_PORT_IS_DHRS;
+            ASMAtomicOrU32(&pAhciPort->regIS, AHCI_PORT_IS_DHRS);
             /* Check if we should assert an interrupt */
             if (pAhciPort->regIE & AHCI_PORT_IE_DHRE)
                 fAssertIntr = true;
@@ -3872,14 +3899,14 @@ static void ahciSendSDBFis(PAHCIPort pAhciPort, uint32_t uFinishedTasks, PAHCIPO
         if (pAhciPortTaskState->uATARegStatus & ATA_STAT_ERR)
         {
             /* Error bit is set. */
-            pAhciPort->regIS |= AHCI_PORT_IS_TFES;
+            ASMAtomicOrU32(&pAhciPort->regIS, AHCI_PORT_IS_TFES);
             if (pAhciPort->regIE & AHCI_PORT_IE_TFEE)
                 fAssertIntr = true;
         }
 
         if (fInterrupt)
         {
-            pAhciPort->regIS |= AHCI_PORT_IS_SDBS;
+            ASMAtomicOrU32(&pAhciPort->regIS, AHCI_PORT_IS_SDBS);
             /* Check if we should assert an interrupt */
             if (pAhciPort->regIE & AHCI_PORT_IE_SDBE)
                 fAssertIntr = true;
@@ -4942,6 +4969,24 @@ static void ahciPortTaskGetCommandFis(PAHCIPort pAhciPort, PAHCIPORTTASKSTATE pA
 #ifdef DEBUG
     /* Print some infos about the FIS. */
     ahciDumpFisInfo(pAhciPort, &pAhciPortTaskState->cmdFis[0]);
+
+    /* Print the PRDT */
+    RTGCPHYS GCPhysAddrPRDTLEntryStart = AHCI_RTGCPHYS_FROM_U32(pAhciPortTaskState->cmdHdr.u32CmdTblAddrUp, pAhciPortTaskState->cmdHdr.u32CmdTblAddr) + AHCI_CMDHDR_PRDT_OFFSET;
+
+    ahciLog(("PRDT address %RGp number of entries %u\n", GCPhysAddrPRDTLEntryStart, AHCI_CMDHDR_PRDTL_ENTRIES(pAhciPortTaskState->cmdHdr.u32DescInf)));
+
+    for (unsigned i = 0; i < AHCI_CMDHDR_PRDTL_ENTRIES(pAhciPortTaskState->cmdHdr.u32DescInf); i++)
+    {
+        SGLEntry SGEntry;
+
+        ahciLog(("Entry %u at address %RGp\n", i, GCPhysAddrPRDTLEntryStart));
+        PDMDevHlpPhysRead(pAhciPort->CTX_SUFF(pDevIns), GCPhysAddrPRDTLEntryStart, &SGEntry, sizeof(SGLEntry));
+
+        RTGCPHYS GCPhysDataAddr = AHCI_RTGCPHYS_FROM_U32(SGEntry.u32DBAUp, SGEntry.u32DBA);
+        ahciLog(("GCPhysAddr=%RGp Size=%u\n", GCPhysDataAddr, SGEntry.u32DescInf & SGLENTRY_DESCINF_DBC));
+
+        GCPhysAddrPRDTLEntryStart += sizeof(SGLEntry);
+    }
 #endif
 }
 
@@ -5179,10 +5224,11 @@ static DECLCALLBACK(int) ahciAsyncIOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
             } while (true);
         }
 
-        ahciLog(("%s: Processing requests\n", __FUNCTION__));
         ASMAtomicXchgBool(&pAhciPort->fNotificationSend, false);
 
         uint32_t cTasksToProcess = ASMAtomicXchgU32(&pAhciPort->uActTasksActive, 0);
+
+        ahciLog(("%s: Processing %u requests\n", __FUNCTION__, cTasksToProcess));
 
         /* Process commands. */
         while (   (cTasksToProcess > 0)
@@ -5350,6 +5396,8 @@ static DECLCALLBACK(int) ahciAsyncIOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
             pAhciPort->uActReadPos %= RT_ELEMENTS(pAhciPort->ahciIOTasks);
             ahciLog(("%s: After uActReadPos=%u\n", __FUNCTION__, pAhciPort->uActReadPos));
             cTasksToProcess--;
+            if (!cTasksToProcess)
+                cTasksToProcess = ASMAtomicXchgU32(&pAhciPort->uActTasksActive, 0);
         }
 
         if (uQueuedTasksFinished && RT_LIKELY(!pAhciPort->fPortReset))
@@ -5417,7 +5465,7 @@ static DECLCALLBACK(void) ahciMountNotify(PPDMIMOUNTNOTIFY pInterface)
      * Initialize registers
      */
     pAhciPort->regCMD  |= AHCI_PORT_CMD_CPS;
-    pAhciPort->regIS   |= AHCI_PORT_IS_CPDS | AHCI_PORT_IS_PRCS;
+    ASMAtomicOrU32(&pAhciPort->regIS, AHCI_PORT_IS_CPDS | AHCI_PORT_IS_PRCS);
     pAhciPort->regSERR |= AHCI_PORT_SERR_N;
     if (pAhciPort->regIE & AHCI_PORT_IE_CPDE)
         ahciHbaSetInterrupt(pAhciPort->CTX_SUFF(pAhci), pAhciPort->iLUN);
@@ -5439,7 +5487,7 @@ static DECLCALLBACK(void) ahciUnmountNotify(PPDMIMOUNTNOTIFY pInterface)
      */
     pAhciPort->regSSTS = 0;
     pAhciPort->regCMD &= ~AHCI_PORT_CMD_CPS;
-    pAhciPort->regIS |= AHCI_PORT_IS_CPDS | AHCI_PORT_IS_PRCS;
+    ASMAtomicOrU32(&pAhciPort->regIS, AHCI_PORT_IS_CPDS | AHCI_PORT_IS_PRCS);
     pAhciPort->regSERR |= AHCI_PORT_SERR_N;
     if (pAhciPort->regIE & AHCI_PORT_IE_CPDE)
         ahciHbaSetInterrupt(pAhciPort->CTX_SUFF(pAhci), pAhciPort->iLUN);
@@ -5852,7 +5900,7 @@ static DECLCALLBACK(int) ahciLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle,
         SSMR3GetU32(pSSMHandle, &pAhci->ahciPort[i].regFBU);
         SSMR3GetGCPhys(pSSMHandle, (RTGCPHYS *)&pAhci->ahciPort[i].GCPhysAddrClb);
         SSMR3GetGCPhys(pSSMHandle, (RTGCPHYS *)&pAhci->ahciPort[i].GCPhysAddrFb);
-        SSMR3GetU32(pSSMHandle, &pAhci->ahciPort[i].regIS);
+        SSMR3GetU32(pSSMHandle, (uint32_t *)&pAhci->ahciPort[i].regIS);
         SSMR3GetU32(pSSMHandle, &pAhci->ahciPort[i].regIE);
         SSMR3GetU32(pSSMHandle, &pAhci->ahciPort[i].regCMD);
         SSMR3GetU32(pSSMHandle, &pAhci->ahciPort[i].regTFD);
