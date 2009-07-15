@@ -2008,8 +2008,10 @@ static void tmR3TimerQueueRunVirtualSync(PVM pVM)
     /*
      * Process the expired timers moving the clock along as we progress.
      */
+#ifdef DEBUG_bird
 #ifdef VBOX_STRICT
     uint64_t u64Prev = u64Now; NOREF(u64Prev);
+#endif
 #endif
     while (pNext && pNext->u64Expire <= u64Max)
     {
@@ -2039,9 +2041,11 @@ static void tmR3TimerQueueRunVirtualSync(PVM pVM)
             pTimer->offPrev = 0;
 
             /* advance the clock - don't permit timers to be out of order or armed in the 'past'. */
+#ifdef DEBUG_bird
 #ifdef VBOX_STRICT
             AssertMsg(pTimer->u64Expire >= u64Prev, ("%'RU64 < %'RU64 %s\n", pTimer->u64Expire, u64Prev, pTimer->pszDesc));
             u64Prev = pTimer->u64Expire;
+#endif
 #endif
             ASMAtomicWriteU64(&pVM->tm.s.u64VirtualSync, pTimer->u64Expire);
             ASMAtomicWriteBool(&pVM->tm.s.fVirtualSyncTicking, false);
