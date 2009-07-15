@@ -174,6 +174,11 @@ BOOLEAN VBoxVideoStartIO(
    PVOID HwDeviceExtension,
    PVIDEO_REQUEST_PACKET RequestPacket);
 
+#if defined(VBOX_WITH_HGSMI) && defined(VBOX_WITH_VIDEOHWACCEL)
+BOOLEAN VBoxVideoInterrupt(PVOID  HwDeviceExtension);
+#endif
+
+
 BOOLEAN VBoxVideoResetHW(
    PVOID HwDeviceExtension,
    ULONG Columns,
@@ -264,6 +269,14 @@ DECLCALLBACK(int) hgsmiHostCmdRequest (HVBOXVIDEOHGSMI hHGSMI, uint8_t u8Channel
 int vboxVBVAChannelDisplayEnable(PDEVICE_EXTENSION PrimaryExtension,
         int iDisplay, /* negative would mean this is a miniport handler */
         uint8_t u8Channel);
+
+VOID VBoxVideoHGSMIDpc(
+    IN PVOID  HwDeviceExtension,
+    IN PVOID  Context
+    );
+
+void HGSMIClearIrq (PDEVICE_EXTENSION PrimaryExtension);
+
 #endif /* VBOX_WITH_HGSMI */
 } /* extern "C" */
 

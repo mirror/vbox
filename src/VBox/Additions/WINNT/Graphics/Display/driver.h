@@ -96,7 +96,7 @@ typedef struct
 #ifdef VBOX_WITH_VIDEOHWACCEL
 typedef struct _VBOXVHWAREGION
 {
-    RECT DirtyMem;
+    RECT Rect;
     bool bValid;
 }VBOXVHWAREGION, *PVBOXVHWAREGION;
 

@@ -3130,7 +3130,17 @@ PDMBOTHCBDECL(int) vgaIOPortWriteVBEData(PPDMDEVINS pDevIns, void *pvUser, RTIOP
     }
     if (s->vbe_index == VBE_DISPI_INDEX_VBVA_HOST)
     {
-        HGSMIHostWrite (s->pHGSMI, u32);
+#if defined(VBOX_WITH_VIDEOHWACCEL)
+        if(u32 == HGSMIOFFSET_VOID)
+        {
+            PDMDevHlpPCISetIrq(pDevIns, 0, PDM_IRQ_LEVEL_LOW);
+            HGSMIClearHostGuestFlags(s->pHGSMI, HGSMIHOSTFLAGS_IRQ);
+        }
+        else
+#endif
+        {
+            HGSMIHostWrite (s->pHGSMI, u32);
+        }
         PDMCritSectLeave(&s->lock);
         return VINF_SUCCESS;
     }
@@ -5697,6 +5707,9 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     PCIDevSetClassSub(  &pThis->Dev,   0x00);   /* VGA controller */
     PCIDevSetClassBase( &pThis->Dev,   0x03);
     PCIDevSetHeaderType(&pThis->Dev,   0x00);
+#if defined(VBOX_WITH_HGSMI) && defined(VBOX_WITH_VIDEOHWACCEL)
+    PCIDevSetInterruptPin(&pThis->Dev, 1);
+#endif
 
     /* The LBF access handler - error handling is better here than in the map function.  */
     rc = PDMR3LdrGetSymbolRCLazy(pVM, pDevIns->pDevReg->szRCMod, "vgaGCLFBAccessHandler", &pThis->RCPtrLFBHandler);

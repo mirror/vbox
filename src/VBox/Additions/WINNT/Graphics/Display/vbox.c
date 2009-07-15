@@ -942,7 +942,7 @@ int vboxVHWAEnable(PPDEV ppdev)
     if (!pCmd)
     {
         DISPDBG((0, "VBoxDISP::vboxVHWAQueryHostInfo1: vboxVHWACommandCreate failed\n"));
-        return NULL;
+        return rc;
     }
 
     if(vboxVHWACommandSubmit (ppdev, pCmd))
@@ -964,7 +964,7 @@ int vboxVHWADisable(PPDEV ppdev)
     if (!pCmd)
     {
         DISPDBG((0, "VBoxDISP::vboxVHWAQueryHostInfo1: vboxVHWACommandCreate failed\n"));
-        return NULL;
+        return rc;
     }
 
     if(vboxVHWACommandSubmit (ppdev, pCmd))
