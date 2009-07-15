@@ -147,10 +147,18 @@ int rtR0MemObjNativeFree(RTR0MEMOBJ pMem)
             break;
         }
 
+        case RTR0MEMOBJTYPE_RES_VIRT:
+        {
+            if (pMemSolaris->Core.u.ResVirt.R0Process == NIL_RTR0PROCESS)
+                vmem_xfree(heap_arena, pMemSolaris->Core.pv, pMemSolaris->Core.cb);
+            else
+                AssertFailed();
+            break;
+        }
+
         /* unused */
         case RTR0MEMOBJTYPE_LOW:
         case RTR0MEMOBJTYPE_PHYS:
-        case RTR0MEMOBJTYPE_RES_VIRT:
         default:
             AssertMsgFailed(("enmType=%d\n", pMemSolaris->Core.enmType));
             return VERR_INTERNAL_ERROR;
@@ -309,7 +317,26 @@ int rtR0MemObjNativeLockKernel(PPRTR0MEMOBJINTERNAL ppMem, void *pv, size_t cb)
 
 int rtR0MemObjNativeReserveKernel(PPRTR0MEMOBJINTERNAL ppMem, void *pvFixed, size_t cb, size_t uAlignment)
 {
-    return VERR_NOT_IMPLEMENTED;
+    PRTR0MEMOBJSOLARIS  pMemSolaris;
+    void               *pv;
+
+    /*
+     * Use xalloc.
+     */
+    pv = vmem_xalloc(heap_arena, cb, uAlignment, 0 /*phase*/, 0 /*nocross*/,
+                     NULL /*minaddr*/, NULL /*maxaddr*/, VM_SLEEP);
+    if (!pv)
+        return VERR_NO_MEMORY;
+    pMemSolaris = (PRTR0MEMOBJSOLARIS)rtR0MemObjNew(sizeof(*pMemSolaris), RTR0MEMOBJTYPE_RES_VIRT, pv, cb);
+    if (!pMemSolaris)
+    {
+        vmem_xfree(heap_arena, pv, cb);
+        return VERR_NO_MEMORY;
+    }
+
+    pMemSolaris->Core.u.ResVirt.R0Process = NIL_RTR0PROCESS;
+    *ppMem = &pMemSolaris->Core;
+    return VINF_SUCCESS;
 }
 
 
