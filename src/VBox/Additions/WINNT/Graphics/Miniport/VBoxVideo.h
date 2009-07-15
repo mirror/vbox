@@ -115,6 +115,8 @@ typedef struct _DEVICE_EXTENSION
                                                 */
 #ifdef VBOX_WITH_HGSMI
            volatile HGSMIHOSTFLAGS * pHostFlags; /* HGSMI host flags */
+           bool bHostCmdProcessing;
+           PSPIN_LOCK pSynchLock;
 #endif
 
            PVOID pvAdapterInformation;         /* The pointer to the last 4K of VRAM.

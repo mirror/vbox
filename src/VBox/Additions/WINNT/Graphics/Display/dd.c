@@ -1072,29 +1072,34 @@ DWORD APIENTRY DdLock(PDD_LOCKDATA lpLock)
 
             pBody->u.in.hSurf = pDesc->hHostHandle;
 
+            if(lpLock->bHasRect)
+            {
+                pRect = &lpLock->rArea;
+            }
+            else
+            {
+                tmpRect.left=0;
+                tmpRect.top=0;
+                tmpRect.right=lpSurfaceGlobal->wWidth-1;
+                tmpRect.bottom=lpSurfaceGlobal->wHeight-1;
+                pRect = &tmpRect;
+            }
+
             if(VBOXDD_CHECKFLAG(lpLock->dwFlags, DDLOCK_DISCARDCONTENTS))
             {
                 pBody->u.in.flags |= VBOXVHWA_LOCK_DISCARDCONTENTS;
-//                if(lpLock->bHasRect)
-//                {
-//                    pRect = &lpLock->rArea;
-//                }
-//                else
-//                {
-//                    tmpRect.left=0;
-//                    tmpRect.top=0;
-//                    tmpRect.right=lpSurfaceGlobal->wWidth-1;
-//                    tmpRect.bottom=lpSurfaceGlobal->wHeight-1;
-//                    pRect = &tmpRect;
-//                }
-//
-//                if(vboxVHWARegionIncluded(&pDesc->DirtyRegion, pRect))
-//                {
-//                    vboxVHWARegionClear(&pDesc->DirtyRegion);
-//                }
+
+                if(vboxVHWARegionIncluded(&pDesc->DirtyRegion, pRect))
+                {
+                    vboxVHWARegionClear(&pDesc->DirtyRegion);
+                }
 //            }
 //            else if(vboxVHWARegionInterse)
                 /* we're not interested in completion, just send the command */
+                vboxVHWACommandSubmitAsynch(pDev, pCmd, vboxVHWAFreeCmdCompletion, NULL);
+            }
+            else if(!vboxVHWARegionIntersects(&pDesc->DirtyRegion, pRect))
+            {
                 vboxVHWACommandSubmitAsynch(pDev, pCmd, vboxVHWAFreeCmdCompletion, NULL);
             }
             else
