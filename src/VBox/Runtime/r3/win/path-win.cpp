@@ -210,27 +210,62 @@ RTR3DECL(int) RTPathQueryInfo(const char *pszPath, PRTFSOBJINFO pObjInfo, RTFSOB
     /*
      * Query file info.
      */
+    WIN32_FILE_ATTRIBUTE_DATA Data;
 #ifndef RT_DONT_CONVERT_FILENAMES
     PRTUTF16 pwszPath;
     int rc = RTStrToUtf16(pszPath, &pwszPath);
     if (RT_FAILURE(rc))
         return rc;
-    WIN32_FIND_DATAW Data;
-    HANDLE hDir = FindFirstFileW(pwszPath, &Data);
-    if (hDir == INVALID_HANDLE_VALUE)
+    if (!GetFileAttributesExW(pwszPath, GetFileExInfoStandard, &Data))
     {
-        rc = RTErrConvertFromWin32(GetLastError());
-        RTUtf16Free(pwszPath);
-        return rc;
+        /* Fallback to FindFileFirst in case of sharing violation. */
+        if (GetLastError() == ERROR_SHARING_VIOLATION)
+        {
+            WIN32_FIND_DATAW FindData;
+            HANDLE hDir = FindFirstFileW(pwszPath, &FindData);
+            if (hDir == INVALID_HANDLE_VALUE)
+            {
+                rc = RTErrConvertFromWin32(GetLastError());
+                RTUtf16Free(pwszPath);
+                return rc;
+            }
+            FindClose(hDir);
+            Data.dwFileAttributes = FindData.dwFileAttributes;
+            Data.ftCreationTime = FindData.ftCreationTime;
+            Data.ftLastAccessTime = FindData.ftLastAccessTime;
+            Data.ftLastWriteTime = FindData.ftLastWriteTime;
+            Data.nFileSizeHigh = FindData.nFileSizeHigh;
+            Data.nFileSizeLow = FindData.nFileSizeLow;
+        }
+        else
+        {
+            rc = RTErrConvertFromWin32(GetLastError());
+            RTUtf16Free(pwszPath);
+            return rc;
+        }
     }
-    FindClose(hDir);
     RTUtf16Free(pwszPath);
 #else
-    WIN32_FIND_DATAA Data;
-    HANDLE hDir = FindFirstFileA(pszPath, &Data);
-    if (hDir == INVALID_HANDLE_VALUE)
-        return RTErrConvertFromWin32(GetLastError());
-    FindClose(hDir);
+    if (!GetFileAttributesExA(pszPath, GetFileExInfoStandard, &Data))
+    {
+        /* Fallback to FindFileFirst in case of sharing violation. */
+        if (GetLastError() == ERROR_SHARING_VIOLATION)
+        {
+            WIN32_FIND_DATAA FindData;
+            HANDLE hDir = FindFirstFileA(pszPath, &FindData);
+            if (hDir == INVALID_HANDLE_VALUE)
+                return RTErrConvertFromWin32(GetLastError());
+            FindClose(hDir);
+            Data.dwFileAttributes = FindData.dwFileAttributes;
+            Data.ftCreationTime = FindData.ftCreationTime;
+            Data.ftLastAccessTime = FindData.ftLastAccessTime;
+            Data.ftLastWriteTime = FindData.ftLastWriteTime;
+            Data.nFileSizeHigh = FindData.nFileSizeHigh;
+            Data.nFileSizeLow = FindData.nFileSizeLow;
+        }
+        else
+            return RTErrConvertFromWin32(GetLastError());
+    }
 #endif
 
     /*
