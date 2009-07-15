@@ -1054,7 +1054,7 @@ DWORD APIENTRY DdLock(PDD_LOCKDATA lpLock)
         if(pCmd)
         {
             VBOXVHWACMD_SURF_LOCK * pBody = VBOXVHWACMD_BODY(pCmd, VBOXVHWACMD_SURF_LOCK);
-            RECT tmpRect, *pRect;
+            RECTL tmpRect, *pRect;
             memset(pBody, 0, sizeof(VBOXVHWACMD_SURF_LOCK));
 
             pBody->u.in.offSurface = (uint64_t)lpSurfaceGlobal->fpVidMem;
@@ -1064,26 +1064,22 @@ DWORD APIENTRY DdLock(PDD_LOCKDATA lpLock)
                 DISPDBG((0, "%d,%d %dx%d\n", lpLock->rArea.left, lpLock->rArea.top, lpLock->rArea.right - lpLock->rArea.left, lpLock->rArea.bottom - lpLock->rArea.top));
                 vboxVHWAFromRECTL(&pBody->u.in.rect, &lpLock->rArea);
                 pBody->u.in.rectValid = 1;
+
+                pRect = &lpLock->rArea;
+
             }
             else
             {
                 pBody->u.in.rectValid = 0;
-            }
 
-            pBody->u.in.hSurf = pDesc->hHostHandle;
-
-            if(lpLock->bHasRect)
-            {
-                pRect = &lpLock->rArea;
-            }
-            else
-            {
                 tmpRect.left=0;
                 tmpRect.top=0;
                 tmpRect.right=lpSurfaceGlobal->wWidth-1;
                 tmpRect.bottom=lpSurfaceGlobal->wHeight-1;
                 pRect = &tmpRect;
             }
+
+            pBody->u.in.hSurf = pDesc->hHostHandle;
 
             if(VBOXDD_CHECKFLAG(lpLock->dwFlags, DDLOCK_DISCARDCONTENTS))
             {
@@ -1107,6 +1103,7 @@ DWORD APIENTRY DdLock(PDD_LOCKDATA lpLock)
                 /* wait for the surface to be locked and memory buffer updated */
                 vboxVHWACommandSubmit(pDev, pCmd);
                 vboxVHWACommandFree(pDev, pCmd);
+                vboxVHWARegionClear(&pDesc->DirtyRegion);
             }
 
             lpLock->ddRVal = DD_OK;
@@ -1484,14 +1481,9 @@ DWORD APIENTRY DdBlt(PDD_BLTDATA  lpBlt)
             ASMAtomicIncU32(&pSrcDesc->cPendingBltsSrc);
             ASMAtomicIncU32(&pDestDesc->cPendingBltsDst);
 
-//            if(VBOXDD_CHECKFLAG(lpBlt->dwFlags, DDBLT_ASYNC))
-//            {
-                vboxVHWACommandSubmitAsynch(pDev, pCmd, vboxVHWASurfBltCompletion, NULL);
-//            }
-//            else
-//            {
-//                vboxVHWACommandSubmit(pDev, pCmd);
-//            }
+            vboxVHWARegionAdd(&pDestDesc->DirtyRegion, &lpBlt->rDest);
+            vboxVHWACommandSubmitAsynch(pDev, pCmd, vboxVHWASurfBltCompletion, NULL);
+
             lpBlt->ddRVal = DD_OK;
         }
         else
