@@ -32,6 +32,7 @@ GuestOSType::GuestOSType()
     , mRAMSize (0), mVRAMSize (0)
     , mHDDSize (0), mMonitorCount (0)
     , mNetworkAdapterType (NetworkAdapterType_Am79C973)
+    , mNumSerialEnabled (0)
 {
 }
 
@@ -70,19 +71,19 @@ HRESULT GuestOSType::init (const char *aFamilyId, const char *aFamilyDescription
                            const char *aId, const char *aDescription,
                            VBOXOSTYPE aOSType, uint32_t aOSHint,
                            uint32_t aRAMSize, uint32_t aVRAMSize, uint32_t aHDDSize,
-                           NetworkAdapterType_T aNetworkAdapterType)
+                           NetworkAdapterType_T aNetworkAdapterType, uint32_t aNumSerialEnabled)
 {
 #if 0
     LogFlowThisFunc (("aFamilyId='%s', aFamilyDescription='%s', "
                       "aId='%s', aDescription='%s', "
                       "aType=%d, aOSHint=%x, "
                       "aRAMSize=%d, aVRAMSize=%d, aHDDSize=%d, "
-                      "aNetworkAdapterType=%d\n",
+                      "aNetworkAdapterType=%d, aNumSerialEnabled=%d\n",
                       aFamilyId, aFamilyDescription,
                       aId, aDescription,
                       aOSType, aOSHint,
                       aRAMSize, aVRAMSize, aHDDSize,
-                      aNetworkAdapterType));
+                      aNetworkAdapterType, aNumSerialEnabled));
 #endif
 
     ComAssertRet (aFamilyId && aFamilyDescription && aId && aDescription, E_INVALIDARG);
@@ -101,6 +102,7 @@ HRESULT GuestOSType::init (const char *aFamilyId, const char *aFamilyDescription
     unconst (mVRAMSize) = aVRAMSize;
     unconst (mHDDSize) = aHDDSize;
     unconst (mNetworkAdapterType) = aNetworkAdapterType;
+    unconst (mNumSerialEnabled) = aNumSerialEnabled;
 
     /* Confirm a successful initialization when it's the case */
     autoInitSpan.setSucceeded();

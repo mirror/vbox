@@ -59,7 +59,7 @@ public:
                   const char *aId, const char *aDescription,
                   VBOXOSTYPE aOSType, uint32_t aOSHint,
                   uint32_t aRAMSize, uint32_t aVRAMSize, uint32_t aHDDSize,
-                  NetworkAdapterType_T aNetworkAdapterType);
+                  NetworkAdapterType_T aNetworkAdapterType, uint32_t numSerialEnabled);
     void uninit();
 
     // IGuestOSType properties
@@ -81,6 +81,7 @@ public:
     bool recommendedIOAPIC() const { return !!(mOSHint & VBOXOSHINT_IOAPIC); }
     bool recommendedVirtEx() const { return !!(mOSHint & VBOXOSHINT_HWVIRTEX); }
     NetworkAdapterType_T networkAdapterType() const { return mNetworkAdapterType; }
+    uint32_t numSerialEnabled() const { return mNumSerialEnabled; }
 
     // for VirtualBoxSupportErrorInfoImpl
     static const wchar_t *getComponentName() { return L"GuestOSType"; }
@@ -98,6 +99,7 @@ private:
     const uint32_t mHDDSize;
     const uint32_t mMonitorCount;
     const NetworkAdapterType_T mNetworkAdapterType;
+    const uint32_t mNumSerialEnabled;
 };
 
 #endif // ____H_GUESTOSTYPEIMPL

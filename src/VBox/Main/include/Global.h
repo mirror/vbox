@@ -60,6 +60,7 @@ public:
         const uint32_t              recommendedVRAM;
         const uint32_t              recommendedHDD;
         const NetworkAdapterType_T  networkAdapterType;
+        const uint32_t              numSerialEnabled;
     };
 
     static const OSType sOSTypes [SchemaDefs::OSTypeId_COUNT];

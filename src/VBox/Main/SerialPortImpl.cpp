@@ -22,6 +22,7 @@
 #include "SerialPortImpl.h"
 #include "MachineImpl.h"
 #include "VirtualBoxImpl.h"
+#include "GuestOSTypeImpl.h"
 #include "Logging.h"
 
 #include <iprt/string.h>
@@ -358,6 +359,25 @@ void SerialPort::copyFrom (SerialPort *aThat)
 
     /* this will back up current data */
     mData.assignCopy (aThat->mData);
+}
+
+void SerialPort::applyDefaults (GuestOSType *aOsType)
+{
+    AssertReturnVoid (aOsType != NULL);
+
+    /* sanity */
+    AutoCaller autoCaller (this);
+    AssertComRCReturnVoid (autoCaller.rc());
+
+    AutoWriteLock alock (this);
+
+    uint32_t numSerialEnabled = aOsType->numSerialEnabled();
+
+    /* Enable port if requested */
+    if (mData->mSlot < numSerialEnabled)
+    {
+        mData->mEnabled = true;
+    }
 }
 
 // ISerialPort properties
