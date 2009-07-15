@@ -27,8 +27,6 @@
 #include "iprt/xml_cpp.h"
 #include <map>
 
-using namespace std;
-
 ////////////////////////////////////////////////////////////////////////////////
 //
 // Enumerations
@@ -232,11 +230,11 @@ struct VirtualHardwareItem
     {};
 };
 
-typedef map<iprt::MiniString, DiskImage> DiskImagesMap;
+typedef std::map<iprt::MiniString, DiskImage> DiskImagesMap;
 
 struct VirtualSystem;
 
-typedef map<uint32_t, VirtualHardwareItem> HardwareItemsMap;
+typedef std::map<uint32_t, VirtualHardwareItem> HardwareItemsMap;
 
 struct HardDiskController
 {
@@ -254,7 +252,7 @@ struct HardDiskController
     }
 };
 
-typedef map<uint32_t, HardDiskController> ControllersMap;
+typedef std::map<uint32_t, HardDiskController> ControllersMap;
 
 struct VirtualDisk
 {
@@ -267,7 +265,7 @@ struct VirtualDisk
                                                 // references in Appliance::Data.mapDisks
 };
 
-typedef map<iprt::MiniString, VirtualDisk> VirtualDisksMap;
+typedef std::map<iprt::MiniString, VirtualDisk> VirtualDisksMap;
 
 /**
  * A list of EthernetAdapters is contained in VirtualSystem, representing the
@@ -279,7 +277,7 @@ struct EthernetAdapter
     iprt::MiniString    strNetworkName;         // from <rasd:Connection>
 };
 
-typedef list<EthernetAdapter> EthernetAdaptersList;
+typedef std::list<EthernetAdapter> EthernetAdaptersList;
 
 /**
  * A list of VirtualSystem structs is created by OVFReader::read(). Each refers to
@@ -372,9 +370,9 @@ public:
     void HandleVirtualSystemContent(const xml::ElementNode *pContentElem);
 
     // Data fields
-    iprt::MiniString        m_strPath;            // file name given to constructor
-    DiskImagesMap           m_mapDisks;           // map of DiskImage structs, sorted by DiskImage.strDiskId
-    list<VirtualSystem>     m_llVirtualSystems;   // list of virtual systems, created by and valid after read()
+    iprt::MiniString         m_strPath;            // file name given to constructor
+    DiskImagesMap            m_mapDisks;           // map of DiskImage structs, sorted by DiskImage.strDiskId
+    std::list<VirtualSystem> m_llVirtualSystems;   // list of virtual systems, created by and valid after read()
 };
 
 ////////////////////////////////////////////////////////////////////////////////

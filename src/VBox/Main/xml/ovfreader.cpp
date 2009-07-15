@@ -670,6 +670,7 @@ void OVFReader::HandleVirtualSystemContent(const xml::ElementNode *pelmVirtualSy
                         vsys.mapVirtualDisks[vd.strDiskId] = vd;
                     }
                     break;
+                    default: break;
                 }
             }
         }
