@@ -50,6 +50,19 @@ check_zone()
     fi
 }
 
+install_python_bindings()
+{
+    PYTHONBIN=$1
+    if test -x "$PYTHONBIN"; then
+        VBOX_INSTALL_PATH=/opt/VirtualBox
+        export VBOX_INSTALL_PATH
+        cd /opt/VirtualBox/sdk/installer
+        $PYTHONBIN ./vboxapisetup.py install > /dev/null
+        return 0
+    fi
+    return 1
+}
+
 check_root
 check_zone
 
@@ -167,14 +180,32 @@ rc3=0
 if test -f "/opt/VirtualBox/sdk/installer/vboxapisetup.py" || test -h "/opt/VirtualBox/sdk/installer/vboxapisetup.py"; then
     PYTHONBIN=`which python`
     if test -f "$PYTHONBIN" || test -h "$PYTHONBIN"; then
-        echo "Installing python bindings..."
+        echo "Installing Python bindings..."
 
-        VBOX_INSTALL_PATH=/opt/VirtualBox
-        export VBOX_INSTALL_PATH
-        cd /opt/VirtualBox/sdk/installer
-        $PYTHONBIN ./vboxapisetup.py install > /dev/null
-        rc3=$?
-        echo "Done."
+        INSTALLEDIT=1
+        PYTHONBIN=`which python2.4`
+        install_python_bindings "$PYTHONBIN"
+        if test "$?" -eq 0; then
+            INSTALLEDIT=0
+        fi
+        PYTHONBIN=`which python2.5`
+        install_python_bindings "$PYTHONBIN"
+        if test "$?" -eq 0; then
+            INSTALLEDIT=0
+        fi
+        PYTHONBIN=`which python2.6`
+        install_python_bindings "$PYTHONBIN"
+        if test "$?" -eq 0; then 
+            INSTALLEDIT=0
+        fi
+
+        # remove files installed by Python build
+        rm -rf /opt/VirtualBox/sdk/installer/build
+
+        if test "$INSTALLEDIT" -ne 0; then
+            echo "** No suitable Python version found. Requires Python 2.4, 2.5 or 2.6."
+        fi
+        rc3=$INSTALLEDIT
     else
         echo "** WARNING! Python not found, skipped installed Python bindings."
         echo "   Manually run '/opt/VirtualBox/sdk/installer/vboxapisetup.py install'"
