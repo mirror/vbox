@@ -275,9 +275,11 @@ typedef enum
 /* the command processing was asynch, set by the host to indicate asynch command completion
  * must not be cleared once set, the command completion is performed by issuing a host->guest completion command
  * while keeping this flag unchanged */
-#define VBOXVHWACMD_FLAG_ASYNCH      0x00000001
+#define VBOXVHWACMD_FLAG_ASYNCH       0x00000001
 /* asynch completion is performed by issuing the event */
 #define VBOXVHWACMD_FLAG_ASYNCH_EVENT 0x00000002
+/* issue interrupt on asynch completion */
+#define VBOXVHWACMD_FLAG_ASYNCH_IRQ   0x00000004
 
 typedef struct _VBOXVHWACMD
 {

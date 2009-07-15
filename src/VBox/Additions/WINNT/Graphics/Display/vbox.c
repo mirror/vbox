@@ -781,7 +781,7 @@ void vboxVHWACommandSubmitAsynchByEvent (PPDEV ppdev, VBOXVHWACMD* pCmd, PEVENT 
     pCmd->GuestVBVAReserved2 = 0;
 
     /* complete it asynchronously by setting event */
-    pCmd->Flags = VBOXVHWACMD_FLAG_ASYNCH_EVENT;
+    pCmd->Flags |= VBOXVHWACMD_FLAG_ASYNCH_EVENT;
     vboxHGSMIBufferSubmit (ppdev, pCmd);
 
     if(!(ASMAtomicReadU32((volatile uint32_t *)&pCmd->Flags)  & VBOXVHWACMD_FLAG_ASYNCH))
@@ -799,6 +799,7 @@ BOOL vboxVHWACommandSubmit (PPDEV ppdev, VBOXVHWACMD* pCmd)
 
     if(brc)
     {
+        pCmd->Flags = VBOXVHWACMD_FLAG_ASYNCH_IRQ;
         vboxVHWACommandSubmitAsynchByEvent (ppdev, pCmd, pEvent);
 
         brc = EngWaitForSingleObject(pEvent,
