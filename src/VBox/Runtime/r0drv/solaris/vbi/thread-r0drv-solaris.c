@@ -152,6 +152,7 @@ RTDECL(bool) RTThreadIsInInterrupt(RTTHREAD hThread)
 {
     /* This is the best we currently can do here. :-( */
     return !RTThreadPreemptIsEnabled(hThread)
-        && getpil() > 0
+        && getpil() > 0;
 }
+
 
