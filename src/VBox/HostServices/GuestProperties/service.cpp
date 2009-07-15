@@ -359,29 +359,20 @@ DECLCALLBACK(int) Service::reqThreadFn(RTTHREAD ThreadSelf, void *pvUser)
 
 
 /**
- * Checking that the name passed by the guest fits our criteria for a
- * property name.
+ * Check that a string fits our criteria for a property name.
  *
  * @returns IPRT status code
- * @param   pszName   the name passed by the guest
- * @param   cbName    the number of bytes pszName points to, including the
+ * @param   pszName   the string to check, must be valid Utf8
+ * @param   cbName    the number of bytes @a pszName points to, including the
  *                    terminating '\0'
  * @thread  HGCM
  */
 int Service::validateName(const char *pszName, uint32_t cbName)
 {
     LogFlowFunc(("cbName=%d\n", cbName));
-
-    /*
-     * Validate the name, checking that it's proper UTF-8 and has
-     * a string terminator.
-     */
     int rc = VINF_SUCCESS;
     if (RT_SUCCESS(rc) && (cbName < 2))
         rc = VERR_INVALID_PARAMETER;
-    if (RT_SUCCESS(rc))
-        rc = RTStrValidateEncodingEx(pszName, RT_MIN(cbName, (uint32_t) MAX_NAME_LEN),
-                                     RTSTR_VALIDATE_ENCODING_ZERO_TERMINATED);
     for (unsigned i = 0; RT_SUCCESS(rc) && i < cbName; ++i)
         if (pszName[i] == '*' || pszName[i] == '?' || pszName[i] == '|')
             rc = VERR_INVALID_PARAMETER;
@@ -391,28 +382,21 @@ int Service::validateName(const char *pszName, uint32_t cbName)
 
 
 /**
- * Check that the data passed by the guest fits our criteria for the value of
- * a guest property.
+ * Check a string fits our criteria for the value of a guest property.
  *
  * @returns IPRT status code
- * @param   pszValue  the value to store in the property
- * @param   cbValue   the number of bytes in the buffer pszValue points to
+ * @param   pszValue  the string to check, must be valid Utf8
+ * @param   cbValue   the length in bytes of @a pszValue, including the
+ *                    terminator
  * @thread  HGCM
  */
 int Service::validateValue(const char *pszValue, uint32_t cbValue)
 {
     LogFlowFunc(("cbValue=%d\n", cbValue));
 
-    /*
-     * Validate the value, checking that it's proper UTF-8 and has
-     * a string terminator.
-     */
     int rc = VINF_SUCCESS;
     if (RT_SUCCESS(rc) && cbValue == 0)
         rc = VERR_INVALID_PARAMETER;
-    if (RT_SUCCESS(rc))
-        rc = RTStrValidateEncodingEx(pszValue, RT_MIN(cbValue, (uint32_t) MAX_VALUE_LEN),
-                                     RTSTR_VALIDATE_ENCODING_ZERO_TERMINATED);
     if (RT_SUCCESS(rc))
         LogFlow(("    pszValue=%s\n", cbValue > 0 ? pszValue : NULL));
     LogFlowFunc(("returning %Rrc\n", rc));
@@ -534,8 +518,8 @@ int Service::getProperty(uint32_t cParms, VBOXHGCMSVCPARM paParms[])
      */
     LogFlowThisFunc(("\n"));
     if (   cParms != 4  /* Hardcoded value as the next lines depend on it. */
-        || RT_FAILURE (paParms[0].getPointer ((const void **) &pcszName, &cchName))    /* name */
-        || RT_FAILURE (paParms[1].getPointer ((void **) &pchBuf, &cchBuf))    /* buffer */
+        || RT_FAILURE (paParms[0].getString(&pcszName, &cchName))  /* name */
+        || RT_FAILURE (paParms[1].getBuffer((void **) &pchBuf, &cchBuf))  /* buffer */
        )
         rc = VERR_INVALID_PARAMETER;
     else
@@ -618,13 +602,10 @@ int Service::setProperty(uint32_t cParms, VBOXHGCMSVCPARM paParms[], bool isGues
      */
     if (   RT_SUCCESS(rc)
         && (   (cParms < 2) || (cParms > 3)  /* Hardcoded value as the next lines depend on it. */
-            || RT_FAILURE(paParms[0].getPointer ((const void **) &pcszName,
-                                                 &cchName)) /* name */
-            || RT_FAILURE(paParms[1].getPointer ((const void **) &pcszValue,
-                                                 &cchValue)) /* value */
+            || RT_FAILURE(paParms[0].getString(&pcszName, &cchName))  /* name */
+            || RT_FAILURE(paParms[1].getString(&pcszValue, &cchValue))  /* value */
             || (   (3 == cParms)
-                && RT_FAILURE(paParms[2].getPointer ((const void **) &pcszFlags,
-                                                     &cchFlags)) /* flags */
+                && RT_FAILURE(paParms[2].getString(&pcszFlags, &cchFlags)) /* flags */
                )
            )
        )
@@ -714,8 +695,7 @@ int Service::delProperty(uint32_t cParms, VBOXHGCMSVCPARM paParms[], bool isGues
      * Check the user-supplied parameters.
      */
     if (   (cParms != 1)  /* Hardcoded value as the next lines depend on it. */
-        || RT_FAILURE(paParms[0].getPointer ((const void **) &pcszName,
-                                             &cbName))  /* name */
+        || RT_FAILURE(paParms[0].getString(&pcszName, &cbName))  /* name */
        )
         rc = VERR_INVALID_PARAMETER;
     if (RT_SUCCESS(rc))
@@ -776,9 +756,8 @@ int Service::enumProps(uint32_t cParms, VBOXHGCMSVCPARM paParms[])
     uint32_t cchPatterns = 0, cchBuf = 0;
     LogFlowThisFunc(("\n"));
     if (   (cParms != 3)  /* Hardcoded value as the next lines depend on it. */
-        || RT_FAILURE(paParms[0].getPointer ((const void **) &pcchPatterns,
-                                             &cchPatterns))  /* patterns */
-        || RT_FAILURE(paParms[1].getPointer ((void **) &pchBuf, &cchBuf))  /* return buffer */
+        || RT_FAILURE(paParms[0].getString(&pcchPatterns, &cchPatterns))  /* patterns */
+        || RT_FAILURE(paParms[1].getBuffer((void **) &pchBuf, &cchBuf))  /* return buffer */
        )
         rc = VERR_INVALID_PARAMETER;
     if (RT_SUCCESS(rc) && cchPatterns > MAX_PATTERN_LEN)
@@ -788,17 +767,12 @@ int Service::enumProps(uint32_t cParms, VBOXHGCMSVCPARM paParms[])
      * First repack the patterns into the format expected by RTStrSimplePatternMatch()
      */
     char pszPatterns[MAX_PATTERN_LEN];
-    if (NULL == pcchPatterns)
-        pszPatterns[0] = '\0';
-    else
-    {
-        for (unsigned i = 0; i < cchPatterns - 1; ++i)
-            if (pcchPatterns[i] != '\0')
-                pszPatterns[i] = pcchPatterns[i];
-            else
-                pszPatterns[i] = '|';
-        pszPatterns[cchPatterns - 1] = '\0';
-    }
+    for (unsigned i = 0; i < cchPatterns - 1; ++i)
+        if (pcchPatterns[i] != '\0')
+            pszPatterns[i] = pcchPatterns[i];
+        else
+            pszPatterns[i] = '|';
+    pszPatterns[cchPatterns - 1] = '\0';
 
     /*
      * Next enumerate into a temporary buffer.  This can throw, but this is
@@ -884,7 +858,7 @@ int Service::getNotificationWriteOut(VBOXHGCMSVCPARM paParms[], Property prop)
     uint64_t u64Timestamp;
     char *pchBuf;
     uint32_t cchBuf;
-    rc = paParms[2].getPointer((void **) &pchBuf, &cchBuf);
+    rc = paParms[2].getBuffer((void **) &pchBuf, &cchBuf);
     if (RT_SUCCESS(rc))
     {
         char szFlags[MAX_FLAGS_LEN];
@@ -935,14 +909,9 @@ int Service::getNotification(VBOXHGCMCALLHANDLE callHandle, uint32_t cParms,
      */
     LogFlowThisFunc(("\n"));
     if (   (cParms != 4)  /* Hardcoded value as the next lines depend on it. */
-        || RT_FAILURE(paParms[0].getPointer ((void **) &pszPatterns, &cchPatterns))  /* patterns */
-        || pszPatterns[cchPatterns - 1] != '\0'  /* The patterns string must be zero-terminated */
-/** @todo r=bird: What if cchPatterns is 0? pszPatterns is NULL then, and if it wasn't, you'd access memory
- * before what it points to. Add a getString() method? Please, check *all* similar cases.
- * Remember that the guest is not trusted. :-) */
-        || RT_FAILURE(paParms[1].getUInt64 (&u64Timestamp))  /* timestamp */
-        || RT_FAILURE(paParms[2].getPointer ((void **) &pchBuf, &cchBuf))  /* return buffer */
-        || cchBuf < 1
+        || RT_FAILURE(paParms[0].getString(&pszPatterns, &cchPatterns))  /* patterns */
+        || RT_FAILURE(paParms[1].getUInt64(&u64Timestamp))  /* timestamp */
+        || RT_FAILURE(paParms[2].getBuffer((void **) &pchBuf, &cchBuf))  /* return buffer */
        )
         rc = VERR_INVALID_PARAMETER;
     if (RT_SUCCESS(rc))
@@ -1027,7 +996,7 @@ void Service::doNotifications(const char *pszProperty, uint64_t u64Timestamp)
             {
                 const char *pszPatterns;
                 uint32_t cchPatterns;
-                it->mParms[0].getPointer((void **) &pszPatterns, &cchPatterns);
+                it->mParms[0].getString(&pszPatterns, &cchPatterns);
                 if (prop.Matches(pszPatterns))
                 {
                     GuestCall call = *it;
