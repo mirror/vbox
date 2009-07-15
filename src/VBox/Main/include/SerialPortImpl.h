@@ -27,6 +27,7 @@
 #include "VirtualBoxBase.h"
 
 class Machine;
+class GuestOSType;
 
 class ATL_NO_VTABLE SerialPort :
     public VirtualBoxBaseNEXT,
@@ -118,6 +119,7 @@ public:
     bool rollback();
     void commit();
     void copyFrom (SerialPort *aThat);
+    void applyDefaults (GuestOSType *aOsType);
 
     // public methods for internal purposes only
     // (ensure there is a caller and a read lock before calling them!)

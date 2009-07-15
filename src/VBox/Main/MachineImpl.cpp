@@ -506,6 +506,10 @@ HRESULT Machine::init (VirtualBox *aParent, CBSTR aConfigFile,
                     /* Apply network adapters defaults */
                     for (ULONG slot = 0; slot < RT_ELEMENTS (mNetworkAdapters); ++ slot)
                         mNetworkAdapters [slot]->applyDefaults (aOsType);
+
+                    /* Apply serial port defaults */
+                    for (ULONG slot = 0; slot < RT_ELEMENTS (mSerialPorts); ++ slot)
+                        mSerialPorts [slot]->applyDefaults (aOsType);
                 }
 
                 /* The default is that the VM has at least one IDE controller
