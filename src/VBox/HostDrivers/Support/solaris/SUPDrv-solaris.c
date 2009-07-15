@@ -392,6 +392,7 @@ static int VBoxDrvSolarisDetach(dev_info_t *pDip, ddi_detach_cmd_t enmCmd)
             ddi_remove_minor_node(pDip, NULL);
             ddi_soft_state_free(g_pVBoxDrvSolarisState, instance);
 #endif
+            ddi_prop_remove_all(pDip);
             return DDI_SUCCESS;
         }
 
