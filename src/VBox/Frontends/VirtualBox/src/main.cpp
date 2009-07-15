@@ -330,7 +330,7 @@ extern "C" DECLEXPORT(int) TrustedMain (int argc, char **argv, char ** /*envp*/)
          * restore the original environment, so that others like the OpenGL
          * service will proper work. */
         char *pchOldVar = NULL;
-        bool fHackARGB = !RTEnvExist ("VBOX_NO_ARGB_VISUALS_HACK") && VBoxGlobal::qtRTVersion() >= 0x040500;
+        bool fHackARGB = !RTEnvExist ("VBOX_NO_ARGB_VISUALS_HACK");
         if (fHackARGB)
         {
             const char *pchVar = RTEnvGet ("XLIB_SKIP_ARGB_VISUALS");
@@ -351,9 +351,9 @@ extern "C" DECLEXPORT(int) TrustedMain (int argc, char **argv, char ** /*envp*/)
             else
                 RTEnvUnset ("XLIB_SKIP_ARGB_VISUALS");
         }
-#else /* defined(Q_WS_X11) && (QT_VERSION >= 0x040500) */
+#else /* Q_WS_X11 */
         QIApplication a (argc, argv);
-#endif /* defined(Q_WS_X11) && (QT_VERSION >= 0x040500) */
+#endif /* Q_WS_X11 */
 
         /* Qt4.3 version has the QProcess bug which freezing the application
          * for 30 seconds. This bug is internally used at initialization of
