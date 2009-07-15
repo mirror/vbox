@@ -39,9 +39,9 @@ class VirtualBox;
  * Base component class for progress objects.
  */
 class ATL_NO_VTABLE ProgressBase :
-    public VirtualBoxBaseNEXT,
+    public VirtualBoxBase,
     public com::SupportErrorInfoBase,
-    public VirtualBoxSupportTranslation <ProgressBase>,
+    public VirtualBoxSupportTranslation<ProgressBase>,
     VBOX_SCRIPTABLE_IMPL(IProgress)
 {
 protected:
@@ -132,8 +132,8 @@ protected:
  * Normal progress object.
  */
 class ATL_NO_VTABLE Progress :
-    public com::SupportErrorInfoDerived <ProgressBase, Progress, IProgress>,
-    public VirtualBoxSupportTranslation <Progress>
+    public com::SupportErrorInfoDerived<ProgressBase, Progress, IProgress>,
+    public VirtualBoxSupportTranslation<Progress>
 {
 
 public:
@@ -304,8 +304,8 @@ private:
  *       will be in a loop calling a method that returns immediately.
  */
 class ATL_NO_VTABLE CombinedProgress :
-    public com::SupportErrorInfoDerived <ProgressBase, CombinedProgress, IProgress>,
-    public VirtualBoxSupportTranslation <CombinedProgress>
+    public com::SupportErrorInfoDerived<ProgressBase, CombinedProgress, IProgress>,
+    public VirtualBoxSupportTranslation<CombinedProgress>
 {
 
 public:

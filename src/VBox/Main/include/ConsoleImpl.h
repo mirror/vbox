@@ -78,8 +78,8 @@ typedef struct VUSBIRHCONFIG *PVUSBIRHCONFIG;
 /** IConsole implementation class */
 class ATL_NO_VTABLE Console :
     public VirtualBoxBaseWithChildrenNEXT,
-    public VirtualBoxSupportErrorInfoImpl <Console, IConsole>,
-    public VirtualBoxSupportTranslation <Console>,
+    public VirtualBoxSupportErrorInfoImpl<Console, IConsole>,
+    public VirtualBoxSupportTranslation<Console>,
     VBOX_SCRIPTABLE_IMPL(IConsole)
 {
     Q_OBJECT

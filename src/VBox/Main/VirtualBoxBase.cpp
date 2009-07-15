@@ -1152,8 +1152,7 @@ void VirtualBoxBaseWithChildrenNEXT::uninitDependentChildren()
  *
  * @note Locks #childrenLock() for reading.
  */
-VirtualBoxBaseNEXT *
-VirtualBoxBaseWithChildrenNEXT::getDependentChild (const ComPtr <IUnknown> &aUnk)
+VirtualBoxBase* VirtualBoxBaseWithChildrenNEXT::getDependentChild(const ComPtr<IUnknown> &aUnk)
 {
     AssertReturn (!aUnk.isNull(), NULL);
 
@@ -1173,8 +1172,8 @@ VirtualBoxBaseWithChildrenNEXT::getDependentChild (const ComPtr <IUnknown> &aUnk
 }
 
 /** Helper for addDependentChild(). */
-void VirtualBoxBaseWithChildrenNEXT::doAddDependentChild (
-    IUnknown *aUnk, VirtualBoxBaseNEXT *aChild)
+void VirtualBoxBaseWithChildrenNEXT::doAddDependentChild(IUnknown *aUnk,
+                                                         VirtualBoxBase *aChild)
 {
     AssertReturnVoid (aUnk != NULL);
     AssertReturnVoid (aChild != NULL);
