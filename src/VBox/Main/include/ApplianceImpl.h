@@ -24,14 +24,10 @@
 #ifndef ____H_APPLIANCEIMPL
 #define ____H_APPLIANCEIMPL
 
+/* VBox includes */
 #include "VirtualBoxBase.h"
 
-namespace xml
-{
-    class Node;
-    class ElementNode;
-}
-
+/* VBox forward declarations */
 class VirtualBox;
 class Progress;
 
@@ -75,7 +71,7 @@ public:
 
     /* IAppliance methods */
     /* Import methods */
-    STDMETHOD(Read)(IN_BSTR path);
+    STDMETHOD(Read)(IN_BSTR path, IProgress **aProgress);
     STDMETHOD(Interpret)(void);
     STDMETHOD(ImportMachines)(IProgress **aProgress);
     /* Export methods */
@@ -96,22 +92,38 @@ private:
 
     HRESULT searchUniqueVMName(Utf8Str& aName) const;
     HRESULT searchUniqueDiskImageFilePath(Utf8Str& aName) const;
-    HRESULT setUpProgress(ComObjPtr<Progress> &pProgress, const Bstr &bstrDescription);
-    HRESULT setUpProgressUpload(ComObjPtr<Progress> &pProgress, const Bstr &bstrDescription);
     void waitForAsyncProgress(ComObjPtr<Progress> &pProgressThis, ComPtr<IProgress> &pProgressAsync);
     void addWarning(const char* aWarning, ...);
 
-    void parseURI(Utf8Str strUri, const Utf8Str &strProtocol, Utf8Str &strFilepath, Utf8Str &strHostname, Utf8Str &strUsername, Utf8Str &strPassword);
-    HRESULT writeImpl(int aFormat, const Utf8Str &aPath, ComObjPtr<Progress> &aProgress);
+    void disksWeight(uint32_t &ulTotalMB, uint32_t &cDisks) const;
+    HRESULT setUpProgressFS(ComObjPtr<Progress> &pProgress, const Bstr &bstrDescription);
+    HRESULT setUpProgressImportS3(ComObjPtr<Progress> &pProgress, const Bstr &bstrDescription);
+    HRESULT setUpProgressWriteS3(ComObjPtr<Progress> &pProgress, const Bstr &bstrDescription);
 
-    struct TaskImportMachines;  /* Worker thread for import */
-    static DECLCALLBACK(int) taskThreadImportMachines(RTTHREAD thread, void *pvUser);
+    struct LocationInfo;
+    void parseURI(Utf8Str strUri, LocationInfo &locInfo) const;
+    void parseBucket(Utf8Str &aPath, Utf8Str &aBucket) const;
 
-    struct TaskWriteOVF;        /* Worker threads for export */
+    HRESULT readImpl(const LocationInfo &aLocInfo, ComObjPtr<Progress> &aProgress);
+    HRESULT importImpl(const LocationInfo &aLocInfo, ComObjPtr<Progress> &aProgress);
+
+    struct TaskOVF;
+    struct TaskImportOVF; /* Worker threads for import */
+    static DECLCALLBACK(int) taskThreadImportOVF(RTTHREAD aThread, void *pvUser);
+
+    int readFS(TaskImportOVF *pTask);
+    int readS3(TaskImportOVF *pTask);
+
+    int importFS(TaskImportOVF *pTask);
+    int importS3(TaskImportOVF *pTask);
+
+    HRESULT writeImpl(int aFormat, const LocationInfo &aLocInfo, ComObjPtr<Progress> &aProgress);
+
+    struct TaskExportOVF; /* Worker threads for export */
     static DECLCALLBACK(int) taskThreadWriteOVF(RTTHREAD aThread, void *pvUser);
 
-    int writeFS(TaskWriteOVF *pTask);
-    int writeS3(TaskWriteOVF *pTask);
+    int writeFS(TaskExportOVF *pTask);
+    int writeS3(TaskExportOVF *pTask);
 
     friend class Machine;
 };

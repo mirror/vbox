@@ -86,7 +86,7 @@ typedef int (*PFNHANDLER)(HandlerArg *a);
 /**
  * Print out progress on the console
  */
-void showProgress(ComPtr<IProgress> progress)
+LONG showProgress(ComPtr<IProgress> progress)
 {
     BOOL fCompleted;
     ULONG ulCurrentPercent;
@@ -172,6 +172,7 @@ void showProgress(ComPtr<IProgress> progress)
     else
         RTPrintf("\n");
     RTStrmFlush(g_pStdOut);
+    return iRc;
 }
 #endif /* !VBOX_ONLY_DOCS */
 
