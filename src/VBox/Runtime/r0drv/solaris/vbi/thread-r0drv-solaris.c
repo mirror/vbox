@@ -150,9 +150,8 @@ RTDECL(void) RTThreadPreemptRestore(PRTTHREADPREEMPTSTATE pState)
 
 RTDECL(bool) RTThreadIsInInterrupt(RTTHREAD hThread)
 {
-    Assert(hThread == NIL_RTTHREAD); NOREF(hThread);
-    /** @todo Solaris: Implement RTThreadIsInInterrupt. Required for guest
-     *        additions! */
-    return !ASMIntAreEnabled();
+    /* This is the best we currently can do here. :-( */
+    return !RTThreadPreemptIsEnabled(hThread)
+        && getpil() > 0
 }
 
