@@ -3036,7 +3036,7 @@
 
   <interface
      name="IAppliance" extends="$unknown"
-     uuid="07495095-d16c-4911-8964-5914341ced5d"
+     uuid="e3ba9ab9-ac2c-4266-8bd2-91c4bf721ceb"
      wsmap="managed"
      >
     <desc>
@@ -3182,6 +3182,9 @@
           Name of appliance file to open (either with an <tt>.ovf</tt> or <tt>.ova</tt> extension, depending
           on whether the appliance is distributed as a set of files or as a single file, respectively).
         </desc>
+      </param>
+      <param name="aProgress" type="IProgress" dir="return">
+        <desc></desc>
       </param>
     </method>
 

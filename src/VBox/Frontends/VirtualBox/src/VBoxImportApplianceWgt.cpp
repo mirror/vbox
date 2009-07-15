@@ -58,10 +58,17 @@ bool VBoxImportApplianceWgt::setFile (const QString& aFile)
         if (fResult)
         {
             /* Read the appliance */
-            mAppliance->Read (aFile);
+            CProgress progress = mAppliance->Read (aFile);
             fResult = mAppliance->isOk();
             if (fResult)
             {
+                /* Show some progress, so the user know whats going on */
+                vboxProblem().showModalProgressDialog (progress, tr ("Reading Appliance ..."), this);
+                if (!progress.isOk() || progress.GetResultCode() != 0)
+                {
+                    vboxProblem().cannotImportAppliance (progress, mAppliance, this);
+                    return false;
+                }
                 /* Now we have to interpret that stuff */
                 mAppliance->Interpret();
                 fResult = mAppliance->isOk();

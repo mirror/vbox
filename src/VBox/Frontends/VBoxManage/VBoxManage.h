@@ -151,7 +151,7 @@ int errorArgument(const char *pszFormat, ...);
 void printUsageInternal(USAGECATEGORY u64Cmd);
 
 #ifndef VBOX_ONLY_DOCS
-void showProgress(ComPtr<IProgress> progress);
+LONG showProgress(ComPtr<IProgress> progress);
 #endif
 
 /* VBoxManage.cpp */

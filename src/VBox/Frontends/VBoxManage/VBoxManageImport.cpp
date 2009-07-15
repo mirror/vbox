@@ -232,13 +232,32 @@ int handleImportAppliance(HandlerArg *a)
         ComPtr<IAppliance> pAppliance;
         CHECK_ERROR_BREAK(a->virtualBox, CreateAppliance(pAppliance.asOutParam()));
 
-        char *pszAbsFilePath = RTPathAbsDup(strOvfFilename.c_str());
-        CHECK_ERROR_BREAK(pAppliance, Read(Bstr(pszAbsFilePath)));
+        char *pszAbsFilePath;
+        if (strOvfFilename.startsWith("S3://", iprt::MiniString::CaseInsensitive) ||
+            strOvfFilename.startsWith("SunCloud://", iprt::MiniString::CaseInsensitive) ||
+            strOvfFilename.startsWith("webdav://", iprt::MiniString::CaseInsensitive))
+            pszAbsFilePath = RTStrDup(strOvfFilename.c_str());
+        else
+            pszAbsFilePath = RTPathAbsDup(strOvfFilename.c_str());
+        ComPtr<IProgress> progressRead;
+        CHECK_ERROR_BREAK(pAppliance, Read(Bstr(pszAbsFilePath), progressRead.asOutParam()));
         RTStrFree(pszAbsFilePath);
 
+        rc = showProgress(progressRead);
+
+        if (FAILED(rc))
+        {
+            com::ProgressErrorInfo info(progressRead);
+            com::GluePrintErrorInfo(info);
+            com::GluePrintErrorContext("ImportAppliance", __FILE__, __LINE__);
+            return 1;
+        }
+
+        Bstr path; /* fetch the path, there is stuff like username/password removed if any */
+        CHECK_ERROR_BREAK(pAppliance, COMGETTER(Path)(path.asOutParam()));
         // call interpret(); this can yield both warnings and errors, so we need
         // to tinker with the error info a bit
-        RTPrintf("Interpreting %s...\n", strOvfFilename.c_str());
+        RTPrintf("Interpreting %ls...\n", path.raw());
         rc = pAppliance->Interpret();
         com::ErrorInfo info0(pAppliance);
 
@@ -643,20 +662,14 @@ int handleImportAppliance(HandlerArg *a)
                 CHECK_ERROR_BREAK(pAppliance,
                                   ImportMachines(progress.asOutParam()));
 
-                showProgress(progress);
-
-                if (SUCCEEDED(rc))
-                {
-                    LONG iRc;
-                    progress->COMGETTER(ResultCode)(&iRc);
-                    rc = iRc;
-                }
+                rc = showProgress(progress);
 
                 if (FAILED(rc))
                 {
                     com::ProgressErrorInfo info(progress);
                     com::GluePrintErrorInfo(info);
                     com::GluePrintErrorContext("ImportAppliance", __FILE__, __LINE__);
+                    return 1;
                 }
                 else
                     RTPrintf("Successfully imported the appliance.\n");
@@ -888,24 +901,24 @@ int handleExportAppliance(HandlerArg *a)
             break;
 
         ComPtr<IProgress> progress;
-        char *pszAbsFilePath = RTPathAbsDup(strOutputFile.c_str());
+        char *pszAbsFilePath;
+        if (strOutputFile.startsWith("S3://", iprt::MiniString::CaseInsensitive) ||
+            strOutputFile.startsWith("SunCloud://", iprt::MiniString::CaseInsensitive) ||
+            strOutputFile.startsWith("webdav://", iprt::MiniString::CaseInsensitive))
+            pszAbsFilePath = RTStrDup(strOutputFile.c_str());
+        else
+            pszAbsFilePath = RTPathAbsDup(strOutputFile.c_str());
         CHECK_ERROR_BREAK(pAppliance, Write(Bstr(strOvfFormat), Bstr(pszAbsFilePath), progress.asOutParam()));
         RTStrFree(pszAbsFilePath);
 
-        showProgress(progress);
-
-        if (SUCCEEDED(rc))
-        {
-            LONG iRc;
-            progress->COMGETTER(ResultCode)(&iRc);
-            rc = iRc;
-        }
+        rc = showProgress(progress);
 
         if (FAILED(rc))
         {
             com::ProgressErrorInfo info(progress);
             com::GluePrintErrorInfo(info);
             com::GluePrintErrorContext("Write", __FILE__, __LINE__);
+            return 1;
         }
         else
             RTPrintf("Successfully exported %d machine(s).\n", llMachines.size());
