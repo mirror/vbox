@@ -39,6 +39,7 @@ endif
 ifdef VBOX_WITH_GUEST_PROPS
  include $(PATH_SUB_CURRENT)/GuestProperties/Makefile.kmk
 endif
+include $(PATH_SUB_CURRENT)/testcase/Makefile.kmk
 
 include	$(KBUILD_PATH)/subfooter.kmk
 
