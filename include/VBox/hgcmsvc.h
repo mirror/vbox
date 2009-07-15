@@ -30,9 +30,14 @@
 #ifndef ___VBox_hgcm_h
 #define ___VBox_hgcm_h
 
+#include <iprt/assert.h>
+#include <iprt/string.h>
 #include <VBox/cdefs.h>
 #include <VBox/types.h>
 #include <VBox/err.h>
+#ifdef VBOX_TEST_HGCM_PARMS
+# include <iprt/test.h>
+#endif
 
 /** @todo proper comments. */
 
@@ -109,6 +114,7 @@ typedef struct VBOXHGCMSVCPARM
     /** Extract a uint32_t value from an HGCM parameter structure */
     int getUInt32 (uint32_t *u32)
     {
+        AssertPtrReturn(u32, VERR_INVALID_POINTER);
         int rc = VINF_SUCCESS;
         if (type != VBOX_HGCM_SVC_PARM_32BIT)
             rc = VERR_INVALID_PARAMETER;
@@ -120,6 +126,7 @@ typedef struct VBOXHGCMSVCPARM
     /** Extract a uint64_t value from an HGCM parameter structure */
     int getUInt64 (uint64_t *u64)
     {
+        AssertPtrReturn(u64, VERR_INVALID_POINTER);
         int rc = VINF_SUCCESS;
         if (type != VBOX_HGCM_SVC_PARM_64BIT)
             rc = VERR_INVALID_PARAMETER;
@@ -131,6 +138,8 @@ typedef struct VBOXHGCMSVCPARM
     /** Extract a pointer value from an HGCM parameter structure */
     int getPointer (void **ppv, uint32_t *pcb)
     {
+        AssertPtrReturn(ppv, VERR_INVALID_POINTER);
+        AssertPtrReturn(pcb, VERR_INVALID_POINTER);
         if (type == VBOX_HGCM_SVC_PARM_PTR)
         {
             *ppv = u.pointer.addr;
@@ -142,16 +151,71 @@ typedef struct VBOXHGCMSVCPARM
     }
 
     /** Extract a constant pointer value from an HGCM parameter structure */
-    int getPointer (const void **ppv, uint32_t *pcb)
+    int getPointer (const void **ppcv, uint32_t *pcb)
     {
-        if (type == VBOX_HGCM_SVC_PARM_PTR)
+        AssertPtrReturn(ppcv, VERR_INVALID_POINTER);
+        AssertPtrReturn(pcb, VERR_INVALID_POINTER);
+        void *pv;
+        int rc = getPointer(&pv, pcb);
+        *ppcv = pv;
+        return rc;
+    }
+
+    /** Extract a pointer value to a non-empty buffer from an HGCM parameter
+     * structure */
+    int getBuffer (void **ppv, uint32_t *pcb)
+    {
+        AssertPtrReturn(ppv, VERR_INVALID_POINTER);
+        AssertPtrReturn(pcb, VERR_INVALID_POINTER);
+        void *pv = NULL;
+        uint32_t cb = 0;
+        int rc = getPointer(&pv, &cb);
+        if (   RT_SUCCESS(rc)
+            && VALID_PTR(pv)
+            && cb > 0)
         {
-            *ppv = u.pointer.addr;
-            *pcb = u.pointer.size;
+            *ppv = pv;
+            *pcb = cb;
             return VINF_SUCCESS;
         }
 
         return VERR_INVALID_PARAMETER;
+    }
+
+    /** Extract a pointer value to a non-empty constant buffer from an HGCM
+     * parameter structure */
+    int getBuffer (const void **ppcv, uint32_t *pcb)
+    {
+        AssertPtrReturn(ppcv, VERR_INVALID_POINTER);
+        AssertPtrReturn(pcb, VERR_INVALID_POINTER);
+        void *pcv = NULL;
+        int rc = getBuffer(&pcv, pcb);
+        *ppcv = pcv;
+        return rc;
+    }
+
+    /** Extract a string value from an HGCM parameter structure */
+    int getString (char **ppch, uint32_t *pcb)
+    {
+        uint32_t cb = 0;
+        char *pch = NULL;
+        int rc = getBuffer((void **)&pch, &cb);
+        if (RT_FAILURE(rc))
+            return rc;
+        rc = RTStrValidateEncodingEx(pch, cb,
+                                     RTSTR_VALIDATE_ENCODING_ZERO_TERMINATED);
+        *ppch = pch;
+        *pcb = cb;
+        return rc;
+    }
+
+    /** Extract a constant string value from an HGCM parameter structure */
+    int getString (const char **ppcch, uint32_t *pcb)
+    {
+        char *pch = NULL;
+        int rc = getString(&pch, pcb);
+        *ppcch = pch;
+        return rc;
     }
 
     /** Set a uint32_t value to an HGCM parameter structure */
@@ -175,6 +239,69 @@ typedef struct VBOXHGCMSVCPARM
         u.pointer.addr = pv;
         u.pointer.size = cb;
     }
+
+#ifdef VBOX_TEST_HGCM_PARMS
+    /** Test the getString member function.  Indirectly tests the getPointer
+     * and getBuffer APIs.
+     * @param  hTest  an running IPRT test
+     * @param  aType  the type that the parameter should be set to before
+     *                calling getString
+     * @param  apcc   the value that the parameter should be set to before
+     *                calling getString, and also the address (!) which we
+     *                expect getString to return.  Stricter than needed of
+     *                course, but I was feeling lazy.
+     * @param  acb    the size that the parameter should be set to before
+     *                calling getString, and also the size which we expect
+     *                getString to return.
+     * @param  rcExp  the expected return value of the call to getString.
+     */
+    void doTestGetString(RTTEST hTest, uint32_t aType, const char *apcc,
+                         uint32_t acb, int rcExp)
+    {
+        /* An RTTest API like this, which would print out an additional line
+         * of context if a test failed, would be nice.  This is because the
+         * line number alone doesn't help much here, given that this is a
+         * subroutine called many times. */
+        /*
+        RTTestContextF(hTest,
+                       ("doTestGetString, aType=%u, apcc=%p, acp=%u, rcExp=%Rrc",
+                        aType, apcc, acp, rcExp));
+         */
+        setPointer((void *)apcc, acb);
+        type = aType;  /* in case we don't want VBOX_HGCM_SVC_PARM_PTR */
+        const char *pcc = NULL;
+        uint32_t cb = 0;
+        int rc = getString(&pcc, &cb);
+        RTTEST_CHECK_RC(hTest, rc, rcExp);
+        if (RT_SUCCESS(rcExp))
+        {
+            RTTEST_CHECK_MSG_RETV(hTest, (pcc == apcc),
+                                  (hTest, "expected %p, got %p", apcc, pcc));
+            RTTEST_CHECK_MSG_RETV(hTest, (cb == acb),
+                                  (hTest, "expected %u, got %u", acb, cb));
+        }
+    }
+
+    /** Run some unit tests on the getString method and indirectly test
+     * getPointer and getBuffer as well. */
+    void testGetString(RTTEST hTest)
+    {
+        RTTestSub(hTest, "HGCM string parameter handling");
+        doTestGetString(hTest, VBOX_HGCM_SVC_PARM_32BIT, "test", 3,
+                        VERR_INVALID_PARAMETER);
+        doTestGetString(hTest, VBOX_HGCM_SVC_PARM_PTR, "test", 5,
+                        VINF_SUCCESS);
+        doTestGetString(hTest, VBOX_HGCM_SVC_PARM_PTR, "test", 3,
+                        VERR_BUFFER_OVERFLOW);
+        doTestGetString(hTest, VBOX_HGCM_SVC_PARM_PTR, "test\xf0", 6,
+                        VERR_INVALID_UTF8_ENCODING);
+        doTestGetString(hTest, VBOX_HGCM_SVC_PARM_PTR, "test", 0,
+                        VERR_INVALID_PARAMETER);
+        doTestGetString(hTest, VBOX_HGCM_SVC_PARM_PTR, (const char *)0x1, 5,
+                        VERR_INVALID_PARAMETER);
+        RTTestSubDone(hTest);
+    }
+#endif
 
     VBOXHGCMSVCPARM() : type(VBOX_HGCM_SVC_PARM_INVALID) {}
 #endif
