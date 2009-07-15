@@ -130,7 +130,7 @@ fi
 
 # Exclude directories to not cause install-time conflicts with existing system directories
 cd "$PKG_BASE_DIR"
-find . ! -type d | $VBOX_GGREP -v -E 'prototype|makepackage.sh|vbox.pkginfo|postinstall.sh|preremove.sh|ReadMe.txt|vbox.space|vbox.copyright|VirtualBoxKern' | pkgproto >> prototype
+find . ! -type d | $VBOX_GGREP -v -E 'prototype|makepackage.sh|vbox.pkginfo|postinstall.sh|checkinstall.sh|preremove.sh|ReadMe.txt|vbox.space|vbox.copyright|VirtualBoxKern' | pkgproto >> prototype
 
 # Include only opt/VirtualBox and subdirectories as we want uninstall to clean up directory structure as well
 find . -type d | $VBOX_GGREP -E 'opt/VirtualBox' | pkgproto >> prototype
