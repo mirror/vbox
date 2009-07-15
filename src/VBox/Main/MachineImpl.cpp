@@ -5124,9 +5124,14 @@ HRESULT Machine::loadSnapshot (const settings::Key &aNode,
         }
 
         /* initialize the snapshot */
-        rc = snapshot->init (uuid, name, description, timeStamp,
-                             snapshotMachine, aParentSnapshot);
-        CheckComRCReturnRC (rc);
+        rc = snapshot->init(mParent, // VirtualBox object
+                            uuid,
+                            name,
+                            description,
+                            timeStamp,
+                            snapshotMachine,
+                            aParentSnapshot);
+        CheckComRCReturnRC(rc);
     }
 
     /* memorize the first snapshot if necessary */
@@ -9198,9 +9203,13 @@ STDMETHODIMP SessionMachine::BeginTakingSnapshot (
     RTTIMESPEC time;
     ComObjPtr <Snapshot> snapshot;
     snapshot.createObject();
-    rc = snapshot->init (snapshotId, aName, aDescription,
-                         *RTTimeNow (&time), snapshotMachine,
-                         mData->mCurrentSnapshot);
+    rc = snapshot->init(mParent,
+                        snapshotId,
+                        aName,
+                        aDescription,
+                        *RTTimeNow(&time),
+                        snapshotMachine,
+                        mData->mCurrentSnapshot);
     AssertComRCReturnRC (rc);
 
     /* create and start the task on a separate thread (note that it will not

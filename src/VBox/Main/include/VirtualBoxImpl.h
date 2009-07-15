@@ -63,8 +63,8 @@ struct VMClientWatcherData;
 
 class ATL_NO_VTABLE VirtualBox :
     public VirtualBoxBaseWithChildrenNEXT,
-    public VirtualBoxSupportErrorInfoImpl <VirtualBox, IVirtualBox>,
-    public VirtualBoxSupportTranslation <VirtualBox>,
+    public VirtualBoxSupportErrorInfoImpl<VirtualBox, IVirtualBox>,
+    public VirtualBoxSupportTranslation<VirtualBox>,
     VBOX_SCRIPTABLE_IMPL(IVirtualBox)
 #ifdef RT_OS_WINDOWS
     , public CComCoClass<VirtualBox, &CLSID_VirtualBox>
@@ -358,6 +358,8 @@ public:
      */
     RWLockHandle *hardDiskTreeLockHandle() { return &mHardDiskTreeLockHandle; }
 
+    RWLockHandle *snapshotTreeLockHandle() { return &mSnapshotTreeLockHandle; }
+
     /* for VirtualBoxSupportErrorInfoImpl */
     static const wchar_t *getComponentName() { return L"VirtualBox"; }
 
@@ -506,6 +508,7 @@ private:
 
     RWLockHandle mHardDiskTreeLockHandle;
     RWLockHandle mChildrenMapLockHandle;
+    RWLockHandle mSnapshotTreeLockHandle;
 
     static Bstr sVersion;
     static ULONG sRevision;

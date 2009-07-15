@@ -47,9 +47,9 @@ typedef ConsoleEventBuffer<KeyboardEvent> KeyboardEventBuffer;
 class Console;
 
 class ATL_NO_VTABLE Keyboard :
-    public VirtualBoxBaseNEXT,
-    public VirtualBoxSupportErrorInfoImpl <Keyboard, IKeyboard>,
-    public VirtualBoxSupportTranslation <Keyboard>,
+    public VirtualBoxBase,
+    public VirtualBoxSupportErrorInfoImpl<Keyboard, IKeyboard>,
+    public VirtualBoxSupportTranslation<Keyboard>,
     VBOX_SCRIPTABLE_IMPL(IKeyboard)
 {
 

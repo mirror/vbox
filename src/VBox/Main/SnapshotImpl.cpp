@@ -64,16 +64,24 @@ void Snapshot::FinalRelease()
  *  @param  aMachine       machine associated with this snapshot
  *  @param  aParent        parent snapshot (NULL if no parent)
  */
-HRESULT Snapshot::init (const Guid &aId, IN_BSTR aName, IN_BSTR aDescription,
-                        RTTIMESPEC aTimeStamp, SnapshotMachine *aMachine,
-                        Snapshot *aParent)
+HRESULT Snapshot::init(VirtualBox *aVirtualBox,
+                       const Guid &aId,
+                       IN_BSTR aName,
+                       IN_BSTR aDescription,
+                       RTTIMESPEC aTimeStamp,
+                       SnapshotMachine *aMachine,
+                       Snapshot *aParent)
 {
     LogFlowMember (("Snapshot::init(aParent=%p)\n", aParent));
 
     ComAssertRet (!aId.isEmpty() && aName && aMachine, E_INVALIDARG);
 
-    AutoWriteLock alock (this);
-    ComAssertRet (!isReady(), E_FAIL);
+    /* Enclose the state transition NotReady->InInit->Ready */
+    AutoInitSpan autoInitSpan (this);
+    AssertReturn (autoInitSpan.isOk(), E_FAIL);
+
+    /* share parent weakly */
+    unconst (mVirtualBox) = aVirtualBox;
 
     mParent = aParent;
 
@@ -86,7 +94,8 @@ HRESULT Snapshot::init (const Guid &aId, IN_BSTR aName, IN_BSTR aDescription,
     if (aParent)
         aParent->addDependentChild (this);
 
-    setReady (true);
+    /* Confirm a successful initialization when it's the case */
+    autoInitSpan.setSucceeded();
 
     return S_OK;
 }
@@ -100,22 +109,17 @@ void Snapshot::uninit()
 {
     LogFlowMember (("Snapshot::uninit()\n"));
 
-    AutoWriteLock alock (this);
-
-    LogFlowMember (("Snapshot::uninit(): isReady=%d\n", isReady()));
-    if (!isReady())
-        return;
+    /* Enclose the state transition Ready->InUninit->NotReady */
+//     AutoUninitSpan autoUninitSpan (this);         @todo this creates a deadlock, investigate what this does actually
+//     if (autoUninitSpan.uninitDone())
+//         return;
 
     // uninit all children
     uninitDependentChildren();
 
-    setReady (false);
-
     if (mParent)
     {
-        alock.leave();
         mParent->removeDependentChild (this);
-        alock.enter();
         mParent.setNull();
     }
 
@@ -133,10 +137,11 @@ void Snapshot::uninit()
  */
 void Snapshot::discard()
 {
-    LogFlowMember (("Snapshot::discard()\n"));
+    AutoCaller autoCaller (this);
+    if (FAILED(autoCaller.rc()))
+        return;
 
     AutoWriteLock alock (this);
-    AssertReturn (isReady(), (void) 0);
 
     {
         AutoWriteLock chLock (childrenLock ());
@@ -168,8 +173,10 @@ STDMETHODIMP Snapshot::COMGETTER(Id) (BSTR *aId)
 {
     CheckComArgOutPointerValid(aId);
 
-    AutoWriteLock alock (this);
-    CHECK_READY();
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    AutoReadLock alock (this);
 
     mData.mId.toUtf16().cloneTo (aId);
     return S_OK;
@@ -179,8 +186,10 @@ STDMETHODIMP Snapshot::COMGETTER(Name) (BSTR *aName)
 {
     CheckComArgOutPointerValid(aName);
 
-    AutoWriteLock alock (this);
-    CHECK_READY();
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    AutoReadLock alock (this);
 
     mData.mName.cloneTo (aName);
     return S_OK;
@@ -194,8 +203,10 @@ STDMETHODIMP Snapshot::COMSETTER(Name) (IN_BSTR aName)
 {
     CheckComArgNotNull(aName);
 
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
     AutoWriteLock alock (this);
-    CHECK_READY();
 
     if (mData.mName != aName)
     {
@@ -213,8 +224,10 @@ STDMETHODIMP Snapshot::COMGETTER(Description) (BSTR *aDescription)
 {
     CheckComArgOutPointerValid(aDescription);
 
-    AutoWriteLock alock (this);
-    CHECK_READY();
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    AutoReadLock alock (this);
 
     mData.mDescription.cloneTo (aDescription);
     return S_OK;
@@ -224,8 +237,10 @@ STDMETHODIMP Snapshot::COMSETTER(Description) (IN_BSTR aDescription)
 {
     CheckComArgNotNull(aDescription);
 
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
     AutoWriteLock alock (this);
-    CHECK_READY();
 
     if (mData.mDescription != aDescription)
     {
@@ -243,8 +258,10 @@ STDMETHODIMP Snapshot::COMGETTER(TimeStamp) (LONG64 *aTimeStamp)
 {
     CheckComArgOutPointerValid(aTimeStamp);
 
-    AutoWriteLock alock (this);
-    CHECK_READY();
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    AutoReadLock alock (this);
 
     *aTimeStamp = RTTimeSpecGetMilli (&mData.mTimeStamp);
     return S_OK;
@@ -254,8 +271,10 @@ STDMETHODIMP Snapshot::COMGETTER(Online) (BOOL *aOnline)
 {
     CheckComArgOutPointerValid(aOnline);
 
-    AutoWriteLock alock (this);
-    CHECK_READY();
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    AutoReadLock alock (this);
 
     *aOnline = !stateFilePath().isNull();
     return S_OK;
@@ -265,8 +284,10 @@ STDMETHODIMP Snapshot::COMGETTER(Machine) (IMachine **aMachine)
 {
     CheckComArgOutPointerValid(aMachine);
 
-    AutoWriteLock alock (this);
-    CHECK_READY();
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    AutoReadLock alock (this);
 
     mData.mMachine.queryInterfaceTo (aMachine);
     return S_OK;
@@ -276,8 +297,10 @@ STDMETHODIMP Snapshot::COMGETTER(Parent) (ISnapshot **aParent)
 {
     CheckComArgOutPointerValid(aParent);
 
-    AutoWriteLock alock (this);
-    CHECK_READY();
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    AutoReadLock alock (this);
 
     mParent.queryInterfaceTo (aParent);
     return S_OK;
@@ -287,10 +310,11 @@ STDMETHODIMP Snapshot::COMGETTER(Children) (ComSafeArrayOut (ISnapshot *, aChild
 {
     CheckComArgOutSafeArrayPointerValid(aChildren);
 
-    AutoWriteLock alock (this);
-    CHECK_READY();
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
 
-    AutoWriteLock chLock (childrenLock ());
+    AutoReadLock alock (this);
+    AutoReadLock chLock (childrenLock ());
 
     SafeIfaceArray <ISnapshot> collection (children());
     collection.detachTo (ComSafeArrayOutArg (aChildren));
@@ -316,10 +340,12 @@ const Bstr &Snapshot::stateFilePath() const
  */
 ULONG Snapshot::descendantCount()
 {
-    AutoWriteLock alock(this);
-    AssertReturn (isReady(), 0);
+    AutoCaller autoCaller (this);
+    AssertComRC(autoCaller.rc());
 
-    AutoWriteLock chLock (childrenLock ());
+    AutoReadLock alock (this);
+
+    AutoReadLock chLock (childrenLock ());
 
     ULONG count = (ULONG)children().size();
 
@@ -336,12 +362,14 @@ ULONG Snapshot::descendantCount()
  *  Searches for a snapshot with the given ID among children, grand-children,
  *  etc. of this snapshot. This snapshot itself is also included in the search.
  */
-ComObjPtr <Snapshot> Snapshot::findChildOrSelf (IN_GUID aId)
+ComObjPtr<Snapshot> Snapshot::findChildOrSelf (IN_GUID aId)
 {
     ComObjPtr <Snapshot> child;
 
-    AutoWriteLock alock (this);
-    AssertReturn (isReady(), child);
+    AutoCaller autoCaller (this);
+    AssertComRC(autoCaller.rc());
+
+    AutoReadLock alock (this);
 
     if (mData.mId == aId)
         child = this;
@@ -368,8 +396,10 @@ ComObjPtr <Snapshot> Snapshot::findChildOrSelf (IN_BSTR aName)
     ComObjPtr <Snapshot> child;
     AssertReturn (aName, child);
 
-    AutoWriteLock alock (this);
-    AssertReturn (isReady(), child);
+    AutoCaller autoCaller (this);
+    AssertComRC(autoCaller.rc());
+
+    AutoReadLock alock (this);
 
     if (mData.mName == aName)
         child = this;
@@ -404,8 +434,10 @@ void Snapshot::updateSavedStatePaths (const char *aOldPath, const char *aNewPath
     AssertReturnVoid (aOldPath);
     AssertReturnVoid (aNewPath);
 
+    AutoCaller autoCaller (this);
+    AssertComRC(autoCaller.rc());
+
     AutoWriteLock alock (this);
-    AssertReturnVoid (isReady());
 
     Utf8Str path = mData.mMachine->mSSData->mStateFilePath;
     LogFlowThisFunc (("Snap[%ls].statePath={%s}\n", mData.mName.raw(), path.raw()));
@@ -429,4 +461,28 @@ void Snapshot::updateSavedStatePaths (const char *aOldPath, const char *aNewPath
     }
 }
 
-/* vi: set tabstop=4 shiftwidth=4 expandtab: */
+/**
+    * Returns VirtualBox::mSnapshotsTreeLockHandle(), for convenience. Don't forget
+    * to follow these locking rules:
+    *
+    * 1. The write lock on this handle must be either held alone on the thread
+    *    or requested *after* the VirtualBox object lock. Mixing with other
+    *    locks is prohibited.
+    *
+    * 2. The read lock on this handle may be intermixed with any other lock
+    *    with the exception that it must be requested *after* the VirtualBox
+    *    object lock.
+    */
+RWLockHandle* Snapshot::treeLock()
+{
+    return mVirtualBox->snapshotTreeLockHandle();
+}
+
+/** Reimplements VirtualBoxWithTypedChildren::childrenLock() to return
+    *  treeLock(). */
+RWLockHandle* Snapshot::childrenLock()
+{
+    return treeLock();
+}
+
+
