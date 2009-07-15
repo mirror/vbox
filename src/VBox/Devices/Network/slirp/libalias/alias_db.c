@@ -759,6 +759,9 @@ GetSocket(struct libalias *la, u_short port_net, int *sockfd, int link_type)
     sock_addr.sin_family = AF_INET;
     sock_addr.sin_addr.s_addr = htonl(INADDR_ANY);
     sock_addr.sin_port = htons(port_net);
+#ifdef RT_OS_DARWIN
+    sock_addr.sin_len = sizeof(struct sockaddr_in);
+#endif
 
     err = bind(sock,
         (struct sockaddr *)&sock_addr,
