@@ -32,7 +32,6 @@
 #include <sys/mixer.h>
 
 #define LOG_GROUP LOG_GROUP_DEV_AUDIO
-#define LOG_ENABLED
 #include <VBox/log.h>
 #include <iprt/env.h>
 
