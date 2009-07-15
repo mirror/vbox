@@ -137,9 +137,6 @@ typedef struct _DEVICE_EXTENSION
            HGSMICHANNELINFO channels;
 
            HGSMIHEAP hgsmiAdapterHeap;
-
-           volatile bool bPollingStop;
-           RTTHREAD PollingThread;
 #endif /* VBOX_WITH_HGSMI */
        } primary;
 
