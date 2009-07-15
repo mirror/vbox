@@ -755,9 +755,10 @@ GetSocket(struct libalias *la, u_short port_net, int *sockfd, int link_type)
     so->s = sock;
     fd_nonblock(so->s);
 #endif
+    memset(&sock_addr, 0, sizeof(struct sockaddr_in));
     sock_addr.sin_family = AF_INET;
     sock_addr.sin_addr.s_addr = htonl(INADDR_ANY);
-    sock_addr.sin_port = port_net;
+    sock_addr.sin_port = htons(port_net);
 
     err = bind(sock,
         (struct sockaddr *)&sock_addr,
