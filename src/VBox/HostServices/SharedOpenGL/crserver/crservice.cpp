@@ -20,6 +20,7 @@
  * additional information or have any questions.
  */
 
+#define __STDC_CONSTANT_MACROS  /* needed for a definition in iprt/string.h */
 
 #ifdef RT_OS_WINDOWS
 #include <iprt/alloc.h>
