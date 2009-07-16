@@ -95,6 +95,7 @@ static int vboxGuestInitFixateGuestMappings(PVBOXGUESTDEVEXT pDevExt)
         uint32_t    cbHypervisor = pReq->hypervisorSize;
         RTR0MEMOBJ  ahTries[5];
         uint32_t    iTry;
+        bool        fBitched = false;
         Log(("vboxGuestInitFixateGuestMappings: cbHypervisor=%#x\n", cbHypervisor));
         for (iTry = 0; iTry < RT_ELEMENTS(ahTries); iTry++)
         {
@@ -135,6 +136,7 @@ static int vboxGuestInitFixateGuestMappings(PVBOXGUESTDEVEXT pDevExt)
             {
                 LogRel(("VBoxGuest: Failed to reserve memory for the hypervisor: rc=%Rrc (cbHypervisor=%#x uAlignment=%#x iTry=%u)\n",
                         rc, cbHypervisor, uAlignment, iTry));
+                fBitched = true;
                 break;
             }
 
@@ -155,10 +157,10 @@ static int vboxGuestInitFixateGuestMappings(PVBOXGUESTDEVEXT pDevExt)
             if (RT_SUCCESS(rc))
             {
                 pDevExt->hGuestMappings = hFictive != NIL_RTR0MEMOBJ ? hFictive : hObj;
-                Log(("vboxGuestInitFixateGuestMappings: %p LB %#x; uAlignment=%#x iTry=%u hGuestMappings=%p (%s)\n",
-                     RTR0MemObjAddress(pDevExt->hGuestMappings),
-                     RTR0MemObjSize(pDevExt->hGuestMappings),
-                     uAlignment, iTry, pDevExt->hGuestMappings, hFictive != NIL_RTR0PTR ? "fictive" : "reservation"));
+                LogRel(("VBoxGuest: %p LB %#x; uAlignment=%#x iTry=%u hGuestMappings=%p (%s)\n",
+                     	RTR0MemObjAddress(pDevExt->hGuestMappings),
+                     	RTR0MemObjSize(pDevExt->hGuestMappings),
+                     	uAlignment, iTry, pDevExt->hGuestMappings, hFictive != NIL_RTR0PTR ? "fictive" : "reservation"));
                 break;
             }
             ahTries[iTry] = hObj;
@@ -172,6 +174,8 @@ static int vboxGuestInitFixateGuestMappings(PVBOXGUESTDEVEXT pDevExt)
         if (    RT_FAILURE(rc)
             &&  hFictive != NIL_RTR0PTR)
             RTR0MemObjFree(hFictive, false /* fFreeMappings */);
+        if (RT_FAILURE(rc) && !fBitched)
+            LogRel(("VBoxGuest: Warning: failed to reserve %#d of memory for guest mappings.\n", cbHypervisor));
     }
     VbglGRFree(&pReq->header);
 
