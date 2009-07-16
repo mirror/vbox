@@ -378,6 +378,7 @@ class PlatformXPCOM:
 class PlatformWEBSERVICE:
     def __init__(self, params):
         sys.path.append(VboxSdkDir+'/bindings/webservice/python/lib')
+        # not really needed, but just fail early if misconfigured
         import VirtualBox_services
         import VirtualBox_wrappers
         from VirtualBox_wrappers import IWebsessionManager2
@@ -389,14 +390,34 @@ class PlatformWEBSERVICE:
             self.user = ""
             self.password = ""
             self.url = None
-        self.wsmgr = IWebsessionManager2(self.url)
+        self.vbox = None        
 
-    def getSessionObject(self, vbox):
+    def getSessionObject(self, vbox):        
         return self.wsmgr.getSessionObject(vbox)
 
     def getVirtualBox(self):
+        return connect(self.url, self.user, self.password)
+
+    def connect(self, url, user, passwd):
+        if self.vbox is not None:
+             disconnect()
+        from VirtualBox_wrappers import IWebsessionManager2
+        self.url = url
+        if user is None:
+            user = ""
+        self.user = user
+        if passwd is None:
+            passwd = ""
+        self.password = passwd
+        self.wsmgr = IWebsessionManager2(self.url)
         self.vbox = self.wsmgr.logon(self.user, self.password)
         return self.vbox
+
+    def disconnect(self):
+        if self.vbox is not None and self.wsmgr is not None:
+                self.wsmgr.logoff(self.vbox)
+                self.vbox = None
+                self.wsmgr = None
 
     def getConstants(self):
         return None
@@ -425,11 +446,9 @@ class PlatformWEBSERVICE:
 
     def deinit(self):
         try:
-            if self.vbox is not None:
-                self.wsmg.logoff(self.vbox)
-                self.vbox = None
+           disconnect()
         except:
-            pass
+           pass
 
     def getPerfCollector(self, vbox):
         return PerfCollector(vbox)    
@@ -450,16 +469,21 @@ class VirtualBoxManager:
                 style = "XPCOM"
         try:
             exec "self.platform = Platform"+style+"(platparams)"
-            self.vbox = self.platform.getVirtualBox()
-            self.mgr = SessionManager(self)
+            
             self.constants = VirtualBoxReflectionInfo()
             self.type = self.platform.getType()
             self.remote = self.platform.getRemote()
             self.style = style            
+
+            self.mgr = SessionManager(self)
+            self.vbox = self.platform.getVirtualBox()
         except Exception,e:
             print "init exception: ",e
             traceback.print_exc()
-            raise e
+            if self.remote:
+                self.vbox = None
+            else:
+                raise e
 
     def getArray(self, obj, field):
         return self.platform.getArray(obj, field)
