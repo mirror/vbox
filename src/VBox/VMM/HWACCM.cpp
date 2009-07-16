@@ -1386,9 +1386,19 @@ VMMR3DECL(void) HWACCMR3Reset(PVM pVM)
  *
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
+ * @param   pPatchMem   Patch memory range
+ * @param   cbPatchMem  Size of the memory range
  */
-VMMR3DECL(int)  HWACMMR3EnablePatching(PVM pVM)
+VMMR3DECL(int)  HWACMMR3EnablePatching(PVM pVM, RTGCPTR pPatchMem, unsigned cbPatchMem)
 {
+    /* Current TPR patching only applies to AMD cpus.
+     * May need to be extended to Intel CPUs without the APIC TPR hardware optimization.
+     */
+    if (CPUMGetCPUVendor(pVM) != CPUMCPUVENDOR_AMD)
+        return VERR_NOT_SUPPORTED;
+
+    pVM->hwaccm.s.pGuestPatchMem  = pPatchMem;
+    pVM->hwaccm.s.cbGuestPatchMem = cbPatchMem;
     return VINF_SUCCESS;
 }
 
@@ -1397,9 +1407,13 @@ VMMR3DECL(int)  HWACMMR3EnablePatching(PVM pVM)
  *
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
+ * @param   pPatchMem   Patch memory range
+ * @param   cbPatchMem  Size of the memory range
  */
-VMMR3DECL(int)  HWACMMR3DisablePatching(PVM pVM)
+VMMR3DECL(int)  HWACMMR3DisablePatching(PVM pVM, RTGCPTR pPatchMem, unsigned cbPatchMem)
 {
+    pVM->hwaccm.s.pGuestPatchMem  = 0;
+    pVM->hwaccm.s.cbGuestPatchMem = 0;
     return VINF_SUCCESS;
 }
 
@@ -1799,7 +1813,45 @@ static DECLCALLBACK(int) hwaccmR3Save(PVM pVM, PSSMHANDLE pSSM)
         rc = SSMR3PutU32(pSSM, pVM->aCpus[i].hwaccm.s.vmx.enmPrevGuestMode);
         AssertRCReturn(rc, rc);
     }
+#ifdef VBOX_HWACCM_WITH_GUEST_PATCHING
+    rc = SSMR3PutGCPtr(pSSM, pVM->hwaccm.s.pGuestPatchMem);
+    AssertRCReturn(rc, rc);
+    rc = SSMR3PutGCPtr(pSSM, pVM->hwaccm.s.pFreeGuestPatchMem);
+    AssertRCReturn(rc, rc);
+    rc = SSMR3PutU32(pSSM, pVM->hwaccm.s.cbGuestPatchMem);
+    AssertRCReturn(rc, rc);
 
+    /* Store all the guest patch records too. */
+    rc = SSMR3GetU32(pSSM, &pVM->hwaccm.s.svm.cPatches);
+    AssertRCReturn(rc, rc);
+
+    for (unsigned i = 0; i < pVM->hwaccm.s.svm.cPatches; i++)
+    {
+        PHWACCMTPRPATCH pPatch = &pVM->hwaccm.s.svm.aPatches[i];
+
+        rc = SSMR3PutU32(pSSM, pPatch->Core.Key);
+        AssertRCReturn(rc, rc);
+
+        rc = SSMR3PutU32(pSSM, pPatch->cbOp);
+        AssertRCReturn(rc, rc);
+
+        AssertCompile(sizeof(HWACCMTPRINSTR) == sizeof(uint32_t));
+        rc = SSMR3PutU32(pSSM, (uint32_t)&pPatch->enmType);
+        AssertRCReturn(rc, rc);
+
+        rc = SSMR3PutU32(pSSM, pPatch->uSrcOperand);
+        AssertRCReturn(rc, rc);
+
+        rc = SSMR3PutU32(pSSM, pPatch->uDstOperand);
+        AssertRCReturn(rc, rc);
+
+        rc = SSMR3PutU32(pSSM, pPatch->pJumpTarget);
+        AssertRCReturn(rc, rc);
+
+        rc = SSMR3PutU32(pSSM, pPatch->cFaults);
+        AssertRCReturn(rc, rc);
+    }
+#endif
     return VINF_SUCCESS;
 }
 
@@ -1821,6 +1873,7 @@ static DECLCALLBACK(int) hwaccmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Vers
      * Validate version.
      */
     if (   u32Version != HWACCM_SSM_VERSION
+        && u32Version != HWACCM_SSM_VERSION_NO_PATCHING
         && u32Version != HWACCM_SSM_VERSION_2_0_X)
     {
         AssertMsgFailed(("hwaccmR3Load: Invalid version u32Version=%d!\n", u32Version));
@@ -1835,7 +1888,7 @@ static DECLCALLBACK(int) hwaccmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Vers
         rc = SSMR3GetU64(pSSM, &pVM->aCpus[i].hwaccm.s.Event.intInfo);
         AssertRCReturn(rc, rc);
 
-        if (u32Version >= HWACCM_SSM_VERSION)
+        if (u32Version >= HWACCM_SSM_VERSION_NO_PATCHING)
         {
             uint32_t val;
 
@@ -1852,6 +1905,51 @@ static DECLCALLBACK(int) hwaccmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Vers
             pVM->aCpus[i].hwaccm.s.vmx.enmPrevGuestMode = (PGMMODE)val;
         }
     }
+#ifdef VBOX_HWACCM_WITH_GUEST_PATCHING
+    if (u32Version > HWACCM_SSM_VERSION_NO_PATCHING)
+    {
+        rc = SSMR3GetGCPtr(pSSM, &pVM->hwaccm.s.pGuestPatchMem);
+        AssertRCReturn(rc, rc);
+        rc = SSMR3GetGCPtr(pSSM, &pVM->hwaccm.s.pFreeGuestPatchMem);
+        AssertRCReturn(rc, rc);
+        rc = SSMR3GetU32(pSSM, &pVM->hwaccm.s.cbGuestPatchMem);
+        AssertRCReturn(rc, rc);
+
+        /* Fetch all TPR patch records. */
+        rc = SSMR3GetU32(pSSM, &pVM->hwaccm.s.svm.cPatches);
+        AssertRCReturn(rc, rc);
+
+        for (unsigned i = 0; i < pVM->hwaccm.s.svm.cPatches; i++)
+        {
+            PHWACCMTPRPATCH pPatch = &pVM->hwaccm.s.svm.aPatches[i];
+
+            rc = SSMR3GetU32(pSSM, &pPatch->Core.Key);
+            AssertRCReturn(rc, rc);
+
+            rc = SSMR3GetU32(pSSM, &pPatch->cbOp);
+            AssertRCReturn(rc, rc);
+
+            AssertCompile(sizeof(HWACCMTPRINSTR) == sizeof(uint32_t));
+            rc = SSMR3GetU32(pSSM, (uint32_t *)&pPatch->enmType);
+            AssertRCReturn(rc, rc);
+
+            rc = SSMR3GetU32(pSSM, &pPatch->uSrcOperand);
+            AssertRCReturn(rc, rc);
+
+            rc = SSMR3GetU32(pSSM, &pPatch->uDstOperand);
+            AssertRCReturn(rc, rc);
+
+            rc = SSMR3GetU32(pSSM, &pPatch->cFaults);
+            AssertRCReturn(rc, rc);
+
+            rc = SSMR3GetU32(pSSM, &pPatch->pJumpTarget);
+            AssertRCReturn(rc, rc);
+            
+            rc = RTAvloU32Insert(&pVM->hwaccm.s.svm.PatchTree, &pPatch->Core);
+            AssertRC(rc);
+        }
+    }
+#endif
     return VINF_SUCCESS;
 }
 

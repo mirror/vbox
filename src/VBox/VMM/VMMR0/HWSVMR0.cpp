@@ -1736,12 +1736,13 @@ ResumeExecution:
         if (    (uFaultAddress & 0xfff) == 0x080
             &&  pVM->hwaccm.s.fHasIoApic
             &&  !(errCode & X86_TRAP_PF_P)  /* not present */
-            &&  CPUMGetGuestCPL(pVCpu, CPUMCTX2CORE(pCtx)) == 0
             &&  !CPUMIsGuestInLongModeEx(pCtx))
         {
             RTGCPHYS GCPhysApicBase;
             PDMApicGetBase(pVM, &GCPhysApicBase);   /* @todo cache this */
             GCPhysApicBase &= PAGE_BASE_GC_MASK;
+
+            Assert(CPUMGetGuestCPL(pVCpu, CPUMCTX2CORE(pCtx)) == 0);
 
             if (uFaultAddress == GCPhysApicBase + 0x80)
             {
