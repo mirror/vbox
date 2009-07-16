@@ -315,7 +315,7 @@ STDMETHODIMP USBController::COMGETTER(USBStandard) (USHORT *aUSBStandard)
  * We need an empty collection & enum for deviceFilters, that's all.
  */
 class ATL_NO_VTABLE USBDeviceFilter :
-    public VirtualBoxBaseNEXT,
+    public VirtualBoxBase,
     public VirtualBoxSupportErrorInfoImpl<USBDeviceFilter, IUSBDeviceFilter>,
     public VirtualBoxSupportTranslation<USBDeviceFilter>,
     public IUSBDeviceFilter
