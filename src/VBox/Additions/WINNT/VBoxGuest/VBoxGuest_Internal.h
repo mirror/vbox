@@ -52,6 +52,7 @@ RT_C_DECLS_END
 #endif
 
 #include <iprt/spinlock.h>
+#include <iprt/memobj.h>
 
 #include <VBox/VMMDev.h>
 #include <VBox/VBoxGuest.h>
@@ -179,6 +180,9 @@ typedef struct VBOXGUESTDEVEXT
     PVOID hypervisorMapping;
     // size in bytes of the hypervisor mapping
     ULONG hypervisorMappingSize;
+
+    /* Patch memory object. */
+    RTR0MEMOBJ PatchMemObj;
 
     /* Physical address and length of VMMDev memory */
     PHYSICAL_ADDRESS memoryAddress;

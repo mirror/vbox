@@ -810,6 +810,38 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
             break;
         }
 
+        case VMMDevReq_SetPatchMemory:
+        {
+            if (pRequestHeader->size != sizeof(VMMDevReqPatchMemory))
+            {
+                AssertMsgFailed(("VMMDevReq_SetPatchMemory structure has invalid size!\n"));
+                pRequestHeader->rc = VERR_INVALID_PARAMETER;
+            }
+            else
+            {
+                VMMDevReqPatchMemory *pPatchRequest = (VMMDevReqPatchMemory*)pRequestHeader;
+
+                pRequestHeader->rc = VMMR3SetPatchMemory(PDMDevHlpGetVM(pDevIns), pPatchRequest->pPatchMem, pPatchRequest->cbPatchMem);
+            }
+            break;
+        }
+
+        case VMMDevReq_ClearPatchMemory:
+        {
+            if (pRequestHeader->size != sizeof(VMMDevReqPatchMemory))
+            {
+                AssertMsgFailed(("VMMDevReq_ClearPatchMemory structure has invalid size!\n"));
+                pRequestHeader->rc = VERR_INVALID_PARAMETER;
+            }
+            else
+            {
+                VMMDevReqPatchMemory *pPatchRequest = (VMMDevReqPatchMemory*)pRequestHeader;
+
+                pRequestHeader->rc = VMMR3ClearPatchMemory(PDMDevHlpGetVM(pDevIns), pPatchRequest->pPatchMem, pPatchRequest->cbPatchMem);
+            }
+            break;
+        }
+
         /*
          * Set the system power status
          */

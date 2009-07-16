@@ -1303,6 +1303,30 @@ VMMR3DECL(void) VMMR3SendInitIpi(PVM pVM, VMCPUID idCpu)
     AssertRC(rc);
 }
 
+/**
+ * Sets the guest memory range that can be used for patching
+ *
+ * @param   pVM         The VM to operate on.
+ * @param   pPatchMem   Patch memory range
+ * @param   cbPatchMem  Size of the memory range
+ */
+VMMR3DECL(int) VMMR3SetPatchMemory(PVM pVM, RTGCPTR pPatchPage, unsigned cbPatch)
+{
+    return VERR_ACCESS_DENIED;
+}
+
+/**
+ * Clears the guest memory range that can be used for patching
+ *
+ * @param   pVM         The VM to operate on.
+ * @param   pPatchMem   Patch memory range
+ * @param   cbPatchMem  Size of the memory range
+ */
+VMMR3DECL(int) VMMR3ClearPatchMemory(PVM pVM, RTGCPTR pPatchPage, unsigned cbPatch)
+{
+    return VINF_SUCCESS;
+}
+
 
 /**
  * VCPU worker for VMMR3SynchronizeAllVCpus.

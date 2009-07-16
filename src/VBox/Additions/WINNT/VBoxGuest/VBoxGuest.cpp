@@ -1739,6 +1739,35 @@ VOID reserveHypervisorMemory(PVBOXGUESTDEVEXT pDevExt)
         VbglGRFree (&req->header);
     }
 
+    /* Allocate locked executable memory that can be used for patching guest code. */
+    {
+        VMMDevReqPatchMemory *req = NULL;
+        int rc = VbglGRAlloc ((VMMDevRequestHeader **)&req, sizeof (VMMDevReqPatchMemory), VMMDevReq_SetPatchMemory);
+        if (RT_SUCCESS(rc))
+        {
+            req->cbPatchMem = VMMDEV_GUEST_DEFAULT_PATCHMEM_SIZE;
+
+            rc = RTR0MemObjAllocPage(&pDevExt->PatchMemObj, req->cbPatchMem, true /* executable. */);
+            if (RT_SUCCESS(rc))
+            {
+                req->pPatchMem = (RTGCPTR)RTR0MemObjAddress(pDevExt->PatchMemObj);
+
+                rc = VbglGRPerform (&req->header);
+                if (RT_FAILURE(rc) || RT_FAILURE(req->header.rc))
+                {
+                    dprintf(("VBoxGuest::reserveHypervisorMemory: VMMDevReq_SetPatchMemory error!"
+                                "rc = %d, VMMDev rc = %Rrc\n", rc, req->header.rc));
+                    RTR0MemObjFree(pDevExt->PatchMemObj, true);
+                    pDevExt->PatchMemObj = NULL;
+                }
+            }
+            else
+            {
+                dprintf(("VBoxGuest::reserveHypervisorMemory: RTR0MemObjAllocPage failed with rc %d\n", rc));
+            }
+            VbglGRFree (&req->header);
+        }
+    }
     return;
 }
 
@@ -1749,6 +1778,32 @@ VOID reserveHypervisorMemory(PVBOXGUESTDEVEXT pDevExt)
  */
 VOID unreserveHypervisorMemory(PVBOXGUESTDEVEXT pDevExt)
 {
+    /* Remove the locked executable memory range that can be used for patching guest code. */
+    if (pDevExt->PatchMemObj)
+    {
+        VMMDevReqPatchMemory *req = NULL;
+        int rc = VbglGRAlloc ((VMMDevRequestHeader **)&req, sizeof (VMMDevReqPatchMemory), VMMDevReq_ClearPatchMemory);
+        if (RT_SUCCESS(rc))
+        {
+            req->cbPatchMem = (uint32_t)RTR0MemObjSize(pDevExt->PatchMemObj);
+            req->pPatchMem  = (RTGCPTR)RTR0MemObjAddress(pDevExt->PatchMemObj);
+
+            rc = VbglGRPerform (&req->header);
+            if (RT_FAILURE(rc) || RT_FAILURE(req->header.rc))
+            {
+                dprintf(("VBoxGuest::reserveHypervisorMemory: VMMDevReq_ClearPatchMemory error!"
+                            "rc = %d, VMMDev rc = %Rrc\n", rc, req->header.rc));
+                /* We intentially leak the memory object here as there still could 
+                 * be references to it!!!
+                 */
+            }
+            else
+            {
+                RTR0MemObjFree(pDevExt->PatchMemObj, true);
+            }
+        }
+    }
+
     VMMDevReqHypervisorInfo *req = NULL;
 
     int rc = VbglGRAlloc ((VMMDevRequestHeader **)&req, sizeof (VMMDevReqHypervisorInfo), VMMDevReq_SetHypervisorInfo);
