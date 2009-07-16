@@ -832,7 +832,7 @@ typedef struct VM
 #ifdef ___HWACCMInternal_h
         struct HWACCM s;
 #endif
-        char        padding[4096];       /* multiple of 32 */
+        char        padding[8192];       /* multiple of 32 */
     } hwaccm;
 
     /** TRPM part. */

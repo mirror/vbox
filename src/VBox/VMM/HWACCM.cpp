@@ -1379,6 +1379,13 @@ VMMR3DECL(void) HWACCMR3Reset(PVM pVM)
         pCache->uMagic = UINT64_C(0xDEADBEEFDEADBEEF);
 #endif
     }
+
+    /* Clear all patch information. */
+    pVM->hwaccm.s.pGuestPatchMem      = 0;
+    pVM->hwaccm.s.pFreeGuestPatchMem  = 0;
+    pVM->hwaccm.s.cbGuestPatchMem     = 0;
+    pVM->hwaccm.s.svm.cPatches        = 0;
+    ASMMemZero32(pVM->hwaccm.s.svm.aPatches, sizeof(pVM->hwaccm.s.svm.aPatches));
 }
 
 /**
@@ -1397,8 +1404,9 @@ VMMR3DECL(int)  HWACMMR3EnablePatching(PVM pVM, RTGCPTR pPatchMem, unsigned cbPa
     if (CPUMGetCPUVendor(pVM) != CPUMCPUVENDOR_AMD)
         return VERR_NOT_SUPPORTED;
 
-    pVM->hwaccm.s.pGuestPatchMem  = pPatchMem;
-    pVM->hwaccm.s.cbGuestPatchMem = cbPatchMem;
+    pVM->hwaccm.s.pGuestPatchMem      = pPatchMem;
+    pVM->hwaccm.s.pFreeGuestPatchMem  = pPatchMem;
+    pVM->hwaccm.s.cbGuestPatchMem     = cbPatchMem;
     return VINF_SUCCESS;
 }
 
@@ -1412,8 +1420,12 @@ VMMR3DECL(int)  HWACMMR3EnablePatching(PVM pVM, RTGCPTR pPatchMem, unsigned cbPa
  */
 VMMR3DECL(int)  HWACMMR3DisablePatching(PVM pVM, RTGCPTR pPatchMem, unsigned cbPatchMem)
 {
-    pVM->hwaccm.s.pGuestPatchMem  = 0;
-    pVM->hwaccm.s.cbGuestPatchMem = 0;
+    Assert(pVM->hwaccm.s.pGuestPatchMem == pPatchMem);
+    Assert(pVM->hwaccm.s.cbGuestPatchMem == cbPatchMem);
+
+    pVM->hwaccm.s.pGuestPatchMem      = 0;
+    pVM->hwaccm.s.pFreeGuestPatchMem  = 0;
+    pVM->hwaccm.s.cbGuestPatchMem     = 0;
     return VINF_SUCCESS;
 }
 
@@ -1832,10 +1844,19 @@ static DECLCALLBACK(int) hwaccmR3Save(PVM pVM, PSSMHANDLE pSSM)
         rc = SSMR3PutU32(pSSM, pPatch->Core.Key);
         AssertRCReturn(rc, rc);
 
+        rc = SSMR3PutMem(pSSM, pPatch->aOpcode, sizeof(pPatch->aOpcode));
+        AssertRCReturn(rc, rc);
+
         rc = SSMR3PutU32(pSSM, pPatch->cbOp);
         AssertRCReturn(rc, rc);
 
-        AssertCompile(sizeof(HWACCMTPRINSTR) == sizeof(uint32_t));
+        rc = SSMR3PutMem(pSSM, pPatch->aNewOpcode, sizeof(pPatch->aNewOpcode));
+        AssertRCReturn(rc, rc);
+
+        rc = SSMR3PutU32(pSSM, pPatch->cbNewOp);
+        AssertRCReturn(rc, rc);
+
+        AssertCompileSize(HWACCMTPRINSTR == 4);
         rc = SSMR3PutU32(pSSM, (uint32_t)&pPatch->enmType);
         AssertRCReturn(rc, rc);
 
@@ -1926,10 +1947,18 @@ static DECLCALLBACK(int) hwaccmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Vers
             rc = SSMR3GetU32(pSSM, &pPatch->Core.Key);
             AssertRCReturn(rc, rc);
 
+            rc = SSMR3GetMem(pSSM, pPatch->aOpcode, sizeof(pPatch->aOpcode));
+            AssertRCReturn(rc, rc);
+
             rc = SSMR3GetU32(pSSM, &pPatch->cbOp);
             AssertRCReturn(rc, rc);
 
-            AssertCompile(sizeof(HWACCMTPRINSTR) == sizeof(uint32_t));
+            rc = SSMR3GetMem(pSSM, pPatch->aNewOpcode, sizeof(pPatch->aNewOpcode));
+            AssertRCReturn(rc, rc);
+
+            rc = SSMR3GetU32(pSSM, &pPatch->cbNewOp);
+            AssertRCReturn(rc, rc);
+
             rc = SSMR3GetU32(pSSM, (uint32_t *)&pPatch->enmType);
             AssertRCReturn(rc, rc);
 

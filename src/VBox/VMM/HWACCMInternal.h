@@ -209,6 +209,10 @@ typedef struct
     uint8_t                 aOpcode[16];
     /** Instruction size. */
     uint32_t                cbOp;
+    /** Replacement opcode. */
+    uint8_t                 aNewOpcode[16];
+    /** Replacement instruction size. */
+    uint32_t                cbNewOp;
     /** Instruction type. */
     HWACCMTPRINSTR          enmType;
     /** Source operand. */
