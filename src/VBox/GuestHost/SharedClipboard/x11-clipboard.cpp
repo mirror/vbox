@@ -402,7 +402,7 @@ static void clipGetFormatsFromTargets(CLIPBACKEND *pCtx, Atom *pTargets,
             {
                 char *pszName = XGetAtomName(XtDisplay(pCtx->widget),
                                                    pTargets[i]);
-                Log2(("%s: found target %s\n", __PRETTY_FUNCTION__, pszName));
+                LogRel2(("%s: found target %s\n", __PRETTY_FUNCTION__, pszName));
                 XFree(pszName);
             }
 #endif
@@ -424,7 +424,7 @@ static void clipUpdateX11Targets(CLIPBACKEND *pCtx, Atom *pTargets,
 {
     bool changed = false;
 
-    Log3 (("%s: called\n", __PRETTY_FUNCTION__));
+    LogRel3 (("%s: called\n", __PRETTY_FUNCTION__));
     if (pCtx->fOwnsClipboard)
         /* VBox raced us and we lost.  So we don't want to report anything. */
         return;
@@ -501,11 +501,11 @@ void clipSchedulePoller(CLIPBACKEND *pCtx,
 void clipPollX11CBFormats(XtPointer pUserData, XtIntervalId * /* hTimerId */)
 {
     CLIPBACKEND *pCtx = (CLIPBACKEND *)pUserData;
-    Log3 (("%s: called\n", __PRETTY_FUNCTION__));
+    LogRel3 (("%s: called\n", __PRETTY_FUNCTION__));
     /* Get the current clipboard contents if we don't own it ourselves */
     if (!pCtx->fOwnsClipboard)
     {
-        Log3 (("%s: requesting the targets that the X11 clipboard offers\n",
+        LogRel3 (("%s: requesting the targets that the X11 clipboard offers\n",
                __PRETTY_FUNCTION__));
         XtGetSelectionValue(pCtx->widget,
                             clipGetAtom(pCtx->widget, "CLIPBOARD"),
@@ -694,7 +694,7 @@ void ClipDestructX11(CLIPBACKEND *pCtx)
 int ClipStartX11(CLIPBACKEND *pCtx)
 {
     int rc = VINF_SUCCESS;
-    LogFlowFunc(("\n"));
+    LogRelFlowFunc(("\n"));
     /*
      * Immediately return if we are not connected to the X server.
      */
@@ -756,7 +756,7 @@ int ClipStopX11(CLIPBACKEND *pCtx)
     else
         LogRelFunc(("rc=%Rrc\n", rc));
     clipUninit(pCtx);
-    LogFlowFunc(("returning %Rrc.\n", rc));
+    LogRelFlowFunc(("returning %Rrc.\n", rc));
     return rc;
 }
 
@@ -781,7 +781,7 @@ static int clipCreateX11Targets(CLIPBACKEND *pCtx, Atom *atomTypeReturn,
     Atom *atomTargets = (Atom *)XtMalloc(  (MAX_CLIP_X11_FORMATS + 3)
                                          * sizeof(Atom));
     unsigned cTargets = 0;
-    LogFlowFunc (("called\n"));
+    LogRelFlowFunc (("called\n"));
     CLIPX11FORMAT format = NIL_CLIPX11FORMAT;
     do
     {
@@ -811,7 +811,7 @@ static int clipReadVBoxClipboard(CLIPBACKEND *pCtx, uint32_t u32Format,
                                  void **ppv, uint32_t *pcb)
 {
     int rc = VINF_SUCCESS;
-    LogFlowFunc(("pCtx=%p, u32Format=%02X, ppv=%p, pcb=%p\n", pCtx,
+    LogRelFlowFunc(("pCtx=%p, u32Format=%02X, ppv=%p, pcb=%p\n", pCtx,
                  u32Format, ppv, pcb));
     if (u32Format == VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT)
     {
@@ -830,9 +830,9 @@ static int clipReadVBoxClipboard(CLIPBACKEND *pCtx, uint32_t u32Format,
     else
         rc = ClipRequestDataForX11(pCtx->pFrontend, u32Format,
                                           ppv, pcb);
-    LogFlowFunc(("returning %Rrc\n", rc));
+    LogRelFlowFunc(("returning %Rrc\n", rc));
     if (RT_SUCCESS(rc))
-        LogFlowFunc(("*ppv=%.*ls, *pcb=%u\n", *pcb, *ppv, *pcb));
+        LogRelFlowFunc(("*ppv=%.*ls, *pcb=%u\n", *pcb, *ppv, *pcb));
     return rc;
 }
 
@@ -875,7 +875,7 @@ static int clipWinTxtToUtf8(PRTUTF16 pwszSrc, size_t cbSrc, char *pszBuf,
     size_t cwSrc = cbSrc / 2, cwTmp = 0, cbDest = 0;
     int rc = VINF_SUCCESS;
 
-    LogFlowFunc (("pwszSrc=%.*ls, cbSrc=%u\n", cbSrc, pwszSrc, cbSrc));
+    LogRelFlowFunc (("pwszSrc=%.*ls, cbSrc=%u\n", cbSrc, pwszSrc, cbSrc));
     /* How long will the converted text be? */
     AssertPtr(pwszSrc);
     AssertPtr(pszBuf);
@@ -896,9 +896,9 @@ static int clipWinTxtToUtf8(PRTUTF16 pwszSrc, size_t cbSrc, char *pszBuf,
     RTMemFree(reinterpret_cast<void *>(pwszTmp));
     if (pcbActual)
         *pcbActual = cbDest + 1;
-    LogFlowFunc(("returning %Rrc\n", rc));
+    LogRelFlowFunc(("returning %Rrc\n", rc));
     if (RT_SUCCESS(rc))
-        LogFlowFunc (("converted string is %.*s. Returning.\n", cbDest,
+        LogRelFlowFunc (("converted string is %.*s. Returning.\n", cbDest,
                       pszBuf));
     return rc;
 }
@@ -983,7 +983,7 @@ static int clipWinTxtToCTextForX11CB(Display *pDisplay, PRTUTF16 pwszSrc,
     XTextProperty property;
     int rc = VINF_SUCCESS, xrc = 0;
 
-    LogFlowFunc(("pwszSrc=%.*ls, cbSrc=%u\n", cbSrc / 2, pwszSrc, cbSrc));
+    LogRelFlowFunc(("pwszSrc=%.*ls, cbSrc=%u\n", cbSrc / 2, pwszSrc, cbSrc));
     AssertPtrReturn(pDisplay, false);
     AssertPtrReturn(pwszSrc, false);
     rc = clipWinTxtBufSizeForUtf8(pwszSrc, cbSrc / 2, &cbTmp);
@@ -1014,9 +1014,9 @@ static int clipWinTxtToCTextForX11CB(Display *pDisplay, PRTUTF16 pwszSrc,
     *pValReturn = reinterpret_cast<XtPointer>(property.value);
     *pcLenReturn = property.nitems + 1;
     *piFormatReturn = property.format;
-    LogFlowFunc(("returning %Rrc\n", rc));
+    LogRelFlowFunc(("returning %Rrc\n", rc));
     if (RT_SUCCESS(rc))
-        LogFlowFunc (("converted string is %s\n", property.value));
+        LogRelFlowFunc (("converted string is %s\n", property.value));
     return rc;
 }
 
@@ -1082,7 +1082,7 @@ static Boolean clipXtConvertSelectionProc(Widget widget, Atom *atomSelection,
     CLIPBACKEND *pCtx = clipLookupContext(widget);
     int rc = VINF_SUCCESS;
 
-    LogFlowFunc(("\n"));
+    LogRelFlowFunc(("\n"));
     if (   !pCtx->fOwnsClipboard   /* Drop requests we receive too late. */
         || !clipIsSupportedSelectionType(pCtx->widget, *atomSelection))
         return false;
@@ -1092,7 +1092,7 @@ static Boolean clipXtConvertSelectionProc(Widget widget, Atom *atomSelection,
     else
         rc = clipConvertVBoxCBForX11(pCtx, atomTarget, atomTypeReturn,
                                      pValReturn, pcLenReturn, piFormatReturn);
-    LogFlowFunc(("returning, internal status code %Rrc\n", rc));
+    LogRelFlowFunc(("returning, internal status code %Rrc\n", rc));
     return RT_SUCCESS(rc);
 }
 
@@ -1101,7 +1101,7 @@ static Boolean clipXtConvertSelectionProc(Widget widget, Atom *atomSelection,
  */
 static void clipReleaseCB(CLIPBACKEND *pCtx)
 {
-    LogFlowFunc (("\n"));
+    LogRelFlowFunc (("\n"));
     /* The formats should be set to the right values as soon as we start
      * polling */
     clipReportEmptyX11CB(pCtx);
@@ -1117,7 +1117,7 @@ static void clipReleaseCB(CLIPBACKEND *pCtx)
 static void clipXtLoseSelectionProc(Widget widget, Atom *)
 {
     CLIPBACKEND *pCtx = clipLookupContext(widget);
-    LogFlowFunc (("\n"));
+    LogRelFlowFunc (("\n"));
     clipReleaseCB(pCtx);
 }
 
@@ -1174,11 +1174,11 @@ static void clipNewVBoxFormatsWorker(XtPointer pUserData,
     CLIPBACKEND *pCtx = pFormats->pCtx;
     uint32_t u32Formats = pFormats->formats;
     RTMemFree(pFormats);
-    LogFlowFunc (("u32Formats=%d\n", u32Formats));
+    LogRelFlowFunc (("u32Formats=%d\n", u32Formats));
     clipInvalidateVBoxCBCache(pCtx);
     clipGrabX11CB(pCtx, u32Formats);
     clipResetX11Formats(pCtx);
-    LogFlowFunc(("returning\n"));
+    LogRelFlowFunc(("returning\n"));
 }
 
 /**
@@ -1221,7 +1221,7 @@ void ClipAnnounceFormatToX11(CLIPBACKEND *pCtx,
 static int clipUtf16ToWinTxt(RTUTF16 *pwcSrc, size_t cwcSrc,
                              PRTUTF16 *ppwszDest, uint32_t *pcbDest)
 {
-    LogFlowFunc(("pwcSrc=%p, cwcSrc=%u, ppwszDest=%p\n", pwcSrc, cwcSrc,
+    LogRelFlowFunc(("pwcSrc=%p, cwcSrc=%u, ppwszDest=%p\n", pwcSrc, cwcSrc,
                  ppwszDest));
     AssertPtrReturn(pwcSrc, VERR_INVALID_POINTER);
     AssertPtrReturn(ppwszDest, VERR_INVALID_POINTER);
@@ -1241,16 +1241,16 @@ static int clipUtf16ToWinTxt(RTUTF16 *pwcSrc, size_t cwcSrc,
                                         cwcDest);
     if (RT_SUCCESS(rc))
     {
-        LogFlowFunc (("converted string is %.*ls\n", cwcDest, pwszDest));
+        LogRelFlowFunc (("converted string is %.*ls\n", cwcDest, pwszDest));
         *ppwszDest = pwszDest;
         if (pcbDest)
             *pcbDest = cwcDest * 2;
     }
     else
         RTMemFree(pwszDest);
-    LogFlowFunc(("returning %Rrc\n", rc));
+    LogRelFlowFunc(("returning %Rrc\n", rc));
     if (pcbDest)
-        LogFlowFunc(("*pcbDest=%u\n", *pcbDest));
+        LogRelFlowFunc(("*pcbDest=%u\n", *pcbDest));
     return rc;
 }
 
@@ -1268,7 +1268,7 @@ static int clipUtf16ToWinTxt(RTUTF16 *pwcSrc, size_t cwcSrc,
 static int clipUtf8ToWinTxt(const char *pcSrc, unsigned cbSrc,
                             PRTUTF16 *ppwszDest, uint32_t *pcbDest)
 {
-    LogFlowFunc(("pcSrc=%p, cbSrc=%u, ppwszDest=%p\n", pcSrc, cbSrc,
+    LogRelFlowFunc(("pcSrc=%p, cbSrc=%u, ppwszDest=%p\n", pcSrc, cbSrc,
                  ppwszDest));
     AssertPtrReturn(pcSrc, VERR_INVALID_POINTER);
     AssertPtrReturn(ppwszDest, VERR_INVALID_POINTER);
@@ -1281,9 +1281,9 @@ static int clipUtf8ToWinTxt(const char *pcSrc, unsigned cbSrc,
     if (RT_SUCCESS(rc))
         rc = clipUtf16ToWinTxt(pwcTmp, cwcTmp, ppwszDest, pcbDest);
     RTUtf16Free(pwcTmp);
-    LogFlowFunc(("Returning %Rrc\n", rc));
+    LogRelFlowFunc(("Returning %Rrc\n", rc));
     if (pcbDest)
-        LogFlowFunc(("*pcbDest=%u\n", *pcbDest));
+        LogRelFlowFunc(("*pcbDest=%u\n", *pcbDest));
     return rc;
 }
 
@@ -1304,7 +1304,7 @@ static int clipCTextToWinTxt(Widget widget, unsigned char *pcSrc,
                              unsigned cbSrc, PRTUTF16 *ppwszDest,
                              uint32_t *pcbDest)
 {
-    LogFlowFunc(("widget=%p, pcSrc=%p, cbSrc=%u, ppwszDest=%p\n", widget,
+    LogRelFlowFunc(("widget=%p, pcSrc=%p, cbSrc=%u, ppwszDest=%p\n", widget,
                  pcSrc, cbSrc, ppwszDest));
     AssertReturn(widget, VERR_INVALID_PARAMETER);
     AssertPtrReturn(pcSrc, VERR_INVALID_POINTER);
@@ -1352,9 +1352,9 @@ static int clipCTextToWinTxt(Widget widget, unsigned char *pcSrc,
     if (ppcTmp != NULL)
         XFreeStringList(ppcTmp);
     RTStrFree(pszTmp);
-    LogFlowFunc(("Returning %Rrc\n", rc));
+    LogRelFlowFunc(("Returning %Rrc\n", rc));
     if (pcbDest)
-        LogFlowFunc(("*pcbDest=%u\n", *pcbDest));
+        LogRelFlowFunc(("*pcbDest=%u\n", *pcbDest));
     return rc;
 }
 
@@ -1372,7 +1372,7 @@ static int clipCTextToWinTxt(Widget widget, unsigned char *pcSrc,
 static int clipLatin1ToWinTxt(char *pcSrc, unsigned cbSrc,
                               PRTUTF16 *ppwszDest, uint32_t *pcbDest)
 {
-    LogFlowFunc (("pcSrc=%.*s, cbSrc=%u, ppwszDest=%p\n", cbSrc,
+    LogRelFlowFunc (("pcSrc=%.*s, cbSrc=%u, ppwszDest=%p\n", cbSrc,
                   (char *) pcSrc, cbSrc, ppwszDest));
     AssertPtrReturn(pcSrc, VERR_INVALID_POINTER);
     AssertPtrReturn(ppwszDest, VERR_INVALID_POINTER);
@@ -1407,15 +1407,15 @@ static int clipLatin1ToWinTxt(char *pcSrc, unsigned cbSrc,
                 ++j;
             }
         pwszDest[cwcDest - 1] = '\0';  /* Make sure we are zero-terminated. */
-        LogFlowFunc (("converted text is %.*ls\n", cwcDest, pwszDest));
+        LogRelFlowFunc (("converted text is %.*ls\n", cwcDest, pwszDest));
     }
     if (RT_SUCCESS(rc))
         *ppwszDest = pwszDest;
     else
         RTMemFree(pwszDest);
-    LogFlowFunc(("Returning %Rrc\n", rc));
+    LogRelFlowFunc(("Returning %Rrc\n", rc));
     if (pcbDest)
-        LogFlowFunc(("*pcbDest=%u\n", *pcbDest));
+        LogRelFlowFunc(("*pcbDest=%u\n", *pcbDest));
     return rc;
 }
 
@@ -1447,7 +1447,7 @@ static void clipConvertX11CB(Widget widget, XtPointer pClientData,
                              int *piFormat)
 {
     CLIPREADX11CBREQ *pReq = (CLIPREADX11CBREQ *) pClientData;
-    LogFlowFunc(("pReq->mFormat=%02X, pReq->mTextFormat=%u, pReq->mCtx=%p\n",
+    LogRelFlowFunc(("pReq->mFormat=%02X, pReq->mTextFormat=%u, pReq->mCtx=%p\n",
                  pReq->mFormat, pReq->mTextFormat, pReq->mCtx));
     AssertPtr(pReq->mCtx);
     Assert(pReq->mFormat != 0);  /* sanity */
@@ -1503,7 +1503,7 @@ static void clipConvertX11CB(Widget widget, XtPointer pClientData,
         clipReportFormatsToVBox(pCtx);
     // else
     //     clipReportEmptyX11CB(pCtx);
-    LogFlowFunc(("rc=%Rrc\n", rc));
+    LogRelFlowFunc(("rc=%Rrc\n", rc));
 }
 
 /** Worker function for ClipRequestDataFromX11 which runs on the event
@@ -1513,7 +1513,7 @@ static void vboxClipboardReadX11Worker(XtPointer pUserData,
 {
     CLIPREADX11CBREQ *pReq = (CLIPREADX11CBREQ *)pUserData;
     CLIPBACKEND *pCtx = pReq->mCtx;
-    LogFlowFunc (("pReq->mFormat = %02X\n", pReq->mFormat));
+    LogRelFlowFunc (("pReq->mFormat = %02X\n", pReq->mFormat));
 
     int rc = VINF_SUCCESS;
     /* Do not continue if we already own the clipboard */
@@ -1551,7 +1551,7 @@ static void vboxClipboardReadX11Worker(XtPointer pUserData,
                                        NULL, 0);
         RTMemFree(pReq);
     }
-    LogFlowFunc(("status %Rrc\n", rc));
+    LogRelFlowFunc(("status %Rrc\n", rc));
 }
 
 /**
