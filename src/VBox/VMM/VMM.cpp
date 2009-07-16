@@ -1304,26 +1304,38 @@ VMMR3DECL(void) VMMR3SendInitIpi(PVM pVM, VMCPUID idCpu)
 }
 
 /**
- * Sets the guest memory range that can be used for patching
+ * Registers the guest memory range that can be used for patching
  *
+ * @returns VBox status code.
  * @param   pVM         The VM to operate on.
  * @param   pPatchMem   Patch memory range
  * @param   cbPatchMem  Size of the memory range
  */
-VMMR3DECL(int) VMMR3SetPatchMemory(PVM pVM, RTGCPTR pPatchPage, unsigned cbPatch)
+VMMR3DECL(int) VMMR3RegisterPatchMemory(PVM pVM, RTGCPTR pPatchMem, unsigned cbPatchMem)
 {
+    if (HWACCMIsEnabled(pVM))
+        HWACMMR3EnablePatching(pVM);
+
     return VERR_ACCESS_DENIED;
 }
 
 /**
- * Clears the guest memory range that can be used for patching
+ * Deregisters the guest memory range that can be used for patching
  *
+ * @returns VBox status code.
  * @param   pVM         The VM to operate on.
  * @param   pPatchMem   Patch memory range
  * @param   cbPatchMem  Size of the memory range
  */
-VMMR3DECL(int) VMMR3ClearPatchMemory(PVM pVM, RTGCPTR pPatchPage, unsigned cbPatch)
+VMMR3DECL(int) VMMR3DeregisterPatchMemory(PVM pVM, RTGCPTR pPatchMem, unsigned cbPatchMem)
 {
+    if (HWACCMIsEnabled(pVM))
+    {
+        int rc = HWACMMR3DisablePatching(pVM);
+        if (VBOX_FAILURE(rc))
+            return rc;
+    }
+
     return VINF_SUCCESS;
 }
 
