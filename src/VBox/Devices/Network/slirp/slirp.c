@@ -656,15 +656,17 @@ void slirp_term(PNATState pData)
 
     slirp_link_down(pData);
     slirp_release_dns_list(pData);
-#ifdef RT_OS_WINDOWS
-    WSACleanup();
-#endif
+    ftp_alias_unload();
+    nbt_alias_unload();
 #ifdef VBOX_WITH_SLIRP_ALIAS
     while(!LIST_EMPTY(&instancehead)) {
         struct libalias *la = LIST_FIRST(&instancehead);
         /* libalias do all clean up */
         LibAliasUninit(la);
     }
+#endif
+#ifdef RT_OS_WINDOWS
+    WSACleanup();
 #endif
 #ifdef LOG_ENABLED
     Log(("\n"
