@@ -183,7 +183,7 @@ RTDECL(int) RTStrValidateEncoding(const char *psz);
  */
 /** Check that the string is zero terminated within the given size.
  * VERR_BUFFER_OVERFLOW will be returned if the check fails. */
-#define RTSTR_VALIDATE_ENCODING_ZERO_TERMINATED     ((uint32_t) 1)
+#define RTSTR_VALIDATE_ENCODING_ZERO_TERMINATED     RT_BIT_32(0)
 /** @} */
 
 /**
