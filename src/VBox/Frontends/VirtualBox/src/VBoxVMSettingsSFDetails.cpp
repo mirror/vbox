@@ -146,6 +146,16 @@ void VBoxVMSettingsSFDetails::onSelectPath()
         return;
 
     QString folderName (mPsPath->path());
+#if defined (Q_OS_WIN) || defined (Q_OS_OS2)
+    if (folderName[0].isLetter() && folderName[1] == ':' && folderName[2] == 0)
+    {
+        /* VBoxFilePathSelectorWidget returns root path as 'X:', which is invalid path.
+         * Append the trailing backslash to get a valid root path 'X:\'.
+         */
+        folderName += "\\";
+        mPsPath->setPath(folderName);
+    }
+#endif
     QDir folder (folderName);
     if (!folder.isRoot())
         /* Processing non-root folder */
