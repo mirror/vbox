@@ -196,12 +196,23 @@ void VBoxGuestSeamlessX11::addClientWindow(const Window hWin)
     }
     if (fAddWin && (winAttrib.map_state == IsUnmapped))
         fAddWin = false;
+    XSizeHints dummyHints;
+    long dummyLong;
+    if (fAddWin && (!XGetWMNormalHints(mDisplay, hClient, &dummyHints,
+                                       &dummyLong)))
+    {
+        LogFlowFunc(("window %lu, client window %lu has no size hints\n",
+                     hWin, hClient));
+        fAddWin = false;
+    }
     if (fAddWin)
     {
         VBoxGuestX11Pointer<XRectangle> rects;
         int cRects = 0, iOrdering;
         bool hasShape = false;
 
+        LogFlowFunc(("adding window %lu, client window %lu\n", hWin,
+                     hClient));
         if (mSupportsShape)
         {
             XShapeSelectInput(mDisplay, hWin, ShapeNotifyMask);

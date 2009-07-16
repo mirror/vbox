@@ -218,6 +218,16 @@ Status XFetchName(Display *display, Window w, char **window_name_return)
     return 0;
 }
 
+extern "C" Status XGetWMNormalHints(Display *display, Window w,
+                                    XSizeHints *hints_return,
+                                    long *supplied_return);
+
+Status XGetWMNormalHints(Display *display, Window w,
+                         XSizeHints *hints_return, long *supplied_return)
+{
+    return 1;
+}
+
 static void smlsSetWindowAttributes(XWindowAttributes *pAttribs,
                                     Window *pWindows, unsigned cAttribs,
                                     const char **paNames)
