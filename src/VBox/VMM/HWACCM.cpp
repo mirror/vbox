@@ -1542,6 +1542,9 @@ DECLCALLBACK(int) hwaccmR3PatchTprInstr(PVM pVM, PVMCPU pVCpu, void *pvUser)
                 }
                 rc = PGMPhysSimpleWriteGCPtr(pVCpu, pCtx->rip, aVMMCall, sizeof(aVMMCall));
                 AssertRC(rc);
+
+                memcpy(pPatch->aNewOpcode, aVMMCall, sizeof(aVMMCall));
+                pPatch->cbNewOp = sizeof(aVMMCall);
             }
             else
             {
@@ -1566,7 +1569,7 @@ DECLCALLBACK(int) hwaccmR3PatchTprInstr(PVM pVM, PVMCPU pVCpu, void *pvUser)
                     &&  pDis->param1.base.reg_gen == uMmioReg
                     &&  pDis->param2.flags == USE_IMMEDIATE8
                     &&  pDis->param2.parval == 4
-                    &&  oldcbOp + cbOp < sizeof(pVM->hwaccm.s.svm.aPatches[idx]))
+                    &&  oldcbOp + cbOp < sizeof(pVM->hwaccm.s.svm.aPatches[idx].aOpcode))
                 {
                     uint8_t szInstr[15];
 
@@ -1581,11 +1584,14 @@ DECLCALLBACK(int) hwaccmR3PatchTprInstr(PVM pVM, PVMCPU pVCpu, void *pvUser)
                     szInstr[1] = 0x0F;
                     szInstr[2] = 0x20;
                     szInstr[3] = 0xC0 | pDis->param1.base.reg_gen;
-                    for (unsigned i = 4; i < 5+cbOp; i++)
+                    for (unsigned i = 4; i < pPatch->cbOp; i++)
                         szInstr[i] = 0x90;  /* nop */
 
-                    rc = PGMPhysSimpleWriteGCPtr(pVCpu, pCtx->rip, szInstr, 5+cbOp);
+                    rc = PGMPhysSimpleWriteGCPtr(pVCpu, pCtx->rip, szInstr, pPatch->cbOp);
                     AssertRC(rc);
+
+                    memcpy(pPatch->aNewOpcode, szInstr, pPatch->cbOp);
+                    pPatch->cbNewOp = pPatch->cbOp;
 
                     Log(("Acceptable read/shr candidate!\n"));
                     pPatch->enmType = HWACCMTPRINSTR_READ_SHR4;
@@ -1597,6 +1603,9 @@ DECLCALLBACK(int) hwaccmR3PatchTprInstr(PVM pVM, PVMCPU pVCpu, void *pvUser)
 
                     rc = PGMPhysSimpleWriteGCPtr(pVCpu, pCtx->rip, aVMMCall, sizeof(aVMMCall));
                     AssertRC(rc);
+
+                    memcpy(pPatch->aNewOpcode, aVMMCall, sizeof(aVMMCall));
+                    pPatch->cbNewOp = sizeof(aVMMCall);
                 }
             }
 
