@@ -810,34 +810,34 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
             break;
         }
 
-        case VMMDevReq_SetPatchMemory:
+        case VMMDevReq_RegisterPatchMemory:
         {
             if (pRequestHeader->size != sizeof(VMMDevReqPatchMemory))
             {
-                AssertMsgFailed(("VMMDevReq_SetPatchMemory structure has invalid size!\n"));
+                AssertMsgFailed(("VMMDevReq_RegisterPatchMemory structure has invalid size!\n"));
                 pRequestHeader->rc = VERR_INVALID_PARAMETER;
             }
             else
             {
                 VMMDevReqPatchMemory *pPatchRequest = (VMMDevReqPatchMemory*)pRequestHeader;
 
-                pRequestHeader->rc = VMMR3SetPatchMemory(PDMDevHlpGetVM(pDevIns), pPatchRequest->pPatchMem, pPatchRequest->cbPatchMem);
+                pRequestHeader->rc = VMMR3RegisterPatchMemory(PDMDevHlpGetVM(pDevIns), pPatchRequest->pPatchMem, pPatchRequest->cbPatchMem);
             }
             break;
         }
 
-        case VMMDevReq_ClearPatchMemory:
+        case VMMDevReq_DeregisterPatchMemory:
         {
             if (pRequestHeader->size != sizeof(VMMDevReqPatchMemory))
             {
-                AssertMsgFailed(("VMMDevReq_ClearPatchMemory structure has invalid size!\n"));
+                AssertMsgFailed(("VMMDevReq_DeregisterPatchMemory structure has invalid size!\n"));
                 pRequestHeader->rc = VERR_INVALID_PARAMETER;
             }
             else
             {
                 VMMDevReqPatchMemory *pPatchRequest = (VMMDevReqPatchMemory*)pRequestHeader;
 
-                pRequestHeader->rc = VMMR3ClearPatchMemory(PDMDevHlpGetVM(pDevIns), pPatchRequest->pPatchMem, pPatchRequest->cbPatchMem);
+                pRequestHeader->rc = VMMR3DeregisterPatchMemory(PDMDevHlpGetVM(pDevIns), pPatchRequest->pPatchMem, pPatchRequest->cbPatchMem);
             }
             break;
         }

@@ -1382,6 +1382,28 @@ VMMR3DECL(void) HWACCMR3Reset(PVM pVM)
 }
 
 /**
+ * Enable patching in a VT-x/AMD-V guest
+ *
+ * @returns VBox status code.
+ * @param   pVM         The VM to operate on.
+ */
+VMMR3DECL(int)  HWACMMR3EnablePatching(PVM pVM)
+{
+    return VINF_SUCCESS;
+}
+
+/**
+ * Disable patching in a VT-x/AMD-V guest
+ *
+ * @returns VBox status code.
+ * @param   pVM         The VM to operate on.
+ */
+VMMR3DECL(int)  HWACMMR3DisablePatching(PVM pVM)
+{
+    return VINF_SUCCESS;
+}
+
+/**
  * Force execution of the current IO code in the recompiler
  *
  * @returns VBox status code.

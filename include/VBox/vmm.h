@@ -191,8 +191,8 @@ VMMR3DECL(void)     VMMR3YieldStop(PVM pVM);
 VMMR3DECL(void)     VMMR3YieldResume(PVM pVM);
 VMMR3DECL(void)     VMMR3SendSipi(PVM pVM, VMCPUID idCpu, uint32_t uVector);
 VMMR3DECL(void)     VMMR3SendInitIpi(PVM pVM, VMCPUID idCpu);
-VMMR3DECL(int)      VMMR3SetPatchMemory(PVM pVM, RTGCPTR pPatchMem, unsigned cbPatchMem);
-VMMR3DECL(int)      VMMR3ClearPatchMemory(PVM pVM, RTGCPTR pPatchMem, unsigned cbPatchMem);
+VMMR3DECL(int)      VMMR3RegisterPatchMemory(PVM pVM, RTGCPTR pPatchMem, unsigned cbPatchMem);
+VMMR3DECL(int)      VMMR3DeregisterPatchMemory(PVM pVM, RTGCPTR pPatchMem, unsigned cbPatchMem);
 VMMR3DECL(int)      VMMR3AtomicExecuteHandler(PVM pVM, PFNATOMICHANDLER pfnHandler, void *pvUser);
 VMMR3DECL(int)      VMMR3EmtRendezvous(PVM pVM, uint32_t fFlags, PFNVMMEMTRENDEZVOUS pfnRendezvous, void *pvUser);
 /** @defgroup grp_VMMR3EmtRendezvous_fFlags     VMMR3EmtRendezvous flags

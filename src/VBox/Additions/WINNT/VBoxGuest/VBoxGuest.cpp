@@ -1742,7 +1742,7 @@ VOID reserveHypervisorMemory(PVBOXGUESTDEVEXT pDevExt)
     /* Allocate locked executable memory that can be used for patching guest code. */
     {
         VMMDevReqPatchMemory *req = NULL;
-        int rc = VbglGRAlloc ((VMMDevRequestHeader **)&req, sizeof (VMMDevReqPatchMemory), VMMDevReq_SetPatchMemory);
+        int rc = VbglGRAlloc ((VMMDevRequestHeader **)&req, sizeof (VMMDevReqPatchMemory), VMMDevReq_RegisterPatchMemory);
         if (RT_SUCCESS(rc))
         {
             req->cbPatchMem = VMMDEV_GUEST_DEFAULT_PATCHMEM_SIZE;
@@ -1755,7 +1755,7 @@ VOID reserveHypervisorMemory(PVBOXGUESTDEVEXT pDevExt)
                 rc = VbglGRPerform (&req->header);
                 if (RT_FAILURE(rc) || RT_FAILURE(req->header.rc))
                 {
-                    dprintf(("VBoxGuest::reserveHypervisorMemory: VMMDevReq_SetPatchMemory error!"
+                    dprintf(("VBoxGuest::reserveHypervisorMemory: VMMDevReq_RegisterPatchMemory error!"
                                 "rc = %d, VMMDev rc = %Rrc\n", rc, req->header.rc));
                     RTR0MemObjFree(pDevExt->PatchMemObj, true);
                     pDevExt->PatchMemObj = NULL;
@@ -1782,7 +1782,7 @@ VOID unreserveHypervisorMemory(PVBOXGUESTDEVEXT pDevExt)
     if (pDevExt->PatchMemObj)
     {
         VMMDevReqPatchMemory *req = NULL;
-        int rc = VbglGRAlloc ((VMMDevRequestHeader **)&req, sizeof (VMMDevReqPatchMemory), VMMDevReq_ClearPatchMemory);
+        int rc = VbglGRAlloc ((VMMDevRequestHeader **)&req, sizeof (VMMDevReqPatchMemory), VMMDevReq_DeregisterPatchMemory);
         if (RT_SUCCESS(rc))
         {
             req->cbPatchMem = (uint32_t)RTR0MemObjSize(pDevExt->PatchMemObj);
@@ -1791,7 +1791,7 @@ VOID unreserveHypervisorMemory(PVBOXGUESTDEVEXT pDevExt)
             rc = VbglGRPerform (&req->header);
             if (RT_FAILURE(rc) || RT_FAILURE(req->header.rc))
             {
-                dprintf(("VBoxGuest::reserveHypervisorMemory: VMMDevReq_ClearPatchMemory error!"
+                dprintf(("VBoxGuest::reserveHypervisorMemory: VMMDevReq_DeregisterPatchMemory error!"
                             "rc = %d, VMMDev rc = %Rrc\n", rc, req->header.rc));
                 /* We intentially leak the memory object here as there still could 
                  * be references to it!!!

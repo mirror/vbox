@@ -140,6 +140,8 @@ VMMR3DECL(bool) HWACCMR3IsVPIDActive(PVM pVM);
 VMMR3DECL(int)  HWACCMR3InjectNMI(PVM pVM);
 VMMR3DECL(int)  HWACCMR3EmulateIoBlock(PVM pVM, PCPUMCTX pCtx);
 VMMR3DECL(int)  HWACCMR3RestartPendingIOInstr(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx);
+VMMR3DECL(int)  HWACMMR3EnablePatching(PVM pVM);
+VMMR3DECL(int)  HWACMMR3DisablePatching(PVM pVM);
 
 /** @} */
 #endif /* IN_RING3 */
