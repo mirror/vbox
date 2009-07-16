@@ -470,6 +470,110 @@ void Console::uninit()
     LogFlowThisFuncLeave();
 }
 
+#ifdef VBOX_WITH_GUEST_PROPS
+bool Console::enabledGuestPropertiesVRDP (void)
+{
+    Bstr value;
+    HRESULT hrc = mMachine->GetExtraData(Bstr("VBoxInternal2/EnableGuestPropertiesVRDP"), value.asOutParam());
+    if (hrc == S_OK)
+    {
+        if (value == "1")
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
+void Console::updateGuestPropertiesVRDPLogon (uint32_t u32ClientId, const char *pszUser, const char *pszDomain)
+{
+    if (!enabledGuestPropertiesVRDP())
+    {
+        return;
+    }
+
+    int rc;
+    char *pszPropertyName;
+
+    rc = RTStrAPrintf(&pszPropertyName, "/VirtualBox/HostInfo/VRDP/Client/%d/Name", u32ClientId);
+    if (RT_SUCCESS(rc))
+    {
+        Bstr clientName;
+        mRemoteDisplayInfo->COMGETTER(ClientName)(clientName.asOutParam());
+
+        mMachine->SetGuestPropertyValue(Bstr(pszPropertyName), clientName);
+        RTStrFree(pszPropertyName);
+    }
+
+    rc = RTStrAPrintf(&pszPropertyName, "/VirtualBox/HostInfo/VRDP/Client/%d/User", u32ClientId);
+    if (RT_SUCCESS(rc))
+    {
+        mMachine->SetGuestPropertyValue(Bstr(pszPropertyName), Bstr(pszUser));
+        RTStrFree(pszPropertyName);
+    }
+
+    rc = RTStrAPrintf(&pszPropertyName, "/VirtualBox/HostInfo/VRDP/Client/%d/Domain", u32ClientId);
+    if (RT_SUCCESS(rc))
+    {
+        mMachine->SetGuestPropertyValue(Bstr(pszPropertyName), Bstr(pszDomain));
+        RTStrFree(pszPropertyName);
+    }
+
+    char *pszClientId;
+    rc = RTStrAPrintf(&pszClientId, "%d", u32ClientId);
+    if (RT_SUCCESS(rc))
+    {
+        mMachine->SetGuestPropertyValue(Bstr("/VirtualBox/HostInfo/VRDP/LastConnectedClient"), Bstr(pszClientId));
+        RTStrFree(pszClientId);
+    }
+
+    return;
+}
+
+void Console::updateGuestPropertiesVRDPDisconnect (uint32_t u32ClientId)
+{
+    if (!enabledGuestPropertiesVRDP())
+    {
+        return;
+    }
+
+    int rc;
+    char *pszPropertyName;
+
+    rc = RTStrAPrintf(&pszPropertyName, "/VirtualBox/HostInfo/VRDP/Client/%d/Name", u32ClientId);
+    if (RT_SUCCESS(rc))
+    {
+        mMachine->SetGuestPropertyValue(Bstr(pszPropertyName), Bstr(""));
+        RTStrFree(pszPropertyName);
+    }
+
+    rc = RTStrAPrintf(&pszPropertyName, "/VirtualBox/HostInfo/VRDP/Client/%d/User", u32ClientId);
+    if (RT_SUCCESS(rc))
+    {
+        mMachine->SetGuestPropertyValue(Bstr(pszPropertyName), Bstr(""));
+        RTStrFree(pszPropertyName);
+    }
+
+    rc = RTStrAPrintf(&pszPropertyName, "/VirtualBox/HostInfo/VRDP/Client/%d/Domain", u32ClientId);
+    if (RT_SUCCESS(rc))
+    {
+        mMachine->SetGuestPropertyValue(Bstr(pszPropertyName), Bstr(""));
+        RTStrFree(pszPropertyName);
+    }
+
+    char *pszClientId;
+    rc = RTStrAPrintf(&pszClientId, "%d", u32ClientId);
+    if (RT_SUCCESS(rc))
+    {
+        mMachine->SetGuestPropertyValue(Bstr("/VirtualBox/HostInfo/VRDP/LastDisconnectedClient"), Bstr(pszClientId));
+        RTStrFree(pszClientId);
+    }
+
+    return;
+}
+#endif /* VBOX_WITH_GUEST_PROPS */
+
+
 int Console::VRDPClientLogon (uint32_t u32ClientId, const char *pszUser, const char *pszPassword, const char *pszDomain)
 {
     LogFlowFuncEnter();
@@ -658,26 +762,9 @@ int Console::VRDPClientLogon (uint32_t u32ClientId, const char *pszUser, const c
         mu32SingleRDPClientId = u32ClientId;
     }
 
-    /* Set guest properties. */
-    int rc;
-    char *pszPropertyName;
-    rc = RTStrAPrintf(&pszPropertyName, "/VirtualBox/HostInfo/VRDP/Client/%d/Name", u32ClientId);
-    if (RT_SUCCESS(rc))
-    {
-        Bstr clientName;
-        mRemoteDisplayInfo->COMGETTER(ClientName)(clientName.asOutParam());
-
-        mMachine->SetGuestPropertyValue(Bstr(pszPropertyName), clientName);
-        RTStrFree(pszPropertyName);
-    }
-
-    char *pszClientId;
-    rc = RTStrAPrintf(&pszClientId, "%d", u32ClientId);
-    if (RT_SUCCESS(rc))
-    {
-        mMachine->SetGuestPropertyValue(Bstr("/VirtualBox/HostInfo/VRDP/LastConnectedClient"), Bstr(pszClientId));
-        RTStrFree(pszClientId);
-    }
+#ifdef VBOX_WITH_GUEST_PROPS
+    updateGuestPropertiesVRDPLogon (u32ClientId, pszUser, pszDomain);
+#endif /* VBOX_WITH_GUEST_PROPS */
 
     return VINF_SUCCESS;
 }
@@ -770,23 +857,9 @@ void Console::VRDPClientDisconnect (uint32_t u32ClientId,
     if (authType == VRDPAuthType_External)
         mConsoleVRDPServer->AuthDisconnect (uuid, u32ClientId);
 
-    /* Reset guest properties for the client. */
-    int rc;
-    char *pszPropertyName;
-    rc = RTStrAPrintf(&pszPropertyName, "/VirtualBox/HostInfo/VRDP/Client/%d/Name", u32ClientId);
-    if (RT_SUCCESS(rc))
-    {
-        mMachine->SetGuestPropertyValue(Bstr(pszPropertyName), Bstr(""));
-        RTStrFree(pszPropertyName);
-    }
-
-    char *pszClientId;
-    rc = RTStrAPrintf(&pszClientId, "%d", u32ClientId);
-    if (RT_SUCCESS(rc))
-    {
-        mMachine->SetGuestPropertyValue(Bstr("/VirtualBox/HostInfo/VRDP/LastDisconnectedClient"), Bstr(pszClientId));
-        RTStrFree(pszClientId);
-    }
+#ifdef VBOX_WITH_GUEST_PROPS
+    updateGuestPropertiesVRDPDisconnect (u32ClientId);
+#endif /* VBOX_WITH_GUEST_PROPS */
 
     LogFlowFuncLeave();
     return;

@@ -507,6 +507,10 @@ private:
                                         ComSafeArrayOut(BSTR, aValues),
                                         ComSafeArrayOut(ULONG64, aTimestamps),
                                         ComSafeArrayOut(BSTR, aFlags));
+
+    bool enabledGuestPropertiesVRDP (void);
+    void updateGuestPropertiesVRDPLogon (uint32_t u32ClientId, const char *pszUser, const char *pszDomain);
+    void updateGuestPropertiesVRDPDisconnect (uint32_t u32ClientId);
 #endif
 
     bool mSavedStateDataLoaded : 1;
