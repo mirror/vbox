@@ -922,6 +922,17 @@ RTDECL(void) RTLogPrintfEx(void *pvInstance, unsigned fFlags, unsigned iGroup, c
  */
 #define LogRelFlow(a)      LogRelIt(LOG_REL_INSTANCE, RTLOGGRPFLAGS_FLOW,     LOG_GROUP, a)
 
+/** @def LogRelFlowFunc
+ * Release logging.  Macro to log the execution flow inside C/C++ functions.
+ *
+ * Prepends the given log message with the function name followed by
+ * a semicolon and space.
+ *
+ * @param   a   Log message in format <tt>("string\n" [, args])</tt>.
+ */
+# define LogRelFlowFunc(a) \
+    do { LogRelFlow((LOG_FN_FMT ": ", __PRETTY_FUNCTION__)); LogRelFlow(a); } while (0)
+
 /** @def LogRelFunc
  * Release logging.  Prepends the given log message with the function name
  * followed by a semicolon and space.
