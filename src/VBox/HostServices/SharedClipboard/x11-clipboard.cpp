@@ -71,7 +71,7 @@ struct _VBOXCLIPBOARDCONTEXT
 void ClipReportX11Formats(VBOXCLIPBOARDCONTEXT *pCtx,
                                       uint32_t u32Formats)
 {
-    LogFlowFunc(("called.  pCtx=%p, u32Formats=%02X\n", pCtx, u32Formats));
+    LogRelFlowFunc(("called.  pCtx=%p, u32Formats=%02X\n", pCtx, u32Formats));
     vboxSvcClipboardReportMsg(pCtx->pClient,
                               VBOX_SHARED_CLIPBOARD_HOST_MSG_FORMATS,
                               u32Formats);
@@ -134,7 +134,7 @@ int vboxClipboardConnect (VBOXCLIPBOARDCLIENTDATA *pClient)
         RTMemFree(pCtx);
         LogRel(("Failed to initialise the shared clipboard\n"));
     }
-    LogFlowFunc(("returning %Rrc\n", rc));
+    LogRelFlowFunc(("returning %Rrc\n", rc));
     return rc;
 }
 
@@ -159,7 +159,7 @@ int vboxClipboardSync (VBOXCLIPBOARDCLIENTDATA *pClient)
  */
 void vboxClipboardDisconnect (VBOXCLIPBOARDCLIENTDATA *pClient)
 {
-    LogFlow(("vboxClipboardDisconnect\n"));
+    LogRelFlow(("vboxClipboardDisconnect\n"));
 
     LogRel(("Stopping the host clipboard service\n"));
     VBOXCLIPBOARDCONTEXT *pCtx = pClient->pCtx;
@@ -191,7 +191,7 @@ void vboxClipboardDisconnect (VBOXCLIPBOARDCLIENTDATA *pClient)
 void vboxClipboardFormatAnnounce (VBOXCLIPBOARDCLIENTDATA *pClient,
                                   uint32_t u32Formats)
 {
-    LogFlowFunc(("called.  pClient=%p, u32Formats=%02X\n", pClient,
+    LogRelFlowFunc(("called.  pClient=%p, u32Formats=%02X\n", pClient,
                  u32Formats));
     ClipAnnounceFormatToX11 (pClient->pCtx->pBackend, u32Formats);
 }
@@ -229,7 +229,7 @@ int vboxClipboardReadData (VBOXCLIPBOARDCLIENTDATA *pClient,
                            uint32_t u32Format, void *pv, uint32_t cb,
                            uint32_t *pcbActual)
 {
-    LogFlowFunc(("pClient=%p, u32Format=%02X, pv=%p, cb=%u, pcbActual=%p",
+    LogRelFlowFunc(("pClient=%p, u32Format=%02X, pv=%p, cb=%u, pcbActual=%p",
                  pClient, u32Format, pv, cb, pcbActual));
     
     int rc = VINF_SUCCESS;
@@ -245,7 +245,7 @@ int vboxClipboardReadData (VBOXCLIPBOARDCLIENTDATA *pClient,
         if (RT_SUCCESS(rc))
             rc = VINF_HGCM_ASYNC_EXECUTE;
     }
-    LogFlowFunc(("returning %Rrc\n", rc));
+    LogRelFlowFunc(("returning %Rrc\n", rc));
     return rc;
 }
 
@@ -289,7 +289,7 @@ static int clipWaitForDataFromVBox(VBOXCLIPBOARDCONTEXT *pCtx,
                                    uint32_t u32Format)
 {
     int rc = VINF_SUCCESS;
-    LogFlowFunc(("pCtx=%p, pReq=%p, u32Format=%02X\n", pCtx, pReq, u32Format));
+    LogRelFlowFunc(("pCtx=%p, pReq=%p, u32Format=%02X\n", pCtx, pReq, u32Format));
     /* Request data from VBox */
     vboxSvcClipboardReportMsg(pCtx->pClient,
                               VBOX_SHARED_CLIPBOARD_HOST_MSG_READ_DATA,
@@ -311,7 +311,7 @@ static int clipWaitForDataFromVBox(VBOXCLIPBOARDCONTEXT *pCtx,
     RTCritSectLeave(&pCtx->clipboardMutex);
     if (RT_SUCCESS(rc) && (pReq->pv == NULL))
         rc = VERR_NO_DATA;
-    LogFlowFunc(("returning %Rrc\n", rc));
+    LogRelFlowFunc(("returning %Rrc\n", rc));
     return rc;
 }
 
@@ -322,7 +322,7 @@ static int clipRequestDataFromVBox(VBOXCLIPBOARDCONTEXT *pCtx,
                                           uint32_t u32Format)
 {
     int rc = VINF_SUCCESS;
-    LogFlowFunc(("pCtx=%p, pReq=%p, u32Format=%02X\n", pCtx, pReq,
+    LogRelFlowFunc(("pCtx=%p, pReq=%p, u32Format=%02X\n", pCtx, pReq,
                  u32Format));
     /* Start by "posting" the request for the next invocation of
      * vboxClipboardWriteData. */
@@ -339,7 +339,7 @@ static int clipRequestDataFromVBox(VBOXCLIPBOARDCONTEXT *pCtx,
     RTCritSectLeave(&pCtx->clipboardMutex);
     if (RT_SUCCESS(rc))
         rc = clipWaitForDataFromVBox(pCtx, pReq, u32Format);
-    LogFlowFunc(("returning %Rrc\n", rc));
+    LogRelFlowFunc(("returning %Rrc\n", rc));
     return rc;
 }
 
@@ -360,12 +360,12 @@ int ClipRequestDataForX11 (VBOXCLIPBOARDCONTEXT *pCtx,
 {
     VBOXCLIPBOARDREQFROMVBOX request = { NULL };
 
-    LogFlowFunc(("pCtx=%p, u32Format=%02X, ppv=%p, pcb=%p\n", pCtx,
+    LogRelFlowFunc(("pCtx=%p, u32Format=%02X, ppv=%p, pcb=%p\n", pCtx,
                  u32Format, ppv, pcb));
     if (pCtx->fShuttingDown)
     {
         /* The shared clipboard is disconnecting. */
-        LogFunc(("host requested guest clipboard data after guest had disconnected.\n"));
+        LogRelFunc(("host requested guest clipboard data after guest had disconnected.\n"));
         return VERR_WRONG_ORDER;
     }
     int rc = RTSemEventCreate(&request.finished);
@@ -379,9 +379,9 @@ int ClipRequestDataForX11 (VBOXCLIPBOARDCONTEXT *pCtx,
         *ppv = request.pv;
         *pcb = request.cb;
     }
-    LogFlowFunc(("returning %Rrc\n", rc));
+    LogRelFlowFunc(("returning %Rrc\n", rc));
     if (RT_SUCCESS(rc))
-        LogFlowFunc(("*ppv=%.*ls, *pcb=%u\n", *pcb / 2, *ppv, *pcb));
+        LogRelFlowFunc(("*ppv=%.*ls, *pcb=%u\n", *pcb / 2, *ppv, *pcb));
     return rc;
 }
 
@@ -397,7 +397,7 @@ int ClipRequestDataForX11 (VBOXCLIPBOARDCONTEXT *pCtx,
 void vboxClipboardWriteData (VBOXCLIPBOARDCLIENTDATA *pClient,
                              void *pv, uint32_t cb, uint32_t u32Format)
 {
-    LogFlowFunc (("called.  pClient=%p, pv=%p (%.*ls), cb=%u, u32Format=%02X\n",
+    LogRelFlowFunc (("called.  pClient=%p, pv=%p (%.*ls), cb=%u, u32Format=%02X\n",
                   pClient, pv, cb / 2, pv, cb, u32Format));
 
     VBOXCLIPBOARDCONTEXT *pCtx = pClient->pCtx;
