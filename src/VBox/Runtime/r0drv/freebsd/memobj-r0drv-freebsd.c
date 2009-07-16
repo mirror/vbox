@@ -211,6 +211,13 @@ int rtR0MemObjNativeAllocPage(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, bool fExecu
                 pPage = vm_page_alloc(pMemFreeBSD->pObject, PageIndex,
                                       VM_ALLOC_NOBUSY | VM_ALLOC_SYSTEM |
                                       VM_ALLOC_WIRED);
+
+#if __FreeBSD_version >= 800000 /** @todo Find exact version number */
+                /* Fixes crashes during VM termination on FreeBSD8-CURRENT amd64
+                 * with kernel debugging enabled. */
+                vm_page_set_valid(pPage, 0, PAGE_SIZE);
+#endif
+
                 if (pPage)
                 {
                     vm_page_lock_queues();
