@@ -19,6 +19,8 @@
  * additional information or have any questions.
  */
 
+#include <iprt/stdint.h>
+
 #if defined(RT_OS_WINDOWS)
 #elif defined(RT_OS_LINUX)
 #endif
