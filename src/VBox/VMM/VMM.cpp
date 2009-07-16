@@ -1314,9 +1314,9 @@ VMMR3DECL(void) VMMR3SendInitIpi(PVM pVM, VMCPUID idCpu)
 VMMR3DECL(int) VMMR3RegisterPatchMemory(PVM pVM, RTGCPTR pPatchMem, unsigned cbPatchMem)
 {
     if (HWACCMIsEnabled(pVM))
-        HWACMMR3EnablePatching(pVM);
+        return HWACMMR3EnablePatching(pVM, pPatchMem, cbPatchMem);
 
-    return VERR_ACCESS_DENIED;
+    return VERR_NOT_SUPPORTED;
 }
 
 /**
@@ -1330,11 +1330,7 @@ VMMR3DECL(int) VMMR3RegisterPatchMemory(PVM pVM, RTGCPTR pPatchMem, unsigned cbP
 VMMR3DECL(int) VMMR3DeregisterPatchMemory(PVM pVM, RTGCPTR pPatchMem, unsigned cbPatchMem)
 {
     if (HWACCMIsEnabled(pVM))
-    {
-        int rc = HWACMMR3DisablePatching(pVM);
-        if (VBOX_FAILURE(rc))
-            return rc;
-    }
+        return HWACMMR3DisablePatching(pVM, pPatchMem, cbPatchMem);
 
     return VINF_SUCCESS;
 }

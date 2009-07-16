@@ -131,9 +131,18 @@ RT_C_DECLS_BEGIN
 /** Total guest mapped memory needed. */
 #define HWACCM_VTX_TOTAL_DEVHEAP_MEM        (HWACCM_EPT_IDENTITY_PG_TABLE_SIZE + HWACCM_VTX_TSS_SIZE)
 
+/* Enable for TPR guest patching. */
+//#define VBOX_HWACCM_WITH_GUEST_PATCHING
+
 /** HWACCM SSM version
  */
+#ifdef VBOX_HWACCM_WITH_GUEST_PATCHING
+#define HWACCM_SSM_VERSION                  5
+#define HWACCM_SSM_VERSION_NO_PATCHING      4
+#else
 #define HWACCM_SSM_VERSION                  4
+#define HWACCM_SSM_VERSION_NO_PATCHING      4
+#endif
 #define HWACCM_SSM_VERSION_2_0_X            3
 
 /* Per-cpu information. (host) */
@@ -187,7 +196,7 @@ typedef enum
     HWACCMTPRINSTR_READ_SHR4,
     HWACCMTPRINSTR_WRITE_REG,
     HWACCMTPRINSTR_WRITE_IMM,
-    HWACCMTPRINSTR_MOV,
+    HWACCMTPRINSTR_JUMP_REPLACEMENT,
     /** The usual 32-bit paranoia. */
     HWACCMTPRINSTR_32BIT_HACK   = 0x7fffffff
 } HWACCMTPRINSTR;
@@ -208,6 +217,8 @@ typedef struct
     uint32_t                uDstOperand;
     /** Number of times the instruction caused a fault. */
     uint32_t                cFaults;
+    /** Patch address of the jump replacement. */
+    RTGCPTR32               pJumpTarget;
 } HWACCMTPRPATCH;
 /** Pointer to HWACCMTPRPATCH. */
 typedef HWACCMTPRPATCH *PHWACCMTPRPATCH;
@@ -259,6 +270,14 @@ typedef struct HWACCM
     /** The maximum number of resumes loops allowed in ring-0 (safety precaution).
      * This number is set much higher when RTThreadPreemptIsPending is reliable. */
     uint32_t                    cMaxResumeLoops;
+
+    /** Guest allocated memory for patching purposes. */
+    RTGCPTR                     pGuestPatchMem;
+    /** Current free pointer inside the patch block. */
+    RTGCPTR                     pFreeGuestPatchMem;
+    /** Size of the guest patch memory block. */
+    uint32_t                    cbGuestPatchMem;
+    uint32_t                    uPadding1;
 
 #if HC_ARCH_BITS == 32 && defined(VBOX_ENABLE_64_BITS_GUESTS) && !defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
     /** 32 to 64 bits switcher entrypoint. */
@@ -410,7 +429,6 @@ typedef struct HWACCM
          * AVL tree with all patches (active or disabled) sorted by guest instruction address
          */
         AVLOU32TREE                 PatchTree;
-
         uint32_t                    cPatches;
         HWACCMTPRPATCH              aPatches[64];
     } svm;

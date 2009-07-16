@@ -152,4 +152,3 @@ VMMDECL(VMMSWITCHER) VMMGetSwitcher(PVM pVM)
 {
     return pVM->vmm.s.enmSwitcher;
 }
-
