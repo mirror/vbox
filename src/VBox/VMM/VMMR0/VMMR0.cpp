@@ -467,6 +467,9 @@ static void vmmR0RecordRC(PVM pVM, PVMCPU pVCpu, int rc)
         case VINF_EM_PENDING_REQUEST:
             STAM_COUNTER_INC(&pVM->vmm.s.StatRZRetPendingRequest);
             break;
+        case VINF_EM_HWACCM_PATCH_TPR_INSTR:
+            STAM_COUNTER_INC(&pVM->vmm.s.StatRZRetPatchTPR);
+            break;
         default:
             STAM_COUNTER_INC(&pVM->vmm.s.StatRZRetMisc);
             break;

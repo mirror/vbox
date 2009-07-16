@@ -363,6 +363,7 @@ typedef struct VMM
     STAMCOUNTER                 StatRZRetPATMDuplicateFn;
     STAMCOUNTER                 StatRZRetPGMChangeMode;
     STAMCOUNTER                 StatRZRetPendingRequest;
+    STAMCOUNTER                 StatRZRetPatchTPR;
     STAMCOUNTER                 StatRZCallPDMLock;
     STAMCOUNTER                 StatRZCallLogFlush;
     STAMCOUNTER                 StatRZCallPDMQueueFlush;
