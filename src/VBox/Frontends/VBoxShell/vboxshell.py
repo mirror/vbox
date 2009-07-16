@@ -257,8 +257,13 @@ def startVm(ctx,mach,type):
         if not ctx['remote']:
             print session.QueryErrorObject(rc)
 
-def getMachines(ctx):
-    return ctx['global'].getArray(ctx['vb'], 'machines')
+def getMachines(ctx, invalidate = False):
+    if ctx['vb'] is not None:
+        if ctx['_machlist'] is None or invalidate:
+            ctx['_machlist'] = ctx['global'].getArray(ctx['vb'], 'machines')
+        return ctx['_machlist']
+    else:
+        return []
 
 def asState(var):
     if var:
@@ -388,7 +393,7 @@ def helpCmd(ctx, args):
     return 0
 
 def listCmd(ctx, args):
-    for m in getMachines(ctx):
+    for m in getMachines(ctx, True):
         print "Machine '%s' [%s], state=%s" %(m.name,m.id,m.sessionState)
     return 0
 
@@ -419,9 +424,9 @@ def infoCmd(ctx,args):
         return 0
     os = ctx['vb'].getGuestOSType(mach.OSTypeId)
     print " One can use setvar <mach> <var> <value> to change variable, using name in []."
-    print "  Name [name]: " + mach.name
-    print "  ID [n/a]: " + mach.id
-    print "  OS Type [n/a]: " + os.description
+    print "  Name [name]: %s" %(mach.name)
+    print "  ID [n/a]: %s" %(mach.id)
+    print "  OS Type [n/a]: %s" %(os.description)
     print
     print "  CPUs [CPUCount]: %d" %(mach.CPUCount)
     print "  RAM [memorySize]: %dM" %(mach.memorySize)
@@ -434,7 +439,7 @@ def infoCmd(ctx,args):
     bios = mach.BIOSSettings
     print "  ACPI [BIOSSettings.ACPIEnabled]: %s" %(asState(bios.ACPIEnabled))
     print "  APIC [BIOSSettings.IOAPICEnabled]: %s" %(asState(bios.IOAPICEnabled))
-    print "  PAE [PAEEnabled]: %s" %(asState(mach.PAEEnabled))
+    print "  PAE [PAEEnabled]: %s" %(asState(int(mach.PAEEnabled)))
     print "  Hardware virtualization [HWVirtExEnabled]: " + asState(mach.HWVirtExEnabled)
     print "  VPID support [HWVirtExVPIDEnabled]: " + asState(mach.HWVirtExVPIDEnabled)
     print "  Hardware 3d acceleration[accelerate3DEnabled]: " + asState(mach.accelerate3DEnabled)
@@ -456,38 +461,38 @@ def infoCmd(ctx,args):
     for disk in disks:
         print "    Controller: %s port: %d device: %d:" % (disk.controller, disk.port, disk.device)
         hd = disk.hardDisk
-        print "    id: " + hd.id
-        print "    location: " +  hd.location
-        print "    name: " +  hd.name
-        print "    format: " +  hd.format
+        print "    id: %s" %(hd.id)
+        print "    location: %s" %(hd.location)
+        print "    name: %s"  %(hd.name)
+        print "    format: %s"  %(hd.format)
         print
 
     dvd = mach.DVDDrive
-    if dvd.getHostDrive() is not None:
+    if dvd.getHostDrive():
         hdvd = dvd.getHostDrive()
         print "  DVD:"
-        print "    Host disk:",hdvd.name
+        print "    Host disk: %s" %(hdvd.name)
         print
 
-    if dvd.getImage() is not None:
+    if dvd.getImage():
         vdvd = dvd.getImage()
         print "  DVD:"
-        print "    Image at:",vdvd.location
-        print "    Size:",vdvd.size
+        print "    Image at: %s" %(vdvd.location)
+        print "    Size: %s" %(vdvd.size)
         print
 
     floppy = mach.floppyDrive
-    if floppy.getHostDrive() is not None:
+    if floppy.getHostDrive():
         hfloppy = floppy.getHostDrive()
         print "  Floppy:"
-        print "    Host disk:",hfloppy.name
+        print "    Host disk: %s" %(hfloppy.name)
         print
 
-    if floppy.getImage() is not None:
+    if floppy.getImage():
         vfloppy = floppy.getImage()
         print "  Floppy:"
-        print "    Image at:",vfloppy.location
-        print "    Size:",vfloppy.size
+        print "    Image at: %s" %(vfloppy.location)
+        print "    Size: %s" %(vfloppy.size)
         print
 
     return 0
@@ -768,6 +773,56 @@ def sleepCmd(ctx, args):
         return 0
 
     time.sleep(float(args[1]))
+    return 0
+
+
+def connectCmd(ctx, args):
+    if (len(args) > 4):
+        print "usage: connect [url] [username] [passwd]"
+        return 0
+
+    if ctx['vb'] is not None:
+        print "Already connected, disconnect first..."
+        return 0
+
+    if (len(args) > 1):
+        url = args[1]
+    else:
+        url = None
+
+    if (len(args) > 2):
+        user = args[1]
+    else:
+        user = ""
+
+    if (len(args) > 3):
+        passwd = args[2]
+    else:
+        passwd = ""
+
+    vbox = ctx['global'].platform.connect(url, user, passwd)
+    ctx['vb'] = vbox
+    print "Running VirtualBox version %s" %(vbox.version)
+    ctx['perf'] = ctx['global'].getPerfCollector(ctx['vb'])
+    return 0
+
+def disconnectCmd(ctx, args):
+    if (len(args) != 1):
+        print "usage: disconnect"
+        return 0
+
+    if ctx['vb'] is None:
+        print "Not connected yet."
+        return 0
+
+    try:
+        ctx['global'].platform.disconnect()
+    except:
+        ctx['vb'] = None
+        raise
+
+    ctx['vb'] = None
+    return 0
 
 aliases = {'s':'start',
            'i':'info',
@@ -851,12 +906,23 @@ def checkUserExtensions(ctx, cmds, folder):
         print "Error loading user extensions:"
         traceback.print_exc()
 
-def interpret(ctx):
+def interpret(ctx):    
+    if ctx['remote']:
+        commands['connect'] = ["Connect to remote VBox instance", connectCmd, 0]
+        commands['disconnect'] = ["Disconnect from remote VBox instance", disconnectCmd, 0]
+    
     vbox = ctx['vb']
-    print "Running VirtualBox version %s" %(vbox.version)
-    ctx['perf'] = ctx['global'].getPerfCollector(ctx['vb'])
 
-    checkUserExtensions(ctx, commands, vbox.homeFolder)
+    if vbox is not None:
+        print "Running VirtualBox version %s" %(vbox.version)
+        ctx['perf'] = ctx['global'].getPerfCollector(ctx['vb'])
+        home = vbox.homeFolder
+    else:
+        ctx['perf'] = None
+        home = os.path.join(os.path.expanduser("~"), ".VirtualBox")
+
+    print "h", home
+    checkUserExtensions(ctx, commands, home)
 
     autoCompletion(commands, ctx)
 
@@ -922,7 +988,8 @@ def main(argv):
            'ifaces':g_virtualBoxManager.constants,
            'remote':g_virtualBoxManager.remote, 
            'type':g_virtualBoxManager.type,
-           'run':runCommandCb
+           'run':runCommandCb,
+           '_machlist':None
            }
     interpret(ctx)
     g_virtualBoxManager.deinit()
