@@ -45,6 +45,9 @@
 # include <poll.h>
 # include <errno.h>
 #endif
+#ifdef RT_OS_FREEBSD
+# include <netinet/in.h>
+#endif
 #include <iprt/semaphore.h>
 #include <iprt/req.h>
 
