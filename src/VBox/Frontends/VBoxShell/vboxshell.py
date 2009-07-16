@@ -921,7 +921,6 @@ def interpret(ctx):
         ctx['perf'] = None
         home = os.path.join(os.path.expanduser("~"), ".VirtualBox")
 
-    print "h", home
     checkUserExtensions(ctx, commands, home)
 
     autoCompletion(commands, ctx)
