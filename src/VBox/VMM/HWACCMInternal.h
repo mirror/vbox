@@ -405,9 +405,8 @@ typedef struct HWACCM
         bool                        fEnabled;
         /** Set if erratum 170 affects the AMD cpu. */
         bool                        fAlwaysFlushTLB;
-        /** Explicit alignment padding to make 32-bit gcc align u64RegisterMask
-         *  naturally. */
-        bool                        padding[1];
+        /** Set when TPR patching is active. */
+        bool                        fTPRPatchingActive;
 
         /** R0 memory object for the IO bitmap (12kb). */
         RTR0MEMOBJ                  pMemObjIOBitmap;

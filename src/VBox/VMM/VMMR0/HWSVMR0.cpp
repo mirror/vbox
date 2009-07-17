@@ -1075,19 +1075,27 @@ ResumeExecution:
         /* TPR caching in CR8 */
         int rc = PDMApicGetTPR(pVCpu, &u8LastTPR, &fPending);
         AssertRC(rc);
-        pVMCB->ctrl.IntCtrl.n.u8VTPR = (u8LastTPR >> 4); /* cr8 bits 3-0 correspond to bits 7-4 of the task priority mmio register. */
 
-        if (fPending)
+        if (pVM->hwaccm.s.svm.fTPRPatchingActive)
         {
-            /* A TPR change could activate a pending interrupt, so catch cr8 writes. */
-            pVMCB->ctrl.u16InterceptWrCRx |= RT_BIT(8);
+            /* Our patch code uses LSTAR for TPR caching. */
+            pCtx->msrLSTAR = u8LastTPR;
         }
         else
-            /* No interrupts are pending, so we don't need to be explicitely notified.
-             * There are enough world switches for detecting pending interrupts.
-             */
-            pVMCB->ctrl.u16InterceptWrCRx &= ~RT_BIT(8);
+        {
+            pVMCB->ctrl.IntCtrl.n.u8VTPR = (u8LastTPR >> 4); /* cr8 bits 3-0 correspond to bits 7-4 of the task priority mmio register. */
 
+            if (fPending)
+            {
+                /* A TPR change could activate a pending interrupt, so catch cr8 writes. */
+                pVMCB->ctrl.u16InterceptWrCRx |= RT_BIT(8);
+            }
+            else
+                /* No interrupts are pending, so we don't need to be explicitely notified.
+                * There are enough world switches for detecting pending interrupts.
+                */
+                pVMCB->ctrl.u16InterceptWrCRx &= ~RT_BIT(8);
+        }
         fSyncTPR = !fPending;
     }
 
@@ -1472,10 +1480,21 @@ ResumeExecution:
 
     /* Sync back the TPR if it was changed. */
     if (    fSyncTPR
-        &&  (u8LastTPR >> 4) != pVMCB->ctrl.IntCtrl.n.u8VTPR)
+        &&  pVM->hwaccm.s.svm.fTPRPatchingActive
+        &&  (pCtx->msrLSTAR & 0xff) != u8LastTPR)
     {
-        rc = PDMApicSetTPR(pVCpu, pVMCB->ctrl.IntCtrl.n.u8VTPR << 4);   /* cr8 bits 3-0 correspond to bits 7-4 of the task priority mmio register. */
+        /* Our patch code uses LSTAR for TPR caching. */
+        rc = PDMApicSetTPR(pVCpu, pCtx->msrLSTAR & 0xff);
         AssertRC(rc);
+    }
+    else
+    {
+        if (    fSyncTPR
+            &&  (u8LastTPR >> 4) != pVMCB->ctrl.IntCtrl.n.u8VTPR)
+        {
+            rc = PDMApicSetTPR(pVCpu, pVMCB->ctrl.IntCtrl.n.u8VTPR << 4);   /* cr8 bits 3-0 correspond to bits 7-4 of the task priority mmio register. */
+            AssertRC(rc);
+        }
     }
 
     /* Deal with the reason of the VM-exit. */
