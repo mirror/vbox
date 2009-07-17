@@ -383,7 +383,7 @@ udp_attach(PNATState pData, struct socket *so, int service_port)
     memset(&sa_addr, 0, sizeof(struct sockaddr));
     addr = (struct sockaddr_in *)&sa_addr;
 #ifdef RT_OS_DARWIN
-   addr->sin_len = sizeof(struct sockaddr_in);
+    addr->sin_len = sizeof(struct sockaddr_in);
 #endif
     addr->sin_family = AF_INET;
     addr->sin_port = service_port;
