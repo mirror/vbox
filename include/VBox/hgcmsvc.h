@@ -31,7 +31,6 @@
 #define ___VBox_hgcm_h
 
 #include <iprt/assert.h>
-#include <iprt/stdint.h>
 #include <iprt/string.h>
 #include <VBox/cdefs.h>
 #include <VBox/types.h>
