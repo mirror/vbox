@@ -2236,7 +2236,7 @@ static DECLCALLBACK(int) hwaccmR3Save(PVM pVM, PSSMHANDLE pSSM)
     AssertRCReturn(rc, rc);
 
     /* Store all the guest patch records too. */
-    rc = SSMR3GetU32(pSSM, &pVM->hwaccm.s.svm.cPatches);
+    rc = SSMR3PutU32(pSSM, &pVM->hwaccm.s.svm.cPatches);
     AssertRCReturn(rc, rc);
 
     for (unsigned i = 0; i < pVM->hwaccm.s.svm.cPatches; i++)
