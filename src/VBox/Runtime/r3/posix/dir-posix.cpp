@@ -88,12 +88,23 @@ RTDECL(int) RTDirCreate(const char *pszPath, RTFMODE fMode)
         {
             if (mkdir(pszNativePath, fMode & RTFS_UNIX_MASK))
             {
+                rc = errno;
 #ifdef RT_OS_SOLARIS
-                if (errno == ENOSYS) /* ENOSYS has a slight different meaning (mkdir on nfs mount point). */
-                    rc = VERR_ALREADY_EXISTS;
-                else
+                /*
+                 * mkdir on nfs mount points has been/is busted in various
+                 * during the Nevada development cycle. We've observed:
+                 *  - Build 111b (2009.06) returns EACCES.
+                 *  - Build ca. 70-80 returns ENOSYS.
+                 */
+                if (    rc == ENOSYS
+                    ||  rc == EACCES)
+                {
+                    struct stat st;
+                    if (!stat(pszNativePath, &st))
+                        rc = EEXIST;
+                }
 #endif
-                    rc = RTErrConvertFromErrno(errno);
+                rc = RTErrConvertFromErrno(rc);
             }
         }
 
