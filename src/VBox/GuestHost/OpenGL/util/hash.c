@@ -315,6 +315,7 @@ CRHashTable *crAllocHashtable( void )
 void crFreeHashtable( CRHashTable *hash, CRHashtableCallback deleteFunc )
 {
     int i;
+    CRHashNode *entry, *next;
 
     if ( !hash) return;
 
@@ -324,16 +325,21 @@ void crFreeHashtable( CRHashTable *hash, CRHashtableCallback deleteFunc )
 
     for ( i = 0; i < CR_NUM_BUCKETS; i++ )
     {
-        if ( hash->buckets[i] ) 
+        entry = hash->buckets[i];
+        while (entry)
         {
-            if (hash->buckets[i]->data && deleteFunc) {
-                /* Clear the key in case crHashtableDelete() is called
-                 * from this callback.
-                 */
-                hash->buckets[i]->key = 0;
-                (*deleteFunc)( hash->buckets[i]->data );
+            next = entry->next;
+            /* Clear the key in case crHashtableDelete() is called
+             * from this callback.
+             */
+            entry->key = 0;
+            if (deleteFunc && entry->data)
+            {
+                (*deleteFunc)(entry->data);
             }
-            crFree( hash->buckets[i] );
+            crFree(entry);
+            entry = next;
+
         }
     }
     crFreeHashIdPool( hash->idPool );
