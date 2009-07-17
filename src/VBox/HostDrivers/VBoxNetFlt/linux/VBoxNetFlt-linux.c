@@ -133,9 +133,7 @@ MODULE_AUTHOR("Sun Microsystems, Inc.");
 MODULE_DESCRIPTION("VirtualBox Network Filter Driver");
 MODULE_LICENSE("GPL");
 #ifdef MODULE_VERSION
-# define xstr(s) str(s)
-# define str(s)  #s
-MODULE_VERSION(VBOX_VERSION_STRING " (" xstr(INTNETTRUNKIFPORT_VERSION) ")");
+MODULE_VERSION(VBOX_VERSION_STRING " (" RT_XSTR(INTNETTRUNKIFPORT_VERSION) ")");
 #endif
 
 
