@@ -1633,13 +1633,17 @@ DECLCALLBACK(int) hwaccmR3ReplaceTprInstr(PVM pVM, PVMCPU pVCpu, void *pvUser)
 DECLCALLBACK(int) hwaccmR3PatchTprInstr(PVM pVM, PVMCPU pVCpu, void *pvUser)
 {
     PCPUMCTX     pCtx   = (PCPUMCTX)pvUser;
-    RTGCPTR      oldrip = pCtx->rip;
     PDISCPUSTATE pDis   = &pVCpu->hwaccm.s.DisState;
     unsigned     cbOp;
+    int          rc;
+#ifdef LOG_ENABLED
+    RTGCPTR      pInstr;
+    char         szOutput[256];
+#endif
 
     Log(("Patch TPR access at %RGv\n", pCtx->rip));
 
-    int rc = EMInterpretDisasOne(pVM, pVCpu, CPUMCTX2CORE(pCtx), pDis, &cbOp);
+    rc = EMInterpretDisasOne(pVM, pVCpu, CPUMCTX2CORE(pCtx), pDis, &cbOp);
     AssertRC(rc);
     if (    rc == VINF_SUCCESS
         &&  pDis->pCurInstr->opcode == OP_MOV)
@@ -1648,80 +1652,165 @@ DECLCALLBACK(int) hwaccmR3PatchTprInstr(PVM pVM, PVMCPU pVCpu, void *pvUser)
         {
             uint32_t        idx = pVM->hwaccm.s.svm.cPatches;
             PHWACCMTPRPATCH pPatch = &pVM->hwaccm.s.svm.aPatches[idx];
+            uint8_t         aPatch[64];
+            uint32_t        off = 0;
+
+#ifdef LOG_ENABLED
+            rc = DBGFR3DisasInstrEx(pVM, pVCpu->idCpu, pCtx->cs, pCtx->rip, 0, szOutput, sizeof(szOutput), 0);
+            if (VBOX_SUCCESS(rc))
+                Log(("Original instr: %s\n", szOutput));
+#endif
 
             rc = PGMPhysSimpleReadGCPtr(pVCpu, pPatch->aOpcode, pCtx->rip, cbOp);
             AssertRC(rc);
 
-            pPatch->cbOp     = cbOp;
+            pPatch->cbOp    = cbOp;
+            pPatch->enmType = HWACCMTPRINSTR_JUMP_REPLACEMENT;
 
             if (pDis->param1.flags == USE_DISPLACEMENT32)
             {
                 /*
                  * TPR write:
                  *
-                 *  push ecx
-                 *  push edx
-                 *  push eax
-                 *  xor  edx, edx
-                 *  mov  eax, src_reg
-                 *  mov  ecx, MSR_K8_LSTAR (0xc0000082)
-                 *  rdmsr
-                 *  pop  eax
-                 *  pop  edx
-                 *  pop  ecx
+                 * push ECX                      [51]
+                 * push EDX                      [52]
+                 * push EAX                      [50]
+                 * xor EDX,EDX                   [31 D2]
+                 * mov EAX,EAX                   [89 C0]
+                 *  or
+                 * mov EAX,0000000CCh            [B8 CC 00 00 00]
+                 * mov ECX,0C0000082h            [B9 82 00 00 C0]
+                 * wrmsr                         [0F 30]
+                 * pop EAX                       [58]
+                 * pop EDX                       [5A]
+                 * pop ECX                       [59]
+                 * jmp return_address            [E9 return_address]
                  *
                  */
+                aPatch[off++] = 0x51;    /* push ecx */
+                aPatch[off++] = 0x52;    /* push edx */
+                aPatch[off++] = 0x50;    /* push eax */
+                aPatch[off++] = 0x31;    /* xor edx, edx */
+                aPatch[off++] = 0xD2;
                 if (pDis->param2.flags == USE_REG_GEN32)
                 {
-                    pPatch->enmType     = HWACCMTPRINSTR_WRITE_REG;
-                    pPatch->uSrcOperand = pDis->param2.base.reg_gen;
+                    aPatch[off++] = 0x89;    /* mov eax, src_reg */
+                    aPatch[off++] = MAKE_MODRM(3, pDis->param2.base.reg_gen, USE_REG_EAX);
                 }
                 else
                 {
                     Assert(pDis->param2.flags == USE_IMMEDIATE32);
-                    pPatch->enmType     = HWACCMTPRINSTR_WRITE_IMM;
-                    pPatch->uSrcOperand = pDis->param2.parval;
+                    aPatch[off++] = 0xB8;    /* mov eax, immediate */
+                    *(uint32_t *)&aPatch[off] = pDis->param2.parval;
+                    off += sizeof(uint32_t);
                 }
-//                rc = PGMPhysSimpleWriteGCPtr(pVCpu, pCtx->rip, aVMMCall, sizeof(aVMMCall));
-//                AssertRC(rc);
+                aPatch[off++] = 0xB9;    /* mov ecx, 0xc0000082 */
+                *(uint32_t *)&aPatch[off] = MSR_K8_LSTAR;
+                off += sizeof(uint32_t);
 
-//                memcpy(pPatch->aNewOpcode, aVMMCall, sizeof(aVMMCall));
-//                pPatch->cbNewOp = sizeof(aVMMCall);
+                aPatch[off++] = 0x0F;    /* wrmsr */
+                aPatch[off++] = 0x30;
+                aPatch[off++] = 0x58;    /* pop eax */
+                aPatch[off++] = 0x5A;    /* pop edx */
+                aPatch[off++] = 0x59;    /* pop ecx */
             }
             else
             {
                 /*
                  * TPR read:
                  *
-                 *  push ecx
-                 *  push edx
-                 *  push eax
-                 *  mov  ecx, MSR_K8_LSTAR (0xc0000082)
-                 *  rdmsr
-                 *  mov  target_reg, eax
-                 *  pop  eax
-                 *  pop  edx
-                 *  pop  ecx
+                 * push ECX                      [51]
+                 * push EDX                      [52]
+                 * push EAX                      [50]
+                 * mov ECX,0C0000082h            [B9 82 00 00 C0]
+                 * rdmsr                         [0F 32]
+                 * mov EAX,EAX                   [89 C0]
+                 * pop EAX                       [58]
+                 * pop EDX                       [5A]
+                 * pop ECX                       [59]
+                 * jmp return_address            [E9 return_address]
                  *
                  */
                 Assert(pDis->param1.flags == USE_REG_GEN32);
 
-                pPatch->enmType     = HWACCMTPRINSTR_READ;
-                pPatch->uDstOperand = pDis->param1.base.reg_gen;
+                if (pDis->param1.base.reg_gen != USE_REG_ECX)
+                    aPatch[off++] = 0x51;    /* push ecx */
+                if (pDis->param1.base.reg_gen != USE_REG_EDX)
+                    aPatch[off++] = 0x52;    /* push edx */
+                if (pDis->param1.base.reg_gen != USE_REG_EAX)
+                    aPatch[off++] = 0x50;    /* push eax */
 
-//                rc = PGMPhysSimpleWriteGCPtr(pVCpu, pCtx->rip, aVMMCall, sizeof(aVMMCall));
-//                AssertRC(rc);
+                aPatch[off++] = 0x31;    /* xor edx, edx */
+                aPatch[off++] = 0xD2;
 
-//                memcpy(pPatch->aNewOpcode, aVMMCall, sizeof(aVMMCall));
-//                pPatch->cbNewOp = sizeof(aVMMCall);
+                aPatch[off++] = 0xB9;    /* mov ecx, 0xc0000082 */
+                *(uint32_t *)&aPatch[off] = MSR_K8_LSTAR;
+                off += sizeof(uint32_t);
+
+                aPatch[off++] = 0x0F;    /* rdmsr */
+                aPatch[off++] = 0x32;
+
+                aPatch[off++] = 0x89;    /* mov dst_reg, eax */
+                aPatch[off++] = MAKE_MODRM(3, USE_REG_EAX, pDis->param1.base.reg_gen);
+
+                if (pDis->param1.base.reg_gen != USE_REG_EAX)
+                    aPatch[off++] = 0x58;    /* pop eax */
+                if (pDis->param1.base.reg_gen != USE_REG_EDX)
+                    aPatch[off++] = 0x5A;    /* pop edx */
+                if (pDis->param1.base.reg_gen != USE_REG_ECX)
+                    aPatch[off++] = 0x59;    /* pop ecx */
             }
+            aPatch[off++] = 0xE9;    /* jmp return_address */
+            *(RTRCUINTPTR *)&aPatch[off] = ((RTRCUINTPTR)pCtx->eip + cbOp) - ((RTRCUINTPTR)pVM->hwaccm.s.pFreeGuestPatchMem + off + 4);
+            off += sizeof(RTRCUINTPTR);
 
-            pPatch->Core.Key = pCtx->eip;
-            rc = RTAvloU32Insert(&pVM->hwaccm.s.svm.PatchTree, &pPatch->Core);
-            AssertRC(rc);
+            if (pVM->hwaccm.s.pFreeGuestPatchMem + off <= pVM->hwaccm.s.pGuestPatchMem + pVM->hwaccm.s.cbGuestPatchMem)
+            {
+                /* Write new code to the patch buffer. */
+                rc = PGMPhysSimpleWriteGCPtr(pVCpu, pVM->hwaccm.s.pFreeGuestPatchMem, aPatch, off);
+                AssertRC(rc);
 
-            pVM->hwaccm.s.svm.cPatches++;
-            return VINF_SUCCESS;
+#ifdef LOG_ENABLED
+                pInstr = pVM->hwaccm.s.pFreeGuestPatchMem;
+                while (true)
+                {
+                    uint32_t cb;
+
+                    rc = DBGFR3DisasInstrEx(pVM, pVCpu->idCpu, pCtx->cs, pInstr, 0, szOutput, sizeof(szOutput), &cb);
+                    if (VBOX_SUCCESS(rc))
+                        Log(("Patch instr %RGv: %s\n", pInstr, szOutput));
+
+                    pInstr += cb;
+
+                    if (pInstr > pVM->hwaccm.s.pFreeGuestPatchMem + off)
+                        break;
+                }
+#endif
+
+                pPatch->aNewOpcode[0] = 0xE9;
+                *(RTRCUINTPTR *)&pPatch->aNewOpcode[1] = ((RTRCUINTPTR)pVM->hwaccm.s.pFreeGuestPatchMem) - ((RTRCUINTPTR)pCtx->eip + 5);
+
+                /* Overwrite the TPR instruction with a jump. */
+                rc = PGMPhysSimpleWriteGCPtr(pVCpu, pCtx->eip, pPatch->aNewOpcode, 5);
+                AssertRC(rc);
+
+#ifdef LOG_ENABLED
+                rc = DBGFR3DisasInstrEx(pVM, pVCpu->idCpu, pCtx->cs, pCtx->rip, 0, szOutput, sizeof(szOutput), 0);
+                if (VBOX_SUCCESS(rc))
+                    Log(("Jump: %s\n", szOutput));
+#endif
+                pVM->hwaccm.s.pFreeGuestPatchMem += off;
+                pPatch->cbNewOp = 5;
+    
+                pPatch->Core.Key = pCtx->eip;
+                rc = RTAvloU32Insert(&pVM->hwaccm.s.svm.PatchTree, &pPatch->Core);
+                AssertRC(rc);
+
+                pVM->hwaccm.s.svm.cPatches++;
+                return VINF_SUCCESS;
+            }
+            else
+                Log(("Ran out of space in our patch buffer!\n"));
         }
         return hwaccmR0EmulateTprMov(pVCpu, pDis, pCtx, cbOp);
     }
