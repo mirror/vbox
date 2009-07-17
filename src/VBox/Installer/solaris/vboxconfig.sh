@@ -27,10 +27,13 @@ BIN_MODLOAD=/usr/sbin/modload
 BIN_MODUNLOAD=/usr/sbin/modunload
 BIN_MODINFO=/usr/sbin/modinfo
 BIN_DEVFSADM=/usr/sbin/devfsadm
+BIN_BOOTADM=/sbin/bootadm
 
+# "vboxdrv" is also used in sed lines here (change those as well if it ever changes)
 MOD_VBOXDRV=vboxdrv
 MOD_VBOXNET=vboxnet
 MOD_VBOXFLT=vboxflt
+MOD_VBI=vbi
 MOD_VBOXUSBMON=vboxusbmon
 FATALOP=fatal
 
@@ -152,8 +155,6 @@ check_module_arch()
     exit 99
 }
 
-
-
 # module_added(modname)
 # returns 0 if added, 1 otherwise
 module_added()
@@ -264,8 +265,10 @@ unload_module()
             if test "$fatal" = "$FATALOP"; then
                 exit 12
             fi
+            return 1
         fi
     fi
+    return 0
 }
 
 # load_module(modname)
@@ -283,11 +286,13 @@ load_module()
     $BIN_MODLOAD -p $modname
     if test $? -eq 0; then
         success "Loaded: $modname successfully"
+        return 0
     else
         error "Failed to load: $modname"
         if test "$fatal" = "$FATALOP"; then
             exit 15
         fi
+        return 1
     fi
 }
 
@@ -299,7 +304,7 @@ install_drivers()
     add_driver $MOD_VBOXDRV "* 0600 root sys" fatal
     load_module $MOD_VBOXDRV fatal
 
-    # Add vboxdrv to the devlink.tab
+    # Add vboxdrv to devlink.tab
     sed -e '/name=vboxdrv/d' /etc/devlink.tab > /etc/devlink.vbox
     echo "type=ddi_pseudo;name=vboxdrv	\D" >> /etc/devlink.vbox
     mv -f /etc/devlink.vbox /etc/devlink.tab
@@ -308,21 +313,30 @@ install_drivers()
     /usr/sbin/devfsadm -i $MOD_VBOXDRV
 
     if test $? -eq 0; then
-        infoprint "Loading NetAdapter..."
-        add_drv $MOD_VBOXNET fatal
-        load_module $MOD_VBOXNET fatal
 
-        infoprint "Loading NetFilter..."
-        add_driver $MOD_VBOXFLT fatal
-        load_module $MOD_VBOXFLT fatal
+        if test -f /platform/i86pc/kernel/drv/vboxnet.conf; then
+            infoprint "Loading NetAdapter..."
+            add_drv $MOD_VBOXNET fatal
+            load_module $MOD_VBOXNET fatal
+        fi
+
+        if test -f /platform/i86pc/kernel/drv/vboxflt.conf; then
+            infoprint "Loading NetFilter..."
+            add_driver $MOD_VBOXFLT fatal
+            load_module $MOD_VBOXFLT fatal
+        fi
 
         if test -f /platform/i86pc/kernel/drv/vboxusbmon.conf && test "$HOST_OS_VERSION" != "5.10"; then
             infoprint "Loading USBMonitor..."
             add_driver $MOD_VBOXUSBMON fatal
             load_module $MOD_VBOXUSBMON fatal
 
+            # Add vboxusbmon to devlink.tab
+            sed -e '/name=vboxusbmon/d' /etc/devlink.tab > /etc/devlink.vbox
+            echo "type=ddi_pseudo;name=vboxusbmon	\D" >> /etc/devlink.vbox
+
             # Create the device link
-            /usr/sbin/devfsadm -i  $MOD_VBOXUSBMON           
+            /usr/sbin/devfsadm -i  $MOD_VBOXUSBMON
             if test $? -ne 0; then
                 error "Failed to create device link for $MOD_VBOXUSBMON."
                 exit 16
@@ -332,6 +346,8 @@ install_drivers()
         error "Failed to create device link for $MOD_VBOXDRV."
         exit 17
     fi
+
+    return $?
 }
 
 # remove_all([fatal])
@@ -339,24 +355,37 @@ install_drivers()
 remove_drivers()
 {
     $fatal=$1
+    # Remove vboxdrv from devlink.tab
+    sed -e '/name=vboxdrv/d' /etc/devlink.tab > /etc/devlink.vbox
+    mv -f /etc/devlink.vbox /etc/devlink.tab
+
+    # Remove vboxusbmon from devlink.tab
+    sed -e '/name=vboxusbmon/d' /etc/devlink.tab > /etc/devlink.vbox
+    mv -f /etc/devlink.vbox /etc/devlink.tab
+
     # USBMonitor might not even be installed, but anyway...
     if test -f /platform/i86pc/kernel/drv/vboxusbmon.conf && test "$HOST_OS_VERSION" != "5.10"; then
         infoprint "Unloading USBMonitor..."
         unload_module $MOD_VBOXUSBMON "$fatal"
-        rem_drv $MOD_VBOXUSBMON "$fatal"
+        rem_driver $MOD_VBOXUSBMON "$fatal"
     fi
 
     infoprint "Unloading NetFilter..."
     unload_module $MOD_VBOXFLT "$fatal"
-    rem_drv $MOD_VBOXFLT "$fatal"
+    rem_driver $MOD_VBOXFLT "$fatal"
 
-    infoprint "Unload NetAdapter..."
+    infoprint "Unloading NetAdapter..."
     unload_module $MOD_VBOXNET "$fatal"
-    rem_drver $MOD_VBOXNET "$fatal"
+    rem_driver $MOD_VBOXNET "$fatal"
 
-    infoprint "Unload Host Driver..."
+    infoprint "Unloading Host Driver..."
     unload_module $MOD_VBOXDRV "$fatal"
-    rem_drv $MOD_VBOXDRV "$fatal"
+    rem_driver $MOD_VBOXDRV "$fatal"
+
+    infoprint "Unloading VBI..."
+    unload_module $MOD_VBI "$fatal"
+
+    return 0
 }
 
 
@@ -364,7 +393,29 @@ remove_drivers()
 # !! failure is always fatal
 post_install()
 {
-    # @todo install_drivers, start services, patch_files
+    # @todo install_drivers, update boot-archive start services, patch_files, update boot archive
+    infoprint "Loading VirtualBox kernel modules..."
+    install_drivers
+
+    infoprint "Updating the boot archive..."
+    $BIN_BOOTADM update-archive > /dev/null
+
+    if test "$?" -eq 0; then
+        # nwam/dhcpagent fix
+        nwamfile=/etc/nwam/llp
+        nwambackupfile=$nwamfile.vbox
+        if test -f "$nwamfile"; then
+            sed -e '/vboxnet/d' $nwamfile > $nwambackupfile
+            echo "vboxnet0	static 192.168.56.1" >> $nwambackupfile
+            mv -f $nwambackupfile $nwamfile
+        fi
+
+        return 0
+    else
+        error "Failed to update boot-archive"
+        exit 666
+    fi
+    return 1
 }
 
 # pre_remove([fatal])
@@ -372,7 +423,7 @@ post_install()
 pre_remove()
 {
     fatal=$1
-    
+
     # @todo halt services, remove_drivers, unpatch_files
 }
 
@@ -388,6 +439,7 @@ check_bin_path $BIN_MODLOAD
 check_bin_path $BIN_MODUNLOAD
 check_bin_path $BIN_MODINFO
 check_bin_path $BIN_DEVFSADM
+check_bin_path $BIN_BOOTADM
 
 drvop=$1
 fatal=$2
