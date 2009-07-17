@@ -124,19 +124,20 @@ int VBoxMainDriveInfo::updateDVDs ()
     {
         mDVDList.clear ();
 #if defined(RT_OS_LINUX)
+        /* Always allow the user to override our auto-detection using an
+         * environment variable. */
+        if (RT_SUCCESS (rc) && (!success || testing()))
+            rc = getDriveInfoFromEnv ("VBOX_CDROM", &mDVDList, true /* isDVD */,
+                                      &success);
 #ifdef VBOX_WITH_DBUS
         if (RT_SUCCESS (rc) && RT_SUCCESS(VBoxLoadDBusLib()) && (!success || testing()))
             rc = getDriveInfoFromHal(&mDVDList, true /* isDVD */, &success);
 #endif /* VBOX_WITH_DBUS defined */
-        // On Linux without hal, the situation is much more complex. We will take a
-        // heuristical approach and also allow the user to specify a list of host
-        // CDROMs using an environment variable.
-        // The general strategy is to try some known device names and see of they
-        // exist. At last, we'll enumerate the /etc/fstab file (luckily there's an
-        // API to parse it) for CDROM devices. Ok, let's start!
-        if (RT_SUCCESS (rc) && (!success || testing()))
-            rc = getDriveInfoFromEnv ("VBOX_CDROM", &mDVDList, true /* isDVD */,
-                                      &success);
+        /* On Linux without hal, the situation is much more complex. We will
+         * take a heuristical approach.  The general strategy is to try some
+         * known device names and see of they exist.  Failing that, we
+         * enumerate the /etc/fstab file (luckily there's an API to parse it)
+         * for CDROM devices. Ok, let's start! */
         if (RT_SUCCESS (rc) && (!success || testing()))
         {
             // this is a good guess usually
@@ -169,19 +170,19 @@ int VBoxMainDriveInfo::updateFloppies ()
     {
         mFloppyList.clear ();
 #if defined(RT_OS_LINUX)
+        if (RT_SUCCESS (rc) && (!success || testing()))
+            rc = getDriveInfoFromEnv ("VBOX_FLOPPY", &mFloppyList, false /* isDVD */,
+                                      &success);
 #ifdef VBOX_WITH_DBUS
         if (   RT_SUCCESS (rc)
             && RT_SUCCESS(VBoxLoadDBusLib())
             && (!success || testing()))
             rc = getDriveInfoFromHal(&mFloppyList, false /* isDVD */, &success);
 #endif /* VBOX_WITH_DBUS defined */
-        // As with the CDROMs, on Linux we have to take a multi-level approach
-        // involving parsing the mount tables. As this is not bulletproof, we'll
-        // give the user the chance to override the detection by an environment
-        // variable and skip the detection.
-        if (RT_SUCCESS (rc) && (!success || testing()))
-            rc = getDriveInfoFromEnv ("VBOX_FLOPPY", &mFloppyList, false /* isDVD */,
-                                      &success);
+        /* As with the CDROMs, on Linux we have to take a multi-level approach
+         * involving parsing the mount tables. As this is not bulletproof, we
+         * give the user the chance to override the detection using an
+         * environment variable, skiping the detection. */
 
         if (RT_SUCCESS (rc) && (!success || testing()))
         {
@@ -1119,6 +1120,10 @@ int getDriveInfoFromHal(DriveInfoList *pList, bool isDVD, bool *pfSuccess)
         }
         if (dbusError.HasName (DBUS_ERROR_NO_MEMORY))
             rc = VERR_NO_MEMORY;
+        /* If we found nothing something may have gone wrong with hal, so
+         * report failure to fall back to other methods. */
+        if (pList->size() == 0)
+            halSuccess = false;
         if (pfSuccess != NULL)
             *pfSuccess = halSuccess;
     }
