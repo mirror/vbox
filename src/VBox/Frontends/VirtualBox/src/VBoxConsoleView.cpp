@@ -3131,13 +3131,12 @@ bool VBoxConsoleView::mouseEvent (int aType, const QPoint &aPos, const QPoint &a
 
             QPoint cpnt = viewportToContents (aPos);
             if (cpnt.x() < 0) cpnt.setX (0);
-            else if (cpnt.x() >= cw) cpnt.setX (cw - 1);
+            else if (cpnt.x() > cw) cpnt.setX (cw);
             if (cpnt.y() < 0) cpnt.setY (0);
-            else if (cpnt.y() >= ch) cpnt.setY (ch - 1);
+            else if (cpnt.y() > ch) cpnt.setY (ch);
 
             CMouse mouse = mConsole.GetMouse();
-            mouse.PutMouseEventAbsolute (cpnt.x() + 1, cpnt.y() + 1,
-                                         wheel, state);
+            mouse.PutMouseEventAbsolute (cpnt.x(), cpnt.y(), wheel, state);
             return true; /* stop further event handling */
         }
         else
