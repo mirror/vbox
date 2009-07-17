@@ -648,3 +648,456 @@ RTDECL(PRTUTF16) RTUtf16PutCpInternal(PRTUTF16 pwsz, RTUNICP CodePoint)
 }
 RT_EXPORT_SYMBOL(RTUtf16PutCpInternal);
 
+
+/**
+ * Validate the UTF-16 encoding and calculates the length of a Latin1 encoding.
+ *
+ * @returns iprt status code.
+ * @param   pwsz        The UTF-16 string.
+ * @param   cwc         The max length of the UTF-16 string to consider.
+ * @param   pcch        Where to store the length (excluding '\\0') of the Latin1 string. (cch == cb, btw)
+ */
+static int rtUtf16CalcLatin1Length(PCRTUTF16 pwsz, size_t cwc, size_t *pcch)
+{
+    int     rc = VINF_SUCCESS;
+    size_t  cch = 0;
+    while (cwc > 0)
+    {
+        RTUTF16 wc = *pwsz++; cwc--;
+        if (!wc)
+            break;
+        else if (wc < 0xd800 || wc > 0xdfff)
+        {
+            if (wc < 0xfffe)
+                ++cch;
+            else
+            {
+                RTStrAssertMsgFailed(("endian indicator! wc=%#x\n", wc));
+                rc = VERR_CODE_POINT_ENDIAN_INDICATOR;
+                break;
+            }
+        }
+        else
+        {
+            if (wc >= 0xdc00)
+            {
+                RTStrAssertMsgFailed(("Wrong 1st char in surrogate! wc=%#x\n", wc));
+                rc = VERR_INVALID_UTF16_ENCODING;
+                break;
+            }
+            if (cwc <= 0)
+            {
+                RTStrAssertMsgFailed(("Invalid length! wc=%#x\n", wc));
+                rc = VERR_INVALID_UTF16_ENCODING;
+                break;
+            }
+            wc = *pwsz++; cwc--;
+            if (wc < 0xdc00 || wc > 0xdfff)
+            {
+                RTStrAssertMsgFailed(("Wrong 2nd char in surrogate! wc=%#x\n", wc));
+                rc = VERR_INVALID_UTF16_ENCODING;
+                break;
+            }
+            ++cch;
+        }
+    }
+
+
+    /* done */
+    *pcch = cch;
+    return rc;
+}
+
+
+/**
+ * Recodes an valid UTF-16 string as Latin1.
+ *
+ * @returns iprt status code.
+ * @param   pwsz        The UTF-16 string.
+ * @param   cwc         The number of RTUTF16 characters to process from pwsz. The recoding
+ *                      will stop when cwc or '\\0' is reached.
+ * @param   psz         Where to store the Latin1 string.
+ * @param   cch         The size of the Latin1 buffer, excluding the terminator.
+ * @param   pcch        Where to store the number of octets actually encoded.
+ */
+static int rtUtf16RecodeAsLatin1(PCRTUTF16 pwsz, size_t cwc, char *psz, size_t cch, size_t *pcch)
+{
+    unsigned char  *pwch = (unsigned char *)psz;
+    int             rc = VINF_SUCCESS;
+    while (cwc > 0)
+    {
+        RTUTF16 wc = *pwsz++; cwc--;
+        if (!wc)
+            break;
+        else if (wc < 0xd800 || wc > 0xdfff)
+        {
+            if (wc < 0x100)
+            {
+                if (cch < 1)
+                {
+                    RTStrAssertMsgFailed(("Buffer overflow! 1\n"));
+                    rc = VERR_BUFFER_OVERFLOW;
+                    break;
+                }
+                cch--;
+                *pwch++ = (char)wc;
+            }
+            else if (wc < 0xfffe)
+            {
+                if (cch < 1)
+                {
+                    RTStrAssertMsgFailed(("Buffer overflow! 3\n"));
+                    rc = VERR_BUFFER_OVERFLOW;
+                    break;
+                }
+                cch--;
+                *pwch++ = '?';
+            }
+            else
+            {
+                RTStrAssertMsgFailed(("endian indicator! wc=%#x\n", wc));
+                rc = VERR_CODE_POINT_ENDIAN_INDICATOR;
+                break;
+            }
+        }
+        else
+        {
+            if (wc >= 0xdc00)
+            {
+                RTStrAssertMsgFailed(("Wrong 1st char in surrogate! wc=%#x\n", wc));
+                rc = VERR_INVALID_UTF16_ENCODING;
+                break;
+            }
+            if (cwc <= 0)
+            {
+                RTStrAssertMsgFailed(("Invalid length! wc=%#x\n", wc));
+                rc = VERR_INVALID_UTF16_ENCODING;
+                break;
+            }
+            RTUTF16 wc2 = *pwsz++; cwc--;
+            if (wc2 < 0xdc00 || wc2 > 0xdfff)
+            {
+                RTStrAssertMsgFailed(("Wrong 2nd char in surrogate! wc=%#x\n", wc));
+                rc = VERR_INVALID_UTF16_ENCODING;
+                break;
+            }
+            if (cch < 1)
+            {
+                RTStrAssertMsgFailed(("Buffer overflow! 4\n"));
+                rc = VERR_BUFFER_OVERFLOW;
+                break;
+            }
+            cch--;
+            *pwch++ = '?';
+        }
+    }
+
+    /* done */
+    *pwch = '\0';
+    *pcch = (char *)pwch - psz;
+    return rc;
+}
+
+
+RTDECL(int)  RTUtf16ToLatin1(PCRTUTF16 pwszString, char **ppszString)
+{
+    /*
+     * Validate input.
+     */
+    Assert(VALID_PTR(ppszString));
+    Assert(VALID_PTR(pwszString));
+    *ppszString = NULL;
+
+    /*
+     * Validate the UTF-16 string and calculate the length of the UTF-8 encoding of it.
+     */
+    size_t cch;
+    int rc = rtUtf16CalcLatin1Length(pwszString, RTSTR_MAX, &cch);
+    if (RT_SUCCESS(rc))
+    {
+        /*
+         * Allocate buffer and recode it.
+         */
+        char *pszResult = (char *)RTMemAlloc(cch + 1);
+        if (pszResult)
+        {
+            rc = rtUtf16RecodeAsLatin1(pwszString, RTSTR_MAX, pszResult, cch, &cch);
+            if (RT_SUCCESS(rc))
+            {
+                *ppszString = pszResult;
+                return rc;
+            }
+
+            RTMemFree(pszResult);
+        }
+        else
+            rc = VERR_NO_STR_MEMORY;
+    }
+    return rc;
+}
+RT_EXPORT_SYMBOL(RTUtf16ToLatin1);
+
+
+RTDECL(int)  RTUtf16ToLatin1Ex(PCRTUTF16 pwszString, size_t cwcString, char **ppsz, size_t cch, size_t *pcch)
+{
+    /*
+     * Validate input.
+     */
+    Assert(VALID_PTR(pwszString));
+    Assert(VALID_PTR(ppsz));
+    Assert(!pcch || VALID_PTR(pcch));
+
+    /*
+     * Validate the UTF-16 string and calculate the length of the Latin1 encoding of it.
+     */
+    size_t cchResult;
+    int rc = rtUtf16CalcLatin1Length(pwszString, cwcString, &cchResult);
+    if (RT_SUCCESS(rc))
+    {
+        if (pcch)
+            *pcch = cchResult;
+
+        /*
+         * Check buffer size / Allocate buffer and recode it.
+         */
+        bool fShouldFree;
+        char *pszResult;
+        if (cch > 0 && *ppsz)
+        {
+            fShouldFree = false;
+            if (cch <= cchResult)
+                return VERR_BUFFER_OVERFLOW;
+            pszResult = *ppsz;
+        }
+        else
+        {
+            *ppsz = NULL;
+            fShouldFree = true;
+            cch = RT_MAX(cch, cchResult + 1);
+            pszResult = (char *)RTMemAlloc(cch);
+        }
+        if (pszResult)
+        {
+            rc = rtUtf16RecodeAsLatin1(pwszString, cwcString, pszResult, cch - 1, &cch);
+            if (RT_SUCCESS(rc))
+            {
+                *ppsz = pszResult;
+                return rc;
+            }
+
+            if (fShouldFree)
+                RTMemFree(pszResult);
+        }
+        else
+            rc = VERR_NO_STR_MEMORY;
+    }
+    return rc;
+}
+RT_EXPORT_SYMBOL(RTUtf16ToLatin1Ex);
+
+
+RTDECL(size_t) RTUtf16CalcLatin1Len(PCRTUTF16 pwsz)
+{
+    size_t cch;
+    int rc = rtUtf16CalcLatin1Length(pwsz, RTSTR_MAX, &cch);
+    return RT_SUCCESS(rc) ? cch : 0;
+}
+RT_EXPORT_SYMBOL(RTUtf16CalcLatin1Len);
+
+
+RTDECL(int) RTUtf16CalcLatin1LenEx(PCRTUTF16 pwsz, size_t cwc, size_t *pcch)
+{
+    size_t cch;
+    int rc = rtUtf16CalcLatin1Length(pwsz, cwc, &cch);
+    if (pcch)
+        *pcch = RT_SUCCESS(rc) ? cch : ~(size_t)0;
+    return rc;
+}
+RT_EXPORT_SYMBOL(RTUtf16CalcLatin1LenEx);
+
+
+/**
+ * Calculates the UTF-16 length of a Latin1 string.  In fact this is just the
+ * original length, but the function saves us nasty comments to that effect
+ * all over the place.
+ *
+ * @returns IPRT status code.
+ * @param   psz     Pointer to the Latin1 string.
+ * @param   cch     The max length of the string. (btw cch = cb)
+ *                  Use RTSTR_MAX if all of the string is to be examined.s
+ * @param   pcwc    Where to store the length of the UTF-16 string as a number of RTUTF16 characters.
+ */
+static int rtLatin1CalcUtf16Length(const char *psz, size_t cch, size_t *pcwc)
+{
+    *pcwc = RTStrNLen(psz, cch);
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Recodes a Latin1 string as UTF-16.  This is just a case of expanding it to
+ * sixteen bits, as Unicode is a superset of Latin1.
+ *
+ * Since we know the input is valid, we do *not* perform length checks.
+ *
+ * @returns iprt status code.
+ * @param   psz     The Latin1 string to recode.
+ * @param   cch     The number of chars (the type char, so bytes if you like) to process of the Latin1 string.
+ *                  The recoding will stop when cch or '\\0' is reached. Pass RTSTR_MAX to process up to '\\0'.
+ * @param   pwsz    Where to store the UTF-16 string.
+ * @param   cwc     The number of RTUTF16 items the pwsz buffer can hold, excluding the terminator ('\\0').
+ * @param   pcwc    Where to store the actual number of RTUTF16 items encoded into the UTF-16. This excludes the terminator.
+ */
+static int rtLatin1RecodeAsUtf16(const char *psz, size_t cch, PRTUTF16 pwsz, size_t cwc, size_t *pcwc)
+{
+    int                     rc = VINF_SUCCESS;
+    const unsigned char    *puch = (const unsigned char *)psz;
+    const PRTUTF16          pwszEnd = pwsz + cwc;
+    PRTUTF16                pwc = pwsz;
+    Assert(pwszEnd >= pwc);
+    while (cch > 0)
+    {
+        /* read the next char and check for terminator. */
+        const unsigned char uch = *puch;
+        if (!uch)
+            break;
+
+        /* check for output overflow */
+        if (pwc >= pwszEnd)
+        {
+            rc = VERR_BUFFER_OVERFLOW;
+            break;
+        }
+
+        /* expand the code point */
+        *pwc++ = uch;
+        puch++;
+        cch--;
+    }
+
+    /* done */
+    *pwc = '\0';
+    *pcwc = pwc - pwsz;
+    return rc;
+}
+
+
+RTDECL(int) RTLatin1ToUtf16(const char *pszString, PRTUTF16 *ppwszString)
+{
+    /*
+     * Validate input.
+     */
+    Assert(VALID_PTR(ppwszString));
+    Assert(VALID_PTR(pszString));
+    *ppwszString = NULL;
+
+    /*
+     * Validate the input and calculate the length of the UTF-16 string.
+     */
+    size_t cwc;
+    int rc = rtLatin1CalcUtf16Length(pszString, RTSTR_MAX, &cwc);
+    if (RT_SUCCESS(rc))
+    {
+        /*
+         * Allocate buffer.
+         */
+        PRTUTF16 pwsz = (PRTUTF16)RTMemAlloc((cwc + 1) * sizeof(RTUTF16));
+        if (pwsz)
+        {
+            /*
+             * Encode the UTF-16 string.
+             */
+            rc = rtLatin1RecodeAsUtf16(pszString, RTSTR_MAX, pwsz, cwc, &cwc);
+            if (RT_SUCCESS(rc))
+            {
+                *ppwszString = pwsz;
+                return rc;
+            }
+            RTMemFree(pwsz);
+        }
+        else
+            rc = VERR_NO_UTF16_MEMORY;
+    }
+    return rc;
+}
+RT_EXPORT_SYMBOL(RTLatin1ToUtf16);
+
+
+RTDECL(int)  RTLatin1ToUtf16Ex(const char *pszString, size_t cchString, PRTUTF16 *ppwsz, size_t cwc, size_t *pcwc)
+{
+    /*
+     * Validate input.
+     */
+    Assert(VALID_PTR(pszString));
+    Assert(VALID_PTR(ppwsz));
+    Assert(!pcwc || VALID_PTR(pcwc));
+
+    /*
+     * Validate the input and calculate the length of the UTF-16 string.
+     */
+    size_t cwcResult;
+    int rc = rtLatin1CalcUtf16Length(pszString, cchString, &cwcResult);
+    if (RT_SUCCESS(rc))
+    {
+        if (pcwc)
+            *pcwc = cwcResult;
+
+        /*
+         * Check buffer size / Allocate buffer.
+         */
+        bool fShouldFree;
+        PRTUTF16 pwszResult;
+        if (cwc > 0 && *ppwsz)
+        {
+            fShouldFree = false;
+            if (cwc <= cwcResult)
+                return VERR_BUFFER_OVERFLOW;
+            pwszResult = *ppwsz;
+        }
+        else
+        {
+            *ppwsz = NULL;
+            fShouldFree = true;
+            cwc = RT_MAX(cwcResult + 1, cwc);
+            pwszResult = (PRTUTF16)RTMemAlloc(cwc * sizeof(RTUTF16));
+        }
+        if (pwszResult)
+        {
+            /*
+             * Encode the UTF-16 string.
+             */
+            rc = rtLatin1RecodeAsUtf16(pszString, cchString, pwszResult, cwc - 1, &cwcResult);
+            if (RT_SUCCESS(rc))
+            {
+                *ppwsz = pwszResult;
+                return rc;
+            }
+            if (fShouldFree)
+                RTMemFree(pwszResult);
+        }
+        else
+            rc = VERR_NO_UTF16_MEMORY;
+    }
+    return rc;
+}
+RT_EXPORT_SYMBOL(RTLatin1ToUtf16Ex);
+
+
+RTDECL(size_t) RTLatin1CalcUtf16Len(const char *psz)
+{
+    size_t cwc;
+    int rc = rtLatin1CalcUtf16Length(psz, RTSTR_MAX, &cwc);
+    return RT_SUCCESS(rc) ? cwc : 0;
+}
+RT_EXPORT_SYMBOL(RTLatin1CalcUtf16Len);
+
+
+RTDECL(int) RTLatin1CalcUtf16LenEx(const char *psz, size_t cch, size_t *pcwc)
+{
+    size_t cwc;
+    int rc = rtLatin1CalcUtf16Length(psz, cch, &cwc);
+    if (pcwc)
+        *pcwc = RT_SUCCESS(rc) ? cwc : ~(size_t)0;
+    return rc;
+}
+RT_EXPORT_SYMBOL(RTLatin1CalcUtf16LenEx);

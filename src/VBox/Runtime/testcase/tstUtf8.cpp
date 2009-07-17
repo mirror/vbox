@@ -1008,6 +1008,159 @@ void testMinistring(RTTEST hTest)
 #undef CHECK
 }
 
+void testLatin1(RTTEST hTest)
+{
+    RTTestSub(hTest, "Latin1 conversion functions");
+    
+    /* Test Utf16 -> Latin1 */
+    size_t cch_szAll = 0;
+    int rc = RTUtf16CalcLatin1LenEx(g_wszAll, 255, &cch_szAll);
+    RTTEST_CHECK(hTest, (cch_szAll == 255));
+    rc = RTUtf16CalcLatin1LenEx(g_wszAll, RTSTR_MAX, &cch_szAll);
+    RTTEST_CHECK_RC_OK(hTest, rc);
+    if (RT_SUCCESS(rc))
+    {
+        RTTEST_CHECK(hTest, (cch_szAll == 0x110000 - 1 - 0x800 - 2));
+        RTTEST_CHECK(hTest, (cch_szAll == RTUtf16CalcLatin1Len(g_wszAll)));
+    }
+    char *psz = NULL;
+    rc = RTUtf16ToLatin1(g_wszAll, &psz);
+    RTTEST_CHECK_RC_OK(hTest, rc);
+    if (RT_SUCCESS(rc))
+    {
+        RTTEST_CHECK(hTest, (strlen(psz) == cch_szAll));
+        for (unsigned i = 0, j = 1; psz[i] != '\0'; ++i, ++j)
+            if (   ((j < 0x100) && (psz[i] != (char) j))
+                || ((j > 0xff) && psz[i] != '?'))
+            {
+                RTTestFailed(hTest, "conversion of g_wszAll to Latin1 failed at position %u\n", i);
+                break;
+            }
+    }
+    char sz[512];
+    char *psz2 = &sz[0];
+    size_t cchActual = 0;
+    rc = RTUtf16ToLatin1Ex(g_wszAll, sizeof(sz) - 1, &psz2, sizeof(sz),
+                           &cchActual);
+    RTTEST_CHECK_RC_OK(hTest, rc);
+    if (RT_SUCCESS(rc))
+    {
+        RTTEST_CHECK(hTest, (cchActual == sizeof(sz) - 1));
+        RTTEST_CHECK(hTest, (cchActual == strlen(sz)));
+        for (unsigned i = 0, j = 1; psz[i] != '\0'; ++i, ++j)
+            if (   ((j < 0x100) && (psz[i] != (char) j))
+                || ((j > 0xff) && psz[i] != '?'))
+            {
+                RTTestFailed(hTest, "second conversion of g_wszAll to Latin1 failed at position %u\n", i);
+                break;
+            }
+    }
+    rc = RTUtf16ToLatin1Ex(g_wszAll, sizeof(sz), &psz2, sizeof(sz),
+                           &cchActual);
+    RTTEST_CHECK_RC(hTest, rc, VERR_BUFFER_OVERFLOW);
+    /** @todo Either fix the documentation or fix the code - cchActual is
+     * set to the number of bytes actually encoded. */
+    RTTEST_CHECK(hTest, (cchActual == sizeof(sz)));
+    RTStrFree(psz);
+    rc = RTUtf16ToLatin1Ex(g_wszAll, 512, &psz, 0, &cchActual);
+    RTTEST_CHECK_RC_OK(hTest, rc);
+    if (RT_SUCCESS(rc))
+    {
+        RTTEST_CHECK(hTest, (cchActual == 512));
+        RTTEST_CHECK(hTest, (cchActual == strlen(psz)));
+        for (unsigned i = 0, j = 1; psz[i] != '\0'; ++i, ++j)
+            if (   ((j < 0x100) && (psz[i] != (char) j))
+                || ((j > 0xff) && psz[i] != '?'))
+            {
+                RTTestFailed(hTest, "third conversion of g_wszAll to Latin1 failed at position %u\n", i);
+                break;
+            }
+    }
+    const char *pszGood = "H\0e\0l\0l\0o\0\0\xD8\0\xDC\0";
+    const char *pszBad = "H\0e\0l\0l\0o\0\0\xDC\0\xD8\0";
+    rc = RTUtf16ToLatin1Ex((RTUTF16 *) pszGood, RTSTR_MAX, &psz2, sizeof(sz),
+                           &cchActual);
+    RTTEST_CHECK_RC_OK(hTest, rc);
+    RTTEST_CHECK(hTest, (cchActual == 6));
+    RTTEST_CHECK(hTest, (strlen(sz) == 6));
+    rc = RTUtf16ToLatin1Ex((RTUTF16 *) pszGood, RTSTR_MAX, &psz2, sizeof(sz),
+                           NULL);
+    RTTEST_CHECK_RC_OK(hTest, rc);
+    rc = RTUtf16ToLatin1Ex((RTUTF16 *) pszBad, RTSTR_MAX, &psz2, sizeof(sz),
+                           &cchActual);
+    RTTEST_CHECK_RC(hTest, rc, VERR_INVALID_UTF16_ENCODING);
+    RTStrFree(psz);
+    rc = RTUtf16ToLatin1((RTUTF16 *) pszGood, &psz);
+    RTTEST_CHECK_RC_OK(hTest, rc);
+    RTTEST_CHECK(hTest, (strlen(psz) == 6));
+    RTStrFree(psz);
+
+    /* Test Latin1 -> Utf16 */
+    const char *pszLat1 = "\x01\x20\x40\x80\x81";
+    RTTEST_CHECK(hTest, (RTLatin1CalcUtf16Len(pszLat1) == 5));
+    rc = RTLatin1CalcUtf16LenEx(pszLat1, 3, &cchActual);
+    RTTEST_CHECK_RC_OK(hTest, rc);
+    if (RT_SUCCESS(rc))
+        RTTEST_CHECK(hTest, (cchActual == 3));
+    rc = RTLatin1CalcUtf16LenEx(pszLat1, RTSTR_MAX, &cchActual);
+    RTTEST_CHECK_RC_OK(hTest, rc);
+    if (RT_SUCCESS(rc))
+        RTTEST_CHECK(hTest, (cchActual == 5));
+    RTUTF16 *pwc = NULL;
+    RTUTF16 wc[6];
+    RTUTF16 *pwc2 = &wc[0];
+    size_t cwActual = 0;
+    rc = RTLatin1ToUtf16(pszLat1, &pwc);
+    RTTEST_CHECK_RC_OK(hTest, rc);
+    if (RT_SUCCESS(rc))
+        RTTEST_CHECK(hTest,    (pwc[0] == 1) && (pwc[1] == 0x20)
+                            && (pwc[2] == 0x40) && (pwc[3] == 0x80)
+                            && (pwc[4] == 0x81) && (pwc[5] == '\0'));
+    RTUtf16Free(pwc);
+    rc = RTLatin1ToUtf16Ex(pszLat1, RTSTR_MAX, &pwc, 0, &cwActual);
+    RTTEST_CHECK_RC_OK(hTest, rc);
+    if (RT_SUCCESS(rc))
+    {
+        RTTEST_CHECK(hTest, (cwActual == 5));
+        RTTEST_CHECK(hTest,    (pwc[0] == 1) && (pwc[1] == 0x20)
+                            && (pwc[2] == 0x40) && (pwc[3] == 0x80)
+                            && (pwc[4] == 0x81) && (pwc[5] == '\0'));
+    }
+    RTUtf16Free(pwc);
+    rc = RTLatin1ToUtf16Ex(pszLat1, RTSTR_MAX, &pwc, 0, NULL);
+    RTTEST_CHECK_RC_OK(hTest, rc);
+    if (RT_SUCCESS(rc))
+        RTTEST_CHECK(hTest,    (pwc[0] == 1) && (pwc[1] == 0x20)
+                            && (pwc[2] == 0x40) && (pwc[3] == 0x80)
+                            && (pwc[4] == 0x81) && (pwc[5] == '\0'));
+    rc = RTLatin1ToUtf16Ex(pszLat1, RTSTR_MAX, &pwc2, RT_ELEMENTS(wc),
+                           &cwActual);
+    RTTEST_CHECK_RC_OK(hTest, rc);
+    if (RT_SUCCESS(rc))
+    {
+        RTTEST_CHECK(hTest, (cwActual == 5));
+        RTTEST_CHECK(hTest,    (wc[0] == 1) && (wc[1] == 0x20)
+                            && (wc[2] == 0x40) && (wc[3] == 0x80)
+                            && (wc[4] == 0x81) && (wc[5] == '\0'));
+    }
+    rc = RTLatin1ToUtf16Ex(pszLat1, 3, &pwc2, RT_ELEMENTS(wc),
+                           &cwActual);
+    RTTEST_CHECK_RC_OK(hTest, rc);
+    if (RT_SUCCESS(rc))
+    {
+        RTTEST_CHECK(hTest, (cwActual == 3));
+        RTTEST_CHECK(hTest,    (wc[0] == 1) && (wc[1] == 0x20)
+                            && (wc[2] == 0x40) && (wc[3] == '\0'));
+    }
+    rc = RTLatin1ToUtf16Ex(pszLat1, RTSTR_MAX, &pwc2, RT_ELEMENTS(wc) - 1,
+                           &cwActual);
+    RTTEST_CHECK_RC(hTest, rc, VERR_BUFFER_OVERFLOW);
+    /** @todo Either fix the documentation or fix the code - cchActual is
+     * set to the number of bytes actually encoded. */
+    RTTEST_CHECK(hTest, (cwActual == 5));
+    RTTestSubDone(hTest);
+}
+
 int main()
 {
     /*
@@ -1030,6 +1183,8 @@ int main()
     testStrStr(hTest);
 
     testMinistring(hTest);
+
+    testLatin1(hTest);
 
     Benchmarks(hTest);
 
