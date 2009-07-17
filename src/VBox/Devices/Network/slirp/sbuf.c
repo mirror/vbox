@@ -83,12 +83,6 @@ sbappend(PNATState pData, struct socket *so, struct mbuf *m)
     DEBUG_ARG("m = %lx", (long)m);
     DEBUG_ARG("m->m_len = %d", m->m_len);
 
-    STAM_COUNTER_RESET(&pData->StatIOSBAppend);
-    STAM_COUNTER_RESET(&pData->StatIOSBAppend_zm);
-    STAM_COUNTER_RESET(&pData->StatIOSBAppend_wa);
-    STAM_COUNTER_RESET(&pData->StatIOSBAppend_wf);
-    STAM_COUNTER_RESET(&pData->StatIOSBAppend_wp);
-
     STAM_COUNTER_INC(&pData->StatIOSBAppend);
     /* Shouldn't happen, but...  e.g. foreign host closes connection */
     if (m->m_len <= 0)
@@ -160,11 +154,6 @@ sbappendsb(PNATState pData, struct sbuf *sb, struct mbuf *m)
     int len, n,  nn;
 
     len = m->m_len;
-
-    STAM_COUNTER_RESET(&pData->StatIOSBAppendSB);
-    STAM_COUNTER_RESET(&pData->StatIOSBAppendSB_w_l_r);
-    STAM_COUNTER_RESET(&pData->StatIOSBAppendSB_w_ge_r);
-    STAM_COUNTER_RESET(&pData->StatIOSBAppendSB_w_alter);
 
     STAM_COUNTER_INC(&pData->StatIOSBAppendSB);
     if (sb->sb_wptr < sb->sb_rptr)
