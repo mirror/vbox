@@ -44,7 +44,6 @@ RTFMODE rtFsModeNormalize(RTFMODE fMode, const char *pszName, size_t cbName);
 bool    rtFsModeIsValid(RTFMODE fMode);
 bool    rtFsModeIsValidPermissions(RTFMODE fMode);
 
-size_t  rtPathVolumeSpecLen(const char *pszPath);
 #ifndef RT_OS_WINDOWS
 void    rtFsConvertStatToObjInfo(PRTFSOBJINFO pObjInfo, const struct stat *pStat, const char *pszName, unsigned cbName);
 #endif
