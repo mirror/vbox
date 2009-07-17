@@ -1385,6 +1385,7 @@ VMMR3DECL(void) HWACCMR3Reset(PVM pVM)
     pVM->hwaccm.s.pFreeGuestPatchMem  = 0;
     pVM->hwaccm.s.cbGuestPatchMem     = 0;
     pVM->hwaccm.s.svm.cPatches        = 0;
+    pVM->hwaccm.s.svm.PatchTree       = 0;
     ASMMemZero32(pVM->hwaccm.s.svm.aPatches, sizeof(pVM->hwaccm.s.svm.aPatches));
 }
 
