@@ -30,9 +30,9 @@ class Machine;
 class GuestOSType;
 
 class ATL_NO_VTABLE NetworkAdapter :
-    public VirtualBoxBase,
-    public VirtualBoxSupportErrorInfoImpl<NetworkAdapter, INetworkAdapter>,
-    public VirtualBoxSupportTranslation<NetworkAdapter>,
+    public VirtualBoxBaseNEXT,
+    public VirtualBoxSupportErrorInfoImpl <NetworkAdapter, INetworkAdapter>,
+    public VirtualBoxSupportTranslation <NetworkAdapter>,
     VBOX_SCRIPTABLE_IMPL(INetworkAdapter)
 {
 public:

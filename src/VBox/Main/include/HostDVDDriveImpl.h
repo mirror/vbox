@@ -25,9 +25,9 @@
 #include "VirtualBoxBase.h"
 
 class ATL_NO_VTABLE HostDVDDrive :
-    public VirtualBoxBase,
-    public VirtualBoxSupportErrorInfoImpl<HostDVDDrive, IHostDVDDrive>,
-    public VirtualBoxSupportTranslation<HostDVDDrive>,
+    public VirtualBoxBaseNEXT,
+    public VirtualBoxSupportErrorInfoImpl <HostDVDDrive, IHostDVDDrive>,
+    public VirtualBoxSupportTranslation <HostDVDDrive>,
     VBOX_SCRIPTABLE_IMPL(IHostDVDDrive)
 {
 public:

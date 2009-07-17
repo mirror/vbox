@@ -32,7 +32,7 @@
  * Generally this contains much less information.
  */
 class ATL_NO_VTABLE OUSBDevice :
-    public VirtualBoxBase,
+    public VirtualBoxBaseNEXT,
     public VirtualBoxSupportErrorInfoImpl<OUSBDevice, IUSBDevice>,
     public VirtualBoxSupportTranslation<OUSBDevice>,
     VBOX_SCRIPTABLE_IMPL(IUSBDevice)

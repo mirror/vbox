@@ -29,9 +29,9 @@
 class Console;
 
 class ATL_NO_VTABLE MachineDebugger :
-    public VirtualBoxBase,
-    public VirtualBoxSupportErrorInfoImpl<MachineDebugger, IMachineDebugger>,
-    public VirtualBoxSupportTranslation<MachineDebugger>,
+    public VirtualBoxBaseNEXT,
+    public VirtualBoxSupportErrorInfoImpl <MachineDebugger, IMachineDebugger>,
+    public VirtualBoxSupportTranslation <MachineDebugger>,
     VBOX_SCRIPTABLE_IMPL(IMachineDebugger)
 {
 public:

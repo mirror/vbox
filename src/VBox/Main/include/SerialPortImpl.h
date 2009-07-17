@@ -30,9 +30,9 @@ class Machine;
 class GuestOSType;
 
 class ATL_NO_VTABLE SerialPort :
-    public VirtualBoxBase,
-    public VirtualBoxSupportErrorInfoImpl<SerialPort, ISerialPort>,
-    public VirtualBoxSupportTranslation<SerialPort>,
+    public VirtualBoxBaseNEXT,
+    public VirtualBoxSupportErrorInfoImpl <SerialPort, ISerialPort>,
+    public VirtualBoxSupportTranslation <SerialPort>,
     VBOX_SCRIPTABLE_IMPL(ISerialPort)
 {
 public:

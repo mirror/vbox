@@ -34,9 +34,9 @@ struct NETIFINFO;
 #endif
 
 class ATL_NO_VTABLE HostNetworkInterface :
-    public VirtualBoxBase,
-    public VirtualBoxSupportErrorInfoImpl<HostNetworkInterface, IHostNetworkInterface>,
-    public VirtualBoxSupportTranslation<HostNetworkInterface>,
+    public VirtualBoxBaseNEXT,
+    public VirtualBoxSupportErrorInfoImpl <HostNetworkInterface, IHostNetworkInterface>,
+    public VirtualBoxSupportTranslation <HostNetworkInterface>,
     VBOX_SCRIPTABLE_IMPL(IHostNetworkInterface)
 {
 public:

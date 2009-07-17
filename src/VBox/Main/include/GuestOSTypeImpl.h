@@ -28,9 +28,9 @@
 #include <VBox/ostypes.h>
 
 class ATL_NO_VTABLE GuestOSType :
-    public VirtualBoxBase,
-    public VirtualBoxSupportErrorInfoImpl<GuestOSType, IGuestOSType>,
-    public VirtualBoxSupportTranslation<GuestOSType>,
+    public VirtualBoxBaseNEXT,
+    public VirtualBoxSupportErrorInfoImpl <GuestOSType, IGuestOSType>,
+    public VirtualBoxSupportTranslation <GuestOSType>,
     VBOX_SCRIPTABLE_IMPL(IGuestOSType)
 {
 public:

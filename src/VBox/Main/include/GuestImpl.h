@@ -30,9 +30,9 @@ class Console;
 #define GUEST_STAT_INVALID          (ULONG)-1
 
 class ATL_NO_VTABLE Guest :
-    public VirtualBoxSupportErrorInfoImpl<Guest, IGuest>,
-    public VirtualBoxSupportTranslation<Guest>,
-    public VirtualBoxBase,
+    public VirtualBoxSupportErrorInfoImpl <Guest, IGuest>,
+    public VirtualBoxSupportTranslation <Guest>,
+    public VirtualBoxBaseNEXT,
     VBOX_SCRIPTABLE_IMPL(IGuest)
 {
 public:

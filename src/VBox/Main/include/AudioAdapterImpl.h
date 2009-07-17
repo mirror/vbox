@@ -29,9 +29,9 @@
 class Machine;
 
 class ATL_NO_VTABLE AudioAdapter :
-    public VirtualBoxBase,
-    public VirtualBoxSupportErrorInfoImpl<AudioAdapter, IAudioAdapter>,
-    public VirtualBoxSupportTranslation<AudioAdapter>,
+    public VirtualBoxBaseNEXT,
+    public VirtualBoxSupportErrorInfoImpl <AudioAdapter, IAudioAdapter>,
+    public VirtualBoxSupportTranslation <AudioAdapter>,
     VBOX_SCRIPTABLE_IMPL(IAudioAdapter)
 {
 public:

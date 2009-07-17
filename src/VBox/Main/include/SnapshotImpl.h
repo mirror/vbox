@@ -29,12 +29,11 @@
 #include <list>
 
 class SnapshotMachine;
-class VirtualBox;
 
 class ATL_NO_VTABLE Snapshot :
-    public VirtualBoxSupportErrorInfoImpl<Snapshot, ISnapshot>,
-    public VirtualBoxSupportTranslation<Snapshot>,
-    public VirtualBoxBaseWithTypedChildren<Snapshot>,
+    public VirtualBoxSupportErrorInfoImpl <Snapshot, ISnapshot>,
+    public VirtualBoxSupportTranslation <Snapshot>,
+    public VirtualBoxBaseWithTypedChildren <Snapshot>,
     VBOX_SCRIPTABLE_IMPL(ISnapshot)
 {
 public:
@@ -51,7 +50,8 @@ public:
         ComObjPtr <SnapshotMachine> mMachine;
     };
 
-    typedef VirtualBoxBaseWithTypedChildren<Snapshot>::DependentChildren SnapshotList;
+    typedef VirtualBoxBaseWithTypedChildren <Snapshot>::DependentChildren
+        SnapshotList;
 
     DECLARE_NOT_AGGREGATABLE(Snapshot)
 
@@ -65,22 +65,13 @@ public:
 
     NS_DECL_ISUPPORTS
 
-    Snapshot()
-    { };
-    ~Snapshot()
-    { };
-
     HRESULT FinalConstruct();
     void FinalRelease();
 
     // public initializer/uninitializer only for internal purposes
-    HRESULT init(VirtualBox *aVirtualBox,
-                 const Guid &aId,
-                 IN_BSTR aName,
-                 IN_BSTR aDescription,
-                 RTTIMESPEC aTimeStamp,
-                 SnapshotMachine *aMachine,
-                 Snapshot *aParent);
+    HRESULT init (const Guid &aId, IN_BSTR aName, IN_BSTR aDescription,
+                  RTTIMESPEC aTimeStamp, SnapshotMachine *aMachine,
+                  Snapshot *aParent);
     void uninit();
 
     void discard();
@@ -108,6 +99,9 @@ public:
 
     ComObjPtr <Snapshot> parent() const { return (Snapshot *) mParent; }
 
+    /** Shortcut to #dependentChildrenLock() */
+    RWLockHandle *childrenLock() const { return dependentChildrenLock(); }
+
     /**
      *  Shortcut to #dependentChildren().
      *  Do |AutoWriteLock alock (childrenLock());| before acceessing the returned list!
@@ -123,15 +117,9 @@ public:
     // for VirtualBoxSupportErrorInfoImpl
     static const wchar_t *getComponentName() { return L"Snapshot"; }
 
-    RWLockHandle *treeLock();
-    RWLockHandle *childrenLock();
-
 private:
 
-    /** weak VirtualBox parent */
-    const ComObjPtr<VirtualBox, ComWeakRef> mVirtualBox;
-
-    ComObjPtr<Snapshot, ComWeakRef> mParent;
+    ComObjPtr <Snapshot, ComWeakRef> mParent;
 
     Data mData;
 };

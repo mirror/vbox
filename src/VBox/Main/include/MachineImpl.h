@@ -77,8 +77,8 @@ class SessionMachine;
 
 class ATL_NO_VTABLE Machine :
     public VirtualBoxBaseWithChildrenNEXT,
-    public VirtualBoxSupportErrorInfoImpl<Machine, IMachine>,
-    public VirtualBoxSupportTranslation<Machine>,
+    public VirtualBoxSupportErrorInfoImpl <Machine, IMachine>,
+    public VirtualBoxSupportTranslation <Machine>,
     VBOX_SCRIPTABLE_IMPL(IMachine)
 {
     Q_OBJECT
@@ -872,7 +872,7 @@ protected:
  *  instance is also locked in the same lock mode. Keep it in mind.
  */
 class ATL_NO_VTABLE SessionMachine :
-    public VirtualBoxSupportTranslation<SessionMachine>,
+    public VirtualBoxSupportTranslation <SessionMachine>,
     public Machine,
     VBOX_SCRIPTABLE_IMPL(IInternalMachineControl)
 {
@@ -1047,7 +1047,7 @@ private:
  *  instance is also locked in the same lock mode. Keep it in mind.
  */
 class ATL_NO_VTABLE SnapshotMachine :
-    public VirtualBoxSupportTranslation<SnapshotMachine>,
+    public VirtualBoxSupportTranslation <SnapshotMachine>,
     public Machine
 {
 public:

@@ -28,9 +28,9 @@
 class Machine;
 
 class ATL_NO_VTABLE ParallelPort :
-    public VirtualBoxBase,
-    public VirtualBoxSupportErrorInfoImpl<ParallelPort, IParallelPort>,
-    public VirtualBoxSupportTranslation<ParallelPort>,
+    public VirtualBoxBaseNEXT,
+    public VirtualBoxSupportErrorInfoImpl <ParallelPort, IParallelPort>,
+    public VirtualBoxSupportTranslation <ParallelPort>,
     VBOX_SCRIPTABLE_IMPL(IParallelPort)
 {
 public:
