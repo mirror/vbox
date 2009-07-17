@@ -46,14 +46,11 @@
 
 // #define wchar_t linux_wchar_t
 
-#define xstr(s) str(s)
-#define str(s) #s
-
 MODULE_DESCRIPTION ("Host file system access VFS for VirtualBox");
 MODULE_AUTHOR ("Sun Microsystems, Inc.");
 MODULE_LICENSE ("GPL");
 #ifdef MODULE_VERSION
-MODULE_VERSION(VBOX_VERSION_STRING " (interface " xstr(VMMDEV_VERSION) ")");
+MODULE_VERSION(VBOX_VERSION_STRING " (interface " RT_XSTR(VMMDEV_VERSION) ")");
 #endif
 
 /* globals */
@@ -488,7 +485,7 @@ init (void)
 
         printk(KERN_DEBUG
                "vboxvfs: Successfully loaded version " VBOX_VERSION_STRING
-               " (interface " xstr(VMMDEV_VERSION) ")\n");
+               " (interface " RT_XSTR(VMMDEV_VERSION) ")\n");
 
         return 0;
 
