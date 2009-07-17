@@ -57,7 +57,7 @@ size_t rtPathVolumeSpecLen(const char *pszPath)
 
         /* Drive letter. */
         if (    pszPath[1] == ':'
-            &&  RT_C_IS_ALPHA(pszPath[0])
+            &&  RT_C_IS_ALPHA(pszPath[0]))
             return 2;
     }
     return 0;
