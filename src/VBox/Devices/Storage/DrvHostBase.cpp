@@ -24,8 +24,6 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_DRV_HOST_BASE
-/* We need this for UINT32_C for RTSTR_VALIDATE_ENCODING_ZERO_TERMINATED */
-#include <iprt/stdint.h>
 #ifdef RT_OS_DARWIN
 # include <mach/mach.h>
 # include <Carbon/Carbon.h>
@@ -184,7 +182,7 @@ static DECLCALLBACK(int) drvHostBaseRead(PPDMIBLOCK pInterface, uint64_t off, vo
             off    += cbRead32;
             cbRead -= cbRead32;
             pvBuf   = (uint8_t *)pvBuf + cbRead32;
-        } while ((cbRead > 0) && RT_SUCCESS(rc)); 
+        } while ((cbRead > 0) && RT_SUCCESS(rc));
 
 #else
         /*
