@@ -19,15 +19,13 @@
  * additional information or have any questions.
  */
 
-#include <iprt/stdint.h>
-
+#define LOG_GROUP LOG_GROUP_HGCM
 #include <Carbon/Carbon.h>
 
 #include <iprt/mem.h>
 #include <iprt/assert.h>
 #include "iprt/err.h"
 
-#define LOG_GROUP LOG_GROUP_HGCM
 #include "VBox/log.h"
 #include "VBox/HostServices/VBoxClipboardSvc.h"
 #include "VBox/GuestHost/clipboard-helper.h"
@@ -317,3 +315,4 @@ int writeToPasteboard (PasteboardRef pPasteboard, void *pv, uint32_t cb, uint32_
     Log (("writeToPasteboard: rc = %02X\n", rc));
     return rc;
 }
+
