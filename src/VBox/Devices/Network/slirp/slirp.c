@@ -650,7 +650,7 @@ void slirp_term(PNATState pData)
     pData->pfIcmpCloseHandle(pData->icmp_socket.sh);
     FreeLibrary(pData->hmIcmpLibrary);
     RTMemFree(pData->pvIcmpBuffer);
-# else
+#else
     closesocket(pData->icmp_socket.s);
 #endif
 
