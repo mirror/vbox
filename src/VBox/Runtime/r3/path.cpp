@@ -38,6 +38,7 @@
 #include <iprt/err.h>
 #include <iprt/path.h>
 #include <iprt/string.h>
+#include "internal/path.h"
 #include "internal/process.h"
 
 
