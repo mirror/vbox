@@ -22,6 +22,7 @@
 
 #include "QIHotKeyEdit.h"
 #include "VBoxDefs.h"
+#include "VBoxGlobal.h"
 
 /* Qt includes */
 #include <QApplication>
@@ -118,7 +119,8 @@ QIHotKeyEdit::QIHotKeyEdit (QWidget *aParent) :
 {
 #ifdef Q_WS_X11
     /* Initialize the X keyboard subsystem */
-    initXKeyboard (QX11Info::display());
+    initMappedX11Keyboard(QX11Info::display(),
+            vboxGlobal().settings().publicProperty ("GUI/RemapScancodes"));
 #endif
 
     clear();

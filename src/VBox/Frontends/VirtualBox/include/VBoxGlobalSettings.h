@@ -46,6 +46,7 @@ private:
     QString guiFeatures;
     QString languageId;
     QString maxGuestRes;
+    QString remapScancodes;
     bool trayIconEnabled;
     bool dockPreviewEnabled;
 
@@ -62,6 +63,7 @@ class VBoxGlobalSettings : public QObject, public CIShared <VBoxGlobalSettingsDa
     Q_PROPERTY (QString guiFeatures READ guiFeatures WRITE setGuiFeatures)
     Q_PROPERTY (QString languageId READ languageId WRITE setLanguageId)
     Q_PROPERTY (QString maxGuestRes READ maxGuestRes WRITE setMaxGuestRes)
+    Q_PROPERTY (QString remapScancodes READ remapScancodes WRITE setRemapScancodes)
     Q_PROPERTY (bool trayIconEnabled READ trayIconEnabled WRITE setTrayIconEnabled)
     Q_PROPERTY (bool dockPreviewEnabled READ dockPreviewEnabled WRITE setDockPreviewEnabled)
 
@@ -105,6 +107,13 @@ public:
     {
         mData()->maxGuestRes = aMaxGuestRes;
     }
+
+    QString remapScancodes() const { return data()->remapScancodes; }
+    void setRemapScancodes (const QString &aRemapScancodes)
+    {
+        mData()->remapScancodes = aRemapScancodes;
+    }
+
 
     bool trayIconEnabled() const { return data()->trayIconEnabled; }
     void setTrayIconEnabled (bool enabled)

@@ -54,18 +54,13 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+#define KEYC2SCAN_SIZE 256
+
 /** 
  * Array containing the current mapping of keycodes to scan codes, detected
  * using the keyboard layout algorithm in X11DRV_InitKeyboardByLayout.
  */
-static unsigned keyc2scan[256];
-/** 
- * Whether a keyboard was detected with a well-known keycode to scan code
- * mapping.
- */
-static unsigned use_builtin_table = 0;
-/** The index of the well-known keycode to scan code mapping in our table. */
-static unsigned builtin_table_number;
+static unsigned keyc2scan[KEYC2SCAN_SIZE];
 /** Whether to output basic debugging information to standard output */
 static int log_kb_1 = 0;
 /** Whether to output verbose debugging information to standard output */
@@ -125,12 +120,8 @@ unsigned X11DRV_KeyEvent(Display *display, KeyCode code)
             scan = 0x138;
     }
     if (keysym != 0 && scan == 0)
-    {
-        if (use_builtin_table != 0)
-            scan = main_keyboard_type_scans[builtin_table_number][code];
-        else
             scan = keyc2scan[code];
-    }
+
     return scan;
 }
 
@@ -439,9 +430,8 @@ X11DRV_InitKeyboardByType(Display *display)
             && (XKeysymToKeycode(display, XK_F8)        == main_keyboard_type_list[i].f8)
            )
             found = 1;
-    use_builtin_table = found;
     if (found != 0)
-        builtin_table_number = i - 1;
+	memcpy(keyc2scan, main_keyboard_type_scans[i - 1], KEYC2SCAN_SIZE);
     return found;
 }
 
@@ -463,17 +453,38 @@ X11DRV_InitKeyboardByType(Display *display)
  * @warning not re-entrant
  * @returns 1 if the layout found was optimal, 0 if it was not.  This is
  *          for diagnostic purposes
- * @param   display     a pointer to the X11 display
- * @param   byLayoutOK  diagnostic - set to one if detection by layout
- *                      succeeded, and to 0 otherwise
- * @param   byTypeOK    diagnostic - set to one if detection by type
- *                      succeeded, and to 0 otherwise
+ * @param   display          a pointer to the X11 display
+ * @param   byLayoutOK       diagnostic - set to one if detection by layout
+ *                           succeeded, and to 0 otherwise
+ * @param   byTypeOK         diagnostic - set to one if detection by type
+ *                           succeeded, and to 0 otherwise
+ * @param   remapScancode    array of tuples that remap the keycode (first
+ *                           part) to a scancode (second part)
  */
-unsigned X11DRV_InitKeyboard(Display *display, unsigned *byLayoutOK, unsigned *byTypeOK)
+unsigned X11DRV_InitKeyboard(Display *display, unsigned *byLayoutOK, unsigned *byTypeOK, int (*remapScancodes)[2])
 {
-    unsigned byLayout = X11DRV_InitKeyboardByLayout(display);
-    unsigned byType   = X11DRV_InitKeyboardByType(display);
+    unsigned byLayout; 
+    unsigned byType; 
+
+    byLayout = X11DRV_InitKeyboardByLayout(display);
     *byLayoutOK = byLayout;
-    *byTypeOK   = byType;
+
+    byType = X11DRV_InitKeyboardByType(display);
+    *byTypeOK = byType;
+
+    /* Remap keycodes after initialization. Remapping stops after an
+       identity mapping is seen */
+    if(remapScancodes != NULL)
+	for(; (*remapScancodes)[0] != (*remapScancodes)[1]; remapScancodes++) 
+	    keyc2scan[(*remapScancodes)[0]] = (*remapScancodes)[1];
+
     return (byLayout || byType) ? 1 : 0;
+}
+
+/**
+ * Returns the keycode to scancode array
+ */
+unsigned *X11DRV_getKeyc2scan()
+{
+    return keyc2scan;
 }

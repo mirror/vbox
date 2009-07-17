@@ -23,8 +23,10 @@
 #ifndef __XKeyboard_h__
 #define __XKeyboard_h__
 
+#include <QString>
+
 // initialize the X keyboard subsystem
-bool initXKeyboard(Display *dpy);
+void initMappedX11Keyboard(Display *pDisplay, QString remapScancodes);
 // our custom keyboard handler
 unsigned handleXKeyEvent(XEvent *event);
 // returns the number of keysyms per keycode (only valid after initXKeyboard())

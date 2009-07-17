@@ -796,7 +796,8 @@ VBoxConsoleView::VBoxConsoleView (VBoxConsoleWnd *mainWnd,
 
 #ifdef Q_WS_X11
     /* initialize the X keyboard subsystem */
-    initXKeyboard (QX11Info::display());
+    initMappedX11Keyboard(QX11Info::display(),
+            vboxGlobal().settings().publicProperty ("GUI/RemapScancodes"));
 #endif
 
     ::memset (mPressedKeys, 0, sizeof (mPressedKeys));
