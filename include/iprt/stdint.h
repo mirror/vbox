@@ -33,6 +33,10 @@
  *
  */
 
+#if 1
+# include <iprt/stdint-new.h>
+#else /* this (old) header */
+
 #ifndef ___iprt_stdint_h
 #define ___iprt_stdint_h
 
@@ -201,4 +205,5 @@ typedef __uintptr_t             uintptr_t;
 #endif /* ! have usable stdint.h */
 
 #endif
+#endif /* this (old) header */
 
