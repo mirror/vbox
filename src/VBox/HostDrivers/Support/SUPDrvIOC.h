@@ -34,7 +34,7 @@
 /*
  * Basic types.
  */
-#include <iprt/stdint.h>
+#include <iprt/types.h>
 
 /*
  * IOCtl numbers.

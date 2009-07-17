@@ -21,8 +21,6 @@
  * additional information or have any questions.
  */
 
-#include <iprt/stdint.h>
-
 #include "ovfreader.h"
 
 using namespace std;
