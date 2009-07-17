@@ -1381,11 +1381,12 @@ VMMR3DECL(void) HWACCMR3Reset(PVM pVM)
     }
 
     /* Clear all patch information. */
-    pVM->hwaccm.s.pGuestPatchMem      = 0;
-    pVM->hwaccm.s.pFreeGuestPatchMem  = 0;
-    pVM->hwaccm.s.cbGuestPatchMem     = 0;
-    pVM->hwaccm.s.svm.cPatches        = 0;
-    pVM->hwaccm.s.svm.PatchTree       = 0;
+    pVM->hwaccm.s.pGuestPatchMem         = 0;
+    pVM->hwaccm.s.pFreeGuestPatchMem     = 0;
+    pVM->hwaccm.s.cbGuestPatchMem        = 0;
+    pVM->hwaccm.s.svm.cPatches           = 0;
+    pVM->hwaccm.s.svm.PatchTree          = 0;
+    pVM->hwaccm.s.svm.fTPRPatchingActive = false;
     ASMMemZero32(pVM->hwaccm.s.svm.aPatches, sizeof(pVM->hwaccm.s.svm.aPatches));
 }
 
@@ -1442,6 +1443,7 @@ DECLCALLBACK(int) hwaccmR3RemovePatches(PVM pVM, PVMCPU pVCpu, void *pvUser)
     pVM->hwaccm.s.svm.cPatches        = 0;
     pVM->hwaccm.s.svm.PatchTree       = 0;
     pVM->hwaccm.s.pFreeGuestPatchMem  = pVM->hwaccm.s.pGuestPatchMem;
+    pVM->hwaccm.s.svm.fTPRPatchingActive = false;
     return VINF_SUCCESS;
 }
 
@@ -1493,6 +1495,7 @@ VMMR3DECL(int)  HWACMMR3DisablePatching(PVM pVM, RTGCPTR pPatchMem, unsigned cbP
     pVM->hwaccm.s.pGuestPatchMem      = 0;
     pVM->hwaccm.s.pFreeGuestPatchMem  = 0;
     pVM->hwaccm.s.cbGuestPatchMem     = 0;
+    pVM->hwaccm.s.svm.fTPRPatchingActive = false;
     return VINF_SUCCESS;
 }
 
@@ -1882,6 +1885,7 @@ DECLCALLBACK(int) hwaccmR3PatchTprInstr(PVM pVM, PVMCPU pVCpu, void *pvUser)
                 AssertRC(rc);
 
                 pVM->hwaccm.s.svm.cPatches++;
+                pVM->hwaccm.s.svm.fTPRPatchingActive = true;
                 return VINF_SUCCESS;
             }
             else
