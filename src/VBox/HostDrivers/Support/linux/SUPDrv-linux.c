@@ -125,9 +125,6 @@ extern int nmi_active;
 
 #endif /* CONFIG_X86_LOCAL_APIC */
 
-#define xstr(s) str(s)
-#define str(s) #s
-
 
 /*******************************************************************************
 *   Global Variables                                                           *
@@ -577,7 +574,7 @@ nmi_activated:
                                g_DevExt.pGip->u32Mode == SUPGIPMODE_SYNC_TSC ? "'synchronous'" : "'asynchronous'");
                         LogFlow(("VBoxDrv::ModuleInit returning %#x\n", rc));
                         printk(KERN_DEBUG DEVICE_NAME ": Successfully loaded version "
-                                VBOX_VERSION_STRING " (interface " xstr(SUPDRV_IOC_VERSION) ").\n");
+                                VBOX_VERSION_STRING " (interface " RT_XSTR(SUPDRV_IOC_VERSION) ").\n");
                         return rc;
                     }
 #ifdef VBOX_WITH_SUSPEND_NOTIFICATION
@@ -1017,7 +1014,7 @@ MODULE_AUTHOR("Sun Microsystems, Inc.");
 MODULE_DESCRIPTION("VirtualBox Support Driver");
 MODULE_LICENSE("GPL");
 #ifdef MODULE_VERSION
-MODULE_VERSION(VBOX_VERSION_STRING " (" xstr(SUPDRV_IOC_VERSION) ")");
+MODULE_VERSION(VBOX_VERSION_STRING " (" RT_XSTR(SUPDRV_IOC_VERSION) ")");
 #endif
 
 module_param(force_async_tsc, int, 0444);
