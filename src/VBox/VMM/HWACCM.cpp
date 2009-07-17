@@ -1417,14 +1417,14 @@ DECLCALLBACK(int) hwaccmR3RemovePatches(PVM pVM, PVMCPU pVCpu, void *pvUser)
 #endif
 
         /* Check if the instruction is still the same. */
-        rc = PGMPhysSimpleReadGCPtr(pVCpu, szInstr, pInstrGC, pPatch->cbOp);
+        rc = PGMPhysSimpleReadGCPtr(pVCpu, szInstr, pInstrGC, pPatch->cbNewOp);
         if (rc != VINF_SUCCESS)
         {
             Log(("Patched code removed? (rc=%Rrc0\n", rc));
             continue;   /* swapped out or otherwise removed; skip it. */
         }
 
-        if (memcmp(szInstr, pPatch->aOpcode, pPatch->cbOp))
+        if (memcmp(szInstr, pPatch->aNewOpcode, pPatch->cbNewOp))
         {
             Log(("Patched instruction was changed! (rc=%Rrc0\n", rc));
             continue;   /* skip it. */
@@ -1850,7 +1850,7 @@ DECLCALLBACK(int) hwaccmR3PatchTprInstr(PVM pVM, PVMCPU pVCpu, void *pvUser)
 
                     rc = DBGFR3DisasInstrEx(pVM, pVCpu->idCpu, pCtx->cs, pInstr, 0, szOutput, sizeof(szOutput), &cb);
                     if (VBOX_SUCCESS(rc))
-                        Log(("Patch instr %RGv: %s\n", pInstr, szOutput));
+                        Log(("Patch instr %s\n", szOutput));
 
                     pInstr += cb;
 
