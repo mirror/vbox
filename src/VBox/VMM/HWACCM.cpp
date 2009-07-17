@@ -1493,7 +1493,7 @@ static int hwaccmR0EmulateTprMov(PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTX pCtx,
 }
 
 /**
- * Callback to patch a TPR instruction
+ * Callback to patch a TPR instruction (vmmcall or mov cr8)
  *
  * @returns VBox status code.
  * @param   pVM     The VM handle.
@@ -1501,7 +1501,7 @@ static int hwaccmR0EmulateTprMov(PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTX pCtx,
  * @param   pvUser  User specified CPU context
  *
  */
-DECLCALLBACK(int) hwaccmR3PatchTprInstr(PVM pVM, PVMCPU pVCpu, void *pvUser)
+DECLCALLBACK(int) hwaccmR3ReplaceTprInstr(PVM pVM, PVMCPU pVCpu, void *pvUser)
 {
     PCPUMCTX     pCtx   = (PCPUMCTX)pvUser;
     RTGCPTR      oldrip = pCtx->rip;
@@ -1622,6 +1622,112 @@ DECLCALLBACK(int) hwaccmR3PatchTprInstr(PVM pVM, PVMCPU pVCpu, void *pvUser)
 }
 
 /**
+ * Callback to patch a TPR instruction (vmmcall or mov cr8)
+ *
+ * @returns VBox status code.
+ * @param   pVM     The VM handle.
+ * @param   pVCpu   The VMCPU for the EMT we're being called on. 
+ * @param   pvUser  User specified CPU context
+ *
+ */
+DECLCALLBACK(int) hwaccmR3PatchTprInstr(PVM pVM, PVMCPU pVCpu, void *pvUser)
+{
+    PCPUMCTX     pCtx   = (PCPUMCTX)pvUser;
+    RTGCPTR      oldrip = pCtx->rip;
+    PDISCPUSTATE pDis   = &pVCpu->hwaccm.s.DisState;
+    unsigned     cbOp;
+
+    Log(("Patch TPR access at %RGv\n", pCtx->rip));
+
+    int rc = EMInterpretDisasOne(pVM, pVCpu, CPUMCTX2CORE(pCtx), pDis, &cbOp);
+    AssertRC(rc);
+    if (    rc == VINF_SUCCESS
+        &&  pDis->pCurInstr->opcode == OP_MOV)
+    {
+        if (pVM->hwaccm.s.svm.cPatches < RT_ELEMENTS(pVM->hwaccm.s.svm.aPatches))
+        {
+            uint32_t        idx = pVM->hwaccm.s.svm.cPatches;
+            PHWACCMTPRPATCH pPatch = &pVM->hwaccm.s.svm.aPatches[idx];
+
+            rc = PGMPhysSimpleReadGCPtr(pVCpu, pPatch->aOpcode, pCtx->rip, cbOp);
+            AssertRC(rc);
+
+            pPatch->cbOp     = cbOp;
+
+            if (pDis->param1.flags == USE_DISPLACEMENT32)
+            {
+                /*
+                 * TPR write:
+                 *
+                 *  push ecx
+                 *  push edx
+                 *  push eax
+                 *  xor  edx, edx
+                 *  mov  eax, src_reg
+                 *  mov  ecx, MSR_K8_LSTAR (0xc0000082)
+                 *  rdmsr
+                 *  pop  eax
+                 *  pop  edx
+                 *  pop  ecx
+                 *
+                 */
+                if (pDis->param2.flags == USE_REG_GEN32)
+                {
+                    pPatch->enmType     = HWACCMTPRINSTR_WRITE_REG;
+                    pPatch->uSrcOperand = pDis->param2.base.reg_gen;
+                }
+                else
+                {
+                    Assert(pDis->param2.flags == USE_IMMEDIATE32);
+                    pPatch->enmType     = HWACCMTPRINSTR_WRITE_IMM;
+                    pPatch->uSrcOperand = pDis->param2.parval;
+                }
+//                rc = PGMPhysSimpleWriteGCPtr(pVCpu, pCtx->rip, aVMMCall, sizeof(aVMMCall));
+//                AssertRC(rc);
+
+//                memcpy(pPatch->aNewOpcode, aVMMCall, sizeof(aVMMCall));
+//                pPatch->cbNewOp = sizeof(aVMMCall);
+            }
+            else
+            {
+                /*
+                 * TPR read:
+                 *
+                 *  push ecx
+                 *  push edx
+                 *  push eax
+                 *  mov  ecx, MSR_K8_LSTAR (0xc0000082)
+                 *  rdmsr
+                 *  mov  target_reg, eax
+                 *  pop  eax
+                 *  pop  edx
+                 *  pop  ecx
+                 *
+                 */
+                Assert(pDis->param1.flags == USE_REG_GEN32);
+
+                pPatch->enmType     = HWACCMTPRINSTR_READ;
+                pPatch->uDstOperand = pDis->param1.base.reg_gen;
+
+//                rc = PGMPhysSimpleWriteGCPtr(pVCpu, pCtx->rip, aVMMCall, sizeof(aVMMCall));
+//                AssertRC(rc);
+
+//                memcpy(pPatch->aNewOpcode, aVMMCall, sizeof(aVMMCall));
+//                pPatch->cbNewOp = sizeof(aVMMCall);
+            }
+
+            pPatch->Core.Key = pCtx->eip;
+            rc = RTAvloU32Insert(&pVM->hwaccm.s.svm.PatchTree, &pPatch->Core);
+            AssertRC(rc);
+
+            pVM->hwaccm.s.svm.cPatches++;
+            return VINF_SUCCESS;
+        }
+        return hwaccmR0EmulateTprMov(pVCpu, pDis, pCtx, cbOp);
+    }
+    return VERR_ACCESS_DENIED;
+}
+/**
  * Attempt to patch TPR mmio instructions
  *
  * @returns VBox status code.
@@ -1631,7 +1737,7 @@ DECLCALLBACK(int) hwaccmR3PatchTprInstr(PVM pVM, PVMCPU pVCpu, void *pvUser)
  */
 VMMR3DECL(int) HWACCMR3PatchTprInstr(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 {
-    int rc = VMMR3EmtRendezvous(pVM, VMMEMTRENDEZVOUS_FLAGS_TYPE_ONCE, hwaccmR3PatchTprInstr, pCtx);
+    int rc = VMMR3EmtRendezvous(pVM, VMMEMTRENDEZVOUS_FLAGS_TYPE_ONCE, (pVM->hwaccm.s.pGuestPatchMem) ? hwaccmR3PatchTprInstr : hwaccmR3ReplaceTprInstr, pCtx);
     AssertRC(rc);
     return rc;
 }
