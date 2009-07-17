@@ -657,7 +657,8 @@ int
 sosendto(PNATState pData, struct socket *so, struct mbuf *m)
 {
     int ret;
-    struct sockaddr_in addr;
+    struct sockaddr_in *paddr;
+    struct sockaddr addr;
 #if 0
     struct sockaddr_in host_addr;
 #endif
@@ -665,8 +666,13 @@ sosendto(PNATState pData, struct socket *so, struct mbuf *m)
     DEBUG_CALL("sosendto");
     DEBUG_ARG("so = %lx", (long)so);
     DEBUG_ARG("m = %lx", (long)m);
-
-    addr.sin_family = AF_INET;
+    
+    memset(&addr, 0, sizeof(struct sockaddr));
+#ifdef RT_OS_DARWIN
+    addr.sa_len = sizeof(struct sockaddr_in);
+#endif
+    paddr = (struct sockaddr_in *)&addr;
+    paddr->sin_family = AF_INET;
     if ((so->so_faddr.s_addr & htonl(pData->netmask)) == special_addr.s_addr)
     {
         /* It's an alias */
@@ -693,22 +699,21 @@ sosendto(PNATState pData, struct socket *so, struct mbuf *m)
             case CTL_ALIAS:
             default:
                 if (last_byte == ~pData->netmask)
-                    addr.sin_addr.s_addr = INADDR_BROADCAST;
+                    paddr->sin_addr.s_addr = INADDR_BROADCAST;
                 else
-                    addr.sin_addr = loopback_addr;
+                    paddr->sin_addr = loopback_addr;
                 break;
         }
     }
     else
-        addr.sin_addr = so->so_faddr;
-    addr.sin_port = so->so_fport;
+        paddr->sin_addr = so->so_faddr;
+    paddr->sin_port = so->so_fport;
 
     DEBUG_MISC((dfd, " sendto()ing, addr.sin_port=%d, addr.sin_addr.s_addr=%.16s\n",
-                ntohs(addr.sin_port), inet_ntoa(addr.sin_addr)));
+                ntohs(paddr->sin_port), inet_ntoa(paddr->sin_addr)));
 
     /* Don't care what port we get */
-    ret = sendto(so->s, m->m_data, m->m_len, 0,
-                 (struct sockaddr *)&addr, sizeof (struct sockaddr));
+    ret = sendto(so->s, m->m_data, m->m_len, 0, &addr, sizeof (struct sockaddr_in));
     if (ret < 0)
     {
         LogRel(("UDP: sendto fails (%s)\n", strerror(errno)));
