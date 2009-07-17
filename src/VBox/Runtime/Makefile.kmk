@@ -233,6 +233,7 @@ RuntimeR3_SOURCES       = \
 	common/misc/thread.cpp \
 	common/misc/zip.cpp \
 	common/misc/term.cpp \
+	common/path/rtPathVolumeSpecLen.cpp \
 	common/path/RTPathAbsDup.cpp \
 	common/path/RTPathAbsEx.cpp \
 	common/path/RTPathAbsExDup.cpp \
@@ -723,6 +724,7 @@ RuntimeGuestR3Mini_SOURCES = \
 	common/misc/assert.cpp \
 	common/misc/sanity-c.c \
 	common/misc/sanity-cpp.cpp \
+	common/path/rtPathVolumeSpecLen.cpp \
 	common/path/RTPathAbsDup.cpp \
 	common/path/RTPathAbsEx.cpp \
 	common/path/RTPathAbsExDup.cpp \
@@ -1105,7 +1107,10 @@ RuntimeR0Drv_SOURCES    = \
 	common/misc/sanity-c.c \
 	common/misc/sanity-cpp.cpp \
 	common/misc/term.cpp \
+	common/path/rtPathVolumeSpecLen.cpp \
 	common/path/RTPathAbsDup.cpp \
+	common/path/RTPathAbsEx.cpp \
+	common/path/RTPathAbsExDup.cpp \
 	common/path/RTPathAppend.cpp \
 	common/path/RTPathExt.cpp \
 	common/path/RTPathFilename.cpp \
