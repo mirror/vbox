@@ -2298,7 +2298,11 @@ HouseKeeping(struct libalias *la)
 #endif
 
     /* Compute number of spokes (output table link chains) to cover */
+#ifndef VBOX
     n = LINK_TABLE_OUT_SIZE * (la->timeStamp - la->lastCleanupTime);
+#else
+    n = LINK_TABLE_OUT_SIZE * ((la->timeStamp - la->lastCleanupTime)/1000);
+#endif
     n /= ALIAS_CLEANUP_INTERVAL_SECS;
 
     /* Handle different cases */

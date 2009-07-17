@@ -106,12 +106,16 @@ struct libalias {
 
     int     cleanupIndex;   /* Index to chain of link table    */
     /* being inspected for old links   */
-
+#ifndef VBOX
     int     timeStamp;  /* System time in seconds for      */
     /* current packet                  */
 
     int     lastCleanupTime;    /* Last time
                          * IncrementalCleanup()  */
+#else
+    unsigned int     timeStamp;  /* System time in seconds for      */
+    unsigned int     lastCleanupTime;    /* Last time */
+#endif
     /* was called                      */
 
     int     deleteAllLinks; /* If equal to zero, DeleteLink()  */
