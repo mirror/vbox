@@ -1751,7 +1751,7 @@ VOID reserveHypervisorMemory(PVBOXGUESTDEVEXT pDevExt)
             rc = RTR0MemObjAllocPage(&pDevExt->PatchMemObj, req->cbPatchMem, true /* executable. */);
             if (RT_SUCCESS(rc))
             {
-                req->pPatchMem = (RTGCPTR)RTR0MemObjAddress(pDevExt->PatchMemObj);
+                req->pPatchMem = (RTGCPTR)(uintptr_t)RTR0MemObjAddress(pDevExt->PatchMemObj);
 
                 rc = VbglGRPerform (&req->header);
                 if (RT_FAILURE(rc) || RT_FAILURE(req->header.rc))
@@ -1789,7 +1789,7 @@ VOID unreserveHypervisorMemory(PVBOXGUESTDEVEXT pDevExt)
         if (RT_SUCCESS(rc))
         {
             req->cbPatchMem = (uint32_t)RTR0MemObjSize(pDevExt->PatchMemObj);
-            req->pPatchMem  = (RTGCPTR)RTR0MemObjAddress(pDevExt->PatchMemObj);
+            req->pPatchMem  = (RTGCPTR)(uintptr_t)RTR0MemObjAddress(pDevExt->PatchMemObj);
 
             rc = VbglGRPerform (&req->header);
             if (RT_FAILURE(rc) || RT_FAILURE(req->header.rc))
