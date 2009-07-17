@@ -929,7 +929,12 @@ IncrementalCleanup(struct libalias *la)
     LIBALIAS_LOCK_ASSERT(la);
     LIST_FOREACH_SAFE(lnk, &la->linkTableOut[la->cleanupIndex++],
         list_out, lnk_tmp) {
+#ifndef VBOX
         if (la->timeStamp - lnk->timestamp > lnk->expire_time)
+#else
+        /* libalias counts time in seconds while slirp in millis */
+        if (la->timeStamp - lnk->timestamp > (1000 * lnk->expire_time))
+#endif
             DeleteLink(lnk);
     }
 
