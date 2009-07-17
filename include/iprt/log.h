@@ -922,6 +922,30 @@ RTDECL(void) RTLogPrintfEx(void *pvInstance, unsigned fFlags, unsigned iGroup, c
  */
 #define LogRelFlow(a)      LogRelIt(LOG_REL_INSTANCE, RTLOGGRPFLAGS_FLOW,     LOG_GROUP, a)
 
+/** @def LogRelFunc
+ * Release logging.  Prepends the given log message with the function name
+ * followed by a semicolon and space.
+ */
+#ifdef LOG_USE_C99
+# define LogRelFunc(a) \
+    _LogRelIt(LOG_REL_INSTANCE, RTLOGGRPFLAGS_LEVEL_1, LOG_GROUP, LOG_FN_FMT ": %M", __PRETTY_FUNCTION__, _LogRemoveParentheseis a )
+#else
+# define LogRelFunc(a) \
+    do { LogRel((LOG_FN_FMT ": ", __PRETTY_FUNCTION__)); LogRel(a); } while (0)
+#endif
+
+/** @def LogRelThisFunc
+ * The same as LogRelFunc but for class functions (methods): the resulting log
+ * line is additionally prepended with a hex value of |this| pointer.
+ */
+#ifdef LOG_USE_C99
+# define LogRelThisFunc(a) \
+    _LogRelIt(LOG_REL_INSTANCE, RTLOGGRPFLAGS_LEVEL_1, LOG_GROUP, "{%p} " LOG_FN_FMT ": %M", this, __PRETTY_FUNCTION__, _LogRemoveParentheseis a )
+#else
+# define LogRelThisFunc(a) \
+    do { LogRel(("{%p} " LOG_FN_FMT ": ", this, __PRETTY_FUNCTION__)); LogRel(a); } while (0)
+#endif
+
 /** @def LogRelFlowFunc
  * Release logging.  Macro to log the execution flow inside C/C++ functions.
  *
@@ -930,22 +954,13 @@ RTDECL(void) RTLogPrintfEx(void *pvInstance, unsigned fFlags, unsigned iGroup, c
  *
  * @param   a   Log message in format <tt>("string\n" [, args])</tt>.
  */
+#ifdef LOG_USE_C99
+# define LogRelFlowFunc(a) \
+    _LogRelIt(LOG_REL_INSTANCE, RTLOGGRPFLAGS_FLOW, LOG_GROUP, LOG_FN_FMT ": %M", __PRETTY_FUNCTION__, _LogRemoveParentheseis a )
+#else
 # define LogRelFlowFunc(a) \
     do { LogRelFlow((LOG_FN_FMT ": ", __PRETTY_FUNCTION__)); LogRelFlow(a); } while (0)
-
-/** @def LogRelFunc
- * Release logging.  Prepends the given log message with the function name
- * followed by a semicolon and space.
- */
-#define LogRelFunc(a) \
-    do { LogRel((LOG_FN_FMT ": ", __PRETTY_FUNCTION__)); LogRel(a); } while (0)
-
-/** @def LogRelThisFunc
- * The same as LogRelFunc but for class functions (methods): the resulting log
- * line is additionally prepended with a hex value of |this| pointer.
- */
-#define LogRelThisFunc(a) \
-    do { LogRel(("{%p} " LOG_FN_FMT ": ", this, __PRETTY_FUNCTION__)); LogRel(a); } while (0)
+#endif
 
 /** @def LogRelLelik
  *  lelik logging.
