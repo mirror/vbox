@@ -1400,6 +1400,7 @@ VMMR3DECL(void) HWACCMR3Reset(PVM pVM)
  */
 DECLCALLBACK(int) hwaccmR3RemovePatches(PVM pVM, PVMCPU pVCpu, void *pvUser)
 {
+    Log(("hwaccmR3RemovePatches\n"));
     for (unsigned i = 0; i < pVM->hwaccm.s.svm.cPatches; i++)
     {
         uint8_t         szInstr[15];
@@ -1453,6 +1454,8 @@ DECLCALLBACK(int) hwaccmR3RemovePatches(PVM pVM, PVMCPU pVCpu, void *pvUser)
  */
 VMMR3DECL(int)  HWACMMR3EnablePatching(PVM pVM, RTGCPTR pPatchMem, unsigned cbPatchMem)
 {
+    Log(("HWACMMR3EnablePatching %RGv size %x\n", pPatchMem, cbPatchMem));
+
     /* Current TPR patching only applies to AMD cpus.
      * May need to be extended to Intel CPUs without the APIC TPR hardware optimization.
      */
@@ -1478,6 +1481,8 @@ VMMR3DECL(int)  HWACMMR3EnablePatching(PVM pVM, RTGCPTR pPatchMem, unsigned cbPa
  */
 VMMR3DECL(int)  HWACMMR3DisablePatching(PVM pVM, RTGCPTR pPatchMem, unsigned cbPatchMem)
 {
+    Log(("HWACMMR3DisablePatching %RGv size %x\n", pPatchMem, cbPatchMem));
+
     Assert(pVM->hwaccm.s.pGuestPatchMem == pPatchMem);
     Assert(pVM->hwaccm.s.cbGuestPatchMem == cbPatchMem);
 
@@ -1570,7 +1575,7 @@ DECLCALLBACK(int) hwaccmR3ReplaceTprInstr(PVM pVM, PVMCPU pVCpu, void *pvUser)
     PDISCPUSTATE pDis   = &pVCpu->hwaccm.s.DisState;
     unsigned     cbOp;
 
-    Log(("Replace TPR access at %RGv\n", pCtx->rip));
+    Log(("hwaccmR3ReplaceTprInstr: %RGv\n", pCtx->rip));
 
     int rc = EMInterpretDisasOne(pVM, pVCpu, CPUMCTX2CORE(pCtx), pDis, &cbOp);
     AssertRC(rc);
@@ -1706,7 +1711,7 @@ DECLCALLBACK(int) hwaccmR3PatchTprInstr(PVM pVM, PVMCPU pVCpu, void *pvUser)
     char         szOutput[256];
 #endif
 
-    Log(("Patch TPR access at %RGv\n", pCtx->rip));
+    Log(("hwaccmR3PatchTprInstr %RGv\n", pCtx->rip));
 
     rc = EMInterpretDisasOne(pVM, pVCpu, CPUMCTX2CORE(pCtx), pDis, &cbOp);
     AssertRC(rc);
