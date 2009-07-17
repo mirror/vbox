@@ -2259,7 +2259,7 @@ static DECLCALLBACK(int) hwaccmR3Save(PVM pVM, PSSMHANDLE pSSM)
         AssertRCReturn(rc, rc);
 
         AssertCompileSize(HWACCMTPRINSTR, 4);
-        rc = SSMR3PutU32(pSSM, (uint32_t)&pPatch->enmType);
+        rc = SSMR3PutU32(pSSM, (uint32_t)pPatch->enmType);
         AssertRCReturn(rc, rc);
 
         rc = SSMR3PutU32(pSSM, pPatch->uSrcOperand);
