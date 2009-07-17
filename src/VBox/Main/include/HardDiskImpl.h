@@ -45,13 +45,14 @@ class Progress;
  */
 class ATL_NO_VTABLE HardDisk
     : public com::SupportErrorInfoDerived<MediumBase, HardDisk, IHardDisk>
-    , public VirtualBoxBaseWithTypedChildren<HardDisk>
+    , public VirtualBoxBaseWithTypedChildrenNEXT<HardDisk>
     , public VirtualBoxSupportTranslation<HardDisk>
     , VBOX_SCRIPTABLE_IMPL(IHardDisk)
 {
 public:
 
-    typedef VirtualBoxBaseWithTypedChildren<HardDisk>::DependentChildren List;
+    typedef VirtualBoxBaseWithTypedChildrenNEXT <HardDisk>::DependentChildren
+        List;
 
     class MergeChain;
     class ImageChain;

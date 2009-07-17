@@ -34,9 +34,9 @@ struct NETIFINFO;
 #endif
 
 class ATL_NO_VTABLE DHCPServer :
-    public VirtualBoxBase,
-    public VirtualBoxSupportErrorInfoImpl<DHCPServer, IDHCPServer>,
-    public VirtualBoxSupportTranslation<DHCPServer>,
+    public VirtualBoxBaseNEXT,
+    public VirtualBoxSupportErrorInfoImpl <DHCPServer, IDHCPServer>,
+    public VirtualBoxSupportTranslation <DHCPServer>,
     VBOX_SCRIPTABLE_IMPL(IDHCPServer)
 {
 public:

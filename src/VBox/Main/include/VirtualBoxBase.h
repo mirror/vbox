@@ -465,6 +465,28 @@ public:
 
 ////////////////////////////////////////////////////////////////////////////////
 
+/// @todo (dmik) remove after we switch to VirtualBoxBaseNEXT completely
+/**
+ *  Checks whether this object is ready or not. Objects are typically ready
+ *  after they are successfully created by their parent objects and become
+ *  not ready when the respective parent itself becomes not ready or gets
+ *  destroyed while a reference to the child is still held by the caller
+ *  (which prevents it from destruction).
+ *
+ *  When this object is not ready, the macro sets error info and returns
+ *  E_ACCESSDENIED (the translatable error message is defined in null context).
+ *  Otherwise, the macro does nothing.
+ *
+ *  This macro <b>must</b> be used at the beginning of all interface methods
+ *  (right after entering the class lock) in classes derived from both
+ *  VirtualBoxBase and VirtualBoxSupportErrorInfoImpl.
+ */
+#define CHECK_READY() \
+    do { \
+        if (!isReady()) \
+            return setError (E_ACCESSDENIED, tr ("The object is not ready")); \
+    } while (0)
+
 /**
  *  Declares an empty constructor and destructor for the given class.
  *  This is useful to prevent the compiler from generating the default
@@ -1217,6 +1239,7 @@ private:
 
 ////////////////////////////////////////////////////////////////////////////////
 
+/// @todo (dmik) remove after we switch to VirtualBoxBaseNEXT completely
 class ATL_NO_VTABLE VirtualBoxBase
     : virtual public VirtualBoxBaseProto
 #if !defined (VBOX_WITH_XPCOM)
@@ -1228,10 +1251,12 @@ class ATL_NO_VTABLE VirtualBoxBase
 
 public:
     VirtualBoxBase()
-    {}
-
+    {
+        mReady = false;
+    }
     virtual ~VirtualBoxBase()
-    {}
+    {
+    }
 
     /**
      *  Virtual unintialization method. Called during parent object's
@@ -1240,11 +1265,46 @@ public:
      *  VirtualBoxBaseWithChildren::addDependentChild). In this case, this
      *  method's implementation must call setReady (false),
      */
-    virtual void uninit()
-    {}
+    virtual void uninit() {}
+
+
+    // sets the ready state of the object
+    void setReady(bool isReady)
+    {
+        mReady = isReady;
+    }
+    // get the ready state of the object
+    bool isReady()
+    {
+        return mReady;
+    }
 
     static const char *translate (const char *context, const char *sourceText,
                                   const char *comment = 0);
+
+private:
+
+    // flag determining whether an object is ready
+    // for usage, i.e. methods may be called
+    bool mReady;
+    // mutex semaphore to lock the object
+};
+
+/**
+ *  Temporary class to disable deprecated methods of VirtualBoxBase.
+ *  Can be used as a base for components that are completely switched to
+ *  the new locking scheme (VirtualBoxBaseProto).
+ *
+ *  @todo remove after we switch to VirtualBoxBaseNEXT completely.
+ */
+class VirtualBoxBaseNEXT : public VirtualBoxBase
+{
+private:
+
+    void lock();
+    void unlock();
+    void setReady (bool isReady);
+    bool isReady();
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -1322,7 +1382,7 @@ private:
 };
 
 template <class C>
-const char *VirtualBoxSupportTranslation<C>::sClassName = NULL;
+const char *VirtualBoxSupportTranslation <C>::sClassName = NULL;
 
 /**
  * This macro must be invoked inside the public section of the declaration of
@@ -1337,7 +1397,7 @@ const char *VirtualBoxSupportTranslation<C>::sClassName = NULL;
     inline static const char *tr (const char *aSourceText, \
                                   const char *aComment = NULL) \
     { \
-        return VirtualBoxSupportTranslation<C>::tr (aSourceText, aComment); \
+        return VirtualBoxSupportTranslation <C>::tr (aSourceText, aComment); \
     }
 
 /**
@@ -2022,7 +2082,7 @@ private:
  *       VirtualBoxBaseWithChildren after the old VirtualBoxBase implementation
  *       has gone.
  */
-class VirtualBoxBaseWithChildrenNEXT : public VirtualBoxBase
+class VirtualBoxBaseWithChildrenNEXT : public VirtualBoxBaseNEXT
 {
 public:
 
@@ -2130,17 +2190,178 @@ protected:
 
     void uninitDependentChildren();
 
-    VirtualBoxBase *getDependentChild(const ComPtr <IUnknown> &aUnk);
+    VirtualBoxBaseNEXT *getDependentChild (const ComPtr <IUnknown> &aUnk);
 
 private:
-    void doAddDependentChild(IUnknown *aUnk, VirtualBoxBase *aChild);
+
+    /// @todo temporarily reinterpret VirtualBoxBase * as VirtualBoxBaseNEXT *
+    //  until ported HardDisk and Progress to the new scheme.
+    void doAddDependentChild (IUnknown *aUnk, VirtualBoxBase *aChild)
+    {
+        doAddDependentChild (aUnk,
+                             reinterpret_cast <VirtualBoxBaseNEXT *> (aChild));
+    }
+
+    void doAddDependentChild (IUnknown *aUnk, VirtualBoxBaseNEXT *aChild);
     void doRemoveDependentChild (IUnknown *aUnk);
 
-    typedef std::map<IUnknown*, VirtualBoxBase*> DependentChildren;
+    typedef std::map <IUnknown *, VirtualBoxBaseNEXT *> DependentChildren;
     DependentChildren mDependentChildren;
 };
 
 ////////////////////////////////////////////////////////////////////////////////
+
+/**
+ *  Base class to track component's children of some particular type.
+ *
+ *  This class is similar to VirtualBoxBaseWithChildren, with the exception
+ *  that all children must be of the same type. For this reason, it's not
+ *  necessary to use a map to store children, so a list is used instead.
+ *
+ *  As opposed to VirtualBoxBaseWithChildren, children added by
+ *  #addDependentChild() are <b>strongly</b> referenced, so that they cannot
+ *  be externally destructed until #removeDependentChild() is called.
+ *
+ *  Also, this class doesn't have the
+ *  VirtualBoxBaseWithChildrenNEXT::getDependentChild() method because it would
+ *  be not fast for long lists.
+ *
+ *  @param C    type of child objects (must inherit VirtualBoxBase AND
+ *              implement some interface)
+ *
+ *  @deprecated Use VirtualBoxBaseWithTypedChildrenNEXT for new classes.
+ */
+template <class C>
+class VirtualBoxBaseWithTypedChildren : public VirtualBoxBase
+{
+public:
+
+    typedef std::list <ComObjPtr <C> > DependentChildren;
+
+    VirtualBoxBaseWithTypedChildren() : mInUninit (false) {}
+
+    virtual ~VirtualBoxBaseWithTypedChildren() {}
+
+    /**
+     *  Adds the given child to the list of dependent children.
+     *  Must be called from the child's init() method,
+     *  from under the child's lock.
+     *
+     *  @param C    the child object to add (must inherit VirtualBoxBase AND
+     *              implement some interface)
+     */
+    void addDependentChild (C *child)
+    {
+        AssertReturn (child, (void) 0);
+
+        AutoWriteLock alock (mMapLock);
+        if (mInUninit)
+            return;
+
+        mDependentChildren.push_back (child);
+    }
+
+    /**
+     *  Removes the given child from the list of dependent children.
+     *  Must be called from the child's uninit() method,
+     *  under the child's lock.
+     *
+     *  @param C    the child object to remove (must inherit VirtualBoxBase AND
+     *              implement some interface)
+     */
+    void removeDependentChild (C *child)
+    {
+        AssertReturn (child, (void) 0);
+
+        AutoWriteLock alock (mMapLock);
+        if (mInUninit)
+            return;
+
+        mDependentChildren.remove (child);
+    }
+
+protected:
+
+    /**
+     *  Returns an internal lock handle to lock the list of children
+     *  returned by #dependentChildren() using AutoReadLock/AutoWriteLock:
+     *  <code>
+     *      AutoReadLock alock (dependentChildrenLock());
+     *  </code>
+     *
+     *  This is necessary for example to access the list of children returned by
+     *  #dependentChildren().
+     */
+    RWLockHandle *dependentChildrenLock() const { return &mMapLock; }
+
+    /**
+     *  Returns the read-only list of all dependent children.
+     *  @note
+     *      Access the returned list (iterate, get size etc.) only after
+     *      doing |AutoWriteLock alock (dependentChildrenLock());|!
+     */
+    const DependentChildren &dependentChildren() const { return mDependentChildren; }
+
+    /**
+     *  Uninitializes all dependent children registered with #addDependentChild().
+     *
+     *  @note
+     *      This method will call uninit() methods of children. If these methods
+     *      access the parent object, uninitDependentChildren() must be called
+     *      either at the beginning of the parent uninitialization sequence (when
+     *      it is still operational) or after setReady(false) is called to
+     *      indicate the parent is out of action.
+     */
+    void uninitDependentChildren()
+    {
+        AutoWriteLock alock (this);
+        AutoWriteLock mapLock (mMapLock);
+
+        if (mDependentChildren.size())
+        {
+            // set flag to ignore #removeDependentChild() called from child->uninit()
+            mInUninit = true;
+
+            // leave the locks to let children waiting for #removeDependentChild() run
+            mapLock.leave();
+            alock.leave();
+
+            for (typename DependentChildren::iterator it = mDependentChildren.begin();
+                it != mDependentChildren.end(); ++ it)
+            {
+                C *child = (*it);
+                Assert (child);
+                if (child)
+                    child->uninit();
+            }
+            mDependentChildren.clear();
+
+            alock.enter();
+            mapLock.enter();
+
+            mInUninit = false;
+        }
+    }
+
+    /**
+     *  Removes (detaches) all dependent children registered with
+     *  #addDependentChild(), without uninitializing them.
+     *
+     *  @note This method must be called from under the main object's lock
+     */
+    void removeDependentChildren()
+    {
+        AutoWriteLock alock (mMapLock);
+        mDependentChildren.clear();
+    }
+
+private:
+
+    DependentChildren mDependentChildren;
+
+    bool mInUninit;
+    mutable RWLockHandle mMapLock;
+};
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -2170,17 +2391,15 @@ private:
  *       has gone.
  */
 template <class C>
-class VirtualBoxBaseWithTypedChildren : public VirtualBoxBase
+class VirtualBoxBaseWithTypedChildrenNEXT : public VirtualBoxBaseNEXT
 {
 public:
 
     typedef std::list <ComObjPtr <C> > DependentChildren;
 
-    VirtualBoxBaseWithTypedChildren()
-    {}
+    VirtualBoxBaseWithTypedChildrenNEXT() {}
 
-    virtual ~VirtualBoxBaseWithTypedChildren()
-    {}
+    virtual ~VirtualBoxBaseWithTypedChildrenNEXT() {}
 
     /**
      * Lock handle to use when adding/removing child objects from the list of

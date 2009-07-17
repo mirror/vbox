@@ -31,9 +31,9 @@
 class Machine;
 
 class ATL_NO_VTABLE DVDDrive :
-    public VirtualBoxBase,
-    public VirtualBoxSupportErrorInfoImpl<DVDDrive, IDVDDrive>,
-    public VirtualBoxSupportTranslation<DVDDrive>,
+    public VirtualBoxBaseNEXT,
+    public VirtualBoxSupportErrorInfoImpl <DVDDrive, IDVDDrive>,
+    public VirtualBoxSupportTranslation <DVDDrive>,
     VBOX_SCRIPTABLE_IMPL(IDVDDrive)
 {
 public:

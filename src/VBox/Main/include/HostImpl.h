@@ -51,8 +51,8 @@ class Progress;
 
 class ATL_NO_VTABLE Host :
     public VirtualBoxBaseWithChildren,
-    public VirtualBoxSupportErrorInfoImpl<Host, IHost>,
-    public VirtualBoxSupportTranslation<Host>,
+    public VirtualBoxSupportErrorInfoImpl <Host, IHost>,
+    public VirtualBoxSupportTranslation <Host>,
     VBOX_SCRIPTABLE_IMPL(IHost)
 {
 public:

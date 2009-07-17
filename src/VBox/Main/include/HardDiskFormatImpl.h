@@ -42,9 +42,9 @@ struct VDBACKENDINFO;
  * wait!
  */
 class ATL_NO_VTABLE HardDiskFormat :
-    public VirtualBoxBase,
-    public VirtualBoxSupportErrorInfoImpl<HardDiskFormat, IHardDiskFormat>,
-    public VirtualBoxSupportTranslation<HardDiskFormat>,
+    public VirtualBoxBaseNEXT,
+    public VirtualBoxSupportErrorInfoImpl <HardDiskFormat, IHardDiskFormat>,
+    public VirtualBoxSupportTranslation <HardDiskFormat>,
     VBOX_SCRIPTABLE_IMPL(IHardDiskFormat)
 {
 public:
