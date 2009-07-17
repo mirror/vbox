@@ -1390,6 +1390,60 @@ VMMR3DECL(void) HWACCMR3Reset(PVM pVM)
 }
 
 /**
+ * Callback to patch a TPR instruction (vmmcall or mov cr8)
+ *
+ * @returns VBox status code.
+ * @param   pVM     The VM handle.
+ * @param   pVCpu   The VMCPU for the EMT we're being called on. 
+ * @param   pvUser  Unused
+ *
+ */
+DECLCALLBACK(int) hwaccmR3RemovePatches(PVM pVM, PVMCPU pVCpu, void *pvUser)
+{
+    for (unsigned i = 0; i < pVM->hwaccm.s.svm.cPatches; i++)
+    {
+        uint8_t         szInstr[15];
+        PHWACCMTPRPATCH pPatch = &pVM->hwaccm.s.svm.aPatches[i];
+        RTGCPTR         pInstrGC = (RTGCPTR)pPatch->Core.Key;
+
+#ifdef LOG_ENABLED
+        char            szOutput[256];
+
+        int rc = DBGFR3DisasInstrEx(pVM, pVCpu->idCpu, CPUMGetGuestCS(pVCpu), pInstrGC, 0, szOutput, sizeof(szOutput), 0);
+        if (VBOX_SUCCESS(rc))
+            Log(("Patched instr: %s\n", szOutput));
+#endif
+
+        /* Check if the instruction is still the same. */
+        rc = PGMPhysSimpleReadGCPtr(pVCpu, szInstr, pInstrGC, pPatch->cbOp);
+        if (rc != VINF_SUCCESS)
+        {
+            Log(("Patched code removed? (rc=%Rrc0\n", rc));
+            continue;   /* swapped out or otherwise removed; skip it. */
+        }
+
+        if (memcmp(szInstr, pPatch->aOpcode, pPatch->cbOp))
+        {
+            Log(("Patched instruction was changed! (rc=%Rrc0\n", rc));
+            continue;   /* skip it. */
+        }
+
+        rc = PGMPhysSimpleWriteGCPtr(pVCpu, pInstrGC, pPatch->aOpcode, pPatch->cbOp);
+        AssertRC(rc);
+
+#ifdef LOG_ENABLED
+        rc = DBGFR3DisasInstrEx(pVM, pVCpu->idCpu, CPUMGetGuestCS(pVCpu), pInstrGC, 0, szOutput, sizeof(szOutput), 0);
+        if (VBOX_SUCCESS(rc))
+            Log(("Original instr: %s\n", szOutput));
+#endif
+    }
+    pVM->hwaccm.s.svm.cPatches        = 0;
+    pVM->hwaccm.s.svm.PatchTree       = 0;
+    pVM->hwaccm.s.pFreeGuestPatchMem  = pVM->hwaccm.s.pGuestPatchMem;
+    return VINF_SUCCESS;
+}
+
+/**
  * Enable patching in a VT-x/AMD-V guest
  *
  * @returns VBox status code.
@@ -1404,6 +1458,9 @@ VMMR3DECL(int)  HWACMMR3EnablePatching(PVM pVM, RTGCPTR pPatchMem, unsigned cbPa
      */
     if (CPUMGetCPUVendor(pVM) != CPUMCPUVENDOR_AMD)
         return VERR_NOT_SUPPORTED;
+
+    int rc = VMMR3EmtRendezvous(pVM, VMMEMTRENDEZVOUS_FLAGS_TYPE_ONCE, hwaccmR3RemovePatches, NULL);
+    AssertRC(rc);
 
     pVM->hwaccm.s.pGuestPatchMem      = pPatchMem;
     pVM->hwaccm.s.pFreeGuestPatchMem  = pPatchMem;
@@ -1423,6 +1480,9 @@ VMMR3DECL(int)  HWACMMR3DisablePatching(PVM pVM, RTGCPTR pPatchMem, unsigned cbP
 {
     Assert(pVM->hwaccm.s.pGuestPatchMem == pPatchMem);
     Assert(pVM->hwaccm.s.cbGuestPatchMem == cbPatchMem);
+
+    int rc = VMMR3EmtRendezvous(pVM, VMMEMTRENDEZVOUS_FLAGS_TYPE_ONCE, hwaccmR3RemovePatches, NULL);
+    AssertRC(rc);
 
     pVM->hwaccm.s.pGuestPatchMem      = 0;
     pVM->hwaccm.s.pFreeGuestPatchMem  = 0;
@@ -1493,6 +1553,7 @@ static int hwaccmR0EmulateTprMov(PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTX pCtx,
     return VERR_EM_INTERPRETER;
 }
 
+
 /**
  * Callback to patch a TPR instruction (vmmcall or mov cr8)
  *
@@ -1514,7 +1575,8 @@ DECLCALLBACK(int) hwaccmR3ReplaceTprInstr(PVM pVM, PVMCPU pVCpu, void *pvUser)
     int rc = EMInterpretDisasOne(pVM, pVCpu, CPUMCTX2CORE(pCtx), pDis, &cbOp);
     AssertRC(rc);
     if (    rc == VINF_SUCCESS
-        &&  pDis->pCurInstr->opcode == OP_MOV)
+        &&  pDis->pCurInstr->opcode == OP_MOV
+        &&  cbOp >= 3)
     {
         if (pVM->hwaccm.s.svm.cPatches < RT_ELEMENTS(pVM->hwaccm.s.svm.aPatches))
         {
@@ -1619,6 +1681,8 @@ DECLCALLBACK(int) hwaccmR3ReplaceTprInstr(PVM pVM, PVMCPU pVCpu, void *pvUser)
         }
         return hwaccmR0EmulateTprMov(pVCpu, pDis, pCtx, cbOp);
     }
+    else
+        AssertFailed(); /* deal with failures. */
     return VERR_ACCESS_DENIED;
 }
 
@@ -1647,7 +1711,8 @@ DECLCALLBACK(int) hwaccmR3PatchTprInstr(PVM pVM, PVMCPU pVCpu, void *pvUser)
     rc = EMInterpretDisasOne(pVM, pVCpu, CPUMCTX2CORE(pCtx), pDis, &cbOp);
     AssertRC(rc);
     if (    rc == VINF_SUCCESS
-        &&  pDis->pCurInstr->opcode == OP_MOV)
+        &&  pDis->pCurInstr->opcode == OP_MOV
+        &&  cbOp >= 5)
     {
         if (pVM->hwaccm.s.svm.cPatches < RT_ELEMENTS(pVM->hwaccm.s.svm.aPatches))
         {
@@ -1815,6 +1880,8 @@ DECLCALLBACK(int) hwaccmR3PatchTprInstr(PVM pVM, PVMCPU pVCpu, void *pvUser)
         }
         return hwaccmR0EmulateTprMov(pVCpu, pDis, pCtx, cbOp);
     }
+    else
+        AssertFailed(); /* deal with failures. */
     return VERR_ACCESS_DENIED;
 }
 /**
