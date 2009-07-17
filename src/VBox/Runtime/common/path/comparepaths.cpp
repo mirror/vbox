@@ -36,6 +36,7 @@
 #include <iprt/path.h>
 #include <iprt/err.h>
 #include <iprt/string.h>
+#include <iprt/uni.h>
 
 
 /**

@@ -34,6 +34,7 @@
 *******************************************************************************/
 #include "internal/iprt.h"
 #include <iprt/path.h>
+#include <iprt/ctype.h>
 
 
 /**
