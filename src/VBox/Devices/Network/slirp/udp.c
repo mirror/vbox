@@ -367,60 +367,57 @@ int udp_output(PNATState pData, struct socket *so, struct mbuf *m,
 int
 udp_attach(PNATState pData, struct socket *so, int service_port)
 {
-    struct sockaddr_in addr;
+    struct sockaddr_in *addr;
     struct sockaddr sa_addr;
     socklen_t socklen = sizeof(struct sockaddr);
     int status;
+    int opt = 1;
 
-    if ((so->s = socket(AF_INET, SOCK_DGRAM, 0)) != -1)
-    {
-        /*
-         * Here, we bind() the socket.  Although not really needed
-         * (sendto() on an unbound socket will bind it), it's done
-         * here so that emulation of ytalk etc. don't have to do it
-         */
-        memset(&addr, 0, sizeof(addr));
+    if ((so->s = socket(AF_INET, SOCK_DGRAM, 0)) == -1)
+        goto error;
+    /*
+     * Here, we bind() the socket.  Although not really needed
+     * (sendto() on an unbound socket will bind it), it's done
+     * here so that emulation of ytalk etc. don't have to do it
+     */
+    memset(&sa_addr, 0, sizeof(struct sockaddr));
+    addr = (struct sockaddr_in *)&sa_addr;
 #ifdef RT_OS_DARWIN
-        addr.sin_len = sizeof(addr);
+   addr->sin_len = sizeof(struct sockaddr_in);
 #endif
-        addr.sin_family = AF_INET;
-        addr.sin_port = service_port;
-        addr.sin_addr.s_addr = pData->bindIP.s_addr;
-        fd_nonblock(so->s);
-        if (bind(so->s, (struct sockaddr *)&addr, sizeof(addr)) < 0)
-        {
-            int lasterrno = errno;
-            closesocket(so->s);
-            so->s = -1;
-#ifdef RT_OS_WINDOWS
-            WSASetLastError(lasterrno);
-#else
-            errno = lasterrno;
-#endif
-        }
-        else
-        {
-            int opt = 1;
-            /* success, insert in queue */
-            so->so_expire = curtime + SO_EXPIRE;
-            /* enable broadcast for later use */
-            setsockopt(so->s, SOL_SOCKET, SO_BROADCAST, (const char *)&opt, sizeof(opt));
-            status = getsockname(so->s, &sa_addr, &socklen);
-            Assert(status == 0 && sa_addr.sa_family == AF_INET);
-            so->so_hlport = ((struct sockaddr_in *)&sa_addr)->sin_port;
-            so->so_hladdr.s_addr = ((struct sockaddr_in *)&sa_addr)->sin_addr.s_addr;
-            SOCKET_LOCK_CREATE(so);
-            QSOCKET_LOCK(udb);
-            insque(pData, so, &udb);
-            NSOCK_INC();
-            QSOCKET_UNLOCK(udb);
-        }
-    }
-    else 
+    addr->sin_family = AF_INET;
+    addr->sin_port = service_port;
+    addr->sin_addr.s_addr = pData->bindIP.s_addr;
+    fd_nonblock(so->s);
+    if (bind(so->s, &sa_addr, sizeof(struct sockaddr_in)) < 0)
     {
-        LogRel(("NAT: can't create datagramm socket\n"));
+        int lasterrno = errno;
+        closesocket(so->s);
+        so->s = -1;
+#ifdef RT_OS_WINDOWS
+        WSASetLastError(lasterrno);
+#else
+        errno = lasterrno;
+#endif
+        goto error;
     }
+    /* success, insert in queue */
+    so->so_expire = curtime + SO_EXPIRE;
+    /* enable broadcast for later use */
+    setsockopt(so->s, SOL_SOCKET, SO_BROADCAST, (const char *)&opt, sizeof(opt));
+    status = getsockname(so->s, &sa_addr, &socklen);
+    Assert(status == 0 && sa_addr.sa_family == AF_INET);
+    so->so_hlport = ((struct sockaddr_in *)&sa_addr)->sin_port;
+    so->so_hladdr.s_addr = ((struct sockaddr_in *)&sa_addr)->sin_addr.s_addr;
+    SOCKET_LOCK_CREATE(so);
+    QSOCKET_LOCK(udb);
+    insque(pData, so, &udb);
+    NSOCK_INC();
+    QSOCKET_UNLOCK(udb);
     return so->s;
+error:
+    LogRel(("NAT: can't create datagramm socket\n"));
+    return -1;
 }
 
 void
