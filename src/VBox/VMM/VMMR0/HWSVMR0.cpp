@@ -395,7 +395,7 @@ static void svmR0SetMSRPermission(PVM pVM, unsigned ulMSR, bool fRead, bool fWri
 
     if (ulMSR <= 0x00001FFF)
     {
-        /* Pentium®-compatible MSRs */
+        /* Pentium-compatible MSRs */
         ulBit    = ulMSR * 2;
     }
     else
