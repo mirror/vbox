@@ -1486,6 +1486,7 @@ void if_encap(PNATState pData, uint16_t eth_proto, struct mbuf *m)
 {
     struct ethhdr *eh;
     uint8_t *buf = RTMemAlloc(1600);
+    STAM_PROFILE_START(&pData->StatIF_encap, a);
 
     m->m_data -= if_maxlinkhdr;
     m->m_len += ETH_HLEN;
@@ -1522,6 +1523,7 @@ void if_encap(PNATState pData, uint16_t eth_proto, struct mbuf *m)
     memcpy(buf, mtod(m, uint8_t *), m->m_len);
     slirp_output(pData->pvUser, NULL, buf, m->m_len);
 done:
+    STAM_PROFILE_STOP(&pData->StatIF_encap, a);
     m_free(pData, m);
 #endif
 }

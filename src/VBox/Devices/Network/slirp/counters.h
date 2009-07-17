@@ -75,6 +75,7 @@ PROFILE_COUNTER(TCP_reassamble, "TCP::reasamble");
 PROFILE_COUNTER(TCP_input, "TCP::input");
 PROFILE_COUNTER(IP_input, "IP::input");
 PROFILE_COUNTER(IP_output, "IP::output");
+PROFILE_COUNTER(IF_encap, "IF::encap");
 #ifdef VBOX_WITH_SLIRP_ALIAS
 PROFILE_COUNTER(ALIAS_input, "ALIAS::input");
 PROFILE_COUNTER(ALIAS_output, "ALIAS::output");
