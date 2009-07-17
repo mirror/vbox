@@ -192,73 +192,39 @@ static      LIST_HEAD(, libalias) instancehead = LIST_HEAD_INITIALIZER(instanceh
 
 /* Parameters used for cleanup of expired links */
 /* NOTE: ALIAS_CLEANUP_INTERVAL_SECS must be less then LINK_TABLE_OUT_SIZE */
-#ifndef VBOX
-# define ALIAS_CLEANUP_INTERVAL_SECS  64
-# define ALIAS_CLEANUP_MAX_SPOKES     (LINK_TABLE_OUT_SIZE/5)
+#define ALIAS_CLEANUP_INTERVAL_SECS  64
+#define ALIAS_CLEANUP_MAX_SPOKES     (LINK_TABLE_OUT_SIZE/5)
 
 /* Timeouts (in seconds) for different link types */
-# define ICMP_EXPIRE_TIME             60
-# define UDP_EXPIRE_TIME              60
-# define PROTO_EXPIRE_TIME            60
-# define FRAGMENT_ID_EXPIRE_TIME      10
-# define FRAGMENT_PTR_EXPIRE_TIME     30
+#define ICMP_EXPIRE_TIME             60
+#define UDP_EXPIRE_TIME              60
+#define PROTO_EXPIRE_TIME            60
+#define FRAGMENT_ID_EXPIRE_TIME      10
+#define FRAGMENT_PTR_EXPIRE_TIME     30
 
 /* TCP link expire time for different cases */
 /* When the link has been used and closed - minimal grace time to
    allow ACKs and potential re-connect in FTP (XXX - is this allowed?)  */
-# ifndef TCP_EXPIRE_DEAD
-# define TCP_EXPIRE_DEAD           10
-# endif
-
-/* When the link has been used and closed on one side - the other side
-   is allowed to still send data */
-# ifndef TCP_EXPIRE_SINGLEDEAD
-# define TCP_EXPIRE_SINGLEDEAD     90
-# endif
-
-/* When the link isn't yet up */
-# ifndef TCP_EXPIRE_INITIAL
-# define TCP_EXPIRE_INITIAL       300
-# endif
-
-/* When the link is up */
-# ifndef TCP_EXPIRE_CONNECTED
-# define TCP_EXPIRE_CONNECTED   86400
-# endif
-#else /* VBOX */
-# define ALIAS_CLEANUP_INTERVAL_SECS  (64 * 1000)
-# define ALIAS_CLEANUP_MAX_SPOKES     (LINK_TABLE_OUT_SIZE/5)
-
-/* Timeouts (in seconds) for different link types */
-# define ICMP_EXPIRE_TIME             (60 * 1000)
-# define UDP_EXPIRE_TIME              (60 * 1000)
-# define PROTO_EXPIRE_TIME            (60 * 1000)
-# define FRAGMENT_ID_EXPIRE_TIME      (10 * 1000)
-# define FRAGMENT_PTR_EXPIRE_TIME     (30 * 1000)
-
-/* TCP link expire time for different cases */
-/* When the link has been used and closed - minimal grace time to
-   allow ACKs and potential re-connect in FTP (XXX - is this allowed?)  */
-# ifndef TCP_EXPIRE_DEAD
-# define TCP_EXPIRE_DEAD           (10 * 1000)
-# endif
-
-/* When the link has been used and closed on one side - the other side
-   is allowed to still send data */
-# ifndef TCP_EXPIRE_SINGLEDEAD
-# define TCP_EXPIRE_SINGLEDEAD     (90 * 1000)
-# endif
-
-/* When the link isn't yet up */
-# ifndef TCP_EXPIRE_INITIAL
-# define TCP_EXPIRE_INITIAL       (300 * 1000)
-# endif
-
-/* When the link is up */
-# ifndef TCP_EXPIRE_CONNECTED
-# define TCP_EXPIRE_CONNECTED   (86400 * 1000)
-# endif
+#ifndef TCP_EXPIRE_DEAD
+#define TCP_EXPIRE_DEAD           10
 #endif
+
+/* When the link has been used and closed on one side - the other side
+   is allowed to still send data */
+#ifndef TCP_EXPIRE_SINGLEDEAD
+#define TCP_EXPIRE_SINGLEDEAD     90
+#endif
+
+/* When the link isn't yet up */
+#ifndef TCP_EXPIRE_INITIAL
+#define TCP_EXPIRE_INITIAL       300
+#endif
+
+/* When the link is up */
+#ifndef TCP_EXPIRE_CONNECTED
+#define TCP_EXPIRE_CONNECTED   86400
+#endif
+
 
 /* Dummy port number codes used for FindLinkIn/Out() and AddLink().
    These constants can be anything except zero, which indicates an
@@ -2304,10 +2270,10 @@ HouseKeeping(struct libalias *la)
 {
     int i, n;
 #ifndef VBOX
-# ifndef _KERNEL
+#ifndef _KERNEL
     struct timeval tv;
     struct timezone tz;
-# endif
+#endif
 
     LIBALIAS_LOCK_ASSERT(la);
     /*
@@ -2315,12 +2281,12 @@ HouseKeeping(struct libalias *la)
      * by other functions. This is done so as not to unnecessarily
      * waste timeline by making system calls.
      */
-# ifdef  _KERNEL
+#ifdef  _KERNEL
     la->timeStamp = time_uptime;
-# else
+#else
     gettimeofday(&tv, &tz);
     la->timeStamp = tv.tv_sec;
-# endif
+#endif
 #else /* !VBOX */
     LIBALIAS_LOCK_ASSERT(la);
     la->timeStamp = la->curtime;
