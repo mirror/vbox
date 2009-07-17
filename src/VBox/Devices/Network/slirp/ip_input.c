@@ -76,6 +76,8 @@ ip_input(PNATState pData, struct mbuf *m)
 {
     register struct ip *ip;
     int hlen = 0;
+    STAM_PROFILE_START(&pData->StatIP_input, a);
+    STAM_PROFILE_START(&pData->StatALIAS_input, b);
 
     DEBUG_CALL("ip_input");
     DEBUG_ARG("m = %lx", (long)m);
@@ -89,6 +91,7 @@ ip_input(PNATState pData, struct mbuf *m)
         int rc;
         rc = LibAliasIn(m->m_la ? m->m_la : pData->proxy_alias, mtod(m, char *), 
             m->m_len);
+        STAM_PROFILE_STOP(&pData->StatALIAS_input, b);
         Log2(("NAT: LibAlias return %d\n", rc));
     }
 #endif
@@ -96,6 +99,7 @@ ip_input(PNATState pData, struct mbuf *m)
     if (m->m_len < sizeof(struct ip))
     {
         ipstat.ips_toosmall++;
+        STAM_PROFILE_STOP(&pData->StatIP_input, a);
         return;
     }
 
@@ -173,7 +177,10 @@ ip_input(PNATState pData, struct mbuf *m)
     {
         m = ip_reass(pData, m);
         if (m == NULL)
-            return;
+        {
+             STAM_PROFILE_STOP(&pData->StatIP_input, a);
+             return;
+        }
         ip = mtod(m, struct ip *);
         hlen = ip->ip_len;
     }
@@ -199,11 +206,13 @@ ip_input(PNATState pData, struct mbuf *m)
             ipstat.ips_noproto++;
             m_free(pData, m);
     }
+    STAM_PROFILE_STOP(&pData->StatIP_input, a);
     return;
 bad:
     Log2(("NAT: IP datagram to %R[IP4] with size(%d) claimed as bad\n", 
         &ip->ip_dst, ip->ip_len));
     m_freem(pData, m);
+    STAM_PROFILE_STOP(&pData->StatIP_input, a);
     return;
 }
 
