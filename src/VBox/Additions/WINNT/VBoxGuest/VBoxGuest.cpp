@@ -1739,6 +1739,7 @@ VOID reserveHypervisorMemory(PVBOXGUESTDEVEXT pDevExt)
         VbglGRFree (&req->header);
     }
 
+#ifdef RT_ARCH_X86
     /* Allocate locked executable memory that can be used for patching guest code. */
     {
         VMMDevReqPatchMemory *req = NULL;
@@ -1768,6 +1769,7 @@ VOID reserveHypervisorMemory(PVBOXGUESTDEVEXT pDevExt)
             VbglGRFree (&req->header);
         }
     }
+#endif
     return;
 }
 
@@ -1778,6 +1780,7 @@ VOID reserveHypervisorMemory(PVBOXGUESTDEVEXT pDevExt)
  */
 VOID unreserveHypervisorMemory(PVBOXGUESTDEVEXT pDevExt)
 {
+#ifdef RT_ARCH_X86
     /* Remove the locked executable memory range that can be used for patching guest code. */
     if (pDevExt->PatchMemObj)
     {
@@ -1803,6 +1806,7 @@ VOID unreserveHypervisorMemory(PVBOXGUESTDEVEXT pDevExt)
             }
         }
     }
+#endif
 
     VMMDevReqHypervisorInfo *req = NULL;
 
