@@ -2446,7 +2446,7 @@ static int svmR0EmulateTprVMMCall(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 {
     int rc;
 
-    Log(("Emulated VMMCall TPR access replacement at %RGv\n", pCtx->rip));
+    LogFlow(("Emulated VMMCall TPR access replacement at %RGv\n", pCtx->rip));
 
     while (true)
     {
@@ -2467,7 +2467,7 @@ static int svmR0EmulateTprVMMCall(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
             rc = DISWriteReg32(CPUMCTX2CORE(pCtx), pPatch->uDstOperand, u8Tpr);
             AssertRC(rc);
 
-            Log(("Emulated read successfully\n"));
+            LogFlow(("Emulated read successfully\n"));
             pCtx->rip += pPatch->cbOp;
             break;
 
@@ -2487,8 +2487,11 @@ static int svmR0EmulateTprVMMCall(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 
             rc = PDMApicSetTPR(pVCpu, u8Tpr);
             AssertRC(rc);
-            Log(("Emulated write successfully\n"));
+            LogFlow(("Emulated write successfully\n"));
             pCtx->rip += pPatch->cbOp;
+            break;
+        default:
+            AssertFailed();
             break;
         }
     }
