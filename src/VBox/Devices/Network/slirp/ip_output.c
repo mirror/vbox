@@ -89,7 +89,9 @@ ip_output(PNATState pData, struct socket *so, struct mbuf *m0)
     const uint8_t *eth_dst = NULL;
 #endif
     STAM_PROFILE_START(&pData->StatIP_output, a);
-    STAM_PROFILE_START(&pData->StatALIAS_output, b);
+#ifdef VBOX_WITH_SLIRP_ALIAS
+    //STAM_PROFILE_START(&pData->StatALIAS_output, b);
+#endif
 
     DEBUG_CALL("ip_output");
     DEBUG_ARG("so = %lx", (long)so);
@@ -157,7 +159,7 @@ ip_output(PNATState pData, struct socket *so, struct mbuf *m0)
             rc = LibAliasOut((m->m_la ? m->m_la : pData->proxy_alias), 
                 mtod(m, char *), m->m_len);
             Log2(("NAT: LibAlias return %d\n", rc));
-            STAM_PROFILE_STOP(&pData->StatALIAS_output, b);
+            //STAM_PROFILE_STOP(&pData->StatALIAS_output, b);
         }
 #endif
 
@@ -260,7 +262,7 @@ ip_output(PNATState pData, struct socket *so, struct mbuf *m0)
             rc = LibAliasOut((m->m_la ? m->m_la : pData->proxy_alias), 
                 mtod(m, char *), m->m_len);
             Log2(("NAT: LibAlias return %d\n", rc));
-            STAM_PROFILE_STOP(&pData->StatALIAS_output, b);
+            //STAM_PROFILE_STOP(&pData->StatALIAS_output, b);
         }
 #endif
 
