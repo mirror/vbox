@@ -328,8 +328,14 @@ struct alias_link {     /* Main data structure */
 #define LINK_PARTIALLY_SPECIFIED   0x03 /* logical-or of first two bits */
 #define LINK_UNFIREWALLED          0x08
 
+#ifndef VBOX
     int     timestamp;  /* Time link was last accessed         */
     int     expire_time;    /* Expire time for link                */
+#else
+    unsigned int timestamp;  /* Time link was last accessed         */
+    unsigned int expire_time;    /* Expire time for link                */
+#endif
+
 #ifndef NO_USE_SOCKETS
 # ifndef VBOX 
     /* 
