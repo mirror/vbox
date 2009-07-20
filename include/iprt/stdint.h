@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Sun Microsystems, Inc.
+ * Copyright (C) 2009 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -25,30 +25,18 @@
  * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa
  * Clara, CA 95054 USA or visit http://www.sun.com if you need
  * additional information or have any questions.
- * --------------------------------------------------------------------
- *
- * This code is based on:
- *
- * Based on various FreeBSD 5.2 headers.
  *
  */
 
-#if 1
-# include <iprt/stdint-new.h>
-#else /* this (old) header */
-
-#ifndef ___iprt_stdint_h
-#define ___iprt_stdint_h
-
-#ifndef __STDC_CONSTANT_MACROS
-# define __STDC_CONSTANT_MACROS
-#endif
-#ifndef __STDC_LIMIT_MACROS
-# define __STDC_LIMIT_MACROS
-#endif
+#ifndef __iprt_stdint_h
+#define __iprt_stdint_h
 
 #include <iprt/cdefs.h>
 
+
+/*
+ * Use the stdint.h on systems that have one.
+ */
 #if !(defined(RT_OS_LINUX) && defined(__KERNEL__))  \
   && !defined(_MSC_VER) \
   && !defined(__IBMC__) \
@@ -56,154 +44,195 @@
   && !defined(IPRT_NO_CRT) \
   && !defined(IPRT_DONT_USE_SYSTEM_STDINT_H) \
   && !defined(DOXYGEN_RUNNING)
+
+# ifndef __STDC_CONSTANT_MACROS
+#  define __STDC_CONSTANT_MACROS
+# endif
+# ifndef __STDC_LIMIT_MACROS
+#  define __STDC_LIMIT_MACROS
+# endif
 # include <stdint.h>
 
 # if defined(RT_OS_DARWIN) && defined(KERNEL) && defined(RT_ARCH_AMD64)
-/* Kludge to fix the incorrect 32-bit constant macros in
-   Kernel.framework/Headers/stdin.h. uint32_t and int32_t are
-   int not long as these macros use, which is significant when
-   targeting AMD64. (10a222) */
+ /*
+  * Kludge to fix the incorrect 32-bit constant macros in
+  * Kernel.framework/Headers/stdin.h. uint32_t and int32_t are
+  * int not long as these macros use, which is significant when
+  * targeting AMD64. (10a222)
+  */
 #  undef  INT32_C
-#  define INT32_C(c)        (c)
+#  define INT32_C(Value)    (Value)
 #  undef  UINT32_C
-#  define UINT32_C(c)       (c ## U)
+#  define INT32_C(Value)    (Value)
 # endif /* 64-bit darwin kludge. */
 
-#else
+#else /* No system stdint.h */
 
-#if !(defined(RT_OS_LINUX) && defined(__KERNEL__)) || defined(IPRT_NO_CRT) || defined(IPRT_DONT_USE_SYSTEM_STDINT_H) || defined(DOXGEN_RUNNING)
-/* machine specific */
-typedef signed char         __int8_t;
-typedef unsigned char       __uint8_t;
-typedef short               __int16_t;
-typedef unsigned short      __uint16_t;
-typedef int                 __int32_t;
-typedef unsigned int        __uint32_t;
+/*
+ * Define the types we use.
+ * The linux kernel defines all these in linux/types.h, so skip it.
+ */
+# if !(defined(RT_OS_LINUX) && defined(__KERNEL__)) \
+  || defined(IPRT_NO_CRT) \
+  || defined(IPRT_DONT_USE_SYSTEM_STDINT_H) \
+  || defined(DOXGEN_RUNNING)
 
-# ifdef _MSC_VER
-typedef _int64              __int64_t;
-typedef unsigned _int64     __uint64_t;
-# else
-#  if defined(__IBMC__) || defined(__IBMCPP__) /* assume VAC308 without long long. */
-typedef struct { __uint32_t lo,hi; } __int64_t, __uint64_t;
-#  else
-typedef long long           __int64_t;
-typedef unsigned long long  __uint64_t;
+    /* Simplify the [u]int64_t type detection mess. */
+# undef IPRT_STDINT_USE_STRUCT_FOR_64_BIT_TYPES
+# ifdef __IBMCPP__
+#  if __IBMCPP__ < 350 && (defined(__WINDOWS__) || defined(_AIX) || defined(__OS2__))
+#   defined IPRT_STDINT_USE_STRUCT_FOR_64_BIT_TYPES
 #  endif
 # endif
-#endif /* !linux kernel and more */
+# ifdef __IBMC__
+#  if __IBMC__   < 350 && (defined(__WINDOWS__) || defined(_AIX) || defined(__OS2__))
+#   defined IPRT_STDINT_USE_STRUCT_FOR_64_BIT_TYPES
+#  endif
+# endif
 
-#if ARCH_BITS == 32 || defined(RT_OS_LINUX) || defined(RT_OS_FREEBSD)
-typedef signed long             __intptr_t;
-typedef unsigned long           __uintptr_t;
-#else
-typedef __int64_t               __intptr_t;
-typedef __uint64_t              __uintptr_t;
+    /* x-bit types */
+#  if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
+#   if !defined(_INT8_T_DECLARED)   && !defined(_INT8_T)
+typedef signed char         int8_t;
+#   endif
+#   if !defined(_UINT8_T_DECLARED)  && !defined(_UINT8_T)
+typedef unsigned char       uint8_t;
+#   endif
+#   if !defined(_INT16_T_DECLARED)  && !defined(_INT16_T)
+typedef signed short        int16_t;
+#   endif
+#   if !defined(_UINT16_T_DECLARED) && !defined(_UINT16_T)
+typedef unsigned short      uint16_t;
+#   endif
+#   if !defined(_INT32_T_DECLARED)  && !defined(_INT32_T)
+typedef signed int          int32_t;
+#   endif
+#   if !defined(_UINT32_T_DECLARED) && !defined(_UINT32_T)
+typedef unsigned int        uint32_t;
+#   endif
+#   if defined(_MSC_VER)
+#    if !defined(_INT64_T_DECLARED)  && !defined(_INT64_T)
+typedef signed _int64       int64_t;
+#    endif
+#    if !defined(_UINT64_T_DECLARED) && !defined(_UINT64_T)
+typedef unsigned _int64     uint64_t;
+#    endif
+#   elif defined(IPRT_STDINT_USE_STRUCT_FOR_64_BIT_TYPES)
+#    if !defined(_INT64_T_DECLARED)  && !defined(_INT64_T)
+typedef struct { uint32_t lo; int32_t hi; }     int64_t;
+#    endif
+#    if !defined(_UINT64_T_DECLARED) && !defined(_UINT64_T)
+typedef struct { uint32_t lo; uint32_t hi; }    uint64_t;
+#    endif
+#   else /* Use long long for 64-bit types */
+#    if !defined(_INT64_T_DECLARED)  && !defined(_INT64_T)
+typedef signed long long    int64_t;
+#    endif
+#    if !defined(_UINT64_T_DECLARED) && !defined(_UINT64_T)
+typedef unsigned long long  uint64_t;
+#    endif
+#   endif
+
+    /* max integer types */
+#   if !defined(_INTMAX_T_DECLARED)  && !defined(_INTMAX_T)
+typedef int64_t             intmax_t;
+#   endif
+#   if !defined(_UINTMAX_T_DECLARED) && !defined(_UINTMAX_T)
+typedef uint64_t            uintmax_t;
+#   endif
+
+#  else
+#   error "PORTME: Add architecture. Don't forget to check the [U]INTx_C() and [U]INTMAX_MIN/MAX macros."
+#  endif
+
+# endif /* !linux kernel or stuff */
+
+    /* pointer <-> integer types */
+# if !defined(_MSC_VER) || defined(DOXYGEN_RUNNING)
+#  if ARCH_BITS == 32 \
+   || defined(RT_OS_LINUX) \
+   || defined(RT_OS_FREEBSD)
+#   if !defined(_INTPTR_T_DECLARED)  && !defined(_INTPTR_T)
+typedef signed long         intptr_t;
+#   endif
+#   if !defined(_UINTPTR_T_DECLARED) && !defined(_UINTPTR_T)
+typedef unsigned long       uintptr_t;
+#   endif
+#  else
+#   if !defined(_INTPTR_T_DECLARED)  && !defined(_INTPTR_T)
+typedef int64_t             intptr_t;
+#   endif
+#   if !defined(_UINTPTR_T_DECLARED) && !defined(_UINTPTR_T)
+typedef uint64_t            uintptr_t;
+#   endif
+#  endif
+# endif /* !_MSC_VER */
+
+#endif /* no system stdint.h */
+
+
+/*
+ * Make sure the [U]INTx_C(c) macros are present.
+ * For In C++ source the system stdint.h may have skipped these if it was
+ * included before we managed to define __STDC_CONSTANT_MACROS. (Kludge alert!)
+ */
+#if !defined(INT8_C) \
+ || !defined(INT16_C) \
+ || !defined(INT32_C) \
+ || !defined(INT64_C) \
+ || !defined(INTMAX_C) \
+ || !defined(UINT8_C) \
+ || !defined(UINT16_C) \
+ || !defined(UINT32_C) \
+ || !defined(UINT64_C) \
+ || !defined(UINTMAX_C)
+# define INT8_C(Value)      (Value)
+# define INT16_C(Value)     (Value)
+# define INT32_C(Value)     (Value)
+# define INT64_C(Value)     (Value ## LL)
+# define UINT8_C(Value)     (Value)
+# define UINT16_C(Value)    (Value)
+# define UINT32_C(Value)    (Value ## U)
+# define UINT64_C(Value)    (Value ## ULL)
+# define INTMAX_C(Value)    INT64_C(Value)
+# define UINTMAX_C(Value)   UINT64_C(Value)
 #endif
 
 
-/* the stuff we use */
-#if (!defined(RT_OS_LINUX) && !defined(__KERNEL__)) || defined(IPRT_NO_CRT)
-#ifndef _INT8_T_DECLARED
-typedef __int8_t        int8_t;
-#define _INT8_T_DECLARED
+/*
+ * Make sure the INTx_MIN and [U]INTx_MAX macros are present.
+ * For In C++ source the system stdint.h may have skipped these if it was
+ * included before we managed to define __STDC_LIMIT_MACROS. (Kludge alert!)
+ */
+#if !defined(INT8_MIN) \
+ || !defined(INT16_MIN) \
+ || !defined(INT32_MIN) \
+ || !defined(INT64_MIN) \
+ || !defined(INT8_MAX) \
+ || !defined(INT16_MAX) \
+ || !defined(INT32_MAX) \
+ || !defined(INT64_MAX) \
+ || !defined(UINT8_MAX) \
+ || !defined(UINT16_MAX) \
+ || !defined(UINT32_MAX) \
+ || !defined(UINT64_MAX)
+# define INT8_MIN           (INT8_C(-0x7f)                - 1)
+# define INT16_MIN          (INT16_C(-0x7fff)             - 1)
+# define INT32_MIN          (INT32_C(-0x7fffffff)         - 1)
+# define INT64_MIN          (INT64_C(-0x7fffffffffffffff) - 1)
+# define INT8_MAX           INT8_C(0x7f)
+# define INT16_MAX          INT16_C(0x7fff)
+# define INT32_MAX          INT32_C(0x7fffffff)
+# define INT64_MAX          INT64_C(0x7fffffffffffffff)
+# define UINT8_MAX          UINT8_C(0xff)
+# define UINT16_MAX         UINT16_C(0xffff)
+# define UINT32_MAX         UINT32_C(0xffffffff)
+# define UINT64_MAX         UINT64_C(0xffffffffffffffff)
+
+# define INTMAX_MIN         INT64_MIN
+# define INTMAX_MAX         INT64_MAX
+# define UINTMAX_MAX        UINT64_MAX
 #endif
 
-#ifndef _INT16_T_DECLARED
-typedef __int16_t       int16_t;
-#define _INT16_T_DECLARED
 #endif
-
-#ifndef _INT32_T_DECLARED
-typedef __int32_t       int32_t;
-#define _INT32_T_DECLARED
-#endif
-
-#ifndef _INT64_T_DECLARED
-typedef __int64_t       int64_t;
-#define _INT64_T_DECLARED
-#endif
-
-#ifndef _UINT8_T_DECLARED
-typedef __uint8_t       uint8_t;
-#define _UINT8_T_DECLARED
-#endif
-
-#ifndef _UINT16_T_DECLARED
-typedef __uint16_t      uint16_t;
-#define _UINT16_T_DECLARED
-#endif
-
-#ifndef _UINT32_T_DECLARED
-typedef __uint32_t      uint32_t;
-#define _UINT32_T_DECLARED
-#endif
-
-#ifndef _UINT64_T_DECLARED
-typedef __uint64_t      uint64_t;
-#define _UINT64_T_DECLARED
-#endif
-
-#endif /* !linux kernel || no-crt */
-
-#if !defined(_MSC_VER) || defined(DOXYGEN_RUNNING)
-#ifndef _INTPTR_T_DECLARED
-/** Signed interger type capable of holding a pointer value, very useful for casting. */
-typedef __intptr_t              intptr_t;
-/** Unsigned interger type capable of holding a pointer value, very useful for casting. */
-typedef __uintptr_t             uintptr_t;
-#define _INTPTR_T_DECLARED
-#endif
-#endif /* !_MSC_VER || DOXYGEN_RUNNING */
-
-#if !defined(__cplusplus) || defined(__STDC_CONSTANT_MACROS)
-
-#define INT8_C(c)       (c)
-#define INT16_C(c)      (c)
-#define INT32_C(c)      (c)
-#define INT64_C(c)      (c ## LL)
-
-#define UINT8_C(c)      (c)
-#define UINT16_C(c)     (c)
-#define UINT32_C(c)     (c ## U)
-#define UINT64_C(c)     (c ## ULL)
-
-#define INTMAX_C(c)     (c ## LL)
-#define UINTMAX_C(c)        (c ## ULL)
-
-#define INT8_MIN    (-0x7f-1)
-#define INT16_MIN   (-0x7fff-1)
-#define INT32_MIN   (-0x7fffffff-1)
-#define INT64_MIN   (-0x7fffffffffffffffLL-1)
-
-#define INT8_MAX    0x7f
-#define INT16_MAX   0x7fff
-#define INT32_MAX   0x7fffffff
-#define INT64_MAX   0x7fffffffffffffffLL
-
-#define UINT8_MAX   0xff
-#define UINT16_MAX  0xffff
-#define UINT32_MAX  0xffffffffU
-#define UINT64_MAX  0xffffffffffffffffULL
-
-#endif /* !C++ || __STDC_CONSTANT_MACROS */
-
-#if defined(RT_OS_FREEBSD) && defined(IPRT_DONT_USE_SYSTEM_STDINT_H)
-/* This is a hack to get tstVMStructGC.cpp building on FreeBSD. */
-# define __uintptr_t __bad_uintptr_t
-# define __uint64_t __bad_uint64_t
-# define __uint32_t __bad_uint32_t
-# define __uint16_t __bad_uint16_t
-# define __uint8_t  __bad_uint8_t
-# define __intptr_t __bad_intptr_t
-# define __int64_t  __bad_int64_t
-# define __int32_t  __bad_int32_t
-# define __int16_t  __bad_int16_t
-# define __int8_t   __bad_int8_t
-#endif
-
-#endif /* ! have usable stdint.h */
-
-#endif
-#endif /* this (old) header */
 
