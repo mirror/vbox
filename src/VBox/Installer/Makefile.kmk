@@ -38,8 +38,9 @@ ifndef VBOX_ONLY_SDK
  if "$(KBUILD_TARGET)" == "win" && "$(KBUILD_HOST)" == "win"
   include $(PATH_SUB_CURRENT)/win/Makefile.kmk
  endif
- include $(PATH_SUB_CURRENT)/common/Makefile.kmk
 endif
+
+include $(PATH_SUB_CURRENT)/common/Makefile.kmk
 
 if defined(VBOX_ONLY_SDK) ## @todo || defined(VBOX_WITH_SDK)
  #
