@@ -90,7 +90,7 @@ ip_input(PNATState pData, struct mbuf *m)
         int rc;
         STAM_PROFILE_START(&pData->StatALIAS_input, a);
         rc = LibAliasIn(m->m_la ? m->m_la : pData->proxy_alias, mtod(m, char *), 
-            m->m_size);
+            m->m_len);
         STAM_PROFILE_STOP(&pData->StatALIAS_input, a);
         Log2(("NAT: LibAlias return %d\n", rc));
     }
