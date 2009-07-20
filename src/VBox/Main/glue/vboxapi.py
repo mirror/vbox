@@ -396,12 +396,14 @@ class PlatformWEBSERVICE:
         return self.wsmgr.getSessionObject(vbox)
 
     def getVirtualBox(self):
-        return connect(self.url, self.user, self.password)
+        return self.connect(self.url, self.user, self.password)
 
     def connect(self, url, user, passwd):
         if self.vbox is not None:
-             disconnect()
+             self.disconnect()
         from VirtualBox_wrappers import IWebsessionManager2
+        if url is None:
+            url = ""
         self.url = url
         if user is None:
             user = ""
@@ -411,6 +413,8 @@ class PlatformWEBSERVICE:
         self.password = passwd
         self.wsmgr = IWebsessionManager2(self.url)
         self.vbox = self.wsmgr.logon(self.user, self.password)
+        if not self.vbox.handle:
+            raise Exception("cannot connect to '"+self.url+"' as '"+self.user+"'")
         return self.vbox
 
     def disconnect(self):
