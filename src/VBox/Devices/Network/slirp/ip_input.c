@@ -77,9 +77,6 @@ ip_input(PNATState pData, struct mbuf *m)
     register struct ip *ip;
     int hlen = 0;
     STAM_PROFILE_START(&pData->StatIP_input, a);
-#ifdef VBOX_WITH_SLIRP_ALIAS
-    //STAM_PROFILE_START(&pData->StatALIAS_input, b);
-#endif
 
     DEBUG_CALL("ip_input");
     DEBUG_ARG("m = %lx", (long)m);
@@ -91,9 +88,10 @@ ip_input(PNATState pData, struct mbuf *m)
 #ifdef VBOX_WITH_SLIRP_ALIAS
     {
         int rc;
+        STAM_PROFILE_START(&pData->StatALIAS_input, a);
         rc = LibAliasIn(m->m_la ? m->m_la : pData->proxy_alias, mtod(m, char *), 
-            m->m_len);
-        //STAM_PROFILE_STOP(&pData->StatALIAS_input, b);
+            m->m_size);
+        STAM_PROFILE_STOP(&pData->StatALIAS_input, a);
         Log2(("NAT: LibAlias return %d\n", rc));
     }
 #endif
