@@ -128,7 +128,7 @@ class VBoxMonitor:
         print "onSnapshotChange: %s %s" %(mach, id)
 
     def onGuestPropertyChange(self, id, name, newValue, flags):
-        print "onGuestPropertyChange: %s: %s=%s" %(id, name, newValue)
+       print "onGuestPropertyChange: %s: %s=%s" %(id, name, newValue)
 
 g_hasreadline = 1
 try:
@@ -791,12 +791,12 @@ def connectCmd(ctx, args):
         url = None
 
     if (len(args) > 2):
-        user = args[1]
+        user = args[2]
     else:
         user = ""
 
     if (len(args) > 3):
-        passwd = args[2]
+        passwd = args[3]
     else:
         passwd = ""
 
