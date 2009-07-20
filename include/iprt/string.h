@@ -1706,7 +1706,8 @@ RTDECL(size_t) RTUtf16CalcUtf8Len(PCRTUTF16 pwsz);
 RTDECL(int) RTUtf16CalcUtf8LenEx(PCRTUTF16 pwsz, size_t cwc, size_t *pcch);
 
 /**
- * Translate a UTF-16 string into a Latin1 allocating the result buffer.
+ * Translate a UTF-16 string into a Latin-1 (ISO-8859-1) allocating the result
+ * buffer.
  *
  * @returns iprt status code.
  * @param   pwszString      UTF-16 string to convert.
@@ -1717,29 +1718,35 @@ RTDECL(int) RTUtf16CalcUtf8LenEx(PCRTUTF16 pwsz, size_t cwc, size_t *pcch);
 RTDECL(int)  RTUtf16ToLatin1(PCRTUTF16 pwszString, char **ppszString);
 
 /**
- * Translates UTF-16 to Latin1 using buffer provided by the caller or
- * a fittingly sized buffer allocated by the function.
+ * Translates UTF-16 to Latin-1 (ISO-8859-1) using buffer provided by the caller
+ * or a fittingly sized buffer allocated by the function.
  *
  * @returns iprt status code.
  * @param   pwszString      The UTF-16 string to convert.
- * @param   cwcString       The number of RTUTF16 items to translate from pwszString.
- *                          The translation will stop when reaching cwcString or the terminator ('\\0').
- *                          Use RTSTR_MAX to translate the entire string.
- * @param   ppsz            If cch is non-zero, this must either be pointing to a pointer to
- *                          a buffer of the specified size, or pointer to a NULL pointer.
- *                          If *ppsz is NULL or cch is zero a buffer of at least cch chars
- *                          will be allocated to hold the translated string.
- *                          If a buffer was requested it must be freed using RTUtf16Free().
- * @param   cch             The buffer size in chars (the type). This includes the terminator.
- * @param   pcch            Where to store the length of the translated string. (Optional)
- *                          This field will be updated even on failure, however the value is only
- *                          specified for the following two error codes. On VERR_BUFFER_OVERFLOW
- *                          and VERR_NO_STR_MEMORY it contains the required buffer space.
+ * @param   cwcString       The number of RTUTF16 items to translate from
+ *                          pwszString. The translation will stop when reaching
+ *                          cwcString or the terminator ('\\0'). Use RTSTR_MAX
+ *                          to translate the entire string.
+ * @param   ppsz            If cch is non-zero, this must either be pointing to
+ *                          a pointer to a buffer of the specified size, or
+ *                          pointer to a NULL pointer. If *ppsz is NULL or cch
+ *                          is zero a buffer of at least cch chars will be
+ *                          allocated to hold the translated string. If a buffer
+ *                          was requested it must be freed using RTUtf16Free().
+ * @param   cch             The buffer size in chars (the type). This includes
+ *                          the terminator.
+ * @param   pcch            Where to store the length of the translated string.
+ *                          (Optional)
+ *                          This will be set even on failure, however the value
+ *                          is only specified for the following two error
+ *                          codes. On VERR_BUFFER_OVERFLOW and
+ *                          VERR_NO_STR_MEMORY it contains the required buffer
+ *                          space.
  */
 RTDECL(int)  RTUtf16ToLatin1Ex(PCRTUTF16 pwszString, size_t cwcString, char **ppsz, size_t cch, size_t *pcch);
 
 /**
- * Calculates the length of the UTF-16 string in Latin1 chars (bytes).
+ * Calculates the length of the UTF-16 string in Latin-1 (ISO-8859-1) chars.
  *
  * This function will validate the string, and incorrectly encoded UTF-16
  * strings will be rejected. The primary purpose of this function is to
@@ -1753,14 +1760,15 @@ RTDECL(int)  RTUtf16ToLatin1Ex(PCRTUTF16 pwszString, size_t cwcString, char **pp
 RTDECL(size_t) RTUtf16CalcLatin1Len(PCRTUTF16 pwsz);
 
 /**
- * Calculates the length of the UTF-16 string in Latin1 chars (bytes).
+ * Calculates the length of the UTF-16 string in Latin-1 (ISO-8859-1) chars.
  *
  * This function will validate the string, and incorrectly encoded UTF-16
  * strings will be rejected.
  *
  * @returns iprt status code.
  * @param   pwsz        The string.
- * @param   cwc         The max string length. Use RTSTR_MAX to process the entire string.
+ * @param   cwc         The max string length. Use RTSTR_MAX to process the
+ *                      entire string.
  * @param   pcch        Where to store the string length (in bytes). Optional.
  *                      This is undefined on failure.
  */
@@ -1779,26 +1787,27 @@ RTDECL(size_t) RTLatin1CalcUtf16Len(const char *psz);
  *
  * @returns iprt status code.
  * @param   psz         The string.
- * @param   cch         The max string length. Use RTSTR_MAX to process the entire string.
+ * @param   cch         The max string length. Use RTSTR_MAX to process the
+ *                      entire string.
  * @param   pcwc        Where to store the string length. Optional.
  *                      This is undefined on failure.
  */
 RTDECL(int) RTLatin1CalcUtf16LenEx(const char *psz, size_t cch, size_t *pcwc);
 
 /**
- * Translate a Latin1 string into a UTF-16 allocating the result buffer.
+ * Translate a Latin-1 (ISO-8859-1) string into a UTF-16 allocating the result
+ * buffer.
  *
  * @returns iprt status code.
  * @param   pszString       Latin1 string to convert.
- * @param   ppwszString     Receives pointer to the allocated UTF-16 string.
- *                          The returned string must be freed using
- *                          RTUtf16Free().
+ * @param   ppwszString     Receives pointer to the allocated UTF-16 string. The
+ *                          returned string must be freed using RTUtf16Free().
  */
 RTDECL(int) RTLatin1ToUtf16(const char *pszString, PRTUTF16 *ppwszString);
 
 /**
- * Translates pszString from Latin1 to UTF-16, allocating the result buffer
- * if requested.
+ * Translates pszString from Latin-1 (ISO-8859-1) to UTF-16, allocating the
+ * result buffer if requested.
  *
  * @returns iprt status code.
  * @param   pszString       Latin1 string to convert.
@@ -1816,8 +1825,7 @@ RTDECL(int) RTLatin1ToUtf16(const char *pszString, PRTUTF16 *ppwszString);
  * @param   cwc             The buffer size in RTUTF16s. This includes the
  *                          terminator.
  * @param   pcwc            Where to store the length of the translated
- *                          string. (Optional)
- *                          This field will be updated even on failure,
+ *                          string. (Optional) This will be set even on failure,
  *                          however the value is only specified for the
  *                          following two error codes. On VERR_BUFFER_OVERFLOW
  *                          and VERR_NO_STR_MEMORY it contains the required
