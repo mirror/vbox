@@ -1374,7 +1374,10 @@ VRDPAuthResult ConsoleVRDPServer::Authenticate (const Guid &uuid, VRDPAuthGuestJ
             int rc2 = RTLdrGetSymbol(mAuthLibrary, "VRDPAuth2", (void**)&mpfnAuthEntry2);
             if (RT_FAILURE (rc2))
             {
-                LogRel(("VRDPAUTH: Could not resolve import '%s'. Error code: %Rrc\n", "VRDPAuth2", rc2));
+                if (rc2 != VERR_SYMBOL_NOT_FOUND)
+                {
+                    LogRel(("VRDPAUTH: Could not resolve import '%s'. Error code: %Rrc\n", "VRDPAuth2", rc2));
+                }
                 rc = rc2;
             }
 
@@ -1383,7 +1386,10 @@ VRDPAuthResult ConsoleVRDPServer::Authenticate (const Guid &uuid, VRDPAuthGuestJ
             rc2 = RTLdrGetSymbol(mAuthLibrary, "VRDPAuth", (void**)&mpfnAuthEntry);
             if (RT_FAILURE (rc2))
             {
-                LogRel(("VRDPAUTH: Could not resolve import '%s'. Error code: %Rrc\n", "VRDPAuth", rc2));
+                if (rc2 != VERR_SYMBOL_NOT_FOUND)
+                {
+                    LogRel(("VRDPAUTH: Could not resolve import '%s'. Error code: %Rrc\n", "VRDPAuth", rc2));
+                }
                 rc = rc2;
             }
 
