@@ -287,10 +287,10 @@ void printUsage(USAGECATEGORY u64Cmd)
                  "                            setlinkstate<1-N> on|off |\n"
 #ifdef VBOX_DYNAMIC_NET_ATTACH
 #if defined(VBOX_WITH_NETFLT)
-                 "                            nic<1-N> none|null|nat|bridged|intnet|hostonly\n"
+                 "                            nic<1-N> null|nat|bridged|intnet|hostonly\n"
                  "                                     [<devicename>] |\n"
 #else /* !RT_OS_LINUX && !RT_OS_DARWIN */
-                 "                            nic<1-N> none|null|nat|bridged|intnet\n"
+                 "                            nic<1-N> null|nat|bridged|intnet\n"
                  "                                     [<devicename>] |\n"
 #endif /* !RT_OS_LINUX && !RT_OS_DARWIN  */
 #endif /* VBOX_DYNAMIC_NET_ATTACH */

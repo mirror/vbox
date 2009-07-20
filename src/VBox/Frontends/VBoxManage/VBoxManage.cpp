@@ -784,7 +784,7 @@ static int handleControlVM(HandlerArg *a)
                 rc = E_FAIL;
                 break;
             }
-            if (a->argc <= 1 + 1)
+            if (a->argc <= 2)
             {
                 errorArgument("Missing argument to '%s'", a->argv[1]);
                 rc = E_FAIL;
@@ -796,66 +796,71 @@ static int handleControlVM(HandlerArg *a)
             CHECK_ERROR_BREAK (sessionMachine, GetNetworkAdapter(n - 1, adapter.asOutParam()));
             if (adapter)
             {
-                if (!strcmp(a->argv[2], "none"))
+                BOOL fEnabled;
+                adapter->COMGETTER(Enabled)(&fEnabled);
+                if (fEnabled)
                 {
-                    CHECK_ERROR_RET(adapter, COMSETTER(Enabled) (FALSE), 1);
-                }
-                else if (!strcmp(a->argv[2], "null"))
-                {
-                    CHECK_ERROR_RET(adapter, COMSETTER(Enabled) (TRUE), 1);
-                    CHECK_ERROR_RET(adapter, Detach(), 1);
-                }
-                else if (!strcmp(a->argv[2], "nat"))
-                {
-                    if (a->argc == 3)
-                        CHECK_ERROR_RET(adapter, COMSETTER(NATNetwork)(Bstr(a->argv[3])), 1);
-                    CHECK_ERROR_RET(adapter, COMSETTER(Enabled) (TRUE), 1);
-                    CHECK_ERROR_RET(adapter, AttachToNAT(), 1);
-                }
-                else if (  !strcmp(a->argv[2], "bridged")
-                        || !strcmp(a->argv[2], "hostif")) /* backward compatibility */
-                {
-                    if (a->argc <= 1 + 2)
+                    if (!strcmp(a->argv[2], "null"))
                     {
-                        errorArgument("Missing argument to '%s'", a->argv[2]);
-                        rc = E_FAIL;
-                        break;
+                        CHECK_ERROR_RET(adapter, COMSETTER(Enabled) (TRUE), 1);
+                        CHECK_ERROR_RET(adapter, Detach(), 1);
                     }
-                    CHECK_ERROR_RET(adapter, COMSETTER(HostInterface)(Bstr(a->argv[3])), 1);
-                    CHECK_ERROR_RET(adapter, COMSETTER(Enabled) (TRUE), 1);
-                    CHECK_ERROR_RET(adapter, AttachToBridgedInterface(), 1);
-                }
-                else if (!strcmp(a->argv[2], "intnet"))
-                {
-                    if (a->argc <= 1 + 2)
+                    else if (!strcmp(a->argv[2], "nat"))
                     {
-                        errorArgument("Missing argument to '%s'", a->argv[2]);
-                        rc = E_FAIL;
-                        break;
+                        if (a->argc == 4)
+                            CHECK_ERROR_RET(adapter, COMSETTER(NATNetwork)(Bstr(a->argv[3])), 1);
+                        CHECK_ERROR_RET(adapter, COMSETTER(Enabled) (TRUE), 1);
+                        CHECK_ERROR_RET(adapter, AttachToNAT(), 1);
                     }
-                    CHECK_ERROR_RET(adapter, COMSETTER(InternalNetwork)(Bstr(a->argv[3])), 1);
-                    CHECK_ERROR_RET(adapter, COMSETTER(Enabled) (TRUE), 1);
-                    CHECK_ERROR_RET(adapter, AttachToInternalNetwork(), 1);
-                }
+                    else if (  !strcmp(a->argv[2], "bridged")
+                            || !strcmp(a->argv[2], "hostif")) /* backward compatibility */
+                    {
+                        if (a->argc <= 3)
+                        {
+                            errorArgument("Missing argument to '%s'", a->argv[2]);
+                            rc = E_FAIL;
+                            break;
+                        }
+                        CHECK_ERROR_RET(adapter, COMSETTER(HostInterface)(Bstr(a->argv[3])), 1);
+                        CHECK_ERROR_RET(adapter, COMSETTER(Enabled) (TRUE), 1);
+                        CHECK_ERROR_RET(adapter, AttachToBridgedInterface(), 1);
+                    }
+                    else if (!strcmp(a->argv[2], "intnet"))
+                    {
+                        if (a->argc <= 3)
+                        {
+                            errorArgument("Missing argument to '%s'", a->argv[2]);
+                            rc = E_FAIL;
+                            break;
+                        }
+                        CHECK_ERROR_RET(adapter, COMSETTER(InternalNetwork)(Bstr(a->argv[3])), 1);
+                        CHECK_ERROR_RET(adapter, COMSETTER(Enabled) (TRUE), 1);
+                        CHECK_ERROR_RET(adapter, AttachToInternalNetwork(), 1);
+                    }
 #if defined(VBOX_WITH_NETFLT)
-                else if (!strcmp(a->argv[2], "hostonly"))
-                {
-                    if (a->argc <= 1 + 2)
+                    else if (!strcmp(a->argv[2], "hostonly"))
                     {
-                        errorArgument("Missing argument to '%s'", a->argv[2]);
+                        if (a->argc <= 3)
+                        {
+                            errorArgument("Missing argument to '%s'", a->argv[2]);
+                            rc = E_FAIL;
+                            break;
+                        }
+                        CHECK_ERROR_RET(adapter, COMSETTER(HostInterface)(Bstr(a->argv[3])), 1);
+                        CHECK_ERROR_RET(adapter, COMSETTER(Enabled) (TRUE), 1);
+                        CHECK_ERROR_RET(adapter, AttachToHostOnlyInterface(), 1);
+                    }
+#endif
+                    else
+                    {
+                        errorArgument("Invalid type '%s' specfied for NIC %lu", Utf8Str(a->argv[2]).raw(), n);
                         rc = E_FAIL;
                         break;
                     }
-                    CHECK_ERROR_RET(adapter, COMSETTER(HostInterface)(Bstr(a->argv[3])), 1);
-                    CHECK_ERROR_RET(adapter, COMSETTER(Enabled) (TRUE), 1);
-                    CHECK_ERROR_RET(adapter, AttachToHostOnlyInterface(), 1);
                 }
-#endif
                 else
                 {
-                    errorArgument("Invalid type '%s' specfied for NIC %lu", Utf8Str(a->argv[2]).raw(), n + 1);
-                    rc = E_FAIL;
-                    break;
+                    RTPrintf("The NIC %d is currently disabled and thus can't change its attachment type\n", n);
                 }
             }
         }
