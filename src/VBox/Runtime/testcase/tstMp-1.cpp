@@ -34,8 +34,9 @@
 #include <iprt/mp.h>
 #include <iprt/cpuset.h>
 #include <iprt/err.h>
-#include <iprt/stream.h>
 #include <iprt/initterm.h>
+#include <iprt/stream.h>
+#include <iprt/string.h>
 
 
 /*******************************************************************************
@@ -242,6 +243,41 @@ int main()
         g_cErrors++;
     }
 
+
+    /* Find an online cpu for the next test. */
+    RTCPUID idCpuOnline;
+    for (idCpuOnline = 0; idCpuOnline < RTCPUSET_MAX_CPUS; idCpuOnline++)
+        if (RTMpIsCpuOnline(idCpuOnline))
+            break;
+
+    /*
+     * Quick test of RTMpGetDescription.
+     */
+    char szBuf[64];
+    int rc = RTMpGetDescription(idCpuOnline, &szBuf[0], sizeof(szBuf));
+    if (RT_SUCCESS(rc))
+    {
+        RTPrintf("tstMp-1: RTMpGetDescription -> '%s'\n", szBuf);
+
+        size_t cch = strlen(szBuf);
+        rc = RTMpGetDescription(idCpuOnline, &szBuf[0], cch);
+        if (rc != VERR_BUFFER_OVERFLOW)
+        {
+            RTPrintf("tstMp-1: FAILURE: RTMpGetDescription -> %Rrc, expected VERR_BUFFER_OVERFLOW\n", rc);
+            g_cErrors++;
+        }
+        rc = RTMpGetDescription(idCpuOnline, &szBuf[0], cch + 1);
+        if (RT_FAILURE(rc))
+        {
+            RTPrintf("tstMp-1: FAILURE: RTMpGetDescription -> %Rrc, expected VINF_SUCCESS\n", rc);
+            g_cErrors++;
+        }
+    }
+    else
+    {
+        RTPrintf("tstMp-1: FAILURE: RTMpGetDescription -> %Rrc\n", rc);
+        g_cErrors++;
+    }
 
 
     if (!g_cErrors)
