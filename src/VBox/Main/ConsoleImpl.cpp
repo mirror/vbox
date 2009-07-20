@@ -495,27 +495,27 @@ void Console::updateGuestPropertiesVRDPLogon (uint32_t u32ClientId, const char *
     int rc;
     char *pszPropertyName;
 
-    rc = RTStrAPrintf(&pszPropertyName, "/VirtualBox/HostInfo/VRDP/Client/%d/Name", u32ClientId);
+    rc = RTStrAPrintf(&pszPropertyName, "/VirtualBox/HostInfo/VRDP/Client/%u/Name", u32ClientId);
     if (RT_SUCCESS(rc))
     {
         Bstr clientName;
         mRemoteDisplayInfo->COMGETTER(ClientName)(clientName.asOutParam());
 
-        mMachine->SetGuestPropertyValue(Bstr(pszPropertyName), clientName);
+        mMachine->SetGuestProperty(Bstr(pszPropertyName), clientName, Bstr("RDONLYGUEST"));
         RTStrFree(pszPropertyName);
     }
 
-    rc = RTStrAPrintf(&pszPropertyName, "/VirtualBox/HostInfo/VRDP/Client/%d/User", u32ClientId);
+    rc = RTStrAPrintf(&pszPropertyName, "/VirtualBox/HostInfo/VRDP/Client/%u/User", u32ClientId);
     if (RT_SUCCESS(rc))
     {
-        mMachine->SetGuestPropertyValue(Bstr(pszPropertyName), Bstr(pszUser));
+        mMachine->SetGuestProperty(Bstr(pszPropertyName), Bstr(pszUser), Bstr("RDONLYGUEST"));
         RTStrFree(pszPropertyName);
     }
 
-    rc = RTStrAPrintf(&pszPropertyName, "/VirtualBox/HostInfo/VRDP/Client/%d/Domain", u32ClientId);
+    rc = RTStrAPrintf(&pszPropertyName, "/VirtualBox/HostInfo/VRDP/Client/%u/Domain", u32ClientId);
     if (RT_SUCCESS(rc))
     {
-        mMachine->SetGuestPropertyValue(Bstr(pszPropertyName), Bstr(pszDomain));
+        mMachine->SetGuestProperty(Bstr(pszPropertyName), Bstr(pszDomain), Bstr("RDONLYGUEST"));
         RTStrFree(pszPropertyName);
     }
 
@@ -523,7 +523,7 @@ void Console::updateGuestPropertiesVRDPLogon (uint32_t u32ClientId, const char *
     rc = RTStrAPrintf(&pszClientId, "%d", u32ClientId);
     if (RT_SUCCESS(rc))
     {
-        mMachine->SetGuestPropertyValue(Bstr("/VirtualBox/HostInfo/VRDP/LastConnectedClient"), Bstr(pszClientId));
+        mMachine->SetGuestProperty(Bstr("/VirtualBox/HostInfo/VRDP/LastConnectedClient"), Bstr(pszClientId), Bstr("RDONLYGUEST"));
         RTStrFree(pszClientId);
     }
 
@@ -540,24 +540,24 @@ void Console::updateGuestPropertiesVRDPDisconnect (uint32_t u32ClientId)
     int rc;
     char *pszPropertyName;
 
-    rc = RTStrAPrintf(&pszPropertyName, "/VirtualBox/HostInfo/VRDP/Client/%d/Name", u32ClientId);
+    rc = RTStrAPrintf(&pszPropertyName, "/VirtualBox/HostInfo/VRDP/Client/%u/Name", u32ClientId);
     if (RT_SUCCESS(rc))
     {
-        mMachine->SetGuestPropertyValue(Bstr(pszPropertyName), Bstr(""));
+        mMachine->SetGuestProperty(Bstr(pszPropertyName), Bstr(""), Bstr("RDONLYGUEST"));
         RTStrFree(pszPropertyName);
     }
 
-    rc = RTStrAPrintf(&pszPropertyName, "/VirtualBox/HostInfo/VRDP/Client/%d/User", u32ClientId);
+    rc = RTStrAPrintf(&pszPropertyName, "/VirtualBox/HostInfo/VRDP/Client/%u/User", u32ClientId);
     if (RT_SUCCESS(rc))
     {
-        mMachine->SetGuestPropertyValue(Bstr(pszPropertyName), Bstr(""));
+        mMachine->SetGuestProperty(Bstr(pszPropertyName), Bstr(""), Bstr("RDONLYGUEST"));
         RTStrFree(pszPropertyName);
     }
 
-    rc = RTStrAPrintf(&pszPropertyName, "/VirtualBox/HostInfo/VRDP/Client/%d/Domain", u32ClientId);
+    rc = RTStrAPrintf(&pszPropertyName, "/VirtualBox/HostInfo/VRDP/Client/%u/Domain", u32ClientId);
     if (RT_SUCCESS(rc))
     {
-        mMachine->SetGuestPropertyValue(Bstr(pszPropertyName), Bstr(""));
+        mMachine->SetGuestProperty(Bstr(pszPropertyName), Bstr(""), Bstr("RDONLYGUEST"));
         RTStrFree(pszPropertyName);
     }
 
@@ -565,7 +565,7 @@ void Console::updateGuestPropertiesVRDPDisconnect (uint32_t u32ClientId)
     rc = RTStrAPrintf(&pszClientId, "%d", u32ClientId);
     if (RT_SUCCESS(rc))
     {
-        mMachine->SetGuestPropertyValue(Bstr("/VirtualBox/HostInfo/VRDP/LastDisconnectedClient"), Bstr(pszClientId));
+        mMachine->SetGuestProperty(Bstr("/VirtualBox/HostInfo/VRDP/LastDisconnectedClient"), Bstr(pszClientId), Bstr("RDONLYGUEST"));
         RTStrFree(pszClientId);
     }
 
