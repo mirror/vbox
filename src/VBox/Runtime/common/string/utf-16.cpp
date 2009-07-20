@@ -666,10 +666,15 @@ static int rtUtf16CalcLatin1Length(PCRTUTF16 pwsz, size_t cwc, size_t *pcch)
         RTUTF16 wc = *pwsz++; cwc--;
         if (!wc)
             break;
+        else if (wc < 256)
+            ++cch;
         else if (wc < 0xd800 || wc > 0xdfff)
         {
             if (wc < 0xfffe)
-                ++cch;
+            {
+                rc = VERR_NO_TRANSLATION;
+                break;
+            }
             else
             {
                 RTStrAssertMsgFailed(("endian indicator! wc=%#x\n", wc));
@@ -698,7 +703,8 @@ static int rtUtf16CalcLatin1Length(PCRTUTF16 pwsz, size_t cwc, size_t *pcch)
                 rc = VERR_INVALID_UTF16_ENCODING;
                 break;
             }
-            ++cch;
+            rc = VERR_NO_TRANSLATION;
+            break;
         }
     }
 
@@ -744,14 +750,8 @@ static int rtUtf16RecodeAsLatin1(PCRTUTF16 pwsz, size_t cwc, char *psz, size_t c
             }
             else if (wc < 0xfffe)
             {
-                if (cch < 1)
-                {
-                    RTStrAssertMsgFailed(("Buffer overflow! 3\n"));
-                    rc = VERR_BUFFER_OVERFLOW;
-                    break;
-                }
-                cch--;
-                *pwch++ = '?';
+                rc = VERR_NO_TRANSLATION;
+                break;
             }
             else
             {
@@ -781,14 +781,8 @@ static int rtUtf16RecodeAsLatin1(PCRTUTF16 pwsz, size_t cwc, char *psz, size_t c
                 rc = VERR_INVALID_UTF16_ENCODING;
                 break;
             }
-            if (cch < 1)
-            {
-                RTStrAssertMsgFailed(("Buffer overflow! 4\n"));
-                rc = VERR_BUFFER_OVERFLOW;
-                break;
-            }
-            cch--;
-            *pwch++ = '?';
+            rc = VERR_NO_TRANSLATION;
+            break;
         }
     }
 
