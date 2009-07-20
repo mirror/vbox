@@ -24,7 +24,7 @@ if VboxBinDir is None:
     VboxBinDir = "%VBOX_INSTALL_PATH%"
 
 if VboxSdkDir is None:
-    VboxSdkDir = VboxBinDir+"/sdk"
+    VboxSdkDir = os.path.join(VboxBinDir,"sdk")
 
 os.environ["VBOX_PROGRAM_PATH"] = VboxBinDir
 os.environ["VBOX_SDK_PATH"] = VboxSdkDir
@@ -377,11 +377,12 @@ class PlatformXPCOM:
 
 class PlatformWEBSERVICE:
     def __init__(self, params):
-        sys.path.append(VboxSdkDir+'/bindings/webservice/python/lib')
+        sys.path.append(os.path.join(VboxSdkDir,'bindings', 'webservice', 'python', 'lib'))
         # not really needed, but just fail early if misconfigured
         import VirtualBox_services
         import VirtualBox_wrappers
         from VirtualBox_wrappers import IWebsessionManager2
+
         if params is not None:
             self.user = params.get("user", "")
             self.password = params.get("password", "")
@@ -471,16 +472,21 @@ class VirtualBoxManager:
                 style = "MSCOM"
             else:
                 style = "XPCOM"
-        try:
-            exec "self.platform = Platform"+style+"(platparams)"
+        
+        exec "self.platform = Platform"+style+"(platparams)"
             
-            self.constants = VirtualBoxReflectionInfo()
-            self.type = self.platform.getType()
-            self.remote = self.platform.getRemote()
-            self.style = style            
-
-            self.mgr = SessionManager(self)
+        self.constants = VirtualBoxReflectionInfo()
+        self.type = self.platform.getType()
+        self.remote = self.platform.getRemote()
+        self.style = style 
+        self.mgr = SessionManager(self)
+        
+        try:
             self.vbox = self.platform.getVirtualBox()
+        except NameError,ne:
+            print "Installation problem: check that appropriate libs in place"
+            traceback.print_exc()
+            raise ne
         except Exception,e:
             print "init exception: ",e
             traceback.print_exc()
