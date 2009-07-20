@@ -822,7 +822,7 @@ void Benchmarks(RTTEST hTest)
             }
         }
         uint64_t u64Elapsed = RTTimeNanoTS() - u64Start;
-        RTTestPrintf(hTest, RTTESTLVL_ALWAYS, "%d in %RI64ns\n", i, u64Elapsed);
+        RTTestPrintf(hTest, RTTESTLVL_ALWAYS, "%d in %'RI64 ns\n", i, u64Elapsed);
     }
 
     RTTestPrintf(hTest, RTTESTLVL_ALWAYS, "Benchmarking RTUtf16ToUtf8Ex: ");
@@ -842,7 +842,7 @@ void Benchmarks(RTTEST hTest)
             }
         }
         uint64_t u64Elapsed = RTTimeNanoTS() - u64Start;
-        RTTestPrintf(hTest, RTTESTLVL_ALWAYS, "%d in %RI64ns\n", i, u64Elapsed);
+        RTTestPrintf(hTest, RTTESTLVL_ALWAYS, "%d in %'RI64 ns\n", i, u64Elapsed);
     }
 
 }
@@ -1008,10 +1008,11 @@ void testMinistring(RTTEST hTest)
 #undef CHECK
 }
 
+
 void testLatin1(RTTEST hTest)
 {
     RTTestSub(hTest, "Latin1 conversion functions");
-    
+
     /* Test Utf16 -> Latin1 */
     size_t cch_szAll = 0;
     int rc = RTUtf16CalcLatin1LenEx(g_wszAll, 255, &cch_szAll);
@@ -1161,6 +1162,43 @@ void testLatin1(RTTEST hTest)
     RTTestSubDone(hTest);
 }
 
+
+static void testNoTransation(RTTEST hTest)
+{
+
+    /*
+     * Try trigger a VERR_NO_TRANSLATION error in convert to
+     * current CP to latin-1.
+     */
+    const RTUTF16 s_swzTest1[] = { 0x2358, 0x2242, 0x2357, 0x2359,  0x22f9, 0x2c4e, 0x0030, 0x0060,
+                                   0x0092, 0x00c1, 0x00f2, 0x1f80,  0x0088, 0x2c38, 0x2c30, 0x0000 };
+    char *pszTest1;
+    int rc = RTUtf16ToUtf8(s_swzTest1, &pszTest1);
+    RTTESTI_CHECK_RC_RETV(rc, VINF_SUCCESS);
+
+    RTTestSub(hTest, "VERR_NO_TRANSLATION/RTStrUtf8ToCurrentCP");
+    char *pszOut;
+    rc = RTStrUtf8ToCurrentCP(&pszOut, pszTest1);
+    if (RT_SUCCESS(rc))
+    {
+        RTTESTI_CHECK(!strcmp(pszOut, pszTest1));
+        RTTestIPrintf(RTTESTLVL_ALWAYS, "CurrentCP is UTF-8 or similar\n");
+        RTStrFree(pszOut);
+    }
+    else
+        RTTESTI_CHECK_RC(rc, VERR_NO_TRANSLATION);
+
+    RTTestSub(hTest, "VERR_NO_TRANSLATION/RTUtf16ToLatin1");
+    rc = RTUtf16ToLatin1(s_swzTest1, &pszOut);
+    RTTESTI_CHECK_RC(rc, VERR_NO_TRANSLATION);
+    if (RT_SUCCESS(rc))
+        RTStrFree(pszOut);
+
+    RTStrFree(pszTest1);
+    RTTestSubDone(hTest);
+}
+
+
 int main()
 {
     /*
@@ -1185,6 +1223,8 @@ int main()
     testMinistring(hTest);
 
     testLatin1(hTest);
+
+    testNoTransation(hTest);
 
     Benchmarks(hTest);
 
