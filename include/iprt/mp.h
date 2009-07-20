@@ -180,6 +180,18 @@ RTDECL(uint32_t) RTMpGetCurFrequency(RTCPUID idCpu);
  */
 RTDECL(uint32_t) RTMpGetMaxFrequency(RTCPUID idCpu);
 
+/**
+ * Get the CPU description string.
+ *
+ * The CPU must be online.
+ *
+ * @returns IPRT status code.
+ * @param   idCpu       The identifier of the CPU.
+ * @param   pszBuf      The output buffer.
+ * @param   cbBuf       The size of the output buffer.
+ */
+RTDECL(int) RTMpGetDescription(RTCPUID idCpu, char *pszBuf, size_t cbBuf);
+
 
 #ifdef IN_RING0
 
