@@ -47,7 +47,7 @@ RT_C_DECLS_BEGIN
  * @param   pszFile      Filename to create a SHA1 digest for.
  * @param   ppszDigest   On success the SHA1 digest.
  */
-RTR3DECL(int) RTSHA1Digest(const char *pszFile, char **ppszDigest);
+RTR3DECL(int) RTSha1Digest(const char *pszFile, char **ppszDigest);
 
 /** @} */
 
