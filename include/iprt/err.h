@@ -405,7 +405,7 @@ RTDECL(PCRTCOMERRMSG) RTErrCOMGet(uint32_t rc);
 #define VERR_INVALID_UUID_FORMAT            (-49)
 /** The specified process was not found. */
 #define VERR_PROCESS_NOT_FOUND              (-50)
-/** The process specified to a non-block wait had not exitted. */
+/** The process specified to a non-block wait had not exited. */
 #define VERR_PROCESS_RUNNING                (-51)
 /** Retry the operation. */
 #define VERR_TRY_AGAIN                      (-52)
@@ -415,17 +415,17 @@ RTDECL(PCRTCOMERRMSG) RTErrCOMGet(uint32_t rc);
 #define VERR_PARSE_ERROR                    (-53)
 /** Value out of range. */
 #define VERR_OUT_OF_RANGE                   (-54)
-/** A numeric convertion encountered a value which was too big for the target. */
+/** A numeric conversion encountered a value which was too big for the target. */
 #define VERR_NUMBER_TOO_BIG                 (-55)
-/** A numeric convertion encountered a value which was too big for the target. */
+/** A numeric conversion encountered a value which was too big for the target. */
 #define VWRN_NUMBER_TOO_BIG                 55
 /** The number begin converted (string) contained no digits. */
 #define VERR_NO_DIGITS                      (-56)
 /** The number begin converted (string) contained no digits. */
 #define VWRN_NO_DIGITS                      56
-/** Encountered a '-' during convertion to an unsigned value. */
+/** Encountered a '-' during conversion to an unsigned value. */
 #define VERR_NEGATIVE_UNSIGNED              (-57)
-/** Encountered a '-' during convertion to an unsigned value. */
+/** Encountered a '-' during conversion to an unsigned value. */
 #define VWRN_NEGATIVE_UNSIGNED              57
 /** Error while characters translation (unicode and so). */
 #define VERR_NO_TRANSLATION                 (-58)
@@ -493,7 +493,7 @@ RTDECL(PCRTCOMERRMSG) RTErrCOMGet(uint32_t rc);
 #define VERR_END_OF_STRING                  (-83)
 /** End of string. */
 #define VINF_END_OF_STRING                  83
-/** A page count is ouf of range. */
+/** A page count is out of range. */
 #define VERR_PAGE_COUNT_OUT_OF_RANGE        (-84)
 /** Generic object destroyed status. */
 #define VERR_OBJECT_DESTROYED               (-85)
@@ -949,7 +949,7 @@ RTDECL(PCRTCOMERRMSG) RTErrCOMGet(uint32_t rc);
 /** The module contains no symbol information. */
 #define VERR_DBG_NO_SYMBOLS                     (-651)
 /** The specified segment:offset address was invalid. Typically an attempt at
- * addressing outside the segment boundrary. */
+ * addressing outside the segment boundary. */
 #define VERR_DBG_INVALID_ADDRESS                (-652)
 /** Invalid segment index. */
 #define VERR_DBG_INVALID_SEGMENT_INDEX          (-653)
@@ -997,7 +997,7 @@ RTDECL(PCRTCOMERRMSG) RTErrCOMGet(uint32_t rc);
  */
 /** Invalid RT request type.
  * For the RTReqAlloc() case, the caller just specified an illegal enmType. For
- * all the other occurences it means indicates corruption, broken logic, or stupid
+ * all the other occurrences it means indicates corruption, broken logic, or stupid
  * interface user. */
 #define VERR_RT_REQUEST_INVALID_TYPE            (-700)
 /** Invalid RT request state.
