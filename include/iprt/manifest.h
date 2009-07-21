@@ -55,7 +55,7 @@ typedef struct RTMANIFESTTEST
 typedef RTMANIFESTTEST* PRTMANIFESTTEST;
 
 /**
- * Verify the given SHA1 digests to the entries in the manifest file.
+ * Verify the given SHA1 digests against the entries in the manifest file.
  *
  * Please note that not only the various digest have to match, but the
  * filenames as well. If there are more or even less files listed in the
@@ -81,8 +81,8 @@ RTR3DECL(int) RTManifestVerify(const char *pszManifestFile, PRTMANIFESTTEST paTe
  *
  * @param   pszManifestFile      Filename of the manifest file to verify.
  * @param   papszFiles           Array of files to check SHA1 sums.
- * @param   cFiles               Number of entries in ppszFiles.
- * @param   piFailed             A index to ppszFiles in the
+ * @param   cFiles               Number of entries in papszFiles.
+ * @param   piFailed             A index to papszFiles in the
  *                               VERR_MANIFEST_DIGEST_MISMATCH error case
  *                               (optional).
  */
