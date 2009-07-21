@@ -623,12 +623,47 @@ def verboseCmd(ctx, args):
     g_verbose = not g_verbose
     return 0
 
+def getUSBStateString(state):
+    if state == 0:
+        return "NotSupported"
+    elif state == 1:
+        return "Unavailable"
+    elif state == 2:
+        return "Busy"
+    elif state == 3:
+        return "Available"
+    elif state == 4:
+        return "Held"
+    elif state == 5:
+        return "Captured"
+    else:
+        return "Unknown"
+
 def hostCmd(ctx, args):
    host = ctx['vb'].host
    cnt = host.processorCount
    print "Processor count:",cnt
    for i in range(0,cnt):
-      print "Processor #%d speed: %dMHz" %(i,host.getProcessorSpeed(i))
+      print "Processor #%d speed: %dMHz %s" %(i,host.getProcessorSpeed(i), host.getProcessorDescription(i))
+
+   print "RAM: %dM (free %dM)" %(host.memorySize, host.memoryAvailable)
+   print "OS: %s (%s)" %(host.operatingSystem, host.OSVersion)
+   if host.Acceleration3DAvailable:
+       print "3D acceleration available"
+   else:
+       print "3D acceleration NOT available"
+
+   print "Network interfaces:" 
+   for ni in ctx['global'].getArray(host, 'networkInterfaces'):
+       print "  %s (%s)" %(ni.name, ni.IPAddress)
+
+   print "DVD drives:" 
+   for dd in ctx['global'].getArray(host, 'DVDDrives'):
+       print "  %s - %s" %(dd.name, dd.description)
+
+   print "USB devices:" 
+   for ud in ctx['global'].getArray(host, 'USBDevices'):
+       print "  %s (vendorId=%d productId=%d serial=%s) %s" %(ud.product, ud.vendorId, ud.productId, ud.serialNumber, getUSBStateString(ud.state))
 
    if ctx['perf']:
      for metric in ctx['perf'].query(["*"], [host]):
