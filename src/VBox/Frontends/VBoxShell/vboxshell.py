@@ -807,7 +807,11 @@ def sleepCmd(ctx, args):
         print "usage: sleep <secs>"
         return 0
 
-    time.sleep(float(args[1]))
+    try:
+        time.sleep(float(args[1]))
+    except:
+        # to allow sleep interrupt
+        pass
     return 0
 
 
