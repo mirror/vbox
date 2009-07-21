@@ -188,15 +188,12 @@ static int rtUtf8Length(const char *psz, size_t cch, size_t *pcuc, size_t *pcchA
  *                  The recoding will stop when cch or '\\0' is reached. Pass RTSTR_MAX to process up to '\\0'.
  * @param   paCps   Where to store the code points array.
  * @param   cCps    The number of RTUNICP items the paCps buffer can hold, excluding the terminator ('\\0').
- * @param   pcCps   Where to store the actual number of decoded code points. This excludes the terminator.
  */
-static int rtUtf8Decode(const char *psz, size_t cch, PRTUNICP paCps, size_t cCps, size_t *pcCps)
+static int rtUtf8Decode(const char *psz, size_t cch, PRTUNICP paCps, size_t cCps)
 {
-    int                     rc = VINF_SUCCESS;
+    int                     rc   = VINF_SUCCESS;
     const unsigned char    *puch = (const unsigned char *)psz;
-    const PRTUNICP          pCpEnd = paCps + cCps;
-    PRTUNICP                pCp = paCps;
-    Assert(pCpEnd >= pCp);
+    PRTUNICP                pCp  = paCps;
     while (cch > 0)
     {
         /* read the next char and check for terminator. */
@@ -205,11 +202,12 @@ static int rtUtf8Decode(const char *psz, size_t cch, PRTUNICP paCps, size_t cCps
             break;
 
         /* check for output overflow */
-        if (pCp >= pCpEnd)
+        if (RT_UNLIKELY(cCps < 1))
         {
             rc = VERR_BUFFER_OVERFLOW;
             break;
         }
+        cCps--;
 
         /* decode and recode the code point */
         if (!(uch & RT_BIT(7)))
@@ -272,7 +270,6 @@ static int rtUtf8Decode(const char *psz, size_t cch, PRTUNICP paCps, size_t cCps
 
     /* done */
     *pCp = 0;
-    *pcCps = pCp - paCps;
     return rc;
 }
 
@@ -362,7 +359,7 @@ RTDECL(int) RTStrToUni(const char *pszString, PRTUNICP *ppaCps)
             /*
              * Decode the string.
              */
-            rc = rtUtf8Decode(pszString, RTSTR_MAX, paCps, cCps, &cCps);
+            rc = rtUtf8Decode(pszString, RTSTR_MAX, paCps, cCps);
             if (RT_SUCCESS(rc))
             {
                 *ppaCps = paCps;
@@ -421,7 +418,7 @@ RTDECL(int)  RTStrToUniEx(const char *pszString, size_t cchString, PRTUNICP *ppa
             /*
              * Encode the UTF-16 string.
              */
-            rc = rtUtf8Decode(pszString, cchString, paCpsResult, cCps - 1, &cCpsResult);
+            rc = rtUtf8Decode(pszString, cchString, paCpsResult, cCps - 1);
             if (RT_SUCCESS(rc))
             {
                 *ppaCps = paCpsResult;
@@ -584,15 +581,12 @@ static int rtUtf8CalcUtf16Length(const char *psz, size_t cch, size_t *pcwc)
  *                  The recoding will stop when cch or '\\0' is reached. Pass RTSTR_MAX to process up to '\\0'.
  * @param   pwsz    Where to store the UTF-16 string.
  * @param   cwc     The number of RTUTF16 items the pwsz buffer can hold, excluding the terminator ('\\0').
- * @param   pcwc    Where to store the actual number of RTUTF16 items encoded into the UTF-16. This excludes the terminator.
  */
-static int rtUtf8RecodeAsUtf16(const char *psz, size_t cch, PRTUTF16 pwsz, size_t cwc, size_t *pcwc)
+static int rtUtf8RecodeAsUtf16(const char *psz, size_t cch, PRTUTF16 pwsz, size_t cwc)
 {
-    int                     rc = VINF_SUCCESS;
+    int                     rc   = VINF_SUCCESS;
     const unsigned char    *puch = (const unsigned char *)psz;
-    const PRTUTF16          pwszEnd = pwsz + cwc;
-    PRTUTF16                pwc = pwsz;
-    Assert(pwszEnd >= pwc);
+    PRTUTF16                pwc  = pwsz;
     while (cch > 0)
     {
         /* read the next char and check for terminator. */
@@ -601,11 +595,12 @@ static int rtUtf8RecodeAsUtf16(const char *psz, size_t cch, PRTUTF16 pwsz, size_
             break;
 
         /* check for output overflow */
-        if (pwc >= pwszEnd)
+        if (RT_UNLIKELY(cwc < 1))
         {
             rc = VERR_BUFFER_OVERFLOW;
             break;
         }
+        cwc--;
 
         /* decode and recode the code point */
         if (!(uch & RT_BIT(7)))
@@ -639,11 +634,13 @@ static int rtUtf8RecodeAsUtf16(const char *psz, size_t cch, PRTUTF16 pwsz, size_
                        | ((RTUNICP)(puch[2] & 0x3f) << 6)
                        | ((RTUNICP)(puch[1] & 0x3f) << 12)
                        | ((RTUNICP)(uch     & 0x07) << 18);
-            if (pwc + 1 >= pwszEnd)
+            if (RT_UNLIKELY(cwc < 1))
             {
                 rc = VERR_BUFFER_OVERFLOW;
                 break;
             }
+            cwc--;
+
             uc -= 0x10000;
             *pwc++ = 0xd800 | (uc >> 10);
             *pwc++ = 0xdc00 | (uc & 0x3ff);
@@ -654,7 +651,6 @@ static int rtUtf8RecodeAsUtf16(const char *psz, size_t cch, PRTUTF16 pwsz, size_
 
     /* done */
     *pwc = '\0';
-    *pcwc = pwc - pwsz;
     return rc;
 }
 
@@ -684,7 +680,7 @@ RTDECL(int) RTStrToUtf16(const char *pszString, PRTUTF16 *ppwszString)
             /*
              * Encode the UTF-16 string.
              */
-            rc = rtUtf8RecodeAsUtf16(pszString, RTSTR_MAX, pwsz, cwc, &cwc);
+            rc = rtUtf8RecodeAsUtf16(pszString, RTSTR_MAX, pwsz, cwc);
             if (RT_SUCCESS(rc))
             {
                 *ppwszString = pwsz;
@@ -743,7 +739,7 @@ RTDECL(int)  RTStrToUtf16Ex(const char *pszString, size_t cchString, PRTUTF16 *p
             /*
              * Encode the UTF-16 string.
              */
-            rc = rtUtf8RecodeAsUtf16(pszString, cchString, pwszResult, cwc - 1, &cwcResult);
+            rc = rtUtf8RecodeAsUtf16(pszString, cchString, pwszResult, cwc - 1);
             if (RT_SUCCESS(rc))
             {
                 *ppwsz = pwszResult;
