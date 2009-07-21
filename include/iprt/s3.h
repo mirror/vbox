@@ -35,7 +35,7 @@
 
 RT_C_DECLS_BEGIN
 
-/** @group grp_rt_s3    RTS3 - Simple Storage Service (S3) Communication API
+/** @defgroup grp_rt_s3    RTS3 - Simple Storage Service (S3) Communication API
  * @ingroup grp_rt
  * @{
  */
