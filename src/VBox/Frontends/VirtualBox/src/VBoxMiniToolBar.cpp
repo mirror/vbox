@@ -215,12 +215,14 @@ void VBoxMiniToolBar::timerEvent (QTimerEvent *aEvent)
 {
     if (aEvent->timerId() == mScrollTimer.timerId())
     {
+        QRect screen = mSeamless ? QApplication::desktop()->availableGeometry (window()) :
+                                   QApplication::desktop()->screenGeometry (window());
         switch (mAlignment)
         {
             case AlignTop:
             {
-                if (((mPositionY == 0) && mSlideToScreen) ||
-                    ((mPositionY == - height() + 1) && !mSlideToScreen))
+                if (((mPositionY == screen.y()) && mSlideToScreen) ||
+                    ((mPositionY == screen.y() - height() + 1) && !mSlideToScreen))
                 {
                     mScrollTimer.stop();
                     if (mHideAfterSlide)
@@ -235,10 +237,8 @@ void VBoxMiniToolBar::timerEvent (QTimerEvent *aEvent)
             }
             case AlignBottom:
             {
-                QRect screen = mSeamless ? QApplication::desktop()->availableGeometry (this) :
-                                           QApplication::desktop()->screenGeometry (this);
-                if (((mPositionY == screen.height() - height()) && mSlideToScreen) ||
-                    ((mPositionY == screen.height() - 1) && !mSlideToScreen))
+                if (((mPositionY == screen.y() + screen.height() - height()) && mSlideToScreen) ||
+                    ((mPositionY == screen.y() + screen.height() - 1) && !mSlideToScreen))
                 {
                     mScrollTimer.stop();
                     if (mHideAfterSlide)
@@ -376,19 +376,19 @@ void VBoxMiniToolBar::recreateMask()
 
 void VBoxMiniToolBar::moveToBase()
 {
-    QRect screen = mSeamless ? QApplication::desktop()->availableGeometry (this) :
-                               QApplication::desktop()->screenGeometry (this);
-    mPositionX = screen.width() / 2 - width() / 2;
+    QRect screen = mSeamless ? QApplication::desktop()->availableGeometry (window()) :
+                               QApplication::desktop()->screenGeometry (window());
+    mPositionX = screen.x() + screen.width() / 2 - width() / 2;
     switch (mAlignment)
     {
         case AlignTop:
         {
-            mPositionY = - height() + 1;
+            mPositionY = screen.y() - height() + 1;
             break;
         }
         case AlignBottom:
         {
-            mPositionY = screen.height() - 1;
+            mPositionY = screen.y() + screen.height() - 1;
             break;
         }
         default:
@@ -403,9 +403,9 @@ void VBoxMiniToolBar::moveToBase()
 QPoint VBoxMiniToolBar::mapFromScreen (const QPoint &aPoint)
 {
     QPoint globalPosition = parentWidget()->mapFromGlobal (aPoint);
-    QRect fullArea = QApplication::desktop()->screenGeometry (this);
-    QRect realArea = mSeamless ? QApplication::desktop()->availableGeometry (this) :
-                                 QApplication::desktop()->screenGeometry (this);
+    QRect fullArea = QApplication::desktop()->screenGeometry (window());
+    QRect realArea = mSeamless ? QApplication::desktop()->availableGeometry (window()) :
+                                 QApplication::desktop()->screenGeometry (window());
     QPoint shiftToReal (realArea.topLeft() - fullArea.topLeft());
     return globalPosition + shiftToReal;
 }
