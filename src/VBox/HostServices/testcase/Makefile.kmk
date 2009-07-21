@@ -1,0 +1,55 @@
+# $Id$
+## @file
+# Sub-Makefile for the HGCM service testcase.
+#
+
+#
+# Copyright (C) 2009 Sun Microsystems, Inc.
+#
+# This file is part of VirtualBox Open Source Edition (OSE), as
+# available from http://www.virtualbox.org. This file is free software;
+# you can redistribute it and/or modify it under the terms of the GNU
+# General Public License (GPL) as published by the Free Software
+# Foundation, in version 2 as it comes in the "COPYING" file of the
+# VirtualBox OSE distribution. VirtualBox OSE is distributed in the
+# hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+#
+# The contents of this file may alternatively be used under the terms
+# of the Common Development and Distribution License Version 1.0
+# (CDDL) only, as it comes in the "COPYING.CDDL" file of the
+# VirtualBox OSE distribution, in which case the provisions of the
+# CDDL are applicable instead of those of the GPL.
+#
+# You may elect to license modified versions of this file under the
+# terms and conditions of either the GPL or the CDDL or both.
+#
+# Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa
+# Clara, CA 95054 USA or visit http://www.sun.com if you need
+# additional information or have any questions.
+#
+
+SUB_DEPTH = ../../../..
+include	$(KBUILD_PATH)/subheader.kmk
+
+if defined(VBOX_WITH_TESTCASES) && !defined(VBOX_ONLY_ADDITIONS) && !defined(VBOX_ONLY_SDK)
+
+  #
+  # Set this in LocalConfig.kmk if you are working on HGCM service internals
+  # to automatically run the unit test at build time:
+  #    OTHERS += $(PATH_tstHGCMSvc)/tstHGCMSvc.run
+  #
+  PROGRAMS += tstHGCMSvc
+  TESTING  += $(PATH_tstHGCMSvc)/tstHGCMSvc.run
+  tstHGCMSvc_TEMPLATE = VBOXR3TSTEXE
+  tstHGCMSvc_DEFS     = VBOX_WITH_HGCM VBOX_TEST_HGCM_PARMS
+  tstHGCMSvc_SOURCES  = tstHGCMSvc.cpp
+  tstHGCMSvc_CLEAN    = $(PATH_tstHGCMSvc)/tstHGCMSvc.run
+
+$$(PATH_tstHGCMSvc)/tstHGCMSvc.run: $$(INSTARGET_tstHGCMSvc)
+	export VBOX_LOG_DEST=nofile; $(INSTARGET_tstHGCMSvc) quiet
+	$(QUIET)$(APPEND) -t "$@" "done"
+
+endif # VBOX_WITH_TESTCASES
+
+include	$(KBUILD_PATH)/subfooter.kmk
+
