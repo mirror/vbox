@@ -83,7 +83,7 @@ RTR3DECL(int) RTManifestVerify(const char *pszManifestFile, PRTMANIFESTTEST pTes
  *                               VERR_MANIFEST_DIGEST_MISMATCH error case
  *                               (optional).
  */
-RTR3DECL(int) RTManifestVerifyFiles(const char *pszManifestFile, const char * const *papszFiles, size_t cFiles, size_t *pcFailed);
+RTR3DECL(int) RTManifestVerifyFiles(const char *pszManifestFile, const char * const *papszFiles, size_t cFiles, size_t *piFailed);
 
 /**
  * Creates a manifest file for a set of files. The manifest file contains SHA1
