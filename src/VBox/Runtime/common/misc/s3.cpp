@@ -909,6 +909,10 @@ RTR3DECL(int) RTS3GetKey(RTS3 hS3, const char* pszBucketName, const char* pszKey
     /* Close the open file */
     RTFileClose(hFile);
 
+    /* If there was an error delete the newly created file */
+    if (RT_FAILURE(rc))
+        RTFileDelete(pszFileName);
+
     return rc;
 }
 
