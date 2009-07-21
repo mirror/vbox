@@ -56,12 +56,12 @@ typedef RTFILELISTINT* PRTFILELISTINT;
 *   Public RTManifest interface                                                *
 *******************************************************************************/
 
-RTR3DECL(int) RTManifestVerify(const char *pszManifestFile, PRTMANIFESTTEST pTestList, size_t cTests, size_t *pcFileIndexOnFailure)
+RTR3DECL(int) RTManifestVerify(const char *pszManifestFile, PRTMANIFESTTEST paTests, size_t cTests, size_t *piFailed)
 {
     /* Validate input */
-    if (!pszManifestFile || !pTestList)
+    if (!pszManifestFile || !paTests)
     {
-        AssertMsgFailed(("Must supply pszManifestFile and pTestList!\n"));
+        AssertMsgFailed(("Must supply pszManifestFile and paTests!\n"));
         return VERR_INVALID_PARAMETER;
     }
 
@@ -76,7 +76,7 @@ RTR3DECL(int) RTManifestVerify(const char *pszManifestFile, PRTMANIFESTTEST pTes
         return VERR_NO_MEMORY;
     /* Fill our compare list */
     for (size_t i=0; i < cTests; ++i)
-        pFileList[i].pTestPattern = &pTestList[i];
+        pFileList[i].pTestPattern = &paTests[i];
 
     /* Parse the manifest file line by line */
     char pszLine[1024];
@@ -172,8 +172,8 @@ RTR3DECL(int) RTManifestVerify(const char *pszManifestFile, PRTMANIFESTTEST pTes
             /* Do the manifest SHA1 digest match against the actual digest? */
             if (RTStrICmp(pFileList[i].pszManifestDigest, pFileList[i].pTestPattern->pszTestDigest))
             {
-                if (pcFileIndexOnFailure)
-                    *pcFileIndexOnFailure = i;
+                if (piFailed)
+                    *piFailed = i;
                 rc = VERR_MANIFEST_DIGEST_MISMATCH;
                 break;
             }
@@ -193,12 +193,12 @@ RTR3DECL(int) RTManifestVerify(const char *pszManifestFile, PRTMANIFESTTEST pTes
     return rc;
 }
 
-RTR3DECL(int) RTManifestVerifyFiles(const char *pszManifestFile, const char **ppszFiles, size_t cFiles, size_t *pcFileIndexOnFailure)
+RTR3DECL(int) RTManifestVerifyFiles(const char *pszManifestFile, const char * const *papszFiles, size_t cFiles, size_t *piFailed)
 {
     /* Validate input */
-    if (!pszManifestFile || !ppszFiles)
+    if (!pszManifestFile || !papszFiles)
     {
-        AssertMsgFailed(("Must supply pszManifestFile and ppszFiles!\n"));
+        AssertMsgFailed(("Must supply pszManifestFile and papszFiles!\n"));
         return VERR_INVALID_PARAMETER;
     }
 
@@ -212,15 +212,15 @@ RTR3DECL(int) RTManifestVerifyFiles(const char *pszManifestFile, const char **pp
     for (size_t i=0; i < cFiles; ++i)
     {
         char *pszDigest;
-        rc = RTSHA1Digest(ppszFiles[i], &pszDigest);
+        rc = RTSHA1Digest(papszFiles[i], &pszDigest);
         if (RT_FAILURE(rc))
             break;
-        pFileList[i].pszTestFile = (char*)ppszFiles[i];
+        pFileList[i].pszTestFile = (char*)papszFiles[i];
         pFileList[i].pszTestDigest = pszDigest;
     }
     /* Do the verify */
     if (RT_SUCCESS(rc))
-        rc = RTManifestVerify(pszManifestFile, pFileList, cFiles, pcFileIndexOnFailure);
+        rc = RTManifestVerify(pszManifestFile, pFileList, cFiles, piFailed);
 
     /* Cleanup */
     for (size_t i=0; i < cFiles; ++i)
@@ -233,12 +233,12 @@ RTR3DECL(int) RTManifestVerifyFiles(const char *pszManifestFile, const char **pp
     return rc;
 }
 
-RTR3DECL(int) RTManifestWriteFiles(const char *pszManifestFile, const char **ppszFiles, size_t cFiles)
+RTR3DECL(int) RTManifestWriteFiles(const char *pszManifestFile, const char * const *papszFiles, size_t cFiles)
 {
     /* Validate input */
-    if (!pszManifestFile || !ppszFiles)
+    if (!pszManifestFile || !papszFiles)
     {
-        AssertMsgFailed(("Must supply pszManifestFile and ppszFiles!\n"));
+        AssertMsgFailed(("Must supply pszManifestFile and papszFiles!\n"));
         return VERR_INVALID_PARAMETER;
     }
 
@@ -252,11 +252,11 @@ RTR3DECL(int) RTManifestWriteFiles(const char *pszManifestFile, const char **pps
     {
         /* Calculate the SHA1 digest of every file */
         char *pszDigest;
-        rc = RTSHA1Digest(ppszFiles[i], &pszDigest);
+        rc = RTSHA1Digest(papszFiles[i], &pszDigest);
         if (RT_FAILURE(rc))
             break;
         /* Add the entry to the manifest file */
-        int cbRet = RTStrmPrintf(pStream, "SHA1 (%s)= %s\n", RTPathFilename(ppszFiles[i]), pszDigest);
+        int cbRet = RTStrmPrintf(pStream, "SHA1 (%s)= %s\n", RTPathFilename(papszFiles[i]), pszDigest);
         RTStrFree(pszDigest);
         if (cbRet < 0)
         {
