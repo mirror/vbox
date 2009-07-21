@@ -178,10 +178,6 @@ static void pshader_set_limits(IWineD3DPixelShaderImpl *This)
 
         case WINED3D_SHADER_VERSION(2,1):
             This->baseShader.limits.temporary = 32;
-        case WINED3D_SHADER_VERSION(4,0):
-            FIXME("Using 3.0 limits for 4.0 shader\n");
-            /* Fall through */
-
             This->baseShader.limits.constant_float = 32;
             This->baseShader.limits.constant_int = 16;
             This->baseShader.limits.constant_bool = 16;
@@ -190,6 +186,10 @@ static void pshader_set_limits(IWineD3DPixelShaderImpl *This)
             This->baseShader.limits.packed_input = 0;
             This->baseShader.limits.label = 16;
             break;
+
+        case WINED3D_SHADER_VERSION(4,0):
+            FIXME("Using 3.0 limits for 4.0 shader\n");
+            /* Fall through */
 
         case WINED3D_SHADER_VERSION(3,0):
             This->baseShader.limits.temporary = 32;

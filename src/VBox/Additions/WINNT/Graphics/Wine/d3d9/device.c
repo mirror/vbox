@@ -433,45 +433,26 @@ static BOOL     WINAPI  IDirect3DDevice9Impl_ShowCursor(LPDIRECT3DDEVICE9EX ifac
 
 static HRESULT WINAPI reset_enum_callback(IWineD3DResource *resource, void *data) {
     BOOL *resources_ok = data;
-    WINED3DRESOURCETYPE type;
+    D3DRESOURCETYPE type;
     HRESULT ret = S_OK;
     WINED3DSURFACE_DESC surface_desc;
     WINED3DVOLUME_DESC volume_desc;
     D3DINDEXBUFFER_DESC index_desc;
     D3DVERTEXBUFFER_DESC vertex_desc;
-    WINED3DFORMAT dummy_format;
-    WINED3DMULTISAMPLE_TYPE dummy_multisampletype;
-    DWORD dummy_dword;
-    WINED3DPOOL pool = WINED3DPOOL_SCRATCH; /* a harmless pool */
+    WINED3DPOOL pool;
     IDirect3DResource9 *parent;
 
     IWineD3DResource_GetParent(resource, (IUnknown **) &parent);
     type = IDirect3DResource9_GetType(parent);
     switch(type) {
         case D3DRTYPE_SURFACE:
-            surface_desc.Format = &dummy_format;
-            surface_desc.Type = &type;
-            surface_desc.Usage = &dummy_dword;
-            surface_desc.Pool = &pool;
-            surface_desc.Size = &dummy_dword;
-            surface_desc.MultiSampleType = &dummy_multisampletype;
-            surface_desc.MultiSampleQuality = &dummy_dword;
-            surface_desc.Width = &dummy_dword;
-            surface_desc.Height = &dummy_dword;
-
             IWineD3DSurface_GetDesc((IWineD3DSurface *) resource, &surface_desc);
+            pool = surface_desc.pool;
             break;
 
         case D3DRTYPE_VOLUME:
-            volume_desc.Format = &dummy_format;
-            volume_desc.Type = &type;
-            volume_desc.Usage = &dummy_dword;
-            volume_desc.Pool = &pool;
-            volume_desc.Size = &dummy_dword;
-            volume_desc.Width = &dummy_dword;
-            volume_desc.Height = &dummy_dword;
-            volume_desc.Depth = &dummy_dword;
             IWineD3DVolume_GetDesc((IWineD3DVolume *) resource, &volume_desc);
+            pool = volume_desc.Pool;
             break;
 
         case D3DRTYPE_INDEXBUFFER:
@@ -488,6 +469,7 @@ static HRESULT WINAPI reset_enum_callback(IWineD3DResource *resource, void *data
          * is a D3DPOOL_DEFAULT surface or volume as well
          */
         default:
+            pool = WINED3DPOOL_SCRATCH; /* a harmless pool */
             break;
     }
 
@@ -656,7 +638,10 @@ static void WINAPI IDirect3DDevice9Impl_GetGammaRamp(LPDIRECT3DDEVICE9EX iface, 
 }
 
 
-static HRESULT IDirect3DDevice9Impl_CreateSurface(LPDIRECT3DDEVICE9EX iface, UINT Width, UINT Height, D3DFORMAT Format, BOOL Lockable, BOOL Discard, UINT Level, IDirect3DSurface9 **ppSurface,D3DRESOURCETYPE Type, UINT Usage, D3DPOOL Pool, D3DMULTISAMPLE_TYPE MultiSample, DWORD MultisampleQuality,HANDLE* pSharedHandle )  {
+static HRESULT IDirect3DDevice9Impl_CreateSurface(LPDIRECT3DDEVICE9EX iface, UINT Width, UINT Height,
+        D3DFORMAT Format, BOOL Lockable, BOOL Discard, UINT Level, IDirect3DSurface9 **ppSurface,
+        UINT Usage, D3DPOOL Pool, D3DMULTISAMPLE_TYPE MultiSample, DWORD MultisampleQuality)
+{
     HRESULT hrc;
     IDirect3DSurface9Impl *object;
     IDirect3DDevice9Impl  *This = (IDirect3DDevice9Impl *)iface;
@@ -687,8 +672,8 @@ static HRESULT IDirect3DDevice9Impl_CreateSurface(LPDIRECT3DDEVICE9EX iface, UIN
 
     EnterCriticalSection(&d3d9_cs);
     hrc = IWineD3DDevice_CreateSurface(This->WineD3DDevice, Width, Height, wined3dformat_from_d3dformat(Format),
-            Lockable, Discard, Level, &object->wineD3DSurface, Type, Usage & WINED3DUSAGE_MASK,
-            (WINED3DPOOL)Pool, MultiSample, MultisampleQuality, SURFACE_OPENGL, (IUnknown *)object);
+            Lockable, Discard, Level, &object->wineD3DSurface, Usage & WINED3DUSAGE_MASK, (WINED3DPOOL)Pool,
+            MultiSample, MultisampleQuality, SURFACE_OPENGL, (IUnknown *)object);
     LeaveCriticalSection(&d3d9_cs);
 
     if (hrc != D3D_OK || NULL == object->wineD3DSurface) {
@@ -714,8 +699,10 @@ static HRESULT  WINAPI  IDirect3DDevice9Impl_CreateRenderTarget(LPDIRECT3DDEVICE
     HRESULT hr;
     TRACE("Relay\n");
 
-   hr = IDirect3DDevice9Impl_CreateSurface(iface,Width,Height,Format,Lockable,FALSE/*Discard*/, 0/*Level*/, ppSurface,D3DRTYPE_SURFACE,D3DUSAGE_RENDERTARGET,D3DPOOL_DEFAULT,MultiSample,MultisampleQuality,pSharedHandle);
-   return hr;
+    hr = IDirect3DDevice9Impl_CreateSurface(iface, Width, Height, Format, Lockable, FALSE /* Discard */,
+            0 /* Level */, ppSurface, D3DUSAGE_RENDERTARGET, D3DPOOL_DEFAULT, MultiSample, MultisampleQuality);
+
+    return hr;
 }
 
 static HRESULT  WINAPI  IDirect3DDevice9Impl_CreateDepthStencilSurface(LPDIRECT3DDEVICE9EX iface, UINT Width, UINT Height,
@@ -725,10 +712,10 @@ static HRESULT  WINAPI  IDirect3DDevice9Impl_CreateDepthStencilSurface(LPDIRECT3
     HRESULT hr;
     TRACE("Relay\n");
 
-     hr = IDirect3DDevice9Impl_CreateSurface(iface,Width,Height,Format,TRUE/* Lockable */,Discard, 0/* Level */
-                                               ,ppSurface,D3DRTYPE_SURFACE,D3DUSAGE_DEPTHSTENCIL,
-                                                D3DPOOL_DEFAULT,MultiSample,MultisampleQuality,pSharedHandle);
-     return hr;
+    hr = IDirect3DDevice9Impl_CreateSurface(iface, Width, Height, Format, TRUE /* Lockable */, Discard,
+            0 /* Level */, ppSurface, D3DUSAGE_DEPTHSTENCIL, D3DPOOL_DEFAULT, MultiSample, MultisampleQuality);
+
+    return hr;
 }
 
 
@@ -802,18 +789,16 @@ static HRESULT  WINAPI  IDirect3DDevice9Impl_ColorFill(LPDIRECT3DDEVICE9EX iface
     HRESULT hr;
     TRACE("(%p) Relay\n" , This);
 
-    memset(&desc, 0, sizeof(desc));
-    desc.Usage = &usage;
-    desc.Pool = &pool;
-    desc.Type = &restype;
-
     EnterCriticalSection(&d3d9_cs);
     IWineD3DSurface_GetDesc(surface->wineD3DSurface, &desc);
+    usage = desc.usage;
+    pool = desc.pool;
+    restype = desc.resource_type;
 
     /* This method is only allowed with surfaces that are render targets, or offscreen plain surfaces
      * in D3DPOOL_DEFAULT
      */
-    if(!(usage & WINED3DUSAGE_RENDERTARGET) && (pool != D3DPOOL_DEFAULT || restype != D3DRTYPE_SURFACE)) {
+    if(!(usage & WINED3DUSAGE_RENDERTARGET) && (pool != WINED3DPOOL_DEFAULT || restype != WINED3DRTYPE_SURFACE)) {
         LeaveCriticalSection(&d3d9_cs);
         WARN("Surface is not a render target, or not a stand-alone D3DPOOL_DEFAULT surface\n");
         return D3DERR_INVALIDCALL;
@@ -840,7 +825,9 @@ static HRESULT  WINAPI  IDirect3DDevice9Impl_CreateOffscreenPlainSurface(LPDIREC
         Why, their always lockable?
         should I change the usage to dynamic?        
         */
-    hr = IDirect3DDevice9Impl_CreateSurface(iface,Width,Height,Format,TRUE/*Loackable*/,FALSE/*Discard*/,0/*Level*/ , ppSurface,D3DRTYPE_SURFACE, 0/*Usage (undefined/none)*/,(WINED3DPOOL) Pool,D3DMULTISAMPLE_NONE,0/*MultisampleQuality*/,pSharedHandle);
+    hr = IDirect3DDevice9Impl_CreateSurface(iface, Width, Height, Format, TRUE /* Lockable */, FALSE /* Discard */,
+            0 /* Level */, ppSurface, 0 /* Usage (undefined/none) */, (WINED3DPOOL)Pool, D3DMULTISAMPLE_NONE,
+            0 /* MultisampleQuality */);
 
     return hr;
 }
@@ -2016,8 +2003,7 @@ static HRESULT STDMETHODCALLTYPE device_parent_CreateSurface(IWineD3DDeviceParen
 
     hr = IDirect3DDevice9Impl_CreateSurface((IDirect3DDevice9Ex *)This, width, height,
             d3dformat_from_wined3dformat(format), lockable, FALSE /* Discard */, level,
-            (IDirect3DSurface9 **)&d3d_surface, D3DRTYPE_SURFACE, usage, pool,
-            D3DMULTISAMPLE_NONE, 0 /* MultisampleQuality */, NULL);
+            (IDirect3DSurface9 **)&d3d_surface, usage, pool, D3DMULTISAMPLE_NONE, 0 /* MultisampleQuality */);
     if (FAILED(hr))
     {
         ERR("(%p) CreateSurface failed, returning %#x\n", iface, hr);

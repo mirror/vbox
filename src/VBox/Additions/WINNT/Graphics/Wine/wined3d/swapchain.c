@@ -73,7 +73,24 @@ static void WINAPI IWineD3DSwapChainImpl_Destroy(IWineD3DSwapChain *iface, D3DCB
         HeapFree(GetProcessHeap(), 0, This->backBuffer);
     }
 
-    for(i = 0; i < This->num_contexts; i++) {
+    for (i = 0; i < This->num_contexts; ++i)
+    {
+        if (This->context[i] == This->wineD3DDevice->activeContext)
+        {
+            IWineD3DSwapChainImpl *swapchain = (IWineD3DSwapChainImpl *)This->wineD3DDevice->swapchains[0];
+
+            /* Avoid destroying the currently active context for non-implicit swapchains. */
+            if (This != swapchain)
+            {
+                TRACE("Would destroy currently active context %p on a non-implicit swapchain.\n", This->context[i]);
+
+                if (swapchain->backBuffer)
+                    ActivateContext(This->wineD3DDevice, swapchain->backBuffer[0], CTXUSAGE_RESOURCELOAD);
+                else
+                    ActivateContext(This->wineD3DDevice, swapchain->frontBuffer, CTXUSAGE_RESOURCELOAD);
+            }
+        }
+
         DestroyContext(This->wineD3DDevice, This->context[i]);
     }
     /* Restore the screen resolution if we rendered in fullscreen
@@ -120,9 +137,9 @@ static HRESULT WINAPI IWineD3DSwapChainImpl_Present(IWineD3DSwapChain *iface, CO
         cursor.resource.pool = WINED3DPOOL_SCRATCH;
         cursor.resource.format_desc = getFormatDescEntry(WINED3DFMT_A8R8G8B8, &This->wineD3DDevice->adapter->gl_info);
         cursor.resource.resourceType = WINED3DRTYPE_SURFACE;
-        cursor.glDescription.textureName = This->wineD3DDevice->cursorTexture;
-        cursor.glDescription.target = GL_TEXTURE_2D;
-        cursor.glDescription.level = 0;
+        cursor.texture_name = This->wineD3DDevice->cursorTexture;
+        cursor.texture_target = GL_TEXTURE_2D;
+        cursor.texture_level = 0;
         cursor.currentDesc.Width = This->wineD3DDevice->cursorWidth;
         cursor.currentDesc.Height = This->wineD3DDevice->cursorHeight;
         cursor.glRect.left = 0;
@@ -232,7 +249,7 @@ static HRESULT WINAPI IWineD3DSwapChainImpl_Present(IWineD3DSwapChain *iface, CO
         TRACE("Clearing the color buffer with cyan color\n");
 
         IWineD3DDevice_Clear((IWineD3DDevice*)This->wineD3DDevice, 0, NULL,
-                              WINED3DCLEAR_TARGET, 0xff00ffff, 1.0, 0);
+                WINED3DCLEAR_TARGET, 0xff00ffff, 1.0f, 0);
     }
 
     if(((IWineD3DSurfaceImpl *) This->frontBuffer)->Flags   & SFLAG_INSYSMEM ||

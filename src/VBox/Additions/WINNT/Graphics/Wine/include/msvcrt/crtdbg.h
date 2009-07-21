@@ -17,15 +17,6 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
-/*
- * Sun LGPL Disclaimer: For the avoidance of doubt, except that if any license choice
- * other than GPL or LGPL is available it will apply instead, Sun elects to use only
- * the Lesser General Public License version 2.1 (LGPLv2) at this time for any software where
- * a choice of LGPL license versions is made available with the language indicating
- * that LGPLv2 or any later version may be used, or where a choice of which version
- * of the LGPL is applied is otherwise unspecified.
- */
-
 #ifndef __WINE_CRTDBG_H_
 #define __WINE_CRTDBG_H_
 
@@ -53,10 +44,10 @@
 typedef struct _CrtMemState
 {
     struct _CrtMemBlockHeader* pBlockHeader;
-    unsigned long lCounts[_MAX_BLOCKS];
-    unsigned long lSizes[_MAX_BLOCKS];
-    unsigned long lHighWaterCount;
-    unsigned long lTotalCount;
+    __msvcrt_ulong lCounts[_MAX_BLOCKS];
+    __msvcrt_ulong lSizes[_MAX_BLOCKS];
+    __msvcrt_ulong lHighWaterCount;
+    __msvcrt_ulong lTotalCount;
 } _CrtMemState;
 
 
@@ -69,7 +60,7 @@ typedef struct _CrtMemState
 #define _CrtCheckMemory()               ((int)1)
 #define _CrtDbgReport(...)              ((int)0)
 #define _CrtDumpMemoryLeaks()           ((int)0)
-#define _CrtSetBreakAlloc(a)            ((long)0)
+#define _CrtSetBreakAlloc(a)            ((__msvcrt_long)0)
 #define _CrtSetDbgFlag(f)               ((int)0)
 #define _CrtSetDumpClient(f)            ((void)0)
 #define _CrtSetReportMode(t,m)          ((int)0)

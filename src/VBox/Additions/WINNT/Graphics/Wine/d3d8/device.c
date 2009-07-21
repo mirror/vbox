@@ -78,6 +78,7 @@ D3DFORMAT d3dformat_from_wined3dformat(WINED3DFORMAT format)
         case WINED3DFMT_X8L8V8U8: return D3DFMT_X8L8V8U8;
         case WINED3DFMT_R8G8B8A8_SNORM: return D3DFMT_Q8W8V8U8;
         case WINED3DFMT_R16G16_SNORM: return D3DFMT_V16U16;
+        case WINED3DFMT_W11V11U10: return D3DFMT_W11V11U10;
         case WINED3DFMT_A2W10V10U10: return D3DFMT_A2W10V10U10;
         case WINED3DFMT_D16_LOCKABLE: return D3DFMT_D16_LOCKABLE;
         case WINED3DFMT_D32: return D3DFMT_D32;
@@ -128,6 +129,7 @@ WINED3DFORMAT wined3dformat_from_d3dformat(D3DFORMAT format)
         case D3DFMT_X8L8V8U8: return WINED3DFMT_X8L8V8U8;
         case D3DFMT_Q8W8V8U8: return WINED3DFMT_R8G8B8A8_SNORM;
         case D3DFMT_V16U16: return WINED3DFMT_R16G16_SNORM;
+        case D3DFMT_W11V11U10: return WINED3DFMT_W11V11U10;
         case D3DFMT_A2W10V10U10: return WINED3DFMT_A2W10V10U10;
         case D3DFMT_D16_LOCKABLE: return WINED3DFMT_D16_LOCKABLE;
         case D3DFMT_D32: return WINED3DFMT_D32;
@@ -172,14 +174,23 @@ static UINT vertex_count_from_primitive_count(D3DPRIMITIVETYPE primitive_type, U
 }
 
 /* Handle table functions */
-static DWORD d3d8_allocate_handle(struct d3d8_handle_table *t, void *object)
+static DWORD d3d8_allocate_handle(struct d3d8_handle_table *t, void *object, enum d3d8_handle_type type)
 {
+    struct d3d8_handle_entry *entry;
+
     if (t->free_entries)
     {
         /* Use a free handle */
-        void **entry = t->free_entries;
-        t->free_entries = *entry;
-        *entry = object;
+        entry = t->free_entries;
+        if (entry->type != D3D8_HANDLE_FREE)
+        {
+            ERR("Handle %u(%p) is in the free list, but has type %#x.\n", (entry - t->entries), entry, entry->type);
+            return D3D8_INVALID_HANDLE;
+        }
+        t->free_entries = entry->object;
+        entry->object = object;
+        entry->type = type;
+
         return entry - t->entries;
     }
 
@@ -187,34 +198,68 @@ static DWORD d3d8_allocate_handle(struct d3d8_handle_table *t, void *object)
     {
         /* Grow the table */
         UINT new_size = t->table_size + (t->table_size >> 1);
-        void **new_entries = HeapReAlloc(GetProcessHeap(), 0, t->entries, new_size * sizeof(void *));
-        if (!new_entries) return D3D8_INVALID_HANDLE;
+        struct d3d8_handle_entry *new_entries = HeapReAlloc(GetProcessHeap(),
+                0, t->entries, new_size * sizeof(*t->entries));
+        if (!new_entries)
+        {
+            ERR("Failed to grow the handle table.\n");
+            return D3D8_INVALID_HANDLE;
+        }
         t->entries = new_entries;
         t->table_size = new_size;
     }
 
-    t->entries[t->entry_count] = object;
+    entry = &t->entries[t->entry_count];
+    entry->object = object;
+    entry->type = type;
+
     return t->entry_count++;
 }
 
-static void *d3d8_free_handle(struct d3d8_handle_table *t, DWORD handle)
+static void *d3d8_free_handle(struct d3d8_handle_table *t, DWORD handle, enum d3d8_handle_type type)
 {
-    void **entry, *object;
+    struct d3d8_handle_entry *entry;
+    void *object;
 
-    if (handle >= t->entry_count) return NULL;
+    if (handle == D3D8_INVALID_HANDLE || handle >= t->entry_count)
+    {
+        WARN("Invalid handle %u passed.\n", handle);
+        return NULL;
+    }
 
     entry = &t->entries[handle];
-    object = *entry;
-    *entry = t->free_entries;
+    if (entry->type != type)
+    {
+        WARN("Handle %u(%p) is not of type %#x.\n", handle, entry, type);
+        return NULL;
+    }
+
+    object = entry->object;
+    entry->object = t->free_entries;
+    entry->type = D3D8_HANDLE_FREE;
     t->free_entries = entry;
 
     return object;
 }
 
-static void *d3d8_get_object(struct d3d8_handle_table *t, DWORD handle)
+static void *d3d8_get_object(struct d3d8_handle_table *t, DWORD handle, enum d3d8_handle_type type)
 {
-    if (handle >= t->entry_count) return NULL;
-    return t->entries[handle];
+    struct d3d8_handle_entry *entry;
+
+    if (handle == D3D8_INVALID_HANDLE || handle >= t->entry_count)
+    {
+        WARN("Invalid handle %u passed.\n", handle);
+        return NULL;
+    }
+
+    entry = &t->entries[handle];
+    if (entry->type != type)
+    {
+        WARN("Handle %u(%p) is not of type %#x.\n", handle, entry, type);
+        return NULL;
+    }
+
+    return entry->object;
 }
 
 /* IDirect3D IUnknown parts follow: */
@@ -803,7 +848,10 @@ static HRESULT WINAPI IDirect3DDevice8Impl_CreateIndexBuffer(LPDIRECT3DDEVICE8 i
     return hrc;
 }
 
-static HRESULT IDirect3DDevice8Impl_CreateSurface(LPDIRECT3DDEVICE8 iface, UINT Width, UINT Height, D3DFORMAT Format, BOOL Lockable, BOOL Discard, UINT Level, IDirect3DSurface8 **ppSurface,D3DRESOURCETYPE Type, UINT Usage,D3DPOOL Pool, D3DMULTISAMPLE_TYPE MultiSample, DWORD MultisampleQuality)  {
+static HRESULT IDirect3DDevice8Impl_CreateSurface(LPDIRECT3DDEVICE8 iface, UINT Width, UINT Height,
+        D3DFORMAT Format, BOOL Lockable, BOOL Discard, UINT Level, IDirect3DSurface8 **ppSurface,
+        UINT Usage, D3DPOOL Pool, D3DMULTISAMPLE_TYPE MultiSample, DWORD MultisampleQuality)
+{
     HRESULT hrc;
     IDirect3DSurface8Impl *object;
     IDirect3DDevice8Impl  *This = (IDirect3DDevice8Impl *)iface;
@@ -834,8 +882,8 @@ static HRESULT IDirect3DDevice8Impl_CreateSurface(LPDIRECT3DDEVICE8 iface, UINT 
 
     EnterCriticalSection(&d3d8_cs);
     hrc = IWineD3DDevice_CreateSurface(This->WineD3DDevice, Width, Height, wined3dformat_from_d3dformat(Format),
-            Lockable, Discard, Level,  &object->wineD3DSurface, Type, Usage & WINED3DUSAGE_MASK,
-            (WINED3DPOOL)Pool, MultiSample, MultisampleQuality, SURFACE_OPENGL, (IUnknown *)object);
+            Lockable, Discard, Level, &object->wineD3DSurface, Usage & WINED3DUSAGE_MASK, (WINED3DPOOL)Pool,
+            MultiSample, MultisampleQuality, SURFACE_OPENGL, (IUnknown *)object);
     LeaveCriticalSection(&d3d8_cs);
     if (hrc != D3D_OK || NULL == object->wineD3DSurface) {
        /* free up object */
@@ -854,7 +902,9 @@ static HRESULT WINAPI IDirect3DDevice8Impl_CreateRenderTarget(LPDIRECT3DDEVICE8 
     HRESULT hr;
     TRACE("Relay\n");
 
-    hr = IDirect3DDevice8Impl_CreateSurface(iface, Width, Height, Format, Lockable, FALSE /* Discard */, 0 /* Level */ , ppSurface, D3DRTYPE_SURFACE, D3DUSAGE_RENDERTARGET, D3DPOOL_DEFAULT, MultiSample, 0);
+    hr = IDirect3DDevice8Impl_CreateSurface(iface, Width, Height, Format, Lockable, FALSE /* Discard */,
+            0 /* Level */, ppSurface, D3DUSAGE_RENDERTARGET, D3DPOOL_DEFAULT, MultiSample, 0);
+
     return hr;
 }
 
@@ -863,9 +913,9 @@ static HRESULT WINAPI IDirect3DDevice8Impl_CreateDepthStencilSurface(LPDIRECT3DD
     TRACE("Relay\n");
 
     /* TODO: Verify that Discard is false */
-    hr = IDirect3DDevice8Impl_CreateSurface(iface, Width, Height, Format, TRUE /* Lockable */, FALSE, 0 /* Level */
-                                               ,ppSurface, D3DRTYPE_SURFACE, D3DUSAGE_DEPTHSTENCIL,
-                                                D3DPOOL_DEFAULT, MultiSample, 0);
+    hr = IDirect3DDevice8Impl_CreateSurface(iface, Width, Height, Format, TRUE /* Lockable */, FALSE,
+            0 /* Level */, ppSurface, D3DUSAGE_DEPTHSTENCIL, D3DPOOL_DEFAULT, MultiSample, 0);
+
     return hr;
 }
 
@@ -874,8 +924,10 @@ static HRESULT WINAPI IDirect3DDevice8Impl_CreateImageSurface(LPDIRECT3DDEVICE8 
     HRESULT hr;
     TRACE("Relay\n");
 
-    hr = IDirect3DDevice8Impl_CreateSurface(iface, Width, Height, Format, TRUE /* Loackable */ , FALSE /*Discard*/ , 0 /* Level */ , ppSurface,
-                                            D3DRTYPE_SURFACE, 0 /* Usage (undefined/none) */ , D3DPOOL_SYSTEMMEM, D3DMULTISAMPLE_NONE, 0 /* MultisampleQuality */);
+    hr = IDirect3DDevice8Impl_CreateSurface(iface, Width, Height, Format, TRUE /* Lockable */, FALSE /* Discard */,
+            0 /* Level */, ppSurface, 0 /* Usage (undefined/none) */, D3DPOOL_SYSTEMMEM, D3DMULTISAMPLE_NONE,
+            0 /* MultisampleQuality */);
+
     return hr;
 }
 
@@ -895,20 +947,18 @@ static HRESULT WINAPI IDirect3DDevice8Impl_CopyRects(LPDIRECT3DDEVICE8 iface, ID
 
 
     /* Check that the source texture is in WINED3DPOOL_SYSTEMMEM and the destination texture is in WINED3DPOOL_DEFAULT */
-    memset(&winedesc, 0, sizeof(winedesc));
 
-    winedesc.Format = &srcFormat;
-    winedesc.Width  = &srcWidth;
-    winedesc.Height = &srcHeight;
-    winedesc.Size   = &srcSize;
     EnterCriticalSection(&d3d8_cs);
     IWineD3DSurface_GetDesc(Source->wineD3DSurface, &winedesc);
+    srcFormat = winedesc.format;
+    srcWidth = winedesc.width;
+    srcHeight = winedesc.height;
+    srcSize = winedesc.size;
 
-    winedesc.Format = &destFormat;
-    winedesc.Width  = &destWidth;
-    winedesc.Height = &destHeight;
-    winedesc.Size   = NULL;
     IWineD3DSurface_GetDesc(Dest->wineD3DSurface, &winedesc);
+    destFormat = winedesc.format;
+    destWidth = winedesc.width;
+    destHeight = winedesc.height;
 
     /* Check that the source and destination formats match */
     if (srcFormat != destFormat && WINED3DFMT_UNKNOWN != destFormat) {
@@ -1290,7 +1340,7 @@ static HRESULT WINAPI IDirect3DDevice8Impl_EndStateBlock(LPDIRECT3DDEVICE8 iface
 
     object->wineD3DStateBlock = wineD3DStateBlock;
 
-    *pToken = d3d8_allocate_handle(&This->handle_table, object);
+    *pToken = d3d8_allocate_handle(&This->handle_table, object, D3D8_HANDLE_SB);
     LeaveCriticalSection(&d3d8_cs);
 
     if (*pToken == D3D8_INVALID_HANDLE)
@@ -1314,7 +1364,7 @@ static HRESULT WINAPI IDirect3DDevice8Impl_ApplyStateBlock(LPDIRECT3DDEVICE8 ifa
     TRACE("(%p) %#x Relay\n", This, Token);
 
     EnterCriticalSection(&d3d8_cs);
-    pSB = d3d8_get_object(&This->handle_table, Token - 1);
+    pSB = d3d8_get_object(&This->handle_table, Token - 1, D3D8_HANDLE_SB);
     if (!pSB)
     {
         WARN("Invalid handle (%#x) passed.\n", Token);
@@ -1334,7 +1384,7 @@ static HRESULT WINAPI IDirect3DDevice8Impl_CaptureStateBlock(LPDIRECT3DDEVICE8 i
     TRACE("(%p) %#x Relay\n", This, Token);
 
     EnterCriticalSection(&d3d8_cs);
-    pSB = d3d8_get_object(&This->handle_table, Token - 1);
+    pSB = d3d8_get_object(&This->handle_table, Token - 1, D3D8_HANDLE_SB);
     if (!pSB)
     {
         WARN("Invalid handle (%#x) passed.\n", Token);
@@ -1353,7 +1403,7 @@ static HRESULT WINAPI IDirect3DDevice8Impl_DeleteStateBlock(LPDIRECT3DDEVICE8 if
     TRACE("(%p) Relay\n", This);
 
     EnterCriticalSection(&d3d8_cs);
-    pSB = d3d8_free_handle(&This->handle_table, Token - 1);
+    pSB = d3d8_free_handle(&This->handle_table, Token - 1, D3D8_HANDLE_SB);
     LeaveCriticalSection(&d3d8_cs);
 
     if (!pSB)
@@ -1408,7 +1458,7 @@ static HRESULT WINAPI IDirect3DDevice8Impl_CreateStateBlock(IDirect3DDevice8 *if
         return hr;
     }
 
-    *handle = d3d8_allocate_handle(&This->handle_table, object);
+    *handle = d3d8_allocate_handle(&This->handle_table, object, D3D8_HANDLE_SB);
     LeaveCriticalSection(&d3d8_cs);
 
     if (*handle == D3D8_INVALID_HANDLE)
@@ -1775,7 +1825,7 @@ static HRESULT WINAPI IDirect3DDevice8Impl_CreateVertexShader(LPDIRECT3DDEVICE8 
     }
 
     EnterCriticalSection(&d3d8_cs);
-    handle = d3d8_allocate_handle(&This->handle_table, object);
+    handle = d3d8_allocate_handle(&This->handle_table, object, D3D8_HANDLE_VS);
     if (handle == D3D8_INVALID_HANDLE)
     {
         ERR("Failed to allocate shader handle\n");
@@ -1801,7 +1851,7 @@ static HRESULT WINAPI IDirect3DDevice8Impl_CreateVertexShader(LPDIRECT3DDEVICE8 
         {
             /* free up object */
             FIXME("Call to IWineD3DDevice_CreateVertexShader failed\n");
-            d3d8_free_handle(&This->handle_table, handle);
+            d3d8_free_handle(&This->handle_table, handle, D3D8_HANDLE_VS);
             IDirect3DVertexDeclaration8_Release(object->vertex_declaration);
             HeapFree(GetProcessHeap(), 0, object);
             *ppShader = 0;
@@ -1908,7 +1958,7 @@ static HRESULT WINAPI IDirect3DDevice8Impl_SetVertexShader(LPDIRECT3DDEVICE8 ifa
     TRACE("Setting shader\n");
 
     EnterCriticalSection(&d3d8_cs);
-    shader = d3d8_get_object(&This->handle_table, pShader - (VS_HIGHESTFIXEDFXF + 1));
+    shader = d3d8_get_object(&This->handle_table, pShader - (VS_HIGHESTFIXEDFXF + 1), D3D8_HANDLE_VS);
     if (!shader)
     {
         WARN("Invalid handle (%#x) passed.\n", pShader);
@@ -1974,7 +2024,7 @@ static HRESULT  WINAPI  IDirect3DDevice8Impl_DeleteVertexShader(LPDIRECT3DDEVICE
 
     EnterCriticalSection(&d3d8_cs);
 
-    shader = d3d8_free_handle(&This->handle_table, pShader - (VS_HIGHESTFIXEDFXF + 1));
+    shader = d3d8_free_handle(&This->handle_table, pShader - (VS_HIGHESTFIXEDFXF + 1), D3D8_HANDLE_VS);
     if (!shader)
     {
         WARN("Invalid handle (%#x) passed.\n", pShader);
@@ -2043,7 +2093,7 @@ static HRESULT WINAPI IDirect3DDevice8Impl_GetVertexShaderDeclaration(LPDIRECT3D
 
     EnterCriticalSection(&d3d8_cs);
 
-    shader = d3d8_get_object(&This->handle_table, pVertexShader - (VS_HIGHESTFIXEDFXF + 1));
+    shader = d3d8_get_object(&This->handle_table, pVertexShader - (VS_HIGHESTFIXEDFXF + 1), D3D8_HANDLE_VS);
     LeaveCriticalSection(&d3d8_cs);
     if (!shader)
     {
@@ -2079,7 +2129,7 @@ static HRESULT WINAPI IDirect3DDevice8Impl_GetVertexShaderFunction(LPDIRECT3DDEV
 
     EnterCriticalSection(&d3d8_cs);
 
-    shader = d3d8_get_object(&This->handle_table, pVertexShader - (VS_HIGHESTFIXEDFXF + 1));
+    shader = d3d8_get_object(&This->handle_table, pVertexShader - (VS_HIGHESTFIXEDFXF + 1), D3D8_HANDLE_VS);
     if (!shader)
     {
         WARN("Invalid handle (%#x) passed.\n", pVertexShader);
@@ -2182,7 +2232,7 @@ static HRESULT WINAPI IDirect3DDevice8Impl_CreatePixelShader(LPDIRECT3DDEVICE8 i
         return hr;
     }
 
-    handle = d3d8_allocate_handle(&This->handle_table, object);
+    handle = d3d8_allocate_handle(&This->handle_table, object, D3D8_HANDLE_PS);
     LeaveCriticalSection(&d3d8_cs);
     if (handle == D3D8_INVALID_HANDLE)
     {
@@ -2213,7 +2263,7 @@ static HRESULT WINAPI IDirect3DDevice8Impl_SetPixelShader(LPDIRECT3DDEVICE8 ifac
         return hr;
     }
 
-    shader = d3d8_get_object(&This->handle_table, pShader - (VS_HIGHESTFIXEDFXF + 1));
+    shader = d3d8_get_object(&This->handle_table, pShader - (VS_HIGHESTFIXEDFXF + 1), D3D8_HANDLE_PS);
     if (!shader)
     {
         WARN("Invalid handle (%#x) passed.\n", pShader);
@@ -2264,12 +2314,12 @@ static HRESULT WINAPI IDirect3DDevice8Impl_DeletePixelShader(LPDIRECT3DDEVICE8 i
 
     EnterCriticalSection(&d3d8_cs);
 
-    shader = d3d8_free_handle(&This->handle_table, pShader - (VS_HIGHESTFIXEDFXF + 1));
+    shader = d3d8_free_handle(&This->handle_table, pShader - (VS_HIGHESTFIXEDFXF + 1), D3D8_HANDLE_PS);
     if (!shader)
     {
         WARN("Invalid handle (%#x) passed.\n", pShader);
         LeaveCriticalSection(&d3d8_cs);
-        return D3DERR_INVALIDCALL;
+        return D3D_OK;
     }
 
     IWineD3DDevice_GetPixelShader(This->WineD3DDevice, &cur);
@@ -2320,7 +2370,7 @@ static HRESULT WINAPI IDirect3DDevice8Impl_GetPixelShaderFunction(LPDIRECT3DDEVI
     TRACE("(%p) : pPixelShader %#x, pData %p, pSizeOfData %p\n", This, pPixelShader, pData, pSizeOfData);
 
     EnterCriticalSection(&d3d8_cs);
-    shader = d3d8_get_object(&This->handle_table, pPixelShader - (VS_HIGHESTFIXEDFXF + 1));
+    shader = d3d8_get_object(&This->handle_table, pPixelShader - (VS_HIGHESTFIXEDFXF + 1), D3D8_HANDLE_PS);
     if (!shader)
     {
         WARN("Invalid handle (%#x) passed.\n", pPixelShader);
@@ -2570,8 +2620,7 @@ static HRESULT STDMETHODCALLTYPE device_parent_CreateSurface(IWineD3DDeviceParen
 
     hr = IDirect3DDevice8Impl_CreateSurface((IDirect3DDevice8 *)This, width, height,
             d3dformat_from_wined3dformat(format), lockable, FALSE /* Discard */, level,
-            (IDirect3DSurface8 **)&d3d_surface, D3DRTYPE_SURFACE, usage, pool,
-            D3DMULTISAMPLE_NONE, 0 /* MultisampleQuality */);
+            (IDirect3DSurface8 **)&d3d_surface, usage, pool, D3DMULTISAMPLE_NONE, 0 /* MultisampleQuality */);
     if (FAILED(hr))
     {
         ERR("(%p) CreateSurface failed, returning %#x\n", iface, hr);

@@ -1041,7 +1041,6 @@ typedef struct _CTL_USAGE_MATCH {
 #define CERT_CHAIN_RETURN_LOWER_QUALITY_CONTEXTS       0x00000080
 #define CERT_CHAIN_DISABLE_AUTH_ROOT_AUTO_UPDATE       0x00000100
 #define CERT_CHAIN_TIMESTAMP_TIME                      0x00000200
-    LPFILETIME       pftCacheResync;
 
 typedef struct _CERT_CHAIN_PARA {
     DWORD            cbSize;
@@ -1051,6 +1050,7 @@ typedef struct _CERT_CHAIN_PARA {
     DWORD            dwUrlRetrievalTimeout;
     BOOL             fCheckRevocationFreshnessTime;
     DWORD            dwRevocationFreshnessTime;
+    LPFILETIME       pftCacheResync;
 #endif
 } CERT_CHAIN_PARA, *PCERT_CHAIN_PARA;
 

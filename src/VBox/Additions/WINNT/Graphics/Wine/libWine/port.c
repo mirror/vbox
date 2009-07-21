@@ -35,9 +35,10 @@
 #include <sys/types.h>
 
 #include "wine/library.h"
-#include "wine/pthread.h"
 
-static struct wine_pthread_functions pthread_functions;
+/* no longer used, for backwards compatibility only */
+struct wine_pthread_functions;
+static void *pthread_functions[8];
 
 /***********************************************************************
  *           wine_pthread_get_functions
@@ -62,30 +63,7 @@ void wine_pthread_set_functions( const struct wine_pthread_functions *functions,
  *
  * Switch to the specified stack and call the function.
  */
-void DECLSPEC_NORETURN wine_switch_to_stack( void (*func)(void *), void *arg, void *stack );
-#if defined(__i386__) && defined(__GNUC__)
-__ASM_GLOBAL_FUNC( wine_switch_to_stack,
-                   "movl 4(%esp),%ecx\n\t"  /* func */
-                   "movl 8(%esp),%edx\n\t"  /* arg */
-                   "movl 12(%esp),%esp\n\t"  /* stack */
-                   "andl $~15,%esp\n\t"
-                   "subl $12,%esp\n\t"
-                   "pushl %edx\n\t"
-                   "xorl %ebp,%ebp\n\t"
-                   "call *%ecx\n\t"
-                   "int $3" /* we never return here */ )
-#elif defined(__i386__) && defined(_MSC_VER)
-__declspec(naked) void wine_switch_to_stack( void (*func)(void *), void *arg, void *stack )
-{
-  __asm mov ecx, 4[esp];
-  __asm mov edx, 8[esp];
-  __asm mov esp, 12[esp];
-  __asm push edx;
-  __asm xor ebp, ebp;
-  __asm call [ecx];
-  __asm int 3;
-}
-#elif defined(__sparc__) && defined(__GNUC__)
+#if defined(__sparc__) && defined(__GNUC__)
 __ASM_GLOBAL_FUNC( wine_switch_to_stack,
                    "mov %o0, %l0\n\t" /* store first argument */
                    "mov %o1, %l1\n\t" /* store second argument */
@@ -101,16 +79,6 @@ __ASM_GLOBAL_FUNC( wine_switch_to_stack,
                    "subi r1,r1,0x100\n\t" /* adjust stack pointer */
                    "bctrl\n" /* call ctr */
                    "1:\tb 1b") /* loop */
-#elif defined(__powerpc__) && defined(__GNUC__)
-__ASM_GLOBAL_FUNC( wine_switch_to_stack,
-                   "mtctr 3\n\t" /* func -> ctr */
-                   "mr 3,4\n\t" /* args -> function param 1 (r3) */
-                   "mr 1,5\n\t" /* stack */
-                   "subi 1, 1, 16\n\t" /* allocate space for the callee */
-                   "li 0, 0\n\t" /* load zero */
-                   "stw 0, 0(1)\n\t" /* create a bottom stack frame */
-                   "bctrl\n\t" /* call ctr */
-                   "1:\tb 1b") /* loop */
 #elif defined(__ALPHA__) && defined(__GNUC__)
 __ASM_GLOBAL_FUNC( wine_switch_to_stack,
                    "mov $16,$0\n\t" /* func */
@@ -118,15 +86,6 @@ __ASM_GLOBAL_FUNC( wine_switch_to_stack,
                    "mov $18,$30\n\t" /* stack */
                    "jsr $31,($0),0\n\t" /* call func */
                    "L1:\tbr $31,L1") /* loop */
-#elif defined(__x86_64__) && defined(__GNUC__)
-__ASM_GLOBAL_FUNC( wine_switch_to_stack,
-                   "movq %rdi,%rax\n\t" /* func */
-                   "movq %rsi,%rdi\n\t" /* arg */
-                   "andq $~15,%rdx\n\t" /* stack */
-                   "movq %rdx,%rsp\n\t"
-                   "xorq %rbp,%rbp\n\t"
-                   "callq *%rax\n\t"    /* call func */
-                   "int $3")
 #else
 void DECLSPEC_NORETURN wine_switch_to_stack( void (*func)(void *), void *arg, void *stack )
 {
@@ -145,19 +104,29 @@ void DECLSPEC_NORETURN wine_switch_to_stack( void (*func)(void *), void *arg, vo
 #if defined(__i386__) && defined(__GNUC__)
 __ASM_GLOBAL_FUNC( wine_call_on_stack,
                    "pushl %ebp\n\t"
+                   __ASM_CFI(".cfi_adjust_cfa_offset 4\n\t")
+                   __ASM_CFI(".cfi_rel_offset %ebp,0\n\t")
                    "pushl %esi\n\t"
+                   __ASM_CFI(".cfi_adjust_cfa_offset 4\n\t")
+                   __ASM_CFI(".cfi_rel_offset %esi,0\n\t")
+                   "movl %esp,%esi\n\t"
+                   __ASM_CFI(".cfi_def_cfa_register %esi\n\t")
                    "movl 12(%esp),%ecx\n\t"  /* func */
                    "movl 16(%esp),%edx\n\t"  /* arg */
-                   "movl 20(%esp),%esi\n\t"  /* stack */
-                   "andl $~15,%esi\n\t"
-                   "subl $12,%esi\n\t"
-                   "xchgl %esi,%esp\n\t"
+                   "movl 20(%esp),%eax\n\t"  /* stack */
+                   "andl $~15,%eax\n\t"
+                   "subl $12,%eax\n\t"
+                   "movl %eax,%esp\n\t"
                    "pushl %edx\n\t"
                    "xorl %ebp,%ebp\n\t"
                    "call *%ecx\n\t"
                    "movl %esi,%esp\n\t"
                    "popl %esi\n\t"
+                   __ASM_CFI(".cfi_adjust_cfa_offset -4\n\t")
+                   __ASM_CFI(".cfi_same_value %esi\n\t")
                    "popl %ebp\n\t"
+                   __ASM_CFI(".cfi_def_cfa %esp,4\n\t")
+                   __ASM_CFI(".cfi_same_value %ebp\n\t")
                    "ret" )
 #elif defined(__i386__) && defined(_MSC_VER)
 __declspec(naked) int wine_call_on_stack( int (*func)(void *), void *arg, void *stack )
@@ -179,17 +148,20 @@ __declspec(naked) int wine_call_on_stack( int (*func)(void *), void *arg, void *
 #elif defined(__x86_64__) && defined(__GNUC__)
 __ASM_GLOBAL_FUNC( wine_call_on_stack,
                    "pushq %rbp\n\t"
-                   "pushq %rbx\n\t"
-                   "movq %rsp,%rbx\n\t"
+                   ".cfi_adjust_cfa_offset 8\n\t"
+                   ".cfi_rel_offset %rbp,0\n\t"
+                   "movq %rsp,%rbp\n\t"
+                   ".cfi_def_cfa_register %rbp\n\t"
                    "movq %rdi,%rax\n\t" /* func */
                    "movq %rsi,%rdi\n\t" /* arg */
                    "andq $~15,%rdx\n\t" /* stack */
                    "movq %rdx,%rsp\n\t"
-                   "xorq %rbp,%rbp\n\t"
                    "callq *%rax\n\t"    /* call func */
-                   "movq %rbx,%rsp\n\t"
-                   "popq %rbx\n\t"
+                   "movq %rbp,%rsp\n\t"
+                   ".cfi_def_cfa_register %rsp\n\t"
                    "popq %rbp\n\t"
+                   ".cfi_adjust_cfa_offset -8\n\t"
+                   ".cfi_same_value %rbp\n\t"
                    "ret")
 #elif defined(__powerpc__) && defined(__GNUC__)
 __ASM_GLOBAL_FUNC( wine_call_on_stack,

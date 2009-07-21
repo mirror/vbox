@@ -493,6 +493,8 @@ static const WCHAR PROGRESS_CLASSW[] = { 'm','s','c','t','l','s','_',
 #define PBM_GETPOS          (WM_USER+8)
 #define PBM_SETBARCOLOR     (WM_USER+9)
 #define PBM_SETMARQUEE      (WM_USER+10)
+#define PBM_GETBKCOLOR      (WM_USER+14)
+#define PBM_GETBARCOLOR     (WM_USER+15)
 #define PBM_SETBKCOLOR      CCM_SETBKCOLOR
 
 #define PBS_SMOOTH          0x01
@@ -745,6 +747,8 @@ static const WCHAR WC_HEADERW[] = { 'S','y','s','H','e','a','d','e','r','3','2',
 #define HDS_FILTERBAR           0x0100
 #define HDS_FLAT                0x0200
 #define HDS_CHECKBOXES          0x0400
+#define HDS_NOSIZING            0x0800
+#define HDS_OVERFLOW            0x1000
 
 #define HDI_WIDTH               0x0001
 #define HDI_HEIGHT              HDI_WIDTH
@@ -756,6 +760,9 @@ static const WCHAR WC_HEADERW[] = { 'S','y','s','H','e','a','d','e','r','3','2',
 #define HDI_DI_SETITEM          0x0040
 #define HDI_ORDER               0x0080
 #define HDI_FILTER              0x0100
+#define HDI_STATE               0x0200
+
+#define HDIS_FOCUSED        0x00000001
 
 #define HDF_LEFT                0x0000
 #define HDF_RIGHT               0x0001
@@ -772,6 +779,7 @@ static const WCHAR WC_HEADERW[] = { 'S','y','s','H','e','a','d','e','r','3','2',
 #define HDF_BITMAP              0x2000
 #define HDF_STRING              0x4000
 #define HDF_OWNERDRAW           0x8000
+#define HDF_SPLITBUTTON      0x1000000
 
 #define HHT_NOWHERE             0x0001
 #define HHT_ONHEADER            0x0002
@@ -784,6 +792,8 @@ static const WCHAR WC_HEADERW[] = { 'S','y','s','H','e','a','d','e','r','3','2',
 #define HHT_TORIGHT             0x0400
 #define HHT_TOLEFT              0x0800
 #define HHT_ONITEMSTATEICON     0x1000
+#define HHT_ONDROPDOWN          0x2000
+#define HHT_ONOVERFLOW          0x4000
 
 #define HDM_FIRST               0x1200
 #define HDM_GETITEMCOUNT        (HDM_FIRST+0)
@@ -871,10 +881,14 @@ typedef struct _HD_ITEMA
     INT     cchTextMax;
     INT     fmt;
     LPARAM    lParam;
+    /* (_WIN32_IE >= 0x0300) */
     INT     iImage;
     INT     iOrder;
+    /* (_WIN32_IE >= 0x0500) */
     UINT    type;
     LPVOID  pvFilter;
+    /* (_WIN32_WINNT >= 0x0600) */
+    UINT    state;
 } HDITEMA, *LPHDITEMA;
 
 typedef struct _HD_ITEMW
@@ -886,10 +900,14 @@ typedef struct _HD_ITEMW
     INT     cchTextMax;
     INT     fmt;
     LPARAM    lParam;
+    /* (_WIN32_IE >= 0x0300) */
     INT     iImage;
     INT     iOrder;
+    /* (_WIN32_IE >= 0x0500) */
     UINT    type;
     LPVOID  pvFilter;
+    /* (_WIN32_WINNT >= 0x0600) */
+    UINT    state;
 } HDITEMW, *LPHDITEMW;
 
 #define HDITEM   WINELIB_NAME_AW(HDITEM)
@@ -1979,6 +1997,9 @@ typedef struct tagREBARBANDINFOA
     UINT    cxIdeal;
     LPARAM    lParam;
     UINT    cxHeader;
+    /* _WIN32_WINNT >= 0x0600 */
+    RECT    rcChevronLocation;
+    UINT    uChevronState;
 } REBARBANDINFOA, *LPREBARBANDINFOA;
 
 typedef REBARBANDINFOA const *LPCREBARBANDINFOA;
@@ -2005,6 +2026,9 @@ typedef struct tagREBARBANDINFOW
     UINT    cxIdeal;
     LPARAM    lParam;
     UINT    cxHeader;
+    /* _WIN32_WINNT >= 0x0600 */
+    RECT    rcChevronLocation;
+    UINT    uChevronState;
 } REBARBANDINFOW, *LPREBARBANDINFOW;
 
 typedef REBARBANDINFOW const *LPCREBARBANDINFOW;
@@ -2016,6 +2040,9 @@ typedef REBARBANDINFOW const *LPCREBARBANDINFOW;
 #define REBARBANDINFOA_V3_SIZE CCSIZEOF_STRUCT(REBARBANDINFOA, wID)
 #define REBARBANDINFOW_V3_SIZE CCSIZEOF_STRUCT(REBARBANDINFOW, wID)
 #define REBARBANDINFO_V3_SIZE  CCSIZEOF_STRUCT(WINELIB_NAME_AW(REBARBANDINFO), wID)
+#define REBARBANDINFOA_V6_SIZE CCSIZEOF_STRUCT(REBARBANDINFOA, cxHeader)
+#define REBARBANDINFOW_V6_SIZE CCSIZEOF_STRUCT(REBARBANDINFOW, cxHeader)
+#define REBARBANDINFO_V6_SIZE  CCSIZEOF_STRUCT(WINELIB_NAME_AW(REBARBANDINFO), cxHeader)
 
 typedef struct tagNMREBARCHILDSIZE
 {
@@ -2515,6 +2542,9 @@ typedef struct {
       INT  cChildren;
       LPARAM lParam;
       INT iIntegral;
+      UINT uStateEx;        /* _WIN32_IE >= 0x600 */
+      HWND hwnd;            /* _WIN32_IE >= 0x600 */
+      INT iExpandedImage;   /* _WIN32_IE >= 0x600 */
 } TVITEMEXA, *LPTVITEMEXA;
 
 typedef struct {
@@ -2529,6 +2559,9 @@ typedef struct {
       INT cChildren;
       LPARAM lParam;
       INT iIntegral;
+      UINT uStateEx;        /* _WIN32_IE >= 0x600 */
+      HWND hwnd;            /* _WIN32_IE >= 0x600 */
+      INT iExpandedImage;   /* _WIN32_IE >= 0x600 */
 } TVITEMEXW, *LPTVITEMEXW;
 
 #define TVITEMEX   WINELIB_NAME_AW(TVITEMEX)
@@ -2604,8 +2637,20 @@ typedef struct tagTVDISPINFOW {
 	TVITEMW	item;
 } NMTVDISPINFOW, *LPNMTVDISPINFOW;
 
+typedef struct tagTVDISPINFOEXA {
+	NMHDR	hdr;
+	TVITEMEXA	item;
+} NMTVDISPINFOEXA, *LPNMTVDISPINFOEXA;
+
+typedef struct tagTVDISPINFOEXW {
+	NMHDR	hdr;
+	TVITEMEXW	item;
+} NMTVDISPINFOEXW, *LPNMTVDISPINFOEXW;
+
 #define NMTVDISPINFO            WINELIB_NAME_AW(NMTVDISPINFO)
 #define LPNMTVDISPINFO          WINELIB_NAME_AW(LPNMTVDISPINFO)
+#define NMTVDISPINFOEX          WINELIB_NAME_AW(NMTVDISPINFOEX)
+#define LPNMTVDISPINFOEX        WINELIB_NAME_AW(LPNMTVDISPINFOEX)
 #define TV_DISPINFOA            NMTVDISPINFOA
 #define TV_DISPINFOW            NMTVDISPINFOW
 #define TV_DISPINFO             NMTVDISPINFO
@@ -3227,6 +3272,7 @@ static const WCHAR WC_LISTVIEWW[] = { 'S','y','s',
 #define LVM_CANCELEDITLABEL     (LVM_FIRST + 179)
 #define LVM_MAPINDEXTOID        (LVM_FIRST + 180)
 #define LVM_MAPIDTOINDEX        (LVM_FIRST + 181)
+#define LVM_ISITEMVISIBLE       (LVM_FIRST + 182)
 
 #define LVN_FIRST               (0U-100U)
 #define LVN_LAST                (0U-199U)
@@ -3292,10 +3338,15 @@ typedef struct tagLVITEMA
     INT  cchTextMax;
     INT  iImage;
     LPARAM lParam;
-    INT  iIndent;	/* (_WIN32_IE >= 0x0300) */
-    int iGroupId;       /* (_WIN32_IE >= 0x560) */
-    UINT cColumns;      /* (_WIN32_IE >= 0x560) */
-    PUINT puColumns;	/* (_WIN32_IE >= 0x560) */
+    /* (_WIN32_IE >= 0x0300) */
+    INT  iIndent;
+    /* (_WIN32_IE >= 0x0560) */
+    INT iGroupId;
+    UINT cColumns;
+    PUINT puColumns;
+    /* (_WIN32_WINNT >= 0x0600) */
+    PINT piColFmt;
+    INT iGroup;
 } LVITEMA, *LPLVITEMA;
 
 typedef struct tagLVITEMW
@@ -3309,10 +3360,15 @@ typedef struct tagLVITEMW
     INT  cchTextMax;
     INT  iImage;
     LPARAM lParam;
-    INT  iIndent;	/* (_WIN32_IE >= 0x0300) */
-    int iGroupId;       /* (_WIN32_IE >= 0x560) */
-    UINT cColumns;      /* (_WIN32_IE >= 0x560) */
-    PUINT puColumns;	/* (_WIN32_IE >= 0x560) */
+    /* (_WIN32_IE >= 0x0300) */
+    INT  iIndent;
+    /* (_WIN32_IE >= 0x0560) */
+    INT iGroupId;
+    UINT cColumns;
+    PUINT puColumns;
+    /* (_WIN32_WINNT >= 0x0600) */
+    PINT piColFmt;
+    INT iGroup;
 } LVITEMW, *LPLVITEMW;
 
 #define LVITEM   WINELIB_NAME_AW(LVITEM)
@@ -3321,6 +3377,10 @@ typedef struct tagLVITEMW
 #define LVITEM_V1_SIZEA CCSIZEOF_STRUCT(LVITEMA, lParam)
 #define LVITEM_V1_SIZEW CCSIZEOF_STRUCT(LVITEMW, lParam)
 #define LVITEM_V1_SIZE WINELIB_NAME_AW(LVITEM_V1_SIZE)
+
+#define LVITEMA_V5_SIZE CCSIZEOF_STRUCT(LVITEMA, puColumns)
+#define LVITEMW_V5_SIZE CCSIZEOF_STRUCT(LVITEMW, puColumns)
+#define LVITEM_V5_SIZE WINELIB_NAME_AW(LVITEM_V5_SIZE)
 
 #define LV_ITEM  LVITEM
 #define LV_ITEMA LVITEMA
@@ -3385,8 +3445,13 @@ typedef struct tagLVCOLUMNA
     LPSTR  pszText;
     INT  cchTextMax;
     INT  iSubItem;
-    INT  iImage;  /* (_WIN32_IE >= 0x0300) */
-    INT  iOrder;  /* (_WIN32_IE >= 0x0300) */
+    /* (_WIN32_IE >= 0x0300) */
+    INT  iImage;
+    INT  iOrder;
+    /* (_WIN32_WINNT >= 0x0600) */
+    INT  cxMin;
+    INT  cxDefault;
+    INT  cxIdeal;
 } LVCOLUMNA, *LPLVCOLUMNA;
 
 typedef struct tagLVCOLUMNW
@@ -3397,8 +3462,13 @@ typedef struct tagLVCOLUMNW
     LPWSTR pszText;
     INT  cchTextMax;
     INT  iSubItem;
-    INT  iImage;	/* (_WIN32_IE >= 0x0300) */
-    INT  iOrder;	/* (_WIN32_IE >= 0x0300) */
+    /* (_WIN32_IE >= 0x0300) */
+    INT  iImage;
+    INT  iOrder;
+    /* (_WIN32_WINNT >= 0x0600) */
+    INT  cxMin;
+    INT  cxDefault;
+    INT  cxIdeal;
 } LVCOLUMNW, *LPLVCOLUMNW;
 
 #define LVCOLUMN   WINELIB_NAME_AW(LVCOLUMN)
@@ -3504,6 +3574,8 @@ typedef struct tagLVHITTESTINFO
     UINT  flags;
     INT   iItem;
     INT   iSubItem;
+    /* (_WIN32_WINNT >= 0x0600) */
+    INT   iGroup;
 } LVHITTESTINFO, *LPLVHITTESTINFO;
 
 #define LV_HITTESTINFO LVHITTESTINFO
@@ -3542,14 +3614,31 @@ typedef struct LVGROUP
 	UINT cbSize;
 	UINT mask;
 	LPWSTR pszHeader;
-	int cchHeader;
+	INT cchHeader;
 	LPWSTR pszFooter;
-	int cchFooter;
-	int iGroupId;
+	INT cchFooter;
+	INT iGroupId;
 	UINT stateMask;
 	UINT state;
 	UINT uAlign;
+        /* (_WIN32_WINNT >= 0x0600) */
+	LPWSTR  pszSubtitle;
+	UINT    cchSubtitle;
+	LPWSTR  pszTask;
+	UINT    cchTask;
+	LPWSTR  pszDescriptionTop;
+	UINT    cchDescriptionTop;
+	LPWSTR  pszDescriptionBottom;
+	UINT    cchDescriptionBottom;
+	INT     iTitleImage;
+	INT     iExtendedImage;
+	INT     iFirstItem;
+	UINT    cItems;
+	LPWSTR  pszSubsetTitle;
+	UINT    cchSubsetTitle;
 } LVGROUP, *PLVGROUP;
+
+#define LVGROUP_V5_SIZE CCSIZEOF_STRUCT(LVGROUP, uAlign)
 
 typedef struct LVGROUPMETRICS
 {
@@ -3584,6 +3673,8 @@ typedef struct LVTILEINFO
 	int iItem;
 	UINT cColumns;
 	PUINT puColumns;
+        /* (_WIN32_WINNT >= 0x0600) */
+	int* piColFmt;
 } LVTILEINFO, *PLVTILEINFO;
 
 typedef struct LVTILEVIEWINFO

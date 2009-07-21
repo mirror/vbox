@@ -62,19 +62,7 @@ HRESULT basetexture_init(IWineD3DBaseTextureImpl *texture, UINT levels, WINED3DR
 
 void basetexture_cleanup(IWineD3DBaseTexture *iface)
 {
-    IWineD3DBaseTextureImpl *This = (IWineD3DBaseTextureImpl *)iface;
-    IWineD3DDeviceImpl *device = This->resource.wineD3DDevice;
-
-    TRACE("(%p) : textureName(%d)\n", This, This->baseTexture.textureName);
-    if (This->baseTexture.textureName != 0) {
-        ActivateContext(device, device->lastActiveRenderTarget, CTXUSAGE_RESOURCELOAD);
-        ENTER_GL();
-        TRACE("(%p) : Deleting texture %d\n", This, This->baseTexture.textureName);
-        glDeleteTextures(1, &This->baseTexture.textureName);
-        glDeleteTextures(1, &This->baseTexture.srgbTextureName);
-        LEAVE_GL();
-    }
-
+    basetexture_unload(iface);
     resource_cleanup((IWineD3DResource *)iface);
 }
 
@@ -87,8 +75,14 @@ void basetexture_unload(IWineD3DBaseTexture *iface)
         ActivateContext(device, device->lastActiveRenderTarget, CTXUSAGE_RESOURCELOAD);
         ENTER_GL();
         glDeleteTextures(1, &This->baseTexture.textureName);
-        glDeleteTextures(1, &This->baseTexture.srgbTextureName);
         This->baseTexture.textureName = 0;
+        LEAVE_GL();
+    }
+
+    if(This->baseTexture.srgbTextureName) {
+        ActivateContext(device, device->lastActiveRenderTarget, CTXUSAGE_RESOURCELOAD);
+        ENTER_GL();
+        glDeleteTextures(1, &This->baseTexture.srgbTextureName);
         This->baseTexture.srgbTextureName = 0;
         LEAVE_GL();
     }
@@ -212,6 +206,7 @@ BOOL basetexture_get_dirty(IWineD3DBaseTexture *iface)
     return This->baseTexture.dirty || This->baseTexture.srgbDirty;
 }
 
+/* Context activation is done by the caller. */
 HRESULT basetexture_bind(IWineD3DBaseTexture *iface, BOOL srgb, BOOL *set_surface_desc)
 {
     IWineD3DBaseTextureImpl *This = (IWineD3DBaseTextureImpl *)iface;

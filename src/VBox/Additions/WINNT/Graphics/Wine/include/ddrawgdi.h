@@ -1,5 +1,7 @@
 /*
- * Copyright 2001 Ove Kaaven
+ * Ddrawgdi definitions
+ *
+ * Copyright (C) 2009 Louis Lenders
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -25,20 +27,19 @@
  * of the LGPL is applied is otherwise unspecified.
  */
 
-/*
- * Sun LGPL Disclaimer: For the avoidance of doubt, except that if any license choice
- * other than GPL or LGPL is available it will apply instead, Sun elects to use only
- * the Lesser General Public License version 2.1 (LGPLv2) at this time for any software where
- * a choice of LGPL license versions is made available with the language indicating
- * that LGPLv2 or any later version may be used, or where a choice of which version
- * of the LGPL is applied is otherwise unspecified.
- */
+#ifndef __WINE_DDRAWGDI_H
+#define __WINE_DDRAWGDI_H
 
-#define WINE_FILEDESCRIPTION_STR "Wine Direct3D"
-#define WINE_FILENAME_STR "d3d9.dll"
-#define WINE_FILEVERSION 5,3,1,904
-#define WINE_FILEVERSION_STR "5.3.1.904"
-#define WINE_PRODUCTVERSION 5,3,1,904
-#define WINE_PRODUCTVERSION_STR "5.3.1.904"
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-#include "wine/wine_common_ver.rc"
+#define DdQueryDisplaySettingsUniqueness    GdiEntry13
+
+ULONG APIENTRY DdQueryDisplaySettingsUniqueness(VOID);
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif /* __WINE_DDRAWGDI_H */

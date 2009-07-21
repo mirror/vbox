@@ -55,7 +55,7 @@ typedef int mbstate_t;
 #endif
 
 #ifndef _FSIZE_T_DEFINED
-typedef unsigned long _fsize_t;
+typedef __msvcrt_ulong _fsize_t;
 #define _FSIZE_T_DEFINED
 #endif
 
@@ -234,10 +234,10 @@ int      __cdecl _wrmdir(const wchar_t*);
 int      __cdecl _waccess(const wchar_t*,int);
 int      __cdecl _wchmod(const wchar_t*,int);
 int      __cdecl _wcreat(const wchar_t*,int);
-long     __cdecl _wfindfirst(const wchar_t*,struct _wfinddata_t*);
-long     __cdecl _wfindfirsti64(const wchar_t*, struct _wfinddatai64_t*);
-int      __cdecl _wfindnext(long,struct _wfinddata_t*);
-int      __cdecl _wfindnexti64(long, struct _wfinddatai64_t*);
+__msvcrt_long __cdecl _wfindfirst(const wchar_t*,struct _wfinddata_t*);
+__msvcrt_long __cdecl _wfindfirsti64(const wchar_t*, struct _wfinddatai64_t*);
+int      __cdecl _wfindnext(__msvcrt_long,struct _wfinddata_t*);
+int      __cdecl _wfindnexti64(__msvcrt_long, struct _wfinddatai64_t*);
 wchar_t* __cdecl _wmktemp(wchar_t*);
 int      __cdecl _wopen(const wchar_t*,int,...);
 int      __cdecl _wrename(const wchar_t*,const wchar_t*);
@@ -324,9 +324,9 @@ int      __cdecl wscanf(const wchar_t*,...);
 #define _WSTDLIB_DEFINED
 wchar_t* __cdecl _itow(int,wchar_t*,int);
 wchar_t* __cdecl _i64tow(__int64,wchar_t*,int);
-wchar_t* __cdecl _ltow(long,wchar_t*,int);
+wchar_t* __cdecl _ltow(__msvcrt_long,wchar_t*,int);
 wchar_t* __cdecl _ui64tow(unsigned __int64,wchar_t*,int);
-wchar_t* __cdecl _ultow(unsigned long,wchar_t*,int);
+wchar_t* __cdecl _ultow(__msvcrt_ulong,wchar_t*,int);
 wchar_t* __cdecl _wfullpath(wchar_t*,const wchar_t*,size_t);
 wchar_t* __cdecl _wgetenv(const wchar_t*);
 void     __cdecl _wmakepath(wchar_t*,const wchar_t*,const wchar_t*,const wchar_t*,const wchar_t*);
@@ -337,14 +337,14 @@ void     __cdecl _wsplitpath(const wchar_t*,wchar_t*,wchar_t*,wchar_t*,wchar_t*)
 int      __cdecl _wsystem(const wchar_t*);
 int      __cdecl _wtoi(const wchar_t*);
 __int64  __cdecl _wtoi64(const wchar_t*);
-long     __cdecl _wtol(const wchar_t*);
+__msvcrt_long __cdecl _wtol(const wchar_t*);
 
 size_t        __cdecl mbstowcs(wchar_t*,const char*,size_t);
 int           __cdecl mbtowc(wchar_t*,const char*,size_t);
 double        __cdecl wcstod(const wchar_t*,wchar_t**);
-long          __cdecl wcstol(const wchar_t*,wchar_t**,int);
+__msvcrt_long __cdecl wcstol(const wchar_t*,wchar_t**,int);
 size_t        __cdecl wcstombs(char*,const wchar_t*,size_t);
-unsigned long __cdecl wcstoul(const wchar_t*,wchar_t**,int);
+__msvcrt_ulong __cdecl wcstoul(const wchar_t*,wchar_t**,int);
 int           __cdecl wctomb(char*,wchar_t);
 #endif /* _WSTDLIB_DEFINED */
 
@@ -380,11 +380,22 @@ size_t   __cdecl wcsxfrm(wchar_t*,const wchar_t*,size_t);
 
 #ifndef _WTIME_DEFINED
 #define _WTIME_DEFINED
+
+#ifdef _USE_32BIT_TIME_T
+#define _wctime32 _wctime
+#endif
+
 wchar_t* __cdecl _wasctime(const struct tm*);
 size_t   __cdecl wcsftime(wchar_t*,size_t,const wchar_t*,const struct tm*);
-wchar_t* __cdecl _wctime(const time_t*);
+wchar_t* __cdecl _wctime32(const __time32_t*);
+wchar_t* __cdecl _wctime64(const __time64_t*);
 wchar_t* __cdecl _wstrdate(wchar_t*);
 wchar_t* __cdecl _wstrtime(wchar_t*);
+
+#ifndef _USE_32BIT_TIME_T
+static inline wchar_t* _wctime(const time_t *t) { return _wctime64(t); }
+#endif
+
 #endif /* _WTIME_DEFINED */
 
 wchar_t __cdecl btowc(int);
