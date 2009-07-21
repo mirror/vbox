@@ -34,7 +34,7 @@
 
 RT_C_DECLS_BEGIN
 
-/** @group grp_rt_sha1digest   RTSHA1Digest - SHA1 digest creation
+/** @defgroup grp_rt_sha1digest   RTSha1Digest - SHA1 digest creation
  * @ingroup grp_rt
  * @{
  */

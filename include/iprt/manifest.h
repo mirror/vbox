@@ -35,19 +35,21 @@
 
 RT_C_DECLS_BEGIN
 
-/** @group grp_rt_manifest    RTManifest - Manifest file creation and checking.
+/** @defgroup grp_rt_manifest    RTManifest - Manifest file creation and checking
  * @ingroup grp_rt
  * @{
  */
 
 /**
- * Input structure for RTManifestVerify which contains the filename & the SHA1
- * digest.
+ * Input structure for RTManifestVerify() which contains the filename & the
+ * SHA1 digest.
  */
 typedef struct RTMANIFESTTEST
 {
-    char *pszTestFile; /** The filename */
-    char *pszTestDigest; /** The SHA1 digest of the file */
+    /** The filename. */
+    char *pszTestFile;
+    /** The SHA1 digest of the file. */
+    char *pszTestDigest;
 } RTMANIFESTTEST;
 /** Pointer to the input structure. */
 typedef RTMANIFESTTEST* PRTMANIFESTTEST;
@@ -55,29 +57,30 @@ typedef RTMANIFESTTEST* PRTMANIFESTTEST;
 /**
  * Verify the given SHA1 digests to the entries in the manifest file.
  *
- * Please note that not only the various digest have to much, but the filenames
- * as well. If there are more or even less files listed in the manifest file
- * than provided by pTestList, VERR_MANIFEST_FILE_MISMATCH will be returned.
+ * Please note that not only the various digest have to match, but the
+ * filenames as well. If there are more or even less files listed in the
+ * manifest file than provided by paTests, VERR_MANIFEST_FILE_MISMATCH will be
+ * returned.
  *
  * @returns VBox status code.
  *
  * @param   pszManifestFile      Filename of the manifest file to verify.
- * @param   pTestList            List of files & SHA1 sums.
- * @param   cTests               Number of entries in pTestList
- * @param   piFailed             A index to pTestList in the
+ * @param   paTests              Array of files & SHA1 sums.
+ * @param   cTests               Number of entries in paTests.
+ * @param   piFailed             A index to paTests in the
  *                               VERR_MANIFEST_DIGEST_MISMATCH error case
  *                               (optional).
  */
-RTR3DECL(int) RTManifestVerify(const char *pszManifestFile, PRTMANIFESTTEST pTestList, size_t cTests, size_t *piFailed);
+RTR3DECL(int) RTManifestVerify(const char *pszManifestFile, PRTMANIFESTTEST paTests, size_t cTests, size_t *piFailed);
 
 /**
- * This is analogous to function RTManifestVerify, but calculates the SHA1 sums
- * of the given files itself.
+ * This is analogous to function RTManifestVerify(), but calculates the SHA1
+ * sums of the given files itself.
  *
  * @returns VBox status code.
  *
  * @param   pszManifestFile      Filename of the manifest file to verify.
- * @param   ppszFiles            List of files to check SHA1 sums.
+ * @param   papszFiles           Array of files to check SHA1 sums.
  * @param   cFiles               Number of entries in ppszFiles.
  * @param   piFailed             A index to ppszFiles in the
  *                               VERR_MANIFEST_DIGEST_MISMATCH error case
@@ -93,8 +96,8 @@ RTR3DECL(int) RTManifestVerifyFiles(const char *pszManifestFile, const char * co
  * @returns VBox status code.
  *
  * @param   pszManifestFile      Filename of the manifest file to create.
- * @param   ppszFiles            List of files to create SHA1 sums for.
- * @param   cFiles               Number of entries in ppszFiles.
+ * @param   papszFiles           Array of files to create SHA1 sums for.
+ * @param   cFiles               Number of entries in papszFiles.
  */
 RTR3DECL(int) RTManifestWriteFiles(const char *pszManifestFile, const char * const *papszFiles, size_t cFiles);
 
