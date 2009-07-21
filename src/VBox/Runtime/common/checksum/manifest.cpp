@@ -212,7 +212,7 @@ RTR3DECL(int) RTManifestVerifyFiles(const char *pszManifestFile, const char * co
     for (size_t i=0; i < cFiles; ++i)
     {
         char *pszDigest;
-        rc = RTSHA1Digest(papszFiles[i], &pszDigest);
+        rc = RTSha1Digest(papszFiles[i], &pszDigest);
         if (RT_FAILURE(rc))
             break;
         pFileList[i].pszTestFile = (char*)papszFiles[i];
@@ -252,7 +252,7 @@ RTR3DECL(int) RTManifestWriteFiles(const char *pszManifestFile, const char * con
     {
         /* Calculate the SHA1 digest of every file */
         char *pszDigest;
-        rc = RTSHA1Digest(papszFiles[i], &pszDigest);
+        rc = RTSha1Digest(papszFiles[i], &pszDigest);
         if (RT_FAILURE(rc))
             break;
         /* Add the entry to the manifest file */

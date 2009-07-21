@@ -37,10 +37,10 @@
 #include <openssl/sha.h>
 
 /*******************************************************************************
-*   Public RTSHA1Digest interface                                              *
+*   Public RTSha1Digest interface                                              *
 *******************************************************************************/
 
-RTR3DECL(int) RTSHA1Digest(const char *pszFile, char **ppszDigest)
+RTR3DECL(int) RTSha1Digest(const char *pszFile, char **ppszDigest)
 {
     /* Validate input */
     if (!pszFile || !ppszDigest)
