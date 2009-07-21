@@ -234,6 +234,8 @@ VBoxPlug(pointer module,
           int *errmin)
 {
     xf86AddInputDriver(&VBOXMOUSE, module, 0);
+    xf86Msg(X_CONFIG, "Load address of symbol \"VBOXMOUSE\" is %p\n",
+            (void *)&VBOXMOUSE);
     return module;
 }
 
