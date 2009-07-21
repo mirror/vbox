@@ -1700,16 +1700,19 @@ typedef struct _WINED3DTRIPATCH_INFO
 
 typedef struct _WINED3DADAPTER_IDENTIFIER
 {
-    char *Driver;
-    char *Description;
-    char *DeviceName;
-    LARGE_INTEGER *DriverVersion;
-    DWORD *VendorId;
-    DWORD *DeviceId;
-    DWORD *SubSysId;
-    DWORD *Revision;
-    GUID *DeviceIdentifier;
-    DWORD *WHQLLevel;
+    char *driver;
+    UINT driver_size;
+    char *description;
+    UINT description_size;
+    char *device_name;
+    UINT device_name_size;
+    LARGE_INTEGER driver_version;
+    DWORD vendor_id;
+    DWORD device_id;
+    DWORD subsystem_id;
+    DWORD revision;
+    GUID device_identifier;
+    DWORD whql_level;
 } WINED3DADAPTER_IDENTIFIER;
 
 typedef struct _WINED3DPRESENT_PARAMETERS
@@ -1733,27 +1736,27 @@ typedef struct _WINED3DPRESENT_PARAMETERS
 
 typedef struct _WINED3DSURFACE_DESC
 {
-    WINED3DFORMAT *Format;
-    WINED3DRESOURCETYPE *Type;
-    DWORD *Usage;
-    WINED3DPOOL *Pool;
-    UINT *Size;
-    WINED3DMULTISAMPLE_TYPE *MultiSampleType;
-    DWORD *MultiSampleQuality;
-    UINT *Width;
-    UINT *Height;
+    WINED3DFORMAT format;
+    WINED3DRESOURCETYPE resource_type;
+    DWORD usage;
+    WINED3DPOOL pool;
+    UINT size;
+    WINED3DMULTISAMPLE_TYPE multisample_type;
+    DWORD multisample_quality;
+    UINT width;
+    UINT height;
 } WINED3DSURFACE_DESC;
 
 typedef struct _WINED3DVOLUME_DESC
 {
-    WINED3DFORMAT *Format;
-    WINED3DRESOURCETYPE *Type;
-    DWORD *Usage;
-    WINED3DPOOL *Pool;
-    UINT *Size;
-    UINT *Width;
-    UINT *Height;
-    UINT *Depth;
+    WINED3DFORMAT Format;
+    WINED3DRESOURCETYPE Type;
+    DWORD Usage;
+    WINED3DPOOL Pool;
+    UINT Size;
+    UINT Width;
+    UINT Height;
+    UINT Depth;
 } WINED3DVOLUME_DESC;
 
 typedef struct _WINED3DCLIPSTATUS
@@ -1891,13 +1894,6 @@ typedef struct _WINED3DBUFFER_DESC
     WINED3DPOOL Pool;
     UINT Size;
 } WINED3DBUFFER_DESC;
-
-typedef struct glDescriptor
-{
-    UINT textureName, srgbTextureName;
-    int level;
-    int /*GLenum*/ target;
-} glDescriptor;
 
 typedef struct WineDirect3DStridedData
 {
@@ -2538,9 +2534,6 @@ interface IWineD3DSurface : IWineD3DResource
     HRESULT SetContainer(
         [in] IWineD3DBase *container
     );
-    void GetGlDesc(
-        [out] glDescriptor **desc
-    );
     const void *GetData(
     );
     HRESULT SetFormat(
@@ -2941,7 +2934,6 @@ interface IWineD3DDevice : IWineD3DBase
         [in] BOOL discard,
         [in] UINT level,
         [out] IWineD3DSurface **surface,
-        [in] WINED3DRESOURCETYPE resource_type,
         [in] DWORD usage,
         [in] WINED3DPOOL pool,
         [in] WINED3DMULTISAMPLE_TYPE multisample_type,

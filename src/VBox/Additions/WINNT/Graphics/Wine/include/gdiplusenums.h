@@ -181,11 +181,6 @@ enum MatrixOrder
 {
     MatrixOrderPrepend = 0,
     MatrixOrderAppend  = 1
-enum WarpMode {
-    WarpModePerspective,
-    WarpModeBilinear
-};
-
 };
 
 enum ImageType
@@ -193,6 +188,11 @@ enum ImageType
     ImageTypeUnknown,
     ImageTypeBitmap,
     ImageTypeMetafile
+};
+
+enum WarpMode {
+    WarpModePerspective,
+    WarpModeBilinear
 };
 
 enum WrapMode
@@ -441,7 +441,6 @@ typedef enum LineCap LineCap;
 typedef enum PathPointType PathPointType;
 typedef enum LineJoin LineJoin;
 typedef enum QualityMode QualityMode;
-typedef enum WarpMode WarpMode;
 typedef enum SmoothingMode SmoothingMode;
 typedef enum CompositingQuality CompositingQuality;
 typedef enum InterpolationMode InterpolationMode;
@@ -451,6 +450,7 @@ typedef enum DashStyle DashStyle;
 typedef enum MatrixOrder MatrixOrder;
 typedef enum ImageType ImageType;
 typedef enum ImageFlags ImageFlags;
+typedef enum WarpMode WarpMode;
 typedef enum WrapMode WrapMode;
 typedef enum MetafileType MetafileType;
 typedef enum LinearGradientMode LinearGradientMode;

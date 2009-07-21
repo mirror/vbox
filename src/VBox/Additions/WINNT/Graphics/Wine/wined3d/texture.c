@@ -136,7 +136,7 @@ static void texture_cleanup(IWineD3DTextureImpl *This, D3DCB_DESTROYSURFACEFN su
 HRESULT texture_init(IWineD3DTextureImpl *texture, UINT width, UINT height, UINT levels,
         IWineD3DDeviceImpl *device, DWORD usage, WINED3DFORMAT format, WINED3DPOOL pool, IUnknown *parent)
 {
-    const WineD3D_GL_Info *gl_info = &device->adapter->gl_info;
+    const struct wined3d_gl_info *gl_info = &device->adapter->gl_info;
     const struct GlPixelFormatDesc *format_desc = getFormatDescEntry(format, gl_info);
     UINT pow2_width, pow2_height;
     UINT tmp_w, tmp_h;
@@ -223,10 +223,10 @@ HRESULT texture_init(IWineD3DTextureImpl *texture, UINT width, UINT height, UINT
      * doesn't work in combination with ARB_TEXTURE_RECTANGLE. */
     if (GL_SUPPORT(WINE_NORMALIZED_TEXRECT) && (width != pow2_width || height != pow2_height))
     {
-        texture->baseTexture.pow2Matrix[0] = 1.0;
-        texture->baseTexture.pow2Matrix[5] = 1.0;
-        texture->baseTexture.pow2Matrix[10] = 1.0;
-        texture->baseTexture.pow2Matrix[15] = 1.0;
+        texture->baseTexture.pow2Matrix[0] = 1.0f;
+        texture->baseTexture.pow2Matrix[5] = 1.0f;
+        texture->baseTexture.pow2Matrix[10] = 1.0f;
+        texture->baseTexture.pow2Matrix[15] = 1.0f;
         texture->target = GL_TEXTURE_2D;
         texture->cond_np2 = TRUE;
         texture->baseTexture.minMipLookup = minMipLookup_noFilter;
@@ -240,8 +240,8 @@ HRESULT texture_init(IWineD3DTextureImpl *texture, UINT width, UINT height, UINT
 
         texture->baseTexture.pow2Matrix[0] = (float)width;
         texture->baseTexture.pow2Matrix[5] = (float)height;
-        texture->baseTexture.pow2Matrix[10] = 1.0;
-        texture->baseTexture.pow2Matrix[15] = 1.0;
+        texture->baseTexture.pow2Matrix[10] = 1.0f;
+        texture->baseTexture.pow2Matrix[15] = 1.0f;
         texture->target = GL_TEXTURE_RECTANGLE_ARB;
         texture->cond_np2 = TRUE;
         texture->baseTexture.minMipLookup = minMipLookup_noFilter;
@@ -256,12 +256,12 @@ HRESULT texture_init(IWineD3DTextureImpl *texture, UINT width, UINT height, UINT
         }
         else
         {
-            texture->baseTexture.pow2Matrix[0] = 1.0;
-            texture->baseTexture.pow2Matrix[5] = 1.0;
+            texture->baseTexture.pow2Matrix[0] = 1.0f;
+            texture->baseTexture.pow2Matrix[5] = 1.0f;
         }
 
-        texture->baseTexture.pow2Matrix[10] = 1.0;
-        texture->baseTexture.pow2Matrix[15] = 1.0;
+        texture->baseTexture.pow2Matrix[10] = 1.0f;
+        texture->baseTexture.pow2Matrix[15] = 1.0f;
         texture->target = GL_TEXTURE_2D;
         texture->cond_np2 = FALSE;
     }
@@ -431,6 +431,7 @@ static BOOL WINAPI IWineD3DTextureImpl_GetDirty(IWineD3DTexture *iface) {
     return basetexture_get_dirty((IWineD3DBaseTexture *)iface);
 }
 
+/* Context activation is done by the caller. */
 static HRESULT WINAPI IWineD3DTextureImpl_BindTexture(IWineD3DTexture *iface, BOOL srgb) {
     IWineD3DTextureImpl *This = (IWineD3DTextureImpl *)iface;
     BOOL set_gl_texture_desc;

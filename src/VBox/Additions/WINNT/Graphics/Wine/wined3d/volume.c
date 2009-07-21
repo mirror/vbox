@@ -35,6 +35,7 @@
 WINE_DEFAULT_DEBUG_CHANNEL(d3d_surface);
 #define GLINFO_LOCATION This->resource.wineD3DDevice->adapter->gl_info
 
+/* Context activation is done by the caller. */
 static void volume_bind_and_dirtify(IWineD3DVolume *iface) {
     IWineD3DVolumeImpl *This = (IWineD3DVolumeImpl *)iface;
     IWineD3DVolumeTexture *texture;
@@ -205,14 +206,15 @@ static HRESULT WINAPI IWineD3DVolumeImpl_GetDesc(IWineD3DVolume *iface, WINED3DV
     IWineD3DVolumeImpl *This = (IWineD3DVolumeImpl *)iface;
     TRACE("(%p) : copying into %p\n", This, pDesc);
 
-    *(pDesc->Format)  = This->resource.format_desc->format;
-    *(pDesc->Type)    = This->resource.resourceType;
-    *(pDesc->Usage)   = This->resource.usage;
-    *(pDesc->Pool)    = This->resource.pool;
-    *(pDesc->Size)    = This->resource.size; /* dx8 only */
-    *(pDesc->Width)   = This->currentDesc.Width;
-    *(pDesc->Height)  = This->currentDesc.Height;
-    *(pDesc->Depth)   = This->currentDesc.Depth;
+    pDesc->Format = This->resource.format_desc->format;
+    pDesc->Type = This->resource.resourceType;
+    pDesc->Usage = This->resource.usage;
+    pDesc->Pool = This->resource.pool;
+    pDesc->Size = This->resource.size; /* dx8 only */
+    pDesc->Width = This->currentDesc.Width;
+    pDesc->Height = This->currentDesc.Height;
+    pDesc->Depth = This->currentDesc.Depth;
+
     return WINED3D_OK;
 }
 
@@ -309,6 +311,7 @@ static HRESULT WINAPI IWineD3DVolumeImpl_SetContainer(IWineD3DVolume *iface, IWi
     return WINED3D_OK;
 }
 
+/* Context activation is done by the caller. */
 static HRESULT WINAPI IWineD3DVolumeImpl_LoadTexture(IWineD3DVolume *iface, int gl_level, BOOL srgb_mode) {
     IWineD3DVolumeImpl *This     = (IWineD3DVolumeImpl *)iface;
     const struct GlPixelFormatDesc *glDesc = This->resource.format_desc;

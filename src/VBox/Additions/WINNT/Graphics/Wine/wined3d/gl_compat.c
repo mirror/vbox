@@ -142,7 +142,7 @@ static void WINE_GLAPI wine_glGetIntegerv(GLenum pname, GLint* params) {
 
 static void (WINE_GLAPI *old_multitex_glGetFloatv) (GLenum pname, GLfloat* params) = NULL;
 static void WINE_GLAPI wine_glGetFloatv(GLenum pname, GLfloat* params) {
-    if(pname == GL_ACTIVE_TEXTURE) *params = 0.0;
+    if (pname == GL_ACTIVE_TEXTURE) *params = 0.0f;
     else old_multitex_glGetFloatv(pname, params);
 }
 
@@ -284,9 +284,9 @@ static void WINE_GLAPI wine_glVertex4f(GLfloat x, GLfloat y, GLfloat z, GLfloat 
         GLfloat i;
 
         i = (ctx->fogend - ctx->fog_coord_value) / (ctx->fogend - ctx->fogstart);
-        c[0] = i * c[0] + (1.0 - i) * ctx->fogcolor[0];
-        c[1] = i * c[1] + (1.0 - i) * ctx->fogcolor[1];
-        c[2] = i * c[2] + (1.0 - i) * ctx->fogcolor[2];
+        c[0] = i * c[0] + (1.0f - i) * ctx->fogcolor[0];
+        c[1] = i * c[1] + (1.0f - i) * ctx->fogcolor[1];
+        c[2] = i * c[2] + (1.0f - i) * ctx->fogcolor[2];
 
         old_fogcoord_glColor4f(c[0], c[1], c[2], c[3]);
         old_fogcoord_glVertex4f(x, y, z, w);
@@ -300,11 +300,11 @@ static void WINE_GLAPI wine_glVertex4fv(const GLfloat *pos) {
 }
 
 static void WINE_GLAPI wine_glVertex3f(GLfloat x, GLfloat y, GLfloat z) {
-    wine_glVertex4f(x, y, z, 1.0);
+    wine_glVertex4f(x, y, z, 1.0f);
 }
 
 static void WINE_GLAPI wine_glVertex3fv(const GLfloat *pos) {
-    wine_glVertex4f(pos[0], pos[1], pos[2], 1.0);
+    wine_glVertex4f(pos[0], pos[1], pos[2], 1.0f);
 }
 
 static void WINE_GLAPI wine_glColor4f(GLfloat r, GLfloat g, GLfloat b, GLfloat a) {
@@ -321,15 +321,15 @@ static void WINE_GLAPI wine_glColor4fv(const GLfloat *c) {
 }
 
 static void WINE_GLAPI wine_glColor3f(GLfloat r, GLfloat g, GLfloat b) {
-    wine_glColor4f(r, g, b, 1.0);
+    wine_glColor4f(r, g, b, 1.0f);
 }
 
 static void WINE_GLAPI wine_glColor3fv(const GLfloat *c) {
-    wine_glColor4f(c[0], c[1], c[2], 1.0);
+    wine_glColor4f(c[0], c[1], c[2], 1.0f);
 }
 
 static void WINE_GLAPI wine_glColor4ub(GLubyte r, GLubyte g, GLubyte b, GLubyte a) {
-    wine_glColor4f(r / 255.0, g / 255.0, b / 255.0, a / 255.0);
+    wine_glColor4f(r / 255.0f, g / 255.0f, b / 255.0f, a / 255.0f);
 }
 
 /* In D3D the fog coord is a UBYTE, so there's no problem with using the single
@@ -352,7 +352,8 @@ static void WINE_GLAPI wine_glFogCoorddvEXT(const GLdouble *f) {
 /* End GL_EXT_fog_coord emulation */
 
 #define GLINFO_LOCATION (*gl_info)
-void add_gl_compat_wrappers(WineD3D_GL_Info *gl_info) {
+void add_gl_compat_wrappers(struct wined3d_gl_info *gl_info)
+{
     if(!GL_SUPPORT(ARB_MULTITEXTURE)) {
         TRACE("Applying GL_ARB_multitexture emulation hooks\n");
         gl_info->glActiveTextureARB         = wine_glActiveTextureARB;

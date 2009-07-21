@@ -1,5 +1,7 @@
 /*
- * Copyright 2001 Ove Kaaven
+ * Rtutils.h - Routing utilities / RRAS tracing
+ *
+ * Copyright (C) 2009 Alexander Scott-Johns
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -25,20 +27,32 @@
  * of the LGPL is applied is otherwise unspecified.
  */
 
-/*
- * Sun LGPL Disclaimer: For the avoidance of doubt, except that if any license choice
- * other than GPL or LGPL is available it will apply instead, Sun elects to use only
- * the Lesser General Public License version 2.1 (LGPLv2) at this time for any software where
- * a choice of LGPL license versions is made available with the language indicating
- * that LGPLv2 or any later version may be used, or where a choice of which version
- * of the LGPL is applied is otherwise unspecified.
- */
+#ifndef _RTUTILS_H_
+#define _RTUTILS_H_
 
-#define WINE_FILEDESCRIPTION_STR "Wine Direct3D"
-#define WINE_FILENAME_STR "d3d9.dll"
-#define WINE_FILEVERSION 5,3,1,904
-#define WINE_FILEVERSION_STR "5.3.1.904"
-#define WINE_PRODUCTVERSION 5,3,1,904
-#define WINE_PRODUCTVERSION_STR "5.3.1.904"
+#include <stdarg.h>
 
-#include "wine/wine_common_ver.rc"
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+DWORD WINAPI TraceRegisterExW(LPCWSTR name, DWORD flags);
+DWORD WINAPI TraceRegisterExA(LPCSTR name, DWORD flags);
+#define      TraceRegisterEx  WINELIB_NAME_AW(TraceRegisterEx)
+
+#define TraceRegisterW(name) TraceRegisterExW((name), 0)
+#define TraceRegisterA(name) TraceRegisterExA((name), 0)
+#define TraceRegister  WINELIB_NAME_AW(TraceRegister)
+
+/* Flags for TraceRegisterEx(W|A) */
+#define TRACE_USE_FILE     1
+#define TRACE_USE_CONSOLE  2
+
+/* Return value of TraceRegisterEx(W|A) */
+#define INVALID_TRACEID    0xFFFFFFFF
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif /* _RTUTILS_H_ */

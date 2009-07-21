@@ -50,6 +50,7 @@ PUBLIC_IDL_H_SRCS = \
 	mstask.idl \
 	msxml.idl \
 	msxml2.idl \
+	netcon.idl \
 	netfw.idl \
 	oaidl.idl \
 	objidl.idl \
@@ -77,6 +78,8 @@ PUBLIC_IDL_H_SRCS = \
 	urlhist.idl \
 	urlmon.idl \
 	vmr9.idl \
+	wbemcli.idl \
+	wincodec.idl \
 	wine/itss.idl \
 	wine/svcctl.idl \
 	wtypes.idl \
@@ -138,11 +141,6 @@ SRCDIR_INCLUDES = \
 	d3drmobj.h \
 	d3dtypes.h \
 	d3dvec.inl \
-	d3dx8.h \
-	d3dx8core.h \
-	d3dx8math.h \
-	d3dx8math.inl \
-	d3dx8mesh.h \
 	d3dx9.h \
 	d3dx9core.h \
 	d3dx9math.h \
@@ -175,6 +173,7 @@ SRCDIR_INCLUDES = \
 	ddk/winddiui.h \
 	ddk/winsplp.h \
 	ddraw.h \
+	ddrawgdi.h \
 	ddrawi.h \
 	devenum.idl \
 	devguid.h \
@@ -347,6 +346,7 @@ SRCDIR_INCLUDES = \
 	npapi.h \
 	nspapi.h \
 	ntddcdrm.h \
+	ntddndis.h \
 	ntddscsi.h \
 	ntddstor.h \
 	ntdsapi.h \
@@ -388,6 +388,7 @@ SRCDIR_INCLUDES = \
 	rpcndr.h \
 	rpcnterr.h \
 	rpcproxy.h \
+	rtutils.h \
 	scarderr.h \
 	schannel.h \
 	schemadef.h \
@@ -415,6 +416,7 @@ SRCDIR_INCLUDES = \
 	sspi.h \
 	storage.h \
 	svrapi.h \
+	t2embapi.h \
 	tapi.h \
 	tchar.h \
 	textserv.h \

@@ -86,6 +86,7 @@ VOID         WINAPI SHUpdateImageW(LPCWSTR,INT,UINT,INT);
 #define             SHUpdateImage WINELIB_NAME_AW(SHUpdateImage)
 int          WINAPI RestartDialog(HWND,LPCWSTR,DWORD);
 int          WINAPI RestartDialogEx(HWND,LPCWSTR,DWORD,DWORD);
+BOOL         WINAPI IsUserAnAdmin(void);
 
 #define SHFMT_ERROR     0xFFFFFFFFL  /* Error on last format, drive may be formattable */
 #define SHFMT_CANCEL    0xFFFFFFFEL  /* Last format was cancelled */
@@ -522,6 +523,31 @@ DECLARE_INTERFACE_(IACList2,IACList)
 #define IACList2_SetOptions(p,a)        (p)->lpVtbl->SetOptions(p,a)
 #endif
 
+/****************************************************************************
+ * IShellFolderViewCB interface
+ */
+
+#define INTERFACE IShellFolderViewCB
+DECLARE_INTERFACE_(IShellFolderViewCB,IUnknown)
+{
+    /*** IUnknown methods ***/
+    STDMETHOD_(HRESULT,QueryInterface)(THIS_ REFIID riid, void** ppvObject) PURE;
+    STDMETHOD_(ULONG,AddRef)(THIS) PURE;
+    STDMETHOD_(ULONG,Release)(THIS) PURE;
+    /*** IShellFolderViewCB methods ***/
+    STDMETHOD(MessageSFVCB)(THIS_ UINT uMsg, WPARAM wParam, LPARAM lParam) PURE;
+};
+#undef INTERFACE
+
+#if !defined(__cplusplus) || defined(CINTERFACE)
+/*** IUnknown methods ***/
+#define IShellFolderViewCB_QueryInterface(p,a,b)      (p)->lpVtbl->QueryInterface(p,a,b)
+#define IShellFolderViewCB_AddRef(p)                  (p)->lpVtbl->AddRef(p)
+#define IShellFolderViewCB_Release(p)                 (p)->lpVtbl->Release(p)
+/*** IShellFolderViewCB methods ***/
+#define IShellFolderViewCB_MessageSFVCB(p,a,b,c)      (p)->lpVtbl->MessageSFVCB(p,a,b,c)
+#endif
+
 /* IProgressDialog interface */
 #define PROGDLG_NORMAL           0x00000000
 #define PROGDLG_MODAL            0x00000001
@@ -744,6 +770,16 @@ HRESULT WINAPI SHCreateShellFolderViewEx(LPCSFV pshfvi, IShellView **ppshv);
 #define SFVM_GET_WEBVIEW_TASKS        84 /* undocumented */
 #define SFVM_GET_WEBVIEW_THEME        86 /* undocumented */
 #define SFVM_GETDEFERREDVIEWSETTINGS  92 /* undocumented */
+
+typedef struct _SFV_CREATE
+{
+    UINT cbSize;
+    IShellFolder *pshf;
+    IShellView *psvOuter;
+    IShellFolderViewCB *psfvcb;
+} SFV_CREATE;
+
+HRESULT WINAPI SHCreateShellFolderView(const SFV_CREATE *pscfv, IShellView **ppsv);
 
 /* Types and definitions for the SFM_* parameters */
 #include <pshpack8.h>
@@ -1263,7 +1299,6 @@ BOOL WINAPI SHChangeNotifyDeregister(ULONG ulID);
 HANDLE WINAPI SHChangeNotification_Lock(HANDLE hChangeNotification, DWORD dwProcessId,
                                         LPITEMIDLIST **pppidl, LONG *plEvent);
 BOOL WINAPI SHChangeNotification_Unlock(HANDLE hLock);
-#define    SHCreateDirectoryEx WINELIB_NAME_AW(SHCreateDirectoryEx)
 
 HRESULT WINAPI SHGetRealIDL(IShellFolder *psf, LPCITEMIDLIST pidlSimple, LPITEMIDLIST * ppidlReal);
 
@@ -1273,6 +1308,7 @@ HRESULT WINAPI SHGetRealIDL(IShellFolder *psf, LPCITEMIDLIST pidlSimple, LPITEMI
 DWORD WINAPI SHCreateDirectory(HWND, LPCVOID);
 int WINAPI SHCreateDirectoryExA(HWND, LPCSTR, LPSECURITY_ATTRIBUTES);
 int WINAPI SHCreateDirectoryExW(HWND, LPCWSTR, LPSECURITY_ATTRIBUTES);
+#define    SHCreateDirectoryEx WINELIB_NAME_AW(SHCreateDirectoryEx)
 
 /****************************************************************************
 * SHGetSpecialFolderLocation API

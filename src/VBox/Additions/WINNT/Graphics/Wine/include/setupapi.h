@@ -1391,9 +1391,6 @@ typedef enum {
 
 /* SetupDiGetWizardPage PageType values */
 #define SPWPT_SELECTDEVICE 0x00000001
-/* SetupUninstallOEMInf Flags values */
-#define SUOI_FORCEDELETE 0x00000001
-
 /* SetupDiGetWizardPage Flags values */
 #define SPWP_USE_DEVINFO_DATA 0x00000001
 
@@ -1402,6 +1399,9 @@ typedef enum {
 
 /* SetupConfigureWmiFromInfSection Flags values */
 #define SCWMI_CLOBBER_SECURITY 0x00000001
+
+/* SetupUninstallOEMInf Flags values */
+#define SUOI_FORCEDELETE 0x00000001
 
 LONG     WINAPI AddTagToGroupOrderList(PCWSTR lpGroupName, DWORD dwUnknown2, DWORD dwUnknown3);
 DWORD    WINAPI CaptureAndConvertAnsiArg(PCSTR lpSrc, PWSTR *lpDst);

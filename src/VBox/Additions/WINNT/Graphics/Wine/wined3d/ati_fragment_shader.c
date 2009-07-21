@@ -201,8 +201,9 @@ static const char *debug_mask(GLuint mask) {
 }
 #define GLINFO_LOCATION (*gl_info)
 
-static void wrap_op1(const WineD3D_GL_Info *gl_info, GLuint op, GLuint dst, GLuint dstMask, GLuint dstMod,
-                     GLuint arg1, GLuint arg1Rep, GLuint arg1Mod) {
+static void wrap_op1(const struct wined3d_gl_info *gl_info, GLuint op, GLuint dst, GLuint dstMask, GLuint dstMod,
+        GLuint arg1, GLuint arg1Rep, GLuint arg1Mod)
+{
     if(dstMask == GL_ALPHA) {
         TRACE("glAlphaFragmentOp1ATI(%s, %s, %s, %s, %s, %s)\n", debug_op(op), debug_register(dst), debug_dstmod(dstMod),
               debug_register(arg1), debug_rep(arg1Rep), debug_argmod(arg1Mod));
@@ -215,9 +216,9 @@ static void wrap_op1(const WineD3D_GL_Info *gl_info, GLuint op, GLuint dst, GLui
     }
 }
 
-static void wrap_op2(const WineD3D_GL_Info *gl_info, GLuint op, GLuint dst, GLuint dstMask, GLuint dstMod,
-                     GLuint arg1, GLuint arg1Rep, GLuint arg1Mod,
-                     GLuint arg2, GLuint arg2Rep, GLuint arg2Mod) {
+static void wrap_op2(const struct wined3d_gl_info *gl_info, GLuint op, GLuint dst, GLuint dstMask, GLuint dstMod,
+        GLuint arg1, GLuint arg1Rep, GLuint arg1Mod, GLuint arg2, GLuint arg2Rep, GLuint arg2Mod)
+{
     if(dstMask == GL_ALPHA) {
         TRACE("glAlphaFragmentOp2ATI(%s, %s, %s, %s, %s, %s, %s, %s, %s)\n", debug_op(op), debug_register(dst), debug_dstmod(dstMod),
               debug_register(arg1), debug_rep(arg1Rep), debug_argmod(arg1Mod),
@@ -232,10 +233,10 @@ static void wrap_op2(const WineD3D_GL_Info *gl_info, GLuint op, GLuint dst, GLui
     }
 }
 
-static void wrap_op3(const WineD3D_GL_Info *gl_info, GLuint op, GLuint dst, GLuint dstMask, GLuint dstMod,
-                     GLuint arg1, GLuint arg1Rep, GLuint arg1Mod,
-                     GLuint arg2, GLuint arg2Rep, GLuint arg2Mod,
-                     GLuint arg3, GLuint arg3Rep, GLuint arg3Mod) {
+static void wrap_op3(const struct wined3d_gl_info *gl_info, GLuint op, GLuint dst, GLuint dstMask, GLuint dstMod,
+        GLuint arg1, GLuint arg1Rep, GLuint arg1Mod, GLuint arg2, GLuint arg2Rep, GLuint arg2Mod,
+        GLuint arg3, GLuint arg3Rep, GLuint arg3Mod)
+{
     if(dstMask == GL_ALPHA) {
         /* Leave some free space to fit "GL_NONE, " in to align most alpha and color op lines */
         TRACE("glAlphaFragmentOp3ATI(%s, %s,          %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)\n", debug_op(op), debug_register(dst), debug_dstmod(dstMod),
@@ -259,7 +260,7 @@ static void wrap_op3(const WineD3D_GL_Info *gl_info, GLuint op, GLuint dst, GLui
     }
 }
 
-static GLuint register_for_arg(DWORD arg, const WineD3D_GL_Info *gl_info,
+static GLuint register_for_arg(DWORD arg, const struct wined3d_gl_info *gl_info,
         unsigned int stage, GLuint *mod, GLuint *rep, GLuint tmparg)
 {
     GLenum ret;
@@ -387,7 +388,7 @@ static GLuint find_tmpreg(const struct texture_stage_op op[MAX_TEXTURES])
     }
 }
 
-static GLuint gen_ati_shader(const struct texture_stage_op op[MAX_TEXTURES], const WineD3D_GL_Info *gl_info)
+static GLuint gen_ati_shader(const struct texture_stage_op op[MAX_TEXTURES], const struct wined3d_gl_info *gl_info)
 {
     GLuint ret = GL_EXTCALL(glGenFragmentShadersATI(1));
     unsigned int stage;
@@ -432,13 +433,6 @@ static GLuint gen_ati_shader(const struct texture_stage_op op[MAX_TEXTURES], con
         GL_EXTCALL(glPassTexCoordATI(GL_REG_0_ATI + stage + 1,
                    GL_TEXTURE0_ARB + stage + 1,
                    swizzle));
-
-        /* We need GL_REG_5_ATI as a temporary register to swizzle the bump matrix. So we run into
-         * issues if we're bump mapping on stage 4 or 5
-         */
-        if(stage >= 4) {
-            FIXME("Bump mapping in stage %d\n", stage);
-        }
     }
 
     /* Pass 2: Generate perturbation calculations */
@@ -469,22 +463,24 @@ static GLuint gen_ati_shader(const struct texture_stage_op op[MAX_TEXTURES], con
                  ATI_FFP_CONST_BUMPMAT(stage), GL_NONE, GL_2X_BIT_ATI | GL_BIAS_BIT_ATI,
                  GL_REG_0_ATI + stage + 1, GL_RED, GL_NONE);
 
-        /* FIXME: How can I make GL_DOT2_ADD_ATI read the factors from blue and alpha? It defaults to red and green,
-         * and it is fairly easy to make it read GL_BLUE or BL_ALPHA, but I can't get an R * B + G * A. So we're wasting
-         * one register and two instructions in this pass for a simple swizzling operation.
-         * For starters it might be good enough to merge the two movs into one, but even that isn't possible :-(
+        /* Don't use GL_DOT2_ADD_ATI here because we cannot configure it to read the blue and alpha
+         * component of the bump matrix. Instead do this with two MADs:
          *
-         * NOTE: GL_BLUE | GL_ALPHA is not possible. It doesn't throw a compilation error, but an OR operation on the
-         * constants doesn't make sense, considering their values.
+         * coord.a = tex.r * bump.b + coord.g
+         * coord.g = tex.g * bump.a + coord.a
+         *
+         * The first instruction writes to alpha so it can be coissued with the above DOT2_ADD.
+         * coord.a is unused. If the perturbed texture is projected, this was already handled
+         * in the glPassTexCoordATI above.
          */
-        wrap_op1(gl_info, GL_MOV_ATI, GL_REG_5_ATI, GL_RED_BIT_ATI, GL_NONE,
-                 ATI_FFP_CONST_BUMPMAT(stage), GL_BLUE, GL_NONE);
-        wrap_op1(gl_info, GL_MOV_ATI, GL_REG_5_ATI, GL_GREEN_BIT_ATI, GL_NONE,
-                 ATI_FFP_CONST_BUMPMAT(stage), GL_ALPHA, GL_NONE);
-        wrap_op3(gl_info, GL_DOT2_ADD_ATI, GL_REG_0_ATI + stage + 1, GL_GREEN_BIT_ATI, GL_NONE,
-                 GL_REG_0_ATI + stage, GL_NONE, argmodextra_y,
-                 GL_REG_5_ATI, GL_NONE, GL_2X_BIT_ATI | GL_BIAS_BIT_ATI,
+        wrap_op3(gl_info, GL_MAD_ATI, GL_REG_0_ATI + stage + 1, GL_ALPHA, GL_NONE,
+                 GL_REG_0_ATI + stage, GL_RED, argmodextra_y,
+                 ATI_FFP_CONST_BUMPMAT(stage), GL_BLUE, GL_NONE,
                  GL_REG_0_ATI + stage + 1, GL_GREEN, GL_NONE);
+        wrap_op3(gl_info, GL_MAD_ATI, GL_REG_0_ATI + stage + 1, GL_GREEN_BIT_ATI, GL_NONE,
+                 GL_REG_0_ATI + stage, GL_GREEN, argmodextra_y,
+                 ATI_FFP_CONST_BUMPMAT(stage), GL_ALPHA, GL_NONE,
+                 GL_REG_0_ATI + stage + 1, GL_ALPHA, GL_NONE);
     }
 
     /* Pass 3: Generate sampling instructions for regular textures */
@@ -878,10 +874,10 @@ static void set_bumpmat(DWORD state, IWineD3DStateBlockImpl *stateblock, WineD3D
      * shader(it is free). This might potentially reduce precision. However, if the hardware does
      * support proper floats it shouldn't, and if it doesn't we can't get anything better anyway
      */
-    mat[0][0] = (mat[0][0] + 1.0) * 0.5;
-    mat[1][0] = (mat[1][0] + 1.0) * 0.5;
-    mat[0][1] = (mat[0][1] + 1.0) * 0.5;
-    mat[1][1] = (mat[1][1] + 1.0) * 0.5;
+    mat[0][0] = (mat[0][0] + 1.0f) * 0.5f;
+    mat[1][0] = (mat[1][0] + 1.0f) * 0.5f;
+    mat[0][1] = (mat[0][1] + 1.0f) * 0.5f;
+    mat[1][1] = (mat[1][1] + 1.0f) * 0.5f;
     GL_EXTCALL(glSetFragmentShaderConstantATI(ATI_FFP_CONST_BUMPMAT(stage), (float *) mat));
     checkGLcall("glSetFragmentShaderConstantATI(ATI_FFP_CONST_BUMPMAT(stage), mat)");
 }
@@ -1052,6 +1048,7 @@ static const struct StateEntryTemplate atifs_fragmentstate_template[] = {
     {0 /* Terminate */,                                   { 0,                                                  0                       }, WINED3D_GL_EXT_NONE             },
 };
 
+/* Context activation is done by the caller. */
 static void atifs_enable(IWineD3DDevice *iface, BOOL enable) {
     ENTER_GL();
     if(enable) {
@@ -1064,7 +1061,7 @@ static void atifs_enable(IWineD3DDevice *iface, BOOL enable) {
     LEAVE_GL();
 }
 
-static void atifs_get_caps(WINED3DDEVTYPE devtype, const WineD3D_GL_Info *gl_info, struct fragment_caps *caps)
+static void atifs_get_caps(WINED3DDEVTYPE devtype, const struct wined3d_gl_info *gl_info, struct fragment_caps *caps)
 {
     caps->TextureOpCaps =  WINED3DTEXOPCAPS_DISABLE                     |
                            WINED3DTEXOPCAPS_SELECTARG1                  |
@@ -1132,6 +1129,7 @@ static HRESULT atifs_alloc(IWineD3DDevice *iface) {
 }
 
 #define GLINFO_LOCATION This->adapter->gl_info
+/* Context activation is done by the caller. */
 static void atifs_free_ffpshader(struct wine_rb_entry *entry, void *context)
 {
     IWineD3DDeviceImpl *This = context;
@@ -1144,6 +1142,7 @@ static void atifs_free_ffpshader(struct wine_rb_entry *entry, void *context)
     LEAVE_GL();
 }
 
+/* Context activation is done by the caller. */
 static void atifs_free(IWineD3DDevice *iface) {
     IWineD3DDeviceImpl *This = (IWineD3DDeviceImpl *) iface;
     struct atifs_private_data *priv = This->fragment_priv;

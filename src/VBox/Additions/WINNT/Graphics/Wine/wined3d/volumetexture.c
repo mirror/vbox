@@ -41,7 +41,7 @@ static void volumetexture_internal_preload(IWineD3DBaseTexture *iface, enum WINE
     /* Override the IWineD3DResource Preload method. */
     IWineD3DVolumeTextureImpl *This = (IWineD3DVolumeTextureImpl *)iface;
     IWineD3DDeviceImpl *device = This->resource.wineD3DDevice;
-    const WineD3D_GL_Info *gl_info = &device->adapter->gl_info;
+    const struct wined3d_gl_info *gl_info = &device->adapter->gl_info;
     BOOL srgb_mode = This->baseTexture.is_srgb;
     BOOL srgb_was_toggled = FALSE;
     unsigned int i;
@@ -108,7 +108,7 @@ static void volumetexture_cleanup(IWineD3DVolumeTextureImpl *This, D3DCB_DESTROY
 HRESULT volumetexture_init(IWineD3DVolumeTextureImpl *texture, UINT width, UINT height, UINT depth, UINT levels,
         IWineD3DDeviceImpl *device, DWORD usage, WINED3DFORMAT format, WINED3DPOOL pool, IUnknown *parent)
 {
-    const WineD3D_GL_Info *gl_info = &device->adapter->gl_info;
+    const struct wined3d_gl_info *gl_info = &device->adapter->gl_info;
     const struct GlPixelFormatDesc *format_desc = getFormatDescEntry(format, gl_info);
     UINT tmp_w, tmp_h, tmp_d;
     unsigned int i;
@@ -171,10 +171,10 @@ HRESULT volumetexture_init(IWineD3DVolumeTextureImpl *texture, UINT width, UINT 
     }
 
     /* Is NP2 support for volumes needed? */
-    texture->baseTexture.pow2Matrix[0] = 1.0;
-    texture->baseTexture.pow2Matrix[5] = 1.0;
-    texture->baseTexture.pow2Matrix[10] = 1.0;
-    texture->baseTexture.pow2Matrix[15] = 1.0;
+    texture->baseTexture.pow2Matrix[0] = 1.0f;
+    texture->baseTexture.pow2Matrix[5] = 1.0f;
+    texture->baseTexture.pow2Matrix[10] = 1.0f;
+    texture->baseTexture.pow2Matrix[15] = 1.0f;
 
     /* Generate all the surfaces. */
     tmp_w = width;
@@ -340,6 +340,7 @@ static BOOL WINAPI IWineD3DVolumeTextureImpl_GetDirty(IWineD3DVolumeTexture *ifa
     return basetexture_get_dirty((IWineD3DBaseTexture *)iface);
 }
 
+/* Context activation is done by the caller. */
 static HRESULT WINAPI IWineD3DVolumeTextureImpl_BindTexture(IWineD3DVolumeTexture *iface, BOOL srgb) {
     IWineD3DVolumeTextureImpl *This = (IWineD3DVolumeTextureImpl *)iface;
     BOOL dummy;

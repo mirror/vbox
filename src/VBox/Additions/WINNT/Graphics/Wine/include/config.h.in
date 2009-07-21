@@ -123,9 +123,6 @@
 /* Define to 1 if you have the <freetype/ftmodapi.h> header file. */
 #undef HAVE_FREETYPE_FTMODAPI_H
 
-/* Define to 1 if you have the <freetype/ftnames.h> header file. */
-#undef HAVE_FREETYPE_FTNAMES_H
-
 /* Define to 1 if you have the <freetype/ftoutln.h> header file. */
 #undef HAVE_FREETYPE_FTOUTLN_H
 
@@ -221,9 +218,6 @@
 
 /* Define to 1 if you have the `getuid' function. */
 #undef HAVE_GETUID
-
-/* Define to 1 if you have the <GL/glext.h> header file. */
-#undef HAVE_GL_GLEXT_H
 
 /* Define to 1 if you have the <GL/glu.h> header file. */
 #undef HAVE_GL_GLU_H
@@ -558,6 +552,9 @@
 /* Define to 1 if the system has the type `pid_t'. */
 #undef HAVE_PID_T
 
+/* Define to 1 if you have the `pipe2' function. */
+#undef HAVE_PIPE2
+
 /* Define to 1 if you have the <png.h> header file. */
 #undef HAVE_PNG_H
 
@@ -699,6 +696,9 @@
 /* Define to 1 if you have the `statvfs' function. */
 #undef HAVE_STATVFS
 
+/* Define to 1 if you have the <stdbool.h> header file. */
+#undef HAVE_STDBOOL_H
+
 /* Define to 1 if you have the <stdint.h> header file. */
 #undef HAVE_STDINT_H
 
@@ -830,6 +830,9 @@
 
 /* Define to 1 if you have the <sys/filio.h> header file. */
 #undef HAVE_SYS_FILIO_H
+
+/* Define to 1 if you have the <sys/inotify.h> header file. */
+#undef HAVE_SYS_INOTIFY_H
 
 /* Define to 1 if you have the <sys/ioctl.h> header file. */
 #undef HAVE_SYS_IOCTL_H
@@ -1188,11 +1191,28 @@
 /* Define to 1 if the X Window System is missing or not being used. */
 #undef X_DISPLAY_MISSING
 
+/* Define to a macro to output a .cfi assembly pseudo-op */
+#undef __ASM_CFI
+
+/* Define to a macro to define an assembly function */
+#undef __ASM_DEFINE_FUNC
+
 /* Define to a macro to generate an assembly function directive */
 #undef __ASM_FUNC
 
+/* Define to a macro to generate an assembly function with C calling
+   convention */
+#undef __ASM_GLOBAL_FUNC
+
 /* Define to a macro to generate an assembly name from a C symbol */
 #undef __ASM_NAME
+
+/* Define to a macro to generate an stdcall suffix */
+#undef __ASM_STDCALL
+
+/* Define to a macro to generate an assembly function with stdcall calling
+   convention */
+#undef __ASM_STDCALL_FUNC
 
 /* Define to empty if `const' does not conform to ANSI C. */
 #undef const

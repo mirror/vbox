@@ -25,14 +25,27 @@
  * of the LGPL is applied is otherwise unspecified.
  */
 
-cpp_quote("#define TF_E_DISCONNECTED    MAKE_HRESULT(SEVERITY_ERROR, FACILITY_ITF, 0x0504)")
 #ifndef DO_NO_IMPORTS
-cpp_quote("#define TF_E_NOLOCK          MAKE_HRESULT(SEVERITY_ERROR, FACILITY_ITF, 0x0201)")
-
 import "oaidl.idl";
 import "comcat.idl";
 import "textstor.idl";
 /* import "ctfutb.idl"; */
+#endif
+cpp_quote("#include <winuser.h>")
+
+cpp_quote("#define TF_E_STACKFULL MAKE_HRESULT(SEVERITY_ERROR, FACILITY_ITF, 0x0501)")
+cpp_quote("#define TF_E_DISCONNECTED    MAKE_HRESULT(SEVERITY_ERROR, FACILITY_ITF, 0x0504)")
+cpp_quote("#define TF_E_ALREADY_EXISTS  MAKE_HRESULT(SEVERITY_ERROR, FACILITY_ITF, 0x0506)")
+cpp_quote("#define TF_E_NOLOCK          MAKE_HRESULT(SEVERITY_ERROR, FACILITY_ITF, 0x0201)")
+
+cpp_quote("HRESULT WINAPI TF_CreateThreadMgr(ITfThreadMgr **pptim);")
+cpp_quote("HRESULT WINAPI TF_GetThreadMgr(ITfThreadMgr **pptim);")
+cpp_quote("HRESULT WINAPI TF_CreateInputProcessorProfiles(ITfInputProcessorProfiles **ppipr);")
+
+cpp_quote("EXTERN_C const CLSID CLSID_TF_ThreadMgr;")
+cpp_quote("EXTERN_C const CLSID CLSID_TF_InputProcessorProfiles;")
+cpp_quote("EXTERN_C const CLSID CLSID_TF_CategoryMgr;")
+
 /* GUIDs for Compartments */
 cpp_quote("EXTERN_C const GUID GUID_COMPARTMENT_KEYBOARD_DISABLED;")
 cpp_quote("EXTERN_C const GUID GUID_COMPARTMENT_KEYBOARD_OPENCLOSE;")
@@ -43,15 +56,6 @@ cpp_quote("EXTERN_C const GUID GUID_COMPARTMENT_SPEECH_GLOBALSTATE;")
 cpp_quote("EXTERN_C const GUID GUID_COMPARTMENT_PERSISTMENUENABLED;")
 cpp_quote("EXTERN_C const GUID GUID_COMPARTMENT_EMPTYCONTEXT;")
 cpp_quote("EXTERN_C const GUID GUID_COMPARTMENT_TIPUISTATUS;")
-
-#endif
-cpp_quote("#include <winuser.h>")
-
-cpp_quote("#define TF_E_STACKFULL MAKE_HRESULT(SEVERITY_ERROR, FACILITY_ITF, 0x0501)")
-cpp_quote("#define TF_E_ALREADY_EXISTS  MAKE_HRESULT(SEVERITY_ERROR, FACILITY_ITF, 0x0506)")
-cpp_quote("EXTERN_C const CLSID CLSID_TF_ThreadMgr;")
-cpp_quote("EXTERN_C const CLSID CLSID_TF_InputProcessorProfiles;")
-cpp_quote("EXTERN_C const CLSID CLSID_TF_CategoryMgr;")
 
 /* GUIDs for Categories */
 cpp_quote("EXTERN_C const GUID GUID_TFCAT_TIP_KEYBOARD;")
@@ -101,8 +105,6 @@ typedef [uuid(e1b5808d-1e46-4c19-84dc-68c5f5978cc8)] struct TF_LANGUAGEPROFILE
     LANGID langid;
     GUID catid;
     BOOL fActive;
-typedef [uuid(5a886226-ae9a-489b-b991-2b1e25ee59a9)]  enum { TF_ANCHOR_START = 0, TF_ANCHOR_END = 1 } TfAnchor;
-
     GUID guidProfile;
 } TF_LANGUAGEPROFILE;
 
@@ -111,6 +113,8 @@ typedef [uuid(77c12f95-b783-450d-879f-1cd2362c6521)] struct TF_PRESERVEDKEY
     UINT uVKey;
     UINT uModifiers;
 } TF_PRESERVEDKEY;
+
+typedef [uuid(5a886226-ae9a-489b-b991-2b1e25ee59a9)]  enum { TF_ANCHOR_START = 0, TF_ANCHOR_END = 1 } TfAnchor;
 
 [
     object,
@@ -715,6 +719,15 @@ interface ITfMessagePump : IUnknown
 [
   object,
   local,
+  uuid(d60a7b49-1b9f-4be2-b702-47e9dc05dec3),
+  pointer_default(unique)
+]
+interface ITfClientId : IUnknown
+{
+    HRESULT GetClientId(
+        [in] REFCLSID rclsid,
+        [out] TfClientId *ptid);
+};
 
 [
   object,
@@ -938,12 +951,56 @@ interface ITfCompartmentMgr : IUnknown
     HRESULT EnumCompartments(
         [out] IEnumGUID **ppEnum);
 };
-  uuid(d60a7b49-1b9f-4be2-b702-47e9dc05dec3),
+
+[
+  object,
+  uuid(743abd5f-f26d-48df-8cc5-238492419b64),
   pointer_default(unique)
 ]
-interface ITfClientId : IUnknown
+interface ITfCompartmentEventSink : IUnknown
 {
-    HRESULT GetClientId(
-        [in] REFCLSID rclsid,
-        [out] TfClientId *ptid);
+    HRESULT OnChange(
+        [in] REFGUID rguid);
+}
+
+[
+  object,
+  uuid(8f1a7ea6-1654-4502-a86e-b2902344d507),
+  pointer_default(unique)
+]
+interface IEnumTfContexts : IUnknown
+{
+    HRESULT Clone(
+        [out] IEnumTfContexts **ppEnum);
+
+    HRESULT Next(
+        [in] ULONG ulCount,
+        [out, size_is(ulCount), length_is(*pcFetched)] ITfContext **rgContext,
+        [out] ULONG *pcFetched);
+
+    HRESULT Reset();
+
+    HRESULT Skip(
+        [in] ULONG ulCount);
+};
+
+[
+  object,
+  uuid(aa80e808-2021-11d2-93e0-0060b067b86e),
+  pointer_default(unique)
+]
+interface IEnumTfDocumentMgrs : IUnknown
+{
+    HRESULT Clone(
+        [out] IEnumTfDocumentMgrs **ppEnum);
+
+    HRESULT Next(
+        [in] ULONG ulCount,
+        [out, size_is(ulCount), length_is(*pcFetched)] ITfDocumentMgr **rgDocumentMgr,
+        [out] ULONG *pcFetched);
+
+    HRESULT Reset();
+
+    HRESULT Skip(
+        [in] ULONG ulCount);
 };

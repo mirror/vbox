@@ -71,10 +71,6 @@ static void vshader_set_limits(IWineD3DVertexShaderImpl *This)
         case WINED3D_SHADER_VERSION(2,0):
         case WINED3D_SHADER_VERSION(2,1):
             This->baseShader.limits.temporary = 12;
-        case WINED3D_SHADER_VERSION(4,0):
-            FIXME("Using 3.0 limits for 4.0 shader\n");
-            /* Fall through */
-
             This->baseShader.limits.constant_bool = 16;
             This->baseShader.limits.constant_int = 16;
             This->baseShader.limits.address = 1;
@@ -83,6 +79,10 @@ static void vshader_set_limits(IWineD3DVertexShaderImpl *This)
             This->baseShader.limits.label = 16;
             This->baseShader.limits.constant_float = min(256, GL_LIMITS(vshader_constantsF));
             break;
+
+        case WINED3D_SHADER_VERSION(4,0):
+            FIXME("Using 3.0 limits for 4.0 shader\n");
+            /* Fall through */
 
         case WINED3D_SHADER_VERSION(3,0):
             This->baseShader.limits.temporary = 32;
@@ -289,10 +289,10 @@ static HRESULT WINAPI IWineD3DVertexShaderImpl_SetFunction(IWineD3DVertexShader 
 
     vshader_set_limits(This);
 
-    if(deviceImpl->vs_selected_mode == SHADER_ARB &&
-       (GLINFO_LOCATION).arb_vs_offset_limit      &&
-       This->min_rel_offset <= This->max_rel_offset) {
-
+    if (deviceImpl->vs_selected_mode == SHADER_ARB
+            && ((GLINFO_LOCATION).quirks & WINED3D_QUIRK_ARB_VS_OFFSET_LIMIT)
+            && This->min_rel_offset <= This->max_rel_offset)
+    {
         if(This->max_rel_offset - This->min_rel_offset > 127) {
             FIXME("The difference between the minimum and maximum relative offset is > 127\n");
             FIXME("Which this OpenGL implementation does not support. Try using GLSL\n");
