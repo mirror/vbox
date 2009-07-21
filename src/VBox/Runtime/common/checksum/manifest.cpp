@@ -258,7 +258,7 @@ RTR3DECL(int) RTManifestWriteFiles(const char *pszManifestFile, const char * con
         /* Add the entry to the manifest file */
         int cbRet = RTStrmPrintf(pStream, "SHA1 (%s)= %s\n", RTPathFilename(papszFiles[i]), pszDigest);
         RTStrFree(pszDigest);
-        if (cbRet < 0)
+        if (RT_UNLIKELY(cbRet < 0))
         {
             rc = VERR_INTERNAL_ERROR;
             break;
