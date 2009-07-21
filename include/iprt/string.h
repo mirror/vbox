@@ -255,10 +255,13 @@ RTDECL(int) RTStrToUni(const char *pszString, PRTUNICP *ppUniString);
  *                          will be allocated to hold the translated string.
  *                          If a buffer was requested it must be freed using RTUtf16Free().
  * @param   cCps            The number of code points in the unicode string. This includes the terminator.
- * @param   pcCps           Where to store the length of the translated string. (Optional)
- *                          This field will be updated even on failure, however the value is only
- *                          specified for the following two error codes. On VERR_BUFFER_OVERFLOW
- *                          and VERR_NO_STR_MEMORY it contains the required buffer space.
+ * @param   pcCps           Where to store the length of the translated string,
+ *                          excluding the terminator. (Optional)
+ *
+ *                          This may be set under some error conditions,
+ *                          however, only for VERR_BUFFER_OVERFLOW and
+ *                          VERR_NO_STR_MEMORY will it contain a valid string
+ *                          length that can be used to resize the buffer.
  */
 RTDECL(int)  RTStrToUniEx(const char *pszString, size_t cchString, PRTUNICP *ppaCps, size_t cCps, size_t *pcCps);
 
@@ -314,10 +317,13 @@ RTDECL(int) RTStrToUtf16(const char *pszString, PRTUTF16 *ppwszString);
  *                          will be allocated to hold the translated string.
  *                          If a buffer was requested it must be freed using RTUtf16Free().
  * @param   cwc             The buffer size in RTUTF16s. This includes the terminator.
- * @param   pcwc            Where to store the length of the translated string. (Optional)
- *                          This field will be updated even on failure, however the value is only
- *                          specified for the following two error codes. On VERR_BUFFER_OVERFLOW
- *                          and VERR_NO_STR_MEMORY it contains the required buffer space.
+ * @param   pcwc            Where to store the length of the translated string,
+ *                          excluding the terminator. (Optional)
+ *
+ *                          This may be set under some error conditions,
+ *                          however, only for VERR_BUFFER_OVERFLOW and
+ *                          VERR_NO_STR_MEMORY will it contain a valid string
+ *                          length that can be used to resize the buffer.
  */
 RTDECL(int)  RTStrToUtf16Ex(const char *pszString, size_t cchString, PRTUTF16 *ppwsz, size_t cwc, size_t *pcwc);
 
@@ -1382,7 +1388,7 @@ RTDECL(int16_t) RTStrToInt16(const char *pszValue);
  * @param   ppszNext    Where to store the pointer to the first char following the number. (Optional)
  * @param   uBase       The base of the representation used.
  *                      If 0 the function will look for known prefixes before defaulting to 10.
- * @param   pi8        Where to store the converted number. (optional)
+ * @param   pi8         Where to store the converted number. (optional)
  */
 RTDECL(int) RTStrToInt8Ex(const char *pszValue, char **ppszNext, unsigned uBase, int8_t *pi8);
 
@@ -1670,10 +1676,13 @@ RTDECL(int)  RTUtf16ToUtf8(PCRTUTF16 pwszString, char **ppszString);
  *                          will be allocated to hold the translated string.
  *                          If a buffer was requested it must be freed using RTUtf16Free().
  * @param   cch             The buffer size in chars (the type). This includes the terminator.
- * @param   pcch            Where to store the length of the translated string. (Optional)
- *                          This field will be updated even on failure, however the value is only
- *                          specified for the following two error codes. On VERR_BUFFER_OVERFLOW
- *                          and VERR_NO_STR_MEMORY it contains the required buffer space.
+ * @param   pcch            Where to store the length of the translated string,
+ *                          excluding the terminator. (Optional)
+ *
+ *                          This may be set under some error conditions,
+ *                          however, only for VERR_BUFFER_OVERFLOW and
+ *                          VERR_NO_STR_MEMORY will it contain a valid string
+ *                          length that can be used to resize the buffer.
  */
 RTDECL(int)  RTUtf16ToUtf8Ex(PCRTUTF16 pwszString, size_t cwcString, char **ppsz, size_t cch, size_t *pcch);
 
@@ -1744,13 +1753,13 @@ RTDECL(int)  RTUtf16ToLatin1(PCRTUTF16 pwszString, char **ppszString);
  *
  * @param   cch             The buffer size in chars (the type). This includes
  *                          the terminator.
- * @param   pcch            Where to store the length of the translated string.
- *                          (Optional)
- *                          This will be set even on failure, however the value
- *                          is only specified for the following two error
- *                          codes. On VERR_BUFFER_OVERFLOW and
- *                          VERR_NO_STR_MEMORY it contains the required buffer
- *                          space.
+ * @param   pcch            Where to store the length of the translated string,
+ *                          excluding the terminator. (Optional)
+ *
+ *                          This may be set under some error conditions,
+ *                          however, only for VERR_BUFFER_OVERFLOW and
+ *                          VERR_NO_STR_MEMORY will it contain a valid string
+ *                          length that can be used to resize the buffer.
  */
 RTDECL(int)  RTUtf16ToLatin1Ex(PCRTUTF16 pwszString, size_t cwcString, char **ppsz, size_t cch, size_t *pcch);
 
@@ -2017,12 +2026,13 @@ RTDECL(int) RTLatin1ToUtf16(const char *pszString, PRTUTF16 *ppwszString);
  *                          must be freed using RTUtf16Free().
  * @param   cwc             The buffer size in RTUTF16s. This includes the
  *                          terminator.
- * @param   pcwc            Where to store the length of the translated
- *                          string. (Optional) This will be set even on failure,
- *                          however the value is only specified for the
- *                          following two error codes. On VERR_BUFFER_OVERFLOW
- *                          and VERR_NO_STR_MEMORY it contains the required
- *                          buffer space.
+ * @param   pcwc            Where to store the length of the translated string,
+ *                          excluding the terminator. (Optional)
+ *
+ *                          This may be set under some error conditions,
+ *                          however, only for VERR_BUFFER_OVERFLOW and
+ *                          VERR_NO_STR_MEMORY will it contain a valid string
+ *                          length that can be used to resize the buffer.
  */
 RTDECL(int) RTLatin1ToUtf16Ex(const char *pszString, size_t cchString, PRTUTF16 *ppwsz, size_t cwc, size_t *pcwc);
 
