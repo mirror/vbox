@@ -402,10 +402,8 @@ int handleList(HandlerArg *a)
                     RTPrintf("Processor#%u speed: %lu MHz\n", i, processorSpeed);
                 else
                     RTPrintf("Processor#%u speed: unknown\n", i, processorSpeed);
-#if 0 /* not yet implemented in Main */
                 CHECK_ERROR (Host, GetProcessorDescription(i, processorDescription.asOutParam()));
                 RTPrintf("Processor#%u description: %lS\n", i, processorDescription.raw());
-#endif
             }
 
             ULONG memorySize = 0;
