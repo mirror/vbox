@@ -62,7 +62,7 @@ typedef RTMANIFESTTEST* PRTMANIFESTTEST;
  * manifest file than provided by paTests, VERR_MANIFEST_FILE_MISMATCH will be
  * returned.
  *
- * @returns VBox status code.
+ * @returns iprt status code.
  *
  * @param   pszManifestFile      Filename of the manifest file to verify.
  * @param   paTests              Array of files & SHA1 sums.
@@ -77,7 +77,7 @@ RTR3DECL(int) RTManifestVerify(const char *pszManifestFile, PRTMANIFESTTEST paTe
  * This is analogous to function RTManifestVerify(), but calculates the SHA1
  * sums of the given files itself.
  *
- * @returns VBox status code.
+ * @returns iprt status code.
  *
  * @param   pszManifestFile      Filename of the manifest file to verify.
  * @param   papszFiles           Array of files to check SHA1 sums.
@@ -93,7 +93,7 @@ RTR3DECL(int) RTManifestVerifyFiles(const char *pszManifestFile, const char * co
  * sums of every provided file and could be used to verify the data integrity
  * of them.
  *
- * @returns VBox status code.
+ * @returns iprt status code.
  *
  * @param   pszManifestFile      Filename of the manifest file to create.
  * @param   papszFiles           Array of files to create SHA1 sums for.
