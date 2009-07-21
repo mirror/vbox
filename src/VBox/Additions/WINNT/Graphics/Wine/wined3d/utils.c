@@ -2179,6 +2179,8 @@ void gen_ffp_frag_op(IWineD3DStateBlockImpl *stateblock, struct ffp_frag_setting
     DWORD cop, aop, carg0, carg1, carg2, aarg0, aarg1, aarg2;
     IWineD3DDeviceImpl *device = stateblock->wineD3DDevice;
 
+    memset(settings, 0, sizeof(*settings));
+
     for(i = 0; i < GL_LIMITS(texture_stages); i++) {
         IWineD3DBaseTextureImpl *texture;
         settings->op[i].padding = 0;
