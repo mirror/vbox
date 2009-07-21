@@ -931,13 +931,18 @@ STDMETHODIMP Host::GetProcessorSpeed(ULONG aCpuId, ULONG *aSpeed)
  * @param   cpu id to get info for.
  * @param   description address of result variable, empty string if not known or aCpuId is invalid.
  */
-STDMETHODIMP Host::GetProcessorDescription(ULONG /* aCpuId */, BSTR *aDescription)
+STDMETHODIMP Host::GetProcessorDescription(ULONG aCpuId, BSTR *aDescription)
 {
     CheckComArgOutPointerValid(aDescription);
     AutoWriteLock alock (this);
     CHECK_READY();
-    /** @todo */
-    ReturnComNotImplemented();
+
+    char szCPUModel[80];
+    int vrc = RTMpGetDescription(aCpuId, szCPUModel, sizeof(szCPUModel));
+    if (RT_FAILURE(vrc))
+        return E_FAIL; /** @todo error reporting? */
+    Bstr (szCPUModel).cloneTo (aDescription);
+    return S_OK;
 }
 
 /**
