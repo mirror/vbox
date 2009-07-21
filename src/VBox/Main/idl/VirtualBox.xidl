@@ -7078,10 +7078,6 @@
 
     <method name="getProcessorDescription">
       <desc>Query the model string of a specified host CPU.
-        <note>
-          This function is not implemented in the current version of the
-          product.
-        </note>
       </desc>
       <param name="cpuId" type="unsigned long" dir="in">
         <desc>
