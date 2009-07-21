@@ -805,6 +805,8 @@ void Benchmarks(RTTEST hTest)
         char szBuf[sizeof(g_szAll)];
     } s_Buf;
 
+    RTTestSub(hTest, "Benchmarks");
+/** @todo add RTTest* methods for reporting benchmark results. */
     RTTestPrintf(hTest, RTTESTLVL_ALWAYS, "Benchmarking RTStrToUtf16Ex:  "); /** @todo figure this stuff into the test framework. */
     PRTUTF16 pwsz = &s_Buf.wszBuf[0];
     int rc = RTStrToUtf16Ex(&g_szAll[0], RTSTR_MAX, &pwsz, RT_ELEMENTS(s_Buf.wszBuf), NULL);
@@ -845,6 +847,7 @@ void Benchmarks(RTTEST hTest)
         RTTestPrintf(hTest, RTTESTLVL_ALWAYS, "%d in %'RI64 ns\n", i, u64Elapsed);
     }
 
+    RTTestSubDone(hTest);
 }
 
 
@@ -1066,9 +1069,7 @@ void testLatin1(RTTEST hTest)
     }
     rc = RTUtf16ToLatin1Ex(g_wszAll, 128, &psz2, 128, &cchActual);
     RTTEST_CHECK_RC(hTest, rc, VERR_BUFFER_OVERFLOW);
-    /** @todo Either fix the documentation or fix the code - cchActual is
-     * set to the number of bytes actually encoded. */
-    RTTEST_CHECK_MSG(hTest, (cchActual == 128),
+    RTTEST_CHECK_MSG(hTest, cchActual == 128,
                      (hTest, "cchActual=%lu\n", cchActual));
     rc = RTUtf16ToLatin1Ex(g_wszAll, 255, &psz, 0, &cchActual);
     RTTEST_CHECK_RC_OK(hTest, rc);
@@ -1182,6 +1183,12 @@ static void testNoTransation(RTTEST hTest)
     else
         RTTESTI_CHECK_RC(rc, VERR_NO_TRANSLATION);
 
+    RTTestSub(hTest, "VERR_NO_TRANSLATION/RTUtf16ToLatin1");
+    rc = RTUtf16ToLatin1(s_swzTest1, &pszOut);
+    RTTESTI_CHECK_RC(rc, VERR_NO_TRANSLATION);
+    if (RT_SUCCESS(rc))
+        RTStrFree(pszOut);
+
     RTStrFree(pszTest1);
     RTTestSubDone(hTest);
 }
@@ -1207,11 +1214,8 @@ int main()
     test3(hTest);
     TstRTStrXCmp(hTest);
     testStrStr(hTest);
-
     testMinistring(hTest);
-
     testLatin1(hTest);
-
     testNoTransation(hTest);
 
     Benchmarks(hTest);

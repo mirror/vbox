@@ -341,7 +341,7 @@ static int rtUtf16RecodeAsUtf8(PCRTUTF16 pwsz, size_t cwc, char *psz, size_t cch
         {
             if (wc < 0x80)
             {
-                if (cch < 1)
+                if (RT_UNLIKELY(cch < 1))
                 {
                     RTStrAssertMsgFailed(("Buffer overflow! 1\n"));
                     rc = VERR_BUFFER_OVERFLOW;
@@ -352,7 +352,7 @@ static int rtUtf16RecodeAsUtf8(PCRTUTF16 pwsz, size_t cwc, char *psz, size_t cch
             }
             else if (wc < 0x800)
             {
-                if (cch < 2)
+                if (RT_UNLIKELY(cch < 2))
                 {
                     RTStrAssertMsgFailed(("Buffer overflow! 2\n"));
                     rc = VERR_BUFFER_OVERFLOW;
@@ -364,7 +364,7 @@ static int rtUtf16RecodeAsUtf8(PCRTUTF16 pwsz, size_t cwc, char *psz, size_t cch
             }
             else if (wc < 0xfffe)
             {
-                if (cch < 3)
+                if (RT_UNLIKELY(cch < 3))
                 {
                     RTStrAssertMsgFailed(("Buffer overflow! 3\n"));
                     rc = VERR_BUFFER_OVERFLOW;
@@ -406,7 +406,7 @@ static int rtUtf16RecodeAsUtf8(PCRTUTF16 pwsz, size_t cwc, char *psz, size_t cch
             uint32_t CodePoint = 0x10000
                                + (  ((wc & 0x3ff) << 10)
                                   | (wc2 & 0x3ff));
-            if (cch < 4)
+            if (RT_UNLIKELY(cch < 4))
             {
                 RTStrAssertMsgFailed(("Buffer overflow! 4\n"));
                 rc = VERR_BUFFER_OVERFLOW;
@@ -494,7 +494,7 @@ RTDECL(int)  RTUtf16ToUtf8Ex(PCRTUTF16 pwszString, size_t cwcString, char **ppsz
         if (cch > 0 && *ppsz)
         {
             fShouldFree = false;
-            if (cch <= cchResult)
+            if (RT_UNLIKELY(cch <= cchResult))
                 return VERR_BUFFER_OVERFLOW;
             pszResult = *ppsz;
         }
@@ -666,48 +666,46 @@ static int rtUtf16CalcLatin1Length(PCRTUTF16 pwsz, size_t cwc, size_t *pcch)
         RTUTF16 wc = *pwsz++; cwc--;
         if (!wc)
             break;
-        else if (wc < 256)
+        else if (RT_LIKELY(wc < 0x100))
             ++cch;
-        else if (wc < 0xd800 || wc > 0xdfff)
+        else
         {
-            if (wc < 0xfffe)
+            if (wc < 0xd800 || wc > 0xdfff)
             {
-                rc = VERR_NO_TRANSLATION;
-                break;
+                if (wc >= 0xfffe)
+                {
+                    RTStrAssertMsgFailed(("endian indicator! wc=%#x\n", wc));
+                    rc = VERR_CODE_POINT_ENDIAN_INDICATOR;
+                    break;
+                }
             }
             else
             {
-                RTStrAssertMsgFailed(("endian indicator! wc=%#x\n", wc));
-                rc = VERR_CODE_POINT_ENDIAN_INDICATOR;
-                break;
+                if (wc >= 0xdc00)
+                {
+                    RTStrAssertMsgFailed(("Wrong 1st char in surrogate! wc=%#x\n", wc));
+                    rc = VERR_INVALID_UTF16_ENCODING;
+                    break;
+                }
+                if (cwc <= 0)
+                {
+                    RTStrAssertMsgFailed(("Invalid length! wc=%#x\n", wc));
+                    rc = VERR_INVALID_UTF16_ENCODING;
+                    break;
+                }
+                wc = *pwsz++; cwc--;
+                if (wc < 0xdc00 || wc > 0xdfff)
+                {
+                    RTStrAssertMsgFailed(("Wrong 2nd char in surrogate! wc=%#x\n", wc));
+                    rc = VERR_INVALID_UTF16_ENCODING;
+                    break;
+                }
             }
-        }
-        else
-        {
-            if (wc >= 0xdc00)
-            {
-                RTStrAssertMsgFailed(("Wrong 1st char in surrogate! wc=%#x\n", wc));
-                rc = VERR_INVALID_UTF16_ENCODING;
-                break;
-            }
-            if (cwc <= 0)
-            {
-                RTStrAssertMsgFailed(("Invalid length! wc=%#x\n", wc));
-                rc = VERR_INVALID_UTF16_ENCODING;
-                break;
-            }
-            wc = *pwsz++; cwc--;
-            if (wc < 0xdc00 || wc > 0xdfff)
-            {
-                RTStrAssertMsgFailed(("Wrong 2nd char in surrogate! wc=%#x\n", wc));
-                rc = VERR_INVALID_UTF16_ENCODING;
-                break;
-            }
+
             rc = VERR_NO_TRANSLATION;
             break;
         }
     }
-
 
     /* done */
     *pcch = cch;
@@ -724,71 +722,68 @@ static int rtUtf16CalcLatin1Length(PCRTUTF16 pwsz, size_t cwc, size_t *pcch)
  *                      will stop when cwc or '\\0' is reached.
  * @param   psz         Where to store the Latin1 string.
  * @param   cch         The size of the Latin1 buffer, excluding the terminator.
- * @param   pcch        Where to store the number of octets actually encoded.
  */
-static int rtUtf16RecodeAsLatin1(PCRTUTF16 pwsz, size_t cwc, char *psz, size_t cch, size_t *pcch)
+static int rtUtf16RecodeAsLatin1(PCRTUTF16 pwsz, size_t cwc, char *psz, size_t cch)
 {
-    unsigned char  *pwch = (unsigned char *)psz;
-    int             rc = VINF_SUCCESS;
+    unsigned char  *pch = (unsigned char *)psz;
+    int             rc  = VINF_SUCCESS;
     while (cwc > 0)
     {
         RTUTF16 wc = *pwsz++; cwc--;
         if (!wc)
             break;
-        else if (wc < 0xd800 || wc > 0xdfff)
+        if (RT_LIKELY(wc < 0x100))
         {
-            if (wc < 0x100)
+            if (RT_UNLIKELY(cch < 1))
             {
-                if (cch < 1)
-                {
-                    RTStrAssertMsgFailed(("Buffer overflow! 1\n"));
-                    rc = VERR_BUFFER_OVERFLOW;
-                    break;
-                }
-                cch--;
-                *pwch++ = (char)wc;
-            }
-            else if (wc < 0xfffe)
-            {
-                rc = VERR_NO_TRANSLATION;
+                RTStrAssertMsgFailed(("Buffer overflow! 1\n"));
+                rc = VERR_BUFFER_OVERFLOW;
                 break;
             }
-            else
-            {
-                RTStrAssertMsgFailed(("endian indicator! wc=%#x\n", wc));
-                rc = VERR_CODE_POINT_ENDIAN_INDICATOR;
-                break;
-            }
+            cch--;
+            *pch++ = (unsigned char)wc;
         }
         else
         {
-            if (wc >= 0xdc00)
+            if (wc < 0xd800 || wc > 0xdfff)
             {
-                RTStrAssertMsgFailed(("Wrong 1st char in surrogate! wc=%#x\n", wc));
-                rc = VERR_INVALID_UTF16_ENCODING;
-                break;
+                if (wc >= 0xfffe)
+                {
+                    RTStrAssertMsgFailed(("endian indicator! wc=%#x\n", wc));
+                    rc = VERR_CODE_POINT_ENDIAN_INDICATOR;
+                    break;
+                }
             }
-            if (cwc <= 0)
+            else
             {
-                RTStrAssertMsgFailed(("Invalid length! wc=%#x\n", wc));
-                rc = VERR_INVALID_UTF16_ENCODING;
-                break;
+                if (wc >= 0xdc00)
+                {
+                    RTStrAssertMsgFailed(("Wrong 1st char in surrogate! wc=%#x\n", wc));
+                    rc = VERR_INVALID_UTF16_ENCODING;
+                    break;
+                }
+                if (cwc <= 0)
+                {
+                    RTStrAssertMsgFailed(("Invalid length! wc=%#x\n", wc));
+                    rc = VERR_INVALID_UTF16_ENCODING;
+                    break;
+                }
+                RTUTF16 wc2 = *pwsz++; cwc--;
+                if (wc2 < 0xdc00 || wc2 > 0xdfff)
+                {
+                    RTStrAssertMsgFailed(("Wrong 2nd char in surrogate! wc=%#x\n", wc));
+                    rc = VERR_INVALID_UTF16_ENCODING;
+                    break;
+                }
             }
-            RTUTF16 wc2 = *pwsz++; cwc--;
-            if (wc2 < 0xdc00 || wc2 > 0xdfff)
-            {
-                RTStrAssertMsgFailed(("Wrong 2nd char in surrogate! wc=%#x\n", wc));
-                rc = VERR_INVALID_UTF16_ENCODING;
-                break;
-            }
+
             rc = VERR_NO_TRANSLATION;
             break;
         }
     }
 
     /* done */
-    *pwch = '\0';
-    *pcch = (char *)pwch - psz;
+    *pch = '\0';
     return rc;
 }
 
@@ -815,7 +810,7 @@ RTDECL(int)  RTUtf16ToLatin1(PCRTUTF16 pwszString, char **ppszString)
         char *pszResult = (char *)RTMemAlloc(cch + 1);
         if (pszResult)
         {
-            rc = rtUtf16RecodeAsLatin1(pwszString, RTSTR_MAX, pszResult, cch, &cch);
+            rc = rtUtf16RecodeAsLatin1(pwszString, RTSTR_MAX, pszResult, cch);
             if (RT_SUCCESS(rc))
             {
                 *ppszString = pszResult;
@@ -837,9 +832,9 @@ RTDECL(int)  RTUtf16ToLatin1Ex(PCRTUTF16 pwszString, size_t cwcString, char **pp
     /*
      * Validate input.
      */
-    Assert(VALID_PTR(pwszString));
-    Assert(VALID_PTR(ppsz));
-    Assert(!pcch || VALID_PTR(pcch));
+    AssertPtr(pwszString);
+    AssertPtr(ppsz);
+    AssertPtrNull(pcch);
 
     /*
      * Validate the UTF-16 string and calculate the length of the Latin1 encoding of it.
@@ -872,7 +867,7 @@ RTDECL(int)  RTUtf16ToLatin1Ex(PCRTUTF16 pwszString, size_t cwcString, char **pp
         }
         if (pszResult)
         {
-            rc = rtUtf16RecodeAsLatin1(pwszString, cwcString, pszResult, cch - 1, &cch);
+            rc = rtUtf16RecodeAsLatin1(pwszString, cwcString, pszResult, cch - 1);
             if (RT_SUCCESS(rc))
             {
                 *ppsz = pszResult;
@@ -940,16 +935,13 @@ static int rtLatin1CalcUtf16Length(const char *psz, size_t cch, size_t *pcwc)
  *                  The recoding will stop when cch or '\\0' is reached. Pass RTSTR_MAX to process up to '\\0'.
  * @param   pwsz    Where to store the UTF-16 string.
  * @param   cwc     The number of RTUTF16 items the pwsz buffer can hold, excluding the terminator ('\\0').
- * @param   pcwc    Where to store the actual number of RTUTF16 items encoded into the UTF-16. This excludes the terminator.
  */
-static int rtLatin1RecodeAsUtf16(const char *psz, size_t cch, PRTUTF16 pwsz, size_t cwc, size_t *pcwc)
+static int rtLatin1RecodeAsUtf16(const char *psz, size_t cch, PRTUTF16 pwsz, size_t cwc)
 {
-    int                     rc = VINF_SUCCESS;
+    int                     rc   = VINF_SUCCESS;
     const unsigned char    *puch = (const unsigned char *)psz;
-    const PRTUTF16          pwszEnd = pwsz + cwc;
-    PRTUTF16                pwc = pwsz;
-    Assert(pwszEnd >= pwc);
-    while (cch > 0)
+    PRTUTF16                pwc  = pwsz;
+    while (cch-- > 0)
     {
         /* read the next char and check for terminator. */
         const unsigned char uch = *puch;
@@ -957,7 +949,7 @@ static int rtLatin1RecodeAsUtf16(const char *psz, size_t cch, PRTUTF16 pwsz, siz
             break;
 
         /* check for output overflow */
-        if (pwc >= pwszEnd)
+        if (RT_UNLIKELY(cwc < 1))
         {
             rc = VERR_BUFFER_OVERFLOW;
             break;
@@ -965,13 +957,12 @@ static int rtLatin1RecodeAsUtf16(const char *psz, size_t cch, PRTUTF16 pwsz, siz
 
         /* expand the code point */
         *pwc++ = uch;
+        cwc--;
         puch++;
-        cch--;
     }
 
     /* done */
     *pwc = '\0';
-    *pcwc = pwc - pwsz;
     return rc;
 }
 
@@ -1001,7 +992,7 @@ RTDECL(int) RTLatin1ToUtf16(const char *pszString, PRTUTF16 *ppwszString)
             /*
              * Encode the UTF-16 string.
              */
-            rc = rtLatin1RecodeAsUtf16(pszString, RTSTR_MAX, pwsz, cwc, &cwc);
+            rc = rtLatin1RecodeAsUtf16(pszString, RTSTR_MAX, pwsz, cwc);
             if (RT_SUCCESS(rc))
             {
                 *ppwszString = pwsz;
@@ -1060,7 +1051,7 @@ RTDECL(int)  RTLatin1ToUtf16Ex(const char *pszString, size_t cchString, PRTUTF16
             /*
              * Encode the UTF-16 string.
              */
-            rc = rtLatin1RecodeAsUtf16(pszString, cchString, pwszResult, cwc - 1, &cwcResult);
+            rc = rtLatin1RecodeAsUtf16(pszString, cchString, pwszResult, cwc - 1);
             if (RT_SUCCESS(rc))
             {
                 *ppwsz = pwszResult;
