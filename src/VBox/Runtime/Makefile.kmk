@@ -198,8 +198,6 @@ RuntimeR3_SOURCES       = \
 	common/checksum/crc64.cpp \
 	common/checksum/md5.cpp \
 	common/checksum/ipv4.cpp \
-	common/checksum/sha1.cpp \
-	common/checksum/manifest.cpp \
 	common/dbg/dbg.cpp \
 	common/dbg/dbgas.cpp \
 	common/dbg/dbgmod.cpp \
@@ -819,7 +817,9 @@ VBoxRT_SOURCES                 = \
 	$(RuntimeR3_SOURCES)
 VBoxRT_SOURCES                += \
 	common/misc/s3.cpp \
-	r3/xml.cpp
+	r3/xml.cpp \
+	common/checksum/sha1.cpp \
+	common/checksum/manifest.cpp
 VBoxRT_SOURCES.$(KBUILD_TARGET) = $(RuntimeR3_SOURCES.$(KBUILD_TARGET))
 VBoxRT_SOURCES.$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH) = $(RuntimeR3_SOURCES.$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH))
 VBoxRT_SOURCES.$(KBUILD_TARGET_ARCH) = $(RuntimeR3_SOURCES.$(KBUILD_TARGET_ARCH))
