@@ -42,7 +42,7 @@ RT_C_DECLS_BEGIN
 /**
  * Creates a SHA1 digest for the given file.
  *
- * @returns VBox status code.
+ * @returns iprt status code.
  *
  * @param   pszFile      Filename to create a SHA1 digest for.
  * @param   ppszDigest   On success the SHA1 digest.

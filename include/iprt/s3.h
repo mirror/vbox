@@ -123,7 +123,7 @@ typedef struct RTS3KEYENTRY
 /**
  * Creates a RTS3 interface handle.
  *
- * @returns IPRT status code.
+ * @returns iprt status code.
  *
  * @param   phS3           Where to store the RTS3 handle.
  * @param   pszAccessKey   The access key for the S3 storage server.
@@ -137,7 +137,7 @@ RTR3DECL(int) RTS3Create(PRTS3 phS3, const char *pszAccessKey, const char *pszSe
 /**
  * Destroys a RTS3 interface handle.
  *
- * @returns IPRT status code.
+ * @returns iprt status code.
  *
  * @param   hS3            Handle to the RTS3 interface.
  */
@@ -149,7 +149,7 @@ RTR3DECL(void) RTS3Destroy(RTS3 hS3);
  * This callback function will be called when the completion percentage of an S3
  * operation changes.
  *
- * @returns IPRT status code.
+ * @returns iprt status code.
  *
  * @param   hS3             Handle to the RTS3 interface.
  * @param   pfnProgressCB   The pointer to the progress function.
@@ -162,7 +162,7 @@ RTR3DECL(void) RTS3SetProgressCallback(RTS3 hS3, PFNRTS3PROGRESS pfnProgressCB, 
  *
  * You have to delete ppBuckets after usage with RTS3BucketsDestroy.
  *
- * @returns VBox status code.
+ * @returns iprt status code.
  *
  * @param   hS3             Handle to the RTS3 interface.
  * @param   ppBuckets       Where to store the pointer to the head of the
@@ -174,7 +174,7 @@ RTR3DECL(int) RTS3GetBuckets(RTS3 hS3, PCRTS3BUCKETENTRY *ppBuckets);
 /**
  * Destroys the bucket list returned by RTS3GetBuckets.
  *
- * @returns IPRT status code.
+ * @returns iprt status code.
  *
  * @param   pBuckets        Pointer to the first bucket entry.
  */
@@ -185,7 +185,7 @@ RTR3DECL(int) RTS3BucketsDestroy(PCRTS3BUCKETENTRY pBuckets);
  *
  * This name have to be unique over all accounts on the S3 storage server.
  *
- * @returns IPRT status code.
+ * @returns iprt status code.
  *
  * @param   hS3             Handle to the RTS3 interface.
  * @param   pszBucketName   Name of the new bucket.
@@ -197,7 +197,7 @@ RTR3DECL(int) RTS3CreateBucket(RTS3 hS3, const char *pszBucketName);
  *
  * The bucket must be empty.
  *
- * @returns IPRT status code.
+ * @returns iprt status code.
  *
  * @param   hS3             Handle to the RTS3 interface.
  * @param   pszBucketName   Name of the bucket to delete.
@@ -209,7 +209,7 @@ RTR3DECL(int) RTS3DeleteBucket(RTS3 hS3, const char *pszBucketName);
  *
  * You have to delete ppKeys after usage with RTS3KeysDestroy.
  *
- * @returns IPRT status code.
+ * @returns iprt status code.
  *
  * @param   hS3             Handle to the RTS3 interface.
  * @param   pszBucketName   Name of the bucket to delete.
@@ -222,7 +222,7 @@ RTR3DECL(int) RTS3GetBucketKeys(RTS3 hS3, const char *pszBucketName, PCRTS3KEYEN
 /**
  * Delete the key list returned by RTS3GetBucketKeys.
  *
- * @returns IPRT status code.
+ * @returns iprt status code.
  *
  * @param   pKeys           Pointer to the first key entry.
  */
@@ -231,7 +231,7 @@ RTR3DECL(int) RTS3KeysDestroy(PCRTS3KEYENTRY pKeys);
 /**
  * Deletes a key in a bucket on the S3 storage server.
  *
- * @returns IPRT status code.
+ * @returns iprt status code.
  *
  * @param   hS3             Handle to the RTS3 interface.
  * @param   pszBucketName   Name of the bucket contains pszKeyName.
@@ -244,7 +244,7 @@ RTR3DECL(int) RTS3DeleteKey(RTS3 hS3, const char *pszBucketName, const char *psz
  *
  * The file must not exists.
  *
- * @returns IPRT status code.
+ * @returns iprt status code.
  *
  * @param   hS3             Handle to the RTS3 interface.
  * @param   pszBucketName   Name of the bucket that contains pszKeyName.
@@ -256,7 +256,7 @@ RTR3DECL(int) RTS3GetKey(RTS3 hS3, const char *pszBucketName, const char *pszKey
 /**
  * Uploads the content of a file into a key in the specified bucked.
  *
- * @returns IPRT status code.
+ * @returns iprt status code.
  *
  * @param   hS3             Handle to the RTS3 interface.
  * @param   pszBucketName   Name of the bucket where the new key should be
