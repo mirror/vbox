@@ -64,11 +64,11 @@ typedef RTMANIFESTTEST* PRTMANIFESTTEST;
  * @param   pszManifestFile      Filename of the manifest file to verify.
  * @param   pTestList            List of files & SHA1 sums.
  * @param   cTests               Number of entries in pTestList
- * @param   pcFileIndexOnFailure A index to pTestList in the
+ * @param   piFailed             A index to pTestList in the
  *                               VERR_MANIFEST_DIGEST_MISMATCH error case
  *                               (optional).
  */
-RTR3DECL(int) RTManifestVerify(const char *pszManifestFile, PRTMANIFESTTEST pTestList, size_t cTests, size_t *pcFileIndexOnFailure);
+RTR3DECL(int) RTManifestVerify(const char *pszManifestFile, PRTMANIFESTTEST pTestList, size_t cTests, size_t *piFailed);
 
 /**
  * This is analogous to function RTManifestVerify, but calculates the SHA1 sums
@@ -79,11 +79,11 @@ RTR3DECL(int) RTManifestVerify(const char *pszManifestFile, PRTMANIFESTTEST pTes
  * @param   pszManifestFile      Filename of the manifest file to verify.
  * @param   ppszFiles            List of files to check SHA1 sums.
  * @param   cFiles               Number of entries in ppszFiles.
- * @param   pcFileIndexOnFailure A index to ppszFiles in the
+ * @param   piFailed             A index to ppszFiles in the
  *                               VERR_MANIFEST_DIGEST_MISMATCH error case
  *                               (optional).
  */
-RTR3DECL(int) RTManifestVerifyFiles(const char *pszManifestFile, const char **ppszFiles, size_t cFiles, size_t *pcFileIndexOnFailure);
+RTR3DECL(int) RTManifestVerifyFiles(const char *pszManifestFile, const char * const *papszFiles, size_t cFiles, size_t *pcFailed);
 
 /**
  * Creates a manifest file for a set of files. The manifest file contains SHA1
@@ -96,7 +96,7 @@ RTR3DECL(int) RTManifestVerifyFiles(const char *pszManifestFile, const char **pp
  * @param   ppszFiles            List of files to create SHA1 sums for.
  * @param   cFiles               Number of entries in ppszFiles.
  */
-RTR3DECL(int) RTManifestWriteFiles(const char *pszManifestFile, const char **ppszFiles, size_t cFiles);
+RTR3DECL(int) RTManifestWriteFiles(const char *pszManifestFile, const char * const *papszFiles, size_t cFiles);
 
 /** @} */
 
