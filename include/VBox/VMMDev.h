@@ -476,7 +476,7 @@ typedef struct
     /** Header. */
     VMMDevRequestHeader header;
     /** Guest virtual address of the patching page(s). */
-    RTGCPTR             pPatchMem;
+    RTGCPTR64           pPatchMem;
     /** Patch page size in bytes. */
     uint32_t            cbPatchMem;
 } VMMDevReqPatchMemory;
