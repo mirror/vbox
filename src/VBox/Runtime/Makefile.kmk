@@ -198,6 +198,8 @@ RuntimeR3_SOURCES       = \
 	common/checksum/crc64.cpp \
 	common/checksum/md5.cpp \
 	common/checksum/ipv4.cpp \
+	common/checksum/sha1.cpp \
+	common/checksum/manifest.cpp \
 	common/dbg/dbg.cpp \
 	common/dbg/dbgas.cpp \
 	common/dbg/dbgmod.cpp \

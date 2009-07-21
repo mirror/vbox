@@ -1069,6 +1069,18 @@ RTDECL(PCRTCOMERRMSG) RTErrCOMGet(uint32_t rc);
 #define VERR_S3_CANCELED                        (-879)
 /** @} */
 
+/** @name RTManifest status codes
+ * @{ */
+/** A digest type used in the manifest file isn't supported */
+#define VERR_MANIFEST_UNSUPPORTED_DIGEST_TYPE   (-900)
+/** An entry in the manifest file couldn't be interpreted correctly */
+#define VERR_MANIFEST_WRONG_FILE_FORMAT         (-901)
+/** A digest doesn't match the corresponding file */
+#define VERR_MANIFEST_DIGEST_MISMATCH           (-902)
+/** The file list doesn't match to the content of the manifest file */
+#define VERR_MANIFEST_FILE_MISMATCH             (-903)
+/** @} */
+
 /* SED-END */
 
 /** @} */
