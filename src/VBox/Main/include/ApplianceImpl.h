@@ -103,6 +103,7 @@ private:
     struct LocationInfo;
     void parseURI(Utf8Str strUri, LocationInfo &locInfo) const;
     void parseBucket(Utf8Str &aPath, Utf8Str &aBucket) const;
+    Utf8Str manifestFileName(Utf8Str aPath) const;
 
     HRESULT readImpl(const LocationInfo &aLocInfo, ComObjPtr<Progress> &aProgress);
     HRESULT importImpl(const LocationInfo &aLocInfo, ComObjPtr<Progress> &aProgress);

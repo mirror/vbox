@@ -25,6 +25,8 @@
 #include <iprt/dir.h>
 #include <iprt/file.h>
 #include <iprt/s3.h>
+#include <iprt/sha1.h>
+#include <iprt/manifest.h>
 
 #include "ovfreader.h"
 
@@ -86,6 +88,7 @@ struct Appliance::Data
     list<Utf8Str> llWarnings;
 
     ULONG ulWeightPerOperation;
+    Utf8Str strOVFSHA1Digest;
 };
 
 struct VirtualSystemDescription::Data
@@ -543,7 +546,7 @@ HRESULT Appliance::setUpProgressImportS3(ComObjPtr<Progress> &pProgress, const B
     uint32_t cDisks;
     disksWeight(ulTotalMB, cDisks);
 
-    ULONG cOperations = 1 + 1 + cDisks;     // one op per disk plus 1 for init & 1 plus for the import */
+    ULONG cOperations = 1 + 1 + 1 + cDisks;     // one op per disk plus 1 for init, plus 1 for the manifest file & 1 plus for the import */
 
     ULONG ulTotalOperationsWeight = ulTotalMB;
     if (!ulTotalOperationsWeight)
@@ -583,7 +586,7 @@ HRESULT Appliance::setUpProgressWriteS3(ComObjPtr<Progress> &pProgress, const Bs
     uint32_t cDisks;
     disksWeight(ulTotalMB, cDisks);
 
-    ULONG cOperations = 1 + 1 + cDisks;     // one op per disk plus 1 for the OVF & 1 plus to the temporary creation */
+    ULONG cOperations = 1 + 1 + 1 + cDisks;     // one op per disk plus 1 for the OVF, plus 1 for the mf & 1 plus to the temporary creation */
 
     ULONG ulTotalOperationsWeight;
     if (ulTotalMB)
@@ -676,6 +679,20 @@ void Appliance::parseBucket(Utf8Str &aPath, Utf8Str &aBucket) const
     if (aBucket.isEmpty())
         throw setError(E_INVALIDARG,
                        tr("You doesn't provide a bucket name in the URI '%s'"), aPath.c_str());
+}
+
+Utf8Str Appliance::manifestFileName(Utf8Str aPath) const
+{
+    /* Get the name part */
+    char *pszMfName = RTStrDup(RTPathFilename(aPath.c_str()));
+    /* Strip any extensions */
+    RTPathStripExt(pszMfName);
+    /* Path without the filename */
+    aPath.stripFilename();
+    /* Format the manifest path */
+    Utf8StrFmt strMfFile("%s/%s.mf", aPath.c_str(), pszMfName);
+    RTStrFree(pszMfName);
+    return strMfFile;
 }
 
 struct Appliance::TaskOVF
@@ -906,7 +923,17 @@ int Appliance::readFS(TaskImportOVF *pTask)
 
     try
     {
+        /* Read & parse the XML structure of the OVF file */
         m->pReader = new OVFReader(pTask->locInfo.strPath);
+        /* Create the SHA1 sum of the OVF file for later validation */
+        char *pszDigest;
+        int vrc = RTSha1Digest(pTask->locInfo.strPath.c_str(), &pszDigest);
+        if (RT_FAILURE(vrc))
+            throw setError(VBOX_E_FILE_ERROR,
+                           tr("Couldn't calculate SHA1 digest for file '%s' (%Rrc)"),
+                           RTPathFilename(pTask->locInfo.strPath.c_str()), vrc);
+        m->strOVFSHA1Digest = pszDigest;
+        RTStrFree(pszDigest);
     }
     catch(xml::Error &x)
     {
@@ -1076,12 +1103,84 @@ int Appliance::importFS(TaskImportOVF *pTask)
  	// this is safe to access because this thread only gets started
  	// if pReader != NULL
 
+    /* If an manifest file exists, verify the content. Therefor we need all
+     * files which are referenced by the OVF & the OVF itself */
+    Utf8Str strMfFile = manifestFileName(pTask->locInfo.strPath);
+    list<Utf8Str> filesList;
+    if (RTPathExists(strMfFile.c_str()))
+    {
+        Utf8Str strSrcDir(pTask->locInfo.strPath);
+        strSrcDir.stripFilename();
+        /* Add every disks of every virtual system to an internal list */
+        list< ComObjPtr<VirtualSystemDescription> >::const_iterator it;
+        for (it = m->virtualSystemDescriptions.begin();
+             it != m->virtualSystemDescriptions.end();
+             ++it)
+        {
+            ComObjPtr<VirtualSystemDescription> vsdescThis = (*it);
+            std::list<VirtualSystemDescriptionEntry*> avsdeHDs = vsdescThis->findByType(VirtualSystemDescriptionType_HardDiskImage);
+            std::list<VirtualSystemDescriptionEntry*>::const_iterator itH;
+            for (itH = avsdeHDs.begin();
+                 itH != avsdeHDs.end();
+                 ++itH)
+            {
+                VirtualSystemDescriptionEntry *vsdeHD = *itH;
+                /* Find the disk from the OVF's disk list */
+                DiskImagesMap::const_iterator itDiskImage = reader.m_mapDisks.find(vsdeHD->strRef);
+                const DiskImage &di = itDiskImage->second;
+                Utf8StrFmt strSrcFilePath("%s%c%s", strSrcDir.c_str(), RTPATH_DELIMITER, di.strHref.c_str());
+                filesList.push_back(strSrcFilePath);
+            }
+        }
+        /* Create the test list */
+        PRTMANIFESTTEST pTestList = (PRTMANIFESTTEST)RTMemAllocZ(sizeof(RTMANIFESTTEST)*(filesList.size()+1));
+        pTestList[0].pszTestFile = (char*)pTask->locInfo.strPath.c_str();
+        pTestList[0].pszTestDigest = (char*)m->strOVFSHA1Digest.c_str();
+        int vrc = VINF_SUCCESS;
+        size_t i = 1;
+        list<Utf8Str>::const_iterator it1;
+        for (it1 = filesList.begin();
+             it1 != filesList.end();
+             ++it1, ++i)
+        {
+            char* pszDigest;
+            vrc = RTSha1Digest((*it1).c_str(), &pszDigest);
+            pTestList[i].pszTestFile = (char*)(*it1).c_str();
+            pTestList[i].pszTestDigest = pszDigest;
+        }
+        size_t cIndexOnError;
+        vrc = RTManifestVerify(strMfFile.c_str(), pTestList, filesList.size() + 1, &cIndexOnError);
+        if (vrc == VERR_MANIFEST_DIGEST_MISMATCH)
+            rc = setError(VBOX_E_FILE_ERROR,
+                          tr("The SHA1 digest of '%s' doesn't match to the one in '%s'"),
+                          RTPathFilename(pTestList[cIndexOnError].pszTestFile),
+                          RTPathFilename(strMfFile.c_str()));
+        else if (RT_FAILURE(vrc))
+            rc = setError(VBOX_E_FILE_ERROR,
+                          tr("Couldn't verify the content of '%s' against the available files (%Rrc)"),
+                          RTPathFilename(strMfFile.c_str()),
+                          vrc);
+        /* Cleanup */
+        for (size_t i=1; i < filesList.size(); ++i)
+            RTStrFree(pTestList[i].pszTestDigest);
+        RTMemFree(pTestList);
+        if (FAILED(rc))
+        {
+            /* Return on error */
+            pTask->rc = rc;
+
+            if (!pTask->progress.isNull())
+                pTask->progress->notifyComplete(rc);
+            return rc;
+        }
+    }
+
     list<VirtualSystem>::const_iterator it;
     list< ComObjPtr<VirtualSystemDescription> >::const_iterator it1;
     /* Iterate through all virtual systems of that appliance */
     size_t i = 0;
     for (it = reader.m_llVirtualSystems.begin(),
-            it1 = m->virtualSystemDescriptions.begin();
+         it1 = m->virtualSystemDescriptions.begin();
          it != reader.m_llVirtualSystems.end();
          ++it, ++it1, ++i)
     {
@@ -1818,6 +1917,33 @@ int Appliance::importS3(TaskImportOVF *pTask)
             }
         }
 
+        /* Provide a OVF file (haven't to exist) so the import routine can
+         * figure out where the disk images/manifest file are located. */
+        Utf8StrFmt strTmpOvf("%s/%s", pszTmpDir, RTPathFilename(tmpPath));
+        /* Now check if there is an manifest file. This is optional. */
+        Utf8Str strManifestFile = manifestFileName(strTmpOvf);
+        char *pszFilename = RTPathFilename(strManifestFile.c_str());
+        if (!pTask->progress.isNull())
+            pTask->progress->setNextOperation(BstrFmt(tr("Downloading file '%s'"), pszFilename), 1);
+
+        /* Try to download it. If the error is VERR_S3_NOT_FOUND, it isn't fatal. */
+        vrc = RTS3GetKey(hS3, bucket.c_str(), pszFilename, strManifestFile.c_str());
+        if (RT_SUCCESS(vrc))
+            filesList.push_back(pair<Utf8Str, ULONG>(strManifestFile, 0));
+        else if (RT_FAILURE(vrc))
+        {
+            if(vrc == VERR_S3_CANCELED)
+                throw S_OK; /* todo: !!!!!!!!!!!!! */
+            else if(vrc == VERR_S3_NOT_FOUND)
+                vrc = VINF_SUCCESS; /* Not found is ok */
+            else if(vrc == VERR_S3_ACCESS_DENIED)
+                throw setError(E_ACCESSDENIED,
+                               tr("Cannot download file '%s' from S3 storage server (Access denied)"), pszFilename);
+            else
+                throw setError(VBOX_E_IPRT_ERROR,
+                               tr("Cannot download file '%s' from S3 storage server (%Rrc)"), pszFilename, vrc);
+        }
+
         /* Close the connection early */
         RTS3Destroy(hS3);
         hS3 = NIL_RTS3;
@@ -1828,9 +1954,6 @@ int Appliance::importS3(TaskImportOVF *pTask)
         ComObjPtr<Progress> progress;
         /* Import the whole temporary OVF & the disk images */
         LocationInfo li;
-        /* Provide a OVF file (haven't to exist) so the import routine can
-         * figure out where the disk images are located. */
-        Utf8StrFmt strTmpOvf("%s/%s", pszTmpDir, RTPathFilename(tmpPath));
         li.strPath = strTmpOvf;
         rc = importImpl(li, progress);
         if (FAILED(rc)) throw rc;
@@ -2665,6 +2788,7 @@ int Appliance::writeFS(TaskExportOVF *pTask)
             pelmNetwork->createChild("Description")->addContent("Logical network used by this appliance.");
         }
 
+        list<Utf8Str> diskList;
         map<Utf8Str, const VirtualSystemDescriptionEntry*>::const_iterator itS;
         uint32_t ulFile = 1;
         for (itS = mapDisks.begin();
@@ -2731,6 +2855,7 @@ int Appliance::writeFS(TaskExportOVF *pTask)
                 pTargetDisk->Close();
                 throw;
             }
+            diskList.push_back(strTargetFilePath);
 
             // we need the following for the XML
             uint64_t cbFile = 0;        // actual file size
@@ -2767,6 +2892,23 @@ int Appliance::writeFS(TaskExportOVF *pTask)
         // now go write the XML
         xml::XmlFileWriter writer(doc);
         writer.write(pTask->locInfo.strPath.c_str());
+
+        /* Create & write the manifest file */
+        const char** ppManifestFiles = (const char**)RTMemAlloc(sizeof(char*)*diskList.size() + 1);
+        ppManifestFiles[0] = pTask->locInfo.strPath.c_str();
+        list<Utf8Str>::const_iterator it1;
+        size_t i = 1;
+        for (it1 = diskList.begin();
+             it1 != diskList.end();
+             ++it1, ++i)
+            ppManifestFiles[i] = (*it1).c_str();
+        Utf8Str strMfFile = manifestFileName(pTask->locInfo.strPath.c_str());
+        int vrc = RTManifestWriteFiles(strMfFile.c_str(), ppManifestFiles, diskList.size()+1);
+        if (RT_FAILURE(vrc))
+            throw setError(VBOX_E_FILE_ERROR,
+                           tr("Couldn't create manifest file '%s' (%Rrc)"),
+                           RTPathFilename(strMfFile.c_str()), vrc);
+        RTMemFree(ppManifestFiles);
     }
     catch(xml::Error &x)
     {
@@ -2854,6 +2996,8 @@ int Appliance::writeS3(TaskExportOVF *pTask)
                            tr("Cannot find source file '%s'"), strTmpOvf.c_str());
         /* Add the OVF file */
         filesList.push_back(pair<Utf8Str, ULONG>(strTmpOvf, m->ulWeightPerOperation)); /* Use 1% of the total for the OVF file upload */
+        Utf8Str strMfFile = manifestFileName(strTmpOvf);
+        filesList.push_back(pair<Utf8Str, ULONG>(strMfFile , m->ulWeightPerOperation)); /* Use 1% of the total for the manifest file upload */
 
         /* Now add every disks of every virtual system */
         list< ComObjPtr<VirtualSystemDescription> >::const_iterator it;
