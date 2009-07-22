@@ -123,7 +123,7 @@ BLDDIRS          += $(addprefix $(SOLARIS_BASEINST_DIR)/,\
 PACKING          += $(PATH_BIN)/$(PKG_FILENAME).tar.gz $(PATH_BIN)/$(DBG_ARCHIVE)
 
 OTHER_CLEAN      += $(addprefix $(SOLARIS_BASEINST_DIR)/,\
-	vbox.pkginfo vbox.copyright vbox.space vbox.pkgresponse \
+	vbox.pkginfo vbox.copyright vbox.space vbox.depend vbox.pkgresponse \
 	makepackage.sh prototype postinstall.sh checkinstall.sh preremove.sh)
 
 #
@@ -476,6 +476,7 @@ $(PATH_BIN)/$(PKG_FILENAME).tar.gz: \
 		$(VBOX_PATH_SOL_INST_SRC)/preremove.sh \
 		$(VBOX_PATH_SOL_INST_SRC)/vbox.pkginfo \
 		$(VBOX_PATH_SOL_INST_SRC)/vbox.space \
+		$(VBOX_PATH_SOL_INST_SRC)/vbox.depend \
 		$(VBOX_PATH_SOL_INST_SRC)/vbox.pkgresponse \
 		$(VBOX_PATH_SOL_INST_SRC)/virtualbox.desktop \
 		$(PATH_ROOT)/doc/ReadMe-Solaris.txt \
@@ -561,6 +562,8 @@ endif
 	$(QUIET)$(INSTALL) -m 0644 $(VBOX_PATH_SOL_INST_SRC)/vbox.pkgresponse                                   $(SOLARIS_VBOXINST_DIR)/autoresponse
 	$(QUIET)$(INSTALL) -m 0644 $(VBOX_PATH_SOL_INST_SRC)/vbox.pkgresponse                                   $(SOLARIS_BASEINST_DIR)/autoresponse
 	$(QUIET)$(INSTALL) -m 0644 $(VBOX_PATH_SOL_INST_SRC)/vbox.space                                         $(SOLARIS_BASEINST_DIR)/vbox.space
+	@# Warning!! If we add NON-PYTHON dependencies to vbox.depend, remove the VBOX_WITH_PYTHON setting
+	$(QUIET)$(if $(VBOX_WITH_PYTHON),$(INSTALL) -m 0644 $(VBOX_PATH_SOL_INST_SRC)/vbox.depend               $(SOLARIS_BASEINST_DIR)/vbox.depend,)
 	$(QUIET)$(SED) \
 		-e "s/@VBOX_VERSION_STRING@/$(VBOX_VERSION_STRING)/g" \
 		-e "s/@BUILD_TARGET_ARCH@/$(KBUILD_TARGET_ARCH)/g" \
