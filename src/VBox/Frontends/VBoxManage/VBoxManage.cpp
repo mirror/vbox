@@ -807,9 +807,9 @@ static int handleControlVM(HandlerArg *a)
                     }
                     else if (!strcmp(a->argv[2], "nat"))
                     {
+                        CHECK_ERROR_RET(adapter, COMSETTER(Enabled) (TRUE), 1);
                         if (a->argc == 4)
                             CHECK_ERROR_RET(adapter, COMSETTER(NATNetwork)(Bstr(a->argv[3])), 1);
-                        CHECK_ERROR_RET(adapter, COMSETTER(Enabled) (TRUE), 1);
                         CHECK_ERROR_RET(adapter, AttachToNAT(), 1);
                     }
                     else if (  !strcmp(a->argv[2], "bridged")
@@ -821,8 +821,8 @@ static int handleControlVM(HandlerArg *a)
                             rc = E_FAIL;
                             break;
                         }
-                        CHECK_ERROR_RET(adapter, COMSETTER(HostInterface)(Bstr(a->argv[3])), 1);
                         CHECK_ERROR_RET(adapter, COMSETTER(Enabled) (TRUE), 1);
+                        CHECK_ERROR_RET(adapter, COMSETTER(HostInterface)(Bstr(a->argv[3])), 1);
                         CHECK_ERROR_RET(adapter, AttachToBridgedInterface(), 1);
                     }
                     else if (!strcmp(a->argv[2], "intnet"))
@@ -833,8 +833,8 @@ static int handleControlVM(HandlerArg *a)
                             rc = E_FAIL;
                             break;
                         }
-                        CHECK_ERROR_RET(adapter, COMSETTER(InternalNetwork)(Bstr(a->argv[3])), 1);
                         CHECK_ERROR_RET(adapter, COMSETTER(Enabled) (TRUE), 1);
+                        CHECK_ERROR_RET(adapter, COMSETTER(InternalNetwork)(Bstr(a->argv[3])), 1);
                         CHECK_ERROR_RET(adapter, AttachToInternalNetwork(), 1);
                     }
 #if defined(VBOX_WITH_NETFLT)
@@ -846,8 +846,8 @@ static int handleControlVM(HandlerArg *a)
                             rc = E_FAIL;
                             break;
                         }
-                        CHECK_ERROR_RET(adapter, COMSETTER(HostInterface)(Bstr(a->argv[3])), 1);
                         CHECK_ERROR_RET(adapter, COMSETTER(Enabled) (TRUE), 1);
+                        CHECK_ERROR_RET(adapter, COMSETTER(HostInterface)(Bstr(a->argv[3])), 1);
                         CHECK_ERROR_RET(adapter, AttachToHostOnlyInterface(), 1);
                     }
 #endif
