@@ -45,7 +45,9 @@
 #include <QLocale>
 #include <QTranslator>
 
-#include <X11/Xlib.h>
+#ifdef Q_WS_X11
+# include <X11/Xlib.h>
+#endif
 
 #include <iprt/err.h>
 #include <iprt/initterm.h>
