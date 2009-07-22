@@ -88,6 +88,9 @@ public:
 
     bool isMouseAbsolute() const { return mMouseAbsolute; }
 
+    bool shouldHideHostPointer() const
+    { return mMouseCaptured || (mMouseAbsolute && mHideHostPointer); }
+
     void setAutoresizeGuest (bool on);
 
     void onFullscreenChange (bool on);
