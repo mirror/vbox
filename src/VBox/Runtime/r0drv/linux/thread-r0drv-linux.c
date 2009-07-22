@@ -98,7 +98,20 @@ RTDECL(bool) RTThreadPreemptIsEnabled(RTTHREAD hThread)
     Assert(hThread == NIL_RTTHREAD);
     c = g_acPreemptDisabled[smp_processor_id()];
     AssertMsg(c >= 0 && c < 32, ("%d\n", c));
-    return c == 0 && !in_atomic() && !irqs_disabled();
+    if (c != 0)
+        return false;
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 5, 32)
+    if (in_atomic())
+        return false;
+# endif
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 5, 28)
+    if (!irqs_disabled())
+        return false;
+# else
+    if (!ASMIntAreEnabled())
+        return false;
+# endif
+    return true;
 #endif
 }
 RT_EXPORT_SYMBOL(RTThreadPreemptIsEnabled);
