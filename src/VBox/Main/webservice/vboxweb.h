@@ -225,6 +225,12 @@ int findComPtrFromId(struct soap *soap,
         RaiseSoapInvalidObjectFault(soap, id);
     else
     {
+        if (fNullAllowed && pRef == NULL)
+        {
+          pComPtr.setNull();
+          return 0;
+        }
+
         // pRef->getComPtr returns a ComPtr<IUnknown>; by casting it to
         // ComPtr<T>, we implicitly do a queryInterface() call
         if (pComPtr = pRef->getComPtr())
