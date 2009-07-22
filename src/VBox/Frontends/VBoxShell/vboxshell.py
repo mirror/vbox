@@ -815,6 +815,19 @@ def sleepCmd(ctx, args):
     return 0
 
 
+def shellCmd(ctx, args):
+    if (len(args) < 2):
+        print "usage: shell <commands>"
+        return 0
+    cmd = ' '.join(args[1:])
+    try:
+        os.system(cmd)
+    except KeyboardInterrupt:
+        # to allow shell command interruption
+        pass
+    return 0
+
+
 def connectCmd(ctx, args):
     if (len(args) > 4):
         print "usage: connect [url] [username] [passwd]"
@@ -896,7 +909,8 @@ commands = {'help':['Prints help information', helpCmd, 0],
             'showLog':['Show log file of the VM, : showLog Win32', showLogCmd, 0],
             'reloadExt':['Reload custom extensions: reloadExt', reloadExtCmd, 0],
             'runScript':['Run VBox script: runScript script.vbox', runScriptCmd, 0],
-            'sleep':['Sleep for specified number of seconds: sleep <secs>', sleepCmd, 0],
+            'sleep':['Sleep for specified number of seconds: sleep 3.14159', sleepCmd, 0],
+            'shell':['Execute external shell comman: shell "ls /etc/rc*"', shellCmd, 0]
             }
 
 def runCommandArgs(ctx, args):
