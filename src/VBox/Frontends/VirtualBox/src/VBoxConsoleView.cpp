@@ -732,7 +732,8 @@ VBoxConsoleView::VBoxConsoleView (VBoxConsoleWnd *mainWnd,
 #endif
     , mDesktopGeo (DesktopGeo_Invalid)
     , mPassCAD (false)
-    , mHideHostPointer (false)
+      /* Don't show a hardware pointer until we have one to show */
+    , mHideHostPointer (true)
 {
     Assert (!mConsole.isNull() &&
             !mConsole.GetDisplay().isNull() &&
@@ -1131,16 +1132,17 @@ void VBoxConsoleView::setMouseIntegrationEnabled (bool enabled)
      * mode until it's shape is set to the guest cursor shape in
      * OnMousePointerShapeChange event handler.
      *
-     * This is necessary to avoid double-cursor issue when both the
-     * guest and the host cursors are displayed in one place one-above-one.
+     * This is necessary to avoid double-cursor issues where both the
+     * guest and the host cursors are displayed in one place, one above the
+     * other.
      *
-     * This is a workaround because the correct decision is to notify
+     * This is a workaround because the correct decision would be to notify
      * the Guest Additions about we are entering the mouse integration
      * mode. The GuestOS should hide it's cursor to allow using of
      * host cursor for the guest's manipulation.
      *
-     * This notification is not possible right now due to there is
-     * no the required API. */
+     * This notification is not always possible though, as not all guests
+     * support switching to a hardware pointer on demand. */
     if (enabled)
         viewport()->setCursor (QCursor (Qt::BlankCursor));
 
@@ -1234,18 +1236,18 @@ bool VBoxConsoleView::event (QEvent *e)
                  * http://trolltech.com/developer/task-tracker/index_html?id=206165&method=entry
                  * for details. */
                 QCursor cursor;
-                if (!mHideHostPointer)
-                    cursor = viewport()->cursor();
-                else
+                if (shouldHideHostPointer())
                     cursor = QCursor (Qt::BlankCursor);
+                else
+                    cursor = viewport()->cursor();
                 mFrameBuf->resizeEvent (re);
                 viewport()->setCursor (cursor);
 #else
                 mFrameBuf->resizeEvent (re);
-                if (!mHideHostPointer)
-                    viewport()->unsetCursor();
-                else
+                if (shouldHideHostPointer())
                     viewport()->setCursor (QCursor (Qt::BlankCursor));
+                else
+                    viewport()->unsetCursor();
 #endif
 
                 /* This event appears in case of guest video was changed
