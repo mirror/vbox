@@ -25,6 +25,7 @@
 
 #include "VBoxSettingsPage.h"
 #include "VBoxGLSettingsUpdate.gen.h"
+#include "VBoxUpdateDlg.h"
 
 class VBoxGLSettingsUpdate : public VBoxSettingsPage,
                              public Ui::VBoxGLSettingsUpdate
@@ -50,12 +51,17 @@ private slots:
 
     void toggleUpdater (bool aOn);
     void activatedPeriod (int aIndex);
+    void toggledBranch();
 
 private:
 
     void showEvent (QShowEvent *aEvent);
 
+    VBoxUpdateData::PeriodType periodType() const;
+    VBoxUpdateData::BranchType branchType() const;
+
     bool mSettingsChanged;
+    QRadioButton *mLastChosen;
 };
 
 #endif // __VBoxGLSettingsUpdate_h__

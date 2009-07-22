@@ -57,36 +57,57 @@ class VBoxUpdateData
 {
 public:
 
-    enum
+    enum PeriodType
     {
-        NeverCheck = -2
+        PeriodNever     = -2,
+        PeriodUndefined = -1,
+        Period1Day      =  0,
+        Period2Days     =  1,
+        Period3Days     =  2,
+        Period4Days     =  3,
+        Period5Days     =  4,
+        Period6Days     =  5,
+        Period1Week     =  6,
+        Period2Weeks    =  7,
+        Period3Weeks    =  8,
+        Period1Month    =  9
+    };
+
+    enum BranchType
+    {
+        BranchStable     = 0,
+        BranchAllRelease = 1,
+        BranchWithBetas  = 2
     };
 
     static void populate();
     static QStringList list();
 
     VBoxUpdateData (const QString &aData);
-    VBoxUpdateData (int aIndex);
+    VBoxUpdateData (PeriodType aPeriodIndex, BranchType aBranchIndex);
 
     bool isNecessary();
-    bool isNeverCheck();
+    bool isNoNeedToCheck();
 
     QString data() const;
-    int index() const;
+    PeriodType periodIndex() const;
     QString date() const;
+    BranchType branchIndex() const;
+    QString branchName() const;
 
 private:
 
     /* Private functions */
-    void decode (const QString &aData);
-    void encode (int aIndex);
+    void decode();
+    void encode();
 
     /* Private variables */
     static QList <UpdateDay> mDayList;
 
     QString mData;
-    int mIndex;
+    PeriodType mPeriodIndex;
     QDate mDate;
+    BranchType mBranchIndex;
 };
 
 class VBoxUpdateDlg : public QIWithRetranslateUI <QIAbstractWizard>,

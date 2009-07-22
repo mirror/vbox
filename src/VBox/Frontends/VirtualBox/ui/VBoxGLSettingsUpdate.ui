@@ -143,7 +143,53 @@
      </property>
     </widget>
    </item>
-   <item row="3" column="1" colspan="4" >
+   <item row="3" column="2" >
+    <widget class="QLabel" name="mLbFilter" >
+     <property name="sizePolicy" >
+      <sizepolicy vsizetype="Preferred" hsizetype="Preferred" >
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+     <property name="text" >
+      <string>Check for:</string>
+     </property>
+     <property name="alignment" >
+      <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+     </property>
+    </widget>
+   </item>
+   <item row="3" column="3" colspan="2" >
+    <widget class="QRadioButton" name="mRbStable" >
+     <property name="whatsThis" >
+      <string>&lt;p>Choose this if you only wish to be notified about stable updates to VirtualBox.&lt;/p></string>
+     </property>
+     <property name="text" >
+      <string>&amp;Stable release versions</string>
+     </property>
+    </widget>
+   </item>
+   <item row="4" column="3" colspan="2" >
+    <widget class="QRadioButton" name="mRbAllRelease" >
+     <property name="whatsThis" >
+      <string>&lt;p>Choose this if you wish to be notified about all new VirtualBox releases.&lt;/p></string>
+     </property>
+     <property name="text" >
+      <string>&amp;All new releases</string>
+     </property>
+    </widget>
+   </item>
+   <item row="5" column="3" colspan="2" >
+    <widget class="QRadioButton" name="mRbWithBetas" >
+     <property name="whatsThis" >
+      <string>&lt;p>Choose this to be notified about all new VirtualBox releases and pre-release versions of VirtualBox.&lt;/p></string>
+     </property>
+     <property name="text" >
+      <string>All new releases and &amp;pre-releases</string>
+     </property>
+    </widget>
+   </item>
+   <item row="6" column="1" colspan="4" >
     <spacer>
      <property name="orientation" >
       <enum>Qt::Vertical</enum>
