@@ -1373,6 +1373,7 @@ GLboolean crStateUseServerArrays(void)
             break;    
         }
 
+#ifdef DEBUG
     if (!res)
     {
         crStateDumpClientPointer(&c->array.v, "v", -1);
@@ -1388,6 +1389,7 @@ GLboolean crStateUseServerArrays(void)
             crStateDumpClientPointer(&c->array.a[i], "attrib", i);
         crDebug("crStateUseServerArrays->%d", res);
     }
+#endif
 
     return res;
 #else
