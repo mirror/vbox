@@ -1027,6 +1027,7 @@ def main(argv):
            'remote':g_virtualBoxManager.remote, 
            'type':g_virtualBoxManager.type,
            'run':runCommandCb,
+           'machById':lambda (id): machById(ctx,id), 
            '_machlist':None
            }
     interpret(ctx)
