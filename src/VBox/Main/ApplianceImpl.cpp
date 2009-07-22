@@ -1006,7 +1006,7 @@ int Appliance::readS3(TaskImportOVF *pTask)
                 throw S_OK; /* todo: !!!!!!!!!!!!! */
             else if(vrc == VERR_S3_ACCESS_DENIED)
                 throw setError(E_ACCESSDENIED,
-                               tr("Cannot download file '%s' from S3 storage server (Access denied)"), pszFilename);
+                               tr("Cannot download file '%s' from S3 storage server (Access denied). Make sure that your credentials are right. Also check that your host clock is properly synced"), pszFilename);
             else if(vrc == VERR_S3_NOT_FOUND)
                 throw setError(VBOX_E_FILE_ERROR,
                                tr("Cannot download file '%s' from S3 storage server (File not found)"), pszFilename);
@@ -1907,7 +1907,7 @@ int Appliance::importS3(TaskImportOVF *pTask)
                     throw S_OK; /* todo: !!!!!!!!!!!!! */
                 else if(vrc == VERR_S3_ACCESS_DENIED)
                     throw setError(E_ACCESSDENIED,
-                                   tr("Cannot download file '%s' from S3 storage server (Access denied)"), pszFilename);
+                                   tr("Cannot download file '%s' from S3 storage server (Access denied). Make sure that your credentials are right. Also check that your host clock is properly synced"), pszFilename);
                 else if(vrc == VERR_S3_NOT_FOUND)
                     throw setError(VBOX_E_FILE_ERROR,
                                    tr("Cannot download file '%s' from S3 storage server (File not found)"), pszFilename);
@@ -1938,7 +1938,7 @@ int Appliance::importS3(TaskImportOVF *pTask)
                 vrc = VINF_SUCCESS; /* Not found is ok */
             else if(vrc == VERR_S3_ACCESS_DENIED)
                 throw setError(E_ACCESSDENIED,
-                               tr("Cannot download file '%s' from S3 storage server (Access denied)"), pszFilename);
+                               tr("Cannot download file '%s' from S3 storage server (Access denied). Make sure that your credentials are right. Also check that your host clock is properly synced"), pszFilename);
             else
                 throw setError(VBOX_E_IPRT_ERROR,
                                tr("Cannot download file '%s' from S3 storage server (%Rrc)"), pszFilename, vrc);
@@ -3047,7 +3047,7 @@ int Appliance::writeS3(TaskExportOVF *pTask)
                     break;
                 else if(vrc == VERR_S3_ACCESS_DENIED)
                     throw setError(E_ACCESSDENIED,
-                                   tr("Cannot upload file '%s' to S3 storage server (Access denied)"), pszFilename);
+                                   tr("Cannot upload file '%s' to S3 storage server (Access denied). Make sure that your credentials are right. Also check that your host clock is properly synced"), pszFilename);
                 else if(vrc == VERR_S3_NOT_FOUND)
                     throw setError(VBOX_E_FILE_ERROR,
                                    tr("Cannot upload file '%s' to S3 storage server (File not found)"), pszFilename);
