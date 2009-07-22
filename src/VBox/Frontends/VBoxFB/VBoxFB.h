@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2009 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -35,13 +35,14 @@
 #include <nsIComponentRegistrar.h>
 #include <nsXPCOMGlue.h>
 #include <nsMemory.h>
-#include <nsStringAPI.h>
 #include <nsIProgrammingLanguage.h>
-#include <nsEmbedString.h>
 #include <nsIFile.h>
 #include <nsILocalFile.h>
+#include <nsString.h>
+#include <nsReadableUtils.h>
 #include <VirtualBox_XPCOM.h>
 #include <ipcIService.h>
+#include <nsEventQueueUtils.h>
 #include <ipcCID.h>
 #include <ipcIDConnectService.h>
 #define IPC_DCONNECTSERVICE_CONTRACTID \

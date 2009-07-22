@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2009 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -24,7 +24,7 @@
 #define __H_HELPER
 
 #define MAX_VIDEOMODES 64
-typedef struct videoMode
+struct videoMode
 {
     uint32_t width;
     uint32_t height;
