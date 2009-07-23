@@ -155,7 +155,7 @@ static int crVBoxHGCMCall(void *pvData, unsigned cbData)
 {
 #ifdef IN_GUEST
 
-#ifdef RT_OS_WINDOWS
+# ifdef RT_OS_WINDOWS
     DWORD cbReturned;
 
     if (DeviceIoControl (g_crvboxhgcm.hGuestDrv,
@@ -169,25 +169,36 @@ static int crVBoxHGCMCall(void *pvData, unsigned cbData)
     }
     crDebug("vboxCall failed with %x\n", GetLastError());
     return VERR_NOT_SUPPORTED;
-#else
-# ifdef RT_OS_SOLARIS
+# else
+    int rc;
+#  ifdef RT_OS_SOLARIS
     VBGLBIGREQ Hdr;
     Hdr.u32Magic = VBGLBIGREQ_MAGIC;
     Hdr.cbData = cbData;
     Hdr.pvDataR3 = pvData;
-#  if HC_ARCH_BITS == 32
+#   if HC_ARCH_BITS == 32
     Hdr.u32Padding = 0;
+#   endif
+    rc = ioctl(g_crvboxhgcm.iGuestDrv, VBOXGUEST_IOCTL_HGCM_CALL(cbData), &Hdr);
+#  else
+    rc = ioctl(g_crvboxhgcm.iGuestDrv, VBOXGUEST_IOCTL_HGCM_CALL(cbData), pvData);
 #  endif
-    if (ioctl(g_crvboxhgcm.iGuestDrv, VBOXGUEST_IOCTL_HGCM_CALL(cbData), &Hdr) >= 0)
-# else
-    if (ioctl(g_crvboxhgcm.iGuestDrv, VBOXGUEST_IOCTL_HGCM_CALL(cbData), pvData) >= 0)
-# endif
+#  ifdef RT_OS_LINUX
+    if (rc == 0)
+#  else
+    if (rc >= 0)
+#  endif
     {
         return VINF_SUCCESS;
     }
-    crWarning("vboxCall failed with %x\n", errno);
+#  ifdef RT_OS_LINUX
+    if (rc >= 0) /* positive values are negated VBox error status codes. */
+        crWarning("vboxCall failed with VBox status code %d\n", -rc);
+    else
+#  endif
+        crWarning("vboxCall failed with %x\n", errno);
     return VERR_NOT_SUPPORTED;
-#endif /*#ifdef RT_OS_WINDOWS*/
+# endif /*#ifdef RT_OS_WINDOWS*/
 
 #else /*#ifdef IN_GUEST*/
     crError("crVBoxHGCMCall called on host side!");
@@ -326,7 +337,7 @@ static void crVBoxHGCMWriteExact(CRConnection *conn, const void *buf, unsigned i
     CRVBOXHGCMWRITE parms;
     int rc;
 
-    parms.hdr.result      = VINF_SUCCESS;
+    parms.hdr.result      = VERR_WRONG_ORDER;
     parms.hdr.u32ClientID = conn->u32ClientID;
     parms.hdr.u32Function = SHCRGL_GUEST_FN_WRITE;
     parms.hdr.cParms      = SHCRGL_CPARMS_WRITE;
@@ -348,7 +359,7 @@ static void crVBoxHGCMReadExact( CRConnection *conn, const void *buf, unsigned i
     CRVBOXHGCMREAD parms;
     int rc;
 
-    parms.hdr.result      = VINF_SUCCESS;
+    parms.hdr.result      = VERR_WRONG_ORDER;
     parms.hdr.u32ClientID = conn->u32ClientID;
     parms.hdr.u32Function = SHCRGL_GUEST_FN_READ;
     parms.hdr.cParms      = SHCRGL_CPARMS_READ;
@@ -391,7 +402,7 @@ crVBoxHGCMWriteReadExact(CRConnection *conn, const void *buf, unsigned int len, 
     CRVBOXHGCMWRITEREAD parms;
     int rc;
 
-    parms.hdr.result      = VINF_SUCCESS;
+    parms.hdr.result      = VERR_WRONG_ORDER;
     parms.hdr.u32ClientID = conn->u32ClientID;
     parms.hdr.u32Function = SHCRGL_GUEST_FN_WRITE_READ;
     parms.hdr.cParms      = SHCRGL_CPARMS_WRITE_READ;
@@ -510,7 +521,7 @@ static void crVBoxHGCMPollHost(CRConnection *conn)
 
     CRASSERT(!conn->pBuffer);
 
-    parms.hdr.result      = VINF_SUCCESS;
+    parms.hdr.result      = VERR_WRONG_ORDER;
     parms.hdr.u32ClientID = conn->u32ClientID;
     parms.hdr.u32Function = SHCRGL_GUEST_FN_READ;
     parms.hdr.cParms      = SHCRGL_CPARMS_READ;
@@ -675,7 +686,7 @@ static int crVBoxHGCMSetVersion(CRConnection *conn, unsigned int vMajor, unsigne
     CRVBOXHGCMSETVERSION parms;
     int rc;
 
-    parms.hdr.result      = VINF_SUCCESS;
+    parms.hdr.result      = VERR_WRONG_ORDER;
     parms.hdr.u32ClientID = conn->u32ClientID;
     parms.hdr.u32Function = SHCRGL_GUEST_FN_SET_VERSION;
     parms.hdr.cParms      = SHCRGL_CPARMS_SET_VERSION;
