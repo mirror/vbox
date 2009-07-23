@@ -1201,6 +1201,14 @@ void VBoxProblemReporter::cannotCloseMedium (
         formatErrorInfo (aResult));
 }
 
+void VBoxProblemReporter::cannotEjectDrive()
+{
+    message (mainWindowShown(), Warning,
+             tr ("Failed to eject the disk from the virtual drive. "
+                 "The drive may be locked by the guest operating system. "
+                 "Please check this and try again."));
+}
+
 void VBoxProblemReporter::cannotOpenSession (const CSession &session)
 {
     Assert (session.isNull());

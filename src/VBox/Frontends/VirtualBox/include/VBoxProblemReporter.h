@@ -262,6 +262,7 @@ public:
                            VBoxDefs::MediaType aType, const QString &aLocation);
     void cannotCloseMedium (QWidget *aParent, const VBoxMedium &aMedium,
                             const COMResult &aResult);
+    void cannotEjectDrive();
 
     void cannotOpenSession (const CSession &session);
     void cannotOpenSession (const CVirtualBox &vbox, const CMachine &machine,
