@@ -23,28 +23,104 @@
 /** @page pg_ssm        SSM - The Saved State Manager
  *
  * The Saved State Manager (SSM) implements facilities for saving and loading a
- * VM state in a structural manner using callbacks for each collection of data
- * which needs saving.
+ * VM state in a structural manner using callbacks for named data units.
  *
  * At init time each of the VMM components, Devices, Drivers and one or two
- * other things will register data entities which they need to save and restore.
- * Each entity have a unique name (ascii), instance number, and a set of
- * callbacks associated with it.  The name will be used to identify the entity
- * during restore.  The callbacks are for the two operations, save and restore.
- * There are three callbacks for each of the two - a prepare, a execute and a
- * complete - giving each component ample opportunity to perform actions both
- * before and afterwards.
+ * other things will register data units which they need to save and restore.
+ * Each unit have a unique name (ascii), instance number, and a set of callbacks
+ * associated with it.  The name will be used to identify the unit during
+ * restore.  The callbacks are for the two operations, save and restore.  There
+ * are three callbacks for each of the two - a prepare, a execute and a complete
+ * - giving each component ample opportunity to perform actions both before and
+ * afterwards.
  *
- * The SSM provides a number of APIs for encoding and decoding the data.
+ * The SSM provides a number of APIs for encoding and decoding the data: @see
+ * grp_ssm
  *
- * @see grp_ssm
  *
  *
- * @section sec_ssm_future  Future Changes
+ * @section sec_ssm_live_snapshots  Live Snapshots
+ *
+ * The live snapshots feature (LS) is similar to live migration (LM) and was a
+ * natural first step when implementing LM.  The main differences between LS and
+ * LM are that after a live snapshot we will have a saved state file, disk image
+ * snapshots, and the VM will still be running.
+ *
+ * Compared to normal saved stated and snapshots, the difference is in that the
+ * VM is running while we do most of the saving.  Prior to LS, there was only
+ * round of callback during saving, after LS there are 1 or more while the VM is
+ * still running and a final one after it has been paused.  The runtime stages
+ * is executed on a dedicated thread running at at the same priority as the EMTs
+ * so that the saving doesn't starve or lose in scheduling questions.  The final
+ * phase is done on EMT(0).
+ *
+ * There are a couple of common reasons why LS and LM will fail:
+ *   - Memory configuration changed (PCI memory mappings).
+ *   - Takes too long (LM) / Too much output (LS).
+ *
+ * FIGURE THIS: It is currently unclear who will resume the VM after it has been
+ * paused.  The most efficient way to do this is by doing it before returning
+ * from the VMR3Save call and use a callback for reconfiguring the disk images.
+ * (It is more efficient because of fewer thread switches.) The more convenient
+ * way is to have main do it after calling VMR3Save.
+ *
+ *
+ * @section sec_ssm_live_migration  Live Migration
+ *
+ * As mentioned in the previous section, the main differences between this and
+ * live snapshots are in where the saved state is written and what state the
+ * local VM is in afterwards - at least from the VMM point of view.  The
+ * necessary administrative work - establishing the connection to the remote
+ * machine, cloning the VM config on it and doing lowlevel saved state data
+ * transfer - is taken care of by layer above the VMM (i.e.  Main).
+ *
+ * The SSM data format was made streamable for the purpose of live migration
+ * (v1.2 was the last non-streamable version).
+ *
+ *
+ * @section sec_ssm_format          Saved State Format
+ *
+ * The stream format starts with a header (SSMFILEHDR) that indicates the
+ * version and such things, it is followed by zero or more saved state units
+ * (name + instance + phase), and the stream concludes with a footer
+ * (SSMFILEFTR) that contains unit counts and optionally a checksum for the
+ * entire file.  (In version 1.2 and earlier, the checksum was in the header and
+ * there was no footer.  This meant that the header was updated after the entire
+ * file was written.)
+ *
+ * The saved state units each starts with a variable sized header
+ * (SSMFILEUNITHDR) that contains the name, instance and phase.  The data
+ * follows the header and is encoded as records with a 2-8 byte record header
+ * indicating the type, flags and size.  The first byte in the record header
+ * indicates the type and flags:
+ *
+ *   - bits 0..3: Record type:
+ *       - type 0: Invalid.
+ *       - type 1: Terminator with CRC32 and unit size.
+ *       - type 2: Terminator without any integrity checks.
+ *       - type 3: Raw data record.
+ *       - type 4: Named data - length prefixed name followed by the data.
+ *       - types 5 thru 15 are current undefined.
+ *   - bit 4: Important (set), can be skipped (clear).
+ *   - bit 5: Undefined flag, must be zero.
+ *   - bit 6: Undefined flag, must be zero.
+ *   - bit 7: "magic" bit, always set.
+ *
+ * Record header byte 2 (optionally thru 7) is the size of the following data
+ * encoded in UTF-8 style.
+ *
+ * The data part of the unit is compressed using LZF (via RTZip).
+ *
+ * (In version 1.2 and earlier the unit header also contained the compressed
+ * size of the data, i.e.  it was updated after the data was written, and the
+ * data was not record based.)
+ *
+ *
+ * @section sec_ssm_future          Future Changes
  *
  * There are plans to extend SSM to make it easier to be both backwards and
  * (somewhat) forwards compatible.  One of the new features will be being able
- * to classify units and data items as unimportant.  Another potentail feature
+ * to classify units and data items as unimportant.  Another suggested feature
  * is naming data items, perhaps by extending the SSMR3PutStruct API.
  *
  */
