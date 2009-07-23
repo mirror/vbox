@@ -279,7 +279,12 @@ start_vboxnet()
         else
             # Plumb the interface!
             /sbin/ifconfig vboxnet0 plumb up
-            info "VirtualBox NetAdapter kernel module loaded."
+            if test "$?" -eq 0; then
+                /sbin/ifconfig vboxnet0 192.168.56.1 netmask 255.255.255.0 up
+                info "VirtualBox NetAdapter kernel module loaded."
+            else
+                warn "VirtualBox NetAdapter kernel module loaded BUT failed to plumb interface."
+            fi
         fi
     fi
 }
