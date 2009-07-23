@@ -2843,6 +2843,19 @@ void VBoxConsoleWnd::devicesUnmountFloppy()
                 vboxProblem().cannotSaveMachineSettings (m);
         }
     }
+
+    if (drv.GetState() != KDriveState_NotMounted)
+    {
+        /* Looks like Main make no force unmounting here
+         * but IFloppyDrive::Unmount() is called synchronously.
+         * Also Main performs rollback for this procedure if
+         * it was failed by some reason - for example if the
+         * guest OS locked IFloppyDrive preventing image from
+         * unmounting - so no way to know the error was really
+         * occured. Thats why we just checking the drive state
+         * and warn a user about problem if present. */
+        vboxProblem().cannotEjectDrive();
+    }
 }
 
 void VBoxConsoleWnd::devicesMountDVDImage()
@@ -2891,6 +2904,19 @@ void VBoxConsoleWnd::devicesUnmountDVD()
             if (!m.isOk())
                 vboxProblem().cannotSaveMachineSettings (m);
         }
+    }
+
+    if (drv.GetState() != KDriveState_NotMounted)
+    {
+        /* Looks like Main make no force unmounting here
+         * but IDVDDrive::Unmount() is called synchronously.
+         * Also Main performs rollback for this procedure if
+         * it was failed by some reason - for example if the
+         * guest OS locked IDVDDrive preventing image from
+         * unmounting - so no way to know the error was really
+         * occured. Thats why we just checking the drive state
+         * and warn a user about problem if present. */
+        vboxProblem().cannotEjectDrive();
     }
 }
 
