@@ -28,6 +28,7 @@ BIN_MODUNLOAD=/usr/sbin/modunload
 BIN_MODINFO=/usr/sbin/modinfo
 BIN_DEVFSADM=/usr/sbin/devfsadm
 BIN_BOOTADM=/sbin/bootadm
+BIN_IFCONFIG=/sbin/ifconfig
 
 # "vboxdrv" is also used in sed lines here (change those as well if it ever changes)
 MOD_VBOXDRV=vboxdrv
@@ -44,6 +45,11 @@ MODDIR64=$MODDIR32/amd64
 infoprint()
 {
     echo 1>&2 "$1"
+}
+
+warnprint()
+{
+    echo 1>&2 "* Warning!! $1"
 }
 
 success()
@@ -401,13 +407,24 @@ post_install()
     $BIN_BOOTADM update-archive > /dev/null
 
     if test "$?" -eq 0; then
-        # nwam/dhcpagent fix
-        nwamfile=/etc/nwam/llp
-        nwambackupfile=$nwamfile.vbox
-        if test -f "$nwamfile"; then
-            sed -e '/vboxnet/d' $nwamfile > $nwambackupfile
-            echo "vboxnet0	static 192.168.56.1" >> $nwambackupfile
-            mv -f $nwambackupfile $nwamfile
+
+        if test -f /platform/i86pc/kernel/drv/vboxnet.conf; then        
+            # nwam/dhcpagent fix
+            nwamfile=/etc/nwam/llp
+            nwambackupfile=$nwamfile.vbox
+            if test -f "$nwamfile"; then
+                sed -e '/vboxnet/d' $nwamfile > $nwambackupfile
+                echo "vboxnet0	static 192.168.56.1" >> $nwambackupfile
+                mv -f $nwambackupfile $nwamfile
+            fi
+
+            # plumb and configure vboxnet0
+            $BIN_IFCONFIG vboxnet0 plumb up
+            if test "$?" -eq 0; then
+                $BIN_IFCONFIG vboxnet0 192.168.56.1 netmask 255.255.255.0 up
+            else
+                warnprint "Failed to bring up vboxnet0!!"
+            fi
         fi
 
         return 0
@@ -440,6 +457,7 @@ check_bin_path $BIN_MODUNLOAD
 check_bin_path $BIN_MODINFO
 check_bin_path $BIN_DEVFSADM
 check_bin_path $BIN_BOOTADM
+check_bin_path $BIN_IFCONFIG
 
 drvop=$1
 fatal=$2
