@@ -3352,7 +3352,7 @@ HRESULT Console::onNetworkAdapterChange (INetworkAdapter *aNetworkAdapter)
             }
 
 #ifdef VBOX_DYNAMIC_NET_ATTACH
-            if (VBOX_SUCCESS (vrc) && !(eAttachmentType == meAttachmentType[ulInstance]))
+            if (VBOX_SUCCESS (vrc))
                 rc = doNetworkAdapterChange(pszAdapterName, ulInstance, 0, aNetworkAdapter);
 #endif /* VBOX_DYNAMIC_NET_ATTACH */
 
@@ -3463,8 +3463,8 @@ DECLCALLBACK(int) Console::changeNetworkAttachment (Console *pThis,
 
     AssertReturn (pThis, VERR_INVALID_PARAMETER);
 
-    AssertMsg (   (!strcmp (pszDevice, "pcnet") && uLun == 0 && uInstance < 8)
-               || (!strcmp (pszDevice, "e1000") && uLun == 0 && uInstance < 8),
+    AssertMsg (   (!strcmp (pszDevice, "pcnet") && uLun == 0 && uInstance < SchemaDefs::NetworkAdapterCount)
+               || (!strcmp (pszDevice, "e1000") && uLun == 0 && uInstance < SchemaDefs::NetworkAdapterCount),
                ("pszDevice=%s uLun=%d uInstance=%d\n", pszDevice, uLun, uInstance));
     Log(("pszDevice=%s uLun=%d uInstance=%d\n", pszDevice, uLun, uInstance));
 
