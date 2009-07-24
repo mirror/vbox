@@ -374,7 +374,7 @@ static DECLCALLBACK(int)    ssmR3SelfLoadExec(PVM pVM, PSSMHANDLE pSSM, uint32_t
 static int                  ssmR3Register(PVM pVM, const char *pszName, uint32_t u32Instance, uint32_t u32Version, size_t cbGuess, const char *pszBefore, PSSMUNIT *ppUnit);
 static int                  ssmR3CalcChecksum(RTFILE File, uint64_t cbFile, uint32_t *pu32CRC);
 static void                 ssmR3Progress(PSSMHANDLE pSSM, uint64_t cbAdvance);
-static int                  ssmR3Validate(RTFILE File, PSSMFILEHDR pHdr, size_t *pcbFileHdr);
+static int                  ssmR3ValidateFile(RTFILE File, bool fChecksumIt, PSSMFILEHDR pHdr, size_t *pcbFileHdr);
 static PSSMUNIT             ssmR3Find(PVM pVM, const char *pszName, uint32_t u32Instance);
 static int                  ssmR3WriteFinish(PSSMHANDLE pSSM);
 static int                  ssmR3Write(PSSMHANDLE pSSM, const void *pvBuf, size_t cbBuf);
@@ -1424,10 +1424,11 @@ VMMR3DECL(int) SSMR3Save(PVM pVM, const char *pszFilename, SSMAFTER enmAfter, PF
  * @returns VBox status.
  * @param   File        File to validate.
  *                      The file position is undefined on return.
+ * @param   fChecksumIt Whether to checksum the file or not.
  * @param   pHdr        Where to store the file header.
  * @param   pcbFileHdr  Where to store the file header size.
  */
-static int ssmR3Validate(RTFILE File, PSSMFILEHDR pHdr, size_t *pcbFileHdr)
+static int ssmR3ValidateFile(RTFILE File, bool fChecksumIt, PSSMFILEHDR pHdr, size_t *pcbFileHdr)
 {
     /*
      * Read the header.
@@ -1551,22 +1552,25 @@ static int ssmR3Validate(RTFILE File, PSSMFILEHDR pHdr, size_t *pcbFileHdr)
     }
 
     /*
-     * Verify the checksum.
+     * Verify the checksum if requested.
      */
-    rc = RTFileSeek(File, offCrc32, RTFILE_SEEK_BEGIN, NULL);
-    if (RT_FAILURE(rc))
+    if (fChecksumIt)
     {
-        Log(("SSM: Failed to seek to crc start. rc=%Rrc\n", rc));
-        return rc;
-    }
-    uint32_t u32CRC;
-    rc = ssmR3CalcChecksum(File, pHdr->cbFile - *pcbFileHdr, &u32CRC);
-    if (RT_FAILURE(rc))
-        return rc;
-    if (u32CRC != pHdr->u32CRC)
-    {
-        Log(("SSM: Invalid CRC! Calculated %#08x, in header %#08x\n", u32CRC, pHdr->u32CRC));
-        return VERR_SSM_INTEGRITY_CRC;
+        rc = RTFileSeek(File, offCrc32, RTFILE_SEEK_BEGIN, NULL);
+        if (RT_FAILURE(rc))
+        {
+            Log(("SSM: Failed to seek to crc start. rc=%Rrc\n", rc));
+            return rc;
+        }
+        uint32_t u32CRC;
+        rc = ssmR3CalcChecksum(File, pHdr->cbFile - *pcbFileHdr, &u32CRC);
+        if (RT_FAILURE(rc))
+            return rc;
+        if (u32CRC != pHdr->u32CRC)
+        {
+            Log(("SSM: Invalid CRC! Calculated %#08x, in header %#08x\n", u32CRC, pHdr->u32CRC));
+            return VERR_SSM_INTEGRITY_CRC;
+        }
     }
 
     /*
@@ -1678,7 +1682,7 @@ VMMR3DECL(int) SSMR3Load(PVM pVM, const char *pszFilename, SSMAFTER enmAfter, PF
      * Read file header and validate it.
      */
     SSMFILEHDR Hdr;
-    rc = ssmR3Validate(Handle.File, &Hdr, &Handle.cbFileHdr);
+    rc = ssmR3ValidateFile(Handle.File, true /* fChecksumIt */, &Hdr, &Handle.cbFileHdr);
     if (RT_SUCCESS(rc))
     {
         if (Hdr.cbGCPhys)
@@ -2051,12 +2055,13 @@ VMMR3DECL(int) SSMR3Load(PVM pVM, const char *pszFilename, SSMAFTER enmAfter, PF
  * @returns VBox status code on other failures.
  *
  * @param   pszFilename     The path to the file to validate.
+ * @param   fChecksumIt     Whether to checksum the file or not.
  *
  * @thread  Any.
  */
-VMMR3DECL(int) SSMR3ValidateFile(const char *pszFilename)
+VMMR3DECL(int) SSMR3ValidateFile(const char *pszFilename, bool fChecksumIt)
 {
-    LogFlow(("SSMR3ValidateFile: pszFilename=%p:{%s}\n", pszFilename, pszFilename));
+    LogFlow(("SSMR3ValidateFile: pszFilename=%p:{%s} fChecksumIt=%RTbool\n", pszFilename, pszFilename, fChecksumIt));
 
     /*
      * Try open the file and validate it.
@@ -2067,7 +2072,7 @@ VMMR3DECL(int) SSMR3ValidateFile(const char *pszFilename)
     {
         size_t cbFileHdr;
         SSMFILEHDR Hdr;
-        rc = ssmR3Validate(File, &Hdr, &cbFileHdr);
+        rc = ssmR3ValidateFile(File, fChecksumIt, &Hdr, &cbFileHdr);
         RTFileClose(File);
     }
     else
@@ -2112,7 +2117,7 @@ VMMR3DECL(int) SSMR3Open(const char *pszFilename, unsigned fFlags, PSSMHANDLE *p
     {
         SSMFILEHDR Hdr;
         size_t cbFileHdr;
-        rc = ssmR3Validate(pSSM->File, &Hdr, &cbFileHdr);
+        rc = ssmR3ValidateFile(pSSM->File, true /* fChecksumIt */, &Hdr, &cbFileHdr);
         if (RT_SUCCESS(rc))
         {
             //pSSM->pVM           = NULL;
