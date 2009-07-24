@@ -186,11 +186,12 @@ windowEvtHndlr(EventHandlerCallRef myHandler, EventRef event, void* userData)
                         RTSemFastMutexRequest(render_spu.syncMutex);
                         GLboolean result = render_spu.ws.aglSetCurrentContext(tmpContext);
                         CHECK_AGL_RC (result, "Render SPU (windowEvtHndlr): SetCurrentContext Failed");
-                        if (result)
-                        {
-                            result = render_spu.ws.aglUpdateContext(tmpContext);
-                            CHECK_AGL_RC (result, "Render SPU (windowEvtHndlr): UpdateContext Failed");
-                        }
+                        /* Doesn't work with DirectX; Anyway doesn't  */
+/*                        if (result)*/
+/*                        {*/
+/*                            result = render_spu.ws.aglUpdateContext(tmpContext);*/
+/*                            CHECK_AGL_RC (result, "Render SPU (windowEvtHndlr): UpdateContext Failed");*/
+/*                        }*/
                         RTSemFastMutexRelease(render_spu.syncMutex);
                     }
                     eventResult = noErr;
