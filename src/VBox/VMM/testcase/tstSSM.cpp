@@ -153,7 +153,7 @@ DECLCALLBACK(int) Item01Save(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 #undef ITEM
 
     uint64_t u64Elapsed = RTTimeNanoTS() - u64Start;
-    RTPrintf("tstSSM: Saved 1st item in %RI64 ns\n", u64Elapsed);
+    RTPrintf("tstSSM: Saved 1st item in %'RI64 ns\n", u64Elapsed);
     return 0;
 }
 
@@ -301,7 +301,7 @@ DECLCALLBACK(int) Item02Save(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
     }
 
     uint64_t u64Elapsed = RTTimeNanoTS() - u64Start;
-    RTPrintf("tstSSM: Saved 2nd item in %RI64 ns\n", u64Elapsed);
+    RTPrintf("tstSSM: Saved 2nd item in %'RI64 ns\n", u64Elapsed);
     return 0;
 }
 
@@ -407,7 +407,7 @@ DECLCALLBACK(int) Item03Save(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
     }
 
     uint64_t u64Elapsed = RTTimeNanoTS() - u64Start;
-    RTPrintf("tstSSM: Saved 3rd item in %RI64 ns\n", u64Elapsed);
+    RTPrintf("tstSSM: Saved 3rd item in %'RI64 ns\n", u64Elapsed);
     return 0;
 }
 
@@ -505,7 +505,7 @@ DECLCALLBACK(int) Item04Save(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
     }
 
     uint64_t u64Elapsed = RTTimeNanoTS() - u64Start;
-    RTPrintf("tstSSM: Saved 4th item in %RI64 ns\n", u64Elapsed);
+    RTPrintf("tstSSM: Saved 4th item in %'RI64 ns\n", u64Elapsed);
     return 0;
 }
 
@@ -697,7 +697,7 @@ int main(int argc, char **argv)
         return 1;
     }
     uint64_t u64Elapsed = RTTimeNanoTS() - u64Start;
-    RTPrintf("tstSSM: Saved in %RI64 ns\n", u64Elapsed);
+    RTPrintf("tstSSM: Saved in %'RI64 ns\n", u64Elapsed);
 
     RTFSOBJINFO Info;
     rc = RTPathQueryInfo(pszFilename, &Info, RTFSOBJATTRADD_NOTHING);
@@ -719,20 +719,30 @@ int main(int argc, char **argv)
         return 1;
     }
     u64Elapsed = RTTimeNanoTS() - u64Start;
-    RTPrintf("tstSSM: Loaded in %RI64 ns\n", u64Elapsed);
+    RTPrintf("tstSSM: Loaded in %'RI64 ns\n", u64Elapsed);
 
     /*
      * Validate it.
      */
     u64Start = RTTimeNanoTS();
-    rc = SSMR3ValidateFile(pszFilename);
+    rc = SSMR3ValidateFile(pszFilename, false /* fChecksumIt*/ );
     if (RT_FAILURE(rc))
     {
         RTPrintf("SSMR3ValidateFile #1 -> %Rrc\n", rc);
         return 1;
     }
     u64Elapsed = RTTimeNanoTS() - u64Start;
-    RTPrintf("tstSSM: Validated in %RI64 ns\n", u64Elapsed);
+    RTPrintf("tstSSM: Validated without checksumming in %'RI64 ns\n", u64Elapsed);
+
+    u64Start = RTTimeNanoTS();
+    rc = SSMR3ValidateFile(pszFilename, true /* fChecksumIt */);
+    if (RT_FAILURE(rc))
+    {
+        RTPrintf("SSMR3ValidateFile #1 -> %Rrc\n", rc);
+        return 1;
+    }
+    u64Elapsed = RTTimeNanoTS() - u64Start;
+    RTPrintf("tstSSM: Validated and checksummed in %'RI64 ns\n", u64Elapsed);
 
     /*
      * Open it and read.
@@ -746,7 +756,7 @@ int main(int argc, char **argv)
         return 1;
     }
     u64Elapsed = RTTimeNanoTS() - u64Start;
-    RTPrintf("tstSSM: Opened in %RI64 ns\n", u64Elapsed);
+    RTPrintf("tstSSM: Opened in %'RI64 ns\n", u64Elapsed);
 
     /* negative */
     u64Start = RTTimeNanoTS();
@@ -757,7 +767,7 @@ int main(int argc, char **argv)
         return 1;
     }
     u64Elapsed = RTTimeNanoTS() - u64Start;
-    RTPrintf("tstSSM: Failed seek in %RI64 ns\n", u64Elapsed);
+    RTPrintf("tstSSM: Failed seek in %'RI64 ns\n", u64Elapsed);
 
     /* 2nd unit */
     rc = SSMR3Seek(pSSM, "SSM Testcase Data Item no.2 (rand mem)", 0, NULL);
@@ -781,7 +791,7 @@ int main(int argc, char **argv)
         return 1;
     }
     u64Elapsed = RTTimeNanoTS() - u64Start;
-    RTPrintf("tstSSM: Loaded 2nd item in %RI64 ns\n", u64Elapsed);
+    RTPrintf("tstSSM: Loaded 2nd item in %'RI64 ns\n", u64Elapsed);
 
     /* 1st unit */
     u32Version = 0xbadc0ded;
@@ -799,7 +809,7 @@ int main(int argc, char **argv)
         return 1;
     }
     u64Elapsed = RTTimeNanoTS() - u64Start;
-    RTPrintf("tstSSM: Loaded 1st item in %RI64 ns\n", u64Elapsed);
+    RTPrintf("tstSSM: Loaded 1st item in %'RI64 ns\n", u64Elapsed);
 
     /* 3st unit */
     u32Version = 0xbadc0ded;
@@ -817,7 +827,7 @@ int main(int argc, char **argv)
         return 1;
     }
     u64Elapsed = RTTimeNanoTS() - u64Start;
-    RTPrintf("tstSSM: Loaded 3rd item in %RI64 ns\n", u64Elapsed);
+    RTPrintf("tstSSM: Loaded 3rd item in %'RI64 ns\n", u64Elapsed);
 
     /* close */
     rc = SSMR3Close(pSSM);
