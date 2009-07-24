@@ -1227,7 +1227,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_PDMQueueCreate(PPDMDEVINS pDevIns, RTUINT c
 
     if (pDevIns->iInstance > 0)
     {
-        pszName = MMR3HeapAPrintf(pVM, MM_TAG_PDM_DEVICE_DESC, "%s-%u", pszName, pDevIns->iInstance);
+        pszName = MMR3HeapAPrintf(pVM, MM_TAG_PDM_DEVICE_DESC, "%s_%u", pszName, pDevIns->iInstance);
         AssertLogRelReturn(pszName, VERR_NO_MEMORY);
     }
 
