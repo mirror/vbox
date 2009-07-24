@@ -887,7 +887,7 @@
      name="IVirtualBoxErrorInfo" extends="$errorinfo"
      uuid="bcae7fc3-3fd0-4bac-923c-ec1596c7bc83"
      supportsErrorInfo="no"
-     wsmap="suppress"
+     wsmap="managed"
      >
     <desc>
       The IVirtualBoxErrorInfo interface represents extended error information.
@@ -935,11 +935,12 @@
       </desc>
     </attribute>
 
-    <attribute name="interfaceID" type="uuid" readonly="yes">
+    <attribute name="interfaceID" type="wstring" readonly="yes">
       <desc>
         UUID of the interface that defined the error.
         <note>
-          In MS COM, it is the same as IErrorInfo::GetGUID.
+          In MS COM, it is the same as IErrorInfo::GetGUID, except for the
+          data type.
           In XPCOM, there is no equivalent.
         </note>
       </desc>

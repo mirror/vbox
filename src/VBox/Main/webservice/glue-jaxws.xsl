@@ -814,7 +814,7 @@ public class IWebsessionManager {
 
           <xsl:variable name="extends" select="//interface[@name=$ifname]/@extends" />
           <xsl:choose>
-            <xsl:when test="($extends = '$unknown') or ($extends = '$dispatched')">
+            <xsl:when test="($extends = '$unknown') or ($extends = '$dispatched') or ($extends = '$errorinfo')">
               <xsl:value-of select="concat('public class ', $ifname, ' extends IUnknown {&#10;&#10;')" />
             </xsl:when>
             <xsl:when test="//interface[@name=$extends]">

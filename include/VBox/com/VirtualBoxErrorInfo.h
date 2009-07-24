@@ -85,7 +85,7 @@ public:
 
     // IVirtualBoxErrorInfo properties
     STDMETHOD(COMGETTER(ResultCode)) (LONG *aResultCode);
-    STDMETHOD(COMGETTER(InterfaceID)) (OUT_GUID aIID);
+    STDMETHOD(COMGETTER(InterfaceID)) (BSTR *aIID);
     STDMETHOD(COMGETTER(Component)) (BSTR *aComponent);
     STDMETHOD(COMGETTER(Text)) (BSTR *aText);
     STDMETHOD(COMGETTER(Next)) (IVirtualBoxErrorInfo **aNext);
@@ -104,7 +104,7 @@ public:
 
     HRESULT init (nsIException *aInfo);
 
-    NS_DECL_NSIEXCEPTION   
+    NS_DECL_NSIEXCEPTION
 #endif
 
 private:

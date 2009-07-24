@@ -49,11 +49,11 @@ STDMETHODIMP VirtualBoxErrorInfo::COMGETTER(ResultCode) (LONG *aResultCode)
     return S_OK;
 }
 
-STDMETHODIMP VirtualBoxErrorInfo::COMGETTER(InterfaceID) (OUT_GUID aIID)
+STDMETHODIMP VirtualBoxErrorInfo::COMGETTER(InterfaceID) (BSTR *aIID)
 {
     CheckComArgOutPointerValid(aIID);
 
-    mIID.cloneTo (aIID);
+    mIID.toUtf16().cloneTo (aIID);
     return S_OK;
 }
 
