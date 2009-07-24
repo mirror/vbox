@@ -118,7 +118,11 @@ STDMETHODIMP VirtualBoxErrorInfo::GetDescription (BSTR *description)
 
 STDMETHODIMP VirtualBoxErrorInfo::GetGUID (GUID *guid)
 {
-    return COMGETTER(InterfaceID) (guid);
+    Bstr iid;
+    HRESULT rc = COMGETTER(InterfaceID) (iid.asOutParam());
+    if (SUCCEEDED(rc))
+        *guid = Guid(iid);
+    return rc;
 }
 
 STDMETHODIMP VirtualBoxErrorInfo::GetHelpContext (DWORD *pdwHelpContext)
