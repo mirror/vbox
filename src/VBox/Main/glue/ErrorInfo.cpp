@@ -182,15 +182,19 @@ void ErrorInfo::init (IVirtualBoxErrorInfo *info)
     bool gotAll = true;
     LONG lrc;
 
-    rc = info->COMGETTER(ResultCode) (&lrc); mResultCode = lrc;    
+    rc = info->COMGETTER(ResultCode) (&lrc); mResultCode = lrc;
     gotSomething |= SUCCEEDED (rc);
     gotAll &= SUCCEEDED (rc);
 
-    rc = info->COMGETTER(InterfaceID) (mInterfaceID.asOutParam());
+    Bstr iid;
+    rc = info->COMGETTER(InterfaceID) (iid.asOutParam());
     gotSomething |= SUCCEEDED (rc);
     gotAll &= SUCCEEDED (rc);
     if (SUCCEEDED (rc))
+    {
+        mInterfaceID = iid;
         GetInterfaceNameByIID (mInterfaceID, mInterfaceName.asOutParam());
+    }
 
     rc = info->COMGETTER(Component) (mComponent.asOutParam());
     gotSomething |= SUCCEEDED (rc);
