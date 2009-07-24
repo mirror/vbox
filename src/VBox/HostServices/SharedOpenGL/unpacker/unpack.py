@@ -220,7 +220,9 @@ void crUnpack( const void *data, const void *opcodes,
     unpack_opcodes = (const unsigned char *)opcodes;
     cr_unpackData = (const unsigned char *)data;
 
+#if defined(CR_UNPACK_DEBUG_LAST_OPCODES) || defined(CR_UNPACK_DEBUG_LAST_OPCODES)
     crDebug("crUnpack: %d opcodes", num_opcodes);
+#endif
 
     for (i = 0 ; i < num_opcodes ; i++)
     {
