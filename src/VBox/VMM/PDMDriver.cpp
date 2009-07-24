@@ -825,7 +825,7 @@ static DECLCALLBACK(int) pdmR3DrvHlp_PDMQueueCreate(PPDMDRVINS pDrvIns, RTUINT c
 
     if (pDrvIns->iInstance > 0)
     {
-        pszName = MMR3HeapAPrintf(pVM, MM_TAG_PDM_DRIVER_DESC, "%s-%u", pszName, pDrvIns->iInstance);
+        pszName = MMR3HeapAPrintf(pVM, MM_TAG_PDM_DRIVER_DESC, "%s_%u", pszName, pDrvIns->iInstance);
         AssertLogRelReturn(pszName, VERR_NO_MEMORY);
     }
 
