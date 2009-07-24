@@ -1081,6 +1081,12 @@ RTDECL(PCRTCOMERRMSG) RTErrCOMGet(uint32_t rc);
 #define VERR_MANIFEST_FILE_MISMATCH             (-903)
 /** @} */
 
+/** @name RTTar status codes
+ * @{ */
+/** The checksum of a tar header record doesn't match */
+#define VERR_TAR_CHKSUM_MISMATCH                (-925)
+/** @} */
+
 /* SED-END */
 
 /** @} */
