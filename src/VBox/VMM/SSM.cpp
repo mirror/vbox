@@ -1387,14 +1387,6 @@ VMMR3DECL(int) SSMR3Save(PVM pVM, const char *pszFilename, SSMAFTER enmAfter, PF
                         if (pfnProgress)
                             pfnProgress(pVM, 100, pvUser);
                         Log(("SSM: Successfully saved the vm state to '%s'.\n", pszFilename));
-                        Log(("\n\n\n"));
-                        DBGFR3InfoLog(pVM, "cpum", "verbose");
-                        DBGFR3InfoLog(pVM, "timers", NULL);
-                        DBGFR3InfoLog(pVM, "activetimers", NULL);
-                        DBGFR3InfoLog(pVM, "ioport", NULL);
-                        DBGFR3InfoLog(pVM, "mmio", NULL);
-                        DBGFR3InfoLog(pVM, "phys", NULL);
-                        Log(("\n\n\n"));
                         return VINF_SUCCESS;
                     }
 
@@ -2032,14 +2024,6 @@ VMMR3DECL(int) SSMR3Load(PVM pVM, const char *pszFilename, SSMAFTER enmAfter, PF
         if (pfnProgress)
             pfnProgress(pVM, 100, pvUser);
         Log(("SSM: Load of '%s' completed!\n", pszFilename));
-        Log(("\n\n\n"));
-        DBGFR3InfoLog(pVM, "cpum", "verbose");
-        DBGFR3InfoLog(pVM, "timers", NULL);
-        DBGFR3InfoLog(pVM, "activetimers", NULL);
-        DBGFR3InfoLog(pVM, "ioport", NULL);
-        DBGFR3InfoLog(pVM, "mmio", NULL);
-        DBGFR3InfoLog(pVM, "phys", NULL);
-        Log(("\n\n\n"));
     }
     return rc;
 }
@@ -2238,88 +2222,53 @@ VMMR3DECL(int) SSMR3Seek(PSSMHANDLE pSSM, const char *pszUnit, uint32_t iInstanc
     /*
      * Walk the data units until we find EOF or a match.
      */
-    size_t  cchUnit = strlen(pszUnit) + 1;
-    int     rc = VINF_SUCCESS;
-    char   *pszName = NULL;
-    size_t  cchName = 0;
-    SSMFILEUNITHDR  UnitHdr;
+#define SSM_MAX_NAME_SIZE   48
+    size_t              cbUnit = strlen(pszUnit) + 1;
+    AssertLogRelReturn(cbUnit <= SSM_MAX_NAME_SIZE, VERR_SSM_UNIT_NOT_FOUND);
+    char                szName[SSM_MAX_NAME_SIZE];
+    SSMFILEUNITHDR      UnitHdr;
     for (RTFOFF off = pSSM->cbFileHdr; ; off += UnitHdr.cbUnit)
     {
         /*
          * Read the unit header and verify it.
          */
-        rc = RTFileReadAt(pSSM->File, off, &UnitHdr, RT_OFFSETOF(SSMFILEUNITHDR, szName), NULL);
-        AssertRC(rc);
-        if (RT_SUCCESS(rc))
+        int rc = RTFileReadAt(pSSM->File, off, &UnitHdr, RT_OFFSETOF(SSMFILEUNITHDR, szName), NULL);
+        AssertRCReturn(rc, rc);
+        if (!memcmp(&UnitHdr.achMagic[0], SSMFILEUNITHDR_MAGIC, sizeof(SSMFILEUNITHDR_MAGIC)))
         {
-            if (!memcmp(&UnitHdr.achMagic[0], SSMFILEUNITHDR_MAGIC, sizeof(SSMFILEUNITHDR_MAGIC)))
+            /*
+             * Does what we've got match, if so read the name.
+             */
+            if (    UnitHdr.u32Instance == iInstance
+                &&  UnitHdr.cchName     == cbUnit)
             {
-                /*
-                 * Does it match thus far or should we just skip along?
-                 */
-                if (    UnitHdr.u32Instance != iInstance
-                    &&  UnitHdr.cchName != cchUnit)
-                    continue;
+                rc = RTFileRead(pSSM->File, szName, cbUnit, NULL);
+                AssertRCReturn(rc, rc);
+                AssertLogRelMsgReturn(!szName[UnitHdr.cchName - 1],
+                                      (" Unit name '%.*s' was not properly terminated.\n", cbUnit, szName),
+                                      VERR_SSM_INTEGRITY);
 
                 /*
-                 * Read the name.
-                 * Adjust the name buffer first.
+                 * Does the name match?
                  */
-                if (cchName < UnitHdr.cchName)
+                if (!memcmp(szName, pszUnit, cbUnit))
                 {
-                    if (pszName)
-                        RTMemTmpFree(pszName);
-                    cchName = RT_ALIGN_Z(UnitHdr.cchName, 64);
-                    pszName = (char *)RTMemTmpAlloc(cchName);
-                }
-                rc = VERR_NO_MEMORY;
-                if (pszName)
-                {
-                    rc = RTFileRead(pSSM->File, pszName, UnitHdr.cchName, NULL);
-                    AssertRC(rc);
-                    if (RT_SUCCESS(rc))
-                    {
-                        if (!pszName[UnitHdr.cchName - 1])
-                        {
-                            /*
-                             * Does the name match? If not continue with the next item.
-                             */
-                            if (memcmp(pszName, pszUnit, cchUnit))
-                                continue;
-
-                            pSSM->rc = rc = VINF_SUCCESS;
-                            pSSM->cbUnitLeft = UnitHdr.cbUnit - RT_OFFSETOF(SSMFILEUNITHDR, szName[UnitHdr.cchName]);
-                            pSSM->offUnit = 0;
-                            if (piVersion)
-                                *piVersion = UnitHdr.u32Version;
-                        }
-                        else
-                        {
-                            AssertMsgFailed((" Unit name '%.*s' was not properly terminated.\n", UnitHdr.cchName, pszName));
-                            rc = VERR_SSM_INTEGRITY;
-                        }
-                    }
-                }
-            }
-            else
-            {
-                if (!memcmp(&UnitHdr.achMagic[0], SSMFILEUNITHDR_END, sizeof(SSMFILEUNITHDR_END)))
-                    rc = VERR_SSM_UNIT_NOT_FOUND;
-                else
-                {
-                    AssertMsgFailed(("Invalid unit magic at offset %RTfoff, '%.*s'!\n",
-                                     off, sizeof(UnitHdr.achMagic) - 1, &UnitHdr.achMagic[0]));
-                    rc = VERR_SSM_INTEGRITY_UNIT_MAGIC;
+                    pSSM->cbUnitLeft = UnitHdr.cbUnit - RT_OFFSETOF(SSMFILEUNITHDR, szName[cbUnit]);
+                    pSSM->offUnit = 0;
+                    if (piVersion)
+                        *piVersion = UnitHdr.u32Version;
+                    return pSSM->rc = VINF_SUCCESS;
                 }
             }
         }
-
-        /* error or success, two continue statements cover the iterating */
-        break;
+        else if (!memcmp(&UnitHdr.achMagic[0], SSMFILEUNITHDR_END, sizeof(SSMFILEUNITHDR_END)))
+            return VERR_SSM_UNIT_NOT_FOUND;
+        else
+            AssertLogRelMsgFailedReturn(("Invalid unit magic at offset %RTfoff, '%.*s'!\n",
+                                         off, sizeof(UnitHdr.achMagic) - 1, &UnitHdr.achMagic[0]),
+                                        VERR_SSM_INTEGRITY_UNIT_MAGIC);
     }
-
-    RTMemFree(pszName);
-    return rc;
+    /* won't get here. */
 }
 
 

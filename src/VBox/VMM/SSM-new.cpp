@@ -2863,7 +2863,7 @@ static int ssmR3FileSeekV1(PSSMHANDLE pSSM, const char *pszUnit, uint32_t iInsta
      * Walk the data units until we find EOF or a match.
      */
     size_t              cbUnit = strlen(pszUnit) + 1;
-    AssertLogRelReturn(cbUnit > SSM_MAX_NAME_SIZE, VERR_SSM_UNIT_NOT_FOUND);
+    AssertLogRelReturn(cbUnit <= SSM_MAX_NAME_SIZE, VERR_SSM_UNIT_NOT_FOUND);
     char                szName[SSM_MAX_NAME_SIZE];
     SSMFILEUNITHDRV1    UnitHdr;
     for (RTFOFF off = pSSM->u.Read.cbFileHdr; ; off += UnitHdr.cbUnit)
@@ -2890,7 +2890,7 @@ static int ssmR3FileSeekV1(PSSMHANDLE pSSM, const char *pszUnit, uint32_t iInsta
                 /*
                  * Does the name match?
                  */
-                if (memcmp(szName, pszUnit, cbUnit))
+                if (!memcmp(szName, pszUnit, cbUnit))
                 {
                     pSSM->cbUnitLeftV1 = UnitHdr.cbUnit - RT_OFFSETOF(SSMFILEUNITHDR, szName[cbUnit]);
                     pSSM->offUnit = 0;
