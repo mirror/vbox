@@ -44,11 +44,29 @@
 #include <iprt/path.h>
 
 
-const uint8_t gabPage[PAGE_SIZE] = {0};
+/*******************************************************************************
+*   Defined Constants And Macros                                               *
+*******************************************************************************/
+#define TSTSSM_BIG_CONFIG   1
 
-const char gachMem1[] = "sdfg\1asdfa\177hjkl;sdfghjkl;dfghjkl;dfghjkl;\0\0asdf;kjasdf;lkjasd;flkjasd;lfkjasd\0;lfk";
+#ifdef TSTSSM_BIG_CONFIG
+# define TSTSSM_ITEM_SIZE    (512*_1M)
+#else
+# define TSTSSM_ITEM_SIZE    (5*_1M)
+#endif
 
-uint8_t gabBigMem[8*1024*1024];
+
+/*******************************************************************************
+*   Global Variables                                                           *
+*******************************************************************************/
+const uint8_t   gabPage[PAGE_SIZE] = {0};
+const char      gachMem1[] = "sdfg\1asdfa\177hjkl;sdfghjkl;dfghjkl;dfghjkl;\0\0asdf;kjasdf;lkjasd;flkjasd;lfkjasd\0;lfk";
+#ifdef TSTSSM_BIG_CONFIG
+uint8_t         gabBigMem[_1M];
+#else
+uint8_t         gabBigMem[8*_1M];
+#endif
+
 
 /** initializes gabBigMem with some non zero stuff. */
 void initBigMem(void)
@@ -166,6 +184,12 @@ DECLCALLBACK(int) Item01Save(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
  */
 DECLCALLBACK(int) Item01Load(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t u32Version)
 {
+    if (u32Version != 0)
+    {
+        RTPrintf("Item01: u32Version=%#x, expected 0\n", u32Version);
+        return VERR_GENERAL_FAILURE;
+    }
+
     /*
      * Load the memory block.
      */
@@ -314,6 +338,12 @@ DECLCALLBACK(int) Item02Save(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
  */
 DECLCALLBACK(int) Item02Load(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t u32Version)
 {
+    if (u32Version != 0)
+    {
+        RTPrintf("Item02: u32Version=%#x, expected 0\n", u32Version);
+        return VERR_GENERAL_FAILURE;
+    }
+
     /*
      * Load the size.
      */
@@ -378,7 +408,7 @@ DECLCALLBACK(int) Item03Save(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
     /*
      * Put the size.
      */
-    uint32_t cb = 512*_1M;
+    uint32_t cb = TSTSSM_ITEM_SIZE;
     int rc = SSMR3PutU32(pSSM, cb);
     if (RT_FAILURE(rc))
     {
@@ -420,6 +450,12 @@ DECLCALLBACK(int) Item03Save(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
  */
 DECLCALLBACK(int) Item03Load(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t u32Version)
 {
+    if (u32Version != 123)
+    {
+        RTPrintf("Item03: u32Version=%#x, expected 123\n", u32Version);
+        return VERR_GENERAL_FAILURE;
+    }
+
     /*
      * Load the size.
      */
@@ -430,9 +466,9 @@ DECLCALLBACK(int) Item03Load(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t u32Ve
         RTPrintf("Item03: SSMR3GetU32 -> %Rrc\n", rc);
         return rc;
     }
-    if (cb != 512*_1M)
+    if (cb != TSTSSM_ITEM_SIZE)
     {
-        RTPrintf("Item03: loaded size doesn't match the real thing. %#x != %#x\n", cb, 512*_1M);
+        RTPrintf("Item03: loaded size doesn't match the real thing. %#x != %#x\n", cb, TSTSSM_ITEM_SIZE);
         return VERR_GENERAL_FAILURE;
     }
 
@@ -446,12 +482,12 @@ DECLCALLBACK(int) Item03Load(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t u32Ve
         rc = SSMR3GetMem(pSSM, &achPage[0], PAGE_SIZE);
         if (RT_FAILURE(rc))
         {
-            RTPrintf("Item03: SSMR3GetMem(,,%#x) -> %Rrc offset %#x\n", PAGE_SIZE, rc, 512*_1M - cb);
+            RTPrintf("Item03: SSMR3GetMem(,,%#x) -> %Rrc offset %#x\n", PAGE_SIZE, rc, TSTSSM_ITEM_SIZE - cb);
             return rc;
         }
         if (memcmp(achPage, pu8Org, PAGE_SIZE))
         {
-            RTPrintf("Item03: compare failed. mem offset=%#x\n", 512*_1M - cb);
+            RTPrintf("Item03: compare failed. mem offset=%#x\n", TSTSSM_ITEM_SIZE - cb);
             return VERR_GENERAL_FAILURE;
         }
 
@@ -518,6 +554,12 @@ DECLCALLBACK(int) Item04Save(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
  */
 DECLCALLBACK(int) Item04Load(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t u32Version)
 {
+    if (u32Version != 42)
+    {
+        RTPrintf("Item04: u32Version=%#x, expected 42\n", u32Version);
+        return VERR_GENERAL_FAILURE;
+    }
+
     /*
      * Load the size.
      */
@@ -706,7 +748,7 @@ int main(int argc, char **argv)
         RTPrintf("tstSSM: failed to query file size: %Rrc\n", rc);
         return 1;
     }
-    RTPrintf("tstSSM: file size %RI64 bytes\n", Info.cbObject);
+    RTPrintf("tstSSM: file size %'RI64 bytes\n", Info.cbObject);
 
     /*
      * Attempt a load.
@@ -769,18 +811,26 @@ int main(int argc, char **argv)
     u64Elapsed = RTTimeNanoTS() - u64Start;
     RTPrintf("tstSSM: Failed seek in %'RI64 ns\n", u64Elapsed);
 
-    /* 2nd unit */
+    /* another negative, now only the instance number isn't matching. */
     rc = SSMR3Seek(pSSM, "SSM Testcase Data Item no.2 (rand mem)", 0, NULL);
+    if (rc != VERR_SSM_UNIT_NOT_FOUND)
+    {
+        RTPrintf("SSMR3Seek #1 unit 2 -> %Rrc\n", rc);
+        return 1;
+    }
+
+    /* 2nd unit */
+    rc = SSMR3Seek(pSSM, "SSM Testcase Data Item no.2 (rand mem)", 2, NULL);
     if (RT_FAILURE(rc))
     {
-        RTPrintf("SSMR3Seek #1 unit 2-> %Rrc\n", rc);
+        RTPrintf("SSMR3Seek #1 unit 2 -> %Rrc [2]\n", rc);
         return 1;
     }
     uint32_t u32Version = 0xbadc0ded;
-    rc = SSMR3Seek(pSSM, "SSM Testcase Data Item no.2 (rand mem)", 0, &u32Version);
+    rc = SSMR3Seek(pSSM, "SSM Testcase Data Item no.2 (rand mem)", 2, &u32Version);
     if (RT_FAILURE(rc))
     {
-        RTPrintf("SSMR3Seek #1 unit 2-> %Rrc\n", rc);
+        RTPrintf("SSMR3Seek #1 unit 2 -> %Rrc [3]\n", rc);
         return 1;
     }
     u64Start = RTTimeNanoTS();
@@ -795,7 +845,7 @@ int main(int argc, char **argv)
 
     /* 1st unit */
     u32Version = 0xbadc0ded;
-    rc = SSMR3Seek(pSSM, "SSM Testcase Data Item no.1 (all types)", 0, &u32Version);
+    rc = SSMR3Seek(pSSM, "SSM Testcase Data Item no.1 (all types)", 1, &u32Version);
     if (RT_FAILURE(rc))
     {
         RTPrintf("SSMR3Seek #1 unit 1 -> %Rrc\n", rc);
@@ -813,7 +863,7 @@ int main(int argc, char **argv)
 
     /* 3st unit */
     u32Version = 0xbadc0ded;
-    rc = SSMR3Seek(pSSM, "SSM Testcase Data Item no.3 (big mem)", 123, &u32Version);
+    rc = SSMR3Seek(pSSM, "SSM Testcase Data Item no.3 (big mem)", 0, &u32Version);
     if (RT_FAILURE(rc))
     {
         RTPrintf("SSMR3Seek #3 unit 1 -> %Rrc\n", rc);
