@@ -71,8 +71,10 @@ RT_C_DECLS_BEGIN
  */
 typedef enum SSMAFTER
 {
+    /** Invalid. */
+    SSMAFTER_INVALID = 0,
     /** Will resume the loaded state. */
-    SSMAFTER_RESUME = 1,
+    SSMAFTER_RESUME,
     /** Will destroy the VM after saving. */
     SSMAFTER_DESTROY,
     /** Will continue execution after saving the VM. */
@@ -392,8 +394,7 @@ typedef FNSSMEXTLOADPREP *PFNSSMEXTLOADPREP;
 /**
  * Execute state load operation.
  *
- * @returns 0 on success.
- * @returns Not 0 on failure.
+ * @returns VBox status code.
  * @param   pSSM            SSM operation handle.
  * @param   pvUser          User argument.
  * @param   u32Version      Data layout version.
