@@ -297,6 +297,25 @@ RT_C_DECLS_END
     AssertCompile(RT_OFFSETOF(type, member) == (off))
 #endif
 
+/** @def AssertCompile2MemberOffsets
+ * Asserts that two (sub-structure) members in union have the same offset.
+ * @param   type    The type.
+ * @param   member1 The first member.
+ * @param   member2 The second member.
+ */
+#if defined(__GNUC__) && defined(__cplusplus)
+# if __GNUC__ >= 4
+#  define AssertCompile2MemberOffsets(type, member1, member2) \
+    AssertCompile(__builtin_offsetof(type, member1) == __builtin_offsetof(type, member2))
+# else
+#  define AssertCompile2MemberOffsets(type, member1, member2) \
+    AssertCompile(RT_OFFSETOF(type, member1) == RT_OFFSETOF(type, member2))
+# endif
+#else
+# define AssertCompile2MemberOffsets(type, member1, member2) \
+    AssertCompile(RT_OFFSETOF(type, member1) == RT_OFFSETOF(type, member2))
+#endif
+
 /** @} */
 
 
