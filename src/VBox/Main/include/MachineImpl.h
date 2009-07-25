@@ -885,6 +885,7 @@ public:
     DECLARE_PROTECT_FINAL_CONSTRUCT()
 
     BEGIN_COM_MAP(SessionMachine)
+        COM_INTERFACE_ENTRY2(IDispatch, IMachine)
         COM_INTERFACE_ENTRY(ISupportErrorInfo)
         COM_INTERFACE_ENTRY(IMachine)
         COM_INTERFACE_ENTRY(IInternalMachineControl)
@@ -1059,6 +1060,7 @@ public:
     DECLARE_PROTECT_FINAL_CONSTRUCT()
 
     BEGIN_COM_MAP(SnapshotMachine)
+        COM_INTERFACE_ENTRY2(IDispatch, IMachine)        
         COM_INTERFACE_ENTRY(ISupportErrorInfo)
         COM_INTERFACE_ENTRY(IMachine)
     END_COM_MAP()

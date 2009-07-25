@@ -208,11 +208,12 @@ def split_no_quotes(s):
 def createVm(ctx,name,kind,base):
     mgr = ctx['mgr']
     vb = ctx['vb']
-    mach = vb.createMachine(name, kind, base,
-                            "00000000-0000-0000-0000-000000000000")
+    mach = vb.createMachine(name, kind, base, "")
     mach.saveSettings()
     print "created machine with UUID",mach.id
     vb.registerMachine(mach)
+    # update cache
+    getMachines(ctx, True)
 
 def removeVm(ctx,mach):
     mgr = ctx['mgr']
@@ -220,13 +221,18 @@ def removeVm(ctx,mach):
     id = mach.id
     print "removing machine ",mach.name,"with UUID",id
     session = ctx['global'].openMachineSession(id)
-    mach=session.machine
-    for d in mach.getHardDiskAttachments():
-        mach.detachHardDisk(d.controller, d.port, d.device)
+    try:
+       mach = session.Machine
+       for d in ctx['global'].getArray(mach, 'hardDiskAttachments'):
+          mach.detachHardDisk(d.controller, d.port, d.device)
+    except:
+       traceback.print_exc()
     ctx['global'].closeMachineSession(session)
     mach = vb.unregisterMachine(id)
     if mach:
          mach.deleteSettings()
+    # update cache
+    getMachines(ctx, True)
 
 def startVm(ctx,mach,type):
     mgr = ctx['mgr']
@@ -352,7 +358,6 @@ def cmdExistingVm(ctx,mach,cmd,args):
 
     session.close()
 
-# can cache known machines, if needed
 def machById(ctx,id):
     mach = None
     for m in getMachines(ctx):
