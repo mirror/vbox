@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2009 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -36,6 +36,7 @@
 #define RTZIP_USE_ZLIB 1
 //#define RTZIP_USE_BZLIB 1
 #define RTZIP_USE_LZF 1
+#define RTZIP_LZF_BLOCK_BY_BLOCK
 
 
 /*******************************************************************************
@@ -223,10 +224,12 @@ typedef struct RTZIPDECOMP
         /** LZF 'stream'. */
         struct
         {
+# ifndef RTZIP_LZF_BLOCK_BY_BLOCK
             /** Current input buffer postition. */
             uint8_t    *pbInput;
             /** The number of bytes left in the input buffer. */
             size_t      cbInput;
+# endif
             /** The spill buffer.
              * LZF is a block based compressor and not a stream compressor. So,
              * we have to decompress full blocks if we want to get any of the data.
@@ -1079,6 +1082,77 @@ static DECLCALLBACK(int) rtZipLZFDecompress(PRTZIPDECOMP pZip, void *pvBuf, size
      * When possible we decompress directly to the user buffer, when
      * not possible we'll use the spill buffer.
      */
+# ifdef RTZIP_LZF_BLOCK_BY_BLOCK
+    size_t cbWritten = 0;
+    while (cbBuf > 0)
+    {
+        /*
+         * Anything in the spill buffer?
+         */
+        if (pZip->u.LZF.cbSpill > 0)
+        {
+            unsigned cb = (unsigned)RT_MIN(pZip->u.LZF.cbSpill, cbBuf);
+            memcpy(pvBuf, pZip->u.LZF.pbSpill, cb);
+            pZip->u.LZF.pbSpill += cb;
+            pZip->u.LZF.cbSpill -= cb;
+            cbWritten += cb;
+            cbBuf -= cb;
+            if (!cbBuf)
+                break;
+            pvBuf = (uint8_t *)pvBuf + cb;
+        }
+
+        /*
+         * We always read and work one block at a time.
+         */
+        RTZIPLZFHDR Hdr;
+        int rc = pZip->pfnIn(pZip->pvUser, &Hdr, sizeof(Hdr), NULL);
+        if (RT_FAILURE(rc))
+            return rc;
+        if (!rtZipLZFValidHeader(&Hdr))
+            return VERR_GENERAL_FAILURE; /** @todo Get better error codes for RTZip! */
+        if (Hdr.cbData > 0)
+        {
+            rc = pZip->pfnIn(pZip->pvUser, &pZip->abBuffer[0], Hdr.cbData, NULL);
+            if (RT_FAILURE(rc))
+                return rc;
+        }
+
+        /*
+         * Does the uncompressed data fit into the supplied buffer?
+         * If so we uncompress it directly into the user buffer, else we'll have to use the spill buffer.
+         */
+        unsigned cbUncompressed = Hdr.cbUncompressed;
+        if (cbUncompressed <= cbBuf)
+        {
+            unsigned cbOutput = lzf_decompress(&pZip->abBuffer[0], Hdr.cbData, pvBuf, cbUncompressed);
+            if (cbOutput != cbUncompressed)
+            {
+                AssertMsgFailed(("Decompression error, errno=%d. cbOutput=%#x cbUncompressed=%#x\n",
+                                 errno, cbOutput, cbUncompressed));
+                return VERR_GENERAL_FAILURE; /** @todo Get better error codes for RTZip! */
+            }
+            cbBuf -= cbUncompressed;
+            pvBuf = (uint8_t *)pvBuf + cbUncompressed;
+            cbWritten += cbUncompressed;
+        }
+        else
+        {
+            unsigned cbOutput = lzf_decompress(&pZip->abBuffer[0], Hdr.cbData, pZip->u.LZF.abSpill, cbUncompressed);
+            if (cbOutput != cbUncompressed)
+            {
+                AssertMsgFailed(("Decompression error, errno=%d. cbOutput=%#x cbUncompressed=%#x\n",
+                                 errno, cbOutput, cbUncompressed));
+                return VERR_GENERAL_FAILURE; /** @todo Get better error codes for RTZip! */
+            }
+            pZip->u.LZF.pbSpill = &pZip->u.LZF.abSpill[0];
+            pZip->u.LZF.cbSpill = cbUncompressed;
+        }
+    }
+
+    if (pcbWritten)
+        *pcbWritten = cbWritten;
+# else  /* !RTZIP_LZF_BLOCK_BY_BLOCK */
     while (cbBuf > 0)
     {
         /*
@@ -1199,7 +1273,7 @@ static DECLCALLBACK(int) rtZipLZFDecompress(PRTZIPDECOMP pZip, void *pvBuf, size
         if (pcbWritten)
             *pcbWritten += cbUncompressed;
     }
-
+# endif /* !RTZIP_LZF_BLOCK_BY_BLOCK */
     return VINF_SUCCESS;
 }
 
@@ -1223,8 +1297,10 @@ static DECLCALLBACK(int) rtZipLZFDecompInit(PRTZIPDECOMP pZip)
     pZip->pfnDecompress = rtZipLZFDecompress;
     pZip->pfnDestroy = rtZipLZFDecompDestroy;
 
+# ifndef RTZIP_LZF_BLOCK_BY_BLOCK
     pZip->u.LZF.pbInput    = NULL;
     pZip->u.LZF.cbInput    = 0;
+# endif
     pZip->u.LZF.cbSpill    = 0;
     pZip->u.LZF.pbSpill    = NULL;
 
