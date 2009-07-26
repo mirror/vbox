@@ -88,7 +88,7 @@ RTDECL(int) RTFileReadAllByHandleEx(RTFILE File, RTFOFF off, RTFOFF cbMax, uint3
                              * Success - fill in the return values.
                              */
                             *ppvFile = pvFile;
-                            *pcbFile = cbAllocFile;
+                            *pcbFile = cbAllocMem;
                         }
                     }
 
