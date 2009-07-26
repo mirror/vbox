@@ -30,7 +30,16 @@ ifneq ($(KBUILD_TARGET),win)
 PROGRAMS   += tstVMMFork
 endif
 ifdef VBOX_WITH_TESTCASES
- PROGRAMS  += tstCFGM tstSSM tstMMHyperHeap tstVMREQ tstMicro tstCompiler tstVMMR0CallHost-1 tstVMMR0CallHost-2
+ PROGRAMS  += \
+ 	tstCFGM \
+ 	tstCompressionBenchmark \
+ 	tstSSM \
+ 	tstMMHyperHeap \
+ 	tstVMREQ \
+ 	tstMicro \
+ 	tstCompiler \
+ 	tstVMMR0CallHost-1 \
+ 	tstVMMR0CallHost-2
  ifneq ($(KBUILD_TARGET),l4)
   PROGRAMS += tstAnimate
  endif
@@ -144,6 +153,9 @@ tstInstrEmul_LIBS       = $(LIB_VMM) $(LIB_REM) $(LIB_RUNTIME)
 tstCFGM_TEMPLATE        = VBOXR3TSTEXE
 tstCFGM_SOURCES         = tstCFGM.cpp
 tstCFGM_LIBS            = $(LIB_VMM) $(LIB_REM) $(LIB_RUNTIME)
+
+tstCompressionBenchmark_TEMPLATE = VBOXR3TSTEXE
+tstCompressionBenchmark_SOURCES  = tstCompressionBenchmark.cpp
 
 tstVMM_TEMPLATE         = VBOXR3EXE
 tstVMM_SOURCES          = tstVMM.cpp
