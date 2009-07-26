@@ -721,7 +721,7 @@ RTR3DECL(int) RTFileIoCtl(RTFILE File, int iRequest, void *pvData, unsigned cbDa
  * @returns IPRT status code.
  * @param   pszFilename     The name of the file.
  * @param   ppvFile         Where to store the pointer to the memory on successful return.
- * @param   pcbFile         Where to store the size of the file on successful return.
+ * @param   pcbFile         Where to store the size of the returned memory.
  *
  * @remarks Note that this function may be implemented using memory mapping, which means
  *          that the file may remain open until RTFileReadAllFree() is called. It also
@@ -744,7 +744,7 @@ RTDECL(int) RTFileReadAll(const char *pszFilename, void **ppvFile, size_t *pcbFi
  *                          to read to the end of the file.
  * @param   fFlags          See RTFILE_RDALL_*.
  * @param   ppvFile         Where to store the pointer to the memory on successful return.
- * @param   pcbFile         Where to store the size of the file on successful return.
+ * @param   pcbFile         Where to store the size of the returned memory.
  *
  * @remarks See the remarks for RTFileReadAll.
  */
@@ -758,7 +758,7 @@ RTDECL(int) RTFileReadAllEx(const char *pszFilename, RTFOFF off, RTFOFF cbMax, u
  * @returns IPRT status code.
  * @param   File            The handle to the file.
  * @param   ppvFile         Where to store the pointer to the memory on successful return.
- * @param   pcbFile         Where to store the size of the file on successful return.
+ * @param   pcbFile         Where to store the size of the returned memory.
  *
  * @remarks See the remarks for RTFileReadAll.
  */
@@ -776,7 +776,7 @@ RTDECL(int) RTFileReadAllByHandle(RTFILE File, void **ppvFile, size_t *pcbFile);
  *                          to read to the end of the file.
  * @param   fFlags          See RTFILE_RDALL_*.
  * @param   ppvFile         Where to store the pointer to the memory on successful return.
- * @param   pcbFile         Where to store the size of the file on successful return.
+ * @param   pcbFile         Where to store the size of the returned memory.
  *
  * @remarks See the remarks for RTFileReadAll.
  */
