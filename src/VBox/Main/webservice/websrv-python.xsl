@@ -52,7 +52,6 @@
     <xsl:when test="$type='unsigned short'">UnsignedShort</xsl:when>
     <xsl:when test="$type='unsigned long long'">UnsignedLong</xsl:when>
     <xsl:when test="$type='result'">UnsignedInt</xsl:when>
-    <xsl:when test="$type='uuid'">UUID</xsl:when>
     <xsl:when test="$type='$unknown'">IUnknown</xsl:when>
     <xsl:when test="$type='$dispatched'">IUnknown</xsl:when>
     <xsl:otherwise><xsl:value-of select="$type" /></xsl:otherwise>
@@ -536,53 +535,6 @@ class String:
   def __add__(self,other):
       return str(self.handle)+str(other)
 
-
-class UUID:
-  def __init__(self, mgr, handle, isarray = False):
-      self.handle = handle
-      self.mgr = mgr
-      self.isarray = isarray
- 
-  def __next(self):
-      if self.isarray:
-          return self.handle.__next()
-      raise TypeError, "iteration over non-sequence"
-
-  def __size(self):
-      if self.isarray:         
-          return self.handle.__size()
-      raise TypeError, "iteration over non-sequence"
-
-  def __len__(self):
-      if self.isarray:
-          return self.handle.__len__()
-      raise TypeError, "iteration over non-sequence"
-
-  def __getitem__(self, index):
-      if self.isarray:
-          return UUID(self.mgr, self.handle[index])
-      raise TypeError, "iteration over non-sequence"       
-
-  def __str__(self):
-      return self.handle
-
-  def __eq__(self,other):
-      if self.isarray:
-         return isinstance(other,UUID) and self.handle == other.handle
-      if isinstance(other,UUID):
-         return self.handle == other.handle
-      if isinstance(other,basestring):
-         return self.handle == other
-      return False
-
-  def __ne__(self,other):
-      if self.isarray:
-         return not isinstance(other,UUID) or self.handle == other.handle     
-      if isinstance(other,UUID):
-         return self.handle != other.handle
-      if isinstance(other,basestring):
-         return self.handle != other
-      return True
 
 class Boolean:
   def __init__(self, mgr, handle, isarray = False):       
