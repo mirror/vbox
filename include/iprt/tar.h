@@ -43,26 +43,32 @@ RT_C_DECLS_BEGIN
 /**
  * Check if the specified file exists in the Tar archive.
  *
- * @returns iprt status code.
- * @retval VINF_SUCCESS when the file exists in the Tar archive
- * @retval VERR_FILE_NOT_FOUND when the file not exists in the Tar archive
+ * (The matching is case sensitive.)
  *
- * @note Currently only regular files are supported.
+ * @note    Currently only regular files are supported.
+ *
+ * @returns iprt status code.
+ * @retval  VINF_SUCCESS when the file exists in the Tar archive.
+ * @retval  VERR_FILE_NOT_FOUND when the file not exists in the Tar archive.
  *
  * @param   pszTarFile      Tar file to check.
  * @param   pszFile         Filename to check for.
+ *
+ * @todo    r=bird: rename to RTTarQueryFileExists (or bool RTTarFileExist).
  */
 RTR3DECL(int) RTTarExists(const char *pszTarFile, const char *pszFile);
 
 /**
  * Create a file list from a Tar archive.
  *
+ * @note    Currently only regular files are supported.
+ *
  * @returns iprt status code.
  *
- * @note Currently only regular files are supported.
- *
  * @param   pszTarFile      Tar file to list files from.
- * @param   ppapszFiles     On success the array with the filenames.
+ * @param   ppapszFiles     On success an array with array with the filenames is
+ *                          returned. The names must be freed with RTStrFree and
+ *                          the array with RTMemFree.
  * @param   pcFiles         On success the number of entries in ppapszFiles.
  */
 RTR3DECL(int) RTTarList(const char *pszTarFile, char ***ppapszFiles, size_t *pcFiles);
@@ -70,38 +76,43 @@ RTR3DECL(int) RTTarList(const char *pszTarFile, char ***ppapszFiles, size_t *pcF
 /**
  * Extract a set of files from a Tar archive.
  *
- * The output directory has to exists. Also note that this function is atomic.
- * If an error occurs all previously extracted files will be deleted.
+ * Also note that this function is atomic. If an error occurs all previously
+ * extracted files will be deleted.
  *
- * @note Currently only regular files are supported. Also some of the header
- * fields are not used (uid, gid, uname, gname, mtime).
+ * (The matching is case sensitive.)
+ *
+ * @note    Currently only regular files are supported. Also some of the heade
+ *          fields are not used (uid, gid, uname, gname, mtime).
  *
  * @returns iprt status code.
  *
  * @param   pszTarFile      Tar file to extract files from.
- * @param   pszOutputDir    Where to store the extracted files.
+ * @param   pszOutputDir    Where to store the extracted files. Must exist.
  * @param   papszFiles      Which files should be extracted.
  * @param   cFiles          The number of files in papszFiles.
+ *
+ * @todo    r=bird: Rename to RTTarExtractFiles.
  */
 RTR3DECL(int) RTTarExtract(const char *pszTarFile, const char *pszOutputDir, const char * const *papszFiles, size_t cFiles);
 
 /**
  * Extract a file by index from a Tar archive.
  *
- * The index is starting by zero. The output directory has to exists.
- *
- * @note Currently only regular files are supported. Also some of the header
- * fields are not used (uid, gid, uname, gname, mtime).
+ * @note    Currently only regular files are supported. Also some of the header
+ *          fields are not used (uid, gid, uname, gname, mtime).
  *
  * @returns iprt status code.
- * @retval VERR_FILE_NOT_FOUND when the index isn't valid
+ * @retval  VERR_FILE_NOT_FOUND when the index isn't valid.
  *
  * @param   pszTarFile      Tar file to extract the file from.
- * @param   pszOutputDir    Where to store the extracted file.
- * @param   iIndex          Which file should be extracted.
- * @param   ppszFileName    On success the filename of the extracted file.
+ * @param   pszOutputDir    Where to store the extracted file. Must exist.
+ * @param   iIndex          Which file should be extracted, 0 based.
+ * @param   ppszFileName    On success the filename of the extracted file. Must
+ *                          be freed with RTStrFree.
+ *
+ * @todo    r=bird: Rename to RTTarExtractByIndex.
  */
-RTR3DECL(int) RTTarExtractIndex(const char *pszTarFile, const char *pszOutputDir, size_t iIndex, char** ppszFileName);
+RTR3DECL(int) RTTarExtractIndex(const char *pszTarFile, const char *pszOutputDir, size_t iIndex, char **ppszFileName);
 
 /**
  * Create a Tar archive out of the given files.
