@@ -34,9 +34,9 @@
 class VirtualBox;
 
 class ATL_NO_VTABLE SystemProperties :
-    public VirtualBoxBaseNEXT,
-    public VirtualBoxSupportErrorInfoImpl <SystemProperties, ISystemProperties>,
-    public VirtualBoxSupportTranslation <SystemProperties>,
+    public VirtualBoxBase,
+    public VirtualBoxSupportErrorInfoImpl<SystemProperties, ISystemProperties>,
+    public VirtualBoxSupportTranslation<SystemProperties>,
     VBOX_SCRIPTABLE_IMPL(ISystemProperties)
 {
 public:

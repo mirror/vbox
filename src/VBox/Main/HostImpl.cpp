@@ -151,8 +151,7 @@ HRESULT Host::FinalConstruct()
 
 void Host::FinalRelease()
 {
-    if (isReady())
-        uninit();
+    uninit();
 }
 
 // public initializer/uninitializer for internal purposes only
@@ -163,14 +162,13 @@ void Host::FinalRelease()
  *
  * @param aParent   VirtualBox parent object.
  */
-HRESULT Host::init (VirtualBox *aParent)
+HRESULT Host::init(VirtualBox *aParent)
 {
-    LogFlowThisFunc (("isReady=%d\n", isReady()));
+    LogFlowThisFunc (("aParent=%p\n", aParent));
 
-    ComAssertRet (aParent, E_INVALIDARG);
-
-    AutoWriteLock alock (this);
-    ComAssertRet (!isReady(), E_FAIL);
+    /* Enclose the state transition NotReady->InInit->Ready */
+    AutoInitSpan autoInitSpan (this);
+    AssertReturn (autoInitSpan.isOk(), E_FAIL);
 
     mParent = aParent;
 
@@ -259,7 +257,9 @@ HRESULT Host::init (VirtualBox *aParent)
     f3DAccelerationSupported = is3DAccelerationSupported();
 #endif /* VBOX_WITH_CROGL */
 
-    setReady(true);
+    /* Confirm a successful initialization */
+    autoInitSpan.setSucceeded();
+
     return S_OK;
 }
 
@@ -269,9 +269,12 @@ HRESULT Host::init (VirtualBox *aParent)
  */
 void Host::uninit()
 {
-    LogFlowThisFunc (("isReady=%d\n", isReady()));
+    LogFlowThisFunc (("\n"));
 
-    AssertReturn (isReady(), (void) 0);
+    /* Enclose the state transition Ready->InUninit->NotReady */
+    AutoUninitSpan autoUninitSpan (this);
+    if (autoUninitSpan.uninitDone())
+        return;
 
 #ifdef VBOX_WITH_RESOURCE_USAGE_API
     unregisterMetrics (mParent->performanceCollector());
@@ -294,8 +297,6 @@ void Host::uninit()
 #ifdef VBOX_WITH_USB
     mUSBDeviceFilters.clear();
 #endif
-
-    setReady (FALSE);
 }
 
 // IHost properties
@@ -310,9 +311,13 @@ void Host::uninit()
 STDMETHODIMP Host::COMGETTER(DVDDrives) (ComSafeArrayOut (IHostDVDDrive *, aDrives))
 {
     CheckComArgOutSafeArrayPointerValid(aDrives);
+
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
     AutoWriteLock alock (this);
-    CHECK_READY();
-    std::list <ComObjPtr <HostDVDDrive> > list;
+
+    std::list< ComObjPtr<HostDVDDrive> > list;
     HRESULT rc = S_OK;
     try
     {
@@ -438,10 +443,13 @@ STDMETHODIMP Host::COMGETTER(DVDDrives) (ComSafeArrayOut (IHostDVDDrive *, aDriv
 STDMETHODIMP Host::COMGETTER(FloppyDrives) (ComSafeArrayOut (IHostFloppyDrive *, aDrives))
 {
     CheckComArgOutPointerValid(aDrives);
-    AutoWriteLock alock (this);
-    CHECK_READY();
 
-    std::list <ComObjPtr <HostFloppyDrive> > list;
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
+
+    AutoWriteLock alock(this);
+
+    std::list<ComObjPtr <HostFloppyDrive> > list;
     HRESULT rc = S_OK;
 
     try
@@ -553,8 +561,10 @@ STDMETHODIMP Host::COMGETTER(NetworkInterfaces) (ComSafeArrayOut (IHostNetworkIn
     if (ComSafeArrayOutIsNull (aNetworkInterfaces))
         return E_POINTER;
 
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
     AutoWriteLock alock (this);
-    CHECK_READY();
 
     std::list <ComObjPtr <HostNetworkInterface> > list;
 
@@ -832,8 +842,10 @@ STDMETHODIMP Host::COMGETTER(USBDevices)(ComSafeArrayOut (IHostUSBDevice *, aUSB
 #ifdef VBOX_WITH_USB
     CheckComArgOutSafeArrayPointerValid(aUSBDevices);
 
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
     AutoWriteLock alock (this);
-    CHECK_READY();
 
     MultiResult rc = checkUSBProxyService();
     CheckComRCReturnRC (rc);
@@ -857,8 +869,10 @@ STDMETHODIMP Host::COMGETTER(USBDeviceFilters) (ComSafeArrayOut (IHostUSBDeviceF
 #ifdef VBOX_WITH_USB
     CheckComArgOutSafeArrayPointerValid(aUSBDeviceFilters);
 
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
     AutoWriteLock alock (this);
-    CHECK_READY();
 
     MultiResult rc = checkUSBProxyService();
     CheckComRCReturnRC (rc);
@@ -888,8 +902,11 @@ STDMETHODIMP Host::COMGETTER(USBDeviceFilters) (ComSafeArrayOut (IHostUSBDeviceF
 STDMETHODIMP Host::COMGETTER(ProcessorCount)(ULONG *aCount)
 {
     CheckComArgOutPointerValid(aCount);
-    AutoWriteLock alock (this);
-    CHECK_READY();
+//     AutoCaller autoCaller (this);
+//     CheckComRCReturnRC (autoCaller.rc());
+
+//     AutoReadLock alock (this);
+
     *aCount = RTMpGetPresentCount();
     return S_OK;
 }
@@ -903,8 +920,11 @@ STDMETHODIMP Host::COMGETTER(ProcessorCount)(ULONG *aCount)
 STDMETHODIMP Host::COMGETTER(ProcessorOnlineCount)(ULONG *aCount)
 {
     CheckComArgOutPointerValid(aCount);
-    AutoWriteLock alock (this);
-    CHECK_READY();
+//     AutoCaller autoCaller (this);
+//     CheckComRCReturnRC (autoCaller.rc());
+
+//     AutoReadLock alock (this);
+
     *aCount = RTMpGetOnlineCount();
     return S_OK;
 }
@@ -919,8 +939,11 @@ STDMETHODIMP Host::COMGETTER(ProcessorOnlineCount)(ULONG *aCount)
 STDMETHODIMP Host::GetProcessorSpeed(ULONG aCpuId, ULONG *aSpeed)
 {
     CheckComArgOutPointerValid(aSpeed);
-    AutoWriteLock alock (this);
-    CHECK_READY();
+//     AutoCaller autoCaller (this);
+//     CheckComRCReturnRC (autoCaller.rc());
+
+//     AutoReadLock alock (this);
+
     *aSpeed = RTMpGetMaxFrequency(aCpuId);
     return S_OK;
 }
@@ -934,8 +957,11 @@ STDMETHODIMP Host::GetProcessorSpeed(ULONG aCpuId, ULONG *aSpeed)
 STDMETHODIMP Host::GetProcessorDescription(ULONG aCpuId, BSTR *aDescription)
 {
     CheckComArgOutPointerValid(aDescription);
-    AutoWriteLock alock (this);
-    CHECK_READY();
+//     AutoCaller autoCaller (this);
+//     CheckComRCReturnRC (autoCaller.rc());
+
+//     AutoReadLock alock (this);
+
 
     char szCPUModel[80];
     int vrc = RTMpGetDescription(aCpuId, szCPUModel, sizeof(szCPUModel));
@@ -955,8 +981,10 @@ STDMETHODIMP Host::GetProcessorDescription(ULONG aCpuId, BSTR *aDescription)
 STDMETHODIMP Host::GetProcessorFeature(ProcessorFeature_T aFeature, BOOL *aSupported)
 {
     CheckComArgOutPointerValid(aSupported);
-    AutoWriteLock alock (this);
-    CHECK_READY();
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
+    AutoReadLock alock (this);
 
     switch (aFeature)
     {
@@ -987,8 +1015,11 @@ STDMETHODIMP Host::GetProcessorFeature(ProcessorFeature_T aFeature, BOOL *aSuppo
 STDMETHODIMP Host::COMGETTER(MemorySize)(ULONG *aSize)
 {
     CheckComArgOutPointerValid(aSize);
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
     AutoWriteLock alock (this);
-    CHECK_READY();
+
     /* @todo This is an ugly hack. There must be a function in IPRT for that. */
     pm::CollectorHAL *hal = pm::createHAL();
     if (!hal)
@@ -1009,8 +1040,11 @@ STDMETHODIMP Host::COMGETTER(MemorySize)(ULONG *aSize)
 STDMETHODIMP Host::COMGETTER(MemoryAvailable)(ULONG *aAvailable)
 {
     CheckComArgOutPointerValid(aAvailable);
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
     AutoWriteLock alock (this);
-    CHECK_READY();
+
     /* @todo This is an ugly hack. There must be a function in IPRT for that. */
     pm::CollectorHAL *hal = pm::createHAL();
     if (!hal)
@@ -1031,8 +1065,10 @@ STDMETHODIMP Host::COMGETTER(MemoryAvailable)(ULONG *aAvailable)
 STDMETHODIMP Host::COMGETTER(OperatingSystem)(BSTR *aOs)
 {
     CheckComArgOutPointerValid(aOs);
-    AutoWriteLock alock (this);
-    CHECK_READY();
+//     AutoCaller autoCaller (this);
+//     CheckComRCReturnRC (autoCaller.rc());
+
+//     AutoReadLock alock (this);
 
     char szOSName[80];
     int vrc = RTSystemQueryOSInfo(RTSYSOSINFO_PRODUCT, szOSName, sizeof(szOSName));
@@ -1051,8 +1087,10 @@ STDMETHODIMP Host::COMGETTER(OperatingSystem)(BSTR *aOs)
 STDMETHODIMP Host::COMGETTER(OSVersion)(BSTR *aVersion)
 {
     CheckComArgOutPointerValid(aVersion);
-    AutoWriteLock alock (this);
-    CHECK_READY();
+//     AutoCaller autoCaller (this);
+//     CheckComRCReturnRC (autoCaller.rc());
+
+//     AutoReadLock alock (this);
 
     /* Get the OS release. Reserve some buffer space for the service pack. */
     char szOSRelease[128];
@@ -1088,19 +1126,24 @@ STDMETHODIMP Host::COMGETTER(OSVersion)(BSTR *aVersion)
 STDMETHODIMP Host::COMGETTER(UTCTime)(LONG64 *aUTCTime)
 {
     CheckComArgOutPointerValid(aUTCTime);
-    AutoWriteLock alock (this);
-    CHECK_READY();
+//     AutoCaller autoCaller (this);
+//     CheckComRCReturnRC (autoCaller.rc());
+
+//     AutoReadLock alock (this);
+
     RTTIMESPEC now;
     *aUTCTime = RTTimeSpecGetMilli(RTTimeNow(&now));
+
     return S_OK;
 }
 
 STDMETHODIMP Host::COMGETTER(Acceleration3DAvailable)(BOOL *aSupported)
 {
     CheckComArgOutPointerValid(aSupported);
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
 
-    AutoWriteLock alock(this);
-    CHECK_READY();
+    AutoReadLock alock (this);
 
     *aSupported = f3DAccelerationSupported;
 
@@ -1116,8 +1159,10 @@ Host::CreateHostOnlyNetworkInterface (IHostNetworkInterface **aHostNetworkInterf
     CheckComArgOutPointerValid(aHostNetworkInterface);
     CheckComArgOutPointerValid(aProgress);
 
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
     AutoWriteLock alock (this);
-    CHECK_READY();
 
     int r = NetIfCreateHostOnlyNetworkInterface (mParent, aHostNetworkInterface, aProgress);
     if(RT_SUCCESS(r))
@@ -1136,8 +1181,10 @@ Host::RemoveHostOnlyNetworkInterface (IN_BSTR aId,
     CheckComArgOutPointerValid(aHostNetworkInterface);
     CheckComArgOutPointerValid(aProgress);
 
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
     AutoWriteLock alock (this);
-    CHECK_READY();
 
     /* first check whether an interface with the given name already exists */
     {
@@ -1163,8 +1210,10 @@ STDMETHODIMP Host::CreateUSBDeviceFilter (IN_BSTR aName, IHostUSBDeviceFilter **
     CheckComArgStrNotEmptyOrNull(aName);
     CheckComArgOutPointerValid(aFilter);
 
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
     AutoWriteLock alock (this);
-    CHECK_READY();
 
     ComObjPtr <HostUSBDeviceFilter> filter;
     filter.createObject();
@@ -1189,8 +1238,10 @@ STDMETHODIMP Host::InsertUSBDeviceFilter (ULONG aPosition, IHostUSBDeviceFilter 
     CheckComArgNotNull(aFilter);
 
     /* Note: HostUSBDeviceFilter and USBProxyService also uses this lock. */
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
     AutoWriteLock alock (this);
-    CHECK_READY();
 
     MultiResult rc = checkUSBProxyService();
     CheckComRCReturnRC (rc);
@@ -1238,8 +1289,10 @@ STDMETHODIMP Host::RemoveUSBDeviceFilter (ULONG aPosition, IHostUSBDeviceFilter 
     CheckComArgOutPointerValid(aFilter);
 
     /* Note: HostUSBDeviceFilter and USBProxyService also uses this lock. */
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
     AutoWriteLock alock (this);
-    CHECK_READY();
 
     MultiResult rc = checkUSBProxyService();
     CheckComRCReturnRC (rc);
@@ -1295,8 +1348,10 @@ HRESULT Host::loadSettings (const settings::Key &aGlobal)
 {
     using namespace settings;
 
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
     AutoWriteLock alock (this);
-    CHECK_READY();
 
     AssertReturn (!aGlobal.isNull(), E_FAIL);
 
@@ -1357,8 +1412,10 @@ HRESULT Host::saveSettings (settings::Key &aGlobal)
 {
     using namespace settings;
 
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
     AutoWriteLock alock (this);
-    CHECK_READY();
 
     ComAssertRet (!aGlobal.isNull(), E_FAIL);
 
@@ -1435,8 +1492,10 @@ HRESULT Host::saveSettings (settings::Key &aGlobal)
 HRESULT Host::onUSBDeviceFilterChange (HostUSBDeviceFilter *aFilter,
                                        BOOL aActiveChanged /* = FALSE */)
 {
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
     AutoWriteLock alock (this);
-    CHECK_READY();
 
     if (aFilter->mInList)
     {
@@ -2013,8 +2072,10 @@ bool Host::validateDevice(const char *deviceNode, bool isCDROM)
  */
 HRESULT Host::checkUSBProxyService()
 {
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
+
     AutoWriteLock alock (this);
-    CHECK_READY();
 
     AssertReturn (mUSBProxyService, E_FAIL);
     if (!mUSBProxyService->isActive())

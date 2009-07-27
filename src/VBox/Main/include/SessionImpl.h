@@ -41,9 +41,9 @@
 #endif
 
 class ATL_NO_VTABLE Session :
-    public VirtualBoxBaseNEXT,
-    public VirtualBoxSupportErrorInfoImpl <Session, ISession>,
-    public VirtualBoxSupportTranslation <Session>,
+    public VirtualBoxBase,
+    public VirtualBoxSupportErrorInfoImpl<Session, ISession>,
+    public VirtualBoxSupportTranslation<Session>,
     VBOX_SCRIPTABLE_IMPL(ISession),
     VBOX_SCRIPTABLE_IMPL(IInternalSessionControl)
 #ifdef RT_OS_WINDOWS
@@ -61,7 +61,7 @@ public:
 
     BEGIN_COM_MAP(Session)
         COM_INTERFACE_ENTRY2(IDispatch, ISession)
-        COM_INTERFACE_ENTRY2(IDispatch, IInternalSessionControl)        
+        COM_INTERFACE_ENTRY2(IDispatch, IInternalSessionControl)
         COM_INTERFACE_ENTRY(IInternalSessionControl)
         COM_INTERFACE_ENTRY(ISupportErrorInfo)
         COM_INTERFACE_ENTRY(ISession)
