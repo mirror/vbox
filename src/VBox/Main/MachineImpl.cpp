@@ -1729,7 +1729,7 @@ STDMETHODIMP Machine::COMGETTER(SnapshotCount)(ULONG *aSnapshotCount)
 
     *aSnapshotCount = !mData->mFirstSnapshot
                           ? 0
-                          : mData->mFirstSnapshot->getGrandChildrenCount() + 1;
+                          : mData->mFirstSnapshot->getAllChildrenCount() + 1;
 
     return S_OK;
 }
@@ -4330,7 +4330,7 @@ HRESULT Machine::trySetRegistered (BOOL aRegistered)
 
         size_t snapshotCount = 0;
         if (mData->mFirstSnapshot)
-            snapshotCount = mData->mFirstSnapshot->getGrandChildrenCount() + 1;
+            snapshotCount = mData->mFirstSnapshot->getAllChildrenCount() + 1;
         if (snapshotCount)
             return setError (VBOX_E_INVALID_OBJECT_STATE,
                 tr ("Cannot unregister the machine '%ls' because it "
@@ -9213,7 +9213,7 @@ STDMETHODIMP SessionMachine::DiscardSnapshot(IConsole *aInitiator,
 
     AutoWriteLock snapshotLock(snapshot);
 
-    size_t childrenCount = snapshot->getGrandChildrenCount();
+    size_t childrenCount = snapshot->getChildrenCount();
     if (childrenCount > 1)
         return setError(VBOX_E_INVALID_OBJECT_STATE,
                         tr("Snapshot '%ls' of the machine '%ls' has more than one child snapshot (%d)"),

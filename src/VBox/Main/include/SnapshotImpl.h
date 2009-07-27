@@ -99,7 +99,9 @@ public:
         return (Snapshot*)mParent;
     }
 
-    ULONG getGrandChildrenCount();
+    ULONG getChildrenCount();
+    ULONG getAllChildrenCount();
+    ULONG getAllChildrenCountImpl();
 
     ComPtr<SnapshotMachine> getSnapshotMachine();
 

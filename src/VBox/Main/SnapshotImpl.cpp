@@ -405,7 +405,7 @@ const Bstr& Snapshot::stateFilePath() const
     return m->pMachine->mSSData->mStateFilePath;
 }
 
-ULONG Snapshot::getGrandChildrenCount()
+ULONG Snapshot::getChildrenCount()
 {
     AutoCaller autoCaller(this);
     AssertComRC(autoCaller.rc());
@@ -413,15 +413,33 @@ ULONG Snapshot::getGrandChildrenCount()
     AutoReadLock chLock(m->pMachine->snapshotsTreeLockHandle());
     AutoReadLock alock(this);
 
+    return (ULONG)m->llChildren.size();
+}
+
+ULONG Snapshot::getAllChildrenCountImpl()
+{
+    AutoCaller autoCaller(this);
+    AssertComRC(autoCaller.rc());
+
+    AutoReadLock alock(this);
     ULONG count = (ULONG)m->llChildren.size();
     for (SnapshotsList::const_iterator it = m->llChildren.begin();
          it != m->llChildren.end();
          ++it)
     {
-        count += (*it)->getGrandChildrenCount();
+        count += (*it)->getAllChildrenCountImpl();
     }
 
     return count;
+}
+
+ULONG Snapshot::getAllChildrenCount()
+{
+    AutoCaller autoCaller(this);
+    AssertComRC(autoCaller.rc());
+
+    AutoReadLock chLock(m->pMachine->snapshotsTreeLockHandle());
+    return getAllChildrenCountImpl();
 }
 
 ComPtr<SnapshotMachine> Snapshot::getSnapshotMachine()
