@@ -1720,36 +1720,36 @@ static void vdiDump(void *pBackendData)
 {
     PVDIIMAGEDESC pImage = (PVDIIMAGEDESC)pBackendData;
 
-    RTLogPrintf("Dumping VDI image \"%s\" mode=%s uOpenFlags=%X File=%08X\n",
+    pImage->pInterfaceErrorCallbacks->pfnMessage(pImage->pInterfaceError->pvUser, "Dumping VDI image \"%s\" mode=%s uOpenFlags=%X File=%08X\n",
                 pImage->pszFilename,
                 (pImage->uOpenFlags & VD_OPEN_FLAGS_READONLY) ? "r/o" : "r/w",
                 pImage->uOpenFlags,
                 pImage->File);
-    RTLogPrintf("Header: Version=%08X Type=%X Flags=%X Size=%llu\n",
+    pImage->pInterfaceErrorCallbacks->pfnMessage(pImage->pInterfaceError->pvUser, "Header: Version=%08X Type=%X Flags=%X Size=%llu\n",
                 pImage->PreHeader.u32Version,
                 getImageType(&pImage->Header),
                 getImageFlags(&pImage->Header),
                 getImageDiskSize(&pImage->Header));
-    RTLogPrintf("Header: cbBlock=%u cbBlockExtra=%u cBlocks=%u cBlocksAllocated=%u\n",
+    pImage->pInterfaceErrorCallbacks->pfnMessage(pImage->pInterfaceError->pvUser, "Header: cbBlock=%u cbBlockExtra=%u cBlocks=%u cBlocksAllocated=%u\n",
                 getImageBlockSize(&pImage->Header),
                 getImageExtraBlockSize(&pImage->Header),
                 getImageBlocks(&pImage->Header),
                 getImageBlocksAllocated(&pImage->Header));
-    RTLogPrintf("Header: offBlocks=%u offData=%u\n",
+    pImage->pInterfaceErrorCallbacks->pfnMessage(pImage->pInterfaceError->pvUser, "Header: offBlocks=%u offData=%u\n",
                 getImageBlocksOffset(&pImage->Header),
                 getImageDataOffset(&pImage->Header));
     PVDIDISKGEOMETRY pg = getImageLCHSGeometry(&pImage->Header);
     if (pg)
-        RTLogPrintf("Header: Geometry: C/H/S=%u/%u/%u cbSector=%u\n",
+        pImage->pInterfaceErrorCallbacks->pfnMessage(pImage->pInterfaceError->pvUser, "Header: Geometry: C/H/S=%u/%u/%u cbSector=%u\n",
                     pg->cCylinders, pg->cHeads, pg->cSectors, pg->cbSector);
-    RTLogPrintf("Header: uuidCreation={%RTuuid}\n", getImageCreationUUID(&pImage->Header));
-    RTLogPrintf("Header: uuidModification={%RTuuid}\n", getImageModificationUUID(&pImage->Header));
-    RTLogPrintf("Header: uuidParent={%RTuuid}\n", getImageParentUUID(&pImage->Header));
+    pImage->pInterfaceErrorCallbacks->pfnMessage(pImage->pInterfaceError->pvUser, "Header: uuidCreation={%RTuuid}\n", getImageCreationUUID(&pImage->Header));
+    pImage->pInterfaceErrorCallbacks->pfnMessage(pImage->pInterfaceError->pvUser, "Header: uuidModification={%RTuuid}\n", getImageModificationUUID(&pImage->Header));
+    pImage->pInterfaceErrorCallbacks->pfnMessage(pImage->pInterfaceError->pvUser, "Header: uuidParent={%RTuuid}\n", getImageParentUUID(&pImage->Header));
     if (GET_MAJOR_HEADER_VERSION(&pImage->Header) >= 1)
-        RTLogPrintf("Header: uuidParentModification={%RTuuid}\n", getImageParentModificationUUID(&pImage->Header));
-    RTLogPrintf("Image:  fFlags=%08X offStartBlocks=%u offStartData=%u\n",
+        pImage->pInterfaceErrorCallbacks->pfnMessage(pImage->pInterfaceError->pvUser, "Header: uuidParentModification={%RTuuid}\n", getImageParentModificationUUID(&pImage->Header));
+    pImage->pInterfaceErrorCallbacks->pfnMessage(pImage->pInterfaceError->pvUser, "Image:  fFlags=%08X offStartBlocks=%u offStartData=%u\n",
                 pImage->uImageFlags, pImage->offStartBlocks, pImage->offStartData);
-    RTLogPrintf("Image:  uBlockMask=%08X cbTotalBlockData=%u uShiftOffset2Index=%u offStartBlockData=%u\n",
+    pImage->pInterfaceErrorCallbacks->pfnMessage(pImage->pInterfaceError->pvUser, "Image:  uBlockMask=%08X cbTotalBlockData=%u uShiftOffset2Index=%u offStartBlockData=%u\n",
                 pImage->uBlockMask,
                 pImage->cbTotalBlockData,
                 pImage->uShiftOffset2Index,
@@ -1767,12 +1767,12 @@ static void vdiDump(void *pBackendData)
     }
     if (cBlocksNotFree != getImageBlocksAllocated(&pImage->Header))
     {
-        RTLogPrintf("!! WARNING: %u blocks actually allocated (cBlocksAllocated=%u) !!\n",
+        pImage->pInterfaceErrorCallbacks->pfnMessage(pImage->pInterfaceError->pvUser, "!! WARNING: %u blocks actually allocated (cBlocksAllocated=%u) !!\n",
                 cBlocksNotFree, getImageBlocksAllocated(&pImage->Header));
     }
     if (cBadBlocks)
     {
-        RTLogPrintf("!! WARNING: %u bad blocks found !!\n",
+        pImage->pInterfaceErrorCallbacks->pfnMessage(pImage->pInterfaceError->pvUser, "!! WARNING: %u bad blocks found !!\n",
                 cBadBlocks);
     }
 }

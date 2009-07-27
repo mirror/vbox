@@ -813,6 +813,7 @@ int handleConvertFromRaw(int argc, char *argv[])
     vdInterfaceErrorCallbacks.cbSize       = sizeof(VDINTERFACEERROR);
     vdInterfaceErrorCallbacks.enmInterface = VDINTERFACETYPE_ERROR;
     vdInterfaceErrorCallbacks.pfnError     = handleVDError;
+    vdInterfaceErrorCallbacks.pfnMessage   = NULL;
 
     rc = VDInterfaceAdd(&vdInterfaceError, "VBoxManage_IError", VDINTERFACETYPE_ERROR,
                         &vdInterfaceErrorCallbacks, NULL, &pVDIfs);

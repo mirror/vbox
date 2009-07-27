@@ -5681,14 +5681,14 @@ static void vmdkDump(void *pBackendData)
     AssertPtr(pImage);
     if (pImage)
     {
-        RTLogPrintf("Header: Geometry PCHS=%u/%u/%u LCHS=%u/%u/%u cbSector=%llu\n",
+        pImage->pInterfaceErrorCallbacks->pfnMessage(pImage->pInterfaceError->pvUser, "Header: Geometry PCHS=%u/%u/%u LCHS=%u/%u/%u cbSector=%llu\n",
                     pImage->PCHSGeometry.cCylinders, pImage->PCHSGeometry.cHeads, pImage->PCHSGeometry.cSectors,
                     pImage->LCHSGeometry.cCylinders, pImage->LCHSGeometry.cHeads, pImage->LCHSGeometry.cSectors,
                     VMDK_BYTE2SECTOR(pImage->cbSize));
-        RTLogPrintf("Header: uuidCreation={%RTuuid}\n", &pImage->ImageUuid);
-        RTLogPrintf("Header: uuidModification={%RTuuid}\n", &pImage->ModificationUuid);
-        RTLogPrintf("Header: uuidParent={%RTuuid}\n", &pImage->ParentUuid);
-        RTLogPrintf("Header: uuidParentModification={%RTuuid}\n", &pImage->ParentModificationUuid);
+        pImage->pInterfaceErrorCallbacks->pfnMessage(pImage->pInterfaceError->pvUser, "Header: uuidCreation={%RTuuid}\n", &pImage->ImageUuid);
+        pImage->pInterfaceErrorCallbacks->pfnMessage(pImage->pInterfaceError->pvUser, "Header: uuidModification={%RTuuid}\n", &pImage->ModificationUuid);
+        pImage->pInterfaceErrorCallbacks->pfnMessage(pImage->pInterfaceError->pvUser, "Header: uuidParent={%RTuuid}\n", &pImage->ParentUuid);
+        pImage->pInterfaceErrorCallbacks->pfnMessage(pImage->pInterfaceError->pvUser, "Header: uuidParentModification={%RTuuid}\n", &pImage->ParentModificationUuid);
     }
 }
 

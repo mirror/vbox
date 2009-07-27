@@ -959,7 +959,7 @@ static void parallelsDump(void *pBackendData)
     Assert(pImage);
     if (pImage)
     {
-        RTLogPrintf("Header: Geometry PCHS=%u/%u/%u LCHS=%u/%u/%u\n",
+        pImage->pInterfaceErrorCallbacks->pfnMessage(pImage->pInterfaceError->pvUser, "Header: Geometry PCHS=%u/%u/%u LCHS=%u/%u/%u\n",
                     pImage->PCHSGeometry.cCylinders, pImage->PCHSGeometry.cHeads, pImage->PCHSGeometry.cSectors,
                     pImage->LCHSGeometry.cCylinders, pImage->LCHSGeometry.cHeads, pImage->LCHSGeometry.cSectors);
     }
