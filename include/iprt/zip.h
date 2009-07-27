@@ -85,7 +85,13 @@ typedef enum RTZIPTYPE
     /** BZlib compress. */
     RTZIPTYPE_BZLIB,
     /** libLZF compress. */
-    RTZIPTYPE_LZF
+    RTZIPTYPE_LZF,
+    /** Lempel-Ziv-Jeff-Bonwick compression. */
+    RTZIPTYPE_LZJB,
+    /** Lempel-Ziv-Oberhumer compression. */
+    RTZIPTYPE_LZO,
+    /** End of valid the valid compression types.  */
+    RTZIPTYPE_END
 } RTZIPTYPE;
 
 /**
@@ -105,7 +111,7 @@ typedef enum RTZIPLEVEL
 
 
 /**
- * Create a compressor instance.
+ * Create a stream compressor instance.
  *
  * @returns iprt status code.
  * @param   ppZip       Where to store the instance handle.
@@ -131,12 +137,12 @@ RTDECL(int)     RTZipCompress(PRTZIPCOMP pZip, const void *pvBuf, size_t cbBuf);
  * This will flush all data and terminate the compression data stream.
  *
  * @returns iprt status code.
- * @param   pZip        The compressor instance.
+ * @param   pZip        The stream compressor instance.
  */
 RTDECL(int)     RTZipCompFinish(PRTZIPCOMP pZip);
 
 /**
- * Destroys the compressor instance.
+ * Destroys the stream compressor instance.
  *
  * @returns iprt status code.
  * @param   pZip        The compressor instance.
@@ -145,7 +151,7 @@ RTDECL(int)     RTZipCompDestroy(PRTZIPCOMP pZip);
 
 
 /**
- * Create a decompressor instance.
+ * Create a stream decompressor instance.
  *
  * @returns iprt status code.
  * @param   ppZip       Where to store the instance handle.
@@ -158,7 +164,7 @@ RTDECL(int)     RTZipDecompCreate(PRTZIPDECOMP *ppZip, void *pvUser, PFNRTZIPIN 
  * Decompresses a chunk of memory.
  *
  * @returns iprt status code.
- * @param   pZip        The decompressor instance.
+ * @param   pZip        The stream decompressor instance.
  * @param   pvBuf       Where to store the decompressed data.
  * @param   cbBuf       Number of bytes to produce. If pcbWritten is set
  *                      any number of bytes up to cbBuf might be returned.
@@ -168,12 +174,50 @@ RTDECL(int)     RTZipDecompCreate(PRTZIPDECOMP *ppZip, void *pvUser, PFNRTZIPIN 
 RTDECL(int)     RTZipDecompress(PRTZIPDECOMP pZip, void *pvBuf, size_t cbBuf, size_t *pcbWritten);
 
 /**
- * Destroys the decompressor instance.
+ * Destroys the stream decompressor instance.
  *
  * @returns iprt status code.
  * @param   pZip        The decompressor instance.
  */
 RTDECL(int)     RTZipDecompDestroy(PRTZIPDECOMP pZip);
+
+
+/**
+ * Compress a chunk of memory into a block.
+ *
+ * @returns IPRT status code.
+ *
+ * @param   enmType         The compression type.
+ * @param   enmLevel        The compression level.
+ * @param   fFlags          Flags reserved for future extensions, MBZ.
+ * @param   pvSrc           Pointer to the input block.
+ * @param   cbSrc           Size of the input block.
+ * @param   pvDst           Pointer to the output buffer.
+ * @param   cbDst           The size of the output buffer.
+ * @param   pcbDstActual    Where to return the compressed size.
+ */
+RTDECL(int)     RTZipBlockCompress(RTZIPTYPE enmType, RTZIPLEVEL enmLevel, uint32_t fFlags,
+                                   void const *pvSrc, size_t cbSrc,
+                                   void *pvDst, size_t cbDst, size_t *pcbDstActual) RT_NO_THROW;
+
+
+/**
+ * Decompress a block.
+ *
+ * @returns IPRT status code.
+ *
+ * @param   enmType         The compression type.
+ * @param   fFlags          Flags reserved for future extensions, MBZ.
+ * @param   pvSrc           Pointer to the input block.
+ * @param   cbSrc           Size of the input block.
+ * @param   pcbSrcActual    Where to return the compressed size.
+ * @param   pvDst           Pointer to the output buffer.
+ * @param   cbDst           The size of the output buffer.
+ * @param   pcbDstActual    Where to return the decompressed size.
+ */
+RTDECL(int)     RTZipBlockDecompress(RTZIPTYPE enmType, uint32_t fFlags,
+                                     void const *pvSrc, size_t cbSrc, size_t *pcbSrcActual,
+                                     void *pvDst, size_t cbDst, size_t *pcbDstActual) RT_NO_THROW;
 
 
 /** @} */
