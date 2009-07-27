@@ -2757,6 +2757,11 @@ static int iscsiRead(void *pBackendData, uint64_t uOffset, void *pvBuf,
         goto out;
     }
 
+    /*
+     * Clip read size to a value which is supported by many targets.
+     */
+    cbToRead = RT_MIN(cbToRead, _256K);
+
     lba = uOffset / pImage->cbSector;
     tls = (uint16_t)(cbToRead / pImage->cbSector);
     SCSIREQ sr;
@@ -2786,7 +2791,12 @@ static int iscsiRead(void *pBackendData, uint64_t uOffset, void *pvBuf,
 
     rc = iscsiCommand(pImage, &sr);
     if (RT_FAILURE(rc))
+    {
         AssertMsgFailed(("iscsiCommand(%s, %#llx) -> %Rrc\n", pImage->pszTargetName, uOffset, rc));
+        *pcbActuallyRead = 0;
+    }
+    else
+        *pcbActuallyRead = cbToRead;
 
 out:
     LogFlowFunc(("returns %Rrc\n", rc));
@@ -2820,6 +2830,11 @@ static int iscsiWrite(void *pBackendData, uint64_t uOffset, const void *pvBuf,
 
     *pcbPreRead = 0;
     *pcbPostRead = 0;
+
+    /*
+     * Clip write size to a value which is supported by many targets.
+     */
+    cbToWrite = RT_MIN(cbToWrite, _256K);
 
     lba = uOffset / pImage->cbSector;
     tls = (uint16_t)(cbToWrite / pImage->cbSector);
