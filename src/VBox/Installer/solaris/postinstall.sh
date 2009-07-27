@@ -166,9 +166,11 @@ if test "$currentzone" = "global"; then
 
     # Update boot archive
     BOOTADMBIN=/sbin/bootadm
-    if test -f "$BOOTADMBIN" || test -h "$BOOTADMBIN"; then
+    if test -x "$BOOTADMBIN"; then
         echo "Updating boot archive..."
         $BOOTADMBIN update-archive > /dev/null
+    else
+        echo "## $BOOTADMBIN not found/executable. Skipped explicit boot-archive update."
     fi
 fi
 
