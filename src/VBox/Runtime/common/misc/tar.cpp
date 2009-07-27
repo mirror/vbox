@@ -311,7 +311,7 @@ static int rtTarSkipData(RTFILE hFile, PRTTARRECORD pRecord)
 }
 
 
-RTR3DECL(int) RTTarExists(const char *pszTarFile, const char *pszFile)
+RTR3DECL(int) RTTarQueryFileExists(const char *pszTarFile, const char *pszFile)
 {
     /* Validate input */
     AssertPtrReturn(pszTarFile, VERR_INVALID_POINTER);
@@ -452,7 +452,7 @@ RTR3DECL(int) RTTarList(const char *pszTarFile, char ***ppapszFiles, size_t *pcF
     return rc;
 }
 
-RTR3DECL(int) RTTarExtract(const char *pszTarFile, const char *pszOutputDir, const char * const *papszFiles, size_t cFiles)
+RTR3DECL(int) RTTarExtractFiles(const char *pszTarFile, const char *pszOutputDir, const char * const *papszFiles, size_t cFiles)
 {
     /* Validate input */
     AssertPtrReturn(pszTarFile, VERR_INVALID_POINTER);
@@ -547,7 +547,7 @@ RTR3DECL(int) RTTarExtract(const char *pszTarFile, const char *pszOutputDir, con
     return rc;
 }
 
-RTR3DECL(int) RTTarExtractIndex(const char *pszTarFile, const char *pszOutputDir, size_t iIndex, char **ppszFileName)
+RTR3DECL(int) RTTarExtractByIndex(const char *pszTarFile, const char *pszOutputDir, size_t iIndex, char **ppszFileName)
 {
     /* Validate input */
     AssertPtrReturn(pszTarFile, VERR_INVALID_POINTER);
