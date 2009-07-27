@@ -1718,17 +1718,18 @@ STDMETHODIMP Machine::COMGETTER(CurrentSnapshot) (ISnapshot **aCurrentSnapshot)
     return S_OK;
 }
 
-STDMETHODIMP Machine::COMGETTER(SnapshotCount) (ULONG *aSnapshotCount)
+STDMETHODIMP Machine::COMGETTER(SnapshotCount)(ULONG *aSnapshotCount)
 {
     CheckComArgOutPointerValid (aSnapshotCount);
 
     AutoCaller autoCaller (this);
     CheckComRCReturnRC (autoCaller.rc());
 
-    AutoReadLock alock (this);
+    AutoReadLock alock(this);
 
-    *aSnapshotCount = !mData->mFirstSnapshot ? 0 :
-                      mData->mFirstSnapshot->descendantCount() + 1 /* self */;
+    *aSnapshotCount = !mData->mFirstSnapshot
+                          ? 0
+                          : mData->mFirstSnapshot->getGrandChildrenCount() + 1;
 
     return S_OK;
 }
@@ -2106,14 +2107,14 @@ STDMETHODIMP Machine::AttachHardDisk(IN_BSTR aId,
             {
                 AutoReadLock snapLock (snap);
 
-                const HDData::AttachmentList &snapAtts =
-                    snap->data().mMachine->mHDData->mAttachments;
+                const HDData::AttachmentList &snapAtts = snap->getSnapshotMachine()->mHDData->mAttachments;
 
                 HDData::AttachmentList::const_iterator foundIt = snapAtts.end();
                 uint32_t foundLevel = 0;
 
-                for (HDData::AttachmentList::const_iterator
-                     it = snapAtts.begin(); it != snapAtts.end(); ++ it)
+                for (HDData::AttachmentList::const_iterator it = snapAtts.begin();
+                     it != snapAtts.end();
+                     ++it)
                 {
                     uint32_t level = 0;
                     if ((*it)->hardDisk()->root (&level).equalsTo (hd))
@@ -4329,7 +4330,7 @@ HRESULT Machine::trySetRegistered (BOOL aRegistered)
 
         size_t snapshotCount = 0;
         if (mData->mFirstSnapshot)
-            snapshotCount = mData->mFirstSnapshot->descendantCount() + 1;
+            snapshotCount = mData->mFirstSnapshot->getGrandChildrenCount() + 1;
         if (snapshotCount)
             return setError (VBOX_E_INVALID_OBJECT_STATE,
                 tr ("Cannot unregister the machine '%ls' because it "
@@ -5124,9 +5125,14 @@ HRESULT Machine::loadSnapshot (const settings::Key &aNode,
         }
 
         /* initialize the snapshot */
-        rc = snapshot->init (uuid, name, description, timeStamp,
-                             snapshotMachine, aParentSnapshot);
-        CheckComRCReturnRC (rc);
+        rc = snapshot->init(mParent, // VirtualBox object
+                            uuid,
+                            name,
+                            description,
+                            timeStamp,
+                            snapshotMachine,
+                            aParentSnapshot);
+        CheckComRCReturnRC(rc);
     }
 
     /* memorize the first snapshot if necessary */
@@ -5134,7 +5140,9 @@ HRESULT Machine::loadSnapshot (const settings::Key &aNode,
         mData->mFirstSnapshot = snapshot;
 
     /* memorize the current snapshot when appropriate */
-    if (!mData->mCurrentSnapshot && snapshot->data().mId == aCurSnapshotId)
+    if (    !mData->mCurrentSnapshot
+         && snapshot->getId() == aCurSnapshotId
+       )
         mData->mCurrentSnapshot = snapshot;
 
     /* Snapshots node (optional) */
@@ -5725,12 +5733,12 @@ HRESULT Machine::findSnapshotNode (Snapshot *aSnapshot, settings::Key &aMachineN
     aSnapshotNode->setNull();
 
     // build the full uuid path (from the top parent to the given snapshot)
-    std::list <Guid> path;
+    std::list<Guid> path;
     {
-        ComObjPtr <Snapshot> parent = aSnapshot;
+        ComObjPtr<Snapshot> parent = aSnapshot;
         while (parent)
         {
-            path.push_front (parent->data().mId);
+            path.push_front(parent->getId());
             parent = parent->parent();
         }
     }
@@ -6267,8 +6275,8 @@ HRESULT Machine::saveSettings (int aFlags /*= 0*/)
         if (!mData->mCurrentSnapshot.isNull())
         {
             Assert (!mData->mFirstSnapshot.isNull());
-            machineNode.setValue <Guid> ("currentSnapshot",
-                                         mData->mCurrentSnapshot->data().mId);
+            machineNode.setValue<Guid>("currentSnapshot",
+                                       mData->mCurrentSnapshot->getId());
         }
         else
         {
@@ -6521,7 +6529,7 @@ HRESULT Machine::saveSnapshotSettingsWorker (settings::Key &aMachineNode,
                 do
                 {
                     Key snapshotNode = snapshotsNode.appendKey ("Snapshot");
-                    rc = saveSnapshot (snapshotNode, aSnapshot, false /* aAttrsOnly */);
+                    rc = aSnapshot->saveSnapshot(snapshotNode, false /* aAttrsOnly */);
                     CheckComRCBreakRC (rc);
 
                     /* when a new snapshot is added, this means diffs were created
@@ -6570,14 +6578,14 @@ HRESULT Machine::saveSnapshotSettingsWorker (settings::Key &aMachineNode,
             snapshotsNode = aMachineNode;
 
         if (op == SaveSS_UpdateAttrsOp)
-            rc = saveSnapshot (snapshotNode, aSnapshot, true /* aAttrsOnly */);
+            rc = aSnapshot->saveSnapshot(snapshotNode, true /* aAttrsOnly */);
         else
         {
             if (!snapshotNode.isNull())
                 snapshotNode.zap();
 
             snapshotNode = snapshotsNode.appendKey ("Snapshot");
-            rc = saveSnapshot (snapshotNode, aSnapshot, false /* aAttrsOnly */);
+            rc = aSnapshot->saveSnapshot(snapshotNode, false /* aAttrsOnly */);
             CheckComRCBreakRC (rc);
         }
     }
@@ -6589,8 +6597,8 @@ HRESULT Machine::saveSnapshotSettingsWorker (settings::Key &aMachineNode,
         if (aOpFlags & SaveSS_CurrentId)
         {
             if (!mData->mCurrentSnapshot.isNull())
-                aMachineNode.setValue <Guid> ("currentSnapshot",
-                                              mData->mCurrentSnapshot->data().mId);
+                aMachineNode.setValue<Guid>("currentSnapshot",
+                                            mData->mCurrentSnapshot->getId());
             else
                 aMachineNode.zapValue ("currentSnapshot");
         }
@@ -6603,99 +6611,6 @@ HRESULT Machine::saveSnapshotSettingsWorker (settings::Key &aMachineNode,
     }
 
     return rc;
-}
-
-/**
- *  Saves the given snapshot and all its children (unless \a aAttrsOnly is true).
- *  It is assumed that the given node is empty (unless \a aAttrsOnly is true).
- *
- *  @param aNode        <Snapshot> node to save the snapshot to.
- *  @param aSnapshot    Snapshot to save.
- *  @param aAttrsOnly   If true, only updatge user-changeable attrs.
- */
-HRESULT Machine::saveSnapshot (settings::Key &aNode, Snapshot *aSnapshot, bool aAttrsOnly)
-{
-    using namespace settings;
-
-    AssertReturn (!aNode.isNull() && aSnapshot, E_INVALIDARG);
-    AssertReturn (mType == IsMachine || mType == IsSessionMachine, E_FAIL);
-
-    /* uuid (required) */
-    if (!aAttrsOnly)
-        aNode.setValue <Guid> ("uuid", aSnapshot->data().mId);
-
-    /* name (required) */
-    aNode.setValue <Bstr> ("name", aSnapshot->data().mName);
-
-    /* timeStamp (required) */
-    aNode.setValue <RTTIMESPEC> ("timeStamp", aSnapshot->data().mTimeStamp);
-
-    /* Description node (optional) */
-    if (!aSnapshot->data().mDescription.isNull())
-    {
-        Key descNode = aNode.createKey ("Description");
-        descNode.setKeyValue <Bstr> (aSnapshot->data().mDescription);
-    }
-    else
-    {
-        Key descNode = aNode.findKey ("Description");
-        if (!descNode.isNull())
-            descNode.zap();
-    }
-
-    if (aAttrsOnly)
-        return S_OK;
-
-    /* stateFile (optional) */
-    if (aSnapshot->stateFilePath())
-    {
-        /* try to make the file name relative to the settings file dir */
-        Utf8Str stateFilePath = aSnapshot->stateFilePath();
-        calculateRelativePath (stateFilePath, stateFilePath);
-        aNode.setStringValue ("stateFile", stateFilePath);
-    }
-
-    {
-        ComObjPtr <SnapshotMachine> snapshotMachine = aSnapshot->data().mMachine;
-        ComAssertRet (!snapshotMachine.isNull(), E_FAIL);
-
-        /* save hardware */
-        {
-            Key hwNode = aNode.createKey ("Hardware");
-            HRESULT rc = snapshotMachine->saveHardware (hwNode);
-            CheckComRCReturnRC (rc);
-        }
-
-        /* save hard disks. */
-        {
-            Key storageNode = aNode.createKey ("StorageControllers");
-            HRESULT rc = snapshotMachine->saveStorageControllers (storageNode);
-            CheckComRCReturnRC (rc);
-        }
-    }
-
-    /* save children */
-    {
-        AutoWriteLock listLock (aSnapshot->childrenLock ());
-
-        if (aSnapshot->children().size())
-        {
-            Key snapshotsNode = aNode.createKey ("Snapshots");
-
-            HRESULT rc = S_OK;
-
-            for (Snapshot::SnapshotList::const_iterator it = aSnapshot->children().begin();
-                 it != aSnapshot->children().end();
-                 ++ it)
-            {
-                Key snapshotNode = snapshotsNode.createKey ("Snapshot");
-                rc = saveSnapshot (snapshotNode, (*it), aAttrsOnly);
-                CheckComRCReturnRC (rc);
-            }
-        }
-    }
-
-    return S_OK;
 }
 
 /**
@@ -9198,9 +9113,13 @@ STDMETHODIMP SessionMachine::BeginTakingSnapshot (
     RTTIMESPEC time;
     ComObjPtr <Snapshot> snapshot;
     snapshot.createObject();
-    rc = snapshot->init (snapshotId, aName, aDescription,
-                         *RTTimeNow (&time), snapshotMachine,
-                         mData->mCurrentSnapshot);
+    rc = snapshot->init(mParent,
+                        snapshotId,
+                        aName,
+                        aDescription,
+                        *RTTimeNow(&time),
+                        snapshotMachine,
+                        mData->mCurrentSnapshot);
     AssertComRCReturnRC (rc);
 
     /* create and start the task on a separate thread (note that it will not
@@ -9267,9 +9186,10 @@ STDMETHODIMP SessionMachine::EndTakingSnapshot (BOOL aSuccess)
 /**
  *  @note Locks mParent + this + children objects for writing!
  */
-STDMETHODIMP SessionMachine::DiscardSnapshot (
-    IConsole *aInitiator, IN_BSTR aId,
-    MachineState_T *aMachineState, IProgress **aProgress)
+STDMETHODIMP SessionMachine::DiscardSnapshot(IConsole *aInitiator,
+                                             IN_BSTR aId,
+                                             MachineState_T *aMachineState,
+                                             IProgress **aProgress)
 {
     LogFlowThisFunc (("\n"));
 
@@ -9281,26 +9201,25 @@ STDMETHODIMP SessionMachine::DiscardSnapshot (
     AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
 
     /* saveSettings() needs mParent lock */
-    AutoMultiWriteLock2 alock (mParent, this);
+//     AutoMultiWriteLock2 alock (mParent, this);
 
     ComAssertRet (!Global::IsOnlineOrTransient (mData->mMachineState), E_FAIL);
 
-    ComObjPtr <Snapshot> snapshot;
-    HRESULT rc = findSnapshot (id, snapshot, true /* aSetError */);
+    AutoWriteLock treeLock(snapshotsTreeLockHandle());
+
+    ComObjPtr<Snapshot> snapshot;
+    HRESULT rc = findSnapshot(id, snapshot, true /* aSetError */);
     CheckComRCReturnRC (rc);
 
-    AutoWriteLock snapshotLock (snapshot);
+    AutoWriteLock snapshotLock(snapshot);
 
-    {
-        AutoWriteLock chLock (snapshot->childrenLock());
-        size_t childrenCount = snapshot->children().size();
-        if (childrenCount > 1)
-            return setError (VBOX_E_INVALID_OBJECT_STATE,
-                tr ("Snapshot '%ls' of the machine '%ls' has more than one "
-                    "child snapshot (%d)"),
-                snapshot->data().mName.raw(), mUserData->mName.raw(),
-                childrenCount);
-    }
+    size_t childrenCount = snapshot->getGrandChildrenCount();
+    if (childrenCount > 1)
+        return setError(VBOX_E_INVALID_OBJECT_STATE,
+                        tr("Snapshot '%ls' of the machine '%ls' has more than one child snapshot (%d)"),
+                        snapshot->getName().raw(),
+                        mUserData->mName.raw(),
+                        childrenCount);
 
     /* If the snapshot being discarded is the current one, ensure current
      * settings are committed and saved.
@@ -9309,8 +9228,16 @@ STDMETHODIMP SessionMachine::DiscardSnapshot (
     {
         if (isModified())
         {
+            snapshotLock.unlock();
+            treeLock.unlock();
+
+            AutoWriteLock vboxLock(mParent);
             rc = saveSettings();
-            CheckComRCReturnRC (rc);
+            CheckComRCReturnRC(rc);
+            vboxLock.unlock();
+
+            treeLock.lock();
+            snapshotLock.lock();
         }
     }
 
@@ -9320,10 +9247,10 @@ STDMETHODIMP SessionMachine::DiscardSnapshot (
     ComObjPtr <Progress> progress;
     progress.createObject();
     rc = progress->init (mParent, aInitiator,
-                         Bstr (Utf8StrFmt (tr ("Discarding snapshot '%ls'"),
-                             snapshot->data().mName.raw())),
+                         Bstr(Utf8StrFmt(tr("Discarding snapshot '%ls'"),
+                                            snapshot->getName().raw())),
                          FALSE /* aCancelable */,
-                         1 + (ULONG)snapshot->data().mMachine->mHDData->mAttachments.size() +
+                         1 + (ULONG)snapshot->getSnapshotMachine()->mHDData->mAttachments.size() +
                          (snapshot->stateFilePath().isNull() ? 0 : 1),
                          Bstr (tr ("Preparing to discard snapshot")));
     AssertComRCReturn (rc, rc);
@@ -9378,8 +9305,7 @@ STDMETHODIMP SessionMachine::DiscardCurrentState (
     ComObjPtr <Progress> progress;
     progress.createObject();
     {
-        ULONG opCount = 1 + (ULONG)mData->mCurrentSnapshot->data()
-                                       .mMachine->mHDData->mAttachments.size();
+        ULONG opCount = 1 + (ULONG)mData->mCurrentSnapshot->getSnapshotMachine()->mHDData->mAttachments.size();
         if (mData->mCurrentSnapshot->stateFilePath())
             ++ opCount;
         progress->init (mParent, aInitiator,
@@ -9416,8 +9342,9 @@ STDMETHODIMP SessionMachine::DiscardCurrentState (
 /**
  *  @note Locks thos object for writing!
  */
-STDMETHODIMP SessionMachine::DiscardCurrentSnapshotAndState (
-    IConsole *aInitiator, MachineState_T *aMachineState, IProgress **aProgress)
+STDMETHODIMP SessionMachine::DiscardCurrentSnapshotAndState(IConsole *aInitiator,
+                                                            MachineState_T *aMachineState,
+                                                            IProgress **aProgress)
 {
     LogFlowThisFunc (("\n"));
 
@@ -9449,50 +9376,50 @@ STDMETHODIMP SessionMachine::DiscardCurrentSnapshotAndState (
     ComObjPtr <Progress> progress;
     progress.createObject();
     {
-        ComObjPtr <Snapshot> curSnapshot = mData->mCurrentSnapshot;
-        ComObjPtr <Snapshot> prevSnapshot = mData->mCurrentSnapshot->parent();
+        ComObjPtr<Snapshot> curSnapshot = mData->mCurrentSnapshot;
+        ComObjPtr<Snapshot> prevSnapshot = mData->mCurrentSnapshot->parent();
 
         ULONG opCount = 1;
         if (prevSnapshot)
         {
-            opCount += (ULONG)curSnapshot->data().mMachine->mHDData->mAttachments.size();
-            opCount += (ULONG)prevSnapshot->data().mMachine->mHDData->mAttachments.size();
+            opCount += (ULONG)curSnapshot->getSnapshotMachine()->mHDData->mAttachments.size();
+            opCount += (ULONG)prevSnapshot->getSnapshotMachine()->mHDData->mAttachments.size();
             if (prevSnapshot->stateFilePath())
-                ++ opCount;
+                ++opCount;
             if (curSnapshot->stateFilePath())
-                ++ opCount;
+                ++opCount;
         }
         else
         {
             opCount +=
-                (ULONG)curSnapshot->data().mMachine->mHDData->mAttachments.size() * 2;
+                (ULONG)curSnapshot->getSnapshotMachine()->mHDData->mAttachments.size() * 2;
             if (curSnapshot->stateFilePath())
                 opCount += 2;
         }
 
-        progress->init (mParent, aInitiator,
-                        Bstr (tr ("Discarding current machine snapshot and state")),
-                        FALSE /* aCancelable */, opCount,
-                        Bstr (tr ("Preparing to discard current snapshot and state")));
+        progress->init(mParent, aInitiator,
+                       Bstr (tr ("Discarding current machine snapshot and state")),
+                       FALSE /* aCancelable */, opCount,
+                       Bstr (tr ("Preparing to discard current snapshot and state")));
     }
 
     /* create and start the task on a separate thread */
     DiscardCurrentStateTask *task =
         new DiscardCurrentStateTask (this, progress, true /* discardCurSnapshot */);
-    int vrc = RTThreadCreate (NULL, taskHandler,
-                              (void *) task,
-                              0, RTTHREADTYPE_MAIN_WORKER, 0, "DiscardCurStSnp");
-    if (RT_FAILURE (vrc))
+    int vrc = RTThreadCreate(NULL, taskHandler,
+                             (void *) task,
+                             0, RTTHREADTYPE_MAIN_WORKER, 0, "DiscardCurStSnp");
+    if (RT_FAILURE(vrc))
     {
         delete task;
-        ComAssertRCRet (vrc, E_FAIL);
+        ComAssertRCRet(vrc, E_FAIL);
     }
 
     /* set the proper machine state (note: after creating a Task instance) */
-    setMachineState (MachineState_Discarding);
+    setMachineState(MachineState_Discarding);
 
     /* return the progress to the caller */
-    progress.queryInterfaceTo (aProgress);
+    progress.queryInterfaceTo(aProgress);
 
     /* return the new state to the caller */
     *aMachineState = mData->mMachineState;
@@ -10171,8 +10098,8 @@ HRESULT SessionMachine::endTakingSnapshot (BOOL aSuccess)
         fixupHardDisks(true /* aCommit */, online);
 
         /* inform callbacks */
-        mParent->onSnapshotTaken (mData->mUuid,
-                                  mSnapshotData.mSnapshot->data().mId);
+        mParent->onSnapshotTaken(mData->mUuid,
+                                 mSnapshotData.mSnapshot->getId());
     }
     else
     {
@@ -10344,7 +10271,7 @@ typedef std::list <HardDiskDiscardRec> HardDiskDiscardRecList;
  *
  * @note Locks mParent + this + child objects for writing!
  */
-void SessionMachine::discardSnapshotHandler (DiscardSnapshotTask &aTask)
+void SessionMachine::discardSnapshotHandler(DiscardSnapshotTask &aTask)
 {
     LogFlowThisFuncEnter();
 
@@ -10364,25 +10291,25 @@ void SessionMachine::discardSnapshotHandler (DiscardSnapshotTask &aTask)
     }
 
     /* saveSettings() needs mParent lock */
-    AutoWriteLock vboxLock (mParent);
+//     AutoWriteLock vboxLock (mParent);
 
     /* @todo We don't need mParent lock so far so unlock() it. Better is to
      * provide an AutoWriteLock argument that lets create a non-locking
      * instance */
-    vboxLock.unlock();
+//     vboxLock.unlock();
 
-    /* Preseve the {parent, child} lock order for this and snapshot stuff */
-    AutoMultiWriteLock3 alock (this->lockHandle(),
-                               aTask.snapshot->lockHandle(),
-                               aTask.snapshot->childrenLock());
+    /* Locking order:  */
+    AutoMultiWriteLock3 alock(this->lockHandle(),
+                              this->snapshotsTreeLockHandle(),
+                              aTask.snapshot->lockHandle());
 
-    ComObjPtr <SnapshotMachine> sm = aTask.snapshot->data().mMachine;
+    ComPtr<SnapshotMachine> sm = aTask.snapshot->getSnapshotMachine();
     /* no need to lock the snapshot machine since it is const by definiton */
 
     HRESULT rc = S_OK;
 
     /* save the snapshot ID (for callbacks) */
-    Guid snapshotId = aTask.snapshot->data().mId;
+    Guid snapshotId = aTask.snapshot->getId();
 
     HardDiskDiscardRecList toDiscard;
 
@@ -10393,8 +10320,7 @@ void SessionMachine::discardSnapshotHandler (DiscardSnapshotTask &aTask)
         /* first pass: */
         LogFlowThisFunc (("1: Checking hard disk merge prerequisites...\n"));
 
-        for (HDData::AttachmentList::const_iterator it =
-             sm->mHDData->mAttachments.begin();
+        for (HDData::AttachmentList::const_iterator it = sm->mHDData->mAttachments.begin();
              it != sm->mHDData->mAttachments.end();
              ++ it)
         {
@@ -10402,7 +10328,7 @@ void SessionMachine::discardSnapshotHandler (DiscardSnapshotTask &aTask)
             ComObjPtr<HardDisk> hd = hda->hardDisk();
 
             /* HardDisk::prepareDiscard() reqiuires a write lock */
-            AutoWriteLock hdLock (hd);
+            AutoWriteLock hdLock(hd);
 
             if (hd->type() != HardDiskType_Normal)
             {
@@ -10413,7 +10339,7 @@ void SessionMachine::discardSnapshotHandler (DiscardSnapshotTask &aTask)
                 rc = aTask.progress->setNextOperation(BstrFmt(tr("Skipping writethrough hard disk '%s'"),
                                                               hd->root()->name().raw()),
                                                       1); // weight
-                CheckComRCThrowRC (rc);
+                CheckComRCThrowRC(rc);
 
                 continue;
             }
@@ -10438,7 +10364,7 @@ void SessionMachine::discardSnapshotHandler (DiscardSnapshotTask &aTask)
                  * HardDisk::MergeChain to the header just for that
                  * Assert (!chain->isForward()); */
 
-                Assert (hd->children().size() == 1);
+                Assert(hd->children().size() == 1);
 
                 ComObjPtr<HardDisk> replaceHd = hd->children().front();
 
@@ -10476,8 +10402,7 @@ void SessionMachine::discardSnapshotHandler (DiscardSnapshotTask &aTask)
                     AssertComRC (rc2);
 
                     /* don't lock the snapshot; cannot be modified outside */
-                    HDData::AttachmentList &snapAtts =
-                        snapshot->data().mMachine->mHDData->mAttachments;
+                    HDData::AttachmentList &snapAtts = snapshot->getSnapshotMachine()->mHDData->mAttachments;
                     it = std::find_if (snapAtts.begin(),
                                        snapAtts.end(),
                                        HardDiskAttachment::RefersTo (replaceHd));
@@ -10506,58 +10431,16 @@ void SessionMachine::discardSnapshotHandler (DiscardSnapshotTask &aTask)
         LogFlowThisFunc (("2: Discarding snapshot...\n"));
 
         {
-            /* for now, the snapshot must have only one child when discarded,
-             * or no children at all */
-            ComAssertThrow (aTask.snapshot->children().size() <= 1, E_FAIL);
-
-            ComObjPtr <Snapshot> parentSnapshot = aTask.snapshot->parent();
-
-            /// @todo (dmik):
-            //  when we introduce clones later, discarding the snapshot
-            //  will affect the current and first snapshots of clones, if they are
-            //  direct children of this snapshot. So we will need to lock machines
-            //  associated with child snapshots as well and update mCurrentSnapshot
-            //  and/or mFirstSnapshot fields.
-
-            if (aTask.snapshot == mData->mCurrentSnapshot)
-            {
-                /* currently, the parent snapshot must refer to the same machine */
-                /// @todo NEWMEDIA not really clear why
-                ComAssertThrow (
-                    !parentSnapshot ||
-                    parentSnapshot->data().mMachine->mData->mUuid == mData->mUuid,
-                    E_FAIL);
-                mData->mCurrentSnapshot = parentSnapshot;
-
-                /* we've changed the base of the current state so mark it as
-                 * modified as it no longer guaranteed to be its copy */
-                mData->mCurrentStateModified = TRUE;
-            }
-
-            if (aTask.snapshot == mData->mFirstSnapshot)
-            {
-                if (aTask.snapshot->children().size() == 1)
-                {
-                    ComObjPtr <Snapshot> childSnapshot =
-                        aTask.snapshot->children().front();
-                    ComAssertThrow (
-                        childSnapshot->data().mMachine->mData->mUuid == mData->mUuid,
-                        E_FAIL);
-                    mData->mFirstSnapshot = childSnapshot;
-                }
-                else
-                    mData->mFirstSnapshot.setNull();
-            }
-
+            ComObjPtr<Snapshot> parentSnapshot = aTask.snapshot->parent();
             Bstr stateFilePath = aTask.snapshot->stateFilePath();
 
             /* Note that discarding the snapshot will deassociate it from the
              * hard disks which will allow the merge+delete operation for them*/
-            aTask.snapshot->discard();
+            aTask.snapshot->beginDiscard();
+            aTask.snapshot->uninit();
 
-            rc = saveSnapshotSettings (parentSnapshot, SaveSS_UpdateAllOp |
-                                                       SaveSS_CurrentId |
-                                                       SaveSS_CurStateModified);
+            rc = saveSnapshotSettings(parentSnapshot,
+                                      SaveSS_UpdateAllOp | SaveSS_CurrentId | SaveSS_CurStateModified);
             CheckComRCThrowRC (rc);
 
             /// @todo (dmik)
@@ -10568,7 +10451,7 @@ void SessionMachine::discardSnapshotHandler (DiscardSnapshotTask &aTask)
                 aTask.progress->setNextOperation(Bstr(tr("Discarding the execution state")),
                                                  1);        // weight
 
-                RTFileDelete (Utf8Str (stateFilePath));
+                RTFileDelete(Utf8Str(stateFilePath));
             }
 
             /// @todo NEWMEDIA to provide a good level of fauilt tolerance, we
@@ -10648,18 +10531,18 @@ void SessionMachine::discardSnapshotHandler (DiscardSnapshotTask &aTask)
              * still in a protective state which allows us to temporarily leave
              * the lock */
             alock.unlock();
-            vboxLock.lock();
+            AutoWriteLock vboxLock(mParent);
             alock.lock();
 
             /* preserve existing error info */
             ErrorInfoKeeper eik;
 
             /* restore the machine state */
-            setMachineState (aTask.state);
+            setMachineState(aTask.state);
             updateMachineStateOnClient();
 
             if (settingsChanged)
-                saveSettings (SaveS_InformCallbacksAnyway);
+                saveSettings(SaveS_InformCallbacksAnyway);
         }
 
         /* set the result (this will try to fetch current error info on failure) */
@@ -10766,25 +10649,27 @@ void SessionMachine::discardCurrentStateHandler (DiscardCurrentStateTask &aTask)
             AutoReadLock snapshotLock (curSnapshot);
 
             /* remember the timestamp of the snapshot we're restoring from */
-            snapshotTimeStamp = curSnapshot->data().mTimeStamp;
+            snapshotTimeStamp = curSnapshot->getTimeStamp();
+
+            ComPtr<SnapshotMachine> pSnapshotMachine(curSnapshot->getSnapshotMachine());
 
             /* copy all hardware data from the current snapshot */
-            copyFrom (curSnapshot->data().mMachine);
+            copyFrom(pSnapshotMachine);
 
             LogFlowThisFunc (("Restoring hard disks from the snapshot...\n"));
 
             /* restore the attachmends from the snapshot */
             mHDData.backup();
             mHDData->mAttachments =
-                curSnapshot->data().mMachine->mHDData->mAttachments;
+                pSnapshotMachine->mHDData->mAttachments;
 
             /* leave the locks before the potentially lengthy operation */
             snapshotLock.unlock();
             alock.leave();
 
-            rc = createImplicitDiffs (mUserData->mSnapshotFolderFull,
-                                      aTask.progress,
-                                      false /* aOnline */);
+            rc = createImplicitDiffs(mUserData->mSnapshotFolderFull,
+                                     aTask.progress,
+                                     false /* aOnline */);
 
             alock.enter();
             snapshotLock.lock();
@@ -11729,7 +11614,7 @@ HRESULT SnapshotMachine::onSnapshotChange (Snapshot *aSnapshot)
     mPeer->saveSnapshotSettings (aSnapshot, SaveSS_UpdateAttrsOp);
 
     /* inform callbacks */
-    mParent->onSnapshotChange (mData->mUuid, aSnapshot->data().mId);
+    mParent->onSnapshotChange(mData->mUuid, aSnapshot->getId());
 
     return S_OK;
 }

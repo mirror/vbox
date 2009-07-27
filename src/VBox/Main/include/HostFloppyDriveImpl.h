@@ -25,9 +25,9 @@
 #include "VirtualBoxBase.h"
 
 class ATL_NO_VTABLE HostFloppyDrive :
-    public VirtualBoxBaseNEXT,
-    public VirtualBoxSupportErrorInfoImpl <HostFloppyDrive, IHostFloppyDrive>,
-    public VirtualBoxSupportTranslation <HostFloppyDrive>,
+    public VirtualBoxBase,
+    public VirtualBoxSupportErrorInfoImpl<HostFloppyDrive, IHostFloppyDrive>,
+    public VirtualBoxSupportTranslation<HostFloppyDrive>,
     VBOX_SCRIPTABLE_IMPL(IHostFloppyDrive)
 {
 public:

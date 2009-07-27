@@ -28,19 +28,36 @@
 #include <VBox/param.h>
 #include <VBox/err.h>
 
-#include <algorithm>
+#include <list>
+
+#include <VBox/settings.h>
+
+// private snapshot data
+////////////////////////////////////////////////////////////////////////////////
+
+typedef std::list< ComPtr<Snapshot> > SnapshotsList;
+
+struct Snapshot::Data
+{
+    Data()
+    {
+        RTTimeSpecSetMilli(&timeStamp, 0);
+    };
+
+    ~Data()
+    {}
+
+    Guid                        id;
+    Bstr                        name;
+    Bstr                        description;
+    RTTIMESPEC                  timeStamp;
+    ComObjPtr<SnapshotMachine>  pMachine;
+
+    SnapshotsList               llChildren;             // protected by VirtualBox::snapshotTreeLockHandle()
+};
 
 // constructor / destructor
 ////////////////////////////////////////////////////////////////////////////////
-
-Snapshot::Data::Data()
-{
-    RTTimeSpecSetMilli (&mTimeStamp, 0);
-};
-
-Snapshot::Data::~Data()
-{
-};
 
 HRESULT Snapshot::FinalConstruct()
 {
@@ -64,29 +81,40 @@ void Snapshot::FinalRelease()
  *  @param  aMachine       machine associated with this snapshot
  *  @param  aParent        parent snapshot (NULL if no parent)
  */
-HRESULT Snapshot::init (const Guid &aId, IN_BSTR aName, IN_BSTR aDescription,
-                        RTTIMESPEC aTimeStamp, SnapshotMachine *aMachine,
-                        Snapshot *aParent)
+HRESULT Snapshot::init(VirtualBox *aVirtualBox,
+                       const Guid &aId,
+                       IN_BSTR aName,
+                       IN_BSTR aDescription,
+                       RTTIMESPEC aTimeStamp,
+                       SnapshotMachine *aMachine,
+                       Snapshot *aParent)
 {
     LogFlowMember (("Snapshot::init(aParent=%p)\n", aParent));
 
     ComAssertRet (!aId.isEmpty() && aName && aMachine, E_INVALIDARG);
 
-    AutoWriteLock alock (this);
-    ComAssertRet (!isReady(), E_FAIL);
+    /* Enclose the state transition NotReady->InInit->Ready */
+    AutoInitSpan autoInitSpan(this);
+    AssertReturn(autoInitSpan.isOk(), E_FAIL);
+
+    m = new Data;
+
+    /* share parent weakly */
+    unconst(mVirtualBox) = aVirtualBox;
 
     mParent = aParent;
 
-    mData.mId = aId;
-    mData.mName = aName;
-    mData.mDescription = aDescription;
-    mData.mTimeStamp = aTimeStamp;
-    mData.mMachine = aMachine;
+    m->id = aId;
+    m->name = aName;
+    m->description = aDescription;
+    m->timeStamp = aTimeStamp;
+    m->pMachine = aMachine;
 
     if (aParent)
-        aParent->addDependentChild (this);
+        aParent->m->llChildren.push_back(this);
 
-    setReady (true);
+    /* Confirm a successful initialization when it's the case */
+    autoInitSpan.setSucceeded();
 
     return S_OK;
 }
@@ -100,65 +128,112 @@ void Snapshot::uninit()
 {
     LogFlowMember (("Snapshot::uninit()\n"));
 
-    AutoWriteLock alock (this);
-
-    LogFlowMember (("Snapshot::uninit(): isReady=%d\n", isReady()));
-    if (!isReady())
+    /* Enclose the state transition Ready->InUninit->NotReady */
+    AutoUninitSpan autoUninitSpan (this);
+    if (autoUninitSpan.uninitDone())
         return;
 
     // uninit all children
-    uninitDependentChildren();
-
-    setReady (false);
+    SnapshotsList::iterator it;
+    for (it = m->llChildren.begin();
+         it != m->llChildren.end();
+         ++ it)
+    {
+        Snapshot *pChild = *it;
+        pChild->uninit();
+    }
+    m->llChildren.clear();          // this unsets all the ComPtrs and probably calls delete
 
     if (mParent)
     {
-        alock.leave();
-        mParent->removeDependentChild (this);
-        alock.enter();
+        SnapshotsList &llParent = mParent->m->llChildren;
+        for (it = llParent.begin();
+            it != llParent.end();
+            ++ it)
+        {
+            Snapshot *pParentsChild = *it;
+            if (this == pParentsChild)
+            {
+                llParent.erase(it);
+                break;
+            }
+        }
+
         mParent.setNull();
     }
 
-    if (mData.mMachine)
+    if (m->pMachine)
     {
-        mData.mMachine->uninit();
-        mData.mMachine.setNull();
+        m->pMachine->uninit();
+        m->pMachine.setNull();
     }
 }
 
 /**
  *  Discards the current snapshot by removing it from the tree of snapshots
  *  and reparenting its children.
- *  This method also calls #uninit() in case of success.
+ *
+ *  After this, the caller must call uninit() on the snapshot. We can't call
+ *  that from here because if we do, the AutoUninitSpan waits forever for
+ *  the number of callers to become 0 (it is 1 because of the AutoCaller in here).
+ *
+ *  NOTE: this does NOT lock the snapshot, it is assumed that the caller has
+ *  locked a) the machine, b) the snapshots tree and c) the snapshot (this).
  */
-void Snapshot::discard()
+void Snapshot::beginDiscard()
 {
-    LogFlowMember (("Snapshot::discard()\n"));
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc()))
+        return;
 
-    AutoWriteLock alock (this);
-    AssertReturn (isReady(), (void) 0);
+    /* for now, the snapshot must have only one child when discarded,
+        * or no children at all */
+    AssertReturnVoid(m->llChildren.size() <= 1);
 
+    ComObjPtr<Snapshot> parentSnapshot = parent();
+
+    /// @todo (dmik):
+    //  when we introduce clones later, discarding the snapshot
+    //  will affect the current and first snapshots of clones, if they are
+    //  direct children of this snapshot. So we will need to lock machines
+    //  associated with child snapshots as well and update mCurrentSnapshot
+    //  and/or mFirstSnapshot fields.
+
+    if (this == m->pMachine->mData->mCurrentSnapshot)
     {
-        AutoWriteLock chLock (childrenLock ());
-        AssertReturn (!!mParent || children().size() <= 1, (void) 0);
+        m->pMachine->mData->mCurrentSnapshot = parentSnapshot;
 
-        for (SnapshotList::const_iterator it = children().begin();
-             it != children().end(); ++ it)
-        {
-            ComObjPtr <Snapshot> child = *it;
-            AutoWriteLock childLock (child);
-            // reparent the child
-            child->mParent = mParent;
-            if (mParent)
-                mParent->addDependentChild (child);
-        }
+        /* we've changed the base of the current state so mark it as
+            * modified as it no longer guaranteed to be its copy */
+        m->pMachine->mData->mCurrentStateModified = TRUE;
     }
 
-    // detach all our children to avoid their uninit in #uninit()
-    removeDependentChildren();
+    if (this == m->pMachine->mData->mFirstSnapshot)
+    {
+        if (m->llChildren.size() == 1)
+        {
+            ComPtr<Snapshot> childSnapshot = m->llChildren.front();
+            m->pMachine->mData->mFirstSnapshot = childSnapshot;
+        }
+        else
+            m->pMachine->mData->mFirstSnapshot.setNull();
+    }
 
-    // finalize uninitialization
-    uninit();
+    // reparent our children
+    for (SnapshotsList::const_iterator it = m->llChildren.begin();
+         it != m->llChildren.end();
+         ++it)
+    {
+        ComPtr<Snapshot> child = *it;
+        AutoWriteLock childLock(child);
+
+        child->mParent = mParent;
+        if (mParent)
+            mParent->m->llChildren.push_back(child);
+    }
+
+    // clear our own children list (since we reparented the children)
+    m->llChildren.clear();
 }
 
 // ISnapshot methods
@@ -168,10 +243,12 @@ STDMETHODIMP Snapshot::COMGETTER(Id) (BSTR *aId)
 {
     CheckComArgOutPointerValid(aId);
 
-    AutoWriteLock alock (this);
-    CHECK_READY();
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
 
-    mData.mId.toUtf16().cloneTo (aId);
+    AutoReadLock alock (this);
+
+    m->id.toUtf16().cloneTo(aId);
     return S_OK;
 }
 
@@ -179,10 +256,12 @@ STDMETHODIMP Snapshot::COMGETTER(Name) (BSTR *aName)
 {
     CheckComArgOutPointerValid(aName);
 
-    AutoWriteLock alock (this);
-    CHECK_READY();
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
 
-    mData.mName.cloneTo (aName);
+    AutoReadLock alock (this);
+
+    m->name.cloneTo(aName);
     return S_OK;
 }
 
@@ -194,16 +273,18 @@ STDMETHODIMP Snapshot::COMSETTER(Name) (IN_BSTR aName)
 {
     CheckComArgNotNull(aName);
 
-    AutoWriteLock alock (this);
-    CHECK_READY();
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
 
-    if (mData.mName != aName)
+    AutoWriteLock alock(this);
+
+    if (m->name != aName)
     {
-        mData.mName = aName;
+        m->name = aName;
 
         alock.leave(); /* Important! (child->parent locks are forbidden) */
 
-        return mData.mMachine->onSnapshotChange (this);
+        return m->pMachine->onSnapshotChange(this);
     }
 
     return S_OK;
@@ -213,10 +294,12 @@ STDMETHODIMP Snapshot::COMGETTER(Description) (BSTR *aDescription)
 {
     CheckComArgOutPointerValid(aDescription);
 
-    AutoWriteLock alock (this);
-    CHECK_READY();
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
 
-    mData.mDescription.cloneTo (aDescription);
+    AutoReadLock alock (this);
+
+    m->description.cloneTo(aDescription);
     return S_OK;
 }
 
@@ -224,16 +307,18 @@ STDMETHODIMP Snapshot::COMSETTER(Description) (IN_BSTR aDescription)
 {
     CheckComArgNotNull(aDescription);
 
-    AutoWriteLock alock (this);
-    CHECK_READY();
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
 
-    if (mData.mDescription != aDescription)
+    AutoWriteLock alock(this);
+
+    if (m->description != aDescription)
     {
-        mData.mDescription = aDescription;
+        m->description = aDescription;
 
         alock.leave(); /* Important! (child->parent locks are forbidden) */
 
-        return mData.mMachine->onSnapshotChange (this);
+        return m->pMachine->onSnapshotChange(this);
     }
 
     return S_OK;
@@ -243,10 +328,12 @@ STDMETHODIMP Snapshot::COMGETTER(TimeStamp) (LONG64 *aTimeStamp)
 {
     CheckComArgOutPointerValid(aTimeStamp);
 
-    AutoWriteLock alock (this);
-    CHECK_READY();
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
 
-    *aTimeStamp = RTTimeSpecGetMilli (&mData.mTimeStamp);
+    AutoReadLock alock (this);
+
+    *aTimeStamp = RTTimeSpecGetMilli(&m->timeStamp);
     return S_OK;
 }
 
@@ -254,8 +341,10 @@ STDMETHODIMP Snapshot::COMGETTER(Online) (BOOL *aOnline)
 {
     CheckComArgOutPointerValid(aOnline);
 
-    AutoWriteLock alock (this);
-    CHECK_READY();
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
+
+    AutoReadLock alock (this);
 
     *aOnline = !stateFilePath().isNull();
     return S_OK;
@@ -265,10 +354,12 @@ STDMETHODIMP Snapshot::COMGETTER(Machine) (IMachine **aMachine)
 {
     CheckComArgOutPointerValid(aMachine);
 
-    AutoWriteLock alock (this);
-    CHECK_READY();
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
 
-    mData.mMachine.queryInterfaceTo (aMachine);
+    AutoReadLock alock (this);
+
+    m->pMachine.queryInterfaceTo(aMachine);
     return S_OK;
 }
 
@@ -276,8 +367,10 @@ STDMETHODIMP Snapshot::COMGETTER(Parent) (ISnapshot **aParent)
 {
     CheckComArgOutPointerValid(aParent);
 
-    AutoWriteLock alock (this);
-    CHECK_READY();
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
+
+    AutoReadLock alock (this);
 
     mParent.queryInterfaceTo (aParent);
     return S_OK;
@@ -287,13 +380,14 @@ STDMETHODIMP Snapshot::COMGETTER(Children) (ComSafeArrayOut (ISnapshot *, aChild
 {
     CheckComArgOutSafeArrayPointerValid(aChildren);
 
-    AutoWriteLock alock (this);
-    CHECK_READY();
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
 
-    AutoWriteLock chLock (childrenLock ());
+    AutoReadLock alock(m->pMachine->snapshotsTreeLockHandle());
+    AutoReadLock block(this->lockHandle());
 
-    SafeIfaceArray <ISnapshot> collection (children());
-    collection.detachTo (ComSafeArrayOutArg (aChildren));
+    SafeIfaceArray<ISnapshot> collection(m->llChildren);
+    collection.detachTo(ComSafeArrayOutArg(aChildren));
 
     return S_OK;
 }
@@ -305,53 +399,75 @@ STDMETHODIMP Snapshot::COMGETTER(Children) (ComSafeArrayOut (ISnapshot *, aChild
  *  @note
  *      Must be called from under the object's lock!
  */
-const Bstr &Snapshot::stateFilePath() const
+const Bstr& Snapshot::stateFilePath() const
 {
-    return mData.mMachine->mSSData->mStateFilePath;
+    return m->pMachine->mSSData->mStateFilePath;
 }
 
-/**
- *  Returns the number of children of this snapshot, including grand-children,
- *  etc.
- */
-ULONG Snapshot::descendantCount()
+ULONG Snapshot::getGrandChildrenCount()
 {
-    AutoWriteLock alock(this);
-    AssertReturn (isReady(), 0);
+    AutoCaller autoCaller(this);
+    AssertComRC(autoCaller.rc());
 
-    AutoWriteLock chLock (childrenLock ());
+    AutoReadLock chLock(m->pMachine->snapshotsTreeLockHandle());
+    AutoReadLock alock(this);
 
-    ULONG count = (ULONG)children().size();
-
-    for (SnapshotList::const_iterator it = children().begin();
-         it != children().end(); ++ it)
+    ULONG count = (ULONG)m->llChildren.size();
+    for (SnapshotsList::const_iterator it = m->llChildren.begin();
+         it != m->llChildren.end();
+         ++it)
     {
-        count += (*it)->descendantCount();
+        count += (*it)->getGrandChildrenCount();
     }
 
     return count;
+}
+
+ComPtr<SnapshotMachine> Snapshot::getSnapshotMachine()
+{
+    return (SnapshotMachine*)m->pMachine;
+}
+
+Guid Snapshot::getId() const
+{
+    return m->id;
+}
+
+Bstr Snapshot::getName() const
+{
+    return m->name;
+}
+
+RTTIMESPEC Snapshot::getTimeStamp() const
+{
+    return m->timeStamp;
 }
 
 /**
  *  Searches for a snapshot with the given ID among children, grand-children,
  *  etc. of this snapshot. This snapshot itself is also included in the search.
  */
-ComObjPtr <Snapshot> Snapshot::findChildOrSelf (IN_GUID aId)
+ComObjPtr<Snapshot> Snapshot::findChildOrSelf(IN_GUID aId)
 {
-    ComObjPtr <Snapshot> child;
+    ComObjPtr<Snapshot> child;
 
-    AutoWriteLock alock (this);
-    AssertReturn (isReady(), child);
+    AutoCaller autoCaller(this);
+    AssertComRC(autoCaller.rc());
 
-    if (mData.mId == aId)
+    AutoReadLock alock(this);
+
+    if (m->id == aId)
         child = this;
     else
     {
-        AutoWriteLock chLock (childrenLock ());
-        for (SnapshotList::const_iterator it = children().begin();
-             !child && it != children().end(); ++ it)
+        alock.unlock();
+        AutoReadLock chlock(m->pMachine->snapshotsTreeLockHandle());
+        for (SnapshotsList::const_iterator it = m->llChildren.begin();
+             it != m->llChildren.end();
+             ++it)
         {
-            child = (*it)->findChildOrSelf (aId);
+            if ((child = (*it)->findChildOrSelf(aId)))
+                break;
         }
     }
 
@@ -363,27 +479,63 @@ ComObjPtr <Snapshot> Snapshot::findChildOrSelf (IN_GUID aId)
  *  grand-children, etc. of this snapshot. This snapshot itself is also included
  *  in the search.
  */
-ComObjPtr <Snapshot> Snapshot::findChildOrSelf (IN_BSTR aName)
+ComObjPtr<Snapshot> Snapshot::findChildOrSelf(IN_BSTR aName)
 {
     ComObjPtr <Snapshot> child;
     AssertReturn (aName, child);
 
-    AutoWriteLock alock (this);
-    AssertReturn (isReady(), child);
+    AutoCaller autoCaller(this);
+    AssertComRC(autoCaller.rc());
 
-    if (mData.mName == aName)
+    AutoReadLock alock (this);
+
+    if (m->name == aName)
         child = this;
     else
     {
-        AutoWriteLock chLock (childrenLock ());
-        for (SnapshotList::const_iterator it = children().begin();
-             !child && it != children().end(); ++ it)
+        alock.unlock();
+        AutoReadLock chlock(m->pMachine->snapshotsTreeLockHandle());
+        for (SnapshotsList::const_iterator it = m->llChildren.begin();
+             it != m->llChildren.end();
+             ++it)
         {
-            child = (*it)->findChildOrSelf (aName);
+            if ((child = (*it)->findChildOrSelf(aName)))
+                break;
         }
     }
 
     return child;
+}
+
+/**
+ * Internal implementation for Snapshot::updateSavedStatePaths (below).
+ * @param aOldPath
+ * @param aNewPath
+ */
+void Snapshot::updateSavedStatePathsImpl(const char *aOldPath, const char *aNewPath)
+{
+    AutoWriteLock alock(this);
+
+    Utf8Str path = m->pMachine->mSSData->mStateFilePath;
+    LogFlowThisFunc(("Snap[%ls].statePath={%s}\n", m->name.raw(), path.raw()));
+
+    /* state file may be NULL (for offline snapshots) */
+    if (    path.length()
+         && RTPathStartsWith(path, aOldPath)
+       )
+    {
+        path = Utf8StrFmt ("%s%s", aNewPath, path.raw() + strlen (aOldPath));
+        m->pMachine->mSSData->mStateFilePath = path;
+
+        LogFlowThisFunc(("-> updated: {%s}\n", path.raw()));
+    }
+
+    for (SnapshotsList::const_iterator it = m->llChildren.begin();
+         it != m->llChildren.end();
+         ++it)
+    {
+        updateSavedStatePathsImpl(aOldPath, aNewPath);
+    }
 }
 
 /**
@@ -397,36 +549,117 @@ ComObjPtr <Snapshot> Snapshot::findChildOrSelf (IN_BSTR aName)
  *
  *  @note Locks this object + children for writing.
  */
-void Snapshot::updateSavedStatePaths (const char *aOldPath, const char *aNewPath)
+void Snapshot::updateSavedStatePaths(const char *aOldPath, const char *aNewPath)
 {
-    LogFlowThisFunc (("aOldPath={%s} aNewPath={%s}\n", aOldPath, aNewPath));
+    LogFlowThisFunc(("aOldPath={%s} aNewPath={%s}\n", aOldPath, aNewPath));
 
-    AssertReturnVoid (aOldPath);
-    AssertReturnVoid (aNewPath);
+    AssertReturnVoid(aOldPath);
+    AssertReturnVoid(aNewPath);
 
-    AutoWriteLock alock (this);
-    AssertReturnVoid (isReady());
+    AutoCaller autoCaller(this);
+    AssertComRC(autoCaller.rc());
 
-    Utf8Str path = mData.mMachine->mSSData->mStateFilePath;
-    LogFlowThisFunc (("Snap[%ls].statePath={%s}\n", mData.mName.raw(), path.raw()));
-
-    /* state file may be NULL (for offline snapshots) */
-    if (    path.length()
-         && RTPathStartsWith(path, aOldPath)
-       )
-    {
-        path = Utf8StrFmt ("%s%s", aNewPath, path.raw() + strlen (aOldPath));
-        mData.mMachine->mSSData->mStateFilePath = path;
-
-        LogFlowThisFunc (("-> updated: {%s}\n", path.raw()));
-    }
-
-    AutoWriteLock chLock (childrenLock ());
-    for (SnapshotList::const_iterator it = children().begin();
-         it != children().end(); ++ it)
-    {
-        (*it)->updateSavedStatePaths (aOldPath, aNewPath);
-    }
+    AutoWriteLock chLock(m->pMachine->snapshotsTreeLockHandle());
+    // call the implementation under the tree lock
+    updateSavedStatePathsImpl(aOldPath, aNewPath);
 }
 
-/* vi: set tabstop=4 shiftwidth=4 expandtab: */
+/**
+ * Internal implementation for Snapshot::saveSnapshot (below).
+ * @param aNode
+ * @param aAttrsOnly
+ * @return
+ */
+HRESULT Snapshot::saveSnapshotImpl(settings::Key &aNode, bool aAttrsOnly)
+{
+    using namespace settings;
+
+    /* uuid (required) */
+    if (!aAttrsOnly)
+        aNode.setValue<Guid>("uuid", m->id);
+
+    /* name (required) */
+    aNode.setValue<Bstr>("name", m->name);
+
+    /* timeStamp (required) */
+    aNode.setValue<RTTIMESPEC>("timeStamp", m->timeStamp);
+
+    /* Description node (optional) */
+    if (!m->description.isNull())
+    {
+        Key descNode = aNode.createKey("Description");
+        descNode.setKeyValue<Bstr>(m->description);
+    }
+    else
+    {
+        Key descNode = aNode.findKey ("Description");
+        if (!descNode.isNull())
+            descNode.zap();
+    }
+
+    if (aAttrsOnly)
+        return S_OK;
+
+    /* stateFile (optional) */
+    if (stateFilePath())
+    {
+        /* try to make the file name relative to the settings file dir */
+        Utf8Str strStateFilePath = stateFilePath();
+        m->pMachine->calculateRelativePath(strStateFilePath, strStateFilePath);
+        aNode.setStringValue ("stateFile", strStateFilePath);
+    }
+
+    {
+        ComObjPtr<SnapshotMachine> snapshotMachine = m->pMachine;
+
+        /* save hardware */
+        {
+            Key hwNode = aNode.createKey ("Hardware");
+            HRESULT rc = snapshotMachine->saveHardware (hwNode);
+            CheckComRCReturnRC (rc);
+        }
+
+        /* save hard disks. */
+        {
+            Key storageNode = aNode.createKey ("StorageControllers");
+            HRESULT rc = snapshotMachine->saveStorageControllers (storageNode);
+            CheckComRCReturnRC (rc);
+        }
+    }
+
+    if (m->llChildren.size())
+    {
+        Key snapshotsNode = aNode.createKey ("Snapshots");
+
+        HRESULT rc = S_OK;
+
+        for (SnapshotsList::const_iterator it = m->llChildren.begin();
+             it != m->llChildren.end();
+             ++it)
+        {
+            Key snapshotNode = snapshotsNode.createKey("Snapshot");
+            rc = (*it)->saveSnapshotImpl(snapshotNode, aAttrsOnly);
+            CheckComRCReturnRC (rc);
+        }
+    }
+
+    return S_OK;
+}
+
+/**
+ *  Saves the given snapshot and all its children (unless \a aAttrsOnly is true).
+ *  It is assumed that the given node is empty (unless \a aAttrsOnly is true).
+ *
+ *  @param aNode        <Snapshot> node to save the snapshot to.
+ *  @param aSnapshot    Snapshot to save.
+ *  @param aAttrsOnly   If true, only updatge user-changeable attrs.
+ */
+HRESULT Snapshot::saveSnapshot(settings::Key &aNode, bool aAttrsOnly)
+{
+    AssertReturn(!aNode.isNull(), E_INVALIDARG);
+
+    AutoWriteLock listLock(m->pMachine->snapshotsTreeLockHandle());
+
+    return saveSnapshot(aNode, aAttrsOnly);
+}
+

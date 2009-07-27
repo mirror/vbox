@@ -27,7 +27,7 @@
 #include "HardDiskImpl.h"
 
 class ATL_NO_VTABLE HardDiskAttachment :
-    public VirtualBoxBaseNEXT,
+    public VirtualBoxBase,
     public com::SupportErrorInfoImpl<HardDiskAttachment, IHardDiskAttachment>,
     public VirtualBoxSupportTranslation<HardDiskAttachment>,
     VBOX_SCRIPTABLE_IMPL(IHardDiskAttachment)

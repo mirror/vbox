@@ -30,9 +30,9 @@ class Console;
 class VirtualBox;
 
 class ATL_NO_VTABLE SharedFolder :
-    public VirtualBoxBaseNEXT,
-    public VirtualBoxSupportErrorInfoImpl <SharedFolder, ISharedFolder>,
-    public VirtualBoxSupportTranslation <SharedFolder>,
+    public VirtualBoxBase,
+    public VirtualBoxSupportErrorInfoImpl<SharedFolder, ISharedFolder>,
+    public VirtualBoxSupportTranslation<SharedFolder>,
     VBOX_SCRIPTABLE_IMPL(ISharedFolder)
 {
 public:

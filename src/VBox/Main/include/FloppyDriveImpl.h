@@ -31,9 +31,9 @@
 class Machine;
 
 class ATL_NO_VTABLE FloppyDrive :
-    public VirtualBoxBaseNEXT,
-    public VirtualBoxSupportErrorInfoImpl <FloppyDrive, IFloppyDrive>,
-    public VirtualBoxSupportTranslation <FloppyDrive>,
+    public VirtualBoxBase,
+    public VirtualBoxSupportErrorInfoImpl<FloppyDrive, IFloppyDrive>,
+    public VirtualBoxSupportTranslation<FloppyDrive>,
     VBOX_SCRIPTABLE_IMPL(IFloppyDrive)
 {
 public:

@@ -77,8 +77,8 @@ class SessionMachine;
 
 class ATL_NO_VTABLE Machine :
     public VirtualBoxBaseWithChildrenNEXT,
-    public VirtualBoxSupportErrorInfoImpl <Machine, IMachine>,
-    public VirtualBoxSupportTranslation <Machine>,
+    public VirtualBoxSupportErrorInfoImpl<Machine, IMachine>,
+    public VirtualBoxSupportTranslation<Machine>,
     VBOX_SCRIPTABLE_IMPL(IMachine)
 {
     Q_OBJECT
@@ -175,9 +175,11 @@ public:
 
         Session mSession;
 
-        ComObjPtr <Snapshot> mFirstSnapshot;
-        ComObjPtr <Snapshot> mCurrentSnapshot;
+        ComObjPtr<Snapshot> mFirstSnapshot;
+        ComObjPtr<Snapshot> mCurrentSnapshot;
 
+        // protectes the snapshots tree of this machine
+        RWLockHandle mSnapshotsTreeLockHandle;
     };
 
     /**
@@ -715,6 +717,11 @@ public:
     // for VirtualBoxSupportErrorInfoImpl
     static const wchar_t *getComponentName() { return L"Machine"; }
 
+    RWLockHandle* snapshotsTreeLockHandle() const
+    {
+        return &mData->mSnapshotsTreeLockHandle;
+    }
+
 protected:
 
     HRESULT registeredInit();
@@ -785,7 +792,6 @@ protected:
     HRESULT saveSnapshotSettingsWorker (settings::Key &aMachineNode,
                                         Snapshot *aSnapshot, int aOpFlags);
 
-    HRESULT saveSnapshot (settings::Key &aNode, Snapshot *aSnapshot, bool aAttrsOnly);
     HRESULT saveHardware (settings::Key &aNode);
     HRESULT saveStorageControllers (settings::Key &aNode);
     HRESULT saveStorageDevices (ComObjPtr<StorageController> aStorageController,
@@ -872,7 +878,7 @@ protected:
  *  instance is also locked in the same lock mode. Keep it in mind.
  */
 class ATL_NO_VTABLE SessionMachine :
-    public VirtualBoxSupportTranslation <SessionMachine>,
+    public VirtualBoxSupportTranslation<SessionMachine>,
     public Machine,
     VBOX_SCRIPTABLE_IMPL(IInternalMachineControl)
 {
@@ -1048,7 +1054,7 @@ private:
  *  instance is also locked in the same lock mode. Keep it in mind.
  */
 class ATL_NO_VTABLE SnapshotMachine :
-    public VirtualBoxSupportTranslation <SnapshotMachine>,
+    public VirtualBoxSupportTranslation<SnapshotMachine>,
     public Machine
 {
 public:
@@ -1060,7 +1066,7 @@ public:
     DECLARE_PROTECT_FINAL_CONSTRUCT()
 
     BEGIN_COM_MAP(SnapshotMachine)
-        COM_INTERFACE_ENTRY2(IDispatch, IMachine)        
+        COM_INTERFACE_ENTRY2(IDispatch, IMachine)
         COM_INTERFACE_ENTRY(ISupportErrorInfo)
         COM_INTERFACE_ENTRY(IMachine)
     END_COM_MAP()

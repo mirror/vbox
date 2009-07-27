@@ -30,9 +30,9 @@ class Machine;
 class GuestOSType;
 
 class ATL_NO_VTABLE BIOSSettings :
-    public VirtualBoxSupportErrorInfoImpl <BIOSSettings, IBIOSSettings>,
-    public VirtualBoxSupportTranslation <BIOSSettings>,
-    public VirtualBoxBaseNEXT,
+    public VirtualBoxSupportErrorInfoImpl<BIOSSettings, IBIOSSettings>,
+    public VirtualBoxSupportTranslation<BIOSSettings>,
+    public VirtualBoxBase,
     VBOX_SCRIPTABLE_IMPL(IBIOSSettings)
 {
 public:

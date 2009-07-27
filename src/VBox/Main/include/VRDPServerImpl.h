@@ -31,9 +31,9 @@
 class Machine;
 
 class ATL_NO_VTABLE VRDPServer :
-    public VirtualBoxBaseNEXT,
-    public VirtualBoxSupportErrorInfoImpl <VRDPServer, IVRDPServer>,
-    public VirtualBoxSupportTranslation <VRDPServer>,
+    public VirtualBoxBase,
+    public VirtualBoxSupportErrorInfoImpl<VRDPServer, IVRDPServer>,
+    public VirtualBoxSupportTranslation<VRDPServer>,
     VBOX_SCRIPTABLE_IMPL(IVRDPServer)
 {
 public:
