@@ -661,6 +661,6 @@ HRESULT Snapshot::saveSnapshot(settings::Key &aNode, bool aAttrsOnly)
 
     AutoWriteLock listLock(m->pMachine->snapshotsTreeLockHandle());
 
-    return saveSnapshot(aNode, aAttrsOnly);
+    return saveSnapshotImpl(aNode, aAttrsOnly);
 }
 
