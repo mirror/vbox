@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!DOCTYPE TS><TS version="1.1" language="uk_UA">
+<!DOCTYPE TS>
+<TS version="2.0" language="uk_UA">
 <context>
     <name>@@@</name>
     <message>
@@ -30,7 +31,7 @@
         <location filename="../src/VBoxGlobal.cpp" line="2650"/>
         <source>Sun Microsystems, Inc.</source>
         <comment>Comma-separated list of translators</comment>
-        <translation>Daniel Korostil</translation>
+        <translation>Daniel Korostil.</translation>
     </message>
 </context>
 <context>
@@ -81,7 +82,7 @@
     <message>
         <location filename="../src/main.cpp" line="72"/>
         <source>This error means that the kernel driver was either not able to allocate enough memory or that some mapping operation failed.&lt;br/&gt;&lt;br/&gt;There are known problems with Linux 2.6.29. If you are running such a kernel, please edit /usr/src/vboxdrv-*/Makefile and enable &lt;i&gt;VBOX_USE_INSERT_PAGE = 1&lt;/i&gt;. After that, re-compile the kernel module by executing&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;as root.</source>
-        <translation>Ця помилка означає, що драйвер ядра не зміг виділити достатньо пам&apos;яті або не вдалось виконати відображення деякої операції.&lt;br/&gt;&lt;br/&gt;Це є відомі проблеми з версією ядра 2.6.29. Якщо ви запускаєте саме це ядро, будь ласка, редагуйте  /usr/src/vboxdrv-*/Makefile і ввімкніть &lt;i&gt;VBOX_USE_INSERT_PAGE = 1&lt;/i&gt;. Після чого, перекомпілюйте модуль ядра, виконавши з-під адміністратора&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;.</translation>
+        <translation>Ця помилка означає, що драйвер ядра не зміг виділити достатньо пам&apos;яті або не вдалось виконати відображення деякої операції.&lt;br/&gt;&lt;br/&gt;Це відомі проблеми з версією ядра 2.6.29. Якщо ви запускаєте саме це ядро, будь ласка, редагуйте  /usr/src/vboxdrv-*/Makefile і ввімкніть &lt;i&gt;VBOX_USE_INSERT_PAGE = 1&lt;/i&gt;. Після чого, перекомпілюйте модуль ядра, виконавши з-під адміністратора&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;.</translation>
     </message>
     <message>
         <location filename="../src/main.cpp" line="82"/>
@@ -386,7 +387,7 @@
     <message>
         <location filename="../include/QIHttp.h" line="91"/>
         <source>Connection timed out</source>
-        <translation>Час очікування підключення вичерпався</translation>
+        <translation>Час очікування під&apos;єднання вичерпався</translation>
     </message>
     <message>
         <location filename="../include/QIHttp.h" line="94"/>
@@ -486,27 +487,27 @@
 <context>
     <name>VBoxAddNIDialog</name>
     <message>
-        <location filename="" line="0"/>
+        <location filename="../src/VBoxAboutDlg.cpp" line="0"/>
         <source>Add Host Interface</source>
         <translation type="obsolete">Додати головний інтерфейс</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
+        <location filename="../src/VBoxAboutDlg.cpp" line="0"/>
         <source>Interface Name</source>
         <translation type="obsolete">Назва інтерфейсу</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
+        <location filename="../src/VBoxAboutDlg.cpp" line="0"/>
         <source>Descriptive name of the new network interface</source>
         <translation type="obsolete">Описова назва нового мережевого інтерфейсу</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
+        <location filename="../src/VBoxAboutDlg.cpp" line="0"/>
         <source>&amp;OK</source>
         <translation type="obsolete">&amp;Гаразд</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
+        <location filename="../src/VBoxAboutDlg.cpp" line="0"/>
         <source>Cancel</source>
         <translation type="obsolete">Скасувати</translation>
     </message>
@@ -682,7 +683,7 @@
     <message>
         <location filename="../ui/VBoxCloseVMDlg.ui" line="79"/>
         <source>You want to:</source>
-        <translation>Ви хочете:</translation>
+        <translation>Ви бажаєте:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxCloseVMDlg.ui" line="107"/>
@@ -712,7 +713,7 @@
     <message>
         <location filename="../ui/VBoxCloseVMDlg.ui" line="207"/>
         <source>&lt;p&gt;When checked, the machine state will be restored from the state stored in the current snapshot right after it is turned off. This is useful if you are sure that you want to discard the results of your last sessions and go back to the current snapshot.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Якщо цей пункт буде позначено, стан машини буде відновлено до стану, який збережено в поточному знімку, відразу після її вимикання. Це може бути корисним, якщо ви впевнені, що хочете відкинути результати останнього сеансу і вернутись до поточного знімку.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Якщо це відмічено, стан машини буде відновлено до стану, який збережено в поточному знімку, відразу після її вимкнення. Це може бути корисним, якщо ви впевнені, що бажаєте відкинути результати останнього сеансу і вернутись до поточного знімку.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxCloseVMDlg.ui" line="104"/>
@@ -722,7 +723,7 @@
     <message>
         <location filename="../ui/VBoxCloseVMDlg.ui" line="130"/>
         <source>&lt;p&gt;Sends the ACPI Power Button press event to the virtual machine.&lt;/p&gt;&lt;p&gt;Normally, the guest operating system running inside the virtual machine will detect this event and perform a clean shutdown procedure. This is a recommended way to turn off the virtual machine because all applications running inside it will get a chance to save their data and state.&lt;/p&gt;&lt;p&gt;If the machine doesn&apos;t respond to this action then the guest operating system may be misconfigured or doesn&apos;t understand ACPI Power Button events at all. In this case you should select the &lt;b&gt;Power off the machine&lt;/b&gt; action to stop virtual machine execution.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Відсилає ACPI-сигнал натиснення кнопки живлення у віртуальній машині.&lt;/p&gt;&lt;p&gt;Зазвичай, гостьова операційна система, яка виконується всередині віртуальної машини, визначить цей сигнал і виконає процес нормального завершення роботи. Цей варіант є рекомендованим шляхом вимкнення віртуальної машини, бо всі запущені програми всередині гостьової операційної системи зможуть зберегти свої дані та стан.&lt;/p&gt;&lt;p&gt;Якщо машина ніяк не реагує на ці дії, тоді гостьова операційна система може бути неправильно налаштована, або вона взагалі не розпізнає ACPI-сигнал живлення. У такому випадку, ви повинні вибрати дію &lt;b&gt;Вимкнути машину&lt;/b&gt; для зупинення виконання віртуальної машини.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Відсилає сигнал ACPI натиснення кнопки живлення у віртуальній машині.&lt;/p&gt;&lt;p&gt;Зазвичай, гостьова операційна система, яка виконується всередині віртуальної машини, визначить цей сигнал і виконає процес нормального завершення роботи. Цей варіант є рекомендованим шляхом вимкнення віртуальної машини, бо всі запущені програми всередині гостьової операційної системи зможуть зберегти свої дані та стан.&lt;/p&gt;&lt;p&gt;Якщо машина ніяк не реагує на ці дії, тоді гостьова операційна система може бути неправильно налаштована, або вона взагалі не розпізнає сигнал ACPI живлення. У такому випадку, ви повинні вибрати дію &lt;b&gt;Вимкнути машину&lt;/b&gt; для зупинення виконання віртуальної машини.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxCloseVMDlg.ui" line="156"/>
@@ -745,7 +746,7 @@
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1657"/>
         <source>Switch to fullscreen mode</source>
-        <translation>перемкнути у повноекранний режим</translation>
+        <translation>Перемкнути у повноекранний режим</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1663"/>
@@ -877,7 +878,7 @@
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1729"/>
         <source>Unmount the currently mounted CD/DVD-ROM media</source>
-        <translation>Демонтувати вже змонтований CD/DVD-ROM</translation>
+        <translation>Демонтувати вже змонтований носій CD/DVD-ROM</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1733"/>
@@ -887,7 +888,7 @@
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1735"/>
         <source>Enable or disable remote desktop (RDP) connections to this machine</source>
-        <translation>Дозволити або заборонити підключення віддаленої стільниці (RDP) до цієї машини</translation>
+        <translation>Дозволити або заборонити під&apos;єднання віддаленої стільниці (RDP) до цієї машини</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1737"/>
@@ -902,7 +903,7 @@
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1741"/>
         <source>&amp;Install Guest Additions...</source>
-        <translation>Вс&amp;тановіть гостьові доповнення...</translation>
+        <translation>Вс&amp;тановити гостьові доповнення...</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1744"/>
@@ -932,7 +933,7 @@
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1780"/>
         <source>De&amp;bug</source>
-        <translation>&amp;Налагодження</translation>
+        <translation>&amp;Зневадження</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1782"/>
@@ -1130,7 +1131,7 @@
         <location filename="../src/VBoxConsoleWnd.cpp" line="1996"/>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;All network adapters are disabled&lt;/b&gt;&lt;/nobr&gt;</source>
         <comment>Network adapters tooltip</comment>
-        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Всі мережеві адаптери вимукнуті&lt;/b&gt;&lt;/nobr&gt;</translation>
+        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Всі мережеві адаптери вимкнуті&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="2008"/>
@@ -1142,7 +1143,7 @@
         <location filename="../src/VBoxConsoleWnd.cpp" line="2026"/>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;No USB devices attached&lt;/b&gt;&lt;/nobr&gt;</source>
         <comment>USB device tooltip</comment>
-        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Жодного пристрою USB не під’єднано&lt;/b&gt;&lt;/nobr&gt;</translation>
+        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Жодного пристрою USB не під&apos;єднано&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="2033"/>
@@ -1163,19 +1164,19 @@
         <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Немає спільних тек&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
+        <location filename="../src/VBoxConsoleWnd.cpp" line="0"/>
         <source>Sun xVM VirtualBox</source>
         <translation type="obsolete">Sun xVM VirtualBox</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1708"/>
         <source>Session I&amp;nformation Dialog</source>
-        <translation>&amp;Інформація про сесію</translation>
+        <translation>&amp;Інформація про сеанс</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1710"/>
         <source>Show Session Information Dialog</source>
-        <translation>Показувати інформацію про сесію</translation>
+        <translation>Показати інформацію про сеанс</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="1750"/>
@@ -1279,12 +1280,12 @@
     <message>
         <location filename="../src/VBoxExportApplianceWzd.cpp" line="134"/>
         <source>Please complete the additionally fields like the username, password and the bucket. Finally you have to provide a filename for the OVF target.</source>
-        <translation type="unfinished"></translation>
+        <translation>Будь ласка, заповніть додаткові поля такі, як ім&apos;я користувача, пароль і крилата діжка. Наостанок, ви маєте надати назву файлові для цілі OVF.</translation>
     </message>
     <message>
         <location filename="../src/VBoxExportApplianceWzd.cpp" line="135"/>
         <source>Please complete the additionally fields like the username, password, hostname and the bucket. Finally you have to provide a filename for the OVF target.</source>
-        <translation type="unfinished"></translation>
+        <translation>Будь ласка, заповніть додаткові поля такі, як ім&apos;я користувача, пароль, назва вузла і крилата діжка. Наостанок, ви маєте надати назву файлові для цілі OVF.</translation>
     </message>
     <message>
         <location filename="../src/VBoxExportApplianceWzd.cpp" line="208"/>
@@ -1299,17 +1300,17 @@
     <message>
         <location filename="../src/VBoxExportApplianceWzd.cpp" line="388"/>
         <source>Exporting Appliance ...</source>
-        <translation type="unfinished"></translation>
+        <translation>Експорт образа віртуальної машини ...</translation>
     </message>
     <message>
         <location filename="../ui/VBoxExportApplianceWzd.ui" line="31"/>
         <source>Appliance Export Wizard</source>
-        <translation type="unfinished"></translation>
+        <translation>Майстер експорту образа віртуальної машини</translation>
     </message>
     <message>
         <location filename="../ui/VBoxExportApplianceWzd.ui" line="55"/>
         <source>Welcome to the Appliance Export Wizard!</source>
-        <translation type="unfinished"></translation>
+        <translation>Ласкаво просимо до майстера експорту образа віртуальної машини!</translation>
     </message>
     <message>
         <location filename="../ui/VBoxExportApplianceWzd.ui" line="105"/>
@@ -1320,7 +1321,13 @@ p, li { white-space: pre-wrap; }
 &lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;This wizard will guide you through the process of exporting an appliance. &lt;/p&gt;
 &lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Use the &lt;span style=&quot; font-weight:600;&quot;&gt;Next&lt;/span&gt; button to go the next page of the wizard and the &lt;span style=&quot; font-weight:600;&quot;&gt;Back&lt;/span&gt; button to return to the previous page.&lt;/p&gt;
 &lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Please select the virtual machines that should be exported to the appliance. You can select more than one. Please note that these machines have to be turned off before they can be exported.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
+&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
+p, li { white-space: pre-wrap; }
+&lt;/style&gt;&lt;/head&gt;&lt;body&gt;
+&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Цей майстер допоможе вам з експортом образа віртуальної машини. &lt;/p&gt;
+&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Натисніть кнопку &lt;span style=&quot; font-weight:600;&quot;&gt;Далі&lt;/span&gt;, щоб перейти до наступної сторінки майстра і &lt;span style=&quot; font-weight:600;&quot;&gt;Назад&lt;/span&gt;, щоб повернутись до попередньої сторінки.&lt;/p&gt;
+&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Будь ласка, виберіть віртуальні машини, які слід експортувати в образ віртуальної машини. Ви можете вибрати більше одного. Будь ласка, майте на увазі, що ті віртуальні машини потрібно вимкнути перед експортом.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxExportApplianceWzd.ui" line="722"/>
@@ -1340,77 +1347,77 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxExportApplianceWzd.ui" line="545"/>
         <source>Appliance Export Settings</source>
-        <translation type="unfinished"></translation>
+        <translation>Налаштування експорту образів віртуальної машини</translation>
     </message>
     <message>
         <location filename="../ui/VBoxExportApplianceWzd.ui" line="252"/>
         <source>Here you can change additional configuration values of the selected virtual machines. You can modify most of the shown properties by double-clicking on the items.</source>
-        <translation type="unfinished"></translation>
+        <translation>Тут ви можете змінити додаткові значення налаштування вибраної віртуальної машини. Ви можете змінити більшість показаних властивостей подвійним клацом по пунктах.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxExportApplianceWzd.ui" line="298"/>
         <source>Restore Defaults</source>
-        <translation type="unfinished">Відновити до типових</translation>
+        <translation>Відновити до типових</translation>
     </message>
     <message>
         <location filename="../ui/VBoxExportApplianceWzd.ui" line="419"/>
         <source>Please specify the target for the OVF export. You can choose between a local file system export, the uploading of the OVF to the Sun Cloud service or an S3 storage server.</source>
-        <translation type="unfinished"></translation>
+        <translation>Будь ласка, вкажіть ціль експорту OVF. Ви можете вибрати між експортом локальної файлової системи і завантаженням OVF на хмарні служби Sun або на сервер зберігання S3.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxExportApplianceWzd.ui" line="431"/>
         <source>&amp;Local Filesystem </source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Локальна файлова система </translation>
     </message>
     <message>
         <location filename="../ui/VBoxExportApplianceWzd.ui" line="441"/>
         <source>Sun &amp;Cloud</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Хмаринки Sun</translation>
     </message>
     <message>
         <location filename="../ui/VBoxExportApplianceWzd.ui" line="448"/>
         <source>&amp;Simple Storage System (S3)</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Проста система зберігання (S3)</translation>
     </message>
     <message>
         <location filename="../ui/VBoxExportApplianceWzd.ui" line="604"/>
         <source>&amp;Username:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Ім&apos;я користувача:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxExportApplianceWzd.ui" line="617"/>
         <source>&amp;Password:</source>
-        <translation type="unfinished">&amp;Пароль:</translation>
+        <translation>&amp;Пароль:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxExportApplianceWzd.ui" line="637"/>
         <source>&amp;File:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Файл:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxExportApplianceWzd.ui" line="650"/>
         <source>&amp;Bucket:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Крилата діжка:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxExportApplianceWzd.ui" line="660"/>
         <source>&amp;Hostname:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Назва вузла:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxExportApplianceWzd.ui" line="675"/>
         <source>Write in legacy OVF 0.9 format for compatibility with other virtualization products.</source>
-        <translation type="unfinished"></translation>
+        <translation>Записати в форматі OVF 0.9 для сумісності з іншими продуктами віртуалізації.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxExportApplianceWzd.ui" line="678"/>
         <source>&amp;Write legacy OVF 0.9</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Записати в OVF 0.9</translation>
     </message>
     <message>
         <location filename="../ui/VBoxExportApplianceWzd.ui" line="729"/>
         <source>&amp;Export &gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Експорт &gt;</translation>
     </message>
 </context>
 <context>
@@ -1486,7 +1493,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="165"/>
         <source>General</source>
-        <translation>Загальні</translation>
+        <translation>Загально</translation>
     </message>
     <message>
         <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="168"/>
@@ -1554,7 +1561,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxGLSettingsGeneral.ui" line="128"/>
         <source>When checked, the application will provide an icon with the context menu in the system tray.</source>
-        <translation>Якщо цей пункт буде позначено, програма забезпечуватиме піктограму з контекстним меню в системному лотку.</translation>
+        <translation>Якщо це відмічено, програма забезпечуватиме піктограму з контекстним меню в системному лотку.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxGLSettingsGeneral.ui" line="131"/>
@@ -1634,7 +1641,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxGLSettingsLanguage.ui" line="87"/>
         <source>Lists all available user interface languages. The effective language is written in &lt;b&gt;bold&lt;/b&gt;. Select &lt;i&gt;Default&lt;/i&gt; to reset to the system default language.</source>
-        <translation>Показує список всіх доступних користувацьких інтерфейсів мови.Чинна мова записана &lt;b&gt;грубим шрифтом&lt;/b&gt;. Виберіть &lt;i&gt;Типова&lt;/i&gt;, щоб повернутися до типової для системи мови.</translation>
+        <translation>Показує список усіх доступних мов користувацького інтерфейсу. Чинна мова записана &lt;b&gt;грубим шрифтом&lt;/b&gt;. Виберіть &lt;i&gt;Типова&lt;/i&gt;, щоб повернутися до типової для системи мови.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxGLSettingsLanguage.ui" line="94"/>
@@ -1963,7 +1970,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxGLSettingsUpdate.ui" line="45"/>
         <source>When checked, the application will periodically connect to the VirtualBox website and check whether a new VirtualBox version is available.</source>
-        <translation>Якщо це відмічено, програма періодично підключатиметься до веб-сайта VirtualBox і перевірятиме доступність нових версій VirtualBox.</translation>
+        <translation>Якщо це відмічено, програма періодично буде під&apos;єднуватись до сайта VirtualBox і перевірятиме доступність нових версій VirtualBox.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxGLSettingsUpdate.ui" line="48"/>
@@ -1978,7 +1985,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxGLSettingsUpdate.ui" line="103"/>
         <source>Specifies how often the new version check should be performed. Note that if you want to completely disable this check, just clear the above check box.</source>
-        <translation>Визначає як часто слід здійснювати перевірку нової версії. Майте на увазі, якщо ви бажаєте повністю відмовитись від перевірки, просто зніміть мітку.</translation>
+        <translation>Визначає, як часто слід здійснювати перевірку нової версії. Майте на увазі, якщо ви бажаєте повністю відмовитись від перевірки, просто зніміть мітку.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxGLSettingsUpdate.ui" line="129"/>
@@ -2004,7 +2011,7 @@ p, li { white-space: pre-wrap; }
         <location filename="../src/VBoxGlobal.cpp" line="1334"/>
         <source>&lt;br&gt;&lt;nobr&gt;Serial No. %1&lt;/nobr&gt;</source>
         <comment>USB device tooltip</comment>
-        <translation>&lt;br&gt;&lt;nobr&gt;Серійний Номер %1&lt;/nobr&gt;</translation>
+        <translation>&lt;br&gt;&lt;nobr&gt;Серійний номер %1&lt;/nobr&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="1341"/>
@@ -2031,7 +2038,7 @@ p, li { white-space: pre-wrap; }
         <translation>Основна пам&apos;ять</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
+        <location filename="../src/VBoxGlobal.cpp" line="0"/>
         <source>&lt;nobr&gt;%3 MB&lt;/nobr&gt;</source>
         <comment>details report</comment>
         <translation type="obsolete">&lt;nobr&gt;%3 МБ.&lt;/nobr&gt;</translation>
@@ -2040,7 +2047,7 @@ p, li { white-space: pre-wrap; }
         <location filename="../src/VBoxGlobal.cpp" line="1443"/>
         <source>General</source>
         <comment>details report</comment>
-        <translation>Загальні</translation>
+        <translation>Загально</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="1532"/>
@@ -2049,7 +2056,7 @@ p, li { white-space: pre-wrap; }
         <translation>Відеопам&apos;ять</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
+        <location filename="../src/VBoxGlobal.cpp" line="0"/>
         <source>&lt;nobr&gt;%4 MB&lt;/nobr&gt;</source>
         <comment>details report</comment>
         <translation type="obsolete">&lt;nobr&gt;%4 МБ.&lt;/nobr&gt;</translation>
@@ -2205,31 +2212,31 @@ p, li { white-space: pre-wrap; }
         <translation>Вимкнутий</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
+        <location filename="../src/VBoxGlobal.cpp" line="0"/>
         <source>VRDP Server Port</source>
         <comment>details report (VRDP)</comment>
         <translation type="obsolete">Порт сервера VRDP</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
+        <location filename="../src/VBoxGlobal.cpp" line="0"/>
         <source>%1</source>
         <comment>details report (VRDP)</comment>
         <translation type="obsolete">%1</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
+        <location filename="../src/VBoxGlobal.cpp" line="0"/>
         <source>Disabled</source>
         <comment>details report (VRDP)</comment>
         <translation type="obsolete">Вимкнутий</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
+        <location filename="../src/VBoxGlobal.cpp" line="0"/>
         <source>Remote Display</source>
         <comment>details report</comment>
         <translation type="obsolete">Віддалена стільниця</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
+        <location filename="../src/VBoxGlobal.cpp" line="0"/>
         <source>Opening URLs is not implemented yet.</source>
         <translation type="obsolete">Відкриття URL ще не здійснено.</translation>
     </message>
@@ -2444,7 +2451,7 @@ p, li { white-space: pre-wrap; }
         <translation>NAT</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
+        <location filename="../src/VBoxGlobal.cpp" line="0"/>
         <source>Host Interface</source>
         <comment>NetworkAttachmentType</comment>
         <translation type="obsolete">Головний інтерфейс</translation>
@@ -2516,12 +2523,12 @@ p, li { white-space: pre-wrap; }
         <translation>Двонапрямний</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
+        <location filename="../src/VBoxGlobal.cpp" line="0"/>
         <source>Select a directory</source>
         <translation type="obsolete">Виберіть теку</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
+        <location filename="../src/VBoxGlobal.cpp" line="0"/>
         <source>Select a file</source>
         <translation type="obsolete">Виберіть файл</translation>
     </message>
@@ -2556,7 +2563,7 @@ p, li { white-space: pre-wrap; }
         <translation>Спільна теки</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
+        <location filename="../src/VBoxGlobal.cpp" line="0"/>
         <source>%1</source>
         <comment>details report (shadef folders)</comment>
         <translation type="obsolete">%1</translation>
@@ -2583,7 +2590,7 @@ p, li { white-space: pre-wrap; }
         <location filename="../src/VBoxGlobal.cpp" line="2705"/>
         <source>Disconnected</source>
         <comment>PortMode</comment>
-        <translation>Відключений</translation>
+        <translation>Від&apos;єднаний</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="2706"/>
@@ -2766,13 +2773,13 @@ p, li { white-space: pre-wrap; }
         <translation>Intel PRO/1000 MT Desktop (82540EM)</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
+        <location filename="../src/VBoxGlobal.cpp" line="0"/>
         <source>PIIX3</source>
         <comment>IDEControllerType</comment>
         <translation type="obsolete">PIIX3</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
+        <location filename="../src/VBoxGlobal.cpp" line="0"/>
         <source>PIIX4</source>
         <comment>IDEControllerType</comment>
         <translation type="obsolete">PIIX4</translation>
@@ -2817,7 +2824,7 @@ p, li { white-space: pre-wrap; }
         <location filename="../src/VBoxGlobal.cpp" line="1383"/>
         <source>&lt;nobr&gt;Serial No.: %1&lt;/nobr&gt;</source>
         <comment>USB filter tooltip</comment>
-        <translation>&lt;nobr&gt;Серійний Номер: %1&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;Серійний номер: %1&lt;/nobr&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="1388"/>
@@ -2832,13 +2839,13 @@ p, li { white-space: pre-wrap; }
         <translation>&lt;nobr&gt;Стан: %1&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
+        <location filename="../src/VBoxGlobal.cpp" line="0"/>
         <source>host interface, %1</source>
         <comment>details report (network)</comment>
         <translation type="obsolete">головний інтерфейс, %1</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
+        <location filename="../src/VBoxGlobal.cpp" line="0"/>
         <source>internal network, &apos;%1&apos;</source>
         <comment>details report (network)</comment>
         <translation type="obsolete">внутрішня мережа, &apos;%1&apos;</translation>
@@ -2900,12 +2907,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/VBoxMedium.cpp" line="495"/>
         <source>&lt;hr&gt;Some of the media in this hard disk chain are inaccessible. Please use the Virtual Media Manager in &lt;b&gt;Show Differencing Hard Disks&lt;/b&gt; mode to inspect these media.</source>
-        <translation>&lt;hr&gt;Деякі з носіїв цієї низки жорстких дисків недоступні. Будь ласка, використайте Керування Віртуальними Носіями в режимі &lt;b&gt;Показати обчислення жорстких дисків&lt;/b&gt;, щоб оглянути цей носій.</translation>
+        <translation>&lt;hr&gt;Деякі з носіїв цієї низки жорстких дисків недоступні. Будь ласка, використайте керування віртуальними носіями в режимі &lt;b&gt;Показати обчислення жорстких дисків&lt;/b&gt;, щоб оглянути цей носій.</translation>
     </message>
     <message>
         <location filename="../src/VBoxMedium.cpp" line="514"/>
         <source>%1&lt;hr&gt;This base hard disk is indirectly attached using the following differencing hard disk:&lt;br&gt;%2%3</source>
-        <translation>%1&lt;hr&gt;Цей жорсткий диск неявно під&apos;єднаний, використовуючи наступне обчислення жорсткого диска:&lt;br&gt;%2%3</translation>
+        <translation>%1&lt;hr&gt;Цей жорсткий диск неявно під&apos;єднаний, використовуючи таке обчислення жорсткого диска:&lt;br&gt;%2%3</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="1536"/>
@@ -2983,7 +2990,7 @@ p, li { white-space: pre-wrap; }
         <location filename="../src/VBoxGlobal.cpp" line="1546"/>
         <source>Remote Display Server Port</source>
         <comment>details report (VRDP Server)</comment>
-        <translation>Віддалений потр екрана сервера</translation>
+        <translation>Віддалений порт екрана сервера</translation>
     </message>
     <message>
         <location filename="../src/VBoxGlobal.cpp" line="1550"/>
@@ -3316,7 +3323,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/VBoxMediaComboBox.cpp" line="262"/>
         <source>No media available. Use the Virtual Media Manager to add media of the corresponding type.</source>
-        <translation>Жодного доступного носія. Використайте Керування Віртуальними Носіями, щоб додати носія відповідного типу.</translation>
+        <translation>Жодного доступного носія. Використайте керування віртуальними носіями, щоб додати носія відповідного типу.</translation>
     </message>
     <message>
         <location filename="../src/VBoxMediaComboBox.cpp" line="263"/>
@@ -3455,7 +3462,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxMediaManagerDlg.ui" line="36"/>
         <source>Virtual Media Manager</source>
-        <translation>Керування Віртуальними Носіями</translation>
+        <translation>Керування віртуальними носіями</translation>
     </message>
     <message>
         <location filename="../ui/VBoxMediaManagerDlg.ui" line="59"/>
@@ -3514,42 +3521,42 @@ p, li { white-space: pre-wrap; }
 <context>
     <name>VBoxNIList</name>
     <message>
-        <location filename="" line="0"/>
+        <location filename="../src/VBoxMiniToolBar.cpp" line="0"/>
         <source>VirtualBox Host Interface %1</source>
         <translation type="obsolete">Головний інтерфейс VirtualBox %1</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
+        <location filename="../src/VBoxMiniToolBar.cpp" line="0"/>
         <source>&lt;p&gt;Do you want to remove the selected host network interface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note:&lt;/b&gt; This interface may be in use by one or more network adapters of this or another VM. After it is removed, these adapters will no longer work until you correct their settings by either choosing a different interface name or a different adapter attachment type.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Чи ви бажаєте вилучити вибраний головний мережевий інтерфейс &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Майте на увазі:&lt;/b&gt; Цей інтерфейс може використовуватись одним або більше мережевим адаптером на цій чи іншій віртуальній машині. Після вилучення, ці адаптери більше не працюватимуть поки ви не зміните їхні налаштування, вибравши будь-яку іншу назву інтерфейсу або інший тип під&apos;єднання.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
+        <location filename="../src/VBoxMiniToolBar.cpp" line="0"/>
         <source>Host &amp;Interfaces</source>
         <translation type="obsolete">&amp;Головний інтерфейс</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
+        <location filename="../src/VBoxMiniToolBar.cpp" line="0"/>
         <source>Lists all available host interfaces.</source>
         <translation type="obsolete">Показує список всіх доступних головних інтерфейсів. </translation>
     </message>
     <message>
-        <location filename="" line="0"/>
+        <location filename="../src/VBoxMiniToolBar.cpp" line="0"/>
         <source>A&amp;dd New Host Interface</source>
         <translation type="obsolete">&amp;Додати новий головний інтерфейс</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
+        <location filename="../src/VBoxMiniToolBar.cpp" line="0"/>
         <source>&amp;Remove Selected Host Interface</source>
         <translation type="obsolete">&amp;Вилучити вибраний головний інтерфейс</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
+        <location filename="../src/VBoxMiniToolBar.cpp" line="0"/>
         <source>Adds a new host interface.</source>
         <translation type="obsolete">Додає новий головний інтерфейс.</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
+        <location filename="../src/VBoxMiniToolBar.cpp" line="0"/>
         <source>Removes the selected host interface.</source>
         <translation type="obsolete">Вилучає вибраний головний інтерфейс.</translation>
     </message>
@@ -3564,7 +3571,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="63"/>
         <source>Welcome to the Create New Virtual Disk Wizard!</source>
-        <translation>Ласкаво просимо до Майстра Створення Нового Віртуального Диска!</translation>
+        <translation>Ласкаво просимо до майсетра створення нового віртуального диска!</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="435"/>
@@ -3584,7 +3591,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/VBoxNewHDWzd.cpp" line="274"/>
         <source>Hard disk images (*.vdi)</source>
-        <translation>Образ жорсткого диску (*.vdi)</translation>
+        <translation>Образ жорсткого диска (*.vdi)</translation>
     </message>
     <message>
         <location filename="../src/VBoxNewHDWzd.cpp" line="272"/>
@@ -3638,7 +3645,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="121"/>
         <source>&lt;p&gt;This wizard will help you to create a new virtual hard disk for your virtual machine.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Цей майстер допоможе створити новий віртуальний жорсткий диск для вашої віртуальної машини.&lt;/p&gt;&lt;p&gt;Натисніть кнопку &lt;b&gt;Далі&lt;/b&gt;, щоб перейти до наступної сторінки майстра та кнопку &lt;b&gt;Назад&lt;/b&gt;, щоб повернутись до попередньої сторінки.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Цей майстер допоможе створити новий віртуальний жорсткий диск для вашої віртуальної машини.&lt;/p&gt;&lt;p&gt;Натисніть кнопку &lt;b&gt;Далі&lt;/b&gt;, щоб перейти до наступної сторінки майстера та кнопку &lt;b&gt;Назад&lt;/b&gt;, щоб повернутись до попередньої сторінки.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="227"/>
@@ -3648,7 +3655,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="285"/>
         <source>&lt;p&gt;Select the type of virtual hard disk you want to create.&lt;/p&gt;&lt;p&gt;A &lt;b&gt;dynamically expanding storage&lt;/b&gt; initially occupies a very small amount of space on your physical hard disk. It will grow dynamically (up to the size specified) as the Guest OS claims disk space.&lt;/p&gt;&lt;p&gt;A &lt;b&gt;fixed-size storage&lt;/b&gt; does not grow. It is stored in a file of approximately the same size as the size of the virtual hard disk. The creation of a fixed-size storage may take a long time depending on the storage size and the write performance of your harddisk.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Виберіть тип віртуального жорсткого диска, який ви хочете створити.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Динамічно розширна пам&apos;ять&lt;/b&gt; початково займає дуже малу величину місця на фізичному жорсткому диску. Розмір буде динамічно зростати (до вказаного розміру) до тих пір, поки гостьова операційна система може використовувати дисковий простір.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Незмінної розмірності пам&apos;ять&lt;/b&gt; не збільшується. Він зберігається у файлі приблизно такого ж розміру, як розмір віртуального жорсткого диска. Створення незмінної розмірності пам&apos;яті може забрати багато часу, який залежить від розміру пам&apos;яті та швидкодії вашого жорсткого диска.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Виберіть тип віртуального жорсткого диска, який ви бажаєте створити.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Динамічно розширна пам&apos;ять&lt;/b&gt; початково займає дуже малу величину місця на фізичному жорсткому диску. Розмір буде динамічно зростати (до вказаного розміру) до тих пір, поки гостьова операційна система може використовувати дисковий простір.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Незмінної розмірності пам&apos;ять&lt;/b&gt; не збільшується. Він зберігається у файлі приблизно такого ж розміру, як розмір віртуального жорсткого диска. Створення незмінної розмірності пам&apos;яті може забрати багато часу, який залежить від розміру пам&apos;яті та швидкодії вашого жорсткого диска.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="304"/>
@@ -3688,7 +3695,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="793"/>
         <source>You are going to create a new virtual hard disk with the following parameters:</source>
-        <translation>Ви збираєтесь створити новий віртуальний жорсткий диск з наступними параметрами:</translation>
+        <translation>Ви збираєтесь створити новий віртуальний жорсткий диск з такими параметрами:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewHDWzd.ui" line="843"/>
@@ -3706,7 +3713,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxNewVMWzd.ui" line="63"/>
         <source>Welcome to the New Virtual Machine Wizard!</source>
-        <translation>Ласкаво просимо до Майстра Нової Віртуальної Машини!</translation>
+        <translation>Ласкаво просимо до майстера нової віртуальної машини!</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewVMWzd.ui" line="298"/>
@@ -3726,7 +3733,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxNewVMWzd.ui" line="494"/>
         <source>&lt;p&gt;Select the amount of base memory (RAM) in megabytes to be allocated to the virtual machine.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Виберіть кількість основної пам&apos;яті (RAM) в мегабайтах, яка буде виділена віртуальній машині.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Виберіть об&apos;єм основної пам&apos;яті (RAM) в мегабайтах, яка буде виділена віртуальній машині.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewVMWzd.ui" line="532"/>
@@ -3744,12 +3751,12 @@ p, li { white-space: pre-wrap; }
         <translation>Пам&apos;ять</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
+        <location filename="../ui/VBoxNewVMWzd.ui" line="0"/>
         <source>N&amp;ew...</source>
         <translation type="obsolete">С&amp;творити...</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
+        <location filename="../ui/VBoxNewVMWzd.ui" line="0"/>
         <source>E&amp;xisting...</source>
         <translation type="obsolete">&amp;Існуючий...</translation>
     </message>
@@ -3776,7 +3783,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxNewVMWzd.ui" line="121"/>
         <source>&lt;p&gt;This wizard will guide you through the steps that are necessary to create a new virtual machine for VirtualBox.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Цей майстер допоможе вам зробити кроки, які необхідні для створення нової віртуальної машини для VirtualBox.&lt;/p&gt;&lt;p&gt;Натисніть кнопку &lt;b&gt;Наступний&lt;/b&gt;, щоб перейти до наступної сторінки майстра, або кнопку &lt;b&gt;Назад&lt;/b&gt;, щоб повернутись до попередньої сторінки.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Цей майстер допоможе вам зробити кроки, які необхідні для створення нової віртуальної машини для VirtualBox.&lt;/p&gt;&lt;p&gt;Натисніть кнопку &lt;b&gt;Наступний&lt;/b&gt;, щоб перейти до наступної сторінки майстера, або кнопку &lt;b&gt;Назад&lt;/b&gt;, щоб повернутись до попередньої сторінки.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewVMWzd.ui" line="1113"/>
@@ -3791,12 +3798,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxNewVMWzd.ui" line="282"/>
         <source>&lt;p&gt;Enter a name for the new virtual machine and select the type of the guest operating system you plan to install onto the virtual machine.&lt;/p&gt;&lt;p&gt;The name of the virtual machine usually indicates its software and hardware configuration. It will be used by all VirtualBox components to identify your virtual machine.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Введіть назву для нової віртуальної машини і виберіть тип гостьової операційної системи, яку ви плануєте встановити на цю віртуальну машину.&lt;/p&gt;&lt;p&gt;Назва віртуальної машини зазвичай показує її  програмну та апаратну конфігурацію. Це буде використовуватися усіма компонентами VirtualBox для пізнавання вашої віртуальної машини.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Введіть назву для нової віртуальної машини і виберіть тип гостьової операційної системи, яку ви плануєте встановити на цю віртуальну машину.&lt;/p&gt;&lt;p&gt;Назва віртуальної машини зазвичай показує її програмні та апаратні налаштування. Це буде використовуватися усіма компонентами VirtualBox для пізнавання вашої віртуальної машини.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewVMWzd.ui" line="1014"/>
         <source>&lt;p&gt;You are going to create a new virtual machine with the following parameters:&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Ви збираєтесь створити віртуальну машину з наступними параметрами:&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Ви збираєтесь створити віртуальну машину з такими параметрами:&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxNewVMWzd.ui" line="1061"/>
@@ -3877,7 +3884,7 @@ p, li { white-space: pre-wrap; }
         <translation>Показує сімейство операційних систем, котру ви плануєте встановити на цю віртуальну машину.</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
+        <location filename="../src/VBoxOSTypeSelectorWidget.cpp" line="0"/>
         <source>V&amp;ersion:</source>
         <translation type="obsolete">&amp;Версія:</translation>
     </message>
@@ -3922,7 +3929,7 @@ p, li { white-space: pre-wrap; }
         <location filename="../src/VBoxProblemReporter.cpp" line="175"/>
         <source>VirtualBox - Critical Error</source>
         <comment>msg box title</comment>
-        <translation>VirtualBox — Критична Помилка</translation>
+        <translation>VirtualBox — Критична помилка</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="199"/>
@@ -3933,12 +3940,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="382"/>
         <source>Failed to open &lt;tt&gt;%1&lt;/tt&gt;. Make sure your desktop environment can properly handle URLs of this type.</source>
-        <translation>Не вдалось відкрити &lt;tt&gt;%1&lt;/tt&gt;. Переконайтесь, що середовище вашої стільниці може правильно оперувати з URL цього типу.</translation>
+        <translation>Не вдалось відкрити &lt;tt&gt;%1&lt;/tt&gt;. Переконайтесь, що середовище вашої стільниці може правильно оперувати з посиланнями цього типу.</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="433"/>
         <source>&lt;p&gt;Failed to initialize COM or to find the VirtualBox COM server. Most likely, the VirtualBox server is not running or failed to start.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Не вдалося ініціювати COM або знайти сервер COM програми VirtualBox. Швидше за все, сервер VirtualBox не запускається або він не може запуститись.&lt;/p&gt;&lt;p&gt;Програма зараз завершить роботу.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Не вдалося запустити COM або знайти сервер COM програми VirtualBox. Швидше за все, сервер VirtualBox не запускається або він не може запуститись.&lt;/p&gt;&lt;p&gt;Програма зараз завершить роботу.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="441"/>
@@ -3948,7 +3955,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="489"/>
         <source>Failed to set global VirtualBox properties.</source>
-        <translation>Не вдалось задати глобальні налаштування VirtualBox.</translation>
+        <translation>Не вдалось задати загальні налаштування VirtualBox.</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="519"/>
@@ -3998,7 +4005,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="726"/>
         <source>Failed to stop the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Нес вдалось зупинити віртуальну машину &lt;b&gt;%1&lt;/b&gt;.</translation>
+        <translation>Не вдалось зупинити віртуальну машину &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="738"/>
@@ -4028,22 +4035,22 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="886"/>
         <source>There is no virtual machine named &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Не названа віртуальна машина &lt;b&gt;%1&lt;/b&gt;.</translation>
+        <translation>Нема віртуальної машини з назвою &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="934"/>
         <source>&lt;p&gt;Are you sure you want to permanently delete the virtual machine &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;This operation cannot be undone.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Ви впевнені, що хочете хочете повністю вилучити віртуальну машину &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;Цю операцію не можна скасувати.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Ви впевнені, що бажаєте повністю вилучити віртуальну машину &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;Цю операцію не можна скасувати.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="947"/>
         <source>&lt;p&gt;Are you sure you want to unregister the inaccessible virtual machine &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;You will no longer be able to register it back from GUI.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Ви впевнені, що хочете вилучити з реєстру недоступну віртуальну машину &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;Ви більше не зможете зареєструвати її  знову за допомогою GUI.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Ви впевнені, що бажаєте вилучити з реєстру недоступну віртуальну машину &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;Ви більше не зможете зареєструвати її знову за допомогою GUI.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="963"/>
         <source>&lt;p&gt;Are you sure you want to discard the saved state of the virtual machine &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;This operation is equivalent to resetting or powering off the machine without doing a proper shutdown by means of the guest OS.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Ви впевнені, що хочете відкинути збережений стан віртуальної машини &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;Ця операція рівносильна перезавантаженню або вимкненню живлення машини без належного вимкнення за допомогою гостьової операційної системи.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Ви впевнені, що бажаєте відкинути збережений стан віртуальної машини &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;Ця операція рівносильна перезавантаженню або вимкненню машини з живлення неналежним чином за допомогою гостьової операційної системи.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1211"/>
@@ -4056,7 +4063,7 @@ p, li { white-space: pre-wrap; }
         <translation>Не вдалось відкрити сеанс для віртуальної машини &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="0"/>
         <source>Failed to create the host network interface &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation type="obsolete">Не вдалось створити головний мережевий інтерфейс &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
@@ -4088,7 +4095,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1699"/>
         <source>&lt;p&gt;The Virtual Machine reports that the guest OS does not support &lt;b&gt;mouse pointer integration&lt;/b&gt; in the current video mode. You need to capture the mouse (by clicking over the VM display or pressing the host key) in order to use the mouse inside the guest OS.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Віртуальна машина  повідомляє, що гостьова операційна система не підтримує &lt;b&gt;інтеграція курсора миші&lt;/b&gt; в поточному відеорежимі. Вам потрібно захопити мишку (клацнувши на екран віртуальної машини або натиснувши головну клавішу), щоб використовувати мишку всередині гостьової операційної системи.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Віртуальна машина повідомляє, що гостьова операційна система не підтримує &lt;b&gt;інтеграцію курсора миші&lt;/b&gt; в поточному відеорежимі. Вам потрібно захопити мишку (клацнувши на екран віртуальної машини або натиснувши головну клавішу), щоб використовувати мишку всередині гостьової операційної системи.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1718"/>
@@ -4104,7 +4111,7 @@ p, li { white-space: pre-wrap; }
         <location filename="../src/VBoxProblemReporter.cpp" line="2129"/>
         <source>&lt;nobr&gt;Fatal Error&lt;/nobr&gt;</source>
         <comment>runtime error info</comment>
-        <translation>&lt;nobr&gt;Невиправна Помилка&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;Невиправна помилка&lt;/nobr&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="2135"/>
@@ -4133,17 +4140,17 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="2174"/>
         <source>&lt;p&gt;A fatal error has occurred during virtual machine execution! The virtual machine will be powered off. It is suggested to use the clipboard to copy the following error message for further examination:&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Невиправна помилка трапилась під час роботи віртуальної машини! Віртуальна машина буде вимкнута. Пропонується використати копіювання в буфер обміну для подальшого вивчення помилки:&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Протягом роботи віртуальної машини трапилась невиправна помилка! Віртуальна машина буде вимкнуто. Пропонується використати копіювання в кишеню для подальшого вивчення помилки:&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="2186"/>
         <source>&lt;p&gt;An error has occurred during virtual machine execution! The error details are shown below. You can try to correct the described error and resume the virtual machine execution.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Невиправна помилка трапилась під час роботи віртуальної машини! Подробиці про помилку показано нижче. Ви можете спробувати виправити описану помилку і відновити роботу віртуальної машини.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Протягом роботи віртуальної машини трапилась невиправна помилка! Подробиці про помилку показано нижче. Ви можете спробувати виправити описану помилку і відновити роботу віртуальної машини.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="2196"/>
         <source>&lt;p&gt;The virtual machine execution may run into an error condition as described below. You may ignore this message, but it is suggested to perform an appropriate action to make sure the described error will not happen.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Робота віртуальної машини може запускатися з помилкою, котра описана нижче. Ви можете проігнорувати це повідомлення, але пропонується здійснити відповідну дію, щоб переконатися, що описана помилка не трапиться.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Робота віртуальної машини може запускатися з помилкою, яка описана нижче. Ви можете проігнорувати це повідомлення, але пропонується здійснити відповідну дію, щоб переконатися, що описана помилка не трапиться.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="2309"/>
@@ -4188,17 +4195,17 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1485"/>
         <source>&lt;p&gt;VirtualBox Guest Additions installed in the Guest OS are too old: the installed version is %1, the expected version is %2. Some features that require Guest Additions (mouse integration, guest display auto-resize) will most likely stop working properly.&lt;/p&gt;&lt;p&gt;Please update Guest Additions to the current version by choosing &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Гостьові доповнення VirtualBox, котрі встановлені в гостьовій операційній системі занадто старі: поточна версія — %1, потрібна версія — %2. Деякі властивості, котрі потребують гостьових доповнень (інтеграцію миші, авторозмір гостьового термінала тощо), найімовірніше не будуть працювати як слід.&lt;/p&gt;&lt;p&gt;Будь ласка, оновіть гостьові доповнення до поточної версії вибравши &lt;b&gt;Встановити гостьові доповнення&lt;/b&gt; з меню &lt;b&gt;Пристрої&lt;/b&gt;.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Гостьові доповнення VirtualBox, які встановлено в гостьовій операційній системі занадто старі: поточна версія — %1, потрібна версія — %2. Деякі властивості, які потребують гостьових доповнень (інтеграцію миші, авторозмір гостьового термінала тощо), найімовірніше не будуть працювати як слід.&lt;/p&gt;&lt;p&gt;Будь ласка, оновіть гостьові доповнення до поточної версії вибравши &lt;b&gt;Встановити гостьові доповнення&lt;/b&gt; з меню &lt;b&gt;Пристрої&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1501"/>
         <source>&lt;p&gt;VirtualBox Guest Additions installed in the Guest OS are outdated: the installed version is %1, the expected version is %2. Some features that require Guest Additions (mouse integration, guest display auto-resize) may not work as expected.&lt;/p&gt;&lt;p&gt;It is recommended to update Guest Additions to the current version  by choosing &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Гостьові доповнення VirtualBox, котрі встановлені в гостьову операційну систему, застаріли: поточна версія — %1, потрібна версія — %2. Деякі властивості, котрі потребують гостьових доповнень (інтеграцію миші, авторозмір гостьового екрана тощо), не можуть працювати як потрібно.&lt;/p&gt;&lt;p&gt;Рекомендується оновити гостьові доповнення до поточної версії вибравши &lt;b&gt;Встановити гостьові доповнення&lt;/b&gt; з меню &lt;b&gt;Пристрої&lt;/b&gt;.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Гостьові доповнення VirtualBox, які встановлено в гостьову операційну систему, застаріли: поточна версія — %1, потрібна версія — %2. Деякі властивості, які потребують гостьових доповнень (інтеграцію миші, авторозмір гостьового екрана тощо), не можуть працювати як слід.&lt;/p&gt;&lt;p&gt;Рекомендується оновити гостьові доповнення до поточної версії вибравши &lt;b&gt;Встановити гостьові доповнення&lt;/b&gt; з меню &lt;b&gt;Пристрої&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1517"/>
         <source>&lt;p&gt;VirtualBox Guest Additions installed in the Guest OS are too recent for this version of VirtualBox: the installed version is %1, the expected version is %2.&lt;/p&gt;&lt;p&gt;Using a newer version of Additions with an older version of VirtualBox is not supported. Please install the current version of Guest Additions by choosing &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Гостьові доповненя VirtualBox, які встановлені в гостьову операційну систему, — новіші ніж версія VirtualBox: Встановлена версія — %1, Потрібна версія — %2.&lt;/p&gt;&lt;p&gt;Не підтримується використання найновішої версії доповнень зі старішою версією. Будь ласка, встановіть поточну версію гостьових доповнень вибравши &lt;b&gt;Встановити гостьові доповнення&lt;/b&gt; в меню &lt;b&gt;Пристрої&lt;/b&gt;.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Гостьові доповненя VirtualBox, які встановлені в гостьову операційну систему, — новіші, ніж версія VirtualBox: Встановлена версія — %1, Потрібна версія — %2.&lt;/p&gt;&lt;p&gt;Не підтримується використання найновішої версії доповнень зі старішою версією. Будь ласка, встановіть поточну версію гостьових доповнень вибравши &lt;b&gt;Встановити гостьові доповнення&lt;/b&gt; в меню &lt;b&gt;Пристрої&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="793"/>
@@ -4208,12 +4215,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1416"/>
         <source>&lt;p&gt;Failed to remove the shared folder &lt;b&gt;%1&lt;/b&gt; (pointing to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) from the virtual machine &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Please close all programs in the guest OS that may be using this shared folder and try again.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Не вдалось вилучити спільну теку &lt;b&gt;%1&lt;/b&gt; (що вказує на &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) з віртуальної машини &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Будь ласка, вимкніть всі програми в гостьовій операційній системі, котрі можуть використовувати спільну теку та спробуйте знову.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Не вдалось вилучити спільну теку &lt;b&gt;%1&lt;/b&gt; (що вказує на &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) з віртуальної машини &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Будь ласка, вимкніть всі програми в гостьовій операційній системі, які можуть використовувати спільну теку та спробуйте знову.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1430"/>
         <source>&lt;p&gt;Could not find the VirtualBox Guest Additions CD image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; or &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you want to download this CD image from the Internet?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Не вдалось знайти файл образа гостьових доповнень &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; або &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Ви бажаєте звантажити образ з Інтернету?&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Не вдалось знайти файл образа гостьових доповнень &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; або &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Ви бажаєте звантажити образ з інтернету?&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1442"/>
@@ -4261,7 +4268,7 @@ p, li { white-space: pre-wrap; }
         <translation>&lt;p&gt;Вітаємо! Ви успішно зареєструвались як користувач VirtualBox.&lt;/p&gt;&lt;p&gt;Дякуємо вам, що знайшли час, щоб заповнити реєстраційну форму!&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="0"/>
         <source>&lt;p&gt;Failed to register the VirtualBox product&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Не вдалось зареєструвати VirtualBox&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</translation>
     </message>
@@ -4309,7 +4316,7 @@ p, li { white-space: pre-wrap; }
         <translation>Відкинути</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
+        <location filename="../src/VBoxProblemReporter.cpp" line="0"/>
         <source>&lt;p&gt;There are hard disks attached to SATA ports of this virtual machine. If you disable the SATA controller, all these hard disks will be automatically detached.&lt;/p&gt;&lt;p&gt;Are you sure that you want to disable the SATA controller?&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;До портів SATA цієї віртуальної машини під&apos;єднані жорсткі диски. Якщо ви вимкнете контролер SATA, то всі ці жорсткі диски будуть автоматично від&apos;єднані.&lt;/p&gt;&lt;p&gt;Ви впевнені, що бажаєте вимкнути контролер SATA?&lt;/p&gt;</translation>
     </message>
@@ -4370,7 +4377,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1967"/>
         <source>&lt;p&gt;Do you really want to reset the virtual machine?&lt;/p&gt;&lt;p&gt;When the machine is reset, unsaved data of all applications running inside it will be lost.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Чи ви справді хочете перезавантажити віртуальну машину?&lt;/p&gt;&lt;p&gt;Під час перезавантаження машини відбудеться втрата даних усіх програм, які запущені всередині віртуальної машини.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Чи ви справді бажаєте перезавантажити віртуальну машину?&lt;/p&gt;&lt;p&gt;Під час перезавантаження машини відбудеться втрата даних усіх програм, які запущені всередині віртуальної машини.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1969"/>
@@ -4425,17 +4432,17 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1611"/>
         <source>&lt;p&gt;You have &lt;b&gt;clicked the mouse&lt;/b&gt; inside the Virtual Machine display or pressed the &lt;b&gt;host key&lt;/b&gt;. This will cause the Virtual Machine to &lt;b&gt;capture&lt;/b&gt; the host mouse pointer (only if the mouse pointer integration is not currently supported by the guest OS) and the keyboard, which will make them unavailable to other applications running on your host machine.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;host key&lt;/b&gt; at any time to &lt;b&gt;uncapture&lt;/b&gt; the keyboard and mouse (if it is captured) and return them to normal operation. The currently assigned host key is shown on the status bar at the bottom of the Virtual Machine window, next to the&amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp;icon. This icon, together with the mouse icon placed nearby, indicate the current keyboard and mouse capture state.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Ви &lt;b&gt;клацнули мишкою&lt;/b&gt; всередині екрана віртуальної машини або натиснули &lt;b&gt;головну клавішу&lt;/b&gt;. Віртуальна машина &lt;b&gt;захопить&lt;/b&gt; головний вказівник миші (Тільки якщо інтеграція вказівника миші зараз не підтримується гостьовою операційною системою) і клавіатуру, яка буде недоступною для інших програм, котрі запущені на вашій головній машині.&lt;/p&gt;&lt;p&gt;Ви можете натиснути &lt;b&gt;головну клавішу&lt;/b&gt; в будь-який момент, щоб   &lt;b&gt;відпустити&lt;/b&gt; клавіатуру і мишку (якщо вони захоплені) та повернути назад. Поточна головна клавіша показується на панелі стану у вікні віртуальної машини, біля the&amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp;icon. Ця піктограма, знаходиться біля піктограми миші, показуючи поточний стан клавіатури і миші.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Ви &lt;b&gt;клацнули мишкою&lt;/b&gt; всередині екрана віртуальної машини або натиснули &lt;b&gt;головну клавішу&lt;/b&gt;. Віртуальна машина &lt;b&gt;захопить&lt;/b&gt; головний вказівник миші (Тільки якщо інтеграція вказівника миші зараз не підтримується гостьовою операційною системою) і клавіатуру, яка буде недоступною для інших програм, які запущені на вашій головній машині.&lt;/p&gt;&lt;p&gt;Ви можете натиснути &lt;b&gt;головну клавішу&lt;/b&gt; в будь-який момент, щоб &lt;b&gt;відпустити&lt;/b&gt; клавіатуру і мишку (якщо вони захоплені) та повернути назад. Поточна головна клавіша показується на панелі стану у вікні віртуальної машини, біля the&amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp;icon. Ця піктограма, знаходиться біля піктограми миші, показуючи поточний стан клавіатури і миші.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1644"/>
         <source>&lt;p&gt;You have the &lt;b&gt;Auto capture keyboard&lt;/b&gt; option turned on. This will cause the Virtual Machine to automatically &lt;b&gt;capture&lt;/b&gt; the keyboard every time the VM window is activated and make it unavailable to other applications running on your host machine: when the keyboard is captured, all keystrokes (including system ones like Alt-Tab) will be directed to the VM.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;host key&lt;/b&gt; at any time to &lt;b&gt;uncapture&lt;/b&gt; the keyboard and mouse (if it is captured) and return them to normal operation. The currently assigned host key is shown on the status bar at the bottom of the Virtual Machine window, next to the&amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp;icon. This icon, together with the mouse icon placed nearby, indicate the current keyboard and mouse capture state.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Ви вімкнули &lt;b&gt;Автозахоплення клавіатури&lt;/b&gt;. Віртуальна машина автоматично &lt;b&gt;захоплюватиме&lt;/b&gt; клавіатуру кожного разу, коли вікно віртуальної машини активне та робить його недоступним для інших програм, які запущено на вашій головній машині: коли клавіатура захоплена, будь-які натиснення клавіш (у тому ж числі такі системні, як Alt-Tab) будуть виконуватись всередині віртуальної машини.&lt;/p&gt;&lt;p&gt;&lt;p&gt;Ви можете натиснути &lt;b&gt;головну клавішу&lt;/b&gt; в будь-який момент, щоб  &lt;b&gt;відпустити&lt;/b&gt; клавіатуру і мишку (якщо вони захоплені) та повернути назад. Поточна головна клавіша показується на панелі стану у вікні віртуальної машини, біля the&amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp;icon. Ця піктограма, знаходиться біля піктограми миші, показуючи поточний стан клавіатури і миші.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Ви вімкнули &lt;b&gt;Автозахоплення клавіатури&lt;/b&gt;. Віртуальна машина автоматично &lt;b&gt;захоплюватиме&lt;/b&gt; клавіатуру кожного разу, коли вікно віртуальної машини активне та робить його недоступним для інших програм, які запущено на вашій головній машині: коли клавіатура захоплена, будь-які натиснення клавіш (у тому ж числі такі системні, як Alt-Tab) будуть виконуватись всередині віртуальної машини.&lt;/p&gt;&lt;p&gt;&lt;p&gt;Ви можете натиснути &lt;b&gt;головну клавішу&lt;/b&gt; в будь-який момент, щоб &lt;b&gt;відпустити&lt;/b&gt; клавіатуру і мишку (якщо вони захоплені) та повернути назад. Поточна головна клавіша показується на панелі стану у вікні віртуальної машини, біля the&amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp;icon. Ця піктограма, знаходиться біля піктограми миші, показуючи поточний стан клавіатури і миші.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1689"/>
         <source>&lt;p&gt;The Virtual Machine reports that the guest OS supports &lt;b&gt;mouse pointer integration&lt;/b&gt;. This means that you do not need to &lt;i&gt;capture&lt;/i&gt; the mouse pointer to be able to use it in your guest OS -- all mouse actions you perform when the mouse pointer is over the Virtual Machine&apos;s display are directly sent to the guest OS. If the mouse is currently captured, it will be automatically uncaptured.&lt;/p&gt;&lt;p&gt;The mouse icon on the status bar will look like&amp;nbsp;&lt;img src=:/mouse_seamless_16px.png/&gt;&amp;nbsp;to inform you that mouse pointer integration is supported by the guest OS and is currently turned on.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note&lt;/b&gt;: Some applications may behave incorrectly in mouse pointer integration mode. You can always disable it for the current session (and enable it again) by selecting the corresponding action from the menu bar.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Віртуальна машина повідомляє, що гостьова операційна система підтримує &lt;b&gt;інтеграцію вказівника миші&lt;/b&gt;. Тобто вам не потрібно &lt;i&gt;захоплювати&lt;/i&gt; вказівник миші, щоб використовувати його в гостьовій операційній системі — усі дії миші, які ви виконуєте, коли вказівник на екрані віртуальної машини, виконуються в гостьовій операційній системі. Якщо мишка вже захоплена, то вона автоматично відпуститься.&lt;/p&gt;&lt;p&gt;Піктограма миші на панелі стану буде вигляди як&amp;nbsp;&lt;img src=:/mouse_seamless_16px.png/&gt;&amp;nbsp;, щоб  повідомити, що ваша інтеграція вказівника миші підтримується гостьовою операційною системою і зараз увімкнута.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note&lt;/b&gt;: Деякі програми можуть поводитись неправильно в режимі інтеграції вказівника миші. Ви завжди можете вимкнути його на поточний сеанс (і ввімкнути знову) вибравши відповідну дію в панелі меню.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Віртуальна машина повідомляє, що гостьова операційна система підтримує &lt;b&gt;інтеграцію вказівника миші&lt;/b&gt;. Тобто вам не потрібно &lt;i&gt;захоплювати&lt;/i&gt; вказівник миші, щоб використовувати його в гостьовій операційній системі — усі дії миші, які ви виконуєте, коли вказівник на екрані віртуальної машини, виконуються в гостьовій операційній системі. Якщо мишка вже захоплена, то вона автоматично відпуститься.&lt;/p&gt;&lt;p&gt;Піктограма миші на панелі стану буде вигляди як&amp;nbsp;&lt;img src=:/mouse_seamless_16px.png/&gt;&amp;nbsp;, щоб повідомити, що ваша інтеграція вказівника миші підтримується гостьовою операційною системою і зараз увімкнута.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note&lt;/b&gt;: Деякі програми можуть поводитись неправильно в режимі інтеграції вказівника миші. Ви завжди можете вимкнути його на поточний сеанс (і ввімкнути знову) вибравши відповідну дію в панелі меню.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1864"/>
@@ -4450,7 +4457,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/VBoxHelpActions.cpp" line="103"/>
         <source>&amp;Contents...</source>
-        <translation>&amp;Зміст...</translation>
+        <translation>&amp;Вміст...</translation>
     </message>
     <message>
         <location filename="../src/VBoxHelpActions.cpp" line="106"/>
@@ -4460,12 +4467,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/VBoxHelpActions.cpp" line="108"/>
         <source>&amp;VirtualBox Web Site...</source>
-        <translation>&amp;Веб-сайт VirtualBox...</translation>
+        <translation>&amp;Сайт VirtualBox...</translation>
     </message>
     <message>
         <location filename="../src/VBoxHelpActions.cpp" line="110"/>
         <source>Open the browser and go to the VirtualBox product web site</source>
-        <translation>Відкрити переглядач і перейти до веб-сайта продукції VirtualBox</translation>
+        <translation>Відкрити переглядач і перейти до сайта продукції VirtualBox</translation>
     </message>
     <message>
         <location filename="../src/VBoxHelpActions.cpp" line="112"/>
@@ -4515,7 +4522,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="979"/>
         <source>&lt;p&gt;Are you sure you want to release the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;This will detach it from the following virtual machine(s): &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation>Ви впевнені, що ви бажаєте відпустити  %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;Це Буде від&apos;єднано з наступних віртуальних машин: &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;</translation>
+        <translation>Ви впевнені, що ви бажаєте відпустити  %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;Це буде від&apos;єднано з таких віртуальних машин: &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="983"/>
@@ -4531,7 +4538,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1002"/>
         <source>Note that this hard disk is inaccessible so that its storage unit cannot be deleted right now.</source>
-        <translation>Майте на увазі, цей жорсткий диск недоступний, тому його блок пам&apos;яті не може бути розпізнаний зараз. </translation>
+        <translation>Майте на увазі, цей жорсткий диск недоступний, тому його блок пам&apos;яті неможливо розпізнанати зараз.</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1007"/>
@@ -4557,7 +4564,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1045"/>
         <source>&lt;p&gt;Do you want to delete the storage unit of the hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;Delete&lt;/b&gt; then the specified storage unit will be permanently deleted. This operation &lt;b&gt;cannot be undone&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;Keep&lt;/b&gt; then the hard disk will be only removed from the list of known hard disks, but the storage unit will be left untouched which makes it possible to add this hard disk to the list later again.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Ви бажаєте вилучити блок пам&apos;яті жорсткого диска &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;Якщо ви виберете &lt;b&gt;Вилучити&lt;/b&gt;, вказаний блок пам&apos;яті буде безповоротно вилучений. Цю операцію &lt;b&gt;не можна скасувати&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Якщо ви виберете &lt;b&gt;Затримати&lt;/b&gt;, жорсткий диск буде вилучено лише зі списку жорстких дисків, але блок пам&apos;яті залишиться недоторканим, що дозволить додати цей жорсткий диск до списку згодом.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Ви бажаєте вилучити блок пам&apos;яті жорсткого диска &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;Якщо ви виберете &lt;b&gt;Вилучити&lt;/b&gt;, вказаний блок пам&apos;яті буде безповоротно вилучено. Цю операцію &lt;b&gt;неможливо скасувати&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Якщо ви виберете &lt;b&gt;Затримати&lt;/b&gt;, жорсткий диск буде вилучено лише зі списку жорстких дисків, але блок пам&apos;яті залишиться недоторканим, що дозволить додати цей жорсткий диск до списку згодом.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1050"/>
@@ -4589,7 +4596,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1130"/>
         <source>Failed to attach the hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; to the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation>Не вдалося з’єднати жорсткий диск &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; зі слотом &lt;i&gt;%2&lt;/i&gt; машини &lt;b&gt;%3&lt;/b&gt;.</translation>
+        <translation>Не вдалося з&apos;єднати жорсткий диск &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; зі слотом &lt;i&gt;%2&lt;/i&gt; машини &lt;b&gt;%3&lt;/b&gt;.</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1143"/>
@@ -4639,7 +4646,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1794"/>
         <source>&lt;p&gt;Your existing VirtualBox settings files were automatically converted from the old format to a new format necessary for the new version of VirtualBox.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; to start VirtualBox now or press &lt;b&gt;More&lt;/b&gt; if you want to get more information about what files were converted and access additional actions.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Exit&lt;/b&gt; to terminate the VirtualBox application without saving the results of the conversion to disk.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Ваші фали налаштувань VirtualBox були автоматично перетворені зі старого формату в новий, який необхідний для нової версії VirtualBox.&lt;/p&gt;&lt;p&gt;Натисніть &lt;b&gt;Гаразд&lt;/b&gt;, щоб запустити VirtualBox зараз або натисніть &lt;b&gt;Детальніше&lt;/b&gt;, якщо ви бажаєте отримати більше інформації  про файли, котрі були перетворені і дозволити додаткові дії.&lt;/p&gt;&lt;p&gt;Натисніть &lt;b&gt;Вихід&lt;/b&gt;, щоб вимкнути VirtualBox без збереження результатів перетворення на диск.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Ваші фали налаштувань VirtualBox були автоматично перетворені зі старого формату в новий, який необхідний для нової версії VirtualBox.&lt;/p&gt;&lt;p&gt;Натисніть &lt;b&gt;Гаразд&lt;/b&gt;, щоб запустити VirtualBox зараз або натисніть &lt;b&gt;Детальніше&lt;/b&gt;, якщо ви бажаєте отримати більше інформації  про файли, які були перетворені і дозволити додаткові дії.&lt;/p&gt;&lt;p&gt;Натисніть &lt;b&gt;Вихід&lt;/b&gt;, щоб вимкнути VirtualBox без збереження результатів перетворення на диск.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1800"/>
@@ -4651,7 +4658,7 @@ p, li { white-space: pre-wrap; }
         <location filename="../src/VBoxProblemReporter.cpp" line="1845"/>
         <source>E&amp;xit</source>
         <comment>warnAboutAutoConvertedSettings message box</comment>
-        <translation>&amp;Вихід</translation>
+        <translation>&amp;Вийти</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1832"/>
@@ -4661,7 +4668,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1835"/>
         <source>&lt;li&gt;&lt;b&gt;Exit&lt;/b&gt; to terminate VirtualBox without saving the results of the conversion to disk.&lt;/li&gt;</source>
-        <translation>&lt;li&gt;&lt;b&gt;Вихід&lt;/b&gt; завершує роботу VirtualBox без збереження підсумків перетворення на диск.&lt;/li&gt;</translation>
+        <translation>&lt;li&gt;&lt;b&gt;Вийти&lt;/b&gt; завершує роботу VirtualBox без збереження підсумків перетворення на диск.&lt;/li&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1842"/>
@@ -4672,7 +4679,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1951"/>
         <source>&lt;p&gt;A critical error has occurred while running the virtual machine and the machine execution has been stopped.&lt;/p&gt;&lt;p&gt;For help, please see the Community section on &lt;a href=http://www.virtualbox.org&gt;http://www.virtualbox.org&lt;/a&gt; or your support contract. Please provide the contents of the log file &lt;tt&gt;VBox.log&lt;/tt&gt; and the image file &lt;tt&gt;VBox.png&lt;/tt&gt;, which you can find in the &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; directory, as well as a description of what you were doing when this error happened. Note that you can also access the above files by selecting &lt;b&gt;Show Log&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; if you want to power off the machine or press &lt;b&gt;Ignore&lt;/b&gt; if you want to leave it as is for debugging. Please note that debugging requires special knowledge and tools, so it is recommended to press &lt;b&gt;OK&lt;/b&gt; now.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Трапилась критична помилка під час роботи віртуальної машини і її виконання припинене.&lt;/p&gt;&lt;p&gt;Зверніться до спільноти за допомогою на сайті &lt;a href=http://www.virtualbox.org&gt;http://www.virtualbox.org&lt;/a&gt; або до вашої групи підтримки. Будь ласка, додайте свій журнал помилок &lt;tt&gt;VBox.log&lt;/tt&gt; та зображення &lt;tt&gt;VBox.png&lt;/tt&gt;, які ви можете знайти в теці &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;, і також опис того, що ви робили, коли це трапилось. Майте на увазі, ви також можете отримати файл використавши &lt;b&gt;Показати журнал&lt;/b&gt; в меню &lt;b&gt;Машина&lt;/b&gt; головного вікна VirtualBox.&lt;/p&gt;&lt;p&gt;Натисніть  &lt;b&gt;Гаразд&lt;/b&gt;, якщо ви бажаєте вимкнути живлення машини, або натисніть &lt;b&gt;Ігнорувати&lt;/b&gt;, якщо ви бажаєте покинути це для зневадження. Будь ласка, майте на увазі, зневадження потребує спеціальних знань та інструментів, тому рекомендується зараз натиснути &lt;b&gt;Гаразд&lt;/b&gt;.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Трапилась критична помилка під час роботи віртуальної машини і її виконання припинено.&lt;/p&gt;&lt;p&gt;Зверніться до спільноти за допомогою на сайті &lt;a href=http://www.virtualbox.org&gt;http://www.virtualbox.org&lt;/a&gt; або до вашої групи підтримки. Будь ласка, додайте свій журнал помилок &lt;tt&gt;VBox.log&lt;/tt&gt; та зображення &lt;tt&gt;VBox.png&lt;/tt&gt;, які ви можете знайти в теці &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;, і також опис того, що ви робили, коли це трапилось. Майте на увазі, ви також можете отримати файл використавши &lt;b&gt;Показати журнал&lt;/b&gt; в меню &lt;b&gt;Машина&lt;/b&gt; головного вікна VirtualBox.&lt;/p&gt;&lt;p&gt;Натисніть  &lt;b&gt;Гаразд&lt;/b&gt;, якщо ви бажаєте вимкнути живлення машини, або натисніть &lt;b&gt;Ігнорувати&lt;/b&gt;, якщо ви бажаєте покинути це для зневадження. Будь ласка, майте на увазі, зневадження потребує спеціальних знань та інструментів, тому рекомендується зараз натиснути &lt;b&gt;Гаразд&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="2208"/>
@@ -4684,7 +4691,7 @@ p, li { white-space: pre-wrap; }
         <location filename="../src/VBoxProblemReporter.cpp" line="2210"/>
         <source>CD/DVD image</source>
         <comment>failed to close ...</comment>
-        <translation> образ CD/DVD</translation>
+        <translation>образ CD/DVD</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="2212"/>
@@ -4695,37 +4702,37 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="296"/>
         <source>A file named &lt;b&gt;%1&lt;/b&gt; already exists. Are you sure you want to replace it?&lt;br /&gt;&lt;br /&gt;Replacing it will overwrite its contents.</source>
-        <translation type="unfinished"></translation>
+        <translation>Файл з назвою &lt;b&gt;%1&lt;/b&gt; вже існує. Ви впевнені, що бажаєте його замінити?&lt;br /&gt;&lt;br /&gt;При заміні буде перезаписано його вміст.</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="305"/>
         <source>The following files already exist:&lt;br /&gt;&lt;br /&gt;%1&lt;br /&gt;&lt;br /&gt;Are you sure you want to replace them? Replacing them will overwrite their contents.</source>
-        <translation type="unfinished"></translation>
+        <translation>Такі файли вже існують:&lt;br /&gt;&lt;br /&gt;%1&lt;br /&gt;&lt;br /&gt;Ви впевнені, що бажаєте замінити їх? При їх заміні буде перезаписано їх вміст.</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="341"/>
         <source>Failed to remove the file &lt;b&gt;%1&lt;/b&gt;.&lt;br /&gt;&lt;br /&gt;Please try to remove the file yourself and try again.</source>
-        <translation type="unfinished"></translation>
+        <translation>Не вдається вилучити файл &lt;b&gt;%1&lt;/b&gt;.&lt;br /&gt;&lt;br /&gt;Будь ласка, спробуйте вилучити файл самостійно і спробувати знову.</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="352"/>
         <source>You are running a prerelease version of VirtualBox. This version is not suitable for production use.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ви запускаєте невипущену версію VirtualBox. Ця версія не підходить для повсякденного використання.</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="512"/>
         <source>Could not access USB on the host system, because neither the USB file system (usbfs) nor the DBus and hal services are currently available. If you wish to use host USB devices inside guest systems, you must correct this and restart VirtualBox.</source>
-        <translation type="unfinished"></translation>
+        <translation>Нема доступу до USB на головній операційній системі, бо ані файлова система USB (usbfs), ані DBus і служби hal зараз недостуні. Якщо ви бажаєте використовувати головний пристрій USB всередині гостьової операційної системи, вам потрібно виправити це і перезавантажити VirtualBox.</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="758"/>
         <source>You are trying to shut down the guest with the ACPI power button. This is currently not possible because the guest does not use the ACPI subsystem.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ви намагаєтесь вимкнути гостьову систему з живлення. Це неможливо, оскільки гостьова операційна система не використовує підсистему ACPI.</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="768"/>
         <source>&lt;p&gt;VT-x/AMD-V hardware acceleration has been enabled, but is not operational. Your 64-bit guest will fail to detect a 64-bit CPU and will not be able to boot.&lt;/p&gt;&lt;p&gt;Please ensure that you have enabled VT-x/AMD-V properly in the BIOS of your host computer.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Увімкнуто апаратне прискорення VT-x/AMD-V, але воно нечинне. Вашій 64-бітній гостьовій операційній системі не вдасться виявити 64-бітний процесор і він не завантажиться.&lt;/p&gt;&lt;p&gt;Будь ласка, переконайтесь, що VT-x/AMD-V в BIOS ввімкнуто належним чином у вашій головній операційній системі.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="782"/>
@@ -4740,12 +4747,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="780"/>
         <source>&lt;p&gt;VT-x/AMD-V hardware acceleration has been enabled, but is not operational. Certain guests (e.g. OS/2 and QNX) require this feature.&lt;/p&gt;&lt;p&gt;Please ensure that you have enabled VT-x/AMD-V properly in the BIOS of your host computer.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Увімкнуто апаратне прискорення VT-x/AMD-V, але воно нечинне. Певна гостьова операційна система (наприклад,. OS/2 і QNX) потребує цю властивість.&lt;/p&gt;&lt;p&gt;Будь ласка, переконайтесь, що VT-x/AMD-V в BIOS ввімкнуто належним чином у вашій головній операційній системі.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="802"/>
         <source>&lt;p&gt;Are you sure you wish to delete the selected snapshot and saved state?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Ви впевнені, що бажаєте вилучити вибраний знімок і збережений стан?&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="804"/>
@@ -4760,12 +4767,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1076"/>
         <source>&lt;p&gt;There are hard disks attached to ports of the additional controller. If you disable the additional controller, all these hard disks will be automatically detached.&lt;/p&gt;&lt;p&gt;Are you sure you want to disable the additional controller?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;До додаткового контролера під&apos;єднано жорсткі диски. Якщо ви вимкнули додатковий контролер, усі ті жорсткі диски автоматично під&apos;єднаються.&lt;/p&gt;&lt;p&gt;Ви впевнені, що бажаєте вимкнути додатковий контролер?&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1088"/>
         <source>&lt;p&gt;There are hard disks attached to ports of the additional controller. If you change the additional controller, all these hard disks will be automatically detached.&lt;/p&gt;&lt;p&gt;Are you sure you want to change the additional controller?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;До додаткового контролера під&apos;єднано жорсткі диски. Якщо ви зміните додатковий контролер, усі ті жорсткі диски автоматично від&apos;єднаються.&lt;/p&gt;&lt;p&gt;Ви впевнені, що бажаєте змінити додатковий контролер?&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1090"/>
@@ -4776,12 +4783,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1256"/>
         <source>&lt;p&gt;Deleting this host-only network will lead to the deleting of the host-only interface this network is based on. Do you want to remove the (host-only network) interface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note:&lt;/b&gt; this interface may be in use by one or more virtual network adapters belonging to one of your VMs. After it is removed, these adapters will no longer be usable until you correct their settings by either choosing a different interface name or a different adapter attachment type.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Вилучення цієї лише головної мережі спричинить вилучення лише головного інтерфейса цієї мережі, який базується на ній. Ви бажаєте вилучити (лише головної мережі) інтерфейс &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Майте на увазі:&lt;/b&gt; цей інтерфейс можливо викристовувати одним або більше адаперами віртуальної мережі, яка належить до ваших віртуальних мереж. Після цього він вилучиться, ті адаптери більше не використовуватимуться, допоки ви не зміните їхні налаштування, вибравши іншу назву інтерфейса або інший тип під&apos;єнання адаптера.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1274"/>
         <source>Failed to create the host-only network interface.</source>
-        <translation type="unfinished"></translation>
+        <translation>Не вдається створити лише головний мережевий інтерфейс.</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1553"/>
@@ -4796,27 +4803,27 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="1770"/>
         <source>&lt;p&gt;Your existing VirtualBox settings files will be automatically converted from the old format to a new format necessary for the new version of VirtualBox.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; to start VirtualBox now or press &lt;b&gt;Exit&lt;/b&gt; if you want to terminate the VirtualBox application without any further actions.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Ваш існуючий файл налаштувань VirtualBox буде автоматично перетворено зі старого формату на необхідний для нової версії VirtualBox.&lt;/p&gt;&lt;p&gt;Натисніть &lt;b&gt;Гаразд&lt;/b&gt;, щоб запустити VirtualBox зараз або натисніть &lt;b&gt;Вийти&lt;/b&gt;, якщо ви бажаєте завершити роботу програми VirtualBox без будь-яких інших дій.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="2006"/>
         <source>Failed to open appliance.</source>
-        <translation type="unfinished"></translation>
+        <translation>Не вдається створити образ віртуальної машини.</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="2022"/>
         <source>Failed to open/interpret appliance &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Не вдається відкрити/розпізнати образ віртуальної машини &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="2034"/>
         <source>Failed to import appliance &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Не вдається імпортувати образ віртуальної машини &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="2044"/>
         <source>Failed to check files.</source>
-        <translation>Не вдається первірити файли.</translation>
+        <translation>Не вдається перевірити файли.</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="2054"/>
@@ -4826,22 +4833,22 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="2064"/>
         <source>Failed to create appliance.</source>
-        <translation type="unfinished"></translation>
+        <translation>Не вдається створити образ віртуальної машини.</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="2089"/>
         <source>Failed to prepare the export of the appliance &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Не вдається підготувати образ віртуальної машини &lt;b&gt;%1&lt;/b&gt; до експорту.</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="2084"/>
         <source>Failed to create an appliance.</source>
-        <translation type="unfinished"></translation>
+        <translation>Не вдається створити образ віртуальної машини.</translation>
     </message>
     <message>
         <location filename="../src/VBoxProblemReporter.cpp" line="2100"/>
         <source>Failed to export appliance &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Не вдається експортувати образ віртуальної машини &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
 </context>
 <context>
@@ -4860,7 +4867,7 @@ p, li { white-space: pre-wrap; }
         <translation>Діалог реєстрації VirtualBox</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
+        <location filename="../ui/VBoxRegistrationDlg.ui" line="0"/>
         <source>&amp;Name</source>
         <translation type="obsolete">&amp;Назва</translation>
     </message>
@@ -4870,7 +4877,7 @@ p, li { white-space: pre-wrap; }
         <translation>Введіть ваше повне ім&apos;я, використовуючи лише латинські символи.</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
+        <location filename="../ui/VBoxRegistrationDlg.ui" line="0"/>
         <source>&amp;E-mail</source>
         <translation type="obsolete">&amp;Електронна пошта</translation>
     </message>
@@ -4880,7 +4887,7 @@ p, li { white-space: pre-wrap; }
         <translation>Введіть дійсну адресу вашої електронної пошти.</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
+        <location filename="../ui/VBoxRegistrationDlg.ui" line="0"/>
         <source>&amp;Please do not use this information to contact me</source>
         <translation type="obsolete">&amp;Будь ласка, не використовуйте цю інформацію для контактування зі мною</translation>
     </message>
@@ -4895,17 +4902,17 @@ p, li { white-space: pre-wrap; }
         <translation>Не вдалось здійснити встановлення зв&apos;язку.</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
+        <location filename="../src/VBoxRegistrationDlg.cpp" line="0"/>
         <source>&lt;p&gt;Please fill out this registration form to let us know that you use VirtualBox and, optionally, to keep you informed about VirtualBox news and updates.&lt;/p&gt;&lt;p&gt;Enter your full name using Latin characters and your e-mail address to the fields below. Please note that Sun Microsystems will use this information only to gather product usage statistics and to send you VirtualBox newsletters. In particular, Sun Microsystems will never pass your data to third parties. Detailed information about how we use your personal data can be found in the &lt;b&gt;Privacy Policy&lt;/b&gt; section of the VirtualBox Manual or on the &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt; page of the VirtualBox web-site.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Будь ласка, заповніть реєстраційну форму, цим самим, ми будемо знати, що ви користуєтесь програмою VirtualBox і, за власним бажанням, отримаєте можливість бути в курсі новин і оновлень про VirtualBox.&lt;/p&gt;&lt;p&gt;Введіть ваше повне і&apos;мя, користуючись латинськими символами, та адресу електронної пошти в нижніх полях. Будь ласка, майте на увазі, що ця інформація буде використовуватись лише для статистичних даних кількості користувачів і розсилці новин про VirtualBox. Власне, Sun Microsystems ніколи не буде надавати ваші дані третій стороні. Більш детальна інформація про те, як ми використовуємо ваші особисті дані, можна знайти в розділі &lt;b&gt;Privacy Policy&lt;/b&gt; (Політика Конфіденційності) у документації програми або на сторінці  &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt; веб-сайта VirtualBox.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
+        <location filename="../src/VBoxRegistrationDlg.cpp" line="0"/>
         <source>Check this box if you do not want to receive mail from Sun Microsystems at the e-mail address specified above.</source>
         <translation type="obsolete">Відмітьте, якщо ви не хочете отримувати пошту від Sun Microsystems на задану адресу електронної пошти.</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
+        <location filename="../src/VBoxRegistrationDlg.cpp" line="0"/>
         <source>C&amp;onfirm</source>
         <translation type="obsolete">&amp;Підтвердити</translation>
     </message>
@@ -4922,12 +4929,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxRegistrationDlg.ui" line="108"/>
         <source>&lt;p&gt;Please fill out this registration form to let us know that you use VirtualBox and, optionally, to keep you informed about VirtualBox news and updates.&lt;/p&gt;&lt;p&gt;Please use the Latin characters to fill the fields below. Please note that Sun Microsystems will use this information only to gather product usage statistics and to send you VirtualBox newsletters. In particular, Sun Microsystems will never pass your data to third parties. Detailed information about how we use your personal data can be found in the &lt;b&gt;Privacy Policy&lt;/b&gt; section of the VirtualBox Manual or on the &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt; page of the VirtualBox web-site.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Будь ласка, заповніть цю реєстраційну форму, щоб ми знали, що ви використуєте VirtualBox, і, за вашим бажанням, ми триматимемо вас у курсі всіх новин і оновлень щодо VirtualBox.&lt;/p&gt;&lt;p&gt;Будь ласка, використовуйте латинські символи для заповнення полів нижче. Будь ласка, майте на увазі, Sun Microsystems використовуватиме цю інформацію лише для збору статистичної інформації та розсилки новин. Власне, Sun Microsystems ніколи не надасть ваших даних третій особі. Детальна інформація про використання ваших особистих даних можна знайти в довідці VirtualBox у розділі  &lt;b&gt;Privacy Policy&lt;/b&gt; або на &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt; сторінці сайта VirtualBox.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxRegistrationDlg.ui" line="125"/>
         <source>I &amp;have a Sun Online account already:</source>
-        <translation>&amp;Я вже маю зареєстрований профіль у Sun:</translation>
+        <translation>&amp;Я вже маю зареєстрований акаунт у Sun:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxRegistrationDlg.ui" line="151"/>
@@ -4942,7 +4949,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxRegistrationDlg.ui" line="201"/>
         <source>I &amp;would like to register creating a new Sun Online account:</source>
-        <translation type="unfinished"></translation>
+        <translation>Я &amp;бажаю зареєструватись, створивши акаунт Sun:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxRegistrationDlg.ui" line="224"/>
@@ -5014,12 +5021,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1325"/>
         <source>Display the global settings dialog</source>
-        <translation>Показати діалог глобальних налаштувань</translation>
+        <translation>Показати діалог загальних налаштувань</translation>
     </message>
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1327"/>
         <source>E&amp;xit</source>
-        <translation>Ви&amp;хід</translation>
+        <translation>Ви&amp;йти</translation>
     </message>
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1329"/>
@@ -5029,7 +5036,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1331"/>
         <source>&amp;New...</source>
-        <translation>&amp;Новий...</translation>
+        <translation>&amp;Нова...</translation>
     </message>
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1333"/>
@@ -5059,7 +5066,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1349"/>
         <source>D&amp;iscard</source>
-        <translation>Ві&amp;дмовитись</translation>
+        <translation>Ві&amp;дкинути</translation>
     </message>
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1351"/>
@@ -5067,7 +5074,7 @@ p, li { white-space: pre-wrap; }
         <translation>Відкинути збережений стан вибраної віртуальної машини</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
+        <location filename="../src/VBoxSelectorWnd.cpp" line="0"/>
         <source>&amp;Refresh</source>
         <translation type="obsolete">&amp;Оновити</translation>
     </message>
@@ -5137,7 +5144,7 @@ p, li { white-space: pre-wrap; }
         <translation>Показати файли журналу вибраної віртуальної машини</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
+        <location filename="../src/VBoxSelectorWnd.cpp" line="0"/>
         <source>Sun xVM VirtualBox</source>
         <translation type="obsolete">Sun xVM VirtualBox</translation>
     </message>
@@ -5162,7 +5169,7 @@ p, li { white-space: pre-wrap; }
         <translation>Призупинити роботу віртуально машини</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
+        <location filename="../src/VBoxSelectorWnd.cpp" line="0"/>
         <source>&lt;h3&gt;Welcome to VirtualBox!&lt;/h3&gt;&lt;p&gt;The left part of this window is intended to display a list of all virtual machines on your computer. The list is empty now because you haven&apos;t created any virtual machines yet.&lt;img src=:/welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;In order to create a new virtual machine, press the &lt;b&gt;New&lt;/b&gt; button in the main tool bar located at the top of the window.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;F1&lt;/b&gt; key to get instant help, or visit &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; for the latest information and news.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;h3&gt;Ласкаво просимо до програми VirtualBox!&lt;/h3&gt;&lt;p&gt;Ліва частина цього вікна призначена для показу списку всіх віртуальних машин на вашому комп&apos;ютері. Цей список зараз порожній, бо ви ще не створили жодної віртуальної машини.&lt;img src=:/welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;Щоб створити нову віртуальну машину, натисніть кнопку &lt;b&gt;Створити&lt;/b&gt; на головній панелі інструментів, який знаходиться зверху вікна.&lt;/p&gt;&lt;p&gt;Ви можете натиснути клавішу &lt;b&gt;F1&lt;/b&gt; для отримання  миттєвої допомоги, або відвідайте &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt;, щоб дізнатися останню інформацію та новини.&lt;/p&gt;</translation>
     </message>
@@ -5174,7 +5181,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1294"/>
         <source>Display the Virtual Media Manager dialog</source>
-        <translation>Показує діалог Керуванння Віртуального Носія</translation>
+        <translation>Показати діалог керуванння віртуального носія</translation>
     </message>
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1362"/>
@@ -5215,7 +5222,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1518"/>
         <source>&lt;h3&gt;Welcome to VirtualBox!&lt;/h3&gt;&lt;p&gt;The left part of this window is intended to display a list of all virtual machines on your computer. The list is empty now because you haven&apos;t created any virtual machines yet.&lt;img src=:/welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;In order to create a new virtual machine, press the &lt;b&gt;New&lt;/b&gt; button in the main tool bar located at the top of the window.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;%1&lt;/b&gt; key to get instant help, or visit &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; for the latest information and news.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;h3&gt;Ласкаво просимо до VirtualBox!&lt;/h3&gt;&lt;p&gt;У лівій частині цього вікна показується список віртуальних машин на вашому комп&apos;ютері. Зараз список порожній, оскільки, поки що, ви не маєте створених віртуальних машин.&lt;img src=:/welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;Для того, щоб створити нову віртуальну машину, натисніть &lt;b&gt;Створити&lt;/b&gt; в головному меню панелі інструментів , які знаходяться вверху вікна.&lt;/p&gt;&lt;p&gt;Ви можете натиснути &lt;b&gt;%1&lt;/b&gt;, щоб отримати миттєву довідку, або відвідайте  &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; щодо останіх новин.&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -5223,7 +5230,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/VBoxSettingsDialog.cpp" line="95"/>
         <source>&lt;i&gt;Select a settings category from the list on the left side and move the mouse over a settings item to get more information&lt;/i&gt;.</source>
-        <translation>&lt;i&gt;Виберіть категорію налаштувань зі списку зліва та пересуньте мишку до пункту налаштувань, щоб отримати більше інформації&lt;/i&gt;.</translation>
+        <translation>&lt;i&gt;Виберіть категорію налаштувань зі списку зліва та пересуньте мишку до пункту налаштувань, щоб отримати детальнішу інформацію&lt;/i&gt;.</translation>
     </message>
     <message>
         <location filename="../src/VBoxSettingsDialog.cpp" line="187"/>
@@ -5243,7 +5250,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/VBoxSettingsDialog.cpp" line="138"/>
         <source>On the &lt;b&gt;%1&lt;/b&gt; page, %2</source>
-        <translation>На  &lt;b&gt;%1&lt;/b&gt; сторінці, %2</translation>
+        <translation>На &lt;b&gt;%1&lt;/b&gt; сторінці, %2</translation>
     </message>
 </context>
 <context>
@@ -5372,7 +5379,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/VBoxSnapshotsWgt.cpp" line="687"/>
         <source>D&amp;iscard Current Snapshot and State</source>
-        <translation>С&amp;касувати поточний знімок та стан</translation>
+        <translation>Відкин&amp;ути поточний знімок та стан</translation>
     </message>
     <message>
         <location filename="../src/VBoxSnapshotsWgt.cpp" line="688"/>
@@ -5446,12 +5453,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/VBoxLineTextEdit.cpp" line="78"/>
         <source>&amp;Replace...</source>
-        <translation>&amp;Перемістити...</translation>
+        <translation>&amp;Замінити...</translation>
     </message>
     <message>
         <location filename="../src/VBoxLineTextEdit.cpp" line="79"/>
         <source>Replaces the current text with the content of a given file.</source>
-        <translation>Переміщує поточний текст з контекстом певного файла.</translation>
+        <translation>Заміняє поточний текст з контекстом певного файла.</translation>
     </message>
     <message>
         <location filename="../src/VBoxLineTextEdit.cpp" line="84"/>
@@ -5469,7 +5476,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1781"/>
         <source>Show Selector Window</source>
-        <translation>Показати Вікно Вибору</translation>
+        <translation>Показати вікно вибору</translation>
     </message>
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="1783"/>
@@ -5578,7 +5585,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/VBoxUpdateDlg.cpp" line="374"/>
         <source>VirtualBox Update Wizard</source>
-        <translation>Майстер Оновлень VirtualBox</translation>
+        <translation>Майстер оновлень VirtualBox</translation>
     </message>
     <message>
         <location filename="../src/VBoxUpdateDlg.cpp" line="376"/>
@@ -5603,7 +5610,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/VBoxUpdateDlg.cpp" line="399"/>
         <source>&lt;p&gt;Unable to obtain the new version information due to the following network error:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Неможливо отримати інформацію про нову версію через наступну мережеву помилку:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Неможливо отримати інформацію про нову версію через таку мережеву помилку:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxUpdateDlg.cpp" line="402"/>
@@ -5613,7 +5620,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/VBoxUpdateDlg.cpp" line="390"/>
         <source>&lt;p&gt;This wizard will connect to the VirtualBox web-site and check if a newer version of VirtualBox is available.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Check&lt;/b&gt; button to check for a new version now or the &lt;b&gt;Cancel&lt;/b&gt; button if you do not want to perform this check.&lt;/p&gt;&lt;p&gt;You can run this wizard at any time by choosing &lt;b&gt;Check for Updates...&lt;/b&gt; from the &lt;b&gt;Help&lt;/b&gt; menu.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Цей майстер пз’єднається з веб-сайтом VirtualBox і перевірить, чи доступна найновіша версія VirtualBox.&lt;/p&gt;&lt;p&gt;Використайте кнопку &lt;b&gt;Перевірити&lt;/b&gt;, щоб перевірити на нову версію зараз або кнопку &lt;b&gt;Скасувати&lt;/b&gt;, якщо ви не бажаєте здійснювати цю перевірку.&lt;/p&gt;&lt;p&gt;Ви можете запустити цього майстра в будь-який час вибираючи &lt;b&gt;Перевірити на оновлення...&lt;/b&gt; з меню &lt;b&gt;Довідка&lt;/b&gt;.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Цей майстер з&apos;єднається з сайтом VirtualBox і перевірить, чи доступна найновіша версія VirtualBox.&lt;/p&gt;&lt;p&gt;Використайте кнопку &lt;b&gt;Перевірити&lt;/b&gt;, щоб перевірити на нову версію зараз або кнопку &lt;b&gt;Скасувати&lt;/b&gt;, якщо ви не бажаєте здійснювати цю перевірку.&lt;/p&gt;&lt;p&gt;Ви можете запустити цього майстра в будь-який час вибираючи &lt;b&gt;Перевірити на оновлення...&lt;/b&gt; з меню &lt;b&gt;Довідка&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -5639,7 +5646,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/VBoxSelectorWnd.cpp" line="193"/>
         <source>The selected virtual machine is &lt;i&gt;inaccessible&lt;/i&gt;. Please inspect the error message shown below and press the &lt;b&gt;Refresh&lt;/b&gt; button if you want to repeat the accessibility check:</source>
-        <translation>Вибрана віртуальна машина &lt;i&gt;недоступна&lt;/i&gt;. Будь ласка, перегляньте повідомлення про помилки, що показані нижче та натисніть  &lt;b&gt;Оновити&lt;/b&gt;, якщо ви хочете повторити перевірку доступності:</translation>
+        <translation>Вибрана віртуальна машина &lt;i&gt;недоступна&lt;/i&gt;. Будь ласка, перегляньте повідомлення про помилки, що показані нижче та натисніть  &lt;b&gt;Оновити&lt;/b&gt;, якщо ви бажаєте повторити перевірку доступності:</translation>
     </message>
 </context>
 <context>
@@ -5647,22 +5654,22 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxVMFirstRunWzd.ui" line="30"/>
         <source>First Run Wizard</source>
-        <translation>Перший Запуск Майстра</translation>
+        <translation>Майстер першого запуску</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMFirstRunWzd.ui" line="121"/>
         <source>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for installing an operating system of your choice onto this virtual machine.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page. You can also press &lt;b&gt;Cancel&lt;/b&gt; if you want to cancel execution of this wizard.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Ви запустили новостворену віртуальну машину перший раз. Цей майстер допоможе вам виконати кроки, які необхідні для встановлення операційної системи на ваш вибір на цю віртуальну машину.&lt;/p&gt;&lt;p&gt;Натисніть кнопку &lt;b&gt;Далі&lt;/b&gt;, щоб перейти до наступної сторінки майстра або кнопку &lt;b&gt;Назад&lt;/b&gt;, щоб повернутись до попередньої сторінки. Також ви можете натиснути кнопку &lt;b&gt;Скасувати&lt;/b&gt;, якщо ви хочете скасувати виконання майстра.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Ви запустили новостворену віртуальну машину перший раз. Цей майстер допоможе вам виконати кроки, які необхідні для встановлення операційної системи на ваш вибір на цю віртуальну машину.&lt;/p&gt;&lt;p&gt;Натисніть кнопку &lt;b&gt;Далі&lt;/b&gt;, щоб перейти до наступної сторінки майстера або кнопку &lt;b&gt;Назад&lt;/b&gt;, щоб повернутись до попередньої сторінки. Також ви можете натиснути кнопку &lt;b&gt;Скасувати&lt;/b&gt;, якщо ви бажаєте скасувати виконання майстра.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMFirstRunWzd.ui" line="63"/>
         <source>Welcome to the First Run Wizard!</source>
-        <translation>Ласкаво просимо до Першого Запуску Майстра!</translation>
+        <translation>Ласкаво просимо до майстера першого запуску!</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMFirstRunWzd.ui" line="307"/>
         <source>&lt;p&gt;Select the type of the media you would like to use for installation purposes below.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Виберіть тип носія, який ви б хотіли використати для встановлення, нижче.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Виберіть тип носія, який ви бажаєте використати для встановлення, нижче.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMFirstRunWzd.ui" line="348"/>
@@ -5682,7 +5689,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxVMFirstRunWzd.ui" line="401"/>
         <source>&lt;p&gt;Select the media which contains the setup program of the operating system you want to install. This media must be bootable, otherwise the setup program will not be able to start.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Виберіть носій, який містить програму встановлення операційної системи, яку ви хочете встановити. Цей носій має бути завантажувальниим, інакше програма встановлення не зможе запуститися.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Виберіть носій, який містить програму встановлення операційної системи, яку ви бажаєте встановити. Цей носій має бути завантажувальним, інакше програма встановлення не зможе запуститися.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMFirstRunWzd.ui" line="439"/>
@@ -5707,7 +5714,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxVMFirstRunWzd.ui" line="651"/>
         <source>&lt;p&gt;You have selected the following media to boot from:&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Ви вибрали наступний пристрій для завантаження:&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Ви вибрали такий пристрій для завантаження:&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMFirstRunWzd.ui" line="593"/>
@@ -5732,27 +5739,27 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxVMFirstRunWzd.ui" line="146"/>
         <source>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for booting an operating system of your choice on the virtual machine.&lt;/p&gt;&lt;p&gt;Note that you will not be able to install an operating system into this virtual machine right now because you did not attach any hard disk to it. If this is not what you want, you can cancel execution of this wizard, select &lt;b&gt;Settings&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window to access the settings dialog of this machine and change the hard disk configuration.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page. You can also press &lt;b&gt;Cancel&lt;/b&gt; if you want to cancel execution of this wizard.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Ви запустили нову віртуальну машину вперше. Цей майстер допоможе вам виконати кроки, необхідні для завантаження вами вибраної операційної системи на віртуальну машину.&lt;/p&gt;&lt;p&gt;Майте на увазі, ви не зможете встановити операційну систему на цю віртуальну машину зараз, бо ви не під&apos;єднали до неї жодного жорсткого диска. Якщо це не те, що ви хочете, то ви можете скасувати виконання майстра, вибрати &lt;b&gt;Налаштування&lt;/b&gt; з меню &lt;b&gt;Машина&lt;/b&gt; головного вікна VirtualBox для відкриття діалогу налаштувань машини та змінити конфігурацію жорсткого диска.&lt;/p&gt;&lt;p&gt;Натисніть кнопку &lt;b&gt;Далі&lt;/b&gt;, щоб перейти до наступної сторінки майстра, або кнопку &lt;b&gt;Назад&lt;/b&gt;, щоб повернутись до попередньої сторінки. Також ви можете натиснути кнопку &lt;b&gt;Скасувати&lt;/b&gt;, якщо ви хочете скасувати виконання майстра.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Ви запустили нову віртуальну машину вперше. Цей майстер допоможе вам виконати кроки, необхідні для завантаження вами вибраної операційної системи на віртуальну машину.&lt;/p&gt;&lt;p&gt;Майте на увазі, ви не зможете встановити операційну систему на цю віртуальну машину зараз, бо ви не під&apos;єднали до неї жодного жорсткого диска. Якщо це не те, що ви бажаєте, то ви можете скасувати виконання майстера, вибрати &lt;b&gt;Налаштування&lt;/b&gt; з меню &lt;b&gt;Машина&lt;/b&gt; головного вікна VirtualBox для відкриття діалогу налаштувань машини та змінити налаштування жорсткого диска.&lt;/p&gt;&lt;p&gt;Натисніть кнопку &lt;b&gt;Далі&lt;/b&gt;, щоб перейти до наступної сторінки майстера, або кнопку &lt;b&gt;Назад&lt;/b&gt;, щоб повернутись до попередньої сторінки. Також ви можете натиснути кнопку &lt;b&gt;Скасувати&lt;/b&gt;, якщо ви бажаєте скасувати виконання майстра.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMFirstRunWzd.ui" line="332"/>
         <source>&lt;p&gt;Select the type of the media you would like to use for booting an operating system.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Виберіть тип носія, який ви би хотіли використовувати для завантаження операційної системи.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Виберіть тип носія, який ви бажаєте використовувати для завантаження операційної системи.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMFirstRunWzd.ui" line="423"/>
         <source>&lt;p&gt;Select the media that contains the operating system you want to work with. This media must be bootable, otherwise the operating system will not be able to start.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Виберіть носій, який містить операційну систему, з якою ви хочете працювати. Цей носій має бути завантажувальним, інакше операційна система не зможе запуститись.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Виберіть носій, який містить операційну систему, з якою ви бажаєте працювати. Цей носій має бути завантажувальним, інакше операційна система не зможе запуститись.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMFirstRunWzd.ui" line="676"/>
         <source>&lt;p&gt;You have selected the following media to boot an operating system from:&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Ви вибрали наступний пристрій для завантаження операційної системи:&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Ви вибрали такий пристрій для завантаження операційної системи:&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMFirstRunWzd.ui" line="753"/>
         <source>&lt;p&gt;If the above is correct, press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, the selected media will be mounted on the virtual machine and the machine will start execution.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Якщо вищевказана інформація правильна, натисніть кнопку &lt;b&gt;Закінчити&lt;/b&gt;. Після цього вказаний носій буде змонтований до віртуальної машини і машина почне виконання процесу.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Якщо вищевказана інформація правильна, натисніть кнопку &lt;b&gt;Закінчити&lt;/b&gt;. Після цього вказаний носій буде змонтований до віртуальної машини і вона почне виконання процесу.&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMFirstRunWzd.ui" line="805"/>
@@ -5802,7 +5809,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/VBoxVMInformationDlg.cpp" line="166"/>
         <source>%1 - Session Information</source>
-        <translation>%1 — Інформація про Сесію</translation>
+        <translation>%1 — Інформація про сеанс</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMInformationDlg.ui" line="41"/>
@@ -5852,7 +5859,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/VBoxVMInformationDlg.cpp" line="473"/>
         <source>Screen Resolution</source>
-        <translation>Розширення екрану</translation>
+        <translation>Розширення екрана</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMInformationDlg.cpp" line="550"/>
@@ -5874,7 +5881,7 @@ p, li { white-space: pre-wrap; }
         <location filename="../src/VBoxVMInformationDlg.cpp" line="457"/>
         <source>Not Detected</source>
         <comment>guest additions</comment>
-        <translation>Не виявлені</translation>
+        <translation>Не виявлено</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMInformationDlg.cpp" line="460"/>
@@ -5905,7 +5912,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/VBoxVMInformationDlg.cpp" line="577"/>
         <source>No Network Adapters</source>
-        <translation>Нема жодного мережевого Адаптера</translation>
+        <translation>Нема жодного мережевого адаптера</translation>
     </message>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="2119"/>
@@ -5941,7 +5948,7 @@ p, li { white-space: pre-wrap; }
         <location filename="../src/VBoxVMListView.cpp" line="173"/>
         <source>&lt;nobr&gt;%1&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;%2 since %3&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Session %4&lt;/nobr&gt;</source>
         <comment>VM tooltip (name, last state change, session state)</comment>
-        <translation>&lt;nobr&gt;%1&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;%2 починаючи з %3&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Сесія %4&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;%1&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;%2 починаючи з %3&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Сеанс %4&lt;/nobr&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMListView.cpp" line="184"/>
@@ -6010,7 +6017,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/VBoxVMLogViewer.cpp" line="259"/>
         <source>%1 - VirtualBox Log Viewer</source>
-        <translation>%1 — Переглядач Журналу VirtualBox</translation>
+        <translation>%1 — Переглядач журналу VirtualBox</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMLogViewer.cpp" line="191"/>
@@ -6071,17 +6078,17 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/VBoxVMSettingsCD.cpp" line="173"/>
         <source>Host CD/DVD drive is not selected</source>
-        <translation>Головний носій CD/DVD не вибраний</translation>
+        <translation>Головний носій CD/DVD не вибрано</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsCD.cpp" line="175"/>
         <source>CD/DVD image file is not selected</source>
-        <translation>Файл образа CD/DVD не вибраний</translation>
+        <translation>Файл образа CD/DVD не вибрано</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsCD.ui" line="33"/>
         <source>When checked, mounts the specified media to the CD/DVD drive of the virtual machine. Note that the CD/DVD drive is always connected to the Secondary Master IDE controller of the machine.</source>
-        <translation>Якщо це відмічено, змонтовує вказаний носій CD/DVD як носій віртуальної машини. Майте на увазі, носій CD/DVD завжди підключений до другого головного контролера машини.</translation>
+        <translation>Якщо це відмічено, змонтовує вказаний носій CD/DVD як носій віртуальної машини. Майте на увазі, носій CD/DVD завжди під&apos;єднаний до другого головного контролера машини.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsCD.ui" line="36"/>
@@ -6106,7 +6113,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxVMSettingsCD.ui" line="125"/>
         <source>When checked, allows the guest to send ATAPI commands directly to the host drive which makes it possible to use CD/DVD writers connected to the host inside the VM. Note that writing audio CD inside the VM is not yet supported.</source>
-        <translation>Якщо це відмічено, дозволяє гостям надсилати команди ATAPI прямо в головну машину, котра дозволяє використовувати запис CD/DVD, з’єднаних з головною машиною. Майте на увазі, запис аудіо CD ще не підтримується.</translation>
+        <translation>Якщо це відмічено, дозволяє гостям надсилати команди ATAPI прямо в головну машину, котра дозволяє використовувати запис CD/DVD, з&apos;єднаних з головною машиною. Майте на увазі, запис аудіо CD ще не підтримується.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsCD.ui" line="128"/>
@@ -6131,7 +6138,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxVMSettingsCD.ui" line="155"/>
         <source>Invokes the Virtual Media Manager to select a CD/DVD image to mount.</source>
-        <translation>Викликає Керуванння Віртуальними Носіями, щоб вибрати образ CD/DVD для монтування.</translation>
+        <translation>Викликає керуванння віртуальними носіями, щоб вибрати образ CD/DVD для монтування.</translation>
     </message>
 </context>
 <context>
@@ -6174,7 +6181,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxVMSettingsDisplay.ui" line="171"/>
         <source>When checked, the virtual machine will get access to the 3D graphics capabilities available on the host.</source>
-        <translation>Якщо це позначено, віртуальна машина отримає доступ до можливостей прискорення просторової графіки, доступних на вузлі.</translation>
+        <translation>Якщо це відмічено, віртуальна машина отримає доступ до можливостей прискорення просторової графіки, доступних на головній операційній системі.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsDisplay.ui" line="174"/>
@@ -6209,7 +6216,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxVMSettingsDisplay.ui" line="280"/>
         <source>Authentication &amp;Method:</source>
-        <translation>М&amp;етод засвідчення:</translation>
+        <translation>&amp;Спосіб засвідчення:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsDisplay.ui" line="299"/>
@@ -6232,7 +6239,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="455"/>
         <source>General</source>
-        <translation>Загальні</translation>
+        <translation>Загально</translation>
     </message>
     <message>
         <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="464"/>
@@ -6247,7 +6254,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="470"/>
         <source>CD/DVD-ROM</source>
-        <translation> CD/DVD-ROM</translation>
+        <translation>CD/DVD-ROM</translation>
     </message>
     <message>
         <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="473"/>
@@ -6290,7 +6297,7 @@ p, li { white-space: pre-wrap; }
         <translation>Спільна теки</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
+        <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="0"/>
         <source>Remote Display</source>
         <translation type="obsolete">Віддалена стільниця</translation>
     </message>
@@ -6300,7 +6307,7 @@ p, li { white-space: pre-wrap; }
         <translation>%1 — %2</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
+        <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="0"/>
         <source>On the &lt;b&gt;%1&lt;/b&gt; page, %2</source>
         <translation type="obsolete">На  &lt;b&gt;%1&lt;/b&gt; сторінці, %2</translation>
     </message>
@@ -6317,7 +6324,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="543"/>
         <source>you have selected a 64-bit guest OS type for this VM. As such guests require hardware virtualization (VT-x/AMD-V), this feature will be enabled automatically.</source>
-        <translation>ви вибрали 64-ох бітну гостьову операційну систему для цієї віртуальної машини. необхідна віртуалізація (VT-x/AMD-V), ці властивості будуть автоматично ввімкнуті.</translation>
+        <translation>ви вибрали 64-ох бітну гостьову операційну систему, для цієї віртуальної машини. необхідна віртуалізація (VT-x/AMD-V), ці властивості будуть автоматично ввімкнуто.</translation>
     </message>
     <message>
         <location filename="../src/VBoxSettingsDialogSpecific.cpp" line="555"/>
@@ -6330,12 +6337,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/VBoxVMSettingsFD.cpp" line="171"/>
         <source>Host floppy drive is not selected</source>
-        <translation>Головний носій дискет не вибраний</translation>
+        <translation>Головний носій дискет не вибрано</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsFD.cpp" line="173"/>
         <source>Floppy image file is not selected</source>
-        <translation>Файл образа дискети не вибраний</translation>
+        <translation>Файл образа дискети не вибрано</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsFD.ui" line="33"/>
@@ -6380,20 +6387,20 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxVMSettingsFD.ui" line="139"/>
         <source>Invokes the Virtual Media Manager to select a Floppy image to mount.</source>
-        <translation>Викликає Керуванння Віртуальними Носіями, щоб вибрати образ дискет для монтування.</translation>
+        <translation>Викликає керуванння віртуальними носіями, щоб вибрати образ дискет для монтування.</translation>
     </message>
 </context>
 <context>
     <name>VBoxVMSettingsGeneral</name>
     <message>
-        <location filename="" line="0"/>
+        <location filename="../ui/VBoxVMSettingsFD.ui" line="0"/>
         <source>&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</source>
         <translation type="obsolete">&lt;qt&gt;%1&amp;nbsp;МБ&lt;/qt&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsGeneral.cpp" line="154"/>
         <source>Displays the path where snapshots of this virtual machine will be stored. Note that snapshots can take quite a lot of disk space.</source>
-        <translation>Показує шлях, де будуть зберігатися знімки цієї машини.Майте на увазі, знімки можуть займати доволі чимало дискового простору.</translation>
+        <translation>Показує шлях, де будуть зберігатися знімки цієї машини. Майте на увазі, знімки можуть займати доволі чимало дискового простору.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="37"/>
@@ -6401,7 +6408,7 @@ p, li { white-space: pre-wrap; }
         <translation>&amp;Основний</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
+        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="0"/>
         <source>Identification</source>
         <translation type="obsolete">Розпізнавання</translation>
     </message>
@@ -6416,37 +6423,37 @@ p, li { white-space: pre-wrap; }
         <translation>Показує назву віртуальної машини.</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
+        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="0"/>
         <source>Base &amp;Memory Size</source>
         <translation type="obsolete">Розмір &amp;основної пам&apos;яті</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
+        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="0"/>
         <source>Controls the amount of memory provided to the virtual machine. If you assign too much, the machine might not start.</source>
         <translation type="obsolete">Керує об&apos;ємом пам&apos;яті, яка забезпечує віртуальну машину. Якщо ви надали забагато, машина може не запуститись.</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
+        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="0"/>
         <source>&lt;</source>
         <translation type="obsolete">&lt;</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
+        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="0"/>
         <source>&gt;</source>
         <translation type="obsolete">&gt;</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
+        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="0"/>
         <source>MB</source>
         <translation type="obsolete">МБ</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
+        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="0"/>
         <source>&amp;Video Memory Size</source>
         <translation type="obsolete">Розмір &amp;відеопам&apos;яті</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
+        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="0"/>
         <source>Controls the amount of video memory provided to the virtual machine.</source>
         <translation type="obsolete">Керує об&apos;ємом відеопам&apos;яті, котра забезпечує віртуальну машину.</translation>
     </message>
@@ -6456,89 +6463,89 @@ p, li { white-space: pre-wrap; }
         <translation>&amp;Вдосконалений</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
+        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="0"/>
         <source>Boo&amp;t Order:</source>
         <translation type="obsolete">&amp;Порядок завантаження:</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
+        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="0"/>
         <source>Defines the boot device order. Use checkboxes to the left to enable or disable individual boot devices. Move items up and down to change the device order.</source>
         <translation type="obsolete">Описує порядок завантаження пристроїв. Використайте мітку, щоб ввімкнути або вимкнути конкретні пристрої, що завантажуються. Перемістіть пункти вверх і вниз, щоб змінити порядок завантаження.</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
+        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="0"/>
         <source>[device]</source>
         <translation type="obsolete">[пристрій]</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
+        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="0"/>
         <source>Move Up (Ctrl-Up)</source>
         <translation type="obsolete">Пересунути вище (Ctrl-Up)</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
+        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="0"/>
         <source>Moves the selected boot device up.</source>
         <translation type="obsolete">Пересуває вибраний пристрій завантаження вище.</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
+        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="0"/>
         <source>Move Down (Ctrl-Down)</source>
         <translation type="obsolete">Пересунути нижче (Ctrl-Down)</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
+        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="0"/>
         <source>Moves the selected boot device down.</source>
         <translation type="obsolete">Пересуває вибраний пристрій завантаження нижче.</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
+        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="0"/>
         <source>Extended Features:</source>
         <translation type="obsolete">Розширені властивості:</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
+        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="0"/>
         <source>When checked, the virtual machine will support the Advanced Configuration and Power Management Interface (ACPI). &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable this feature after having installed a Windows guest operating system!</source>
         <translation type="obsolete">Якщо це відмічено, віртуальна машина буде підтримувати вдосконалений інтерфейс конфігурації та керування живленням (ACPI). &lt;b&gt;Майте на увазі:&lt;/b&gt; не блокуйте цю властивість після встановлення Windows гостьовою операційною системою!</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
+        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="0"/>
         <source>Enable A&amp;CPI</source>
         <translation type="obsolete">Ввімкн&amp;ути ACPI</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
+        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="0"/>
         <source>When checked, the virtual machine will support the Input Output APIC (IO APIC), which may slightly decrease the VM performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable this feature after having installed a Windows guest operating system!</source>
         <translation type="obsolete">Якщо це відмічено, віртуальна машина буде підтримувати покращений програмовний контролер переривань В/В (IO APIC), який може трохи понизити продуктивність віртуальної машини.&lt;b&gt;Майте на увазі:&lt;/b&gt; не блокуйте цю властивість після встановлення Windows гостьовою операційною системою!</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
+        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="0"/>
         <source>Enable IO A&amp;PIC</source>
         <translation type="obsolete">Вв&amp;імкнути APIC В/В</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
+        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="0"/>
         <source>When checked, the virtual machine will try to make use of the host CPU&apos;s hardware virtualization extensions such as Intel VT-x and AMD-V.</source>
         <translation type="obsolete">Якщо це відмічено, віртуальна машина спробує використати розширення апаратної віртуалізації, такі як Intel VT-x та AMD-V, для процесора головного комп&apos;ютера.</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
+        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="0"/>
         <source>Enable &amp;VT-x/AMD-V</source>
         <translation type="obsolete">Ввімкну&amp;ти &amp;VT-x/AMD-V</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
+        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="0"/>
         <source>When checked, the Physical Address Extension (PAE) feature of the host CPU will be exposed to the virtual machine.</source>
         <translation type="obsolete">Якщо позначити цей пункт, на віртуальній машині буде використано можливість розширення області фізичних адрес (PAE).</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
+        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="0"/>
         <source>Enable PA&amp;E/NX</source>
         <translation type="obsolete">Ввімк&amp;нути PAE/NX</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="130"/>
         <source>&amp;Shared Clipboard:</source>
-        <translation>&amp;Спільний буфер обміну:</translation>
+        <translation>&amp;Спільна кишеня:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="149"/>
@@ -6546,12 +6553,12 @@ p, li { white-space: pre-wrap; }
         <translation>Описує режим розподіл буфера обміну між гостьової і головною операційною системою. Майте на увазі, ця властивість вимагає встановити гостьові доповнення в гостьову операційну систему.</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
+        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="0"/>
         <source>Defines the type of the virtual IDE controller. Depending on this value, VirtualBox will provide different virtual IDE hardware devices to the guest OS.</source>
         <translation type="obsolete">Описує тип віртуального контролера IDE. Залежно від значення, буде забезпечено відповідний віртуальний пристрій IDE в гостьову операційну систему.</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
+        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="0"/>
         <source>&amp;IDE Controller Type:</source>
         <translation type="obsolete">Тип &amp;контролера IDE:</translation>
     </message>
@@ -6568,10 +6575,10 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxVMSettingsGeneral.ui" line="253"/>
         <source>Displays the description of the virtual machine. The description field is useful for commenting configuration details of the installed guest OS.</source>
-        <translation>Показує характеристику віртуальної машини. Поля опису є корисні  для коментування деталей налаштування гостьової операційної системи, котра встановлена.</translation>
+        <translation>Показує характеристику віртуальної машини. Поля опису є корисні для коментування деталей налаштування гостьової операційної системи, котра встановлена.</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
+        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="0"/>
         <source>&amp;Other</source>
         <translation type="obsolete">&amp;Інші</translation>
     </message>
@@ -6581,37 +6588,37 @@ p, li { white-space: pre-wrap; }
         <translation>Якщо це відмічено, будь-які зміни для носіїв CD/DVD або дискет, які змонтовані, виконані під час роботи машини будуть збережені в файл налаштувань в порядку збереження налаштувань носіїв, які змонтовані, перед запуском.</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
+        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="0"/>
         <source>&amp;Remember Mounted Media</source>
         <translation type="obsolete">&amp;Запам&apos;ятовувати носії, які змонтовані</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
+        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="0"/>
         <source>Runtime:</source>
         <translation type="obsolete">Час роботи:</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
+        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="0"/>
         <source>you have assigned more than &lt;b&gt;75%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%1&lt;/b&gt;) to the virtual machine. Not enough memory is left for your host operating system. Please select a smaller amount.</source>
         <translation type="obsolete">ви вказали більше ніж &lt;b&gt;75%&lt;/b&gt; пам&apos;яті вашого комп&apos;ютера  (&lt;b&gt;%1&lt;/b&gt;) у віртуальну машину. Це недостатньо пам&apos;яті для вашої головної операційної системи. Будь ласка, виберіть менший об&apos;єм.</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
+        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="0"/>
         <source>you have assigned more than &lt;b&gt;50%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%1&lt;/b&gt;) to the virtual machine. Not enough memory might be left for your host operating system. Continue at your own risk.</source>
         <translation type="obsolete">ви вказали більше ніж &lt;b&gt;50%&lt;/b&gt; пам&apos;яті вашого комп&apos;ютера  (&lt;b&gt;%1&lt;/b&gt;) у віртуальну машину. Може бути недостатньо пам&apos;яті для вашої головної операційної системи. Продовжуйте на власний ризик.</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
+        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="0"/>
         <source>you have assigned less than &lt;b&gt;%1&lt;/b&gt; for video memory which is the minimum amount required to switch the virtual machine to fullscreen or seamless mode.</source>
         <translation type="obsolete">ви вказали менше ніж &lt;b&gt;%1&lt;/b&gt; відеопам&apos;яті, менше за мінімальний об’єм, потрібний для перемикання віртуальної машини у повноекранний або повноцінний режим. </translation>
     </message>
     <message>
-        <location filename="" line="0"/>
+        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="0"/>
         <source>When checked, the virtual machine will get access to the 3D graphics capabilities available on the host.</source>
         <translation type="obsolete">Якщо позначити цей пункт, віртуальна машина отримає доступ до можливостей прискорення просторової графіки, доступних на вузлі.</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
+        <location filename="../ui/VBoxVMSettingsGeneral.ui" line="0"/>
         <source>Enable &amp;3D Acceleration</source>
         <translation type="obsolete">&amp;Ввімкнути 3D прискорення</translation>
     </message>
@@ -6656,12 +6663,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/VBoxVMSettingsHD.cpp" line="854"/>
         <source>&amp;Add Attachment</source>
-        <translation>&amp;Додати підключення</translation>
+        <translation>&amp;Додати під&apos;єднання</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsHD.cpp" line="855"/>
         <source>&amp;Remove Attachment</source>
-        <translation>&amp;Вилучити підключення</translation>
+        <translation>&amp;Вилучити під&apos;єднання</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsHD.cpp" line="856"/>
@@ -6671,37 +6678,37 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/VBoxVMSettingsHD.cpp" line="865"/>
         <source>Adds a new hard disk attachment.</source>
-        <translation>Додає нове підключення жорсткого диска.</translation>
+        <translation>Додає нове під&apos;єднання жорсткого диска.</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsHD.cpp" line="866"/>
         <source>Removes the highlighted hard disk attachment.</source>
-        <translation>Вилучає виділене підключення жорсткого диска.</translation>
+        <translation>Вилучає виділене під&apos;єднання жорсткого диска.</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
+        <location filename="../src/VBoxVMSettingsHD.cpp" line="0"/>
         <source>When checked, enables the virtual SATA controller of this machine. Note that you cannot attach hard disks to SATA ports when the virtual SATA controller is disabled.</source>
         <translation type="obsolete">Якщо це відмічено, ввімкнутий віртуальний контролер SATA цієї машини. Майте на увазі,  ви не можете під&apos;єднювати жорсткі диски до порту SATA, коли віртуальний контролер SATA вимкнутий.</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
+        <location filename="../src/VBoxVMSettingsHD.cpp" line="0"/>
         <source>&amp;Enable SATA Controller</source>
         <translation type="obsolete">Вв&amp;імкнути контролер SATA</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsHD.ui" line="126"/>
         <source>&amp;Attachments</source>
-        <translation>&amp;Підключення</translation>
+        <translation>&amp;Під&apos;єднання</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsHD.ui" line="145"/>
         <source>Lists all hard disks attached to this machine. Use a mouse click or the &lt;tt&gt;Space&lt;/tt&gt; key on the highlighted item to activate the drop-down list and choose the desired value. Use the context menu or buttons to the right to add or remove hard disk attachments.</source>
-        <translation>Показує список всіх жорстких дисків, наявних на цьому комп’ютері. Наведенням вказівника миші на вибраний пункт з наступним клацанням лівою кнопкою миші або натисканням клавіші &lt;tt&gt;Пробіл&lt;/tt&gt; ви зможете відкрити спадний список і обрати бажане значення. Скористайтеся контекстним меню або кнопками, розташованими праворуч для додавання або вилучення жорстких дисків.</translation>
+        <translation>Показує список всіх жорстких дисків, наявних на цьому комп’ютері. Наведенням вказівника миші на вибраний пункт з таким клацанням лівою кнопкою миші або натисканням клавіші &lt;tt&gt;Пробіл&lt;/tt&gt; ви зможете відкрити спадний список і вибрати бажане значення. Скористайтеся контекстним меню або кнопками, розташованими праворуч для додавання або вилучення жорстких дисків.</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsHD.cpp" line="869"/>
         <source>Invokes the Virtual Media Manager to select a hard disk to attach to the currently highlighted slot.</source>
-        <translation>Відкриває вікно Керуванння Віртуальними Носіями для вибору жорсткого диска, який слід з’єднати з поточним вибраним слотом.</translation>
+        <translation>Відкриває вікно керуванння віртуальними носіями для вибору жорсткого диска, який слід з&apos;єднати з вибраним слотом.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsHD.ui" line="176"/>
@@ -6726,7 +6733,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxVMSettingsHD.ui" line="83"/>
         <source>When checked, enables an additional virtual controller (either SATA or SCSI) of this machine.</source>
-        <translation>Якщо це відмічено, вмикається додатковий віртуальний контролер цієї машини (або SATA, або SCSI).</translation>
+        <translation>Якщо це відмічено, вмикається додатковий віртуальний контролер цієї машини (SATA або SCSI).</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsHD.ui" line="86"/>
@@ -6737,12 +6744,12 @@ p, li { white-space: pre-wrap; }
 <context>
     <name>VBoxVMSettingsNetwork</name>
     <message>
-        <location filename="" line="0"/>
+        <location filename="../ui/VBoxVMSettingsHD.ui" line="0"/>
         <source>Select TAP setup application</source>
         <translation type="obsolete">Вибрати програму встановлення TAP</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
+        <location filename="../ui/VBoxVMSettingsHD.ui" line="0"/>
         <source>Select TAP terminate application</source>
         <translation type="obsolete">Вибрати програму завершення TAP</translation>
     </message>
@@ -6757,14 +6764,14 @@ p, li { white-space: pre-wrap; }
         <translation>&amp;Ввімкнути мережевий адаптер</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
+        <location filename="../ui/VBoxVMSettingsNetwork.ui" line="0"/>
         <source>A&amp;dapter Type:</source>
         <translation type="obsolete">Тип &amp;адаптера:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="90"/>
         <source>Selects the type of the virtual network adapter. Depending on this value, VirtualBox will provide different network hardware to the virtual machine.</source>
-        <translation>Вибирає тип віртуального мережевого адаптера. Залежно від значення,  VirtualBox забезпечуватиме мережевий пристрій для віртуальної машини.</translation>
+        <translation>Вибирає тип віртуального мережевого адаптера. Залежно від значення, VirtualBox забезпечуватиме мережевий пристрій для віртуальної машини.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="97"/>
@@ -6772,92 +6779,92 @@ p, li { white-space: pre-wrap; }
         <translation>&amp;Під&apos;єднаний до:</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
+        <location filename="../ui/VBoxVMSettingsNetwork.ui" line="0"/>
         <source>Controls the way how this virtual adapter is attached to the real network of the Host OS.</source>
         <translation type="obsolete">Контролює, як цей адаптер під&apos;єднаний до справжньої мережі головної операційної системи.</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
+        <location filename="../ui/VBoxVMSettingsNetwork.ui" line="0"/>
         <source>&amp;Network Name:</source>
         <translation type="obsolete">&amp;Назва мережі:</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
+        <location filename="../ui/VBoxVMSettingsNetwork.ui" line="0"/>
         <source>Displays the name of the internal network selected for this adapter.</source>
         <translation type="obsolete">Показує назву внутрішньої мережі, вибраної для цього адаптера.</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
+        <location filename="../ui/VBoxVMSettingsNetwork.ui" line="0"/>
         <source>&amp;MAC Address:</source>
         <translation type="obsolete">&amp;Адреса MAC:</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
+        <location filename="../ui/VBoxVMSettingsNetwork.ui" line="0"/>
         <source>Displays the MAC address of this adapter. It contains exactly 12 characters chosen from {0-9,A-F}. Note that the second character must be an even digit.</source>
         <translation type="obsolete">Показує адресу MAC цього адаптера. Вона містить 12 символів вибраних з діапозону {0-9,A-F}. Майте на увазі, другий символ повиннен бути лише числом.</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
+        <location filename="../ui/VBoxVMSettingsNetwork.ui" line="0"/>
         <source>Generates a new random MAC address.</source>
         <translation type="obsolete">Створює нову випадкову MAC-адресу.</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
+        <location filename="../ui/VBoxVMSettingsNetwork.ui" line="0"/>
         <source>&amp;Generate</source>
         <translation type="obsolete">&amp;Згенерувати</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
+        <location filename="../ui/VBoxVMSettingsNetwork.ui" line="0"/>
         <source>Indicates whether the virtual network cable is plugged in on machine startup or not.</source>
         <translation type="obsolete">Визначає, буде з’єднано віртуальний мережевий кабель під час запуску, чи ні.</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
+        <location filename="../ui/VBoxVMSettingsNetwork.ui" line="0"/>
         <source>Ca&amp;ble Connected</source>
         <translation type="obsolete">Каб&amp;бель з’єднано</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
+        <location filename="../ui/VBoxVMSettingsNetwork.ui" line="0"/>
         <source>&amp;Interface Name:</source>
         <translation type="obsolete">Назва &amp;інтерфейсу:</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
+        <location filename="../ui/VBoxVMSettingsNetwork.ui" line="0"/>
         <source>Displays the TAP interface name.</source>
         <translation type="obsolete">Показує назву інтерфейсу TAP.</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
+        <location filename="../ui/VBoxVMSettingsNetwork.ui" line="0"/>
         <source>&amp;Setup Application:</source>
         <translation type="obsolete">Програма вс&amp;тановлення:</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
+        <location filename="../ui/VBoxVMSettingsNetwork.ui" line="0"/>
         <source>Displays the command executed to set up the TAP interface.</source>
         <translation type="obsolete">Показує команду, яку буде виконано для встановлення інтерфейсу TAP.</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
+        <location filename="../ui/VBoxVMSettingsNetwork.ui" line="0"/>
         <source>Selects the setup application.</source>
         <translation type="obsolete">Вказує програму встановлення.</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
+        <location filename="../ui/VBoxVMSettingsNetwork.ui" line="0"/>
         <source>&amp;Terminate Application:</source>
         <translation type="obsolete">Програма &amp;завершення:</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
+        <location filename="../ui/VBoxVMSettingsNetwork.ui" line="0"/>
         <source>Displays the command executed to terminate the TAP interface.</source>
         <translation type="obsolete">Показує команду, яку буде виконано для завершення роботи інтерфейсу TAP.</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
+        <location filename="../ui/VBoxVMSettingsNetwork.ui" line="0"/>
         <source>Selects the terminate application.</source>
         <translation type="obsolete">Вказує програму завершення.</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
+        <location filename="../ui/VBoxVMSettingsNetwork.ui" line="0"/>
         <source>Host Interface Settings</source>
         <translation type="obsolete">Налаштування головного інтерфейсу</translation>
     </message>
@@ -6890,12 +6897,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="110"/>
         <source>Controls how this virtual adapter is attached to the real network of the Host OS.</source>
-        <translation type="unfinished"></translation>
+        <translation>Котролює, як цей віртуальний адаптер під&apos;єднаний до справжньої мережі головної операційної системи.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="117"/>
         <source>Open additional options dialog for current attachment type.</source>
-        <translation type="unfinished"></translation>
+        <translation>Відкрити діалог додаткових варіантів для поточноно типу під&apos;єднання.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="127"/>
@@ -6905,7 +6912,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxVMSettingsNetwork.ui" line="140"/>
         <source>Selects the name of the network adapter if attachment type is equivalent to &lt;b&gt;Bridged Adapter&lt;/b&gt; or &lt;b&gt;Host-only Adapter&lt;/b&gt; and the name of the internal network if attachment type is equivalent to &lt;b&gt;Internal Network&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Вибирає назву мережевого адаптера, якщо тип під&apos;єднання рівносильний до &lt;b&gt;проміжного адаптера&lt;/b&gt; або &lt;b&gt;лише головного адаптера&lt;/b&gt; і назву внутрьошньої мережі, якщо тип під&apos;єднання рівносильний до &lt;b&gt;внутрьошньої мережі&lt;/b&gt;.</translation>
     </message>
 </context>
 <context>
@@ -6928,7 +6935,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxVMSettingsNetworkDetails.ui" line="62"/>
         <source>Generates a new random MAC address.</source>
-        <translation>Створює нову випадкову MAC-адресу.</translation>
+        <translation>Створює нову випадкову адресу MAC.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsNetworkDetails.ui" line="75"/>
@@ -6944,12 +6951,12 @@ p, li { white-space: pre-wrap; }
 <context>
     <name>VBoxVMSettingsNetworkPage</name>
     <message>
-        <location filename="" line="0"/>
+        <location filename="../ui/VBoxVMSettingsNetworkDetails.ui" line="0"/>
         <source>No host network interface is selected</source>
         <translation type="obsolete">Нема жодного вибраного мережевого інтерфейсу</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
+        <location filename="../ui/VBoxVMSettingsNetworkDetails.ui" line="0"/>
         <source>Internal network name is not set</source>
         <translation type="obsolete">Не встановлено назви внутрішньої мережі</translation>
     </message>
@@ -7066,12 +7073,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/VBoxVMSettingsSF.cpp" line="252"/>
         <source> Machine Folders</source>
-        <translation>Теки машини</translation>
+        <translation> Теки машини</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsSF.cpp" line="259"/>
         <source> Transient Folders</source>
-        <translation>Тимчасові теки</translation>
+        <translation> Тимчасові теки</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsSF.cpp" line="359"/>
@@ -7109,7 +7116,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/VBoxVMSettingsSFDetails.cpp" line="120"/>
         <source>Add Share</source>
-        <translation>Зробити спільну теку</translation>
+        <translation>Створити спільну теку</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsSFDetails.cpp" line="123"/>
@@ -7221,7 +7228,7 @@ p, li { white-space: pre-wrap; }
         <translation>&amp;Створити канал</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
+        <location filename="../ui/VBoxVMSettingsSerial.ui" line="0"/>
         <source>Port &amp;Path:</source>
         <translation type="obsolete">&amp;Шлях порту:</translation>
     </message>
@@ -7259,32 +7266,32 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/VBoxVMSettingsSystem.cpp" line="352"/>
         <source>you have assigned more than &lt;b&gt;%1%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%2&lt;/b&gt;) to the virtual machine. Not enough memory is left for your host operating system. Please select a smaller amount.</source>
-        <translation type="unfinished"></translation>
+        <translation>ви вказали більше, ніж &lt;b&gt;%1%&lt;/b&gt; пам&apos;яті вашого комп&apos;ютера (&lt;b&gt;%2&lt;/b&gt;) у віртуальній машині. Недостатньо пам&apos;яті для вашої головної операційної системи. Будь ласка, виберіть менший об&apos;єм.</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsSystem.cpp" line="362"/>
         <source>you have assigned more than &lt;b&gt;%1%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%2&lt;/b&gt;) to the virtual machine. Not enough memory might be left for your host operating system. Continue at your own risk.</source>
-        <translation type="unfinished"></translation>
+        <translation>ви вказали більше, ніж &lt;b&gt;%1%&lt;/b&gt; пам&apos;яті вашого комп&apos;ютера (&lt;b&gt;%2&lt;/b&gt;) у віртуальній машині. Недостатньо пам&apos;яті для вашої головної операційної системи. Продовжуйте на власний ризик.</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsSystem.cpp" line="375"/>
         <source>for performance reasons, the number of virtual CPUs attached to the virtual machine may not be more than twice the number of physical CPUs on the host (&lt;b&gt;%1&lt;/b&gt;). Please reduce the number of virtual CPUs.</source>
-        <translation type="unfinished"></translation>
+        <translation>з точки зору швидкодії, число віртуальних процесорів, які під&apos;єднані до машини, не можуть перевищувати більше двох фізичних процесорів на головному комп&apos;ютері (&lt;b&gt;%1&lt;/b&gt;).Будь ласка, зменшіть число віртуальних процесорів.</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsSystem.cpp" line="385"/>
         <source>you have assigned more virtual CPUs to the virtual machine than the number of physical CPUs on your host system (&lt;b&gt;%1&lt;/b&gt;). This is likely to degrade the performance of your virtual machine. Please consider reducing the number of virtual CPUs.</source>
-        <translation type="unfinished"></translation>
+        <translation>ви вказали більше віртуальних процесорів, ніж фізично на головному комп&apos;ютері (&lt;b&gt;%1&lt;/b&gt;). Імовірно це занизить швидкодію вашої віртуальної машини. Будь ласка, прийміть до уваги зниження числа віртуальних процесорів.</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsSystem.cpp" line="396"/>
         <source>you have assigned more than one virtual CPU to this VM. This will not work unless the IO-APIC feature is also enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
-        <translation type="unfinished"></translation>
+        <translation>ви вказали більше, ніж один віртуальний процесор для цієї машини. Це також не працює, якщо не ввімкнено властивості IO-APIC. Це буде автоматично здійснено, коли ви дозволите налаштування віртуальної машини, натиснувши кнопку Гаразд.</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsSystem.cpp" line="407"/>
         <source>you have assigned more than one virtual CPU to this VM. This will not work unless hardware virtualization (VT-x/AMD-V) is also enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
-        <translation type="unfinished"></translation>
+        <translation>ви вказали більше, ніж один віртуальний процесор для цієї машини. Це також не працює, якщо не ввімкнено віртуалізацію апаратури (VT-x/AMD-V). Це буде автоматично здійснено, коли ви дозволите налаштування віртуальної машини, натиснувши кнопку Гаразд.</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsSystem.cpp" line="458"/>
@@ -7295,13 +7302,13 @@ p, li { white-space: pre-wrap; }
         <location filename="../src/VBoxVMSettingsSystem.cpp" line="461"/>
         <source>&lt;qt&gt;%1&amp;nbsp;CPU&lt;/qt&gt;</source>
         <comment>%1 is 1 for now</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;%1&amp;nbsp;процесор&lt;/qt&gt;</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsSystem.cpp" line="462"/>
         <source>&lt;qt&gt;%1&amp;nbsp;CPUs&lt;/qt&gt;</source>
         <comment>%1 is 32 for now</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;%1&amp;nbsp;процесорів&lt;/qt&gt;</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsSystem.ui" line="37"/>
@@ -7391,7 +7398,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxVMSettingsSystem.ui" line="473"/>
         <source>Controls the number of virtual CPUs in the virtual machine.</source>
-        <translation type="unfinished"></translation>
+        <translation>Контролює числом віртуальних процесорів у віртуальній машині.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsSystem.ui" line="496"/>
@@ -7406,12 +7413,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxVMSettingsSystem.ui" line="520"/>
         <source>Acce&amp;leration</source>
-        <translation type="unfinished"></translation>
+        <translation>При&amp;скорення</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsSystem.ui" line="526"/>
         <source>Hardware Virtualization:</source>
-        <translation type="unfinished"></translation>
+        <translation>Віртуалізація пристрою:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsSystem.ui" line="539"/>
@@ -7426,12 +7433,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxVMSettingsSystem.ui" line="558"/>
         <source>When checked, the virtual machine will try to make use of the nested paging extension of Intel VT-x and AMD-V.</source>
-        <translation type="unfinished"></translation>
+        <translation>Коли це відмічено, віртуальна машина спробує застосувати розширення вкладеного заміщення сторінок Intel VT-x і AMD-V.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsSystem.ui" line="561"/>
         <source>Enable Nested Pa&amp;ging</source>
-        <translation type="unfinished"></translation>
+        <translation>Увімкнути вкла&amp;дене заміщення сторінок</translation>
     </message>
 </context>
 <context>
@@ -7469,17 +7476,17 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/VBoxVMSettingsUSB.cpp" line="262"/>
         <source>Adds a new USB filter with all fields initially set to empty strings. Note that such a filter will match any attached USB device.</source>
-        <translation>Додає новий фільтр USB з порожніми початковими значеннями полів. Зауважте, що такий фільтр відповідатиме будь-якому з’єднаному пристрою USB.</translation>
+        <translation>Додає новий фільтр USB з порожніми початковими значеннями полів. Зауважте, що такий фільтр відповідатиме будь-якому з&apos;єднаному пристрою USB.</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsUSB.cpp" line="265"/>
         <source>Adds a new USB filter with all fields set to the values of the selected USB device attached to the host PC.</source>
-        <translation>Додає новий фільтр USB з початковими значеннями полів, обраним для пристрою USB, з’єднаного з комп’ютером-вузлом.</translation>
+        <translation>Додає новий фільтр USB з початковими значеннями полів, вибраним для пристрою USB, з&apos;єднаного з головним комп&apos;ютером.</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsUSB.cpp" line="266"/>
         <source>Edits the selected USB filter.</source>
-        <translation>Відкриває вікно редагування параметрів вибраного фільтра USB.</translation>
+        <translation>Редагує вибраний фільтр USB.</translation>
     </message>
     <message>
         <location filename="../src/VBoxVMSettingsUSB.cpp" line="267"/>
@@ -7505,7 +7512,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxVMSettingsUSB.ui" line="33"/>
         <source>When checked, enables the virtual USB controller of this machine.</source>
-        <translation>Якщо цей пункт буде позначено, буде увімкнено віртуальний контролер USB цього комп’ютера.</translation>
+        <translation>Якщо це відмічено, буде увімкнено віртуальний контролер USB цьієї машини.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSB.ui" line="36"/>
@@ -7515,7 +7522,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxVMSettingsUSB.ui" line="77"/>
         <source>When checked, enables the virtual USB EHCI controller of this machine. The USB EHCI controller provides USB 2.0 support.</source>
-        <translation>Якщо позначити цей пункт, на цій машині буде увімкнено віртуальний EHCI USB-контролер. За допомогою EHCI USB-контролера забезпечується підтримка USB 2.0.</translation>
+        <translation>Якщо це відмічено, на цій машині буде увімкнено віртуальний контролер USB EHCI. Контролер USB EHCI забезпечує підтримку USB 2.0.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSB.ui" line="80"/>
@@ -7530,7 +7537,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxVMSettingsUSB.ui" line="115"/>
         <source>Lists all USB filters of this machine. The checkbox to the left defines whether the particular filter is enabled or not. Use the context menu or buttons to the right to add or remove USB filters.</source>
-        <translation>Показує список всіх фільтрів USB на цій машині. Пункт, розташований ліворуч визначає, буде увімкнуто пристрій чи ні. Для додавання або вилучення USB-фільтрів скористайтеся контекстним меню або кнопками, розташованими праворуч.</translation>
+        <translation>Показує список всіх фільтрів USB на цій машині. Мітка, розташована ліворуч визначає, чи буде увімкнуто пристрій, чи ні. Для додавання або вилучення фільтрів USB скористайтеся контекстним меню або кнопками, розташованими праворуч.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSB.ui" line="122"/>
@@ -7571,32 +7578,32 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="62"/>
         <source>&amp;Vendor ID:</source>
-        <translation>ID &amp;Продавця:</translation>
+        <translation>ID &amp;продавця:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="75"/>
         <source>Defines the vendor ID filter. The &lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;XXXX&lt;/tt&gt; where &lt;tt&gt;X&lt;/tt&gt; is a hexadecimal digit. An empty string will match any value.</source>
-        <translation>Описує фільтр по ID Продавця. Формат рядка &lt;i&gt;точна відповідність&lt;/i&gt; — &lt;tt&gt;XXXX&lt;/tt&gt;, де &lt;tt&gt;X&lt;/tt&gt; — шістнадцяткова цифра. Порожній рядок відповідає будь-якому значенню.</translation>
+        <translation>Описує фільтр за ID продавця. Формат рядка &lt;i&gt;точна відповідність&lt;/i&gt; — &lt;tt&gt;XXXX&lt;/tt&gt;, де &lt;tt&gt;X&lt;/tt&gt; — шістнадцяткова цифра. Порожній рядок відповідає будь-якому значенню.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="82"/>
         <source>&amp;Product ID:</source>
-        <translation>ID П&amp;родукту:</translation>
+        <translation>ID п&amp;родукту:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="95"/>
         <source>Defines the product ID filter. The &lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;XXXX&lt;/tt&gt; where &lt;tt&gt;X&lt;/tt&gt; is a hexadecimal digit. An empty string will match any value.</source>
-        <translation>Описує фільтр по ID Продукту. Формат рядка &lt;i&gt;точна відповідність&lt;/i&gt; — &lt;tt&gt;XXXX&lt;/tt&gt;, де &lt;tt&gt;X&lt;/tt&gt; — шістнадцяткова цифра. Порожній рядок відповідає будь-якому значенню.</translation>
+        <translation>Описує фільтр за ID продукту. Формат рядка &lt;i&gt;точна відповідність&lt;/i&gt; — &lt;tt&gt;XXXX&lt;/tt&gt;, де &lt;tt&gt;X&lt;/tt&gt; — шістнадцяткова цифра. Порожній рядок відповідає будь-якому значенню.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="102"/>
         <source>&amp;Revision:</source>
-        <translation>&amp;Модифікація:</translation>
+        <translation>П&amp;ерегляд:</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="115"/>
         <source>Defines the revision number filter. The &lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;IIFF&lt;/tt&gt; where &lt;tt&gt;I&lt;/tt&gt; is a decimal digit of the integer part and &lt;tt&gt;F&lt;/tt&gt; is a decimal digit of the fractional part. An empty string will match any value.</source>
-        <translation>Описує номер модифікації фільтра. Формат рядка &lt;i&gt;точна відповідність&lt;/i&gt; — &lt;tt&gt;IIFF&lt;/tt&gt;, де &lt;tt&gt;I&lt;/tt&gt; — десяткове число цілої частини та &lt;tt&gt;F&lt;/tt&gt; — десяткове число дробової частини. Пустий рядок відповідає будь-якому значенню.</translation>
+        <translation>Описує номер перегляду фільтра. Формат рядка &lt;i&gt;точна відповідність&lt;/i&gt; — &lt;tt&gt;IIFF&lt;/tt&gt;, де &lt;tt&gt;I&lt;/tt&gt; — десяткове число цілої частини та &lt;tt&gt;F&lt;/tt&gt; — десяткове число дробової частини. Пустий рядок відповідає будь-якому значенню.</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="122"/>
@@ -7646,7 +7653,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="221"/>
         <source>Defines whether this filter applies to USB devices attached locally to the host computer (&lt;i&gt;No&lt;/i&gt;), to a VRDP client&apos;s computer (&lt;i&gt;Yes&lt;/i&gt;), or both (&lt;i&gt;Any&lt;/i&gt;).</source>
-        <translation>Описує, чи цей фільтр застосовується до пристроїв USB локально під&apos;єднаних до головного комп&apos;ютера (&lt;i&gt;Ні&lt;/i&gt;), до комп&apos;ютера клієнта VRDP (&lt;i&gt;Так&lt;/i&gt;), або до (&lt;i&gt;Обох&lt;/i&gt;).</translation>
+        <translation>Описує, чи цей фільтр застосовується до пристроїв USB локально під&apos;єднаних до головного комп&apos;ютера (&lt;i&gt;Ні&lt;/i&gt;), чи до комп&apos;ютера клієнта VRDP (&lt;i&gt;Так&lt;/i&gt;), або до (&lt;i&gt;Обох&lt;/i&gt;).</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="228"/>
@@ -7656,7 +7663,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="247"/>
         <source>Defines an action performed by the host computer when a matching device is attached: give it up to the host OS (&lt;i&gt;Ignore&lt;/i&gt;) or grab it for later usage by virtual machines (&lt;i&gt;Hold&lt;/i&gt;).</source>
-        <translation>Описує дії, котрі виконуються головним комп&apos;ютером, коли буде з’єднано відповідний пристрій: передати його основній операційній системі (&lt;i&gt;Ігнорувати&lt;/i&gt;) або перехопити його для наступного використання у віртуальних машинах (&lt;i&gt;Захопити&lt;/i&gt;).</translation>
+        <translation>Описує дії, котрі виконуються головним комп&apos;ютером, коли буде з&apos;єднано відповідний пристрій: передати його основній операційній системі (&lt;i&gt;Ігнорувати&lt;/i&gt;) або перехопити його для наступного використання у віртуальних машинах (&lt;i&gt;Захопити&lt;/i&gt;).</translation>
     </message>
     <message>
         <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="36"/>
@@ -7667,42 +7674,42 @@ p, li { white-space: pre-wrap; }
 <context>
     <name>VBoxVMSettingsVRDP</name>
     <message>
-        <location filename="" line="0"/>
+        <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="0"/>
         <source>When checked, the VM will act as a Remote Desktop Protocol (RDP) server, allowing remote clients to connect and operate the VM (when it is running) using a standard RDP client.</source>
         <translation type="obsolete">Якщо це відмічено, то віртуальна машина буде діяти відповідно як сервер віддаленої стільниці (RDP), дозволяючи віддаленим клієнтам з&apos;єднатися та використовувати віртуальну машину (коли вона запущена) використовуючи стандартного клієнта RDP.</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
+        <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="0"/>
         <source>&amp;Enable VRDP Server</source>
         <translation type="obsolete">&amp;Ввімкнути сервер VRDP</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
+        <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="0"/>
         <source>Server &amp;Port:</source>
         <translation type="obsolete">&amp;Порт сервера:</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
+        <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="0"/>
         <source>Displays the VRDP Server port number. You may specify &lt;tt&gt;0&lt;/tt&gt; (zero) to reset the port to the default value.</source>
         <translation type="obsolete">Показує номер порту сервера VRDP. Ви можете вказати &lt;tt&gt;0&lt;/tt&gt; (нуль), щоб скинути порт до типових значень.</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
+        <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="0"/>
         <source>Authentication &amp;Method:</source>
         <translation type="obsolete">М&amp;етод засвідчення:</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
+        <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="0"/>
         <source>Defines the VRDP authentication method.</source>
         <translation type="obsolete">Описує метод засвідчення VRDP.</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
+        <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="0"/>
         <source>Authentication &amp;Timeout:</source>
         <translation type="obsolete">&amp;Час очікування засвідчення:</translation>
     </message>
     <message>
-        <location filename="" line="0"/>
+        <location filename="../ui/VBoxVMSettingsUSBFilterDetails.ui" line="0"/>
         <source>Specifies the timeout for guest authentication, in milliseconds.</source>
         <translation type="obsolete">Показує час очікування засвідчення гостя, в мілісекундах.</translation>
     </message>
