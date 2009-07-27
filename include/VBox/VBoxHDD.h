@@ -335,7 +335,8 @@ DECLINLINE(int) VDInterfaceAdd(PVDINTERFACE pInterface, const char *pszName,
 }
 
 /**
- * Interface to deliver error messages to upper layers.
+ * Interface to deliver error messages (and also informational messages)
+ * to upper layers.
  *
  * Per disk interface. Optional, but think twice if you want to miss the
  * opportunity of reporting better human-readable error messages.
@@ -353,7 +354,8 @@ typedef struct VDINTERFACEERROR
     VDINTERFACETYPE enmInterface;
 
     /**
-     * Error message callback.
+     * Error message callback. Must be able to accept special IPRT format
+     * strings.
      *
      * @param   pvUser          The opaque data passed on container creation.
      * @param   rc              The VBox error code.
@@ -362,6 +364,17 @@ typedef struct VDINTERFACEERROR
      * @param   va              Error message arguments.
      */
     DECLR3CALLBACKMEMBER(void, pfnError, (void *pvUser, int rc, RT_SRC_POS_DECL, const char *pszFormat, va_list va));
+
+    /**
+     * Informational message callback. May be NULL. Used e.g. in
+     * VDDumpImages(). Must be able to accept special IPRT format strings.
+     *
+     * @return  VBox status code.
+     * @param   pvUser          The opaque data passed on container creation.
+     * @param   pszFormat       Error message format string.
+     * @param   ...             Error message arguments.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnMessage, (void *pvUser, const char *pszFormat, ...));
 
 } VDINTERFACEERROR, *PVDINTERFACEERROR;
 

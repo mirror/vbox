@@ -3335,7 +3335,7 @@ static void iscsiDump(void *pBackendData)
     if (pImage)
     {
         /** @todo put something useful here */
-        RTLogPrintf("Header: cVolume=%u\n", pImage->cVolume);
+        pImage->pInterfaceErrorCallbacks->pfnMessage(pImage->pInterfaceError->pvUser, "Header: cVolume=%u\n", pImage->cVolume);
     }
 }
 

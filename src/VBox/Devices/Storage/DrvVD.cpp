@@ -837,6 +837,7 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
     pThis->VDIErrorCallbacks.cbSize       = sizeof(VDINTERFACEERROR);
     pThis->VDIErrorCallbacks.enmInterface = VDINTERFACETYPE_ERROR;
     pThis->VDIErrorCallbacks.pfnError     = drvvdErrorCallback;
+    pThis->VDIErrorCallbacks.pfnMessage   = NULL;
 
     rc = VDInterfaceAdd(&pThis->VDIError, "DrvVD_VDIError", VDINTERFACETYPE_ERROR,
                         &pThis->VDIErrorCallbacks, pDrvIns, &pThis->pVDIfsDisk);

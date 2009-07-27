@@ -707,6 +707,20 @@ out:
 }
 
 /**
+ * internal: send output to the log (unconditionally).
+ */
+int vdLogMessage(void *pvUser, const char *pszFormat, ...)
+{
+    NOREF(pvUser);
+    va_list args;
+    va_start(args, pszFormat);
+    RTLogPrintf(pszFormat, args);
+    va_end(args);
+    return VINF_SUCCESS;
+}
+
+
+/**
  * Initializes HDD backends.
  *
  * @returns VBox status code.
@@ -1532,9 +1546,10 @@ VBOXDDU_DECL(int) VDCreateDiff(PVBOXHDD pDisk, const char *pszBackend,
         }
 
         pImage->uOpenFlags = uOpenFlags & VD_OPEN_FLAGS_HONOR_SAME;
+        uImageFlags |= VD_IMAGE_FLAGS_DIFF;
         rc = pImage->Backend->pfnCreate(pImage->pszFilename, pDisk->cbSize,
-                                        uImageFlags, pszComment,
-                                        &pDisk->PCHSGeometry,
+                                        uImageFlags | VD_IMAGE_FLAGS_DIFF,
+                                        pszComment, &pDisk->PCHSGeometry,
                                         &pDisk->LCHSGeometry, pUuid,
                                         uOpenFlags & ~VD_OPEN_FLAGS_HONOR_SAME,
                                         0, 99,
@@ -1545,7 +1560,7 @@ VBOXDDU_DECL(int) VDCreateDiff(PVBOXHDD pDisk, const char *pszBackend,
 
         if (RT_SUCCESS(rc) && pDisk->cImages != 0)
         {
-            pImage->uImageFlags |= VD_IMAGE_FLAGS_DIFF;
+            pImage->uImageFlags = uImageFlags;
 
             /* Switch previous image to read-only mode. */
             unsigned uOpenFlagsPrevImg;
@@ -3474,11 +3489,22 @@ VBOXDDU_DECL(void) VDDumpImages(PVBOXHDD pDisk)
         AssertPtrBreak(pDisk);
         AssertMsg(pDisk->u32Signature == VBOXHDDDISK_SIGNATURE, ("u32Signature=%08x\n", pDisk->u32Signature));
 
-        RTLogPrintf("--- Dumping VD Disk, Images=%u\n", pDisk->cImages);
+        int (*pfnMessage)(void *, const char *, ...) = NULL;
+        void *pvUser = pDisk->pInterfaceError->pvUser;
+
+        if (pDisk->pInterfaceErrorCallbacks && VALID_PTR(pDisk->pInterfaceErrorCallbacks->pfnMessage))
+            pfnMessage = pDisk->pInterfaceErrorCallbacks->pfnMessage;
+        else
+        {
+            pDisk->pInterfaceErrorCallbacks->pfnMessage = vdLogMessage;
+            pfnMessage = vdLogMessage;
+        }
+
+        pfnMessage(pvUser, "--- Dumping VD Disk, Images=%u\n", pDisk->cImages);
         for (PVDIMAGE pImage = pDisk->pBase; pImage; pImage = pImage->pNext)
         {
-            RTLogPrintf("Dumping VD image \"%s\" (Backend=%s)\n",
-                        pImage->pszFilename, pImage->Backend->pszBackendName);
+            pfnMessage(pvUser, "Dumping VD image \"%s\" (Backend=%s)\n",
+                       pImage->pszFilename, pImage->Backend->pszBackendName);
             pImage->Backend->pfnDump(pImage->pvBackendData);
         }
     } while (0);

@@ -664,6 +664,7 @@ HRESULT HardDisk::FinalConstruct()
     mm.vdIfCallsError.cbSize = sizeof (VDINTERFACEERROR);
     mm.vdIfCallsError.enmInterface = VDINTERFACETYPE_ERROR;
     mm.vdIfCallsError.pfnError = vdErrorCall;
+    mm.vdIfCallsError.pfnMessage = NULL;
 
     /* Initialize the callbacks of the VD progress interface */
     mm.vdIfCallsProgress.cbSize = sizeof (VDINTERFACEPROGRESS);
@@ -3249,8 +3250,7 @@ HRESULT HardDisk::queryInfo()
                 flags |= VD_OPEN_FLAGS_READONLY;
 
             /** @todo This kind of opening of images is assuming that diff
-             * images can be opened as base images. Not very clean, and should
-             * be fixed eventually. */
+             * images can be opened as base images. Should be fixed ASAP. */
             vrc = VDOpen(hdd,
                          Utf8Str(mm.format),
                          location,
@@ -3274,7 +3274,7 @@ HRESULT HardDisk::queryInfo()
                 }
                 if (mm.setParentId)
                 {
-                    vrc = VDSetUuid(hdd, 0, mm.parentId);
+                    vrc = VDSetParentUuid(hdd, 0, mm.parentId);
                     ComAssertRCThrow(vrc, E_FAIL);
                 }
                 /* zap the information, these are no long-term members */
@@ -3899,6 +3899,8 @@ DECLCALLBACK(int) HardDisk::taskThread (RTTHREAD thread, void *pvUser)
                     /* needed for vdProgressCallback */
                     that->mm.vdProgress = task->progress;
 
+                    /** @todo add VD_IMAGE_FLAGS_DIFF to the image flags, to
+                     * be on the safe side. */
                     vrc = VDCreateDiff (hdd, targetFormat, targetLocation,
                                         task->d.variant,
                                         NULL, targetId.raw(),

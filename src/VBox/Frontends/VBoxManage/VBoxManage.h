@@ -95,6 +95,7 @@
 #define USAGE_EXPORTAPPLIANCE       RT_BIT_64(45)
 #define USAGE_HOSTONLYIFS           RT_BIT_64(46)
 #define USAGE_DHCPSERVER            RT_BIT_64(47)
+#define USAGE_DUMPHDINFO            RT_BIT_64(48)
 #define USAGE_ALL                   (~(uint64_t)0)
 /** @} */
 
