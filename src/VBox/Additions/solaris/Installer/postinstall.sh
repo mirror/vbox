@@ -312,6 +312,19 @@ echo "Configuring service..."
 
 /usr/sbin/devfsadm -i vboxguest
 
+# Update boot archive
+BOOTADMBIN=/sbin/bootadm
+if test -x "$BOOTADMBIN"; then
+    if test -h "/dev/vboxguest"; then
+        echo "Updating boot archive..."
+        $BOOTADMBIN update-archive > /dev/null
+    else
+        echo "## Guest kernel module doesn't seem to be up. Skipped explicit boot-archive update."
+    fi
+else
+    echo "## $BOOTADMBIN not found/executable. Skipped explicit boot-archive update."
+fi
+
 echo "Done."
 if test $retval -eq 0; then
     if test ! -z "$xorgbin"; then
