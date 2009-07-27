@@ -37,6 +37,9 @@
 //#define RTZIP_USE_BZLIB 1
 #define RTZIP_USE_LZF 1
 #define RTZIP_LZF_BLOCK_BY_BLOCK
+//#define RTZIP_USE_LZJB 1
+
+/** @todo lzjb? LZO? QuickLZ? Others? */
 
 
 /*******************************************************************************
@@ -1671,4 +1674,162 @@ RTDECL(int)     RTZipDecompDestroy(PRTZIPDECOMP pZip)
     return rc;
 }
 RT_EXPORT_SYMBOL(RTZipDecompDestroy);
+
+
+RTDECL(int) RTZipBlockCompress(RTZIPTYPE enmType, RTZIPLEVEL enmLevel, uint32_t fFlags,
+                               void const *pvSrc, size_t cbSrc,
+                               void *pvDst, size_t cbDst, size_t *pcbDstActual) RT_NO_THROW
+{
+    /* input validation - the crash and burn approach as speed is essential here. */
+    Assert(enmLevel <= RTZIPLEVEL_MAX && enmLevel >= RTZIPLEVEL_STORE);
+    Assert(!fFlags);
+
+    /*
+     * Deal with flags involving prefixes.
+     */
+    /** @todo later: type and/or compressed length prefix. */
+
+    /*
+     * The type specific part.
+     */
+    switch (enmType)
+    {
+        case RTZIPTYPE_LZF:
+        {
+#ifdef RTZIP_USE_LZF
+            unsigned cbDstActual = lzf_compress(pvSrc, cbSrc, pvDst, cbDst);
+            if (RT_UNLIKELY(cbDstActual < 1))
+                return VERR_BUFFER_OVERFLOW;
+            *pcbDstActual = cbDstActual;
+            break;
+#else
+            return VERR_NOT_SUPPORTED;
+#endif
+        }
+
+        case RTZIPTYPE_STORE:
+        {
+            if (cbDst < cbSrc)
+                return VERR_BUFFER_OVERFLOW;
+            memcpy(pvDst, pvSrc, cbSrc);
+            *pcbDstActual = cbSrc;
+            break;
+        }
+
+        case RTZIPTYPE_LZJB:
+        {
+#ifdef RTZIP_USE_LZJB
+            AssertReturn(cbDst >= cbSrc, VERR_BUFFER_OVERFLOW);
+            size_t cbDstActual = lzjb_compress((void *)pvSrc, (uint8_t *)pvDst + 1, cbSrc, cbSrc, 0 /*??*/);
+            if (cbDst == cbSrc)
+                *(uint8_t *)pvDst = 0;
+            else
+                *(uint8_t *)pvDst = 1;
+            *pcbDstActual = cbDstActual + 1;
+            break;
+#else
+            return VERR_NOT_SUPPORTED;
+#endif
+        }
+
+        case RTZIPTYPE_ZLIB:
+        case RTZIPTYPE_BZLIB:
+            return VERR_NOT_SUPPORTED;
+
+        default:
+            AssertMsgFailed(("%d\n", enmType));
+            return VERR_INVALID_PARAMETER;
+    }
+
+    return VINF_SUCCESS;
+}
+RT_EXPORT_SYMBOL(RTZipBlockCompress);
+
+
+RTDECL(int) RTZipBlockDecompress(RTZIPTYPE enmType, uint32_t fFlags,
+                                 void const *pvSrc, size_t cbSrc, size_t *pcbSrcActual,
+                                 void *pvDst, size_t cbDst, size_t *pcbDstActual) RT_NO_THROW
+{
+    /* input validation - the crash and burn approach as speed is essential here. */
+    Assert(!fFlags);
+
+    /*
+     * Deal with flags involving prefixes.
+     */
+    /** @todo later: type and/or compressed length prefix. */
+
+    /*
+     * The type specific part.
+     */
+    switch (enmType)
+    {
+        case RTZIPTYPE_LZF:
+        {
+#ifdef RTZIP_USE_LZF
+            unsigned cbDstActual = lzf_decompress(pvSrc, cbSrc, pvDst, cbDst);
+            if (RT_UNLIKELY(cbDstActual < 1))
+            {
+                if (errno == E2BIG)
+                    return VERR_BUFFER_OVERFLOW;
+                Assert(errno == EINVAL);
+                return VERR_GENERAL_FAILURE;
+            }
+            if (pcbDstActual)
+                *pcbDstActual = cbDstActual;
+            if (pcbSrcActual)
+                *pcbSrcActual = cbSrc;
+            break;
+#else
+            return VERR_NOT_SUPPORTED;
+#endif
+        }
+
+        case RTZIPTYPE_STORE:
+        {
+            if (cbDst < cbSrc)
+                return VERR_BUFFER_OVERFLOW;
+            memcpy(pvDst, pvSrc, cbSrc);
+            if (pcbDstActual)
+                *pcbDstActual = cbSrc;
+            if (pcbSrcActual)
+                *pcbSrcActual = cbSrc;
+            break;
+        }
+
+        case RTZIPTYPE_LZJB:
+        {
+#ifdef RTZIP_USE_LZJB
+            if (*(uint8_t *)pvSrc == 1)
+            {
+                int rc = lzjb_decompress((uint8_t *)pvSrc + 1, pvDst, cbSrc - 1, cbDst, 0 /*??*/);
+                if (RT_UNLIKELY(rc != 0))
+                    return VERR_BUFFER_OVERFLOW;
+                if (pcbDstActual)
+                    *pcbDstActual = cbDst;
+            }
+            else
+            {
+                AssertReturn(cbDst >= cbSrc + 1, VERR_BUFFER_OVERFLOW);
+                memcpy(pvDst, (uint8_t *)pvSrc + 1, cbSrc);
+            }
+            if (pcbSrcActual)
+                *pcbSrcActual = cbSrc;
+            break;
+#else
+            return VERR_NOT_SUPPORTED;
+#endif
+        }
+
+        case RTZIPTYPE_ZLIB:
+        case RTZIPTYPE_BZLIB:
+        case RTZIPTYPE_LZO:
+            return VERR_NOT_SUPPORTED;
+
+        default:
+            AssertMsgFailed(("%d\n", enmType));
+            return VERR_INVALID_PARAMETER;
+    }
+    return  VINF_SUCCESS;
+}
+RT_EXPORT_SYMBOL(RTZipBlockDecompress);
 
