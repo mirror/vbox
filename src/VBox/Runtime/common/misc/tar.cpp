@@ -191,7 +191,7 @@ static int rtTarCopyFileFrom(RTFILE hFile, const char *pszTargetName, PRTTARRECO
             rc = RTFileSetMode(hNewFile, mode);
         }
     }
-    /* Make sure the called doesn't mix trunacted tar files with the official
+    /* Make sure the called doesn't mix truncated tar files with the official
      * end indicated by rtTarCalcChkSum. */
     else if (rc == VERR_EOF)
         rc = VERR_FILE_IO_ERROR;
@@ -290,8 +290,8 @@ static int rtTarCopyFileTo(RTFILE hFile, const char *pszSrcName)
             cbAllWritten += sizeof(record);
         }
 
-        /* Make sure the called doesn't mix trunacted tar files with the official
-         * end indicated by rtTarCalcChkSum. */
+        /* Make sure the called doesn't mix truncated tar files with the
+         * official end indicated by rtTarCalcChkSum. */
         if (rc == VERR_EOF)
             rc == VERR_FILE_IO_ERROR;
     }
@@ -382,11 +382,18 @@ RTR3DECL(int) RTTarList(const char *pszTarFile, char ***ppapszFiles, size_t *pcF
     if (RT_FAILURE(rc))
         return rc;
 
+    /* Initialize the file name array with one slot */
+    size_t cFilesAlloc = 1;
+    char **papszFiles = (char**)RTMemAlloc(sizeof(char *));
+    if (!papszFiles)
+    {
+        RTFileClose(hFile);
+        return VERR_NO_MEMORY;
+    }
+
     /* Iterate through the tar file record by record. Skip data records as we
      * didn't need them. */
     RTTARRECORD record;
-    char **papszFiles = NULL;
-    size_t cFilesAlloc = 0;
     size_t cFiles = 0;
     for (;;)
     {
@@ -497,7 +504,7 @@ RTR3DECL(int) RTTarExtractFiles(const char *pszTarFile, const char *pszOutputDir
                             rc = RTStrAPrintf(&pszTargetFile, "%s/%s", pszOutputDir, papszFiles[i]);
                             if (rc > 0)
                             {
-                                rc = rtTarCopyFileFrom(hFile, paExtracted[cExtracted], &record);
+                                rc = rtTarCopyFileFrom(hFile, pszTargetFile, &record);
                                 if (RT_SUCCESS(rc))
                                     paExtracted[cExtracted++] = pszTargetFile;
                                 else
@@ -596,11 +603,11 @@ RTR3DECL(int) RTTarExtractByIndex(const char *pszTarFile, const char *pszOutputD
                     rc = VERR_NO_MEMORY;
                 break;
             }
-            ++iFile;
         }
         rc = rtTarSkipData(hFile, &record);
         if (RT_FAILURE(rc))
             break;
+        ++iFile;
     }
 
     RTFileClose(hFile);
