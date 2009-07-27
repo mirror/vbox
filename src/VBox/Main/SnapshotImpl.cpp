@@ -137,9 +137,10 @@ void Snapshot::uninit()
     SnapshotsList::iterator it;
     for (it = m->llChildren.begin();
          it != m->llChildren.end();
-         ++ it)
+         ++it)
     {
         Snapshot *pChild = *it;
+        pChild->mParent.setNull();
         pChild->uninit();
     }
     m->llChildren.clear();          // this unsets all the ComPtrs and probably calls delete
