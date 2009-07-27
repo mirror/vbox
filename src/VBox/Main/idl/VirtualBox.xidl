@@ -491,18 +491,22 @@
     </const>
     <const name="PoweredOff"            value="1">
       <desc>
-        The machine is not running.
+        The machine is not running and has no saved execution state; it has
+        either never been started or been shut down successfully.
       </desc>
     </const>
     <const name="Saved"                 value="2">
       <desc>
         The machine is not currently running, but the execution state of the machine
-        has been saved to an external file when it was running.
+        has been saved to an external file when it was running, from where
+        it can be resumed.
       </desc>
     </const>
     <const name="Aborted"               value="3">
       <desc>
-        The process running the machine has terminated abnormally.
+        The process running the machine has terminated abnormally. This may
+        indicate a crash of the VM process in host execution context, or
+        the VM process has been terminated externally.
       </desc>
     </const>
     <const name="Running"               value="4">
@@ -528,7 +532,7 @@
     <const name="Stuck"                 value="6">
       <desc>
         Execution of the machine has reached the "Guru Meditation"
-        condition.
+        condition. This indicates a severe error in the hypervisor itself.
       </desc>
     </const>
     <const name="Starting"              value="7">
@@ -545,7 +549,7 @@
     </const>
     <const name="Saving"                value="9">
       <desc>
-        Machine is saving its execution state to a file or an online
+        Machine is saving its execution state to a file, or an online
         snapshot of the machine is being taken.
       </desc>
     </const>
@@ -6490,14 +6494,15 @@
 
     <method name="takeSnapshot">
       <desc>
-        Saves the current execution state and all settings of the
-        machine and creates differencing images for all
-        normal (non-independent) hard disks.
+        Saves the current execution state
+        and all settings of the machine and creates differencing images
+        for all normal (non-independent) hard disks.
+        See <link to="ISnapshot" /> for an introduction to snapshots.
 
-        This method can be called for a PoweredOff, Saved, Running or
+        This method can be called for a PoweredOff, Saved (see
+        <link to="#saveState"/>), Running or
         Paused virtual machine. When the machine is PoweredOff, an
-        offline <link to="ISnapshot">snapshot</link> is created,
-        in all other cases -- an online snapshot.
+        offline snapshot is created, an online snapshot otherwise.
 
         The taken snapshot is always based on the
         <link to="IMachine::currentSnapshot">current snapshot</link>
@@ -6508,7 +6513,6 @@
           save all current machine settings before taking an offline snapshot.
         </note>
 
-        <see>ISnapshot, <link to="#saveState"/></see>
         <result name="VBOX_E_INVALID_VM_STATE">
           Virtual machine currently changing state.
         </result>
@@ -6526,12 +6530,14 @@
 
     <method name="discardSnapshot">
       <desc>
+        Starts discarding the specified snapshot asynchronously.
+        See <link to="ISnapshot" /> for an introduction to snapshots.
 
-        Starts discarding the specified snapshot. The execution state
+        The execution state
         and settings of the associated machine stored in the snapshot
         will be deleted. The contents of all differencing hard disks of
         this snapshot will be merged with the contents of their
-        dependent child hard disks to keep the, disks valid (in other
+        dependent child hard disks to keep the disks valid (in other
         words, all changes represented by hard disks being discarded
         will be propagated to their child hard disks). After that, this
         snapshot's differencing hard disks will be deleted. The parent
@@ -6620,11 +6626,11 @@
 
     <method name="discardCurrentState">
       <desc>
-        This operation is similar to <link to="IConsole::discardSnapshot"/> but
-        affects the current machine state. This means that the state stored in
-        the current snapshot will become a new current state, and all current
-        settings of the machine and changes stored in differencing hard disks
+        Starts resetting the machine's current state to the state contained
+        in the current snapshot, asynchronously. All current settings of the
+        machine will be reset and changes stored in differencing hard disks
         will be lost.
+        See <link to="ISnapshot" /> for an introduction to snapshots.
 
         After this operation is successfully completed, new empty differencing
         hard disks are created for all normal hard disks of the machine.
