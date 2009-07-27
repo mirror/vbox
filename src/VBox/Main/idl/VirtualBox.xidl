@@ -4465,12 +4465,9 @@
 
     <attribute name="currentSnapshot" type="ISnapshot" readonly="yes">
       <desc>
-        Current snapshot of this machine.
-        <note>
-          A @c null object is returned if the machine doesn't
-          have snapshots.
-        </note>
-        <see><link to="ISnapshot"/></see>
+        Current snapshot of this machine. This is @c null if the machine
+        currently has no snapshots. Otherwise, this is always the last snapshot
+        in the current implementation; see <link to="ISnapshot"/> for details.
       </desc>
     </attribute>
 
@@ -6503,9 +6500,8 @@
         in all other cases -- an online snapshot.
 
         The taken snapshot is always based on the
-        <link to="IMachine::currentSnapshot">current
-          snapshot</link> of the associated virtual machine and becomes
-        a new current snapshot.
+        <link to="IMachine::currentSnapshot">current snapshot</link>
+        of the associated virtual machine and becomes a new current snapshot.
 
         <note>
           This method implicitly calls <link to="IMachine::saveSettings"/> to
@@ -8021,135 +8017,99 @@
       The ISnapshot interface represents a snapshot of the virtual
       machine.
 
-      The <i>snapshot</i> stores all the information about a virtual
-      machine necessary to bring it to exactly the same state as it was at
-      the time of taking the snapshot. The snapshot includes:
+      Together with the differencing hard disks that are created
+      when a snapshot is taken, a machine can be brought back to
+      the exact state it was in when the snapshot was taken.
+
+      The ISnapshot interface has no methods, only attributes; snapshots
+      are controlled through methods of the <link to="IConsole" /> interface
+      which also manage the hard disk images associated with the snapshot.
+      The following operations exist:
 
       <ul>
-        <li>all settings of the virtual machine (i.e. its hardware
-          configuration: RAM size, attached hard disks, etc.)
-        </li>
-        <li>the execution state of the virtual machine (memory contents,
-          CPU state, etc.).
-        </li>
+          <li><link to="IConsole::takeSnapshot"/>: creates a new snapshot
+              by creating new, empty differencing images for the machine's
+              hard disks and saving the VM settings and (if the VM is running)
+              the current VM state in the snapshot.
+
+              The differencing images will then receive all data written to
+              the machine's hard disks, while their parent (base) images
+              remain unmodified after the snapshot has been taken (see
+              <link to="IHardDisk" /> for details about differencing images).
+              This simplifies restoring a machine to the state of a snapshot:
+              only the differencing images need to be deleted.
+
+              The current machine state is not changed by taking a snapshot.
+              If the machine is running, it will resume execution after the
+              snapshot has been taken.
+          </li>
+
+          <li><link to="IConsole::discardCurrentState"/>: this goes back to
+              a previous snapshot. This resets the machine's state to that of
+              the previous snapshot by deleting the differencing image of each
+              of the machine's hard disks and setting the machine's settings
+              and state to the state that was saved in the snapshot (if any).
+
+              This destroys the machine's current state.
+          </li>
+
+          <li><link to="IConsole::discardSnapshot"/>: deletes a snapshot
+              without affecting the current machine state.
+
+              This does not change the machine, but instead frees the resources
+              allocated when the snapshot was taken: the settings and machine state
+              is deleted (if any), and the snapshot's differencing image for each
+              of the machine's hard disks gets merged with its parent image.
+
+              Neither the current machine state nor other snapshots are affected
+              by this operation, except that parent disk images will be modified
+              to contain the disk data associated with the snapshot being deleted.
+          </li>
+
+          <li><link to="IConsole::discardCurrentSnapshotAndState"/>:
+              this completely reverts the virtual machine to the state it was in
+              before the current snapshot has been taken. Effectively, this goes
+              back to the state before the current snapshot, which might be
+              an earlier snapshot.
+
+              The current state, as well as the current snapshot, are lost.
+          </li>
       </ul>
 
-      Snapshots can be <i>offline</i> (taken when the VM is powered off)
-      or <i>online</i> (taken when the VM is running). The execution
-      state of the offline snapshot is called a <i>zero execution state</i>
-      (it doesn't actually contain any information about memory contents
-      or the CPU state, assuming that all hardware is just powered off).
+      Each snapshot contains the settings of the virtual machine (hardware
+      configuration etc.). In addition, if the machine was running when the
+      snapshot was taken (<link to="IMachine::state"/> is <link to="MachineState_Running"/>),
+      the current VM state is saved in the snapshot (similarly to what happens
+      when a VM's state is saved). The snapshot is then said to
+      be <i>online</i> because when restoring it, the VM will be running.
 
-      <h3>Snapshot branches</h3>
+      If the machine is saved (<link to="MachineState_Saved"/>), the snapshot
+      receives a copy of the execution state file (<link to="IMachine::stateFilePath"/>).
 
-      Snapshots can be chained. Chained snapshots form a branch where
-      every next snapshot is based on the previous one. This chaining is
-      mostly related to hard disk branching (see <link to="IHardDisk"/>
-      description). This means that every time a new snapshot is created,
-      a new differencing hard disk is implicitly created for all normal
-      hard disks attached to the given virtual machine. This allows to
-      fully restore hard disk contents when the machine is later reverted
-      to a particular snapshot.
+      Otherwise, if the machine was not running (<link to="MachineState_PoweredOff"/>
+      or <link to="MachineState_Aborted"/>), the snapshot is <i>offline</i>;
+      it then contains a so-called "zero execution state", representing a
+      machine that is powered off.
+
+      <h3>Snapshot branches and the "current" snapshot</h3>
+
+      Snapshots can be chained, whereby every next snapshot is based on the
+      previous one. This chaining is related to hard disk branching
+      (see the <link to="IHardDisk"/> description) in that every time
+      a new snapshot is created, a new differencing hard disk is implicitly
+      created for all normal hard disks attached to the machine.
+
+      Each virtual machine has a "current snapshot", identified by
+      <link to="IMachine::currentSnapshot"/>. Presently, this is always set
+      to the last snapshot in the chain. In a future version of VirtualBox,
+      it will be possible to reset a machine's current state to that of an
+      earlier snapshot without discarding the current state so that it will be
+      possible to create alternative snapshot paths in a snapshot tree.
 
       In the current implementation, multiple snapshot branches within one
       virtual machine are not allowed. Every machine has a single branch,
       and <link to="IConsole::takeSnapshot"/> operation adds a new
       snapshot to the top of that branch.
-
-      Existing snapshots can be discarded using
-      <link to="IConsole::discardSnapshot"/>.
-
-      <h3>Current snapshot</h3>
-
-      Every virtual machine has a current snapshot, identified by
-      <link to="IMachine::currentSnapshot"/>. This snapshot is used as
-      a base for the <i>current machine state</i> (see below), to the effect
-      that all normal hard disks of the machine and its execution
-      state are based on this snapshot.
-
-      In the current implementation, the current snapshot is always the
-      last taken snapshot (i.e. the head snapshot on the branch) and it
-      cannot be changed.
-
-      The current snapshot is @c null if the machine doesn't have
-      snapshots at all; in this case the current machine state is just
-      current settings of this machine plus its current execution state.
-
-      <h3>Current machine state</h3>
-
-      The current machine state is what represented by IMachine instances got
-      directly from IVirtualBox
-      using <link
-      to="IVirtualBox::getMachine">getMachine()</link>, <link
-      to="IVirtualBox::findMachine">findMachine()</link>, etc. (as opposed
-      to instances returned by <link to="ISnapshot::machine"/>).  This state
-      is always used when the machine is <link to="IConsole::powerUp"> powered
-      on</link>.
-
-      The current machine state also includes the current execution state.
-      If the machine is being currently executed
-      (<link to="IMachine::state"/> is <link to="MachineState_Running"/>
-      and above), its execution state is just what's happening now.
-      If it is powered off (<link to="MachineState_PoweredOff"/> or
-      <link to="MachineState_Aborted"/>), it has a zero execution state.
-      If the machine is saved (<link to="MachineState_Saved"/>), its
-      execution state is what saved in the execution state file
-      (<link to="IMachine::stateFilePath"/>).
-
-      If the machine is in the saved state, then, next time it is powered
-      on, its execution state will be fully restored from the saved state
-      file and the execution will continue from the point where the state
-      was saved.
-
-      Similarly to snapshots, the current machine state can be discarded
-      using <link to="IConsole::discardCurrentState"/>.
-
-      <h3>Taking and discarding snapshots</h3>
-
-      The table below briefly explains the meaning of every snapshot
-      operation:
-
-      <table>
-        <tr><th>Operation</th><th>Meaning</th><th>Remarks</th></tr>
-
-        <tr><td><link to="IConsole::takeSnapshot"/></td>
-
-          <td>Save the current state of the virtual machine, including all
-            settings, contents of normal hard disks and the current modifications
-            to immutable hard disks (for online snapshots)</td>
-
-          <td>The current state is not changed (the machine will continue
-            execution if it is being executed when the snapshot is
-            taken)</td></tr>
-
-        <tr><td><link to="IConsole::discardSnapshot"/></td>
-
-          <td>Forget the state of the virtual machine stored in the snapshot:
-            dismiss all saved settings and delete the saved execution state (for
-            online snapshots)</td>
-
-          <td>Other snapshots (including child snapshots, if any) and the
-            current state are not directly affected</td></tr>
-
-        <tr><td><link to="IConsole::discardCurrentState"/></td>
-
-          <td>Restore the current state of the virtual machine from the state
-            stored in the current snapshot, including all settings and hard disk
-            contents</td>
-
-          <td>The current state of the machine existed prior to this operation
-            is lost</td></tr>
-
-        <tr><td><link to="IConsole::discardCurrentSnapshotAndState"/></td>
-
-          <td>Completely revert the virtual machine to the state it was in
-            before the current snapshot has been taken</td>
-
-          <td>The current state, as well as the current snapshot, are
-            lost</td></tr>
-
-      </table>
-
     </desc>
 
     <attribute name="id" type="wstring" readonly="yes">
