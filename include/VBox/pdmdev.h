@@ -3365,6 +3365,14 @@ DECLINLINE(int) PDMDevHlpIOPortRegisterR0(PPDMDEVINS pDevIns, RTIOPORT Port, RTU
 }
 
 /**
+ * @copydoc PDMDEVHLPR3::pfnIOPortDeregister
+ */
+DECLINLINE(int) PDMDevHlpIOPortDeregister(PPDMDEVINS pDevIns, RTIOPORT Port, RTUINT cPorts)
+{
+    return pDevIns->pDevHlpR3->pfnIOPortDeregister(pDevIns, Port, cPorts);
+}
+
+/**
  * @copydoc PDMDEVHLPR3::pfnMMIORegister
  */
 DECLINLINE(int) PDMDevHlpMMIORegister(PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTUINT cbRange, RTHCPTR pvUser,
