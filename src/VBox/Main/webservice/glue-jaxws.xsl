@@ -210,16 +210,6 @@
   <xsl:param name="idltype"/>
   <xsl:param name="safearray"/>
   <xsl:choose>
-    <xsl:when test="$idltype='uuid'">
-      <xsl:choose>
-        <xsl:when test="$safearray">
-          <xsl:value-of select="concat('Helper.uuidWrap(',$value,')')" />
-        </xsl:when>
-        <xsl:otherwise>
-          <xsl:value-of select="concat('UUID.fromString(',$value,')')" />
-        </xsl:otherwise>
-      </xsl:choose>
-    </xsl:when>
     <xsl:when test="//collection[@name=$idltype]">
       <xsl:variable name="elemtype">
         <xsl:call-template name="typeIdl2Glue">
@@ -303,9 +293,6 @@
           </xsl:choose>
         </xsl:otherwise>
       </xsl:choose>
-    </xsl:when>
-    <xsl:when test="$paramtype='uuid'">
-      <xsl:value-of select="concat($paramname, '.toString()')" />
     </xsl:when>
     <xsl:otherwise>
       <xsl:value-of select="$paramname" />
@@ -415,7 +402,6 @@ public class IUnknown
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.UUID;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 
@@ -439,14 +425,6 @@ class Helper {
         } catch (InvocationTargetException e) {
             throw new AssertionError(e);
         }
-    }
-
-    public static List<UUID> uuidWrap(List<String> uuidVals) {
-         List<UUID> ret = new ArrayList<UUID>(uuidVals.size());
-         for (String uuid : uuidVals) {
-              ret.add(UUID.fromString(uuid));
-         }
-         return ret;
     }
 
     public static <T extends IUnknown> List<String> unwrap(List<T> thisPtrs) {
@@ -475,7 +453,6 @@ import java.math.BigInteger;
 import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
-import java.util.UUID;
 import javax.xml.namespace.QName;
 import javax.xml.ws.BindingProvider;
 import javax.xml.ws.Holder;
@@ -799,7 +776,6 @@ public class IWebsessionManager {
 
       <xsl:text>import java.math.BigInteger;&#10;</xsl:text>
       <xsl:text>import java.util.List;&#10;</xsl:text>
-      <xsl:text>import java.util.UUID;&#10;</xsl:text>
       <xsl:text>import javax.xml.ws.Holder;&#10;</xsl:text>
       <xsl:text>import javax.xml.ws.WebServiceException;&#10;</xsl:text>
 
