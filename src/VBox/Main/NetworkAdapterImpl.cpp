@@ -700,7 +700,9 @@ STDMETHODIMP NetworkAdapter::AttachToNAT()
     {
         mData.backup();
 
-        detach();
+        // Commented this for now as it resets the parameter mData->mNATNetwork
+        // which is essential while changing the Attachment dynamically.
+        //detach();
 
         mData->mAttachmentType = NetworkAttachmentType_NAT;
 
@@ -730,7 +732,9 @@ STDMETHODIMP NetworkAdapter::AttachToBridgedInterface()
         mData.backup();
 
         /* first detach the current attachment */
-        detach();
+        // Commented this for now as it reset the parameter mData->mHostInterface
+        // which is essential while changing the Attachment dynamically.
+        //detach();
 
         mData->mAttachmentType = NetworkAttachmentType_Bridged;
 
@@ -760,7 +764,9 @@ STDMETHODIMP NetworkAdapter::AttachToInternalNetwork()
         mData.backup();
 
         /* first detach the current attachment */
-        detach();
+        // Commented this for now as it reset the parameter mData->mInternalNetwork
+        // which is essential while changing the Attachment dynamically.
+        //detach();
 
         /* there must an internal network name */
         if (mData->mInternalNetwork.isEmpty())
@@ -798,7 +804,9 @@ STDMETHODIMP NetworkAdapter::AttachToHostOnlyInterface()
         mData.backup();
 
         /* first detach the current attachment */
-        detach();
+        // Commented this for now as it reset the parameter mData->mHostInterface
+        // which is essential while changing the Attachment dynamically.
+        //detach();
 
         mData->mAttachmentType = NetworkAttachmentType_HostOnly;
 
