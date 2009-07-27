@@ -8134,13 +8134,11 @@
       <desc>
         @c true if this snapshot is an online snapshot and @c false otherwise.
 
-        <note>
           When this attribute is @c true, the
           <link to="IMachine::stateFilePath"/> attribute of the
           <link to="#machine"/> object associated with this snapshot
           will point to the saved state file. Otherwise, it will be
           an empty string.
-        </note>
       </desc>
     </attribute>
 
@@ -8157,12 +8155,8 @@
 
     <attribute name="parent" type="ISnapshot" readonly="yes">
       <desc>
-        Parent snapshot (a snapshot this one is based on).
-        <note>
-          It's not an error to read this attribute on a snapshot
-          that doesn't have a parent -- a @c null object will be
-          returned to indicate this.
-        </note>
+        Parent snapshot (a snapshot this one is based on), or
+        @c null if the snapshot has no parent.
       </desc>
     </attribute>
 
