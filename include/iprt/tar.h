@@ -53,10 +53,8 @@ RT_C_DECLS_BEGIN
  *
  * @param   pszTarFile      Tar file to check.
  * @param   pszFile         Filename to check for.
- *
- * @todo    r=bird: rename to RTTarQueryFileExists (or bool RTTarFileExist).
  */
-RTR3DECL(int) RTTarExists(const char *pszTarFile, const char *pszFile);
+RTR3DECL(int) RTTarQueryFileExists(const char *pszTarFile, const char *pszFile);
 
 /**
  * Create a file list from a Tar archive.
@@ -90,10 +88,8 @@ RTR3DECL(int) RTTarList(const char *pszTarFile, char ***ppapszFiles, size_t *pcF
  * @param   pszOutputDir    Where to store the extracted files. Must exist.
  * @param   papszFiles      Which files should be extracted.
  * @param   cFiles          The number of files in papszFiles.
- *
- * @todo    r=bird: Rename to RTTarExtractFiles.
  */
-RTR3DECL(int) RTTarExtract(const char *pszTarFile, const char *pszOutputDir, const char * const *papszFiles, size_t cFiles);
+RTR3DECL(int) RTTarExtractFiles(const char *pszTarFile, const char *pszOutputDir, const char * const *papszFiles, size_t cFiles);
 
 /**
  * Extract a file by index from a Tar archive.
@@ -109,10 +105,8 @@ RTR3DECL(int) RTTarExtract(const char *pszTarFile, const char *pszOutputDir, con
  * @param   iIndex          Which file should be extracted, 0 based.
  * @param   ppszFileName    On success the filename of the extracted file. Must
  *                          be freed with RTStrFree.
- *
- * @todo    r=bird: Rename to RTTarExtractByIndex.
  */
-RTR3DECL(int) RTTarExtractIndex(const char *pszTarFile, const char *pszOutputDir, size_t iIndex, char **ppszFileName);
+RTR3DECL(int) RTTarExtractByIndex(const char *pszTarFile, const char *pszOutputDir, size_t iIndex, char **ppszFileName);
 
 /**
  * Create a Tar archive out of the given files.
