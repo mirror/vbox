@@ -83,29 +83,10 @@ static DECLCALLBACK(int) DecomprInCallback(void *pvUser, void *pvBuf, size_t cbB
 }
 
 
-int RTZipBlockCompress(RTZIPTYPE enmType, RTZIPLEVEL enmLevel, uint32_t fFlags,
-                       void const *pvSrc, size_t cbSrc, void *pvDst, size_t cbDst, size_t *pcbDstActual)
-{
-    memcpy(pvDst, pvSrc, cbSrc);
-    *pcbDstActual = cbSrc;
-    return  VINF_SUCCESS;
-}
-
-int RTZipBlockDecompress(RTZIPTYPE enmType, RTZIPLEVEL enmLevel, uint32_t fFlags,
-                         void const *pvSrc, size_t cbSrc, void *pvDst, size_t cbDst, size_t *pcbDstActual)
-{
-    memcpy(pvDst, pvSrc, cbSrc);
-    if (pcbDstActual)
-        *pcbDstActual = cbSrc;
-    return  VINF_SUCCESS;
-}
-
-
-
 /** Prints an error message and returns 1 for quick return from main use. */
 static int Error(const char *pszMsgFmt, ...)
 {
-    RTStrmPrintf(g_pStdErr, "error: ");
+    RTStrmPrintf(g_pStdErr, "\nerror: ");
     va_list va;
     va_start(va, pszMsgFmt);
     RTStrmPrintfV(g_pStdErr, pszMsgFmt, va);
@@ -166,7 +147,9 @@ int main(int argc, char **argv)
                 break;
 
             default:
-                if (rc > 0)
+                if (rc == VINF_GETOPT_NOT_OPTION)
+                    Error("unknown argument: %s\n", Val.psz);
+                else if (rc > 0)
                 {
                     if (RT_C_IS_GRAPH(rc))
                         Error("unhandled option: -%c\n", rc);
@@ -175,8 +158,6 @@ int main(int argc, char **argv)
                 }
                 else if (rc == VERR_GETOPT_UNKNOWN_OPTION)
                     Error("unknown option: %s\n", Val.psz);
-                else if (rc == VINF_GETOPT_NOT_OPTION)
-                    Error("unknown argument: %s\n", Val.psz);
                 else if (Val.pDef)
                     Error("%s: %Rrs\n", Val.pDef->pszLong, rc);
                 else
@@ -208,7 +189,12 @@ int main(int argc, char **argv)
         g_pabSrc = (uint8_t *)RTMemAlloc(g_cbPages);
         if (g_pabSrc)
         {
-            /* just fill it with something. */
+            /* Just fill it with something - warn about the low quality of the something. */
+            RTPrintf("tstCompressionBenchmark: WARNING! No input file was specified so the source\n"
+                     "buffer will be filled with generated data of questionable quality.\n");
+#ifdef RT_OS_LINUX
+            RTPrintf("To get real RAM on linux: sudo dd if=/dev/mem ... \n");
+#endif
             uint8_t *pb    = g_pabSrc;
             uint8_t *pbEnd = &g_pabSrc[g_cbPages];
             for (; pb != pbEnd; pb += 16)
@@ -251,21 +237,23 @@ int main(int argc, char **argv)
         const char *pszName;
     } aTests[] =
     {
-        { 0, 0, 0, 0, false, RTZIPTYPE_LZF,   RTZIPLEVEL_DEFAULT, "RTZip/LZF"   },
-//        { 0, 0, 0, 0, false, RTZIPTYPE_ZLIB,  RTZIPLEVEL_DEFAULT, "RTZip/zlib"  },
         { 0, 0, 0, 0, false, RTZIPTYPE_STORE, RTZIPLEVEL_DEFAULT, "RTZip/Store" },
-        { 0, 0, 0, 0, true, RTZIPTYPE_STORE, RTZIPLEVEL_DEFAULT, "RTZipBlock/Store" }
+        { 0, 0, 0, 0, false, RTZIPTYPE_LZF,   RTZIPLEVEL_DEFAULT, "RTZip/LZF"   },
+//        { 0, 0, 0, 0, false, RTZIPTYPE_ZLIB,  RTZIPLEVEL_DEFAULT, "RTZip/zlib"  }, - slow plus it randomly hits VERR_GENERAL_FAILURE atm.
+        { 0, 0, 0, 0, true, RTZIPTYPE_STORE,  RTZIPLEVEL_DEFAULT, "RTZipBlock/Store" },
+        { 0, 0, 0, 0, true, RTZIPTYPE_LZF,    RTZIPLEVEL_DEFAULT, "RTZipBlock/LZF" },
+        { 0, 0, 0, 0, true, RTZIPTYPE_LZJB,   RTZIPLEVEL_DEFAULT, "RTZipBlock/LZJB" },
     };
     RTPrintf("tstCompressionBenchmark: TESTING..");
     for (uint32_t i = 0; i < cIterations; i++)
     {
-        RTPrintf("."); RTStrmFlush(g_pStdOut);
         for (uint32_t j = 0; j < RT_ELEMENTS(aTests); j++)
         {
             memset(g_pabCompr,   0, g_cbComprAlloc);
             memset(g_pabDecompr, 0, g_cbPages);
             g_cbCompr = 0;
             g_offComprIn = 0;
+            RTPrintf("."); RTStrmFlush(g_pStdOut);
 
             /*
              * Compress it.
@@ -285,7 +273,8 @@ int main(int argc, char **argv)
                     size_t  cbSrc = RT_MIN(g_cPages - iPage, cPagesAtATime) * PAGE_SIZE;
                     size_t  cbDst;
                     rc = RTZipBlockCompress(aTests[j].enmType, aTests[j].enmLevel, 0 /*fFlags*/,
-                                            pbSrcPage, cbSrc, pbDstPage, cbLeft, &cbDst);
+                                            pbSrcPage, cbSrc,
+                                            pbDstPage, cbLeft, &cbDst);
                     if (RT_FAILURE(rc))
                     {
                         Error("RTZipBlockCompress failed for '%s' (#%u): %Rrc\n", aTests[j].pszName, j, rc);
@@ -352,11 +341,12 @@ int main(int argc, char **argv)
                 for (size_t iPage = 0; iPage < g_cPages; iPage += cPagesAtATime)
                 {
                     size_t   cbDst = RT_MIN(g_cPages - iPage, cPagesAtATime) * PAGE_SIZE;
-                    uint32_t cbSrc = *(uint32_t *)pbSrcPage;
+                    size_t   cbSrc = *(uint32_t *)pbSrcPage;
                     pbSrcPage     += sizeof(uint32_t);
                     cbLeft        -= sizeof(uint32_t);
-                    rc = RTZipBlockDecompress(aTests[j].enmType, aTests[j].enmLevel, 0 /*fFlags*/,
-                                              pbSrcPage, cbSrc, pbDstPage, cbDst, NULL);
+                    rc = RTZipBlockDecompress(aTests[j].enmType, 0 /*fFlags*/,
+                                              pbSrcPage, cbSrc, &cbSrc,
+                                              pbDstPage, cbDst, &cbDst);
                     if (RT_FAILURE(rc))
                     {
                         Error("RTZipBlockDecompress failed for '%s' (#%u): %Rrc\n", aTests[j].pszName, j, rc);
@@ -367,7 +357,8 @@ int main(int argc, char **argv)
                     cbLeft    -= cbSrc;
                     pbSrcPage += cbSrc;
                 }
-
+                if (RT_FAILURE(rc))
+                    continue;
             }
             else
             {
@@ -402,7 +393,7 @@ int main(int argc, char **argv)
 
             if (memcmp(g_pabDecompr, g_pabSrc, g_cbPages))
             {
-                Error("The ecompressed data doesn't match the source for '%s' (%#u)\n", aTests[j].pszName, j);
+                Error("The compressed data doesn't match the source for '%s' (%#u)\n", aTests[j].pszName, j);
                 aTests[j].cErrors++;
                 continue;
             }
@@ -423,12 +414,12 @@ int main(int argc, char **argv)
     {
         if (!aTests[j].cErrors)
         {
-            unsigned uComprSpeedIn    = cbTotalKB         / (long double)aTests[j].cNanoCompr   * 1000000000.0;
-            unsigned uComprSpeedOut   = aTests[j].cbCompr / (long double)aTests[j].cNanoCompr   * 1000000000.0 / 1024;
-            size_t   uRatio           = aTests[j].cbCompr / cIterations * 100 / g_cbPages;
-            unsigned uDecomprSpeedIn  = aTests[j].cbCompr / (long double)aTests[j].cNanoDecompr * 1000000000.0 / 1024;
-            unsigned uDecomprSpeedOut = cbTotalKB         / (long double)aTests[j].cNanoDecompr * 1000000000.0;
-            RTPrintf("%-20s %'9u KB/s  %'9u KB/s  %3zu%%  %'11llu bytes   %'9u KB/s  %'9u KB/s",
+            unsigned uComprSpeedIn    = (unsigned)(cbTotalKB         / (long double)aTests[j].cNanoCompr   * 1000000000.0);
+            unsigned uComprSpeedOut   = (unsigned)(aTests[j].cbCompr / (long double)aTests[j].cNanoCompr   * 1000000000.0 / 1024);
+            unsigned uRatio           = (unsigned)(aTests[j].cbCompr / cIterations * 100 / g_cbPages);
+            unsigned uDecomprSpeedIn  = (unsigned)(aTests[j].cbCompr / (long double)aTests[j].cNanoDecompr * 1000000000.0 / 1024);
+            unsigned uDecomprSpeedOut = (unsigned)(cbTotalKB         / (long double)aTests[j].cNanoDecompr * 1000000000.0);
+            RTPrintf("%-20s %'9u KB/s  %'9u KB/s  %3u%%  %'11llu bytes   %'9u KB/s  %'9u KB/s",
                      aTests[j].pszName,
                      uComprSpeedIn,   uComprSpeedOut, uRatio, aTests[j].cbCompr / cIterations,
                      uDecomprSpeedIn, uDecomprSpeedOut);
@@ -446,7 +437,7 @@ int main(int argc, char **argv)
             rc = 1;
         }
     }
-    RTPrintf("Input: %'12zu pages                                 (%'zu bytes)\n", g_cPages, g_cbPages);
+    RTPrintf("Input: %'12zu pages                                  (%'zu bytes)\n", g_cPages, g_cbPages);
     RTPrintf("tstCompressionBenchmark: END RESULTS\n");
 
     return rc;
