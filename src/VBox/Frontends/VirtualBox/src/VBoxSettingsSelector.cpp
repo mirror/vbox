@@ -377,6 +377,7 @@ VBoxSettingsToolBarSelector::VBoxSettingsToolBarSelector (QWidget *aParent /* = 
 
 VBoxSettingsToolBarSelector::~VBoxSettingsToolBarSelector()
 {
+    delete mTbSelector;
 }
 
 QWidget *VBoxSettingsToolBarSelector::widget() const
@@ -396,7 +397,7 @@ QWidget *VBoxSettingsToolBarSelector::addItem (const QString &aBigIcon,
     QIcon icon (aBigIcon);
     if (!aBigIconDisabled.isEmpty())
         icon.addFile (aBigIconDisabled, QSize(), QIcon::Disabled);
-    
+
     QWidget *result = NULL;
     SelectorActionItem *item = new SelectorActionItem (icon, "", aId, aLink, aPage, aParentId, this);
     mItemList.append (item);

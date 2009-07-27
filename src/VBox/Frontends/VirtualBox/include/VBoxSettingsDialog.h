@@ -50,6 +50,7 @@ class VBoxSettingsDialog : public QIWithRetranslateUI<QIMainDialog>,
 public:
 
     VBoxSettingsDialog (QWidget *aParent = NULL);
+    ~VBoxSettingsDialog();
 
     virtual void getFrom() = 0;
     virtual void putBackTo() = 0;

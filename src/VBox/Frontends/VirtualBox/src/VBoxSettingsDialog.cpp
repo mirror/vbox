@@ -123,6 +123,11 @@ VBoxSettingsDialog::VBoxSettingsDialog (QWidget *aParent /* = NULL */)
     retranslateUi();
 }
 
+VBoxSettingsDialog::~VBoxSettingsDialog()
+{
+    delete mSelector;
+}
+
 void VBoxSettingsDialog::revalidate (QIWidgetValidator *aWval)
 {
     /* Perform validations for particular page */
