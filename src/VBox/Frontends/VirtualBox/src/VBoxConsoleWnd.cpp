@@ -2258,7 +2258,7 @@ bool VBoxConsoleWnd::toggleFullscreenMode (bool aOn, bool aSeamless)
     }
 
     AssertReturn (console, false);
-    AssertReturn ((hidden_children.isEmpty() == aOn), false);
+    AssertReturn ((mHiddenChildren.empty() == aOn), false);
     AssertReturn ((aSeamless && mIsSeamless != aOn) ||
                   (!aSeamless && mIsFullscreen != aOn), false);
     if (aOn)
@@ -2374,7 +2374,7 @@ bool VBoxConsoleWnd::toggleFullscreenMode (bool aOn, bool aSeamless)
                 if (!w->isHidden())
                 {
                     w->hide();
-                    hidden_children.append (w);
+                    mHiddenChildren.append (w);
                 }
             }
         }
@@ -2427,9 +2427,9 @@ bool VBoxConsoleWnd::toggleFullscreenMode (bool aOn, bool aSeamless)
         console->setVerticalScrollBarPolicy (Qt::ScrollBarAsNeeded);
 
         /* Show everything hidden when going fullscreen. */
-        foreach (QObject *obj, hidden_children)
-            ((QWidget *) obj)->show();
-        hidden_children.clear();
+        foreach (QPointer <QWidget> child, mHiddenChildren)
+            if (child) child->show();
+        mHiddenChildren.clear();
     }
 
     /* Set flag for waiting host resize if it awaited during mode entering */
