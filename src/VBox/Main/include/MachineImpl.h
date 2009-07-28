@@ -717,6 +717,20 @@ public:
     // for VirtualBoxSupportErrorInfoImpl
     static const wchar_t *getComponentName() { return L"Machine"; }
 
+    /**
+     * Returns the handle of the snapshots tree lock. This lock is
+     * machine-specific because there is one snapshots tree per
+     * IMachine; the lock protects the "first snapshot" member in
+     * IMachine and all the children and parent links in snapshot
+     * objects pointed to therefrom.
+     *
+     * Locking order:
+     * a) object lock of the machine;
+     * b) snapshots tree lock of the machine;
+     * c) individual snapshot object locks in parent->child order,
+     *    if needed; they are _not_ needed for the tree itself
+     *    (as defined above).
+     */
     RWLockHandle* snapshotsTreeLockHandle() const
     {
         return &mData->mSnapshotsTreeLockHandle;
