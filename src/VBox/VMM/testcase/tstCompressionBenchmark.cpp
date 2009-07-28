@@ -108,9 +108,12 @@ int main(int argc, char **argv)
         { "--num-pages",      'n', RTGETOPT_REQ_UINT32 },
         { "--page-at-a-time", 'c', RTGETOPT_REQ_UINT32 },
         { "--page-file",      'f', RTGETOPT_REQ_STRING },
+        { "--offset",         'o', RTGETOPT_REQ_UINT64 },
+        { "--page-offset",    'O', RTGETOPT_REQ_UINT64 },
     };
 
     const char     *pszPageFile = NULL;
+    uint64_t        offPageFile = 0;
     uint32_t        cIterations = 1;
     uint32_t        cPagesAtATime = 1;
     RTGETOPTUNION   Val;
@@ -146,6 +149,14 @@ int main(int argc, char **argv)
                 pszPageFile = Val.psz;
                 break;
 
+            case 'o':
+                offPageFile = Val.u64;
+                break;
+
+            case 'O':
+                offPageFile = Val.u64 * PAGE_SIZE;
+                break;
+
             default:
                 if (rc == VINF_GETOPT_NOT_OPTION)
                     Error("unknown argument: %s\n", Val.psz);
@@ -178,11 +189,11 @@ int main(int argc, char **argv)
     if (pszPageFile)
     {
         size_t cbFile;
-        rc = RTFileReadAllEx(pszPageFile, 0, g_cbPages, RTFILE_RDALL_O_DENY_NONE, (void **)&g_pabSrc, &cbFile);
+        rc = RTFileReadAllEx(pszPageFile, offPageFile, g_cbPages, RTFILE_RDALL_O_DENY_NONE, (void **)&g_pabSrc, &cbFile);
         if (RT_FAILURE(rc))
-            return Error("Error reading %zu bytes from %s: %Rrc\n", g_cbPages, pszPageFile, rc);
+            return Error("Error reading %zu bytes from %s at %llu: %Rrc\n", g_cbPages, pszPageFile, offPageFile, rc);
         if (cbFile != g_cbPages)
-            return Error("Error reading %zu bytes from %s: got %zu bytes\n", g_cbPages, pszPageFile, cbFile);
+            return Error("Error reading %zu bytes from %s at %llu: got %zu bytes\n", g_cbPages, pszPageFile, offPageFile, cbFile);
     }
     else
     {
@@ -225,8 +236,8 @@ int main(int argc, char **argv)
         uint64_t    cNanoCompr;
         /** The size of the compressed data. */
         uint64_t    cbCompr;
-        /** Number of errrors. */
-        uint32_t    cErrors;
+        /** First error. */
+        int         rc;
         /** The compression style: block or stream. */
         bool        fBlock;
         /** Compresstion type.  */
@@ -237,18 +248,21 @@ int main(int argc, char **argv)
         const char *pszName;
     } aTests[] =
     {
-        { 0, 0, 0, 0, false, RTZIPTYPE_STORE, RTZIPLEVEL_DEFAULT, "RTZip/Store" },
-        { 0, 0, 0, 0, false, RTZIPTYPE_LZF,   RTZIPLEVEL_DEFAULT, "RTZip/LZF"   },
-//        { 0, 0, 0, 0, false, RTZIPTYPE_ZLIB,  RTZIPLEVEL_DEFAULT, "RTZip/zlib"  }, - slow plus it randomly hits VERR_GENERAL_FAILURE atm.
-        { 0, 0, 0, 0, true, RTZIPTYPE_STORE,  RTZIPLEVEL_DEFAULT, "RTZipBlock/Store" },
-        { 0, 0, 0, 0, true, RTZIPTYPE_LZF,    RTZIPLEVEL_DEFAULT, "RTZipBlock/LZF" },
-//        { 0, 0, 0, 0, true, RTZIPTYPE_LZJB,   RTZIPLEVEL_DEFAULT, "RTZipBlock/LZJB" },
+        { 0, 0, 0, VINF_SUCCESS, false, RTZIPTYPE_STORE, RTZIPLEVEL_DEFAULT, "RTZip/Store"      },
+        { 0, 0, 0, VINF_SUCCESS, false, RTZIPTYPE_LZF,   RTZIPLEVEL_DEFAULT, "RTZip/LZF"        },
+/*      { 0, 0, 0, VINF_SUCCESS, false, RTZIPTYPE_ZLIB,  RTZIPLEVEL_DEFAULT, "RTZip/zlib"       }, - slow plus it randomly hits VERR_GENERAL_FAILURE atm. */
+        { 0, 0, 0, VINF_SUCCESS, true,  RTZIPTYPE_STORE, RTZIPLEVEL_DEFAULT, "RTZipBlock/Store" },
+        { 0, 0, 0, VINF_SUCCESS, true,  RTZIPTYPE_LZF,   RTZIPLEVEL_DEFAULT, "RTZipBlock/LZF"   },
+        { 0, 0, 0, VINF_SUCCESS, true,  RTZIPTYPE_LZJB,  RTZIPLEVEL_DEFAULT, "RTZipBlock/LZJB"  },
+        { 0, 0, 0, VINF_SUCCESS, true,  RTZIPTYPE_LZO,   RTZIPLEVEL_DEFAULT, "RTZipBlock/LZO"   },
     };
     RTPrintf("tstCompressionBenchmark: TESTING..");
     for (uint32_t i = 0; i < cIterations; i++)
     {
         for (uint32_t j = 0; j < RT_ELEMENTS(aTests); j++)
         {
+            if (RT_FAILURE(aTests[j].rc))
+                continue;
             memset(g_pabCompr,   0, g_cbComprAlloc);
             memset(g_pabDecompr, 0, g_cbPages);
             g_cbCompr = 0;
@@ -278,7 +292,7 @@ int main(int argc, char **argv)
                     if (RT_FAILURE(rc))
                     {
                         Error("RTZipBlockCompress failed for '%s' (#%u): %Rrc\n", aTests[j].pszName, j, rc);
-                        aTests[j].cErrors++;
+                        aTests[j].rc = rc;
                         break;
                     }
                     *pcb       = (uint32_t)cbDst;
@@ -297,7 +311,7 @@ int main(int argc, char **argv)
                 if (RT_FAILURE(rc))
                 {
                     Error("Failed to create the compressor for '%s' (#%u): %Rrc\n", aTests[j].pszName, j, rc);
-                    aTests[j].cErrors++;
+                    aTests[j].rc = rc;
                     continue;
                 }
 
@@ -309,7 +323,7 @@ int main(int argc, char **argv)
                     if (RT_FAILURE(rc))
                     {
                         Error("RTZipCompress failed for '%s' (#%u): %Rrc\n", aTests[j].pszName, j, rc);
-                        aTests[j].cErrors++;
+                        aTests[j].rc = rc;
                         break;
                     }
                     pbSrcPage += cb;
@@ -320,7 +334,7 @@ int main(int argc, char **argv)
                 if (RT_FAILURE(rc))
                 {
                     Error("RTZipCompFinish failed for '%s' (#%u): %Rrc\n", aTests[j].pszName, j, rc);
-                    aTests[j].cErrors++;
+                    aTests[j].rc = rc;
                     break;
                 }
                 RTZipCompDestroy(pZipComp);
@@ -350,7 +364,7 @@ int main(int argc, char **argv)
                     if (RT_FAILURE(rc))
                     {
                         Error("RTZipBlockDecompress failed for '%s' (#%u): %Rrc\n", aTests[j].pszName, j, rc);
-                        aTests[j].cErrors++;
+                        aTests[j].rc = rc;
                         break;
                     }
                     pbDstPage += cbDst;
@@ -367,7 +381,7 @@ int main(int argc, char **argv)
                 if (RT_FAILURE(rc))
                 {
                     Error("Failed to create the decompressor for '%s' (#%u): %Rrc\n", aTests[j].pszName, j, rc);
-                    aTests[j].cErrors++;
+                    aTests[j].rc = rc;
                     continue;
                 }
 
@@ -379,7 +393,7 @@ int main(int argc, char **argv)
                     if (RT_FAILURE(rc))
                     {
                         Error("RTZipDecompress failed for '%s' (#%u): %Rrc\n", aTests[j].pszName, j, rc);
-                        aTests[j].cErrors++;
+                        aTests[j].rc = rc;
                         break;
                     }
                     pbDstPage += cb;
@@ -394,7 +408,7 @@ int main(int argc, char **argv)
             if (memcmp(g_pabDecompr, g_pabSrc, g_cbPages))
             {
                 Error("The compressed data doesn't match the source for '%s' (%#u)\n", aTests[j].pszName, j);
-                aTests[j].cErrors++;
+                aTests[j].rc = VERR_BAD_EXE_FORMAT;
                 continue;
             }
         }
@@ -412,7 +426,7 @@ int main(int argc, char **argv)
     RTPrintf("%.20s-----------------------------------------------------------------------------------------\n", "---------------------------------------------");
     for (uint32_t j = 0; j < RT_ELEMENTS(aTests); j++)
     {
-        if (!aTests[j].cErrors)
+        if (RT_SUCCESS(aTests[j].rc))
         {
             unsigned uComprSpeedIn    = (unsigned)(cbTotalKB         / (long double)aTests[j].cNanoCompr   * 1000000000.0);
             unsigned uComprSpeedOut   = (unsigned)(aTests[j].cbCompr / (long double)aTests[j].cNanoCompr   * 1000000000.0 / 1024);
@@ -433,11 +447,17 @@ int main(int argc, char **argv)
         }
         else
         {
-            RTPrintf("%-20s: %u errors\n", aTests[j].pszName, aTests[j].cErrors);
+            RTPrintf("%-20s: %Rrc\n", aTests[j].pszName, aTests[j].rc);
             rc = 1;
         }
     }
-    RTPrintf("Input: %'12zu pages                                  (%'zu bytes)\n", g_cPages, g_cbPages);
+    if (pszPageFile)
+        RTPrintf("Input: %'10zu pages from '%s' starting at offset %'lld (%#llx)\n"
+                 "                                                           %'11zu bytes\n",
+                 g_cPages, pszPageFile, offPageFile, offPageFile, g_cbPages);
+    else
+        RTPrintf("Input: %'10zu pages of generated rubbish               %'11zu bytes\n",
+                 g_cPages, g_cbPages);
     RTPrintf("tstCompressionBenchmark: END RESULTS\n");
 
     return rc;
