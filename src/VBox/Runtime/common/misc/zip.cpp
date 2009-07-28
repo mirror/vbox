@@ -38,8 +38,9 @@
 #define RTZIP_USE_LZF 1
 #define RTZIP_LZF_BLOCK_BY_BLOCK
 //#define RTZIP_USE_LZJB 1
+//#define RTZIP_USE_LZO 1
 
-/** @todo lzjb? LZO? QuickLZ? Others? */
+/** @todo FastLZ? QuickLZ? Others? */
 
 
 /*******************************************************************************
@@ -54,6 +55,12 @@
 #ifdef RTZIP_USE_LZF
 # include <lzf.h>
 # include <iprt/crc32.h>
+#endif
+#ifdef RTZIP_USE_LZJB
+# include "lzjb.h"
+#endif
+#ifdef RTZIP_USE_LZO
+#include <lzo/lzo1x.h>
 #endif
 
 #include <iprt/zip.h>
@@ -1719,13 +1726,36 @@ RTDECL(int) RTZipBlockCompress(RTZIPTYPE enmType, RTZIPLEVEL enmLevel, uint32_t 
         case RTZIPTYPE_LZJB:
         {
 #ifdef RTZIP_USE_LZJB
-            AssertReturn(cbDst >= cbSrc, VERR_BUFFER_OVERFLOW);
+            AssertReturn(cbDst > cbSrc, VERR_BUFFER_OVERFLOW);
             size_t cbDstActual = lzjb_compress((void *)pvSrc, (uint8_t *)pvDst + 1, cbSrc, cbSrc, 0 /*??*/);
-            if (cbDst == cbSrc)
+            if (cbDstActual == cbSrc)
                 *(uint8_t *)pvDst = 0;
             else
                 *(uint8_t *)pvDst = 1;
             *pcbDstActual = cbDstActual + 1;
+            break;
+#else
+            return VERR_NOT_SUPPORTED;
+#endif
+        }
+
+        case RTZIPTYPE_LZO:
+        {
+#ifdef RTZIP_USE_LZO
+            uint64_t Scratch[RT_ALIGN(LZO1X_1_MEM_COMPRESS, sizeof(uint64_t)) / sizeof(uint64_t)];
+            int rc = lzo_init();
+            if (RT_UNLIKELY(rc != LZO_E_OK))
+                return VERR_INTERNAL_ERROR;
+
+            lzo_uint cbDstInOut = cbDst;
+            rc = lzo1x_1_compress((const lzo_bytep)pvSrc, cbSrc, (lzo_bytep )pvDst, &cbDstInOut, &Scratch[0]);
+            if (RT_UNLIKELY(rc != LZO_E_OK))
+                switch (rc)
+                {
+                    case LZO_E_OUTPUT_OVERRUN:  return VERR_BUFFER_OVERFLOW;
+                    default:                    return VERR_GENERAL_FAILURE;
+                }
+            *pcbDstActual = cbDstInOut;
             break;
 #else
             return VERR_NOT_SUPPORTED;
@@ -1803,14 +1833,16 @@ RTDECL(int) RTZipBlockDecompress(RTZIPTYPE enmType, uint32_t fFlags,
             {
                 int rc = lzjb_decompress((uint8_t *)pvSrc + 1, pvDst, cbSrc - 1, cbDst, 0 /*??*/);
                 if (RT_UNLIKELY(rc != 0))
-                    return VERR_BUFFER_OVERFLOW;
+                    return VERR_GENERAL_FAILURE;
                 if (pcbDstActual)
                     *pcbDstActual = cbDst;
             }
             else
             {
-                AssertReturn(cbDst >= cbSrc + 1, VERR_BUFFER_OVERFLOW);
-                memcpy(pvDst, (uint8_t *)pvSrc + 1, cbSrc);
+                AssertReturn(cbDst >= cbSrc - 1, VERR_BUFFER_OVERFLOW);
+                memcpy(pvDst, (uint8_t *)pvSrc + 1, cbSrc - 1);
+                if (pcbDstActual)
+                    *pcbDstActual = cbSrc - 1;
             }
             if (pcbSrcActual)
                 *pcbSrcActual = cbSrc;
@@ -1820,16 +1852,40 @@ RTDECL(int) RTZipBlockDecompress(RTZIPTYPE enmType, uint32_t fFlags,
 #endif
         }
 
+        case RTZIPTYPE_LZO:
+        {
+#ifdef RTZIP_USE_LZO
+            int rc = lzo_init();
+            if (RT_UNLIKELY(rc != LZO_E_OK))
+                return VERR_INTERNAL_ERROR;
+            lzo_uint cbDstInOut = cbDst;
+            rc = lzo1x_decompress((const lzo_bytep)pvSrc, cbSrc, (lzo_bytep)pvDst, &cbDstInOut, NULL);
+            if (RT_UNLIKELY(rc != LZO_E_OK))
+                switch (rc)
+                {
+                    case LZO_E_OUTPUT_OVERRUN:  return VERR_BUFFER_OVERFLOW;
+                    default:
+                    case LZO_E_INPUT_OVERRUN:   return VERR_GENERAL_FAILURE;
+                }
+            if (pcbSrcActual)
+                *pcbSrcActual = cbSrc;
+            if (pcbDstActual)
+                *pcbDstActual = cbDstInOut;
+            break;
+#else
+            return VERR_NOT_SUPPORTED;
+#endif
+        }
+
         case RTZIPTYPE_ZLIB:
         case RTZIPTYPE_BZLIB:
-        case RTZIPTYPE_LZO:
             return VERR_NOT_SUPPORTED;
 
         default:
             AssertMsgFailed(("%d\n", enmType));
             return VERR_INVALID_PARAMETER;
     }
-    return  VINF_SUCCESS;
+    return VINF_SUCCESS;
 }
 RT_EXPORT_SYMBOL(RTZipBlockDecompress);
 
