@@ -180,6 +180,7 @@ DECLEXPORT(void) crError( char *format, ... )
     va_start( args, format );
     vsprintf( txt + offset, format, args );
 #if defined(IN_GUEST)
+    crDebug("%s", txt);
     outputChromiumMessage( stderr, txt );
 #else
     LogRel(("%s\n", txt));
@@ -232,6 +233,7 @@ DECLEXPORT(void) crWarning( char *format, ... )
         va_start( args, format );
         vsprintf( txt + offset, format, args );
 #if defined(IN_GUEST)
+        crDebug("%s", txt);
         outputChromiumMessage( stderr, txt );
 #else
         LogRel(("%s\n", txt));
@@ -259,6 +261,7 @@ DECLEXPORT(void) crInfo( char *format, ... )
     va_start( args, format );
     vsprintf( txt + offset, format, args );
 #if defined(IN_GUEST)
+    crDebug("%s", txt);
     outputChromiumMessage( stderr, txt );
 #else
     LogRel(("%s\n", txt));
