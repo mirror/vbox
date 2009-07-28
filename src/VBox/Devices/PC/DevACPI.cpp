@@ -54,12 +54,12 @@ int acpiCleanupDsdt(PPDMDEVINS pDevIns, void* pPtr);
 #define DEBUG_CHR       0x3001
 
 #define PM_TMR_FREQ     3579545
-/* Default base for PM PIIX4 device */ 
-#define PM_PORT_BASE    0x00004000
+/* Default base for PM PIIX4 device */
+#define PM_PORT_BASE    0x4000
 /* Port offsets in PM device */
 enum
 {
-    PM1a_EVT_OFFSET                     = 0x00,        
+    PM1a_EVT_OFFSET                     = 0x00,
     PM1b_EVT_OFFSET                     =   -1,   /**<  not supported  */
     PM1a_CTL_OFFSET                     = 0x04,
     PM1b_CTL_OFFSET                     =   -1,   /**<  not supported  */
@@ -143,12 +143,12 @@ enum
     SYSTEM_INFO_INDEX_SMC_STATUS        = 3,
     SYSTEM_INFO_INDEX_FDC_STATUS        = 4,
     SYSTEM_INFO_INDEX_CPU0_STATUS       = 5,
-    SYSTEM_INFO_INDEX_CPU1_STATUS       = 6, 
-    SYSTEM_INFO_INDEX_CPU2_STATUS       = 7, 
-    SYSTEM_INFO_INDEX_CPU3_STATUS       = 8, 
-    SYSTEM_INFO_INDEX_HIGH_MEMORY_LENGTH= 9, 
-    SYSTEM_INFO_INDEX_RTC_STATUS        = 10, 
-    SYSTEM_INFO_INDEX_END               = 11, 
+    SYSTEM_INFO_INDEX_CPU1_STATUS       = 6,
+    SYSTEM_INFO_INDEX_CPU2_STATUS       = 7,
+    SYSTEM_INFO_INDEX_CPU3_STATUS       = 8,
+    SYSTEM_INFO_INDEX_HIGH_MEMORY_LENGTH= 9,
+    SYSTEM_INFO_INDEX_RTC_STATUS        = 10,
+    SYSTEM_INFO_INDEX_END               = 11,
     SYSTEM_INFO_INDEX_INVALID           = 0x80,
     SYSTEM_INFO_INDEX_VALID             = 0x200
 };
@@ -230,7 +230,7 @@ typedef struct ACPIState
     /** Flag whether the R0 part of the device is enabled. */
     bool                fR0Enabled;
     /** Aligning IBase. */
-    bool                afAlignment[1];
+    bool                afAlignment[4];
 
     /** ACPI port base interface. */
     PDMIBASE            IBase;
@@ -242,7 +242,7 @@ typedef struct ACPIState
     R3PTRTYPE(PPDMIBASE) pDrvBase;
     /** Pointer to the driver connector interface */
     R3PTRTYPE(PPDMIACPICONNECTOR) pDrv;
-    
+
     /* Pointer to default PCI config read function */
     R3PTRTYPE(PFNPCICONFIGREAD)   pfnAcpiPciConfigRead;
     /* Pointer to default PCI config write function */
@@ -449,7 +449,7 @@ struct ACPITBLIOAPIC
 };
 AssertCompileSize(ACPITBLIOAPIC, 12);
 
-# ifdef IN_RING3 /**@todo r=bird: Move this down to where it's used. */
+# ifdef IN_RING3 /** @todo r=bird: Move this down to where it's used. */
 
 #  define PCAT_COMPAT   0x1                     /**< system has also a dual-8259 setup */
 
@@ -594,7 +594,7 @@ RT_C_DECLS_END
 static RTIOPORT acpiPmPort(ACPIState* pAcpi, int32_t offset)
 {
     Assert(pAcpi->uPmIoPortBase != 0);
-    
+
     if (offset == -1)
         return 0;
 
@@ -642,7 +642,7 @@ static void acpiPhyscpy(ACPIState *s, RTGCPHYS32 dst, const void * const src, si
 
 /** Differentiated System Description Table (DSDT) */
 
-static void acpiSetupDSDT(ACPIState *s, RTGCPHYS32 addr, 
+static void acpiSetupDSDT(ACPIState *s, RTGCPHYS32 addr,
                             void* pPtr, size_t uDsdtLen)
 {
     acpiPhyscpy(s, addr, pPtr, uDsdtLen);
@@ -1368,19 +1368,19 @@ PDMBOTHCBDECL(int) acpiSysInfoDataRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPOR
                             : 0;
                     break;
 
-                    
-                case SYSTEM_INFO_INDEX_CPU0_STATUS: 
-                case SYSTEM_INFO_INDEX_CPU1_STATUS: 
-                case SYSTEM_INFO_INDEX_CPU2_STATUS: 
-                case SYSTEM_INFO_INDEX_CPU3_STATUS: 
-                  *pu32 = s->fShowCpu 
-                    && s->uSystemInfoIndex - SYSTEM_INFO_INDEX_CPU0_STATUS < s->cCpus 
-                    ?   
-                      STA_DEVICE_PRESENT_MASK 
-                    | STA_DEVICE_ENABLED_MASK 
-                    | STA_DEVICE_SHOW_IN_UI_MASK 
-                    | STA_DEVICE_FUNCTIONING_PROPERLY_MASK 
-                    : 0; 
+
+                case SYSTEM_INFO_INDEX_CPU0_STATUS:
+                case SYSTEM_INFO_INDEX_CPU1_STATUS:
+                case SYSTEM_INFO_INDEX_CPU2_STATUS:
+                case SYSTEM_INFO_INDEX_CPU3_STATUS:
+                  *pu32 = s->fShowCpu
+                    && s->uSystemInfoIndex - SYSTEM_INFO_INDEX_CPU0_STATUS < s->cCpus
+                    ?
+                      STA_DEVICE_PRESENT_MASK
+                    | STA_DEVICE_ENABLED_MASK
+                    | STA_DEVICE_SHOW_IN_UI_MASK
+                    | STA_DEVICE_FUNCTIONING_PROPERLY_MASK
+                    : 0;
 
                  case SYSTEM_INFO_INDEX_RTC_STATUS:
                     *pu32 = s->fShowRtc ? (  STA_DEVICE_PRESENT_MASK
@@ -1687,7 +1687,7 @@ static int acpiRegisterPmHandlers(ACPIState*  pThis)
     /* register GC stuff */
     if (pThis->fGCEnabled)
     {
-        rc = PDMDevHlpIOPortRegisterGC(pThis->pDevIns, acpiPmPort(pThis, PM_TMR_OFFSET), 
+        rc = PDMDevHlpIOPortRegisterGC(pThis->pDevIns, acpiPmPort(pThis, PM_TMR_OFFSET),
                                        1, 0, NULL, "acpiPMTmrRead",
                                        NULL, NULL, "ACPI PM Timer");
         AssertRCReturn(rc, rc);
@@ -1696,7 +1696,7 @@ static int acpiRegisterPmHandlers(ACPIState*  pThis)
     /* register R0 stuff */
     if (pThis->fR0Enabled)
     {
-        rc = PDMDevHlpIOPortRegisterR0(pThis->pDevIns, acpiPmPort(pThis, PM_TMR_OFFSET), 
+        rc = PDMDevHlpIOPortRegisterR0(pThis->pDevIns, acpiPmPort(pThis, PM_TMR_OFFSET),
                                        1, 0, NULL, "acpiPMTmrRead",
                                        NULL, NULL, "ACPI PM Timer");
         AssertRCReturn(rc, rc);
@@ -1705,15 +1705,14 @@ static int acpiRegisterPmHandlers(ACPIState*  pThis)
     return rc;
 }
 
-static int acpiUnregisterPmHandlers(ACPIState*  pThis)
+static int acpiUnregisterPmHandlers(ACPIState *pThis)
 {
-    int   rc = VINF_SUCCESS;
-
-#define U(offset, cnt)     \
+    /** @todo r=bird: How can this work when acpiDeregisterPmHandlers is called
+     *        after the guest changed uPmIoPortBase? */
+#define U(offset, cnt) \
     do { \
-        rc = PDMDevHlpIOPortDeregister(pThis->pDevIns, acpiPmPort(pThis, offset), cnt); \
-        if (RT_FAILURE(rc)) \
-            return rc; \
+        int rc = PDMDevHlpIOPortDeregister(pThis->pDevIns, acpiPmPort(pThis, offset), cnt); \
+        AssertRCReturn(rc, rc); \
     } while (0)
 #define L       (GPE0_BLK_LEN / 2)
 
@@ -1726,9 +1725,7 @@ static int acpiUnregisterPmHandlers(ACPIState*  pThis)
 #undef L
 #undef U
 
-    /* no need to explicitly unregister R0/GC handlers, as pfnIOPortDeregister() claim to unregister both */
-    
-    return rc;
+    return VINF_SUCCESS;
 }
 
 /**
@@ -1744,7 +1741,7 @@ static const SSMFIELD g_AcpiSavedStateFields4[] =
     SSMFIELD_ENTRY(ACPIState, gpe0_sts),
     SSMFIELD_ENTRY(ACPIState, uBatteryIndex),
     SSMFIELD_ENTRY(ACPIState, uSystemInfoIndex),
-    SSMFIELD_ENTRY(ACPIState, u64RamSize),      /** @todo not necessary to save this. */
+    SSMFIELD_ENTRY(ACPIState, u64RamSize),
     SSMFIELD_ENTRY(ACPIState, u8IndexShift),
     SSMFIELD_ENTRY(ACPIState, u8UseIOApic),
     SSMFIELD_ENTRY(ACPIState, uSleepState),
@@ -1759,24 +1756,24 @@ static const SSMFIELD g_AcpiSavedStateFields5[] =
     SSMFIELD_ENTRY(ACPIState, pm1a_en),
     SSMFIELD_ENTRY(ACPIState, pm1a_sts),
     SSMFIELD_ENTRY(ACPIState, pm1a_ctl),
-    SSMFIELD_ENTRY(ACPIState, cCpus),
+    SSMFIELD_ENTRY(ACPIState, cCpus),           /**< @todo r=bird: This is a configuration parameter that will not change, so no need to save it. */
     SSMFIELD_ENTRY(ACPIState, pm_timer_initial),
     SSMFIELD_ENTRY(ACPIState, gpe0_en),
     SSMFIELD_ENTRY(ACPIState, gpe0_sts),
     SSMFIELD_ENTRY(ACPIState, uBatteryIndex),
     SSMFIELD_ENTRY(ACPIState, uSystemInfoIndex),
-    SSMFIELD_ENTRY(ACPIState, u64RamSize),
+    SSMFIELD_ENTRY(ACPIState, u64RamSize),      /**< @todo r=bird: ditto. */
     SSMFIELD_ENTRY(ACPIState, uSleepState),
     SSMFIELD_ENTRY(ACPIState, u8IndexShift),
-    SSMFIELD_ENTRY(ACPIState, u8UseIOApic),
-    SSMFIELD_ENTRY(ACPIState, fUseFdc),
-    SSMFIELD_ENTRY(ACPIState, fUseHpet),
-    SSMFIELD_ENTRY(ACPIState, fUseSmc),
-    SSMFIELD_ENTRY(ACPIState, fShowCpu),
-    SSMFIELD_ENTRY(ACPIState, fShowRtc),
+    SSMFIELD_ENTRY(ACPIState, u8UseIOApic),     /**< @todo r=bird: ditto. */
+    SSMFIELD_ENTRY(ACPIState, fUseFdc),         /**< @todo r=bird: ditto. */
+    SSMFIELD_ENTRY(ACPIState, fUseHpet),        /**< @todo r=bird: ditto. */
+    SSMFIELD_ENTRY(ACPIState, fUseSmc),         /**< @todo r=bird: ditto. */
+    SSMFIELD_ENTRY(ACPIState, fShowCpu),        /**< @todo r=bird: ditto. */
+    SSMFIELD_ENTRY(ACPIState, fShowRtc),        /**< @todo r=bird: ditto. */
     SSMFIELD_ENTRY(ACPIState, uPmIoPortBase),
-    SSMFIELD_ENTRY(ACPIState, fGCEnabled),
-    SSMFIELD_ENTRY(ACPIState, fR0Enabled),
+    SSMFIELD_ENTRY(ACPIState, fGCEnabled),      /**< @todo r=bird: ditto. */
+    SSMFIELD_ENTRY(ACPIState, fR0Enabled),      /**< @todo r=bird: ditto. */
     SSMFIELD_ENTRY_TERM()
 };
 
@@ -1793,21 +1790,21 @@ static DECLCALLBACK(int) acpi_load_state(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHand
     ACPIState *s = PDMINS_2_DATA(pDevIns, ACPIState *);
     int rc;
 
-    if (u32Version != 4 && u32Version != 5)
-        return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
-
     switch (u32Version)
     {
         case 4:
             rc = SSMR3GetStruct(pSSMHandle, s, &g_AcpiSavedStateFields4[0]);
-            /** @todo: provide saner defaults for fields not found in saved state */
+            /** @todo Provide saner defaults for fields not found in saved state. */
             break;
         case 5:
             rc = SSMR3GetStruct(pSSMHandle, s, &g_AcpiSavedStateFields5[0]);
             break;
+        default:
+            return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
     }
     if (RT_SUCCESS(rc))
     {
+        /** @todo r=bird: Why aren't the handlers deregistered first? */
         rc = acpiRegisterPmHandlers(s);
         if (RT_FAILURE(rc))
             return rc;
@@ -1961,8 +1958,8 @@ static uint32_t acpiPciConfigRead(PPCIDEVICE pPciDev, uint32_t Address, unsigned
 
 static void acpiPciConfigWrite(PPCIDEVICE pPciDev, uint32_t Address, uint32_t u32Value, unsigned cb)
 {
-    PPDMDEVINS pDevIns = pPciDev->pDevIns;
-    ACPIState*  pThis = PDMINS_2_DATA(pDevIns, ACPIState *);
+    PPDMDEVINS  pDevIns = pPciDev->pDevIns;
+    ACPIState  *pThis   = PDMINS_2_DATA(pDevIns, ACPIState *);
 
     if (Address == 0x40)
     {
@@ -1976,8 +1973,8 @@ static void acpiPciConfigWrite(PPCIDEVICE pPciDev, uint32_t Address, uint32_t u3
             int rc;
 
             acpiUnregisterPmHandlers(pThis);
-            
-            rc = acpiRegisterPmHandlers(pThis);        
+
+            rc = acpiRegisterPmHandlers(pThis);
             Assert(RT_SUCCESS(rc));
         }
     }
@@ -2060,7 +2057,7 @@ static DECLCALLBACK(int) acpiConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     rc = CFGMR3QueryBoolDef(pCfgHandle, "ShowCpu", &s->fShowCpu, false);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("Configuration error: Failed to read \"ShowCpu\""));   
+                                N_("Configuration error: Failed to read \"ShowCpu\""));
 
     rc = CFGMR3QueryBool(pCfgHandle, "GCEnabled", &s->fGCEnabled);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
@@ -2142,11 +2139,11 @@ static DECLCALLBACK(int) acpiConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
 
     dev->config[0x08] = 0x08; /* revision number */
 
-    dev->config[0x09] = 0x00; /* class code */ 
+    dev->config[0x09] = 0x00; /* class code */
     dev->config[0x0a] = 0x80;
     dev->config[0x0b] = 0x06;
 
-    dev->config[0x0e] = 0x80; /* header type */ 
+    dev->config[0x0e] = 0x80; /* header type */
 
     dev->config[0x0f] = 0x00; /* reserved */
 
@@ -2162,7 +2159,7 @@ static DECLCALLBACK(int) acpiConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     if (RT_FAILURE(rc))
         return rc;
 
-    PDMDevHlpPCISetConfigCallbacks(pDevIns, dev, 
+    PDMDevHlpPCISetConfigCallbacks(pDevIns, dev,
                                    acpiPciConfigRead,  &s->pfnAcpiPciConfigRead,
                                    acpiPciConfigWrite, &s->pfnAcpiPciConfigWrite);
 
