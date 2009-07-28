@@ -36,6 +36,7 @@
 #include <QColor>
 #include <QDialog>
 #include <QMenu>
+#include <QPointer>
 
 #ifdef VBOX_WITH_DEBUGGER_GUI
 # include <VBox/dbggui.h>
@@ -376,7 +377,7 @@ private:
     bool mIsGraphicsSupported : 1;
     bool mIsWaitingModeResize : 1;
     bool was_max : 1;
-    QObjectList hidden_children;
+    QList < QPointer <QWidget> > mHiddenChildren;
     int console_style;
     QPalette mErasePalette;
 
