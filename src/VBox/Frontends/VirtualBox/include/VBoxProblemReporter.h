@@ -323,9 +323,7 @@ public:
     void remindAboutMouseIntegration (bool aSupportsAbsolute);
     bool remindAboutPausedVMInput();
 
-    int warnAboutAutoConvertedSettings (const QString &aFormatVersion,
-                                        const QString &aFileList,
-                                        bool aAfterRefresh);
+    int warnAboutSettingsAutoConversion (const QString &aFileList, bool aAfterRefresh);
 
     bool remindAboutInaccessibleMedia();
 
