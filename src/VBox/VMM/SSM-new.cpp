@@ -230,7 +230,7 @@
 
 /** @name SSMRECTERM::fFlags
  * @{ */
-/** There is CRC-32 for the data. */
+/** There is a CRC-32 value for the stream. */
 #define SSMRECTERM_FLAGS_CRC32                  UINT16_C(0x0001)
 /** @} */
 
@@ -293,10 +293,6 @@ typedef struct SSMHANDLE
     uint64_t        cbUnitLeftV1;
     /** The current uncompressed offset into the data unit. */
     uint64_t        offUnit;
-    /** Whether we're checksumming the unit or not. */
-    bool            fUnitChecksummed;
-    /** The unit CRC. */
-    uint32_t        u32UnitCRC;
 
     /** Pointer to the progress callback function. */
     PFNVMPROGRESS   pfnProgress;
@@ -525,6 +521,8 @@ typedef struct SSMFILEUNITHDR
     /** The offset in the saved state stream of the start of this unit.
      * This is mainly intended for sanity checking. */
     uint64_t        offStream;
+    /** The CRC-in-progress value this unit starts at. */
+    uint32_t        u32CurStreamCRC;
     /** The checksum of this structure, including the whole name.
      * Calculated with this field set to zero.  */
     uint32_t        u32CRC;
@@ -541,7 +539,7 @@ typedef struct SSMFILEUNITHDR
     /** Data unit name, variable size. */
     char            szName[SSM_MAX_NAME_SIZE];
 } SSMFILEUNITHDR;
-AssertCompileMemberOffset(SSMFILEUNITHDR, szName, 40);
+AssertCompileMemberOffset(SSMFILEUNITHDR, szName, 44);
 AssertCompileMemberSize(SSMFILEUNITHDR, szMagic, sizeof(SSMFILEUNITHDR_MAGIC));
 AssertCompileMemberSize(SSMFILEUNITHDR, szMagic, sizeof(SSMFILEUNITHDR_END));
 /** Pointer to SSMFILEUNITHDR.  */
@@ -582,8 +580,8 @@ typedef struct SSMRECTERM
     uint8_t         cbRec;
     /** Flags, see SSMRECTERM_FLAGS_CRC32. */
     uint16_t        fFlags;
-    /** The checksum of the data up to the start of this record. */
-    uint32_t        u32CRC;
+    /** The checksum of the stream up to the start of this record. */
+    uint32_t        u32StreamCRC;
     /** The length of this data unit in bytes (including this record). */
     uint64_t        cbUnit;
 } SSMRECTERM;
@@ -1527,8 +1525,6 @@ VMMR3DECL(int) SSMR3Save(PVM pVM, const char *pszFilename, SSMAFTER enmAfter, PF
     Handle.rc               = VINF_SUCCESS;
     Handle.cbUnitLeftV1     = 0;
     Handle.offUnit          = UINT64_MAX;
-    Handle.fUnitChecksummed = false;
-    Handle.u32UnitCRC       = 0;
     Handle.pfnProgress      = pfnProgress;
     Handle.pvUser           = pvUser;
     Handle.uPercent         = 0;
@@ -1656,15 +1652,18 @@ VMMR3DECL(int) SSMR3Save(PVM pVM, const char *pszFilename, SSMAFTER enmAfter, PF
                  * Write data unit header
                  */
                 memcpy(&u.UnitHdr.szMagic[0], SSMFILEUNITHDR_MAGIC, sizeof(u.UnitHdr.szMagic));
-                u.UnitHdr.offStream   = pUnit->offStream;
-                u.UnitHdr.u32CRC      = 0;
-                u.UnitHdr.u32Version  = pUnit->u32Version;
-                u.UnitHdr.u32Instance = pUnit->u32Instance;
-                u.UnitHdr.u32Phase    = SSM_PHASE_FINAL;
-                u.UnitHdr.fFlags      = 0;
-                u.UnitHdr.cbName      = (uint32_t)pUnit->cchName + 1;
+                u.UnitHdr.offStream       = pUnit->offStream;
+                if (Handle.fChecksummed)
+                    ssmR3StrmFlush(&Handle);
+                u.UnitHdr.u32CurStreamCRC = Handle.u32StreamCRC;
+                u.UnitHdr.u32CRC          = 0;
+                u.UnitHdr.u32Version      = pUnit->u32Version;
+                u.UnitHdr.u32Instance     = pUnit->u32Instance;
+                u.UnitHdr.u32Phase        = SSM_PHASE_FINAL;
+                u.UnitHdr.fFlags          = 0;
+                u.UnitHdr.cbName          = (uint32_t)pUnit->cchName + 1;
                 memcpy(&u.UnitHdr.szName[0], &pUnit->szName[0], u.UnitHdr.cbName);
-                u.UnitHdr.u32CRC      = RTCrc32(&u.UnitHdr, RT_OFFSETOF(SSMFILEUNITHDR, szName[u.UnitHdr.cbName]));
+                u.UnitHdr.u32CRC          = RTCrc32(&u.UnitHdr, RT_OFFSETOF(SSMFILEUNITHDR, szName[u.UnitHdr.cbName]));
                 Log(("SSM: Unit at %#9llx: '%s', instance %u, phase %#x, version %u\n",
                      u.UnitHdr.offStream, u.UnitHdr.szName, u.UnitHdr.u32Instance, u.UnitHdr.u32Phase, u.UnitHdr.u32Version));
                 rc = ssmR3StrmWrite(&Handle, &u.UnitHdr, RT_OFFSETOF(SSMFILEUNITHDR, szName[u.UnitHdr.cbName]));
@@ -1701,25 +1700,22 @@ VMMR3DECL(int) SSMR3Save(PVM pVM, const char *pszFilename, SSMAFTER enmAfter, PF
                         SSMRECTERM TermRec;
                         TermRec.u8TypeAndFlags = SSM_REC_FLAGS_FIXED | SSM_REC_FLAGS_IMPORTANT | SSM_REC_TYPE_TERM;
                         TermRec.cbRec       = sizeof(TermRec) - 2;
-                        if (Handle.fUnitChecksummed)
+                        if (Handle.fChecksummed)
                         {
-                            TermRec.fFlags  = SSMRECTERM_FLAGS_CRC32;
-                            TermRec.u32CRC  = RTCrc32Finish(Handle.u32UnitCRC);
+                            TermRec.fFlags       = SSMRECTERM_FLAGS_CRC32;
+                            TermRec.u32StreamCRC = RTCrc32Finish(Handle.u32StreamCRC);
                         }
                         else
                         {
-                            TermRec.fFlags  = 0;
-                            TermRec.u32CRC  = 0;
+                            TermRec.fFlags       = 0;
+                            TermRec.u32StreamCRC = 0;
                         }
                         TermRec.cbUnit      = Handle.offUnit + sizeof(TermRec);
                         rc = ssmR3DataWriteRaw(&Handle, &TermRec, sizeof(TermRec));
                         if (RT_SUCCESS(rc))
                             rc = ssmR3DataWriteFinish(&Handle);
                         if (RT_SUCCESS(rc))
-                        {
                             Handle.offUnit     = UINT64_MAX;
-                            Handle.u32UnitCRC  = 0;
-                        }
                         else
                         {
                             LogRel(("SSM: Failed ending compression stream. rc=%Rrc\n", rc));
@@ -1789,14 +1785,15 @@ VMMR3DECL(int) SSMR3Save(PVM pVM, const char *pszFilename, SSMAFTER enmAfter, PF
         {
             /* Write the end unit. */
             memcpy(&u.UnitHdr.szMagic[0], SSMFILEUNITHDR_END, sizeof(u.UnitHdr.szMagic));
-            u.UnitHdr.offStream   = ssmR3StrmTell(&Handle);
-            u.UnitHdr.u32Version  = 0;
-            u.UnitHdr.u32Instance = 0;
-            u.UnitHdr.u32Phase    = SSM_PHASE_FINAL;
-            u.UnitHdr.fFlags      = 0;
-            u.UnitHdr.cbName      = 0;
-            u.UnitHdr.u32CRC      = 0;
-            u.UnitHdr.u32CRC      = RTCrc32(&u.UnitHdr, RT_OFFSETOF(SSMFILEUNITHDR, szName[0]));
+            u.UnitHdr.offStream       = ssmR3StrmTell(&Handle);
+            u.UnitHdr.u32CurStreamCRC = Handle.u32StreamCRC;
+            u.UnitHdr.u32CRC          = 0;
+            u.UnitHdr.u32Version      = 0;
+            u.UnitHdr.u32Instance     = 0;
+            u.UnitHdr.u32Phase        = SSM_PHASE_FINAL;
+            u.UnitHdr.fFlags          = 0;
+            u.UnitHdr.cbName          = 0;
+            u.UnitHdr.u32CRC          = RTCrc32(&u.UnitHdr, RT_OFFSETOF(SSMFILEUNITHDR, szName[0]));
             Log(("SSM: Unit at %#9llx: END UNIT\n", u.UnitHdr.offStream));
             rc = ssmR3StrmWrite(&Handle,  &u.UnitHdr, RT_OFFSETOF(SSMFILEUNITHDR, szName[0]));
             if (RT_SUCCESS(rc))
@@ -1909,7 +1906,8 @@ static int ssmR3ValidateHeaderInfo(PSSMHANDLE pSSM, bool fHaveHostBits, bool fHa
 
 
 /**
- * Validates the integrity of a saved state file.
+ * Validates the integrity of a saved state file, it also initializes
+ * u32StreamCRC for v2.0+.
  *
  * @returns VBox status.
  * @param   File                File to validate.
@@ -1994,6 +1992,9 @@ static int ssmR3ValidateFile(PSSMHANDLE pSSM, bool fChecksumIt, bool fChecksumOn
             return VERR_SSM_INTEGRITY_VERSION;
         }
 
+        if (fChecksummed && fChecksumOnRead)
+            pSSM->u32StreamCRC = RTCrc32Process(RTCrc32Start(), &uHdr, pSSM->u.Read.cbFileHdr);
+
         /*
          * Read and validate the footer.
          */
@@ -2040,7 +2041,8 @@ static int ssmR3ValidateFile(PSSMHANDLE pSSM, bool fChecksumIt, bool fChecksumOn
          * Check the checksum if that's called for and possible.
          */
         if (    fChecksummed
-            &&  fChecksumIt)
+            &&  fChecksumIt
+            &&  !fChecksumOnRead)
         {
             rc = RTFileSeek(pSSM->hFile, 0, RTFILE_SEEK_BEGIN, NULL);
             AssertLogRelRCReturn(rc, rc);
@@ -2192,8 +2194,6 @@ static int ssmR3OpenFile(PVM pVM, const char *pszFilename, bool fChecksumIt, boo
     pSSM->rc               = VINF_SUCCESS;
     pSSM->cbUnitLeftV1     = 0;
     pSSM->offUnit          = UINT64_MAX;
-    pSSM->fUnitChecksummed = 0;
-    pSSM->u32UnitCRC       = 0;
     pSSM->pfnProgress      = NULL;
     pSSM->pvUser           = NULL;
     pSSM->uPercent         = 0;
@@ -2459,7 +2459,8 @@ static int ssmR3LoadExecV2(PVM pVM, PSSMHANDLE pSSM)
         /*
          * Read the unit header and check its integrity.
          */
-        uint64_t        offUnit = ssmR3StrmTell(pSSM);
+        uint64_t        offUnit         = ssmR3StrmTell(pSSM);
+        uint32_t        u32CurStreamCRC = pSSM->u32StreamCRC;
         SSMFILEUNITHDR  UnitHdr;
         int rc = ssmR3StrmRead(pSSM, &UnitHdr, RT_OFFSETOF(SSMFILEUNITHDR, szName));
         if (RT_FAILURE(rc))
@@ -2496,6 +2497,8 @@ static int ssmR3LoadExecV2(PVM pVM, PSSMHANDLE pSSM)
             LogRel(("SSM: Unit at %#llx (%lld): offStream=%#llx, expected %#llx\n", offUnit, offUnit, UnitHdr.offStream, offUnit));
             return VERR_SSM_INTEGRITY;
         }
+        AssertLogRelMsgReturn(UnitHdr.u32CurStreamCRC == u32CurStreamCRC || !pSSM->fChecksummed,
+                              ("Unit at %#llx (%lld): Stream CRC mismatch: %08x, correct is %08x\n", offUnit, offUnit, UnitHdr.u32CurStreamCRC, u32CurStreamCRC), VERR_SSM_INTEGRITY);
         AssertLogRelMsgReturn(!UnitHdr.fFlags, ("Unit at %#llx (%lld): fFlags=%08x\n", offUnit, offUnit, UnitHdr.fFlags), VERR_SSM_INTEGRITY);
         if (!memcmp(&UnitHdr.szMagic[0], SSMFILEUNITHDR_END,   sizeof(UnitHdr.szMagic)))
         {
@@ -2810,7 +2813,7 @@ VMMR3DECL(int) SSMR3Open(const char *pszFilename, unsigned fFlags, PSSMHANDLE *p
     /*
      * Try open the file and validate it.
      */
-    int rc = ssmR3OpenFile(NULL, pszFilename, true /*fChecksumIt*/, false /*fChecksumOnRead*/, pSSM);
+    int rc = ssmR3OpenFile(NULL, pszFilename, false /*fChecksumIt*/, true /*fChecksumOnRead*/, pSSM);
     if (RT_SUCCESS(rc))
     {
         pSSM->enmAfter = SSMAFTER_OPENED;
@@ -3007,6 +3010,9 @@ static int ssmR3FileSeekSubV2(PSSMHANDLE pSSM, PSSMFILEDIR pDir, size_t cbDir, u
                 rc = RTFileSeek(pSSM->hFile, pDir->aEntries[i].off + cbUnitHdr, RTFILE_SEEK_BEGIN, NULL);
                 AssertLogRelRCReturn(rc, rc);
 
+                if (pSSM->fChecksummed)
+                    pSSM->u32StreamCRC = RTCrc32Process(UnitHdr.u32CurStreamCRC, &UnitHdr, cbUnitHdr);
+
                 ssmR3DataReadBeginV2(pSSM);
                 return VINF_SUCCESS;
             }
@@ -3132,9 +3138,7 @@ static int ssmR3DataWriteFinish(PSSMHANDLE pSSM)
  */
 static void ssmR3DataWriteBegin(PSSMHANDLE pSSM)
 {
-    pSSM->offUnit           = 0;
-    if (pSSM->fUnitChecksummed)
-        pSSM->u32UnitCRC    = RTCrc32Start();
+    pSSM->offUnit = 0;
 }
 
 
@@ -3156,12 +3160,6 @@ static int ssmR3DataWriteRaw(PSSMHANDLE pSSM, const void *pvBuf, size_t cbBuf)
      */
     if (RT_FAILURE(pSSM->rc))
         return pSSM->rc;
-
-    /*
-     * Do the stream checksumming before we write the data.
-     */
-    if (pSSM->fUnitChecksummed)
-        pSSM->u32UnitCRC = RTCrc32Process(pSSM->u32UnitCRC, pvBuf, cbBuf);
 
     /*
      * Write the data item in 1MB chunks for progress indicator reasons.
@@ -4042,8 +4040,7 @@ static void ssmR3DataReadFinishV2(PSSMHANDLE pSSM)
 
 
 /**
- * Read reader that does the decompression and keeps the offset and CRC members
- * up to date.
+ * Read reader that keep works the progress indicator and unit offset.
  *
  * Does not set SSM::rc.
  *
@@ -4059,9 +4056,6 @@ DECLINLINE(int) ssmR3DataReadV2Raw(PSSMHANDLE pSSM, void *pvBuf, size_t cbToRead
     if (RT_SUCCESS(rc))
     {
         pSSM->offUnit += cbToRead;
-        if (pSSM->fUnitChecksummed)
-            pSSM->u32UnitCRC = RTCrc32Process(pSSM->u32UnitCRC, pvBuf, cbToRead);
-
         ssmR3Progress(pSSM, cbToRead);
         return VINF_SUCCESS;
     }
@@ -4157,7 +4151,7 @@ static int ssmR3DataReadRecHdrV2(PSSMHANDLE pSSM)
     /*
      * Read the two mandatory bytes.
      */
-    uint32_t u32UnitCRC = pSSM->u32UnitCRC;
+    uint32_t u32StreamCRC = pSSM->u32StreamCRC;
     uint8_t  abHdr[8];
     int rc = ssmR3DataReadV2Raw(pSSM, abHdr, 2);
     if (RT_FAILURE(rc))
@@ -4187,11 +4181,11 @@ static int ssmR3DataReadRecHdrV2(PSSMHANDLE pSSM)
                               VERR_SSM_INTEGRITY);
         AssertLogRelMsgReturn(!(TermRec.fFlags & ~SSMRECTERM_FLAGS_CRC32), ("%#x\n", TermRec.fFlags), VERR_SSM_INTEGRITY);
         if (!(TermRec.fFlags & SSMRECTERM_FLAGS_CRC32))
-            AssertLogRelMsgReturn(TermRec.u32CRC == 0, ("%#x\n", TermRec.u32CRC), VERR_SSM_INTEGRITY);
-        else if (pSSM->fUnitChecksummed)
+            AssertLogRelMsgReturn(TermRec.u32StreamCRC == 0, ("%#x\n", TermRec.u32StreamCRC), VERR_SSM_INTEGRITY);
+        else if (pSSM->fChecksummed)
         {
-            u32UnitCRC = RTCrc32Finish(u32UnitCRC);
-            AssertLogRelMsgReturn(TermRec.u32CRC == u32UnitCRC, ("%#x, %#x\n", TermRec.u32CRC, u32UnitCRC), VERR_SSM_INTEGRITY_CRC);
+            u32StreamCRC = RTCrc32Finish(u32StreamCRC);
+            AssertLogRelMsgReturn(TermRec.u32StreamCRC == u32StreamCRC, ("%#x, %#x\n", TermRec.u32StreamCRC, u32StreamCRC), VERR_SSM_INTEGRITY_CRC);
         }
 
         Log3(("ssmR3DataReadRecHdrV2: %08llx|%08llx: TERM\n", ssmR3StrmTell(pSSM) - sizeof(SSMRECTERM), pSSM->offUnit));
