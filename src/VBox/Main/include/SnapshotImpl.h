@@ -89,9 +89,6 @@ public:
 
     // public methods only for internal purposes
 
-    /** Do |AutoWriteLock alock (this);| before acceessing the returned data! */
-//     const Data &data() const { return mData; }
-
     const Bstr &stateFilePath() const;
 
     ComObjPtr<Snapshot> parent() const
@@ -109,13 +106,6 @@ public:
     Bstr getName() const;
     RTTIMESPEC getTimeStamp() const;
 
-    /**
-     *  Shortcut to #dependentChildren().
-     *  Do |AutoWriteLock alock (childrenLock());| before acceessing the returned list!
-     */
-//     const SnapshotList &children() const { return dependentChildren(); }
-
-//     ULONG descendantCount();
     ComObjPtr<Snapshot> findChildOrSelf(IN_GUID aId);
     ComObjPtr<Snapshot> findChildOrSelf(IN_BSTR aName);
 

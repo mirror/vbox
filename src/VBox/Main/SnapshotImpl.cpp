@@ -35,7 +35,7 @@
 // private snapshot data
 ////////////////////////////////////////////////////////////////////////////////
 
-typedef std::list< ComPtr<Snapshot> > SnapshotsList;
+typedef std::list< ComObjPtr<Snapshot> > SnapshotsList;
 
 struct Snapshot::Data
 {
@@ -168,6 +168,9 @@ void Snapshot::uninit()
         m->pMachine->uninit();
         m->pMachine.setNull();
     }
+
+    delete m;
+    m = NULL;
 }
 
 /**
@@ -179,7 +182,7 @@ void Snapshot::uninit()
  *  the number of callers to become 0 (it is 1 because of the AutoCaller in here).
  *
  *  NOTE: this does NOT lock the snapshot, it is assumed that the caller has
- *  locked a) the machine, b) the snapshots tree and c) the snapshot (this).
+ *  locked a) the machine and b) the snapshots tree in write mode!
  */
 void Snapshot::beginDiscard()
 {
@@ -213,7 +216,7 @@ void Snapshot::beginDiscard()
     {
         if (m->llChildren.size() == 1)
         {
-            ComPtr<Snapshot> childSnapshot = m->llChildren.front();
+            ComObjPtr<Snapshot> childSnapshot = m->llChildren.front();
             m->pMachine->mData->mFirstSnapshot = childSnapshot;
         }
         else
@@ -225,7 +228,7 @@ void Snapshot::beginDiscard()
          it != m->llChildren.end();
          ++it)
     {
-        ComPtr<Snapshot> child = *it;
+        ComObjPtr<Snapshot> child = *it;
         AutoWriteLock childLock(child);
 
         child->mParent = mParent;
@@ -405,23 +408,30 @@ const Bstr& Snapshot::stateFilePath() const
     return m->pMachine->mSSData->mStateFilePath;
 }
 
+/**
+ * Returns the number of direct child snapshots, without grandchildren.
+ * Does not recurse.
+ * @return
+ */
 ULONG Snapshot::getChildrenCount()
 {
     AutoCaller autoCaller(this);
     AssertComRC(autoCaller.rc());
 
-    AutoReadLock chLock(m->pMachine->snapshotsTreeLockHandle());
-    AutoReadLock alock(this);
-
+    AutoReadLock treeLock(m->pMachine->snapshotsTreeLockHandle());
     return (ULONG)m->llChildren.size();
 }
 
+/**
+ * Implementation method for getAllChildrenCount() so we request the
+ * tree lock only once before recursing. Don't call directly.
+ * @return
+ */
 ULONG Snapshot::getAllChildrenCountImpl()
 {
     AutoCaller autoCaller(this);
     AssertComRC(autoCaller.rc());
 
-    AutoReadLock alock(this);
     ULONG count = (ULONG)m->llChildren.size();
     for (SnapshotsList::const_iterator it = m->llChildren.begin();
          it != m->llChildren.end();
@@ -433,30 +443,55 @@ ULONG Snapshot::getAllChildrenCountImpl()
     return count;
 }
 
+/**
+ * Returns the number of child snapshots including all grandchildren.
+ * Recurses into the snapshots tree.
+ * @return
+ */
 ULONG Snapshot::getAllChildrenCount()
 {
     AutoCaller autoCaller(this);
     AssertComRC(autoCaller.rc());
 
-    AutoReadLock chLock(m->pMachine->snapshotsTreeLockHandle());
+    AutoReadLock treeLock(m->pMachine->snapshotsTreeLockHandle());
     return getAllChildrenCountImpl();
 }
 
+/**
+ * Returns the SnapshotMachine that this snapshot belongs to.
+ * Caller must hold the snapshot's object lock!
+ * @return
+ */
 ComPtr<SnapshotMachine> Snapshot::getSnapshotMachine()
 {
     return (SnapshotMachine*)m->pMachine;
 }
 
+/**
+ * Returns the UUID of this snapshot.
+ * Caller must hold the snapshot's object lock!
+ * @return
+ */
 Guid Snapshot::getId() const
 {
     return m->id;
 }
 
+/**
+ * Returns the name of this snapshot.
+ * Caller must hold the snapshot's object lock!
+ * @return
+ */
 Bstr Snapshot::getName() const
 {
     return m->name;
 }
 
+/**
+ * Returns the time stamp of this snapshot.
+ * Caller must hold the snapshot's object lock!
+ * @return
+ */
 RTTIMESPEC Snapshot::getTimeStamp() const
 {
     return m->timeStamp;
@@ -465,6 +500,7 @@ RTTIMESPEC Snapshot::getTimeStamp() const
 /**
  *  Searches for a snapshot with the given ID among children, grand-children,
  *  etc. of this snapshot. This snapshot itself is also included in the search.
+ *  Caller must hold the snapshots tree lock!
  */
 ComObjPtr<Snapshot> Snapshot::findChildOrSelf(IN_GUID aId)
 {
@@ -480,7 +516,6 @@ ComObjPtr<Snapshot> Snapshot::findChildOrSelf(IN_GUID aId)
     else
     {
         alock.unlock();
-        AutoReadLock chlock(m->pMachine->snapshotsTreeLockHandle());
         for (SnapshotsList::const_iterator it = m->llChildren.begin();
              it != m->llChildren.end();
              ++it)
@@ -497,6 +532,7 @@ ComObjPtr<Snapshot> Snapshot::findChildOrSelf(IN_GUID aId)
  *  Searches for a first snapshot with the given name among children,
  *  grand-children, etc. of this snapshot. This snapshot itself is also included
  *  in the search.
+ *  Caller must hold the snapshots tree lock!
  */
 ComObjPtr<Snapshot> Snapshot::findChildOrSelf(IN_BSTR aName)
 {
@@ -513,7 +549,6 @@ ComObjPtr<Snapshot> Snapshot::findChildOrSelf(IN_BSTR aName)
     else
     {
         alock.unlock();
-        AutoReadLock chlock(m->pMachine->snapshotsTreeLockHandle());
         for (SnapshotsList::const_iterator it = m->llChildren.begin();
              it != m->llChildren.end();
              ++it)
@@ -593,6 +628,8 @@ HRESULT Snapshot::saveSnapshotImpl(settings::Key &aNode, bool aAttrsOnly)
 {
     using namespace settings;
 
+    AutoReadLock alock(this);
+
     /* uuid (required) */
     if (!aAttrsOnly)
         aNode.setValue<Guid>("uuid", m->id);
@@ -634,17 +671,19 @@ HRESULT Snapshot::saveSnapshotImpl(settings::Key &aNode, bool aAttrsOnly)
         /* save hardware */
         {
             Key hwNode = aNode.createKey ("Hardware");
-            HRESULT rc = snapshotMachine->saveHardware (hwNode);
+            HRESULT rc = snapshotMachine->saveHardware(hwNode);
             CheckComRCReturnRC (rc);
         }
 
         /* save hard disks. */
         {
             Key storageNode = aNode.createKey ("StorageControllers");
-            HRESULT rc = snapshotMachine->saveStorageControllers (storageNode);
+            HRESULT rc = snapshotMachine->saveStorageControllers(storageNode);
             CheckComRCReturnRC (rc);
         }
     }
+
+    alock.unlock();
 
     if (m->llChildren.size())
     {
