@@ -309,6 +309,7 @@ void VBoxMiniToolBar::paintEvent (QPaintEvent *aEvent)
 {
     QPainter painter (this);
     painter.fillRect (aEvent->rect(), palette().brush (QPalette::Window));
+    painter.end();
     VBoxToolBar::paintEvent (aEvent);
 }
 
