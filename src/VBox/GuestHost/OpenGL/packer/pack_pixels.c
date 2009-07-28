@@ -17,7 +17,7 @@ void PACK_APIENTRY crPackDrawPixels( GLsizei width, GLsizei height,
                                                                          const CRPixelPackState *unpackstate )
 {
     unsigned char *data_ptr;
-    int packet_length;
+    int packet_length, imagesize;
 
     if (pixels == NULL)
     {
@@ -39,7 +39,15 @@ void PACK_APIENTRY crPackDrawPixels( GLsizei width, GLsizei height,
         sizeof( format ) +
         sizeof( type );
 
-    packet_length += crImageSize( format, type, width, height );
+    imagesize = crImageSize( format, type, width, height );
+
+    if (imagesize<=0)
+    {
+        crDebug("crPackDrawPixels: 0 image size, ignoring");
+        return;
+    }
+
+    packet_length += imagesize;
 
     data_ptr = (unsigned char *) crPackAlloc( packet_length );
     WRITE_DATA( 0, GLsizei, width );
