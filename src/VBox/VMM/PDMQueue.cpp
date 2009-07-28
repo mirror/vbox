@@ -215,7 +215,7 @@ VMMR3DECL(int) PDMR3QueueCreateDevice(PVM pVM, PPDMDEVINS pDevIns, RTUINT cbItem
                                       PFNPDMQUEUEDEV pfnCallback, bool fRZEnabled, const char *pszName, PPDMQUEUE *ppQueue)
 {
     LogFlow(("PDMR3QueueCreateDevice: pDevIns=%p cbItem=%d cItems=%d cMilliesInterval=%d pfnCallback=%p fRZEnabled=%RTbool pszName=%s\n",
-             pDevIns, cbItem, cItems, cMilliesInterval, pfnCallback, fRZEnabled));
+             pDevIns, cbItem, cItems, cMilliesInterval, pfnCallback, fRZEnabled, pszName));
 
     /*
      * Validate input.
