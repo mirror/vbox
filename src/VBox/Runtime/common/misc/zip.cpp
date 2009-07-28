@@ -60,7 +60,7 @@
 # include "lzjb.h"
 #endif
 #ifdef RTZIP_USE_LZO
-#include <lzo/lzo1x.h>
+# include <lzo/lzo1x.h>
 #endif
 
 #include <iprt/zip.h>
@@ -258,7 +258,6 @@ typedef struct RTZIPDECOMP
 
 
 #ifdef RTZIP_USE_STORE
-#include <stdio.h>
 
 /**
  * @copydoc RTZipCompress
@@ -416,7 +415,7 @@ static DECLCALLBACK(int) rtZipStoreDecompInit(PRTZIPDECOMP pZip)
     return VINF_SUCCESS;
 }
 
-#endif
+#endif /* RTZIP_USE_STORE */
 
 
 #ifdef RTZIP_USE_ZLIB
@@ -634,7 +633,7 @@ static DECLCALLBACK(int) rtZipZlibDecompInit(PRTZIPDECOMP pZip)
     return rc >= 0 ? VINF_SUCCESS : zipErrConvertFromZlib(rc);
 }
 
-#endif
+#endif /* RTZIP_USE_ZLIB */
 
 
 #ifdef RTZIP_USE_BZLIB
@@ -857,7 +856,7 @@ static DECLCALLBACK(int) rtZipBZlibDecompInit(PRTZIPDECOMP pZip)
     return rc >= 0 ? VINF_SUCCESS : zipErrConvertFromBZlib(rc);
 }
 
-#endif
+#endif /* RTZIP_USE_BZLIB */
 
 
 #ifdef RTZIP_USE_LZF
@@ -1335,23 +1334,10 @@ RTDECL(int)     RTZipCompCreate(PRTZIPCOMP *ppZip, void *pvUser, PFNRTZIPOUT pfn
     /*
      * Validate input.
      */
-    if (    enmType < RTZIPTYPE_AUTO
-        ||  enmType > RTZIPTYPE_LZF)
-    {
-        AssertMsgFailed(("Invalid enmType=%d\n", enmType));
-        return VERR_INVALID_PARAMETER;
-    }
-    if (    enmLevel < RTZIPLEVEL_STORE
-        ||  enmLevel > RTZIPLEVEL_MAX)
-    {
-        AssertMsgFailed(("Invalid enmLevel=%d\n", enmLevel));
-        return VERR_INVALID_PARAMETER;
-    }
-    if (!pfnOut || !ppZip)
-    {
-        AssertMsgFailed(("Must supply pfnOut and ppZip!\n"));
-        return VERR_INVALID_PARAMETER;
-    }
+    AssertReturn(enmType >= RTZIPTYPE_INVALID && enmType < RTZIPTYPE_END, VERR_INVALID_PARAMETER);
+    AssertReturn(enmLevel >= RTZIPLEVEL_STORE && enmLevel <= RTZIPLEVEL_MAX, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pfnOut, VERR_INVALID_POINTER);
+    AssertPtrReturn(ppZip, VERR_INVALID_POINTER);
 
     /*
      * Allocate memory for the instance data.
@@ -1391,37 +1377,39 @@ RTDECL(int)     RTZipCompCreate(PRTZIPCOMP *ppZip, void *pvUser, PFNRTZIPOUT pfn
     pZip->enmType = enmType;
     pZip->pvUser  = pvUser;
     pZip->abBuffer[0] = enmType;       /* first byte is the compression type. */
-    int rc = VINF_SUCCESS;
+    int rc = VERR_NOT_IMPLEMENTED;
     switch (enmType)
     {
-#ifdef RTZIP_USE_STORE
         case RTZIPTYPE_STORE:
+#ifdef RTZIP_USE_STORE
             rc = rtZipStoreCompInit(pZip, enmLevel);
-            break;
 #endif
+            break;
 
-#ifdef RTZIP_USE_ZLIB
         case RTZIPTYPE_ZLIB:
+#ifdef RTZIP_USE_ZLIB
             rc = rtZipZlibCompInit(pZip, enmLevel);
-            break;
 #endif
+            break;
 
-#ifdef RTZIP_USE_BZLIB
         case RTZIPTYPE_BZLIB:
+#ifdef RTZIP_USE_BZLIB
             rc = rtZipBZlibCompInit(pZip, enmLevel);
-            break;
 #endif
+            break;
 
-#ifdef RTZIP_USE_LZF
         case RTZIPTYPE_LZF:
+#ifdef RTZIP_USE_LZF
             rc = rtZipLZFCompInit(pZip, enmLevel);
-            break;
 #endif
+            break;
+
+        case RTZIPTYPE_LZJB:
+        case RTZIPTYPE_LZO:
+            break;
 
         default:
-            AssertMsgFailed(("Not implemented!\n"));
-            rc = VERR_NOT_IMPLEMENTED;
-            break;
+            AssertFailedBreak();
     }
 
     if (RT_SUCCESS(rc))
@@ -1519,11 +1507,8 @@ RTDECL(int)     RTZipDecompCreate(PRTZIPDECOMP *ppZip, void *pvUser, PFNRTZIPIN 
     /*
      * Validate input.
      */
-    if (!pfnIn || !ppZip)
-    {
-        AssertMsgFailed(("Must supply pfnIn and ppZip!\n"));
-        return VERR_INVALID_PARAMETER;
-    }
+    AssertPtrReturn(pfnIn, VERR_INVALID_POINTER);
+    AssertPtrReturn(ppZip, VERR_INVALID_POINTER);
 
     /*
      * Allocate memory for the instance data.
@@ -1566,19 +1551,22 @@ static int rtzipDecompInit(PRTZIPDECOMP pZip)
      * Determin type and do type specific init.
      */
     pZip->enmType = (RTZIPTYPE)u8Type;
+    rc = VERR_NOT_SUPPORTED;
     switch (pZip->enmType)
     {
-#ifdef RTZIP_USE_STORE
         case RTZIPTYPE_STORE:
+#ifdef RTZIP_USE_STORE
             rc = rtZipStoreDecompInit(pZip);
-            break;
+#else
+            AssertMsgFailed(("Store is not include in this build!\n"));
 #endif
+            break;
 
         case RTZIPTYPE_ZLIB:
 #ifdef RTZIP_USE_ZLIB
             rc = rtZipZlibDecompInit(pZip);
 #else
-            AssertMsgFailedReturn(("Zlib is not include in this build!\n"), VERR_NOT_IMPLEMENTED);
+            AssertMsgFailed(("Zlib is not include in this build!\n"));
 #endif
             break;
 
@@ -1586,7 +1574,7 @@ static int rtzipDecompInit(PRTZIPDECOMP pZip)
 #ifdef RTZIP_USE_BZLIB
             rc = rtZipBZlibDecompInit(pZip);
 #else
-            AssertMsgFailedReturn(("BZlib is not include in this build!\n"), VERR_NOT_IMPLEMENTED);
+            AssertMsgFailed(("BZlib is not include in this build!\n"));
 #endif
             break;
 
@@ -1594,22 +1582,28 @@ static int rtzipDecompInit(PRTZIPDECOMP pZip)
 #ifdef RTZIP_USE_LZF
             rc = rtZipLZFDecompInit(pZip);
 #else
-            AssertMsgFailedReturn(("LZF is not include in this build!\n"), VERR_NOT_IMPLEMENTED);
+            AssertMsgFailed(("LZF is not include in this build!\n"));
 #endif
             break;
 
-        case RTZIPTYPE_INVALID:
-            AssertMsgFailed(("Invalid compression type RTZIPTYPE_INVALID!\n"));
-            rc = VERR_NOT_IMPLEMENTED;
+        case RTZIPTYPE_LZJB:
+#ifdef RTZIP_USE_LZJB
+            AssertMsgFailed(("LZJB streaming support is not implemented yet!\n"));
+#else
+            AssertMsgFailed(("LZJB is not include in this build!\n"));
+#endif
             break;
 
-        case RTZIPTYPE_AUTO:
-            AssertMsgFailed(("Invalid compression type RTZIPTYPE_AUTO!\n"));
-            rc = VERR_INVALID_MAGIC;
+        case RTZIPTYPE_LZO:
+#ifdef RTZIP_USE_LZJB
+            AssertMsgFailed(("LZO streaming support is not implemented yet!\n"));
+#else
+            AssertMsgFailed(("LZO is not include in this build!\n"));
+#endif
             break;
 
         default:
-            AssertMsgFailed(("Unknown compression type %d\n\n", pZip->enmType));
+            AssertMsgFailed(("Invalid compression type %d (%#x)!\n", pZip->enmType, pZip->enmType));
             rc = VERR_INVALID_MAGIC;
             break;
     }
@@ -1621,6 +1615,7 @@ static int rtzipDecompInit(PRTZIPDECOMP pZip)
 
     return rc;
 }
+
 
 /**
  * Decompresses a chunk of memory.
