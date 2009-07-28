@@ -1943,10 +1943,33 @@ static int acpiPlantTables(ACPIState *s)
     return acpiSetupXSDT(s, xsdt_addr + addend, cAddr, xsdt_addrs);
 }
 
+static int acpiUpdatePmHandlers(ACPIState *pThis, RTIOPORT uNewBase)
+{
+    Log(("acpi: rebasing PM 0x%x -> 0x%x\n", pThis->uPmIoPortBase, uNewBase));
+    if (uNewBase != pThis->uPmIoPortBase)
+    {
+        int rc;
+
+        rc = acpiUnregisterPmHandlers(pThis);
+        if (RT_FAILURE(rc))
+            return rc;
+
+        pThis->uPmIoPortBase = uNewBase;
+
+        rc = acpiRegisterPmHandlers(pThis);
+        if (RT_FAILURE(rc))
+            return rc;
+    }
+
+    return VINF_SUCCESS;
+}
+
 static uint32_t acpiPciConfigRead(PPCIDEVICE pPciDev, uint32_t Address, unsigned cb)
 {
     PPDMDEVINS pDevIns = pPciDev->pDevIns;
     ACPIState*  pThis = PDMINS_2_DATA(pDevIns, ACPIState *);
+
+    Log2(("acpi: PCI config read: 0x%x (%d)\n", Address, cb));
 
     return pThis->pfnAcpiPciConfigRead(pPciDev, Address, cb);
 }
@@ -1956,6 +1979,7 @@ static void acpiPciConfigWrite(PPCIDEVICE pPciDev, uint32_t Address, uint32_t u3
     PPDMDEVINS  pDevIns = pPciDev->pDevIns;
     ACPIState  *pThis   = PDMINS_2_DATA(pDevIns, ACPIState *);
 
+    Log2(("acpi: PCI config write: 0x%x -> 0x%x (%d)\n", u32Value, Address, cb));
     pThis->pfnAcpiPciConfigWrite(pPciDev, Address, u32Value, cb);
 
     /* PMREGMISC written */
@@ -1970,16 +1994,8 @@ static void acpiPciConfigWrite(PPCIDEVICE pPciDev, uint32_t Address, uint32_t u3
                     RTIOPORT(RT_LE2H_U32(*(uint32_t*)&pPciDev->config[0x40]));
             uNewBase &= 0xffc0;
 
-            if (uNewBase != pThis->uPmIoPortBase)
-            {
-                rc = acpiUnregisterPmHandlers(pThis);
-                Assert(RT_SUCCESS(rc));
-
-                pThis->uPmIoPortBase = uNewBase;
-
-                rc = acpiRegisterPmHandlers(pThis);
-                Assert(RT_SUCCESS(rc));
-            }
+            rc = acpiUpdatePmHandlers(pThis, uNewBase);
+            Assert(RT_SUCCESS(rc));
         }
     }
 }
@@ -2227,6 +2243,9 @@ static DECLCALLBACK(void) acpiReset(PPDMDEVINS pDevIns)
     s->gpe0_en           = 0;
     s->gpe0_sts          = 0;
     s->uSleepState       = 0;
+
+    /** @todo Should we really reset PM base? */
+    acpiUpdatePmHandlers(s, PM_PORT_BASE);
 
     acpiPlantTables(s);
 }
