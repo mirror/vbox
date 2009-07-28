@@ -75,7 +75,7 @@ DECLINLINE(void) resetlock (spinlock_t *p)
 DECLINLINE(int) testandset (int *p)
 {
 
-    return ASMAtomicCmpXchgU32((uint32_t volatile *)p, 0, 1);
+    return ASMAtomicCmpXchgU32((volatile uint32_t *)p, 1, 0) ? 0 : 1;
 }
 #elif defined(__powerpc__)
 static inline int testandset (int *p)
