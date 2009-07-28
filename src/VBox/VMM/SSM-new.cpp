@@ -98,8 +98,13 @@
  *       - type 0: Invalid.
  *       - type 1: Terminator with CRC-32 and unit size.
  *       - type 2: Raw data record.
- *       - type 3: Named data - length prefixed name followed by the data.
- *       - types 4 thru 15 are current undefined.
+ *       - type 3: Raw data compressed by LZF. The data is prefixed by a 8-bit
+ *                 field countining the length of the uncompressed data given as
+ *                 a page count.
+ *       - type 4: Named data - length prefixed name followed by the data. This
+ *                 type is not implemented yet as we're missing the API part, so
+ *                 the type assignment is tentative.
+ *       - types 5 thru 15 are current undefined.
  *   - bit 4: Important (set), can be skipped (clear).
  *   - bit 5: Undefined flag, must be zero.
  *   - bit 6: Undefined flag, must be zero.
@@ -108,11 +113,9 @@
  * Record header byte 2 (optionally thru 7) is the size of the following data
  * encoded in UTF-8 style.
  *
- * The data part of the unit is compressed using LZF (via RTZip).
- *
- * (In version 1.2 and earlier the unit header also contained the compressed
- * size of the data, i.e.  it was updated after the data was written, and the
- * data was not record based.)
+ * (In version 1.2 and earlier the unit data was compressed and not record
+ * based. The unit header contained the compressed size of the data, i.e. it
+ * needed updating after the data was written.)
  *
  *
  * @section sec_ssm_future          Future Changes
@@ -140,14 +143,15 @@
 #include <VBox/log.h>
 #include <VBox/version.h>
 
-#include <iprt/assert.h>
-#include <iprt/file.h>
 #include <iprt/alloc.h>
-#include <iprt/uuid.h>
-#include <iprt/zip.h>
+#include <iprt/assert.h>
 #include <iprt/crc32.h>
+#include <iprt/file.h>
+#include <iprt/param.h>
 #include <iprt/thread.h>
 #include <iprt/string.h>
+#include <iprt/uuid.h>
+#include <iprt/zip.h>
 
 
 /*******************************************************************************
@@ -198,9 +202,13 @@
 #define SSM_REC_TYPE_TERM                       1
 /** Raw data. The data follows the size field without further ado. */
 #define SSM_REC_TYPE_RAW                        2
+/** Raw data compressed by LZF.
+ * The record header is followed by a 8-bit field containing the size of the
+ * uncompressed data.  The compressed data is after it. */
+#define SSM_REC_TYPE_RAW_LZF                    3
 /** Named data items.
  * A length prefix zero terminated string (i.e. max 255) followed by the data.  */
-#define SSM_REC_TYPE_NAMED                      3
+#define SSM_REC_TYPE_NAMED                      4
 /** Macro for validating the record type.
  * This can be used with the flags+type byte, no need to mask out the type first. */
 #define SSM_REC_TYPE_IS_VALID(u8Type)           (   ((u8Type) & SSM_REC_TYPE_MASK) >  SSM_REC_TYPE_INVALID \
@@ -320,8 +328,6 @@ typedef struct SSMHANDLE
         /** Write data. */
         struct
         {
-            /** The compressor of the current data unit. */
-            PRTZIPCOMP      pZipComp;
             /** Offset into the databuffer. */
             uint32_t        offDataBuffer;
             /** Space for the record header.  */
@@ -333,8 +339,8 @@ typedef struct SSMHANDLE
         /** Read data. */
         struct
         {
-            /** The decompressor of the current data unit. */
-            PRTZIPDECOMP    pZipDecomp;
+            /** V1: The decompressor of the current data unit. */
+            PRTZIPDECOMP    pZipDecompV1;
             /** The major format version number. */
             uint32_t        uFmtVerMajor;
             /** The minor format version number. */
@@ -379,8 +385,13 @@ typedef struct SSMHANDLE
             uint64_t        cbLoadFile;
             /** @} */
 
-            /** V2: Data buffer. */
+            /** V2: Data buffer.
+             * @remarks Be extremely careful when changing the size of this buffer! */
             uint8_t         abDataBuffer[4096];
+
+            /** V2: Decompression buffer.
+             * @todo removed this when we start buffering the stream. */
+            uint8_t         abComprBuffer[4096];
         } Read;
     } u;
 } SSMHANDLE;
@@ -416,8 +427,8 @@ typedef struct SSMFILEHDR
     uint32_t        cUnits;
     /** Flags, see SSMFILEHDR_FLAGS_XXX.  */
     uint32_t        fFlags;
-    /** Reserved header space - must be zero. */
-    uint32_t        u32Reserved;
+    /** The maximum size of decompressed data. */
+    uint32_t        cbMaxDecompr;
     /** The checksum of this header.
      * This field is set to zero when calculating the checksum. */
     uint32_t        u32CRC;
@@ -1529,7 +1540,6 @@ VMMR3DECL(int) SSMR3Save(PVM pVM, const char *pszFilename, SSMAFTER enmAfter, PF
     Handle.uPercentDone     = 2;
     Handle.fChecksummed     = true;
     Handle.u32StreamCRC     = RTCrc32Start();
-    Handle.u.Write.pZipComp         = NULL;
     Handle.u.Write.offDataBuffer    = 0;
 
     int rc = RTFileOpen(&Handle.hFile, pszFilename, RTFILE_O_READWRITE | RTFILE_O_CREATE_REPLACE | RTFILE_O_DENY_WRITE);
@@ -1562,7 +1572,7 @@ VMMR3DECL(int) SSMR3Save(PVM pVM, const char *pszFilename, SSMAFTER enmAfter, PF
     u.FileHdr.u8Reserved   = 0;
     u.FileHdr.cUnits       = pVM->ssm.s.cUnits;
     u.FileHdr.fFlags       = SSMFILEHDR_FLAGS_STREAM_CRC32;
-    u.FileHdr.u32Reserved  = 0;
+    u.FileHdr.cbMaxDecompr = RT_SIZEOFMEMB(SSMHANDLE, u.Read.abDataBuffer);
     u.FileHdr.u32CRC       = 0;
     u.FileHdr.u32CRC       = RTCrc32(&u.FileHdr, sizeof(u.FileHdr));
     rc = ssmR3StrmWrite(&Handle, &u.FileHdr, sizeof(u.FileHdr));
@@ -1828,8 +1838,6 @@ VMMR3DECL(int) SSMR3Save(PVM pVM, const char *pszFilename, SSMAFTER enmAfter, PF
     AssertRC(rc2);
     rc2 = RTFileDelete(pszFilename);
     AssertRC(rc2);
-    if (Handle.u.Write.pZipComp)
-        RTZipCompDestroy(Handle.u.Write.pZipComp);
 
     return rc;
 }
@@ -1948,15 +1956,21 @@ static int ssmR3ValidateFile(PSSMHANDLE pSSM, bool fChecksumIt, bool fChecksumOn
         {
             /* validate the header. */
             SSM_CHECK_CRC32_RET(&uHdr.v2_0, sizeof(uHdr.v2_0), ("Header CRC mismatch: %08x, correct is %08x\n", u32CRC, u32ActualCRC));
-            if (    uHdr.v2_0.u8Reserved
-                ||  uHdr.v2_0.u32Reserved)
+            if (uHdr.v2_0.u8Reserved)
             {
-                LogRel(("SSM: Reserved header fields aren't zero: %02x %08x\n", uHdr.v2_0.u8Reserved, uHdr.v2_0.u32Reserved));
+                LogRel(("SSM: Reserved header field isn't zero: %02x\n", uHdr.v2_0.u8Reserved));
                 return VERR_SSM_INTEGRITY;
             }
             if ((uHdr.v2_0.fFlags & ~SSMFILEHDR_FLAGS_STREAM_CRC32))
             {
                 LogRel(("SSM: Unknown header flags: %08x\n", uHdr.v2_0.fFlags));
+                return VERR_SSM_INTEGRITY;
+            }
+            if (    uHdr.v2_0.cbMaxDecompr > sizeof(pSSM->u.Read.abDataBuffer)
+                ||  uHdr.v2_0.cbMaxDecompr < PAGE_SIZE
+                ||  (uHdr.v2_0.cbMaxDecompr & 0xff) != 0)
+            {
+                LogRel(("SSM: The cbMaxDecompr header field is out of range: %#x\n", uHdr.v2_0.cbMaxDecompr));
                 return VERR_SSM_INTEGRITY;
             }
 
@@ -2192,7 +2206,7 @@ static int ssmR3OpenFile(PVM pVM, const char *pszFilename, bool fChecksumIt, boo
     pSSM->fChecksummed     = fChecksumOnRead;
     pSSM->u32StreamCRC     = 0;
 
-    pSSM->u.Read.pZipDecomp     = NULL;
+    pSSM->u.Read.pZipDecompV1   = NULL;
     pSSM->u.Read.uFmtVerMajor   = UINT32_MAX;
     pSSM->u.Read.uFmtVerMinor   = UINT32_MAX;
     pSSM->u.Read.cbFileHdr      = UINT32_MAX;
@@ -2838,10 +2852,10 @@ VMMR3DECL(int) SSMR3Close(PSSMHANDLE pSSM)
      */
     int rc = RTFileClose(pSSM->hFile);
     AssertRC(rc);
-    if (pSSM->u.Read.pZipDecomp)
+    if (pSSM->u.Read.pZipDecompV1)
     {
-        RTZipDecompDestroy(pSSM->u.Read.pZipDecomp);
-        pSSM->u.Read.pZipDecomp = NULL;
+        RTZipDecompDestroy(pSSM->u.Read.pZipDecompV1);
+        pSSM->u.Read.pZipDecompV1 = NULL;
     }
     RTMemFree(pSSM);
     return rc;
@@ -3069,10 +3083,10 @@ VMMR3DECL(int) SSMR3Seek(PSSMHANDLE pSSM, const char *pszUnit, uint32_t iInstanc
     /*
      * Reset the state.
      */
-    if (pSSM->u.Read.pZipDecomp)
+    if (pSSM->u.Read.pZipDecompV1)
     {
-        RTZipDecompDestroy(pSSM->u.Read.pZipDecomp);
-        pSSM->u.Read.pZipDecomp = NULL;
+        RTZipDecompDestroy(pSSM->u.Read.pZipDecompV1);
+        pSSM->u.Read.pZipDecompV1 = NULL;
     }
     pSSM->cbUnitLeftV1  = 0;
     pSSM->offUnit       = UINT64_MAX;
@@ -3100,41 +3114,12 @@ static int ssmR3DataWriteFinish(PSSMHANDLE pSSM)
     //Log2(("ssmR3DataWriteFinish: %#010llx start\n", RTFileTell(pSSM->File)));
     int rc = ssmR3DataFlushBuffer(pSSM);
     if (RT_SUCCESS(rc))
-    {
-        if (!pSSM->u.Write.pZipComp)
-            return VINF_SUCCESS;
-
-        int rc = RTZipCompFinish(pSSM->u.Write.pZipComp);
-        if (RT_SUCCESS(rc))
-        {
-            rc = RTZipCompDestroy(pSSM->u.Write.pZipComp);
-            if (RT_SUCCESS(rc))
-            {
-                pSSM->u.Write.pZipComp = NULL;
-                //Log2(("ssmR3DataWriteFinish: %#010llx done\n", RTFileTell(pSSM->File)));
-                return VINF_SUCCESS;
-            }
-        }
-    }
+        return VINF_SUCCESS;
 
     if (RT_SUCCESS(pSSM->rc))
         pSSM->rc = rc;
     Log2(("ssmR3DataWriteFinish: failure rc=%Rrc\n", rc));
     return rc;
-}
-
-
-/**
- * Callback for flusing the output buffer of a compression stream.
- *
- * @returns VBox status.
- * @param   pSSM            The saved state handle.
- * @param   pvBuf           Compressed data.
- * @param   cbBuf           Size of the compressed data.
- */
-static DECLCALLBACK(int) ssmR3WriteOut(void *pvSSM, const void *pvBuf, size_t cbBuf)
-{
-    return ssmR3StrmWrite((PSSMHANDLE)pvSSM, pvBuf, cbBuf);
 }
 
 
@@ -3147,18 +3132,9 @@ static DECLCALLBACK(int) ssmR3WriteOut(void *pvSSM, const void *pvBuf, size_t cb
  */
 static void ssmR3DataWriteBegin(PSSMHANDLE pSSM)
 {
-    Assert(!pSSM->u.Write.pZipComp);
-
-    pSSM->u.Write.pZipComp  = NULL;
     pSSM->offUnit           = 0;
     if (pSSM->fUnitChecksummed)
         pSSM->u32UnitCRC    = RTCrc32Start();
-
-    //int rc = RTZipCompCreate(&pSSM->u.Write.pZipComp, pSSM, ssmR3WriteOut, RTZIPTYPE_ZLIB, RTZIPLEVEL_FAST);
-    int rc = RTZipCompCreate(&pSSM->u.Write.pZipComp, pSSM, ssmR3WriteOut, RTZIPTYPE_LZF, RTZIPLEVEL_FAST);
-    //int rc = RTZipCompCreate(&pSSM->u.Write.pZipComp, pSSM, ssmR3WriteOut, RTZIPTYPE_STORE, RTZIPLEVEL_FAST);
-    if (RT_FAILURE(rc) && RT_SUCCESS(pSSM->rc))
-        pSSM->rc = rc;
 }
 
 
@@ -3172,7 +3148,8 @@ static void ssmR3DataWriteBegin(PSSMHANDLE pSSM)
  */
 static int ssmR3DataWriteRaw(PSSMHANDLE pSSM, const void *pvBuf, size_t cbBuf)
 {
-    Log2(("ssmR3DataWriteRaw: %08llx: pvBuf=%p cbBuf=%#x %.*Rhxs%s\n", pSSM->offUnit, pvBuf, cbBuf, RT_MIN(cbBuf, SSM_LOG_BYTES), pvBuf, cbBuf > SSM_LOG_BYTES ? "..." : ""));
+    Log2(("ssmR3DataWriteRaw: %08llx|%08llx: pvBuf=%p cbBuf=%#x %.*Rhxs%s\n",
+          ssmR3StrmTell(pSSM), pSSM->offUnit, pvBuf, cbBuf, RT_MIN(cbBuf, SSM_LOG_BYTES), pvBuf, cbBuf > SSM_LOG_BYTES ? "..." : ""));
 
     /*
      * Check that everything is fine.
@@ -3192,7 +3169,7 @@ static int ssmR3DataWriteRaw(PSSMHANDLE pSSM, const void *pvBuf, size_t cbBuf)
     while (cbBuf > 0)
     {
         size_t cbChunk = RT_MIN(cbBuf, _1M);
-        int rc = pSSM->rc = RTZipCompress(pSSM->u.Write.pZipComp, pvBuf, cbChunk);
+        int rc = ssmR3StrmWrite(pSSM, pvBuf, cbChunk);
         if (RT_FAILURE(rc))
             return rc;
         ssmR3Progress(pSSM, cbChunk);
@@ -3203,6 +3180,7 @@ static int ssmR3DataWriteRaw(PSSMHANDLE pSSM, const void *pvBuf, size_t cbBuf)
 
     return VINF_SUCCESS;
 }
+
 
 /**
  * Writes a record header for the specified amount of data.
@@ -3265,8 +3243,8 @@ static int ssmR3DataWriteRecHdr(PSSMHANDLE pSSM, size_t cb, uint8_t u8TypeAndFla
     else
         AssertLogRelMsgFailedReturn(("cb=%#x\n", cb), pSSM->rc = VERR_INTERNAL_ERROR);
 
-    Log3(("ssmR3DataWriteRecHdr: %08llx/%08x: Type=%02x fImportant=%RTbool cbHdr=%u\n",
-          pSSM->offUnit + cbHdr, cb, u8TypeAndFlags & SSM_REC_TYPE_MASK, !!(u8TypeAndFlags & SSM_REC_FLAGS_IMPORTANT), cbHdr));
+    Log3(("ssmR3DataWriteRecHdr: %08llx|%08llx/%08x: Type=%02x fImportant=%RTbool cbHdr=%u\n",
+          ssmR3StrmTell(pSSM) + cbHdr, pSSM->offUnit + cbHdr, cb, u8TypeAndFlags & SSM_REC_TYPE_MASK, !!(u8TypeAndFlags & SSM_REC_FLAGS_IMPORTANT), cbHdr));
 
     return ssmR3DataWriteRaw(pSSM, &abHdr[0], cbHdr);
 }
@@ -3344,8 +3322,8 @@ static int ssmR3DataFlushBuffer(PSSMHANDLE pSSM)
         AssertLogRelMsgFailedReturn(("cb=%#x\n", cb), VERR_INTERNAL_ERROR);
     pbHdr[0] = SSM_REC_FLAGS_FIXED | SSM_REC_FLAGS_IMPORTANT | SSM_REC_TYPE_RAW;
 
-    Log3(("ssmR3DataFlushBuffer: %08llx/%08x: Type=RAW fImportant=true cbHdr=%u\n",
-          pSSM->offUnit + (cbTotal - cb), cb, (cbTotal - cb) ));
+    Log3(("ssmR3DataFlushBuffer: %08llx|%08llx/%08x: Type=RAW fImportant=true cbHdr=%u\n",
+          ssmR3StrmTell(pSSM) + (cbTotal - cb), pSSM->offUnit + (cbTotal - cb), cb, (cbTotal - cb) ));
 
     /*
      * Write it and reset the buffer.
@@ -3369,12 +3347,63 @@ static int ssmR3DataWriteBig(PSSMHANDLE pSSM, const void *pvBuf, size_t cbBuf)
     int rc = ssmR3DataFlushBuffer(pSSM);
     if (RT_SUCCESS(rc))
     {
-        rc = ssmR3DataWriteRecHdr(pSSM, cbBuf, SSM_REC_FLAGS_FIXED | SSM_REC_FLAGS_IMPORTANT | SSM_REC_TYPE_RAW);
-        if (RT_SUCCESS(rc))
-            rc = ssmR3DataWriteRaw(pSSM, pvBuf, cbBuf);
+        /*
+         * Compress it if it's a page or more in size.
+         */
+        for (;;)
+        {
+            if (cbBuf >= PAGE_SIZE)
+            {
+                struct
+                {
+                    uint8_t     cPages;
+                    uint8_t     abCompr[PAGE_SIZE - (PAGE_SIZE / 16)];
+                } s;
+                AssertCompile(sizeof(s) == PAGE_SIZE - (PAGE_SIZE / 16) + sizeof(uint8_t));
+
+                size_t cbCompr;
+                rc = RTZipBlockCompress(RTZIPTYPE_LZF, RTZIPLEVEL_FAST, 0 /*fFlags*/,
+                                        pvBuf, PAGE_SIZE,
+                                        &s.abCompr[0], sizeof(s.abCompr), &cbCompr);
+                if (RT_SUCCESS(rc))
+                {
+                    cbCompr += sizeof(s.cPages);
+                    s.cPages = 1;
+                    rc = ssmR3DataWriteRecHdr(pSSM, cbCompr, SSM_REC_FLAGS_FIXED | SSM_REC_FLAGS_IMPORTANT | SSM_REC_TYPE_RAW_LZF);
+                    if (RT_FAILURE(rc))
+                        return rc;
+                    rc = ssmR3DataWriteRaw(pSSM, &s, cbCompr);
+                    if (RT_FAILURE(rc))
+                        return rc;
+                }
+                else
+                {
+                    /* Didn't compress very well, store it. */
+                    rc = ssmR3DataWriteRecHdr(pSSM, PAGE_SIZE, SSM_REC_FLAGS_FIXED | SSM_REC_FLAGS_IMPORTANT | SSM_REC_TYPE_RAW);
+                    if (RT_FAILURE(rc))
+                        return rc;
+                    rc = ssmR3DataWriteRaw(pSSM, pvBuf, PAGE_SIZE);
+                    if (RT_FAILURE(rc))
+                        return rc;
+                }
+                if (cbBuf == PAGE_SIZE)
+                    return VINF_SUCCESS;
+                cbBuf -= PAGE_SIZE;
+                pvBuf = (uint8_t const*)pvBuf + PAGE_SIZE;
+            }
+            else
+            {
+                /* Less than one page, just store it. */
+                rc = ssmR3DataWriteRecHdr(pSSM, cbBuf, SSM_REC_FLAGS_FIXED | SSM_REC_FLAGS_IMPORTANT | SSM_REC_TYPE_RAW);
+                if (RT_SUCCESS(rc))
+                    rc = ssmR3DataWriteRaw(pSSM, pvBuf, cbBuf);
+                return rc;
+            }
+        }
     }
     return rc;
 }
+
 
 /**
  * ssmR3DataWrite worker that is called when there isn't enough room in the
@@ -3886,11 +3915,11 @@ VMMR3DECL(int) SSMR3PutStrZ(PSSMHANDLE pSSM, const char *psz)
  */
 static void ssmR3DataReadFinishV1(PSSMHANDLE pSSM)
 {
-    if (pSSM->u.Read.pZipDecomp)
+    if (pSSM->u.Read.pZipDecompV1)
     {
-        int rc = RTZipDecompDestroy(pSSM->u.Read.pZipDecomp);
+        int rc = RTZipDecompDestroy(pSSM->u.Read.pZipDecompV1);
         AssertRC(rc);
-        pSSM->u.Read.pZipDecomp = NULL;
+        pSSM->u.Read.pZipDecompV1 = NULL;
     }
 }
 
@@ -3945,9 +3974,9 @@ static int ssmR3DataReadV1(PSSMHANDLE pSSM, void *pvBuf, size_t cbBuf)
     /*
      * Open the decompressor on the first read.
      */
-    if (!pSSM->u.Read.pZipDecomp)
+    if (!pSSM->u.Read.pZipDecompV1)
     {
-        pSSM->rc = RTZipDecompCreate(&pSSM->u.Read.pZipDecomp, pSSM, ssmR3ReadInV1);
+        pSSM->rc = RTZipDecompCreate(&pSSM->u.Read.pZipDecompV1, pSSM, ssmR3ReadInV1);
         if (RT_FAILURE(pSSM->rc))
             return pSSM->rc;
     }
@@ -3955,7 +3984,7 @@ static int ssmR3DataReadV1(PSSMHANDLE pSSM, void *pvBuf, size_t cbBuf)
     /*
      * Do the requested read.
      */
-    int rc = pSSM->rc = RTZipDecompress(pSSM->u.Read.pZipDecomp, pvBuf, cbBuf, NULL);
+    int rc = pSSM->rc = RTZipDecompress(pSSM->u.Read.pZipDecompV1, pvBuf, cbBuf, NULL);
     if (RT_SUCCESS(rc))
     {
         Log2(("ssmR3DataRead: pvBuf=%p cbBuf=%#x offUnit=%#llx %.*Rhxs%s\n", pvBuf, cbBuf, pSSM->offUnit, RT_MIN(cbBuf, SSM_LOG_BYTES), pvBuf, cbBuf > SSM_LOG_BYTES ? "..." : ""));
@@ -3968,35 +3997,6 @@ static int ssmR3DataReadV1(PSSMHANDLE pSSM, void *pvBuf, size_t cbBuf)
 
 
 /**
- * Callback for reading compressed data into the input buffer of the
- * decompressor, for saved file format version 2.
- *
- * @returns VBox status code.
- * @param   pvSSM       The SSM handle.
- * @param   pvBuf       Where to store the compressed data.
- * @param   cbBuf       Size of the buffer.
- * @param   pcbRead     Number of bytes actually stored in the buffer.
- */
-static DECLCALLBACK(int) ssmR3ReadInV2(void *pvSSM, void *pvBuf, size_t cbBuf, size_t *pcbRead)
-{
-    PSSMHANDLE  pSSM   = (PSSMHANDLE)pvSSM;
-    //Log2(("ssmR3ReadInV2: %#010llx cbBug=%#x cbRead=%#x\n", RTFileTell(pSSM->hFile), cbBuf, cbRead));
-    int rc = ssmR3StrmRead(pSSM, pvBuf, cbBuf);
-    if (RT_SUCCESS(rc))
-    {
-        if (pcbRead)
-            *pcbRead = cbBuf;
-        ssmR3Progress(pSSM, cbBuf);
-        return VINF_SUCCESS;
-    }
-    /** @todo weed out lazy saving */
-    if (pSSM->enmAfter != SSMAFTER_DEBUG_IT)
-        AssertMsgFailed(("SSM: attempted reading more than the unit!\n"));
-    return VERR_SSM_LOADED_TOO_MUCH;
-}
-
-
-/**
  * Creates the decompressor for the data unit.
  *
  * pSSM->rc will be set on error.
@@ -4005,21 +4005,15 @@ static DECLCALLBACK(int) ssmR3ReadInV2(void *pvSSM, void *pvBuf, size_t cbBuf, s
  */
 static void ssmR3DataReadBeginV2(PSSMHANDLE pSSM)
 {
-    Assert(!pSSM->u.Read.pZipDecomp);
     Assert(!pSSM->u.Read.cbDataBuffer || pSSM->u.Read.cbDataBuffer == pSSM->u.Read.offDataBuffer);
     Assert(!pSSM->u.Read.cbRecLeft);
 
     pSSM->offUnit = 0;
-    pSSM->u.Read.pZipDecomp     = NULL;
     pSSM->u.Read.cbRecLeft      = 0;
     pSSM->u.Read.cbDataBuffer   = 0;
     pSSM->u.Read.offDataBuffer  = 0;
     pSSM->u.Read.fEndOfData     = false;
     pSSM->u.Read.u8TypeAndFlags = 0;
-
-    int rc = RTZipDecompCreate(&pSSM->u.Read.pZipDecomp, pSSM, ssmR3ReadInV2);
-    if (RT_FAILURE(rc) && RT_SUCCESS(pSSM->rc))
-        pSSM->rc = rc;
 }
 
 
@@ -4032,12 +4026,6 @@ static void ssmR3DataReadBeginV2(PSSMHANDLE pSSM)
  */
 static void ssmR3DataReadFinishV2(PSSMHANDLE pSSM)
 {
-    if (RT_UNLIKELY(!pSSM->u.Read.pZipDecomp))
-    {
-        Assert(RT_FAILURE_NP(pSSM->rc));
-        return;
-    }
-
     /*
      * If we haven't encountered the end of the record, it must be the next one.
      */
@@ -4050,18 +4038,6 @@ static void ssmR3DataReadFinishV2(PSSMHANDLE pSSM)
             rc = VERR_SSM_LOADED_TOO_MUCH; /** @todo More error codes! */
         pSSM->rc = rc;
     }
-
-    /*
-     * Destroy the decompressor.
-     */
-    int rc = RTZipDecompDestroy(pSSM->u.Read.pZipDecomp);
-    if (RT_FAILURE(rc))
-    {
-        AssertRC(rc);
-        if (RT_SUCCESS(pSSM->rc))
-            pSSM->rc = rc;
-    }
-    pSSM->u.Read.pZipDecomp = NULL;
 }
 
 
@@ -4078,13 +4054,88 @@ static void ssmR3DataReadFinishV2(PSSMHANDLE pSSM)
  */
 DECLINLINE(int) ssmR3DataReadV2Raw(PSSMHANDLE pSSM, void *pvBuf, size_t cbToRead)
 {
-    int rc = RTZipDecompress(pSSM->u.Read.pZipDecomp, pvBuf, cbToRead, NULL);
+    /** @todo buffered reads! (at some level or another) */
+    int rc = ssmR3StrmRead(pSSM, pvBuf, cbToRead);
+    if (RT_SUCCESS(rc))
+    {
+        pSSM->offUnit += cbToRead;
+        if (pSSM->fUnitChecksummed)
+            pSSM->u32UnitCRC = RTCrc32Process(pSSM->u32UnitCRC, pvBuf, cbToRead);
+
+        ssmR3Progress(pSSM, cbToRead);
+        return VINF_SUCCESS;
+    }
+
+    /** @todo weed out lazy saving */
+    if (pSSM->enmAfter != SSMAFTER_DEBUG_IT)
+        AssertMsgFailed(("SSM: attempted reading more than the unit!\n"));
+    return VERR_SSM_LOADED_TOO_MUCH;
+}
+
+
+/**
+ * Reads and checks the LZF "header".
+ *
+ * @returns VBox status code.
+ * @param   pSSM            The saved state handle..
+ * @param   pcbDecompr      Where to store the size of the decompressed data.
+ */
+DECLINLINE(int) ssmR3DataReadV2RawLzfHdr(PSSMHANDLE pSSM, size_t *pcbDecompr)
+{
+    *pcbDecompr = 0; /* shuts up gcc. */
+    AssertLogRelMsgReturn(   pSSM->u.Read.cbRecLeft > 1
+                          && pSSM->u.Read.cbRecLeft <= RT_SIZEOFMEMB(SSMHANDLE, u.Read.abComprBuffer) + 2,
+                          ("%#x\n", pSSM->u.Read.cbRecLeft),
+                          VERR_SSM_INTEGRITY);
+
+/** @todo this isn't very efficient, we know we have to read it all, so both
+ *        reading the first byte separately.  */
+    uint8_t cPages;
+    int rc = ssmR3DataReadV2Raw(pSSM, &cPages, 1);
     if (RT_FAILURE(rc))
         return rc;
-    pSSM->offUnit += cbToRead;
-    if (pSSM->fUnitChecksummed)
-        pSSM->u32UnitCRC = RTCrc32Process(pSSM->u32UnitCRC, pvBuf, cbToRead);
+    pSSM->u.Read.cbRecLeft -= sizeof(cPages);
+
+    size_t cbDecompr = (size_t)cPages * PAGE_SIZE;
+    AssertLogRelMsgReturn(   cbDecompr >= pSSM->u.Read.cbRecLeft
+                          && cbDecompr <= RT_SIZEOFMEMB(SSMHANDLE, u.Read.abDataBuffer),
+                          ("%#x\n", cbDecompr),
+                          VERR_SSM_INTEGRITY);
+
+    *pcbDecompr = cbDecompr;
     return VINF_SUCCESS;
+}
+
+
+/**
+ * Reads an LZF block from the stream and decompresses into the specified
+ * buffer.
+ *
+ * @returns VBox status code.
+ * @param   SSM             The saved state handle.
+ * @param   pvDst           Pointer to the output buffer.
+ * @param   cbDecompr       The size of the decompressed data.
+ */
+static int ssmR3DataReadV2RawLzf(PSSMHANDLE pSSM, void *pvDst, size_t cbDecompr)
+{
+    /** @todo optimize this wrt to stream buffering when that is added. */
+    uint32_t cbCompr = pSSM->u.Read.cbRecLeft;
+    pSSM->u.Read.cbRecLeft = 0;
+
+    int rc = ssmR3DataReadV2Raw(pSSM, &pSSM->u.Read.abComprBuffer[0], cbCompr);
+    if (RT_SUCCESS(rc))
+    {
+        size_t cbDstActual;
+        rc = RTZipBlockDecompress(RTZIPTYPE_LZF, 0 /*fFlags*/,
+                                  &pSSM->u.Read.abComprBuffer[0], cbCompr, NULL /*pcbSrcActual*/,
+                                  pvDst, cbDecompr, &cbDstActual);
+        if (RT_SUCCESS(rc))
+        {
+            AssertLogRelMsgReturn(cbDstActual == cbDecompr, ("%#x %#x\n", cbDstActual, cbDecompr), VERR_SSM_INTEGRITY);
+            return VINF_SUCCESS;
+        }
+    }
+    return rc;
 }
 
 
@@ -4143,7 +4194,7 @@ static int ssmR3DataReadRecHdrV2(PSSMHANDLE pSSM)
             AssertLogRelMsgReturn(TermRec.u32CRC == u32UnitCRC, ("%#x, %#x\n", TermRec.u32CRC, u32UnitCRC), VERR_SSM_INTEGRITY_CRC);
         }
 
-        Log3(("ssmR3DataReadRecHdrV2: %08llx: TERM\n", pSSM->offUnit));
+        Log3(("ssmR3DataReadRecHdrV2: %08llx|%08llx: TERM\n", ssmR3StrmTell(pSSM) - sizeof(SSMRECTERM), pSSM->offUnit));
         return VINF_SUCCESS;
     }
 
@@ -4177,7 +4228,6 @@ static int ssmR3DataReadRecHdrV2(PSSMHANDLE pSSM)
         rc = ssmR3DataReadV2Raw(pSSM, &abHdr[2], cb - 1);
         if (RT_FAILURE(rc))
             return rc;
-Log(("ssmR3DataReadRecHdrV2: cb=%u %.*Rhxs\n", cb, cb + 1, abHdr));
 
         /*
          * Validate what we've read.
@@ -4246,8 +4296,8 @@ Log(("ssmR3DataReadRecHdrV2: cb=%u %.*Rhxs\n", cb, cb + 1, abHdr));
         pSSM->u.Read.cbRecLeft = cb;
     }
 
-    Log3(("ssmR3DataReadRecHdrV2: %08llx/%08x: Type=%02x fImportant=%RTbool cbHdr=%u\n",
-          pSSM->offUnit, pSSM->u.Read.cbRecLeft,
+    Log3(("ssmR3DataReadRecHdrV2: %08llx|%08llx/%08x: Type=%02x fImportant=%RTbool cbHdr=%u\n",
+          ssmR3StrmTell(pSSM), pSSM->offUnit, pSSM->u.Read.cbRecLeft,
           pSSM->u.Read.u8TypeAndFlags & SSM_REC_TYPE_MASK,
           !!(pSSM->u.Read.u8TypeAndFlags & SSM_REC_FLAGS_IMPORTANT),
           cbHdr
@@ -4273,7 +4323,7 @@ static int ssmR3DataReadUnbufferedV2(PSSMHANDLE pSSM, void *pvBuf, size_t cbBuf)
      */
     uint32_t off        = pSSM->u.Read.offDataBuffer;
     int32_t  cbInBuffer = pSSM->u.Read.cbDataBuffer - off;
-    Log4(("ssmR3DataReadUnbufferedV2: %08llx/%08x/%08x: cbBuf=%#x\n", pSSM->offUnit, pSSM->u.Read.cbRecLeft, cbInBuffer, cbBufOrg));
+    Log4(("ssmR3DataReadUnbufferedV2: %08llx|%08llx/%08x/%08x: cbBuf=%#x\n", ssmR3StrmTell(pSSM), pSSM->offUnit, pSSM->u.Read.cbRecLeft, cbInBuffer, cbBufOrg));
     if (cbInBuffer > 0)
     {
         uint32_t const cbToCopy = (uint32_t)cbInBuffer;
@@ -4304,17 +4354,56 @@ static int ssmR3DataReadUnbufferedV2(PSSMHANDLE pSSM, void *pvBuf, size_t cbBuf)
         /*
          * Read data from the current record.
          */
-        size_t cbToRead = RT_MIN(cbBuf, pSSM->u.Read.cbRecLeft);
-        int rc = ssmR3DataReadV2Raw(pSSM, pvBuf, cbToRead);
-        if (RT_FAILURE(rc))
-            return pSSM->rc = rc;
-        pSSM->u.Read.cbRecLeft -= cbToRead;
+        size_t cbToRead;
+        switch (pSSM->u.Read.u8TypeAndFlags & SSM_REC_TYPE_MASK)
+        {
+            case SSM_REC_TYPE_RAW:
+            {
+                cbToRead = RT_MIN(cbBuf, pSSM->u.Read.cbRecLeft);
+                int rc = ssmR3DataReadV2Raw(pSSM, pvBuf, cbToRead);
+                if (RT_FAILURE(rc))
+                    return pSSM->rc = rc;
+                pSSM->u.Read.cbRecLeft -= cbToRead;
+                break;
+            }
+
+            case SSM_REC_TYPE_RAW_LZF:
+            {
+                size_t cbDecompr;
+                int rc = ssmR3DataReadV2RawLzfHdr(pSSM, &cbDecompr);
+                if (RT_FAILURE(rc))
+                    return rc;
+                if (cbBuf >= cbDecompr)
+                {
+                    cbToRead = cbDecompr;
+                    rc = ssmR3DataReadV2RawLzf(pSSM, pvBuf, cbDecompr);
+                    if (RT_FAILURE(rc))
+                        return rc;
+                }
+                else
+                {
+                    /* output buffer is too small, use the data buffer. */
+                    rc = ssmR3DataReadV2RawLzf(pSSM, &pSSM->u.Read.abDataBuffer[0], cbDecompr);
+                    if (RT_FAILURE(rc))
+                        return rc;
+                    memcpy(pvBuf, &pSSM->u.Read.abDataBuffer[0], cbBuf);
+                    pSSM->u.Read.cbDataBuffer = cbDecompr;
+                    pSSM->u.Read.offDataBuffer = cbBuf;
+                    cbToRead = cbBuf;
+                }
+                break;
+            }
+
+            default:
+                AssertMsgFailedReturn(("%x\n", pSSM->u.Read.u8TypeAndFlags), VERR_INTERNAL_ERROR_5);
+        }
+
         cbBuf -= cbToRead;
         pvBuf = (uint8_t *)pvBuf + cbToRead;
     } while (cbBuf > 0);
 
-    Log4(("ssmR3DataReadUnBufferedV2: %08llx/%08x/%08x: cbBuf=%#x %.*Rhxs%s\n",
-          pSSM->offUnit, pSSM->u.Read.cbRecLeft, 0, cbBufOrg, RT_MIN(SSM_LOG_BYTES, cbBufOrg), pvBufOrg, cbBufOrg > SSM_LOG_BYTES ? "..." : ""));
+    Log4(("ssmR3DataReadUnBufferedV2: %08llx|%08llx/%08x/%08x: cbBuf=%#x %.*Rhxs%s\n",
+          ssmR3StrmTell(pSSM), pSSM->offUnit, pSSM->u.Read.cbRecLeft, 0, cbBufOrg, RT_MIN(SSM_LOG_BYTES, cbBufOrg), pvBufOrg, cbBufOrg > SSM_LOG_BYTES ? "..." : ""));
     return VINF_SUCCESS;
 }
 
@@ -4336,7 +4425,7 @@ static int ssmR3DataReadBufferedV2(PSSMHANDLE pSSM, void *pvBuf, size_t cbBuf)
      */
     uint32_t off        = pSSM->u.Read.offDataBuffer;
     int32_t  cbInBuffer = pSSM->u.Read.cbDataBuffer - off;
-    Log4(("ssmR3DataReadBufferedV2: %08llx/%08x/%08x: cbBuf=%#x\n", pSSM->offUnit, pSSM->u.Read.cbRecLeft, cbInBuffer, cbBufOrg));
+    Log4(("ssmR3DataReadBufferedV2: %08llx|%08llx/%08x/%08x: cbBuf=%#x\n", ssmR3StrmTell(pSSM), pSSM->offUnit, pSSM->u.Read.cbRecLeft, cbInBuffer, cbBufOrg));
     if (cbInBuffer > 0)
     {
         uint32_t const cbToCopy = (uint32_t)cbInBuffer;
@@ -4368,12 +4457,37 @@ static int ssmR3DataReadBufferedV2(PSSMHANDLE pSSM, void *pvBuf, size_t cbBuf)
          * Read data from the current record.
          * LATER: optimize by reading directly into the output buffer for some cases.
          */
-        size_t cbToRead = RT_MIN(sizeof(pSSM->u.Read.abDataBuffer), pSSM->u.Read.cbRecLeft);
-        int rc = ssmR3DataReadV2Raw(pSSM, &pSSM->u.Read.abDataBuffer[0], cbToRead);
-        if (RT_FAILURE(rc))
-            return pSSM->rc = rc;
-        pSSM->u.Read.cbRecLeft -= cbToRead;
-        pSSM->u.Read.cbDataBuffer = cbToRead;
+        size_t cbToRead;
+        switch (pSSM->u.Read.u8TypeAndFlags & SSM_REC_TYPE_MASK)
+        {
+            case SSM_REC_TYPE_RAW:
+            {
+                cbToRead = RT_MIN(sizeof(pSSM->u.Read.abDataBuffer), pSSM->u.Read.cbRecLeft);
+                int rc = ssmR3DataReadV2Raw(pSSM, &pSSM->u.Read.abDataBuffer[0], cbToRead);
+                if (RT_FAILURE(rc))
+                    return pSSM->rc = rc;
+                pSSM->u.Read.cbRecLeft -= cbToRead;
+                pSSM->u.Read.cbDataBuffer = cbToRead;
+                break;
+            }
+
+            case SSM_REC_TYPE_RAW_LZF:
+            {
+                size_t cbDecompr;
+                int rc = ssmR3DataReadV2RawLzfHdr(pSSM, &cbDecompr);
+                if (RT_FAILURE(rc))
+                    return rc;
+                cbToRead = cbDecompr;
+                rc = ssmR3DataReadV2RawLzf(pSSM, &pSSM->u.Read.abDataBuffer[0], cbToRead);
+                if (RT_FAILURE(rc))
+                    return rc;
+                pSSM->u.Read.cbDataBuffer = cbToRead;
+                break;
+            }
+
+            default:
+                AssertMsgFailedReturn(("%x\n", pSSM->u.Read.u8TypeAndFlags), VERR_INTERNAL_ERROR_5);
+        }
         /*pSSM->u.Read.offDataBuffer = 0;*/
 
         /*
@@ -4386,8 +4500,8 @@ static int ssmR3DataReadBufferedV2(PSSMHANDLE pSSM, void *pvBuf, size_t cbBuf)
         pSSM->u.Read.offDataBuffer = cbToCopy;
     } while (cbBuf > 0);
 
-    Log4(("ssmR3DataReadBufferedV2: %08llx/%08x/%08x: cbBuf=%#x %.*Rhxs%s\n",
-          pSSM->offUnit, pSSM->u.Read.cbRecLeft, pSSM->u.Read.cbDataBuffer - pSSM->u.Read.offDataBuffer,
+    Log4(("ssmR3DataReadBufferedV2: %08llx|%08llx/%08x/%08x: cbBuf=%#x %.*Rhxs%s\n",
+          ssmR3StrmTell(pSSM), pSSM->offUnit, pSSM->u.Read.cbRecLeft, pSSM->u.Read.cbDataBuffer - pSSM->u.Read.offDataBuffer,
           cbBufOrg, RT_MIN(SSM_LOG_BYTES, cbBufOrg), pvBufOrg, cbBufOrg > SSM_LOG_BYTES ? "..." : ""));
     return VINF_SUCCESS;
 }
@@ -4425,9 +4539,9 @@ DECLINLINE(int) ssmR3DataRead(PSSMHANDLE pSSM, void *pvBuf, size_t cbBuf)
     memcpy(pvBuf, &pSSM->u.Read.abDataBuffer[off], cbBuf);
     pSSM->u.Read.offDataBuffer = off + cbBuf;
     Log4((cbBuf
-          ? "ssmR3DataRead: %08llx/%08x/%08x: cbBuf=%#x %.*Rhxs%s\n"
-          : "ssmR3DataRead: %08llx/%08x/%08x: cbBuf=%#x\n",
-          pSSM->offUnit, pSSM->u.Read.cbRecLeft, pSSM->u.Read.cbDataBuffer - pSSM->u.Read.offDataBuffer,
+          ? "ssmR3DataRead: %08llx|%08llx/%08x/%08x: cbBuf=%#x %.*Rhxs%s\n"
+          : "ssmR3DataRead: %08llx|%08llx/%08x/%08x: cbBuf=%#x\n",
+          ssmR3StrmTell(pSSM), pSSM->offUnit, pSSM->u.Read.cbRecLeft, pSSM->u.Read.cbDataBuffer - pSSM->u.Read.offDataBuffer,
           cbBuf, RT_MIN(SSM_LOG_BYTES, cbBuf), pvBuf, cbBuf > SSM_LOG_BYTES ? "..." : ""));
 
     return VINF_SUCCESS;
