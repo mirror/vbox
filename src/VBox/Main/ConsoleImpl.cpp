@@ -3366,7 +3366,7 @@ HRESULT Console::onNetworkAdapterChange (INetworkAdapter *aNetworkAdapter)
                        (meAttachmentType[ulInstance] == NetworkAttachmentType_Null)))
                     changeAdaptor = true;
 
-                /* @todo r=pritesh Need to check for mNATNetwork as well here
+                /** @todo pritesh: Need to check for mNATNetwork as well here
                  * when NAT is shifted to use IntNet, till then just compare
                  * if the current and next attachment types are not same
                  */
@@ -3556,7 +3556,7 @@ DECLCALLBACK(int) Console::changeNetworkAttachment (Console *pThis,
     PCFGMNODE pInst = CFGMR3GetChildF (CFGMR3GetRoot (pVM), "Devices/%s/%d/", pszDevice, uInstance);
     AssertRelease (pInst);
 
-    /* @todo r=pritesh Need to store the previous network configuration
+    /** @todo pritesh: Need to store the previous network configuration
      * and restore it if configNetwork fails, currently not sure if the
      * previous atachment will also cleanly reattach with the later one
      * failing to attach.
