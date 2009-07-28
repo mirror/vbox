@@ -75,19 +75,7 @@ GetExtensions(void)
     extensions = return_value;
     ext = crStateMergeExtensions(1, &extensions);
 
-#ifdef CR_OPENGL_VERSION_2_0
-    /* @todo move to known extensions etc, for now just a hack.
-     */
-    {
-        GLfloat fversion = GetVersionString();
-        if (fversion>=2.f)
-        {
-            sprintf((char*)gpszExtensions, "%sGL_ARB_shading_language_100 GL_ARB_shader_objects GL_ARB_vertex_shader GL_ARB_fragment_shader GL_EXT_texture_compression_s3tc GL_EXT_draw_range_elements", ext);
-        }
-    }
-#else
     sprintf(gpszExtensions, "%s", ext);
-#endif
 
     return gpszExtensions;
 }
