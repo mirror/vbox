@@ -26,7 +26,7 @@ include $(KBUILD_PATH)/subheader.kmk
 LIBRARIES += VBox-liblzf
 VBox-liblzf_TEMPLATE = VBOXR3
 VBox-liblzf_BLD_TYPE = release # WARNING! Always optimizing this lib.
-VBox-liblzf_DEFS = ULTRA_FAST=1 STRICT_ALIGN=0 INIT_HTAB=1 HLOG=17
+VBox-liblzf_DEFS = ULTRA_FAST=1 HLOG=12 STRICT_ALIGN=0
 VBox-liblzf_SOURCES = \
 	lzf_c.c \
 	lzf_d.c
