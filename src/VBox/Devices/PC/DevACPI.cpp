@@ -230,7 +230,7 @@ typedef struct ACPIState
     /** Flag whether the R0 part of the device is enabled. */
     bool                fR0Enabled;
     /** Aligning IBase. */
-    bool                afAlignment[2];
+    bool                afAlignment[4];
 
     /** ACPI port base interface. */
     PDMIBASE            IBase;
