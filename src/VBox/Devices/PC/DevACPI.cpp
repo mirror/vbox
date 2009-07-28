@@ -66,7 +66,7 @@ enum
     PM2_CTL_OFFSET                      =   -1,   /**<  not supported  */
     PM_TMR_OFFSET                       = 0x08,
     GPE0_OFFSET                         = 0x20,
-    GPE1_OFFSET                         =   -1   /**<  not supported  */
+    GPE1_OFFSET                         =   -1    /**<  not supported  */
 };
 
 #define BAT_INDEX       0x00004040
@@ -230,7 +230,7 @@ typedef struct ACPIState
     /** Flag whether the R0 part of the device is enabled. */
     bool                fR0Enabled;
     /** Aligning IBase. */
-    bool                afAlignment[4];
+    bool                afAlignment[2];
 
     /** ACPI port base interface. */
     PDMIBASE            IBase;
@@ -1707,8 +1707,6 @@ static int acpiRegisterPmHandlers(ACPIState*  pThis)
 
 static int acpiUnregisterPmHandlers(ACPIState *pThis)
 {
-    /** @todo r=bird: How can this work when acpiDeregisterPmHandlers is called
-     *        after the guest changed uPmIoPortBase? */
 #define U(offset, cnt) \
     do { \
         int rc = PDMDevHlpIOPortDeregister(pThis->pDevIns, acpiPmPort(pThis, offset), cnt); \
@@ -1756,24 +1754,14 @@ static const SSMFIELD g_AcpiSavedStateFields5[] =
     SSMFIELD_ENTRY(ACPIState, pm1a_en),
     SSMFIELD_ENTRY(ACPIState, pm1a_sts),
     SSMFIELD_ENTRY(ACPIState, pm1a_ctl),
-    SSMFIELD_ENTRY(ACPIState, cCpus),           /**< @todo r=bird: This is a configuration parameter that will not change, so no need to save it. */
     SSMFIELD_ENTRY(ACPIState, pm_timer_initial),
     SSMFIELD_ENTRY(ACPIState, gpe0_en),
     SSMFIELD_ENTRY(ACPIState, gpe0_sts),
     SSMFIELD_ENTRY(ACPIState, uBatteryIndex),
     SSMFIELD_ENTRY(ACPIState, uSystemInfoIndex),
-    SSMFIELD_ENTRY(ACPIState, u64RamSize),      /**< @todo r=bird: ditto. */
     SSMFIELD_ENTRY(ACPIState, uSleepState),
     SSMFIELD_ENTRY(ACPIState, u8IndexShift),
-    SSMFIELD_ENTRY(ACPIState, u8UseIOApic),     /**< @todo r=bird: ditto. */
-    SSMFIELD_ENTRY(ACPIState, fUseFdc),         /**< @todo r=bird: ditto. */
-    SSMFIELD_ENTRY(ACPIState, fUseHpet),        /**< @todo r=bird: ditto. */
-    SSMFIELD_ENTRY(ACPIState, fUseSmc),         /**< @todo r=bird: ditto. */
-    SSMFIELD_ENTRY(ACPIState, fShowCpu),        /**< @todo r=bird: ditto. */
-    SSMFIELD_ENTRY(ACPIState, fShowRtc),        /**< @todo r=bird: ditto. */
     SSMFIELD_ENTRY(ACPIState, uPmIoPortBase),
-    SSMFIELD_ENTRY(ACPIState, fGCEnabled),      /**< @todo r=bird: ditto. */
-    SSMFIELD_ENTRY(ACPIState, fR0Enabled),      /**< @todo r=bird: ditto. */
     SSMFIELD_ENTRY_TERM()
 };
 
@@ -1790,6 +1778,14 @@ static DECLCALLBACK(int) acpi_load_state(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHand
     ACPIState *s = PDMINS_2_DATA(pDevIns, ACPIState *);
     int rc;
 
+    /*
+     * Unregister PM handlers, will register with actual base
+     * after state successfully loaded.
+     */
+    rc = acpiUnregisterPmHandlers(s);
+    if (RT_FAILURE(rc))
+        return rc;
+
     switch (u32Version)
     {
         case 4:
@@ -1804,7 +1800,6 @@ static DECLCALLBACK(int) acpi_load_state(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHand
     }
     if (RT_SUCCESS(rc))
     {
-        /** @todo r=bird: Why aren't the handlers deregistered first? */
         rc = acpiRegisterPmHandlers(s);
         if (RT_FAILURE(rc))
             return rc;
@@ -1961,25 +1956,32 @@ static void acpiPciConfigWrite(PPCIDEVICE pPciDev, uint32_t Address, uint32_t u3
     PPDMDEVINS  pDevIns = pPciDev->pDevIns;
     ACPIState  *pThis   = PDMINS_2_DATA(pDevIns, ACPIState *);
 
-    if (Address == 0x40)
-    {
-        pThis->uPmIoPortBase = u32Value & 0xffc0;
-    }
+    pThis->pfnAcpiPciConfigWrite(pPciDev, Address, u32Value, cb);
 
+    /* PMREGMISC written */
     if (Address == 0x80)
     {
-        if (u32Value & 1)
+        /* Check Power Management IO Space Enable (PMIOSE) bit */
+        if (pPciDev->config[0x80] & 0x1)
         {
             int rc;
 
-            acpiUnregisterPmHandlers(pThis);
+            RTIOPORT uNewBase =
+                    RTIOPORT(RT_LE2H_U32(*(uint32_t*)&pPciDev->config[0x40]));
+            uNewBase &= 0xffc0;
 
-            rc = acpiRegisterPmHandlers(pThis);
-            Assert(RT_SUCCESS(rc));
+            if (uNewBase != pThis->uPmIoPortBase)
+            {
+                rc = acpiUnregisterPmHandlers(pThis);
+                Assert(RT_SUCCESS(rc));
+
+                pThis->uPmIoPortBase = uNewBase;
+
+                rc = acpiRegisterPmHandlers(pThis);
+                Assert(RT_SUCCESS(rc));
+            }
         }
     }
-
-    pThis->pfnAcpiPciConfigWrite(pPciDev, Address, u32Value, cb);
 }
 
 /**
