@@ -956,10 +956,15 @@ void PACK_APIENTRY crPackCompressedTexSubImage3DARB( GLenum target, GLint level,
 void PACK_APIENTRY crPackGetCompressedTexImageARB( GLenum target, GLint level, GLvoid *img, int *writeback )
 {
     GET_PACKER_CONTEXT(pc);
-    crError ( "GetCompressedTexImageARB needs to be special cased!");
-    (void) pc;
-    (void) target;
-    (void) level;
-    (void) img;
-    (void) writeback;
+    int packet_length = sizeof(int)+sizeof(GLenum)+sizeof(target)+sizeof(level)+2*8;
+    unsigned char *data_ptr;
+    GET_BUFFERED_POINTER( pc, packet_length );
+
+    WRITE_DATA_AI(int, packet_length);
+    WRITE_DATA_AI(GLenum, CR_GETCOMPRESSEDTEXIMAGEARB_EXTEND_OPCODE);
+    WRITE_DATA_AI(GLenum, target);
+    WRITE_DATA_AI(GLint, level);
+    WRITE_NETWORK_POINTER(0, (void *) img );
+    WRITE_NETWORK_POINTER(8, (void *) writeback );
+    WRITE_OPCODE(pc, CR_EXTEND_OPCODE);
 }
