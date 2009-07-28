@@ -1750,26 +1750,21 @@ bool VBoxProblemReporter::remindAboutInaccessibleMedia()
 }
 
 /**
- * Shows a list of auto-converted files and asks the user to either Save, Backup
- * or Cancel to leave them as is and exit VirtualBox.
+ * Shows user a proposal to either convert configuration files or
+ * Exit the application leaving all as already is.
  *
- * @param aFormatVersion    Recent settings file format version.
- * @param aFileList         List of auto-converted files (may use Qt HTML).
- * @param aAfterRefresh     @true when called after the VM refresh.
+ * @param aFileList      List of files for auto-convertion (may use Qt HTML).
+ * @param aAfterRefresh  @true when called after the VM refresh.
  *
- * @return QIMessageBox::Yes (Save), QIMessageBox::No (Backup),
- *         QIMessageBox::Cancel (Exit)
+ * @return QIMessageBox::Ok (Save + Backup), QIMessageBox::Cancel (Exit)
  */
-int VBoxProblemReporter::warnAboutAutoConvertedSettings (const QString &aFormatVersion,
-                                                         const QString &aFileList,
-                                                         bool aAfterRefresh)
+int VBoxProblemReporter::warnAboutSettingsAutoConversion (const QString &aFileList,
+                                                          bool aAfterRefresh)
 {
-    /* The aAfterRefresh parameter says if an item which was inaccessible is
-       become accessible after a refresh. For the time beeing we present the
-       old message dialog. This case should be rather unlikly. */
     if (!aAfterRefresh)
     {
-        int rc = message (mainWindowShown(), Info,
+        /* Common variant for all VMs */
+        return message (mainWindowShown(), Info,
             tr ("<p>Your existing VirtualBox settings files will be automatically "
                 "converted from the old format to a new format necessary for the "
                 "new version of VirtualBox.</p>"
@@ -1781,76 +1776,26 @@ int VBoxProblemReporter::warnAboutAutoConvertedSettings (const QString &aFormatV
             QIMessageBox::Cancel | QIMessageBox::Escape,
             0,
             0,
-            tr ("E&xit", "warnAboutAutoConvertedSettings message box"));
-
-        if (rc == QIMessageBox::Cancel)
-            return QIMessageBox::Cancel;
-
-        /* We backup in any case */
-        return QIMessageBox::No;
-
-#if 0
-        int rc = message (mainWindowShown(), Info,
-            tr ("<p>Your existing VirtualBox settings files were automatically "
+            tr ("E&xit", "warnAboutSettingsAutoConversion message box"));
+    }
+    else
+    {
+        /* Particular VM variant */
+        return message (mainWindowShown(), Info,
+            tr ("<p>The following VirtualBox settings files will be automatically "
                 "converted from the old format to a new format necessary for the "
                 "new version of VirtualBox.</p>"
-                "<p>Press <b>OK</b> to start VirtualBox now or press <b>More</b> if "
-                "you want to get more information about what files were converted "
-                "and access additional actions.</p>"
-                "<p>Press <b>Exit</b> to terminate the VirtualBox "
-                "application without saving the results of the conversion to "
-                "disk.</p>"),
+                "<p>Press <b>OK</b> to start VirtualBox now or press <b>Exit</b> if "
+                "you want to terminate the VirtualBox "
+                "application without any further actions.</p>"),
+            QString ("<!--EOM-->%1").arg (aFileList),
             NULL /* aAutoConfirmId */,
             QIMessageBox::Ok | QIMessageBox::Default,
-            QIMessageBox::No,
             QIMessageBox::Cancel | QIMessageBox::Escape,
             0,
-            tr ("&More", "warnAboutAutoConvertedSettings message box"),
-            tr ("E&xit", "warnAboutAutoConvertedSettings message box"));
-
-        /* in the simplest case we backup */
-        if (rc == QIMessageBox::Ok)
-            return QIMessageBox::No;
-
-        if (rc == QIMessageBox::Cancel)
-            return QIMessageBox::Cancel;
-#endif
+            0,
+            tr ("E&xit", "warnAboutSettingsAutoConversion message box"));
     }
-
-    return message (mainWindowShown(), Info,
-        tr ("<p>The following VirtualBox settings files have been "
-            "automatically converted to the new settings file format "
-            "version <b>%1</b>.</p>"
-            "<p>However, the results of the conversion were not saved back "
-            "to disk yet. Please press:</p>"
-            "<ul>"
-            "<li><b>Backup</b> to create backup copies of the settings files in "
-            "the old format before saving them in the new format;</li>"
-            "<li><b>Overwrite</b> to save all auto-converted files without "
-            "creating backup copies (it will not be possible to use these "
-            "settings files with an older version of VirtualBox "
-            "afterwards);</li>"
-            "%2"
-            "</ul>"
-            "<p>It is recommended to always select <b>Backup</b> because in "
-            "this case it will be possible to go back to the previous "
-            "version of VirtualBox (if necessary) without losing your current "
-            "settings. See the VirtualBox Manual for more information about "
-            "downgrading.</p>")
-            .arg (aFormatVersion)
-            .arg (aAfterRefresh ? QString::null :
-                  tr ("<li><b>Exit</b> to terminate VirtualBox without saving "
-                      "the results of the conversion to disk.</li>")),
-        QString ("<!--EOM-->%1").arg (aFileList),
-        NULL /* aAutoConfirmId */,
-        QIMessageBox::Yes,
-        aAfterRefresh ? (QIMessageBox::No | QIMessageBox::Default | QIMessageBox::Escape) :
-                        (QIMessageBox::No | QIMessageBox::Default),
-        aAfterRefresh ? 0 : (QIMessageBox::Cancel | QIMessageBox::Escape),
-        tr ("O&verwrite", "warnAboutAutoConvertedSettings message box"),
-        tr ("&Backup", "warnAboutAutoConvertedSettings message box"),
-        aAfterRefresh ? QString::null :
-            tr ("E&xit", "warnAboutAutoConvertedSettings message box"));
 }
 
 /**

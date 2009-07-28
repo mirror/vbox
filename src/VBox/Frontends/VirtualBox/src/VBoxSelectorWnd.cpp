@@ -1114,8 +1114,9 @@ void VBoxSelectorWnd::vmRefresh (const QString &aUuid /*= QUuid_null*/)
                    true /* aSnapshot */,
                    true /* aDescription */);
 
-    if (!oldAccessible && item->accessible())
-        vboxGlobal().checkForAutoConvertedSettingsAfterRefresh();
+    if (!oldAccessible && item->accessible() &&
+        !vboxGlobal().checkForSettingsAutoConversionAfterRefresh())
+        fileExit();
 }
 
 void VBoxSelectorWnd::vmShowLogs (const QString &aUuid /*= QUuid_null*/)

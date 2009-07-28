@@ -609,10 +609,9 @@ public:
     bool showVirtualBoxLicense();
 #endif
 
-    bool checkForAutoConvertedSettings (bool aAfterRefresh = false);
+    bool checkForSettingsAutoConversion (bool aAfterRefresh = false);
 
-    void checkForAutoConvertedSettingsAfterRefresh()
-    { checkForAutoConvertedSettings (true); }
+    bool checkForSettingsAutoConversionAfterRefresh() { return checkForSettingsAutoConversion (true); }
 
     CSession openSession (const QString &aId, bool aExisting = false);
 
