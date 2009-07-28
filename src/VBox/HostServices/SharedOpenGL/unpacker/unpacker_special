@@ -162,3 +162,4 @@ GetAttribLocation
 GetUniformLocation
 GetAttachedObjectsARB
 GetInfoLogARB
+DeleteQueriesARB

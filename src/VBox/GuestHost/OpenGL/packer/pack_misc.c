@@ -92,3 +92,17 @@ void PACK_APIENTRY crPackChromiumParametervCR(GLenum target, GLenum type, GLsize
 		return;
 	}
 }
+
+void PACK_APIENTRY crPackDeleteQueriesARB(GLsizei n, const GLuint * ids)
+{
+    unsigned char *data_ptr;
+    int packet_length = sizeof(GLenum)+sizeof(n)+n*sizeof(*ids);
+	GET_PACKER_CONTEXT(pc);
+    if (!ids) return;
+    data_ptr = (unsigned char *) crPackAlloc(packet_length);
+    WRITE_DATA(0, GLenum, CR_DELETEQUERIESARB_EXTEND_OPCODE);
+    WRITE_DATA(4, GLsizei, n);
+    crMemcpy(data_ptr + 8, ids, n*sizeof(*ids));
+    crHugePacket(CR_EXTEND_OPCODE, data_ptr);
+    crPackFree(data_ptr);
+}

@@ -20,3 +20,10 @@ void crUnpackExtendChromiumParametervCR( void  )
 	INCR_VAR_PTR();
 	*/
 }
+
+void crUnpackExtendDeleteQueriesARB(void)
+{
+	GLsizei n = READ_DATA( 8, GLsizei );
+    const GLuint *ids = DATA_POINTER(12, GLuint);
+	cr_unpackDispatch.DeleteQueriesARB(n, ids);
+}
