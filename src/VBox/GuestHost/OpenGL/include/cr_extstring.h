@@ -181,7 +181,25 @@ static const char *crExtensions =
 	"GL_SGIS_texture_border_clamp "
 #endif
 #ifdef CR_SGIS_texture_edge_clamp
-	"GL_SGIS_texture_edge_clamp"
+	"GL_SGIS_texture_edge_clamp "
+#endif
+#ifdef CR_ARB_shading_language_100
+    "GL_ARB_shading_language_100 "
+#endif
+#ifdef CR_ARB_shader_objects
+    "GL_ARB_shader_objects "
+#endif
+#ifdef CR_ARB_vertex_shader
+    "GL_ARB_vertex_shader "
+#endif
+#ifdef CR_ARB_fragment_shader
+    "GL_ARB_fragment_shader "
+#endif
+#ifdef CR_EXT_texture_compression_s3tc
+    "GL_EXT_texture_compression_s3tc "
+#endif
+#ifdef CR_EXT_draw_range_elements
+    "GL_EXT_draw_range_elements"
 #endif
 	"";
 

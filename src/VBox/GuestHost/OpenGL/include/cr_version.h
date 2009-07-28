@@ -110,9 +110,12 @@
 #define CR_SGIS_generate_mipmap 1
 
 #define CR_EXT_texture_from_pixmap 1
+#define CR_EXT_draw_range_elements 1
+#define CR_EXT_texture_compression_s3tc 1
 
 #define CR_ARB_shader_objects 1
 #define CR_ARB_vertex_shader 1
 #define CR_ARB_fragment_shader 1
+#define CR_ARB_shading_language_100 1
 
 #endif /* CR_VERSION_H */
