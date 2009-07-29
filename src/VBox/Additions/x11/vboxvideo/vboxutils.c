@@ -140,9 +140,13 @@ vbox_host_uses_hwcursor(ScrnInfoPtr pScrn)
      * to draw the pointer. */
     if (rc)
     {
+        if (fFeatures & VMMDEV_MOUSE_GUEST_CAN_ABSOLUTE)
+            /* Assume this will never be unloaded as long as the X session is
+             * running. */
+            pVBox->mouseDriverLoaded = TRUE;
         if (   (fFeatures & VMMDEV_MOUSE_HOST_CANNOT_HWPOINTER)
-            || !(fFeatures & VMMDEV_MOUSE_GUEST_CAN_ABSOLUTE)
-            ||!(fFeatures & VMMDEV_MOUSE_HOST_CAN_ABSOLUTE)
+            || !pVBox->mouseDriverLoaded
+            || !(fFeatures & VMMDEV_MOUSE_HOST_CAN_ABSOLUTE)
            )
             rc = FALSE;
     }

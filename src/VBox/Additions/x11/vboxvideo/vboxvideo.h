@@ -213,6 +213,8 @@ typedef struct _VBOXRec
     size_t pointerSize;
     Bool useDevice;
     Bool forceSWCursor;
+    /** Do we know that the guest mouse driver was loaded successfully? */
+    Bool mouseDriverLoaded;
     /** Are we currently switched to a virtual terminal?  If so, it is not
      * safe to touch the hardware. */
     Bool vtSwitch;
