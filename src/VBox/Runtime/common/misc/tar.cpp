@@ -250,53 +250,57 @@ static int rtTarCopyFileTo(RTFILE hFile, const char *pszSrcName)
     RTStrPrintf(record.h.uname, sizeof(record.h.uname), "someone");
     RTStrPrintf(record.h.gname, sizeof(record.h.gname), "someone");
     record.h.linkflag = LF_NORMAL;
+
     /* Create the checksum out of the new header */
     uint32_t chksum;
-    rtTarCalcChkSum(&record, &chksum);
-    RTStrPrintf(record.h.chksum, sizeof(record.h.chksum), "%0.7o", chksum);
-
-    /* Write the header first */
-    rc = RTFileWrite(hFile, &record, sizeof(record), NULL);
+    rc = rtTarCalcChkSum(&record, &chksum);
     if (RT_SUCCESS(rc))
     {
+        RTStrPrintf(record.h.chksum, sizeof(record.h.chksum), "%0.7o", chksum);
+
+        /* Write the header first */
+        rc = RTFileWrite(hFile, &record, sizeof(record), NULL);
+        if (RT_SUCCESS(rc))
+        {
 /** @todo r=bird: using a 64KB buffer here instead of 0.5KB would probably be
  *        a good thing. */
-        uint64_t cbAllWritten = 0;
-        /* Copy the content from pszSrcName over to hFile. This is done block
-         * wise in 512 byte steps. After this copying is finished hFile will be
-         * on a 512 byte boundary, regardless if the file copied is 512 byte
-         * size aligned. */
-        for (;;)
-        {
-            if (cbAllWritten >= cbSize)
-                break;
-            size_t cbToRead = sizeof(record);
-            /* Last record? */
-            if (cbAllWritten + cbToRead > cbSize)
+            uint64_t cbAllWritten = 0;
+            /* Copy the content from pszSrcName over to hFile. This is done block
+             * wise in 512 byte steps. After this copying is finished hFile will be
+             * on a 512 byte boundary, regardless if the file copied is 512 byte
+             * size aligned. */
+            for (;;)
             {
-                /* Initialize with zeros */
-                RT_ZERO(record);
-                cbToRead = cbSize - cbAllWritten;
+                if (cbAllWritten >= cbSize)
+                    break;
+                size_t cbToRead = sizeof(record);
+                /* Last record? */
+                if (cbAllWritten + cbToRead > cbSize)
+                {
+                    /* Initialize with zeros */
+                    RT_ZERO(record);
+                    cbToRead = cbSize - cbAllWritten;
+                }
+                /* Read one block */
+                rc = RTFileRead(hOldFile, &record, cbToRead, NULL);
+                if (RT_FAILURE(rc))
+                    break;
+                /* Write one block */
+                rc = RTFileWrite(hFile, &record, sizeof(record), NULL);
+                if (RT_FAILURE(rc))
+                    break;
+                /* Count how many bytes are written already */
+                cbAllWritten += sizeof(record);
             }
-            /* Read one block */
-            rc = RTFileRead(hOldFile, &record, cbToRead, NULL);
-            if (RT_FAILURE(rc))
-                break;
-            /* Write one block */
-            rc = RTFileWrite(hFile, &record, sizeof(record), NULL);
-            if (RT_FAILURE(rc))
-                break;
-            /* Count how many bytes are written already */
-            cbAllWritten += sizeof(record);
+
+            /* Make sure the called doesn't mix truncated tar files with the
+             * official end indicated by rtTarCalcChkSum. */
+            if (rc == VERR_EOF)
+                rc == VERR_FILE_IO_ERROR;
         }
-
-        /* Make sure the called doesn't mix truncated tar files with the
-         * official end indicated by rtTarCalcChkSum. */
-        if (rc == VERR_EOF)
-            rc == VERR_FILE_IO_ERROR;
     }
-    RTFileClose(hOldFile);
 
+    RTFileClose(hOldFile);
     return rc;
 }
 
