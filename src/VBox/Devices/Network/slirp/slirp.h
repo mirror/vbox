@@ -367,17 +367,17 @@ AssertCompileSize(struct ethhdr, 14);
 
 # define strncasecmp RTStrNICmp
 
+# ifdef DEBUG
 # define LIBALIAS_DEBUG
-
 # ifdef fprintf
-#   undef fprintf
-# endif /*fprintf*/
+#  undef fprintf
+# endif
 # ifdef fflush
-#   undef fflush
-# endif /*fflush*/
+#  undef fflush
+# endif
 # ifdef printf
-#   undef printf
-# endif /*printf*/
+#  undef printf
+# endif
 #define fflush(x) do{}while(0)
 # define fprintf vbox_slirp_fprintf
 # define printf vbox_slirp_printf
@@ -403,6 +403,7 @@ static void vbox_slirp_fprintf(void *ignored, char *format, ...)
     vbox_slirp_printV(format, args);
     va_end(args);
 }
+# endif /* DEBUG */
 #endif /*VBOX_WITH_SLIRP_ALIAS && VBOX_SLIRP_ALIAS*/
 
 #ifdef VBOX_WITH_SLIRP_ALIAS

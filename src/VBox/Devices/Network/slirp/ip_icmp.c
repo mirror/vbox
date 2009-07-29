@@ -530,7 +530,7 @@ void icmp_error(PNATState pData, struct mbuf *msrc, u_char type, u_char code, in
         int new_m_size;
         m->m_data += if_maxlinkhdr;
         new_m_size = sizeof(struct ip) + ICMP_MINLEN + msrc->m_len + ICMP_MAXDATALEN;
-        if (new_m_size>m->m_size)
+        if (new_m_size > m->m_size)
             m_inc(m, new_m_size);
     }
 
