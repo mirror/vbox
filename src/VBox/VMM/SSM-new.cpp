@@ -151,6 +151,7 @@
 #include <iprt/file.h>
 #include <iprt/param.h>
 #include <iprt/thread.h>
+#include <iprt/semaphore.h>
 #include <iprt/string.h>
 #include <iprt/uuid.h>
 #include <iprt/zip.h>
@@ -280,14 +281,85 @@ typedef enum SSMSTATE
     SSMSTATE_OPEN_READ
 } SSMSTATE;
 
+/** Pointer to a SSM stream buffer. */
+typedef struct SSMSTRMBUF *PSSMSTRMBUF;
+/**
+ * A SSM stream buffer.
+ */
+typedef struct SSMSTRMBUF
+{
+    /** The buffer data. */
+    uint8_t                 abData[_64K];
+
+    /** The stream position of this buffer. */
+    uint64_t                offStream;
+    /** The amount of buffered data. */
+    size_t                  cb;
+    /** End of stream indicator (for read streams only). */
+    bool                    fEndOfStream;
+    /** Pointer to the next buffer in the chain. */
+    PSSMSTRMBUF volatile    pNext;
+} SSMSTRMBUF;
+
+/**
+ * SSM stream.
+ *
+ * This is a typical producer / consumer setup with a dedicated I/O thread and
+ * fixed number of buffers for read ahead and write back.
+ */
+typedef struct SSMSTRM
+{
+    /** The file handle. */
+    RTFILE                  hFile;
+
+    /** Write (set) or read (clear) stream. */
+    bool                    fWrite;
+    /** Termination indicator. */
+    bool volatile           fTerminating;
+    /** Stream error status. */
+    int32_t volatile        rc;
+
+    /** The head of the consumer queue.
+     * For save the consumer is the I/O thread.  For load the I/O thread is the
+     * producer. */
+    PSSMSTRMBUF volatile    pHead;
+    /** Chain of free buffers.
+     * The consumer/producer roles are the inverse of pHead.  */
+    PSSMSTRMBUF volatile    pFree;
+    /** Event that's signalled when pHead is updated. */
+    RTSEMEVENT              hEvtHead;
+    /** Event that's signalled when pFree is updated. */
+    RTSEMEVENT              hEvtFree;
+
+    /** List of pending buffers that has been dequeued from pHead and reversed. */
+    PSSMSTRMBUF             pPending;
+    /** Pointer to the current buffer. */
+    PSSMSTRMBUF             pCur;
+    /** The stream offset of the current buffer. */
+    uint64_t                offCurStream;
+    /** The current buffer offset. */
+    uint32_t                off;
+    /** Whether we're checksumming reads/writes. */
+    bool                    fChecksummed;
+    /** The stream CRC if fChecksummed is set. */
+    uint32_t                u32StreamCRC;
+    /** How far into the buffer u32StreamCRC is up-to-date.
+     * This may lag behind off as it's desirable to checksum as large blocks as
+     * possible.  */
+    uint32_t                offStreamCRC;
+} SSMSTRM;
+/** Pointer to a SSM stream. */
+typedef SSMSTRM *PSSMSTRM;
+
 
 /**
  * Handle structure.
  */
 typedef struct SSMHANDLE
 {
-    /** The file handle. */
-    RTFILE          hFile;
+    /** Stream/buffer manager. */
+    SSMSTRM         Strm;
+
     /** The VM handle. */
     PVM             pVM;
     /** The current operation. */
@@ -320,11 +392,6 @@ typedef struct SSMHANDLE
     unsigned        uPercentPrepare;
     /** the amount of % we reserve for the 'done' stage */
     unsigned        uPercentDone;
-
-    /** Whether we're checksumming reads/writes. */
-    bool            fChecksummed;
-    /** The stream CRC if fChecksummed is set. */
-    uint32_t        u32StreamCRC;
 
     union
     {
@@ -1280,27 +1347,540 @@ VMMR3DECL(int) SSMR3DeregisterExternal(PVM pVM, const char *pszName)
 
 
 /**
+ * Initializes the stream after/before opening the file/whatever.
+ *
+ * @returns VINF_SUCCESS or VERR_NO_MEMORY.
+ * @param   pStrm           The stream handle.
+ * @param   fChecksummed    Whether the stream is to be checksummed while
+ *                          written/read.
+ */
+static int ssmR3StrmInit(PSSMSTRM pStrm, bool fChecksummed)
+{
+    /*
+     * Init the common data members.
+     */
+    pStrm->fTerminating = false;
+    pStrm->rc           = VINF_SUCCESS;
+
+    pStrm->pHead        = NULL;
+    pStrm->pFree        = NULL;
+    pStrm->hEvtHead     = NIL_RTSEMEVENT;
+    pStrm->hEvtFree     = NIL_RTSEMEVENT;
+
+    pStrm->pPending     = NULL;
+    pStrm->pCur         = NULL;
+    pStrm->offCurStream = 0;
+    pStrm->off          = 0;
+    pStrm->fChecksummed = fChecksummed;
+    pStrm->u32StreamCRC = fChecksummed ? RTCrc32Start() : 0;
+    pStrm->offStreamCRC = 0;
+
+    /*
+     * Allocate the buffers.  Page align them in case that makes the kernel
+     * and/or cpu happier in some way.
+     */
+    int rc = VINF_SUCCESS;
+    for (unsigned i = 0; i < 4; i++)
+    {
+        PSSMSTRMBUF pBuf = (PSSMSTRMBUF)RTMemPageAllocZ(sizeof(*pBuf));
+        if (!pBuf)
+        {
+            if (i > 2)
+            {
+                LogRel(("ssmR3StrmAllocBuffer: WARNING: Could only get %d stream buffers.\n", i));
+                break;
+            }
+            LogRel(("ssmR3StrmAllocBuffer: Failed to allocate stream buffers. (i=%d)\n", i));
+            return VERR_NO_MEMORY;
+        }
+
+        /* link it */
+        pBuf->pNext = pStrm->pFree;
+        pStrm->pFree = pBuf;
+    }
+
+    /*
+     * Create the event semaphores.
+     */
+    rc = RTSemEventCreate(&pStrm->hEvtHead);
+    if (RT_FAILURE(rc))
+        return rc;
+    rc = RTSemEventCreate(&pStrm->hEvtFree);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Destroys a list of buffers.
+ *
+ * @param   pHead            Pointer to the head.
+ */
+static void ssmR3StrmDestroyBufList(PSSMSTRMBUF pHead)
+{
+    while (pHead)
+    {
+        PSSMSTRMBUF pCur = pHead;
+        pHead = pCur->pNext;
+        pCur->pNext = NULL;
+        RTMemPageFree(pCur);
+    }
+}
+
+
+/**
+ * Cleans up a stream after ssmR3StrmInit has been called (regardless of it
+ * succeeded or not).
+ *
+ * @param   pStrm           The stream handle.
+ */
+static void ssmR3StrmDelete(PSSMSTRM pStrm)
+{
+    RTMemPageFree(pStrm->pCur);
+    pStrm->pCur = NULL;
+    ssmR3StrmDestroyBufList(pStrm->pHead);
+    pStrm->pHead = NULL;
+    ssmR3StrmDestroyBufList(pStrm->pPending);
+    pStrm->pPending = NULL;
+    ssmR3StrmDestroyBufList(pStrm->pFree);
+    pStrm->pFree = NULL;
+
+    RTSemEventDestroy(pStrm->hEvtHead);
+    pStrm->hEvtHead = NIL_RTSEMEVENT;
+
+    RTSemEventDestroy(pStrm->hEvtFree);
+    pStrm->hEvtFree = NIL_RTSEMEVENT;
+}
+
+
+/**
+ * Opens a file stream.
+ *
+ * @returns VBox status code.
+ * @param   pStrm           The stream manager structure.
+ * @param   pszFilename     The file to open or create.
+ * @param   fWrite          Whether to open for writing or reading.
+ * @param   fChecksummed    Whether the stream is to be checksummed while
+ *                          written/read.
+ */
+static int ssmR3StrmOpenFile(PSSMSTRM pStrm, const char *pszFilename, bool fWrite, bool fChecksummed)
+{
+    int rc = ssmR3StrmInit(pStrm, fChecksummed);
+    if (RT_SUCCESS(rc))
+    {
+        uint32_t fFlags = fWrite
+                        ? RTFILE_O_READWRITE | RTFILE_O_CREATE_REPLACE | RTFILE_O_DENY_WRITE
+                        : RTFILE_O_READ      | RTFILE_O_OPEN           | RTFILE_O_DENY_WRITE;
+        rc = RTFileOpen(&pStrm->hFile, pszFilename, fFlags);
+        if (RT_SUCCESS(rc))
+        {
+            pStrm->fWrite = fWrite;
+            return VINF_SUCCESS;
+        }
+    }
+
+    ssmR3StrmDelete(pStrm);
+    pStrm->rc = rc;
+    return rc;
+}
+
+
+/**
+ * Raise an error condition on the stream.
+ *
+ * @returns true if we raised the error condition, false if the stream already
+ *          had an error condition set.
+ *
+ * @param   pStrm           The stream handle.
+ * @param   rc              The VBox error status code.
+ *
+ * @thread  Any.
+ */
+DECLINLINE(bool) ssmR3StrmSetError(PSSMSTRM pStrm, int rc)
+{
+    Assert(RT_FAILURE_NP(rc));
+    return ASMAtomicCmpXchgS32(&pStrm->rc, rc, VINF_SUCCESS);
+}
+
+
+/**
+ * Puts a buffer into the free list.
+ *
+ * @param   pStrm           The stream handle.
+ * @param   pBuf            The buffer.
+ *
+ * @thread  The consumer.
+ */
+static void ssmR3StrmPutFreeBuf(PSSMSTRM pStrm, PSSMSTRMBUF pBuf)
+{
+    for (;;)
+    {
+        PSSMSTRMBUF pCurFreeHead = (PSSMSTRMBUF)ASMAtomicUoReadPtr((void * volatile *)&pStrm->pFree);
+        ASMAtomicUoWritePtr((void * volatile *)&pBuf->pNext, pCurFreeHead);
+        if (ASMAtomicCmpXchgPtr((void * volatile *)&pStrm->pFree, pBuf, pCurFreeHead))
+        {
+            int rc = RTSemEventSignal(pStrm->hEvtFree);
+            AssertRC(rc);
+            return;
+        }
+    }
+}
+
+
+/**
+ * Gets a free buffer, waits for one if necessary.
+ *
+ * @returns Pointer to the buffer on success. NULL if we're terminating.
+ * @param   pStrm           The stream handle.
+ *
+ * @thread  The producer.
+ */
+static PSSMSTRMBUF ssmR3StrmGetFreeBuf(PSSMSTRM pStrm)
+{
+    for (;;)
+    {
+        PSSMSTRMBUF pMine = (PSSMSTRMBUF)ASMAtomicUoReadPtr((void * volatile *)pStrm->pFree);
+        if (!pMine)
+        {
+            if (pStrm->fTerminating)
+                return NULL;
+            if (RT_FAILURE(pStrm->rc))
+                return NULL;
+            int rc = RTSemEventWaitNoResume(pStrm->hEvtFree, 30000);
+            if (    rc == VERR_SEM_DESTROYED
+                ||  pStrm->fTerminating)
+                return NULL;
+            continue;
+        }
+
+        if (ASMAtomicCmpXchgPtr((void * volatile *)&pStrm->pFree, pMine->pNext, pMine))
+        {
+            pMine->offStream    = UINT64_MAX;
+            pMine->cb           = 0;
+            pMine->pNext        = NULL;
+            pMine->fEndOfStream = false;
+            return pMine;
+        }
+    }
+}
+
+
+/**
+ * Puts a buffer onto the queue.
+ *
+ * @param   pBuf        The buffer.
+ *
+ * @thread  The producer.
+ */
+static void ssmR3StrmPutBuf(PSSMSTRM pStrm, PSSMSTRMBUF pBuf)
+{
+    for (;;)
+    {
+        PSSMSTRMBUF pCurHead = (PSSMSTRMBUF)ASMAtomicUoReadPtr((void * volatile *)&pStrm->pHead);
+        ASMAtomicUoWritePtr((void * volatile *)&pBuf->pNext, pCurHead);
+        if (ASMAtomicCmpXchgPtr((void * volatile *)&pStrm->pHead, pBuf, pCurHead))
+        {
+            int rc = RTSemEventSignal(pStrm->hEvtHead);
+            AssertRC(rc);
+            return;
+        }
+    }
+}
+
+
+/**
+ * Reverses the list.
+ *
+ * @returns The head of the reversed list.
+ * @param   pHead           The head of the list to reverse.
+ */
+static PSSMSTRMBUF ssmR3StrmReverseList(PSSMSTRMBUF pHead)
+{
+    PSSMSTRMBUF pRevHead = NULL;
+    while (pHead)
+    {
+        PSSMSTRMBUF pCur = pHead;
+        pHead = pCur->pNext;
+        pCur->pNext = pRevHead;
+        pRevHead = pCur;
+    }
+    return pRevHead;
+}
+
+
+/**
+ * Gets one buffer from the queue, will wait for one to become ready if
+ * necessary.
+ *
+ * @returns Pointer to the buffer on success. NULL if we're terminating.
+ * @param   pBuf        The buffer.
+ *
+ * @thread  The consumer.
+ */
+static PSSMSTRMBUF ssmR3StrmGetBuf(PSSMSTRM pStrm)
+{
+    for (;;)
+    {
+        PSSMSTRMBUF pMine = pStrm->pPending;
+        if (pMine)
+        {
+            pStrm->pPending = pMine->pNext;
+            pMine->pNext = NULL;
+            return pMine;
+        }
+
+        pMine = (PSSMSTRMBUF)ASMAtomicXchgPtr((void * volatile *)pStrm->pHead, NULL);
+        if (pMine)
+            pStrm->pPending = ssmR3StrmReverseList(pMine);
+        else
+        {
+            if (pStrm->fTerminating)
+                return NULL;
+            if (RT_FAILURE(pStrm->rc))
+                return NULL;
+            int rc = RTSemEventWaitNoResume(pStrm->hEvtHead, 30000);
+            if (    rc == VERR_SEM_DESTROYED
+                ||  pStrm->fTerminating)
+                return NULL;
+        }
+    }
+}
+
+
+/**
+ * Flushes the current buffer (both write and read streams).
+ *
+ * @param   pStrm           The stream handle.
+ */
+static void ssmR3StrmFlushCurBuf(PSSMSTRM pStrm)
+{
+    if (pStrm->pCur)
+    {
+        PSSMSTRMBUF pCur = pStrm->pCur;
+        pStrm->pCur = NULL;
+
+        if (pStrm->fWrite)
+        {
+            uint32_t cb     = pStrm->off;
+            pCur->cb        = cb;
+            pCur->offStream = pStrm->offCurStream;
+            if (    pStrm->fChecksummed
+                &&  pStrm->offStreamCRC < cb)
+                pStrm->u32StreamCRC = RTCrc32Process(pStrm->u32StreamCRC,
+                                                     &pCur->abData[pStrm->offStreamCRC],
+                                                     cb - pStrm->offStreamCRC);
+            pStrm->offCurStream += cb;
+            pStrm->off          = 0;
+            pStrm->offStreamCRC = 0;
+
+            ssmR3StrmPutBuf(pStrm, pCur);
+        }
+        else
+        {
+            uint32_t cb = pCur->cb;
+            if (    pStrm->fChecksummed
+                &&  pStrm->offStreamCRC < cb)
+                pStrm->u32StreamCRC = RTCrc32Process(pStrm->u32StreamCRC,
+                                                     &pCur->abData[pStrm->offStreamCRC],
+                                                     cb - pStrm->offStreamCRC);
+            pStrm->offCurStream += cb;
+            pStrm->off          = 0;
+            pStrm->offStreamCRC = 0;
+
+            ssmR3StrmPutFreeBuf(pStrm, pCur);
+        }
+    }
+}
+
+
+/**
+ * Flush any buffered data.
+ *
+ * @returns VBox status code.
+ * @param   pStrm           The stream handle.
+ *
+ * @thread  The producer thread.
+ */
+static int ssmR3StrmFlush(PSSMSTRM pStrm)
+{
+    /*
+     * Read streams have nothing that needs to be flushed.
+     */
+    if (!pStrm->fWrite)
+        return VINF_SUCCESS;
+    int rc = pStrm->rc;
+    if (RT_FAILURE(rc))
+        return rc;
+
+    /*
+     * Complete the current buffer and queue it.
+     */
+    ssmR3StrmFlushCurBuf(pStrm);
+
+/** @todo This is what the I/O thread will be doing when we finally get one. */
+
+    /*
+     * Grab the pending list and write it out.
+     */
+    PSSMSTRMBUF pHead = (PSSMSTRMBUF)ASMAtomicXchgPtr((void * volatile *)&pStrm->pHead, NULL);
+    if (!pHead)
+        return VINF_SUCCESS;
+    pHead = ssmR3StrmReverseList(pHead);
+
+    while (pHead)
+    {
+        /* pop */
+        PSSMSTRMBUF pCur = pHead;
+        pHead = pCur->pNext;
+
+        /* flush */
+        int rc = RTFileWriteAt(pStrm->hFile, pCur->offStream, &pCur->abData[0], pCur->cb, NULL);
+        if (    RT_FAILURE(rc)
+            &&  ssmR3StrmSetError(pStrm, rc))
+            LogRel(("ssmR3StrmFlush: RTFileWriteAt failed with rc=%Rrc at offStream=%#llx\n", rc, pCur->offStream));
+
+        /* free it */
+        ssmR3StrmPutFreeBuf(pStrm, pCur);
+    }
+
+    return pStrm->rc;
+}
+
+
+/**
+ * Closes the stream after first flushing any pending write.
+ *
+ * @returns VBox status code.
+ * @param   pStrm           The stream handle.
+ */
+static int ssmR3StrmClose(PSSMSTRM pStrm)
+{
+    /*
+     * Flush and close the stream.
+     */
+    ssmR3StrmFlush(pStrm);
+    int rc = RTFileClose(pStrm->hFile);
+    if (RT_FAILURE(rc))
+        ssmR3StrmSetError(pStrm, rc);
+    pStrm->hFile = NIL_RTFILE;
+
+    rc = pStrm->rc;
+    ssmR3StrmDelete(pStrm);
+
+    return rc;
+}
+
+
+/**
  * Stream output routine.
  *
  * @returns VBox status code.
- * @param   pSSM        The SSM handle.
+ * @param   pStrm       The stream handle.
  * @param   pvBuf       What to write.
  * @param   cbToWrite   How much to write.
+ *
+ * @thread  The producer in a write stream (never the I/O thread).
  */
-static int ssmR3StrmWrite(PSSMHANDLE pSSM, const void *pvBuf, size_t cbToWrite)
+static int ssmR3StrmWrite(PSSMSTRM pStrm, const void *pvBuf, size_t cbToWrite)
 {
-    Assert(pSSM->enmOp <= SSMSTATE_SAVE_DONE);
-    int rc = RTFileWrite(pSSM->hFile, pvBuf, cbToWrite, NULL);
-    if (RT_SUCCESS(rc))
+    AssertReturn(cbToWrite > 0, VINF_SUCCESS);
+    Assert(pStrm->fWrite);
+
+    /*
+     * Squeeze as much as possible into the current buffer.
+     */
+    PSSMSTRMBUF pBuf = pStrm->pCur;
+    if (RT_LIKELY(pBuf))
     {
-        if (pSSM->fChecksummed)
-            pSSM->u32StreamCRC = RTCrc32Process(pSSM->u32StreamCRC, pvBuf, cbToWrite);
-        return VINF_SUCCESS;
+        uint32_t cbLeft = pStrm->off - RT_SIZEOFMEMB(SSMSTRMBUF, abData);
+        if (RT_LIKELY(cbLeft >= cbToWrite))
+        {
+            memcpy(&pBuf->abData[pStrm->off], pvBuf, cbToWrite);
+            pStrm->off += cbToWrite;
+            return VINF_SUCCESS;
+        }
+
+        if (cbLeft > 0)
+        {
+            memcpy(&pBuf->abData[pStrm->off], pvBuf, cbLeft);
+            pStrm->off += cbLeft;
+            cbToWrite  -= cbLeft;
+            pvBuf       = (uint8_t const *)pvBuf + cbLeft;
+        }
     }
 
-    LogRel(("ssmR3StrmWrite: RTFileWrite(,,%zu) -> %Rrc\n", cbToWrite, rc));
-    if (RT_SUCCESS(pSSM->rc))
-        pSSM->rc = rc;
+    /*
+     * Need one or more new buffers.
+     */
+    do
+    {
+        /*
+         * Flush the current buffer and replace it with a new one.
+         */
+        int rc = ssmR3StrmFlush(pStrm);
+        if (RT_FAILURE(rc))
+            return rc;
+        pBuf = ssmR3StrmGetFreeBuf(pStrm);
+        if (!pBuf)
+            break;
+        pStrm->pCur = pBuf;
+        Assert(pStrm->off == 0);
+
+        /*
+         * Copy data to the buffer.
+         */
+        uint32_t cbCopy = pStrm->off - RT_SIZEOFMEMB(SSMSTRMBUF, abData);
+        if (cbCopy > cbToWrite)
+            cbCopy = cbToWrite;
+        memcpy(&pBuf->abData[pStrm->off], pvBuf, cbCopy);
+        pStrm->off += cbCopy;
+        cbToWrite  -= cbCopy;
+        pvBuf       = (uint8_t const *)pvBuf + cbCopy;
+    } while (cbToWrite > 0);
+
+    return pStrm->rc;
+}
+
+
+
+/**
+ * Read more from the stream.
+ *
+ * @returns VBox status code. VERR_EOF is passed up.
+ * @param   pStrm       The stream handle.
+ *
+ * @thread  The I/O thread when we get one.
+ */
+static int ssmR3StrmReadMore(PSSMSTRM pStrm)
+{
+    PSSMSTRMBUF pBuf = ssmR3StrmGetFreeBuf(pStrm);
+    if (!pBuf)
+        return pStrm->rc;
+
+    pBuf->offStream = RTFileTell(pStrm->hFile);
+    size_t cbRead   = sizeof(pBuf->abData);
+    int rc = RTFileRead(pStrm->hFile, &pBuf->abData[0], cbRead, &cbRead);
+    if (RT_SUCCESS(rc))
+    {
+        pBuf->cb           = cbRead;
+        pBuf->fEndOfStream = cbRead == 0;
+        ssmR3StrmPutBuf(pStrm, pBuf);
+    }
+    else if (rc == VERR_EOF)
+    {
+        pBuf->cb           = 0;
+        pBuf->fEndOfStream = true;
+        ssmR3StrmPutBuf(pStrm, pBuf);
+    }
+    else
+    {
+        if (ssmR3StrmSetError(pStrm, rc))
+            LogRel(("ssmR3StrmReadMore: RTFileRead(,,%#x,) -> %Rrc at offset %#llx\n",
+                    sizeof(pBuf->abData), rc, pBuf->offStream));
+        ssmR3StrmPutFreeBuf(pStrm, pBuf);
+    }
     return rc;
 }
 
@@ -1309,38 +1889,88 @@ static int ssmR3StrmWrite(PSSMHANDLE pSSM, const void *pvBuf, size_t cbToWrite)
  * Stream input routine.
  *
  * @returns VBox status code.
- * @param   pSSM        The SSM handle.
+ * @param   pStrm       The stream handle.
  * @param   pvBuf       Where to put what we read.
  * @param   cbToRead    How much to read.
  */
-static int ssmR3StrmRead(PSSMHANDLE pSSM, void *pvBuf, size_t cbToRead)
+static int ssmR3StrmRead(PSSMSTRM pStrm, void *pvBuf, size_t cbToRead)
 {
-    Assert(pSSM->enmOp >= SSMSTATE_LOAD_PREP);
-    int rc = RTFileRead(pSSM->hFile, pvBuf, cbToRead, NULL);
-    if (RT_SUCCESS(rc))
+    AssertReturn(cbToRead > 0, VINF_SUCCESS);
+    Assert(!pStrm->fWrite);
+
+    /*
+     * Read from the current buffer if we got one.
+     */
+    PSSMSTRMBUF pBuf = pStrm->pCur;
+    if (RT_LIKELY(pBuf))
     {
-        if (pSSM->fChecksummed)
-            pSSM->u32StreamCRC = RTCrc32Process(pSSM->u32StreamCRC, pvBuf, cbToRead);
-        return VINF_SUCCESS;
+        Assert(pStrm->off <= pBuf->cb);
+        uint32_t cbLeft = pStrm->off - pBuf->cb;
+        if (cbLeft >= cbToRead)
+        {
+            memcpy(pvBuf, &pBuf->abData[pStrm->off], cbToRead);
+            pStrm->off += cbToRead;
+            return VINF_SUCCESS;
+        }
+        if (cbLeft)
+        {
+            memcpy(pvBuf, &pBuf->abData[pStrm->off], cbLeft);
+            pStrm->off += cbLeft;
+            cbToRead   -= cbLeft;
+            pvBuf       = (uint8_t *)pvBuf + cbLeft;
+        }
+        else if (pBuf->fEndOfStream)
+            return VERR_EOF;
     }
 
-    LogRel(("ssmR3StrmRead: RTFileRead(,,%zu) -> %Rrc\n", cbToRead, rc));
-    if (RT_SUCCESS(pSSM->rc))
-        pSSM->rc = rc;
+    /*
+     * Get more buffers from the stream.
+     */
+    int rc;
+    do
+    {
+        /*
+         * Check for EOF first - never flush the EOF buffer.
+         */
+        if (    pBuf
+            &&  pBuf->fEndOfStream)
+            return VERR_EOF;
+
+        /*
+         * Flush the current buffer and get the next one.
+         */
+        ssmR3StrmFlushCurBuf(pStrm);
+        rc = ssmR3StrmReadMore(pStrm); /** @todo Remove this when adding the I/O thread! */
+        if (RT_FAILURE(rc))
+            break;
+        PSSMSTRMBUF pBuf = ssmR3StrmGetBuf(pStrm);
+        if (!pBuf)
+        {
+            rc = pStrm->rc;
+            break;
+        }
+        pStrm->pCur = pBuf;
+        Assert(pStrm->off == 0);
+        Assert(pStrm->offCurStream == pBuf->offStream);
+        if (!pBuf->cb)
+        {
+            Assert(pBuf->fEndOfStream);
+            return VERR_EOF;
+        }
+
+        /*
+         * Read data from the buffer.
+         */
+        uint32_t cbCopy = pStrm->off - pBuf->cb;
+        if (cbCopy > cbToRead)
+            cbCopy = cbToRead;
+        memcpy(pvBuf, &pBuf->abData[pStrm->off], cbCopy);
+        pStrm->off += cbCopy;
+        cbToRead   -= cbCopy;
+        pvBuf       = (uint8_t *)pvBuf + cbCopy;
+    } while (cbToRead > 0);
+
     return rc;
-}
-
-
-/**
- * Flush any buffered data.
- *
- * @returns VBox status code.
- * @param   pSSM        The SSM handle.
- */
-static int ssmR3StrmFlush(PSSMHANDLE pSSM)
-{
-    /* no buffering yet. */
-    return VINF_SUCCESS;
 }
 
 
@@ -1348,11 +1978,103 @@ static int ssmR3StrmFlush(PSSMHANDLE pSSM)
  * Tell current stream position.
  *
  * @returns stream position.
- * @param   pSSM        The SSM handle.
+ * @param   pStrm       The stream handle.
  */
-static uint64_t ssmR3StrmTell(PSSMHANDLE pSSM)
+static uint64_t ssmR3StrmTell(PSSMSTRM pStrm)
 {
-    return RTFileTell(pSSM->hFile);
+    return pStrm->offCurStream + pStrm->off;
+}
+
+
+/**
+ * Gets the intermediate stream CRC up to the current position.
+ *
+ * @returns CRC.
+ * @param   pStrm       The stream handle.
+ */
+static uint32_t ssmR3StrmCurCRC(PSSMSTRM pStrm)
+{
+    if (!pStrm->fChecksummed)
+        return 0;
+    if (pStrm->offStreamCRC < pStrm->off)
+    {
+        PSSMSTRMBUF pBuf = pStrm->pCur; Assert(pBuf);
+        pStrm->u32StreamCRC = RTCrc32Process(pStrm->u32StreamCRC, &pBuf->abData[pStrm->off], pStrm->off - pStrm->offStreamCRC);
+    }
+    else
+        Assert(pStrm->offStreamCRC == pStrm->off);
+    return pStrm->u32StreamCRC;
+}
+
+
+/**
+ * Gets the final stream CRC up to the current position.
+ *
+ * @returns CRC.
+ * @param   pStrm       The stream handle.
+ */
+static uint32_t ssmR3StrmFinalCRC(PSSMSTRM pStrm)
+{
+    if (!pStrm->fChecksummed)
+        return 0;
+    return RTCrc32Finish(ssmR3StrmCurCRC(pStrm));
+}
+
+
+/**
+ * Disables checksumming of the stream.
+ *
+ * @param   pStrm       The stream handle.
+ */
+static void ssmR3StrmDisableChecksumming(PSSMSTRM pStrm)
+{
+    pStrm->fChecksummed = false;
+}
+
+
+/**
+ * Skip some bytes in the stream.
+ *
+ * This is only used if someone didn't read all of their data in the V1 format,
+ * so don't bother making this very efficient yet.
+ *
+ * @returns VBox status code.
+ * @param   pStrm       The stream handle.
+ * @param   offDst      The destination offset.
+ */
+static int ssmR3StrmSkipTo(PSSMSTRM pStrm, uint64_t offDst)
+{
+    /* dead simple - lazy bird! */
+    for (;;)
+    {
+        uint64_t offCur = ssmR3StrmTell(pStrm);
+        AssertReturn(offCur <= offDst, VERR_INTERNAL_ERROR_4);
+        if (offCur == offDst)
+            return VINF_SUCCESS;
+
+        uint8_t abBuf[4096];
+        size_t cbToRead = RT_MIN(sizeof(abBuf), offDst - offCur);
+        int rc = ssmR3StrmRead(pStrm, abBuf, cbToRead);
+        if (RT_FAILURE(rc))
+            return rc;
+    }
+}
+
+
+/**
+ * Get the size of the file.
+ *
+ * This does not work for non-file streams!
+ *
+ * @returns The file size, or UINT64_MAX if not a file stream.
+ * @param   pStrm       The stream handle.
+ */
+static uint64_t ssmR3StrmGetSize(PSSMSTRM pStrm)
+{
+    uint64_t cbFile;
+    int rc = RTFileGetSize(pStrm->hFile, &cbFile);
+    AssertLogRelRCReturn(rc, UINT64_MAX);
+    return cbFile;
 }
 
 
@@ -1483,7 +2205,7 @@ static int ssmR3WriteDirectory(PVM pVM, PSSMHANDLE pSSM, uint32_t *pcEntries)
     *pcEntries = pDir->cEntries;
     cbDir = RT_OFFSETOF(SSMFILEDIR, aEntries[pDir->cEntries]);
     pDir->u32CRC = RTCrc32(pDir, cbDir);
-    int rc = ssmR3StrmWrite(pSSM, pDir, cbDir);
+    int rc = ssmR3StrmWrite(&pSSM->Strm, pDir, cbDir);
     RTMemTmpFree(pDir);
     return rc;
 }
@@ -1524,8 +2246,8 @@ VMMR3DECL(int) SSMR3Save(PVM pVM, const char *pszFilename, SSMAFTER enmAfter, PF
      * so we reserve 20% for the 'Done' period.  The checksumming and closing of
      * the saved state file might take a long time.
      */
-    SSMHANDLE Handle        = {0};
-    Handle.hFile            = NIL_RTFILE;
+    SSMHANDLE Handle;
+    RT_ZERO(Handle);
     Handle.pVM              = pVM;
     Handle.enmOp            = SSMSTATE_INVALID;
     Handle.enmAfter         = enmAfter;
@@ -1541,11 +2263,9 @@ VMMR3DECL(int) SSMR3Save(PVM pVM, const char *pszFilename, SSMAFTER enmAfter, PF
     Handle.offEstUnitEnd    = 0;
     Handle.uPercentPrepare  = 20;
     Handle.uPercentDone     = 2;
-    Handle.fChecksummed     = true;
-    Handle.u32StreamCRC     = RTCrc32Start();
     Handle.u.Write.offDataBuffer    = 0;
 
-    int rc = RTFileOpen(&Handle.hFile, pszFilename, RTFILE_O_READWRITE | RTFILE_O_CREATE_REPLACE | RTFILE_O_DENY_WRITE);
+    int rc = ssmR3StrmOpenFile(&Handle.Strm, pszFilename, true /*fWrite*/, true /*fChecksummed*/);
     if (RT_FAILURE(rc))
     {
         LogRel(("SSM: Failed to create save state file '%s', rc=%Rrc.\n",  pszFilename, rc));
@@ -1578,7 +2298,7 @@ VMMR3DECL(int) SSMR3Save(PVM pVM, const char *pszFilename, SSMAFTER enmAfter, PF
     u.FileHdr.cbMaxDecompr = RT_SIZEOFMEMB(SSMHANDLE, u.Read.abDataBuffer);
     u.FileHdr.u32CRC       = 0;
     u.FileHdr.u32CRC       = RTCrc32(&u.FileHdr, sizeof(u.FileHdr));
-    rc = ssmR3StrmWrite(&Handle, &u.FileHdr, sizeof(u.FileHdr));
+    rc = ssmR3StrmWrite(&Handle.Strm, &u.FileHdr, sizeof(u.FileHdr));
     if (RT_SUCCESS(rc))
     {
         /*
@@ -1653,16 +2373,14 @@ VMMR3DECL(int) SSMR3Save(PVM pVM, const char *pszFilename, SSMAFTER enmAfter, PF
                     pUnit->fCalled = true;
                     continue;
                 }
-                pUnit->offStream = ssmR3StrmTell(&Handle);
+                pUnit->offStream = ssmR3StrmTell(&Handle.Strm);
 
                 /*
                  * Write data unit header
                  */
                 memcpy(&u.UnitHdr.szMagic[0], SSMFILEUNITHDR_MAGIC, sizeof(u.UnitHdr.szMagic));
                 u.UnitHdr.offStream       = pUnit->offStream;
-                if (Handle.fChecksummed)
-                    ssmR3StrmFlush(&Handle);
-                u.UnitHdr.u32CurStreamCRC = Handle.u32StreamCRC;
+                u.UnitHdr.u32CurStreamCRC = ssmR3StrmCurCRC(&Handle.Strm);
                 u.UnitHdr.u32CRC          = 0;
                 u.UnitHdr.u32Version      = pUnit->u32Version;
                 u.UnitHdr.u32Instance     = pUnit->u32Instance;
@@ -1673,7 +2391,7 @@ VMMR3DECL(int) SSMR3Save(PVM pVM, const char *pszFilename, SSMAFTER enmAfter, PF
                 u.UnitHdr.u32CRC          = RTCrc32(&u.UnitHdr, RT_OFFSETOF(SSMFILEUNITHDR, szName[u.UnitHdr.cbName]));
                 Log(("SSM: Unit at %#9llx: '%s', instance %u, phase %#x, version %u\n",
                      u.UnitHdr.offStream, u.UnitHdr.szName, u.UnitHdr.u32Instance, u.UnitHdr.u32Phase, u.UnitHdr.u32Version));
-                rc = ssmR3StrmWrite(&Handle, &u.UnitHdr, RT_OFFSETOF(SSMFILEUNITHDR, szName[u.UnitHdr.cbName]));
+                rc = ssmR3StrmWrite(&Handle.Strm, &u.UnitHdr, RT_OFFSETOF(SSMFILEUNITHDR, szName[u.UnitHdr.cbName]));
                 if (RT_SUCCESS(rc))
                 {
                     /*
@@ -1707,10 +2425,10 @@ VMMR3DECL(int) SSMR3Save(PVM pVM, const char *pszFilename, SSMAFTER enmAfter, PF
                         SSMRECTERM TermRec;
                         TermRec.u8TypeAndFlags = SSM_REC_FLAGS_FIXED | SSM_REC_FLAGS_IMPORTANT | SSM_REC_TYPE_TERM;
                         TermRec.cbRec       = sizeof(TermRec) - 2;
-                        if (Handle.fChecksummed)
+                        if (Handle.Strm.fChecksummed)
                         {
                             TermRec.fFlags       = SSMRECTERM_FLAGS_CRC32;
-                            TermRec.u32StreamCRC = RTCrc32Finish(Handle.u32StreamCRC);
+                            TermRec.u32StreamCRC = ssmR3StrmFinalCRC(&Handle.Strm);
                         }
                         else
                         {
@@ -1792,8 +2510,8 @@ VMMR3DECL(int) SSMR3Save(PVM pVM, const char *pszFilename, SSMAFTER enmAfter, PF
         {
             /* Write the end unit. */
             memcpy(&u.UnitHdr.szMagic[0], SSMFILEUNITHDR_END, sizeof(u.UnitHdr.szMagic));
-            u.UnitHdr.offStream       = ssmR3StrmTell(&Handle);
-            u.UnitHdr.u32CurStreamCRC = Handle.u32StreamCRC;
+            u.UnitHdr.offStream       = ssmR3StrmTell(&Handle.Strm);
+            u.UnitHdr.u32CurStreamCRC = ssmR3StrmCurCRC(&Handle.Strm);
             u.UnitHdr.u32CRC          = 0;
             u.UnitHdr.u32Version      = 0;
             u.UnitHdr.u32Instance     = 0;
@@ -1802,32 +2520,32 @@ VMMR3DECL(int) SSMR3Save(PVM pVM, const char *pszFilename, SSMAFTER enmAfter, PF
             u.UnitHdr.cbName          = 0;
             u.UnitHdr.u32CRC          = RTCrc32(&u.UnitHdr, RT_OFFSETOF(SSMFILEUNITHDR, szName[0]));
             Log(("SSM: Unit at %#9llx: END UNIT\n", u.UnitHdr.offStream));
-            rc = ssmR3StrmWrite(&Handle,  &u.UnitHdr, RT_OFFSETOF(SSMFILEUNITHDR, szName[0]));
+            rc = ssmR3StrmWrite(&Handle.Strm,  &u.UnitHdr, RT_OFFSETOF(SSMFILEUNITHDR, szName[0]));
             if (RT_SUCCESS(rc))
             {
                 /* Write the directory for the final units and then the footer. */
                 rc = ssmR3WriteDirectory(pVM, &Handle, &u.Footer.cDirEntries);
-                /* Flush the stream buffers so that the CRC is up to date. */
-                if (RT_SUCCESS(rc))
-                    rc = ssmR3StrmFlush(&Handle);
                 if (RT_SUCCESS(rc))
                 {
                     memcpy(u.Footer.szMagic, SSMFILEFTR_MAGIC, sizeof(u.Footer.szMagic));
-                    u.Footer.offStream    = ssmR3StrmTell(&Handle);
-                    u.Footer.u32StreamCRC = Handle.fChecksummed ? RTCrc32Finish(Handle.u32StreamCRC) : 0;
+                    u.Footer.offStream    = ssmR3StrmTell(&Handle.Strm);
+                    u.Footer.u32StreamCRC = ssmR3StrmFinalCRC(&Handle.Strm);
                     u.Footer.u32Reserved  = 0;
                     u.Footer.u32CRC       = 0;
                     u.Footer.u32CRC       = RTCrc32(&u.Footer, sizeof(u.Footer));
                     Log(("SSM: Footer at %#9llx: \n", u.Footer.offStream));
-                    rc = ssmR3StrmWrite(&Handle, &u.Footer, sizeof(u.Footer));
+                    rc = ssmR3StrmWrite(&Handle.Strm, &u.Footer, sizeof(u.Footer));
                     if (RT_SUCCESS(rc))
                     {
-                        rc = RTFileClose(Handle.hFile);
-                        AssertRC(rc);
-                        if (pfnProgress)
-                            pfnProgress(pVM, 100, pvUser);
-                        Log(("SSM: Successfully saved the vm state to '%s'.\n", pszFilename));
-                        return VINF_SUCCESS;
+                        rc = ssmR3StrmClose(&Handle.Strm);
+                        if (RT_SUCCESS(rc))
+                        {
+                            if (pfnProgress)
+                                pfnProgress(pVM, 100, pvUser);
+                            Log(("SSM: Successfully saved the vm state to '%s'.\n", pszFilename));
+                            return VINF_SUCCESS;
+                        }
+                        return rc;
                     }
                 }
             }
@@ -1836,11 +2554,10 @@ VMMR3DECL(int) SSMR3Save(PVM pVM, const char *pszFilename, SSMAFTER enmAfter, PF
     }
 
     /*
-     * Delete the file on failure and destroy any compressors.
+     * Delete the file on failure.
      */
-    int rc2 = RTFileClose(Handle.hFile);
-    AssertRC(rc2);
-    rc2 = RTFileDelete(pszFilename);
+    ssmR3StrmClose(&Handle.Strm);
+    int rc2 = RTFileDelete(pszFilename);
     AssertRC(rc2);
 
     return rc;
@@ -1928,7 +2645,7 @@ static int ssmR3ValidateHeaderInfo(PSSMHANDLE pSSM, bool fHaveHostBits, bool fHa
 static int ssmR3ValidateFile(PSSMHANDLE pSSM, bool fChecksumIt, bool fChecksumOnRead)
 {
     /*
-     * Read the header.
+     * Read and check the header magic.
      */
     union
     {
@@ -1936,28 +2653,63 @@ static int ssmR3ValidateFile(PSSMHANDLE pSSM, bool fChecksumIt, bool fChecksumOn
         SSMFILEHDRV12       v1_2;
         SSMFILEHDRV11       v1_1;
     } uHdr;
-    int rc = RTFileRead(pSSM->hFile, &uHdr, sizeof(uHdr), NULL);
+    int rc = ssmR3StrmRead(&pSSM->Strm, &uHdr, sizeof(uHdr.v2_0.szMagic));
     if (RT_FAILURE(rc))
     {
-        LogRel(("SSM: Failed to read file header. rc=%Rrc\n", rc));
+        LogRel(("SSM: Failed to read file magic header. rc=%Rrc\n", rc));
         return rc;
     }
-
-    /*
-     * Verify the magic and make adjustments for versions differences.
-     */
     if (memcmp(uHdr.v2_0.szMagic, SSMFILEHDR_MAGIC_BASE, sizeof(SSMFILEHDR_MAGIC_BASE) - 1))
     {
         Log(("SSM: Not a saved state file. magic=%.*s\n", sizeof(uHdr.v2_0.szMagic) - 1, uHdr.v2_0.szMagic));
         return VERR_SSM_INTEGRITY_MAGIC;
     }
-    if (memcmp(uHdr.v2_0.szMagic, SSMFILEHDR_MAGIC_V1_X, sizeof(SSMFILEHDR_MAGIC_V1_X) - 1))
+
+    /*
+     * Find the header size and read the rest.
+     */
+    static const struct
+    {
+        char        szMagic[sizeof(SSMFILEHDR_MAGIC_V2_0)];
+        size_t      cbHdr;
+        unsigned    uFmtVerMajor;
+        unsigned    uFmtVerMinor;
+    }   s_aVers[] =
+    {
+        { SSMFILEHDR_MAGIC_V2_0, sizeof(SSMFILEHDR),    2, 0 },
+        { SSMFILEHDR_MAGIC_V1_2, sizeof(SSMFILEHDRV12), 1, 2 },
+        { SSMFILEHDR_MAGIC_V1_1, sizeof(SSMFILEHDRV11), 1, 1 },
+    };
+    int iVer = RT_ELEMENTS(s_aVers);
+    while (iVer-- > 0)
+        if (!memcmp(uHdr.v2_0.szMagic, s_aVers[iVer].szMagic, sizeof(uHdr.v2_0.szMagic)))
+            break;
+    if (iVer < 0)
+    {
+        Log(("SSM: Unknown file format version. magic=%.*s\n", sizeof(uHdr.v2_0.szMagic) - 1, uHdr.v2_0.szMagic));
+        return VERR_SSM_INTEGRITY_VERSION;
+    }
+    pSSM->u.Read.uFmtVerMajor   = s_aVers[iVer].uFmtVerMajor;
+    pSSM->u.Read.uFmtVerMinor   = s_aVers[iVer].uFmtVerMinor;
+    pSSM->u.Read.cbFileHdr      = s_aVers[iVer].cbHdr;
+
+    rc = ssmR3StrmRead(&pSSM->Strm, (uint8_t *)&uHdr + sizeof(uHdr.v2_0.szMagic), pSSM->u.Read.cbFileHdr - sizeof(uHdr.v2_0.szMagic));
+    if (RT_FAILURE(rc))
+    {
+        LogRel(("SSM: Failed to read the file header. rc=%Rrc\n", rc));
+        return rc;
+    }
+
+    /*
+     * Make version specific adjustments.
+     */
+    if (pSSM->u.Read.uFmtVerMajor >= 2)
     {
         /*
          * Version 2.0 and later.
          */
         bool fChecksummed;
-        if (!memcmp(uHdr.v2_0.szMagic, SSMFILEHDR_MAGIC_V2_0, sizeof(SSMFILEHDR_MAGIC_V2_0)))
+        if (pSSM->u.Read.uFmtVerMinor == 0)
         {
             /* validate the header. */
             SSM_CHECK_CRC32_RET(&uHdr.v2_0, sizeof(uHdr.v2_0), ("Header CRC mismatch: %08x, correct is %08x\n", u32CRC, u32ActualCRC));
@@ -1980,9 +2732,6 @@ static int ssmR3ValidateFile(PSSMHANDLE pSSM, bool fChecksumIt, bool fChecksumOn
             }
 
             /* set the header info. */
-            pSSM->u.Read.uFmtVerMajor   = 2;
-            pSSM->u.Read.uFmtVerMinor   = 2;
-            pSSM->u.Read.cbFileHdr      = sizeof(uHdr.v2_0);
             pSSM->u.Read.cHostBits      = uHdr.v2_0.cHostBits;
             pSSM->u.Read.u16VerMajor    = uHdr.v2_0.u16VerMajor;
             pSSM->u.Read.u16VerMinor    = uHdr.v2_0.u16VerMinor;
@@ -1994,22 +2743,18 @@ static int ssmR3ValidateFile(PSSMHANDLE pSSM, bool fChecksumIt, bool fChecksumOn
             fChecksummed = !!(uHdr.v2_0.fFlags & SSMFILEHDR_FLAGS_STREAM_CRC32);
         }
         else
-        {
-            Log(("SSM: Unknown file format version. magic=%.*s\n", sizeof(uHdr.v2_0.szMagic) - 1, uHdr.v2_0.szMagic));
-            return VERR_SSM_INTEGRITY_VERSION;
-        }
-
-        if (fChecksummed && fChecksumOnRead)
-            pSSM->u32StreamCRC = RTCrc32Process(RTCrc32Start(), &uHdr, pSSM->u.Read.cbFileHdr);
+            AssertFailedReturn(VERR_INTERNAL_ERROR);
 
         /*
          * Read and validate the footer.
          */
+/** @todo this needs to be fixed when starting to buffer input using a separate thread. */
+        uint64_t    offRestore = RTFileTell(pSSM->Strm.hFile);
         SSMFILEFTR  Footer;
         uint64_t    offFooter;
-        rc = RTFileSeek(pSSM->hFile, -(RTFOFF)sizeof(Footer), RTFILE_SEEK_END, &offFooter);
+        rc = RTFileSeek(pSSM->Strm.hFile, -(RTFOFF)sizeof(Footer), RTFILE_SEEK_END, &offFooter);
         AssertLogRelRCReturn(rc, rc);
-        rc = RTFileRead(pSSM->hFile, &Footer, sizeof(Footer), NULL);
+        rc = RTFileRead(pSSM->Strm.hFile, &Footer, sizeof(Footer), NULL);
         AssertLogRelRCReturn(rc, rc);
         if (memcmp(Footer.szMagic, SSMFILEFTR_MAGIC, sizeof(Footer.szMagic)))
         {
@@ -2051,10 +2796,10 @@ static int ssmR3ValidateFile(PSSMHANDLE pSSM, bool fChecksumIt, bool fChecksumOn
             &&  fChecksumIt
             &&  !fChecksumOnRead)
         {
-            rc = RTFileSeek(pSSM->hFile, 0, RTFILE_SEEK_BEGIN, NULL);
+            rc = RTFileSeek(pSSM->Strm.hFile, 0, RTFILE_SEEK_BEGIN, NULL);
             AssertLogRelRCReturn(rc, rc);
             uint32_t u32CRC;
-            rc = ssmR3CalcChecksum(pSSM->hFile, offFooter, &u32CRC);
+            rc = ssmR3CalcChecksum(pSSM->Strm.hFile, offFooter, &u32CRC);
             if (RT_FAILURE(rc))
                 return rc;
             if (u32CRC != pSSM->u.Read.u32LoadCRC)
@@ -2063,6 +2808,9 @@ static int ssmR3ValidateFile(PSSMHANDLE pSSM, bool fChecksumIt, bool fChecksumOn
                 return VERR_SSM_INTEGRITY_CRC;
             }
         }
+
+        rc = RTFileSeek(pSSM->Strm.hFile, RTFILE_SEEK_BEGIN, offRestore, NULL);
+        AssertRCReturn(rc, rc);
     }
     else
     {
@@ -2073,12 +2821,9 @@ static int ssmR3ValidateFile(PSSMHANDLE pSSM, bool fChecksumIt, bool fChecksumOn
         bool        fHaveVersion  = false;
         RTUUID      MachineUuidFromHdr;
 
-        pSSM->fChecksummed = false;
-        pSSM->u.Read.uFmtVerMajor = 1;
-        if (!memcmp(uHdr.v2_0.szMagic, SSMFILEHDR_MAGIC_V1_1, sizeof(SSMFILEHDR_MAGIC_V1_1)))
+        ssmR3StrmDisableChecksumming(&pSSM->Strm);
+        if (pSSM->u.Read.uFmtVerMinor == 1)
         {
-            pSSM->u.Read.uFmtVerMinor   = 1;
-            pSSM->u.Read.cbFileHdr      = sizeof(uHdr.v1_1);
             pSSM->u.Read.cHostBits      = 0; /* unknown */
             pSSM->u.Read.u16VerMajor    = 0;
             pSSM->u.Read.u16VerMinor    = 0;
@@ -2093,10 +2838,8 @@ static int ssmR3ValidateFile(PSSMHANDLE pSSM, bool fChecksumIt, bool fChecksumOn
             MachineUuidFromHdr  = uHdr.v1_1.MachineUuid;
             fHaveHostBits       = false;
         }
-        else if (!memcmp(uHdr.v2_0.szMagic, SSMFILEHDR_MAGIC_V1_2, sizeof(SSMFILEHDR_MAGIC_V1_2)))
+        else if (pSSM->u.Read.uFmtVerMinor == 2)
         {
-            pSSM->u.Read.uFmtVerMinor   = 2;
-            pSSM->u.Read.cbFileHdr      = sizeof(uHdr.v1_2);
             pSSM->u.Read.cHostBits      = uHdr.v1_2.cHostBits;
             pSSM->u.Read.u16VerMajor    = uHdr.v1_2.u16VerMajor;
             pSSM->u.Read.u16VerMinor    = uHdr.v1_2.u16VerMinor;
@@ -2112,10 +2855,7 @@ static int ssmR3ValidateFile(PSSMHANDLE pSSM, bool fChecksumIt, bool fChecksumOn
             fHaveVersion        = true;
         }
         else
-        {
-            LogRel(("SSM: Unknown file format version. magic=%.*s\n", sizeof(uHdr.v2_0.szMagic) - 1, uHdr.v2_0.szMagic));
-            return VERR_SSM_INTEGRITY_VERSION;
-        }
+            AssertFailedReturn(VERR_INTERNAL_ERROR);
 
         /*
          * The MachineUuid must be NULL (was never used).
@@ -2129,9 +2869,7 @@ static int ssmR3ValidateFile(PSSMHANDLE pSSM, bool fChecksumIt, bool fChecksumOn
         /*
          * Verify the file size.
          */
-        uint64_t cbFile;
-        rc = RTFileGetSize(pSSM->hFile, &cbFile);
-        AssertLogRelRCReturn(rc, rc);
+        uint64_t cbFile = ssmR3StrmGetSize(&pSSM->Strm);
         if (cbFile != pSSM->u.Read.cbLoadFile)
         {
             LogRel(("SSM: File size mismatch. hdr.cbFile=%lld actual %lld\n", pSSM->u.Read.cbLoadFile, cbFile));
@@ -2155,10 +2893,12 @@ static int ssmR3ValidateFile(PSSMHANDLE pSSM, bool fChecksumIt, bool fChecksumOn
         if (    fChecksumIt
             ||  fChecksumOnRead)
         {
-            rc = RTFileSeek(pSSM->hFile, RT_OFFSETOF(SSMFILEHDRV11, u32CRC) + sizeof(uHdr.v1_1.u32CRC), RTFILE_SEEK_BEGIN, NULL);
+/** @todo this needs to be fixed when starting to buffer input using a separate thread. */
+            uint64_t offRestore = RTFileTell(pSSM->Strm.hFile);
+            rc = RTFileSeek(pSSM->Strm.hFile, RT_OFFSETOF(SSMFILEHDRV11, u32CRC) + sizeof(uHdr.v1_1.u32CRC), RTFILE_SEEK_BEGIN, NULL);
             AssertLogRelRCReturn(rc, rc);
             uint32_t u32CRC;
-            rc = ssmR3CalcChecksum(pSSM->hFile, cbFile - pSSM->u.Read.cbFileHdr, &u32CRC);
+            rc = ssmR3CalcChecksum(pSSM->Strm.hFile, cbFile - pSSM->u.Read.cbFileHdr, &u32CRC);
             if (RT_FAILURE(rc))
                 return rc;
             if (u32CRC != pSSM->u.Read.u32LoadCRC)
@@ -2166,6 +2906,8 @@ static int ssmR3ValidateFile(PSSMHANDLE pSSM, bool fChecksumIt, bool fChecksumOn
                 LogRel(("SSM: Invalid CRC! Calculated %#010x, in header %#010x\n", u32CRC, pSSM->u.Read.u32LoadCRC));
                 return VERR_SSM_INTEGRITY_CRC;
             }
+            rc = RTFileSeek(pSSM->Strm.hFile, RTFILE_SEEK_BEGIN, offRestore, NULL);
+            AssertRCReturn(rc, rc);
         }
     }
 
@@ -2194,7 +2936,6 @@ static int ssmR3OpenFile(PVM pVM, const char *pszFilename, bool fChecksumIt, boo
     /*
      * Initialize the handle.
      */
-    pSSM->hFile            = NIL_RTFILE;
     pSSM->pVM              = pVM;
     pSSM->enmOp            = SSMSTATE_INVALID;
     pSSM->enmAfter         = SSMAFTER_INVALID;
@@ -2210,8 +2951,6 @@ static int ssmR3OpenFile(PVM pVM, const char *pszFilename, bool fChecksumIt, boo
     pSSM->offEstUnitEnd    = 0;
     pSSM->uPercentPrepare  = 5;
     pSSM->uPercentDone     = 2;
-    pSSM->fChecksummed     = fChecksumOnRead;
-    pSSM->u32StreamCRC     = 0;
 
     pSSM->u.Read.pZipDecompV1   = NULL;
     pSSM->u.Read.uFmtVerMajor   = UINT32_MAX;
@@ -2236,22 +2975,18 @@ static int ssmR3OpenFile(PVM pVM, const char *pszFilename, bool fChecksumIt, boo
     /*
      * Try open and validate the file.
      */
-    int rc = RTFileOpen(&pSSM->hFile, pszFilename, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_WRITE);
+    int rc = ssmR3StrmOpenFile(&pSSM->Strm, pszFilename, false /*fWrite*/, fChecksumOnRead);
     if (RT_SUCCESS(rc))
     {
         rc = ssmR3ValidateFile(pSSM, fChecksumIt, fChecksumOnRead);
         if (RT_SUCCESS(rc))
-        {
-            rc = RTFileSeek(pSSM->hFile, pSSM->u.Read.cbFileHdr, RTFILE_SEEK_BEGIN, NULL);
-            if (RT_SUCCESS(rc))
-                return rc;
-        }
+            return rc;
 
-        RTFileClose(pSSM->hFile);
+        /* failure path */
+        ssmR3StrmClose(&pSSM->Strm);
     }
     else
         Log(("SSM: Failed to open save state file '%s', rc=%Rrc.\n",  pszFilename, rc));
-    pSSM->hFile = NIL_RTFILE;
     return rc;
 }
 
@@ -2297,9 +3032,9 @@ static int ssmR3LoadExecV1(PVM pVM, PSSMHANDLE pSSM)
         /*
          * Save the current file position and read the data unit header.
          */
-        uint64_t         offUnit = ssmR3StrmTell(pSSM);
+        uint64_t         offUnit = ssmR3StrmTell(&pSSM->Strm);
         SSMFILEUNITHDRV1 UnitHdr;
-        rc = ssmR3StrmRead(pSSM, &UnitHdr, RT_OFFSETOF(SSMFILEUNITHDR, szName));
+        rc = ssmR3StrmRead(&pSSM->Strm, &UnitHdr, RT_OFFSETOF(SSMFILEUNITHDR, szName));
         if (RT_SUCCESS(rc))
         {
             /*
@@ -2333,7 +3068,7 @@ static int ssmR3LoadExecV1(PVM pVM, PSSMHANDLE pSSM)
             }
             if (pszName)
             {
-                rc = ssmR3StrmRead(pSSM, pszName, UnitHdr.cchName);
+                rc = ssmR3StrmRead(&pSSM->Strm, pszName, UnitHdr.cchName);
                 if (RT_SUCCESS(rc))
                 {
                     if (pszName[UnitHdr.cchName - 1])
@@ -2394,12 +3129,12 @@ static int ssmR3LoadExecV1(PVM pVM, PSSMHANDLE pSSM)
                              * Note! Because of buffering / compression we'll only see the
                              * really bad ones here.
                              */
-                            uint64_t off = ssmR3StrmTell(pSSM);
+                            uint64_t off = ssmR3StrmTell(&pSSM->Strm);
                             int64_t i64Diff = off - (offUnit + UnitHdr.cbUnit);
                             if (i64Diff < 0)
                             {
                                 Log(("SSM: Unit '%s' left %lld bytes unread!\n", pszName, -i64Diff));
-                                rc = RTFileSeek(pSSM->hFile, offUnit + UnitHdr.cbUnit, RTFILE_SEEK_BEGIN, NULL);
+                                rc = ssmR3StrmSkipTo(&pSSM->Strm, offUnit + UnitHdr.cbUnit);
                                 ssmR3Progress(pSSM, offUnit + UnitHdr.cbUnit - pSSM->offEst);
                             }
                             else if (i64Diff > 0)
@@ -2428,7 +3163,7 @@ static int ssmR3LoadExecV1(PVM pVM, PSSMHANDLE pSSM)
                         rc = VERR_SSM_INTEGRITY_UNIT_NOT_FOUND;
                         if (pSSM->enmAfter != SSMAFTER_DEBUG_IT)
                             break;
-                        rc = RTFileSeek(pSSM->hFile, offUnit + UnitHdr.cbUnit, RTFILE_SEEK_BEGIN, NULL);
+                        rc = ssmR3StrmSkipTo(&pSSM->Strm, offUnit + UnitHdr.cbUnit);
                     }
                 }
             }
@@ -2466,10 +3201,10 @@ static int ssmR3LoadExecV2(PVM pVM, PSSMHANDLE pSSM)
         /*
          * Read the unit header and check its integrity.
          */
-        uint64_t        offUnit         = ssmR3StrmTell(pSSM);
+        uint64_t        offUnit         = ssmR3StrmTell(&pSSM->Strm);
         uint32_t        u32CurStreamCRC = pSSM->u32StreamCRC;
         SSMFILEUNITHDR  UnitHdr;
-        int rc = ssmR3StrmRead(pSSM, &UnitHdr, RT_OFFSETOF(SSMFILEUNITHDR, szName));
+        int rc = ssmR3StrmRead(&pSSM->Strm, &UnitHdr, RT_OFFSETOF(SSMFILEUNITHDR, szName));
         if (RT_FAILURE(rc))
             return rc;
         if (RT_UNLIKELY(    memcmp(&UnitHdr.szMagic[0], SSMFILEUNITHDR_MAGIC, sizeof(UnitHdr.szMagic))
@@ -2487,7 +3222,7 @@ static int ssmR3LoadExecV2(PVM pVM, PSSMHANDLE pSSM)
                         offUnit, offUnit, UnitHdr.cbName, sizeof(UnitHdr.szName)));
                 return VERR_SSM_INTEGRITY;
             }
-            rc = ssmR3StrmRead(pSSM, &UnitHdr.szName[0], UnitHdr.cbName);
+            rc = ssmR3StrmRead(&pSSM->Strm, &UnitHdr.szName[0], UnitHdr.cbName);
             if (RT_FAILURE(rc))
                 return rc;
             if (RT_UNLIKELY(UnitHdr.szName[UnitHdr.cbName - 1]))
@@ -2745,8 +3480,7 @@ VMMR3DECL(int) SSMR3Load(PVM pVM, const char *pszFilename, SSMAFTER enmAfter, PF
     /*
      * Done
      */
-    int rc2 = RTFileClose(Handle.hFile);
-    AssertRC(rc2);
+    ssmR3StrmClose(&Handle.Strm);
     if (RT_SUCCESS(rc))
     {
         /* progress */
@@ -2782,7 +3516,7 @@ VMMR3DECL(int) SSMR3ValidateFile(const char *pszFilename, bool fChecksumIt)
     SSMHANDLE Handle;
     int rc = ssmR3OpenFile(NULL, pszFilename, fChecksumIt, false /*fChecksumOnRead*/, &Handle);
     if (RT_SUCCESS(rc))
-        RTFileClose(Handle.hFile);
+        ssmR3StrmClose(&Handle.Strm);
     else
         Log(("SSM: Failed to open saved state file '%s', rc=%Rrc.\n",  pszFilename, rc));
     return rc;
@@ -2858,10 +3592,9 @@ VMMR3DECL(int) SSMR3Close(PSSMHANDLE pSSM)
     AssertMsgReturn(pSSM->enmOp == SSMSTATE_OPEN_READ, ("%d\n", pSSM->enmOp), VERR_INVALID_PARAMETER);
 
     /*
-     * Close the file and free the handle.
+     * Close the stream and free the handle.
      */
-    int rc = RTFileClose(pSSM->hFile);
-    AssertRC(rc);
+    ssmR3StrmClose(&Handle.Strm);
     if (pSSM->u.Read.pZipDecompV1)
     {
         RTZipDecompDestroy(pSSM->u.Read.pZipDecompV1);
@@ -3160,7 +3893,7 @@ static void ssmR3DataWriteBegin(PSSMHANDLE pSSM)
 static int ssmR3DataWriteRaw(PSSMHANDLE pSSM, const void *pvBuf, size_t cbBuf)
 {
     Log2(("ssmR3DataWriteRaw: %08llx|%08llx: pvBuf=%p cbBuf=%#x %.*Rhxs%s\n",
-          ssmR3StrmTell(pSSM), pSSM->offUnit, pvBuf, cbBuf, RT_MIN(cbBuf, SSM_LOG_BYTES), pvBuf, cbBuf > SSM_LOG_BYTES ? "..." : ""));
+          ssmR3StrmTell(&pSSM->Strm), pSSM->offUnit, pvBuf, cbBuf, RT_MIN(cbBuf, SSM_LOG_BYTES), pvBuf, cbBuf > SSM_LOG_BYTES ? "..." : ""));
 
     /*
      * Check that everything is fine.
@@ -3174,7 +3907,7 @@ static int ssmR3DataWriteRaw(PSSMHANDLE pSSM, const void *pvBuf, size_t cbBuf)
     while (cbBuf > 0)
     {
         size_t cbChunk = RT_MIN(cbBuf, _1M);
-        int rc = ssmR3StrmWrite(pSSM, pvBuf, cbChunk);
+        int rc = ssmR3StrmWrite(&pSSM->Strm, pvBuf, cbChunk);
         if (RT_FAILURE(rc))
             return rc;
         ssmR3Progress(pSSM, cbChunk);
@@ -3249,7 +3982,7 @@ static int ssmR3DataWriteRecHdr(PSSMHANDLE pSSM, size_t cb, uint8_t u8TypeAndFla
         AssertLogRelMsgFailedReturn(("cb=%#x\n", cb), pSSM->rc = VERR_INTERNAL_ERROR);
 
     Log3(("ssmR3DataWriteRecHdr: %08llx|%08llx/%08x: Type=%02x fImportant=%RTbool cbHdr=%u\n",
-          ssmR3StrmTell(pSSM) + cbHdr, pSSM->offUnit + cbHdr, cb, u8TypeAndFlags & SSM_REC_TYPE_MASK, !!(u8TypeAndFlags & SSM_REC_FLAGS_IMPORTANT), cbHdr));
+          ssmR3StrmTell(&pSSM->Strm) + cbHdr, pSSM->offUnit + cbHdr, cb, u8TypeAndFlags & SSM_REC_TYPE_MASK, !!(u8TypeAndFlags & SSM_REC_FLAGS_IMPORTANT), cbHdr));
 
     return ssmR3DataWriteRaw(pSSM, &abHdr[0], cbHdr);
 }
@@ -3328,7 +4061,7 @@ static int ssmR3DataFlushBuffer(PSSMHANDLE pSSM)
     pbHdr[0] = SSM_REC_FLAGS_FIXED | SSM_REC_FLAGS_IMPORTANT | SSM_REC_TYPE_RAW;
 
     Log3(("ssmR3DataFlushBuffer: %08llx|%08llx/%08x: Type=RAW fImportant=true cbHdr=%u\n",
-          ssmR3StrmTell(pSSM) + (cbTotal - cb), pSSM->offUnit + (cbTotal - cb), cb, (cbTotal - cb) ));
+          ssmR3StrmTell(&pSSM->Strm) + (cbTotal - cb), pSSM->offUnit + (cbTotal - cb), cb, (cbTotal - cb) ));
 
     /*
      * Write it and reset the buffer.
@@ -3948,7 +4681,7 @@ static DECLCALLBACK(int) ssmR3ReadInV1(void *pvSSM, void *pvBuf, size_t cbBuf, s
     if (cbRead)
     {
         //Log2(("ssmR3ReadInV1: %#010llx cbBug=%#x cbRead=%#x\n", RTFileTell(pSSM->File), cbBuf, cbRead));
-        int rc = ssmR3StrmRead(pSSM, pvBuf, cbRead);
+        int rc = ssmR3StrmRead(&pSSM->Strm, pvBuf, cbRead);
         if (RT_SUCCESS(rc))
         {
             pSSM->cbUnitLeftV1 -= cbRead;
@@ -4059,7 +4792,7 @@ static void ssmR3DataReadFinishV2(PSSMHANDLE pSSM)
 DECLINLINE(int) ssmR3DataReadV2Raw(PSSMHANDLE pSSM, void *pvBuf, size_t cbToRead)
 {
     /** @todo buffered reads! (at some level or another) */
-    int rc = ssmR3StrmRead(pSSM, pvBuf, cbToRead);
+    int rc = ssmR3StrmRead(&pSSM->Strm, pvBuf, cbToRead);
     if (RT_SUCCESS(rc))
     {
         pSSM->offUnit += cbToRead;
@@ -4158,7 +4891,7 @@ static int ssmR3DataReadRecHdrV2(PSSMHANDLE pSSM)
     /*
      * Read the two mandatory bytes.
      */
-    uint32_t u32StreamCRC = pSSM->u32StreamCRC;
+    uint32_t u32StreamCRC = ssmR3StrmCurCRC(pSSM); /** @todo NOT good. */
     uint8_t  abHdr[8];
     int rc = ssmR3DataReadV2Raw(pSSM, abHdr, 2);
     if (RT_FAILURE(rc))
@@ -4189,13 +4922,13 @@ static int ssmR3DataReadRecHdrV2(PSSMHANDLE pSSM)
         AssertLogRelMsgReturn(!(TermRec.fFlags & ~SSMRECTERM_FLAGS_CRC32), ("%#x\n", TermRec.fFlags), VERR_SSM_INTEGRITY);
         if (!(TermRec.fFlags & SSMRECTERM_FLAGS_CRC32))
             AssertLogRelMsgReturn(TermRec.u32StreamCRC == 0, ("%#x\n", TermRec.u32StreamCRC), VERR_SSM_INTEGRITY);
-        else if (pSSM->fChecksummed)
+        else if (pSSM->Strm.fChecksummed)
         {
             u32StreamCRC = RTCrc32Finish(u32StreamCRC);
             AssertLogRelMsgReturn(TermRec.u32StreamCRC == u32StreamCRC, ("%#x, %#x\n", TermRec.u32StreamCRC, u32StreamCRC), VERR_SSM_INTEGRITY_CRC);
         }
 
-        Log3(("ssmR3DataReadRecHdrV2: %08llx|%08llx: TERM\n", ssmR3StrmTell(pSSM) - sizeof(SSMRECTERM), pSSM->offUnit));
+        Log3(("ssmR3DataReadRecHdrV2: %08llx|%08llx: TERM\n", ssmR3StrmTell(&pSSM->Strm) - sizeof(SSMRECTERM), pSSM->offUnit));
         return VINF_SUCCESS;
     }
 
@@ -4302,7 +5035,7 @@ static int ssmR3DataReadRecHdrV2(PSSMHANDLE pSSM)
     }
 
     Log3(("ssmR3DataReadRecHdrV2: %08llx|%08llx/%08x: Type=%02x fImportant=%RTbool cbHdr=%u\n",
-          ssmR3StrmTell(pSSM), pSSM->offUnit, pSSM->u.Read.cbRecLeft,
+          ssmR3StrmTell(&pSSM->Strm), pSSM->offUnit, pSSM->u.Read.cbRecLeft,
           pSSM->u.Read.u8TypeAndFlags & SSM_REC_TYPE_MASK,
           !!(pSSM->u.Read.u8TypeAndFlags & SSM_REC_FLAGS_IMPORTANT),
           cbHdr
@@ -4328,7 +5061,7 @@ static int ssmR3DataReadUnbufferedV2(PSSMHANDLE pSSM, void *pvBuf, size_t cbBuf)
      */
     uint32_t off        = pSSM->u.Read.offDataBuffer;
     int32_t  cbInBuffer = pSSM->u.Read.cbDataBuffer - off;
-    Log4(("ssmR3DataReadUnbufferedV2: %08llx|%08llx/%08x/%08x: cbBuf=%#x\n", ssmR3StrmTell(pSSM), pSSM->offUnit, pSSM->u.Read.cbRecLeft, cbInBuffer, cbBufOrg));
+    Log4(("ssmR3DataReadUnbufferedV2: %08llx|%08llx/%08x/%08x: cbBuf=%#x\n", ssmR3StrmTell(&pSSM->Strm), pSSM->offUnit, pSSM->u.Read.cbRecLeft, cbInBuffer, cbBufOrg));
     if (cbInBuffer > 0)
     {
         uint32_t const cbToCopy = (uint32_t)cbInBuffer;
@@ -4408,7 +5141,7 @@ static int ssmR3DataReadUnbufferedV2(PSSMHANDLE pSSM, void *pvBuf, size_t cbBuf)
     } while (cbBuf > 0);
 
     Log4(("ssmR3DataReadUnBufferedV2: %08llx|%08llx/%08x/%08x: cbBuf=%#x %.*Rhxs%s\n",
-          ssmR3StrmTell(pSSM), pSSM->offUnit, pSSM->u.Read.cbRecLeft, 0, cbBufOrg, RT_MIN(SSM_LOG_BYTES, cbBufOrg), pvBufOrg, cbBufOrg > SSM_LOG_BYTES ? "..." : ""));
+          ssmR3StrmTell(&pSSM->Strm), pSSM->offUnit, pSSM->u.Read.cbRecLeft, 0, cbBufOrg, RT_MIN(SSM_LOG_BYTES, cbBufOrg), pvBufOrg, cbBufOrg > SSM_LOG_BYTES ? "..." : ""));
     return VINF_SUCCESS;
 }
 
@@ -4430,7 +5163,7 @@ static int ssmR3DataReadBufferedV2(PSSMHANDLE pSSM, void *pvBuf, size_t cbBuf)
      */
     uint32_t off        = pSSM->u.Read.offDataBuffer;
     int32_t  cbInBuffer = pSSM->u.Read.cbDataBuffer - off;
-    Log4(("ssmR3DataReadBufferedV2: %08llx|%08llx/%08x/%08x: cbBuf=%#x\n", ssmR3StrmTell(pSSM), pSSM->offUnit, pSSM->u.Read.cbRecLeft, cbInBuffer, cbBufOrg));
+    Log4(("ssmR3DataReadBufferedV2: %08llx|%08llx/%08x/%08x: cbBuf=%#x\n", ssmR3StrmTell(&pSSM->Strm), pSSM->offUnit, pSSM->u.Read.cbRecLeft, cbInBuffer, cbBufOrg));
     if (cbInBuffer > 0)
     {
         uint32_t const cbToCopy = (uint32_t)cbInBuffer;
@@ -4506,7 +5239,7 @@ static int ssmR3DataReadBufferedV2(PSSMHANDLE pSSM, void *pvBuf, size_t cbBuf)
     } while (cbBuf > 0);
 
     Log4(("ssmR3DataReadBufferedV2: %08llx|%08llx/%08x/%08x: cbBuf=%#x %.*Rhxs%s\n",
-          ssmR3StrmTell(pSSM), pSSM->offUnit, pSSM->u.Read.cbRecLeft, pSSM->u.Read.cbDataBuffer - pSSM->u.Read.offDataBuffer,
+          ssmR3StrmTell(&pSSM->Strm), pSSM->offUnit, pSSM->u.Read.cbRecLeft, pSSM->u.Read.cbDataBuffer - pSSM->u.Read.offDataBuffer,
           cbBufOrg, RT_MIN(SSM_LOG_BYTES, cbBufOrg), pvBufOrg, cbBufOrg > SSM_LOG_BYTES ? "..." : ""));
     return VINF_SUCCESS;
 }
@@ -4546,7 +5279,7 @@ DECLINLINE(int) ssmR3DataRead(PSSMHANDLE pSSM, void *pvBuf, size_t cbBuf)
     Log4((cbBuf
           ? "ssmR3DataRead: %08llx|%08llx/%08x/%08x: cbBuf=%#x %.*Rhxs%s\n"
           : "ssmR3DataRead: %08llx|%08llx/%08x/%08x: cbBuf=%#x\n",
-          ssmR3StrmTell(pSSM), pSSM->offUnit, pSSM->u.Read.cbRecLeft, pSSM->u.Read.cbDataBuffer - pSSM->u.Read.offDataBuffer,
+          ssmR3StrmTell(&pSSM->Strm), pSSM->offUnit, pSSM->u.Read.cbRecLeft, pSSM->u.Read.cbDataBuffer - pSSM->u.Read.offDataBuffer,
           cbBuf, RT_MIN(SSM_LOG_BYTES, cbBuf), pvBuf, cbBuf > SSM_LOG_BYTES ? "..." : ""));
 
     return VINF_SUCCESS;
