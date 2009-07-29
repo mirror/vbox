@@ -99,8 +99,8 @@
  *       - type 1: Terminator with CRC-32 and unit size.
  *       - type 2: Raw data record.
  *       - type 3: Raw data compressed by LZF. The data is prefixed by a 8-bit
- *                 field countining the length of the uncompressed data given as
- *                 a page count.
+ *                 field countining the length of the uncompressed data given in
+ *                 1KB units.
  *       - type 4: Named data - length prefixed name followed by the data. This
  *                 type is not implemented yet as we're missing the API part, so
  *                 the type assignment is tentative.
@@ -111,7 +111,9 @@
  *   - bit 7: "magic" bit, always set.
  *
  * Record header byte 2 (optionally thru 7) is the size of the following data
- * encoded in UTF-8 style.
+ * encoded in UTF-8 style.  To make buffering simpler and more efficient during
+ * the save operation, the strict checks enforcing optimal encoding has been
+ * relaxed for the 2 and 3 byte encodings.
  *
  * (In version 1.2 and earlier the unit data was compressed and not record
  * based. The unit header contained the compressed size of the data, i.e. it
@@ -255,6 +257,11 @@
         (p)->u32CRC = u32CRC; \
         AssertLogRelMsgReturn(u32ActualCRC == u32CRC, Msg, VERR_SSM_INTEGRITY_CRC); \
     } while (0)
+
+/** The number of bytes to compress is one block.
+ * Must be a multiple of 1KB.  */
+#define SSM_ZIP_BLOCK_SIZE                      _4K
+AssertCompile(SSM_ZIP_BLOCK_SIZE / _1K * _1K == SSM_ZIP_BLOCK_SIZE);
 
 
 /*******************************************************************************
@@ -1965,7 +1972,7 @@ static int ssmR3ValidateFile(PSSMHANDLE pSSM, bool fChecksumIt, bool fChecksumOn
                 return VERR_SSM_INTEGRITY;
             }
             if (    uHdr.v2_0.cbMaxDecompr > sizeof(pSSM->u.Read.abDataBuffer)
-                ||  uHdr.v2_0.cbMaxDecompr < PAGE_SIZE
+                ||  uHdr.v2_0.cbMaxDecompr < _1K
                 ||  (uHdr.v2_0.cbMaxDecompr & 0xff) != 0)
             {
                 LogRel(("SSM: The cbMaxDecompr header field is out of range: %#x\n", uHdr.v2_0.cbMaxDecompr));
@@ -3350,23 +3357,23 @@ static int ssmR3DataWriteBig(PSSMHANDLE pSSM, const void *pvBuf, size_t cbBuf)
          */
         for (;;)
         {
-            if (cbBuf >= PAGE_SIZE)
+            if (cbBuf >= SSM_ZIP_BLOCK_SIZE)
             {
                 struct
                 {
-                    uint8_t     cPages;
-                    uint8_t     abCompr[PAGE_SIZE - (PAGE_SIZE / 16)];
+                    uint8_t     cKB;
+                    uint8_t     abCompr[SSM_ZIP_BLOCK_SIZE - (SSM_ZIP_BLOCK_SIZE / 16)];
                 } s;
-                AssertCompile(sizeof(s) == PAGE_SIZE - (PAGE_SIZE / 16) + sizeof(uint8_t));
+                AssertCompile(sizeof(s) == SSM_ZIP_BLOCK_SIZE - (SSM_ZIP_BLOCK_SIZE / 16) + sizeof(uint8_t));
 
                 size_t cbCompr;
                 rc = RTZipBlockCompress(RTZIPTYPE_LZF, RTZIPLEVEL_FAST, 0 /*fFlags*/,
-                                        pvBuf, PAGE_SIZE,
+                                        pvBuf, SSM_ZIP_BLOCK_SIZE,
                                         &s.abCompr[0], sizeof(s.abCompr), &cbCompr);
                 if (RT_SUCCESS(rc))
                 {
-                    cbCompr += sizeof(s.cPages);
-                    s.cPages = 1;
+                    cbCompr += sizeof(s.cKB);
+                    s.cKB = SSM_ZIP_BLOCK_SIZE / _1K;
                     rc = ssmR3DataWriteRecHdr(pSSM, cbCompr, SSM_REC_FLAGS_FIXED | SSM_REC_FLAGS_IMPORTANT | SSM_REC_TYPE_RAW_LZF);
                     if (RT_FAILURE(rc))
                         return rc;
@@ -3377,17 +3384,17 @@ static int ssmR3DataWriteBig(PSSMHANDLE pSSM, const void *pvBuf, size_t cbBuf)
                 else
                 {
                     /* Didn't compress very well, store it. */
-                    rc = ssmR3DataWriteRecHdr(pSSM, PAGE_SIZE, SSM_REC_FLAGS_FIXED | SSM_REC_FLAGS_IMPORTANT | SSM_REC_TYPE_RAW);
+                    rc = ssmR3DataWriteRecHdr(pSSM, SSM_ZIP_BLOCK_SIZE, SSM_REC_FLAGS_FIXED | SSM_REC_FLAGS_IMPORTANT | SSM_REC_TYPE_RAW);
                     if (RT_FAILURE(rc))
                         return rc;
-                    rc = ssmR3DataWriteRaw(pSSM, pvBuf, PAGE_SIZE);
+                    rc = ssmR3DataWriteRaw(pSSM, pvBuf, SSM_ZIP_BLOCK_SIZE);
                     if (RT_FAILURE(rc))
                         return rc;
                 }
-                if (cbBuf == PAGE_SIZE)
+                if (cbBuf == SSM_ZIP_BLOCK_SIZE)
                     return VINF_SUCCESS;
-                cbBuf -= PAGE_SIZE;
-                pvBuf = (uint8_t const*)pvBuf + PAGE_SIZE;
+                cbBuf -= SSM_ZIP_BLOCK_SIZE;
+                pvBuf = (uint8_t const*)pvBuf + SSM_ZIP_BLOCK_SIZE;
             }
             else
             {
@@ -4084,13 +4091,13 @@ DECLINLINE(int) ssmR3DataReadV2RawLzfHdr(PSSMHANDLE pSSM, size_t *pcbDecompr)
 
 /** @todo this isn't very efficient, we know we have to read it all, so both
  *        reading the first byte separately.  */
-    uint8_t cPages;
-    int rc = ssmR3DataReadV2Raw(pSSM, &cPages, 1);
+    uint8_t cKB;
+    int rc = ssmR3DataReadV2Raw(pSSM, &cKB, 1);
     if (RT_FAILURE(rc))
         return rc;
-    pSSM->u.Read.cbRecLeft -= sizeof(cPages);
+    pSSM->u.Read.cbRecLeft -= sizeof(cKB);
 
-    size_t cbDecompr = (size_t)cPages * PAGE_SIZE;
+    size_t cbDecompr = (size_t)cKB * _1K;
     AssertLogRelMsgReturn(   cbDecompr >= pSSM->u.Read.cbRecLeft
                           && cbDecompr <= RT_SIZEOFMEMB(SSMHANDLE, u.Read.abDataBuffer),
                           ("%#x\n", cbDecompr),
@@ -4276,12 +4283,16 @@ static int ssmR3DataReadRecHdrV2(PSSMHANDLE pSSM)
                 cb =             (abHdr[3] & 0x3f)
                     | ((uint32_t)(abHdr[2] & 0x3f) << 6)
                     | ((uint32_t)(abHdr[1] & 0x0f) << 12);
+#if 0  /* disabled to optimize buffering */
                 AssertLogRelMsgReturn(cb >= 0x00000800 && cb <= 0x0000ffff, ("cb=%#x\n", cb), VERR_SSM_INTEGRITY);
+#endif
                 break;
             case 2:
                 cb =             (abHdr[2] & 0x3f)
                     | ((uint32_t)(abHdr[1] & 0x1f) << 6);
+#if 0  /* disabled to optimize buffering */
                 AssertLogRelMsgReturn(cb >= 0x00000080 && cb <= 0x000007ff, ("cb=%#x\n", cb), VERR_SSM_INTEGRITY);
+#endif
                 break;
             default:
                 return VERR_INTERNAL_ERROR;
