@@ -115,12 +115,19 @@ struct dll {
 
 void            handler_chain_init(void);
 void            handler_chain_destroy(void);
+#ifdef VBOX
+int             LibAliasAttachHandlers(PNATState pData, struct proto_handler *);
+int             LibAliasDetachHandlers(PNATState pData, struct proto_handler *);
+int             detach_handler(PNATState pData, struct proto_handler *);
+struct proto_handler *first_handler(PNATState pData);
+#else
 int             LibAliasAttachHandlers(struct proto_handler *);
 int             LibAliasDetachHandlers(struct proto_handler *);
 int             detach_handler(struct proto_handler *);
-int             find_handler(int8_t, int8_t, struct libalias *, 
-               struct ip *, struct alias_data *);
 struct proto_handler *first_handler(void);
+#endif
+int             find_handler(int8_t, int8_t, struct libalias *, 
+                             struct ip *, struct alias_data *);
 
 /* Functions used with dll module. */
 

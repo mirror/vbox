@@ -556,8 +556,8 @@ int slirp_init(PNATState *ppData, uint32_t u32NetAddr, uint32_t u32Netmask,
         flags = LibAliasSetMode(pData->proxy_alias, flags, ~0);
         proxy_addr.s_addr = htonl(ntohl(special_addr.s_addr) | CTL_ALIAS);
         LibAliasSetAddress(pData->proxy_alias, proxy_addr);
-        ftp_alias_load();
-        nbt_alias_load();
+        ftp_alias_load(pData);
+        nbt_alias_load(pData);
 
     }
 #endif
@@ -656,8 +656,8 @@ void slirp_term(PNATState pData)
 
     slirp_link_down(pData);
     slirp_release_dns_list(pData);
-    ftp_alias_unload();
-    nbt_alias_unload();
+    ftp_alias_unload(pData);
+    nbt_alias_unload(pData);
 #ifdef VBOX_WITH_SLIRP_ALIAS
     while(!LIST_EMPTY(&instancehead)) {
         struct libalias *la = LIST_FIRST(&instancehead);
