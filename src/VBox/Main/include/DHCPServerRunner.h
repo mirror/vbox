@@ -52,10 +52,10 @@ typedef enum
 class DHCPServerRunner
 {
 public:
-    DHCPServerRunner() : mProcess (NIL_RTPROCESS) {}
+    DHCPServerRunner(); 
     ~DHCPServerRunner() { stop(); /* don't leave abandoned servers */}
 
-    int setOption(DHCPCFG opt, const char *val)
+    int setOption(DHCPCFG opt, const char *val, bool enabled)
     {
         if(opt == 0 || opt >= DHCPCFG_NOTOPT_MAXVAL)
             return VERR_INVALID_PARAMETER;
@@ -74,6 +74,7 @@ public:
         {
             mOptions[opt] = val;
         }
+        mOptionEnabled[opt] = enabled;
         return VINF_SUCCESS;
     }
 
@@ -84,5 +85,6 @@ public:
     void detachFromServer();
 private:
     com::Utf8Str mOptions[DHCPCFG_NOTOPT_MAXVAL];
+    bool mOptionEnabled[DHCPCFG_NOTOPT_MAXVAL];
     RTPROCESS mProcess;
 };

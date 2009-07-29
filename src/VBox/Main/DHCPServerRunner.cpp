@@ -63,6 +63,15 @@ static const ARGDEF * getArgDef(DHCPCFG type)
     return NULL;
 }
 
+DHCPServerRunner::DHCPServerRunner()
+{
+    mProcess = NIL_RTPROCESS;
+    for (unsigned i = 0; i < DHCPCFG_NOTOPT_MAXVAL; i++)
+    {
+        mOptionEnabled[i] = false;
+    }
+}
+
 void DHCPServerRunner::detachFromServer()
 {
     mProcess = NIL_RTPROCESS;
@@ -96,11 +105,16 @@ int DHCPServerRunner::start()
 
     for (unsigned i = 0; i < DHCPCFG_NOTOPT_MAXVAL; i++)
     {
-        if (mOptions[i].length())
+        if (mOptionEnabled[i])
         {
             const ARGDEF * pArgDef = getArgDef((DHCPCFG)i);
             args[index++] = pArgDef->Name;      // e.g. "--network"
-            args[index++] = mOptions[i].raw();  // value
+
+            /* value can be null for e.g. --begin-config has no value
+             * and thus check the mOptions string length here
+             */
+            if (mOptions[i].length())
+                args[index++] = mOptions[i].raw();  // value
         }
     }
 

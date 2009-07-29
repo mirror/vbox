@@ -248,11 +248,11 @@ STDMETHODIMP DHCPServer::Start (IN_BSTR aNetworkName, IN_BSTR aTrunkName, IN_BST
     if (!m.enabled)
         return S_OK;
 
-    m.dhcp.setOption(DHCPCFG_NETNAME, Utf8Str(aNetworkName));
+    m.dhcp.setOption(DHCPCFG_NETNAME, Utf8Str(aNetworkName), true);
     Bstr tmp(aTrunkName);
     if (!tmp.isEmpty())
-        m.dhcp.setOption(DHCPCFG_TRUNKNAME, Utf8Str(tmp));
-    m.dhcp.setOption(DHCPCFG_TRUNKTYPE, Utf8Str(aTrunkType));
+        m.dhcp.setOption(DHCPCFG_TRUNKNAME, Utf8Str(tmp), true);
+    m.dhcp.setOption(DHCPCFG_TRUNKTYPE, Utf8Str(aTrunkType), true);
     //temporary hack for testing
     //    DHCPCFG_NAME
     char strMAC[13];
@@ -260,19 +260,19 @@ STDMETHODIMP DHCPServer::Start (IN_BSTR aNetworkName, IN_BSTR aTrunkName, IN_BST
     guid.create();
     RTStrPrintf (strMAC, sizeof(strMAC), "080027%02X%02X%02X",
                  guid.ptr()->au8[0], guid.ptr()->au8[1], guid.ptr()->au8[2]);
-    m.dhcp.setOption(DHCPCFG_MACADDRESS, strMAC);
-    m.dhcp.setOption(DHCPCFG_IPADDRESS,  Utf8Str(m.IPAddress));
+    m.dhcp.setOption(DHCPCFG_MACADDRESS, strMAC, true);
+    m.dhcp.setOption(DHCPCFG_IPADDRESS,  Utf8Str(m.IPAddress), true);
     //        DHCPCFG_LEASEDB,
     //        DHCPCFG_VERBOSE,
     //        DHCPCFG_GATEWAY,
-    m.dhcp.setOption(DHCPCFG_LOWERIP,  Utf8Str(m.lowerIP));
-    m.dhcp.setOption(DHCPCFG_UPPERIP,  Utf8Str(m.upperIP));
-    m.dhcp.setOption(DHCPCFG_NETMASK,  Utf8Str(m.networkMask));
+    m.dhcp.setOption(DHCPCFG_LOWERIP,  Utf8Str(m.lowerIP), true);
+    m.dhcp.setOption(DHCPCFG_UPPERIP,  Utf8Str(m.upperIP), true);
+    m.dhcp.setOption(DHCPCFG_NETMASK,  Utf8Str(m.networkMask), true);
 
     //        DHCPCFG_HELP,
     //        DHCPCFG_VERSION,
     //        DHCPCFG_NOTOPT_MAXVAL
-    m.dhcp.setOption(DHCPCFG_BEGINCONFIG,  "");
+    m.dhcp.setOption(DHCPCFG_BEGINCONFIG,  "", true);
 
     return RT_FAILURE(m.dhcp.start()) ? E_FAIL : S_OK;
     //m.dhcp.detachFromServer(); /* need to do this to avoid server shutdown on runner destruction */
