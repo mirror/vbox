@@ -228,6 +228,7 @@ typedef struct NATState
 #ifdef VBOX_WITH_SLIRP_ALIAS
     LIST_HEAD(RT_NOTHING, libalias) instancehead;
     struct libalias *proxy_alias;
+    LIST_HEAD(handler_chain, proto_handler) handler_chain;
 #endif
 
 #define PROFILE_COUNTER(name, dsc)     STAMPROFILE Stat ## name
@@ -314,6 +315,8 @@ typedef struct NATState
 #define our_addr pData->our_addr
 #ifndef VBOX_SLIRP_ALIAS
 # define alias_addr pData->alias_addr
+#else
+# define handler_chain pData->handler_chain
 #endif
 #define special_addr pData->special_addr
 #define dns_addr pData->dns_addr

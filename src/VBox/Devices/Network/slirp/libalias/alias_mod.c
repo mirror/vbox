@@ -51,14 +51,14 @@ __FBSDID("$FreeBSD: src/sys/netinet/libalias/alias_mod.c,v 1.3.8.1 2009/04/15 03
 #include "alias_local.h"
 #include "alias_mod.h"
 #endif
+
+/* Protocol and userland module handlers chains. */
+LIST_HEAD(handler_chain, proto_handler) handler_chain = LIST_HEAD_INITIALIZER(foo);
 #else /* !VBOX */
 # include <slirp.h>
 # include "alias_local.h"
 # include "alias_mod.h"
 #endif /* VBOX */
-
-/* Protocol and userland module handlers chains. */
-LIST_HEAD(handler_chain, proto_handler) handler_chain = LIST_HEAD_INITIALIZER(foo);
 #ifdef _KERNEL
 struct rwlock   handler_rw;
 #endif
@@ -137,7 +137,11 @@ handler_chain_destroy(void)
 }
 
 static int
+#ifdef VBOX
+_attach_handler(PNATState pData, struct proto_handler *p)
+#else
 _attach_handler(struct proto_handler *p)
+#endif
 {
     struct proto_handler *b = NULL;
 
@@ -161,7 +165,11 @@ _attach_handler(struct proto_handler *p)
 }
 
 static int
+#ifdef VBOX
+_detach_handler(PNATState pData, struct proto_handler *p)
+#else
 _detach_handler(struct proto_handler *p)
+#endif
 {
     struct proto_handler *b, *b_tmp;;
 
@@ -176,7 +184,11 @@ _detach_handler(struct proto_handler *p)
 }
 
 int
+#ifdef VBOX
+LibAliasAttachHandlers(PNATState pData, struct proto_handler *_p)
+#else
 LibAliasAttachHandlers(struct proto_handler *_p)
+#endif
 {
     int i, error = -1;
 
@@ -184,7 +196,11 @@ LibAliasAttachHandlers(struct proto_handler *_p)
     for (i=0; 1; i++) {
         if (*((int *)&_p[i]) == EOH) 
             break;
+#ifdef VBOX
+        error = _attach_handler(pData, &_p[i]);
+#else
         error = _attach_handler(&_p[i]);
+#endif
         if (error != 0) 
             break;
     }
@@ -193,7 +209,11 @@ LibAliasAttachHandlers(struct proto_handler *_p)
 }
 
 int
+#ifdef VBOX
+LibAliasDetachHandlers(PNATState pData, struct proto_handler *_p)
+#else
 LibAliasDetachHandlers(struct proto_handler *_p)
+#endif
 {
     int i, error = -1;
 
@@ -201,7 +221,11 @@ LibAliasDetachHandlers(struct proto_handler *_p)
     for (i=0; 1; i++) {
         if (*((int *)&_p[i]) == EOH) 
             break;
+#ifdef VBOX
+        error = _detach_handler(pData, &_p[i]);
+#else
         error = _detach_handler(&_p[i]);
+#endif
         if (error != 0) 
             break;
     }
@@ -210,12 +234,20 @@ LibAliasDetachHandlers(struct proto_handler *_p)
 }
 
 int
+#ifdef VBOX
+detach_handler(PNATState pData, struct proto_handler *_p)
+#else
 detach_handler(struct proto_handler *_p)
+#endif
 {
     int error = -1;
 
     LIBALIAS_WLOCK();
+#ifdef VBOX
+    error = _detach_handler(pData, _p);
+#else
     error = _detach_handler(_p);
+#endif
     LIBALIAS_WUNLOCK();
     return (error);
 }
@@ -224,6 +256,9 @@ int
 find_handler(int8_t dir, int8_t proto, struct libalias *la, struct ip *pip, 
          struct alias_data *ad)
 {
+#ifdef VBOX
+    PNATState pData = la->pData;
+#endif
     struct proto_handler *p;
     int error = ENOENT;
 
@@ -241,7 +276,11 @@ find_handler(int8_t dir, int8_t proto, struct libalias *la, struct ip *pip,
 }
 
 struct proto_handler *
+#ifdef VBOX
+first_handler(PNATState pData)
+#else
 first_handler(void)
+#endif
 {
     
     return (LIST_FIRST(&handler_chain));    

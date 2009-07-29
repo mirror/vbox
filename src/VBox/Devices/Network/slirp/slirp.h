@@ -406,10 +406,10 @@ static void vbox_slirp_fprintf(void *ignored, char *format, ...)
 #endif /*VBOX_WITH_SLIRP_ALIAS && VBOX_SLIRP_ALIAS*/
 
 #ifdef VBOX_WITH_SLIRP_ALIAS
-int ftp_alias_load(void);
-int ftp_alias_unload(void);
-int nbt_alias_load(void);
-int nbt_alias_unload(void);
+int ftp_alias_load(PNATState);
+int ftp_alias_unload(PNATState);
+int nbt_alias_load(PNATState);
+int nbt_alias_unload(PNATState);
 #endif /*VBOX_WITH_SLIRP_ALIAS*/
 
 #endif
