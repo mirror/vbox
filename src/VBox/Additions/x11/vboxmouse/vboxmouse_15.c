@@ -67,7 +67,8 @@ VBoxReadInput(InputInfoPtr pInfo)
 
     /* The first test here is a workaround for an apparant bug in Xorg Server 1.5 */
     if (   miPointerGetScreen(pInfo->dev) != NULL
-        && RT_SUCCESS(VbglR3GetMouseStatus(&fFeatures, &cx, &cy)))
+        && RT_SUCCESS(VbglR3GetMouseStatus(&fFeatures, &cx, &cy))
+        && (fFeatures & VMMDEV_MOUSE_HOST_CAN_ABSOLUTE))
         /* send absolute movement */
         xf86PostMotionEvent(pInfo->dev, 1, 0, 2, cx, cy);
 }
