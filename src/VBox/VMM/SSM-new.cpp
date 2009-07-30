@@ -659,7 +659,7 @@ typedef struct SSMRECTERM
     uint8_t         cbRec;
     /** Flags, see SSMRECTERM_FLAGS_CRC32. */
     uint16_t        fFlags;
-    /** The checksum of the stream up to the start of this record. */
+    /** The checksum of the stream up to fFlags (exclusive). */
     uint32_t        u32StreamCRC;
     /** The length of this data unit in bytes (including this record). */
     uint64_t        cbUnit;
@@ -2489,7 +2489,7 @@ VMMR3DECL(int) SSMR3Save(PVM pVM, const char *pszFilename, SSMAFTER enmAfter, PF
                         if (Handle.Strm.fChecksummed)
                         {
                             TermRec.fFlags       = SSMRECTERM_FLAGS_CRC32;
-                            TermRec.u32StreamCRC = ssmR3StrmFinalCRC(&Handle.Strm);
+                            TermRec.u32StreamCRC = RTCrc32Finish(RTCrc32Process(ssmR3StrmCurCRC(&Handle.Strm), &TermRec, 2));
                         }
                         else
                         {
@@ -5010,7 +5010,6 @@ static int ssmR3DataReadRecHdrV2(PSSMHANDLE pSSM)
     /*
      * Read the two mandatory bytes.
      */
-    uint32_t u32StreamCRC = ssmR3StrmCurCRC(&pSSM->Strm); /** @todo NOT good. */
     uint8_t  abHdr[8];
     int rc = ssmR3DataReadV2Raw(pSSM, abHdr, 2);
     if (RT_FAILURE(rc))
@@ -5029,7 +5028,8 @@ static int ssmR3DataReadRecHdrV2(PSSMHANDLE pSSM)
         AssertLogRelMsgReturn(abHdr[0] & SSM_REC_FLAGS_IMPORTANT, ("%#x\n", abHdr[0]), VERR_SSM_INTEGRITY);
 
         /* get the rest */
-        SSMRECTERM TermRec;
+        uint32_t    u32StreamCRC = ssmR3StrmFinalCRC(&pSSM->Strm);
+        SSMRECTERM  TermRec;
         int rc = ssmR3DataReadV2Raw(pSSM, (uint8_t *)&TermRec + 2, sizeof(SSMRECTERM) - 2);
         if (RT_FAILURE(rc))
             return rc;
@@ -5042,10 +5042,7 @@ static int ssmR3DataReadRecHdrV2(PSSMHANDLE pSSM)
         if (!(TermRec.fFlags & SSMRECTERM_FLAGS_CRC32))
             AssertLogRelMsgReturn(TermRec.u32StreamCRC == 0, ("%#x\n", TermRec.u32StreamCRC), VERR_SSM_INTEGRITY);
         else if (pSSM->Strm.fChecksummed)
-        {
-            u32StreamCRC = RTCrc32Finish(u32StreamCRC);
             AssertLogRelMsgReturn(TermRec.u32StreamCRC == u32StreamCRC, ("%#x, %#x\n", TermRec.u32StreamCRC, u32StreamCRC), VERR_SSM_INTEGRITY_CRC);
-        }
 
         Log3(("ssmR3DataReadRecHdrV2: %08llx|%08llx: TERM\n", ssmR3StrmTell(&pSSM->Strm) - sizeof(SSMRECTERM), pSSM->offUnit));
         return VINF_SUCCESS;
