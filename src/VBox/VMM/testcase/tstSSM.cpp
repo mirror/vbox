@@ -47,7 +47,7 @@
 /*******************************************************************************
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
-#define TSTSSM_BIG_CONFIG   1
+//#define TSTSSM_BIG_CONFIG   1
 
 #ifdef TSTSSM_BIG_CONFIG
 # define TSTSSM_ITEM_SIZE    (512*_1M)

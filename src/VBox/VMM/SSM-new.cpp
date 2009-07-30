@@ -2068,14 +2068,15 @@ static void ssmR3StrmDisableChecksumming(PSSMSTRM pStrm)
 
 
 /**
+ * Used by SSMR3Seek to position the stream at the new unit.
  *
  * @returns VBox stutus code.
  * @param   pStrm       The strem handle.
  * @param   off         The seek offset.
  * @param   uMethod     The seek method.
- * @param   poff        Where to optionally store the new file offset.
+ * @param   u32CurCRC   The current CRC at the seek position.
  */
-static int ssmR3StrmSeek(PSSMSTRM pStrm, int64_t off, uint32_t uMethod, uint64_t *poff)
+static int ssmR3StrmSeek(PSSMSTRM pStrm, int64_t off, uint32_t uMethod, uint32_t u32CurCRC)
 {
     AssertReturn(!pStrm->fWrite, VERR_NOT_SUPPORTED);
     AssertReturn(pStrm->hIoThread == NIL_RTTHREAD, VERR_WRONG_ORDER);
@@ -2084,17 +2085,17 @@ static int ssmR3StrmSeek(PSSMSTRM pStrm, int64_t off, uint32_t uMethod, uint64_t
     int rc = RTFileSeek(pStrm->hFile, off, uMethod, &offStream);
     if (RT_SUCCESS(rc))
     {
+        pStrm->fNeedSeek    = false;
         pStrm->offCurStream = offStream;
-        pStrm->off = 0;
+        pStrm->off          = 0;
         pStrm->offStreamCRC = 0;
-        pStrm->u32StreamCRC = 0;
+        if (pStrm->fChecksummed)
+            pStrm->u32StreamCRC = u32CurCRC;
         if (pStrm->pCur)
         {
             ssmR3StrmPutFreeBuf(pStrm, pStrm->pCur);
             pStrm->pCur = NULL;
         }
-        if (poff)
-            *poff = offStream;
     }
     return rc;
 }
@@ -2184,62 +2185,6 @@ static int ssmR3StrmPeekAt(PSSMSTRM pStrm, RTFOFF off, void *pvBuf, size_t cbToR
         rc = RTFileRead(pStrm->hFile, pvBuf, cbToRead, NULL);
 
     return rc;
-}
-
-
-
-/**
- * Calculate the checksum of a file portion.
- *
- * @returns VBox status.
- * @param   pStrm       The stream handle
- * @param   off         Where to start checksumming.
- * @param   cb          How much to checksum.
- * @param   pu32CRC     Where to store the calculated checksum.
- */
-static int ssmR3CalcChecksum(PSSMSTRM pStrm, uint64_t off, uint64_t cb, uint32_t *pu32CRC)
-{
-    /*
-     * Allocate a buffer.
-     */
-    const size_t cbBuf = _32K;
-    void *pvBuf = RTMemTmpAlloc(cbBuf);
-    if (!pvBuf)
-        return VERR_NO_TMP_MEMORY;
-
-    /*
-     * Loop reading and calculating CRC32.
-     */
-    int         rc     = VINF_SUCCESS;
-    uint32_t    u32CRC = RTCrc32Start();
-    while (cb > 0)
-    {
-        /* read chunk */
-        size_t cbToRead = cbBuf;
-        if (cb < cbBuf)
-            cbToRead = cb;
-        rc = ssmR3StrmPeekAt(pStrm, off, pvBuf, cbToRead, NULL);
-        if (RT_FAILURE(rc))
-        {
-            AssertMsgFailed(("Failed with rc=%Rrc while calculating crc.\n", rc));
-            RTMemTmpFree(pvBuf);
-            return rc;
-        }
-
-        /* update total */
-        cb -= cbToRead;
-
-        /* calc crc32. */
-        u32CRC = RTCrc32Process(u32CRC, pvBuf, cbToRead);
-    }
-    RTMemTmpFree(pvBuf);
-
-    /* store the calculated crc */
-    u32CRC = RTCrc32Finish(u32CRC);
-    Log(("SSM: u32CRC=0x%08x\n", u32CRC));
-    *pu32CRC = u32CRC;
-
-    return VINF_SUCCESS;
 }
 
 
@@ -2675,6 +2620,62 @@ VMMR3DECL(int) SSMR3Save(PVM pVM, const char *pszFilename, SSMAFTER enmAfter, PF
 
 
 /**
+ * Calculate the checksum of a file portion.
+ *
+ * @returns VBox status.
+ * @param   pStrm       The stream handle
+ * @param   off         Where to start checksumming.
+ * @param   cb          How much to checksum.
+ * @param   pu32CRC     Where to store the calculated checksum.
+ */
+static int ssmR3CalcChecksum(PSSMSTRM pStrm, uint64_t off, uint64_t cb, uint32_t *pu32CRC)
+{
+    /*
+     * Allocate a buffer.
+     */
+    const size_t cbBuf = _32K;
+    void *pvBuf = RTMemTmpAlloc(cbBuf);
+    if (!pvBuf)
+        return VERR_NO_TMP_MEMORY;
+
+    /*
+     * Loop reading and calculating CRC32.
+     */
+    int         rc     = VINF_SUCCESS;
+    uint32_t    u32CRC = RTCrc32Start();
+    while (cb > 0)
+    {
+        /* read chunk */
+        size_t cbToRead = cbBuf;
+        if (cb < cbBuf)
+            cbToRead = cb;
+        rc = ssmR3StrmPeekAt(pStrm, off, pvBuf, cbToRead, NULL);
+        if (RT_FAILURE(rc))
+        {
+            AssertMsgFailed(("Failed with rc=%Rrc while calculating crc.\n", rc));
+            RTMemTmpFree(pvBuf);
+            return rc;
+        }
+
+        /* advance */
+        cb  -= cbToRead;
+        off += cbToRead;
+
+        /* calc crc32. */
+        u32CRC = RTCrc32Process(u32CRC, pvBuf, cbToRead);
+    }
+    RTMemTmpFree(pvBuf);
+
+    /* store the calculated crc */
+    u32CRC = RTCrc32Finish(u32CRC);
+    Log(("SSM: u32CRC=0x%08x\n", u32CRC));
+    *pu32CRC = u32CRC;
+
+    return VINF_SUCCESS;
+}
+
+
+/**
  * Validates the header information stored in the handle.
  *
  * @returns VBox status code.
@@ -2740,19 +2741,20 @@ static int ssmR3ValidateHeaderInfo(PSSMHANDLE pSSM, bool fHaveHostBits, bool fHa
 
 
 /**
- * Validates the integrity of a saved state file, it also initializes
- * u32StreamCRC for v2.0+.
+ * Reads the header, detects the format version and performs integrity
+ * validations.
  *
  * @returns VBox status.
  * @param   File                File to validate.
  *                              The file position is undefined on return.
- * @param   fChecksumIt         Whether to checksum the file or not.
+ * @param   fChecksumIt         Whether to checksum the file or not.  This will
+ *                              be ignored if it the stream isn't a file.
  * @param   fChecksumOnRead     Whether to validate the checksum while reading
  *                              the stream instead of up front. If not possible,
  *                              verify the checksum up front.
  * @param   pHdr                Where to store the file header.
  */
-static int ssmR3ValidateFile(PSSMHANDLE pSSM, bool fChecksumIt, bool fChecksumOnRead)
+static int ssmR3HeaderAndValidate(PSSMHANDLE pSSM, bool fChecksumIt, bool fChecksumOnRead)
 {
     /*
      * Read and check the header magic.
@@ -2917,7 +2919,7 @@ static int ssmR3ValidateFile(PSSMHANDLE pSSM, bool fChecksumIt, bool fChecksumOn
                 return rc;
             if (u32CRC != pSSM->u.Read.u32LoadCRC)
             {
-                LogRel(("SSM: Invalid CRC! Calculated %#010x, in header %#010x\n", u32CRC, pSSM->u.Read.u32LoadCRC));
+                LogRel(("SSM: Invalid CRC! Calculated %#010x, in footer %#010x\n", u32CRC, pSSM->u.Read.u32LoadCRC));
                 return VERR_SSM_INTEGRITY_CRC;
             }
         }
@@ -3085,7 +3087,7 @@ static int ssmR3OpenFile(PVM pVM, const char *pszFilename, bool fChecksumIt, boo
     int rc = ssmR3StrmOpenFile(&pSSM->Strm, pszFilename, false /*fWrite*/, fChecksumOnRead);
     if (RT_SUCCESS(rc))
     {
-        rc = ssmR3ValidateFile(pSSM, fChecksumIt, fChecksumOnRead);
+        rc = ssmR3HeaderAndValidate(pSSM, fChecksumIt, fChecksumOnRead);
         if (RT_SUCCESS(rc))
             return rc;
 
@@ -3727,8 +3729,8 @@ static int ssmR3FileSeekV1(PSSMHANDLE pSSM, const char *pszUnit, uint32_t iInsta
     /*
      * Walk the data units until we find EOF or a match.
      */
-    size_t              cbUnit = strlen(pszUnit) + 1;
-    AssertLogRelReturn(cbUnit <= SSM_MAX_NAME_SIZE, VERR_SSM_UNIT_NOT_FOUND);
+    size_t              cbUnitNm = strlen(pszUnit) + 1;
+    AssertLogRelReturn(cbUnitNm <= SSM_MAX_NAME_SIZE, VERR_SSM_UNIT_NOT_FOUND);
     char                szName[SSM_MAX_NAME_SIZE];
     SSMFILEUNITHDRV1    UnitHdr;
     for (RTFOFF off = pSSM->u.Read.cbFileHdr; ; off += UnitHdr.cbUnit)
@@ -3736,8 +3738,7 @@ static int ssmR3FileSeekV1(PSSMHANDLE pSSM, const char *pszUnit, uint32_t iInsta
         /*
          * Read the unit header and verify it.
          */
-/** @todo this doesn't work when we get an I/O thread... */
-        int rc = RTFileReadAt(pSSM->Strm.hFile, off, &UnitHdr, RT_OFFSETOF(SSMFILEUNITHDR, szName), NULL);
+        int rc = ssmR3StrmPeekAt(&pSSM->Strm, off, &UnitHdr, RT_OFFSETOF(SSMFILEUNITHDR, szName), NULL);
         AssertRCReturn(rc, rc);
         if (!memcmp(&UnitHdr.achMagic[0], SSMFILEUNITHDR_MAGIC, sizeof(SSMFILEUNITHDR_MAGIC)))
         {
@@ -3745,20 +3746,21 @@ static int ssmR3FileSeekV1(PSSMHANDLE pSSM, const char *pszUnit, uint32_t iInsta
              * Does what we've got match, if so read the name.
              */
             if (    UnitHdr.u32Instance == iInstance
-                &&  UnitHdr.cchName     == cbUnit)
+                &&  UnitHdr.cchName     == cbUnitNm)
             {
-                rc = RTFileRead(pSSM->Strm.hFile, szName, cbUnit, NULL);
+                rc = ssmR3StrmPeekAt(&pSSM->Strm, off + RT_OFFSETOF(SSMFILEUNITHDR, szName), szName, cbUnitNm, NULL);
                 AssertRCReturn(rc, rc);
                 AssertLogRelMsgReturn(!szName[UnitHdr.cchName - 1],
-                                      (" Unit name '%.*s' was not properly terminated.\n", cbUnit, szName),
+                                      (" Unit name '%.*s' was not properly terminated.\n", cbUnitNm, szName),
                                       VERR_SSM_INTEGRITY);
 
                 /*
                  * Does the name match?
                  */
-                if (!memcmp(szName, pszUnit, cbUnit))
+                if (!memcmp(szName, pszUnit, cbUnitNm))
                 {
-                    pSSM->cbUnitLeftV1 = UnitHdr.cbUnit - RT_OFFSETOF(SSMFILEUNITHDR, szName[cbUnit]);
+                    rc = ssmR3StrmSeek(&pSSM->Strm, off + RT_OFFSETOF(SSMFILEUNITHDR, szName) + cbUnitNm, RTFILE_SEEK_BEGIN, 0);
+                    pSSM->cbUnitLeftV1 = UnitHdr.cbUnit - RT_OFFSETOF(SSMFILEUNITHDR, szName[cbUnitNm]);
                     pSSM->offUnit = 0;
                     if (piVersion)
                         *piVersion = UnitHdr.u32Version;
@@ -3793,8 +3795,7 @@ static int ssmR3FileSeekSubV2(PSSMHANDLE pSSM, PSSMFILEDIR pDir, size_t cbDir, u
      * Read it.
      */
     uint64_t const offDir = pSSM->u.Read.cbLoadFile - sizeof(SSMFILEFTR) - cbDir;
-/** @todo this doesn't work when we get an I/O thread... */
-    int rc = RTFileReadAt(pSSM->Strm.hFile, offDir, pDir, cbDir, NULL);
+    int rc = ssmR3StrmPeekAt(&pSSM->Strm, offDir, pDir, cbDir, NULL);
     AssertLogRelRCReturn(rc, rc);
     AssertLogRelReturn(!memcmp(pDir->szMagic, SSMFILEDIR_MAGIC, sizeof(pDir->szMagic)), VERR_SSM_INTEGRITY);
     SSM_CHECK_CRC32_RET(pDir, cbDir, ("Bad directory CRC: %08x, actual %08x\n", u32CRC, u32ActualCRC));
@@ -3809,8 +3810,8 @@ static int ssmR3FileSeekSubV2(PSSMHANDLE pSSM, PSSMFILEDIR pDir, size_t cbDir, u
     /*
      * Search the directory.
      */
-    size_t          cbUnit     = strlen(pszUnit) + 1;
-    uint32_t const  u32NameCRC = RTCrc32(pszUnit, cbUnit - 1);
+    size_t          cbUnitNm   = strlen(pszUnit) + 1;
+    uint32_t const  u32NameCRC = RTCrc32(pszUnit, cbUnitNm - 1);
     for (uint32_t i = 0; i < cDirEntries; i++)
     {
         if (    pDir->aEntries[i].u32NameCRC  == u32NameCRC
@@ -3826,8 +3827,7 @@ static int ssmR3FileSeekSubV2(PSSMHANDLE pSSM, PSSMFILEDIR pDir, size_t cbDir, u
                 cbToRead = offDir - pDir->aEntries[i].off;
                 RT_ZERO(UnitHdr);
             }
-/** @todo this doesn't work when we get an I/O thread... */
-            rc = RTFileReadAt(pSSM->Strm.hFile, pDir->aEntries[i].off, &UnitHdr, cbToRead, NULL);
+            rc = ssmR3StrmPeekAt(&pSSM->Strm, pDir->aEntries[i].off, &UnitHdr, cbToRead, NULL);
             AssertLogRelRCReturn(rc, rc);
 
             AssertLogRelMsgReturn(!memcmp(UnitHdr.szMagic, SSMFILEUNITHDR_MAGIC, sizeof(UnitHdr.szMagic)),
@@ -3853,18 +3853,14 @@ static int ssmR3FileSeekSubV2(PSSMHANDLE pSSM, PSSMFILEDIR pDir, size_t cbDir, u
             /*
              * Ok, it is valid, get on with the comparing now.
              */
-            if (    UnitHdr.cbName == cbUnit
-                &&  !memcmp(UnitHdr.szName, pszUnit, cbUnit))
+            if (    UnitHdr.cbName == cbUnitNm
+                &&  !memcmp(UnitHdr.szName, pszUnit, cbUnitNm))
             {
                 if (piVersion)
                     *piVersion = UnitHdr.u32Version;
-/** @todo this doesn't work when we get an I/O thread... */
-                rc = RTFileSeek(pSSM->Strm.hFile, pDir->aEntries[i].off + cbUnitHdr, RTFILE_SEEK_BEGIN, NULL);
+                rc = ssmR3StrmSeek(&pSSM->Strm, pDir->aEntries[i].off + cbUnitHdr, RTFILE_SEEK_BEGIN,
+                                   RTCrc32Process(UnitHdr.u32CurStreamCRC, &UnitHdr, cbUnitHdr));
                 AssertLogRelRCReturn(rc, rc);
-
-                if (pSSM->Strm.fChecksummed)
-                    pSSM->Strm.u32StreamCRC = RTCrc32Process(UnitHdr.u32CurStreamCRC, &UnitHdr, cbUnitHdr);
-
                 ssmR3DataReadBeginV2(pSSM);
                 return VINF_SUCCESS;
             }
