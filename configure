@@ -892,8 +892,10 @@ EOF
   [ -n "$INCZ" ] && I_INCZ=`prefix_I "$INCZ"`
   if test_compile "$LIBZ $I_INCZ" zlib zlib; then
     if test_execute; then
-      cnf_append "SDK_VBOX_ZLIB_LIBS" "`strip_l "$LIBZ"`"
-      cnf_append "SDK_VBOX_ZLIB_INCS" "$INCZ"
+      echo "if1of (\$(KBUILD_TARGET),darwin freebsd linux solaris)" >> $CNF
+      cnf_append " SDK_VBOX_ZLIB_LIBS" "`strip_l "$LIBZ"`"
+      cnf_append " SDK_VBOX_ZLIB_INCS" "$INCZ"
+      echo "endif" >> $CNF
     fi
   fi
 }
