@@ -3360,37 +3360,42 @@ HRESULT Console::onNetworkAdapterChange (INetworkAdapter *aNetworkAdapter)
 #ifdef VBOX_DYNAMIC_NET_ATTACH
             if (VBOX_SUCCESS (vrc))
             {
-                bool changeAdaptor = false;
+                VMSTATE enmVMState = VMR3GetState (mpVM);
+                if (   (enmVMState == VMSTATE_RUNNING)
+                    || (enmVMState == VMSTATE_SUSPENDED))
+                {
+                    bool changeAdaptor = false;
 
-                if (!( (eAttachmentType == NetworkAttachmentType_Null) &&
-                       (meAttachmentType[ulInstance] == NetworkAttachmentType_Null)))
-                    changeAdaptor = true;
+                    if (!( (eAttachmentType == NetworkAttachmentType_Null) &&
+                           (meAttachmentType[ulInstance] == NetworkAttachmentType_Null)))
+                        changeAdaptor = true;
 
-                /** @todo pritesh: Need to check for mNATNetwork as well here
-                 * when NAT is shifted to use IntNet, till then just compare
-                 * if the current and next attachment types are not same
-                 */
-                if (!( (eAttachmentType == NetworkAttachmentType_NAT) &&
-                       (meAttachmentType[ulInstance] == NetworkAttachmentType_NAT)))
-                    changeAdaptor = true;
+                    /** @todo pritesh: Need to check for mNATNetwork as well here
+                     * when NAT is shifted to use IntNet, till then just compare
+                     * if the current and next attachment types are not same
+                     */
+                    if (!( (eAttachmentType == NetworkAttachmentType_NAT) &&
+                           (meAttachmentType[ulInstance] == NetworkAttachmentType_NAT)))
+                        changeAdaptor = true;
 
-                if (!( (eAttachmentType == NetworkAttachmentType_Bridged) &&
-                       (meAttachmentType[ulInstance] == NetworkAttachmentType_Bridged) &&
-                       (mHostInterface[ulInstance] == eHostInterface)))
-                    changeAdaptor = true;
+                    if (!( (eAttachmentType == NetworkAttachmentType_Bridged) &&
+                           (meAttachmentType[ulInstance] == NetworkAttachmentType_Bridged) &&
+                           (mHostInterface[ulInstance] == eHostInterface)))
+                        changeAdaptor = true;
 
-                if (!( (eAttachmentType == NetworkAttachmentType_HostOnly) &&
-                       (meAttachmentType[ulInstance] == NetworkAttachmentType_HostOnly) &&
-                       (mHostInterface[ulInstance] == eHostInterface)))
-                    changeAdaptor = true;
+                    if (!( (eAttachmentType == NetworkAttachmentType_HostOnly) &&
+                           (meAttachmentType[ulInstance] == NetworkAttachmentType_HostOnly) &&
+                           (mHostInterface[ulInstance] == eHostInterface)))
+                        changeAdaptor = true;
 
-                if (!( (eAttachmentType == NetworkAttachmentType_Internal) &&
-                       (meAttachmentType[ulInstance] == NetworkAttachmentType_Internal) &&
-                       (mInternalNetwork[ulInstance] == eInternalNetwork)))
-                    changeAdaptor = true;
+                    if (!( (eAttachmentType == NetworkAttachmentType_Internal) &&
+                           (meAttachmentType[ulInstance] == NetworkAttachmentType_Internal) &&
+                           (mInternalNetwork[ulInstance] == eInternalNetwork)))
+                        changeAdaptor = true;
 
-                if (changeAdaptor)
-                    rc = doNetworkAdapterChange(pszAdapterName, ulInstance, 0, aNetworkAdapter);
+                    if (changeAdaptor)
+                        rc = doNetworkAdapterChange(pszAdapterName, ulInstance, 0, aNetworkAdapter);
+                }
             }
 #endif /* VBOX_DYNAMIC_NET_ATTACH */
 
