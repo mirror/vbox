@@ -237,6 +237,7 @@ void VBoxServiceReloadCursor(void)
             AttachThreadInput(hCurrentThread, hThread, TRUE);
     }
     ShowCursor(false);
+    SwitchToThread();
     ShowCursor(true);
     if (hWin && (hCurrentThread != hThread))
         AttachThreadInput(hCurrentThread, hThread, FALSE);
