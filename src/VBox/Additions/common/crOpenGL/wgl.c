@@ -521,7 +521,7 @@ BOOL WINAPI wglGetPixelFormatAttribivEXT_prox
                 pValues[i] = WGL_TYPE_RGBA_ARB;
                 break;
             case WGL_COLOR_BITS_ARB:
-                pValues[i] = 24;
+                pValues[i] = 32;
                 break;
             case WGL_RED_BITS_ARB:
             case WGL_GREEN_BITS_ARB:
@@ -637,7 +637,7 @@ BOOL WINAPI wglGetPixelFormatAttribfvEXT_prox
                 pValues[i] = WGL_TYPE_RGBA_ARB;
                 break;
             case WGL_COLOR_BITS_ARB:
-                pValues[i] = 24.f;
+                pValues[i] = 32.f;
                 break;
             case WGL_RED_BITS_ARB:
             case WGL_GREEN_BITS_ARB:
