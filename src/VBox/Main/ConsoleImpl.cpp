@@ -3366,31 +3366,31 @@ HRESULT Console::onNetworkAdapterChange (INetworkAdapter *aNetworkAdapter)
                 {
                     bool changeAdaptor = false;
 
-                    if (!( (eAttachmentType == NetworkAttachmentType_Null) &&
-                           (meAttachmentType[ulInstance] == NetworkAttachmentType_Null)))
+                    if ( !(   (eAttachmentType == NetworkAttachmentType_Null)
+                           && (meAttachmentType[ulInstance] == NetworkAttachmentType_Null)))
                         changeAdaptor = true;
 
                     /** @todo pritesh: Need to check for mNATNetwork as well here
                      * when NAT is shifted to use IntNet, till then just compare
                      * if the current and next attachment types are not same
                      */
-                    if (!( (eAttachmentType == NetworkAttachmentType_NAT) &&
-                           (meAttachmentType[ulInstance] == NetworkAttachmentType_NAT)))
+                    if ( !(   (eAttachmentType == NetworkAttachmentType_NAT)
+                           && (meAttachmentType[ulInstance] == NetworkAttachmentType_NAT)))
                         changeAdaptor = true;
 
-                    if (!( (eAttachmentType == NetworkAttachmentType_Bridged) &&
-                           (meAttachmentType[ulInstance] == NetworkAttachmentType_Bridged) &&
-                           (mHostInterface[ulInstance] == eHostInterface)))
+                    if ( !(   (eAttachmentType == NetworkAttachmentType_Bridged)
+                           && (meAttachmentType[ulInstance] == NetworkAttachmentType_Bridged)
+                           && (mHostInterface[ulInstance] == eHostInterface)))
                         changeAdaptor = true;
 
-                    if (!( (eAttachmentType == NetworkAttachmentType_HostOnly) &&
-                           (meAttachmentType[ulInstance] == NetworkAttachmentType_HostOnly) &&
-                           (mHostInterface[ulInstance] == eHostInterface)))
+                    if ( !(   (eAttachmentType == NetworkAttachmentType_HostOnly)
+                           && (meAttachmentType[ulInstance] == NetworkAttachmentType_HostOnly)
+                           && (mHostInterface[ulInstance] == eHostInterface)))
                         changeAdaptor = true;
 
-                    if (!( (eAttachmentType == NetworkAttachmentType_Internal) &&
-                           (meAttachmentType[ulInstance] == NetworkAttachmentType_Internal) &&
-                           (mInternalNetwork[ulInstance] == eInternalNetwork)))
+                    if ( !(   (eAttachmentType == NetworkAttachmentType_Internal)
+                           && (meAttachmentType[ulInstance] == NetworkAttachmentType_Internal)
+                           && (mInternalNetwork[ulInstance] == eInternalNetwork)))
                         changeAdaptor = true;
 
                     if (changeAdaptor)
