@@ -28,9 +28,7 @@
 #include <VBox/pgm.h>
 
 #include <VBox/log.h>
-#ifdef VBOX_WITH_DMI_OEMSTRINGS
- #include <VBox/version.h>
-#endif
+#include <VBox/version.h>
 #include <iprt/assert.h>
 #include <iprt/alloc.h>
 #include <iprt/file.h>
@@ -193,7 +191,7 @@ typedef struct DMIHDR
 } *PDMIHDR;
 AssertCompileSize(DMIHDR, 4);
 
-/** DMI BIOS information */
+/** DMI BIOS information (Type 0) */
 typedef struct DMIBIOSINF
 {
     DMIHDR          header;
@@ -212,7 +210,7 @@ typedef struct DMIBIOSINF
 } *PDMIBIOSINF;
 AssertCompileSize(DMIBIOSINF, 0x18);
 
-/** DMI system information */
+/** DMI system information (Type 1) */
 typedef struct DMISYSTEMINF
 {
     DMIHDR          header;
@@ -227,7 +225,29 @@ typedef struct DMISYSTEMINF
 } *PDMISYSTEMINF;
 AssertCompileSize(DMISYSTEMINF, 0x1b);
 
-/** DMI processor information */
+/** DMI system enclosure or chassis type (Type 3) */
+typedef struct DMICHASSIS
+{
+    DMIHDR          header;
+    uint8_t         u8Manufacturer;
+    uint8_t         u8Type;
+    uint8_t         u8Version;
+    uint8_t         u8SerialNumber;
+    uint8_t         u8AssetTag;
+    uint8_t         u8BootupState;
+    uint8_t         u8PowerSupplyState;
+    uint8_t         u8ThermalState;
+    uint8_t         u8SecurityStatus;
+    /* v2.3+, currently not supported */
+    uint32_t        u32OEMdefined;
+    uint8_t         u8Height;
+    uint8_t         u8NumPowerChords;
+    uint8_t         u8ContElems;
+    uint8_t         u8ContElemRecLen;
+} *PDMICHASSIS;
+AssertCompileSize(DMICHASSIS, 0x15);
+
+/** DMI processor information (Type 4) */
 typedef struct DMIPROCESSORINF
 {
     DMIHDR          header;
@@ -257,8 +277,7 @@ typedef struct DMIPROCESSORINF
 } *PDMIPROCESSORINF;
 AssertCompileSize(DMIPROCESSORINF, 0x2a);
 
-#ifdef VBOX_WITH_DMI_OEMSTRINGS
-/** DMI OEM strings */
+/** DMI OEM strings (Type 11) */
 typedef struct DMIOEMSTRINGS
 {
     DMIHDR          header;
@@ -267,7 +286,6 @@ typedef struct DMIOEMSTRINGS
     uint8_t         u8VboxRevision;
 } *PDMIOEMSTRINGS;
 AssertCompileSize(DMIOEMSTRINGS, 0x7);
-#endif
 
 /** MPS floating pointer structure */
 typedef struct MPSFLOATPTR
@@ -347,6 +365,7 @@ typedef struct MPSIOINTERRUPTENTRY
 AssertCompileSize(MPSIOINTERRUPTENTRY, 8);
 
 #pragma pack()
+
 
 /* Attempt to guess the LCHS disk geometry from the MS-DOS master boot
  * record (partition table). */
@@ -932,24 +951,29 @@ static int pcbiosPlantDMITable(PPDMDEVINS pDevIns, uint8_t *pTable, unsigned cbM
     char *pszDmiBIOSVendor, *pszDmiBIOSVersion, *pszDmiBIOSReleaseDate;
     int  iDmiBIOSReleaseMajor, iDmiBIOSReleaseMinor, iDmiBIOSFirmwareMajor, iDmiBIOSFirmwareMinor;
     char *pszDmiSystemVendor, *pszDmiSystemProduct, *pszDmiSystemVersion, *pszDmiSystemSerial, *pszDmiSystemUuid, *pszDmiSystemFamily;
-#ifdef VBOX_WITH_DMI_OEMSTRINGS
+    char *pszDmiChassisVendor, *pszDmiChassisVersion, *pszDmiChassisSerial, *pszDmiChassisAssetTag;
     char *pszDmiOEMVBoxVer, *pszDmiOEMVBoxRev;
-#endif
 
+#define CHECKSIZE(want) \
+    do { \
+        size_t _max = (size_t)(pszStr + want - (char *)pTable) + 5; /* +1 for strtab terminator +4 for end-of-table entry */ \
+        if (_max > cbMax) \
+        { \
+            return PDMDevHlpVMSetError(pDevIns, VERR_TOO_MUCH_DATA, RT_SRC_POS, \
+                   N_("One of the DMI strings is too long. Check all bios/Dmi* configuration entries. At least %zu bytes are needed but there is no space for more than %d bytes"), _max, cbMax); \
+        } \
+    } while (0)
 #define SETSTRING(memb, str) \
     do { \
         if (!str[0]) \
-          memb = 0; /* empty string */ \
+            memb = 0; /* empty string */ \
         else \
         { \
-          memb = iStrNr++; \
-          size_t _len = strlen(str) + 1; \
-          size_t _max = (size_t)(pszStr + _len - (char *)pTable) + 5; /* +1 for strtab terminator +4 for end-of-table entry */ \
-          if (_max > cbMax) \
-            return PDMDevHlpVMSetError(pDevIns, VERR_TOO_MUCH_DATA, RT_SRC_POS, \
-                    N_("One of the DMI strings is too long. Check all bios/Dmi* configuration entries. At least %zu bytes are needed but there is no space for more than %d bytes"), _max, cbMax); \
-          memcpy(pszStr, str, _len); \
-          pszStr += _len; \
+            memb = iStrNr++; \
+            size_t _len = strlen(str) + 1; \
+            CHECKSIZE(_len); \
+            memcpy(pszStr, str, _len); \
+            pszStr += _len; \
         } \
     } while (0)
 #define READCFGSTR(name, variable, default_value) \
@@ -994,12 +1018,17 @@ static int pcbiosPlantDMITable(PPDMDEVINS pDevIns, uint8_t *pTable, unsigned cbM
     else if (RT_FAILURE(rc))
         return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
                                    N_("Configuration error: Querying \"DmiUuid\" as a string failed"));
-    READCFGSTR("DmiSystemFamily",    pszDmiSystemFamily,    "Virtual Machine");
+    READCFGSTR("DmiSystemFamily",      pszDmiSystemFamily,    "Virtual Machine");
+    READCFGSTR("DmiChassisVendor",     pszDmiChassisVendor,   "Sun Microsystems, Inc.");
+    READCFGSTR("DmiChassisVersion",    pszDmiChassisVersion,  ""); /* default not specified */
+    READCFGSTR("DmiChassisSerial",     pszDmiChassisSerial,   ""); /* default not specified */
+    READCFGSTR("DmiChassisAssetTag",   pszDmiChassisAssetTag, ""); /* default not specified */
 
-    /* DMI BIOS information */
+    /* DMI BIOS information (Type 0) */
     PDMIBIOSINF pBIOSInf         = (PDMIBIOSINF)pszStr;
+    CHECKSIZE(sizeof(*pBIOSInf));
 
-    pszStr = (char *)&pBIOSInf->u8ReleaseMajor;
+    pszStr                       = (char *)&pBIOSInf->u8ReleaseMajor;
     pBIOSInf->header.u8Length    = RT_OFFSETOF(DMIBIOSINF, u8ReleaseMajor);
 
     /* don't set these fields by default for legacy compatibility */
@@ -1042,8 +1071,9 @@ static int pcbiosPlantDMITable(PPDMDEVINS pDevIns, uint8_t *pTable, unsigned cbM
                                      ;
     *pszStr++                    = '\0';
 
-    /* DMI system information */
+    /* DMI system information (Type 1) */
     PDMISYSTEMINF pSystemInf     = (PDMISYSTEMINF)pszStr;
+    CHECKSIZE(sizeof(*pSystemInf));
     pszStr                       = (char *)(pSystemInf + 1);
     iStrNr                       = 1;
     pSystemInf->header.u8Type    = 1; /* System Information */
@@ -1073,14 +1103,49 @@ static int pcbiosPlantDMITable(PPDMDEVINS pDevIns, uint8_t *pTable, unsigned cbM
     SETSTRING(pSystemInf->u8Family, pszDmiSystemFamily);
     *pszStr++                    = '\0';
 
-#ifdef VBOX_WITH_DMI_OEMSTRINGS
+    /* DMI System Enclosure or Chassis (Type 3) */
+    PDMICHASSIS pChassis         = (PDMICHASSIS)pszStr;
+    CHECKSIZE(sizeof(*pChassis));
+    pszStr                       = (char*)&pChassis->u32OEMdefined;
+    iStrNr                       = 1;
+#ifdef VBOX_WITH_DMI_CHASSIS
+    pChassis->header.u8Type      = 3; /* System Enclosure or Chassis */
+#else
+    pChassis->header.u8Type      = 0x7e; /* inactive */
+#endif
+    pChassis->header.u8Length    = RT_OFFSETOF(DMICHASSIS, u32OEMdefined);
+    pChassis->header.u16Handle   = 0x0003;
+    SETSTRING(pChassis->u8Manufacturer, pszDmiChassisVendor);
+    pChassis->u8Type             = 0x01; /* ''other'', no chassis lock present */
+    SETSTRING(pChassis->u8Version, pszDmiChassisVersion);
+    SETSTRING(pChassis->u8SerialNumber, pszDmiChassisSerial);
+    SETSTRING(pChassis->u8AssetTag, pszDmiChassisAssetTag);
+    pChassis->u8BootupState      = 0x03; /* safe */
+    pChassis->u8PowerSupplyState = 0x03; /* safe */
+    pChassis->u8ThermalState     = 0x03; /* safe */
+    pChassis->u8SecurityStatus   = 0x03; /* none XXX */
+# if 0
+    /* v2.3+, currently not supported */
+    pChassis->u32OEMdefined      = 0;
+    pChassis->u8Height           = 0; /* unspecified */
+    pChassis->u8NumPowerChords   = 0; /* unspecified */
+    pChassis->u8ContElems        = 0; /* no contained elements */
+    pChassis->u8ContElemRecLen   = 0; /* no contained elements */
+# endif
+    *pszStr++                    = '\0';
+
     /* DMI OEM strings */
     PDMIOEMSTRINGS pOEMStrings    = (PDMIOEMSTRINGS)pszStr;
+    CHECKSIZE(sizeof(*pOEMStrings));
     pszStr                        = (char *)(pOEMStrings + 1);
     iStrNr                        = 1;
+#ifdef VBOX_WITH_DMI_OEMSTRINGS
     pOEMStrings->header.u8Type    = 0xb; /* OEM Strings */
+#else
+    pOEMStrings->header.u8Type    = 0x7e; /* inactive */
+#endif
     pOEMStrings->header.u8Length  = sizeof(*pOEMStrings);
-    pOEMStrings->header.u16Handle = 0x0002;    
+    pOEMStrings->header.u16Handle = 0x0002;
     pOEMStrings->u8Count          = 2;
 
     char* pszVBoxVer, *pszVBoxRev;
@@ -1093,20 +1158,20 @@ static int pcbiosPlantDMITable(PPDMDEVINS pDevIns, uint8_t *pTable, unsigned cbM
     SETSTRING(pOEMStrings->u8VboxRevision, pszDmiOEMVBoxRev);
     RTStrFree(pszVBoxVer);
     RTStrFree(pszVBoxRev);
-
     *pszStr++                    = '\0';
-#endif
 
     /* End-of-table marker - includes padding to account for fixed table size. */
     PDMIHDR pEndOfTable          = (PDMIHDR)pszStr;
     pEndOfTable->u8Type          = 0x7f;
     pEndOfTable->u8Length        = cbMax - ((char *)pszStr - (char *)pTable) - 2;
-    pEndOfTable->u16Handle       = 0xFFFF;
+    pEndOfTable->u16Handle       = 0xFEFF;
 
     /* If more fields are added here, fix the size check in SETSTRING */
 
 #undef SETSTRING
-#undef READCFG
+#undef READCFGSTR
+#undef READCFGINT
+#undef CHECKSIZE
 
     MMR3HeapFree(pszDmiBIOSVendor);
     MMR3HeapFree(pszDmiBIOSVersion);
@@ -1117,15 +1182,16 @@ static int pcbiosPlantDMITable(PPDMDEVINS pDevIns, uint8_t *pTable, unsigned cbM
     MMR3HeapFree(pszDmiSystemSerial);
     MMR3HeapFree(pszDmiSystemUuid);
     MMR3HeapFree(pszDmiSystemFamily);
-#ifdef VBOX_WITH_DMI_OEMSTRINGS
+    MMR3HeapFree(pszDmiChassisVendor);
+    MMR3HeapFree(pszDmiChassisVersion);
+    MMR3HeapFree(pszDmiChassisSerial);
+    MMR3HeapFree(pszDmiChassisAssetTag);
     MMR3HeapFree(pszDmiOEMVBoxVer);
     MMR3HeapFree(pszDmiOEMVBoxRev);
-#endif
 
     return VINF_SUCCESS;
 }
-AssertCompile(VBOX_DMI_TABLE_ENTR == 4);
-
+AssertCompile(VBOX_DMI_TABLE_ENTR == 5);
 
 /**
  * Calculate a simple checksum for the MPS table.
@@ -1462,6 +1528,11 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
                               "DmiSystemSerial\0"
                               "DmiSystemUuid\0"
                               "DmiSystemVendor\0"
+                              "DmiSystemVersion\0"
+                              "DmiChassisVendor\0"
+                              "DmiChassisVersion\0"
+                              "DmiChassisSerial\0"
+                              "DmiChassisAssetTag\0"
                               "DmiSystemVersion\0"
                               "DmiOEMVBoxVer\0"
                               "DmiOEMVBoxRev\0"))
