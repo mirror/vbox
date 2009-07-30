@@ -1533,7 +1533,6 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
                               "DmiChassisVersion\0"
                               "DmiChassisSerial\0"
                               "DmiChassisAssetTag\0"
-                              "DmiSystemVersion\0"
                               "DmiOEMVBoxVer\0"
                               "DmiOEMVBoxRev\0"))
         return PDMDEV_SET_ERROR(pDevIns, VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES,
