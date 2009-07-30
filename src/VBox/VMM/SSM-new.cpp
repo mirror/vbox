@@ -323,6 +323,8 @@ typedef struct SSMSTRM
     int32_t volatile        rc;
     /** The handle of the I/O thread. This is set to nil when not active. */
     RTTHREAD                hIoThread;
+    /** Where to seek to. */
+    uint64_t                offNeedSeekTo;
 
     /** The head of the consumer queue.
      * For save the consumer is the I/O thread.  For load the I/O thread is the
@@ -749,6 +751,7 @@ static DECLCALLBACK(int)    ssmR3SelfSaveExec(PVM pVM, PSSMHANDLE pSSM);
 static DECLCALLBACK(int)    ssmR3SelfLoadExec(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version);
 static int                  ssmR3Register(PVM pVM, const char *pszName, uint32_t u32Instance, uint32_t u32Version, size_t cbGuess, const char *pszBefore, PSSMUNIT *ppUnit);
 static int                  ssmR3StrmWriteBuffers(PSSMSTRM pStrm);
+static int                  ssmR3StrmReadMore(PSSMSTRM pStrm);
 static int                  ssmR3CalcChecksum(RTFILE File, uint64_t cbFile, uint32_t *pu32CRC);
 static void                 ssmR3Progress(PSSMHANDLE pSSM, uint64_t cbAdvance);
 static PSSMUNIT             ssmR3Find(PVM pVM, const char *pszName, uint32_t u32Instance);
@@ -1368,6 +1371,7 @@ static int ssmR3StrmInit(PSSMSTRM pStrm, bool fChecksummed)
     pStrm->fNeedSeek    = false;
     pStrm->rc           = VINF_SUCCESS;
     pStrm->hIoThread    = NIL_RTTHREAD;
+    pStrm->offNeedSeekTo= UINT64_MAX;
 
     pStrm->pHead        = NULL;
     pStrm->pFree        = NULL;
@@ -1654,6 +1658,15 @@ static PSSMSTRMBUF ssmR3StrmGetBuf(PSSMSTRM pStrm)
                 return NULL;
             if (RT_FAILURE(pStrm->rc))
                 return NULL;
+            if (    !pStrm->fWrite
+                &&  pStrm->hIoThread == NIL_RTTHREAD)
+            {
+                int rc = ssmR3StrmReadMore(pStrm);
+                if (RT_FAILURE(rc))
+                    return NULL;
+                continue;
+            }
+
             int rc = RTSemEventWaitNoResume(pStrm->hEvtHead, 30000);
             if (    rc == VERR_SEM_DESTROYED
                 ||  pStrm->fTerminating)
@@ -1686,8 +1699,8 @@ static void ssmR3StrmFlushCurBuf(PSSMSTRM pStrm)
                                                      &pBuf->abData[pStrm->offStreamCRC],
                                                      cb - pStrm->offStreamCRC);
             pStrm->offCurStream += cb;
-            pStrm->off          = 0;
-            pStrm->offStreamCRC = 0;
+            pStrm->off           = 0;
+            pStrm->offStreamCRC  = 0;
 
             ssmR3StrmPutBuf(pStrm, pBuf);
         }
@@ -1700,8 +1713,8 @@ static void ssmR3StrmFlushCurBuf(PSSMSTRM pStrm)
                                                      &pBuf->abData[pStrm->offStreamCRC],
                                                      cb - pStrm->offStreamCRC);
             pStrm->offCurStream += cb;
-            pStrm->off          = 0;
-            pStrm->offStreamCRC = 0;
+            pStrm->off           = 0;
+            pStrm->offStreamCRC  = 0;
 
             ssmR3StrmPutFreeBuf(pStrm, pBuf);
         }
@@ -1766,13 +1779,23 @@ static int ssmR3StrmWriteBuffers(PSSMSTRM pStrm)
 static int ssmR3StrmClose(PSSMSTRM pStrm)
 {
     /*
-     * Flush and close the stream.
+     * Flush, terminate the I/O thread, and close the stream.
      */
     if (pStrm->fWrite)
     {
         ssmR3StrmFlushCurBuf(pStrm);
-        ssmR3StrmWriteBuffers(pStrm);
+        if (pStrm->hIoThread == NIL_RTTHREAD)
+            ssmR3StrmWriteBuffers(pStrm);
     }
+
+    if (pStrm->hIoThread != NIL_RTTHREAD)
+    {
+        ASMAtomicWriteBool(&pStrm->fTerminating, true);
+        int rc2 = RTSemEventSignal(pStrm->fWrite ? pStrm->hEvtHead : pStrm->hEvtFree); AssertLogRelRC(rc2);
+        int rc3 = RTThreadWait(pStrm->hIoThread, RT_INDEFINITE_WAIT, NULL);            AssertLogRelRC(rc3);
+        pStrm->hIoThread = NIL_RTTHREAD;
+    }
+
     int rc = RTFileClose(pStrm->hFile);
     if (RT_FAILURE(rc))
         ssmR3StrmSetError(pStrm, rc);
@@ -1921,28 +1944,30 @@ static int ssmR3StrmCommitWriteBufferSpace(PSSMSTRM pStrm, size_t cb)
 /**
  * Read more from the stream.
  *
- * @returns VBox status code. VERR_EOF is passed up.
+ * @returns VBox status code. VERR_EOF gets translated into VINF_EOF.
  * @param   pStrm       The stream handle.
  *
- * @thread  The I/O thread when we get one.
+ * @thread  The I/O thread when we got one, otherwise the stream user.
  */
 static int ssmR3StrmReadMore(PSSMSTRM pStrm)
 {
     int rc;
+    Log6(("ssmR3StrmReadMore:\n"));
 
     /*
      * Undo seek done by ssmR3StrmPeekAt.
      */
     if (pStrm->fNeedSeek)
     {
-        rc = RTFileSeek(pStrm->hFile, pStrm->offCurStream + pStrm->off, RTFILE_SEEK_BEGIN, NULL);
+        rc = RTFileSeek(pStrm->hFile, pStrm->offNeedSeekTo, RTFILE_SEEK_BEGIN, NULL);
         if (RT_FAILURE(rc))
         {
             if (ssmR3StrmSetError(pStrm, rc))
-                LogRel(("ssmR3StrmReadMore: RTFileSeek(,%#llx,) failed with rc=%Rrc\n", pStrm->offCurStream + pStrm->off, rc));
+                LogRel(("ssmR3StrmReadMore: RTFileSeek(,%#llx,) failed with rc=%Rrc\n", pStrm->offNeedSeekTo, rc));
             return rc;
         }
-
+        pStrm->fNeedSeek     = false;
+        pStrm->offNeedSeekTo = UINT64_MAX;
     }
 
     /*
@@ -1952,24 +1977,30 @@ static int ssmR3StrmReadMore(PSSMSTRM pStrm)
     if (!pBuf)
         return pStrm->rc;
 
-    pBuf->offStream = pStrm->offCurStream + pStrm->off;
-    Assert(pBuf->offStream == RTFileTell(pStrm->hFile));
+    pBuf->offStream = RTFileTell(pStrm->hFile);
     size_t cbRead   = sizeof(pBuf->abData);
     rc = RTFileRead(pStrm->hFile, &pBuf->abData[0], cbRead, &cbRead);
-    if (RT_SUCCESS(rc))
+    if (    RT_SUCCESS(rc)
+        &&  cbRead > 0)
     {
         pBuf->cb           = (uint32_t)cbRead;
-        pBuf->fEndOfStream = cbRead == 0; /** @todo Check out this EOF mess... */
+        pBuf->fEndOfStream = false;
+        Log6(("ssmR3StrmReadMore: %#010llx %#x\n", pBuf->offStream, pBuf->cb));
         ssmR3StrmPutBuf(pStrm, pBuf);
     }
-    else if (rc == VERR_EOF)
+    else if (   (   RT_SUCCESS_NP(rc)
+                 && cbRead == 0)
+             || rc == VERR_EOF)
     {
         pBuf->cb           = 0;
         pBuf->fEndOfStream = true;
+        Log6(("ssmR3StrmReadMore: %#010llx 0 EOF!\n", pBuf->offStream));
         ssmR3StrmPutBuf(pStrm, pBuf);
+        rc = VINF_EOF;
     }
     else
     {
+        Log6(("ssmR3StrmReadMore: %#010llx rc=%Rrc!\n", pBuf->offStream, rc));
         if (ssmR3StrmSetError(pStrm, rc))
             LogRel(("ssmR3StrmReadMore: RTFileRead(,,%#x,) -> %Rrc at offset %#llx\n",
                     sizeof(pBuf->abData), rc, pBuf->offStream));
@@ -2036,12 +2067,6 @@ static int ssmR3StrmRead(PSSMSTRM pStrm, void *pvBuf, size_t cbToRead)
          * Flush the current buffer and get the next one.
          */
         ssmR3StrmFlushCurBuf(pStrm);
-        if (pStrm->hIoThread == NIL_RTTHREAD)
-        {
-            rc = ssmR3StrmReadMore(pStrm);
-            if (RT_FAILURE(rc))
-                break;
-        }
         PSSMSTRMBUF pBuf = ssmR3StrmGetBuf(pStrm);
         if (!pBuf)
         {
@@ -2194,6 +2219,7 @@ static int ssmR3StrmSeek(PSSMSTRM pStrm, int64_t off, uint32_t uMethod, uint32_t
     if (RT_SUCCESS(rc))
     {
         pStrm->fNeedSeek    = false;
+        pStrm->offNeedSeekTo= UINT64_MAX;
         pStrm->offCurStream = offStream;
         pStrm->off          = 0;
         pStrm->offStreamCRC = 0;
@@ -2287,12 +2313,88 @@ static int ssmR3StrmPeekAt(PSSMSTRM pStrm, RTFOFF off, void *pvBuf, size_t cbToR
     AssertReturn(!pStrm->fWrite && pStrm->hFile != NIL_RTFILE, VERR_NOT_SUPPORTED);
     AssertReturn(pStrm->hIoThread == NIL_RTTHREAD, VERR_WRONG_ORDER);
 
-    pStrm->fNeedSeek = true;
+    if (!pStrm->fNeedSeek)
+    {
+        pStrm->fNeedSeek     = true;
+        pStrm->offNeedSeekTo = pStrm->offCurStream + (pStrm->pCur ? pStrm->pCur->cb : 0);
+    }
+
     int rc = RTFileSeek(pStrm->hFile, off, off >= 0 ? RTFILE_SEEK_BEGIN : RTFILE_SEEK_END, poff);
     if (RT_SUCCESS(rc))
         rc = RTFileRead(pStrm->hFile, pvBuf, cbToRead, NULL);
 
     return rc;
+}
+
+
+/**
+ * The I/O thread.
+ *
+ * @returns VINF_SUCCESS (ignored).
+ * @param   hSelf       The thread handle.
+ * @param   pvStrm      The stream handle.
+ */
+static DECLCALLBACK(int) ssmR3StrmIoThread(RTTHREAD hSelf, void *pvStrm)
+{
+    PSSMSTRM pStrm = (PSSMSTRM)pvStrm;
+    ASMAtomicWriteHandle(&pStrm->hIoThread, hSelf); /* paranoia */
+
+    Log(("ssmR3StrmIoThread: starts working\n"));
+    if (pStrm->fWrite)
+    {
+        /*
+         * Write until error or terminated.
+         */
+        for (;;)
+        {
+
+        }
+    }
+    else
+    {
+        /*
+         * Read until end of file, error or termination.
+         */
+        for (;;)
+        {
+            if (ASMAtomicReadBool(&pStrm->fTerminating))
+            {
+                Log(("ssmR3StrmIoThread: quitting reading because of pending termination.\n"));
+                break;
+            }
+
+            int rc = ssmR3StrmReadMore(pStrm);
+            if (    RT_FAILURE(rc)
+                ||  rc == VINF_EOF)
+            {
+                Log(("ssmR3StrmIoThread: quitting reading with rc=%Rrc\n", rc));
+                break;
+            }
+            if (RT_FAILURE(pStrm->rc))
+            {
+                Log(("ssmR3StrmIoThread: quitting reading with stream rc=%Rrc\n", pStrm->rc));
+                break;
+            }
+        }
+    }
+
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Starts the I/O thread for the specified stream.
+ *
+ * @param   pStrm       The stream handle.
+ */
+static void ssmR3StrmStartIoThread(PSSMSTRM pStrm)
+{
+    Assert(pStrm->hIoThread == NIL_RTTHREAD);
+
+    RTTHREAD hThread;
+    int rc = RTThreadCreate(&hThread, ssmR3StrmIoThread, pStrm, 0, RTTHREADTYPE_IO, RTTHREADFLAGS_WAITABLE, "SSM-IO");
+    AssertRCReturnVoid(rc);
+    ASMAtomicWriteHandle(&pStrm->hIoThread, hThread); /* paranoia */
 }
 
 
@@ -3574,6 +3676,8 @@ VMMR3DECL(int) SSMR3Load(PVM pVM, const char *pszFilename, SSMAFTER enmAfter, PF
     int rc = ssmR3OpenFile(pVM, pszFilename, false /* fChecksumIt */, true /* fChecksumOnRead */, &Handle);
     if (RT_SUCCESS(rc))
     {
+        ssmR3StrmStartIoThread(&Handle.Strm);
+
         Handle.enmAfter     = enmAfter;
         Handle.pfnProgress  = pfnProgress;
         Handle.pvUser       = pvUser;
