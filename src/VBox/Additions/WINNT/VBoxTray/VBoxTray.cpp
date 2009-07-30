@@ -214,6 +214,36 @@ static void vboxStopServices (VBOXSERVICEENV *pEnv, VBOXSERVICEINFO *pTable)
 }
 
 
+/** Attempt to force Windows to reload the cursor image by attaching to the
+ * thread of the window currently under the mouse, hiding the cursor and
+ * showing it again.  This could fail to work in any number of ways (no
+ * window under the cursor, the cursor has moved to a different window while
+ * we are processing), but we just accept this, as the cursor will be reloaded
+ * at some point anyway. */
+void VBoxServiceReloadCursor(void)
+{
+    LogFlowFunc(("\n"));
+    POINT mousePos;
+    HWND hWin;
+    DWORD hThread, hCurrentThread;
+    
+    GetCursorPos(&mousePos);
+    hWin = WindowFromPoint(mousePos);
+    if (hWin)
+    {
+        hThread = GetWindowThreadProcessId(hWin, NULL);
+        hCurrentThread = GetCurrentThreadId();
+        if (hCurrentThread != hThread)
+            AttachThreadInput(hCurrentThread, hThread, TRUE);
+    }
+    ShowCursor(false);
+    ShowCursor(true);
+    if (hWin && (hCurrentThread != hThread))
+        AttachThreadInput(hCurrentThread, hThread, FALSE);
+    LogFlowFunc(("exiting\n"));
+}
+
+
 void WINAPI VBoxServiceStart(void)
 {
     Log(("VBoxTray: Leaving service main function"));
@@ -263,19 +293,7 @@ void WINAPI VBoxServiceStart(void)
         if (!gToolWindow)
             status = GetLastError();
         else
-        {
-            /* move the window beneach the mouse pointer so that we get access to it */
-            POINT mousePos;
-            GetCursorPos(&mousePos);
-            SetWindowPos(gToolWindow, HWND_TOPMOST, mousePos.x - 10, mousePos.y - 10, 0, 0,
-                         SWP_NOACTIVATE | SWP_SHOWWINDOW | SWP_NOCOPYBITS | SWP_NOREDRAW | SWP_NOSIZE);
-            /* change the mouse pointer so that we can go for a hardware shape */
-            SetCursor(LoadCursor(NULL, IDC_APPSTARTING));
-            SetCursor(LoadCursor(NULL, IDC_ARROW));
-            /* move back our tool window */
-            SetWindowPos(gToolWindow, HWND_TOPMOST, -200, -200, 0, 0,
-                         SWP_NOACTIVATE | SWP_HIDEWINDOW | SWP_NOCOPYBITS | SWP_NOREDRAW | SWP_NOSIZE);
-        }
+            VBoxServiceReloadCursor();
     }
 
     Log(("VBoxTray: Window Handle = %p, Status = %p\n", gToolWindow, status));

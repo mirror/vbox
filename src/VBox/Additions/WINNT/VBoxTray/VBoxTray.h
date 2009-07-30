@@ -66,5 +66,7 @@ typedef struct _VBOXSERVICEINFO
 
 extern HWND  gToolWindow;
 
+extern void VBoxServiceReloadCursor(void);
+
 #endif /* !___VBOXTRAY_H */
 

@@ -385,7 +385,7 @@ unsigned __stdcall VBoxDisplayThread  (void *pInstance)
     VBoxGuestFilterMaskInfo maskInfo;
     DWORD cbReturned;
 
-    maskInfo.u32OrMask = VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST;
+    maskInfo.u32OrMask = VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST | VMMDEV_EVENT_MOUSE_CAPABILITIES_CHANGED;
     maskInfo.u32NotMask = 0;
     if (DeviceIoControl (gVBoxDriver, VBOXGUEST_IOCTL_CTL_FILTER_MASK, &maskInfo, sizeof (maskInfo), NULL, 0, &cbReturned, NULL))
     {
@@ -402,7 +402,7 @@ unsigned __stdcall VBoxDisplayThread  (void *pInstance)
         /* wait for a display change event */
         VBoxGuestWaitEventInfo waitEvent;
         waitEvent.u32TimeoutIn = 1000;
-        waitEvent.u32EventMaskIn = VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST;
+        waitEvent.u32EventMaskIn = VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST | VMMDEV_EVENT_MOUSE_CAPABILITIES_CHANGED;
         if (DeviceIoControl(gVBoxDriver, VBOXGUEST_IOCTL_WAITEVENT, &waitEvent, sizeof(waitEvent), &waitEvent, sizeof(waitEvent), &cbReturned, NULL))
         {
             /*Log(("VBoxDisplayThread : DeviceIOControl succeded\n"));*/
@@ -590,6 +590,8 @@ unsigned __stdcall VBoxDisplayThread  (void *pInstance)
                     }
                 }
             }
+            if (waitEvent.u32EventFlagsOut & VMMDEV_EVENT_MOUSE_CAPABILITIES_CHANGED)
+                VBoxServiceReloadCursor();
         } else
         {
             Log(("VBoxDisplayThread : error 0 from DeviceIoControl VBOXGUEST_IOCTL_WAITEVENT\n"));
@@ -603,7 +605,7 @@ unsigned __stdcall VBoxDisplayThread  (void *pInstance)
     } while (!fTerminate);
 
     maskInfo.u32OrMask = 0;
-    maskInfo.u32NotMask = VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST;
+    maskInfo.u32NotMask = VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST | VMMDEV_EVENT_MOUSE_CAPABILITIES_CHANGED;
     if (DeviceIoControl (gVBoxDriver, VBOXGUEST_IOCTL_CTL_FILTER_MASK, &maskInfo, sizeof (maskInfo), NULL, 0, &cbReturned, NULL))
     {
         Log(("VBoxDisplayThread : DeviceIOControl(CtlMask - not) succeeded\n"));
