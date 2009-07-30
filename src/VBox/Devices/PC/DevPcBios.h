@@ -25,7 +25,7 @@
 /** @def VBOX_DMI_TABLE_BASE */
 #define VBOX_DMI_TABLE_BASE          0xe1000
 #define VBOX_DMI_TABLE_VER           0x25
-#define VBOX_DMI_TABLE_ENTR          4
+#define VBOX_DMI_TABLE_ENTR          5
 #define VBOX_DMI_TABLE_SIZE          0x100
 
 
