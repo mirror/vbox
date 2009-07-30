@@ -154,7 +154,7 @@ int NetIfCreateHostOnlyNetworkInterface (VirtualBox *pVBox, IHostNetworkInterfac
             if (RT_FAILURE(rc))
             {
                 progress->notifyComplete(E_FAIL, COM_IIDOF(IHostNetworkInterface), HostNetworkInterface::getComponentName(),
-                                         "Failed to get program path, rc=%Vrc.\n", rc);
+                                         "Failed to get program path, rc=%Vrc\n", rc);
                 return rc;
             }
             strcat(szAdpCtl, "/" VBOXNETADPCTL_NAME " add");
@@ -181,7 +181,7 @@ int NetIfCreateHostOnlyNetworkInterface (VirtualBox *pVBox, IHostNetworkInterfac
                         if (RT_FAILURE(rc))
                         {
                             progress->notifyComplete(E_FAIL, COM_IIDOF(IHostNetworkInterface), HostNetworkInterface::getComponentName(),
-                                                     "Failed to get config info for %s (as reported by '" VBOXNETADPCTL_NAME " add').\n", szBuf);
+                                                     "Failed to get config info for %s (as reported by '" VBOXNETADPCTL_NAME " add')\n", szBuf);
                         }
                         else
                         {
@@ -198,7 +198,7 @@ int NetIfCreateHostOnlyNetworkInterface (VirtualBox *pVBox, IHostNetworkInterfac
                 }
                 if ((rc = pclose(fp)) != 0)
                 {
-                    progress->notifyComplete(E_FAIL, COM_IIDOF(IHostNetworkInterface), HostNetworkInterface::getComponentName(), "Failed to execute '"VBOXNETADPCTL_NAME " add' (exit status: %d).", rc);
+                    progress->notifyComplete(E_FAIL, COM_IIDOF(IHostNetworkInterface), HostNetworkInterface::getComponentName(), "Failed to execute '"VBOXNETADPCTL_NAME " add' (exit status: %d)", rc);
                     rc = VERR_INTERNAL_ERROR;
                 }
             }
@@ -243,7 +243,7 @@ int NetIfRemoveHostOnlyNetworkInterface (VirtualBox *pVBox, IN_GUID aId, IHostNe
             iface.queryInterfaceTo(aHostNetworkInterface);
             rc = NetIfAdpCtl(Utf8Str(ifname), "remove", NULL, NULL);
             if (RT_FAILURE(rc))
-                progress->notifyComplete(E_FAIL, COM_IIDOF(IHostNetworkInterface), HostNetworkInterface::getComponentName(), "Failed to execute '"VBOXNETADPCTL_NAME "' (exit status: %d).", rc);
+                progress->notifyComplete(E_FAIL, COM_IIDOF(IHostNetworkInterface), HostNetworkInterface::getComponentName(), "Failed to execute '"VBOXNETADPCTL_NAME "' (exit status: %d)", rc);
             else
                 progress->notifyComplete(S_OK);
         }
