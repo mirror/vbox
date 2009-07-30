@@ -92,7 +92,7 @@ private:
     Bstr mText;
     Guid mIID;
     Bstr mComponent;
-    ComPtr <IVirtualBoxErrorInfo> mNext;
+    ComPtr<IVirtualBoxErrorInfo> mNext;
 };
 
 #endif // ____H_VIRTUALBOXERRORINFOIMPL

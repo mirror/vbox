@@ -58,15 +58,15 @@ void Guest::FinalRelease()
  */
 HRESULT Guest::init (Console *aParent)
 {
-    LogFlowThisFunc (("aParent=%p\n", aParent));
+    LogFlowThisFunc(("aParent=%p\n", aParent));
 
     ComAssertRet (aParent, E_INVALIDARG);
 
     /* Enclose the state transition NotReady->InInit->Ready */
-    AutoInitSpan autoInitSpan (this);
-    AssertReturn (autoInitSpan.isOk(), E_FAIL);
+    AutoInitSpan autoInitSpan(this);
+    AssertReturn(autoInitSpan.isOk(), E_FAIL);
 
-    unconst (mParent) = aParent;
+    unconst(mParent) = aParent;
 
     /* mData.mAdditionsActive is FALSE */
 
@@ -102,14 +102,14 @@ HRESULT Guest::init (Console *aParent)
  */
 void Guest::uninit()
 {
-    LogFlowThisFunc (("\n"));
+    LogFlowThisFunc(("\n"));
 
     /* Enclose the state transition Ready->InUninit->NotReady */
-    AutoUninitSpan autoUninitSpan (this);
+    AutoUninitSpan autoUninitSpan(this);
     if (autoUninitSpan.uninitDone())
         return;
 
-    unconst (mParent).setNull();
+    unconst(mParent).setNull();
 }
 
 // IGuest properties
@@ -119,16 +119,16 @@ STDMETHODIMP Guest::COMGETTER(OSTypeId) (BSTR *aOSTypeId)
 {
     CheckComArgOutPointerValid(aOSTypeId);
 
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
 
-    AutoReadLock alock (this);
+    AutoReadLock alock(this);
 
     // redirect the call to IMachine if no additions are installed
     if (mData.mAdditionsVersion.isNull())
         return mParent->machine()->COMGETTER(OSTypeId) (aOSTypeId);
 
-    mData.mOSTypeId.cloneTo (aOSTypeId);
+    mData.mOSTypeId.cloneTo(aOSTypeId);
 
     return S_OK;
 }
@@ -137,10 +137,10 @@ STDMETHODIMP Guest::COMGETTER(AdditionsActive) (BOOL *aAdditionsActive)
 {
     CheckComArgOutPointerValid(aAdditionsActive);
 
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
 
-    AutoReadLock alock (this);
+    AutoReadLock alock(this);
 
     *aAdditionsActive = mData.mAdditionsActive;
 
@@ -151,12 +151,12 @@ STDMETHODIMP Guest::COMGETTER(AdditionsVersion) (BSTR *aAdditionsVersion)
 {
     CheckComArgOutPointerValid(aAdditionsVersion);
 
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
 
-    AutoReadLock alock (this);
+    AutoReadLock alock(this);
 
-    mData.mAdditionsVersion.cloneTo (aAdditionsVersion);
+    mData.mAdditionsVersion.cloneTo(aAdditionsVersion);
 
     return S_OK;
 }
@@ -165,10 +165,10 @@ STDMETHODIMP Guest::COMGETTER(SupportsSeamless) (BOOL *aSupportsSeamless)
 {
     CheckComArgOutPointerValid(aSupportsSeamless);
 
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
 
-    AutoReadLock alock (this);
+    AutoReadLock alock(this);
 
     *aSupportsSeamless = mData.mSupportsSeamless;
 
@@ -179,10 +179,10 @@ STDMETHODIMP Guest::COMGETTER(SupportsGraphics) (BOOL *aSupportsGraphics)
 {
     CheckComArgOutPointerValid(aSupportsGraphics);
 
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
 
-    AutoReadLock alock (this);
+    AutoReadLock alock(this);
 
     *aSupportsGraphics = mData.mSupportsGraphics;
 
@@ -193,10 +193,10 @@ STDMETHODIMP Guest::COMGETTER(MemoryBalloonSize) (ULONG *aMemoryBalloonSize)
 {
     CheckComArgOutPointerValid(aMemoryBalloonSize);
 
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
 
-    AutoReadLock alock (this);
+    AutoReadLock alock(this);
 
     *aMemoryBalloonSize = mMemoryBalloonSize;
 
@@ -205,10 +205,10 @@ STDMETHODIMP Guest::COMGETTER(MemoryBalloonSize) (ULONG *aMemoryBalloonSize)
 
 STDMETHODIMP Guest::COMSETTER(MemoryBalloonSize) (ULONG aMemoryBalloonSize)
 {
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
 
-    AutoWriteLock alock (this);
+    AutoWriteLock alock(this);
 
     HRESULT ret = mParent->machine()->COMSETTER(MemoryBalloonSize)(aMemoryBalloonSize);
     if (ret == S_OK)
@@ -227,10 +227,10 @@ STDMETHODIMP Guest::COMGETTER(StatisticsUpdateInterval) (ULONG *aUpdateInterval)
 {
     CheckComArgOutPointerValid(aUpdateInterval);
 
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
 
-    AutoReadLock alock (this);
+    AutoReadLock alock(this);
 
     *aUpdateInterval = mStatUpdateInterval;
 
@@ -239,10 +239,10 @@ STDMETHODIMP Guest::COMGETTER(StatisticsUpdateInterval) (ULONG *aUpdateInterval)
 
 STDMETHODIMP Guest::COMSETTER(StatisticsUpdateInterval) (ULONG aUpdateInterval)
 {
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
 
-    AutoWriteLock alock (this);
+    AutoWriteLock alock(this);
 
     HRESULT ret = mParent->machine()->COMSETTER(StatisticsUpdateInterval)(aUpdateInterval);
     if (ret == S_OK)
@@ -264,8 +264,8 @@ STDMETHODIMP Guest::SetCredentials(IN_BSTR aUserName, IN_BSTR aPassword,
     CheckComArgNotNull(aPassword);
     CheckComArgNotNull(aDomain);
 
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
 
     /* forward the information to the VMM device */
     VMMDev *vmmDev = mParent->getVMMDev();
@@ -317,10 +317,10 @@ void Guest::setAdditionsVersion (Bstr aVersion, VBOXOSTYPE aOsType)
 {
     Assert(aVersion.isNull() || !aVersion.isEmpty());
 
-    AutoCaller autoCaller (this);
+    AutoCaller autoCaller(this);
     AssertComRCReturnVoid (autoCaller.rc());
 
-    AutoWriteLock alock (this);
+    AutoWriteLock alock(this);
 
     mData.mAdditionsVersion = aVersion;
     mData.mAdditionsActive = !aVersion.isNull();
@@ -330,20 +330,20 @@ void Guest::setAdditionsVersion (Bstr aVersion, VBOXOSTYPE aOsType)
 
 void Guest::setSupportsSeamless (BOOL aSupportsSeamless)
 {
-    AutoCaller autoCaller (this);
+    AutoCaller autoCaller(this);
     AssertComRCReturnVoid (autoCaller.rc());
 
-    AutoWriteLock alock (this);
+    AutoWriteLock alock(this);
 
     mData.mSupportsSeamless = aSupportsSeamless;
 }
 
 void Guest::setSupportsGraphics (BOOL aSupportsGraphics)
 {
-    AutoCaller autoCaller (this);
+    AutoCaller autoCaller(this);
     AssertComRCReturnVoid (autoCaller.rc());
 
-    AutoWriteLock alock (this);
+    AutoWriteLock alock(this);
 
     mData.mSupportsGraphics = aSupportsGraphics;
 }

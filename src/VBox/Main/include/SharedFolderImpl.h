@@ -103,9 +103,9 @@ private:
     VirtualBoxBaseWithChildrenNEXT *const mParent;
 
     /* weak parents (only one of them is not null) */
-    const ComObjPtr <Machine, ComWeakRef> mMachine;
-    const ComObjPtr <Console, ComWeakRef> mConsole;
-    const ComObjPtr <VirtualBox, ComWeakRef> mVirtualBox;
+    const ComObjPtr<Machine, ComWeakRef> mMachine;
+    const ComObjPtr<Console, ComWeakRef> mConsole;
+    const ComObjPtr<VirtualBox, ComWeakRef> mVirtualBox;
 
     Data m;
 };

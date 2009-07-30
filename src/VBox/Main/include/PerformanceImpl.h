@@ -185,8 +185,8 @@ public:
 
     void registerBaseMetric (pm::BaseMetric *baseMetric);
     void registerMetric (pm::Metric *metric);
-    void unregisterBaseMetricsFor (const ComPtr <IUnknown> &object);
-    void unregisterMetricsFor (const ComPtr <IUnknown> &object);
+    void unregisterBaseMetricsFor (const ComPtr<IUnknown> &object);
+    void unregisterMetricsFor (const ComPtr<IUnknown> &object);
 
     void suspendSampling();
     void resumeSampling();

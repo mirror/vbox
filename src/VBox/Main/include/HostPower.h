@@ -52,9 +52,9 @@ public:
 
 protected:
 
-    ComObjPtr <VirtualBox, ComWeakRef> mVirtualBox;
+    ComObjPtr<VirtualBox, ComWeakRef> mVirtualBox;
 
-    std::vector <ComPtr <IConsole> > mConsoles;
+    std::vector <ComPtr<IConsole> > mConsoles;
 };
 
 # ifdef RT_OS_WINDOWS

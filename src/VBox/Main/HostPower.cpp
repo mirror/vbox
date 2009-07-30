@@ -67,7 +67,7 @@ void HostPowerService::notify (HostPowerEvent aEvent)
             for (size_t i = 0; i < controls.size(); ++ i)
             {
                 /* get the remote console */
-                ComPtr <IConsole> console;
+                ComPtr<IConsole> console;
                 rc = controls [i]->GetRemoteConsole (console.asOutParam());
                 /* the VM could have been powered down and closed or whatever */
                 if (FAILED (rc))
@@ -135,7 +135,7 @@ void HostPowerService::notify (HostPowerEvent aEvent)
             for (size_t i = 0; i < controls.size(); ++ i)
             {
                 /* get the remote console */
-                ComPtr <IConsole> console;
+                ComPtr<IConsole> console;
                 rc = controls [i]->GetRemoteConsole (console.asOutParam());
                 /* the VM could have been powered down and closed or whatever */
                 if (FAILED (rc))
@@ -152,14 +152,14 @@ void HostPowerService::notify (HostPowerEvent aEvent)
                 /* Wait until the operation has been completed. */
                 LONG iRc;
                 rc = progress->WaitForCompletion(-1);
-                if (SUCCEEDED (rc))
+                if (SUCCEEDED(rc))
                     progress->COMGETTER(ResultCode) (&iRc);
                 rc = iRc;
 
-                AssertMsg (SUCCEEDED (rc), ("SaveState WaitForCompletion "
+                AssertMsg (SUCCEEDED(rc), ("SaveState WaitForCompletion "
                                             "failed with %Rhrc (%#08X)\n", rc, rc));
 
-                if (SUCCEEDED (rc))
+                if (SUCCEEDED(rc))
                     ++ saved;
             }
 

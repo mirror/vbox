@@ -63,7 +63,7 @@ public:
             return aThat->hardDisk().equalsTo (hardDisk);
         }
 
-        const ComObjPtr <HardDisk> hardDisk;
+        const ComObjPtr<HardDisk> hardDisk;
     };
 
     DECLARE_NOT_AGGREGATABLE(HardDiskAttachment)

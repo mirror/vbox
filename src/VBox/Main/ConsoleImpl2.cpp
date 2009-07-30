@@ -151,19 +151,19 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
     }
 #endif
 
-    AssertReturn (pvConsole, VERR_GENERAL_FAILURE);
-    ComObjPtr <Console> pConsole = static_cast <Console *> (pvConsole);
+    AssertReturn(pvConsole, VERR_GENERAL_FAILURE);
+    ComObjPtr<Console> pConsole = static_cast <Console *> (pvConsole);
 
-    AutoCaller autoCaller (pConsole);
+    AutoCaller autoCaller(pConsole);
     AssertComRCReturn (autoCaller.rc(), VERR_ACCESS_DENIED);
 
     /* lock the console because we widely use internal fields and methods */
-    AutoWriteLock alock (pConsole);
+    AutoWriteLock alock(pConsole);
 
     /* Save the VM pointer in the machine object */
     pConsole->mpVM = pVM;
 
-    ComPtr <IMachine> pMachine = pConsole->machine();
+    ComPtr<IMachine> pMachine = pConsole->machine();
 
     int             rc;
     HRESULT         hrc;
@@ -187,7 +187,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
     ComPtr<IHost> host;
     hrc = virtualBox->COMGETTER(Host)(host.asOutParam());                           H();
 
-    ComPtr <ISystemProperties> systemProperties;
+    ComPtr<ISystemProperties> systemProperties;
     hrc = virtualBox->COMGETTER(SystemProperties)(systemProperties.asOutParam());   H();
 
     ComPtr<IBIOSSettings> biosSettings;
@@ -267,7 +267,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
         Bstr osTypeId;
         hrc = pMachine->COMGETTER(OSTypeId)(osTypeId.asOutParam());                 H();
 
-        ComPtr <IGuestOSType> guestOSType;
+        ComPtr<IGuestOSType> guestOSType;
         hrc = virtualBox->GetGuestOSType(osTypeId, guestOSType.asOutParam());       H();
 
         BOOL fSupportsLongMode = false;
@@ -1104,8 +1104,8 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
 
             /* Pass all custom parameters. */
             bool fHostIP = true;
-            SafeArray <BSTR> names;
-            SafeArray <BSTR> values;
+            SafeArray<BSTR> names;
+            SafeArray<BSTR> values;
             hrc = hardDisk->GetProperties (NULL,
                                            ComSafeArrayAsOutParam (names),
                                            ComSafeArrayAsOutParam (values));    H();
@@ -1146,8 +1146,8 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                 rc = CFGMR3InsertString (pCur, "Format", Utf8Str (bstr));       RC_CHECK();
 
                 /* Pass all custom parameters. */
-                SafeArray <BSTR> names;
-                SafeArray <BSTR> values;
+                SafeArray<BSTR> names;
+                SafeArray<BSTR> values;
                 hrc = hardDisk->GetProperties (NULL,
                                                 ComSafeArrayAsOutParam (names),
                                                 ComSafeArrayAsOutParam (values));H();
@@ -1701,7 +1701,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
             /* Load the service */
             rc = pConsole->mVMMDev->hgcmLoadService ("VBoxSharedClipboard", "VBoxSharedClipboard");
 
-            if (RT_FAILURE (rc))
+            if (RT_FAILURE(rc))
             {
                 LogRel(("VBoxSharedClipboard is not available. rc = %Rrc\n", rc));
                 /* That is not a fatal failure. */
@@ -1800,7 +1800,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
         /* Load the service */
         rc = pConsole->mVMMDev->hgcmLoadService ("VBoxGuestPropSvc", "VBoxGuestPropSvc");
 
-        if (RT_FAILURE (rc))
+        if (RT_FAILURE(rc))
         {
             LogRel(("VBoxGuestPropSvc is not available. rc = %Rrc\n", rc));
             /* That is not a fatal failure. */
@@ -2017,13 +2017,13 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
     /* Register VM state change handler */
     int rc2 = VMR3AtStateRegister (pVM, Console::vmstateChangeCallback, pConsole);
     AssertRC (rc2);
-    if (RT_SUCCESS (rc))
+    if (RT_SUCCESS(rc))
         rc = rc2;
 
     /* Register VM runtime error handler */
     rc2 = VMR3AtRuntimeErrorRegister (pVM, Console::setVMRuntimeErrorCallback, pConsole);
     AssertRC (rc2);
-    if (RT_SUCCESS (rc))
+    if (RT_SUCCESS(rc))
         rc = rc2;
 
     LogFlowFunc (("vrc = %Rrc\n", rc));
@@ -2055,7 +2055,7 @@ DECLCALLBACK(int)  Console::configNetwork(Console *pThis, const char *pszDevice,
     int rc = VINF_SUCCESS;
     int rcRet = VINF_SUCCESS;
 
-    AutoCaller autoCaller (pThis);
+    AutoCaller autoCaller(pThis);
     AssertComRCReturn (autoCaller.rc(), VERR_ACCESS_DENIED);
 
     /*
@@ -2063,7 +2063,7 @@ DECLCALLBACK(int)  Console::configNetwork(Console *pThis, const char *pszDevice,
      * we're on EMT. Write lock is necessary because we indirectly modify the
      * meAttachmentType member.
      */
-    AutoWriteLock alock (pThis);
+    AutoWriteLock alock(pThis);
 
     PVM pVM = pThis->mpVM;
 
@@ -2074,7 +2074,7 @@ DECLCALLBACK(int)  Console::configNetwork(Console *pThis, const char *pszDevice,
     do
     {
         HRESULT hrc;
-        ComPtr <IMachine> pMachine = pThis->machine();
+        ComPtr<IMachine> pMachine = pThis->machine();
 
         ComPtr<IVirtualBox> virtualBox;
         hrc = pMachine->COMGETTER(Parent)(virtualBox.asOutParam());

@@ -52,7 +52,7 @@ using namespace com;
 static Bstr getObjectName(ComPtr<IVirtualBox> aVirtualBox,
                                   ComPtr<IUnknown> aObject);
 static void queryMetrics (ComPtr<IVirtualBox> aVirtualBox,
-                          ComPtr <IPerformanceCollector> collector,
+                          ComPtr<IPerformanceCollector> collector,
                           ComSafeArrayIn (IUnknown *, objects));
 static void listAffectedMetrics(ComPtr<IVirtualBox> aVirtualBox,
                                 ComSafeArrayIn(IPerformanceMetric*, aMetrics));
@@ -72,7 +72,7 @@ HRESULT readAndChangeMachineSettings (IMachine *machine, IMachine *readonlyMachi
     RTPrintf("Getting machine GUID...\n");
     Bstr guid;
     CHECK_ERROR (machine, COMGETTER(Id) (guid.asOutParam()));
-    if (SUCCEEDED (rc) && !guid.isEmpty()) {
+    if (SUCCEEDED(rc) && !guid.isEmpty()) {
         RTPrintf ("Guid::toString(): {%s}\n", Utf8Str(guid).c_str());
     } else {
         RTPrintf ("WARNING: there's no GUID!");
@@ -91,14 +91,14 @@ HRESULT readAndChangeMachineSettings (IMachine *machine, IMachine *readonlyMachi
     BOOL modified;
     RTPrintf ("Are any settings modified?...\n");
     CHECK_ERROR (machine, COMGETTER(SettingsModified) (&modified));
-    if (SUCCEEDED (rc))
+    if (SUCCEEDED(rc))
         RTPrintf ("%s\n", modified ? "yes" : "no");
 
     ULONG memorySizeBig = memorySize * 10;
     RTPrintf("Changing memory size to %d...\n", memorySizeBig);
     CHECK_ERROR (machine, COMSETTER(MemorySize) (memorySizeBig));
 
-    if (SUCCEEDED (rc))
+    if (SUCCEEDED(rc))
     {
         RTPrintf ("Are any settings modified now?...\n");
         CHECK_ERROR_RET (machine, COMGETTER(SettingsModified) (&modified), rc);
@@ -148,7 +148,7 @@ HRESULT readAndChangeMachineSettings (IMachine *machine, IMachine *readonlyMachi
 
     RTPrintf ("Saving machine settings...\n");
     CHECK_ERROR (machine, SaveSettings());
-    if (SUCCEEDED (rc))
+    if (SUCCEEDED(rc))
     {
         RTPrintf ("Are any settings modified after saving?...\n");
         CHECK_ERROR_RET (machine, COMGETTER(SettingsModified) (&modified), rc);
@@ -184,7 +184,7 @@ HRESULT readAndChangeMachineSettings (IMachine *machine, IMachine *readonlyMachi
     );
     CHECK_ERROR (machine, SetExtraData (extraDataKey, extraData));
 
-    if (SUCCEEDED (rc)) {
+    if (SUCCEEDED(rc)) {
         RTPrintf ("Getting extra data key {%ls} again...\n", extraDataKey.raw());
         CHECK_ERROR_RET (machine, GetExtraData (extraDataKey, extraData.asOutParam()), rc);
         if (!extraData.isEmpty()) {
@@ -230,8 +230,8 @@ int main(int argc, char *argv[])
     // scopes all the stuff till shutdown
     ////////////////////////////////////////////////////////////////////////////
 
-    ComPtr <IVirtualBox> virtualBox;
-    ComPtr <ISession> session;
+    ComPtr<IVirtualBox> virtualBox;
+    ComPtr<ISession> session;
 
 #if 0
     // Utf8Str test
@@ -283,7 +283,7 @@ int main(int argc, char *argv[])
         RTPrintf ("Testing VirtualBox::COMGETTER(ProgressOperations)...\n");
 
         for (;;) {
-            com::SafeIfaceArray <IProgress> operations;
+            com::SafeIfaceArray<IProgress> operations;
 
             CHECK_ERROR_BREAK (virtualBox,
                 COMGETTER(ProgressOperations)(ComSafeArrayAsOutParam(operations)));
@@ -308,7 +308,7 @@ int main(int argc, char *argv[])
     ////////////////////////////////////////////////////////////////////////////
     {
         {
-            ComPtr <IVirtualBox> virtualBox2;
+            ComPtr<IVirtualBox> virtualBox2;
 
             RTPrintf ("Creating one more VirtualBox object...\n");
             CHECK_RC (virtualBox2.createLocalObject (CLSID_VirtualBox));
@@ -322,16 +322,16 @@ int main(int argc, char *argv[])
                     (IVirtualBox *) virtualBox, (IVirtualBox *) virtualBox2);
             Assert ((IVirtualBox *) virtualBox == (IVirtualBox *) virtualBox2);
 
-            ComPtr <IUnknown> unk (virtualBox);
-            ComPtr <IUnknown> unk2;
+            ComPtr<IUnknown> unk (virtualBox);
+            ComPtr<IUnknown> unk2;
             unk2 = virtualBox2;
 
             RTPrintf ("IUnknown(virtualBox)=%p IUnknown(virtualBox2)=%p\n",
                     (IUnknown *) unk, (IUnknown *) unk2);
             Assert ((IUnknown *) unk == (IUnknown *) unk2);
 
-            ComPtr <IVirtualBox> vb = unk;
-            ComPtr <IVirtualBox> vb2 = unk;
+            ComPtr<IVirtualBox> vb = unk;
+            ComPtr<IVirtualBox> vb2 = unk;
 
             RTPrintf ("IVirtualBox(IUnknown(virtualBox))=%p IVirtualBox(IUnknown(virtualBox2))=%p\n",
                     (IVirtualBox *) vb, (IVirtualBox *) vb2);
@@ -339,24 +339,24 @@ int main(int argc, char *argv[])
         }
 
         {
-            ComPtr <IHost> host;
+            ComPtr<IHost> host;
             CHECK_ERROR_BREAK (virtualBox, COMGETTER(Host)(host.asOutParam()));
             RTPrintf (" IHost(host)=%p\n", (IHost *) host);
-            ComPtr <IUnknown> unk = host;
+            ComPtr<IUnknown> unk = host;
             RTPrintf (" IUnknown(host)=%p\n", (IUnknown *) unk);
-            ComPtr <IHost> host_copy = unk;
+            ComPtr<IHost> host_copy = unk;
             RTPrintf (" IHost(host_copy)=%p\n", (IHost *) host_copy);
-            ComPtr <IUnknown> unk_copy = host_copy;
+            ComPtr<IUnknown> unk_copy = host_copy;
             RTPrintf (" IUnknown(host_copy)=%p\n", (IUnknown *) unk_copy);
             Assert ((IUnknown *) unk == (IUnknown *) unk_copy);
 
             /* query IUnknown on IUnknown */
-            ComPtr <IUnknown> unk_copy_copy;
-            unk_copy.queryInterfaceTo (unk_copy_copy.asOutParam());
+            ComPtr<IUnknown> unk_copy_copy;
+            unk_copy.queryInterfaceTo(unk_copy_copy.asOutParam());
             RTPrintf (" IUnknown(unk_copy)=%p\n", (IUnknown *) unk_copy_copy);
             Assert ((IUnknown *) unk_copy == (IUnknown *) unk_copy_copy);
             /* query IUnknown on IUnknown in the opposite direction */
-            unk_copy_copy.queryInterfaceTo (unk_copy.asOutParam());
+            unk_copy_copy.queryInterfaceTo(unk_copy.asOutParam());
             RTPrintf (" IUnknown(unk_copy_copy)=%p\n", (IUnknown *) unk_copy);
             Assert ((IUnknown *) unk_copy == (IUnknown *) unk_copy_copy);
 
@@ -397,7 +397,7 @@ int main(int argc, char *argv[])
     {
         RTPrintf ("Calling IVirtualBox::Machines...\n");
 
-        com::SafeIfaceArray <IMachine> machines;
+        com::SafeIfaceArray<IMachine> machines;
         CHECK_ERROR_BREAK (virtualBox,
                            COMGETTER(Machines) (ComSafeArrayAsOutParam (machines)));
 
@@ -515,7 +515,7 @@ int main(int argc, char *argv[])
 
         // call a method that will definitely fail
         Guid uuid;
-        ComPtr <IHardDisk> hardDisk;
+        ComPtr<IHardDisk> hardDisk;
         rc = virtualBox->GetHardDisk(uuid, hardDisk.asOutParam());
         RTPrintf ("virtualBox->GetHardDisk(null-uuid)=%08X\n", rc);
 
@@ -537,7 +537,7 @@ int main(int argc, char *argv[])
         // Local calls
 
         // call a method that will definitely fail
-        ComPtr <IMachine> machine;
+        ComPtr<IMachine> machine;
         rc = session->COMGETTER(Machine)(machine.asOutParam());
         RTPrintf ("session->COMGETTER(Machine)=%08X\n", rc);
 
@@ -563,7 +563,7 @@ int main(int argc, char *argv[])
     ///////////////////////////////////////////////////////////////////////////
     do
     {
-        ComPtr <IHardDisk> hd;
+        ComPtr<IHardDisk> hd;
         Bstr src = L"E:\\develop\\innotek\\images\\NewHardDisk.vdi";
         RTPrintf ("Opening the existing hard disk '%ls'...\n", src.raw());
         CHECK_ERROR_BREAK (virtualBox, OpenHardDisk (src, AccessMode_ReadWrite, hd.asOutParam()));
@@ -583,11 +583,11 @@ int main(int argc, char *argv[])
     ///////////////////////////////////////////////////////////////////////////
     do
     {
-        ComPtr <IVirtualDiskImage> vdi;
+        ComPtr<IVirtualDiskImage> vdi;
         Bstr src = L"CreatorTest.vdi";
         RTPrintf ("Unregistering the hard disk '%ls'...\n", src.raw());
         CHECK_ERROR_BREAK (virtualBox, FindVirtualDiskImage (src, vdi.asOutParam()));
-        ComPtr <IHardDisk> hd = vdi;
+        ComPtr<IHardDisk> hd = vdi;
         Guid id;
         CHECK_ERROR_BREAK (hd, COMGETTER(Id) (id.asOutParam()));
         CHECK_ERROR_BREAK (virtualBox, UnregisterHardDisk (id, hd.asOutParam()));
@@ -608,10 +608,10 @@ int main(int argc, char *argv[])
 #endif
         Bstr dst = L"./clone.vdi";
         RTPrintf ("Cloning '%ls' to '%ls'...\n", src.raw(), dst.raw());
-        ComPtr <IVirtualDiskImage> vdi;
+        ComPtr<IVirtualDiskImage> vdi;
         CHECK_ERROR_BREAK (virtualBox, FindVirtualDiskImage (src, vdi.asOutParam()));
-        ComPtr <IHardDisk> hd = vdi;
-        ComPtr <IProgress> progress;
+        ComPtr<IHardDisk> hd = vdi;
+        ComPtr<IProgress> progress;
         CHECK_ERROR_BREAK (hd, CloneToImage (dst, vdi.asOutParam(), progress.asOutParam()));
         RTPrintf ("Waiting for completion...\n");
         CHECK_ERROR_BREAK (progress, WaitForCompletion (-1));
@@ -635,7 +635,7 @@ int main(int argc, char *argv[])
     ///////////////////////////////////////////////////////////////////////////
     do
     {
-        ComPtr <IHardDisk> hd;
+        ComPtr<IHardDisk> hd;
         static const wchar_t *Names[] =
         {
 #ifndef RT_OS_LINUX
@@ -656,7 +656,7 @@ int main(int argc, char *argv[])
             Bstr src = Names [i];
             RTPrintf ("Searching for hard disk '%ls'...\n", src.raw());
             rc = virtualBox->FindHardDisk (src, hd.asOutParam());
-            if (SUCCEEDED (rc))
+            if (SUCCEEDED(rc))
             {
                 Guid id;
                 Bstr location;
@@ -665,8 +665,8 @@ int main(int argc, char *argv[])
                 RTPrintf ("Found, UUID={%Vuuid}, location='%ls'.\n",
                         id.raw(), location.raw());
 
-                com::SafeArray <BSTR> names;
-                com::SafeArray <BSTR> values;
+                com::SafeArray<BSTR> names;
+                com::SafeArray<BSTR> values;
 
                 CHECK_ERROR_BREAK (hd, GetProperties (NULL,
                                                       ComSafeArrayAsOutParam (names),
@@ -704,7 +704,7 @@ int main(int argc, char *argv[])
     ///////////////////////////////////////////////////////////////////////////
     do
     {
-        ComPtr <IMachine> machine;
+        ComPtr<IMachine> machine;
         Bstr name = argc > 1 ? argv [1] : "dos";
         RTPrintf ("Getting a machine object named '%ls'...\n", name.raw());
         CHECK_ERROR_BREAK (virtualBox, FindMachine (name, machine.asOutParam()));
@@ -731,7 +731,7 @@ int main(int argc, char *argv[])
     ///////////////////////////////////////////////////////////////////////////
     do
     {
-        ComPtr <IMachine> machine;
+        ComPtr<IMachine> machine;
 #if defined (RT_OS_LINUX)
         Bstr baseDir = L"/tmp/vbox";
 #else
@@ -766,7 +766,7 @@ int main(int argc, char *argv[])
         RTPrintf ("Setting description to \"%ls\"...\n", desc.raw());
         CHECK_ERROR_BREAK (machine, COMSETTER(Description) (desc));
 
-        ComPtr <IGuestOSType> guestOSType;
+        ComPtr<IGuestOSType> guestOSType;
         Bstr type = L"os2warp45";
         CHECK_ERROR_BREAK (virtualBox, GetGuestOSType (type, guestOSType.asOutParam()));
 
@@ -785,18 +785,18 @@ int main(int argc, char *argv[])
     ///////////////////////////////////////////////////////////////////////////
     do
     {
-        ComPtr <IHost> host;
+        ComPtr<IHost> host;
         CHECK_RC_BREAK (virtualBox->COMGETTER(Host) (host.asOutParam()));
 
         {
-            ComPtr <IHostDVDDriveCollection> coll;
+            ComPtr<IHostDVDDriveCollection> coll;
             CHECK_RC_BREAK (host->COMGETTER(DVDDrives) (coll.asOutParam()));
-            ComPtr <IHostDVDDriveEnumerator> enumerator;
+            ComPtr<IHostDVDDriveEnumerator> enumerator;
             CHECK_RC_BREAK (coll->Enumerate (enumerator.asOutParam()));
             BOOL hasmore;
-            while (SUCCEEDED (enumerator->HasMore (&hasmore)) && hasmore)
+            while (SUCCEEDED(enumerator->HasMore (&hasmore)) && hasmore)
             {
-                ComPtr <IHostDVDDrive> drive;
+                ComPtr<IHostDVDDrive> drive;
                 CHECK_RC_BREAK (enumerator->GetNext (drive.asOutParam()));
                 Bstr name;
                 CHECK_RC_BREAK (drive->COMGETTER(Name) (name.asOutParam()));
@@ -804,11 +804,11 @@ int main(int argc, char *argv[])
             }
             CHECK_RC_BREAK (rc);
 
-            ComPtr <IHostDVDDrive> drive;
+            ComPtr<IHostDVDDrive> drive;
             CHECK_ERROR (enumerator, GetNext (drive.asOutParam()));
             CHECK_ERROR (coll, GetItemAt (1000, drive.asOutParam()));
             CHECK_ERROR (coll, FindByName (Bstr ("R:"), drive.asOutParam()));
-            if (SUCCEEDED (rc))
+            if (SUCCEEDED(rc))
             {
                 Bstr name;
                 CHECK_RC_BREAK (drive->COMGETTER(Name) (name.asOutParam()));
@@ -828,7 +828,7 @@ int main(int argc, char *argv[])
         ComPtr<ISystemProperties> systemProperties;
         CHECK_ERROR_BREAK (virtualBox,
                            COMGETTER(SystemProperties) (systemProperties.asOutParam()));
-        com::SafeIfaceArray <IHardDiskFormat> hardDiskFormats;
+        com::SafeIfaceArray<IHardDiskFormat> hardDiskFormats;
         CHECK_ERROR_BREAK (systemProperties,
                            COMGETTER(HardDiskFormats) (ComSafeArrayAsOutParam (hardDiskFormats)));
 
@@ -851,7 +851,7 @@ int main(int argc, char *argv[])
                      i, id.raw(), description.raw(), caps);
 
             /* File extensions */
-            com::SafeArray <BSTR> fileExtensions;
+            com::SafeArray<BSTR> fileExtensions;
             CHECK_ERROR_BREAK (hardDiskFormats [i],
                                COMGETTER(FileExtensions) (ComSafeArrayAsOutParam (fileExtensions)));
             for (size_t a = 0; a < fileExtensions.size(); ++ a)
@@ -863,11 +863,11 @@ int main(int argc, char *argv[])
             RTPrintf ("'");
 
             /* Configuration keys */
-            com::SafeArray <BSTR> propertyNames;
-            com::SafeArray <BSTR> propertyDescriptions;
-            com::SafeArray <ULONG> propertyTypes;
-            com::SafeArray <ULONG> propertyFlags;
-            com::SafeArray <BSTR> propertyDefaults;
+            com::SafeArray<BSTR> propertyNames;
+            com::SafeArray<BSTR> propertyDescriptions;
+            com::SafeArray<ULONG> propertyTypes;
+            com::SafeArray<ULONG> propertyFlags;
+            com::SafeArray<BSTR> propertyDefaults;
             CHECK_ERROR_BREAK (hardDiskFormats [i],
                                DescribeProperties (ComSafeArrayAsOutParam (propertyNames),
                                                    ComSafeArrayAsOutParam (propertyDescriptions),
@@ -905,7 +905,7 @@ int main(int argc, char *argv[])
     do
     {
         {
-            com::SafeIfaceArray <IHardDisk> disks;
+            com::SafeIfaceArray<IHardDisk> disks;
             CHECK_ERROR_BREAK (virtualBox,
                                COMGETTER(HardDisks)(ComSafeArrayAsOutParam (disks)));
 
@@ -965,7 +965,7 @@ int main(int argc, char *argv[])
             }
         }
         {
-            com::SafeIfaceArray <IDVDImage> images;
+            com::SafeIfaceArray<IDVDImage> images;
             CHECK_ERROR_BREAK (virtualBox,
                                COMGETTER(DVDImages) (ComSafeArrayAsOutParam (images)));
 
@@ -1030,7 +1030,7 @@ int main(int argc, char *argv[])
     ///////////////////////////////////////////////////////////////////////////
     do
     {
-        ComPtr <IMachine> machine;
+        ComPtr<IMachine> machine;
         Bstr name = argc > 1 ? argv [1] : "dos";
         RTPrintf ("Getting a machine object named '%ls'...\n", name.raw());
         CHECK_ERROR_BREAK (virtualBox, FindMachine (name, machine.asOutParam()));
@@ -1039,7 +1039,7 @@ int main(int argc, char *argv[])
         RTPrintf ("Opening a session for this machine...\n");
         CHECK_RC_BREAK (virtualBox->OpenSession (session, guid));
 #if 1
-        ComPtr <IMachine> sessionMachine;
+        ComPtr<IMachine> sessionMachine;
         RTPrintf ("Getting sessioned machine object...\n");
         CHECK_RC_BREAK (session->COMGETTER(Machine) (sessionMachine.asOutParam()));
         RTPrintf ("Accessing the machine within the session:\n");
@@ -1047,7 +1047,7 @@ int main(int argc, char *argv[])
 #if 0
         RTPrintf ("\n");
         RTPrintf ("Enabling the VRDP server (must succeed even if the VM is saved):\n");
-        ComPtr <IVRDPServer> vrdp;
+        ComPtr<IVRDPServer> vrdp;
         CHECK_ERROR_BREAK (sessionMachine, COMGETTER(VRDPServer) (vrdp.asOutParam()));
         if (FAILED (vrdp->COMSETTER(Enabled) (TRUE)))
         {
@@ -1062,11 +1062,11 @@ int main(int argc, char *argv[])
 #endif
 #endif
 #if 0
-        ComPtr <IConsole> console;
+        ComPtr<IConsole> console;
         RTPrintf ("Getting the console object...\n");
         CHECK_RC_BREAK (session->COMGETTER(Console) (console.asOutParam()));
         RTPrintf ("Discarding the current machine state...\n");
-        ComPtr <IProgress> progress;
+        ComPtr<IProgress> progress;
         CHECK_ERROR_BREAK (console, DiscardCurrentState (progress.asOutParam()));
         RTPrintf ("Waiting for completion...\n");
         CHECK_ERROR_BREAK (progress, WaitForCompletion (-1));
@@ -1075,11 +1075,11 @@ int main(int argc, char *argv[])
         {
             PRINT_ERROR_INFO (ei);
 
-            ComPtr <IUnknown> initiator;
+            ComPtr<IUnknown> initiator;
             CHECK_ERROR_BREAK (progress, COMGETTER(Initiator) (initiator.asOutParam()));
 
             RTPrintf ("initiator(unk) = %p\n", (IUnknown *) initiator);
-            RTPrintf ("console(unk) = %p\n", (IUnknown *) ComPtr <IUnknown> ((IConsole *) console));
+            RTPrintf ("console(unk) = %p\n", (IUnknown *) ComPtr<IUnknown> ((IConsole *) console));
             RTPrintf ("console = %p\n", (IConsole *) console);
         }
 #endif
@@ -1096,22 +1096,22 @@ int main(int argc, char *argv[])
     ///////////////////////////////////////////////////////////////////////////
     do
     {
-        ComPtr <IMachine> machine;
+        ComPtr<IMachine> machine;
         Bstr name = L"dos";
         RTPrintf ("Getting a machine object named '%ls'...\n", name.raw());
         CHECK_RC_BREAK (virtualBox->FindMachine (name, machine.asOutParam()));
         Guid guid;
         CHECK_RC_BREAK (machine->COMGETTER(Id) (guid.asOutParam()));
         RTPrintf ("Opening a remote session for this machine...\n");
-        ComPtr <IProgress> progress;
+        ComPtr<IProgress> progress;
         CHECK_RC_BREAK (virtualBox->OpenRemoteSession (session, guid, Bstr("gui"),
                                                        NULL, progress.asOutParam()));
         RTPrintf ("Waiting for the session to open...\n");
         CHECK_RC_BREAK (progress->WaitForCompletion (-1));
-        ComPtr <IMachine> sessionMachine;
+        ComPtr<IMachine> sessionMachine;
         RTPrintf ("Getting sessioned machine object...\n");
         CHECK_RC_BREAK (session->COMGETTER(Machine) (sessionMachine.asOutParam()));
-        ComPtr <IConsole> console;
+        ComPtr<IConsole> console;
         RTPrintf ("Getting console object...\n");
         CHECK_RC_BREAK (session->COMGETTER(Console) (console.asOutParam()));
         RTPrintf ("Press enter to pause the VM execution in the remote session...");
@@ -1130,7 +1130,7 @@ int main(int argc, char *argv[])
     ///////////////////////////////////////////////////////////////////////////
     do
     {
-        ComPtr <IMachine> machine;
+        ComPtr<IMachine> machine;
         Bstr name = "dos";
         RTPrintf ("Getting a machine object named '%ls'...\n", name.raw());
         CHECK_RC_BREAK (virtualBox->FindMachine (name, machine.asOutParam()));
@@ -1138,7 +1138,7 @@ int main(int argc, char *argv[])
         CHECK_RC_BREAK (machine->COMGETTER(Id) (guid.asOutParam()));
         RTPrintf ("Opening an existing remote session for this machine...\n");
         CHECK_RC_BREAK (virtualBox->OpenExistingSession (session, guid));
-        ComPtr <IMachine> sessionMachine;
+        ComPtr<IMachine> sessionMachine;
         RTPrintf ("Getting sessioned machine object...\n");
         CHECK_RC_BREAK (session->COMGETTER(Machine) (sessionMachine.asOutParam()));
 
@@ -1148,7 +1148,7 @@ int main(int argc, char *argv[])
         CHECK_RC (sessionMachine->SetExtraData (extraDataKey, extraData));
 #endif
 #if 0
-        ComPtr <IConsole> console;
+        ComPtr<IConsole> console;
         RTPrintf ("Getting console object...\n");
         CHECK_RC_BREAK (session->COMGETTER(Console) (console.asOutParam()));
         RTPrintf ("Press enter to pause the VM execution in the remote session...");
@@ -1166,7 +1166,7 @@ int main(int argc, char *argv[])
 #if 0
     do {
         // Get host
-        ComPtr <IHost> host;
+        ComPtr<IHost> host;
         CHECK_ERROR_BREAK (virtualBox, COMGETTER(Host) (host.asOutParam()));
 
         ULONG uMemSize, uMemAvail;
@@ -1180,10 +1180,10 @@ int main(int argc, char *argv[])
 #if 0
     do {
         // Get host
-        ComPtr <IHost> host;
+        ComPtr<IHost> host;
         CHECK_ERROR_BREAK (virtualBox, COMGETTER(Host) (host.asOutParam()));
 
-        com::SafeIfaceArray <IHostNetworkInterface> hostNetworkInterfaces;
+        com::SafeIfaceArray<IHostNetworkInterface> hostNetworkInterfaces;
         CHECK_ERROR_BREAK(host,
                           COMGETTER(NetworkInterfaces) (ComSafeArrayAsOutParam (hostNetworkInterfaces)));
         if (hostNetworkInterfaces.size() > 0)
@@ -1221,7 +1221,7 @@ int main(int argc, char *argv[])
 #if 0 && defined (VBOX_WITH_RESOURCE_USAGE_API)
     do {
         // Get collector
-        ComPtr <IPerformanceCollector> collector;
+        ComPtr<IPerformanceCollector> collector;
         CHECK_ERROR_BREAK (virtualBox,
                            COMGETTER(PerformanceCollector) (collector.asOutParam()));
 
@@ -1229,14 +1229,14 @@ int main(int argc, char *argv[])
         // Fill base metrics array
         Bstr baseMetricNames[] = { L"CPU/Load,RAM/Usage" };
         com::SafeArray<BSTR> baseMetrics (1);
-        baseMetricNames[0].cloneTo (&baseMetrics [0]);
+        baseMetricNames[0].cloneTo(&baseMetrics [0]);
 
         // Get host
-        ComPtr <IHost> host;
+        ComPtr<IHost> host;
         CHECK_ERROR_BREAK (virtualBox, COMGETTER(Host) (host.asOutParam()));
 
         // Get machine
-        ComPtr <IMachine> machine;
+        ComPtr<IMachine> machine;
         Bstr name = argc > 1 ? argv [1] : "dsl";
         Bstr sessionType = argc > 2 ? argv [2] : "vrdp";
         RTPrintf ("Getting a machine object named '%ls'...\n", name.raw());
@@ -1246,12 +1246,12 @@ int main(int argc, char *argv[])
         Guid guid;
         CHECK_RC_BREAK (machine->COMGETTER(Id) (guid.asOutParam()));
         RTPrintf ("Opening a remote session for this machine...\n");
-        ComPtr <IProgress> progress;
+        ComPtr<IProgress> progress;
         CHECK_RC_BREAK (virtualBox->OpenRemoteSession (session, guid, sessionType,
                                                        NULL, progress.asOutParam()));
         RTPrintf ("Waiting for the session to open...\n");
         CHECK_RC_BREAK (progress->WaitForCompletion (-1));
-        ComPtr <IMachine> sessionMachine;
+        ComPtr<IMachine> sessionMachine;
         RTPrintf ("Getting sessioned machine object...\n");
         CHECK_RC_BREAK (session->COMGETTER(Machine) (sessionMachine.asOutParam()));
 
@@ -1269,7 +1269,7 @@ int main(int argc, char *argv[])
         affectedMetrics.setNull();
 
         // Get console
-        ComPtr <IConsole> console;
+        ComPtr<IConsole> console;
         RTPrintf ("Getting console object...\n");
         CHECK_RC_BREAK (session->COMGETTER(Console) (console.asOutParam()));
 
@@ -1340,7 +1340,7 @@ int main(int argc, char *argv[])
         Bstr ovf = argc > 1 ? argv [1] : "someOVF.ovf";
         RTPrintf ("Try to open %ls ...\n", ovf.raw());
 
-        ComPtr <IAppliance> appliance;
+        ComPtr<IAppliance> appliance;
         CHECK_ERROR_BREAK (virtualBox,
                            CreateAppliance (appliance.asOutParam()));
         CHECK_ERROR_BREAK (appliance,
@@ -1411,7 +1411,7 @@ int main(int argc, char *argv[])
         CHECK_ERROR_BREAK (appliance,
                            ImportMachines (progress.asOutParam()));
         CHECK_ERROR (progress, WaitForCompletion (-1));
-        if (SUCCEEDED (rc))
+        if (SUCCEEDED(rc))
         {
             /* Check if the import was successfully */
             progress->COMGETTER (ResultCode)(&rc);
@@ -1451,7 +1451,7 @@ int main(int argc, char *argv[])
 
 #ifdef VBOX_WITH_RESOURCE_USAGE_API
 static void queryMetrics (ComPtr<IVirtualBox> aVirtualBox,
-                          ComPtr <IPerformanceCollector> collector,
+                          ComPtr<IPerformanceCollector> collector,
                           ComSafeArrayIn (IUnknown *, objects))
 {
     HRESULT rc;
@@ -1459,7 +1459,7 @@ static void queryMetrics (ComPtr<IVirtualBox> aVirtualBox,
     //Bstr metricNames[] = { L"CPU/Load/User:avg,CPU/Load/System:avg,CPU/Load/Idle:avg,RAM/Usage/Total,RAM/Usage/Used:avg" };
     Bstr metricNames[] = { L"*" };
     com::SafeArray<BSTR> metrics (1);
-    metricNames[0].cloneTo (&metrics [0]);
+    metricNames[0].cloneTo(&metrics [0]);
     com::SafeArray<BSTR>          retNames;
     com::SafeIfaceArray<IUnknown> retObjects;
     com::SafeArray<BSTR>          retUnits;

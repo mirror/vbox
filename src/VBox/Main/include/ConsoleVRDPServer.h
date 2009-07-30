@@ -285,7 +285,7 @@ public:
 
 private:
 
-    const ComObjPtr <Console, ComWeakRef> mParent;
+    const ComObjPtr<Console, ComWeakRef> mParent;
 };
 
 #endif // ____H_CONSOLEVRDPSERVER

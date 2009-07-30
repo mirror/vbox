@@ -73,13 +73,13 @@ class ATL_NO_VTABLE VirtualBox :
 
 public:
 
-    typedef std::list <ComPtr <IVirtualBoxCallback> > CallbackList;
-    typedef std::vector <ComPtr <IVirtualBoxCallback> > CallbackVector;
+    typedef std::list <ComPtr<IVirtualBoxCallback> > CallbackList;
+    typedef std::vector <ComPtr<IVirtualBoxCallback> > CallbackVector;
 
-    typedef std::vector <ComObjPtr <SessionMachine> > SessionMachineVector;
-    typedef std::vector <ComObjPtr <Machine> > MachineVector;
+    typedef std::vector <ComObjPtr<SessionMachine> > SessionMachineVector;
+    typedef std::vector <ComObjPtr<Machine> > MachineVector;
 
-    typedef std::vector <ComPtr <IInternalSessionControl> > InternalControlVector;
+    typedef std::vector <ComPtr<IInternalSessionControl> > InternalControlVector;
 
     class CallbackEvent;
     friend class CallbackEvent;
@@ -223,7 +223,7 @@ public:
     void onGuestPropertyChange (const Guid &aMachineId, IN_BSTR aName, IN_BSTR aValue,
                                 IN_BSTR aFlags);
 
-    ComObjPtr <GuestOSType> getUnknownOSType();
+    ComObjPtr<GuestOSType> getUnknownOSType();
 
     void getOpenedMachines (SessionMachineVector &aMachines,
                             InternalControlVector *aControls = NULL);
@@ -239,7 +239,7 @@ public:
     }
 
     HRESULT findMachine (const Guid &aId, bool aSetError,
-                         ComObjPtr <Machine> *machine = NULL);
+                         ComObjPtr<Machine> *machine = NULL);
 
     HRESULT findHardDisk(const Guid *aId, CBSTR aLocation,
                           bool aSetError, ComObjPtr<HardDisk> *aHardDisk = NULL);
@@ -248,11 +248,11 @@ public:
     HRESULT findFloppyImage(const Guid *aId, CBSTR aLocation,
                             bool aSetError, ComObjPtr<FloppyImage> *aImage = NULL);
 
-    const ComObjPtr <Host> &host() { return mData.mHost; }
-    const ComObjPtr <SystemProperties> &systemProperties()
+    const ComObjPtr<Host> &host() { return mData.mHost; }
+    const ComObjPtr<SystemProperties> &systemProperties()
         { return mData.mSystemProperties; }
 #ifdef VBOX_WITH_RESOURCE_USAGE_API
-    const ComObjPtr <PerformanceCollector> &performanceCollector()
+    const ComObjPtr<PerformanceCollector> &performanceCollector()
         { return mData.mPerformanceCollector; }
 #endif /* VBOX_WITH_RESOURCE_USAGE_API */
 
@@ -363,16 +363,16 @@ public:
 
 private:
 
-    typedef std::list <ComObjPtr <Machine> > MachineList;
-    typedef std::list <ComObjPtr <GuestOSType> > GuestOSTypeList;
+    typedef std::list <ComObjPtr<Machine> > MachineList;
+    typedef std::list <ComObjPtr<GuestOSType> > GuestOSTypeList;
 
-    typedef std::map <Guid, ComPtr <IProgress> > ProgressMap;
+    typedef std::map <Guid, ComPtr<IProgress> > ProgressMap;
 
-    typedef std::list <ComObjPtr <HardDisk> > HardDiskList;
-    typedef std::list <ComObjPtr <DVDImage> > DVDImageList;
-    typedef std::list <ComObjPtr <FloppyImage> > FloppyImageList;
-    typedef std::list <ComObjPtr <SharedFolder> > SharedFolderList;
-    typedef std::list <ComObjPtr <DHCPServer> > DHCPServerList;
+    typedef std::list <ComObjPtr<HardDisk> > HardDiskList;
+    typedef std::list <ComObjPtr<DVDImage> > DVDImageList;
+    typedef std::list <ComObjPtr<FloppyImage> > FloppyImageList;
+    typedef std::list <ComObjPtr<SharedFolder> > SharedFolderList;
+    typedef std::list <ComObjPtr<DHCPServer> > DHCPServerList;
 
     typedef std::map <Guid, ComObjPtr<HardDisk> > HardDiskMap;
 
@@ -429,10 +429,10 @@ private:
         const Utf8Str mHomeDir;
 
         // const objects not requiring locking
-        const ComObjPtr <Host> mHost;
-        const ComObjPtr <SystemProperties> mSystemProperties;
+        const ComObjPtr<Host> mHost;
+        const ComObjPtr<SystemProperties> mSystemProperties;
 #ifdef VBOX_WITH_RESOURCE_USAGE_API
-        const ComObjPtr <PerformanceCollector> mPerformanceCollector;
+        const ComObjPtr<PerformanceCollector> mPerformanceCollector;
 #endif /* VBOX_WITH_RESOURCE_USAGE_API */
 
         CfgFile mCfgFile;
@@ -543,7 +543,7 @@ public:
 
     void *handler();
 
-    virtual void handleCallback (const ComPtr <IVirtualBoxCallback> &aCallback) = 0;
+    virtual void handleCallback (const ComPtr<IVirtualBoxCallback> &aCallback) = 0;
 
 private:
 
@@ -551,7 +551,7 @@ private:
      *  Note that this is a weak ref -- the CallbackEvent handler thread
      *  is bound to the lifetime of the VirtualBox instance, so it's safe.
      */
-    ComObjPtr <VirtualBox, ComWeakRef> mVirtualBox;
+    ComObjPtr<VirtualBox, ComWeakRef> mVirtualBox;
 };
 
 #endif // ____H_VIRTUALBOXIMPL

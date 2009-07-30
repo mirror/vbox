@@ -56,7 +56,7 @@ public:
 
         BOOL enabled;
         ComObjPtr<FloppyImage> image;
-        ComPtr <IHostFloppyDrive> hostDrive;
+        ComPtr<IHostFloppyDrive> hostDrive;
         DriveState_T state;
     };
 
@@ -120,8 +120,8 @@ public:
 
 private:
 
-    const ComObjPtr <Machine, ComWeakRef> mParent;
-    const ComObjPtr <FloppyDrive> mPeer;
+    const ComObjPtr<Machine, ComWeakRef> mParent;
+    const ComObjPtr<FloppyDrive> mPeer;
 
     Backupable <Data> m;
 };

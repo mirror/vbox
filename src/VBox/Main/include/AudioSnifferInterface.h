@@ -47,7 +47,7 @@ private:
     static DECLCALLBACK(int)    drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle);
     static DECLCALLBACK(void)   drvDestruct(PPDMDRVINS pDrvIns);
 
-    ComObjPtr <Console, ComWeakRef> mParent;
+    ComObjPtr<Console, ComWeakRef> mParent;
 };
 
 #endif /* ____H_AUDIOSNIFFERINTERFACE */

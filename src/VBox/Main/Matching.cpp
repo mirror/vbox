@@ -111,7 +111,7 @@ size_t ParsedIntervalFilter_base::parseValue (
     else
         vrc = RTStrToUInt64Ex(aFilter + aStart, &endptr, 0, &val.ull);
 
-    AssertReturn (endptr, 0);
+    AssertReturn(endptr, 0);
 
     size_t parsed = endptr - aFilter;
 

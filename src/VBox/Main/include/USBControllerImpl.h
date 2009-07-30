@@ -121,7 +121,7 @@ public:
     HRESULT onDeviceFilterChange (USBDeviceFilter *aFilter,
                                   BOOL aActiveChanged = FALSE);
 
-    bool hasMatchingFilter (const ComObjPtr <HostUSBDevice> &aDevice, ULONG *aMaskedIfs);
+    bool hasMatchingFilter (const ComObjPtr<HostUSBDevice> &aDevice, ULONG *aMaskedIfs);
     bool hasMatchingFilter (IUSBDevice *aUSBDevice, ULONG *aMaskedIfs);
 
     HRESULT notifyProxy (bool aInsertFilters);
@@ -131,7 +131,7 @@ public:
     // (ensure there is a caller and a read lock before calling them!)
 
     /** @note this doesn't require a read lock since mParent is constant. */
-    const ComObjPtr <Machine, ComWeakRef> &parent() { return mParent; };
+    const ComObjPtr<Machine, ComWeakRef> &parent() { return mParent; };
 
     const Backupable<Data> &data() { return mData; }
 
@@ -142,10 +142,10 @@ private:
 
 #ifdef VBOX_WITH_USB
     /** specialization for IUSBDeviceFilter */
-    ComObjPtr <USBDeviceFilter> getDependentChild (IUSBDeviceFilter *aFilter)
+    ComObjPtr<USBDeviceFilter> getDependentChild (IUSBDeviceFilter *aFilter)
     {
         VirtualBoxBase *child = VirtualBoxBaseWithChildrenNEXT::
-                                getDependentChild (ComPtr <IUnknown> (aFilter));
+                                getDependentChild (ComPtr<IUnknown> (aFilter));
         return child ? static_cast <USBDeviceFilter *> (child)
                      : NULL;
     }
@@ -156,7 +156,7 @@ private:
     /** Parent object. */
     const ComObjPtr<Machine, ComWeakRef> mParent;
     /** Peer object. */
-    const ComObjPtr <USBController> mPeer;
+    const ComObjPtr<USBController> mPeer;
     /** Data. */
     Backupable <Data> mData;
 
@@ -164,7 +164,7 @@ private:
     // the following fields need special backup/rollback/commit handling,
     // so they cannot be a part of Data
 
-    typedef std::list <ComObjPtr <USBDeviceFilter> > DeviceFilterList;
+    typedef std::list <ComObjPtr<USBDeviceFilter> > DeviceFilterList;
     Backupable <DeviceFilterList> mDeviceFilters;
 #endif /* VBOX_WITH_USB */
 };

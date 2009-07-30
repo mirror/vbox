@@ -135,8 +135,8 @@ public:
 
 private:
 
-    ComObjPtr <Machine, ComWeakRef> mParent;
-    ComObjPtr <BIOSSettings> mPeer;
+    ComObjPtr<Machine, ComWeakRef> mParent;
+    ComObjPtr<BIOSSettings> mPeer;
     Backupable <Data> mData;
 };
 

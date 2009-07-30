@@ -74,7 +74,7 @@ HRESULT GuestOSType::init (const char *aFamilyId, const char *aFamilyDescription
                            NetworkAdapterType_T aNetworkAdapterType, uint32_t aNumSerialEnabled)
 {
 #if 0
-    LogFlowThisFunc (("aFamilyId='%s', aFamilyDescription='%s', "
+    LogFlowThisFunc(("aFamilyId='%s', aFamilyDescription='%s', "
                       "aId='%s', aDescription='%s', "
                       "aType=%d, aOSHint=%x, "
                       "aRAMSize=%d, aVRAMSize=%d, aHDDSize=%d, "
@@ -89,20 +89,20 @@ HRESULT GuestOSType::init (const char *aFamilyId, const char *aFamilyDescription
     ComAssertRet (aFamilyId && aFamilyDescription && aId && aDescription, E_INVALIDARG);
 
     /* Enclose the state transition NotReady->InInit->Ready */
-    AutoInitSpan autoInitSpan (this);
-    AssertReturn (autoInitSpan.isOk(), E_FAIL);
+    AutoInitSpan autoInitSpan(this);
+    AssertReturn(autoInitSpan.isOk(), E_FAIL);
 
-    unconst (mFamilyID) = aFamilyId;
-    unconst (mFamilyDescription) = aFamilyDescription;
-    unconst (mID) = aId;
-    unconst (mDescription) = aDescription;
-    unconst (mOSType) = aOSType;
-    unconst (mOSHint) = aOSHint;
-    unconst (mRAMSize) = aRAMSize;
-    unconst (mVRAMSize) = aVRAMSize;
-    unconst (mHDDSize) = aHDDSize;
-    unconst (mNetworkAdapterType) = aNetworkAdapterType;
-    unconst (mNumSerialEnabled) = aNumSerialEnabled;
+    unconst(mFamilyID) = aFamilyId;
+    unconst(mFamilyDescription) = aFamilyDescription;
+    unconst(mID) = aId;
+    unconst(mDescription) = aDescription;
+    unconst(mOSType) = aOSType;
+    unconst(mOSHint) = aOSHint;
+    unconst(mRAMSize) = aRAMSize;
+    unconst(mVRAMSize) = aVRAMSize;
+    unconst(mHDDSize) = aHDDSize;
+    unconst(mNetworkAdapterType) = aNetworkAdapterType;
+    unconst(mNumSerialEnabled) = aNumSerialEnabled;
 
     /* Confirm a successful initialization when it's the case */
     autoInitSpan.setSucceeded();
@@ -117,7 +117,7 @@ HRESULT GuestOSType::init (const char *aFamilyId, const char *aFamilyDescription
 void GuestOSType::uninit()
 {
     /* Enclose the state transition Ready->InUninit->NotReady */
-    AutoUninitSpan autoUninitSpan (this);
+    AutoUninitSpan autoUninitSpan(this);
     if (autoUninitSpan.uninitDone())
         return;
 }
@@ -129,11 +129,11 @@ STDMETHODIMP GuestOSType::COMGETTER(FamilyId) (BSTR *aFamilyId)
 {
     CheckComArgOutPointerValid(aFamilyId);
 
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
 
     /* mFamilyID is constant during life time, no need to lock */
-    mFamilyID.cloneTo (aFamilyId);
+    mFamilyID.cloneTo(aFamilyId);
 
     return S_OK;
 }
@@ -142,11 +142,11 @@ STDMETHODIMP GuestOSType::COMGETTER(FamilyDescription) (BSTR *aFamilyDescription
 {
     CheckComArgOutPointerValid(aFamilyDescription);
 
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
 
     /* mFamilyDescription is constant during life time, no need to lock */
-    mFamilyDescription.cloneTo (aFamilyDescription);
+    mFamilyDescription.cloneTo(aFamilyDescription);
 
     return S_OK;
 }
@@ -155,11 +155,11 @@ STDMETHODIMP GuestOSType::COMGETTER(Id) (BSTR *aId)
 {
     CheckComArgOutPointerValid(aId);
 
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
 
     /* mID is constant during life time, no need to lock */
-    mID.cloneTo (aId);
+    mID.cloneTo(aId);
 
     return S_OK;
 }
@@ -168,11 +168,11 @@ STDMETHODIMP GuestOSType::COMGETTER(Description) (BSTR *aDescription)
 {
     CheckComArgOutPointerValid(aDescription);
 
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
 
     /* mDescription is constant during life time, no need to lock */
-    mDescription.cloneTo (aDescription);
+    mDescription.cloneTo(aDescription);
 
     return S_OK;
 }
@@ -181,8 +181,8 @@ STDMETHODIMP GuestOSType::COMGETTER(Is64Bit) (BOOL *aIs64Bit)
 {
     CheckComArgOutPointerValid(aIs64Bit);
 
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
 
     /* mIs64Bit is constant during life time, no need to lock */
     *aIs64Bit = !!(mOSHint & VBOXOSHINT_64BIT);
@@ -194,8 +194,8 @@ STDMETHODIMP GuestOSType::COMGETTER(RecommendedIOAPIC) (BOOL *aRecommendedIOAPIC
 {
     CheckComArgOutPointerValid(aRecommendedIOAPIC);
 
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
 
     /* mRecommendedIOAPIC is constant during life time, no need to lock */
     *aRecommendedIOAPIC = !!(mOSHint & VBOXOSHINT_IOAPIC);
@@ -207,8 +207,8 @@ STDMETHODIMP GuestOSType::COMGETTER(RecommendedVirtEx) (BOOL *aRecommendedVirtEx
 {
     CheckComArgOutPointerValid(aRecommendedVirtEx);
 
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
 
     /* mRecommendedVirtEx is constant during life time, no need to lock */
     *aRecommendedVirtEx = !!(mOSHint & VBOXOSHINT_HWVIRTEX);
@@ -220,8 +220,8 @@ STDMETHODIMP GuestOSType::COMGETTER(RecommendedRAM) (ULONG *aRAMSize)
 {
     CheckComArgOutPointerValid(aRAMSize);
 
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
 
     /* mRAMSize is constant during life time, no need to lock */
     *aRAMSize = mRAMSize;
@@ -233,8 +233,8 @@ STDMETHODIMP GuestOSType::COMGETTER(RecommendedVRAM) (ULONG *aVRAMSize)
 {
     CheckComArgOutPointerValid(aVRAMSize);
 
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
 
     /* mVRAMSize is constant during life time, no need to lock */
     *aVRAMSize = mVRAMSize;
@@ -246,8 +246,8 @@ STDMETHODIMP GuestOSType::COMGETTER(RecommendedHDD) (ULONG *aHDDSize)
 {
     CheckComArgOutPointerValid(aHDDSize);
 
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
 
     /* mHDDSize is constant during life time, no need to lock */
     *aHDDSize = mHDDSize;
@@ -259,8 +259,8 @@ STDMETHODIMP GuestOSType::COMGETTER(AdapterType) (NetworkAdapterType_T *aNetwork
 {
     CheckComArgOutPointerValid(aNetworkAdapterType);
 
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
 
     /* mNetworkAdapterType is constant during life time, no need to lock */
     *aNetworkAdapterType = mNetworkAdapterType;

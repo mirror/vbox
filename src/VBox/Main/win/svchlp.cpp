@@ -64,7 +64,7 @@ SVCHlpClient::~SVCHlpClient()
 
 int SVCHlpClient::create (const char *aName)
 {
-    AssertReturn (aName, VERR_INVALID_PARAMETER);
+    AssertReturn(aName, VERR_INVALID_PARAMETER);
 
     if (mIsOpen)
         return VERR_WRONG_ORDER;
@@ -93,7 +93,7 @@ int SVCHlpClient::create (const char *aName)
 
 int SVCHlpClient::open (const char *aName)
 {
-    AssertReturn (aName, VERR_INVALID_PARAMETER);
+    AssertReturn(aName, VERR_INVALID_PARAMETER);
 
     if (mIsOpen)
         return VERR_WRONG_ORDER;
@@ -160,15 +160,15 @@ int SVCHlpClient::close()
 
 int SVCHlpClient::write (const void *aVal, size_t aLen)
 {
-    AssertReturn (aVal != NULL, VERR_INVALID_PARAMETER);
-    AssertReturn (aLen != 0, VERR_INVALID_PARAMETER);
+    AssertReturn(aVal != NULL, VERR_INVALID_PARAMETER);
+    AssertReturn(aLen != 0, VERR_INVALID_PARAMETER);
 
     if (!mIsOpen)
         return VERR_WRONG_ORDER;
 
     DWORD written = 0;
     BOOL ok = WriteFile (mWriteEnd, aVal, (ULONG)aLen, &written, NULL);
-    AssertReturn (!ok || written == aLen, VERR_GENERAL_FAILURE);
+    AssertReturn(!ok || written == aLen, VERR_GENERAL_FAILURE);
     return ok ? VINF_SUCCESS : rtErrConvertFromWin32OnFailure();
 }
 
@@ -185,7 +185,7 @@ int SVCHlpClient::write (const Utf8Str &aVal)
 
     /* write string length */
     int vrc = write (len);
-    if (RT_SUCCESS (vrc))
+    if (RT_SUCCESS(vrc))
     {
         /* write string data */
         vrc = write (aVal.raw(), len);
@@ -202,15 +202,15 @@ int SVCHlpClient::write (const Guid &aGuid)
 
 int SVCHlpClient::read (void *aVal, size_t aLen)
 {
-    AssertReturn (aVal != NULL, VERR_INVALID_PARAMETER);
-    AssertReturn (aLen != 0, VERR_INVALID_PARAMETER);
+    AssertReturn(aVal != NULL, VERR_INVALID_PARAMETER);
+    AssertReturn(aLen != 0, VERR_INVALID_PARAMETER);
 
     if (!mIsOpen)
         return VERR_WRONG_ORDER;
 
     DWORD read = 0;
     BOOL ok = ReadFile (mReadEnd, aVal, (ULONG)aLen, &read, NULL);
-    AssertReturn (!ok || read == aLen, VERR_GENERAL_FAILURE);
+    AssertReturn(!ok || read == aLen, VERR_GENERAL_FAILURE);
     return ok ? VINF_SUCCESS : rtErrConvertFromWin32OnFailure();
 }
 
@@ -223,7 +223,7 @@ int SVCHlpClient::read (Utf8Str &aVal)
 
     /* read string length */
     int vrc = read (len);
-    if (RT_FAILURE (vrc))
+    if (RT_FAILURE(vrc))
         return vrc;
 
     /* length -1 means a NULL string */
@@ -246,7 +246,7 @@ int SVCHlpClient::read (Guid &aGuid)
 {
     Utf8Str guidStr;
     int vrc = read (guidStr);
-    if (RT_SUCCESS (vrc))
+    if (RT_SUCCESS(vrc))
         aGuid = Guid (guidStr.c_str());
     return vrc;
 }
@@ -265,7 +265,7 @@ int SVCHlpServer::run()
     do
     {
         vrc = read (msgCode);
-        if (RT_FAILURE (vrc))
+        if (RT_FAILURE(vrc))
             return vrc;
 
         /* terminate request received */
@@ -292,7 +292,7 @@ int SVCHlpServer::run()
                     VERR_GENERAL_FAILURE);
         }
 
-        if (RT_FAILURE (vrc))
+        if (RT_FAILURE(vrc))
             return vrc;
     }
     while (1);

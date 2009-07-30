@@ -125,8 +125,8 @@ public:
 
 private:
 
-    const ComObjPtr <Machine, ComWeakRef> mParent;
-    const ComObjPtr <VRDPServer> mPeer;
+    const ComObjPtr<Machine, ComWeakRef> mParent;
+    const ComObjPtr<VRDPServer> mPeer;
 
     Backupable <Data> mData;
 };

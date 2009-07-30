@@ -124,14 +124,14 @@ private:
     SessionState_T mState;
     SessionType_T mType;
 
-    ComPtr <IInternalMachineControl> mControl;
+    ComPtr<IInternalMachineControl> mControl;
 
-    ComObjPtr <Console> mConsole;
+    ComObjPtr<Console> mConsole;
 
-    ComPtr <IMachine> mRemoteMachine;
-    ComPtr <IConsole> mRemoteConsole;
+    ComPtr<IMachine> mRemoteMachine;
+    ComPtr<IConsole> mRemoteConsole;
 
-    ComPtr <IVirtualBox> mVirtualBox;
+    ComPtr<IVirtualBox> mVirtualBox;
 
     /* interprocess semaphore handle (id) for the opened machine */
 #if defined(RT_OS_WINDOWS)

@@ -588,15 +588,15 @@ void printErrorInfo()
 
     nsCOMPtr <nsIExceptionService> es;
     es = do_GetService (NS_EXCEPTIONSERVICE_CONTRACTID, &rc);
-    if (NS_SUCCEEDED (rc))
+    if (NS_SUCCEEDED(rc))
     {
         nsCOMPtr <nsIExceptionManager> em;
         rc = es->GetCurrentExceptionManager (getter_AddRefs (em));
-        if (NS_SUCCEEDED (rc))
+        if (NS_SUCCEEDED(rc))
         {
             nsCOMPtr<nsIException> ex;
             rc = em->GetCurrentException (getter_AddRefs (ex));
-            if (NS_SUCCEEDED (rc) && ex)
+            if (NS_SUCCEEDED(rc) && ex)
             {
                 nsCOMPtr <IVirtualBoxErrorInfo> info;
                 info = do_QueryInterface(ex, &rc);

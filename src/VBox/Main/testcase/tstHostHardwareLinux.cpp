@@ -45,9 +45,9 @@ int main()
     VBoxMainDriveInfo driveInfo;
     g_testHostHardwareLinux = true;
     rc = driveInfo.updateFloppies();
-    if (RT_SUCCESS (rc))
+    if (RT_SUCCESS(rc))
         rc = driveInfo.updateDVDs();
-    if (RT_FAILURE (rc))
+    if (RT_FAILURE(rc))
     {
         RTPrintf("Failed to update the host drive information, error %Rrc\n",
                  rc);
@@ -78,7 +78,7 @@ int main()
 #ifdef VBOX_USB_WITH_SYSFS
     VBoxMainUSBDeviceInfo deviceInfo;
     rc = deviceInfo.UpdateDevices();
-    if (RT_FAILURE (rc))
+    if (RT_FAILURE(rc))
     {
         RTPrintf ("Failed to update the host USB device information, error %Rrc\n",
                  rc);

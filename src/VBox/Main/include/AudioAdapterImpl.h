@@ -106,8 +106,8 @@ public:
 
 private:
 
-    const ComObjPtr <Machine, ComWeakRef> mParent;
-    const ComObjPtr <AudioAdapter> mPeer;
+    const ComObjPtr<Machine, ComWeakRef> mParent;
+    const ComObjPtr<AudioAdapter> mPeer;
 
     Backupable <Data> mData;
 };

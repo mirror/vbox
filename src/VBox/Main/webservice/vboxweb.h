@@ -37,7 +37,7 @@ void WebLog(const char *pszFormat, ...);
  *
  ****************************************************************************/
 
-extern ComPtr <IVirtualBox> G_pVirtualBox;
+extern ComPtr<IVirtualBox> G_pVirtualBox;
 extern bool g_fVerbose;
 
 extern PRTSTREAM g_pstrLog;

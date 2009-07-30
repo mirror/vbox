@@ -97,7 +97,7 @@ public:
     HRESULT loadSettings (const settings::Key &aGlobal);
     HRESULT saveSettings (settings::Key &aGlobal);
 
-    ComObjPtr <HardDiskFormat> hardDiskFormat (CBSTR aFormat);
+    ComObjPtr<HardDiskFormat> hardDiskFormat (CBSTR aFormat);
 
     // public methods for internal purposes only
     // (ensure there is a caller and a read lock before calling them!)
@@ -119,7 +119,7 @@ public:
 
 private:
 
-    typedef std::list <ComObjPtr <HardDiskFormat> > HardDiskFormatList;
+    typedef std::list <ComObjPtr<HardDiskFormat> > HardDiskFormatList;
 
     HRESULT setDefaultMachineFolder (CBSTR aPath);
     HRESULT setDefaultHardDiskFolder (CBSTR aPath);
@@ -128,7 +128,7 @@ private:
     HRESULT setRemoteDisplayAuthLibrary (CBSTR aPath);
     HRESULT setWebServiceAuthLibrary (CBSTR aPath);
 
-    const ComObjPtr <VirtualBox, ComWeakRef> mParent;
+    const ComObjPtr<VirtualBox, ComWeakRef> mParent;
 
     Bstr mDefaultMachineFolder;
     Bstr mDefaultMachineFolderFull;

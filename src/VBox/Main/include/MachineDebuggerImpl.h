@@ -97,7 +97,7 @@ private:
     // private methods
     bool queueSettings() const;
 
-    const ComObjPtr <Console, ComWeakRef> mParent;
+    const ComObjPtr<Console, ComWeakRef> mParent;
     // flags whether settings have been queued because
     // they could not be sent to the VM (not up yet, etc.)
     int mSinglestepQueued;

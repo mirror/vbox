@@ -131,8 +131,8 @@ private:
 
     HRESULT checkSetPath (CBSTR aPath);
 
-    const ComObjPtr <Machine, ComWeakRef> mParent;
-    const ComObjPtr <SerialPort> mPeer;
+    const ComObjPtr<Machine, ComWeakRef> mParent;
+    const ComObjPtr<SerialPort> mPeer;
 
     Backupable <Data> mData;
 };

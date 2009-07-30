@@ -117,7 +117,7 @@ static DBusHandlerResult dbusFilterFunction (DBusConnection *pConnection,
 
 int VBoxMainDriveInfo::updateDVDs ()
 {
-    LogFlowThisFunc (("entered\n"));
+    LogFlowThisFunc(("entered\n"));
     int rc = VINF_SUCCESS;
     bool success = false;  /* Have we succeeded in finding anything yet? */
     try
@@ -126,11 +126,11 @@ int VBoxMainDriveInfo::updateDVDs ()
 #if defined(RT_OS_LINUX)
         /* Always allow the user to override our auto-detection using an
          * environment variable. */
-        if (RT_SUCCESS (rc) && (!success || testing()))
+        if (RT_SUCCESS(rc) && (!success || testing()))
             rc = getDriveInfoFromEnv ("VBOX_CDROM", &mDVDList, true /* isDVD */,
                                       &success);
 #ifdef VBOX_WITH_DBUS
-        if (RT_SUCCESS (rc) && RT_SUCCESS(VBoxLoadDBusLib()) && (!success || testing()))
+        if (RT_SUCCESS(rc) && RT_SUCCESS(VBoxLoadDBusLib()) && (!success || testing()))
             rc = getDriveInfoFromHal(&mDVDList, true /* isDVD */, &success);
 #endif /* VBOX_WITH_DBUS defined */
         /* On Linux without hal, the situation is much more complex. We will
@@ -138,7 +138,7 @@ int VBoxMainDriveInfo::updateDVDs ()
          * known device names and see of they exist.  Failing that, we
          * enumerate the /etc/fstab file (luckily there's an API to parse it)
          * for CDROM devices. Ok, let's start! */
-        if (RT_SUCCESS (rc) && (!success || testing()))
+        if (RT_SUCCESS(rc) && (!success || testing()))
         {
             // this is a good guess usually
             if (validateDevice("/dev/cdrom", true))
@@ -148,7 +148,7 @@ int VBoxMainDriveInfo::updateDVDs ()
             rc = getDVDInfoFromMTab((char*)"/etc/mtab", &mDVDList);
 
             // check the drives that can be mounted
-            if (RT_SUCCESS (rc))
+            if (RT_SUCCESS(rc))
                 rc = getDVDInfoFromMTab((char*)"/etc/fstab", &mDVDList);
         }
 #endif
@@ -157,24 +157,24 @@ int VBoxMainDriveInfo::updateDVDs ()
     {
         rc = VERR_NO_MEMORY;
     }
-    LogFlowThisFunc (("rc=%Rrc\n", rc));
+    LogFlowThisFunc(("rc=%Rrc\n", rc));
     return rc;
 }
 
 int VBoxMainDriveInfo::updateFloppies ()
 {
-    LogFlowThisFunc (("entered\n"));
+    LogFlowThisFunc(("entered\n"));
     int rc = VINF_SUCCESS;
     bool success = false;  /* Have we succeeded in finding anything yet? */
     try
     {
         mFloppyList.clear ();
 #if defined(RT_OS_LINUX)
-        if (RT_SUCCESS (rc) && (!success || testing()))
+        if (RT_SUCCESS(rc) && (!success || testing()))
             rc = getDriveInfoFromEnv ("VBOX_FLOPPY", &mFloppyList, false /* isDVD */,
                                       &success);
 #ifdef VBOX_WITH_DBUS
-        if (   RT_SUCCESS (rc)
+        if (   RT_SUCCESS(rc)
             && RT_SUCCESS(VBoxLoadDBusLib())
             && (!success || testing()))
             rc = getDriveInfoFromHal(&mFloppyList, false /* isDVD */, &success);
@@ -184,7 +184,7 @@ int VBoxMainDriveInfo::updateFloppies ()
          * give the user the chance to override the detection using an
          * environment variable, skiping the detection. */
 
-        if (RT_SUCCESS (rc) && (!success || testing()))
+        if (RT_SUCCESS(rc) && (!success || testing()))
         {
             // we assume that a floppy is always /dev/fd[x] with x from 0 to 7
             char devName[10];
@@ -201,13 +201,13 @@ int VBoxMainDriveInfo::updateFloppies ()
     {
         rc = VERR_NO_MEMORY;
     }
-    LogFlowThisFunc (("rc=%Rrc\n", rc));
+    LogFlowThisFunc(("rc=%Rrc\n", rc));
     return rc;
 }
 
 int VBoxMainUSBDeviceInfo::UpdateDevices ()
 {
-    LogFlowThisFunc (("entered\n"));
+    LogFlowThisFunc(("entered\n"));
     int rc = VINF_SUCCESS;
     bool success = false;  /* Have we succeeded in finding anything yet? */
     try
@@ -216,13 +216,13 @@ int VBoxMainUSBDeviceInfo::UpdateDevices ()
         mDeviceList.clear();
 #if defined(RT_OS_LINUX)
 #ifdef VBOX_WITH_DBUS
-        if (   RT_SUCCESS (rc)
+        if (   RT_SUCCESS(rc)
             && RT_SUCCESS(VBoxLoadDBusLib())
             && (!success || testing()))
             rc = getUSBDeviceInfoFromHal(&mDeviceList, &halSuccess);
         /* Try the old API if the new one *succeeded* as only one of them will
          * pick up devices anyway. */
-        if (RT_SUCCESS (rc) && halSuccess && (!success || testing()))
+        if (RT_SUCCESS(rc) && halSuccess && (!success || testing()))
             rc = getOldUSBDeviceInfoFromHal(&mDeviceList, &halSuccess);
         if (!success)
             success = halSuccess;
@@ -233,7 +233,7 @@ int VBoxMainUSBDeviceInfo::UpdateDevices ()
     {
         rc = VERR_NO_MEMORY;
     }
-    LogFlowThisFunc (("rc=%Rrc\n", rc));
+    LogFlowThisFunc(("rc=%Rrc\n", rc));
     return rc;
 }
 
@@ -271,15 +271,15 @@ VBoxMainHotplugWaiter::VBoxMainHotplugWaiter ()
         if (!mContext->mConnection)
             rc = VERR_NOT_SUPPORTED;
         DBusMessage *pMessage;
-        while (   RT_SUCCESS (rc)
+        while (   RT_SUCCESS(rc)
                && (pMessage = dbus_connection_pop_message (mContext->mConnection.get())) != NULL)
             dbus_message_unref (pMessage); /* empty the message queue. */
-        if (   RT_SUCCESS (rc)
+        if (   RT_SUCCESS(rc)
             && !dbus_connection_add_filter (mContext->mConnection.get(),
                                             dbusFilterFunction,
                                             (void *) &mContext->mTriggered, NULL))
             rc = VERR_NO_MEMORY;
-        if (RT_FAILURE (rc))
+        if (RT_FAILURE(rc))
             mContext->mConnection.reset();
     }
 #endif /* defined RT_OS_LINUX && defined VBOX_WITH_DBUS */
@@ -313,7 +313,7 @@ int VBoxMainHotplugWaiter::Wait(unsigned cMillies)
         cRealMillies = cMillies;
     else
         cRealMillies = DBUS_POLL_TIMEOUT;
-    while (   RT_SUCCESS (rc) && connected && !mContext->mTriggered
+    while (   RT_SUCCESS(rc) && connected && !mContext->mTriggered
            && !mContext->mInterrupt)
     {
         connected = dbus_connection_read_write_dispatch (mContext->mConnection.get(),
@@ -438,7 +438,7 @@ int getDriveInfoFromEnv(const char *pszVar, DriveInfoList *pList,
             if (!drive)
                 rc = VERR_NO_MEMORY;
         }
-        if (pszValue != NULL && RT_SUCCESS (rc))
+        if (pszValue != NULL && RT_SUCCESS(rc))
         {
             char *pDrive = drive.get();
             char *pDriveNext = strchr (pDrive, ':');
@@ -491,14 +491,14 @@ int getDVDInfoFromMTab(char *mountTable, DriveInfoList *pList)
             struct mntent *mntent;
             RTMemAutoPtr <char, RTStrFree> mnt_type, mnt_dev;
             char *tmp;
-            while (RT_SUCCESS (rc) && (mntent = getmntent(mtab)))
+            while (RT_SUCCESS(rc) && (mntent = getmntent(mtab)))
             {
                 mnt_type = RTStrDup (mntent->mnt_type);
                 mnt_dev = RTStrDup (mntent->mnt_fsname);
                 if (!mnt_type || !mnt_dev)
                     rc = VERR_NO_MEMORY;
                 // supermount fs case
-                if (RT_SUCCESS (rc) && strcmp(mnt_type.get(), "supermount") == 0)
+                if (RT_SUCCESS(rc) && strcmp(mnt_type.get(), "supermount") == 0)
                 {
                     tmp = strstr(mntent->mnt_opts, "fs=");
                     if (tmp)
@@ -528,7 +528,7 @@ int getDVDInfoFromMTab(char *mountTable, DriveInfoList *pList)
                     }
                 }
                 // use strstr here to cover things fs types like "udf,iso9660"
-                if (RT_SUCCESS (rc) && strstr(mnt_type.get(), "iso9660") == 0)
+                if (RT_SUCCESS(rc) && strstr(mnt_type.get(), "iso9660") == 0)
                 {
                     if (validateDevice(mnt_dev.get(), true))
                     {
@@ -784,7 +784,7 @@ int halFindDeviceStringMatch (DBusConnection *pConnection, const char *pszKey,
     autoDBusError dbusError;
 
     RTMemAutoPtr <DBusMessage, VBoxDBusMessageUnref> message, reply;
-    if (halSuccess && RT_SUCCESS (rc))
+    if (halSuccess && RT_SUCCESS(rc))
     {
         message = dbus_message_new_method_call ("org.freedesktop.Hal",
                                                 "/org/freedesktop/Hal/Manager",
@@ -793,7 +793,7 @@ int halFindDeviceStringMatch (DBusConnection *pConnection, const char *pszKey,
         if (!message)
             rc = VERR_NO_MEMORY;
     }
-    if (halSuccess && RT_SUCCESS (rc))
+    if (halSuccess && RT_SUCCESS(rc))
     {
         DBusMessageIter iterAppend;
         dbus_message_iter_init_append (message.get(), &iterAppend);
@@ -833,7 +833,7 @@ int halFindDeviceStringMatchVector (DBusConnection *pConnection,
     AssertPtrReturn (pszKey, VERR_INVALID_POINTER);
     AssertPtrReturn (pszValue, VERR_INVALID_POINTER);
     AssertPtrReturn (pMatches, VERR_INVALID_POINTER);
-    AssertReturn (pfSuccess == NULL || VALID_PTR (pfSuccess), VERR_INVALID_POINTER);
+    AssertReturn(pfSuccess == NULL || VALID_PTR (pfSuccess), VERR_INVALID_POINTER);
     LogFlowFunc (("pConnection=%p, pszKey=%s, pszValue=%s, pMatches=%p, pfSuccess=%p\n",
                   pConnection, pszKey, pszValue, pMatches, pfSuccess));
     int rc = VINF_SUCCESS;  /* We set this to failure on fatal errors. */
@@ -842,22 +842,22 @@ int halFindDeviceStringMatchVector (DBusConnection *pConnection,
     RTMemAutoPtr <DBusMessage, VBoxDBusMessageUnref> message, replyFind;
     DBusMessageIter iterFind, iterUdis;
 
-    if (halSuccess && RT_SUCCESS (rc))
+    if (halSuccess && RT_SUCCESS(rc))
     {
         rc = halFindDeviceStringMatch (pConnection, pszKey, pszValue,
                                        &replyFind);
         if (!replyFind)
             halSuccess = false;
     }
-    if (halSuccess && RT_SUCCESS (rc))
+    if (halSuccess && RT_SUCCESS(rc))
     {
         dbus_message_iter_init (replyFind.get(), &iterFind);
         if (dbus_message_iter_get_arg_type (&iterFind) != DBUS_TYPE_ARRAY)
             halSuccess = false;
     }
-    if (halSuccess && RT_SUCCESS (rc))
+    if (halSuccess && RT_SUCCESS(rc))
         dbus_message_iter_recurse (&iterFind, &iterUdis);
-    for (;    halSuccess && RT_SUCCESS (rc)
+    for (;    halSuccess && RT_SUCCESS(rc)
            && dbus_message_iter_get_arg_type (&iterUdis) == DBUS_TYPE_STRING;
          dbus_message_iter_next(&iterUdis))
     {
@@ -927,7 +927,7 @@ int halGetPropertyStrings (DBusConnection *pConnection, const char *pszUdi,
                                             "GetAllProperties");
     if (!message)
         rc = VERR_NO_MEMORY;
-    if (halSuccess && RT_SUCCESS (rc))
+    if (halSuccess && RT_SUCCESS(rc))
     {
         reply = dbus_connection_send_with_reply_and_block (pConnection,
                                                            message.get(), -1,
@@ -937,17 +937,17 @@ int halGetPropertyStrings (DBusConnection *pConnection, const char *pszUdi,
     }
 
     /* Parse the reply */
-    if (halSuccess && RT_SUCCESS (rc))
+    if (halSuccess && RT_SUCCESS(rc))
     {
         dbus_message_iter_init (reply.get(), &iterGet);
         if (   dbus_message_iter_get_arg_type (&iterGet) != DBUS_TYPE_ARRAY
             && dbus_message_iter_get_element_type (&iterGet) != DBUS_TYPE_DICT_ENTRY)
             halSuccess = false;
     }
-    if (halSuccess && RT_SUCCESS (rc))
+    if (halSuccess && RT_SUCCESS(rc))
         dbus_message_iter_recurse (&iterGet, &iterProps);
     /* Go through all entries in the reply and see if any match our keys. */
-    while (   halSuccess && RT_SUCCESS (rc)
+    while (   halSuccess && RT_SUCCESS(rc)
            &&    dbus_message_iter_get_arg_type (&iterProps)
               == DBUS_TYPE_DICT_ENTRY)
     {
@@ -966,7 +966,7 @@ int halGetPropertyStrings (DBusConnection *pConnection, const char *pszUdi,
             }
         dbus_message_iter_next (&iterProps);
     }
-    if (RT_SUCCESS (rc) && halSuccess)
+    if (RT_SUCCESS(rc) && halSuccess)
         *pMessage = reply.release();
     if (dbusError.HasName (DBUS_ERROR_NO_MEMORY))
         rc = VERR_NO_MEMORY;
@@ -1003,8 +1003,8 @@ int halGetPropertyStringsVector (DBusConnection *pConnection,
     AssertPtrReturn (pszUdi, VERR_INVALID_POINTER);
     AssertPtrReturn (papszKeys, VERR_INVALID_POINTER);
     AssertPtrReturn (pMatches, VERR_INVALID_POINTER);
-    AssertReturn ((pfMatches == NULL) || VALID_PTR (pfMatches), VERR_INVALID_POINTER);
-    AssertReturn ((pfSuccess == NULL) || VALID_PTR (pfSuccess), VERR_INVALID_POINTER);
+    AssertReturn((pfMatches == NULL) || VALID_PTR (pfMatches), VERR_INVALID_POINTER);
+    AssertReturn((pfSuccess == NULL) || VALID_PTR (pfSuccess), VERR_INVALID_POINTER);
     AssertReturn(pMatches->empty(), VERR_INVALID_PARAMETER);
     LogFlowFunc (("pConnection=%p, pszUdi=%s, cProps=%llu, papszKeys=%p, pMatches=%p, pfMatches=%p, pfSuccess=%p\n",
                   pConnection, pszUdi, cProps, papszKeys, pMatches, pfMatches, pfSuccess));
@@ -1074,22 +1074,22 @@ int getDriveInfoFromHal(DriveInfoList *pList, bool isDVD, bool *pfSuccess)
         rc = halInit (&dbusConnection);
         if (!dbusConnection)
             halSuccess = false;
-        if (halSuccess && RT_SUCCESS (rc))
+        if (halSuccess && RT_SUCCESS(rc))
         {
             rc = halFindDeviceStringMatch (dbusConnection.get(), "storage.drive_type",
                                         isDVD ? "cdrom" : "floppy", &replyFind);
             if (!replyFind)
                 halSuccess = false;
         }
-        if (halSuccess && RT_SUCCESS (rc))
+        if (halSuccess && RT_SUCCESS(rc))
         {
             dbus_message_iter_init (replyFind.get(), &iterFind);
             if (dbus_message_iter_get_arg_type (&iterFind) != DBUS_TYPE_ARRAY)
                 halSuccess = false;
         }
-        if (halSuccess && RT_SUCCESS (rc))
+        if (halSuccess && RT_SUCCESS(rc))
             dbus_message_iter_recurse (&iterFind, &iterUdis);
-        for (;    halSuccess && RT_SUCCESS (rc)
+        for (;    halSuccess && RT_SUCCESS(rc)
             && dbus_message_iter_get_arg_type (&iterUdis) == DBUS_TYPE_STRING;
             dbus_message_iter_next(&iterUdis))
         {
@@ -1165,14 +1165,14 @@ int getUSBDeviceInfoFromHal(USBDeviceInfoList *pList, bool *pfSuccess)
     if (!dbusConnection)
         halSuccess = false;
     /* Get an array of all devices in the usb_device subsystem */
-    if (halSuccess && RT_SUCCESS (rc))
+    if (halSuccess && RT_SUCCESS(rc))
     {
         rc = halFindDeviceStringMatch (dbusConnection.get(), "info.subsystem",
                                        "usb_device", &replyFind);
         if (!replyFind)
             halSuccess = false;
     }
-    if (halSuccess && RT_SUCCESS (rc))
+    if (halSuccess && RT_SUCCESS(rc))
     {
         dbus_message_iter_init (replyFind.get(), &iterFind);
         if (dbus_message_iter_get_arg_type (&iterFind) != DBUS_TYPE_ARRAY)
@@ -1180,9 +1180,9 @@ int getUSBDeviceInfoFromHal(USBDeviceInfoList *pList, bool *pfSuccess)
     }
     /* Recurse down into the array and query interesting information about the
      * entries. */
-    if (halSuccess && RT_SUCCESS (rc))
+    if (halSuccess && RT_SUCCESS(rc))
         dbus_message_iter_recurse (&iterFind, &iterUdis);
-    for (;    halSuccess && RT_SUCCESS (rc)
+    for (;    halSuccess && RT_SUCCESS(rc)
            && dbus_message_iter_get_arg_type (&iterUdis) == DBUS_TYPE_STRING;
          dbus_message_iter_next(&iterUdis))
     {
@@ -1250,14 +1250,14 @@ int getOldUSBDeviceInfoFromHal(USBDeviceInfoList *pList, bool *pfSuccess)
     if (!dbusConnection)
         halSuccess = false;
     /* Get an array of all devices in the usb_device subsystem */
-    if (halSuccess && RT_SUCCESS (rc))
+    if (halSuccess && RT_SUCCESS(rc))
     {
         rc = halFindDeviceStringMatch (dbusConnection.get(), "info.category",
                                        "usbraw", &replyFind);
         if (!replyFind)
             halSuccess = false;
     }
-    if (halSuccess && RT_SUCCESS (rc))
+    if (halSuccess && RT_SUCCESS(rc))
     {
         dbus_message_iter_init (replyFind.get(), &iterFind);
         if (dbus_message_iter_get_arg_type (&iterFind) != DBUS_TYPE_ARRAY)
@@ -1265,9 +1265,9 @@ int getOldUSBDeviceInfoFromHal(USBDeviceInfoList *pList, bool *pfSuccess)
     }
     /* Recurse down into the array and query interesting information about the
      * entries. */
-    if (halSuccess && RT_SUCCESS (rc))
+    if (halSuccess && RT_SUCCESS(rc))
         dbus_message_iter_recurse (&iterFind, &iterUdis);
-    for (;    halSuccess && RT_SUCCESS (rc)
+    for (;    halSuccess && RT_SUCCESS(rc)
            && dbus_message_iter_get_arg_type (&iterUdis) == DBUS_TYPE_STRING;
          dbus_message_iter_next(&iterUdis))
     {
@@ -1340,7 +1340,7 @@ int getUSBInterfacesFromHal(std::vector<iprt::MiniString> *pList,
     rc = halInit (&dbusConnection);
     if (!dbusConnection)
         halSuccess = false;
-    if (halSuccess && RT_SUCCESS (rc))
+    if (halSuccess && RT_SUCCESS(rc))
     {
         /* Look for children of the current UDI. */
         rc = halFindDeviceStringMatch (dbusConnection.get(), "info.parent",
@@ -1348,15 +1348,15 @@ int getUSBInterfacesFromHal(std::vector<iprt::MiniString> *pList,
         if (!replyFind)
             halSuccess = false;
     }
-    if (halSuccess && RT_SUCCESS (rc))
+    if (halSuccess && RT_SUCCESS(rc))
     {
         dbus_message_iter_init (replyFind.get(), &iterFind);
         if (dbus_message_iter_get_arg_type (&iterFind) != DBUS_TYPE_ARRAY)
             halSuccess = false;
     }
-    if (halSuccess && RT_SUCCESS (rc))
+    if (halSuccess && RT_SUCCESS(rc))
         dbus_message_iter_recurse (&iterFind, &iterUdis);
-    for (;    halSuccess && RT_SUCCESS (rc)
+    for (;    halSuccess && RT_SUCCESS(rc)
            && dbus_message_iter_get_arg_type (&iterUdis) == DBUS_TYPE_STRING;
          dbus_message_iter_next(&iterUdis))
     {
@@ -1374,7 +1374,7 @@ int getUSBInterfacesFromHal(std::vector<iprt::MiniString> *pList,
             halSuccess = false;
         if (!!replyGet && pszSysfsPath == NULL)
             halSuccess = false;
-        if (   halSuccess && RT_SUCCESS (rc)
+        if (   halSuccess && RT_SUCCESS(rc)
             && RTStrCmp (pszInfoSubsystem, "usb_device") != 0  /* Children of buses can also be devices. */
             && RTStrCmp (pszLinuxSubsystem, "usb_device") != 0)
             try

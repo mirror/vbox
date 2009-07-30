@@ -117,7 +117,7 @@ bool BaseMetric::collectorBeat(uint64_t nowAt)
 
 /*bool BaseMetric::associatedWith(ComPtr<IUnknown> object)
 {
-    LogFlowThisFunc (("mObject(%p) == object(%p) is %s.\n", mObject, object, mObject == object ? "true" : "false"));
+    LogFlowThisFunc(("mObject(%p) == object(%p) is %s.\n", mObject, object, mObject == object ? "true" : "false"));
     return mObject == object;
 }*/
 
@@ -163,7 +163,7 @@ void HostCpuLoadRaw::collect()
         if (totalDiff == 0)
         {
             /* This is only possible if none of counters has changed! */
-            LogFlowThisFunc (("Impossible! User, kernel and idle raw "
+            LogFlowThisFunc(("Impossible! User, kernel and idle raw "
                 "counters has not changed since last sample.\n" ));
             mUser->put(0);
             mKernel->put(0);
@@ -431,34 +431,34 @@ Filter::Filter(ComSafeArrayIn(IN_BSTR, metricNames),
      */
     if (ComSafeArrayInIsNull(metricNames))
     {
-        com::SafeArray <BSTR> nameArray;
+        com::SafeArray<BSTR> nameArray;
         if (ComSafeArrayInIsNull(objects))
         {
-            com::SafeIfaceArray <IUnknown> objectArray;
+            com::SafeIfaceArray<IUnknown> objectArray;
             objectArray.reset(0);
             init(ComSafeArrayAsInParam(nameArray),
                  ComSafeArrayAsInParam(objectArray));
         }
         else
         {
-            com::SafeIfaceArray <IUnknown> objectArray(ComSafeArrayInArg(objects));
+            com::SafeIfaceArray<IUnknown> objectArray(ComSafeArrayInArg(objects));
             init(ComSafeArrayAsInParam(nameArray),
                  ComSafeArrayAsInParam(objectArray));
         }
     }
     else
     {
-        com::SafeArray <IN_BSTR> nameArray(ComSafeArrayInArg(metricNames));
+        com::SafeArray<IN_BSTR> nameArray(ComSafeArrayInArg(metricNames));
         if (ComSafeArrayInIsNull(objects))
         {
-            com::SafeIfaceArray <IUnknown> objectArray;
+            com::SafeIfaceArray<IUnknown> objectArray;
             objectArray.reset(0);
             init(ComSafeArrayAsInParam(nameArray),
                  ComSafeArrayAsInParam(objectArray));
         }
         else
         {
-            com::SafeIfaceArray <IUnknown> objectArray(ComSafeArrayInArg(objects));
+            com::SafeIfaceArray<IUnknown> objectArray(ComSafeArrayInArg(objects));
             init(ComSafeArrayAsInParam(nameArray),
                  ComSafeArrayAsInParam(objectArray));
         }
@@ -468,8 +468,8 @@ Filter::Filter(ComSafeArrayIn(IN_BSTR, metricNames),
 void Filter::init(ComSafeArrayIn(IN_BSTR, metricNames),
                   ComSafeArrayIn(IUnknown *, objects))
 {
-    com::SafeArray <IN_BSTR> nameArray(ComSafeArrayInArg(metricNames));
-    com::SafeIfaceArray <IUnknown> objectArray(ComSafeArrayInArg(objects));
+    com::SafeArray<IN_BSTR> nameArray(ComSafeArrayInArg(metricNames));
+    com::SafeIfaceArray<IUnknown> objectArray(ComSafeArrayInArg(objects));
 
     if (!objectArray.size())
     {

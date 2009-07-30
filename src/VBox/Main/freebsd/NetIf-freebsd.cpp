@@ -30,7 +30,7 @@
 #include "netif.h"
 #include "Logging.h"
 
-int NetIfList(std::list <ComObjPtr <HostNetworkInterface> > &list)
+int NetIfList(std::list <ComObjPtr<HostNetworkInterface> > &list)
 {
     /** @todo implement */
     return VERR_NOT_IMPLEMENTED;

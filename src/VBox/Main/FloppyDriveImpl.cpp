@@ -62,15 +62,15 @@ void FloppyDrive::FinalRelease()
  */
 HRESULT FloppyDrive::init (Machine *aParent)
 {
-    LogFlowThisFunc (("aParent=%p\n", aParent));
+    LogFlowThisFunc(("aParent=%p\n", aParent));
 
     ComAssertRet (aParent, E_INVALIDARG);
 
     /* Enclose the state transition NotReady->InInit->Ready */
-    AutoInitSpan autoInitSpan (this);
-    AssertReturn (autoInitSpan.isOk(), E_FAIL);
+    AutoInitSpan autoInitSpan(this);
+    AssertReturn(autoInitSpan.isOk(), E_FAIL);
 
-    unconst (mParent) = aParent;
+    unconst(mParent) = aParent;
     /* mPeer is left null */
 
     m.allocate();
@@ -93,19 +93,19 @@ HRESULT FloppyDrive::init (Machine *aParent)
  */
 HRESULT FloppyDrive::init (Machine *aParent, FloppyDrive *aThat)
 {
-    LogFlowThisFunc (("aParent=%p, aThat=%p\n", aParent, aThat));
+    LogFlowThisFunc(("aParent=%p, aThat=%p\n", aParent, aThat));
 
     ComAssertRet (aParent && aThat, E_INVALIDARG);
 
     /* Enclose the state transition NotReady->InInit->Ready */
-    AutoInitSpan autoInitSpan (this);
-    AssertReturn (autoInitSpan.isOk(), E_FAIL);
+    AutoInitSpan autoInitSpan(this);
+    AssertReturn(autoInitSpan.isOk(), E_FAIL);
 
-    unconst (mParent) = aParent;
-    unconst (mPeer) = aThat;
+    unconst(mParent) = aParent;
+    unconst(mPeer) = aThat;
 
     AutoCaller thatCaller (aThat);
-    AssertComRCReturnRC (thatCaller.rc());
+    AssertComRCReturnRC(thatCaller.rc());
 
     AutoReadLock thatLock (aThat);
     m.share (aThat->m);
@@ -125,19 +125,19 @@ HRESULT FloppyDrive::init (Machine *aParent, FloppyDrive *aThat)
  */
 HRESULT FloppyDrive::initCopy (Machine *aParent, FloppyDrive *aThat)
 {
-    LogFlowThisFunc (("aParent=%p, aThat=%p\n", aParent, aThat));
+    LogFlowThisFunc(("aParent=%p, aThat=%p\n", aParent, aThat));
 
     ComAssertRet (aParent && aThat, E_INVALIDARG);
 
     /* Enclose the state transition NotReady->InInit->Ready */
-    AutoInitSpan autoInitSpan (this);
-    AssertReturn (autoInitSpan.isOk(), E_FAIL);
+    AutoInitSpan autoInitSpan(this);
+    AssertReturn(autoInitSpan.isOk(), E_FAIL);
 
-    unconst (mParent) = aParent;
+    unconst(mParent) = aParent;
     /* mPeer is left null */
 
     AutoCaller thatCaller (aThat);
-    AssertComRCReturnRC (thatCaller.rc());
+    AssertComRCReturnRC(thatCaller.rc());
 
     AutoReadLock thatLock (aThat);
     m.attachCopy (aThat->m);
@@ -165,10 +165,10 @@ HRESULT FloppyDrive::initCopy (Machine *aParent, FloppyDrive *aThat)
  */
 void FloppyDrive::uninit()
 {
-    LogFlowThisFunc (("\n"));
+    LogFlowThisFunc(("\n"));
 
     /* Enclose the state transition Ready->InUninit->NotReady */
-    AutoUninitSpan autoUninitSpan (this);
+    AutoUninitSpan autoUninitSpan(this);
     if (autoUninitSpan.uninitDone())
         return;
 
@@ -188,8 +188,8 @@ void FloppyDrive::uninit()
 
     m.free();
 
-    unconst (mPeer).setNull();
-    unconst (mParent).setNull();
+    unconst(mPeer).setNull();
+    unconst(mParent).setNull();
 }
 
 // IFloppyDrive properties
@@ -199,10 +199,10 @@ STDMETHODIMP FloppyDrive::COMGETTER(Enabled) (BOOL *aEnabled)
 {
     CheckComArgOutPointerValid(aEnabled);
 
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
 
-    AutoReadLock alock (this);
+    AutoReadLock alock(this);
 
     *aEnabled = m->enabled;
 
@@ -211,16 +211,16 @@ STDMETHODIMP FloppyDrive::COMGETTER(Enabled) (BOOL *aEnabled)
 
 STDMETHODIMP FloppyDrive::COMSETTER(Enabled) (BOOL aEnabled)
 {
-    LogFlowThisFunc (("aEnabled=%RTbool\n", aEnabled));
+    LogFlowThisFunc(("aEnabled=%RTbool\n", aEnabled));
 
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
 
     /* the machine needs to be mutable */
     Machine::AutoMutableStateDependency adep (mParent);
-    CheckComRCReturnRC (adep.rc());
+    CheckComRCReturnRC(adep.rc());
 
-    AutoWriteLock alock (this);
+    AutoWriteLock alock(this);
 
     if (m->enabled != aEnabled)
     {
@@ -240,10 +240,10 @@ STDMETHODIMP FloppyDrive::COMGETTER(State) (DriveState_T *aState)
 {
     CheckComArgOutPointerValid(aState);
 
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
 
-    AutoReadLock alock (this);
+    AutoReadLock alock(this);
 
     *aState = m->state;
 
@@ -258,14 +258,14 @@ STDMETHODIMP FloppyDrive::MountImage (IN_BSTR aImageId)
     Guid imageId(aImageId);
     CheckComArgExpr(aImageId, !imageId.isEmpty());
 
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
 
     /* the machine needs to be mutable */
     Machine::AutoMutableStateDependency adep (mParent);
-    CheckComRCReturnRC (adep.rc());
+    CheckComRCReturnRC(adep.rc());
 
-    AutoWriteLock alock (this);
+    AutoWriteLock alock(this);
 
     HRESULT rc = E_FAIL;
 
@@ -276,18 +276,18 @@ STDMETHODIMP FloppyDrive::MountImage (IN_BSTR aImageId)
     rc = mParent->virtualBox()->findFloppyImage(&imageId, NULL,
                                                 true /* aSetError */, &image);
 
-    if (SUCCEEDED (rc))
+    if (SUCCEEDED(rc))
     {
         if (m->state != DriveState_ImageMounted ||
             !m->image.equalsTo (image))
         {
             rc = image->attachTo (mParent->id(), mParent->snapshotId());
-            if (SUCCEEDED (rc))
+            if (SUCCEEDED(rc))
             {
                 /* umount() will backup data */
                 rc = unmount();
 
-                if (SUCCEEDED (rc))
+                if (SUCCEEDED(rc))
                 {
                     /* lock the image for reading if the VM is online. It will
                      * be unlocked either when unmounted from this drive or by
@@ -297,7 +297,7 @@ STDMETHODIMP FloppyDrive::MountImage (IN_BSTR aImageId)
                         rc = image->LockRead (NULL);
                 }
 
-                if (SUCCEEDED (rc))
+                if (SUCCEEDED(rc))
                 {
                     m->image = image;
                     m->state = DriveState_ImageMounted;
@@ -318,21 +318,21 @@ STDMETHODIMP FloppyDrive::CaptureHostDrive (IHostFloppyDrive *aHostFloppyDrive)
 {
     CheckComArgNotNull(aHostFloppyDrive);
 
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
 
     /* the machine needs to be mutable */
     Machine::AutoMutableStateDependency adep (mParent);
-    CheckComRCReturnRC (adep.rc());
+    CheckComRCReturnRC(adep.rc());
 
-    AutoWriteLock alock (this);
+    AutoWriteLock alock(this);
 
     if (m->state != DriveState_HostDriveCaptured ||
         !m->hostDrive.equalsTo (aHostFloppyDrive))
     {
         /* umount() will backup data */
         HRESULT rc = unmount();
-        if (SUCCEEDED (rc))
+        if (SUCCEEDED(rc))
         {
             m->hostDrive = aHostFloppyDrive;
             m->state = DriveState_HostDriveCaptured;
@@ -349,20 +349,20 @@ STDMETHODIMP FloppyDrive::CaptureHostDrive (IHostFloppyDrive *aHostFloppyDrive)
 
 STDMETHODIMP FloppyDrive::Unmount()
 {
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
 
     /* the machine needs to be mutable */
     Machine::AutoMutableStateDependency adep (mParent);
-    CheckComRCReturnRC (adep.rc());
+    CheckComRCReturnRC(adep.rc());
 
-    AutoWriteLock alock (this);
+    AutoWriteLock alock(this);
 
     if (m->state != DriveState_NotMounted)
     {
         /* umount() will backup data */
         HRESULT rc = unmount();
-        if (SUCCEEDED (rc))
+        if (SUCCEEDED(rc))
         {
             m->state = DriveState_NotMounted;
 
@@ -382,12 +382,12 @@ STDMETHODIMP FloppyDrive::GetImage(IFloppyImage **aFloppyImage)
 {
     CheckComArgOutPointerValid(aFloppyImage);
 
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
 
-    AutoReadLock alock (this);
+    AutoReadLock alock(this);
 
-    m->image.queryInterfaceTo (aFloppyImage);
+    m->image.queryInterfaceTo(aFloppyImage);
 
     return S_OK;
 }
@@ -396,12 +396,12 @@ STDMETHODIMP FloppyDrive::GetHostDrive (IHostFloppyDrive **aHostDrive)
 {
     CheckComArgOutPointerValid(aHostDrive);
 
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
 
-    AutoReadLock alock (this);
+    AutoReadLock alock(this);
 
-    m->hostDrive.queryInterfaceTo (aHostDrive);
+    m->hostDrive.queryInterfaceTo(aHostDrive);
 
     return S_OK;
 }
@@ -421,12 +421,12 @@ HRESULT FloppyDrive::loadSettings (const settings::Key &aMachineNode)
 {
     using namespace settings;
 
-    AssertReturn (!aMachineNode.isNull(), E_FAIL);
+    AssertReturn(!aMachineNode.isNull(), E_FAIL);
 
-    AutoCaller autoCaller (this);
-    AssertComRCReturnRC (autoCaller.rc());
+    AutoCaller autoCaller(this);
+    AssertComRCReturnRC(autoCaller.rc());
 
-    AutoWriteLock alock (this);
+    AutoWriteLock alock(this);
 
     /* Note: we assume that the default values for attributes of optional
      * nodes are assigned in the Data::Data() constructor and don't do it
@@ -453,7 +453,7 @@ HRESULT FloppyDrive::loadSettings (const settings::Key &aMachineNode)
     {
         Guid uuid = typeNode.value <Guid> ("uuid");
         rc = MountImage (uuid.toUtf16());
-        CheckComRCReturnRC (rc);
+        CheckComRCReturnRC(rc);
     }
     else if (!(typeNode = floppyDriveNode.findKey ("HostDrive")).isNull())
     {
@@ -461,31 +461,31 @@ HRESULT FloppyDrive::loadSettings (const settings::Key &aMachineNode)
         Bstr src = typeNode.stringValue ("src");
 
         /* find the corresponding object */
-        ComObjPtr <Host> host = mParent->virtualBox()->host();
+        ComObjPtr<Host> host = mParent->virtualBox()->host();
 
-        com::SafeIfaceArray <IHostFloppyDrive> coll;
+        com::SafeIfaceArray<IHostFloppyDrive> coll;
         rc = host->COMGETTER(FloppyDrives) (ComSafeArrayAsOutParam(coll));
         AssertComRC (rc);
 
-        ComPtr <IHostFloppyDrive> drive;
+        ComPtr<IHostFloppyDrive> drive;
         rc = host->FindHostFloppyDrive (src, drive.asOutParam());
 
-        if (SUCCEEDED (rc))
+        if (SUCCEEDED(rc))
         {
             rc = CaptureHostDrive (drive);
-            CheckComRCReturnRC (rc);
+            CheckComRCReturnRC(rc);
         }
         else if (rc == E_INVALIDARG)
         {
             /* the host DVD drive is not currently available. we
              * assume it will be available later and create an
              * extra object now */
-            ComObjPtr <HostFloppyDrive> hostDrive;
+            ComObjPtr<HostFloppyDrive> hostDrive;
             hostDrive.createObject();
             rc = hostDrive->init (src);
             AssertComRC (rc);
             rc = CaptureHostDrive (hostDrive);
-            CheckComRCReturnRC (rc);
+            CheckComRCReturnRC(rc);
         }
         else
             AssertComRC (rc);
@@ -505,12 +505,12 @@ HRESULT FloppyDrive::saveSettings (settings::Key &aMachineNode)
 {
     using namespace settings;
 
-    AssertReturn (!aMachineNode.isNull(), E_FAIL);
+    AssertReturn(!aMachineNode.isNull(), E_FAIL);
 
-    AutoCaller autoCaller (this);
-    AssertComRCReturnRC (autoCaller.rc());
+    AutoCaller autoCaller(this);
+    AssertComRCReturnRC(autoCaller.rc());
 
-    AutoReadLock alock (this);
+    AutoReadLock alock(this);
 
     Key node = aMachineNode.createKey ("FloppyDrive");
 
@@ -561,14 +561,14 @@ HRESULT FloppyDrive::saveSettings (settings::Key &aMachineNode)
 bool FloppyDrive::rollback()
 {
     /* sanity */
-    AutoCaller autoCaller (this);
+    AutoCaller autoCaller(this);
     AssertComRCReturn (autoCaller.rc(), false);
 
     /* we need adep for the state check */
     Machine::AutoAnyStateDependency adep (mParent);
     AssertComRCReturn (adep.rc(), false);
 
-    AutoWriteLock alock (this);
+    AutoWriteLock alock(this);
 
     bool changed = false;
 
@@ -625,7 +625,7 @@ bool FloppyDrive::rollback()
 void FloppyDrive::commit()
 {
     /* sanity */
-    AutoCaller autoCaller (this);
+    AutoCaller autoCaller(this);
     AssertComRCReturnVoid (autoCaller.rc());
 
     /* sanity too */
@@ -654,7 +654,7 @@ void FloppyDrive::commit()
 void FloppyDrive::copyFrom (FloppyDrive *aThat)
 {
     /* sanity */
-    AutoCaller autoCaller (this);
+    AutoCaller autoCaller(this);
     AssertComRCReturnVoid (autoCaller.rc());
 
     /* sanity too */
@@ -676,7 +676,7 @@ void FloppyDrive::copyFrom (FloppyDrive *aThat)
  */
 HRESULT FloppyDrive::unmount()
 {
-    AssertReturn (isWriteLockOnCurrentThread(), E_FAIL);
+    AssertReturn(isWriteLockOnCurrentThread(), E_FAIL);
 
     /* we need adep for the state check */
     Machine::AutoAnyStateDependency adep (mParent);

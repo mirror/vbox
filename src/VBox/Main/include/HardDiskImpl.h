@@ -155,14 +155,14 @@ public:
      * Shortcut to #deleteStorage() that doesn't wait for operation completion
      * and implies the progress object will be used for waiting.
      */
-    HRESULT deleteStorageNoWait (ComObjPtr <Progress> &aProgress)
+    HRESULT deleteStorageNoWait (ComObjPtr<Progress> &aProgress)
     { return deleteStorage (&aProgress, false /* aWait */); }
 
     /**
      * Shortcut to #deleteStorage() that wait for operation completion by
      * blocking the current thread.
      */
-    HRESULT deleteStorageAndWait (ComObjPtr <Progress> *aProgress = NULL)
+    HRESULT deleteStorageAndWait (ComObjPtr<Progress> *aProgress = NULL)
     { return deleteStorage (aProgress, true /* aWait */); }
 
     /**
@@ -171,7 +171,7 @@ public:
      */
     HRESULT createDiffStorageNoWait (ComObjPtr<HardDisk> &aTarget,
                                      HardDiskVariant_T aVariant,
-                                     ComObjPtr <Progress> &aProgress)
+                                     ComObjPtr<Progress> &aProgress)
     { return createDiffStorage (aTarget, aVariant, &aProgress, false /* aWait */); }
 
     /**
@@ -180,7 +180,7 @@ public:
      */
     HRESULT createDiffStorageAndWait (ComObjPtr<HardDisk> &aTarget,
                                       HardDiskVariant_T aVariant,
-                                      ComObjPtr <Progress> *aProgress = NULL)
+                                      ComObjPtr<Progress> *aProgress = NULL)
     { return createDiffStorage (aTarget, aVariant, aProgress, true /* aWait */); }
 
     HRESULT prepareMergeTo (HardDisk *aTarget, MergeChain * &aChain,
@@ -191,7 +191,7 @@ public:
      * implies the progress object will be used for waiting.
      */
     HRESULT mergeToNoWait (MergeChain *aChain,
-                           ComObjPtr <Progress> &aProgress)
+                           ComObjPtr<Progress> &aProgress)
     { return mergeTo (aChain, &aProgress, false /* aWait */); }
 
     /**
@@ -199,7 +199,7 @@ public:
      * blocking the current thread.
      */
     HRESULT mergeToAndWait (MergeChain *aChain,
-                            ComObjPtr <Progress> *aProgress = NULL)
+                            ComObjPtr<Progress> *aProgress = NULL)
     { return mergeTo (aChain, aProgress, true /* aWait */); }
 
     void cancelMergeTo (MergeChain *aChain);
@@ -207,7 +207,7 @@ public:
     Utf8Str name();
 
     HRESULT prepareDiscard (MergeChain * &aChain);
-    HRESULT discard (ComObjPtr <Progress> &aProgress, MergeChain *aChain);
+    HRESULT discard (ComObjPtr<Progress> &aProgress, MergeChain *aChain);
     void cancelDiscard (MergeChain *aChain);
 
     /** Returns a preferred format for a differencing hard disk. */
@@ -216,7 +216,7 @@ public:
     // unsafe inline public methods for internal purposes only (ensure there is
     // a caller and a read lock before calling them!)
 
-    ComObjPtr <HardDisk> parent() const { return static_cast <HardDisk *> (mParent); }
+    ComObjPtr<HardDisk> parent() const { return static_cast <HardDisk *> (mParent); }
     HardDiskType_T type() const { return mm.type; }
 
     /** For com::SupportErrorInfoImpl. */
@@ -224,15 +224,15 @@ public:
 
 protected:
 
-    HRESULT deleteStorage (ComObjPtr <Progress> *aProgress, bool aWait);
+    HRESULT deleteStorage (ComObjPtr<Progress> *aProgress, bool aWait);
 
-    HRESULT createDiffStorage (ComObjPtr <HardDisk> &aTarget,
+    HRESULT createDiffStorage (ComObjPtr<HardDisk> &aTarget,
                                HardDiskVariant_T aVariant,
-                               ComObjPtr <Progress> *aProgress,
+                               ComObjPtr<Progress> *aProgress,
                                bool aWait);
 
     HRESULT mergeTo (MergeChain *aChain,
-                     ComObjPtr <Progress> *aProgress,
+                     ComObjPtr<Progress> *aProgress,
                      bool aWait);
 
     /**
@@ -284,7 +284,7 @@ private:
     static DECLCALLBACK(int) taskThread (RTTHREAD thread, void *pvUser);
 
     /** weak parent */
-    ComObjPtr <HardDisk, ComWeakRef> mParent;
+    ComObjPtr<HardDisk, ComWeakRef> mParent;
 
     struct Task;
     friend struct Task;
@@ -305,7 +305,7 @@ private:
         {}
 
         const Bstr format;
-        ComObjPtr <HardDiskFormat> formatObj;
+        ComObjPtr<HardDiskFormat> formatObj;
 
         HardDiskType_T type;
         uint64_t logicalSize;   /*< In MBytes. */

@@ -129,7 +129,7 @@ void Snapshot::uninit()
     LogFlowMember (("Snapshot::uninit()\n"));
 
     /* Enclose the state transition Ready->InUninit->NotReady */
-    AutoUninitSpan autoUninitSpan (this);
+    AutoUninitSpan autoUninitSpan(this);
     if (autoUninitSpan.uninitDone())
         return;
 
@@ -250,7 +250,7 @@ STDMETHODIMP Snapshot::COMGETTER(Id) (BSTR *aId)
     AutoCaller autoCaller(this);
     CheckComRCReturnRC(autoCaller.rc());
 
-    AutoReadLock alock (this);
+    AutoReadLock alock(this);
 
     m->id.toUtf16().cloneTo(aId);
     return S_OK;
@@ -263,7 +263,7 @@ STDMETHODIMP Snapshot::COMGETTER(Name) (BSTR *aName)
     AutoCaller autoCaller(this);
     CheckComRCReturnRC(autoCaller.rc());
 
-    AutoReadLock alock (this);
+    AutoReadLock alock(this);
 
     m->name.cloneTo(aName);
     return S_OK;
@@ -301,7 +301,7 @@ STDMETHODIMP Snapshot::COMGETTER(Description) (BSTR *aDescription)
     AutoCaller autoCaller(this);
     CheckComRCReturnRC(autoCaller.rc());
 
-    AutoReadLock alock (this);
+    AutoReadLock alock(this);
 
     m->description.cloneTo(aDescription);
     return S_OK;
@@ -335,7 +335,7 @@ STDMETHODIMP Snapshot::COMGETTER(TimeStamp) (LONG64 *aTimeStamp)
     AutoCaller autoCaller(this);
     CheckComRCReturnRC(autoCaller.rc());
 
-    AutoReadLock alock (this);
+    AutoReadLock alock(this);
 
     *aTimeStamp = RTTimeSpecGetMilli(&m->timeStamp);
     return S_OK;
@@ -348,7 +348,7 @@ STDMETHODIMP Snapshot::COMGETTER(Online) (BOOL *aOnline)
     AutoCaller autoCaller(this);
     CheckComRCReturnRC(autoCaller.rc());
 
-    AutoReadLock alock (this);
+    AutoReadLock alock(this);
 
     *aOnline = !stateFilePath().isNull();
     return S_OK;
@@ -361,7 +361,7 @@ STDMETHODIMP Snapshot::COMGETTER(Machine) (IMachine **aMachine)
     AutoCaller autoCaller(this);
     CheckComRCReturnRC(autoCaller.rc());
 
-    AutoReadLock alock (this);
+    AutoReadLock alock(this);
 
     m->pMachine.queryInterfaceTo(aMachine);
     return S_OK;
@@ -374,13 +374,13 @@ STDMETHODIMP Snapshot::COMGETTER(Parent) (ISnapshot **aParent)
     AutoCaller autoCaller(this);
     CheckComRCReturnRC(autoCaller.rc());
 
-    AutoReadLock alock (this);
+    AutoReadLock alock(this);
 
-    mParent.queryInterfaceTo (aParent);
+    mParent.queryInterfaceTo(aParent);
     return S_OK;
 }
 
-STDMETHODIMP Snapshot::COMGETTER(Children) (ComSafeArrayOut (ISnapshot *, aChildren))
+STDMETHODIMP Snapshot::COMGETTER(Children) (ComSafeArrayOut(ISnapshot *, aChildren))
 {
     CheckComArgOutSafeArrayPointerValid(aChildren);
 
@@ -536,13 +536,13 @@ ComObjPtr<Snapshot> Snapshot::findChildOrSelf(IN_GUID aId)
  */
 ComObjPtr<Snapshot> Snapshot::findChildOrSelf(IN_BSTR aName)
 {
-    ComObjPtr <Snapshot> child;
-    AssertReturn (aName, child);
+    ComObjPtr<Snapshot> child;
+    AssertReturn(aName, child);
 
     AutoCaller autoCaller(this);
     AssertComRC(autoCaller.rc());
 
-    AutoReadLock alock (this);
+    AutoReadLock alock(this);
 
     if (m->name == aName)
         child = this;
@@ -672,14 +672,14 @@ HRESULT Snapshot::saveSnapshotImpl(settings::Key &aNode, bool aAttrsOnly)
         {
             Key hwNode = aNode.createKey ("Hardware");
             HRESULT rc = snapshotMachine->saveHardware(hwNode);
-            CheckComRCReturnRC (rc);
+            CheckComRCReturnRC(rc);
         }
 
         /* save hard disks. */
         {
             Key storageNode = aNode.createKey ("StorageControllers");
             HRESULT rc = snapshotMachine->saveStorageControllers(storageNode);
-            CheckComRCReturnRC (rc);
+            CheckComRCReturnRC(rc);
         }
     }
 
@@ -697,7 +697,7 @@ HRESULT Snapshot::saveSnapshotImpl(settings::Key &aNode, bool aAttrsOnly)
         {
             Key snapshotNode = snapshotsNode.createKey("Snapshot");
             rc = (*it)->saveSnapshotImpl(snapshotNode, aAttrsOnly);
-            CheckComRCReturnRC (rc);
+            CheckComRCReturnRC(rc);
         }
     }
 
