@@ -28,6 +28,9 @@
 #include <VBox/pgm.h>
 
 #include <VBox/log.h>
+#ifdef VBOX_WITH_DMI_OEMSTRINGS
+ #include <VBox/version.h>
+#endif
 #include <iprt/assert.h>
 #include <iprt/alloc.h>
 #include <iprt/file.h>
@@ -251,8 +254,20 @@ typedef struct DMIPROCESSORINF
     uint8_t         u8ThreadCount;
     uint16_t        u16ProcessorCharacteristics;
     uint16_t        u16ProcessorFamily2;
-} PDMIPROCESSORINF;
+} *PDMIPROCESSORINF;
 AssertCompileSize(DMIPROCESSORINF, 0x2a);
+
+#ifdef VBOX_WITH_DMI_OEMSTRINGS
+/** DMI OEM strings */
+typedef struct DMIOEMSTRINGS
+{
+    DMIHDR          header;
+    uint8_t         u8Count;
+    uint8_t         u8VboxVersion;
+    uint8_t         u8VboxRevision;
+} *PDMIOEMSTRINGS;
+AssertCompileSize(DMIOEMSTRINGS, 0x7);
+#endif
 
 /** MPS floating pointer structure */
 typedef struct MPSFLOATPTR
@@ -917,6 +932,9 @@ static int pcbiosPlantDMITable(PPDMDEVINS pDevIns, uint8_t *pTable, unsigned cbM
     char *pszDmiBIOSVendor, *pszDmiBIOSVersion, *pszDmiBIOSReleaseDate;
     int  iDmiBIOSReleaseMajor, iDmiBIOSReleaseMinor, iDmiBIOSFirmwareMajor, iDmiBIOSFirmwareMinor;
     char *pszDmiSystemVendor, *pszDmiSystemProduct, *pszDmiSystemVersion, *pszDmiSystemSerial, *pszDmiSystemUuid, *pszDmiSystemFamily;
+#ifdef VBOX_WITH_DMI_OEMSTRINGS
+    char *pszDmiOEMVBoxVer, *pszDmiOEMVBoxRev;
+#endif
 
 #define SETSTRING(memb, str) \
     do { \
@@ -1055,6 +1073,30 @@ static int pcbiosPlantDMITable(PPDMDEVINS pDevIns, uint8_t *pTable, unsigned cbM
     SETSTRING(pSystemInf->u8Family, pszDmiSystemFamily);
     *pszStr++                    = '\0';
 
+#ifdef VBOX_WITH_DMI_OEMSTRINGS
+    /* DMI OEM strings */
+    PDMIOEMSTRINGS pOEMStrings    = (PDMIOEMSTRINGS)pszStr;
+    pszStr                        = (char *)(pOEMStrings + 1);
+    iStrNr                        = 1;
+    pOEMStrings->header.u8Type    = 0xb; /* OEM Strings */
+    pOEMStrings->header.u8Length  = sizeof(*pOEMStrings);
+    pOEMStrings->header.u16Handle = 0x0002;    
+    pOEMStrings->u8Count          = 2;
+
+    char* pszVBoxVer, *pszVBoxRev;
+    RTStrAPrintf(&pszVBoxVer, "vboxVer_%d.%d.%d",
+                  VBOX_VERSION_MAJOR, VBOX_VERSION_MINOR, VBOX_VERSION_BUILD);
+    RTStrAPrintf(&pszVBoxRev, "vboxRev_%ld", VBOX_SVN_REV);
+    READCFGSTR("DmiOEMVBoxVer", pszDmiOEMVBoxVer, pszVBoxVer);
+    READCFGSTR("DmiOEMVBoxRev", pszDmiOEMVBoxRev, pszVBoxRev);
+    SETSTRING(pOEMStrings->u8VboxVersion, pszDmiOEMVBoxVer);
+    SETSTRING(pOEMStrings->u8VboxRevision, pszDmiOEMVBoxRev);
+    RTStrFree(pszVBoxVer);
+    RTStrFree(pszVBoxRev);
+
+    *pszStr++                    = '\0';
+#endif
+
     /* End-of-table marker - includes padding to account for fixed table size. */
     PDMIHDR pEndOfTable          = (PDMIHDR)pszStr;
     pEndOfTable->u8Type          = 0x7f;
@@ -1075,10 +1117,14 @@ static int pcbiosPlantDMITable(PPDMDEVINS pDevIns, uint8_t *pTable, unsigned cbM
     MMR3HeapFree(pszDmiSystemSerial);
     MMR3HeapFree(pszDmiSystemUuid);
     MMR3HeapFree(pszDmiSystemFamily);
+#ifdef VBOX_WITH_DMI_OEMSTRINGS
+    MMR3HeapFree(pszDmiOEMVBoxVer);
+    MMR3HeapFree(pszDmiOEMVBoxRev);
+#endif
 
     return VINF_SUCCESS;
 }
-AssertCompile(VBOX_DMI_TABLE_ENTR == 3);
+AssertCompile(VBOX_DMI_TABLE_ENTR == 4);
 
 
 /**
@@ -1416,7 +1462,9 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
                               "DmiSystemSerial\0"
                               "DmiSystemUuid\0"
                               "DmiSystemVendor\0"
-                              "DmiSystemVersion\0"))
+                              "DmiSystemVersion\0"
+                              "DmiOEMVBoxVer\0"
+                              "DmiOEMVBoxRev\0"))
         return PDMDEV_SET_ERROR(pDevIns, VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES,
                                 N_("Invalid configuraton for  device pcbios device"));
 
