@@ -318,7 +318,11 @@ endif
 ifdef VBOX_WITH_VIDEOHWACCEL
  DevicesR3_DEFS         += VBOX_WITH_VIDEOHWACCEL
 endif
-
+ifdef VBOX_WITH_DMI_OEMSTRINGS
+ DevicesR3_DEFS         += VBOX_WITH_DMI_OEMSTRINGS
+ DevicesR3_DEFS         += VBOX_SVN_REV=$(VBOX_SVN_REV)
+ DevicesR3_DEPS          = $(VBOX_SVN_REV_KMK)
+endif
 
 ifdef VBOX_WITH_INIP
 DevicesR3_INCS         += \
