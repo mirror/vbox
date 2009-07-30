@@ -2159,7 +2159,7 @@ fi
 if [ "$OS" = "darwin" ]; then
   BUILD_LIBXSLT=1
   BUILD_LIBXML2=1
-  BUILD_LIBCURL=1
+  [ $OSE -eq 1 ] && BUILD_LIBCURL=1
 fi
 
 # emit disable directives corresponding to any --disable-xxx options.
