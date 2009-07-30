@@ -111,9 +111,6 @@
       <xsl:when test="$collPrefix and //interface[@name=$origname]/@wsmap='managed'">
          <xsl:value-of select="concat($G_virtualBoxPackage, concat('.', $name))" />
       </xsl:when>
-     <xsl:when test="//interface[@name=$name]/@wsmap='struct' or //interface[@name=$origname]/@wsmap='struct'">
-        <xsl:value-of select="concat($G_virtualBoxPackage2,  concat('.', $name))" />
-     </xsl:when>
      <xsl:when test="//interface[@name=$name]">
        <xsl:value-of select="concat($G_virtualBoxPackage2,  concat('.', $name))" />
      </xsl:when>
@@ -177,8 +174,11 @@
   <xsl:param name="name" />
   <xsl:param name="type" />
   <xsl:param name="safearray" />
+  <xsl:param name="forceelem" />
+  
+  <xsl:variable name="needarray" select="($safearray='yes') and not($forceelem='yes')" />
 
-  <xsl:if test="$safearray">
+  <xsl:if test="$needarray">
     <xsl:value-of select="'List&lt;'" />
   </xsl:if>
 
@@ -201,7 +201,7 @@
       </xsl:call-template>
     </xsl:otherwise>
   </xsl:choose>
-  <xsl:if test="$safearray">
+  <xsl:if test="$needarray">
     <xsl:value-of select="'&gt;'" />
   </xsl:if>
 </xsl:template>
@@ -250,7 +250,16 @@
           </xsl:variable>
           <xsl:choose>
             <xsl:when test="$isstruct">
-              <xsl:value-of select="concat('Helper.wrap2(',$elemtype, '.class, port, ', $value,')')"/>
+              <xsl:variable name="javagettertype">
+                <xsl:call-template name="typeIdl2Java">
+                  <xsl:with-param name="method" select="$methodname" />
+                  <xsl:with-param name="name" select="$value" />
+                  <xsl:with-param name="type" select="$idltype" />
+                  <xsl:with-param name="safearray" select="$safearray" />
+                  <xsl:with-param name="forceelem" select="'yes'" />
+                </xsl:call-template>
+              </xsl:variable>
+              <xsl:value-of select="concat('Helper.wrap2(',$elemtype, '.class, ', $javagettertype, '.class, port, ', $value,')')"/>
             </xsl:when>
             <xsl:otherwise>
               <xsl:value-of select="concat('Helper.wrap(',$elemtype, '.class, port, ', $value,')')"/>
@@ -518,14 +527,13 @@ class Helper {
         }
     }
 
-
-    public static <T, T1> List<T> wrap2(Class<T> wrapperClass, VboxPortType pt, List<T1> thisPtrs) {
+    public static <T1, T2> List<T1> wrap2(Class<T1> wrapperClass1, Class<T2> wrapperClass2, VboxPortType pt, List<T2> thisPtrs) {
         try {
             if(thisPtrs==null)  return Collections.emptyList();
 
-            Constructor<T> c = wrapperClass.getConstructor(String.class, VboxPortType.class);
-            List<T> ret = new ArrayList<T>(thisPtrs.size());
-            for (T1 thisPtr : thisPtrs) {
+            Constructor<T1> c = wrapperClass1.getConstructor(wrapperClass2, VboxPortType.class);
+            List<T1> ret = new ArrayList<T1>(thisPtrs.size());
+            for (T2 thisPtr : thisPtrs) {
                 ret.add(c.newInstance(thisPtr,pt));
             }
             return ret;
