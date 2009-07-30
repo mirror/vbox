@@ -464,8 +464,7 @@ typedef struct SSMHANDLE
              * @remarks Be extremely careful when changing the size of this buffer! */
             uint8_t         abDataBuffer[4096];
 
-            /** V2: Decompression buffer.
-             * @todo removed this when we start buffering the stream. */
+            /** V2: Decompression buffer for when we cannot use the stream buffer. */
             uint8_t         abComprBuffer[4096];
         } Read;
     } u;
@@ -749,6 +748,7 @@ static int                  ssmR3LazyInit(PVM pVM);
 static DECLCALLBACK(int)    ssmR3SelfSaveExec(PVM pVM, PSSMHANDLE pSSM);
 static DECLCALLBACK(int)    ssmR3SelfLoadExec(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version);
 static int                  ssmR3Register(PVM pVM, const char *pszName, uint32_t u32Instance, uint32_t u32Version, size_t cbGuess, const char *pszBefore, PSSMUNIT *ppUnit);
+static int                  ssmR3StrmWriteBuffers(PSSMSTRM pStrm);
 static int                  ssmR3CalcChecksum(RTFILE File, uint64_t cbFile, uint32_t *pu32CRC);
 static void                 ssmR3Progress(PSSMHANDLE pSSM, uint64_t cbAdvance);
 static PSSMUNIT             ssmR3Find(PVM pVM, const char *pszName, uint32_t u32Instance);
@@ -1555,6 +1555,13 @@ static PSSMSTRMBUF ssmR3StrmGetFreeBuf(PSSMSTRM pStrm)
                 return NULL;
             if (RT_FAILURE(pStrm->rc))
                 return NULL;
+            if (    pStrm->fWrite
+                &&  pStrm->hIoThread == NIL_RTTHREAD)
+            {
+                int rc = ssmR3StrmWriteBuffers(pStrm);
+                if (RT_FAILURE(rc))
+                    return NULL;
+            }
             int rc = RTSemEventWaitNoResume(pStrm->hEvtFree, 30000);
             if (    rc == VERR_SEM_DESTROYED
                 ||  pStrm->fTerminating)
@@ -1824,15 +1831,8 @@ static int ssmR3StrmWrite(PSSMSTRM pStrm, const void *pvBuf, size_t cbToWrite)
     {
         /*
          * Flush the current buffer and replace it with a new one.
-         * Write the bits to the disk if we haven't got any helper yet.
          */
         ssmR3StrmFlushCurBuf(pStrm);
-        if (pStrm->hIoThread == NIL_RTTHREAD)
-        {
-            int rc = ssmR3StrmWriteBuffers(pStrm);
-            if (RT_FAILURE(rc))
-                return rc;
-        }
         pBuf = ssmR3StrmGetFreeBuf(pStrm);
         if (!pBuf)
             break;
@@ -1854,6 +1854,68 @@ static int ssmR3StrmWrite(PSSMSTRM pStrm, const void *pvBuf, size_t cbToWrite)
     return pStrm->rc;
 }
 
+
+/**
+ * Reserves space in the current buffer so the caller can write directly to the
+ * buffer instead of doing double buffering.
+ *
+ * @returns VBox status code
+ * @param   pStrm       The stream handle.
+ * @param   cb          The amount of buffer space to reserve.
+ * @param   ppb         Where to return the pointer.
+ */
+static int ssmR3StrmReserveWriteBufferSpace(PSSMSTRM pStrm, size_t cb, uint8_t **ppb)
+{
+    Assert(pStrm->fWrite);
+    Assert(RT_SIZEOFMEMB(SSMSTRMBUF, abData) / 4 >= cb);
+
+    /*
+     * Check if there is room in the current buffer, it not flush it.
+     */
+    PSSMSTRMBUF pBuf = pStrm->pCur;
+    if (pBuf)
+    {
+        uint32_t cbLeft = RT_SIZEOFMEMB(SSMSTRMBUF, abData) - pStrm->off;
+        if (cbLeft >= cb)
+        {
+            *ppb = &pBuf->abData[pStrm->off];
+            return VINF_SUCCESS;
+        }
+
+        ssmR3StrmFlushCurBuf(pStrm);
+    }
+
+    /*
+     * Get a fresh buffer and return a pointer into it.
+     */
+    pBuf = ssmR3StrmGetFreeBuf(pStrm);
+    if (pBuf)
+    {
+        pStrm->pCur = pBuf;
+        Assert(pStrm->off == 0);
+        *ppb = &pBuf->abData[0];
+    }
+    else
+        *ppb = NULL; /* make gcc happy. */
+    return pStrm->rc;
+}
+
+
+/**
+ * Commits buffer space reserved by ssmR3StrmReserveWriteBufferSpace.
+ *
+ * @returns VBox status code.
+ * @param   pStrm       The stream handle.
+ * @param   cb          The amount of buffer space to commit.  This can be less
+ *                      that what was reserved initially.
+ */
+static int ssmR3StrmCommitWriteBufferSpace(PSSMSTRM pStrm, size_t cb)
+{
+    Assert(pStrm->pCur);
+    Assert(pStrm->off + cb <= RT_SIZEOFMEMB(SSMSTRMBUF, abData));
+    pStrm->off += cb;
+    return VINF_SUCCESS;
+}
 
 
 /**
@@ -1960,7 +2022,7 @@ static int ssmR3StrmRead(PSSMSTRM pStrm, void *pvBuf, size_t cbToRead)
     /*
      * Get more buffers from the stream.
      */
-    int rc;
+    int rc = VINF_SUCCESS;
     do
     {
         /*
@@ -2009,6 +2071,46 @@ static int ssmR3StrmRead(PSSMSTRM pStrm, void *pvBuf, size_t cbToRead)
     } while (cbToRead > 0);
 
     return rc;
+}
+
+
+/**
+ * Reads data from the stream but instead of copying it to some output buffer
+ * the caller gets a pointer to into the current stream buffer.
+ *
+ * The returned pointer becomes invalid after the next stream operation!
+ *
+ * @returns Pointer to the read data residing in the stream buffer.  NULL is
+ *          returned if the request amount of data isn't available in the
+ *          buffer.  The caller must fall back on ssmR3StrmRead when this
+ *          happens.
+ *
+ * @param   pStrm       The stream handle.
+ * @param   cbToRead    The number of bytes to tread.
+ */
+static uint8_t const *ssmR3StrmReadDirect(PSSMSTRM pStrm, size_t cbToRead)
+{
+    AssertReturn(cbToRead > 0, VINF_SUCCESS);
+    Assert(!pStrm->fWrite);
+
+    /*
+     * Too lazy to fetch more data for the odd case that we're
+     * exactly at the boundrary between two buffers.
+     */
+    PSSMSTRMBUF pBuf = pStrm->pCur;
+    if (RT_LIKELY(pBuf))
+    {
+        Assert(pStrm->off <= pBuf->cb);
+        uint32_t cbLeft = pBuf->cb - pStrm->off;
+        if (cbLeft >= cbToRead)
+        {
+            uint8_t const *pb = &pBuf->abData[pStrm->off];
+            pStrm->off += (uint32_t)cbToRead;
+            Assert(pStrm->off <= pBuf->cb);
+            return pb;
+        }
+    }
+    return NULL;
 }
 
 
@@ -4115,78 +4217,22 @@ static int ssmR3DataWriteRecHdr(PSSMHANDLE pSSM, size_t cb, uint8_t u8TypeAndFla
  */
 static int ssmR3DataFlushBuffer(PSSMHANDLE pSSM)
 {
+    /*
+     * Check how much there current is in the buffer.
+     */
     uint32_t cb = pSSM->u.Write.offDataBuffer;
     if (!cb)
         return pSSM->rc;
-
-    /*
-     * Create a record header.
-     */
-    uint32_t    cbTotal = cb + 1;
-    uint8_t    *pbHdr   = &pSSM->u.Write.abRecHdr[sizeof(pSSM->u.Write.abRecHdr) - 1];
-    if (cb < 0x80)
-    {
-        cbTotal += 1;
-        pbHdr   -= 1;
-        pbHdr[1] = cb;
-    }
-    else if (cb < 0x00000800)
-    {
-        cbTotal += 2;
-        pbHdr   -= 2;
-        pbHdr[1] = 0xc0 | (cb >> 6);
-        pbHdr[2] = 0x80 | (cb & 0x3f);
-    }
-    else if (cb < 0x00010000)
-    {
-        cbTotal += 3;
-        pbHdr   -= 3;
-        pbHdr[1] = 0xe0 | (cb >> 12);
-        pbHdr[2] = 0x80 | ((cb >> 6) & 0x3f);
-        pbHdr[3] = 0x80 | (cb & 0x3f);
-    }
-    else if (cb < 0x00200000)
-    {
-        cbTotal += 4;
-        pbHdr   -= 4;
-        pbHdr[1] = 0xf0 | (cb >> 18);
-        pbHdr[2] = 0x80 | ((cb >> 12) & 0x3f);
-        pbHdr[3] = 0x80 | ((cb >> 6) & 0x3f);
-        pbHdr[4] = 0x80 | (cb & 0x3f);
-    }
-    else if (cb < 0x04000000)
-    {
-        cbTotal += 5;
-        pbHdr   -= 5;
-        pbHdr[1] = 0xf8 | (cb >> 24);
-        pbHdr[2] = 0x80 | ((cb >> 18) & 0x3f);
-        pbHdr[3] = 0x80 | ((cb >> 12) & 0x3f);
-        pbHdr[4] = 0x80 | ((cb >> 6) & 0x3f);
-        pbHdr[5] = 0x80 | (cb & 0x3f);
-    }
-    else if (cb <= 0x7fffffff)
-    {
-        cbTotal += 6;
-        pbHdr   -= 6;
-        pbHdr[1] = 0xfc | (cb >> 30);
-        pbHdr[2] = 0x80 | ((cb >> 24) & 0x3f);
-        pbHdr[3] = 0x80 | ((cb >> 18) & 0x3f);
-        pbHdr[4] = 0x80 | ((cb >> 12) & 0x3f);
-        pbHdr[5] = 0x80 | ((cb >> 6) & 0x3f);
-        pbHdr[6] = 0x80 | (cb & 0x3f);
-    }
-    else
-        AssertLogRelMsgFailedReturn(("cb=%#x\n", cb), VERR_INTERNAL_ERROR);
-    pbHdr[0] = SSM_REC_FLAGS_FIXED | SSM_REC_FLAGS_IMPORTANT | SSM_REC_TYPE_RAW;
-
-    Log3(("ssmR3DataFlushBuffer: %08llx|%08llx/%08x: Type=RAW fImportant=true cbHdr=%u\n",
-          ssmR3StrmTell(&pSSM->Strm) + (cbTotal - cb), pSSM->offUnit + (cbTotal - cb), cb, (cbTotal - cb) ));
-
-    /*
-     * Write it and reset the buffer.
-     */
-    int rc = ssmR3DataWriteRaw(pSSM, pbHdr, cbTotal);
     pSSM->u.Write.offDataBuffer = 0;
+
+    /*
+     * Write a record header and then the data.
+     * (No need for fancy optimizations here any longer since the stream is
+     * fully buffered.)
+     */
+    int rc = ssmR3DataWriteRecHdr(pSSM, cb, SSM_REC_FLAGS_FIXED | SSM_REC_FLAGS_IMPORTANT | SSM_REC_TYPE_RAW);
+    if (RT_SUCCESS(rc))
+        rc = ssmR3DataWriteRaw(pSSM, pSSM->u.Write.abDataBuffer, cb);
     return rc;
 }
 
@@ -4211,38 +4257,39 @@ static int ssmR3DataWriteBig(PSSMHANDLE pSSM, const void *pvBuf, size_t cbBuf)
         {
             if (cbBuf >= SSM_ZIP_BLOCK_SIZE)
             {
-                struct
-                {
-                    uint8_t     cKB;
-                    uint8_t     abCompr[SSM_ZIP_BLOCK_SIZE - (SSM_ZIP_BLOCK_SIZE / 16)];
-                } s;
-                AssertCompile(sizeof(s) == SSM_ZIP_BLOCK_SIZE - (SSM_ZIP_BLOCK_SIZE / 16) + sizeof(uint8_t));
-
-                size_t cbCompr;
+                AssertCompile(1 + 3 + 1 + SSM_ZIP_BLOCK_SIZE < 0x00010000);
+                uint8_t *pb;
+                rc = ssmR3StrmReserveWriteBufferSpace(&pSSM->Strm, 1 + 3 + 1 + SSM_ZIP_BLOCK_SIZE, &pb);
+                if (RT_FAILURE(rc))
+                    break;
+                size_t cbRec = SSM_ZIP_BLOCK_SIZE - (SSM_ZIP_BLOCK_SIZE / 16);
                 rc = RTZipBlockCompress(RTZIPTYPE_LZF, RTZIPLEVEL_FAST, 0 /*fFlags*/,
                                         pvBuf, SSM_ZIP_BLOCK_SIZE,
-                                        &s.abCompr[0], sizeof(s.abCompr), &cbCompr);
+                                        pb + 1 + 3 + 1, cbRec, &cbRec);
                 if (RT_SUCCESS(rc))
                 {
-                    cbCompr += sizeof(s.cKB);
-                    s.cKB = SSM_ZIP_BLOCK_SIZE / _1K;
-                    rc = ssmR3DataWriteRecHdr(pSSM, cbCompr, SSM_REC_FLAGS_FIXED | SSM_REC_FLAGS_IMPORTANT | SSM_REC_TYPE_RAW_LZF);
-                    if (RT_FAILURE(rc))
-                        return rc;
-                    rc = ssmR3DataWriteRaw(pSSM, &s, cbCompr);
-                    if (RT_FAILURE(rc))
-                        return rc;
+                    pb[0] = SSM_REC_FLAGS_FIXED | SSM_REC_FLAGS_IMPORTANT | SSM_REC_TYPE_RAW_LZF;
+                    pb[4] = SSM_ZIP_BLOCK_SIZE / _1K;
+                    cbRec += 1;
                 }
                 else
                 {
-                    /* Didn't compress very well, store it. */
-                    rc = ssmR3DataWriteRecHdr(pSSM, SSM_ZIP_BLOCK_SIZE, SSM_REC_FLAGS_FIXED | SSM_REC_FLAGS_IMPORTANT | SSM_REC_TYPE_RAW);
-                    if (RT_FAILURE(rc))
-                        return rc;
-                    rc = ssmR3DataWriteRaw(pSSM, pvBuf, SSM_ZIP_BLOCK_SIZE);
-                    if (RT_FAILURE(rc))
-                        return rc;
+                    pb[0] = SSM_REC_FLAGS_FIXED | SSM_REC_FLAGS_IMPORTANT | SSM_REC_TYPE_RAW;
+                    memcpy(&pb[4], pvBuf, SSM_ZIP_BLOCK_SIZE);
+                    cbRec = SSM_ZIP_BLOCK_SIZE;
                 }
+                pb[1] = (uint8_t)(0xe0 | ( cbRec >> 12));
+                pb[2] = (uint8_t)(0x80 | ((cbRec >>  6) & 0x3f));
+                pb[3] = (uint8_t)(0x80 | ( cbRec        & 0x3f));
+                cbRec += 1 + 3;
+                rc = ssmR3StrmCommitWriteBufferSpace(&pSSM->Strm, cbRec);
+                if (RT_FAILURE(rc))
+                    break;
+
+                pSSM->offUnit += cbRec;
+                ssmR3Progress(pSSM, SSM_ZIP_BLOCK_SIZE);
+
+                /* advance */
                 if (cbBuf == SSM_ZIP_BLOCK_SIZE)
                     return VINF_SUCCESS;
                 cbBuf -= SSM_ZIP_BLOCK_SIZE;
@@ -4250,11 +4297,13 @@ static int ssmR3DataWriteBig(PSSMHANDLE pSSM, const void *pvBuf, size_t cbBuf)
             }
             else
             {
-                /* Less than one page, just store it. */
+                /*
+                 * Less than one block left, store it the simple way.
+                 */
                 rc = ssmR3DataWriteRecHdr(pSSM, cbBuf, SSM_REC_FLAGS_FIXED | SSM_REC_FLAGS_IMPORTANT | SSM_REC_TYPE_RAW);
                 if (RT_SUCCESS(rc))
                     rc = ssmR3DataWriteRaw(pSSM, pvBuf, cbBuf);
-                return rc;
+                break;
             }
         }
     }
@@ -4910,7 +4959,6 @@ static void ssmR3DataReadFinishV2(PSSMHANDLE pSSM)
  */
 DECLINLINE(int) ssmR3DataReadV2Raw(PSSMHANDLE pSSM, void *pvBuf, size_t cbToRead)
 {
-    /** @todo buffered reads! (at some level or another) */
     int rc = ssmR3StrmRead(&pSSM->Strm, pvBuf, cbToRead);
     if (RT_SUCCESS(rc))
     {
@@ -4971,22 +5019,38 @@ DECLINLINE(int) ssmR3DataReadV2RawLzfHdr(PSSMHANDLE pSSM, uint32_t *pcbDecompr)
  */
 static int ssmR3DataReadV2RawLzf(PSSMHANDLE pSSM, void *pvDst, size_t cbDecompr)
 {
-    /** @todo optimize this wrt to stream buffering when that is added. */
-    uint32_t cbCompr = pSSM->u.Read.cbRecLeft;
+    int         rc;
+    uint32_t    cbCompr    = pSSM->u.Read.cbRecLeft;
     pSSM->u.Read.cbRecLeft = 0;
 
-    int rc = ssmR3DataReadV2Raw(pSSM, &pSSM->u.Read.abComprBuffer[0], cbCompr);
+    /*
+     * Try use the stream buffer directly to avoid copying things around.
+     */
+    uint8_t const *pb = ssmR3StrmReadDirect(&pSSM->Strm, cbCompr);
+    if (pb)
+    {
+        pSSM->offUnit += cbCompr;
+        ssmR3Progress(pSSM, cbCompr);
+    }
+    else
+    {
+        rc = ssmR3DataReadV2Raw(pSSM, &pSSM->u.Read.abComprBuffer[0], cbCompr);
+        if (RT_FAILURE(rc))
+            return rc;
+        pb = &pSSM->u.Read.abComprBuffer[0];
+    }
+
+    /*
+     * Decompress it.
+     */
+    size_t cbDstActual;
+    rc = RTZipBlockDecompress(RTZIPTYPE_LZF, 0 /*fFlags*/,
+                              pb, cbCompr, NULL /*pcbSrcActual*/,
+                              pvDst, cbDecompr, &cbDstActual);
     if (RT_SUCCESS(rc))
     {
-        size_t cbDstActual;
-        rc = RTZipBlockDecompress(RTZIPTYPE_LZF, 0 /*fFlags*/,
-                                  &pSSM->u.Read.abComprBuffer[0], cbCompr, NULL /*pcbSrcActual*/,
-                                  pvDst, cbDecompr, &cbDstActual);
-        if (RT_SUCCESS(rc))
-        {
-            AssertLogRelMsgReturn(cbDstActual == cbDecompr, ("%#x %#x\n", cbDstActual, cbDecompr), VERR_SSM_INTEGRITY);
-            return VINF_SUCCESS;
-        }
+        AssertLogRelMsgReturn(cbDstActual == cbDecompr, ("%#x %#x\n", cbDstActual, cbDecompr), VERR_SSM_INTEGRITY);
+        return VINF_SUCCESS;
     }
     return rc;
 }
