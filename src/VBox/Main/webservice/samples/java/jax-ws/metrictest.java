@@ -29,7 +29,6 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 import com.sun.xml.ws.commons.virtualbox{VBOX_API_SUFFIX}.*;
-import org.virtualbox{VBOX_API_SUFFIX}.*;
 
 import java.util.*;
 import javax.xml.ws.Holder;
