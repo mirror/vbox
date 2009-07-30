@@ -568,14 +568,15 @@ STDMETHODIMP Host::COMGETTER(NetworkInterfaces) (ComSafeArrayOut(IHostNetworkInt
 
     std::list <ComObjPtr<HostNetworkInterface> > list;
 
-#ifdef VBOX_WITH_HOSTNETIF_API
+# ifdef VBOX_WITH_HOSTNETIF_API
     int rc = NetIfList(list);
     if (rc)
     {
         Log(("Failed to get host network interface list with rc=%Vrc\n", rc));
     }
-#else
-# if defined(RT_OS_DARWIN)
+# else
+
+#  if defined(RT_OS_DARWIN)
     PDARWINETHERNIC pEtherNICs = DarwinGetEthernetControllers();
     while (pEtherNICs)
     {
@@ -590,9 +591,9 @@ STDMETHODIMP Host::COMGETTER(NetworkInterfaces) (ComSafeArrayOut(IHostNetworkInt
         RTMemFree(pvFree);
     }
 
-# elif defined(RT_OS_SOLARIS)
+#  elif defined(RT_OS_SOLARIS)
 
-#  ifdef VBOX_SOLARIS_NSL_RESOLVED
+#   ifdef VBOX_SOLARIS_NSL_RESOLVED
 
     /*
      * Use libdevinfo for determining all physical interfaces.
@@ -611,7 +612,7 @@ STDMETHODIMP Host::COMGETTER(NetworkInterfaces) (ComSafeArrayOut(IHostNetworkInt
     if (VBoxSolarisLibDlpiFound())
         g_pfnLibDlpiWalk(vboxSolarisAddLinkHostIface, &list, 0);
 
-#  endif    /* VBOX_SOLARIS_NSL_RESOLVED */
+#   endif    /* VBOX_SOLARIS_NSL_RESOLVED */
 
     /*
      * This gets only the list of all plumbed logical interfaces.
@@ -687,10 +688,10 @@ STDMETHODIMP Host::COMGETTER(NetworkInterfaces) (ComSafeArrayOut(IHostNetworkInt
     list.sort(vboxSolarisSortNICList);
     list.unique(vboxSolarisSameNIC);
 
-# elif defined RT_OS_WINDOWS
-#  ifndef VBOX_WITH_NETFLT
+#  elif defined RT_OS_WINDOWS
+#   ifndef VBOX_WITH_NETFLT
     hr = E_NOTIMPL;
-#  else /* #  if defined VBOX_WITH_NETFLT */
+#   else /* #  if defined VBOX_WITH_NETFLT */
     INetCfg              *pNc;
     INetCfgComponent     *pMpNcc;
     INetCfgComponent     *pTcpIpNcc;
@@ -709,20 +710,20 @@ STDMETHODIMP Host::COMGETTER(NetworkInterfaces) (ComSafeArrayOut(IHostNetworkInt
     Assert(hr == S_OK);
     if(hr == S_OK)
     {
-#ifdef VBOX_NETFLT_ONDEMAND_BIND
+#    ifdef VBOX_NETFLT_ONDEMAND_BIND
         /* for the protocol-based approach for now we just get all miniports the MS_TCPIP protocol binds to */
         hr = pNc->FindComponent(L"MS_TCPIP", &pTcpIpNcc);
-#else
+#    else
         /* for the filter-based approach we get all miniports our filter (sun_VBoxNetFlt)is bound to */
         hr = pNc->FindComponent(L"sun_VBoxNetFlt", &pTcpIpNcc);
-# ifndef VBOX_WITH_HARDENING
+#     ifndef VBOX_WITH_HARDENING
         if(hr != S_OK)
         {
             /* TODO: try to install the netflt from here */
         }
-# endif
+#     endif
 
-#endif
+#    endif
 
         if(hr == S_OK)
         {
@@ -783,10 +784,10 @@ STDMETHODIMP Host::COMGETTER(NetworkInterfaces) (ComSafeArrayOut(IHostNetworkInt
 
         VBoxNetCfgWinReleaseINetCfg(pNc, FALSE);
     }
-#  endif /* #  if defined VBOX_WITH_NETFLT */
+#   endif /* #  if defined VBOX_WITH_NETFLT */
 
 
-# elif defined RT_OS_LINUX
+#  elif defined RT_OS_LINUX
     int sock = socket(AF_INET, SOCK_DGRAM, 0);
     if (sock >= 0)
     {
@@ -816,15 +817,14 @@ STDMETHODIMP Host::COMGETTER(NetworkInterfaces) (ComSafeArrayOut(IHostNetworkInt
         }
         close(sock);
     }
-# endif /* RT_OS_LINUX */
-#endif
+#  endif /* RT_OS_LINUX */
+# endif
 
     std::list <ComObjPtr<HostNetworkInterface> >::iterator it;
     for (it = list.begin(); it != list.end(); ++it)
     {
         (*it)->setVirtualBox(mParent);
     }
-
 
     SafeIfaceArray<IHostNetworkInterface> networkInterfaces (list);
     networkInterfaces.detachTo(ComSafeArrayOutArg(aNetworkInterfaces));
