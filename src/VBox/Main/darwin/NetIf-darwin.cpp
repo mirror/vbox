@@ -58,7 +58,7 @@
 #include "Logging.h"
 
 #if 0
-int NetIfList(std::list <ComObjPtr <HostNetworkInterface> > &list)
+int NetIfList(std::list <ComObjPtr<HostNetworkInterface> > &list)
 {
     int sock = socket(PF_INET, SOCK_DGRAM, IPPROTO_IP);
     if (sock < 0)
@@ -274,7 +274,7 @@ static int getDefaultIfaceIndex(unsigned short *pu16Index)
     return VERR_INTERNAL_ERROR;
 }
 
-int NetIfList(std::list <ComObjPtr <HostNetworkInterface> > &list)
+int NetIfList(std::list <ComObjPtr<HostNetworkInterface> > &list)
 {
     int rc = VINF_SUCCESS;
     size_t cbNeeded;

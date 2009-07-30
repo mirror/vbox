@@ -172,15 +172,15 @@ Display::displaySSMLoad (PSSMHANDLE pSSM, void *pvUser, uint32_t u32Version)
  */
 HRESULT Display::init (Console *aParent)
 {
-    LogFlowThisFunc (("aParent=%p\n", aParent));
+    LogFlowThisFunc(("aParent=%p\n", aParent));
 
     ComAssertRet (aParent, E_INVALIDARG);
 
     /* Enclose the state transition NotReady->InInit->Ready */
-    AutoInitSpan autoInitSpan (this);
-    AssertReturn (autoInitSpan.isOk(), E_FAIL);
+    AutoInitSpan autoInitSpan(this);
+    AssertReturn(autoInitSpan.isOk(), E_FAIL);
 
-    unconst (mParent) = aParent;
+    unconst(mParent) = aParent;
 
     // by default, we have an internal framebuffer which is
     // NULL, i.e. a black hole for no display output
@@ -228,10 +228,10 @@ HRESULT Display::init (Console *aParent)
  */
 void Display::uninit()
 {
-    LogFlowThisFunc (("\n"));
+    LogFlowThisFunc(("\n"));
 
     /* Enclose the state transition Ready->InUninit->NotReady */
-    AutoUninitSpan autoUninitSpan (this);
+    AutoUninitSpan autoUninitSpan(this);
     if (autoUninitSpan.uninitDone())
         return;
 
@@ -242,7 +242,7 @@ void Display::uninit()
     if (mParent)
         mParent->UnregisterCallback (this);
 
-    unconst (mParent).setNull();
+    unconst(mParent).setNull();
 
     if (mpDrv)
         mpDrv->pDisplay = NULL;
@@ -1316,10 +1316,10 @@ STDMETHODIMP Display::COMGETTER(Width) (ULONG *width)
 {
     CheckComArgNotNull(width);
 
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
 
-    AutoWriteLock alock (this);
+    AutoWriteLock alock(this);
 
     CHECK_CONSOLE_DRV (mpDrv);
 
@@ -1338,10 +1338,10 @@ STDMETHODIMP Display::COMGETTER(Height) (ULONG *height)
 {
     CheckComArgNotNull(height);
 
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
 
-    AutoWriteLock alock (this);
+    AutoWriteLock alock(this);
 
     CHECK_CONSOLE_DRV (mpDrv);
 
@@ -1361,10 +1361,10 @@ STDMETHODIMP Display::COMGETTER(BitsPerPixel) (ULONG *bitsPerPixel)
     if (!bitsPerPixel)
         return E_INVALIDARG;
 
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
 
-    AutoWriteLock alock (this);
+    AutoWriteLock alock(this);
 
     CHECK_CONSOLE_DRV (mpDrv);
 
@@ -1388,10 +1388,10 @@ STDMETHODIMP Display::SetFramebuffer (ULONG aScreenId,
     if (aFramebuffer != NULL)
         CheckComArgOutPointerValid(aFramebuffer);
 
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
 
-    AutoWriteLock alock (this);
+    AutoWriteLock alock(this);
 
     Console::SafeVMPtrQuiet pVM (mParent);
     if (pVM.isOk())
@@ -1404,7 +1404,7 @@ STDMETHODIMP Display::SetFramebuffer (ULONG aScreenId,
         PVMREQ pReq = NULL;
         int vrc = VMR3ReqCall (pVM, VMCPUID_ANY, &pReq, RT_INDEFINITE_WAIT,
             (PFNRT) changeFramebuffer, 3, this, aFramebuffer, aScreenId);
-        if (RT_SUCCESS (vrc))
+        if (RT_SUCCESS(vrc))
             vrc = pReq->iStatus;
         VMR3ReqFree (pReq);
 
@@ -1429,10 +1429,10 @@ STDMETHODIMP Display::GetFramebuffer (ULONG aScreenId,
 
     CheckComArgOutPointerValid(aFramebuffer);
 
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
 
-    AutoWriteLock alock (this);
+    AutoWriteLock alock(this);
 
     /* @todo this should be actually done on EMT. */
     DISPLAYFBINFO *pFBInfo = &maFramebuffers[aScreenId];
@@ -1451,10 +1451,10 @@ STDMETHODIMP Display::GetFramebuffer (ULONG aScreenId,
 STDMETHODIMP Display::SetVideoModeHint(ULONG aWidth, ULONG aHeight,
     ULONG aBitsPerPixel, ULONG aDisplay)
 {
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
 
-    AutoWriteLock alock (this);
+    AutoWriteLock alock(this);
 
     CHECK_CONSOLE_DRV (mpDrv);
 
@@ -1501,10 +1501,10 @@ STDMETHODIMP Display::SetVideoModeHint(ULONG aWidth, ULONG aHeight,
 
 STDMETHODIMP Display::SetSeamlessMode (BOOL enabled)
 {
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
 
-    AutoWriteLock alock (this);
+    AutoWriteLock alock(this);
 
     /* Have to leave the lock because the pfnRequestSeamlessChange will call EMT.  */
     alock.leave ();
@@ -1531,15 +1531,15 @@ STDMETHODIMP Display::TakeScreenShot (BYTE *address, ULONG width, ULONG height)
     CheckComArgExpr(width, width != 0);
     CheckComArgExpr(height, height != 0);
 
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
 
-    AutoWriteLock alock (this);
+    AutoWriteLock alock(this);
 
     CHECK_CONSOLE_DRV (mpDrv);
 
     Console::SafeVMPtr pVM (mParent);
-    CheckComRCReturnRC (pVM.rc());
+    CheckComRCReturnRC(pVM.rc());
 
     HRESULT rc = S_OK;
 
@@ -1587,7 +1587,7 @@ STDMETHODIMP Display::TakeScreenShot (BYTE *address, ULONG width, ULONG height)
 }
 
 STDMETHODIMP Display::TakeScreenShotSlow (ULONG width, ULONG height,
-                                          ComSafeArrayOut (BYTE, aScreenData))
+                                          ComSafeArrayOut(BYTE, aScreenData))
 {
      HRESULT rc = S_OK;
 
@@ -1614,15 +1614,15 @@ STDMETHODIMP Display::DrawToScreen (BYTE *address, ULONG x, ULONG y,
     CheckComArgExpr(width, width != 0);
     CheckComArgExpr(height, height != 0);
 
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
 
-    AutoWriteLock alock (this);
+    AutoWriteLock alock(this);
 
     CHECK_CONSOLE_DRV (mpDrv);
 
     Console::SafeVMPtr pVM (mParent);
-    CheckComRCReturnRC (pVM.rc());
+    CheckComRCReturnRC(pVM.rc());
 
     /*
      * Again we're lazy and make the graphics device do all the
@@ -1673,15 +1673,15 @@ STDMETHODIMP Display::InvalidateAndUpdate()
 {
     LogFlowFuncEnter();
 
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
 
-    AutoWriteLock alock (this);
+    AutoWriteLock alock(this);
 
     CHECK_CONSOLE_DRV (mpDrv);
 
     Console::SafeVMPtr pVM (mParent);
-    CheckComRCReturnRC (pVM.rc());
+    CheckComRCReturnRC(pVM.rc());
 
     HRESULT rc = S_OK;
 
@@ -1718,7 +1718,7 @@ STDMETHODIMP Display::ResizeCompleted(ULONG aScreenId)
 {
     LogFlowFunc (("\n"));
 
-    /// @todo (dmik) can we AutoWriteLock alock (this); here?
+    /// @todo (dmik) can we AutoWriteLock alock(this); here?
     //  do it when we switch this class to VirtualBoxBase_NEXT.
     //  This will require general code review and may add some details.
     //  In particular, we may want to check whether EMT is really waiting for
@@ -1726,8 +1726,8 @@ STDMETHODIMP Display::ResizeCompleted(ULONG aScreenId)
     //  sure this method is not called from more than one thread at a time
     //  (and therefore don't use Display lock at all here to save some
     //  milliseconds).
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
 
     /* this is only valid for external framebuffers */
     if (maFramebuffers[aScreenId].pFramebuffer == NULL)
@@ -1754,7 +1754,7 @@ STDMETHODIMP Display::UpdateCompleted()
 {
     LogFlowFunc (("\n"));
 
-    /// @todo (dmik) can we AutoWriteLock alock (this); here?
+    /// @todo (dmik) can we AutoWriteLock alock(this); here?
     //  do it when we switch this class to VirtualBoxBase_NEXT.
     //  Tthis will require general code review and may add some details.
     //  In particular, we may want to check whether EMT is really waiting for
@@ -1762,8 +1762,8 @@ STDMETHODIMP Display::UpdateCompleted()
     //  sure this method is not called from more than one thread at a time
     //  (and therefore don't use Display lock at all here to save some
     //  milliseconds).
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
 
     /* this is only valid for external framebuffers */
     if (maFramebuffers[VBOX_VIDEO_PRIMARY_SCREEN].pFramebuffer == NULL)
@@ -1888,13 +1888,13 @@ DECLCALLBACK(int) Display::changeFramebuffer (Display *that, IFramebuffer *aFB,
 {
     LogFlowFunc (("uScreenId = %d\n", uScreenId));
 
-    AssertReturn (that, VERR_INVALID_PARAMETER);
-    AssertReturn (uScreenId < that->mcMonitors, VERR_INVALID_PARAMETER);
+    AssertReturn(that, VERR_INVALID_PARAMETER);
+    AssertReturn(uScreenId < that->mcMonitors, VERR_INVALID_PARAMETER);
 
-    AutoCaller autoCaller (that);
-    CheckComRCReturnRC (autoCaller.rc());
+    AutoCaller autoCaller(that);
+    CheckComRCReturnRC(autoCaller.rc());
 
-    AutoWriteLock alock (that);
+    AutoWriteLock alock(that);
 
     DISPLAYFBINFO *pDisplayFBInfo = &that->maFramebuffers[uScreenId];
     pDisplayFBInfo->pFramebuffer = aFB;

@@ -104,7 +104,7 @@ uint64_t FromStringInteger (const char *aValue, bool aSigned,
     {
         int64_t result;
         int vrc = RTStrToInt64Full (aValue, 0, &result);
-        if (RT_SUCCESS (vrc))
+        if (RT_SUCCESS(vrc))
         {
             if (result >= (int64_t) aMin && result <= (int64_t) aMax)
                 return (uint64_t) result;
@@ -114,7 +114,7 @@ uint64_t FromStringInteger (const char *aValue, bool aSigned,
     {
         uint64_t result;
         int vrc = RTStrToUInt64Full (aValue, 0, &result);
-        if (RT_SUCCESS (vrc))
+        if (RT_SUCCESS(vrc))
         {
             if (result >= aMin && result <= aMax)
                 return result;
@@ -248,7 +248,7 @@ stdx::char_auto_ptr ToStringInteger (uint64_t aValue, unsigned int aBase,
     if (aBase == 0)
         aBase = 10;
     int vrc = RTStrFormatNumber (result.get(), aValue, aBase, 0, 0, flags);
-    if (RT_SUCCESS (vrc))
+    if (RT_SUCCESS(vrc))
         return result;
 
     throw xml::EIPRTFailure (vrc);
@@ -371,7 +371,7 @@ const char *XmlKeyBackend::value (const char *aName) const
          * <Foo></Foo> and may want to return "" in this case to distinguish
          * from <Foo/> (where NULL is pretty much expected). */
         if (!mNodeText)
-            unconst (mNodeText) =
+            unconst(mNodeText) =
                 xmlNodeListGetString (mNode->doc, mNode->children, 0);
         return (char *) mNodeText;
     }
@@ -942,7 +942,7 @@ Key &XmlTreeBackend::rootKey() const
 /* static */
 int XmlTreeBackend::ReadCallback (void *aCtxt, char *aBuf, int aLen)
 {
-    AssertReturn (aCtxt != NULL, 0);
+    AssertReturn(aCtxt != NULL, 0);
 
     Data::InputCtxt *ctxt = static_cast <Data::InputCtxt *> (aCtxt);
 
@@ -963,7 +963,7 @@ int XmlTreeBackend::ReadCallback (void *aCtxt, char *aBuf, int aLen)
 /* static */
 int XmlTreeBackend::WriteCallback (void *aCtxt, const char *aBuf, int aLen)
 {
-    AssertReturn (aCtxt != NULL, 0);
+    AssertReturn(aCtxt != NULL, 0);
 
     Data::OutputCtxt *ctxt = static_cast <Data::OutputCtxt *> (aCtxt);
 
@@ -984,7 +984,7 @@ int XmlTreeBackend::WriteCallback (void *aCtxt, const char *aBuf, int aLen)
 /* static */
 int XmlTreeBackend::CloseCallback (void *aCtxt)
 {
-    AssertReturn (aCtxt != NULL, 0);
+    AssertReturn(aCtxt != NULL, 0);
 
     Data::IOCtxt *ctxt = static_cast <Data::IOCtxt *> (aCtxt);
 
@@ -1103,7 +1103,7 @@ xmlParserInputPtr XmlTreeBackend::ExternalEntityLoader (const char *aURI,
                                                         const char *aID,
                                                         xmlParserCtxtPtr aCtxt)
 {
-    AssertReturn (sThat != NULL, NULL);
+    AssertReturn(sThat != NULL, NULL);
 
     if (sThat->m->inputResolver == NULL)
         return xml::GlobalLock::callDefaultLoader(aURI, aID, aCtxt);

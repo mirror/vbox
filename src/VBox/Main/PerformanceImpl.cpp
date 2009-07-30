@@ -81,14 +81,14 @@ PerformanceCollector::~PerformanceCollector() {}
 
 HRESULT PerformanceCollector::FinalConstruct()
 {
-    LogFlowThisFunc (("\n"));
+    LogFlowThisFunc(("\n"));
 
     return S_OK;
 }
 
 void PerformanceCollector::FinalRelease()
 {
-    LogFlowThisFunc (("\n"));
+    LogFlowThisFunc(("\n"));
 }
 
 // public initializer/uninitializer for internal purposes only
@@ -100,8 +100,8 @@ void PerformanceCollector::FinalRelease()
 HRESULT PerformanceCollector::init()
 {
     /* Enclose the state transition NotReady->InInit->Ready */
-    AutoInitSpan autoInitSpan (this);
-    AssertReturn (autoInitSpan.isOk(), E_FAIL);
+    AutoInitSpan autoInitSpan(this);
+    AssertReturn(autoInitSpan.isOk(), E_FAIL);
 
     LogFlowThisFuncEnter();
 
@@ -117,10 +117,10 @@ HRESULT PerformanceCollector::init()
                                &PerformanceCollector::staticSamplerCallback, this);
     AssertMsgRC (vrc, ("Failed to create resource usage "
                        "sampling timer(%Rra)\n", vrc));
-    if (RT_FAILURE (vrc))
+    if (RT_FAILURE(vrc))
         rc = E_FAIL;
 
-    if (SUCCEEDED (rc))
+    if (SUCCEEDED(rc))
         autoInitSpan.setSucceeded();
 
     LogFlowThisFuncLeave();
@@ -138,10 +138,10 @@ void PerformanceCollector::uninit()
     LogFlowThisFuncEnter();
 
     /* Enclose the state transition Ready->InUninit->NotReady */
-    AutoUninitSpan autoUninitSpan (this);
+    AutoUninitSpan autoUninitSpan(this);
     if (autoUninitSpan.uninitDone())
     {
-        LogFlowThisFunc (("Already uninitialized.\n"));
+        LogFlowThisFunc(("Already uninitialized.\n"));
         LogFlowThisFuncLeave();
         return;
     }
@@ -167,23 +167,23 @@ void PerformanceCollector::uninit()
 ////////////////////////////////////////////////////////////////////////////////
 
 STDMETHODIMP
-PerformanceCollector::COMGETTER(MetricNames) (ComSafeArrayOut (BSTR, theMetricNames))
+PerformanceCollector::COMGETTER(MetricNames) (ComSafeArrayOut(BSTR, theMetricNames))
 {
-    if (ComSafeArrayOutIsNull (theMetricNames))
+    if (ComSafeArrayOutIsNull(theMetricNames))
         return E_POINTER;
 
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
 
-    AutoReadLock alock (this);
+    AutoReadLock alock(this);
 
-    com::SafeArray <BSTR> metricNames(RT_ELEMENTS(gMetricNames));
+    com::SafeArray<BSTR> metricNames(RT_ELEMENTS(gMetricNames));
     for (size_t i = 0; i < RT_ELEMENTS(gMetricNames); i++)
     {
         Bstr(gMetricNames[i]).cloneTo(&metricNames[i]);
     }
-    //gMetricNames.detachTo(ComSafeArrayOutArg (theMetricNames));
-    metricNames.detachTo (ComSafeArrayOutArg (theMetricNames));
+    //gMetricNames.detachTo(ComSafeArrayOutArg(theMetricNames));
+    metricNames.detachTo(ComSafeArrayOutArg(theMetricNames));
 
     return S_OK;
 }
@@ -193,43 +193,43 @@ PerformanceCollector::COMGETTER(MetricNames) (ComSafeArrayOut (BSTR, theMetricNa
 
 HRESULT PerformanceCollector::toIPerformanceMetric(pm::Metric *src, IPerformanceMetric **dst)
 {
-    ComObjPtr <PerformanceMetric> metric;
+    ComObjPtr<PerformanceMetric> metric;
     HRESULT rc = metric.createObject();
-    if (SUCCEEDED (rc))
+    if (SUCCEEDED(rc))
         rc = metric->init (src);
-    AssertComRCReturnRC (rc);
-    metric.queryInterfaceTo (dst);
+    AssertComRCReturnRC(rc);
+    metric.queryInterfaceTo(dst);
     return rc;
 }
 
 HRESULT PerformanceCollector::toIPerformanceMetric(pm::BaseMetric *src, IPerformanceMetric **dst)
 {
-    ComObjPtr <PerformanceMetric> metric;
+    ComObjPtr<PerformanceMetric> metric;
     HRESULT rc = metric.createObject();
-    if (SUCCEEDED (rc))
+    if (SUCCEEDED(rc))
         rc = metric->init (src);
-    AssertComRCReturnRC (rc);
-    metric.queryInterfaceTo (dst);
+    AssertComRCReturnRC(rc);
+    metric.queryInterfaceTo(dst);
     return rc;
 }
 
 STDMETHODIMP
 PerformanceCollector::GetMetrics (ComSafeArrayIn (IN_BSTR, metricNames),
                                   ComSafeArrayIn (IUnknown *, objects),
-                                  ComSafeArrayOut (IPerformanceMetric *, outMetrics))
+                                  ComSafeArrayOut(IPerformanceMetric *, outMetrics))
 {
     LogFlowThisFuncEnter();
-    //LogFlowThisFunc (("mState=%d, mType=%d\n", mState, mType));
+    //LogFlowThisFunc(("mState=%d, mType=%d\n", mState, mType));
 
     HRESULT rc = S_OK;
 
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
 
     pm::Filter filter (ComSafeArrayInArg (metricNames),
                        ComSafeArrayInArg (objects));
 
-    AutoReadLock alock (this);
+    AutoReadLock alock(this);
 
     MetricList filteredMetrics;
     MetricList::iterator it;
@@ -241,16 +241,16 @@ PerformanceCollector::GetMetrics (ComSafeArrayIn (IN_BSTR, metricNames),
     int i = 0;
     for (it = filteredMetrics.begin(); it != filteredMetrics.end(); ++it)
     {
-        ComObjPtr <PerformanceMetric> metric;
+        ComObjPtr<PerformanceMetric> metric;
         rc = metric.createObject();
-        if (SUCCEEDED (rc))
+        if (SUCCEEDED(rc))
             rc = metric->init (*it);
-        AssertComRCReturnRC (rc);
+        AssertComRCReturnRC(rc);
         LogFlow (("PerformanceCollector::GetMetrics() store a metric at "
                   "retMetrics[%d]...\n", i));
-        metric.queryInterfaceTo (&retMetrics [i++]);
+        metric.queryInterfaceTo(&retMetrics [i++]);
     }
-    retMetrics.detachTo (ComSafeArrayOutArg(outMetrics));
+    retMetrics.detachTo(ComSafeArrayOutArg(outMetrics));
     LogFlowThisFuncLeave();
     return rc;
 }
@@ -259,16 +259,16 @@ STDMETHODIMP
 PerformanceCollector::SetupMetrics (ComSafeArrayIn (IN_BSTR, metricNames),
                                     ComSafeArrayIn (IUnknown *, objects),
                                     ULONG aPeriod, ULONG aCount,
-                                    ComSafeArrayOut (IPerformanceMetric *,
+                                    ComSafeArrayOut(IPerformanceMetric *,
                                                      outMetrics))
 {
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
 
     pm::Filter filter (ComSafeArrayInArg (metricNames),
                        ComSafeArrayInArg (objects));
 
-    AutoWriteLock alock (this);
+    AutoWriteLock alock(this);
 
     HRESULT rc = S_OK;
     BaseMetricList filteredMetrics;
@@ -297,9 +297,9 @@ PerformanceCollector::SetupMetrics (ComSafeArrayIn (IN_BSTR, metricNames),
     com::SafeIfaceArray<IPerformanceMetric> retMetrics (filteredMetrics.size());
     int i = 0;
     for (it = filteredMetrics.begin();
-         it != filteredMetrics.end() && SUCCEEDED (rc); ++it)
+         it != filteredMetrics.end() && SUCCEEDED(rc); ++it)
         rc = toIPerformanceMetric(*it, &retMetrics [i++]);
-    retMetrics.detachTo (ComSafeArrayOutArg(outMetrics));
+    retMetrics.detachTo(ComSafeArrayOutArg(outMetrics));
 
     LogFlowThisFuncLeave();
     return rc;
@@ -308,16 +308,16 @@ PerformanceCollector::SetupMetrics (ComSafeArrayIn (IN_BSTR, metricNames),
 STDMETHODIMP
 PerformanceCollector::EnableMetrics (ComSafeArrayIn (IN_BSTR, metricNames),
                                      ComSafeArrayIn (IUnknown *, objects),
-                                     ComSafeArrayOut (IPerformanceMetric *,
+                                     ComSafeArrayOut(IPerformanceMetric *,
                                                       outMetrics))
 {
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
 
     pm::Filter filter (ComSafeArrayInArg (metricNames),
                        ComSafeArrayInArg (objects));
 
-    AutoWriteLock alock (this); /* Write lock is not needed atm since we are */
+    AutoWriteLock alock(this); /* Write lock is not needed atm since we are */
                                 /* fiddling with enable bit only, but we */
                                 /* care for those who come next :-). */
 
@@ -334,9 +334,9 @@ PerformanceCollector::EnableMetrics (ComSafeArrayIn (IN_BSTR, metricNames),
     com::SafeIfaceArray<IPerformanceMetric> retMetrics (filteredMetrics.size());
     int i = 0;
     for (it = filteredMetrics.begin();
-         it != filteredMetrics.end() && SUCCEEDED (rc); ++it)
+         it != filteredMetrics.end() && SUCCEEDED(rc); ++it)
         rc = toIPerformanceMetric(*it, &retMetrics [i++]);
-    retMetrics.detachTo (ComSafeArrayOutArg(outMetrics));
+    retMetrics.detachTo(ComSafeArrayOutArg(outMetrics));
 
     LogFlowThisFuncLeave();
     return rc;
@@ -345,16 +345,16 @@ PerformanceCollector::EnableMetrics (ComSafeArrayIn (IN_BSTR, metricNames),
 STDMETHODIMP
 PerformanceCollector::DisableMetrics (ComSafeArrayIn (IN_BSTR, metricNames),
                                       ComSafeArrayIn (IUnknown *, objects),
-                                      ComSafeArrayOut (IPerformanceMetric *,
+                                      ComSafeArrayOut(IPerformanceMetric *,
                                                        outMetrics))
 {
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
 
     pm::Filter filter (ComSafeArrayInArg (metricNames),
                        ComSafeArrayInArg (objects));
 
-    AutoWriteLock alock (this); /* Write lock is not needed atm since we are */
+    AutoWriteLock alock(this); /* Write lock is not needed atm since we are */
                                 /* fiddling with enable bit only, but we */
                                 /* care for those who come next :-). */
 
@@ -371,9 +371,9 @@ PerformanceCollector::DisableMetrics (ComSafeArrayIn (IN_BSTR, metricNames),
     com::SafeIfaceArray<IPerformanceMetric> retMetrics (filteredMetrics.size());
     int i = 0;
     for (it = filteredMetrics.begin();
-         it != filteredMetrics.end() && SUCCEEDED (rc); ++it)
+         it != filteredMetrics.end() && SUCCEEDED(rc); ++it)
         rc = toIPerformanceMetric(*it, &retMetrics [i++]);
-    retMetrics.detachTo (ComSafeArrayOutArg(outMetrics));
+    retMetrics.detachTo(ComSafeArrayOutArg(outMetrics));
 
     LogFlowThisFuncLeave();
     return rc;
@@ -382,22 +382,22 @@ PerformanceCollector::DisableMetrics (ComSafeArrayIn (IN_BSTR, metricNames),
 STDMETHODIMP
 PerformanceCollector::QueryMetricsData (ComSafeArrayIn (IN_BSTR, metricNames),
                                         ComSafeArrayIn (IUnknown *, objects),
-                                        ComSafeArrayOut (BSTR, outMetricNames),
-                                        ComSafeArrayOut (IUnknown *, outObjects),
-                                        ComSafeArrayOut (BSTR, outUnits),
-                                        ComSafeArrayOut (ULONG, outScales),
-                                        ComSafeArrayOut (ULONG, outSequenceNumbers),
-                                        ComSafeArrayOut (ULONG, outDataIndices),
-                                        ComSafeArrayOut (ULONG, outDataLengths),
-                                        ComSafeArrayOut (LONG, outData))
+                                        ComSafeArrayOut(BSTR, outMetricNames),
+                                        ComSafeArrayOut(IUnknown *, outObjects),
+                                        ComSafeArrayOut(BSTR, outUnits),
+                                        ComSafeArrayOut(ULONG, outScales),
+                                        ComSafeArrayOut(ULONG, outSequenceNumbers),
+                                        ComSafeArrayOut(ULONG, outDataIndices),
+                                        ComSafeArrayOut(ULONG, outDataLengths),
+                                        ComSafeArrayOut(LONG, outData))
 {
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
 
     pm::Filter filter (ComSafeArrayInArg (metricNames),
                        ComSafeArrayInArg (objects));
 
-    AutoReadLock alock (this);
+    AutoReadLock alock(this);
 
     /* Let's compute the size of the resulting flat array */
     size_t flatSize = 0;
@@ -413,14 +413,14 @@ PerformanceCollector::QueryMetricsData (ComSafeArrayIn (IN_BSTR, metricNames),
     int i = 0;
     size_t flatIndex = 0;
     size_t numberOfMetrics = filteredMetrics.size();
-    com::SafeArray <BSTR> retNames (numberOfMetrics);
-    com::SafeIfaceArray <IUnknown> retObjects (numberOfMetrics);
-    com::SafeArray <BSTR> retUnits (numberOfMetrics);
-    com::SafeArray <ULONG> retScales (numberOfMetrics);
-    com::SafeArray <ULONG> retSequenceNumbers (numberOfMetrics);
-    com::SafeArray <ULONG> retIndices (numberOfMetrics);
-    com::SafeArray <ULONG> retLengths (numberOfMetrics);
-    com::SafeArray <LONG> retData (flatSize);
+    com::SafeArray<BSTR> retNames (numberOfMetrics);
+    com::SafeIfaceArray<IUnknown> retObjects (numberOfMetrics);
+    com::SafeArray<BSTR> retUnits (numberOfMetrics);
+    com::SafeArray<ULONG> retScales (numberOfMetrics);
+    com::SafeArray<ULONG> retSequenceNumbers (numberOfMetrics);
+    com::SafeArray<ULONG> retIndices (numberOfMetrics);
+    com::SafeArray<ULONG> retLengths (numberOfMetrics);
+    com::SafeArray<LONG> retData (flatSize);
 
     for (it = filteredMetrics.begin(); it != filteredMetrics.end(); ++it, ++i)
     {
@@ -432,7 +432,7 @@ PerformanceCollector::QueryMetricsData (ComSafeArrayIn (IN_BSTR, metricNames),
         memcpy(retData.raw() + flatIndex, values, length * sizeof(*values));
         Bstr tmp((*it)->getName());
         tmp.detachTo(&retNames[i]);
-        (*it)->getObject().queryInterfaceTo (&retObjects[i]);
+        (*it)->getObject().queryInterfaceTo(&retObjects[i]);
         tmp = (*it)->getUnit();
         tmp.detachTo(&retUnits[i]);
         retScales[i] = (*it)->getScale();
@@ -442,14 +442,14 @@ PerformanceCollector::QueryMetricsData (ComSafeArrayIn (IN_BSTR, metricNames),
         flatIndex += length;
     }
 
-    retNames.detachTo (ComSafeArrayOutArg (outMetricNames));
-    retObjects.detachTo (ComSafeArrayOutArg (outObjects));
-    retUnits.detachTo (ComSafeArrayOutArg (outUnits));
-    retScales.detachTo (ComSafeArrayOutArg (outScales));
-    retSequenceNumbers.detachTo (ComSafeArrayOutArg (outSequenceNumbers));
-    retIndices.detachTo (ComSafeArrayOutArg (outDataIndices));
-    retLengths.detachTo (ComSafeArrayOutArg (outDataLengths));
-    retData.detachTo (ComSafeArrayOutArg (outData));
+    retNames.detachTo(ComSafeArrayOutArg(outMetricNames));
+    retObjects.detachTo(ComSafeArrayOutArg(outObjects));
+    retUnits.detachTo(ComSafeArrayOutArg(outUnits));
+    retScales.detachTo(ComSafeArrayOutArg(outScales));
+    retSequenceNumbers.detachTo(ComSafeArrayOutArg(outSequenceNumbers));
+    retIndices.detachTo(ComSafeArrayOutArg(outDataIndices));
+    retLengths.detachTo(ComSafeArrayOutArg(outDataLengths));
+    retData.detachTo(ComSafeArrayOutArg(outData));
     return S_OK;
 }
 
@@ -459,10 +459,10 @@ PerformanceCollector::QueryMetricsData (ComSafeArrayIn (IN_BSTR, metricNames),
 void PerformanceCollector::registerBaseMetric (pm::BaseMetric *baseMetric)
 {
     //LogFlowThisFuncEnter();
-    AutoCaller autoCaller (this);
-    if (!SUCCEEDED (autoCaller.rc())) return;
+    AutoCaller autoCaller(this);
+    if (!SUCCEEDED(autoCaller.rc())) return;
 
-    AutoWriteLock alock (this);
+    AutoWriteLock alock(this);
     LogAleksey(("{%p} " LOG_FN_FMT ": obj=%p name=%s\n", this, __PRETTY_FUNCTION__, (void *)baseMetric->getObject(), baseMetric->getName()));
     m.baseMetrics.push_back (baseMetric);
     //LogFlowThisFuncLeave();
@@ -471,22 +471,22 @@ void PerformanceCollector::registerBaseMetric (pm::BaseMetric *baseMetric)
 void PerformanceCollector::registerMetric (pm::Metric *metric)
 {
     //LogFlowThisFuncEnter();
-    AutoCaller autoCaller (this);
-    if (!SUCCEEDED (autoCaller.rc())) return;
+    AutoCaller autoCaller(this);
+    if (!SUCCEEDED(autoCaller.rc())) return;
 
-    AutoWriteLock alock (this);
+    AutoWriteLock alock(this);
     LogAleksey(("{%p} " LOG_FN_FMT ": obj=%p name=%s\n", this, __PRETTY_FUNCTION__, (void *)metric->getObject(), metric->getName()));
     m.metrics.push_back (metric);
     //LogFlowThisFuncLeave();
 }
 
-void PerformanceCollector::unregisterBaseMetricsFor (const ComPtr <IUnknown> &aObject)
+void PerformanceCollector::unregisterBaseMetricsFor (const ComPtr<IUnknown> &aObject)
 {
     //LogFlowThisFuncEnter();
-    AutoCaller autoCaller (this);
-    if (!SUCCEEDED (autoCaller.rc())) return;
+    AutoCaller autoCaller(this);
+    if (!SUCCEEDED(autoCaller.rc())) return;
 
-    AutoWriteLock alock (this);
+    AutoWriteLock alock(this);
     LogAleksey(("{%p} " LOG_FN_FMT ": before remove_if: m.baseMetrics.size()=%d\n", this, __PRETTY_FUNCTION__, m.baseMetrics.size()));
     BaseMetricList::iterator it;
     for (it = m.baseMetrics.begin(); it != m.baseMetrics.end();)
@@ -501,13 +501,13 @@ void PerformanceCollector::unregisterBaseMetricsFor (const ComPtr <IUnknown> &aO
     //LogFlowThisFuncLeave();
 }
 
-void PerformanceCollector::unregisterMetricsFor (const ComPtr <IUnknown> &aObject)
+void PerformanceCollector::unregisterMetricsFor (const ComPtr<IUnknown> &aObject)
 {
     //LogFlowThisFuncEnter();
-    AutoCaller autoCaller (this);
-    if (!SUCCEEDED (autoCaller.rc())) return;
+    AutoCaller autoCaller(this);
+    if (!SUCCEEDED(autoCaller.rc())) return;
 
-    AutoWriteLock alock (this);
+    AutoWriteLock alock(this);
     LogAleksey(("{%p} " LOG_FN_FMT ": obj=%p\n", this, __PRETTY_FUNCTION__, (void *)aObject));
     MetricList::iterator it;
     for (it = m.metrics.begin(); it != m.metrics.end();)
@@ -523,8 +523,8 @@ void PerformanceCollector::unregisterMetricsFor (const ComPtr <IUnknown> &aObjec
 
 void PerformanceCollector::suspendSampling()
 {
-    AutoCaller autoCaller (this);
-    if (!SUCCEEDED (autoCaller.rc())) return;
+    AutoCaller autoCaller(this);
+    if (!SUCCEEDED(autoCaller.rc())) return;
 
     int rc = RTTimerLRStop(m.sampler);
     AssertRC(rc);
@@ -532,8 +532,8 @@ void PerformanceCollector::suspendSampling()
 
 void PerformanceCollector::resumeSampling()
 {
-    AutoCaller autoCaller (this);
-    if (!SUCCEEDED (autoCaller.rc())) return;
+    AutoCaller autoCaller(this);
+    if (!SUCCEEDED(autoCaller.rc())) return;
 
     int rc = RTTimerLRStart(m.sampler, 0);
     AssertRC(rc);
@@ -560,7 +560,7 @@ void PerformanceCollector::staticSamplerCallback (RTTIMERLR hTimerLR, void *pvUs
 void PerformanceCollector::samplerCallback()
 {
     Log4(("{%p} " LOG_FN_FMT ": ENTER\n", this, __PRETTY_FUNCTION__));
-    AutoWriteLock alock (this);
+    AutoWriteLock alock(this);
 
     pm::CollectorHints hints;
     uint64_t timestamp = RTTimeMilliTS();
@@ -603,14 +603,14 @@ PerformanceMetric::~PerformanceMetric()
 
 HRESULT PerformanceMetric::FinalConstruct()
 {
-    LogFlowThisFunc (("\n"));
+    LogFlowThisFunc(("\n"));
 
     return S_OK;
 }
 
 void PerformanceMetric::FinalRelease()
 {
-    LogFlowThisFunc (("\n"));
+    LogFlowThisFunc(("\n"));
 
     uninit ();
 }
@@ -653,7 +653,7 @@ STDMETHODIMP PerformanceMetric::COMGETTER(MetricName) (BSTR *aMetricName)
     /// @todo (r=dmik) why do all these getters not do AutoCaller and
     /// AutoReadLock? Is the underlying metric a constant object?
 
-    m.name.cloneTo (aMetricName);
+    m.name.cloneTo(aMetricName);
     return S_OK;
 }
 
@@ -665,7 +665,7 @@ STDMETHODIMP PerformanceMetric::COMGETTER(Object) (IUnknown **anObject)
 
 STDMETHODIMP PerformanceMetric::COMGETTER(Description) (BSTR *aDescription)
 {
-    m.description.cloneTo (aDescription);
+    m.description.cloneTo(aDescription);
     return S_OK;
 }
 

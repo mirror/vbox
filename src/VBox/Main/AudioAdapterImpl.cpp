@@ -52,13 +52,13 @@ void AudioAdapter::FinalRelease()
  */
 HRESULT AudioAdapter::init (Machine *aParent)
 {
-    LogFlowThisFunc (("aParent=%p\n", aParent));
+    LogFlowThisFunc(("aParent=%p\n", aParent));
 
     ComAssertRet (aParent, E_INVALIDARG);
 
     /* Enclose the state transition NotReady->InInit->Ready */
-    AutoInitSpan autoInitSpan (this);
-    AssertReturn (autoInitSpan.isOk(), E_FAIL);
+    AutoInitSpan autoInitSpan(this);
+    AssertReturn(autoInitSpan.isOk(), E_FAIL);
 
     /* Get the default audio driver out of the system properties */
     ComPtr<IVirtualBox> VBox;
@@ -71,7 +71,7 @@ HRESULT AudioAdapter::init (Machine *aParent)
     rc = sysProps->COMGETTER(DefaultAudioDriver)(&defaultAudioDriver);
     if (FAILED(rc)) return rc;
 
-    unconst (mParent) = aParent;
+    unconst(mParent) = aParent;
     /* mPeer is left null */
 
     mData.allocate();
@@ -95,19 +95,19 @@ HRESULT AudioAdapter::init (Machine *aParent)
  */
 HRESULT AudioAdapter::init (Machine *aParent, AudioAdapter *aThat)
 {
-    LogFlowThisFunc (("aParent=%p, aThat=%p\n", aParent, aThat));
+    LogFlowThisFunc(("aParent=%p, aThat=%p\n", aParent, aThat));
 
     ComAssertRet (aParent && aThat, E_INVALIDARG);
 
     /* Enclose the state transition NotReady->InInit->Ready */
-    AutoInitSpan autoInitSpan (this);
-    AssertReturn (autoInitSpan.isOk(), E_FAIL);
+    AutoInitSpan autoInitSpan(this);
+    AssertReturn(autoInitSpan.isOk(), E_FAIL);
 
-    unconst (mParent) = aParent;
-    unconst (mPeer) = aThat;
+    unconst(mParent) = aParent;
+    unconst(mPeer) = aThat;
 
     AutoCaller thatCaller (aThat);
-    AssertComRCReturnRC (thatCaller.rc());
+    AssertComRCReturnRC(thatCaller.rc());
 
     AutoReadLock thatLock (aThat);
     mData.share (aThat->mData);
@@ -127,19 +127,19 @@ HRESULT AudioAdapter::init (Machine *aParent, AudioAdapter *aThat)
  */
 HRESULT AudioAdapter::initCopy (Machine *aParent, AudioAdapter *aThat)
 {
-    LogFlowThisFunc (("aParent=%p, aThat=%p\n", aParent, aThat));
+    LogFlowThisFunc(("aParent=%p, aThat=%p\n", aParent, aThat));
 
     ComAssertRet (aParent && aThat, E_INVALIDARG);
 
     /* Enclose the state transition NotReady->InInit->Ready */
-    AutoInitSpan autoInitSpan (this);
-    AssertReturn (autoInitSpan.isOk(), E_FAIL);
+    AutoInitSpan autoInitSpan(this);
+    AssertReturn(autoInitSpan.isOk(), E_FAIL);
 
-    unconst (mParent) = aParent;
+    unconst(mParent) = aParent;
     /* mPeer is left null */
 
     AutoCaller thatCaller (aThat);
-    AssertComRCReturnRC (thatCaller.rc());
+    AssertComRCReturnRC(thatCaller.rc());
 
     AutoReadLock thatLock (aThat);
     mData.attachCopy (aThat->mData);
@@ -156,17 +156,17 @@ HRESULT AudioAdapter::initCopy (Machine *aParent, AudioAdapter *aThat)
  */
 void AudioAdapter::uninit()
 {
-    LogFlowThisFunc (("\n"));
+    LogFlowThisFunc(("\n"));
 
     /* Enclose the state transition Ready->InUninit->NotReady */
-    AutoUninitSpan autoUninitSpan (this);
+    AutoUninitSpan autoUninitSpan(this);
     if (autoUninitSpan.uninitDone())
         return;
 
     mData.free();
 
-    unconst (mPeer).setNull();
-    unconst (mParent).setNull();
+    unconst(mPeer).setNull();
+    unconst(mParent).setNull();
 }
 
 // IAudioAdapter properties
@@ -176,10 +176,10 @@ STDMETHODIMP AudioAdapter::COMGETTER(Enabled)(BOOL *aEnabled)
 {
     CheckComArgOutPointerValid(aEnabled);
 
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
 
-    AutoReadLock alock (this);
+    AutoReadLock alock(this);
 
     *aEnabled = mData->mEnabled;
 
@@ -188,14 +188,14 @@ STDMETHODIMP AudioAdapter::COMGETTER(Enabled)(BOOL *aEnabled)
 
 STDMETHODIMP AudioAdapter::COMSETTER(Enabled)(BOOL aEnabled)
 {
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
 
     /* the machine needs to be mutable */
     Machine::AutoMutableStateDependency adep (mParent);
-    CheckComRCReturnRC (adep.rc());
+    CheckComRCReturnRC(adep.rc());
 
-    AutoWriteLock alock (this);
+    AutoWriteLock alock(this);
 
     if (mData->mEnabled != aEnabled)
     {
@@ -210,10 +210,10 @@ STDMETHODIMP AudioAdapter::COMGETTER(AudioDriver)(AudioDriverType_T *aAudioDrive
 {
     CheckComArgOutPointerValid(aAudioDriver);
 
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
 
-    AutoReadLock alock (this);
+    AutoReadLock alock(this);
 
     *aAudioDriver = mData->mAudioDriver;
 
@@ -222,14 +222,14 @@ STDMETHODIMP AudioAdapter::COMGETTER(AudioDriver)(AudioDriverType_T *aAudioDrive
 
 STDMETHODIMP AudioAdapter::COMSETTER(AudioDriver)(AudioDriverType_T aAudioDriver)
 {
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
 
     /* the machine needs to be mutable */
     Machine::AutoMutableStateDependency adep (mParent);
-    CheckComRCReturnRC (adep.rc());
+    CheckComRCReturnRC(adep.rc());
 
-    AutoWriteLock alock (this);
+    AutoWriteLock alock(this);
 
     HRESULT rc = S_OK;
 
@@ -289,10 +289,10 @@ STDMETHODIMP AudioAdapter::COMGETTER(AudioController)(AudioControllerType_T *aAu
 {
     CheckComArgOutPointerValid(aAudioController);
 
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
 
-    AutoReadLock alock (this);
+    AutoReadLock alock(this);
 
     *aAudioController = mData->mAudioController;
 
@@ -301,14 +301,14 @@ STDMETHODIMP AudioAdapter::COMGETTER(AudioController)(AudioControllerType_T *aAu
 
 STDMETHODIMP AudioAdapter::COMSETTER(AudioController)(AudioControllerType_T aAudioController)
 {
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
 
     /* the machine needs to be mutable */
     Machine::AutoMutableStateDependency adep (mParent);
-    CheckComRCReturnRC (adep.rc());
+    CheckComRCReturnRC(adep.rc());
 
-    AutoWriteLock alock (this);
+    AutoWriteLock alock(this);
 
     HRESULT rc = S_OK;
 
@@ -364,12 +364,12 @@ HRESULT AudioAdapter::loadSettings (const settings::Key &aMachineNode)
 {
     using namespace settings;
 
-    AssertReturn (!aMachineNode.isNull(), E_FAIL);
+    AssertReturn(!aMachineNode.isNull(), E_FAIL);
 
-    AutoCaller autoCaller (this);
-    AssertComRCReturnRC (autoCaller.rc());
+    AutoCaller autoCaller(this);
+    AssertComRCReturnRC(autoCaller.rc());
 
-    AutoWriteLock alock (this);
+    AutoWriteLock alock(this);
 
     /* Note: we assume that the default values for attributes of optional
      * nodes are assigned in the Data::Data() constructor and don't do it
@@ -459,12 +459,12 @@ HRESULT AudioAdapter::saveSettings (settings::Key &aMachineNode)
 {
     using namespace settings;
 
-    AssertReturn (!aMachineNode.isNull(), E_FAIL);
+    AssertReturn(!aMachineNode.isNull(), E_FAIL);
 
-    AutoCaller autoCaller (this);
-    AssertComRCReturnRC (autoCaller.rc());
+    AutoCaller autoCaller(this);
+    AssertComRCReturnRC(autoCaller.rc());
 
-    AutoReadLock alock (this);
+    AutoReadLock alock(this);
 
     Key node = aMachineNode.createKey ("AudioAdapter");
 
@@ -568,10 +568,10 @@ HRESULT AudioAdapter::saveSettings (settings::Key &aMachineNode)
 bool AudioAdapter::rollback()
 {
     /* sanity */
-    AutoCaller autoCaller (this);
+    AutoCaller autoCaller(this);
     AssertComRCReturn (autoCaller.rc(), false);
 
-    AutoWriteLock alock (this);
+    AutoWriteLock alock(this);
 
     bool changed = false;
 
@@ -593,7 +593,7 @@ bool AudioAdapter::rollback()
 void AudioAdapter::commit()
 {
     /* sanity */
-    AutoCaller autoCaller (this);
+    AutoCaller autoCaller(this);
     AssertComRCReturnVoid (autoCaller.rc());
 
     /* sanity too */
@@ -624,7 +624,7 @@ void AudioAdapter::copyFrom (AudioAdapter *aThat)
     AssertReturnVoid (aThat != NULL);
 
     /* sanity */
-    AutoCaller autoCaller (this);
+    AutoCaller autoCaller(this);
     AssertComRCReturnVoid (autoCaller.rc());
 
     /* sanity too */

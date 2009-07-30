@@ -41,7 +41,7 @@ HostPowerServiceDarwin::HostPowerServiceDarwin (VirtualBox *aVirtualBox)
     int rc = RTThreadCreate (&mThread, HostPowerServiceDarwin::powerChangeNotificationThread, this, 65536,
                              RTTHREADTYPE_IO, RTTHREADFLAGS_WAITABLE, "MainPower");
 
-    if (RT_FAILURE (rc))
+    if (RT_FAILURE(rc))
         LogFlow (("RTThreadCreate failed with %Rrc\n", rc));
 }
 

@@ -201,8 +201,8 @@ struct NetworkInterfaceHelperClientData
     SVCHlpMsg::Code msgCode;
     /* for SVCHlpMsg::CreateHostOnlyNetworkInterface */
     Bstr name;
-    ComObjPtr <HostNetworkInterface> iface;
-    ComObjPtr <VirtualBox> vBox;
+    ComObjPtr<HostNetworkInterface> iface;
+    ComObjPtr<VirtualBox> vBox;
     /* for SVCHlpMsg::RemoveHostOnlyNetworkInterface */
     Guid guid;
 
@@ -223,10 +223,10 @@ static HRESULT netIfNetworkInterfaceHelperClient (SVCHlpClient *aClient,
     LogFlowFunc (("aClient={%p}, aProgress={%p}, aUser={%p}\n",
                   aClient, aProgress, aUser));
 
-    AssertReturn ((aClient == NULL && aProgress == NULL && aVrc == NULL) ||
+    AssertReturn((aClient == NULL && aProgress == NULL && aVrc == NULL) ||
                   (aClient != NULL && aProgress != NULL && aVrc != NULL),
                   E_POINTER);
-    AssertReturn (aUser, E_POINTER);
+    AssertReturn(aUser, E_POINTER);
 
     std::auto_ptr <NetworkInterfaceHelperClientData>
         d (static_cast <NetworkInterfaceHelperClientData *> (aUser));
@@ -249,9 +249,9 @@ static HRESULT netIfNetworkInterfaceHelperClient (SVCHlpClient *aClient,
 
             /* write message and parameters */
             vrc = aClient->write (d->msgCode);
-            if (RT_FAILURE (vrc)) break;
+            if (RT_FAILURE(vrc)) break;
 //            vrc = aClient->write (Utf8Str (d->name));
-//            if (RT_FAILURE (vrc)) break;
+//            if (RT_FAILURE(vrc)) break;
 
             /* wait for a reply */
             bool endLoop = false;
@@ -260,7 +260,7 @@ static HRESULT netIfNetworkInterfaceHelperClient (SVCHlpClient *aClient,
                 SVCHlpMsg::Code reply = SVCHlpMsg::Null;
 
                 vrc = aClient->read (reply);
-                if (RT_FAILURE (vrc)) break;
+                if (RT_FAILURE(vrc)) break;
 
                 switch (reply)
                 {
@@ -270,9 +270,9 @@ static HRESULT netIfNetworkInterfaceHelperClient (SVCHlpClient *aClient,
                         Guid guid;
                         Utf8Str name;
                         vrc = aClient->read (name);
-                        if (RT_FAILURE (vrc)) break;
+                        if (RT_FAILURE(vrc)) break;
                         vrc = aClient->read (guid);
-                        if (RT_FAILURE (vrc)) break;
+                        if (RT_FAILURE(vrc)) break;
 
                         LogFlowFunc (("Network connection GUID = {%RTuuid}\n", guid.raw()));
 
@@ -295,7 +295,7 @@ static HRESULT netIfNetworkInterfaceHelperClient (SVCHlpClient *aClient,
                         /* read the error message */
                         Utf8Str errMsg;
                         vrc = aClient->read (errMsg);
-                        if (RT_FAILURE (vrc)) break;
+                        if (RT_FAILURE(vrc)) break;
 
                         rc = E_FAIL;//TODO: setError (E_FAIL, errMsg);
                         endLoop = true;
@@ -321,9 +321,9 @@ static HRESULT netIfNetworkInterfaceHelperClient (SVCHlpClient *aClient,
 
             /* write message and parameters */
             vrc = aClient->write (d->msgCode);
-            if (RT_FAILURE (vrc)) break;
+            if (RT_FAILURE(vrc)) break;
             vrc = aClient->write (d->guid);
-            if (RT_FAILURE (vrc)) break;
+            if (RT_FAILURE(vrc)) break;
 
             /* wait for a reply */
             bool endLoop = false;
@@ -332,7 +332,7 @@ static HRESULT netIfNetworkInterfaceHelperClient (SVCHlpClient *aClient,
                 SVCHlpMsg::Code reply = SVCHlpMsg::Null;
 
                 vrc = aClient->read (reply);
-                if (RT_FAILURE (vrc)) break;
+                if (RT_FAILURE(vrc)) break;
 
                 switch (reply)
                 {
@@ -348,7 +348,7 @@ static HRESULT netIfNetworkInterfaceHelperClient (SVCHlpClient *aClient,
                         /* read the error message */
                         Utf8Str errMsg;
                         vrc = aClient->read (errMsg);
-                        if (RT_FAILURE (vrc)) break;
+                        if (RT_FAILURE(vrc)) break;
 
                         rc = E_FAIL; // TODO: setError (E_FAIL, errMsg);
                         endLoop = true;
@@ -374,9 +374,9 @@ static HRESULT netIfNetworkInterfaceHelperClient (SVCHlpClient *aClient,
 
             /* write message and parameters */
             vrc = aClient->write (d->msgCode);
-            if (RT_FAILURE (vrc)) break;
+            if (RT_FAILURE(vrc)) break;
             vrc = aClient->write (d->guid);
-            if (RT_FAILURE (vrc)) break;
+            if (RT_FAILURE(vrc)) break;
 
             /* wait for a reply */
             bool endLoop = false;
@@ -385,7 +385,7 @@ static HRESULT netIfNetworkInterfaceHelperClient (SVCHlpClient *aClient,
                 SVCHlpMsg::Code reply = SVCHlpMsg::Null;
 
                 vrc = aClient->read (reply);
-                if (RT_FAILURE (vrc)) break;
+                if (RT_FAILURE(vrc)) break;
 
                 switch (reply)
                 {
@@ -401,7 +401,7 @@ static HRESULT netIfNetworkInterfaceHelperClient (SVCHlpClient *aClient,
                         /* read the error message */
                         Utf8Str errMsg;
                         vrc = aClient->read (errMsg);
-                        if (RT_FAILURE (vrc)) break;
+                        if (RT_FAILURE(vrc)) break;
 
                         rc = E_FAIL; // TODO: setError (E_FAIL, errMsg);
                         endLoop = true;
@@ -427,13 +427,13 @@ static HRESULT netIfNetworkInterfaceHelperClient (SVCHlpClient *aClient,
 
             /* write message and parameters */
             vrc = aClient->write (d->msgCode);
-            if (RT_FAILURE (vrc)) break;
+            if (RT_FAILURE(vrc)) break;
             vrc = aClient->write (d->guid);
-            if (RT_FAILURE (vrc)) break;
+            if (RT_FAILURE(vrc)) break;
             vrc = aClient->write (d->u.StaticIP.IPAddress);
-            if (RT_FAILURE (vrc)) break;
+            if (RT_FAILURE(vrc)) break;
             vrc = aClient->write (d->u.StaticIP.IPNetMask);
-            if (RT_FAILURE (vrc)) break;
+            if (RT_FAILURE(vrc)) break;
 
             /* wait for a reply */
             bool endLoop = false;
@@ -442,7 +442,7 @@ static HRESULT netIfNetworkInterfaceHelperClient (SVCHlpClient *aClient,
                 SVCHlpMsg::Code reply = SVCHlpMsg::Null;
 
                 vrc = aClient->read (reply);
-                if (RT_FAILURE (vrc)) break;
+                if (RT_FAILURE(vrc)) break;
 
                 switch (reply)
                 {
@@ -458,7 +458,7 @@ static HRESULT netIfNetworkInterfaceHelperClient (SVCHlpClient *aClient,
                         /* read the error message */
                         Utf8Str errMsg;
                         vrc = aClient->read (errMsg);
-                        if (RT_FAILURE (vrc)) break;
+                        if (RT_FAILURE(vrc)) break;
 
                         rc = E_FAIL; // TODO: setError (E_FAIL, errMsg);
                         endLoop = true;
@@ -484,13 +484,13 @@ static HRESULT netIfNetworkInterfaceHelperClient (SVCHlpClient *aClient,
 
             /* write message and parameters */
             vrc = aClient->write (d->msgCode);
-            if (RT_FAILURE (vrc)) break;
+            if (RT_FAILURE(vrc)) break;
             vrc = aClient->write (d->guid);
-            if (RT_FAILURE (vrc)) break;
+            if (RT_FAILURE(vrc)) break;
             vrc = aClient->write (Utf8Str(d->u.StaticIPV6.IPV6Address));
-            if (RT_FAILURE (vrc)) break;
+            if (RT_FAILURE(vrc)) break;
             vrc = aClient->write (d->u.StaticIPV6.IPV6NetMaskLength);
-            if (RT_FAILURE (vrc)) break;
+            if (RT_FAILURE(vrc)) break;
 
             /* wait for a reply */
             bool endLoop = false;
@@ -499,7 +499,7 @@ static HRESULT netIfNetworkInterfaceHelperClient (SVCHlpClient *aClient,
                 SVCHlpMsg::Code reply = SVCHlpMsg::Null;
 
                 vrc = aClient->read (reply);
-                if (RT_FAILURE (vrc)) break;
+                if (RT_FAILURE(vrc)) break;
 
                 switch (reply)
                 {
@@ -515,7 +515,7 @@ static HRESULT netIfNetworkInterfaceHelperClient (SVCHlpClient *aClient,
                         /* read the error message */
                         Utf8Str errMsg;
                         vrc = aClient->read (errMsg);
-                        if (RT_FAILURE (vrc)) break;
+                        if (RT_FAILURE(vrc)) break;
 
                         rc = E_FAIL; // TODO: setError (E_FAIL, errMsg);
                         endLoop = true;
@@ -541,9 +541,9 @@ static HRESULT netIfNetworkInterfaceHelperClient (SVCHlpClient *aClient,
 
             /* write message and parameters */
             vrc = aClient->write (d->msgCode);
-            if (RT_FAILURE (vrc)) break;
+            if (RT_FAILURE(vrc)) break;
             vrc = aClient->write (d->guid);
-            if (RT_FAILURE (vrc)) break;
+            if (RT_FAILURE(vrc)) break;
 
             /* wait for a reply */
             bool endLoop = false;
@@ -552,7 +552,7 @@ static HRESULT netIfNetworkInterfaceHelperClient (SVCHlpClient *aClient,
                 SVCHlpMsg::Code reply = SVCHlpMsg::Null;
 
                 vrc = aClient->read (reply);
-                if (RT_FAILURE (vrc)) break;
+                if (RT_FAILURE(vrc)) break;
 
                 switch (reply)
                 {
@@ -568,7 +568,7 @@ static HRESULT netIfNetworkInterfaceHelperClient (SVCHlpClient *aClient,
                         /* read the error message */
                         Utf8Str errMsg;
                         vrc = aClient->read (errMsg);
-                        if (RT_FAILURE (vrc)) break;
+                        if (RT_FAILURE(vrc)) break;
 
                         rc = E_FAIL; // TODO: setError (E_FAIL, errMsg);
                         endLoop = true;
@@ -609,7 +609,7 @@ int netIfNetworkInterfaceHelperServer (SVCHlpClient *aClient,
     LogFlowFuncEnter();
     LogFlowFunc (("aClient={%p}, aMsgCode=%d\n", aClient, aMsgCode));
 
-    AssertReturn (aClient, VERR_INVALID_POINTER);
+    AssertReturn(aClient, VERR_INVALID_POINTER);
 
     int vrc = VINF_SUCCESS;
     HRESULT hrc;
@@ -622,7 +622,7 @@ int netIfNetworkInterfaceHelperServer (SVCHlpClient *aClient,
 
 //            Utf8Str name;
 //            vrc = aClient->read (name);
-//            if (RT_FAILURE (vrc)) break;
+//            if (RT_FAILURE(vrc)) break;
 
             Guid guid;
             Utf8Str errMsg;
@@ -645,11 +645,11 @@ int netIfNetworkInterfaceHelperServer (SVCHlpClient *aClient,
 
                 /* write success followed by GUID */
                 vrc = aClient->write (SVCHlpMsg::CreateHostOnlyNetworkInterface_OK);
-                if (RT_FAILURE (vrc)) break;
+                if (RT_FAILURE(vrc)) break;
                 vrc = aClient->write (Utf8Str (name));
-                if (RT_FAILURE (vrc)) break;
+                if (RT_FAILURE(vrc)) break;
                 vrc = aClient->write (guid);
-                if (RT_FAILURE (vrc)) break;
+                if (RT_FAILURE(vrc)) break;
             }
             else
             {
@@ -659,9 +659,9 @@ int netIfNetworkInterfaceHelperServer (SVCHlpClient *aClient,
                 if (errMsg.isEmpty())
                     errMsg = Utf8StrFmt ("Unspecified error (%Rrc)", vrc);
                 vrc = aClient->write (SVCHlpMsg::Error);
-                if (RT_FAILURE (vrc)) break;
+                if (RT_FAILURE(vrc)) break;
                 vrc = aClient->write (errMsg);
-                if (RT_FAILURE (vrc)) break;
+                if (RT_FAILURE(vrc)) break;
             }
 
             break;
@@ -674,7 +674,7 @@ int netIfNetworkInterfaceHelperServer (SVCHlpClient *aClient,
             Bstr bstrErr;
 
             vrc = aClient->read (guid);
-            if (RT_FAILURE (vrc)) break;
+            if (RT_FAILURE(vrc)) break;
 
             Utf8Str errMsg;
             hrc = VBoxNetCfgWinRemoveHostOnlyNetworkInterface ((const GUID*)guid.raw(), bstrErr.asOutParam());
@@ -683,7 +683,7 @@ int netIfNetworkInterfaceHelperServer (SVCHlpClient *aClient,
             {
                 /* write parameter-less success */
                 vrc = aClient->write (SVCHlpMsg::OK);
-                if (RT_FAILURE (vrc)) break;
+                if (RT_FAILURE(vrc)) break;
             }
             else
             {
@@ -693,9 +693,9 @@ int netIfNetworkInterfaceHelperServer (SVCHlpClient *aClient,
                 if (errMsg.isEmpty())
                     errMsg = Utf8StrFmt ("Unspecified error (%Rrc)", vrc);
                 vrc = aClient->write (SVCHlpMsg::Error);
-                if (RT_FAILURE (vrc)) break;
+                if (RT_FAILURE(vrc)) break;
                 vrc = aClient->write (errMsg);
-                if (RT_FAILURE (vrc)) break;
+                if (RT_FAILURE(vrc)) break;
             }
 
             break;
@@ -708,20 +708,20 @@ int netIfNetworkInterfaceHelperServer (SVCHlpClient *aClient,
             Utf8Str ipV6;
             ULONG maskLengthV6;
             vrc = aClient->read (guid);
-            if (RT_FAILURE (vrc)) break;
+            if (RT_FAILURE(vrc)) break;
             vrc = aClient->read (ipV6);
-            if (RT_FAILURE (vrc)) break;
+            if (RT_FAILURE(vrc)) break;
             vrc = aClient->read (maskLengthV6);
-            if (RT_FAILURE (vrc)) break;
+            if (RT_FAILURE(vrc)) break;
 
             Utf8Str errMsg;
             vrc = VERR_NOT_IMPLEMENTED;
 
-            if (RT_SUCCESS (vrc))
+            if (RT_SUCCESS(vrc))
             {
                 /* write success followed by GUID */
                 vrc = aClient->write (SVCHlpMsg::OK);
-                if (RT_FAILURE (vrc)) break;
+                if (RT_FAILURE(vrc)) break;
             }
             else
             {
@@ -729,9 +729,9 @@ int netIfNetworkInterfaceHelperServer (SVCHlpClient *aClient,
                 if (errMsg.isEmpty())
                     errMsg = Utf8StrFmt ("Unspecified error (%Rrc)", vrc);
                 vrc = aClient->write (SVCHlpMsg::Error);
-                if (RT_FAILURE (vrc)) break;
+                if (RT_FAILURE(vrc)) break;
                 vrc = aClient->write (errMsg);
-                if (RT_FAILURE (vrc)) break;
+                if (RT_FAILURE(vrc)) break;
             }
 
             break;
@@ -743,11 +743,11 @@ int netIfNetworkInterfaceHelperServer (SVCHlpClient *aClient,
             Guid guid;
             ULONG ip, mask;
             vrc = aClient->read (guid);
-            if (RT_FAILURE (vrc)) break;
+            if (RT_FAILURE(vrc)) break;
             vrc = aClient->read (ip);
-            if (RT_FAILURE (vrc)) break;
+            if (RT_FAILURE(vrc)) break;
             vrc = aClient->read (mask);
-            if (RT_FAILURE (vrc)) break;
+            if (RT_FAILURE(vrc)) break;
 
             Utf8Str errMsg;
             hrc = VBoxNetCfgWinEnableStaticIpConfig ((const GUID *)guid.raw(), ip, mask);
@@ -756,7 +756,7 @@ int netIfNetworkInterfaceHelperServer (SVCHlpClient *aClient,
             {
                 /* write success followed by GUID */
                 vrc = aClient->write (SVCHlpMsg::OK);
-                if (RT_FAILURE (vrc)) break;
+                if (RT_FAILURE(vrc)) break;
             }
             else
             {
@@ -765,9 +765,9 @@ int netIfNetworkInterfaceHelperServer (SVCHlpClient *aClient,
                 if (errMsg.isEmpty())
                     errMsg = Utf8StrFmt ("Unspecified error (%Rrc)", vrc);
                 vrc = aClient->write (SVCHlpMsg::Error);
-                if (RT_FAILURE (vrc)) break;
+                if (RT_FAILURE(vrc)) break;
                 vrc = aClient->write (errMsg);
-                if (RT_FAILURE (vrc)) break;
+                if (RT_FAILURE(vrc)) break;
             }
 
             break;
@@ -778,7 +778,7 @@ int netIfNetworkInterfaceHelperServer (SVCHlpClient *aClient,
 
             Guid guid;
             vrc = aClient->read (guid);
-            if (RT_FAILURE (vrc)) break;
+            if (RT_FAILURE(vrc)) break;
 
             Utf8Str errMsg;
             hrc = VBoxNetCfgWinEnableDynamicIpConfig ((const GUID *)guid.raw());
@@ -787,7 +787,7 @@ int netIfNetworkInterfaceHelperServer (SVCHlpClient *aClient,
             {
                 /* write success followed by GUID */
                 vrc = aClient->write (SVCHlpMsg::OK);
-                if (RT_FAILURE (vrc)) break;
+                if (RT_FAILURE(vrc)) break;
             }
             else
             {
@@ -796,9 +796,9 @@ int netIfNetworkInterfaceHelperServer (SVCHlpClient *aClient,
                 if (errMsg.isEmpty())
                     errMsg = Utf8StrFmt ("Unspecified error (%Rrc)", vrc);
                 vrc = aClient->write (SVCHlpMsg::Error);
-                if (RT_FAILURE (vrc)) break;
+                if (RT_FAILURE(vrc)) break;
                 vrc = aClient->write (errMsg);
-                if (RT_FAILURE (vrc)) break;
+                if (RT_FAILURE(vrc)) break;
             }
 
             break;
@@ -809,7 +809,7 @@ int netIfNetworkInterfaceHelperServer (SVCHlpClient *aClient,
 
             Guid guid;
             vrc = aClient->read (guid);
-            if (RT_FAILURE (vrc)) break;
+            if (RT_FAILURE(vrc)) break;
 
             Utf8Str errMsg;
             hrc = VBoxNetCfgWinDhcpRediscover ((const GUID *)guid.raw());
@@ -818,7 +818,7 @@ int netIfNetworkInterfaceHelperServer (SVCHlpClient *aClient,
             {
                 /* write success followed by GUID */
                 vrc = aClient->write (SVCHlpMsg::OK);
-                if (RT_FAILURE (vrc)) break;
+                if (RT_FAILURE(vrc)) break;
             }
             else
             {
@@ -827,9 +827,9 @@ int netIfNetworkInterfaceHelperServer (SVCHlpClient *aClient,
                 if (errMsg.isEmpty())
                     errMsg = Utf8StrFmt ("Unspecified error (%Rrc)", vrc);
                 vrc = aClient->write (SVCHlpMsg::Error);
-                if (RT_FAILURE (vrc)) break;
+                if (RT_FAILURE(vrc)) break;
                 vrc = aClient->write (errMsg);
-                if (RT_FAILURE (vrc)) break;
+                if (RT_FAILURE(vrc)) break;
             }
 
             break;
@@ -858,7 +858,7 @@ static BOOL IsUACEnabled()
     ZeroMemory (&info, sizeof (OSVERSIONINFOEX));
     info.dwOSVersionInfoSize = sizeof (OSVERSIONINFOEX);
     rc = GetVersionEx ((OSVERSIONINFO *) &info);
-    AssertReturn (rc != 0, FALSE);
+    AssertReturn(rc != 0, FALSE);
 
     LogFlowFunc (("dwMajorVersion=%d, dwMinorVersion=%d\n",
                   info.dwMajorVersion, info.dwMinorVersion));
@@ -896,7 +896,7 @@ static BOOL IsUACEnabled()
 
 /* end */
 
-static int vboxNetWinAddComponent(std::list <ComObjPtr <HostNetworkInterface> > * pPist, INetCfgComponent * pncc, HostNetworkInterfaceType enmType)
+static int vboxNetWinAddComponent(std::list <ComObjPtr<HostNetworkInterface> > * pPist, INetCfgComponent * pncc, HostNetworkInterfaceType enmType)
 {
     LPWSTR              lpszName;
     GUID                IfGuid;
@@ -925,10 +925,10 @@ static int vboxNetWinAddComponent(std::list <ComObjPtr <HostNetworkInterface> > 
                 Log(("vboxNetWinAddComponent: collectNetIfInfo() -> %Vrc\n", rc));
             }
             /* create a new object and add it to the list */
-            ComObjPtr <HostNetworkInterface> iface;
+            ComObjPtr<HostNetworkInterface> iface;
             iface.createObject();
             /* remove the curly bracket at the end */
-            if (SUCCEEDED (iface->init (name, enmType, &Info)))
+            if (SUCCEEDED(iface->init (name, enmType, &Info)))
             {
                 pPist->push_back (iface);
                 rc = VINF_SUCCESS;
@@ -947,7 +947,7 @@ static int vboxNetWinAddComponent(std::list <ComObjPtr <HostNetworkInterface> > 
 #endif /* VBOX_WITH_NETFLT */
 
 
-static int netIfListHostAdapters(std::list <ComObjPtr <HostNetworkInterface> > &list)
+static int netIfListHostAdapters(std::list <ComObjPtr<HostNetworkInterface> > &list)
 {
 #ifndef VBOX_WITH_NETFLT
     /* VBoxNetAdp is available only when VBOX_WITH_NETFLT is enabled */
@@ -1053,7 +1053,7 @@ int NetIfCreateHostOnlyNetworkInterface (VirtualBox *pVBox,
     return VERR_NOT_IMPLEMENTED;
 #else
     /* create a progress object */
-    ComObjPtr <Progress> progress;
+    ComObjPtr<Progress> progress;
     progress.createObject();
 
     ComPtr<IHost> host;
@@ -1065,18 +1065,18 @@ int NetIfCreateHostOnlyNetworkInterface (VirtualBox *pVBox,
                              FALSE /* aCancelable */);
         if(SUCCEEDED(rc))
         {
-            CheckComRCReturnRC (rc);
-            progress.queryInterfaceTo (aProgress);
+            CheckComRCReturnRC(rc);
+            progress.queryInterfaceTo(aProgress);
 
             /* create a new uninitialized host interface object */
-            ComObjPtr <HostNetworkInterface> iface;
+            ComObjPtr<HostNetworkInterface> iface;
             iface.createObject();
-            iface.queryInterfaceTo (aHostNetworkInterface);
+            iface.queryInterfaceTo(aHostNetworkInterface);
 
             /* create the networkInterfaceHelperClient() argument */
             std::auto_ptr <NetworkInterfaceHelperClientData>
                 d (new NetworkInterfaceHelperClientData());
-            AssertReturn (d.get(), E_OUTOFMEMORY);
+            AssertReturn(d.get(), E_OUTOFMEMORY);
 
             d->msgCode = SVCHlpMsg::CreateHostOnlyNetworkInterface;
 //            d->name = aName;
@@ -1089,7 +1089,7 @@ int NetIfCreateHostOnlyNetworkInterface (VirtualBox *pVBox,
                 static_cast <void *> (d.get()),
                 progress);
 
-            if (SUCCEEDED (rc))
+            if (SUCCEEDED(rc))
             {
                 /* d is now owned by netIfNetworkInterfaceHelperClient(), so release it */
                 d.release();
@@ -1109,7 +1109,7 @@ int NetIfRemoveHostOnlyNetworkInterface (VirtualBox *pVBox, IN_GUID aId,
     return VERR_NOT_IMPLEMENTED;
 #else
     /* create a progress object */
-    ComObjPtr <Progress> progress;
+    ComObjPtr<Progress> progress;
     progress.createObject();
     ComPtr<IHost> host;
     HRESULT rc = pVBox->COMGETTER(Host)(host.asOutParam());
@@ -1120,13 +1120,13 @@ int NetIfRemoveHostOnlyNetworkInterface (VirtualBox *pVBox, IN_GUID aId,
                             FALSE /* aCancelable */);
         if(SUCCEEDED(rc))
         {
-            CheckComRCReturnRC (rc);
-            progress.queryInterfaceTo (aProgress);
+            CheckComRCReturnRC(rc);
+            progress.queryInterfaceTo(aProgress);
 
             /* create the networkInterfaceHelperClient() argument */
             std::auto_ptr <NetworkInterfaceHelperClientData>
                 d (new NetworkInterfaceHelperClientData());
-            AssertReturn (d.get(), E_OUTOFMEMORY);
+            AssertReturn(d.get(), E_OUTOFMEMORY);
 
             d->msgCode = SVCHlpMsg::RemoveHostOnlyNetworkInterface;
             d->guid = aId;
@@ -1137,7 +1137,7 @@ int NetIfRemoveHostOnlyNetworkInterface (VirtualBox *pVBox, IN_GUID aId,
                 static_cast <void *> (d.get()),
                 progress);
 
-            if (SUCCEEDED (rc))
+            if (SUCCEEDED(rc))
             {
                 /* d is now owned by netIfNetworkInterfaceHelperClient(), so release it */
                 d.release();
@@ -1164,7 +1164,7 @@ int NetIfEnableStaticIpConfig(VirtualBox *vBox, HostNetworkInterface * pIf, ULON
 //        if(SUCCEEDED(rc))
         {
             /* create a progress object */
-            ComObjPtr <Progress> progress;
+            ComObjPtr<Progress> progress;
             progress.createObject();
 //            ComPtr<IHost> host;
 //            HRESULT rc = vBox->COMGETTER(Host)(host.asOutParam());
@@ -1175,13 +1175,13 @@ int NetIfEnableStaticIpConfig(VirtualBox *vBox, HostNetworkInterface * pIf, ULON
                                     FALSE /* aCancelable */);
                 if(SUCCEEDED(rc))
                 {
-                    CheckComRCReturnRC (rc);
-//                    progress.queryInterfaceTo (aProgress);
+                    CheckComRCReturnRC(rc);
+//                    progress.queryInterfaceTo(aProgress);
 
                     /* create the networkInterfaceHelperClient() argument */
                     std::auto_ptr <NetworkInterfaceHelperClientData>
                         d (new NetworkInterfaceHelperClientData());
-                    AssertReturn (d.get(), E_OUTOFMEMORY);
+                    AssertReturn(d.get(), E_OUTOFMEMORY);
 
                     d->msgCode = SVCHlpMsg::EnableStaticIpConfig;
                     d->guid = Guid(guid);
@@ -1195,7 +1195,7 @@ int NetIfEnableStaticIpConfig(VirtualBox *vBox, HostNetworkInterface * pIf, ULON
                         static_cast <void *> (d.get()),
                         progress);
 
-                    if (SUCCEEDED (rc))
+                    if (SUCCEEDED(rc))
                     {
                         /* d is now owned by netIfNetworkInterfaceHelperClient(), so release it */
                         d.release();
@@ -1226,7 +1226,7 @@ int NetIfEnableStaticIpConfigV6(VirtualBox *vBox, HostNetworkInterface * pIf, IN
 //        if(SUCCEEDED(rc))
         {
             /* create a progress object */
-            ComObjPtr <Progress> progress;
+            ComObjPtr<Progress> progress;
             progress.createObject();
 //            ComPtr<IHost> host;
 //            HRESULT rc = vBox->COMGETTER(Host)(host.asOutParam());
@@ -1237,13 +1237,13 @@ int NetIfEnableStaticIpConfigV6(VirtualBox *vBox, HostNetworkInterface * pIf, IN
                                     FALSE /* aCancelable */);
                 if(SUCCEEDED(rc))
                 {
-                    CheckComRCReturnRC (rc);
-//                    progress.queryInterfaceTo (aProgress);
+                    CheckComRCReturnRC(rc);
+//                    progress.queryInterfaceTo(aProgress);
 
                     /* create the networkInterfaceHelperClient() argument */
                     std::auto_ptr <NetworkInterfaceHelperClientData>
                         d (new NetworkInterfaceHelperClientData());
-                    AssertReturn (d.get(), E_OUTOFMEMORY);
+                    AssertReturn(d.get(), E_OUTOFMEMORY);
 
                     d->msgCode = SVCHlpMsg::EnableStaticIpConfigV6;
                     d->guid = guid;
@@ -1257,7 +1257,7 @@ int NetIfEnableStaticIpConfigV6(VirtualBox *vBox, HostNetworkInterface * pIf, IN
                         static_cast <void *> (d.get()),
                         progress);
 
-                    if (SUCCEEDED (rc))
+                    if (SUCCEEDED(rc))
                     {
                         /* d is now owned by netIfNetworkInterfaceHelperClient(), so release it */
                         d.release();
@@ -1288,7 +1288,7 @@ int NetIfEnableDynamicIpConfig(VirtualBox *vBox, HostNetworkInterface * pIf)
 //        if(SUCCEEDED(rc))
         {
             /* create a progress object */
-            ComObjPtr <Progress> progress;
+            ComObjPtr<Progress> progress;
             progress.createObject();
 //            ComPtr<IHost> host;
 //            HRESULT rc = vBox->COMGETTER(Host)(host.asOutParam());
@@ -1299,13 +1299,13 @@ int NetIfEnableDynamicIpConfig(VirtualBox *vBox, HostNetworkInterface * pIf)
                                     FALSE /* aCancelable */);
                 if(SUCCEEDED(rc))
                 {
-                    CheckComRCReturnRC (rc);
-//                    progress.queryInterfaceTo (aProgress);
+                    CheckComRCReturnRC(rc);
+//                    progress.queryInterfaceTo(aProgress);
 
                     /* create the networkInterfaceHelperClient() argument */
                     std::auto_ptr <NetworkInterfaceHelperClientData>
                         d (new NetworkInterfaceHelperClientData());
-                    AssertReturn (d.get(), E_OUTOFMEMORY);
+                    AssertReturn(d.get(), E_OUTOFMEMORY);
 
                     d->msgCode = SVCHlpMsg::EnableDynamicIpConfig;
                     d->guid = guid;
@@ -1317,7 +1317,7 @@ int NetIfEnableDynamicIpConfig(VirtualBox *vBox, HostNetworkInterface * pIf)
                         static_cast <void *> (d.get()),
                         progress);
 
-                    if (SUCCEEDED (rc))
+                    if (SUCCEEDED(rc))
                     {
                         /* d is now owned by netIfNetworkInterfaceHelperClient(), so release it */
                         d.release();
@@ -1348,7 +1348,7 @@ int NetIfDhcpRediscover(VirtualBox *vBox, HostNetworkInterface * pIf)
 //        if(SUCCEEDED(rc))
         {
             /* create a progress object */
-            ComObjPtr <Progress> progress;
+            ComObjPtr<Progress> progress;
             progress.createObject();
 //            ComPtr<IHost> host;
 //            HRESULT rc = vBox->COMGETTER(Host)(host.asOutParam());
@@ -1359,13 +1359,13 @@ int NetIfDhcpRediscover(VirtualBox *vBox, HostNetworkInterface * pIf)
                                     FALSE /* aCancelable */);
                 if(SUCCEEDED(rc))
                 {
-                    CheckComRCReturnRC (rc);
-//                    progress.queryInterfaceTo (aProgress);
+                    CheckComRCReturnRC(rc);
+//                    progress.queryInterfaceTo(aProgress);
 
                     /* create the networkInterfaceHelperClient() argument */
                     std::auto_ptr <NetworkInterfaceHelperClientData>
                         d (new NetworkInterfaceHelperClientData());
-                    AssertReturn (d.get(), E_OUTOFMEMORY);
+                    AssertReturn(d.get(), E_OUTOFMEMORY);
 
                     d->msgCode = SVCHlpMsg::DhcpRediscover;
                     d->guid = guid;
@@ -1377,7 +1377,7 @@ int NetIfDhcpRediscover(VirtualBox *vBox, HostNetworkInterface * pIf)
                         static_cast <void *> (d.get()),
                         progress);
 
-                    if (SUCCEEDED (rc))
+                    if (SUCCEEDED(rc))
                     {
                         /* d is now owned by netIfNetworkInterfaceHelperClient(), so release it */
                         d.release();
@@ -1393,7 +1393,7 @@ int NetIfDhcpRediscover(VirtualBox *vBox, HostNetworkInterface * pIf)
 #endif
 }
 
-int NetIfList(std::list <ComObjPtr <HostNetworkInterface> > &list)
+int NetIfList(std::list <ComObjPtr<HostNetworkInterface> > &list)
 {
 #ifndef VBOX_WITH_NETFLT
     return VERR_NOT_IMPLEMENTED;

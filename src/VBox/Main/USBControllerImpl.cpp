@@ -69,15 +69,15 @@ void USBController::FinalRelease()
  */
 HRESULT USBController::init (Machine *aParent)
 {
-    LogFlowThisFunc (("aParent=%p\n", aParent));
+    LogFlowThisFunc(("aParent=%p\n", aParent));
 
     ComAssertRet (aParent, E_INVALIDARG);
 
     /* Enclose the state transition NotReady->InInit->Ready */
-    AutoInitSpan autoInitSpan (this);
-    AssertReturn (autoInitSpan.isOk(), E_FAIL);
+    AutoInitSpan autoInitSpan(this);
+    AssertReturn(autoInitSpan.isOk(), E_FAIL);
 
-    unconst (mParent) = aParent;
+    unconst(mParent) = aParent;
     /* mPeer is left null */
 
     mData.allocate();
@@ -105,16 +105,16 @@ HRESULT USBController::init (Machine *aParent)
  */
 HRESULT USBController::init (Machine *aParent, USBController *aPeer)
 {
-    LogFlowThisFunc (("aParent=%p, aPeer=%p\n", aParent, aPeer));
+    LogFlowThisFunc(("aParent=%p, aPeer=%p\n", aParent, aPeer));
 
     ComAssertRet (aParent && aPeer, E_INVALIDARG);
 
     /* Enclose the state transition NotReady->InInit->Ready */
-    AutoInitSpan autoInitSpan (this);
-    AssertReturn (autoInitSpan.isOk(), E_FAIL);
+    AutoInitSpan autoInitSpan(this);
+    AssertReturn(autoInitSpan.isOk(), E_FAIL);
 
-    unconst (mParent) = aParent;
-    unconst (mPeer) = aPeer;
+    unconst(mParent) = aParent;
+    unconst(mPeer) = aPeer;
 
     AutoWriteLock thatlock (aPeer);
     mData.share (aPeer->mData);
@@ -125,7 +125,7 @@ HRESULT USBController::init (Machine *aParent, USBController *aPeer)
     DeviceFilterList::const_iterator it = aPeer->mDeviceFilters->begin();
     while (it != aPeer->mDeviceFilters->end())
     {
-        ComObjPtr <USBDeviceFilter> filter;
+        ComObjPtr<USBDeviceFilter> filter;
         filter.createObject();
         filter->init (this, *it);
         mDeviceFilters->push_back (filter);
@@ -147,15 +147,15 @@ HRESULT USBController::init (Machine *aParent, USBController *aPeer)
  */
 HRESULT USBController::initCopy (Machine *aParent, USBController *aPeer)
 {
-    LogFlowThisFunc (("aParent=%p, aPeer=%p\n", aParent, aPeer));
+    LogFlowThisFunc(("aParent=%p, aPeer=%p\n", aParent, aPeer));
 
     ComAssertRet (aParent && aPeer, E_INVALIDARG);
 
     /* Enclose the state transition NotReady->InInit->Ready */
-    AutoInitSpan autoInitSpan (this);
-    AssertReturn (autoInitSpan.isOk(), E_FAIL);
+    AutoInitSpan autoInitSpan(this);
+    AssertReturn(autoInitSpan.isOk(), E_FAIL);
 
-    unconst (mParent) = aParent;
+    unconst(mParent) = aParent;
     /* mPeer is left null */
 
     AutoWriteLock thatlock (aPeer);
@@ -167,7 +167,7 @@ HRESULT USBController::initCopy (Machine *aParent, USBController *aPeer)
     DeviceFilterList::const_iterator it = aPeer->mDeviceFilters->begin();
     while (it != aPeer->mDeviceFilters->end())
     {
-        ComObjPtr <USBDeviceFilter> filter;
+        ComObjPtr<USBDeviceFilter> filter;
         filter.createObject();
         filter->initCopy (this, *it);
         mDeviceFilters->push_back (filter);
@@ -188,10 +188,10 @@ HRESULT USBController::initCopy (Machine *aParent, USBController *aPeer)
  */
 void USBController::uninit()
 {
-    LogFlowThisFunc (("\n"));
+    LogFlowThisFunc(("\n"));
 
     /* Enclose the state transition Ready->InUninit->NotReady */
-    AutoUninitSpan autoUninitSpan (this);
+    AutoUninitSpan autoUninitSpan(this);
     if (autoUninitSpan.uninitDone())
         return;
 
@@ -203,8 +203,8 @@ void USBController::uninit()
 #endif
     mData.free();
 
-    unconst (mPeer).setNull();
-    unconst (mParent).setNull();
+    unconst(mPeer).setNull();
+    unconst(mParent).setNull();
 }
 
 
@@ -215,10 +215,10 @@ STDMETHODIMP USBController::COMGETTER(Enabled) (BOOL *aEnabled)
 {
     CheckComArgOutPointerValid(aEnabled);
 
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
 
-    AutoReadLock alock (this);
+    AutoReadLock alock(this);
 
     *aEnabled = mData->mEnabled;
 
@@ -228,16 +228,16 @@ STDMETHODIMP USBController::COMGETTER(Enabled) (BOOL *aEnabled)
 
 STDMETHODIMP USBController::COMSETTER(Enabled) (BOOL aEnabled)
 {
-    LogFlowThisFunc (("aEnabled=%RTbool\n", aEnabled));
+    LogFlowThisFunc(("aEnabled=%RTbool\n", aEnabled));
 
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
 
     /* the machine needs to be mutable */
     Machine::AutoMutableStateDependency adep (mParent);
-    CheckComRCReturnRC (adep.rc());
+    CheckComRCReturnRC(adep.rc());
 
-    AutoWriteLock alock (this);
+    AutoWriteLock alock(this);
 
     if (mData->mEnabled != aEnabled)
     {
@@ -257,10 +257,10 @@ STDMETHODIMP USBController::COMGETTER(EnabledEhci) (BOOL *aEnabled)
 {
     CheckComArgOutPointerValid(aEnabled);
 
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
 
-    AutoReadLock alock (this);
+    AutoReadLock alock(this);
 
     *aEnabled = mData->mEnabledEhci;
 
@@ -269,16 +269,16 @@ STDMETHODIMP USBController::COMGETTER(EnabledEhci) (BOOL *aEnabled)
 
 STDMETHODIMP USBController::COMSETTER(EnabledEhci) (BOOL aEnabled)
 {
-    LogFlowThisFunc (("aEnabled=%RTbool\n", aEnabled));
+    LogFlowThisFunc(("aEnabled=%RTbool\n", aEnabled));
 
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
 
     /* the machine needs to be mutable */
     Machine::AutoMutableStateDependency adep (mParent);
-    CheckComRCReturnRC (adep.rc());
+    CheckComRCReturnRC(adep.rc());
 
-    AutoWriteLock alock (this);
+    AutoWriteLock alock(this);
 
     if (mData->mEnabledEhci != aEnabled)
     {
@@ -298,8 +298,8 @@ STDMETHODIMP USBController::COMGETTER(USBStandard) (USHORT *aUSBStandard)
 {
     CheckComArgOutPointerValid(aUSBStandard);
 
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
 
     /* not accessing data -- no need to lock */
 
@@ -364,13 +364,13 @@ STDMETHODIMP USBController::COMGETTER(DeviceFilters) (ComSafeArrayOut(IUSBDevice
 #ifdef VBOX_WITH_USB
     CheckComArgOutSafeArrayPointerValid(aDevicesFilters);
 
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
 
-    AutoReadLock alock (this);
+    AutoReadLock alock(this);
 
-    SafeIfaceArray <IUSBDeviceFilter> collection (*mDeviceFilters.data());
-    collection.detachTo (ComSafeArrayOutArg (aDevicesFilters));
+    SafeIfaceArray<IUSBDeviceFilter> collection (*mDeviceFilters.data());
+    collection.detachTo(ComSafeArrayOutArg(aDevicesFilters));
 
     return S_OK;
 #else
@@ -393,21 +393,21 @@ STDMETHODIMP USBController::CreateDeviceFilter (IN_BSTR aName,
 
     CheckComArgStrNotEmptyOrNull(aName);
 
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
 
     /* the machine needs to be mutable */
     Machine::AutoMutableStateDependency adep (mParent);
-    CheckComRCReturnRC (adep.rc());
+    CheckComRCReturnRC(adep.rc());
 
-    AutoWriteLock alock (this);
+    AutoWriteLock alock(this);
 
-    ComObjPtr <USBDeviceFilter> filter;
+    ComObjPtr<USBDeviceFilter> filter;
     filter.createObject();
     HRESULT rc = filter->init (this, aName);
     ComAssertComRCRetRC (rc);
-    rc = filter.queryInterfaceTo (aFilter);
-    AssertComRCReturnRC (rc);
+    rc = filter.queryInterfaceTo(aFilter);
+    AssertComRCReturnRC(rc);
 
     return S_OK;
 #else
@@ -424,16 +424,16 @@ STDMETHODIMP USBController::InsertDeviceFilter (ULONG aPosition,
 
     CheckComArgNotNull(aFilter);
 
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
 
     /* the machine needs to be mutable */
     Machine::AutoMutableStateDependency adep (mParent);
-    CheckComRCReturnRC (adep.rc());
+    CheckComRCReturnRC(adep.rc());
 
-    AutoWriteLock alock (this);
+    AutoWriteLock alock(this);
 
-    ComObjPtr <USBDeviceFilter> filter = getDependentChild (aFilter);
+    ComObjPtr<USBDeviceFilter> filter = getDependentChild (aFilter);
     if (!filter)
         return setError (E_INVALIDARG,
             tr ("The given USB device filter is not created within "
@@ -487,14 +487,14 @@ STDMETHODIMP USBController::RemoveDeviceFilter (ULONG aPosition,
 
     CheckComArgOutPointerValid(aFilter);
 
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
 
     /* the machine needs to be mutable */
     Machine::AutoMutableStateDependency adep (mParent);
-    CheckComRCReturnRC (adep.rc());
+    CheckComRCReturnRC(adep.rc());
 
-    AutoWriteLock alock (this);
+    AutoWriteLock alock(this);
 
     if (!mDeviceFilters->size())
         return setError (E_INVALIDARG,
@@ -508,7 +508,7 @@ STDMETHODIMP USBController::RemoveDeviceFilter (ULONG aPosition,
     /* backup the list before modification */
     mDeviceFilters.backup();
 
-    ComObjPtr <USBDeviceFilter> filter;
+    ComObjPtr<USBDeviceFilter> filter;
     {
         /* iterate to the position... */
         DeviceFilterList::iterator it = mDeviceFilters->begin();
@@ -523,7 +523,7 @@ STDMETHODIMP USBController::RemoveDeviceFilter (ULONG aPosition,
     /* cancel sharing (make an independent copy of data) */
     filter->unshare();
 
-    filter.queryInterfaceTo (aFilter);
+    filter.queryInterfaceTo(aFilter);
 
     /* notify the proxy (only when it makes sense) */
     if (filter->data().mActive && Global::IsOnline (adep.machineState()))
@@ -562,12 +562,12 @@ HRESULT USBController::loadSettings (const settings::Key &aMachineNode)
 {
     using namespace settings;
 
-    AssertReturn (!aMachineNode.isNull(), E_FAIL);
+    AssertReturn(!aMachineNode.isNull(), E_FAIL);
 
-    AutoCaller autoCaller (this);
-    AssertComRCReturnRC (autoCaller.rc());
+    AutoCaller autoCaller(this);
+    AssertComRCReturnRC(autoCaller.rc());
 
-    AutoWriteLock alock (this);
+    AutoWriteLock alock(this);
 
     /* Note: we assume that the default values for attributes of optional
      * nodes are assigned in the Data::Data() constructor and don't do it
@@ -611,14 +611,14 @@ HRESULT USBController::loadSettings (const settings::Key &aMachineNode)
         Bstr remote = (*it).stringValue ("remote");
         ULONG maskedIfs = (*it).value <ULONG> ("maskedInterfaces");
 
-        ComObjPtr <USBDeviceFilter> filterObj;
+        ComObjPtr<USBDeviceFilter> filterObj;
         filterObj.createObject();
         rc = filterObj->init (this,
                               name, active, vendorId, productId, revision,
                               manufacturer, product, serialNumber,
                               port, remote, maskedIfs);
         /* error info is set by init() when appropriate */
-        CheckComRCReturnRC (rc);
+        CheckComRCReturnRC(rc);
 
         mDeviceFilters->push_back (filterObj);
         filterObj->mInList = true;
@@ -639,12 +639,12 @@ HRESULT USBController::saveSettings (settings::Key &aMachineNode)
 {
     using namespace settings;
 
-    AssertReturn (!aMachineNode.isNull(), E_FAIL);
+    AssertReturn(!aMachineNode.isNull(), E_FAIL);
 
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
 
-    AutoReadLock alock (this);
+    AutoReadLock alock(this);
 
     /* first, delete the entry */
     Key controller = aMachineNode.findKey ("USBController");
@@ -723,10 +723,10 @@ HRESULT USBController::saveSettings (settings::Key &aMachineNode)
 /** @note Locks objects for reading! */
 bool USBController::isModified()
 {
-    AutoCaller autoCaller (this);
+    AutoCaller autoCaller(this);
     AssertComRCReturn (autoCaller.rc(), false);
 
-    AutoReadLock alock (this);
+    AutoReadLock alock(this);
 
     if (mData.isBackedUp()
 #ifdef VBOX_WITH_USB
@@ -753,10 +753,10 @@ bool USBController::isModified()
 /** @note Locks objects for reading! */
 bool USBController::isReallyModified()
 {
-    AutoCaller autoCaller (this);
+    AutoCaller autoCaller(this);
     AssertComRCReturn (autoCaller.rc(), false);
 
-    AutoReadLock alock (this);
+    AutoReadLock alock(this);
 
     if (mData.hasActualChanges())
         return true;
@@ -818,14 +818,14 @@ bool USBController::isReallyModified()
 /** @note Locks objects for writing! */
 bool USBController::rollback()
 {
-    AutoCaller autoCaller (this);
+    AutoCaller autoCaller(this);
     AssertComRCReturn (autoCaller.rc(), false);
 
     /* we need the machine state */
     Machine::AutoAnyStateDependency adep (mParent);
     AssertComRCReturn (adep.rc(), false);
 
-    AutoWriteLock alock (this);
+    AutoWriteLock alock(this);
 
     bool dataChanged = false;
 
@@ -921,7 +921,7 @@ bool USBController::rollback()
 void USBController::commit()
 {
     /* sanity */
-    AutoCaller autoCaller (this);
+    AutoCaller autoCaller(this);
     AssertComRCReturnVoid (autoCaller.rc());
 
     /* sanity too */
@@ -964,7 +964,7 @@ void USBController::commit()
                 (*it)->commit();
 
                 /* look if this filter has a peer filter */
-                ComObjPtr <USBDeviceFilter> peer = (*it)->peer();
+                ComObjPtr<USBDeviceFilter> peer = (*it)->peer();
                 if (!peer)
                 {
                     /* no peer means the filter is a newly created one;
@@ -1029,7 +1029,7 @@ void USBController::copyFrom (USBController *aThat)
     AssertReturnVoid (aThat != NULL);
 
     /* sanity */
-    AutoCaller autoCaller (this);
+    AutoCaller autoCaller(this);
     AssertComRCReturnVoid (autoCaller.rc());
 
     /* sanity too */
@@ -1061,7 +1061,7 @@ void USBController::copyFrom (USBController *aThat)
         it != aThat->mDeviceFilters->end();
         ++ it)
     {
-        ComObjPtr <USBDeviceFilter> filter;
+        ComObjPtr<USBDeviceFilter> filter;
         filter.createObject();
         filter->initCopy (this, *it);
         mDeviceFilters->push_back (filter);
@@ -1080,12 +1080,12 @@ void USBController::copyFrom (USBController *aThat)
 HRESULT USBController::onDeviceFilterChange (USBDeviceFilter *aFilter,
                                              BOOL aActiveChanged /* = FALSE */)
 {
-    AutoCaller autoCaller (this);
-    AssertComRCReturnRC (autoCaller.rc());
+    AutoCaller autoCaller(this);
+    AssertComRCReturnRC(autoCaller.rc());
 
     /* we need the machine state */
     Machine::AutoAnyStateDependency adep (mParent);
-    AssertComRCReturnRC (adep.rc());
+    AssertComRCReturnRC(adep.rc());
 
     /* nothing to do if the machine isn't running */
     if (!Global::IsOnline (adep.machineState()))
@@ -1136,12 +1136,12 @@ HRESULT USBController::onDeviceFilterChange (USBDeviceFilter *aFilter,
  *
  *  @note Locks this object for reading.
  */
-bool USBController::hasMatchingFilter (const ComObjPtr <HostUSBDevice> &aDevice, ULONG *aMaskedIfs)
+bool USBController::hasMatchingFilter (const ComObjPtr<HostUSBDevice> &aDevice, ULONG *aMaskedIfs)
 {
-    AutoCaller autoCaller (this);
+    AutoCaller autoCaller(this);
     AssertComRCReturn (autoCaller.rc(), false);
 
-    AutoReadLock alock (this);
+    AutoReadLock alock(this);
 
     /* Disabled USB controllers cannot actually work with USB devices */
     if (!mData->mEnabled)
@@ -1179,10 +1179,10 @@ bool USBController::hasMatchingFilter (IUSBDevice *aUSBDevice, ULONG *aMaskedIfs
 {
     LogFlowThisFuncEnter();
 
-    AutoCaller autoCaller (this);
+    AutoCaller autoCaller(this);
     AssertComRCReturn (autoCaller.rc(), false);
 
-    AutoReadLock alock (this);
+    AutoReadLock alock(this);
 
     /* Disabled USB controllers cannot actually work with USB devices */
     if (!mData->mEnabled)
@@ -1264,7 +1264,7 @@ bool USBController::hasMatchingFilter (IUSBDevice *aUSBDevice, ULONG *aMaskedIfs
         break;
     }
 
-    LogFlowThisFunc (("returns: %d\n", match));
+    LogFlowThisFunc(("returns: %d\n", match));
     LogFlowThisFuncLeave();
 
     return match;
@@ -1280,15 +1280,15 @@ bool USBController::hasMatchingFilter (IUSBDevice *aUSBDevice, ULONG *aMaskedIfs
  */
 HRESULT USBController::notifyProxy (bool aInsertFilters)
 {
-    LogFlowThisFunc (("aInsertFilters=%RTbool\n", aInsertFilters));
+    LogFlowThisFunc(("aInsertFilters=%RTbool\n", aInsertFilters));
 
-    AutoCaller autoCaller (this);
+    AutoCaller autoCaller(this);
     AssertComRCReturn (autoCaller.rc(), false);
 
-    AutoReadLock alock (this);
+    AutoReadLock alock(this);
 
     USBProxyService *service = mParent->virtualBox()->host()->usbProxyService();
-    AssertReturn (service, E_FAIL);
+    AssertReturn(service, E_FAIL);
 
     DeviceFilterList::const_iterator it = mDeviceFilters->begin();
     while (it != mDeviceFilters->end())
@@ -1300,7 +1300,7 @@ HRESULT USBController::notifyProxy (bool aInsertFilters)
         {
             if (aInsertFilters)
             {
-                AssertReturn (flt->id() == NULL, E_FAIL);
+                AssertReturn(flt->id() == NULL, E_FAIL);
                 flt->id() = service->insertFilter (&flt->data().mUSBFilter);
             }
             else

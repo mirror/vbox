@@ -106,7 +106,7 @@ private:
 
     ULONG mCurrentGuestStat[GuestStatisticType_MaxVal];
 
-    ComObjPtr <Console, ComWeakRef> mParent;
+    ComObjPtr<Console, ComWeakRef> mParent;
     Data mData;
 };
 

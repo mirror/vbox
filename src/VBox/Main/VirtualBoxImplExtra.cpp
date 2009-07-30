@@ -200,7 +200,7 @@ ToString <com::Bstr> (const com::Bstr &aValue, unsigned int /* aExtra */)
 
     int vrc = RTUtf16ToUtf8Ex (aValue.raw(), RTSTR_MAX,
                                &dummy2, strLen, &strLen);
-    if (RT_SUCCESS (vrc))
+    if (RT_SUCCESS(vrc))
     {
         /* the string only contains '\0' :) */
         result.reset (new char [1]);
@@ -215,7 +215,7 @@ ToString <com::Bstr> (const com::Bstr &aValue, unsigned int /* aExtra */)
         vrc = RTUtf16ToUtf8Ex (aValue.raw(), RTSTR_MAX, &buf, strLen + 1, NULL);
     }
 
-    if (RT_FAILURE (vrc))
+    if (RT_FAILURE(vrc))
         throw xml::LogicError (RT_SRC_POS);
 
     return result;
@@ -240,7 +240,7 @@ template<> com::Guid FromString <com::Guid> (const char *aValue)
      * ENoConversion on format error */
     RTUUID uuid;
     int vrc = RTUuidFromStr (&uuid, buf);
-    if (RT_FAILURE (vrc))
+    if (RT_FAILURE(vrc))
         throw ENoConversion(com::Utf8StrFmt("'%s' is not Guid (%Rrc)", aValue, vrc));
 
     return com::Guid (uuid);
@@ -253,7 +253,7 @@ ToString <com::Guid> (const com::Guid &aValue, unsigned int /* aExtra */)
     stdx::char_auto_ptr result (new char [RTUUID_STR_LENGTH + 2]);
 
     int vrc = RTUuidToStr (aValue.raw(), result.get() + 1, RTUUID_STR_LENGTH);
-    if (RT_FAILURE (vrc))
+    if (RT_FAILURE(vrc))
         throw xml::LogicError (RT_SRC_POS);
 
     result.get() [0] = '{';

@@ -78,7 +78,7 @@ typedef NETIFINFO *PNETIFINFO;
 typedef NETIFINFO const *PCNETIFINFO;
 #endif
 
-int NetIfList(std::list <ComObjPtr <HostNetworkInterface> > &list);
+int NetIfList(std::list <ComObjPtr<HostNetworkInterface> > &list);
 int NetIfEnableStaticIpConfig(VirtualBox *pVbox, HostNetworkInterface * pIf, ULONG aOldIp, ULONG aNewIp, ULONG aMask);
 int NetIfEnableStaticIpConfigV6(VirtualBox *pVbox, HostNetworkInterface * pIf, IN_BSTR aOldIPV6Address, IN_BSTR aIPV6Address, ULONG aIPV6MaskPrefixLength);
 int NetIfEnableDynamicIpConfig(VirtualBox *pVbox, HostNetworkInterface * pIf);

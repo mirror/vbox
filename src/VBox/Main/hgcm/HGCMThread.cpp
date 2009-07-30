@@ -300,7 +300,7 @@ int HGCMThread::Initialize (HGCMTHREADHANDLE handle, const char *pszThreadName, 
                     /* Wait until the thread is ready. */
                     rc = RTThreadUserWait (thread, 30000);
                     AssertRC (rc);
-                    Assert (!(m_fu32ThreadFlags & HGCMMSG_TF_INITIALIZING) || RT_FAILURE (rc));
+                    Assert (!(m_fu32ThreadFlags & HGCMMSG_TF_INITIALIZING) || RT_FAILURE(rc));
                 }
                 else
                 {
@@ -334,7 +334,7 @@ inline int HGCMThread::Enter (void)
     int rc = RTCritSectEnter (&m_critsect);
 
 #ifdef LOG_ENABLED
-    if (RT_FAILURE (rc))
+    if (RT_FAILURE(rc))
     {
         Log(("HGCMThread::MsgPost: FAILURE: could not obtain worker thread mutex, rc = %Rrc!!!\n", rc));
     }
@@ -475,7 +475,7 @@ int HGCMThread::MsgGet (HGCMMsgCore **ppMsg)
             /* Move the message to the m_pMsgInProcessHead list */
             rc = Enter ();
 
-            if (RT_FAILURE (rc))
+            if (RT_FAILURE(rc))
             {
                 break;
             }
@@ -637,7 +637,7 @@ int hgcmThreadCreate (HGCMTHREADHANDLE *pHandle, const char *pszThreadName, PFNH
         rc = VERR_NO_MEMORY;
     }
 
-    if (RT_SUCCESS (rc))
+    if (RT_SUCCESS(rc))
     {
         *pHandle = handle;
     }
@@ -738,7 +738,7 @@ int hgcmMsgPost (HGCMMSGHANDLE hMsg, PHGCMMSGCALLBACK pfnCallback)
 {
     int rc = hgcmMsgPostInternal (hMsg, pfnCallback, false);
 
-    if (RT_SUCCESS (rc))
+    if (RT_SUCCESS(rc))
     {
         rc = VINF_HGCM_ASYNC_EXECUTE;
     }

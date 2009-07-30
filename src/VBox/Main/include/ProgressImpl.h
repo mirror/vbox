@@ -97,10 +97,10 @@ protected:
 
 #if !defined (VBOX_COM_INPROC)
     /** Weak parent. */
-    const ComObjPtr <VirtualBox, ComWeakRef> mParent;
+    const ComObjPtr<VirtualBox, ComWeakRef> mParent;
 #endif
 
-    const ComPtr <IUnknown> mInitiator;
+    const ComPtr<IUnknown> mInitiator;
 
     const Guid mId;
     const Bstr mDescription;
@@ -113,7 +113,7 @@ protected:
     BOOL mCancelable;
     BOOL mCanceled;
     HRESULT mResultCode;
-    ComPtr <IVirtualBoxErrorInfo> mErrorInfo;
+    ComPtr<IVirtualBoxErrorInfo> mErrorInfo;
 
     ULONG m_cOperations;                            // number of operations (so that progress dialog can display something like 1/3)
     ULONG m_ulTotalOperationsWeight;                // sum of weights of all operations, given to constructor
@@ -415,7 +415,7 @@ private:
 
     HRESULT checkProgress();
 
-    typedef std::vector <ComPtr <IProgress> > ProgressVector;
+    typedef std::vector <ComPtr<IProgress> > ProgressVector;
     ProgressVector mProgresses;
 
     size_t mProgress;

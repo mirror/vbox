@@ -164,7 +164,7 @@ public:
     Display *getDisplay() const { return mDisplay; }
     MachineDebugger *getMachineDebugger() const { return mDebugger; }
 
-    const ComPtr <IMachine> &machine() const { return mMachine; }
+    const ComPtr<IMachine> &machine() const { return mMachine; }
 
     /** Method is called only from ConsoleVRDPServer */
     IVRDPServer *getVRDPServer() const { return mVRDPServer; }
@@ -388,18 +388,18 @@ public:
         Bstr mHostPath;
         BOOL mWritable;
     };
-    typedef std::map <Bstr, ComObjPtr <SharedFolder> > SharedFolderMap;
+    typedef std::map <Bstr, ComObjPtr<SharedFolder> > SharedFolderMap;
     typedef std::map <Bstr, SharedFolderData> SharedFolderDataMap;
 
 private:
 
-    typedef std::list <ComObjPtr <OUSBDevice> > USBDeviceList;
-    typedef std::list <ComObjPtr <RemoteUSBDevice> > RemoteUSBDeviceList;
+    typedef std::list <ComObjPtr<OUSBDevice> > USBDeviceList;
+    typedef std::list <ComObjPtr<RemoteUSBDevice> > RemoteUSBDeviceList;
 
     HRESULT addVMCaller (bool aQuiet = false, bool aAllowNullVM = false);
     void releaseVMCaller();
 
-    HRESULT consoleInitReleaseLog (const ComPtr <IMachine> aMachine);
+    HRESULT consoleInitReleaseLog (const ComPtr<IMachine> aMachine);
 
     HRESULT powerUp (IProgress **aProgress, bool aPaused);
     HRESULT powerDown (Progress *aProgress = NULL);
@@ -417,7 +417,7 @@ private:
     }
 
     HRESULT findSharedFolder (CBSTR aName,
-                              ComObjPtr <SharedFolder> &aSharedFolder,
+                              ComObjPtr<SharedFolder> &aSharedFolder,
                               bool aSetError = false);
 
     HRESULT fetchSharedFolders (BOOL aGlobal);
@@ -515,21 +515,21 @@ private:
 
     bool mSavedStateDataLoaded : 1;
 
-    const ComPtr <IMachine> mMachine;
-    const ComPtr <IInternalMachineControl> mControl;
+    const ComPtr<IMachine> mMachine;
+    const ComPtr<IInternalMachineControl> mControl;
 
-    const ComPtr <IVRDPServer> mVRDPServer;
-    const ComPtr <IDVDDrive> mDVDDrive;
-    const ComPtr <IFloppyDrive> mFloppyDrive;
+    const ComPtr<IVRDPServer> mVRDPServer;
+    const ComPtr<IDVDDrive> mDVDDrive;
+    const ComPtr<IFloppyDrive> mFloppyDrive;
 
     ConsoleVRDPServer * const mConsoleVRDPServer;
 
-    const ComObjPtr <Guest> mGuest;
-    const ComObjPtr <Keyboard> mKeyboard;
-    const ComObjPtr <Mouse> mMouse;
-    const ComObjPtr <Display> mDisplay;
-    const ComObjPtr <MachineDebugger> mDebugger;
-    const ComObjPtr <RemoteDisplayInfo> mRemoteDisplayInfo;
+    const ComObjPtr<Guest> mGuest;
+    const ComObjPtr<Keyboard> mKeyboard;
+    const ComObjPtr<Mouse> mMouse;
+    const ComObjPtr<Display> mDisplay;
+    const ComObjPtr<MachineDebugger> mDebugger;
+    const ComObjPtr<RemoteDisplayInfo> mRemoteDisplayInfo;
 
     USBDeviceList mUSBDevices;
     RemoteUSBDeviceList mRemoteUSBDevices;
@@ -588,7 +588,7 @@ private:
     /* Local machine state value */
     MachineState_T mMachineState;
 
-    typedef std::list <ComPtr <IConsoleCallback> > CallbackList;
+    typedef std::list <ComPtr<IConsoleCallback> > CallbackList;
     CallbackList mCallbacks;
 
     struct

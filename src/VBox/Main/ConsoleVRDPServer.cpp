@@ -1111,7 +1111,7 @@ int ConsoleVRDPServer::Launch (void)
     HRESULT rc2 = vrdpserver->COMGETTER(Enabled) (&vrdpEnabled);
     AssertComRC(rc2);
 
-    if (SUCCEEDED (rc2) && vrdpEnabled)
+    if (SUCCEEDED(rc2) && vrdpEnabled)
     {
         if (loadVRDPLibrary ())
         {
@@ -1278,19 +1278,19 @@ void ConsoleVRDPServer::remoteUSBThreadStart (void)
 {
     int rc = RTSemEventCreate (&mUSBBackends.event);
 
-    if (RT_FAILURE (rc))
+    if (RT_FAILURE(rc))
     {
         AssertFailed ();
         mUSBBackends.event = 0;
     }
 
-    if (RT_SUCCESS (rc))
+    if (RT_SUCCESS(rc))
     {
         rc = RTThreadCreate (&mUSBBackends.thread, threadRemoteUSB, this, 65536,
                              RTTHREADTYPE_VRDP_IO, RTTHREADFLAGS_WAITABLE, "remote usb");
     }
 
-    if (RT_FAILURE (rc))
+    if (RT_FAILURE(rc))
     {
         LogRel(("Warning: could not start the remote USB thread, rc = %Rrc!!!\n", rc));
         mUSBBackends.thread = NIL_RTTHREAD;
@@ -1300,7 +1300,7 @@ void ConsoleVRDPServer::remoteUSBThreadStart (void)
         /* Wait until the thread is ready. */
         rc = RTThreadUserWait (mUSBBackends.thread, 60000);
         AssertRC (rc);
-        Assert (mUSBBackends.fThreadRunning || RT_FAILURE (rc));
+        Assert (mUSBBackends.fThreadRunning || RT_FAILURE(rc));
     }
 }
 
@@ -1364,15 +1364,15 @@ VRDPAuthResult ConsoleVRDPServer::Authenticate (const Guid &uuid, VRDPAuthGuestJ
         LogRel(("VRDPAUTH: ConsoleVRDPServer::Authenticate: loading external authentication library '%ls'\n", authLibrary.raw()));
 
         int rc = RTLdrLoad (filename.raw(), &mAuthLibrary);
-        if (RT_FAILURE (rc))
+        if (RT_FAILURE(rc))
             LogRel(("VRDPAUTH: Failed to load external authentication library. Error code: %Rrc\n", rc));
 
-        if (RT_SUCCESS (rc))
+        if (RT_SUCCESS(rc))
         {
             /* Get the entry point. */
             mpfnAuthEntry2 = NULL;
             int rc2 = RTLdrGetSymbol(mAuthLibrary, "VRDPAuth2", (void**)&mpfnAuthEntry2);
-            if (RT_FAILURE (rc2))
+            if (RT_FAILURE(rc2))
             {
                 if (rc2 != VERR_SYMBOL_NOT_FOUND)
                 {
@@ -1384,7 +1384,7 @@ VRDPAuthResult ConsoleVRDPServer::Authenticate (const Guid &uuid, VRDPAuthGuestJ
             /* Get the entry point. */
             mpfnAuthEntry = NULL;
             rc2 = RTLdrGetSymbol(mAuthLibrary, "VRDPAuth", (void**)&mpfnAuthEntry);
-            if (RT_FAILURE (rc2))
+            if (RT_FAILURE(rc2))
             {
                 if (rc2 != VERR_SYMBOL_NOT_FOUND)
                 {
@@ -1400,7 +1400,7 @@ VRDPAuthResult ConsoleVRDPServer::Authenticate (const Guid &uuid, VRDPAuthGuestJ
             }
         }
 
-        if (RT_FAILURE (rc))
+        if (RT_FAILURE(rc))
         {
             mConsole->reportAuthLibraryError (filename.raw(), rc);
 
@@ -1596,13 +1596,13 @@ void ConsoleVRDPServer::ClipboardCreate (uint32_t u32ClientId)
 {
     int rc = lockConsoleVRDPServer ();
 
-    if (RT_SUCCESS (rc))
+    if (RT_SUCCESS(rc))
     {
         if (mcClipboardRefs == 0)
         {
             rc = HGCMHostRegisterServiceExtension (&mhClipboard, "VBoxSharedClipboard", ClipboardServiceExtension, this);
 
-            if (RT_SUCCESS (rc))
+            if (RT_SUCCESS(rc))
             {
                 mcClipboardRefs++;
             }
@@ -1616,7 +1616,7 @@ void ConsoleVRDPServer::ClipboardDelete (uint32_t u32ClientId)
 {
     int rc = lockConsoleVRDPServer ();
 
-    if (RT_SUCCESS (rc))
+    if (RT_SUCCESS(rc))
     {
         mcClipboardRefs--;
 
@@ -1647,7 +1647,7 @@ void ConsoleVRDPServer::USBBackendCreate (uint32_t u32ClientId, void **ppvInterc
         /* Append the new instance in the list. */
         int rc = lockConsoleVRDPServer ();
 
-        if (RT_SUCCESS (rc))
+        if (RT_SUCCESS(rc))
         {
             pRemoteUSBBackend->pNext = mUSBBackends.pHead;
             if (mUSBBackends.pHead)
@@ -1669,7 +1669,7 @@ void ConsoleVRDPServer::USBBackendCreate (uint32_t u32ClientId, void **ppvInterc
             }
         }
 
-        if (RT_FAILURE (rc))
+        if (RT_FAILURE(rc))
         {
             pRemoteUSBBackend->Release ();
         }
@@ -1687,7 +1687,7 @@ void ConsoleVRDPServer::USBBackendDelete (uint32_t u32ClientId)
     /* Find the instance. */
     int rc = lockConsoleVRDPServer ();
 
-    if (RT_SUCCESS (rc))
+    if (RT_SUCCESS(rc))
     {
         pRemoteUSBBackend = usbBackendFind (u32ClientId);
 
@@ -1716,7 +1716,7 @@ void *ConsoleVRDPServer::USBBackendRequestPointer (uint32_t u32ClientId, const G
     /* Find the instance. */
     int rc = lockConsoleVRDPServer ();
 
-    if (RT_SUCCESS (rc))
+    if (RT_SUCCESS(rc))
     {
         pRemoteUSBBackend = usbBackendFind (u32ClientId);
 
@@ -1756,7 +1756,7 @@ void ConsoleVRDPServer::USBBackendReleasePointer (const Guid *pGuid)
     /* Find the instance. */
     int rc = lockConsoleVRDPServer ();
 
-    if (RT_SUCCESS (rc))
+    if (RT_SUCCESS(rc))
     {
         pRemoteUSBBackend = usbBackendFindByUUID (pGuid);
 
@@ -1784,7 +1784,7 @@ RemoteUSBBackend *ConsoleVRDPServer::usbBackendGetNext (RemoteUSBBackend *pRemot
 
     int rc = lockConsoleVRDPServer ();
 
-    if (RT_SUCCESS (rc))
+    if (RT_SUCCESS(rc))
     {
         if (pRemoteUSBBackend == NULL)
         {
@@ -2048,15 +2048,15 @@ void RemoteDisplayInfo::FinalRelease()
  */
 HRESULT RemoteDisplayInfo::init (Console *aParent)
 {
-    LogFlowThisFunc (("aParent=%p\n", aParent));
+    LogFlowThisFunc(("aParent=%p\n", aParent));
 
     ComAssertRet (aParent, E_INVALIDARG);
 
     /* Enclose the state transition NotReady->InInit->Ready */
-    AutoInitSpan autoInitSpan (this);
-    AssertReturn (autoInitSpan.isOk(), E_FAIL);
+    AutoInitSpan autoInitSpan(this);
+    AssertReturn(autoInitSpan.isOk(), E_FAIL);
 
-    unconst (mParent) = aParent;
+    unconst(mParent) = aParent;
 
     /* Confirm a successful initialization */
     autoInitSpan.setSucceeded();
@@ -2070,14 +2070,14 @@ HRESULT RemoteDisplayInfo::init (Console *aParent)
  */
 void RemoteDisplayInfo::uninit()
 {
-    LogFlowThisFunc (("\n"));
+    LogFlowThisFunc(("\n"));
 
     /* Enclose the state transition Ready->InUninit->NotReady */
-    AutoUninitSpan autoUninitSpan (this);
+    AutoUninitSpan autoUninitSpan(this);
     if (autoUninitSpan.uninitDone())
         return;
 
-    unconst (mParent).setNull();
+    unconst(mParent).setNull();
 }
 
 // IRemoteDisplayInfo properties
@@ -2089,11 +2089,11 @@ void RemoteDisplayInfo::uninit()
         if (!a##_aName)                                                   \
             return E_POINTER;                                             \
                                                                           \
-        AutoCaller autoCaller (this);                                     \
-        CheckComRCReturnRC (autoCaller.rc());                             \
+        AutoCaller autoCaller(this);                                     \
+        CheckComRCReturnRC(autoCaller.rc());                             \
                                                                           \
         /* todo: Not sure if a AutoReadLock would be sufficient. */       \
-        AutoWriteLock alock (this);                                       \
+        AutoWriteLock alock(this);                                       \
                                                                           \
         uint32_t value;                                                   \
         uint32_t cbOut = 0;                                               \
@@ -2112,11 +2112,11 @@ void RemoteDisplayInfo::uninit()
         if (!a##_aName)                                                   \
             return E_POINTER;                                             \
                                                                           \
-        AutoCaller autoCaller (this);                                     \
-        CheckComRCReturnRC (autoCaller.rc());                             \
+        AutoCaller autoCaller(this);                                     \
+        CheckComRCReturnRC(autoCaller.rc());                             \
                                                                           \
         /* todo: Not sure if a AutoReadLock would be sufficient. */       \
-        AutoWriteLock alock (this);                                       \
+        AutoWriteLock alock(this);                                       \
                                                                           \
         _aType value;                                                     \
         uint32_t cbOut = 0;                                               \
@@ -2135,11 +2135,11 @@ void RemoteDisplayInfo::uninit()
         if (!a##_aName)                                                   \
             return E_POINTER;                                             \
                                                                           \
-        AutoCaller autoCaller (this);                                     \
-        CheckComRCReturnRC (autoCaller.rc());                             \
+        AutoCaller autoCaller(this);                                     \
+        CheckComRCReturnRC(autoCaller.rc());                             \
                                                                           \
         /* todo: Not sure if a AutoReadLock would be sufficient. */       \
-        AutoWriteLock alock (this);                                       \
+        AutoWriteLock alock(this);                                       \
                                                                           \
         uint32_t cbOut = 0;                                               \
                                                                           \
@@ -2149,7 +2149,7 @@ void RemoteDisplayInfo::uninit()
         if (cbOut == 0)                                                   \
         {                                                                 \
             Bstr str("");                                                 \
-            str.cloneTo (a##_aName);                                      \
+            str.cloneTo(a##_aName);                                      \
             return S_OK;                                                  \
         }                                                                 \
                                                                           \
@@ -2168,7 +2168,7 @@ void RemoteDisplayInfo::uninit()
                                                                           \
         Bstr str(pchBuffer);                                              \
                                                                           \
-        str.cloneTo (a##_aName);                                          \
+        str.cloneTo(a##_aName);                                          \
                                                                           \
         RTMemTmpFree (pchBuffer);                                         \
                                                                           \

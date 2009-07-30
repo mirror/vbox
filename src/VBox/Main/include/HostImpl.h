@@ -118,7 +118,7 @@ public:
     HRESULT saveSettings (settings::Key &aGlobal);
 
 #ifdef VBOX_WITH_USB
-    typedef std::list <ComObjPtr <HostUSBDeviceFilter> > USBDeviceFilterList;
+    typedef std::list <ComObjPtr<HostUSBDeviceFilter> > USBDeviceFilterList;
 
     /** Must be called from under this object's lock. */
     USBProxyService *usbProxyService() { return mUSBProxyService; }
@@ -134,21 +134,21 @@ public:
 private:
 
 #if (defined(RT_OS_SOLARIS) || defined(RT_OS_FREEBSD)) && defined(VBOX_USE_LIBHAL)
-    bool getDVDInfoFromHal(std::list <ComObjPtr <HostDVDDrive> > &list);
-    bool getFloppyInfoFromHal(std::list <ComObjPtr <HostFloppyDrive> > &list);
+    bool getDVDInfoFromHal(std::list <ComObjPtr<HostDVDDrive> > &list);
+    bool getFloppyInfoFromHal(std::list <ComObjPtr<HostFloppyDrive> > &list);
 #endif
 
 #if defined(RT_OS_SOLARIS)
-    void parseMountTable(char *mountTable, std::list <ComObjPtr <HostDVDDrive> > &list);
+    void parseMountTable(char *mountTable, std::list <ComObjPtr<HostDVDDrive> > &list);
     bool validateDevice(const char *deviceNode, bool isCDROM);
 #endif
 
 #ifdef VBOX_WITH_USB
     /** specialization for IHostUSBDeviceFilter */
-    ComObjPtr <HostUSBDeviceFilter> getDependentChild (IHostUSBDeviceFilter *aFilter)
+    ComObjPtr<HostUSBDeviceFilter> getDependentChild (IHostUSBDeviceFilter *aFilter)
     {
         VirtualBoxBase *child = VirtualBoxBaseWithChildren::
-                                getDependentChild (ComPtr <IUnknown> (aFilter));
+                                getDependentChild (ComPtr<IUnknown> (aFilter));
         return child ? dynamic_cast <HostUSBDeviceFilter *> (child)
                      : NULL;
     }
@@ -159,7 +159,7 @@ private:
     void unregisterMetrics (PerformanceCollector *aCollector);
 #endif /* VBOX_WITH_RESOURCE_USAGE_API */
 
-    ComObjPtr <VirtualBox, ComWeakRef> mParent;
+    ComObjPtr<VirtualBox, ComWeakRef> mParent;
 
 #ifdef VBOX_WITH_USB
     USBDeviceFilterList mUSBDeviceFilters;

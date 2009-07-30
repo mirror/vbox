@@ -348,7 +348,7 @@ HRESULT Appliance::init(VirtualBox *aVirtualBox)
 void Appliance::uninit()
 {
     /* Enclose the state transition Ready->InUninit->NotReady */
-    AutoUninitSpan autoUninitSpan (this);
+    AutoUninitSpan autoUninitSpan(this);
     if (autoUninitSpan.uninitDone())
         return;
 

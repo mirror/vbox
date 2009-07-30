@@ -131,7 +131,7 @@ int VMMDev::WaitCredentialsJudgement (uint32_t u32Timeout, uint32_t *pu32Credent
 
     int rc = RTSemEventWait (mCredentialsEvent, u32Timeout);
 
-    if (RT_SUCCESS (rc))
+    if (RT_SUCCESS(rc))
     {
         *pu32CredentialsFlags = mu32CredentialsFlags;
     }

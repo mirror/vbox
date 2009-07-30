@@ -262,7 +262,7 @@ int HGCMService::loadServiceDLL (void)
 
         rc = RTLdrGetSymbol (m_hLdrMod, VBOX_HGCM_SVCLOAD_NAME, (void**)&m_pfnLoad);
 
-        if (RT_FAILURE (rc) || !m_pfnLoad)
+        if (RT_FAILURE(rc) || !m_pfnLoad)
         {
             Log(("HGCMService::loadServiceDLL: Error resolving the service entry point %s, rc = %d, m_pfnLoad = %p\n", VBOX_HGCM_SVCLOAD_NAME, rc, m_pfnLoad));
 
@@ -285,7 +285,7 @@ int HGCMService::loadServiceDLL (void)
 
             LogFlowFunc(("m_pfnLoad rc = %Rrc\n", rc));
 
-            if (RT_SUCCESS (rc))
+            if (RT_SUCCESS(rc))
             {
                 if (   m_fntable.pfnUnload == NULL
                     || m_fntable.pfnConnect == NULL
@@ -474,7 +474,7 @@ DECLCALLBACK(void) hgcmServiceThread (HGCMTHREADHANDLE ThreadHandle, void *pvUse
         HGCMMsgCore *pMsgCore;
         int rc = hgcmMsgGet (ThreadHandle, &pMsgCore);
 
-        if (RT_FAILURE (rc))
+        if (RT_FAILURE(rc))
         {
             /* The error means some serious unrecoverable problem in the hgcmMsg/hgcmThread layer. */
             AssertMsgFailed (("%Rrc\n", rc));
@@ -645,7 +645,7 @@ DECLCALLBACK(void) hgcmServiceThread (HGCMTHREADHANDLE ThreadHandle, void *pvUse
                         rc = VERR_NOT_SUPPORTED;
                     }
 
-                    if (RT_SUCCESS (rc))
+                    if (RT_SUCCESS(rc))
                     {
                         pSvc->m_hExtension = pMsg->handle;
                     }
@@ -804,7 +804,7 @@ void HGCMService::instanceDestroy (void)
     {
         rc = hgcmMsgSend (hMsg);
 
-        if (RT_SUCCESS (rc))
+        if (RT_SUCCESS(rc))
         {
             hgcmThreadWait (m_thread);
         }
@@ -883,7 +883,7 @@ int HGCMService::loadClientState (uint32_t u32ClientId, PSSMHANDLE pSSM)
     HGCMService *pSvc;
     int rc = HGCMService::ResolveService (&pSvc, pszServiceName);
 
-    if (RT_SUCCESS (rc))
+    if (RT_SUCCESS(rc))
     {
         /* The service is already loaded. */
         pSvc->ReleaseService ();
@@ -1295,7 +1295,7 @@ int HGCMService::CreateAndConnectClient (uint32_t *pu32ClientIdOut, uint32_t u32
 
             rc = hgcmMsgSend (hMsg);
 
-            if (RT_SUCCESS (rc))
+            if (RT_SUCCESS(rc))
             {
                 /* Add the client Id to the array. */
                 if (m_cClients == m_cClientsAllocated)
@@ -1360,7 +1360,7 @@ int HGCMService::DisconnectClient (uint32_t u32ClientId, bool fFromService)
         }
     }
 
-    if (RT_SUCCESS (rc))
+    if (RT_SUCCESS(rc))
     {
         /* Remove the client id from the array in any case. */
         int i;
@@ -1645,7 +1645,7 @@ static DECLCALLBACK(void) hgcmThread (HGCMTHREADHANDLE ThreadHandle, void *pvUse
         HGCMMsgCore *pMsgCore;
         int rc = hgcmMsgGet (ThreadHandle, &pMsgCore);
 
-        if (RT_FAILURE (rc))
+        if (RT_FAILURE(rc))
         {
             /* The error means some serious unrecoverable problem in the hgcmMsg/hgcmThread layer. */
             AssertMsgFailed (("%Rrc\n", rc));
@@ -1668,7 +1668,7 @@ static DECLCALLBACK(void) hgcmThread (HGCMTHREADHANDLE ThreadHandle, void *pvUse
                 HGCMService *pService;
                 rc = HGCMService::ResolveService (&pService, pMsg->pszServiceName);
 
-                if (RT_SUCCESS (rc))
+                if (RT_SUCCESS(rc))
                 {
                     /* Call the service instance method. */
                     rc = pService->CreateAndConnectClient (pMsg->pu32ClientId, 0);
@@ -1723,7 +1723,7 @@ static DECLCALLBACK(void) hgcmThread (HGCMTHREADHANDLE ThreadHandle, void *pvUse
                 HGCMService *pService;
                 rc = HGCMService::ResolveService (&pService, pMsg->pszServiceName);
 
-                if (RT_SUCCESS (rc))
+                if (RT_SUCCESS(rc))
                 {
                     rc = pService->HostCall (pMsg->u32Function, pMsg->cParms, pMsg->paParms);
 
@@ -1788,14 +1788,14 @@ static DECLCALLBACK(void) hgcmThread (HGCMTHREADHANDLE ThreadHandle, void *pvUse
                     HGCMService *pService;
                     rc = HGCMService::ResolveService (&pService, handle->pszServiceName);
 
-                    if (RT_SUCCESS (rc))
+                    if (RT_SUCCESS(rc))
                     {
                         pService->RegisterExtension (handle, pMsg->pfnExtension, pMsg->pvExtension);
 
                         pService->ReleaseService ();
                     }
 
-                    if (RT_FAILURE (rc))
+                    if (RT_FAILURE(rc))
                     {
                         RTMemFree (handle);
                     }
@@ -1815,7 +1815,7 @@ static DECLCALLBACK(void) hgcmThread (HGCMTHREADHANDLE ThreadHandle, void *pvUse
                 HGCMService *pService;
                 rc = HGCMService::ResolveService (&pService, pMsg->handle->pszServiceName);
 
-                if (RT_SUCCESS (rc))
+                if (RT_SUCCESS(rc))
                 {
                     pService->UnregisterExtension (pMsg->handle);
 
@@ -2235,7 +2235,7 @@ int HGCMHostInit (void)
 
         rc = hgcmThreadCreate (&g_hgcmThread, "MainHGCMthread", hgcmThread, NULL);
 
-        if (RT_FAILURE (rc))
+        if (RT_FAILURE(rc))
         {
             LogRel(("Failed to start HGCM thread. HGCM services will be unavailable!!! rc = %Rrc\n", rc));
         }
@@ -2255,7 +2255,7 @@ int HGCMHostShutdown (void)
 
     int rc = HGCMHostReset ();
 
-    if (RT_SUCCESS (rc))
+    if (RT_SUCCESS(rc))
     {
         /* Send the quit message to the main hgcmThread. */
         HGCMMSGHANDLE hMsg = 0;
@@ -2266,7 +2266,7 @@ int HGCMHostShutdown (void)
         {
             rc = hgcmMsgSend (hMsg);
 
-            if (RT_SUCCESS (rc))
+            if (RT_SUCCESS(rc))
             {
                 /* Wait for the thread termination. */
                 hgcmThreadWait (g_hgcmThread);

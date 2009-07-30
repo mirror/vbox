@@ -55,7 +55,7 @@ public:
         }
 
         ComObjPtr<DVDImage> image;
-        ComPtr <IHostDVDDrive> hostDrive;
+        ComPtr<IHostDVDDrive> hostDrive;
         DriveState_T state;
         BOOL passthrough;
     };
@@ -120,8 +120,8 @@ public:
 
 private:
 
-    const ComObjPtr <Machine, ComWeakRef> mParent;
-    const ComObjPtr <DVDDrive> mPeer;
+    const ComObjPtr<Machine, ComWeakRef> mParent;
+    const ComObjPtr<DVDDrive> mPeer;
 
     Backupable <Data> m;
 };

@@ -135,14 +135,14 @@ VirtualBox::~VirtualBox() {}
 
 HRESULT VirtualBox::FinalConstruct()
 {
-    LogFlowThisFunc (("\n"));
+    LogFlowThisFunc(("\n"));
 
     return init();
 }
 
 void VirtualBox::FinalRelease()
 {
-    LogFlowThisFunc (("\n"));
+    LogFlowThisFunc(("\n"));
 
     uninit();
 }
@@ -162,8 +162,8 @@ VirtualBox::Data::Data()
 HRESULT VirtualBox::init()
 {
     /* Enclose the state transition NotReady->InInit->Ready */
-    AutoInitSpan autoInitSpan (this);
-    AssertReturn (autoInitSpan.isOk(), E_FAIL);
+    AutoInitSpan autoInitSpan(this);
+    AssertReturn(autoInitSpan.isOk(), E_FAIL);
 
     LogFlow (("===========================================================\n"));
     LogFlowThisFuncEnter();
@@ -173,24 +173,24 @@ HRESULT VirtualBox::init()
     sRevision = VBoxSVNRev();
     if (sPackageType.isNull())
         sPackageType = VBOX_PACKAGE_STRING;
-    LogFlowThisFunc (("Version: %ls, Package: %ls\n", sVersion.raw(), sPackageType.raw()));
+    LogFlowThisFunc(("Version: %ls, Package: %ls\n", sVersion.raw(), sPackageType.raw()));
 
     if (sSettingsFormatVersion.isNull())
         sSettingsFormatVersion = VBOX_XML_VERSION_FULL;
-    LogFlowThisFunc (("Settings Format Version: %ls\n",
+    LogFlowThisFunc(("Settings Format Version: %ls\n",
                       sSettingsFormatVersion.raw()));
 
     /* Get the VirtualBox home directory. */
     {
         char homeDir [RTPATH_MAX];
         int vrc = com::GetVBoxUserHomeDirectory (homeDir, sizeof (homeDir));
-        if (RT_FAILURE (vrc))
+        if (RT_FAILURE(vrc))
             return setError (E_FAIL,
                 tr ("Could not create the VirtualBox home directory '%s'"
                     "(%Rrc)"),
                 homeDir, vrc);
 
-        unconst (mData.mHomeDir) = homeDir;
+        unconst(mData.mHomeDir) = homeDir;
     }
 
     /* compose the global config file name (always full path) */
@@ -198,11 +198,11 @@ HRESULT VirtualBox::init()
                                RTPATH_DELIMITER, VBOX_GLOBAL_SETTINGS_FILE);
 
     /* store the config file name */
-    unconst (mData.mCfgFile.mName) = vboxConfigFile;
+    unconst(mData.mCfgFile.mName) = vboxConfigFile;
 
     /* lock the config file */
     HRESULT rc = lockConfig();
-    if (SUCCEEDED (rc))
+    if (SUCCEEDED(rc))
     {
         if (!isConfigLocked())
         {
@@ -214,11 +214,11 @@ HRESULT VirtualBox::init()
             int vrc = RTFileOpen (&handle, vboxConfigFile,
                                   RTFILE_O_READWRITE | RTFILE_O_CREATE |
                                   RTFILE_O_DENY_WRITE);
-            if (RT_SUCCESS (vrc))
+            if (RT_SUCCESS(vrc))
                 vrc = RTFileWrite (handle,
                                    (void *) gDefaultGlobalConfig,
                                    strlen (gDefaultGlobalConfig), NULL);
-            if (RT_FAILURE (vrc))
+            if (RT_FAILURE(vrc))
             {
                 rc = setError (E_FAIL, tr ("Could not create the default settings file "
                                            "'%s' (%Rrc)"),
@@ -232,7 +232,7 @@ HRESULT VirtualBox::init()
         }
     }
 
-    if (SUCCEEDED (rc))
+    if (SUCCEEDED(rc))
     {
         try
         {
@@ -251,13 +251,13 @@ HRESULT VirtualBox::init()
 
 #ifdef VBOX_WITH_RESOURCE_USAGE_API
             /* create the performance collector object BEFORE host */
-            unconst (mData.mPerformanceCollector).createObject();
+            unconst(mData.mPerformanceCollector).createObject();
             rc = mData.mPerformanceCollector->init();
             ComAssertComRCThrowRC (rc);
 #endif /* VBOX_WITH_RESOURCE_USAGE_API */
 
             /* create the host object early, machines will need it */
-            unconst (mData.mHost).createObject();
+            unconst(mData.mHost).createObject();
             rc = mData.mHost->init (this);
             ComAssertComRCThrowRC (rc);
 
@@ -265,7 +265,7 @@ HRESULT VirtualBox::init()
             CheckComRCThrowRC (rc);
 
             /* create the system properties object, someone may need it too */
-            unconst (mData.mSystemProperties).createObject();
+            unconst(mData.mSystemProperties).createObject();
             rc = mData.mSystemProperties->init (this);
             ComAssertComRCThrowRC (rc);
 
@@ -275,9 +275,9 @@ HRESULT VirtualBox::init()
             /* guest OS type objects, needed by machines */
             for (size_t i = 0; i < RT_ELEMENTS (Global::sOSTypes); ++ i)
             {
-                ComObjPtr <GuestOSType> guestOSTypeObj;
+                ComObjPtr<GuestOSType> guestOSTypeObj;
                 rc = guestOSTypeObj.createObject();
-                if (SUCCEEDED (rc))
+                if (SUCCEEDED(rc))
                 {
                     rc = guestOSTypeObj->init (Global::sOSTypes [i].familyId,
                                                Global::sOSTypes [i].familyDescription,
@@ -290,7 +290,7 @@ HRESULT VirtualBox::init()
                                                Global::sOSTypes [i].recommendedHDD,
                                                Global::sOSTypes [i].networkAdapterType,
                                                Global::sOSTypes [i].numSerialEnabled);
-                    if (SUCCEEDED (rc))
+                    if (SUCCEEDED(rc))
                         mData.mGuestOSTypes.push_back (guestOSTypeObj);
                 }
                 ComAssertComRCThrowRC (rc);
@@ -311,7 +311,7 @@ HRESULT VirtualBox::init()
             /* check hard disk consistency */
 /// @todo (r=dmik) add IVirtualBox::cleanupHardDisks() instead or similar
 //            for (HardDiskList::const_iterator it = mData.mHardDisks.begin();
-//                 it != mData.mHardDisks.end() && SUCCEEDED (rc);
+//                 it != mData.mHardDisks.end() && SUCCEEDED(rc);
 //                 ++ it)
 //            {
 //                rc = (*it)->checkConsistency();
@@ -333,32 +333,32 @@ HRESULT VirtualBox::init()
         }
     }
 
-    if (SUCCEEDED (rc))
+    if (SUCCEEDED(rc))
     {
         /* start the client watcher thread */
 #if defined(RT_OS_WINDOWS)
-        unconst (mWatcherData.mUpdateReq) = ::CreateEvent (NULL, FALSE, FALSE, NULL);
+        unconst(mWatcherData.mUpdateReq) = ::CreateEvent (NULL, FALSE, FALSE, NULL);
 #elif defined(RT_OS_OS2)
-        RTSemEventCreate (&unconst (mWatcherData.mUpdateReq));
+        RTSemEventCreate (&unconst(mWatcherData.mUpdateReq));
 #elif defined(VBOX_WITH_SYS_V_IPC_SESSION_WATCHER)
-        RTSemEventCreate (&unconst (mWatcherData.mUpdateReq));
+        RTSemEventCreate (&unconst(mWatcherData.mUpdateReq));
 #else
 # error "Port me!"
 #endif
-        int vrc = RTThreadCreate (&unconst (mWatcherData.mThread),
+        int vrc = RTThreadCreate (&unconst(mWatcherData.mThread),
                                   ClientWatcher, (void *) this,
                                   0, RTTHREADTYPE_MAIN_WORKER,
                                   RTTHREADFLAGS_WAITABLE, "Watcher");
         ComAssertRC (vrc);
-        if (RT_FAILURE (vrc))
+        if (RT_FAILURE(vrc))
             rc = E_FAIL;
     }
 
-    if (SUCCEEDED (rc)) do
+    if (SUCCEEDED(rc)) do
     {
         /* start the async event handler thread */
-        int vrc = RTThreadCreate (&unconst (mAsyncEventThread), AsyncEventHandler,
-                                  &unconst (mAsyncEventQ),
+        int vrc = RTThreadCreate (&unconst(mAsyncEventThread), AsyncEventHandler,
+                                  &unconst(mAsyncEventQ),
                                   0, RTTHREADTYPE_MAIN_WORKER,
                                   RTTHREADFLAGS_WAITABLE, "EventHandler");
         ComAssertRCBreak (vrc, rc = E_FAIL);
@@ -370,10 +370,10 @@ HRESULT VirtualBox::init()
     while (0);
 
     /* Confirm a successful initialization when it's the case */
-    if (SUCCEEDED (rc))
+    if (SUCCEEDED(rc))
         autoInitSpan.setSucceeded();
 
-    LogFlowThisFunc (("rc=%08X\n", rc));
+    LogFlowThisFunc(("rc=%08X\n", rc));
     LogFlowThisFuncLeave();
     LogFlow (("===========================================================\n"));
     return rc;
@@ -382,17 +382,17 @@ HRESULT VirtualBox::init()
 void VirtualBox::uninit()
 {
     /* Enclose the state transition Ready->InUninit->NotReady */
-    AutoUninitSpan autoUninitSpan (this);
+    AutoUninitSpan autoUninitSpan(this);
     if (autoUninitSpan.uninitDone())
         return;
 
     LogFlow (("===========================================================\n"));
     LogFlowThisFuncEnter();
-    LogFlowThisFunc (("initFailed()=%d\n", autoUninitSpan.initFailed()));
+    LogFlowThisFunc(("initFailed()=%d\n", autoUninitSpan.initFailed()));
 
     /* tell all our child objects we've been uninitialized */
 
-    LogFlowThisFunc (("Uninitializing machines (%d)...\n", mData.mMachines.size()));
+    LogFlowThisFunc(("Uninitializing machines (%d)...\n", mData.mMachines.size()));
     if (mData.mMachines.size())
     {
         MachineList::iterator it = mData.mMachines.begin();
@@ -425,27 +425,27 @@ void VirtualBox::uninit()
     if (mData.mSystemProperties)
     {
         mData.mSystemProperties->uninit();
-        unconst (mData.mSystemProperties).setNull();
+        unconst(mData.mSystemProperties).setNull();
     }
 
     if (mData.mHost)
     {
         mData.mHost->uninit();
-        unconst (mData.mHost).setNull();
+        unconst(mData.mHost).setNull();
     }
 
 #ifdef VBOX_WITH_RESOURCE_USAGE_API
     if (mData.mPerformanceCollector)
     {
         mData.mPerformanceCollector->uninit();
-        unconst (mData.mPerformanceCollector).setNull();
+        unconst(mData.mPerformanceCollector).setNull();
     }
 #endif /* VBOX_WITH_RESOURCE_USAGE_API */
 
     /* unlock the config file */
     unlockConfig();
 
-    LogFlowThisFunc (("Releasing callbacks...\n"));
+    LogFlowThisFunc(("Releasing callbacks...\n"));
     if (mData.mCallbacks.size())
     {
         /* release all callbacks */
@@ -454,7 +454,7 @@ void VirtualBox::uninit()
         mData.mCallbacks.clear();
     }
 
-    LogFlowThisFunc (("Terminating the async event handler...\n"));
+    LogFlowThisFunc(("Terminating the async event handler...\n"));
     if (mAsyncEventThread != NIL_RTTHREAD)
     {
         /* signal to exit the event loop */
@@ -465,7 +465,7 @@ void VirtualBox::uninit()
              *  a NULL event!)
              */
             int vrc = RTThreadWait (mAsyncEventThread, 60000, NULL);
-            if (RT_FAILURE (vrc))
+            if (RT_FAILURE(vrc))
                 LogWarningFunc (("RTThreadWait(%RTthrd) -> %Rrc\n",
                                  mAsyncEventThread, vrc));
         }
@@ -475,37 +475,37 @@ void VirtualBox::uninit()
             RTThreadWait (mAsyncEventThread, 0, NULL);
         }
 
-        unconst (mAsyncEventThread) = NIL_RTTHREAD;
-        unconst (mAsyncEventQ) = NULL;
+        unconst(mAsyncEventThread) = NIL_RTTHREAD;
+        unconst(mAsyncEventQ) = NULL;
     }
 
-    LogFlowThisFunc (("Terminating the client watcher...\n"));
+    LogFlowThisFunc(("Terminating the client watcher...\n"));
     if (mWatcherData.mThread != NIL_RTTHREAD)
     {
         /* signal the client watcher thread */
         updateClientWatcher();
         /* wait for the termination */
         RTThreadWait (mWatcherData.mThread, RT_INDEFINITE_WAIT, NULL);
-        unconst (mWatcherData.mThread) = NIL_RTTHREAD;
+        unconst(mWatcherData.mThread) = NIL_RTTHREAD;
     }
     mWatcherData.mProcesses.clear();
 #if defined(RT_OS_WINDOWS)
     if (mWatcherData.mUpdateReq != NULL)
     {
         ::CloseHandle (mWatcherData.mUpdateReq);
-        unconst (mWatcherData.mUpdateReq) = NULL;
+        unconst(mWatcherData.mUpdateReq) = NULL;
     }
 #elif defined(RT_OS_OS2)
     if (mWatcherData.mUpdateReq != NIL_RTSEMEVENT)
     {
         RTSemEventDestroy (mWatcherData.mUpdateReq);
-        unconst (mWatcherData.mUpdateReq) = NIL_RTSEMEVENT;
+        unconst(mWatcherData.mUpdateReq) = NIL_RTSEMEVENT;
     }
 #elif defined(VBOX_WITH_SYS_V_IPC_SESSION_WATCHER)
     if (mWatcherData.mUpdateReq != NIL_RTSEMEVENT)
     {
         RTSemEventDestroy (mWatcherData.mUpdateReq);
-        unconst (mWatcherData.mUpdateReq) = NIL_RTSEMEVENT;
+        unconst(mWatcherData.mUpdateReq) = NIL_RTSEMEVENT;
     }
 #else
 # error "Port me!"
@@ -525,10 +525,10 @@ STDMETHODIMP VirtualBox::COMGETTER(Version) (BSTR *aVersion)
 {
     CheckComArgNotNull(aVersion);
 
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
 
-    sVersion.cloneTo (aVersion);
+    sVersion.cloneTo(aVersion);
     return S_OK;
 }
 
@@ -536,8 +536,8 @@ STDMETHODIMP VirtualBox::COMGETTER(Revision) (ULONG *aRevision)
 {
     CheckComArgNotNull(aRevision);
 
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
 
     *aRevision = sRevision;
     return S_OK;
@@ -547,10 +547,10 @@ STDMETHODIMP VirtualBox::COMGETTER(PackageType) (BSTR *aPackageType)
 {
     CheckComArgNotNull(aPackageType);
 
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
 
-    sPackageType.cloneTo (aPackageType);
+    sPackageType.cloneTo(aPackageType);
     return S_OK;
 }
 
@@ -558,11 +558,11 @@ STDMETHODIMP VirtualBox::COMGETTER(HomeFolder) (BSTR *aHomeFolder)
 {
     CheckComArgNotNull(aHomeFolder);
 
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
 
     /* mHomeDir is const and doesn't need a lock */
-    mData.mHomeDir.cloneTo (aHomeFolder);
+    mData.mHomeDir.cloneTo(aHomeFolder);
     return S_OK;
 }
 
@@ -570,11 +570,11 @@ STDMETHODIMP VirtualBox::COMGETTER(SettingsFilePath) (BSTR *aSettingsFilePath)
 {
     CheckComArgNotNull(aSettingsFilePath);
 
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
 
     /* mCfgFile.mName is const and doesn't need a lock */
-    mData.mCfgFile.mName.cloneTo (aSettingsFilePath);
+    mData.mCfgFile.mName.cloneTo(aSettingsFilePath);
     return S_OK;
 }
 
@@ -583,12 +583,12 @@ COMGETTER(SettingsFileVersion) (BSTR *aSettingsFileVersion)
 {
     CheckComArgNotNull(aSettingsFileVersion);
 
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
 
-    AutoReadLock alock (this);
+    AutoReadLock alock(this);
 
-    mData.mSettingsFileVersion.cloneTo (aSettingsFileVersion);
+    mData.mSettingsFileVersion.cloneTo(aSettingsFileVersion);
     return S_OK;
 }
 
@@ -597,10 +597,10 @@ COMGETTER(SettingsFormatVersion) (BSTR *aSettingsFormatVersion)
 {
     CheckComArgNotNull(aSettingsFormatVersion);
 
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
 
-    sSettingsFormatVersion.cloneTo (aSettingsFormatVersion);
+    sSettingsFormatVersion.cloneTo(aSettingsFormatVersion);
     return S_OK;
 }
 
@@ -608,11 +608,11 @@ STDMETHODIMP VirtualBox::COMGETTER(Host) (IHost **aHost)
 {
     CheckComArgOutSafeArrayPointerValid(aHost);
 
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
 
     /* mHost is const, no need to lock */
-    mData.mHost.queryInterfaceTo (aHost);
+    mData.mHost.queryInterfaceTo(aHost);
     return S_OK;
 }
 
@@ -621,60 +621,60 @@ VirtualBox::COMGETTER(SystemProperties) (ISystemProperties **aSystemProperties)
 {
     CheckComArgOutSafeArrayPointerValid(aSystemProperties);
 
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
 
     /* mSystemProperties is const, no need to lock */
-    mData.mSystemProperties.queryInterfaceTo (aSystemProperties);
+    mData.mSystemProperties.queryInterfaceTo(aSystemProperties);
     return S_OK;
 }
 
 STDMETHODIMP
-VirtualBox::COMGETTER(Machines) (ComSafeArrayOut (IMachine *, aMachines))
+VirtualBox::COMGETTER(Machines) (ComSafeArrayOut(IMachine *, aMachines))
 {
-    if (ComSafeArrayOutIsNull (aMachines))
+    if (ComSafeArrayOutIsNull(aMachines))
         return E_POINTER;
 
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
 
-    AutoReadLock alock (this);
+    AutoReadLock alock(this);
 
-    SafeIfaceArray <IMachine> machines (mData.mMachines);
-    machines.detachTo (ComSafeArrayOutArg (aMachines));
+    SafeIfaceArray<IMachine> machines (mData.mMachines);
+    machines.detachTo(ComSafeArrayOutArg(aMachines));
 
     return S_OK;
 }
 
-STDMETHODIMP VirtualBox::COMGETTER(HardDisks) (ComSafeArrayOut (IHardDisk *, aHardDisks))
+STDMETHODIMP VirtualBox::COMGETTER(HardDisks) (ComSafeArrayOut(IHardDisk *, aHardDisks))
 {
-    if (ComSafeArrayOutIsNull (aHardDisks))
+    if (ComSafeArrayOutIsNull(aHardDisks))
         return E_POINTER;
 
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
 
-    AutoReadLock alock (this);
+    AutoReadLock alock(this);
 
     SafeIfaceArray<IHardDisk> hardDisks (mData.mHardDisks);
-    hardDisks.detachTo (ComSafeArrayOutArg (aHardDisks));
+    hardDisks.detachTo(ComSafeArrayOutArg(aHardDisks));
 
     return S_OK;
 }
 
 STDMETHODIMP
-VirtualBox::COMGETTER(DVDImages) (ComSafeArrayOut (IDVDImage *, aDVDImages))
+VirtualBox::COMGETTER(DVDImages) (ComSafeArrayOut(IDVDImage *, aDVDImages))
 {
-    if (ComSafeArrayOutIsNull (aDVDImages))
+    if (ComSafeArrayOutIsNull(aDVDImages))
         return E_POINTER;
 
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
 
-    AutoReadLock alock (this);
+    AutoReadLock alock(this);
 
-    SafeIfaceArray <IDVDImage> images (mData.mDVDImages);
-    images.detachTo (ComSafeArrayOutArg (aDVDImages));
+    SafeIfaceArray<IDVDImage> images (mData.mDVDImages);
+    images.detachTo(ComSafeArrayOutArg(aDVDImages));
 
     return S_OK;
 }
@@ -682,53 +682,53 @@ VirtualBox::COMGETTER(DVDImages) (ComSafeArrayOut (IDVDImage *, aDVDImages))
 STDMETHODIMP
 VirtualBox::COMGETTER(FloppyImages) (ComSafeArrayOut(IFloppyImage *, aFloppyImages))
 {
-    if (ComSafeArrayOutIsNull (aFloppyImages))
+    if (ComSafeArrayOutIsNull(aFloppyImages))
         return E_POINTER;
 
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
 
-    AutoReadLock alock (this);
+    AutoReadLock alock(this);
 
     SafeIfaceArray<IFloppyImage> images (mData.mFloppyImages);
-    images.detachTo (ComSafeArrayOutArg (aFloppyImages));
+    images.detachTo(ComSafeArrayOutArg(aFloppyImages));
 
     return S_OK;
 }
 
-STDMETHODIMP VirtualBox::COMGETTER(ProgressOperations) (ComSafeArrayOut (IProgress *, aOperations))
+STDMETHODIMP VirtualBox::COMGETTER(ProgressOperations) (ComSafeArrayOut(IProgress *, aOperations))
 {
     CheckComArgOutSafeArrayPointerValid(aOperations);
 
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
 
     /* protect mProgressOperations */
     AutoReadLock safeLock (mSafeLock);
 
-    SafeIfaceArray <IProgress> progress (mData.mProgressOperations);
-    progress.detachTo (ComSafeArrayOutArg (aOperations));
+    SafeIfaceArray<IProgress> progress (mData.mProgressOperations);
+    progress.detachTo(ComSafeArrayOutArg(aOperations));
 
     return S_OK;
 }
 
-STDMETHODIMP VirtualBox::COMGETTER(GuestOSTypes) (ComSafeArrayOut (IGuestOSType *, aGuestOSTypes))
+STDMETHODIMP VirtualBox::COMGETTER(GuestOSTypes) (ComSafeArrayOut(IGuestOSType *, aGuestOSTypes))
 {
     CheckComArgOutSafeArrayPointerValid(aGuestOSTypes);
 
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
 
-    AutoReadLock alock (this);
+    AutoReadLock alock(this);
 
-    SafeIfaceArray <IGuestOSType> ostypes (mData.mGuestOSTypes);
-    ostypes.detachTo (ComSafeArrayOutArg (aGuestOSTypes));
+    SafeIfaceArray<IGuestOSType> ostypes (mData.mGuestOSTypes);
+    ostypes.detachTo(ComSafeArrayOutArg(aGuestOSTypes));
 
     return S_OK;
 }
 
 STDMETHODIMP
-VirtualBox::COMGETTER(SharedFolders) (ComSafeArrayOut (ISharedFolder *, aSharedFolders))
+VirtualBox::COMGETTER(SharedFolders) (ComSafeArrayOut(ISharedFolder *, aSharedFolders))
 {
 #ifndef RT_OS_WINDOWS
     NOREF(aSharedFoldersSize);
@@ -736,8 +736,8 @@ VirtualBox::COMGETTER(SharedFolders) (ComSafeArrayOut (ISharedFolder *, aSharedF
 
     CheckComArgOutSafeArrayPointerValid(aSharedFolders);
 
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
 
     return setError (E_NOTIMPL, "Not yet implemented");
 }
@@ -748,11 +748,11 @@ VirtualBox::COMGETTER(PerformanceCollector) (IPerformanceCollector **aPerformanc
 #ifdef VBOX_WITH_RESOURCE_USAGE_API
     CheckComArgOutSafeArrayPointerValid(aPerformanceCollector);
 
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
 
     /* mPerformanceCollector is const, no need to lock */
-    mData.mPerformanceCollector.queryInterfaceTo (aPerformanceCollector);
+    mData.mPerformanceCollector.queryInterfaceTo(aPerformanceCollector);
 
     return S_OK;
 #else /* !VBOX_WITH_RESOURCE_USAGE_API */
@@ -761,18 +761,18 @@ VirtualBox::COMGETTER(PerformanceCollector) (IPerformanceCollector **aPerformanc
 }
 
 STDMETHODIMP
-VirtualBox::COMGETTER(DHCPServers) (ComSafeArrayOut (IDHCPServer *, aDHCPServers))
+VirtualBox::COMGETTER(DHCPServers) (ComSafeArrayOut(IDHCPServer *, aDHCPServers))
 {
-    if (ComSafeArrayOutIsNull (aDHCPServers))
+    if (ComSafeArrayOutIsNull(aDHCPServers))
         return E_POINTER;
 
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
 
-    AutoReadLock alock (this);
+    AutoReadLock alock(this);
 
     SafeIfaceArray<IDHCPServer> svrs (mData.mDHCPServers);
-    svrs.detachTo (ComSafeArrayOutArg (aDHCPServers));
+    svrs.detachTo(ComSafeArrayOutArg(aDHCPServers));
 
     return S_OK;
 }
@@ -788,14 +788,14 @@ STDMETHODIMP VirtualBox::CreateMachine (IN_BSTR aName,
                                         IMachine **aMachine)
 {
     LogFlowThisFuncEnter();
-    LogFlowThisFunc (("aName=\"%ls\",aOsTypeId =\"%ls\",aBaseFolder=\"%ls\"\n", aName, aOsTypeId, aBaseFolder));
+    LogFlowThisFunc(("aName=\"%ls\",aOsTypeId =\"%ls\",aBaseFolder=\"%ls\"\n", aName, aOsTypeId, aBaseFolder));
 
     CheckComArgStrNotEmptyOrNull (aName);
     /** @todo tighten checks on aId? */
-    CheckComArgOutPointerValid (aMachine);
+    CheckComArgOutPointerValid(aMachine);
 
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
 
     /* Compose the settings file name using the following scheme:
      *
@@ -818,9 +818,9 @@ STDMETHODIMP VirtualBox::CreateMachine (IN_BSTR aName,
     HRESULT rc = E_FAIL;
 
     /* create a new object */
-    ComObjPtr <Machine> machine;
+    ComObjPtr<Machine> machine;
     rc = machine.createObject();
-    CheckComRCReturnRC (rc);
+    CheckComRCReturnRC(rc);
 
     /* Create UUID if an empty one was specified. */
     Guid id(aId);
@@ -852,10 +852,10 @@ STDMETHODIMP VirtualBox::CreateMachine (IN_BSTR aName,
     /* initialize the machine object */
     rc = machine->init (this, settingsFile, Machine::Init_New, aName, osType,
                         TRUE /* aNameSync */, &id);
-    if (SUCCEEDED (rc))
+    if (SUCCEEDED(rc))
     {
         /* set the return value */
-        rc = machine.queryInterfaceTo (aMachine);
+        rc = machine.queryInterfaceTo(aMachine);
         AssertComRC (rc);
     }
 
@@ -873,10 +873,10 @@ STDMETHODIMP VirtualBox::CreateLegacyMachine (IN_BSTR aName,
     CheckComArgStrNotEmptyOrNull (aName);
     CheckComArgStrNotEmptyOrNull (aSettingsFile);
     /** @todo tighten checks on aId? */
-    CheckComArgOutPointerValid (aMachine);
+    CheckComArgOutPointerValid(aMachine);
 
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
 
     HRESULT rc = E_FAIL;
 
@@ -888,7 +888,7 @@ STDMETHODIMP VirtualBox::CreateLegacyMachine (IN_BSTR aName,
     /* create a new object */
     ComObjPtr<Machine> machine;
     rc = machine.createObject();
-    CheckComRCReturnRC (rc);
+    CheckComRCReturnRC(rc);
 
     /* Create UUID if an empty one was specified. */
     Guid id(aId);
@@ -920,10 +920,10 @@ STDMETHODIMP VirtualBox::CreateLegacyMachine (IN_BSTR aName,
     /* initialize the machine object */
     rc = machine->init (this, Bstr (settingsFile), Machine::Init_New,
                         aName, osType, FALSE /* aNameSync */, &id);
-    if (SUCCEEDED (rc))
+    if (SUCCEEDED(rc))
     {
         /* set the return value */
-        rc = machine.queryInterfaceTo (aMachine);
+        rc = machine.queryInterfaceTo(aMachine);
         AssertComRC (rc);
     }
 
@@ -936,22 +936,22 @@ STDMETHODIMP VirtualBox::OpenMachine (IN_BSTR aSettingsFile,
     CheckComArgStrNotEmptyOrNull(aSettingsFile);
     CheckComArgOutSafeArrayPointerValid(aMachine);
 
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
 
     HRESULT rc = E_FAIL;
 
     /* create a new object */
     ComObjPtr<Machine> machine;
     rc = machine.createObject();
-    if (SUCCEEDED (rc))
+    if (SUCCEEDED(rc))
     {
         /* initialize the machine object */
         rc = machine->init (this, aSettingsFile, Machine::Init_Existing);
-        if (SUCCEEDED (rc))
+        if (SUCCEEDED(rc))
         {
             /* set the return value */
-            rc = machine.queryInterfaceTo (aMachine);
+            rc = machine.queryInterfaceTo(aMachine);
             ComAssertComRC (rc);
         }
     }
@@ -964,14 +964,14 @@ STDMETHODIMP VirtualBox::RegisterMachine (IMachine *aMachine)
 {
     CheckComArgNotNull(aMachine);
 
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
 
     HRESULT rc;
 
     Bstr name;
     rc = aMachine->COMGETTER(Name) (name.asOutParam());
-    CheckComRCReturnRC (rc);
+    CheckComRCReturnRC(rc);
 
     /* We need the children map lock here to keep the getDependentChild() result
      * valid until we finish */
@@ -995,7 +995,7 @@ STDMETHODIMP VirtualBox::RegisterMachine (IMachine *aMachine)
     rc = registerMachine (machine);
 
     /* fire an event */
-    if (SUCCEEDED (rc))
+    if (SUCCEEDED(rc))
         onMachineRegistered (machine->id(), TRUE);
 
     return rc;
@@ -1006,14 +1006,14 @@ STDMETHODIMP VirtualBox::GetMachine (IN_BSTR aId, IMachine **aMachine)
 {
     CheckComArgOutSafeArrayPointerValid(aMachine);
 
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
 
-    ComObjPtr <Machine> machine;
+    ComObjPtr<Machine> machine;
     HRESULT rc = findMachine (Guid (aId), true /* setError */, &machine);
 
     /* the below will set *aMachine to NULL if machine is null */
-    machine.queryInterfaceTo (aMachine);
+    machine.queryInterfaceTo(aMachine);
 
     return rc;
 }
@@ -1022,20 +1022,20 @@ STDMETHODIMP VirtualBox::GetMachine (IN_BSTR aId, IMachine **aMachine)
 STDMETHODIMP VirtualBox::FindMachine (IN_BSTR aName, IMachine **aMachine)
 {
     LogFlowThisFuncEnter();
-    LogFlowThisFunc (("aName=\"%ls\", aMachine={%p}\n", aName, aMachine));
+    LogFlowThisFunc(("aName=\"%ls\", aMachine={%p}\n", aName, aMachine));
 
     CheckComArgNotNull(aName);
     CheckComArgOutSafeArrayPointerValid(aMachine);
 
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
 
     /* start with not found */
-    ComObjPtr <Machine> machine;
+    ComObjPtr<Machine> machine;
     MachineList machines;
     {
         /* take a copy for safe iteration outside the lock */
-        AutoReadLock alock (this);
+        AutoReadLock alock(this);
         machines = mData.mMachines;
     }
 
@@ -1056,14 +1056,14 @@ STDMETHODIMP VirtualBox::FindMachine (IN_BSTR aName, IMachine **aMachine)
     }
 
     /* this will set (*machine) to NULL if machineObj is null */
-    machine.queryInterfaceTo (aMachine);
+    machine.queryInterfaceTo(aMachine);
 
     HRESULT rc = machine
         ? S_OK
         : setError (VBOX_E_OBJECT_NOT_FOUND,
             tr ("Could not find a registered machine named '%ls'"), aName);
 
-    LogFlowThisFunc (("rc=%08X\n", rc));
+    LogFlowThisFunc(("rc=%08X\n", rc));
     LogFlowThisFuncLeave();
 
     return rc;
@@ -1077,18 +1077,18 @@ STDMETHODIMP VirtualBox::UnregisterMachine (IN_BSTR  aId,
     if (id.isEmpty())
         return E_INVALIDARG;
 
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
 
-    AutoWriteLock alock (this);
+    AutoWriteLock alock(this);
 
-    ComObjPtr <Machine> machine;
+    ComObjPtr<Machine> machine;
 
     HRESULT rc = findMachine (id, true /* setError */, &machine);
-    CheckComRCReturnRC (rc);
+    CheckComRCReturnRC(rc);
 
     rc = machine->trySetRegistered (FALSE);
-    CheckComRCReturnRC (rc);
+    CheckComRCReturnRC(rc);
 
     /* remove from the collection of registered machines */
     mData.mMachines.remove (machine);
@@ -1097,7 +1097,7 @@ STDMETHODIMP VirtualBox::UnregisterMachine (IN_BSTR  aId,
     rc = saveSettings();
 
     /* return the unregistered machine to the caller */
-    machine.queryInterfaceTo (aMachine);
+    machine.queryInterfaceTo(aMachine);
 
     /* fire an event */
     onMachineRegistered (id, FALSE);
@@ -1109,10 +1109,10 @@ STDMETHODIMP VirtualBox::CreateHardDisk(IN_BSTR aFormat,
                                         IN_BSTR aLocation,
                                         IHardDisk **aHardDisk)
 {
-    CheckComArgOutPointerValid (aHardDisk);
+    CheckComArgOutPointerValid(aHardDisk);
 
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
 
     /* we don't access non-const data members so no need to lock */
 
@@ -1129,8 +1129,8 @@ STDMETHODIMP VirtualBox::CreateHardDisk(IN_BSTR aFormat,
     hardDisk.createObject();
     rc = hardDisk->init(this, format, aLocation);
 
-    if (SUCCEEDED (rc))
-        hardDisk.queryInterfaceTo (aHardDisk);
+    if (SUCCEEDED(rc))
+        hardDisk.queryInterfaceTo(aHardDisk);
 
     return rc;
 }
@@ -1146,8 +1146,8 @@ STDMETHODIMP VirtualBox::OpenHardDisk(IN_BSTR aLocation,
     CheckComArgNotNull(aParentId);
     CheckComArgOutSafeArrayPointerValid(aHardDisk);
 
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
 
     /* we don't access non-const data members so no need to lock */
 
@@ -1170,7 +1170,7 @@ STDMETHODIMP VirtualBox::OpenHardDisk(IN_BSTR aLocation,
                         aSetImageId, imageId,
                         aSetParentId, parentId);
 
-    if (SUCCEEDED (rc))
+    if (SUCCEEDED(rc))
     {
         rc = registerHardDisk (hardDisk);
 
@@ -1178,8 +1178,8 @@ STDMETHODIMP VirtualBox::OpenHardDisk(IN_BSTR aLocation,
          * because the differencing hard disk would have been already associated
          * with the parent and this association needs to be broken. */
 
-        if (SUCCEEDED (rc))
-            hardDisk.queryInterfaceTo (aHardDisk);
+        if (SUCCEEDED(rc))
+            hardDisk.queryInterfaceTo(aHardDisk);
         else
             hardDisk->uninit();
     }
@@ -1192,15 +1192,15 @@ STDMETHODIMP VirtualBox::GetHardDisk(IN_BSTR   aId,
 {
     CheckComArgOutSafeArrayPointerValid(aHardDisk);
 
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
 
     Guid id(aId);
     ComObjPtr<HardDisk> hardDisk;
     HRESULT rc = findHardDisk(&id, NULL, true /* setError */, &hardDisk);
 
     /* the below will set *aHardDisk to NULL if hardDisk is null */
-    hardDisk.queryInterfaceTo (aHardDisk);
+    hardDisk.queryInterfaceTo(aHardDisk);
 
     return rc;
 }
@@ -1211,14 +1211,14 @@ STDMETHODIMP VirtualBox::FindHardDisk(IN_BSTR aLocation,
     CheckComArgNotNull(aLocation);
     CheckComArgOutSafeArrayPointerValid(aHardDisk);
 
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
 
     ComObjPtr<HardDisk> hardDisk;
     HRESULT rc = findHardDisk(NULL, aLocation, true /* setError */, &hardDisk);
 
     /* the below will set *aHardDisk to NULL if hardDisk is null */
-    hardDisk.queryInterfaceTo (aHardDisk);
+    hardDisk.queryInterfaceTo(aHardDisk);
 
     return rc;
 }
@@ -1230,8 +1230,8 @@ STDMETHODIMP VirtualBox::OpenDVDImage (IN_BSTR aLocation, IN_BSTR aId,
     CheckComArgStrNotEmptyOrNull(aLocation);
     CheckComArgOutSafeArrayPointerValid(aDVDImage);
 
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
 
     HRESULT rc = VBOX_E_FILE_ERROR;
 
@@ -1240,15 +1240,15 @@ STDMETHODIMP VirtualBox::OpenDVDImage (IN_BSTR aLocation, IN_BSTR aId,
     if (id.isEmpty())
         id.create();
 
-    ComObjPtr <DVDImage> image;
+    ComObjPtr<DVDImage> image;
     image.createObject();
     rc = image->init (this, aLocation, id);
-    if (SUCCEEDED (rc))
+    if (SUCCEEDED(rc))
     {
         rc = registerDVDImage (image);
 
-        if (SUCCEEDED (rc))
-            image.queryInterfaceTo (aDVDImage);
+        if (SUCCEEDED(rc))
+            image.queryInterfaceTo(aDVDImage);
     }
 
     return rc;
@@ -1259,15 +1259,15 @@ STDMETHODIMP VirtualBox::GetDVDImage (IN_BSTR aId, IDVDImage **aDVDImage)
 {
     CheckComArgOutSafeArrayPointerValid(aDVDImage);
 
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
 
     Guid id(aId);
-    ComObjPtr <DVDImage> image;
+    ComObjPtr<DVDImage> image;
     HRESULT rc = findDVDImage (&id, NULL, true /* setError */, &image);
 
     /* the below will set *aDVDImage to NULL if image is null */
-    image.queryInterfaceTo (aDVDImage);
+    image.queryInterfaceTo(aDVDImage);
 
     return rc;
 }
@@ -1278,14 +1278,14 @@ STDMETHODIMP VirtualBox::FindDVDImage (IN_BSTR aLocation, IDVDImage **aDVDImage)
     CheckComArgNotNull(aLocation);
     CheckComArgOutSafeArrayPointerValid(aDVDImage);
 
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
 
-    ComObjPtr <DVDImage> image;
+    ComObjPtr<DVDImage> image;
     HRESULT rc = findDVDImage (NULL, aLocation, true /* setError */, &image);
 
     /* the below will set *aDVDImage to NULL if dvd is null */
-    image.queryInterfaceTo (aDVDImage);
+    image.queryInterfaceTo(aDVDImage);
 
     return rc;
 }
@@ -1297,8 +1297,8 @@ STDMETHODIMP VirtualBox::OpenFloppyImage (IN_BSTR aLocation, IN_BSTR aId,
     CheckComArgStrNotEmptyOrNull(aLocation);
     CheckComArgOutSafeArrayPointerValid(aFloppyImage);
 
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
 
     HRESULT rc = VBOX_E_FILE_ERROR;
 
@@ -1310,12 +1310,12 @@ STDMETHODIMP VirtualBox::OpenFloppyImage (IN_BSTR aLocation, IN_BSTR aId,
     ComObjPtr<FloppyImage> image;
     image.createObject();
     rc = image->init (this, aLocation, id);
-    if (SUCCEEDED (rc))
+    if (SUCCEEDED(rc))
     {
         rc = registerFloppyImage (image);
 
-        if (SUCCEEDED (rc))
-            image.queryInterfaceTo (aFloppyImage);
+        if (SUCCEEDED(rc))
+            image.queryInterfaceTo(aFloppyImage);
     }
 
     return rc;
@@ -1328,15 +1328,15 @@ STDMETHODIMP VirtualBox::GetFloppyImage (IN_BSTR aId,
 {
     CheckComArgOutSafeArrayPointerValid(aFloppyImage);
 
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
 
     Guid id(aId);
     ComObjPtr<FloppyImage> image;
     HRESULT rc = findFloppyImage (&id, NULL, true /* setError */, &image);
 
     /* the below will set *aFloppyImage to NULL if image is null */
-    image.queryInterfaceTo (aFloppyImage);
+    image.queryInterfaceTo(aFloppyImage);
 
     return rc;
 }
@@ -1348,14 +1348,14 @@ STDMETHODIMP VirtualBox::FindFloppyImage (IN_BSTR aLocation,
     CheckComArgNotNull(aLocation);
     CheckComArgOutSafeArrayPointerValid(aFloppyImage);
 
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
 
     ComObjPtr<FloppyImage> image;
     HRESULT rc = findFloppyImage(NULL, aLocation, true /* setError */, &image);
 
     /* the below will set *aFloppyImage to NULL if img is null */
-    image.queryInterfaceTo (aFloppyImage);
+    image.queryInterfaceTo(aFloppyImage);
 
     return rc;
 }
@@ -1384,8 +1384,8 @@ STDMETHODIMP VirtualBox::GetGuestOSType (IN_BSTR aId, IGuestOSType **aType)
 
     CheckComArgNotNull (aType);
 
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
 
     /* first, look for a substitution */
     Bstr id = aId;
@@ -1400,7 +1400,7 @@ STDMETHODIMP VirtualBox::GetGuestOSType (IN_BSTR aId, IGuestOSType **aType)
 
     *aType = NULL;
 
-    AutoReadLock alock (this);
+    AutoReadLock alock(this);
 
     for (GuestOSTypeList::iterator it = mData.mGuestOSTypes.begin();
          it != mData.mGuestOSTypes.end();
@@ -1410,7 +1410,7 @@ STDMETHODIMP VirtualBox::GetGuestOSType (IN_BSTR aId, IGuestOSType **aType)
         AssertMsg (!!typeId, ("ID must not be NULL"));
         if (typeId.compareIgnoreCase (id) == 0)
         {
-            (*it).queryInterfaceTo (aType);
+            (*it).queryInterfaceTo(aType);
             break;
         }
     }
@@ -1427,8 +1427,8 @@ VirtualBox::CreateSharedFolder (IN_BSTR aName, IN_BSTR aHostPath, BOOL /* aWrita
     CheckComArgNotNull(aName);
     CheckComArgNotNull(aHostPath);
 
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
 
     return setError (E_NOTIMPL, "Not yet implemented");
 }
@@ -1437,8 +1437,8 @@ STDMETHODIMP VirtualBox::RemoveSharedFolder (IN_BSTR aName)
 {
     CheckComArgNotNull(aName);
 
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
 
     return setError (E_NOTIMPL, "Not yet implemented");
 }
@@ -1451,8 +1451,8 @@ GetNextExtraDataKey (IN_BSTR aKey, BSTR *aNextKey, BSTR *aNextValue)
 {
     CheckComArgNotNull(aNextKey);
 
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
 
     /* start with nothing found */
     Bstr("").cloneTo(aNextKey);
@@ -1464,7 +1464,7 @@ GetNextExtraDataKey (IN_BSTR aKey, BSTR *aNextKey, BSTR *aNextValue)
     Bstr bstrInKey(aKey);
 
     /* serialize file access (prevent writes) */
-    AutoReadLock alock (this);
+    AutoReadLock alock(this);
 
     try
     {
@@ -1477,7 +1477,7 @@ GetNextExtraDataKey (IN_BSTR aKey, BSTR *aNextKey, BSTR *aNextValue)
         XmlTreeBackend tree;
 
         rc = VirtualBox::loadSettingsTree_Again (tree, file);
-        CheckComRCReturnRC (rc);
+        CheckComRCReturnRC(rc);
 
         Key globalNode = tree.rootKey().key ("Global");
         Key extraDataNode = globalNode.findKey ("ExtraData");
@@ -1495,11 +1495,11 @@ GetNextExtraDataKey (IN_BSTR aKey, BSTR *aNextKey, BSTR *aNextValue)
                     /* if we're supposed to return the first one */
                     if (bstrInKey.isEmpty())
                     {
-                        key.cloneTo (aNextKey);
+                        key.cloneTo(aNextKey);
                         if (aNextValue)
                         {
                             Bstr val = (*it).stringValue ("value");
-                            val.cloneTo (aNextValue);
+                            val.cloneTo(aNextValue);
                         }
                         return S_OK;
                     }
@@ -1512,11 +1512,11 @@ GetNextExtraDataKey (IN_BSTR aKey, BSTR *aNextKey, BSTR *aNextValue)
                         if (it != items.end())
                         {
                             Bstr key = (*it).stringValue ("name");
-                            key.cloneTo (aNextKey);
+                            key.cloneTo(aNextKey);
                             if (aNextValue)
                             {
                                 Bstr val = (*it).stringValue ("value");
-                                val.cloneTo (aNextValue);
+                                val.cloneTo(aNextValue);
                             }
                         }
                         /* else it's the last one, arguments are already NULL */
@@ -1552,8 +1552,8 @@ STDMETHODIMP VirtualBox::GetExtraData (IN_BSTR aKey, BSTR *aValue)
     CheckComArgNotNull(aKey);
     CheckComArgNotNull(aValue);
 
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
 
     /* start with nothing found */
     Bstr("").cloneTo(aValue);
@@ -1561,7 +1561,7 @@ STDMETHODIMP VirtualBox::GetExtraData (IN_BSTR aKey, BSTR *aValue)
     HRESULT rc = S_OK;
 
     /* serialize file access (prevent writes) */
-    AutoReadLock alock (this);
+    AutoReadLock alock(this);
 
     try
     {
@@ -1574,7 +1574,7 @@ STDMETHODIMP VirtualBox::GetExtraData (IN_BSTR aKey, BSTR *aValue)
         XmlTreeBackend tree;
 
         rc = VirtualBox::loadSettingsTree_Again (tree, file);
-        CheckComRCReturnRC (rc);
+        CheckComRCReturnRC(rc);
 
         const Utf8Str key = aKey;
 
@@ -1591,7 +1591,7 @@ STDMETHODIMP VirtualBox::GetExtraData (IN_BSTR aKey, BSTR *aValue)
                 if (key == (*it).stringValue ("name"))
                 {
                     Bstr val = (*it).stringValue ("value");
-                    val.cloneTo (aValue);
+                    val.cloneTo(aValue);
                     break;
                 }
             }
@@ -1612,8 +1612,8 @@ STDMETHODIMP VirtualBox::SetExtraData (IN_BSTR aKey, IN_BSTR aValue)
 {
     CheckComArgNotNull(aKey);
 
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
 
     Guid emptyGuid;
     Bstr val;
@@ -1626,7 +1626,7 @@ STDMETHODIMP VirtualBox::SetExtraData (IN_BSTR aKey, IN_BSTR aValue)
     HRESULT rc = S_OK;
 
     /* serialize file access (prevent concurrent reads and writes) */
-    AutoWriteLock alock (this);
+    AutoWriteLock alock(this);
 
     try
     {
@@ -1638,7 +1638,7 @@ STDMETHODIMP VirtualBox::SetExtraData (IN_BSTR aKey, IN_BSTR aValue)
         XmlTreeBackend tree;
 
         rc = VirtualBox::loadSettingsTree_ForUpdate (tree, file);
-        CheckComRCReturnRC (rc);
+        CheckComRCReturnRC(rc);
 
         const Utf8Str key = aKey;
         Bstr oldVal("");
@@ -1699,7 +1699,7 @@ STDMETHODIMP VirtualBox::SetExtraData (IN_BSTR aKey, IN_BSTR aValue)
             /* save settings on success */
             rc = VirtualBox::saveSettingsTree (tree, file,
                                                mData.mSettingsFileVersion);
-            CheckComRCReturnRC (rc);
+            CheckComRCReturnRC(rc);
         }
     }
     catch (...)
@@ -1708,7 +1708,7 @@ STDMETHODIMP VirtualBox::SetExtraData (IN_BSTR aKey, IN_BSTR aValue)
     }
 
     /* fire a notification */
-    if (SUCCEEDED (rc) && changed)
+    if (SUCCEEDED(rc) && changed)
         onExtraDataChange (Guid::Empty, aKey, aValue);
 
     return rc;
@@ -1721,32 +1721,32 @@ STDMETHODIMP VirtualBox::OpenSession (ISession *aSession, IN_BSTR aMachineId)
 {
     CheckComArgNotNull(aSession);
 
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
 
     Guid id(aMachineId);
-    ComObjPtr <Machine> machine;
+    ComObjPtr<Machine> machine;
 
     HRESULT rc = findMachine (id, true /* setError */, &machine);
-    CheckComRCReturnRC (rc);
+    CheckComRCReturnRC(rc);
 
     /* check the session state */
     SessionState_T state;
     rc = aSession->COMGETTER(State) (&state);
-    CheckComRCReturnRC (rc);
+    CheckComRCReturnRC(rc);
 
     if (state != SessionState_Closed)
         return setError (VBOX_E_INVALID_OBJECT_STATE,
             tr ("The given session is already open or being opened"));
 
     /* get the IInternalSessionControl interface */
-    ComPtr <IInternalSessionControl> control = aSession;
+    ComPtr<IInternalSessionControl> control = aSession;
     ComAssertMsgRet (!!control, ("No IInternalSessionControl interface"),
                      E_INVALIDARG);
 
     rc = machine->openSession (control);
 
-    if (SUCCEEDED (rc))
+    if (SUCCEEDED(rc))
     {
         /*
          *  tell the client watcher thread to update the set of
@@ -1777,31 +1777,31 @@ STDMETHODIMP VirtualBox::OpenRemoteSession (ISession *aSession,
     CheckComArgNotNull(aType);
     CheckComArgOutSafeArrayPointerValid(aProgress);
 
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
 
     Guid id(aMachineId);
-    ComObjPtr <Machine> machine;
+    ComObjPtr<Machine> machine;
 
     HRESULT rc = findMachine (id, true /* setError */, &machine);
-    CheckComRCReturnRC (rc);
+    CheckComRCReturnRC(rc);
 
     /* check the session state */
     SessionState_T state;
     rc = aSession->COMGETTER(State) (&state);
-    CheckComRCReturnRC (rc);
+    CheckComRCReturnRC(rc);
 
     if (state != SessionState_Closed)
         return setError (VBOX_E_INVALID_OBJECT_STATE,
             tr ("The given session is already open or being opened"));
 
     /* get the IInternalSessionControl interface */
-    ComPtr <IInternalSessionControl> control = aSession;
+    ComPtr<IInternalSessionControl> control = aSession;
     ComAssertMsgRet (!!control, ("No IInternalSessionControl interface"),
                      E_INVALIDARG);
 
     /* create a progress object */
-    ComObjPtr <Progress> progress;
+    ComObjPtr<Progress> progress;
     progress.createObject();
     progress->init (this, static_cast <IMachine *> (machine),
                     Bstr (tr ("Spawning session")),
@@ -1809,9 +1809,9 @@ STDMETHODIMP VirtualBox::OpenRemoteSession (ISession *aSession,
 
     rc = machine->openRemoteSession (control, aType, aEnvironment, progress);
 
-    if (SUCCEEDED (rc))
+    if (SUCCEEDED(rc))
     {
-        progress.queryInterfaceTo (aProgress);
+        progress.queryInterfaceTo(aProgress);
 
         /* signal the client watcher thread */
         updateClientWatcher();
@@ -1831,26 +1831,26 @@ STDMETHODIMP VirtualBox::OpenExistingSession (ISession *aSession,
 {
     CheckComArgNotNull(aSession);
 
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
 
     Guid id(aMachineId);
-    ComObjPtr <Machine> machine;
+    ComObjPtr<Machine> machine;
 
     HRESULT rc = findMachine (id, true /* setError */, &machine);
-    CheckComRCReturnRC (rc);
+    CheckComRCReturnRC(rc);
 
     /* check the session state */
     SessionState_T state;
     rc = aSession->COMGETTER(State) (&state);
-    CheckComRCReturnRC (rc);
+    CheckComRCReturnRC(rc);
 
     if (state != SessionState_Closed)
         return setError (VBOX_E_INVALID_OBJECT_STATE,
             tr ("The given session is already open or being opened"));
 
     /* get the IInternalSessionControl interface */
-    ComPtr <IInternalSessionControl> control = aSession;
+    ComPtr<IInternalSessionControl> control = aSession;
     ComAssertMsgRet (!!control, ("No IInternalSessionControl interface"),
                      E_INVALIDARG);
 
@@ -1864,12 +1864,12 @@ STDMETHODIMP VirtualBox::OpenExistingSession (ISession *aSession,
  */
 STDMETHODIMP VirtualBox::RegisterCallback (IVirtualBoxCallback *aCallback)
 {
-    LogFlowThisFunc (("aCallback=%p\n", aCallback));
+    LogFlowThisFunc(("aCallback=%p\n", aCallback));
 
     CheckComArgNotNull(aCallback);
 
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
 
 #if 0 /** @todo r=bird,r=pritesh: must check that the interface id match correct or we might screw up with old code! */
     void *dummy;
@@ -1879,7 +1879,7 @@ STDMETHODIMP VirtualBox::RegisterCallback (IVirtualBoxCallback *aCallback)
     aCallback->Release();
 #endif
 
-    AutoWriteLock alock (this);
+    AutoWriteLock alock(this);
     mData.mCallbacks.push_back (CallbackList::value_type (aCallback));
 
     return S_OK;
@@ -1892,12 +1892,12 @@ STDMETHODIMP VirtualBox::UnregisterCallback (IVirtualBoxCallback *aCallback)
 {
     CheckComArgNotNull(aCallback);
 
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
 
     HRESULT rc = S_OK;
 
-    AutoWriteLock alock (this);
+    AutoWriteLock alock(this);
 
     CallbackList::iterator it;
     it = std::find (mData.mCallbacks.begin(),
@@ -1908,7 +1908,7 @@ STDMETHODIMP VirtualBox::UnregisterCallback (IVirtualBoxCallback *aCallback)
     else
         mData.mCallbacks.erase (it);
 
-    LogFlowThisFunc (("aCallback=%p, rc=%08X\n", aCallback, rc));
+    LogFlowThisFunc(("aCallback=%p, rc=%08X\n", aCallback, rc));
     return rc;
 }
 
@@ -1921,8 +1921,8 @@ STDMETHODIMP VirtualBox::WaitForPropertyChange (IN_BSTR /* aWhat */, ULONG /* aT
 
 STDMETHODIMP VirtualBox::SaveSettings()
 {
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
 
     return saveSettings();
 }
@@ -1931,11 +1931,11 @@ STDMETHODIMP VirtualBox::SaveSettingsWithBackup (BSTR *aBakFileName)
 {
     CheckComArgNotNull(aBakFileName);
 
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
 
     /* saveSettings() needs write lock */
-    AutoWriteLock alock (this);
+    AutoWriteLock alock(this);
 
     /* perform backup only when there was auto-conversion */
     if (mData.mSettingsFileVersion != VBOX_XML_VERSION_FULL)
@@ -1945,9 +1945,9 @@ STDMETHODIMP VirtualBox::SaveSettingsWithBackup (BSTR *aBakFileName)
         HRESULT rc = backupSettingsFile (mData.mCfgFile.mName,
                                          mData.mSettingsFileVersion,
                                          bakFileName);
-        CheckComRCReturnRC (rc);
+        CheckComRCReturnRC(rc);
 
-        bakFileName.cloneTo (aBakFileName);
+        bakFileName.cloneTo(aBakFileName);
     }
 
     return saveSettings();
@@ -1973,7 +1973,7 @@ STDMETHODIMP VirtualBox::SaveSettingsWithBackup (BSTR *aBakFileName)
  */
 HRESULT VirtualBox::postEvent (Event *event)
 {
-    AutoCaller autoCaller (this);
+    AutoCaller autoCaller(this);
     AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
 
     if (autoCaller.state() != Ready)
@@ -1984,8 +1984,8 @@ HRESULT VirtualBox::postEvent (Event *event)
         return S_OK;
     }
 
-    AssertReturn (event, E_FAIL);
-    AssertReturn (mAsyncEventQ, E_FAIL);
+    AssertReturn(event, E_FAIL);
+    AssertReturn(mAsyncEventQ, E_FAIL);
 
     if (mAsyncEventQ->postEvent (event))
         return S_OK;
@@ -2005,12 +2005,12 @@ HRESULT VirtualBox::addProgress (IProgress *aProgress)
 {
     CheckComArgNotNull(aProgress);
 
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
 
     Bstr id;
     HRESULT rc = aProgress->COMGETTER(Id) (id.asOutParam());
-    AssertComRCReturnRC (rc);
+    AssertComRCReturnRC(rc);
 
     /* protect mProgressOperations */
     AutoWriteLock safeLock (mSafeLock);
@@ -2029,10 +2029,10 @@ HRESULT VirtualBox::addProgress (IProgress *aProgress)
  */
 HRESULT VirtualBox::removeProgress (IN_GUID aId)
 {
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
 
-    ComPtr <IProgress> progress;
+    ComPtr<IProgress> progress;
 
     /* protect mProgressOperations */
     AutoWriteLock safeLock (mSafeLock);
@@ -2048,8 +2048,8 @@ HRESULT VirtualBox::removeProgress (IN_GUID aId)
 
 struct StartSVCHelperClientData
 {
-    ComObjPtr <VirtualBox> that;
-    ComObjPtr <Progress> progress;
+    ComObjPtr<VirtualBox> that;
+    ComObjPtr<Progress> progress;
     bool privileged;
     VirtualBox::SVCHelperClientFunc func;
     void *user;
@@ -2107,16 +2107,16 @@ HRESULT VirtualBox::startSVCHelperClient (bool aPrivileged,
                                           SVCHelperClientFunc aFunc,
                                           void *aUser, Progress *aProgress)
 {
-    AssertReturn (aFunc, E_POINTER);
-    AssertReturn (aProgress, E_POINTER);
+    AssertReturn(aFunc, E_POINTER);
+    AssertReturn(aProgress, E_POINTER);
 
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
 
     /* create the SVCHelperClientThread() argument */
     std::auto_ptr <StartSVCHelperClientData>
         d (new StartSVCHelperClientData());
-    AssertReturn (d.get(), E_OUTOFMEMORY);
+    AssertReturn(d.get(), E_OUTOFMEMORY);
 
     d->that = this;
     d->progress = aProgress;
@@ -2157,10 +2157,10 @@ VirtualBox::SVCHelperClientThread (RTTHREAD aThread, void *aUser)
     do
     {
         AssertBreakStmt (d.get(), rc = E_POINTER);
-        AssertReturn (!d->progress.isNull(), E_POINTER);
+        AssertReturn(!d->progress.isNull(), E_POINTER);
 
         /* protect VirtualBox from uninitialization */
-        AutoCaller autoCaller (d->that);
+        AutoCaller autoCaller(d->that);
         if (!autoCaller.isOk())
         {
             /* it's too late */
@@ -2175,7 +2175,7 @@ VirtualBox::SVCHelperClientThread (RTTHREAD aThread, void *aUser)
         SVCHlpClient client;
         vrc = client.create (Utf8StrFmt ("VirtualBox\\SVCHelper\\{%RTuuid}",
                                          id.raw()));
-        if (RT_FAILURE (vrc))
+        if (RT_FAILURE(vrc))
         {
             rc = setError (E_FAIL,
                 tr ("Could not create the communication channel (%Rrc)"), vrc);
@@ -2232,7 +2232,7 @@ VirtualBox::SVCHelperClientThread (RTTHREAD aThread, void *aUser)
         {
             const char *args[] = { exePath, "/Helper", client.name(), 0 };
             vrc = RTProcCreate (exePath, args, RTENV_DEFAULT, 0, &pid);
-            if (RT_FAILURE (vrc))
+            if (RT_FAILURE(vrc))
             {
                 rc = setError (E_FAIL,
                     tr ("Could not launch a process '%s' (%Rrc)"), exePath, vrc);
@@ -2242,7 +2242,7 @@ VirtualBox::SVCHelperClientThread (RTTHREAD aThread, void *aUser)
 
         /* wait for the client to connect */
         vrc = client.connect();
-        if (RT_SUCCESS (vrc))
+        if (RT_SUCCESS(vrc))
         {
             /* start the user supplied function */
             rc = d->func (&client, d->progress, d->user, &vrc);
@@ -2252,11 +2252,11 @@ VirtualBox::SVCHelperClientThread (RTTHREAD aThread, void *aUser)
         /* send the termination signal to the process anyway */
         {
             int vrc2 = client.write (SVCHlpMsg::Null);
-            if (RT_SUCCESS (vrc))
+            if (RT_SUCCESS(vrc))
                 vrc = vrc2;
         }
 
-        if (SUCCEEDED (rc) && RT_FAILURE (vrc))
+        if (SUCCEEDED(rc) && RT_FAILURE(vrc))
         {
             rc = setError (E_FAIL,
                 tr ("Could not operate the communication channel (%Rrc)"), vrc);
@@ -2288,10 +2288,10 @@ VirtualBox::SVCHelperClientThread (RTTHREAD aThread, void *aUser)
  */
 void VirtualBox::updateClientWatcher()
 {
-    AutoCaller autoCaller (this);
+    AutoCaller autoCaller(this);
     AssertComRCReturn (autoCaller.rc(), (void) 0);
 
-    AssertReturn (mWatcherData.mThread != NIL_RTTHREAD, (void) 0);
+    AssertReturn(mWatcherData.mThread != NIL_RTTHREAD, (void) 0);
 
     /* sent an update request */
 #if defined(RT_OS_WINDOWS)
@@ -2311,12 +2311,12 @@ void VirtualBox::updateClientWatcher()
  */
 void VirtualBox::addProcessToReap (RTPROCESS pid)
 {
-    AutoCaller autoCaller (this);
+    AutoCaller autoCaller(this);
     AssertComRCReturn (autoCaller.rc(), (void) 0);
 
     /// @todo (dmik) Win32?
 #ifndef RT_OS_WINDOWS
-    AutoWriteLock alock (this);
+    AutoWriteLock alock(this);
     mWatcherData.mProcesses.push_back (pid);
 #endif
 }
@@ -2340,7 +2340,7 @@ struct MachineEvent : public VirtualBox::CallbackEvent
         , registered (aRegistered)
         {}
 
-    void handleCallback (const ComPtr <IVirtualBoxCallback> &aCallback)
+    void handleCallback (const ComPtr<IVirtualBoxCallback> &aCallback)
     {
         switch (what)
         {
@@ -2373,7 +2373,7 @@ struct MachineEvent : public VirtualBox::CallbackEvent
 /**
  *  @note Doesn't lock any object.
  */
-void VirtualBox::onMachineStateChange (const Guid &aId, MachineState_T aState)
+void VirtualBox::onMachineStateChange(const Guid &aId, MachineState_T aState)
 {
     postEvent (new MachineEvent (this, aId, aState));
 }
@@ -2381,7 +2381,7 @@ void VirtualBox::onMachineStateChange (const Guid &aId, MachineState_T aState)
 /**
  *  @note Doesn't lock any object.
  */
-void VirtualBox::onMachineDataChange (const Guid &aId)
+void VirtualBox::onMachineDataChange(const Guid &aId)
 {
     postEvent (new MachineEvent (this, aId));
 }
@@ -2392,15 +2392,15 @@ void VirtualBox::onMachineDataChange (const Guid &aId)
 BOOL VirtualBox::onExtraDataCanChange (const Guid &aId, IN_BSTR aKey, IN_BSTR aValue,
                                        Bstr &aError)
 {
-    LogFlowThisFunc (("machine={%s} aKey={%ls} aValue={%ls}\n",
+    LogFlowThisFunc(("machine={%s} aKey={%ls} aValue={%ls}\n",
                       aId.toString().raw(), aKey, aValue));
 
-    AutoCaller autoCaller (this);
+    AutoCaller autoCaller(this);
     AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
 
     CallbackList list;
     {
-        AutoReadLock alock (this);
+        AutoReadLock alock(this);
         list = mData.mCallbacks;
     }
 
@@ -2422,7 +2422,7 @@ BOOL VirtualBox::onExtraDataCanChange (const Guid &aId, IN_BSTR aKey, IN_BSTR aV
         }
     }
 
-    LogFlowThisFunc (("allowChange=%RTbool\n", allowChange));
+    LogFlowThisFunc(("allowChange=%RTbool\n", allowChange));
     return allowChange;
 }
 
@@ -2435,7 +2435,7 @@ struct ExtraDataEvent : public VirtualBox::CallbackEvent
         , key (aKey), val (aVal)
         {}
 
-    void handleCallback (const ComPtr <IVirtualBoxCallback> &aCallback)
+    void handleCallback (const ComPtr<IVirtualBoxCallback> &aCallback)
     {
         LogFlow (("OnExtraDataChange: machineId={%RTuuid}, key='%ls', val='%ls'\n",
                   machineId.ptr(), key.raw(), val.raw()));
@@ -2469,7 +2469,7 @@ struct SessionEvent : public VirtualBox::CallbackEvent
         : CallbackEvent (aVB), machineId (aMachineId), sessionState (aState)
         {}
 
-    void handleCallback (const ComPtr <IVirtualBoxCallback> &aCallback)
+    void handleCallback (const ComPtr<IVirtualBoxCallback> &aCallback)
     {
         LogFlow (("OnSessionStateChange: machineId={%RTuuid}, sessionState=%d\n",
                   machineId.ptr(), sessionState));
@@ -2500,7 +2500,7 @@ struct SnapshotEvent : public VirtualBox::CallbackEvent
         , machineId (aMachineId), snapshotId (aSnapshotId)
         {}
 
-    void handleCallback (const ComPtr <IVirtualBoxCallback> &aCallback)
+    void handleCallback (const ComPtr<IVirtualBoxCallback> &aCallback)
     {
         Bstr mid = machineId.toUtf16();
 	Bstr sid = snapshotId.toUtf16();
@@ -2566,7 +2566,7 @@ struct GuestPropertyEvent : public VirtualBox::CallbackEvent
         , name (aName), value (aValue), flags(aFlags)
         {}
 
-    void handleCallback (const ComPtr <IVirtualBoxCallback> &aCallback)
+    void handleCallback (const ComPtr<IVirtualBoxCallback> &aCallback)
     {
         LogFlow (("OnGuestPropertyChange: machineId={%RTuuid}, name='%ls', value='%ls', flags='%ls'\n",
                   machineId.ptr(), name.raw(), value.raw(), flags.raw()));
@@ -2589,14 +2589,14 @@ void VirtualBox::onGuestPropertyChange (const Guid &aMachineId, IN_BSTR aName,
 /**
  *  @note Locks this object for reading.
  */
-ComObjPtr <GuestOSType> VirtualBox::getUnknownOSType()
+ComObjPtr<GuestOSType> VirtualBox::getUnknownOSType()
 {
-    ComObjPtr <GuestOSType> type;
+    ComObjPtr<GuestOSType> type;
 
-    AutoCaller autoCaller (this);
+    AutoCaller autoCaller(this);
     AssertComRCReturn (autoCaller.rc(), type);
 
-    AutoReadLock alock (this);
+    AutoReadLock alock(this);
 
     /* unknown type must always be the first */
     ComAssertRet (mData.mGuestOSTypes.size() > 0, type);
@@ -2624,21 +2624,21 @@ ComObjPtr <GuestOSType> VirtualBox::getUnknownOSType()
 void VirtualBox::getOpenedMachines (SessionMachineVector &aMachines,
                                     InternalControlVector *aControls /*= NULL*/)
 {
-    AutoCaller autoCaller (this);
+    AutoCaller autoCaller(this);
     AssertComRCReturnVoid (autoCaller.rc());
 
     aMachines.clear();
     if (aControls)
         aControls->clear();
 
-    AutoReadLock alock (this);
+    AutoReadLock alock(this);
 
     for (MachineList::iterator it = mData.mMachines.begin();
          it != mData.mMachines.end();
          ++ it)
     {
-        ComObjPtr <SessionMachine> sm;
-        ComPtr <IInternalSessionControl> ctl;
+        ComObjPtr<SessionMachine> sm;
+        ComPtr<IInternalSessionControl> ctl;
         if ((*it)->isSessionOpen (sm, &ctl))
         {
             aMachines.push_back (sm);
@@ -2666,15 +2666,15 @@ void VirtualBox::getOpenedMachines (SessionMachineVector &aMachines,
  *  @note Locks this object for reading.
  */
 HRESULT VirtualBox::findMachine (const Guid &aId, bool aSetError,
-                                 ComObjPtr <Machine> *aMachine /* = NULL */)
+                                 ComObjPtr<Machine> *aMachine /* = NULL */)
 {
-    AutoCaller autoCaller (this);
+    AutoCaller autoCaller(this);
     AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
 
     bool found = false;
 
     {
-        AutoReadLock alock (this);
+        AutoReadLock alock(this);
 
         for (MachineList::iterator it = mData.mMachines.begin();
              !found && it != mData.mMachines.end();
@@ -2721,9 +2721,9 @@ HRESULT VirtualBox::
 findHardDisk(const Guid *aId, CBSTR aLocation,
              bool aSetError, ComObjPtr<HardDisk> *aHardDisk /*= NULL*/)
 {
-    AssertReturn (aId || aLocation, E_INVALIDARG);
+    AssertReturn(aId || aLocation, E_INVALIDARG);
 
-    AutoReadLock alock (this);
+    AutoReadLock alock(this);
 
     /* first, look up by UUID in the map if UUID is provided */
     if (aId)
@@ -2750,7 +2750,7 @@ findHardDisk(const Guid *aId, CBSTR aLocation,
             const ComObjPtr<HardDisk> &hd = (*it).second;
 
             HRESULT rc = hd->compareLocationTo (location, result);
-            CheckComRCReturnRC (rc);
+            CheckComRCReturnRC(rc);
 
             if (result == 0)
             {
@@ -2797,20 +2797,20 @@ HRESULT VirtualBox::findDVDImage(const Guid *aId, CBSTR aLocation,
                                  bool aSetError,
                                  ComObjPtr<DVDImage> *aImage /* = NULL */)
 {
-    AssertReturn (aId || aLocation, E_INVALIDARG);
+    AssertReturn(aId || aLocation, E_INVALIDARG);
 
     Utf8Str location;
 
     if (aLocation != NULL)
     {
         int vrc = calculateFullPath (Utf8Str (aLocation), location);
-        if (RT_FAILURE (vrc))
+        if (RT_FAILURE(vrc))
             return setError (VBOX_E_FILE_ERROR,
                 tr ("Invalid image file location '%ls' (%Rrc)"),
                 aLocation, vrc);
     }
 
-    AutoReadLock alock (this);
+    AutoReadLock alock(this);
 
     bool found = false;
 
@@ -2869,20 +2869,20 @@ HRESULT VirtualBox::findFloppyImage(const Guid *aId, CBSTR aLocation,
                                     bool aSetError,
                                     ComObjPtr<FloppyImage> *aImage /* = NULL */)
 {
-    AssertReturn (aId || aLocation, E_INVALIDARG);
+    AssertReturn(aId || aLocation, E_INVALIDARG);
 
     Utf8Str location;
 
     if (aLocation != NULL)
     {
         int vrc = calculateFullPath (Utf8Str (aLocation), location);
-        if (RT_FAILURE (vrc))
+        if (RT_FAILURE(vrc))
             return setError (VBOX_E_FILE_ERROR,
                 tr ("Invalid image file location '%ls' (%Rrc)"),
                 aLocation, vrc);
     }
 
-    AutoReadLock alock (this);
+    AutoReadLock alock(this);
 
     bool found = false;
 
@@ -2934,14 +2934,14 @@ HRESULT VirtualBox::findFloppyImage(const Guid *aId, CBSTR aLocation,
  */
 int VirtualBox::calculateFullPath (const char *aPath, Utf8Str &aResult)
 {
-    AutoCaller autoCaller (this);
+    AutoCaller autoCaller(this);
     AssertComRCReturn (autoCaller.rc(), VERR_GENERAL_FAILURE);
 
     /* no need to lock since mHomeDir is const */
 
     char folder [RTPATH_MAX];
     int vrc = RTPathAbsEx (mData.mHomeDir, aPath, folder, sizeof (folder));
-    if (RT_SUCCESS (vrc))
+    if (RT_SUCCESS(vrc))
         aResult = folder;
 
     return vrc;
@@ -2960,7 +2960,7 @@ int VirtualBox::calculateFullPath (const char *aPath, Utf8Str &aResult)
  */
 void VirtualBox::calculateRelativePath (const char *aPath, Utf8Str &aResult)
 {
-    AutoCaller autoCaller (this);
+    AutoCaller autoCaller(this);
     AssertComRCReturnVoid (autoCaller.rc());
 
     /* no need to lock since mHomeDir is const */
@@ -3001,16 +3001,16 @@ HRESULT VirtualBox::checkMediaForConflicts2 (const Guid &aId,
 {
     aConflict.setNull();
 
-    AssertReturn (!aId.isEmpty() && !aLocation.isEmpty(), E_FAIL);
+    AssertReturn(!aId.isEmpty() && !aLocation.isEmpty(), E_FAIL);
 
-    AutoReadLock alock (this);
+    AutoReadLock alock(this);
 
     HRESULT rc = S_OK;
 
     {
         ComObjPtr<HardDisk> hardDisk;
         rc = findHardDisk(&aId, aLocation, false /* aSetError */, &hardDisk);
-        if (SUCCEEDED (rc))
+        if (SUCCEEDED(rc))
         {
             /* Note: no AutoCaller since bound to this */
             AutoReadLock mediaLock (hardDisk);
@@ -3024,7 +3024,7 @@ HRESULT VirtualBox::checkMediaForConflicts2 (const Guid &aId,
     {
         ComObjPtr<DVDImage> image;
         rc = findDVDImage (&aId, aLocation, false /* aSetError */, &image);
-        if (SUCCEEDED (rc))
+        if (SUCCEEDED(rc))
         {
             /* Note: no AutoCaller since bound to this */
             AutoReadLock mediaLock (image);
@@ -3038,7 +3038,7 @@ HRESULT VirtualBox::checkMediaForConflicts2 (const Guid &aId,
     {
         ComObjPtr<FloppyImage> image;
         rc = findFloppyImage(&aId, aLocation, false /* aSetError */, &image);
-        if (SUCCEEDED (rc))
+        if (SUCCEEDED(rc))
         {
             /* Note: no AutoCaller since bound to this */
             AutoReadLock mediaLock (image);
@@ -3065,8 +3065,8 @@ HRESULT VirtualBox::loadMachines (const settings::Key &aGlobal)
 {
     using namespace settings;
 
-    AutoCaller autoCaller (this);
-    AssertReturn (autoCaller.state() == InInit, E_FAIL);
+    AutoCaller autoCaller(this);
+    AssertReturn(autoCaller.state() == InInit, E_FAIL);
 
     HRESULT rc = S_OK;
 
@@ -3080,14 +3080,14 @@ HRESULT VirtualBox::loadMachines (const settings::Key &aGlobal)
         Bstr src = (*it).stringValue ("src");
 
         /* create a new machine object */
-        ComObjPtr <Machine> machine;
+        ComObjPtr<Machine> machine;
         rc = machine.createObject();
-        if (SUCCEEDED (rc))
+        if (SUCCEEDED(rc))
         {
             /* initialize the machine object and register it */
             rc = machine->init (this, src, Machine::Init_Registered,
                                 NULL, NULL, FALSE, &uuid);
-            if (SUCCEEDED (rc))
+            if (SUCCEEDED(rc))
                 rc = registerMachine (machine);
         }
     }
@@ -3108,8 +3108,8 @@ HRESULT VirtualBox::loadMedia (const settings::Key &aGlobal)
 {
     using namespace settings;
 
-    AutoCaller autoCaller (this);
-    AssertReturn (autoCaller.state() == InInit, E_FAIL);
+    AutoCaller autoCaller(this);
+    AssertReturn(autoCaller.state() == InInit, E_FAIL);
 
     HRESULT rc = S_OK;
 
@@ -3200,8 +3200,8 @@ HRESULT VirtualBox::loadNetservices (const settings::Key &aGlobal)
 {
     using namespace settings;
 
-    AutoCaller autoCaller (this);
-    AssertReturn (autoCaller.state() == InInit, E_FAIL);
+    AutoCaller autoCaller(this);
+    AssertReturn(autoCaller.state() == InInit, E_FAIL);
 
     HRESULT rc = S_OK;
 
@@ -3246,15 +3246,15 @@ HRESULT VirtualBox::loadNetservices (const settings::Key &aGlobal)
  */
 HRESULT VirtualBox::saveSettings()
 {
-    AutoCaller autoCaller (this);
+    AutoCaller autoCaller(this);
     AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
 
-    AssertReturn (!!mData.mCfgFile.mName, E_FAIL);
+    AssertReturn(!!mData.mCfgFile.mName, E_FAIL);
 
     HRESULT rc = S_OK;
 
     /* serialize file access (prevents concurrent reads and writes) */
-    AutoWriteLock alock (this);
+    AutoWriteLock alock(this);
 
     try
     {
@@ -3410,17 +3410,17 @@ HRESULT VirtualBox::registerMachine (Machine *aMachine)
 {
     ComAssertRet (aMachine, E_INVALIDARG);
 
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
 
-    AutoWriteLock alock (this);
+    AutoWriteLock alock(this);
 
     HRESULT rc = S_OK;
 
     {
-        ComObjPtr <Machine> m;
+        ComObjPtr<Machine> m;
         rc = findMachine (aMachine->id(), false /* aDoSetError */, &m);
-        if (SUCCEEDED (rc))
+        if (SUCCEEDED(rc))
         {
             /* sanity */
             AutoLimitedCaller machCaller (m);
@@ -3439,7 +3439,7 @@ HRESULT VirtualBox::registerMachine (Machine *aMachine)
     {
         /* Machine::trySetRegistered() will commit and save machine settings */
         rc = aMachine->trySetRegistered (TRUE);
-        CheckComRCReturnRC (rc);
+        CheckComRCReturnRC(rc);
     }
 
     /* add to the collection of registered machines */
@@ -3469,12 +3469,12 @@ HRESULT VirtualBox::registerMachine (Machine *aMachine)
 HRESULT VirtualBox::registerHardDisk(HardDisk *aHardDisk,
                                      bool aSaveRegistry /*= true*/)
 {
-    AssertReturn (aHardDisk != NULL, E_INVALIDARG);
+    AssertReturn(aHardDisk != NULL, E_INVALIDARG);
 
-    AutoCaller autoCaller (this);
+    AutoCaller autoCaller(this);
     AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
 
-    AutoWriteLock alock (this);
+    AutoWriteLock alock(this);
 
     AutoCaller hardDiskCaller (aHardDisk);
     AssertComRCReturn (hardDiskCaller.rc(), hardDiskCaller.rc());
@@ -3485,7 +3485,7 @@ HRESULT VirtualBox::registerHardDisk(HardDisk *aHardDisk,
     HRESULT rc = checkMediaForConflicts2(aHardDisk->id(),
                                          aHardDisk->locationFull(),
                                          strConflict);
-    CheckComRCReturnRC (rc);
+    CheckComRCReturnRC(rc);
 
     if (strConflict.length())
     {
@@ -3535,12 +3535,12 @@ HRESULT VirtualBox::registerHardDisk(HardDisk *aHardDisk,
 HRESULT VirtualBox::unregisterHardDisk(HardDisk *aHardDisk,
                                        bool aSaveRegistry /*= true*/)
 {
-    AssertReturn (aHardDisk != NULL, E_INVALIDARG);
+    AssertReturn(aHardDisk != NULL, E_INVALIDARG);
 
-    AutoCaller autoCaller (this);
+    AutoCaller autoCaller(this);
     AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
 
-    AutoWriteLock alock (this);
+    AutoWriteLock alock(this);
 
     AutoCaller hardDiskCaller (aHardDisk);
     AssertComRCReturn (hardDiskCaller.rc(), hardDiskCaller.rc());
@@ -3587,12 +3587,12 @@ HRESULT VirtualBox::unregisterHardDisk(HardDisk *aHardDisk,
 HRESULT VirtualBox::registerDVDImage (DVDImage *aImage,
                                       bool aSaveRegistry /*= true*/)
 {
-    AssertReturn (aImage != NULL, E_INVALIDARG);
+    AssertReturn(aImage != NULL, E_INVALIDARG);
 
-    AutoCaller autoCaller (this);
+    AutoCaller autoCaller(this);
     AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
 
-    AutoWriteLock alock (this);
+    AutoWriteLock alock(this);
 
     AutoCaller imageCaller (aImage);
     AssertComRCReturn (imageCaller.rc(), imageCaller.rc());
@@ -3603,7 +3603,7 @@ HRESULT VirtualBox::registerDVDImage (DVDImage *aImage,
     HRESULT rc = checkMediaForConflicts2(aImage->id(),
                                          aImage->locationFull(),
                                          strConflict);
-    CheckComRCReturnRC (rc);
+    CheckComRCReturnRC(rc);
 
     if (strConflict.length())
     {
@@ -3646,12 +3646,12 @@ HRESULT VirtualBox::registerDVDImage (DVDImage *aImage,
 HRESULT VirtualBox::unregisterDVDImage (DVDImage *aImage,
                                         bool aSaveRegistry /*= true*/)
 {
-    AssertReturn (aImage != NULL, E_INVALIDARG);
+    AssertReturn(aImage != NULL, E_INVALIDARG);
 
-    AutoCaller autoCaller (this);
+    AutoCaller autoCaller(this);
     AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
 
-    AutoWriteLock alock (this);
+    AutoWriteLock alock(this);
 
     AutoCaller imageCaller (aImage);
     AssertComRCReturn (imageCaller.rc(), imageCaller.rc());
@@ -3690,12 +3690,12 @@ HRESULT VirtualBox::unregisterDVDImage (DVDImage *aImage,
 HRESULT VirtualBox::registerFloppyImage(FloppyImage *aImage,
                                         bool aSaveRegistry /*= true*/)
 {
-    AssertReturn (aImage != NULL, E_INVALIDARG);
+    AssertReturn(aImage != NULL, E_INVALIDARG);
 
-    AutoCaller autoCaller (this);
+    AutoCaller autoCaller(this);
     AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
 
-    AutoWriteLock alock (this);
+    AutoWriteLock alock(this);
 
     AutoCaller imageCaller (aImage);
     AssertComRCReturn (imageCaller.rc(), imageCaller.rc());
@@ -3706,7 +3706,7 @@ HRESULT VirtualBox::registerFloppyImage(FloppyImage *aImage,
     HRESULT rc = checkMediaForConflicts2(aImage->id(),
                                          aImage->locationFull(),
                                          strConflict);
-    CheckComRCReturnRC (rc);
+    CheckComRCReturnRC(rc);
 
     if (strConflict.length())
     {
@@ -3749,12 +3749,12 @@ HRESULT VirtualBox::registerFloppyImage(FloppyImage *aImage,
 HRESULT VirtualBox::unregisterFloppyImage(FloppyImage *aImage,
                                           bool aSaveRegistry /*= true*/)
 {
-    AssertReturn (aImage != NULL, E_INVALIDARG);
+    AssertReturn(aImage != NULL, E_INVALIDARG);
 
-    AutoCaller autoCaller (this);
+    AutoCaller autoCaller(this);
     AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
 
-    AutoWriteLock alock (this);
+    AutoWriteLock alock(this);
 
     AutoCaller imageCaller (aImage);
     AssertComRCReturn (imageCaller.rc(), imageCaller.rc());
@@ -3785,11 +3785,11 @@ HRESULT VirtualBox::unregisterFloppyImage(FloppyImage *aImage,
  *
  * @note Locks #childrenLock() for reading.
  */
-HRESULT VirtualBox::cast (IHardDisk *aFrom, ComObjPtr <HardDisk> &aTo)
+HRESULT VirtualBox::cast (IHardDisk *aFrom, ComObjPtr<HardDisk> &aTo)
 {
-    AssertReturn (aFrom != NULL, E_INVALIDARG);
+    AssertReturn(aFrom != NULL, E_INVALIDARG);
 
-    AutoCaller autoCaller (this);
+    AutoCaller autoCaller(this);
     AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
 
     /* We need the children map lock here to keep the getDependentChild() result
@@ -3821,15 +3821,15 @@ HRESULT VirtualBox::cast (IHardDisk *aFrom, ComObjPtr <HardDisk> &aTo)
  */
 HRESULT VirtualBox::updateSettings (const char *aOldPath, const char *aNewPath)
 {
-    LogFlowThisFunc (("aOldPath={%s} aNewPath={%s}\n", aOldPath, aNewPath));
+    LogFlowThisFunc(("aOldPath={%s} aNewPath={%s}\n", aOldPath, aNewPath));
 
-    AssertReturn (aOldPath, E_INVALIDARG);
-    AssertReturn (aNewPath, E_INVALIDARG);
+    AssertReturn(aOldPath, E_INVALIDARG);
+    AssertReturn(aNewPath, E_INVALIDARG);
 
-    AutoCaller autoCaller (this);
+    AutoCaller autoCaller(this);
     AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
 
-    AutoWriteLock alock (this);
+    AutoWriteLock alock(this);
 
     /* check DVD paths */
     for (DVDImageList::iterator it = mData.mDVDImages.begin();
@@ -3880,7 +3880,7 @@ HRESULT VirtualBox::ensureFilePathExists (const char *aFileName)
     if (!RTDirExists(strDir))
     {
         int vrc = RTDirCreateFullPath(strDir, 0777);
-        if (RT_FAILURE (vrc))
+        if (RT_FAILURE(vrc))
         {
             return setError (E_FAIL,
                 tr ("Could not create the directory '%s' (%Rrc)"),
@@ -4034,7 +4034,7 @@ HRESULT VirtualBox::backupSettingsFile (const Bstr &aFileName,
     if (vrc == VERR_ALREADY_EXISTS)
     {
         Utf8Str tmp = nf;
-        for (int i = 0; i <= 9 && RT_FAILURE (vrc); ++ i)
+        for (int i = 0; i <= 9 && RT_FAILURE(vrc); ++ i)
         {
             nf = Utf8StrFmt ("%s.%d", tmp.raw(), i);
             vrc = RTFileCopyEx (of, nf, RTFILECOPY_FLAGS_NO_SRC_DENY_WRITE,
@@ -4042,7 +4042,7 @@ HRESULT VirtualBox::backupSettingsFile (const Bstr &aFileName,
         }
     }
 
-    if (RT_FAILURE (vrc))
+    if (RT_FAILURE(vrc))
         return setError (VBOX_E_IPRT_ERROR,
             tr ("Could not copy the settings file '%s' to '%s' (%Rrc)"),
             of.raw(), nf.raw(), vrc);
@@ -4114,9 +4114,9 @@ HRESULT VirtualBox::handleUnexpectedExceptions (RT_SRC_POS_DECL)
  */
 HRESULT VirtualBox::lockConfig()
 {
-    AutoCaller autoCaller (this);
+    AutoCaller autoCaller(this);
     AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
-    AssertReturn (autoCaller.state() == InInit, E_FAIL);
+    AssertReturn(autoCaller.state() == InInit, E_FAIL);
 
     HRESULT rc = S_OK;
 
@@ -4128,14 +4128,14 @@ HRESULT VirtualBox::lockConfig()
                               Utf8Str (mData.mCfgFile.mName),
                               RTFILE_O_READWRITE | RTFILE_O_OPEN |
                               RTFILE_O_DENY_WRITE);
-        if (RT_FAILURE (vrc) && (vrc != VERR_FILE_NOT_FOUND))
+        if (RT_FAILURE(vrc) && (vrc != VERR_FILE_NOT_FOUND))
         {
             /* Open the associated config file only with read access. */
             vrc = RTFileOpen (&mData.mCfgFile.mHandle,
                               Utf8Str (mData.mCfgFile.mName),
                               RTFILE_O_READ | RTFILE_O_OPEN |
                               RTFILE_O_DENY_NONE);
-            if (RT_FAILURE (vrc))
+            if (RT_FAILURE(vrc))
             {
                 /* We even cannot open it in read mode, so there's seriously
                    something wrong. */
@@ -4159,7 +4159,7 @@ HRESULT VirtualBox::lockConfig()
             mData.mCfgFile.mReadonly = FALSE;
         }
 
-        LogFlowThisFunc (("mCfgFile.mName='%ls', mCfgFile.mHandle=%d, rc=%08X\n",
+        LogFlowThisFunc(("mCfgFile.mName='%ls', mCfgFile.mHandle=%d, rc=%08X\n",
                           mData.mCfgFile.mName.raw(), mData.mCfgFile.mHandle, rc));
     }
     return rc;
@@ -4173,9 +4173,9 @@ HRESULT VirtualBox::lockConfig()
  */
 HRESULT VirtualBox::unlockConfig()
 {
-    AutoCaller autoCaller (this);
+    AutoCaller autoCaller(this);
     AssertComRCReturn (autoCaller.rc(), E_FAIL);
-    AssertReturn (autoCaller.state() == InUninit, E_FAIL);
+    AssertReturn(autoCaller.state() == InUninit, E_FAIL);
 
     HRESULT rc = S_OK;
 
@@ -4186,7 +4186,7 @@ HRESULT VirtualBox::unlockConfig()
         /** @todo flush the directory too. */
         mData.mCfgFile.mHandle = NIL_RTFILE;
         mData.mCfgFile.mReadonly = FALSE;
-        LogFlowThisFunc (("\n"));
+        LogFlowThisFunc(("\n"));
     }
 
     return rc;
@@ -4224,7 +4224,7 @@ DECLCALLBACK(int) VirtualBox::ClientWatcher (RTTHREAD /* thread */, void *pvUser
 
     do
     {
-        AutoCaller autoCaller (that);
+        AutoCaller autoCaller(that);
         /* VirtualBox has been early uninitialized, terminate */
         if (!autoCaller.isOk())
             break;
@@ -4289,7 +4289,7 @@ DECLCALLBACK(int) VirtualBox::ClientWatcher (RTTHREAD /* thread */, void *pvUser
                     AssertMsgBreak ((1 + cnt) <= MAXIMUM_WAIT_OBJECTS,
                                     ("MAXIMUM_WAIT_OBJECTS reached"));
 
-                    ComObjPtr <SessionMachine> sm;
+                    ComObjPtr<SessionMachine> sm;
                     HANDLE ipcSem;
                     if ((*it)->isSessionOpenOrClosing (sm, NULL, &ipcSem))
                     {
@@ -4355,7 +4355,7 @@ DECLCALLBACK(int) VirtualBox::ClientWatcher (RTTHREAD /* thread */, void *pvUser
 
     do
     {
-        AutoCaller autoCaller (that);
+        AutoCaller autoCaller(that);
         /* VirtualBox has been early uninitialized, terminate */
         if (!autoCaller.isOk())
             break;
@@ -4376,7 +4376,7 @@ DECLCALLBACK(int) VirtualBox::ClientWatcher (RTTHREAD /* thread */, void *pvUser
             bool update = false;
             bool updateSpawned = false;
 
-            if (RT_SUCCESS (vrc))
+            if (RT_SUCCESS(vrc))
             {
                 /* update event is signaled */
                 update = true;
@@ -4481,7 +4481,7 @@ DECLCALLBACK(int) VirtualBox::ClientWatcher (RTTHREAD /* thread */, void *pvUser
                                    ("maximum of 64 mutex semaphores reached (%d)",
                                     cnt));
 
-                        ComObjPtr <SessionMachine> sm;
+                        ComObjPtr<SessionMachine> sm;
                         HMTX ipcSem;
                         if ((*it)->isSessionOpenOrClosing (sm, NULL, &ipcSem))
                         {
@@ -4542,7 +4542,7 @@ DECLCALLBACK(int) VirtualBox::ClientWatcher (RTTHREAD /* thread */, void *pvUser
 
     do
     {
-        AutoCaller autoCaller (that);
+        AutoCaller autoCaller(that);
         if (!autoCaller.isOk())
             break;
 
@@ -4561,13 +4561,13 @@ DECLCALLBACK(int) VirtualBox::ClientWatcher (RTTHREAD /* thread */, void *pvUser
             if (!autoCaller.isOk())
                 break;
 
-            if (RT_SUCCESS (rc) || update || updateSpawned)
+            if (RT_SUCCESS(rc) || update || updateSpawned)
             {
-                /* RT_SUCCESS (rc) means an update event is signaled */
+                /* RT_SUCCESS(rc) means an update event is signaled */
 
                 AutoReadLock thatLock (that);
 
-                if (RT_SUCCESS (rc) || update)
+                if (RT_SUCCESS(rc) || update)
                 {
                     /* obtain a new set of opened machines */
                     machines.clear();
@@ -4575,7 +4575,7 @@ DECLCALLBACK(int) VirtualBox::ClientWatcher (RTTHREAD /* thread */, void *pvUser
                     for (MachineList::iterator it = that->mData.mMachines.begin();
                          it != that->mData.mMachines.end(); ++ it)
                     {
-                        ComObjPtr <SessionMachine> sm;
+                        ComObjPtr<SessionMachine> sm;
                         if ((*it)->isSessionOpenOrClosing (sm))
                             machines.push_back (sm);
                     }
@@ -4584,7 +4584,7 @@ DECLCALLBACK(int) VirtualBox::ClientWatcher (RTTHREAD /* thread */, void *pvUser
                     LogFlowFunc (("UPDATE: direct session count = %d\n", cnt));
                 }
 
-                if (RT_SUCCESS (rc) || updateSpawned)
+                if (RT_SUCCESS(rc) || updateSpawned)
                 {
                     /* obtain a new set of spawned machines */
                     spawnedMachines.clear();
@@ -4611,7 +4611,7 @@ DECLCALLBACK(int) VirtualBox::ClientWatcher (RTTHREAD /* thread */, void *pvUser
 
             /* reap child processes */
             {
-                AutoWriteLock alock (that);
+                AutoWriteLock alock(that);
                 if (that->mWatcherData.mProcesses.size())
                 {
                     LogFlowFunc (("UPDATE: child process count = %d\n",
@@ -4672,11 +4672,11 @@ DECLCALLBACK(int) VirtualBox::AsyncEventHandler (RTTHREAD thread, void *pvUser)
 {
     LogFlowFuncEnter();
 
-    AssertReturn (pvUser, VERR_INVALID_POINTER);
+    AssertReturn(pvUser, VERR_INVALID_POINTER);
 
     // create an event queue for the current thread
     EventQueue *eventQ = new EventQueue();
-    AssertReturn (eventQ, VERR_NO_MEMORY);
+    AssertReturn(eventQ, VERR_NO_MEMORY);
 
     // return the queue to the one who created this thread
     *(static_cast <EventQueue **> (pvUser)) = eventQ;
@@ -4689,7 +4689,7 @@ DECLCALLBACK(int) VirtualBox::AsyncEventHandler (RTTHREAD thread, void *pvUser)
     while ((ok = eventQ->waitForEvent (&event)) && event)
         eventQ->handleEvent (event);
 
-    AssertReturn (ok, VERR_GENERAL_FAILURE);
+    AssertReturn(ok, VERR_GENERAL_FAILURE);
 
     delete eventQ;
 
@@ -4713,7 +4713,7 @@ void *VirtualBox::CallbackEvent::handler()
     if (mVirtualBox.isNull())
         return NULL;
 
-    AutoCaller autoCaller (mVirtualBox);
+    AutoCaller autoCaller(mVirtualBox);
     if (!autoCaller.isOk())
     {
         LogWarningFunc (("VirtualBox has been uninitialized (state=%d), "
@@ -4727,7 +4727,7 @@ void *VirtualBox::CallbackEvent::handler()
     CallbackVector callbacks;
     {
         /* Make a copy to release the lock before iterating */
-        AutoReadLock alock (mVirtualBox);
+        AutoReadLock alock(mVirtualBox);
         callbacks = CallbackVector (mVirtualBox->mData.mCallbacks.begin(),
                                     mVirtualBox->mData.mCallbacks.end());
         /* We don't need mVirtualBox any more, so release it */
@@ -4751,16 +4751,16 @@ STDMETHODIMP VirtualBox::CreateDHCPServer (IN_BSTR aName, IDHCPServer ** aServer
     CheckComArgNotNull(aName);
     CheckComArgNotNull(aServer);
 
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
 
     ComObjPtr<DHCPServer> dhcpServer;
     dhcpServer.createObject();
     HRESULT rc = dhcpServer->init (this, aName);
-    CheckComRCReturnRC (rc);
+    CheckComRCReturnRC(rc);
 
     rc = registerDHCPServer(dhcpServer, true);
-    CheckComRCReturnRC (rc);
+    CheckComRCReturnRC(rc);
 
     dhcpServer.queryInterfaceTo(aServer);
 
@@ -4777,14 +4777,14 @@ STDMETHODIMP VirtualBox::FindDHCPServerByNetworkName (IN_BSTR aName, IDHCPServer
     CheckComArgNotNull(aName);
     CheckComArgNotNull(aServer);
 
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
 
-    AutoWriteLock alock (this);
+    AutoWriteLock alock(this);
 
     HRESULT rc;
     Bstr bstr;
-    ComPtr <DHCPServer> found;
+    ComPtr<DHCPServer> found;
 
     for (DHCPServerList::const_iterator it =
             mData.mDHCPServers.begin();
@@ -4804,15 +4804,15 @@ STDMETHODIMP VirtualBox::FindDHCPServerByNetworkName (IN_BSTR aName, IDHCPServer
     if (!found)
         return E_INVALIDARG;
 
-    return found.queryInterfaceTo (aServer);
+    return found.queryInterfaceTo(aServer);
 }
 
 STDMETHODIMP VirtualBox::RemoveDHCPServer (IDHCPServer * aServer)
 {
     CheckComArgNotNull(aServer);
 
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
 
     HRESULT rc = unregisterDHCPServer(static_cast<DHCPServer *>(aServer), true);
 
@@ -4837,12 +4837,12 @@ STDMETHODIMP VirtualBox::RemoveDHCPServer (IDHCPServer * aServer)
 HRESULT VirtualBox::registerDHCPServer(DHCPServer *aDHCPServer,
                                      bool aSaveRegistry /*= true*/)
 {
-    AssertReturn (aDHCPServer != NULL, E_INVALIDARG);
+    AssertReturn(aDHCPServer != NULL, E_INVALIDARG);
 
-    AutoCaller autoCaller (this);
+    AutoCaller autoCaller(this);
     AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
 
-    AutoWriteLock alock (this);
+    AutoWriteLock alock(this);
 
     AutoCaller dhcpServerCaller (aDHCPServer);
     AssertComRCReturn (dhcpServerCaller.rc(), dhcpServerCaller.rc());
@@ -4852,7 +4852,7 @@ HRESULT VirtualBox::registerDHCPServer(DHCPServer *aDHCPServer,
     Bstr name;
     HRESULT rc;
     rc = aDHCPServer->COMGETTER(NetworkName) (name.asOutParam());
-    CheckComRCReturnRC (rc);
+    CheckComRCReturnRC(rc);
 
     ComPtr<IDHCPServer> existing;
     rc = FindDHCPServerByNetworkName(name.mutableRaw(), existing.asOutParam());
@@ -4892,12 +4892,12 @@ HRESULT VirtualBox::registerDHCPServer(DHCPServer *aDHCPServer,
 HRESULT VirtualBox::unregisterDHCPServer(DHCPServer *aDHCPServer,
                                        bool aSaveRegistry /*= true*/)
 {
-    AssertReturn (aDHCPServer != NULL, E_INVALIDARG);
+    AssertReturn(aDHCPServer != NULL, E_INVALIDARG);
 
-    AutoCaller autoCaller (this);
+    AutoCaller autoCaller(this);
     AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
 
-    AutoWriteLock alock (this);
+    AutoWriteLock alock(this);
 
     AutoCaller dhcpServerCaller (aDHCPServer);
     AssertComRCReturn (dhcpServerCaller.rc(), dhcpServerCaller.rc());

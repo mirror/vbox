@@ -58,7 +58,7 @@
 
 static void vboxSolarisAddHostIface(char *pszIface, int Instance, void *pvHostNetworkInterfaceList)
 {
-    std::list<ComObjPtr <HostNetworkInterface> > *pList = (std::list<ComObjPtr <HostNetworkInterface> > *)pvHostNetworkInterfaceList;
+    std::list<ComObjPtr<HostNetworkInterface> > *pList = (std::list<ComObjPtr<HostNetworkInterface> > *)pvHostNetworkInterfaceList;
     Assert(pList);
 
     typedef std::map <std::string, std::string> NICMap;
@@ -243,7 +243,7 @@ static boolean_t vboxSolarisAddLinkHostIface(const char *pszIface, void *pvHostN
     return _B_FALSE;
 }
 
-static bool vboxSolarisSortNICList(const ComObjPtr <HostNetworkInterface> Iface1, const ComObjPtr <HostNetworkInterface> Iface2)
+static bool vboxSolarisSortNICList(const ComObjPtr<HostNetworkInterface> Iface1, const ComObjPtr<HostNetworkInterface> Iface2)
 {
     Bstr Iface1Str;
     (*Iface1).COMGETTER(Name) (Iface1Str.asOutParam());
@@ -254,7 +254,7 @@ static bool vboxSolarisSortNICList(const ComObjPtr <HostNetworkInterface> Iface1
     return Iface1Str < Iface2Str;
 }
 
-static bool vboxSolarisSameNIC(const ComObjPtr <HostNetworkInterface> Iface1, const ComObjPtr <HostNetworkInterface> Iface2)
+static bool vboxSolarisSameNIC(const ComObjPtr<HostNetworkInterface> Iface1, const ComObjPtr<HostNetworkInterface> Iface2)
 {
     Bstr Iface1Str;
     (*Iface1).COMGETTER(Name) (Iface1Str.asOutParam());
@@ -285,7 +285,7 @@ static int vboxSolarisAddPhysHostIface(di_node_t Node, di_minor_t Minor, void *p
 }
 # endif /* VBOX_SOLARIS_NSL_RESOLVED */
 
-int NetIfList(std::list <ComObjPtr <HostNetworkInterface> > &list)
+int NetIfList(std::list <ComObjPtr<HostNetworkInterface> > &list)
 {
 
 #  ifdef VBOX_SOLARIS_NSL_RESOLVED
@@ -387,7 +387,7 @@ int NetIfList(std::list <ComObjPtr <HostNetworkInterface> > &list)
 }
 
 #else
-int NetIfList(std::list <ComObjPtr <HostNetworkInterface> > &list)
+int NetIfList(std::list <ComObjPtr<HostNetworkInterface> > &list)
 {
     return VERR_NOT_IMPLEMENTED;
 }

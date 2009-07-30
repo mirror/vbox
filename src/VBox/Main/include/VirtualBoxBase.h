@@ -1941,19 +1941,19 @@ public:
         //  child's uninit() from under the children map lock should not produce
         //  dead-locks any more).
         Assert (!child->isWriteLockOnCurrentThread() || child->lockHandle() == lockHandle());
-        removeDependentChild (ComPtr <IUnknown> (child));
+        removeDependentChild (ComPtr<IUnknown> (child));
     }
 
 protected:
 
     void uninitDependentChildren();
 
-    VirtualBoxBase *getDependentChild (const ComPtr <IUnknown> &unk);
+    VirtualBoxBase *getDependentChild (const ComPtr<IUnknown> &unk);
 
 private:
 
-    void addDependentChild (const ComPtr <IUnknown> &unk, VirtualBoxBase *child);
-    void removeDependentChild (const ComPtr <IUnknown> &unk);
+    void addDependentChild (const ComPtr<IUnknown> &unk, VirtualBoxBase *child);
+    void removeDependentChild (const ComPtr<IUnknown> &unk);
 
     typedef std::map <IUnknown *, VirtualBoxBase *> DependentChildren;
     DependentChildren mDependentChildren;
@@ -2067,18 +2067,18 @@ public:
     void addDependentChild (C *aChild)
     {
         AssertReturnVoid (aChild != NULL);
-        doAddDependentChild (ComPtr <IUnknown> (aChild), aChild);
+        doAddDependentChild (ComPtr<IUnknown> (aChild), aChild);
     }
 
     /**
      * Equivalent to template <class C> void addDependentChild (C *aChild)
-     * but takes a ComObjPtr <C> argument.
+     * but takes a ComObjPtr<C> argument.
      */
     template <class C>
-    void addDependentChild (const ComObjPtr <C> &aChild)
+    void addDependentChild (const ComObjPtr<C> &aChild)
     {
         AssertReturnVoid (!aChild.isNull());
-        doAddDependentChild (ComPtr <IUnknown> (static_cast <C *> (aChild)), aChild);
+        doAddDependentChild (ComPtr<IUnknown> (static_cast <C *> (aChild)), aChild);
     }
 
     /**
@@ -2112,25 +2112,25 @@ public:
     void removeDependentChild (C *aChild)
     {
         AssertReturnVoid (aChild != NULL);
-        doRemoveDependentChild (ComPtr <IUnknown> (aChild));
+        doRemoveDependentChild (ComPtr<IUnknown> (aChild));
     }
 
     /**
      * Equivalent to template <class C> void removeDependentChild (C *aChild)
-     * but takes a ComObjPtr <C> argument.
+     * but takes a ComObjPtr<C> argument.
      */
     template <class C>
-    void removeDependentChild (const ComObjPtr <C> &aChild)
+    void removeDependentChild (const ComObjPtr<C> &aChild)
     {
         AssertReturnVoid (!aChild.isNull());
-        doRemoveDependentChild (ComPtr <IUnknown> (static_cast <C *> (aChild)));
+        doRemoveDependentChild (ComPtr<IUnknown> (static_cast <C *> (aChild)));
     }
 
 protected:
 
     void uninitDependentChildren();
 
-    VirtualBoxBase *getDependentChild(const ComPtr <IUnknown> &aUnk);
+    VirtualBoxBase *getDependentChild(const ComPtr<IUnknown> &aUnk);
 
 private:
     void doAddDependentChild(IUnknown *aUnk, VirtualBoxBase *aChild);
@@ -2174,7 +2174,7 @@ class VirtualBoxBaseWithTypedChildren : public VirtualBoxBase
 {
 public:
 
-    typedef std::list <ComObjPtr <C> > DependentChildren;
+    typedef std::list <ComObjPtr<C> > DependentChildren;
 
     VirtualBoxBaseWithTypedChildren()
     {}

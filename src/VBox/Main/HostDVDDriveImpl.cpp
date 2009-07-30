@@ -56,18 +56,18 @@ HRESULT HostDVDDrive::init (IN_BSTR aName,
     ComAssertRet (aName, E_INVALIDARG);
 
     /* Enclose the state transition NotReady->InInit->Ready */
-    AutoInitSpan autoInitSpan (this);
-    AssertReturn (autoInitSpan.isOk(), E_FAIL);
+    AutoInitSpan autoInitSpan(this);
+    AssertReturn(autoInitSpan.isOk(), E_FAIL);
 
-    unconst (mName) = aName;
+    unconst(mName) = aName;
     if (!aUdi)
-        unconst (mUdi) = "";
+        unconst(mUdi) = "";
     else
-        unconst (mUdi) = aUdi;
+        unconst(mUdi) = aUdi;
     if (!aDescription)
-        unconst (mDescription) = "";
+        unconst(mDescription) = "";
     else
-        unconst (mDescription) = aDescription;
+        unconst(mDescription) = aDescription;
 
     /* Confirm the successful initialization */
     autoInitSpan.setSucceeded();
@@ -82,12 +82,12 @@ HRESULT HostDVDDrive::init (IN_BSTR aName,
 void HostDVDDrive::uninit()
 {
     /* Enclose the state transition Ready->InUninit->NotReady */
-    AutoUninitSpan autoUninitSpan (this);
+    AutoUninitSpan autoUninitSpan(this);
     if (autoUninitSpan.uninitDone())
         return;
 
-    unconst (mDescription).setNull();
-    unconst (mName).setNull();
+    unconst(mDescription).setNull();
+    unconst(mName).setNull();
 }
 
 // IHostDVDDrive properties
@@ -97,12 +97,12 @@ STDMETHODIMP HostDVDDrive::COMGETTER(Name) (BSTR *aName)
 {
     CheckComArgOutPointerValid(aName);
 
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
 
     /* mName is constant during life time, no need to lock */
 
-    mName.cloneTo (aName);
+    mName.cloneTo(aName);
 
     return S_OK;
 }
@@ -111,12 +111,12 @@ STDMETHODIMP HostDVDDrive::COMGETTER(Description) (BSTR *aDescription)
 {
     CheckComArgOutPointerValid(aDescription);
 
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
 
     /* mDescription is constant during life time, no need to lock */
 
-    mDescription.cloneTo (aDescription);
+    mDescription.cloneTo(aDescription);
 
     return S_OK;
 }
@@ -125,12 +125,12 @@ STDMETHODIMP HostDVDDrive::COMGETTER(Udi) (BSTR *aUdi)
 {
     CheckComArgOutPointerValid(aUdi);
 
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
 
     /* mUdi is constant during life time, no need to lock */
 
-    mUdi.cloneTo (aUdi);
+    mUdi.cloneTo(aUdi);
 
     return S_OK;
 }

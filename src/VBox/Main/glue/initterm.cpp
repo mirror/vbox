@@ -132,18 +132,18 @@ DirectoryServiceProvider::init (const char *aCompRegLocation,
                                 const char *aComponentDirLocation,
                                 const char *aCurrProcDirLocation)
 {
-    AssertReturn (aCompRegLocation, NS_ERROR_INVALID_ARG);
-    AssertReturn (aXPTIDatLocation, NS_ERROR_INVALID_ARG);
+    AssertReturn(aCompRegLocation, NS_ERROR_INVALID_ARG);
+    AssertReturn(aXPTIDatLocation, NS_ERROR_INVALID_ARG);
 
     int vrc = RTStrUtf8ToCurrentCP (&mCompRegLocation, aCompRegLocation);
-    if (RT_SUCCESS (vrc))
+    if (RT_SUCCESS(vrc))
         vrc = RTStrUtf8ToCurrentCP (&mXPTIDatLocation, aXPTIDatLocation);
-    if (RT_SUCCESS (vrc) && aComponentDirLocation)
+    if (RT_SUCCESS(vrc) && aComponentDirLocation)
         vrc = RTStrUtf8ToCurrentCP (&mComponentDirLocation, aComponentDirLocation);
-    if (RT_SUCCESS (vrc) && aCurrProcDirLocation)
+    if (RT_SUCCESS(vrc) && aCurrProcDirLocation)
         vrc = RTStrUtf8ToCurrentCP (&mCurrProcDirLocation, aCurrProcDirLocation);
 
-    return RT_SUCCESS (vrc) ? NS_OK : NS_ERROR_OUT_OF_MEMORY;
+    return RT_SUCCESS(vrc) ? NS_OK : NS_ERROR_OUT_OF_MEMORY;
 }
 
 NS_IMETHODIMP
@@ -325,11 +325,11 @@ HRESULT Initialize()
         nsCOMPtr <nsIEventQueue> eventQ;
         rc = NS_GetMainEventQ (getter_AddRefs (eventQ));
 
-        if (NS_SUCCEEDED (rc))
+        if (NS_SUCCEEDED(rc))
         {
             PRBool isOnMainThread = PR_FALSE;
             rc = eventQ->IsOnCurrentThread (&isOnMainThread);
-            if (NS_SUCCEEDED (rc) && isOnMainThread)
+            if (NS_SUCCEEDED(rc) && isOnMainThread)
                 ++ gXPCOMInitCount;
         }
 
@@ -394,7 +394,7 @@ HRESULT Initialize()
             /* Use RTPathAppPrivateArch() first */
             vrc = RTPathAppPrivateArch (appHomeDir, sizeof (appHomeDir));
             AssertRC (vrc);
-            if (RT_FAILURE (vrc))
+            if (RT_FAILURE(vrc))
             {
                 rc = NS_ERROR_FAILURE;
                 continue;
@@ -430,12 +430,12 @@ HRESULT Initialize()
         {
             char *appDirCP = NULL;
             vrc = RTStrUtf8ToCurrentCP (&appDirCP, appHomeDir);
-            if (RT_SUCCESS (vrc))
+            if (RT_SUCCESS(vrc))
             {
                 nsCOMPtr <nsILocalFile> file;
                 rc = NS_NewNativeLocalFile (nsEmbedCString (appDirCP),
                                             PR_FALSE, getter_AddRefs (file));
-                if (NS_SUCCEEDED (rc))
+                if (NS_SUCCEEDED(rc))
                     appDir = do_QueryInterface (file, &rc);
 
                 RTStrFree (appDirCP);
@@ -451,7 +451,7 @@ HRESULT Initialize()
         {
             char *pathCP = NULL;
             vrc = RTStrUtf8ToCurrentCP (&pathCP, appHomeDir);
-            if (RT_SUCCESS (vrc))
+            if (RT_SUCCESS(vrc))
             {
                 vrc = RTEnvSet ("VBOX_XPCOM_HOME", pathCP);
                 RTStrFree (pathCP);
@@ -465,14 +465,14 @@ HRESULT Initialize()
             rc = NS_InitXPCOM2 (getter_AddRefs (serviceManager),
                                 appDir, dsProv);
 
-            if (NS_SUCCEEDED (rc))
+            if (NS_SUCCEEDED(rc))
             {
                 nsCOMPtr <nsIComponentRegistrar> registrar =
                     do_QueryInterface (serviceManager, &rc);
-                if (NS_SUCCEEDED (rc))
+                if (NS_SUCCEEDED(rc))
                 {
                     rc = registrar->AutoRegister (nsnull);
-                    if (NS_SUCCEEDED (rc))
+                    if (NS_SUCCEEDED(rc))
                     {
                         /* We succeeded, stop probing paths */
                         LogFlowFunc (("Succeeded.\n"));
@@ -512,7 +512,7 @@ HRESULT Shutdown()
     nsCOMPtr <nsIEventQueue> eventQ;
     rc = NS_GetMainEventQ (getter_AddRefs (eventQ));
 
-    if (NS_SUCCEEDED (rc) || rc == NS_ERROR_NOT_AVAILABLE)
+    if (NS_SUCCEEDED(rc) || rc == NS_ERROR_NOT_AVAILABLE)
     {
         /* NS_ERROR_NOT_AVAILABLE seems to mean that
          * nsIEventQueue::StopAcceptingEvents() has been called (see
@@ -522,7 +522,7 @@ HRESULT Shutdown()
          * StopAcceptingEvents() on the main event queue). */
 
         PRBool isOnMainThread = PR_FALSE;
-        if (NS_SUCCEEDED (rc))
+        if (NS_SUCCEEDED(rc))
         {
             rc = eventQ->IsOnCurrentThread (&isOnMainThread);
             eventQ = nsnull; /* early release before shutdown */
@@ -533,7 +533,7 @@ HRESULT Shutdown()
             rc = NS_OK;
         }
 
-        if (NS_SUCCEEDED (rc) && isOnMainThread)
+        if (NS_SUCCEEDED(rc) && isOnMainThread)
         {
             /* only the main thread needs to uninitialize XPCOM and only if
              * init counter drops to zero */

@@ -32,7 +32,7 @@
 #include "HostNetworkInterfaceImpl.h"
 #include "netif.h"
 
-int NetIfList(std::list <ComObjPtr <HostNetworkInterface> > &list)
+int NetIfList(std::list <ComObjPtr<HostNetworkInterface> > &list)
 {
     return VERR_NOT_IMPLEMENTED;
 }

@@ -268,15 +268,15 @@ public:
      */
     nsresult postTo (nsIEventQueue *aEventQ)
     {
-        AssertReturn (mEv.that == NULL, NS_ERROR_FAILURE);
-        AssertReturn (aEventQ, NS_ERROR_FAILURE);
+        AssertReturn(mEv.that == NULL, NS_ERROR_FAILURE);
+        AssertReturn(aEventQ, NS_ERROR_FAILURE);
         nsresult rv = aEventQ->InitEvent (&mEv.e, NULL,
                                           eventHandler, eventDestructor);
-        if (NS_SUCCEEDED (rv))
+        if (NS_SUCCEEDED(rv))
         {
             mEv.that = this;
             rv = aEventQ->PostEvent (&mEv.e);
-            if (NS_SUCCEEDED (rv))
+            if (NS_SUCCEEDED(rv))
                 return rv;
         }
         delete this;
@@ -357,7 +357,7 @@ public:
 
                 int vrc = RTTimerLRStart (sTimer, uint64_t (VBoxSVC_ShutdownDelay) * 1000000);
                 AssertRC (vrc);
-                timerStarted = SUCCEEDED (vrc);
+                timerStarted = SUCCEEDED(vrc);
             }
             else
             {
@@ -475,11 +475,11 @@ public:
         LogFlowFunc (("\n"));
 
         /* create a critsect to protect object construction */
-        if (RT_FAILURE (RTCritSectInit (&sLock)))
+        if (RT_FAILURE(RTCritSectInit (&sLock)))
             return NS_ERROR_OUT_OF_MEMORY;
 
         int vrc = RTTimerLRCreateEx (&sTimer, 0, 0, ShutdownTimer, NULL);
-        if (RT_FAILURE (vrc))
+        if (RT_FAILURE(vrc))
         {
             LogFlowFunc (("Failed to create a timer! (vrc=%Rrc)\n", vrc));
             return NS_ERROR_FAILURE;
@@ -695,10 +695,10 @@ nsresult
 NS_NewGenericFactoryEx (nsIGenericFactory **result,
                         const nsModuleComponentInfoEx *info)
 {
-    AssertReturn (result, NS_ERROR_INVALID_POINTER);
+    AssertReturn(result, NS_ERROR_INVALID_POINTER);
 
     nsresult rv = NS_NewGenericFactory (result, info);
-    if (NS_SUCCEEDED (rv) && info && info->mFactoryConstructor)
+    if (NS_SUCCEEDED(rv) && info && info->mFactoryConstructor)
     {
         rv = info->mFactoryConstructor();
         if (NS_FAILED (rv))
@@ -721,14 +721,14 @@ RegisterSelfComponents (nsIComponentRegistrar *registrar,
 {
     nsresult rc = NS_OK;
     const nsModuleComponentInfoEx *info = components;
-    for (PRUint32 i = 0; i < count && NS_SUCCEEDED (rc); i++, info++)
+    for (PRUint32 i = 0; i < count && NS_SUCCEEDED(rc); i++, info++)
     {
         /* skip components w/o a constructor */
         if (!info->mConstructor) continue;
         /* create a new generic factory for a component and register it */
         nsIGenericFactory *factory;
         rc = NS_NewGenericFactoryEx (&factory, info);
-        if (NS_SUCCEEDED (rc))
+        if (NS_SUCCEEDED(rc))
         {
             rc = registrar->RegisterFactory (info->mCID,
                                              info->mDescription,

@@ -91,14 +91,14 @@ EventQueue::EventQueue()
 
     nsresult rc = NS_GetEventQueueService (getter_AddRefs (mEventQService));
 
-    if (NS_SUCCEEDED (rc))
+    if (NS_SUCCEEDED(rc))
     {
         rc = mEventQService->GetThreadEventQueue (NS_CURRENT_THREAD,
                                                   getter_AddRefs (mEventQ));
         if (rc == NS_ERROR_NOT_AVAILABLE)
         {
             rc = mEventQService->CreateMonitoredThreadEventQueue();
-            if (NS_SUCCEEDED (rc))
+            if (NS_SUCCEEDED(rc))
             {
                 mEQCreated = TRUE;
                 rc = mEventQService->GetThreadEventQueue (NS_CURRENT_THREAD,
@@ -150,7 +150,7 @@ BOOL EventQueue::postEvent (Event *event)
     MyPLEvent *ev = new MyPLEvent (event);
     mEventQ->InitEvent (ev, this, plEventHandler, plEventDestructor);
     HRESULT rc = mEventQ->PostEvent (ev);
-    return NS_SUCCEEDED (rc);
+    return NS_SUCCEEDED(rc);
 
 #endif
 }

@@ -112,19 +112,19 @@ void GetInterfaceNameByIID (const GUID &aIID, BSTR *aName)
     nsresult rv;
     nsCOMPtr <nsIInterfaceInfoManager> iim =
         do_GetService (NS_INTERFACEINFOMANAGER_SERVICE_CONTRACTID, &rv);
-    if (NS_SUCCEEDED (rv))
+    if (NS_SUCCEEDED(rv))
     {
         nsCOMPtr <nsIInterfaceInfo> iinfo;
         rv = iim->GetInfoForIID (&aIID, getter_AddRefs (iinfo));
-        if (NS_SUCCEEDED (rv))
+        if (NS_SUCCEEDED(rv))
         {
             const char *iname = NULL;
             iinfo->GetNameShared (&iname);
             char *utf8IName = NULL;
-            if (RT_SUCCESS (RTStrCurrentCPToUtf8 (&utf8IName, iname)))
+            if (RT_SUCCESS(RTStrCurrentCPToUtf8 (&utf8IName, iname)))
             {
                 PRTUTF16 utf16IName = NULL;
-                if (RT_SUCCESS (RTStrToUtf16 (utf8IName, &utf16IName)))
+                if (RT_SUCCESS(RTStrToUtf16 (utf8IName, &utf16IName)))
                 {
                     *aName = SysAllocString ((OLECHAR *) utf16IName);
                     RTUtf16Free (utf16IName);
@@ -139,8 +139,8 @@ void GetInterfaceNameByIID (const GUID &aIID, BSTR *aName)
 
 int GetVBoxUserHomeDirectory (char *aDir, size_t aDirLen)
 {
-    AssertReturn (aDir, VERR_INVALID_POINTER);
-    AssertReturn (aDirLen > 0, VERR_BUFFER_OVERFLOW);
+    AssertReturn(aDir, VERR_INVALID_POINTER);
+    AssertReturn(aDirLen > 0, VERR_BUFFER_OVERFLOW);
 
     /* start with null */
     *aDir = 0;
@@ -155,10 +155,10 @@ int GetVBoxUserHomeDirectory (char *aDir, size_t aDirLen)
         /* get the full path name */
         char *VBoxUserHomeUtf8 = NULL;
         vrc = RTStrCurrentCPToUtf8 (&VBoxUserHomeUtf8, VBoxUserHome);
-        if (RT_SUCCESS (vrc))
+        if (RT_SUCCESS(vrc))
         {
             vrc = RTPathAbs (VBoxUserHomeUtf8, path, sizeof (path));
-            if (RT_SUCCESS (vrc))
+            if (RT_SUCCESS(vrc))
             {
                 if (aDirLen < strlen (path) + 1)
                     vrc = VERR_BUFFER_OVERFLOW;
@@ -172,7 +172,7 @@ int GetVBoxUserHomeDirectory (char *aDir, size_t aDirLen)
     {
         /* compose the config directory (full path) */
         vrc = RTPathUserHome (path, sizeof (path));
-        if (RT_SUCCESS (vrc))
+        if (RT_SUCCESS(vrc))
         {
             size_t len =
                 RTStrPrintf (aDir, aDirLen, "%s%c%s",
@@ -183,7 +183,7 @@ int GetVBoxUserHomeDirectory (char *aDir, size_t aDirLen)
     }
 
     /* ensure the home directory exists */
-    if (RT_SUCCESS (vrc))
+    if (RT_SUCCESS(vrc))
         if (!RTDirExists (aDir))
             vrc = RTDirCreateFullPath (aDir, 0777);
 

@@ -42,7 +42,7 @@ HostPowerServiceWin::HostPowerServiceWin(VirtualBox *aVirtualBox) : HostPowerSer
     int rc = RTThreadCreate (&mThread, HostPowerServiceWin::NotificationThread, this, 65536,
                              RTTHREADTYPE_GUI, RTTHREADFLAGS_WAITABLE, "MainPower");
 
-    if (RT_FAILURE (rc))
+    if (RT_FAILURE(rc))
     {
         Log(("HostPowerServiceWin::HostPowerServiceWin: RTThreadCreate failed with %Rrc\n", rc));
         return;

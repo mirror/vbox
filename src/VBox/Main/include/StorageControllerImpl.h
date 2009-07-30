@@ -141,10 +141,10 @@ public:
     void unshare();
 
     /** @note this doesn't require a read lock since mParent is constant. */
-    const ComObjPtr <Machine, ComWeakRef> &parent() { return mParent; };
+    const ComObjPtr<Machine, ComWeakRef> &parent() { return mParent; };
 
     const Backupable<Data> &data() { return mData; }
-    ComObjPtr <StorageController> peer() { return mPeer; }
+    ComObjPtr<StorageController> peer() { return mPeer; }
 
     // for VirtualBoxSupportErrorInfoImpl
     static const wchar_t *getComponentName() { return L"StorageController"; }
@@ -156,7 +156,7 @@ private:
     /** Parent object. */
     const ComObjPtr<Machine, ComWeakRef> mParent;
     /** Peer object. */
-    const ComObjPtr <StorageController> mPeer;
+    const ComObjPtr<StorageController> mPeer;
     /** Data. */
     Backupable <Data> mData;
 

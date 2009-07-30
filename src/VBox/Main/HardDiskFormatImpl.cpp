@@ -51,29 +51,29 @@ void HardDiskFormat::FinalRelease()
  */
 HRESULT HardDiskFormat::init (const VDBACKENDINFO *aVDInfo)
 {
-    LogFlowThisFunc (("aVDInfo=%p\n", aVDInfo));
+    LogFlowThisFunc(("aVDInfo=%p\n", aVDInfo));
 
     ComAssertRet (aVDInfo, E_INVALIDARG);
 
     /* Enclose the state transition NotReady->InInit->Ready */
-    AutoInitSpan autoInitSpan (this);
-    AssertReturn (autoInitSpan.isOk(), E_FAIL);
+    AutoInitSpan autoInitSpan(this);
+    AssertReturn(autoInitSpan.isOk(), E_FAIL);
 
     /* The ID of the backend */
-    unconst (m.id) = aVDInfo->pszBackend;
+    unconst(m.id) = aVDInfo->pszBackend;
     /* The Name of the backend */
     /* Use id for now as long as VDBACKENDINFO hasn't any extra
      * name/description field. */
-    unconst (m.name) = aVDInfo->pszBackend;
+    unconst(m.name) = aVDInfo->pszBackend;
     /* The capabilities of the backend */
-    unconst (m.capabilities) = aVDInfo->uBackendCaps;
+    unconst(m.capabilities) = aVDInfo->uBackendCaps;
     /* Save the supported file extensions in a list */
     if (aVDInfo->papszFileExtensions)
     {
         const char *const *papsz = aVDInfo->papszFileExtensions;
         while (*papsz != NULL)
         {
-            unconst (m.fileExtensions).push_back (*papsz);
+            unconst(m.fileExtensions).push_back (*papsz);
             ++ papsz;
         }
     }
@@ -136,7 +136,7 @@ HRESULT HardDiskFormat::init (const VDBACKENDINFO *aVDInfo)
                                     dt,
                                     flags,
                                     defaultValue };
-            unconst (m.properties).push_back (prop);
+            unconst(m.properties).push_back (prop);
             ++ pa;
         }
     }
@@ -153,18 +153,18 @@ HRESULT HardDiskFormat::init (const VDBACKENDINFO *aVDInfo)
  */
 void HardDiskFormat::uninit()
 {
-    LogFlowThisFunc (("\n"));
+    LogFlowThisFunc(("\n"));
 
     /* Enclose the state transition Ready->InUninit->NotReady */
-    AutoUninitSpan autoUninitSpan (this);
+    AutoUninitSpan autoUninitSpan(this);
     if (autoUninitSpan.uninitDone())
         return;
 
-    unconst (m.properties).clear();
-    unconst (m.fileExtensions).clear();
-    unconst (m.capabilities) = 0;
-    unconst (m.name).setNull();
-    unconst (m.id).setNull();
+    unconst(m.properties).clear();
+    unconst(m.fileExtensions).clear();
+    unconst(m.capabilities) = 0;
+    unconst(m.name).setNull();
+    unconst(m.id).setNull();
 }
 
 // IHardDiskFormat properties
@@ -174,11 +174,11 @@ STDMETHODIMP HardDiskFormat::COMGETTER(Id)(BSTR *aId)
 {
     CheckComArgOutPointerValid(aId);
 
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
 
     /* this is const, no need to lock */
-    m.id.cloneTo (aId);
+    m.id.cloneTo(aId);
 
     return S_OK;
 }
@@ -187,31 +187,31 @@ STDMETHODIMP HardDiskFormat::COMGETTER(Name)(BSTR *aName)
 {
     CheckComArgOutPointerValid(aName);
 
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
 
     /* this is const, no need to lock */
-    m.name.cloneTo (aName);
+    m.name.cloneTo(aName);
 
     return S_OK;
 }
 
 STDMETHODIMP HardDiskFormat::
-COMGETTER(FileExtensions)(ComSafeArrayOut (BSTR, aFileExtensions))
+COMGETTER(FileExtensions)(ComSafeArrayOut(BSTR, aFileExtensions))
 {
-    if (ComSafeArrayOutIsNull (aFileExtensions))
+    if (ComSafeArrayOutIsNull(aFileExtensions))
         return E_POINTER;
 
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
 
     /* this is const, no need to lock */
-    com::SafeArray <BSTR> fileExtentions (m.fileExtensions.size());
+    com::SafeArray<BSTR> fileExtentions (m.fileExtensions.size());
     int i = 0;
     for (BstrList::const_iterator it = m.fileExtensions.begin();
         it != m.fileExtensions.end(); ++ it, ++ i)
-        (*it).cloneTo (&fileExtentions [i]);
-    fileExtentions.detachTo (ComSafeArrayOutArg (aFileExtensions));
+        (*it).cloneTo(&fileExtentions [i]);
+    fileExtentions.detachTo(ComSafeArrayOutArg(aFileExtensions));
 
     return S_OK;
 }
@@ -220,8 +220,8 @@ STDMETHODIMP HardDiskFormat::COMGETTER(Capabilities)(ULONG *aCaps)
 {
     CheckComArgOutPointerValid(aCaps);
 
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
 
     /* m.capabilities is const, no need to lock */
 
@@ -236,11 +236,11 @@ STDMETHODIMP HardDiskFormat::COMGETTER(Capabilities)(ULONG *aCaps)
     return S_OK;
 }
 
-STDMETHODIMP HardDiskFormat::DescribeProperties(ComSafeArrayOut (BSTR, aNames),
-                                                ComSafeArrayOut (BSTR, aDescriptions),
-                                                ComSafeArrayOut (DataType_T, aTypes),
-                                                ComSafeArrayOut (ULONG, aFlags),
-                                                ComSafeArrayOut (BSTR, aDefaults))
+STDMETHODIMP HardDiskFormat::DescribeProperties(ComSafeArrayOut(BSTR, aNames),
+                                                ComSafeArrayOut(BSTR, aDescriptions),
+                                                ComSafeArrayOut(DataType_T, aTypes),
+                                                ComSafeArrayOut(ULONG, aFlags),
+                                                ComSafeArrayOut(BSTR, aDefaults))
 {
     CheckComArgSafeArrayNotNull(aNames);
     CheckComArgSafeArrayNotNull(aDescriptions);
@@ -248,33 +248,33 @@ STDMETHODIMP HardDiskFormat::DescribeProperties(ComSafeArrayOut (BSTR, aNames),
     CheckComArgSafeArrayNotNull(aFlags);
     CheckComArgSafeArrayNotNull(aDefaults);
 
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
 
     /* this is const, no need to lock */
-    com::SafeArray <BSTR> propertyNames (m.properties.size());
-    com::SafeArray <BSTR> propertyDescriptions (m.properties.size());
-    com::SafeArray <DataType_T> propertyTypes (m.properties.size());
-    com::SafeArray <ULONG> propertyFlags (m.properties.size());
-    com::SafeArray <BSTR> propertyDefaults (m.properties.size());
+    com::SafeArray<BSTR> propertyNames (m.properties.size());
+    com::SafeArray<BSTR> propertyDescriptions (m.properties.size());
+    com::SafeArray<DataType_T> propertyTypes (m.properties.size());
+    com::SafeArray<ULONG> propertyFlags (m.properties.size());
+    com::SafeArray<BSTR> propertyDefaults (m.properties.size());
 
     int i = 0;
     for (PropertyList::const_iterator it = m.properties.begin();
          it != m.properties.end(); ++ it, ++ i)
     {
         const Property &prop = (*it);
-        prop.name.cloneTo (&propertyNames [i]);
-        prop.description.cloneTo (&propertyDescriptions [i]);
+        prop.name.cloneTo(&propertyNames [i]);
+        prop.description.cloneTo(&propertyDescriptions [i]);
         propertyTypes [i] = prop.type;
         propertyFlags [i] = prop.flags;
-        prop.defaultValue.cloneTo (&propertyDefaults [i]);
+        prop.defaultValue.cloneTo(&propertyDefaults [i]);
     }
 
-    propertyNames.detachTo (ComSafeArrayOutArg (aNames));
-    propertyDescriptions.detachTo (ComSafeArrayOutArg (aDescriptions));
-    propertyTypes.detachTo (ComSafeArrayOutArg (aTypes));
-    propertyFlags.detachTo (ComSafeArrayOutArg (aFlags));
-    propertyDefaults.detachTo (ComSafeArrayOutArg (aDefaults));
+    propertyNames.detachTo(ComSafeArrayOutArg(aNames));
+    propertyDescriptions.detachTo(ComSafeArrayOutArg(aDescriptions));
+    propertyTypes.detachTo(ComSafeArrayOutArg(aTypes));
+    propertyFlags.detachTo(ComSafeArrayOutArg(aFlags));
+    propertyDefaults.detachTo(ComSafeArrayOutArg(aDefaults));
 
     return S_OK;
 }

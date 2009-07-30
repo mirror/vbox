@@ -121,7 +121,7 @@ int DHCPServerRunner::start()
     args[index++] = NULL;
 
     int rc = RTProcCreate (exePath, args, RTENV_DEFAULT, 0, &mProcess);
-    if (RT_FAILURE (rc))
+    if (RT_FAILURE(rc))
         mProcess = NIL_RTPROCESS;
 
     return rc;

@@ -156,8 +156,8 @@ private:
     void detach();
     void generateMACAddress();
 
-    const ComObjPtr <Machine, ComWeakRef> mParent;
-    const ComObjPtr <NetworkAdapter> mPeer;
+    const ComObjPtr<Machine, ComWeakRef> mParent;
+    const ComObjPtr<NetworkAdapter> mPeer;
 
     Backupable <Data> mData;
 };

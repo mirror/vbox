@@ -110,15 +110,15 @@ public:
         struct Session
         {
             /** Control of the direct session opened by openSession() */
-            ComPtr <IInternalSessionControl> mDirectControl;
+            ComPtr<IInternalSessionControl> mDirectControl;
 
-            typedef std::list <ComPtr <IInternalSessionControl> > RemoteControlList;
+            typedef std::list <ComPtr<IInternalSessionControl> > RemoteControlList;
 
             /** list of controls of all opened remote sessions */
             RemoteControlList mRemoteControls;
 
             /** openRemoteSession() and OnSessionEnd() progress indicator */
-            ComObjPtr <Progress> mProgress;
+            ComObjPtr<Progress> mProgress;
 
             /**
              * PID of the session object that must be passed to openSession() to
@@ -134,14 +134,14 @@ public:
             Bstr mType;
 
             /** Session machine object */
-            ComObjPtr <SessionMachine> mMachine;
+            ComObjPtr<SessionMachine> mMachine;
 
             /**
              * Successfully locked media list. The 2nd value in the pair is true
              * if the medium is locked for writing and false if locked for
              * reading.
              */
-            typedef std::list <std::pair <ComPtr <IMedium>, bool > > LockedMedia;
+            typedef std::list <std::pair <ComPtr<IMedium>, bool > > LockedMedia;
             LockedMedia mLockedMedia;
         };
 
@@ -275,7 +275,7 @@ public:
 
         DeviceType_T   mBootOrder [SchemaDefs::MaxBootPosition];
 
-        typedef std::list <ComObjPtr <SharedFolder> > SharedFolderList;
+        typedef std::list <ComObjPtr<SharedFolder> > SharedFolderList;
         SharedFolderList mSharedFolders;
         ClipboardMode_T mClipboardMode;
         typedef std::list <GuestProperty> GuestPropertyList;
@@ -596,7 +596,7 @@ public:
      * used by ready Machine children (whose readiness is bound to the parent's
      * one) or after doing addCaller() manually.
      */
-    const ComObjPtr <VirtualBox, ComWeakRef> &virtualBox() const { return mParent; }
+    const ComObjPtr<VirtualBox, ComWeakRef> &virtualBox() const { return mParent; }
 
     /**
      * Returns this machine ID.
@@ -661,38 +661,38 @@ public:
 
 #if defined (RT_OS_WINDOWS)
 
-    bool isSessionOpen (ComObjPtr <SessionMachine> &aMachine,
-                        ComPtr <IInternalSessionControl> *aControl = NULL,
+    bool isSessionOpen (ComObjPtr<SessionMachine> &aMachine,
+                        ComPtr<IInternalSessionControl> *aControl = NULL,
                         HANDLE *aIPCSem = NULL, bool aAllowClosing = false);
     bool isSessionSpawning (RTPROCESS *aPID = NULL);
 
-    bool isSessionOpenOrClosing (ComObjPtr <SessionMachine> &aMachine,
-                                 ComPtr <IInternalSessionControl> *aControl = NULL,
+    bool isSessionOpenOrClosing (ComObjPtr<SessionMachine> &aMachine,
+                                 ComPtr<IInternalSessionControl> *aControl = NULL,
                                  HANDLE *aIPCSem = NULL)
     { return isSessionOpen (aMachine, aControl, aIPCSem, true /* aAllowClosing */); }
 
 #elif defined (RT_OS_OS2)
 
-    bool isSessionOpen (ComObjPtr <SessionMachine> &aMachine,
-                        ComPtr <IInternalSessionControl> *aControl = NULL,
+    bool isSessionOpen (ComObjPtr<SessionMachine> &aMachine,
+                        ComPtr<IInternalSessionControl> *aControl = NULL,
                         HMTX *aIPCSem = NULL, bool aAllowClosing = false);
 
     bool isSessionSpawning (RTPROCESS *aPID = NULL);
 
-    bool isSessionOpenOrClosing (ComObjPtr <SessionMachine> &aMachine,
-                                 ComPtr <IInternalSessionControl> *aControl = NULL,
+    bool isSessionOpenOrClosing (ComObjPtr<SessionMachine> &aMachine,
+                                 ComPtr<IInternalSessionControl> *aControl = NULL,
                                  HMTX *aIPCSem = NULL)
     { return isSessionOpen (aMachine, aControl, aIPCSem, true /* aAllowClosing */); }
 
 #else
 
-    bool isSessionOpen (ComObjPtr <SessionMachine> &aMachine,
-                        ComPtr <IInternalSessionControl> *aControl = NULL,
+    bool isSessionOpen (ComObjPtr<SessionMachine> &aMachine,
+                        ComPtr<IInternalSessionControl> *aControl = NULL,
                         bool aAllowClosing = false);
     bool isSessionSpawning();
 
-    bool isSessionOpenOrClosing (ComObjPtr <SessionMachine> &aMachine,
-                                 ComPtr <IInternalSessionControl> *aControl = NULL)
+    bool isSessionOpenOrClosing (ComObjPtr<SessionMachine> &aMachine,
+                                 ComPtr<IInternalSessionControl> *aControl = NULL)
     { return isSessionOpen (aMachine, aControl, true /* aAllowClosing */); }
 
 #endif
@@ -702,7 +702,7 @@ public:
     HRESULT trySetRegistered (BOOL aRegistered);
 
     HRESULT getSharedFolder (CBSTR aName,
-                             ComObjPtr <SharedFolder> &aSharedFolder,
+                             ComObjPtr<SharedFolder> &aSharedFolder,
                              bool aSetError = false)
     {
         AutoWriteLock alock (this);
@@ -752,7 +752,7 @@ protected:
     virtual HRESULT setMachineState (MachineState_T aMachineState);
 
     HRESULT findSharedFolder (CBSTR aName,
-                              ComObjPtr <SharedFolder> &aSharedFolder,
+                              ComObjPtr<SharedFolder> &aSharedFolder,
                               bool aSetError = false);
 
     HRESULT loadSettings (bool aRegistered);
@@ -769,13 +769,13 @@ protected:
                               settings::Key *aSnapshotsNode,
                               settings::Key *aSnapshotNode);
 
-    HRESULT findSnapshot (const Guid &aId, ComObjPtr <Snapshot> &aSnapshot,
+    HRESULT findSnapshot (const Guid &aId, ComObjPtr<Snapshot> &aSnapshot,
                           bool aSetError = false);
-    HRESULT findSnapshot (IN_BSTR aName, ComObjPtr <Snapshot> &aSnapshot,
+    HRESULT findSnapshot (IN_BSTR aName, ComObjPtr<Snapshot> &aSnapshot,
                           bool aSetError = false);
 
     HRESULT getStorageControllerByName(CBSTR aName,
-                                       ComObjPtr <StorageController> &aStorageController,
+                                       ComObjPtr<StorageController> &aStorageController,
                                        bool aSetError = false);
 
     HRESULT getHardDiskAttachmentsOfController(CBSTR aName,
@@ -816,7 +816,7 @@ protected:
     HRESULT getExtraData(const Utf8Str &aKey, Utf8Str &aValue);
 
     HRESULT createImplicitDiffs (const Bstr &aFolder,
-                                 ComObjPtr <Progress> &aProgress,
+                                 ComObjPtr<Progress> &aProgress,
                                  bool aOnline);
     HRESULT deleteImplicitDiffs();
 
@@ -846,9 +846,9 @@ protected:
 
     const InstanceType mType;
 
-    const ComObjPtr <Machine, ComWeakRef> mPeer;
+    const ComObjPtr<Machine, ComWeakRef> mPeer;
 
-    const ComObjPtr <VirtualBox, ComWeakRef> mParent;
+    const ComObjPtr<VirtualBox, ComWeakRef> mParent;
 
     Shareable <Data> mData;
     Shareable <SSData> mSSData;
@@ -860,17 +860,17 @@ protected:
     // the following fields need special backup/rollback/commit handling,
     // so they cannot be a part of HWData
 
-    const ComObjPtr <VRDPServer> mVRDPServer;
-    const ComObjPtr <DVDDrive> mDVDDrive;
-    const ComObjPtr <FloppyDrive> mFloppyDrive;
-    const ComObjPtr <SerialPort>
+    const ComObjPtr<VRDPServer> mVRDPServer;
+    const ComObjPtr<DVDDrive> mDVDDrive;
+    const ComObjPtr<FloppyDrive> mFloppyDrive;
+    const ComObjPtr<SerialPort>
         mSerialPorts [SchemaDefs::SerialPortCount];
-    const ComObjPtr <ParallelPort>
+    const ComObjPtr<ParallelPort>
         mParallelPorts [SchemaDefs::ParallelPortCount];
-    const ComObjPtr <AudioAdapter> mAudioAdapter;
-    const ComObjPtr <USBController> mUSBController;
-    const ComObjPtr <BIOSSettings> mBIOSSettings;
-    const ComObjPtr <NetworkAdapter>
+    const ComObjPtr<AudioAdapter> mAudioAdapter;
+    const ComObjPtr<USBController> mUSBController;
+    const ComObjPtr<BIOSSettings> mBIOSSettings;
+    const ComObjPtr<NetworkAdapter>
         mNetworkAdapters [SchemaDefs::NetworkAdapterCount];
 
     typedef std::list< ComObjPtr<StorageController> > StorageControllerList;
@@ -976,7 +976,7 @@ public:
                                IVirtualBoxErrorInfo *aError);
     HRESULT onSharedFolderChange();
 
-    bool hasMatchingUSBFilter (const ComObjPtr <HostUSBDevice> &aDevice, ULONG *aMaskedIfs);
+    bool hasMatchingUSBFilter (const ComObjPtr<HostUSBDevice> &aDevice, ULONG *aMaskedIfs);
 
 private:
 
@@ -987,9 +987,9 @@ private:
         MachineState_T mLastState;
 
         // used when taking snapshot
-        ComObjPtr <Snapshot> mSnapshot;
-        ComObjPtr <Progress> mServerProgress;
-        ComObjPtr <CombinedProgress> mCombinedProgress;
+        ComObjPtr<Snapshot> mSnapshot;
+        ComObjPtr<Progress> mServerProgress;
+        ComObjPtr<CombinedProgress> mCombinedProgress;
 
         // used when saving state
         Guid mProgressId;
@@ -1015,7 +1015,7 @@ private:
     HRESULT endSavingState (BOOL aSuccess);
     HRESULT endTakingSnapshot (BOOL aSuccess);
 
-    typedef std::map <ComObjPtr <Machine>, MachineState_T> AffectedMachines;
+    typedef std::map <ComObjPtr<Machine>, MachineState_T> AffectedMachines;
 
     void takeSnapshotHandler (TakeSnapshotTask &aTask);
     void discardSnapshotHandler (DiscardSnapshotTask &aTask);
@@ -1035,14 +1035,14 @@ private:
 #if defined (RT_OS_WINDOWS)
     HANDLE mIPCSem;
     Bstr mIPCSemName;
-    friend bool Machine::isSessionOpen (ComObjPtr <SessionMachine> &aMachine,
-                                        ComPtr <IInternalSessionControl> *aControl,
+    friend bool Machine::isSessionOpen (ComObjPtr<SessionMachine> &aMachine,
+                                        ComPtr<IInternalSessionControl> *aControl,
                                         HANDLE *aIPCSem, bool aAllowClosing);
 #elif defined (RT_OS_OS2)
     HMTX mIPCSem;
     Bstr mIPCSemName;
-    friend bool Machine::isSessionOpen (ComObjPtr <SessionMachine> &aMachine,
-                                        ComPtr <IInternalSessionControl> *aControl,
+    friend bool Machine::isSessionOpen (ComObjPtr<SessionMachine> &aMachine,
+                                        ComPtr<IInternalSessionControl> *aControl,
                                         HMTX *aIPCSem, bool aAllowClosing);
 #elif defined (VBOX_WITH_SYS_V_IPC_SESSION_WATCHER)
     int mIPCSem;

@@ -51,16 +51,16 @@ void HardDiskAttachment::FinalRelease()
 HRESULT HardDiskAttachment::init(HardDisk *aHD, CBSTR aController, LONG aPort,
                                  LONG aDevice, bool aImplicit /*= false*/)
 {
-    AssertReturn (aHD, E_INVALIDARG);
+    AssertReturn(aHD, E_INVALIDARG);
 
     /* Enclose the state transition NotReady->InInit->Ready */
-    AutoInitSpan autoInitSpan (this);
-    AssertReturn (autoInitSpan.isOk(), E_FAIL);
+    AutoInitSpan autoInitSpan(this);
+    AssertReturn(autoInitSpan.isOk(), E_FAIL);
 
     m.hardDisk = aHD;
-    unconst (m.controller) = aController;
-    unconst (m.port)   = aPort;
-    unconst (m.device) = aDevice;
+    unconst(m.controller) = aController;
+    unconst(m.port)   = aPort;
+    unconst(m.device) = aDevice;
 
     m.implicit = aImplicit;
 
@@ -77,7 +77,7 @@ HRESULT HardDiskAttachment::init(HardDisk *aHD, CBSTR aController, LONG aPort,
 void HardDiskAttachment::uninit()
 {
     /* Enclose the state transition Ready->InUninit->NotReady */
-    AutoUninitSpan autoUninitSpan (this);
+    AutoUninitSpan autoUninitSpan(this);
     if (autoUninitSpan.uninitDone())
         return;
 }
@@ -89,12 +89,12 @@ STDMETHODIMP HardDiskAttachment::COMGETTER(HardDisk) (IHardDisk **aHardDisk)
 {
     CheckComArgOutPointerValid(aHardDisk);
 
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
 
-    AutoReadLock alock (this);
+    AutoReadLock alock(this);
 
-    m.hardDisk.queryInterfaceTo (aHardDisk);
+    m.hardDisk.queryInterfaceTo(aHardDisk);
 
     return S_OK;
 }
@@ -103,8 +103,8 @@ STDMETHODIMP HardDiskAttachment::COMGETTER(Controller) (BSTR *aController)
 {
     CheckComArgOutPointerValid(aController);
 
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
 
     /* m.controller is constant during life time, no need to lock */
     m.controller.cloneTo(aController);
@@ -116,8 +116,8 @@ STDMETHODIMP HardDiskAttachment::COMGETTER(Port) (LONG *aPort)
 {
     CheckComArgOutPointerValid(aPort);
 
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
 
     /* m.port is constant during life time, no need to lock */
     *aPort = m.port;
@@ -129,8 +129,8 @@ STDMETHODIMP HardDiskAttachment::COMGETTER(Device) (LONG *aDevice)
 {
     CheckComArgOutPointerValid(aDevice);
 
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
 
     /* m.device is constant during life time, no need to lock */
     *aDevice = m.device;

@@ -79,13 +79,13 @@ void Mouse::FinalRelease()
  */
 HRESULT Mouse::init (Console *parent)
 {
-    LogFlowThisFunc (("\n"));
+    LogFlowThisFunc(("\n"));
 
     ComAssertRet (parent, E_INVALIDARG);
 
     /* Enclose the state transition NotReady->InInit->Ready */
-    AutoInitSpan autoInitSpan (this);
-    AssertReturn (autoInitSpan.isOk(), E_FAIL);
+    AutoInitSpan autoInitSpan(this);
+    AssertReturn(autoInitSpan.isOk(), E_FAIL);
 
     unconst(mParent) = parent;
 
@@ -108,10 +108,10 @@ HRESULT Mouse::init (Console *parent)
  */
 void Mouse::uninit()
 {
-    LogFlowThisFunc (("\n"));
+    LogFlowThisFunc(("\n"));
 
     /* Enclose the state transition Ready->InUninit->NotReady */
-    AutoUninitSpan autoUninitSpan (this);
+    AutoUninitSpan autoUninitSpan(this);
     if (autoUninitSpan.uninitDone())
         return;
 
@@ -119,7 +119,7 @@ void Mouse::uninit()
         mpDrv->pMouse = NULL;
     mpDrv = NULL;
 
-    unconst (mParent).setNull();
+    unconst(mParent).setNull();
 }
 
 // IMouse properties
@@ -137,10 +137,10 @@ STDMETHODIMP Mouse::COMGETTER(AbsoluteSupported) (BOOL *absoluteSupported)
     if (!absoluteSupported)
         return E_POINTER;
 
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
 
-    AutoWriteLock alock (this);
+    AutoWriteLock alock(this);
 
     CHECK_CONSOLE_DRV (mpDrv);
 
@@ -167,10 +167,10 @@ STDMETHODIMP Mouse::COMGETTER(NeedsHostCursor) (BOOL *needsHostCursor)
     if (!needsHostCursor)
         return E_POINTER;
 
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
 
-    AutoWriteLock alock (this);
+    AutoWriteLock alock(this);
 
     CHECK_CONSOLE_DRV (mpDrv);
 
@@ -201,10 +201,10 @@ STDMETHODIMP Mouse::PutMouseEvent(LONG dx, LONG dy, LONG dz, LONG buttonState)
 {
     HRESULT rc = S_OK;
 
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
 
-    AutoWriteLock alock (this);
+    AutoWriteLock alock(this);
 
     CHECK_CONSOLE_DRV (mpDrv);
 
@@ -235,7 +235,7 @@ STDMETHODIMP Mouse::PutMouseEvent(LONG dx, LONG dy, LONG dz, LONG buttonState)
         fButtons |= PDMIMOUSEPORT_BUTTON_MIDDLE;
 
     int vrc = mpDrv->pUpPort->pfnPutEvent(mpDrv->pUpPort, dx, dy, dz, fButtons);
-    if (RT_FAILURE (vrc))
+    if (RT_FAILURE(vrc))
         rc = setError (VBOX_E_IPRT_ERROR,
             tr ("Could not send the mouse event to the virtual mouse (%Rrc)"),
                 vrc);
@@ -258,10 +258,10 @@ STDMETHODIMP Mouse::PutMouseEventAbsolute(LONG x, LONG y, LONG dz,
 {
     HRESULT rc = S_OK;
 
-    AutoCaller autoCaller (this);
-    CheckComRCReturnRC (autoCaller.rc());
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
 
-    AutoWriteLock alock (this);
+    AutoWriteLock alock(this);
 
     CHECK_CONSOLE_DRV (mpDrv);
 
@@ -331,7 +331,7 @@ STDMETHODIMP Mouse::PutMouseEventAbsolute(LONG x, LONG y, LONG dz,
                                               fButtons);
         mLastAbsX = mouseXAbs;
         mLastAbsY = mouseYAbs;
-        if (RT_FAILURE (vrc))
+        if (RT_FAILURE(vrc))
             rc = setError (VBOX_E_IPRT_ERROR,
                 tr ("Could not send the mouse event to the virtual mouse (%Rrc)"),
                     vrc);
