@@ -1703,30 +1703,24 @@ static void ssmR3StrmFlushCurBuf(PSSMSTRM pStrm)
 
 
 /**
- * Flush any buffered data.
+ * Flush buffered data.
  *
  * @returns VBox status code.
  * @param   pStrm           The stream handle.
  *
  * @thread  The producer thread.
  */
-static int ssmR3StrmFlush(PSSMSTRM pStrm)
+static int ssmR3StrmWriteBuffers(PSSMSTRM pStrm)
 {
+    Assert(!pStrm->pCur);
+    Assert(pStrm->fWrite);
+
     /*
-     * Read streams have nothing that needs to be flushed.
+     * Just return if the stream has a pending error condition.
      */
-    if (!pStrm->fWrite)
-        return VINF_SUCCESS;
     int rc = pStrm->rc;
     if (RT_FAILURE(rc))
         return rc;
-
-    /*
-     * Complete the current buffer and queue it.
-     */
-    ssmR3StrmFlushCurBuf(pStrm);
-
-/** @todo This is what the I/O thread will be doing when we finally get one. */
 
     /*
      * Grab the pending list and write it out.
@@ -1746,7 +1740,7 @@ static int ssmR3StrmFlush(PSSMSTRM pStrm)
         int rc = RTFileWriteAt(pStrm->hFile, pCur->offStream, &pCur->abData[0], pCur->cb, NULL);
         if (    RT_FAILURE(rc)
             &&  ssmR3StrmSetError(pStrm, rc))
-            LogRel(("ssmR3StrmFlush: RTFileWriteAt failed with rc=%Rrc at offStream=%#llx\n", rc, pCur->offStream));
+            LogRel(("ssmR3StrmWriteBuffers: RTFileWriteAt failed with rc=%Rrc at offStream=%#llx\n", rc, pCur->offStream));
 
         /* free it */
         ssmR3StrmPutFreeBuf(pStrm, pCur);
@@ -1767,7 +1761,11 @@ static int ssmR3StrmClose(PSSMSTRM pStrm)
     /*
      * Flush and close the stream.
      */
-    ssmR3StrmFlush(pStrm);
+    if (pStrm->fWrite)
+    {
+        ssmR3StrmFlushCurBuf(pStrm);
+        ssmR3StrmWriteBuffers(pStrm);
+    }
     int rc = RTFileClose(pStrm->hFile);
     if (RT_FAILURE(rc))
         ssmR3StrmSetError(pStrm, rc);
@@ -1826,10 +1824,15 @@ static int ssmR3StrmWrite(PSSMSTRM pStrm, const void *pvBuf, size_t cbToWrite)
     {
         /*
          * Flush the current buffer and replace it with a new one.
+         * Write the bits to the disk if we haven't got any helper yet.
          */
-        int rc = ssmR3StrmFlush(pStrm);
-        if (RT_FAILURE(rc))
-            return rc;
+        ssmR3StrmFlushCurBuf(pStrm);
+        if (pStrm->hIoThread == NIL_RTTHREAD)
+        {
+            int rc = ssmR3StrmWriteBuffers(pStrm);
+            if (RT_FAILURE(rc))
+                return rc;
+        }
         pBuf = ssmR3StrmGetFreeBuf(pStrm);
         if (!pBuf)
             break;
@@ -1971,9 +1974,12 @@ static int ssmR3StrmRead(PSSMSTRM pStrm, void *pvBuf, size_t cbToRead)
          * Flush the current buffer and get the next one.
          */
         ssmR3StrmFlushCurBuf(pStrm);
-        rc = ssmR3StrmReadMore(pStrm); /** @todo Remove this when adding the I/O thread! */
-        if (RT_FAILURE(rc))
-            break;
+        if (pStrm->hIoThread == NIL_RTTHREAD)
+        {
+            rc = ssmR3StrmReadMore(pStrm);
+            if (RT_FAILURE(rc))
+                break;
+        }
         PSSMSTRMBUF pBuf = ssmR3StrmGetBuf(pStrm);
         if (!pBuf)
         {
@@ -3784,17 +3790,20 @@ static int ssmR3FileSeekV1(PSSMHANDLE pSSM, const char *pszUnit, uint32_t iInsta
  *
  * @returns VBox status code.
  * @param   pSSM                The SSM handle.
+ * @param   pDir                The directory buffer.
+ * @param   cbDir               The size of the directory.
+ * @param   cDirEntries         The number of directory entries.
+ * @param   offDir              The directory offset in the file.
  * @param   pszUnit             The unit to seek to.
  * @param   iInstance           The particulart insance we seek.
  * @param   piVersion           Where to store the unit version number.
  */
-static int ssmR3FileSeekSubV2(PSSMHANDLE pSSM, PSSMFILEDIR pDir, size_t cbDir, uint32_t cDirEntries,
+static int ssmR3FileSeekSubV2(PSSMHANDLE pSSM, PSSMFILEDIR pDir, size_t cbDir, uint32_t cDirEntries, uint64_t offDir,
                               const char *pszUnit, uint32_t iInstance, uint32_t *piVersion)
 {
     /*
      * Read it.
      */
-    uint64_t const offDir = pSSM->u.Read.cbLoadFile - sizeof(SSMFILEFTR) - cbDir;
     int rc = ssmR3StrmPeekAt(&pSSM->Strm, offDir, pDir, cbDir, NULL);
     AssertLogRelRCReturn(rc, rc);
     AssertLogRelReturn(!memcmp(pDir->szMagic, SSMFILEDIR_MAGIC, sizeof(pDir->szMagic)), VERR_SSM_INTEGRITY);
@@ -3886,9 +3895,9 @@ static int ssmR3FileSeekV2(PSSMHANDLE pSSM, const char *pszUnit, uint32_t iInsta
      * Read the footer, allocate a temporary buffer for the dictionary and
      * pass it down to a worker to simplify cleanup.
      */
+    uint64_t        offFooter;
     SSMFILEFTR      Footer;
-/** @todo this doesn't work when we get an I/O thread... */
-    int rc = RTFileReadAt(pSSM->Strm.hFile, pSSM->u.Read.cbLoadFile - sizeof(Footer), &Footer, sizeof(Footer), NULL);
+    int rc = ssmR3StrmPeekAt(&pSSM->Strm, -(RTFOFF)sizeof(Footer), &Footer, sizeof(Footer), &offFooter);
     AssertLogRelRCReturn(rc, rc);
     AssertLogRelReturn(!memcmp(Footer.szMagic, SSMFILEFTR_MAGIC, sizeof(Footer.szMagic)), VERR_SSM_INTEGRITY);
     SSM_CHECK_CRC32_RET(&Footer, sizeof(Footer), ("Bad footer CRC: %08x, actual %08x\n", u32CRC, u32ActualCRC));
@@ -3897,7 +3906,8 @@ static int ssmR3FileSeekV2(PSSMHANDLE pSSM, const char *pszUnit, uint32_t iInsta
     PSSMFILEDIR     pDir  = (PSSMFILEDIR)RTMemTmpAlloc(cbDir);
     if (RT_UNLIKELY(!pDir))
         return VERR_NO_TMP_MEMORY;
-    rc = ssmR3FileSeekSubV2(pSSM, pDir, cbDir, Footer.cDirEntries, pszUnit, iInstance, piVersion);
+    rc = ssmR3FileSeekSubV2(pSSM, pDir, cbDir, Footer.cDirEntries, offFooter - cbDir,
+                            pszUnit, iInstance, piVersion);
     RTMemTmpFree(pDir);
 
     return rc;
@@ -3966,7 +3976,7 @@ VMMR3DECL(int) SSMR3Seek(PSSMHANDLE pSSM, const char *pszUnit, uint32_t iInstanc
  */
 static int ssmR3DataWriteFinish(PSSMHANDLE pSSM)
 {
-    //Log2(("ssmR3DataWriteFinish: %#010llx start\n", RTFileTell(pSSM->File)));
+    //Log2(("ssmR3DataWriteFinish: %#010llx start\n", ssmR3StrmTell(&pSSM->Strm)));
     int rc = ssmR3DataFlushBuffer(pSSM);
     if (RT_SUCCESS(rc))
         return VINF_SUCCESS;
@@ -4789,7 +4799,7 @@ static DECLCALLBACK(int) ssmR3ReadInV1(void *pvSSM, void *pvBuf, size_t cbBuf, s
         cbRead = (size_t)pSSM->cbUnitLeftV1;
     if (cbRead)
     {
-        //Log2(("ssmR3ReadInV1: %#010llx cbBug=%#x cbRead=%#x\n", RTFileTell(pSSM->File), cbBuf, cbRead));
+        //Log2(("ssmR3ReadInV1: %#010llx cbBug=%#x cbRead=%#x\n", ssmR3StrmTell(&pSSM->Strm), cbBuf, cbRead));
         int rc = ssmR3StrmRead(&pSSM->Strm, pvBuf, cbRead);
         if (RT_SUCCESS(rc))
         {
