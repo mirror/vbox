@@ -282,8 +282,8 @@ typedef struct DMIOEMSTRINGS
 {
     DMIHDR          header;
     uint8_t         u8Count;
-    uint8_t         u8VboxVersion;
-    uint8_t         u8VboxRevision;
+    uint8_t         u8VBoxVersion;
+    uint8_t         u8VBoxRevision;
 } *PDMIOEMSTRINGS;
 AssertCompileSize(DMIOEMSTRINGS, 0x7);
 
@@ -1154,8 +1154,8 @@ static int pcbiosPlantDMITable(PPDMDEVINS pDevIns, uint8_t *pTable, unsigned cbM
     RTStrAPrintf(&pszVBoxRev, "vboxRev_%ld", VBOX_SVN_REV);
     READCFGSTR("DmiOEMVBoxVer", pszDmiOEMVBoxVer, pszVBoxVer);
     READCFGSTR("DmiOEMVBoxRev", pszDmiOEMVBoxRev, pszVBoxRev);
-    SETSTRING(pOEMStrings->u8VboxVersion, pszDmiOEMVBoxVer);
-    SETSTRING(pOEMStrings->u8VboxRevision, pszDmiOEMVBoxRev);
+    SETSTRING(pOEMStrings->u8VBoxVersion, pszDmiOEMVBoxVer);
+    SETSTRING(pOEMStrings->u8VBoxRevision, pszDmiOEMVBoxRev);
     RTStrFree(pszVBoxVer);
     RTStrFree(pszVBoxRev);
     *pszStr++                    = '\0';
