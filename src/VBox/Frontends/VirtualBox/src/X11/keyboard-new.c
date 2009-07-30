@@ -484,7 +484,7 @@ unsigned X11DRV_InitKeyboard(Display *display, unsigned *byLayoutOK, unsigned *b
 /**
  * Returns the keycode to scancode array
  */
-unsigned *X11DRV_getKeyc2scan()
+unsigned *X11DRV_getKeyc2scan(void)
 {
     return keyc2scan;
 }
