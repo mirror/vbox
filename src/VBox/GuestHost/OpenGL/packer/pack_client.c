@@ -143,6 +143,8 @@ crPackExpandArrayElement(GLint index, CRClientState *c)
             case GL_INT: crPackNormal3iv((GLint *)p); break;
             case GL_FLOAT: crPackNormal3fv((GLfloat *)p); break;
             case GL_DOUBLE: crPackNormal3dv((GLdouble *)p); break;
+            default:
+                crWarning("Unhandled: crPackExpandArrayElement, array->n.type 0x%x", array->n.type);
         }
     }
 
@@ -215,6 +217,8 @@ crPackExpandArrayElement(GLint index, CRClientState *c)
                     case 4: crPackColor4dv((GLdouble *)p); break;
                 }
                 break;
+            default: 
+                crWarning("Unhandled: crPackExpandArrayElement, array->c.type 0x%x", array->c.type);
         }
     }
 
@@ -248,6 +252,8 @@ crPackExpandArrayElement(GLint index, CRClientState *c)
                 crPackSecondaryColor3fvEXT((GLfloat *)p); break;
             case GL_DOUBLE:
                 crPackSecondaryColor3dvEXT((GLdouble *)p); break;
+            default:
+                crWarning("Unhandled: crPackExpandArrayElement, array->s.type 0x%x", array->s.type);
         }
     }
 #endif // CR_EXT_secondary_color
@@ -319,6 +325,8 @@ crPackExpandArrayElement(GLint index, CRClientState *c)
                         case 4: crPackMultiTexCoord4dvARB(GL_TEXTURE0_ARB + unit, (GLdouble *)p); break;
                     }
                     break;
+                default:
+                    crWarning("Unhandled: crPackExpandArrayElement, array->t[%i].type 0x%x", unit, array->t[unit].type);
             }
         }
     }
@@ -340,6 +348,8 @@ crPackExpandArrayElement(GLint index, CRClientState *c)
             case GL_INT: crPackIndexiv((GLint *)p); break;
             case GL_FLOAT: crPackIndexfv((GLfloat *)p); break;
             case GL_DOUBLE: crPackIndexdv((GLdouble *)p); break;
+            default:
+                crWarning("Unhandled: crPackExpandArrayElement, array->i.type 0x%x", array->i.type);
         }
     }
 
@@ -413,6 +423,8 @@ crPackExpandArrayElement(GLint index, CRClientState *c)
                     case 4: crPackVertex4dv((GLdouble *)p); break;
                 }
                 break;
+            default:
+                crWarning("Unhandled: crPackExpandArrayElement, array->v.type 0x%x", array->v.type);
         }
     }
 }
