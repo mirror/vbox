@@ -338,9 +338,6 @@ VMMR3DECL(int) CSAMR3Reset(PVM pVM)
     return VINF_SUCCESS;
 }
 
-#define CSAM_SUBTRACT_PTR(a, b) *(uintptr_t *)&(a) = (uintptr_t)(a) - (uintptr_t)(b)
-#define CSAM_ADD_PTR(a, b)      *(uintptr_t *)&(a) = (uintptr_t)(a) + (uintptr_t)(b)
-
 
 /**
  * Callback function for RTAvlPVDoWithAll
