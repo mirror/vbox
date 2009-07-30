@@ -1361,9 +1361,12 @@ VMMR3DECL(int) SSMR3DeregisterExternal(PVM pVM, const char *pszName)
  * @param   pStrm           The stream handle.
  * @param   fChecksummed    Whether the stream is to be checksummed while
  *                          written/read.
+ * @param   cBuffers        The number of buffers.
  */
-static int ssmR3StrmInit(PSSMSTRM pStrm, bool fChecksummed)
+static int ssmR3StrmInit(PSSMSTRM pStrm, bool fChecksummed, uint32_t cBuffers)
 {
+    Assert(cBuffers > 0);
+
     /*
      * Init the common data members.
      */
@@ -1391,7 +1394,7 @@ static int ssmR3StrmInit(PSSMSTRM pStrm, bool fChecksummed)
      * and/or cpu happier in some way.
      */
     int rc = VINF_SUCCESS;
-    for (unsigned i = 0; i < 4; i++)
+    for (uint32_t i = 0; i < cBuffers; i++)
     {
         PSSMSTRMBUF pBuf = (PSSMSTRMBUF)RTMemPageAllocZ(sizeof(*pBuf));
         if (!pBuf)
@@ -1475,10 +1478,11 @@ static void ssmR3StrmDelete(PSSMSTRM pStrm)
  * @param   fWrite          Whether to open for writing or reading.
  * @param   fChecksummed    Whether the stream is to be checksummed while
  *                          written/read.
+ * @param   cBuffers        The number of buffers.
  */
-static int ssmR3StrmOpenFile(PSSMSTRM pStrm, const char *pszFilename, bool fWrite, bool fChecksummed)
+static int ssmR3StrmOpenFile(PSSMSTRM pStrm, const char *pszFilename, bool fWrite, bool fChecksummed, uint32_t cBuffers)
 {
-    int rc = ssmR3StrmInit(pStrm, fChecksummed);
+    int rc = ssmR3StrmInit(pStrm, fChecksummed, cBuffers);
     if (RT_SUCCESS(rc))
     {
         uint32_t fFlags = fWrite
@@ -1725,14 +1729,14 @@ static void ssmR3StrmFlushCurBuf(PSSMSTRM pStrm)
 /**
  * Flush buffered data.
  *
- * @returns VBox status code.
+ * @returns VBox status code. Returns VINF_EOF if we encounter a buffer with the
+ *          fEndOfStream indicator set.
  * @param   pStrm           The stream handle.
  *
  * @thread  The producer thread.
  */
 static int ssmR3StrmWriteBuffers(PSSMSTRM pStrm)
 {
-    Assert(!pStrm->pCur);
     Assert(pStrm->fWrite);
 
     /*
@@ -1763,7 +1767,13 @@ static int ssmR3StrmWriteBuffers(PSSMSTRM pStrm)
             LogRel(("ssmR3StrmWriteBuffers: RTFileWriteAt failed with rc=%Rrc at offStream=%#llx\n", rc, pCur->offStream));
 
         /* free it */
+        bool fEndOfStream = pCur->fEndOfStream;
         ssmR3StrmPutFreeBuf(pStrm, pCur);
+        if (fEndOfStream)
+        {
+            Assert(!pHead);
+            return VINF_EOF;
+        }
     }
 
     return pStrm->rc;
@@ -1937,6 +1947,32 @@ static int ssmR3StrmCommitWriteBufferSpace(PSSMSTRM pStrm, size_t cb)
     Assert(pStrm->pCur);
     Assert(pStrm->off + cb <= RT_SIZEOFMEMB(SSMSTRMBUF, abData));
     pStrm->off += cb;
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Marks the end of the stream.
+ *
+ * This will cause the I/O thread to quit waiting for more buffers.
+ *
+ * @returns VBox status code.
+ * @param   pStrm       The stream handle.
+ */
+static int ssmR3StrmSetEnd(PSSMSTRM pStrm)
+{
+    Assert(pStrm->fWrite);
+    PSSMSTRMBUF pBuf = pStrm->pCur;
+    if (RT_UNLIKELY(!pStrm->pCur))
+    {
+        pBuf = ssmR3StrmGetFreeBuf(pStrm);
+        if (!pBuf)
+            return pStrm->rc;
+        pStrm->pCur = pBuf;
+        Assert(pStrm->off == 0);
+    }
+    pBuf->fEndOfStream = true;
+    ssmR3StrmFlushCurBuf(pStrm);
     return VINF_SUCCESS;
 }
 
@@ -2347,7 +2383,33 @@ static DECLCALLBACK(int) ssmR3StrmIoThread(RTTHREAD hSelf, void *pvStrm)
          */
         for (;;)
         {
+            int rc = ssmR3StrmWriteBuffers(pStrm);
+            if (    RT_FAILURE(rc)
+                ||  rc == VINF_EOF)
+            {
+                Log(("ssmR3StrmIoThread: quitting writing with rc=%Rrc.\n", rc));
+                break;
+            }
+            if (RT_FAILURE(pStrm->rc))
+            {
+                Log(("ssmR3StrmIoThread: quitting writing with stream rc=%Rrc\n", pStrm->rc));
+                break;
+            }
 
+            if (ASMAtomicReadBool(&pStrm->fTerminating))
+            {
+                if (!ASMAtomicReadPtr((void * volatile *)&pStrm->pPending))
+                {
+                    Log(("ssmR3StrmIoThread: quitting writing because of pending termination.\n"));
+                    break;
+                }
+                Log(("ssmR3StrmIoThread: postponing termination because of pending buffers.\n"));
+            }
+            else if (!ASMAtomicReadPtr((void * volatile *)&pStrm->pPending))
+            {
+                rc = RTSemEventWait(pStrm->hEvtHead, RT_INDEFINITE_WAIT);
+                AssertLogRelRC(rc);
+            }
         }
     }
     else
@@ -2530,7 +2592,7 @@ VMMR3DECL(int) SSMR3Save(PVM pVM, const char *pszFilename, SSMAFTER enmAfter, PF
     Handle.uPercentDone     = 2;
     Handle.u.Write.offDataBuffer    = 0;
 
-    int rc = ssmR3StrmOpenFile(&Handle.Strm, pszFilename, true /*fWrite*/, true /*fChecksummed*/);
+    int rc = ssmR3StrmOpenFile(&Handle.Strm, pszFilename, true /*fWrite*/, true /*fChecksummed*/, 8 /*cBuffers*/);
     if (RT_FAILURE(rc))
     {
         LogRel(("SSM: Failed to create save state file '%s', rc=%Rrc.\n",  pszFilename, rc));
@@ -2538,6 +2600,7 @@ VMMR3DECL(int) SSMR3Save(PVM pVM, const char *pszFilename, SSMAFTER enmAfter, PF
     }
 
     Log(("SSM: Starting state save to file '%s'...\n", pszFilename));
+    ssmR3StrmStartIoThread(&Handle.Strm);
 
     /*
      * Write header.
@@ -2733,6 +2796,45 @@ VMMR3DECL(int) SSMR3Save(PVM pVM, const char *pszFilename, SSMAFTER enmAfter, PF
         AssertMsg(RT_FAILURE(rc) || Handle.uPercent == (101-Handle.uPercentDone), ("%d\n", Handle.uPercent));
 
         /*
+         * Finalize the file if successfully saved.
+         */
+        if (RT_SUCCESS(rc))
+        {
+            /* Write the end unit. */
+            memcpy(&u.UnitHdr.szMagic[0], SSMFILEUNITHDR_END, sizeof(u.UnitHdr.szMagic));
+            u.UnitHdr.offStream       = ssmR3StrmTell(&Handle.Strm);
+            u.UnitHdr.u32CurStreamCRC = ssmR3StrmCurCRC(&Handle.Strm);
+            u.UnitHdr.u32CRC          = 0;
+            u.UnitHdr.u32Version      = 0;
+            u.UnitHdr.u32Instance     = 0;
+            u.UnitHdr.u32Phase        = SSM_PHASE_FINAL;
+            u.UnitHdr.fFlags          = 0;
+            u.UnitHdr.cbName          = 0;
+            u.UnitHdr.u32CRC          = RTCrc32(&u.UnitHdr, RT_OFFSETOF(SSMFILEUNITHDR, szName[0]));
+            Log(("SSM: Unit at %#9llx: END UNIT\n", u.UnitHdr.offStream));
+            rc = ssmR3StrmWrite(&Handle.Strm,  &u.UnitHdr, RT_OFFSETOF(SSMFILEUNITHDR, szName[0]));
+            if (RT_SUCCESS(rc))
+            {
+                /* Write the directory for the final units and then the footer. */
+                rc = ssmR3WriteDirectory(pVM, &Handle, &u.Footer.cDirEntries);
+                if (RT_SUCCESS(rc))
+                {
+                    memcpy(u.Footer.szMagic, SSMFILEFTR_MAGIC, sizeof(u.Footer.szMagic));
+                    u.Footer.offStream    = ssmR3StrmTell(&Handle.Strm);
+                    u.Footer.u32StreamCRC = ssmR3StrmFinalCRC(&Handle.Strm);
+                    u.Footer.u32Reserved  = 0;
+                    u.Footer.u32CRC       = 0;
+                    u.Footer.u32CRC       = RTCrc32(&u.Footer, sizeof(u.Footer));
+                    Log(("SSM: Footer at %#9llx: \n", u.Footer.offStream));
+                    rc = ssmR3StrmWrite(&Handle.Strm, &u.Footer, sizeof(u.Footer));
+                    if (RT_SUCCESS(rc))
+                        rc = ssmR3StrmSetEnd(&Handle.Strm);
+                }
+            }
+            LogRel(("SSM: Failed to finalize state file! rc=%Rrc\n", rc));
+        }
+
+        /*
          * Do the done run.
          */
         Handle.rc = rc;
@@ -2769,52 +2871,16 @@ VMMR3DECL(int) SSMR3Save(PVM pVM, const char *pszFilename, SSMAFTER enmAfter, PF
         rc = Handle.rc;
 
         /*
-         * Finalize the file if successfully saved.
+         * Close the file and return if we've succeeded.
          */
         if (RT_SUCCESS(rc))
+            rc = ssmR3StrmClose(&Handle.Strm);
+        if (RT_SUCCESS(rc))
         {
-            /* Write the end unit. */
-            memcpy(&u.UnitHdr.szMagic[0], SSMFILEUNITHDR_END, sizeof(u.UnitHdr.szMagic));
-            u.UnitHdr.offStream       = ssmR3StrmTell(&Handle.Strm);
-            u.UnitHdr.u32CurStreamCRC = ssmR3StrmCurCRC(&Handle.Strm);
-            u.UnitHdr.u32CRC          = 0;
-            u.UnitHdr.u32Version      = 0;
-            u.UnitHdr.u32Instance     = 0;
-            u.UnitHdr.u32Phase        = SSM_PHASE_FINAL;
-            u.UnitHdr.fFlags          = 0;
-            u.UnitHdr.cbName          = 0;
-            u.UnitHdr.u32CRC          = RTCrc32(&u.UnitHdr, RT_OFFSETOF(SSMFILEUNITHDR, szName[0]));
-            Log(("SSM: Unit at %#9llx: END UNIT\n", u.UnitHdr.offStream));
-            rc = ssmR3StrmWrite(&Handle.Strm,  &u.UnitHdr, RT_OFFSETOF(SSMFILEUNITHDR, szName[0]));
-            if (RT_SUCCESS(rc))
-            {
-                /* Write the directory for the final units and then the footer. */
-                rc = ssmR3WriteDirectory(pVM, &Handle, &u.Footer.cDirEntries);
-                if (RT_SUCCESS(rc))
-                {
-                    memcpy(u.Footer.szMagic, SSMFILEFTR_MAGIC, sizeof(u.Footer.szMagic));
-                    u.Footer.offStream    = ssmR3StrmTell(&Handle.Strm);
-                    u.Footer.u32StreamCRC = ssmR3StrmFinalCRC(&Handle.Strm);
-                    u.Footer.u32Reserved  = 0;
-                    u.Footer.u32CRC       = 0;
-                    u.Footer.u32CRC       = RTCrc32(&u.Footer, sizeof(u.Footer));
-                    Log(("SSM: Footer at %#9llx: \n", u.Footer.offStream));
-                    rc = ssmR3StrmWrite(&Handle.Strm, &u.Footer, sizeof(u.Footer));
-                    if (RT_SUCCESS(rc))
-                    {
-                        rc = ssmR3StrmClose(&Handle.Strm);
-                        if (RT_SUCCESS(rc))
-                        {
-                            if (pfnProgress)
-                                pfnProgress(pVM, 100, pvUser);
-                            Log(("SSM: Successfully saved the vm state to '%s'.\n", pszFilename));
-                            return VINF_SUCCESS;
-                        }
-                        return rc;
-                    }
-                }
-            }
-            LogRel(("SSM: Failed to finalize state file! rc=%Rrc\n", rc));
+            if (pfnProgress)
+                pfnProgress(pVM, 100, pvUser);
+            Log(("SSM: Successfully saved the vm state to '%s'.\n", pszFilename));
+            return VINF_SUCCESS;
         }
     }
 
@@ -3249,8 +3315,10 @@ static int ssmR3HeaderAndValidate(PSSMHANDLE pSSM, bool fChecksumIt, bool fCheck
  *                              verify the checksum up front.
  * @param   pSSM                Pointer to the handle structure. This will be
  *                              completely initialized on success.
+ * @param   cBuffers            The number of stream buffers.
  */
-static int ssmR3OpenFile(PVM pVM, const char *pszFilename, bool fChecksumIt, bool fChecksumOnRead, PSSMHANDLE pSSM)
+static int ssmR3OpenFile(PVM pVM, const char *pszFilename, bool fChecksumIt, bool fChecksumOnRead,
+                         uint32_t cBuffers, PSSMHANDLE pSSM)
 {
     /*
      * Initialize the handle.
@@ -3294,7 +3362,7 @@ static int ssmR3OpenFile(PVM pVM, const char *pszFilename, bool fChecksumIt, boo
     /*
      * Try open and validate the file.
      */
-    int rc = ssmR3StrmOpenFile(&pSSM->Strm, pszFilename, false /*fWrite*/, fChecksumOnRead);
+    int rc = ssmR3StrmOpenFile(&pSSM->Strm, pszFilename, false /*fWrite*/, fChecksumOnRead, cBuffers);
     if (RT_SUCCESS(rc))
     {
         rc = ssmR3HeaderAndValidate(pSSM, fChecksumIt, fChecksumOnRead);
@@ -3673,7 +3741,7 @@ VMMR3DECL(int) SSMR3Load(PVM pVM, const char *pszFilename, SSMAFTER enmAfter, PF
      * Create the handle and open the file.
      */
     SSMHANDLE Handle;
-    int rc = ssmR3OpenFile(pVM, pszFilename, false /* fChecksumIt */, true /* fChecksumOnRead */, &Handle);
+    int rc = ssmR3OpenFile(pVM, pszFilename, false /* fChecksumIt */, true /* fChecksumOnRead */, 8 /*cBuffers*/, &Handle);
     if (RT_SUCCESS(rc))
     {
         ssmR3StrmStartIoThread(&Handle.Strm);
@@ -3836,7 +3904,7 @@ VMMR3DECL(int) SSMR3ValidateFile(const char *pszFilename, bool fChecksumIt)
      * Try open the file and validate it.
      */
     SSMHANDLE Handle;
-    int rc = ssmR3OpenFile(NULL, pszFilename, fChecksumIt, false /*fChecksumOnRead*/, &Handle);
+    int rc = ssmR3OpenFile(NULL, pszFilename, fChecksumIt, false /*fChecksumOnRead*/, 1 /*cBuffers*/, &Handle);
     if (RT_SUCCESS(rc))
         ssmR3StrmClose(&Handle.Strm);
     else
@@ -3876,7 +3944,7 @@ VMMR3DECL(int) SSMR3Open(const char *pszFilename, unsigned fFlags, PSSMHANDLE *p
     /*
      * Try open the file and validate it.
      */
-    int rc = ssmR3OpenFile(NULL, pszFilename, false /*fChecksumIt*/, true /*fChecksumOnRead*/, pSSM);
+    int rc = ssmR3OpenFile(NULL, pszFilename, false /*fChecksumIt*/, true /*fChecksumOnRead*/, 1 /*cBuffers*/, pSSM);
     if (RT_SUCCESS(rc))
     {
         pSSM->enmAfter = SSMAFTER_OPENED;
