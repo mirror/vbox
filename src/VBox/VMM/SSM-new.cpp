@@ -294,7 +294,7 @@ typedef struct SSMSTRMBUF
     /** The stream position of this buffer. */
     uint64_t                offStream;
     /** The amount of buffered data. */
-    size_t                  cb;
+    uint32_t                cb;
     /** End of stream indicator (for read streams only). */
     bool                    fEndOfStream;
     /** Pointer to the next buffer in the chain. */
@@ -316,8 +316,13 @@ typedef struct SSMSTRM
     bool                    fWrite;
     /** Termination indicator. */
     bool volatile           fTerminating;
+    /** Indicates whether it is necessary to seek before the next buffer is
+     *  read from the stream.  This is used to avoid a seek in ssmR3StrmPeekAt. */
+    bool                    fNeedSeek;
     /** Stream error status. */
     int32_t volatile        rc;
+    /** The handle of the I/O thread. This is set to nil when not active. */
+    RTTHREAD                hIoThread;
 
     /** The head of the consumer queue.
      * For save the consumer is the I/O thread.  For load the I/O thread is the
@@ -1360,7 +1365,9 @@ static int ssmR3StrmInit(PSSMSTRM pStrm, bool fChecksummed)
      * Init the common data members.
      */
     pStrm->fTerminating = false;
+    pStrm->fNeedSeek    = false;
     pStrm->rc           = VINF_SUCCESS;
+    pStrm->hIoThread    = NIL_RTTHREAD;
 
     pStrm->pHead        = NULL;
     pStrm->pFree        = NULL;
@@ -1541,7 +1548,7 @@ static PSSMSTRMBUF ssmR3StrmGetFreeBuf(PSSMSTRM pStrm)
 {
     for (;;)
     {
-        PSSMSTRMBUF pMine = (PSSMSTRMBUF)ASMAtomicUoReadPtr((void * volatile *)pStrm->pFree);
+        PSSMSTRMBUF pMine = (PSSMSTRMBUF)ASMAtomicUoReadPtr((void * volatile *)&pStrm->pFree);
         if (!pMine)
         {
             if (pStrm->fTerminating)
@@ -1631,7 +1638,7 @@ static PSSMSTRMBUF ssmR3StrmGetBuf(PSSMSTRM pStrm)
             return pMine;
         }
 
-        pMine = (PSSMSTRMBUF)ASMAtomicXchgPtr((void * volatile *)pStrm->pHead, NULL);
+        pMine = (PSSMSTRMBUF)ASMAtomicXchgPtr((void * volatile *)&pStrm->pHead, NULL);
         if (pMine)
             pStrm->pPending = ssmR3StrmReverseList(pMine);
         else
@@ -1658,38 +1665,38 @@ static void ssmR3StrmFlushCurBuf(PSSMSTRM pStrm)
 {
     if (pStrm->pCur)
     {
-        PSSMSTRMBUF pCur = pStrm->pCur;
+        PSSMSTRMBUF pBuf = pStrm->pCur;
         pStrm->pCur = NULL;
 
         if (pStrm->fWrite)
         {
             uint32_t cb     = pStrm->off;
-            pCur->cb        = cb;
-            pCur->offStream = pStrm->offCurStream;
+            pBuf->cb        = cb;
+            pBuf->offStream = pStrm->offCurStream;
             if (    pStrm->fChecksummed
                 &&  pStrm->offStreamCRC < cb)
                 pStrm->u32StreamCRC = RTCrc32Process(pStrm->u32StreamCRC,
-                                                     &pCur->abData[pStrm->offStreamCRC],
+                                                     &pBuf->abData[pStrm->offStreamCRC],
                                                      cb - pStrm->offStreamCRC);
             pStrm->offCurStream += cb;
             pStrm->off          = 0;
             pStrm->offStreamCRC = 0;
 
-            ssmR3StrmPutBuf(pStrm, pCur);
+            ssmR3StrmPutBuf(pStrm, pBuf);
         }
         else
         {
-            uint32_t cb = pCur->cb;
+            uint32_t cb = pBuf->cb;
             if (    pStrm->fChecksummed
                 &&  pStrm->offStreamCRC < cb)
                 pStrm->u32StreamCRC = RTCrc32Process(pStrm->u32StreamCRC,
-                                                     &pCur->abData[pStrm->offStreamCRC],
+                                                     &pBuf->abData[pStrm->offStreamCRC],
                                                      cb - pStrm->offStreamCRC);
             pStrm->offCurStream += cb;
             pStrm->off          = 0;
             pStrm->offStreamCRC = 0;
 
-            ssmR3StrmPutFreeBuf(pStrm, pCur);
+            ssmR3StrmPutFreeBuf(pStrm, pBuf);
         }
     }
 }
@@ -1794,11 +1801,11 @@ static int ssmR3StrmWrite(PSSMSTRM pStrm, const void *pvBuf, size_t cbToWrite)
     PSSMSTRMBUF pBuf = pStrm->pCur;
     if (RT_LIKELY(pBuf))
     {
-        uint32_t cbLeft = pStrm->off - RT_SIZEOFMEMB(SSMSTRMBUF, abData);
+        uint32_t cbLeft = RT_SIZEOFMEMB(SSMSTRMBUF, abData) - pStrm->off;
         if (RT_LIKELY(cbLeft >= cbToWrite))
         {
             memcpy(&pBuf->abData[pStrm->off], pvBuf, cbToWrite);
-            pStrm->off += cbToWrite;
+            pStrm->off += (uint32_t)cbToWrite;
             return VINF_SUCCESS;
         }
 
@@ -1809,6 +1816,7 @@ static int ssmR3StrmWrite(PSSMSTRM pStrm, const void *pvBuf, size_t cbToWrite)
             cbToWrite  -= cbLeft;
             pvBuf       = (uint8_t const *)pvBuf + cbLeft;
         }
+        Assert(pStrm->off == RT_SIZEOFMEMB(SSMSTRMBUF, abData));
     }
 
     /*
@@ -1831,11 +1839,11 @@ static int ssmR3StrmWrite(PSSMSTRM pStrm, const void *pvBuf, size_t cbToWrite)
         /*
          * Copy data to the buffer.
          */
-        uint32_t cbCopy = pStrm->off - RT_SIZEOFMEMB(SSMSTRMBUF, abData);
+        uint32_t cbCopy = RT_SIZEOFMEMB(SSMSTRMBUF, abData);
         if (cbCopy > cbToWrite)
-            cbCopy = cbToWrite;
-        memcpy(&pBuf->abData[pStrm->off], pvBuf, cbCopy);
-        pStrm->off += cbCopy;
+            cbCopy = (uint32_t)cbToWrite;
+        memcpy(&pBuf->abData[0], pvBuf, cbCopy);
+        pStrm->off  = cbCopy;
         cbToWrite  -= cbCopy;
         pvBuf       = (uint8_t const *)pvBuf + cbCopy;
     } while (cbToWrite > 0);
@@ -1855,17 +1863,38 @@ static int ssmR3StrmWrite(PSSMSTRM pStrm, const void *pvBuf, size_t cbToWrite)
  */
 static int ssmR3StrmReadMore(PSSMSTRM pStrm)
 {
+    int rc;
+
+    /*
+     * Undo seek done by ssmR3StrmPeekAt.
+     */
+    if (pStrm->fNeedSeek)
+    {
+        rc = RTFileSeek(pStrm->hFile, pStrm->offCurStream + pStrm->off, RTFILE_SEEK_BEGIN, NULL);
+        if (RT_FAILURE(rc))
+        {
+            if (ssmR3StrmSetError(pStrm, rc))
+                LogRel(("ssmR3StrmReadMore: RTFileSeek(,%#llx,) failed with rc=%Rrc\n", pStrm->offCurStream + pStrm->off, rc));
+            return rc;
+        }
+
+    }
+
+    /*
+     * Get a free buffer and try fill it up.
+     */
     PSSMSTRMBUF pBuf = ssmR3StrmGetFreeBuf(pStrm);
     if (!pBuf)
         return pStrm->rc;
 
-    pBuf->offStream = RTFileTell(pStrm->hFile);
+    pBuf->offStream = pStrm->offCurStream + pStrm->off;
+    Assert(pBuf->offStream == RTFileTell(pStrm->hFile));
     size_t cbRead   = sizeof(pBuf->abData);
-    int rc = RTFileRead(pStrm->hFile, &pBuf->abData[0], cbRead, &cbRead);
+    rc = RTFileRead(pStrm->hFile, &pBuf->abData[0], cbRead, &cbRead);
     if (RT_SUCCESS(rc))
     {
-        pBuf->cb           = cbRead;
-        pBuf->fEndOfStream = cbRead == 0;
+        pBuf->cb           = (uint32_t)cbRead;
+        pBuf->fEndOfStream = cbRead == 0; /** @todo Check out this EOF mess... */
         ssmR3StrmPutBuf(pStrm, pBuf);
     }
     else if (rc == VERR_EOF)
@@ -1905,11 +1934,12 @@ static int ssmR3StrmRead(PSSMSTRM pStrm, void *pvBuf, size_t cbToRead)
     if (RT_LIKELY(pBuf))
     {
         Assert(pStrm->off <= pBuf->cb);
-        uint32_t cbLeft = pStrm->off - pBuf->cb;
+        uint32_t cbLeft = pBuf->cb - pStrm->off;
         if (cbLeft >= cbToRead)
         {
             memcpy(pvBuf, &pBuf->abData[pStrm->off], cbToRead);
-            pStrm->off += cbToRead;
+            pStrm->off += (uint32_t)cbToRead;
+            Assert(pStrm->off <= pBuf->cb);
             return VINF_SUCCESS;
         }
         if (cbLeft)
@@ -1921,6 +1951,7 @@ static int ssmR3StrmRead(PSSMSTRM pStrm, void *pvBuf, size_t cbToRead)
         }
         else if (pBuf->fEndOfStream)
             return VERR_EOF;
+        Assert(pStrm->off == pBuf->cb);
     }
 
     /*
@@ -1961,13 +1992,14 @@ static int ssmR3StrmRead(PSSMSTRM pStrm, void *pvBuf, size_t cbToRead)
         /*
          * Read data from the buffer.
          */
-        uint32_t cbCopy = pStrm->off - pBuf->cb;
+        uint32_t cbCopy = pBuf->cb;
         if (cbCopy > cbToRead)
-            cbCopy = cbToRead;
-        memcpy(pvBuf, &pBuf->abData[pStrm->off], cbCopy);
-        pStrm->off += cbCopy;
+            cbCopy = (uint32_t)cbToRead;
+        memcpy(pvBuf, &pBuf->abData[0], cbCopy);
+        pStrm->off  = cbCopy;
         cbToRead   -= cbCopy;
         pvBuf       = (uint8_t *)pvBuf + cbCopy;
+        Assert(!pStrm->pCur || pStrm->off <= pStrm->pCur->cb);
     } while (cbToRead > 0);
 
     return rc;
@@ -1999,7 +2031,10 @@ static uint32_t ssmR3StrmCurCRC(PSSMSTRM pStrm)
     if (pStrm->offStreamCRC < pStrm->off)
     {
         PSSMSTRMBUF pBuf = pStrm->pCur; Assert(pBuf);
-        pStrm->u32StreamCRC = RTCrc32Process(pStrm->u32StreamCRC, &pBuf->abData[pStrm->off], pStrm->off - pStrm->offStreamCRC);
+        pStrm->u32StreamCRC = RTCrc32Process(pStrm->u32StreamCRC, &pBuf->abData[pStrm->offStreamCRC], pStrm->off - pStrm->offStreamCRC);
+//if (pStrm->offStreamCRC == 0 && pStrm->off == 0x40)
+//    LogAlways(("ssmR3StrmCurCRC: %08x\n%.64Rhxd\n", pStrm->u32StreamCRC, pBuf->abData));
+        pStrm->offStreamCRC = pStrm->off;
     }
     else
         Assert(pStrm->offStreamCRC == pStrm->off);
@@ -2029,6 +2064,39 @@ static uint32_t ssmR3StrmFinalCRC(PSSMSTRM pStrm)
 static void ssmR3StrmDisableChecksumming(PSSMSTRM pStrm)
 {
     pStrm->fChecksummed = false;
+}
+
+
+/**
+ *
+ * @returns VBox stutus code.
+ * @param   pStrm       The strem handle.
+ * @param   off         The seek offset.
+ * @param   uMethod     The seek method.
+ * @param   poff        Where to optionally store the new file offset.
+ */
+static int ssmR3StrmSeek(PSSMSTRM pStrm, int64_t off, uint32_t uMethod, uint64_t *poff)
+{
+    AssertReturn(!pStrm->fWrite, VERR_NOT_SUPPORTED);
+    AssertReturn(pStrm->hIoThread == NIL_RTTHREAD, VERR_WRONG_ORDER);
+
+    uint64_t offStream;
+    int rc = RTFileSeek(pStrm->hFile, off, uMethod, &offStream);
+    if (RT_SUCCESS(rc))
+    {
+        pStrm->offCurStream = offStream;
+        pStrm->off = 0;
+        pStrm->offStreamCRC = 0;
+        pStrm->u32StreamCRC = 0;
+        if (pStrm->pCur)
+        {
+            ssmR3StrmPutFreeBuf(pStrm, pStrm->pCur);
+            pStrm->pCur = NULL;
+        }
+        if (poff)
+            *poff = offStream;
+    }
+    return rc;
 }
 
 
@@ -2078,37 +2146,79 @@ static uint64_t ssmR3StrmGetSize(PSSMSTRM pStrm)
 }
 
 
+/***
+ * Tests if the stream is a file stream or not.
+ *
+ * @returns true / false.
+ * @param   pStrm       The stream handle.
+ */
+static bool ssmR3StrmIsFile(PSSMSTRM pStrm)
+{
+    return pStrm->hFile != NIL_RTFILE;
+}
+
+
+/**
+ * Peeks at data in a file stream without buffering anything (or upsetting
+ * the buffering for that matter).
+ *
+ * @returns VBox status code.
+ * @param   pStrm       The stream handle
+ * @param   off         The offset to start peeking at. Use a negative offset to
+ *                      peek at something relative to the end of the file.
+ * @param   pvBuf       Output buffer.
+ * @param   cbToRead    How much to read.
+ * @param   poff        Where to optionally store the position.  Useful when
+ *                      using a negative off.
+ *
+ * @remarks Failures occuring while peeking will not be raised on the stream.
+ */
+static int ssmR3StrmPeekAt(PSSMSTRM pStrm, RTFOFF off, void *pvBuf, size_t cbToRead, uint64_t *poff)
+{
+    AssertReturn(!pStrm->fWrite && pStrm->hFile != NIL_RTFILE, VERR_NOT_SUPPORTED);
+    AssertReturn(pStrm->hIoThread == NIL_RTTHREAD, VERR_WRONG_ORDER);
+
+    pStrm->fNeedSeek = true;
+    int rc = RTFileSeek(pStrm->hFile, off, off >= 0 ? RTFILE_SEEK_BEGIN : RTFILE_SEEK_END, poff);
+    if (RT_SUCCESS(rc))
+        rc = RTFileRead(pStrm->hFile, pvBuf, cbToRead, NULL);
+
+    return rc;
+}
+
+
 
 /**
  * Calculate the checksum of a file portion.
  *
  * @returns VBox status.
- * @param   File        Handle to the file. Positioned where to start
- *                      checksumming.
- * @param   cbFile      The portion of the file to checksum.
+ * @param   pStrm       The stream handle
+ * @param   off         Where to start checksumming.
+ * @param   cb          How much to checksum.
  * @param   pu32CRC     Where to store the calculated checksum.
  */
-static int ssmR3CalcChecksum(RTFILE File, uint64_t cbFile, uint32_t *pu32CRC)
+static int ssmR3CalcChecksum(PSSMSTRM pStrm, uint64_t off, uint64_t cb, uint32_t *pu32CRC)
 {
     /*
      * Allocate a buffer.
      */
-    void *pvBuf = RTMemTmpAlloc(32*1024);
+    const size_t cbBuf = _32K;
+    void *pvBuf = RTMemTmpAlloc(cbBuf);
     if (!pvBuf)
         return VERR_NO_TMP_MEMORY;
 
     /*
      * Loop reading and calculating CRC32.
      */
-    int         rc = VINF_SUCCESS;
+    int         rc     = VINF_SUCCESS;
     uint32_t    u32CRC = RTCrc32Start();
-    while (cbFile)
+    while (cb > 0)
     {
         /* read chunk */
-        register unsigned cbToRead = 32*1024;
-        if (cbFile < 32*1024)
-            cbToRead = (unsigned)cbFile;
-        rc = RTFileRead(File, pvBuf, cbToRead, NULL);
+        size_t cbToRead = cbBuf;
+        if (cb < cbBuf)
+            cbToRead = cb;
+        rc = ssmR3StrmPeekAt(pStrm, off, pvBuf, cbToRead, NULL);
         if (RT_FAILURE(rc))
         {
             AssertMsgFailed(("Failed with rc=%Rrc while calculating crc.\n", rc));
@@ -2117,10 +2227,10 @@ static int ssmR3CalcChecksum(RTFILE File, uint64_t cbFile, uint32_t *pu32CRC)
         }
 
         /* update total */
-        cbFile -= cbToRead;
+        cb -= cbToRead;
 
         /* calc crc32. */
-        u32CRC = RTCrc32Process(u32CRC, pvBuf,  cbToRead);
+        u32CRC = RTCrc32Process(u32CRC, pvBuf, cbToRead);
     }
     RTMemTmpFree(pvBuf);
 
@@ -2746,41 +2856,45 @@ static int ssmR3ValidateFile(PSSMHANDLE pSSM, bool fChecksumIt, bool fChecksumOn
             AssertFailedReturn(VERR_INTERNAL_ERROR);
 
         /*
-         * Read and validate the footer.
+         * Read and validate the footer if it's a file.
          */
-/** @todo this needs to be fixed when starting to buffer input using a separate thread. */
-        uint64_t    offRestore = RTFileTell(pSSM->Strm.hFile);
-        SSMFILEFTR  Footer;
-        uint64_t    offFooter;
-        rc = RTFileSeek(pSSM->Strm.hFile, -(RTFOFF)sizeof(Footer), RTFILE_SEEK_END, &offFooter);
-        AssertLogRelRCReturn(rc, rc);
-        rc = RTFileRead(pSSM->Strm.hFile, &Footer, sizeof(Footer), NULL);
-        AssertLogRelRCReturn(rc, rc);
-        if (memcmp(Footer.szMagic, SSMFILEFTR_MAGIC, sizeof(Footer.szMagic)))
+        if (ssmR3StrmIsFile(&pSSM->Strm))
         {
-            LogRel(("SSM: Bad footer magic: %.*Rhxs\n", sizeof(Footer.szMagic), &Footer.szMagic[0]));
-            return VERR_SSM_INTEGRITY;
-        }
-        SSM_CHECK_CRC32_RET(&Footer, sizeof(Footer), ("Footer CRC mismatch: %08x, correct is %08x\n", u32CRC, u32ActualCRC));
-        if (Footer.offStream != offFooter)
-        {
-            LogRel(("SSM: SSMFILEFTR::offStream is wrong: %llx, expected %llx\n", Footer.offStream, offFooter));
-            return VERR_SSM_INTEGRITY;
-        }
-        if (Footer.u32Reserved)
-        {
-            LogRel(("SSM: Reserved footer field isn't zero: %08x\n", Footer.u32Reserved));
-            return VERR_SSM_INTEGRITY;
-        }
-        if (    !fChecksummed
-            &&  Footer.u32StreamCRC)
-        {
-            LogRel(("SSM: u32StreamCRC field isn't zero, but header says stream checksumming is disabled.\n"));
-            return VERR_SSM_INTEGRITY;
-        }
+            SSMFILEFTR  Footer;
+            uint64_t    offFooter;
+            rc = ssmR3StrmPeekAt(&pSSM->Strm, -(RTFOFF)sizeof(SSMFILEFTR), &Footer, sizeof(Footer), &offFooter);
+            AssertLogRelRCReturn(rc, rc);
+            if (memcmp(Footer.szMagic, SSMFILEFTR_MAGIC, sizeof(Footer.szMagic)))
+            {
+                LogRel(("SSM: Bad footer magic: %.*Rhxs\n", sizeof(Footer.szMagic), &Footer.szMagic[0]));
+                return VERR_SSM_INTEGRITY;
+            }
+            SSM_CHECK_CRC32_RET(&Footer, sizeof(Footer), ("Footer CRC mismatch: %08x, correct is %08x\n", u32CRC, u32ActualCRC));
+            if (Footer.offStream != offFooter)
+            {
+                LogRel(("SSM: SSMFILEFTR::offStream is wrong: %llx, expected %llx\n", Footer.offStream, offFooter));
+                return VERR_SSM_INTEGRITY;
+            }
+            if (Footer.u32Reserved)
+            {
+                LogRel(("SSM: Reserved footer field isn't zero: %08x\n", Footer.u32Reserved));
+                return VERR_SSM_INTEGRITY;
+            }
+            if (    !fChecksummed
+                &&  Footer.u32StreamCRC)
+            {
+                LogRel(("SSM: u32StreamCRC field isn't zero, but header says stream checksumming is disabled.\n"));
+                return VERR_SSM_INTEGRITY;
+            }
 
-        pSSM->u.Read.cbLoadFile = offFooter + sizeof(Footer);
-        pSSM->u.Read.u32LoadCRC = Footer.u32StreamCRC;
+            pSSM->u.Read.cbLoadFile = offFooter + sizeof(Footer);
+            pSSM->u.Read.u32LoadCRC = Footer.u32StreamCRC;
+        }
+        else
+        {
+            pSSM->u.Read.cbLoadFile = UINT64_MAX;
+            pSSM->u.Read.u32LoadCRC = 0;
+        }
 
         /*
          * Validate the header info we've set in the handle.
@@ -2794,12 +2908,11 @@ static int ssmR3ValidateFile(PSSMHANDLE pSSM, bool fChecksumIt, bool fChecksumOn
          */
         if (    fChecksummed
             &&  fChecksumIt
-            &&  !fChecksumOnRead)
+            &&  !fChecksumOnRead
+            &&  ssmR3StrmIsFile(&pSSM->Strm))
         {
-            rc = RTFileSeek(pSSM->Strm.hFile, 0, RTFILE_SEEK_BEGIN, NULL);
-            AssertLogRelRCReturn(rc, rc);
             uint32_t u32CRC;
-            rc = ssmR3CalcChecksum(pSSM->Strm.hFile, offFooter, &u32CRC);
+            rc = ssmR3CalcChecksum(&pSSM->Strm, 0, pSSM->u.Read.cbLoadFile - sizeof(SSMFILEFTR), &u32CRC);
             if (RT_FAILURE(rc))
                 return rc;
             if (u32CRC != pSSM->u.Read.u32LoadCRC)
@@ -2808,9 +2921,6 @@ static int ssmR3ValidateFile(PSSMHANDLE pSSM, bool fChecksumIt, bool fChecksumOn
                 return VERR_SSM_INTEGRITY_CRC;
             }
         }
-
-        rc = RTFileSeek(pSSM->Strm.hFile, RTFILE_SEEK_BEGIN, offRestore, NULL);
-        AssertRCReturn(rc, rc);
     }
     else
     {
@@ -2893,12 +3003,11 @@ static int ssmR3ValidateFile(PSSMHANDLE pSSM, bool fChecksumIt, bool fChecksumOn
         if (    fChecksumIt
             ||  fChecksumOnRead)
         {
-/** @todo this needs to be fixed when starting to buffer input using a separate thread. */
-            uint64_t offRestore = RTFileTell(pSSM->Strm.hFile);
-            rc = RTFileSeek(pSSM->Strm.hFile, RT_OFFSETOF(SSMFILEHDRV11, u32CRC) + sizeof(uHdr.v1_1.u32CRC), RTFILE_SEEK_BEGIN, NULL);
-            AssertLogRelRCReturn(rc, rc);
             uint32_t u32CRC;
-            rc = ssmR3CalcChecksum(pSSM->Strm.hFile, cbFile - pSSM->u.Read.cbFileHdr, &u32CRC);
+            rc = ssmR3CalcChecksum(&pSSM->Strm,
+                                   RT_OFFSETOF(SSMFILEHDRV11, u32CRC) + sizeof(uHdr.v1_1.u32CRC),
+                                   cbFile - pSSM->u.Read.cbFileHdr,
+                                   &u32CRC);
             if (RT_FAILURE(rc))
                 return rc;
             if (u32CRC != pSSM->u.Read.u32LoadCRC)
@@ -2906,8 +3015,6 @@ static int ssmR3ValidateFile(PSSMHANDLE pSSM, bool fChecksumIt, bool fChecksumOn
                 LogRel(("SSM: Invalid CRC! Calculated %#010x, in header %#010x\n", u32CRC, pSSM->u.Read.u32LoadCRC));
                 return VERR_SSM_INTEGRITY_CRC;
             }
-            rc = RTFileSeek(pSSM->Strm.hFile, RTFILE_SEEK_BEGIN, offRestore, NULL);
-            AssertRCReturn(rc, rc);
         }
     }
 
@@ -3202,7 +3309,7 @@ static int ssmR3LoadExecV2(PVM pVM, PSSMHANDLE pSSM)
          * Read the unit header and check its integrity.
          */
         uint64_t        offUnit         = ssmR3StrmTell(&pSSM->Strm);
-        uint32_t        u32CurStreamCRC = pSSM->u32StreamCRC;
+        uint32_t        u32CurStreamCRC = ssmR3StrmCurCRC(&pSSM->Strm);
         SSMFILEUNITHDR  UnitHdr;
         int rc = ssmR3StrmRead(&pSSM->Strm, &UnitHdr, RT_OFFSETOF(SSMFILEUNITHDR, szName));
         if (RT_FAILURE(rc))
@@ -3239,7 +3346,7 @@ static int ssmR3LoadExecV2(PVM pVM, PSSMHANDLE pSSM)
             LogRel(("SSM: Unit at %#llx (%lld): offStream=%#llx, expected %#llx\n", offUnit, offUnit, UnitHdr.offStream, offUnit));
             return VERR_SSM_INTEGRITY;
         }
-        AssertLogRelMsgReturn(UnitHdr.u32CurStreamCRC == u32CurStreamCRC || !pSSM->fChecksummed,
+        AssertLogRelMsgReturn(UnitHdr.u32CurStreamCRC == u32CurStreamCRC || !pSSM->Strm.fChecksummed,
                               ("Unit at %#llx (%lld): Stream CRC mismatch: %08x, correct is %08x\n", offUnit, offUnit, UnitHdr.u32CurStreamCRC, u32CurStreamCRC), VERR_SSM_INTEGRITY);
         AssertLogRelMsgReturn(!UnitHdr.fFlags, ("Unit at %#llx (%lld): fFlags=%08x\n", offUnit, offUnit, UnitHdr.fFlags), VERR_SSM_INTEGRITY);
         if (!memcmp(&UnitHdr.szMagic[0], SSMFILEUNITHDR_END,   sizeof(UnitHdr.szMagic)))
@@ -3475,12 +3582,13 @@ VMMR3DECL(int) SSMR3Load(PVM pVM, const char *pszFilename, SSMAFTER enmAfter, PF
         /* progress */
         if (pfnProgress)
             pfnProgress(pVM, 99, pvUser);
+
+        ssmR3StrmClose(&Handle.Strm);
     }
 
     /*
      * Done
      */
-    ssmR3StrmClose(&Handle.Strm);
     if (RT_SUCCESS(rc))
     {
         /* progress */
@@ -3594,7 +3702,7 @@ VMMR3DECL(int) SSMR3Close(PSSMHANDLE pSSM)
     /*
      * Close the stream and free the handle.
      */
-    ssmR3StrmClose(&Handle.Strm);
+    int rc = ssmR3StrmClose(&pSSM->Strm);
     if (pSSM->u.Read.pZipDecompV1)
     {
         RTZipDecompDestroy(pSSM->u.Read.pZipDecompV1);
@@ -3628,7 +3736,8 @@ static int ssmR3FileSeekV1(PSSMHANDLE pSSM, const char *pszUnit, uint32_t iInsta
         /*
          * Read the unit header and verify it.
          */
-        int rc = RTFileReadAt(pSSM->hFile, off, &UnitHdr, RT_OFFSETOF(SSMFILEUNITHDR, szName), NULL);
+/** @todo this doesn't work when we get an I/O thread... */
+        int rc = RTFileReadAt(pSSM->Strm.hFile, off, &UnitHdr, RT_OFFSETOF(SSMFILEUNITHDR, szName), NULL);
         AssertRCReturn(rc, rc);
         if (!memcmp(&UnitHdr.achMagic[0], SSMFILEUNITHDR_MAGIC, sizeof(SSMFILEUNITHDR_MAGIC)))
         {
@@ -3638,7 +3747,7 @@ static int ssmR3FileSeekV1(PSSMHANDLE pSSM, const char *pszUnit, uint32_t iInsta
             if (    UnitHdr.u32Instance == iInstance
                 &&  UnitHdr.cchName     == cbUnit)
             {
-                rc = RTFileRead(pSSM->hFile, szName, cbUnit, NULL);
+                rc = RTFileRead(pSSM->Strm.hFile, szName, cbUnit, NULL);
                 AssertRCReturn(rc, rc);
                 AssertLogRelMsgReturn(!szName[UnitHdr.cchName - 1],
                                       (" Unit name '%.*s' was not properly terminated.\n", cbUnit, szName),
@@ -3684,7 +3793,8 @@ static int ssmR3FileSeekSubV2(PSSMHANDLE pSSM, PSSMFILEDIR pDir, size_t cbDir, u
      * Read it.
      */
     uint64_t const offDir = pSSM->u.Read.cbLoadFile - sizeof(SSMFILEFTR) - cbDir;
-    int rc = RTFileReadAt(pSSM->hFile, offDir, pDir, cbDir, NULL);
+/** @todo this doesn't work when we get an I/O thread... */
+    int rc = RTFileReadAt(pSSM->Strm.hFile, offDir, pDir, cbDir, NULL);
     AssertLogRelRCReturn(rc, rc);
     AssertLogRelReturn(!memcmp(pDir->szMagic, SSMFILEDIR_MAGIC, sizeof(pDir->szMagic)), VERR_SSM_INTEGRITY);
     SSM_CHECK_CRC32_RET(pDir, cbDir, ("Bad directory CRC: %08x, actual %08x\n", u32CRC, u32ActualCRC));
@@ -3716,7 +3826,8 @@ static int ssmR3FileSeekSubV2(PSSMHANDLE pSSM, PSSMFILEDIR pDir, size_t cbDir, u
                 cbToRead = offDir - pDir->aEntries[i].off;
                 RT_ZERO(UnitHdr);
             }
-            rc = RTFileReadAt(pSSM->hFile, pDir->aEntries[i].off, &UnitHdr, cbToRead, NULL);
+/** @todo this doesn't work when we get an I/O thread... */
+            rc = RTFileReadAt(pSSM->Strm.hFile, pDir->aEntries[i].off, &UnitHdr, cbToRead, NULL);
             AssertLogRelRCReturn(rc, rc);
 
             AssertLogRelMsgReturn(!memcmp(UnitHdr.szMagic, SSMFILEUNITHDR_MAGIC, sizeof(UnitHdr.szMagic)),
@@ -3747,11 +3858,12 @@ static int ssmR3FileSeekSubV2(PSSMHANDLE pSSM, PSSMFILEDIR pDir, size_t cbDir, u
             {
                 if (piVersion)
                     *piVersion = UnitHdr.u32Version;
-                rc = RTFileSeek(pSSM->hFile, pDir->aEntries[i].off + cbUnitHdr, RTFILE_SEEK_BEGIN, NULL);
+/** @todo this doesn't work when we get an I/O thread... */
+                rc = RTFileSeek(pSSM->Strm.hFile, pDir->aEntries[i].off + cbUnitHdr, RTFILE_SEEK_BEGIN, NULL);
                 AssertLogRelRCReturn(rc, rc);
 
-                if (pSSM->fChecksummed)
-                    pSSM->u32StreamCRC = RTCrc32Process(UnitHdr.u32CurStreamCRC, &UnitHdr, cbUnitHdr);
+                if (pSSM->Strm.fChecksummed)
+                    pSSM->Strm.u32StreamCRC = RTCrc32Process(UnitHdr.u32CurStreamCRC, &UnitHdr, cbUnitHdr);
 
                 ssmR3DataReadBeginV2(pSSM);
                 return VINF_SUCCESS;
@@ -3779,7 +3891,8 @@ static int ssmR3FileSeekV2(PSSMHANDLE pSSM, const char *pszUnit, uint32_t iInsta
      * pass it down to a worker to simplify cleanup.
      */
     SSMFILEFTR      Footer;
-    int rc = RTFileReadAt(pSSM->hFile, pSSM->u.Read.cbLoadFile - sizeof(Footer), &Footer, sizeof(Footer), NULL);
+/** @todo this doesn't work when we get an I/O thread... */
+    int rc = RTFileReadAt(pSSM->Strm.hFile, pSSM->u.Read.cbLoadFile - sizeof(Footer), &Footer, sizeof(Footer), NULL);
     AssertLogRelRCReturn(rc, rc);
     AssertLogRelReturn(!memcmp(Footer.szMagic, SSMFILEFTR_MAGIC, sizeof(Footer.szMagic)), VERR_SSM_INTEGRITY);
     SSM_CHECK_CRC32_RET(&Footer, sizeof(Footer), ("Bad footer CRC: %08x, actual %08x\n", u32CRC, u32ActualCRC));
@@ -3936,47 +4049,47 @@ static int ssmR3DataWriteRecHdr(PSSMHANDLE pSSM, size_t cb, uint8_t u8TypeAndFla
     if (cb < 0x80)
     {
         cbHdr = 2;
-        abHdr[1] = cb;
+        abHdr[1] = (uint8_t)cb;
     }
     else if (cb < 0x00000800)
     {
         cbHdr = 3;
-        abHdr[1] = 0xc0 | (cb >> 6);
-        abHdr[2] = 0x80 | (cb & 0x3f);
+        abHdr[1] = (uint8_t)(0xc0 | (cb >> 6));
+        abHdr[2] = (uint8_t)(0x80 | (cb & 0x3f));
     }
     else if (cb < 0x00010000)
     {
         cbHdr = 4;
-        abHdr[1] = 0xe0 | (cb >> 12);
-        abHdr[2] = 0x80 | ((cb >> 6) & 0x3f);
-        abHdr[3] = 0x80 | (cb & 0x3f);
+        abHdr[1] = (uint8_t)(0xe0 | (cb >> 12));
+        abHdr[2] = (uint8_t)(0x80 | ((cb >> 6) & 0x3f));
+        abHdr[3] = (uint8_t)(0x80 | (cb & 0x3f));
     }
     else if (cb < 0x00200000)
     {
         cbHdr = 5;
-        abHdr[1] = 0xf0 |  (cb >> 18);
-        abHdr[2] = 0x80 | ((cb >> 12) & 0x3f);
-        abHdr[3] = 0x80 | ((cb >>  6) & 0x3f);
-        abHdr[4] = 0x80 |  (cb        & 0x3f);
+        abHdr[1] = (uint8_t)(0xf0 |  (cb >> 18));
+        abHdr[2] = (uint8_t)(0x80 | ((cb >> 12) & 0x3f));
+        abHdr[3] = (uint8_t)(0x80 | ((cb >>  6) & 0x3f));
+        abHdr[4] = (uint8_t)(0x80 |  (cb        & 0x3f));
     }
     else if (cb < 0x04000000)
     {
         cbHdr = 6;
-        abHdr[1] = 0xf8 |  (cb >> 24);
-        abHdr[2] = 0x80 | ((cb >> 18) & 0x3f);
-        abHdr[3] = 0x80 | ((cb >> 12) & 0x3f);
-        abHdr[4] = 0x80 | ((cb >>  6) & 0x3f);
-        abHdr[5] = 0x80 |  (cb        & 0x3f);
+        abHdr[1] = (uint8_t)(0xf8 |  (cb >> 24));
+        abHdr[2] = (uint8_t)(0x80 | ((cb >> 18) & 0x3f));
+        abHdr[3] = (uint8_t)(0x80 | ((cb >> 12) & 0x3f));
+        abHdr[4] = (uint8_t)(0x80 | ((cb >>  6) & 0x3f));
+        abHdr[5] = (uint8_t)(0x80 |  (cb        & 0x3f));
     }
     else if (cb <= 0x7fffffff)
     {
         cbHdr = 7;
-        abHdr[1] = 0xfc | (cb >> 30);
-        abHdr[2] = 0x80 | ((cb >> 24) & 0x3f);
-        abHdr[3] = 0x80 | ((cb >> 18) & 0x3f);
-        abHdr[4] = 0x80 | ((cb >> 12) & 0x3f);
-        abHdr[5] = 0x80 | ((cb >> 6) & 0x3f);
-        abHdr[6] = 0x80 | (cb & 0x3f);
+        abHdr[1] = (uint8_t)(0xfc |  (cb >> 30));
+        abHdr[2] = (uint8_t)(0x80 | ((cb >> 24) & 0x3f));
+        abHdr[3] = (uint8_t)(0x80 | ((cb >> 18) & 0x3f));
+        abHdr[4] = (uint8_t)(0x80 | ((cb >> 12) & 0x3f));
+        abHdr[5] = (uint8_t)(0x80 | ((cb >>  6) & 0x3f));
+        abHdr[6] = (uint8_t)(0x80 | (cb & 0x3f));
     }
     else
         AssertLogRelMsgFailedReturn(("cb=%#x\n", cb), pSSM->rc = VERR_INTERNAL_ERROR);
@@ -4160,7 +4273,7 @@ static int ssmR3DataWriteFlushAndBuffer(PSSMHANDLE pSSM, const void *pvBuf, size
     if (RT_SUCCESS(rc))
     {
         memcpy(&pSSM->u.Write.abDataBuffer[0], pvBuf, cbBuf);
-        pSSM->u.Write.offDataBuffer = cbBuf;
+        pSSM->u.Write.offDataBuffer = (uint32_t)cbBuf;
     }
     return rc;
 }
@@ -4189,7 +4302,7 @@ DECLINLINE(int) ssmR3DataWrite(PSSMHANDLE pSSM, const void *pvBuf, size_t cbBuf)
         return ssmR3DataWriteFlushAndBuffer(pSSM, pvBuf, cbBuf);
 
     memcpy(&pSSM->u.Write.abDataBuffer[off], pvBuf, cbBuf);
-    pSSM->u.Write.offDataBuffer = off + cbBuf;
+    pSSM->u.Write.offDataBuffer = off + (uint32_t)cbBuf;
     return VINF_SUCCESS;
 }
 
@@ -4814,7 +4927,7 @@ DECLINLINE(int) ssmR3DataReadV2Raw(PSSMHANDLE pSSM, void *pvBuf, size_t cbToRead
  * @param   pSSM            The saved state handle..
  * @param   pcbDecompr      Where to store the size of the decompressed data.
  */
-DECLINLINE(int) ssmR3DataReadV2RawLzfHdr(PSSMHANDLE pSSM, size_t *pcbDecompr)
+DECLINLINE(int) ssmR3DataReadV2RawLzfHdr(PSSMHANDLE pSSM, uint32_t *pcbDecompr)
 {
     *pcbDecompr = 0; /* shuts up gcc. */
     AssertLogRelMsgReturn(   pSSM->u.Read.cbRecLeft > 1
@@ -4830,7 +4943,7 @@ DECLINLINE(int) ssmR3DataReadV2RawLzfHdr(PSSMHANDLE pSSM, size_t *pcbDecompr)
         return rc;
     pSSM->u.Read.cbRecLeft -= sizeof(cKB);
 
-    size_t cbDecompr = (size_t)cKB * _1K;
+    uint32_t cbDecompr = (uint32_t)cKB * _1K;
     AssertLogRelMsgReturn(   cbDecompr >= pSSM->u.Read.cbRecLeft
                           && cbDecompr <= RT_SIZEOFMEMB(SSMHANDLE, u.Read.abDataBuffer),
                           ("%#x\n", cbDecompr),
@@ -4891,7 +5004,7 @@ static int ssmR3DataReadRecHdrV2(PSSMHANDLE pSSM)
     /*
      * Read the two mandatory bytes.
      */
-    uint32_t u32StreamCRC = ssmR3StrmCurCRC(pSSM); /** @todo NOT good. */
+    uint32_t u32StreamCRC = ssmR3StrmCurCRC(&pSSM->Strm); /** @todo NOT good. */
     uint8_t  abHdr[8];
     int rc = ssmR3DataReadV2Raw(pSSM, abHdr, 2);
     if (RT_FAILURE(rc))
@@ -5067,9 +5180,9 @@ static int ssmR3DataReadUnbufferedV2(PSSMHANDLE pSSM, void *pvBuf, size_t cbBuf)
         uint32_t const cbToCopy = (uint32_t)cbInBuffer;
         Assert(cbBuf > cbToCopy);
         memcpy(pvBuf, &pSSM->u.Read.abDataBuffer[off], cbToCopy);
-        pvBuf = (uint8_t *)pvBuf + cbToCopy;
+        pvBuf  = (uint8_t *)pvBuf + cbToCopy;
         cbBuf -= cbToCopy;
-        pSSM->u.Read.cbDataBuffer = 0;
+        pSSM->u.Read.cbDataBuffer  = 0;
         pSSM->u.Read.offDataBuffer = 0;
     }
 
@@ -5092,12 +5205,12 @@ static int ssmR3DataReadUnbufferedV2(PSSMHANDLE pSSM, void *pvBuf, size_t cbBuf)
         /*
          * Read data from the current record.
          */
-        size_t cbToRead;
+        uint32_t cbToRead;
         switch (pSSM->u.Read.u8TypeAndFlags & SSM_REC_TYPE_MASK)
         {
             case SSM_REC_TYPE_RAW:
             {
-                cbToRead = RT_MIN(cbBuf, pSSM->u.Read.cbRecLeft);
+                cbToRead = (uint32_t)RT_MIN(cbBuf, pSSM->u.Read.cbRecLeft);
                 int rc = ssmR3DataReadV2Raw(pSSM, pvBuf, cbToRead);
                 if (RT_FAILURE(rc))
                     return pSSM->rc = rc;
@@ -5107,7 +5220,7 @@ static int ssmR3DataReadUnbufferedV2(PSSMHANDLE pSSM, void *pvBuf, size_t cbBuf)
 
             case SSM_REC_TYPE_RAW_LZF:
             {
-                size_t cbDecompr;
+                uint32_t cbDecompr;
                 int rc = ssmR3DataReadV2RawLzfHdr(pSSM, &cbDecompr);
                 if (RT_FAILURE(rc))
                     return rc;
@@ -5124,10 +5237,10 @@ static int ssmR3DataReadUnbufferedV2(PSSMHANDLE pSSM, void *pvBuf, size_t cbBuf)
                     rc = ssmR3DataReadV2RawLzf(pSSM, &pSSM->u.Read.abDataBuffer[0], cbDecompr);
                     if (RT_FAILURE(rc))
                         return rc;
-                    memcpy(pvBuf, &pSSM->u.Read.abDataBuffer[0], cbBuf);
-                    pSSM->u.Read.cbDataBuffer = cbDecompr;
-                    pSSM->u.Read.offDataBuffer = cbBuf;
-                    cbToRead = cbBuf;
+                    cbToRead = (uint32_t)cbBuf;
+                    memcpy(pvBuf, &pSSM->u.Read.abDataBuffer[0], cbToRead);
+                    pSSM->u.Read.cbDataBuffer  = cbDecompr;
+                    pSSM->u.Read.offDataBuffer = cbToRead;
                 }
                 break;
             }
@@ -5169,9 +5282,9 @@ static int ssmR3DataReadBufferedV2(PSSMHANDLE pSSM, void *pvBuf, size_t cbBuf)
         uint32_t const cbToCopy = (uint32_t)cbInBuffer;
         Assert(cbBuf > cbToCopy);
         memcpy(pvBuf, &pSSM->u.Read.abDataBuffer[off], cbToCopy);
-        pvBuf = (uint8_t *)pvBuf + cbToCopy;
+        pvBuf  = (uint8_t *)pvBuf + cbToCopy;
         cbBuf -= cbToCopy;
-        pSSM->u.Read.cbDataBuffer = 0;
+        pSSM->u.Read.cbDataBuffer  = 0;
         pSSM->u.Read.offDataBuffer = 0;
     }
 
@@ -5195,7 +5308,7 @@ static int ssmR3DataReadBufferedV2(PSSMHANDLE pSSM, void *pvBuf, size_t cbBuf)
          * Read data from the current record.
          * LATER: optimize by reading directly into the output buffer for some cases.
          */
-        size_t cbToRead;
+        uint32_t cbToRead;
         switch (pSSM->u.Read.u8TypeAndFlags & SSM_REC_TYPE_MASK)
         {
             case SSM_REC_TYPE_RAW:
@@ -5204,14 +5317,14 @@ static int ssmR3DataReadBufferedV2(PSSMHANDLE pSSM, void *pvBuf, size_t cbBuf)
                 int rc = ssmR3DataReadV2Raw(pSSM, &pSSM->u.Read.abDataBuffer[0], cbToRead);
                 if (RT_FAILURE(rc))
                     return pSSM->rc = rc;
-                pSSM->u.Read.cbRecLeft -= cbToRead;
+                pSSM->u.Read.cbRecLeft   -= cbToRead;
                 pSSM->u.Read.cbDataBuffer = cbToRead;
                 break;
             }
 
             case SSM_REC_TYPE_RAW_LZF:
             {
-                size_t cbDecompr;
+                uint32_t cbDecompr;
                 int rc = ssmR3DataReadV2RawLzfHdr(pSSM, &cbDecompr);
                 if (RT_FAILURE(rc))
                     return rc;
@@ -5231,7 +5344,7 @@ static int ssmR3DataReadBufferedV2(PSSMHANDLE pSSM, void *pvBuf, size_t cbBuf)
         /*
          * Copy data from the buffer.
          */
-        size_t cbToCopy = RT_MIN(cbBuf, cbToRead);
+        uint32_t cbToCopy = (uint32_t)RT_MIN(cbBuf, cbToRead);
         memcpy(pvBuf, &pSSM->u.Read.abDataBuffer[0], cbToCopy);
         cbBuf -= cbToCopy;
         pvBuf = (uint8_t *)pvBuf + cbToCopy;
@@ -5275,7 +5388,7 @@ DECLINLINE(int) ssmR3DataRead(PSSMHANDLE pSSM, void *pvBuf, size_t cbBuf)
     }
 
     memcpy(pvBuf, &pSSM->u.Read.abDataBuffer[off], cbBuf);
-    pSSM->u.Read.offDataBuffer = off + cbBuf;
+    pSSM->u.Read.offDataBuffer = off + (uint32_t)cbBuf;
     Log4((cbBuf
           ? "ssmR3DataRead: %08llx|%08llx/%08x/%08x: cbBuf=%#x %.*Rhxs%s\n"
           : "ssmR3DataRead: %08llx|%08llx/%08x/%08x: cbBuf=%#x\n",
