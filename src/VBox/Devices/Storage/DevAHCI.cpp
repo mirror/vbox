@@ -1789,8 +1789,6 @@ static void ahciPortSwReset(PAHCIPort pAhciPort)
     pAhciPort->regIS   = 0;
     pAhciPort->regIE   = 0;
     pAhciPort->regCMD  = AHCI_PORT_CMD_CPD  | /* Cold presence detection */
-                         AHCI_PORT_CMD_ISP  | /* Interlock switch attached (for hotplug) */
-                         AHCI_PORT_CMD_HPCP | /* Hotplug capable port */
                          AHCI_PORT_CMD_SUD  | /* Device has spun up. */
                          AHCI_PORT_CMD_POD;   /* Port is powered on. */
     pAhciPort->regTFD  = (1 << 8) | ATA_STAT_SEEK | ATA_STAT_WRERR;
@@ -1890,7 +1888,7 @@ static void ahciHBAReset(PAHCI pThis)
             AssertMsgFailed(("%s: Failed to stop timer!\n", __FUNCTION__));
     }
 
-    /** Reset every port */
+    /* Reset every port */
     for (i = 0; i < pThis->cPortsImpl; i++)
     {
         PAHCIPort pAhciPort = &pThis->ahciPort[i];
@@ -1899,12 +1897,11 @@ static void ahciHBAReset(PAHCI pThis)
         ahciPortSwReset(pAhciPort);
     }
 
-    /** Init Global registers */
+    /* Init Global registers */
     pThis->regHbaCap      = AHCI_HBA_CAP_ISS_SHIFT(AHCI_HBA_CAP_ISS_GEN2) |
                             AHCI_HBA_CAP_S64A | /* 64bit addressing supported */
                             AHCI_HBA_CAP_SAM  | /* AHCI mode only */
                             AHCI_HBA_CAP_SNCQ | /* Support native command queuing */
-                            AHCI_HBA_CAP_SIS  | /* Interlock switch for hotplug operations */
                             AHCI_HBA_CAP_SSS  | /* Staggered spin up */
                             AHCI_HBA_CAP_CCCS | /* Support command completion coalescing */
                             AHCI_HBA_CAP_NCS_SET(AHCI_NR_COMMAND_SLOTS) | /* Number of command slots we support */
@@ -1922,7 +1919,7 @@ static void ahciHBAReset(PAHCI pThis)
     pThis->f64BitAddr = false;
     pThis->u32PortsInterrupted = 0;
     pThis->f8ByteMMIO4BytesWrittenSuccessfully = false;
-    /** Clear the HBA Reset bit */
+    /* Clear the HBA Reset bit */
     pThis->regHbaCtrl &= ~AHCI_HBA_CTRL_HR;
 }
 
