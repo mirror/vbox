@@ -230,11 +230,23 @@ int _init(void)
     int rc = RTR0Init(0);
     if (RT_SUCCESS(rc))
     {
+        /*
+         * Create the release logger instance.
+         */
+        static const char *const s_apszGroups[] = VBOX_LOGGROUP_NAMES;
+        PRTLOGGER pRelLogger;
+        rc = RTLogCreate(&pRelLogger, 0 /* fFlags */, "all", "VBOX_RELEASE_LOG", RT_ELEMENTS(s_apszGroups), s_apszGroups,
+                        RTLOGDEST_STDOUT | RTLOGDEST_DEBUGGER, NULL);
+        if (RT_SUCCESS(rc))
+            RTLogRelSetDefaultInstance(pRelLogger);
+
         rc = mod_install(&g_VBoxNetAdpSolarisModLinkage);
         if (!rc)
             return rc;
 
         LogRel((DEVICE_NAME ":mod_install failed. rc=%d\n", rc));
+        RTLogDestroy(RTLogRelSetDefaultInstance(NULL));
+        RTLogDestroy(RTLogSetDefaultInstance(NULL));
         RTR0Term();
     }
     else
@@ -252,6 +264,8 @@ int _fini(void)
     /*
      * Undo the work done during start (in reverse order).
      */
+    RTLogDestroy(RTLogRelSetDefaultInstance(NULL));
+    RTLogDestroy(RTLogSetDefaultInstance(NULL));
     RTR0Term();
 
     return mod_remove(&g_VBoxNetAdpSolarisModLinkage);
