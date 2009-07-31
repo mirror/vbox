@@ -22,9 +22,14 @@
 #define ____H_VERSION
 
 /**
- * Return the SVN revision as number.
+ * Return the SVN revision as a number.
  */
 unsigned long VBoxSVNRev ();
+
+/**
+ * Return the SVN revision as a string.
+ */
+const char *VBoxSVNRevString ();
 
 #endif
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */

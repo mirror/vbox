@@ -24,12 +24,17 @@
 #include "Version.h"
 
 /**
- * This function is implemented in a separate file to speed up the
+ * These functions are implemented in a separate file to speed up the
  * compilation if only the SVN revision changed.
  */
 
 unsigned long VBoxSVNRev ()
 {
     return VBOX_SVN_REV;
+}
+
+const char *VBoxSVNRevString ()
+{
+    return RT_XSTR(VBOX_SVN_REV);
 }
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */

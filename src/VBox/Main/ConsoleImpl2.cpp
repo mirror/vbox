@@ -28,6 +28,7 @@
 *******************************************************************************/
 #include "ConsoleImpl.h"
 #include "DisplayImpl.h"
+#include "Version.h"
 #include "VMMDev.h"
 
 // generated header
@@ -1868,6 +1869,30 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
             parms[3].u.pointer.size = 0;  /* We don't actually care. */
 
             pConsole->mVMMDev->hgcmHostCall ("VBoxGuestPropSvc", guestProp::SET_PROPS_HOST, 4, &parms[0]);
+
+            /* Set the VBox version string as a guest property */
+            parms[0].type = VBOX_HGCM_SVC_PARM_PTR;
+            parms[0].u.pointer.addr = (void *)"/VirtualBox/HostInfo/VBoxVer";
+            parms[0].u.pointer.size = sizeof("/VirtualBox/HostInfo/VBoxVer");
+            parms[1].type = VBOX_HGCM_SVC_PARM_PTR;
+            parms[1].u.pointer.addr = (void *)VBOX_VERSION_STRING;
+            parms[1].u.pointer.size = sizeof(VBOX_VERSION_STRING);
+            parms[2].type = VBOX_HGCM_SVC_PARM_PTR;
+            parms[2].u.pointer.addr = (void *)"TRANSIENT, RDONLYGUEST";
+            parms[2].u.pointer.size = sizeof("TRANSIENT, RDONLYGUEST");
+            pConsole->mVMMDev->hgcmHostCall ("VBoxGuestPropSvc", guestProp::SET_PROP_HOST, 3, &parms[0]);
+
+            /* Set the VBox SVN revision as a guest property */
+            parms[0].type = VBOX_HGCM_SVC_PARM_PTR;
+            parms[0].u.pointer.addr = (void *)"/VirtualBox/HostInfo/VBoxRev";
+            parms[0].u.pointer.size = sizeof("/VirtualBox/HostInfo/VBoxRev");
+            parms[1].type = VBOX_HGCM_SVC_PARM_PTR;
+            parms[1].u.pointer.addr = (void *)VBoxSVNRevString();
+            parms[1].u.pointer.size = strlen(VBoxSVNRevString()) + 1;
+            parms[2].type = VBOX_HGCM_SVC_PARM_PTR;
+            parms[2].u.pointer.addr = (void *)"TRANSIENT, RDONLYGUEST";
+            parms[2].u.pointer.size = sizeof("TRANSIENT, RDONLYGUEST");
+            pConsole->mVMMDev->hgcmHostCall ("VBoxGuestPropSvc", guestProp::SET_PROP_HOST, 3, &parms[0]);
 
             /* Register the host notification callback */
             HGCMSVCEXTHANDLE hDummy;
