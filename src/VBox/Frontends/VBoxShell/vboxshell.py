@@ -881,6 +881,39 @@ def disconnectCmd(ctx, args):
     ctx['vb'] = None
     return 0
 
+def exportVMCmd(ctx, args):
+    import sys
+
+    if len(args) < 3:
+        print "usage: exportVm <machine> <path> <format> <license>"
+        return 0
+    mach = ctx['machById'](args[1])
+    if mach is None:
+        return 0
+    path = args[2]
+    if (len(args) > 3):
+        format = args[3]
+    else:
+        format = "ovf-1.0"
+    if (len(args) > 4):
+        license = args[4]
+    else:
+        license = "GPL"
+
+    app = ctx['vb'].createAppliance()
+    desc = mach.export(app)
+    desc.addDescription(ctx['global'].constants.VirtualSystemDescriptionType_License, license, "")
+    p = app.write(format, path)
+    try:
+        while not p.completed:
+            print "%d %%\r" %(p.percent),
+            sys.stdout.flush()
+            p.waitForCompletion(1000)
+    except KeyboardInterrupt:
+        print "Interrupted."
+    print "Exported to %s in format %s" %(path, format)
+    return 0
+
 aliases = {'s':'start',
            'i':'info',
            'l':'list',
@@ -915,7 +948,8 @@ commands = {'help':['Prints help information', helpCmd, 0],
             'reloadExt':['Reload custom extensions: reloadExt', reloadExtCmd, 0],
             'runScript':['Run VBox script: runScript script.vbox', runScriptCmd, 0],
             'sleep':['Sleep for specified number of seconds: sleep 3.14159', sleepCmd, 0],
-            'shell':['Execute external shell comman: shell "ls /etc/rc*"', shellCmd, 0]
+            'shell':['Execute external shell command: shell "ls /etc/rc*"', shellCmd, 0],
+            'exportVm':['Export VM in OVF format: export Win /tmp/win.ovf', exportVMCmd, 0]
             }
 
 def runCommandArgs(ctx, args):
