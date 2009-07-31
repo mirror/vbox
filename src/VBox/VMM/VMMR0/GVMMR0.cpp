@@ -971,7 +971,7 @@ static DECLCALLBACK(void) gvmmR0HandleObjDestructor(void *pvObj, void *pvGVMM, v
         {
             if (RT_UNLIKELY(iPrev >= RT_ELEMENTS(pGVMM->aHandles)))
             {
-                SUPR0Printf("GVM: used list index %d is out of range!\n");
+                SUPR0Printf("GVM: used list index %d is out of range!\n", iPrev);
                 gvmmR0UsedUnlock(pGVMM);
                 gvmmR0CreateDestroyUnlock(pGVMM);
                 return;
