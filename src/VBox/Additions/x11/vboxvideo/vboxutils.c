@@ -398,6 +398,7 @@ vbox_init(int scrnIndex, VBOXPtr pVBox)
 {
     Bool rc = TRUE;
     int vrc;
+    uint32_t fMouseFeatures = 0;
 
     TRACE_ENTRY();
     pVBox->useVbva = FALSE;
@@ -410,6 +411,13 @@ vbox_init(int scrnIndex, VBOXPtr pVBox)
         rc = FALSE;
     }
     pVBox->useDevice = rc;
+    /* We can't switch to a software cursor at will without help from
+     * VBoxClient.  So tell that to the host and wait for VBoxClient to
+     * change this. */
+    vrc = VbglR3GetMouseStatus(&fMouseFeatures, NULL, NULL);
+    if (RT_SUCCESS(vrc))
+        VbglR3SetMouseStatus(  fMouseFeatures
+                             | VMMDEV_MOUSE_GUEST_NEEDS_HOST_CURSOR);
     return rc;
 }
 
@@ -530,28 +538,15 @@ vbox_set_cursor_colors(ScrnInfoPtr pScrn, int bg, int fg)
     /* ErrorF("vbox_set_cursor_colors NOT IMPLEMENTED\n"); */
 }
 
-/**
- * This function is called to set the position of the hardware cursor.
- * Since we already know the position (exactly where the host pointer is),
- * we only use this function to poll for whether we need to switch from a
- * hardware to a software cursor (that is, whether the user has disabled
- * pointer integration).  Sadly this doesn't work the other way round,
- * as the server updates the software cursor itself without notifying us.
- */
+
 static void
 vbox_set_cursor_position(ScrnInfoPtr pScrn, int x, int y)
 {
-    VBOXPtr pVBox = pScrn->driverPrivate;
-
-    if (pVBox->accessEnabled && !vbox_host_uses_hwcursor(pScrn))
-    {
-        /* This triggers a cursor image reload, and before reloading, the X
-         * server will check whether we can "handle" the new cursor "in
-         * hardware".  We can use this check to force a switch to a software
-         * cursor if we need to do so. */
-        pScrn->EnableDisableFBAccess(pScrn->scrnIndex, FALSE);
-        pScrn->EnableDisableFBAccess(pScrn->scrnIndex, TRUE);
-    }
+    /* Nothing to do here, as we are telling the guest where the mouse is,
+     * not vice versa. */
+    NOREF(pScrn);
+    NOREF(x);
+    NOREF(y);
 }
 
 static void
