@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2009 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -86,7 +86,7 @@ __FBSDID("$FreeBSD: src/sys/libkern/crc32.c,v 1.2 2003/06/11 05:23:04 obrien Exp
 uint32_t crc32_tab[] = {
 #else
 /** CRC32 feedback table. */
-uint32_t au32CRC32[] =
+static uint32_t const g_au32CRC32[] =
 {
 #endif
         0x00000000, 0x77073096, 0xee0e612c, 0x990951ba, 0x076dc419, 0x706af48f,
@@ -154,29 +154,17 @@ crc32(const void *buf, size_t size)
 
 
 
-/**
- * Calculate CRC32 for a memory block.
- *
- * @returns CRC32 for the memory block.
- * @param   pv      Pointer to the memory block.
- * @param   cb      Size of the memory block in bytes.
- */
 RTDECL(uint32_t) RTCrc32(const void *pv, size_t cb)
 {
     const uint8_t  *pu8 = (const uint8_t *)pv;
     uint32_t        uCRC32 = ~0U;
     while (cb--)
-        uCRC32 = au32CRC32[(uCRC32 ^ *pu8++) & 0xff] ^ (uCRC32 >> 8);
+        uCRC32 = g_au32CRC32[(uCRC32 ^ *pu8++) & 0xff] ^ (uCRC32 >> 8);
     return uCRC32 ^ ~0U;
 }
 RT_EXPORT_SYMBOL(RTCrc32);
 
 
-/**
- * Start a multiblock CRC32 calculation.
- *
- * @returns Start CRC32.
- */
 RTDECL(uint32_t) RTCrc32Start(void)
 {
     return ~0U;
@@ -184,30 +172,16 @@ RTDECL(uint32_t) RTCrc32Start(void)
 RT_EXPORT_SYMBOL(RTCrc32Start);
 
 
-/**
- * Processes a multiblock of a CRC32 calculation.
- *
- * @returns Intermediate CRC32 value.
- * @param   uCRC32  Current CRC32 intermediate value.
- * @param   pv      The data block to process.
- * @param   cb      The size of the data block in bytes.
- */
 RTDECL(uint32_t) RTCrc32Process(uint32_t uCRC32, const void *pv, size_t cb)
 {
     const uint8_t  *pu8 = (const uint8_t *)pv;
     while (cb--)
-        uCRC32 = au32CRC32[(uCRC32 ^ *pu8++) & 0xff] ^ (uCRC32 >> 8);
+        uCRC32 = g_au32CRC32[(uCRC32 ^ *pu8++) & 0xff] ^ (uCRC32 >> 8);
     return uCRC32;
 }
 RT_EXPORT_SYMBOL(RTCrc32Process);
 
 
-/**
- * Complete a multiblock CRC32 calculation.
- *
- * @returns CRC32 value.
- * @param   uCRC32  Current CRC32 intermediate value.
- */
 RTDECL(uint32_t) RTCrc32Finish(uint32_t uCRC32)
 {
     return uCRC32 ^ ~0U;
