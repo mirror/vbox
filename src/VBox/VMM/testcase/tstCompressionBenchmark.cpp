@@ -24,11 +24,13 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #include <iprt/assert.h>
+#include <iprt/crc.h>
 #include <iprt/ctype.h>
 #include <iprt/err.h>
 #include <iprt/file.h>
 #include <iprt/getopt.h>
 #include <iprt/initterm.h>
+#include <iprt/md5.h>
 #include <iprt/mem.h>
 #include <iprt/param.h>
 #include <iprt/stream.h>
@@ -80,6 +82,49 @@ static DECLCALLBACK(int) DecomprInCallback(void *pvUser, void *pvBuf, size_t cbB
     memcpy(pvBuf, &g_pabCompr[g_offComprIn], cb);
     g_offComprIn += cb;
     return VINF_SUCCESS;
+}
+
+/**
+ * Benchmark RTCrc routines potentially relevant for SSM.
+ *
+ * @param  pabSrc   Pointer to the test data.
+ * @param  cbSrc    The size of the test data.
+ */
+static void tstBenchmarkCRCs(uint8_t const *pabSrc, size_t cbSrc)
+{
+    RTPrintf("Algorithm     Speed                  Time      Digest\n"
+             "------------------------------------------------------------------------------\n");
+
+    uint64_t NanoTS = RTTimeNanoTS();
+    uint32_t u32Crc = RTCrc32(pabSrc, cbSrc);
+    NanoTS = RTTimeNanoTS() - NanoTS;
+    unsigned uSpeed = (unsigned)(cbSrc / (long double)NanoTS * 1000000000.0 / 1024);
+    RTPrintf("CRC-32    %'9u KB/s  %'14llu ns - %08x\n", uSpeed, NanoTS, u32Crc);
+
+
+    NanoTS = RTTimeNanoTS();
+    uint64_t u64Crc = RTCrc64(pabSrc, cbSrc);
+    NanoTS = RTTimeNanoTS() - NanoTS;
+    uSpeed = (unsigned)(cbSrc / (long double)NanoTS * 1000000000.0 / 1024);
+    RTPrintf("CRC-64    %'9u KB/s  %'14llu ns - %016llx\n", uSpeed, NanoTS, u64Crc);
+
+    NanoTS = RTTimeNanoTS();
+    u32Crc   = RTCrcAdler32(pabSrc, cbSrc);
+    NanoTS = RTTimeNanoTS() - NanoTS;
+    uSpeed = (unsigned)(cbSrc / (long double)NanoTS * 1000000000.0 / 1024);
+    RTPrintf("Adler-32  %'9u KB/s  %'14llu ns - %08x\n", uSpeed, NanoTS, u32Crc);
+
+    NanoTS = RTTimeNanoTS();
+    uint8_t abMd5Hash[RTMD5HASHSIZE];
+    RTMd5(pabSrc, cbSrc, abMd5Hash);
+    NanoTS = RTTimeNanoTS() - NanoTS;
+    uSpeed = (unsigned)(cbSrc / (long double)NanoTS * 1000000000.0 / 1024);
+    RTPrintf("MD5       %'9u KB/s  %'14llu ns - %02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x\n",
+             uSpeed, NanoTS,
+             abMd5Hash[0],  abMd5Hash[1],  abMd5Hash[2],  abMd5Hash[3],
+             abMd5Hash[4],  abMd5Hash[5],  abMd5Hash[6],  abMd5Hash[7],
+             abMd5Hash[8],  abMd5Hash[9],  abMd5Hash[10], abMd5Hash[11],
+             abMd5Hash[12], abMd5Hash[13], abMd5Hash[14], abMd5Hash[15]);
 }
 
 
@@ -458,7 +503,16 @@ int main(int argc, char **argv)
     else
         RTPrintf("Input: %'10zu pages of generated rubbish               %'11zu bytes\n",
                  g_cPages, g_cbPages);
+
+    /*
+     * A little extension to the test, benchmark relevant CRCs.
+     */
+    RTPrintf("\n"
+             "tstCompressionBenchmark: Checksum/CRC\n");
+    tstBenchmarkCRCs(g_pabSrc, g_cbPages);
+
     RTPrintf("tstCompressionBenchmark: END RESULTS\n");
+
 
     return rc;
 }
