@@ -56,6 +56,16 @@ typedef RTMD5CONTEXT *PRTMD5CONTEXT;
 RT_C_DECLS_BEGIN
 
 /**
+ * Compute the MD5 hash of the data.
+ *
+ * @param   pvBuf       Pointer to data.
+ * @param   cbBuf       Length of data (in bytes).
+ * @param   pabDigest   Where to store the hash.
+ *                      (What's passed is a pointer to the caller's buffer.)
+ */
+RTDECL(void) RTMd5(const void *pvBuf, size_t cbBuf, uint8_t pabDigest[RTMD5HASHSIZE]);
+
+/**
  * Initialize MD5 context.
  *
  * @param   pCtx        Pointer to the MD5 context to initialize.
@@ -74,9 +84,9 @@ RTDECL(void) RTMd5Update(PRTMD5CONTEXT pCtx, const void *pvBuf, size_t cbBuf);
 /**
  * Compute the MD5 hash of the data.
  *
- * @param   pabDigest  Where to store the hash.
- *                     (What's passed is a pointer to the caller's buffer.)
- * @param   pCtx       Pointer to the MD5 context.
+ * @param   pabDigest   Where to store the hash.
+ *                      (What's passed is a pointer to the caller's buffer.)
+ * @param   pCtx        Pointer to the MD5 context.
  */
 RTDECL(void) RTMd5Final(uint8_t pabDigest[RTMD5HASHSIZE], PRTMD5CONTEXT pCtx);
 
@@ -84,4 +94,5 @@ RT_C_DECLS_END
 
 /** @} */
 
-#endif /* !__iprt_md5_h__ */
+#endif
+
