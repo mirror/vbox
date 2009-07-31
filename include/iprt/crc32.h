@@ -1,5 +1,5 @@
 /** @file
- * IPRT - CRC32.
+ * IPRT - CRC-32.
  */
 
 /*
@@ -27,59 +27,6 @@
  * additional information or have any questions.
  */
 
-#ifndef ___iprt_crc32_h
-#define ___iprt_crc32_h
-
-#include <iprt/cdefs.h>
-#include <iprt/types.h>
-
-
-RT_C_DECLS_BEGIN
-
-/** @defgroup grp_rt_crc32      RTCrc32 - CRC32 Calculation
- * @ingroup grp_rt
- * @{
- */
-
-/**
- * Calculate CRC32 for a memory block.
- *
- * @returns CRC32 for the memory block.
- * @param   pv      Pointer to the memory block.
- * @param   cb      Size of the memory block in bytes.
- */
-RTDECL(uint32_t) RTCrc32(const void *pv, size_t cb);
-
-/**
- * Start a multiblock CRC32 calculation.
- *
- * @returns Start CRC32.
- */
-RTDECL(uint32_t) RTCrc32Start(void);
-
-/**
- * Processes a multiblock of a CRC32 calculation.
- *
- * @returns Intermediate CRC32 value.
- * @param   uCRC32  Current CRC32 intermediate value.
- * @param   pv      The data block to process.
- * @param   cb      The size of the data block in bytes.
- */
-RTDECL(uint32_t) RTCrc32Process(uint32_t uCRC32, const void *pv, size_t cb);
-
-/**
- * Complete a multiblock CRC32 calculation.
- *
- * @returns CRC32 value.
- * @param   uCRC32  Current CRC32 intermediate value.
- */
-RTDECL(uint32_t) RTCrc32Finish(uint32_t uCRC32);
-
-
-
-/** @} */
-
-RT_C_DECLS_END
-
-#endif
+/* Forwarding to the canonical header. */
+#include <iprt/crc.h>
 

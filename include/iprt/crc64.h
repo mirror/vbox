@@ -27,61 +27,6 @@
  * additional information or have any questions.
  */
 
-#ifndef ___iprt_crc64_h
-#define ___iprt_crc64_h
-
-
-#include <iprt/cdefs.h>
-#include <iprt/types.h>
-
-
-RT_C_DECLS_BEGIN
-
-/** @defgroup grp_rt_crc64      RTCrc64 - CRC64 Calculation
- * @ingroup grp_rt
- * @{
- */
-
-/**
- * Calculate CRC64 for a memory block.
- *
- * @returns CRC64 for the memory block.
- * @param   pv      Pointer to the memory block.
- * @param   cb      Size of the memory block in bytes.
- */
-RTDECL(uint64_t) RTCrc64(const void *pv, size_t cb);
-
-/**
- * Start a multiblock CRC64 calculation.
- *
- * @returns Start CRC64.
- */
-RTDECL(uint64_t) RTCrc64Start(void);
-
-/**
- * Processes a multiblock of a CRC64 calculation.
- *
- * @returns Intermediate CRC64 value.
- * @param   uCRC64  Current CRC64 intermediate value.
- * @param   pv      The data block to process.
- * @param   cb      The size of the data block in bytes.
- */
-RTDECL(uint64_t) RTCrc64Process(uint64_t uCRC64, const void *pv, size_t cb);
-
-/**
- * Complete a multiblock CRC64 calculation.
- *
- * @returns CRC64 value.
- * @param   uCRC64  Current CRC64 intermediate value.
- */
-RTDECL(uint64_t) RTCrc64Finish(uint64_t uCRC64);
-
-
-
-/** @} */
-
-RT_C_DECLS_END
-
-#endif
-
+/* Forwarding to the canonical header. */
+#include <iprt/crc.h>
 

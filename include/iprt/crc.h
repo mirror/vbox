@@ -1,0 +1,164 @@
+/** @file
+ * IPRT - CRCs and Checksums.
+ */
+
+/*
+ * Copyright (C) 2006-2009 Sun Microsystems, Inc.
+ *
+ * This file is part of VirtualBox Open Source Edition (OSE), as
+ * available from http://www.virtualbox.org. This file is free software;
+ * you can redistribute it and/or modify it under the terms of the GNU
+ * General Public License (GPL) as published by the Free Software
+ * Foundation, in version 2 as it comes in the "COPYING" file of the
+ * VirtualBox OSE distribution. VirtualBox OSE is distributed in the
+ * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+ *
+ * The contents of this file may alternatively be used under the terms
+ * of the Common Development and Distribution License Version 1.0
+ * (CDDL) only, as it comes in the "COPYING.CDDL" file of the
+ * VirtualBox OSE distribution, in which case the provisions of the
+ * CDDL are applicable instead of those of the GPL.
+ *
+ * You may elect to license modified versions of this file under the
+ * terms and conditions of either the GPL or the CDDL or both.
+ *
+ * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa
+ * Clara, CA 95054 USA or visit http://www.sun.com if you need
+ * additional information or have any questions.
+ */
+
+#ifndef ___iprt_crc_h
+#define ___iprt_crc_h
+
+#include <iprt/cdefs.h>
+#include <iprt/types.h>
+
+
+RT_C_DECLS_BEGIN
+
+/** @defgroup grp_rt_crc        RTCrc - Checksums and CRCs.
+ * @ingroup grp_rt
+ * @{
+ */
+
+
+/** @defgroup grp_rt_crc32  CRC-32
+ * @{ */
+/**
+ * Calculate CRC-32 for a memory block.
+ *
+ * @returns CRC-32 for the memory block.
+ * @param   pv      Pointer to the memory block.
+ * @param   cb      Size of the memory block in bytes.
+ */
+RTDECL(uint32_t)    RTCrc32(const void *pv, size_t cb);
+
+/**
+ * Start a multiblock CRC-32 calculation.
+ *
+ * @returns Start CRC-32.
+ */
+RTDECL(uint32_t)    RTCrc32Start(void);
+
+/**
+ * Processes a multiblock of a CRC-32 calculation.
+ *
+ * @returns Intermediate CRC-32 value.
+ * @param   uCRC32  Current CRC-32 intermediate value.
+ * @param   pv      The data block to process.
+ * @param   cb      The size of the data block in bytes.
+ */
+RTDECL(uint32_t)    RTCrc32Process(uint32_t uCRC32, const void *pv, size_t cb);
+
+/**
+ * Complete a multiblock CRC-32 calculation.
+ *
+ * @returns CRC-32 value.
+ * @param   uCRC32  Current CRC-32 intermediate value.
+ */
+RTDECL(uint32_t)    RTCrc32Finish(uint32_t uCRC32);
+/** @} */
+
+
+/** @defgroup grp_rt_crc64      CRC-64 Calculation
+ * @{  */
+/**
+ * Calculate CRC-64 for a memory block.
+ *
+ * @returns CRC-64 for the memory block.
+ * @param   pv      Pointer to the memory block.
+ * @param   cb      Size of the memory block in bytes.
+ */
+RTDECL(uint64_t)    RTCrc64(const void *pv, size_t cb);
+
+/**
+ * Start a multiblock CRC-64 calculation.
+ *
+ * @returns Start CRC-64.
+ */
+RTDECL(uint64_t)    RTCrc64Start(void);
+
+/**
+ * Processes a multiblock of a CRC-64 calculation.
+ *
+ * @returns Intermediate CRC-64 value.
+ * @param   uCRC64  Current CRC-64 intermediate value.
+ * @param   pv      The data block to process.
+ * @param   cb      The size of the data block in bytes.
+ */
+RTDECL(uint64_t)    RTCrc64Process(uint64_t uCRC64, const void *pv, size_t cb);
+
+/**
+ * Complete a multiblock CRC-64 calculation.
+ *
+ * @returns CRC-64 value.
+ * @param   uCRC64  Current CRC-64 intermediate value.
+ */
+RTDECL(uint64_t)    RTCrc64Finish(uint64_t uCRC64);
+/** @} */
+
+
+/** @defgroup grp_rt_crc_adler32    Adler-32
+ * @{ */
+/**
+ * Calculate Adler-32 for a memory block.
+ *
+ * @returns Adler-32 for the memory block.
+ * @param   pv      Pointer to the memory block.
+ * @param   cb      Size of the memory block in bytes.
+ */
+RTDECL(uint32_t)    RTCrcAdler32(void const *pv, size_t cb);
+
+/**
+ * Start a multiblock Adler-32 calculation.
+ *
+ * @returns Start Adler-32.
+ */
+RTDECL(uint32_t)    RTCrcAdler32Start(void);
+
+/**
+ * Processes a multiblock of a Adler-32 calculation.
+ *
+ * @returns Intermediate Adler-32 value.
+ * @param   uCrc    Current Adler-32 intermediate value.
+ * @param   pv      The data block to process.
+ * @param   cb      The size of the data block in bytes.
+ */
+RTDECL(uint32_t)    RTCrcAdler32Process(uint32_t uCrc, void const *pv, size_t cb);
+
+/**
+ * Complete a multiblock Adler-32 calculation.
+ *
+ * @returns Adler-32 value.
+ * @param   uCrc    Current Adler-32 intermediate value.
+ */
+RTDECL(uint32_t)    RTCrcAdler32Finish(uint32_t uCrc);
+
+/** @} */
+
+/** @} */
+
+RT_C_DECLS_END
+
+#endif
+
