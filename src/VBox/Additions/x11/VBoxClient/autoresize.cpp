@@ -55,7 +55,8 @@ static int initAutoResize()
             rc = VERR_NOT_SUPPORTED;
     }
     if (RT_SUCCESS(rc))
-        rc = VbglR3CtlFilterMask(VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST, 0);
+        rc = VbglR3CtlFilterMask(  VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST
+                                 | VMMDEV_EVENT_MOUSE_CAPABILITIES_CHANGED, 0);
     LogFlowFunc(("returning %Rrc\n", rc));
     return rc;
 }
@@ -63,7 +64,8 @@ static int initAutoResize()
 void cleanupAutoResize(void)
 {
     LogFlowFunc(("\n"));
-    VbglR3CtlFilterMask(0, VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST);
+    VbglR3CtlFilterMask(0,   VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST
+                           | VMMDEV_EVENT_MOUSE_CAPABILITIES_CHANGED);
     LogFlowFunc(("returning\n"));
 }
 
@@ -92,24 +94,31 @@ int runAutoResize()
                    RTTHREADTYPE_INFREQUENT_POLLER, 0, "X11 monitor");
     if (RT_FAILURE(rc))
         return rc;
-    VbglR3GetLastDisplayChangeRequest(&cx0, &cy0, &cBits0, &iDisplay0);
+    VbglR3GetDisplayChangeRequest(&cx0, &cy0, &cBits0, &iDisplay0, false);
     while (true)
     {
-        uint32_t cx = 0, cy = 0, cBits = 0, iDisplay = 0;
-        rc = VbglR3DisplayChangeWaitEvent(&cx, &cy, &cBits, &iDisplay);
-        /* Ignore the request if it is stale */
-        if ((cx != cx0) || (cy != cy0) || RT_FAILURE(rc))
+        uint32_t fEvents = 0, cx = 0, cy = 0, cBits = 0, iDisplay = 0;
+        rc = VbglR3WaitEvent(VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST,
+                             RT_INDEFINITE_WAIT, &fEvents);
+        if (RT_SUCCESS(rc) && (fEvents & VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST))
         {
-	        /* If we are not stopping, sleep for a bit to avoid using up too
-	            much CPU while retrying. */
-	        if (RT_FAILURE(rc))
-	            RTThreadYield();
-	        else
-	            system("VBoxRandR");
+            rc = VbglR3GetDisplayChangeRequest(&cx, &cy, &cBits, &iDisplay,
+                                               true);
+            /* Ignore the request if it is stale */
+            if ((cx != cx0) || (cy != cy0) || RT_FAILURE(rc))
+            {
+	            /* If we are not stopping, sleep for a bit to avoid using up
+	                too much CPU while retrying. */
+	            if (RT_FAILURE(rc))
+	                RTThreadYield();
+	            else
+	            {
+	                system("VBoxRandR");
+                    cx0 = cx;
+                    cy0 = cy;
+	            }
+            }
         }
-        /* We do not want to ignore any further requests. */
-        cx0 = 0;
-        cy0 = 0;
     }
     LogFlowFunc(("returning VINF_SUCCESS\n"));
     return VINF_SUCCESS;
