@@ -11,15 +11,20 @@
 #include "cr_glstate.h"
 
 /*Convert from GLint to GLfloat in [-1.f,1.f]*/
-#define CRP_I2F_NORM(i) ((2.f*((GLint)(i))+1.f) * (1.f/4294967294.f))
+#define CRP_I2F_NORM(i)  ((2.f*((GLint)(i))+1.f) * (1.f/4294967294.f))
 /*Convert from GLshort to GLfloat in [-1.f,1.f]*/
-#define CRP_S2F_NORM(s) ((2.f*((GLshort)(s))+1.f) * (1.f/65535.f))
-
+#define CRP_S2F_NORM(s)  ((2.f*((GLshort)(s))+1.f) * (1.f/65535.f))
+/*Convert from GLbyte to GLfloat in [-1.f,1.f]*/
+#define CRP_B2F_NORM(b)  ((2.f*((GLbyte)(b))+1.f) * (1.f/255.f))
+/*Convert from GLuint to GLfloat in [0.f,1.f]*/
+#define CRP_UI2F_NORM(i) ((GLfloat)(i) * (1.f/4294967295.f))
+/*Convert from GLushort to GLfloat in [0.f,1.f]*/
+#define CRP_US2F_NORM(s) ((GLfloat)(s) * (1.f/65535.f))
+/*Convert from GLubyte to GLfloat in [0.f,1.f]*/
+#define CRP_UB2F_NORM(b) ((GLfloat)(b) * (1.f/255.f))
 
 static void crPackVertexAttrib(const CRVertexArrays *array, unsigned int attr, GLint index)
 {
-    GLint *iPtr;
-    GLshort *sPtr;
     unsigned char *p = array->a[attr].p + index * array->a[attr].stride;
 
 #ifdef CR_ARB_vertex_buffer_object
@@ -28,10 +33,18 @@ static void crPackVertexAttrib(const CRVertexArrays *array, unsigned int attr, G
         p = (unsigned char *)(array->a[attr].buffer->data) + (unsigned long)p;
     }
 #endif
+
+    if (!p)
+    {
+        crWarning("crPackVertexAttrib: NULL ptr!");
+        return;
+    }
+
     switch (array->a[attr].type)
     {
         case GL_SHORT:
-            sPtr = (GLshort*) p;
+        {
+            GLshort *sPtr = (GLshort*) p;
             switch (array->a[attr].size)
             {
                 case 1:
@@ -60,36 +73,124 @@ static void crPackVertexAttrib(const CRVertexArrays *array, unsigned int attr, G
                     break;
             }
             break;
-        case GL_INT:
-            iPtr = (GLint*) p;
-            switch (array->a[attr].size)
+        }
+        case GL_UNSIGNED_SHORT:
+        {
+            GLushort *usPtr = (GLushort*) p;
+            if (array->a[attr].normalized)
             {
-                case 1:
-                    if (array->a[attr].normalized)
-                        crPackVertexAttrib1fARB(attr, CRP_I2F_NORM(iPtr[0]));
-                    else
-                        crPackVertexAttrib1fARB(attr, iPtr[0]);
-                    break;
-                case 2:
-                    if (array->a[attr].normalized)
-                        crPackVertexAttrib2fARB(attr, CRP_I2F_NORM(iPtr[0]), CRP_I2F_NORM(iPtr[1]));
-                    else
-                        crPackVertexAttrib2fARB(attr, iPtr[0], iPtr[1]);
-                    break;
-                case 3:
-                    if (array->a[attr].normalized)
-                        crPackVertexAttrib3fARB(attr, CRP_I2F_NORM(iPtr[0]), CRP_I2F_NORM(iPtr[1]), CRP_I2F_NORM(iPtr[2]));
-                    else
-                        crPackVertexAttrib3fARB(attr, iPtr[0], iPtr[1], iPtr[2]);
-                    break;
-                case 4: 
-                    if (array->a[attr].normalized)
-                        crPackVertexAttrib4NivARB(attr, iPtr);
-                    else
-                        crPackVertexAttrib4fARB(attr, iPtr[0], iPtr[1], iPtr[2], iPtr[3]);
-                    break;
+                switch (array->a[attr].size)
+                {
+                    case 1:
+                        crPackVertexAttrib1fARB(attr, CRP_US2F_NORM(usPtr[0])); 
+                        break;
+                    case 2:
+                        crPackVertexAttrib2fARB(attr, CRP_US2F_NORM(usPtr[0]), CRP_US2F_NORM(usPtr[1]));
+                        break;
+                    case 3:
+                        crPackVertexAttrib3fARB(attr, CRP_US2F_NORM(usPtr[0]), CRP_US2F_NORM(usPtr[1]), CRP_US2F_NORM(usPtr[2]));
+                        break;
+                    case 4:
+                        crPackVertexAttrib4NusvARB(attr, usPtr);
+                        break;
+                }
+            }
+            else 
+            {
+                GLushort usv[4];
+                switch (array->a[attr].size)
+                {
+                    case 4: 
+                        crPackVertexAttrib4usvARB(attr, usPtr);
+                        break;
+                    case 3: usv[2] = usPtr[2];
+                    case 2: usv[1] = usPtr[1];
+                    case 1: 
+                        usv[0] = usPtr[0];
+                        crPackVertexAttrib4usvARB(attr, usv);
+                        break;
+                }
             }
             break;
+        }
+        case GL_INT:
+        {
+            GLint *iPtr = (GLint*) p;
+            if (array->a[attr].normalized)
+            {
+                switch (array->a[attr].size)
+                {
+                    case 1:
+                        crPackVertexAttrib1fARB(attr, CRP_I2F_NORM(iPtr[0]));
+                        break;
+                    case 2:
+                        crPackVertexAttrib2fARB(attr, CRP_I2F_NORM(iPtr[0]), CRP_I2F_NORM(iPtr[1]));
+                        break;
+                    case 3:
+                        crPackVertexAttrib3fARB(attr, CRP_I2F_NORM(iPtr[0]), CRP_I2F_NORM(iPtr[1]), CRP_I2F_NORM(iPtr[2]));
+                        break;
+                    case 4:
+                        crPackVertexAttrib4NivARB(attr, iPtr);
+                        break;
+                }
+            }
+            else
+            {
+                GLint iv[4];
+                switch (array->a[attr].size)
+                {
+                    case 4: 
+                        crPackVertexAttrib4ivARB(attr, iPtr);
+                        break;
+                    case 3: iv[2] = iPtr[2];
+                    case 2: iv[1] = iPtr[1];
+                    case 1: 
+                        iv[0] = iPtr[0];
+                        crPackVertexAttrib4ivARB(attr, iv);
+                        break;
+                }
+            }
+            break;
+        }
+        case GL_UNSIGNED_INT:
+        {
+            GLuint *uiPtr = (GLuint*) p;
+            if (array->a[attr].normalized)
+            {
+                switch (array->a[attr].size)
+                {
+                    case 1:
+                        crPackVertexAttrib1fARB(attr, CRP_UI2F_NORM(uiPtr[0]));
+                        break;
+                    case 2:
+                        crPackVertexAttrib2fARB(attr, CRP_UI2F_NORM(uiPtr[0]), CRP_UI2F_NORM(uiPtr[1]));
+                        break;
+                    case 3:
+                        crPackVertexAttrib3fARB(attr, CRP_UI2F_NORM(uiPtr[0]), CRP_UI2F_NORM(uiPtr[1]), CRP_UI2F_NORM(uiPtr[2]));
+                        break;
+                    case 4:
+                        crPackVertexAttrib4NivARB(attr, uiPtr);
+                        break;
+                }
+            }
+            else
+            {
+                GLuint uiv[4];
+                switch (array->a[attr].size)
+                {
+                    case 4: 
+                        crPackVertexAttrib4uivARB(attr, uiPtr);
+                        break;
+                    case 3: uiv[2] = uiPtr[2];
+                    case 2: uiv[1] = uiPtr[1];
+                    case 1: 
+                        uiv[0] = uiPtr[0];
+                        crPackVertexAttrib4uivARB(attr, uiv);
+                        break;
+                }
+            }
+            break;
+        }
         case GL_FLOAT:
             switch (array->a[attr].size)
             {
@@ -108,6 +209,84 @@ static void crPackVertexAttrib(const CRVertexArrays *array, unsigned int attr, G
                 case 4: crPackVertexAttrib4dvARB(attr, (GLdouble *)p); break;
             }
             break;
+        case GL_BYTE:
+        {
+            GLbyte *bPtr = (GLbyte*) p;
+            if (array->a[attr].normalized)
+            {
+                switch (array->a[attr].size)
+                {
+                    case 1:
+                        crPackVertexAttrib1fARB(attr, CRP_B2F_NORM(bPtr[0]));
+                        break;
+                    case 2:
+                        crPackVertexAttrib2fARB(attr, CRP_B2F_NORM(bPtr[0]), CRP_B2F_NORM(bPtr[1]));
+                        break;
+                    case 3:
+                        crPackVertexAttrib3fARB(attr, CRP_B2F_NORM(bPtr[0]), CRP_B2F_NORM(bPtr[1]), CRP_B2F_NORM(bPtr[2]));
+                        break;
+                    case 4:
+                        crPackVertexAttrib4NbvARB(attr, bPtr);
+                        break;
+                }
+            }
+            else
+            {
+                GLbyte bv[4];
+                switch (array->a[attr].size)
+                {
+                    case 4: 
+                        crPackVertexAttrib4bvARB(attr, bPtr);
+                        break;
+                    case 3: bv[2] = bPtr[2];
+                    case 2: bv[1] = bPtr[1];
+                    case 1: 
+                        bv[0] = bPtr[0];
+                        crPackVertexAttrib4bvARB(attr, bv);
+                        break;
+                }
+            }
+            break;
+        }
+        case GL_UNSIGNED_BYTE:
+        {
+            GLubyte *ubPtr = (GLubyte*) p;
+            if (array->a[attr].normalized)
+            {
+                switch (array->a[attr].size)
+                {
+                    case 1:
+                        crPackVertexAttrib1fARB(attr, CRP_UB2F_NORM(ubPtr[0]));
+                        break;
+                    case 2:
+                        crPackVertexAttrib2fARB(attr, CRP_UB2F_NORM(ubPtr[0]), CRP_UB2F_NORM(ubPtr[1]));
+                        break;
+                    case 3:
+                        crPackVertexAttrib3fARB(attr, CRP_UB2F_NORM(ubPtr[0]), CRP_UB2F_NORM(ubPtr[1]), CRP_UB2F_NORM(ubPtr[2]));
+                        break;
+                    case 4:
+                        crPackVertexAttrib4NubvARB(attr, ubPtr);
+                        break;
+                }
+            }
+            else
+            {
+                GLubyte ubv[4];
+                switch (array->a[attr].size)
+                {
+                    case 4: 
+                        crPackVertexAttrib4ubvARB(attr, ubPtr);
+                        break;
+                    case 3: ubv[2] = ubPtr[2];
+                    case 2: ubv[1] = ubPtr[1];
+                    case 1: 
+                        ubv[0] = ubPtr[0];
+                        crPackVertexAttrib4ubvARB(attr, ubv);
+                        break;
+                }
+            }
+            break;
+        }
         default:
             crWarning("Bad datatype for vertex attribute [%d] array: 0x%x\n",
                        attr, array->a[attr].type);
