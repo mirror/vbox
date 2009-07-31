@@ -146,11 +146,11 @@ void vboxClientSetSignalHandlers(void)
  */
 void vboxClientUsage(const char *pcszFileName)
 {
-    RTPrintf("Usage: %s --clipboard|--autoresize|--seamless [-d|--nodaemon]\n", pcszFileName);
+    RTPrintf("Usage: %s --clipboard|--display|--seamless [-d|--nodaemon]\n", pcszFileName);
     RTPrintf("Start the VirtualBox X Window System guest services.\n\n");
     RTPrintf("Options:\n");
     RTPrintf("  --clipboard      start the shared clipboard service\n");
-    RTPrintf("  --autoresize     start the display auto-resize service\n");
+    RTPrintf("  --display     start the display management service\n");
     RTPrintf("  --seamless       start the seamless windows service\n");
     RTPrintf("  -d, --nodaemon   continue running as a system service\n");
     RTPrintf("\n");
@@ -189,10 +189,10 @@ int main(int argc, char *argv[])
             else
                 fSuccess = false;
         }
-        else if (!strcmp(argv[i], "--autoresize"))
+        else if (!strcmp(argv[i], "--display"))
         {
             if (g_pService == NULL)
-                g_pService = VBoxClient::GetAutoResizeService();
+                g_pService = VBoxClient::GetDisplayService();
             else
                 fSuccess = false;
         }
