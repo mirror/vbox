@@ -45,12 +45,13 @@ class PerfCollector:
     collection.
     """
 
-    def __init__(self, vb):
+    def __init__(self, mgr, vbox):
         """ Initializes the instance.
 
-        Pass an instance of IVirtualBox as parameter.
         """
-        self.collector = vb.performanceCollector
+        self.mgr = mgr
+        self.isMscom = (mgr.platform.getType() == 'MSCOM')
+        self.collector = vbox.performanceCollector
 
     def setup(self, names, objects, period, nsamples):
         """ Discards all previously collected values for the specified
@@ -80,8 +81,9 @@ class PerfCollector:
         'values': collected data
         'values_as_string': pre-processed values ready for 'print' statement
         """
-        # Get around the problem with input arrays returned in output parameters (see #3953).
-        if sys.platform == 'win32':
+        # Get around the problem with input arrays returned in output 
+        # parameters (see #3953) for MSCOM.
+        if self.isMscom:
             (values, names, objects, names_out, objects_out, units, scales, sequence_numbers,
                 indices, lengths) = self.collector.queryMetricsData(names, objects)
         else:
@@ -313,9 +315,6 @@ class PlatformMSCOM:
         pythoncom.CoUninitialize()
         pass
 
-    def getPerfCollector(self, vbox):
-        return PerfCollector(vbox)
-
 
 class PlatformXPCOM:
     def __init__(self, params):
@@ -371,9 +370,6 @@ class PlatformXPCOM:
     def deinit(self):
         import xpcom
         xpcom._xpcom.DeinitCOM()
-
-    def getPerfCollector(self, vbox):
-        return PerfCollector(vbox)
 
 class PlatformWEBSERVICE:
     def __init__(self, params):
@@ -455,9 +451,6 @@ class PlatformWEBSERVICE:
         except:
            pass
 
-    def getPerfCollector(self, vbox):
-        return PerfCollector(vbox)    
-
 class SessionManager:
     def __init__(self, mgr):
         self.mgr = mgr
@@ -533,4 +526,4 @@ class VirtualBoxManager:
         return self.platform.waitForEvents(timeout)
 
     def getPerfCollector(self, vbox):
-        return PerfCollector(vbox)       
+        return PerfCollector(self, vbox)       
