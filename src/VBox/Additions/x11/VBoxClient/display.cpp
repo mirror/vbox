@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * X11 guest client - display auto-resize.
+ * X11 guest client - display management.
  */
 
 /*
@@ -37,7 +37,7 @@
 
 #include "VBoxClient.h"
 
-static int initAutoResize()
+static int initDisplay()
 {
     int rc = VINF_SUCCESS;
     int rcSystem, rcErrno;
@@ -61,7 +61,7 @@ static int initAutoResize()
     return rc;
 }
 
-void cleanupAutoResize(void)
+void cleanupDisplay(void)
 {
     LogFlowFunc(("\n"));
     VbglR3CtlFilterMask(0,   VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST
@@ -86,7 +86,7 @@ static int x11ConnectionMonitor(RTTHREAD, void *)
  * loop is identical we ignore it, because it is probably
  * stale.
  */
-int runAutoResize()
+int runDisplay()
 {
     LogFlowFunc(("\n"));
     uint32_t cx0 = 0, cy0 = 0, cBits0 = 0, iDisplay0 = 0;
@@ -124,27 +124,27 @@ int runAutoResize()
     return VINF_SUCCESS;
 }
 
-class AutoResizeService : public VBoxClient::Service
+class DisplayService : public VBoxClient::Service
 {
 public:
     virtual const char *getPidFilePath()
     {
-        return ".vboxclient-autoresize.pid";
+        return ".vboxclient-display.pid";
     }
     virtual int run()
     {
-        int rc = initAutoResize();
+        int rc = initDisplay();
         if (RT_SUCCESS(rc))
-            rc = runAutoResize();
+            rc = runDisplay();
         return rc;
     }
     virtual void cleanup()
     {
-        cleanupAutoResize();
+        cleanupDisplay();
     }
 };
 
-VBoxClient::Service *VBoxClient::GetAutoResizeService()
+VBoxClient::Service *VBoxClient::GetDisplayService()
 {
-    return new AutoResizeService;
+    return new DisplayService;
 }

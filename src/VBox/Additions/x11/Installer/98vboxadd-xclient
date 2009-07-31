@@ -18,5 +18,5 @@
 #
 
 /usr/bin/VBoxClient --clipboard
-/usr/bin/VBoxClient --autoresize
+/usr/bin/VBoxClient --display
 /usr/bin/VBoxClient --seamless
