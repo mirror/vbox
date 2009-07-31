@@ -30,6 +30,47 @@
 
 
 /**
+ * Wait for the host to signal one or several of a set of events and return the
+ * events signalled.  The events will only be delivered by the host if they
+ * have been enabled previously using @a VbglR3CtlFilterMask.  If one or
+ * several of the events have already been signalled but not yet waited for,
+ * this function will return immediately and return those events.
+ *
+ * @returns iprt status code
+ * @param   fMask       the events we want to wait for, or-ed together
+ * @param   u32Timeout  how long to wait before giving up and returning.  Use
+ *                      RT_INDEFINITE_WAIT to wait until we are interrupted or
+ *                      one of the events is signalled.
+ * @param   pfEvents    where to store the events signalled
+ */
+VBGLR3DECL(int) VbglR3WaitEvent(uint32_t fMask, uint32_t u32Timeout,
+                                uint32_t *pfEvents)
+{
+    LogFlowFunc(("fMask=0x%x, u32Timeout=%u, pfEvents=%p\n", fMask, u32Timeout,
+                 pfEvents));
+    AssertReturn((fMask & ~VMMDEV_EVENT_VALID_EVENT_MASK) == 0,
+                 VERR_INVALID_PARAMETER);
+    /* Does pfEvents == NULL make sense? */
+    AssertReturn(VALID_PTR(pfEvents) || pfEvents == NULL,
+                 VERR_INVALID_POINTER);
+
+    VBoxGuestWaitEventInfo waitEvent;
+    int rc;
+
+    waitEvent.u32TimeoutIn = u32Timeout;
+    waitEvent.u32EventMaskIn = fMask;
+    waitEvent.u32Result = VBOXGUEST_WAITEVENT_ERROR;
+    waitEvent.u32EventFlagsOut = 0;
+    rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_WAITEVENT, &waitEvent, sizeof(waitEvent));
+    if (RT_SUCCESS(rc) && (pfEvents) != NULL)
+        *pfEvents = waitEvent.u32EventFlagsOut;
+    LogFlowFunc(("rc=%Rrc, waitEvent.u32EventFlagsOut=0x%x\n", rc,
+                 waitEvent.u32EventFlagsOut));
+    return rc;
+}
+
+
+/**
  * Cause any pending WaitEvent calls (VBOXGUEST_IOCTL_WAITEVENT) to return
  * with a VERR_INTERRUPTED status.
  *

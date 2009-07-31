@@ -119,16 +119,25 @@ VBGLR3DECL(int) VbglR3SetPointerShapeReq(VMMDevReqMousePointer *pReq)
 
 
 /**
- * Query the last display change request.
+ * Query the last display change request sent from the host to the guest.
  *
  * @returns iprt status value
- * @param   pcx         Where to store the horizontal pixel resolution (0 = do not change).
- * @param   pcy         Where to store the vertical pixel resolution (0 = do not change).
- * @param   pcBits      Where to store the bits per pixel (0 = do not change).
- * @param   iDisplay    Where to store the display number the request was for - 0 for the
- *                      primary display, 1 for the first secondary, etc.
+ * @param   pcx         Where to store the horizontal pixel resolution
+ *                      requested (a value of zero means do not change).
+ * @param   pcy         Where to store the vertical pixel resolution
+ *                      requested (a value of zero means do not change).
+ * @param   pcBits      Where to store the bits per pixel requested (a value
+ *                      of zero means do not change).
+ * @param   iDisplay    Where to store the display number the request was for
+ *                      - 0 for the primary display, 1 for the first
+ *                      secondary display, etc.
+ * @param   fAck        whether or not to acknowlege the newest request sent by
+ *                      the host.  If this is set, the function will return the
+ *                      most recent host request, otherwise it will return the
+ *                      last request to be acknowleged.
+ *                      
  */
-VBGLR3DECL(int) VbglR3GetLastDisplayChangeRequest(uint32_t *pcx, uint32_t *pcy, uint32_t *pcBits, uint32_t *piDisplay)
+VBGLR3DECL(int) VbglR3GetDisplayChangeRequest(uint32_t *pcx, uint32_t *pcy, uint32_t *pcBits, uint32_t *piDisplay, bool fAck)
 {
     VMMDevDisplayChangeRequest2 Req = { { 0 } };
 
@@ -138,7 +147,9 @@ VBGLR3DECL(int) VbglR3GetLastDisplayChangeRequest(uint32_t *pcx, uint32_t *pcy, 
     AssertPtrReturn(pcBits, VERR_INVALID_PARAMETER);
     AssertPtrReturn(piDisplay, VERR_INVALID_PARAMETER);
 #endif
-vmmdevInitRequest(&Req.header, VMMDevReq_GetDisplayChangeRequest2);
+    vmmdevInitRequest(&Req.header, VMMDevReq_GetDisplayChangeRequest2);
+    if (fAck)
+        Req.eventAck = VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST;
     int rc = vbglR3GRPerform(&Req.header);
     if (RT_SUCCESS(rc))
         rc = Req.header.rc;
@@ -152,59 +163,6 @@ vmmdevInitRequest(&Req.header, VMMDevReq_GetDisplayChangeRequest2);
     return rc;
 }
 
-/**
- * Wait for a display change request event from the host.  These events must have been
- * activated previously using VbglR3CtlFilterMask.
- *
- * @returns IPRT status value
- * @param   pcx       On success, where to return the requested display width.
- *                    0 means no change.
- * @param   pcy       On success, where to return the requested display height.
- *                    0 means no change.
- * @param   pcBits    On success, where to return the requested bits per pixel.
- *                    0 means no change.
- * @param   piDisplay On success, where to return the index of the display to be changed.
- */
-VBGLR3DECL(int) VbglR3DisplayChangeWaitEvent(uint32_t *pcx, uint32_t *pcy, uint32_t *pcBits, uint32_t *piDisplay)
-{
-    VBoxGuestWaitEventInfo waitEvent;
-    int rc;
-
-#ifndef VBOX_VBGLR3_XFREE86
-    AssertPtrReturn(pcx, VERR_INVALID_PARAMETER);
-    AssertPtrReturn(pcy, VERR_INVALID_PARAMETER);
-    AssertPtrReturn(pcBits, VERR_INVALID_PARAMETER);
-    AssertPtrReturn(piDisplay, VERR_INVALID_PARAMETER);
-#endif
-    waitEvent.u32TimeoutIn = RT_INDEFINITE_WAIT;
-    waitEvent.u32EventMaskIn = VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST;
-    waitEvent.u32Result = VBOXGUEST_WAITEVENT_ERROR;
-    waitEvent.u32EventFlagsOut = 0;
-    rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_WAITEVENT, &waitEvent, sizeof(waitEvent));
-    if (RT_SUCCESS(rc))
-    {
-        /* did we get the right event? */
-        if (waitEvent.u32EventFlagsOut & VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST)
-        {
-            VMMDevDisplayChangeRequest2 Req = { { 0 } };
-            vmmdevInitRequest(&Req.header, VMMDevReq_GetDisplayChangeRequest2);
-            Req.eventAck = VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST;
-            int rc = vbglR3GRPerform(&Req.header);
-            if (RT_SUCCESS(rc))
-                rc = Req.header.rc;
-            if (RT_SUCCESS(rc))
-            {
-                *pcx = Req.xres;
-                *pcy = Req.yres;
-                *pcBits = Req.bpp;
-                *piDisplay = Req.display;
-            }
-        }
-        else
-            rc = VERR_TRY_AGAIN;
-    }
-    return rc;
-}
 
 /**
  * Query the host as to whether it likes a specific video mode.
