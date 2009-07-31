@@ -91,6 +91,8 @@ RT_C_DECLS_BEGIN
 #define VMMDEV_EVENT_VRDP                                   RT_BIT(8)
 /** New mouse position data available */
 #define VMMDEV_EVENT_MOUSE_POSITION_CHANGED                 RT_BIT(9)
+/** The mask of valid events, for sanity checking */
+#define VMMDEV_EVENT_VALID_EVENT_MASK                       (RT_BIT(10) - 1)
 /** @} */
 
 
