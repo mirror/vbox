@@ -201,7 +201,7 @@ RuntimeR3_SOURCES       = \
 	common/alloc/alloc.cpp \
 	common/alloc/heapsimple.cpp \
 	common/checksum/adler32.cpp \
-	common/checksum/crc32.cpp \
+	common/checksum/crc32-zlib.cpp \
 	common/checksum/crc64.cpp \
 	common/checksum/md5.cpp \
 	common/checksum/ipv4.cpp \
