@@ -205,6 +205,15 @@ g_verbose = True
 def split_no_quotes(s):
     return shlex.split(s)
 
+def progressBar(ctx,p,wait=1000):
+    try:
+        while not p.completed:
+            print "%d %%\r" %(p.percent),
+            sys.stdout.flush()
+            p.waitForCompletion(wait)
+    except KeyboardInterrupt:
+        print "Interrupted."
+
 def createVm(ctx,name,kind,base):
     mgr = ctx['mgr']
     vb = ctx['vb']
@@ -222,11 +231,12 @@ def removeVm(ctx,mach):
     print "removing machine ",mach.name,"with UUID",id
     session = ctx['global'].openMachineSession(id)
     try:
-       mach = session.Machine
+       mach = session.machine
        for d in ctx['global'].getArray(mach, 'hardDiskAttachments'):
           mach.detachHardDisk(d.controller, d.port, d.device)
     except:
        traceback.print_exc()
+    mach.saveSettings()
     ctx['global'].closeMachineSession(session)
     mach = vb.unregisterMachine(id)
     if mach:
@@ -241,7 +251,7 @@ def startVm(ctx,mach,type):
     session = mgr.getSessionObject(vb)
     uuid = mach.id
     progress = vb.openRemoteSession(session, uuid, type, "")
-    progress.waitForCompletion(-1)
+    progressBar(ctx, progress, 100)
     completed = progress.completed
     rc = int(progress.resultCode)
     print "Completed:", completed, "rc:",hex(rc&0xffffffff)
@@ -347,7 +357,7 @@ def cmdExistingVm(ctx,mach,cmd,args):
          'stats':           lambda: guestStats(ctx, mach),
          'guest':           lambda: guestExec(ctx, mach, console, args),
          'monitorGuest':    lambda: monitorGuest(ctx, mach, console, args),
-         'save':            lambda: console.saveState().waitForCompletion(-1)
+         'save':            lambda: progressBar(ctx,console.saveState())
          }
     try:
         ops[cmd]()
@@ -382,19 +392,27 @@ def argsToMach(ctx,args):
         print "Machine '%s' is unknown, use list command to find available machines" %(id)
     return m
 
+def helpSingleCmd(cmd,h,sp):
+    if sp != 0:
+        spec = " [ext from "+sp+"]"
+    else:
+        spec = ""
+    print "    %s: %s%s" %(cmd,h,spec)
+
 def helpCmd(ctx, args):
     if len(args) == 1:
         print "Help page:"
         names = commands.keys()
         names.sort()
         for i in names:
-            print "   ",i,":", commands[i][0]
+            helpSingleCmd(i, commands[i][0], commands[i][2])
     else:
-        c = commands.get(args[1], None)
+        cmd = args[1]
+        c = commands.get(cmd)
         if c == None:
-            print "Command '%s' not known" %(args[1])
+            print "Command '%s' not known" %(cmd)
         else:
-            print "   ",args[1],":", c[0]
+            helpSingleCmd(cmd, c[0], c[2])
     return 0
 
 def listCmd(ctx, args):
@@ -904,13 +922,7 @@ def exportVMCmd(ctx, args):
     desc = mach.export(app)
     desc.addDescription(ctx['global'].constants.VirtualSystemDescriptionType_License, license, "")
     p = app.write(format, path)
-    try:
-        while not p.completed:
-            print "%d %%\r" %(p.percent),
-            sys.stdout.flush()
-            p.waitForCompletion(1000)
-    except KeyboardInterrupt:
-        print "Interrupted."
+    progressBar(ctx, p)
     print "Exported to %s in format %s" %(path, format)
     return 0
 
@@ -981,22 +993,36 @@ def runCommand(ctx, cmd):
 #    'test': ['Test help', runTestCmd]
 # }
 # and issue reloadExt shell command.
-# This file also will be read automatically on startup.
+# This file also will be read automatically on startup or 'reloadExt'.
 #
-def checkUserExtensions(ctx, cmds, folder):
-    name =  os.path.join(str(folder), "shellext.py")
-    if not os.path.isfile(name):
+# Also one can put shell extensions into ~/.VirtualBox/shexts and 
+# they will also be picked up, so this way one can exchange
+# shell extensions easily.
+def addExtsFromFile(ctx, cmds, file):
+    if not os.path.isfile(file):
         return
     d = {}
     try:
-        execfile(name, d, d)
+        execfile(file, d, d)
         for (k,v) in d['commands'].items():
             if g_verbose:
                 print "customize: adding \"%s\" - %s" %(k, v[0])
-            cmds[k] = [v[0], v[1], 1]
+            cmds[k] = [v[0], v[1], file]
     except:
-        print "Error loading user extensions:"
+        print "Error loading user extensions from %s" %(file)
         traceback.print_exc()
+
+
+def checkUserExtensions(ctx, cmds, folder):
+    name =  os.path.join(folder, "shellext.py")
+    addExtsFromFile(ctx, cmds, name)
+    # also check 'exts' directory for all files
+    shextdir = os.path.join(folder, "shexts")
+    if not os.path.isdir(shextdir):
+        return
+    exts = os.listdir(shextdir)
+    for e in exts:
+        addExtsFromFile(ctx, cmds, os.path.join(shextdir,e))
 
 def interpret(ctx):    
     if ctx['remote']:
@@ -1081,6 +1107,7 @@ def main(argv):
            'type':g_virtualBoxManager.type,
            'run': lambda cmd,args: runCommandCb(ctx, cmd, args),
            'machById': lambda id: machById(ctx,id), 
+           'progressBar': lambda p: progressBar(ctx,p),
            '_machlist':None
            }
     interpret(ctx)
