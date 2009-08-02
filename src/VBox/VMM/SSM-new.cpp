@@ -3529,6 +3529,7 @@ static int ssmR3LoadExecV1(PVM pVM, PSSMHANDLE pSSM)
                             else if (i64Diff > 0)
                             {
                                 LogRel(("SSM: Unit '%s' read %lld bytes too much!\n", pszName, i64Diff));
+                                VMSetError(pVM, rc, RT_SRC_POS, N_("Unit '%s' read %lld bytes too much"), pszName, i64Diff);
                                 rc = VERR_SSM_INTEGRITY;
                                 break;
                             }
@@ -3539,6 +3540,8 @@ static int ssmR3LoadExecV1(PVM pVM, PSSMHANDLE pSSM)
                         {
                             LogRel(("SSM: Load exec failed for '%s' instance #%u ! (version %u)\n",
                                     pszName, UnitHdr.u32Instance, UnitHdr.u32Version));
+                            VMSetError(pVM, rc, RT_SRC_POS, N_("Load exec failed for '%s' instance #%u (version %u)"),
+                                       pszName, UnitHdr.u32Instance, UnitHdr.u32Version);
                             rc = VERR_SSM_INTEGRITY;
                             break;
                         }
@@ -3601,7 +3604,8 @@ static int ssmR3LoadExecV2(PVM pVM, PSSMHANDLE pSSM)
         {
             LogRel(("SSM: Unit at %#llx (%lld): Invalid unit magic: %.*Rhxs!\n",
                     offUnit, offUnit, sizeof(UnitHdr.szMagic) - 1, &UnitHdr.szMagic[0]));
-            return VERR_SSM_INTEGRITY_UNIT_MAGIC;
+            return VMSetError(pVM, VERR_SSM_INTEGRITY_UNIT_MAGIC, RT_SRC_POS,
+                              N_("Unit at %#llx (%lld): Invalid unit magic"), offUnit, offUnit);
         }
         if (UnitHdr.cbName)
         {
@@ -3688,9 +3692,9 @@ static int ssmR3LoadExecV2(PVM pVM, PSSMHANDLE pSSM)
                 pSSM->offUnit = UINT64_MAX;
             else
             {
-                LogRel(("SSM: LoadExec failed for '%s' instance #%u (version %u): %Rrc\n",
+                LogRel(("SSM: LoadExec failed for '%s' instance #%u (version %u, phase %#x): %Rrc\n",
                         UnitHdr.szName, UnitHdr.u32Instance, UnitHdr.u32Version, UnitHdr.u32Phase, rc));
-                return rc;
+                return VMSetError(pVM, rc, RT_SRC_POS, N_("Failed to load unit '%s'"), UnitHdr.szName);
             }
         }
         else
@@ -3700,7 +3704,8 @@ static int ssmR3LoadExecV2(PVM pVM, PSSMHANDLE pSSM)
              */
             LogRel(("SSM: Found no handler for unit '%s' instance #%u!\n", UnitHdr.szName, UnitHdr.u32Instance));
             //if (pSSM->enmAfter != SSMAFTER_DEBUG_IT)
-                return VERR_SSM_INTEGRITY_UNIT_NOT_FOUND;
+                return VMSetError(pVM, VERR_SSM_INTEGRITY_UNIT_NOT_FOUND, RT_SRC_POS,
+                                  N_("Found no handler for unit '%s' instance #%u"), UnitHdr.szName, UnitHdr.u32Instance);
             /** @todo Read data unit to /dev/null. */
         }
     }
