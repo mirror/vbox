@@ -2831,7 +2831,8 @@ VMMR3DECL(int) SSMR3Save(PVM pVM, const char *pszFilename, SSMAFTER enmAfter, PF
                         rc = ssmR3StrmSetEnd(&Handle.Strm);
                 }
             }
-            LogRel(("SSM: Failed to finalize state file! rc=%Rrc\n", rc));
+            if (RT_FAILURE(rc))
+                LogRel(("SSM: Failed to finalize state file! rc=%Rrc\n", rc));
         }
 
         /*
@@ -2993,23 +2994,23 @@ static int ssmR3ValidateHeaderInfo(PSSMHANDLE pSSM, bool fHaveHostBits, bool fHa
             &&  pSSM->u.Read.cHostBits != 64)
         {
             LogRel(("SSM: Incorrect cHostBits value: %u\n", pSSM->u.Read.cHostBits));
-            return VERR_SSM_INTEGRITY_SIZES;
+            return VERR_SSM_INTEGRITY_HEADER;
         }
     }
     else
-        AssertLogRelReturn(pSSM->u.Read.cHostBits == 0, VERR_SSM_INTEGRITY_SIZES);
+        AssertLogRelReturn(pSSM->u.Read.cHostBits == 0, VERR_SSM_INTEGRITY_HEADER);
 
     if (    pSSM->u.Read.cbGCPhys != sizeof(uint32_t)
         &&  pSSM->u.Read.cbGCPhys != sizeof(uint64_t))
     {
         LogRel(("SSM: Incorrect cbGCPhys value: %d\n", pSSM->u.Read.cbGCPhys));
-        return VERR_SSM_INTEGRITY_SIZES;
+        return VERR_SSM_INTEGRITY_HEADER;
     }
     if (    pSSM->u.Read.cbGCPtr != sizeof(uint32_t)
         &&  pSSM->u.Read.cbGCPtr != sizeof(uint64_t))
     {
         LogRel(("SSM: Incorrect cbGCPtr value: %d\n", pSSM->u.Read.cbGCPtr));
-        return VERR_SSM_INTEGRITY_SIZES;
+        return VERR_SSM_INTEGRITY_HEADER;
     }
 
     return VINF_SUCCESS;
@@ -3147,24 +3148,24 @@ static int ssmR3HeaderAndValidate(PSSMHANDLE pSSM, bool fChecksumIt, bool fCheck
             if (memcmp(Footer.szMagic, SSMFILEFTR_MAGIC, sizeof(Footer.szMagic)))
             {
                 LogRel(("SSM: Bad footer magic: %.*Rhxs\n", sizeof(Footer.szMagic), &Footer.szMagic[0]));
-                return VERR_SSM_INTEGRITY;
+                return VERR_SSM_INTEGRITY_FOOTER;
             }
             SSM_CHECK_CRC32_RET(&Footer, sizeof(Footer), ("Footer CRC mismatch: %08x, correct is %08x\n", u32CRC, u32ActualCRC));
             if (Footer.offStream != offFooter)
             {
                 LogRel(("SSM: SSMFILEFTR::offStream is wrong: %llx, expected %llx\n", Footer.offStream, offFooter));
-                return VERR_SSM_INTEGRITY;
+                return VERR_SSM_INTEGRITY_FOOTER;
             }
             if (Footer.u32Reserved)
             {
                 LogRel(("SSM: Reserved footer field isn't zero: %08x\n", Footer.u32Reserved));
-                return VERR_SSM_INTEGRITY;
+                return VERR_SSM_INTEGRITY_FOOTER;
             }
             if (    !fChecksummed
                 &&  Footer.u32StreamCRC)
             {
                 LogRel(("SSM: u32StreamCRC field isn't zero, but header says stream checksumming is disabled.\n"));
-                return VERR_SSM_INTEGRITY;
+                return VERR_SSM_INTEGRITY_FOOTER;
             }
 
             pSSM->u.Read.cbLoadFile = offFooter + sizeof(Footer);
@@ -3463,7 +3464,7 @@ static int ssmR3LoadExecV1(PVM pVM, PSSMHANDLE pSSM)
                     if (pszName[UnitHdr.cchName - 1])
                     {
                         LogRel(("SSM: Unit name '%.*s' was not properly terminated.\n", UnitHdr.cchName, pszName));
-                        rc = VERR_SSM_INTEGRITY;
+                        rc = VERR_SSM_INTEGRITY_UNIT;
                         break;
                     }
                     Log(("SSM: Data unit: offset %#9llx size %9lld '%s'\n", offUnit, UnitHdr.cbUnit, pszName));
@@ -3529,8 +3530,8 @@ static int ssmR3LoadExecV1(PVM pVM, PSSMHANDLE pSSM)
                             else if (i64Diff > 0)
                             {
                                 LogRel(("SSM: Unit '%s' read %lld bytes too much!\n", pszName, i64Diff));
-                                VMSetError(pVM, rc, RT_SRC_POS, N_("Unit '%s' read %lld bytes too much"), pszName, i64Diff);
-                                rc = VERR_SSM_INTEGRITY;
+                                rc = VMSetError(pVM, VERR_SSM_LOADED_TOO_MUCH, RT_SRC_POS,
+                                                N_("Unit '%s' read %lld bytes too much"), pszName, i64Diff);
                                 break;
                             }
 
@@ -3542,7 +3543,6 @@ static int ssmR3LoadExecV1(PVM pVM, PSSMHANDLE pSSM)
                                     pszName, UnitHdr.u32Instance, UnitHdr.u32Version));
                             VMSetError(pVM, rc, RT_SRC_POS, N_("Load exec failed for '%s' instance #%u (version %u)"),
                                        pszName, UnitHdr.u32Instance, UnitHdr.u32Version);
-                            rc = VERR_SSM_INTEGRITY;
                             break;
                         }
                     }
@@ -3609,32 +3609,28 @@ static int ssmR3LoadExecV2(PVM pVM, PSSMHANDLE pSSM)
         }
         if (UnitHdr.cbName)
         {
-            if (RT_UNLIKELY(UnitHdr.cbName > sizeof(UnitHdr.szName)))
-            {
-                LogRel(("SSM: Unit at %#llx (%lld): UnitHdr.cbName=%u > %u\n",
-                        offUnit, offUnit, UnitHdr.cbName, sizeof(UnitHdr.szName)));
-                return VERR_SSM_INTEGRITY;
-            }
+            AssertLogRelMsgReturn(UnitHdr.cbName <= sizeof(UnitHdr.szName),
+                                  ("Unit at %#llx (%lld): UnitHdr.cbName=%u > %u\n",
+                                   offUnit, offUnit, UnitHdr.cbName, sizeof(UnitHdr.szName)),
+                                  VERR_SSM_INTEGRITY_UNIT);
             rc = ssmR3StrmRead(&pSSM->Strm, &UnitHdr.szName[0], UnitHdr.cbName);
             if (RT_FAILURE(rc))
                 return rc;
-            if (RT_UNLIKELY(UnitHdr.szName[UnitHdr.cbName - 1]))
-            {
-                LogRel(("SSM: Unit at %#llx (%lld): Name %.*Rhxs was not properly terminated.\n",
-                        offUnit, offUnit, UnitHdr.cbName, UnitHdr.szName));
-                return VERR_SSM_INTEGRITY;
-            }
+            AssertLogRelMsgReturn(!UnitHdr.szName[UnitHdr.cbName - 1],
+                                  ("Unit at %#llx (%lld): Name %.*Rhxs was not properly terminated.\n",
+                                   offUnit, offUnit, UnitHdr.cbName, UnitHdr.szName),
+                                  VERR_SSM_INTEGRITY_UNIT);
         }
         SSM_CHECK_CRC32_RET(&UnitHdr, RT_OFFSETOF(SSMFILEUNITHDR, szName[UnitHdr.cbName]),
                             ("Unit at %#llx (%lld): CRC mismatch: %08x, correct is %08x\n", offUnit, offUnit, u32CRC, u32ActualCRC));
-        if (RT_UNLIKELY(UnitHdr.offStream != offUnit))
-        {
-            LogRel(("SSM: Unit at %#llx (%lld): offStream=%#llx, expected %#llx\n", offUnit, offUnit, UnitHdr.offStream, offUnit));
-            return VERR_SSM_INTEGRITY;
-        }
+        AssertLogRelMsgReturn(UnitHdr.offStream == offUnit,
+                              ("Unit at %#llx (%lld): offStream=%#llx, expected %#llx\n", offUnit, offUnit, UnitHdr.offStream, offUnit),
+                              VERR_SSM_INTEGRITY_UNIT);
         AssertLogRelMsgReturn(UnitHdr.u32CurStreamCRC == u32CurStreamCRC || !pSSM->Strm.fChecksummed,
-                              ("Unit at %#llx (%lld): Stream CRC mismatch: %08x, correct is %08x\n", offUnit, offUnit, UnitHdr.u32CurStreamCRC, u32CurStreamCRC), VERR_SSM_INTEGRITY);
-        AssertLogRelMsgReturn(!UnitHdr.fFlags, ("Unit at %#llx (%lld): fFlags=%08x\n", offUnit, offUnit, UnitHdr.fFlags), VERR_SSM_INTEGRITY);
+                              ("Unit at %#llx (%lld): Stream CRC mismatch: %08x, correct is %08x\n", offUnit, offUnit, UnitHdr.u32CurStreamCRC, u32CurStreamCRC),
+                              VERR_SSM_INTEGRITY_UNIT);
+        AssertLogRelMsgReturn(!UnitHdr.fFlags, ("Unit at %#llx (%lld): fFlags=%08x\n", offUnit, offUnit, UnitHdr.fFlags),
+                              VERR_SSM_INTEGRITY_UNIT);
         if (!memcmp(&UnitHdr.szMagic[0], SSMFILEUNITHDR_END,   sizeof(UnitHdr.szMagic)))
         {
             AssertLogRelMsgReturn(   UnitHdr.cbName       == 0
@@ -3642,7 +3638,7 @@ static int ssmR3LoadExecV2(PVM pVM, PSSMHANDLE pSSM)
                                   && UnitHdr.u32Version   == 0
                                   && UnitHdr.u32Phase     == SSM_PHASE_FINAL,
                                   ("Unit at %#llx (%lld): Malformed END unit\n", offUnit, offUnit),
-                                  VERR_SSM_INTEGRITY);
+                                  VERR_SSM_INTEGRITY_UNIT);
 
             /*
              * Complete the progress bar (pending 99% afterwards) and RETURN.
@@ -3703,10 +3699,11 @@ static int ssmR3LoadExecV2(PVM pVM, PSSMHANDLE pSSM)
              * SSM unit wasn't found - ignore this when loading for the debugger.
              */
             LogRel(("SSM: Found no handler for unit '%s' instance #%u!\n", UnitHdr.szName, UnitHdr.u32Instance));
-            //if (pSSM->enmAfter != SSMAFTER_DEBUG_IT)
+            if (pSSM->enmAfter != SSMAFTER_DEBUG_IT)
                 return VMSetError(pVM, VERR_SSM_INTEGRITY_UNIT_NOT_FOUND, RT_SRC_POS,
                                   N_("Found no handler for unit '%s' instance #%u"), UnitHdr.szName, UnitHdr.u32Instance);
-            /** @todo Read data unit to /dev/null. */
+            SSMR3SkipToEndOfUnit(pSSM);
+            ssmR3DataReadFinishV2(pSSM);
         }
     }
     /* won't get here */
@@ -4039,7 +4036,7 @@ static int ssmR3FileSeekV1(PSSMHANDLE pSSM, const char *pszUnit, uint32_t iInsta
                 AssertRCReturn(rc, rc);
                 AssertLogRelMsgReturn(!szName[UnitHdr.cchName - 1],
                                       (" Unit name '%.*s' was not properly terminated.\n", cbUnitNm, szName),
-                                      VERR_SSM_INTEGRITY);
+                                      VERR_SSM_INTEGRITY_UNIT);
 
                 /*
                  * Does the name match?
@@ -4087,15 +4084,15 @@ static int ssmR3FileSeekSubV2(PSSMHANDLE pSSM, PSSMFILEDIR pDir, size_t cbDir, u
      */
     int rc = ssmR3StrmPeekAt(&pSSM->Strm, offDir, pDir, cbDir, NULL);
     AssertLogRelRCReturn(rc, rc);
-    AssertLogRelReturn(!memcmp(pDir->szMagic, SSMFILEDIR_MAGIC, sizeof(pDir->szMagic)), VERR_SSM_INTEGRITY);
+    AssertLogRelReturn(!memcmp(pDir->szMagic, SSMFILEDIR_MAGIC, sizeof(pDir->szMagic)), VERR_SSM_INTEGRITY_DIR_MAGIC);
     SSM_CHECK_CRC32_RET(pDir, cbDir, ("Bad directory CRC: %08x, actual %08x\n", u32CRC, u32ActualCRC));
     AssertLogRelMsgReturn(pDir->cEntries == cDirEntries,
                           ("Bad directory entry count: %#x, expected %#x (from the footer)\n", pDir->cEntries, cDirEntries),
-                          VERR_SSM_INTEGRITY);
+                           VERR_SSM_INTEGRITY_DIR);
     for (uint32_t i = 0; i < cDirEntries; i++)
         AssertLogRelMsgReturn(pDir->aEntries[i].off < offDir,
                               ("i=%u off=%lld offDir=%lld\n", i, pDir->aEntries[i].off, offDir),
-                              VERR_SSM_INTEGRITY);
+                              VERR_SSM_INTEGRITY_DIR);
 
     /*
      * Search the directory.
@@ -4122,20 +4119,20 @@ static int ssmR3FileSeekSubV2(PSSMHANDLE pSSM, PSSMFILEDIR pDir, size_t cbDir, u
 
             AssertLogRelMsgReturn(!memcmp(UnitHdr.szMagic, SSMFILEUNITHDR_MAGIC, sizeof(UnitHdr.szMagic)),
                                   ("Bad unit header or dictionary offset: i=%u off=%lld\n", i, pDir->aEntries[i].off),
-                                  VERR_SSM_INTEGRITY);
+                                  VERR_SSM_INTEGRITY_UNIT);
             AssertLogRelMsgReturn(UnitHdr.offStream == pDir->aEntries[i].off,
                                   ("Bad unit header: i=%d off=%lld offStream=%lld\n", i, pDir->aEntries[i].off, UnitHdr.offStream),
-                                  VERR_SSM_INTEGRITY);
+                                  VERR_SSM_INTEGRITY_UNIT);
             AssertLogRelMsgReturn(UnitHdr.u32Instance == pDir->aEntries[i].u32Instance,
                                   ("Bad unit header: i=%d off=%lld u32Instance=%u Dir.u32Instance=%u\n",
                                    i, pDir->aEntries[i].off, UnitHdr.u32Instance, pDir->aEntries[i].u32Instance),
-                                  VERR_SSM_INTEGRITY);
+                                  VERR_SSM_INTEGRITY_UNIT);
             uint32_t cbUnitHdr = RT_UOFFSETOF(SSMFILEUNITHDR, szName[UnitHdr.cbName]);
             AssertLogRelMsgReturn(   UnitHdr.cbName > 0
                                   && UnitHdr.cbName < sizeof(UnitHdr)
                                   && cbUnitHdr <= cbToRead,
                                   ("Bad unit header: i=%u off=%lld cbName=%#x cbToRead=%#x\n", i, pDir->aEntries[i].off, UnitHdr.cbName, cbToRead),
-                                  VERR_SSM_INTEGRITY);
+                                  VERR_SSM_INTEGRITY_UNIT);
             SSM_CHECK_CRC32_RET(&UnitHdr, RT_OFFSETOF(SSMFILEUNITHDR, szName[UnitHdr.cbName]),
                                 ("Bad unit header CRC: i=%u off=%lld u32CRC=%#x u32ActualCRC=%#x\n",
                                  i, pDir->aEntries[i].off, u32CRC, u32ActualCRC));
@@ -5040,7 +5037,6 @@ static DECLCALLBACK(int) ssmR3ReadInV1(void *pvSSM, void *pvBuf, size_t cbBuf, s
         return rc;
     }
 
-    /** @todo weed out lazy saving */
     if (pSSM->enmAfter != SSMAFTER_DEBUG_IT)
         AssertMsgFailed(("SSM: attempted reading more than the unit!\n"));
     return VERR_SSM_LOADED_TOO_MUCH;
@@ -5120,7 +5116,10 @@ static void ssmR3DataReadFinishV2(PSSMHANDLE pSSM)
         int rc = ssmR3DataReadRecHdrV2(pSSM);
         if (    RT_SUCCESS(rc)
             &&  !pSSM->u.Read.fEndOfData)
-            rc = VERR_SSM_LOADED_TOO_MUCH; /** @todo More error codes! */
+        {
+            rc = VERR_SSM_LOADED_TOO_LITTLE;
+            AssertFailed();
+        }
         pSSM->rc = rc;
     }
 }
@@ -5166,10 +5165,8 @@ DECLINLINE(int) ssmR3DataReadV2RawLzfHdr(PSSMHANDLE pSSM, uint32_t *pcbDecompr)
     AssertLogRelMsgReturn(   pSSM->u.Read.cbRecLeft > 1
                           && pSSM->u.Read.cbRecLeft <= RT_SIZEOFMEMB(SSMHANDLE, u.Read.abComprBuffer) + 2,
                           ("%#x\n", pSSM->u.Read.cbRecLeft),
-                          VERR_SSM_INTEGRITY);
+                          VERR_SSM_INTEGRITY_DECOMPRESSION);
 
-/** @todo this isn't very efficient, we know we have to read it all, so both
- *        reading the first byte separately.  */
     uint8_t cKB;
     int rc = ssmR3DataReadV2Raw(pSSM, &cKB, 1);
     if (RT_FAILURE(rc))
@@ -5180,7 +5177,7 @@ DECLINLINE(int) ssmR3DataReadV2RawLzfHdr(PSSMHANDLE pSSM, uint32_t *pcbDecompr)
     AssertLogRelMsgReturn(   cbDecompr >= pSSM->u.Read.cbRecLeft
                           && cbDecompr <= RT_SIZEOFMEMB(SSMHANDLE, u.Read.abDataBuffer),
                           ("%#x\n", cbDecompr),
-                          VERR_SSM_INTEGRITY);
+                          VERR_SSM_INTEGRITY_DECOMPRESSION);
 
     *pcbDecompr = cbDecompr;
     return VINF_SUCCESS;
@@ -5228,10 +5225,12 @@ static int ssmR3DataReadV2RawLzf(PSSMHANDLE pSSM, void *pvDst, size_t cbDecompr)
                               pvDst, cbDecompr, &cbDstActual);
     if (RT_SUCCESS(rc))
     {
-        AssertLogRelMsgReturn(cbDstActual == cbDecompr, ("%#x %#x\n", cbDstActual, cbDecompr), VERR_SSM_INTEGRITY);
+        AssertLogRelMsgReturn(cbDstActual == cbDecompr, ("%#x %#x\n", cbDstActual, cbDecompr), VERR_SSM_INTEGRITY_DECOMPRESSION);
         return VINF_SUCCESS;
     }
-    return rc;
+
+    AssertLogRelMsgFailed(("cbCompr=%#x cbDecompr=%#x rc=%Rrc\n", cbCompr, cbDecompr, rc));
+    return VERR_SSM_INTEGRITY_DECOMPRESSION;
 }
 
 
@@ -5262,13 +5261,13 @@ static int ssmR3DataReadRecHdrV2(PSSMHANDLE pSSM)
      * Validate the first byte and check for the termination records.
      */
     pSSM->u.Read.u8TypeAndFlags = abHdr[0];
-    AssertLogRelMsgReturn(SSM_REC_ARE_TYPE_AND_FLAGS_VALID(abHdr[0]), ("%#x %#x\n", abHdr[0], abHdr[1]), VERR_SSM_INTEGRITY);
+    AssertLogRelMsgReturn(SSM_REC_ARE_TYPE_AND_FLAGS_VALID(abHdr[0]), ("%#x %#x\n", abHdr[0], abHdr[1]), VERR_SSM_INTEGRITY_REC_HDR);
     if ((abHdr[0] & SSM_REC_TYPE_MASK) == SSM_REC_TYPE_TERM)
     {
         pSSM->u.Read.cbRecLeft = 0;
         pSSM->u.Read.fEndOfData = true;
-        AssertLogRelMsgReturn(abHdr[1] == sizeof(SSMRECTERM) - 2, ("%#x\n", abHdr[1]), VERR_SSM_INTEGRITY);
-        AssertLogRelMsgReturn(abHdr[0] & SSM_REC_FLAGS_IMPORTANT, ("%#x\n", abHdr[0]), VERR_SSM_INTEGRITY);
+        AssertLogRelMsgReturn(abHdr[1] == sizeof(SSMRECTERM) - 2, ("%#x\n", abHdr[1]), VERR_SSM_INTEGRITY_REC_TERM);
+        AssertLogRelMsgReturn(abHdr[0] & SSM_REC_FLAGS_IMPORTANT, ("%#x\n", abHdr[0]), VERR_SSM_INTEGRITY_REC_TERM);
 
         /* get the rest */
         uint32_t    u32StreamCRC = ssmR3StrmFinalCRC(&pSSM->Strm);
@@ -5280,12 +5279,13 @@ static int ssmR3DataReadRecHdrV2(PSSMHANDLE pSSM)
         /* validate integrity */
         AssertLogRelMsgReturn(TermRec.cbUnit == pSSM->offUnit,
                               ("cbUnit=%#llx offUnit=%#llx\n", TermRec.cbUnit, pSSM->offUnit),
-                              VERR_SSM_INTEGRITY);
-        AssertLogRelMsgReturn(!(TermRec.fFlags & ~SSMRECTERM_FLAGS_CRC32), ("%#x\n", TermRec.fFlags), VERR_SSM_INTEGRITY);
+                              VERR_SSM_INTEGRITY_REC_TERM);
+        AssertLogRelMsgReturn(!(TermRec.fFlags & ~SSMRECTERM_FLAGS_CRC32), ("%#x\n", TermRec.fFlags), VERR_SSM_INTEGRITY_REC_TERM);
         if (!(TermRec.fFlags & SSMRECTERM_FLAGS_CRC32))
-            AssertLogRelMsgReturn(TermRec.u32StreamCRC == 0, ("%#x\n", TermRec.u32StreamCRC), VERR_SSM_INTEGRITY);
+            AssertLogRelMsgReturn(TermRec.u32StreamCRC == 0, ("%#x\n", TermRec.u32StreamCRC), VERR_SSM_INTEGRITY_REC_TERM);
         else if (pSSM->Strm.fChecksummed)
-            AssertLogRelMsgReturn(TermRec.u32StreamCRC == u32StreamCRC, ("%#x, %#x\n", TermRec.u32StreamCRC, u32StreamCRC), VERR_SSM_INTEGRITY_CRC);
+            AssertLogRelMsgReturn(TermRec.u32StreamCRC == u32StreamCRC, ("%#x, %#x\n", TermRec.u32StreamCRC, u32StreamCRC),
+                                  VERR_SSM_INTEGRITY_REC_TERM_CRC);
 
         Log3(("ssmR3DataReadRecHdrV2: %08llx|%08llx: TERM\n", ssmR3StrmTell(&pSSM->Strm) - sizeof(SSMRECTERM), pSSM->offUnit));
         return VINF_SUCCESS;
@@ -5315,7 +5315,7 @@ static int ssmR3DataReadRecHdrV2(PSSMHANDLE pSSM)
         else if (!(cb & RT_BIT(1)))
             cb = 6;
         else
-            AssertLogRelMsgFailedReturn(("Invalid record size byte: %#x\n", cb), VERR_SSM_INTEGRITY);
+            AssertLogRelMsgFailedReturn(("Invalid record size byte: %#x\n", cb), VERR_SSM_INTEGRITY_REC_HDR);
         cbHdr = cb + 1;
 
         rc = ssmR3DataReadV2Raw(pSSM, &abHdr[2], cb - 1);
@@ -5328,15 +5328,15 @@ static int ssmR3DataReadRecHdrV2(PSSMHANDLE pSSM)
         switch (cb)
         {
             case 6:
-                AssertLogRelMsgReturn((abHdr[6] & 0xc0) == 0x80, ("6/%u: %.*Rhxs\n", cb, cb + 1, &abHdr[0]), VERR_SSM_INTEGRITY);
+                AssertLogRelMsgReturn((abHdr[6] & 0xc0) == 0x80, ("6/%u: %.*Rhxs\n", cb, cb + 1, &abHdr[0]), VERR_SSM_INTEGRITY_REC_HDR);
             case 5:
-                AssertLogRelMsgReturn((abHdr[5] & 0xc0) == 0x80, ("5/%u: %.*Rhxs\n", cb, cb + 1, &abHdr[0]), VERR_SSM_INTEGRITY);
+                AssertLogRelMsgReturn((abHdr[5] & 0xc0) == 0x80, ("5/%u: %.*Rhxs\n", cb, cb + 1, &abHdr[0]), VERR_SSM_INTEGRITY_REC_HDR);
             case 4:
-                AssertLogRelMsgReturn((abHdr[4] & 0xc0) == 0x80, ("4/%u: %.*Rhxs\n", cb, cb + 1, &abHdr[0]), VERR_SSM_INTEGRITY);
+                AssertLogRelMsgReturn((abHdr[4] & 0xc0) == 0x80, ("4/%u: %.*Rhxs\n", cb, cb + 1, &abHdr[0]), VERR_SSM_INTEGRITY_REC_HDR);
             case 3:
-                AssertLogRelMsgReturn((abHdr[3] & 0xc0) == 0x80, ("3/%u: %.*Rhxs\n", cb, cb + 1, &abHdr[0]), VERR_SSM_INTEGRITY);
+                AssertLogRelMsgReturn((abHdr[3] & 0xc0) == 0x80, ("3/%u: %.*Rhxs\n", cb, cb + 1, &abHdr[0]), VERR_SSM_INTEGRITY_REC_HDR);
             case 2:
-                AssertLogRelMsgReturn((abHdr[2] & 0xc0) == 0x80, ("2/%u: %.*Rhxs\n", cb, cb + 1, &abHdr[0]), VERR_SSM_INTEGRITY);
+                AssertLogRelMsgReturn((abHdr[2] & 0xc0) == 0x80, ("2/%u: %.*Rhxs\n", cb, cb + 1, &abHdr[0]), VERR_SSM_INTEGRITY_REC_HDR);
                 break;
             default:
                 return VERR_INTERNAL_ERROR;
@@ -5354,7 +5354,7 @@ static int ssmR3DataReadRecHdrV2(PSSMHANDLE pSSM)
                     | ((uint32_t)(abHdr[3] & 0x3f) << 18)
                     | ((uint32_t)(abHdr[2] & 0x3f) << 24)
                     | ((uint32_t)(abHdr[1] & 0x01) << 30);
-                AssertLogRelMsgReturn(cb >= 0x04000000 && cb <= 0x7fffffff, ("cb=%#x\n", cb), VERR_SSM_INTEGRITY);
+                AssertLogRelMsgReturn(cb >= 0x04000000 && cb <= 0x7fffffff, ("cb=%#x\n", cb), VERR_SSM_INTEGRITY_REC_HDR);
                 break;
             case 5:
                 cb =             (abHdr[5] & 0x3f)
@@ -5362,28 +5362,28 @@ static int ssmR3DataReadRecHdrV2(PSSMHANDLE pSSM)
                     | ((uint32_t)(abHdr[3] & 0x3f) << 12)
                     | ((uint32_t)(abHdr[2] & 0x3f) << 18)
                     | ((uint32_t)(abHdr[1] & 0x03) << 24);
-                AssertLogRelMsgReturn(cb >= 0x00200000 && cb <= 0x03ffffff, ("cb=%#x\n", cb), VERR_SSM_INTEGRITY);
+                AssertLogRelMsgReturn(cb >= 0x00200000 && cb <= 0x03ffffff, ("cb=%#x\n", cb), VERR_SSM_INTEGRITY_REC_HDR);
                 break;
             case 4:
                 cb =             (abHdr[4] & 0x3f)
                     | ((uint32_t)(abHdr[3] & 0x3f) << 6)
                     | ((uint32_t)(abHdr[2] & 0x3f) << 12)
                     | ((uint32_t)(abHdr[1] & 0x07) << 18);
-                AssertLogRelMsgReturn(cb >= 0x00010000 && cb <= 0x001fffff, ("cb=%#x\n", cb), VERR_SSM_INTEGRITY);
+                AssertLogRelMsgReturn(cb >= 0x00010000 && cb <= 0x001fffff, ("cb=%#x\n", cb), VERR_SSM_INTEGRITY_REC_HDR);
                 break;
             case 3:
                 cb =             (abHdr[3] & 0x3f)
                     | ((uint32_t)(abHdr[2] & 0x3f) << 6)
                     | ((uint32_t)(abHdr[1] & 0x0f) << 12);
 #if 0  /* disabled to optimize buffering */
-                AssertLogRelMsgReturn(cb >= 0x00000800 && cb <= 0x0000ffff, ("cb=%#x\n", cb), VERR_SSM_INTEGRITY);
+                AssertLogRelMsgReturn(cb >= 0x00000800 && cb <= 0x0000ffff, ("cb=%#x\n", cb), VERR_SSM_INTEGRITY_REC_HDR);
 #endif
                 break;
             case 2:
                 cb =             (abHdr[2] & 0x3f)
                     | ((uint32_t)(abHdr[1] & 0x1f) << 6);
 #if 0  /* disabled to optimize buffering */
-                AssertLogRelMsgReturn(cb >= 0x00000080 && cb <= 0x000007ff, ("cb=%#x\n", cb), VERR_SSM_INTEGRITY);
+                AssertLogRelMsgReturn(cb >= 0x00000080 && cb <= 0x000007ff, ("cb=%#x\n", cb), VERR_SSM_INTEGRITY_REC_HDR);
 #endif
                 break;
             default:
@@ -6231,6 +6231,57 @@ VMMR3DECL(int) SSMR3Skip(PSSMHANDLE pSSM, size_t cb)
         if (RT_FAILURE(rc))
             return rc;
     }
+
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Skips to the end of the current data unit.
+ *
+ * Since version 2 of the format, the load exec callback have to explicitly call
+ * this API if it wish to be lazy for some reason.  This is because there seldom
+ * is a good reason to not read your entire data unit and it was hiding bugs.
+ *
+ * @returns VBox status code.
+ * @param   pSSM                The saved state handle.
+ */
+VMMR3DECL(int) SSMR3SkipToEndOfUnit(PSSMHANDLE pSSM)
+{
+    AssertMsgReturn(   pSSM->enmOp == SSMSTATE_LOAD_EXEC
+                    || pSSM->enmOp == SSMSTATE_OPEN_READ,
+                    ("Invalid state %d\n", pSSM->enmOp),
+                     VERR_SSM_INVALID_STATE);
+    if (pSSM->u.Read.uFmtVerMajor >= 2)
+    {
+        /*
+         * Read until we the end of data condition is raised.
+         */
+        pSSM->u.Read.cbDataBuffer  = 0;
+        pSSM->u.Read.offDataBuffer = 0;
+        if (!pSSM->u.Read.fEndOfData)
+        {
+            do
+            {
+                /* read the rest of the current record */
+                while (pSSM->u.Read.cbRecLeft)
+                {
+                    uint8_t abBuf[8192];
+                    size_t  cbToRead = RT_MIN(sizeof(pSSM->u.Read.cbRecLeft), sizeof(abBuf));
+                    int rc = ssmR3DataReadV2Raw(pSSM, abBuf, cbToRead);
+                    if (RT_FAILURE(rc))
+                        return pSSM->rc = rc;
+                    pSSM->u.Read.cbRecLeft -= cbToRead;
+                }
+
+                /* read the next header. */
+                int rc = ssmR3DataReadRecHdrV2(pSSM);
+                if (RT_FAILURE(rc))
+                    return pSSM->rc = rc;
+            } while (!pSSM->u.Read.fEndOfData);
+        }
+    }
+    /* else: Doesn't matter for the version 1 loading. */
 
     return VINF_SUCCESS;
 }

@@ -488,6 +488,7 @@
 #define VERR_SSM_UNIT_NOT_FOUND                 (-1801)
 /** The specified data unit wasn't owned by caller. */
 #define VERR_SSM_UNIT_NOT_OWNER                 (-1802)
+
 /** General saved state file integrity error. */
 #define VERR_SSM_INTEGRITY                      (-1810)
 /** The saved state file magic was not recognized. */
@@ -496,56 +497,75 @@
 #define VERR_SSM_INTEGRITY_VERSION              (-1812)
 /** The saved state file size didn't match the one in the header. */
 #define VERR_SSM_INTEGRITY_SIZE                 (-1813)
-/** The CRC of the saved state file did match. */
+/** The CRC of the saved state file did not match. */
 #define VERR_SSM_INTEGRITY_CRC                  (-1814)
-/** The current virtual machine id didn't match the virtual machine id. */
+/** The machine uuid field wasn't null. */
 #define VERR_SMM_INTEGRITY_MACHINE              (-1815)
+/** Saved state header integrity error. */
+#define VERR_SSM_INTEGRITY_HEADER               (-1816)
+/** Unit header integrity error. */
+#define VERR_SSM_INTEGRITY_UNIT                 (-1817)
 /** Invalid unit magic (internal data tag). */
-#define VERR_SSM_INTEGRITY_UNIT_MAGIC           (-1816)
+#define VERR_SSM_INTEGRITY_UNIT_MAGIC           (-1818)
 /** The file contained a data unit which no-one wants. */
-#define VERR_SSM_INTEGRITY_UNIT_NOT_FOUND       (-1817)
-/** Incorrect type sizes in the header. */
-#define VERR_SSM_INTEGRITY_SIZES                (-1818)
+#define VERR_SSM_INTEGRITY_UNIT_NOT_FOUND       (-1819)
 /** Incorrect version numbers in the header. */
-#define VERR_SSM_INTEGRITY_VBOX_VERSION         (-1819)
+#define VERR_SSM_INTEGRITY_VBOX_VERSION         (-1820)
+/** Footer integrity error. */
+#define VERR_SSM_INTEGRITY_FOOTER               (-1821)
+/** Record header integrity error. */
+#define VERR_SSM_INTEGRITY_REC_HDR              (-1822)
+/** Termination record integrity error. */
+#define VERR_SSM_INTEGRITY_REC_TERM             (-1823)
+/** Termination record CRC mismatch. */
+#define VERR_SSM_INTEGRITY_REC_TERM_CRC         (-1824)
+/** Decompression interity error.  */
+#define VERR_SSM_INTEGRITY_DECOMPRESSION        (-1825)
+/** Saved state directory iintegrity error.  */
+#define VERR_SSM_INTEGRITY_DIR                  (-1826)
+/** The saved state directory magic is wrong. */
+#define VERR_SSM_INTEGRITY_DIR_MAGIC            (-1827)
+
 /** A data unit in the saved state file was defined but didn't any
  * routine for processing it. */
-#define VERR_SSM_NO_LOAD_EXEC                   (-1820)
+#define VERR_SSM_NO_LOAD_EXEC                   (-1830)
 /** A restore routine attempted to load more data then the unit contained. */
-#define VERR_SSM_LOADED_TOO_MUCH                (-1821)
+#define VERR_SSM_LOADED_TOO_MUCH                (-1831)
 /** Not in the correct state for the attempted operation. */
-#define VERR_SSM_INVALID_STATE                  (-1822)
+#define VERR_SSM_INVALID_STATE                  (-1832)
+/** Not in the correct state for the attempted operation. */
+#define VERR_SSM_LOADED_TOO_LITTLE              (-1833)
 
 /** Unsupported data unit version.
  * A SSM user returns this if it doesn't know the u32Version. */
-#define VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION  (-1823)
+#define VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION  (-1840)
 /** The format of a data unit has changed.
  * A SSM user returns this if it's not able to read the format for
  * other reasons than u32Version. */
-#define VERR_SSM_DATA_UNIT_FORMAT_CHANGED       (-1824)
+#define VERR_SSM_DATA_UNIT_FORMAT_CHANGED       (-1841)
 /** The CPUID instruction returns different information when loading than when saved.
  * Normally caused by hardware changes on the host, but could also be caused by
  * changes in the BIOS setup. */
-#define VERR_SSM_LOAD_CPUID_MISMATCH            (-1825)
+#define VERR_SSM_LOAD_CPUID_MISMATCH            (-1842)
 /** The RAM size differes between the saved state and the VM config. */
-#define VERR_SSM_LOAD_MEMORY_SIZE_MISMATCH      (-1826)
+#define VERR_SSM_LOAD_MEMORY_SIZE_MISMATCH      (-1843)
 /** The state doesn't match the VM configuration in one or another way.
  * (There are certain PCI reconfiguration which the OS could potentially
  * do which can cause this problem. Check this out when it happens.) */
-#define VERR_SSM_LOAD_CONFIG_MISMATCH           (-1827)
+#define VERR_SSM_LOAD_CONFIG_MISMATCH           (-1844)
 /** The virtual clock freqency differs too much.
  * The clock source for the virtual time isn't reliable or the code have changed. */
-#define VERR_SSM_VIRTUAL_CLOCK_HZ               (-1828)
+#define VERR_SSM_VIRTUAL_CLOCK_HZ               (-1845)
 /** A timeout occured while waiting for async IDE operations to finish. */
-#define VERR_SSM_IDE_ASYNC_TIMEOUT              (-1829)
+#define VERR_SSM_IDE_ASYNC_TIMEOUT              (-1846)
 /** One of the structure magics was wrong. */
-#define VERR_SSM_STRUCTURE_MAGIC                (-1830)
+#define VERR_SSM_STRUCTURE_MAGIC                (-1847)
 /** The data in the saved state doesn't confirm to expectations. */
-#define VERR_SSM_UNEXPECTED_DATA                (-1831)
+#define VERR_SSM_UNEXPECTED_DATA                (-1848)
 /** Trying to read a 64-bit guest physical address into a 32-bit variable. */
-#define VERR_SSM_GCPHYS_OVERFLOW                (-1832)
+#define VERR_SSM_GCPHYS_OVERFLOW                (-1849)
 /** Trying to read a 64-bit guest virtual address into a 32-bit variable. */
-#define VERR_SSM_GCPTR_OVERFLOW                 (-1833)
+#define VERR_SSM_GCPTR_OVERFLOW                 (-1850)
 /** @} */
 
 
