@@ -1506,19 +1506,19 @@ static int ssmR3ValidateFile(RTFILE File, bool fChecksumIt, PSSMFILEHDR pHdr, si
             &&  pHdr->cHostBits != 64)
         {
             LogRel(("SSM: Incorrect cHostBits value: %d\n", pHdr->cHostBits));
-            return VERR_SSM_INTEGRITY_SIZES;
+            return VERR_SSM_INTEGRITY_HEADER;
         }
         if (    pHdr->cbGCPhys != sizeof(uint32_t)
             &&  pHdr->cbGCPhys != sizeof(uint64_t))
         {
             LogRel(("SSM: Incorrect cbGCPhys value: %d\n", pHdr->cbGCPhys));
-            return VERR_SSM_INTEGRITY_SIZES;
+            return VERR_SSM_INTEGRITY_HEADER;
         }
         if (    pHdr->cbGCPtr != sizeof(uint32_t)
             &&  pHdr->cbGCPtr != sizeof(uint64_t))
         {
             LogRel(("SSM: Incorrect cbGCPtr value: %d\n", pHdr->cbGCPtr));
-            return VERR_SSM_INTEGRITY_SIZES;
+            return VERR_SSM_INTEGRITY_HEADER;
         }
     }
     else
@@ -3496,6 +3496,23 @@ VMMR3DECL(int) SSMR3Skip(PSSMHANDLE pSSM, size_t cb)
             return rc;
     }
 
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Skips to the end of the current data unit.
+ *
+ * Since version 2 of the format, the load exec callback have to explicitly call
+ * this API if it wish to be lazy for some reason.  This is because there seldom
+ * is a good reason to not read your entire data unit and it was hiding bugs.
+ *
+ * @returns VBox status code.
+ * @param   pSSM                The saved state handle.
+ */
+VMMR3DECL(int) SSMR3SkipToEndOfUnit(PSSMHANDLE pSSM)
+{
+    /* nothing to do here.  */
     return VINF_SUCCESS;
 }
 
