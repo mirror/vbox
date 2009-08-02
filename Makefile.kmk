@@ -252,33 +252,36 @@ buildserver-docs_SOURCES = \
 		VirtualBox.chm UserManual.pdf \
 		$(foreach f,$(VBOX_MANUAL_ADD_LANGUAGES),VirtualBox_$(f).chm UserManual_$(f).pdf))
 buildserver-docs_CLEANS = \
+	$(buildserver-docs_0_OUTDIR)/unpacked.ts \
+	$(buildserver-docs_0_OUTDIR)/VBoxDocumentation.zip \
+	$(buildserver-docs_0_OUTDIR)/VBoxDocumentation.zip.tmp \
 	$(addprefix $(PATH_TARGET)/, \
-		VBoxDocumentation.zip VBoxDocumentation.zip.tmp \
 		VirtualBox.chm UserManual.pdf \
 		$(foreach f,$(VBOX_MANUAL_ADD_LANGUAGES),VirtualBox_$(f).chm UserManual_$(f).pdf))
 
 ## @todo Hack to get at TOOL_ZIP_UNPACK; see if this can be integrated somehow...
 include $(KBUILD_PATH)/tools/ZIP.kmk
 
-$(PATH_TARGET)/VirtualBox.chm + $(PATH_TARGET)/UserManual.pdf \
-$(foreach f,$(VBOX_MANUAL_ADD_LANGUAGES), + $(PATH_TARGET)/VirtualBox_$(f).chm + $(PATH_TARGET)/UserManual_$(f).pdf): \
-		$(PATH_TARGET)/VBoxDocumentation.zip
+$$(buildserver-docs_0_OUTDIR)/unpacked.ts +| $(PATH_TARGET)/VirtualBox.chm $(PATH_TARGET)/UserManual.pdf \
+$(foreach f,$(VBOX_MANUAL_ADD_LANGUAGES),$(PATH_TARGET)/VirtualBox_$(f).chm $(PATH_TARGET)/UserManual_$(f).pdf): \
+		$$(buildserver-docs_0_OUTDIR)/VBoxDocumentation.zip
 	$(call MSG_L1,Unpacking documentation)
 	$(QUIET)$(TOOL_ZIP_UNPACK) $(TOOL_ZIP_UNPACKFLAGS) -o $< -d $(PATH_TARGET)
+	$(APPEND) -t $@ "done"
 
-$(PATH_TARGET)/VBoxDocumentation.zip: $(VBOX_SVN_REV_KMK) $(PATH_DEVTOOLS)/bin/documentation.sh | $$(dir $$@)
-	$(RM) -f $(PATH_TARGET)/VBoxDocumentation.zip $(PATH_TARGET)/VBoxDocumentation.zip.tmp
+$$(buildserver-docs_0_OUTDIR)/VBoxDocumentation.zip: $(VBOX_SVN_REV_KMK) $(PATH_DEVTOOLS)/bin/documentation.sh | $$(dir $$@)
+	$(RM) -f $@ $@.tmp
  ifneq ($(KBUILD_HOST),win)
-	$(SHELL) $(PATH_DEVTOOLS)/bin/documentation.sh --cmd fetch --filename $(PATH_TARGET)/VBoxDocumentation.zip.tmp
+	$(SHELL) $(PATH_DEVTOOLS)/bin/documentation.sh --cmd fetch --filename $@.tmp
  else
 	$(KMK) --affinity 1 -f $(MAKEFILE) VBOX_SINGLE_MAKEFILE= buildserver-documentation-affinity-hack
  endif
-	$(CP) -f $(PATH_TARGET)/VBoxDocumentation.zip.tmp $(PATH_TARGET)/VBoxDocumentation.zip
-	$(RM) -f $(PATH_TARGET)/VBoxDocumentation.zip.tmp
+	$(CP) -f $@.tmp $@
+	$(RM) -f $@.tmp
 
  ifeq ($(KBUILD_HOST),win)
 buildserver-documentation-affinity-hack:
-	$(SHELL) $(PATH_DEVTOOLS)/bin/documentation.sh --cmd fetch --filename $(PATH_TARGET)/VBoxDocumentation.zip.tmp
+	$(SHELL) $(PATH_DEVTOOLS)/bin/documentation.sh --cmd fetch --filename $(buildserver-docs_0_OUTDIR)/VBoxDocumentation.zip.tmp
  endif
 endif # VBOX_WITH_DOCS_FROM_BUILD_SERVER
 
