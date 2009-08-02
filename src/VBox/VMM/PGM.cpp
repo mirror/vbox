@@ -2658,8 +2658,8 @@ static int pgmR3LoadShadowedRomPage(PVM pVM, PSSMHANDLE pSSM, PPGMPAGE pPage, RT
  */
 static int pgmR3LoadLocked(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version)
 {
-    int         rc;
     PPGM        pPGM = &pVM->pgm.s;
+    int         rc;
     uint32_t    u32Sep;
 
     /*
@@ -2670,21 +2670,17 @@ static int pgmR3LoadLocked(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version)
         rc = SSMR3GetStruct(pSSM, pPGM, &s_aPGMFields[0]);
         AssertLogRelRCReturn(rc, rc);
 
-        for (unsigned i=0;i<pVM->cCPUs;i++)
+        for (VMCPUID i = 0; i < pVM->cCPUs; i++)
         {
-            PVMCPU pVCpu = &pVM->aCpus[i];
-
-            rc = SSMR3GetStruct(pSSM, &pVCpu->pgm.s, &s_aPGMCpuFields[0]);
+            rc = SSMR3GetStruct(pSSM, &pVM->aCpus[i].pgm.s, &s_aPGMCpuFields[0]);
             AssertLogRelRCReturn(rc, rc);
         }
     }
-    else
-    if (u32Version >= PGM_SAVED_STATE_VERSION_RR_DESC)
+    else if (u32Version >= PGM_SAVED_STATE_VERSION_RR_DESC)
     {
-        PGMOLD pgmOld;
-
         AssertRelease(pVM->cCPUs == 1);
 
+        PGMOLD pgmOld;
         rc = SSMR3GetStruct(pSSM, &pgmOld, &s_aPGMFields_Old[0]);
         AssertLogRelRCReturn(rc, rc);
 
@@ -2784,10 +2780,8 @@ static int pgmR3LoadLocked(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version)
      * Ram range flags and bits.
      */
     i = 0;
-    for (PPGMRAMRANGE pRam = pPGM->pRamRangesR3; pRam; pRam = pRam->pNextR3, i++)
+    for (PPGMRAMRANGE pRam = pPGM->pRamRangesR3; ; pRam = pRam->pNextR3, i++)
     {
-        /** @todo MMIO ranges may move (PCI reconfig), we currently assume they don't. */
-
         /* Check the seqence number / separator. */
         rc = SSMR3GetU32(pSSM, &u32Sep);
         if (RT_FAILURE(rc))
@@ -2799,6 +2793,7 @@ static int pgmR3LoadLocked(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version)
             AssertMsgFailed(("u32Sep=%#x (last)\n", u32Sep));
             return VERR_SSM_DATA_UNIT_FORMAT_CHANGED;
         }
+        AssertLogRelReturn(pRam, VERR_SSM_DATA_UNIT_FORMAT_CHANGED);
 
         /* Get the range details. */
         RTGCPHYS GCPhys;
