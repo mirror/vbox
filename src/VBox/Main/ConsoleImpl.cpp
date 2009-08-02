@@ -1058,8 +1058,7 @@ Console::loadStateFileExec (PSSMHANDLE pSSM, void *pvUser, uint32_t u32Version)
     AssertReturn(that, VERR_INVALID_PARAMETER);
 
     /* Currently, nothing to do when we've been called from VMR3Load. */
-
-    return VINF_SUCCESS;
+    return SSMR3SkipToEndOfUnit(pSSM);
 }
 
 /**
