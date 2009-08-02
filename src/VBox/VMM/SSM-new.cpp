@@ -89,7 +89,7 @@
  * file was written.)
  *
  * The saved state units each starts with a variable sized header
- * (SSMFILEUNITHDR) that contains the name, instance and phase.  The data
+ * (SSMFILEUNITHDRV2) that contains the name, instance and phase.  The data
  * follows the header and is encoded as records with a 2-8 byte record header
  * indicating the type, flags and size.  The first byte in the record header
  * indicates the type and flags:
@@ -594,7 +594,7 @@ typedef SSMFILEHDRV11 *PSSMFILEHDRV11;
 /**
  * Data unit header.
  */
-typedef struct SSMFILEUNITHDR
+typedef struct SSMFILEUNITHDRV2
 {
     /** Magic (SSMFILEUNITHDR_MAGIC or SSMFILEUNITHDR_END). */
     char            szMagic[8];
@@ -618,12 +618,12 @@ typedef struct SSMFILEUNITHDR
     uint32_t        cbName;
     /** Data unit name, variable size. */
     char            szName[SSM_MAX_NAME_SIZE];
-} SSMFILEUNITHDR;
-AssertCompileMemberOffset(SSMFILEUNITHDR, szName, 44);
-AssertCompileMemberSize(SSMFILEUNITHDR, szMagic, sizeof(SSMFILEUNITHDR_MAGIC));
-AssertCompileMemberSize(SSMFILEUNITHDR, szMagic, sizeof(SSMFILEUNITHDR_END));
-/** Pointer to SSMFILEUNITHDR.  */
-typedef SSMFILEUNITHDR *PSSMFILEUNITHDR;
+} SSMFILEUNITHDRV2;
+AssertCompileMemberOffset(SSMFILEUNITHDRV2, szName, 44);
+AssertCompileMemberSize(SSMFILEUNITHDRV2, szMagic, sizeof(SSMFILEUNITHDR_MAGIC));
+AssertCompileMemberSize(SSMFILEUNITHDRV2, szMagic, sizeof(SSMFILEUNITHDR_END));
+/** Pointer to SSMFILEUNITHDRV2.  */
+typedef SSMFILEUNITHDRV2 *PSSMFILEUNITHDRV2;
 
 
 /**
@@ -2607,9 +2607,9 @@ VMMR3DECL(int) SSMR3Save(PVM pVM, const char *pszFilename, SSMAFTER enmAfter, PF
      */
     union
     {
-        SSMFILEHDR FileHdr;
-        SSMFILEUNITHDR UnitHdr;
-        SSMFILEFTR Footer;
+        SSMFILEHDR          FileHdr;
+        SSMFILEUNITHDRV2    UnitHdr;
+        SSMFILEFTR          Footer;
     } u;
 
     memcpy(&u.FileHdr.szMagic, SSMFILEHDR_MAGIC_V2_0, sizeof(u.FileHdr.szMagic));
@@ -2716,10 +2716,10 @@ VMMR3DECL(int) SSMR3Save(PVM pVM, const char *pszFilename, SSMAFTER enmAfter, PF
                 u.UnitHdr.fFlags          = 0;
                 u.UnitHdr.cbName          = (uint32_t)pUnit->cchName + 1;
                 memcpy(&u.UnitHdr.szName[0], &pUnit->szName[0], u.UnitHdr.cbName);
-                u.UnitHdr.u32CRC          = RTCrc32(&u.UnitHdr, RT_OFFSETOF(SSMFILEUNITHDR, szName[u.UnitHdr.cbName]));
+                u.UnitHdr.u32CRC          = RTCrc32(&u.UnitHdr, RT_OFFSETOF(SSMFILEUNITHDRV2, szName[u.UnitHdr.cbName]));
                 Log(("SSM: Unit at %#9llx: '%s', instance %u, phase %#x, version %u\n",
                      u.UnitHdr.offStream, u.UnitHdr.szName, u.UnitHdr.u32Instance, u.UnitHdr.u32Phase, u.UnitHdr.u32Version));
-                rc = ssmR3StrmWrite(&Handle.Strm, &u.UnitHdr, RT_OFFSETOF(SSMFILEUNITHDR, szName[u.UnitHdr.cbName]));
+                rc = ssmR3StrmWrite(&Handle.Strm, &u.UnitHdr, RT_OFFSETOF(SSMFILEUNITHDRV2, szName[u.UnitHdr.cbName]));
                 if (RT_SUCCESS(rc))
                 {
                     /*
@@ -2810,9 +2810,9 @@ VMMR3DECL(int) SSMR3Save(PVM pVM, const char *pszFilename, SSMAFTER enmAfter, PF
             u.UnitHdr.u32Phase        = SSM_PHASE_FINAL;
             u.UnitHdr.fFlags          = 0;
             u.UnitHdr.cbName          = 0;
-            u.UnitHdr.u32CRC          = RTCrc32(&u.UnitHdr, RT_OFFSETOF(SSMFILEUNITHDR, szName[0]));
+            u.UnitHdr.u32CRC          = RTCrc32(&u.UnitHdr, RT_OFFSETOF(SSMFILEUNITHDRV2, szName[0]));
             Log(("SSM: Unit at %#9llx: END UNIT\n", u.UnitHdr.offStream));
-            rc = ssmR3StrmWrite(&Handle.Strm,  &u.UnitHdr, RT_OFFSETOF(SSMFILEUNITHDR, szName[0]));
+            rc = ssmR3StrmWrite(&Handle.Strm,  &u.UnitHdr, RT_OFFSETOF(SSMFILEUNITHDRV2, szName[0]));
             if (RT_SUCCESS(rc))
             {
                 /* Write the directory for the final units and then the footer. */
@@ -3424,7 +3424,7 @@ static int ssmR3LoadExecV1(PVM pVM, PSSMHANDLE pSSM)
          */
         uint64_t         offUnit = ssmR3StrmTell(&pSSM->Strm);
         SSMFILEUNITHDRV1 UnitHdr;
-        rc = ssmR3StrmRead(&pSSM->Strm, &UnitHdr, RT_OFFSETOF(SSMFILEUNITHDR, szName));
+        rc = ssmR3StrmRead(&pSSM->Strm, &UnitHdr, RT_OFFSETOF(SSMFILEUNITHDRV1, szName));
         if (RT_SUCCESS(rc))
         {
             /*
@@ -3478,7 +3478,7 @@ static int ssmR3LoadExecV1(PVM pVM, PSSMHANDLE pSSM)
                         /*
                          * Call the execute handler.
                          */
-                        pSSM->cbUnitLeftV1 = UnitHdr.cbUnit - RT_OFFSETOF(SSMFILEUNITHDR, szName[UnitHdr.cchName]);
+                        pSSM->cbUnitLeftV1 = UnitHdr.cbUnit - RT_OFFSETOF(SSMFILEUNITHDRV1, szName[UnitHdr.cchName]);
                         pSSM->offUnit = 0;
                         if (!pUnit->u.Common.pfnLoadExec)
                         {
@@ -3593,10 +3593,10 @@ static int ssmR3LoadExecV2(PVM pVM, PSSMHANDLE pSSM)
         /*
          * Read the unit header and check its integrity.
          */
-        uint64_t        offUnit         = ssmR3StrmTell(&pSSM->Strm);
-        uint32_t        u32CurStreamCRC = ssmR3StrmCurCRC(&pSSM->Strm);
-        SSMFILEUNITHDR  UnitHdr;
-        int rc = ssmR3StrmRead(&pSSM->Strm, &UnitHdr, RT_OFFSETOF(SSMFILEUNITHDR, szName));
+        uint64_t            offUnit         = ssmR3StrmTell(&pSSM->Strm);
+        uint32_t            u32CurStreamCRC = ssmR3StrmCurCRC(&pSSM->Strm);
+        SSMFILEUNITHDRV2    UnitHdr;
+        int rc = ssmR3StrmRead(&pSSM->Strm, &UnitHdr, RT_OFFSETOF(SSMFILEUNITHDRV2, szName));
         if (RT_FAILURE(rc))
             return rc;
         if (RT_UNLIKELY(    memcmp(&UnitHdr.szMagic[0], SSMFILEUNITHDR_MAGIC, sizeof(UnitHdr.szMagic))
@@ -3621,7 +3621,7 @@ static int ssmR3LoadExecV2(PVM pVM, PSSMHANDLE pSSM)
                                    offUnit, offUnit, UnitHdr.cbName, UnitHdr.szName),
                                   VERR_SSM_INTEGRITY_UNIT);
         }
-        SSM_CHECK_CRC32_RET(&UnitHdr, RT_OFFSETOF(SSMFILEUNITHDR, szName[UnitHdr.cbName]),
+        SSM_CHECK_CRC32_RET(&UnitHdr, RT_OFFSETOF(SSMFILEUNITHDRV2, szName[UnitHdr.cbName]),
                             ("Unit at %#llx (%lld): CRC mismatch: %08x, correct is %08x\n", offUnit, offUnit, u32CRC, u32ActualCRC));
         AssertLogRelMsgReturn(UnitHdr.offStream == offUnit,
                               ("Unit at %#llx (%lld): offStream=%#llx, expected %#llx\n", offUnit, offUnit, UnitHdr.offStream, offUnit),
@@ -4022,7 +4022,7 @@ static int ssmR3FileSeekV1(PSSMHANDLE pSSM, const char *pszUnit, uint32_t iInsta
         /*
          * Read the unit header and verify it.
          */
-        int rc = ssmR3StrmPeekAt(&pSSM->Strm, off, &UnitHdr, RT_OFFSETOF(SSMFILEUNITHDR, szName), NULL);
+        int rc = ssmR3StrmPeekAt(&pSSM->Strm, off, &UnitHdr, RT_OFFSETOF(SSMFILEUNITHDRV1, szName), NULL);
         AssertRCReturn(rc, rc);
         if (!memcmp(&UnitHdr.achMagic[0], SSMFILEUNITHDR_MAGIC, sizeof(SSMFILEUNITHDR_MAGIC)))
         {
@@ -4032,7 +4032,7 @@ static int ssmR3FileSeekV1(PSSMHANDLE pSSM, const char *pszUnit, uint32_t iInsta
             if (    UnitHdr.u32Instance == iInstance
                 &&  UnitHdr.cchName     == cbUnitNm)
             {
-                rc = ssmR3StrmPeekAt(&pSSM->Strm, off + RT_OFFSETOF(SSMFILEUNITHDR, szName), szName, cbUnitNm, NULL);
+                rc = ssmR3StrmPeekAt(&pSSM->Strm, off + RT_OFFSETOF(SSMFILEUNITHDRV1, szName), szName, cbUnitNm, NULL);
                 AssertRCReturn(rc, rc);
                 AssertLogRelMsgReturn(!szName[UnitHdr.cchName - 1],
                                       (" Unit name '%.*s' was not properly terminated.\n", cbUnitNm, szName),
@@ -4043,8 +4043,8 @@ static int ssmR3FileSeekV1(PSSMHANDLE pSSM, const char *pszUnit, uint32_t iInsta
                  */
                 if (!memcmp(szName, pszUnit, cbUnitNm))
                 {
-                    rc = ssmR3StrmSeek(&pSSM->Strm, off + RT_OFFSETOF(SSMFILEUNITHDR, szName) + cbUnitNm, RTFILE_SEEK_BEGIN, 0);
-                    pSSM->cbUnitLeftV1 = UnitHdr.cbUnit - RT_OFFSETOF(SSMFILEUNITHDR, szName[cbUnitNm]);
+                    rc = ssmR3StrmSeek(&pSSM->Strm, off + RT_OFFSETOF(SSMFILEUNITHDRV1, szName) + cbUnitNm, RTFILE_SEEK_BEGIN, 0);
+                    pSSM->cbUnitLeftV1 = UnitHdr.cbUnit - RT_OFFSETOF(SSMFILEUNITHDRV1, szName[cbUnitNm]);
                     pSSM->offUnit = 0;
                     if (piVersion)
                         *piVersion = UnitHdr.u32Version;
@@ -4107,8 +4107,8 @@ static int ssmR3FileSeekSubV2(PSSMHANDLE pSSM, PSSMFILEDIR pDir, size_t cbDir, u
             /*
              * Read and validate the unit header.
              */
-            SSMFILEUNITHDR  UnitHdr;
-            size_t          cbToRead = sizeof(UnitHdr);
+            SSMFILEUNITHDRV2    UnitHdr;
+            size_t              cbToRead = sizeof(UnitHdr);
             if (pDir->aEntries[i].off + cbToRead > offDir)
             {
                 cbToRead = offDir - pDir->aEntries[i].off;
@@ -4127,13 +4127,13 @@ static int ssmR3FileSeekSubV2(PSSMHANDLE pSSM, PSSMFILEDIR pDir, size_t cbDir, u
                                   ("Bad unit header: i=%d off=%lld u32Instance=%u Dir.u32Instance=%u\n",
                                    i, pDir->aEntries[i].off, UnitHdr.u32Instance, pDir->aEntries[i].u32Instance),
                                   VERR_SSM_INTEGRITY_UNIT);
-            uint32_t cbUnitHdr = RT_UOFFSETOF(SSMFILEUNITHDR, szName[UnitHdr.cbName]);
+            uint32_t cbUnitHdr = RT_UOFFSETOF(SSMFILEUNITHDRV2, szName[UnitHdr.cbName]);
             AssertLogRelMsgReturn(   UnitHdr.cbName > 0
                                   && UnitHdr.cbName < sizeof(UnitHdr)
                                   && cbUnitHdr <= cbToRead,
                                   ("Bad unit header: i=%u off=%lld cbName=%#x cbToRead=%#x\n", i, pDir->aEntries[i].off, UnitHdr.cbName, cbToRead),
                                   VERR_SSM_INTEGRITY_UNIT);
-            SSM_CHECK_CRC32_RET(&UnitHdr, RT_OFFSETOF(SSMFILEUNITHDR, szName[UnitHdr.cbName]),
+            SSM_CHECK_CRC32_RET(&UnitHdr, RT_OFFSETOF(SSMFILEUNITHDRV2, szName[UnitHdr.cbName]),
                                 ("Bad unit header CRC: i=%u off=%lld u32CRC=%#x u32ActualCRC=%#x\n",
                                  i, pDir->aEntries[i].off, u32CRC, u32ActualCRC));
 
