@@ -122,10 +122,10 @@ RTDECL(int) RTSemSpinMutexCreate(PRTSEMSPINMUTEX phSpinMtx, uint32_t fFlags)
     pThis = (RTSEMSPINMUTEXINTERNAL *)RTMemAllocZ(sizeof(*pThis));
     if (!pThis)
         return VERR_NO_MEMORY;
-    pThis->u32Magic  = RTSEMSPINMUTEX_MAGIC;
-    pThis->fFlags    = fFlags;
-    pThis->hOwner    = NIL_RTNATIVETHREAD;
-    pThis->cLockers  = 0;
+    pThis->u32Magic   = RTSEMSPINMUTEX_MAGIC;
+    pThis->fFlags     = fFlags;
+    pThis->hOwner     = NIL_RTNATIVETHREAD;
+    pThis->cLockers   = 0;
     rc = RTSemEventCreate(&pThis->hEventSem);
     if (RT_SUCCESS(rc))
     {
@@ -149,7 +149,10 @@ RT_EXPORT_SYMBOL(RTSemSpinMutexCreate);
  */
 static int rtSemSpinMutexEnter(RTSEMSPINMUTEXSTATE *pState, RTSEMSPINMUTEXINTERNAL *pThis)
 {
-    int rc = VINF_SUCCESS;
+#ifndef RT_OS_WINDOWS
+    RTTHREADPREEMPTSTATE const StateInit = RTTHREADPREEMPTSTATE_INITIALIZER;
+#endif
+    int rc  = VINF_SUCCESS;
 
     /** @todo Later #1: When entering in interrupt context and we're not able to
      *        wake up threads from it, we could try switch the lock into pure
@@ -191,6 +194,7 @@ static int rtSemSpinMutexEnter(RTSEMSPINMUTEXSTATE *pState, RTSEMSPINMUTEXINTERN
             rc = VINF_SEM_BAD_CONTEXT; /* Try, but owner might be interrupted. */
         pState->fSpin = true;
     }
+    pState->PreemptState = StateInit;
     RTThreadPreemptDisable(&pState->PreemptState);
 
 #else /* PORTME: Check for context where we cannot wake up threads. */
@@ -201,6 +205,7 @@ static int rtSemSpinMutexEnter(RTSEMSPINMUTEXSTATE *pState, RTSEMSPINMUTEXINTERN
     if (RTThreadIsInInterrupt(NIL_RTTHREAD))
         return VERR_SEM_BAD_CONTEXT;
     pState->fSpin = !RTThreadPreemptIsEnabled(NIL_RTTHREAD);
+    pState->PreemptState = StateInit;
     RTThreadPreemptDisable(&pState->PreemptState);
 #endif
 
