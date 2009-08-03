@@ -180,8 +180,13 @@ static int  VBoxDrvLinuxIOCtlSlow(struct file *pFilp, unsigned int uCmd, unsigne
 static int  VBoxDrvLinuxErr2LinuxErr(int);
 #ifdef VBOX_WITH_SUSPEND_NOTIFICATION
 static int  VBoxDrvProbe(struct platform_device *pDev);
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 30)
+static int  VBoxDrvSuspend(struct device *pDev);
+static int  VBoxDrvResume(struct device *pDev);
+# else
 static int  VBoxDrvSuspend(struct platform_device *pDev, pm_message_t State);
 static int  VBoxDrvResume(struct platform_device *pDev);
+# endif
 static void VBoxDevRelease(struct device *pDev);
 #endif
 
@@ -213,15 +218,28 @@ static struct miscdevice gMiscDevice =
 
 
 #ifdef VBOX_WITH_SUSPEND_NOTIFICATION
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 30)
+static struct dev_pm_ops gPlatformPMOps =
+{
+    .suspend = VBoxDrvSuspend,
+    .resume = VBoxDrvResume,
+};
+# endif
+
 static struct platform_driver gPlatformDriver =
 {
     .probe = VBoxDrvProbe,
+# if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 30)
     .suspend = VBoxDrvSuspend,
     .resume = VBoxDrvResume,
+# endif
     /** @todo .shutdown? */
     .driver =
     {
-        .name = "vboxdrv"
+        .name = "vboxdrv",
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 30)
+        .pm = &gPlatformPMOps,
+# endif
     }
 };
 
@@ -734,7 +752,11 @@ static int VBoxDrvProbe(struct platform_device *pDev)
  * @param   pDev        Pointer to the platform device.
  * @param   State       message type, see Documentation/power/devices.txt.
  */
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 30)
+static int VBoxDrvSuspend(struct device *pDev)
+# else
 static int VBoxDrvSuspend(struct platform_device *pDev, pm_message_t State)
+# endif
 {
     RTPowerSignalEvent(RTPOWEREVENT_SUSPEND);
     return 0;
@@ -745,7 +767,11 @@ static int VBoxDrvSuspend(struct platform_device *pDev, pm_message_t State)
  *
  * @param   pDev        Pointer to the platform device.
  */
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 30)
+static int VBoxDrvResume(struct device *pDev)
+# else
 static int VBoxDrvResume(struct platform_device *pDev)
+# endif
 {
     RTPowerSignalEvent(RTPOWEREVENT_RESUME);
     return 0;
