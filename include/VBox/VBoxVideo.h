@@ -275,11 +275,16 @@ typedef enum
 /* the command processing was asynch, set by the host to indicate asynch command completion
  * must not be cleared once set, the command completion is performed by issuing a host->guest completion command
  * while keeping this flag unchanged */
-#define VBOXVHWACMD_FLAG_ASYNCH       0x00000001
+#define VBOXVHWACMD_FLAG_HG_ASYNCH               0x00010000
 /* asynch completion is performed by issuing the event */
-#define VBOXVHWACMD_FLAG_ASYNCH_EVENT 0x00000002
+#define VBOXVHWACMD_FLAG_GH_ASYNCH_EVENT         0x00000001
 /* issue interrupt on asynch completion */
-#define VBOXVHWACMD_FLAG_ASYNCH_IRQ   0x00000004
+#define VBOXVHWACMD_FLAG_GH_ASYNCH_IRQ           0x00000002
+/* guest does not do any op on completion of this command, the host may copy the command and indicate that it does not need the command anymore
+ * by setting the VBOXVHWACMD_FLAG_HG_ASYNCH_RETURNED flag */
+#define VBOXVHWACMD_FLAG_GH_ASYNCH_NOCOMPLETION  0x00000004
+/* the host has copied the VBOXVHWACMD_FLAG_GH_ASYNCH_NOCOMPLETION command and returned it to the guest */
+#define VBOXVHWACMD_FLAG_HG_ASYNCH_RETURNED      0x00020000
 
 typedef struct _VBOXVHWACMD
 {
@@ -308,10 +313,10 @@ typedef uint64_t VBOXVHWA_SURFHANDLE;
 
 typedef struct _VBOXVHWA_RECTL
 {
-    int32_t x;
-    int32_t y;
-    uint32_t w;
-    uint32_t h;
+    int32_t left;
+    int32_t top;
+    int32_t right;
+    int32_t bottom;
 } VBOXVHWA_RECTL;
 
 typedef struct _VBOXVHWA_COLORKEY
@@ -347,6 +352,11 @@ typedef struct _VBOXVHWA_PIXELFORMAT
         uint32_t rgbBBitMask;
         uint32_t yuvVBitMask;
     } m3;
+
+    union
+    {
+        uint32_t rgbABitMask;
+    } m4;
 } VBOXVHWA_PIXELFORMAT;
 
 typedef struct _VBOXVHWA_SURFACEDESC
@@ -355,8 +365,8 @@ typedef struct _VBOXVHWA_SURFACEDESC
     uint32_t height;
     uint32_t width;
     uint32_t pitch;
+    uint32_t bitsPerPixel;
     uint32_t cBackBuffers;
-    uint32_t Reserved1;
     VBOXVHWA_COLORKEY DstOverlayCK;
     VBOXVHWA_COLORKEY DstBltCK;
     VBOXVHWA_COLORKEY SrcOverlayCK;
@@ -397,6 +407,7 @@ typedef struct _VBOXVHWA_OVERLAYFX
 #define VBOXVHWA_CAPS_OVERLAY         0x00000100
 #define VBOXVHWA_CAPS_OVERLAYFOURCC   0x00000200
 #define VBOXVHWA_CAPS_OVERLAYSTRETCH  0x00000400
+#define VBOXVHWA_CAPS_OVERLAYCANTCLIP 0x00000800
 
 #define VBOXVHWA_CAPS_COLORKEY        0x00010000
 #define VBOXVHWA_CAPS_COLORKEYHWASSIST         0x00020000
@@ -520,11 +531,11 @@ typedef struct _VBOXVHWACMD_QUERYINFO2
 
 typedef struct _VBOXVHWACMD_SURF_CANCREATE
 {
+    VBOXVHWA_SURFACEDESC SurfInfo;
     union
     {
         struct
         {
-            VBOXVHWA_SURFACEDESC SurfInfo;
             uint32_t bIsDifferentPixelFormat;
             uint32_t Reserved;
         } in;
@@ -538,11 +549,11 @@ typedef struct _VBOXVHWACMD_SURF_CANCREATE
 
 typedef struct _VBOXVHWACMD_SURF_CREATE
 {
+    VBOXVHWA_SURFACEDESC SurfInfo;
     union
     {
         struct
         {
-            VBOXVHWA_SURFACEDESC SurfInfo;
             uint64_t offSurface;
         } in;
 
@@ -586,6 +597,9 @@ typedef struct _VBOXVHWACMD_SURF_UNLOCK
         struct
         {
             VBOXVHWA_SURFHANDLE hSurf;
+            uint32_t xUpdatedMemValid;
+            uint32_t reserved;
+            VBOXVHWA_RECTL xUpdatedMemRect;
         } in;
     } u;
 } VBOXVHWACMD_SURF_UNLOCK;
@@ -605,8 +619,9 @@ typedef struct _VBOXVHWACMD_SURF_BLT
             uint64_t offSrcSurface;
             VBOXVHWA_RECTL srcRect;
             uint32_t flags;
-            uint32_t reserved;
+            uint32_t xUpdatedSrcMemValid;
             VBOXVHWA_BLTFX desc;
+            VBOXVHWA_RECTL xUpdatedSrcMemRect;
         } in;
     } u;
 } VBOXVHWACMD_SURF_BLT;
@@ -624,7 +639,8 @@ typedef struct _VBOXVHWACMD_SURF_FLIP
             VBOXVHWA_SURFHANDLE hCurrSurf;
             uint64_t offCurrSurface;
             uint32_t flags;
-            uint32_t reserved;
+            uint32_t xUpdatedTargMemValid;
+            VBOXVHWA_RECTL xUpdatedTargMemRect;
         } in;
     } u;
 } VBOXVHWACMD_SURF_FLIP;
@@ -657,8 +673,9 @@ typedef struct _VBOXVHWACMD_SURF_OVERLAY_UPDATE
             uint64_t offSrcSurface;
             VBOXVHWA_RECTL srcRect;
             uint32_t flags;
-            uint32_t reserved;
+            uint32_t xUpdatedSrcMemValid;
             VBOXVHWA_OVERLAYFX desc;
+            VBOXVHWA_RECTL xUpdatedSrcMemRect;
         } in;
     } u;
 }VBOXVHWACMD_SURF_OVERLAY_UPDATE;

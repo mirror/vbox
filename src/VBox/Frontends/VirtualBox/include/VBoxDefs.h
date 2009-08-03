@@ -128,7 +128,7 @@ struct VBoxDefs
 #endif
         AddVDMUrlsEventType,
         ChangeDockIconUpdateEventType
-#ifdef VBOX_WITH_VIDEOHWACCEL
+#ifdef VBOX_GUI_USE_QGL
         ,
         VHWACommandProcessType
 #endif

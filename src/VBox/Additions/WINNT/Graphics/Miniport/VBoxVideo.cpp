@@ -1326,7 +1326,7 @@ BOOLEAN VBoxVideoInterrupt(PVOID  HwDeviceExtension)
         if((flags & HGSMIHOSTFLAGS_COMMANDS_PENDING) != 0)
         {
             /* schedule a DPC*/
-            BOOLEAN bResult = VideoPortQueueDpc(PrimaryExtension, VBoxVideoHGSMIDpc, NULL);
+            BOOLEAN bResult = VideoPortQueueDpc(PrimaryExtension, VBoxVideoHGSMIDpc, (PVOID)1);
             Assert(bResult);
         }
         /* clear the IRQ */
