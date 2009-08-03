@@ -85,9 +85,7 @@ VMMR0DECL(int) CPUMR0Init(PVM pVM)
             uint32_t u32 = ASMRdMsr_Low(MSR_IA32_SYSENTER_CS);
             if (u32)
             {
-                for (unsigned i=0;i<pVM->cCPUs;i++)
-                    pVM->aCpus[i].cpum.s.fUseFlags |= CPUM_USE_SYSENTER;
-
+                pVM->cpum.s.fHostUseFlags |= CPUM_USE_SYSENTER;
                 Log(("CPUMR0Init: host uses sysenter cs=%08x%08x\n", ASMRdMsr_High(MSR_IA32_SYSENTER_CS), u32));
             }
         }
