@@ -73,6 +73,11 @@ void VBoxVMSettingsGeneral::getFrom (const CMachine &aMachine)
     QString showMiniToolBar = mMachine.GetExtraData (VBoxDefs::GUI_ShowMiniToolBar);
     mCbShowToolBar->setChecked (showMiniToolBar != "no");
 
+    /* Show Mini ToolBar at top */
+    QString miniToolBarAlignment = mMachine.GetExtraData (VBoxDefs::GUI_MiniToolBarAlignment);
+    mCbToolBarAlignment->setChecked (miniToolBarAlignment == "top");
+    mCbToolBarAlignment->setEnabled (mCbShowToolBar->isChecked());
+
     /* Snapshot folder */
     mPsSnapshot->setPath (aMachine.GetSnapshotFolder());
     mPsSnapshot->setHomeDir (QFileInfo (mMachine.GetSettingsFilePath()).absolutePath());
@@ -103,6 +108,10 @@ void VBoxVMSettingsGeneral::putBackTo()
     /* Show Mini ToolBar in fullscreen/seamless */
     mMachine.SetExtraData (VBoxDefs::GUI_ShowMiniToolBar,
                            mCbShowToolBar->isChecked() ? "yes" : "no");
+
+    /* Show Mini ToolBar at top */
+    mMachine.SetExtraData (VBoxDefs::GUI_MiniToolBarAlignment,
+                           mCbToolBarAlignment->isChecked() ? "top" : "bottom");
 
     /* Saved state folder */
     if (mPsSnapshot->isModified())
