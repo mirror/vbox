@@ -255,13 +255,13 @@ BEGINPROC vmmR0HostToGuestAsm
 
     FIXUP FIX_NO_SYSENTER_JMP, 0, htg_no_sysenter - NAME(Start) ; this will insert a jmp htg_no_sysenter if host doesn't use sysenter.
     ; save MSR_IA32_SYSENTER_CS register.
-    mov     ecx, MSR_IA32_SYSENTER_CS
     mov     rbx, rdx                    ; save edx
+    mov     ecx, MSR_IA32_SYSENTER_CS
     rdmsr                               ; edx:eax <- MSR[ecx]
-    mov     [rbx + r8 + CPUMCPU.Host.SysEnter.cs], rax
-    mov     [rbx + r8 + CPUMCPU.Host.SysEnter.cs + 4], rdx
-    xor     rax, rax                    ; load 0:0 to cause #GP upon sysenter
-    xor     rdx, rdx
+    mov     [rbx + r8 + CPUMCPU.Host.SysEnter.cs], eax
+    mov     [rbx + r8 + CPUMCPU.Host.SysEnter.cs + 4], edx
+    xor     eax, eax                    ; load 0:0 to cause #GP upon sysenter
+    xor     edx, edx
     wrmsr
     mov     rdx, rbx                    ; restore edx
     jmp short htg_no_sysenter
