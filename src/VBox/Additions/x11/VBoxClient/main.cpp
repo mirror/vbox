@@ -87,22 +87,8 @@ int vboxClientXLibErrorHandler(Display *pDisplay, XErrorEvent *pError)
 {
     char errorText[1024];
 
-    if (pError->error_code == BadAtom)
-    {
-        /* This can be triggered in debug builds if a guest application passes a bad atom
-           in its list of supported clipboard formats.  As such it is harmless. */
-        Log(("VBoxClient: ignoring BadAtom error and returning\n"));
-        return 0;
-    }
-    if (pError->error_code == BadWindow)
-    {
-        /* This can be triggered if a guest application destroys a window before we notice. */
-        Log(("VBoxClient: ignoring BadWindow error and returning\n"));
-        return 0;
-    }
     XGetErrorText(pDisplay, pError->error_code, errorText, sizeof(errorText));
-    LogRel(("VBoxClient: an X Window protocol error occurred: %s (error code %d).  Request code: %d, minor code: %d, serial number: %d\n", errorText, pError->error_code, pError->request_code, pError->minor_code, pError->serial));
-    VBoxClient::CleanUp();
+    LogRelFlow(("VBoxClient: an X Window protocol error occurred: %s (error code %d).  Request code: %d, minor code: %d, serial number: %d\n", errorText, pError->error_code, pError->request_code, pError->minor_code, pError->serial));
     return 0;  /* We should never reach this. */
 }
 
