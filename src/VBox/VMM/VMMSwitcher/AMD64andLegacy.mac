@@ -199,7 +199,7 @@ BITS 64
 ALIGNCODE(16)
 BEGINPROC vmmR0HostToGuestAsm
     ;; Store the offset from CPUM to CPUMCPU in r8
-    mov     r8, [rdx + CPUM.ulOffCPUMCPU]
+    mov     r8d, [rdx + CPUM.ulOffCPUMCPU]
 
     ;;
     ;; Save CPU host context
@@ -946,7 +946,7 @@ GLOBALNAME HCExitTarget
     ; Load CPUM pointer into edx
     mov     rdx, [NAME(pCpumHC) wrt rip]
     ; Load the CPUMCPU offset.
-    mov     r8, [rdx + CPUM.ulOffCPUMCPU]
+    mov     r8d, [rdx + CPUM.ulOffCPUMCPU]
 
     ; activate host gdt and idt
     lgdt    [rdx + r8 + CPUMCPU.Host.gdtr]
