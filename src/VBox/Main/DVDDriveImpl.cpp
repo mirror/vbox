@@ -485,7 +485,7 @@ HRESULT DVDDrive::loadSettings (const settings::Key &aMachineNode)
             /* dvd drive mapping was not found anymore - can
                happen when disabling/hiding the drive created by
                a daemon tools-like program */
-            ComAssertMsgFailedRet(("DVD drive %s does not exist!\n", src), E_FAIL);
+            ComAssertMsgFailedRet(("DVD drive %s does not exist!\n", src.raw()), E_FAIL);
         }
         else
             AssertComRC (rc);
