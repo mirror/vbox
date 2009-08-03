@@ -53,6 +53,8 @@
 # include <iprt/crc32.h>
 # include <iprt/net.h>
 # include <iprt/string.h>
+# include <iprt/rand.h>
+# include <iprt/path.h>
 #endif
 /* VBox/x86.h not compatible with the Linux kernel sources */
 #ifdef RT_OS_LINUX
@@ -479,6 +481,7 @@ static SUPFUNC g_aFunctions[] =
  */
 PFNRT g_apfnVBoxDrvIPRTDeps[] =
 {
+    /* VBoxNetFlt */
     (PFNRT)RTCrc32,
     (PFNRT)RTErrConvertFromErrno,
     (PFNRT)RTNetIPv4IsHdrValid,
@@ -489,6 +492,10 @@ PFNRT g_apfnVBoxDrvIPRTDeps[] =
     (PFNRT)RTUuidFromStr,
     (PFNRT)RTStrDup,
     (PFNRT)RTStrFree,
+    /* VBoxNetAdp */
+    (PFNRT)RTRandBytes,
+    /* VBoxUSB */
+    (PFNRT)RTPathStripFilename,
     NULL
 };
 #endif  /* RT_OS_DARWIN || RT_OS_SOLARIS || RT_OS_SOLARIS */

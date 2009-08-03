@@ -54,8 +54,6 @@ VBoxNetAdp_SOURCES.linux   = \
 VBoxNetAdp_SOURCES          =
 #VBoxNetAdp_SOURCES          = \
 #	VBoxNetAdp.c
-VBoxNetAdp_LIBS.solaris    += \
-	$(PATH_LIB)/RuntimeR0Drv$(VBOX_SUFF_LIB)
 VBoxNetAdp_LIBS            += \
 	$(PATH_LIB)/SUPR0IdcClient$(VBOX_SUFF_LIB)
  endif
