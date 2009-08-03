@@ -29,10 +29,6 @@
 /* Qt includes */
 #include <QPainter>
 
-#ifdef VBOX_WITH_VIDEOHWACCEL
-#include <VBox/VBoxVideo.h>
-#endif
-
 //
 // VBoxFrameBuffer class
 /////////////////////////////////////////////////////////////////////////////
@@ -271,14 +267,14 @@ STDMETHODIMP VBoxFrameBuffer::ProcessVHWACommand(BYTE *pCommand)
     return E_NOTIMPL;
 }
 
-#ifdef VBOX_WITH_VIDEOHWACCEL
-void VBoxFrameBuffer::doProcessVHWACommand(struct _VBOXVHWACMD * pCommand)
+#ifdef VBOX_GUI_USE_QGL
+void VBoxFrameBuffer::doProcessVHWACommand(VBoxVHWACommandProcessEvent * pEvent)
 {
-    pCommand->rc = VERR_NOT_IMPLEMENTED;
-    CDisplay display = mView->console().GetDisplay();
-    Assert (!display.isNull());
-
-    display.CompleteVHWACommand((BYTE*)pCommand);
+//    pCommand->rc = VERR_NOT_IMPLEMENTED;
+//    CDisplay display = mView->console().GetDisplay();
+//    Assert (!display.isNull());
+//
+//    display.CompleteVHWACommand((BYTE*)pCommand);
 }
 #endif
 

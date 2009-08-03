@@ -475,7 +475,11 @@ $(eval VirtualBox_SOURCES += $(FORMS))
 VirtualBox_SOURCES += VirtualBox.qrc
 VirtualBox_SOURCES += $(VBOX_VIRTUALBOX4_OUT_DIR)/VirtualBoxBrand.qrc
 $(VBOX_VIRTUALBOX4_OUT_DIR)/VirtualBoxBrand.qrc_RCCFLAGS = -name BRAND
-
+ifdef VBOX_WITH_VIDEOHWACCEL
+VirtualBox_SOURCES += VirtualBoxShaders.qrc
+VirtualBoxShaders.qrc_RCCFLAGS = -name SHADERS
+endif
+ 
 # Import the translation source from VBoxUI.pro and add the qt_xx_YY counterparts
 VirtualBox_QT_TRANSLATIONS := $(TRANSLATIONS) \
 	$(patsubst nls/VirtualBox_%.ts,nls/qt_%.ts, $(filter nls/VirtualBox_%.ts,$(TRANSLATIONS)))

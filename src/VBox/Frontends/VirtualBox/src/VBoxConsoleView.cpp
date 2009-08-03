@@ -771,11 +771,18 @@ VBoxConsoleView::VBoxConsoleView (VBoxConsoleWnd *mainWnd,
     /* No frame around the view */
     setFrameStyle (QFrame::NoFrame);
 
-#ifndef VBOX_WITH_VIDEOHWACCEL
-    VBoxViewport *pViewport = new VBoxViewport (this);
+#ifdef VBOX_GUI_USE_QGL
+    QWidget *pViewport;
+    switch (mode)
+    {
+        case VBoxDefs::QGLMode:
+            pViewport = new VBoxGLWidget (this, this);
+            break;
+        default:
+            pViewport = new VBoxViewport (this);
+    }
 #else
-//    /* TODO: temporary always use VBoxGLWidget for debugging */
-    VBoxGLWidget *pViewport = new VBoxGLWidget (this);
+    VBoxViewport *pViewport = new VBoxViewport (this);
 #endif
     setViewport (pViewport);
 //    pViewport->vboxDoInit();
@@ -1325,6 +1332,15 @@ bool VBoxConsoleView::event (QEvent *e)
                 return true;
             }
 
+#ifdef VBOX_GUI_USE_QGL
+            case VBoxDefs::VHWACommandProcessType:
+            {
+                VBoxVHWACommandProcessEvent *cmde = (VBoxVHWACommandProcessEvent *)e;
+                mFrameBuf->doProcessVHWACommand(cmde);
+                return true;
+            }
+#endif
+
             case VBoxDefs::SetRegionEventType:
             {
                 VBoxSetRegionEvent *sre = (VBoxSetRegionEvent*) e;
@@ -1685,14 +1701,6 @@ bool VBoxConsoleView::event (QEvent *e)
                  */
                 window()->show();
                 window()->activateWindow();
-                return true;
-            }
-#endif
-#ifdef VBOX_WITH_VIDEOHWACCEL
-            case VBoxDefs::VHWACommandProcessType:
-            {
-                VBoxVHWACommandProcessEvent *cmde = (VBoxVHWACommandProcessEvent *)e;
-                mFrameBuf->doProcessVHWACommand(cmde->command());
                 return true;
             }
 #endif

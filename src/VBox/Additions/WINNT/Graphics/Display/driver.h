@@ -109,7 +109,8 @@ typedef struct _VBOXVHWASURFDESC
     volatile uint32_t cPendingFlipsTarg;
     uint32_t cBitsPerPixel;
     bool bHidden;
-    VBOXVHWAREGION DirtyRegion;
+    VBOXVHWAREGION UpdatedMemRegion;
+    VBOXVHWAREGION NonupdatedMemRegion;
 }VBOXVHWASURFDESC, *PVBOXVHWASURFDESC;
 
 typedef struct _VBOXVHWAINFO
@@ -306,6 +307,8 @@ void vboxVHWARegionSet(PVBOXVHWAREGION pReg, RECTL * pRect);
 void vboxVHWARegionAdd(PVBOXVHWAREGION pReg, RECTL * pRect);
 void vboxVHWARegionInit(PVBOXVHWAREGION pReg);
 void vboxVHWARegionClear(PVBOXVHWAREGION pReg);
+bool vboxVHWARegionValid(PVBOXVHWAREGION pReg);
+void vboxVHWARegionTrySubstitute(PVBOXVHWAREGION pReg, const RECTL *pRect);
 
 VBOXVHWACMD* vboxVHWACommandCreate (PPDEV ppdev, VBOXVHWACMD_TYPE enmCmd, VBOXVHWACMD_LENGTH cbCmd);
 void vboxVHWACommandFree (PPDEV ppdev, VBOXVHWACMD* pCmd);
@@ -313,6 +316,7 @@ BOOL vboxVHWACommandSubmit (PPDEV ppdev, VBOXVHWACMD* pCmd);
 void vboxVHWACommandSubmitAsynch (PPDEV ppdev, VBOXVHWACMD* pCmd, PFNVBOXVHWACMDCOMPLETION pfnCompletion, void * pContext);
 void vboxVHWACommandSubmitAsynchByEvent (PPDEV ppdev, VBOXVHWACMD* pCmd, PEVENT pEvent);
 void vboxVHWACommandCheckHostCmds(PPDEV ppdev);
+void vboxVHWACommandSubmitAsynchAndComplete (PPDEV ppdev, VBOXVHWACMD* pCmd);
 
 int vboxVHWAInitHostInfo1(PPDEV ppdev);
 int vboxVHWAInitHostInfo2(PPDEV ppdev, DWORD *pFourCC);

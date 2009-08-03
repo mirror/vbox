@@ -781,10 +781,10 @@ void vboxVHWACommandSubmitAsynchByEvent (PPDEV ppdev, VBOXVHWACMD* pCmd, PEVENT 
     pCmd->GuestVBVAReserved2 = 0;
 
     /* complete it asynchronously by setting event */
-    pCmd->Flags |= VBOXVHWACMD_FLAG_ASYNCH_EVENT;
+    pCmd->Flags |= VBOXVHWACMD_FLAG_GH_ASYNCH_EVENT;
     vboxHGSMIBufferSubmit (ppdev, pCmd);
 
-    if(!(ASMAtomicReadU32((volatile uint32_t *)&pCmd->Flags)  & VBOXVHWACMD_FLAG_ASYNCH))
+    if(!(ASMAtomicReadU32((volatile uint32_t *)&pCmd->Flags)  & VBOXVHWACMD_FLAG_HG_ASYNCH))
     {
         /* the command is completed */
         EngSetEvent(pEvent);
@@ -799,7 +799,7 @@ BOOL vboxVHWACommandSubmit (PPDEV ppdev, VBOXVHWACMD* pCmd)
 
     if(brc)
     {
-        pCmd->Flags = VBOXVHWACMD_FLAG_ASYNCH_IRQ;
+        pCmd->Flags |= VBOXVHWACMD_FLAG_GH_ASYNCH_IRQ;
         vboxVHWACommandSubmitAsynchByEvent (ppdev, pCmd, pEvent);
 
         brc = EngWaitForSingleObject(pEvent,
@@ -821,13 +821,34 @@ void vboxVHWACommandSubmitAsynch (PPDEV ppdev, VBOXVHWACMD* pCmd, PFNVBOXVHWACMD
     pCmd->GuestVBVAReserved1 = (uintptr_t)pfnCompletion;
     pCmd->GuestVBVAReserved2 = (uintptr_t)pContext;
 
-    pCmd->Flags = 0;
     vboxHGSMIBufferSubmit (ppdev, pCmd);
 
-    if(!(pCmd->Flags  & VBOXVHWACMD_FLAG_ASYNCH))
+    if(!(pCmd->Flags & VBOXVHWACMD_FLAG_HG_ASYNCH))
     {
         /* the command is completed */
         pfnCompletion(ppdev, pCmd, pContext);
+    }
+}
+
+static DECLCALLBACK(void) vboxVHWAFreeCmdCompletion(PPDEV ppdev, VBOXVHWACMD * pCmd, void * pContext)
+{
+    vboxVHWACommandFree(ppdev, pCmd);
+}
+
+void vboxVHWACommandSubmitAsynchAndComplete (PPDEV ppdev, VBOXVHWACMD* pCmd)
+{
+//    Assert(0);
+    pCmd->GuestVBVAReserved1 = (uintptr_t)vboxVHWAFreeCmdCompletion;
+
+    pCmd->Flags |= VBOXVHWACMD_FLAG_GH_ASYNCH_NOCOMPLETION;
+
+    vboxHGSMIBufferSubmit (ppdev, pCmd);
+
+    if(!(pCmd->Flags & VBOXVHWACMD_FLAG_HG_ASYNCH)
+            || pCmd->Flags & VBOXVHWACMD_FLAG_HG_ASYNCH_RETURNED)
+    {
+        /* the command is completed */
+        vboxVHWAFreeCmdCompletion(ppdev, pCmd, NULL);
     }
 }
 
@@ -918,7 +939,8 @@ int vboxVHWAInitHostInfo2(PPDEV ppdev, DWORD *pFourCC)
     VBOXVHWACMD_QUERYINFO2* pInfo = vboxVHWAQueryHostInfo2(ppdev, ppdev->vhwaInfo.numFourCC);
     int rc = VINF_SUCCESS;
 
-    if(pInfo)
+    Assert(pInfo);
+    if(!pInfo)
         return VERR_OUT_OF_RESOURCES;
 
     if(ppdev->vhwaInfo.numFourCC)
