@@ -513,7 +513,7 @@ htg_debug_regs_guest_no:
     mov     eax, [edx + CPUMCPU.Hyper.eip]
     ; callees expect CPUM ptr
     CPUM_FROM_CPUMCPU(edx)
-    
+
 %ifdef VBOX_WITH_STATISTICS
     FIXUP FIX_GC_VM_OFF, 1, VM.StatSwitcherToGC
     mov     edx, 0ffffffffh
@@ -990,10 +990,10 @@ GLOBALNAME HCExitTarget
 
     FIXUP FIX_NO_SYSENTER_JMP, 0, gth_sysenter_no - NAME(Start) ; this will insert a jmp gth_sysenter_no if host doesn't use sysenter.
     ; restore MSR_IA32_SYSENTER_CS register.
+    mov     rbx, rdx                    ; save edx
     mov     ecx, MSR_IA32_SYSENTER_CS
-    mov     eax, [rdx + r8 + CPUMCPU.Host.SysEnter.cs]
-    mov     ebx, [rdx + r8 + CPUMCPU.Host.SysEnter.cs + 4]
-    mov     rbx, rdx                    ; save/load edx
+    mov     eax, [rbx + r8 + CPUMCPU.Host.SysEnter.cs]
+    mov     edx, [rbx + r8 + CPUMCPU.Host.SysEnter.cs + 4]
     wrmsr                               ; MSR[ecx] <- edx:eax
     mov     rdx, rbx                    ; restore edx
     jmp short gth_sysenter_no
