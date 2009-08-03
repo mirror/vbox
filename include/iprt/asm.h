@@ -970,7 +970,7 @@ DECLINLINE(uint8_t) ASMGetApicId(void)
 
 
 /**
- * Tests if it an genuin Intel CPU based on the ASMCpuId(0) output.
+ * Tests if it a genuine Intel CPU based on the ASMCpuId(0) output.
  *
  * @returns true/false.
  * @param   uEBX    EBX return from ASMCpuId(0)
@@ -986,9 +986,10 @@ DECLINLINE(bool) ASMIsIntelCpuEx(uint32_t uEBX, uint32_t uECX, uint32_t uEDX)
 
 
 /**
- * Tests if this is an genuin Intel CPU.
+ * Tests if this is a genuine Intel CPU.
  *
  * @returns true/false.
+ * @remarks ASSUMES that cpuid is supported by the CPU.
  */
 DECLINLINE(bool) ASMIsIntelCpu(void)
 {
