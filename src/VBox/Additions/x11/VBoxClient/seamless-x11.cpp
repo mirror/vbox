@@ -331,13 +331,12 @@ void VBoxGuestSeamlessX11::doConfigureEvent(Window hWin)
     {
         XWindowAttributes winAttrib;
 
-        if (XGetWindowAttributes(mDisplay, hWin, &winAttrib))
-        {
-            iter->second->mX = winAttrib.x;
-            iter->second->mY = winAttrib.y;
-            iter->second->mWidth = winAttrib.width;
-            iter->second->mHeight = winAttrib.height;
-        }
+        if (!XGetWindowAttributes(mDisplay, hWin, &winAttrib))
+            return;
+        iter->second->mX = winAttrib.x;
+        iter->second->mY = winAttrib.y;
+        iter->second->mWidth = winAttrib.width;
+        iter->second->mHeight = winAttrib.height;
         if (iter->second->mhasShape)
         {
             VBoxGuestX11Pointer<XRectangle> rects;
@@ -345,6 +344,8 @@ void VBoxGuestSeamlessX11::doConfigureEvent(Window hWin)
 
             rects = XShapeGetRectangles(mDisplay, hWin, ShapeBounding,
                                         &cRects, &iOrdering);
+            if (rects.get() == NULL)
+                cRects = 0;
             iter->second->mcRects = cRects;
             iter->second->mapRects = rects;
         }
@@ -391,6 +392,8 @@ void VBoxGuestSeamlessX11::doShapeEvent(Window hWin)
 
         rects = XShapeGetRectangles(mDisplay, hWin, ShapeBounding, &cRects,
                                     &iOrdering);
+        if (rects.get() == NULL)
+            cRects = 0;
         iter->second->mhasShape = true;
         iter->second->mcRects = cRects;
         iter->second->mapRects = rects;
