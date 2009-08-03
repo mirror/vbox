@@ -813,9 +813,10 @@ bool VBoxConsoleWnd::openView (const CSession &session)
 
     /* Mini toolbar */
     bool isActive = !(cmachine.GetExtraData (VBoxDefs::GUI_ShowMiniToolBar) == "no");
+    bool isAtTop = (cmachine.GetExtraData (VBoxDefs::GUI_MiniToolBarAlignment) == "top");
     bool isAutoHide = !(cmachine.GetExtraData (VBoxDefs::GUI_MiniToolBarAutoHide) == "off");
     QList <QMenu*> menus (QList <QMenu*> () << mMiniVMMenu << mDevicesMenu);
-    mMiniToolBar = new VBoxMiniToolBar (centralWidget(), VBoxMiniToolBar::AlignBottom,
+    mMiniToolBar = new VBoxMiniToolBar (centralWidget(), isAtTop ? VBoxMiniToolBar::AlignTop : VBoxMiniToolBar::AlignBottom,
                                         isActive, isAutoHide);
     *mMiniToolBar << menus;
     connect (mMiniToolBar, SIGNAL (exitAction()), this, SLOT (mtExitMode()));

@@ -32,6 +32,7 @@ const char* VBoxDefs::GUI_AutoresizeGuest = "GUI/AutoresizeGuest";
 const char* VBoxDefs::GUI_FirstRun = "GUI/FirstRun";
 const char* VBoxDefs::GUI_SaveMountedAtRuntime = "GUI/SaveMountedAtRuntime";
 const char* VBoxDefs::GUI_ShowMiniToolBar = "GUI/ShowMiniToolBar";
+const char* VBoxDefs::GUI_MiniToolBarAlignment = "GUI/MiniToolBarAlignment";
 const char* VBoxDefs::GUI_MiniToolBarAutoHide = "GUI/MiniToolBarAutoHide";
 const char* VBoxDefs::GUI_LastCloseAction = "GUI/LastCloseAction";
 const char* VBoxDefs::GUI_SuppressMessages = "GUI/SuppressMessages";
