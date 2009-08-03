@@ -665,11 +665,16 @@ class VBoxVHWATexture
 public:
     VBoxVHWATexture() {}
     VBoxVHWATexture(const QRect * pRect, const VBoxVHWAColorFormat *pFormat);
-    void init(uchar *pvMem);
+//    virtual ~VBoxVHWATexture();
+    virtual void init(uchar *pvMem);
     void setAddress(uchar *pvMem) {mAddress = pvMem;}
-    void uninit();
-    void update(const QRect * pRect);
-    GLuint texture() {return mTexture;}
+    virtual void update(const QRect * pRect);
+    void bind() {glBindTexture(texTarget(), mTexture);}
+
+    virtual void texCoord(int x, int y);
+    virtual void multiTexCoord(GLenum texUnit, int x, int y);
+
+//    GLuint texture() {return mTexture;}
     const QRect & texRect() {return mTexRect;}
     const QRect & rect() {return mRect;}
     uchar * address(){ return mAddress; }
@@ -683,14 +688,46 @@ public:
     int toXTex(int x) {return x/mColorFormat.widthCompression();}
     int toYTex(int y) {return y/mColorFormat.heightCompression();}
     ulong memSize(){ return mBytesPerLine * mRect.height()/mColorFormat.heightCompression(); }
-private:
+
+    void uninit();
+
+protected:
+    virtual void initParams();
+    virtual void load();
+    virtual GLenum texTarget() {return GL_TEXTURE_2D; }
+
+
+    QRect mTexRect; /* texture size */
+    QRect mRect; /* img size */
     uchar * mAddress;
     GLuint mTexture;
     uint32_t mBytesPerPixel;
     uint32_t mBytesPerLine;
-    QRect mTexRect; /* texture size */
-    QRect mRect; /* img size */
     VBoxVHWAColorFormat mColorFormat;
+};
+
+class VBoxVHWATextureNP2 : public VBoxVHWATexture
+{
+public:
+    VBoxVHWATextureNP2() : VBoxVHWATexture() {}
+    VBoxVHWATextureNP2(const QRect * pRect, const VBoxVHWAColorFormat *pFormat) :
+        VBoxVHWATexture(pRect, pFormat){
+        mTexRect = *pRect;
+    }
+protected:
+};
+
+class VBoxVHWATextureNP2Rect : public VBoxVHWATextureNP2
+{
+public:
+    VBoxVHWATextureNP2Rect() : VBoxVHWATextureNP2() {}
+    VBoxVHWATextureNP2Rect(const QRect * pRect, const VBoxVHWAColorFormat *pFormat) :
+        VBoxVHWATextureNP2(pRect, pFormat){}
+
+    virtual void texCoord(int x, int y);
+    virtual void multiTexCoord(GLenum texUnit, int x, int y);
+protected:
+    virtual GLenum texTarget();
 };
 
 /* data flow:
