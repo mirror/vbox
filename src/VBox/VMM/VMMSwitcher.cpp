@@ -557,13 +557,13 @@ static void vmmR3SwitcherGenericRelocate(PVM pVM, PVMMSWITCHERDEF pSwitcher, RTR
             }
 
             /*
-             * Insert relative jump to specified target it SYSENTER isn't used by the host.
+             * Insert relative jump to specified target it SYSCALL isn't used by the host.
              */
             case FIX_NO_SYSCALL_JMP:
             {
                 uint32_t offTrg = *u.pu32++;
                 Assert(offTrg < pSwitcher->cbCode);
-                if (!CPUMIsHostUsingSysEnter(pVM))
+                if (!CPUMIsHostUsingSysCall(pVM))
                 {
                     *uSrc.pu8++ = 0xe9; /* jmp rel32 */
                     *uSrc.pu32++ = offTrg - (offSrc + 5);

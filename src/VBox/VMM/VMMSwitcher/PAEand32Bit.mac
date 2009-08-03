@@ -156,6 +156,19 @@ BEGINPROC vmmR0HostToGuestAsm
 ALIGNCODE(16)
 htg_no_sysenter:
 
+    FIXUP FIX_NO_SYSCALL_JMP, 0, htg_no_syscall - NAME(Start) ; this will insert a jmp htg_no_syscall if host doesn't use syscall.
+    ; clear MSR_K6_EFER_SCE.
+    mov     ebx, edx                    ; save edx
+    mov     ecx, MSR_K6_EFER
+    rdmsr                               ; edx:eax <- MSR[ecx]
+    and     eax, ~MSR_K6_EFER_SCE
+    wrmsr
+    mov     edx, ebx                    ; restore edx
+    jmp short htg_no_syscall
+
+ALIGNCODE(16)
+htg_no_syscall:
+
     ;; handle use flags.
     mov     esi, [edx + CPUMCPU.fUseFlags] ; esi == use flags.
     and     esi, ~CPUM_USED_FPU         ; Clear CPUM_USED_* flags. ;;@todo FPU check can be optimized to use cr0 flags!
@@ -215,7 +228,7 @@ htg_debug_regs_no:
 
     ; Store the hypervisor cr3 for later loading
     mov     ebp, [edx + CPUMCPU.Hyper.cr3]
-    
+
     ;;
     ;; Load Intermediate memory context.
     ;;
@@ -380,7 +393,7 @@ htg_debug_regs_guest_no:
     mov     eax, [edx + CPUMCPU.Hyper.eip]
     ; callees expect CPUM ptr
     CPUM_FROM_CPUMCPU(edx)
-    
+
 %ifdef VBOX_WITH_STATISTICS
     FIXUP FIX_GC_VM_OFF, 1, VM.StatSwitcherToGC
     mov     edx, 0ffffffffh
@@ -419,7 +432,7 @@ htg_debug_regs_guest:
     mov     [edx + CPUMCPU.Host.dr2], ecx
     mov     eax, dr3
     mov     [edx + CPUMCPU.Host.dr3], eax
-    
+
     ; load hyper DR0-7
     mov     ebx, [edx + CPUMCPU.Hyper.dr]
     mov     dr0, ebx
@@ -863,7 +876,18 @@ GLOBALNAME HCExitTarget
 ALIGNCODE(16)
 gth_sysenter_no:
 
-    ;; @todo AMD syscall
+    FIXUP FIX_NO_SYSCALL_JMP, 0, gth_syscall_no - NAME(Start) ; this will insert a jmp gth_syscall_no if host doesn't use syscall.
+    ; set MSR_K6_EFER_SCE.
+    mov     ebx, edx                    ; save edx
+    mov     ecx, MSR_K6_EFER
+    rdmsr
+    or      eax, MSR_K6_EFER_SCE
+    wrmsr
+    mov     edx, ebx                    ; restore edx
+    jmp short gth_syscall_no
+
+ALIGNCODE(16)
+gth_syscall_no:
 
     ; Restore FPU if guest has used it.
     ; Using fxrstor should ensure that we're not causing unwanted exception on the host.

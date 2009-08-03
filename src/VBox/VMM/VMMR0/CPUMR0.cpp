@@ -60,24 +60,34 @@ VMMR0DECL(int) CPUMR0Init(PVM pVM)
     }
 
     /*
-     * Check for sysenter if it's used.
+     * Check for sysenter and syscall usage.
      */
     if (ASMHasCpuId())
     {
+        /*
+         * SYSENTER/SYSEXIT
+         *
+         * Intel docs claim you should test both the flag and family, model &
+         * stepping because some Pentium Pro CPUs have the SEP cpuid flag set,
+         * but don't support it.  AMD CPUs may support this feature in legacy
+         * mode, they've banned it from long mode.  Since we switch to 32-bit
+         * mode when entering raw-mode context the feature would become
+         * accessible again on AMD CPUs, so we have to check regardless of
+         * host bitness.
+         */
         uint32_t u32CpuVersion;
         uint32_t u32Dummy;
-        uint32_t u32Features;
-        ASMCpuId(1, &u32CpuVersion, &u32Dummy, &u32Dummy, &u32Features);
+        uint32_t fFeatures;
+        ASMCpuId(1, &u32CpuVersion, &u32Dummy, &u32Dummy, &fFeatures);
         uint32_t u32Family   = u32CpuVersion >> 8;
         uint32_t u32Model    = (u32CpuVersion >> 4) & 0xF;
         uint32_t u32Stepping = u32CpuVersion & 0xF;
-
-        /*
-         * Intel docs claim you should test both the flag and family, model & stepping.
-         * Some Pentium Pro cpus have the SEP cpuid flag set, but don't support it.
-         */
-        if (    (u32Features & X86_CPUID_FEATURE_EDX_SEP)
-            && !(u32Family == 6 && u32Model < 3 && u32Stepping < 3))
+        if (    (fFeatures & X86_CPUID_FEATURE_EDX_SEP)
+            &&  (   u32Family   != 6    /* (> pentium pro) */
+                 || u32Model    >= 3
+                 || u32Stepping >= 3
+                 || !ASMIsIntelCpu())
+           )
         {
             /*
              * Read the MSR and see if it's in use or not.
@@ -90,7 +100,39 @@ VMMR0DECL(int) CPUMR0Init(PVM pVM)
             }
         }
 
-        /** @todo check for AMD and syscall!!!!!! */
+        /*
+         * SYSCALL/SYSRET
+         *
+         * This feature is indicated by the SEP bit returned in EDX by CPUID
+         * function 0x80000001.  Intel CPUs only supports this feature in
+         * long mode.  Since we're not running 64-bit guests in raw-mode there
+         * are no issues with 32-bit intel hosts.
+         */
+        uint32_t cExt = 0;
+        ASMCpuId(0x80000000, &cExt, &u32Dummy, &u32Dummy, &u32Dummy);
+        if (    cExt >= 0x80000001
+            &&  cExt <= 0x8000ffff)
+        {
+            uint32_t fExtFeaturesEDX = ASMCpuId_EDX(0x80000001);
+            if (fExtFeaturesEDX & X86_CPUID_AMD_FEATURE_EDX_SEP)
+            {
+#ifdef RT_ARCH_X86
+# ifdef VBOX_WITH_HYBRID_32BIT_KERNEL
+                if (fExtFeaturesEDX & X86_CPUID_AMD_FEATURE_EDX_LONG_MODE)
+# else
+                if (!ASMIsIntelCpu())
+# endif
+#endif
+                {
+                    uint64_t fEfer = ASMRdMsr(MSR_K6_EFER);
+                    if (fEfer & MSR_K6_EFER_SCE)
+                    {
+                        pVM->cpum.s.fHostUseFlags |= CPUM_USE_SYSCALL;
+                        Log(("CPUMR0Init: host uses syscall\n"));
+                    }
+                }
+            }
+        }
     }
 
 
