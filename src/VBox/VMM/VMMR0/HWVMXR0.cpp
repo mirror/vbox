@@ -1244,18 +1244,18 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
                     pCtx->gsHid.Attr.n.u2Dpl  = 0;
                     pCtx->ssHid.Attr.n.u2Dpl  = 0;
 
-                    /* The limit must correspond to the granularity bit. */
-                    if (!pCtx->csHid.Attr.n.u1Granularity)
+                    /* The limit must correspond to the 32 bits setting. */
+                    if (!pCtx->csHid.Attr.n.u1DefBig)
                         pCtx->csHid.u32Limit &= 0xffff;
-                    if (!pCtx->dsHid.Attr.n.u1Granularity)
+                    if (!pCtx->dsHid.Attr.n.u1DefBig)
                         pCtx->dsHid.u32Limit &= 0xffff;
-                    if (!pCtx->esHid.Attr.n.u1Granularity)
+                    if (!pCtx->esHid.Attr.n.u1DefBig)
                         pCtx->esHid.u32Limit &= 0xffff;
-                    if (!pCtx->fsHid.Attr.n.u1Granularity)
+                    if (!pCtx->fsHid.Attr.n.u1DefBig)
                         pCtx->fsHid.u32Limit &= 0xffff;
-                    if (!pCtx->gsHid.Attr.n.u1Granularity)
+                    if (!pCtx->gsHid.Attr.n.u1DefBig)
                         pCtx->gsHid.u32Limit &= 0xffff;
-                    if (!pCtx->ssHid.Attr.n.u1Granularity)
+                    if (!pCtx->ssHid.Attr.n.u1DefBig)
                         pCtx->ssHid.u32Limit &= 0xffff;
                 }
                 else
