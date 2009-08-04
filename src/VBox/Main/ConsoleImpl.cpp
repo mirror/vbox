@@ -3271,7 +3271,7 @@ DECLCALLBACK(int) Console::changeDrive (Console *pThis, const char *pszDevice, u
  *
  *  @note Locks this object for writing.
  */
-HRESULT Console::onNetworkAdapterChange (INetworkAdapter *aNetworkAdapter)
+HRESULT Console::onNetworkAdapterChange (INetworkAdapter *aNetworkAdapter, BOOL changeAdapter)
 {
     LogFlowThisFunc(("\n"));
 
@@ -3288,28 +3288,9 @@ HRESULT Console::onNetworkAdapterChange (INetworkAdapter *aNetworkAdapter)
     AutoVMCaller autoVMCaller (this);
     CheckComRCReturnRC(autoVMCaller.rc());
 
-#ifdef VBOX_DYNAMIC_NET_ATTACH
-    /* Get the current network attachment type */
-    HRESULT rc;
-    NetworkAttachmentType_T eAttachmentType;
-    Bstr eHostInterface;
-    Bstr eInternalNetwork;
-
-    rc = aNetworkAdapter->COMGETTER (AttachmentType) (&eAttachmentType);
-    ComAssertComRCRetRC (rc);
-    rc = aNetworkAdapter->COMGETTER (HostInterface) (eHostInterface.asOutParam());
-    ComAssertComRCRetRC (rc);
-    rc = aNetworkAdapter->COMGETTER (InternalNetwork) (eInternalNetwork.asOutParam());
-    ComAssertComRCRetRC (rc);
-#endif /* VBOX_DYNAMIC_NET_ATTACH */
-
     /* Get the properties we need from the adapter */
     BOOL fCableConnected;
-#ifdef VBOX_DYNAMIC_NET_ATTACH
-    rc = aNetworkAdapter->COMGETTER(CableConnected) (&fCableConnected);
-#else /* !VBOX_DYNAMIC_NET_ATTACH */
     HRESULT rc = aNetworkAdapter->COMGETTER(CableConnected) (&fCableConnected);
-#endif /* !VBOX_DYNAMIC_NET_ATTACH */
     AssertComRC(rc);
     if (SUCCEEDED(rc))
     {
@@ -3357,44 +3338,12 @@ HRESULT Console::onNetworkAdapterChange (INetworkAdapter *aNetworkAdapter)
             }
 
 #ifdef VBOX_DYNAMIC_NET_ATTACH
-            if (VBOX_SUCCESS (vrc))
+            if ((VBOX_SUCCESS (vrc)) && (changeAdapter == TRUE))
             {
                 VMSTATE enmVMState = VMR3GetState (mpVM);
-                if (   (enmVMState == VMSTATE_RUNNING)
-                    || (enmVMState == VMSTATE_SUSPENDED))
-                {
-                    bool changeAdaptor = false;
 
-                    if ( !(   (eAttachmentType == NetworkAttachmentType_Null)
-                           && (meAttachmentType[ulInstance] == NetworkAttachmentType_Null)))
-                        changeAdaptor = true;
-
-                    /** @todo pritesh: Need to check for mNATNetwork as well here
-                     * when NAT is shifted to use IntNet, till then just compare
-                     * if the current and next attachment types are not same
-                     */
-                    if ( !(   (eAttachmentType == NetworkAttachmentType_NAT)
-                           && (meAttachmentType[ulInstance] == NetworkAttachmentType_NAT)))
-                        changeAdaptor = true;
-
-                    if ( !(   (eAttachmentType == NetworkAttachmentType_Bridged)
-                           && (meAttachmentType[ulInstance] == NetworkAttachmentType_Bridged)
-                           && (mHostInterface[ulInstance] == eHostInterface)))
-                        changeAdaptor = true;
-
-                    if ( !(   (eAttachmentType == NetworkAttachmentType_HostOnly)
-                           && (meAttachmentType[ulInstance] == NetworkAttachmentType_HostOnly)
-                           && (mHostInterface[ulInstance] == eHostInterface)))
-                        changeAdaptor = true;
-
-                    if ( !(   (eAttachmentType == NetworkAttachmentType_Internal)
-                           && (meAttachmentType[ulInstance] == NetworkAttachmentType_Internal)
-                           && (mInternalNetwork[ulInstance] == eInternalNetwork)))
-                        changeAdaptor = true;
-
-                    if (changeAdaptor)
-                        rc = doNetworkAdapterChange(pszAdapterName, ulInstance, 0, aNetworkAdapter);
-                }
+                if ((enmVMState == VMSTATE_RUNNING) || (enmVMState == VMSTATE_SUSPENDED))
+                    rc = doNetworkAdapterChange(pszAdapterName, ulInstance, 0, aNetworkAdapter);
             }
 #endif /* VBOX_DYNAMIC_NET_ATTACH */
 
@@ -7677,10 +7626,5 @@ const PDMDRVREG Console::DrvStatusReg =
  * Initializing the attachment type for the network adapters
  */
 NetworkAttachmentType_T Console::meAttachmentType[] = {};
-#ifdef VBOX_DYNAMIC_NET_ATTACH
-Bstr Console::mHostInterface[];
-Bstr Console::mInternalNetwork[];
-Bstr Console::mNATNetwork[];
-#endif
 
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */

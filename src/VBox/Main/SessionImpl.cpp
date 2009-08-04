@@ -531,7 +531,7 @@ STDMETHODIMP Session::OnFloppyDriveChange()
     return mConsole->onFloppyDriveChange();
 }
 
-STDMETHODIMP Session::OnNetworkAdapterChange(INetworkAdapter *networkAdapter)
+STDMETHODIMP Session::OnNetworkAdapterChange(INetworkAdapter *networkAdapter, BOOL changeAdapter)
 {
     LogFlowThisFunc(("\n"));
 
@@ -542,7 +542,7 @@ STDMETHODIMP Session::OnNetworkAdapterChange(INetworkAdapter *networkAdapter)
     AssertReturn(mState == SessionState_Open, VBOX_E_INVALID_VM_STATE);
     AssertReturn(mType == SessionType_Direct, VBOX_E_INVALID_OBJECT_STATE);
 
-    return mConsole->onNetworkAdapterChange(networkAdapter);
+    return mConsole->onNetworkAdapterChange(networkAdapter, changeAdapter);
 }
 
 STDMETHODIMP Session::OnSerialPortChange(ISerialPort *serialPort)

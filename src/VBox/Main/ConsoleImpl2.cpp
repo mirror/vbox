@@ -2215,9 +2215,6 @@ DECLCALLBACK(int)  Console::configNetwork(Console *pThis, const char *pszDevice,
                         RC_CHECK();
                         /* NAT uses its own DHCP implementation */
                         //networkName = Bstr(psz);
-#ifdef VBOX_DYNAMIC_NET_ATTACH
-                        mNATNetwork[uInstance] = str;
-#endif
                     }
 
                     STR_FREE();
@@ -2573,9 +2570,6 @@ DECLCALLBACK(int)  Console::configNetwork(Console *pThis, const char *pszDevice,
 #else
 # error "Port me"
 #endif
-#ifdef VBOX_DYNAMIC_NET_ATTACH
-                mHostInterface[uInstance] = HifName;
-#endif
                 break;
             }
 
@@ -2608,9 +2602,6 @@ DECLCALLBACK(int)  Console::configNetwork(Console *pThis, const char *pszDevice,
                         RC_CHECK();
                         networkName = Bstr(psz);
                         trunkType = Bstr(TRUNKTYPE_WHATEVER);
-#ifdef VBOX_DYNAMIC_NET_ATTACH
-                        mInternalNetwork[uInstance] = str;
-#endif
                     }
                     STR_FREE();
                 }
@@ -2825,9 +2816,6 @@ DECLCALLBACK(int)  Console::configNetwork(Console *pThis, const char *pszDevice,
                     hrc = virtualBox->GetExtraData(BstrFmt("HostOnly/%s/IPV6NetMask", pszHifName), tmpMask.asOutParam());
                 if (SUCCEEDED(hrc) && !tmpAddr.isEmpty() && !tmpMask.isEmpty())
                     hrc = hostInterface->EnableStaticIpConfigV6(tmpAddr, Utf8Str(tmpMask).toUInt32());
-#endif
-#ifdef VBOX_DYNAMIC_NET_ATTACH
-                mHostInterface[uInstance] = HifName;
 #endif
                 break;
             }

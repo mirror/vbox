@@ -7856,7 +7856,7 @@ void Machine::rollback (bool aNotify)
 
         for (ULONG slot = 0; slot < RT_ELEMENTS (networkAdapters); slot ++)
             if (networkAdapters [slot])
-                that->onNetworkAdapterChange (networkAdapters [slot]);
+                that->onNetworkAdapterChange (networkAdapters [slot], FALSE);
         for (ULONG slot = 0; slot < RT_ELEMENTS (serialPorts); slot ++)
             if (serialPorts [slot])
                 that->onSerialPortChange (serialPorts [slot]);
@@ -9744,7 +9744,7 @@ HRESULT SessionMachine::onFloppyDriveChange()
 /**
  *  @note Locks this object for reading.
  */
-HRESULT SessionMachine::onNetworkAdapterChange (INetworkAdapter *networkAdapter)
+HRESULT SessionMachine::onNetworkAdapterChange (INetworkAdapter *networkAdapter, BOOL changeAdapter)
 {
     LogFlowThisFunc(("\n"));
 
@@ -9761,7 +9761,7 @@ HRESULT SessionMachine::onNetworkAdapterChange (INetworkAdapter *networkAdapter)
     if (!directControl)
         return S_OK;
 
-    return directControl->OnNetworkAdapterChange (networkAdapter);
+    return directControl->OnNetworkAdapterChange (networkAdapter, changeAdapter);
 }
 
 /**
