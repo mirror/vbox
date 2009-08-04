@@ -1065,7 +1065,7 @@ ResumeExecution:
     }
 
     /* TPR caching using CR8 is only available in 64 bits mode or with 32 bits guests when X86_CPUID_AMD_FEATURE_ECX_CR8L is supported. */
-    /* Note: we can't do this in LoadGuestState as PDMApicGetTPR can jump back to ring 3 (lock)!!!!!!!!
+    /* Note: we can't do this in LoadGuestState as PDMApicGetTPR can jump back to ring 3 (lock)!!!!!!!! (no longer true)
      * @todo query and update the TPR only when it could have been changed (mmio access)
      */
     if (pVM->hwaccm.s.fHasIoApic)
