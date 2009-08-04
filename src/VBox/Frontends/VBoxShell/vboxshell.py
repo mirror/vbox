@@ -92,8 +92,9 @@ class GuestMonitor:
         print  "%s: onShowWindow: %d" %(self.mach.name, winId)
 
 class VBoxMonitor:
-    def __init__(self, vbox):
-        self.vbox = vbox
+    def __init__(self, params):
+        self.vbox = params[0]
+        self.isMscom = params[1]
         pass
 
     def onMachineStateChange(self, id, state):
@@ -104,7 +105,12 @@ class VBoxMonitor:
 
     def onExtraDataCanChange(self, id, key, value):
         print "onExtraDataCanChange: %s %s=>%s" %(id, key, value)
-        return True, ""
+        # Witty COM bridge thinks if someone wishes to return tuple, hresult
+        # is one of values we want to return
+        if self.isMscom:
+            return True, "", 0
+        else:
+            return True, ""
 
     def onExtraDataChange(self, id, key, value):
         print "onExtraDataChange: %s %s=>%s" %(id, key, value)
@@ -314,7 +320,9 @@ def monitorGuest(ctx, machine, console, dur):
 
 def monitorVBox(ctx, dur):
     vbox = ctx['vb']
-    cb = ctx['global'].createCallback('IVirtualBoxCallback', VBoxMonitor, vbox)
+    isMscom = (ctx['global'].type == 'MSCOM')
+    cb = ctx['global'].createCallback('IVirtualBoxCallback', VBoxMonitor, [vbox, isMscom])
+    
     vbox.registerCallback(cb)
     if dur == -1:
         # not infinity, but close enough
@@ -325,8 +333,7 @@ def monitorVBox(ctx, dur):
             ctx['global'].waitForEvents(500)
     # We need to catch all exceptions here, otherwise callback will never be unregistered
     except:
-        if g_verbose:
-                traceback.print_exc()
+        pass
     vbox.unregisterCallback(cb)
 
 def cmdExistingVm(ctx,mach,cmd,args):
