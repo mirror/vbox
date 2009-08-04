@@ -148,6 +148,18 @@ static int supLoadModule(const char *pszFilename, const char *pszModule, const c
 static DECLCALLBACK(int) supLoadModuleResolveImport(RTLDRMOD hLdrMod, const char *pszModule, const char *pszSymbol, unsigned uSymbol, RTUINTPTR *pValue, void *pvUser);
 
 
+/** Touch a range of pages. */
+DECLINLINE(void) supR3TouchPages(void *pv, size_t cPages)
+{
+    uint32_t volatile *pu32 = (uint32_t volatile *)pv;
+    while (cPages-- > 0)
+    {
+        ASMAtomicCmpXchgU32(pu32, 0, 0);
+        pu32 += PAGE_SIZE / sizeof(uint32_t);
+    }
+}
+
+
 SUPR3DECL(int) SUPR3Install(void)
 {
     return suplibOsInstall();
@@ -1059,6 +1071,9 @@ SUPR3DECL(int) SUPR3PageAllocEx(size_t cPages, uint32_t fFlags, void **ppvPages,
                         paPages[iPage].Phys = pReq->u.Out.aPages[iPage];
                         Assert(!(paPages[iPage].Phys & ~X86_PTE_PAE_PG_MASK));
                     }
+#ifdef RT_OS_DARWIN /* HACK ALERT! */
+                supR3TouchPages(pReq->u.Out.pvR3, cPages);
+#endif
             }
             else if (   rc == VERR_NOT_SUPPORTED
                      && !pR0Ptr)
@@ -1244,6 +1259,9 @@ SUPR3DECL(void *) SUPR3ContAlloc(size_t cPages, PRTR0PTR pR0Ptr, PRTHCPHYS pHCPh
         *pHCPhys = Req.u.Out.HCPhys;
         if (pR0Ptr)
             *pR0Ptr = Req.u.Out.pvR0;
+#ifdef RT_OS_DARWIN /* HACK ALERT! */
+        supR3TouchPages(Req.u.Out.pvR3, cPages);
+#endif
         return Req.u.Out.pvR3;
     }
 
@@ -1341,6 +1359,9 @@ SUPR3DECL(int) SUPR3LowAlloc(size_t cPages, void **ppvPages, PRTR0PTR ppvPagesR0
                     Assert(!(paPages[iPage].Phys & ~X86_PTE_PAE_PG_MASK));
                     Assert(paPages[iPage].Phys <= UINT32_C(0xfffff000));
                 }
+#ifdef RT_OS_DARWIN /* HACK ALERT! */
+            supR3TouchPages(pReq->u.Out.pvR3, cPages);
+#endif
         }
         RTMemTmpFree(pReq);
     }
