@@ -31,14 +31,14 @@ import traceback
 import shlex
 import time
 
-# Simple implementation of IConsoleCallback, one can use it as skeleton 
+# Simple implementation of IConsoleCallback, one can use it as skeleton
 # for custom implementations
 class GuestMonitor:
     def __init__(self, mach):
         self.mach = mach
 
     def onMousePointerShapeChange(self, visible, alpha, xHot, yHot, width, height, shape):
-        print  "%s: onMousePointerShapeChange: visible=%d" %(self.mach.name, visible) 
+        print  "%s: onMousePointerShapeChange: visible=%d" %(self.mach.name, visible)
     def onMouseCapabilityChange(self, supportsAbsolute, needsHostCursor):
         print  "%s: onMouseCapabilityChange: needsHostCursor=%d" %(self.mach.name, needsHostCursor)
 
@@ -101,7 +101,7 @@ class VBoxMonitor:
 
     def onMachineDataChange(self,id):
         print "onMachineDataChange: %s" %(id)
-    
+
     def onExtraDataCanChange(self, id, key, value):
         print "onExtraDataCanChange: %s %s=>%s" %(id, key, value)
         return True, ""
@@ -109,11 +109,11 @@ class VBoxMonitor:
     def onExtraDataChange(self, id, key, value):
         print "onExtraDataChange: %s %s=>%s" %(id, key, value)
 
-    def onMediaRegistred(self, id, type, registred):
-        print "onMediaRegistred: %s" %(id)
+    def onMediaRegistered(self, id, type, registered):
+        print "onMediaRegistered: %s" %(id)
 
-    def onMachineRegistred(self, id, registred):
-        print "onMachineRegistred: %s" %(id)
+    def onMachineRegistered(self, id, registred):
+        print "onMachineRegistered: %s" %(id)
 
     def onSessionStateChange(self, id, state):
         print "onSessionStateChange: %s %d" %(id, state)
@@ -308,7 +308,7 @@ def monitorGuest(ctx, machine, console, dur):
             ctx['global'].waitForEvents(500)
     # We need to catch all exceptions here, otherwise callback will never be unregistered
     except:
-        pass    
+        pass
     console.unregisterCallback(cb)
 
 
@@ -349,7 +349,7 @@ def cmdExistingVm(ctx,mach,cmd,args):
     if ctx['remote'] and cmd == 'stats2':
         print 'Trying to use local only functionality, ignored'
         return
-    console=session.console    
+    console=session.console
     ops={'pause':           lambda: console.pause(),
          'resume':          lambda: console.resume(),
          'powerdown':       lambda: console.powerDown(),
@@ -636,7 +636,7 @@ def aliasCmd(ctx, args):
     if (len(args) == 3):
         aliases[args[1]] = args[2]
         return 0
-    
+
     for (k,v) in aliases.items():
         print "'%s' is an alias for '%s'" %(k,v)
     return 0
@@ -676,15 +676,15 @@ def hostCmd(ctx, args):
    else:
        print "3D acceleration NOT available"
 
-   print "Network interfaces:" 
+   print "Network interfaces:"
    for ni in ctx['global'].getArray(host, 'networkInterfaces'):
        print "  %s (%s)" %(ni.name, ni.IPAddress)
 
-   print "DVD drives:" 
+   print "DVD drives:"
    for dd in ctx['global'].getArray(host, 'DVDDrives'):
        print "  %s - %s" %(dd.name, dd.description)
 
-   print "USB devices:" 
+   print "USB devices:"
    for ud in ctx['global'].getArray(host, 'USBDevices'):
        print "  %s (vendorId=%d productId=%d serial=%s) %s" %(ud.product, ud.vendorId, ud.productId, ud.serialNumber, getUSBStateString(ud.state))
 
@@ -728,8 +728,8 @@ def getAdapterType(ctx, type):
     elif (type == ctx['global'].constants.NetworkAdapterType_Null):
         return None
     else:
-        raise Exception("Unknown adapter type: "+type)    
-    
+        raise Exception("Unknown adapter type: "+type)
+
 
 def portForwardCmd(ctx, args):
     if (len(args) != 5):
@@ -751,14 +751,14 @@ def portForwardCmd(ctx, args):
     profile_name = proto+"_"+str(hostPort)+"_"+str(guestPort)
     config = "VBoxInternal/Devices/" + adapterType + "/"
     config = config + str(adapter.slot)  +"/LUN#0/Config/" + profile_name
-  
+
     mach.setExtraData(config + "/Protocol", proto)
     mach.setExtraData(config + "/HostPort", str(hostPort))
     mach.setExtraData(config + "/GuestPort", str(guestPort))
 
     mach.saveSettings()
     session.close()
-   
+
     return 0
 
 
@@ -995,7 +995,7 @@ def runCommand(ctx, cmd):
 # and issue reloadExt shell command.
 # This file also will be read automatically on startup or 'reloadExt'.
 #
-# Also one can put shell extensions into ~/.VirtualBox/shexts and 
+# Also one can put shell extensions into ~/.VirtualBox/shexts and
 # they will also be picked up, so this way one can exchange
 # shell extensions easily.
 def addExtsFromFile(ctx, cmds, file):
@@ -1024,11 +1024,11 @@ def checkUserExtensions(ctx, cmds, folder):
     for e in exts:
         addExtsFromFile(ctx, cmds, os.path.join(shextdir,e))
 
-def interpret(ctx):    
+def interpret(ctx):
     if ctx['remote']:
         commands['connect'] = ["Connect to remote VBox instance", connectCmd, 0]
         commands['disconnect'] = ["Disconnect from remote VBox instance", disconnectCmd, 0]
-    
+
     vbox = ctx['vb']
 
     if vbox is not None:
@@ -1101,12 +1101,12 @@ def main(argv):
     g_virtualBoxManager = VirtualBoxManager(style, None)
     ctx = {'global':g_virtualBoxManager,
            'mgr':g_virtualBoxManager.mgr,
-           'vb':g_virtualBoxManager.vbox, 
+           'vb':g_virtualBoxManager.vbox,
            'ifaces':g_virtualBoxManager.constants,
-           'remote':g_virtualBoxManager.remote, 
+           'remote':g_virtualBoxManager.remote,
            'type':g_virtualBoxManager.type,
            'run': lambda cmd,args: runCommandCb(ctx, cmd, args),
-           'machById': lambda id: machById(ctx,id), 
+           'machById': lambda id: machById(ctx,id),
            'progressBar': lambda p: progressBar(ctx,p),
            '_machlist':None
            }
