@@ -322,7 +322,6 @@ def monitorVBox(ctx, dur):
     vbox = ctx['vb']
     isMscom = (ctx['global'].type == 'MSCOM')
     cb = ctx['global'].createCallback('IVirtualBoxCallback', VBoxMonitor, [vbox, isMscom])
-    
     vbox.registerCallback(cb)
     if dur == -1:
         # not infinity, but close enough
@@ -1021,7 +1020,8 @@ def addExtsFromFile(ctx, cmds, file):
 
 
 def checkUserExtensions(ctx, cmds, folder):
-    name =  os.path.join(folder, "shellext.py")
+    folder = str(folder)
+    name = os.path.join(folder, "shellext.py")
     addExtsFromFile(ctx, cmds, name)
     # also check 'exts' directory for all files
     shextdir = os.path.join(folder, "shexts")

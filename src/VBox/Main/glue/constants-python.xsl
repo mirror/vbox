@@ -50,7 +50,7 @@
 class VirtualBoxReflectionInfo:
    def __init__(self):
       self.map = {}
- 
+
    _Values = {<xsl:for-each select="//enum">
                 '<xsl:value-of select="@name"/>':{
                   <xsl:for-each select="const">'<xsl:value-of select="@name"/>':<xsl:value-of select="@value"/><xsl:if test="not(position()=last())">,</xsl:if>
@@ -76,4 +76,4 @@ class VirtualBoxReflectionInfo:
          raise AttributeError
 
 </xsl:template>
-</xsl:stylesheet> 
+</xsl:stylesheet>
