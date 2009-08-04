@@ -1766,7 +1766,7 @@ static int ssmR3StrmWriteBuffers(PSSMSTRM pStrm)
             &&  ssmR3StrmSetError(pStrm, rc))
             LogRel(("ssmR3StrmWriteBuffers: RTFileWriteAt failed with rc=%Rrc at offStream=%#llx\n", rc, pCur->offStream));
 
-        /* free it */
+        /* free */
         bool fEndOfStream = pCur->fEndOfStream;
         ssmR3StrmPutFreeBuf(pStrm, pCur);
         if (fEndOfStream)
@@ -2398,14 +2398,14 @@ static DECLCALLBACK(int) ssmR3StrmIoThread(RTTHREAD hSelf, void *pvStrm)
 
             if (ASMAtomicReadBool(&pStrm->fTerminating))
             {
-                if (!ASMAtomicReadPtr((void * volatile *)&pStrm->pPending))
+                if (!ASMAtomicReadPtr((void * volatile *)&pStrm->pHead))
                 {
                     Log(("ssmR3StrmIoThread: quitting writing because of pending termination.\n"));
                     break;
                 }
                 Log(("ssmR3StrmIoThread: postponing termination because of pending buffers.\n"));
             }
-            else if (!ASMAtomicReadPtr((void * volatile *)&pStrm->pPending))
+            else if (!ASMAtomicReadPtr((void * volatile *)&pStrm->pHead))
             {
                 rc = RTSemEventWait(pStrm->hEvtHead, RT_INDEFINITE_WAIT);
                 AssertLogRelRC(rc);
