@@ -81,7 +81,7 @@ class PerfCollector:
         'values': collected data
         'values_as_string': pre-processed values ready for 'print' statement
         """
-        # Get around the problem with input arrays returned in output 
+        # Get around the problem with input arrays returned in output
         # parameters (see #3953) for MSCOM.
         if self.isMscom:
             (values, names, objects, names_out, objects_out, units, scales, sequence_numbers,
@@ -107,11 +107,11 @@ class PerfCollector:
         return out
 
 def ComifyName(name):
-    return name[0].capitalize()+name[1:]    
+    return name[0].capitalize()+name[1:]
 
 _COMForward = { 'getattr' : None,
                 'setattr' : None}
-          
+
 def CustomGetAttr(self, attr):
     # fastpath
     if self.__class__.__dict__.get(attr) != None:
@@ -196,7 +196,7 @@ class PlatformMSCOM:
     VBOX_TLB_LCID  = 0
     VBOX_TLB_MAJOR = 1
     VBOX_TLB_MINOR = 0
-    
+
     def __init__(self, params):
             from win32com import universal
             from win32com.client import gencache, DispatchBaseClass
@@ -213,9 +213,9 @@ class PlatformMSCOM:
             self.handles = []
             self.handles.append(handle)
             _COMForward['getattr'] = DispatchBaseClass.__dict__['__getattr__']
-            DispatchBaseClass.__dict__['__getattr__'] = CustomGetAttr            
+            DispatchBaseClass.__dict__['__getattr__'] = CustomGetAttr
             _COMForward['setattr'] = DispatchBaseClass.__dict__['__setattr__']
-            DispatchBaseClass.__dict__['__setattr__'] = CustomSetAttr            
+            DispatchBaseClass.__dict__['__setattr__'] = CustomSetAttr
             win32com.client.gencache.EnsureDispatch('VirtualBox.Session')
             win32com.client.gencache.EnsureDispatch('VirtualBox.VirtualBox')
 
@@ -256,30 +256,20 @@ class PlatformMSCOM:
         d['tlb_guid'] = PlatformMSCOM.VBOX_TLB_GUID
         str = ""
         str += "import win32com.server.util\n"
-        #str += "import win32com.server.register\n"
-        #str += "from win32com import universal\n"
         str += "import pythoncom\n"
-        #str += "universal.RegisterInterfaces(tlb_guid, 0, 1, 0, ['"+iface+"'])\n"
 
         str += "class "+iface+"Impl(BaseClass):\n"
         str += "   _com_interfaces_ = ['"+iface+"']\n"
         str += "   _typelib_guid_ = tlb_guid\n"
         str += "   _typelib_version_ = 1, 0\n"
-        #str += "   _reg_clsctx_ = pythoncom.CLSCTX_LOCAL_SERVER\n"
-        #str += "   _reg_clsid_ = '{F21202A2-959A-4149-B1C3-68B9013F3335}'\n"
-        #str += "   _reg_progid_ = 'VirtualBox."+iface+"Impl'\n"
-        #str += "   _reg_desc_ = 'Generated callback implementation class'\n"
-        #str += "   _reg_policy_spec_ = 'win32com.server.policy.EventHandlerPolicy'\n"
 
         # generate capitalized version of callbacks - that's how Python COM
         # looks them up on Windows
         for m in dir(impl):
-           if m.startswith("on"):      
+           if m.startswith("on"):
              str += "   "+ComifyName(m)+"=BaseClass."+m+"\n"
 
         str += "   def __init__(self): BaseClass.__init__(self, arg)\n"
-        #str += "win32com.server.register.UseCommandLine("+iface+"Impl)\n"
-
         str += "result = win32com.server.util.wrap("+iface+"Impl())\n"
         exec (str,d,d)
         return d['result']
@@ -387,9 +377,9 @@ class PlatformWEBSERVICE:
             self.user = ""
             self.password = ""
             self.url = None
-        self.vbox = None        
+        self.vbox = None
 
-    def getSessionObject(self, vbox):        
+    def getSessionObject(self, vbox):
         return self.wsmgr.getSessionObject(vbox)
 
     def getVirtualBox(self):
@@ -465,15 +455,15 @@ class VirtualBoxManager:
                 style = "MSCOM"
             else:
                 style = "XPCOM"
-        
+
         exec "self.platform = Platform"+style+"(platparams)"
-            
+
         self.constants = VirtualBoxReflectionInfo()
         self.type = self.platform.getType()
         self.remote = self.platform.getRemote()
-        self.style = style 
+        self.style = style
         self.mgr = SessionManager(self)
-        
+
         try:
             self.vbox = self.platform.getVirtualBox()
         except NameError,ne:
@@ -526,4 +516,4 @@ class VirtualBoxManager:
         return self.platform.waitForEvents(timeout)
 
     def getPerfCollector(self, vbox):
-        return PerfCollector(self, vbox)       
+        return PerfCollector(self, vbox)
