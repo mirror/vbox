@@ -4416,7 +4416,8 @@ PGM_BTH_DECL(int, MapCR3)(PVMCPU pVCpu, RTGCPHYS GCPhysCR3)
 #  endif
 
     /* Clean up the old CR3 root. */
-    if (pOldShwPageCR3)
+    if (    pOldShwPageCR3 
+        &&  pOldShwPageCR3 != pNewShwPageCR3    /* @todo can happen due to incorrect syncing between REM & PGM; find the real cause */)
     {
         Assert(pOldShwPageCR3->enmKind != PGMPOOLKIND_FREE);
 #  ifndef PGM_WITHOUT_MAPPINGS
