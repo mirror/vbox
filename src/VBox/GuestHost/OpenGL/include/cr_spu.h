@@ -145,7 +145,8 @@ typedef BOOL (WGL_APIENTRY *wglChoosePixelFormatEXTFunc_t)(HDC, const int *, con
 typedef BOOL (WGL_APIENTRY *wglGetPixelFormatAttribivEXTFunc_t)(HDC, int, int, UINT, int *, int *);
 typedef BOOL (WGL_APIENTRY *wglGetPixelFormatAttribfvEXTFunc_t)(HDC, int, int, UINT, int *, float *);
 typedef const GLubyte *(WGL_APIENTRY *glGetStringFunc_t)( GLenum );
-typedef const GLubyte *(WGL_APIENTRY *wglGetExtensionsStringEXTFunc_t)( HDC );
+typedef const GLubyte *(WGL_APIENTRY *wglGetExtensionsStringEXTFunc_t)();
+typedef const GLubyte *(WGL_APIENTRY *wglGetExtensionsStringARBFunc_t)(HDC);
 /*@}*/
 #elif defined(DARWIN)
 /**
