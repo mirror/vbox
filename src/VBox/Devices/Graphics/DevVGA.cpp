@@ -3823,10 +3823,13 @@ static int vgaLFBAccess(PVM pVM, PVGASTATE pThis, RTGCPHYS GCPhys, RTGCPTR GCPtr
 #ifndef IN_RING3
         rc = PGMShwModifyPage(PDMDevHlpGetVMCPU(pThis->CTX_SUFF(pDevIns)), GCPtr, 1, X86_PTE_RW, ~(uint64_t)X86_PTE_RW);
         PDMCritSectLeave(&pThis->lock);
-        if (RT_SUCCESS(rc))
-            return VINF_SUCCESS;
-
-        AssertMsgFailed(("PGMShwModifyPage -> rc=%d\n", rc));
+        AssertMsgReturn(    rc == VINF_SUCCESS 
+                        /* In the SMP case the page table might be removed while we wait for the PGM lock in the trap handler. */
+                        ||  rc == VERR_PAGE_TABLE_NOT_PRESENT 
+                        ||  rc == VERR_PAGE_NOT_PRESENT, 
+                        ("PGMShwModifyPage -> GCPtr=%RGv rc=%d\n", GCPtr, rc), 
+                        rc);
+        return VINF_SUCCESS;
 #else /* IN_RING3 : We don't have any virtual page address of the access here. */
         PDMCritSectLeave(&pThis->lock);
         Assert(GCPtr == 0);
