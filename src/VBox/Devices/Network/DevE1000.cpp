@@ -5135,7 +5135,7 @@ static DECLCALLBACK(int) e1kAttach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t f
         Phy::setLinkStatus(&pState->phy, false);
         e1kRaiseInterrupt(pState, ICR_LSC);
         /* Restore the link back in 5 second. */
-        e1kArmTimer(pState, pState->pLUTimer, 5000000);
+        e1kArmTimer(pState, pState->pLUTimer, 20000000);
     }
 
     PDMCritSectLeave(&pState->cs);
