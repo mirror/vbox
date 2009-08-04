@@ -50,7 +50,7 @@ class PerfCollector:
 
         """
         self.mgr = mgr
-        self.isMscom = (mgr.platform.getType() == 'MSCOM')
+        self.isMscom = (mgr.type == 'MSCOM')
         self.collector = vbox.performanceCollector
 
     def setup(self, names, objects, period, nsamples):
