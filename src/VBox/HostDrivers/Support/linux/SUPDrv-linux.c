@@ -487,6 +487,24 @@ static int __init VBoxDrvLinuxInit(void)
             /* performance counter generates NMI and is not masked? */
             if ((GET_APIC_DELIVERY_MODE(v) == APIC_MODE_NMI) && !(v & APIC_LVT_MASKED))
             {
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 31) && defined(CONFIG_PERF_COUNTERS)
+                /* 2.6.31+: The performance counter framework will initialize the LVTPC
+                 * vector as NMI. We can't disable the framework but the kernel loader
+                 * script will do 'echo 2 > /proc/sys/kernel/perf_counter_paranoid'
+                 * which hopefilly prevents any usage of hardware performance counters
+                 * and therefore triggering of NMIs. */
+                printk(KERN_ERR DEVICE_NAME
+                       ": Warning: 2.6.31+ kernel detected. Most likely the hwardware performance\n"
+                                DEVICE_NAME
+                       ": counter framework which can generate NMIs is active. You have to prevent\n"
+                                DEVICE_NAME
+                       ": the usage of hardware performance counters by\n"
+                                DEVICE_NAME
+                       ":   echo 2 > /proc/sys/kernel/perf_counter_paranoid\n");
+                /* We can't do more here :-( */
+                goto no_error;
+# endif
+
 # if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 19) || defined CONFIG_X86_64
                 printk(KERN_ERR DEVICE_NAME
                 ": NMI watchdog either active or at least initialized. Please disable the NMI\n"
@@ -508,6 +526,7 @@ nmi_activated:
     }
 # if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 19)
     printk(KERN_DEBUG DEVICE_NAME ": Successfully done.\n");
+no_error:
 # endif /* >= 2.6.19 */
 #endif /* CONFIG_X86_LOCAL_APIC */
 
