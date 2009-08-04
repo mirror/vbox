@@ -94,7 +94,7 @@ public:
     STDMETHOD(Uninitialize)();
     STDMETHOD(OnDVDDriveChange)();
     STDMETHOD(OnFloppyDriveChange)();
-    STDMETHOD(OnNetworkAdapterChange)(INetworkAdapter *networkAdapter);
+    STDMETHOD(OnNetworkAdapterChange)(INetworkAdapter *networkAdapter, BOOL changeAdapter);
     STDMETHOD(OnSerialPortChange)(ISerialPort *serialPort);
     STDMETHOD(OnParallelPortChange)(IParallelPort *parallelPort);
     STDMETHOD(OnStorageControllerChange)();

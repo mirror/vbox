@@ -225,7 +225,7 @@ STDMETHODIMP NetworkAdapter::COMSETTER(AdapterType) (NetworkAdapterType_T aAdapt
         /* leave the lock before informing callbacks */
         alock.unlock();
 
-        mParent->onNetworkAdapterChange (this);
+        mParent->onNetworkAdapterChange (this, FALSE);
     }
 
     return S_OK;
@@ -278,7 +278,7 @@ STDMETHODIMP NetworkAdapter::COMSETTER(Enabled) (BOOL aEnabled)
         /* leave the lock before informing callbacks */
         alock.unlock();
 
-        mParent->onNetworkAdapterChange (this);
+        mParent->onNetworkAdapterChange (this, FALSE);
     }
 
     return S_OK;
@@ -374,7 +374,7 @@ STDMETHODIMP NetworkAdapter::COMSETTER(MACAddress)(IN_BSTR aMACAddress)
         /* leave the lock before informing callbacks */
         alock.unlock();
 
-        mParent->onNetworkAdapterChange (this);
+        mParent->onNetworkAdapterChange (this, FALSE);
     }
 
     return rc;
@@ -434,7 +434,7 @@ STDMETHODIMP NetworkAdapter::COMSETTER(HostInterface)(IN_BSTR aHostInterface)
         /* leave the lock before informing callbacks */
         alock.unlock();
 
-        mParent->onNetworkAdapterChange (this);
+        mParent->onNetworkAdapterChange (this, FALSE);
     }
 
     return S_OK;
@@ -482,7 +482,7 @@ STDMETHODIMP NetworkAdapter::COMSETTER(InternalNetwork) (IN_BSTR aInternalNetwor
         /* leave the lock before informing callbacks */
         alock.unlock();
 
-        mParent->onNetworkAdapterChange (this);
+        mParent->onNetworkAdapterChange (this, FALSE);
     }
 
     return S_OK;
@@ -521,7 +521,7 @@ STDMETHODIMP NetworkAdapter::COMSETTER(NATNetwork) (IN_BSTR aNATNetwork)
         /* leave the lock before informing callbacks */
         alock.unlock();
 
-        mParent->onNetworkAdapterChange (this);
+        mParent->onNetworkAdapterChange (this, FALSE);
     }
 
     return S_OK;
@@ -560,7 +560,7 @@ STDMETHODIMP NetworkAdapter::COMSETTER(CableConnected) (BOOL aConnected)
         /* leave the lock before informing callbacks */
         alock.unlock();
 
-        mParent->onNetworkAdapterChange (this);
+        mParent->onNetworkAdapterChange (this, FALSE);
     }
 
     return S_OK;
@@ -599,7 +599,7 @@ STDMETHODIMP NetworkAdapter::COMSETTER(LineSpeed) (ULONG aSpeed)
         /* leave the lock before informing callbacks */
         alock.unlock();
 
-        mParent->onNetworkAdapterChange (this);
+        mParent->onNetworkAdapterChange (this, FALSE);
     }
 
     return S_OK;
@@ -637,7 +637,7 @@ STDMETHODIMP NetworkAdapter::COMSETTER(TraceEnabled) (BOOL aEnabled)
         /* leave the lock before informing callbacks */
         alock.unlock();
 
-        mParent->onNetworkAdapterChange (this);
+        mParent->onNetworkAdapterChange (this, FALSE);
     }
 
     return S_OK;
@@ -676,7 +676,7 @@ STDMETHODIMP NetworkAdapter::COMSETTER(TraceFile) (IN_BSTR aTraceFile)
         /* leave the lock before informing callbacks */
         alock.unlock();
 
-        mParent->onNetworkAdapterChange (this);
+        mParent->onNetworkAdapterChange (this, FALSE);
     }
 
     return S_OK;
@@ -709,7 +709,17 @@ STDMETHODIMP NetworkAdapter::AttachToNAT()
         /* leave the lock before informing callbacks */
         alock.unlock();
 
-        mParent->onNetworkAdapterChange (this);
+        HRESULT rc = mParent->onNetworkAdapterChange (this, TRUE);
+        if (FAILED (rc))
+        {
+            /* If changing the attachment failed then we can't assume
+             * that the previous attachment will attach correctly
+             * and thus return error along with dettaching all
+             * attachments.
+             */
+            Detach();
+            return rc;
+        }
     }
 
     return S_OK;
@@ -741,7 +751,17 @@ STDMETHODIMP NetworkAdapter::AttachToBridgedInterface()
         /* leave the lock before informing callbacks */
         alock.unlock();
 
-        mParent->onNetworkAdapterChange (this);
+        HRESULT rc = mParent->onNetworkAdapterChange (this, TRUE);
+        if (FAILED (rc))
+        {
+            /* If changing the attachment failed then we can't assume
+             * that the previous attachment will attach correctly
+             * and thus return error along with dettaching all
+             * attachments.
+             */
+            Detach();
+            return rc;
+        }
     }
 
     return S_OK;
@@ -781,7 +801,17 @@ STDMETHODIMP NetworkAdapter::AttachToInternalNetwork()
         /* leave the lock before informing callbacks */
         alock.unlock();
 
-        mParent->onNetworkAdapterChange (this);
+        HRESULT rc = mParent->onNetworkAdapterChange (this, TRUE);
+        if (FAILED (rc))
+        {
+            /* If changing the attachment failed then we can't assume
+             * that the previous attachment will attach correctly
+             * and thus return error along with dettaching all
+             * attachments.
+             */
+            Detach();
+            return rc;
+        }
     }
 
     return S_OK;
@@ -813,7 +843,17 @@ STDMETHODIMP NetworkAdapter::AttachToHostOnlyInterface()
         /* leave the lock before informing callbacks */
         alock.unlock();
 
-        mParent->onNetworkAdapterChange (this);
+        HRESULT rc = mParent->onNetworkAdapterChange (this, TRUE);
+        if (FAILED (rc))
+        {
+            /* If changing the attachment failed then we can't assume
+             * that the previous attachment will attach correctly
+             * and thus return error along with dettaching all
+             * attachments.
+             */
+            Detach();
+            return rc;
+        }
     }
 
     return S_OK;
@@ -839,7 +879,7 @@ STDMETHODIMP NetworkAdapter::Detach()
         /* leave the lock before informing callbacks */
         alock.unlock();
 
-        mParent->onNetworkAdapterChange (this);
+        mParent->onNetworkAdapterChange (this, TRUE);
     }
 
     return S_OK;

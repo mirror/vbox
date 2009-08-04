@@ -12118,7 +12118,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
      name="IInternalSessionControl" extends="$unknown"
-     uuid="b26552e7-9534-4f47-b766-98eac648a90d"
+     uuid="e28e19fb-23c2-4d1a-b6bf-ce147fa37b24"
      internal="yes"
      wsmap="suppress"
      >
@@ -12248,6 +12248,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
       </desc>
       <param name="networkAdapter" type="INetworkAdapter" dir="in"/>
+      <param name="changeAdapter" type="boolean" dir="in"/>
     </method>
 
     <method name="onSerialPortChange">

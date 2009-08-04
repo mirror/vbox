@@ -176,7 +176,7 @@ public:
     // events from IInternalSessionControl
     HRESULT onDVDDriveChange();
     HRESULT onFloppyDriveChange();
-    HRESULT onNetworkAdapterChange (INetworkAdapter *aNetworkAdapter);
+    HRESULT onNetworkAdapterChange (INetworkAdapter *aNetworkAdapter, BOOL changeAdapter);
     HRESULT onSerialPortChange (ISerialPort *aSerialPort);
     HRESULT onParallelPortChange (IParallelPort *aParallelPort);
     HRESULT onStorageControllerChange ();
@@ -556,17 +556,12 @@ private:
      * This does not have to match the state maintained in the Floppy. */
     DriveState_T meFloppyState;
 
-    /** The current network attachment type/name in the VM.
-     * These don't have to match the network attachment type/name
-     * maintained in the NetworkAdapter. These are needed to
+    /** The current network attachment type in the VM.
+     * This doesn't have to match the network attachment type
+     * maintained in the NetworkAdapter. This is needed to
      * change the network attachment dynamically.
      */
     static NetworkAttachmentType_T meAttachmentType[SchemaDefs::NetworkAdapterCount];
-#ifdef VBOX_DYNAMIC_NET_ATTACH
-    static Bstr mHostInterface[SchemaDefs::NetworkAdapterCount];
-    static Bstr mInternalNetwork[SchemaDefs::NetworkAdapterCount];
-    static Bstr mNATNetwork[SchemaDefs::NetworkAdapterCount];
-#endif
 
     VMMDev * const mVMMDev;
     AudioSniffer * const mAudioSniffer;
