@@ -1088,8 +1088,8 @@ ResumeExecution:
             }
             else
                 /* No interrupts are pending, so we don't need to be explicitely notified.
-                * There are enough world switches for detecting pending interrupts.
-                */
+                 * There are enough world switches for detecting pending interrupts.
+                 */
                 svmR0SetMSRPermission(pVM, MSR_K8_LSTAR, true, true);
         }
         else
@@ -1103,8 +1103,8 @@ ResumeExecution:
             }
             else
                 /* No interrupts are pending, so we don't need to be explicitely notified.
-                * There are enough world switches for detecting pending interrupts.
-                */
+                 * There are enough world switches for detecting pending interrupts.
+                 */
                 pVMCB->ctrl.u16InterceptWrCRx &= ~RT_BIT(8);
         }
         fSyncTPR = !fPending;
@@ -1490,21 +1490,24 @@ ResumeExecution:
 #endif
 
     /* Sync back the TPR if it was changed. */
-    if (    fSyncTPR
-        &&  pVM->hwaccm.s.svm.fTPRPatchingActive
-        &&  (pCtx->msrLSTAR & 0xff) != u8LastTPR)
+    if (fSyncTPR)
     {
-        /* Our patch code uses LSTAR for TPR caching. */
-        rc = PDMApicSetTPR(pVCpu, pCtx->msrLSTAR & 0xff);
-        AssertRC(rc);
-    }
-    else
-    {
-        if (    fSyncTPR
-            &&  (u8LastTPR >> 4) != pVMCB->ctrl.IntCtrl.n.u8VTPR)
+        if (pVM->hwaccm.s.svm.fTPRPatchingActive)
         {
-            rc = PDMApicSetTPR(pVCpu, pVMCB->ctrl.IntCtrl.n.u8VTPR << 4);   /* cr8 bits 3-0 correspond to bits 7-4 of the task priority mmio register. */
-            AssertRC(rc);
+            if ((pCtx->msrLSTAR & 0xff) != u8LastTPR)
+            {
+                /* Our patch code uses LSTAR for TPR caching. */
+                rc = PDMApicSetTPR(pVCpu, pCtx->msrLSTAR & 0xff);
+                AssertRC(rc);
+            }
+        }
+        else
+        {
+            if ((u8LastTPR >> 4) != pVMCB->ctrl.IntCtrl.n.u8VTPR)
+            {
+                rc = PDMApicSetTPR(pVCpu, pVMCB->ctrl.IntCtrl.n.u8VTPR << 4);   /* cr8 bits 3-0 correspond to bits 7-4 of the task priority mmio register. */
+                AssertRC(rc);
+            }
         }
     }
 
@@ -2383,6 +2386,17 @@ ResumeExecution:
     case SVM_EXIT_MSR:
     {
         uint32_t cbSize;
+
+        /* When an interrupt is pending, we'll let MSR_K8_LSTAR writes fault in our TPR patch code. */
+        if (    pVM->hwaccm.s.svm.fTPRPatchingActive
+            &&  pCtx->ecx == MSR_K8_LSTAR
+            &&  pVMCB->ctrl.u64ExitInfo1 == 1 /* wrmsr */
+            &&  (pCtx->eax & 0xff) != u8LastTPR)
+        {
+            /* Our patch code uses LSTAR for TPR caching. */
+            rc = PDMApicSetTPR(pVCpu, pCtx->eax & 0xff);
+            AssertRC(rc);
+        }
 
         /* Note: the intel manual claims there's a REX version of RDMSR that's slightly different, so we play safe by completely disassembling the instruction. */
         STAM_COUNTER_INC((pVMCB->ctrl.u64ExitInfo1 == 0) ? &pVCpu->hwaccm.s.StatExitRdmsr : &pVCpu->hwaccm.s.StatExitWrmsr);
