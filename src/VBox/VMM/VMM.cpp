@@ -240,16 +240,22 @@ VMMR3DECL(int) VMMR3Init(PVM pVM)
 static int vmmR3InitStacks(PVM pVM)
 {
     int rc = VINF_SUCCESS;
+#ifdef VMM_R0_SWITCH_STACK
+    uint32_t fFlags = MMHYPER_AONR_FLAGS_KERNEL_MAPPING;
+#else
+    uint32_t fFlags = 0;
+#endif
 
     for (VMCPUID idCpu = 0; idCpu < pVM->cCPUs; idCpu++)
     {
         PVMCPU pVCpu = &pVM->aCpus[idCpu];
 
 #ifdef VBOX_STRICT_VMM_STACK
-        rc = MMR3HyperAllocOnceNoRel(pVM, PAGE_SIZE + VMM_STACK_SIZE + PAGE_SIZE, PAGE_SIZE, MM_TAG_VMM, (void **)&pVCpu->vmm.s.pbEMTStackR3);
+        rc = MMR3HyperAllocOnceNoRelEx(pVM, PAGE_SIZE + VMM_STACK_SIZE + PAGE_SIZE, 
 #else
-        rc = MMR3HyperAllocOnceNoRel(pVM, VMM_STACK_SIZE, PAGE_SIZE, MM_TAG_VMM, (void **)&pVCpu->vmm.s.pbEMTStackR3);
+        rc = MMR3HyperAllocOnceNoRelEx(pVM, VMM_STACK_SIZE, 
 #endif
+                                       PAGE_SIZE, MM_TAG_VMM, fFlags, (void **)&pVCpu->vmm.s.pbEMTStackR3);
         if (RT_SUCCESS(rc))
         {
 #ifdef VBOX_STRICT_VMM_STACK
