@@ -2886,9 +2886,9 @@ SUPR0DECL(int) SUPR0PageProtect(PSUPDRVSESSION pSession, RTR3PTR pvR3, RTR0PTR p
                     && pBundle->aMem[i].MemObj != NIL_RTR0MEMOBJ
                     && (   pBundle->aMem[i].MapObjR3 != NIL_RTR0MEMOBJ
                         || pvR3 == NIL_RTR3PTR)
-                    && (   pvR0 != NIL_RTR0PTR
-                        || RTR0MemObjAddress(pBundle->aMem[i].MemObj))
-                    && (   pvR3 != NIL_RTR3PTR
+                    && (   pvR0 == NIL_RTR0PTR
+                        || RTR0MemObjAddress(pBundle->aMem[i].MemObj) == pvR0)
+                    && (   pvR3 == NIL_RTR3PTR
                         || RTR0MemObjAddressR3(pBundle->aMem[i].MapObjR3) == pvR3))
                 {
                     if (pvR0 != NIL_RTR0PTR)
