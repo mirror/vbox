@@ -400,8 +400,10 @@ VMMR3DECL(int) HWACCMR3InitCPU(PVM pVM)
     }
 
 #ifdef VBOX_WITH_STATISTICS
-    STAM_REG(pVM, &pVM->hwaccm.s.StatPatchSuccess, STAMTYPE_COUNTER, "/HWACCM/Patch/Success", STAMUNIT_OCCURENCES, "Number of times an instruction was successfully patched.");
-    STAM_REG(pVM, &pVM->hwaccm.s.StatPatchFailure, STAMTYPE_COUNTER, "/HWACCM/Patch/Failed",  STAMUNIT_OCCURENCES, "Number of unsuccessful patch attempts.");
+    STAM_REG(pVM, &pVM->hwaccm.s.StatTPRPatchSuccess, STAMTYPE_COUNTER,   "/HWACCM/TPR/Patch/Success", STAMUNIT_OCCURENCES, "Number of times an instruction was successfully patched.");
+    STAM_REG(pVM, &pVM->hwaccm.s.StatTPRPatchFailure, STAMTYPE_COUNTER,   "/HWACCM/TPR/Patch/Failed",  STAMUNIT_OCCURENCES, "Number of unsuccessful patch attempts.");
+    STAM_REG(pVM, &pVM->hwaccm.s.StatTPRReplaceSuccess, STAMTYPE_COUNTER, "/HWACCM/TPR/Replace/Success", STAMUNIT_OCCURENCES, "Number of times an instruction was successfully patched.");
+    STAM_REG(pVM, &pVM->hwaccm.s.StatTPRReplaceFailure, STAMTYPE_COUNTER, "/HWACCM/TPR/Replace/Failed",  STAMUNIT_OCCURENCES, "Number of unsuccessful patch attempts.");
     
     /*
      * Statistics.
@@ -1642,6 +1644,7 @@ DECLCALLBACK(int) hwaccmR3ReplaceTprInstr(PVM pVM, PVMCPU pVCpu, void *pvUser)
         AssertRC(rc);
 
         pVM->hwaccm.s.svm.cPatches++;
+        STAM_COUNTER_INC(&pVM->hwaccm.s.StatTPRReplaceSuccess);
         return VINF_SUCCESS;
     }
 
@@ -1661,11 +1664,12 @@ DECLCALLBACK(int) hwaccmR3ReplaceTprInstr(PVM pVM, PVMCPU pVCpu, void *pvUser)
     rc = RTAvloU32Insert(&pVM->hwaccm.s.svm.PatchTree, &pPatch->Core);
     AssertRC(rc);
     pVM->hwaccm.s.svm.cPatches++;
+    STAM_COUNTER_INC(&pVM->hwaccm.s.StatTPRReplaceFailure);
     return VINF_SUCCESS;
 }
 
 /**
- * Callback to patch a TPR instruction (vmmcall or mov cr8)
+ * Callback to patch a TPR instruction (jump to generated code)
  *
  * @returns VBox status code.
  * @param   pVM     The VM handle.
@@ -1865,6 +1869,7 @@ DECLCALLBACK(int) hwaccmR3PatchTprInstr(PVM pVM, PVMCPU pVCpu, void *pvUser)
 
             pVM->hwaccm.s.svm.cPatches++;
             pVM->hwaccm.s.svm.fTPRPatchingActive = true;
+            STAM_COUNTER_INC(&pVM->hwaccm.s.StatTPRPatchSuccess);
             return VINF_SUCCESS;
         }
         else
@@ -1886,6 +1891,7 @@ DECLCALLBACK(int) hwaccmR3PatchTprInstr(PVM pVM, PVMCPU pVCpu, void *pvUser)
     rc = RTAvloU32Insert(&pVM->hwaccm.s.svm.PatchTree, &pPatch->Core);
     AssertRC(rc);
     pVM->hwaccm.s.svm.cPatches++;
+    STAM_COUNTER_INC(&pVM->hwaccm.s.StatTPRPatchFailure);
     return VINF_SUCCESS;
 }
 

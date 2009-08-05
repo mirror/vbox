@@ -450,8 +450,10 @@ typedef struct HWACCM
     bool                    fHWACCMR0Init;
     bool                    u8Alignment[7];
 
-    STAMCOUNTER             StatPatchSuccess;
-    STAMCOUNTER             StatPatchFailure;
+    STAMCOUNTER             StatTPRPatchSuccess;
+    STAMCOUNTER             StatTPRPatchFailure;
+    STAMCOUNTER             StatTPRReplaceSuccess;
+    STAMCOUNTER             StatTPRReplaceFailure;
 } HWACCM;
 /** Pointer to HWACCM VM instance data. */
 typedef HWACCM *PHWACCM;
