@@ -5056,15 +5056,15 @@ DECLINLINE(void) ASMMemFill32(volatile void *pv, size_t cb, uint32_t u32)
  *
  * @returns true / false.
  *
- * @param   pvPage      Pointer to the page.  This must be naturally aligned if
- *                      not page aligned.
+ * @param   pvPage      Pointer to the page.  Must be aligned on 16 byte
+ *                      boundrary
  */
 DECLINLINE(bool) ASMMemIsZeroPage(void const *pvPage)
 {
 # if 0 /*RT_INLINE_ASM_GNU_STYLE - this is actually slower... */
     union { RTCCUINTREG r; bool f; } uAX;
     RTCCUINTREG xCX, xDI;
-   Assert(!((uintptr_t)pvPage & (sizeof(uintptr_t) - 1)));
+   Assert(!((uintptr_t)pvPage & 15));
     __asm__ __volatile__("repe; "
 #  ifdef RT_ARCH_AMD64
                          "scasq\n\t"
@@ -5087,7 +5087,7 @@ DECLINLINE(bool) ASMMemIsZeroPage(void const *pvPage)
 # else
    uintptr_t const *puPtr = (uintptr_t const *)pvPage;
    int              cLeft = 0x1000 / sizeof(uintptr_t) / 8;
-   Assert(!((uintptr_t)pvPage & (sizeof(uintptr_t) - 1)));
+   Assert(!((uintptr_t)pvPage & 15));
    for (;;)
    {
        if (puPtr[0])        return false;
