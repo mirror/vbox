@@ -204,7 +204,6 @@ class PlatformMSCOM:
             import win32com
             import pythoncom
             import win32api
-            self.constants = PlatformMSCOM.InterfacesWrapper()
             from win32con import DUPLICATE_SAME_ACCESS
             from win32api import GetCurrentThread,GetCurrentThreadId,DuplicateHandle,GetCurrentProcess
             pid = GetCurrentProcess()
@@ -228,9 +227,6 @@ class PlatformMSCOM:
 	import win32com
         from win32com.client import Dispatch
         return win32com.client.Dispatch("VirtualBox.VirtualBox")
-
-    def getConstants(self):
-        return self.constants
 
     def getType(self):
         return 'MSCOM'
@@ -321,10 +317,6 @@ class PlatformXPCOM:
         import xpcom.components
         return xpcom.components.classes["@virtualbox.org/VirtualBox;1"].createInstance()
 
-    def getConstants(self):
-        import xpcom.components
-        return xpcom.components.interfaces
-
     def getType(self):
         return 'XPCOM'
 
@@ -410,9 +402,6 @@ class PlatformWEBSERVICE:
                 self.vbox = None
                 self.wsmgr = None
 
-    def getConstants(self):
-        return None
-
     def getType(self):
         return 'WEBSERVICE'
 
@@ -456,9 +445,10 @@ class VirtualBoxManager:
             else:
                 style = "XPCOM"
 
-        exec "self.platform = Platform"+style+"(platparams)"
 
-        self.constants = VirtualBoxReflectionInfo()
+        exec "self.platform = Platform"+style+"(platparams)"
+        # for webservices, enums are symbolic
+        self.constants = VirtualBoxReflectionInfo(style == "WEBSERVICE")
         self.type = self.platform.getType()
         self.remote = self.platform.getRemote()
         self.style = style
