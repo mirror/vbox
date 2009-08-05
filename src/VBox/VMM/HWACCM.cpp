@@ -1836,8 +1836,11 @@ DECLCALLBACK(int) hwaccmR3PatchTprInstr(PVM pVM, PVMCPU pVCpu, void *pvUser)
             aPatch[off++] = 0x0F;    /* rdmsr */
             aPatch[off++] = 0x32;
 
-            aPatch[off++] = 0x89;    /* mov dst_reg, eax */
-            aPatch[off++] = MAKE_MODRM(3, USE_REG_EAX, pDis->param1.base.reg_gen);
+            if (pDis->param1.base.reg_gen != USE_REG_EAX)
+            {
+                aPatch[off++] = 0x89;    /* mov dst_reg, eax */
+                aPatch[off++] = MAKE_MODRM(3, USE_REG_EAX, pDis->param1.base.reg_gen);
+            }
 
             if (pDis->param1.base.reg_gen != USE_REG_EAX)
                 aPatch[off++] = 0x58;    /* pop eax */
