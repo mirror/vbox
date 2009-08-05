@@ -130,22 +130,22 @@ if test "$currentzone" = "global"; then
 
     # Install python bindings
     if test -f "/opt/VirtualBox/sdk/installer/vboxapisetup.py" || test -h "/opt/VirtualBox/sdk/installer/vboxapisetup.py"; then
-        PYTHONBIN=`which python`
+        PYTHONBIN=`which python 2> /dev/null`
         if test -f "$PYTHONBIN" || test -h "$PYTHONBIN"; then
             echo "Installing Python bindings..."
 
             INSTALLEDIT=1
-            PYTHONBIN=`which python2.4`
+            PYTHONBIN=`which python2.4 2>/dev/null`
             install_python_bindings "$PYTHONBIN"
             if test "$?" -eq 0; then
                 INSTALLEDIT=0
             fi
-            PYTHONBIN=`which python2.5`
+            PYTHONBIN=`which python2.5 2>/dev/null`
             install_python_bindings "$PYTHONBIN"
             if test "$?" -eq 0; then
                 INSTALLEDIT=0
             fi
-            PYTHONBIN=`which python2.6`
+            PYTHONBIN=`which python2.6 2>/dev/null`
             install_python_bindings "$PYTHONBIN"
             if test "$?" -eq 0; then 
                 INSTALLEDIT=0
