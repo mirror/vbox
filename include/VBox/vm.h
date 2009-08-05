@@ -625,7 +625,7 @@ typedef struct VMCPU
  */
 #define VM_ASSERT_VALID_EXT_RETURN(pVM, rc) \
         AssertMsgReturn(    RT_VALID_ALIGNED_PTR(pVM, PAGE_SIZE) \
-                        &&  (unsigned)(pVM)->enmVMState < (unsigned)VMSTATE_DESTROYING, \
+                        &&  (unsigned)(pVM)->enmVMState < (unsigned) (VM_IS_EMT(pVM) ? VMSTATE_TERMINATED : VMSTATE_DESTROYING), \
                         ("pVM=%p state %s\n", (pVM), RT_VALID_ALIGNED_PTR(pVM, PAGE_SIZE) \
                          ? VMGetStateName(pVM->enmVMState) : ""), \
                         (rc))
