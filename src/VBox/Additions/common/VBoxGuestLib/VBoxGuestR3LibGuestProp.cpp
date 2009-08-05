@@ -810,7 +810,7 @@ VBGLR3DECL(int) VbglR3GuestPropDelSet(uint32_t u32ClientId,
  * @param   cbBuf           The size of @a pvBuf
  * @param   u64Timestamp    The timestamp of the last event seen.  Pass zero
  *                          to wait for the next event.
- * @param   u32Timeout      Timeout in milliseconds.  Use RT_INDEFINITE_WAIT
+ * @param   cMillies        Timeout in milliseconds.  Use RT_INDEFINITE_WAIT
  *                          to wait indefinitely.
  * @param   ppszName        Where to store the pointer to the name retrieved.
  *                          Optional.
@@ -824,7 +824,7 @@ VBGLR3DECL(int) VbglR3GuestPropDelSet(uint32_t u32ClientId,
 VBGLR3DECL(int) VbglR3GuestPropWait(uint32_t u32ClientId,
                                     const char *pszPatterns,
                                     void *pvBuf, uint32_t cbBuf,
-                                    uint64_t u64Timestamp, uint32_t u32Timeout,
+                                    uint64_t u64Timestamp, uint32_t cMillies,
                                     char ** ppszName, char **ppszValue,
                                     uint64_t *pu64Timestamp, char **ppszFlags,
                                     uint32_t *pcbBufActual)
@@ -834,7 +834,7 @@ VBGLR3DECL(int) VbglR3GuestPropWait(uint32_t u32ClientId,
      */
     GetNotification Msg;
 
-    Msg.hdr.u32Timeout = u32Timeout;
+    Msg.hdr.u32Timeout = cMillies;
     Msg.hdr.fInterruptible = true;
     Msg.hdr.info.result = VERR_WRONG_ORDER;
     Msg.hdr.info.u32ClientID = u32ClientId;
