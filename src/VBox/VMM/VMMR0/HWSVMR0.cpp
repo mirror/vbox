@@ -1621,11 +1621,12 @@ ResumeExecution:
 #endif
             Assert(!pVM->hwaccm.s.fNestedPaging);
 
-#if 0
+#ifdef VBOX_HWACCM_WITH_GUEST_PATCHING
             /* Shortcut for APIC TPR reads and writes; 32 bits guests only */
             if (    (uFaultAddress & 0xfff) == 0x080
                 &&  pVM->hwaccm.s.fHasIoApic
                 &&  !(errCode & X86_TRAP_PF_P)  /* not present */
+                &&  CPUMGetGuestCPL(pVCpu, CPUMCTX2CORE(pCtx)) == 0
                 &&  !CPUMIsGuestInLongModeEx(pCtx))
             {
                 RTGCPHYS GCPhysApicBase, GCPhys;
@@ -1636,56 +1637,8 @@ ResumeExecution:
                 if (    rc == VINF_SUCCESS
                     &&  GCPhys == GCPhysApicBase)
                 {
-                    Log(("Replace TPR access at %RGv\n", pCtx->rip));
-
-                    DISCPUSTATE Cpu;
-                    unsigned cbOp;
-                    rc = EMInterpretDisasOne(pVM, pVCpu, CPUMCTX2CORE(pCtx), &Cpu, &cbOp);
-                    AssertRC(rc);
-                    if (    rc == VINF_SUCCESS
-                        &&  Cpu.pCurInstr->opcode == OP_MOV
-                        &&  (cbOp == 5 || cbOp == 6))
-                    {
-                        uint8_t szInstr[15];
-                        if (    (errCode & X86_TRAP_PF_RW)
-                            &&  Cpu.param1.disp32 == (uint32_t)uFaultAddress
-                            &&  Cpu.param2.flags == USE_REG_GEN32)
-                        {
-                            /* 0xF0, 0x0F, 0x22, 0xC0 = mov cr8, eax */
-                            szInstr[0] = 0xF0;
-                            szInstr[1] = 0x0F;
-                            szInstr[2] = 0x22;
-                            szInstr[3] = 0xC0 | Cpu.param2.base.reg_gen;
-                            for (unsigned i = 4; i < cbOp; i++)
-                                szInstr[i] = 0x90;  /* nop */
-
-                            rc = PGMPhysSimpleWriteGCPtr(pVCpu, pCtx->rip, szInstr, cbOp);
-                            AssertRC(rc);
-
-                            Log(("Acceptable write candidate!\n"));
-                            STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatExit1, x);
-                            goto ResumeExecution;
-                        }
-                        else
-                        if (    Cpu.param2.disp32 == (uint32_t)uFaultAddress
-                            &&  Cpu.param1.flags == USE_REG_GEN32)
-                        {
-                            /* 0xF0, 0x0F, 0x20, 0xC0 = mov eax, cr8 */
-                            szInstr[0] = 0xF0;
-                            szInstr[1] = 0x0F;
-                            szInstr[2] = 0x20;
-                            szInstr[3] = 0xC0 | Cpu.param1.base.reg_gen;
-                            for (unsigned i = 4; i < cbOp; i++)
-                                szInstr[i] = 0x90;  /* nop */
-
-                            rc = PGMPhysSimpleWriteGCPtr(pVCpu, pCtx->rip, szInstr, cbOp);
-                            AssertRC(rc);
-
-                            Log(("Acceptable read candidate!\n"));
-                            STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatExit1, x);
-                            goto ResumeExecution;
-                        }
-                    }
+                    rc = VINF_EM_HWACCM_PATCH_TPR_INSTR;
+                    break;
                 }
             }
 #endif
