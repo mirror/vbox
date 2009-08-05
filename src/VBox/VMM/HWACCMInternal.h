@@ -192,6 +192,7 @@ typedef enum
 
 typedef enum
 {
+    HWACCMTPRINSTR_INVALID,
     HWACCMTPRINSTR_READ,
     HWACCMTPRINSTR_READ_SHR4,
     HWACCMTPRINSTR_WRITE_REG,
@@ -447,6 +448,10 @@ typedef struct HWACCM
 
     /** HWACCMR0Init was run */
     bool                    fHWACCMR0Init;
+    bool                    u8Alignment[7];
+
+    STAMCOUNTER             StatPatchSuccess;
+    STAMCOUNTER             StatPatchFailure;
 } HWACCM;
 /** Pointer to HWACCM VM instance data. */
 typedef HWACCM *PHWACCM;

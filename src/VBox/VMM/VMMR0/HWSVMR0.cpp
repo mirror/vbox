@@ -1627,7 +1627,8 @@ ResumeExecution:
                 &&  pVM->hwaccm.s.fHasIoApic
                 &&  !(errCode & X86_TRAP_PF_P)  /* not present */
                 &&  CPUMGetGuestCPL(pVCpu, CPUMCTX2CORE(pCtx)) == 0
-                &&  !CPUMIsGuestInLongModeEx(pCtx))
+                &&  !CPUMIsGuestInLongModeEx(pCtx)
+                &&  pVM->hwaccm.s.svm.cPatches < RT_ELEMENTS(pVM->hwaccm.s.svm.aPatches)
             {
                 RTGCPHYS GCPhysApicBase, GCPhys;
                 PDMApicGetBase(pVM, &GCPhysApicBase);   /* @todo cache this */
@@ -1637,8 +1638,13 @@ ResumeExecution:
                 if (    rc == VINF_SUCCESS
                     &&  GCPhys == GCPhysApicBase)
                 {
-                    rc = VINF_EM_HWACCM_PATCH_TPR_INSTR;
-                    break;
+                    /* Only attempt to patch the instruction once. */
+                    PHWACCMTPRPATCH pPatch = (PHWACCMTPRPATCH)RTAvloU32Get(&pVM->hwaccm.s.svm.PatchTree, (AVLOU32KEY)pCtx->eip);
+                    if (!pPatch)
+                    {
+                        rc = VINF_EM_HWACCM_PATCH_TPR_INSTR;
+                        break;
+                    }
                 }
             }
 #endif
@@ -1789,7 +1795,8 @@ ResumeExecution:
             &&  pVM->hwaccm.s.fHasIoApic
             &&  !(errCode & X86_TRAP_PF_P)  /* not present */
             &&  CPUMGetGuestCPL(pVCpu, CPUMCTX2CORE(pCtx)) == 0
-            &&  !CPUMIsGuestInLongModeEx(pCtx))
+            &&  !CPUMIsGuestInLongModeEx(pCtx)
+            &&  pVM->hwaccm.s.svm.cPatches < RT_ELEMENTS(pVM->hwaccm.s.svm.aPatches)
         {
             RTGCPHYS GCPhysApicBase;
             PDMApicGetBase(pVM, &GCPhysApicBase);   /* @todo cache this */
@@ -1797,8 +1804,13 @@ ResumeExecution:
 
             if (uFaultAddress == GCPhysApicBase + 0x80)
             {
-                rc = VINF_EM_HWACCM_PATCH_TPR_INSTR;
-                break;
+                /* Only attempt to patch the instruction once. */
+                PHWACCMTPRPATCH pPatch = (PHWACCMTPRPATCH)RTAvloU32Get(&pVM->hwaccm.s.svm.PatchTree, (AVLOU32KEY)pCtx->eip);
+                if (!pPatch)
+                {
+                    rc = VINF_EM_HWACCM_PATCH_TPR_INSTR;
+                    break;
+                }
             }
         }
 #endif
