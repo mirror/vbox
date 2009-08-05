@@ -124,6 +124,9 @@ RTDECL(int)  RTSemEventDestroy(RTSEMEVENT EventSem)
 
 RTDECL(int)  RTSemEventSignal(RTSEMEVENT EventSem)
 {
+#ifdef RT_STRICT
+    bool fInts = ASMIntAreEnabled();
+#endif
     PRTSEMEVENTINTERNAL pEventInt = (PRTSEMEVENTINTERNAL)EventSem;
     AssertPtrReturn(pEventInt, VERR_INVALID_HANDLE);
     AssertMsgReturn(pEventInt->u32Magic == RTSEMEVENT_MAGIC,
@@ -142,6 +145,10 @@ RTDECL(int)  RTSemEventSignal(RTSEMEVENT EventSem)
         ASMAtomicXchgU8(&pEventInt->fSignaled, true);
 
     mutex_exit(&pEventInt->Mtx);
+
+#ifdef RT_STRICT
+    AssertMsg(fInts == ASMIntAreEnabled(), ("%d\n", fInts));
+#endif
     return VINF_SUCCESS;
 }
 
@@ -165,7 +172,7 @@ static int rtSemEventWait(RTSEMEVENT EventSem, unsigned cMillies, bool fInterrup
     else
     {
         ASMAtomicIncU32(&pEventInt->cWaiters);
-        
+
         /*
          * Translate milliseconds into ticks and go to sleep.
          */
