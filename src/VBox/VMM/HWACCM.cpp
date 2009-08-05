@@ -1463,6 +1463,26 @@ DECLCALLBACK(int) hwaccmR3RemovePatches(PVM pVM, PVMCPU pVCpu, void *pvUser)
  *
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
+ * @param   idCpu       VCPU to execute hwaccmR3RemovePatches on
+ * @param   pPatchMem   Patch memory range
+ * @param   cbPatchMem  Size of the memory range
+ */
+int hwaccmR3EnablePatching(PVM pVM, VMCPUID idCpu, RTRCPTR pPatchMem, unsigned cbPatchMem)
+{
+    int rc = VMMR3EmtRendezvous(pVM, VMMEMTRENDEZVOUS_FLAGS_TYPE_ONE_BY_ONE, hwaccmR3RemovePatches, (void *)idCpu);
+    AssertRC(rc);
+
+    pVM->hwaccm.s.pGuestPatchMem      = pPatchMem;
+    pVM->hwaccm.s.pFreeGuestPatchMem  = pPatchMem;
+    pVM->hwaccm.s.cbGuestPatchMem     = cbPatchMem;
+    return VINF_SUCCESS;
+}
+
+/**
+ * Enable patching in a VT-x/AMD-V guest
+ *
+ * @returns VBox status code.
+ * @param   pVM         The VM to operate on.
  * @param   pPatchMem   Patch memory range
  * @param   cbPatchMem  Size of the memory range
  */
@@ -1471,18 +1491,22 @@ VMMR3DECL(int)  HWACMMR3EnablePatching(PVM pVM, RTGCPTR pPatchMem, unsigned cbPa
     Log(("HWACMMR3EnablePatching %RGv size %x\n", pPatchMem, cbPatchMem));
 
     /* Current TPR patching only applies to AMD cpus.
-     * May need to be extended to Intel CPUs without the APIC TPR hardware optimization.
+     * Needs to be extended to Intel CPUs without the APIC TPR hardware optimization.
      */
     if (CPUMGetCPUVendor(pVM) != CPUMCPUVENDOR_AMD)
         return VERR_NOT_SUPPORTED;
 
-    int rc = VMMR3EmtRendezvous(pVM, VMMEMTRENDEZVOUS_FLAGS_TYPE_ONE_BY_ONE, hwaccmR3RemovePatches, (void *)VMMGetCpuId(pVM));
-    AssertRC(rc);
-
-    pVM->hwaccm.s.pGuestPatchMem      = pPatchMem;
-    pVM->hwaccm.s.pFreeGuestPatchMem  = pPatchMem;
-    pVM->hwaccm.s.cbGuestPatchMem     = cbPatchMem;
-    return VINF_SUCCESS;
+    if (pVM->cCPUs > 1)
+    {
+        /* We own the IOM lock here and could cause a deadlock by waiting for a VCPU that is blocking on the IOM lock. */
+        PVMREQ pReq;
+        int rc = VMR3ReqCallU(pVM->pUVM, VMCPUID_ANY_QUEUE, &pReq, 0, VMREQFLAGS_NO_WAIT,
+                              (PFNRT)hwaccmR3EnablePatching, 4, pVM, VMMGetCpuId(pVM), (RTRCPTR)pPatchMem, cbPatchMem);
+        AssertRC(rc);
+        return rc;
+    }
+    else
+        return hwaccmR3EnablePatching(pVM, VMMGetCpuId(pVM), (RTRCPTR)pPatchMem, cbPatchMem);
 }
 
 /**
