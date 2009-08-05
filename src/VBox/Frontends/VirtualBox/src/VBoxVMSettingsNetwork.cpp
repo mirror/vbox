@@ -124,16 +124,16 @@ void VBoxVMSettingsNetwork::putBackToAdapter()
             mAdapter.AttachToNAT();
             break;
         case KNetworkAttachmentType_Bridged:
-            mAdapter.AttachToBridgedInterface();
             mAdapter.SetHostInterface (alternativeName());
+            mAdapter.AttachToBridgedInterface();
             break;
         case KNetworkAttachmentType_Internal:
-            mAdapter.AttachToInternalNetwork();
             mAdapter.SetInternalNetwork (alternativeName());
+            mAdapter.AttachToInternalNetwork();
             break;
         case KNetworkAttachmentType_HostOnly:
-            mAdapter.AttachToHostOnlyInterface();
             mAdapter.SetHostInterface (alternativeName());
+            mAdapter.AttachToHostOnlyInterface();
             break;
         default:
             break;
