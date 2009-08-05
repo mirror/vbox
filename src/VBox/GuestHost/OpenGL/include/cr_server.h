@@ -219,7 +219,7 @@ extern DECLEXPORT(int32_t) crVBoxServerClientRead(uint32_t u32ClientID, uint8_t 
 extern DECLEXPORT(int32_t) crVBoxServerClientSetVersion(uint32_t u32ClientID, uint32_t vMajor, uint32_t vMinor);
 
 extern DECLEXPORT(int32_t) crVBoxServerSaveState(PSSMHANDLE pSSM);
-extern DECLEXPORT(int32_t) crVBoxServerLoadState(PSSMHANDLE pSSM);
+extern DECLEXPORT(int32_t) crVBoxServerLoadState(PSSMHANDLE pSSM, uint32_t version);
 #ifdef __cplusplus
 }
 #endif
