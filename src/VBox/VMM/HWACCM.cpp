@@ -1401,6 +1401,12 @@ VMMR3DECL(void) HWACCMR3Reset(PVM pVM)
  */
 DECLCALLBACK(int) hwaccmR3RemovePatches(PVM pVM, PVMCPU pVCpu, void *pvUser)
 {
+    VMCPUID idCpu = (VMCPUID)pvUser;
+
+    /* Only execute the handler on the VCPU the original patch request was issued. */
+    if (pVCpu->idCpu != idCpu)
+        return VINF_SUCCESS;
+
     Log(("hwaccmR3RemovePatches\n"));
     for (unsigned i = 0; i < pVM->hwaccm.s.svm.cPatches; i++)
     {
@@ -1465,7 +1471,7 @@ VMMR3DECL(int)  HWACMMR3EnablePatching(PVM pVM, RTGCPTR pPatchMem, unsigned cbPa
     if (CPUMGetCPUVendor(pVM) != CPUMCPUVENDOR_AMD)
         return VERR_NOT_SUPPORTED;
 
-    int rc = VMMR3EmtRendezvous(pVM, VMMEMTRENDEZVOUS_FLAGS_TYPE_ONCE, hwaccmR3RemovePatches, NULL);
+    int rc = VMMR3EmtRendezvous(pVM, VMMEMTRENDEZVOUS_FLAGS_TYPE_ONE_BY_ONE, hwaccmR3RemovePatches, (void *)VMMGetCpuId(pVM));
     AssertRC(rc);
 
     pVM->hwaccm.s.pGuestPatchMem      = pPatchMem;
@@ -1489,7 +1495,7 @@ VMMR3DECL(int)  HWACMMR3DisablePatching(PVM pVM, RTGCPTR pPatchMem, unsigned cbP
     Assert(pVM->hwaccm.s.pGuestPatchMem == pPatchMem);
     Assert(pVM->hwaccm.s.cbGuestPatchMem == cbPatchMem);
 
-    int rc = VMMR3EmtRendezvous(pVM, VMMEMTRENDEZVOUS_FLAGS_TYPE_ONCE, hwaccmR3RemovePatches, NULL);
+    int rc = VMMR3EmtRendezvous(pVM, VMMEMTRENDEZVOUS_FLAGS_TYPE_ONE_BY_ONE, hwaccmR3RemovePatches, (void *)VMMGetCpuId(pVM));
     AssertRC(rc);
 
     pVM->hwaccm.s.pGuestPatchMem      = 0;
@@ -1528,9 +1534,7 @@ static int hwaccmR0EmulateTprMov(PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTX pCtx,
         }
         else
         if (pDis->param2.flags == USE_IMMEDIATE32)
-        {
             u8Tpr = (uint8_t)pDis->param2.parval;
-        }
         else
             return VERR_EM_INTERPRETER;
 
@@ -1574,10 +1578,15 @@ static int hwaccmR0EmulateTprMov(PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTX pCtx,
  */
 DECLCALLBACK(int) hwaccmR3ReplaceTprInstr(PVM pVM, PVMCPU pVCpu, void *pvUser)
 {
-    PCPUMCTX     pCtx   = (PCPUMCTX)pvUser;
+    VMCPUID      idCpu  = (VMCPUID)pvUser;
+    PCPUMCTX     pCtx   = CPUMQueryGuestCtxPtr(pVCpu);
     RTGCPTR      oldrip = pCtx->rip;
     PDISCPUSTATE pDis   = &pVCpu->hwaccm.s.DisState;
     unsigned     cbOp;
+
+    /* Only execute the handler on the VCPU the original patch request was issued. */
+    if (pVCpu->idCpu != idCpu)
+        return VINF_SUCCESS;
 
     Log(("hwaccmR3ReplaceTprInstr: %RGv\n", pCtx->rip));
 
@@ -1706,7 +1715,8 @@ DECLCALLBACK(int) hwaccmR3ReplaceTprInstr(PVM pVM, PVMCPU pVCpu, void *pvUser)
  */
 DECLCALLBACK(int) hwaccmR3PatchTprInstr(PVM pVM, PVMCPU pVCpu, void *pvUser)
 {
-    PCPUMCTX     pCtx   = (PCPUMCTX)pvUser;
+    VMCPUID      idCpu  = (VMCPUID)pvUser;
+    PCPUMCTX     pCtx   = CPUMQueryGuestCtxPtr(pVCpu);
     PDISCPUSTATE pDis   = &pVCpu->hwaccm.s.DisState;
     unsigned     cbOp;
     int          rc;
@@ -1714,6 +1724,10 @@ DECLCALLBACK(int) hwaccmR3PatchTprInstr(PVM pVM, PVMCPU pVCpu, void *pvUser)
     RTGCPTR      pInstr;
     char         szOutput[256];
 #endif
+
+    /* Only execute the handler on the VCPU the original patch request was issued. */
+    if (pVCpu->idCpu != idCpu)
+        return VINF_SUCCESS;
 
     Log(("hwaccmR3PatchTprInstr %RGv\n", pCtx->rip));
 
@@ -1907,7 +1921,7 @@ DECLCALLBACK(int) hwaccmR3PatchTprInstr(PVM pVM, PVMCPU pVCpu, void *pvUser)
  */
 VMMR3DECL(int) HWACCMR3PatchTprInstr(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 {
-    int rc = VMMR3EmtRendezvous(pVM, VMMEMTRENDEZVOUS_FLAGS_TYPE_ONCE, (pVM->hwaccm.s.pGuestPatchMem) ? hwaccmR3PatchTprInstr : hwaccmR3ReplaceTprInstr, pCtx);
+    int rc = VMMR3EmtRendezvous(pVM, VMMEMTRENDEZVOUS_FLAGS_TYPE_ONE_BY_ONE, (pVM->hwaccm.s.pGuestPatchMem) ? hwaccmR3PatchTprInstr : hwaccmR3ReplaceTprInstr, (void *)pVCpu->idCpu);
     AssertRC(rc);
     return rc;
 }
