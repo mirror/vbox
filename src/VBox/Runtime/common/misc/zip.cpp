@@ -66,6 +66,7 @@
 #include <iprt/zip.h>
 #include "internal/iprt.h"
 
+/*#include <iprt/asm.h>*/
 #include <iprt/alloc.h>
 #include <iprt/assert.h>
 #include <iprt/err.h>
@@ -1699,6 +1700,29 @@ RTDECL(int) RTZipBlockCompress(RTZIPTYPE enmType, RTZIPLEVEL enmLevel, uint32_t 
         case RTZIPTYPE_LZF:
         {
 #ifdef RTZIP_USE_LZF
+# if 0
+            static const uint8_t s_abZero4K[] =
+            {
+                0x01, 0x00, 0x00, 0xe0, 0xff, 0x00, 0xe0, 0xff,
+                0x00, 0xe0, 0xff, 0x00, 0xe0, 0xff, 0x00, 0xe0,
+                0xff, 0x00, 0xe0, 0xff, 0x00, 0xe0, 0xff, 0x00,
+                0xe0, 0xff, 0x00, 0xe0, 0xff, 0x00, 0xe0, 0xff,
+                0x00, 0xe0, 0xff, 0x00, 0xe0, 0xff, 0x00, 0xe0,
+                0xff, 0x00, 0xe0, 0xff, 0x00, 0xe0, 0xff, 0x00,
+                0xe0, 0x7d, 0x00
+            };
+            if (    cbSrc == _4K
+                &&  !((uintptr_t)pvSrc & 15)
+                &&  ASMMemIsZeroPage(pvSrc))
+            {
+                if (RT_UNLIKELY(cbDst < sizeof(s_abZero4K)))
+                    return VERR_BUFFER_OVERFLOW;
+                memcpy(pvDst, s_abZero4K, sizeof(s_abZero4K));
+                *pcbDstActual = sizeof(s_abZero4K);
+                break;
+            }
+# endif
+
             unsigned cbDstActual = lzf_compress(pvSrc, cbSrc, pvDst, cbDst);
             if (RT_UNLIKELY(cbDstActual < 1))
                 return VERR_BUFFER_OVERFLOW;
