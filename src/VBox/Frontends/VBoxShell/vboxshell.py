@@ -508,6 +508,7 @@ def infoCmd(ctx,args):
         print "  DVD:"
         print "    Image at: %s" %(vdvd.location)
         print "    Size: %s" %(vdvd.size)
+        print "    Id: %s" %(vdvd.id)
         print
 
     floppy = mach.floppyDrive
@@ -805,7 +806,7 @@ def evalCmd(ctx, args):
 
 def reloadExtCmd(ctx, args):
    # maybe will want more args smartness
-   checkUserExtensions(ctx, commands, ctx['vb'].homeFolder)
+   checkUserExtensions(ctx, commands, getHomeFolder(ctx))
    autoCompletion(commands, ctx)
    return 0
 
@@ -1031,6 +1032,12 @@ def checkUserExtensions(ctx, cmds, folder):
     for e in exts:
         addExtsFromFile(ctx, cmds, os.path.join(shextdir,e))
 
+def getHomeFolder(ctx):
+    if ctx['remote'] or ctx['vb'] is None:
+        return os.path.join(os.path.expanduser("~"), ".VirtualBox")
+    else:
+        return ctx['vb'].homeFolder
+
 def interpret(ctx):
     if ctx['remote']:
         commands['connect'] = ["Connect to remote VBox instance", connectCmd, 0]
@@ -1040,12 +1047,11 @@ def interpret(ctx):
 
     if vbox is not None:
         print "Running VirtualBox version %s" %(vbox.version)
-        ctx['perf'] = ctx['global'].getPerfCollector(ctx['vb'])
-        home = vbox.homeFolder
+        ctx['perf'] = ctx['global'].getPerfCollector(vbox)
     else:
         ctx['perf'] = None
-        home = os.path.join(os.path.expanduser("~"), ".VirtualBox")
 
+    home = getHomeFolder(ctx)
     checkUserExtensions(ctx, commands, home)
 
     autoCompletion(commands, ctx)
