@@ -177,8 +177,8 @@ DECLCALLBACK(int) VBoxServiceVMInfoWorker(bool volatile *pfShutdown)
     /* VboxServiceGetAddsVersion !RT_OS_WINDOWS */
     VboxServiceWriteProp(g_VMInfoGuestPropSvcClientID, "GuestAdd/Version", VBOX_VERSION_STRING);
 
-    char szRevision[32] = {0};
-    RTStrPrintf(szRevision, sizeof(szRevision), "%lu", VBOX_SVN_REV);
+    char szRevision[32];
+    RTStrPrintf(szRevision, sizeof(szRevision), "%u", VBOX_SVN_REV);
     VboxServiceWriteProp(g_VMInfoGuestPropSvcClientID, "GuestAdd/Revision", szRevision);
 #endif
 
