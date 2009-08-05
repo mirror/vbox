@@ -1524,6 +1524,7 @@ VMMR3DECL(int)  HWACMMR3DisablePatching(PVM pVM, RTGCPTR pPatchMem, unsigned cbP
     Assert(pVM->hwaccm.s.pGuestPatchMem == pPatchMem);
     Assert(pVM->hwaccm.s.cbGuestPatchMem == cbPatchMem);
 
+    /* @todo Potential deadlock when other VCPUs are waiting on the IOM lock (we own it)!! */
     int rc = VMMR3EmtRendezvous(pVM, VMMEMTRENDEZVOUS_FLAGS_TYPE_ONE_BY_ONE, hwaccmR3RemovePatches, (void *)VMMGetCpuId(pVM));
     AssertRC(rc);
 
