@@ -708,6 +708,12 @@ DECLEXPORT(int32_t) crVBoxServerSaveState(PSSMHANDLE pSSM)
             rc = SSMR3PutU32(pSSM, pClient->conn->u32ClientID);
             AssertRCReturn(rc, rc);
 
+            rc = SSMR3PutU32(pSSM, pClient->conn->vMajor);
+            AssertRCReturn(rc, rc);
+
+            rc = SSMR3PutU32(pSSM, pClient->conn->vMinor);
+            AssertRCReturn(rc, rc);
+
             rc = SSMR3PutMem(pSSM, pClient, sizeof(*pClient));
             AssertRCReturn(rc, rc);
 
@@ -734,7 +740,7 @@ DECLEXPORT(int32_t) crVBoxServerSaveState(PSSMHANDLE pSSM)
     return VINF_SUCCESS;
 }
 
-DECLEXPORT(int32_t) crVBoxServerLoadState(PSSMHANDLE pSSM)
+DECLEXPORT(int32_t) crVBoxServerLoadState(PSSMHANDLE pSSM, uint32_t version)
 {
     int32_t  rc, i;
     uint32_t ui, uiNumElems;
@@ -858,6 +864,15 @@ DECLEXPORT(int32_t) crVBoxServerLoadState(PSSMHANDLE pSSM)
             AssertRCReturn(rc, rc);
             /* If this assert fires, then we should search correct client in the list first*/
             CRASSERT(ui == pClient->conn->u32ClientID);
+
+            if (version>=4)
+            {
+                rc = SSMR3GetU32(pSSM, &pClient->conn->vMajor);
+                AssertRCReturn(rc, rc);
+
+                rc = SSMR3GetU32(pSSM, &pClient->conn->vMinor);
+                AssertRCReturn(rc, rc);
+            }
 
             rc = SSMR3GetMem(pSSM, &client, sizeof(client));
             CRASSERT(rc == VINF_SUCCESS);

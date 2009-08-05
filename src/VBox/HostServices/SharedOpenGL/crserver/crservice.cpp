@@ -69,7 +69,7 @@ static ULONG64 g_winId = 0;
 #define CR_USE_HGCM
 
 static const char* gszVBoxOGLSSMMagic = "***OpenGL state data***";
-#define SHCROGL_SSM_VERSION 3
+#define SHCROGL_SSM_VERSION 4
 
 typedef struct
 {
@@ -206,11 +206,12 @@ static DECLCALLBACK(int) svcLoadState(void *, uint32_t u32ClientID, void *pvClie
     /* Version */
     rc = SSMR3GetU32(pSSM, &ui32);
     AssertRCReturn(rc, rc);
-    if (SHCROGL_SSM_VERSION != ui32)
+    if ((SHCROGL_SSM_VERSION != ui32)
+        && (3 != ui32))
         return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
 
     /* The state itself */
-    rc = crVBoxServerLoadState(pSSM);
+    rc = crVBoxServerLoadState(pSSM, ui32);
     AssertRCReturn(rc, rc);
 
     /* End of data */
