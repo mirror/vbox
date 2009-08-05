@@ -1590,6 +1590,11 @@ DECLCALLBACK(int) hwaccmR3ReplaceTprInstr(PVM pVM, PVMCPU pVCpu, void *pvUser)
 
     Log(("hwaccmR3ReplaceTprInstr: %RGv\n", pCtx->rip));
 
+    /* Two or more VCPUs were racing to patch this instruction. */
+    PHWACCMTPRPATCH pPatch = (PHWACCMTPRPATCH)RTAvloU32Get(&pVM->hwaccm.s.svm.PatchTree, (AVLOU32KEY)pCtx->eip);
+    if (pPatch)
+        return VINF_SUCCESS;
+
     int rc = EMInterpretDisasOne(pVM, pVCpu, CPUMCTX2CORE(pCtx), pDis, &cbOp);
     AssertRC(rc);
     if (    rc == VINF_SUCCESS
@@ -1730,6 +1735,11 @@ DECLCALLBACK(int) hwaccmR3PatchTprInstr(PVM pVM, PVMCPU pVCpu, void *pvUser)
         return VINF_SUCCESS;
 
     Log(("hwaccmR3PatchTprInstr %RGv\n", pCtx->rip));
+
+    /* Two or more VCPUs were racing to patch this instruction. */
+    PHWACCMTPRPATCH pPatch = (PHWACCMTPRPATCH)RTAvloU32Get(&pVM->hwaccm.s.svm.PatchTree, (AVLOU32KEY)pCtx->eip);
+    if (pPatch)
+        return VINF_SUCCESS;
 
     rc = EMInterpretDisasOne(pVM, pVCpu, CPUMCTX2CORE(pCtx), pDis, &cbOp);
     AssertRC(rc);
