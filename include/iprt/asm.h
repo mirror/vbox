@@ -5052,6 +5052,66 @@ DECLINLINE(void) ASMMemFill32(volatile void *pv, size_t cb, uint32_t u32)
 
 
 /**
+ * Checks if a memory page is all zeros.
+ *
+ * @returns true / false.
+ *
+ * @param   pvPage      Pointer to the page.  This must be naturally aligned if
+ *                      not page aligned.
+ */
+DECLINLINE(bool) ASMMemIsZeroPage(void const *pvPage)
+{
+# if 0 /*RT_INLINE_ASM_GNU_STYLE - this is actually slower... */
+    union { RTCCUINTREG r; bool f; } uAX;
+    RTCCUINTREG xCX, xDI;
+   Assert(!((uintptr_t)pvPage & (sizeof(uintptr_t) - 1)));
+    __asm__ __volatile__("repe; "
+#  ifdef RT_ARCH_AMD64
+                         "scasq\n\t"
+#  else
+                         "scasl\n\t"
+#  endif
+                         "setnc %%al\n\t"
+                         : "=&c" (xCX),
+                           "=&D" (xDI),
+                           "=&a" (uAX.r)
+                         : "mr" (pvPage),
+#  ifdef RT_ARCH_AMD64
+                         "0" (0x1000/8),
+#  else
+                         "0" (0x1000/4),
+#  endif
+                         "1" (pvPage),
+                         "2" (0));
+    return uAX.f;
+# else
+   uintptr_t const *puPtr = (uintptr_t const *)pvPage;
+   int              cLeft = 0x1000 / sizeof(uintptr_t) / 8;
+   Assert(!((uintptr_t)pvPage & (sizeof(uintptr_t) - 1)));
+   for (;;)
+   {
+       if (puPtr[0])        return false;
+       if (puPtr[4])        return false;
+
+       if (puPtr[2])        return false;
+       if (puPtr[6])        return false;
+
+       if (puPtr[1])        return false;
+       if (puPtr[5])        return false;
+
+       if (puPtr[3])        return false;
+       if (puPtr[7])        return false;
+
+       if (!--cLeft)
+           return true;
+       puPtr += 8;
+   }
+   return true;
+# endif
+}
+
+
+/**
  * Checks if a memory block is filled with the specified byte.
  *
  * This is a sort of inverted memchr.
