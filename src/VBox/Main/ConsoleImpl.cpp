@@ -3338,11 +3338,11 @@ HRESULT Console::onNetworkAdapterChange (INetworkAdapter *aNetworkAdapter, BOOL 
             }
 
 #ifdef VBOX_DYNAMIC_NET_ATTACH
-            if ((VBOX_SUCCESS (vrc)) && (changeAdapter == TRUE))
+            if (RT_SUCCESS(vrc) && changeAdapter)
             {
-                VMSTATE enmVMState = VMR3GetState (mpVM);
-
-                if ((enmVMState == VMSTATE_RUNNING) || (enmVMState == VMSTATE_SUSPENDED))
+                VMSTATE enmVMState = VMR3GetState(mpVM);
+                if (   enmVMState == VMSTATE_RUNNING
+                    || enmVMState == VMSTATE_SUSPENDED)
                     rc = doNetworkAdapterChange(pszAdapterName, ulInstance, 0, aNetworkAdapter);
             }
 #endif /* VBOX_DYNAMIC_NET_ATTACH */
