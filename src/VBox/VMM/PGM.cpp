@@ -588,21 +588,21 @@
 #include <VBox/rem.h>
 #include <VBox/selm.h>
 #include <VBox/ssm.h>
+#include <VBox/hwaccm.h>
 #include "PGMInternal.h"
 #include <VBox/vm.h>
-#include <VBox/dbg.h>
-#include <VBox/hwaccm.h>
 
-#include <iprt/assert.h>
-#include <iprt/alloc.h>
-#include <iprt/asm.h>
-#include <iprt/thread.h>
-#include <iprt/string.h>
-#ifdef DEBUG_bird
-# include <iprt/env.h>
-#endif
+#include <VBox/dbg.h>
 #include <VBox/param.h>
 #include <VBox/err.h>
+
+#include <iprt/asm.h>
+#include <iprt/assert.h>
+#include <iprt/env.h>
+#include <iprt/mem.h>
+#include <iprt/file.h>
+#include <iprt/string.h>
+#include <iprt/thread.h>
 
 
 /*******************************************************************************
@@ -648,6 +648,7 @@ static DECLCALLBACK(int)  pgmR3CmdSyncAlways(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp
 # ifdef VBOX_STRICT
 static DECLCALLBACK(int)  pgmR3CmdAssertCR3(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult);
 # endif
+static DECLCALLBACK(int)  pgmR3CmdPhysToFile(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult);
 #endif
 
 
@@ -662,19 +663,27 @@ static const DBGCVARDESC g_aPgmErrorArgs[] =
     {  0,           1,          DBGCVAR_CAT_STRING,     0,                              "where",        "Error injection location." },
 };
 
+static const DBGCVARDESC g_aPgmPhysToFileArgs[] =
+{
+    /* cTimesMin,   cTimesMax,  enmCategory,            fFlags,                         pszName,        pszDescription */
+    {  1,           1,          DBGCVAR_CAT_STRING,     0,                              "file",         "The file name." },
+    {  0,           1,          DBGCVAR_CAT_STRING,     0,                              "nozero",       "If present, zero pages are skipped." },
+};
+
 /** Command descriptors. */
 static const DBGCCMD    g_aCmds[] =
 {
-    /* pszCmd,  cArgsMin, cArgsMax, paArgDesc,          cArgDescs,                  pResultDesc,        fFlags,     pfnHandler          pszSyntax,          ....pszDescription */
-    { "pgmram",        0, 0,        NULL,               0,                          NULL,               0,          pgmR3CmdRam,        "",                     "Display the ram ranges." },
-    { "pgmmap",        0, 0,        NULL,               0,                          NULL,               0,          pgmR3CmdMap,        "",                     "Display the mapping ranges." },
-    { "pgmsync",       0, 0,        NULL,               0,                          NULL,               0,          pgmR3CmdSync,       "",                     "Sync the CR3 page." },
-    { "pgmerror",      0, 1,        &g_aPgmErrorArgs[0],1,                          NULL,               0,          pgmR3CmdError,      "",                     "Enables inject runtime of errors into parts of PGM." },
-    { "pgmerroroff",   0, 1,        &g_aPgmErrorArgs[0],1,                          NULL,               0,          pgmR3CmdError,      "",                     "Disables inject runtime errors into parts of PGM." },
-#ifdef VBOX_STRICT
-    { "pgmassertcr3",  0, 0,        NULL,               0,                          NULL,               0,          pgmR3CmdAssertCR3,  "",                     "Check the shadow CR3 mapping." },
-#endif
-    { "pgmsyncalways", 0, 0,        NULL,               0,                          NULL,               0,          pgmR3CmdSyncAlways, "",                     "Toggle permanent CR3 syncing." },
+    /* pszCmd,  cArgsMin, cArgsMax, paArgDesc,                cArgDescs,    pResultDesc,        fFlags,     pfnHandler          pszSyntax,          ....pszDescription */
+    { "pgmram",        0, 0,        NULL,                     0,            NULL,               0,          pgmR3CmdRam,        "",                     "Display the ram ranges." },
+    { "pgmmap",        0, 0,        NULL,                     0,            NULL,               0,          pgmR3CmdMap,        "",                     "Display the mapping ranges." },
+    { "pgmsync",       0, 0,        NULL,                     0,            NULL,               0,          pgmR3CmdSync,       "",                     "Sync the CR3 page." },
+    { "pgmerror",      0, 1,        &g_aPgmErrorArgs[0],      1,            NULL,               0,          pgmR3CmdError,      "",                     "Enables inject runtime of errors into parts of PGM." },
+    { "pgmerroroff",   0, 1,        &g_aPgmErrorArgs[0],      1,            NULL,               0,          pgmR3CmdError,      "",                     "Disables inject runtime errors into parts of PGM." },
+#ifdef VBOX_STRICT                                            
+    { "pgmassertcr3",  0, 0,        NULL,                     0,            NULL,               0,          pgmR3CmdAssertCR3,  "",                     "Check the shadow CR3 mapping." },
+#endif                                                        
+    { "pgmsyncalways", 0, 0,        NULL,                     0,            NULL,               0,          pgmR3CmdSyncAlways, "",                     "Toggle permanent CR3 syncing." },
+    { "pgmphystofile", 1, 2,        &g_aPgmPhysToFileArgs[0], 2,            NULL,               0,          pgmR3CmdPhysToFile, "",                     "Save the physical memory to file." },
 };
 #endif
 
@@ -4957,6 +4966,135 @@ static DECLCALLBACK(int) pgmR3CmdSyncAlways(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp,
         VMCPU_FF_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3);
         return pCmdHlp->pfnPrintf(pCmdHlp, NULL, "Enabled permanent forced page directory syncing.\n");
     }
+}
+
+
+/**
+ * The '.pgmsyncalways' command.
+ *
+ * @returns VBox status.
+ * @param   pCmd        Pointer to the command descriptor (as registered).
+ * @param   pCmdHlp     Pointer to command helper functions.
+ * @param   pVM         Pointer to the current VM (if any).
+ * @param   paArgs      Pointer to (readonly) array of arguments.
+ * @param   cArgs       Number of arguments in the array.
+ */
+static DECLCALLBACK(int) pgmR3CmdPhysToFile(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult)
+{
+    /*
+     * Validate input.
+     */
+    if (!pVM)
+        return pCmdHlp->pfnPrintf(pCmdHlp, NULL, "error: The command requires a VM to be selected.\n");
+    if (    cArgs < 1
+        ||  cArgs > 2
+        ||  paArgs[0].enmType != DBGCVAR_TYPE_STRING
+        ||  (   cArgs > 1
+             && paArgs[1].enmType != DBGCVAR_TYPE_STRING))
+        return pCmdHlp->pfnPrintf(pCmdHlp, NULL, "error: parser error, invalid arguments.\n");
+    if (    cArgs >= 2
+        &&  strcmp(paArgs[1].u.pszString, "nozero"))
+        return pCmdHlp->pfnPrintf(pCmdHlp, NULL, "error: Invalid 2nd argument '%s', must be 'nozero'.\n", paArgs[1].u.pszString);
+    bool fIncZeroPgs = cArgs < 2;
+
+    /*
+     * Open the output file and get the ram parameters.
+     */
+    RTFILE hFile;
+    int rc = RTFileOpen(&hFile, paArgs[0].u.pszString, RTFILE_O_WRITE | RTFILE_O_CREATE_REPLACE | RTFILE_O_DENY_WRITE);
+    if (RT_FAILURE(rc))
+        return pCmdHlp->pfnPrintf(pCmdHlp, NULL, "error: RTFileOpen(,'%s',) -> %Rrc.\n", paArgs[0].u.pszString, rc);
+
+    uint32_t cbRamHole = 0;
+    CFGMR3QueryU32Def(CFGMR3GetRoot(pVM), "RamHoleSize", &cbRamHole, MM_RAM_HOLE_SIZE_DEFAULT);
+    uint64_t cbRam     = 0;
+    CFGMR3QueryU64Def(CFGMR3GetRoot(pVM), "RamSize", &cbRam, 0);
+    RTGCPHYS GCPhysEnd = cbRam + cbRamHole;
+
+    /*
+     * Dump the physical memory, page by page.
+     */
+    RTGCPHYS    GCPhys = 0;
+    char        abZeroPg[PAGE_SIZE];
+    RT_ZERO(abZeroPg);
+
+    pgmLock(pVM);
+    for (PPGMRAMRANGE pRam = pVM->pgm.s.pRamRangesR3; 
+          pRam && pRam->GCPhys < GCPhysEnd && RT_SUCCESS(rc); 
+          pRam = pRam->pNextR3)
+    {
+        /* fill the gap */
+        if (pRam->GCPhys > GCPhys && fIncZeroPgs)
+        {
+            while (pRam->GCPhys > GCPhys && RT_SUCCESS(rc))
+            {
+                rc = RTFileWrite(hFile, abZeroPg, PAGE_SIZE, NULL);
+                GCPhys += PAGE_SIZE;
+            }
+        }
+
+        PCPGMPAGE pPage = &pRam->aPages[0];
+        while (GCPhys < pRam->GCPhysLast && RT_SUCCESS(rc))
+        {
+            if (PGM_PAGE_IS_ZERO(pPage))
+            {
+                if (fIncZeroPgs)
+                {    
+                    rc = RTFileWrite(hFile, abZeroPg, PAGE_SIZE, NULL);
+                    if (RT_FAILURE(rc))
+                        pCmdHlp->pfnPrintf(pCmdHlp, NULL, "error: RTFileWrite -> %Rrc at GCPhys=%RGp.\n", rc, GCPhys);
+                }
+            }
+            else
+            {
+                switch (PGM_PAGE_GET_TYPE(pPage))
+                {
+                    case PGMPAGETYPE_RAM:
+                    case PGMPAGETYPE_ROM_SHADOW: /* trouble?? */
+                    case PGMPAGETYPE_ROM:
+                    case PGMPAGETYPE_MMIO2:
+                    {
+                        void const     *pvPage;
+                        PGMPAGEMAPLOCK  Lock;
+                        rc = PGMPhysGCPhys2CCPtrReadOnly(pVM, GCPhys, &pvPage, &Lock);
+                        if (RT_SUCCESS(rc))
+                        {
+                            rc = RTFileWrite(hFile, pvPage, PAGE_SIZE, NULL);
+                            PGMPhysReleasePageMappingLock(pVM, &Lock);
+                            if (RT_FAILURE(rc))
+                                pCmdHlp->pfnPrintf(pCmdHlp, NULL, "error: RTFileWrite -> %Rrc at GCPhys=%RGp.\n", rc, GCPhys);
+                        }
+                        else
+                            pCmdHlp->pfnPrintf(pCmdHlp, NULL, "error: PGMPhysGCPhys2CCPtrReadOnly -> %Rrc at GCPhys=%RGp.\n", rc, GCPhys);
+                        break;
+                    }
+
+                    default:
+                        AssertFailed();
+                    case PGMPAGETYPE_MMIO2_ALIAS_MMIO:
+                    case PGMPAGETYPE_MMIO:
+                        if (fIncZeroPgs)
+                        {    
+                            rc = RTFileWrite(hFile, abZeroPg, PAGE_SIZE, NULL);
+                            if (RT_FAILURE(rc))
+                                pCmdHlp->pfnPrintf(pCmdHlp, NULL, "error: RTFileWrite -> %Rrc at GCPhys=%RGp.\n", rc, GCPhys);
+                        }
+                        break;
+                }
+            }
+
+
+            /* advance */
+            GCPhys += PAGE_SIZE;
+            pPage++;
+        }
+    }
+    pgmUnlock(pVM);
+
+    RTFileClose(hFile);
+    if (RT_SUCCESS(rc))
+        return pCmdHlp->pfnPrintf(pCmdHlp, NULL, "Successfully saved physical memory to '%s'.\n", paArgs[0].u.pszString);
+    return VINF_SUCCESS;
 }
 
 #endif /* VBOX_WITH_DEBUGGER */
