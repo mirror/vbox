@@ -22,10 +22,6 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
-#if defined(DEBUG_ramshankar) && !defined(LOG_ENABLED)
-# define LOG_ENABLED
-#endif
-
 #define LOG_GROUP LOG_GROUP_NET_FLT_DRV
 #include <VBox/log.h>
 #include <VBox/err.h>
@@ -338,7 +334,7 @@ static void vboxNetFltSolarisCachePhysAddr(PVBOXNETFLTINS pThis, mblk_t *pPhysAd
 static int vboxNetFltSolarisBindReq(queue_t *pQueue, int SAP);
 static int vboxNetFltSolarisNotifyReq(queue_t *pQueue);
 
-static int vboxNetFltSolarisUnitDataToRaw(PVBOXNETFLTINS pThis, mblk_t *pMsg, mblk_t **ppRawMsg);
+/*  static int vboxNetFltSolarisUnitDataToRaw(PVBOXNETFLTINS pThis, mblk_t *pMsg, mblk_t **ppRawMsg); */
 static int vboxNetFltSolarisRawToUnitData(mblk_t *pMsg, mblk_t **ppDlpiMsg);
 
 static inline void vboxNetFltSolarisInitPacketId(PVBOXNETFLTPACKETID pTag, mblk_t *pMsg);
@@ -349,8 +345,8 @@ static mblk_t *vboxNetFltSolarisMBlkFromSG(PVBOXNETFLTINS pThis, PINTNETSG pSG, 
 static unsigned vboxNetFltSolarisMBlkCalcSGSegs(PVBOXNETFLTINS pThis, mblk_t *pMsg);
 static int vboxNetFltSolarisMBlkToSG(PVBOXNETFLTINS pThis, mblk_t *pMsg, PINTNETSG pSG, unsigned cSegs, uint32_t fSrc);
 static int vboxNetFltSolarisRecv(PVBOXNETFLTINS pThis, vboxnetflt_stream_t *pStream, queue_t *pQueue, mblk_t *pMsg);
-static mblk_t *vboxNetFltSolarisFixChecksums(mblk_t *pMsg);
-static void vboxNetFltSolarisAnalyzeMBlk(mblk_t *pMsg);
+/* static mblk_t *vboxNetFltSolarisFixChecksums(mblk_t *pMsg); */
+/* static void vboxNetFltSolarisAnalyzeMBlk(mblk_t *pMsg); */
 
 
 /*******************************************************************************
@@ -458,15 +454,19 @@ int _fini(void)
         return EBUSY;
     }
 
-    if (g_VBoxNetFltSolarisMtx != NIL_RTSEMFASTMUTEX)
+    rc = mod_remove(&g_VBoxNetFltSolarisModLinkage);
+    if (!rc)
     {
-        RTSemFastMutexDestroy(g_VBoxNetFltSolarisMtx);
-        g_VBoxNetFltSolarisMtx = NIL_RTSEMFASTMUTEX;
+        if (g_VBoxNetFltSolarisMtx != NIL_RTSEMFASTMUTEX)
+        {
+            RTSemFastMutexDestroy(g_VBoxNetFltSolarisMtx);
+            g_VBoxNetFltSolarisMtx = NIL_RTSEMFASTMUTEX;
+        }
+
+        RTR0Term();
     }
 
-    RTR0Term();
-
-    return mod_remove(&g_VBoxNetFltSolarisModLinkage);
+    return rc;
 }
 
 
@@ -2530,7 +2530,7 @@ static int vboxNetFltSolarisRawToUnitData(mblk_t *pMsg, mblk_t **ppDlpiMsg)
     return VINF_SUCCESS;
 }
 
-
+#if 0
 /**
  * Converts DLPI M_PROTO messages to the raw mode M_DATA format.
  *
@@ -2626,7 +2626,7 @@ static int vboxNetFltSolarisUnitDataToRaw(PVBOXNETFLTINS pThis, mblk_t *pMsg, mb
     *ppRawMsg = pEtherMsg;
     return VINF_SUCCESS;
 }
-
+#endif
 
 /**
  * Initializes a packet identifier.
@@ -2898,26 +2898,17 @@ static int vboxNetFltSolarisRecv(PVBOXNETFLTINS pThis, vboxnetflt_stream_t *pStr
         if (cbMsg < sizeof(RTNETETHERHDR))
             return VINF_SUCCESS;
 
-        mblk_t *pFullMsg = allocb(cbMsg, BPRI_MED);
-        if (RT_LIKELY(pFullMsg))
+        mblk_t *pFullMsg = msgpullup(pMsg, -1 /* all data blocks */);
+        if (pFullMsg)
         {
-            mblk_t *pCur = pMsg;
-            while (pCur)
-            {
-                size_t cbBlock = MBLKL(pCur);
-                if (cbBlock > 0)
-                {
-                    bcopy(pCur->b_rptr, pFullMsg->b_wptr, cbBlock);
-                    pFullMsg->b_wptr += cbBlock;
-                }
-                pCur = pCur->b_cont;
-            }
-
             freemsg(pMsg);
             pMsg = pFullMsg;
         }
         else
+        {
+            LogRel((DEVICE_NAME ":vboxNetFltSolarisRecv msgpullup failed.\n"));
             return VERR_NO_MEMORY;
+        }
     }
 
     /*
@@ -2966,7 +2957,7 @@ static int vboxNetFltSolarisRecv(PVBOXNETFLTINS pThis, vboxnetflt_stream_t *pStr
     return VINF_SUCCESS;
 }
 
-
+#if 0
 /**
  * Finalize the message to be fed into the internal network.
  * Verifies and tries to fix checksums for TCP, UDP and IP.
@@ -3173,6 +3164,7 @@ static void vboxNetFltSolarisAnalyzeMBlk(mblk_t *pMsg)
         /* LogFlow((DEVICE_NAME ":%.*Rhxd\n", MBLKL(pMsg), pMsg->b_rptr)); */
     }
 }
+#endif
 
 
 /* -=-=-=-=-=- Common Hooks -=-=-=-=-=- */
