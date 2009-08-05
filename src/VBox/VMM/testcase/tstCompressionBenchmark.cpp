@@ -23,6 +23,7 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
+#include <iprt/asm.h>
 #include <iprt/assert.h>
 #include <iprt/crc.h>
 #include <iprt/ctype.h>
@@ -263,7 +264,7 @@ int main(int argc, char **argv)
     }
 
     g_pabDecompr = (uint8_t *)RTMemAlloc(g_cbPages);
-    g_cbComprAlloc = g_cbPages * 2;
+    g_cbComprAlloc = RT_MAX(g_cbPages * 2, 256 * PAGE_SIZE);
     g_pabCompr   = (uint8_t *)RTMemAlloc(g_cbComprAlloc);
     if (!g_pabSrc || !g_pabDecompr || !g_pabCompr)
         return Error("failed to allocate memory buffers (g_cPages=%#x)\n", g_cPages);
@@ -308,8 +309,8 @@ int main(int argc, char **argv)
         {
             if (RT_FAILURE(aTests[j].rc))
                 continue;
-            memset(g_pabCompr,   0, g_cbComprAlloc);
-            memset(g_pabDecompr, 0, g_cbPages);
+            memset(g_pabCompr,   0xaa, g_cbComprAlloc);
+            memset(g_pabDecompr, 0xcc, g_cbPages);
             g_cbCompr = 0;
             g_offComprIn = 0;
             RTPrintf("."); RTStrmFlush(g_pStdOut);
@@ -317,7 +318,7 @@ int main(int argc, char **argv)
             /*
              * Compress it.
              */
-            uint64_t        NanoTS    = RTTimeNanoTS();
+            uint64_t NanoTS = RTTimeNanoTS();
             if (aTests[j].fBlock)
             {
                 size_t          cbLeft    = g_cbComprAlloc;
@@ -325,7 +326,7 @@ int main(int argc, char **argv)
                 uint8_t        *pbDstPage = g_pabCompr;
                 for (size_t iPage = 0; iPage < g_cPages; iPage += cPagesAtATime)
                 {
-                    AssertBreakStmt(cbLeft > PAGE_SIZE * 4, rc = VERR_BUFFER_OVERFLOW);
+                    AssertBreakStmt(cbLeft > PAGE_SIZE * 4, aTests[j].rc = rc = VERR_BUFFER_OVERFLOW);
                     uint32_t *pcb = (uint32_t *)pbDstPage;
                     pbDstPage    += sizeof(uint32_t);
                     cbLeft       -= sizeof(uint32_t);
@@ -503,6 +504,17 @@ int main(int argc, char **argv)
     else
         RTPrintf("Input: %'10zu pages of generated rubbish               %'11zu bytes\n",
                  g_cPages, g_cbPages);
+
+    /*
+     * Count zero pages in the data set.
+     */
+    size_t cZeroPages = 0;
+    for (size_t iPage = 0; iPage < g_cPages; iPage++)
+    {
+        if (!ASMMemIsAllU32(&g_pabSrc[iPage * PAGE_SIZE], PAGE_SIZE, 0))
+            cZeroPages++;
+    }
+    RTPrintf("       %'10zu zero pages (%u %%)\n", cZeroPages, cZeroPages * 100 / g_cPages);
 
     /*
      * A little extension to the test, benchmark relevant CRCs.
