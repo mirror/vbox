@@ -91,8 +91,7 @@
 #define DEVICE_DESC_DRV          "VirtualBox NetDrv"
 #define DEVICE_DESC_MOD          "VirtualBox NetMod"
 
-/** @todo Remove the below hackery once done! */
-#if defined(DEBUG_ramshankar) && defined(LOG_ENABLED)
+#if defined(DEBUG_ramshankar)
 # undef Log
 # define Log        LogRel
 # undef LogFlow
