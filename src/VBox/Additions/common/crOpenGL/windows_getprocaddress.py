@@ -96,6 +96,16 @@ extern const GLubyte * WINAPI wglGetExtensionsStringARB_prox(HDC hdc);
 extern BOOL WINAPI wglChoosePixelFormatEXT_prox(HDC hdc, const int *piAttributes, const FLOAT *pfAttributes, UINT nMaxFormats, int *piFormats, UINT *nNumFormats);
 extern BOOL WINAPI wglGetPixelFormatAttribivEXT_prox(HDC hdc, int iPixelFormat, int iLayerPlane, UINT nAttributes, int *piAttributes, int *pValues);
 extern BOOL WINAPI wglGetPixelFormatAttribfvEXT_prox(HDC hdc, int iPixelFormat, int iLayerPlane, UINT nAttributes, int *piAttributes, float *pValues);
+extern BOOL WINAPI wglSwapIntervalEXT_prox(int interval);
+extern int  WINAPI wglGetSwapIntervalEXT_prox(void);
+
+void WINAPI LockArraysEXT (GLint first, GLsizei count)
+{
+}
+
+void WINAPI UnlockArraysEXT (void)
+{
+}
 
 CR_PROC CR_APIENTRY crGetProcAddress( const char *name )
 {
@@ -105,6 +115,9 @@ CR_PROC CR_APIENTRY crGetProcAddress( const char *name )
     wglChoosePixelFormatEXTFunc_t wglChoosePixelFormatEXT = wglChoosePixelFormatEXT_prox;
     wglGetPixelFormatAttribivEXTFunc_t wglGetPixelFormatAttribivEXT = wglGetPixelFormatAttribivEXT_prox;
     wglGetPixelFormatAttribfvEXTFunc_t wglGetPixelFormatAttribfvEXT = wglGetPixelFormatAttribfvEXT_prox;
+    wglSwapIntervalEXTFunc_t wglSwapIntervalEXT = wglSwapIntervalEXT_prox;
+    wglGetSwapIntervalEXTFunc_t wglGetSwapIntervalEXT = wglGetSwapIntervalEXT_prox;
+
 
     stubInit();
 
@@ -125,6 +138,12 @@ CR_PROC CR_APIENTRY crGetProcAddress( const char *name )
     if (!crStrcmp( name, "wglChoosePixelFormatARB" )) return (CR_PROC) wglChoosePixelFormatEXT;
     if (!crStrcmp( name, "wglGetPixelFormatAttribivARB" )) return (CR_PROC) wglGetPixelFormatAttribivEXT;
     if (!crStrcmp( name, "wglGetPixelFormatAttribfvARB" )) return (CR_PROC) wglGetPixelFormatAttribfvEXT;
+
+    if (!crStrcmp( name, "wglSwapIntervalEXT" )) return (CR_PROC) wglSwapIntervalEXT;
+    if (!crStrcmp( name, "wglGetSwapIntervalEXT" )) return (CR_PROC) wglGetSwapIntervalEXT;
+
+    if (!crStrcmp( name, "glLockArraysEXT" )) return (CR_PROC) LockArraysEXT;
+    if (!crStrcmp( name, "glUnlockArraysEXT" )) return (CR_PROC) UnlockArraysEXT;
 
     crDebug("Returning GetProcAddress:NULL for %s", name);
     return NULL;
