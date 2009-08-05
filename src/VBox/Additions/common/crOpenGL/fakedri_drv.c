@@ -81,6 +81,12 @@
 #define PAGESIZE 4096
 #endif
 
+#ifdef RT_ARCH_AMD64
+# define DRI_ELFSYM Elf64_Sym
+#else
+# define DRI_ELFSYM Elf32_Sym
+#endif
+
 static struct _glapi_table vbox_glapi_table;
 fakedri_glxapi_table glxim;
 
@@ -129,7 +135,7 @@ static void
 vboxPatchMesaExport(const char* psFuncName, const void *pStart, const void *pEnd)
 {
     Dl_info dlip;
-    Elf32_Sym* sym=0;
+    DRI_ELFSYM* sym=0;
     int rv;
     void *alPatch;
     void *pMesaEntry;
@@ -156,7 +162,7 @@ vboxPatchMesaExport(const char* psFuncName, const void *pStart, const void *pEnd
 #if VBOX_OGL_GLX_USE_CSTUBS
     {
         Dl_info dlip1;
-        Elf32_Sym* sym1=0;
+        DRI_ELFSYM* sym1=0;
         int rv;
 
         rv = dladdr1(pStart, &dlip1, (void**)&sym1, RTLD_DL_SYMENT);
