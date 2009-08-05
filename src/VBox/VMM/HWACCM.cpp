@@ -1401,7 +1401,7 @@ VMMR3DECL(void) HWACCMR3Reset(PVM pVM)
  */
 DECLCALLBACK(int) hwaccmR3RemovePatches(PVM pVM, PVMCPU pVCpu, void *pvUser)
 {
-    VMCPUID idCpu = (VMCPUID)pvUser;
+    VMCPUID idCpu = (VMCPUID)(uintptr_t)pvUser;
 
     /* Only execute the handler on the VCPU the original patch request was issued. */
     if (pVCpu->idCpu != idCpu)
@@ -1578,7 +1578,7 @@ static int hwaccmR0EmulateTprMov(PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTX pCtx,
  */
 DECLCALLBACK(int) hwaccmR3ReplaceTprInstr(PVM pVM, PVMCPU pVCpu, void *pvUser)
 {
-    VMCPUID      idCpu  = (VMCPUID)pvUser;
+    VMCPUID      idCpu  = (VMCPUID)(uintptr_t)pvUser;
     PCPUMCTX     pCtx   = CPUMQueryGuestCtxPtr(pVCpu);
     RTGCPTR      oldrip = pCtx->rip;
     PDISCPUSTATE pDis   = &pVCpu->hwaccm.s.DisState;
@@ -1715,7 +1715,7 @@ DECLCALLBACK(int) hwaccmR3ReplaceTprInstr(PVM pVM, PVMCPU pVCpu, void *pvUser)
  */
 DECLCALLBACK(int) hwaccmR3PatchTprInstr(PVM pVM, PVMCPU pVCpu, void *pvUser)
 {
-    VMCPUID      idCpu  = (VMCPUID)pvUser;
+    VMCPUID      idCpu  = (VMCPUID)(uintptr_t)pvUser;
     PCPUMCTX     pCtx   = CPUMQueryGuestCtxPtr(pVCpu);
     PDISCPUSTATE pDis   = &pVCpu->hwaccm.s.DisState;
     unsigned     cbOp;
