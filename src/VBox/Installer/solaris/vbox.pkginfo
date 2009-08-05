@@ -7,7 +7,6 @@ SUNW_PRODVERS="@VBOX_VERSION_STRING@"
 SUNW_PKGVERS=1.0
 CATEGORY="application"
 VENDOR="Sun Microsystems, Inc."
-EMAIL="info@virtualbox.org"
 HOTLINE="Please contact your local service provider"
 BASEDIR="/"
 MAXINST=1
