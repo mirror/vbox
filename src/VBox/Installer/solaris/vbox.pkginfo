@@ -10,6 +10,7 @@ VENDOR="Sun Microsystems, Inc."
 EMAIL="info@virtualbox.org"
 HOTLINE="Please contact your local service provider"
 BASEDIR="/"
+MAXINST=1
 CLASSES=none sed
 DESC="A powerful PC virtualization solution"
 
