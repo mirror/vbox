@@ -22,7 +22,7 @@
 
 #ifndef ___VBoxFrameBuffer_h___
 #define ___VBoxFrameBuffer_h___
-
+//#define VBOXQGL_PROF_BASE 1
 #include "COMDefs.h"
 #include <iprt/critsect.h>
 
@@ -665,10 +665,10 @@ class VBoxVHWATexture
 public:
     VBoxVHWATexture() {}
     VBoxVHWATexture(const QRect * pRect, const VBoxVHWAColorFormat *pFormat);
-//    virtual ~VBoxVHWATexture();
+    virtual ~VBoxVHWATexture();
     virtual void init(uchar *pvMem);
     void setAddress(uchar *pvMem) {mAddress = pvMem;}
-    virtual void update(const QRect * pRect);
+    void update(const QRect * pRect) { doUpdate(mAddress, pRect);}
     void bind() {glBindTexture(texTarget(), mTexture);}
 
     virtual void texCoord(int x, int y);
@@ -678,20 +678,21 @@ public:
     const QRect & texRect() {return mTexRect;}
     const QRect & rect() {return mRect;}
     uchar * address(){ return mAddress; }
+    uint32_t rectSizeTex(const QRect * pRect) {return pRect->width() * pRect->height() * mBytesPerPixel;}
     uchar * pointAddress(int x, int y)
     {
         x = toXTex(x);
         y = toYTex(y);
         return pointAddressTex(x, y);
     }
-    uchar * pointAddressTex(int x, int y) { return mAddress + y*mBytesPerLine + x*mBytesPerPixel; }
+    uint32_t pointOffsetTex(int x, int y) { return y*mBytesPerLine + x*mBytesPerPixel; }
+    uchar * pointAddressTex(int x, int y) { return mAddress + pointOffsetTex(x, y); }
     int toXTex(int x) {return x/mColorFormat.widthCompression();}
     int toYTex(int y) {return y/mColorFormat.heightCompression();}
     ulong memSize(){ return mBytesPerLine * mRect.height()/mColorFormat.heightCompression(); }
 
-    void uninit();
-
 protected:
+    virtual void doUpdate(uchar * pAddress, const QRect * pRect);
     virtual void initParams();
     virtual void load();
     virtual GLenum texTarget() {return GL_TEXTURE_2D; }
@@ -704,6 +705,8 @@ protected:
     uint32_t mBytesPerPixel;
     uint32_t mBytesPerLine;
     VBoxVHWAColorFormat mColorFormat;
+private:
+    void uninit();
 };
 
 class VBoxVHWATextureNP2 : public VBoxVHWATexture
@@ -714,7 +717,6 @@ public:
         VBoxVHWATexture(pRect, pFormat){
         mTexRect = *pRect;
     }
-protected:
 };
 
 class VBoxVHWATextureNP2Rect : public VBoxVHWATextureNP2
@@ -728,6 +730,23 @@ public:
     virtual void multiTexCoord(GLenum texUnit, int x, int y);
 protected:
     virtual GLenum texTarget();
+};
+
+class VBoxVHWATextureNP2RectPBO : public VBoxVHWATextureNP2Rect
+{
+public:
+	VBoxVHWATextureNP2RectPBO() : VBoxVHWATextureNP2Rect() {}
+	VBoxVHWATextureNP2RectPBO(const QRect * pRect, const VBoxVHWAColorFormat *pFormat) :
+		VBoxVHWATextureNP2Rect(pRect, pFormat){}
+    virtual ~VBoxVHWATextureNP2RectPBO();
+
+    virtual void init(uchar *pvMem);
+protected:
+    virtual void load();
+    virtual void doUpdate(uchar * pAddress, const QRect * pRect);
+private:
+    void updateBuffer(uchar * pBuf, const QRect * pRect);
+    GLuint mPBO;
 };
 
 /* data flow:
@@ -992,7 +1011,7 @@ private:
     bool mVisibleDisplayInitialized;
 
     uchar * mAddress;
-    VBoxVHWATexture mTex[3];
+    VBoxVHWATexture *mpTex[3];
 
     VBoxVHWAColorFormat mColorFormat;
 
