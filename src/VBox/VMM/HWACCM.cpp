@@ -400,6 +400,9 @@ VMMR3DECL(int) HWACCMR3InitCPU(PVM pVM)
     }
 
 #ifdef VBOX_WITH_STATISTICS
+    STAM_REG(pVM, &pVM->hwaccm.s.StatPatchSuccess, STAMTYPE_COUNTER, "/HWACCM/Patch/Success", STAMUNIT_OCCURENCES, "Number of times an instruction was successfully patched.");
+    STAM_REG(pVM, &pVM->hwaccm.s.StatPatchFailure, STAMTYPE_COUNTER, "/HWACCM/Patch/Failed",  STAMUNIT_OCCURENCES, "Number of unsuccessful patch attempts.");
+    
     /*
      * Statistics.
      */
@@ -1505,67 +1508,6 @@ VMMR3DECL(int)  HWACMMR3DisablePatching(PVM pVM, RTGCPTR pPatchMem, unsigned cbP
     return VINF_SUCCESS;
 }
 
-/**
- * Emulate simple mov tpr instruction
- *
- * @returns VBox status code.
- * @param   pVCpu       The VM CPU to operate on.
- * @param   pDis        Disassembly state
- * @param   pCtx        CPU context
- * @param   cbOp        Opcode size
- */
-static int hwaccmR0EmulateTprMov(PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTX pCtx, unsigned cbOp)
-{
-    int rc;
-
-    if (pDis->param1.flags == USE_DISPLACEMENT32)
-    {
-        /* write */
-        uint8_t u8Tpr;
-
-        /* Fetch the new TPR value */
-        if (pDis->param2.flags == USE_REG_GEN32)
-        {
-            uint32_t val;
-
-            rc = DISFetchReg32(CPUMCTX2CORE(pCtx), pDis->param2.base.reg_gen, &val);
-            AssertRC(rc);
-            u8Tpr = val;
-        }
-        else
-        if (pDis->param2.flags == USE_IMMEDIATE32)
-            u8Tpr = (uint8_t)pDis->param2.parval;
-        else
-            return VERR_EM_INTERPRETER;
-
-        rc = PDMApicSetTPR(pVCpu, u8Tpr);
-        AssertRC(rc);
-
-        Log(("Emulated write successfully\n"));
-        pCtx->rip += cbOp;
-        return VINF_SUCCESS;
-    }
-    else
-    if (pDis->param2.flags == USE_DISPLACEMENT32)
-    {
-        /* read */
-        bool    fPending;
-        uint8_t u8Tpr;
-
-        /* TPR caching in CR8 */
-        rc = PDMApicGetTPR(pVCpu, &u8Tpr, &fPending);
-        AssertRC(rc);
-
-        rc = DISWriteReg32(CPUMCTX2CORE(pCtx), pDis->param1.base.reg_gen, u8Tpr);
-        AssertRC(rc);
-
-        Log(("Emulated read successfully\n"));
-        pCtx->rip += cbOp;
-        return VINF_SUCCESS;
-    }
-    return VERR_EM_INTERPRETER;
-}
-
 
 /**
  * Callback to patch a TPR instruction (vmmcall or mov cr8)
@@ -1595,118 +1537,131 @@ DECLCALLBACK(int) hwaccmR3ReplaceTprInstr(PVM pVM, PVMCPU pVCpu, void *pvUser)
     if (pPatch)
         return VINF_SUCCESS;
 
+    Assert(pVM->hwaccm.s.svm.cPatches < RT_ELEMENTS(pVM->hwaccm.s.svm.aPatches));
+
     int rc = EMInterpretDisasOne(pVM, pVCpu, CPUMCTX2CORE(pCtx), pDis, &cbOp);
     AssertRC(rc);
     if (    rc == VINF_SUCCESS
         &&  pDis->pCurInstr->opcode == OP_MOV
         &&  cbOp >= 3)
     {
-        if (pVM->hwaccm.s.svm.cPatches < RT_ELEMENTS(pVM->hwaccm.s.svm.aPatches))
-        {
-            uint8_t         aVMMCall[3] = { 0xf, 0x1, 0xd9};
-            uint32_t        idx = pVM->hwaccm.s.svm.cPatches;
-            PHWACCMTPRPATCH pPatch = &pVM->hwaccm.s.svm.aPatches[idx];
+        uint8_t         aVMMCall[3] = { 0xf, 0x1, 0xd9};
+        uint32_t        idx = pVM->hwaccm.s.svm.cPatches;
+        PHWACCMTPRPATCH pPatch = &pVM->hwaccm.s.svm.aPatches[idx];
 
-            rc = PGMPhysSimpleReadGCPtr(pVCpu, pPatch->aOpcode, pCtx->rip, cbOp);
+        rc = PGMPhysSimpleReadGCPtr(pVCpu, pPatch->aOpcode, pCtx->rip, cbOp);
+        AssertRC(rc);
+
+        pPatch->cbOp     = cbOp;
+
+        if (pDis->param1.flags == USE_DISPLACEMENT32)
+        {
+            /* write. */
+            if (pDis->param2.flags == USE_REG_GEN32)
+            {
+                pPatch->enmType     = HWACCMTPRINSTR_WRITE_REG;
+                pPatch->uSrcOperand = pDis->param2.base.reg_gen;
+            }
+            else
+            {
+                Assert(pDis->param2.flags == USE_IMMEDIATE32);
+                pPatch->enmType     = HWACCMTPRINSTR_WRITE_IMM;
+                pPatch->uSrcOperand = pDis->param2.parval;
+            }
+            rc = PGMPhysSimpleWriteGCPtr(pVCpu, pCtx->rip, aVMMCall, sizeof(aVMMCall));
             AssertRC(rc);
 
-            pPatch->cbOp     = cbOp;
+            memcpy(pPatch->aNewOpcode, aVMMCall, sizeof(aVMMCall));
+            pPatch->cbNewOp = sizeof(aVMMCall);
+        }
+        else
+        {
+            RTGCPTR  oldrip   = pCtx->rip;
+            uint32_t oldcbOp  = cbOp;
+            uint32_t uMmioReg = pDis->param1.base.reg_gen;
 
-            if (pDis->param1.flags == USE_DISPLACEMENT32)
+            /* read */
+            Assert(pDis->param1.flags == USE_REG_GEN32);
+
+            /* Found:
+                *   mov eax, dword [fffe0080]        (5 bytes)
+                * Check if next instruction is:
+                *   shr eax, 4
+                */
+            pCtx->rip += cbOp;
+            rc = EMInterpretDisasOne(pVM, pVCpu, CPUMCTX2CORE(pCtx), pDis, &cbOp);
+            pCtx->rip = oldrip;
+            if (    rc == VINF_SUCCESS
+                &&  pDis->pCurInstr->opcode == OP_SHR
+                &&  pDis->param1.flags == USE_REG_GEN32
+                &&  pDis->param1.base.reg_gen == uMmioReg
+                &&  pDis->param2.flags == USE_IMMEDIATE8
+                &&  pDis->param2.parval == 4
+                &&  oldcbOp + cbOp < sizeof(pVM->hwaccm.s.svm.aPatches[idx].aOpcode))
             {
-                /* write. */
-                if (pDis->param2.flags == USE_REG_GEN32)
-                {
-                    pPatch->enmType     = HWACCMTPRINSTR_WRITE_REG;
-                    pPatch->uSrcOperand = pDis->param2.base.reg_gen;
-                }
-                else
-                {
-                    Assert(pDis->param2.flags == USE_IMMEDIATE32);
-                    pPatch->enmType     = HWACCMTPRINSTR_WRITE_IMM;
-                    pPatch->uSrcOperand = pDis->param2.parval;
-                }
+                uint8_t szInstr[15];
+
+                /* Replacing two instructions now. */
+                rc = PGMPhysSimpleReadGCPtr(pVCpu, &pPatch->aOpcode, pCtx->rip, oldcbOp + cbOp);
+                AssertRC(rc);
+
+                pPatch->cbOp = oldcbOp + cbOp;
+
+                /* 0xF0, 0x0F, 0x20, 0xC0 = mov eax, cr8 */
+                szInstr[0] = 0xF0;
+                szInstr[1] = 0x0F;
+                szInstr[2] = 0x20;
+                szInstr[3] = 0xC0 | pDis->param1.base.reg_gen;
+                for (unsigned i = 4; i < pPatch->cbOp; i++)
+                    szInstr[i] = 0x90;  /* nop */
+
+                rc = PGMPhysSimpleWriteGCPtr(pVCpu, pCtx->rip, szInstr, pPatch->cbOp);
+                AssertRC(rc);
+
+                memcpy(pPatch->aNewOpcode, szInstr, pPatch->cbOp);
+                pPatch->cbNewOp = pPatch->cbOp;
+
+                Log(("Acceptable read/shr candidate!\n"));
+                pPatch->enmType = HWACCMTPRINSTR_READ_SHR4;
+            }
+            else
+            {
+                pPatch->enmType     = HWACCMTPRINSTR_READ;
+                pPatch->uDstOperand = pDis->param1.base.reg_gen;
+
                 rc = PGMPhysSimpleWriteGCPtr(pVCpu, pCtx->rip, aVMMCall, sizeof(aVMMCall));
                 AssertRC(rc);
 
                 memcpy(pPatch->aNewOpcode, aVMMCall, sizeof(aVMMCall));
                 pPatch->cbNewOp = sizeof(aVMMCall);
             }
-            else
-            {
-                RTGCPTR  oldrip   = pCtx->rip;
-                uint32_t oldcbOp  = cbOp;
-                uint32_t uMmioReg = pDis->param1.base.reg_gen;
-
-                /* read */
-                Assert(pDis->param1.flags == USE_REG_GEN32);
-
-                /* Found:
-                 *   mov eax, dword [fffe0080]        (5 bytes)
-                 * Check if next instruction is:
-                 *   shr eax, 4
-                 */
-                pCtx->rip += cbOp;
-                rc = EMInterpretDisasOne(pVM, pVCpu, CPUMCTX2CORE(pCtx), pDis, &cbOp);
-                pCtx->rip = oldrip;
-                if (    rc == VINF_SUCCESS
-                    &&  pDis->pCurInstr->opcode == OP_SHR
-                    &&  pDis->param1.flags == USE_REG_GEN32
-                    &&  pDis->param1.base.reg_gen == uMmioReg
-                    &&  pDis->param2.flags == USE_IMMEDIATE8
-                    &&  pDis->param2.parval == 4
-                    &&  oldcbOp + cbOp < sizeof(pVM->hwaccm.s.svm.aPatches[idx].aOpcode))
-                {
-                    uint8_t szInstr[15];
-
-                    /* Replacing two instructions now. */
-                    rc = PGMPhysSimpleReadGCPtr(pVCpu, &pPatch->aOpcode, pCtx->rip, oldcbOp + cbOp);
-                    AssertRC(rc);
-
-                    pPatch->cbOp = oldcbOp + cbOp;
-
-                    /* 0xF0, 0x0F, 0x20, 0xC0 = mov eax, cr8 */
-                    szInstr[0] = 0xF0;
-                    szInstr[1] = 0x0F;
-                    szInstr[2] = 0x20;
-                    szInstr[3] = 0xC0 | pDis->param1.base.reg_gen;
-                    for (unsigned i = 4; i < pPatch->cbOp; i++)
-                        szInstr[i] = 0x90;  /* nop */
-
-                    rc = PGMPhysSimpleWriteGCPtr(pVCpu, pCtx->rip, szInstr, pPatch->cbOp);
-                    AssertRC(rc);
-
-                    memcpy(pPatch->aNewOpcode, szInstr, pPatch->cbOp);
-                    pPatch->cbNewOp = pPatch->cbOp;
-
-                    Log(("Acceptable read/shr candidate!\n"));
-                    pPatch->enmType = HWACCMTPRINSTR_READ_SHR4;
-                }
-                else
-                {
-                    pPatch->enmType     = HWACCMTPRINSTR_READ;
-                    pPatch->uDstOperand = pDis->param1.base.reg_gen;
-
-                    rc = PGMPhysSimpleWriteGCPtr(pVCpu, pCtx->rip, aVMMCall, sizeof(aVMMCall));
-                    AssertRC(rc);
-
-                    memcpy(pPatch->aNewOpcode, aVMMCall, sizeof(aVMMCall));
-                    pPatch->cbNewOp = sizeof(aVMMCall);
-                }
-            }
-
-            pPatch->Core.Key = pCtx->eip;
-            rc = RTAvloU32Insert(&pVM->hwaccm.s.svm.PatchTree, &pPatch->Core);
-            AssertRC(rc);
-
-            pVM->hwaccm.s.svm.cPatches++;
-            return VINF_SUCCESS;
         }
-        return hwaccmR0EmulateTprMov(pVCpu, pDis, pCtx, cbOp);
+
+        pPatch->Core.Key = pCtx->eip;
+        rc = RTAvloU32Insert(&pVM->hwaccm.s.svm.PatchTree, &pPatch->Core);
+        AssertRC(rc);
+
+        pVM->hwaccm.s.svm.cPatches++;
+        return VINF_SUCCESS;
     }
-    else
-        AssertFailed(); /* deal with failures. */
-    return VERR_ACCESS_DENIED;
+
+    /* Save invalid patch, so we will not try again. */
+    uint32_t  idx = pVM->hwaccm.s.svm.cPatches;
+
+#ifdef LOG_ENABLED
+    char      szOutput[256];
+    rc = DBGFR3DisasInstrEx(pVM, pVCpu->idCpu, pCtx->cs, pCtx->rip, 0, szOutput, sizeof(szOutput), 0);
+    if (VBOX_SUCCESS(rc))
+        Log(("Failed to patch instr: %s\n", szOutput));
+#endif
+
+    pPatch = &pVM->hwaccm.s.svm.aPatches[idx];
+    pPatch->Core.Key = pCtx->eip;
+    pPatch->enmType  = HWACCMTPRINSTR_INVALID;
+    rc = RTAvloU32Insert(&pVM->hwaccm.s.svm.PatchTree, &pPatch->Core);
+    AssertRC(rc);
+    pVM->hwaccm.s.svm.cPatches++;
+    return VINF_SUCCESS;
 }
 
 /**
@@ -1736,6 +1691,8 @@ DECLCALLBACK(int) hwaccmR3PatchTprInstr(PVM pVM, PVMCPU pVCpu, void *pvUser)
 
     Log(("hwaccmR3PatchTprInstr %RGv\n", pCtx->rip));
 
+    Assert(pVM->hwaccm.s.svm.cPatches < RT_ELEMENTS(pVM->hwaccm.s.svm.aPatches));
+
     /* Two or more VCPUs were racing to patch this instruction. */
     PHWACCMTPRPATCH pPatch = (PHWACCMTPRPATCH)RTAvloU32Get(&pVM->hwaccm.s.svm.PatchTree, (AVLOU32KEY)pCtx->eip);
     if (pPatch)
@@ -1747,180 +1704,191 @@ DECLCALLBACK(int) hwaccmR3PatchTprInstr(PVM pVM, PVMCPU pVCpu, void *pvUser)
         &&  pDis->pCurInstr->opcode == OP_MOV
         &&  cbOp >= 5)
     {
-        if (pVM->hwaccm.s.svm.cPatches < RT_ELEMENTS(pVM->hwaccm.s.svm.aPatches))
+        uint32_t        idx = pVM->hwaccm.s.svm.cPatches;
+        PHWACCMTPRPATCH pPatch = &pVM->hwaccm.s.svm.aPatches[idx];
+        uint8_t         aPatch[64];
+        uint32_t        off = 0;
+
+#ifdef LOG_ENABLED
+        rc = DBGFR3DisasInstrEx(pVM, pVCpu->idCpu, pCtx->cs, pCtx->rip, 0, szOutput, sizeof(szOutput), 0);
+        if (VBOX_SUCCESS(rc))
+            Log(("Original instr: %s\n", szOutput));
+#endif
+
+        rc = PGMPhysSimpleReadGCPtr(pVCpu, pPatch->aOpcode, pCtx->rip, cbOp);
+        AssertRC(rc);
+
+        pPatch->cbOp    = cbOp;
+        pPatch->enmType = HWACCMTPRINSTR_JUMP_REPLACEMENT;
+
+        if (pDis->param1.flags == USE_DISPLACEMENT32)
         {
-            uint32_t        idx = pVM->hwaccm.s.svm.cPatches;
-            PHWACCMTPRPATCH pPatch = &pVM->hwaccm.s.svm.aPatches[idx];
-            uint8_t         aPatch[64];
-            uint32_t        off = 0;
+            /*
+                * TPR write:
+                *
+                * push ECX                      [51]
+                * push EDX                      [52]
+                * push EAX                      [50]
+                * xor EDX,EDX                   [31 D2]
+                * mov EAX,EAX                   [89 C0]
+                *  or
+                * mov EAX,0000000CCh            [B8 CC 00 00 00]
+                * mov ECX,0C0000082h            [B9 82 00 00 C0]
+                * wrmsr                         [0F 30]
+                * pop EAX                       [58]
+                * pop EDX                       [5A]
+                * pop ECX                       [59]
+                * jmp return_address            [E9 return_address]
+                *
+                */
+            aPatch[off++] = 0x51;    /* push ecx */
+            aPatch[off++] = 0x52;    /* push edx */
+            aPatch[off++] = 0x50;    /* push eax */
+            aPatch[off++] = 0x31;    /* xor edx, edx */
+            aPatch[off++] = 0xD2;
+            if (pDis->param2.flags == USE_REG_GEN32)
+            {
+                if (pDis->param2.base.reg_gen != USE_REG_EAX)
+                {
+                    aPatch[off++] = 0x89;    /* mov eax, src_reg */
+                    aPatch[off++] = MAKE_MODRM(3, pDis->param2.base.reg_gen, USE_REG_EAX);
+                }
+            }
+            else
+            {
+                Assert(pDis->param2.flags == USE_IMMEDIATE32);
+                aPatch[off++] = 0xB8;    /* mov eax, immediate */
+                *(uint32_t *)&aPatch[off] = pDis->param2.parval;
+                off += sizeof(uint32_t);
+            }
+            aPatch[off++] = 0xB9;    /* mov ecx, 0xc0000082 */
+            *(uint32_t *)&aPatch[off] = MSR_K8_LSTAR;
+            off += sizeof(uint32_t);
+
+            aPatch[off++] = 0x0F;    /* wrmsr */
+            aPatch[off++] = 0x30;
+            aPatch[off++] = 0x58;    /* pop eax */
+            aPatch[off++] = 0x5A;    /* pop edx */
+            aPatch[off++] = 0x59;    /* pop ecx */
+        }
+        else
+        {
+            /*
+                * TPR read:
+                *
+                * push ECX                      [51]
+                * push EDX                      [52]
+                * push EAX                      [50]
+                * mov ECX,0C0000082h            [B9 82 00 00 C0]
+                * rdmsr                         [0F 32]
+                * mov EAX,EAX                   [89 C0]
+                * pop EAX                       [58]
+                * pop EDX                       [5A]
+                * pop ECX                       [59]
+                * jmp return_address            [E9 return_address]
+                *
+                */
+            Assert(pDis->param1.flags == USE_REG_GEN32);
+
+            if (pDis->param1.base.reg_gen != USE_REG_ECX)
+                aPatch[off++] = 0x51;    /* push ecx */
+            if (pDis->param1.base.reg_gen != USE_REG_EDX)
+                aPatch[off++] = 0x52;    /* push edx */
+            if (pDis->param1.base.reg_gen != USE_REG_EAX)
+                aPatch[off++] = 0x50;    /* push eax */
+
+            aPatch[off++] = 0x31;    /* xor edx, edx */
+            aPatch[off++] = 0xD2;
+
+            aPatch[off++] = 0xB9;    /* mov ecx, 0xc0000082 */
+            *(uint32_t *)&aPatch[off] = MSR_K8_LSTAR;
+            off += sizeof(uint32_t);
+
+            aPatch[off++] = 0x0F;    /* rdmsr */
+            aPatch[off++] = 0x32;
+
+            aPatch[off++] = 0x89;    /* mov dst_reg, eax */
+            aPatch[off++] = MAKE_MODRM(3, USE_REG_EAX, pDis->param1.base.reg_gen);
+
+            if (pDis->param1.base.reg_gen != USE_REG_EAX)
+                aPatch[off++] = 0x58;    /* pop eax */
+            if (pDis->param1.base.reg_gen != USE_REG_EDX)
+                aPatch[off++] = 0x5A;    /* pop edx */
+            if (pDis->param1.base.reg_gen != USE_REG_ECX)
+                aPatch[off++] = 0x59;    /* pop ecx */
+        }
+        aPatch[off++] = 0xE9;    /* jmp return_address */
+        *(RTRCUINTPTR *)&aPatch[off] = ((RTRCUINTPTR)pCtx->eip + cbOp) - ((RTRCUINTPTR)pVM->hwaccm.s.pFreeGuestPatchMem + off + 4);
+        off += sizeof(RTRCUINTPTR);
+
+        if (pVM->hwaccm.s.pFreeGuestPatchMem + off <= pVM->hwaccm.s.pGuestPatchMem + pVM->hwaccm.s.cbGuestPatchMem)
+        {
+            /* Write new code to the patch buffer. */
+            rc = PGMPhysSimpleWriteGCPtr(pVCpu, pVM->hwaccm.s.pFreeGuestPatchMem, aPatch, off);
+            AssertRC(rc);
+
+#ifdef LOG_ENABLED
+            pInstr = pVM->hwaccm.s.pFreeGuestPatchMem;
+            while (true)
+            {
+                uint32_t cb;
+
+                rc = DBGFR3DisasInstrEx(pVM, pVCpu->idCpu, pCtx->cs, pInstr, 0, szOutput, sizeof(szOutput), &cb);
+                if (VBOX_SUCCESS(rc))
+                    Log(("Patch instr %s\n", szOutput));
+
+                pInstr += cb;
+
+                if (pInstr >= pVM->hwaccm.s.pFreeGuestPatchMem + off)
+                    break;
+            }
+#endif
+
+            pPatch->aNewOpcode[0] = 0xE9;
+            *(RTRCUINTPTR *)&pPatch->aNewOpcode[1] = ((RTRCUINTPTR)pVM->hwaccm.s.pFreeGuestPatchMem) - ((RTRCUINTPTR)pCtx->eip + 5);
+
+            /* Overwrite the TPR instruction with a jump. */
+            rc = PGMPhysSimpleWriteGCPtr(pVCpu, pCtx->eip, pPatch->aNewOpcode, 5);
+            AssertRC(rc);
 
 #ifdef LOG_ENABLED
             rc = DBGFR3DisasInstrEx(pVM, pVCpu->idCpu, pCtx->cs, pCtx->rip, 0, szOutput, sizeof(szOutput), 0);
             if (VBOX_SUCCESS(rc))
-                Log(("Original instr: %s\n", szOutput));
+                Log(("Jump: %s\n", szOutput));
 #endif
+            pVM->hwaccm.s.pFreeGuestPatchMem += off;
+            pPatch->cbNewOp = 5;
 
-            rc = PGMPhysSimpleReadGCPtr(pVCpu, pPatch->aOpcode, pCtx->rip, cbOp);
+            pPatch->Core.Key = pCtx->eip;
+            rc = RTAvloU32Insert(&pVM->hwaccm.s.svm.PatchTree, &pPatch->Core);
             AssertRC(rc);
 
-            pPatch->cbOp    = cbOp;
-            pPatch->enmType = HWACCMTPRINSTR_JUMP_REPLACEMENT;
-
-            if (pDis->param1.flags == USE_DISPLACEMENT32)
-            {
-                /*
-                 * TPR write:
-                 *
-                 * push ECX                      [51]
-                 * push EDX                      [52]
-                 * push EAX                      [50]
-                 * xor EDX,EDX                   [31 D2]
-                 * mov EAX,EAX                   [89 C0]
-                 *  or
-                 * mov EAX,0000000CCh            [B8 CC 00 00 00]
-                 * mov ECX,0C0000082h            [B9 82 00 00 C0]
-                 * wrmsr                         [0F 30]
-                 * pop EAX                       [58]
-                 * pop EDX                       [5A]
-                 * pop ECX                       [59]
-                 * jmp return_address            [E9 return_address]
-                 *
-                 */
-                aPatch[off++] = 0x51;    /* push ecx */
-                aPatch[off++] = 0x52;    /* push edx */
-                aPatch[off++] = 0x50;    /* push eax */
-                aPatch[off++] = 0x31;    /* xor edx, edx */
-                aPatch[off++] = 0xD2;
-                if (pDis->param2.flags == USE_REG_GEN32)
-                {
-                    if (pDis->param2.base.reg_gen != USE_REG_EAX)
-                    {
-                        aPatch[off++] = 0x89;    /* mov eax, src_reg */
-                        aPatch[off++] = MAKE_MODRM(3, pDis->param2.base.reg_gen, USE_REG_EAX);
-                    }
-                }
-                else
-                {
-                    Assert(pDis->param2.flags == USE_IMMEDIATE32);
-                    aPatch[off++] = 0xB8;    /* mov eax, immediate */
-                    *(uint32_t *)&aPatch[off] = pDis->param2.parval;
-                    off += sizeof(uint32_t);
-                }
-                aPatch[off++] = 0xB9;    /* mov ecx, 0xc0000082 */
-                *(uint32_t *)&aPatch[off] = MSR_K8_LSTAR;
-                off += sizeof(uint32_t);
-
-                aPatch[off++] = 0x0F;    /* wrmsr */
-                aPatch[off++] = 0x30;
-                aPatch[off++] = 0x58;    /* pop eax */
-                aPatch[off++] = 0x5A;    /* pop edx */
-                aPatch[off++] = 0x59;    /* pop ecx */
-            }
-            else
-            {
-                /*
-                 * TPR read:
-                 *
-                 * push ECX                      [51]
-                 * push EDX                      [52]
-                 * push EAX                      [50]
-                 * mov ECX,0C0000082h            [B9 82 00 00 C0]
-                 * rdmsr                         [0F 32]
-                 * mov EAX,EAX                   [89 C0]
-                 * pop EAX                       [58]
-                 * pop EDX                       [5A]
-                 * pop ECX                       [59]
-                 * jmp return_address            [E9 return_address]
-                 *
-                 */
-                Assert(pDis->param1.flags == USE_REG_GEN32);
-
-                if (pDis->param1.base.reg_gen != USE_REG_ECX)
-                    aPatch[off++] = 0x51;    /* push ecx */
-                if (pDis->param1.base.reg_gen != USE_REG_EDX)
-                    aPatch[off++] = 0x52;    /* push edx */
-                if (pDis->param1.base.reg_gen != USE_REG_EAX)
-                    aPatch[off++] = 0x50;    /* push eax */
-
-                aPatch[off++] = 0x31;    /* xor edx, edx */
-                aPatch[off++] = 0xD2;
-
-                aPatch[off++] = 0xB9;    /* mov ecx, 0xc0000082 */
-                *(uint32_t *)&aPatch[off] = MSR_K8_LSTAR;
-                off += sizeof(uint32_t);
-
-                aPatch[off++] = 0x0F;    /* rdmsr */
-                aPatch[off++] = 0x32;
-
-                aPatch[off++] = 0x89;    /* mov dst_reg, eax */
-                aPatch[off++] = MAKE_MODRM(3, USE_REG_EAX, pDis->param1.base.reg_gen);
-
-                if (pDis->param1.base.reg_gen != USE_REG_EAX)
-                    aPatch[off++] = 0x58;    /* pop eax */
-                if (pDis->param1.base.reg_gen != USE_REG_EDX)
-                    aPatch[off++] = 0x5A;    /* pop edx */
-                if (pDis->param1.base.reg_gen != USE_REG_ECX)
-                    aPatch[off++] = 0x59;    /* pop ecx */
-            }
-            aPatch[off++] = 0xE9;    /* jmp return_address */
-            *(RTRCUINTPTR *)&aPatch[off] = ((RTRCUINTPTR)pCtx->eip + cbOp) - ((RTRCUINTPTR)pVM->hwaccm.s.pFreeGuestPatchMem + off + 4);
-            off += sizeof(RTRCUINTPTR);
-
-            if (pVM->hwaccm.s.pFreeGuestPatchMem + off <= pVM->hwaccm.s.pGuestPatchMem + pVM->hwaccm.s.cbGuestPatchMem)
-            {
-                /* Write new code to the patch buffer. */
-                rc = PGMPhysSimpleWriteGCPtr(pVCpu, pVM->hwaccm.s.pFreeGuestPatchMem, aPatch, off);
-                AssertRC(rc);
-
-#ifdef LOG_ENABLED
-                pInstr = pVM->hwaccm.s.pFreeGuestPatchMem;
-                while (true)
-                {
-                    uint32_t cb;
-
-                    rc = DBGFR3DisasInstrEx(pVM, pVCpu->idCpu, pCtx->cs, pInstr, 0, szOutput, sizeof(szOutput), &cb);
-                    if (VBOX_SUCCESS(rc))
-                        Log(("Patch instr %s\n", szOutput));
-
-                    pInstr += cb;
-
-                    if (pInstr >= pVM->hwaccm.s.pFreeGuestPatchMem + off)
-                        break;
-                }
-#endif
-
-                pPatch->aNewOpcode[0] = 0xE9;
-                *(RTRCUINTPTR *)&pPatch->aNewOpcode[1] = ((RTRCUINTPTR)pVM->hwaccm.s.pFreeGuestPatchMem) - ((RTRCUINTPTR)pCtx->eip + 5);
-
-                /* Overwrite the TPR instruction with a jump. */
-                rc = PGMPhysSimpleWriteGCPtr(pVCpu, pCtx->eip, pPatch->aNewOpcode, 5);
-                AssertRC(rc);
-
-#ifdef LOG_ENABLED
-                rc = DBGFR3DisasInstrEx(pVM, pVCpu->idCpu, pCtx->cs, pCtx->rip, 0, szOutput, sizeof(szOutput), 0);
-                if (VBOX_SUCCESS(rc))
-                    Log(("Jump: %s\n", szOutput));
-#endif
-                pVM->hwaccm.s.pFreeGuestPatchMem += off;
-                pPatch->cbNewOp = 5;
-    
-                pPatch->Core.Key = pCtx->eip;
-                rc = RTAvloU32Insert(&pVM->hwaccm.s.svm.PatchTree, &pPatch->Core);
-                AssertRC(rc);
-
-                pVM->hwaccm.s.svm.cPatches++;
-                pVM->hwaccm.s.svm.fTPRPatchingActive = true;
-                return VINF_SUCCESS;
-            }
-            else
-                Log(("Ran out of space in our patch buffer!\n"));
+            pVM->hwaccm.s.svm.cPatches++;
+            pVM->hwaccm.s.svm.fTPRPatchingActive = true;
+            return VINF_SUCCESS;
         }
-        return hwaccmR0EmulateTprMov(pVCpu, pDis, pCtx, cbOp);
+        else
+            Log(("Ran out of space in our patch buffer!\n"));
     }
-    else
-        AssertFailed(); /* deal with failures. */
-    return VERR_ACCESS_DENIED;
+
+    /* Save invalid patch, so we will not try again. */
+    uint32_t  idx = pVM->hwaccm.s.svm.cPatches;
+
+#ifdef LOG_ENABLED
+    rc = DBGFR3DisasInstrEx(pVM, pVCpu->idCpu, pCtx->cs, pCtx->rip, 0, szOutput, sizeof(szOutput), 0);
+    if (VBOX_SUCCESS(rc))
+        Log(("Failed to patch instr: %s\n", szOutput));
+#endif
+
+    pPatch = &pVM->hwaccm.s.svm.aPatches[idx];
+    pPatch->Core.Key = pCtx->eip;
+    pPatch->enmType  = HWACCMTPRINSTR_INVALID;
+    rc = RTAvloU32Insert(&pVM->hwaccm.s.svm.PatchTree, &pPatch->Core);
+    AssertRC(rc);
+    pVM->hwaccm.s.svm.cPatches++;
+    return VINF_SUCCESS;
 }
+
 /**
  * Attempt to patch TPR mmio instructions
  *
