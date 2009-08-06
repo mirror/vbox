@@ -533,19 +533,9 @@ static int cpumR3CpuIdInit(PVM pVM)
      * is perhaps a bit crudely done as there is probably some relatively harmless
      * info too in these leaves (like words about having a constant TSC).
      */
-#if 0
-    /** @todo NT4 installation regression - investigate */
-    /** Note from Intel manuals:
-     * CPUID leaves > 3 < 80000000 are visible only when
-     * IA32_MISC_ENABLES.BOOT_NT4[bit 22] = 0 (default).
-     *
-     */
-    if (pCPUM->aGuestCpuIdStd[0].eax > 5)
-        pCPUM->aGuestCpuIdStd[0].eax = 5;
-#else
-    if (pCPUM->aGuestCpuIdStd[0].eax > 2)
-        pCPUM->aGuestCpuIdStd[0].eax = 2;
-#endif
+    if (pCPUM->aGuestCpuIdStd[0].eax > pVM->cCpuidLeafs)
+        pCPUM->aGuestCpuIdStd[0].eax = pVM->cCpuidLeafs;
+
     for (i = pCPUM->aGuestCpuIdStd[0].eax + 1; i < RT_ELEMENTS(pCPUM->aGuestCpuIdStd); i++)
         pCPUM->aGuestCpuIdStd[i] = pCPUM->GuestCpuIdDef;
 

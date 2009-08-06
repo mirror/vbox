@@ -211,6 +211,20 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
     ULONG cCpus = 1;
     hrc = pMachine->COMGETTER(CPUCount)(&cCpus);                                    H();
 
+    ULONG cCpuidLeafs = 5;
+    Bstr osTypeId;
+    hrc = pMachine->COMGETTER(OSTypeId)(osTypeId.asOutParam());                     H();
+    if (osTypeId == "WindowsNT4")
+    {
+        /*
+         * We must limit CPUID count for Windows NT 4 manually,
+         * as otherwise it stops with 0x3e error
+         * (MULTIPROCESSOR_CONFIGURATION_NOT_SUPPORTED).
+         */
+        LogRel(("Limiting CPUID leaf count for NT4 guests\n"));
+        cCpuidLeafs = 2;
+    }
+
     /*
      * Get root node first.
      * This is the only node in the tree.
@@ -229,6 +243,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
     rc = CFGMR3InsertInteger(pRoot, "RamSize",              cbRam);                 RC_CHECK();
     rc = CFGMR3InsertInteger(pRoot, "RamHoleSize",          cbRamHole);             RC_CHECK();
     rc = CFGMR3InsertInteger(pRoot, "NumCPUs",              cCpus);                 RC_CHECK();
+    rc = CFGMR3InsertInteger(pRoot, "CpuidLeafs",           cCpuidLeafs);           RC_CHECK();
     rc = CFGMR3InsertInteger(pRoot, "TimerMillies",         10);                    RC_CHECK();
     rc = CFGMR3InsertInteger(pRoot, "RawR3Enabled",         1);     /* boolean */   RC_CHECK();
     rc = CFGMR3InsertInteger(pRoot, "RawR0Enabled",         1);     /* boolean */   RC_CHECK();
@@ -265,9 +280,6 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
          *        makes a lof of difference there (REM and Solaris performance).
          */
 
-        Bstr osTypeId;
-        hrc = pMachine->COMGETTER(OSTypeId)(osTypeId.asOutParam());                 H();
-
         ComPtr<IGuestOSType> guestOSType;
         hrc = virtualBox->GetGuestOSType(osTypeId, guestOSType.asOutParam());       H();
 
@@ -280,7 +292,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
         if (fSupportsLongMode && fIs64BitGuest)
         {
             rc = CFGMR3InsertInteger(pHWVirtExt, "64bitEnabled", 1);                RC_CHECK();
-#if ARCH_BITS == 32 /* The recompiler must use load VBoxREM64 (32-bit host only). */
+#if ARCH_BITS == 32 /* The recompiler must use VBoxREM64 (32-bit host only). */
             PCFGMNODE pREM;
             rc = CFGMR3InsertNode(pRoot, "REM", &pREM);                             RC_CHECK();
             rc = CFGMR3InsertInteger(pREM, "64bitEnabled", 1);                      RC_CHECK();
