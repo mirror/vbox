@@ -362,6 +362,7 @@ VMMR0DECL(int) SVMR0SetupVM(PVM pVM)
 
         /** Setup the PAT msr (nested paging only) */
         pVMCB->guest.u64GPAT = 0x0007040600070406ULL;
+
         /* The following MSRs are saved automatically by vmload/vmsave, so we allow the guest
          * to modify them directly. 
          */
