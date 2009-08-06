@@ -203,7 +203,7 @@ udp_input(PNATState pData, register struct mbuf *m, int iphlen)
          */
         if ((so = socreate()) == NULL)
             goto bad;
-        if (udp_attach(pData, so, slirp_get_service(IPPROTO_UDP, uh->uh_dport, uh->uh_sport)) == -1)
+        if (udp_attach(pData, so, 0) == -1)
         {
             DEBUG_MISC((dfd," udp_attach errno = %d-%s\n",
                         errno, strerror(errno)));
