@@ -23,7 +23,7 @@ SUB_DEPTH = ../../../..
 include	$(KBUILD_PATH)/subheader.kmk
 
 
-if1of ($(KBUILD_TARGET), darwin win)
+if1of ($(KBUILD_TARGET), darwin win) # this ifeq must go, see @todo around elif
 #
 # VBoxNetFlt.sys - The mixed case driver.
 #
@@ -236,7 +236,6 @@ $$(PATH_VBoxNetFltNotify)/VBoxNetFltNotifyn_i.c \
 		/cpp_cmd $(subst $(EXEC_X86_WIN32),,$(call VBOX_FN_MAKE_WIN_PATH,$(TOOL_$(VBOX_VCC_TOOL)_CC))) \
 		$(addprefix /I , $(call VBOX_FN_MAKE_WIN_PATH,$(SDK_W2K3DDK_INCS))) \
 		$(call VBOX_FN_MAKE_WIN_PATH,$<)
-endif #ifeq ($(KBUILD_TARGET), win)
 
 #
 # VBoxNetAdp.sys - The VirtualBox Adapter miniport driver.
@@ -244,9 +243,9 @@ endif #ifeq ($(KBUILD_TARGET), win)
 SYSMODS.win += VBoxNetAdp
 VBoxNetAdp_TEMPLATE = VBOXR0DRV
 #VBoxNetAdp_INST = $(INST_VBOXNETADP)
-if defined(VBOX_SIGNING_MODE)
- VBoxNetAdp_NOINST = true
-endif
+ if defined(VBOX_SIGNING_MODE)
+VBoxNetAdp_NOINST = true
+ endif
 VBoxNetAdp_DEFS = IN_RT_R0 IN_SUP_STATIC
 VBoxNetAdp_SDKS = W2K3DDK WINPSDKINCS
 VBoxNetAdp_INCS := $(PATH_SUB_CURRENT)
@@ -297,6 +296,8 @@ $(PATH_TARGET)/VBoxNetAdpCat.dir/VBoxNetAdp.cat: \
 
  endif #  ifdef VBOX_SIGNING_MODE
 
+endif #ifeq ($(KBUILD_TARGET), win)
+
 else if1of ($(KBUILD_TARGET), linux solaris) ## @todo merge this with the mixed case stuff.
 #
 # vboxnetflt(.ko/.o/) - The lower case driver.
@@ -330,7 +331,8 @@ vboxnetflt_SOURCES = VBoxNetFlt.c
  endif
 
 solaris/VBoxNetFlt-solaris.c_DEFS = VBOX_SVN_REV=$(VBOX_SVN_REV)
-endif
+endif # to be removed.
+
 
 ifeq ($(KBUILD_TARGET),linux)
  #
@@ -355,27 +357,25 @@ ifeq ($(KBUILD_TARGET),linux)
  VBoxNetFlt-sh_MODE    = a+rx,u+w
  VBoxNetFlt-sh_SOURCES = \
 	$(PATH_VBoxNetFlt-sh)/build_in_tmp \
-	$(if $(VBOX_OSE),,\
-	  $(PATH_ROOT)/src/VBox/HostDrivers/linux/do_Module.symvers)
+	$(if $(VBOX_OSE),,$(PATH_ROOT)/src/VBox/HostDrivers/linux/do_Module.symvers)
  VBoxNetFlt-sh_CLEAN   = $(PATH_VBoxNetFlt-sh)/build_in_tmp
 
 
-includedep $(PATH_TARGET)/VBoxNetFlt-src-1.dep
-$$(PATH_VBoxNetFlt-src)/Makefile: \
+ includedep $(PATH_TARGET)/VBoxNetFlt-src-1.dep
+ $$(PATH_VBoxNetFlt-src)/Makefile: \
 		$(PATH_SUB_CURRENT)/linux/Makefile \
 		$$(if $$(eq $$(VBoxNetFlt/linux/Makefile_VBOX_HARDENED),$$(VBOX_WITH_HARDENING)),,FORCE) \
 		| $$(dir $$@)
-ifndef VBOX_WITH_HARDENING
+ ifndef VBOX_WITH_HARDENING
 	$(QUIET)$(SED) -e "s;-DVBOX_WITH_HARDENING;;g" --output $@ $<
-else
+ else
 	$(QUIET)$(CP) -f $< $@
-endif
+ endif
 	%$(QUIET2)$(RM) -f -- $(PATH_TARGET)/VBoxNetFlt-src-1.dep
 	%$(QUIET2)$(APPEND) '$(PATH_TARGET)/VBoxNetFlt-src-1.dep' 'VBoxNetFlt/linux/Makefile_VBOX_HARDENED=$(VBOX_WITH_HARDENING)'
 
-## Scripts needed for building the kernel modules
-
-$$(PATH_VBoxNetFlt-sh)/build_in_tmp: \
+ # Script needed for building the kernel module
+ $$(PATH_VBoxNetFlt-sh)/build_in_tmp: \
 		$(PATH_ROOT)/src/VBox/HostDrivers/linux/build_in_tmp \
 		$(VBOX_VERSION_STAMP) \
 		| $$(dir $$@)
@@ -383,7 +383,8 @@ $$(PATH_VBoxNetFlt-sh)/build_in_tmp: \
 	$(QUIET)$(SED) -e "s;_VERSION_;${VBOX_VERSION_STRING};g; s;_MODULE_;vboxnetflt;g" --output $@ $<
 	$(QUIET)chmod 0755 $@
 
-$$(PATH_VBoxNetFlt-src)/dkms.conf: \
+ # Script needed for building the kernel module
+ $$(PATH_VBoxNetFlt-src)/dkms.conf: \
 		$(PATH_SUB_CURRENT)/linux/dkms.conf \
 		$(VBOX_VERSION_STAMP) \
 		| $$(dir $$@)
