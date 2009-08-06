@@ -14,9 +14,7 @@
 # define _WINSOCK2API_
 # include <IPHlpApi.h>
 #endif
-#ifdef VBOX_WITH_SLIRP_ALIAS
-# include <alias.h>
-#endif
+#include <alias.h>
 
 #if !defined(RT_OS_WINDOWS)
 
@@ -540,8 +538,6 @@ int slirp_init(PNATState *ppData, uint32_t u32NetAddr, uint32_t u32Netmask,
     dnsproxy_init(pData);
 
     getouraddr(pData);
-
-#ifdef VBOX_WITH_SLIRP_ALIAS
     {
         int flags = 0;
         struct in_addr proxy_addr;
@@ -558,9 +554,7 @@ int slirp_init(PNATState *ppData, uint32_t u32NetAddr, uint32_t u32Netmask,
         LibAliasSetAddress(pData->proxy_alias, proxy_addr);
         ftp_alias_load(pData);
         nbt_alias_load(pData);
-
     }
-#endif
     return fNATfailed ? VINF_NAT_DNS : VINF_SUCCESS;
 }
 
@@ -658,13 +652,11 @@ void slirp_term(PNATState pData)
     slirp_release_dns_list(pData);
     ftp_alias_unload(pData);
     nbt_alias_unload(pData);
-#ifdef VBOX_WITH_SLIRP_ALIAS
     while(!LIST_EMPTY(&instancehead)) {
         struct libalias *la = LIST_FIRST(&instancehead);
         /* libalias do all clean up */
         LibAliasUninit(la);
     }
-#endif
 #ifdef RT_OS_WINDOWS
     WSACleanup();
 #endif
@@ -1532,7 +1524,6 @@ int slirp_redir(PNATState pData, int is_udp, struct in_addr host_addr, int host_
                 struct in_addr guest_addr, int guest_port)
 {
     struct socket *so;
-#ifdef VBOX_WITH_SLIRP_ALIAS
     struct alias_link *link;
     struct libalias *lib;
     int flags;
@@ -1541,7 +1532,7 @@ int slirp_redir(PNATState pData, int is_udp, struct in_addr host_addr, int host_
     socklen_t socketlen;
     struct in_addr alias;
     int rc;
-#endif
+
     Log2(("NAT: set redirect %s hp:%d gp:%d\n", (is_udp?"UDP":"TCP"), host_port, guest_port));
     if (is_udp)
     {
@@ -1557,10 +1548,6 @@ int slirp_redir(PNATState pData, int is_udp, struct in_addr host_addr, int host_
     {   
         return -1;
     }
-#ifndef VBOX_WITH_SLIRP_ALIAS
-    Log2(("NAT: redirecting socket %R[natsock]\n", so));
-    return (so != NULL ? 0 : -1);
-#else
 
     psin = (struct sockaddr_in *)&sa;
     psin->sin_family = AF_INET;
@@ -1600,7 +1587,6 @@ int slirp_redir(PNATState pData, int is_udp, struct in_addr host_addr, int host_
     so->so_la = lib;
 
     return 0;
-#endif
 }
 
 int slirp_add_exec(PNATState pData, int do_pty, const char *args, int addr_low_byte,

@@ -44,9 +44,7 @@
 
 #include <slirp.h>
 #include "ip_icmp.h"
-#ifdef VBOX_WITH_SLIRP_ALIAS
-# include "alias.h"
-#endif
+#include "alias.h"
 
 
 /*
@@ -85,7 +83,6 @@ ip_input(PNATState pData, struct mbuf *m)
     Log2(("ip_dst=%R[IP4](len:%d) m_len = %d\n", &ip->ip_dst, ntohs(ip->ip_len), m->m_len));
 
     ipstat.ips_total++;
-#ifdef VBOX_WITH_SLIRP_ALIAS
     {
         int rc;
         STAM_PROFILE_START(&pData->StatALIAS_input, a);
@@ -94,7 +91,6 @@ ip_input(PNATState pData, struct mbuf *m)
         STAM_PROFILE_STOP(&pData->StatALIAS_input, a);
         Log2(("NAT: LibAlias return %d\n", rc));
     }
-#endif
 
     if (m->m_len < sizeof(struct ip))
     {

@@ -699,7 +699,6 @@ ifdef VBOX_WITH_FAULT_INJECTION
 Drivers_DEFS      += VBOX_WITH_FAULT_INJECTION
 endif
 
-VBOX_WITH_SLIRP_ALIAS=1
 Drivers_INCS      := \
 	$(PATH_SUB_CURRENT) \
 	Network/slirp
@@ -765,14 +764,11 @@ Drivers_SOURCES += $(VBOX_SLIRP_SOURCES)
 define def_vbox_slirp_cflags
   $(file)_DEFS += \
       $(if $(VBOX_WITH_SLIRP_MEMORY_CHECK),RTMEM_WRAP_TO_EF_APIS,) \
-      $(if $(VBOX_WITH_SLIRP_ALIAS),VBOX_WITH_SLIRP_ALIAS,) \
       $(if $(VBOX_WITHOUT_SLIRP_CLIENT_ETHER),VBOX_WITHOUT_SLIRP_CLIENT_ETHER,)	\
       $(if $(VBOX_WITH_DEBUG_NAT_SOCKETS),VBOX_WITH_DEBUG_NAT_SOCKETS,)	\
       $(if $(VBOX_WITH_SLIRP_MT),VBOX_WITH_SLIRP_MT,)
- ifdef VBOX_WITH_SLIRP_ALIAS
-  $(file)_INCS += $(1)/slirp
-  $(file)_INCS += $(1)/slirp/libalias
- endif
+ $(file)_INCS += $(1)/slirp
+ $(file)_INCS += $(1)/slirp/libalias
  ifeq ($(KBUILD_TARGET),win)
   $(file)_CFLAGS = -wd4018
  else
@@ -781,7 +777,6 @@ define def_vbox_slirp_cflags
 endef
 $(foreach file,$(VBOX_SLIRP_SOURCES),$(eval $(call def_vbox_slirp_cflags, Network)))
 
-ifdef VBOX_WITH_SLIRP_ALIAS
 Drivers_SOURCES += $(VBOX_SLIRP_ALIAS_SOURCES)
 define def_vbox_slirp_alias_cflags
   $(file)_DEFS += VBOX_SLIRP_ALIAS
@@ -791,7 +786,6 @@ define def_vbox_slirp_alias_cflags
 endef
 $(foreach file,$(VBOX_SLIRP_ALIAS_SOURCES),$(eval $(call def_vbox_slirp_cflags, Network)))
 $(foreach file,$(VBOX_SLIRP_ALIAS_SOURCES),$(eval $(call def_vbox_slirp_alias_cflags, Network)))
-endif
 
 # -- OS specific --
 

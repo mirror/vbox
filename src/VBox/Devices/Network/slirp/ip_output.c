@@ -43,9 +43,7 @@
  */
 
 #include <slirp.h>
-#ifdef VBOX_WITH_SLIRP_ALIAS
-# include "alias.h"
-#endif
+#include "alias.h"
 
 #ifdef VBOX_WITHOUT_SLIRP_CLIENT_ETHER
 static const uint8_t* rt_lookup_in_cache(PNATState pData, uint32_t dst)
@@ -150,7 +148,6 @@ ip_output(PNATState pData, struct socket *so, struct mbuf *m0)
             memcpy(eh->h_source, eth_dst, ETH_ALEN); 
         }
 #endif
-#ifdef VBOX_WITH_SLIRP_ALIAS
         {
             int rc;
             STAM_PROFILE_START(&pData->StatALIAS_output, a);
@@ -159,7 +156,6 @@ ip_output(PNATState pData, struct socket *so, struct mbuf *m0)
             Log2(("NAT: LibAlias return %d\n", rc));
             STAM_PROFILE_STOP(&pData->StatALIAS_output, a);
         }
-#endif
 
         if_output(pData, so, m);
         goto done;
@@ -254,7 +250,6 @@ ip_output(PNATState pData, struct socket *so, struct mbuf *m0)
         ip->ip_off = htons((u_int16_t)(ip->ip_off | IP_MF));
         ip->ip_sum = 0;
         ip->ip_sum = cksum(m, hlen);
-#ifdef VBOX_WITH_SLIRP_ALIAS
         {
             int rc;
             STAM_PROFILE_START(&pData->StatALIAS_output, a);
@@ -263,7 +258,6 @@ ip_output(PNATState pData, struct socket *so, struct mbuf *m0)
             Log2(("NAT: LibAlias return %d\n", rc));
             STAM_PROFILE_STOP(&pData->StatALIAS_output, a);
         }
-#endif
 
 sendorfree:
         for (m = m0; m; m = m0)
@@ -272,14 +266,10 @@ sendorfree:
             m->m_nextpkt = 0;
             if (error == 0)
             {
-#ifdef VBOX_WITH_SLIRP_ALIAS
-            {
                 int rc;
                 rc = LibAliasOut((m->m_la ? m->m_la : pData->proxy_alias), 
                     mtod(m, char *), m->m_len);
                 Log2(("NAT: LibAlias return %d\n", rc));
-            }
-#endif
                 if_output(pData, so, m);
             }
             else 
