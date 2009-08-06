@@ -1654,30 +1654,6 @@ void *slirp_get_queue(PNATState pData)
 }
 #endif
 
-uint16_t slirp_get_service(int proto, uint16_t dport, uint16_t sport)
-{
-    uint16_t hdport, hsport, service;
-    hdport = ntohs(dport);
-    hsport = ntohs(sport);
-    Log2(("proto: %d, dport: %d sport: %d\n", proto, hdport, hsport));
-    service = 0;
-#if 0
-    /* Always return 0 here */
-    switch (hdport)
-    {
-        case 500:
-                if (hsport != 500) /* vpnc by default try operate in src:500/dst:500 mode*/
-                /* Not sure why this make Cisco VPN client's connection more stable,
-                 * at least on some servers
-                 */
-                    service = sport;
-        break;
-    }
-#endif
-    Log2(("service : %d\n", service));
-    return htons(service);
-}
-
 void slirp_set_dhcp_TFTP_prefix(PNATState pData, const char *tftpPrefix)
 {
     Log2(("tftp_prefix:%s\n", tftpPrefix));

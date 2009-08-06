@@ -307,8 +307,6 @@ int tcp_emu (PNATState, struct socket *, struct mbuf *);
 int tcp_ctl (PNATState, struct socket *);
 struct tcpcb *tcp_drop(PNATState, struct tcpcb *tp, int err);
 
-uint16_t slirp_get_service(int proto, uint16_t dport, uint16_t sport);
-
 #define MIN_MRU 128
 #define MAX_MRU 16384
 
