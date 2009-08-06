@@ -328,87 +328,101 @@ VMMDECL(void) PDMCritSectLeave(PPDMCRITSECT pCritSect)
         return;
     }
 
+#ifdef IN_RING0
+# if 0 /** @todo Make SUPSemEventSignal interrupt safe (handle table++) and enable this for: defined(RT_OS_LINUX) || defined(RT_OS_OS2) */
+    if (1) /* SUPSemEventSignal is safe */
+# else
+    if (ASMIntAreEnabled())
+# endif
+#endif
 #if defined(IN_RING3) || defined(IN_RING0)
-    /*
-     * Leave for real.
-     */
-    /* update members. */
+    {
+        /*
+         * Leave for real.
+         */
+        /* update members. */
 # ifdef IN_RING3
-    RTSEMEVENT hEventToSignal    = pCritSect->s.EventToSignal;
-    pCritSect->s.EventToSignal   = NIL_RTSEMEVENT;
+        RTSEMEVENT hEventToSignal    = pCritSect->s.EventToSignal;
+        pCritSect->s.EventToSignal   = NIL_RTSEMEVENT;
 #  if defined(PDMCRITSECT_STRICT)
-    if (pCritSect->s.Core.Strict.ThreadOwner != NIL_RTTHREAD)
-        RTThreadWriteLockDec(pCritSect->s.Core.Strict.ThreadOwner);
-    ASMAtomicWriteHandle(&pCritSect->s.Core.Strict.ThreadOwner, NIL_RTTHREAD);
+        if (pCritSect->s.Core.Strict.ThreadOwner != NIL_RTTHREAD)
+            RTThreadWriteLockDec(pCritSect->s.Core.Strict.ThreadOwner);
+        ASMAtomicWriteHandle(&pCritSect->s.Core.Strict.ThreadOwner, NIL_RTTHREAD);
 #  endif
 # endif
-    ASMAtomicAndU32(&pCritSect->s.Core.fFlags, ~PDMCRITSECT_FLAGS_PENDING_UNLOCK);
-    Assert(pCritSect->s.Core.Strict.ThreadOwner == NIL_RTTHREAD);
-    ASMAtomicWriteHandle(&pCritSect->s.Core.NativeThreadOwner, NIL_RTNATIVETHREAD);
-    ASMAtomicDecS32(&pCritSect->s.Core.cNestings);
+        ASMAtomicAndU32(&pCritSect->s.Core.fFlags, ~PDMCRITSECT_FLAGS_PENDING_UNLOCK);
+        Assert(pCritSect->s.Core.Strict.ThreadOwner == NIL_RTTHREAD);
+        ASMAtomicWriteHandle(&pCritSect->s.Core.NativeThreadOwner, NIL_RTNATIVETHREAD);
+        ASMAtomicDecS32(&pCritSect->s.Core.cNestings);
 
-    /* stop and decrement lockers. */
-    STAM_PROFILE_ADV_STOP(&pCritSect->s.StatLocked, l);
-    ASMCompilerBarrier();
-    if (ASMAtomicDecS32(&pCritSect->s.Core.cLockers) >= 0)
-    {
-        /* Someone is waiting, wake up one of them. */
-        SUPSEMEVENT     hEvent   = (SUPSEMEVENT)pCritSect->s.Core.EventSem;
-        PSUPDRVSESSION  pSession = pCritSect->s.CTX_SUFF(pVM)->pSession;
-        int rc = SUPSemEventSignal(pSession, hEvent);
-        AssertRC(rc);
-    }
+        /* stop and decrement lockers. */
+        STAM_PROFILE_ADV_STOP(&pCritSect->s.StatLocked, l);
+        ASMCompilerBarrier();
+        if (ASMAtomicDecS32(&pCritSect->s.Core.cLockers) >= 0)
+        {
+            /* Someone is waiting, wake up one of them. */
+            SUPSEMEVENT     hEvent   = (SUPSEMEVENT)pCritSect->s.Core.EventSem;
+            PSUPDRVSESSION  pSession = pCritSect->s.CTX_SUFF(pVM)->pSession;
+            int rc = SUPSemEventSignal(pSession, hEvent);
+            AssertRC(rc);
+        }
 
 # ifdef IN_RING3
-    /* Signal exit event. */
-    if (hEventToSignal != NIL_RTSEMEVENT)
-    {
-        LogBird(("Signalling %#x\n", hEventToSignal));
-        int rc = RTSemEventSignal(hEventToSignal);
-        AssertRC(rc);
-    }
+        /* Signal exit event. */
+        if (hEventToSignal != NIL_RTSEMEVENT)
+        {
+            LogBird(("Signalling %#x\n", hEventToSignal));
+            int rc = RTSemEventSignal(hEventToSignal);
+            AssertRC(rc);
+        }
 # endif
 
 # if defined(DEBUG_bird) && defined(IN_RING0)
-    VMMTrashVolatileXMMRegs();
+        VMMTrashVolatileXMMRegs();
 # endif
-
-#else  /* IN_RC */
-    /*
-     * Try leave it.
-     */
-    if (pCritSect->s.Core.cLockers == 0)
-    {
-        ASMAtomicWriteS32(&pCritSect->s.Core.cNestings, 0);
-        RTNATIVETHREAD hNativeThread = pCritSect->s.Core.NativeThreadOwner;
-        ASMAtomicAndU32(&pCritSect->s.Core.fFlags, ~PDMCRITSECT_FLAGS_PENDING_UNLOCK);
-        STAM_PROFILE_ADV_STOP(&pCritSect->s.StatLocked, l);
-
-        ASMAtomicWriteHandle(&pCritSect->s.Core.NativeThreadOwner, NIL_RTNATIVETHREAD);
-        if (ASMAtomicCmpXchgS32(&pCritSect->s.Core.cLockers, -1, 0))
-            return;
-
-        /* darn, someone raced in on us. */
-        ASMAtomicWriteHandle(&pCritSect->s.Core.NativeThreadOwner, hNativeThread);
-        STAM_PROFILE_ADV_START(&pCritSect->s.StatLocked, l);
-        ASMAtomicWriteS32(&pCritSect->s.Core.cNestings, 1);
     }
-    ASMAtomicOrU32(&pCritSect->s.Core.fFlags, PDMCRITSECT_FLAGS_PENDING_UNLOCK);
+#endif  /* IN_RING3 || IN_RING0 */
+#ifdef IN_RING0
+    else
+#endif
+#if defined(IN_RING0) || defined(IN_RC)
+    {
+        /*
+         * Try leave it.
+         */
+        if (pCritSect->s.Core.cLockers == 0)
+        {
+            ASMAtomicWriteS32(&pCritSect->s.Core.cNestings, 0);
+            RTNATIVETHREAD hNativeThread = pCritSect->s.Core.NativeThreadOwner;
+            ASMAtomicAndU32(&pCritSect->s.Core.fFlags, ~PDMCRITSECT_FLAGS_PENDING_UNLOCK);
+            STAM_PROFILE_ADV_STOP(&pCritSect->s.StatLocked, l);
 
-    /*
-     * Queue the request.
-     */
-    PVM         pVM   = pCritSect->s.CTX_SUFF(pVM);     AssertPtr(pVM);
-    PVMCPU      pVCpu = VMMGetCpu(pVM);                 AssertPtr(pVCpu);
-    uint32_t    i     = pVCpu->pdm.s.cQueuedCritSectLeaves++;
-    LogFlow(("PDMCritSectLeave: [%d]=%p => R3\n", i, pCritSect));
-    AssertFatal(i < RT_ELEMENTS(pVCpu->pdm.s.apQueuedCritSectsLeaves));
-    pVCpu->pdm.s.apQueuedCritSectsLeaves[i] = MMHyperCCToR3(pVM, pCritSect);
-    VMCPU_FF_SET(pVCpu, VMCPU_FF_PDM_CRITSECT);
-    VMCPU_FF_SET(pVCpu, VMCPU_FF_TO_R3);
-    STAM_REL_COUNTER_INC(&pVM->pdm.s.StatQueuedCritSectLeaves);
-    STAM_REL_COUNTER_INC(&pCritSect->s.StatContentionRZUnlock);
-#endif /* IN_RC */
+            ASMAtomicWriteHandle(&pCritSect->s.Core.NativeThreadOwner, NIL_RTNATIVETHREAD);
+            if (ASMAtomicCmpXchgS32(&pCritSect->s.Core.cLockers, -1, 0))
+                return;
+
+            /* darn, someone raced in on us. */
+            ASMAtomicWriteHandle(&pCritSect->s.Core.NativeThreadOwner, hNativeThread);
+            STAM_PROFILE_ADV_START(&pCritSect->s.StatLocked, l);
+            ASMAtomicWriteS32(&pCritSect->s.Core.cNestings, 1);
+        }
+        ASMAtomicOrU32(&pCritSect->s.Core.fFlags, PDMCRITSECT_FLAGS_PENDING_UNLOCK);
+
+        /*
+         * Queue the request.
+         */
+        PVM         pVM   = pCritSect->s.CTX_SUFF(pVM);     AssertPtr(pVM);
+        PVMCPU      pVCpu = VMMGetCpu(pVM);                 AssertPtr(pVCpu);
+        uint32_t    i     = pVCpu->pdm.s.cQueuedCritSectLeaves++;
+        LogFlow(("PDMCritSectLeave: [%d]=%p => R3\n", i, pCritSect));
+        AssertFatal(i < RT_ELEMENTS(pVCpu->pdm.s.apQueuedCritSectsLeaves));
+        pVCpu->pdm.s.apQueuedCritSectsLeaves[i] = MMHyperCCToR3(pVM, pCritSect);
+        VMCPU_FF_SET(pVCpu, VMCPU_FF_PDM_CRITSECT);
+        VMCPU_FF_SET(pVCpu, VMCPU_FF_TO_R3);
+        STAM_REL_COUNTER_INC(&pVM->pdm.s.StatQueuedCritSectLeaves);
+        STAM_REL_COUNTER_INC(&pCritSect->s.StatContentionRZUnlock);
+    }
+#endif /* IN_RING0 || IN_RC */
 }
 
 
