@@ -225,11 +225,9 @@ typedef struct NATState
     /* this field control behaviour of DHCP server */
     bool use_dns_proxy;
 
-#ifdef VBOX_WITH_SLIRP_ALIAS
     LIST_HEAD(RT_NOTHING, libalias) instancehead;
     struct libalias *proxy_alias;
     LIST_HEAD(handler_chain, proto_handler) handler_chain;
-#endif
 
 #define PROFILE_COUNTER(name, dsc)     STAMPROFILE Stat ## name
 #define COUNTING_COUNTER(name, dsc)    STAMCOUNTER Stat ## name
@@ -670,8 +668,6 @@ typedef struct NATState
 #define sock_query pData->sock_query
 #define sock_answer pData->sock_answer
 
-#ifdef VBOX_WITH_SLIRP_ALIAS
-# define instancehead pData->instancehead
-#endif
+#define instancehead pData->instancehead
 
 #endif /* !___slirp_state_h */
