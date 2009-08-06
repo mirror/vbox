@@ -242,6 +242,8 @@ VBOXCrtcResize(ScrnInfoPtr scrn, int width, int height)
         if (pVBox->useDRI)
             VBOXDRIUpdateStride(scrn, pVBox);
 #endif
+        /* Write the new values to the hardware */
+        rc = xf86SetDesiredModes();
     }
     TRACE_LOG("returning %s\n", rc ? "TRUE" : "FALSE");
     return rc;
@@ -976,7 +978,7 @@ VBOXScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
     if (!fbScreenInit(pScreen, pVBox->base,
                       pScrn->virtualX, pScrn->virtualY,
                       pScrn->xDpi, pScrn->yDpi,
-                      pScrn->virtualX, pScrn->bitsPerPixel))
+                      pScrn->displayWidth, pScrn->bitsPerPixel))
         return (FALSE);
 
     /* Fixup RGB ordering */
@@ -1016,13 +1018,10 @@ VBOXScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
         return FALSE;
     }
 
-    /* set the viewport */
-    VBOXAdjustFrame(scrnIndex, pScrn->frameX0, pScrn->frameY0, 0);
-
     /* software cursor */
     miDCInitialize(pScreen, xf86GetPointerScreenFuncs());
 
-    /* colourmap code - apparently, we need this even in Truecolour */
+    /* colourmap code */
     if (!miCreateDefColormap(pScreen))
 	return (FALSE);
 
@@ -1060,7 +1059,6 @@ VBOXScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
             xf86DrvMsg(scrnIndex, X_INFO,
                       "The VBox video extensions are now enabled.\n");
         vboxEnableGraphicsCap(pVBox);
-        /* Report the largest resolution that we support */
     }
 
 #ifdef VBOX_DRI
