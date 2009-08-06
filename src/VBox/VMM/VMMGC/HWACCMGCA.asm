@@ -231,17 +231,6 @@ ALIGN(16)
     ; * - EFLAGS (reset to RT_BIT(1); not relevant)
     ; *
     ; */
-
-    ; Load the guest LSTAR, CSTAR, SFMASK & KERNEL_GSBASE MSRs
-    ;; @todo use the automatic load feature for MSRs
-    LOADGUESTMSR MSR_K8_LSTAR,          CPUMCTX.msrLSTAR
-%if 0  ; not supported on Intel CPUs
-    LOADGUESTMSR MSR_K8_CSTAR,          CPUMCTX.msrCSTAR
-%endif
-    LOADGUESTMSR MSR_K6_STAR,           CPUMCTX.msrSTAR
-    LOADGUESTMSR MSR_K8_SF_MASK,        CPUMCTX.msrSFMASK
-    LOADGUESTMSR MSR_K8_KERNEL_GS_BASE, CPUMCTX.msrKERNELGSBASE
-
 %ifdef VBOX_WITH_CRASHDUMP_MAGIC
     mov     qword [rbx + VMCSCACHE.uPos], 5
 %endif
@@ -307,9 +296,6 @@ ALIGNCODE(16)
     mov     qword [rdi + CPUMCTX.edi], rax
 
     pop     rsi         ; pCtx (needed in rsi by the macros below)
-
-    ;; @todo use the automatic load feature for MSRs
-    SAVEGUESTMSR MSR_K8_KERNEL_GS_BASE, CPUMCTX.msrKERNELGSBASE
 
 %ifdef VMX_USE_CACHED_VMCS_ACCESSES
     pop     rdi         ; saved pCache

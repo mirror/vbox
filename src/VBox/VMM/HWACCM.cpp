@@ -945,10 +945,15 @@ VMMR3DECL(int) HWACCMR3InitFinalizeR0(PVM pVM)
             LogRel(("HWACCM: MSR_IA32_VMX_VMCS_ENUM        = %RX64\n", pVM->hwaccm.s.vmx.msr.vmx_vmcs_enum));
 
             LogRel(("HWACCM: TPR shadow physaddr           = %RHp\n", pVM->hwaccm.s.vmx.pAPICPhys));
-            LogRel(("HWACCM: MSR bitmap physaddr           = %RHp\n", pVM->hwaccm.s.vmx.pMSRBitmapPhys));
+
+            /* Paranoia */
+            AssertRelease(MSR_IA32_VMX_MISC_MAX_MSR(pVM->hwaccm.s.vmx.msr.vmx_misc) >= 512);
 
             for (unsigned i=0;i<pVM->cCPUs;i++)
-                LogRel(("HWACCM: VMCS physaddr VCPU%d           = %RHp\n", i, pVM->aCpus[i].hwaccm.s.vmx.pVMCSPhys));
+            {
+                LogRel(("HWACCM: VCPU%d: MSR bitmap physaddr      = %RHp\n", i, pVM->aCpus[i].hwaccm.s.vmx.pMSRBitmapPhys));
+                LogRel(("HWACCM: VCPU%d: VMCS physaddr            = %RHp\n", i, pVM->aCpus[i].hwaccm.s.vmx.pVMCSPhys));
+            }
 
 #ifdef HWACCM_VTX_WITH_EPT
             if (pVM->hwaccm.s.vmx.msr.vmx_proc_ctls2.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC2_EPT)
