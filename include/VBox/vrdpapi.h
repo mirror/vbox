@@ -356,7 +356,7 @@ typedef struct _VRDPUSBREQREAPURBBODY
     uint8_t          error;     /* VRDP_USB_XFER_* */
     uint32_t         handle;    /* Handle of returned URB. Not 0. */
     uint32_t         len;       /* Length of data actually transferred. */
-    /* Data follow. */
+    /* 'len' bytes of data follow if direction of this URB was VRDP_USB_DIRECTION_IN. */
 } VRDPUSBREQREAPURBBODY;
 
 typedef struct _VRDP_USB_REQ_REAP_URB_RET
