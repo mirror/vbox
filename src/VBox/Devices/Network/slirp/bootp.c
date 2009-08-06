@@ -259,8 +259,7 @@ static void bootp_reply(PNATState pData, struct mbuf *m0)
     {
         *q++ = RFC2132_MSG_TYPE;
         *q++ = 1;
-        if (   requested_ip.s_addr == 0xffffffff
-            && requested_ip.s_addr != daddr.sin_addr.s_addr)
+        if (requested_ip.s_addr != daddr.sin_addr.s_addr)
         {
             /* network changed */
             *q++ = DHCPNAK;
