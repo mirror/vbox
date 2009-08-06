@@ -211,19 +211,8 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
     ULONG cCpus = 1;
     hrc = pMachine->COMGETTER(CPUCount)(&cCpus);                                    H();
 
-    ULONG cCpuidLeafs = 5;
     Bstr osTypeId;
     hrc = pMachine->COMGETTER(OSTypeId)(osTypeId.asOutParam());                     H();
-    if (osTypeId == "WindowsNT4")
-    {
-        /*
-         * We must limit CPUID count for Windows NT 4 manually,
-         * as otherwise it stops with 0x3e error
-         * (MULTIPROCESSOR_CONFIGURATION_NOT_SUPPORTED).
-         */
-        LogRel(("Limiting CPUID leaf count for NT4 guests\n"));
-        cCpuidLeafs = 2;
-    }
 
     /*
      * Get root node first.
@@ -243,13 +232,24 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
     rc = CFGMR3InsertInteger(pRoot, "RamSize",              cbRam);                 RC_CHECK();
     rc = CFGMR3InsertInteger(pRoot, "RamHoleSize",          cbRamHole);             RC_CHECK();
     rc = CFGMR3InsertInteger(pRoot, "NumCPUs",              cCpus);                 RC_CHECK();
-    rc = CFGMR3InsertInteger(pRoot, "CpuidLeafs",           cCpuidLeafs);           RC_CHECK();
+    rc = CFGMR3InsertString (pRoot, "OSType",               Utf8Str(osTypeId));     RC_CHECK();
     rc = CFGMR3InsertInteger(pRoot, "TimerMillies",         10);                    RC_CHECK();
     rc = CFGMR3InsertInteger(pRoot, "RawR3Enabled",         1);     /* boolean */   RC_CHECK();
     rc = CFGMR3InsertInteger(pRoot, "RawR0Enabled",         1);     /* boolean */   RC_CHECK();
     /** @todo Config: RawR0, PATMEnabled and CASMEnabled needs attention later. */
     rc = CFGMR3InsertInteger(pRoot, "PATMEnabled",          1);     /* boolean */   RC_CHECK();
     rc = CFGMR3InsertInteger(pRoot, "CSAMEnabled",          1);     /* boolean */   RC_CHECK();
+
+    if (osTypeId == "WindowsNT4")
+    {
+        /*
+         * We must limit CPUID count for Windows NT 4,
+         * as otherwise it stops with 0x3e error
+         * (MULTIPROCESSOR_CONFIGURATION_NOT_SUPPORTED).
+         */
+        LogRel(("Limiting CPUID leaf count for NT4 guests\n"));
+        rc = CFGMR3InsertInteger(pRoot, "NT4LeafLimit", true);                          RC_CHECK();
+    }
 
     /* hardware virtualization extensions */
     BOOL fHWVirtExEnabled;

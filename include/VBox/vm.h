@@ -691,11 +691,8 @@ typedef struct VM
     /** Offset to the VMCPU array starting from beginning of this structure. */
     uint32_t                    offVMCPU;
 
-    /** Maximum CPUID leaf, exposed to this VM. */
-    uint32_t                    cCpuidLeafs;
-
     /** Reserved; alignment. */
-    uint32_t                    u32Reserved[5];
+    uint32_t                    u32Reserved[6];
 
     /** @name Public VMM Switcher APIs
      * @{ */
