@@ -923,6 +923,15 @@ vboxEnableDisableFBAccess(int scrnIndex, Bool enable)
  * mode.
  *
  * End QUOTE.Initialise the initial video mode.
+ *
+ * Note that the order of operations here has been adjusted to match the
+ * Radeon HD driver.  We start with device-dependent initialisation (DDX),
+ * including modesetting (a.k.a RandR 1.2).  Among other things, this
+ * establishes the initial physical and virtual screen dimensions, which we
+ * need to know when we create the screen pixmap (the server's abstraction for
+ * the framebuffer).  We then do the device-independent initialisation (DIX)
+ * which sets up the server's internal structures to reflect the hardware
+ * setup.  Finally we do DPMS (stubs) and hardware cursor setup.
  */
 static Bool
 VBOXScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
@@ -953,6 +962,22 @@ VBOXScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
     pVBox->savedPal = VBESetGetPaletteData(pVBox->pVbe, FALSE, 0, 256,
                                            NULL, FALSE, FALSE);
 
+    /* Initialise randr 1.2 mode-setting functions and set first mode. */
+    if (!xf86CrtcScreenInit(pScreen)) {
+        return FALSE;
+    }
+
+    if (!xf86SetDesiredModes(pScrn)) {
+        return FALSE;
+    }
+
+    /* set the viewport */
+    VBOXAdjustFrame(scrnIndex, pScrn->frameX0, pScrn->frameY0, 0);
+
+    /* Needed before we initialise DRI. */
+    pScrn->virtualX = (pScrn->virtualX + 7) & ~7;
+    pScrn->displayWidth = pScrn->virtualX;
+
     /* mi layer - reset the visual list (?)*/
     miClearVisualTypes();
     if (!xf86SetDefaultVisual(pScrn, -1))
@@ -962,10 +987,6 @@ VBOXScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
         return (FALSE);
     if (!miSetPixmapDepths())
         return (FALSE);
-
-    /* Needed before we initialise DRI. */
-    pScrn->virtualX = (pScrn->virtualX + 7) & ~7;
-    pScrn->displayWidth = pScrn->virtualX;
 
 #ifdef VBOX_DRI
     pVBox->useDRI = VBOXDRIScreenInit(scrnIndex, pScreen, pVBox);
@@ -1006,18 +1027,6 @@ VBOXScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
     /* Initialise DGA.  The cast is unfortunately correct - it gets cast back
        to (unsigned char *) later. */
     xf86DiDGAInit(pScreen, (unsigned long) pVBox->base);
-
-    /* Initialise randr 1.2 mode-setting functions and set first mode. */
-    if (!xf86CrtcScreenInit(pScreen)) {
-        return FALSE;
-    }
-
-    if (!xf86SetDesiredModes(pScrn)) {
-        return FALSE;
-    }
-
-    /* set the viewport */
-    VBOXAdjustFrame(scrnIndex, pScrn->frameX0, pScrn->frameY0, 0);
 
     /* software cursor */
     miDCInitialize(pScreen, xf86GetPointerScreenFuncs());
