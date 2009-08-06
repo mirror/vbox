@@ -4315,7 +4315,6 @@ static int ssmR3DataWriteRaw(PSSMHANDLE pSSM, const void *pvBuf, size_t cbBuf)
         int rc = ssmR3StrmWrite(&pSSM->Strm, pvBuf, cbChunk);
         if (RT_FAILURE(rc))
             return rc;
-        ssmR3Progress(pSSM, cbChunk);
         pSSM->offUnit += cbChunk;
         cbBuf -= cbChunk;
         pvBuf = (char *)pvBuf + cbChunk;
@@ -4417,6 +4416,7 @@ static int ssmR3DataFlushBuffer(PSSMHANDLE pSSM)
     int rc = ssmR3DataWriteRecHdr(pSSM, cb, SSM_REC_FLAGS_FIXED | SSM_REC_FLAGS_IMPORTANT | SSM_REC_TYPE_RAW);
     if (RT_SUCCESS(rc))
         rc = ssmR3DataWriteRaw(pSSM, pSSM->u.Write.abDataBuffer, cb);
+    ssmR3Progress(pSSM, cb);
     return rc;
 }
 
@@ -4501,6 +4501,7 @@ static int ssmR3DataWriteBig(PSSMHANDLE pSSM, const void *pvBuf, size_t cbBuf)
                     break;
 
                 /* advance */
+                ssmR3Progress(pSSM, SSM_ZIP_BLOCK_SIZE);
                 if (cbBuf == SSM_ZIP_BLOCK_SIZE)
                     return VINF_SUCCESS;
                 cbBuf -= SSM_ZIP_BLOCK_SIZE;
@@ -4514,6 +4515,7 @@ static int ssmR3DataWriteBig(PSSMHANDLE pSSM, const void *pvBuf, size_t cbBuf)
                 rc = ssmR3DataWriteRecHdr(pSSM, cbBuf, SSM_REC_FLAGS_FIXED | SSM_REC_FLAGS_IMPORTANT | SSM_REC_TYPE_RAW);
                 if (RT_SUCCESS(rc))
                     rc = ssmR3DataWriteRaw(pSSM, pvBuf, cbBuf);
+                ssmR3Progress(pSSM, cbBuf);
                 break;
             }
         }
