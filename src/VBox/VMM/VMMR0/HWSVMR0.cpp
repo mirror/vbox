@@ -2513,7 +2513,7 @@ static int svmR0EmulateTprVMMCall(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
             pCtx->rip += pPatch->cbOp;
             break;
         default:
-            AssertFailedReturn(VERR_INTERNAL_ERROR);
+            AssertMsgFailedReturn(("Unexpected type %d\n", pPatch->enmType), VERR_INTERNAL_ERROR);
         }
     }
     return VINF_SUCCESS;
