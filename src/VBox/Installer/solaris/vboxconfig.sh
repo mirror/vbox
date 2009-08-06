@@ -28,6 +28,8 @@ BIN_MODUNLOAD=/usr/sbin/modunload
 BIN_MODINFO=/usr/sbin/modinfo
 BIN_DEVFSADM=/usr/sbin/devfsadm
 BIN_BOOTADM=/sbin/bootadm
+BIN_SVCADM=/usr/sbin/svcadm
+BIN_SVCCFG=/usr/sbin/svccfg
 BIN_IFCONFIG=/sbin/ifconfig
 
 # "vboxdrv" is also used in sed lines here (change those as well if it ever changes)
@@ -441,7 +443,25 @@ pre_remove()
 {
     fatal=$1
 
-    # @todo halt services, remove_drivers, unpatch_files
+    # stop and unregister webservice SMF (if present)
+    servicefound=`svcs -a | grep "virtualbox/webservice"`
+    if test ! -z "$servicefound"; then
+        $BIN_SVCADM disable -s svc:/application/virtualbox/webservice:default
+        $BIN_SVCCFG delete svc:/application/virtualbox/webservice:default
+    fi
+
+    # stop and unregister zoneaccess SMF (if present)
+    servicefound=`svcs -a | grep "virtualbox/zoneaccess"`
+    if test ! -z "$servicefound"; then
+        $BIN_SVCADM disable -s svc:/application/virtualbox/zoneaccess
+        $BIN_SVCCFG delete svc:/application/virtualbox/zoneaccess
+    fi
+
+    remove_drivers "$fatal"
+    if test "$?" -eq 0; then
+        return 0;
+    fi
+    return 1
 }
 
 
@@ -457,6 +477,8 @@ check_bin_path $BIN_MODUNLOAD
 check_bin_path $BIN_MODINFO
 check_bin_path $BIN_DEVFSADM
 check_bin_path $BIN_BOOTADM
+check_bin_path $BIN_SVCADM
+check_bin_path $BIN_SVCCFG
 check_bin_path $BIN_IFCONFIG
 
 drvop=$1
@@ -480,4 +502,10 @@ remove_drivers)
     echo "Usage: $0 post_install|pre_remove|install_drivers|remove_drivers [fatal]"
     exit 13
 esac
+
+if test "$?" -eq 0; then
+    exit 0
+fi
+
+exit 1
 
