@@ -1839,6 +1839,8 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         vmxR0SetMSRPermission(pVCpu, MSR_K6_STAR, true, true);
         vmxR0SetMSRPermission(pVCpu, MSR_K8_SF_MASK, true, true);
         vmxR0SetMSRPermission(pVCpu, MSR_K8_KERNEL_GS_BASE, true, true);
+        vmxR0SetMSRPermission(pVCpu, MSR_K8_GS_BASE, true, true);
+        vmxR0SetMSRPermission(pVCpu, MSR_K8_FS_BASE, true, true);
     }
 
     /* Store all guest MSRs in the VM-Entry load area, so they will be loaded during the world switch. */
