@@ -67,7 +67,7 @@ class VirtualBoxReflectionInfo:
                    </xsl:for-each>
                    <xsl:if test="not(position()=last())">,</xsl:if>
                   </xsl:for-each>}
- 
+
    _ValuesFlatSym = {<xsl:for-each select="//enum">
                    <xsl:variable name="ename">
                     <xsl:value-of select="@name"/>
@@ -76,7 +76,7 @@ class VirtualBoxReflectionInfo:
                      <xsl:variable name="eval">
                        <xsl:value-of select="concat($ename, '_', @name)"/>
                    </xsl:variable>
-                        '<xsl:value-of select="$eval"/>': '<xsl:value-of select="$eval"/>'<xsl:if test="not(position()=last())">,</xsl:if>
+                        '<xsl:value-of select="$eval"/>': '<xsl:value-of select="@name"/>'<xsl:if test="not(position()=last())">,</xsl:if>
                    </xsl:for-each>
                    <xsl:if test="not(position()=last())">,</xsl:if>
                   </xsl:for-each>}
