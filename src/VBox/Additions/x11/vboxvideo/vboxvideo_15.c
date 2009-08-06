@@ -243,7 +243,7 @@ VBOXCrtcResize(ScrnInfoPtr scrn, int width, int height)
             VBOXDRIUpdateStride(scrn, pVBox);
 #endif
         /* Write the new values to the hardware */
-        rc = xf86SetDesiredModes();
+        rc = xf86SetDesiredModes(scrn);
     }
     TRACE_LOG("returning %s\n", rc ? "TRUE" : "FALSE");
     return rc;
