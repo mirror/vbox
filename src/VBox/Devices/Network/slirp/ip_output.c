@@ -45,7 +45,6 @@
 #include <slirp.h>
 #include "alias.h"
 
-#ifdef VBOX_WITHOUT_SLIRP_CLIENT_ETHER
 static const uint8_t* rt_lookup_in_cache(PNATState pData, uint32_t dst)
 {
     int i;
@@ -66,7 +65,6 @@ static const uint8_t* rt_lookup_in_cache(PNATState pData, uint32_t dst)
 
     return NULL; 
 }
-#endif
 
 /*
  * IP output.  The packet in mbuf chain m contains a skeletal IP
@@ -81,11 +79,10 @@ ip_output(PNATState pData, struct socket *so, struct mbuf *m0)
     register struct mbuf *m = m0;
     register int hlen = sizeof(struct ip );
     int len, off, error = 0;
-#ifdef VBOX_WITHOUT_SLIRP_CLIENT_ETHER
     extern uint8_t zerro_ethaddr[ETH_ALEN];
     struct ethhdr *eh = NULL;
     const uint8_t *eth_dst = NULL;
-#endif
+
     STAM_PROFILE_START(&pData->StatIP_output, a);
 
     DEBUG_CALL("ip_output");
@@ -125,14 +122,12 @@ ip_output(PNATState pData, struct socket *so, struct mbuf *m0)
         goto bad;
     }
 #endif
-#ifdef VBOX_WITHOUT_SLIRP_CLIENT_ETHER
       /* Current TCP/IP stack hasn't routing information at
        * all so we need to calculate destination ethernet address
        */
      eh = (struct ethhdr *)MBUF_HEAD(m);
      if (memcmp(eh->h_source, zerro_ethaddr, ETH_ALEN) == 0)
          eth_dst = rt_lookup_in_cache(pData, ip->ip_dst.s_addr); 
-#endif
 
     /*
      * If small enough for interface, can just send directly.
@@ -143,11 +138,8 @@ ip_output(PNATState pData, struct socket *so, struct mbuf *m0)
         ip->ip_off = htons((u_int16_t)ip->ip_off);
         ip->ip_sum = 0;
         ip->ip_sum = cksum(m, hlen);
-#ifdef VBOX_WITHOUT_SLIRP_CLIENT_ETHER
-        if (eth_dst != NULL) {
+        if (eth_dst != NULL) 
             memcpy(eh->h_source, eth_dst, ETH_ALEN); 
-        }
-#endif
         {
             int rc;
             STAM_PROFILE_START(&pData->StatALIAS_output, a);
@@ -202,13 +194,11 @@ ip_output(PNATState pData, struct socket *so, struct mbuf *m0)
             m->m_data += if_maxlinkhdr;
             mhip = mtod(m, struct ip *);
             *mhip = *ip;
-#ifdef VBOX_WITHOUT_SLIRP_CLIENT_ETHER
             /* we've calculated eth_dst for first packet */
             eh = (struct ethhdr *)MBUF_HEAD(m);
             if (eth_dst != NULL) {
                 memcpy(eh->h_source, eth_dst, ETH_ALEN); 
             }
-#endif
 
 #if 0 /* No options */
             if (hlen > sizeof (struct ip))

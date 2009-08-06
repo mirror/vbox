@@ -758,13 +758,11 @@ VBOX_SLIRP_ALIAS_SOURCES = \
 	Network/slirp/libalias/alias_util.c
 
 # some day will be deleted
-VBOX_WITHOUT_SLIRP_CLIENT_ETHER=1
 
 Drivers_SOURCES += $(VBOX_SLIRP_SOURCES)
 define def_vbox_slirp_cflags
   $(file)_DEFS += \
       $(if $(VBOX_WITH_SLIRP_MEMORY_CHECK),RTMEM_WRAP_TO_EF_APIS,) \
-      $(if $(VBOX_WITHOUT_SLIRP_CLIENT_ETHER),VBOX_WITHOUT_SLIRP_CLIENT_ETHER,)	\
       $(if $(VBOX_WITH_DEBUG_NAT_SOCKETS),VBOX_WITH_DEBUG_NAT_SOCKETS,)	\
       $(if $(VBOX_WITH_SLIRP_MT),VBOX_WITH_SLIRP_MT,)
  $(file)_INCS += $(1)/slirp
