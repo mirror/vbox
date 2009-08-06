@@ -633,7 +633,8 @@ public:
     bool isValid() const {return mBitsPerPixel != 0; }
     uint32_t fourcc() const {return mDataFormat;}
     uint32_t bitsPerPixel() const { return mBitsPerPixel; }
-    uint32_t bitsPerPixelDd() const { return mBitsPerPixelDd; }
+    uint32_t bitsPerPixelTex() const { return mBitsPerPixelTex; }
+//    uint32_t bitsPerPixelDd() const { return mBitsPerPixelDd; }
     void pixel2Normalized(uint32_t pix, float *r, float *g, float *b) const;
     uint32_t widthCompression() const {return mWidthCompression;}
     uint32_t heightCompression() const {return mHeightCompression;}
@@ -651,7 +652,8 @@ private:
     uint32_t mDataFormat;
 
     uint32_t mBitsPerPixel;
-    uint32_t mBitsPerPixelDd;
+    uint32_t mBitsPerPixelTex;
+//    uint32_t mBitsPerPixelDd;
     uint32_t mWidthCompression;
     uint32_t mHeightCompression;
     VBoxVHWAColorComponent mR;
@@ -678,18 +680,19 @@ public:
     const QRect & texRect() {return mTexRect;}
     const QRect & rect() {return mRect;}
     uchar * address(){ return mAddress; }
-    uint32_t rectSizeTex(const QRect * pRect) {return pRect->width() * pRect->height() * mBytesPerPixel;}
+    uint32_t rectSizeTex(const QRect * pRect) {return pRect->width() * pRect->height() * mBytesPerPixelTex;}
     uchar * pointAddress(int x, int y)
     {
         x = toXTex(x);
         y = toYTex(y);
         return pointAddressTex(x, y);
     }
-    uint32_t pointOffsetTex(int x, int y) { return y*mBytesPerLine + x*mBytesPerPixel; }
+    uint32_t pointOffsetTex(int x, int y) { return y*mBytesPerLine + x*mBytesPerPixelTex; }
     uchar * pointAddressTex(int x, int y) { return mAddress + pointOffsetTex(x, y); }
     int toXTex(int x) {return x/mColorFormat.widthCompression();}
     int toYTex(int y) {return y/mColorFormat.heightCompression();}
-    ulong memSize(){ return mBytesPerLine * mRect.height()/mColorFormat.heightCompression(); }
+    ulong memSize(){ return mBytesPerLine * mRect.height(); }
+    uint32_t bytesPerLine() {return mBytesPerLine; }
 
 protected:
     virtual void doUpdate(uchar * pAddress, const QRect * pRect);
@@ -703,6 +706,7 @@ protected:
     uchar * mAddress;
     GLuint mTexture;
     uint32_t mBytesPerPixel;
+    uint32_t mBytesPerPixelTex;
     uint32_t mBytesPerLine;
     VBoxVHWAColorFormat mColorFormat;
 private:
@@ -715,7 +719,7 @@ public:
     VBoxVHWATextureNP2() : VBoxVHWATexture() {}
     VBoxVHWATextureNP2(const QRect * pRect, const VBoxVHWAColorFormat *pFormat) :
         VBoxVHWATexture(pRect, pFormat){
-        mTexRect = *pRect;
+        mTexRect = QRect(0, 0, pRect->width()/pFormat->widthCompression(), pRect->height()/pFormat->heightCompression());
     }
 };
 
@@ -781,7 +785,8 @@ public:
             const QSize * aSize, const QSize * aTargetSize,
             VBoxVHWAColorFormat & aColorFormat,
             VBoxVHWAColorKey * pSrcBltCKey, VBoxVHWAColorKey * pDstBltCKey,
-            VBoxVHWAColorKey * pSrcOverlayCKey, VBoxVHWAColorKey * pDstOverlayCKey);
+            VBoxVHWAColorKey * pSrcOverlayCKey, VBoxVHWAColorKey * pDstOverlayCKey,
+            bool bVGA);
 
     virtual ~VBoxVHWASurfaceBase();
 
@@ -823,10 +828,10 @@ public:
     GLenum type() { return mColorFormat.type(); }
     uint32_t fourcc() {return mColorFormat.fourcc(); }
 
-    ulong  bytesPerPixel() { return mBytesPerPixel; }
+//    ulong  bytesPerPixel() { return mpTex[0]->bytesPerPixel(); }
     ulong  bitsPerPixel() { return mColorFormat.bitsPerPixel(); }
-    ulong  bitsPerPixelDd() { return mColorFormat.bitsPerPixelDd(); }
-    ulong  bytesPerLine() { return mBytesPerLine; }
+//    ulong  bitsPerPixelDd() { return mColorFormat.bitsPerPixelDd(); }
+    ulong  bytesPerLine() { return mpTex[0]->bytesPerLine(); }
 
     const VBoxVHWAColorKey * dstBltCKey() const { return mpDstBltCKey; }
     const VBoxVHWAColorKey * srcBltCKey() const { return mpSrcBltCKey; }
@@ -933,7 +938,7 @@ public:
     void setAddress(uchar * addr);
 
     const QRect& rect() {return mRect;}
-    const QRect& texRect() {return mTexRect;}
+//    const QRect& texRect() {return mTexRect;}
 
 //    /* surface currently being displayed in a flip chain */
 //    virtual bool isPrimary() = 0;
@@ -989,14 +994,14 @@ private:
 
 //    void doTex2FB(const QRect * aRect);
     void doTex2FB(const QRect * pDstRect, const QRect * pSrcRect);
-    void doMultiTex2FB(const QRect * pDstRect, const QRect * pDstTexSize, const QRect * pSrcRect, int cSrcTex);
+    void doMultiTex2FB(const QRect * pDstRect, VBoxVHWATexture * pDstTex, const QRect * pSrcRect, int cSrcTex);
     void doMultiTex2FB(const QRect * pDstRect, const QRect * pSrcRect, int cSrcTex);
 //    void doMultiTex2FB(GLenum tex, const QRect * pDstRect, const QRect * pSrcRect);
 
     void doSetupMatrix(const QSize * pSize , bool bInverted);
 
     QRect mRect; /* == Inv FB size */
-    QRect mTexRect; /* texture size */
+//    QRect mTexRect; /* texture size */
 
     QRect mSrcRect;
     QRect mTargRect; /* == Vis FB size */
@@ -1031,13 +1036,13 @@ private:
     VBoxVHWAColorKey mDefaultSrcOverlayCKey;
 
 
-    GLenum mFormat;
-    GLint  mInternalFormat;
-    GLenum mType;
+//    GLenum mFormat;
+//    GLint  mInternalFormat;
+//    GLenum mType;
 //    ulong  mDisplayWidth;
 //    ulong  mDisplayHeight;
-    ulong  mBytesPerPixel;
-    ulong  mBytesPerLine;
+//    ulong  mBytesPerPixel;
+//    ulong  mBytesPerLine;
 
     int mLockCount;
     /* memory buffer not reflected in fm and texture, e.g if memory buffer is replaced or in case of lock/unlock  */

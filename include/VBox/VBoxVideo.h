@@ -365,8 +365,10 @@ typedef struct _VBOXVHWA_SURFACEDESC
     uint32_t height;
     uint32_t width;
     uint32_t pitch;
-    uint32_t bitsPerPixel;
+    uint32_t sizeX;
+    uint32_t sizeY;
     uint32_t cBackBuffers;
+    uint32_t Reserved;
     VBOXVHWA_COLORKEY DstOverlayCK;
     VBOXVHWA_COLORKEY DstBltCK;
     VBOXVHWA_COLORKEY SrcOverlayCK;

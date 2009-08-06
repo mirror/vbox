@@ -107,7 +107,7 @@ typedef struct _VBOXVHWASURFDESC
     volatile uint32_t cPendingBltsDst;
     volatile uint32_t cPendingFlipsCurr;
     volatile uint32_t cPendingFlipsTarg;
-    uint32_t cBitsPerPixel;
+//    uint32_t cBitsPerPixel;
     bool bHidden;
     VBOXVHWAREGION UpdatedMemRegion;
     VBOXVHWAREGION NonupdatedMemRegion;
