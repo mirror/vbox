@@ -58,8 +58,7 @@ struc VM
     .cCPUs                  resd 1
     .cbSelf                 resd 1
     .offVMCPU               resd 1
-    .cCpuidLeafs            resd 1
-    .u32Reserved            resd 5
+    .u32Reserved            resd 6
 
     .pfnVMMGCGuestToHostAsmGuestCtx RTRCPTR_RES 1
     .pfnVMMGCGuestToHostAsmHyperCtx RTRCPTR_RES 1

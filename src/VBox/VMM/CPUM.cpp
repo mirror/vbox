@@ -533,8 +533,15 @@ static int cpumR3CpuIdInit(PVM pVM)
      * is perhaps a bit crudely done as there is probably some relatively harmless
      * info too in these leaves (like words about having a constant TSC).
      */
-    if (pCPUM->aGuestCpuIdStd[0].eax > pVM->cCpuidLeafs)
-        pCPUM->aGuestCpuIdStd[0].eax = pVM->cCpuidLeafs;
+    {
+        bool fNt4LeafLimit;
+        PCFGMNODE pNode = CFGMR3GetRoot(pVM);
+        int rc = CFGMR3QueryBoolDef(pNode, "NT4LeafLimit", &fNt4LeafLimit, false);
+        if (RT_SUCCESS(rc) && fNt4LeafLimit)
+            pCPUM->aGuestCpuIdStd[0].eax = 2;
+    }
+    if (pCPUM->aGuestCpuIdStd[0].eax > 5)
+        pCPUM->aGuestCpuIdStd[0].eax = 5;
 
     for (i = pCPUM->aGuestCpuIdStd[0].eax + 1; i < RT_ELEMENTS(pCPUM->aGuestCpuIdStd); i++)
         pCPUM->aGuestCpuIdStd[i] = pCPUM->GuestCpuIdDef;
@@ -1120,10 +1127,10 @@ static DECLCALLBACK(int) cpumR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Versio
                                |  X86_CPUID_FEATURE_ECX_X2APIC
                               );
 
-        /* Make sure we don't forget to update the masks when enabling 
-         * features in the future. 
+        /* Make sure we don't forget to update the masks when enabling
+         * features in the future.
          */
-        AssertRelease(!(pVM->cpum.s.aGuestCpuIdStd[1].ecx & 
+        AssertRelease(!(pVM->cpum.s.aGuestCpuIdStd[1].ecx &
                               (   X86_CPUID_FEATURE_ECX_DTES64
                                |  X86_CPUID_FEATURE_ECX_VMX
                                |  X86_CPUID_FEATURE_ECX_SMX
