@@ -335,13 +335,6 @@ typedef struct HWACCM
         /** Virtual address of the APIC physical page (serves for filtering accesses). */
         R0PTRTYPE(uint8_t *)        pAPIC;
 
-        /** R0 memory object for the MSR bitmap (1 page). */
-        RTR0MEMOBJ                  pMemObjMSRBitmap;
-        /** Physical address of the MSR bitmap (1 page). */
-        RTHCPHYS                    pMSRBitmapPhys;
-        /** Virtual address of the MSR bitmap (1 page). */
-        R0PTRTYPE(uint8_t *)        pMSRBitmap;
-
         /** R0 memory object for the MSR entry load page (guest MSRs). */
         RTR0MEMOBJ                  pMemObjMSREntryLoad;
         /** Physical address of the MSR entry load page (guest MSRs). */
@@ -584,6 +577,27 @@ typedef struct HWACCMCPU
 
         /** Current EPTP. */
         RTHCPHYS                    GCPhysEPTP;
+
+        /** R0 memory object for the MSR bitmap (1 page). */
+        RTR0MEMOBJ                  pMemObjMSRBitmap;
+        /** Physical address of the MSR bitmap (1 page). */
+        RTHCPHYS                    pMSRBitmapPhys;
+        /** Virtual address of the MSR bitmap (1 page). */
+        R0PTRTYPE(uint8_t *)        pMSRBitmap;
+
+        /** R0 memory object for the guest MSR load area (1 page). */
+        RTR0MEMOBJ                  pMemObjGuestMSR;
+        /** Physical address of the guest MSR load area (1 page). */
+        RTHCPHYS                    pGuestMSRPhys;
+        /** Virtual address of the guest MSR load area (1 page). */
+        R0PTRTYPE(uint8_t *)        pGuestMSR;
+
+        /** R0 memory object for the MSR load area (1 page). */
+        RTR0MEMOBJ                  pMemObjHostMSR;
+        /** Physical address of the MSR load area (1 page). */
+        RTHCPHYS                    pHostMSRPhys;
+        /** Virtual address of the MSR load area (1 page). */
+        R0PTRTYPE(uint8_t *)        pHostMSR;
 
         /** VMCS cache. */
         VMCSCACHE                   VMCSCache;
