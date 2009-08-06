@@ -1984,7 +1984,7 @@ VMMDECL(int) EMInterpretCpuId(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame)
     /* cpuid clears the high dwords of the affected 64 bits registers. */
     pRegFrame->rax = 0;
     pRegFrame->rbx = 0;
-    pRegFrame->rcx = 0;
+    pRegFrame->rcx &= UINT64_C(0x00000000ffffffff);
     pRegFrame->rdx = 0;
 
     /* Note: operates the same in 64 and non-64 bits mode. */
