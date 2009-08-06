@@ -183,7 +183,24 @@ static int rtSemSpinMutexEnter(RTSEMSPINMUTEXSTATE *pState, RTSEMSPINMUTEXINTERN
         Assert(pState->PreemptState.uchOldIrql < DISPATCH_LEVEL);
     }
 
-#elif defined(RT_OS_LINUX) || defined(RT_OS_OS2) || defined(RT_OS_SOLARIS)
+#elif defined(RT_OS_SOLARIS)
+    /*
+     * Solaris:  RTSemEventSignal will do bad stuff on S10 if interrupts are disabled.
+     */
+    if (!ASMIntAreEnabled())
+        return VERR_SEM_BAD_CONTEXT;
+
+    pState->fSpin = !RTThreadPreemptIsEnabled(NIL_RTTHREAD);
+    if (RTThreadIsInInterrupt(NIL_RTTHREAD))
+    {
+        if (!(pThis->fFlags & RTSEMSPINMUTEX_FLAGS_IRQ_SAFE))
+            rc = VINF_SEM_BAD_CONTEXT; /* Try, but owner might be interrupted. */
+        pState->fSpin = true;
+    }
+    pState->PreemptState = StateInit;
+    RTThreadPreemptDisable(&pState->PreemptState);
+
+#elif defined(RT_OS_LINUX) || defined(RT_OS_OS2)
     /*
      * OSes on which RTSemEventSignal can be called from any context.
      */
@@ -199,11 +216,14 @@ static int rtSemSpinMutexEnter(RTSEMSPINMUTEXSTATE *pState, RTSEMSPINMUTEXINTERN
 
 #else /* PORTME: Check for context where we cannot wake up threads. */
     /*
-     * Default: ASSUME thread can be woken up from all context except interrupt.
+     * Default: ASSUME thread can be woken up if interrupts are enabled and
+     *          we're not in an interrupt context.
      *          ASSUME that we can go to sleep if preemption is enabled.
      */
-    if (RTThreadIsInInterrupt(NIL_RTTHREAD))
+    if (    RTThreadIsInInterrupt(NIL_RTTHREAD)
+        ||  !ASMIntAreEnabled())
         return VERR_SEM_BAD_CONTEXT;
+
     pState->fSpin = !RTThreadPreemptIsEnabled(NIL_RTTHREAD);
     pState->PreemptState = StateInit;
     RTThreadPreemptDisable(&pState->PreemptState);
