@@ -101,10 +101,12 @@
  *       - type 3: Raw data compressed by LZF. The data is prefixed by a 8-bit
  *                 field countining the length of the uncompressed data given in
  *                 1KB units.
- *       - type 4: Named data - length prefixed name followed by the data. This
+ *       - type 4: Zero data. The record header is followed by a 8-bit field
+ *                 counting the length of the zero data given in 1KB units.
+ *       - type 5: Named data - length prefixed name followed by the data. This
  *                 type is not implemented yet as we're missing the API part, so
  *                 the type assignment is tentative.
- *       - types 5 thru 15 are current undefined.
+ *       - types 6 thru 15 are current undefined.
  *   - bit 4: Important (set), can be skipped (clear).
  *   - bit 5: Undefined flag, must be zero.
  *   - bit 6: Undefined flag, must be zero.
@@ -207,11 +209,15 @@
 #define SSM_REC_TYPE_RAW                        2
 /** Raw data compressed by LZF.
  * The record header is followed by a 8-bit field containing the size of the
- * uncompressed data.  The compressed data is after it. */
+ * uncompressed data in 1KB units.  The compressed data is after it. */
 #define SSM_REC_TYPE_RAW_LZF                    3
+/** Raw zero data.
+ * The record header is followed by a 8-bit field containing the size of the
+ * zero data in 1KB units. */
+#define SSM_REC_TYPE_RAW_ZERO                   4
 /** Named data items.
  * A length prefix zero terminated string (i.e. max 255) followed by the data.  */
-#define SSM_REC_TYPE_NAMED                      4
+#define SSM_REC_TYPE_NAMED                      5
 /** Macro for validating the record type.
  * This can be used with the flags+type byte, no need to mask out the type first. */
 #define SSM_REC_TYPE_IS_VALID(u8Type)           (   ((u8Type) & SSM_REC_TYPE_MASK) >  SSM_REC_TYPE_INVALID \
@@ -4429,12 +4435,19 @@ static int ssmR3DataWriteBig(PSSMHANDLE pSSM, const void *pvBuf, size_t cbBuf)
     if (RT_SUCCESS(rc))
     {
         /*
-         * Compress it if it's a page or more in size.
+         * Split it up into compression blocks.
          */
         for (;;)
         {
-            if (cbBuf >= SSM_ZIP_BLOCK_SIZE)
+            AssertCompile(SSM_ZIP_BLOCK_SIZE == PAGE_SIZE);
+            if (    cbBuf >= SSM_ZIP_BLOCK_SIZE
+                && (    ((uintptr_t)pvBuf & 0xf)
+                    ||  !ASMMemIsZeroPage(pvBuf))
+               )
             {
+                /*
+                 * Compress it.
+                 */
                 AssertCompile(1 + 3 + 1 + SSM_ZIP_BLOCK_SIZE < 0x00010000);
                 uint8_t *pb;
                 rc = ssmR3StrmReserveWriteBufferSpace(&pSSM->Strm, 1 + 3 + 1 + SSM_ZIP_BLOCK_SIZE, &pb);
@@ -4466,6 +4479,26 @@ static int ssmR3DataWriteBig(PSSMHANDLE pSSM, const void *pvBuf, size_t cbBuf)
 
                 pSSM->offUnit += cbRec;
                 ssmR3Progress(pSSM, SSM_ZIP_BLOCK_SIZE);
+
+                /* advance */
+                if (cbBuf == SSM_ZIP_BLOCK_SIZE)
+                    return VINF_SUCCESS;
+                cbBuf -= SSM_ZIP_BLOCK_SIZE;
+                pvBuf = (uint8_t const*)pvBuf + SSM_ZIP_BLOCK_SIZE;
+            }
+            else if (cbBuf >= SSM_ZIP_BLOCK_SIZE)
+            {
+                /*
+                 * Zero block.
+                 */
+                uint8_t abRec[3];
+                abRec[0] = SSM_REC_FLAGS_FIXED | SSM_REC_FLAGS_IMPORTANT | SSM_REC_TYPE_RAW_ZERO;
+                abRec[1] = 1;
+                abRec[2] = SSM_ZIP_BLOCK_SIZE / _1K;
+                Log3(("ssmR3DataWriteBig: %08llx|%08llx/%08x: ZERO\n", ssmR3StrmTell(&pSSM->Strm) + 2, pSSM->offUnit + 2, 1));
+                rc = ssmR3DataWriteRaw(pSSM, &abRec[0], sizeof(abRec));
+                if (RT_FAILURE(rc))
+                    break;
 
                 /* advance */
                 if (cbBuf == SSM_ZIP_BLOCK_SIZE)
@@ -5237,6 +5270,33 @@ static int ssmR3DataReadV2RawLzf(PSSMHANDLE pSSM, void *pvDst, size_t cbDecompr)
 
 
 /**
+ * Reads and checks the raw zero "header".
+ *
+ * @returns VBox status code.
+ * @param   pSSM            The saved state handle..
+ * @param   pcbDecompr      Where to store the size of the zero data.
+ */
+DECLINLINE(int) ssmR3DataReadV2RawZeroHdr(PSSMHANDLE pSSM, uint32_t *pcbZero)
+{
+    *pcbZero = 0; /* shuts up gcc. */
+    AssertLogRelMsgReturn(pSSM->u.Read.cbRecLeft == 1, ("%#x\n", pSSM->u.Read.cbRecLeft), VERR_SSM_INTEGRITY_DECOMPRESSION);
+
+    uint8_t cKB;
+    int rc = ssmR3DataReadV2Raw(pSSM, &cKB, 1);
+    if (RT_FAILURE(rc))
+        return rc;
+    pSSM->u.Read.cbRecLeft = 0;
+
+    uint32_t cbZero = (uint32_t)cKB * _1K;
+    AssertLogRelMsgReturn(cbZero <= RT_SIZEOFMEMB(SSMHANDLE, u.Read.abDataBuffer),
+                          ("%#x\n", cbZero), VERR_SSM_INTEGRITY_DECOMPRESSION);
+
+    *pcbZero = cbZero;
+    return VINF_SUCCESS;
+}
+
+
+/**
  * Worker for reading the record header.
  *
  * It sets pSSM->u.Read.cbRecLeft, pSSM->u.Read.u8TypeAndFlags and
@@ -5468,28 +5528,43 @@ static int ssmR3DataReadUnbufferedV2(PSSMHANDLE pSSM, void *pvBuf, size_t cbBuf)
 
             case SSM_REC_TYPE_RAW_LZF:
             {
-                uint32_t cbDecompr;
-                int rc = ssmR3DataReadV2RawLzfHdr(pSSM, &cbDecompr);
+                int rc = ssmR3DataReadV2RawLzfHdr(pSSM, &cbToRead);
                 if (RT_FAILURE(rc))
                     return rc;
-                if (cbBuf >= cbDecompr)
+                if (cbToRead <= cbBuf)
                 {
-                    cbToRead = cbDecompr;
-                    rc = ssmR3DataReadV2RawLzf(pSSM, pvBuf, cbDecompr);
+                    rc = ssmR3DataReadV2RawLzf(pSSM, pvBuf, cbToRead);
                     if (RT_FAILURE(rc))
                         return rc;
                 }
                 else
                 {
-                    /* output buffer is too small, use the data buffer. */
-                    rc = ssmR3DataReadV2RawLzf(pSSM, &pSSM->u.Read.abDataBuffer[0], cbDecompr);
+                    /* The output buffer is too small, use the data buffer. */
+                    rc = ssmR3DataReadV2RawLzf(pSSM, &pSSM->u.Read.abDataBuffer[0], cbToRead);
                     if (RT_FAILURE(rc))
                         return rc;
+                    pSSM->u.Read.cbDataBuffer  = cbToRead;
                     cbToRead = (uint32_t)cbBuf;
-                    memcpy(pvBuf, &pSSM->u.Read.abDataBuffer[0], cbToRead);
-                    pSSM->u.Read.cbDataBuffer  = cbDecompr;
                     pSSM->u.Read.offDataBuffer = cbToRead;
+                    memcpy(pvBuf, &pSSM->u.Read.abDataBuffer[0], cbToRead);
                 }
+                break;
+            }
+
+            case SSM_REC_TYPE_RAW_ZERO:
+            {
+                int rc = ssmR3DataReadV2RawZeroHdr(pSSM, &cbToRead);
+                if (RT_FAILURE(rc))
+                    return rc;
+                if (cbToRead > cbBuf)
+                {
+                    /* Spill the remainer into the data buffer. */
+                    memset(&pSSM->u.Read.abDataBuffer[0], 0, cbToRead - cbBuf);
+                    pSSM->u.Read.cbDataBuffer  = cbToRead - cbBuf;
+                    pSSM->u.Read.offDataBuffer = 0;
+                    cbToRead = (uint32_t)cbBuf;
+                }
+                memset(pvBuf, 0, cbToRead);
                 break;
             }
 
@@ -5572,14 +5647,22 @@ static int ssmR3DataReadBufferedV2(PSSMHANDLE pSSM, void *pvBuf, size_t cbBuf)
 
             case SSM_REC_TYPE_RAW_LZF:
             {
-                uint32_t cbDecompr;
-                int rc = ssmR3DataReadV2RawLzfHdr(pSSM, &cbDecompr);
+                int rc = ssmR3DataReadV2RawLzfHdr(pSSM, &cbToRead);
                 if (RT_FAILURE(rc))
                     return rc;
-                cbToRead = cbDecompr;
                 rc = ssmR3DataReadV2RawLzf(pSSM, &pSSM->u.Read.abDataBuffer[0], cbToRead);
                 if (RT_FAILURE(rc))
                     return rc;
+                pSSM->u.Read.cbDataBuffer = cbToRead;
+                break;
+            }
+
+            case SSM_REC_TYPE_RAW_ZERO:
+            {
+                int rc = ssmR3DataReadV2RawZeroHdr(pSSM, &cbToRead);
+                if (RT_FAILURE(rc))
+                    return rc;
+                memset(&pSSM->u.Read.abDataBuffer[0], 0, cbToRead);
                 pSSM->u.Read.cbDataBuffer = cbToRead;
                 break;
             }

@@ -90,6 +90,10 @@ void initBigMem(void)
         RTStrPrintf(szTmp, sizeof(szTmp), "aaaa%08Xzzzz", (uint32_t)(uintptr_t)pb);
         memcpy(pb, szTmp, 16);
     }
+
+    /* add some zero pages */
+    memset(&gabBigMem[sizeof(gabBigMem) / 4],     0, PAGE_SIZE * 4);
+    memset(&gabBigMem[sizeof(gabBigMem) / 4 * 3], 0, PAGE_SIZE * 4);
 #endif
 }
 
