@@ -690,6 +690,8 @@ static DECLCALLBACK(void) drvNATPowerOn(PPDMDRVINS pDrvIns)
  */
 static int drvNATConstructRedir(unsigned iInstance, PDRVNAT pThis, PCFGMNODE pCfgHandle, RTIPV4ADDR Network)
 {
+     RTMAC Mac;
+     memset(&Mac, 0, sizeof(RTMAC)); /*can't get MAC here */
     /*
      * Enumerate redirections.
      */
@@ -740,7 +742,7 @@ static int drvNATConstructRedir(unsigned iInstance, PDRVNAT pThis, PCFGMNODE pCf
          */
         struct in_addr BindIP;
         GETIP_DEF(rc, pThis, pNode, BindIP, INADDR_ANY);
-        if (slirp_redir(pThis->pNATState, fUDP, BindIP, iHostPort, GuestIP, iGuestPort) < 0)
+        if (slirp_redir(pThis->pNATState, fUDP, BindIP, iHostPort, GuestIP, iGuestPort, Mac.au8) < 0)
             return PDMDrvHlpVMSetError(pThis->pDrvIns, VERR_NAT_REDIR_SETUP, RT_SRC_POS,
                                        N_("NAT#%d: configuration error: failed to set up "
                                        "redirection of %d to %d. Probably a conflict with "
