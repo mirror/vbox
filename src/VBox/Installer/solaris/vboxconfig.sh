@@ -32,6 +32,8 @@ BIN_SVCADM=/usr/sbin/svcadm
 BIN_SVCCFG=/usr/sbin/svccfg
 BIN_IFCONFIG=/sbin/ifconfig
 
+DIR_VBOXBASE=/opt/VirtualBox
+
 # "vboxdrv" is also used in sed lines here (change those as well if it ever changes)
 MOD_VBOXDRV=vboxdrv
 MOD_VBOXNET=vboxnet
@@ -396,20 +398,31 @@ remove_drivers()
     return 0
 }
 
+# install_python_bindings(pythonbin)
+# remarks: changes pwd
+# failure: non fatal
+install_python_bindings()
+{
+    PYTHONBIN=$1
+    if test -x "$PYTHONBIN"; then
+        VBOX_INSTALL_PATH="$DIR_VBOXBASE"
+        export VBOX_INSTALL_PATH
+        cd $DIR_VBOXBASE/sdk/installer
+        $PYTHONBIN ./vboxapisetup.py install > /dev/null
+        return 0
+    fi
+    return 1
+}
+
 
 # post_install()
 # !! failure is always fatal
 post_install()
 {
-    # @todo install_drivers, update boot-archive start services, patch_files, update boot archive
     infoprint "Loading VirtualBox kernel modules..."
     install_drivers
 
-    infoprint "Updating the boot archive..."
-    $BIN_BOOTADM update-archive > /dev/null
-
     if test "$?" -eq 0; then
-
         if test -f /platform/i86pc/kernel/drv/vboxnet.conf; then        
             # nwam/dhcpagent fix
             nwamfile=/etc/nwam/llp
@@ -428,6 +441,44 @@ post_install()
                 warnprint "Failed to bring up vboxnet0!!"
             fi
         fi
+
+        # Install python bindings
+        if test -f "$DIR_VBOXBASE/sdk/installer/vboxapisetup.py" || test -h "$DIR_VBOXBASE/sdk/installer/vboxapisetup.py"; then
+            PYTHONBIN=`which python 2> /dev/null`
+            if test -f "$PYTHONBIN" || test -h "$PYTHONBIN"; then
+                infoprint "Installing Python bindings..."
+
+                INSTALLEDIT=1
+                PYTHONBIN=`which python2.4 2>/dev/null`
+                install_python_bindings "$PYTHONBIN"
+                if test "$?" -eq 0; then
+                    INSTALLEDIT=0
+                fi
+                PYTHONBIN=`which python2.5 2>/dev/null`
+                install_python_bindings "$PYTHONBIN"
+                if test "$?" -eq 0; then
+                    INSTALLEDIT=0
+                fi
+                PYTHONBIN=`which python2.6 2>/dev/null`
+                install_python_bindings "$PYTHONBIN"
+                if test "$?" -eq 0; then 
+                    INSTALLEDIT=0
+                fi
+
+                # remove files installed by Python build
+                rm -rf $DIR_VBOXBASE/sdk/installer/build
+
+                if test "$INSTALLEDIT" -ne 0; then
+                    warnprint "No suitable Python version found. Required Python 2.4, 2.5 or 2.6."
+                fi
+            else
+                warnprint "Python not found, skipped installed Python bindings."
+            fi
+        fi
+
+        # Update boot archive
+        infoprint "Updating the boot archive..."
+        $BIN_BOOTADM update-archive > /dev/null
 
         return 0
     else
