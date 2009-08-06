@@ -1770,14 +1770,17 @@ DECLCALLBACK(int) hwaccmR3PatchTprInstr(PVM pVM, PVMCPU pVCpu, void *pvUser)
                 * jmp return_address            [E9 return_address]
                 *
                 */
+            bool fUsesEax = (pDis->param2.flags == USE_REG_GEN32 && pDis->param2.base.reg_gen == USE_REG_EAX);
+
             aPatch[off++] = 0x51;    /* push ecx */
             aPatch[off++] = 0x52;    /* push edx */
-            aPatch[off++] = 0x50;    /* push eax */
+            if (!fUsesEax)
+                aPatch[off++] = 0x50;    /* push eax */
             aPatch[off++] = 0x31;    /* xor edx, edx */
             aPatch[off++] = 0xD2;
             if (pDis->param2.flags == USE_REG_GEN32)
             {
-                if (pDis->param2.base.reg_gen != USE_REG_EAX)
+                if (!fUsesEax)
                 {
                     aPatch[off++] = 0x89;    /* mov eax, src_reg */
                     aPatch[off++] = MAKE_MODRM(3, pDis->param2.base.reg_gen, USE_REG_EAX);
@@ -1796,7 +1799,8 @@ DECLCALLBACK(int) hwaccmR3PatchTprInstr(PVM pVM, PVMCPU pVCpu, void *pvUser)
 
             aPatch[off++] = 0x0F;    /* wrmsr */
             aPatch[off++] = 0x30;
-            aPatch[off++] = 0x58;    /* pop eax */
+            if (!fUsesEax)
+                aPatch[off++] = 0x58;    /* pop eax */
             aPatch[off++] = 0x5A;    /* pop edx */
             aPatch[off++] = 0x59;    /* pop ecx */
         }
