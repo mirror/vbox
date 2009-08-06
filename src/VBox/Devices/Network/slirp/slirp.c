@@ -188,6 +188,9 @@
 
 #define LOG_NAT_SOCK(so, proto, winevent, r_fdset, w_fdset, x_fdset) DO_LOG_NAT_SOCK((so), proto, (winevent), r_fdset, w_fdset, x_fdset)
 
+static void acivate_port_forwarding(PNATState, struct ethhdr *);
+static in_addr_t find_guest_ip(PNATState, uint8_t *);
+
 static const uint8_t special_ethaddr[6] =
 {
     0x52, 0x54, 0x00, 0x12, 0x35, 0x00
@@ -1443,6 +1446,9 @@ void slirp_input(PNATState pData, const uint8_t *pkt, int pkt_len)
 
     m->m_len = pkt_len ;
     memcpy(m->m_data, pkt, pkt_len);
+    
+    if (pData->port_forwarding_activated == 0)
+        acivate_port_forwarding(pData, mtod(m, struct ethhdr *));
 
     proto = ntohs(*(uint16_t *)(pkt + 12));
     switch(proto)
@@ -1509,83 +1515,168 @@ void if_encap(PNATState pData, uint16_t eth_proto, struct mbuf *m)
     }
 #endif
     eh->h_proto = htons(eth_proto);
-#if 0
-    slirp_output(pData->pvUser, m, mtod(m, uint8_t *), m->m_len);
-#else
     memcpy(buf, mtod(m, uint8_t *), m->m_len);
     slirp_output(pData->pvUser, NULL, buf, m->m_len);
 done:
     STAM_PROFILE_STOP(&pData->StatIF_encap, a);
     m_free(pData, m);
-#endif
 }
 
-int slirp_redir(PNATState pData, int is_udp, struct in_addr host_addr, int host_port,
-                struct in_addr guest_addr, int guest_port)
+/**
+ * Still we're using dhcp server leasing to map ether to IP
+ * @todo  see rt_lookup_in_cache
+ */
+static in_addr_t find_guest_ip(PNATState pData, uint8_t *eth_addr)
 {
-    struct socket *so;
-    struct alias_link *link;
-    struct libalias *lib;
-    int flags;
-    struct sockaddr sa;
-    struct sockaddr_in *psin;
-    socklen_t socketlen;
-    struct in_addr alias;
-    int rc;
-
-    Log2(("NAT: set redirect %s hp:%d gp:%d\n", (is_udp?"UDP":"TCP"), host_port, guest_port));
-    if (is_udp)
+    int i;
+    if (memcmp(eth_addr, zerro_ethaddr, ETH_ALEN) == 0
+        || memcmp(eth_addr, broadcast_ethaddr, ETH_ALEN) == 0)
+        goto done;
+    for (i = 0; i < NB_ADDR; i++)
     {
-        so = udp_listen(pData, host_addr.s_addr, htons(host_port), guest_addr.s_addr,
-                        htons(guest_port), 0);
+        if (   bootp_clients[i].allocated
+            && memcmp(bootp_clients[i].macaddr, eth_addr, ETH_ALEN) == 0)
+            return bootp_clients[i].addr.s_addr;
     }
-    else
+done:
+    return INADDR_ANY;
+}
+
+/** 
+ * We need check if we've activated port forwarding
+ * for specific machine ... that of course relates to 
+ * service mode
+ * @todo finish this for service case
+ */
+static void acivate_port_forwarding(PNATState pData, struct ethhdr *ethdr)
+{
+    struct port_forward_rule *rule = NULL;
+    
+    pData->port_forwarding_activated = 1;
+    /* check mac here */ 
+    LIST_FOREACH(rule, &pData->port_forward_rule_head, list)
     {
-        so = solisten(pData, host_addr.s_addr, htons(host_port), guest_addr.s_addr,
-                      htons(guest_port), 0);
-    }
-    if (so == NULL)
-    {   
-        return -1;
-    }
+        struct socket *so;
+        struct alias_link *link;
+        struct libalias *lib;
+        int flags;
+        struct sockaddr sa;
+        struct sockaddr_in *psin;
+        socklen_t socketlen;
+        struct in_addr alias;
+        int rc;
+        in_addr_t guest_addr; /* need to understand if we already give address to guest */
 
-    psin = (struct sockaddr_in *)&sa;
-    psin->sin_family = AF_INET;
-    psin->sin_port = 0;
-    psin->sin_addr.s_addr = INADDR_ANY;
-    socketlen = sizeof(struct sockaddr);
-
-    rc = getsockname(so->s, &sa, &socketlen);
-    if (rc < 0 || sa.sa_family != AF_INET)
-    {
-        Log(("NAT: can't get socket's name\n"));
-        return 1;
-    }
-
-    psin = (struct sockaddr_in *)&sa;
-
-#if 1
-    lib = LibAliasInit(pData, NULL);
-    flags = LibAliasSetMode(lib, 0, 0);
-    flags |= PKT_ALIAS_LOG; /* set logging */
-    flags |= PKT_ALIAS_REVERSE; /* set logging */
-    flags = LibAliasSetMode(lib, flags, ~0);
+        if (rule->activated)
+            continue; /*already activated */
+#ifdef VBOX_WITH_NAT_SERVICE
+        if (memcmp(rule->mac_address, ethdr->h_source, ETH_ALEN) != 0)
+            continue; /*not right mac, @todo: it'd be better do the list port forwarding per mac */
+        guest_addr = find_guest_ip(pData, ethdr->h_source);
 #else
-    lib = LIST_FIRST(&instancehead);
+        if (memcmp(client_ethaddr, ethdr->h_source, ETH_ALEN) != 0)
+            continue;
+        guest_addr = find_guest_ip(pData, ethdr->h_source);
+        Assert(rule->guest_addr.s_addr == guest_addr);
 #endif
+        if (guest_addr == INADDR_ANY) 
+        {
+            /* the address wasn't granted */
+            pData->port_forwarding_activated = 0;
+            return;
+        }
 
-    alias.s_addr =  htonl(ntohl(guest_addr.s_addr) | CTL_ALIAS);
-    link = LibAliasRedirectPort(lib, psin->sin_addr, htons(host_port),
-        alias, htons(guest_port),
-        special_addr,  -1, /* not very clear for now*/
-        (is_udp ? IPPROTO_UDP : IPPROTO_TCP));
-    if (link == NULL)
-    {
-        Log(("NAT: can't create redirect\n"));
-        return 1;
+        LogRel(("NAT: set redirect %s hp:%d gp:%d\n", (rule->proto == IPPROTO_UDP?"UDP":"TCP"),
+            rule->host_port, rule->guest_port));
+        if (rule->proto == IPPROTO_UDP)
+        {
+            so = udp_listen(pData, rule->bind_ip.s_addr, htons(rule->host_port), guest_addr,
+                            htons(rule->guest_port), 0);
+        }
+        else
+        {
+            so = solisten(pData, rule->bind_ip.s_addr, htons(rule->host_port), guest_addr,
+                          htons(rule->guest_port), 0);
+        }
+        if (so == NULL)
+        {   
+            LogRel(("NAT: failed redirect %s hp:%d gp:%d\n", (rule->proto == IPPROTO_UDP?"UDP":"TCP"),
+                rule->host_port, rule->guest_port));
+            goto remove_port_forwarding;
+        }
+
+        psin = (struct sockaddr_in *)&sa;
+        psin->sin_family = AF_INET;
+        psin->sin_port = 0;
+        psin->sin_addr.s_addr = INADDR_ANY;
+        socketlen = sizeof(struct sockaddr);
+
+        rc = getsockname(so->s, &sa, &socketlen);
+        if (rc < 0 || sa.sa_family != AF_INET)
+        {
+            LogRel(("NAT: failed redirect %s hp:%d gp:%d\n", (rule->proto == IPPROTO_UDP?"UDP":"TCP"),
+                rule->host_port, rule->guest_port));
+            goto remove_port_forwarding;
+        }
+
+        psin = (struct sockaddr_in *)&sa;
+
+        lib = LibAliasInit(pData, NULL);
+        flags = LibAliasSetMode(lib, 0, 0);
+        flags |= PKT_ALIAS_LOG; /* set logging */
+        flags |= PKT_ALIAS_REVERSE; /* set logging */
+        flags = LibAliasSetMode(lib, flags, ~0);
+
+        alias.s_addr =  htonl(ntohl(guest_addr) | CTL_ALIAS);
+        link = LibAliasRedirectPort(lib, psin->sin_addr, htons(rule->host_port),
+            alias, htons(rule->guest_port),
+            special_addr,  -1, /* not very clear for now*/
+            rule->proto);
+        if (link == NULL)
+        {
+            LogRel(("NAT: failed redirect %s hp:%d gp:%d\n", (rule->proto == IPPROTO_UDP?"UDP":"TCP"),
+                rule->host_port, rule->guest_port));
+            goto remove_port_forwarding;
+        }
+        so->so_la = lib;
+        rule->activated = 1;
+        continue;
+    remove_port_forwarding:
+        LIST_REMOVE(rule, list);
+        RTMemFree(rule);
     }
-    so->so_la = lib;
+}
 
+/**
+ * Changes in 3.1 instead of opening new socket do the following:
+ * gain more information:
+ *  1. bind IP
+ *  2. host port
+ *  3. guest port
+ *  4. proto
+ *  5. guest MAC address 
+ * the guest's MAC address is rather important for service, but we easily 
+ * could get it from VM configuration in DrvNAT or Service, the idea is activating 
+ * corresponding port-forwarding
+ */
+int slirp_redir(PNATState pData, int is_udp, struct in_addr host_addr, int host_port,
+                struct in_addr guest_addr, int guest_port, const uint8_t *ethaddr)
+{
+    struct port_forward_rule *rule = NULL;
+    Assert(memcmp(ethaddr, zerro_ethaddr, ETH_ALEN) == 0);
+    rule = RTMemAllocZ(sizeof(struct port_forward_rule));
+    if (rule == NULL)
+        return 1;
+    rule->proto = (is_udp ? IPPROTO_UDP : IPPROTO_TCP);
+    rule->host_port = host_port;
+    rule->guest_port = guest_port;
+#ifndef VBOX_WITH_NAT_SERVICE
+    rule->guest_addr.s_addr = guest_addr.s_addr;
+#endif
+    rule->bind_ip.s_addr = host_addr.s_addr;
+    memcmp(rule->mac_address, ethaddr, ETH_ALEN);
+    /* @todo add mac address */
+    LIST_INSERT_HEAD(&pData->port_forward_rule_head, rule, list);
     return 0;
 }
 
@@ -1598,7 +1689,7 @@ int slirp_add_exec(PNATState pData, int do_pty, const char *args, int addr_low_b
 
 void slirp_set_ethaddr(PNATState pData, const uint8_t *ethaddr)
 {
-#ifndef VBOX_WITHOUT_SLIRP_CLIENT_ETHER
+#ifndef VBOX_WITH_NAT_SERVICE
     memcpy(client_ethaddr, ethaddr, ETH_ALEN);
 #endif
 }

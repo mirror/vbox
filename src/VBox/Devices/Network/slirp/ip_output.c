@@ -49,7 +49,7 @@
 static const uint8_t* rt_lookup_in_cache(PNATState pData, uint32_t dst)
 {
     int i;
-   /* @todo (r - vasily) to quick ramp up on routing rails
+   /* @todo (vasily) to quick ramp up on routing rails
     * we use information from DHCP server leasings, this
     * code couldn't detect any changes in network topology
     * and should be borrowed from other places

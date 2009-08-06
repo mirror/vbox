@@ -71,6 +71,21 @@ struct dns_entry
 };
 TAILQ_HEAD(dns_list_head, dns_entry);
 
+struct port_forward_rule
+{
+    uint16_t proto;
+    uint16_t host_port;
+    uint16_t guest_port;
+#ifndef VBOX_WITH_NAT_SERVICE
+    struct in_addr guest_addr;
+#endif
+    struct in_addr bind_ip;
+    uint8_t mac_address[6]; /*need ETH_ALEN here */
+    int activated;
+    LIST_ENTRY(port_forward_rule) list;
+};
+LIST_HEAD(port_forward_rule_list, port_forward_rule);
+
 /** Main state/configuration structure for slirp NAT. */
 typedef struct NATState
 {
@@ -129,6 +144,9 @@ typedef struct NATState
 #ifndef VBOX_WITHOUT_SLIRP_CLIENT_ETHER
     uint8_t client_ethaddr[6];
 #else
+# ifndef VBOX_WITH_NAT_SERVICE
+    uint8_t client_ethaddr[6];
+# endif
     const uint8_t *slirp_ethaddr;
 #endif
     struct ex_list *exec_list;
@@ -228,6 +246,8 @@ typedef struct NATState
     LIST_HEAD(RT_NOTHING, libalias) instancehead;
     struct libalias *proxy_alias;
     LIST_HEAD(handler_chain, proto_handler) handler_chain;
+    struct port_forward_rule_list port_forward_rule_head;
+    int port_forwarding_activated;
 
 #define PROFILE_COUNTER(name, dsc)     STAMPROFILE Stat ## name
 #define COUNTING_COUNTER(name, dsc)    STAMCOUNTER Stat ## name
