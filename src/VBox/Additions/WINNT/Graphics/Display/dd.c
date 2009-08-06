@@ -669,18 +669,20 @@ DWORD APIENTRY DdCreateSurface(PDD_CREATESURFACEDATA  lpCreateSurface)
                 Assert(pCmd->rc == VINF_SUCCESS);
                 if(pCmd->rc == VINF_SUCCESS)
                 {
+                	uint32_t surfSizeX = pBody->SurfInfo.sizeX;
+                	uint32_t surfSizeY = pBody->SurfInfo.sizeY;
                     pDesc->hHostHandle = pBody->u.out.hSurf;
                     lpSurfaceGlobal->dwReserved1 = (ULONG_PTR)pDesc;
                     lPitch = pBody->SurfInfo.pitch;
-                    lBpp = pBody->SurfInfo.bitsPerPixel;
-                    pDesc->cBitsPerPixel = lBpp;
+//                    lBpp = pBody->SurfInfo.bitsPerPixel;
+//                    pDesc->cBitsPerPixel = lBpp;
 #if 0
                     lpSurfaceGlobal->dwBlockSizeX   = lPitch;
                     lpSurfaceGlobal->dwBlockSizeY   = lpSurfaceGlobal->wHeight;
                     lpSurfaceGlobal->lPitch         = lPitch;
 #else
-                    lpSurfaceGlobal->dwBlockSizeX   = lPitch * lpSurfaceGlobal->wHeight;
-                    lpSurfaceGlobal->dwBlockSizeY   = 1;
+                    lpSurfaceGlobal->dwBlockSizeX   = surfSizeX;
+                    lpSurfaceGlobal->dwBlockSizeY   = surfSizeY;
                     lpSurfaceGlobal->lPitch         = lPitch;
 #endif
 #if 1
