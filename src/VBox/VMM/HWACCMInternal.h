@@ -416,13 +416,6 @@ typedef struct HWACCM
         /** Virtual address of the IO bitmap. */
         R0PTRTYPE(void *)           pIOBitmap;
 
-        /** R0 memory object for the MSR bitmap (8kb). */
-        RTR0MEMOBJ                  pMemObjMSRBitmap;
-        /** Physical address of the MSR bitmap (8kb). */
-        RTHCPHYS                    pMSRBitmapPhys;
-        /** Virtual address of the MSR bitmap. */
-        R0PTRTYPE(void *)           pMSRBitmap;
-
         /** SVM revision. */
         uint32_t                    u32Rev;
 
@@ -640,6 +633,12 @@ typedef struct HWACCMCPU
         /** Ring 0 handlers for VT-x. */
         PFNHWACCMSVMVMRUN           pfnVMRun;
 
+        /** R0 memory object for the MSR bitmap (8kb). */
+        RTR0MEMOBJ                  pMemObjMSRBitmap;
+        /** Physical address of the MSR bitmap (8kb). */
+        RTHCPHYS                    pMSRBitmapPhys;
+        /** Virtual address of the MSR bitmap. */
+        R0PTRTYPE(void *)           pMSRBitmap;
     } svm;
 
     /** Event injection state. */

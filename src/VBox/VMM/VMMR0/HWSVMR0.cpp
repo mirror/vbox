@@ -54,7 +54,7 @@
 *******************************************************************************/
 static int svmR0InterpretInvpg(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, uint32_t uASID);
 static int svmR0EmulateTprVMMCall(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx);
-static void svmR0SetMSRPermission(PVM pVM, unsigned ulMSR, bool fRead, bool fWrite);
+static void svmR0SetMSRPermission(PVMCPU pVCpu, unsigned ulMSR, bool fRead, bool fWrite);
 
 /*******************************************************************************
 *   Global Variables                                                           *
@@ -131,7 +131,6 @@ VMMR0DECL(int) SVMR0InitVM(PVM pVM)
     int rc;
 
     pVM->hwaccm.s.svm.pMemObjIOBitmap = NIL_RTR0MEMOBJ;
-    pVM->hwaccm.s.svm.pMemObjMSRBitmap = NIL_RTR0MEMOBJ;
 
     /* Allocate 12 KB for the IO bitmap (doesn't seem to be a way to convince SVM not to use it) */
     rc = RTR0MemObjAllocCont(&pVM->hwaccm.s.svm.pMemObjIOBitmap, 3 << PAGE_SHIFT, true /* executable R0 mapping */);
@@ -142,16 +141,6 @@ VMMR0DECL(int) SVMR0InitVM(PVM pVM)
     pVM->hwaccm.s.svm.pIOBitmapPhys = RTR0MemObjGetPagePhysAddr(pVM->hwaccm.s.svm.pMemObjIOBitmap, 0);
     /* Set all bits to intercept all IO accesses. */
     ASMMemFill32(pVM->hwaccm.s.svm.pIOBitmap, PAGE_SIZE*3, 0xffffffff);
-
-    /* Allocate 8 KB for the MSR bitmap (doesn't seem to be a way to convince SVM not to use it) */
-    rc = RTR0MemObjAllocCont(&pVM->hwaccm.s.svm.pMemObjMSRBitmap, 2 << PAGE_SHIFT, true /* executable R0 mapping */);
-    if (RT_FAILURE(rc))
-        return rc;
-
-    pVM->hwaccm.s.svm.pMSRBitmap     = RTR0MemObjAddress(pVM->hwaccm.s.svm.pMemObjMSRBitmap);
-    pVM->hwaccm.s.svm.pMSRBitmapPhys = RTR0MemObjGetPagePhysAddr(pVM->hwaccm.s.svm.pMemObjMSRBitmap, 0);
-    /* Set all bits to intercept all MSR accesses. */
-    ASMMemFill32(pVM->hwaccm.s.svm.pMSRBitmap, PAGE_SIZE*2, 0xffffffff);
 
     /* Erratum 170 which requires a forced TLB flush for each world switch:
      * See http://www.amd.com/us-en/assets/content_type/white_papers_and_tech_docs/33610.pdf
@@ -189,8 +178,9 @@ VMMR0DECL(int) SVMR0InitVM(PVM pVM)
     {
         PVMCPU pVCpu = &pVM->aCpus[i];
 
-        pVCpu->hwaccm.s.svm.pMemObjVMCBHost = NIL_RTR0MEMOBJ;
-        pVCpu->hwaccm.s.svm.pMemObjVMCB     = NIL_RTR0MEMOBJ;
+        pVCpu->hwaccm.s.svm.pMemObjVMCBHost  = NIL_RTR0MEMOBJ;
+        pVCpu->hwaccm.s.svm.pMemObjVMCB      = NIL_RTR0MEMOBJ;
+        pVCpu->hwaccm.s.svm.pMemObjMSRBitmap = NIL_RTR0MEMOBJ;
 
         /* Allocate one page for the host context */
         rc = RTR0MemObjAllocCont(&pVCpu->hwaccm.s.svm.pMemObjVMCBHost, 1 << PAGE_SHIFT, true /* executable R0 mapping */);
@@ -209,6 +199,16 @@ VMMR0DECL(int) SVMR0InitVM(PVM pVM)
         pVCpu->hwaccm.s.svm.pVMCB     = RTR0MemObjAddress(pVCpu->hwaccm.s.svm.pMemObjVMCB);
         pVCpu->hwaccm.s.svm.pVMCBPhys = RTR0MemObjGetPagePhysAddr(pVCpu->hwaccm.s.svm.pMemObjVMCB, 0);
         ASMMemZeroPage(pVCpu->hwaccm.s.svm.pVMCB);
+
+        /* Allocate 8 KB for the MSR bitmap (doesn't seem to be a way to convince SVM not to use it) */
+        rc = RTR0MemObjAllocCont(&pVCpu->hwaccm.s.svm.pMemObjMSRBitmap, 2 << PAGE_SHIFT, true /* executable R0 mapping */);
+        if (RT_FAILURE(rc))
+            return rc;
+
+        pVCpu->hwaccm.s.svm.pMSRBitmap     = RTR0MemObjAddress(pVCpu->hwaccm.s.svm.pMemObjMSRBitmap);
+        pVCpu->hwaccm.s.svm.pMSRBitmapPhys = RTR0MemObjGetPagePhysAddr(pVCpu->hwaccm.s.svm.pMemObjMSRBitmap, 0);
+        /* Set all bits to intercept all MSR accesses. */
+        ASMMemFill32(pVCpu->hwaccm.s.svm.pMSRBitmap, PAGE_SIZE*2, 0xffffffff);
     }
 
     return VINF_SUCCESS;
@@ -241,6 +241,13 @@ VMMR0DECL(int) SVMR0TermVM(PVM pVM)
             pVCpu->hwaccm.s.svm.pVMCBPhys   = 0;
             pVCpu->hwaccm.s.svm.pMemObjVMCB = NIL_RTR0MEMOBJ;
         }
+        if (pVCpu->hwaccm.s.svm.pMemObjMSRBitmap != NIL_RTR0MEMOBJ)
+        {
+            RTR0MemObjFree(pVCpu->hwaccm.s.svm.pMemObjMSRBitmap, false);
+            pVCpu->hwaccm.s.svm.pMSRBitmap       = 0;
+            pVCpu->hwaccm.s.svm.pMSRBitmapPhys   = 0;
+            pVCpu->hwaccm.s.svm.pMemObjMSRBitmap = NIL_RTR0MEMOBJ;
+        }
     }
     if (pVM->hwaccm.s.svm.pMemObjIOBitmap != NIL_RTR0MEMOBJ)
     {
@@ -248,13 +255,6 @@ VMMR0DECL(int) SVMR0TermVM(PVM pVM)
         pVM->hwaccm.s.svm.pIOBitmap       = 0;
         pVM->hwaccm.s.svm.pIOBitmapPhys   = 0;
         pVM->hwaccm.s.svm.pMemObjIOBitmap = NIL_RTR0MEMOBJ;
-    }
-    if (pVM->hwaccm.s.svm.pMemObjMSRBitmap != NIL_RTR0MEMOBJ)
-    {
-        RTR0MemObjFree(pVM->hwaccm.s.svm.pMemObjMSRBitmap, false);
-        pVM->hwaccm.s.svm.pMSRBitmap       = 0;
-        pVM->hwaccm.s.svm.pMSRBitmapPhys   = 0;
-        pVM->hwaccm.s.svm.pMemObjMSRBitmap = NIL_RTR0MEMOBJ;
     }
     return VINF_SUCCESS;
 }
@@ -268,7 +268,6 @@ VMMR0DECL(int) SVMR0TermVM(PVM pVM)
 VMMR0DECL(int) SVMR0SetupVM(PVM pVM)
 {
     int         rc = VINF_SUCCESS;
-    SVM_VMCB   *pVMCB;
 
     AssertReturn(pVM, VERR_INVALID_PARAMETER);
 
@@ -276,7 +275,9 @@ VMMR0DECL(int) SVMR0SetupVM(PVM pVM)
 
     for (unsigned i=0;i<pVM->cCPUs;i++)
     {
-        pVMCB = (SVM_VMCB *)pVM->aCpus[i].hwaccm.s.svm.pVMCB;
+        PVMCPU    pVCpu = &pVM->aCpus[i];
+        SVM_VMCB *pVMCB = (SVM_VMCB *)pVM->aCpus[i].hwaccm.s.svm.pVMCB;
+
         AssertMsgReturn(pVMCB, ("Invalid pVMCB\n"), VERR_EM_INTERNAL_ERROR);
 
         /* Program the control fields. Most of them never have to be changed again. */
@@ -351,7 +352,7 @@ VMMR0DECL(int) SVMR0SetupVM(PVM pVM)
 
         /* Set IO and MSR bitmap addresses. */
         pVMCB->ctrl.u64IOPMPhysAddr  = pVM->hwaccm.s.svm.pIOBitmapPhys;
-        pVMCB->ctrl.u64MSRPMPhysAddr = pVM->hwaccm.s.svm.pMSRBitmapPhys;
+        pVMCB->ctrl.u64MSRPMPhysAddr = pVCpu->hwaccm.s.svm.pMSRBitmapPhys;
 
         /* No LBR virtualization. */
         pVMCB->ctrl.u64LBRVirt      = 0;
@@ -361,21 +362,21 @@ VMMR0DECL(int) SVMR0SetupVM(PVM pVM)
 
         /** Setup the PAT msr (nested paging only) */
         pVMCB->guest.u64GPAT = 0x0007040600070406ULL;
+        /* The following MSRs are saved automatically by vmload/vmsave, so we allow the guest
+         * to modify them directly. 
+         */
+        svmR0SetMSRPermission(pVCpu, MSR_K8_LSTAR, true, true);
+        svmR0SetMSRPermission(pVCpu, MSR_K8_CSTAR, true, true);
+        svmR0SetMSRPermission(pVCpu, MSR_K6_STAR, true, true);
+        svmR0SetMSRPermission(pVCpu, MSR_K8_SF_MASK, true, true);
+        svmR0SetMSRPermission(pVCpu, MSR_K8_FS_BASE, true, true);
+        svmR0SetMSRPermission(pVCpu, MSR_K8_GS_BASE, true, true);
+        svmR0SetMSRPermission(pVCpu, MSR_K8_KERNEL_GS_BASE, true, true);
+        svmR0SetMSRPermission(pVCpu, MSR_IA32_SYSENTER_CS, true, true);
+        svmR0SetMSRPermission(pVCpu, MSR_IA32_SYSENTER_ESP, true, true);
+        svmR0SetMSRPermission(pVCpu, MSR_IA32_SYSENTER_EIP, true, true);
     }
 
-    /* The following MSRs are saved automatically by vmload/vmsave, so we allow the guest
-     * to modify them directly. 
-     */
-    svmR0SetMSRPermission(pVM, MSR_K8_LSTAR, true, true);
-    svmR0SetMSRPermission(pVM, MSR_K8_CSTAR, true, true);
-    svmR0SetMSRPermission(pVM, MSR_K6_STAR, true, true);
-    svmR0SetMSRPermission(pVM, MSR_K8_SF_MASK, true, true);
-    svmR0SetMSRPermission(pVM, MSR_K8_FS_BASE, true, true);
-    svmR0SetMSRPermission(pVM, MSR_K8_GS_BASE, true, true);
-    svmR0SetMSRPermission(pVM, MSR_K8_KERNEL_GS_BASE, true, true);
-    svmR0SetMSRPermission(pVM, MSR_IA32_SYSENTER_CS, true, true);
-    svmR0SetMSRPermission(pVM, MSR_IA32_SYSENTER_ESP, true, true);
-    svmR0SetMSRPermission(pVM, MSR_IA32_SYSENTER_EIP, true, true);
     return rc;
 }
 
@@ -383,15 +384,15 @@ VMMR0DECL(int) SVMR0SetupVM(PVM pVM)
 /**
  * Sets the permission bits for the specified MSR
  *
- * @param   pVM         The VM to operate on.
+ * @param   pVCpu       The VMCPU to operate on.
  * @param   ulMSR       MSR value
  * @param   fRead       Reading allowed/disallowed
  * @param   fWrite      Writing allowed/disallowed
  */
-static void svmR0SetMSRPermission(PVM pVM, unsigned ulMSR, bool fRead, bool fWrite)
+static void svmR0SetMSRPermission(PVMCPU pVCpu, unsigned ulMSR, bool fRead, bool fWrite)
 {
     unsigned ulBit;
-    uint8_t *pMSRBitmap = (uint8_t *)pVM->hwaccm.s.svm.pMSRBitmap;
+    uint8_t *pMSRBitmap = (uint8_t *)pVCpu->hwaccm.s.svm.pMSRBitmap;
 
     if (ulMSR <= 0x00001FFF)
     {
@@ -1084,13 +1085,13 @@ ResumeExecution:
             if (fPending)
             {
                 /* A TPR change could activate a pending interrupt, so catch lstar writes. */
-                svmR0SetMSRPermission(pVM, MSR_K8_LSTAR, true, false);
+                svmR0SetMSRPermission(pVCpu, MSR_K8_LSTAR, true, false);
             }
             else
                 /* No interrupts are pending, so we don't need to be explicitely notified.
                  * There are enough world switches for detecting pending interrupts.
                  */
-                svmR0SetMSRPermission(pVM, MSR_K8_LSTAR, true, true);
+                svmR0SetMSRPermission(pVCpu, MSR_K8_LSTAR, true, true);
         }
         else
         {
@@ -1235,7 +1236,7 @@ ResumeExecution:
     Assert(sizeof(pVCpu->hwaccm.s.svm.pVMCBPhys) == 8);
     Assert(pVMCB->ctrl.IntCtrl.n.u1VIrqMasking);
     Assert(pVMCB->ctrl.u64IOPMPhysAddr  == pVM->hwaccm.s.svm.pIOBitmapPhys);
-    Assert(pVMCB->ctrl.u64MSRPMPhysAddr == pVM->hwaccm.s.svm.pMSRBitmapPhys);
+    Assert(pVMCB->ctrl.u64MSRPMPhysAddr == pVCpu->hwaccm.s.svm.pMSRBitmapPhys);
     Assert(pVMCB->ctrl.u64LBRVirt == 0);
 
 #ifdef VBOX_STRICT
