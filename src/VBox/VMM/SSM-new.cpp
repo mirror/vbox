@@ -4615,13 +4615,9 @@ VMMR3DECL(int) SSMR3PutStruct(PSSMHANDLE pSSM, const void *pvStruct, PCSSMFIELD 
  */
 VMMR3DECL(int) SSMR3PutBool(PSSMHANDLE pSSM, bool fBool)
 {
-    if (pSSM->enmOp == SSMSTATE_SAVE_EXEC)
-    {
-        uint8_t u8 = fBool; /* enforce 1 byte size */
-        return ssmR3DataWrite(pSSM, &u8, sizeof(u8));
-    }
-    AssertMsgFailed(("Invalid state %d\n", pSSM->enmOp));
-    return VERR_SSM_INVALID_STATE;
+    AssertMsgReturn(pSSM->enmOp == SSMSTATE_SAVE_EXEC, ("Invalid state %d\n", pSSM->enmOp), VERR_SSM_INVALID_STATE);
+    uint8_t u8 = fBool; /* enforce 1 byte size */
+    return ssmR3DataWrite(pSSM, &u8, sizeof(u8));
 }
 
 
@@ -4634,10 +4630,8 @@ VMMR3DECL(int) SSMR3PutBool(PSSMHANDLE pSSM, bool fBool)
  */
 VMMR3DECL(int) SSMR3PutU8(PSSMHANDLE pSSM, uint8_t u8)
 {
-    if (pSSM->enmOp == SSMSTATE_SAVE_EXEC)
-        return ssmR3DataWrite(pSSM, &u8, sizeof(u8));
-    AssertMsgFailed(("Invalid state %d\n", pSSM->enmOp));
-    return VERR_SSM_INVALID_STATE;
+    AssertMsgReturn(pSSM->enmOp == SSMSTATE_SAVE_EXEC, ("Invalid state %d\n", pSSM->enmOp), VERR_SSM_INVALID_STATE);
+    return ssmR3DataWrite(pSSM, &u8, sizeof(u8));
 }
 
 
@@ -4650,10 +4644,8 @@ VMMR3DECL(int) SSMR3PutU8(PSSMHANDLE pSSM, uint8_t u8)
  */
 VMMR3DECL(int) SSMR3PutS8(PSSMHANDLE pSSM, int8_t i8)
 {
-    if (pSSM->enmOp == SSMSTATE_SAVE_EXEC)
-        return ssmR3DataWrite(pSSM, &i8, sizeof(i8));
-    AssertMsgFailed(("Invalid state %d\n", pSSM->enmOp));
-    return VERR_SSM_INVALID_STATE;
+    AssertMsgReturn(pSSM->enmOp == SSMSTATE_SAVE_EXEC, ("Invalid state %d\n", pSSM->enmOp), VERR_SSM_INVALID_STATE);
+    return ssmR3DataWrite(pSSM, &i8, sizeof(i8));
 }
 
 
@@ -4666,10 +4658,8 @@ VMMR3DECL(int) SSMR3PutS8(PSSMHANDLE pSSM, int8_t i8)
  */
 VMMR3DECL(int) SSMR3PutU16(PSSMHANDLE pSSM, uint16_t u16)
 {
-    if (pSSM->enmOp == SSMSTATE_SAVE_EXEC)
-        return ssmR3DataWrite(pSSM, &u16, sizeof(u16));
-    AssertMsgFailed(("Invalid state %d\n", pSSM->enmOp));
-    return VERR_SSM_INVALID_STATE;
+    AssertMsgReturn(pSSM->enmOp == SSMSTATE_SAVE_EXEC, ("Invalid state %d\n", pSSM->enmOp), VERR_SSM_INVALID_STATE);
+    return ssmR3DataWrite(pSSM, &u16, sizeof(u16));
 }
 
 
@@ -4682,10 +4672,8 @@ VMMR3DECL(int) SSMR3PutU16(PSSMHANDLE pSSM, uint16_t u16)
  */
 VMMR3DECL(int) SSMR3PutS16(PSSMHANDLE pSSM, int16_t i16)
 {
-    if (pSSM->enmOp == SSMSTATE_SAVE_EXEC)
-        return ssmR3DataWrite(pSSM, &i16, sizeof(i16));
-    AssertMsgFailed(("Invalid state %d\n", pSSM->enmOp));
-    return VERR_SSM_INVALID_STATE;
+    AssertMsgReturn(pSSM->enmOp == SSMSTATE_SAVE_EXEC, ("Invalid state %d\n", pSSM->enmOp), VERR_SSM_INVALID_STATE);
+    return ssmR3DataWrite(pSSM, &i16, sizeof(i16));
 }
 
 
@@ -4698,10 +4686,8 @@ VMMR3DECL(int) SSMR3PutS16(PSSMHANDLE pSSM, int16_t i16)
  */
 VMMR3DECL(int) SSMR3PutU32(PSSMHANDLE pSSM, uint32_t u32)
 {
-    if (pSSM->enmOp == SSMSTATE_SAVE_EXEC)
-        return ssmR3DataWrite(pSSM, &u32, sizeof(u32));
-    AssertMsgFailed(("Invalid state %d\n", pSSM->enmOp));
-    return VERR_SSM_INVALID_STATE;
+    AssertMsgReturn(pSSM->enmOp == SSMSTATE_SAVE_EXEC, ("Invalid state %d\n", pSSM->enmOp), VERR_SSM_INVALID_STATE);
+    return ssmR3DataWrite(pSSM, &u32, sizeof(u32));
 }
 
 
@@ -4714,10 +4700,8 @@ VMMR3DECL(int) SSMR3PutU32(PSSMHANDLE pSSM, uint32_t u32)
  */
 VMMR3DECL(int) SSMR3PutS32(PSSMHANDLE pSSM, int32_t i32)
 {
-    if (pSSM->enmOp == SSMSTATE_SAVE_EXEC)
-        return ssmR3DataWrite(pSSM, &i32, sizeof(i32));
-    AssertMsgFailed(("Invalid state %d\n", pSSM->enmOp));
-    return VERR_SSM_INVALID_STATE;
+    AssertMsgReturn(pSSM->enmOp == SSMSTATE_SAVE_EXEC, ("Invalid state %d\n", pSSM->enmOp), VERR_SSM_INVALID_STATE);
+    return ssmR3DataWrite(pSSM, &i32, sizeof(i32));
 }
 
 
@@ -4730,10 +4714,8 @@ VMMR3DECL(int) SSMR3PutS32(PSSMHANDLE pSSM, int32_t i32)
  */
 VMMR3DECL(int) SSMR3PutU64(PSSMHANDLE pSSM, uint64_t u64)
 {
-    if (pSSM->enmOp == SSMSTATE_SAVE_EXEC)
-        return ssmR3DataWrite(pSSM, &u64, sizeof(u64));
-    AssertMsgFailed(("Invalid state %d\n", pSSM->enmOp));
-    return VERR_SSM_INVALID_STATE;
+    AssertMsgReturn(pSSM->enmOp == SSMSTATE_SAVE_EXEC, ("Invalid state %d\n", pSSM->enmOp), VERR_SSM_INVALID_STATE);
+    return ssmR3DataWrite(pSSM, &u64, sizeof(u64));
 }
 
 
@@ -4746,10 +4728,8 @@ VMMR3DECL(int) SSMR3PutU64(PSSMHANDLE pSSM, uint64_t u64)
  */
 VMMR3DECL(int) SSMR3PutS64(PSSMHANDLE pSSM, int64_t i64)
 {
-    if (pSSM->enmOp == SSMSTATE_SAVE_EXEC)
-        return ssmR3DataWrite(pSSM, &i64, sizeof(i64));
-    AssertMsgFailed(("Invalid state %d\n", pSSM->enmOp));
-    return VERR_SSM_INVALID_STATE;
+    AssertMsgReturn(pSSM->enmOp == SSMSTATE_SAVE_EXEC, ("Invalid state %d\n", pSSM->enmOp), VERR_SSM_INVALID_STATE);
+    return ssmR3DataWrite(pSSM, &i64, sizeof(i64));
 }
 
 
@@ -4762,10 +4742,8 @@ VMMR3DECL(int) SSMR3PutS64(PSSMHANDLE pSSM, int64_t i64)
  */
 VMMR3DECL(int) SSMR3PutU128(PSSMHANDLE pSSM, uint128_t u128)
 {
-    if (pSSM->enmOp == SSMSTATE_SAVE_EXEC)
-        return ssmR3DataWrite(pSSM, &u128, sizeof(u128));
-    AssertMsgFailed(("Invalid state %d\n", pSSM->enmOp));
-    return VERR_SSM_INVALID_STATE;
+    AssertMsgReturn(pSSM->enmOp == SSMSTATE_SAVE_EXEC, ("Invalid state %d\n", pSSM->enmOp), VERR_SSM_INVALID_STATE);
+    return ssmR3DataWrite(pSSM, &u128, sizeof(u128));
 }
 
 
@@ -4778,10 +4756,8 @@ VMMR3DECL(int) SSMR3PutU128(PSSMHANDLE pSSM, uint128_t u128)
  */
 VMMR3DECL(int) SSMR3PutS128(PSSMHANDLE pSSM, int128_t i128)
 {
-    if (pSSM->enmOp == SSMSTATE_SAVE_EXEC)
-        return ssmR3DataWrite(pSSM, &i128, sizeof(i128));
-    AssertMsgFailed(("Invalid state %d\n", pSSM->enmOp));
-    return VERR_SSM_INVALID_STATE;
+    AssertMsgReturn(pSSM->enmOp == SSMSTATE_SAVE_EXEC, ("Invalid state %d\n", pSSM->enmOp), VERR_SSM_INVALID_STATE);
+    return ssmR3DataWrite(pSSM, &i128, sizeof(i128));
 }
 
 
@@ -4794,10 +4770,8 @@ VMMR3DECL(int) SSMR3PutS128(PSSMHANDLE pSSM, int128_t i128)
  */
 VMMR3DECL(int) SSMR3PutUInt(PSSMHANDLE pSSM, RTUINT u)
 {
-    if (pSSM->enmOp == SSMSTATE_SAVE_EXEC)
-        return ssmR3DataWrite(pSSM, &u, sizeof(u));
-    AssertMsgFailed(("Invalid state %d\n", pSSM->enmOp));
-    return VERR_SSM_INVALID_STATE;
+    AssertMsgReturn(pSSM->enmOp == SSMSTATE_SAVE_EXEC, ("Invalid state %d\n", pSSM->enmOp), VERR_SSM_INVALID_STATE);
+    return ssmR3DataWrite(pSSM, &u, sizeof(u));
 }
 
 
@@ -4810,10 +4784,8 @@ VMMR3DECL(int) SSMR3PutUInt(PSSMHANDLE pSSM, RTUINT u)
  */
 VMMR3DECL(int) SSMR3PutSInt(PSSMHANDLE pSSM, RTINT i)
 {
-    if (pSSM->enmOp == SSMSTATE_SAVE_EXEC)
-        return ssmR3DataWrite(pSSM, &i, sizeof(i));
-    AssertMsgFailed(("Invalid state %d\n", pSSM->enmOp));
-    return VERR_SSM_INVALID_STATE;
+    AssertMsgReturn(pSSM->enmOp == SSMSTATE_SAVE_EXEC, ("Invalid state %d\n", pSSM->enmOp), VERR_SSM_INVALID_STATE);
+    return ssmR3DataWrite(pSSM, &i, sizeof(i));
 }
 
 
@@ -4828,10 +4800,8 @@ VMMR3DECL(int) SSMR3PutSInt(PSSMHANDLE pSSM, RTINT i)
  */
 VMMR3DECL(int) SSMR3PutGCUInt(PSSMHANDLE pSSM, RTGCUINT u)
 {
-    if (pSSM->enmOp == SSMSTATE_SAVE_EXEC)
-        return ssmR3DataWrite(pSSM, &u, sizeof(u));
-    AssertMsgFailed(("Invalid state %d\n", pSSM->enmOp));
-    return VERR_SSM_INVALID_STATE;
+    AssertMsgReturn(pSSM->enmOp == SSMSTATE_SAVE_EXEC, ("Invalid state %d\n", pSSM->enmOp), VERR_SSM_INVALID_STATE);
+    return ssmR3DataWrite(pSSM, &u, sizeof(u));
 }
 
 
@@ -4844,10 +4814,8 @@ VMMR3DECL(int) SSMR3PutGCUInt(PSSMHANDLE pSSM, RTGCUINT u)
  */
 VMMR3DECL(int) SSMR3PutGCUIntReg(PSSMHANDLE pSSM, RTGCUINTREG u)
 {
-    if (pSSM->enmOp == SSMSTATE_SAVE_EXEC)
-        return ssmR3DataWrite(pSSM, &u, sizeof(u));
-    AssertMsgFailed(("Invalid state %d\n", pSSM->enmOp));
-    return VERR_SSM_INVALID_STATE;
+    AssertMsgReturn(pSSM->enmOp == SSMSTATE_SAVE_EXEC, ("Invalid state %d\n", pSSM->enmOp), VERR_SSM_INVALID_STATE);
+    return ssmR3DataWrite(pSSM, &u, sizeof(u));
 }
 
 
@@ -4860,10 +4828,8 @@ VMMR3DECL(int) SSMR3PutGCUIntReg(PSSMHANDLE pSSM, RTGCUINTREG u)
  */
 VMMR3DECL(int) SSMR3PutGCPhys32(PSSMHANDLE pSSM, RTGCPHYS32 GCPhys)
 {
-    if (pSSM->enmOp == SSMSTATE_SAVE_EXEC)
-        return ssmR3DataWrite(pSSM, &GCPhys, sizeof(GCPhys));
-    AssertMsgFailed(("Invalid state %d\n", pSSM->enmOp));
-    return VERR_SSM_INVALID_STATE;
+    AssertMsgReturn(pSSM->enmOp == SSMSTATE_SAVE_EXEC, ("Invalid state %d\n", pSSM->enmOp), VERR_SSM_INVALID_STATE);
+    return ssmR3DataWrite(pSSM, &GCPhys, sizeof(GCPhys));
 }
 
 
@@ -4876,10 +4842,8 @@ VMMR3DECL(int) SSMR3PutGCPhys32(PSSMHANDLE pSSM, RTGCPHYS32 GCPhys)
  */
 VMMR3DECL(int) SSMR3PutGCPhys64(PSSMHANDLE pSSM, RTGCPHYS64 GCPhys)
 {
-    if (pSSM->enmOp == SSMSTATE_SAVE_EXEC)
-        return ssmR3DataWrite(pSSM, &GCPhys, sizeof(GCPhys));
-    AssertMsgFailed(("Invalid state %d\n", pSSM->enmOp));
-    return VERR_SSM_INVALID_STATE;
+    AssertMsgReturn(pSSM->enmOp == SSMSTATE_SAVE_EXEC, ("Invalid state %d\n", pSSM->enmOp), VERR_SSM_INVALID_STATE);
+    return ssmR3DataWrite(pSSM, &GCPhys, sizeof(GCPhys));
 }
 
 
@@ -4892,10 +4856,8 @@ VMMR3DECL(int) SSMR3PutGCPhys64(PSSMHANDLE pSSM, RTGCPHYS64 GCPhys)
  */
 VMMR3DECL(int) SSMR3PutGCPhys(PSSMHANDLE pSSM, RTGCPHYS GCPhys)
 {
-    if (pSSM->enmOp == SSMSTATE_SAVE_EXEC)
-        return ssmR3DataWrite(pSSM, &GCPhys, sizeof(GCPhys));
-    AssertMsgFailed(("Invalid state %d\n", pSSM->enmOp));
-    return VERR_SSM_INVALID_STATE;
+    AssertMsgReturn(pSSM->enmOp == SSMSTATE_SAVE_EXEC, ("Invalid state %d\n", pSSM->enmOp), VERR_SSM_INVALID_STATE);
+    return ssmR3DataWrite(pSSM, &GCPhys, sizeof(GCPhys));
 }
 
 
@@ -4908,10 +4870,8 @@ VMMR3DECL(int) SSMR3PutGCPhys(PSSMHANDLE pSSM, RTGCPHYS GCPhys)
  */
 VMMR3DECL(int) SSMR3PutGCPtr(PSSMHANDLE pSSM, RTGCPTR GCPtr)
 {
-    if (pSSM->enmOp == SSMSTATE_SAVE_EXEC)
-        return ssmR3DataWrite(pSSM, &GCPtr, sizeof(GCPtr));
-    AssertMsgFailed(("Invalid state %d\n", pSSM->enmOp));
-    return VERR_SSM_INVALID_STATE;
+    AssertMsgReturn(pSSM->enmOp == SSMSTATE_SAVE_EXEC, ("Invalid state %d\n", pSSM->enmOp), VERR_SSM_INVALID_STATE);
+    return ssmR3DataWrite(pSSM, &GCPtr, sizeof(GCPtr));
 }
 
 
@@ -4924,10 +4884,8 @@ VMMR3DECL(int) SSMR3PutGCPtr(PSSMHANDLE pSSM, RTGCPTR GCPtr)
  */
 VMMR3DECL(int) SSMR3PutRCPtr(PSSMHANDLE pSSM, RTRCPTR RCPtr)
 {
-    if (pSSM->enmOp == SSMSTATE_SAVE_EXEC)
-        return ssmR3DataWrite(pSSM, &RCPtr, sizeof(RCPtr));
-    AssertMsgFailed(("Invalid state %d\n", pSSM->enmOp));
-    return VERR_SSM_INVALID_STATE;
+    AssertMsgReturn(pSSM->enmOp == SSMSTATE_SAVE_EXEC, ("Invalid state %d\n", pSSM->enmOp), VERR_SSM_INVALID_STATE);
+    return ssmR3DataWrite(pSSM, &RCPtr, sizeof(RCPtr));
 }
 
 
@@ -4940,10 +4898,8 @@ VMMR3DECL(int) SSMR3PutRCPtr(PSSMHANDLE pSSM, RTRCPTR RCPtr)
  */
 VMMR3DECL(int) SSMR3PutGCUIntPtr(PSSMHANDLE pSSM, RTGCUINTPTR GCPtr)
 {
-    if (pSSM->enmOp == SSMSTATE_SAVE_EXEC)
-        return ssmR3DataWrite(pSSM, &GCPtr, sizeof(GCPtr));
-    AssertMsgFailed(("Invalid state %d\n", pSSM->enmOp));
-    return VERR_SSM_INVALID_STATE;
+    AssertMsgReturn(pSSM->enmOp == SSMSTATE_SAVE_EXEC, ("Invalid state %d\n", pSSM->enmOp), VERR_SSM_INVALID_STATE);
+    return ssmR3DataWrite(pSSM, &GCPtr, sizeof(GCPtr));
 }
 
 
@@ -4956,10 +4912,8 @@ VMMR3DECL(int) SSMR3PutGCUIntPtr(PSSMHANDLE pSSM, RTGCUINTPTR GCPtr)
  */
 VMMR3DECL(int) SSMR3PutIOPort(PSSMHANDLE pSSM, RTIOPORT IOPort)
 {
-    if (pSSM->enmOp == SSMSTATE_SAVE_EXEC)
-        return ssmR3DataWrite(pSSM, &IOPort, sizeof(IOPort));
-    AssertMsgFailed(("Invalid state %d\n", pSSM->enmOp));
-    return VERR_SSM_INVALID_STATE;
+    AssertMsgReturn(pSSM->enmOp == SSMSTATE_SAVE_EXEC, ("Invalid state %d\n", pSSM->enmOp), VERR_SSM_INVALID_STATE);
+    return ssmR3DataWrite(pSSM, &IOPort, sizeof(IOPort));
 }
 
 
@@ -4972,10 +4926,8 @@ VMMR3DECL(int) SSMR3PutIOPort(PSSMHANDLE pSSM, RTIOPORT IOPort)
  */
 VMMR3DECL(int) SSMR3PutSel(PSSMHANDLE pSSM, RTSEL Sel)
 {
-    if (pSSM->enmOp == SSMSTATE_SAVE_EXEC)
-        return ssmR3DataWrite(pSSM, &Sel, sizeof(Sel));
-    AssertMsgFailed(("Invalid state %d\n", pSSM->enmOp));
-    return VERR_SSM_INVALID_STATE;
+    AssertMsgReturn(pSSM->enmOp == SSMSTATE_SAVE_EXEC, ("Invalid state %d\n", pSSM->enmOp), VERR_SSM_INVALID_STATE);
+    return ssmR3DataWrite(pSSM, &Sel, sizeof(Sel));
 }
 
 
@@ -4989,10 +4941,8 @@ VMMR3DECL(int) SSMR3PutSel(PSSMHANDLE pSSM, RTSEL Sel)
  */
 VMMR3DECL(int) SSMR3PutMem(PSSMHANDLE pSSM, const void *pv, size_t cb)
 {
-    if (pSSM->enmOp == SSMSTATE_SAVE_EXEC)
-        return ssmR3DataWrite(pSSM, pv, cb);
-    AssertMsgFailed(("Invalid state %d\n", pSSM->enmOp));
-    return VERR_SSM_INVALID_STATE;
+    AssertMsgReturn(pSSM->enmOp == SSMSTATE_SAVE_EXEC, ("Invalid state %d\n", pSSM->enmOp), VERR_SSM_INVALID_STATE);
+    return ssmR3DataWrite(pSSM, pv, cb);
 }
 
 
@@ -5005,22 +4955,19 @@ VMMR3DECL(int) SSMR3PutMem(PSSMHANDLE pSSM, const void *pv, size_t cb)
  */
 VMMR3DECL(int) SSMR3PutStrZ(PSSMHANDLE pSSM, const char *psz)
 {
-    if (pSSM->enmOp == SSMSTATE_SAVE_EXEC)
+    AssertMsgReturn(pSSM->enmOp == SSMSTATE_SAVE_EXEC, ("Invalid state %d\n", pSSM->enmOp), VERR_SSM_INVALID_STATE);
+
+    size_t cch = strlen(psz);
+    if (cch > _1M)
     {
-        size_t cch = strlen(psz);
-        if (cch > _1M)
-        {
-            AssertMsgFailed(("a %d byte long string, what's this!?!\n"));
-            return VERR_TOO_MUCH_DATA;
-        }
-        uint32_t u32 = (uint32_t)cch;
-        int rc = ssmR3DataWrite(pSSM, &u32, sizeof(u32));
-        if (rc)
-            return rc;
-        return ssmR3DataWrite(pSSM, psz, cch);
+        AssertMsgFailed(("a %d byte long string, what's this!?!\n"));
+        return VERR_TOO_MUCH_DATA;
     }
-    AssertMsgFailed(("Invalid state %d\n", pSSM->enmOp));
-    return VERR_SSM_INVALID_STATE;
+    uint32_t u32 = (uint32_t)cch;
+    int rc = ssmR3DataWrite(pSSM, &u32, sizeof(u32));
+    if (rc)
+        return rc;
+    return ssmR3DataWrite(pSSM, psz, cch);
 }
 
 
@@ -5780,19 +5727,16 @@ VMMR3DECL(int) SSMR3GetStruct(PSSMHANDLE pSSM, void *pvStruct, PCSSMFIELD paFiel
  */
 VMMR3DECL(int) SSMR3GetBool(PSSMHANDLE pSSM, bool *pfBool)
 {
-    if (pSSM->enmOp == SSMSTATE_LOAD_EXEC || pSSM->enmOp == SSMSTATE_OPEN_READ)
+    AssertMsgReturn(   pSSM->enmOp == SSMSTATE_LOAD_EXEC
+                    || pSSM->enmOp == SSMSTATE_OPEN_READ, ("Invalid state %d\n", pSSM->enmOp), VERR_SSM_INVALID_STATE);
+    uint8_t u8; /* see SSMR3PutBool */
+    int rc = ssmR3DataRead(pSSM, &u8, sizeof(u8));
+    if (RT_SUCCESS(rc))
     {
-        uint8_t u8; /* see SSMR3PutBool */
-        int rc = ssmR3DataRead(pSSM, &u8, sizeof(u8));
-        if (RT_SUCCESS(rc))
-        {
-            Assert(u8 <= 1);
-            *pfBool = !!u8;
-        }
-        return rc;
+        Assert(u8 <= 1);
+        *pfBool = !!u8;
     }
-    AssertMsgFailed(("Invalid state %d\n", pSSM->enmOp));
-    return VERR_SSM_INVALID_STATE;
+    return rc;
 }
 
 
@@ -5805,10 +5749,9 @@ VMMR3DECL(int) SSMR3GetBool(PSSMHANDLE pSSM, bool *pfBool)
  */
 VMMR3DECL(int) SSMR3GetU8(PSSMHANDLE pSSM, uint8_t *pu8)
 {
-    if (pSSM->enmOp == SSMSTATE_LOAD_EXEC || pSSM->enmOp == SSMSTATE_OPEN_READ)
-        return ssmR3DataRead(pSSM, pu8, sizeof(*pu8));
-    AssertMsgFailed(("Invalid state %d\n", pSSM->enmOp));
-    return VERR_SSM_INVALID_STATE;
+    AssertMsgReturn(   pSSM->enmOp == SSMSTATE_LOAD_EXEC
+                    || pSSM->enmOp == SSMSTATE_OPEN_READ, ("Invalid state %d\n", pSSM->enmOp), VERR_SSM_INVALID_STATE);
+    return ssmR3DataRead(pSSM, pu8, sizeof(*pu8));
 }
 
 
@@ -5821,10 +5764,9 @@ VMMR3DECL(int) SSMR3GetU8(PSSMHANDLE pSSM, uint8_t *pu8)
  */
 VMMR3DECL(int) SSMR3GetS8(PSSMHANDLE pSSM, int8_t *pi8)
 {
-    if (pSSM->enmOp == SSMSTATE_LOAD_EXEC || pSSM->enmOp == SSMSTATE_OPEN_READ)
-        return ssmR3DataRead(pSSM, pi8, sizeof(*pi8));
-    AssertMsgFailed(("Invalid state %d\n", pSSM->enmOp));
-    return VERR_SSM_INVALID_STATE;
+    AssertMsgReturn(   pSSM->enmOp == SSMSTATE_LOAD_EXEC
+                    || pSSM->enmOp == SSMSTATE_OPEN_READ, ("Invalid state %d\n", pSSM->enmOp), VERR_SSM_INVALID_STATE);
+    return ssmR3DataRead(pSSM, pi8, sizeof(*pi8));
 }
 
 
@@ -5837,10 +5779,9 @@ VMMR3DECL(int) SSMR3GetS8(PSSMHANDLE pSSM, int8_t *pi8)
  */
 VMMR3DECL(int) SSMR3GetU16(PSSMHANDLE pSSM, uint16_t *pu16)
 {
-    if (pSSM->enmOp == SSMSTATE_LOAD_EXEC || pSSM->enmOp == SSMSTATE_OPEN_READ)
-        return ssmR3DataRead(pSSM, pu16, sizeof(*pu16));
-    AssertMsgFailed(("Invalid state %d\n", pSSM->enmOp));
-    return VERR_SSM_INVALID_STATE;
+    AssertMsgReturn(   pSSM->enmOp == SSMSTATE_LOAD_EXEC
+                    || pSSM->enmOp == SSMSTATE_OPEN_READ, ("Invalid state %d\n", pSSM->enmOp), VERR_SSM_INVALID_STATE);
+    return ssmR3DataRead(pSSM, pu16, sizeof(*pu16));
 }
 
 
@@ -5853,10 +5794,9 @@ VMMR3DECL(int) SSMR3GetU16(PSSMHANDLE pSSM, uint16_t *pu16)
  */
 VMMR3DECL(int) SSMR3GetS16(PSSMHANDLE pSSM, int16_t *pi16)
 {
-    if (pSSM->enmOp == SSMSTATE_LOAD_EXEC || pSSM->enmOp == SSMSTATE_OPEN_READ)
-        return ssmR3DataRead(pSSM, pi16, sizeof(*pi16));
-    AssertMsgFailed(("Invalid state %d\n", pSSM->enmOp));
-    return VERR_SSM_INVALID_STATE;
+    AssertMsgReturn(   pSSM->enmOp == SSMSTATE_LOAD_EXEC
+                    || pSSM->enmOp == SSMSTATE_OPEN_READ, ("Invalid state %d\n", pSSM->enmOp), VERR_SSM_INVALID_STATE);
+    return ssmR3DataRead(pSSM, pi16, sizeof(*pi16));
 }
 
 
@@ -5869,10 +5809,9 @@ VMMR3DECL(int) SSMR3GetS16(PSSMHANDLE pSSM, int16_t *pi16)
  */
 VMMR3DECL(int) SSMR3GetU32(PSSMHANDLE pSSM, uint32_t *pu32)
 {
-    if (pSSM->enmOp == SSMSTATE_LOAD_EXEC || pSSM->enmOp == SSMSTATE_OPEN_READ)
-        return ssmR3DataRead(pSSM, pu32, sizeof(*pu32));
-    AssertMsgFailed(("Invalid state %d\n", pSSM->enmOp));
-    return VERR_SSM_INVALID_STATE;
+    AssertMsgReturn(   pSSM->enmOp == SSMSTATE_LOAD_EXEC
+                    || pSSM->enmOp == SSMSTATE_OPEN_READ, ("Invalid state %d\n", pSSM->enmOp), VERR_SSM_INVALID_STATE);
+    return ssmR3DataRead(pSSM, pu32, sizeof(*pu32));
 }
 
 
@@ -5885,10 +5824,9 @@ VMMR3DECL(int) SSMR3GetU32(PSSMHANDLE pSSM, uint32_t *pu32)
  */
 VMMR3DECL(int) SSMR3GetS32(PSSMHANDLE pSSM, int32_t *pi32)
 {
-    if (pSSM->enmOp == SSMSTATE_LOAD_EXEC || pSSM->enmOp == SSMSTATE_OPEN_READ)
-        return ssmR3DataRead(pSSM, pi32, sizeof(*pi32));
-    AssertMsgFailed(("Invalid state %d\n", pSSM->enmOp));
-    return VERR_SSM_INVALID_STATE;
+    AssertMsgReturn(   pSSM->enmOp == SSMSTATE_LOAD_EXEC
+                    || pSSM->enmOp == SSMSTATE_OPEN_READ, ("Invalid state %d\n", pSSM->enmOp), VERR_SSM_INVALID_STATE);
+    return ssmR3DataRead(pSSM, pi32, sizeof(*pi32));
 }
 
 
@@ -5901,10 +5839,9 @@ VMMR3DECL(int) SSMR3GetS32(PSSMHANDLE pSSM, int32_t *pi32)
  */
 VMMR3DECL(int) SSMR3GetU64(PSSMHANDLE pSSM, uint64_t *pu64)
 {
-    if (pSSM->enmOp == SSMSTATE_LOAD_EXEC || pSSM->enmOp == SSMSTATE_OPEN_READ)
-        return ssmR3DataRead(pSSM, pu64, sizeof(*pu64));
-    AssertMsgFailed(("Invalid state %d\n", pSSM->enmOp));
-    return VERR_SSM_INVALID_STATE;
+    AssertMsgReturn(   pSSM->enmOp == SSMSTATE_LOAD_EXEC
+                    || pSSM->enmOp == SSMSTATE_OPEN_READ, ("Invalid state %d\n", pSSM->enmOp), VERR_SSM_INVALID_STATE);
+    return ssmR3DataRead(pSSM, pu64, sizeof(*pu64));
 }
 
 
@@ -5917,10 +5854,9 @@ VMMR3DECL(int) SSMR3GetU64(PSSMHANDLE pSSM, uint64_t *pu64)
  */
 VMMR3DECL(int) SSMR3GetS64(PSSMHANDLE pSSM, int64_t *pi64)
 {
-    if (pSSM->enmOp == SSMSTATE_LOAD_EXEC || pSSM->enmOp == SSMSTATE_OPEN_READ)
-        return ssmR3DataRead(pSSM, pi64, sizeof(*pi64));
-    AssertMsgFailed(("Invalid state %d\n", pSSM->enmOp));
-    return VERR_SSM_INVALID_STATE;
+    AssertMsgReturn(   pSSM->enmOp == SSMSTATE_LOAD_EXEC
+                    || pSSM->enmOp == SSMSTATE_OPEN_READ, ("Invalid state %d\n", pSSM->enmOp), VERR_SSM_INVALID_STATE);
+    return ssmR3DataRead(pSSM, pi64, sizeof(*pi64));
 }
 
 
@@ -5933,10 +5869,9 @@ VMMR3DECL(int) SSMR3GetS64(PSSMHANDLE pSSM, int64_t *pi64)
  */
 VMMR3DECL(int) SSMR3GetU128(PSSMHANDLE pSSM, uint128_t *pu128)
 {
-    if (pSSM->enmOp == SSMSTATE_LOAD_EXEC || pSSM->enmOp == SSMSTATE_OPEN_READ)
-        return ssmR3DataRead(pSSM, pu128, sizeof(*pu128));
-    AssertMsgFailed(("Invalid state %d\n", pSSM->enmOp));
-    return VERR_SSM_INVALID_STATE;
+    AssertMsgReturn(   pSSM->enmOp == SSMSTATE_LOAD_EXEC
+                    || pSSM->enmOp == SSMSTATE_OPEN_READ, ("Invalid state %d\n", pSSM->enmOp), VERR_SSM_INVALID_STATE);
+    return ssmR3DataRead(pSSM, pu128, sizeof(*pu128));
 }
 
 
@@ -5949,10 +5884,9 @@ VMMR3DECL(int) SSMR3GetU128(PSSMHANDLE pSSM, uint128_t *pu128)
  */
 VMMR3DECL(int) SSMR3GetS128(PSSMHANDLE pSSM, int128_t *pi128)
 {
-    if (pSSM->enmOp == SSMSTATE_LOAD_EXEC || pSSM->enmOp == SSMSTATE_OPEN_READ)
-        return ssmR3DataRead(pSSM, pi128, sizeof(*pi128));
-    AssertMsgFailed(("Invalid state %d\n", pSSM->enmOp));
-    return VERR_SSM_INVALID_STATE;
+    AssertMsgReturn(   pSSM->enmOp == SSMSTATE_LOAD_EXEC
+                    || pSSM->enmOp == SSMSTATE_OPEN_READ, ("Invalid state %d\n", pSSM->enmOp), VERR_SSM_INVALID_STATE);
+    return ssmR3DataRead(pSSM, pi128, sizeof(*pi128));
 }
 
 
@@ -5965,10 +5899,9 @@ VMMR3DECL(int) SSMR3GetS128(PSSMHANDLE pSSM, int128_t *pi128)
  */
 VMMR3DECL(int) SSMR3GetUInt(PSSMHANDLE pSSM, PRTUINT pu)
 {
-    if (pSSM->enmOp == SSMSTATE_LOAD_EXEC || pSSM->enmOp == SSMSTATE_OPEN_READ)
-        return ssmR3DataRead(pSSM, pu, sizeof(*pu));
-    AssertMsgFailed(("Invalid state %d\n", pSSM->enmOp));
-    return VERR_SSM_INVALID_STATE;
+    AssertMsgReturn(   pSSM->enmOp == SSMSTATE_LOAD_EXEC
+                    || pSSM->enmOp == SSMSTATE_OPEN_READ, ("Invalid state %d\n", pSSM->enmOp), VERR_SSM_INVALID_STATE);
+    return ssmR3DataRead(pSSM, pu, sizeof(*pu));
 }
 
 
@@ -5981,10 +5914,9 @@ VMMR3DECL(int) SSMR3GetUInt(PSSMHANDLE pSSM, PRTUINT pu)
  */
 VMMR3DECL(int) SSMR3GetSInt(PSSMHANDLE pSSM, PRTINT pi)
 {
-    if (pSSM->enmOp == SSMSTATE_LOAD_EXEC || pSSM->enmOp == SSMSTATE_OPEN_READ)
-        return ssmR3DataRead(pSSM, pi, sizeof(*pi));
-    AssertMsgFailed(("Invalid state %d\n", pSSM->enmOp));
-    return VERR_SSM_INVALID_STATE;
+    AssertMsgReturn(   pSSM->enmOp == SSMSTATE_LOAD_EXEC
+                    || pSSM->enmOp == SSMSTATE_OPEN_READ, ("Invalid state %d\n", pSSM->enmOp), VERR_SSM_INVALID_STATE);
+    return ssmR3DataRead(pSSM, pi, sizeof(*pi));
 }
 
 
@@ -6027,10 +5959,9 @@ VMMR3DECL(int) SSMR3GetGCUIntReg(PSSMHANDLE pSSM, PRTGCUINTREG pu)
  */
 VMMR3DECL(int) SSMR3GetGCPhys32(PSSMHANDLE pSSM, PRTGCPHYS32 pGCPhys)
 {
-    if (pSSM->enmOp == SSMSTATE_LOAD_EXEC || pSSM->enmOp == SSMSTATE_OPEN_READ)
-        return ssmR3DataRead(pSSM, pGCPhys, sizeof(*pGCPhys));
-    AssertMsgFailed(("Invalid state %d\n", pSSM->enmOp));
-    return VERR_SSM_INVALID_STATE;
+    AssertMsgReturn(   pSSM->enmOp == SSMSTATE_LOAD_EXEC
+                    || pSSM->enmOp == SSMSTATE_OPEN_READ, ("Invalid state %d\n", pSSM->enmOp), VERR_SSM_INVALID_STATE);
+    return ssmR3DataRead(pSSM, pGCPhys, sizeof(*pGCPhys));
 }
 
 
@@ -6043,10 +5974,9 @@ VMMR3DECL(int) SSMR3GetGCPhys32(PSSMHANDLE pSSM, PRTGCPHYS32 pGCPhys)
  */
 VMMR3DECL(int) SSMR3GetGCPhys64(PSSMHANDLE pSSM, PRTGCPHYS64 pGCPhys)
 {
-    if (pSSM->enmOp == SSMSTATE_LOAD_EXEC || pSSM->enmOp == SSMSTATE_OPEN_READ)
-        return ssmR3DataRead(pSSM, pGCPhys, sizeof(*pGCPhys));
-    AssertMsgFailed(("Invalid state %d\n", pSSM->enmOp));
-    return VERR_SSM_INVALID_STATE;
+    AssertMsgReturn(   pSSM->enmOp == SSMSTATE_LOAD_EXEC
+                    || pSSM->enmOp == SSMSTATE_OPEN_READ, ("Invalid state %d\n", pSSM->enmOp), VERR_SSM_INVALID_STATE);
+    return ssmR3DataRead(pSSM, pGCPhys, sizeof(*pGCPhys));
 }
 
 
@@ -6059,35 +5989,36 @@ VMMR3DECL(int) SSMR3GetGCPhys64(PSSMHANDLE pSSM, PRTGCPHYS64 pGCPhys)
  */
 VMMR3DECL(int) SSMR3GetGCPhys(PSSMHANDLE pSSM, PRTGCPHYS pGCPhys)
 {
-    if (pSSM->enmOp == SSMSTATE_LOAD_EXEC || pSSM->enmOp == SSMSTATE_OPEN_READ)
+    AssertMsgReturn(   pSSM->enmOp == SSMSTATE_LOAD_EXEC
+                    || pSSM->enmOp == SSMSTATE_OPEN_READ, ("Invalid state %d\n", pSSM->enmOp), VERR_SSM_INVALID_STATE);
+
+    /*
+     * Default size?
+     */
+    if (RT_LIKELY(sizeof(*pGCPhys) == pSSM->u.Read.cbGCPhys))
+        return ssmR3DataRead(pSSM, pGCPhys, sizeof(*pGCPhys));
+
+    /*
+     * Fiddly.
+     */
+    Assert(sizeof(*pGCPhys)      == sizeof(uint64_t) || sizeof(*pGCPhys)      == sizeof(uint32_t));
+    Assert(pSSM->u.Read.cbGCPhys == sizeof(uint64_t) || pSSM->u.Read.cbGCPhys == sizeof(uint32_t));
+    if (pSSM->u.Read.cbGCPhys == sizeof(uint64_t))
     {
-        if (RT_LIKELY(sizeof(*pGCPhys) == pSSM->u.Read.cbGCPhys))
-            return ssmR3DataRead(pSSM, pGCPhys, sizeof(*pGCPhys));
-
-        /*
-         * Fiddly.
-         */
-        Assert(sizeof(*pGCPhys)      == sizeof(uint64_t) || sizeof(*pGCPhys)      == sizeof(uint32_t));
-        Assert(pSSM->u.Read.cbGCPhys == sizeof(uint64_t) || pSSM->u.Read.cbGCPhys == sizeof(uint32_t));
-        if (pSSM->u.Read.cbGCPhys == sizeof(uint64_t))
-        {
-            /* 64-bit saved, 32-bit load: try truncate it. */
-            uint64_t u64;
-            int rc = ssmR3DataRead(pSSM, &u64, sizeof(uint64_t));
-            if (RT_FAILURE(rc))
-                return rc;
-            if (u64 >= _4G)
-                return VERR_SSM_GCPHYS_OVERFLOW;
-            *pGCPhys = (RTGCPHYS)u64;
+        /* 64-bit saved, 32-bit load: try truncate it. */
+        uint64_t u64;
+        int rc = ssmR3DataRead(pSSM, &u64, sizeof(uint64_t));
+        if (RT_FAILURE(rc))
             return rc;
-        }
-
-        /* 32-bit saved, 64-bit load: clear the high part. */
-        *pGCPhys = 0;
-        return ssmR3DataRead(pSSM, pGCPhys, sizeof(uint32_t));
+        if (u64 >= _4G)
+            return VERR_SSM_GCPHYS_OVERFLOW;
+        *pGCPhys = (RTGCPHYS)u64;
+        return rc;
     }
-    AssertMsgFailed(("Invalid state %d\n", pSSM->enmOp));
-    return VERR_SSM_INVALID_STATE;
+
+    /* 32-bit saved, 64-bit load: clear the high part. */
+    *pGCPhys = 0;
+    return ssmR3DataRead(pSSM, pGCPhys, sizeof(uint32_t));
 }
 
 
@@ -6135,35 +6066,36 @@ VMMR3DECL(int) SSMR3SetGCPtrSize(PSSMHANDLE pSSM, unsigned cbGCPtr)
  */
 VMMR3DECL(int) SSMR3GetGCPtr(PSSMHANDLE pSSM, PRTGCPTR pGCPtr)
 {
-    if (pSSM->enmOp == SSMSTATE_LOAD_EXEC || pSSM->enmOp == SSMSTATE_OPEN_READ)
+    AssertMsgReturn(   pSSM->enmOp == SSMSTATE_LOAD_EXEC
+                    || pSSM->enmOp == SSMSTATE_OPEN_READ, ("Invalid state %d\n", pSSM->enmOp), VERR_SSM_INVALID_STATE);
+
+    /*
+     * Default size?
+     */
+    if (RT_LIKELY(sizeof(*pGCPtr) == pSSM->u.Read.cbGCPtr))
+        return ssmR3DataRead(pSSM, pGCPtr, sizeof(*pGCPtr));
+
+    /*
+     * Fiddly.
+     */
+    Assert(sizeof(*pGCPtr)      == sizeof(uint64_t) || sizeof(*pGCPtr)      == sizeof(uint32_t));
+    Assert(pSSM->u.Read.cbGCPtr == sizeof(uint64_t) || pSSM->u.Read.cbGCPtr == sizeof(uint32_t));
+    if (pSSM->u.Read.cbGCPtr == sizeof(uint64_t))
     {
-        if (RT_LIKELY(sizeof(*pGCPtr) == pSSM->u.Read.cbGCPtr))
-            return ssmR3DataRead(pSSM, pGCPtr, sizeof(*pGCPtr));
-
-        /*
-         * Fiddly.
-         */
-        Assert(sizeof(*pGCPtr)      == sizeof(uint64_t) || sizeof(*pGCPtr)      == sizeof(uint32_t));
-        Assert(pSSM->u.Read.cbGCPtr == sizeof(uint64_t) || pSSM->u.Read.cbGCPtr == sizeof(uint32_t));
-        if (pSSM->u.Read.cbGCPtr == sizeof(uint64_t))
-        {
-            /* 64-bit saved, 32-bit load: try truncate it. */
-            uint64_t u64;
-            int rc = ssmR3DataRead(pSSM, &u64, sizeof(uint64_t));
-            if (RT_FAILURE(rc))
-                return rc;
-            if (u64 >= _4G)
-                return VERR_SSM_GCPTR_OVERFLOW;
-            *pGCPtr = (RTGCPTR)u64;
+        /* 64-bit saved, 32-bit load: try truncate it. */
+        uint64_t u64;
+        int rc = ssmR3DataRead(pSSM, &u64, sizeof(uint64_t));
+        if (RT_FAILURE(rc))
             return rc;
-        }
-
-        /* 32-bit saved, 64-bit load: clear the high part. */
-        *pGCPtr = 0;
-        return ssmR3DataRead(pSSM, pGCPtr, sizeof(uint32_t));
+        if (u64 >= _4G)
+            return VERR_SSM_GCPTR_OVERFLOW;
+        *pGCPtr = (RTGCPTR)u64;
+        return rc;
     }
-    AssertMsgFailed(("Invalid state %d\n", pSSM->enmOp));
-    return VERR_SSM_INVALID_STATE;
+
+    /* 32-bit saved, 64-bit load: clear the high part. */
+    *pGCPtr = 0;
+    return ssmR3DataRead(pSSM, pGCPtr, sizeof(uint32_t));
 }
 
 
@@ -6190,11 +6122,9 @@ VMMR3DECL(int) SSMR3GetGCUIntPtr(PSSMHANDLE pSSM, PRTGCUINTPTR pGCPtr)
  */
 VMMR3DECL(int) SSMR3GetRCPtr(PSSMHANDLE pSSM, PRTRCPTR pRCPtr)
 {
-    if (pSSM->enmOp == SSMSTATE_LOAD_EXEC || pSSM->enmOp == SSMSTATE_OPEN_READ)
-        return ssmR3DataRead(pSSM, pRCPtr, sizeof(*pRCPtr));
-
-    AssertMsgFailed(("Invalid state %d\n", pSSM->enmOp));
-    return VERR_SSM_INVALID_STATE;
+    AssertMsgReturn(   pSSM->enmOp == SSMSTATE_LOAD_EXEC
+                    || pSSM->enmOp == SSMSTATE_OPEN_READ, ("Invalid state %d\n", pSSM->enmOp), VERR_SSM_INVALID_STATE);
+    return ssmR3DataRead(pSSM, pRCPtr, sizeof(*pRCPtr));
 }
 
 
@@ -6207,10 +6137,9 @@ VMMR3DECL(int) SSMR3GetRCPtr(PSSMHANDLE pSSM, PRTRCPTR pRCPtr)
  */
 VMMR3DECL(int) SSMR3GetIOPort(PSSMHANDLE pSSM, PRTIOPORT pIOPort)
 {
-    if (pSSM->enmOp == SSMSTATE_LOAD_EXEC || pSSM->enmOp == SSMSTATE_OPEN_READ)
-        return ssmR3DataRead(pSSM, pIOPort, sizeof(*pIOPort));
-    AssertMsgFailed(("Invalid state %d\n", pSSM->enmOp));
-    return VERR_SSM_INVALID_STATE;
+    AssertMsgReturn(   pSSM->enmOp == SSMSTATE_LOAD_EXEC
+                    || pSSM->enmOp == SSMSTATE_OPEN_READ, ("Invalid state %d\n", pSSM->enmOp), VERR_SSM_INVALID_STATE);
+    return ssmR3DataRead(pSSM, pIOPort, sizeof(*pIOPort));
 }
 
 
@@ -6223,10 +6152,9 @@ VMMR3DECL(int) SSMR3GetIOPort(PSSMHANDLE pSSM, PRTIOPORT pIOPort)
  */
 VMMR3DECL(int) SSMR3GetSel(PSSMHANDLE pSSM, PRTSEL pSel)
 {
-    if (pSSM->enmOp == SSMSTATE_LOAD_EXEC || pSSM->enmOp == SSMSTATE_OPEN_READ)
-        return ssmR3DataRead(pSSM, pSel, sizeof(*pSel));
-    AssertMsgFailed(("Invalid state %d\n", pSSM->enmOp));
-    return VERR_SSM_INVALID_STATE;
+    AssertMsgReturn(   pSSM->enmOp == SSMSTATE_LOAD_EXEC
+                    || pSSM->enmOp == SSMSTATE_OPEN_READ, ("Invalid state %d\n", pSSM->enmOp), VERR_SSM_INVALID_STATE);
+    return ssmR3DataRead(pSSM, pSel, sizeof(*pSel));
 }
 
 
@@ -6240,10 +6168,9 @@ VMMR3DECL(int) SSMR3GetSel(PSSMHANDLE pSSM, PRTSEL pSel)
  */
 VMMR3DECL(int) SSMR3GetMem(PSSMHANDLE pSSM, void *pv, size_t cb)
 {
-    if (pSSM->enmOp == SSMSTATE_LOAD_EXEC || pSSM->enmOp == SSMSTATE_OPEN_READ)
-        return ssmR3DataRead(pSSM, pv, cb);
-    AssertMsgFailed(("Invalid state %d\n", pSSM->enmOp));
-    return VERR_SSM_INVALID_STATE;
+    AssertMsgReturn(   pSSM->enmOp == SSMSTATE_LOAD_EXEC
+                    || pSSM->enmOp == SSMSTATE_OPEN_READ, ("Invalid state %d\n", pSSM->enmOp), VERR_SSM_INVALID_STATE);
+    return ssmR3DataRead(pSSM, pv, cb);
 }
 
 
@@ -6272,27 +6199,25 @@ VMMR3DECL(int) SSMR3GetStrZ(PSSMHANDLE pSSM, char *psz, size_t cbMax)
  */
 VMMR3DECL(int) SSMR3GetStrZEx(PSSMHANDLE pSSM, char *psz, size_t cbMax, size_t *pcbStr)
 {
-    if (pSSM->enmOp == SSMSTATE_LOAD_EXEC || pSSM->enmOp == SSMSTATE_OPEN_READ)
+    AssertMsgReturn(   pSSM->enmOp == SSMSTATE_LOAD_EXEC
+                    || pSSM->enmOp == SSMSTATE_OPEN_READ, ("Invalid state %d\n", pSSM->enmOp), VERR_SSM_INVALID_STATE);
+
+    /* read size prefix. */
+    uint32_t u32;
+    int rc = SSMR3GetU32(pSSM, &u32);
+    if (RT_SUCCESS(rc))
     {
-        /* read size prefix. */
-        uint32_t u32;
-        int rc = SSMR3GetU32(pSSM, &u32);
-        if (RT_SUCCESS(rc))
+        if (pcbStr)
+            *pcbStr = u32;
+        if (u32 < cbMax)
         {
-            if (pcbStr)
-                *pcbStr = u32;
-            if (u32 < cbMax)
-            {
-                /* terminate and read string content. */
-                psz[u32] = '\0';
-                return ssmR3DataRead(pSSM, psz, u32);
-            }
-            return VERR_TOO_MUCH_DATA;
+            /* terminate and read string content. */
+            psz[u32] = '\0';
+            return ssmR3DataRead(pSSM, psz, u32);
         }
-        return rc;
+        return VERR_TOO_MUCH_DATA;
     }
-    AssertMsgFailed(("Invalid state %d\n", pSSM->enmOp));
-    return VERR_SSM_INVALID_STATE;
+    return rc;
 }
 
 
@@ -6306,9 +6231,7 @@ VMMR3DECL(int) SSMR3GetStrZEx(PSSMHANDLE pSSM, char *psz, size_t cbMax, size_t *
 VMMR3DECL(int) SSMR3Skip(PSSMHANDLE pSSM, size_t cb)
 {
     AssertMsgReturn(   pSSM->enmOp == SSMSTATE_LOAD_EXEC
-                    || pSSM->enmOp == SSMSTATE_OPEN_READ,
-                    ("Invalid state %d\n", pSSM->enmOp),
-                    VERR_SSM_INVALID_STATE);
+                    || pSSM->enmOp == SSMSTATE_OPEN_READ, ("Invalid state %d\n", pSSM->enmOp), VERR_SSM_INVALID_STATE);
     while (cb > 0)
     {
         uint8_t abBuf[8192];
@@ -6336,9 +6259,7 @@ VMMR3DECL(int) SSMR3Skip(PSSMHANDLE pSSM, size_t cb)
 VMMR3DECL(int) SSMR3SkipToEndOfUnit(PSSMHANDLE pSSM)
 {
     AssertMsgReturn(   pSSM->enmOp == SSMSTATE_LOAD_EXEC
-                    || pSSM->enmOp == SSMSTATE_OPEN_READ,
-                    ("Invalid state %d\n", pSSM->enmOp),
-                     VERR_SSM_INVALID_STATE);
+                    || pSSM->enmOp == SSMSTATE_OPEN_READ, ("Invalid state %d\n", pSSM->enmOp), VERR_SSM_INVALID_STATE);
     if (pSSM->u.Read.uFmtVerMajor >= 2)
     {
         /*
