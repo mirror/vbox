@@ -527,9 +527,7 @@ int slirp_init(PNATState *ppData, uint32_t u32NetAddr, uint32_t u32Netmask,
 #else
     special_addr.s_addr = u32NetAddr;
 #endif
-#ifdef VBOX_WITHOUT_SLIRP_CLIENT_ETHER
     pData->slirp_ethaddr = &special_ethaddr[0];
-#endif
     alias_addr.s_addr = special_addr.s_addr | htonl(CTL_ALIAS);
     /* @todo: add ability to configure this staff */
 
@@ -1296,21 +1294,6 @@ done:
     STAM_PROFILE_STOP(&pData->StatPoll, a);
 }
 
-#ifndef VBOX_WITHOUT_SLIRP_CLIENT_ETHER
-#define ETH_ALEN        6
-#define ETH_HLEN        14
-
-#define ARPOP_REQUEST   1               /* ARP request                  */
-#define ARPOP_REPLY     2               /* ARP reply                    */
-
-struct ethhdr
-{
-    unsigned char   h_dest[ETH_ALEN];           /* destination eth addr */
-    unsigned char   h_source[ETH_ALEN];         /* source ether addr    */
-    unsigned short  h_proto;                    /* packet type ID field */
-};
-AssertCompileSize(struct ethhdr, 14);
-#endif
 
 struct arphdr
 {
@@ -1347,13 +1330,13 @@ static void arp_input(PNATState pData, struct mbuf *m)
     tip = *(uint32_t*)ah->ar_tip;
 
     mr = m_get(pData);
-#ifdef VBOX_WITHOUT_SLIRP_CLIENT_ETHER
+
     reh = mtod(mr, struct ethhdr *);
     memcpy(reh->h_source, eh->h_source, ETH_ALEN); /* XXX: if_encap will swap src and dst*/
     Log4(("NAT: arp:%R[ether]->%R[ether]\n",
         reh->h_source, reh->h_dest));
     Log4(("NAT: arp: %R[IP4]\n", &tip));
-#endif
+
     mr->m_data += if_maxlinkhdr;
     mr->m_len = sizeof(struct arphdr);
     rah = mtod(mr, struct arphdr *);
@@ -1422,7 +1405,7 @@ void slirp_input(PNATState pData, const uint8_t *pkt, int pkt_len)
         return;
     }
     Log4(("NAT: in:%R[ether]->%R[ether]\n", &eh->h_source, &eh->h_dest));
-#ifdef VBOX_WITHOUT_SLIRP_CLIENT_ETHER
+
     if (memcmp(eh->h_source, special_ethaddr, ETH_ALEN) == 0)
     {
         /* @todo vasily: add ether logging routine in debug.c */
@@ -1430,7 +1413,6 @@ void slirp_input(PNATState pData, const uint8_t *pkt, int pkt_len)
         RTMemFree((void *)pkt);
         return;
     }
-#endif
 
     m = m_get(pData);
     if (!m)
@@ -1496,12 +1478,6 @@ void if_encap(PNATState pData, uint16_t eth_proto, struct mbuf *m)
         AssertMsgFailed(("!!Ethernet frame corrupted!!"));
     }
 
-#ifndef VBOX_WITHOUT_SLIRP_CLIENT_ETHER
-    memcpy(eh->h_dest, client_ethaddr, ETH_ALEN);
-    memcpy(eh->h_source, special_ethaddr, ETH_ALEN - 1);
-    /* XXX: not correct */
-    eh->h_source[5] = CTL_ALIAS;
-#else
     if (memcmp(eh->h_source, special_ethaddr, ETH_ALEN) != 0)
     {
         memcpy(eh->h_dest, eh->h_source, ETH_ALEN);
@@ -1513,7 +1489,7 @@ void if_encap(PNATState pData, uint16_t eth_proto, struct mbuf *m)
             goto done;
         }
     }
-#endif
+
     eh->h_proto = htons(eth_proto);
     memcpy(buf, mtod(m, uint8_t *), m->m_len);
     slirp_output(pData->pvUser, NULL, buf, m->m_len);

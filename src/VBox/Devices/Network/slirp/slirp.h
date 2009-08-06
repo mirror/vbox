@@ -325,12 +325,11 @@ int errno_func(const char *file, int line);
 # endif
 #endif
 
-# ifdef VBOX_WITHOUT_SLIRP_CLIENT_ETHER
-#  define ETH_ALEN        6
-#  define ETH_HLEN        14
+# define ETH_ALEN        6
+# define ETH_HLEN        14
 
-#  define ARPOP_REQUEST   1               /* ARP request                  */
-#  define ARPOP_REPLY     2               /* ARP reply                    */
+# define ARPOP_REQUEST   1               /* ARP request                  */
+# define ARPOP_REPLY     2               /* ARP reply                    */
 
 struct ethhdr
 {
@@ -339,7 +338,6 @@ struct ethhdr
     unsigned short  h_proto;                    /* packet type ID field */
 };
 AssertCompileSize(struct ethhdr, 14);
-# endif
 #if defined(VBOX_SLIRP_ALIAS)
 
 # define ip_next(ip) (void *)((uint8_t *)(ip) + ((ip)->ip_hl << 2))
