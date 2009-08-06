@@ -377,6 +377,23 @@ typedef enum
     /** 32bit hackishness. */
     VMX_FLUSH_32BIT_HACK                        = 0x7fffffff
 } VMX_FLUSH;
+/** @} */
+
+/** @name MSR load/store elements
+ * @{
+ */
+#pragma pack(1)
+typedef struct
+{
+    uint32_t    u32IndexMSR;
+    uint32_t    u32Reserved;
+    uint64_t    u64Value;
+} VMXMSR;
+#pragma pack()
+/** Pointer to an MSR load/store element. */
+typedef VMXMSR *PVMXMSR;
+/** Pointer to a const MSR load/store element. */
+typedef const VMXMSR *PCVMXMSR;
 
 /** @} */
 
