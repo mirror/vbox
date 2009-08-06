@@ -189,7 +189,7 @@
 #define LOG_NAT_SOCK(so, proto, winevent, r_fdset, w_fdset, x_fdset) DO_LOG_NAT_SOCK((so), proto, (winevent), r_fdset, w_fdset, x_fdset)
 
 static void acivate_port_forwarding(PNATState, struct ethhdr *);
-static in_addr_t find_guest_ip(PNATState, uint8_t *);
+static uint32_t find_guest_ip(PNATState, uint8_t *);
 
 static const uint8_t special_ethaddr[6] =
 {
@@ -1526,7 +1526,7 @@ done:
  * Still we're using dhcp server leasing to map ether to IP
  * @todo  see rt_lookup_in_cache
  */
-static in_addr_t find_guest_ip(PNATState pData, uint8_t *eth_addr)
+static uint32_t find_guest_ip(PNATState pData, uint8_t *eth_addr)
 {
     int i;
     if (memcmp(eth_addr, zerro_ethaddr, ETH_ALEN) == 0
@@ -1565,7 +1565,7 @@ static void acivate_port_forwarding(PNATState pData, struct ethhdr *ethdr)
         socklen_t socketlen;
         struct in_addr alias;
         int rc;
-        in_addr_t guest_addr; /* need to understand if we already give address to guest */
+        uint32_t guest_addr; /* need to understand if we already give address to guest */
 
         if (rule->activated)
             continue; /*already activated */
