@@ -151,6 +151,8 @@ static int mmHyperFree(PMMHYPERHEAP pHeap, PMMHYPERCHUNK pChunk);
 static void mmHyperHeapCheck(PMMHYPERHEAP pHeap);
 #endif
 
+
+
 /**
  * Locks the hypervisor heap.
  * This might call back to Ring-3 in order to deal with lock contention in GC and R3.
