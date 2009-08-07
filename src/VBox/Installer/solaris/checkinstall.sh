@@ -22,12 +22,10 @@
 
 abort_error()
 {
-    echo "## To fix this:"
-    echo "## 1. Close VirtualBox and all virtual machines completely."
-    echo "## 2. Uninstall VirtualBox (SUNWvbox) and kernel package (SUNWvboxkern) in this order."
-    echo "## 3. Re-run this installer."
+    echo "## Please close all VirtualBox processes and re-run this installer."
     exit 1
 }
+
 
 # Check if VBoxSVC is currently running
 VBOXSVC_PID=`ps -eo pid,fname | grep VBoxSVC | grep -v grep | awk '{ print $1 }'`
@@ -37,12 +35,36 @@ if test ! -z "$VBOXSVC_PID" && test "$VBOXSVC_PID" -ge 0; then
 fi
 
 # Check if the Zone Access service is holding open vboxdrv, if so stop & remove it
-zoneaccessfound=`svcs -H "svc:/application/virtualbox/zoneaccess" 2> /dev/null | grep '^online'`
-if test ! -z "$zoneaccessfound"; then
+servicefound=`svcs -H "svc:/application/virtualbox/zoneaccess" 2> /dev/null | grep '^online'`
+if test ! -z "$servicefound"; then
     echo "## VirtualBox's zone access service appears to still be running."
     echo "## Halting & removing zone access service..."
     /usr/sbin/svcadm disable -s svc:/application/virtualbox/zoneaccess
-    /usr/sbin/svccfg delete svc:/application/virtualbox/zoneaccess    
+    /usr/sbin/svccfg delete svc:/application/virtualbox/zoneaccess
+fi
+
+# Check if the Web service is running, if so stop & remove it
+servicefound=`svcs -H "svc:/application/virtualbox/webservice" 2> /dev/null | grep '^online'`
+if test ! -z "$servicefound"; then
+    echo "## VirtualBox web service appears to still be running."
+    echo "## Halting & removing webservice..."
+    /usr/sbin/svcadm disable -s svc:/application/virtualbox/webservice
+    /usr/sbin/svccfg delete svc:/application/virtualbox/webservice
+fi
+
+# Check if vboxnet is still plumbed, if so try unplumb it
+BIN_IFCONFIG=`which ifconfig 2> /dev/null`
+if test -x "$BIN_IFCONFIG"; then
+    vboxnetup=`$BIN_IFCONFIG vboxnet0 >/dev/null 2>&1`
+    if test "$?" -eq 0; then
+        echo "## VirtualBox NetAdapter is still plumbed"
+        echo "## Try to remove old NetAdapter..."
+        $BIN_IFCONFIG vboxnet0 unplumb
+        if test "$?" -ne 0; then
+            echo "## VirtualBox NetAdapter 'vboxnet0' couldn't be unplumbed (probably in use)."
+            abort_error
+        fi
+    fi
 fi
 
 exit 0
