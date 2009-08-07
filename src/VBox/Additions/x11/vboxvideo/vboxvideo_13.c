@@ -83,13 +83,7 @@ do { \
 
 #define BOOL_STR(a) ((a) ? "TRUE" : "FALSE")
 
-#ifdef XFree86LOADER
-# include "xorg-server.h"
-#else
-# ifdef HAVE_CONFIG_H
-#  include "config.h"
-# endif
-#endif
+#include "xorg-server.h"
 #include "vboxvideo.h"
 #include "version-generated.h"
 #include <xf86.h>
