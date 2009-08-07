@@ -105,7 +105,7 @@ RTDECL(bool) RTThreadPreemptIsEnabled(RTTHREAD hThread)
         return false;
 # endif
 # if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 5, 28)
-    if (!irqs_disabled())
+    if (irqs_disabled())
         return false;
 # else
     if (!ASMIntAreEnabled())
