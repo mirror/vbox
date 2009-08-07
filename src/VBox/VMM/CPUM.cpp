@@ -526,6 +526,17 @@ static int cpumR3CpuIdInit(PVM pVM)
 #endif
     }
 
+    /** @cfgm{/CPUM/NT4LeafLimit, boolean, false}
+     * Limit the number of standard CPUID leafs to 0..2 to prevent NT4 from
+     * bugchecking with MULTIPROCESSOR_CONFIGURATION_NOT_SUPPORTED (0x3e).
+     * This option corrsponds somewhat to IA32_MISC_ENABLES.BOOT_NT4[bit 22].
+     * @todo r=bird: The intel docs states that leafs 3 is included, why don't we?
+     */
+    bool fNt4LeafLimit;
+    CFGMR3QueryBoolDef(CFGMR3GetChild(CFGMR3GetRoot(pVM), "CPUM"), "NT4LeafLimit", &fNt4LeafLimit, false);
+    if (fNt4LeafLimit)
+        pCPUM->aGuestCpuIdStd[0].eax = 2;
+
     /*
      * Limit it the number of entries and fill the remaining with the defaults.
      *
@@ -533,13 +544,6 @@ static int cpumR3CpuIdInit(PVM pVM)
      * is perhaps a bit crudely done as there is probably some relatively harmless
      * info too in these leaves (like words about having a constant TSC).
      */
-    {
-        bool fNt4LeafLimit;
-        PCFGMNODE pNode = CFGMR3GetRoot(pVM);
-        int rc = CFGMR3QueryBoolDef(pNode, "NT4LeafLimit", &fNt4LeafLimit, false);
-        if (RT_SUCCESS(rc) && fNt4LeafLimit)
-            pCPUM->aGuestCpuIdStd[0].eax = 2;
-    }
     if (pCPUM->aGuestCpuIdStd[0].eax > 5)
         pCPUM->aGuestCpuIdStd[0].eax = 5;
 
@@ -555,9 +559,9 @@ static int cpumR3CpuIdInit(PVM pVM)
         pCPUM->aGuestCpuIdExt[i] = pCPUM->GuestCpuIdDef;
 
     /*
-     * Workaround for missing cpuid(0) patches: If we miss to patch a cpuid(0).eax then
-     * Linux tries to determine the number of processors from (cpuid(4).eax >> 26) + 1.
-     * We currently don't support more than 1 processor.
+     * Workaround for missing cpuid(0) patches when leaf 4 returns GuestCpuIdDef:
+     * If we miss to patch a cpuid(0).eax then Linux tries to determine the number
+     * of processors from (cpuid(4).eax >> 26) + 1.
      */
     if (pVM->cCPUs == 1)
         pCPUM->aGuestCpuIdStd[4].eax = 0;
