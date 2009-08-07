@@ -20,6 +20,10 @@
 #
 
 
+# Never use exit 2 or exit 20 etc., the return codes are used in
+# SRv4 postinstall procedures which carry special meaning. Just use exit 1 for failure.
+set -x
+
 HOST_OS_VERSION=`uname -r`
 
 DIR_VBOXBASE=/opt/VirtualBox
@@ -39,26 +43,43 @@ BIN_IFCONFIG=/sbin/ifconfig
 
 # "vboxdrv" is also used in sed lines here (change those as well if it ever changes)
 MOD_VBOXDRV=vboxdrv
-MOD_VBOXNET=vboxnet
-MOD_VBOXFLT=vboxflt
-MOD_VBI=vbi
-MOD_VBOXUSBMON=vboxusbmon
-FATALOP=fatal
+DESC_VBOXDRV="VirtualBox HostDriver"
 
+MOD_VBOXNET=vboxnet
+DESC_VBOXNET="VirtualBox NetAdapter"
+
+MOD_VBOXFLT=vboxflt
+DESC_VBOXFLT="VirtualBox NetFilter"
+
+MOD_VBI=vbi
+DESC_VBI="VirtualBox Kernel Interface"
+
+MOD_VBOXUSBMON=vboxusbmon
+DESC_VBOXUSBMON="VirtualBox USBMonitor"
+
+FATALOP=fatal
+SILENTOP=silent
+ISSILENT=
 
 infoprint()
 {
-    echo 1>&2 "$1"
+    if test "$ISSILENT" != "$SILENTOP"; then
+        echo 1>&2 "$1"
+    fi
 }
 
 warnprint()
 {
-    echo 1>&2 "* Warning!! $1"
+    if test "$ISSILENT" != "$SILENTOP"; then
+        echo 1>&2 "* Warning!! $1"
+    fi
 }
 
 success()
 {
-    echo 1>&2 "$1"
+    if test "$ISSILENT" != "$SILENTOP"; then
+        echo 1>&2 "$1"
+    fi
 }
 
 errorprint()
@@ -73,12 +94,12 @@ check_bin_path()
 {
     if test -z "$1"; then
         errorprint "missing argument to check_bin_path()"
-        exit 50
+        exit 1
     fi
 
     if test !  -x "$1"; then
         errorprint "$1 missing or is not an executable"
-        exit 51
+        exit 1
     fi
     return 0
 }
@@ -121,7 +142,7 @@ check_root()
 
     if test `$idbin -u` -ne 0; then
         errorprint "This script must be run with administrator privileges."
-        exit 2
+        exit 1
     fi
 }
 
@@ -132,7 +153,7 @@ check_zone()
     currentzone=`zonename`
     if test "$currentzone" != "global"; then
         errorprint "This script must be run from the global zone."
-        exit 3
+        exit 1
     fi
 }
 
@@ -143,7 +164,7 @@ check_isa()
     currentisa=`uname -i`
     if test "$currentisa" = "i86xpv"; then
         errorprint "VirtualBox cannot run under xVM Dom0! Fatal Error, Aborting installation!"
-        exit 4
+        exit 1
     fi
 }
 
@@ -157,7 +178,7 @@ check_module_arch()
         modulepath="$DIR_MOD_64/$MOD_VBOXDRV"
     elif test "$cputype" != "i386"; then
         errorprint "VirtualBox works only on i386/amd64 architectures, not $cputype"
-        exit 98
+        exit 1
     fi
 
     # If things are where they should be, return success
@@ -171,20 +192,20 @@ check_module_arch()
         modulepath="$DIR_MOD_32/$MOD_VBOXDRV"
         if test -f "$modulepath"; then
             errorprint "Found 32-bit module instead of 64-bit. Please install the amd64 package!"
-            exit 97
+            exit 1
         fi
     else
         # x86 ISA, amd64 kernel module??
         modulepath="$DIR_MOD_64/$MOD_VBOXDRV"
         if test -f "$modulepath"; then
             errorprint "Found 64-bit module instead of 32-bit. Please install the x86 package!"
-            exit 96
+            exit 1
         fi
     fi
 
     # Shouldn't really happen...
     errorprint "VirtualBox Host kernel module NOT installed."
-    exit 99
+    exit 1
 }
 
 # module_added(modname)
@@ -193,14 +214,14 @@ module_added()
 {
     if test -z "$1"; then
         errorprint "missing argument to module_added()"
-        exit 5
+        exit 1
     fi
 
     loadentry=`cat /etc/name_to_major | grep $1`
     if test -z "$loadentry"; then
-        return 0
+        return 1
     fi
-    return 1
+    return 0
 }
 
 # module_loaded(modname)
@@ -209,93 +230,103 @@ module_loaded()
 {
     if test -z "$1"; then
         errorprint "missing argument to module_loaded()"
-        exit 6
+        exit 1
     fi
 
     modname=$1
     # modinfo should now work properly since we prevent module autounloading
     loadentry=`$BIN_MODINFO | grep $modname`
     if test -z "$loadentry"; then
-        return 0
+        return 1
     fi
-    return 1
+    return 0
 }
 
-# add_driver(modname, [driverperm], [fatal])
+# add_driver(modname, moddesc, [driverperm], [fatal])
 # failure: depends on [fatal]
 add_driver()
 {
-    if test -z "$1"; then
+    if test -z "$1" || test -z "$2"; then
         errorprint "missing argument to add_driver()"
-        exit 7
+        exit 1
     fi
 
-    modname=$1
-    modperm=$2
-    fatal=$3
+    modname="$1"
+    moddesc="$2"
+    modperm="$3"
+    if test "$3" = "$FATALOP"; then
+        fatal="$FATALOP"
+        modperm=""
+    fi
+    if test "$4" = "$FATALOP"; then
+        fatal="$FATALOP"
+    fi
+
     if test -n "$modperm"; then
-        $BIN_ADDDRV -m'$modperm' $modname
+        $BIN_ADDDRV -m"$modperm" $modname
     else
         $BIN_ADDDRV $modname
     fi
 
     if test $? -ne 0; then
-        errorprint "Failed to load: $modname"
+        errorprint "Adding:  $moddesc module ...FAILED!"
         if test "$fatal" = "$FATALOP"; then
-            exit 8
+            exit 1
         fi
         return 1
     fi
     return 0
 }
 
-# rem_driver(modname, [fatal])
+# rem_driver(modname, moddesc, [fatal])
 # failure: depends on [fatal]
 rem_driver()
 {
-    if test -z "$1"; then
+    if test -z "$1" || test -z "$2"; then
         errorprint "missing argument to rem_driver()"
-        exit 9
+        exit 1
     fi
 
     modname=$1
-    fatal=$2
+    moddesc=$2
+    fatal=$3
     module_added $modname
     if test "$?" -eq 0; then
         $BIN_REMDRV $modname
         if test $? -eq 0; then
-            success "Removed: $modname successfully"
+            success "Removed:  $moddesc module"
             return 0
         else
-            errorprint "Failed to remove: $modname"
+            errorprint "Removing: $moddesc  ...FAILED!"
             if test "$fatal" = "$FATALOP"; then
-                exit 10
+                exit 1
             fi
             return 1
         fi
     fi
 }
 
-# unload_module(modname, [fatal])
+# unload_module(modname, moddesc, [fatal])
 # failure: fatal
 unload_module()
 {
-    if test -z "$1"; then
+    if test -z "$1" || test -z "$2"; then
         errorprint "missing argument to unload_module()"
-        exit 11
+        exit 1
     fi
 
     modname=$1
-    fatal=$2
+    moddesc=$2
+    fatal=$3
     modid=`$BIN_MODINFO | grep $modname | cut -f 1 -d ' ' `
     if test -n "$modid"; then
         $BIN_MODUNLOAD -i $modid
         if test $? -eq 0; then
-            success "Unloaded: $modname successfully"
+            success "Unloaded:  $moddesc module"
         else
-            errorprint "Failed to unload: $modname"
+            errorprint "Unloading:  $moddesc  ...FAILED!"
             if test "$fatal" = "$FATALOP"; then
-                exit 12
+                exit 1
             fi
             return 1
         fi
@@ -303,26 +334,27 @@ unload_module()
     return 0
 }
 
-# load_module(modname)
+# load_module(modname, moddesc, [fatal])
 # pass "drv/modname" or "misc/vbi" etc.
 # failure: fatal
 load_module()
 {
-    if test -z "$1"; then
+    if test -z "$1" || test -z "$2"; then
         errorprint "missing argument to load_module()"
-        exit 14
+        exit 1
     fi
 
     modname=$1
-    fatal=$2
+    moddesc=$2
+    fatal=$3
     $BIN_MODLOAD -p $modname
     if test $? -eq 0; then
-        success "Loaded: $modname successfully"
+        success "Loaded:  $moddesc module"
         return 0
     else
-        errorprint "Failed to load: $modname"
+        errorprint "Loading:  $modesc  ...FAILED!"
         if test "$fatal" = "$FATALOP"; then
-            exit 15
+            exit 1
         fi
         return 1
     fi
@@ -332,9 +364,12 @@ load_module()
 # !! failure is always fatal
 install_drivers()
 {
-    infoprint "Loading Host Driver..."
-    add_driver $MOD_VBOXDRV "* 0600 root sys" fatal
-    load_module $MOD_VBOXDRV fatal
+    if test -n "_HARDENED_"; then
+        add_driver "$MOD_VBOXDRV" "$DESC_VBOXDRV" "'* 0600 root sys'" "$FATALOP"
+    else
+        add_driver "$MOD_VBOXDRV" "$DESC_VBOXDRV" "'* 0666 root sys'" "$FATALOP"
+    fi
+    load_module "drv/$MOD_VBOXDRV" "$DESC_VBOXDRV" "$FATALOP"
 
     # Add vboxdrv to devlink.tab
     sed -e '/name=vboxdrv/d' /etc/devlink.tab > /etc/devlink.vbox
@@ -342,41 +377,39 @@ install_drivers()
     mv -f /etc/devlink.vbox /etc/devlink.tab
 
     # Create the device link
-    /usr/sbin/devfsadm -i $MOD_VBOXDRV
+    /usr/sbin/devfsadm -i "$MOD_VBOXDRV"
 
     if test $? -eq 0; then
 
         if test -f /platform/i86pc/kernel/drv/vboxnet.conf; then
-            infoprint "Loading NetAdapter..."
-            add_drv $MOD_VBOXNET fatal
-            load_module $MOD_VBOXNET fatal
+            add_driver "$MOD_VBOXNET" "$DESC_VBOXNET" "$FATALOP"
+            load_module "drv/$MOD_VBOXNET" "$DESC_VBOXNET" "$FATALOP"
         fi
 
         if test -f /platform/i86pc/kernel/drv/vboxflt.conf; then
-            infoprint "Loading NetFilter..."
-            add_driver $MOD_VBOXFLT fatal
-            load_module $MOD_VBOXFLT fatal
+            add_driver "$MOD_VBOXFLT" "$DESC_VBOXFLT" "$FATALOP"
+            load_module "drv/$MOD_VBOXFLT" "$DESC_VBOXFLT" "$FATALOP"
         fi
 
         if test -f /platform/i86pc/kernel/drv/vboxusbmon.conf && test "$HOST_OS_VERSION" != "5.10"; then
-            infoprint "Loading USBMonitor..."
-            add_driver $MOD_VBOXUSBMON fatal
-            load_module $MOD_VBOXUSBMON fatal
+            add_driver "$MOD_VBOXUSBMON" "$DESC_VBOXUSBMON" "$FATALOP"
+            load_module "drv/$MOD_VBOXUSBMON" "$DESC_VBOXUSBMON" "$FATALOP"
 
             # Add vboxusbmon to devlink.tab
             sed -e '/name=vboxusbmon/d' /etc/devlink.tab > /etc/devlink.vbox
             echo "type=ddi_pseudo;name=vboxusbmon	\D" >> /etc/devlink.vbox
+            mv -f /etc/devlink.vbox /etc/devlink.tab
 
             # Create the device link
-            /usr/sbin/devfsadm -i  $MOD_VBOXUSBMON
+            /usr/sbin/devfsadm -i  "$MOD_VBOXUSBMON"
             if test $? -ne 0; then
                 errorprint "Failed to create device link for $MOD_VBOXUSBMON."
-                exit 16
+                exit 1
             fi
         fi
     else
         errorprint "Failed to create device link for $MOD_VBOXDRV."
-        exit 17
+        exit 1
     fi
 
     return $?
@@ -386,36 +419,45 @@ install_drivers()
 # failure: depends on [fatal]
 remove_drivers()
 {
-    $fatal=$1
+    fatal=$1
     # Remove vboxdrv from devlink.tab
-    sed -e '/name=vboxdrv/d' /etc/devlink.tab > /etc/devlink.vbox
-    mv -f /etc/devlink.vbox /etc/devlink.tab
+    devlinkfound=`cat /etc/devlink.tab | grep vboxdrv`
+    if test -n "$devlinkfound"; then
+        sed -e '/name=vboxdrv/d' /etc/devlink.tab > /etc/devlink.vbox
+        mv -f /etc/devlink.vbox /etc/devlink.tab
+    fi
 
     # Remove vboxusbmon from devlink.tab
-    sed -e '/name=vboxusbmon/d' /etc/devlink.tab > /etc/devlink.vbox
-    mv -f /etc/devlink.vbox /etc/devlink.tab
+    devlinkfound=`cat /etc/devlink.tab | grep vboxusbmon`
+    if test -n "$devlinkfound"; then
+        sed -e '/name=vboxusbmon/d' /etc/devlink.tab > /etc/devlink.vbox
+        mv -f /etc/devlink.vbox /etc/devlink.tab
+    fi
 
     # USBMonitor might not even be installed, but anyway...
     if test -f /platform/i86pc/kernel/drv/vboxusbmon.conf && test "$HOST_OS_VERSION" != "5.10"; then
-        infoprint "Unloading USBMonitor..."
-        unload_module $MOD_VBOXUSBMON "$fatal"
-        rem_driver $MOD_VBOXUSBMON "$fatal"
+        unload_module "$MOD_VBOXUSBMON" "$DESC_VBOXUSBMON" "$fatal"
+        rem_driver "$MOD_VBOXUSBMON" "$DESC_VBOXUSBMON" "$fatal"
     fi
 
-    infoprint "Unloading NetFilter..."
-    unload_module $MOD_VBOXFLT "$fatal"
-    rem_driver $MOD_VBOXFLT "$fatal"
+    unload_module "$MOD_VBOXFLT" "$DESC_VBOXFLT" "$fatal"
+    rem_driver "$MOD_VBOXFLT" "$DESC_VBOXFLT" "$fatal"
 
-    infoprint "Unloading NetAdapter..."
-    unload_module $MOD_VBOXNET "$fatal"
-    rem_driver $MOD_VBOXNET "$fatal"
+    unload_module "$MOD_VBOXNET" "$DESC_VBOXNET" "$fatal"
+    rem_driver "$MOD_VBOXNET" "$DESC_VBOXNET" "$fatal"
 
-    infoprint "Unloading Host Driver..."
-    unload_module $MOD_VBOXDRV "$fatal"
-    rem_driver $MOD_VBOXDRV "$fatal"
+    unload_module "$MOD_VBOXDRV" "$DESC_VBOXDRV" "$fatal"
+    rem_driver "$MOD_VBOXDRV" "$DESC_VBOXDRV" "$fatal"
 
-    infoprint "Unloading VBI..."
-    unload_module $MOD_VBI "$fatal"
+    unload_module "$MOD_VBI" "$DESC_VBI" "$fatal"
+
+    # remove devlinks
+    if test -h "/dev/vboxdrv" || test -f "/dev/vboxdrv"; then
+        rm -f /dev/vboxdrv
+    fi
+    if test -h "/dev/vboxusbmon" || test -f "/dev/vboxusbmon"; then
+        rm -f /dev/vboxusbmon
+    fi
 
     return 0
 }
@@ -444,14 +486,14 @@ cleanup_install()
     fatal=$1
 
     # stop and unregister webservice SMF
-    servicefound=`$BIN_SVCS -a | grep "virtualbox/webservice"`
+    servicefound=`$BIN_SVCS -a | grep "virtualbox/webservice" 2>/dev/null`
     if test ! -z "$servicefound"; then
         $BIN_SVCADM disable -s svc:/application/virtualbox/webservice:default
         $BIN_SVCCFG delete svc:/application/virtualbox/webservice:default
     fi
 
     # stop and unregister zoneaccess SMF
-    servicefound=`$BIN_SVCS -a | grep "virtualbox/zoneaccess"`
+    servicefound=`$BIN_SVCS -a | grep "virtualbox/zoneaccess" 2>/dev/null`
     if test ! -z "$servicefound"; then
         $BIN_SVCADM disable -s svc:/application/virtualbox/zoneaccess
         $BIN_SVCCFG delete svc:/application/virtualbox/zoneaccess
@@ -464,7 +506,7 @@ cleanup_install()
         if test "$?" -ne 0; then
             errorprint "VirtualBox NetAdapter 'vboxnet0' couldn't be unplumbed (probably in use)."
             if test "$fatal" = "$FATALOP"; then
-                exit 33
+                exit 1
             fi
         fi
     fi
@@ -496,6 +538,22 @@ post_install()
             else
                 warnprint "Failed to bring up vboxnet0!!"
             fi
+        fi
+
+        if test -f /var/svc/manifest/application/virtualbox/virtualbox-webservice.xml || test -f /var/svc/manifest/application/virtualbox/virtualbox-zoneaccess.xml; then
+            infoprint "Configuring services..."
+        fi
+
+        # Web service
+        if test -f /var/svc/manifest/application/virtualbox/virtualbox-webservice.xml; then
+            /usr/sbin/svccfg import /var/svc/manifest/application/virtualbox/virtualbox-webservice.xml
+            /usr/sbin/svcadm disable -s svc:/application/virtualbox/webservice:default
+        fi
+
+        # Zone access service
+        if test -f /var/svc/manifest/application/virtualbox/virtualbox-zoneaccess.xml; then
+            /usr/sbin/svccfg import /var/svc/manifest/application/virtualbox/virtualbox-zoneaccess.xml
+            /usr/sbin/svcadm enable -s svc:/application/virtualbox/zoneaccess
         fi
 
         # Install python bindings
@@ -551,7 +609,7 @@ pre_remove()
 {
     fatal=$1
 
-    cleanup_install
+    cleanup_install "$fatal"
 
     remove_drivers "$fatal"
     if test "$?" -eq 0; then
@@ -569,7 +627,13 @@ check_zone
 find_bins
 
 drvop=$1
-fatal=$2
+if test "$2" = "$FATALOP" || test "$3" = "$FATALOP"; then
+    fatal=$FATALOP
+fi
+if test "$2" = "$SILENTOP" || test "$3" = "$SILENTOP"; then
+    ISSILENT=$SILENTOP
+fi
+
 case "$drvop" in
 post_install)
     check_module_arch
@@ -587,12 +651,8 @@ remove_drivers)
     ;;
 *)
     echo "Usage: $0 post_install|pre_remove|install_drivers|remove_drivers [fatal]"
-    exit 13
+    exit 1
 esac
 
-if test "$?" -eq 0; then
-    exit 0
-fi
-
-exit 1
+exit "$?"
 
