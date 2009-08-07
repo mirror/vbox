@@ -203,21 +203,6 @@ Status XGetWindowAttributes(Display *display, Window w,
     return 0;
 }
 
-extern "C" Status XFetchName(Display *display, Window w,
-                             char **window_name_return);
-Status XFetchName(Display *display, Window w, char **window_name_return)
-{
-    AssertPtrReturn(window_name_return, 1);
-    for (unsigned i = 0; i < g_cSmlsWindows; ++i)
-        if (g_paSmlsWindows[i] == w)
-        {
-            *window_name_return = (char *)RTMemDup(g_papszSmlsWinNames[i],
-                                           strlen(g_papszSmlsWinNames[i]) + 1);
-            return *window_name_return != NULL;
-        }
-    return 0;
-}
-
 extern "C" Status XGetWMNormalHints(Display *display, Window w,
                                     XSizeHints *hints_return,
                                     long *supplied_return);
