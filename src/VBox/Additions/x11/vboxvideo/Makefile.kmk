@@ -212,7 +212,7 @@ vboxvideo_drv_15_INCS = \
 	$(VBOX_PATH_X11_ROOT)/xf86driproto-2.0.4 \
 	$(VBOX_PATH_X11_ROOT)/xorg-server-1.5.3
 vboxvideo_drv_15_SOURCES  = \
-	vboxvideo_15.c \
+	vboxvideo_13.c \
 	vboxutils.c \
 	vboxvideo_dri.c
 
@@ -233,7 +233,7 @@ vboxvideo_drv_16_INCS = \
 	$(VBOX_PATH_X11_ROOT)/xorg-server-1.6.0 \
 	$(VBOX_PATH_X11_ROOT)/xorg-server-1.6.0-local
 vboxvideo_drv_16_SOURCES  = \
-	vboxvideo_15.c \
+	vboxvideo_13.c \
 	vboxutils.c \
 	vboxvideo_dri.c
 
@@ -266,7 +266,7 @@ $$(PATH_vboxvideo_drv_70)/tstvboxvideo70.run: $$(INSTARGET_vboxvideo_drv_70)
      OTHERS += $(PATH_vboxvideo_drv_71)/tstvboxvideo71.run
 $$(PATH_vboxvideo_drv_71)/tstvboxvideo71.run: $$(INSTARGET_vboxvideo_drv_71)
 	$(QUIET)/bin/sh $(PATH_ROOT)/src/bldprogs/checkUndefined.sh $(KBUILD_TARGET)  \
-	    $(INSTARGET_vboxvideo_drv_71) $(OUR_PATH_VBOXVIDEO)/undefined_71
+	    $(INSTARGET_vboxvideo_drv_71) $(OUR_PATH_VBOXVIDEO)/undefined_70
 	$(QUIET)$(APPEND) -t "$@" "done"
 
      TESTING  += $(PATH_vboxvideo_drv_13)/tstvboxvideo13.run
@@ -280,21 +280,21 @@ $$(PATH_vboxvideo_drv_13)/tstvboxvideo13.run: $$(INSTARGET_vboxvideo_drv_13)
      OTHERS += $(PATH_vboxvideo_drv_14)/tstvboxvideo14.run
 $$(PATH_vboxvideo_drv_14)/tstvboxvideo14.run: $$(INSTARGET_vboxvideo_drv_14)
 	$(QUIET)/bin/sh $(PATH_ROOT)/src/bldprogs/checkUndefined.sh $(KBUILD_TARGET)  \
-	    $(INSTARGET_vboxvideo_drv_14) $(OUR_PATH_VBOXVIDEO)/undefined_14
+	    $(INSTARGET_vboxvideo_drv_14) $(OUR_PATH_VBOXVIDEO)/undefined_13
 	$(QUIET)$(APPEND) -t "$@" "done"
 
      TESTING  += $(PATH_vboxvideo_drv_15)/tstvboxvideo15.run
      OTHERS += $(PATH_vboxvideo_drv_15)/tstvboxvideo15.run
 $$(PATH_vboxvideo_drv_15)/tstvboxvideo15.run: $$(INSTARGET_vboxvideo_drv_15)
 	$(QUIET)/bin/sh $(PATH_ROOT)/src/bldprogs/checkUndefined.sh $(KBUILD_TARGET)  \
-	    $(INSTARGET_vboxvideo_drv_15) $(OUR_PATH_VBOXVIDEO)/undefined_15
+	    $(INSTARGET_vboxvideo_drv_15) $(OUR_PATH_VBOXVIDEO)/undefined_13
 	$(QUIET)$(APPEND) -t "$@" "done"
 
      TESTING  += $(PATH_vboxvideo_drv_16)/tstvboxvideo16.run
      OTHERS += $(PATH_vboxvideo_drv_16)/tstvboxvideo16.run
 $$(PATH_vboxvideo_drv_16)/tstvboxvideo16.run: $$(INSTARGET_vboxvideo_drv_16)
 	$(QUIET)/bin/sh $(PATH_ROOT)/src/bldprogs/checkUndefined.sh $(KBUILD_TARGET)  \
-	    $(INSTARGET_vboxvideo_drv_16) $(OUR_PATH_VBOXVIDEO)/undefined_15
+	    $(INSTARGET_vboxvideo_drv_16) $(OUR_PATH_VBOXVIDEO)/undefined_13
 	$(QUIET)$(APPEND) -t "$@" "done"
 
     endif # ! VBOX_ONLY_SDK
