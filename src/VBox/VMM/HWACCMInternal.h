@@ -547,10 +547,10 @@ typedef struct HWACCMCPU
 
     struct
     {
-        /** R0 memory object for the VM control structure (VMCS). */
-        RTR0MEMOBJ                  pMemObjVMCS;
         /** Physical address of the VM control structure (VMCS). */
         RTHCPHYS                    pVMCSPhys;
+        /** R0 memory object for the VM control structure (VMCS). */
+        RTR0MEMOBJ                  pMemObjVMCS;
         /** Virtual address of the VM control structure (VMCS). */
         R0PTRTYPE(void *)           pVMCS;
 
@@ -563,10 +563,10 @@ typedef struct HWACCMCPU
         /** Current VMX_VMCS_CTRL_PROC_EXEC2_CONTROLS. */
         uint64_t                    proc_ctls2;
 
-        /** R0 memory object for the virtual APIC page for TPR caching. */
-        RTR0MEMOBJ                  pMemObjVAPIC;
         /** Physical address of the virtual APIC page for TPR caching. */
         RTHCPHYS                    pVAPICPhys;
+        /** R0 memory object for the virtual APIC page for TPR caching. */
+        RTR0MEMOBJ                  pMemObjVAPIC;
         /** Virtual address of the virtual APIC page for TPR caching. */
         R0PTRTYPE(uint8_t *)        pVAPIC;
 
@@ -578,26 +578,29 @@ typedef struct HWACCMCPU
         /** Current EPTP. */
         RTHCPHYS                    GCPhysEPTP;
 
-        /** R0 memory object for the MSR bitmap (1 page). */
-        RTR0MEMOBJ                  pMemObjMSRBitmap;
         /** Physical address of the MSR bitmap (1 page). */
         RTHCPHYS                    pMSRBitmapPhys;
+        /** R0 memory object for the MSR bitmap (1 page). */
+        RTR0MEMOBJ                  pMemObjMSRBitmap;
         /** Virtual address of the MSR bitmap (1 page). */
         R0PTRTYPE(uint8_t *)        pMSRBitmap;
 
-        /** R0 memory object for the guest MSR load area (1 page). */
-        RTR0MEMOBJ                  pMemObjGuestMSR;
         /** Physical address of the guest MSR load area (1 page). */
         RTHCPHYS                    pGuestMSRPhys;
+        /** R0 memory object for the guest MSR load area (1 page). */
+        RTR0MEMOBJ                  pMemObjGuestMSR;
         /** Virtual address of the guest MSR load area (1 page). */
         R0PTRTYPE(uint8_t *)        pGuestMSR;
 
-        /** R0 memory object for the MSR load area (1 page). */
-        RTR0MEMOBJ                  pMemObjHostMSR;
         /** Physical address of the MSR load area (1 page). */
         RTHCPHYS                    pHostMSRPhys;
+        /** R0 memory object for the MSR load area (1 page). */
+        RTR0MEMOBJ                  pMemObjHostMSR;
         /** Virtual address of the MSR load area (1 page). */
         R0PTRTYPE(uint8_t *)        pHostMSR;
+
+        /* Number of automatically loaded/restored MSRs. */
+        uint32_t                    cCachedMSRs;
 
         /** VMCS cache. */
         VMCSCACHE                   VMCSCache;
