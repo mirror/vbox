@@ -34,7 +34,9 @@
 *******************************************************************************/
 #define LOG_GROUP RTLOGGROUP_TIME
 #include "the-darwin-kernel.h"
+#include "internal/iprt.h"
 #include <iprt/time.h>
+
 #include <iprt/asm.h>
 
 

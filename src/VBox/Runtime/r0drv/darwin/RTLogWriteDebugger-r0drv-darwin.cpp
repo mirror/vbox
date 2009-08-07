@@ -33,13 +33,13 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #include "the-darwin-kernel.h"
+#include "internal/iprt.h"
 #include <iprt/log.h>
-#include <iprt/assert.h>
 
 
 RTDECL(void) RTLogWriteDebugger(const char *pch, size_t cb)
 {
-    kprintf("%.*s", cb, pch);
+    kprintf("%.*s", (int)cb, pch);
     return;
 }
 

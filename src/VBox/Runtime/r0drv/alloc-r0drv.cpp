@@ -35,9 +35,11 @@
 #include <iprt/mem.h>
 #include "internal/iprt.h"
 
-#include <iprt/string.h>
+#include <iprt/asm.h>
 #include <iprt/assert.h>
 #include <iprt/param.h>
+#include <iprt/string.h>
+#include <iprt/thread.h>
 #include "r0drv/alloc-r0drv.h"
 
 
@@ -125,7 +127,10 @@ RT_EXPORT_SYMBOL(RTMemTmpFree);
  */
 RTDECL(void *)  RTMemAlloc(size_t cb) RT_NO_THROW
 {
-    PRTMEMHDR pHdr = rtMemAlloc(cb + RTR0MEM_FENCE_EXTRA, 0);
+    PRTMEMHDR pHdr;
+    RT_ASSERT_PREEMPTIBLE();
+
+    pHdr = rtMemAlloc(cb + RTR0MEM_FENCE_EXTRA, 0);
     if (pHdr)
     {
 #ifdef RTR0MEM_STRICT
@@ -152,7 +157,10 @@ RT_EXPORT_SYMBOL(RTMemAlloc);
  */
 RTDECL(void *)  RTMemAllocZ(size_t cb) RT_NO_THROW
 {
-    PRTMEMHDR pHdr = rtMemAlloc(cb + RTR0MEM_FENCE_EXTRA, RTMEMHDR_FLAG_ZEROED);
+    PRTMEMHDR pHdr;
+    RT_ASSERT_PREEMPTIBLE();
+
+    pHdr = rtMemAlloc(cb + RTR0MEM_FENCE_EXTRA, RTMEMHDR_FLAG_ZEROED);
     if (pHdr)
     {
 #ifdef RTR0MEM_STRICT
@@ -185,6 +193,8 @@ RTDECL(void *) RTMemRealloc(void *pvOld, size_t cbNew) RT_NO_THROW
     else
     {
         PRTMEMHDR pHdrOld = (PRTMEMHDR)pvOld - 1;
+        RT_ASSERT_PREEMPTIBLE();
+
         if (pHdrOld->u32Magic == RTMEMHDR_MAGIC)
         {
             PRTMEMHDR pHdrNew;
@@ -227,6 +237,8 @@ RT_EXPORT_SYMBOL(RTMemRealloc);
 RTDECL(void) RTMemFree(void *pv) RT_NO_THROW
 {
     PRTMEMHDR pHdr;
+    RT_ASSERT_INTS_ON();
+
     if (!pv)
         return;
     pHdr = (PRTMEMHDR)pv - 1;
@@ -259,7 +271,10 @@ RT_EXPORT_SYMBOL(RTMemFree);
  */
 RTDECL(void *)    RTMemExecAlloc(size_t cb) RT_NO_THROW
 {
-    PRTMEMHDR pHdr = rtMemAlloc(cb + RTR0MEM_FENCE_EXTRA, RTMEMHDR_FLAG_EXEC);
+    PRTMEMHDR pHdr;
+    RT_ASSERT_PREEMPTIBLE();
+        
+    pHdr = rtMemAlloc(cb + RTR0MEM_FENCE_EXTRA, RTMEMHDR_FLAG_EXEC);
     if (pHdr)
     {
 #ifdef RTR0MEM_STRICT
@@ -281,6 +296,8 @@ RT_EXPORT_SYMBOL(RTMemExecAlloc);
 RTDECL(void)      RTMemExecFree(void *pv) RT_NO_THROW
 {
     PRTMEMHDR pHdr;
+    RT_ASSERT_INTS_ON();
+
     if (!pv)
         return;
     pHdr = (PRTMEMHDR)pv - 1;

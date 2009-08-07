@@ -33,13 +33,18 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #include "the-darwin-kernel.h"
-
+#include "internal/iprt.h"
 #include <iprt/mp.h>
+
+#include <iprt/asm.h>
 #include <iprt/cpuset.h>
 #include <iprt/err.h>
-#include <iprt/asm.h>
 #include "r0drv/mp-r0drv.h"
 
+
+/*******************************************************************************
+*   Defined Constants And Macros                                               *
+*******************************************************************************/
 #define MY_DARWIN_MAX_CPUS      (0xf + 1) /* see MAX_CPUS */
 
 
@@ -201,6 +206,8 @@ static void rtmpOnAllDarwinWrapper(void *pvArg)
 
 RTDECL(int) RTMpOnAll(PFNRTMPWORKER pfnWorker, void *pvUser1, void *pvUser2)
 {
+    RT_ASSERT_INTS_ON();
+
     RTMPARGS Args;
     Args.pfnWorker = pfnWorker;
     Args.pvUser1 = pvUser1;
@@ -229,6 +236,8 @@ static void rtmpOnOthersDarwinWrapper(void *pvArg)
 
 RTDECL(int) RTMpOnOthers(PFNRTMPWORKER pfnWorker, void *pvUser1, void *pvUser2)
 {
+    RT_ASSERT_INTS_ON();
+
     int rc;
     RTMPARGS Args;
     Args.pfnWorker = pfnWorker;
@@ -261,6 +270,8 @@ static void rtmpOnSpecificDarwinWrapper(void *pvArg)
 
 RTDECL(int) RTMpOnSpecific(RTCPUID idCpu, PFNRTMPWORKER pfnWorker, void *pvUser1, void *pvUser2)
 {
+    RT_ASSERT_INTS_ON();
+
     int rc;
     RTMPARGS Args;
     Args.pfnWorker = pfnWorker;
@@ -277,6 +288,8 @@ RTDECL(int) RTMpOnSpecific(RTCPUID idCpu, PFNRTMPWORKER pfnWorker, void *pvUser1
 
 RTDECL(int) RTMpPokeCpu(RTCPUID idCpu)
 {
+    RT_ASSERT_INTS_ON();
+
     /* no unicast IPI */
     return VERR_NOT_SUPPORTED;
 }

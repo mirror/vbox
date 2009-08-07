@@ -33,12 +33,15 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #include "the-darwin-kernel.h"
-
+#include "internal/iprt.h"
 #include <iprt/semaphore.h>
+
 #include <iprt/alloc.h>
 #include <iprt/assert.h>
 #include <iprt/asm.h>
 #include <iprt/err.h>
+#include <iprt/mp.h>
+#include <iprt/thread.h>
 
 #include "internal/magics.h"
 
@@ -114,6 +117,7 @@ RTDECL(int)  RTSemEventCreate(PRTSEMEVENT pEventSem)
 {
     Assert(sizeof(RTSEMEVENTINTERNAL) > sizeof(void *));
     AssertPtrReturn(pEventSem, VERR_INVALID_POINTER);
+    RT_ASSERT_PREEMPTIBLE();
 
     PRTSEMEVENTINTERNAL pEventInt = (PRTSEMEVENTINTERNAL)RTMemAlloc(sizeof(*pEventInt));
     if (pEventInt)
@@ -146,6 +150,7 @@ RTDECL(int)  RTSemEventDestroy(RTSEMEVENT EventSem)
     AssertMsgReturn(pEventInt->u32Magic == RTSEMEVENT_MAGIC,
                     ("pEventInt=%p u32Magic=%#x\n", pEventInt, pEventInt->u32Magic),
                     VERR_INVALID_HANDLE);
+    RT_ASSERT_INTS_ON();
 
     lck_spin_lock(pEventInt->pSpinlock);
     ASMAtomicIncU32(&pEventInt->u32Magic); /* make the handle invalid */
@@ -177,6 +182,8 @@ RTDECL(int)  RTSemEventSignal(RTSEMEVENT EventSem)
     AssertMsgReturn(pEventInt->u32Magic == RTSEMEVENT_MAGIC,
                     ("pEventInt=%p u32Magic=%#x\n", pEventInt, pEventInt->u32Magic),
                     VERR_INVALID_HANDLE);
+    RT_ASSERT_PREEMPT_CPUID_VAR();
+    RT_ASSERT_INTS_ON();
 
     /** @todo should probably disable interrupts here... update
      *        semspinmutex-r0drv-generic.c when done. */
@@ -187,15 +194,17 @@ RTDECL(int)  RTSemEventSignal(RTSEMEVENT EventSem)
         ASMAtomicDecU32(&pEventInt->cWaiters);
         ASMAtomicIncU32(&pEventInt->cWaking);
         thread_wakeup_prim((event_t)pEventInt, TRUE /* one thread */, THREAD_AWAKENED);
-		/** @todo this isn't safe. a scheduling interrupt on the other cpu while we're in here
+        /** @todo this isn't safe. a scheduling interrupt on the other cpu while we're in here
          * could cause the thread to be timed out before we manage to wake it up and the event
          * ends up in the wrong state. ditto for posix signals.
-		 * Update: check the return code; it will return KERN_NOT_WAITING if no one is around. */
+         * Update: check the return code; it will return KERN_NOT_WAITING if no one is around. */
     }
     else
         ASMAtomicXchgU8(&pEventInt->fSignaled, true);
 
     lck_spin_unlock(pEventInt->pSpinlock);
+
+    RT_ASSERT_PREEMPT_CPUID();
     return VINF_SUCCESS;
 }
 
@@ -207,7 +216,8 @@ static int rtSemEventWait(RTSEMEVENT EventSem, unsigned cMillies, wait_interrupt
     AssertMsgReturn(pEventInt->u32Magic == RTSEMEVENT_MAGIC,
                     ("pEventInt=%p u32Magic=%#x\n", pEventInt, pEventInt->u32Magic),
                     VERR_INVALID_HANDLE);
-
+    RT_ASSERT_PREEMPTIBLE();
+        
     lck_spin_lock(pEventInt->pSpinlock);
 
     int rc;
@@ -305,6 +315,7 @@ RTDECL(int)  RTSemEventMultiCreate(PRTSEMEVENTMULTI pEventMultiSem)
 {
     Assert(sizeof(RTSEMEVENTMULTIINTERNAL) > sizeof(void *));
     AssertPtrReturn(pEventMultiSem, VERR_INVALID_POINTER);
+    RT_ASSERT_PREEMPTIBLE();
 
     PRTSEMEVENTMULTIINTERNAL pEventMultiInt = (PRTSEMEVENTMULTIINTERNAL)RTMemAlloc(sizeof(*pEventMultiInt));
     if (pEventMultiInt)
@@ -337,6 +348,7 @@ RTDECL(int)  RTSemEventMultiDestroy(RTSEMEVENTMULTI EventMultiSem)
     AssertMsgReturn(pEventMultiInt->u32Magic == RTSEMEVENTMULTI_MAGIC,
                     ("pEventMultiInt=%p u32Magic=%#x\n", pEventMultiInt, pEventMultiInt->u32Magic),
                     VERR_INVALID_HANDLE);
+    RT_ASSERT_INTS_ON();
 
     lck_spin_lock(pEventMultiInt->pSpinlock);
     ASMAtomicIncU32(&pEventMultiInt->u32Magic); /* make the handle invalid */
@@ -368,6 +380,8 @@ RTDECL(int)  RTSemEventMultiSignal(RTSEMEVENTMULTI EventMultiSem)
     AssertMsgReturn(pEventMultiInt->u32Magic == RTSEMEVENTMULTI_MAGIC,
                     ("pEventMultiInt=%p u32Magic=%#x\n", pEventMultiInt, pEventMultiInt->u32Magic),
                     VERR_INVALID_HANDLE);
+    RT_ASSERT_PREEMPT_CPUID_VAR();
+    RT_ASSERT_INTS_ON();
 
     lck_spin_lock(pEventMultiInt->pSpinlock);
 
@@ -380,6 +394,8 @@ RTDECL(int)  RTSemEventMultiSignal(RTSEMEVENTMULTI EventMultiSem)
     }
 
     lck_spin_unlock(pEventMultiInt->pSpinlock);
+
+    RT_ASSERT_PREEMPT_CPUID();
     return VINF_SUCCESS;
 }
 
@@ -406,6 +422,7 @@ static int rtSemEventMultiWait(RTSEMEVENTMULTI EventMultiSem, unsigned cMillies,
     AssertMsgReturn(pEventMultiInt->u32Magic == RTSEMEVENTMULTI_MAGIC,
                     ("pEventMultiInt=%p u32Magic=%#x\n", pEventMultiInt, pEventMultiInt->u32Magic),
                     VERR_INVALID_HANDLE);
+    RT_ASSERT_PREEMPTIBLE();
 
     lck_spin_lock(pEventMultiInt->pSpinlock);
 
@@ -501,6 +518,7 @@ RTDECL(int)  RTSemEventMultiWaitNoResume(RTSEMEVENTMULTI EventMultiSem, unsigned
 #if 0 /* need proper timeout lock function! */
 RTDECL(int)  RTSemMutexCreate(PRTSEMMUTEX pMutexSem)
 {
+    RT_ASSERT_PREEMPTIBLE();
     AssertCompile(sizeof(RTSEMMUTEXINTERNAL) > sizeof(void *));
     PRTSEMMUTEXINTERNAL pMutexInt = (PRTSEMMUTEXINTERNAL)RTMemAlloc(sizeof(*pMutexInt));
     if (pMutexInt)
@@ -531,6 +549,7 @@ RTDECL(int)  RTSemMutexDestroy(RTSEMMUTEX MutexSem)
     AssertMsg(pMutexInt->u32Magic == RTSEMMUTEX_MAGIC,
               ("pMutexInt->u32Magic=%RX32 pMutexInt=%p\n", pMutexInt->u32Magic, pMutexInt)
               VERR_INVALID_PARAMETER);
+    RT_ASSERT_INTS_ON();
 
     /*
      * Invalidate it and signal the object just in case.
@@ -558,6 +577,7 @@ RTDECL(int)  RTSemMutexRequest(RTSEMMUTEX MutexSem, unsigned cMillies)
     AssertMsg(pMutexInt->u32Magic == RTSEMMUTEX_MAGIC,
               ("pMutexInt->u32Magic=%RX32 pMutexInt=%p\n", pMutexInt->u32Magic, pMutexInt)
               VERR_INVALID_PARAMETER);
+    RT_ASSERT_PREEMPTIBLE();
 
     /*
      * Get the mutex.
@@ -610,6 +630,7 @@ RTDECL(int)  RTSemMutexRelease(RTSEMMUTEX MutexSem)
         AssertMsgFailed(("pMutexInt->u32Magic=%RX32 pMutexInt=%p\n", pMutexInt ? pMutexInt->u32Magic : 0, pMutexInt));
         return VERR_INVALID_PARAMETER;
     }
+    RT_ASSERT_PREEMPTIBLE();
 
     /*
      * Release the mutex.
@@ -631,6 +652,7 @@ RTDECL(int)  RTSemFastMutexCreate(PRTSEMFASTMUTEX pMutexSem)
 {
     AssertCompile(sizeof(RTSEMFASTMUTEXINTERNAL) > sizeof(void *));
     AssertPtrReturn(pMutexSem, VERR_INVALID_POINTER);
+    RT_ASSERT_PREEMPTIBLE();
 
     PRTSEMFASTMUTEXINTERNAL pFastInt = (PRTSEMFASTMUTEXINTERNAL)RTMemAlloc(sizeof(*pFastInt));
     if (pFastInt)
@@ -659,6 +681,7 @@ RTDECL(int)  RTSemFastMutexDestroy(RTSEMFASTMUTEX MutexSem)
     AssertMsgReturn(pFastInt->u32Magic == RTSEMFASTMUTEX_MAGIC,
                     ("pFastInt->u32Magic=%RX32 pFastInt=%p\n", pFastInt->u32Magic, pFastInt),
                     VERR_INVALID_PARAMETER);
+    RT_ASSERT_INTS_ON();
 
     ASMAtomicIncU32(&pFastInt->u32Magic); /* make the handle invalid. */
     Assert(g_pDarwinLockGroup);
@@ -677,6 +700,7 @@ RTDECL(int)  RTSemFastMutexRequest(RTSEMFASTMUTEX MutexSem)
     AssertMsgReturn(pFastInt->u32Magic == RTSEMFASTMUTEX_MAGIC,
                     ("pFastInt->u32Magic=%RX32 pFastInt=%p\n", pFastInt->u32Magic, pFastInt),
                     VERR_INVALID_PARAMETER);
+    RT_ASSERT_PREEMPTIBLE();
     lck_mtx_lock(pFastInt->pMtx);
     return VINF_SUCCESS;
 }
@@ -689,6 +713,7 @@ RTDECL(int)  RTSemFastMutexRelease(RTSEMFASTMUTEX MutexSem)
     AssertMsgReturn(pFastInt->u32Magic == RTSEMFASTMUTEX_MAGIC,
                     ("pFastInt->u32Magic=%RX32 pFastInt=%p\n", pFastInt->u32Magic, pFastInt),
                     VERR_INVALID_PARAMETER);
+    RT_ASSERT_PREEMPTIBLE();
     lck_mtx_unlock(pFastInt->pMtx);
     return VINF_SUCCESS;
 }

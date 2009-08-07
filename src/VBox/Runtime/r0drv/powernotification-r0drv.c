@@ -41,6 +41,7 @@
 #include <iprt/mem.h>
 #include <iprt/spinlock.h>
 #include <iprt/string.h>
+#include <iprt/thread.h>
 #include "r0drv/mp-r0drv.h"
 #include "r0drv/power-r0drv.h"
 
@@ -169,6 +170,7 @@ RTDECL(int) RTPowerNotificationRegister(PFNRTPOWERNOTIFICATION pfnCallback, void
      */
     AssertPtrReturn(pfnCallback, VERR_INVALID_POINTER);
     AssertReturn(g_hRTPowerNotifySpinLock != NIL_RTSPINLOCK, VERR_WRONG_ORDER);
+    RT_ASSERT_PREEMPTIBLE();
 
     RTSpinlockAcquire(g_hRTPowerNotifySpinLock, &Tmp);
     for (pCur = g_pRTPowerCallbackHead; pCur; pCur = pCur->pNext)
@@ -236,6 +238,7 @@ RTDECL(int) RTPowerNotificationDeregister(PFNRTPOWERNOTIFICATION pfnCallback, vo
      */
     AssertPtrReturn(pfnCallback, VERR_INVALID_POINTER);
     AssertReturn(g_hRTPowerNotifySpinLock != NIL_RTSPINLOCK, VERR_WRONG_ORDER);
+    RT_ASSERT_INTS_ON();
 
     /*
      * Find and unlink the record from the list.

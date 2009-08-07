@@ -33,12 +33,13 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #include "the-darwin-kernel.h"
-
+#include "internal/iprt.h"
 #include <iprt/assert.h>
-#include <iprt/log.h>
-#include <iprt/string.h>
-#include <iprt/stdarg.h>
+
 #include <iprt/asm.h>
+#include <iprt/log.h>
+#include <iprt/stdarg.h>
+#include <iprt/string.h>
 
 
 /*******************************************************************************
