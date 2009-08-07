@@ -114,6 +114,7 @@ if test -n "$VBOX_DARWIN_SYMS"; then
 fi
 
 trap "sudo chown -R `whoami` $DIR; exit 1" INT
+trap "sudo chown -R `whoami` $DIR; exit 1" ERR
 # On smbfs, this might succeed just fine but make no actual changes,
 # so we might have to temporarily copy the driver to a local directory.
 if sudo chown -R root:wheel "$DIR"; then
@@ -153,4 +154,8 @@ sync
 sudo chown -R `whoami` "$DIR"
 #sudo chmod 666 /dev/vboxdrv
 kextstat | grep org.virtualbox.kext
+if [ -n "${VBOX_DARWIN_SYMS}"  -a   "$XNU_VERSION" -ge "10" ]; then
+    dsymutil -o "${VBOX_DARWIN_SYMS}/${DRVNAME}.dSYM" "${DIR}/Contents/MacOS/`basename -s .kext ${DRVNAME}`"
+    sync
+fi
 
