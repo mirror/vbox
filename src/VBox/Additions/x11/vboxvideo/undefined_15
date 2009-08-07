@@ -159,3 +159,11 @@ __divdi3
 __umoddi3
 __moddi3
 __udivdi3
+vgaHWRestoreFonts
+vgaHWGetIndex
+vgaHWSaveFonts
+vgaHWUnmapMem
+vgaHWHandleColormaps
+vgaHWGetHWRec
+vgaHWMapMem
+vgaHWFreeHWRec
