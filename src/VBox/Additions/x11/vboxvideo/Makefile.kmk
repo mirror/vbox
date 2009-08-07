@@ -170,7 +170,7 @@ vboxvideo_drv_13_INCS = \
 	$(VBOX_PATH_X11_ROOT)/libdrm-2.3.0 \
 	$(VBOX_PATH_X11_ROOT)/xf86driproto-2.0.3
 vboxvideo_drv_13_SOURCES = \
-	vboxvideo_13.c \
+	vboxvideo_15.c \
 	vboxutils.c
 
 
@@ -192,7 +192,7 @@ vboxvideo_drv_14_INCS = \
 	$(VBOX_PATH_X11_ROOT)/libdrm-2.3.0 \
 	$(VBOX_PATH_X11_ROOT)/xf86driproto-2.0.4
 vboxvideo_drv_14_SOURCES  = \
-	vboxvideo_13.c \
+	vboxvideo_15.c \
 	vboxutils.c
 
 
@@ -294,7 +294,7 @@ $$(PATH_vboxvideo_drv_15)/tstvboxvideo15.run: $$(INSTARGET_vboxvideo_drv_15)
      OTHERS += $(PATH_vboxvideo_drv_16)/tstvboxvideo16.run
 $$(PATH_vboxvideo_drv_16)/tstvboxvideo16.run: $$(INSTARGET_vboxvideo_drv_16)
 	$(QUIET)/bin/sh $(PATH_ROOT)/src/bldprogs/checkUndefined.sh $(KBUILD_TARGET)  \
-	    $(INSTARGET_vboxvideo_drv_16) $(OUR_PATH_VBOXVIDEO)/undefined_16
+	    $(INSTARGET_vboxvideo_drv_16) $(OUR_PATH_VBOXVIDEO)/undefined_15
 	$(QUIET)$(APPEND) -t "$@" "done"
 
     endif # ! VBOX_ONLY_SDK
