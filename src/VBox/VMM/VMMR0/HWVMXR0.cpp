@@ -1832,7 +1832,47 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 
     vmxR0UpdateExceptionBitmap(pVM, pVCpu, pCtx);
 
-    if (pVM->hwaccm.s.vmx.msr.vmx_proc_ctls.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_USE_MSR_BITMAPS)
+    /* Store all guest MSRs in the VM-Entry load area, so they will be loaded during the world switch. */
+    PVMXMSR pMsr = (PVMXMSR)pVCpu->hwaccm.s.vmx.pGuestMSR;
+    unsigned idxMsr = 0;
+
+    uint32_t ulEdx;
+    uint32_t ulTemp;
+    CPUMGetGuestCpuId(pVCpu, 0x80000001, &ulTemp, &ulTemp, &ulTemp, &ulEdx);
+    /* EFER MSR present? */
+    if (ulEdx & (X86_CPUID_AMD_FEATURE_EDX_NX|X86_CPUID_AMD_FEATURE_EDX_LONG_MODE))
+    {
+        pMsr->u32IndexMSR = MSR_K6_EFER;
+        pMsr->u32Reserved = 0;
+        pMsr->u64Value    = pCtx->msrEFER;
+        /* VT-x will complain if only MSR_K6_EFER_LME is set. */
+        if (!CPUMIsGuestInLongModeEx(pCtx))
+            pMsr->u64Value &= ~(MSR_K6_EFER_LMA|MSR_K6_EFER_LME);
+        pMsr++; idxMsr++;
+
+        if (ulEdx & X86_CPUID_AMD_FEATURE_EDX_LONG_MODE)
+        {
+            pMsr->u32IndexMSR = MSR_K8_LSTAR;
+            pMsr->u32Reserved = 0;
+            pMsr->u64Value    = pCtx->msrLSTAR;           /* 64 bits mode syscall rip */
+            pMsr++; idxMsr++;
+            pMsr->u32IndexMSR = MSR_K6_STAR;
+            pMsr->u32Reserved = 0;
+            pMsr->u64Value    = pCtx->msrSTAR;            /* legacy syscall eip, cs & ss */
+            pMsr++; idxMsr++;
+            pMsr->u32IndexMSR = MSR_K8_SF_MASK;
+            pMsr->u32Reserved = 0;
+            pMsr->u64Value    = pCtx->msrSFMASK;          /* syscall flag mask */
+            pMsr++; idxMsr++;
+            pMsr->u32IndexMSR = MSR_K8_KERNEL_GS_BASE;
+            pMsr->u32Reserved = 0;
+            pMsr->u64Value    = pCtx->msrKERNELGSBASE;    /* swapgs exchange value */
+            pMsr++; idxMsr++;
+        }
+    }
+
+    if (    (pVM->hwaccm.s.vmx.msr.vmx_proc_ctls.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_USE_MSR_BITMAPS)
+        &&  (ulEdx & X86_CPUID_AMD_FEATURE_EDX_LONG_MODE))
     {
         /* Allow the guest to directly modify these MSRs; they are restored and saved automatically. */
         vmxR0SetMSRPermission(pVCpu, MSR_K8_LSTAR, true, true);
@@ -1842,35 +1882,6 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         vmxR0SetMSRPermission(pVCpu, MSR_K8_GS_BASE, true, true);
         vmxR0SetMSRPermission(pVCpu, MSR_K8_FS_BASE, true, true);
     }
-
-    /* Store all guest MSRs in the VM-Entry load area, so they will be loaded during the world switch. */
-    PVMXMSR pMsr = (PVMXMSR)pVCpu->hwaccm.s.vmx.pGuestMSR;
-    unsigned idxMsr = 0;
-
-    pMsr->u32IndexMSR = MSR_K6_EFER;
-    pMsr->u32Reserved = 0;
-    pMsr->u64Value    = pCtx->msrEFER;
-    /* VT-x will complain if only MSR_K6_EFER_LME is set. */
-    if (!CPUMIsGuestInLongModeEx(pCtx))
-        pMsr->u64Value &= ~(MSR_K6_EFER_LMA|MSR_K6_EFER_LME);
-
-    pMsr++; idxMsr++;
-    pMsr->u32IndexMSR = MSR_K8_LSTAR;
-    pMsr->u32Reserved = 0;
-    pMsr->u64Value    = pCtx->msrLSTAR;           /* 64 bits mode syscall rip */
-    pMsr++; idxMsr++;
-    pMsr->u32IndexMSR = MSR_K6_STAR;
-    pMsr->u32Reserved = 0;
-    pMsr->u64Value    = pCtx->msrSTAR;            /* legacy syscall eip, cs & ss */
-    pMsr++; idxMsr++;
-    pMsr->u32IndexMSR = MSR_K8_SF_MASK;
-    pMsr->u32Reserved = 0;
-    pMsr->u64Value    = pCtx->msrSFMASK;          /* syscall flag mask */
-    pMsr++; idxMsr++;
-    pMsr->u32IndexMSR = MSR_K8_KERNEL_GS_BASE;
-    pMsr->u32Reserved = 0;
-    pMsr->u64Value    = pCtx->msrKERNELGSBASE;    /* swapgs exchange value */
-    pMsr++; idxMsr++;
 
     rc = VMXWriteVMCS(VMX_VMCS_CTRL_ENTRY_MSR_LOAD_COUNT, idxMsr);
     AssertRC(rc);
