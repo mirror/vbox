@@ -21,6 +21,11 @@
 
 
 HOST_OS_VERSION=`uname -r`
+
+DIR_VBOXBASE=/opt/VirtualBox
+DIR_MOD_32="/platform/i86pc/kernel/drv"
+DIR_MOD_64=$DIR_MOD_32/amd64
+
 BIN_ADDDRV=/usr/sbin/add_drv
 BIN_REMDRV=/usr/sbin/rem_drv
 BIN_MODLOAD=/usr/sbin/modload
@@ -32,8 +37,6 @@ BIN_SVCADM=/usr/sbin/svcadm
 BIN_SVCCFG=/usr/sbin/svccfg
 BIN_IFCONFIG=/sbin/ifconfig
 
-DIR_VBOXBASE=/opt/VirtualBox
-
 # "vboxdrv" is also used in sed lines here (change those as well if it ever changes)
 MOD_VBOXDRV=vboxdrv
 MOD_VBOXNET=vboxnet
@@ -41,9 +44,6 @@ MOD_VBOXFLT=vboxflt
 MOD_VBI=vbi
 MOD_VBOXUSBMON=vboxusbmon
 FATALOP=fatal
-
-MODDIR32="/platform/i86pc/kernel/drv"
-MODDIR64=$MODDIR32/amd64
 
 
 infoprint()
@@ -61,25 +61,47 @@ success()
     echo 1>&2 "$1"
 }
 
-error()
+errorprint()
 {
     echo 1>&2 "## $1"
 }
 
+
 # check_bin_path()
 # !! failure is always fatal
-check_bin_paths()
+check_bin_path()
 {
     if test -z "$1"; then
-        error "missing argument to check_bin_path()"
+        errorprint "missing argument to check_bin_path()"
         exit 50
     fi
 
     if test !  -x "$1"; then
-        error "$1 missing or is not an executable"
+        errorprint "$1 missing or is not an executable"
         exit 51
     fi
     return 0
+}
+
+# find_bins()
+# !! failure is always fatal
+find_bins()
+{
+    # Search only for binaries that might be in different locations
+    BIN_IFCONFIG=`which ifconfig 2> /dev/null`
+    BIN_SVCS=`which svcs 2> /dev/null`
+
+    check_bin_path "$BIN_ADDDRV"
+    check_bin_path "$BIN_REMDRV"
+    check_bin_path "$BIN_MODLOAD"
+    check_bin_path "$BIN_MODUNLOAD"
+    check_bin_path "$BIN_MODINFO"
+    check_bin_path "$BIN_DEVFSADM"
+    check_bin_path "$BIN_BOOTADM"
+    check_bin_path "$BIN_SVCADM"
+    check_bin_path "$BIN_SVCCFG"
+    check_bin_path "$BIN_SVCS"
+    check_bin_path "$BIN_IFCONFIG"
 }
 
 # check_root()
@@ -87,10 +109,10 @@ check_bin_paths()
 check_root()
 {
     idbin=/usr/xpg4/bin/id
-    if test ! -f "$idbin"; then
+    if test ! -x "$idbin"; then
         found=`which id`
-        if test ! -f "$found" || test ! -h "$found"; then
-            error "Failed to find a suitable user id binary."
+        if test ! -x "$found"; then
+            errorprint "Failed to find a suitable user id executable."
             exit 1
         else
             idbin=$found
@@ -98,7 +120,7 @@ check_root()
     fi
 
     if test `$idbin -u` -ne 0; then
-        error "This script must be run with administrator privileges."
+        errorprint "This script must be run with administrator privileges."
         exit 2
     fi
 }
@@ -109,7 +131,7 @@ check_zone()
 {
     currentzone=`zonename`
     if test "$currentzone" != "global"; then
-        error "This script must be run from the global zone."
+        errorprint "This script must be run from the global zone."
         exit 3
     fi
 }
@@ -120,7 +142,7 @@ check_isa()
 {
     currentisa=`uname -i`
     if test "$currentisa" = "i86xpv"; then
-        error "VirtualBox cannot run under xVM Dom0! Fatal Error, Aborting installation!"
+        errorprint "VirtualBox cannot run under xVM Dom0! Fatal Error, Aborting installation!"
         exit 4
     fi
 }
@@ -130,11 +152,11 @@ check_isa()
 check_module_arch()
 {
     cputype=`isainfo -k`
-    modulepath="$MODDIR32/$MOD_VBOXDRV"
+    modulepath="$DIR_MOD_32/$MOD_VBOXDRV"
     if test "$cputype" = "amd64"; then
-        modulepath="$MODDIR64/$MOD_VBOXDRV"
+        modulepath="$DIR_MOD_64/$MOD_VBOXDRV"
     elif test "$cputype" != "i386"; then
-        error "VirtualBox works only on i386/amd64 architectures, not $cputype"
+        errorprint "VirtualBox works only on i386/amd64 architectures, not $cputype"
         exit 98
     fi
 
@@ -146,22 +168,22 @@ check_module_arch()
     # Something's screwed, let us go a step further and check if user has mixed up x86/amd64
     # amd64 ISA, x86 kernel module??
     if test "$cputype" = "amd64"; then
-        modulepath="$MODDIR32/$MOD_VBOXDRV"
+        modulepath="$DIR_MOD_32/$MOD_VBOXDRV"
         if test -f "$modulepath"; then
-            error "Found 32-bit module instead of 64-bit. Please install the amd64 package!"
+            errorprint "Found 32-bit module instead of 64-bit. Please install the amd64 package!"
             exit 97
         fi
     else
         # x86 ISA, amd64 kernel module??
-        modulepath="$MODDIR64/$MOD_VBOXDRV"
+        modulepath="$DIR_MOD_64/$MOD_VBOXDRV"
         if test -f "$modulepath"; then
-            error "Found 64-bit module instead of 32-bit. Please install the x86 package!"
+            errorprint "Found 64-bit module instead of 32-bit. Please install the x86 package!"
             exit 96
         fi
     fi
 
     # Shouldn't really happen...
-    error "VirtualBox Host kernel module NOT installed."
+    errorprint "VirtualBox Host kernel module NOT installed."
     exit 99
 }
 
@@ -170,7 +192,7 @@ check_module_arch()
 module_added()
 {
     if test -z "$1"; then
-        error "missing argument to module_added()"
+        errorprint "missing argument to module_added()"
         exit 5
     fi
 
@@ -186,7 +208,7 @@ module_added()
 module_loaded()
 {
     if test -z "$1"; then
-        error "missing argument to module_loaded()"
+        errorprint "missing argument to module_loaded()"
         exit 6
     fi
 
@@ -204,7 +226,7 @@ module_loaded()
 add_driver()
 {
     if test -z "$1"; then
-        error "missing argument to add_driver()"
+        errorprint "missing argument to add_driver()"
         exit 7
     fi
 
@@ -218,7 +240,7 @@ add_driver()
     fi
 
     if test $? -ne 0; then
-        error "Failed to load: $modname"
+        errorprint "Failed to load: $modname"
         if test "$fatal" = "$FATALOP"; then
             exit 8
         fi
@@ -232,7 +254,7 @@ add_driver()
 rem_driver()
 {
     if test -z "$1"; then
-        error "missing argument to rem_driver()"
+        errorprint "missing argument to rem_driver()"
         exit 9
     fi
 
@@ -245,7 +267,7 @@ rem_driver()
             success "Removed: $modname successfully"
             return 0
         else
-            error "Failed to remove: $modname"
+            errorprint "Failed to remove: $modname"
             if test "$fatal" = "$FATALOP"; then
                 exit 10
             fi
@@ -259,7 +281,7 @@ rem_driver()
 unload_module()
 {
     if test -z "$1"; then
-        error "missing argument to unload_module()"
+        errorprint "missing argument to unload_module()"
         exit 11
     fi
 
@@ -271,7 +293,7 @@ unload_module()
         if test $? -eq 0; then
             success "Unloaded: $modname successfully"
         else
-            error "Failed to unload: $modname"
+            errorprint "Failed to unload: $modname"
             if test "$fatal" = "$FATALOP"; then
                 exit 12
             fi
@@ -287,7 +309,7 @@ unload_module()
 load_module()
 {
     if test -z "$1"; then
-        error "missing argument to load_module()"
+        errorprint "missing argument to load_module()"
         exit 14
     fi
 
@@ -298,7 +320,7 @@ load_module()
         success "Loaded: $modname successfully"
         return 0
     else
-        error "Failed to load: $modname"
+        errorprint "Failed to load: $modname"
         if test "$fatal" = "$FATALOP"; then
             exit 15
         fi
@@ -348,12 +370,12 @@ install_drivers()
             # Create the device link
             /usr/sbin/devfsadm -i  $MOD_VBOXUSBMON
             if test $? -ne 0; then
-                error "Failed to create device link for $MOD_VBOXUSBMON."
+                errorprint "Failed to create device link for $MOD_VBOXUSBMON."
                 exit 16
             fi
         fi
     else
-        error "Failed to create device link for $MOD_VBOXDRV."
+        errorprint "Failed to create device link for $MOD_VBOXDRV."
         exit 17
     fi
 
@@ -412,6 +434,40 @@ install_python_bindings()
         return 0
     fi
     return 1
+}
+
+
+# cleanup_install([fatal])
+# failure: depends on [fatal]
+cleanup_install()
+{
+    fatal=$1
+
+    # stop and unregister webservice SMF
+    servicefound=`$BIN_SVCS -a | grep "virtualbox/webservice"`
+    if test ! -z "$servicefound"; then
+        $BIN_SVCADM disable -s svc:/application/virtualbox/webservice:default
+        $BIN_SVCCFG delete svc:/application/virtualbox/webservice:default
+    fi
+
+    # stop and unregister zoneaccess SMF
+    servicefound=`$BIN_SVCS -a | grep "virtualbox/zoneaccess"`
+    if test ! -z "$servicefound"; then
+        $BIN_SVCADM disable -s svc:/application/virtualbox/zoneaccess
+        $BIN_SVCCFG delete svc:/application/virtualbox/zoneaccess
+    fi
+    
+    # unplumb vboxnet0
+    vboxnetup=`$BIN_IFCONFIG vboxnet0 >/dev/null 2>&1`
+    if test "$?" -eq 0; then
+        $BIN_IFCONFIG vboxnet0 unplumb
+        if test "$?" -ne 0; then
+            errorprint "VirtualBox NetAdapter 'vboxnet0' couldn't be unplumbed (probably in use)."
+            if test "$fatal" = "$FATALOP"; then
+                exit 33
+            fi
+        fi
+    fi
 }
 
 
@@ -482,11 +538,12 @@ post_install()
 
         return 0
     else
-        error "Failed to update boot-archive"
+        errorprint "Failed to update boot-archive"
         exit 666
     fi
     return 1
 }
+
 
 # pre_remove([fatal])
 # failure: depends on [fatal]
@@ -494,19 +551,7 @@ pre_remove()
 {
     fatal=$1
 
-    # stop and unregister webservice SMF (if present)
-    servicefound=`svcs -a | grep "virtualbox/webservice"`
-    if test ! -z "$servicefound"; then
-        $BIN_SVCADM disable -s svc:/application/virtualbox/webservice:default
-        $BIN_SVCCFG delete svc:/application/virtualbox/webservice:default
-    fi
-
-    # stop and unregister zoneaccess SMF (if present)
-    servicefound=`svcs -a | grep "virtualbox/zoneaccess"`
-    if test ! -z "$servicefound"; then
-        $BIN_SVCADM disable -s svc:/application/virtualbox/zoneaccess
-        $BIN_SVCCFG delete svc:/application/virtualbox/zoneaccess
-    fi
+    cleanup_install
 
     remove_drivers "$fatal"
     if test "$?" -eq 0; then
@@ -516,21 +561,12 @@ pre_remove()
 }
 
 
+
 # And it begins...
 check_root
 check_isa
 check_zone
-
-check_bin_path $BIN_ADDDRV
-check_bin_path $BIN_REMDRV
-check_bin_path $BIN_MODLOAD
-check_bin_path $BIN_MODUNLOAD
-check_bin_path $BIN_MODINFO
-check_bin_path $BIN_DEVFSADM
-check_bin_path $BIN_BOOTADM
-check_bin_path $BIN_SVCADM
-check_bin_path $BIN_SVCCFG
-check_bin_path $BIN_IFCONFIG
+find_bins
 
 drvop=$1
 fatal=$2
