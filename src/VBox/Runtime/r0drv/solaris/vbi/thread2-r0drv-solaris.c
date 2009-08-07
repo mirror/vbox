@@ -28,16 +28,19 @@
  * additional information or have any questions.
  */
 
+
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
 #include "the-solaris-kernel.h"
+#include "internal/iprt.h"
+#include <iprt/thread.h>
 
 #include <iprt/assert.h>
 #include <iprt/err.h>
-#include <iprt/thread.h>
-
 #include "internal/thread.h"
+
+
 
 int rtThreadNativeInit(void)
 {
@@ -89,24 +92,24 @@ int rtThreadNativeAdopt(PRTTHREADINT pThread)
 static void rtThreadNativeMain(void *pvThreadInt)
 {
     PRTTHREADINT pThreadInt = (PRTTHREADINT)pvThreadInt;
-    int rc;
 
-    rc = rtThreadMain(pThreadInt, (RTNATIVETHREAD)vbi_curthread(), &pThreadInt->szName[0]);
+    rtThreadMain(pThreadInt, (RTNATIVETHREAD)vbi_curthread(), &pThreadInt->szName[0]);
     vbi_thread_exit();
 }
 
 
 int rtThreadNativeCreate(PRTTHREADINT pThreadInt, PRTNATIVETHREAD pNativeThread)
 {
-    int rc;
-    void *pKernThread = vbi_thread_create(rtThreadNativeMain, pThreadInt,
-                                           sizeof (pThreadInt), minclsyspri);
-    if (pKernThread)
+    void   *pvKernThread;
+    RT_ASSERT_PREEMPTIBLE();
+
+    pvKernThread = vbi_thread_create(rtThreadNativeMain, pThreadInt, sizeof(pThreadInt), minclsyspri);
+    if (pvKernThread)
     {
-        *pNativeThread = (RTNATIVETHREAD)pKernThread;
+        *pNativeThread = (RTNATIVETHREAD)pvKernThread;
         return VINF_SUCCESS;
     }
 
-    return RTErrConvertFromErrno(rc);
+    return VERR_OUT_OF_RESOURCES;
 }
 

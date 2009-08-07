@@ -33,14 +33,11 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #include "the-solaris-kernel.h"
+#include "internal/iprt.h"
+
 #include <iprt/err.h>
-#include <iprt/assert.h>
 #include "internal/initterm.h"
 
-
-/*******************************************************************************
-*   Internal Functions                                                         *
-*******************************************************************************/
 
 
 int rtR0InitNative(void)
@@ -52,3 +49,4 @@ int rtR0InitNative(void)
 void rtR0TermNative(void)
 {
 }
+

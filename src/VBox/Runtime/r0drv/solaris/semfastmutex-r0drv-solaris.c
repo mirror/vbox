@@ -33,13 +33,14 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #include "the-solaris-kernel.h"
-
+#include "internal/iprt.h"
 #include <iprt/semaphore.h>
-#include <iprt/err.h>
-#include <iprt/alloc.h>
-#include <iprt/assert.h>
-#include <iprt/asm.h>
 
+#include <iprt/asm.h>
+#include <iprt/assert.h>
+#include <iprt/err.h>
+#include <iprt/mem.h>
+#include <iprt/thread.h>
 #include "internal/magics.h"
 
 
@@ -58,10 +59,12 @@ typedef struct RTSEMFASTMUTEXINTERNAL
 } RTSEMFASTMUTEXINTERNAL, *PRTSEMFASTMUTEXINTERNAL;
 
 
+
 RTDECL(int)  RTSemFastMutexCreate(PRTSEMFASTMUTEX pMutexSem)
 {
     AssertCompile(sizeof(RTSEMFASTMUTEXINTERNAL) > sizeof(void *));
     AssertPtrReturn(pMutexSem, VERR_INVALID_POINTER);
+    RT_ASSERT_PREEMPTIBLE();
 
     PRTSEMFASTMUTEXINTERNAL pFastInt = (PRTSEMFASTMUTEXINTERNAL)RTMemAlloc(sizeof(*pFastInt));
     if (pFastInt)
@@ -84,6 +87,7 @@ RTDECL(int)  RTSemFastMutexDestroy(RTSEMFASTMUTEX MutexSem)
     AssertMsgReturn(pFastInt->u32Magic == RTSEMFASTMUTEX_MAGIC,
                     ("pFastInt->u32Magic=%RX32 pFastInt=%p\n", pFastInt->u32Magic, pFastInt),
                     VERR_INVALID_PARAMETER);
+    RT_ASSERT_INTS_ON();
 
     ASMAtomicXchgU32(&pFastInt->u32Magic, RTSEMFASTMUTEX_MAGIC_DEAD);
     rw_destroy(&pFastInt->Mtx);
@@ -100,6 +104,7 @@ RTDECL(int)  RTSemFastMutexRequest(RTSEMFASTMUTEX MutexSem)
     AssertMsgReturn(pFastInt->u32Magic == RTSEMFASTMUTEX_MAGIC,
                     ("pFastInt->u32Magic=%RX32 pFastInt=%p\n", pFastInt->u32Magic, pFastInt),
                     VERR_INVALID_PARAMETER);
+    RT_ASSERT_PREEMPTIBLE();
 
     rw_enter(&pFastInt->Mtx, RW_WRITER);
     return VINF_SUCCESS;
@@ -113,6 +118,7 @@ RTDECL(int)  RTSemFastMutexRelease(RTSEMFASTMUTEX MutexSem)
     AssertMsgReturn(pFastInt->u32Magic == RTSEMFASTMUTEX_MAGIC,
                     ("pFastInt->u32Magic=%RX32 pFastInt=%p\n", pFastInt->u32Magic, pFastInt),
                     VERR_INVALID_PARAMETER);
+    RT_ASSERT_INTS_ON();
 
     rw_exit(&pFastInt->Mtx);
     return VINF_SUCCESS;

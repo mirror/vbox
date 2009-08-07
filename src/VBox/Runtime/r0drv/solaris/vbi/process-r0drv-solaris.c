@@ -28,12 +28,14 @@
  * additional information or have any questions.
  */
 
+
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
 #include "the-solaris-kernel.h"
-
+#include "internal/iprt.h"
 #include <iprt/process.h>
+
 
 
 RTDECL(RTPROCESS) RTProcSelf(void)

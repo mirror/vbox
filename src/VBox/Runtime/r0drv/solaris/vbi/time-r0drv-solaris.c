@@ -32,9 +32,9 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
-#include "the-solaris-kernel.h"
 #define RTTIME_INCL_TIMESPEC
-
+#include "the-solaris-kernel.h"
+#include "internal/iprt.h"
 #include <iprt/time.h>
 
 
@@ -66,3 +66,4 @@ RTDECL(PRTTIMESPEC) RTTimeNow(PRTTIMESPEC pTime)
 {
     return RTTimeSpecSetNano(pTime, vbi_tod());
 }
+

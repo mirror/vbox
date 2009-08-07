@@ -33,12 +33,13 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #include "the-solaris-kernel.h"
-
+#include "internal/iprt.h"
 #include <iprt/memobj.h>
-#include <iprt/mem.h>
-#include <iprt/err.h>
+
 #include <iprt/assert.h>
+#include <iprt/err.h>
 #include <iprt/log.h>
+#include <iprt/mem.h>
 #include <iprt/param.h>
 #include <iprt/process.h>
 #include "internal/memobj.h"
@@ -325,7 +326,7 @@ int rtR0MemObjNativeMapUser(PPRTR0MEMOBJINTERNAL ppMem, PRTR0MEMOBJINTERNAL pMem
         {
             cmn_err(CE_NOTE, "rtR0MemObjNativeMapUser: no page to map.\n");
             rc = VERR_MAP_FAILED;
-            goto done;
+            goto l_done;
         }
         pv = (void *)((uintptr_t)pv + PAGE_SIZE);
     }
@@ -336,7 +337,7 @@ int rtR0MemObjNativeMapUser(PPRTR0MEMOBJINTERNAL ppMem, PRTR0MEMOBJINTERNAL pMem
         cmn_err(CE_NOTE, "rtR0MemObjNativeMapUser: vbi failure.\n");
         rc = VERR_MAP_FAILED;
         rtR0MemObjDelete(&pMemSolaris->Core);
-        goto done;
+        goto l_done;
     }
     else
         rc = VINF_SUCCESS;
@@ -344,7 +345,7 @@ int rtR0MemObjNativeMapUser(PPRTR0MEMOBJINTERNAL ppMem, PRTR0MEMOBJINTERNAL pMem
     pMemSolaris->Core.u.Mapping.R0Process = (RTR0PROCESS)vbi_proc();
     pMemSolaris->Core.pv = addr;
     *ppMem = &pMemSolaris->Core;
-done:
+l_done:
     kmem_free(paddrs, sizeof(uint64_t) * cPages);
     return rc;
 }

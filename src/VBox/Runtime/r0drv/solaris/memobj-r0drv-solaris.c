@@ -33,12 +33,13 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #include "the-solaris-kernel.h"
-
+#include "internal/iprt.h"
 #include <iprt/memobj.h>
-#include <iprt/mem.h>
-#include <iprt/err.h>
+
 #include <iprt/assert.h>
+#include <iprt/err.h>
 #include <iprt/log.h>
+#include <iprt/mem.h>
 #include <iprt/param.h>
 #include <iprt/process.h>
 #include "internal/memobj.h"
@@ -60,6 +61,10 @@ typedef struct RTR0MEMOBJSOLARIS
     page_t              **ppShadowPages;
 } RTR0MEMOBJSOLARIS, *PRTR0MEMOBJSOLARIS;
 
+
+/*******************************************************************************
+*   Global Variables                                                           *
+*******************************************************************************/
 /**
  * Used for supplying the solaris kernel info. about memory limits
  * during contiguous allocations (i_ddi_mem_alloc)
@@ -79,6 +84,7 @@ struct ddi_dma_attr g_SolarisX86PhysMemLimits =
     1,                      /* device granularity */
     0                       /* bus-specific flags */
 };
+
 
 
 static uint64_t rtR0MemObjSolarisVirtToPhys(struct hat* hatSpace, caddr_t virtAddr)
