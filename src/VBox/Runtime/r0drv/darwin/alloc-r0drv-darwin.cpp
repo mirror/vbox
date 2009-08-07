@@ -33,9 +33,11 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #include "the-darwin-kernel.h"
+#include "internal/iprt.h"
+#include <iprt/mem.h>
 
-#include <iprt/alloc.h>
 #include <iprt/assert.h>
+#include <iprt/thread.h>
 #include "r0drv/alloc-r0drv.h"
 
 
@@ -53,7 +55,7 @@ PRTMEMHDR rtMemAlloc(size_t cb, uint32_t fFlags)
         pHdr->cbReq     = cb;
     }
     else
-        printf("rmMemAlloc(%#x, %#x) failed\n", cb + sizeof(*pHdr), fFlags);
+        printf("rmMemAlloc(%#zx, %#x) failed\n", cb + sizeof(*pHdr), fFlags);
     return pHdr;
 }
 
@@ -75,6 +77,7 @@ RTR0DECL(void *) RTMemContAlloc(PRTCCPHYS pPhys, size_t cb)
      */
     AssertPtr(pPhys);
     Assert(cb > 0);
+    RT_ASSERT_PREEMPTIBLE();
 
     /*
      * Allocate the memory and ensure that the API is still providing
@@ -104,6 +107,7 @@ RTR0DECL(void *) RTMemContAlloc(PRTCCPHYS pPhys, size_t cb)
 
 RTR0DECL(void) RTMemContFree(void *pv, size_t cb)
 {
+    RT_ASSERT_PREEMPTIBLE();
     if (pv)
     {
         Assert(cb > 0);

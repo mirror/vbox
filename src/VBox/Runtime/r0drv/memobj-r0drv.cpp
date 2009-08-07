@@ -41,8 +41,10 @@
 #include <iprt/assert.h>
 #include <iprt/err.h>
 #include <iprt/log.h>
+#include <iprt/mp.h>
 #include <iprt/param.h>
 #include <iprt/process.h>
+#include <iprt/thread.h>
 
 #include "internal/memobj.h"
 
@@ -317,6 +319,7 @@ RTR0DECL(int) RTR0MemObjFree(RTR0MEMOBJ MemObj, bool fFreeMappings)
     pMem = (PRTR0MEMOBJINTERNAL)MemObj;
     AssertReturn(pMem->u32Magic == RTR0MEMOBJ_MAGIC, VERR_INVALID_HANDLE);
     AssertReturn(pMem->enmType > RTR0MEMOBJTYPE_INVALID && pMem->enmType < RTR0MEMOBJTYPE_END, VERR_INVALID_HANDLE);
+    RT_ASSERT_PREEMPTIBLE();
 
     /*
      * Deal with mapings according to fFreeMappings.
@@ -423,6 +426,7 @@ RTR0DECL(int) RTR0MemObjAllocPage(PRTR0MEMOBJ pMemObj, size_t cb, bool fExecutab
     *pMemObj = NIL_RTR0MEMOBJ;
     AssertReturn(cb > 0, VERR_INVALID_PARAMETER);
     AssertReturn(cb <= cbAligned, VERR_INVALID_PARAMETER);
+    RT_ASSERT_PREEMPTIBLE();
 
     /* do the allocation. */
     return rtR0MemObjNativeAllocPage(pMemObj, cbAligned, fExecutable);
@@ -448,6 +452,7 @@ RTR0DECL(int) RTR0MemObjAllocLow(PRTR0MEMOBJ pMemObj, size_t cb, bool fExecutabl
     *pMemObj = NIL_RTR0MEMOBJ;
     AssertReturn(cb > 0, VERR_INVALID_PARAMETER);
     AssertReturn(cb <= cbAligned, VERR_INVALID_PARAMETER);
+    RT_ASSERT_PREEMPTIBLE();
 
     /* do the allocation. */
     return rtR0MemObjNativeAllocLow(pMemObj, cbAligned, fExecutable);
@@ -473,6 +478,7 @@ RTR0DECL(int) RTR0MemObjAllocCont(PRTR0MEMOBJ pMemObj, size_t cb, bool fExecutab
     *pMemObj = NIL_RTR0MEMOBJ;
     AssertReturn(cb > 0, VERR_INVALID_PARAMETER);
     AssertReturn(cb <= cbAligned, VERR_INVALID_PARAMETER);
+    RT_ASSERT_PREEMPTIBLE();
 
     /* do the allocation. */
     return rtR0MemObjNativeAllocCont(pMemObj, cbAligned, fExecutable);
@@ -508,6 +514,7 @@ RTR0DECL(int) RTR0MemObjLockUser(PRTR0MEMOBJ pMemObj, RTR3PTR R3Ptr, size_t cb, 
     AssertReturn(cb <= cbAligned, VERR_INVALID_PARAMETER);
     if (R0Process == NIL_RTR0PROCESS)
         R0Process = RTR0ProcHandleSelf();
+    RT_ASSERT_PREEMPTIBLE();
 
     /* do the locking. */
     return rtR0MemObjNativeLockUser(pMemObj, R3PtrAligned, cbAligned, R0Process);
@@ -535,6 +542,7 @@ RTR0DECL(int) RTR0MemObjLockKernel(PRTR0MEMOBJ pMemObj, void *pv, size_t cb)
     AssertReturn(cb > 0, VERR_INVALID_PARAMETER);
     AssertReturn(cb <= cbAligned, VERR_INVALID_PARAMETER);
     AssertPtrReturn(pvAligned, VERR_INVALID_POINTER);
+    RT_ASSERT_PREEMPTIBLE();
 
     /* do the allocation. */
     return rtR0MemObjNativeLockKernel(pMemObj, pvAligned, cbAligned);
@@ -560,6 +568,7 @@ RTR0DECL(int) RTR0MemObjAllocPhys(PRTR0MEMOBJ pMemObj, size_t cb, RTHCPHYS PhysH
     AssertReturn(cb > 0, VERR_INVALID_PARAMETER);
     AssertReturn(cb <= cbAligned, VERR_INVALID_PARAMETER);
     AssertReturn(PhysHighest >= cb, VERR_INVALID_PARAMETER);
+    RT_ASSERT_PREEMPTIBLE();
 
     /* do the allocation. */
     return rtR0MemObjNativeAllocPhys(pMemObj, cbAligned, PhysHighest);
@@ -585,6 +594,7 @@ RTR0DECL(int) RTR0MemObjAllocPhysNC(PRTR0MEMOBJ pMemObj, size_t cb, RTHCPHYS Phy
     AssertReturn(cb > 0, VERR_INVALID_PARAMETER);
     AssertReturn(cb <= cbAligned, VERR_INVALID_PARAMETER);
     AssertReturn(PhysHighest >= cb, VERR_INVALID_PARAMETER);
+    RT_ASSERT_PREEMPTIBLE();
 
     /* do the allocation. */
     return rtR0MemObjNativeAllocPhysNC(pMemObj, cbAligned, PhysHighest);
@@ -613,6 +623,7 @@ RTR0DECL(int) RTR0MemObjEnterPhys(PRTR0MEMOBJ pMemObj, RTHCPHYS Phys, size_t cb)
     AssertReturn(cb > 0, VERR_INVALID_PARAMETER);
     AssertReturn(cb <= cbAligned, VERR_INVALID_PARAMETER);
     AssertReturn(Phys != NIL_RTHCPHYS, VERR_INVALID_PARAMETER);
+    RT_ASSERT_PREEMPTIBLE();
 
     /* do the allocation. */
     return rtR0MemObjNativeEnterPhys(pMemObj, PhysAligned, cbAligned);
@@ -643,6 +654,7 @@ RTR0DECL(int) RTR0MemObjReserveKernel(PRTR0MEMOBJ pMemObj, void *pvFixed, size_t
     AssertReturn(cb <= cbAligned, VERR_INVALID_PARAMETER);
     if (pvFixed != (void *)-1)
         AssertReturn(!((uintptr_t)pvFixed & (uAlignment - 1)), VERR_INVALID_PARAMETER);
+    RT_ASSERT_PREEMPTIBLE();
 
     /* do the reservation. */
     return rtR0MemObjNativeReserveKernel(pMemObj, pvFixed, cbAligned, uAlignment);
@@ -676,6 +688,7 @@ RTR0DECL(int) RTR0MemObjReserveUser(PRTR0MEMOBJ pMemObj, RTR3PTR R3PtrFixed, siz
         AssertReturn(!(R3PtrFixed & (uAlignment - 1)), VERR_INVALID_PARAMETER);
     if (R0Process == NIL_RTR0PROCESS)
         R0Process = RTR0ProcHandleSelf();
+    RT_ASSERT_PREEMPTIBLE();
 
     /* do the reservation. */
     return rtR0MemObjNativeReserveUser(pMemObj, R3PtrFixed, cbAligned, uAlignment, R0Process);
@@ -753,6 +766,7 @@ RTR0DECL(int) RTR0MemObjMapKernelEx(PRTR0MEMOBJ pMemObj, RTR0MEMOBJ MemObjToMap,
     AssertReturn(!(cbSub & PAGE_OFFSET_MASK), VERR_INVALID_PARAMETER);
     AssertReturn(cbSub <= pMemToMap->cb, VERR_INVALID_PARAMETER);
     AssertReturn((!offSub && !cbSub) || (offSub + cbSub) <= pMemToMap->cb, VERR_INVALID_PARAMETER);
+    RT_ASSERT_PREEMPTIBLE();
 
     /* adjust the request to simplify the native code. */
     if (offSub == 0 && cbSub == pMemToMap->cb)
@@ -817,6 +831,7 @@ RTR0DECL(int) RTR0MemObjMapUser(PRTR0MEMOBJ pMemObj, RTR0MEMOBJ MemObjToMap, RTR
     AssertReturn(!(fProt & ~(RTMEM_PROT_READ | RTMEM_PROT_WRITE | RTMEM_PROT_EXEC)), VERR_INVALID_PARAMETER);
     if (R0Process == NIL_RTR0PROCESS)
         R0Process = RTR0ProcHandleSelf();
+    RT_ASSERT_PREEMPTIBLE();
 
     /* do the mapping. */
     rc = rtR0MemObjNativeMapUser(&pNew, pMemToMap, R3PtrFixed, uAlignment, fProt, R0Process);
@@ -859,6 +874,7 @@ RTR0DECL(int) RTR0MemObjProtect(RTR0MEMOBJ hMemObj, size_t offSub, size_t cbSub,
     AssertReturn(cbSub <= pMemObj->cb, VERR_INVALID_PARAMETER);
     AssertReturn(offSub + cbSub <= pMemObj->cb, VERR_INVALID_PARAMETER);
     AssertReturn(!(fProt & ~(RTMEM_PROT_NONE | RTMEM_PROT_READ | RTMEM_PROT_WRITE | RTMEM_PROT_EXEC)), VERR_INVALID_PARAMETER);
+    RT_ASSERT_PREEMPTIBLE();
 
     /* do the job */
     rc = rtR0MemObjNativeProtect(pMemObj, offSub, cbSub, fProt);

@@ -33,13 +33,16 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #include "the-darwin-kernel.h"
-
+#include "internal/iprt.h"
 #include <iprt/mem.h>
+
+#include <iprt/asm.h>
 #include <iprt/err.h>
 
 
 RTR0DECL(int) RTR0MemUserCopyFrom(void *pvDst, RTR3PTR R3PtrSrc, size_t cb)
 {
+    RT_ASSERT_INTS_ON();
     int rc = copyin((const user_addr_t)R3PtrSrc, pvDst, cb);
     if (RT_LIKELY(rc == 0))
         return VINF_SUCCESS;
@@ -49,6 +52,7 @@ RTR0DECL(int) RTR0MemUserCopyFrom(void *pvDst, RTR3PTR R3PtrSrc, size_t cb)
 
 RTR0DECL(int) RTR0MemUserCopyTo(RTR3PTR R3PtrDst, void const *pvSrc, size_t cb)
 {
+    RT_ASSERT_INTS_ON();
     int rc = copyout(pvSrc, R3PtrDst, cb);
     if (RT_LIKELY(rc == 0))
         return VINF_SUCCESS;

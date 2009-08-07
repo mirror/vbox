@@ -28,11 +28,15 @@
  * additional information or have any questions.
  */
 
+
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
 #include "the-darwin-kernel.h"
+#include "internal/iprt.h"
 #include <iprt/thread.h>
+
+#include <iprt/assert.h>
 #include <iprt/err.h>
 
 
@@ -45,6 +49,7 @@ RTDECL(RTNATIVETHREAD) RTThreadNativeSelf(void)
 
 RTDECL(int) RTThreadSleep(unsigned cMillies)
 {
+    RT_ASSERT_PREEMPTIBLE();
     uint64_t u64Deadline;
     clock_interval_to_deadline(cMillies, kMillisecondScale, &u64Deadline);
     clock_delay_until(u64Deadline);
@@ -54,6 +59,7 @@ RTDECL(int) RTThreadSleep(unsigned cMillies)
 
 RTDECL(bool) RTThreadYield(void)
 {
+    RT_ASSERT_PREEMPTIBLE();
     thread_block(THREAD_CONTINUE_NULL);
     return true; /* this is fishy */
 }

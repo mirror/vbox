@@ -33,6 +33,8 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #include "the-darwin-kernel.h"
+#include "internal/iprt.h"
+
 #include <iprt/err.h>
 #include <iprt/assert.h>
 #include "internal/initterm.h"

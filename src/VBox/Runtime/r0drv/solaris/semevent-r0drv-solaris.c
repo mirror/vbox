@@ -28,17 +28,20 @@
  * additional information or have any questions.
  */
 
+
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
 #include "the-solaris-kernel.h"
-
+#include "internal/iprt.h"
 #include <iprt/semaphore.h>
+
 #include <iprt/alloc.h>
 #include <iprt/assert.h>
 #include <iprt/asm.h>
 #include <iprt/err.h>
-
+#include <iprt/mp.h>
+#include <iprt/thread.h>
 #include "internal/magics.h"
 
 
@@ -95,6 +98,7 @@ RTDECL(int)  RTSemEventDestroy(RTSEMEVENT EventSem)
     AssertMsgReturn(pEventInt->u32Magic == RTSEMEVENT_MAGIC,
                     ("pEventInt=%p u32Magic=%#x\n", pEventInt, pEventInt->u32Magic),
                     VERR_INVALID_HANDLE);
+    RT_ASSERT_INTS_ON();
 
     mutex_enter(&pEventInt->Mtx);
     ASMAtomicIncU32(&pEventInt->u32Magic); /* make the handle invalid */
@@ -124,14 +128,13 @@ RTDECL(int)  RTSemEventDestroy(RTSEMEVENT EventSem)
 
 RTDECL(int)  RTSemEventSignal(RTSEMEVENT EventSem)
 {
-#ifdef RT_STRICT
-    bool fInts = ASMIntAreEnabled();
-#endif
     PRTSEMEVENTINTERNAL pEventInt = (PRTSEMEVENTINTERNAL)EventSem;
+    RT_ASSERT_PREEMPT_CPUID_VAR();
     AssertPtrReturn(pEventInt, VERR_INVALID_HANDLE);
     AssertMsgReturn(pEventInt->u32Magic == RTSEMEVENT_MAGIC,
                     ("pEventInt=%p u32Magic=%#x\n", pEventInt, pEventInt->u32Magic),
                     VERR_INVALID_HANDLE);
+    RT_ASSERT_INTS_ON();
 
     mutex_enter(&pEventInt->Mtx);
 
@@ -146,11 +149,10 @@ RTDECL(int)  RTSemEventSignal(RTSEMEVENT EventSem)
 
     mutex_exit(&pEventInt->Mtx);
 
-#ifdef RT_STRICT
-    AssertMsg(fInts == ASMIntAreEnabled(), ("%d\n", fInts));
-#endif
+    RT_ASSERT_PREEMPT_CPUID();
     return VINF_SUCCESS;
 }
+
 
 static int rtSemEventWait(RTSEMEVENT EventSem, unsigned cMillies, bool fInterruptible)
 {
@@ -160,6 +162,7 @@ static int rtSemEventWait(RTSEMEVENT EventSem, unsigned cMillies, bool fInterrup
     AssertMsgReturn(pEventInt->u32Magic == RTSEMEVENT_MAGIC,
                     ("pEventInt=%p u32Magic=%#x\n", pEventInt, pEventInt->u32Magic),
                     VERR_INVALID_HANDLE);
+    RT_ASSERT_PREEMPTIBLE();
 
     mutex_enter(&pEventInt->Mtx);
 

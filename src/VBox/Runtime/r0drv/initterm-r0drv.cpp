@@ -38,6 +38,8 @@
 #include <iprt/asm.h>
 #include <iprt/assert.h>
 #include <iprt/err.h>
+#include <iprt/mp.h>
+#include <iprt/thread.h>
 #ifndef IN_GUEST /* play safe for now */
 # include "r0drv/mp-r0drv.h"
 # include "r0drv/power-r0drv.h"
@@ -67,6 +69,7 @@ RTR0DECL(int) RTR0Init(unsigned fReserved)
 {
     int rc;
     Assert(fReserved == 0);
+    RT_ASSERT_PREEMPTIBLE();
 
     /*
      * The first user initializes it.
@@ -105,10 +108,13 @@ RT_EXPORT_SYMBOL(RTR0Init);
  */
 RTR0DECL(void) RTR0Term(void)
 {
+    int32_t cNewUsers;
+    RT_ASSERT_PREEMPTIBLE();
+
     /*
      * Last user does the cleanup.
      */
-    int32_t cNewUsers = ASMAtomicDecS32(&g_crtR0Users);
+    cNewUsers = ASMAtomicDecS32(&g_crtR0Users);
     Assert(cNewUsers >= 0);
     if (cNewUsers != 0)
         return;

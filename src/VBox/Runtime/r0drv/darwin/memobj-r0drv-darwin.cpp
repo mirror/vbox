@@ -33,7 +33,7 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #include "the-darwin-kernel.h"
-
+#include "internal/iprt.h"
 #include <iprt/memobj.h>
 
 #include <iprt/alloc.h>
@@ -44,7 +44,6 @@
 #include <iprt/process.h>
 #include <iprt/string.h>
 #include <iprt/thread.h>
-
 #include "internal/memobj.h"
 
 /*#define USE_VM_MAP_WIRE - may re-enable later when non-mapped allocations are added. */
