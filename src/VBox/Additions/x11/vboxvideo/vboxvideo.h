@@ -197,6 +197,7 @@ typedef struct _VBOXRec
     int statePage, stateSize, stateMode;
     CARD32 *savedPal;
     CARD8 *fonts;
+    vgaRegRec vgaRegs;  /* Space for saving VGA information */
     /* DGA info */
     DGAModePtr pDGAMode;
     int nDGAMode;
