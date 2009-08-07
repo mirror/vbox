@@ -54,6 +54,7 @@
 #ifdef DEBUG_michael
 # define DEBUG_VIDEO 1
 #endif
+
 #ifdef DEBUG_VIDEO
 
 #define TRACE \
@@ -115,8 +116,9 @@ do { \
 
 static const OptionInfoRec * VBOXAvailableOptions(int chipid, int busid);
 static void VBOXIdentify(int flags);
+#ifndef PCIACCESS
 static Bool VBOXProbe(DriverPtr drv, int flags);
-#ifdef PCIACCESS
+#else
 static Bool VBOXPciProbe(DriverPtr drv, int entity_num,
      struct pci_device *dev, intptr_t match_data);
 #endif
@@ -386,8 +388,8 @@ vbox_output_mode_valid (xf86OutputPtr output, DisplayModePtr mode)
      * file, as doing otherwise is likely to annoy people. */
     if (   !(mode->type & M_T_USERDEF)
         && vbox_device_available(VBOXGetRec(pScrn))
-        && !vboxHostLikesVideoMode(pScrn, mode->HDisplay,
-                                   mode->VDisplay, pScrn->bitsPerPixel)
+        && !vboxHostLikesVideoMode(pScrn, mode->HDisplay, mode->VDisplay,
+                                   pScrn->bitsPerPixel)
        )
         rc = MODE_BAD;
     TRACE3("returning %s\n", MODE_OK == rc ? "MODE_OK" : "MODE_BAD");
@@ -457,17 +459,11 @@ vbox_output_get_modes (xf86OutputPtr output)
     {
         uint32_t x, y, bpp, display;
         rc = vboxGetDisplayChangeRequest(pScrn, &x, &y, &bpp, &display);
-        /** @todo - check the display number once we support multiple displays. */
+        /* @todo - check the display number once we support multiple displays. */
         /* If we don't find a display request, see if we have a saved hint
          * from a previous session. */
-        if (rc)
-            TRACE3("Got a display change request for %dx%d\n", x, y);
         if (!rc || (0 == x) || (0 == y))
-        {
             rc = vboxRetrieveVideoMode(pScrn, &x, &y, &bpp);
-            if (rc)
-                TRACE3("Retrieved a video mode of %dx%d\n", x, y);
-        }
         if (rc && (0 != x) && (0 != y)) {
             /* We prefer a slightly smaller size to a slightly larger one */
             x -= (x % 8);
@@ -665,6 +661,7 @@ VBOXPciProbe(DriverPtr drv, int entity_num, struct pci_device *dev,
 }
 #endif
 
+#ifndef PCIACCESS
 static Bool
 VBOXProbe(DriverPtr drv, int flags)
 {
@@ -680,7 +677,6 @@ VBOXProbe(DriverPtr drv, int flags)
 					  &devSections)) <= 0)
 	return (FALSE);
 
-#ifndef PCIACCESS
     /* PCI BUS */
     if (xf86GetPciVideoInfo()) {
         int numUsed;
@@ -719,12 +715,12 @@ VBOXProbe(DriverPtr drv, int flags)
 	    xfree(usedChips);
 	}
     }
-#endif
 
     xfree(devSections);
 
     return (foundScreen);
 }
+#endif
 
 /*
  * QUOTE from the XFree86 DESIGN document:
