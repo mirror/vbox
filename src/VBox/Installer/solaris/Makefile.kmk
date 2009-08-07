@@ -154,7 +154,7 @@ solaris-bin_INST = bin/
 solaris-bin_MODE = a+rx,u+w
 solaris-bin_SOURCES = \
 	$(if $(VBOX_WITH_PYTHON),$(PATH_ROOT)/src/VBox/Frontends/VBoxShell/vboxshell.py,) \
-	$(VBOX_PATH_SOL_INST_SRC)/vboxdrv.sh \
+	$(VBOX_PATH_SOL_INST_SRC)/vboxconfig.sh \
 	$(VBOX_PATH_SOL_INST_SRC)/VBox.sh \
 	$(VBOX_PATH_SOL_INST_SRC)/ipsinstall.sh \
 	$(if $(VBOX_WITH_WEBSERVICES),$(VBOX_PATH_SOL_INST_SRC)/smf-vboxwebsrv.sh,)
@@ -266,7 +266,7 @@ SOLARIS_USRBIN_LINKS = \
 	VBoxManage
 
 SOLARIS_COMMON_EXES = \
-	vboxdrv.sh \
+	vboxconfig.sh \
 	VBox.sh \
 	ipsinstall.sh \
 	$(if $(VBOX_WITH_PYTHON),vboxshell.py,) \
@@ -549,10 +549,10 @@ endif
 	$(QUIET)$(if $(not $(VBOX_WITH_NETFLT))$(INSTALL) -m 0755 $(PATH_ROOT)/src/VBox/Devices/Network/solaris/vnicterm_solaris.sh            $(SOLARIS_VBOXINST_DIR)/vnic_term.sh,)
 	$(QUIET)$(SED) \
 		-e "s/_HARDENED_/$(if $(VBOX_WITH_HARDENED),hardened,)/" \
-		--output $(SOLARIS_VBOXINST_DIR)/vboxdrv.sh.tmp \
-		 $(PATH_BIN)/vboxdrv.sh
-	$(QUIET)$(INSTALL) -m 0755 $(SOLARIS_VBOXINST_DIR)/vboxdrv.sh.tmp                                       $(SOLARIS_VBOXINST_DIR)/vboxdrv.sh
-	$(QUIET)$(RM) -f $(SOLARIS_VBOXINST_DIR)/vboxdrv.sh.tmp
+		--output $(SOLARIS_VBOXINST_DIR)/vboxconfig.sh.tmp \
+		 $(PATH_BIN)/vboxconfig.sh
+	$(QUIET)$(INSTALL) -m 0755 $(SOLARIS_VBOXINST_DIR)/vboxconfig.sh.tmp                                    $(SOLARIS_VBOXINST_DIR)/vboxconfig.sh
+	$(QUIET)$(RM) -f $(SOLARIS_VBOXINST_DIR)/vboxconfig.sh.tmp
 	$(QUIET)$(if $(VBOX_WITH_QTGUI),$(INSTALL) -m 0644 $(VBOX_PATH_SOL_INST_SRC)/virtualbox.desktop         $(SOLARIS_USRSHR_APPS_DIR)/virtualbox.desktop,)
 	$(QUIET)$(INSTALL) -m 0644 $(SOLARIS_OUT_BIN)/VBox.png                                                  $(SOLARIS_USRSHR_PIXMAPS_DIR)/VBox.png
 	$(QUIET)$(INSTALL) -m 0755 $(VBOX_PATH_SOL_INST_SRC)/postinstall.sh                                     $(SOLARIS_BASEINST_DIR)/postinstall.sh

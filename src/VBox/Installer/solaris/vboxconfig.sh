@@ -22,7 +22,6 @@
 
 # Never use exit 2 or exit 20 etc., the return codes are used in
 # SRv4 postinstall procedures which carry special meaning. Just use exit 1 for failure.
-set -x
 
 HOST_OS_VERSION=`uname -r`
 
@@ -43,19 +42,19 @@ BIN_IFCONFIG=/sbin/ifconfig
 
 # "vboxdrv" is also used in sed lines here (change those as well if it ever changes)
 MOD_VBOXDRV=vboxdrv
-DESC_VBOXDRV="VirtualBox HostDriver"
+DESC_VBOXDRV="Host"
 
 MOD_VBOXNET=vboxnet
-DESC_VBOXNET="VirtualBox NetAdapter"
+DESC_VBOXNET="NetAdapter"
 
 MOD_VBOXFLT=vboxflt
-DESC_VBOXFLT="VirtualBox NetFilter"
+DESC_VBOXFLT="NetFilter"
 
 MOD_VBI=vbi
-DESC_VBI="VirtualBox Kernel Interface"
+DESC_VBI="Kernel Interface"
 
 MOD_VBOXUSBMON=vboxusbmon
-DESC_VBOXUSBMON="VirtualBox USBMonitor"
+DESC_VBOXUSBMON="USBMonitor"
 
 FATALOP=fatal
 SILENTOP=silent
@@ -269,7 +268,7 @@ add_driver()
     fi
 
     if test $? -ne 0; then
-        errorprint "Adding:  $moddesc module ...FAILED!"
+        errorprint "   - Adding: $moddesc module ...FAILED!"
         if test "$fatal" = "$FATALOP"; then
             exit 1
         fi
@@ -294,10 +293,10 @@ rem_driver()
     if test "$?" -eq 0; then
         $BIN_REMDRV $modname
         if test $? -eq 0; then
-            success "Removed:  $moddesc module"
+            success "   - Removed: $moddesc module"
             return 0
         else
-            errorprint "Removing: $moddesc  ...FAILED!"
+            errorprint "   - Removing: $moddesc  ...FAILED!"
             if test "$fatal" = "$FATALOP"; then
                 exit 1
             fi
@@ -322,9 +321,9 @@ unload_module()
     if test -n "$modid"; then
         $BIN_MODUNLOAD -i $modid
         if test $? -eq 0; then
-            success "Unloaded:  $moddesc module"
+            success "   - Unloaded:  $moddesc module"
         else
-            errorprint "Unloading:  $moddesc  ...FAILED!"
+            errorprint "   - Unloading:  $moddesc  ...FAILED!"
             if test "$fatal" = "$FATALOP"; then
                 exit 1
             fi
@@ -349,10 +348,10 @@ load_module()
     fatal=$3
     $BIN_MODLOAD -p $modname
     if test $? -eq 0; then
-        success "Loaded:  $moddesc module"
+        success "   - Loaded:  $moddesc module"
         return 0
     else
-        errorprint "Loading:  $modesc  ...FAILED!"
+        errorprint "   - Loading:  $modesc  ...FAILED!"
         if test "$fatal" = "$FATALOP"; then
             exit 1
         fi
@@ -379,7 +378,7 @@ install_drivers()
     # Create the device link
     /usr/sbin/devfsadm -i "$MOD_VBOXDRV"
 
-    if test $? -eq 0; then
+    if test $? -eq 0 && test -h "/dev/vboxdrv"; then
 
         if test -f /platform/i86pc/kernel/drv/vboxnet.conf; then
             add_driver "$MOD_VBOXNET" "$DESC_VBOXNET" "$FATALOP"
@@ -420,6 +419,7 @@ install_drivers()
 remove_drivers()
 {
     fatal=$1
+
     # Remove vboxdrv from devlink.tab
     devlinkfound=`cat /etc/devlink.tab | grep vboxdrv`
     if test -n "$devlinkfound"; then
@@ -434,11 +434,8 @@ remove_drivers()
         mv -f /etc/devlink.vbox /etc/devlink.tab
     fi
 
-    # USBMonitor might not even be installed, but anyway...
-    if test -f /platform/i86pc/kernel/drv/vboxusbmon.conf && test "$HOST_OS_VERSION" != "5.10"; then
-        unload_module "$MOD_VBOXUSBMON" "$DESC_VBOXUSBMON" "$fatal"
-        rem_driver "$MOD_VBOXUSBMON" "$DESC_VBOXUSBMON" "$fatal"
-    fi
+    unload_module "$MOD_VBOXUSBMON" "$DESC_VBOXUSBMON" "$fatal"
+    rem_driver "$MOD_VBOXUSBMON" "$DESC_VBOXUSBMON" "$fatal"
 
     unload_module "$MOD_VBOXFLT" "$DESC_VBOXFLT" "$fatal"
     rem_driver "$MOD_VBOXFLT" "$DESC_VBOXFLT" "$fatal"
@@ -457,6 +454,14 @@ remove_drivers()
     fi
     if test -h "/dev/vboxusbmon" || test -f "/dev/vboxusbmon"; then
         rm -f /dev/vboxusbmon
+    fi
+
+    # unpatch nwam/dhcpagent fix
+    nwamfile=/etc/nwam/llp
+    nwambackupfile=$nwamfile.vbox
+    if test -f "$nwamfile"; then
+        sed -e '/vboxnet/d' $nwamfile > $nwambackupfile
+        mv -f $nwambackupfile $nwamfile
     fi
 
     return 0
@@ -490,6 +495,11 @@ cleanup_install()
     if test ! -z "$servicefound"; then
         $BIN_SVCADM disable -s svc:/application/virtualbox/webservice:default
         $BIN_SVCCFG delete svc:/application/virtualbox/webservice:default
+        if test "$?" -eq 0; then
+            success "   - Unloaded:  Web service"
+        else
+            warnprint "   - Unloading:  Web service  ...ERROR(S)."
+        fi
     fi
 
     # stop and unregister zoneaccess SMF
@@ -497,8 +507,13 @@ cleanup_install()
     if test ! -z "$servicefound"; then
         $BIN_SVCADM disable -s svc:/application/virtualbox/zoneaccess
         $BIN_SVCCFG delete svc:/application/virtualbox/zoneaccess
+        if test "$?" -eq 0; then
+            success "   - Unloaded:  Zone access service"
+        else
+            warnprint "   - Unloading:  Zone access service  ...ERROR(S)."
+        fi
     fi
-    
+
     # unplumb vboxnet0
     vboxnetup=`$BIN_IFCONFIG vboxnet0 >/dev/null 2>&1`
     if test "$?" -eq 0; then
@@ -513,15 +528,15 @@ cleanup_install()
 }
 
 
-# post_install()
+# postinstall()
 # !! failure is always fatal
-post_install()
+postinstall()
 {
     infoprint "Loading VirtualBox kernel modules..."
     install_drivers
 
     if test "$?" -eq 0; then
-        if test -f /platform/i86pc/kernel/drv/vboxnet.conf; then        
+        if test -f /platform/i86pc/kernel/drv/vboxnet.conf; then
             # nwam/dhcpagent fix
             nwamfile=/etc/nwam/llp
             nwambackupfile=$nwamfile.vbox
@@ -536,6 +551,7 @@ post_install()
             if test "$?" -eq 0; then
                 $BIN_IFCONFIG vboxnet0 192.168.56.1 netmask 255.255.255.0 up
             else
+                # Should this be fatal?
                 warnprint "Failed to bring up vboxnet0!!"
             fi
         fi
@@ -548,12 +564,22 @@ post_install()
         if test -f /var/svc/manifest/application/virtualbox/virtualbox-webservice.xml; then
             /usr/sbin/svccfg import /var/svc/manifest/application/virtualbox/virtualbox-webservice.xml
             /usr/sbin/svcadm disable -s svc:/application/virtualbox/webservice:default
+            if test "$?" -eq 0; then
+                success "   - Loaded:  Web service"
+            else
+                warnprint "   - Loading:  Web service  ...ERROR(S)."
+            fi
         fi
 
         # Zone access service
         if test -f /var/svc/manifest/application/virtualbox/virtualbox-zoneaccess.xml; then
             /usr/sbin/svccfg import /var/svc/manifest/application/virtualbox/virtualbox-zoneaccess.xml
             /usr/sbin/svcadm enable -s svc:/application/virtualbox/zoneaccess
+            if test "$?" -eq 0; then
+                success "   - Loaded:  Zone access service"
+            else
+                warnprint "   - Loading:  Zone access service  ...ERROR(S)."
+            fi
         fi
 
         # Install python bindings
@@ -575,7 +601,7 @@ post_install()
                 fi
                 PYTHONBIN=`which python2.6 2>/dev/null`
                 install_python_bindings "$PYTHONBIN"
-                if test "$?" -eq 0; then 
+                if test "$?" -eq 0; then
                     INSTALLEDIT=0
                 fi
 
@@ -584,6 +610,7 @@ post_install()
 
                 if test "$INSTALLEDIT" -ne 0; then
                     warnprint "No suitable Python version found. Required Python 2.4, 2.5 or 2.6."
+                    warnprint "Skipped installing the Python bindings."
                 fi
             else
                 warnprint "Python not found, skipped installed Python bindings."
@@ -602,10 +629,9 @@ post_install()
     return 1
 }
 
-
-# pre_remove([fatal])
+# preremove([fatal])
 # failure: depends on [fatal]
-pre_remove()
+preremove()
 {
     fatal=$1
 
@@ -635,12 +661,12 @@ if test "$2" = "$SILENTOP" || test "$3" = "$SILENTOP"; then
 fi
 
 case "$drvop" in
-post_install)
+postinstall)
     check_module_arch
-    post_install
+    postinstall
     ;;
-pre_remove)
-    pre_remove "$fatal"
+preremove)
+    preremove "$fatal"
     ;;
 install_drivers)
     check_module_arch
@@ -650,7 +676,7 @@ remove_drivers)
     remove_drivers "$fatal"
     ;;
 *)
-    echo "Usage: $0 post_install|pre_remove|install_drivers|remove_drivers [fatal]"
+    echo "Usage: $0 postinstall|preremove|install_drivers|remove_drivers [fatal] [silent]"
     exit 1
 esac
 

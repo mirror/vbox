@@ -22,52 +22,9 @@ echo "This script will unload the VirtualBox kernel module..."
 
 currentzone=`zonename`
 if test "$currentzone" = "global"; then
-    # stop and unregister webservice SMF (if present)
-    webservicefound=`svcs -a | grep "virtualbox/webservice"`
-    if test ! -z "$webservicefound"; then
-        /usr/sbin/svcadm disable -s svc:/application/virtualbox/webservice:default
-        /usr/sbin/svccfg delete svc:/application/virtualbox/webservice:default
-    fi
-
-    # stop and unregister zoneaccess SMF (if present)
-    zoneaccessfound=`svcs -a | grep "virtualbox/zoneaccess"`
-    if test ! -z "$zoneaccessfound"; then
-        /usr/sbin/svcadm disable -s svc:/application/virtualbox/zoneaccess
-        /usr/sbin/svccfg delete svc:/application/virtualbox/zoneaccess
-    fi
-
-    # vboxdrv.sh would've been installed, we just need to call it.
-    /opt/VirtualBox/vboxdrv.sh usbstop alwaysremdrv
-    /opt/VirtualBox/vboxdrv.sh netstop alwaysremdrv
-    /opt/VirtualBox/vboxdrv.sh fltstop alwaysremdrv
-    /opt/VirtualBox/vboxdrv.sh stop alwaysremdrv
-
-    # remove devlink.tab entry for vboxdrv
-    sed -e '
-/name=vboxdrv/d' /etc/devlink.tab > /etc/devlink.vbox
-    mv -f /etc/devlink.vbox /etc/devlink.tab
-
-    # remove nwam entry for vboxnet
-    nwamfile=/etc/nwam/llp
-    nwambackupfile=$nwamfile.vbox
-    if test -f "$nwamfile"; then
-        sed -e '/vboxnet/d' $nwamfile > $nwambackupfile
-        mv -f $nwambackupfile $nwamfile
-    fi
-
-    # remove devlink.tab entry for vboxusbmon
-    sed -e '
-/name=vboxusbmon/d' /etc/devlink.tab > /etc/devlink.vbox
-    mv -f /etc/devlink.vbox /etc/devlink.tab
-
-    # remove the devlinks
-    if test -h "/dev/vboxdrv" || test -f "/dev/vboxdrv"; then
-        rm -f /dev/vboxdrv
-    fi
-    if test -h "/dev/vboxusbmon" || test -f "/dev/vboxusbmon"; then
-        rm -f /dev/vboxusbmon
-    fi
+    /opt/VirtualBox/vboxconfig.sh preremove
 fi
 
 echo "Done."
+exit 0
 
