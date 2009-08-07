@@ -58,7 +58,7 @@ if test -x "$BIN_IFCONFIG"; then
     vboxnetup=`$BIN_IFCONFIG vboxnet0 >/dev/null 2>&1`
     if test "$?" -eq 0; then
         echo "## VirtualBox NetAdapter is still plumbed"
-        echo "## Try to remove old NetAdapter..."
+        echo "## Trying to remove old NetAdapter..."
         $BIN_IFCONFIG vboxnet0 unplumb
         if test "$?" -ne 0; then
             echo "## VirtualBox NetAdapter 'vboxnet0' couldn't be unplumbed (probably in use)."
