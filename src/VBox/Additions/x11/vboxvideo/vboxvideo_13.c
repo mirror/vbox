@@ -80,6 +80,8 @@ do { \
 
 #endif  /* DEBUG_VIDEO not defined */
 
+#define BOOL_STR(a) ((a) ? "TRUE" : "FALSE")
+
 #ifdef XFree86LOADER
 # include "xorg-server.h"
 #else
@@ -114,6 +116,10 @@ do { \
 static const OptionInfoRec * VBOXAvailableOptions(int chipid, int busid);
 static void VBOXIdentify(int flags);
 static Bool VBOXProbe(DriverPtr drv, int flags);
+#ifdef PCIACCESS
+static Bool VBOXPciProbe(DriverPtr drv, int entity_num,
+     struct pci_device *dev, intptr_t match_data);
+#endif
 static Bool VBOXPreInit(ScrnInfoPtr pScrn, int flags);
 static Bool VBOXScreenInit(int Index, ScreenPtr pScreen, int argc,
                            char **argv);
@@ -138,6 +144,34 @@ static void RestoreFonts(ScrnInfoPtr pScrn);
 static Bool VBOXSaveRestore(ScrnInfoPtr pScrn,
                             vbeSaveRestoreFunction function);
 
+enum GenericTypes
+{
+    CHIP_VBOX_GENERIC
+};
+
+#ifdef PCIACCESS
+static const struct pci_id_match vbox_device_match[] = {
+    {
+        VBOX_VENDORID, VBOX_DEVICEID, PCI_MATCH_ANY, PCI_MATCH_ANY,
+        0, 0, 0
+    },
+
+    { 0, 0, 0 },
+};
+#endif
+
+/* Supported chipsets */
+static SymTabRec VBOXChipsets[] =
+{
+    {VBOX_DEVICEID, "vbox"},
+    {-1,	 NULL}
+};
+
+static PciChipsets VBOXPCIchipsets[] = {
+  { VBOX_DEVICEID, VBOX_DEVICEID, RES_SHARED_VGA },
+  { -1,		-1,		    RES_UNDEFINED },
+};
+
 /*
  * This contains the functions needed by the server after loading the
  * driver module.  It must be supplied, and gets added the driver list by
@@ -150,23 +184,20 @@ _X_EXPORT DriverRec VBOXDRV = {
     VBOX_VERSION,
     VBOX_DRIVER_NAME,
     VBOXIdentify,
+#ifdef PCIACCESS
+    NULL,
+#else
     VBOXProbe,
+#endif
     VBOXAvailableOptions,
     NULL,
     0,
-    NULL
-};
+    NULL,
 
-/* Supported chipsets */
-static SymTabRec VBOXChipsets[] =
-{
-    {VBOX_VESA_DEVICEID, "vbox"},
-    {-1,	 NULL}
-};
-
-static PciChipsets VBOXPCIchipsets[] = {
-  { VBOX_DEVICEID, VBOX_DEVICEID, RES_SHARED_VGA },
-  { -1,		-1,		    RES_UNDEFINED },
+#ifdef PCIACCESS
+    vbox_device_match,
+    VBOXPciProbe
+#endif
 };
 
 /* No options for now */
@@ -563,7 +594,11 @@ vboxSetup(pointer Module, pointer Options, int *ErrorMajor, int *ErrorMinor)
     if (!Initialised)
     {
         Initialised = TRUE;
+#ifdef PCIACCESS
+        xf86AddDriver(&VBOXDRV, Module, HaveDriverFuncs);
+#else
         xf86AddDriver(&VBOXDRV, Module, 0);
+#endif
         LoaderRefSymLists(fbSymbols,
                           shadowfbSymbols,
                           vbeSymbols,
@@ -596,14 +631,46 @@ VBOXIdentify(int flags)
  * do a minimal probe for supported hardware.
  */
 
+#ifdef PCIACCESS
+static Bool
+VBOXPciProbe(DriverPtr drv, int entity_num, struct pci_device *dev,
+             intptr_t match_data)
+{
+    ScrnInfoPtr pScrn;
+
+    TRACE;
+    pScrn = xf86ConfigPciEntity(NULL, 0, entity_num, VBOXPCIchipsets,
+                                NULL, NULL, NULL, NULL, NULL);
+    if (pScrn != NULL) {
+        VBOXPtr pVBox = VBOXGetRec(pScrn);
+
+        pScrn->driverVersion = VBOX_VERSION;
+        pScrn->driverName    = VBOX_DRIVER_NAME;
+        pScrn->name          = VBOX_NAME;
+        pScrn->Probe         = NULL;
+        pScrn->PreInit       = VBOXPreInit;
+        pScrn->ScreenInit    = VBOXScreenInit;
+        pScrn->SwitchMode    = VBOXSwitchMode;
+        pScrn->ValidMode     = VBOXValidMode;
+        pScrn->AdjustFrame   = VBOXAdjustFrame;
+        pScrn->EnterVT       = VBOXEnterVT;
+        pScrn->LeaveVT       = VBOXLeaveVT;
+        pScrn->FreeScreen    = VBOXFreeScreen;
+
+        pVBox->pciInfo = dev;
+    }
+
+    TRACE3("returning %s\n", BOOL_STR(pScrn != NULL));
+    return (pScrn != NULL);
+}
+#endif
+
 static Bool
 VBOXProbe(DriverPtr drv, int flags)
 {
     Bool foundScreen = FALSE;
-    int numDevSections, numUsed;
+    int numDevSections;
     GDevPtr *devSections;
-    int *usedChips;
-    int i;
 
     /*
      * Find the config file Device sections that match this
@@ -613,8 +680,12 @@ VBOXProbe(DriverPtr drv, int flags)
 					  &devSections)) <= 0)
 	return (FALSE);
 
+#ifndef PCIACCESS
     /* PCI BUS */
     if (xf86GetPciVideoInfo()) {
+        int numUsed;
+        int *usedChips;
+        int i;
 	numUsed = xf86MatchPciInstances(VBOX_NAME, VBOX_VENDORID,
 					VBOXChipsets, VBOXPCIchipsets,
 					devSections, numDevSections,
@@ -648,6 +719,8 @@ VBOXProbe(DriverPtr drv, int flags)
 	    xfree(usedChips);
 	}
     }
+#endif
+
     xfree(devSections);
 
     return (foundScreen);
@@ -701,19 +774,32 @@ VBOXPreInit(ScrnInfoPtr pScrn, int flags)
 
     /* Entity information seems to mean bus information. */
     pVBox->pEnt = xf86GetEntityInfo(pScrn->entityList[0]);
-    if (pVBox->pEnt->location.type != BUS_PCI)
-        return FALSE;
-
-    /* The ramdac module is needed for the hardware cursor. */
-    if (!xf86LoadSubModule(pScrn, "ramdac"))
-        return FALSE;
-    xf86LoaderReqSymLists(ramdacSymbols, NULL);
 
     /* We need the vbe module because we use VBE code to save and restore
        text mode, in order to keep our code simple. */
     if (!xf86LoadSubModule(pScrn, "vbe"))
         return (FALSE);
     xf86LoaderReqSymLists(vbeSymbols, NULL);
+
+    if ((pVBox->pVbe = VBEExtendedInit(NULL, pVBox->pEnt->index,
+                                       SET_BIOS_SCRATCH
+                                       | RESTORE_BIOS_SCRATCH)) == NULL)
+        return (FALSE);
+
+#ifndef PCIACCESS
+    if (pVBox->pEnt->location.type != BUS_PCI)
+        return FALSE;
+
+    pVBox->pciInfo = xf86GetPciInfoForEntity(pVBox->pEnt->index);
+    pVBox->pciTag = pciTag(pVBox->pciInfo->bus,
+                           pVBox->pciInfo->device,
+                           pVBox->pciInfo->func);
+#endif
+
+    /* The ramdac module is needed for the hardware cursor. */
+    if (!xf86LoadSubModule(pScrn, "ramdac"))
+        return FALSE;
+    xf86LoaderReqSymLists(ramdacSymbols, NULL);
 
     /* The framebuffer module. */
     if (xf86LoadSubModule(pScrn, "fb") == NULL)
@@ -724,21 +810,16 @@ VBOXPreInit(ScrnInfoPtr pScrn, int flags)
         return FALSE;
     xf86LoaderReqSymLists(shadowfbSymbols, NULL);
 
-    pVBox->pciInfo = xf86GetPciInfoForEntity(pVBox->pEnt->index);
-    pVBox->pciTag = pciTag(pVBox->pciInfo->bus,
-                           pVBox->pciInfo->device,
-                           pVBox->pciInfo->func);
-
     /* Set up our ScrnInfoRec structure to describe our virtual
        capabilities to X. */
 
-    pScrn->rgbBits = 8;
+    pScrn->chipset = "vbox";
 
     /* I assume that this is no longer a requirement in the config file. */
     pScrn->monitor = pScrn->confScreen->monitor;
 
-    pScrn->chipset = "vbox";
     pScrn->progClock = TRUE;
+    pScrn->rgbBits = 8;
 
     /* Using the PCI information caused problems with non-powers-of-two
        sized video RAM configurations */
@@ -883,15 +964,12 @@ VBOXScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
     VisualPtr visual;
     unsigned flags;
 
-    /* We make use of the X11 VBE code to save and restore text mode, in
-       order to keep our code simple. */
-    if ((pVBox->pVbe = VBEExtendedInit(NULL, pVBox->pEnt->index,
-                                       SET_BIOS_SCRATCH
-                                       | RESTORE_BIOS_SCRATCH)) == NULL)
-        return (FALSE);
-
     if (pVBox->mapPhys == 0) {
+#ifdef PCIACCESS
+        pVBox->mapPhys = pVBox->pciInfo->regions[0].base_addr;
+#else
         pVBox->mapPhys = pVBox->pciInfo->memBase[0];
+#endif
 /*        pVBox->mapSize = 1 << pVBox->pciInfo->size[0]; */
         /* Using the PCI information caused problems with
            non-powers-of-two sized video RAM configurations */
@@ -1251,6 +1329,20 @@ VBOXMapVidMem(ScrnInfoPtr pScrn)
         pScrn->memPhysBase = pVBox->mapPhys;
         pScrn->fbOffset = pVBox->mapOff;
 
+#ifdef PCIACCESS
+        (void) pci_device_map_range(pVBox->pciInfo,
+                                    pScrn->memPhysBase,
+                                    pVBox->mapSize,
+                                    PCI_DEV_MAP_FLAG_WRITABLE,
+                                    & pVBox->base);
+
+        if (pVBox->base) {
+            pScrn->memPhysBase = pVBox->mapPhys;
+            pVBox->VGAbase = xf86MapDomainMemory(pScrn->scrnIndex, 0,
+                                                 pVBox->pciInfo,
+                                                 0xa0000, 0x10000);
+        }
+#else
         pVBox->base = xf86MapPciMem(pScrn->scrnIndex,
                                     VIDMEM_FRAMEBUFFER,
                                     pVBox->pciTag, pVBox->mapPhys,
@@ -1262,6 +1354,7 @@ VBOXMapVidMem(ScrnInfoPtr pScrn)
                                                  pVBox->pciTag,
                                                  0xa0000, 0x10000);
         }
+#endif
         /* We need this for saving/restoring textmode */
         pVBox->ioBase = pScrn->domainIOBase;
 
@@ -1280,9 +1373,16 @@ VBOXUnmapVidMem(ScrnInfoPtr pScrn)
     if (pVBox->base == NULL)
         return;
 
+#ifdef PCIACCESS
+    (void) pci_device_unmap_range(pVBox->pciInfo,
+                                  pVBox->base,
+                                  pVBox->mapSize);
+    xf86UnMapVidMem(pScrn->scrnIndex, pVBox->VGAbase, 0x10000);
+#else
     xf86UnMapVidMem(pScrn->scrnIndex, pVBox->base,
                     (unsigned) pVBox->mapSize);
     xf86UnMapVidMem(pScrn->scrnIndex, pVBox->VGAbase, 0x10000);
+#endif
     pVBox->base = NULL;
     TRACE2;
 }
