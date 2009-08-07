@@ -216,8 +216,9 @@ static int rtSemEventWait(RTSEMEVENT EventSem, unsigned cMillies, wait_interrupt
     AssertMsgReturn(pEventInt->u32Magic == RTSEMEVENT_MAGIC,
                     ("pEventInt=%p u32Magic=%#x\n", pEventInt, pEventInt->u32Magic),
                     VERR_INVALID_HANDLE);
-    RT_ASSERT_PREEMPTIBLE();
-        
+    if (cMillies)
+        RT_ASSERT_PREEMPTIBLE();
+
     lck_spin_lock(pEventInt->pSpinlock);
 
     int rc;
@@ -227,6 +228,8 @@ static int rtSemEventWait(RTSEMEVENT EventSem, unsigned cMillies, wait_interrupt
         ASMAtomicXchgU8(&pEventInt->fSignaled, false);
         rc = VINF_SUCCESS;
     }
+    else if (!cMillies)
+        rc = VERR_TIMEOUT;
     else
     {
         ASMAtomicIncU32(&pEventInt->cWaiters);
@@ -407,10 +410,14 @@ RTDECL(int)  RTSemEventMultiReset(RTSEMEVENTMULTI EventMultiSem)
     AssertMsgReturn(pEventMultiInt->u32Magic == RTSEMEVENTMULTI_MAGIC,
                     ("pEventMultiInt=%p u32Magic=%#x\n", pEventMultiInt, pEventMultiInt->u32Magic),
                     VERR_INVALID_HANDLE);
+    RT_ASSERT_PREEMPT_CPUID_VAR();
+    RT_ASSERT_INTS_ON();
 
     lck_spin_lock(pEventMultiInt->pSpinlock);
     ASMAtomicXchgU8(&pEventMultiInt->fSignaled, false);
     lck_spin_unlock(pEventMultiInt->pSpinlock);
+
+    RT_ASSERT_PREEMPT_CPUID();
     return VINF_SUCCESS;
 }
 
@@ -422,13 +429,16 @@ static int rtSemEventMultiWait(RTSEMEVENTMULTI EventMultiSem, unsigned cMillies,
     AssertMsgReturn(pEventMultiInt->u32Magic == RTSEMEVENTMULTI_MAGIC,
                     ("pEventMultiInt=%p u32Magic=%#x\n", pEventMultiInt, pEventMultiInt->u32Magic),
                     VERR_INVALID_HANDLE);
-    RT_ASSERT_PREEMPTIBLE();
+    if (cMillies)
+        RT_ASSERT_PREEMPTIBLE();
 
     lck_spin_lock(pEventMultiInt->pSpinlock);
 
     int rc;
     if (pEventMultiInt->fSignaled)
         rc = VINF_SUCCESS;
+    else if (!cMillies)
+        rc = VERR_TIMEOUT;
     else
     {
         ASMAtomicIncU32(&pEventMultiInt->cWaiters);
@@ -577,7 +587,8 @@ RTDECL(int)  RTSemMutexRequest(RTSEMMUTEX MutexSem, unsigned cMillies)
     AssertMsg(pMutexInt->u32Magic == RTSEMMUTEX_MAGIC,
               ("pMutexInt->u32Magic=%RX32 pMutexInt=%p\n", pMutexInt->u32Magic, pMutexInt)
               VERR_INVALID_PARAMETER);
-    RT_ASSERT_PREEMPTIBLE();
+    if (cMillies)
+        RT_ASSERT_PREEMPTIBLE();
 
     /*
      * Get the mutex.
