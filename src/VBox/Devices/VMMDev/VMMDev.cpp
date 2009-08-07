@@ -599,23 +599,15 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
             else
             {
                 VMMDevReqMouseStatus *mouseStatus = (VMMDevReqMouseStatus*)pRequestHeader;
-                mouseStatus->mouseFeatures = 0;
-                if (pThis->mouseCapabilities & VMMDEV_MOUSE_HOST_CAN_ABSOLUTE)
-                {
-                    mouseStatus->mouseFeatures |= VMMDEV_MOUSE_HOST_CAN_ABSOLUTE;
-                }
-                if (pThis->mouseCapabilities & VMMDEV_MOUSE_GUEST_CAN_ABSOLUTE)
-                {
-                    mouseStatus->mouseFeatures |= VMMDEV_MOUSE_GUEST_CAN_ABSOLUTE;
-                }
-                if (pThis->mouseCapabilities & VMMDEV_MOUSE_HOST_CANNOT_HWPOINTER)
-                {
-                    mouseStatus->mouseFeatures |= VMMDEV_MOUSE_HOST_CANNOT_HWPOINTER;
-                }
+                mouseStatus->mouseFeatures =   pThis->mouseCapabilities
+                                             & VMMDEV_MOUSE_MASK;
                 mouseStatus->pointerXPos = pThis->mouseXAbs;
                 mouseStatus->pointerYPos = pThis->mouseYAbs;
-                Log2(("returning mouse status: features = %d, absX = %d, absY = %d\n", mouseStatus->mouseFeatures,
-                      mouseStatus->pointerXPos, mouseStatus->pointerYPos));
+                LogRel2(("%s: VMMDevReq_GetMouseStatus: features = 0x%x, absX = %d, absY = %d\n",
+                                __PRETTY_FUNCTION__,
+                                mouseStatus->mouseFeatures,
+                                mouseStatus->pointerXPos,
+                                mouseStatus->pointerYPos));
                 pRequestHeader->rc = VINF_SUCCESS;
             }
             break;
@@ -634,44 +626,30 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
             }
             else
             {
-                bool bCapsChanged = false;
+                bool fNotify = false;
 
-                VMMDevReqMouseStatus *mouseStatus = (VMMDevReqMouseStatus*)pRequestHeader;
+                uint32_t fFeatures =
+                    ((VMMDevReqMouseStatus*)pRequestHeader)->mouseFeatures;
 
-                /* check if the guest wants absolute coordinates */
-                if (mouseStatus->mouseFeatures & VMMDEV_MOUSE_GUEST_CAN_ABSOLUTE)
-                {
-                    /* set the capability flag and the changed flag if it's actually a change */
-                    if (!(pThis->mouseCapabilities & VMMDEV_MOUSE_GUEST_CAN_ABSOLUTE))
-                    {
-                        pThis->mouseCapabilities |= VMMDEV_MOUSE_GUEST_CAN_ABSOLUTE;
-                        bCapsChanged = true;
-                        LogRel(("Guest requests mouse pointer integration\n"));
-                    }
-                } else
-                {
-                    if (pThis->mouseCapabilities & VMMDEV_MOUSE_GUEST_CAN_ABSOLUTE)
-                    {
-                        pThis->mouseCapabilities &= ~VMMDEV_MOUSE_GUEST_CAN_ABSOLUTE;
-                        bCapsChanged = true;
-                        LogRel(("Guest disables mouse pointer integration\n"));
-                    }
-                }
-                if (mouseStatus->mouseFeatures & VMMDEV_MOUSE_GUEST_NEEDS_HOST_CURSOR)
-                    pThis->mouseCapabilities |= VMMDEV_MOUSE_GUEST_NEEDS_HOST_CURSOR;
-                else
-                    pThis->mouseCapabilities &= ~VMMDEV_MOUSE_GUEST_NEEDS_HOST_CURSOR;
-                if (mouseStatus->mouseFeatures & VMMDEV_MOUSE_GUEST_USES_VMMDEV)
-                    pThis->mouseCapabilities |= VMMDEV_MOUSE_GUEST_USES_VMMDEV;
-                else
-                    pThis->mouseCapabilities &= ~VMMDEV_MOUSE_GUEST_USES_VMMDEV;
+                LogRelFlowFunc(("VMMDevReqMouseStatus: mouseFeatures = 0x%x\n",
+                                fFeatures));
+
+                if (   (fFeatures & VMMDEV_MOUSE_NOTIFY_HOST_MASK)
+                    != (  pThis->mouseCapabilities
+                        & VMMDEV_MOUSE_NOTIFY_HOST_MASK))
+                    fNotify = true;
+                pThis->mouseCapabilities &= ~VMMDEV_MOUSE_GUEST_MASK;
+                pThis->mouseCapabilities |=
+                    (fFeatures & VMMDEV_MOUSE_GUEST_MASK);
+                LogRelFlowFunc(("VMMDevReq_SetMouseStatus: new host capabilities: 0x%x\n",
+                                pThis->mouseCapabilities));
 
                 /*
                  * Notify connector if something has changed
                  */
-                if (bCapsChanged)
+                if (fNotify)
                 {
-                    Log(("VMMDevReq_SetMouseStatus: capabilities changed (%x), informing connector\n", pThis->mouseCapabilities));
+                    LogRelFlowFunc(("VMMDevReq_SetMouseStatus: notifying connector\n"));
                     pThis->pDrv->pfnUpdateMouseCapabilities(pThis->pDrv, pThis->mouseCapabilities);
                 }
                 pRequestHeader->rc = VINF_SUCCESS;
@@ -1049,8 +1027,12 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
                 VMMDevCtlGuestFilterMask *pCtlMaskRequest;
 
                 pCtlMaskRequest = (VMMDevCtlGuestFilterMask *)pRequestHeader;
-                /* The HGCM events are enabled by the VMMDev device automatically when any
-                 * HGCM command is issued. The guest then can not disable these events.
+                LogRelFlowFunc(("VMMDevCtlGuestFilterMask: or mask: 0x%x, not mask: 0x%x\n",
+                                pCtlMaskRequest->u32OrMask,
+                                pCtlMaskRequest->u32NotMask));
+                /* HGCM event notification is enabled by the VMMDev device
+                 * automatically when any HGCM command is issued.  The guest
+                 * cannot disable these notifications.
                  */
                 vmmdevCtlGuestFilterMask_EMT (pThis,
                                               pCtlMaskRequest->u32OrMask,
