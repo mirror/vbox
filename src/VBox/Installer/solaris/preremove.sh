@@ -17,8 +17,7 @@
 # additional information or have any questions.
 #
 
-echo "Sun VirtualBox - preremove script"
-echo "This script will unload the VirtualBox kernel module..."
+echo "Removing VirtualBox drivers and services..."
 
 currentzone=`zonename`
 if test "$currentzone" = "global"; then
