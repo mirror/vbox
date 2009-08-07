@@ -52,6 +52,12 @@
 #endif
 
 
+/** @def RT_MORE_STRICT
+ * Enables more assertions in IPRT.  */
+#if !defined(RT_MORE_STRICT) && (defined(DEBUG) || defined(RT_STRICT) || defined(DOXYGEN_RUNNING))
+# define RT_MORE_STRICT
+#endif 
+
 /** @def RT_ASSERT_PREEMPT_CPUID_VAR
  * Partner to RT_ASSERT_PREEMPT_CPUID_VAR. Declares and initializes a variable 
  * idAssertCpu to NIL_RTCPUID if preemption is enabled and to RTMpCpuId if 
