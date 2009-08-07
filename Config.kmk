@@ -1964,38 +1964,38 @@ TEMPLATE_VBOXGC_SYSSUFF             = .gc
 TEMPLATE_VBOXGC_BLD_TRG_ARCH        = x86
 
 ifeq ($(VBOX_LDR_FMT32),pe)
-ifdef VBOX_USE_VCC80
- TEMPLATE_VBOXGC_TOOL               = VCC80X86
- TEMPLATE_VBOXGC_CXXFLAGS           = -Zi -Zl -GR- -EHs- -GF -W3 -wd4244 -GS- -wd4996 -Zc:wchar_t- -Gs8192 $(VBOX_VCC_GC_OPT) $(VBOX_VCC_GC_FP)
-else
- TEMPLATE_VBOXGC_TOOL               = VCC70
- TEMPLATE_VBOXGC_CXXFLAGS           = -Zi -Zl -GR- -EHs- -GF -W3 -wd4244 $(VBOX_VCC_GC_OPT) $(VBOX_VCC_GC_FP)
-endif
-TEMPLATE_VBOXGC_CFLAGS              = $(TEMPLATE_VBOXGC_CXXFLAGS)
-TEMPLATE_VBOXGC_LDFLAGS             = -Driver -Subsystem:NATIVE -Incremental:NO -Align:64 -MapInfo:Lines -MapInfo:Exports -NoD
-ifndef VBOX_NOINC_MISC
- include $(KBUILD_PATH)/sdks/W2K3DDKX86.kmk
-endif
-TEMPLATE_VBOXGC_LIBS                = \
-        $(PATH_SDK_W2K3DDKX86_LIB)/int64.lib
+ ifdef VBOX_USE_VCC80
+  TEMPLATE_VBOXGC_TOOL              = VCC80X86
+  TEMPLATE_VBOXGC_CXXFLAGS          = -Zi -Zl -GR- -EHs- -GF -W3 -wd4244 -GS- -wd4996 -Zc:wchar_t- -Gs8192 $(VBOX_VCC_GC_OPT) $(VBOX_VCC_GC_FP)
+ else
+  TEMPLATE_VBOXGC_TOOL              = VCC70
+  TEMPLATE_VBOXGC_CXXFLAGS          = -Zi -Zl -GR- -EHs- -GF -W3 -wd4244 $(VBOX_VCC_GC_OPT) $(VBOX_VCC_GC_FP)
+ endif
+ TEMPLATE_VBOXGC_CFLAGS             = $(TEMPLATE_VBOXGC_CXXFLAGS)
+ TEMPLATE_VBOXGC_LDFLAGS            = -Driver -Subsystem:NATIVE -Incremental:NO -Align:64 -MapInfo:Lines -MapInfo:Exports -NoD
+ ifndef VBOX_NOINC_MISC
+  include $(KBUILD_PATH)/sdks/W2K3DDKX86.kmk
+ endif
+ TEMPLATE_VBOXGC_LIBS               = \
+ 	$(PATH_SDK_W2K3DDKX86_LIB)/int64.lib
 endif # pe
 
 ifeq ($(VBOX_LDR_FMT32),elf)
 TEMPLATE_VBOXGC_TOOL                = $(VBOX_GCC32_TOOL)
 TEMPLATE_VBOXGC_CXXFLAGS            = -nostdinc -g -pipe $(VBOX_GCC_PEDANTIC) $(VBOX_GCC32_Wno-variadic-macros) -fno-exceptions -fno-rtti $(VBOX_GCC_GC_OPT) $(VBOX_GCC_GC_FP) -fno-strict-aliasing $(VBOX_GCC_fno-stack-protector) $(VBOX_GCC_fvisibility-hidden) $(VBOX_GCC_fvisibility-inlines-hidden)
 TEMPLATE_VBOXGC_CFLAGS              = -nostdinc -g -pipe $(VBOX_GCC_PEDANTIC) $(VBOX_GCC32_Wno-variadic-macros) -Wmissing-prototypes -Wstrict-prototypes $(VBOX_GCC_GC_OPT) $(VBOX_GCC_GC_FP) -fno-strict-aliasing $(VBOX_GCC_fno-stack-protector) $(VBOX_GCC_fvisibility-hidden)
-ifeq ($(KBUILD_TARGET),solaris)
- TEMPLATE_VBOXGC_LDFLAGS            = -r
-else
- TEMPLATE_VBOXGC_LDFLAGS            = -nostdlib -Bsymbolic
- # "temporarily", must fix the loader.
- TEMPLATE_VBOXGC_LDFLAGS           += $(if $(VBOX_DO_STRIP_MODULES),-S,)
- TEMPLATE_VBOXGC_LDFLAGS.release    = $(if $(VBOX_DO_STRIP_MODULES),-S,)
-endif
-ifn1of ($(KBUILD_TARGET), solaris freebsd)
- TEMPLATE_VBOXGC_LIBS               = \
-	$(VBOX_GCC32_LIBGCC) # instricts
-endif
+ ifeq ($(KBUILD_TARGET),solaris)
+  TEMPLATE_VBOXGC_LDFLAGS           = -r
+ else
+  TEMPLATE_VBOXGC_LDFLAGS           = -nostdlib -Bsymbolic
+  # "temporarily", must fix the loader.
+  TEMPLATE_VBOXGC_LDFLAGS          += $(if $(VBOX_DO_STRIP_MODULES),-S,)
+  TEMPLATE_VBOXGC_LDFLAGS.release   = $(if $(VBOX_DO_STRIP_MODULES),-S,)
+ endif
+ ifn1of ($(KBUILD_TARGET), solaris freebsd)
+  TEMPLATE_VBOXGC_LIBS               = \
+  	$(VBOX_GCC32_LIBGCC) # instricts
+ endif
 endif
 
 ifeq ($(VBOX_LDR_FMT32),macho)
