@@ -51,38 +51,6 @@
  * Authors: Paulo César Pereira de Andrade <pcpa@conectiva.com.br>
  */
 
-#ifdef DEBUG_michael
-# define DEBUG_VIDEO 1
-#endif
-
-#ifdef DEBUG_VIDEO
-
-#define TRACE \
-do { \
-    xf86Msg(X_INFO, __PRETTY_FUNCTION__); \
-    xf86Msg(X_INFO, ": entering\n"); \
-} while(0)
-#define TRACE2 \
-do { \
-    xf86Msg(X_INFO, __PRETTY_FUNCTION__); \
-    xf86Msg(X_INFO, ": leaving\n"); \
-} while(0)
-#define TRACE3(...) \
-do { \
-    xf86Msg(X_INFO, __PRETTY_FUNCTION__); \
-    xf86Msg(X_INFO, __VA_ARGS__); \
-} while(0)
-
-#else  /* DEBUG_VIDEO not defined */
-
-#define TRACE       do { } while(0)
-#define TRACE2      do { } while(0)
-#define TRACE3(...) do { } while(0)
-
-#endif  /* DEBUG_VIDEO not defined */
-
-#define BOOL_STR(a) ((a) ? "TRUE" : "FALSE")
-
 #include "xorg-server.h"
 #include "vboxvideo.h"
 #include "version-generated.h"
@@ -236,7 +204,7 @@ VBOXCrtcResize(ScrnInfoPtr scrn, int width, int height)
     VBOXPtr pVBox = VBOXGetRec(scrn);
     Bool rc = TRUE;
 
-    TRACE3("width=%d, height=%d\n", width, height);
+    TRACE_LOG("width=%d, height=%d\n", width, height);
     /* We only support horizontal resolutions which are a multiple of 8.  Round down if
        necessary. */
     if (width % 8 != 0)
@@ -277,7 +245,7 @@ VBOXCrtcResize(ScrnInfoPtr scrn, int width, int height)
         scrn->virtualY = height;
         scrn->displayWidth = width;
     }
-    TRACE3("returning %s\n", rc ? "TRUE" : "FALSE");
+    TRACE_LOG("returning %s\n", rc ? "TRUE" : "FALSE");
     return rc;
 }
 
@@ -301,7 +269,7 @@ vbox_crtc_mode_fixup (xf86CrtcPtr crtc, DisplayModePtr mode,
     int xRes = adjusted_mode->HDisplay;
 
     (void) mode;
-    TRACE3("name=%s, HDisplay=%d, VDisplay=%d\n", adjusted_mode->name,
+    TRACE_LOG("name=%s, HDisplay=%d, VDisplay=%d\n", adjusted_mode->name,
            adjusted_mode->HDisplay, adjusted_mode->VDisplay);
     /* We only support horizontal resolutions which are a multiple of 8.  Round down if
        necessary. */
@@ -324,7 +292,7 @@ vbox_crtc_mode_set (xf86CrtcPtr crtc, DisplayModePtr mode,
                     DisplayModePtr adjusted_mode, int x, int y)
 {
     (void) mode;
-    TRACE3("name=%s, HDisplay=%d, VDisplay=%d, x=%d, y=%d\n", adjusted_mode->name,
+    TRACE_LOG("name=%s, HDisplay=%d, VDisplay=%d, x=%d, y=%d\n", adjusted_mode->name,
            adjusted_mode->HDisplay, adjusted_mode->VDisplay, x, y);
     VBOXSetMode(crtc->scrn, adjusted_mode);
     VBOXAdjustFrame(crtc->scrn->scrnIndex, x, y, 0);
@@ -377,7 +345,7 @@ vbox_output_mode_valid (xf86OutputPtr output, DisplayModePtr mode)
 {
     ScrnInfoPtr pScrn = output->scrn;
     int rc = MODE_OK;
-    TRACE3("HDisplay=%d, VDisplay=%d\n", mode->HDisplay, mode->VDisplay);
+    TRACE_LOG("HDisplay=%d, VDisplay=%d\n", mode->HDisplay, mode->VDisplay);
     /* We always like modes specified by the user in the configuration
      * file, as doing otherwise is likely to annoy people. */
     if (   !(mode->type & M_T_USERDEF)
@@ -386,7 +354,7 @@ vbox_output_mode_valid (xf86OutputPtr output, DisplayModePtr mode)
                                    pScrn->bitsPerPixel)
        )
         rc = MODE_BAD;
-    TRACE3("returning %s\n", MODE_OK == rc ? "MODE_OK" : "MODE_BAD");
+    TRACE_LOG("returning %s\n", MODE_OK == rc ? "MODE_OK" : "MODE_BAD");
     return rc;
 }
 
@@ -412,7 +380,7 @@ static void
 vbox_output_add_mode (DisplayModePtr *pModes, const char *pszName, int x, int y,
                       Bool isPreferred, Bool isUserDef)
 {
-    TRACE3("pszName=%s, x=%d, y=%d\n", pszName, x, y);
+    TRACE_LOG("pszName=%s, x=%d, y=%d\n", pszName, x, y);
     DisplayModePtr pMode = xnfcalloc(1, sizeof(DisplayModeRec));
 
     pMode->status        = MODE_OK;
@@ -448,7 +416,7 @@ vbox_output_get_modes (xf86OutputPtr output)
     ScrnInfoPtr pScrn = output->scrn;
     VBOXPtr pVBox = VBOXGetRec(pScrn);
 
-    TRACE;
+    TRACE_ENTRY();
     if (vbox_device_available(pVBox))
     {
         uint32_t x, y, bpp, display;
@@ -473,8 +441,7 @@ vbox_output_get_modes (xf86OutputPtr output)
             vbox_output_add_mode(&pModes, pScrn->display->modes[i], x, y,
                                  FALSE, TRUE);
     }
-
-    TRACE2;
+    TRACE_EXIT();
     return pModes;
 }
 
@@ -550,6 +517,30 @@ static const char *ramdacSymbols[] = {
     NULL
 };
 
+#ifdef VBOX_DRI
+static const char *drmSymbols[] = {
+    "drmFreeVersion",
+    "drmGetVersion",
+    NULL
+};
+
+static const char *driSymbols[] = {
+    "DRICloseScreen",
+    "DRICreateInfoRec",
+    "DRIDestroyInfoRec",
+    "DRIFinishScreenInit",
+    "DRIGetSAREAPrivate",
+    "DRILock",
+    "DRIMoveBuffersHelper",
+    "DRIQueryVersion",
+    "DRIScreenInit",
+    "DRIUnlock",
+    "GlxSetVisualConfigs",
+    "DRICreatePCIBusID",
+    NULL
+};
+#endif
+
 #ifdef XFree86LOADER
 /* Module loader interface */
 static MODULESETUPPROTO(vboxSetup);
@@ -593,6 +584,9 @@ vboxSetup(pointer Module, pointer Options, int *ErrorMajor, int *ErrorMinor)
                           shadowfbSymbols,
                           vbeSymbols,
                           ramdacSymbols,
+#ifdef VBOX_DRI
+                          drmSymbols, driSymbols,
+#endif
                           NULL);
         return (pointer)TRUE;
     }
@@ -628,7 +622,7 @@ VBOXPciProbe(DriverPtr drv, int entity_num, struct pci_device *dev,
 {
     ScrnInfoPtr pScrn;
 
-    TRACE;
+    TRACE_ENTRY();
     pScrn = xf86ConfigPciEntity(NULL, 0, entity_num, VBOXPCIchipsets,
                                 NULL, NULL, NULL, NULL, NULL);
     if (pScrn != NULL) {
@@ -650,7 +644,7 @@ VBOXPciProbe(DriverPtr drv, int entity_num, struct pci_device *dev,
         pVBox->pciInfo = dev;
     }
 
-    TRACE3("returning %s\n", BOOL_STR(pScrn != NULL));
+    TRACE_LOG("returning %s\n", BOOL_STR(pScrn != NULL));
     return (pScrn != NULL);
 }
 #endif
@@ -694,7 +688,7 @@ VBOXProbe(DriverPtr drv, int flags)
 			pScrn->driverName    = VBOX_DRIVER_NAME;
 			pScrn->name	     = VBOX_NAME;
 			pScrn->Probe	     = VBOXProbe;
-                        pScrn->PreInit       = VBOXPreInit;
+            pScrn->PreInit       = VBOXPreInit;
 			pScrn->ScreenInit    = VBOXScreenInit;
 			pScrn->SwitchMode    = VBOXSwitchMode;
 			pScrn->ValidMode     = VBOXValidMode;
@@ -908,6 +902,12 @@ VBOXPreInit(ScrnInfoPtr pScrn, int flags)
     /* Framebuffer-related setup */
     pScrn->bitmapBitOrder = BITMAP_BIT_ORDER;
 
+#ifdef VBOX_DRI
+    /* Load the dri module. */
+    if (xf86LoadSubModule(pScrn, "dri")) {
+        xf86LoaderReqSymLists(driSymbols, drmSymbols, NULL);
+    }
+#endif
     return (TRUE);
 }
 
@@ -926,10 +926,10 @@ vboxEnableDisableFBAccess(int scrnIndex, Bool enable)
     ScrnInfoPtr pScrn = xf86Screens[scrnIndex];
     VBOXPtr pVBox = VBOXGetRec(pScrn);
 
-    TRACE3("enable=%s\n", enable ? "TRUE" : "FALSE");
+    TRACE_LOG("enable=%s\n", enable ? "TRUE" : "FALSE");
     pVBox->accessEnabled = enable;
     pVBox->EnableDisableFBAccess(scrnIndex, enable);
-    TRACE2;
+    TRACE_EXIT();
 }
 
 /*
@@ -984,6 +984,10 @@ VBOXScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
         return (FALSE);
     if (!miSetPixmapDepths())
         return (FALSE);
+
+#ifdef VBOX_DRI
+    pVBox->useDRI = VBOXDRIScreenInit(scrnIndex, pScreen, pVBox);
+#endif
 
     /* I checked in the sources, and XFree86 4.2 does seem to support
        this function for 32bpp. */
@@ -1076,6 +1080,11 @@ VBOXScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
         vboxEnableGraphicsCap(pVBox);
         /* Report the largest resolution that we support */
     }
+
+#ifdef VBOX_DRI
+    if (pVBox->useDRI)
+        pVBox->useDRI = VBOXDRIFinishScreenInit(pScreen);
+#endif
     return (TRUE);
 }
 
@@ -1086,10 +1095,14 @@ VBOXEnterVT(int scrnIndex, int flags)
     VBOXPtr pVBox = VBOXGetRec(pScrn);
     bool rc;
 
-    TRACE;
+    TRACE_ENTRY();
     pVBox->vtSwitch = FALSE;
+#ifdef VBOX_DRI
+    if (pVBox->useDRI)
+        DRIUnlock(screenInfo.screens[scrnIndex]);
+#endif
     rc = xf86SetDesiredModes(pScrn);
-    TRACE3("returning %s\n", rc ? "TRUE" : "FALSE");
+    TRACE_LOG("returning %s\n", rc ? "TRUE" : "FALSE");
     return rc;
 }
 
@@ -1099,7 +1112,7 @@ VBOXLeaveVT(int scrnIndex, int flags)
     ScrnInfoPtr pScrn = xf86Screens[scrnIndex];
     VBOXPtr pVBox = VBOXGetRec(pScrn);
 
-    TRACE;
+    TRACE_ENTRY();
     pVBox->vtSwitch = TRUE;
     VBOXSaveRestore(pScrn, MODE_RESTORE);
     if (vbox_device_available(pVBox))
@@ -1108,7 +1121,11 @@ VBOXLeaveVT(int scrnIndex, int flags)
             vboxDisableVbva(pScrn);
         vboxDisableGraphicsCap(pVBox);
     }
-    TRACE2;
+#ifdef VBOX_DRI
+    if (pVBox->useDRI)
+        DRILock(screenInfo.screens[scrnIndex], 0);
+#endif
+    TRACE_EXIT();
 }
 
 static Bool
@@ -1116,6 +1133,12 @@ VBOXCloseScreen(int scrnIndex, ScreenPtr pScreen)
 {
     ScrnInfoPtr pScrn = xf86Screens[scrnIndex];
     VBOXPtr pVBox = VBOXGetRec(pScrn);
+
+#ifdef VBOX_DRI
+    if (pVBox->useDRI)
+        VBOXDRICloseScreen(pScreen, pVBox);
+    pVBox->useDRI = false;
+#endif
 
     if (vbox_device_available(pVBox))
     {
@@ -1162,7 +1185,7 @@ VBOXValidMode(int scrn, DisplayModePtr p, Bool flag, int pass)
     DisplayModePtr mode;
     float v;
 
-    TRACE3("HDisplay=%d, VDisplay=%d, flag=%s, pass=%d\n",
+    TRACE_LOG("HDisplay=%d, VDisplay=%d, flag=%s, pass=%d\n",
            p->HDisplay, p->VDisplay, flag ? "TRUE" : "FALSE", pass);
     if (pass != MODECHECK_FINAL) {
         if (!warned) {
@@ -1196,7 +1219,7 @@ VBOXValidMode(int scrn, DisplayModePtr p, Bool flag, int pass)
     {
         xf86DrvMsg(scrn, X_WARNING, "Graphics mode %s rejected by the X server\n", p->name);
     }
-    TRACE3("returning %d\n", ret);
+    TRACE_LOG("returning %d\n", ret);
     return ret;
 }
 
@@ -1207,7 +1230,7 @@ VBOXSwitchMode(int scrnIndex, DisplayModePtr pMode, int flags)
     VBOXPtr pVBox;
     Bool rc;
 
-    TRACE3("HDisplay=%d, VDisplay=%d\n", pMode->HDisplay, pMode->VDisplay);
+    TRACE_LOG("HDisplay=%d, VDisplay=%d\n", pMode->HDisplay, pMode->VDisplay);
     pScrn = xf86Screens[scrnIndex];  /* Why does X have three ways of refering to the screen? */
     pVBox = VBOXGetRec(pScrn);
     /* We want to disable access to the framebuffer before switching mode.
@@ -1217,7 +1240,7 @@ VBOXSwitchMode(int scrnIndex, DisplayModePtr pMode, int flags)
     rc = xf86SetSingleMode(pScrn, pMode, 0);
     if (pVBox->accessEnabled)
         pVBox->EnableDisableFBAccess(scrnIndex, TRUE);
-    TRACE3("returning %s\n", rc ? "TRUE" : "FALSE");
+    TRACE_LOG("returning %s\n", rc ? "TRUE" : "FALSE");
     return rc;
 }
 
@@ -1231,7 +1254,7 @@ VBOXSetMode(ScrnInfoPtr pScrn, DisplayModePtr pMode)
     Bool rc = TRUE;
 
     int bpp = pScrn->depth == 24 ? 32 : 16;
-    TRACE3("HDisplay=%d, VDisplay=%d\n", pMode->HDisplay, pMode->VDisplay);
+    TRACE_LOG("HDisplay=%d, VDisplay=%d\n", pMode->HDisplay, pMode->VDisplay);
     pVBox = VBOXGetRec(pScrn);
     /* Don't fiddle with the hardware if we are switched
      * to a virtual terminal. */
@@ -1275,7 +1298,7 @@ VBOXSetMode(ScrnInfoPtr pScrn, DisplayModePtr pMode)
             }
         }
     }
-    TRACE3("returning %s\n", rc ? "TRUE" : "FALSE");
+    TRACE_LOG("returning %s\n", rc ? "TRUE" : "FALSE");
     return rc;
 }
 
@@ -1285,7 +1308,7 @@ VBOXAdjustFrame(int scrnIndex, int x, int y, int flags)
     VBOXPtr pVBox = VBOXGetRec(xf86Screens[scrnIndex]);
     ScrnInfoPtr pScrn = xf86Screens[scrnIndex];
 
-    TRACE;
+    TRACE_ENTRY();
     /* Don't fiddle with the hardware if we are switched
      * to a virtual terminal. */
     if (!pVBox->vtSwitch) {
@@ -1298,7 +1321,7 @@ VBOXAdjustFrame(int scrnIndex, int x, int y, int flags)
         if (pVBox->useVbva == TRUE)
             vboxEnableVbva(pScrn);
     }
-    TRACE2;
+    TRACE_EXIT();
 }
 
 static void
@@ -1313,7 +1336,7 @@ VBOXMapVidMem(ScrnInfoPtr pScrn)
     VBOXPtr pVBox = VBOXGetRec(pScrn);
     Bool rc = TRUE;
 
-    TRACE;
+    TRACE_ENTRY();
     if (NULL == pVBox->base)
     {
         pScrn->memPhysBase = pVBox->mapPhys;
@@ -1350,7 +1373,7 @@ VBOXMapVidMem(ScrnInfoPtr pScrn)
 
         rc = pVBox->base != NULL;
     }
-    TRACE3("returning %s\n", rc ? "TRUE" : "FALSE");
+    TRACE_LOG("returning %s\n", rc ? "TRUE" : "FALSE");
     return rc;
 }
 
@@ -1359,7 +1382,7 @@ VBOXUnmapVidMem(ScrnInfoPtr pScrn)
 {
     VBOXPtr pVBox = VBOXGetRec(pScrn);
 
-    TRACE;
+    TRACE_ENTRY();
     if (pVBox->base == NULL)
         return;
 
@@ -1374,7 +1397,7 @@ VBOXUnmapVidMem(ScrnInfoPtr pScrn)
     xf86UnMapVidMem(pScrn->scrnIndex, pVBox->VGAbase, 0x10000);
 #endif
     pVBox->base = NULL;
-    TRACE2;
+    TRACE_EXIT();
 }
 
 static void
@@ -1389,7 +1412,7 @@ VBOXLoadPalette(ScrnInfoPtr pScrn, int numColors, int *indices,
 	   (void)inb(pVBox->ioBase + VGA_IOBASE_COLOR + VGA_IN_STAT_1_OFFSET); \
     } while (0)
 
-    TRACE;
+    TRACE_ENTRY();
     for (i = 0; i < numColors; i++) {
 	   idx = indices[i];
 	   outb(pVBox->ioBase + VGA_DAC_WRITE_ADDR, idx);
@@ -1401,7 +1424,7 @@ VBOXLoadPalette(ScrnInfoPtr pScrn, int numColors, int *indices,
 	   outb(pVBox->ioBase + VGA_DAC_DATA, colors[idx].blue);
 	   VBOXDACDelay();
     }
-    TRACE2;
+    TRACE_EXIT();
 }
 
 /*
@@ -1475,7 +1498,7 @@ SaveFonts(ScrnInfoPtr pScrn)
     unsigned char miscOut, attr10, gr4, gr5, gr6, seq2, seq4, scrn;
     Bool cont = TRUE;
 
-    TRACE;
+    TRACE_ENTRY();
     if (pVBox->fonts != NULL)
 	cont = FALSE;
 
@@ -1539,7 +1562,7 @@ SaveFonts(ScrnInfoPtr pScrn)
         WriteGr(0x06, gr6);
         WriteMiscOut(miscOut);
     }
-    TRACE2;
+    TRACE_EXIT();
 }
 
 static void
@@ -1548,7 +1571,7 @@ RestoreFonts(ScrnInfoPtr pScrn)
     VBOXPtr pVBox = VBOXGetRec(pScrn);
     unsigned char miscOut, attr10, gr1, gr3, gr4, gr5, gr6, gr8, seq2, seq4, scrn;
 
-    TRACE;
+    TRACE_ENTRY();
     if (pVBox->fonts != NULL)
     {
         /* save the registers that are needed here */
@@ -1610,7 +1633,7 @@ RestoreFonts(ScrnInfoPtr pScrn)
         WriteSeq(0x02, seq2);
         WriteSeq(0x04, seq4);
     }
-    TRACE2;
+    TRACE_EXIT();
 }
 
 Bool
@@ -1619,7 +1642,7 @@ VBOXSaveRestore(ScrnInfoPtr pScrn, vbeSaveRestoreFunction function)
     VBOXPtr pVBox;
     Bool rc = TRUE;
 
-    TRACE;
+    TRACE_ENTRY();
     if (MODE_QUERY < 0 || function > MODE_RESTORE)
 	rc = FALSE;
 
@@ -1672,6 +1695,6 @@ VBOXSaveRestore(ScrnInfoPtr pScrn, vbeSaveRestoreFunction function)
             }
         }
     }
-    TRACE3("returning %s\n", rc ? "TRUE" : "FALSE");
+    TRACE_LOG("returning %s\n", rc ? "TRUE" : "FALSE");
     return rc;
 }
