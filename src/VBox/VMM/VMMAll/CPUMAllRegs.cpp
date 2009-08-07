@@ -1079,8 +1079,9 @@ VMMDECL(void) CPUMGetGuestCpuId(PVMCPU pVCpu, uint32_t iLeaf, uint32_t *pEax, ui
         *pEbx |= (pVCpu->idCpu << 24);
    }
 
-    if ( iLeaf == 4 && fHasMoreCaches &&
-         pVM->cpum.s.enmCPUVendor == CPUMCPUVENDOR_INTEL)
+    if (    iLeaf == 4
+        &&  fHasMoreCaches
+        &&  pVM->cpum.s.enmCPUVendor == CPUMCPUVENDOR_INTEL)
     {
         /* Report unified L0 cache, Linux'es num_cpu_cores() requires
          * that to be non-0 to detect core count correctly. */
@@ -2057,3 +2058,4 @@ VMMDECL(CPUMMODE) CPUMGetGuestMode(PVMCPU pVCpu)
 
     return enmMode;
 }
+
