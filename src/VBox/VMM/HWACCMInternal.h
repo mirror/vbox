@@ -601,6 +601,7 @@ typedef struct HWACCMCPU
 
         /* Number of automatically loaded/restored MSRs. */
         uint32_t                    cCachedMSRs;
+        uint32_t                    uAlignement;
 
         /** VMCS cache. */
         VMCSCACHE                   VMCSCache;
