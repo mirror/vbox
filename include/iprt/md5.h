@@ -45,9 +45,9 @@
  */
 typedef struct RTMD5CONTEXT
 {
+    uint32_t in[16];
     uint32_t buf[4];
     uint32_t bits[2];
-    uint32_t in[16];
 } RTMD5CONTEXT;
 
 /** Pointer to MD5 hash algorithm context. */
