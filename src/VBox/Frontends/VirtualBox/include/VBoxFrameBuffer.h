@@ -23,6 +23,7 @@
 #ifndef ___VBoxFrameBuffer_h___
 #define ___VBoxFrameBuffer_h___
 //#define VBOXQGL_PROF_BASE 1
+//#define VBOXQGL_DBG_SURF 1
 #include "COMDefs.h"
 #include <iprt/critsect.h>
 
@@ -964,12 +965,8 @@ public:
 
     class VBoxVHWASurfList * getComplexList() {return mComplexList; }
 
-//    bool isOverlay() { return mIsOverlay; }
-
-#ifdef VBOX_WITH_VIDEOHWACCEL
     class VBoxVHWAGlProgramMngr * getGlProgramMngr();
     static int setCKey(class VBoxVHWAGlProgramVHWA * pProgram, const VBoxVHWAColorFormat * pFormat, const VBoxVHWAColorKey * pCKey, bool bDst);
-#endif
 private:
     void setComplexList(VBoxVHWASurfList *aComplexList) { mComplexList = aComplexList; }
     void initDisplay(VBoxVHWASurfaceBase *pPrimary);
@@ -1232,7 +1229,9 @@ public:
     bool vboxUsesGuestVRAM() { return mUsesGuestVRAM; }
 
     uchar *vboxAddress() { return mDisplay.getVGA() ? mDisplay.getVGA()->address() : NULL; }
+#ifdef VBOX_WITH_VIDEOHWACCEL
     uchar *vboxVRAMAddressFromOffset(uint64_t offset);
+#endif
     ulong vboxBitsPerPixel() { return mDisplay.getVGA()->bitsPerPixel(); }
     ulong vboxBytesPerLine() { return mDisplay.getVGA() ? mDisplay.getVGA()->bytesPerLine() : NULL; }
 
@@ -1241,14 +1240,14 @@ typedef void (VBoxGLWidget::*PFNVBOXQGLOP)(void* );
 
     void vboxPaintEvent (QPaintEvent *pe) {vboxPerformGLOp(&VBoxGLWidget::vboxDoPaint, pe);}
     void vboxResizeEvent (VBoxResizeEvent *re) {vboxPerformGLOp(&VBoxGLWidget::vboxDoResize, re);}
-#ifdef DEBUG_misha
-    void vboxTestSurfaces () {vboxPerformGLOp(&VBoxGLWidget::vboxDoTestSurfaces, NULL);}
-#endif
+//#ifdef VBOXQGL_DBG_SURF
+//    void vboxTestSurfaces () {vboxPerformGLOp(&VBoxGLWidget::vboxDoTestSurfaces, NULL);}
+//#endif
     void vboxProcessVHWACommands(VBoxVHWACommandProcessEvent * pEvent) {vboxPerformGLOp(&VBoxGLWidget::vboxDoProcessVHWACommands, pEvent);}
 #ifdef VBOX_WITH_VIDEOHWACCEL
     void vboxVHWACmd (struct _VBOXVHWACMD * pCmd) {vboxPerformGLOp(&VBoxGLWidget::vboxDoVHWACmd, pCmd);}
-    class VBoxVHWAGlProgramMngr * vboxVHWAGetGlProgramMngr() { return mpMngr; }
 #endif
+    class VBoxVHWAGlProgramMngr * vboxVHWAGetGlProgramMngr() { return mpMngr; }
 
     VBoxVHWASurfaceBase * vboxGetVGASurface() { return mDisplay.getVGA(); }
 
@@ -1285,13 +1284,19 @@ private:
     void vboxDoPaint(void *rec);
 
     void vboxDoUpdateRect(const QRect * pRect);
-#ifdef DEBUG_misha
+#ifdef VBOXQGL_DBG_SURF
     void vboxDoTestSurfaces(void *context);
 #endif
 #ifdef VBOX_WITH_VIDEOHWACCEL
     void vboxDoVHWACmd(void *cmd);
     void vboxCheckUpdateAddress (VBoxVHWASurfaceBase * pSurface, uint64_t offset)
     {
+#ifndef VBOXQGL_DBG_SURF
+    	if(offset == 0xffffffff)
+    	{
+    		return;
+    	}
+#endif
         if (pSurface->addressAlocated())
         {
             uchar * addr = vboxVRAMAddressFromOffset(offset);
@@ -1355,9 +1360,7 @@ private:
     VBoxVHWASurfList *mConstructingList;
     int32_t mcRemaining2Contruct;
 
-#ifdef VBOX_WITH_VIDEOHWACCEL
     class VBoxVHWAGlProgramMngr *mpMngr;
-#endif
 };
 
 
