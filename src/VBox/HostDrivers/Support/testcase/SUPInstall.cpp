@@ -1,7 +1,6 @@
+/* $Id$ */
 /** @file
- *
- * VBox host drivers - Ring-0 support drivers - Testcases:
- * Testcase for driver install
+ * SUPInstall - Driver Install
  */
 
 /*
@@ -36,7 +35,8 @@
 #include <VBox/sup.h>
 #include <VBox/err.h>
 #include <iprt/initterm.h>
-#include <stdio.h>
+#include <iprt/stream.h>
+
 
 int main(int argc, char **argv)
 {
@@ -44,10 +44,10 @@ int main(int argc, char **argv)
     int rc = SUPR3Install();
     if (RT_SUCCESS(rc))
     {
-        printf("installed successfully\n");
+        RTPrintf("installed successfully\n");
         return 0;
     }
-    printf("installation failed. rc=%d\n", rc);
-
+    RTPrintf("installation failed. rc=%Rrc\n", rc);
     return 1;
 }
+

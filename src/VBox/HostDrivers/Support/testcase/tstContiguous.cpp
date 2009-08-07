@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Support Driver - Contiguous Memory Testcase (ring-3).
+ * SUP Testcase - Contiguous Memory Interface (ring-3).
  */
 
 /*

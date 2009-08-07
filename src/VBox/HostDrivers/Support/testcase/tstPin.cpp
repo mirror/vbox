@@ -1,7 +1,6 @@
+/* $Id$ */
 /** @file
- *
- * VBox host drivers - Ring-0 support drivers - Testcases:
- * Test the memory locking interface
+ * SUP Testcase - Memory locking interface (ring 3).
  */
 
 /*

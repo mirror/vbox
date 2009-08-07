@@ -1,7 +1,6 @@
+/* $Id$ */
 /** @file
- *
- * VBox host drivers - Ring-0 support drivers - Testcases:
- * Test the interface for querying host paging mode
+ * SUP Testcase - Host paging mode interface (ring 3).
  */
 
 /*

@@ -1,8 +1,9 @@
+/* $Id$ */
+/** @file
+ * VirtualBox Support Driver - Windows Resource File.
+ */
+
 /*
- * VBox host drivers - Ring-0 support drivers - Win32 host
- *
- * Resource definitions
- *
  * Copyright (C) 2006-2009 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
@@ -27,7 +28,7 @@
  * additional information or have any questions.
  */
 
-#include <windows.h>
+#include <Windows.h>
 #include <VBox/version.h>
 
 LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
@@ -60,3 +61,4 @@ BEGIN
       VALUE "Translation", 0x409, 1200
    END
 END
+

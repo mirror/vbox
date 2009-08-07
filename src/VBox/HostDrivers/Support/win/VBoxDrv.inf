@@ -1,7 +1,8 @@
+; $Id$
+;; @file
+; VirtualBox Support Driver - Windows Driver INF file.
 ;
-; VBox host drivers - Ring-0 support drivers - Win32 host
-;
-; INF file for installing the Win32 driver
+
 ;
 ; Copyright (C) 2006-2007 Sun Microsystems, Inc.
 ;

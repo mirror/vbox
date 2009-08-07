@@ -1,6 +1,6 @@
-/** $Id$ */
+/* $Id$ */
 /** @file
- * Testcase: Test the interrupt gate feature of the support library.
+ * SUP Testcase - Test the interrupt gate feature of the support library.
  */
 
 /*
