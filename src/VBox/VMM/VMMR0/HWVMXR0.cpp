@@ -521,6 +521,18 @@ VMMR0DECL(int) VMXR0SetupVM(PVM pVM)
             vmxR0SetMSRPermission(pVCpu, MSR_IA32_SYSENTER_CS, true, true);
             vmxR0SetMSRPermission(pVCpu, MSR_IA32_SYSENTER_ESP, true, true);
             vmxR0SetMSRPermission(pVCpu, MSR_IA32_SYSENTER_EIP, true, true);
+
+            /* Long mode supported? */
+            if (CPUMGetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_LONG_MODE))
+            {
+                /* Allow the guest to directly modify these MSRs; they are restored and saved automatically. */
+                vmxR0SetMSRPermission(pVCpu, MSR_K8_LSTAR, true, true);
+                vmxR0SetMSRPermission(pVCpu, MSR_K6_STAR, true, true);
+                vmxR0SetMSRPermission(pVCpu, MSR_K8_SF_MASK, true, true);
+                vmxR0SetMSRPermission(pVCpu, MSR_K8_KERNEL_GS_BASE, true, true);
+                vmxR0SetMSRPermission(pVCpu, MSR_K8_GS_BASE, true, true);
+                vmxR0SetMSRPermission(pVCpu, MSR_K8_FS_BASE, true, true);
+            }
         }
 
         /* Set the guest & host MSR load/store physical addresses. */
@@ -531,7 +543,7 @@ VMMR0DECL(int) VMXR0SetupVM(PVM pVM)
         AssertRC(rc);
 
         Assert(pVCpu->hwaccm.s.vmx.pHostMSRPhys);
-        rc = VMXWriteVMCS64(VMX_VMCS_CTRL_VMEXIT_MSR_LOAD_FULL, pVCpu->hwaccm.s.vmx.pHostMSRPhys);
+        rc = VMXWriteVMCS64(VMX_VMCS_CTRL_VMEXIT_MSR_LOAD_FULL,  pVCpu->hwaccm.s.vmx.pHostMSRPhys);
         AssertRC(rc);
         
         if (pVM->hwaccm.s.vmx.msr.vmx_proc_ctls.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_USE_TPR_SHADOW)
@@ -1867,17 +1879,6 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
             pMsr->u32Reserved = 0;
             pMsr->u64Value    = pCtx->msrKERNELGSBASE;    /* swapgs exchange value */
             pMsr++; idxMsr++;
-
-            if (pVM->hwaccm.s.vmx.msr.vmx_proc_ctls.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_USE_MSR_BITMAPS)
-            {
-                /* Allow the guest to directly modify these MSRs; they are restored and saved automatically. */
-                vmxR0SetMSRPermission(pVCpu, MSR_K8_LSTAR, true, true);
-                vmxR0SetMSRPermission(pVCpu, MSR_K6_STAR, true, true);
-                vmxR0SetMSRPermission(pVCpu, MSR_K8_SF_MASK, true, true);
-                vmxR0SetMSRPermission(pVCpu, MSR_K8_KERNEL_GS_BASE, true, true);
-                vmxR0SetMSRPermission(pVCpu, MSR_K8_GS_BASE, true, true);
-                vmxR0SetMSRPermission(pVCpu, MSR_K8_FS_BASE, true, true);
-            }
         }
     }
     pVCpu->hwaccm.s.vmx.cCachedMSRs = idxMsr;
