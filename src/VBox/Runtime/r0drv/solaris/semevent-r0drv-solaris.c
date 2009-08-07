@@ -36,10 +36,10 @@
 #include "internal/iprt.h"
 #include <iprt/semaphore.h>
 
-#include <iprt/alloc.h>
 #include <iprt/assert.h>
 #include <iprt/asm.h>
 #include <iprt/err.h>
+#include <iprt/mem.h>
 #include <iprt/mp.h>
 #include <iprt/thread.h>
 #include "internal/magics.h"
@@ -68,10 +68,12 @@ typedef struct RTSEMEVENTINTERNAL
 } RTSEMEVENTINTERNAL, *PRTSEMEVENTINTERNAL;
 
 
+
 RTDECL(int)  RTSemEventCreate(PRTSEMEVENT pEventSem)
 {
     Assert(sizeof(RTSEMEVENTINTERNAL) > sizeof(void *));
     AssertPtrReturn(pEventSem, VERR_INVALID_POINTER);
+    RT_ASSERT_PREEMPTIBLE();
 
     PRTSEMEVENTINTERNAL pEventInt = (PRTSEMEVENTINTERNAL)RTMemAlloc(sizeof(*pEventInt));
     if (pEventInt)
@@ -162,7 +164,8 @@ static int rtSemEventWait(RTSEMEVENT EventSem, unsigned cMillies, bool fInterrup
     AssertMsgReturn(pEventInt->u32Magic == RTSEMEVENT_MAGIC,
                     ("pEventInt=%p u32Magic=%#x\n", pEventInt, pEventInt->u32Magic),
                     VERR_INVALID_HANDLE);
-    RT_ASSERT_PREEMPTIBLE();
+    if (cMillies)
+        RT_ASSERT_PREEMPTIBLE();
 
     mutex_enter(&pEventInt->Mtx);
 
@@ -172,6 +175,8 @@ static int rtSemEventWait(RTSEMEVENT EventSem, unsigned cMillies, bool fInterrup
         ASMAtomicXchgU8(&pEventInt->fSignaled, false);
         rc = VINF_SUCCESS;
     }
+    else if (!cMillies)
+        rc = VERR_TIMEOUT;
     else
     {
         ASMAtomicIncU32(&pEventInt->cWaiters);

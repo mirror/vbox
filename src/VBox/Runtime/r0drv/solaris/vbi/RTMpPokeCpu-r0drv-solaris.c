@@ -33,13 +33,17 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #include "the-solaris-kernel.h"
+#include "internal/iprt.h"
 #include <iprt/mp.h>
+
+#include <iprt/asm.h>
 #include <iprt/err.h>
 
 
 
 RTDECL(int) RTMpPokeCpu(RTCPUID idCpu)
 {
+    RT_ASSERT_INTS_ON();
     vbi_poke_cpu(idCpu);
     return VINF_SUCCESS;
 }

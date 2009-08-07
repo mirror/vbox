@@ -28,17 +28,19 @@
  * additional information or have any questions.
  */
 
+
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
 #include "the-solaris-kernel.h"
-
+#include "internal/iprt.h"
 #include <iprt/spinlock.h>
-#include <iprt/err.h>
-#include <iprt/alloc.h>
-#include <iprt/assert.h>
-#include <iprt/asm.h>
 
+#include <iprt/asm.h>
+#include <iprt/assert.h>
+#include <iprt/err.h>
+#include <iprt/mem.h>
+#include <iprt/thread.h>
 #include "internal/magics.h"
 
 
@@ -57,11 +59,13 @@ typedef struct RTSPINLOCKINTERNAL
 } RTSPINLOCKINTERNAL, *PRTSPINLOCKINTERNAL;
 
 
+
 RTDECL(int)  RTSpinlockCreate(PRTSPINLOCK pSpinlock)
 {
     /*
      * Allocate.
      */
+    RT_ASSERT_PREEMPTIBLE();
     AssertCompile(sizeof(RTSPINLOCKINTERNAL) > sizeof(void *));
     PRTSPINLOCKINTERNAL pSpinlockInt = (PRTSPINLOCKINTERNAL)RTMemAlloc(sizeof(*pSpinlockInt));
     if (!pSpinlockInt)
@@ -82,6 +86,7 @@ RTDECL(int)  RTSpinlockDestroy(RTSPINLOCK Spinlock)
     /*
      * Validate input.
      */
+    RT_ASSERT_INTS_ON();
     PRTSPINLOCKINTERNAL pSpinlockInt = (PRTSPINLOCKINTERNAL)Spinlock;
     if (!pSpinlockInt)
         return VERR_INVALID_PARAMETER;
@@ -106,6 +111,7 @@ RTDECL(void) RTSpinlockAcquireNoInts(RTSPINLOCK Spinlock, PRTSPINLOCKTMP pTmp)
     Assert(pSpinlockInt->u32Magic == RTSPINLOCK_MAGIC);
     NOREF(pTmp);
 
+    /** @todo r=bird: are interrupts disabled implicitly by mutex_enter?!? */
     mutex_enter(&pSpinlockInt->Mtx);
 }
 

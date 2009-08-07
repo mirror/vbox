@@ -28,13 +28,14 @@
  * additional information or have any questions.
  */
 
+
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
 #include "the-solaris-kernel.h"
-
-#include <iprt/err.h>
+#include "internal/iprt.h"
 #include <iprt/mp.h>
+
 #include <iprt/err.h>
 #include "r0drv/mp-r0drv.h"
 

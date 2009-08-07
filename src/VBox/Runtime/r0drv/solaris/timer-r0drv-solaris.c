@@ -33,16 +33,17 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #include "the-solaris-kernel.h"
-
+#include "internal/iprt.h"
 #include <iprt/timer.h>
-#include <iprt/time.h>
-#include <iprt/mp.h>
-#include <iprt/spinlock.h>
-#include <iprt/err.h>
+
 #include <iprt/asm.h>
 #include <iprt/assert.h>
-#include <iprt/alloc.h>
-
+#include <iprt/err.h>
+#include <iprt/mem.h>
+#include <iprt/mp.h>
+#include <iprt/spinlock.h>
+#include <iprt/thread.h>
+#include <iprt/time.h>
 #include "internal/magics.h"
 
 
@@ -141,6 +142,7 @@ RTDECL(int) RTTimerCreateEx(PRTTIMER *ppTimer, uint64_t u64NanoInterval, unsigne
     /*
      * Validate flags.
      */
+    RT_ASSERT_PREEMPTIBLE();
     if (!RTTIMER_FLAGS_ARE_VALID(fFlags))
         return VERR_INVALID_PARAMETER;
     if (    (fFlags & RTTIMER_FLAGS_CPU_SPECIFIC)
@@ -195,10 +197,12 @@ RTDECL(int) RTTimerDestroy(PRTTIMER pTimer)
     /*
      * Validate.
      */
+    RT_ASSERT_PREEMPTIBLE();
     if (pTimer == NULL)
         return VINF_SUCCESS;
     AssertPtrReturn(pTimer, VERR_INVALID_HANDLE);
     AssertReturn(pTimer->u32Magic == RTTIMER_MAGIC, VERR_INVALID_HANDLE);
+    RT_ASSERT_INTS_ON();
 
     /*
      * Invalid the timer, stop it, and free the associated resources.
@@ -224,6 +228,7 @@ RTDECL(int) RTTimerStart(PRTTIMER pTimer, uint64_t u64First)
      */
     AssertPtrReturn(pTimer, VERR_INVALID_HANDLE);
     AssertReturn(pTimer->u32Magic == RTTIMER_MAGIC, VERR_INVALID_HANDLE);
+    RT_ASSERT_INTS_ON();
     if (rtTimerSolarisGetCyclicId(pTimer) != CYCLIC_NONE)
     {
         /*
@@ -323,6 +328,7 @@ RTDECL(int) RTTimerStop(PRTTIMER pTimer)
      */
     AssertPtrReturn(pTimer, VERR_INVALID_HANDLE);
     AssertReturn(pTimer->u32Magic == RTTIMER_MAGIC, VERR_INVALID_HANDLE);
+    RT_ASSERT_INTS_ON();
 
     /*
      * Stop the timer.

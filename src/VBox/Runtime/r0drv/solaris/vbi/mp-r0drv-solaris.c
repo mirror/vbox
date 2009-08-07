@@ -33,12 +33,14 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #include "the-solaris-kernel.h"
-
+#include "internal/iprt.h"
 #include <iprt/mp.h>
+
+#include <iprt/asm.h>
 #include <iprt/cpuset.h>
 #include <iprt/err.h>
-#include <iprt/asm.h>
 #include "r0drv/mp-r0drv.h"
+
 
 
 RTDECL(bool) RTMpIsCpuWorkPending(void)
@@ -159,6 +161,7 @@ static int rtmpOnAllSolarisWrapper(void *uArg, void *uIgnored1, void *uIgnored2)
 RTDECL(int) RTMpOnAll(PFNRTMPWORKER pfnWorker, void *pvUser1, void *pvUser2)
 {
     RTMPARGS Args;
+    RT_ASSERT_INTS_ON();
 
     Args.pfnWorker = pfnWorker;
     Args.pvUser1 = pvUser1;
@@ -202,6 +205,7 @@ RTDECL(int) RTMpOnOthers(PFNRTMPWORKER pfnWorker, void *pvUser1, void *pvUser2)
 {
     int rc;
     RTMPARGS Args;
+    RT_ASSERT_INTS_ON();
 
     /* The caller is supposed to have disabled preemption, but take no chances. */
     vbi_preempt_disable();
@@ -248,6 +252,7 @@ RTDECL(int) RTMpOnSpecific(RTCPUID idCpu, PFNRTMPWORKER pfnWorker, void *pvUser1
 {
     int rc;
     RTMPARGS Args;
+    RT_ASSERT_INTS_ON();
 
     if (idCpu >= vbi_cpu_count())
         return VERR_CPU_NOT_FOUND;

@@ -33,11 +33,13 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #include "the-solaris-kernel.h"
-
+#include "internal/iprt.h"
 #include <iprt/thread.h>
+
 #include <iprt/asm.h>
 #include <iprt/assert.h>
 #include <iprt/err.h>
+
 
 
 RTDECL(RTNATIVETHREAD) RTThreadNativeSelf(void)
@@ -50,6 +52,7 @@ RTDECL(int) RTThreadSleep(unsigned cMillies)
 {
     clock_t cTicks;
     unsigned long timeout;
+    RT_ASSERT_PREEMPTIBLE();
 
     if (!cMillies)
     {
@@ -95,6 +98,7 @@ RTDECL(int) RTThreadSleep(unsigned cMillies)
 
 RTDECL(bool) RTThreadYield(void)
 {
+    RT_ASSERT_PREEMPTIBLE();
     return vbi_yield();
 }
 

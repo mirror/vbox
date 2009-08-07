@@ -32,10 +32,11 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
-#include "the-solaris-kernel.h"
 #define RTTIME_INCL_TIMESPEC
-
+#include "the-solaris-kernel.h"
+#include "internal/iprt.h"
 #include <iprt/time.h>
+
 
 
 RTDECL(uint64_t) RTTimeNanoTS(void)
@@ -68,3 +69,4 @@ RTDECL(PRTTIMESPEC) RTTimeNow(PRTTIMESPEC pTime)
     timestruc_t tv = tod_get();
     return RTTimeSpecSetNano(pTime, (uint64_t)tv.tv_sec * 1000000000 + tv.tv_nsec);
 }
+

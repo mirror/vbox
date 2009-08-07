@@ -28,9 +28,16 @@
  * additional information or have any questions.
  */
 
+
+/*******************************************************************************
+*   Header Files                                                               *
+*******************************************************************************/
 #include "the-solaris-kernel.h"
+#include "internal/iprt.h"
 #include <iprt/log.h>
+
 #include <iprt/assert.h>
+
 
 
 RTDECL(void) RTLogWriteDebugger(const char *pch, size_t cb)

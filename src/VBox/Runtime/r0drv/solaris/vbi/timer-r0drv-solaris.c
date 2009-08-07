@@ -1,4 +1,4 @@
-/** $Id$ */
+/* $Id$ */
 /** @file
  * IPRT - Timer, Ring-0 Driver, Solaris.
  */
@@ -33,16 +33,17 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #include "the-solaris-kernel.h"
-
+#include "internal/iprt.h"
 #include <iprt/timer.h>
-#include <iprt/time.h>
-#include <iprt/mp.h>
-#include <iprt/spinlock.h>
-#include <iprt/err.h>
+
 #include <iprt/asm.h>
 #include <iprt/assert.h>
-#include <iprt/alloc.h>
-
+#include <iprt/err.h>
+#include <iprt/mem.h>
+#include <iprt/mp.h>
+#include <iprt/spinlock.h>
+#include <iprt/time.h>
+#include <iprt/thread.h>
 #include "internal/magics.h"
 
 
@@ -69,14 +70,26 @@ typedef struct RTTIMER
     /** The nano second interval for repeating timers */
     uint64_t                interval;
     /** simple Solaris timer handle. */
-    vbi_stimer_t            *stimer;
+    vbi_stimer_t           *stimer;
     /** global Solaris timer handle. */
-    vbi_gtimer_t            *gtimer;
+    vbi_gtimer_t           *gtimer;
     /** The user callback. */
     PFNRTTIMER              pfnTimer;
     /** The argument for the user callback. */
-    void                    *pvUser;
+    void                   *pvUser;
 } RTTIMER;
+
+
+/*******************************************************************************
+*   Defined Constants And Macros                                               *
+*******************************************************************************/
+/** Validates that the timer is valid. */
+#define RTTIMER_ASSERT_VALID_RET(pTimer) \
+    do \
+    { \
+        AssertPtrReturn(pTimer, VERR_INVALID_HANDLE); \
+        AssertReturn((pTimer)->u32Magic == RTTIMER_MAGIC, VERR_INVALID_HANDLE); \
+    } while (0)
 
 
 /*
@@ -92,6 +105,7 @@ static void rtTimerSolarisCallbackWrapper(PRTTIMER pTimer, uint64_t tick)
 
 RTDECL(int) RTTimerCreateEx(PRTTIMER *ppTimer, uint64_t u64NanoInterval, unsigned fFlags, PFNRTTIMER pfnTimer, void *pvUser)
 {
+    RT_ASSERT_PREEMPTIBLE();
     *ppTimer = NULL;
 
     /*
@@ -148,32 +162,18 @@ RTDECL(int) RTTimerCreateEx(PRTTIMER *ppTimer, uint64_t u64NanoInterval, unsigne
 }
 
 
-/**
- * Validates the timer handle.
- *
- * @returns true if valid, false if invalid.
- * @param   pTimer  The handle.
- */
-DECLINLINE(bool) rtTimerIsValid(PRTTIMER pTimer)
-{
-    AssertReturn(VALID_PTR(pTimer), false);
-    AssertReturn(pTimer->u32Magic == RTTIMER_MAGIC, false);
-    return true;
-}
-
-
 RTDECL(int) RTTimerDestroy(PRTTIMER pTimer)
 {
     if (pTimer == NULL)
         return VINF_SUCCESS;
-    if (!rtTimerIsValid(pTimer))
-        return VERR_INVALID_HANDLE;
+    RTTIMER_ASSERT_VALID_RET(pTimer);
+    RT_ASSERT_INTS_ON();
 
     /*
      * Free the associated resources.
      */
     RTTimerStop(pTimer);
-    pTimer->u32Magic++;
+    ASMAtomicWriteU32(pTimer, ~RTTIMER_MAGIC);
     RTMemFree(pTimer);
     return VINF_SUCCESS;
 }
@@ -181,10 +181,9 @@ RTDECL(int) RTTimerDestroy(PRTTIMER pTimer)
 
 RTDECL(int) RTTimerStart(PRTTIMER pTimer, uint64_t u64First)
 {
-    int cpu = VBI_ANY_CPU;
+    RTTIMER_ASSERT_VALID_RET(pTimer);
+    RT_ASSERT_INTS_ON();
 
-    if (!rtTimerIsValid(pTimer))
-        return VERR_INVALID_HANDLE;
     if (!pTimer->fSuspended)
         return VERR_TIMER_ACTIVE;
 
@@ -197,6 +196,7 @@ RTDECL(int) RTTimerStart(PRTTIMER pTimer, uint64_t u64First)
     }
     else
     {
+        int cpu = VBI_ANY_CPU;
         if (pTimer->fSpecificCpu)
             cpu = pTimer->iCpu;
         pTimer->stimer = vbi_stimer_begin(rtTimerSolarisCallbackWrapper, pTimer, u64First, pTimer->interval, cpu);
@@ -214,8 +214,9 @@ RTDECL(int) RTTimerStart(PRTTIMER pTimer, uint64_t u64First)
 
 RTDECL(int) RTTimerStop(PRTTIMER pTimer)
 {
-    if (!rtTimerIsValid(pTimer))
-        return VERR_INVALID_HANDLE;
+    RTTIMER_ASSERT_VALID_RET(pTimer);
+    RT_ASSERT_INTS_ON();
+
     if (pTimer->fSuspended)
         return VERR_TIMER_SUSPENDED;
 

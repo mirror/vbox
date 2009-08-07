@@ -33,11 +33,12 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #include "the-solaris-kernel.h"
+#include "internal/iprt.h"
+#include <iprt/mem.h>
 
-#include <iprt/alloc.h>
 #include <iprt/assert.h>
-#include <iprt/types.h>
 #include <iprt/param.h>
+#include <iprt/thread.h>
 #include "r0drv/alloc-r0drv.h"
 
 
@@ -92,6 +93,7 @@ RTR0DECL(void *) RTMemContAlloc(PRTCCPHYS pPhys, size_t cb)
 {
     AssertPtr(pPhys);
     Assert(cb > 0);
+    RT_ASSERT_PREEMPTIBLE();
 
     /* Allocate physically contiguous page-aligned memory. */
     caddr_t virtAddr;
@@ -107,6 +109,7 @@ RTR0DECL(void *) RTMemContAlloc(PRTCCPHYS pPhys, size_t cb)
 RTR0DECL(void) RTMemContFree(void *pv, size_t cb)
 {
     NOREF(cb);
+    RT_ASSERT_PREEMPTIBLE();
     if (pv)
         i_ddi_mem_free(pv, NULL);
 }

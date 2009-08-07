@@ -28,8 +28,13 @@
  * additional information or have any questions.
  */
 
+
+/*******************************************************************************
+*   Header Files                                                               *
+*******************************************************************************/
 #include "the-solaris-kernel.h"
 #include <iprt/log.h>
+
 #include <iprt/assert.h>
 
 
