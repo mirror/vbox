@@ -144,7 +144,7 @@ static PciChipsets VBOXPCIchipsets[] = {
  * this DriverRec be an upper-case version of the driver name.
  */
 
-_X_EXPORT DriverRec VBOXDRV = {
+_X_EXPORT DriverRec VBOXVIDEO = {
     VBOX_VERSION,
     VBOX_DRIVER_NAME,
     VBOXIdentify,
@@ -574,10 +574,12 @@ vboxSetup(pointer Module, pointer Options, int *ErrorMajor, int *ErrorMinor)
     {
         Initialised = TRUE;
 #ifdef PCIACCESS
-        xf86AddDriver(&VBOXDRV, Module, HaveDriverFuncs);
+        xf86AddDriver(&VBOXVIDEO, Module, HaveDriverFuncs);
 #else
-        xf86AddDriver(&VBOXDRV, Module, 0);
+        xf86AddDriver(&VBOXVIDEO, Module, 0);
 #endif
+        xf86Msg(X_CONFIG, "Load address of symbol \"VBOXVIDEO\" is %p\n",
+                (void *)&VBOXVIDEO);
         LoaderRefSymLists(fbSymbols,
                           shadowfbSymbols,
                           vbeSymbols,
