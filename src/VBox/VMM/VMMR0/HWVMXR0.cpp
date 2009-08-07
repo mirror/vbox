@@ -521,18 +521,12 @@ VMMR0DECL(int) VMXR0SetupVM(PVM pVM)
             vmxR0SetMSRPermission(pVCpu, MSR_IA32_SYSENTER_CS, true, true);
             vmxR0SetMSRPermission(pVCpu, MSR_IA32_SYSENTER_ESP, true, true);
             vmxR0SetMSRPermission(pVCpu, MSR_IA32_SYSENTER_EIP, true, true);
-
-            /* Long mode supported? */
-            if (CPUMGetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_LONG_MODE))
-            {
-                /* Allow the guest to directly modify these MSRs; they are restored and saved automatically. */
-                vmxR0SetMSRPermission(pVCpu, MSR_K8_LSTAR, true, true);
-                vmxR0SetMSRPermission(pVCpu, MSR_K6_STAR, true, true);
-                vmxR0SetMSRPermission(pVCpu, MSR_K8_SF_MASK, true, true);
-                vmxR0SetMSRPermission(pVCpu, MSR_K8_KERNEL_GS_BASE, true, true);
-                vmxR0SetMSRPermission(pVCpu, MSR_K8_GS_BASE, true, true);
-                vmxR0SetMSRPermission(pVCpu, MSR_K8_FS_BASE, true, true);
-            }
+            vmxR0SetMSRPermission(pVCpu, MSR_K8_LSTAR, true, true);
+            vmxR0SetMSRPermission(pVCpu, MSR_K6_STAR, true, true);
+            vmxR0SetMSRPermission(pVCpu, MSR_K8_SF_MASK, true, true);
+            vmxR0SetMSRPermission(pVCpu, MSR_K8_KERNEL_GS_BASE, true, true);
+            vmxR0SetMSRPermission(pVCpu, MSR_K8_GS_BASE, true, true);
+            vmxR0SetMSRPermission(pVCpu, MSR_K8_FS_BASE, true, true);
         }
 
         /* Set the guest & host MSR load/store physical addresses. */
