@@ -1880,6 +1880,7 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
             }
         }
     }
+    pVCpu->hwaccm.s.vmx.cCachedMSRs = idxMsr;
 
     rc = VMXWriteVMCS(VMX_VMCS_CTRL_ENTRY_MSR_LOAD_COUNT, idxMsr);
     AssertRC(rc);
@@ -2017,12 +2018,8 @@ DECLINLINE(int) VMXR0SaveGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         VMX_READ_SELREG(TR, tr);
     }
 
-    uint32_t maxMsr = 0;
-    rc = VMXReadVMCS32(VMX_VMCS_CTRL_EXIT_MSR_STORE_COUNT, &maxMsr);
-    AssertRC(rc);
-
     /* Save the possibly changed MSRs that we automatically restore and save during a world switch. */
-    for (unsigned i = 0; i < maxMsr; i++)
+    for (unsigned i = 0; i < pVCpu->hwaccm.s.vmx.cCachedMSRs; i++)
     {
         PVMXMSR pMsr = (PVMXMSR)pVCpu->hwaccm.s.vmx.pGuestMSR;
         pMsr += i;
