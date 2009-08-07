@@ -618,7 +618,11 @@ int rtR0MemObjNativeEnterPhys(PPRTR0MEMOBJINTERNAL ppMem, RTHCPHYS Phys, size_t 
                                                                              kIODirectionInOut, NULL /*task*/);
         if (pMemDesc)
         {
-            Assert(Phys == pMemDesc->getPhysicalAddress());
+#ifdef __LP64__ /* Grumble! */
+            Assert(Phys == pMemDesc->getPhysicalSegment(0, 0));
+#else
+            Assert(Phys == pMemDesc->getPhysicalSegment64(0, 0));
+#endif
 
             /*
              * Create the IPRT memory object.
