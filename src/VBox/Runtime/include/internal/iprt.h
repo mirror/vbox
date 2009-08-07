@@ -54,22 +54,22 @@
 
 /** @def RT_MORE_STRICT
  * Enables more assertions in IPRT.  */
-#if !defined(RT_MORE_STRICT) && (defined(DEBUG) || defined(RT_STRICT) || defined(DOXYGEN_RUNNING))
+#if !defined(RT_MORE_STRICT) && (defined(DEBUG) || defined(RT_STRICT) || defined(DOXYGEN_RUNNING)) && !defined(RT_OS_WINDOWS) /** @todo enable on windows after testing */
 # define RT_MORE_STRICT
-#endif 
+#endif
 
 /** @def RT_ASSERT_PREEMPT_CPUID_VAR
- * Partner to RT_ASSERT_PREEMPT_CPUID_VAR. Declares and initializes a variable 
- * idAssertCpu to NIL_RTCPUID if preemption is enabled and to RTMpCpuId if 
- * disabled.  When RT_MORE_STRICT isn't defined it declares an uninitialized 
- * dummy variable. 
- *  
- * Requires iprt/mp.h and iprt/asm.h. 
- */ 
+ * Partner to RT_ASSERT_PREEMPT_CPUID_VAR. Declares and initializes a variable
+ * idAssertCpu to NIL_RTCPUID if preemption is enabled and to RTMpCpuId if
+ * disabled.  When RT_MORE_STRICT isn't defined it declares an uninitialized
+ * dummy variable.
+ *
+ * Requires iprt/mp.h and iprt/asm.h.
+ */
 /** @def RT_ASSERT_PREEMPT_CPUID
- * Asserts that we didn't change CPU since RT_ASSERT_PREEMPT_CPUID_VAR if 
- * preemption is disabled.  Will also detect changes in preemption 
- * disable/enable status.  This is a noop when RT_MORE_STRICT isn't defined. */ 
+ * Asserts that we didn't change CPU since RT_ASSERT_PREEMPT_CPUID_VAR if
+ * preemption is disabled.  Will also detect changes in preemption
+ * disable/enable status.  This is a noop when RT_MORE_STRICT isn't defined. */
 #ifdef RT_MORE_STRICT
 # define RT_ASSERT_PREEMPT_CPUID_VAR() \
     RTCPUID const idAssertCpu = RTThreadPreemptIsEnabled(NIL_RTTHREAD) ? NIL_RTCPUID : RTMpCpuId()
@@ -79,11 +79,11 @@
         RTCPUID const idAssertCpuNow = RTThreadPreemptIsEnabled(NIL_RTTHREAD) ? NIL_RTCPUID : RTMpCpuId(); \
         AssertMsg(idAssertCpu == idAssertCpuNow,  ("%#x, %#x\n", idAssertCpu, idAssertCpuNow)); \
    } while (0)
-                                                 
+
 #else
 # define RT_ASSERT_PREEMPT_CPUID_VAR()  RTCPUID idAssertCpuDummy
 # define RT_ASSERT_PREEMPT_CPUID()      NOREF(idAssertCpuDummy)
-#endif 
+#endif
 
 /** @def RT_ASSERT_INTS_ON
  * Asserts that interrupts are disabled when RT_MORE_STRICT is defined.   */
@@ -91,16 +91,16 @@
 # define RT_ASSERT_INTS_ON()            Assert(ASMIntAreEnabled())
 #else
 # define RT_ASSERT_INTS_ON()            do { } while (0)
-#endif 
+#endif
 
 /** @def RT_ASSERT_PREEMPTIBLE
- * Asserts that preemption hasn't been disabled (using 
- * RTThreadPreemptDisable) when RT_MORE_STRICT is defined. */ 
+ * Asserts that preemption hasn't been disabled (using
+ * RTThreadPreemptDisable) when RT_MORE_STRICT is defined. */
 #ifdef RT_MORE_STRICT
 # define RT_ASSERT_PREEMPTIBLE()        Assert(RTThreadPreemptIsEnabled(NIL_RTTHREAD))
 #else
 # define RT_ASSERT_PREEMPTIBLE()        do { } while (0)
-#endif 
+#endif
 
 #endif
 
