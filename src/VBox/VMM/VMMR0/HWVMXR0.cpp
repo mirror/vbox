@@ -257,6 +257,7 @@ VMMR0DECL(int) VMXR0InitVM(PVM pVM)
             memset(pVCpu->hwaccm.s.vmx.pMSRBitmap, 0xff, PAGE_SIZE);
         }
 
+#ifdef VBOX_WITH_AUTO_MSR_LOAD_RESTORE
         /* Allocate one page for the guest MSR load area (for preloading guest MSRs during the world switch). */
         rc = RTR0MemObjAllocCont(&pVCpu->hwaccm.s.vmx.pMemObjGuestMSR, 1 << PAGE_SHIFT, true /* executable R0 mapping */);
         AssertRC(rc);
@@ -276,6 +277,7 @@ VMMR0DECL(int) VMXR0InitVM(PVM pVM)
         pVCpu->hwaccm.s.vmx.pHostMSR     = (uint8_t *)RTR0MemObjAddress(pVCpu->hwaccm.s.vmx.pMemObjHostMSR);
         pVCpu->hwaccm.s.vmx.pHostMSRPhys = RTR0MemObjGetPagePhysAddr(pVCpu->hwaccm.s.vmx.pMemObjHostMSR, 0);
         memset(pVCpu->hwaccm.s.vmx.pHostMSR, 0, PAGE_SIZE);
+#endif /* VBOX_WITH_AUTO_MSR_LOAD_RESTORE */
 
         /* Current guest paging mode. */
         pVCpu->hwaccm.s.vmx.enmLastSeenGuestMode = PGMMODE_REAL;
@@ -321,6 +323,7 @@ VMMR0DECL(int) VMXR0TermVM(PVM pVM)
             pVCpu->hwaccm.s.vmx.pMSRBitmap       = 0;
             pVCpu->hwaccm.s.vmx.pMSRBitmapPhys   = 0;
         }
+#ifdef VBOX_WITH_AUTO_MSR_LOAD_RESTORE
         if (pVCpu->hwaccm.s.vmx.pMemObjHostMSR != NIL_RTR0MEMOBJ)
         {
             RTR0MemObjFree(pVCpu->hwaccm.s.vmx.pMemObjHostMSR, false);
@@ -335,6 +338,7 @@ VMMR0DECL(int) VMXR0TermVM(PVM pVM)
             pVCpu->hwaccm.s.vmx.pGuestMSR       = 0;
             pVCpu->hwaccm.s.vmx.pGuestMSRPhys   = 0;
         }
+#endif /* VBOX_WITH_AUTO_MSR_LOAD_RESTORE */
     }
     if (pVM->hwaccm.s.vmx.pMemObjAPIC != NIL_RTR0MEMOBJ)
     {
@@ -529,6 +533,7 @@ VMMR0DECL(int) VMXR0SetupVM(PVM pVM)
             vmxR0SetMSRPermission(pVCpu, MSR_K8_FS_BASE, true, true);
         }
 
+#ifdef VBOX_WITH_AUTO_MSR_LOAD_RESTORE
         /* Set the guest & host MSR load/store physical addresses. */
         Assert(pVCpu->hwaccm.s.vmx.pGuestMSRPhys);
         rc = VMXWriteVMCS64(VMX_VMCS_CTRL_VMENTRY_MSR_LOAD_FULL, pVCpu->hwaccm.s.vmx.pGuestMSRPhys);
@@ -539,7 +544,14 @@ VMMR0DECL(int) VMXR0SetupVM(PVM pVM)
         Assert(pVCpu->hwaccm.s.vmx.pHostMSRPhys);
         rc = VMXWriteVMCS64(VMX_VMCS_CTRL_VMEXIT_MSR_LOAD_FULL,  pVCpu->hwaccm.s.vmx.pHostMSRPhys);
         AssertRC(rc);
-        
+#endif /* VBOX_WITH_AUTO_MSR_LOAD_RESTORE */
+
+        rc = VMXWriteVMCS(VMX_VMCS_CTRL_ENTRY_MSR_LOAD_COUNT, 0);
+        AssertRC(rc);
+
+        rc = VMXWriteVMCS(VMX_VMCS_CTRL_EXIT_MSR_STORE_COUNT, 0);
+        AssertRC(rc);
+
         if (pVM->hwaccm.s.vmx.msr.vmx_proc_ctls.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_USE_TPR_SHADOW)
         {
             Assert(pVM->hwaccm.s.vmx.pMemObjAPIC);
@@ -1163,6 +1175,7 @@ VMMR0DECL(int) VMXR0SaveHostState(PVM pVM, PVMCPU pVCpu)
 #endif
         AssertRC(rc);
 
+#ifdef VBOX_WITH_AUTO_MSR_LOAD_RESTORE
         /* Store all host MSRs in the VM-Exit load area, so they will be reloaded after the world switch back to the host. */
         PVMXMSR pMsr = (PVMXMSR)pVCpu->hwaccm.s.vmx.pHostMSR;
         unsigned idxMsr = 0;
@@ -1180,19 +1193,19 @@ VMMR0DECL(int) VMXR0SaveHostState(PVM pVM, PVMCPU pVCpu)
 
             pMsr->u32IndexMSR = MSR_K6_EFER;
             pMsr->u32Reserved = 0;
-#if HC_ARCH_BITS == 32 && defined(VBOX_ENABLE_64_BITS_GUESTS) && !defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
+# if HC_ARCH_BITS == 32 && defined(VBOX_ENABLE_64_BITS_GUESTS) && !defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
             if (CPUMIsGuestInLongMode(pVCpu))
             {
                 /* Must match the efer value in our 64 bits switcher. */
                 pMsr->u64Value    = ASMRdMsr(MSR_K6_EFER) | MSR_K6_EFER_LME | MSR_K6_EFER_SCE | MSR_K6_EFER_NXE;
             }
             else
-#endif
+# endif
                 pMsr->u64Value    = ASMRdMsr(MSR_K6_EFER);
             pMsr++; idxMsr++;
         }
 
-#if HC_ARCH_BITS == 64 || defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
+# if HC_ARCH_BITS == 64 || defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
         if (VMX_IS_64BIT_HOST_MODE())
         {
             pMsr->u32IndexMSR = MSR_K8_LSTAR;
@@ -1208,9 +1221,10 @@ VMMR0DECL(int) VMXR0SaveHostState(PVM pVM, PVMCPU pVCpu)
             pMsr->u64Value    = ASMRdMsr(MSR_K8_KERNEL_GS_BASE);    /* swapgs exchange value */
             pMsr++; idxMsr++;
         }
-#endif
+# endif
         rc = VMXWriteVMCS(VMX_VMCS_CTRL_EXIT_MSR_LOAD_COUNT, idxMsr);
         AssertRC(rc);
+#endif /* VBOX_WITH_AUTO_MSR_LOAD_RESTORE */
 
         pVCpu->hwaccm.s.fContextUseFlags &= ~HWACCM_CHANGED_HOST_CONTEXT;
     }
@@ -1837,6 +1851,7 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 
     vmxR0UpdateExceptionBitmap(pVM, pVCpu, pCtx);
 
+#ifdef VBOX_WITH_AUTO_MSR_LOAD_RESTORE
     /* Store all guest MSRs in the VM-Entry load area, so they will be loaded during the world switch. */
     PVMXMSR pMsr = (PVMXMSR)pVCpu->hwaccm.s.vmx.pGuestMSR;
     unsigned idxMsr = 0;
@@ -1882,6 +1897,7 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 
     rc = VMXWriteVMCS(VMX_VMCS_CTRL_EXIT_MSR_STORE_COUNT, idxMsr);
     AssertRC(rc);
+#endif /* VBOX_WITH_AUTO_MSR_LOAD_RESTORE */
 
     /* Done. */
     pVCpu->hwaccm.s.fContextUseFlags &= ~HWACCM_CHANGED_ALL_GUEST;
@@ -2013,6 +2029,7 @@ DECLINLINE(int) VMXR0SaveGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         VMX_READ_SELREG(TR, tr);
     }
 
+#ifdef VBOX_WITH_AUTO_MSR_LOAD_RESTORE
     /* Save the possibly changed MSRs that we automatically restore and save during a world switch. */
     for (unsigned i = 0; i < pVCpu->hwaccm.s.vmx.cCachedMSRs; i++)
     {
@@ -2042,6 +2059,7 @@ DECLINLINE(int) VMXR0SaveGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
             return VERR_INTERNAL_ERROR;
         }
     }
+#endif /* VBOX_WITH_AUTO_MSR_LOAD_RESTORE */
     return VINF_SUCCESS;
 }
 
