@@ -63,7 +63,7 @@
 #  undef  INT32_C
 #  define INT32_C(Value)    (Value)
 #  undef  UINT32_C
-#  define INT32_C(Value)    (Value)
+#  define UINT32_C(Value)   (Value)
 # endif /* 64-bit darwin kludge. */
 
 #else /* No system stdint.h */
