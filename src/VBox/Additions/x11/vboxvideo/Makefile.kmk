@@ -170,7 +170,7 @@ vboxvideo_drv_13_INCS = \
 	$(VBOX_PATH_X11_ROOT)/libdrm-2.3.0 \
 	$(VBOX_PATH_X11_ROOT)/xf86driproto-2.0.3
 vboxvideo_drv_13_SOURCES = \
-	vboxvideo_15.c \
+	vboxvideo_13.c \
 	vboxutils.c
 
 
@@ -192,7 +192,7 @@ vboxvideo_drv_14_INCS = \
 	$(VBOX_PATH_X11_ROOT)/libdrm-2.3.0 \
 	$(VBOX_PATH_X11_ROOT)/xf86driproto-2.0.4
 vboxvideo_drv_14_SOURCES  = \
-	vboxvideo_15.c \
+	vboxvideo_13.c \
 	vboxutils.c
 
 
