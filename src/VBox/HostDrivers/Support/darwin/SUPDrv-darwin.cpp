@@ -1,8 +1,6 @@
 /* $Id$ */
 /** @file
- *
- * VBox host drivers - Ring-0 support drivers - Darwin host:
- * Darwin driver C code
+ * VirtualBox Support Driver - Darwin Specific Code.
  */
 
 /*

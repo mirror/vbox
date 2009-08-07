@@ -1,7 +1,6 @@
+/* $Id$  */
 /** @file
- *
- * VBox host drivers - Ring-0 support drivers - Testcases:
- * Test allocating physical memory below 4G
+ * SUP Testcase - Low (<4GB) Memory Allocate interface (ring 3).
  */
 
 /*
@@ -38,8 +37,8 @@
 #include <VBox/err.h>
 #include <iprt/initterm.h>
 #include <iprt/stream.h>
+#include <iprt/string.h>
 
-#include <string.h>
 
 int main(int argc, char **argv)
 {

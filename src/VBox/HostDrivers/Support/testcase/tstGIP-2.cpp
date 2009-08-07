@@ -1,7 +1,6 @@
+/* $Id$ */
 /** @file
- *
- * VBox host drivers - Ring-0 support drivers - Testcases:
- * Test the Global Info Page interface
+ * SUP Testcase - Global Info Page interface (ring 3).
  */
 
 /*

@@ -1,7 +1,6 @@
+/* $Id$ */
 /** @file
- *
- * VBox host drivers - Ring-0 support drivers - Testcases:
- * Tests init and term of the support library
+ * SUP Testcase - Support Library initialization and termination.
  */
 
 /*
@@ -53,3 +52,4 @@ int main(int argc, char **argv)
 
     return rc;
 }
+

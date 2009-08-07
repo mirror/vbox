@@ -1,4 +1,4 @@
-/* $Id: $ */
+/* $Id$ */
 /** @file
  * VirtualBox Support Library - Darwin specific parts.
  */
