@@ -108,7 +108,7 @@ class VBoxMonitor:
         # Witty COM bridge thinks if someone wishes to return tuple, hresult
         # is one of values we want to return
         if self.isMscom:
-            return True, "", 0
+            return "", 0, True
         else:
             return True, ""
 
