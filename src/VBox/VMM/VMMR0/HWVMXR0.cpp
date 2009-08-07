@@ -1425,7 +1425,6 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         VMX_WRITE_SELREG(DS, ds);
         AssertRC(rc);
 
-        /* The base values in the hidden fs & gs registers are not in sync with the msrs; they are cut to 32 bits. */
         VMX_WRITE_SELREG(FS, fs);
         AssertRC(rc);
 
