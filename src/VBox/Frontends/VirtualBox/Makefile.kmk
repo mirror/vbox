@@ -188,6 +188,8 @@ endif
 ifdef VBOX_WITH_VIDEOHWACCEL
  VirtualBox_DEFS        += VBOX_WITH_VIDEOHWACCEL \
             VBOX_GUI_USE_QGL
+else ifdef VBOX_GUI_USE_QGL
+ VirtualBox_DEFS        += VBOX_GUI_USE_QGL
 endif
 
 VirtualBox_src/main.cpp_DEFS += VBOX_VERSION_STRING=\"$(VBOX_VERSION_STRING)\"
@@ -226,7 +228,7 @@ ifeq ($(filter-out freebsd linux netbsd openbsd solaris,$(KBUILD_TARGET)),) # X1
  VirtualBox_LIBS         += $(PATH_DLL)/VBoxKeyboard$(VBOX_SUFF_DLL)
 endif
 
-ifdef VBOX_WITH_VIDEOHWACCEL
+if defined(VBOX_WITH_VIDEOHWACCEL) || defined(VBOX_GUI_USE_QGL) 
  VirtualBox_LIBS.win     += $(PATH_SDK_WINPSDK_LIB)/Opengl32.lib
 endif
 
@@ -453,7 +455,7 @@ else
 	src/darwin/VBoxUtils-darwin-carbon.cpp
 endif
 
-ifdef VBOX_WITH_VIDEOHWACCEL
+if defined(VBOX_WITH_VIDEOHWACCEL) || defined(VBOX_GUI_USE_QGL)
  VirtualBox_SOURCES += \
 	src/VBoxFBQGL.cpp
 endif
@@ -461,7 +463,7 @@ endif
 # (The include directory and lib/framework for each module will be added by the Qt4 unit.)
 VirtualBox_QT_MODULES = Core Gui Network
 
-ifdef VBOX_WITH_VIDEOHWACCEL
+if defined(VBOX_WITH_VIDEOHWACCEL) || defined(VBOX_GUI_USE_QGL)
 VirtualBox_QT_MODULES += OpenGL
 endif
 
@@ -475,7 +477,7 @@ $(eval VirtualBox_SOURCES += $(FORMS))
 VirtualBox_SOURCES += VirtualBox.qrc
 VirtualBox_SOURCES += $(VBOX_VIRTUALBOX4_OUT_DIR)/VirtualBoxBrand.qrc
 $(VBOX_VIRTUALBOX4_OUT_DIR)/VirtualBoxBrand.qrc_RCCFLAGS = -name BRAND
-ifdef VBOX_WITH_VIDEOHWACCEL
+if defined(VBOX_WITH_VIDEOHWACCEL) || defined(VBOX_GUI_USE_QGL)
 VirtualBox_SOURCES += VirtualBoxShaders.qrc
 VirtualBoxShaders.qrc_RCCFLAGS = -name SHADERS
 endif

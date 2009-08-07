@@ -47,6 +47,8 @@ static DWORD APIENTRY DdCreateSurface(PDD_CREATESURFACEDATA  lpCreateSurface);
 static bool getDDHALInfo(PPDEV pDev, DD_HALINFO* pHALInfo);
 static DECLCALLBACK(void) vboxVHWASurfBltCompletion(PPDEV ppdev, VBOXVHWACMD * pCmd, void * pContext);
 static DECLCALLBACK(void) vboxVHWASurfFlipCompletion(PPDEV ppdev, VBOXVHWACMD * pCmd, void * pContext);
+
+//#define DBG_DDSTUBS 1
 #endif
 
 /**
@@ -1002,6 +1004,7 @@ DWORD APIENTRY DdLock(PDD_LOCKDATA lpLock)
 #ifdef VBOX_WITH_VIDEOHWACCEL
     if(pDev->vhwaInfo.bVHWAEnabled)
     {
+#ifndef DBG_DDSTUBS
         DD_SURFACE_GLOBAL*  lpSurfaceGlobal = lpSurfaceLocal->lpGbl;
         PVBOXVHWASURFDESC pDesc = (PVBOXVHWASURFDESC)lpSurfaceGlobal->dwReserved1;
         RECTL tmpRect, *pRect;
@@ -1096,6 +1099,9 @@ DWORD APIENTRY DdLock(PDD_LOCKDATA lpLock)
                 lpLock->ddRVal = DDERR_GENERIC;
             }
         }
+#else
+        lpLock->ddRVal = DD_OK;
+#endif
         return DDHAL_DRIVER_NOTHANDLED;
     }
 #endif
@@ -1154,6 +1160,7 @@ DWORD APIENTRY DdUnlock(PDD_UNLOCKDATA lpUnlock)
 #ifdef VBOX_WITH_VIDEOHWACCEL
     if (pDev->vhwaInfo.bVHWAEnabled)
     {
+#ifndef DBG_DDSTUBS
         DD_SURFACE_LOCAL*   lpSurfaceLocal = lpUnlock->lpDDSurface;
         DD_SURFACE_GLOBAL*  lpSurfaceGlobal = lpSurfaceLocal->lpGbl;
         PVBOXVHWASURFDESC pDesc = (PVBOXVHWASURFDESC)lpSurfaceGlobal->dwReserved1;
@@ -1208,6 +1215,9 @@ DWORD APIENTRY DdUnlock(PDD_UNLOCKDATA lpUnlock)
                 lpUnlock->ddRVal = DDERR_GENERIC;
             }
         }
+#else
+        lpUnlock->ddRVal = DD_OK;
+#endif
 
         return DDHAL_DRIVER_NOTHANDLED;
     }
@@ -1408,7 +1418,7 @@ DWORD APIENTRY DdFreeDriverMemory(PDD_FREEDRIVERMEMORYDATA lpFreeDriverMemory)
 }
 
 #ifdef VBOX_WITH_VIDEOHWACCEL
-#if 1
+#ifndef DBG_DDSTUBS
 DWORD APIENTRY DdSetColorKey(PDD_SETCOLORKEYDATA  lpSetColorKey)
 {
     PPDEV pDev = (PPDEV)lpSetColorKey->lpDD->dhpdev;
