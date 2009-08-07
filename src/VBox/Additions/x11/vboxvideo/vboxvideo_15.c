@@ -70,6 +70,9 @@
 /* #define DPMS_SERVER
 #include "extensions/dpms.h" */
 
+/* VGA hardware functions for setting and restoring text mode */
+#include "vgaHW.h"
+
 /* X.org 1.3+ mode setting */
 #include "xf86Crtc.h"
 #include "xf86Modes.h"
@@ -100,11 +103,6 @@ static void VBOXFreeRec(ScrnInfoPtr pScrn);
 /* locally used functions */
 static Bool VBOXMapVidMem(ScrnInfoPtr pScrn);
 static void VBOXUnmapVidMem(ScrnInfoPtr pScrn);
-static void VBOXLoadPalette(ScrnInfoPtr pScrn, int numColors,
-                            int *indices,
-                            LOCO *colors, VisualPtr pVisual);
-static void SaveFonts(ScrnInfoPtr pScrn);
-static void RestoreFonts(ScrnInfoPtr pScrn);
 static Bool VBOXSaveRestore(ScrnInfoPtr pScrn,
                             vbeSaveRestoreFunction function);
 
@@ -517,6 +515,17 @@ static const char *ramdacSymbols[] = {
     NULL
 };
 
+static const char *vgahwSymbols[] = {
+    "vgaHWGetHWRec",
+    "vgaHWHandleColormaps",
+    "vgaHWFreeHWRec",
+    "vgaHWMapMem",
+    "vgaHWUnmapMem",
+    "vgaHWSaveFonts",
+    "vgaHWRestoreFonts",
+    NULL
+};
+
 #ifdef VBOX_DRI
 static const char *drmSymbols[] = {
     "drmFreeVersion",
@@ -796,6 +805,10 @@ VBOXPreInit(ScrnInfoPtr pScrn, int flags)
         return FALSE;
     xf86LoaderReqSymLists(shadowfbSymbols, NULL);
 
+    if (!xf86LoadSubModule(pScrn, "vgahw"))
+        return FALSE;
+    xf86LoaderReqSymLists(vgahwSymbols, NULL);
+
     /* Set up our ScrnInfoRec structure to describe our virtual
        capabilities to X. */
 
@@ -881,6 +894,10 @@ VBOXPreInit(ScrnInfoPtr pScrn, int flags)
 
     /* Framebuffer-related setup */
     pScrn->bitmapBitOrder = BITMAP_BIT_ORDER;
+
+    /* VGA hardware initialisation */
+    if (!vgaHWGetHWRec(pScrn))
+        return FALSE;
 
 #ifdef VBOX_DRI
     /* Load the dri module. */
@@ -1027,9 +1044,7 @@ VBOXScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
 
     flags = CMAP_RELOAD_ON_MODE_SWITCH;
 
-    if(!xf86HandleColormaps(pScreen, 256,
-        8 /* DAC is switchable to 8 bits per primary color */,
-        VBOXLoadPalette, NULL, flags))
+    if(!vgaHWHandleColormaps(pScreen))
         return (FALSE);
 
     /* Hook our observer function ito the chain which is called when
@@ -1134,6 +1149,9 @@ VBOXCloseScreen(int scrnIndex, ScreenPtr pScreen)
 	VBOXUnmapVidMem(pScrn);
     }
     pScrn->vtSema = FALSE;
+    
+    /* Destroy the VGA hardware record */
+    vgaHWFreeHWRec(pScrn);
 
     /* Remove our observer functions from the X server call chains. */
     pScrn->EnableDisableFBAccess = pVBox->EnableDisableFBAccess;
@@ -1318,7 +1336,7 @@ VBOXMapVidMem(ScrnInfoPtr pScrn)
     Bool rc = TRUE;
 
     TRACE_ENTRY();
-    if (NULL == pVBox->base)
+    if (!pVBox->base)
     {
         pScrn->memPhysBase = pVBox->mapPhys;
         pScrn->fbOffset = pVBox->mapOff;
@@ -1329,30 +1347,20 @@ VBOXMapVidMem(ScrnInfoPtr pScrn)
                                     pVBox->mapSize,
                                     PCI_DEV_MAP_FLAG_WRITABLE,
                                     & pVBox->base);
-
-        if (pVBox->base) {
-            pScrn->memPhysBase = pVBox->mapPhys;
-            pVBox->VGAbase = xf86MapDomainMemory(pScrn->scrnIndex, 0,
-                                                 pVBox->pciInfo,
-                                                 0xa0000, 0x10000);
-        }
 #else
         pVBox->base = xf86MapPciMem(pScrn->scrnIndex,
                                     VIDMEM_FRAMEBUFFER,
                                     pVBox->pciTag, pVBox->mapPhys,
                                     (unsigned) pVBox->mapSize);
-
-        if (pVBox->base) {
-            pScrn->memPhysBase = pVBox->mapPhys;
-            pVBox->VGAbase = xf86MapDomainMemory(pScrn->scrnIndex, 0,
-                                                 pVBox->pciTag,
-                                                 0xa0000, 0x10000);
-        }
 #endif
-        /* We need this for saving/restoring textmode */
-        pVBox->ioBase = pScrn->domainIOBase;
-
-        rc = pVBox->base != NULL;
+        if (pVBox->base)
+        {
+            /* We need this for saving/restoring textmode */
+            VGAHWPTR(pScrn)->IOBase = pScrn->domainIOBase;
+            rc = vgaHWMapMem(pScrn);
+        }
+        else
+            rc = FALSE;
     }
     TRACE_LOG("returning %s\n", rc ? "TRUE" : "FALSE");
     return rc;
@@ -1371,251 +1379,15 @@ VBOXUnmapVidMem(ScrnInfoPtr pScrn)
     (void) pci_device_unmap_range(pVBox->pciInfo,
                                   pVBox->base,
                                   pVBox->mapSize);
-    xf86UnMapVidMem(pScrn->scrnIndex, pVBox->VGAbase, 0x10000);
 #else
     xf86UnMapVidMem(pScrn->scrnIndex, pVBox->base,
                     (unsigned) pVBox->mapSize);
-    xf86UnMapVidMem(pScrn->scrnIndex, pVBox->VGAbase, 0x10000);
 #endif
+    vgaHWUnmapMem(pScrn);
     pVBox->base = NULL;
     TRACE_EXIT();
 }
 
-static void
-VBOXLoadPalette(ScrnInfoPtr pScrn, int numColors, int *indices,
-		LOCO *colors, VisualPtr pVisual)
-{
-    VBOXPtr pVBox = VBOXGetRec(pScrn);
-    int i, idx;
-#define VBOXDACDelay()							    \
-    do {								    \
-	   (void)inb(pVBox->ioBase + VGA_IOBASE_COLOR + VGA_IN_STAT_1_OFFSET); \
-	   (void)inb(pVBox->ioBase + VGA_IOBASE_COLOR + VGA_IN_STAT_1_OFFSET); \
-    } while (0)
-
-    TRACE_ENTRY();
-    for (i = 0; i < numColors; i++) {
-	   idx = indices[i];
-	   outb(pVBox->ioBase + VGA_DAC_WRITE_ADDR, idx);
-	   VBOXDACDelay();
-	   outb(pVBox->ioBase + VGA_DAC_DATA, colors[idx].red);
-	   VBOXDACDelay();
-	   outb(pVBox->ioBase + VGA_DAC_DATA, colors[idx].green);
-	   VBOXDACDelay();
-	   outb(pVBox->ioBase + VGA_DAC_DATA, colors[idx].blue);
-	   VBOXDACDelay();
-    }
-    TRACE_EXIT();
-}
-
-/*
- * Just adapted from the std* functions in vgaHW.c
- */
-static void
-WriteAttr(VBOXPtr pVBox, int index, int value)
-{
-    (void) inb(pVBox->ioBase + VGA_IOBASE_COLOR + VGA_IN_STAT_1_OFFSET);
-
-    index |= 0x20;
-    outb(pVBox->ioBase + VGA_ATTR_INDEX, index);
-    outb(pVBox->ioBase + VGA_ATTR_DATA_W, value);
-}
-
-static int
-ReadAttr(VBOXPtr pVBox, int index)
-{
-    (void) inb(pVBox->ioBase + VGA_IOBASE_COLOR + VGA_IN_STAT_1_OFFSET);
-
-    index |= 0x20;
-    outb(pVBox->ioBase + VGA_ATTR_INDEX, index);
-    return (inb(pVBox->ioBase + VGA_ATTR_DATA_R));
-}
-
-#define WriteMiscOut(value)	outb(pVBox->ioBase + VGA_MISC_OUT_W, value)
-#define ReadMiscOut()		inb(pVBox->ioBase + VGA_MISC_OUT_R)
-#define WriteSeq(index, value) \
-        outb(pVBox->ioBase + VGA_SEQ_INDEX, (index));\
-        outb(pVBox->ioBase + VGA_SEQ_DATA, value)
-
-static int
-ReadSeq(VBOXPtr pVBox, int index)
-{
-    outb(pVBox->ioBase + VGA_SEQ_INDEX, index);
-
-    return (inb(pVBox->ioBase + VGA_SEQ_DATA));
-}
-
-#define WriteGr(index, value)				\
-    outb(pVBox->ioBase + VGA_GRAPH_INDEX, index);	\
-    outb(pVBox->ioBase + VGA_GRAPH_DATA, value)
-
-static int
-ReadGr(VBOXPtr pVBox, int index)
-{
-    outb(pVBox->ioBase + VGA_GRAPH_INDEX, index);
-
-    return (inb(pVBox->ioBase + VGA_GRAPH_DATA));
-}
-
-#define WriteCrtc(index, value)						     \
-    outb(pVBox->ioBase + (VGA_IOBASE_COLOR + VGA_CRTC_INDEX_OFFSET), index); \
-    outb(pVBox->ioBase + (VGA_IOBASE_COLOR + VGA_CRTC_DATA_OFFSET), value)
-
-static void
-SeqReset(VBOXPtr pVBox, Bool start)
-{
-    if (start) {
-	   WriteSeq(0x00, 0x01);		/* Synchronous Reset */
-    }
-    else {
-	   WriteSeq(0x00, 0x03);		/* End Reset */
-    }
-}
-
-static void
-SaveFonts(ScrnInfoPtr pScrn)
-{
-    VBOXPtr pVBox = VBOXGetRec(pScrn);
-    unsigned char miscOut, attr10, gr4, gr5, gr6, seq2, seq4, scrn;
-    Bool cont = TRUE;
-
-    TRACE_ENTRY();
-    if (pVBox->fonts != NULL)
-	cont = FALSE;
-
-    if (cont)
-    {
-        /* If in graphics mode, don't save anything */
-        attr10 = ReadAttr(pVBox, 0x10);
-        if (attr10 & 0x01)
-            cont = FALSE;
-    }
-
-    if (cont)
-    {
-        pVBox->fonts = xalloc(16384);
-
-        /* save the registers that are needed here */
-        miscOut = ReadMiscOut();
-        gr4 = ReadGr(pVBox, 0x04);
-        gr5 = ReadGr(pVBox, 0x05);
-        gr6 = ReadGr(pVBox, 0x06);
-        seq2 = ReadSeq(pVBox, 0x02);
-        seq4 = ReadSeq(pVBox, 0x04);
-
-        /* Force into colour mode */
-        WriteMiscOut(miscOut | 0x01);
-
-        scrn = ReadSeq(pVBox, 0x01) | 0x20;
-        SeqReset(pVBox, TRUE);
-        WriteSeq(0x01, scrn);
-        SeqReset(pVBox, FALSE);
-
-        WriteAttr(pVBox, 0x10, 0x01);	/* graphics mode */
-
-        /*font1 */
-        WriteSeq(0x02, 0x04);	/* write to plane 2 */
-        WriteSeq(0x04, 0x06);	/* enable plane graphics */
-        WriteGr(0x04, 0x02);	/* read plane 2 */
-        WriteGr(0x05, 0x00);	/* write mode 0, read mode 0 */
-        WriteGr(0x06, 0x05);	/* set graphics */
-        slowbcopy_frombus(pVBox->VGAbase, pVBox->fonts, 8192);
-
-        /* font2 */
-        WriteSeq(0x02, 0x08);	/* write to plane 3 */
-        WriteSeq(0x04, 0x06);	/* enable plane graphics */
-        WriteGr(0x04, 0x03);	/* read plane 3 */
-        WriteGr(0x05, 0x00);	/* write mode 0, read mode 0 */
-        WriteGr(0x06, 0x05);	/* set graphics */
-        slowbcopy_frombus(pVBox->VGAbase, pVBox->fonts + 8192, 8192);
-
-        scrn = ReadSeq(pVBox, 0x01) & ~0x20;
-        SeqReset(pVBox, TRUE);
-        WriteSeq(0x01, scrn);
-        SeqReset(pVBox, FALSE);
-
-        /* Restore clobbered registers */
-        WriteAttr(pVBox, 0x10, attr10);
-        WriteSeq(0x02, seq2);
-        WriteSeq(0x04, seq4);
-        WriteGr(0x04, gr4);
-        WriteGr(0x05, gr5);
-        WriteGr(0x06, gr6);
-        WriteMiscOut(miscOut);
-    }
-    TRACE_EXIT();
-}
-
-static void
-RestoreFonts(ScrnInfoPtr pScrn)
-{
-    VBOXPtr pVBox = VBOXGetRec(pScrn);
-    unsigned char miscOut, attr10, gr1, gr3, gr4, gr5, gr6, gr8, seq2, seq4, scrn;
-
-    TRACE_ENTRY();
-    if (pVBox->fonts != NULL)
-    {
-        /* save the registers that are needed here */
-        miscOut = ReadMiscOut();
-        attr10 = ReadAttr(pVBox, 0x10);
-        gr1 = ReadGr(pVBox, 0x01);
-        gr3 = ReadGr(pVBox, 0x03);
-        gr4 = ReadGr(pVBox, 0x04);
-        gr5 = ReadGr(pVBox, 0x05);
-        gr6 = ReadGr(pVBox, 0x06);
-        gr8 = ReadGr(pVBox, 0x08);
-        seq2 = ReadSeq(pVBox, 0x02);
-        seq4 = ReadSeq(pVBox, 0x04);
-
-        /* Force into colour mode */
-        WriteMiscOut(miscOut | 0x01);
-
-        scrn = ReadSeq(pVBox, 0x01) & ~0x20;
-        SeqReset(pVBox, TRUE);
-        WriteSeq(0x01, scrn);
-        SeqReset(pVBox, FALSE);
-
-        WriteAttr(pVBox, 0x10, 0x01);	/* graphics mode */
-        if (pScrn->depth == 4) {
-	    /* GJA */
-	    WriteGr(0x03, 0x00);	/* don't rotate, write unmodified */
-	    WriteGr(0x08, 0xFF);	/* write all bits in a byte */
-	    WriteGr(0x01, 0x00);	/* all planes come from CPU */
-        }
-
-        WriteSeq(0x02, 0x04);   /* write to plane 2 */
-        WriteSeq(0x04, 0x06);   /* enable plane graphics */
-        WriteGr(0x04, 0x02);    /* read plane 2 */
-        WriteGr(0x05, 0x00);    /* write mode 0, read mode 0 */
-        WriteGr(0x06, 0x05);    /* set graphics */
-        slowbcopy_tobus(pVBox->fonts, pVBox->VGAbase, 8192);
-
-        WriteSeq(0x02, 0x08);   /* write to plane 3 */
-        WriteSeq(0x04, 0x06);   /* enable plane graphics */
-        WriteGr(0x04, 0x03);    /* read plane 3 */
-        WriteGr(0x05, 0x00);    /* write mode 0, read mode 0 */
-        WriteGr(0x06, 0x05);    /* set graphics */
-        slowbcopy_tobus(pVBox->fonts + 8192, pVBox->VGAbase, 8192);
-
-        scrn = ReadSeq(pVBox, 0x01) & ~0x20;
-        SeqReset(pVBox, TRUE);
-        WriteSeq(0x01, scrn);
-        SeqReset(pVBox, FALSE);
-
-        /* restore the registers that were changed */
-        WriteMiscOut(miscOut);
-        WriteAttr(pVBox, 0x10, attr10);
-        WriteGr(0x01, gr1);
-        WriteGr(0x03, gr3);
-        WriteGr(0x04, gr4);
-        WriteGr(0x05, gr5);
-        WriteGr(0x06, gr6);
-        WriteGr(0x08, gr8);
-        WriteSeq(0x02, seq2);
-        WriteSeq(0x04, seq4);
-    }
-    TRACE_EXIT();
-}
 
 Bool
 VBOXSaveRestore(ScrnInfoPtr pScrn, vbeSaveRestoreFunction function)
@@ -1638,7 +1410,7 @@ VBOXSaveRestore(ScrnInfoPtr pScrn, vbeSaveRestoreFunction function)
 
 	    /* Make sure we save at least this information in case of failure */
             (void)VBEGetVBEMode(pVBox->pVbe, &pVBox->stateMode);
-            SaveFonts(pScrn);
+            vgaHWSaveFonts(pScrn, &pVBox->vgaRegs);
 
             if (!VBESaveRestore(pVBox->pVbe,function,(pointer)&pVBox->state,
                                 &pVBox->stateSize,&pVBox->statePage)
@@ -1672,7 +1444,7 @@ VBOXSaveRestore(ScrnInfoPtr pScrn, vbeSaveRestoreFunction function)
             if (function == MODE_RESTORE)
             {
                 VBESetVBEMode(pVBox->pVbe, pVBox->stateMode, NULL);
-                RestoreFonts(pScrn);
+                vgaHWRestoreFonts(pScrn, &pVBox->vgaRegs);
             }
         }
     }
