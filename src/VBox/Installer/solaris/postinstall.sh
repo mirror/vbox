@@ -34,20 +34,17 @@ if test "$currentzone" = "global"; then
     /opt/VirtualBox/vboxconfig.sh preremove fatal
     rc=$?
     if test "$rc" -eq 0; then
-        echo "Installing new bits..."
+        echo "Installing new ones..."
         /opt/VirtualBox/vboxconfig.sh postinstall
     fi
     rc=$?
-    if test "$rc" -eq 0; then
-        echo "Completed Successfully!"
-    else
+    if test "$rc" -ne 0; then
         echo "Completed but with errors."
+        rc=20
     fi
 fi
 
 /usr/sbin/installf -f $PKGINST
-
-echo "Done."
 
 # return 20 = requires reboot, 2 = partial failure, 0  = success
 exit "$rc"
