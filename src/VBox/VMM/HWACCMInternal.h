@@ -45,6 +45,17 @@
 #define HWACCM_VTX_WITH_EPT
 #define HWACCM_VTX_WITH_VPID
 
+
+#if 0
+/* Seeing somewhat random behaviour on my Nehalem system with auto-save of guest MSRs;
+ * for some strange reason the CPU doesn't save the MSRs during the VM-exit.
+ * Clearly visible with a dual VCPU configured OpenSolaris 200906 live cd VM.
+ *
+ * Note: change the assembly files when enabling this! (remove the manual auto load/save)
+ */
+#define VBOX_WITH_AUTO_MSR_LOAD_RESTORE
+#endif
+
 RT_C_DECLS_BEGIN
 
 
@@ -585,6 +596,7 @@ typedef struct HWACCMCPU
         /** Virtual address of the MSR bitmap (1 page). */
         R0PTRTYPE(uint8_t *)        pMSRBitmap;
 
+#ifdef VBOX_WITH_AUTO_MSR_LOAD_RESTORE
         /** Physical address of the guest MSR load area (1 page). */
         RTHCPHYS                    pGuestMSRPhys;
         /** R0 memory object for the guest MSR load area (1 page). */
@@ -598,6 +610,7 @@ typedef struct HWACCMCPU
         RTR0MEMOBJ                  pMemObjHostMSR;
         /** Virtual address of the MSR load area (1 page). */
         R0PTRTYPE(uint8_t *)        pHostMSR;
+#endif /* VBOX_WITH_AUTO_MSR_LOAD_RESTORE */
 
         /* Number of automatically loaded/restored MSRs. */
         uint32_t                    cCachedMSRs;
