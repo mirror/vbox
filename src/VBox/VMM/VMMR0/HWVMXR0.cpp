@@ -1868,19 +1868,18 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
             pMsr->u32Reserved = 0;
             pMsr->u64Value    = pCtx->msrKERNELGSBASE;    /* swapgs exchange value */
             pMsr++; idxMsr++;
-        }
-    }
 
-    if (    (pVM->hwaccm.s.vmx.msr.vmx_proc_ctls.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_USE_MSR_BITMAPS)
-        &&  (ulEdx & X86_CPUID_AMD_FEATURE_EDX_LONG_MODE))
-    {
-        /* Allow the guest to directly modify these MSRs; they are restored and saved automatically. */
-        vmxR0SetMSRPermission(pVCpu, MSR_K8_LSTAR, true, true);
-        vmxR0SetMSRPermission(pVCpu, MSR_K6_STAR, true, true);
-        vmxR0SetMSRPermission(pVCpu, MSR_K8_SF_MASK, true, true);
-        vmxR0SetMSRPermission(pVCpu, MSR_K8_KERNEL_GS_BASE, true, true);
-        vmxR0SetMSRPermission(pVCpu, MSR_K8_GS_BASE, true, true);
-        vmxR0SetMSRPermission(pVCpu, MSR_K8_FS_BASE, true, true);
+            if (pVM->hwaccm.s.vmx.msr.vmx_proc_ctls.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_USE_MSR_BITMAPS)
+            {
+                /* Allow the guest to directly modify these MSRs; they are restored and saved automatically. */
+                vmxR0SetMSRPermission(pVCpu, MSR_K8_LSTAR, true, true);
+                vmxR0SetMSRPermission(pVCpu, MSR_K6_STAR, true, true);
+                vmxR0SetMSRPermission(pVCpu, MSR_K8_SF_MASK, true, true);
+                vmxR0SetMSRPermission(pVCpu, MSR_K8_KERNEL_GS_BASE, true, true);
+                vmxR0SetMSRPermission(pVCpu, MSR_K8_GS_BASE, true, true);
+                vmxR0SetMSRPermission(pVCpu, MSR_K8_FS_BASE, true, true);
+            }
+        }
     }
 
     rc = VMXWriteVMCS(VMX_VMCS_CTRL_ENTRY_MSR_LOAD_COUNT, idxMsr);
