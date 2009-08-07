@@ -111,7 +111,7 @@ int rtThreadNativeCreate(PRTTHREADINT pThreadInt, PRTNATIVETHREAD pNativeThread)
                                 (void *)RTR0ProcHandleSelf(), TS_RUN, minclsyspri);
     if (pKernThread)
     {
-        *pNativeThread = (RTNATIVETHREAD)pvKernThread;
+        *pNativeThread = (RTNATIVETHREAD)pKernThread;
         return VINF_SUCCESS;
     }
 
