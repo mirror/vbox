@@ -100,7 +100,28 @@ static int dbgfR3StackWalk(PVM pVM, VMCPUID idCpu, PDBGFSTACKFRAME pFrame)
         case DBGFADDRESS_FLAGS_FAR32: cbStackItem = 4; break;
         case DBGFADDRESS_FLAGS_FAR64: cbStackItem = 8; break;
         case DBGFADDRESS_FLAGS_RING0: cbStackItem = sizeof(RTHCUINTPTR); break;
-        default:                      cbStackItem = 4; break; /// @todo 64-bit guests.
+        default:
+            switch (pFrame->enmReturnType)
+            {
+                case DBGFRETURNTYPE_FAR16:
+                case DBGFRETURNTYPE_IRET16:
+                case DBGFRETURNTYPE_IRET32_V86:
+                case DBGFRETURNTYPE_NEAR16: cbStackItem = 2; break;
+
+                case DBGFRETURNTYPE_FAR32:
+                case DBGFRETURNTYPE_IRET32:
+                case DBGFRETURNTYPE_IRET32_PRIV:
+                case DBGFRETURNTYPE_NEAR32: cbStackItem = 4; break;
+
+                case DBGFRETURNTYPE_FAR64:
+                case DBGFRETURNTYPE_IRET64:
+                case DBGFRETURNTYPE_NEAR64: cbStackItem = 8; break;
+
+                default:
+                    AssertMsgFailed(("%d\n", pFrame->enmReturnType));
+                    cbStackItem = 4;
+                    break;
+            }
     }
 
     union
@@ -238,6 +259,17 @@ static int dbgfR3StackWalk(PVM pVM, VMCPUID idCpu, PDBGFSTACKFRAME pFrame)
     pFrame->pLineReturnPC = DBGFR3LineByAddrAlloc(pVM, pFrame->AddrReturnPC.FlatPtr, NULL);
 
     /*
+     * Frame bitness flag.
+     */
+    switch (cbStackItem)
+    {
+        case 2: pFrame->fFlags |= DBGFSTACKFRAME_FLAGS_16BIT; break;
+        case 4: pFrame->fFlags |= DBGFSTACKFRAME_FLAGS_32BIT; break;
+        case 8: pFrame->fFlags |= DBGFSTACKFRAME_FLAGS_64BIT; break;
+        default:    AssertMsgFailed(("cbStackItem=%d\n", cbStackItem)); return VERR_INTERNAL_ERROR;
+    }
+
+    /*
      * The arguments.
      */
     memcpy(&pFrame->Args, uArgs.pv, sizeof(pFrame->Args));
@@ -281,27 +313,32 @@ static DECLCALLBACK(int) dbgfR3StackWalkCtxFull(PVM pVM, VMCPUID idCpu, PCCPUMCT
                 case DBGFADDRESS_FLAGS_FAR16: pCur->enmReturnType = DBGFRETURNTYPE_NEAR16; break;
                 case DBGFADDRESS_FLAGS_FAR32: pCur->enmReturnType = DBGFRETURNTYPE_NEAR32; break;
                 case DBGFADDRESS_FLAGS_FAR64: pCur->enmReturnType = DBGFRETURNTYPE_NEAR64; break;
-                case DBGFADDRESS_FLAGS_RING0: pCur->enmReturnType = (HC_ARCH_BITS == 64) ? DBGFRETURNTYPE_NEAR64 : DBGFRETURNTYPE_NEAR32; break;
+                case DBGFADDRESS_FLAGS_RING0: pCur->enmReturnType = HC_ARCH_BITS == 64 ? DBGFRETURNTYPE_NEAR64 : DBGFRETURNTYPE_NEAR32; break;
                 default:                      pCur->enmReturnType = DBGFRETURNTYPE_NEAR32; break; /// @todo 64-bit guests
             }
 
-        uint64_t fAddrMask = UINT64_MAX;
+        uint64_t fAddrMask;
         if (enmCodeType == DBGFCODETYPE_RING0)
-            fAddrMask = (HC_ARCH_BITS == 64) ? UINT64_MAX : UINT32_MAX;
-        else
-        if (enmCodeType == DBGFCODETYPE_HYPER)
+            fAddrMask = HC_ARCH_BITS == 64 ? UINT64_MAX : UINT32_MAX;
+        else if (enmCodeType == DBGFCODETYPE_HYPER)
             fAddrMask = UINT32_MAX;
         else if (DBGFADDRESS_IS_FAR16(&pCur->AddrPC))
             fAddrMask = UINT16_MAX;
         else if (DBGFADDRESS_IS_FAR32(&pCur->AddrPC))
             fAddrMask = UINT32_MAX;
-        else if (DBGFADDRESS_IS_FLAT(&pCur->AddrPC))
+        else if (DBGFADDRESS_IS_FAR64(&pCur->AddrPC))
+            fAddrMask = UINT64_MAX;
+        else
         {
-            CPUMMODE CpuMode = CPUMGetGuestMode(VMMGetCpuById(pVM, idCpu));
+            PVMCPU pVCpu = VMMGetCpuById(pVM, idCpu);
+            CPUMMODE CpuMode = CPUMGetGuestMode(pVCpu);
             if (CpuMode == CPUMMODE_REAL)
                 fAddrMask = UINT16_MAX;
-            else if (CpuMode == CPUMMODE_PROTECTED)
+            else if (   CpuMode == CPUMMODE_PROTECTED
+                     || !CPUMIsGuestIn64BitCode(pVCpu, pCtxCore))
                 fAddrMask = UINT32_MAX;
+            else
+                fAddrMask = UINT64_MAX;
         }
 
         if (pAddrStack)
