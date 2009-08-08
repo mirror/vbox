@@ -68,7 +68,7 @@ VMMR3DECL(int) DBGFR3AddrFromSelOff(PVM pVM, VMCPUID idCpu, PDBGFADDRESS pAddres
     if (Sel != DBGF_SEL_FLAT)
     {
         DBGFSELINFO SelInfo;
-        int rc = DBGFR3SelQueryInfo(pVM, idCpu, Sel, DBGFSELQI_FLAGS_DT_GUEST, &SelInfo);
+        int rc = DBGFR3SelQueryInfo(pVM, idCpu, Sel, DBGFSELQI_FLAGS_DT_GUEST | DBGFSELQI_FLAGS_DT_ADJ_64BIT_MODE, &SelInfo);
         if (RT_FAILURE(rc))
             return rc;
         if (SelInfo.fFlags & (DBGFSELINFO_FLAGS_INVALID | DBGFSELINFO_FLAGS_NOT_PRESENT))
