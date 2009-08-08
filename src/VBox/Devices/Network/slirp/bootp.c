@@ -171,7 +171,7 @@ static struct mbuf *dhcp_create_msg(PNATState pData, struct bootp_t *bp, struct 
     rbp = mtod(m, struct bootp_t *);
     rbp->bp_op = BOOTP_REPLY;
     rbp->bp_xid = bp->bp_xid; /* see table 3 of rfc2131*/
-    rbp->flags = bp->flags;
+    rbp->bp_flags = bp->bp_flags;
     rbp->bp_giaddr.s_addr = bp->bp_giaddr.s_addr;
 #if 0 /*check flags*/
     saddr.sin_port = htons(BOOTP_SERVER);
@@ -373,7 +373,6 @@ static int dhcp_decode_request(PNATState pData, struct bootp_t *bp, const uint8_
          Log(("no address left\n"));
          return -1;
     }
-    LogRel(("NAT: flags:%x sec:%x\n", bp->flags, bp->bp_secs));
     if (server_ip != NULL)
     {
         /*selecting*/
@@ -391,7 +390,7 @@ static int dhcp_decode_request(PNATState pData, struct bootp_t *bp, const uint8_
         }
         else
         {
-            if (bp->flags & DHCP_FLAGS_B)
+            if (bp->bp_flags & DHCP_FLAGS_B)
                 dhcp_stat = RENEWING;
             else 
                 dhcp_stat = REBINDING; /*??rebinding??*/
@@ -602,7 +601,7 @@ reply:
         m_free(pData, m);
         return;
     }
-    bootp_reply(pData, m, rc, bp->flags);
+    bootp_reply(pData, m, rc, bp->bp_flags);
     return;
 }
 
