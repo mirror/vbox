@@ -2054,15 +2054,18 @@ static int selmR3GetSelectorInfo64(PVM pVM, PVMCPU pVCpu, RTSEL Sel, PDBGFSELINF
     pSelInfo->u.Raw64 = Desc;
     if (Desc.Gen.u1DescType)
     {
+        /*
+         * 64-bit code selectors are wide open, it's not possible to detect
+         * 64-bit data or stack selectors without also dragging in assumptions
+         * about current CS (i.e. that's we're executing in 64-bit mode).  So,
+         * the selinfo user needs to deal with this in the context the info is
+         * used unfortunately.
+         */
         if (    Desc.Gen.u1Long
             &&  !Desc.Gen.u1DefBig
             &&  (Desc.Gen.u4Type & X86_SEL_TYPE_CODE))
         {
-            /* 64-bit code selectors are wide open. It's not possible to
-               detect 64-bit data or stack selectors without also dragging
-               in assumptions about current CS. So, the selinfo user needs
-               to deal with this in the context the info is used unfortunately.
-               Note. We ignore the segment limit hacks that was added by AMD. */
+            /* Note! We ignore the segment limit hacks that was added by AMD. */
             pSelInfo->GCPtrBase = 0;
             pSelInfo->cbLimit   = ~(RTGCUINTPTR)0;
         }

@@ -402,11 +402,44 @@ static DECLCALLBACK(int) dbgfR3SelQueryInfo(PVM pVM, VMCPUID idCpu, RTSEL Sel, u
      * Make the query.
      */
     int rc;
-    if (!(fFlags & DBGFSELQI_FLAGS_DT_GUEST))
+    if (!(fFlags & DBGFSELQI_FLAGS_DT_SHADOW))
     {
         PVMCPU pVCpu = VMMGetCpuById(pVM, idCpu);
         VMCPU_ASSERT_EMT(pVCpu);
         rc = SELMR3GetSelectorInfo(pVM, pVCpu, Sel, pSelInfo);
+
+        /*
+         * 64-bit mode HACKS for making data and stack selectors wide open when
+         * queried. This is voodoo magic.
+         */
+        if (fFlags & DBGFSELQI_FLAGS_DT_ADJ_64BIT_MODE)
+        {
+            /* Expand 64-bit data and stack selectors. The check is a bit bogus... */
+            if (    RT_SUCCESS(rc)
+                &&  (pSelInfo->fFlags & (  DBGFSELINFO_FLAGS_LONG_MODE | DBGFSELINFO_FLAGS_REAL_MODE | DBGFSELINFO_FLAGS_PROT_MODE
+                                         | DBGFSELINFO_FLAGS_GATE      | DBGFSELINFO_FLAGS_HYPER
+                                         | DBGFSELINFO_FLAGS_INVALID   | DBGFSELINFO_FLAGS_NOT_PRESENT))
+                     == DBGFSELINFO_FLAGS_LONG_MODE
+                &&  pSelInfo->cbLimit != ~(RTGCPTR)0
+                &&  CPUMIsGuestIn64BitCode(pVCpu, CPUMGetGuestCtxCore(pVCpu)) )
+            {
+                pSelInfo->GCPtrBase = 0;
+                pSelInfo->cbLimit   = ~(RTGCPTR)0;
+            }
+            else if (   Sel == 0
+                     && CPUMIsGuestIn64BitCode(pVCpu, CPUMGetGuestCtxCore(pVCpu)))
+            {
+                pSelInfo->GCPtrBase = 0;
+                pSelInfo->cbLimit   = ~(RTGCPTR)0;
+                pSelInfo->Sel       = 0;
+                pSelInfo->SelGate   = 0;
+                pSelInfo->fFlags    = DBGFSELINFO_FLAGS_LONG_MODE;
+                pSelInfo->u.Raw64.Gen.u1Present  = 1;
+                pSelInfo->u.Raw64.Gen.u1Long     = 1;
+                pSelInfo->u.Raw64.Gen.u1DescType = 1;
+                rc = VINF_SUCCESS;
+            }
+        }
     }
     else
     {
@@ -448,7 +481,9 @@ static DECLCALLBACK(int) dbgfR3SelQueryInfo(PVM pVM, VMCPUID idCpu, RTSEL Sel, u
 VMMR3DECL(int) DBGFR3SelQueryInfo(PVM pVM, VMCPUID idCpu, RTSEL Sel, uint32_t fFlags, PDBGFSELINFO pSelInfo)
 {
     AssertReturn(idCpu < pVM->cCPUs, VERR_INVALID_PARAMETER);
-    AssertReturn(!(fFlags & ~(DBGFSELQI_FLAGS_DT_GUEST | DBGFSELQI_FLAGS_DT_SHADOW)), VERR_INVALID_PARAMETER);
+    AssertReturn(!(fFlags & ~(DBGFSELQI_FLAGS_DT_GUEST | DBGFSELQI_FLAGS_DT_SHADOW | DBGFSELQI_FLAGS_DT_ADJ_64BIT_MODE)), VERR_INVALID_PARAMETER);
+    AssertReturn(    (fFlags & (DBGFSELQI_FLAGS_DT_SHADOW | DBGFSELQI_FLAGS_DT_ADJ_64BIT_MODE))
+                  !=           (DBGFSELQI_FLAGS_DT_SHADOW | DBGFSELQI_FLAGS_DT_ADJ_64BIT_MODE), VERR_INVALID_PARAMETER);
 
     /* Clear the return data here on this thread. */
     memset(pSelInfo, 0, sizeof(*pSelInfo));
