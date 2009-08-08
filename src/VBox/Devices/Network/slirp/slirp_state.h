@@ -37,9 +37,11 @@
 /** Entry in the table of known DHCP clients. */
 typedef struct
 {
+    uint32_t xid;
     bool allocated;
     uint8_t macaddr[6];
     struct in_addr addr;
+    int number;
 } BOOTPClient;
 
 

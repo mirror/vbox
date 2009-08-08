@@ -73,6 +73,7 @@
 #define DHCPACK                 5
 #define DHCPNAK                 6
 #define DHCPRELEASE             7
+#define DHCPINFORM              8
 
 #define RFC1533_VENDOR_MAJOR    0
 #define RFC1533_VENDOR_MINOR    0
@@ -102,7 +103,7 @@ struct bootp_t
     uint8_t        bp_hops;
     uint32_t       bp_xid;
     uint16_t       bp_secs;
-    uint16_t       unused;
+    uint16_t       flags;
     struct in_addr bp_ciaddr;
     struct in_addr bp_yiaddr;
     struct in_addr bp_siaddr;
@@ -112,7 +113,7 @@ struct bootp_t
     uint8_t        bp_file[128];
     uint8_t        bp_vend[DHCP_OPT_LEN];
 };
-
+#define DHCP_FLAGS_B (1<<15)
 struct bootp_ext
 {
     uint8_t bpe_tag;
