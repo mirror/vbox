@@ -103,7 +103,7 @@ struct bootp_t
     uint8_t        bp_hops;
     uint32_t       bp_xid;
     uint16_t       bp_secs;
-    uint16_t       flags;
+    uint16_t       bp_flags;
     struct in_addr bp_ciaddr;
     struct in_addr bp_yiaddr;
     struct in_addr bp_siaddr;
