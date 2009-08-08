@@ -727,9 +727,9 @@ typedef struct DBGFSTACKFRAME const  *PCDBGFSTACKFRAME;
 typedef struct DBGFSTACKFRAME
 {
     /** Frame number. */
-    RTUINT          iFrame;
+    uint32_t        iFrame;
     /** Frame flags. */
-    RTUINT          fFlags;
+    uint32_t        fFlags;
     /** The frame address.
      * The off member is [e|r]bp and the Sel member is ss. */
     DBGFADDRESS     AddrFrame;
@@ -794,6 +794,12 @@ typedef struct DBGFSTACKFRAME
 #define DBGFSTACKFRAME_FLAGS_LOOP       RT_BIT(2)
 /** This is the last record because we reached the maximum depth. */
 #define DBGFSTACKFRAME_FLAGS_MAX_DEPTH  RT_BIT(3)
+/** 16-bit frame. */
+#define DBGFSTACKFRAME_FLAGS_16BIT      RT_BIT(4)
+/** 32-bit frame. */
+#define DBGFSTACKFRAME_FLAGS_32BIT      RT_BIT(5)
+/** 64-bit frame. */
+#define DBGFSTACKFRAME_FLAGS_64BIT      RT_BIT(6)
 /** @} */
 
 /** @name DBGFCODETYPE
