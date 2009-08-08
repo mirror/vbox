@@ -421,11 +421,11 @@ static int dhcp_decode_request(PNATState pData, struct bootp_t *bp, const uint8_
            }
            Assert((bp->bp_hlen == ETH_ALEN));
            memcpy(bc->macaddr, bp->bp_hwaddr, bp->bp_hlen);
-           bc->addr.s_addr = bp->bp_ciaddr.s_addr; /* @todo change releasing */ 
+           bc->addr.s_addr = bp->bp_ciaddr.s_addr; 
         }
     }
     Assert((dhcp_stat != NONE));
-    off = dhcp_send_ack(pData, bp, bc, m, 1);/*@todo when need send NACK */
+    off = dhcp_send_ack(pData, bp, bc, m, 1);
     return off;
 }
 
