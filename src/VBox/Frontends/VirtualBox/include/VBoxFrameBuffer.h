@@ -500,7 +500,7 @@ private:
     }while(0)
 
 #define VBOXQGLLOG_CKEY(_p, _pck, _s) do{\
-    VBOXQGLLOG((_p " l(%d), u(%d)" _s, (_pck)->lower(), (_pck)->upper()));\
+    VBOXQGLLOG((_p " l(0x%x), u(0x%x)" _s, (_pck)->lower(), (_pck)->upper()));\
     }while(0)
 
 class VBoxVHWADirtyRect
@@ -1292,7 +1292,7 @@ private:
     void vboxCheckUpdateAddress (VBoxVHWASurfaceBase * pSurface, uint64_t offset)
     {
 #ifndef VBOXQGL_DBG_SURF
-    	if(offset == 0xffffffff)
+    	if(offset == 0xffffffffffffffffL)
     	{
     		return;
     	}
