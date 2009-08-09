@@ -56,6 +56,8 @@ typedef struct
     PVM             pVM;
     /** The VMCPU handle. */
     PVMCPU          pVCpu;
+    /** The address space for resolving symbol. */
+    RTDBGAS         hAs;
     /** Pointer to the first byte in the segemnt. */
     RTGCUINTPTR     GCPtrSegBase;
     /** Pointer to the byte after the end of the segment. (might have wrapped!) */
@@ -105,6 +107,9 @@ static int dbgfR3DisasInstrFirst(PVM pVM, PVMCPU pVCpu, PDBGFSELINFO pSelInfo, P
     pState->enmMode         = enmMode;
     pState->pvPageGC        = 0;
     pState->pvPageR3        = NULL;
+    pState->hAs             = pSelInfo->fFlags & DBGFSELINFO_FLAGS_HYPER /** @todo Deal more explicitly with RC in DBGFR3Disas*. */
+                            ? DBGF_AS_RC_AND_GC_GLOBAL
+                            : DBGF_AS_GLOBAL;
     pState->pVM             = pVM;
     pState->pVCpu           = pVCpu;
     pState->fLocked         = false;
@@ -256,25 +261,21 @@ static DECLCALLBACK(int) dbgfR3DisasGetSymbol(PCDISCPUSTATE pCpu, uint32_t u32Se
 {
     PDBGFDISASSTATE pState   = (PDBGFDISASSTATE)pCpu;
     PCDBGFSELINFO   pSelInfo = (PCDBGFSELINFO)pvUser;
-    DBGFSYMBOL      Sym;
+    DBGFADDRESS     Addr;
+    RTDBGSYMBOL     Sym;
     RTGCINTPTR      off;
     int             rc;
 
-    if (DIS_FMT_SEL_IS_REG(u32Sel))
+    if (   DIS_FMT_SEL_IS_REG(u32Sel)
+        ?  DIS_FMT_SEL_GET_REG(u32Sel) == DIS_SELREG_CS
+        :  pSelInfo->Sel == DIS_FMT_SEL_GET_VALUE(u32Sel))
     {
-        if (DIS_FMT_SEL_GET_REG(u32Sel) == DIS_SELREG_CS)
-            rc = DBGFR3SymbolByAddr(pState->pVM, uAddress + pSelInfo->GCPtrBase, &off, &Sym);
-        else
-            rc = VERR_SYMBOL_NOT_FOUND; /** @todo implement this */
+        rc = DBGFR3AddrFromSelInfoOff(pState->pVM, &Addr, pSelInfo, uAddress);
+        if (RT_SUCCESS(rc))
+            rc = DBGFR3AsSymbolByAddr(pState->pVM, pState->hAs, &Addr, &off, &Sym, NULL /*phMod*/);
     }
     else
-    {
-        if (pSelInfo->Sel == DIS_FMT_SEL_GET_VALUE(u32Sel))
-            rc = DBGFR3SymbolByAddr(pState->pVM, uAddress + pSelInfo->GCPtrBase, &off, &Sym);
-        else
-            rc = VERR_SYMBOL_NOT_FOUND; /** @todo implement this */
-    }
-
+        rc = VERR_SYMBOL_NOT_FOUND; /** @todo implement this */
     if (RT_SUCCESS(rc))
     {
         size_t cchName = strlen(Sym.szName);

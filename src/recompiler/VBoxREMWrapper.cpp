@@ -576,12 +576,14 @@ static const REMPARMDESC g_aArgsDBGFR3Info[] =
     { REMPARMDESC_FLAGS_INT,        sizeof(const char *), NULL },
     { REMPARMDESC_FLAGS_INT,        sizeof(PCDBGFINFOHLP), NULL }
 };
-static const REMPARMDESC g_aArgsDBGFR3SymbolByAddr[] =
+static const REMPARMDESC g_aArgsDBGFR3AsSymbolByAddr[] =
 {
     { REMPARMDESC_FLAGS_INT,        sizeof(PVM), NULL },
-    { REMPARMDESC_FLAGS_GCPTR,      sizeof(RTGCUINTPTR), NULL },
-    { REMPARMDESC_FLAGS_GCPTR,      sizeof(RTGCINTPTR), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(PDBGFSYMBOL), NULL }
+    { REMPARMDESC_FLAGS_INT,        sizeof(RTDBGAS), NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(PCDBGFADDRESS), NULL },
+    { REMPARMDESC_FLAGS_GCPTR,      sizeof(PRTGCINTPTR), NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(PRTDBGSYMBOL), NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(PRTDBGMOD), NULL }
 };
 static const REMPARMDESC g_aArgsDISInstr[] =
 {
@@ -713,13 +715,13 @@ static const REMPARMDESC g_aArgsPDMIsaSetIrq[] =
     { REMPARMDESC_FLAGS_INT,        sizeof(uint8_t), NULL },
     { REMPARMDESC_FLAGS_INT,        sizeof(uint8_t), NULL }
 };
-static const REMPARMDESC g_aArgsPDMR3CritSectInit[] = 
+static const REMPARMDESC g_aArgsPDMR3CritSectInit[] =
 {
     { REMPARMDESC_FLAGS_INT,        sizeof(PVM), NULL },
     { REMPARMDESC_FLAGS_INT,        sizeof(PPDMCRITSECT), NULL },
     { REMPARMDESC_FLAGS_INT,        sizeof(char *), NULL }
 };
-static const REMPARMDESC g_aArgsPDMCritSectEnter[] = 
+static const REMPARMDESC g_aArgsPDMCritSectEnter[] =
 {
     { REMPARMDESC_FLAGS_INT,        sizeof(PPDMCRITSECT), NULL },
     { REMPARMDESC_FLAGS_INT,        sizeof(int), NULL }
@@ -1113,7 +1115,7 @@ static REMFNDESC g_aVMMImports[] =
     { "DBGFR3DisasInstrCurrentLogInternal",     (void *)(uintptr_t)&DBGFR3DisasInstrCurrentLogInternal, &g_aArgsDBGFR3DisasInstrCurrentLogInternal[0],  RT_ELEMENTS(g_aArgsDBGFR3DisasInstrCurrentLogInternal),REMFNDESC_FLAGS_RET_INT,    sizeof(int),        NULL },
     { "DBGFR3Info",                             (void *)(uintptr_t)&DBGFR3Info,                     &g_aArgsDBGFR3Info[0],                      RT_ELEMENTS(g_aArgsDBGFR3Info),                        REMFNDESC_FLAGS_RET_INT,    sizeof(int),        NULL },
     { "DBGFR3InfoLogRelHlp",                    (void *)(uintptr_t)&DBGFR3InfoLogRelHlp,            NULL,                                       0,                                                     REMFNDESC_FLAGS_RET_INT,    sizeof(void *),     NULL },
-    { "DBGFR3SymbolByAddr",                     (void *)(uintptr_t)&DBGFR3SymbolByAddr,             &g_aArgsDBGFR3SymbolByAddr[0],              RT_ELEMENTS(g_aArgsDBGFR3SymbolByAddr),                REMFNDESC_FLAGS_RET_INT,    sizeof(int),        NULL },
+    { "DBGFR3AsSymbolByAddr",                   (void *)(uintptr_t)&DBGFR3AsSymbolByAddr,           &g_aArgsDBGFR3AsSymbolByAddr[0],            RT_ELEMENTS(g_aArgsDBGFR3AsSymbolByAddr),              REMFNDESC_FLAGS_RET_INT,    sizeof(int),        NULL },
     { "DISInstr",                               (void *)(uintptr_t)&DISInstr,                       &g_aArgsDISInstr[0],                        RT_ELEMENTS(g_aArgsDISInstr),                          REMFNDESC_FLAGS_RET_INT,    sizeof(bool),       NULL },
     { "EMR3FatalError",                         (void *)(uintptr_t)&EMR3FatalError,                 &g_aArgsEMR3FatalError[0],                  RT_ELEMENTS(g_aArgsEMR3FatalError),                    REMFNDESC_FLAGS_RET_VOID,   0,                  NULL },
     { "EMRemLock",                              (void *)(uintptr_t)&EMRemLock,                      &g_aArgsVM[0],                              RT_ELEMENTS(g_aArgsVM),                                REMFNDESC_FLAGS_RET_VOID,   0,                  NULL },
@@ -1144,7 +1146,7 @@ static REMFNDESC g_aVMMImports[] =
     { "PDMR3CritSectInit",                      (void *)(uintptr_t)&PDMR3CritSectInit,              &g_aArgsPDMR3CritSectInit[0],               RT_ELEMENTS(g_aArgsPDMR3CritSectInit),                 REMFNDESC_FLAGS_RET_INT,    sizeof(int),        NULL },
     { "PDMCritSectEnter",                       (void *)(uintptr_t)&PDMCritSectEnter,               &g_aArgsPDMCritSectEnter[0],                RT_ELEMENTS(g_aArgsPDMCritSectEnter),                  REMFNDESC_FLAGS_RET_INT,    sizeof(int),        NULL },
     { "PDMCritSectLeave",                       (void *)(uintptr_t)&PDMCritSectLeave,               &g_aArgsPTR[0],                             RT_ELEMENTS(g_aArgsPTR),                               REMFNDESC_FLAGS_RET_VOID,   0,                  NULL },
-    
+
     { "PDMGetInterrupt",                        (void *)(uintptr_t)&PDMGetInterrupt,                &g_aArgsPDMGetInterrupt[0],                 RT_ELEMENTS(g_aArgsPDMGetInterrupt),                   REMFNDESC_FLAGS_RET_INT,    sizeof(int),        NULL },
     { "PDMIsaSetIrq",                           (void *)(uintptr_t)&PDMIsaSetIrq,                   &g_aArgsPDMIsaSetIrq[0],                    RT_ELEMENTS(g_aArgsPDMIsaSetIrq),                      REMFNDESC_FLAGS_RET_INT,    sizeof(int),        NULL },
     { "PGMGetGuestMode",                        (void *)(uintptr_t)&PGMGetGuestMode,                &g_aArgsPGMGetGuestMode[0],                 RT_ELEMENTS(g_aArgsPGMGetGuestMode),                   REMFNDESC_FLAGS_RET_INT,    sizeof(int),        NULL },

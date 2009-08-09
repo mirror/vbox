@@ -378,7 +378,7 @@ VMMR3DECL(int) DBGFR3AsSetAlias(PVM pVM, RTDBGAS hAlias, RTDBGAS hAliasFor)
      * Input validation.
      */
     VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
-    AssertMsgReturn(!DBGF_AS_IS_ALIAS(hAlias), ("%p\n", hAlias), VERR_INVALID_PARAMETER);
+    AssertMsgReturn(DBGF_AS_IS_ALIAS(hAlias), ("%p\n", hAlias), VERR_INVALID_PARAMETER);
     AssertMsgReturn(!DBGF_AS_IS_FIXED_ALIAS(hAlias), ("%p\n", hAlias), VERR_INVALID_PARAMETER);
     RTDBGAS hRealAliasFor = DBGFR3AsResolveAndRetain(pVM, hAlias);
     if (hRealAliasFor == NIL_RTDBGAS)
@@ -933,6 +933,29 @@ VMMR3DECL(int) DBGFR3AsSymbolByAddr(PVM pVM, RTDBGAS hDbgAs, PCDBGFADDRESS pAddr
     }
 
     return rc;
+}
+
+
+/**
+ * Convenience function that combines RTDbgSymbolDup and DBGFR3AsSymbolByAddr.
+ *
+ * @returns Pointer to the symbol on success. This must be free using
+ *          RTDbgSymbolFree(). NULL is returned if not found or any error
+ *          occurs.
+ *
+ * @param   pVM                 The VM handle.
+ * @param   hDbgAs              See DBGFR3AsSymbolByAddr.
+ * @param   pAddress            See DBGFR3AsSymbolByAddr.
+ * @param   poffDisp            See DBGFR3AsSymbolByAddr.
+ * @param   phMod               See DBGFR3AsSymbolByAddr.
+ */
+VMMR3DECL(PRTDBGSYMBOL) DBGFR3AsSymbolByAddrA(PVM pVM, RTDBGAS hDbgAs, PCDBGFADDRESS pAddress, PRTGCINTPTR poffDisp, PRTDBGMOD phMod)
+{
+    RTDBGSYMBOL SymInfo;
+    int rc = DBGFR3AsSymbolByAddr(pVM, hDbgAs, pAddress, poffDisp, &SymInfo, phMod);
+    if (RT_SUCCESS(rc))
+        return RTDbgSymbolDup(&SymInfo);
+    return NULL;
 }
 
 
