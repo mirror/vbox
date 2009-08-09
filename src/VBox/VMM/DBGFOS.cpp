@@ -29,98 +29,21 @@
 #include "DBGFInternal.h"
 #include <VBox/vm.h>
 #include <VBox/err.h>
-
 #include <VBox/log.h>
-#include <iprt/thread.h>
+
 #include <iprt/assert.h>
+#include <iprt/thread.h>
+#include <iprt/param.h>
 
 
+/*******************************************************************************
+*   Defined Constants And Macros                                               *
+*******************************************************************************/
+#define DBGF_OS_READ_LOCK(pVM)      do { } while (0)
+#define DBGF_OS_READ_UNLOCK(pVM)    do { } while (0)
 
-/**
- * EMT worker function for DBGFR3OSRegister.
- *
- * @returns VBox status code.
- * @param   pVM     Pointer to the shared VM structure.
- * @param   pReg    The registration structure.
- */
-static DECLCALLBACK(int) dbgfR3OSRegister(PVM pVM, PDBGFOSREG pReg)
-{
-    /* more validations. */
-    PDBGFOS pOS;
-    for (pOS = pVM->dbgf.s.pOSHead; pOS; pOS = pOS->pNext)
-        if (!strcmp(pOS->pReg->szName, pReg->szName))
-        {
-            Log(("dbgfR3OSRegister: %s -> VERR_ALREADY_LOADED\n", pReg->szName));
-            return VERR_ALREADY_LOADED;
-        }
-
-    /*
-     * Allocate a new structure, call the constructor and link it into the list.
-     */
-    pOS = (PDBGFOS)MMR3HeapAllocZ(pVM, MM_TAG_DBGF_OS, RT_OFFSETOF(DBGFOS, abData[pReg->cbData]));
-    AssertReturn(pOS, VERR_NO_MEMORY);
-    pOS->pReg = pReg;
-
-    int rc = pOS->pReg->pfnConstruct(pVM, pOS->abData);
-    if (RT_SUCCESS(rc))
-    {
-        pOS->pNext = pVM->dbgf.s.pOSHead;
-        pVM->dbgf.s.pOSHead = pOS;
-    }
-    else
-    {
-        if (pOS->pReg->pfnDestruct)
-            pOS->pReg->pfnDestruct(pVM, pOS->abData);
-        MMR3HeapFree(pOS);
-    }
-
-    return VINF_SUCCESS;
-}
-
-
-/**
- * Registers a guest OS digger.
- *
- * This will instantiate an instance of the digger and add it
- * to the list for us in the next call to DBGFR3OSDetect().
- *
- * @returns VBox status code.
- * @param   pVM     Pointer to the shared VM structure.
- * @param   pReg    The registration structure.
- * @thread  Any.
- */
-VMMR3DECL(int) DBGFR3OSRegister(PVM pVM, PCDBGFOSREG pReg)
-{
-    /*
-     * Validate intput.
-     */
-    AssertPtrReturn(pReg, VERR_INVALID_POINTER);
-    AssertReturn(pReg->u32Magic == DBGFOSREG_MAGIC, VERR_INVALID_MAGIC);
-    AssertReturn(pReg->u32EndMagic == DBGFOSREG_MAGIC, VERR_INVALID_MAGIC);
-    AssertReturn(!pReg->fFlags, VERR_INVALID_PARAMETER);
-    AssertReturn(pReg->cbData < _2G, VERR_INVALID_PARAMETER);
-    AssertReturn(pReg->szName[0], VERR_INVALID_NAME);
-    AssertReturn(memchr(&pReg->szName[0], '\0', sizeof(pReg->szName)), VERR_INVALID_NAME);
-    AssertPtrReturn(pReg->pfnConstruct, VERR_INVALID_POINTER);
-    AssertPtrNullReturn(pReg->pfnDestruct, VERR_INVALID_POINTER);
-    AssertPtrReturn(pReg->pfnProbe, VERR_INVALID_POINTER);
-    AssertPtrReturn(pReg->pfnInit, VERR_INVALID_POINTER);
-    AssertPtrReturn(pReg->pfnRefresh, VERR_INVALID_POINTER);
-    AssertPtrReturn(pReg->pfnTerm, VERR_INVALID_POINTER);
-    AssertPtrReturn(pReg->pfnQueryVersion, VERR_INVALID_POINTER);
-    AssertPtrReturn(pReg->pfnQueryInterface, VERR_INVALID_POINTER);
-
-    /*
-     * Pass it on to the EMT.
-     */
-    PVMREQ pReq;
-    int rc = VMR3ReqCallU(pVM->pUVM, VMCPUID_ANY, &pReq, RT_INDEFINITE_WAIT, 0, (PFNRT)dbgfR3OSRegister, 2, pVM, pReg);
-    if (RT_SUCCESS(rc))
-        rc = pReq->iStatus;
-    VMR3ReqFree(pReq);
-
-    return rc;
-}
+#define DBGF_OS_WRITE_LOCK(pVM)     do { } while (0)
+#define DBGF_OS_WRITE_UNLOCK(pVM)   do { } while (0)
 
 
 /**
@@ -150,6 +73,196 @@ void dbgfR3OSTerm(PVM pVM)
             pOS->pReg->pfnDestruct(pVM, pOS->abData);
         MMR3HeapFree(pOS);
     }
+}
+
+
+/**
+ * EMT worker function for DBGFR3OSRegister.
+ *
+ * @returns VBox status code.
+ * @param   pVM     Pointer to the shared VM structure.
+ * @param   pReg    The registration structure.
+ */
+static DECLCALLBACK(int) dbgfR3OSRegister(PVM pVM, PDBGFOSREG pReg)
+{
+    /* more validations. */
+    DBGF_OS_READ_LOCK(pVM);
+    PDBGFOS pOS;
+    for (pOS = pVM->dbgf.s.pOSHead; pOS; pOS = pOS->pNext)
+        if (!strcmp(pOS->pReg->szName, pReg->szName))
+        {
+            DBGF_OS_READ_UNLOCK(pVM);
+            Log(("dbgfR3OSRegister: %s -> VERR_ALREADY_LOADED\n", pReg->szName));
+            return VERR_ALREADY_LOADED;
+        }
+
+    /*
+     * Allocate a new structure, call the constructor and link it into the list.
+     */
+    pOS = (PDBGFOS)MMR3HeapAllocZ(pVM, MM_TAG_DBGF_OS, RT_OFFSETOF(DBGFOS, abData[pReg->cbData]));
+    AssertReturn(pOS, VERR_NO_MEMORY);
+    pOS->pReg = pReg;
+
+    int rc = pOS->pReg->pfnConstruct(pVM, pOS->abData);
+    if (RT_SUCCESS(rc))
+    {
+        DBGF_OS_WRITE_LOCK(pVM);
+        pOS->pNext = pVM->dbgf.s.pOSHead;
+        pVM->dbgf.s.pOSHead = pOS;
+        DBGF_OS_WRITE_UNLOCK(pVM);
+    }
+    else
+    {
+        if (pOS->pReg->pfnDestruct)
+            pOS->pReg->pfnDestruct(pVM, pOS->abData);
+        MMR3HeapFree(pOS);
+    }
+
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Registers a guest OS digger.
+ *
+ * This will instantiate an instance of the digger and add it
+ * to the list for us in the next call to DBGFR3OSDetect().
+ *
+ * @returns VBox status code.
+ * @param   pVM     Pointer to the shared VM structure.
+ * @param   pReg    The registration structure.
+ * @thread  Any.
+ */
+VMMR3DECL(int) DBGFR3OSRegister(PVM pVM, PCDBGFOSREG pReg)
+{
+    /*
+     * Validate intput.
+     */
+    VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
+
+    AssertPtrReturn(pReg, VERR_INVALID_POINTER);
+    AssertReturn(pReg->u32Magic == DBGFOSREG_MAGIC, VERR_INVALID_MAGIC);
+    AssertReturn(pReg->u32EndMagic == DBGFOSREG_MAGIC, VERR_INVALID_MAGIC);
+    AssertReturn(!pReg->fFlags, VERR_INVALID_PARAMETER);
+    AssertReturn(pReg->cbData < _2G, VERR_INVALID_PARAMETER);
+    AssertReturn(pReg->szName[0], VERR_INVALID_NAME);
+    AssertReturn(memchr(&pReg->szName[0], '\0', sizeof(pReg->szName)), VERR_INVALID_NAME);
+    AssertPtrReturn(pReg->pfnConstruct, VERR_INVALID_POINTER);
+    AssertPtrNullReturn(pReg->pfnDestruct, VERR_INVALID_POINTER);
+    AssertPtrReturn(pReg->pfnProbe, VERR_INVALID_POINTER);
+    AssertPtrReturn(pReg->pfnInit, VERR_INVALID_POINTER);
+    AssertPtrReturn(pReg->pfnRefresh, VERR_INVALID_POINTER);
+    AssertPtrReturn(pReg->pfnTerm, VERR_INVALID_POINTER);
+    AssertPtrReturn(pReg->pfnQueryVersion, VERR_INVALID_POINTER);
+    AssertPtrReturn(pReg->pfnQueryInterface, VERR_INVALID_POINTER);
+
+    /*
+     * Pass it on to the EMT.
+     */
+    PVMREQ pReq;
+    int rc = VMR3ReqCallU(pVM->pUVM, 0, &pReq, RT_INDEFINITE_WAIT, 0, (PFNRT)dbgfR3OSRegister, 2, pVM, pReg);
+    if (RT_SUCCESS(rc))
+        rc = pReq->iStatus;
+    VMR3ReqFree(pReq);
+
+    return rc;
+}
+
+
+/**
+ * EMT worker function for DBGFR3OSDeregister.
+ *
+ * @returns VBox status code.
+ * @param   pVM     Pointer to the shared VM structure.
+ * @param   pReg    The registration structure.
+ */
+static DECLCALLBACK(int) dbgfR3OSDeregister(PVM pVM, PDBGFOSREG pReg)
+{
+    /*
+     * Unlink it.
+     */
+    bool    fWasCurOS = false;
+    PDBGFOS pOSPrev   = NULL;
+    PDBGFOS pOS;
+    DBGF_OS_WRITE_LOCK(pVM);
+    for (pOS = pVM->dbgf.s.pOSHead; pOS; pOSPrev = pOS, pOS = pOS->pNext)
+        if (pOS->pReg == pReg)
+        {
+            if (pOSPrev)
+                pOSPrev->pNext = pOS->pNext;
+            else
+                pVM->dbgf.s.pOSHead = pOS->pNext;
+            if (pVM->dbgf.s.pCurOS == pOS)
+            {
+                pVM->dbgf.s.pCurOS = NULL;
+                fWasCurOS = true;
+            }
+            break;
+        }
+    DBGF_OS_WRITE_UNLOCK(pVM);
+    if (!pOS)
+    {
+        Log(("DBGFR3OSDeregister: %s -> VERR_NOT_FOUND\n", pReg->szName));
+        return VERR_NOT_FOUND;
+    }
+
+    /*
+     * Terminate it if it was the current OS, then invoke the
+     * destructor and clean up.
+     */
+    if (fWasCurOS)
+        pOS->pReg->pfnTerm(pVM, pOS->abData);
+    if (pOS->pReg->pfnDestruct)
+        pOS->pReg->pfnDestruct(pVM, pOS->abData);
+    MMR3HeapFree(pOS);
+
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Deregisters a guest OS digger previously registered by DBGFR3OSRegister.
+ *
+ * @returns VBox status code.
+ *
+ * @param   pVM     Pointer to the shared VM structure.
+ * @param   pReg    The registration structure.
+ * @thread  Any.
+ */
+VMMR3DECL(int)  DBGFR3OSDeregister(PVM pVM, PCDBGFOSREG pReg)
+{
+    /*
+     * Validate input.
+     */
+    VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
+    AssertPtrReturn(pReg, VERR_INVALID_POINTER);
+    AssertReturn(pReg->u32Magic == DBGFOSREG_MAGIC, VERR_INVALID_MAGIC);
+    AssertReturn(pReg->u32EndMagic == DBGFOSREG_MAGIC, VERR_INVALID_MAGIC);
+    AssertReturn(memchr(&pReg->szName[0], '\0', sizeof(pReg->szName)), VERR_INVALID_NAME);
+
+    DBGF_OS_READ_LOCK(pVM);
+    PDBGFOS pOS;
+    for (pOS = pVM->dbgf.s.pOSHead; pOS; pOS = pOS->pNext)
+        if (pOS->pReg == pReg)
+            break;
+    DBGF_OS_READ_LOCK(pVM);
+
+    if (!pOS)
+    {
+        Log(("DBGFR3OSDeregister: %s -> VERR_NOT_FOUND\n", pReg->szName));
+        return VERR_NOT_FOUND;
+    }
+
+    /*
+     * Pass it on to the EMT.
+     */
+    PVMREQ pReq;
+    int rc = VMR3ReqCallU(pVM->pUVM, 0, &pReq, RT_INDEFINITE_WAIT, 0, (PFNRT)dbgfR3OSDeregister, 2, pVM, pReg);
+    if (RT_SUCCESS(rc))
+        rc = pReq->iStatus;
+    VMR3ReqFree(pReq);
+
+    return rc;
 }
 
 
@@ -222,7 +335,7 @@ VMMR3DECL(int) DBGFR3OSDetect(PVM pVM, char *pszName, size_t cchName)
      * Pass it on to the EMT.
      */
     PVMREQ pReq;
-    int rc = VMR3ReqCallU(pVM->pUVM, VMCPUID_ANY, &pReq, RT_INDEFINITE_WAIT, 0, (PFNRT)dbgfR3OSDetect, 3, pVM, pszName, cchName);
+    int rc = VMR3ReqCallU(pVM->pUVM, 0, &pReq, RT_INDEFINITE_WAIT, 0, (PFNRT)dbgfR3OSDetect, 3, pVM, pszName, cchName);
     if (RT_SUCCESS(rc))
         rc = pReq->iStatus;
     VMR3ReqFree(pReq);
@@ -306,7 +419,7 @@ VMMR3DECL(int) DBGFR3OSQueryNameAndVersion(PVM pVM, char *pszName, size_t cchNam
      * Pass it on to the EMT.
      */
     PVMREQ pReq;
-    int rc = VMR3ReqCallU(pVM->pUVM, VMCPUID_ANY, &pReq, RT_INDEFINITE_WAIT, 0, (PFNRT)dbgfR3OSQueryNameAndVersion,
+    int rc = VMR3ReqCallU(pVM->pUVM, 0, &pReq, RT_INDEFINITE_WAIT, 0, (PFNRT)dbgfR3OSQueryNameAndVersion,
                           5, pVM, pszName, cchName, pszVersion, cchVersion);
     if (RT_SUCCESS(rc))
         rc = pReq->iStatus;
