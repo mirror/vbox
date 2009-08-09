@@ -414,7 +414,7 @@ static DECLCALLBACK(int) rtDbgModContainer_SymbolAdd(PRTDBGMODINT pMod, const ch
                                        : &pThis->paSegs[iSeg].SymAddrTree;
             if (RTAvlrUIntPtrInsert(pAddrTree, &pSymbol->AddrCore))
             {
-                if (RTAvlU32Insert(&pThis->LineOrdinalTree, &pSymbol->OrdinalCore))
+                if (RTAvlU32Insert(&pThis->SymbolOrdinalTree, &pSymbol->OrdinalCore))
                 {
                     if (piOrdinal)
                         *piOrdinal = pThis->iNextSymbolOrdinal;
