@@ -118,6 +118,7 @@ typedef const DBGFADDRESS *PCDBGFADDRESS;
 /** @} */
 
 VMMR3DECL(int)          DBGFR3AddrFromSelOff(PVM pVM, VMCPUID idCpu, PDBGFADDRESS pAddress, RTSEL Sel, RTUINTPTR off);
+VMMR3DECL(int)          DBGFR3AddrFromSelInfoOff(PVM pVM, PDBGFADDRESS pAddress, PCDBGFSELINFO pSelInfo, RTUINTPTR off);
 VMMR3DECL(PDBGFADDRESS) DBGFR3AddrFromFlat(PVM pVM, PDBGFADDRESS pAddress, RTGCUINTPTR FlatPtr);
 VMMR3DECL(PDBGFADDRESS) DBGFR3AddrFromPhys(PVM pVM, PDBGFADDRESS pAddress, RTGCPHYS PhysAddr);
 VMMR3DECL(bool)         DBGFR3AddrIsValid(PVM pVM, PCDBGFADDRESS pAddress);
@@ -638,6 +639,7 @@ VMMR3DECL(int)          DBGFR3AsLoadMap(PVM pVM, RTDBGAS hDbgAs, const char *psz
 VMMR3DECL(int)          DBGFR3AsLinkModule(PVM pVM, RTDBGAS hDbgAs, RTDBGMOD hMod, PCDBGFADDRESS pModAddress, RTDBGSEGIDX iModSeg, uint32_t fFlags);
 
 VMMR3DECL(int)          DBGFR3AsSymbolByAddr(PVM pVM, RTDBGAS hDbgAs, PCDBGFADDRESS pAddress, PRTGCINTPTR poffDisp, PRTDBGSYMBOL pSymbol, PRTDBGMOD phMod);
+VMMR3DECL(PRTDBGSYMBOL) DBGFR3AsSymbolByAddrA(PVM pVM, RTDBGAS hDbgAs, PCDBGFADDRESS pAddress, PRTGCINTPTR poffDisp, PRTDBGMOD phMod);
 VMMR3DECL(int)          DBGFR3AsSymbolByName(PVM pVM, RTDBGAS hDbgAs, const char *pszSymbol, PRTDBGSYMBOL pSymbol, PRTDBGMOD phMod);
 
 /* The following are soon to be obsoleted: */
@@ -647,9 +649,7 @@ VMMR3DECL(void)         DBGFR3ModuleRelocate(PVM pVM, RTGCUINTPTR OldImageBase, 
 VMMR3DECL(int)          DBGFR3SymbolAdd(PVM pVM, RTGCUINTPTR ModuleAddress, RTGCUINTPTR SymbolAddress, RTUINT cbSymbol, const char *pszSymbol);
 VMMR3DECL(int)          DBGFR3SymbolByAddr(PVM pVM, RTGCUINTPTR Address, PRTGCINTPTR poffDisplacement, PDBGFSYMBOL pSymbol);
 VMMR3DECL(int)          DBGFR3SymbolByName(PVM pVM, const char *pszSymbol, PDBGFSYMBOL pSymbol);
-VMMR3DECL(PDBGFSYMBOL)  DBGFR3SymbolByAddrAlloc(PVM pVM, RTGCUINTPTR Address, PRTGCINTPTR poffDisplacement);
-VMMR3DECL(PDBGFSYMBOL)  DBGFR3SymbolByNameAlloc(PVM pVM, const char *pszSymbol);
-VMMR3DECL(void)         DBGFR3SymbolFree(PDBGFSYMBOL pSymbol);
+
 VMMR3DECL(int)          DBGFR3LineByAddr(PVM pVM, RTGCUINTPTR Address, PRTGCINTPTR poffDisplacement, PDBGFLINE pLine);
 VMMR3DECL(PDBGFLINE)    DBGFR3LineByAddrAlloc(PVM pVM, RTGCUINTPTR Address, PRTGCINTPTR poffDisplacement);
 VMMR3DECL(void)         DBGFR3LineFree(PDBGFLINE pLine);
@@ -740,7 +740,7 @@ typedef struct DBGFSTACKFRAME
      * The off member is [e|r]ip and the Sel member is cs. */
     DBGFADDRESS     AddrPC;
     /** Pointer to the symbol nearest the program counter (PC). NULL if not found. */
-    PDBGFSYMBOL     pSymPC;
+    PRTDBGSYMBOL    pSymPC;
     /** Pointer to the linnumber nearest the program counter (PC). NULL if not found. */
     PDBGFLINE       pLinePC;
 
@@ -757,7 +757,7 @@ typedef struct DBGFSTACKFRAME
      * The off member is [e|r]ip and the Sel member is cs. */
     DBGFADDRESS     AddrReturnPC;
     /** Pointer to the symbol nearest the return PC. NULL if not found. */
-    PDBGFSYMBOL     pSymReturnPC;
+    PRTDBGSYMBOL    pSymReturnPC;
     /** Pointer to the linnumber nearest the return PC. NULL if not found. */
     PDBGFLINE       pLineReturnPC;
 
