@@ -374,6 +374,8 @@ typedef struct RTDBGMODINT
     /** The number of reference there are to this module.
      * This is used to perform automatic cleanup and sharing. */
     uint32_t volatile   cRefs;
+    /** The module tag. */
+    uint64_t            uTag;
     /** The module name (short). */
     char const         *pszName;
     /** The module filename. Can be NULL. */
