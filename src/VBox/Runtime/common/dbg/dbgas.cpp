@@ -67,6 +67,8 @@ typedef struct RTDBGASMOD
     PRTDBGASMAP         pMapHead;
     /** Pointer to the next module with an identical name. */
     PRTDBGASMOD         pNextName;
+    /** The index into RTDBGASINT::papModules. */
+    uint32_t            iOrdinal;
 } RTDBGASMOD;
 
 /**
@@ -111,7 +113,7 @@ typedef struct RTDBGASINT
     uint32_t            cModules;
     /** Pointer to the module table.
      * The valid array length is given by cModules. */
-    PRTDBGASMOD         paModules;
+    PRTDBGASMOD        *papModules;
     /** AVL tree translating module handles to module entries. */
     AVLPVTREE           ModTree;
     /** AVL tree mapping addresses to modules. */
@@ -208,7 +210,7 @@ RTDECL(int) RTDbgAsCreate(PRTDBGAS phDbgAs, RTUINTPTR FirstAddr, RTUINTPTR LastA
     pDbgAs->cRefs       = 1;
     pDbgAs->hLock       = NIL_RTSEMRW;
     pDbgAs->cModules    = 0;
-    pDbgAs->paModules   = NULL;
+    pDbgAs->papModules  = NULL;
     pDbgAs->ModTree     = NULL;
     pDbgAs->MapTree     = NULL;
     pDbgAs->NameSpace   = NULL;
@@ -331,11 +333,20 @@ static void rtDbgAsDestroy(PRTDBGASINT pDbgAs)
     uint32_t i = pDbgAs->cModules;
     while (i-- > 0)
     {
-        RTDbgModRelease((RTDBGMOD)pDbgAs->paModules[i].Core.Key);
-        pDbgAs->paModules[i].Core.Key = NIL_RTDBGMOD;
+        PRTDBGASMOD pMod = pDbgAs->papModules[i];
+        AssertPtr(pMod);
+        if (VALID_PTR(pMod))
+        {
+            Assert(pMod->iOrdinal == i);
+            RTDbgModRelease((RTDBGMOD)pMod->Core.Key);
+            pMod->Core.Key = NIL_RTDBGMOD;
+            pMod->iOrdinal = UINT32_MAX;
+            RTMemFree(pMod);
+        }
+        pDbgAs->papModules[i] = NULL;
     }
-    RTMemFree(pDbgAs->paModules);
-    pDbgAs->paModules = NULL;
+    RTMemFree(pDbgAs->papModules);
+    pDbgAs->papModules = NULL;
 
     RTMemFree(pDbgAs);
 }
@@ -520,31 +531,27 @@ int rtDbgAsModuleLinkCommon(PRTDBGASINT pDbgAs, RTDBGMOD hDbgMod, RTDBGSEGIDX iS
          */
         if (!(pDbgAs->cModules % 32))
         {
-            void *pvNew = RTMemRealloc(pDbgAs->paModules, sizeof(pDbgAs->paModules[0]) * (pDbgAs->cModules + 32));
+            void *pvNew = RTMemRealloc(pDbgAs->papModules, sizeof(pDbgAs->papModules[0]) * (pDbgAs->cModules + 32));
             if (!pvNew)
                 return VERR_NO_MEMORY;
-            pDbgAs->paModules = (PRTDBGASMOD)pvNew;
-
-            /** @todo this rebuilding of the tree gets a bit silly... */
-            pDbgAs->ModTree = NULL;
-            for (uint32_t iMod = 0; iMod < pDbgAs->cModules; iMod++)
-            {
-                bool fRc = RTAvlPVInsert(&pDbgAs->ModTree, &pDbgAs->paModules[iMod].Core);
-                Assert(fRc); NOREF(fRc);
-            }
+            pDbgAs->papModules = (PRTDBGASMOD *)pvNew;
         }
-        pMod = &pDbgAs->paModules[pDbgAs->cModules];
-        pDbgAs->cModules++;
-
+        pMod = (PRTDBGASMOD)RTMemAlloc(sizeof(*pMod));
+        if (!pMod)
+            return VERR_NO_MEMORY;
         pMod->Core.Key  = hDbgMod;
         pMod->pMapHead  = NULL;
         pMod->pNextName = NULL;
-        if (!RTAvlPVInsert(&pDbgAs->ModTree, &pMod->Core))
+        if (RT_UNLIKELY(!RTAvlPVInsert(&pDbgAs->ModTree, &pMod->Core)))
         {
             AssertFailed();
             pDbgAs->cModules--;
+            RTMemFree(pMod);
             return VERR_INTERNAL_ERROR;
         }
+        pMod->iOrdinal = pDbgAs->cModules;
+        pDbgAs->papModules[pDbgAs->cModules] = pMod;
+        pDbgAs->cModules++;
         RTDbgModRetain(hDbgMod);
 
         /*
@@ -557,9 +564,10 @@ int rtDbgAsModuleLinkCommon(PRTDBGASINT pDbgAs, RTDBGMOD hDbgMod, RTDBGSEGIDX iS
             pName = (PRTDBGASNAME)RTMemAlloc(sizeof(*pName) + cchName + 1);
             if (!pName)
             {
+                RTDbgModRelease(hDbgMod);
                 pDbgAs->cModules--;
                 RTAvlPVRemove(&pDbgAs->ModTree, hDbgMod);
-                RTDbgModRelease(hDbgMod);
+                RTMemFree(pMod);
                 return VERR_NO_MEMORY;
             }
             pName->StrCore.cchString = cchName;
@@ -758,17 +766,21 @@ static void rtDbgAsModuleUnlinkMod(PRTDBGASINT pDbgAs, PRTDBGASMOD pMod)
     /*
      * Remove it from the module table by replacing it by the last entry.
      */
-    uint32_t iMod = pMod - &pDbgAs->paModules[0];
-    Assert(iMod < pDbgAs->cModules);
     pDbgAs->cModules--;
-    if (iMod <= pDbgAs->cModules)
+    uint32_t iMod = pMod->iOrdinal;
+    Assert(iMod <= pDbgAs->cModules);
+    if (iMod != pDbgAs->cModules)
     {
-        pNode = RTAvlPVRemove(&pDbgAs->ModTree, pDbgAs->paModules[pDbgAs->cModules].Core.Key);
-        Assert(pNode);
-        pDbgAs->paModules[iMod] = pDbgAs->paModules[pDbgAs->cModules];
-        bool fRc = RTAvlPVInsert(&pDbgAs->ModTree, &pMod->Core);
-        Assert(fRc); NOREF(fRc);
+        PRTDBGASMOD pTailMod = pDbgAs->papModules[pDbgAs->cModules];
+        pTailMod->iOrdinal = iMod;
+        pDbgAs->papModules[iMod] = pTailMod;
     }
+    pMod->iOrdinal = UINT32_MAX;
+
+    /*
+     * Free it.
+     */
+    RTMemFree(pMod);
 }
 
 
@@ -788,7 +800,7 @@ static void rtDbgAsModuleUnlinkMap(PRTDBGASINT pDbgAs, PRTDBGASMAP pMap)
 
     /* unlink */
     PRTDBGASMOD pMod = pMap->pMod;
-    if (pMod->pMapHead)
+    if (pMod->pMapHead == pMap)
         pMod->pMapHead = pMap->pNext;
     else
     {
@@ -941,7 +953,7 @@ RTDECL(RTDBGMOD) RTDbgAsModuleByIndex(RTDBGAS hDbgAs, uint32_t iModule)
     /*
      * Get, retain and return it.
      */
-    RTDBGMOD hMod = (RTDBGMOD)pDbgAs->paModules[iModule].Core.Key;
+    RTDBGMOD hMod = (RTDBGMOD)pDbgAs->papModules[iModule]->Core.Key;
     RTDbgModRetain(hMod);
 
     RTDBGAS_UNLOCK_READ(pDbgAs);
@@ -1320,19 +1332,19 @@ DECLINLINE(PRTDBGMOD) rtDbgAsSnapshotModuleTable(PRTDBGASINT pDbgAs, uint32_t *p
     RTDBGAS_LOCK_READ(pDbgAs);
 
     uint32_t iMod = *pcModules = pDbgAs->cModules;
-    PRTDBGMOD paModules = (PRTDBGMOD)RTMemTmpAlloc(sizeof(paModules[0]) * RT_MAX(iMod, 1));
-    if (paModules)
+    PRTDBGMOD pahModules = (PRTDBGMOD)RTMemTmpAlloc(sizeof(pahModules[0]) * RT_MAX(iMod, 1));
+    if (pahModules)
     {
         while (iMod-- > 0)
         {
-            RTDBGMOD hMod = (RTDBGMOD)pDbgAs->paModules[iMod].Core.Key;
-            paModules[iMod] = hMod;
+            RTDBGMOD hMod = (RTDBGMOD)pDbgAs->papModules[iMod]->Core.Key;
+            pahModules[iMod] = hMod;
             RTDbgModRetain(hMod);
         }
     }
 
     RTDBGAS_UNLOCK_READ(pDbgAs);
-    return paModules;
+    return pahModules;
 }
 
 
@@ -1447,33 +1459,33 @@ RTDECL(int) RTDbgAsSymbolByName(RTDBGAS hDbgAs, const char *pszSymbol, PRTDBGSYM
      * Iterate the modules, looking for the symbol.
      */
     uint32_t cModules;
-    PRTDBGMOD paModules = rtDbgAsSnapshotModuleTable(pDbgAs, &cModules);
-    if (!paModules)
+    PRTDBGMOD pahModules = rtDbgAsSnapshotModuleTable(pDbgAs, &cModules);
+    if (!pahModules)
         return VERR_NO_TMP_MEMORY;
 
     for (uint32_t i = 0; i < cModules; i++)
     {
         if (    cchModPat == 0
-            ||  RTStrSimplePatternNMatch(pachModPat, cchModPat, RTDbgModName(paModules[i]), RTSTR_MAX))
+            ||  RTStrSimplePatternNMatch(pachModPat, cchModPat, RTDbgModName(pahModules[i]), RTSTR_MAX))
         {
-            int rc = RTDbgModSymbolByName(paModules[i], pszSymbol, pSymbol);
+            int rc = RTDbgModSymbolByName(pahModules[i], pszSymbol, pSymbol);
             if (RT_SUCCESS(rc))
             {
-                if (rtDbgAsFindMappingAndAdjustSymbolValue(pDbgAs, paModules[i], pSymbol))
+                if (rtDbgAsFindMappingAndAdjustSymbolValue(pDbgAs, pahModules[i], pSymbol))
                 {
                     if (phMod)
-                        RTDbgModRetain(*phMod = paModules[i]);
+                        RTDbgModRetain(*phMod = pahModules[i]);
                     for (; i < cModules; i++)
-                        RTDbgModRelease(paModules[i]);
-                    RTMemTmpFree(paModules);
+                        RTDbgModRelease(pahModules[i]);
+                    RTMemTmpFree(pahModules);
                     return rc;
                 }
             }
         }
-        RTDbgModRelease(paModules[i]);
+        RTDbgModRelease(pahModules[i]);
     }
 
-    RTMemTmpFree(paModules);
+    RTMemTmpFree(pahModules);
     return VERR_SYMBOL_NOT_FOUND;
 }
 RT_EXPORT_SYMBOL(RTDbgAsSymbolByName);
@@ -1522,33 +1534,33 @@ RTDECL(int) RTDbgAsSymbolByNameA(RTDBGAS hDbgAs, const char *pszSymbol, PRTDBGSY
      * Iterate the modules, looking for the symbol.
      */
     uint32_t cModules;
-    PRTDBGMOD paModules = rtDbgAsSnapshotModuleTable(pDbgAs, &cModules);
-    if (!paModules)
+    PRTDBGMOD pahModules = rtDbgAsSnapshotModuleTable(pDbgAs, &cModules);
+    if (!pahModules)
         return VERR_NO_TMP_MEMORY;
 
     for (uint32_t i = 0; i < cModules; i++)
     {
         if (    cchModPat == 0
-            ||  RTStrSimplePatternNMatch(pachModPat, cchModPat, RTDbgModName(paModules[i]), RTSTR_MAX))
+            ||  RTStrSimplePatternNMatch(pachModPat, cchModPat, RTDbgModName(pahModules[i]), RTSTR_MAX))
         {
-            int rc = RTDbgModSymbolByNameA(paModules[i], pszSymbol, ppSymbol);
+            int rc = RTDbgModSymbolByNameA(pahModules[i], pszSymbol, ppSymbol);
             if (RT_SUCCESS(rc))
             {
-                if (rtDbgAsFindMappingAndAdjustSymbolValue(pDbgAs, paModules[i], *ppSymbol))
+                if (rtDbgAsFindMappingAndAdjustSymbolValue(pDbgAs, pahModules[i], *ppSymbol))
                 {
                     if (phMod)
-                        RTDbgModRetain(*phMod = paModules[i]);
+                        RTDbgModRetain(*phMod = pahModules[i]);
                     for (; i < cModules; i++)
-                        RTDbgModRelease(paModules[i]);
-                    RTMemTmpFree(paModules);
+                        RTDbgModRelease(pahModules[i]);
+                    RTMemTmpFree(pahModules);
                     return rc;
                 }
             }
         }
-        RTDbgModRelease(paModules[i]);
+        RTDbgModRelease(pahModules[i]);
     }
 
-    RTMemTmpFree(paModules);
+    RTMemTmpFree(pahModules);
     return VERR_SYMBOL_NOT_FOUND;
 }
 RT_EXPORT_SYMBOL(RTDbgAsSymbolByNameA);
