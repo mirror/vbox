@@ -499,7 +499,7 @@ int rtDbgAsModuleLinkCommon(PRTDBGASINT pDbgAs, RTDBGMOD hDbgMod, RTDBGSEGIDX iS
         }
         pAdjMod = (PRTDBGASMAP)RTAvlrUIntPtrGetBestFit(&pDbgAs->MapTree, Addr, true /* fAbove */);
         if (     pAdjMod
-            &&   pAdjMod->Core.Key >= Addr + cb - 1)
+            &&   pAdjMod->Core.Key <= Addr + cb - 1)
         {
             if (!(fFlags & RTDBGASLINK_FLAGS_REPLACE))
                 return VERR_ADDRESS_CONFLICT;
@@ -524,6 +524,14 @@ int rtDbgAsModuleLinkCommon(PRTDBGASINT pDbgAs, RTDBGMOD hDbgMod, RTDBGSEGIDX iS
             if (!pvNew)
                 return VERR_NO_MEMORY;
             pDbgAs->paModules = (PRTDBGASMOD)pvNew;
+
+            /** @todo this rebuilding of the tree gets a bit silly... */
+            pDbgAs->ModTree = NULL;
+            for (uint32_t iMod = 0; iMod < pDbgAs->cModules; iMod++)
+            {
+                bool fRc = RTAvlPVInsert(&pDbgAs->ModTree, &pDbgAs->paModules[iMod].Core);
+                Assert(fRc); NOREF(fRc);
+            }
         }
         pMod = &pDbgAs->paModules[pDbgAs->cModules];
         pDbgAs->cModules++;
@@ -550,12 +558,15 @@ int rtDbgAsModuleLinkCommon(PRTDBGASINT pDbgAs, RTDBGMOD hDbgMod, RTDBGSEGIDX iS
             if (!pName)
             {
                 pDbgAs->cModules--;
+                RTAvlPVRemove(&pDbgAs->ModTree, hDbgMod);
                 RTDbgModRelease(hDbgMod);
                 return VERR_NO_MEMORY;
             }
             pName->StrCore.cchString = cchName;
             pName->StrCore.pszString = (char *)memcpy(pName + 1, pszName, cchName + 1);
             pName->pHead = pMod;
+            if (!RTStrSpaceInsert(&pDbgAs->NameSpace, &pName->StrCore))
+                AssertFailed();
         }
         else
         {
@@ -713,7 +724,8 @@ static void rtDbgAsModuleUnlinkMod(PRTDBGASINT pDbgAs, PRTDBGASMOD pMod)
     /*
      * Unlink it from the name.
      */
-    PRTDBGASNAME pName = (PRTDBGASNAME)RTStrSpaceGet(&pDbgAs->NameSpace, RTDbgModName((RTDBGMOD)pMod->Core.Key));
+    const char  *pszName = RTDbgModName((RTDBGMOD)pMod->Core.Key);
+    PRTDBGASNAME pName   = (PRTDBGASNAME)RTStrSpaceGet(&pDbgAs->NameSpace, pszName);
     AssertReturnVoid(pName);
 
     if (pName->pHead == pMod)
@@ -750,7 +762,13 @@ static void rtDbgAsModuleUnlinkMod(PRTDBGASINT pDbgAs, PRTDBGASMOD pMod)
     Assert(iMod < pDbgAs->cModules);
     pDbgAs->cModules--;
     if (iMod <= pDbgAs->cModules)
+    {
+        pNode = RTAvlPVRemove(&pDbgAs->ModTree, pDbgAs->paModules[pDbgAs->cModules].Core.Key);
+        Assert(pNode);
         pDbgAs->paModules[iMod] = pDbgAs->paModules[pDbgAs->cModules];
+        bool fRc = RTAvlPVInsert(&pDbgAs->ModTree, &pMod->Core);
+        Assert(fRc); NOREF(fRc);
+    }
 }
 
 
@@ -766,7 +784,7 @@ static void rtDbgAsModuleUnlinkMap(PRTDBGASINT pDbgAs, PRTDBGASMAP pMap)
 {
     /* remove from the tree */
     PAVLRUINTPTRNODECORE pNode = RTAvlrUIntPtrRemove(&pDbgAs->MapTree, pMap->Core.Key);
-    Assert(pNode);
+    Assert(pNode == &pMap->Core);
 
     /* unlink */
     PRTDBGASMOD pMod = pMap->pMod;
@@ -774,7 +792,7 @@ static void rtDbgAsModuleUnlinkMap(PRTDBGASINT pDbgAs, PRTDBGASMAP pMap)
         pMod->pMapHead = pMap->pNext;
     else
     {
-        bool        fFound = false;
+        bool fFound = false;
         for (PRTDBGASMAP pCur = pMod->pMapHead; pCur; pCur = pCur->pNext)
             if (pCur->pNext == pMap)
             {
@@ -1333,7 +1351,7 @@ static bool rtDbgAsFindMappingAndAdjustSymbolValue(PRTDBGASINT pDbgAs, RTDBGMOD 
      * Absolute segments needs no fixing.
      */
     RTDBGSEGIDX const iSeg = pSymbol->iSeg;
-    if (iSeg)
+    if (iSeg == RTDBGSEGIDX_ABS)
         return true;
 
     RTDBGAS_LOCK_READ(pDbgAs);
