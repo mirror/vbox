@@ -375,6 +375,40 @@ RTDECL(bool) RTPathStartsWith(const char *pszPath, const char *pszParentPath);
  */
 RTDECL(int) RTPathAppend(char *pszPath, size_t cbPathDst, const char *pszAppend);
 
+/**
+ * Callback for RTPathTraverseList that's called for each element.
+ *
+ * @returns IPRT style status code. Return VINF_TRY_AGAIN to continue, any other
+ *          value will abort the traversing and be returned to the caller.
+ *
+ * @param   pchPath         Pointer to the start of the current path. This is
+ *                          not null terminated.
+ * @param   cchPath         The length of the path.
+ * @param   pvUser1         The first user parameter.
+ * @param   pvUser2         The second user parameter.
+ */
+typedef DECLCALLBACK(int) FNRTPATHTRAVERSER(char const *pchPath, size_t cchPath, void *pvUser1, void *pvUser2);
+/** Pointer to a FNRTPATHTRAVERSER. */
+typedef FNRTPATHTRAVERSER *PFNRTPATHTRAVERSER;
+
+/**
+ * Traverses a string that can contain multiple paths separated by a special
+ * character.
+ *
+ * @returns IPRT style status code from the callback or VERR_END_OF_STRING if
+ *          the callback returned VINF_TRY_AGAIN for all paths in the string.
+ *
+ * @param   pszPathList     The string to traverse.
+ * @param   chSep           The separator character.  Using the null terminator
+ *                          is fine, but the result will simply be that there
+ *                          will only be one callback for the entire string
+ *                          (save any leading white space).
+ * @param   pfnCallback     The callback.
+ * @param   pvUser1         First user argument for the callback.
+ * @param   pvUser2         Second user argument for the callback.
+ */
+RTDECL(int) RTPathTraverseList(const char *pszPathList, char chSep, PFNRTPATHTRAVERSER pfnCallback, void *pvUser1, void *pvUser2);
+
 
 #ifdef IN_RING3
 

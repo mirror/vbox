@@ -255,6 +255,7 @@ RuntimeR3_SOURCES       = \
 	common/path/RTPathStripExt.cpp \
 	common/path/RTPathStripFilename.cpp \
 	common/path/RTPathStripTrailingSlash.cpp \
+	common/path/RTPathTraverseList.cpp \
 	common/path/comparepaths.cpp \
 	common/rand/rand.cpp \
 	common/rand/randadv.cpp \
