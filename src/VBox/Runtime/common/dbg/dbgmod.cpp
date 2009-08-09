@@ -551,6 +551,49 @@ RT_EXPORT_SYMBOL(RTDbgModImageSize);
 
 
 /**
+ * Gets the module tag value if any.
+ *
+ * @returns The tag. 0 if hDbgMod is invalid.
+ *
+ * @param   hDbgMod         The module handle.
+ */
+RTDECL(uint64_t) RTDbgModGetTag(RTDBGMOD hDbgMod)
+{
+    PRTDBGMODINT pDbgMod = hDbgMod;
+    RTDBGMOD_VALID_RETURN_RC(pDbgMod, 0);
+    return pDbgMod->uTag;
+}
+RT_EXPORT_SYMBOL(RTDbgModGetTag);
+
+
+/**
+ * Tags or untags the module.
+ *
+ * @returns IPRT status code.
+ * @retval  VERR_INVALID_HANDLE if hDbgMod is invalid.
+ *
+ * @param   hDbgMod         The module handle.
+ * @param   uTag            The tag value.  The convention is that 0 is no tag
+ *                          and any other value means it's tagged.  It's adviced
+ *                          to use some kind of unique number like an address
+ *                          (global or string cache for instance) to avoid
+ *                          collisions with other users
+ */
+RTDECL(int) RTDbgModSetTag(RTDBGMOD hDbgMod, uint64_t uTag)
+{
+    PRTDBGMODINT pDbgMod = hDbgMod;
+    RTDBGMOD_VALID_RETURN_RC(pDbgMod, VERR_INVALID_HANDLE);
+    RTDBGMOD_LOCK(pDbgMod);
+
+    pDbgMod->uTag = uTag;
+
+    RTDBGMOD_UNLOCK(pDbgMod);
+    return VINF_SUCCESS;
+}
+RT_EXPORT_SYMBOL(RTDbgModSetTag);
+
+
+/**
  * Adds a segment to the module. Optional feature.
  *
  * This method is intended used for manually constructing debug info for a
