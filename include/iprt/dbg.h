@@ -665,6 +665,30 @@ RTDECL(RTDBGSEGIDX) RTDbgModRvaToSegOff(RTDBGMOD hDbgMod, RTUINTPTR uRva, PRTUIN
  */
 RTDECL(RTUINTPTR)   RTDbgModImageSize(RTDBGMOD hDbgMod);
 
+/**
+ * Gets the module tag value if any.
+ *
+ * @returns The tag. 0 if hDbgMod is invalid.
+ *
+ * @param   hDbgMod         The module handle.
+ */
+RTDECL(uint64_t)    RTDbgModGetTag(RTDBGMOD hDbgMod);
+
+/**
+ * Tags or untags the module.
+ *
+ * @returns IPRT status code.
+ * @retval  VERR_INVALID_HANDLE if hDbgMod is invalid.
+ *
+ * @param   hDbgMod         The module handle.
+ * @param   uTag            The tag value.  The convention is that 0 is no tag
+ *                          and any other value means it's tagged.  It's adviced
+ *                          to use some kind of unique number like an address
+ *                          (global or string cache for instance) to avoid
+ *                          collisions with other users
+ */
+RTDECL(int)         RTDbgModSetTag(RTDBGMOD hDbgMod, uint64_t uTag);
+
 
 /**
  * Adds a segment to the module. Optional feature.
