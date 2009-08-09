@@ -588,7 +588,7 @@ static int dbgfR3AsSearchPath(const char *pszFilename, const char *pszPath, PFND
         while (RT_C_IS_BLANK(*psz))
             psz++;
 
-        /* Fine the end of this element. */
+        /* Find the end of this element. */
         const char *pszNext;
         const char *pszEnd = strchr(psz, ';');
         if (!pszEnd)

@@ -295,6 +295,11 @@ typedef const DBGCVAR *PCDBGCVAR;
         } while (0)
 
 
+/** Pointer to command descriptor. */
+typedef struct DBGCCMD *PDBGCCMD;
+/** Pointer to const command descriptor. */
+typedef const struct DBGCCMD *PCDBGCCMD;
+
 /** Pointer to helper functions for commands. */
 typedef struct DBGCCMDHLP *PDBGCCMDHLP;
 
@@ -405,20 +410,6 @@ typedef DECLCALLBACK(int) FNDBGCHLPMEMWRITE(PDBGCCMDHLP pCmdHlp, PVM pVM, const 
 typedef FNDBGCHLPMEMWRITE *PFNDBGCHLPMEMWRITE;
 
 
-/**
- * Evaluates an expression.
- * (Hopefully the parser and functions are fully reentrant.)
- *
- * @returns VBox status code appropriate to return from a command.
- * @param   pCmdHlp     Pointer to the command callback structure.
- * @param   pResult     Where to store the result.
- * @param   pszExpr     The expression. Format string with the format DBGC extensions.
- * @param   ...         Format arguments.
- */
-typedef DECLCALLBACK(int) FNDBGCHLPEVAL(PDBGCCMDHLP pCmdHlp, PDBGCVAR pResult, const char *pszExpr, ...);
-/** Pointer to a FNDBGCHLPEVAL() function. */
-typedef FNDBGCHLPEVAL *PFNDBGCHLPEVAL;
-
 
 /**
  * Executes command an expression.
@@ -453,10 +444,32 @@ typedef struct DBGCCMDHLP
     PFNDBGCHLPMEMREAD       pfnMemRead;
     /** Pointer to a FNDBGCHLPMEMWRITE() function. */
     PFNDBGCHLPMEMWRITE      pfnMemWrite;
-    /** Pointer to a FNDBGCHLPEVAL() function. */
-    PFNDBGCHLPEVAL          pfnEval;
     /** Pointer to a FNDBGCHLPEXEC() function. */
     PFNDBGCHLPEXEC          pfnExec;
+
+    /**
+     * Evaluates an expression.
+     * (Hopefully the parser and functions are fully reentrant.)
+     *
+     * @returns VBox status code appropriate to return from a command.
+     * @param   pCmdHlp     Pointer to the command callback structure.
+     * @param   pResult     Where to store the result.
+     * @param   pszExpr     The expression. Format string with the format DBGC extensions.
+     * @param   va          Format arguments.
+     */
+    DECLCALLBACKMEMBER(int, pfnEvalV)(PDBGCCMDHLP pCmdHlp, PDBGCVAR pResult, const char *pszExpr, va_list va);
+
+    /**
+     * Print an error and fail the current command.
+     *
+     * @returns VBox status code to pass upwards.
+     *
+     * @param   pCmdHlp     Pointer to the command callback structure.
+     * @param   pCmd        The failing command.
+     * @param   pszFormat   The error message format string.
+     * @param   va          Format arguments.
+     */
+    DECLCALLBACKMEMBER(int, pfnFailV)(PDBGCCMDHLP pCmdHlp, PCDBGCCMD pCmd, const char *pszFormat, va_list va);
 
     /**
      * Converts a DBGC variable to a DBGF address structure.
@@ -482,6 +495,7 @@ typedef struct DBGCCMDHLP
 
 
 #ifdef IN_RING3
+
 /**
  * Command helper for writing formatted text to the debug console.
  *
@@ -494,10 +508,12 @@ typedef struct DBGCCMDHLP
 DECLINLINE(int) DBGCCmdHlpPrintf(PDBGCCMDHLP pCmdHlp, const char *pszFormat, ...)
 {
     va_list va;
-    int rc;
+    int     rc;
+
     va_start(va, pszFormat);
     rc = pCmdHlp->pfnPrintfV(pCmdHlp, NULL, pszFormat, va);
     va_end(va);
+
     return rc;
 }
 
@@ -507,9 +523,11 @@ DECLINLINE(int) DBGCCmdHlpPrintf(PDBGCCMDHLP pCmdHlp, const char *pszFormat, ...
 DECLINLINE(int) DBGCCmdHlpVBoxError(PDBGCCMDHLP pCmdHlp, int rc, const char *pszFormat, ...)
 {
     va_list va;
+
     va_start(va, pszFormat);
     rc = pCmdHlp->pfnVBoxErrorV(pCmdHlp, rc, pszFormat, va);
     va_end(va);
+
     return rc;
 }
 
@@ -520,13 +538,54 @@ DECLINLINE(int) DBGCCmdHlpMemRead(PDBGCCMDHLP pCmdHlp, PVM pVM, void *pvBuffer, 
 {
     return pCmdHlp->pfnMemRead(pCmdHlp, pVM, pvBuffer, cbRead, pVarPointer, pcbRead);
 }
+
+/**
+ * Evaluates an expression.
+ * (Hopefully the parser and functions are fully reentrant.)
+ *
+ * @returns VBox status code appropriate to return from a command.
+ * @param   pCmdHlp     Pointer to the command callback structure.
+ * @param   pResult     Where to store the result.
+ * @param   pszExpr     The expression. Format string with the format DBGC extensions.
+ * @param   ...         Format arguments.
+ */
+DECLINLINE(int) DBGCCmdHlpEval(PDBGCCMDHLP pCmdHlp, PDBGCVAR pResult, const char *pszExpr, ...)
+{
+    va_list va;
+    int     rc;
+
+    va_start(va, pszExpr);
+    rc = pCmdHlp->pfnEvalV(pCmdHlp, pResult, pszExpr, va);
+    va_end(va);
+
+    return rc;
+}
+
+/**
+ * Print an error and fail the current command.
+ *
+ * @returns VBox status code to pass upwards.
+ *
+ * @param   pCmdHlp     Pointer to the command callback structure.
+ * @param   pCmd        The failing command.
+ * @param   pszFormat   The error message format string.
+ * @param   ...         Format arguments.
+ */
+DECLINLINE(int) DBGCCmdHlpFail(PDBGCCMDHLP pCmdHlp, PCDBGCCMD pCmd, const char *pszFormat, ...)
+{
+    va_list va;
+    int     rc;
+
+    va_start(va, pszFormat);
+    rc = pCmdHlp->pfnFailV(pCmdHlp, pCmd, pszFormat, va);
+    va_end(va);
+
+    return rc;
+}
+
 #endif /* IN_RING3 */
 
 
-/** Pointer to command descriptor. */
-typedef struct DBGCCMD *PDBGCCMD;
-/** Pointer to const command descriptor. */
-typedef const struct DBGCCMD *PCDBGCCMD;
 
 /**
  * Command handler.
@@ -728,6 +787,54 @@ DBGDECL(int)    DBGCTcpCreate(PVM pVM, void **ppvUser);
  * @param   pvData      Instance data set by DBGCTcpCreate().
  */
 DBGDECL(int)    DBGCTcpTerminate(PVM pVM, void *pvData);
+
+
+/** @defgroup grp_dbgc_plug_in      The DBGC Plug-in Interface
+ * @{
+ */
+
+/** The plug-in module name prefix. */
+#define DBGC_PLUG_IN_PREFIX         "DBGCPlugIn"
+
+/** The name of the plug-in entry point (FNDBGCPLUGIN) */
+#define DBGC_PLUG_IN_ENTRYPOINT     "DBGCPlugInEntry"
+
+/**
+ * DBGC plug-in operations.
+ */
+typedef enum DBGCPLUGINOP
+{
+    /** The usual invalid first value. */
+    DBGCPLUGINOP_INVALID,
+    /** Initialize the plug-in, register all the stuff.
+     * The plug-in will be unloaded on failure.
+     * uArg: The VirtualBox version (major+minor). */
+    DBGCPLUGINOP_INIT,
+    /** Terminate the plug-ing, deregister all the stuff.
+     * The plug-in will be unloaded after this call regardless of the return
+     * code. */
+    DBGCPLUGINOP_TERM,
+    /** The usual 32-bit hack. */
+    DBGCPLUGINOP_32BIT_HACK = 0x7fffffff
+} DBGCPLUGINOP;
+
+/**
+ * DBGC plug-in main entry point.
+ *
+ * @returns VBox status code.
+ *
+ * @param   enmOperation    The operation.
+ * @param   pVM             The VM handle. This may be NULL.
+ * @param   uArg            Extra argument.
+ */
+typedef DECLCALLBACK(int) FNDBGCPLUGIN(DBGCPLUGINOP enmOperation, PVM pVM, uintptr_t uArg);
+/** Pointer to a FNDBGCPLUGIN. */
+typedef FNDBGCPLUGIN *PFNDBGCPLUGIN;
+
+/** @copydoc FNDBGCPLUGIN */
+DECLEXPORT(int) DBGCPlugInEntry(DBGCPLUGINOP enmOperation, PVM pVM, uintptr_t uArg);
+
+/** @} */
 
 
 RT_C_DECLS_END
