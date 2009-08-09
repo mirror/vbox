@@ -379,7 +379,10 @@ static int dhcp_decode_request(PNATState pData, struct bootp_t *bp, const uint8_
         dhcp_stat = SELECTING;
         Assert((bp->bp_ciaddr.s_addr == INADDR_ANY));
         Assert((*(uint32_t *)(req_ip + 2) == bc->addr.s_addr)); /*the same address as in offer*/
+#if 0
+        /* DSL xid in request differ from offer */
         Assert((bp->bp_xid == bc->xid));
+#endif
     }
     else
     {
@@ -607,74 +610,6 @@ reply:
 
 static void bootp_reply(PNATState pData, struct mbuf *m, int off, uint16_t flags)
 {
-#if 0
-    BOOTPClient *bc;
-    struct mbuf *m; /* XXX: @todo vasily - it'd be better to reuse this mbuf here */
-    struct bootp_t *bp = mtod(m0, struct bootp_t *);
-    struct bootp_t *rbp;
-    struct sockaddr_in saddr, daddr;
-    int dhcp_msg_type, val;
-    uint8_t *q;
-    struct in_addr requested_ip; /* the requested IP in DHCPREQUEST */
-    int send_nak = 0;
-
-    /* extract exact DHCP msg type */
-    requested_ip.s_addr = 0xffffffff;
-    dhcp_decode(bp, bp->bp_vend, DHCP_OPT_LEN, &dhcp_msg_type, &requested_ip);
-    Log(("bootp packet op=%d msgtype=%d\n", bp->bp_op, dhcp_msg_type));
-
-    if (dhcp_msg_type == 0)
-        dhcp_msg_type = DHCPREQUEST; /* Force reply for old BOOTP clients */
-
-    if (dhcp_msg_type == DHCPRELEASE)
-    {
-        int rc;
-        rc = release_addr(pData, &bp->bp_ciaddr);
-        LogRel(("NAT: %s %R[IP4]\n",
-                rc ? "DHCP released IP address" : "Ignored DHCP release for IP address",
-                &bp->bp_ciaddr));
-        /* This message is not to be answered in any way. */
-        return;
-    }
-    if (   dhcp_msg_type != DHCPDISCOVER
-        && dhcp_msg_type != DHCPREQUEST)
-        return;
-
-
-    if (dhcp_msg_type == DHCPDISCOVER)
-    {
-        /* Do not allocate a new lease for clients that forgot that they had a lease. */
-    }
-    else if (dhcp_msg_type == DHCPREQUEST)
-    {
-        *q++ = RFC2132_MSG_TYPE;
-        *q++ = 1;
-        if (requested_ip.s_addr != daddr.sin_addr.s_addr)
-        {
-            /* network changed */
-            *q++ = DHCPNAK;
-            send_nak = 1;
-        }
-        else
-            *q++ = DHCPACK;
-    }
-
-    if (send_nak)
-        LogRel(("NAT: Client requested IP address %R[IP4] -- sending NAK\n",
-                &requested_ip));
-    else
-        LogRel(("NAT: DHCP offered IP address %R[IP4]\n",
-                &daddr.sin_addr));
-    if (   dhcp_msg_type == DHCPDISCOVER
-        || dhcp_msg_type == DHCPREQUEST)
-    {
-        FILL_BOOTP_EXT(q, RFC2132_SRV_ID, 4, &saddr.sin_addr);
-    }
-
-    if (!send_nak &&
-        (   dhcp_msg_type == DHCPDISCOVER
-         || dhcp_msg_type == DHCPREQUEST))
-#endif
     struct sockaddr_in saddr, daddr; 
     struct bootp_t *rbp = NULL;
     uint8_t *q = NULL;
