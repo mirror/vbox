@@ -1514,7 +1514,7 @@ static int HbaInterruptStatus_w(PAHCI ahci, uint32_t iReg, uint32_t u32Value)
             unsigned i = 0;
 
             /* Check if the cleared ports have a interrupt status bit set. */
-            while (u32Value > 0)
+            while ((u32Value > 0) && (i < AHCI_MAX_NR_PORTS_IMPL))
             {
                 if (u32Value & 0x01)
                 {
@@ -1816,8 +1816,6 @@ static void ahciPortSwReset(PAHCIPort pAhciPort)
     if (pAhciPort->pDrvBase)
     {
         pAhciPort->regCMD |= AHCI_PORT_CMD_CPS; /* Indicate that there is a device on that port */
-        /* We received a COMINIT signal */
-        pAhciPort->regTFD  |= ATA_STAT_BUSY;
 
         if (pAhciPort->fPoweredOn)
         {
