@@ -123,7 +123,7 @@ RTDECL(void) RTSpinlockAcquireNoInts(RTSPINLOCK Spinlock, PRTSPINLOCKTMP pTmp)
     pTmp->uFlags = ASMIntDisableFlags();
     mutex_enter(&pThis->Mtx);
 
-    RT_ASSERT_PREEMPT_CPUID_SPIN_ACQUIRED()
+    RT_ASSERT_PREEMPT_CPUID_SPIN_ACQUIRED();
 }
 
 
@@ -154,7 +154,7 @@ RTDECL(void) RTSpinlockAcquire(RTSPINLOCK Spinlock, PRTSPINLOCKTMP pTmp)
 
     mutex_enter(&pThis->Mtx);
 
-    RT_ASSERT_PREEMPT_CPUID_SPIN_ACQUIRED()
+    RT_ASSERT_PREEMPT_CPUID_SPIN_ACQUIRED();
 }
 
 
