@@ -679,9 +679,9 @@ static const DBGCCMD    g_aCmds[] =
     { "pgmsync",       0, 0,        NULL,                     0,            NULL,               0,          pgmR3CmdSync,       "",                     "Sync the CR3 page." },
     { "pgmerror",      0, 1,        &g_aPgmErrorArgs[0],      1,            NULL,               0,          pgmR3CmdError,      "",                     "Enables inject runtime of errors into parts of PGM." },
     { "pgmerroroff",   0, 1,        &g_aPgmErrorArgs[0],      1,            NULL,               0,          pgmR3CmdError,      "",                     "Disables inject runtime errors into parts of PGM." },
-#ifdef VBOX_STRICT                                            
+#ifdef VBOX_STRICT
     { "pgmassertcr3",  0, 0,        NULL,                     0,            NULL,               0,          pgmR3CmdAssertCR3,  "",                     "Check the shadow CR3 mapping." },
-#endif                                                        
+#endif
     { "pgmsyncalways", 0, 0,        NULL,                     0,            NULL,               0,          pgmR3CmdSyncAlways, "",                     "Toggle permanent CR3 syncing." },
     { "pgmphystofile", 1, 2,        &g_aPgmPhysToFileArgs[0], 2,            NULL,               0,          pgmR3CmdPhysToFile, "",                     "Save the physical memory to file." },
 };
@@ -2033,6 +2033,14 @@ VMMR3DECL(void) PGMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
                 pCur->pSelfRC = MMHyperCCToRC(pVM, pCur);
         pgmR3PhysRelinkRamRanges(pVM);
     }
+
+    /*
+     * Update the pSelfRC pointer of the MMIO2 ram ranges since they might not
+     * be mapped and thus not included in the above exercise.
+     */
+    for (PPGMMMIO2RANGE pCur = pVM->pgm.s.pMmio2RangesR3; pCur; pCur = pCur->pNextR3)
+        if (!(pCur->RamRange.fFlags & PGM_RAM_RANGE_FLAGS_FLOATING))
+            pCur->RamRange.pSelfRC = MMHyperCCToRC(pVM, &pCur->RamRange);
 
     /*
      * Update the two page directories with all page table mappings.
@@ -5019,8 +5027,8 @@ static DECLCALLBACK(int) pgmR3CmdPhysToFile(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp,
     RT_ZERO(abZeroPg);
 
     pgmLock(pVM);
-    for (PPGMRAMRANGE pRam = pVM->pgm.s.pRamRangesR3; 
-          pRam && pRam->GCPhys < GCPhysEnd && RT_SUCCESS(rc); 
+    for (PPGMRAMRANGE pRam = pVM->pgm.s.pRamRangesR3;
+          pRam && pRam->GCPhys < GCPhysEnd && RT_SUCCESS(rc);
           pRam = pRam->pNextR3)
     {
         /* fill the gap */
@@ -5039,7 +5047,7 @@ static DECLCALLBACK(int) pgmR3CmdPhysToFile(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp,
             if (PGM_PAGE_IS_ZERO(pPage))
             {
                 if (fIncZeroPgs)
-                {    
+                {
                     rc = RTFileWrite(hFile, abZeroPg, PAGE_SIZE, NULL);
                     if (RT_FAILURE(rc))
                         pCmdHlp->pfnPrintf(pCmdHlp, NULL, "error: RTFileWrite -> %Rrc at GCPhys=%RGp.\n", rc, GCPhys);
@@ -5074,7 +5082,7 @@ static DECLCALLBACK(int) pgmR3CmdPhysToFile(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp,
                     case PGMPAGETYPE_MMIO2_ALIAS_MMIO:
                     case PGMPAGETYPE_MMIO:
                         if (fIncZeroPgs)
-                        {    
+                        {
                             rc = RTFileWrite(hFile, abZeroPg, PAGE_SIZE, NULL);
                             if (RT_FAILURE(rc))
                                 pCmdHlp->pfnPrintf(pCmdHlp, NULL, "error: RTFileWrite -> %Rrc at GCPhys=%RGp.\n", rc, GCPhys);
