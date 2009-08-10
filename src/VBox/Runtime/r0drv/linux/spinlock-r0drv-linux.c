@@ -34,12 +34,14 @@
 *******************************************************************************/
 #include "the-linux-kernel.h"
 #include "internal/iprt.h"
-
 #include <iprt/spinlock.h>
-#include <iprt/err.h>
-#include <iprt/alloc.h>
+
 #include <iprt/assert.h>
 #include <iprt/asm.h>
+#include <iprt/err.h>
+#include <iprt/mem.h>
+#include <iprt/mp.h>
+#include <iprt/thread.h>
 #include "internal/magics.h"
 
 
@@ -133,11 +135,20 @@ RT_EXPORT_SYMBOL(RTSpinlockReleaseNoInts);
 RTDECL(void) RTSpinlockAcquire(RTSPINLOCK Spinlock, PRTSPINLOCKTMP pTmp)
 {
     PRTSPINLOCKINTERNAL pSpinlockInt = (PRTSPINLOCKINTERNAL)Spinlock;
+    RT_ASSERT_PREEMPT_CPUID_VAR();
     AssertMsg(pSpinlockInt && pSpinlockInt->u32Magic == RTSPINLOCK_MAGIC,
               ("pSpinlockInt=%p u32Magic=%08x\n", pSpinlockInt, pSpinlockInt ? (int)pSpinlockInt->u32Magic : 0));
     NOREF(pSpinlockInt); NOREF(pTmp);
 
     spin_lock(&pSpinlockInt->Spinlock);
+
+#ifdef RT_MORE_STRICT
+    {
+        RTCPUID const idAssertCpuNow = RTMpCpuId(); /* Spinlocks are not preemptible, so we cannot be rescheduled. */
+        AssertMsg(idAssertCpu == idAssertCpuNow || idAssertCpu == NIL_RTCPUID,  ("%#x, %#x\n", idAssertCpu, idAssertCpuNow));
+        pTmp->flFlags = idAssertCpuNow;
+    }
+#endif
 }
 RT_EXPORT_SYMBOL(RTSpinlockAcquire);
 
@@ -145,11 +156,21 @@ RT_EXPORT_SYMBOL(RTSpinlockAcquire);
 RTDECL(void) RTSpinlockRelease(RTSPINLOCK Spinlock, PRTSPINLOCKTMP pTmp)
 {
     PRTSPINLOCKINTERNAL pSpinlockInt = (PRTSPINLOCKINTERNAL)Spinlock;
+#ifdef RT_MORE_STRICT
+    RTCPUID const idAssertCpu = pTmp->flFlags;
+    pTmp->flFlags = 0;
+    RT_ASSERT_PREEMPT_CPUID();
+#endif
     AssertMsg(pSpinlockInt && pSpinlockInt->u32Magic == RTSPINLOCK_MAGIC,
               ("pSpinlockInt=%p u32Magic=%08x\n", pSpinlockInt, pSpinlockInt ? (int)pSpinlockInt->u32Magic : 0));
     NOREF(pSpinlockInt); NOREF(pTmp);
 
     spin_unlock(&pSpinlockInt->Spinlock);
+
+#ifdef RT_MORE_STRICT
+    if (!RTThreadPreemptIsEnabled(NIL_RTTHREAD))
+        RT_ASSERT_PREEMPT_CPUID();
+#endif
 }
 RT_EXPORT_SYMBOL(RTSpinlockRelease);
 

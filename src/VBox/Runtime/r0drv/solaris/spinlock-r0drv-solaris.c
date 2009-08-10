@@ -140,10 +140,13 @@ RTDECL(void) RTSpinlockAcquire(RTSPINLOCK Spinlock, PRTSPINLOCKTMP pTmp)
     NOREF(pTmp);
 
     mutex_enter(&pSpinlockInt->Mtx);
-    RT_ASSERT_PREEMPT_CPUID();
+
 #ifdef RT_MORE_STRICT
-    /* Spinlocks are not preemptible, so we cannot be rescheduled. */
-    pTmp->uFlags = idAssertCpu != NIL_RTCPUID ? idAssertCpu : RTMpCpuId();
+    {
+        RTCPUID const idAssertCpuNow = RTMpCpuId(); /* Spinlocks are not preemptible, so we cannot be rescheduled. */
+        AssertMsg(idAssertCpu == idAssertCpuNow || idAssertCpu == NIL_RTCPUID,  ("%#x, %#x\n", idAssertCpu, idAssertCpuNow));
+        pTmp->uFlags = idAssertCpuNow;
+    }
 #endif
 }
 
@@ -154,12 +157,17 @@ RTDECL(void) RTSpinlockRelease(RTSPINLOCK Spinlock, PRTSPINLOCKTMP pTmp)
 #ifdef RT_MORE_STRICT
     RTCPUID const idAssertCpu = pTmp->uFlags;
     pTmp->uFlags = 0;
+    RT_ASSERT_PREEMPT_CPUID();
 #endif
     AssertPtr(pSpinlockInt);
     Assert(pSpinlockInt->u32Magic == RTSPINLOCK_MAGIC);
-    RT_ASSERT_PREEMPT_CPUID();
     NOREF(pTmp);
 
     mutex_exit(&pSpinlockInt->Mtx);
+
+#ifdef RT_MORE_STRICT
+    if (!RTThreadPreemptIsEnabled(NIL_RTTHREAD))
+        RT_ASSERT_PREEMPT_CPUID();
+#endif
 }
 
