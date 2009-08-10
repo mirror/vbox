@@ -136,6 +136,9 @@ void printUsage(USAGECATEGORY u64Cmd)
                  "                            [--cpus <number>]\n"
                  "                            [--monitorcount <number>]\n"
                  "                            [--accelerate3d <on|off>]\n"
+#ifdef VBOX_WITH_VIDEOHWACCEL
+                 "                            [--accelerate2dvideo <on|off>]\n"
+#endif
                  "                            [--bioslogofadein on|off]\n"
                  "                            [--bioslogofadeout on|off]\n"
                  "                            [--bioslogodisplaytime <msec>]\n"
