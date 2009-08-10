@@ -69,6 +69,9 @@ int handleModifyVM(HandlerArg *a)
     char *ioapic = NULL;
     uint32_t monitorcount = ~0;
     char *accelerate3d = NULL;
+#ifdef VBOX_WITH_VIDEOHWACCEL
+    char *accelerate2dvideo = NULL;
+#endif
     char *bioslogofadein = NULL;
     char *bioslogofadeout = NULL;
     uint32_t bioslogodisplaytime = ~0;
@@ -246,6 +249,16 @@ int handleModifyVM(HandlerArg *a)
             i++;
             accelerate3d = a->argv[i];
         }
+#ifdef VBOX_WITH_VIDEOHWACCEL
+        else if (   !strcmp(a->argv[i], "--accelerate2dvideo")
+                 || !strcmp(a->argv[i], "-accelerate2dvideo"))
+        {
+            if (a->argc <= i + 1)
+                return errorArgument("Missing argument to '%s'", a->argv[i]);
+            i++;
+            accelerate2dvideo = a->argv[i];
+        }
+#endif
         else if (   !strcmp(a->argv[i], "--bioslogofadein")
                  || !strcmp(a->argv[i], "-bioslogofadein"))
         {
@@ -1021,11 +1034,30 @@ int handleModifyVM(HandlerArg *a)
             }
             else
             {
-                errorArgument("Invalid --accelerate3d argument '%s'", ioapic);
+                errorArgument("Invalid --accelerate3d argument '%s'", accelerate3d);
                 rc = E_FAIL;
                 break;
             }
         }
+#ifdef VBOX_WITH_VIDEOHWACCEL
+        if (accelerate2dvideo)
+        {
+            if (!strcmp(accelerate2dvideo, "on"))
+            {
+                CHECK_ERROR(machine, COMSETTER(Accelerate2DVideoEnabled)(true));
+            }
+            else if (!strcmp(accelerate2dvideo, "off"))
+            {
+                CHECK_ERROR(machine, COMSETTER(Accelerate2DVideoEnabled)(false));
+            }
+            else
+            {
+                errorArgument("Invalid --accelerate2dvideo argument '%s'", accelerate2dvideo);
+                rc = E_FAIL;
+                break;
+            }
+        }
+#endif
         if (bioslogofadein)
         {
             if (!strcmp(bioslogofadein, "on"))
