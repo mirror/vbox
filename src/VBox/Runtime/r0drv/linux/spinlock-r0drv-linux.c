@@ -144,7 +144,7 @@ RTDECL(void) RTSpinlockReleaseNoInts(RTSPINLOCK Spinlock, PRTSPINLOCKTMP pTmp)
 
     spin_unlock_irqrestore(&pThis->Spinlock, pTmp->flFlags);
 
-    RT_ASSERT_PREEMPT_CPUID_SPIN_RELEASED();
+    RT_ASSERT_PREEMPT_CPUID();
 }
 RT_EXPORT_SYMBOL(RTSpinlockReleaseNoInts);
 
@@ -175,7 +175,7 @@ RTDECL(void) RTSpinlockRelease(RTSPINLOCK Spinlock, PRTSPINLOCKTMP pTmp)
 
     spin_unlock(&pThis->Spinlock);
 
-    RT_ASSERT_PREEMPT_CPUID_SPIN_RELEASED();
+    RT_ASSERT_PREEMPT_CPUID();
 }
 RT_EXPORT_SYMBOL(RTSpinlockRelease);
 

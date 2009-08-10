@@ -106,7 +106,7 @@
  * Extended version of RT_ASSERT_PREEMPT_CPUID_VAR for use with
  * RTSpinlockRelease* returns. */
 #ifdef RT_MORE_STRICT
-# define RT_ASSERT_PREEMPT_CPUID_SPIN_RELEASE_VARS()    RTCPUID idAssertCpu, idAssertCpuAfter
+# define RT_ASSERT_PREEMPT_CPUID_SPIN_RELEASE_VARS()    RTCPUID idAssertCpu
 #else
 # define RT_ASSERT_PREEMPT_CPUID_SPIN_RELEASE_VARS()    RTCPUID idAssertCpuDummy
 #endif
@@ -119,29 +119,15 @@
 # define RT_ASSERT_PREEMPT_CPUID_SPIN_RELEASE(pThis) \
     do \
     { \
-        idAssertCpu          = (pThis)->idCpuOwner; \
-        idAssertCpuAfter     = (pThis)->idAssertCpu; \
-        RT_ASSERT_PREEMPT_CPUID(); \
+        RTCPUID const idCpuOwner     = (pThis)->idCpuOwner; \
+        RTCPUID const idAssertCpuNow = RTMpCpuId(); \
+        AssertMsg(idCpuOwner == idAssertCpuNow,  ("%#x, %#x\n", idCpuOwner, idAssertCpuNow)); \
         (pThis)->idCpuOwner  = NIL_RTCPUID; \
+        idAssertCpu = (pThis)->idAssertCpu; \
         (pThis)->idAssertCpu = NIL_RTCPUID; \
     } while (0)
 #else
 # define RT_ASSERT_PREEMPT_CPUID_SPIN_RELEASE(pThis)    NOREF(idAssertCpuDummy)
-#endif
-
-/** @def RT_ASSERT_PREEMPT_CPUID_SPIN_RELEASED
- * Extended version of RT_ASSERT_PREEMPT_CPUID for use in RTSpinlockRelease*
- * after having released the spinlock. It must be teamed up with
- * RT_ASSERT_PREEMPT_CPUID_SPIN_RELEASE. */
-#ifdef RT_MORE_STRICT
-# define RT_ASSERT_PREEMPT_CPUID_SPIN_RELEASED() \
-    do \
-    { \
-        idAssertCpu = idAssertCpuAfter; \
-        RT_ASSERT_PREEMPT_CPUID(); \
-    } while (0)
-#else
-# define RT_ASSERT_PREEMPT_CPUID_SPIN_RELEASED()        NOREF(idAssertCpuDummy)
 #endif
 
 /** @def RT_ASSERT_INTS_ON

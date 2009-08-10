@@ -140,7 +140,7 @@ RTDECL(void) RTSpinlockReleaseNoInts(RTSPINLOCK Spinlock, PRTSPINLOCKTMP pTmp)
     mutex_exit(&pThis->Mtx);
     ASMSetFlags(pTmp->uFlags);
 
-    RT_ASSERT_PREEMPT_CPUID_SPIN_RELEASED();
+    RT_ASSERT_PREEMPT_CPUID();
 }
 
 
@@ -170,6 +170,6 @@ RTDECL(void) RTSpinlockRelease(RTSPINLOCK Spinlock, PRTSPINLOCKTMP pTmp)
 
     mutex_exit(&pThis->Mtx);
 
-    RT_ASSERT_PREEMPT_CPUID_SPIN_RELEASED();
+    RT_ASSERT_PREEMPT_CPUID();
 }
 
