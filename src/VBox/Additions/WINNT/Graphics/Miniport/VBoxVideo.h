@@ -115,7 +115,7 @@ typedef struct _DEVICE_EXTENSION
                                                 */
 #ifdef VBOX_WITH_HGSMI
            volatile HGSMIHOSTFLAGS * pHostFlags; /* HGSMI host flags */
-           bool bHostCmdProcessing;
+           volatile bool bHostCmdProcessing;
            PSPIN_LOCK pSynchLock;
 #endif
 
@@ -139,6 +139,8 @@ typedef struct _DEVICE_EXTENSION
            HGSMICHANNELINFO channels;
 
            HGSMIHEAP hgsmiAdapterHeap;
+
+           PSPIN_LOCK pGHRWLock; /* lock for making guest->host read/writes atomic */
 #endif /* VBOX_WITH_HGSMI */
        } primary;
 
@@ -252,7 +254,64 @@ void VBoxUnmapAdapterMemory (PDEVICE_EXTENSION PrimaryExtension,
 void VBoxComputeFrameBufferSizes (PDEVICE_EXTENSION PrimaryExtension);
 
 #ifdef VBOX_WITH_HGSMI
-BOOLEAN VBoxHGSMIIsSupported (void);
+
+DECLINLINE(void) VBoxVideoHostWriteUlongLocked(USHORT dataType, ULONG data)
+{
+    VideoPortWritePortUshort((PUSHORT)VBE_DISPI_IOPORT_INDEX, dataType);
+    VideoPortWritePortUlong((PULONG)VBE_DISPI_IOPORT_DATA, data);
+}
+
+DECLINLINE(void) VBoxVideoHostWriteUshortLocked(USHORT dataType, USHORT data)
+{
+    VideoPortWritePortUshort((PUSHORT)VBE_DISPI_IOPORT_INDEX, dataType);
+    VideoPortWritePortUshort((PUSHORT)VBE_DISPI_IOPORT_DATA, data);
+}
+
+DECLINLINE(ULONG) VBoxVideoHostReadUlongLocked (USHORT dataType)
+{
+    VideoPortWritePortUshort((PUSHORT)VBE_DISPI_IOPORT_INDEX, dataType);
+    return VideoPortReadPortUlong((PULONG)VBE_DISPI_IOPORT_DATA);
+}
+
+DECLINLINE(void) VBoxVideoHostWriteUlong(PDEVICE_EXTENSION PrimaryExtension, USHORT dataType, ULONG data)
+{
+    UCHAR oldIrql;
+    VideoPortAcquireSpinLock(PrimaryExtension,
+    		PrimaryExtension->u.primary.pGHRWLock,
+            &oldIrql);
+    VBoxVideoHostWriteUlongLocked(dataType, data);
+    VideoPortReleaseSpinLock(PrimaryExtension,
+    		PrimaryExtension->u.primary.pGHRWLock,
+            oldIrql);
+}
+
+DECLINLINE(void) VBoxVideoHostWriteUshort(PDEVICE_EXTENSION PrimaryExtension, USHORT dataType, USHORT data)
+{
+    UCHAR oldIrql;
+    VideoPortAcquireSpinLock(PrimaryExtension,
+    		PrimaryExtension->u.primary.pGHRWLock,
+            &oldIrql);
+    VBoxVideoHostWriteUshortLocked(dataType, data);
+    VideoPortReleaseSpinLock(PrimaryExtension,
+    		PrimaryExtension->u.primary.pGHRWLock,
+            oldIrql);
+}
+
+DECLINLINE(ULONG) VBoxVideoHostReadUlong(PDEVICE_EXTENSION PrimaryExtension, USHORT dataType)
+{
+	ULONG data;
+    UCHAR oldIrql;
+    VideoPortAcquireSpinLock(PrimaryExtension,
+    		PrimaryExtension->u.primary.pGHRWLock,
+            &oldIrql);
+	data = VBoxVideoHostReadUlongLocked(dataType);
+    VideoPortReleaseSpinLock(PrimaryExtension,
+    		PrimaryExtension->u.primary.pGHRWLock,
+            oldIrql);
+    return data;
+}
+
+BOOLEAN VBoxHGSMIIsSupported (PDEVICE_EXTENSION PrimaryExtension);
 
 VOID VBoxSetupDisplaysHGSMI (PDEVICE_EXTENSION PrimaryExtension,
                              PVIDEO_PORT_CONFIG_INFO pConfigInfo,
@@ -260,7 +319,7 @@ VOID VBoxSetupDisplaysHGSMI (PDEVICE_EXTENSION PrimaryExtension,
 BOOLEAN vboxUpdatePointerShape (PDEVICE_EXTENSION PrimaryExtension,
                                 PVIDEO_POINTER_ATTRIBUTES pointerAttr,
                                 uint32_t cbLength);
-
+DECLCALLBACK(void) hgsmiGHCommandPost(HVBOXVIDEOHGSMI hHGSMI, HGSMIOFFSET offCmd);
 DECLCALLBACK(void) hgsmiHostCmdComplete (HVBOXVIDEOHGSMI hHGSMI, struct _VBVAHOSTCMD * pCmd);
 DECLCALLBACK(int) hgsmiHostCmdRequest (HVBOXVIDEOHGSMI hHGSMI, uint8_t u8Channel, struct _VBVAHOSTCMD ** ppCmd);
 

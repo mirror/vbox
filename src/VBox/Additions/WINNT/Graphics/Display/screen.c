@@ -122,6 +122,7 @@ static void vboxInitVBoxVideo (PPDEV ppdev, const VIDEO_MEMORY_INFORMATION *pMem
             RtlZeroMemory(&HandlerReg, sizeof(HandlerReg));
 
             ppdev->hMpHGSMI = Callbacks.hContext;
+            ppdev->pfnHGSMIGHCommandPost = Callbacks.pfnHGSMIGHCommandPost;
             ppdev->pfnHGSMICommandComplete = Callbacks.pfnCompletionHandler;
             ppdev->pfnHGSMIRequestCommands = Callbacks.pfnRequestCommandsHandler;
 

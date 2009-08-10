@@ -1061,6 +1061,7 @@ private:
     class VBoxVHWASurfList *mComplexList;
 
     class VBoxGLWidget *mWidget;
+
 protected:
 #if 0
     virtual void init(uchar *pvMem, bool bInverted);
@@ -1068,7 +1069,11 @@ protected:
 #endif
 
     friend class VBoxVHWASurfList;
-
+#ifdef DEBUG
+public:
+    uint64_t cFlipsCurr;
+    uint64_t cFlipsTarg;
+#endif
 };
 
 typedef std::list <VBoxVHWASurfaceBase*> SurfList;

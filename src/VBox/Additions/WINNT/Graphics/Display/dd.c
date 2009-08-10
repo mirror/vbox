@@ -1584,6 +1584,10 @@ DWORD APIENTRY DdFlip(PDD_FLIPDATA  lpFlip)
 
         ASMAtomicIncU32(&pCurrDesc->cPendingFlipsCurr);
         ASMAtomicIncU32(&pTargDesc->cPendingFlipsTarg);
+#ifdef DEBUG
+        ASMAtomicIncU32(&pCurrDesc->cFlipsCurr);
+        ASMAtomicIncU32(&pTargDesc->cFlipsTarg);
+#endif
 
         if(pTargDesc->UpdatedMemRegion.bValid)
         {
