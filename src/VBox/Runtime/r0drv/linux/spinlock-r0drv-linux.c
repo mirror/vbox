@@ -57,7 +57,13 @@ typedef struct RTSPINLOCKINTERNAL
     uint32_t volatile   u32Magic;
     /** The linux spinlock structure. */
     spinlock_t          Spinlock;
-#if !defined(CONFIG_SMP) || defined(RT_ARCH_AMD64)
+#ifdef RT_MORE_STRICT
+    /** The idAssertCpu variable before acquring the lock for asserting after
+     *  releasing the spinlock. */
+    RTCPUID volatile    idAssertCpu;
+    /** The CPU that owns the lock. */
+    RTCPUID volatile    idCpuOwner;
+#elif !defined(CONFIG_SMP) || defined(RT_ARCH_AMD64)
     /** A placeholder on Uni systems so we won't piss off RTMemAlloc(). */
     void                *pvUniDummy;
 #endif
@@ -70,18 +76,22 @@ RTDECL(int)  RTSpinlockCreate(PRTSPINLOCK pSpinlock)
     /*
      * Allocate.
      */
-    PRTSPINLOCKINTERNAL pSpinlockInt;
+    PRTSPINLOCKINTERNAL pThis;
     Assert(sizeof(RTSPINLOCKINTERNAL) > sizeof(void *));
-    pSpinlockInt = (PRTSPINLOCKINTERNAL)RTMemAlloc(sizeof(*pSpinlockInt));
-    if (!pSpinlockInt)
+    pThis = (PRTSPINLOCKINTERNAL)RTMemAlloc(sizeof(*pThis));
+    if (!pThis)
         return VERR_NO_MEMORY;
     /*
      * Initialize and return.
      */
-    pSpinlockInt->u32Magic = RTSPINLOCK_MAGIC;
-    spin_lock_init(&pSpinlockInt->Spinlock);
+    pThis->u32Magic    = RTSPINLOCK_MAGIC;
+#ifdef RT_MORE_STRICT
+    pThis->idCpuOwner  = NIL_RTCPUID;
+    pThis->idAssertCpu = NIL_RTCPUID;
+#endif
+    spin_lock_init(&pThis->Spinlock);
 
-    *pSpinlock = pSpinlockInt;
+    *pSpinlock = pThis;
     return VINF_SUCCESS;
 }
 RT_EXPORT_SYMBOL(RTSpinlockCreate);
@@ -92,17 +102,17 @@ RTDECL(int)  RTSpinlockDestroy(RTSPINLOCK Spinlock)
     /*
      * Validate input.
      */
-    PRTSPINLOCKINTERNAL pSpinlockInt = (PRTSPINLOCKINTERNAL)Spinlock;
-    if (!pSpinlockInt)
+    PRTSPINLOCKINTERNAL pThis = (PRTSPINLOCKINTERNAL)Spinlock;
+    if (!pThis)
         return VERR_INVALID_PARAMETER;
-    if (pSpinlockInt->u32Magic != RTSPINLOCK_MAGIC)
+    if (pThis->u32Magic != RTSPINLOCK_MAGIC)
     {
-        AssertMsgFailed(("Invalid spinlock %p magic=%#x\n", pSpinlockInt, pSpinlockInt->u32Magic));
+        AssertMsgFailed(("Invalid spinlock %p magic=%#x\n", pThis, pThis->u32Magic));
         return VERR_INVALID_PARAMETER;
     }
 
-    ASMAtomicIncU32(&pSpinlockInt->u32Magic);
-    RTMemFree(pSpinlockInt);
+    ASMAtomicIncU32(&pThis->u32Magic);
+    RTMemFree(pThis);
     return VINF_SUCCESS;
 }
 RT_EXPORT_SYMBOL(RTSpinlockDestroy);
@@ -110,67 +120,62 @@ RT_EXPORT_SYMBOL(RTSpinlockDestroy);
 
 RTDECL(void) RTSpinlockAcquireNoInts(RTSPINLOCK Spinlock, PRTSPINLOCKTMP pTmp)
 {
-    PRTSPINLOCKINTERNAL pSpinlockInt = (PRTSPINLOCKINTERNAL)Spinlock;
-    AssertMsg(pSpinlockInt && pSpinlockInt->u32Magic == RTSPINLOCK_MAGIC,
-              ("pSpinlockInt=%p u32Magic=%08x\n", pSpinlockInt, pSpinlockInt ? (int)pSpinlockInt->u32Magic : 0));
-    NOREF(pSpinlockInt);
+    PRTSPINLOCKINTERNAL pThis = (PRTSPINLOCKINTERNAL)Spinlock;
+    RT_ASSERT_PREEMPT_CPUID_VAR();
+    AssertMsg(pThis && pThis->u32Magic == RTSPINLOCK_MAGIC,
+              ("pThis=%p u32Magic=%08x\n", pThis, pThis ? (int)pThis->u32Magic : 0));
 
-    spin_lock_irqsave(&pSpinlockInt->Spinlock, pTmp->flFlags);
+    spin_lock_irqsave(&pThis->Spinlock, pTmp->flFlags);
+
+    RT_ASSERT_PREEMPT_CPUID_SPIN_ACQUIRED(pThis);
 }
 RT_EXPORT_SYMBOL(RTSpinlockAcquireNoInts);
 
 
 RTDECL(void) RTSpinlockReleaseNoInts(RTSPINLOCK Spinlock, PRTSPINLOCKTMP pTmp)
 {
-    PRTSPINLOCKINTERNAL pSpinlockInt = (PRTSPINLOCKINTERNAL)Spinlock;
-    AssertMsg(pSpinlockInt && pSpinlockInt->u32Magic == RTSPINLOCK_MAGIC,
-              ("pSpinlockInt=%p u32Magic=%08x\n", pSpinlockInt, pSpinlockInt ? (int)pSpinlockInt->u32Magic : 0));
-    NOREF(pSpinlockInt);
+    PRTSPINLOCKINTERNAL pThis = (PRTSPINLOCKINTERNAL)Spinlock;
+    RT_ASSERT_PREEMPT_CPUID_SPIN_RELEASE_VARS();
 
-    spin_unlock_irqrestore(&pSpinlockInt->Spinlock, pTmp->flFlags);
+    AssertMsg(pThis && pThis->u32Magic == RTSPINLOCK_MAGIC,
+              ("pThis=%p u32Magic=%08x\n", pThis, pThis ? (int)pThis->u32Magic : 0));
+    RT_ASSERT_PREEMPT_CPUID_SPIN_RELEASE(pThis);
+    NOREF(pTmp);
+
+    spin_unlock_irqrestore(&pThis->Spinlock, pTmp->flFlags);
+
+    RT_ASSERT_PREEMPT_CPUID_SPIN_RELEASED();
 }
 RT_EXPORT_SYMBOL(RTSpinlockReleaseNoInts);
 
 
 RTDECL(void) RTSpinlockAcquire(RTSPINLOCK Spinlock, PRTSPINLOCKTMP pTmp)
 {
-    PRTSPINLOCKINTERNAL pSpinlockInt = (PRTSPINLOCKINTERNAL)Spinlock;
+    PRTSPINLOCKINTERNAL pThis = (PRTSPINLOCKINTERNAL)Spinlock;
     RT_ASSERT_PREEMPT_CPUID_VAR();
-    AssertMsg(pSpinlockInt && pSpinlockInt->u32Magic == RTSPINLOCK_MAGIC,
-              ("pSpinlockInt=%p u32Magic=%08x\n", pSpinlockInt, pSpinlockInt ? (int)pSpinlockInt->u32Magic : 0));
-    NOREF(pSpinlockInt); NOREF(pTmp);
+    AssertMsg(pThis && pThis->u32Magic == RTSPINLOCK_MAGIC,
+              ("pThis=%p u32Magic=%08x\n", pThis, pThis ? (int)pThis->u32Magic : 0));
+    NOREF(pTmp);
 
-    spin_lock(&pSpinlockInt->Spinlock);
+    spin_lock(&pThis->Spinlock);
 
-#ifdef RT_MORE_STRICT
-    {
-        RTCPUID const idAssertCpuNow = RTMpCpuId(); /* Spinlocks are not preemptible, so we cannot be rescheduled. */
-        AssertMsg(idAssertCpu == idAssertCpuNow || idAssertCpu == NIL_RTCPUID,  ("%#x, %#x\n", idAssertCpu, idAssertCpuNow));
-        pTmp->flFlags = idAssertCpuNow;
-    }
-#endif
+    RT_ASSERT_PREEMPT_CPUID_SPIN_ACQUIRED(pThis);
 }
 RT_EXPORT_SYMBOL(RTSpinlockAcquire);
 
 
 RTDECL(void) RTSpinlockRelease(RTSPINLOCK Spinlock, PRTSPINLOCKTMP pTmp)
 {
-    PRTSPINLOCKINTERNAL pSpinlockInt = (PRTSPINLOCKINTERNAL)Spinlock;
-#ifdef RT_MORE_STRICT
-    RTCPUID const idAssertCpu = pTmp->flFlags;
-    pTmp->flFlags = 0;
-    RT_ASSERT_PREEMPT_CPUID();
-#endif
-    AssertMsg(pSpinlockInt && pSpinlockInt->u32Magic == RTSPINLOCK_MAGIC,
-              ("pSpinlockInt=%p u32Magic=%08x\n", pSpinlockInt, pSpinlockInt ? (int)pSpinlockInt->u32Magic : 0));
-    NOREF(pSpinlockInt); NOREF(pTmp);
+    PRTSPINLOCKINTERNAL pThis = (PRTSPINLOCKINTERNAL)Spinlock;
+    RT_ASSERT_PREEMPT_CPUID_SPIN_RELEASE_VARS();
+    AssertMsg(pThis && pThis->u32Magic == RTSPINLOCK_MAGIC,
+              ("pThis=%p u32Magic=%08x\n", pThis, pThis ? (int)pThis->u32Magic : 0));
+    NOREF(pTmp);
+    RT_ASSERT_PREEMPT_CPUID_SPIN_RELEASE(pThis);
 
-    spin_unlock(&pSpinlockInt->Spinlock);
+    spin_unlock(&pThis->Spinlock);
 
-#ifdef RT_MORE_STRICT
-    if (!RTThreadPreemptIsEnabled(NIL_RTTHREAD))
-        RT_ASSERT_PREEMPT_CPUID();
-#endif
+    RT_ASSERT_PREEMPT_CPUID_SPIN_RELEASED();
 }
 RT_EXPORT_SYMBOL(RTSpinlockRelease);
 

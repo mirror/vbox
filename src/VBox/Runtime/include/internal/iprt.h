@@ -85,6 +85,65 @@
 # define RT_ASSERT_PREEMPT_CPUID()      NOREF(idAssertCpuDummy)
 #endif
 
+/** @def RT_ASSERT_PREEMPT_CPUID_SPIN_ACQUIRED
+ * Extended version of RT_ASSERT_PREEMPT_CPUID for use before
+ * RTSpinlockAcquired* returns.  This macro works the idCpuOwner and idAssertCpu
+ * members of the spinlock instance data.  */
+#ifdef RT_MORE_STRICT
+# define RT_ASSERT_PREEMPT_CPUID_SPIN_ACQUIRED(pThis) \
+    do \
+    { \
+        RTCPUID const idAssertCpuNow = RTMpCpuId(); \
+        AssertMsg(idAssertCpu == idAssertCpuNow || idAssertCpu == NIL_RTCPUID,  ("%#x, %#x\n", idAssertCpu, idAssertCpuNow)); \
+        (pThis)->idAssertCpu = idAssertCpu; \
+        (pThis)->idCpuOwner  = idAssertCpuNow; \
+    } while (0)
+#else
+# define RT_ASSERT_PREEMPT_CPUID_SPIN_ACQUIRED(pThis)   NOREF(idAssertCpuDummy)
+#endif
+
+/** @def RT_ASSERT_PREEMPT_CPUID_SPIN_RELEASE_VARS
+ * Extended version of RT_ASSERT_PREEMPT_CPUID_VAR for use with
+ * RTSpinlockRelease* returns. */
+#ifdef RT_MORE_STRICT
+# define RT_ASSERT_PREEMPT_CPUID_SPIN_RELEASE_VARS()    RTCPUID idAssertCpu, idAssertCpuAfter
+#else
+# define RT_ASSERT_PREEMPT_CPUID_SPIN_RELEASE_VARS()    RTCPUID idAssertCpuDummy
+#endif
+
+/** @def RT_ASSERT_PREEMPT_CPUID_SPIN_RELEASE
+ * Extended version of RT_ASSERT_PREEMPT_CPUID for use in RTSpinlockRelease*
+ * before calling the native API for releasing the spinlock.  It must be
+ * teamed up with RT_ASSERT_PREEMPT_CPUID_SPIN_ACQUIRED. */
+#ifdef RT_MORE_STRICT
+# define RT_ASSERT_PREEMPT_CPUID_SPIN_RELEASE(pThis) \
+    do \
+    { \
+        idAssertCpu        = (pThis)->idCpuOwner; \
+        idAssertCpuAfter   = (pThis)->idAssertCpu; \
+        RT_ASSERT_PREEMPT_CPUID(); \
+        (pThis)->idCpuOwner  = NIL_RTCPUID; \
+        (pThis)->idAssertCpu = NIL_RTCPUID; \
+    } while (0)
+#else
+# define RT_ASSERT_PREEMPT_CPUID_SPIN_RELEASE(pThis)    NOREF(idAssertCpuDummy)
+#endif
+
+/** @def RT_ASSERT_PREEMPT_CPUID_SPIN_RELEASED
+ * Extended version of RT_ASSERT_PREEMPT_CPUID for use in RTSpinlockRelease*
+ * after having released the spinlock. It must be teamed up with
+ * RT_ASSERT_PREEMPT_CPUID_SPIN_RELEASE. */
+#ifdef RT_MORE_STRICT
+# define RT_ASSERT_PREEMPT_CPUID_SPIN_RELEASED() \
+    do \
+    { \
+        idAssertCpu = idAssertCpuAfter; \
+        RT_ASSERT_PREEMPT_CPUID(); \
+    } while (0)
+#else
+# define RT_ASSERT_PREEMPT_CPUID_SPIN_RELEASED()        NOREF(idAssertCpuDummy)
+#endif
+
 /** @def RT_ASSERT_INTS_ON
  * Asserts that interrupts are disabled when RT_MORE_STRICT is defined.   */
 #ifdef RT_MORE_STRICT
