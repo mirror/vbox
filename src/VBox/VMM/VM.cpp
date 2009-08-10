@@ -491,6 +491,7 @@ static int vmR3CreateUVM(uint32_t cCpus, PUVM *ppUVM)
         RTTlsFree(pUVM->vm.s.idxTLS);
     }
     RTMemFree(pUVM);
+    *ppUVM = NULL; /* shuts up gcc */
     return rc;
 }
 

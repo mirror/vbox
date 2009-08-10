@@ -6356,6 +6356,7 @@ VMMR3DECL(SSMAFTER) SSMR3HandleGetAfter(PSSMHANDLE pSSM)
  */
 VMMR3DECL(uint64_t) SSMR3HandleGetUnitOffset(PSSMHANDLE pSSM)
 {
+    AssertMsgFailed(("/** @todo this isn't correct any longer. */"));
     return pSSM->offUnit;
 }
 
