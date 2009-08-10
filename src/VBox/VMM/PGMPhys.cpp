@@ -762,7 +762,7 @@ static void pgmR3PhysInitAndLinkRamRange(PVM pVM, PPGMRAMRANGE pNew, RTGCPHYS GC
     pNew->GCPhysLast    = GCPhysLast;
     pNew->cb            = GCPhysLast - GCPhys + 1;
     pNew->pszDesc       = pszDesc;
-    pNew->fFlags        = RCPtrNew != NIL_RTR0PTR ? PGM_RAM_RANGE_FLAGS_FLOATING : 0;
+    pNew->fFlags        = RCPtrNew != NIL_RTRCPTR ? PGM_RAM_RANGE_FLAGS_FLOATING : 0;
     pNew->pvR3          = NULL;
 
     uint32_t const cPages = pNew->cb >> PAGE_SHIFT;
