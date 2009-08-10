@@ -40,6 +40,7 @@
 #include <iprt/assert.h>
 #include <iprt/err.h>
 #include <iprt/mem.h>
+#include <iprt/mp.h>
 #include <iprt/thread.h>
 #include "internal/magics.h"
 
@@ -111,7 +112,11 @@ RTDECL(void) RTSpinlockAcquireNoInts(RTSPINLOCK Spinlock, PRTSPINLOCKTMP pTmp)
     Assert(pSpinlockInt->u32Magic == RTSPINLOCK_MAGIC);
 
     pTmp->uFlags = ASMIntDisableFlags();
-    mutex_enter(&pSpinlockInt->Mtx);
+    {
+        RT_ASSERT_PREEMPT_CPUID_VAR();
+        mutex_enter(&pSpinlockInt->Mtx);
+        RT_ASSERT_PREEMPT_CPUID();
+    }
 }
 
 
@@ -129,19 +134,30 @@ RTDECL(void) RTSpinlockReleaseNoInts(RTSPINLOCK Spinlock, PRTSPINLOCKTMP pTmp)
 RTDECL(void) RTSpinlockAcquire(RTSPINLOCK Spinlock, PRTSPINLOCKTMP pTmp)
 {
     PRTSPINLOCKINTERNAL pSpinlockInt = (PRTSPINLOCKINTERNAL)Spinlock;
+    RT_ASSERT_PREEMPT_CPUID_VAR();
     AssertPtr(pSpinlockInt);
     Assert(pSpinlockInt->u32Magic == RTSPINLOCK_MAGIC);
     NOREF(pTmp);
 
     mutex_enter(&pSpinlockInt->Mtx);
+    RT_ASSERT_PREEMPT_CPUID();
+#ifdef RT_MORE_STRICT
+    /* Spinlocks are not preemptible, so we cannot be rescheduled. */
+    pTmp->uFlags = idAssertCpu != NIL_RTCPUID ? idAssertCpu : RTMpCpuId();
+#endif
 }
 
 
 RTDECL(void) RTSpinlockRelease(RTSPINLOCK Spinlock, PRTSPINLOCKTMP pTmp)
 {
     PRTSPINLOCKINTERNAL pSpinlockInt = (PRTSPINLOCKINTERNAL)Spinlock;
+#ifdef RT_MORE_STRICT
+    RTCPUID const idAssertCpu = pTmp->uFlags;
+    pTmp->uFlags = 0;
+#endif
     AssertPtr(pSpinlockInt);
     Assert(pSpinlockInt->u32Magic == RTSPINLOCK_MAGIC);
+    RT_ASSERT_PREEMPT_CPUID();
     NOREF(pTmp);
 
     mutex_exit(&pSpinlockInt->Mtx);
