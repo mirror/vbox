@@ -119,8 +119,8 @@
 # define RT_ASSERT_PREEMPT_CPUID_SPIN_RELEASE(pThis) \
     do \
     { \
-        idAssertCpu        = (pThis)->idCpuOwner; \
-        idAssertCpuAfter   = (pThis)->idAssertCpu; \
+        idAssertCpu          = (pThis)->idCpuOwner; \
+        idAssertCpuAfter     = (pThis)->idAssertCpu; \
         RT_ASSERT_PREEMPT_CPUID(); \
         (pThis)->idCpuOwner  = NIL_RTCPUID; \
         (pThis)->idAssertCpu = NIL_RTCPUID; \
