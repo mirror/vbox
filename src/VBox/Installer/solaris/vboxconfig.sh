@@ -172,7 +172,7 @@ check_isa()
 check_module_arch()
 {
     cputype=`isainfo -k`
-    if test "$cputype" != "amd64" || test "$cputype" != "i386"; then
+    if test "$cputype" != "amd64" && test "$cputype" != "i386"; then
         errorprint "VirtualBox works only on i386/amd64 hosts, not $cputype"
         exit 1
     fi
@@ -292,9 +292,9 @@ unload_module()
     if test -n "$modid"; then
         $BIN_MODUNLOAD -i $modid
         if test $? -eq 0; then
-            subprint "Unloaded:  $moddesc module"
+            subprint "Unloaded: $moddesc module"
         else
-            subprint "Unloading:  $moddesc  ...FAILED!"
+            subprint "Unloading: $moddesc  ...FAILED!"
             if test "$fatal" = "$FATALOP"; then
                 exit 1
             fi
@@ -319,10 +319,10 @@ load_module()
     fatal=$3
     $BIN_MODLOAD -p $modname
     if test $? -eq 0; then
-        subprint "Loaded:  $moddesc module"
+        subprint "Loaded: $moddesc module"
         return 0
     else
-        subprint "Loading:  $modesc  ...FAILED!"
+        subprint "Loading: $modesc  ...FAILED!"
         if test "$fatal" = "$FATALOP"; then
             exit 1
         fi
@@ -443,12 +443,21 @@ remove_drivers()
 # failure: non fatal
 install_python_bindings()
 {
-    PYTHONBIN=$1
-    if test -x "$PYTHONBIN"; then
+    if test -z "$1" || test -z "$2"; then
+        errorprint "missing argument to install_python_bindings"
+        exit 1
+    fi
+
+    pythonbin=$1
+    pythondesc=$2
+    if test -x "$pythonbin"; then
         VBOX_INSTALL_PATH="$DIR_VBOXBASE"
         export VBOX_INSTALL_PATH
         cd $DIR_VBOXBASE/sdk/installer
-        $PYTHONBIN ./vboxapisetup.py install > /dev/null
+        $pythonbin ./vboxapisetup.py install > /dev/null
+        if test "$?" -eq 0; then
+            subprint "Installed: Bindings for $pythondesc"
+        fi
         return 0
     fi
     return 1
@@ -467,9 +476,9 @@ cleanup_install()
         $BIN_SVCADM disable -s svc:/application/virtualbox/webservice:default
         $BIN_SVCCFG delete svc:/application/virtualbox/webservice:default
         if test "$?" -eq 0; then
-            subprint "Unloaded:  Web service"
+            subprint "Unloaded: Web service"
         else
-            subprint "Unloading:  Web service  ...ERROR(S)."
+            subprint "Unloading: Web service  ...ERROR(S)."
         fi
     fi
 
@@ -479,9 +488,9 @@ cleanup_install()
         $BIN_SVCADM disable -s svc:/application/virtualbox/zoneaccess
         $BIN_SVCCFG delete svc:/application/virtualbox/zoneaccess
         if test "$?" -eq 0; then
-            subprint "Unloaded:  Zone access service"
+            subprint "Unloaded: Zone access service"
         else
-            subprint "Unloading:  Zone access service  ...ERROR(S)."
+            subprint "Unloading: Zone access service  ...ERROR(S)."
         fi
     fi
 
@@ -536,9 +545,9 @@ postinstall()
             /usr/sbin/svccfg import /var/svc/manifest/application/virtualbox/virtualbox-webservice.xml
             /usr/sbin/svcadm disable -s svc:/application/virtualbox/webservice:default
             if test "$?" -eq 0; then
-                subprint "Loaded:  Web service"
+                subprint "Loaded: Web service"
             else
-                subprint "Loading:  Web service  ...ERROR(S)."
+                subprint "Loading: Web service  ...ERROR(S)."
             fi
         fi
 
@@ -547,9 +556,9 @@ postinstall()
             /usr/sbin/svccfg import /var/svc/manifest/application/virtualbox/virtualbox-zoneaccess.xml
             /usr/sbin/svcadm enable -s svc:/application/virtualbox/zoneaccess
             if test "$?" -eq 0; then
-                subprint "Loaded:  Zone access service"
+                subprint "Loaded: Zone access service"
             else
-                subprint "Loading:  Zone access service  ...ERROR(S)."
+                subprint "Loading: Zone access service  ...ERROR(S)."
             fi
         fi
 
@@ -561,17 +570,17 @@ postinstall()
 
                 INSTALLEDIT=1
                 PYTHONBIN=`which python2.4 2>/dev/null`
-                install_python_bindings "$PYTHONBIN"
+                install_python_bindings "$PYTHONBIN" "Python 2.4"
                 if test "$?" -eq 0; then
                     INSTALLEDIT=0
                 fi
                 PYTHONBIN=`which python2.5 2>/dev/null`
-                install_python_bindings "$PYTHONBIN"
+                install_python_bindings "$PYTHONBIN"  "Python 2.5"
                 if test "$?" -eq 0; then
                     INSTALLEDIT=0
                 fi
                 PYTHONBIN=`which python2.6 2>/dev/null`
-                install_python_bindings "$PYTHONBIN"
+                install_python_bindings "$PYTHONBIN" "Python 2.6"
                 if test "$?" -eq 0; then
                     INSTALLEDIT=0
                 fi
