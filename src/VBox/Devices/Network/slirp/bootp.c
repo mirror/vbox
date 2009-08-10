@@ -575,13 +575,13 @@ static void dhcp_decode(PNATState pData, struct bootp_t *bp, const uint8_t *buf,
             /**/
         case DHCPINFORM:
             rc = dhcp_decode_discover(pData, bp, buf, size, flag, m);
-            Assert(rc > 0);
-            goto reply;
+            if (rc > 0)
+                goto reply;
         break;
         case DHCPREQUEST:
             rc = dhcp_decode_request(pData, bp, buf, size, m);
-            Assert(rc > 0);
-            goto reply;
+            if (rc > 0)
+                goto reply;
         break;
         case DHCPRELEASE:
             flag = 1;
@@ -589,21 +589,17 @@ static void dhcp_decode(PNATState pData, struct bootp_t *bp, const uint8_t *buf,
         case DHCPDECLINE:
 #endif
             rc = dhcp_decode_release(pData, bp, buf, size, flag);
-            Assert(rc > 0);
-            goto reply;
+            if (rc > 0)
+                goto reply;
         break;
         default:
             AssertMsgFailed(("unsupported DHCP message type"));
     }
+    Assert(m);
+    /*silently ignore*/
+    m_free(pData, m);
     return;
 reply:
-    Assert(m);
-    if (rc < 0)
-    {
-        /*silently ignore*/
-        m_free(pData, m);
-        return;
-    }
     bootp_reply(pData, m, rc, bp->bp_flags);
     return;
 }
