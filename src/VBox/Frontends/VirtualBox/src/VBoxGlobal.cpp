@@ -545,12 +545,8 @@ static VBoxDefs::RenderMode vboxGetRenderMode (const char *aModeStr)
             mode = VBoxDefs::QGLMode;
 #endif
     }
-#ifdef VBOX_WITH_VIDEOHWACCEL
-    /* temporary hack to enable QGL mode */
-    mode = VBoxDefs::QGLMode;
-#endif
-    return mode;
 
+    return mode;
 }
 
 /** @class VBoxGlobal

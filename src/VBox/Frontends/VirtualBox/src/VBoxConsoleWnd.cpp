@@ -806,10 +806,18 @@ bool VBoxConsoleWnd::openView (const CSession &session)
     CConsole cconsole = csession.GetConsole();
     AssertWrapperOk (csession);
 
+    CMachine cmachine = csession.GetMachine();
+
+#ifdef VBOX_WITH_VIDEOHWACCEL
+    /* need to force the QGL framebuffer in case 2D Video Acceleration is enabled && supported */
+    if(cmachine.GetAccelerate2DVideoEnabled() && VBoxGlobal::isAcceleration2DVideoAvailable())
+    {
+    	mode = vboxGlobal().vmAcceleration2DVideoRenderMode();
+    }
+#endif
+
     console = new VBoxConsoleView (this, cconsole, mode, centralWidget());
     static_cast <QGridLayout*> (centralWidget()->layout())->addWidget (console, 1, 1, Qt::AlignVCenter | Qt::AlignHCenter);
-
-    CMachine cmachine = csession.GetMachine();
 
     /* Mini toolbar */
     bool isActive = !(cmachine.GetExtraData (VBoxDefs::GUI_ShowMiniToolBar) == "no");
