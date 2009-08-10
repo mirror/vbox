@@ -441,6 +441,46 @@ RTDECL(int) RTDbgAsModuleByAddr(RTDBGAS hDbgAs, RTUINTPTR Addr, PRTDBGMOD phMod,
 RTDECL(int) RTDbgAsModuleByName(RTDBGAS hDbgAs, const char *pszName, uint32_t iName, PRTDBGMOD phMod);
 
 /**
+ * Information about a mapping.
+ *
+ * This is used by RTDbgAsModuleGetMapByIndex.
+ */
+typedef struct RTDBGASMAPINFO
+{
+    /** The mapping address. */
+    RTUINTPTR       Address;
+    /** The segment mapped there.
+     *  This is NIL_RTDBGSEGIDX if the entire module image is mapped here. */
+    RTDBGSEGIDX     iSeg;
+} RTDBGASMAPINFO;
+/** Pointer to info about an address space mapping. */
+typedef RTDBGASMAPINFO *PRTDBGASMAPINFO;
+/** Pointer to const info about an address space mapping. */
+typedef RTDBGASMAPINFO const *PCRTDBGASMAPINFO;
+
+/**
+ * Queries mapping information for a module given by index.
+ *
+ * @returns IRPT status code.
+ * @retval  VERR_INVALID_HANDLE if hDbgAs is invalid.
+ * @retval  VERR_OUT_OF_RANGE if the name index was out of range.
+ * @retval  VINF_BUFFER_OVERFLOW if the array is too small and the returned
+ *          information is incomplete.
+ *
+ * @param   hDbgAs          The address space handle.
+ * @param   iModule         The index of the module to get.
+ * @param   paMappings      Where to return the mapping information.  The buffer
+ *                          size is given by *pcMappings.
+ * @param   pcMappings      IN: Size of the paMappings array. OUT: The number of
+ *                          entries returned.
+ * @param   fFlags          Flags for reserved for future use. MBZ.
+ *
+ * @remarks See remarks for RTDbgAsModuleByIndex regarding the volatility of the
+ *          iModule parameter.
+ */
+RTDECL(int) RTDbgAsModuleQueryMapByIndex(RTDBGAS hDbgAs, uint32_t iModule, PRTDBGASMAPINFO paMappings, uint32_t *pcMappings, uint32_t fFlags);
+
+/**
  * Adds a symbol to a module in the address space.
  *
  * @returns IPRT status code. See RTDbgModSymbolAdd for more specific ones.

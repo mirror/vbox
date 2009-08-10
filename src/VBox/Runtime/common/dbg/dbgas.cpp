@@ -1070,6 +1070,69 @@ RT_EXPORT_SYMBOL(RTDbgAsModuleByName);
 
 
 /**
+ * Queries mapping information for a module given by index.
+ *
+ * @returns IRPT status code.
+ * @retval  VERR_INVALID_HANDLE if hDbgAs is invalid.
+ * @retval  VERR_OUT_OF_RANGE if the name index was out of range.
+ * @retval  VINF_BUFFER_OVERFLOW if the array is too small and the returned
+ *          information is incomplete.
+ *
+ * @param   hDbgAs          The address space handle.
+ * @param   iModule         The index of the module to get.
+ * @param   paMappings      Where to return the mapping information.  The buffer
+ *                          size is given by *pcMappings.
+ * @param   pcMappings      IN: Size of the paMappings array. OUT: The number of
+ *                          entries returned.
+ * @param   fFlags          Flags for reserved for future use. MBZ.
+ *
+ * @remarks See remarks for RTDbgAsModuleByIndex regarding the volatility of the
+ *          iModule parameter.
+ */
+RTDECL(int) RTDbgAsModuleQueryMapByIndex(RTDBGAS hDbgAs, uint32_t iModule, PRTDBGASMAPINFO paMappings, uint32_t *pcMappings, uint32_t fFlags)
+{
+    /*
+     * Validate input.
+     */
+    uint32_t const  cMappings = *pcMappings;
+    PRTDBGASINT     pDbgAs = hDbgAs;
+    RTDBGAS_VALID_RETURN_RC(pDbgAs, VERR_INVALID_HANDLE);
+    AssertReturn(!fFlags, VERR_INVALID_PARAMETER);
+
+    RTDBGAS_LOCK_READ(pDbgAs);
+    if (iModule >= pDbgAs->cModules)
+    {
+        RTDBGAS_UNLOCK_READ(pDbgAs);
+        return VERR_OUT_OF_RANGE;
+    }
+
+    /*
+     * Copy the mapping information about the module.
+     */
+    int         rc    = VINF_SUCCESS;
+    PRTDBGASMAP pMap  = pDbgAs->papModules[iModule]->pMapHead;
+    uint32_t    cMaps = 0;
+    while (pMap)
+    {
+        if (cMaps >= cMappings)
+        {
+            rc = VINF_BUFFER_OVERFLOW;
+            break;
+        }
+        paMappings[cMaps].Address = pMap->Core.Key;
+        paMappings[cMaps].iSeg    = pMap->iSeg;
+        cMaps++;
+        pMap = pMap->pNext;
+    }
+
+    RTDBGAS_UNLOCK_READ(pDbgAs);
+    *pcMappings = cMaps;
+    return rc;
+}
+RT_EXPORT_SYMBOL(RTDbgAsModuleQueryMapByIndex);
+
+
+/**
  * Internal worker that looks up and retains a module.
  *
  * @returns Module handle, NIL_RTDBGMOD if not found.
