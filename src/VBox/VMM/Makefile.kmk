@@ -107,7 +107,7 @@ VMMR3_SOURCES   = \
 	PGMPhys.cpp \
 	PGMPool.cpp \
 	SELM.cpp \
-	SSM$(if-expr defined(VBOX_WITH_OLD_SSM),,-new).cpp \
+	SSM.cpp \
 	STAM.cpp \
 	TM.cpp \
 	TRPM.cpp \
