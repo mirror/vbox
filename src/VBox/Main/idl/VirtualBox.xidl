@@ -4009,7 +4009,7 @@
 
   <interface
      name="IMachine" extends="$unknown"
-     uuid="540dcfda-3df2-49c6-88fa-033a28c2ff85"
+     uuid="5293aa45-5ab5-4f70-852e-bb43f5a46491"
      wsmap="managed"
      >
     <desc>
@@ -4222,6 +4222,12 @@
         This setting determines whether VirtualBox allows guests to make use
         of the 3D graphics support available on the host. Currently limited
         to OpenGL only. </desc>
+    </attribute>
+    
+    <attribute name="accelerate2DVideoEnabled" type="boolean" default="false">
+      <desc>
+        This setting determines whether VirtualBox allows guests to make use
+        of the 2D Video graphics support available on the host. </desc>
     </attribute>
 
     <attribute name="monitorCount" type="unsigned long">

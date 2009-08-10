@@ -192,6 +192,7 @@ Machine::HWData::HWData()
     mStatisticsUpdateInterval = 0;
     mVRAMSize = 8;
     mAccelerate3DEnabled = false;
+    mAccelerate2DVideoEnabled = false;
     mMonitorCount = 1;
     mHWVirtExEnabled = true;
     mHWVirtExNestedPagingEnabled = false;
@@ -225,6 +226,7 @@ bool Machine::HWData::operator== (const HWData &that) const
         mStatisticsUpdateInterval != that.mStatisticsUpdateInterval ||
         mVRAMSize != that.mVRAMSize ||
         mAccelerate3DEnabled != that.mAccelerate3DEnabled ||
+        mAccelerate2DVideoEnabled != that.mAccelerate2DVideoEnabled ||
         mMonitorCount != that.mMonitorCount ||
         mHWVirtExEnabled != that.mHWVirtExEnabled ||
         mHWVirtExNestedPagingEnabled != that.mHWVirtExNestedPagingEnabled ||
@@ -1185,6 +1187,39 @@ STDMETHODIMP Machine::COMSETTER(Accelerate3DEnabled)(BOOL enable)
     return S_OK;
 }
 
+
+STDMETHODIMP Machine::COMGETTER(Accelerate2DVideoEnabled)(BOOL *enabled)
+{
+    if (!enabled)
+        return E_POINTER;
+
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
+
+    AutoReadLock alock(this);
+
+    *enabled = mHWData->mAccelerate2DVideoEnabled;
+
+    return S_OK;
+}
+
+STDMETHODIMP Machine::COMSETTER(Accelerate2DVideoEnabled)(BOOL enable)
+{
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
+
+    AutoWriteLock alock(this);
+
+    HRESULT rc = checkStateDependency(MutableStateDep);
+    CheckComRCReturnRC(rc);
+
+    /** @todo check validity! */
+
+    mHWData.backup();
+    mHWData->mAccelerate2DVideoEnabled = enable;
+
+    return S_OK;
+}
 
 STDMETHODIMP Machine::COMGETTER(MonitorCount) (ULONG *monitorCount)
 {
@@ -5273,6 +5308,7 @@ HRESULT Machine::loadHardware (const settings::Key &aNode)
         mHWData->mVRAMSize      = displayNode.value <ULONG> ("VRAMSize");
         mHWData->mMonitorCount  = displayNode.value <ULONG> ("monitorCount");
         mHWData->mAccelerate3DEnabled = displayNode.value <bool> ("accelerate3D");
+        mHWData->mAccelerate2DVideoEnabled = displayNode.value <bool> ("accelerate2DVideo");
     }
 
 #ifdef VBOX_WITH_VRDP
@@ -6725,6 +6761,7 @@ HRESULT Machine::saveHardware (settings::Key &aNode)
         displayNode.setValue <ULONG> ("VRAMSize", mHWData->mVRAMSize);
         displayNode.setValue <ULONG> ("monitorCount", mHWData->mMonitorCount);
         displayNode.setValue <bool> ("accelerate3D", !!mHWData->mAccelerate3DEnabled);
+        displayNode.setValue <bool> ("accelerate2DVideo", !!mHWData->mAccelerate2DVideoEnabled);
     }
 
 #ifdef VBOX_WITH_VRDP

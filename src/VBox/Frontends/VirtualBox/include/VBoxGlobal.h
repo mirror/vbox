@@ -751,6 +751,10 @@ public:
 
     static QString documentsPath();
 
+#ifdef VBOX_WITH_VIDEOHWACCEL
+    static bool isAcceleration2DVideoAvailable() {/*TODO: */ return true;}
+#endif
+
 signals:
 
     /**

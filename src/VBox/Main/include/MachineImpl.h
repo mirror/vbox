@@ -270,6 +270,7 @@ public:
         BOOL           mHWVirtExNestedPagingEnabled;
         BOOL           mHWVirtExVPIDEnabled;
         BOOL           mAccelerate3DEnabled;
+        BOOL           mAccelerate2DVideoEnabled;
         BOOL           mPAEEnabled;
         ULONG          mCPUCount;
 
@@ -503,6 +504,8 @@ public:
     STDMETHOD(COMSETTER(MonitorCount))(ULONG monitorCount);
     STDMETHOD(COMGETTER(Accelerate3DEnabled))(BOOL *enabled);
     STDMETHOD(COMSETTER(Accelerate3DEnabled))(BOOL enabled);
+    STDMETHOD(COMGETTER(Accelerate2DVideoEnabled))(BOOL *enabled);
+    STDMETHOD(COMSETTER(Accelerate2DVideoEnabled))(BOOL enabled);
     STDMETHOD(COMGETTER(BIOSSettings))(IBIOSSettings **biosSettings);
     STDMETHOD(COMGETTER(HWVirtExEnabled))(BOOL *enabled);
     STDMETHOD(COMSETTER(HWVirtExEnabled))(BOOL enabled);

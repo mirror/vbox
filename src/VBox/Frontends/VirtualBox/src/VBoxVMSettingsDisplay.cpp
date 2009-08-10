@@ -94,6 +94,10 @@ VBoxVMSettingsDisplay::VBoxVMSettingsDisplay()
     mCb3D->setEnabled (false);
 #endif /* QT_MAC_USE_COCOA */
 
+#ifndef VBOX_WITH_VIDEOHWACCEL
+    mCb2DVideo->setEnabled (false);
+#endif
+
     /* Applying language settings */
     retranslateUi();
 }
@@ -110,6 +114,14 @@ void VBoxVMSettingsDisplay::getFrom (const CMachine &aMachine)
                                    .GetAcceleration3DAvailable();
     mCb3D->setEnabled (isAccelerationSupported);
     mCb3D->setChecked (mMachine.GetAccelerate3DEnabled());
+
+#ifdef VBOX_WITH_VIDEOHWACCEL
+    bool is2DVideoAccelerationSupported = VBoxGlobal::isAcceleration2DVideoAvailable();
+    mCb2DVideo->setEnabled (is2DVideoAccelerationSupported);
+    mCb2DVideo->setChecked (mMachine.GetAccelerate2DVideoEnabled());
+#else
+    mCb2DVideo->setEnabled (false);
+#endif
 
     /* VRDP Settings */
     CVRDPServer vrdp = mMachine.GetVRDPServer();
@@ -136,6 +148,11 @@ void VBoxVMSettingsDisplay::putBackTo()
     /* 3D Acceleration */
     mMachine.SetAccelerate3DEnabled (mCb3D->isChecked());
 
+#ifdef VBOX_WITH_VIDEOHWACCEL
+    /* 2D Video Acceleration */
+    mMachine.SetAccelerate2DVideoEnabled (mCb2DVideo->isChecked());
+#endif
+
     /* VRDP Settings */
     CVRDPServer vrdp = mMachine.GetVRDPServer();
     if (!vrdp.isNull())
@@ -152,6 +169,10 @@ void VBoxVMSettingsDisplay::setValidator (QIWidgetValidator *aVal)
     mValidator = aVal;
     connect (mCb3D, SIGNAL (stateChanged (int)),
              mValidator, SLOT (revalidate()));
+#ifdef VBOX_WITH_VIDEOHWACCEL
+    connect (mCb2DVideo, SIGNAL (stateChanged (int)),
+             mValidator, SLOT (revalidate()));
+#endif
     connect (mCbVRDP, SIGNAL (toggled (bool)),
              mValidator, SLOT (revalidate()));
     connect (mLeVRDPPort, SIGNAL (textChanged (const QString&)),
@@ -186,8 +207,12 @@ void VBoxVMSettingsDisplay::setOrderAfter (QWidget *aWidget)
     setTabOrder (mTwDisplay->focusProxy(), mSlMemory);
     setTabOrder (mSlMemory, mLeMemory);
     setTabOrder (mLeMemory, mCb3D);
-
+#ifdef VBOX_WITH_VIDEOHWACCEL
+    setTabOrder (mCb3D, mCb2DVideo);
+    setTabOrder (mCb2DVideo, mCbVRDP);
+#else
     setTabOrder (mCb3D, mCbVRDP);
+#endif
     setTabOrder (mCbVRDP, mLeVRDPPort);
     setTabOrder (mLeVRDPPort, mCbVRDPMethod);
     setTabOrder (mCbVRDPMethod, mLeVRDPTimeout);
