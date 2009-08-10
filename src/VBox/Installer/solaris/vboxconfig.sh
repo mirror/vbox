@@ -67,6 +67,13 @@ infoprint()
     fi
 }
 
+subprint()
+{
+    if test "$ISSILENT" != "$SILENTOP"; then
+        echo 1>&2 "   - $1"
+    fi
+}
+
 warnprint()
 {
     if test "$ISSILENT" != "$SILENTOP"; then
@@ -208,7 +215,7 @@ check_module_arch()
 }
 
 # module_added(modname)
-# returns 0 if added, 1 otherwise
+# returns 1 if added, 0 otherwise
 module_added()
 {
     if test -z "$1"; then
@@ -268,7 +275,7 @@ add_driver()
     fi
 
     if test $? -ne 0; then
-        errorprint "   - Adding: $moddesc module ...FAILED!"
+        subprint "Adding: $moddesc module ...FAILED!"
         if test "$fatal" = "$FATALOP"; then
             exit 1
         fi
@@ -293,10 +300,10 @@ rem_driver()
     if test "$?" -eq 0; then
         $BIN_REMDRV $modname
         if test $? -eq 0; then
-            success "   - Removed: $moddesc module"
+            subprint "Removed: $moddesc module"
             return 0
         else
-            errorprint "   - Removing: $moddesc  ...FAILED!"
+            subprint "Removing: $moddesc  ...FAILED!"
             if test "$fatal" = "$FATALOP"; then
                 exit 1
             fi
@@ -321,9 +328,9 @@ unload_module()
     if test -n "$modid"; then
         $BIN_MODUNLOAD -i $modid
         if test $? -eq 0; then
-            success "   - Unloaded:  $moddesc module"
+            subprint "Unloaded:  $moddesc module"
         else
-            errorprint "   - Unloading:  $moddesc  ...FAILED!"
+            subprint "Unloading:  $moddesc  ...FAILED!"
             if test "$fatal" = "$FATALOP"; then
                 exit 1
             fi
@@ -348,10 +355,10 @@ load_module()
     fatal=$3
     $BIN_MODLOAD -p $modname
     if test $? -eq 0; then
-        success "   - Loaded:  $moddesc module"
+        subprint "Loaded:  $moddesc module"
         return 0
     else
-        errorprint "   - Loading:  $modesc  ...FAILED!"
+        subprint "Loading:  $modesc  ...FAILED!"
         if test "$fatal" = "$FATALOP"; then
             exit 1
         fi
@@ -496,9 +503,9 @@ cleanup_install()
         $BIN_SVCADM disable -s svc:/application/virtualbox/webservice:default
         $BIN_SVCCFG delete svc:/application/virtualbox/webservice:default
         if test "$?" -eq 0; then
-            success "   - Unloaded:  Web service"
+            subprint "Unloaded:  Web service"
         else
-            warnprint "   - Unloading:  Web service  ...ERROR(S)."
+            subprint "Unloading:  Web service  ...ERROR(S)."
         fi
     fi
 
@@ -508,9 +515,9 @@ cleanup_install()
         $BIN_SVCADM disable -s svc:/application/virtualbox/zoneaccess
         $BIN_SVCCFG delete svc:/application/virtualbox/zoneaccess
         if test "$?" -eq 0; then
-            success "   - Unloaded:  Zone access service"
+            subprint "Unloaded:  Zone access service"
         else
-            warnprint "   - Unloading:  Zone access service  ...ERROR(S)."
+            subprint "Unloading:  Zone access service  ...ERROR(S)."
         fi
     fi
 
@@ -565,9 +572,9 @@ postinstall()
             /usr/sbin/svccfg import /var/svc/manifest/application/virtualbox/virtualbox-webservice.xml
             /usr/sbin/svcadm disable -s svc:/application/virtualbox/webservice:default
             if test "$?" -eq 0; then
-                success "   - Loaded:  Web service"
+                subprint "Loaded:  Web service"
             else
-                warnprint "   - Loading:  Web service  ...ERROR(S)."
+                subprint "Loading:  Web service  ...ERROR(S)."
             fi
         fi
 
@@ -576,9 +583,9 @@ postinstall()
             /usr/sbin/svccfg import /var/svc/manifest/application/virtualbox/virtualbox-zoneaccess.xml
             /usr/sbin/svcadm enable -s svc:/application/virtualbox/zoneaccess
             if test "$?" -eq 0; then
-                success "   - Loaded:  Zone access service"
+                subprint "Loaded:  Zone access service"
             else
-                warnprint "   - Loading:  Zone access service  ...ERROR(S)."
+                subprint "Loading:  Zone access service  ...ERROR(S)."
             fi
         fi
 
