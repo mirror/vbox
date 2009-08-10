@@ -20,7 +20,6 @@
  */
 
 
-
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
@@ -929,15 +928,44 @@ static int VBoxGuestCommonIOCtl_WaitEvent(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSE
 
 static int VBoxGuestCommonIOCtl_CancelAllWaitEvents(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSION pSession)
 {
-    RTSPINLOCKTMP   Tmp = RTSPINLOCKTMP_INITIALIZER;
-    PVBOXGUESTWAIT  pWait;
-    int             rc = 0;
+    RTSPINLOCKTMP           Tmp   = RTSPINLOCKTMP_INITIALIZER;
+#if defined(RT_OS_SOLARIS)
+    RTTHREADPREEMPTSTATE    State = RTTHREADPREEMPTSTATE_INITIALIZER;
+#endif
+    PVBOXGUESTWAIT          pWait;
+    int                     rc = 0;
 
     Log(("VBoxGuestCommonIOCtl: CANCEL_ALL_WAITEVENTS\n"));
 
     /*
      * Walk the event list and wake up anyone with a matching session.
+     *
+     * Note! On Solaris we have to do really ugly stuff here because
+     *       RTSemEventMultiSignal cannot be called with interrupts disabled.
+     *       The hack is racy, but what we can we do... (Eliminate this
+     *       termination hack, perhaps?)
      */
+#if defined(RT_OS_SOLARIS)
+    RTThreadPreemptDisable(&State);
+    RTSpinlockAcquireNoInts(pDevExt->EventSpinlock, &Tmp);
+    do
+    {
+        for (pWait = pDevExt->WaitList.pHead; pWait; pWait = pWait->pNext)
+            if (    pWait->pSession   == pSession
+                &&  pWait->fResEvents != UINT32_MAX)
+            {
+                RTSEMEVENTMULTI     hEvent;
+                pWait->fResEvents = UINT32_MAX;
+                RTSpinlockReleaseNoInts(pDevExt->EventSpinlock, &Tmp);
+                /* HACK ALRET! This races wakeup + reuse! */
+                rc |= RTSemEventMultiSignal(hEvent);
+                RTSpinlockAcquireNoInts(pDevExt->EventSpinlock, &Tmp);
+                break;
+            }
+    } while (pWait);
+    RTSpinlockReleaseNoInts(pDevExt->EventSpinlock, &Tmp);
+    RTThreadPreemptDisable(&State);
+#else
     RTSpinlockAcquireNoInts(pDevExt->EventSpinlock, &Tmp);
     for (pWait = pDevExt->WaitList.pHead; pWait; pWait = pWait->pNext)
         if (pWait->pSession == pSession)
@@ -946,6 +974,7 @@ static int VBoxGuestCommonIOCtl_CancelAllWaitEvents(PVBOXGUESTDEVEXT pDevExt, PV
             rc |= RTSemEventMultiSignal(pWait->Event);
         }
     RTSpinlockReleaseNoInts(pDevExt->EventSpinlock, &Tmp);
+#endif
     Assert(rc == 0);
 
     return VINF_SUCCESS;
@@ -1628,8 +1657,16 @@ bool VBoxGuestCommonISR(PVBOXGUESTDEVEXT pDevExt)
 
     /*
      * Enter the spinlock and check if it's our IRQ or not.
+     *
+     * Note! Solaris cannot do RTSemEventMultiSignal with interrupts disabled
+     *       so we're entering the spinlock without disabling them.  This works
+     *       fine as long as we never called in a nested fashion.
      */
+#if defined(RT_OS_SOLARIS)
+    RTSpinlockAcquire(pDevExt->EventSpinlock, &Tmp);
+#else
     RTSpinlockAcquireNoInts(pDevExt->EventSpinlock, &Tmp);
+#endif
     fOurIrq = pDevExt->pVMMDevMemory->V.V1_04.fHaveEvents;
     if (fOurIrq)
     {
@@ -1702,7 +1739,11 @@ bool VBoxGuestCommonISR(PVBOXGUESTDEVEXT pDevExt)
      * Work the poll and async notification queues on OSes that implements that.
      * Do this outside the spinlock to prevent some recursive spinlocking.
      */
+#if defined(RT_OS_SOLARIS)
+    RTSpinlockRelease(pDevExt->EventSpinlock, &Tmp);
+#else
     RTSpinlockReleaseNoInts(pDevExt->EventSpinlock, &Tmp);
+#endif
 
     if (fMousePositionChanged)
     {
