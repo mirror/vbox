@@ -109,9 +109,8 @@ RTDECL(void) RTSpinlockAcquireNoInts(RTSPINLOCK Spinlock, PRTSPINLOCKTMP pTmp)
     PRTSPINLOCKINTERNAL pSpinlockInt = (PRTSPINLOCKINTERNAL)Spinlock;
     AssertPtr(pSpinlockInt);
     Assert(pSpinlockInt->u32Magic == RTSPINLOCK_MAGIC);
-    NOREF(pTmp);
 
-    /** @todo r=bird: are interrupts disabled implicitly by mutex_enter?!? */
+    pTmp->uFlags = ASMIntDisableFlags();
     mutex_enter(&pSpinlockInt->Mtx);
 }
 
@@ -121,9 +120,9 @@ RTDECL(void) RTSpinlockReleaseNoInts(RTSPINLOCK Spinlock, PRTSPINLOCKTMP pTmp)
     PRTSPINLOCKINTERNAL pSpinlockInt = (PRTSPINLOCKINTERNAL)Spinlock;
     AssertPtr(pSpinlockInt);
     Assert(pSpinlockInt->u32Magic == RTSPINLOCK_MAGIC);
-    NOREF(pTmp);
 
     mutex_exit(&pSpinlockInt->Mtx);
+    ASMSetFlags(pTmp->uFlags);
 }
 
 
