@@ -38,7 +38,11 @@
 
 RTDECL(bool) RTAssertShouldPanic(void)
 {
+#if 0 /* Enable this to not panic on assertions. (Make sure this code is used!) */
+    return false;
+#else
     return true;
+#endif
 }
 RT_EXPORT_SYMBOL(RTAssertShouldPanic);
 
