@@ -81,13 +81,6 @@ warnprint()
     fi
 }
 
-success()
-{
-    if test "$ISSILENT" != "$SILENTOP"; then
-        echo 1>&2 "$1"
-    fi
-}
-
 errorprint()
 {
     echo 1>&2 "## $1"
@@ -179,39 +172,10 @@ check_isa()
 check_module_arch()
 {
     cputype=`isainfo -k`
-    modulepath="$DIR_MOD_32/$MOD_VBOXDRV"
-    if test "$cputype" = "amd64"; then
-        modulepath="$DIR_MOD_64/$MOD_VBOXDRV"
-    elif test "$cputype" != "i386"; then
-        errorprint "VirtualBox works only on i386/amd64 architectures, not $cputype"
+    if test "$cputype" != "amd64" || test "$cputype" != "i386"; then
+        errorprint "VirtualBox works only on i386/amd64 hosts, not $cputype"
         exit 1
     fi
-
-    # If things are where they should be, return success
-    if test -f "$modulepath" || test -h "$modulepath"; then
-        return 0
-    fi
-
-    # Something's screwed, let us go a step further and check if user has mixed up x86/amd64
-    # amd64 ISA, x86 kernel module??
-    if test "$cputype" = "amd64"; then
-        modulepath="$DIR_MOD_32/$MOD_VBOXDRV"
-        if test -f "$modulepath"; then
-            errorprint "Found 32-bit module instead of 64-bit. Please install the amd64 package!"
-            exit 1
-        fi
-    else
-        # x86 ISA, amd64 kernel module??
-        modulepath="$DIR_MOD_64/$MOD_VBOXDRV"
-        if test -f "$modulepath"; then
-            errorprint "Found 64-bit module instead of 32-bit. Please install the x86 package!"
-            exit 1
-        fi
-    fi
-
-    # Shouldn't really happen...
-    errorprint "VirtualBox Host kernel module NOT installed."
-    exit 1
 }
 
 # module_added(modname)
