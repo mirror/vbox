@@ -540,6 +540,10 @@ static VBoxDefs::RenderMode vboxGetRenderMode (const char *aModeStr)
         else if (::strcmp (aModeStr, "quartz2d") == 0)
             mode = VBoxDefs::Quartz2DMode;
 #endif
+#if defined (VBOX_GUI_USE_QGL)
+        else if (::strcmp (aModeStr, "qgl") == 0)
+            mode = VBoxDefs::QGLMode;
+#endif
     }
 #ifdef VBOX_WITH_VIDEOHWACCEL
     /* temporary hack to enable QGL mode */
