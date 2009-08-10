@@ -1156,6 +1156,8 @@ VP_STATUS VBoxVideoFindAdapter(IN PVOID HwDeviceExtension,
 
    dprintf(("VBoxVideo::VBoxVideoFindAdapter\n"));
 
+   VideoPortCreateSpinLock(HwDeviceExtension, &((PDEVICE_EXTENSION)HwDeviceExtension)->u.primary.pGHRWLock);
+
    VideoPortWritePortUshort((PUSHORT)VBE_DISPI_IOPORT_INDEX, VBE_DISPI_INDEX_ID);
    VideoPortWritePortUshort((PUSHORT)VBE_DISPI_IOPORT_DATA, VBE_DISPI_ID2);
    DispiId = VideoPortReadPortUshort((PUSHORT)VBE_DISPI_IOPORT_DATA);
@@ -1248,7 +1250,7 @@ VP_STATUS VBoxVideoFindAdapter(IN PVOID HwDeviceExtension,
        * The host will however support both old and new interface to keep compatibility
        * with old guest additions.
        */
-      if (VBoxHGSMIIsSupported ())
+      if (VBoxHGSMIIsSupported ((PDEVICE_EXTENSION)HwDeviceExtension))
       {
           LogRel(("VBoxVideo: using HGSMI\n"));
 
@@ -1768,8 +1770,12 @@ BOOLEAN VBoxVideoStartIO(PVOID HwDeviceExtension,
             if (pDevExt->pPrimary->u.primary.bVBoxVideoSupported)
             {
                 /* The display driver must have prepared the monitor information. */
+#ifndef VBOX_WITH_HGSMI
                 VideoPortWritePortUshort((PUSHORT)VBE_DISPI_IOPORT_INDEX, VBE_DISPI_INDEX_VBOX_VIDEO);
                 VideoPortWritePortUlong((PULONG)VBE_DISPI_IOPORT_DATA, VBOX_VIDEO_INTERPRET_DISPLAY_MEMORY_BASE + pDevExt->iDevice);
+#else
+                VBoxVideoHostWriteUlong(((PDEVICE_EXTENSION)HwDeviceExtension)->pPrimary, VBE_DISPI_INDEX_VBOX_VIDEO, VBOX_VIDEO_INTERPRET_DISPLAY_MEMORY_BASE + pDevExt->iDevice);
+#endif
             }
             else
             {
@@ -1944,6 +1950,7 @@ BOOLEAN VBoxVideoStartIO(PVOID HwDeviceExtension,
             HGSMIQUERYCALLBACKS *pInfo = (HGSMIQUERYCALLBACKS *)RequestPacket->OutputBuffer;
 
             pInfo->hContext = pDevExt;
+            pInfo->pfnHGSMIGHCommandPost = hgsmiGHCommandPost;
             pInfo->pfnCompletionHandler = hgsmiHostCmdComplete;
             pInfo->pfnRequestCommandsHandler = hgsmiHostCmdRequest;
 
@@ -2030,8 +2037,12 @@ BOOLEAN VBoxVideoResetHW(PVOID HwDeviceExtension, ULONG Columns, ULONG Rows)
         return TRUE;
     }
 
+#ifndef VBOX_WITH_HGSMI
     VideoPortWritePortUshort((PUSHORT)VBE_DISPI_IOPORT_INDEX, VBE_DISPI_INDEX_ENABLE);
     VideoPortWritePortUshort((PUSHORT)VBE_DISPI_IOPORT_DATA, VBE_DISPI_DISABLED);
+#else
+    VBoxVideoHostWriteUshort(((PDEVICE_EXTENSION)HwDeviceExtension)->pPrimary, VBE_DISPI_INDEX_ENABLE, VBE_DISPI_DISABLED);
+#endif
 
     if (pDevExt->u.primary.pvReqFlush != NULL)
     {
@@ -2133,6 +2144,7 @@ BOOLEAN FASTCALL VBoxVideoSetCurrentMode(PDEVICE_EXTENSION DeviceExtension,
     }
 
     /* set the mode characteristics */
+#ifndef VBOX_WITH_HGSMI
     VideoPortWritePortUshort((PUSHORT)VBE_DISPI_IOPORT_INDEX, VBE_DISPI_INDEX_XRES);
     VideoPortWritePortUshort((PUSHORT)VBE_DISPI_IOPORT_DATA, (USHORT)ModeInfo->VisScreenWidth);
     VideoPortWritePortUshort((PUSHORT)VBE_DISPI_IOPORT_INDEX, VBE_DISPI_INDEX_YRES);
@@ -2143,6 +2155,12 @@ BOOLEAN FASTCALL VBoxVideoSetCurrentMode(PDEVICE_EXTENSION DeviceExtension,
     VideoPortWritePortUshort((PUSHORT)VBE_DISPI_IOPORT_INDEX, VBE_DISPI_INDEX_ENABLE);
     VideoPortWritePortUshort((PUSHORT)VBE_DISPI_IOPORT_DATA, VBE_DISPI_ENABLED | VBE_DISPI_LFB_ENABLED);
     /** @todo read from the port to see if the mode switch was successful */
+#else
+    VBoxVideoHostWriteUshort(DeviceExtension->pPrimary, VBE_DISPI_INDEX_XRES, (USHORT)ModeInfo->VisScreenWidth);
+    VBoxVideoHostWriteUshort(DeviceExtension->pPrimary, VBE_DISPI_INDEX_YRES, (USHORT)ModeInfo->VisScreenHeight);
+    VBoxVideoHostWriteUshort(DeviceExtension->pPrimary, VBE_DISPI_INDEX_BPP, (USHORT)ModeInfo->BitsPerPlane);
+    VBoxVideoHostWriteUshort(DeviceExtension->pPrimary, VBE_DISPI_INDEX_ENABLE, VBE_DISPI_ENABLED | VBE_DISPI_LFB_ENABLED);
+#endif
 
     /* Tell the host that we now support graphics in the additions.
      * @todo: Keep old behaviour, because VBoxVideoResetDevice is called on every graphics

@@ -107,6 +107,10 @@ typedef struct _VBOXVHWASURFDESC
     volatile uint32_t cPendingBltsDst;
     volatile uint32_t cPendingFlipsCurr;
     volatile uint32_t cPendingFlipsTarg;
+#ifdef DEBUG
+    volatile uint64_t cFlipsCurr;
+    volatile uint64_t cFlipsTarg;
+#endif
 //    uint32_t cBitsPerPixel;
     bool bHidden;
     VBOXVHWAREGION UpdatedMemRegion;
@@ -199,6 +203,7 @@ struct  _PDEV
     VBVABUFFER *pVBVA; /* Pointer to the pjScreen + layout->offVBVABuffer. NULL if VBVA is not enabled. */
 
     HVBOXVIDEOHGSMI hMpHGSMI; /* context handler passed to miniport HGSMI callbacks */
+    PFNVBOXVIDEOHGSMIPOSTCOMMAND pfnHGSMIGHCommandPost; /* called to post the guest command (offset) to the host */
     PFNVBOXVIDEOHGSMICOMPLETION pfnHGSMICommandComplete; /* called to complete the command we receive from the miniport */
     PFNVBOXVIDEOHGSMICOMMANDS   pfnHGSMIRequestCommands; /* called to requests the commands posted to us from the host */
 #endif /* VBOX_WITH_HGSMI */
@@ -224,9 +229,9 @@ extern HSEMAPHORE ghsemHwBuffer;
 
 
 #ifdef VBOX_WITH_HGSMI
-#define VBE_DISPI_IOPORT_INDEX          0x01CE
-#define VBE_DISPI_IOPORT_DATA           0x01CF
-#define VBE_DISPI_INDEX_VBVA_GUEST      0xc
+//#define VBE_DISPI_IOPORT_INDEX          0x01CE
+//#define VBE_DISPI_IOPORT_DATA           0x01CF
+//#define VBE_DISPI_INDEX_VBVA_GUEST      0xc
 #endif /* VBOX_WITH_HGSMI */
 
 extern BOOL  g_bOnNT40;

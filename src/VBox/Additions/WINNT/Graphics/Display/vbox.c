@@ -344,8 +344,9 @@ static void vboxHGSMIBufferSubmit (PPDEV ppdev, void *p)
 {
     HGSMIOFFSET offBuffer = HGSMIHeapBufferOffset (&ppdev->hgsmiDisplayHeap, p);
 
-    ASMOutU16 (VBE_DISPI_IOPORT_INDEX, VBE_DISPI_INDEX_VBVA_GUEST);
-    ASMOutU32 (VBE_DISPI_IOPORT_DATA, offBuffer);
+    ppdev->pfnHGSMIGHCommandPost(ppdev->hMpHGSMI, offBuffer);
+//    ASMOutU16 (VBE_DISPI_IOPORT_INDEX, VBE_DISPI_INDEX_VBVA_GUEST);
+//    ASMOutU32 (VBE_DISPI_IOPORT_DATA, offBuffer);
 }
 
 static BOOL vboxVBVAInformHost (PPDEV ppdev, BOOL bEnable)
@@ -756,6 +757,7 @@ static void vboxVBVAHostCommandHanlder(PPDEV ppdev, VBVAHOSTCMD * pCmd)
 # endif
         default:
         {
+        	Assert(0);
             vboxVBVAHostCommandComplete(ppdev, pCmd);
         }
     }
@@ -763,12 +765,14 @@ static void vboxVBVAHostCommandHanlder(PPDEV ppdev, VBVAHOSTCMD * pCmd)
 
 void vboxVHWACommandCheckHostCmds(PPDEV ppdev)
 {
-    VBVAHOSTCMD * pCmd;
+    VBVAHOSTCMD * pCmd, * pNextCmd;
     int rc = ppdev->pfnHGSMIRequestCommands(ppdev->hMpHGSMI, HGSMI_CH_VBVA, &pCmd);
+    Assert(RT_SUCCESS(rc));
     if(RT_SUCCESS(rc))
     {
-        for(; pCmd; pCmd = pCmd->u.pNext)
+        for(;pCmd; pCmd = pNextCmd)
         {
+        	pNextCmd = pCmd->u.pNext;
             vboxVBVAHostCommandHanlder(ppdev, pCmd);
         }
     }
@@ -783,12 +787,14 @@ void vboxVHWACommandSubmitAsynchByEvent (PPDEV ppdev, VBOXVHWACMD* pCmd, PEVENT 
     /* complete it asynchronously by setting event */
     pCmd->Flags |= VBOXVHWACMD_FLAG_GH_ASYNCH_EVENT;
     vboxHGSMIBufferSubmit (ppdev, pCmd);
-
+    //TODO: dbg
+#if 0
     if(!(ASMAtomicReadU32((volatile uint32_t *)&pCmd->Flags)  & VBOXVHWACMD_FLAG_HG_ASYNCH))
     {
         /* the command is completed */
         EngSetEvent(pEvent);
     }
+#endif
 }
 
 BOOL vboxVHWACommandSubmit (PPDEV ppdev, VBOXVHWACMD* pCmd)
@@ -822,12 +828,14 @@ void vboxVHWACommandSubmitAsynch (PPDEV ppdev, VBOXVHWACMD* pCmd, PFNVBOXVHWACMD
     pCmd->GuestVBVAReserved2 = (uintptr_t)pContext;
 
     vboxHGSMIBufferSubmit (ppdev, pCmd);
-
+    //TODO: dbg
+#if 0
     if(!(pCmd->Flags & VBOXVHWACMD_FLAG_HG_ASYNCH))
     {
         /* the command is completed */
         pfnCompletion(ppdev, pCmd, pContext);
     }
+#endif
 }
 
 static DECLCALLBACK(void) vboxVHWAFreeCmdCompletion(PPDEV ppdev, VBOXVHWACMD * pCmd, void * pContext)
@@ -843,13 +851,15 @@ void vboxVHWACommandSubmitAsynchAndComplete (PPDEV ppdev, VBOXVHWACMD* pCmd)
     pCmd->Flags |= VBOXVHWACMD_FLAG_GH_ASYNCH_NOCOMPLETION;
 
     vboxHGSMIBufferSubmit (ppdev, pCmd);
-
+    //TODO: dbg
+#if 0
     if(!(pCmd->Flags & VBOXVHWACMD_FLAG_HG_ASYNCH)
             || pCmd->Flags & VBOXVHWACMD_FLAG_HG_ASYNCH_RETURNED)
     {
         /* the command is completed */
         vboxVHWAFreeCmdCompletion(ppdev, pCmd, NULL);
     }
+#endif
 }
 
 void vboxVHWAFreeHostInfo1(PPDEV ppdev, VBOXVHWACMD_QUERYINFO1* pInfo)
