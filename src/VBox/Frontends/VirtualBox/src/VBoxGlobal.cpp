@@ -1558,6 +1558,16 @@ QString VBoxGlobal::detailsReport (const CMachine &aMachine, bool aWithLinks)
 
         rows += 2;
 
+#ifdef VBOX_WITH_VIDEOHWACCEL
+        QString acc2dVideo = aMachine.GetAccelerate2DVideoEnabled()
+            ? tr ("Enabled", "details report (2D Video Acceleration)")
+            : tr ("Disabled", "details report (2D Video Acceleration)");
+
+        item += QString (sSectionItemTpl2)
+                       .arg (tr ("2D Video Acceleration", "details report"), acc2dVideo);
+        rows++;
+#endif
+
         /* VRDP tab */
         CVRDPServer srv = aMachine.GetVRDPServer();
         if (!srv.isNull())

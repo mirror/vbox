@@ -499,6 +499,7 @@
     </xsd:simpleType>
   </xsd:attribute>
   <xsd:attribute name="accelerate3D" type="xsd:boolean" default="false"/>
+  <xsd:attribute name="accelerate2DVideo" type="xsd:boolean" default="false"/>
 </xsd:complexType>
 
 <xsd:complexType name="TRemoteDisplay">

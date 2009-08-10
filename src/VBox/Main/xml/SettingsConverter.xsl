@@ -143,6 +143,14 @@ The source version is not supported.
   </xsl:copy>
 </xsl:template>
 
+<!-- 1.7 => 1.8 -->
+<xsl:template match="/vb:VirtualBox[substring-before(@version,'-')='1.7']">
+  <xsl:copy>
+    <xsl:attribute name="version"><xsl:value-of select="concat('1.8','-',$curVerPlat)"/></xsl:attribute>
+    <xsl:apply-templates select="node()" mode="v1.8"/>
+  </xsl:copy>
+</xsl:template>
+
 <!--
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
  *  1.1 => 1.2
@@ -972,6 +980,46 @@ Value '<xsl:value-of select="@type"/>' of 'HardDisk::type' attribute is invalid.
               mode="v1.7">
   <!-- just remove the node -->
 </xsl:template>
+
+<!--
+ * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+ *  1.7 => 1.8
+ * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+-->
+<!--
+ *  all non-root elements that are not explicitly matched are copied as is
+-->
+<xsl:template match="@*|node()[../..]" mode="v1.8">
+  <xsl:copy>
+    <xsl:apply-templates select="@*|node()[../..]" mode="v1.8"/>
+  </xsl:copy>
+</xsl:template>
+
+<!--
+ *  Global settings
+-->
+
+<!--
+ *  Machine settings
+-->
+
+<!--xsl:template match="vb:VirtualBox[substring-before(@version,'-')='1.7']/
+                     vb:Machine//vb:Hardware/vb:Display"
+              mode="v1.8">
+  <xsl:copy>
+    <xsl:apply-templates select="node()" mode="v1.8"/>
+    <xsl:for-each select="@*">
+      <xsl:choose>
+        <xsl:when test="name()='Accelerate2DVideo'">
+          <xsl:attribute name="accelerate2DVideo"><xsl:value-of select="."/></xsl:attribute>
+        </xsl:when>
+        <xsl:otherwise>
+          <xsl:apply-templates select="." mode="v1.8"/>
+        </xsl:otherwise>
+      </xsl:choose>
+    </xsl:for-each>
+  </xsl:copy>
+</xsl:template-->
 
 <!--
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
