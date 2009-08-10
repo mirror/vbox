@@ -175,7 +175,7 @@
   <xsl:param name="type" />
   <xsl:param name="safearray" />
   <xsl:param name="forceelem" />
-  
+
   <xsl:variable name="needarray" select="($safearray='yes') and not($forceelem='yes')" />
 
   <xsl:if test="$needarray">
@@ -212,7 +212,7 @@
   <xsl:param name="value"/>
   <xsl:param name="idltype"/>
   <xsl:param name="safearray"/>
-  <xsl:variable name="isstruct" 
+  <xsl:variable name="isstruct"
                 select="//interface[@name=$idltype]/@wsmap='struct'" />
   <xsl:choose>
     <xsl:when test="//collection[@name=$idltype]">
@@ -280,7 +280,7 @@
              <xsl:when test="$isstruct">
                <xsl:value-of select="concat('(', $value, ' != null) ? new ', $gluetype, '(', $value,', port) : null')" />
              </xsl:when>
-              <xsl:otherwise>             
+              <xsl:otherwise>
                 <!-- if the MOR string is empty, that means NULL, so return NULL instead of an object then -->
                 <xsl:value-of select="concat('(', $value, '.length() > 0) ? new ', $gluetype, '(', $value,', port) : null')" />
               </xsl:otherwise>
@@ -296,7 +296,7 @@
 
 <xsl:template name="genStructWrapper">
   <xsl:param name="ifname" select="@name" />
-  
+
   <xsl:value-of select="concat('    private ', $G_virtualBoxPackage,'.',$ifname, ' real;&#10;')"/>
   <xsl:value-of select="'    private VboxPortType port;&#10;&#10;'"/>
 
@@ -305,11 +305,11 @@
     <xsl:variable name="attrname"><xsl:value-of select="@name" /></xsl:variable>
     <xsl:variable name="attrtype"><xsl:value-of select="@type" /></xsl:variable>
     <xsl:variable name="attrreadonly"><xsl:value-of select="@readonly" /></xsl:variable>
-    <xsl:variable name="attrsafearray"><xsl:value-of select="@safearray" /></xsl:variable>    
+    <xsl:variable name="attrsafearray"><xsl:value-of select="@safearray" /></xsl:variable>
      <xsl:choose>
        <xsl:when test="$attrreadonly='yes'">
          <xsl:value-of select="concat('&#10;    // read-only attribute ', $ifname, '::', $attrname, ' of type ', $attrtype, '&#10;')" />
-         
+
        </xsl:when>
        <xsl:otherwise>
          <xsl:value-of select="concat('&#10;    // read/write attribute ', $ifname, '::', $attrname, ' of type ', $attrtype, '&#10;')" />
@@ -368,7 +368,7 @@
      <xsl:text>    }&#10;</xsl:text>
 
   </xsl:for-each>
-  
+
 </xsl:template>
 
 
@@ -632,11 +632,15 @@ class PortPool
     synchronized VboxPortType getPort()
     {
         VboxPortType port = null;
+        int ttl = 0;
+
         for (VboxPortType cur: known.keySet())
         {
-            if (known.get(cur) == 0)
+            int value = known.get(cur);
+            if ((value & 0x10000) == 0)
             {
                 port = cur;
+                ttl = value & 0xffff;
                 break;
             }
         }
@@ -652,20 +656,35 @@ class PortPool
                                                 "vboxService"));
             }
             port = svc.getVboxServicePort();
+            // reuse this object 0x10 times
+            ttl = 0x10;
         }
-        known.put(port, new Integer(1));
+        // mark as used
+        known.put(port, new Integer(0x10000 | ttl));
         return port;
     }
 
     synchronized void releasePort(VboxPortType port)
     {
-        Integer val =  known.get(port);
+        Integer val = known.get(port);
         if (val == null || val == 0)
         {
             // know you not
             return;
         }
-        known.put(port, val - 1);
+
+        int v = val;
+        int ttl = v & 0xffff;
+        // decrement TTL, and throw away port if used too much times
+        if (--ttl <= 0)
+        {
+            known.remove(port);
+        }
+        else
+        {
+            v = ttl; // set new TTL and clear busy bit
+            known.put(port, v);
+        }
     }
 }
 
@@ -702,30 +721,45 @@ public class IWebsessionManager {
     public void connect(String url)
     {
         this.port = pool.getPort();
-        ((BindingProvider)port).getRequestContext().
-                put(BindingProvider.ENDPOINT_ADDRESS_PROPERTY, url);
+
+         try {
+          ((BindingProvider)port).getRequestContext().
+                 put(BindingProvider.ENDPOINT_ADDRESS_PROPERTY, url);
+         }  catch (Throwable t) {
+             if (this.port != null)
+                pool.releasePort(this.port);
+             // we have to throw smth derived from RuntimeException
+             throw new WebServiceException(t);
+          }
     }
 
     public void connect(String url, Map<String, Object> requestContext, Map<String, Object> responseContext)
     {
          this.port = pool.getPort();
 
-         ((BindingProvider)port).getRequestContext();
-         if (requestContext != null)
+         try {
+           ((BindingProvider)port).getRequestContext();
+           if (requestContext != null)
                ((BindingProvider)port).getRequestContext().putAll(requestContext);
 
-         if (responseContext != null)
+           if (responseContext != null)
                ((BindingProvider)port).getResponseContext().putAll(responseContext);
 
-         ((BindingProvider)port).getRequestContext().
+           ((BindingProvider)port).getRequestContext().
                 put(BindingProvider.ENDPOINT_ADDRESS_PROPERTY, url);
+          } catch (Throwable t) {
+             if (this.port != null)
+                pool.releasePort(port);
+             // we have to throw smth derived from RuntimeException
+             throw new WebServiceException(t);
+          }
     }
 
 
     public void disconnect(IVirtualBox refIVirtualBox)
     {
         logoff(refIVirtualBox);
-        pool.releasePort(port);
+        pool.releasePort(this.port);
     }
 
     public void cleanupUnused()
