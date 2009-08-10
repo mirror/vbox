@@ -55,7 +55,7 @@ typedef struct RTSPINLOCKTMP
 
 # elif defined(RT_OS_WINDOWS)
     /** The saved [R|E]FLAGS. */
-    RTCCUINTREG       uFlags;
+    RTCCUINTREG     uFlags;
     /** The KIRQL. */
     unsigned char   uchIrqL;
 #  define RTSPINLOCKTMP_INITIALIZER { 0, 0 }
@@ -65,26 +65,25 @@ typedef struct RTSPINLOCKTMP
     unsigned long   flFlags;
 #  define RTSPINLOCKTMP_INITIALIZER { 0 }
 
-# elif defined(RT_OS_DARWIN)
+# elif defined(RT_OS_DARWIN) || defined(RT_OS_SOLARIS)
     /** The saved [R|E]FLAGS. */
-    RTCCUINTREG       uFlags;
+    RTCCUINTREG     uFlags;
 #  define RTSPINLOCKTMP_INITIALIZER { 0 }
 
-# elif defined(RT_OS_OS2) || defined(RT_OS_FREEBSD) || defined(RT_OS_SOLARIS)
+# elif defined(RT_OS_OS2) || defined(RT_OS_FREEBSD) /** @todo r=bird: FreeBSD is probably doing the wrong thing here. */
     /** The saved [R|E]FLAGS. (dummy) */
-    RTCCUINTREG       uFlags;
+    RTCCUINTREG     uFlags;
 #  define RTSPINLOCKTMP_INITIALIZER { 0 }
 
 # else
-#  error "Your OS is not supported.\n"
+#  error "PORTME\n"
     /** The saved [R|E]FLAGS. */
-    RTCCUINTREG       uFlags;
+    RTCCUINTREG     uFlags;
 # endif
 
 #else /* !IN_RING0 */
-    /** The saved [R|E]FLAGS.
-     * (RT spinlocks will by definition disable interrupts.) */
-    RTCCUINTREG       uFlags;
+    /** The saved [R|E]FLAGS. (dummy) */
+    RTCCUINTREG     uFlags;
 # define RTSPINLOCKTMP_INITIALIZER { 0 }
 #endif /* !IN_RING0 */
 } RTSPINLOCKTMP;
