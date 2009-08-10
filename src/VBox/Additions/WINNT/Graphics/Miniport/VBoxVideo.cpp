@@ -1156,7 +1156,9 @@ VP_STATUS VBoxVideoFindAdapter(IN PVOID HwDeviceExtension,
 
    dprintf(("VBoxVideo::VBoxVideoFindAdapter\n"));
 
+#ifdef VBOX_WITH_HGSMI
    VideoPortCreateSpinLock(HwDeviceExtension, &((PDEVICE_EXTENSION)HwDeviceExtension)->u.primary.pGHRWLock);
+#endif
 
    VideoPortWritePortUshort((PUSHORT)VBE_DISPI_IOPORT_INDEX, VBE_DISPI_INDEX_ID);
    VideoPortWritePortUshort((PUSHORT)VBE_DISPI_IOPORT_DATA, VBE_DISPI_ID2);
