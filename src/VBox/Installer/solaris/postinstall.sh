@@ -24,10 +24,9 @@
 currentisa=`uname -i`
 if test "$currentisa" = "i86xpv"; then
     echo "## VirtualBox cannot run under xVM Dom0! Fatal Error, Aborting installation!"
-    exit 2
+    exit 1
 fi
 
-osversion=`uname -r`
 currentzone=`zonename`
 if test "$currentzone" = "global"; then
     echo "Checking for older bits..."
