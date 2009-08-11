@@ -56,7 +56,7 @@ typedef struct {
     GLuint   id;
     GLsizei  width, height;
     GLenum   internalformat;
-  	GLuint   redBits, greenBits, blueBits, alphaBits, depthBits, stencilBits;
+    GLuint   redBits, greenBits, blueBits, alphaBits, depthBits, stencilBits;
 } CRRenderbufferObject;
 
 typedef struct {
