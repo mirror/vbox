@@ -36,6 +36,7 @@
 #include "SerialPortImpl.h"
 #include "ParallelPortImpl.h"
 #include "BIOSSettingsImpl.h"
+#include "StorageControllerImpl.h"          // required for MachineImpl.h to compile on Windows
 #ifdef VBOX_WITH_RESOURCE_USAGE_API
 #include "PerformanceImpl.h"
 #endif /* VBOX_WITH_RESOURCE_USAGE_API */
@@ -75,11 +76,11 @@ class SessionMachine;
 namespace settings
 {
     class MachineConfigFile;
-    class Snapshot;
-    class Hardware;
-    class Storage;
-    class StorageController;
-    class MachineRegistryEntry;
+    struct Snapshot;
+    struct Hardware;
+    struct Storage;
+    struct StorageController;
+    struct MachineRegistryEntry;
 }
 
 // Machine class

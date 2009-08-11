@@ -49,7 +49,7 @@ class Progress;
 
 namespace settings
 {
-    class Host;
+    struct Host;
 }
 
 #include <list>

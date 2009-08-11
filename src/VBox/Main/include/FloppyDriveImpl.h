@@ -32,7 +32,7 @@ class Machine;
 
 namespace settings
 {
-    class FloppyDrive;
+    struct FloppyDrive;
 }
 
 class ATL_NO_VTABLE FloppyDrive :

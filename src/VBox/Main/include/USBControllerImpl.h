@@ -36,7 +36,7 @@ class HostUSBDevice;
 
 namespace settings
 {
-    class USBController;
+    struct USBController;
 }
 
 /**

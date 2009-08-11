@@ -50,11 +50,13 @@
 #include <map>
 #include <vector>
 
-#ifdef IN_VBOXXML_R3
-# define VBOXXML_CLASS DECLEXPORT_CLASS
-#else
-# define VBOXXML_CLASS DECLIMPORT_CLASS
-#endif
+// #ifdef IN_VBOXXML_R3
+// # define VBOXXML_CLASS DECLEXPORT_CLASS
+// #else
+// # define VBOXXML_CLASS DECLIMPORT_CLASS
+// #endif
+
+#define VBOXXML_CLASS
 
 namespace xml
 {

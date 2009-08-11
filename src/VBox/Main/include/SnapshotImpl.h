@@ -31,7 +31,7 @@ class VirtualBox;
 
 namespace settings
 {
-    class Snapshot;
+    struct Snapshot;
 }
 
 class ATL_NO_VTABLE Snapshot :

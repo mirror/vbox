@@ -3183,7 +3183,7 @@ STDMETHODIMP Machine::SetGuestProperty(IN_BSTR aName,
                                                         &dummy, &dummy64, &dummy);
         }
     }
-    catch (std::bad_alloc &e)
+    catch (std::bad_alloc &)
     {
         rc = E_OUTOFMEMORY;
     }
@@ -5014,7 +5014,7 @@ HRESULT Machine::loadHardware(const settings::Hardware &data)
         mHWData->mGuestPropertyNotificationPatterns = data.strNotificationPatterns;
 #endif /* VBOX_WITH_GUEST_PROPS defined */
     }
-    catch(std::bad_alloc &e)
+    catch(std::bad_alloc &)
     {
         return E_OUTOFMEMORY;
     }
@@ -5435,7 +5435,7 @@ HRESULT Machine::prepareSaveSettings(bool &aRenamed,
                 }
             }
 
-            /* update mConfigFileFull amd mConfigFile */
+            /* update m_strConfigFileFull amd mConfigFile */
             Utf8Str oldConfigFileFull = mData->m_strConfigFileFull;
             Utf8Str oldConfigFile = mData->m_strConfigFile;
             mData->m_strConfigFileFull = newConfigFile;
@@ -5746,10 +5746,10 @@ HRESULT Machine::saveHardware(settings::Hardware &data)
         data.strVersion = mHWData->mHWVersion;
 
         // CPU
-        data.fHardwareVirt = mHWData->mHWVirtExEnabled;
-        data.fNestedPaging = mHWData->mHWVirtExNestedPagingEnabled;
-        data.fVPID = mHWData->mHWVirtExVPIDEnabled;
-        data.fPAE = mHWData->mPAEEnabled;
+        data.fHardwareVirt = !!mHWData->mHWVirtExEnabled;
+        data.fNestedPaging = !!mHWData->mHWVirtExNestedPagingEnabled;
+        data.fVPID = !!mHWData->mHWVirtExVPIDEnabled;
+        data.fPAE = !!mHWData->mPAEEnabled;
 
         data.cCPUs = mHWData->mCPUCount;
 
@@ -5875,7 +5875,7 @@ HRESULT Machine::saveHardware(settings::Hardware &data)
 
         data.strNotificationPatterns = mHWData->mGuestPropertyNotificationPatterns;
     }
-    catch(std::bad_alloc &e)
+    catch(std::bad_alloc &)
     {
         return E_OUTOFMEMORY;
     }
@@ -5915,10 +5915,10 @@ HRESULT Machine::saveStorageControllers(settings::Storage &data)
         /* Save IDE emulation settings. */
         if (ctl.controllerType == StorageControllerType_IntelAhci)
         {
-            if (    (FAILED(rc = pCtl->GetIDEEmulationPort(0, &ctl.lIDE0MasterEmulationPort)))
-                 || (FAILED(rc = pCtl->GetIDEEmulationPort(1, &ctl.lIDE0SlaveEmulationPort)))
-                 || (FAILED(rc = pCtl->GetIDEEmulationPort(2, &ctl.lIDE1MasterEmulationPort)))
-                 || (FAILED(rc = pCtl->GetIDEEmulationPort(3, &ctl.lIDE1SlaveEmulationPort)))
+            if (    (FAILED(rc = pCtl->GetIDEEmulationPort(0, (LONG*)&ctl.lIDE0MasterEmulationPort)))
+                 || (FAILED(rc = pCtl->GetIDEEmulationPort(1, (LONG*)&ctl.lIDE0SlaveEmulationPort)))
+                 || (FAILED(rc = pCtl->GetIDEEmulationPort(2, (LONG*)&ctl.lIDE1MasterEmulationPort)))
+                 || (FAILED(rc = pCtl->GetIDEEmulationPort(3, (LONG*)&ctl.lIDE1SlaveEmulationPort)))
                )
                 ComAssertRCRet(rc, rc);
         }
@@ -7076,7 +7076,7 @@ HRESULT SessionMachine::init (Machine *aMachine)
 
     /* create the interprocess semaphore */
 #if defined(RT_OS_WINDOWS)
-    mIPCSemName = aMachine->mData->mConfigFileFull;
+    mIPCSemName = aMachine->mData->m_strConfigFileFull;
     for (size_t i = 0; i < mIPCSemName.length(); i++)
         if (mIPCSemName[i] == '\\')
             mIPCSemName[i] = '/';
@@ -7118,7 +7118,7 @@ HRESULT SessionMachine::init (Machine *aMachine)
         }
     }
 # else /* !VBOX_WITH_NEW_SYS_V_KEYGEN */
-    Utf8Str semName = aMachine->mData->mConfigFileFull;
+    Utf8Str semName = aMachine->mData->m_strConfigFileFull;
     char *pszSemName = NULL;
     RTStrUtf8ToCurrentCP (&pszSemName, semName);
     key_t key = ::ftok (pszSemName, 'V');
@@ -7517,7 +7517,7 @@ STDMETHODIMP SessionMachine::GetIPCId (BSTR *aId)
 # ifdef VBOX_WITH_NEW_SYS_V_KEYGEN
     mIPCKey.cloneTo(aId);
 # else /* !VBOX_WITH_NEW_SYS_V_KEYGEN */
-    mData->mConfigFileFull.cloneTo(aId);
+    mData->m_strConfigFileFull.cloneTo(aId);
 # endif /* !VBOX_WITH_NEW_SYS_V_KEYGEN */
     return S_OK;
 #else
