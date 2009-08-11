@@ -809,11 +809,9 @@ bool VBoxConsoleWnd::openView (const CSession &session)
     CMachine cmachine = csession.GetMachine();
 
 #ifdef VBOX_WITH_VIDEOHWACCEL
-    /* need to force the QGL framebuffer in case 2D Video Acceleration is enabled && supported */
-    if(cmachine.GetAccelerate2DVideoEnabled() && VBoxGlobal::isAcceleration2DVideoAvailable())
-    {
-    	mode = vboxGlobal().vmAcceleration2DVideoRenderMode();
-    }
+    /* Need to force the QGL framebuffer in case 2D Video Acceleration is supported & enabled */
+    if (VBoxGlobal::isAcceleration2DVideoAvailable() && cmachine.GetAccelerate2DVideoEnabled())
+        mode = vboxGlobal().vmAcceleration2DVideoRenderMode();
 #endif
 
     console = new VBoxConsoleView (this, cconsole, mode, centralWidget());

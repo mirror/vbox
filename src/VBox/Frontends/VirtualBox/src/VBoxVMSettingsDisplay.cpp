@@ -95,7 +95,7 @@ VBoxVMSettingsDisplay::VBoxVMSettingsDisplay()
 #endif /* QT_MAC_USE_COCOA */
 
 #ifndef VBOX_WITH_VIDEOHWACCEL
-    mCb2DVideo->setEnabled (false);
+    mCb2DVideo->setVisible (false);
 #endif
 
     /* Applying language settings */
@@ -116,11 +116,8 @@ void VBoxVMSettingsDisplay::getFrom (const CMachine &aMachine)
     mCb3D->setChecked (mMachine.GetAccelerate3DEnabled());
 
 #ifdef VBOX_WITH_VIDEOHWACCEL
-    bool is2DVideoAccelerationSupported = VBoxGlobal::isAcceleration2DVideoAvailable();
-    mCb2DVideo->setEnabled (is2DVideoAccelerationSupported);
+    mCb2DVideo->setEnabled (VBoxGlobal::isAcceleration2DVideoAvailable());
     mCb2DVideo->setChecked (mMachine.GetAccelerate2DVideoEnabled());
-#else
-    mCb2DVideo->setEnabled (false);
 #endif
 
     /* VRDP Settings */
@@ -169,10 +166,6 @@ void VBoxVMSettingsDisplay::setValidator (QIWidgetValidator *aVal)
     mValidator = aVal;
     connect (mCb3D, SIGNAL (stateChanged (int)),
              mValidator, SLOT (revalidate()));
-#ifdef VBOX_WITH_VIDEOHWACCEL
-    connect (mCb2DVideo, SIGNAL (stateChanged (int)),
-             mValidator, SLOT (revalidate()));
-#endif
     connect (mCbVRDP, SIGNAL (toggled (bool)),
              mValidator, SLOT (revalidate()));
     connect (mLeVRDPPort, SIGNAL (textChanged (const QString&)),
