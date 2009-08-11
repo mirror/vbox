@@ -1553,7 +1553,6 @@ static void acivate_port_forwarding(PNATState pData, struct ethhdr *ethdr)
         if (memcmp(client_ethaddr, ethdr->h_source, ETH_ALEN) != 0)
             continue;
         guest_addr = find_guest_ip(pData, ethdr->h_source);
-        Assert(rule->guest_addr.s_addr == guest_addr);
 #endif
         if (guest_addr == INADDR_ANY) 
         {
@@ -1561,6 +1560,9 @@ static void acivate_port_forwarding(PNATState pData, struct ethhdr *ethdr)
             pData->port_forwarding_activated = 0;
             return;
         }
+#if defined(DEBUG_vvl) && !defined(VBOX_WITH_NAT_SERVICE)
+        Assert(rule->guest_addr.s_addr == guest_addr);
+#endif
 
         LogRel(("NAT: set redirect %s hp:%d gp:%d\n", (rule->proto == IPPROTO_UDP?"UDP":"TCP"),
             rule->host_port, rule->guest_port));
