@@ -361,21 +361,21 @@ static int dhcp_decode_request(PNATState pData, struct bootp_t *bp, const uint8_
     uint8_t *opt;
     uint8_t *req_ip;
     uint8_t *server_ip;
+    uint32_t ui32;
     enum DHCP_REQUEST_STATES dhcp_stat = NONE;
     /*need to understand which type of request we get */
     req_ip = dhcp_find_option(&bp->bp_vend[0], RFC2132_REQ_ADDR);
     server_ip = dhcp_find_option(&bp->bp_vend[0], RFC2132_SRV_ID);
-
     bc = find_addr(pData, &daddr, bp->bp_hwaddr);
-    if (!bc)
-    {
-         LogRel(("NAT: DHCP no IP address left\n"));
-         Log(("no address left\n"));
-         return -1;
-    }
+
     if (server_ip != NULL)
     {
         /*selecting*/
+        if (!bc)
+        {
+             LogRel(("NAT: DHCP no IP wasn't allocated\n"));
+             return -1;
+        }
         dhcp_stat = SELECTING;
         Assert((bp->bp_ciaddr.s_addr == INADDR_ANY));
         Assert((*(uint32_t *)(req_ip + 2) == bc->addr.s_addr)); /*the same address as in offer*/
@@ -400,34 +400,62 @@ static int dhcp_decode_request(PNATState pData, struct bootp_t *bp, const uint8_
         }
     }
         /*?? renewing ??*/
-    if(dhcp_stat == RENEWING){
-        Assert((   server_ip == NULL 
-            && req_ip == NULL
-            && bp->bp_ciaddr.s_addr != INADDR_ANY));
-        if (bc != NULL)
+    switch (dhcp_stat)
+    {
+        case RENEWING: 
         {
-            Assert((bc->addr.s_addr == bp->bp_ciaddr.s_addr));
-            /*if it already here well just do ack, we aren't aware of dhcp time expiration*/
+            Assert((   server_ip == NULL 
+                && req_ip == NULL
+                && bp->bp_ciaddr.s_addr != INADDR_ANY));
+            if (bc != NULL)
+            {
+                Assert((bc->addr.s_addr == bp->bp_ciaddr.s_addr));
+                /*if it already here well just do ack, we aren't aware of dhcp time expiration*/
+            }
+            else
+            {
+               if ((bp->bp_ciaddr.s_addr & htonl(pData->netmask)) != special_addr.s_addr) 
+               {
+                    off = dhcp_send_nack(pData, bp, bc, m);
+                    return off;
+               }
+               bc = alloc_addr(pData);
+               if (bc == NULL)
+               {
+                   LogRel(("NAT: can't alloc address. RENEW has been silently ignored\n"));
+                   return -1;
+               }
+               Assert((bp->bp_hlen == ETH_ALEN));
+               memcpy(bc->macaddr, bp->bp_hwaddr, bp->bp_hlen);
+               bc->addr.s_addr = bp->bp_ciaddr.s_addr; 
+            }
         }
-        else
-        {
-           if ((bp->bp_ciaddr.s_addr & pData->netmask) != special_addr.s_addr) 
-           {
-                off = dhcp_send_nack(pData, bp, bc, m);
-                return off;
-           }
-           bc = alloc_addr(pData);
-           if (bc == NULL)
-           {
-               LogRel(("NAT: can't alloc address. RENEW has been silently ignored\n"));
-               return -1;
-           }
-           Assert((bp->bp_hlen == ETH_ALEN));
-           memcpy(bc->macaddr, bp->bp_hwaddr, bp->bp_hlen);
-           bc->addr.s_addr = bp->bp_ciaddr.s_addr; 
-        }
+        case INIT_REBOOT:
+            Assert(server_ip == NULL);
+            Assert(req_ip != NULL);
+            ui32 = *(uint32_t *)(req_ip + 2);
+            if ((ui32 & htonl(pData->netmask)) != special_addr.s_addr) 
+            {
+                LogRel(("NAT: address %R[IP4] has been req.\n", &ui32));
+                 off = dhcp_send_nack(pData, bp, bc, m);
+                 return off;
+            }
+            bc = alloc_addr(pData);
+            if (bc == NULL)
+            {
+                LogRel(("NAT: can't alloc address. RENEW has been silently ignored\n"));
+                return -1;
+            }
+            Assert((bp->bp_hlen == ETH_ALEN));
+            memcpy(bc->macaddr, bp->bp_hwaddr, bp->bp_hlen);
+            bc->addr.s_addr = ui32; 
+        break;
+        case NONE:
+            Assert((dhcp_stat != NONE));
+            return -1;
+        default:
+        break;
     }
-    Assert((dhcp_stat != NONE));
     off = dhcp_send_ack(pData, bp, bc, m, 1);
     return off;
 }
