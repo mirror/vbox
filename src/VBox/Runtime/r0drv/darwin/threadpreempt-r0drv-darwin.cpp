@@ -140,8 +140,8 @@ RTDECL(bool) RTThreadPreemptIsPossible(void)
 RTDECL(void) RTThreadPreemptDisable(PRTTHREADPREEMPTSTATE pState)
 {
     AssertPtr(pState);
-    Assert(pState->uchDummy != 42);
-    pState->uchDummy = 42;
+    Assert(pState->u32Reserved == 0);
+    pState->u32Reserved = 42;
 
     /*
      * Disable to prevent preemption while we grab the per-cpu spin lock.
@@ -163,14 +163,16 @@ RTDECL(void) RTThreadPreemptDisable(PRTTHREADPREEMPTSTATE pState)
     }
     ASMSetFlags(fSavedFlags);
     Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
+    RT_ASSERT_PREEMPT_CPUID_DISABLE(pState);
 }
 
 
 RTDECL(void) RTThreadPreemptRestore(PRTTHREADPREEMPTSTATE pState)
 {
     AssertPtr(pState);
-    Assert(pState->uchDummy == 42);
-    pState->uchDummy = 0;
+    Assert(pState->u32Reserved == 42);
+    pState->u32Reserved = 0;
+    RT_ASSERT_PREEMPT_CPUID_RESTORE(pState);
 
     RTCPUID idCpu = RTMpCpuId();
     if (RT_UNLIKELY(idCpu < RT_ELEMENTS(g_aPreemptHacks)))

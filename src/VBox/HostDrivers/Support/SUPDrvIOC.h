@@ -183,17 +183,20 @@ typedef SUPREQHDR *PSUPREQHDR;
  * When incompatible changes are made, the upper major number has to be changed.
  *
  * Update rules:
- *  -# Only update the major number when incompatible changes has been made.
+ *  -# Only update the major number when incompatible changes has been made to
+ *     the IOC interface or the ABI provided via the functions returned by
+ *     SUPQUERYFUNCS.
  *  -# When adding new features (new IOC number, new flags, new exports, ++)
  *     only update the minor number and change SUPLib.cpp to require the
  *     new IOC version.
  *  -# When incrementing the major number, clear the minor part and reset
  *     any IOC version requirements in SUPLib.cpp.
+ *  -# When increment the major number, execute all pending work.
  *
  * @todo Pending work on next major version change:
  *          - Nothing.
  */
-#define SUPDRV_IOC_VERSION                              0x000e0002
+#define SUPDRV_IOC_VERSION                              0x000f0000
 
 /** SUP_IOCTL_COOKIE. */
 typedef struct SUPCOOKIE

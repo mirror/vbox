@@ -471,14 +471,22 @@ RTDECL(bool) RTThreadPreemptIsPossible(void);
  */
 typedef struct RTTHREADPREEMPTSTATE
 {
+    /** In debug builds this will be used to check for cpu migration. */
+    RTCPUID         idCpu;
 #ifdef RT_OS_WINDOWS
     /** The old IRQL. Don't touch. */
-    unsigned char uchOldIrql;
-# define RTTHREADPREEMPTSTATE_INITIALIZER { 255 }
+    unsigned char   uchOldIrql;
+    /** Reserved, MBZ. */
+    uint8_t         bReserved1;
+    /** Reserved, MBZ. */
+    uint8_t         bReserved2;
+    /** Reserved, MBZ. */
+    uint8_t         bReserved3;
+# define RTTHREADPREEMPTSTATE_INITIALIZER { NIL_RTCPUID, 255, 0, 0, 0 }
 #else
-    /** Dummy unused placeholder. */
-    unsigned char uchDummy;
-# define RTTHREADPREEMPTSTATE_INITIALIZER { 0 }
+    /** Reserved, MBZ. */
+    uint32_t        u32Reserved;
+# define RTTHREADPREEMPTSTATE_INITIALIZER { NIL_RTCPUID, 0 }
 #endif
 } RTTHREADPREEMPTSTATE;
 /** Pointer to a preemption state. */

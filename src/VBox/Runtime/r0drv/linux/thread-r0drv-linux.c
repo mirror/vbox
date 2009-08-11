@@ -34,11 +34,12 @@
 *******************************************************************************/
 #include "the-linux-kernel.h"
 #include "internal/iprt.h"
-
 #include <iprt/thread.h>
+
 #include <iprt/asm.h>
 #include <iprt/assert.h>
 #include <iprt/err.h>
+#include <iprt/mp.h>
 
 
 /*******************************************************************************
@@ -159,18 +160,21 @@ RTDECL(void) RTThreadPreemptDisable(PRTTHREADPREEMPTSTATE pState)
 {
 #ifdef CONFIG_PREEMPT
     AssertPtr(pState);
-    Assert(pState->uchDummy != 42);
-    pState->uchDummy = 42;
+    Assert(pState->u32Reserved == 0);
+    pState->u32Reserved = 42;
     preempt_disable();
+    RT_ASSERT_PREEMPT_CPUID_DISABLE(pState);
 
 #else /* !CONFIG_PREEMPT */
     int32_t c;
     AssertPtr(pState);
+    Assert(pState->u32Reserved == 0);
 
     /* Do our own accounting. */
     c = ASMAtomicIncS32(&g_acPreemptDisabled[smp_processor_id()]);
     AssertMsg(c > 0 && c < 32, ("%d\n", c));
-    pState->uchDummy = (unsigned char )c;
+    pState->u32Reserved = c;
+    RT_ASSERT_PREEMPT_CPUID_DISABLE(pState);
 #endif
 }
 RT_EXPORT_SYMBOL(RTThreadPreemptDisable);
@@ -180,20 +184,22 @@ RTDECL(void) RTThreadPreemptRestore(PRTTHREADPREEMPTSTATE pState)
 {
 #ifdef CONFIG_PREEMPT
     AssertPtr(pState);
-    Assert(pState->uchDummy == 42);
-    pState->uchDummy = 0;
+    Assert(pState->u32Reserved == 42);
+    RT_ASSERT_PREEMPT_CPUID_RESTORE(pState);
     preempt_enable();
 
 #else
     int32_t volatile *pc;
     AssertPtr(pState);
-    AssertMsg(pState->uchDummy > 0 && pState->uchDummy < 32, ("%d\n", pState->uchDummy));
+    AssertMsg(pState->u32Reserved > 0 && pState->u32Reserved < 32, ("%d\n", pState->u32Reserved));
+    RT_ASSERT_PREEMPT_CPUID_RESTORE(pState);
 
     /* Do our own accounting. */
     pc = &g_acPreemptDisabled[smp_processor_id()];
-    AssertMsg(pState->uchDummy == (uint32_t)*pc, ("uchDummy=%d *pc=%d \n", pState->uchDummy, *pc));
-    ASMAtomicUoWriteS32(pc, pState->uchDummy - 1);
+    AssertMsg(pState->u32Reserved == (uint32_t)*pc, ("u32Reserved=%d *pc=%d \n", pState->u32Reserved, *pc));
+    ASMAtomicUoWriteS32(pc, pState->u32Reserved - 1);
 #endif
+    pState->u32Reserved = 0;
 }
 RT_EXPORT_SYMBOL(RTThreadPreemptRestore);
 
