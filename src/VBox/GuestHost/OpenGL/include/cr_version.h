@@ -118,4 +118,6 @@
 #define CR_ARB_fragment_shader 1
 #define CR_ARB_shading_language_100 1
 
+#define CR_EXT_framebuffer_object 1
+
 #endif /* CR_VERSION_H */

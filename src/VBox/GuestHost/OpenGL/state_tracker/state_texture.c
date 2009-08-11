@@ -691,6 +691,31 @@ void STATE_APIENTRY crStateDeleteTextures(GLsizei n, const GLuint *textures)
 				}
 #endif
 			}
+
+#ifdef CR_EXT_framebuffer_object
+            if (g->framebufferobject.framebuffer)
+            {
+                CRFBOAttachmentPoint *ap;
+                for (u=0; u<CR_MAX_COLOR_ATTACHMENTS; ++u)
+                {
+                    ap = &g->framebufferobject.framebuffer->color[u];
+                    if (ap->type==GL_TEXTURE && ap->name==name)
+                    {
+                        crStateFramebufferTexture1DEXT(GL_FRAMEBUFFER_EXT, u+GL_COLOR_ATTACHMENT0_EXT, 0, 0, 0);
+                    }
+                }
+                ap = &g->framebufferobject.framebuffer->depth;
+                if (ap->type==GL_TEXTURE && ap->name==name)
+                {
+                    crStateFramebufferTexture1DEXT(GL_FRAMEBUFFER_EXT, GL_DEPTH_ATTACHMENT_EXT, 0, 0, 0);
+                }
+                ap = &g->framebufferobject.framebuffer->stencil;
+                if (ap->type==GL_TEXTURE && ap->name==name)
+                {
+                    crStateFramebufferTexture1DEXT(GL_FRAMEBUFFER_EXT, GL_STENCIL_ATTACHMENT_EXT, 0, 0, 0);
+                }
+            }
+#endif
 			crStateDeleteTextureObject(tObj);
 		}
 	}

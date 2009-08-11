@@ -199,7 +199,10 @@ static const char *crExtensions =
     "GL_EXT_texture_compression_s3tc "
 #endif
 #ifdef CR_EXT_draw_range_elements
-    "GL_EXT_draw_range_elements"
+    "GL_EXT_draw_range_elements "
+#endif
+#ifdef CR_EXT_framebuffer_object
+    "GL_EXT_framebuffer_object"
 #endif
 	"";
 

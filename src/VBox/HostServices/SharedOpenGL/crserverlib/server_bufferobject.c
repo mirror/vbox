@@ -58,4 +58,3 @@ crServerDispatchGetBufferSubDataARB(GLenum target, GLintptrARB offset,
 		crError("Out of memory in crServerDispatchGetBufferSubDataARB");
 	}
 }
-

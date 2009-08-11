@@ -166,3 +166,5 @@ GetAttachedObjectsARB
 GetInfoLogARB
 GetBufferSubDataARB
 DeleteQueriesARB
+DeleteFramebuffersEXT
+DeleteRenderbuffersEXT

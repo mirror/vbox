@@ -160,6 +160,7 @@ VBoxOGLcrpacker_SOURCES = \
 	packer/pack_swap_texture.c \
 	packer/pack_visibleregion.c \
 	packer/pack_shaders.c \
+	packer/pack_framebuffer.c \
 	$(VBOX_PATH_CROGL_GENFILES)/pack_arrays_swap.c \
 	$(VBOX_PATH_CROGL_GENFILES)/pack_bounds_swap.c \
 	$(VBOX_PATH_CROGL_GENFILES)/pack_bufferobject_swap.c \
@@ -339,6 +340,7 @@ VBoxOGLcrstate_SOURCES = \
 	state_tracker/state_texdiff.c \
 	state_tracker/state_transform.c \
 	state_tracker/state_viewport.c \
+	state_tracker/state_framebuffer.c \
 	$(VBOX_PATH_CROGL_GENFILES)/state_buffer_gen.c \
 	$(VBOX_PATH_CROGL_GENFILES)/state_current_gen.c \
 	$(VBOX_PATH_CROGL_GENFILES)/state_fog_gen.c \

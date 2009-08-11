@@ -191,3 +191,8 @@ GetUniformfv
 GetUniformiv
 GetAttachedObjectsARB
 GetInfoLogARB
+GenFramebuffersEXT
+GenRenderbuffersEXT
+FramebufferTexture1DEXT
+FramebufferTexture2DEXT
+FramebufferTexture3DEXT

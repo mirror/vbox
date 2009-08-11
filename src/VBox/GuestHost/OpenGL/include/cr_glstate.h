@@ -38,6 +38,7 @@ typedef struct CRContext CRContext;
 #include "state/cr_viewport.h"
 
 #include "state/cr_attrib.h"
+#include "state/cr_framebuffer.h"
 
 #include "state/cr_statefuncs.h"
 #include "state/cr_stateerror.h"
@@ -147,6 +148,10 @@ struct CRContext {
     CRTextureState     texture;
     CRTransformState   transform;
     CRViewportState    viewport;
+
+#ifdef CR_EXT_framebuffer_object
+    CRFramebufferObjectState    framebufferobject;
+#endif
 
     /** For buffering vertices for selection/feedback */
     /*@{*/
