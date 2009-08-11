@@ -272,7 +272,11 @@ RT_EXPORT_SYMBOL(RTMemFree);
 RTDECL(void *)    RTMemExecAlloc(size_t cb) RT_NO_THROW
 {
     PRTMEMHDR pHdr;
+#ifdef RT_OS_SOLARIS /** @todo figure out why */
+    RT_ASSERT_INTS_ON();
+#else
     RT_ASSERT_PREEMPTIBLE();
+#endif
 
     pHdr = rtMemAlloc(cb + RTR0MEM_FENCE_EXTRA, RTMEMHDR_FLAG_EXEC);
     if (pHdr)
