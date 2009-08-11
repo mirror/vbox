@@ -218,6 +218,14 @@ VMMDECL(int) PATMGCHandleIllegalInstrTrap(PVM pVM, PCPUMCTXCORE pRegFrame)
                 }
                 else
                 {
+                    /* Check first before trying to generate a function/trampoline patch. */
+                    if (pVM->patm.s.fOutOfMemory)
+                    {
+                        pRegFrame->eip += PATM_ILLEGAL_INSTR_SIZE;
+                        pRegFrame->eax = 0;     /* make it fault */
+                        STAM_COUNTER_INC(&pVM->patm.s.StatFunctionNotFound);
+                        return VINF_SUCCESS;
+                    }
                     STAM_COUNTER_INC(&pVM->patm.s.StatFunctionNotFound);
                     return VINF_PATM_DUPLICATE_FUNCTION;
                 }
@@ -410,7 +418,7 @@ VMMDECL(int) PATMGCHandleIllegalInstrTrap(PVM pVM, PCPUMCTXCORE pRegFrame)
             }
 
             case PATM_ACTION_LOG_RET:
-                Log(("PATMGC: RET to %x ESP=%x iopl=%d\n", pRegFrame->edx, pRegFrame->ebx, X86_EFL_GET_IOPL(pVM->patm.s.CTXSUFF(pGCState)->uVMFlags)));
+                Log(("PATMGC: RET from %x to %x ESP=%x iopl=%d\n", pRegFrame->eip, pRegFrame->edx, pRegFrame->ebx, X86_EFL_GET_IOPL(pVM->patm.s.CTXSUFF(pGCState)->uVMFlags)));
                 pRegFrame->eip += PATM_ILLEGAL_INSTR_SIZE;
                 return VINF_SUCCESS;
 
