@@ -5780,6 +5780,7 @@
           <li><tt>"HostMemoryLow"</tt></li>
           <li><tt>"HostAudioNotResponding"</tt></li>
           <li><tt>"VDIStorageFull"</tt></li>
+          <li><tt>"3DSupportIncompatibleAdditions"</tt></li>
         </ul>
 
         <note>
