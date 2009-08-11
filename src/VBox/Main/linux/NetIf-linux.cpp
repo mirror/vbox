@@ -73,7 +73,8 @@ static int getDefaultIfaceName(char *pszName)
 
 static int getInterfaceInfo(int iSocket, const char *pszName, PNETIFINFO pInfo)
 {
-    memset(pInfo, 0, sizeof(*pInfo));
+    // Zeroing out pInfo is a bad idea as it should contain both short and long names at this point.
+    //memset(pInfo, 0, sizeof(*pInfo));
     struct ifreq Req;
     memset(&Req, 0, sizeof(Req));
     strncpy(Req.ifr_name, pszName, sizeof(Req.ifr_name) - 1);
