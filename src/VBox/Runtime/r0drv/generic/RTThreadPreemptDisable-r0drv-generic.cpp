@@ -41,8 +41,8 @@
 RTDECL(void) RTThreadPreemptDisable(PRTTHREADPREEMPTSTATE pState)
 {
     AssertPtr(pState);
-    Assert(pState->uchDummy != 42);
-    pState->uchDummy = 42;
+    Assert(pState->u32Reserved == 0);
+    pState->u32Reserved = 42;
 }
 RT_EXPORT_SYMBOL(RTThreadPreemptDisable);
 

@@ -133,24 +133,27 @@ RTDECL(bool) RTThreadPreemptIsPossible(void)
 RTDECL(void) RTThreadPreemptDisable(PRTTHREADPREEMPTSTATE pState)
 {
     AssertPtr(pState);
+    Assert(pState->u32Reserved == 0);
 
     /* No preemption on OS/2, so do our own accounting. */
     int32_t c = ASMAtomicIncS32(&g_acPreemptDisabled[ASMGetApicId()]);
     AssertMsg(c > 0 && c < 32, ("%d\n", c));
-    pState->uchDummy = (unsigned char)c;
+    pState->u32Reserved = c;
+    RT_ASSERT_PREEMPT_CPUID_DISABLE(pState);
 }
 
 
 RTDECL(void) RTThreadPreemptRestore(PRTTHREADPREEMPTSTATE pState)
 {
     AssertPtr(pState);
-    AssertMsg(pState->uchDummy > 0 && pState->uchDummy < 32, ("%d\n", pState->uchDummy));
+    AssertMsg(pState->u32Reserved > 0 && pState->u32Reserved < 32, ("%d\n", pState->u32Reserved));
+    RT_ASSERT_PREEMPT_CPUID_RESTORE(pState);
 
     /* No preemption on OS/2, so do our own accounting. */
     int32_t volatile *pc = &g_acPreemptDisabled[ASMGetApicId()];
-    AssertMsg(pState->uchDummy == (uint32_t)*pc, ("uchDummy=%d *pc=%d \n", pState->uchDummy, *pc));
-    ASMAtomicUoWriteS32(pc, pState->uchDummy - 1);
-    pState->uchDummy = 0;
+    AssertMsg(pState->u32Reserved == (uint32_t)*pc, ("uchDummy=%d *pc=%d \n", pState->u32Reserved, *pc));
+    ASMAtomicUoWriteS32(pc, pState->u32Reserved - 1);
+    pState->u32Reserved = 0;
 }
 
 

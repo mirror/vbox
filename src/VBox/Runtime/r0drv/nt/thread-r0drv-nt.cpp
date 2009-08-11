@@ -168,6 +168,7 @@ RTDECL(void) RTThreadPreemptDisable(PRTTHREADPREEMPTSTATE pState)
     Assert(KeGetCurrentIrql() <= DISPATCH_LEVEL);
 
     KeRaiseIrql(DISPATCH_LEVEL, &pState->uchOldIrql);
+    RT_ASSERT_PREEMPT_CPUID_DISABLE(pState);
 }
 
 
@@ -175,6 +176,7 @@ RTDECL(void) RTThreadPreemptRestore(PRTTHREADPREEMPTSTATE pState)
 {
     AssertPtr(pState);
 
+    RT_ASSERT_PREEMPT_CPUID_RESTORE(pState);
     KeLowerIrql(pState->uchOldIrql);
     pState->uchOldIrql = 255;
 }

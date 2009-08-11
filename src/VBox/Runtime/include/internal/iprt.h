@@ -130,6 +130,37 @@
 # define RT_ASSERT_PREEMPT_CPUID_SPIN_RELEASE(pThis)    NOREF(idAssertCpuDummy)
 #endif
 
+/** @def RT_ASSERT_PREEMPT_CPUID_DISABLE
+ * For use in RTThreadPreemptDisable implementations after having disabled
+ * preemption.  Requires iprt/mp.h. */
+#ifdef RT_MORE_STRICT
+# define RT_ASSERT_PREEMPT_CPUID_DISABLE(pStat) \
+    do \
+    { \
+        Assert((pStat)->idCpu == NIL_RTCPUID); \
+        (pStat)->idCpu = RTMpCpuId(); \
+    } while (0)
+#else
+# define RT_ASSERT_PREEMPT_CPUID_DISABLE(pStat) \
+    Assert((pStat)->idCpu == NIL_RTCPUID)
+#endif
+
+/** @def RT_ASSERT_PREEMPT_CPUID_RESTORE
+ * For use in RTThreadPreemptRestore implementations before restoring
+ * preemption.  Requires iprt/mp.h. */
+#ifdef RT_MORE_STRICT
+# define RT_ASSERT_PREEMPT_CPUID_RESTORE(pStat) \
+    do \
+    { \
+        RTCPUID const idAssertCpuNow = RTMpCpuId(); \
+        AssertMsg((pStat)->idCpu == idAssertCpuNow,  ("%#x, %#x\n", (pStat)->idCpu, idAssertCpuNow)); \
+        (pStat)->idCpu = NIL_RTCPUID; \
+    } while (0)
+#else
+# define RT_ASSERT_PREEMPT_CPUID_RESTORE(pStat)         do { } while (0)
+#endif
+
+
 /** @def RT_ASSERT_INTS_ON
  * Asserts that interrupts are disabled when RT_MORE_STRICT is defined.   */
 #ifdef RT_MORE_STRICT
