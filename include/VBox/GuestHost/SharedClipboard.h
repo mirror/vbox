@@ -58,7 +58,7 @@ typedef struct _CLIPREADCBREQ CLIPREADCBREQ;
 /* APIs exported by the X11 backend */
 extern CLIPBACKEND *ClipConstructX11(VBOXCLIPBOARDCONTEXT *pFrontend);
 extern void ClipDestructX11(CLIPBACKEND *pBackend);
-extern int ClipStartX11(CLIPBACKEND *pBackend);
+extern int ClipStartX11(CLIPBACKEND *pBackend, bool grab = false);
 extern int ClipStopX11(CLIPBACKEND *pBackend);
 extern void ClipAnnounceFormatToX11(CLIPBACKEND *pBackend,
                                     uint32_t u32Formats);

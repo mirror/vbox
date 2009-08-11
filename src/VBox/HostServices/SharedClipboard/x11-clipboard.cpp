@@ -122,7 +122,7 @@ int vboxClipboardConnect (VBOXCLIPBOARDCLIENTDATA *pClient)
             pCtx->pBackend = pBackend;
             pClient->pCtx = pCtx;
             pCtx->pClient = pClient;
-            rc = ClipStartX11(pBackend);
+            rc = ClipStartX11(pBackend, true /* grab shared clipboard */);
         }
         if (RT_FAILURE(rc) && pBackend)
             ClipStopX11(pCtx->pBackend);
@@ -485,7 +485,7 @@ void ClipDestructX11(CLIPBACKEND *pBackend)
     RTMemFree(pBackend);
 }
 
-int ClipStartX11(CLIPBACKEND *pBackend)
+int ClipStartX11(CLIPBACKEND *pBackend, bool)
 {
     return VINF_SUCCESS;
 }

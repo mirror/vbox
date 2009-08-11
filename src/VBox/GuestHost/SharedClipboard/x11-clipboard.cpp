@@ -20,16 +20,19 @@
  * additional information or have any questions.
  */
 
-/* Note: to automatically run regression tests on the shared clipboard, set
- * the make variable VBOX_RUN_X11_CLIPBOARD_TEST=1 while building.  If you
- * often make changes to the clipboard code, setting this variable in
- * LocalConfig.kmk will cause the tests to be run every time the code is
+/* Note: to automatically run regression tests on the shared clipboard,
+ * execute the tstClipboardX11 testcase.  If you often make changes to the
+ * clipboard code, adding the line
+ *   OTHERS += $(PATH_tstClipboardX11)/tstClipboardX11.run
+ * to LocalConfig.kmk will cause the tests to be run every time the code is
  * changed. */
 
 #define LOG_GROUP LOG_GROUP_SHARED_CLIPBOARD
 
 #include <errno.h>
 
+#include <dlfcn.h>
+#include <fcntl.h>
 #include <unistd.h>
 
 #ifdef RT_OS_SOLARIS
@@ -43,6 +46,7 @@
 #include <X11/Xproto.h>
 #include <X11/StringDefs.h>
 
+#include <iprt/types.h>
 #include <iprt/env.h>
 #include <iprt/mem.h>
 #include <iprt/semaphore.h>
@@ -163,9 +167,10 @@ struct _CLIPBACKEND
     /** The X Toolkit widget which we use as our clipboard client.  It is never made visible. */
     Widget widget;
 
-    /** Does VBox currently own the clipboard?  If so, we don't need to poll
-     * X11 for supported formats. */
+    /** Does VBox currently own the clipboard? */
     bool fOwnsClipboard;
+    /** Should we try to grab the clipboard on startup? */
+    bool fGrabClipboardOnStart;
 
     /** The best text format X11 has to offer, as an index into the formats
      * table */
@@ -190,6 +195,10 @@ struct _CLIPBACKEND
     int wakeupPipeWrite;
     /** The reader end of the pipe */
     int wakeupPipeRead;
+    /** A pointer to the XFixesSelectSelectionInput function */
+    void (*fixesSelectInput)(Display *, Window, Atom, unsigned long);
+    /** The first XFixes event number */
+    int fixesEventBase;
 };
 
 /** The number of simultaneous instances we support.  For all normal purposes
@@ -279,15 +288,27 @@ static Atom clipGetAtom(Widget widget, const char *pszName)
     return retval;
 }
 
-static void clipQueueToEventThread(XtAppContext app_context,
+static void clipQueueToEventThread(CLIPBACKEND *pCtx,
                                    XtTimerCallbackProc proc,
                                    XtPointer client_data);
+
+/** String written to the wakeup pipe. */
+#define WAKE_UP_STRING      "WakeUp!"
+/** Length of the string written. */
+#define WAKE_UP_STRING_LEN  ( sizeof(WAKE_UP_STRING) - 1 )
+
 #ifndef TESTCASE
-void clipQueueToEventThread(XtAppContext app_context,
+/** Schedule a function call to run on the Xt event thread by passing it to
+ * the application context as a 0ms timeout and waking up the event loop by
+ * writing to the wakeup pipe which it monitors. */
+void clipQueueToEventThread(CLIPBACKEND *pCtx,
                             XtTimerCallbackProc proc,
                             XtPointer client_data)
 {
-    XtAppAddTimeOut(app_context, 0, proc, client_data);
+    LogRel2(("clipQueueToEventThread: proc=%p, client_data=%p\n",
+             proc, client_data));
+    XtAppAddTimeOut(pCtx->appContext, 0, proc, client_data);
+    write(pCtx->wakeupPipeWrite, WAKE_UP_STRING, WAKE_UP_STRING_LEN);
 }
 #endif
 
@@ -301,9 +322,8 @@ static void clipReportFormatsToVBox(CLIPBACKEND *pCtx)
 }
 
 /**
- * Forget which formats were previously in the X11 clipboard.  Should be
- * called when we grab the clipboard, so that when we lose it again the poller
- * will notify us when new formats become available. */
+ * Forget which formats were previously in the X11 clipboard.  Called when we
+ * grab the clipboard. */
 static void clipResetX11Formats(CLIPBACKEND *pCtx)
 {
     pCtx->X11TextFormat = INVALID;
@@ -424,13 +444,12 @@ static void clipUpdateX11Targets(CLIPBACKEND *pCtx, Atom *pTargets,
 {
     bool changed = false;
 
-    LogRel3 (("%s: called\n", __PRETTY_FUNCTION__));
+    LogRel2 (("%s: called\n", __PRETTY_FUNCTION__));
     if (pCtx->fOwnsClipboard)
         /* VBox raced us and we lost.  So we don't want to report anything. */
         return;
     clipGetFormatsFromTargets(pCtx, pTargets, cTargets, &changed);
-    if (changed)
-        clipReportFormatsToVBox(pCtx);
+    clipReportFormatsToVBox(pCtx);
 }
 
 #ifdef TESTCASE
@@ -459,7 +478,7 @@ static bool clipTestTargetUpdate(CLIPBACKEND *pCtx)
 /**
  * Notify the VBox clipboard about available data formats, based on the
  * "targets" information obtained from the X11 clipboard.
- * @note  callback for XtGetSelectionValue, called on a polling loop
+ * @note  callback for XtGetSelectionValue
  */
 static void clipConvertX11Targets(Widget, XtPointer pClientData,
                                   Atom * /* selection */, Atom *atomType,
@@ -471,41 +490,22 @@ static void clipConvertX11Targets(Widget, XtPointer pClientData,
     Atom *pTargets = (*atomType == XT_CONVERT_FAIL) ? NULL  /* timeout */
                                                     : (Atom *)pValue;
     size_t cTargets = pTargets ? *pcLen : 0;
+    LogRel2(("clipConvertX11Targets: pValue=%p, *pcLen=%u, *atomType=%d, XT_CONVERT_FAIL=%d\n",
+             pValue, *pcLen, *atomType, XT_CONVERT_FAIL));
     clipUpdateX11Targets(pCtx, pTargets, cTargets);
     XtFree(reinterpret_cast<char *>(pValue));
 }
 
-enum { TIMER_FREQ = 200 /* ms */ };
-
-static void clipPollX11CBFormats(XtPointer pUserData,
-                                 XtIntervalId * /* hTimerId */);
-static void clipSchedulePoller(CLIPBACKEND *pCtx,
-                               XtTimerCallbackProc proc);
-
-#ifndef TESTCASE
-void clipSchedulePoller(CLIPBACKEND *pCtx,
-                        XtTimerCallbackProc proc)
-{
-    XtAppAddTimeOut(pCtx->appContext, TIMER_FREQ, proc, pCtx);
-}
-#endif
-
 /**
- * This timer callback is called every 200ms to check the contents of the X11
- * clipboard.
- * @note  X11 backend code, callback for XtAppAddTimeOut, recursively
- *        re-armed.
- * @todo  Use the XFIXES extension to check for new clipboard data when
- *        available.
+ * Callback to notify us when the contents of the X11 clipboard change.
  */
-void clipPollX11CBFormats(XtPointer pUserData, XtIntervalId * /* hTimerId */)
+void clipQueryX11CBFormats(CLIPBACKEND *pCtx)
 {
-    CLIPBACKEND *pCtx = (CLIPBACKEND *)pUserData;
-    LogRel3 (("%s: called\n", __PRETTY_FUNCTION__));
+    LogRel2 (("%s: called\n", __PRETTY_FUNCTION__));
     /* Get the current clipboard contents if we don't own it ourselves */
     if (!pCtx->fOwnsClipboard)
     {
-        LogRel3 (("%s: requesting the targets that the X11 clipboard offers\n",
+        LogRel2 (("%s: requesting the targets that the X11 clipboard offers\n",
                __PRETTY_FUNCTION__));
         XtGetSelectionValue(pCtx->widget,
                             clipGetAtom(pCtx->widget, "CLIPBOARD"),
@@ -513,11 +513,22 @@ void clipPollX11CBFormats(XtPointer pUserData, XtIntervalId * /* hTimerId */)
                             clipConvertX11Targets, pCtx,
                             CurrentTime);
     }
-    /* Re-arm our timer */
-    clipSchedulePoller(pCtx, clipPollX11CBFormats);
 }
 
 #ifndef TESTCASE
+/**
+ * Wait until an event arrives and handle it if it is an XFIXES selection
+ * event, which Xt doesn't know about.
+ */
+void clipPeekEventAndDoXFixesHandling(CLIPBACKEND *pCtx)
+{
+    XEvent event = { 0 };
+
+    if (XtAppPeekEvent(pCtx->appContext, &event))
+        if (event.type == pCtx->fixesEventBase)
+            clipQueryX11CBFormats(pCtx);
+}
+
 /**
  * The main loop of our clipboard reader.
  * @note  X11 backend code.
@@ -527,8 +538,14 @@ static int clipEventThread(RTTHREAD self, void *pvUser)
     LogRel(("Shared clipboard: starting shared clipboard thread\n"));
 
     CLIPBACKEND *pCtx = (CLIPBACKEND *)pvUser;
+
+    if (pCtx->fGrabClipboardOnStart)
+        clipQueryX11CBFormats(pCtx);
     while (XtAppGetExitFlag(pCtx->appContext) == FALSE)
+    {
+        clipPeekEventAndDoXFixesHandling(pCtx);
         XtAppProcessEvent(pCtx->appContext, XtIMAll);
+    }
     LogRel(("Shared clipboard: shared clipboard thread terminated successfully\n"));
     return VINF_SUCCESS;
 }
@@ -561,8 +578,7 @@ static void clipUninit(CLIPBACKEND *pCtx)
 
 /** Worker function for stopping the clipboard which runs on the event
  * thread. */
-static void clipStopEventThreadWorker(XtPointer pUserData, int * /* source */,
-                                      XtInputId * /* id */)
+static void clipStopEventThreadWorker(XtPointer pUserData, XtIntervalId *)
 {
     
     CLIPBACKEND *pCtx = (CLIPBACKEND *)pUserData;
@@ -574,6 +590,46 @@ static void clipStopEventThreadWorker(XtPointer pUserData, int * /* source */,
      * reiterate that any outstanding requests from the X11 event loop to
      * the VBox part *must* have returned before we do this. */
     XtAppSetExitFlag(pCtx->appContext);
+}
+
+#ifndef TESTCASE
+/** Setup the XFixes library and load the XFixesSelectSelectionInput symbol */
+static int clipLoadXFixes(Display *pDisplay, CLIPBACKEND *pCtx)
+{
+    int dummy1 = 0, dummy2 = 0, rc = VINF_SUCCESS;
+    void *hFixesLib;
+
+    hFixesLib = dlopen("libXfixes.so.1", RTLD_LAZY);
+    if (!hFixesLib)
+        hFixesLib = dlopen("libXfixes.so.2", RTLD_LAZY);
+    if (!hFixesLib)
+        hFixesLib = dlopen("libXfixes.so.3", RTLD_LAZY);
+    if (hFixesLib)
+        pCtx->fixesSelectInput =
+            (void (*)(Display *, Window, Atom, long unsigned int))
+                (uintptr_t)dlsym(hFixesLib, "XFixesSelectSelectionInput");
+    /* For us, a NULL function pointer is a failure */
+    if (!hFixesLib || !pCtx->fixesSelectInput)
+        rc = VERR_NOT_SUPPORTED;
+    if (   RT_SUCCESS(rc)
+        && !XQueryExtension(pDisplay, "XFIXES", &dummy1,
+                            &pCtx->fixesEventBase, &dummy2))
+        rc = VERR_NOT_SUPPORTED;
+    if (RT_SUCCESS(rc) && pCtx->fixesEventBase < 0)
+        rc = VERR_NOT_SUPPORTED;
+    return rc;
+}
+#endif
+
+/** This is the callback which is scheduled when data is available on the
+ * wakeup pipe.  It simply reads all data from the pipe. */
+static void clipDrainWakeupPipe(XtPointer pUserData, int *, XtInputId *)
+{
+    CLIPBACKEND *pCtx = (CLIPBACKEND *)pUserData;
+    char acBuf[WAKE_UP_STRING_LEN];
+
+    LogRel2(("clipDrainWakeupPipe: called\n"));
+    while (read(pCtx->wakeupPipeRead, acBuf, sizeof(acBuf)) > 0) {}
 }
 
 /** X11 specific initialisation for the shared clipboard.
@@ -600,6 +656,10 @@ static int clipInit(CLIPBACKEND *pCtx)
         LogRel(("Shared clipboard: failed to connect to the X11 clipboard - the window system may not be running.\n"));
         rc = VERR_NOT_SUPPORTED;
     }
+#ifndef TESTCASE
+    if (RT_SUCCESS(rc))
+        rc = clipLoadXFixes(pDisplay, pCtx);
+#endif
     if (RT_SUCCESS(rc))
     {
         pCtx->widget = XtVaAppCreateShell(0, "VBoxClipboard",
@@ -616,10 +676,16 @@ static int clipInit(CLIPBACKEND *pCtx)
     }
     if (RT_SUCCESS(rc))
     {
+        EventMask mask = 0;
+
         XtSetMappedWhenManaged(pCtx->widget, false);
         XtRealizeWidget(pCtx->widget);
-        /* Set up a timer to poll the X11 clipboard */
-        clipSchedulePoller(pCtx, clipPollX11CBFormats);
+#ifndef TESTCASE
+        /* Enable clipboard update notification */
+        pCtx->fixesSelectInput(pDisplay, XtWindow(pCtx->widget),
+                               clipGetAtom(pCtx->widget, "CLIPBOARD"),
+                               7 /* All XFixes*Selection*NotifyMask flags */);
+#endif
     }
     /* Create the pipes */
     int pipes[2];
@@ -629,8 +695,11 @@ static int clipInit(CLIPBACKEND *pCtx)
         pCtx->wakeupPipeWrite = pipes[1];
         if (!XtAppAddInput(pCtx->appContext, pCtx->wakeupPipeRead,
                            (XtPointer) XtInputReadMask,
-                           clipStopEventThreadWorker, (XtPointer) pCtx))
+                           clipDrainWakeupPipe, (XtPointer) pCtx))
             rc = VERR_NO_MEMORY;  /* What failure means is not doc'ed. */
+        if (   RT_SUCCESS(rc)
+            && (fcntl(pCtx->wakeupPipeRead, F_SETFL, O_NONBLOCK) != 0))
+            rc = RTErrConvertFromErrno(errno);
     }
     else
         rc = RTErrConvertFromErrno(errno);
@@ -690,8 +759,9 @@ void ClipDestructX11(CLIPBACKEND *pCtx)
 
 /**
  * Announce to the X11 backend that we are ready to start.
+ * @param  grab  whether we should try to grab the shared clipboard at once
  */
-int ClipStartX11(CLIPBACKEND *pCtx)
+int ClipStartX11(CLIPBACKEND *pCtx, bool grab)
 {
     int rc = VINF_SUCCESS;
     LogRelFlowFunc(("\n"));
@@ -702,6 +772,12 @@ int ClipStartX11(CLIPBACKEND *pCtx)
         return VINF_SUCCESS;
 
     rc = clipInit(pCtx);
+    if (RT_SUCCESS(rc))
+    {
+        pCtx->fOwnsClipboard = false;
+        clipResetX11Formats(pCtx);
+        pCtx->fGrabClipboardOnStart = grab;
+    }
 #ifndef TESTCASE
     if (RT_SUCCESS(rc))
     {
@@ -711,18 +787,8 @@ int ClipStartX11(CLIPBACKEND *pCtx)
             LogRel(("Failed to initialise the shared clipboard X11 backend.\n"));
     }
 #endif
-    if (RT_SUCCESS(rc))
-    {
-        pCtx->fOwnsClipboard = false;
-        clipResetX11Formats(pCtx);
-    }
     return rc;
 }
-
-/** String written to the wakeup pipe. */
-#define WAKE_UP_STRING      "WakeUp!"
-/** Length of the string written. */
-#define WAKE_UP_STRING_LEN  ( sizeof(WAKE_UP_STRING) - 1 )
 
 /**
  * Shut down the shared clipboard X11 backend.
@@ -744,13 +810,18 @@ int ClipStopX11(CLIPBACKEND *pCtx)
 
     LogRelFunc(("stopping the shared clipboard X11 backend\n"));
     /* Write to the "stop" pipe */
-    rc = write(pCtx->wakeupPipeWrite, WAKE_UP_STRING, WAKE_UP_STRING_LEN);
+    clipQueueToEventThread(pCtx, clipStopEventThreadWorker, (XtPointer) pCtx);
+#ifndef TESTCASE
     do
     {
         rc = RTThreadWait(pCtx->thread, 1000, &rcThread);
         ++count;
         Assert(RT_SUCCESS(rc) || ((VERR_TIMEOUT == rc) && (count != 5)));
     } while ((VERR_TIMEOUT == rc) && (count < 300));
+#else
+    rc = VINF_SUCCESS;
+    rcThread = VINF_SUCCESS;
+#endif
     if (RT_SUCCESS(rc))
         AssertRC(rcThread);
     else
@@ -1089,7 +1160,6 @@ static Boolean clipXtConvertSelectionProc(Widget widget, Atom *atomSelection,
     if (*atomTarget == clipGetAtom(pCtx->widget, "TARGETS"))
         rc = clipCreateX11Targets(pCtx, atomTypeReturn, pValReturn,
                                   pcLenReturn, piFormatReturn);
-    else
         rc = clipConvertVBoxCBForX11(pCtx, atomTarget, atomTypeReturn,
                                      pValReturn, pcLenReturn, piFormatReturn);
     LogRelFlowFunc(("returning, internal status code %Rrc\n", rc));
@@ -1102,8 +1172,8 @@ static Boolean clipXtConvertSelectionProc(Widget widget, Atom *atomSelection,
 static void clipReleaseCB(CLIPBACKEND *pCtx)
 {
     LogRelFlowFunc (("\n"));
-    /* The formats should be set to the right values as soon as we start
-     * polling */
+    /* The formats should be set to the right values as soon as X11 clipboard
+     * data becomes available. */
     clipReportEmptyX11CB(pCtx);
     pCtx->fOwnsClipboard = false;
 }
@@ -1202,7 +1272,7 @@ void ClipAnnounceFormatToX11(CLIPBACKEND *pCtx,
     {
         pFormats->pCtx = pCtx;
         pFormats->formats = u32Formats;
-        clipQueueToEventThread(pCtx->appContext, clipNewVBoxFormatsWorker,
+        clipQueueToEventThread(pCtx, clipNewVBoxFormatsWorker,
                                (XtPointer) pFormats);
     }
 }
@@ -1496,13 +1566,6 @@ static void clipConvertX11CB(Widget widget, XtPointer pClientData,
                                    pvDest, cbDest);
     RTMemFree(pvDest);
     RTMemFree(pReq);
-    if (RT_SUCCESS(rc))
-        /* The other end may want to cache the data, so pretend we have new
-         * data, as we have no way of telling when new data really does
-         * arrive. */
-        clipReportFormatsToVBox(pCtx);
-    // else
-    //     clipReportEmptyX11CB(pCtx);
     LogRelFlowFunc(("rc=%Rrc\n", rc));
 }
 
@@ -1585,7 +1648,7 @@ int ClipRequestDataFromX11(CLIPBACKEND *pCtx, uint32_t u32Format,
         pX11Req->mCtx = pCtx;
         pX11Req->mReq = pReq;
         /* We use this to schedule a worker function on the event thread. */
-        clipQueueToEventThread(pCtx->appContext, vboxClipboardReadX11Worker,
+        clipQueueToEventThread(pCtx, vboxClipboardReadX11Worker,
                                (XtPointer) pX11Req);
     }
     return rc;
@@ -1606,23 +1669,9 @@ int ClipRequestDataFromX11(CLIPBACKEND *pCtx, uint32_t u32Format,
 #define TEST_NAME "tstClipboardX11"
 #define TEST_WIDGET (Widget)0xffff
 
-/* Our X11 clipboard target poller */
-static XtTimerCallbackProc g_pfnPoller = NULL;
-/* User data for the poller function. */
-static XtPointer g_pPollerData = NULL;
-
-/* For the testcase, we install the poller function in a global variable
- * which is called when the testcase updates the X11 targets. */
-void clipSchedulePoller(CLIPBACKEND *pCtx,
-                        XtTimerCallbackProc proc)
-{
-    g_pfnPoller = proc;
-    g_pPollerData = (XtPointer)pCtx;
-}
-
 /* For the purpose of the test case, we just execute the procedure to be
  * scheduled, as we are running single threaded. */
-void clipQueueToEventThread(XtAppContext app_context,
+void clipQueueToEventThread(CLIPBACKEND *pCtx,
                             XtTimerCallbackProc proc,
                             XtPointer client_data)
 {
@@ -2569,6 +2618,9 @@ int main()
     }
     if (!testStringFromVBoxFailed(pCtx, "UTF8_STRING"))
         ++cErrs;
+    rc = ClipStopX11(pCtx);
+    AssertRCReturn(rc, 1);
+    ClipDestructX11(pCtx);
 
     if (cErrs > 0)
         RTPrintf("Failed with %u error(s)\n", cErrs);
