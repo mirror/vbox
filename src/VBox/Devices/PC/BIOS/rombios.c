@@ -221,6 +221,7 @@
 #ifdef VBOX_WITH_SCSI
 /* Enough for now */
 #    define BX_MAX_SCSI_DEVICES 4
+#    define BX_MAX_STORAGE_DEVICES (BX_MAX_ATA_DEVICES + BX_MAX_SCSI_DEVICES)
 
 /* A SCSI device starts always at BX_MAX_ATA_DEVICES. */
 #    define VBOX_IS_SCSI_DEVICE(device_id) (device_id >= BX_MAX_ATA_DEVICES)
@@ -2356,8 +2357,8 @@ void ata_init( )
 
   // hdidmap  and cdidmap init.
   for (device=0; device<BX_MAX_ATA_DEVICES; device++) {
-    write_byte(ebda_seg,&EbdaData->ata.hdidmap[device],BX_MAX_ATA_DEVICES);
-    write_byte(ebda_seg,&EbdaData->ata.cdidmap[device],BX_MAX_ATA_DEVICES);
+    write_byte(ebda_seg,&EbdaData->ata.hdidmap[device],BX_MAX_STORAGE_DEVICES);
+    write_byte(ebda_seg,&EbdaData->ata.cdidmap[device],BX_MAX_STORAGE_DEVICES);
     }
 
   write_byte(ebda_seg,&EbdaData->ata.hdcount,0);
@@ -5419,7 +5420,7 @@ int13_harddisk(EHAX, DS, ES, DI, SI, BP, ELDX, BX, DX, CX, AX, IP, CS, FLAGS)
 
 #ifdef VBOX_WITH_SCSI
   // basic check : device has to be defined
-  if ( (GET_ELDL() < 0x80) || (GET_ELDL() >= 0x80 + BX_MAX_ATA_DEVICES + BX_MAX_SCSI_DEVICES) ) {
+  if ( (GET_ELDL() < 0x80) || (GET_ELDL() >= 0x80 + BX_MAX_STORAGE_DEVICES) ) {
     BX_INFO("int13_harddisk: function %02x, ELDL out of range %02x\n", GET_AH(), GET_ELDL());
     goto int13_fail;
     }
@@ -5436,7 +5437,7 @@ int13_harddisk(EHAX, DS, ES, DI, SI, BP, ELDX, BX, DX, CX, AX, IP, CS, FLAGS)
 
 #ifdef VBOX_WITH_SCSI
   // basic check : device has to be valid
-  if (device >= BX_MAX_ATA_DEVICES + BX_MAX_SCSI_DEVICES) {
+  if (device >= BX_MAX_STORAGE_DEVICES) {
     BX_INFO("int13_harddisk: function %02x, unmapped device for ELDL=%02x\n", GET_AH(), GET_ELDL());
     goto int13_fail;
     }
