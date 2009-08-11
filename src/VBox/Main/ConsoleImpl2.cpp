@@ -169,16 +169,11 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
 
     int             rc;
     HRESULT         hrc;
-    char           *psz = NULL;
     BSTR            str = NULL;
 
-    Bstr            bstr; /* use this bstr when calling COM methods instead
-                             of str as it manages memory! */
-
-#define STR_CONV()  do { rc = RTUtf16ToUtf8(str, &psz); RC_CHECK(); } while (0)
-#define STR_FREE()  do { if (str) { SysFreeString(str); str = NULL; } if (psz) { RTStrFree(psz); psz = NULL; } } while (0)
-#define RC_CHECK()  do { if (RT_FAILURE(rc)) { AssertMsgFailed(("rc=%Rrc\n", rc)); STR_FREE(); return rc; } } while (0)
-#define H()         do { if (FAILED(hrc)) { AssertMsgFailed(("hrc=%#x\n", hrc)); STR_FREE(); return VERR_GENERAL_FAILURE; } } while (0)
+#define STR_FREE()  do { if (str) { SysFreeString(str); str = NULL; } } while (0)
+#define RC_CHECK()  do { if (RT_FAILURE(rc)) { AssertMsgFailed(("rc=%Rrc\n", rc));  STR_FREE(); return rc;                   } } while (0)
+#define H()         do { if (FAILED(hrc))    { AssertMsgFailed(("hrc=%#x\n", hrc)); STR_FREE(); return VERR_GENERAL_FAILURE; } } while (0)
 
     /*
      * Get necessary objects and frequently used parameters.
@@ -195,10 +190,10 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
     ComPtr<IBIOSSettings> biosSettings;
     hrc = pMachine->COMGETTER(BIOSSettings)(biosSettings.asOutParam());             H();
 
-    Bstr id;
-    hrc = pMachine->COMGETTER(Id)(id.asOutParam());                               H();
-    Guid uuid(id);
-    PCRTUUID pUuid = uuid.raw();
+    hrc = pMachine->COMGETTER(Id)(&str);                                            H();
+    Guid MachineUuid(str);
+    PCRTUUID pUuid = MachineUuid.raw();
+    STR_FREE();
 
     ULONG cRamMBs;
     hrc = pMachine->COMGETTER(MemorySize)(&cRamMBs);                                H();
@@ -632,8 +627,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
             rc = CFGMR3InsertString(pLunL1, "Driver",          "RawImage");         RC_CHECK();
             rc = CFGMR3InsertNode(pLunL1,   "Config", &pCfg);                       RC_CHECK();
             hrc = floppyImage->COMGETTER(Location)(&str);                           H();
-            STR_CONV();
-            rc = CFGMR3InsertString(pCfg,   "Path",             psz);               RC_CHECK();
+            rc = CFGMR3InsertStringW(pCfg,  "Path",             str);               RC_CHECK();
             STR_FREE();
         }
         else
@@ -646,8 +640,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                 rc = CFGMR3InsertString(pLunL0, "Driver",      "HostFloppy");       RC_CHECK();
                 rc = CFGMR3InsertNode(pLunL0,   "Config", &pCfg);                   RC_CHECK();
                 hrc = hostFloppyDrive->COMGETTER(Name)(&str);                       H();
-                STR_CONV();
-                rc = CFGMR3InsertString(pCfg,   "Path",         psz);               RC_CHECK();
+                rc = CFGMR3InsertStringW(pCfg,  "Path",         str);               RC_CHECK();
                 STR_FREE();
             }
             else
@@ -811,11 +804,12 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
     for (unsigned iMode = 1; iMode <= 16; iMode++)
     {
         char szExtraDataKey[sizeof("CustomVideoModeXX")];
-        RTStrPrintf(szExtraDataKey, sizeof(szExtraDataKey), "CustomVideoMode%d", iMode);
+        RTStrPrintf(szExtraDataKey, sizeof(szExtraDataKey), "CustomVideoMode%u", iMode);
         hrc = pMachine->GetExtraData(Bstr(szExtraDataKey), &str);                   H();
         if (!str || !*str)
             break;
-        rc = CFGMR3InsertStringW(pCfg, szExtraDataKey, str);
+        rc = CFGMR3InsertStringW(pCfg, szExtraDataKey, str);                        RC_CHECK();
+        STR_FREE();
         cModes++;
     }
     rc = CFGMR3InsertInteger(pCfg,  "CustomVideoModes", cModes);
@@ -845,8 +839,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
      * Storage controllers.
      */
     com::SafeIfaceArray<IStorageController> ctrls;
-    hrc = pMachine->
-        COMGETTER(StorageControllers) (ComSafeArrayAsOutParam (ctrls));             H();
+    hrc = pMachine->COMGETTER(StorageControllers)(ComSafeArrayAsOutParam(ctrls));   H();
 
     for (size_t i = 0; i < ctrls.size(); ++ i)
     {
@@ -993,8 +986,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                         rc = CFGMR3InsertString(pLunL0, "Driver",      "HostDVD");              RC_CHECK();
                         rc = CFGMR3InsertNode(pLunL0,   "Config", &pCfg);                       RC_CHECK();
                         hrc = hostDvdDrive->COMGETTER(Name)(&str);                              H();
-                        STR_CONV();
-                        rc = CFGMR3InsertString(pCfg,   "Path",         psz);                   RC_CHECK();
+                        rc = CFGMR3InsertStringW(pCfg,  "Path",         str);                   RC_CHECK();
                         STR_FREE();
                         BOOL fPassthrough;
                         hrc = dvdDrive->COMGETTER(Passthrough)(&fPassthrough);                  H();
@@ -1017,8 +1009,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                             rc = CFGMR3InsertString(pLunL1, "Driver",          "MediaISO");     RC_CHECK();
                             rc = CFGMR3InsertNode(pLunL1,   "Config", &pCfg);                   RC_CHECK();
                             hrc = dvdImage->COMGETTER(Location)(&str);                          H();
-                            STR_CONV();
-                            rc = CFGMR3InsertString(pCfg,   "Path",             psz);           RC_CHECK();
+                            rc = CFGMR3InsertStringW(pCfg,  "Path",             str);           RC_CHECK();
                             STR_FREE();
                         }
                     }
@@ -1032,22 +1023,21 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
         }
 
         /* At the moment we only support one controller per type. So the instance id is always 0. */
-        rc = ctrls[i]->COMSETTER(Instance)(0);                                     H();
+        rc = ctrls[i]->COMSETTER(Instance)(0);                                  H();
 
         /* Attach the hard disks. */
         com::SafeIfaceArray<IHardDiskAttachment> atts;
-        hrc = pMachine->
-            GetHardDiskAttachmentsOfController (controllerName,
-                                                ComSafeArrayAsOutParam (atts)); H();
+        hrc = pMachine->GetHardDiskAttachmentsOfController(controllerName,
+                                                           ComSafeArrayAsOutParam(atts)); H();
 
         for (size_t j = 0; j < atts.size(); ++ j)
         {
             ComPtr<IHardDisk> hardDisk;
-            hrc = atts [j]->COMGETTER(HardDisk) (hardDisk.asOutParam());        H();
+            hrc = atts[j]->COMGETTER(HardDisk)(hardDisk.asOutParam());          H();
             LONG lDev;
-            hrc = atts [j]->COMGETTER(Device) (&lDev);                          H();
+            hrc = atts[j]->COMGETTER(Device)(&lDev);                            H();
             LONG lPort;
-            hrc = atts [j]->COMGETTER(Port) (&lPort);                           H();
+            hrc = atts[j]->COMGETTER(Port)(&lPort);                             H();
 
             int iLUN = 0;
 
@@ -1086,52 +1076,51 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                 }
             }
 
-            char szLUN[16];
-            RTStrPrintf (szLUN, sizeof(szLUN), "LUN#%u", iLUN);
-
-            rc = CFGMR3InsertNode (pCtlInst, szLUN, &pLunL0);                       RC_CHECK();
+            rc = CFGMR3InsertNodeF(pCtlInst, &pLunL0, "LUN#%u", iLUN);          RC_CHECK();
             /* SCSI has a another driver between device and block. */
             if (fSCSI)
             {
-                rc = CFGMR3InsertString (pLunL0, "Driver", "SCSI");             RC_CHECK();
-                rc = CFGMR3InsertNode (pLunL0, "Config", &pCfg);                RC_CHECK();
+                rc = CFGMR3InsertString(pLunL0, "Driver", "SCSI");              RC_CHECK();
+                rc = CFGMR3InsertNode(pLunL0, "Config", &pCfg);                 RC_CHECK();
 
-                rc = CFGMR3InsertNode (pLunL0, "AttachedDriver", &pLunL0);      RC_CHECK();
+                rc = CFGMR3InsertNode(pLunL0, "AttachedDriver", &pLunL0);       RC_CHECK();
             }
-            rc = CFGMR3InsertString (pLunL0, "Driver", "Block");                RC_CHECK();
-            rc = CFGMR3InsertNode (pLunL0, "Config", &pCfg);                    RC_CHECK();
-            rc = CFGMR3InsertString (pCfg, "Type", "HardDisk");                 RC_CHECK();
-            rc = CFGMR3InsertInteger (pCfg, "Mountable", 0);                    RC_CHECK();
+            rc = CFGMR3InsertString(pLunL0, "Driver", "Block");                 RC_CHECK();
+            rc = CFGMR3InsertNode(pLunL0, "Config", &pCfg);                     RC_CHECK();
+            rc = CFGMR3InsertString(pCfg, "Type", "HardDisk");                  RC_CHECK();
+            rc = CFGMR3InsertInteger(pCfg, "Mountable", 0);                     RC_CHECK();
 
-            rc = CFGMR3InsertNode (pLunL0, "AttachedDriver", &pLunL1);          RC_CHECK();
-            rc = CFGMR3InsertString (pLunL1, "Driver", "VD");                   RC_CHECK();
-            rc = CFGMR3InsertNode (pLunL1, "Config", &pCfg);                    RC_CHECK();
+            rc = CFGMR3InsertNode(pLunL0, "AttachedDriver", &pLunL1);           RC_CHECK();
+            rc = CFGMR3InsertString(pLunL1, "Driver", "VD");                    RC_CHECK();
+            rc = CFGMR3InsertNode(pLunL1, "Config", &pCfg);                     RC_CHECK();
 
-            hrc = hardDisk->COMGETTER(Location) (bstr.asOutParam());            H();
-            rc = CFGMR3InsertString (pCfg, "Path", Utf8Str (bstr));             RC_CHECK();
+            hrc = hardDisk->COMGETTER(Location)(&str);                          H();
+            rc = CFGMR3InsertStringW(pCfg, "Path", str);                        RC_CHECK();
+            STR_FREE();
 
-            hrc = hardDisk->COMGETTER(Format) (bstr.asOutParam());              H();
-            rc = CFGMR3InsertString (pCfg, "Format", Utf8Str (bstr));           RC_CHECK();
+            hrc = hardDisk->COMGETTER(Format)(&str);                            H();
+            rc = CFGMR3InsertStringW(pCfg, "Format", str);                      RC_CHECK();
+            STR_FREE();
 
             /* Pass all custom parameters. */
             bool fHostIP = true;
             SafeArray<BSTR> names;
             SafeArray<BSTR> values;
-            hrc = hardDisk->GetProperties (NULL,
-                                           ComSafeArrayAsOutParam (names),
-                                           ComSafeArrayAsOutParam (values));    H();
+            hrc = hardDisk->GetProperties(NULL,
+                                          ComSafeArrayAsOutParam(names),
+                                          ComSafeArrayAsOutParam(values));      H();
 
             if (names.size() != 0)
             {
                 PCFGMNODE pVDC;
-                rc = CFGMR3InsertNode (pCfg, "VDConfig", &pVDC);                RC_CHECK();
+                rc = CFGMR3InsertNode(pCfg, "VDConfig", &pVDC);                 RC_CHECK();
                 for (size_t ii = 0; ii < names.size(); ++ ii)
                 {
                     if (values[ii] && *values[ii])
                     {
-                        Utf8Str name = names [ii];
-                        Utf8Str value = values [ii];
-                        rc = CFGMR3InsertString (pVDC, name, value);
+                        Utf8Str name = names[ii];
+                        Utf8Str value = values[ii];
+                        rc = CFGMR3InsertString(pVDC, name, value);
                         if (    !(name.compare("HostIPStack"))
                             &&  !(value.compare("0")))
                             fHostIP = false;
@@ -1143,39 +1132,40 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
             ComPtr<IHardDisk> parentHardDisk = hardDisk;
             for (PCFGMNODE pParent = pCfg;;)
             {
-                hrc = parentHardDisk->
-                    COMGETTER(Parent) (hardDisk.asOutParam());                  H();
+                hrc = parentHardDisk->COMGETTER(Parent)(hardDisk.asOutParam()); H();
                 if (hardDisk.isNull())
                     break;
 
                 PCFGMNODE pCur;
-                rc = CFGMR3InsertNode (pParent, "Parent", &pCur);               RC_CHECK();
-                hrc = hardDisk->COMGETTER(Location) (bstr.asOutParam());        H();
-                rc = CFGMR3InsertString (pCur, "Path", Utf8Str (bstr));         RC_CHECK();
+                rc = CFGMR3InsertNode(pParent, "Parent", &pCur);                RC_CHECK();
+                hrc = hardDisk->COMGETTER(Location)(&str);                      H();
+                rc = CFGMR3InsertStringW(pCur, "Path", str);                    RC_CHECK();
+                STR_FREE();
 
-                hrc = hardDisk->COMGETTER(Format) (bstr.asOutParam());          H();
-                rc = CFGMR3InsertString (pCur, "Format", Utf8Str (bstr));       RC_CHECK();
+                hrc = hardDisk->COMGETTER(Format)(&str);                        H();
+                rc = CFGMR3InsertStringW(pCur, "Format", str);                  RC_CHECK();
+                STR_FREE();
 
                 /* Pass all custom parameters. */
                 SafeArray<BSTR> names;
                 SafeArray<BSTR> values;
-                hrc = hardDisk->GetProperties (NULL,
-                                                ComSafeArrayAsOutParam (names),
-                                                ComSafeArrayAsOutParam (values));H();
+                hrc = hardDisk->GetProperties(NULL,
+                                              ComSafeArrayAsOutParam(names),
+                                              ComSafeArrayAsOutParam(values));  H();
 
                 if (names.size() != 0)
                 {
                     PCFGMNODE pVDC;
-                    rc = CFGMR3InsertNode (pCur, "VDConfig", &pVDC);            RC_CHECK();
-                    for (size_t ii = 0; ii < names.size(); ++ ii)
+                    rc = CFGMR3InsertNode(pCur, "VDConfig", &pVDC);             RC_CHECK();
+                    for (size_t ii = 0; ii < names.size(); ++ii)
                     {
-                        if (values [ii])
+                        if (values[ii])
                         {
-                            Utf8Str name = names [ii];
-                            Utf8Str value = values [ii];
+                            Utf8Str name = names[ii];
+                            Utf8Str value = values[ii];
                             rc = CFGMR3InsertString (pVDC, name, value);
-                            if (    !(name.compare("HostIPStack"))
-                                &&  !(value.compare("0")))
+                            if (    name.compare("HostIPStack") == 0
+                                &&  value.compare("0") == 0)
                                 fHostIP = false;
                         }
                     }
@@ -1185,7 +1175,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                     * configuration node. Simplifies life of DrvVD a bit. */
                 if (!fHostIP)
                 {
-                    rc = CFGMR3InsertInteger (pCfg, "HostIPStack", 0);          RC_CHECK();
+                    rc = CFGMR3InsertInteger(pCfg, "HostIPStack", 0);           RC_CHECK();
                 }
 
                 /* next */
@@ -1246,9 +1236,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                                   adapterType, ulInstance);
         }
 
-        char szInstance[4]; Assert(ulInstance <= 999);
-        RTStrPrintf(szInstance, sizeof(szInstance), "%lu", ulInstance);
-        rc = CFGMR3InsertNode(pDev, szInstance, &pInst);                            RC_CHECK();
+        rc = CFGMR3InsertNodeF(pDev, &pInst, "%u", ulInstance);                     RC_CHECK();
         rc = CFGMR3InsertInteger(pInst, "Trusted",              1); /* boolean */   RC_CHECK();
         /* the first network card gets the PCI ID 3, the next 3 gets 8..10,
          * next 4 get 16..19. */
@@ -1357,7 +1345,8 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
          * Configure the network card now
          */
 
-        rc = configNetwork(pConsole, pszAdapterName, ulInstance, 0, networkAdapter, pCfg, pLunL0, pInst, false);
+        rc = configNetwork(pConsole, pszAdapterName, ulInstance, 0, networkAdapter,
+                           pCfg, pLunL0, pInst, false /*fAttachDetach*/);
         RC_CHECK();
     }
 
@@ -1375,10 +1364,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
         if (!fEnabled)
             continue;
 
-        char szInstance[4]; Assert(ulInstance <= 999);
-        RTStrPrintf(szInstance, sizeof(szInstance), "%lu", ulInstance);
-
-        rc = CFGMR3InsertNode(pDev, szInstance, &pInst);                            RC_CHECK();
+        rc = CFGMR3InsertNodeF(pDev, &pInst, "%u", ulInstance);                     RC_CHECK();
         rc = CFGMR3InsertNode(pInst, "Config", &pCfg);                              RC_CHECK();
 
         ULONG ulIRQ, ulIOBase;
@@ -1435,10 +1421,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
         if (!fEnabled)
             continue;
 
-        char szInstance[4]; Assert(ulInstance <= 999);
-        RTStrPrintf(szInstance, sizeof(szInstance), "%lu", ulInstance);
-
-        rc = CFGMR3InsertNode(pDev, szInstance, &pInst);                            RC_CHECK();
+        rc = CFGMR3InsertNodeF(pDev, &pInst, "%u", ulInstance);                     RC_CHECK();
         rc = CFGMR3InsertNode(pInst, "Config", &pCfg);                              RC_CHECK();
 
         ULONG ulIRQ, ulIOBase;
@@ -1614,8 +1597,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
 #endif
         }
         hrc = pMachine->COMGETTER(Name)(&str);                                      H();
-        STR_CONV();
-        rc = CFGMR3InsertString(pCfg,  "StreamName", psz);                          RC_CHECK();
+        rc = CFGMR3InsertStringW(pCfg, "StreamName", str);                          RC_CHECK();
         STR_FREE();
     }
 
@@ -1705,7 +1687,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
      */
     {
         ClipboardMode_T mode = ClipboardMode_Disabled;
-        hrc = pMachine->COMGETTER(ClipboardMode) (&mode);                               H();
+        hrc = pMachine->COMGETTER(ClipboardMode)(&mode);                                H();
 
         if (mode != ClipboardMode_Disabled)
         {
@@ -1769,7 +1751,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
      */
     {
         BOOL fEnabled = false;
-        hrc = pMachine->COMGETTER(Accelerate3DEnabled) (&fEnabled);                               H();
+        hrc = pMachine->COMGETTER(Accelerate3DEnabled)(&fEnabled); H();
 
         if (fEnabled)
         {
@@ -1809,6 +1791,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
 #endif
 
 #ifdef VBOX_WITH_GUEST_PROPS
+    /** @todo r=bird: functions! methods! */
     /*
      * Guest property service
      */
@@ -2050,10 +2033,9 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
         }
     }
 
+#undef STR_FREE
 #undef H
 #undef RC_CHECK
-#undef STR_FREE
-#undef STR_CONV
 
     /* Register VM state change handler */
     int rc2 = VMR3AtStateRegister (pVM, Console::vmstateChangeCallback, pConsole);
@@ -2093,11 +2075,11 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
  *
  *  @note Locks the Console object for writing.
  */
-DECLCALLBACK(int)  Console::configNetwork(Console *pThis, const char *pszDevice,
-                                          unsigned uInstance, unsigned uLun,
-                                          INetworkAdapter *aNetworkAdapter,
-                                          PCFGMNODE pCfg, PCFGMNODE pLunL0,
-                                          PCFGMNODE pInst, bool fAttachDetach)
+/*static*/ int Console::configNetwork(Console *pThis, const char *pszDevice,
+                                      unsigned uInstance, unsigned uLun,
+                                      INetworkAdapter *aNetworkAdapter,
+                                      PCFGMNODE pCfg, PCFGMNODE pLunL0,
+                                      PCFGMNODE pInst, bool fAttachDetach)
 {
     int rc = VINF_SUCCESS;
 
@@ -2113,12 +2095,10 @@ DECLCALLBACK(int)  Console::configNetwork(Console *pThis, const char *pszDevice,
 
     PVM     pVM = pThis->mpVM;
     BSTR    str = NULL;
-    char   *psz = NULL;
 
-#define STR_CONV()  do { rc = RTUtf16ToUtf8(str, &psz); RC_CHECK(); } while (0)
-#define STR_FREE()  do { if (str) { SysFreeString(str); str = NULL; } if (psz) { RTStrFree(psz); psz = NULL; } } while (0)
-#define RC_CHECK()  do { if (RT_FAILURE(rc)) { AssertMsgFailed(("rc=%Rrc\n", rc)); STR_FREE(); return rc; } } while (0)
-#define H()         do { if (FAILED(hrc)) { AssertMsgFailed(("hrc=%#x\n", hrc)); STR_FREE(); return VERR_GENERAL_FAILURE; } } while (0)
+#define STR_FREE()  do { if (str) { SysFreeString(str); str = NULL; } } while (0)
+#define RC_CHECK()  do { if (RT_FAILURE(rc)) { AssertMsgFailed(("rc=%Rrc\n", rc));  STR_FREE(); return rc;                   } } while (0)
+#define H()         do { if (FAILED(hrc))    { AssertMsgFailed(("hrc=%#x\n", hrc)); STR_FREE(); return VERR_GENERAL_FAILURE; } } while (0)
 
     HRESULT hrc;
     ComPtr<IMachine> pMachine = pThis->machine();
@@ -2160,16 +2140,14 @@ DECLCALLBACK(int)  Console::configNetwork(Console *pThis, const char *pszDevice,
         hrc = aNetworkAdapter->COMGETTER(TraceFile)(&str);              H();
         if (str) /* check convention for indicating default file. */
         {
-            STR_CONV();
-            rc = CFGMR3InsertString(pCfg, "File", psz);                 RC_CHECK();
-            STR_FREE();
+            rc = CFGMR3InsertStringW(pCfg, "File", str);                RC_CHECK();
         }
+        STR_FREE();
     }
 
     Bstr networkName, trunkName, trunkType;
     NetworkAttachmentType_T eAttachmentType;
-    hrc = aNetworkAdapter->COMGETTER(AttachmentType)(&eAttachmentType);
-    H();
+    hrc = aNetworkAdapter->COMGETTER(AttachmentType)(&eAttachmentType); H();
     switch (eAttachmentType)
     {
         case NetworkAttachmentType_Null:
@@ -2189,34 +2167,24 @@ DECLCALLBACK(int)  Console::configNetwork(Console *pThis, const char *pszDevice,
             rc = CFGMR3InsertNode(pLunL0, "Config", &pCfg);             RC_CHECK();
 
             /* Configure TFTP prefix and boot filename. */
-            hrc = virtualBox->COMGETTER(HomeFolder)(&str);
-            H();
-            STR_CONV();
-            if (psz && *psz)
+            hrc = virtualBox->COMGETTER(HomeFolder)(&str);              H();
+            if (str && *str)
             {
-                rc = CFGMR3InsertStringF(pCfg, "TFTPPrefix", "%s%c%s", psz, RTPATH_DELIMITER, "TFTP"); RC_CHECK();
+                rc = CFGMR3InsertStringF(pCfg, "TFTPPrefix", "%ls%c%s", str, RTPATH_DELIMITER, "TFTP"); RC_CHECK();
             }
             STR_FREE();
-            hrc = pMachine->COMGETTER(Name)(&str);
-            H();
-            STR_CONV();
-            rc = CFGMR3InsertStringF(pCfg, "BootFile", "%s.pxe", psz); RC_CHECK();
+            hrc = pMachine->COMGETTER(Name)(&str);                      H();
+            rc = CFGMR3InsertStringF(pCfg, "BootFile", "%ls.pxe", str); RC_CHECK();
             STR_FREE();
 
-            hrc = aNetworkAdapter->COMGETTER(NATNetwork)(&str);
-            H();
-            if (str)
+            hrc = aNetworkAdapter->COMGETTER(NATNetwork)(&str);         H();
+            if (str && *str)
             {
-                STR_CONV();
-                if (psz && *psz)
-                {
-                    rc = CFGMR3InsertString(pCfg, "Network", psz);      RC_CHECK();
-                    /* NAT uses its own DHCP implementation */
-                    //networkName = Bstr(psz);
-                }
-
-                STR_FREE();
+                rc = CFGMR3InsertStringW(pCfg, "Network", str);         RC_CHECK();
+                /* NAT uses its own DHCP implementation */
+                //networkName = Bstr(psz);
             }
+            STR_FREE();
             break;
         }
 
@@ -2309,29 +2277,29 @@ DECLCALLBACK(int)  Console::configNetwork(Console *pThis, const char *pszDevice,
                                   HifName.raw());
             }
 
-            HostNetworkInterfaceType_T ifType;
-            hrc = hostInterface->COMGETTER(InterfaceType)(&ifType);
+            HostNetworkInterfaceType_T eIfType;
+            hrc = hostInterface->COMGETTER(InterfaceType)(&eIfType);
             if (FAILED(hrc))
             {
                 LogRel(("NetworkAttachmentType_Bridged: COMGETTER(InterfaceType) failed, hrc (0x%x)", hrc));
                 H();
             }
 
-            if (ifType != HostNetworkInterfaceType_Bridged)
+            if (eIfType != HostNetworkInterfaceType_Bridged)
             {
                 return VMSetError(pVM, VERR_INTERNAL_ERROR, RT_SRC_POS,
                                                       N_("Interface ('%ls') is not a Bridged Adapter interface"),
                                                       HifName.raw());
             }
 
-            Bstr hostIFGuid_;
-            hrc = hostInterface->COMGETTER(Id)(hostIFGuid_.asOutParam());
+            hrc = hostInterface->COMGETTER(Id)(&str);
             if (FAILED(hrc))
             {
                 LogRel(("NetworkAttachmentType_Bridged: COMGETTER(Id) failed, hrc (0x%x)", hrc));
                 H();
             }
-            Guid hostIFGuid(hostIFGuid_);
+            Guid hostIFGuid(str);
+            STR_FREE(str);
 
             INetCfg              *pNc;
             ComPtr<INetCfgComponent> pAdaptorComponent;
@@ -2404,7 +2372,7 @@ DECLCALLBACK(int)  Console::configNetwork(Console *pThis, const char *pszDevice,
             /* we're not releasing the INetCfg stuff here since we use it later to figure out whether it is wireless */
 
 # elif defined(RT_OS_LINUX)
-            /* @todo Check for malformed names. */
+            /** @todo Check for malformed names. */
             const char *pszTrunk = pszHifName;
 
 # else
@@ -2553,31 +2521,27 @@ DECLCALLBACK(int)  Console::configNetwork(Console *pThis, const char *pszDevice,
 
         case NetworkAttachmentType_Internal:
         {
-            hrc = aNetworkAdapter->COMGETTER(InternalNetwork)(&str);        H();
-            if (str)
+            hrc = aNetworkAdapter->COMGETTER(InternalNetwork)(&str);    H();
+            if (str && *str)
             {
-                STR_CONV();
-                if (psz && *psz)
+                if (fSniffer)
                 {
-                    if (fSniffer)
-                    {
-                        rc = CFGMR3InsertNode(pLunL0, "AttachedDriver", &pLunL0);
-                        RC_CHECK();
-                    }
-                    else
-                    {
-                        rc = CFGMR3InsertNode(pInst, "LUN#0", &pLunL0);
-                        RC_CHECK();
-                    }
-                    rc = CFGMR3InsertString(pLunL0, "Driver", "IntNet");    RC_CHECK();
-                    rc = CFGMR3InsertNode(pLunL0, "Config", &pCfg);         RC_CHECK();
-                    rc = CFGMR3InsertString(pCfg, "Network", psz);          RC_CHECK();
-                    rc = CFGMR3InsertInteger(pCfg, "TrunkType", kIntNetTrunkType_WhateverNone); RC_CHECK();
-                    networkName = Bstr(psz);
-                    trunkType = Bstr(TRUNKTYPE_WHATEVER);
+                    rc = CFGMR3InsertNode(pLunL0, "AttachedDriver", &pLunL0);
+                    RC_CHECK();
                 }
-                STR_FREE();
+                else
+                {
+                    rc = CFGMR3InsertNode(pInst, "LUN#0", &pLunL0);
+                    RC_CHECK();
+                }
+                rc = CFGMR3InsertString(pLunL0, "Driver", "IntNet");    RC_CHECK();
+                rc = CFGMR3InsertNode(pLunL0, "Config", &pCfg);         RC_CHECK();
+                rc = CFGMR3InsertStringW(pCfg, "Network", str);         RC_CHECK();
+                rc = CFGMR3InsertInteger(pCfg, "TrunkType", kIntNetTrunkType_WhateverNone); RC_CHECK();
+                networkName = str;
+                trunkType = Bstr(TRUNKTYPE_WHATEVER);
             }
+            STR_FREE();
             break;
         }
 
@@ -2629,27 +2593,27 @@ DECLCALLBACK(int)  Console::configNetwork(Console *pThis, const char *pszDevice,
 # else  /* defined VBOX_WITH_NETFLT*/
             /** @todo r=bird: Put this in a function. */
 
-            HostNetworkInterfaceType_T ifType;
-            hrc = hostInterface->COMGETTER(InterfaceType)(&ifType);
+            HostNetworkInterfaceType_T eIfType;
+            hrc = hostInterface->COMGETTER(InterfaceType)(&eIfType);
             if (FAILED(hrc))
             {
                 LogRel(("NetworkAttachmentType_HostOnly: COMGETTER(InterfaceType) failed, hrc (0x%x)\n", hrc));
                 H();
             }
 
-            if (ifType != HostNetworkInterfaceType_HostOnly)
+            if (eIfType != HostNetworkInterfaceType_HostOnly)
                 return VMSetError(pVM, VERR_INTERNAL_ERROR, RT_SRC_POS,
                                   N_("Interface ('%ls') is not a Host-Only Adapter interface"),
                                   HifName.raw());
 
-            Bstr hostIFGuid_;
-            hrc = hostInterface->COMGETTER(Id)(hostIFGuid_.asOutParam());
+            hrc = hostInterface->COMGETTER(Id)(&str);
             if (FAILED(hrc))
             {
                 LogRel(("NetworkAttachmentType_HostOnly: COMGETTER(Id) failed, hrc (0x%x)\n", hrc));
                 H();
             }
-            Guid hostIFGuid(hostIFGuid_);
+            Guid hostIFGuid(str);
+            STR_FREE(str);
 
             INetCfg *pNc;
             ComPtr<INetCfgComponent> pAdaptorComponent;
@@ -2854,7 +2818,6 @@ DECLCALLBACK(int)  Console::configNetwork(Console *pThis, const char *pszDevice,
     meAttachmentType[uInstance] = eAttachmentType;
 
 #undef STR_FREE
-#undef STR_CONV
 #undef H
 #undef RC_CHECK
 
