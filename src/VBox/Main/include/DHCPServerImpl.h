@@ -33,7 +33,7 @@ struct NETIFINFO;
 
 namespace settings
 {
-    class DHCPServer;
+    struct DHCPServer;
 }
 
 class ATL_NO_VTABLE DHCPServer :

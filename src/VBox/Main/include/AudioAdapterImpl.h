@@ -30,7 +30,7 @@ class Machine;
 
 namespace settings
 {
-    class AudioAdapter;
+    struct AudioAdapter;
 }
 
 class ATL_NO_VTABLE AudioAdapter :

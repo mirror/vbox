@@ -31,7 +31,7 @@ class GuestOSType;
 
 namespace settings
 {
-    class SerialPort;
+    struct SerialPort;
 }
 
 class ATL_NO_VTABLE SerialPort :

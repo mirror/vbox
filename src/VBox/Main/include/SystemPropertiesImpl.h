@@ -34,7 +34,7 @@
 class VirtualBox;
 namespace settings
 {
-    class SystemProperties;
+    struct SystemProperties;
 }
 
 class ATL_NO_VTABLE SystemProperties :

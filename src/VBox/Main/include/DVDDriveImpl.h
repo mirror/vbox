@@ -32,7 +32,7 @@ class Machine;
 
 namespace settings
 {
-    class DVDDrive;
+    struct DVDDrive;
 }
 
 class ATL_NO_VTABLE DVDDrive :

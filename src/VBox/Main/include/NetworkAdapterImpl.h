@@ -31,7 +31,7 @@ class GuestOSType;
 
 namespace settings
 {
-    class NetworkAdapter;
+    struct NetworkAdapter;
 }
 
 class ATL_NO_VTABLE NetworkAdapter :

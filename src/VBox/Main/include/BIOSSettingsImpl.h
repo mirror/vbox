@@ -31,7 +31,7 @@ class GuestOSType;
 
 namespace settings
 {
-    class BIOSSettings;
+    struct BIOSSettings;
 }
 
 class ATL_NO_VTABLE BIOSSettings :

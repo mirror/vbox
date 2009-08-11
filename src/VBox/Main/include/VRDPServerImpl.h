@@ -32,7 +32,7 @@ class Machine;
 
 namespace settings
 {
-    class VRDPSettings;
+    struct VRDPSettings;
 }
 
 class ATL_NO_VTABLE VRDPServer :

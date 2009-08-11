@@ -29,7 +29,7 @@ class Machine;
 
 namespace settings
 {
-    class ParallelPort;
+    struct ParallelPort;
 }
 
 class ATL_NO_VTABLE ParallelPort :
