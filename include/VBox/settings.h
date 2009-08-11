@@ -211,7 +211,7 @@ public:
     void writeHardDisk(xml::ElementNode &elmMedium,
                        const Medium &m,
                        uint32_t level);
-    void write();
+    void write(const com::Utf8Str strFilename);
 
     Host                    host;
     SystemProperties        systemProperties;

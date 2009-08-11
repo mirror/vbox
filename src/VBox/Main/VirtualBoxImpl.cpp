@@ -30,6 +30,7 @@
 #include <iprt/process.h>
 #include <iprt/env.h>
 #include <iprt/cpputils.h>
+#include <iprt/xml_cpp.h>
 
 #include <VBox/com/com.h>
 #include <VBox/com/array.h>
@@ -163,13 +164,34 @@ HRESULT VirtualBox::init()
                                                 RTPATH_DELIMITER,
                                                 VBOX_GLOBAL_SETTINGS_FILE);
     HRESULT rc = S_OK;
+    bool fCreate = false;
     try
     {
         // load and parse VirtualBox.xml; this will throw on XML or logic errors
         m_pMainConfigFile = new settings::MainConfigFile(&m_strSettingsFilePath);
+    }
+    catch (xml::EIPRTFailure &e)
+    {
+        // this is thrown by the XML backend if the RTOpen() call fails;
+        // only if the main settings file does not exist, create it,
+        // if there's something more serious, then do fail!
+        if (e.rc() == VERR_FILE_NOT_FOUND)
+            fCreate = true;
+    }
+    catch (HRESULT err)
+    {
+        /* we assume that error info is set by the thrower */
+        rc = err;
+    }
+    catch (...)
+    {
+        rc = VirtualBox::handleUnexpectedExceptions(RT_SRC_POS);
+    }
 
-        // either a) valid XML file loaded or b) file not found and defaults loaded:
-        // now construct our global objects from that data
+    try
+    {
+        if (fCreate)
+            m_pMainConfigFile = new settings::MainConfigFile(NULL);
 
 #ifdef VBOX_WITH_RESOURCE_USAGE_API
         /* create the performance collector object BEFORE host */
@@ -2985,7 +3007,7 @@ HRESULT VirtualBox::saveSettings()
         CheckComRCThrowRC(rc);
 
         // now write out the XML
-        m_pMainConfigFile->write();
+        m_pMainConfigFile->write(m_strSettingsFilePath);
     }
     catch (HRESULT err)
     {
