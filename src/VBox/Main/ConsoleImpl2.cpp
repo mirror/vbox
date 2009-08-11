@@ -226,9 +226,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
      * Set the root (and VMM) level values.
      */
     hrc = pMachine->COMGETTER(Name)(&str);                                          H();
-    STR_CONV();
-    rc = CFGMR3InsertString(pRoot,  "Name",                 psz);                   RC_CHECK();
-    STR_FREE();
+    rc = CFGMR3InsertStringW(pRoot, "Name",                 str);                   RC_CHECK();
     rc = CFGMR3InsertBytes(pRoot,   "UUID", pUuid, sizeof(*pUuid));                 RC_CHECK();
     rc = CFGMR3InsertInteger(pRoot, "RamSize",              cbRam);                 RC_CHECK();
     rc = CFGMR3InsertInteger(pRoot, "RamHoleSize",          cbRamHole);             RC_CHECK();
@@ -817,9 +815,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
         hrc = pMachine->GetExtraData(Bstr(szExtraDataKey), &str);                   H();
         if (!str || !*str)
             break;
-        STR_CONV();
-        rc = CFGMR3InsertString(pCfg, szExtraDataKey, psz);
-        STR_FREE();
+        rc = CFGMR3InsertStringW(pCfg, szExtraDataKey, str);
         cModes++;
     }
     rc = CFGMR3InsertInteger(pCfg,  "CustomVideoModes", cModes);
@@ -2501,7 +2497,7 @@ DECLCALLBACK(int)  Console::configNetwork(Console *pThis, const char *pszDevice,
                     Assert(winEr == ERROR_INVALID_PARAMETER || winEr == ERROR_NOT_SUPPORTED || winEr == ERROR_BAD_COMMAND);
                 }
                 CloseHandle(hDevice);
-                
+
                 if (fSharedMacOnWire)
                 {
                     Log(("this is a wireless adapter"));
@@ -2771,7 +2767,7 @@ DECLCALLBACK(int)  Console::configNetwork(Console *pThis, const char *pszDevice,
             if (SUCCEEDED(hrc))
                 hrc = virtualBox->GetExtraData(BstrFmt("HostOnly/%s/IPV6NetMask", pszHifName), tmpMask.asOutParam());
             if (SUCCEEDED(hrc) && !tmpAddr.isEmpty() && !tmpMask.isEmpty())
-            {    
+            {
                 hrc = hostInterface->EnableStaticIpConfigV6(tmpAddr, Utf8Str(tmpMask).toUInt32());
                 ComAssertComRC(hrc); /** @todo r=bird: Why this isn't fatal? (H()) */
             }
