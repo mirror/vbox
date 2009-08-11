@@ -877,11 +877,24 @@ void vboxVHWAFreeHostInfo2(PPDEV ppdev, VBOXVHWACMD_QUERYINFO2* pInfo)
 VBOXVHWACMD_QUERYINFO1* vboxVHWAQueryHostInfo1(PPDEV ppdev)
 {
     VBOXVHWACMD* pCmd = vboxVHWACommandCreate (ppdev, VBOXVHWACMD_TYPE_QUERY_INFO1, sizeof(VBOXVHWACMD_QUERYINFO1));
+    VBOXVHWACMD_QUERYINFO1 *pInfo1;
     if (!pCmd)
     {
         DISPDBG((0, "VBoxDISP::vboxVHWAQueryHostInfo1: vboxVHWACommandCreate failed\n"));
         return NULL;
     }
+
+    if (!pCmd)
+    {
+        DISPDBG((0, "VBoxDISP::vboxVHWAQueryHostInfo1: vboxVHWACommandCreate failed\n"));
+        return NULL;
+    }
+
+    pInfo1 = VBOXVHWACMD_BODY(pCmd, VBOXVHWACMD_QUERYINFO1);
+    pInfo1->u.in.guestVersion.maj = VBOXVHWA_VERSION_MAJ;
+    pInfo1->u.in.guestVersion.min = VBOXVHWA_VERSION_MIN;
+    pInfo1->u.in.guestVersion.bld = VBOXVHWA_VERSION_BLD;
+    pInfo1->u.in.guestVersion.reserved = VBOXVHWA_VERSION_RSV;
 
     if(vboxVHWACommandSubmit (ppdev, pCmd))
     {
@@ -932,14 +945,14 @@ int vboxVHWAInitHostInfo1(PPDEV ppdev)
         return VERR_OUT_OF_RESOURCES;
     }
 
-    ppdev->vhwaInfo.caps = pInfo->caps;
-    ppdev->vhwaInfo.caps2 = pInfo->caps2;
-    ppdev->vhwaInfo.colorKeyCaps = pInfo->colorKeyCaps;
-    ppdev->vhwaInfo.stretchCaps = pInfo->stretchCaps;
-    ppdev->vhwaInfo.surfaceCaps = pInfo->surfaceCaps;
-    ppdev->vhwaInfo.numOverlays = pInfo->numOverlays;
-    ppdev->vhwaInfo.numFourCC = pInfo->numFourCC;
-    ppdev->vhwaInfo.bVHWAEnabled = (pInfo->cfgFlags & VBOXVHWA_CFG_ENABLED);
+    ppdev->vhwaInfo.caps = pInfo->u.out.caps;
+    ppdev->vhwaInfo.caps2 = pInfo->u.out.caps2;
+    ppdev->vhwaInfo.colorKeyCaps = pInfo->u.out.colorKeyCaps;
+    ppdev->vhwaInfo.stretchCaps = pInfo->u.out.stretchCaps;
+    ppdev->vhwaInfo.surfaceCaps = pInfo->u.out.surfaceCaps;
+    ppdev->vhwaInfo.numOverlays = pInfo->u.out.numOverlays;
+    ppdev->vhwaInfo.numFourCC = pInfo->u.out.numFourCC;
+    ppdev->vhwaInfo.bVHWAEnabled = (pInfo->u.out.cfgFlags & VBOXVHWA_CFG_ENABLED);
     vboxVHWAFreeHostInfo1(ppdev, pInfo);
     return VINF_SUCCESS;
 }

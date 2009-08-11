@@ -1386,6 +1386,9 @@ public:
 
 #ifdef VBOX_WITH_VIDEOHWACCEL
     STDMETHOD(ProcessVHWACommand)(BYTE *pCommand);
+
+
+    static bool isAcceleration2DVideoAvailable();
 #endif
 
     ulong pixelFormat() { return vboxWidget()->vboxPixelFormat(); }
