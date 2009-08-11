@@ -30,6 +30,11 @@
 
 class Machine;
 
+namespace settings
+{
+    class DVDDrive;
+}
+
 class ATL_NO_VTABLE DVDDrive :
     public VirtualBoxBase,
     public VirtualBoxSupportErrorInfoImpl<DVDDrive, IDVDDrive>,
@@ -99,8 +104,8 @@ public:
 
     // public methods only for internal purposes
 
-    HRESULT loadSettings (const settings::Key &aMachineNode);
-    HRESULT saveSettings (settings::Key &aMachineNode);
+    HRESULT loadSettings(const settings::DVDDrive &data);
+    HRESULT saveSettings(settings::DVDDrive &data);
 
     bool isModified() { AutoWriteLock alock (this); return m.isBackedUp(); }
     bool isReallyModified() { AutoWriteLock alock (this); return m.hasActualChanges(); }

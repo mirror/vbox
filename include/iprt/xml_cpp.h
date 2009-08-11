@@ -91,7 +91,8 @@ public:
     }
 
 private:
-    Error() {};     // hide the default constructor to make sure the extended one above is always used
+    // hide the default constructor to make sure the extended one above is always used
+    Error();
 
     iprt::MiniString m_s;
 };
@@ -281,7 +282,7 @@ public:
      * @param aMode     File mode.
      * @param aFileName File name.
      */
-    File (Mode aMode, const char *aFileName);
+    File(Mode aMode, const char *aFileName);
 
     /**
      * Uses the given file handle to perform file operations. This file
@@ -301,7 +302,7 @@ public:
      * @param aHandle   Open file handle.
      * @param aFileName File name (for reference).
      */
-    File (RTFILE aHandle, const char *aFileName = NULL);
+    File(RTFILE aHandle, const char *aFileName = NULL);
 
     /**
      * Destroys the File object. If the object was created from a file name
@@ -313,19 +314,19 @@ public:
     const char *uri() const;
 
     uint64_t pos() const;
-    void setPos (uint64_t aPos);
+    void setPos(uint64_t aPos);
 
     /**
      * See Input::read(). If this method is called in wrong file mode,
      * LogicError will be thrown.
      */
-    int read (char *aBuf, int aLen);
+    int read(char *aBuf, int aLen);
 
     /**
      * See Output::write(). If this method is called in wrong file mode,
      * LogicError will be thrown.
      */
-    int write (const char *aBuf, int aLen);
+    int write(const char *aBuf, int aLen);
 
     /**
      * See Output::truncate(). If this method is called in wrong file mode,
@@ -357,9 +358,9 @@ public:
 
     const char *uri() const;
 
-    int read (char *aBuf, int aLen);
+    int read(char *aBuf, int aLen);
     uint64_t pos() const;
-    void setPos (uint64_t aPos);
+    void setPos(uint64_t aPos);
 
 private:
     /* Obscure class data */
@@ -367,7 +368,7 @@ private:
     Data *m;
 
     /* auto_ptr data doesn't have proper copy semantics */
-    DECLARE_CLS_COPY_CTOR_ASSIGN_NOOP (MemoryBuf)
+    DECLARE_CLS_COPY_CTOR_ASSIGN_NOOP(MemoryBuf)
 };
 
 
@@ -433,6 +434,8 @@ public:
     ~Node();
 
     const char* getName() const;
+    bool nameEquals(const char *pcsz) const;
+
     const char* getValue() const;
     bool copyValue(int32_t &i) const;
     bool copyValue(uint32_t &i) const;
@@ -472,12 +475,32 @@ public:
 
     const AttributeNode* findAttribute(const char *pcszMatch) const;
     bool getAttributeValue(const char *pcszMatch, const char *&ppcsz) const;
+    bool getAttributeValue(const char *pcszMatch, iprt::MiniString &str) const;
+    bool getAttributeValue(const char *pcszMatch, int32_t &i) const;
+    bool getAttributeValue(const char *pcszMatch, uint32_t &i) const;
     bool getAttributeValue(const char *pcszMatch, int64_t &i) const;
     bool getAttributeValue(const char *pcszMatch, uint64_t &i) const;
+    bool getAttributeValue(const char *pcszMatch, bool &f) const;
 
     ElementNode* createChild(const char *pcszElementName);
+
     ContentNode* addContent(const char *pcszContent);
+    ContentNode* addContent(const iprt::MiniString &strContent)
+    {
+        return addContent(strContent.c_str());
+    }
+
     AttributeNode* setAttribute(const char *pcszName, const char *pcszValue);
+    AttributeNode* setAttribute(const char *pcszName, const iprt::MiniString &strValue)
+    {
+        return setAttribute(pcszName, strValue.c_str());
+    }
+    AttributeNode* setAttribute(const char *pcszName, int32_t i);
+    AttributeNode* setAttribute(const char *pcszName, uint32_t i);
+    AttributeNode* setAttribute(const char *pcszName, int64_t i);
+    AttributeNode* setAttribute(const char *pcszName, uint64_t i);
+    AttributeNode* setAttributeHex(const char *pcszName, uint32_t i);
+    AttributeNode* setAttribute(const char *pcszName, bool f);
 
 protected:
     // hide the default constructor so people use only our factory methods
@@ -548,6 +571,7 @@ public:
     Document& operator=(const Document &x);
 
     const ElementNode* getRootElement() const;
+    ElementNode* getRootElement();
 
     ElementNode* createRootElement(const char *pcszRootElementName);
 
@@ -587,7 +611,7 @@ public:
     XmlFileParser();
     ~XmlFileParser();
 
-    void read(const char *pcszFilename, Document &doc);
+    void read(const iprt::MiniString &strFilename, Document &doc);
 
 private:
     /* Obscure class data */

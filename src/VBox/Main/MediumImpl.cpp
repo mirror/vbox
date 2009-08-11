@@ -551,7 +551,7 @@ HRESULT MediumBase::updatePath (const char *aOldPath, const char *aNewPath)
 
     Utf8Str path = m.locationFull;
 
-    if (RTPathStartsWith (path, aOldPath))
+    if (RTPathStartsWith(path.c_str(), aOldPath))
     {
         Utf8Str newPath = Utf8StrFmt ("%s%s", aNewPath,
                                       path.raw() + strlen (aOldPath));
@@ -687,7 +687,7 @@ Utf8Str MediumBase::name()
 {
     Utf8Str location (m.locationFull);
 
-    Utf8Str name = RTPathFilename (location);
+    Utf8Str name = RTPathFilename(location.c_str());
     return name;
 }
 
@@ -699,15 +699,16 @@ Utf8Str MediumBase::name()
  *
  * @note Must be called from under this object's write lock.
  */
-HRESULT MediumBase::setLocation (CBSTR aLocation)
+HRESULT MediumBase::setLocation(const Utf8Str &aLocation)
 {
     /* get the full file name */
     Utf8Str locationFull;
-    int vrc = mVirtualBox->calculateFullPath (Utf8Str (aLocation), locationFull);
+    int vrc = mVirtualBox->calculateFullPath(aLocation, locationFull);
     if (RT_FAILURE(vrc))
-        return setError (E_FAIL,
-            tr ("Invalid image file location '%ls' (%Rrc)"),
-            aLocation, vrc);
+        return setError(E_FAIL,
+                        tr("Invalid image file location '%s' (%Rrc)"),
+                        aLocation.raw(),
+                        vrc);
 
     m.location = aLocation;
     m.locationFull = locationFull;
@@ -789,7 +790,7 @@ HRESULT MediumBase::queryInfo()
     /* get image file info */
     {
         RTFILE file;
-        vrc = RTFileOpen (&file, Utf8Str (m.locationFull), RTFILE_O_READ);
+        vrc = RTFileOpen(&file, Utf8Str(m.locationFull).c_str(), RTFILE_O_READ);
         if (RT_SUCCESS(vrc))
         {
             vrc = RTFileGetSize (file, &m.size);
@@ -975,7 +976,7 @@ HRESULT ImageMediumBase::protectedInit (VirtualBox *aVirtualBox, CBSTR aLocation
         /* if the image file is not accessible, it's not acceptable for the
          * newly opened media so convert this into an error */
         if (!m.lastAccessError.isEmpty())
-            rc = setError (VBOX_E_FILE_ERROR, Utf8Str (m.lastAccessError));
+            rc = setError(VBOX_E_FILE_ERROR, Utf8Str(m.lastAccessError).c_str());
     }
 
     /* Confirm a successful initialization when it's the case */
@@ -994,8 +995,8 @@ HRESULT ImageMediumBase::protectedInit (VirtualBox *aVirtualBox, CBSTR aLocation
  * @param aVirtualBox   Parent VirtualBox object.
  * @param aImageNode    Either <DVDImage> or <FloppyImage> settings node.
  */
-HRESULT ImageMediumBase::protectedInit (VirtualBox *aVirtualBox,
-                                        const settings::Key &aImageNode)
+HRESULT ImageMediumBase::protectedInit(VirtualBox *aVirtualBox,
+                                       const settings::Medium &data)
 {
     AssertReturn(aVirtualBox, E_INVALIDARG);
 
@@ -1017,17 +1018,12 @@ HRESULT ImageMediumBase::protectedInit (VirtualBox *aVirtualBox,
     m.state = MediaState_Inaccessible;
 
     /* required */
-    unconst(m.id) = aImageNode.value <Guid> ("uuid");
+    unconst(m.id) = data.uuid;
     /* required */
-    Bstr location = aImageNode.stringValue ("location");
-    rc = setLocation (location);
-    CheckComRCReturnRC(rc);
-    /* optional */
-    {
-        settings::Key descNode = aImageNode.findKey ("Description");
-        if (!descNode.isNull())
-            m.description = descNode.keyStringValue();
-    }
+    rc = setLocation(data.strLocation);
+    CheckComRCReturnRC (rc);
+
+    m.description = data.strDescription;
 
     LogFlowThisFunc(("m.locationFull='%ls', m.id={%RTuuid}\n",
                       m.locationFull.raw(), m.id.raw()));
@@ -1076,28 +1072,18 @@ void ImageMediumBase::protectedUninit()
  *
  * @note Locks this object for reading.
  */
-HRESULT ImageMediumBase::saveSettings (settings::Key &aImagesNode)
+HRESULT ImageMediumBase::saveSettings(settings::Medium &data)
 {
-    using namespace settings;
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
 
-    AssertReturn(!aImagesNode.isNull(), E_FAIL);
+    AutoReadLock alock (this);
 
-    AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    data.uuid = m.id;
+    data.strLocation = m.locationFull;
+    data.strDescription = m.description;
 
-    AutoReadLock alock(this);
-
-    Key imageNode = aImagesNode.appendKey ("Image");
-    /* required */
-    imageNode.setValue <Guid> ("uuid", m.id);
-    /* required */
-    imageNode.setValue <Bstr> ("location", m.locationFull);
-    /* optional */
-    if (!m.description.isNull())
-    {
-        Key descNode = aImagesNode.createKey ("Description");
-        descNode.setKeyValue <Bstr> (m.description);
-    }
+    data.llChildren.clear();
 
     return S_OK;
 }

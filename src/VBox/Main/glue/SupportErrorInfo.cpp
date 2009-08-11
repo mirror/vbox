@@ -97,18 +97,24 @@ void MultiResult::decCounter()
  * code is returned.
  */
 /* static */
-HRESULT SupportErrorInfoBase::setErrorInternal (
-    HRESULT aResultCode, const GUID *aIID,
-    const char *aComponent, const char *aText,
-    bool aWarning, IVirtualBoxErrorInfo *aInfo /*= NULL*/)
+HRESULT SupportErrorInfoBase::setErrorInternal(HRESULT aResultCode,
+                                               const GUID *aIID,
+                                               const char *aComponent,
+                                               const Utf8Str &strText,
+                                               bool aWarning,
+                                               IVirtualBoxErrorInfo *aInfo /*= NULL*/)
 {
     /* whether multi-error mode is turned on */
     bool preserve = ((uintptr_t) RTTlsGet (MultiResult::sCounter)) > 0;
 
-    LogRel (("ERROR [COM]: aRC=%#08x aIID={%Vuuid} aComponent={%s} aText={%s} "
-             "aWarning=%RTbool, aInfo=%p, preserve=%RTbool\n",
-             aResultCode, aIID, aComponent, aText, aWarning, aInfo,
-             preserve));
+    LogRel(("ERROR [COM]: aRC=%#08x aIID={%Vuuid} aComponent={%s} aText={%s} aWarning=%RTbool, aInfo=%p, preserve=%RTbool\n",
+            aResultCode,
+            aIID,
+            aComponent,
+            strText.c_str(),
+            aWarning,
+            aInfo,
+            preserve));
 
     if (aInfo == NULL)
     {
@@ -116,8 +122,7 @@ HRESULT SupportErrorInfoBase::setErrorInternal (
         AssertReturn((!aWarning && FAILED (aResultCode)) ||
                       (aWarning && aResultCode != S_OK),
                       E_FAIL);
-        AssertReturn(aText != NULL, E_FAIL);
-        AssertReturn(*aText != '\0', E_FAIL);
+        AssertReturn(!strText.isEmpty(), E_FAIL);
 
         /* reset the error severity bit if it's a warning */
         if (aWarning)
@@ -262,7 +267,7 @@ HRESULT SupportErrorInfoBase::setErrorInternal (
                 rc = infoObj.createObject();
                 CheckComRCBreakRC (rc);
 
-                rc = infoObj->init (aResultCode, aIID, aComponent, aText, curInfo);
+                rc = infoObj->init(aResultCode, aIID, aComponent, strText, curInfo);
                 CheckComRCBreakRC (rc);
 
                 info = infoObj;
@@ -331,6 +336,15 @@ HRESULT SupportErrorInfoBase::setError (HRESULT aResultCode, const char *aText, 
     HRESULT rc = setErrorV (aResultCode, mainInterfaceID(), componentName(),
                             aText, args);
     va_end (args);
+    return rc;
+}
+
+HRESULT SupportErrorInfoBase::setError (HRESULT aResultCode, const Utf8Str &strText)
+{
+    HRESULT rc = setError(aResultCode,
+                          mainInterfaceID(),
+                          componentName(),
+                          strText);
     return rc;
 }
 

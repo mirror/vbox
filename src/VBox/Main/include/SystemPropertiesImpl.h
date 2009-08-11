@@ -32,6 +32,10 @@
 #include <list>
 
 class VirtualBox;
+namespace settings
+{
+    class SystemProperties;
+}
 
 class ATL_NO_VTABLE SystemProperties :
     public VirtualBoxBase,
@@ -94,54 +98,44 @@ public:
 
     // public methods only for internal purposes
 
-    HRESULT loadSettings (const settings::Key &aGlobal);
-    HRESULT saveSettings (settings::Key &aGlobal);
+    HRESULT loadSettings(const settings::SystemProperties &data);
+    HRESULT saveSettings(settings::SystemProperties &data);
 
-    ComObjPtr<HardDiskFormat> hardDiskFormat (CBSTR aFormat);
+    ComObjPtr<HardDiskFormat> hardDiskFormat(CBSTR aFormat);
 
     // public methods for internal purposes only
     // (ensure there is a caller and a read lock before calling them!)
-
-    /** Default Machine path (as is, not full). Not thread safe (use object lock). */
-    const Bstr &defaultMachineFolder() const { return mDefaultMachineFolder; }
-    /** Default Machine path (full). Not thread safe (use object lock). */
-    const Bstr &defaultMachineFolderFull() const { return mDefaultMachineFolderFull; }
-    /** Default hard disk path (as is, not full). Not thread safe (use object lock). */
-    const Bstr &defaultHardDiskFolder() const { return mDefaultHardDiskFolder; }
-    /** Default hard disk path (full). Not thread safe (use object lock). */
-    const Bstr &defaultHardDiskFolderFull() const { return mDefaultHardDiskFolderFull; }
-
-    /** Default hard disk format. Not thread safe (use object lock). */
-    const Bstr &defaultHardDiskFormat() const { return mDefaultHardDiskFormat; }
 
     // for VirtualBoxSupportErrorInfoImpl
     static const wchar_t *getComponentName() { return L"SystemProperties"; }
 
 private:
 
-    typedef std::list <ComObjPtr<HardDiskFormat> > HardDiskFormatList;
+    typedef std::list< ComObjPtr<HardDiskFormat> > HardDiskFormatList;
 
-    HRESULT setDefaultMachineFolder (CBSTR aPath);
-    HRESULT setDefaultHardDiskFolder (CBSTR aPath);
-    HRESULT setDefaultHardDiskFormat (CBSTR aFormat);
+    HRESULT setDefaultMachineFolder(const Utf8Str &aPath);
+    HRESULT setDefaultHardDiskFolder(const Utf8Str &aPath);
+    HRESULT setDefaultHardDiskFormat(const Utf8Str &aFormat);
 
-    HRESULT setRemoteDisplayAuthLibrary (CBSTR aPath);
-    HRESULT setWebServiceAuthLibrary (CBSTR aPath);
+    HRESULT setRemoteDisplayAuthLibrary(const Utf8Str &aPath);
+    HRESULT setWebServiceAuthLibrary(const Utf8Str &aPath);
 
     const ComObjPtr<VirtualBox, ComWeakRef> mParent;
 
-    Bstr mDefaultMachineFolder;
-    Bstr mDefaultMachineFolderFull;
-    Bstr mDefaultHardDiskFolder;
-    Bstr mDefaultHardDiskFolderFull;
-    Bstr mDefaultHardDiskFormat;
+    Utf8Str m_strDefaultMachineFolder;
+    Utf8Str m_strDefaultMachineFolderFull;
+    Utf8Str m_strDefaultHardDiskFolder;
+    Utf8Str m_strDefaultHardDiskFolderFull;
+    Utf8Str m_strDefaultHardDiskFormat;
 
     HardDiskFormatList mHardDiskFormats;
 
-    Bstr mRemoteDisplayAuthLibrary;
-    Bstr mWebServiceAuthLibrary;
+    Utf8Str m_strRemoteDisplayAuthLibrary;
+    Utf8Str m_strWebServiceAuthLibrary;
     ULONG mLogHistoryCount;
     AudioDriverType_T mDefaultAudioDriver;
+
+    friend class VirtualBox;
 };
 
 #endif // ____H_SYSTEMPROPERTIESIMPL

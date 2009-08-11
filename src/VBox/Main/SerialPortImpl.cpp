@@ -174,12 +174,8 @@ void SerialPort::uninit()
  *
  *  @note Locks this object for writing.
  */
-HRESULT SerialPort::loadSettings (const settings::Key &aPortNode)
+HRESULT SerialPort::loadSettings(const settings::SerialPort &data)
 {
-    using namespace settings;
-
-    AssertReturn(!aPortNode.isNull(), E_FAIL);
-
     AutoCaller autoCaller(this);
     AssertComRCReturnRC(autoCaller.rc());
 
@@ -197,32 +193,22 @@ HRESULT SerialPort::loadSettings (const settings::Key &aPortNode)
      * default to B. */
 
     /* enabled (required) */
-    mData->mEnabled = aPortNode.value <bool> ("enabled");
+    mData->mEnabled = data.fEnabled;
     /* I/O base (required) */
-    mData->mIOBase = aPortNode.value <ULONG> ("IOBase");
+    mData->mIOBase = data.ulIOBase;
     /* IRQ (required) */
-    mData->mIRQ = aPortNode.value <ULONG> ("IRQ");
+    mData->mIRQ = data.ulIRQ;
     /* host mode (required) */
-    const char *mode = aPortNode.stringValue ("hostMode");
-    if (strcmp (mode, "RawFile") == 0)
-        mData->mHostMode = PortMode_RawFile;
-    else if (strcmp (mode, "HostPipe") == 0)
-        mData->mHostMode = PortMode_HostPipe;
-    else if (strcmp (mode, "HostDevice") == 0)
-        mData->mHostMode = PortMode_HostDevice;
-    else if (strcmp (mode, "Disconnected") == 0)
-        mData->mHostMode = PortMode_Disconnected;
-    else
-        ComAssertMsgFailedRet (("Invalid port mode '%s'", mode), E_FAIL);
+    mData->mHostMode = data.portMode;
 
     /* pipe/device path (optional, defaults to null) */
-    Bstr path = aPortNode.stringValue ("path");
-    HRESULT rc = checkSetPath (path);
+    Bstr path(data.strPath);
+    HRESULT rc = checkSetPath(path);
     CheckComRCReturnRC(rc);
     mData->mPath = path;
 
     /* server mode (optional, defaults to false) */
-    mData->mServer = aPortNode.value <bool> ("server");
+    mData->mServer = data.fServer;
 
     return S_OK;
 }
@@ -236,50 +222,23 @@ HRESULT SerialPort::loadSettings (const settings::Key &aPortNode)
  *
  *  @note Locks this object for reading.
  */
-HRESULT SerialPort::saveSettings (settings::Key &aPortNode)
+HRESULT SerialPort::saveSettings(settings::SerialPort &data)
 {
-    using namespace settings;
-
-    AssertReturn(!aPortNode.isNull(), E_FAIL);
-
     AutoCaller autoCaller(this);
     AssertComRCReturnRC(autoCaller.rc());
 
     AutoReadLock alock(this);
 
-    aPortNode.setValue <bool> ("enabled", !!mData->mEnabled);
-    aPortNode.setValue <ULONG> ("IOBase", mData->mIOBase, 16);
-    aPortNode.setValue <ULONG> ("IRQ", mData->mIRQ);
-
-    const char *mode = NULL;
-    switch (mData->mHostMode)
-    {
-        case PortMode_Disconnected:
-            mode = "Disconnected";
-            break;
-        case PortMode_HostPipe:
-            mode = "HostPipe";
-            break;
-        case PortMode_HostDevice:
-            mode = "HostDevice";
-            break;
-        case PortMode_RawFile:
-            mode = "RawFile";
-            break;
-        default:
-            ComAssertMsgFailedRet (("Invalid serial port mode: %d",
-                                    mData->mHostMode),
-                                   E_FAIL);
-    }
-    aPortNode.setStringValue ("hostMode", mode);
+    data.fEnabled = !!mData->mEnabled;
+    data.ulIOBase = mData->mIOBase;
+    data.ulIRQ = mData->mIRQ;
+    data.portMode = mData->mHostMode;
 
     /* Always save non-null mPath and mServer to preserve the user values for
      * later use. Note that 'server' is false by default in XML so we don't
      * save it when it's false. */
-    if (!mData->mPath.isEmpty())
-        aPortNode.setValue <Bstr> ("path", mData->mPath);
-    if (mData->mServer)
-        aPortNode.setValue <bool> ("server", !!mData->mServer);
+    data.strPath = mData->mPath;
+    data.fServer = !!mData->mServer;
 
     return S_OK;
 }

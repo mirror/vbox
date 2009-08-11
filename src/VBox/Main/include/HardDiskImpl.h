@@ -37,6 +37,10 @@
 #include <map>
 
 class Progress;
+namespace settings
+{
+    class Medium;
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -95,7 +99,7 @@ public:
                  const Guid &aParentId);
     HRESULT init(VirtualBox *aVirtualBox,
                  HardDisk *aParent,
-                 const settings::Key &aNode);
+                 const settings::Medium &data);
     void uninit();
 
     // IMedium properties & methods
@@ -147,9 +151,9 @@ public:
 
     bool isReadOnly();
 
-    HRESULT saveSettings (settings::Key &aParentNode);
+    HRESULT saveSettings(settings::Medium &data);
 
-    HRESULT compareLocationTo (const char *aLocation, int &aResult);
+    HRESULT compareLocationTo(const Utf8Str &strLocation, int &aResult);
 
     /**
      * Shortcut to #deleteStorage() that doesn't wait for operation completion
@@ -255,7 +259,7 @@ protected:
 
 private:
 
-    HRESULT setLocation (CBSTR aLocation);
+    virtual HRESULT setLocation(const Utf8Str &aLocation);
     HRESULT setFormat (CBSTR aFormat);
 
     virtual HRESULT queryInfo();

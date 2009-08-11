@@ -29,6 +29,11 @@
 class Machine;
 class GuestOSType;
 
+namespace settings
+{
+    class NetworkAdapter;
+}
+
 class ATL_NO_VTABLE NetworkAdapter :
     public VirtualBoxBase,
     public VirtualBoxSupportErrorInfoImpl<NetworkAdapter, INetworkAdapter>,
@@ -133,8 +138,8 @@ public:
 
     // public methods only for internal purposes
 
-    HRESULT loadSettings (const settings::Key &aAdapterNode);
-    HRESULT saveSettings (settings::Key &aAdapterNode);
+    HRESULT loadSettings(const settings::NetworkAdapter &data);
+    HRESULT saveSettings(settings::NetworkAdapter &data);
 
     bool isModified() { AutoWriteLock alock (this); return mData.isBackedUp(); }
     bool isReallyModified() { AutoWriteLock alock (this); return mData.hasActualChanges(); }

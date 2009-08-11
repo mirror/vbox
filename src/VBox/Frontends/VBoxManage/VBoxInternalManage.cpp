@@ -473,15 +473,15 @@ static int CmdLoadSyms(int argc, char **argv, ComPtr<IVirtualBox> aVirtualBox, C
     Utf8Str KeyStr;
     HRESULT hrc = NewUniqueKey(machine, "VBoxInternal/DBGF/loadsyms", KeyStr);
     if (SUCCEEDED(hrc))
-        hrc = SetString(machine, "VBoxInternal/DBGF/loadsyms", KeyStr, "Filename", pszFilename);
+        hrc = SetString(machine, "VBoxInternal/DBGF/loadsyms", KeyStr.c_str(), "Filename", pszFilename);
     if (SUCCEEDED(hrc) && argc >= 3)
-        hrc = SetInt64(machine, "VBoxInternal/DBGF/loadsyms", KeyStr, "Delta", offDelta);
+        hrc = SetInt64(machine, "VBoxInternal/DBGF/loadsyms", KeyStr.c_str(), "Delta", offDelta);
     if (SUCCEEDED(hrc) && argc >= 4)
-        hrc = SetString(machine, "VBoxInternal/DBGF/loadsyms", KeyStr, "Module", pszModule);
+        hrc = SetString(machine, "VBoxInternal/DBGF/loadsyms", KeyStr.c_str(), "Module", pszModule);
     if (SUCCEEDED(hrc) && argc >= 5)
-        hrc = SetUInt64(machine, "VBoxInternal/DBGF/loadsyms", KeyStr, "ModuleAddress", ModuleAddress);
+        hrc = SetUInt64(machine, "VBoxInternal/DBGF/loadsyms", KeyStr.c_str(), "ModuleAddress", ModuleAddress);
     if (SUCCEEDED(hrc) && argc >= 6)
-        hrc = SetUInt64(machine, "VBoxInternal/DBGF/loadsyms", KeyStr, "ModuleSize", ModuleSize);
+        hrc = SetUInt64(machine, "VBoxInternal/DBGF/loadsyms", KeyStr.c_str(), "ModuleSize", ModuleSize);
 
     return FAILED(hrc);
 }

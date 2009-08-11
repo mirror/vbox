@@ -24,18 +24,4 @@
 #ifndef ____H_VIRTUALBOXIMPLEXTRA
 #define ____H_VIRTUALBOXIMPLEXTRA
 
-class SettingsTreeHelper : public settings::XmlTreeBackend::InputResolver
-                         , public settings::XmlTreeBackend::AutoConverter
-{
-public:
-
-    // InputResolver interface
-    xml::Input *resolveEntity (const char *aURI, const char *aID);
-
-    // AutoConverter interface
-    bool needsConversion (const settings::Key &aRoot, char **aOldVersion) const;
-    const char *templateUri() const;
-};
-
 #endif // ____H_VIRTUALBOXIMPL EXTRA
-/* vi: set tabstop=4 shiftwidth=4 expandtab: */

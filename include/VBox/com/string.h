@@ -279,10 +279,10 @@ protected:
         }
     }
 
-    inline static void raw_copy (BSTR &ls, CBSTR rs)
+    inline static void raw_copy(BSTR &ls, CBSTR rs)
     {
         if (rs)
-            ls = ::SysAllocString ((const OLECHAR *) rs);
+            ls = ::SysAllocString((const OLECHAR *) rs);
     }
 
     inline static void raw_copy (BSTR &ls, const char *rs)
@@ -539,7 +539,7 @@ inline Bstr::Bstr(const char *that)
 inline Bstr &Bstr::operator=(const Utf8Str &that)
 {
     setNull();
-    raw_copy(bstr, that);
+    raw_copy(bstr, that.c_str());
     return *this;
 }
 inline Bstr &Bstr::operator=(const char *that)
@@ -647,8 +647,8 @@ public:
     explicit BstrFmt (const char *aFormat, ...)
     {
         va_list args;
-        va_start (args, aFormat);
-        raw_copy (bstr, Utf8StrFmtVA (aFormat, args));
+        va_start(args, aFormat);
+        raw_copy(bstr, Utf8StrFmtVA(aFormat, args).c_str());
         va_end (args);
     }
 };
@@ -669,7 +669,7 @@ public:
      */
     BstrFmtVA (const char *aFormat, va_list aArgs)
     {
-        raw_copy (bstr, Utf8StrFmtVA (aFormat, aArgs));
+        raw_copy(bstr, Utf8StrFmtVA(aFormat, aArgs).c_str());
     }
 };
 

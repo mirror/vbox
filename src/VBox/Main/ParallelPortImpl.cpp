@@ -173,12 +173,8 @@ void ParallelPort::uninit()
  *
  *  @note Locks this object for writing.
  */
-HRESULT ParallelPort::loadSettings (const settings::Key &aPortNode)
+HRESULT ParallelPort::loadSettings(const settings::ParallelPort &data)
 {
-    using namespace settings;
-
-    AssertReturn(!aPortNode.isNull(), E_FAIL);
-
     AutoCaller autoCaller(this);
     AssertComRCReturnRC(autoCaller.rc());
 
@@ -196,14 +192,13 @@ HRESULT ParallelPort::loadSettings (const settings::Key &aPortNode)
      * default to B. */
 
     /* enabled (required) */
-    mData->mEnabled = aPortNode.value <bool> ("enabled");
+    mData->mEnabled = data.fEnabled;
     /* I/O base (required) */
-    mData->mIOBase = aPortNode.value <ULONG> ("IOBase");
+    mData->mIOBase = data.ulIOBase;
     /* IRQ (required) */
-    mData->mIRQ = aPortNode.value <ULONG> ("IRQ");
+    mData->mIRQ = data.ulIRQ;
     /* device path (optional, defaults to null) */
-    Bstr path = aPortNode.stringValue ("path");
-
+    Bstr path(data.strPath);
     HRESULT rc = checkSetPath (path);
     CheckComRCReturnRC(rc);
     mData->mPath = path;
@@ -220,24 +215,17 @@ HRESULT ParallelPort::loadSettings (const settings::Key &aPortNode)
  *
  *  @note Locks this object for reading.
  */
-HRESULT ParallelPort::saveSettings (settings::Key &aPortNode)
+HRESULT ParallelPort::saveSettings(settings::ParallelPort &data)
 {
-    using namespace settings;
-
-    AssertReturn(!aPortNode.isNull(), E_FAIL);
-
     AutoCaller autoCaller(this);
     AssertComRCReturnRC(autoCaller.rc());
 
     AutoReadLock alock(this);
 
-    aPortNode.setValue <bool> ("enabled", !!mData->mEnabled);
-    aPortNode.setValue <ULONG> ("IOBase", mData->mIOBase, 16);
-    aPortNode.setValue <ULONG> ("IRQ", mData->mIRQ);
-
-    /* 'path' is optional in XML */
-    if (!mData->mPath.isEmpty())
-        aPortNode.setValue <Bstr> ("path", mData->mPath);
+    data.fEnabled = !!mData->mEnabled;
+    data.ulIOBase = mData->mIOBase;
+    data.ulIRQ = mData->mIRQ;
+    data.strPath = mData->mPath;
 
     return S_OK;
 }

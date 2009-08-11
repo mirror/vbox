@@ -496,6 +496,18 @@ const char* Node::getName() const
     return m->pcszName;
 }
 
+bool Node::nameEquals(const char *pcsz) const
+{
+    if (m->pcszName == pcsz)
+        return true;
+    if (m->pcszName == NULL)
+        return false;
+    if (pcsz == NULL)
+        return false;
+    return !strcmp(m->pcszName, pcsz);
+}
+
+
 /**
  * Returns the value of a node. If this node is an attribute, returns
  * the attribute value; if this node is an element, then this returns
@@ -731,6 +743,68 @@ bool ElementNode::getAttributeValue(const char *pcszMatch, const char *&ppcsz) c
 
 /**
  * Convenience method which attempts to find the attribute with the given
+ * name and returns its value as a string.
+ *
+ * @param pcszMatch name of attribute to find.
+ * @param str out: attribute value
+ * @return TRUE if attribute was found and str was thus updated.
+ */
+bool ElementNode::getAttributeValue(const char *pcszMatch, iprt::MiniString &str) const
+{
+    const Node* pAttr;
+    if ((pAttr = findAttribute(pcszMatch)))
+    {
+        str = pAttr->getValue();
+        return true;
+    }
+
+    return false;
+}
+
+/**
+ * Convenience method which attempts to find the attribute with the given
+ * name and returns its value as a signed integer. This calls
+ * RTStrToInt32Ex internally and will only output the integer if that
+ * function returns no error.
+ *
+ * @param pcszMatch name of attribute to find.
+ * @param i out: attribute value
+ * @return TRUE if attribute was found and str was thus updated.
+ */
+bool ElementNode::getAttributeValue(const char *pcszMatch, int32_t &i) const
+{
+    const char *pcsz;
+    if (    (getAttributeValue(pcszMatch, pcsz))
+         && (VINF_SUCCESS == RTStrToInt32Ex(pcsz, NULL, 0, &i))
+       )
+        return true;
+
+    return false;
+}
+
+/**
+ * Convenience method which attempts to find the attribute with the given
+ * name and returns its value as an unsigned integer.This calls
+ * RTStrToUInt32Ex internally and will only output the integer if that
+ * function returns no error.
+ *
+ * @param pcszMatch name of attribute to find.
+ * @param i out: attribute value
+ * @return TRUE if attribute was found and str was thus updated.
+ */
+bool ElementNode::getAttributeValue(const char *pcszMatch, uint32_t &i) const
+{
+    const char *pcsz;
+    if (    (getAttributeValue(pcszMatch, pcsz))
+         && (VINF_SUCCESS == RTStrToUInt32Ex(pcsz, NULL, 0, &i))
+       )
+        return true;
+
+    return false;
+}
+
+/**
+ * Convenience method which attempts to find the attribute with the given
  * name and returns its value as a signed long integer. This calls
  * RTStrToInt64Ex internally and will only output the integer if that
  * function returns no error.
@@ -743,7 +817,7 @@ bool ElementNode::getAttributeValue(const char *pcszMatch, int64_t &i) const
 {
     const char *pcsz;
     if (    (getAttributeValue(pcszMatch, pcsz))
-         && (VINF_SUCCESS == RTStrToInt64Ex(pcsz, NULL, 10, &i))
+         && (VINF_SUCCESS == RTStrToInt64Ex(pcsz, NULL, 0, &i))
        )
         return true;
 
@@ -764,9 +838,44 @@ bool ElementNode::getAttributeValue(const char *pcszMatch, uint64_t &i) const
 {
     const char *pcsz;
     if (    (getAttributeValue(pcszMatch, pcsz))
-         && (VINF_SUCCESS == RTStrToUInt64Ex(pcsz, NULL, 10, &i))
+         && (VINF_SUCCESS == RTStrToUInt64Ex(pcsz, NULL, 0, &i))
        )
         return true;
+
+    return false;
+}
+
+/**
+ * Convenience method which attempts to find the attribute with the given
+ * name and returns its value as a boolean. This accepts "true", "false",
+ * "yes", "no", "1" or "0" as valid values.
+ *
+ * @param pcszMatch name of attribute to find.
+ * @param i out: attribute value
+ * @return TRUE if attribute was found and str was thus updated.
+ */
+bool ElementNode::getAttributeValue(const char *pcszMatch, bool &f) const
+{
+    const char *pcsz;
+    if (getAttributeValue(pcszMatch, pcsz))
+    {
+        if (    (!strcmp(pcsz, "true"))
+             || (!strcmp(pcsz, "yes"))
+             || (!strcmp(pcsz, "1"))
+           )
+        {
+            f = true;
+            return true;
+        }
+        if (    (!strcmp(pcsz, "false"))
+             || (!strcmp(pcsz, "no"))
+             || (!strcmp(pcsz, "0"))
+           )
+        {
+            f = false;
+            return true;
+        }
+    }
 
     return false;
 }
@@ -869,6 +978,55 @@ AttributeNode* ElementNode::setAttribute(const char *pcszName, const char *pcszV
 
 }
 
+AttributeNode* ElementNode::setAttribute(const char *pcszName, int32_t i)
+{
+    char *psz = NULL;
+    RTStrAPrintf(&psz, "%RI32", i);
+    AttributeNode *p = setAttribute(pcszName, psz);
+    RTStrFree(psz);
+    return p;
+}
+
+AttributeNode* ElementNode::setAttribute(const char *pcszName, uint32_t i)
+{
+    char *psz = NULL;
+    RTStrAPrintf(&psz, "%RU32", i);
+    AttributeNode *p = setAttribute(pcszName, psz);
+    RTStrFree(psz);
+    return p;
+}
+
+AttributeNode* ElementNode::setAttribute(const char *pcszName, int64_t i)
+{
+    char *psz = NULL;
+    RTStrAPrintf(&psz, "%RI64", i);
+    AttributeNode *p = setAttribute(pcszName, psz);
+    RTStrFree(psz);
+    return p;
+}
+
+AttributeNode* ElementNode::setAttribute(const char *pcszName, uint64_t i)
+{
+    char *psz = NULL;
+    RTStrAPrintf(&psz, "%RU64", i);
+    AttributeNode *p = setAttribute(pcszName, psz);
+    RTStrFree(psz);
+    return p;
+}
+
+AttributeNode* ElementNode::setAttributeHex(const char *pcszName, uint32_t i)
+{
+    char *psz = NULL;
+    RTStrAPrintf(&psz, "0x%RX32", i);
+    AttributeNode *p = setAttribute(pcszName, psz);
+    RTStrFree(psz);
+    return p;
+}
+
+AttributeNode* ElementNode::setAttribute(const char *pcszName, bool f)
+{
+    return setAttribute(pcszName, (f) ? "true" : "false");
+}
 
 AttributeNode::AttributeNode()
     : Node(IsAttribute)
@@ -909,9 +1067,9 @@ NodesLoop::~NodesLoop()
  * instance of NodesLoop on the stack and call this method until it returns
  * NULL, like this:
  * <code>
- *      xml::Node node;         // should point to an element
+ *      xml::ElementNode node;               // should point to an element
  *      xml::NodesLoop loop(node, "child");  // find all "child" elements under node
- *      const xml::Node *pChild = NULL;
+ *      const xml::ElementNode *pChild = NULL;
  *      while (pChild = loop.forAllNodes())
  *          ...;
  * </code>
@@ -1017,9 +1175,20 @@ void Document::refreshInternals() // private
 
 /**
  * Returns the root element of the document, or NULL if the document is empty.
+ * Const variant.
  * @return
  */
 const ElementNode* Document::getRootElement() const
+{
+    return m->pRootElement;
+}
+
+/**
+ * Returns the root element of the document, or NULL if the document is empty.
+ * Non-const variant.
+ * @return
+ */
+ElementNode* Document::getRootElement()
 {
     return m->pRootElement;
 }
@@ -1150,13 +1319,14 @@ struct WriteContext : IOContext
  * @param pcszFilename in: name fo file to parse.
  * @param doc out: document to be reset and filled with data according to file contents.
  */
-void XmlFileParser::read(const char *pcszFilename,
+void XmlFileParser::read(const iprt::MiniString &strFilename,
                          Document &doc)
 {
     GlobalLock lock;
 //     global.setExternalEntityLoader(ExternalEntityLoader);
 
-    m->strXmlFilename = pcszFilename;
+    m->strXmlFilename = strFilename;
+    const char *pcszFilename = strFilename.c_str();
 
     ReadContext context(pcszFilename);
     doc.m->reset();

@@ -52,7 +52,7 @@ typedef enum
 class DHCPServerRunner
 {
 public:
-    DHCPServerRunner(); 
+    DHCPServerRunner();
     ~DHCPServerRunner() { stop(); /* don't leave abandoned servers */}
 
     int setOption(DHCPCFG opt, const char *val, bool enabled)
@@ -76,6 +76,11 @@ public:
         }
         mOptionEnabled[opt] = enabled;
         return VINF_SUCCESS;
+    }
+
+    int setOption(DHCPCFG opt, const com::Utf8Str &val, bool enabled)
+    {
+        return setOption(opt, val.c_str(), enabled);
     }
 
     int start();

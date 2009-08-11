@@ -1266,19 +1266,19 @@ static int handleGetExtraData(HandlerArg *a)
         /* enumeration? */
         if (!strcmp(a->argv[1], "enumerate"))
         {
-            Bstr extraDataKey;
+            SafeArray<BSTR> aKeys;
+            CHECK_ERROR(a->virtualBox, GetExtraDataKeys(ComSafeArrayAsOutParam(aKeys)));
 
-            do
+            for (size_t i = 0;
+                 i < aKeys.size();
+                 ++i)
             {
-                Bstr nextExtraDataKey;
-                Bstr nextExtraDataValue;
-                HRESULT rcEnum = a->virtualBox->GetNextExtraDataKey(extraDataKey, nextExtraDataKey.asOutParam(),
-                                                                    nextExtraDataValue.asOutParam());
-                extraDataKey = nextExtraDataKey;
+                Bstr bstrKey(aKeys[i]);
+                Bstr bstrValue;
+                CHECK_ERROR(a->virtualBox, GetExtraData(bstrKey, bstrValue.asOutParam()));
 
-                if (SUCCEEDED(rcEnum) && !extraDataKey.isEmpty())
-                    RTPrintf("Key: %lS, Value: %lS\n", nextExtraDataKey.raw(), nextExtraDataValue.raw());
-            } while (!extraDataKey.isEmpty());
+                RTPrintf("Key: %lS, Value: %lS\n", bstrKey.raw(), bstrValue.raw());
+            }
         }
         else
         {
@@ -1305,21 +1305,19 @@ static int handleGetExtraData(HandlerArg *a)
             /* enumeration? */
             if (!strcmp(a->argv[1], "enumerate"))
             {
-                Bstr extraDataKey;
+                SafeArray<BSTR> aKeys;
+                CHECK_ERROR(machine, GetExtraDataKeys(ComSafeArrayAsOutParam(aKeys)));
 
-                do
+                for (size_t i = 0;
+                    i < aKeys.size();
+                    ++i)
                 {
-                    Bstr nextExtraDataKey;
-                    Bstr nextExtraDataValue;
-                    HRESULT rcEnum = machine->GetNextExtraDataKey(extraDataKey, nextExtraDataKey.asOutParam(),
-                                                                  nextExtraDataValue.asOutParam());
-                    extraDataKey = nextExtraDataKey;
+                    Bstr bstrKey(aKeys[i]);
+                    Bstr bstrValue;
+                    CHECK_ERROR(machine, GetExtraData(bstrKey, bstrValue.asOutParam()));
 
-                    if (SUCCEEDED(rcEnum) && !extraDataKey.isEmpty())
-                    {
-                        RTPrintf("Key: %lS, Value: %lS\n", nextExtraDataKey.raw(), nextExtraDataValue.raw());
-                    }
-                } while (!extraDataKey.isEmpty());
+                    RTPrintf("Key: %lS, Value: %lS\n", bstrKey.raw(), bstrValue.raw());
+                }
             }
             else
             {
@@ -1696,165 +1694,6 @@ static int handleVMStatistics(HandlerArg *a)
 }
 #endif /* !VBOX_ONLY_DOCS */
 
-enum ConvertSettings
-{
-    ConvertSettings_No      = 0,
-    ConvertSettings_Yes     = 1,
-    ConvertSettings_Backup  = 2,
-    ConvertSettings_Ignore  = 3,
-};
-
-#ifndef VBOX_ONLY_DOCS
-/**
- * Checks if any of the settings files were auto-converted and informs the
- * user if so.
- *
- * @return @false if the program should terminate and @true otherwise.
- */
-static bool checkForAutoConvertedSettings (ComPtr<IVirtualBox> virtualBox,
-                                           ComPtr<ISession> session,
-                                           ConvertSettings fConvertSettings)
-{
-    /* return early if nothing to do */
-    if (fConvertSettings == ConvertSettings_Ignore)
-        return true;
-
-    HRESULT rc;
-
-    do
-    {
-        Bstr formatVersion;
-        CHECK_ERROR_BREAK(virtualBox, COMGETTER(SettingsFormatVersion) (formatVersion.asOutParam()));
-
-        bool isGlobalConverted = false;
-        std::list <ComPtr <IMachine> > cvtMachines;
-        std::list <Utf8Str> fileList;
-        Bstr version;
-        Bstr filePath;
-
-        com::SafeIfaceArray <IMachine> machines;
-        CHECK_ERROR_BREAK(virtualBox, COMGETTER(Machines)(ComSafeArrayAsOutParam (machines)));
-
-        for (size_t i = 0; i < machines.size(); ++ i)
-        {
-            BOOL accessible;
-            CHECK_ERROR_BREAK(machines[i], COMGETTER(Accessible) (&accessible));
-            if (!accessible)
-                continue;
-
-            CHECK_ERROR_BREAK(machines[i], COMGETTER(SettingsFileVersion) (version.asOutParam()));
-
-            if (version != formatVersion)
-            {
-                cvtMachines.push_back (machines [i]);
-                Bstr filePath;
-                CHECK_ERROR_BREAK(machines[i], COMGETTER(SettingsFilePath) (filePath.asOutParam()));
-                fileList.push_back (Utf8StrFmt ("%ls  (%ls)", filePath.raw(),
-                                                version.raw()));
-            }
-        }
-
-        if (FAILED(rc))
-            break;
-
-        CHECK_ERROR_BREAK(virtualBox, COMGETTER(SettingsFileVersion) (version.asOutParam()));
-        if (version != formatVersion)
-        {
-            isGlobalConverted = true;
-            CHECK_ERROR_BREAK(virtualBox, COMGETTER(SettingsFilePath) (filePath.asOutParam()));
-            fileList.push_back (Utf8StrFmt ("%ls  (%ls)", filePath.raw(),
-                                            version.raw()));
-        }
-
-        if (fileList.size() > 0)
-        {
-            switch (fConvertSettings)
-            {
-                case ConvertSettings_No:
-                {
-                    RTPrintf (
-"WARNING! The following VirtualBox settings files have been automatically\n"
-"converted to the new settings file format version '%ls':\n"
-"\n",
-                              formatVersion.raw());
-
-                    for (std::list <Utf8Str>::const_iterator f = fileList.begin();
-                         f != fileList.end(); ++ f)
-                        RTPrintf ("  %S\n", (*f).raw());
-                    RTPrintf (
-"\n"
-"The current command was aborted to prevent overwriting the above settings\n"
-"files with the results of the auto-conversion without your permission.\n"
-"Please put one of the following command line switches to the beginning of\n"
-"the VBoxManage command line and repeat the command:\n"
-"\n"
-"  --convertSettings       - to save all auto-converted files (it will not\n"
-"                            be possible to use these settings files with an\n"
-"                            older version of VirtualBox in the future);\n"
-"  --convertSettingsBackup - to create backup copies of the settings files in\n"
-"                            the old format before saving them in the new format;\n"
-"  --convertSettingsIgnore - to not save the auto-converted settings files.\n"
-"\n"
-"Note that if you use --convertSettingsIgnore, the auto-converted settings files\n"
-"will be implicitly saved in the new format anyway once you change a setting or\n"
-"start a virtual machine, but NO backup copies will be created in this case.\n");
-                    return false;
-                }
-                case ConvertSettings_Yes:
-                case ConvertSettings_Backup:
-                {
-                    break;
-                }
-                default:
-                    AssertFailedReturn (false);
-            }
-
-            for (std::list <ComPtr <IMachine> >::const_iterator m = cvtMachines.begin();
-                 m != cvtMachines.end(); ++ m)
-            {
-                Bstr id;
-                CHECK_ERROR_BREAK((*m), COMGETTER(Id) (id.asOutParam()));
-
-                /* open a session for the VM */
-                CHECK_ERROR_BREAK (virtualBox, OpenSession (session, id));
-
-                ComPtr <IMachine> sm;
-                CHECK_ERROR_BREAK(session, COMGETTER(Machine) (sm.asOutParam()));
-
-                Bstr bakFileName;
-                if (fConvertSettings == ConvertSettings_Backup)
-                    CHECK_ERROR (sm, SaveSettingsWithBackup (bakFileName.asOutParam()));
-                else
-                    CHECK_ERROR (sm, SaveSettings());
-
-                session->Close();
-
-                if (FAILED(rc))
-                    break;
-            }
-
-            if (FAILED(rc))
-                break;
-
-            if (isGlobalConverted)
-            {
-                Bstr bakFileName;
-                if (fConvertSettings == ConvertSettings_Backup)
-                    CHECK_ERROR (virtualBox, SaveSettingsWithBackup (bakFileName.asOutParam()));
-                else
-                    CHECK_ERROR (virtualBox, SaveSettings());
-            }
-
-            if (FAILED(rc))
-                break;
-        }
-    }
-    while (0);
-
-    return SUCCEEDED (rc);
-}
-#endif /* !VBOX_ONLY_DOCS */
-
 // main
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -1869,8 +1708,6 @@ int main(int argc, char *argv[])
     bool fShowLogo = true;
     int  iCmd      = 1;
     int  iCmdArg;
-
-    ConvertSettings fConvertSettings = ConvertSettings_No;
 
     /* global options */
     for (int i = 1; i < argc || argc <= iCmd; i++)
@@ -1909,24 +1746,6 @@ int main(int argc, char *argv[])
         {
             /* suppress the logo */
             fShowLogo = false;
-            iCmd++;
-        }
-        else if (   !strcmp(argv[i], "--convertSettings")
-                 || !strcmp(argv[i], "-convertSettings"))
-        {
-            fConvertSettings = ConvertSettings_Yes;
-            iCmd++;
-        }
-        else if (   !strcmp(argv[i], "--convertSettingsBackup")
-                 || !strcmp(argv[i], "-convertSettingsBackup"))
-        {
-            fConvertSettings = ConvertSettings_Backup;
-            iCmd++;
-        }
-        else if (   !strcmp(argv[i], "--convertSettingsIgnore")
-                 || !strcmp(argv[i], "-convertSettingsIgnore"))
-        {
-            fConvertSettings = ConvertSettings_Ignore;
             iCmd++;
         }
         else
@@ -2012,9 +1831,6 @@ int main(int argc, char *argv[])
     nsCOMPtr<nsIEventQueue> eventQ;
     NS_GetMainEventQ(getter_AddRefs(eventQ));
 #endif
-
-    if (!checkForAutoConvertedSettings (virtualBox, session, fConvertSettings))
-        break;
 
 #ifdef USE_XPCOM_QUEUE
     HandlerArg handlerArg = { 0, NULL, eventQ, virtualBox, session };

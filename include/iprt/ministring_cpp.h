@@ -96,7 +96,9 @@ public:
     }
 
     /**
-     * Returns the length of the member string. This is always cached
+     * Returns the length of the member string, which is equal to
+     * strlen(c_str()). In other words, this does not count UTF-8 characters
+     * but returns the number of bytes.     This is always cached
      * so calling this is cheap and requires no strlen() invocation.
      * @return
      */
@@ -213,7 +215,7 @@ public:
      * Appends a copy of @a that to "this".
      * @param that
      */
-    void append(const MiniString &that)
+    MiniString& append(const MiniString &that)
     {
         size_t cbThis = length();
         size_t cbThat = that.length();
@@ -229,6 +231,22 @@ public:
             m_psz[cbThis + cbThat] = '\0';
             m_cbLength = cbBoth - 1;
         }
+        return *this;
+    }
+
+    /**
+     * Returns the byte at the given index, or a null byte if
+     * the index is not smaller than length(). This does _not_
+     * count UTF-8 characters but simply points into the
+     * member C string.
+     * @param i
+     * @return
+     */
+    inline char operator[](size_t i) const
+    {
+        if (i < length())
+            return m_psz[i];
+        return '\0';
     }
 
     /**
@@ -247,12 +265,6 @@ public:
     inline const char* raw() const
     {
         return m_psz;
-    }
-
-    /** Intended to to pass instances as input (|char *|) parameters to methods. */
-    inline operator const char*() const
-    {
-        return c_str();
     }
 
     /**

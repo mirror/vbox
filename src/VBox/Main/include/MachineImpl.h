@@ -36,7 +36,6 @@
 #include "SerialPortImpl.h"
 #include "ParallelPortImpl.h"
 #include "BIOSSettingsImpl.h"
-#include "StorageControllerImpl.h"
 #ifdef VBOX_WITH_RESOURCE_USAGE_API
 #include "PerformanceImpl.h"
 #endif /* VBOX_WITH_RESOURCE_USAGE_API */
@@ -69,8 +68,19 @@ class USBController;
 class Snapshot;
 class SharedFolder;
 class HostUSBDevice;
+class StorageController;
 
 class SessionMachine;
+
+namespace settings
+{
+    class MachineConfigFile;
+    class Snapshot;
+    class Hardware;
+    class Storage;
+    class StorageController;
+    class MachineRegistryEntry;
+}
 
 // Machine class
 ////////////////////////////////////////////////////////////////////////////////
@@ -86,6 +96,8 @@ class ATL_NO_VTABLE Machine :
 public:
 
     enum InstanceType { IsMachine, IsSessionMachine, IsSnapshotMachine };
+
+    enum InitMode { Init_New, Init_Import, Init_Registered };
 
     /**
      * Internal machine data.
@@ -150,13 +162,15 @@ public:
 
         const Guid mUuid;
         BOOL mRegistered;
+        InitMode mInitMode;
 
         /** Flag indicating that the config file is read-only. */
         BOOL mConfigFileReadonly;
-        Bstr mConfigFile;
-        Bstr mConfigFileFull;
+        Utf8Str m_strConfigFile;
+        Utf8Str m_strConfigFileFull;
 
-        Utf8Str mSettingsFileVersion;
+        // machine settings XML file
+        settings::MachineConfigFile *m_pMachineConfigFile;
 
         BOOL mAccessible;
         com::ErrorInfo mAccessError;
@@ -246,9 +260,9 @@ public:
          */
         struct GuestProperty {
             /** Property name */
-            Bstr mName;
+            Utf8Str strName;
             /** Property value */
-            Bstr mValue;
+            Utf8Str strValue;
             /** Property timestamp */
             ULONG64 mTimestamp;
             /** Property flags */
@@ -269,17 +283,19 @@ public:
         BOOL           mHWVirtExEnabled;
         BOOL           mHWVirtExNestedPagingEnabled;
         BOOL           mHWVirtExVPIDEnabled;
-        BOOL           mAccelerate3DEnabled;
         BOOL           mAccelerate2DVideoEnabled;
         BOOL           mPAEEnabled;
         ULONG          mCPUCount;
+        BOOL           mAccelerate3DEnabled;
 
-        DeviceType_T   mBootOrder [SchemaDefs::MaxBootPosition];
+        DeviceType_T   mBootOrder[SchemaDefs::MaxBootPosition];
 
-        typedef std::list <ComObjPtr<SharedFolder> > SharedFolderList;
+        typedef std::list< ComObjPtr<SharedFolder> > SharedFolderList;
         SharedFolderList mSharedFolders;
+
         ClipboardMode_T mClipboardMode;
-        typedef std::list <GuestProperty> GuestPropertyList;
+
+        typedef std::list<GuestProperty> GuestPropertyList;
         GuestPropertyList mGuestProperties;
         BOOL           mPropertyServiceActive;
         Bstr           mGuestPropertyNotificationPatterns;
@@ -463,20 +479,26 @@ public:
 
     NS_DECL_ISUPPORTS
 
-    DECLARE_EMPTY_CTOR_DTOR (Machine)
+    DECLARE_EMPTY_CTOR_DTOR(Machine)
 
     HRESULT FinalConstruct();
     void FinalRelease();
 
-    enum InitMode { Init_New, Init_Existing, Init_Registered };
-
     // public initializer/uninitializer for internal purposes only
-    HRESULT init (VirtualBox *aParent, CBSTR aConfigFile,
-                  InitMode aMode, CBSTR aName = NULL,
-                  GuestOSType *aOsType = NULL,
-                  BOOL aNameSync = TRUE, const Guid *aId = NULL);
+    HRESULT init(VirtualBox *aParent,
+                 const Utf8Str &strConfigFile,
+                 InitMode aMode,
+                 CBSTR aName = NULL,
+                 GuestOSType *aOsType = NULL,
+                 BOOL aNameSync = TRUE,
+                 const Guid *aId = NULL);
     void uninit();
 
+protected:
+    HRESULT initDataAndChildObjects();
+    void uninitDataAndChildObjects();
+
+public:
     // IMachine properties
     STDMETHOD(COMGETTER(Parent))(IVirtualBox **aParent);
     STDMETHOD(COMGETTER(Accessible)) (BOOL *aAccessible);
@@ -524,7 +546,6 @@ public:
     STDMETHOD(COMGETTER(AudioAdapter))(IAudioAdapter **audioAdapter);
     STDMETHOD(COMGETTER(USBController)) (IUSBController * *aUSBController);
     STDMETHOD(COMGETTER(SettingsFilePath)) (BSTR *aFilePath);
-    STDMETHOD(COMGETTER(SettingsFileVersion)) (BSTR *aSettingsFileVersion);
     STDMETHOD(COMGETTER(SettingsModified)) (BOOL *aModified);
     STDMETHOD(COMGETTER(SessionState)) (SessionState_T *aSessionState);
     STDMETHOD(COMGETTER(SessionType)) (BSTR *aSessionType);
@@ -554,11 +575,10 @@ public:
     STDMETHOD(GetSerialPort) (ULONG slot, ISerialPort **port);
     STDMETHOD(GetParallelPort) (ULONG slot, IParallelPort **port);
     STDMETHOD(GetNetworkAdapter) (ULONG slot, INetworkAdapter **adapter);
-    STDMETHOD(GetNextExtraDataKey)(IN_BSTR aKey, BSTR *aNextKey, BSTR *aNextValue);
+    STDMETHOD(GetExtraDataKeys) (ComSafeArrayOut(BSTR, aKeys));
     STDMETHOD(GetExtraData)(IN_BSTR aKey, BSTR *aValue);
     STDMETHOD(SetExtraData)(IN_BSTR aKey, IN_BSTR aValue);
     STDMETHOD(SaveSettings)();
-    STDMETHOD(SaveSettingsWithBackup) (BSTR *aBakFileName);
     STDMETHOD(DiscardSettings)();
     STDMETHOD(DeleteSettings)();
     STDMETHOD(Export)(IAppliance *aAppliance, IVirtualSystemDescription **aDescription);
@@ -627,7 +647,7 @@ public:
      * Intended to be used only after doing addCaller() manually and locking it
      * for reading.
      */
-    const Bstr &settingsFileFull() const { return mData->mConfigFileFull; }
+    const Utf8Str &settingsFileFull() const { return mData->m_strConfigFileFull; }
 
     /**
      * Returns this machine name.
@@ -649,10 +669,10 @@ public:
     virtual HRESULT onStorageControllerChange() { return S_OK; }
     virtual HRESULT onSharedFolderChange() { return S_OK; }
 
-    HRESULT saveRegistryEntry (settings::Key &aEntryNode);
+    HRESULT saveRegistryEntry(settings::MachineRegistryEntry &data);
 
-    int calculateFullPath (const char *aPath, Utf8Str &aResult);
-    void calculateRelativePath (const char *aPath, Utf8Str &aResult);
+    int calculateFullPath(const Utf8Str &strPath, Utf8Str &aResult);
+    void calculateRelativePath(const Utf8Str &strPath, Utf8Str &aResult);
 
     void getLogFolder (Utf8Str &aLogFolder);
 
@@ -747,9 +767,6 @@ protected:
 
     inline Machine *machine();
 
-    HRESULT initDataAndChildObjects();
-    void uninitDataAndChildObjects();
-
     void ensureNoStateDependencies();
 
     virtual HRESULT setMachineState (MachineState_T aMachineState);
@@ -758,26 +775,25 @@ protected:
                               ComObjPtr<SharedFolder> &aSharedFolder,
                               bool aSetError = false);
 
-    HRESULT loadSettings (bool aRegistered);
-    HRESULT loadSnapshot (const settings::Key &aNode, const Guid &aCurSnapshotId,
-                          Snapshot *aParentSnapshot);
-    HRESULT loadHardware (const settings::Key &aNode);
-    HRESULT loadStorageControllers (const settings::Key &aNode, bool aRegistered,
-                           const Guid *aSnapshotId = NULL);
-    HRESULT loadStorageDevices (ComObjPtr<StorageController> aStorageController,
-                                const settings::Key &aNode, bool aRegistered,
-                                const Guid *aSnapshotId = NULL);
+    HRESULT loadSettings(bool aRegistered);
+    HRESULT loadSnapshot(const settings::Snapshot &data,
+                         const Guid &aCurSnapshotId,
+                         Snapshot *aParentSnapshot);
+    HRESULT loadHardware(const settings::Hardware &data);
+    HRESULT loadStorageControllers(const settings::Storage &data,
+                                   bool aRegistered,
+                                   const Guid *aSnapshotId = NULL);
+    HRESULT loadStorageDevices(StorageController *aStorageController,
+                               const settings::StorageController &data,
+                               bool aRegistered,
+                               const Guid *aSnapshotId = NULL);
 
-    HRESULT findSnapshotNode (Snapshot *aSnapshot, settings::Key &aMachineNode,
-                              settings::Key *aSnapshotsNode,
-                              settings::Key *aSnapshotNode);
+    HRESULT findSnapshot(const Guid &aId, ComObjPtr<Snapshot> &aSnapshot,
+                         bool aSetError = false);
+    HRESULT findSnapshot(IN_BSTR aName, ComObjPtr<Snapshot> &aSnapshot,
+                         bool aSetError = false);
 
-    HRESULT findSnapshot (const Guid &aId, ComObjPtr<Snapshot> &aSnapshot,
-                          bool aSetError = false);
-    HRESULT findSnapshot (IN_BSTR aName, ComObjPtr<Snapshot> &aSnapshot,
-                          bool aSetError = false);
-
-    HRESULT getStorageControllerByName(CBSTR aName,
+    HRESULT getStorageControllerByName(const Utf8Str &aName,
                                        ComObjPtr<StorageController> &aStorageController,
                                        bool aSetError = false);
 
@@ -789,10 +805,6 @@ protected:
         /* flags for #saveSettings() */
         SaveS_ResetCurStateModified = 0x01,
         SaveS_InformCallbacksAnyway = 0x02,
-        /* ops for #saveSnapshotSettings() */
-        SaveSS_NoOp = 0x00, SaveSS_AddOp = 0x01,
-        SaveSS_UpdateAttrsOp = 0x02, SaveSS_UpdateAllOp = 0x03,
-        SaveSS_OpMask = 0xF,
         /* flags for #saveSnapshotSettings() */
         SaveSS_CurStateModified = 0x40,
         SaveSS_CurrentId = 0x80,
@@ -802,21 +814,17 @@ protected:
         SaveSTS_StateTimeStamp = 0x80,
     };
 
-    HRESULT prepareSaveSettings (bool &aRenamed, bool &aNew);
-    HRESULT saveSettings (int aFlags = 0);
+    HRESULT prepareSaveSettings(bool &aRenamed, bool &aNew);
+    HRESULT saveSettings(int aFlags = 0);
 
-    HRESULT saveSnapshotSettings (Snapshot *aSnapshot, int aOpFlags);
-    HRESULT saveSnapshotSettingsWorker (settings::Key &aMachineNode,
-                                        Snapshot *aSnapshot, int aOpFlags);
+    HRESULT saveAllSnapshots();
 
-    HRESULT saveHardware (settings::Key &aNode);
-    HRESULT saveStorageControllers (settings::Key &aNode);
-    HRESULT saveStorageDevices (ComObjPtr<StorageController> aStorageController,
-                                settings::Key &aNode);
+    HRESULT saveHardware(settings::Hardware &data);
+    HRESULT saveStorageControllers(settings::Storage &data);
+    HRESULT saveStorageDevices(ComObjPtr<StorageController> aStorageController,
+                               settings::StorageController &data);
 
-    HRESULT saveStateSettings (int aFlags);
-
-    HRESULT getExtraData(const Utf8Str &aKey, Utf8Str &aValue);
+    HRESULT saveStateSettings(int aFlags);
 
     HRESULT createImplicitDiffs (const Bstr &aFolder,
                                  ComObjPtr<Progress> &aProgress,
@@ -824,15 +832,6 @@ protected:
     HRESULT deleteImplicitDiffs();
 
     void fixupHardDisks(bool aCommit, bool aOnline = false);
-
-    HRESULT lockConfig();
-    HRESULT unlockConfig();
-
-    /** @note This method is not thread safe */
-    BOOL isConfigLocked()
-    {
-        return !!mData && mData->mHandleCfgFile != NIL_RTFILE;
-    }
 
     bool isInOwnDir (Utf8Str *aSettingsDir = NULL);
 
@@ -1096,11 +1095,14 @@ public:
     void FinalRelease();
 
     // public initializer/uninitializer for internal purposes only
-    HRESULT init (SessionMachine *aSessionMachine,
-                  IN_GUID aSnapshotId, IN_BSTR aStateFilePath);
-    HRESULT init (Machine *aMachine,
-                  const settings::Key &aHWNode, const settings::Key &aHDAsNode,
-                  IN_GUID aSnapshotId, IN_BSTR aStateFilePath);
+    HRESULT init(SessionMachine *aSessionMachine,
+                 IN_GUID aSnapshotId,
+                 const Utf8Str &aStateFilePath);
+    HRESULT init(Machine *aMachine,
+                 const settings::Hardware &hardware,
+                 const settings::Storage &storage,
+                 IN_GUID aSnapshotId,
+                 const Utf8Str &aStateFilePath);
     void uninit();
 
     // util::Lockable interface

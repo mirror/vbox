@@ -206,13 +206,15 @@ HRESULT SharedFolder::protectedInit (VirtualBoxBaseWithChildrenNEXT *aParent,
 
     /* Check whether the path is full (absolute) */
     char hostPathFull [RTPATH_MAX];
-    int vrc = RTPathAbsEx (NULL, hostPath,
-                           hostPathFull, sizeof (hostPathFull));
+    int vrc = RTPathAbsEx(NULL,
+                          hostPath.c_str(),
+                          hostPathFull,
+                          sizeof (hostPathFull));
     if (RT_FAILURE(vrc))
         return setError (E_INVALIDARG,
             tr ("Invalid shared folder path: '%s' (%Rrc)"), hostPath.raw(), vrc);
 
-    if (RTPathCompare (hostPath, hostPathFull) != 0)
+    if (RTPathCompare(hostPath.c_str(), hostPathFull) != 0)
         return setError (E_INVALIDARG,
             tr ("Shared folder path '%s' is not absolute"), hostPath.raw());
 
@@ -290,10 +292,11 @@ STDMETHODIMP SharedFolder::COMGETTER(Accessible) (BOOL *aAccessible)
     /* mName and mHostPath are constant during life time, no need to lock */
 
     /* check whether the host path exists */
-    Utf8Str hostPath = Utf8Str (m.hostPath);
-    char hostPathFull [RTPATH_MAX];
-    int vrc = RTPathExists (hostPath) ? RTPathReal (hostPath, hostPathFull,
-                                                    sizeof (hostPathFull))
+    Utf8Str hostPath = Utf8Str(m.hostPath);
+    char hostPathFull[RTPATH_MAX];
+    int vrc = RTPathExists(hostPath.c_str()) ? RTPathReal(hostPath.c_str(),
+                                                          hostPathFull,
+                                                          sizeof(hostPathFull))
                                       : VERR_PATH_NOT_FOUND;
     if (RT_SUCCESS(vrc))
     {

@@ -29,6 +29,11 @@
 class Machine;
 class GuestOSType;
 
+namespace settings
+{
+    class BIOSSettings;
+}
+
 class ATL_NO_VTABLE BIOSSettings :
     public VirtualBoxSupportErrorInfoImpl<BIOSSettings, IBIOSSettings>,
     public VirtualBoxSupportTranslation<BIOSSettings>,
@@ -118,8 +123,8 @@ public:
 
     // public methods only for internal purposes
 
-    HRESULT loadSettings (const settings::Key &aMachineNode);
-    HRESULT saveSettings (settings::Key &aMachineNode);
+    HRESULT loadSettings(const settings::BIOSSettings &data);
+    HRESULT saveSettings(settings::BIOSSettings &data);
 
     const Backupable <Data> &data() const { return mData; }
 

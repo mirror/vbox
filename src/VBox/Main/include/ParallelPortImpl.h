@@ -27,6 +27,11 @@
 
 class Machine;
 
+namespace settings
+{
+    class ParallelPort;
+}
+
 class ATL_NO_VTABLE ParallelPort :
     public VirtualBoxBase,
     public VirtualBoxSupportErrorInfoImpl<ParallelPort, IParallelPort>,
@@ -99,8 +104,8 @@ public:
 
     // public methods only for internal purposes
 
-    HRESULT loadSettings (const settings::Key &aPortNode);
-    HRESULT saveSettings (settings::Key &aPortNode);
+    HRESULT loadSettings(const settings::ParallelPort &data);
+    HRESULT saveSettings(settings::ParallelPort &data);
 
     bool isModified() { AutoWriteLock alock (this); return mData.isBackedUp(); }
     bool isReallyModified() { AutoWriteLock alock (this); return mData.hasActualChanges(); }

@@ -1344,63 +1344,34 @@ STDMETHODIMP Host::RemoveUSBDeviceFilter (ULONG aPosition, IHostUSBDeviceFilter 
 // public methods only for internal purposes
 ////////////////////////////////////////////////////////////////////////////////
 
-HRESULT Host::loadSettings (const settings::Key &aGlobal)
+HRESULT Host::loadSettings(const settings::Host &data)
 {
-    using namespace settings;
-
     AutoCaller autoCaller(this);
     CheckComRCReturnRC(autoCaller.rc());
 
     AutoWriteLock alock(this);
 
-    AssertReturn(!aGlobal.isNull(), E_FAIL);
-
     HRESULT rc = S_OK;
 
 #ifdef VBOX_WITH_USB
-    Key::List filters = aGlobal.key ("USBDeviceFilters").keys ("DeviceFilter");
-    for (Key::List::const_iterator it = filters.begin();
-         it != filters.end(); ++ it)
+    for (settings::USBDeviceFiltersList::const_iterator it = data.llUSBDeviceFilters.begin();
+         it != data.llUSBDeviceFilters.end();
+         ++it)
     {
-        Bstr name = (*it).stringValue ("name");
-        bool active = (*it).value <bool> ("active");
-
-        Bstr vendorId = (*it).stringValue ("vendorId");
-        Bstr productId = (*it).stringValue ("productId");
-        Bstr revision = (*it).stringValue ("revision");
-        Bstr manufacturer = (*it).stringValue ("manufacturer");
-        Bstr product = (*it).stringValue ("product");
-        Bstr serialNumber = (*it).stringValue ("serialNumber");
-        Bstr port = (*it).stringValue ("port");
-
-        USBDeviceFilterAction_T action;
-        action = USBDeviceFilterAction_Ignore;
-        const char *actionStr = (*it).stringValue ("action");
-        if (strcmp (actionStr, "Ignore") == 0)
-            action = USBDeviceFilterAction_Ignore;
-        else
-        if (strcmp (actionStr, "Hold") == 0)
-            action = USBDeviceFilterAction_Hold;
-        else
-            AssertMsgFailed (("Invalid action: '%s'\n", actionStr));
-
-        ComObjPtr<HostUSBDeviceFilter> filterObj;
-        filterObj.createObject();
-        rc = filterObj->init (this,
-                              name, active, vendorId, productId, revision,
-                              manufacturer, product, serialNumber, port,
-                              action);
-        /* error info is set by init() when appropriate */
+        const settings::USBDeviceFilter &f = *it;
+        ComObjPtr<HostUSBDeviceFilter> pFilter;
+        pFilter.createObject();
+        rc = pFilter->init(this, f);
         CheckComRCBreakRC (rc);
 
-        mUSBDeviceFilters.push_back (filterObj);
-        filterObj->mInList = true;
+        mUSBDeviceFilters.push_back(pFilter);
+        pFilter->mInList = true;
 
         /* notify the proxy (only when the filter is active) */
-        if (filterObj->data().mActive)
+        if (pFilter->data().mActive)
         {
-            HostUSBDeviceFilter *flt = filterObj; /* resolve ambiguity */
-            flt->id() = mUSBProxyService->insertFilter (&filterObj->data().mUSBFilter);
+            HostUSBDeviceFilter *flt = pFilter; /* resolve ambiguity */
+            flt->id() = mUSBProxyService->insertFilter(&pFilter->data().mUSBFilter);
         }
     }
 #endif /* VBOX_WITH_USB */
@@ -1408,77 +1379,24 @@ HRESULT Host::loadSettings (const settings::Key &aGlobal)
     return rc;
 }
 
-HRESULT Host::saveSettings (settings::Key &aGlobal)
+HRESULT Host::saveSettings(settings::Host &data)
 {
-    using namespace settings;
-
     AutoCaller autoCaller(this);
     CheckComRCReturnRC(autoCaller.rc());
 
     AutoWriteLock alock(this);
 
-    ComAssertRet (!aGlobal.isNull(), E_FAIL);
-
 #ifdef VBOX_WITH_USB
-    /* first, delete the entry */
-    Key filters = aGlobal.findKey ("USBDeviceFilters");
-    if (!filters.isNull())
-        filters.zap();
-    /* then, recreate it */
-    filters = aGlobal.createKey ("USBDeviceFilters");
+    data.llUSBDeviceFilters.clear();
 
-    USBDeviceFilterList::const_iterator it = mUSBDeviceFilters.begin();
-    while (it != mUSBDeviceFilters.end())
+    for (USBDeviceFilterList::const_iterator it = mUSBDeviceFilters.begin();
+         it != mUSBDeviceFilters.end();
+         ++it)
     {
-        AutoWriteLock filterLock (*it);
-        const HostUSBDeviceFilter::Data &data = (*it)->data();
-
-        Key filter = filters.appendKey ("DeviceFilter");
-
-        filter.setValue <Bstr> ("name", data.mName);
-        filter.setValue <bool> ("active", !!data.mActive);
-
-        /* all are optional */
-        Bstr str;
-        (*it)->COMGETTER (VendorId) (str.asOutParam());
-        if (!str.isNull())
-            filter.setValue <Bstr> ("vendorId", str);
-
-        (*it)->COMGETTER (ProductId) (str.asOutParam());
-        if (!str.isNull())
-            filter.setValue <Bstr> ("productId", str);
-
-        (*it)->COMGETTER (Revision) (str.asOutParam());
-        if (!str.isNull())
-            filter.setValue <Bstr> ("revision", str);
-
-        (*it)->COMGETTER (Manufacturer) (str.asOutParam());
-        if (!str.isNull())
-            filter.setValue <Bstr> ("manufacturer", str);
-
-        (*it)->COMGETTER (Product) (str.asOutParam());
-        if (!str.isNull())
-            filter.setValue <Bstr> ("product", str);
-
-        (*it)->COMGETTER (SerialNumber) (str.asOutParam());
-        if (!str.isNull())
-            filter.setValue <Bstr> ("serialNumber", str);
-
-        (*it)->COMGETTER (Port) (str.asOutParam());
-        if (!str.isNull())
-            filter.setValue <Bstr> ("port", str);
-
-        /* action is mandatory */
-        USBDeviceFilterAction_T action = USBDeviceFilterAction_Null;
-        (*it)->COMGETTER (Action) (&action);
-        if (action == USBDeviceFilterAction_Ignore)
-            filter.setStringValue ("action", "Ignore");
-        else if (action == USBDeviceFilterAction_Hold)
-            filter.setStringValue ("action", "Hold");
-        else
-            AssertMsgFailed (("Invalid action: %d\n", action));
-
-        ++ it;
+        ComObjPtr<HostUSBDeviceFilter> pFilter = *it;
+        settings::USBDeviceFilter f;
+        pFilter->saveSettings(f);
+        data.llUSBDeviceFilters.push_back(f);
     }
 #endif /* VBOX_WITH_USB */
 
