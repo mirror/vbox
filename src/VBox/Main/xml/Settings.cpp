@@ -785,8 +785,9 @@ void MainConfigFile::writeHardDisk(xml::ElementNode &elmMedium,
  * Called from the IMachine interface to write out a machine config file. This
  * builds an XML DOM tree and writes it out to disk.
  */
-void MainConfigFile::write()
+void MainConfigFile::write(const com::Utf8Str strFilename)
 {
+    m->strFilename = strFilename;
     createStubDocument();
 
     xml::ElementNode *pelmGlobal = m->pelmRoot->createChild("Global");
@@ -1951,7 +1952,6 @@ void MachineConfigFile::writeSnapshot(xml::ElementNode &elmParent,
 void MachineConfigFile::write(const com::Utf8Str &strFilename)
 {
     m->strFilename = strFilename;
-
     createStubDocument();
 
     xml::ElementNode *pelmMachine = m->pelmRoot->createChild("Machine");
