@@ -225,7 +225,6 @@ SOLARIS_STRIP_BINS = \
 	  VBoxOGLhosterrorspu.so \
 	  VBoxOGLrenderspu.so \
 	  VBoxSharedCrOpenGL.so) \
-	VBoxSettings.so \
 	components/VBoxC.so \
 	components/VBoxSVCM.so \
 	components/VBoxXPCOMIPCC.so
