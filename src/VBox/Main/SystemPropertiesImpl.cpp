@@ -76,11 +76,11 @@ HRESULT SystemProperties::init (VirtualBox *aParent)
 
     unconst(mParent) = aParent;
 
-    setDefaultMachineFolder (NULL);
-    setDefaultHardDiskFolder (NULL);
-    setDefaultHardDiskFormat (NULL);
+    setDefaultMachineFolder(Utf8Str::Null);
+    setDefaultHardDiskFolder(Utf8Str::Null);
+    setDefaultHardDiskFormat(Utf8Str::Null);
 
-    setRemoteDisplayAuthLibrary (NULL);
+    setRemoteDisplayAuthLibrary(Utf8Str::Null);
 
     mLogHistoryCount = 3;
 
@@ -361,7 +361,7 @@ STDMETHODIMP SystemProperties::COMGETTER(DefaultMachineFolder) (BSTR *aDefaultMa
 
     AutoReadLock alock(this);
 
-    mDefaultMachineFolderFull.cloneTo(aDefaultMachineFolder);
+    m_strDefaultMachineFolderFull.cloneTo(aDefaultMachineFolder);
 
     return S_OK;
 }
@@ -390,7 +390,7 @@ STDMETHODIMP SystemProperties::COMGETTER(DefaultHardDiskFolder) (BSTR *aDefaultH
 
     AutoReadLock alock(this);
 
-    mDefaultHardDiskFolderFull.cloneTo(aDefaultHardDiskFolder);
+    m_strDefaultHardDiskFolderFull.cloneTo(aDefaultHardDiskFolder);
 
     return S_OK;
 }
@@ -436,7 +436,7 @@ STDMETHODIMP SystemProperties::COMGETTER(DefaultHardDiskFormat) (BSTR *aDefaultH
 
     AutoReadLock alock(this);
 
-    mDefaultHardDiskFormat.cloneTo(aDefaultHardDiskFormat);
+    m_strDefaultHardDiskFormat.cloneTo(aDefaultHardDiskFormat);
 
     return S_OK;
 }
@@ -465,7 +465,7 @@ STDMETHODIMP SystemProperties::COMGETTER(RemoteDisplayAuthLibrary) (BSTR *aRemot
 
     AutoReadLock alock(this);
 
-    mRemoteDisplayAuthLibrary.cloneTo(aRemoteDisplayAuthLibrary);
+    m_strRemoteDisplayAuthLibrary.cloneTo(aRemoteDisplayAuthLibrary);
 
     return S_OK;
 }
@@ -494,7 +494,7 @@ STDMETHODIMP SystemProperties::COMGETTER(WebServiceAuthLibrary) (BSTR *aWebServi
 
     AutoReadLock alock(this);
 
-    mWebServiceAuthLibrary.cloneTo(aWebServiceAuthLibrary);
+    m_strWebServiceAuthLibrary.cloneTo(aWebServiceAuthLibrary);
 
     return S_OK;
 }
@@ -562,82 +562,48 @@ STDMETHODIMP SystemProperties::COMGETTER(DefaultAudioDriver) (AudioDriverType_T 
 // public methods only for internal purposes
 /////////////////////////////////////////////////////////////////////////////
 
-HRESULT SystemProperties::loadSettings (const settings::Key &aGlobal)
+HRESULT SystemProperties::loadSettings(const settings::SystemProperties &data)
 {
-    using namespace settings;
-
     AutoCaller autoCaller(this);
     CheckComRCReturnRC(autoCaller.rc());
 
     AutoWriteLock alock(this);
 
-    AssertReturn(!aGlobal.isNull(), E_FAIL);
-
     HRESULT rc = S_OK;
 
-    Key properties = aGlobal.key ("SystemProperties");
-
-    Bstr bstr;
-
-    bstr = properties.stringValue ("defaultMachineFolder");
-    rc = setDefaultMachineFolder (bstr);
+    rc = setDefaultMachineFolder(data.strDefaultMachineFolder);
     CheckComRCReturnRC(rc);
 
-    bstr = properties.stringValue ("defaultHardDiskFolder");
-    rc = setDefaultHardDiskFolder (bstr);
+    rc = setDefaultHardDiskFolder(data.strDefaultHardDiskFolder);
     CheckComRCReturnRC(rc);
 
-    bstr = properties.stringValue ("defaultHardDiskFormat");
-    rc = setDefaultHardDiskFormat (bstr);
+    rc = setDefaultHardDiskFormat(data.strDefaultHardDiskFormat);
     CheckComRCReturnRC(rc);
 
-    bstr = properties.stringValue ("remoteDisplayAuthLibrary");
-    rc = setRemoteDisplayAuthLibrary (bstr);
+    rc = setRemoteDisplayAuthLibrary(data.strRemoteDisplayAuthLibrary);
     CheckComRCReturnRC(rc);
 
-    bstr = properties.stringValue ("webServiceAuthLibrary");
-    rc = setWebServiceAuthLibrary (bstr);
+    rc = setWebServiceAuthLibrary(data.strWebServiceAuthLibrary);
     CheckComRCReturnRC(rc);
 
-    mLogHistoryCount = properties.valueOr <ULONG> ("LogHistoryCount", 3);
+    mLogHistoryCount = data.ulLogHistoryCount;
 
     return S_OK;
 }
 
-HRESULT SystemProperties::saveSettings (settings::Key &aGlobal)
+HRESULT SystemProperties::saveSettings(settings::SystemProperties &data)
 {
-    using namespace settings;
-
     AutoCaller autoCaller(this);
     CheckComRCReturnRC(autoCaller.rc());
 
     AutoReadLock alock(this);
 
-    ComAssertRet (!aGlobal.isNull(), E_FAIL);
-
-    /* first, delete the entry */
-    Key properties = aGlobal.findKey ("SystemProperties");
-    if (!properties.isNull())
-        properties.zap();
-    /* then, recreate it */
-    properties = aGlobal.createKey ("SystemProperties");
-
-    if (mDefaultMachineFolder)
-        properties.setValue <Bstr> ("defaultMachineFolder", mDefaultMachineFolder);
-
-    if (mDefaultHardDiskFolder)
-        properties.setValue <Bstr> ("defaultHardDiskFolder", mDefaultHardDiskFolder);
-
-    if (mDefaultHardDiskFormat)
-        properties.setValue <Bstr> ("defaultHardDiskFormat", mDefaultHardDiskFormat);
-
-    if (mRemoteDisplayAuthLibrary)
-        properties.setValue <Bstr> ("remoteDisplayAuthLibrary", mRemoteDisplayAuthLibrary);
-
-    if (mWebServiceAuthLibrary)
-        properties.setValue <Bstr> ("webServiceAuthLibrary", mWebServiceAuthLibrary);
-
-    properties.setValue <ULONG> ("LogHistoryCount", mLogHistoryCount);
+    data.strDefaultMachineFolder = m_strDefaultMachineFolder;
+    data.strDefaultHardDiskFolder = m_strDefaultHardDiskFolder;
+    data.strDefaultHardDiskFormat = m_strDefaultHardDiskFormat;
+    data.strRemoteDisplayAuthLibrary = m_strRemoteDisplayAuthLibrary;
+    data.strWebServiceAuthLibrary = m_strWebServiceAuthLibrary;
+    data.ulLogHistoryCount = mLogHistoryCount;
 
     return S_OK;
 }
@@ -677,77 +643,75 @@ ComObjPtr<HardDiskFormat> SystemProperties::hardDiskFormat (CBSTR aFormat)
 // private methods
 /////////////////////////////////////////////////////////////////////////////
 
-HRESULT SystemProperties::setDefaultMachineFolder (CBSTR aPath)
+HRESULT SystemProperties::setDefaultMachineFolder(const Utf8Str &aPath)
 {
-    Utf8Str path;
-    if (aPath && *aPath)
-        path = aPath;
-    else
+    Utf8Str path(aPath);
+    if (path.isEmpty())
         path = "Machines";
 
     /* get the full file name */
     Utf8Str folder;
-    int vrc = mParent->calculateFullPath (path, folder);
+    int vrc = mParent->calculateFullPath(path, folder);
     if (RT_FAILURE(vrc))
-        return setError (E_FAIL,
-            tr ("Invalid default machine folder '%ls' (%Rrc)"),
-            path.raw(), vrc);
+        return setError(E_FAIL,
+                        tr("Invalid default machine folder '%s' (%Rrc)"),
+                        path.raw(),
+                        vrc);
 
-    mDefaultMachineFolder = path;
-    mDefaultMachineFolderFull = folder;
+    m_strDefaultMachineFolder = path;
+    m_strDefaultMachineFolderFull = folder;
 
     return S_OK;
 }
 
-HRESULT SystemProperties::setDefaultHardDiskFolder (CBSTR aPath)
+HRESULT SystemProperties::setDefaultHardDiskFolder(const Utf8Str &aPath)
 {
-    Utf8Str path;
-    if (aPath && *aPath)
-        path = aPath;
-    else
+    Utf8Str path(aPath);
+    if (path.isEmpty())
         path = "HardDisks";
 
     /* get the full file name */
     Utf8Str folder;
-    int vrc = mParent->calculateFullPath (path, folder);
+    int vrc = mParent->calculateFullPath(path, folder);
     if (RT_FAILURE(vrc))
-        return setError (E_FAIL,
-            tr ("Invalid default hard disk folder '%ls' (%Rrc)"),
-            path.raw(), vrc);
+        return setError(E_FAIL,
+                        tr("Invalid default hard disk folder '%s' (%Rrc)"),
+                        path.raw(),
+                        vrc);
 
-    mDefaultHardDiskFolder = path;
-    mDefaultHardDiskFolderFull = folder;
+    m_strDefaultHardDiskFolder = path;
+    m_strDefaultHardDiskFolderFull = folder;
 
     return S_OK;
 }
 
-HRESULT SystemProperties::setDefaultHardDiskFormat (CBSTR aFormat)
+HRESULT SystemProperties::setDefaultHardDiskFormat(const Utf8Str &aFormat)
 {
-    if (aFormat && *aFormat)
-        mDefaultHardDiskFormat = aFormat;
+    if (!aFormat.isEmpty())
+        m_strDefaultHardDiskFormat = aFormat;
     else
-        mDefaultHardDiskFormat = "VDI";
+        m_strDefaultHardDiskFormat = "VDI";
 
     return S_OK;
 }
 
-HRESULT SystemProperties::setRemoteDisplayAuthLibrary (CBSTR aPath)
+HRESULT SystemProperties::setRemoteDisplayAuthLibrary(const Utf8Str &aPath)
 {
-    if (aPath && *aPath)
-        mRemoteDisplayAuthLibrary = aPath;
+    if (!aPath.isEmpty())
+        m_strRemoteDisplayAuthLibrary = aPath;
     else
-        mRemoteDisplayAuthLibrary = "VRDPAuth";
+        m_strRemoteDisplayAuthLibrary = "VRDPAuth";
 
     return S_OK;
 }
 
-HRESULT SystemProperties::setWebServiceAuthLibrary (CBSTR aPath)
+HRESULT SystemProperties::setWebServiceAuthLibrary(const Utf8Str &aPath)
 {
-    if (aPath && *aPath)
-        mWebServiceAuthLibrary = aPath;
+    if (!aPath.isEmpty())
+        m_strWebServiceAuthLibrary = aPath;
     else
-        mWebServiceAuthLibrary = "VRDPAuth";
+        m_strWebServiceAuthLibrary = "VRDPAuth";
 
     return S_OK;
 }
-/* vi: set tabstop=4 shiftwidth=4 expandtab: */
+

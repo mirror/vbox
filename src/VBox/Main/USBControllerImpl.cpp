@@ -558,12 +558,8 @@ STDMETHODIMP USBController::RemoveDeviceFilter (ULONG aPosition,
  *
  *  @note Locks this object for writing.
  */
-HRESULT USBController::loadSettings (const settings::Key &aMachineNode)
+HRESULT USBController::loadSettings(const settings::USBController &data)
 {
-    using namespace settings;
-
-    AssertReturn(!aMachineNode.isNull(), E_FAIL);
-
     AutoCaller autoCaller(this);
     AssertComRCReturnRC(autoCaller.rc());
 
@@ -580,48 +576,23 @@ HRESULT USBController::loadSettings (const settings::Key &aMachineNode)
      * the same setting of an object loaded from the old settings file must
      * default to B. */
 
-    /* USB Controller node (required) */
-    Key controller = aMachineNode.key ("USBController");
-
-    /* enabled (required) */
-    mData->mEnabled = controller.value <bool> ("enabled");
-
-    /* enabledEhci (optiona, defaults to false) */
-    mData->mEnabledEhci = controller.value <bool> ("enabledEhci");
+    mData->mEnabled = data.fEnabled;
+    mData->mEnabledEhci = data.fEnabledEHCI;
 
 #ifdef VBOX_WITH_USB
-    HRESULT rc = S_OK;
-
-    Key::List children = controller.keys ("DeviceFilter");
-    for (Key::List::const_iterator it = children.begin();
-         it != children.end(); ++ it)
+    for (settings::USBDeviceFiltersList::const_iterator it = data.llDeviceFilters.begin();
+         it != data.llDeviceFilters.end();
+         ++it)
     {
-        /* required */
-        Bstr name = (*it).stringValue ("name");
-        bool active = (*it).value <bool> ("active");
-
-        /* optional */
-        Bstr vendorId = (*it).stringValue ("vendorId");
-        Bstr productId = (*it).stringValue ("productId");
-        Bstr revision = (*it).stringValue ("revision");
-        Bstr manufacturer = (*it).stringValue ("manufacturer");
-        Bstr product = (*it).stringValue ("product");
-        Bstr serialNumber = (*it).stringValue ("serialNumber");
-        Bstr port = (*it).stringValue ("port");
-        Bstr remote = (*it).stringValue ("remote");
-        ULONG maskedIfs = (*it).value <ULONG> ("maskedInterfaces");
-
-        ComObjPtr<USBDeviceFilter> filterObj;
-        filterObj.createObject();
-        rc = filterObj->init (this,
-                              name, active, vendorId, productId, revision,
-                              manufacturer, product, serialNumber,
-                              port, remote, maskedIfs);
-        /* error info is set by init() when appropriate */
+        const settings::USBDeviceFilter &f = *it;
+        ComObjPtr<USBDeviceFilter> pFilter;
+        pFilter.createObject();
+        HRESULT rc = pFilter->init(this,        // parent
+                                   f);
         CheckComRCReturnRC(rc);
 
-        mDeviceFilters->push_back (filterObj);
-        filterObj->mInList = true;
+        mDeviceFilters->push_back(pFilter);
+        pFilter->mInList = true;
     }
 #endif /* VBOX_WITH_USB */
 
@@ -635,85 +606,47 @@ HRESULT USBController::loadSettings (const settings::Key &aMachineNode)
  *
  *  @note Locks this object for reading.
  */
-HRESULT USBController::saveSettings (settings::Key &aMachineNode)
+HRESULT USBController::saveSettings(settings::USBController &data)
 {
-    using namespace settings;
-
-    AssertReturn(!aMachineNode.isNull(), E_FAIL);
-
     AutoCaller autoCaller(this);
     CheckComRCReturnRC(autoCaller.rc());
 
     AutoReadLock alock(this);
 
-    /* first, delete the entry */
-    Key controller = aMachineNode.findKey ("USBController");
-#ifdef VBOX_WITH_USB
-    if (!controller.isNull())
-        controller.zap();
-    /* then, recreate it */
-    controller = aMachineNode.createKey ("USBController");
-#else
-    /* don't zap it. */
-    if (controller.isNull())
-        controller = aMachineNode.createKey ("USBController");
-#endif
-
-    /* enabled */
-    controller.setValue <bool> ("enabled", !!mData->mEnabled);
-
-    /* enabledEhci */
-    controller.setValue <bool> ("enabledEhci", !!mData->mEnabledEhci);
+    data.fEnabled = !!mData->mEnabled;
+    data.fEnabledEHCI = !!mData->mEnabledEhci;
 
 #ifdef VBOX_WITH_USB
-    DeviceFilterList::const_iterator it = mDeviceFilters->begin();
-    while (it != mDeviceFilters->end())
+    data.llDeviceFilters.clear();
+
+    for (DeviceFilterList::const_iterator it = mDeviceFilters->begin();
+         it != mDeviceFilters->end();
+         ++it)
     {
         AutoWriteLock filterLock (*it);
         const USBDeviceFilter::Data &data = (*it)->data();
 
-        Key filter = controller.appendKey ("DeviceFilter");
-
-        filter.setValue <Bstr> ("name", data.mName);
-        filter.setValue <bool> ("active", !!data.mActive);
-
-        /* all are optional */
         Bstr str;
-        (*it)->COMGETTER (VendorId) (str.asOutParam());
-        if (!str.isNull())
-            filter.setValue <Bstr> ("vendorId", str);
 
-        (*it)->COMGETTER (ProductId) (str.asOutParam());
-        if (!str.isNull())
-            filter.setValue <Bstr> ("productId", str);
-
+        settings::USBDeviceFilter f;
+        f.strName = data.mName;
+        f.fActive = !!data.mActive;
+        (*it)->COMGETTER(VendorId)(str.asOutParam());
+        f.strVendorId = str;
+        (*it)->COMGETTER(ProductId)(str.asOutParam());
+        f.strProductId = str;
         (*it)->COMGETTER (Revision) (str.asOutParam());
-        if (!str.isNull())
-            filter.setValue <Bstr> ("revision", str);
-
+        f.strRevision = str;
         (*it)->COMGETTER (Manufacturer) (str.asOutParam());
-        if (!str.isNull())
-            filter.setValue <Bstr> ("manufacturer", str);
-
+        f.strManufacturer = str;
         (*it)->COMGETTER (Product) (str.asOutParam());
-        if (!str.isNull())
-            filter.setValue <Bstr> ("product", str);
-
+        f.strProduct = str;
         (*it)->COMGETTER (SerialNumber) (str.asOutParam());
-        if (!str.isNull())
-            filter.setValue <Bstr> ("serialNumber", str);
-
+        f.strSerialNumber = str;
         (*it)->COMGETTER (Port) (str.asOutParam());
-        if (!str.isNull())
-            filter.setValue <Bstr> ("port", str);
-
-        if (data.mRemote.string())
-            filter.setValue <Bstr> ("remote", data.mRemote.string());
-
-        if (data.mMaskedIfs)
-            filter.setValue <ULONG> ("maskedInterfaces", data.mMaskedIfs);
-
-        ++ it;
+        f.strPort = str;
+        f.strRemote = data.mRemote.string();
+        f.ulMaskedInterfaces = data.mMaskedIfs;
     }
 #endif /* VBOX_WITH_USB */
 
@@ -1214,19 +1147,19 @@ bool USBController::hasMatchingFilter (IUSBDevice *aUSBDevice, ULONG *aMaskedIfs
     rc = aUSBDevice->COMGETTER(Manufacturer) (manufacturer.asOutParam());
     ComAssertComRCRet (rc, false);
     if (!manufacturer.isNull())
-        USBFilterSetStringExact (&dev, USBFILTERIDX_MANUFACTURER_STR, Utf8Str(manufacturer), true);
+        USBFilterSetStringExact (&dev, USBFILTERIDX_MANUFACTURER_STR, Utf8Str(manufacturer).c_str(), true);
 
     Bstr product;
     rc = aUSBDevice->COMGETTER(Product) (product.asOutParam());
     ComAssertComRCRet (rc, false);
     if (!product.isNull())
-        USBFilterSetStringExact (&dev, USBFILTERIDX_PRODUCT_STR, Utf8Str(product), true);
+        USBFilterSetStringExact (&dev, USBFILTERIDX_PRODUCT_STR, Utf8Str(product).c_str(), true);
 
     Bstr serialNumber;
     rc = aUSBDevice->COMGETTER(SerialNumber) (serialNumber.asOutParam());
     ComAssertComRCRet (rc, false);
     if (!serialNumber.isNull())
-        USBFilterSetStringExact (&dev, USBFILTERIDX_SERIAL_NUMBER_STR, Utf8Str(serialNumber), true);
+        USBFilterSetStringExact (&dev, USBFILTERIDX_SERIAL_NUMBER_STR, Utf8Str(serialNumber).c_str(), true);
 
     Bstr address;
     rc = aUSBDevice->COMGETTER(Address) (address.asOutParam());

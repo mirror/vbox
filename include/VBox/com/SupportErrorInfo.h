@@ -223,10 +223,12 @@ private:
  */
 class SupportErrorInfoBase
 {
-    static HRESULT setErrorInternal (HRESULT aResultCode, const GUID *aIID,
-                                     const char *aComponent, const char *aText,
-                                     bool aWarning,
-                                     IVirtualBoxErrorInfo *aInfo = NULL);
+    static HRESULT setErrorInternal(HRESULT aResultCode,
+                                    const GUID *aIID,
+                                    const char *aComponent,
+                                    const Utf8Str &strText,
+                                    bool aWarning,
+                                    IVirtualBoxErrorInfo *aInfo = NULL);
 
 protected:
 
@@ -291,11 +293,28 @@ protected:
      *         while setting error info itself, that error is returned instead
      *         of the @a aResultCode argument.
      */
-    static HRESULT setError (HRESULT aResultCode, const GUID &aIID,
-                             const char *aComponent, const char *aText)
+    static HRESULT setError(HRESULT aResultCode,
+                            const GUID &aIID,
+                            const char *aComponent,
+                            const char *aText)
     {
-        return setErrorInternal (aResultCode, &aIID, aComponent, aText,
-                                 false /* aWarning */);
+        return setErrorInternal(aResultCode,
+                                &aIID,
+                                aComponent,
+                                aText,
+                                false /* aWarning */);
+    }
+
+    static HRESULT setError(HRESULT aResultCode,
+                            const GUID &aIID,
+                            const char *aComponent,
+                            const Utf8Str &strText)
+    {
+        return setErrorInternal(aResultCode,
+                                &aIID,
+                                aComponent,
+                                strText,
+                                false /* aWarning */);
     }
 
     /**
@@ -307,11 +326,16 @@ protected:
      * use ordinary E_XXX result code constants, for convenience. However, this
      * behavior may be non-standard on some COM platforms.
      */
-    static HRESULT setWarning (HRESULT aResultCode, const GUID &aIID,
-                               const char *aComponent, const char *aText)
+    static HRESULT setWarning(HRESULT aResultCode,
+                              const GUID &aIID,
+                              const char *aComponent,
+                              const char *aText)
     {
-        return setErrorInternal (aResultCode, &aIID, aComponent, aText,
-                                 true /* aWarning */);
+        return setErrorInternal(aResultCode,
+                                &aIID,
+                                aComponent,
+                                aText,
+                                true /* aWarning */);
     }
 
     /**
@@ -319,13 +343,13 @@ protected:
      * interprets the @a aText argument as a RTPrintf-like format string and the
      * @a aArgs argument as an argument list for this format string.
      */
-    static HRESULT setErrorV (HRESULT aResultCode, const GUID &aIID,
-                              const char *aComponent, const char *aText,
-                              va_list aArgs)
+    static HRESULT setErrorV(HRESULT aResultCode, const GUID &aIID,
+                             const char *aComponent, const char *aText,
+                             va_list aArgs)
     {
-        return setErrorInternal (aResultCode, &aIID, aComponent,
-                                 Utf8StrFmtVA (aText, aArgs),
-                                 false /* aWarning */);
+        return setErrorInternal(aResultCode, &aIID, aComponent,
+                                Utf8StrFmtVA(aText, aArgs),
+                                false /* aWarning */);
     }
 
     /**
@@ -333,13 +357,14 @@ protected:
      * but interprets the @a aText argument as a RTPrintf-like format string and
      * the @a aArgs argument as an argument list for this format string.
      */
-    static HRESULT setWarningV (HRESULT aResultCode, const GUID &aIID,
-                                const char *aComponent, const char *aText,
-                                va_list aArgs)
+    static HRESULT setWarningV(HRESULT aResultCode, const GUID &aIID,
+                               const char *aComponent, const char *aText,
+                               va_list aArgs)
     {
-        return setErrorInternal (aResultCode, &aIID, aComponent,
-                                 Utf8StrFmtVA (aText, aArgs),
-                                 true /* aWarning */);
+        return setErrorInternal(aResultCode, &aIID,
+                                aComponent,
+                                Utf8StrFmtVA(aText, aArgs),
+                                true /* aWarning */);
     }
 
     /**
@@ -347,18 +372,20 @@ protected:
      * interprets the @a aText argument as a RTPrintf-like format string and
      * takes a variable list of arguments for this format string.
      */
-    static HRESULT setError (HRESULT aResultCode, const GUID &aIID,
-                             const char *aComponent, const char *aText,
-                             ...);
+    static HRESULT setError(HRESULT aResultCode,
+                            const GUID &aIID,
+                            const char *aComponent,
+                            const char *aText,
+                            ...);
 
     /**
      * Same as #setWarning (HRESULT, const GUID &, const char *, const char *)
      * but interprets the @a aText argument as a RTPrintf-like format string and
      * takes a variable list of arguments for this format string.
      */
-    static HRESULT setWarning (HRESULT aResultCode, const GUID &aIID,
-                               const char *aComponent, const char *aText,
-                               ...);
+    static HRESULT setWarning(HRESULT aResultCode, const GUID &aIID,
+                              const char *aComponent, const char *aText,
+                              ...);
 
     /**
      * Sets the given error info object on the current thread.
@@ -369,10 +396,10 @@ protected:
      *
      * @param aInfo     Error info object to set (must not be NULL).
      */
-    static HRESULT setErrorInfo (IVirtualBoxErrorInfo *aInfo)
+    static HRESULT setErrorInfo(IVirtualBoxErrorInfo *aInfo)
     {
         AssertReturn (aInfo != NULL, E_FAIL);
-        return setErrorInternal (0, NULL, NULL, NULL, false, aInfo);
+        return setErrorInternal(0, NULL, NULL, Utf8Str::Null, false, aInfo);
     }
 
     /**
@@ -393,7 +420,9 @@ protected:
      *     return rc;
      * </code>
      */
-    HRESULT setError (HRESULT aResultCode, const char *aText, ...);
+    HRESULT setError(HRESULT aResultCode, const char *aText, ...);
+
+    HRESULT setError(HRESULT aResultCode, const Utf8Str &strText);
 
     /**
      * Same as #setWarning (HRESULT, const GUID &, const char *, const char *,

@@ -417,12 +417,8 @@ STDMETHODIMP FloppyDrive::GetHostDrive (IHostFloppyDrive **aHostDrive)
  *
  * @note Locks this object for writing.
  */
-HRESULT FloppyDrive::loadSettings (const settings::Key &aMachineNode)
+HRESULT FloppyDrive::loadSettings(const settings::FloppyDrive &data)
 {
-    using namespace settings;
-
-    AssertReturn(!aMachineNode.isNull(), E_FAIL);
-
     AutoCaller autoCaller(this);
     AssertComRCReturnRC(autoCaller.rc());
 
@@ -441,24 +437,17 @@ HRESULT FloppyDrive::loadSettings (const settings::Key &aMachineNode)
 
     HRESULT rc = S_OK;
 
-    /* Floppy drive (required, contains either Image or HostDrive or nothing) */
-    Key floppyDriveNode = aMachineNode.key ("FloppyDrive");
-
     /* optional, defaults to true */
-    m->enabled = floppyDriveNode.value <bool> ("enabled");
+    m->enabled = data.fEnabled;
 
-    Key typeNode;
-
-    if (!(typeNode = floppyDriveNode.findKey ("Image")).isNull())
+    if (!data.uuid.isEmpty())
     {
-        Guid uuid = typeNode.value <Guid> ("uuid");
-        rc = MountImage (uuid.toUtf16());
+        rc = MountImage(data.uuid.toUtf16());
         CheckComRCReturnRC(rc);
     }
-    else if (!(typeNode = floppyDriveNode.findKey ("HostDrive")).isNull())
+    else if (!data.strHostDriveSrc.isEmpty())
     {
-
-        Bstr src = typeNode.stringValue ("src");
+        Bstr src = data.strHostDriveSrc;
 
         /* find the corresponding object */
         ComObjPtr<Host> host = mParent->virtualBox()->host();
@@ -501,20 +490,14 @@ HRESULT FloppyDrive::loadSettings (const settings::Key &aMachineNode)
  *
  * @note Locks this object for reading.
  */
-HRESULT FloppyDrive::saveSettings (settings::Key &aMachineNode)
+HRESULT FloppyDrive::saveSettings(settings::FloppyDrive &data)
 {
-    using namespace settings;
-
-    AssertReturn(!aMachineNode.isNull(), E_FAIL);
-
     AutoCaller autoCaller(this);
     AssertComRCReturnRC(autoCaller.rc());
 
     AutoReadLock alock(this);
 
-    Key node = aMachineNode.createKey ("FloppyDrive");
-
-    node.setValue <bool> ("enabled", !!m->enabled);
+    data.fEnabled = !!m->enabled;
 
     switch (m->state)
     {
@@ -527,8 +510,8 @@ HRESULT FloppyDrive::saveSettings (settings::Key &aMachineNode)
             AssertComRC (rc);
             Assert (!id.isEmpty());
 
-            Key imageNode = node.createKey ("Image");
-            imageNode.setValue <Guid> ("uuid", Guid(id));
+            data.uuid = Guid(id);
+            data.strHostDriveSrc.setNull();
             break;
         }
         case DriveState_HostDriveCaptured:
@@ -540,13 +523,15 @@ HRESULT FloppyDrive::saveSettings (settings::Key &aMachineNode)
             AssertComRC (rc);
             Assert (!name.isEmpty());
 
-            Key hostDriveNode = node.createKey ("HostDrive");
-            hostDriveNode.setValue <Bstr> ("src", name);
+            data.uuid.clear();
+            data.strHostDriveSrc = name;
             break;
         }
         case DriveState_NotMounted:
             /* do nothing, i.e.leave the drive node empty */
-            break;
+            data.uuid.clear();
+            data.strHostDriveSrc.setNull();
+        break;
         default:
             ComAssertMsgFailedRet (("Invalid drive state: %d", m->state),
                                     E_FAIL);

@@ -458,90 +458,25 @@ STDMETHODIMP BIOSSettings::COMSETTER(TimeOffset)(LONG64 offset)
  *
  *  @note Locks this object for writing.
  */
-HRESULT BIOSSettings::loadSettings (const settings::Key &aMachineNode)
+HRESULT BIOSSettings::loadSettings(const settings::BIOSSettings &data)
 {
-    using namespace settings;
-
-    AssertReturn(!aMachineNode.isNull(), E_FAIL);
-
     AutoCaller autoCaller(this);
     AssertComRCReturnRC(autoCaller.rc());
 
     AutoWriteLock alock(this);
 
-    /* Note: we assume that the default values for attributes of optional
-     * nodes are assigned in the Data::Data() constructor and don't do it
-     * here. It implies that this method may only be called after constructing
-     * a new BIOSSettings object while all its data fields are in the default
-     * values. Exceptions are fields whose creation time defaults don't match
-     * values that should be applied when these fields are not explicitly set
-     * in the settings file (for backwards compatibility reasons). This takes
-     * place when a setting of a newly created object must default to A while
-     * the same setting of an object loaded from the old settings file must
-     * default to B. */
+    mData->mACPIEnabled = data.fACPIEnabled;
+    mData->mIOAPICEnabled = data.fIOAPICEnabled;
 
-    /* BIOS node (required) */
-    Key biosNode = aMachineNode.key ("BIOS");
+    mData->mLogoFadeIn = data.fLogoFadeIn;
+    mData->mLogoFadeOut = data.fLogoFadeOut;
+    mData->mLogoDisplayTime = data.ulLogoDisplayTime;
+    mData->mLogoImagePath = data.strLogoImagePath;
 
-    /* ACPI (required) */
-    {
-        Key acpiNode = biosNode.key ("ACPI");
+    mData->mBootMenuMode = data.biosBootMenuMode;
 
-        mData->mACPIEnabled = acpiNode.value <bool> ("enabled");
-    }
-
-    /* IOAPIC (optional) */
-    {
-        Key ioapicNode = biosNode.findKey ("IOAPIC");
-        if (!ioapicNode.isNull())
-            mData->mIOAPICEnabled = ioapicNode.value <bool> ("enabled");
-    }
-
-    /* Logo (optional) */
-    {
-        Key logoNode = biosNode.findKey ("Logo");
-        if (!logoNode.isNull())
-        {
-            mData->mLogoFadeIn = logoNode.value <bool> ("fadeIn");
-            mData->mLogoFadeOut = logoNode.value <bool> ("fadeOut");
-            mData->mLogoDisplayTime = logoNode.value <ULONG> ("displayTime");
-            mData->mLogoImagePath = logoNode.stringValue ("imagePath");
-        }
-    }
-
-    /* boot menu (optional) */
-    {
-        Key bootMenuNode = biosNode.findKey ("BootMenu");
-        if (!bootMenuNode.isNull())
-        {
-            mData->mBootMenuMode = BIOSBootMenuMode_MessageAndMenu;
-            const char *modeStr = bootMenuNode.stringValue ("mode");
-
-            if (strcmp (modeStr, "Disabled") == 0)
-                mData->mBootMenuMode = BIOSBootMenuMode_Disabled;
-            else if (strcmp (modeStr, "MenuOnly") == 0)
-                mData->mBootMenuMode = BIOSBootMenuMode_MenuOnly;
-            else if (strcmp (modeStr, "MessageAndMenu") == 0)
-                mData->mBootMenuMode = BIOSBootMenuMode_MessageAndMenu;
-            else
-                ComAssertMsgFailedRet (("Invalid boot menu mode '%s'", modeStr),
-                                       E_FAIL);
-        }
-    }
-
-    /* PXE debug logging (optional) */
-    {
-        Key pxedebugNode = biosNode.findKey ("PXEDebug");
-        if (!pxedebugNode.isNull())
-            mData->mPXEDebugEnabled = pxedebugNode.value <bool> ("enabled");
-    }
-
-    /* time offset (optional) */
-    {
-        Key timeOffsetNode = biosNode.findKey ("TimeOffset");
-        if (!timeOffsetNode.isNull())
-            mData->mTimeOffset = timeOffsetNode.value <LONG64> ("value");
-    }
+    mData->mPXEDebugEnabled = data.fPXEDebugEnabled;
+    mData->mTimeOffset = data.llTimeOffset;
 
     return S_OK;
 }
@@ -553,74 +488,24 @@ HRESULT BIOSSettings::loadSettings (const settings::Key &aMachineNode)
  *
  *  @note Locks this object for reading.
  */
-HRESULT BIOSSettings::saveSettings (settings::Key &aMachineNode)
+HRESULT BIOSSettings::saveSettings(settings::BIOSSettings &data)
 {
-    using namespace settings;
-
-    AssertReturn(!aMachineNode.isNull(), E_FAIL);
-
     AutoCaller autoCaller(this);
     AssertComRCReturnRC(autoCaller.rc());
 
     AutoReadLock alock(this);
 
-    Key biosNode = aMachineNode.createKey ("BIOS");
+    data.fACPIEnabled = !!mData->mACPIEnabled;
+    data.fIOAPICEnabled = !!mData->mIOAPICEnabled;
 
-    /* ACPI */
-    {
-        Key acpiNode = biosNode.createKey ("ACPI");
-        acpiNode.setValue <bool> ("enabled", !!mData->mACPIEnabled);
-    }
+    data.fLogoFadeIn = !!mData->mLogoFadeIn;
+    data.fLogoFadeOut = !!mData->mLogoFadeOut;
+    data.ulLogoDisplayTime = mData->mLogoDisplayTime;
+    data.strLogoImagePath = mData->mLogoImagePath;
 
-    /* IOAPIC */
-    {
-        Key ioapicNode = biosNode.createKey ("IOAPIC");
-        ioapicNode.setValue <bool> ("enabled", !!mData->mIOAPICEnabled);
-    }
-
-    /* BIOS logo (optional) **/
-    {
-        Key logoNode = biosNode.createKey ("Logo");
-        logoNode.setValue <bool> ("fadeIn", !!mData->mLogoFadeIn);
-        logoNode.setValue <bool> ("fadeOut", !!mData->mLogoFadeOut);
-        logoNode.setValue <ULONG> ("displayTime", mData->mLogoDisplayTime);
-        logoNode.setValueOr <Bstr> ("imagePath", mData->mLogoImagePath, Bstr::Null);
-    }
-
-    /* boot menu (optional) */
-    {
-        Key bootMenuNode = biosNode.createKey ("BootMenu");
-        const char *modeStr = NULL;
-        switch (mData->mBootMenuMode)
-        {
-            case BIOSBootMenuMode_Disabled:
-                modeStr = "Disabled";
-                break;
-            case BIOSBootMenuMode_MenuOnly:
-                modeStr = "MenuOnly";
-                break;
-            case BIOSBootMenuMode_MessageAndMenu:
-                modeStr = "MessageAndMenu";
-                break;
-            default:
-                ComAssertMsgFailedRet (("Invalid boot menu type: %d",
-                                        mData->mBootMenuMode),
-                                       E_FAIL);
-        }
-        bootMenuNode.setStringValue ("mode", modeStr);
-    }
-
-    /* time offset (optional) */
-    {
-        Key timeOffsetNode = biosNode.createKey ("TimeOffset");
-        timeOffsetNode.setValue <LONG64> ("value", mData->mTimeOffset);
-    }
-
-    /* PXE debug flag (optional) */
-    {
-        Key pxedebugNode = biosNode.createKey ("PXEDebug");
-        pxedebugNode.setValue <bool> ("enabled", !!mData->mPXEDebugEnabled);
-    }
+    data.biosBootMenuMode = mData->mBootMenuMode;
+    data.fPXEDebugEnabled = !!mData->mPXEDebugEnabled;
+    data.llTimeOffset = mData->mTimeOffset;
 
     return S_OK;
 }

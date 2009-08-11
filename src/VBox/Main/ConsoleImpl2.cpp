@@ -226,7 +226,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
     rc = CFGMR3InsertInteger(pRoot, "RamSize",              cbRam);                 RC_CHECK();
     rc = CFGMR3InsertInteger(pRoot, "RamHoleSize",          cbRamHole);             RC_CHECK();
     rc = CFGMR3InsertInteger(pRoot, "NumCPUs",              cCpus);                 RC_CHECK();
-    rc = CFGMR3InsertString (pRoot, "OSType",               Utf8Str(osTypeId));     RC_CHECK();
+    rc = CFGMR3InsertString (pRoot, "OSType",               Utf8Str(osTypeId).c_str()); RC_CHECK();
     rc = CFGMR3InsertInteger(pRoot, "TimerMillies",         10);                    RC_CHECK();
     rc = CFGMR3InsertInteger(pRoot, "RawR3Enabled",         1);     /* boolean */   RC_CHECK();
     rc = CFGMR3InsertInteger(pRoot, "RawR0Enabled",         1);     /* boolean */   RC_CHECK();
@@ -778,7 +778,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
     rc = CFGMR3InsertInteger(pCfg,  "LogoTime", logoDisplayTime);                   RC_CHECK();
     Bstr logoImagePath;
     hrc = biosSettings->COMGETTER(LogoImagePath)(logoImagePath.asOutParam());       H();
-    rc = CFGMR3InsertString(pCfg,   "LogoFile", logoImagePath ? Utf8Str(logoImagePath) : ""); RC_CHECK();
+    rc = CFGMR3InsertString(pCfg,   "LogoFile", logoImagePath ? Utf8Str(logoImagePath).c_str() : ""); RC_CHECK();
 
     /*
      * Boot menu
@@ -1101,7 +1101,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                     {
                         Utf8Str name = names[ii];
                         Utf8Str value = values[ii];
-                        rc = CFGMR3InsertString(pVDC, name, value);
+                        rc = CFGMR3InsertString(pVDC, name.c_str(), value.c_str());
                         if (    name.compare("HostIPStack") == 0
                             &&  value.compare("0") == 0)
                             fHostIP = false;
@@ -1144,7 +1144,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                         {
                             Utf8Str name = names[ii];
                             Utf8Str value = values[ii];
-                            rc = CFGMR3InsertString(pVDC, name, value);
+                            rc = CFGMR3InsertString(pVDC, name.c_str(), value.c_str());
                             if (    name.compare("HostIPStack") == 0
                                 &&  value.compare("0") == 0)
                                 fHostIP = false;
@@ -1906,44 +1906,49 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
      *
      */
     /** @todo add support for removing nodes and byte blobs. */
-    Bstr strExtraDataKey;
-    bool fGlobalExtraData = true;
-    for (;;)
+    SafeArray<BSTR> aGlobalExtraDataKeys;
+    SafeArray<BSTR> aMachineExtraDataKeys;
+    /*
+        * Get the next key
+        */
+    if (FAILED(hrc = virtualBox->GetExtraDataKeys(ComSafeArrayAsOutParam(aGlobalExtraDataKeys))))
+        AssertMsgFailed(("VirtualBox::GetExtraDataKeys failed with %Rrc\n", hrc));
+    size_t cGlobalValues = aGlobalExtraDataKeys.size();
+    if (FAILED(hrc = pMachine->GetExtraDataKeys(ComSafeArrayAsOutParam(aMachineExtraDataKeys))))
+        AssertMsgFailed(("IMachine::GetExtraDataKeys failed with %Rrc\n", hrc));
+
+    // build a combined list, prefix global keys with "G:"...
+    std::list<Utf8Str> llExtraDataKeys;
+    size_t i;
+    for (i = 0; i < aGlobalExtraDataKeys.size(); ++i)
+        llExtraDataKeys.push_back(Utf8Str(aGlobalExtraDataKeys[i]));
+    // ... and machine keys with "M:" (so we know below which method to call)
+    for (i = 0; i < aMachineExtraDataKeys.size(); ++i)
+        llExtraDataKeys.push_back(Utf8Str(aMachineExtraDataKeys[i]));
+    i = 0;
+    for (std::list<Utf8Str>::const_iterator it = llExtraDataKeys.begin();
+         it != llExtraDataKeys.end();
+         ++it, ++i)
     {
-        /*
-         * Get the next key
-         */
-        Bstr strNextExtraDataKey;
-        Bstr strExtraDataValue;
-        if (fGlobalExtraData)
-            hrc = virtualBox->GetNextExtraDataKey(strExtraDataKey, strNextExtraDataKey.asOutParam(),
-                                                  strExtraDataValue.asOutParam());
-        else
-            hrc = pMachine->GetNextExtraDataKey(strExtraDataKey, strNextExtraDataKey.asOutParam(),
-                                                strExtraDataValue.asOutParam());
-
-        /* stop if for some reason there's nothing more to request */
-        if (FAILED(hrc) || strNextExtraDataKey.isEmpty())
-        {
-            /* if we're out of global keys, continue with machine, otherwise we're done */
-            if (fGlobalExtraData)
-            {
-                fGlobalExtraData = false;
-                strExtraDataKey.setNull();
-                continue;
-            }
-            break;
-        }
-        strExtraDataKey = strNextExtraDataKey;
+        const Utf8Str &strKey = *it;
 
         /*
-         * We only care about keys starting with "VBoxInternal/"
+         * We only care about keys starting with "VBoxInternal/" (skip "G:" or "M:")
          */
-        Utf8Str strExtraDataKeyUtf8(strExtraDataKey);
-        char *pszExtraDataKey = (char *)strExtraDataKeyUtf8.raw();
-        if (strncmp(pszExtraDataKey, "VBoxInternal/", sizeof("VBoxInternal/") - 1) != 0)
+        if (!strKey.startsWith("VBoxInternal/"))
             continue;
-        pszExtraDataKey += sizeof("VBoxInternal/") - 1;
+
+        const char *pszExtraDataKey = strKey.raw() + sizeof("VBoxInternal/") - 1;
+
+        // get the value
+        Bstr strExtraDataValue;
+        if (i < cGlobalValues)
+            // this is still one of the global values:
+            hrc = virtualBox->GetExtraData(Bstr(strKey), strExtraDataValue.asOutParam());
+        else
+            hrc = pMachine->GetExtraData(Bstr(strKey), strExtraDataValue.asOutParam());
+        if (FAILED(hrc))
+            LogRel(("Warning: Cannot get extra data key %s, rc = %Rrc\n", strKey.raw(), hrc));
 
         /*
          * The key will be in the format "Node1/Node2/Value" or simply "Value".
@@ -1951,12 +1956,12 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
          * if necessary.
          */
         PCFGMNODE pNode;
-        char *pszCFGMValueName = strrchr(pszExtraDataKey, '/');
+        const char *pszCFGMValueName = strrchr(pszExtraDataKey, '/');
         if (pszCFGMValueName)
         {
             /* terminate the node and advance to the value (Utf8Str might not
                offically like this but wtf) */
-            *pszCFGMValueName = '\0';
+            *(char*)pszCFGMValueName = '\0';
             pszCFGMValueName++;
 
             /* does the node already exist? */

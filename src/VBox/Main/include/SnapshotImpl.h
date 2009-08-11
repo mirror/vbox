@@ -28,9 +28,10 @@
 
 class SnapshotMachine;
 class VirtualBox;
+
 namespace settings
 {
-    class Key;
+    class Snapshot;
 }
 
 class ATL_NO_VTABLE Snapshot :
@@ -64,9 +65,9 @@ public:
     // public initializer/uninitializer only for internal purposes
     HRESULT init(VirtualBox *aVirtualBox,
                  const Guid &aId,
-                 IN_BSTR aName,
-                 IN_BSTR aDescription,
-                 RTTIMESPEC aTimeStamp,
+                 const Utf8Str &aName,
+                 const Utf8Str &aDescription,
+                 const RTTIMESPEC &aTimeStamp,
                  SnapshotMachine *aMachine,
                  Snapshot *aParent);
     void uninit();
@@ -103,19 +104,19 @@ public:
     ComPtr<SnapshotMachine> getSnapshotMachine();
 
     Guid getId() const;
-    Bstr getName() const;
+    const Utf8Str& getName() const;
     RTTIMESPEC getTimeStamp() const;
 
     ComObjPtr<Snapshot> findChildOrSelf(IN_GUID aId);
-    ComObjPtr<Snapshot> findChildOrSelf(IN_BSTR aName);
+    ComObjPtr<Snapshot> findChildOrSelf(const Utf8Str &aName);
 
     void updateSavedStatePaths(const char *aOldPath,
                                const char *aNewPath);
     void updateSavedStatePathsImpl(const char *aOldPath,
                                    const char *aNewPath);
 
-    HRESULT saveSnapshot(settings::Key &aNode, bool aAttrsOnly);
-    HRESULT saveSnapshotImpl(settings::Key &aNode, bool aAttrsOnly);
+    HRESULT saveSnapshot(settings::Snapshot &data, bool aAttrsOnly);
+    HRESULT saveSnapshotImpl(settings::Snapshot &data, bool aAttrsOnly);
 
     // for VirtualBoxSupportErrorInfoImpl
     static const wchar_t *getComponentName()

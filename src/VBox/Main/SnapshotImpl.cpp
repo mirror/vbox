@@ -47,9 +47,9 @@ struct Snapshot::Data
     ~Data()
     {}
 
-    Guid                        id;
-    Bstr                        name;
-    Bstr                        description;
+    Guid                        uuid;
+    Utf8Str                     strName;
+    Utf8Str                     strDescription;
     RTTIMESPEC                  timeStamp;
     ComObjPtr<SnapshotMachine>  pMachine;
 
@@ -83,15 +83,15 @@ void Snapshot::FinalRelease()
  */
 HRESULT Snapshot::init(VirtualBox *aVirtualBox,
                        const Guid &aId,
-                       IN_BSTR aName,
-                       IN_BSTR aDescription,
-                       RTTIMESPEC aTimeStamp,
+                       const Utf8Str &aName,
+                       const Utf8Str &aDescription,
+                       const RTTIMESPEC &aTimeStamp,
                        SnapshotMachine *aMachine,
                        Snapshot *aParent)
 {
-    LogFlowMember (("Snapshot::init(aParent=%p)\n", aParent));
+    LogFlowMember(("Snapshot::init(uuid: %s, aParent->uuid=%s)\n", aId.toString().c_str(), (aParent) ? aParent->m->uuid.toString().c_str() : ""));
 
-    ComAssertRet (!aId.isEmpty() && aName && aMachine, E_INVALIDARG);
+    ComAssertRet (!aId.isEmpty() && !aName.isEmpty() && aMachine, E_INVALIDARG);
 
     /* Enclose the state transition NotReady->InInit->Ready */
     AutoInitSpan autoInitSpan(this);
@@ -104,9 +104,9 @@ HRESULT Snapshot::init(VirtualBox *aVirtualBox,
 
     mParent = aParent;
 
-    m->id = aId;
-    m->name = aName;
-    m->description = aDescription;
+    m->uuid = aId;
+    m->strName = aName;
+    m->strDescription = aDescription;
     m->timeStamp = aTimeStamp;
     m->pMachine = aMachine;
 
@@ -252,7 +252,7 @@ STDMETHODIMP Snapshot::COMGETTER(Id) (BSTR *aId)
 
     AutoReadLock alock(this);
 
-    m->id.toUtf16().cloneTo(aId);
+    m->uuid.toUtf16().cloneTo(aId);
     return S_OK;
 }
 
@@ -265,7 +265,7 @@ STDMETHODIMP Snapshot::COMGETTER(Name) (BSTR *aName)
 
     AutoReadLock alock(this);
 
-    m->name.cloneTo(aName);
+    m->strName.cloneTo(aName);
     return S_OK;
 }
 
@@ -273,18 +273,20 @@ STDMETHODIMP Snapshot::COMGETTER(Name) (BSTR *aName)
  *  @note Locks this object for writing, then calls Machine::onSnapshotChange()
  *  (see its lock requirements).
  */
-STDMETHODIMP Snapshot::COMSETTER(Name) (IN_BSTR aName)
+STDMETHODIMP Snapshot::COMSETTER(Name)(IN_BSTR aName)
 {
     CheckComArgNotNull(aName);
 
     AutoCaller autoCaller(this);
     CheckComRCReturnRC(autoCaller.rc());
 
+    Utf8Str strName(aName);
+
     AutoWriteLock alock(this);
 
-    if (m->name != aName)
+    if (m->strName != strName)
     {
-        m->name = aName;
+        m->strName = strName;
 
         alock.leave(); /* Important! (child->parent locks are forbidden) */
 
@@ -303,7 +305,7 @@ STDMETHODIMP Snapshot::COMGETTER(Description) (BSTR *aDescription)
 
     AutoReadLock alock(this);
 
-    m->description.cloneTo(aDescription);
+    m->strDescription.cloneTo(aDescription);
     return S_OK;
 }
 
@@ -314,11 +316,13 @@ STDMETHODIMP Snapshot::COMSETTER(Description) (IN_BSTR aDescription)
     AutoCaller autoCaller(this);
     CheckComRCReturnRC(autoCaller.rc());
 
+    Utf8Str strDescription(aDescription);
+
     AutoWriteLock alock(this);
 
-    if (m->description != aDescription)
+    if (m->strDescription != strDescription)
     {
-        m->description = aDescription;
+        m->strDescription = strDescription;
 
         alock.leave(); /* Important! (child->parent locks are forbidden) */
 
@@ -474,7 +478,7 @@ ComPtr<SnapshotMachine> Snapshot::getSnapshotMachine()
  */
 Guid Snapshot::getId() const
 {
-    return m->id;
+    return m->uuid;
 }
 
 /**
@@ -482,9 +486,9 @@ Guid Snapshot::getId() const
  * Caller must hold the snapshot's object lock!
  * @return
  */
-Bstr Snapshot::getName() const
+const Utf8Str& Snapshot::getName() const
 {
-    return m->name;
+    return m->strName;
 }
 
 /**
@@ -511,7 +515,7 @@ ComObjPtr<Snapshot> Snapshot::findChildOrSelf(IN_GUID aId)
 
     AutoReadLock alock(this);
 
-    if (m->id == aId)
+    if (m->uuid == aId)
         child = this;
     else
     {
@@ -534,17 +538,17 @@ ComObjPtr<Snapshot> Snapshot::findChildOrSelf(IN_GUID aId)
  *  in the search.
  *  Caller must hold the snapshots tree lock!
  */
-ComObjPtr<Snapshot> Snapshot::findChildOrSelf(IN_BSTR aName)
+ComObjPtr<Snapshot> Snapshot::findChildOrSelf(const Utf8Str &aName)
 {
     ComObjPtr<Snapshot> child;
-    AssertReturn(aName, child);
+    AssertReturn(!aName.isEmpty(), child);
 
     AutoCaller autoCaller(this);
     AssertComRC(autoCaller.rc());
 
-    AutoReadLock alock(this);
+    AutoReadLock alock (this);
 
-    if (m->name == aName)
+    if (m->strName == aName)
         child = this;
     else
     {
@@ -571,11 +575,11 @@ void Snapshot::updateSavedStatePathsImpl(const char *aOldPath, const char *aNewP
     AutoWriteLock alock(this);
 
     Utf8Str path = m->pMachine->mSSData->mStateFilePath;
-    LogFlowThisFunc(("Snap[%ls].statePath={%s}\n", m->name.raw(), path.raw()));
+    LogFlowThisFunc(("Snap[%s].statePath={%s}\n", m->strName.raw(), path.raw()));
 
     /* state file may be NULL (for offline snapshots) */
     if (    path.length()
-         && RTPathStartsWith(path, aOldPath)
+         && RTPathStartsWith(path.c_str(), aOldPath)
        )
     {
         path = Utf8StrFmt ("%s%s", aNewPath, path.raw() + strlen (aOldPath));
@@ -624,34 +628,14 @@ void Snapshot::updateSavedStatePaths(const char *aOldPath, const char *aNewPath)
  * @param aAttrsOnly
  * @return
  */
-HRESULT Snapshot::saveSnapshotImpl(settings::Key &aNode, bool aAttrsOnly)
+HRESULT Snapshot::saveSnapshotImpl(settings::Snapshot &data, bool aAttrsOnly)
 {
-    using namespace settings;
-
     AutoReadLock alock(this);
 
-    /* uuid (required) */
-    if (!aAttrsOnly)
-        aNode.setValue<Guid>("uuid", m->id);
-
-    /* name (required) */
-    aNode.setValue<Bstr>("name", m->name);
-
-    /* timeStamp (required) */
-    aNode.setValue<RTTIMESPEC>("timeStamp", m->timeStamp);
-
-    /* Description node (optional) */
-    if (!m->description.isNull())
-    {
-        Key descNode = aNode.createKey("Description");
-        descNode.setKeyValue<Bstr>(m->description);
-    }
-    else
-    {
-        Key descNode = aNode.findKey ("Description");
-        if (!descNode.isNull())
-            descNode.zap();
-    }
+    data.uuid = m->uuid;
+    data.strName = m->strName;
+    data.timestamp = m->timeStamp;
+    data.strDescription = m->strDescription;
 
     if (aAttrsOnly)
         return S_OK;
@@ -662,42 +646,32 @@ HRESULT Snapshot::saveSnapshotImpl(settings::Key &aNode, bool aAttrsOnly)
         /* try to make the file name relative to the settings file dir */
         Utf8Str strStateFilePath = stateFilePath();
         m->pMachine->calculateRelativePath(strStateFilePath, strStateFilePath);
-        aNode.setStringValue ("stateFile", strStateFilePath);
+        data.strStateFile = strStateFilePath;
     }
+    else
+        data.strStateFile.setNull();
 
-    {
-        ComObjPtr<SnapshotMachine> snapshotMachine = m->pMachine;
+    HRESULT rc = m->pMachine->saveHardware(data.hardware);
+    CheckComRCReturnRC (rc);
 
-        /* save hardware */
-        {
-            Key hwNode = aNode.createKey ("Hardware");
-            HRESULT rc = snapshotMachine->saveHardware(hwNode);
-            CheckComRCReturnRC(rc);
-        }
-
-        /* save hard disks. */
-        {
-            Key storageNode = aNode.createKey ("StorageControllers");
-            HRESULT rc = snapshotMachine->saveStorageControllers(storageNode);
-            CheckComRCReturnRC(rc);
-        }
-    }
+    rc = m->pMachine->saveStorageControllers(data.storage);
+    CheckComRCReturnRC (rc);
 
     alock.unlock();
 
+    data.llChildSnapshots.clear();
+
     if (m->llChildren.size())
     {
-        Key snapshotsNode = aNode.createKey ("Snapshots");
-
-        HRESULT rc = S_OK;
-
         for (SnapshotsList::const_iterator it = m->llChildren.begin();
              it != m->llChildren.end();
              ++it)
         {
-            Key snapshotNode = snapshotsNode.createKey("Snapshot");
-            rc = (*it)->saveSnapshotImpl(snapshotNode, aAttrsOnly);
-            CheckComRCReturnRC(rc);
+            settings::Snapshot snap;
+            rc = (*it)->saveSnapshotImpl(snap, aAttrsOnly);
+            CheckComRCReturnRC (rc);
+
+            data.llChildSnapshots.push_back(snap);
         }
     }
 
@@ -712,12 +686,10 @@ HRESULT Snapshot::saveSnapshotImpl(settings::Key &aNode, bool aAttrsOnly)
  *  @param aSnapshot    Snapshot to save.
  *  @param aAttrsOnly   If true, only updatge user-changeable attrs.
  */
-HRESULT Snapshot::saveSnapshot(settings::Key &aNode, bool aAttrsOnly)
+HRESULT Snapshot::saveSnapshot(settings::Snapshot &data, bool aAttrsOnly)
 {
-    AssertReturn(!aNode.isNull(), E_INVALIDARG);
-
     AutoWriteLock listLock(m->pMachine->snapshotsTreeLockHandle());
 
-    return saveSnapshotImpl(aNode, aAttrsOnly);
+    return saveSnapshotImpl(data, aAttrsOnly);
 }
 

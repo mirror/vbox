@@ -25,6 +25,7 @@
 #include <iprt/file.h>
 #include <iprt/string.h>
 #include <iprt/uuid.h>
+#include <iprt/stream.h>
 #include <iprt/thread.h>
 #include <iprt/process.h>
 #include <iprt/env.h>
@@ -83,34 +84,6 @@
 // globals
 /////////////////////////////////////////////////////////////////////////////
 
-static const char gDefaultGlobalConfig [] =
-{
-    "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>" RTFILE_LINEFEED
-    "<!-- Sun VirtualBox Global Configuration -->" RTFILE_LINEFEED
-    "<VirtualBox xmlns=\"" VBOX_XML_NAMESPACE "\" "
-        "version=\"" VBOX_XML_VERSION_FULL "\">" RTFILE_LINEFEED
-    "  <Global>"RTFILE_LINEFEED
-    "    <MachineRegistry/>"RTFILE_LINEFEED
-    "    <MediaRegistry/>"RTFILE_LINEFEED
-    "    <NetserviceRegistry>"RTFILE_LINEFEED
-    "       <DHCPServers>"RTFILE_LINEFEED
-    "          <DHCPServer "
-#ifdef RT_OS_WINDOWS
-                          "networkName=\"HostInterfaceNetworking-VirtualBox Host-Only Ethernet Adapter\" "
-#else
-                          "networkName=\"HostInterfaceNetworking-vboxnet0\" "
-#endif
-                          "IPAddress=\"192.168.56.100\" networkMask=\"255.255.255.0\" "
-                          "lowerIP=\"192.168.56.101\" upperIP=\"192.168.56.254\" "
-                          "enabled=\"1\"/>"RTFILE_LINEFEED
-    "       </DHCPServers>"RTFILE_LINEFEED
-    "    </NetserviceRegistry>"RTFILE_LINEFEED
-    "    <USBDeviceFilters/>"RTFILE_LINEFEED
-    "    <SystemProperties/>"RTFILE_LINEFEED
-    "  </Global>"RTFILE_LINEFEED
-    "</VirtualBox>"RTFILE_LINEFEED
-};
-
 // static
 Bstr VirtualBox::sVersion;
 
@@ -119,9 +92,6 @@ ULONG VirtualBox::sRevision;
 
 // static
 Bstr VirtualBox::sPackageType;
-
-// static
-Bstr VirtualBox::sSettingsFormatVersion;
 
 // constructor / destructor
 /////////////////////////////////////////////////////////////////////////////
@@ -175,15 +145,10 @@ HRESULT VirtualBox::init()
         sPackageType = VBOX_PACKAGE_STRING;
     LogFlowThisFunc(("Version: %ls, Package: %ls\n", sVersion.raw(), sPackageType.raw()));
 
-    if (sSettingsFormatVersion.isNull())
-        sSettingsFormatVersion = VBOX_XML_VERSION_FULL;
-    LogFlowThisFunc(("Settings Format Version: %ls\n",
-                      sSettingsFormatVersion.raw()));
-
     /* Get the VirtualBox home directory. */
     {
-        char homeDir [RTPATH_MAX];
-        int vrc = com::GetVBoxUserHomeDirectory (homeDir, sizeof (homeDir));
+        char homeDir[RTPATH_MAX];
+        int vrc = com::GetVBoxUserHomeDirectory(homeDir, sizeof(homeDir));
         if (RT_FAILURE(vrc))
             return setError (E_FAIL,
                 tr ("Could not create the VirtualBox home directory '%s'"
@@ -193,144 +158,99 @@ HRESULT VirtualBox::init()
         unconst(mData.mHomeDir) = homeDir;
     }
 
-    /* compose the global config file name (always full path) */
-    Utf8StrFmt vboxConfigFile ("%s%c%s", mData.mHomeDir.raw(),
-                               RTPATH_DELIMITER, VBOX_GLOBAL_SETTINGS_FILE);
-
-    /* store the config file name */
-    unconst(mData.mCfgFile.mName) = vboxConfigFile;
-
-    /* lock the config file */
-    HRESULT rc = lockConfig();
-    if (SUCCEEDED(rc))
+    /* compose the VirtualBox.xml file name */
+    unconst(m_strSettingsFilePath) = Utf8StrFmt("%s%c%s",
+                                                mData.mHomeDir.raw(),
+                                                RTPATH_DELIMITER,
+                                                VBOX_GLOBAL_SETTINGS_FILE);
+    HRESULT rc = S_OK;
+    try
     {
-        if (!isConfigLocked())
-        {
-            /*
-             *  This means the config file not found. This is not fatal --
-             *  we just create an empty one.
-             */
-            RTFILE handle = NIL_RTFILE;
-            int vrc = RTFileOpen (&handle, vboxConfigFile,
-                                  RTFILE_O_READWRITE | RTFILE_O_CREATE |
-                                  RTFILE_O_DENY_WRITE);
-            if (RT_SUCCESS(vrc))
-                vrc = RTFileWrite (handle,
-                                   (void *) gDefaultGlobalConfig,
-                                   strlen (gDefaultGlobalConfig), NULL);
-            if (RT_FAILURE(vrc))
-            {
-                rc = setError (E_FAIL, tr ("Could not create the default settings file "
-                                           "'%s' (%Rrc)"),
-                                       vboxConfigFile.raw(), vrc);
-            }
-            else
-            {
-                mData.mCfgFile.mHandle = handle;
-                /* we do not close the file to simulate lockConfig() */
-            }
-        }
-    }
+        // load and parse VirtualBox.xml; this will throw on XML or logic errors
+        m_pMainConfigFile = new settings::MainConfigFile(&m_strSettingsFilePath);
 
-    if (SUCCEEDED(rc))
-    {
-        try
-        {
-            using namespace settings;
-            using namespace xml;
-
-            /* no concurrent file access is possible in init() so open by handle */
-            File file (mData.mCfgFile.mHandle, vboxConfigFile);
-            XmlTreeBackend tree;
-
-            rc = VirtualBox::loadSettingsTree_FirstTime (tree, file,
-                                                         mData.mSettingsFileVersion);
-            CheckComRCThrowRC (rc);
-
-            Key global = tree.rootKey().key ("Global");
+        // either a) valid XML file loaded or b) file not found and defaults loaded:
+        // now construct our global objects from that data
 
 #ifdef VBOX_WITH_RESOURCE_USAGE_API
-            /* create the performance collector object BEFORE host */
-            unconst(mData.mPerformanceCollector).createObject();
-            rc = mData.mPerformanceCollector->init();
-            ComAssertComRCThrowRC (rc);
+        /* create the performance collector object BEFORE host */
+        unconst (mData.mPerformanceCollector).createObject();
+        rc = mData.mPerformanceCollector->init();
+        ComAssertComRCThrowRC(rc);
 #endif /* VBOX_WITH_RESOURCE_USAGE_API */
 
-            /* create the host object early, machines will need it */
-            unconst(mData.mHost).createObject();
-            rc = mData.mHost->init (this);
-            ComAssertComRCThrowRC (rc);
+        /* create the host object early, machines will need it */
+        unconst (mData.mHost).createObject();
+        rc = mData.mHost->init(this);
+        ComAssertComRCThrowRC(rc);
 
-            rc = mData.mHost->loadSettings (global);
-            CheckComRCThrowRC (rc);
+        rc = mData.mHost->loadSettings(m_pMainConfigFile->host);
+        CheckComRCThrowRC(rc);
 
-            /* create the system properties object, someone may need it too */
-            unconst(mData.mSystemProperties).createObject();
-            rc = mData.mSystemProperties->init (this);
-            ComAssertComRCThrowRC (rc);
+        /* create the system properties object, someone may need it too */
+        unconst (mData.mSystemProperties).createObject();
+        rc = mData.mSystemProperties->init(this);
+        ComAssertComRCThrowRC (rc);
 
-            rc = mData.mSystemProperties->loadSettings (global);
-            CheckComRCThrowRC (rc);
+        rc = mData.mSystemProperties->loadSettings(m_pMainConfigFile->systemProperties);
+        CheckComRCThrowRC(rc);
 
-            /* guest OS type objects, needed by machines */
-            for (size_t i = 0; i < RT_ELEMENTS (Global::sOSTypes); ++ i)
+        /* guest OS type objects, needed by machines */
+        for (size_t i = 0; i < RT_ELEMENTS (Global::sOSTypes); ++ i)
+        {
+            ComObjPtr <GuestOSType> guestOSTypeObj;
+            rc = guestOSTypeObj.createObject();
+            if (SUCCEEDED(rc))
             {
-                ComObjPtr<GuestOSType> guestOSTypeObj;
-                rc = guestOSTypeObj.createObject();
+                rc = guestOSTypeObj->init(Global::sOSTypes [i].familyId,
+                                          Global::sOSTypes [i].familyDescription,
+                                          Global::sOSTypes [i].id,
+                                          Global::sOSTypes [i].description,
+                                          Global::sOSTypes [i].osType,
+                                          Global::sOSTypes [i].osHint,
+                                          Global::sOSTypes [i].recommendedRAM,
+                                          Global::sOSTypes [i].recommendedVRAM,
+                                          Global::sOSTypes [i].recommendedHDD,
+                                          Global::sOSTypes [i].networkAdapterType,
+                                          Global::sOSTypes [i].numSerialEnabled);
                 if (SUCCEEDED(rc))
-                {
-                    rc = guestOSTypeObj->init (Global::sOSTypes [i].familyId,
-                                               Global::sOSTypes [i].familyDescription,
-                                               Global::sOSTypes [i].id,
-                                               Global::sOSTypes [i].description,
-                                               Global::sOSTypes [i].osType,
-                                               Global::sOSTypes [i].osHint,
-                                               Global::sOSTypes [i].recommendedRAM,
-                                               Global::sOSTypes [i].recommendedVRAM,
-                                               Global::sOSTypes [i].recommendedHDD,
-                                               Global::sOSTypes [i].networkAdapterType,
-                                               Global::sOSTypes [i].numSerialEnabled);
-                    if (SUCCEEDED(rc))
-                        mData.mGuestOSTypes.push_back (guestOSTypeObj);
-                }
-                ComAssertComRCThrowRC (rc);
+                    mData.mGuestOSTypes.push_back (guestOSTypeObj);
             }
-
-            /* all registered media, needed by machines */
-            rc = loadMedia (global);
-            CheckComRCThrowRC (rc);
-
-            /* machines */
-            rc = loadMachines (global);
-            CheckComRCThrowRC (rc);
-
-            /* net services */
-            rc = loadNetservices(global);
-            CheckComRCThrowRC (rc);
-
-            /* check hard disk consistency */
-/// @todo (r=dmik) add IVirtualBox::cleanupHardDisks() instead or similar
-//            for (HardDiskList::const_iterator it = mData.mHardDisks.begin();
-//                 it != mData.mHardDisks.end() && SUCCEEDED(rc);
-//                 ++ it)
-//            {
-//                rc = (*it)->checkConsistency();
-//            }
-//            CheckComRCBreakRC ((rc));
-
-            /// @todo (dmik) if successful, check for orphan (unused) diffs
-            //  that might be left because of the server crash, and remove
-            //  Hmm, is it the same remark as above?..
+            ComAssertComRCThrowRC (rc);
         }
-        catch (HRESULT err)
+
+        /* all registered media, needed by machines */
+        if (FAILED(rc = initMedia()))
+            throw rc;
+
+        /* machines */
+        if (FAILED(rc = initMachines()))
+            throw rc;
+
+        /* net services */
+        for (settings::DHCPServersList::const_iterator it = m_pMainConfigFile->llDhcpServers.begin();
+             it != m_pMainConfigFile->llDhcpServers.end();
+             ++it)
         {
-            /* we assume that error info is set by the thrower */
-            rc = err;
+            const settings::DHCPServer &data = *it;
+
+            ComObjPtr<DHCPServer> pDhcpServer;
+            if (SUCCEEDED(rc = pDhcpServer.createObject()))
+                rc = pDhcpServer->init(this, data);
+            CheckComRCThrowRC(rc);
+
+            rc = registerDHCPServer(pDhcpServer, false /* aSaveRegistry */);
+            CheckComRCThrowRC(rc);
         }
-        catch (...)
-        {
-            rc = VirtualBox::handleUnexpectedExceptions (RT_SRC_POS);
-        }
+    }
+    catch (HRESULT err)
+    {
+        /* we assume that error info is set by the thrower */
+        rc = err;
+    }
+    catch (...)
+    {
+        rc = VirtualBox::handleUnexpectedExceptions(RT_SRC_POS);
     }
 
     if (SUCCEEDED(rc))
@@ -377,6 +297,90 @@ HRESULT VirtualBox::init()
     LogFlowThisFuncLeave();
     LogFlow (("===========================================================\n"));
     return rc;
+}
+
+HRESULT VirtualBox::initMachines()
+{
+    for (settings::MachinesRegistry::const_iterator it = m_pMainConfigFile->llMachines.begin();
+         it != m_pMainConfigFile->llMachines.end();
+         ++it)
+    {
+        HRESULT rc = S_OK;
+        const settings::MachineRegistryEntry &xmlMachine = *it;
+        Guid uuid = xmlMachine.uuid;
+
+        ComObjPtr<Machine> pMachine;
+        if (SUCCEEDED(rc = pMachine.createObject()))
+        {
+            rc = pMachine->init(this,
+                                xmlMachine.strSettingsFile,
+                                Machine::Init_Registered,
+                                NULL,
+                                NULL,
+                                FALSE,
+                                &uuid);
+            if (SUCCEEDED(rc))
+                rc = registerMachine(pMachine);
+            if (FAILED(rc))
+                return rc;
+        }
+    }
+
+    return S_OK;
+}
+
+HRESULT VirtualBox::initMedia()
+{
+    HRESULT rc = S_OK;
+    settings::MediaList::const_iterator it;
+    for (it = m_pMainConfigFile->llHardDisks.begin();
+         it != m_pMainConfigFile->llHardDisks.end();
+         ++it)
+    {
+        const settings::Medium &xmlHD = *it;
+
+        ComObjPtr<HardDisk> pHardDisk;
+        if (SUCCEEDED(rc = pHardDisk.createObject()))
+            rc = pHardDisk->init(this,
+                                 NULL,           // parent
+                                 xmlHD);         // XML data; this recurses to processes the children
+        CheckComRCReturnRC(rc);
+
+        rc = registerHardDisk(pHardDisk, false /* aSaveRegistry */);
+        CheckComRCReturnRC(rc);
+    }
+
+    for (it = m_pMainConfigFile->llDvdImages.begin();
+         it != m_pMainConfigFile->llDvdImages.end();
+         ++it)
+    {
+        const settings::Medium &xmlDvd = *it;
+
+        ComObjPtr<DVDImage> pImage;
+        if (SUCCEEDED(pImage.createObject()))
+            rc = pImage->init(this, xmlDvd);
+        CheckComRCReturnRC(rc);
+
+        rc = registerDVDImage(pImage, false /* aSaveRegistry */);
+        CheckComRCReturnRC(rc);
+    }
+
+    for (it = m_pMainConfigFile->llFloppyImages.begin();
+         it != m_pMainConfigFile->llFloppyImages.end();
+         ++it)
+    {
+        const settings::Medium &xmlFloppy = *it;
+
+        ComObjPtr<FloppyImage> pImage;
+        if (SUCCEEDED(pImage.createObject()))
+            rc = pImage->init(this, xmlFloppy);
+        CheckComRCReturnRC(rc);
+
+        rc = registerFloppyImage(pImage, false /* aSaveRegistry */);
+        CheckComRCReturnRC(rc);
+    }
+
+    return S_OK;
 }
 
 void VirtualBox::uninit()
@@ -441,9 +445,6 @@ void VirtualBox::uninit()
         unconst(mData.mPerformanceCollector).setNull();
     }
 #endif /* VBOX_WITH_RESOURCE_USAGE_API */
-
-    /* unlock the config file */
-    unlockConfig();
 
     LogFlowThisFunc(("Releasing callbacks...\n"));
     if (mData.mCallbacks.size())
@@ -574,33 +575,7 @@ STDMETHODIMP VirtualBox::COMGETTER(SettingsFilePath) (BSTR *aSettingsFilePath)
     CheckComRCReturnRC(autoCaller.rc());
 
     /* mCfgFile.mName is const and doesn't need a lock */
-    mData.mCfgFile.mName.cloneTo(aSettingsFilePath);
-    return S_OK;
-}
-
-STDMETHODIMP VirtualBox::
-COMGETTER(SettingsFileVersion) (BSTR *aSettingsFileVersion)
-{
-    CheckComArgNotNull(aSettingsFileVersion);
-
-    AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
-
-    AutoReadLock alock(this);
-
-    mData.mSettingsFileVersion.cloneTo(aSettingsFileVersion);
-    return S_OK;
-}
-
-STDMETHODIMP VirtualBox::
-COMGETTER(SettingsFormatVersion) (BSTR *aSettingsFormatVersion)
-{
-    CheckComArgNotNull(aSettingsFormatVersion);
-
-    AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
-
-    sSettingsFormatVersion.cloneTo(aSettingsFormatVersion);
+    m_strSettingsFilePath.cloneTo(aSettingsFilePath);
     return S_OK;
 }
 
@@ -781,11 +756,11 @@ VirtualBox::COMGETTER(DHCPServers) (ComSafeArrayOut(IDHCPServer *, aDHCPServers)
 /////////////////////////////////////////////////////////////////////////////
 
 /** @note Locks mSystemProperties object for reading. */
-STDMETHODIMP VirtualBox::CreateMachine (IN_BSTR aName,
-                                        IN_BSTR aOsTypeId,
-                                        IN_BSTR aBaseFolder,
-                                        IN_BSTR aId,
-                                        IMachine **aMachine)
+STDMETHODIMP VirtualBox::CreateMachine(IN_BSTR aName,
+                                       IN_BSTR aOsTypeId,
+                                       IN_BSTR aBaseFolder,
+                                       IN_BSTR aId,
+                                       IMachine **aMachine)
 {
     LogFlowThisFuncEnter();
     LogFlowThisFunc(("aName=\"%ls\",aOsTypeId =\"%ls\",aBaseFolder=\"%ls\"\n", aName, aOsTypeId, aBaseFolder));
@@ -804,16 +779,17 @@ STDMETHODIMP VirtualBox::CreateMachine (IN_BSTR aName,
      * If a non-null and non-empty base folder is specified, the default
      * machine folder will be used as a base folder.
      */
-    Bstr settingsFile = aBaseFolder;
-    if (settingsFile.isEmpty())
-    {
-        AutoReadLock propsLock (systemProperties());
+    Utf8Str strSettingsFile = aBaseFolder;
+    if (strSettingsFile.isEmpty())
         /* we use the non-full folder value below to keep the path relative */
-        settingsFile = systemProperties()->defaultMachineFolder();
-    }
-    settingsFile = Utf8StrFmt ("%ls%c%ls%c%ls.xml",
-                               settingsFile.raw(), RTPATH_DELIMITER,
-                               aName, RTPATH_DELIMITER, aName);
+        strSettingsFile = getDefaultMachineFolder();
+
+    strSettingsFile = Utf8StrFmt("%s%c%ls%c%ls.xml",
+                                 strSettingsFile.raw(),
+                                 RTPATH_DELIMITER,
+                                 aName,
+                                 RTPATH_DELIMITER,
+                                 aName);
 
     HRESULT rc = E_FAIL;
 
@@ -835,7 +811,8 @@ STDMETHODIMP VirtualBox::CreateMachine (IN_BSTR aName,
     if (aOsTypeId != NULL)
     {
         for (GuestOSTypeList::const_iterator it = mData.mGuestOSTypes.begin();
-             it != mData.mGuestOSTypes.end(); ++ it)
+             it != mData.mGuestOSTypes.end();
+             ++ it)
         {
             if ((*it)->id() == aOsTypeId)
             {
@@ -845,13 +822,19 @@ STDMETHODIMP VirtualBox::CreateMachine (IN_BSTR aName,
         }
 
         if (osType == NULL)
-            return setError (VBOX_E_OBJECT_NOT_FOUND,
-                tr ("Guest OS type '%ls' is invalid"), aOsTypeId);
+            return setError(VBOX_E_OBJECT_NOT_FOUND,
+                            tr("Guest OS type '%ls' is invalid"),
+                            aOsTypeId);
     }
 
     /* initialize the machine object */
-    rc = machine->init (this, settingsFile, Machine::Init_New, aName, osType,
-                        TRUE /* aNameSync */, &id);
+    rc = machine->init(this,
+                       strSettingsFile,
+                       Machine::Init_New,
+                       aName,
+                       osType,
+                       TRUE /* aNameSync */,
+                       &id);
     if (SUCCEEDED(rc))
     {
         /* set the return value */
@@ -864,11 +847,11 @@ STDMETHODIMP VirtualBox::CreateMachine (IN_BSTR aName,
     return rc;
 }
 
-STDMETHODIMP VirtualBox::CreateLegacyMachine (IN_BSTR aName,
-                                              IN_BSTR aOsTypeId,
-                                              IN_BSTR aSettingsFile,
-                                              IN_BSTR aId,
-                                              IMachine **aMachine)
+STDMETHODIMP VirtualBox::CreateLegacyMachine(IN_BSTR aName,
+                                             IN_BSTR aOsTypeId,
+                                             IN_BSTR aSettingsFile,
+                                             IN_BSTR aId,
+                                             IMachine **aMachine)
 {
     CheckComArgStrNotEmptyOrNull (aName);
     CheckComArgStrNotEmptyOrNull (aSettingsFile);
@@ -882,8 +865,8 @@ STDMETHODIMP VirtualBox::CreateLegacyMachine (IN_BSTR aName,
 
     Utf8Str settingsFile = aSettingsFile;
     /* append the default extension if none */
-    if (!RTPathHaveExt (settingsFile))
-        settingsFile = Utf8StrFmt ("%s.xml", settingsFile.raw());
+    if (!RTPathHaveExt(settingsFile.c_str()))
+        settingsFile = Utf8StrFmt("%s.xml", settingsFile.raw());
 
     /* create a new object */
     ComObjPtr<Machine> machine;
@@ -918,8 +901,13 @@ STDMETHODIMP VirtualBox::CreateLegacyMachine (IN_BSTR aName,
     }
 
     /* initialize the machine object */
-    rc = machine->init (this, Bstr (settingsFile), Machine::Init_New,
-                        aName, osType, FALSE /* aNameSync */, &id);
+    rc = machine->init(this,
+                       settingsFile,
+                       Machine::Init_New,
+                       aName,
+                       osType,
+                       FALSE /* aNameSync */,
+                       &id);
     if (SUCCEEDED(rc))
     {
         /* set the return value */
@@ -930,8 +918,8 @@ STDMETHODIMP VirtualBox::CreateLegacyMachine (IN_BSTR aName,
     return rc;
 }
 
-STDMETHODIMP VirtualBox::OpenMachine (IN_BSTR aSettingsFile,
-                                      IMachine **aMachine)
+STDMETHODIMP VirtualBox::OpenMachine(IN_BSTR aSettingsFile,
+                                     IMachine **aMachine)
 {
     CheckComArgStrNotEmptyOrNull(aSettingsFile);
     CheckComArgOutSafeArrayPointerValid(aMachine);
@@ -947,7 +935,9 @@ STDMETHODIMP VirtualBox::OpenMachine (IN_BSTR aSettingsFile,
     if (SUCCEEDED(rc))
     {
         /* initialize the machine object */
-        rc = machine->init (this, aSettingsFile, Machine::Init_Existing);
+        rc = machine->init(this,
+                           aSettingsFile,
+                           Machine::Init_Import);
         if (SUCCEEDED(rc))
         {
             /* set the return value */
@@ -1118,10 +1108,7 @@ STDMETHODIMP VirtualBox::CreateHardDisk(IN_BSTR aFormat,
 
     Bstr format = aFormat;
     if (format.isEmpty())
-    {
-        AutoReadLock propsLock (systemProperties());
-        format = systemProperties()->defaultHardDiskFormat();
-    }
+        format = getDefaultHardDiskFormat();
 
     HRESULT rc = E_FAIL;
 
@@ -1446,108 +1433,37 @@ STDMETHODIMP VirtualBox::RemoveSharedFolder (IN_BSTR aName)
 /**
  *  @note Locks this object for reading.
  */
-STDMETHODIMP VirtualBox::
-GetNextExtraDataKey (IN_BSTR aKey, BSTR *aNextKey, BSTR *aNextValue)
+STDMETHODIMP VirtualBox::GetExtraDataKeys(ComSafeArrayOut(BSTR, aKeys))
 {
-    CheckComArgNotNull(aNextKey);
+    using namespace settings;
 
-    AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
+    if (ComSafeArrayOutIsNull(aKeys))
+        return E_POINTER;
 
-    /* start with nothing found */
-    Bstr("").cloneTo(aNextKey);
-    if (aNextValue)
-        Bstr("").cloneTo(aNextValue);
+    AutoCaller autoCaller (this);
+    CheckComRCReturnRC (autoCaller.rc());
 
-    HRESULT rc = S_OK;
+    AutoReadLock alock (this);
 
-    Bstr bstrInKey(aKey);
-
-    /* serialize file access (prevent writes) */
-    AutoReadLock alock(this);
-
-    try
+    com::SafeArray<BSTR> saKeys(m_pMainConfigFile->mapExtraDataItems.size());
+    int i = 0;
+    for (ExtraDataItemsMap::const_iterator it = m_pMainConfigFile->mapExtraDataItems.begin();
+         it != m_pMainConfigFile->mapExtraDataItems.end();
+         ++it, ++i)
     {
-        using namespace settings;
-        using namespace xml;
-
-        /* load the settings file (we don't reuse the existing handle but
-         * request a new one to allow for concurrent multi-threaded reads) */
-        File file (File::Mode_Read, Utf8Str (mData.mCfgFile.mName));
-        XmlTreeBackend tree;
-
-        rc = VirtualBox::loadSettingsTree_Again (tree, file);
-        CheckComRCReturnRC(rc);
-
-        Key globalNode = tree.rootKey().key ("Global");
-        Key extraDataNode = globalNode.findKey ("ExtraData");
-
-        if (!extraDataNode.isNull())
-        {
-            Key::List items = extraDataNode.keys ("ExtraDataItem");
-            if (items.size())
-            {
-                for (Key::List::const_iterator it = items.begin();
-                     it != items.end(); ++ it)
-                {
-                    Bstr key = (*it).stringValue ("name");
-
-                    /* if we're supposed to return the first one */
-                    if (bstrInKey.isEmpty())
-                    {
-                        key.cloneTo(aNextKey);
-                        if (aNextValue)
-                        {
-                            Bstr val = (*it).stringValue ("value");
-                            val.cloneTo(aNextValue);
-                        }
-                        return S_OK;
-                    }
-
-                    /* did we find the key we're looking for? */
-                    if (key == bstrInKey)
-                    {
-                        ++ it;
-                        /* is there another item? */
-                        if (it != items.end())
-                        {
-                            Bstr key = (*it).stringValue ("name");
-                            key.cloneTo(aNextKey);
-                            if (aNextValue)
-                            {
-                                Bstr val = (*it).stringValue ("value");
-                                val.cloneTo(aNextValue);
-                            }
-                        }
-                        /* else it's the last one, arguments are already NULL */
-                        return S_OK;
-                    }
-                }
-            }
-        }
-
-        /* Here we are when a) there are no items at all or b) there are items
-         * but none of them equals to the requested non-NULL key. b) is an
-         * error as well as a) if the key is non-NULL. When the key is NULL
-         * (which is the case only when there are no items), we just fall
-         * through to return NULLs and S_OK. */
-
-        if (!bstrInKey.isEmpty())
-            return setError (VBOX_E_OBJECT_NOT_FOUND,
-                tr("Could not find the extra data key '%ls'"), bstrInKey.raw());
+        const Utf8Str &strName = it->first;     // the key
+        strName.cloneTo(&saKeys[i]);
     }
-    catch (...)
-    {
-        rc = VirtualBox::handleUnexpectedExceptions (RT_SRC_POS);
-    }
+    saKeys.detachTo(ComSafeArrayOutArg(aKeys));
 
-    return rc;
+    return S_OK;
 }
 
 /**
  *  @note Locks this object for reading.
  */
-STDMETHODIMP VirtualBox::GetExtraData (IN_BSTR aKey, BSTR *aValue)
+STDMETHODIMP VirtualBox::GetExtraData(IN_BSTR aKey,
+                                      BSTR *aValue)
 {
     CheckComArgNotNull(aKey);
     CheckComArgNotNull(aValue);
@@ -1558,57 +1474,22 @@ STDMETHODIMP VirtualBox::GetExtraData (IN_BSTR aKey, BSTR *aValue)
     /* start with nothing found */
     Bstr("").cloneTo(aValue);
 
-    HRESULT rc = S_OK;
-
-    /* serialize file access (prevent writes) */
-    AutoReadLock alock(this);
-
-    try
+    settings::ExtraDataItemsMap::const_iterator it = m_pMainConfigFile->mapExtraDataItems.find(Utf8Str(aKey));
+    if (it != m_pMainConfigFile->mapExtraDataItems.end())
     {
-        using namespace settings;
-        using namespace xml;
-
-        /* load the settings file (we don't reuse the existing handle but
-         * request a new one to allow for concurrent multi-threaded reads) */
-        File file (File::Mode_Read, Utf8Str (mData.mCfgFile.mName));
-        XmlTreeBackend tree;
-
-        rc = VirtualBox::loadSettingsTree_Again (tree, file);
-        CheckComRCReturnRC(rc);
-
-        const Utf8Str key = aKey;
-
-        Key globalNode = tree.rootKey().key ("Global");
-        Key extraDataNode = globalNode.findKey ("ExtraData");
-
-        if (!extraDataNode.isNull())
-        {
-            /* check if the key exists */
-            Key::List items = extraDataNode.keys ("ExtraDataItem");
-            for (Key::List::const_iterator it = items.begin();
-                 it != items.end(); ++ it)
-            {
-                if (key == (*it).stringValue ("name"))
-                {
-                    Bstr val = (*it).stringValue ("value");
-                    val.cloneTo(aValue);
-                    break;
-                }
-            }
-        }
-    }
-    catch (...)
-    {
-        rc = VirtualBox::handleUnexpectedExceptions (RT_SRC_POS);
+        // found:
+        const Utf8Str &strValue = it->second;
+        strValue.cloneTo(aValue);
     }
 
-    return rc;
+    return S_OK;
 }
 
 /**
  *  @note Locks this object for writing.
  */
-STDMETHODIMP VirtualBox::SetExtraData (IN_BSTR aKey, IN_BSTR aValue)
+STDMETHODIMP VirtualBox::SetExtraData(IN_BSTR aKey,
+                                      IN_BSTR aValue)
 {
     CheckComArgNotNull(aKey);
 
@@ -1622,96 +1503,51 @@ STDMETHODIMP VirtualBox::SetExtraData (IN_BSTR aKey, IN_BSTR aValue)
     else
         val = aValue;
 
-    bool changed = false;
-    HRESULT rc = S_OK;
+    Utf8Str strKey(aKey);
+    Bstr oldVal("");
 
     /* serialize file access (prevent concurrent reads and writes) */
     AutoWriteLock alock(this);
 
-    try
+    settings::ExtraDataItemsMap::const_iterator it = m_pMainConfigFile->mapExtraDataItems.find(strKey);
+    if (it != m_pMainConfigFile->mapExtraDataItems.end())
     {
-        using namespace settings;
-        using namespace xml;
-
-        /* load the settings file */
-        File file (mData.mCfgFile.mHandle, Utf8Str (mData.mCfgFile.mName));
-        XmlTreeBackend tree;
-
-        rc = VirtualBox::loadSettingsTree_ForUpdate (tree, file);
-        CheckComRCReturnRC(rc);
-
-        const Utf8Str key = aKey;
-        Bstr oldVal("");
-
-        Key globalNode = tree.rootKey().key ("Global");
-        Key extraDataNode = globalNode.createKey ("ExtraData");
-        Key extraDataItemNode;
-
-        Key::List items = extraDataNode.keys ("ExtraDataItem");
-        for (Key::List::const_iterator it = items.begin();
-             it != items.end(); ++ it)
-        {
-            if (key == (*it).stringValue ("name"))
-            {
-                extraDataItemNode = *it;
-                oldVal = (*it).stringValue ("value");
-                break;
-            }
-        }
-
-        /* When no key is found, oldVal is empty string */
-        changed = oldVal != val;
-
-        if (changed)
-        {
-            /* ask for permission from all listeners */
-            Bstr error;
-            if (!onExtraDataCanChange (Guid::Empty, aKey, val, error))
-            {
-                const char *sep = error.isEmpty() ? "" : ": ";
-                CBSTR err = error.isNull() ? (CBSTR) L"" : error.raw();
-                LogWarningFunc (("Someone vetoed! Change refused%s%ls\n",
-                                 sep, err));
-                return setError (E_ACCESSDENIED,
-                    tr ("Could not set extra data because someone refused "
-                        "the requested change of '%ls' to '%ls'%s%ls"),
-                    aKey, val.raw(), sep, err);
-            }
-
-            if (!val.isEmpty())
-            {
-                if (extraDataItemNode.isNull())
-                {
-                    extraDataItemNode = extraDataNode.appendKey ("ExtraDataItem");
-                    extraDataItemNode.setStringValue ("name", key);
-                }
-                extraDataItemNode.setStringValue ("value", Utf8Str (aValue));
-            }
-            else
-            {
-                /* An old value does for sure exist here (XML schema
-                 * guarantees that "value" may not be absent in the
-                 * <ExtraDataItem> element). */
-                Assert (!extraDataItemNode.isNull());
-                extraDataItemNode.zap();
-            }
-
-            /* save settings on success */
-            rc = VirtualBox::saveSettingsTree (tree, file,
-                                               mData.mSettingsFileVersion);
-            CheckComRCReturnRC(rc);
-        }
+        // key exists:
+        const Utf8Str &strValue = it->second;
+        oldVal = strValue;
     }
-    catch (...)
+
+    bool fChanged = (oldVal != val);
+    if (fChanged)
     {
-        rc = VirtualBox::handleUnexpectedExceptions (RT_SRC_POS);
+        /* ask for permission from all listeners */
+        Bstr error;
+        if (!onExtraDataCanChange(Guid::Empty, aKey, val, error))
+        {
+            const char *sep = error.isEmpty() ? "" : ": ";
+            CBSTR err = error.isNull() ? (CBSTR) L"" : error.raw();
+            LogWarningFunc(("Someone vetoed! Change refused%s%ls\n",
+                            sep, err));
+            return setError(E_ACCESSDENIED,
+                            tr("Could not set extra data because someone refused the requested change of '%ls' to '%ls'%s%ls"),
+                            aKey,
+                            val.raw(),
+                            sep,
+                            err);
+        }
+
+        m_pMainConfigFile->mapExtraDataItems[strKey] = val;
+
+        /* save settings on success */
+        HRESULT rc = saveSettings();
+        CheckComRCReturnRC (rc);
     }
 
     /* fire a notification */
-    if (SUCCEEDED(rc) && changed)
-        onExtraDataChange (Guid::Empty, aKey, aValue);
+    if (fChanged)
+        onExtraDataChange(Guid::Empty, aKey, aValue);
 
-    return rc;
+    return S_OK;
 }
 
 /**
@@ -1917,40 +1753,6 @@ STDMETHODIMP VirtualBox::WaitForPropertyChange (IN_BSTR /* aWhat */, ULONG /* aT
                                                 BSTR * /* aChanged */, BSTR * /* aValues */)
 {
     ReturnComNotImplemented();
-}
-
-STDMETHODIMP VirtualBox::SaveSettings()
-{
-    AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
-
-    return saveSettings();
-}
-
-STDMETHODIMP VirtualBox::SaveSettingsWithBackup (BSTR *aBakFileName)
-{
-    CheckComArgNotNull(aBakFileName);
-
-    AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
-
-    /* saveSettings() needs write lock */
-    AutoWriteLock alock(this);
-
-    /* perform backup only when there was auto-conversion */
-    if (mData.mSettingsFileVersion != VBOX_XML_VERSION_FULL)
-    {
-        Bstr bakFileName;
-
-        HRESULT rc = backupSettingsFile (mData.mCfgFile.mName,
-                                         mData.mSettingsFileVersion,
-                                         bakFileName);
-        CheckComRCReturnRC(rc);
-
-        bakFileName.cloneTo(aBakFileName);
-    }
-
-    return saveSettings();
 }
 
 // public methods only for internal purposes
@@ -2717,9 +2519,10 @@ HRESULT VirtualBox::findMachine (const Guid &aId, bool aSetError,
  *
  * @note Locks this object and hard disk objects for reading.
  */
-HRESULT VirtualBox::
-findHardDisk(const Guid *aId, CBSTR aLocation,
-             bool aSetError, ComObjPtr<HardDisk> *aHardDisk /*= NULL*/)
+HRESULT VirtualBox::findHardDisk(const Guid *aId,
+                                 CBSTR aLocation,
+                                 bool aSetError,
+                                 ComObjPtr<HardDisk> *aHardDisk /*= NULL*/)
 {
     AssertReturn(aId || aLocation, E_INVALIDARG);
 
@@ -2749,7 +2552,7 @@ findHardDisk(const Guid *aId, CBSTR aLocation,
         {
             const ComObjPtr<HardDisk> &hd = (*it).second;
 
-            HRESULT rc = hd->compareLocationTo (location, result);
+            HRESULT rc = hd->compareLocationTo(location, result);
             CheckComRCReturnRC(rc);
 
             if (result == 0)
@@ -2766,13 +2569,15 @@ findHardDisk(const Guid *aId, CBSTR aLocation,
     if (aSetError && result != 0)
     {
         if (aId)
-            setError (rc, tr ("Could not find a hard disk with UUID {%RTuuid} "
-                              "in the media registry ('%ls')"),
-                      aId->raw(), mData.mCfgFile.mName.raw());
+            setError(rc,
+                     tr("Could not find a hard disk with UUID {%RTuuid} in the media registry ('%s')"),
+                     aId->raw(),
+                     m_strSettingsFilePath.raw());
         else
-            setError (rc, tr ("Could not find a hard disk with location '%ls' "
-                              "in the media registry ('%ls')"),
-                      aLocation, mData.mCfgFile.mName.raw());
+            setError(rc,
+                     tr("Could not find a hard disk with location '%ls' in the media registry ('%s')"),
+                     aLocation,
+                     m_strSettingsFilePath.raw());
     }
 
     return rc;
@@ -2793,7 +2598,8 @@ findHardDisk(const Guid *aId, CBSTR aLocation,
  *
  * @note Locks this object and image objects for reading.
  */
-HRESULT VirtualBox::findDVDImage(const Guid *aId, CBSTR aLocation,
+HRESULT VirtualBox::findDVDImage(const Guid *aId,
+                                 CBSTR aLocation,
                                  bool aSetError,
                                  ComObjPtr<DVDImage> *aImage /* = NULL */)
 {
@@ -2803,11 +2609,12 @@ HRESULT VirtualBox::findDVDImage(const Guid *aId, CBSTR aLocation,
 
     if (aLocation != NULL)
     {
-        int vrc = calculateFullPath (Utf8Str (aLocation), location);
+        int vrc = calculateFullPath(Utf8Str(aLocation), location);
         if (RT_FAILURE(vrc))
-            return setError (VBOX_E_FILE_ERROR,
-                tr ("Invalid image file location '%ls' (%Rrc)"),
-                aLocation, vrc);
+            return setError(VBOX_E_FILE_ERROR,
+                            tr("Invalid image file location '%ls' (%Rrc)"),
+                            aLocation,
+                            vrc);
     }
 
     AutoReadLock alock(this);
@@ -2823,7 +2630,9 @@ HRESULT VirtualBox::findDVDImage(const Guid *aId, CBSTR aLocation,
 
         found = (aId && (*it)->id() == *aId) ||
                 (aLocation != NULL &&
-                 RTPathCompare (location, Utf8Str ((*it)->locationFull())) == 0);
+                 RTPathCompare(location.c_str(),
+                               Utf8Str((*it)->locationFull()).c_str()
+                              ) == 0);
         if (found)
         {
             if (aImage)
@@ -2837,13 +2646,15 @@ HRESULT VirtualBox::findDVDImage(const Guid *aId, CBSTR aLocation,
     if (aSetError && !found)
     {
         if (aId)
-            setError (rc, tr ("Could not find a CD/DVD image with UUID {%RTuuid} "
-                              "in the media registry ('%ls')"),
-                      aId->raw(), mData.mCfgFile.mName.raw());
+            setError(rc,
+                     tr("Could not find a CD/DVD image with UUID {%RTuuid} in the media registry ('%s')"),
+                     aId->raw(),
+                     m_strSettingsFilePath.raw());
         else
-            setError (rc, tr ("Could not find a CD/DVD image with location '%ls' "
-                              "in the media registry ('%ls')"),
-                      aLocation, mData.mCfgFile.mName.raw());
+            setError(rc,
+                     tr("Could not find a CD/DVD image with location '%ls' in the media registry ('%s')"),
+                     aLocation,
+                     m_strSettingsFilePath.raw());
     }
 
     return rc;
@@ -2875,7 +2686,7 @@ HRESULT VirtualBox::findFloppyImage(const Guid *aId, CBSTR aLocation,
 
     if (aLocation != NULL)
     {
-        int vrc = calculateFullPath (Utf8Str (aLocation), location);
+        int vrc = calculateFullPath(Utf8Str(aLocation), location);
         if (RT_FAILURE(vrc))
             return setError (VBOX_E_FILE_ERROR,
                 tr ("Invalid image file location '%ls' (%Rrc)"),
@@ -2895,7 +2706,9 @@ HRESULT VirtualBox::findFloppyImage(const Guid *aId, CBSTR aLocation,
 
         found = (aId && (*it)->id() == *aId) ||
                 (aLocation != NULL &&
-                 RTPathCompare (location, Utf8Str ((*it)->locationFull())) == 0);
+                 RTPathCompare(location.c_str(),
+                               Utf8Str((*it)->locationFull()).c_str()
+                              ) == 0);
         if (found)
         {
             if (aImage)
@@ -2909,16 +2722,51 @@ HRESULT VirtualBox::findFloppyImage(const Guid *aId, CBSTR aLocation,
     if (aSetError && !found)
     {
         if (aId)
-            setError (rc, tr ("Could not find a floppy image with UUID {%RTuuid} "
-                              "in the media registry ('%ls')"),
-                      aId->raw(), mData.mCfgFile.mName.raw());
+            setError(rc,
+                     tr("Could not find a floppy image with UUID {%RTuuid} in the media registry ('%s')"),
+                     aId->raw(),
+                     m_strSettingsFilePath.raw());
         else
-            setError (rc, tr ("Could not find a floppy image with location '%ls' "
-                              "in the media registry ('%ls')"),
-                      aLocation, mData.mCfgFile.mName.raw());
+            setError(rc,
+                     tr("Could not find a floppy image with location '%ls' in the media registry ('%s')"),
+                     aLocation,
+                     m_strSettingsFilePath.raw());
     }
 
     return rc;
+}
+
+/**
+ * Returns the default machine folder from the system properties
+ * with proper locking.
+ * @return
+ */
+const Utf8Str& VirtualBox::getDefaultMachineFolder() const
+{
+    AutoReadLock propsLock(mData.mSystemProperties);
+    return mData.mSystemProperties->m_strDefaultMachineFolder;
+}
+
+/**
+ * Returns the default hard disk folder from the system properties
+ * with proper locking.
+ * @return
+ */
+const Utf8Str& VirtualBox::getDefaultHardDiskFolder() const
+{
+    AutoReadLock propsLock(mData.mSystemProperties);
+    return mData.mSystemProperties->m_strDefaultHardDiskFolder;
+}
+
+/**
+ * Returns the default hard disk format from the system properties
+ * with proper locking.
+ * @return
+ */
+const Utf8Str& VirtualBox::getDefaultHardDiskFormat() const
+{
+    AutoReadLock propsLock(mData.mSystemProperties);
+    return mData.mSystemProperties->m_strDefaultHardDiskFormat;
 }
 
 /**
@@ -2932,15 +2780,15 @@ HRESULT VirtualBox::findFloppyImage(const Guid *aId, CBSTR aLocation,
  *
  * @note Doesn't lock any object.
  */
-int VirtualBox::calculateFullPath (const char *aPath, Utf8Str &aResult)
+int VirtualBox::calculateFullPath(const Utf8Str &strPath, Utf8Str &aResult)
 {
     AutoCaller autoCaller(this);
     AssertComRCReturn (autoCaller.rc(), VERR_GENERAL_FAILURE);
 
     /* no need to lock since mHomeDir is const */
 
-    char folder [RTPATH_MAX];
-    int vrc = RTPathAbsEx (mData.mHomeDir, aPath, folder, sizeof (folder));
+    char folder[RTPATH_MAX];
+    int vrc = RTPathAbsEx(mData.mHomeDir.c_str(), strPath.c_str(), folder, sizeof(folder));
     if (RT_SUCCESS(vrc))
         aResult = folder;
 
@@ -2958,7 +2806,7 @@ int VirtualBox::calculateFullPath (const char *aPath, Utf8Str &aResult)
  *
  * @note Doesn't lock any object.
  */
-void VirtualBox::calculateRelativePath (const char *aPath, Utf8Str &aResult)
+void VirtualBox::calculateRelativePath(const Utf8Str &strPath, Utf8Str &aResult)
 {
     AutoCaller autoCaller(this);
     AssertComRCReturnVoid (autoCaller.rc());
@@ -2967,14 +2815,14 @@ void VirtualBox::calculateRelativePath (const char *aPath, Utf8Str &aResult)
 
     Utf8Str settingsDir = mData.mHomeDir;
 
-    if (RTPathStartsWith (aPath, settingsDir))
+    if (RTPathStartsWith(strPath.c_str(), settingsDir.c_str()))
     {
         /* when assigning, we create a separate Utf8Str instance because both
          * aPath and aResult can point to the same memory location when this
          * func is called (if we just do aResult = aPath, aResult will be freed
          * first, and since its the same as aPath, an attempt to copy garbage
          * will be made. */
-        aResult = Utf8Str (aPath + settingsDir.length() + 1);
+        aResult = Utf8Str(strPath.c_str() + settingsDir.length() + 1);
     }
 }
 
@@ -3053,203 +2901,16 @@ HRESULT VirtualBox::checkMediaForConflicts2 (const Guid &aId,
 }
 
 /**
- *  Reads in the machine definitions from the configuration loader
- *  and creates the relevant objects.
- *
- *  @param aGlobal  <Global> node.
- *
- *  @note Can be called only from #init().
- *  @note Doesn't lock anything.
- */
-HRESULT VirtualBox::loadMachines (const settings::Key &aGlobal)
-{
-    using namespace settings;
-
-    AutoCaller autoCaller(this);
-    AssertReturn(autoCaller.state() == InInit, E_FAIL);
-
-    HRESULT rc = S_OK;
-
-    Key::List machines = aGlobal.key ("MachineRegistry").keys ("MachineEntry");
-    for (Key::List::const_iterator it = machines.begin();
-         it != machines.end(); ++ it)
-    {
-        /* required */
-        Guid uuid = (*it).value <Guid> ("uuid");
-        /* required */
-        Bstr src = (*it).stringValue ("src");
-
-        /* create a new machine object */
-        ComObjPtr<Machine> machine;
-        rc = machine.createObject();
-        if (SUCCEEDED(rc))
-        {
-            /* initialize the machine object and register it */
-            rc = machine->init (this, src, Machine::Init_Registered,
-                                NULL, NULL, FALSE, &uuid);
-            if (SUCCEEDED(rc))
-                rc = registerMachine (machine);
-        }
-    }
-
-    return rc;
-}
-
-/**
- *  Reads in the media registration entries from the global settings file
- *  and creates the relevant objects.
- *
- *  @param aGlobal  <Global> node
- *
- *  @note Can be called only from #init().
- *  @note Doesn't lock anything.
- */
-HRESULT VirtualBox::loadMedia (const settings::Key &aGlobal)
-{
-    using namespace settings;
-
-    AutoCaller autoCaller(this);
-    AssertReturn(autoCaller.state() == InInit, E_FAIL);
-
-    HRESULT rc = S_OK;
-
-    Key registry = aGlobal.key ("MediaRegistry");
-
-    const char *kMediaNodes[] = { "HardDisks", "DVDImages", "FloppyImages" };
-
-    for (size_t n = 0; n < RT_ELEMENTS (kMediaNodes); ++ n)
-    {
-        /* All three media nodes are optional */
-        Key node = registry.findKey (kMediaNodes [n]);
-        if (node.isNull())
-            continue;
-
-        if (n == 0)
-        {
-            Key::List hardDisks = node.keys ("HardDisk");
-            for (Key::List::const_iterator it = hardDisks.begin();
-                 it != hardDisks.end(); ++ it)
-            {
-                ComObjPtr<HardDisk> hardDisk;
-                hardDisk.createObject();
-                rc = hardDisk->init(this, NULL, *it);
-                CheckComRCBreakRC (rc);
-
-                rc = registerHardDisk(hardDisk, false /* aSaveRegistry */);
-                CheckComRCBreakRC (rc);
-            }
-
-            continue;
-        }
-
-        CheckComRCBreakRC (rc);
-
-        Key::List images = node.keys ("Image");
-        for (Key::List::const_iterator it = images.begin();
-             it != images.end(); ++ it)
-        {
-            switch (n)
-            {
-                case 1: /* DVDImages */
-                {
-                    ComObjPtr<DVDImage> image;
-                    image.createObject();
-                    rc = image->init (this, *it);
-                    CheckComRCBreakRC (rc);
-
-                    rc = registerDVDImage (image, false /* aSaveRegistry */);
-                    CheckComRCBreakRC (rc);
-
-                    break;
-                }
-                case 2: /* FloppyImages */
-                {
-                    ComObjPtr<FloppyImage> image;
-                    image.createObject();
-                    rc = image->init (this, *it);
-                    CheckComRCBreakRC (rc);
-
-                    rc = registerFloppyImage (image, false /* aSaveRegistry */);
-                    CheckComRCBreakRC (rc);
-
-                    break;
-                }
-                default:
-                    AssertFailed();
-            }
-
-            CheckComRCBreakRC (rc);
-        }
-
-        CheckComRCBreakRC (rc);
-    }
-
-    return rc;
-}
-
-/**
- *  Reads in the network service registration entries from the global settings file
- *  and creates the relevant objects.
- *
- *  @param aGlobal  <Global> node
- *
- *  @note Can be called only from #init().
- *  @note Doesn't lock anything.
- */
-HRESULT VirtualBox::loadNetservices (const settings::Key &aGlobal)
-{
-    using namespace settings;
-
-    AutoCaller autoCaller(this);
-    AssertReturn(autoCaller.state() == InInit, E_FAIL);
-
-    HRESULT rc = S_OK;
-
-    Key registry = aGlobal.findKey ("NetserviceRegistry");
-    if(registry.isNull())
-        return S_OK;
-
-    const char *kMediaNodes[] = { "DHCPServers" };
-
-    for (size_t n = 0; n < RT_ELEMENTS (kMediaNodes); ++ n)
-    {
-        /* All three media nodes are optional */
-        Key node = registry.findKey (kMediaNodes [n]);
-        if (node.isNull())
-            continue;
-
-        if (n == 0)
-        {
-            Key::List dhcpServers = node.keys ("DHCPServer");
-            for (Key::List::const_iterator it = dhcpServers.begin();
-                 it != dhcpServers.end(); ++ it)
-            {
-                ComObjPtr<DHCPServer> dhcpServer;
-                dhcpServer.createObject();
-                rc = dhcpServer->init (this, *it);
-                CheckComRCBreakRC (rc);
-
-                rc = registerDHCPServer(dhcpServer, false /* aSaveRegistry */);
-                CheckComRCBreakRC (rc);
-            }
-
-            continue;
-        }
-    }
-   return rc;
-}
-
-/**
  *  Helper function to write out the configuration tree.
  *
  *  @note Locks this object for writing and child objects for reading/writing!
  */
 HRESULT VirtualBox::saveSettings()
 {
-    AutoCaller autoCaller(this);
-    AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
+    AutoCaller autoCaller (this);
+    AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
 
-    AssertReturn(!!mData.mCfgFile.mName, E_FAIL);
+    AssertReturn(!m_strSettingsFilePath.isEmpty(), E_FAIL);
 
     HRESULT rc = S_OK;
 
@@ -3258,125 +2919,74 @@ HRESULT VirtualBox::saveSettings()
 
     try
     {
-        using namespace settings;
-        using namespace xml;
-
-        /* load the settings file */
-        File file (mData.mCfgFile.mHandle, Utf8Str (mData.mCfgFile.mName));
-        XmlTreeBackend tree;
-
-        rc = VirtualBox::loadSettingsTree_ForUpdate (tree, file);
-        CheckComRCThrowRC (rc);
-
-        Key global = tree.rootKey().createKey ("Global");
-
-        /* machines */
+        // machines
+        m_pMainConfigFile->llMachines.clear();
+        for (MachineList::iterator it = mData.mMachines.begin();
+             it != mData.mMachines.end();
+             ++it)
         {
-            /* first, delete the entire machine registry */
-            Key registryNode = global.findKey ("MachineRegistry");
-            if (!registryNode.isNull())
-                registryNode.zap();
-            /* then, recreate it */
-            registryNode = global.createKey ("MachineRegistry");
-
-            /* write out the machines */
-            for (MachineList::iterator it = mData.mMachines.begin();
-                 it != mData.mMachines.end();
-                 ++ it)
-            {
-                Key entryNode = registryNode.appendKey ("MachineEntry");
-                rc = (*it)->saveRegistryEntry (entryNode);
-                CheckComRCThrowRC (rc);
-            }
+            settings::MachineRegistryEntry mre;
+            rc = (*it)->saveRegistryEntry(mre);
+            m_pMainConfigFile->llMachines.push_back(mre);
         }
 
-        /* media */
+        // hard disks
+        m_pMainConfigFile->llHardDisks.clear();
+        for (HardDiskList::const_iterator it = mData.mHardDisks.begin();
+             it != mData.mHardDisks.end();
+             ++it)
         {
-            /* first, delete the entire media registry */
-            Key registryNode = global.findKey ("MediaRegistry");
-            if (!registryNode.isNull())
-                registryNode.zap();
-            /* then, recreate it */
-            registryNode = global.createKey ("MediaRegistry");
-
-            /* hard disks */
-            {
-                Key hardDisksNode = registryNode.createKey ("HardDisks");
-
-                for (HardDiskList::const_iterator it =
-                        mData.mHardDisks.begin();
-                     it != mData.mHardDisks.end();
-                     ++ it)
-                {
-                    rc = (*it)->saveSettings (hardDisksNode);
-                    CheckComRCThrowRC (rc);
-                }
-            }
-
-            /* CD/DVD images */
-            {
-                Key imagesNode = registryNode.createKey ("DVDImages");
-
-                for (DVDImageList::const_iterator it =
-                        mData.mDVDImages.begin();
-                     it != mData.mDVDImages.end();
-                     ++ it)
-                {
-                    rc = (*it)->saveSettings (imagesNode);
-                    CheckComRCThrowRC (rc);
-                }
-            }
-
-            /* floppy images */
-            {
-                Key imagesNode = registryNode.createKey ("FloppyImages");
-
-                for (FloppyImageList::const_iterator it =
-                        mData.mFloppyImages.begin();
-                     it != mData.mFloppyImages.end();
-                     ++ it)
-                {
-                    rc = (*it)->saveSettings (imagesNode);
-                    CheckComRCThrowRC (rc);
-                }
-            }
+            settings::Medium m;
+            rc = (*it)->saveSettings(m);
+            m_pMainConfigFile->llHardDisks.push_back(m);
+            CheckComRCThrowRC(rc);
         }
 
-        /* netservices */
+        /* CD/DVD images */
+        m_pMainConfigFile->llDvdImages.clear();
+        for (DVDImageList::const_iterator it = mData.mDVDImages.begin();
+             it != mData.mDVDImages.end();
+             ++it)
         {
-            /* first, delete the entire netservice registry */
-            Key registryNode = global.findKey ("NetserviceRegistry");
-            if (!registryNode.isNull())
-                registryNode.zap();
-            /* then, recreate it */
-            registryNode = global.createKey ("NetserviceRegistry");
+            settings::Medium m;
+            rc = (*it)->saveSettings(m);
+            CheckComRCThrowRC(rc);
+            m_pMainConfigFile->llDvdImages.push_back(m);
+        }
 
-            /* hard disks */
-            {
-                Key dhcpServersNode = registryNode.createKey ("DHCPServers");
+        /* floppy images */
+        m_pMainConfigFile->llFloppyImages.clear();
+        for (FloppyImageList::const_iterator it = mData.mFloppyImages.begin();
+             it != mData.mFloppyImages.end();
+             ++it)
+        {
+            settings::Medium m;
+            rc = (*it)->saveSettings(m);
+            CheckComRCThrowRC(rc);
+            m_pMainConfigFile->llFloppyImages.push_back(m);
+        }
 
-                for (DHCPServerList::const_iterator it =
-                        mData.mDHCPServers.begin();
-                     it != mData.mDHCPServers.end();
-                     ++ it)
-                {
-                    rc = (*it)->saveSettings (dhcpServersNode);
-                    CheckComRCThrowRC (rc);
-                }
-            }
+        m_pMainConfigFile->llDhcpServers.clear();
+        for (DHCPServerList::const_iterator it =
+                mData.mDHCPServers.begin();
+                it != mData.mDHCPServers.end();
+                ++ it)
+        {
+            settings::DHCPServer d;
+            rc = (*it)->saveSettings(d);
+            CheckComRCThrowRC(rc);
+            m_pMainConfigFile->llDhcpServers.push_back(d);
         }
 
         /* host data (USB filters) */
-        rc = mData.mHost->saveSettings (global);
-        CheckComRCThrowRC (rc);
+        rc = mData.mHost->saveSettings(m_pMainConfigFile->host);
+        CheckComRCThrowRC(rc);
 
-        rc = mData.mSystemProperties->saveSettings (global);
-        CheckComRCThrowRC (rc);
+        rc = mData.mSystemProperties->saveSettings(m_pMainConfigFile->systemProperties);
+        CheckComRCThrowRC(rc);
 
-        /* save the settings on success */
-        rc = VirtualBox::saveSettingsTree (tree, file,
-                                           mData.mSettingsFileVersion);
-        CheckComRCThrowRC (rc);
+        // now write out the XML
+        m_pMainConfigFile->write();
     }
     catch (HRESULT err)
     {
@@ -3443,7 +3053,7 @@ HRESULT VirtualBox::registerMachine (Machine *aMachine)
     }
 
     /* add to the collection of registered machines */
-    mData.mMachines.push_back (aMachine);
+    mData.mMachines.push_back(aMachine);
 
     if (autoCaller.state() != InInit)
         rc = saveSettings();
@@ -3490,11 +3100,11 @@ HRESULT VirtualBox::registerHardDisk(HardDisk *aHardDisk,
     if (strConflict.length())
     {
         return setError(E_INVALIDARG,
-                        tr("Cannot register the hard disk '%ls' with UUID {%RTuuid} because a %s already exists in the media registry ('%ls')"),
+                        tr("Cannot register the hard disk '%ls' with UUID {%RTuuid} because a %s already exists in the media registry ('%s')"),
                         aHardDisk->locationFull().raw(),
                         aHardDisk->id().raw(),
                         strConflict.raw(),
-                        mData.mCfgFile.mName.raw());
+                        m_strSettingsFilePath.raw());
     }
 
     if (aHardDisk->parent().isNull())
@@ -3608,11 +3218,11 @@ HRESULT VirtualBox::registerDVDImage (DVDImage *aImage,
     if (strConflict.length())
     {
         return setError(VBOX_E_INVALID_OBJECT_STATE,
-                        tr("Cannot register the CD/DVD image '%ls' with UUID {%RTuuid} because a %s already exists in the media registry ('%ls')"),
+                        tr("Cannot register the CD/DVD image '%ls' with UUID {%RTuuid} because a %s already exists in the media registry ('%s')"),
                         aImage->locationFull().raw(),
                         aImage->id().raw(),
                         strConflict.raw(),
-                        mData.mCfgFile.mName.raw());
+                        m_strSettingsFilePath.raw());
     }
 
     /* add to the collection */
@@ -3711,11 +3321,11 @@ HRESULT VirtualBox::registerFloppyImage(FloppyImage *aImage,
     if (strConflict.length())
     {
         return setError(VBOX_E_INVALID_OBJECT_STATE,
-                        tr("Cannot register the floppy image '%ls' with UUID {%RTuuid} because a %s already exists in the media registry ('%ls')"),
+                        tr("Cannot register the floppy image '%ls' with UUID {%RTuuid} because a %s already exists in the media registry ('%s')"),
                         aImage->locationFull().raw(),
                         aImage->id().raw(),
                         strConflict.raw(),
-                        mData.mCfgFile.mName.raw());
+                        m_strSettingsFilePath.raw());
     }
 
     /* add to the collection */
@@ -3725,7 +3335,7 @@ HRESULT VirtualBox::registerFloppyImage(FloppyImage *aImage,
     {
         rc = saveSettings();
         if (FAILED (rc))
-            unregisterFloppyImage (aImage, false /* aSaveRegistry */);
+            unregisterFloppyImage(aImage, false /* aSaveRegistry */);
     }
 
     return rc;
@@ -3873,181 +3483,19 @@ HRESULT VirtualBox::updateSettings (const char *aOldPath, const char *aNewPath)
  * @return Extended error information on failure to create the path.
  */
 /* static */
-HRESULT VirtualBox::ensureFilePathExists (const char *aFileName)
+HRESULT VirtualBox::ensureFilePathExists(const Utf8Str &strFileName)
 {
-    Utf8Str strDir(aFileName);
+    Utf8Str strDir(strFileName);
     strDir.stripFilename();
-    if (!RTDirExists(strDir))
+    if (!RTDirExists(strDir.c_str()))
     {
-        int vrc = RTDirCreateFullPath(strDir, 0777);
+        int vrc = RTDirCreateFullPath(strDir.c_str(), 0777);
         if (RT_FAILURE(vrc))
-        {
-            return setError (E_FAIL,
-                tr ("Could not create the directory '%s' (%Rrc)"),
-                strDir.c_str(), vrc);
-        }
+            return setError(E_FAIL,
+                            tr("Could not create the directory '%s' (%Rrc)"),
+                            strDir.c_str(),
+                            vrc);
     }
-
-    return S_OK;
-}
-
-/**
- * Helper method to load the setting tree and turn expected exceptions into
- * COM errors, according to arguments.
- *
- * Note that this method will not catch unexpected errors so it may still
- * throw something.
- *
- * @param aTree             Tree to load into settings.
- * @param aFile             File to load settings from.
- * @param aValidate         @c @true to enable tree validation.
- * @param aCatchLoadErrors  @c true to catch exceptions caused by file
- *                          access or validation errors.
- * @param aAddDefaults      @c true to cause the substitution of default
- *                          values for missing attributes that have
- *                          defaults in the XML schema.
- * @param aFormatVersion    Where to store the current format version of the
- *                          loaded settings tree (optional, may be NULL).
- */
-/* static */
-HRESULT VirtualBox::loadSettingsTree (settings::XmlTreeBackend &aTree,
-                                      xml::File &aFile,
-                                      bool aValidate,
-                                      bool aCatchLoadErrors,
-                                      bool aAddDefaults,
-                                      Utf8Str *aFormatVersion /* = NULL */)
-{
-    using namespace settings;
-
-    try
-    {
-        SettingsTreeHelper helper = SettingsTreeHelper();
-
-        aTree.setInputResolver (helper);
-        aTree.setAutoConverter (helper);
-
-        aTree.read (aFile, aValidate ? VBOX_XML_SCHEMA : NULL,
-                    aAddDefaults ? XmlTreeBackend::Read_AddDefaults : 0);
-
-        aTree.resetAutoConverter();
-        aTree.resetInputResolver();
-
-        /* on success, memorize the current settings file version or set it to
-         * the most recent version if no settings conversion took place. Note
-         * that it's not necessary to do it every time we load the settings file
-         * (i.e. only loadSettingsTree_FirstTime() passes a non-NULL
-         * aFormatVersion value) because currently we keep the settings
-         * files locked so that the only legal way to change the format version
-         * while VirtualBox is running is saveSettingsTree(). */
-        if (aFormatVersion != NULL)
-        {
-            *aFormatVersion = aTree.oldVersion();
-            if (!aFormatVersion->length())
-                *aFormatVersion = VBOX_XML_VERSION_FULL;
-        }
-    }
-    catch (const xml::EIPRTFailure &err)
-    {
-        if (!aCatchLoadErrors)
-            throw;
-
-        return setError (VBOX_E_FILE_ERROR,
-                         tr ("Could not load the settings file '%s' (%Rrc)"),
-                         aFile.uri(), err.rc());
-    }
-    catch (const xml::RuntimeError &err)
-    {
-        Assert (err.what() != NULL);
-
-        if (!aCatchLoadErrors)
-            throw;
-
-        return setError (VBOX_E_XML_ERROR,
-                         tr ("Could not load the settings file '%s'.\n%s"),
-                         aFile.uri(),
-                         err.what() ? err.what() : "Unknown error");
-    }
-
-    return S_OK;
-}
-
-/**
- * Helper method to save the settings tree and turn expected exceptions to COM
- * errors.
- *
- * Note that this method will not catch unexpected errors so it may still
- * throw something.
- *
- * @param aTree             Tree to save.
- * @param aFile             File to save the tree to.
- * @param aFormatVersion    Where to store the (recent) format version of the
- *                          saved settings tree on success.
- */
-/* static */
-HRESULT VirtualBox::saveSettingsTree (settings::TreeBackend &aTree,
-                                      xml::File &aFile,
-                                      Utf8Str &aFormatVersion)
-{
-    using namespace settings;
-
-    try
-    {
-        aTree.write (aFile);
-
-        /* set the current settings file version to the most recent version on
-         * success. See also VirtualBox::loadSettingsTree(). */
-        if (aFormatVersion != VBOX_XML_VERSION_FULL)
-            aFormatVersion = VBOX_XML_VERSION_FULL;
-    }
-    catch (const xml::EIPRTFailure &err)
-    {
-        /* this is the only expected exception for now */
-        return setError (VBOX_E_FILE_ERROR,
-                         tr ("Could not save the settings file '%s' (%Rrc)"),
-                         aFile.uri(), err.rc());
-    }
-
-    return S_OK;
-}
-
-/**
- * Creates a backup copy of the given settings file by suffixing it with the
- * supplied version format string and optionally with numbers from .0 to .9
- * if the backup file already exists.
- *
- * @param aFileName     Original settings file name.
- * @param aOldFormat    Version of the original format.
- * @param aBakFileName  File name of the created backup copy (only on success).
- */
-/* static */
-HRESULT VirtualBox::backupSettingsFile (const Bstr &aFileName,
-                                        const Utf8Str &aOldFormat,
-                                        Bstr &aBakFileName)
-{
-    Utf8Str of = aFileName;
-    Utf8Str nf = Utf8StrFmt ("%s.%s.bak", of.raw(), aOldFormat.raw());
-
-    int vrc = RTFileCopyEx (of, nf, RTFILECOPY_FLAGS_NO_SRC_DENY_WRITE,
-                            NULL, NULL);
-
-    /* try progressive suffix from .0 to .9 on failure */
-    if (vrc == VERR_ALREADY_EXISTS)
-    {
-        Utf8Str tmp = nf;
-        for (int i = 0; i <= 9 && RT_FAILURE(vrc); ++ i)
-        {
-            nf = Utf8StrFmt ("%s.%d", tmp.raw(), i);
-            vrc = RTFileCopyEx (of, nf, RTFILECOPY_FLAGS_NO_SRC_DENY_WRITE,
-                                NULL, NULL);
-        }
-    }
-
-    if (RT_FAILURE(vrc))
-        return setError (VBOX_E_IPRT_ERROR,
-            tr ("Could not copy the settings file '%s' to '%s' (%Rrc)"),
-            of.raw(), nf.raw(), vrc);
-
-    aBakFileName = nf;
 
     return S_OK;
 }
@@ -4075,7 +3523,7 @@ HRESULT VirtualBox::backupSettingsFile (const Bstr &aFileName,
  * @param RT_SRC_POS_DECL "RT_SRC_POS" macro instantiation.
  */
 /* static */
-HRESULT VirtualBox::handleUnexpectedExceptions (RT_SRC_POS_DECL)
+HRESULT VirtualBox::handleUnexpectedExceptions(RT_SRC_POS_DECL)
 {
     try
     {
@@ -4084,112 +3532,19 @@ HRESULT VirtualBox::handleUnexpectedExceptions (RT_SRC_POS_DECL)
     }
     catch (const std::exception &err)
     {
-        ComAssertMsgFailedPos (("Unexpected exception '%s' (%s)",
-                                typeid (err).name(), err.what()),
-                               pszFile, iLine, pszFunction);
-        return E_FAIL;
+        return setError(E_FAIL, tr("Unexpected exception: %s [%s]\n%s[%d] (%s)"),
+                                err.what(), typeid(err).name(),
+                                pszFile, iLine, pszFunction);
     }
     catch (...)
     {
-        ComAssertMsgFailedPos (("Unknown exception"),
-                               pszFile, iLine, pszFunction);
-        return E_FAIL;
+        return setError(E_FAIL, tr("Unknown exception\n%s[%d] (%s)"),
+                                pszFile, iLine, pszFunction);
     }
 
     /* should not get here */
     AssertFailed();
     return E_FAIL;
-}
-
-/**
- *  Helper to lock the VirtualBox configuration for write access.
- *
- *  @note This method is not thread safe (must be called only from #init()
- *  or #uninit()).
- *
- *  @note If the configuration file is not found, the method returns
- *  S_OK, but subsequent #isConfigLocked() will return FALSE. This is used
- *  in some places to determine the (valid) situation when no config file
- *  exists yet, and therefore a new one should be created from scratch.
- */
-HRESULT VirtualBox::lockConfig()
-{
-    AutoCaller autoCaller(this);
-    AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
-    AssertReturn(autoCaller.state() == InInit, E_FAIL);
-
-    HRESULT rc = S_OK;
-
-    Assert (!isConfigLocked());
-    if (!isConfigLocked())
-    {
-        /* Open the associated config file. */
-        int vrc = RTFileOpen (&mData.mCfgFile.mHandle,
-                              Utf8Str (mData.mCfgFile.mName),
-                              RTFILE_O_READWRITE | RTFILE_O_OPEN |
-                              RTFILE_O_DENY_WRITE);
-        if (RT_FAILURE(vrc) && (vrc != VERR_FILE_NOT_FOUND))
-        {
-            /* Open the associated config file only with read access. */
-            vrc = RTFileOpen (&mData.mCfgFile.mHandle,
-                              Utf8Str (mData.mCfgFile.mName),
-                              RTFILE_O_READ | RTFILE_O_OPEN |
-                              RTFILE_O_DENY_NONE);
-            if (RT_FAILURE(vrc))
-            {
-                /* We even cannot open it in read mode, so there's seriously
-                   something wrong. */
-                rc = setError (E_FAIL,
-                        tr ("Could not even open settings file '%ls' in read mode (%Rrc)"),
-                        mData.mCfgFile.mName.raw(), vrc);
-            }
-            else
-            {
-                mData.mCfgFile.mReadonly = TRUE;
-            }
-        }
-        else
-        {
-            mData.mCfgFile.mReadonly = FALSE;
-        }
-
-        if (RT_FAILURE(vrc))
-        {
-            mData.mCfgFile.mHandle = NIL_RTFILE;
-            mData.mCfgFile.mReadonly = FALSE;
-        }
-
-        LogFlowThisFunc(("mCfgFile.mName='%ls', mCfgFile.mHandle=%d, rc=%08X\n",
-                          mData.mCfgFile.mName.raw(), mData.mCfgFile.mHandle, rc));
-    }
-    return rc;
-}
-
-/**
- *  Helper to unlock the VirtualBox configuration from write access.
- *
- *  @note This method is not thread safe (must be called only from #init()
- *  or #uninit()).
- */
-HRESULT VirtualBox::unlockConfig()
-{
-    AutoCaller autoCaller(this);
-    AssertComRCReturn (autoCaller.rc(), E_FAIL);
-    AssertReturn(autoCaller.state() == InUninit, E_FAIL);
-
-    HRESULT rc = S_OK;
-
-    if (isConfigLocked())
-    {
-        RTFileFlush (mData.mCfgFile.mHandle);
-        RTFileClose (mData.mCfgFile.mHandle);
-        /** @todo flush the directory too. */
-        mData.mCfgFile.mHandle = NIL_RTFILE;
-        mData.mCfgFile.mReadonly = FALSE;
-        LogFlowThisFunc(("\n"));
-    }
-
-    return rc;
 }
 
 /**
@@ -4792,7 +4147,7 @@ STDMETHODIMP VirtualBox::FindDHCPServerByNetworkName (IN_BSTR aName, IDHCPServer
          ++ it)
     {
         rc = (*it)->COMGETTER(NetworkName) (bstr.asOutParam());
-        CheckComRCThrowRC (rc);
+        CheckComRCThrowRC(rc);
 
         if(bstr == aName)
         {

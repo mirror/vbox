@@ -410,12 +410,8 @@ STDMETHODIMP DVDDrive::GetHostDrive(IHostDVDDrive **aHostDrive)
  *
  * @note Locks this object for writing.
  */
-HRESULT DVDDrive::loadSettings (const settings::Key &aMachineNode)
+HRESULT DVDDrive::loadSettings(const settings::DVDDrive &data)
 {
-    using namespace settings;
-
-    AssertReturn(!aMachineNode.isNull(), E_FAIL);
-
     AutoCaller autoCaller(this);
     AssertComRCReturnRC(autoCaller.rc());
 
@@ -434,38 +430,31 @@ HRESULT DVDDrive::loadSettings (const settings::Key &aMachineNode)
 
     HRESULT rc = S_OK;
 
-    /* DVD drive (required, contains either Image or HostDrive or nothing) */
-    Key dvdDriveNode = aMachineNode.key ("DVDDrive");
-
     /* optional, defaults to false */
-    m->passthrough = dvdDriveNode.value <bool> ("passthrough");
+    m->passthrough = data.fPassThrough;
 
-    Key typeNode;
-
-    if (!(typeNode = dvdDriveNode.findKey ("Image")).isNull())
+    if (!data.uuid.isEmpty())
     {
-        Guid uuid = typeNode.value <Guid> ("uuid");
-        rc = MountImage (uuid.toUtf16());
-        CheckComRCReturnRC(rc);
+        rc = MountImage(data.uuid.toUtf16());
+        CheckComRCReturnRC (rc);
     }
-    else if (!(typeNode = dvdDriveNode.findKey ("HostDrive")).isNull())
+    else if (!data.strHostDriveSrc.isEmpty())
     {
-
-        Bstr src = typeNode.stringValue ("src");
+        Bstr src = data.strHostDriveSrc;
 
         /* find the corresponding object */
         ComObjPtr<Host> host = mParent->virtualBox()->host();
 
         com::SafeIfaceArray<IHostDVDDrive> coll;
-        rc = host->COMGETTER(DVDDrives) (ComSafeArrayAsOutParam(coll));
+        rc = host->COMGETTER(DVDDrives)(ComSafeArrayAsOutParam(coll));
         AssertComRC (rc);
 
         ComPtr<IHostDVDDrive> drive;
-        rc = host->FindHostDVDDrive (src, drive.asOutParam());
+        rc = host->FindHostDVDDrive(src, drive.asOutParam());
 
         if (SUCCEEDED(rc))
         {
-            rc = CaptureHostDrive (drive);
+            rc = CaptureHostDrive(drive);
             CheckComRCReturnRC(rc);
         }
         else if (rc == E_INVALIDARG)
@@ -476,7 +465,7 @@ HRESULT DVDDrive::loadSettings (const settings::Key &aMachineNode)
             ComObjPtr<HostDVDDrive> hostDrive;
             hostDrive.createObject();
             rc = hostDrive->init (src);
-            AssertComRC (rc);
+            AssertComRC(rc);
             rc = CaptureHostDrive (hostDrive);
             CheckComRCReturnRC(rc);
         }
@@ -488,7 +477,7 @@ HRESULT DVDDrive::loadSettings (const settings::Key &aMachineNode)
             ComAssertMsgFailedRet(("DVD drive %s does not exist!\n", src.raw()), E_FAIL);
         }
         else
-            AssertComRC (rc);
+            AssertComRC(rc);
     }
 
     return S_OK;
@@ -501,20 +490,16 @@ HRESULT DVDDrive::loadSettings (const settings::Key &aMachineNode)
  *
  * @note Locks this object for reading.
  */
-HRESULT DVDDrive::saveSettings (settings::Key &aMachineNode)
+HRESULT DVDDrive::saveSettings(settings::DVDDrive &data)
 {
-    using namespace settings;
-
-    AssertReturn(!aMachineNode.isNull(), E_FAIL);
-
     AutoCaller autoCaller(this);
     AssertComRCReturnRC(autoCaller.rc());
 
     AutoReadLock alock(this);
 
-    Key node = aMachineNode.createKey ("DVDDrive");
+    data.fPassThrough = !!m->passthrough;
 
-    node.setValue <bool> ("passthrough", !!m->passthrough);
+    HRESULT  rc = S_OK;
 
     switch (m->state)
     {
@@ -523,12 +508,12 @@ HRESULT DVDDrive::saveSettings (settings::Key &aMachineNode)
             Assert (!m->image.isNull());
 
             Bstr id;
-            HRESULT rc = m->image->COMGETTER(Id) (id.asOutParam());
+            rc = m->image->COMGETTER(Id) (id.asOutParam());
             AssertComRC (rc);
             Assert (!id.isEmpty());
 
-            Key imageNode = node.createKey ("Image");
-            imageNode.setValue <Guid> ("uuid", Guid(id));
+            data.uuid = Guid(id);
+            data.strHostDriveSrc.setNull();
             break;
         }
         case DriveState_HostDriveCaptured:
@@ -536,17 +521,19 @@ HRESULT DVDDrive::saveSettings (settings::Key &aMachineNode)
             Assert (!m->hostDrive.isNull());
 
             Bstr name;
-            HRESULT  rc = m->hostDrive->COMGETTER(Name) (name.asOutParam());
+            rc = m->hostDrive->COMGETTER(Name)(name.asOutParam());
             AssertComRC (rc);
             Assert (!name.isEmpty());
 
-            Key hostDriveNode = node.createKey ("HostDrive");
-            hostDriveNode.setValue <Bstr> ("src", name);
+            data.uuid.clear();
+            data.strHostDriveSrc = name;
             break;
         }
         case DriveState_NotMounted:
             /* do nothing, i.e.leave the drive node empty */
-            break;
+            data.uuid.clear();
+            data.strHostDriveSrc.setNull();
+        break;
         default:
             ComAssertMsgFailedRet (("Invalid drive state: %d", m->state),
                                     E_FAIL);

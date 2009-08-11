@@ -132,32 +132,35 @@ DECLINLINE(int) validateFlags(const char *pcszFlags, uint32_t *pfFlags)
     int rc = VINF_SUCCESS;
     uint32_t fFlags = 0;
     AssertLogRelReturn(VALID_PTR(pfFlags), VERR_INVALID_POINTER);
-    AssertLogRelReturn(VALID_PTR(pcszFlags), VERR_INVALID_POINTER);
-    while (' ' == *pcszNext)
-        ++pcszNext;
-    while ((*pcszNext != '\0') && RT_SUCCESS(rc))
+
+    if (pcszFlags)
     {
-        unsigned i = 0;
-        for (; i < RT_ELEMENTS(sFlagList); ++i)
-            if (RTStrNICmp(pcszNext, flagName(sFlagList[i]),
-                           flagNameLen(sFlagList[i])
-                           ) == 0
-               )
-                break;
-        if (RT_ELEMENTS(sFlagList) == i)
-             rc = VERR_PARSE_ERROR;
-        else
+        while (' ' == *pcszNext)
+            ++pcszNext;
+        while ((*pcszNext != '\0') && RT_SUCCESS(rc))
         {
-            fFlags |= sFlagList[i];
-            pcszNext += flagNameLen(sFlagList[i]);
-            while (' ' == *pcszNext)
-                ++pcszNext;
-            if (',' == *pcszNext)
-                ++pcszNext;
-            else if (*pcszNext != '\0')
+            unsigned i = 0;
+            for (; i < RT_ELEMENTS(sFlagList); ++i)
+                if (RTStrNICmp(pcszNext, flagName(sFlagList[i]),
+                            flagNameLen(sFlagList[i])
+                            ) == 0
+                )
+                    break;
+            if (RT_ELEMENTS(sFlagList) == i)
                 rc = VERR_PARSE_ERROR;
-            while (' ' == *pcszNext)
-                ++pcszNext;
+            else
+            {
+                fFlags |= sFlagList[i];
+                pcszNext += flagNameLen(sFlagList[i]);
+                while (' ' == *pcszNext)
+                    ++pcszNext;
+                if (',' == *pcszNext)
+                    ++pcszNext;
+                else if (*pcszNext != '\0')
+                    rc = VERR_PARSE_ERROR;
+                while (' ' == *pcszNext)
+                    ++pcszNext;
+            }
         }
     }
     if (RT_SUCCESS(rc))

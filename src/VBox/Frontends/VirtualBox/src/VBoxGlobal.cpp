@@ -2110,112 +2110,6 @@ bool VBoxGlobal::showVirtualBoxLicense()
 #endif /* defined(Q_WS_X11) && !defined(VBOX_OSE) */
 
 /**
- * Checks if any of the settings files were auto-converted and informs the user
- * if so. Returns @c false if the user select to exit the application.
- *
- * @param aAfterRefresh @c true to suppress the first simple dialog aExit
- *                      button. Used when calling after the VM refresh.
- */
-bool VBoxGlobal::checkForSettingsAutoConversion (bool aAfterRefresh /* = false */)
-{
-    QString currentVersion = mVBox.GetSettingsFormatVersion();
-    QList <CMachine> machines;
-    bool isGlobalToBeConverted = false;
-    QString fileList;
-    int maxIndex = 0;
-
-    /* Check if VM files need to be converted */
-    CMachineVector vec = mVBox.GetMachines();
-    for (CMachineVector::ConstIterator m = vec.begin(); m != vec.end(); ++ m)
-    {
-        if (!m->GetAccessible())
-            continue;
-
-        QString version = m->GetSettingsFileVersion();
-        if (version != currentVersion)
-        {
-            ++ maxIndex;
-            machines.append (*m);
-            fileList += QString ("<tr><td><nobr>%1</nobr></td><td>&nbsp;&nbsp;</td>"
-                                 "</td><td><nobr><i>%2</i></nobr></td></tr>")
-                .arg (m->GetSettingsFilePath())
-                .arg (version);
-        }
-    }
-
-    /* Check if global file need to be converted */
-    if (!aAfterRefresh)
-    {
-        QString version = mVBox.GetSettingsFileVersion();
-        if (version != currentVersion)
-        {
-            ++ maxIndex;
-            isGlobalToBeConverted = true;
-            fileList += QString ("<tr><td><nobr>%1</nobr></td><td>&nbsp;&nbsp;</td>"
-                                 "</td><td><nobr><i>%2</i></nobr></td></tr>")
-                .arg (mVBox.GetSettingsFilePath())
-                .arg (version);
-        }
-    }
-
-    if (!fileList.isNull())
-    {
-        fileList = QString ("<table cellspacing=0 cellpadding=0>%1</table>")
-                            .arg (fileList);
-
-        /* Asking the user about he wants to convert the
-         * configuration files or leave it as already is. */
-        if (vboxProblem().warnAboutSettingsAutoConversion (
-            fileList, aAfterRefresh) == QIMessageBox::Cancel)
-            return false;
-
-        /* Composing progress dialog */
-        QProgressDialog dlg (mainWindow());
-        dlg.setCancelButton (0);
-        dlg.setWindowModality (Qt::WindowModal);
-        dlg.setMinimum (0);
-        dlg.setMaximum (maxIndex);
-        dlg.setMinimumDuration (2000);
-        dlg.setAutoReset (false);
-
-        /* Converting VM configuration files */
-        foreach (CMachine m, machines)
-        {
-            dlg.setValue (machines.indexOf (m));
-            dlg.setLabelText (tr ("Converting file... (%1/%2)")
-                              .arg (machines.indexOf (m) + 1).arg (maxIndex));
-
-            CSession session = openSession (m.GetId());
-            if (!session.isNull())
-            {
-                CMachine sm = session.GetMachine();
-                sm.SaveSettingsWithBackup();
-                if (!sm.isOk())
-                    vboxProblem().cannotSaveMachineSettings (sm);
-                session.Close();
-            }
-        }
-
-        /* Converting global configuration file */
-        if (isGlobalToBeConverted)
-        {
-            dlg.setValue (machines.size());
-            dlg.setLabelText (tr ("Converting file... (%1/%2)")
-                              .arg (machines.size() + 1).arg (maxIndex));
-
-            mVBox.SaveSettingsWithBackup();
-            if (!mVBox.isOk())
-                vboxProblem().cannotSaveGlobalSettings (mVBox);
-        }
-
-        dlg.setValue (maxIndex);
-        dlg.setLabelText (tr ("Conversion finished!"));
-    }
-
-    return true;
-}
-
-/**
  *  Opens a direct session for a machine with the given ID.
  *  This method does user-friendly error handling (display error messages, etc.).
  *  and returns a null CSession object in case of any error.
@@ -4483,12 +4377,6 @@ void VBoxGlobal::init()
         loadLanguage (languageId);
 
     retranslateUi();
-
-    /* Note: the settings conversion check must be done before anything else
-     * that may unconditionally overwrite settings files in the new format (like
-     * SetExtraData()). But after loading the proper the language. */
-    if (!checkForSettingsAutoConversion())
-        return;
 
 #ifdef VBOX_GUI_WITH_SYSTRAY
     {

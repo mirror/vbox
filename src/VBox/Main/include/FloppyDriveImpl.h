@@ -30,6 +30,11 @@
 
 class Machine;
 
+namespace settings
+{
+    class FloppyDrive;
+}
+
 class ATL_NO_VTABLE FloppyDrive :
     public VirtualBoxBase,
     public VirtualBoxSupportErrorInfoImpl<FloppyDrive, IFloppyDrive>,
@@ -99,8 +104,8 @@ public:
 
     // public methods only for internal purposes
 
-    HRESULT loadSettings (const settings::Key &aMachineNode);
-    HRESULT saveSettings (settings::Key &aMachineNode);
+    HRESULT loadSettings(const settings::FloppyDrive &data);
+    HRESULT saveSettings(settings::FloppyDrive &data);
 
     bool isModified() { AutoWriteLock alock (this); return m.isBackedUp(); }
     bool isReallyModified() { AutoWriteLock alock (this); return m.hasActualChanges(); }

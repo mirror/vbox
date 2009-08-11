@@ -28,6 +28,11 @@
 
 class Machine;
 
+namespace settings
+{
+    class AudioAdapter;
+}
+
 class ATL_NO_VTABLE AudioAdapter :
     public VirtualBoxBase,
     public VirtualBoxSupportErrorInfoImpl<AudioAdapter, IAudioAdapter>,
@@ -87,8 +92,8 @@ public:
 
     // public methods only for internal purposes
 
-    HRESULT loadSettings (const settings::Key &aMachineNode);
-    HRESULT saveSettings (settings::Key &aMachineNode);
+    HRESULT loadSettings(const settings::AudioAdapter &data);
+    HRESULT saveSettings(settings::AudioAdapter &data);
 
     bool isModified() { AutoWriteLock alock (this); return mData.isBackedUp(); }
     bool isReallyModified() { AutoWriteLock alock (this); return mData.hasActualChanges(); }

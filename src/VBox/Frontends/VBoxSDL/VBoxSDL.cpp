@@ -771,166 +771,6 @@ void signal_handler_SIGINT(int sig)
 }
 #endif /* VBOXSDL_WITH_X11 */
 
-enum ConvertSettings
-{
-    ConvertSettings_No      = 0,
-    ConvertSettings_Yes     = 1,
-    ConvertSettings_Backup  = 2,
-    ConvertSettings_Ignore  = 3,
-};
-
-/**
- * Checks if any of the settings files were auto-converted and informs the
- * user if so.
- *
- * @return @false if the program should terminate and @true otherwise.
- *
- * @note The function is taken from VBoxManage.cpp almost unchanged (except the
- *       help text).
- */
-static bool checkForAutoConvertedSettings (ComPtr<IVirtualBox> virtualBox,
-                                           ComPtr<ISession> session,
-                                           ConvertSettings fConvertSettings)
-{
-    /* return early if nothing to do */
-    if (fConvertSettings == ConvertSettings_Ignore)
-        return true;
-
-    HRESULT rc;
-
-    do
-    {
-        Bstr formatVersion;
-        CHECK_ERROR_BREAK(virtualBox, COMGETTER(SettingsFormatVersion) (formatVersion.asOutParam()));
-
-        bool isGlobalConverted = false;
-        std::list <ComPtr <IMachine> > cvtMachines;
-        std::list <Utf8Str> fileList;
-        Bstr version;
-        Bstr filePath;
-
-        com::SafeIfaceArray <IMachine> machines;
-        CHECK_ERROR_BREAK(virtualBox, COMGETTER(Machines)(ComSafeArrayAsOutParam (machines)));
-
-        for (size_t i = 0; i < machines.size(); ++ i)
-        {
-            BOOL accessible;
-            CHECK_ERROR_BREAK(machines[i], COMGETTER(Accessible) (&accessible));
-            if (!accessible)
-                continue;
-
-            CHECK_ERROR_BREAK(machines[i], COMGETTER(SettingsFileVersion) (version.asOutParam()));
-
-            if (version != formatVersion)
-            {
-                cvtMachines.push_back (machines[i]);
-                Bstr filePath;
-                CHECK_ERROR_BREAK(machines[i], COMGETTER(SettingsFilePath) (filePath.asOutParam()));
-                fileList.push_back (Utf8StrFmt ("%ls  (%ls)", filePath.raw(),
-                                                version.raw()));
-            }
-        }
-
-        if (FAILED(rc))
-            break;
-
-        CHECK_ERROR_BREAK(virtualBox, COMGETTER(SettingsFileVersion) (version.asOutParam()));
-        if (version != formatVersion)
-        {
-            isGlobalConverted = true;
-            CHECK_ERROR_BREAK(virtualBox, COMGETTER(SettingsFilePath) (filePath.asOutParam()));
-            fileList.push_back (Utf8StrFmt ("%ls  (%ls)", filePath.raw(),
-                                            version.raw()));
-        }
-
-        if (fileList.size() > 0)
-        {
-            switch (fConvertSettings)
-            {
-                case ConvertSettings_No:
-                {
-                    RTPrintf (
-"WARNING! The following VirtualBox settings files have been automatically\n"
-"converted to the new settings file format version '%ls':\n"
-"\n",
-                              formatVersion.raw());
-
-                    for (std::list <Utf8Str>::const_iterator f = fileList.begin();
-                         f != fileList.end(); ++ f)
-                        RTPrintf ("  %S\n", (*f).raw());
-                    RTPrintf (
-"\n"
-"The current command was aborted to prevent overwriting the above settings\n"
-"files with the results of the auto-conversion without your permission.\n"
-"Please add one of the following command line switches to the VBoxSDL command\n"
-"line and repeat the command:\n"
-"\n"
-"  --convertSettings       - to save all auto-converted files (it will not\n"
-"                            be possible to use these settings files with an\n"
-"                            older version of VirtualBox in the future);\n"
-"  --convertSettingsBackup - to create backup copies of the settings files in\n"
-"                            the old format before saving them in the new format;\n"
-"  --convertSettingsIgnore - to not save the auto-converted settings files.\n"
-"\n"
-"Note that if you use --convertSettingsIgnore, the auto-converted settings files\n"
-"will be implicitly saved in the new format anyway once you change a setting or\n"
-"start a virtual machine, but NO backup copies will be created in this case.\n");
-                    return false;
-                }
-                case ConvertSettings_Yes:
-                case ConvertSettings_Backup:
-                {
-                    break;
-                }
-                default:
-                    AssertFailedReturn (false);
-            }
-
-            for (std::list <ComPtr <IMachine> >::const_iterator m = cvtMachines.begin();
-                 m != cvtMachines.end(); ++ m)
-            {
-                Bstr id;
-                CHECK_ERROR_BREAK((*m), COMGETTER(Id) (id.asOutParam()));
-
-                /* open a session for the VM */
-                CHECK_ERROR_BREAK (virtualBox, OpenSession (session, id));
-
-                ComPtr <IMachine> sm;
-                CHECK_ERROR_BREAK(session, COMGETTER(Machine) (sm.asOutParam()));
-
-                Bstr bakFileName;
-                if (fConvertSettings == ConvertSettings_Backup)
-                    CHECK_ERROR (sm, SaveSettingsWithBackup (bakFileName.asOutParam()));
-                else
-                    CHECK_ERROR (sm, SaveSettings());
-
-                session->Close();
-
-                if (FAILED(rc))
-                    break;
-            }
-
-            if (FAILED(rc))
-                break;
-
-            if (isGlobalConverted)
-            {
-                Bstr bakFileName;
-                if (fConvertSettings == ConvertSettings_Backup)
-                    CHECK_ERROR (virtualBox, SaveSettingsWithBackup (bakFileName.asOutParam()));
-                else
-                    CHECK_ERROR (virtualBox, SaveSettings());
-            }
-
-            if (FAILED(rc))
-                break;
-        }
-    }
-    while (0);
-
-    return SUCCEEDED (rc);
-}
-
 /** entry point */
 extern "C"
 DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
@@ -1182,8 +1022,6 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
     ComPtr <ISystemProperties> sysInfo;
     virtualBox->COMGETTER(SystemProperties) (sysInfo.asOutParam());
     sysInfo->COMGETTER (NetworkAdapterCount) (&NetworkAdapterCount);
-
-    ConvertSettings fConvertSettings = ConvertSettings_No;
 
     // command line argument parsing stuff
     for (int curArg = 1; curArg < argc; curArg++)
@@ -1601,15 +1439,6 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
             }
             gHostKeyMod = atoi(argv[curArg]);
         }
-        else if (   !strcmp(argv[curArg], "--convertSettings")
-                 || !strcmp(argv[curArg], "-convertSettings"))
-            fConvertSettings = ConvertSettings_Yes;
-        else if (   !strcmp(argv[curArg], "--convertSettingsBackup")
-                 || !strcmp(argv[curArg], "-convertSettingsBackup"))
-            fConvertSettings = ConvertSettings_Backup;
-        else if (   !strcmp(argv[curArg], "--convertSettingsIgnore")
-                 || !strcmp(argv[curArg], "-convertSettingsIgnore"))
-            fConvertSettings = ConvertSettings_Ignore;
         /* just show the help screen */
         else
         {
@@ -1622,9 +1451,6 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         }
     }
     if (FAILED (rc))
-        break;
-
-    if (!checkForAutoConvertedSettings (virtualBox, session, fConvertSettings))
         break;
 
     /*

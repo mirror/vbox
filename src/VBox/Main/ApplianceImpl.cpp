@@ -993,7 +993,7 @@ int Appliance::readS3(TaskImportOVF *pTask)
                            tr("Cannot create temporary directory '%s'"), pszTmpDir);
 
         /* The temporary name of the target OVF file */
-        strTmpOvf = Utf8StrFmt("%s/%s", pszTmpDir, RTPathFilename(tmpPath));
+        strTmpOvf = Utf8StrFmt("%s/%s", pszTmpDir, RTPathFilename(tmpPath.c_str()));
 
         /* Next we have to download the OVF */
         vrc = RTS3Create(&hS3, pTask->locInfo.strUsername.c_str(), pTask->locInfo.strPassword.c_str(), pTask->locInfo.strHostname.c_str(), "virtualbox-agent/"VBOX_VERSION_STRING);
@@ -1553,16 +1553,15 @@ int Appliance::importFS(TaskImportOVF *pTask)
                     {
                         VirtualSystemDescriptionEntry *vsdeHD = *itHD;
 
-                        const char *pcszDstFilePath = vsdeHD->strVbox.c_str();
                         /* Check if the destination file exists already or the
                          * destination path is empty. */
-                        if (    !(*pcszDstFilePath)
-                             || RTPathExists(pcszDstFilePath)
+                        if (    vsdeHD->strVbox.isEmpty()
+                             || RTPathExists(vsdeHD->strVbox.c_str())
                            )
                             /* This isn't allowed */
                             throw setError(VBOX_E_FILE_ERROR,
                                            tr("Destination file '%s' exists",
-                                              pcszDstFilePath));
+                                              vsdeHD->strVbox.c_str()));
 
                         /* Find the disk from the OVF's disk list */
                         DiskImagesMap::const_iterator itDiskImage = reader.m_mapDisks.find(vsdeHD->strRef);
@@ -1580,7 +1579,7 @@ int Appliance::importFS(TaskImportOVF *pTask)
                         const VirtualDisk &vd = itVirtualDisk->second;
 
                         /* Make sure all target directories exists */
-                        rc = VirtualBox::ensureFilePathExists(pcszDstFilePath);
+                        rc = VirtualBox::ensureFilePathExists(vsdeHD->strVbox.c_str());
                         if (FAILED(rc))
                             throw rc;
 
@@ -1597,7 +1596,7 @@ int Appliance::importFS(TaskImportOVF *pTask)
                                 || di.strFormat.compare("http://www.vmware.com/specifications/vmdk.html#compressed", Utf8Str::CaseInsensitive))
                                 srcFormat = L"VMDK";
                             /* Create an empty hard disk */
-                            rc = mVirtualBox->CreateHardDisk(srcFormat, Bstr(pcszDstFilePath), dstHdVBox.asOutParam());
+                            rc = mVirtualBox->CreateHardDisk(srcFormat, Bstr(vsdeHD->strVbox), dstHdVBox.asOutParam());
                             if (FAILED(rc)) throw rc;
 
                             /* Create a dynamic growing disk image with the given capacity */
@@ -1606,7 +1605,7 @@ int Appliance::importFS(TaskImportOVF *pTask)
 
                             /* Advance to the next operation */
                             if (!pTask->progress.isNull())
-                                pTask->progress->setNextOperation(BstrFmt(tr("Creating virtual disk image '%s'"), pcszDstFilePath),
+                                pTask->progress->setNextOperation(BstrFmt(tr("Creating virtual disk image '%s'"), vsdeHD->strVbox.c_str()),
                                                                  vsdeHD->ulSizeMB);     // operation's weight, as set up with the IProgress originally
                         }
                         else
@@ -1637,7 +1636,7 @@ int Appliance::importFS(TaskImportOVF *pTask)
                             rc = srcHdVBox->COMGETTER(Format)(srcFormat.asOutParam());
                             if (FAILED(rc)) throw rc;
                             /* Create a new hard disk interface for the destination disk image */
-                            rc = mVirtualBox->CreateHardDisk(srcFormat, Bstr(pcszDstFilePath), dstHdVBox.asOutParam());
+                            rc = mVirtualBox->CreateHardDisk(srcFormat, Bstr(vsdeHD->strVbox), dstHdVBox.asOutParam());
                             if (FAILED(rc)) throw rc;
                             /* Clone the source disk image */
                             rc = srcHdVBox->CloneTo(dstHdVBox, HardDiskVariant_Standard, NULL, pProgress2.asOutParam());
@@ -1724,7 +1723,7 @@ int Appliance::importFS(TaskImportOVF *pTask)
                             default: break;
                         }
 
-                        Log(("Attaching disk %s to channel %d on device %d\n", pcszDstFilePath, mhda.lChannel, mhda.lDevice));
+                        Log(("Attaching disk %s to channel %d on device %d\n", vsdeHD->strVbox.c_str(), mhda.lChannel, mhda.lDevice));
 
                         rc = sMachine->AttachHardDisk(hdId,
                                                       mhda.controllerType,
@@ -1881,7 +1880,7 @@ int Appliance::importS3(TaskImportOVF *pTask)
                 if (!strTargetFile.isEmpty())
                 {
                     /* The temporary name of the target disk file */
-                    Utf8StrFmt strTmpDisk("%s/%s", pszTmpDir, RTPathFilename(strTargetFile));
+                    Utf8StrFmt strTmpDisk("%s/%s", pszTmpDir, RTPathFilename(strTargetFile.c_str()));
                     filesList.push_back(pair<Utf8Str, ULONG>(strTmpDisk, (*itH)->ulSizeMB));
                 }
             }
@@ -1924,7 +1923,7 @@ int Appliance::importS3(TaskImportOVF *pTask)
 
         /* Provide a OVF file (haven't to exist) so the import routine can
          * figure out where the disk images/manifest file are located. */
-        Utf8StrFmt strTmpOvf("%s/%s", pszTmpDir, RTPathFilename(tmpPath));
+        Utf8StrFmt strTmpOvf("%s/%s", pszTmpDir, RTPathFilename(tmpPath.c_str()));
         /* Now check if there is an manifest file. This is optional. */
         Utf8Str strManifestFile = manifestFileName(strTmpOvf);
         char *pszFilename = RTPathFilename(strManifestFile.c_str());
@@ -2975,7 +2974,7 @@ int Appliance::writeS3(TaskExportOVF *pTask)
                            tr("Cannot create temporary directory '%s'"), pszTmpDir);
 
         /* The temporary name of the target OVF file */
-        Utf8StrFmt strTmpOvf("%s/%s", pszTmpDir, RTPathFilename(tmpPath));
+        Utf8StrFmt strTmpOvf("%s/%s", pszTmpDir, RTPathFilename(tmpPath.c_str()));
 
         /* Prepare the temporary writing of the OVF */
         ComObjPtr<Progress> progress;

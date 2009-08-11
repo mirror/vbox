@@ -35,13 +35,6 @@
 
 // avoid including VBox/settings.h and VBox/xml.h;
 // only declare the classes
-namespace settings
-{
-class XmlTreeBackend;
-class TreeBackend;
-class Key;
-}
-
 namespace xml
 {
 class File;

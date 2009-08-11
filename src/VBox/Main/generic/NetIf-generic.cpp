@@ -79,7 +79,7 @@ static int NetIfAdpCtl(HostNetworkInterface * pIf, const char *pszAddr, const ch
     Bstr interfaceName;
     pIf->COMGETTER(Name)(interfaceName.asOutParam());
     Utf8Str strName(interfaceName);
-    return NetIfAdpCtl(strName, pszAddr, pszOption, pszMask);
+    return NetIfAdpCtl(strName.c_str(), pszAddr, pszOption, pszMask);
 }
 
 int NetIfEnableStaticIpConfig(VirtualBox * /* vBox */, HostNetworkInterface * pIf, ULONG aOldIp, ULONG aNewIp, ULONG aMask)
@@ -241,7 +241,7 @@ int NetIfRemoveHostOnlyNetworkInterface (VirtualBox *pVBox, IN_GUID aId, IHostNe
             CheckComRCReturnRC(rc);
             progress.queryInterfaceTo(aProgress);
             iface.queryInterfaceTo(aHostNetworkInterface);
-            rc = NetIfAdpCtl(Utf8Str(ifname), "remove", NULL, NULL);
+            rc = NetIfAdpCtl(Utf8Str(ifname).c_str(), "remove", NULL, NULL);
             if (RT_FAILURE(rc))
                 progress->notifyComplete(E_FAIL, COM_IIDOF(IHostNetworkInterface), HostNetworkInterface::getComponentName(), "Failed to execute '"VBOXNETADPCTL_NAME "' (exit status: %d)", rc);
             else

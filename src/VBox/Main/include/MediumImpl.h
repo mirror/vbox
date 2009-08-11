@@ -31,6 +31,10 @@
 #include <algorithm>
 
 class VirtualBox;
+namespace settings
+{
+    class Medium;
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -141,7 +145,7 @@ protected:
 
     virtual Utf8Str name();
 
-    virtual HRESULT setLocation (CBSTR aLocation);
+    virtual HRESULT setLocation(const Utf8Str &aLocation);
     virtual HRESULT queryInfo();
 
     /**
@@ -221,15 +225,17 @@ public:
 protected:
 
     // protected initializer/uninitializer for internal purposes only
-    HRESULT protectedInit (VirtualBox *aVirtualBox, CBSTR aLocation,
-                           const Guid &aId);
-    HRESULT protectedInit (VirtualBox *aVirtualBox, const settings::Key &aImageNode);
+    HRESULT protectedInit(VirtualBox *aVirtualBox,
+                          CBSTR aLocation,
+                          const Guid &aId);
+    HRESULT protectedInit(VirtualBox *aVirtualBox,
+                          const settings::Medium &data);
     void protectedUninit();
 
 public:
 
     // public methods for internal purposes only
-    HRESULT saveSettings (settings::Key &aImagesNode);
+    HRESULT saveSettings(settings::Medium &data);
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -265,15 +271,17 @@ public:
 
     // public initializer/uninitializer for internal purposes only
 
-    HRESULT init (VirtualBox *aParent, CBSTR aFilePath,
-                  const Guid &aId)
+    HRESULT init(VirtualBox *aParent,
+                 CBSTR aFilePath,
+                 const Guid &aId)
     {
-        return protectedInit (aParent, aFilePath, aId);
+        return protectedInit(aParent, aFilePath, aId);
     }
 
-    HRESULT init (VirtualBox *aParent, const settings::Key &aImageNode)
+    HRESULT init(VirtualBox *aParent,
+                 const settings::Medium &data)
     {
-        return protectedInit (aParent, aImageNode);
+        return protectedInit(aParent, data);
     }
 
     void uninit() { protectedUninit(); }
@@ -319,15 +327,17 @@ public:
 
     // public initializer/uninitializer for internal purposes only
 
-    HRESULT init (VirtualBox *aParent, CBSTR aFilePath,
-                  const Guid &aId)
+    HRESULT init(VirtualBox *aParent,
+                 CBSTR aFilePath,
+                 const Guid &aId)
     {
-        return protectedInit (aParent, aFilePath, aId);
+        return protectedInit(aParent, aFilePath, aId);
     }
 
-    HRESULT init (VirtualBox *aParent, const settings::Key &aImageNode)
+    HRESULT init(VirtualBox *aParent,
+                 const settings::Medium &data)
     {
-        return protectedInit (aParent, aImageNode);
+        return protectedInit(aParent, data);
     }
 
     void uninit() { protectedUninit(); }

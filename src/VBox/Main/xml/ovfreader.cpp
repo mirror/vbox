@@ -37,11 +37,11 @@ OVFReader::OVFReader(const MiniString &path)
 {
     xml::XmlFileParser parser;
     xml::Document doc;
-    parser.read(m_strPath.raw(),
+    parser.read(m_strPath,
                 doc);
 
     const xml::ElementNode *pRootElem = doc.getRootElement();
-    if (strcmp(pRootElem->getName(), "Envelope"))
+    if (pRootElem && strcmp(pRootElem->getName(), "Envelope"))
         throw OVFLogicError(N_("Root element in OVF file must be \"Envelope\"."));
 
     // OVF has the following rough layout:

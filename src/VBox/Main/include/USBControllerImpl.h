@@ -34,6 +34,11 @@
 class Machine;
 class HostUSBDevice;
 
+namespace settings
+{
+    class USBController;
+}
+
 /**
  *  @note we cannot use VirtualBoxBaseWithTypedChildren <USBDeviceFilter> as a
  *  base class, because we want a quick (map-based) way of validating
@@ -108,8 +113,8 @@ public:
 
     // public methods only for internal purposes
 
-    HRESULT loadSettings (const settings::Key &aMachineNode);
-    HRESULT saveSettings (settings::Key &aMachineNode);
+    HRESULT loadSettings(const settings::USBController &data);
+    HRESULT saveSettings(settings::USBController &data);
 
     bool isModified();
     bool isReallyModified();

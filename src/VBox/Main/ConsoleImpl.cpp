@@ -955,7 +955,7 @@ HRESULT Console::loadDataFromSavedState()
         return rc;
 
     PSSMHANDLE ssm;
-    int vrc = SSMR3Open (Utf8Str(savedStateFile), 0, &ssm);
+    int vrc = SSMR3Open(Utf8Str(savedStateFile).c_str(), 0, &ssm);
     if (VBOX_SUCCESS (vrc))
     {
         uint32_t version = 0;
@@ -1019,13 +1019,13 @@ Console::saveStateFileExec (PSSMHANDLE pSSM, void *pvUser)
         Utf8Str name = folder->name();
         vrc = SSMR3PutU32 (pSSM, (uint32_t)name.length() + 1 /* term. 0 */);
         AssertRC (vrc);
-        vrc = SSMR3PutStrZ (pSSM, name);
+        vrc = SSMR3PutStrZ(pSSM, name.c_str());
         AssertRC (vrc);
 
         Utf8Str hostPath = folder->hostPath();
         vrc = SSMR3PutU32 (pSSM, (uint32_t)hostPath.length() + 1 /* term. 0 */);
         AssertRC (vrc);
-        vrc = SSMR3PutStrZ (pSSM, hostPath);
+        vrc = SSMR3PutStrZ (pSSM, hostPath.c_str());
         AssertRC (vrc);
 
         vrc = SSMR3PutBool (pSSM, !!folder->writable());
@@ -1845,9 +1845,9 @@ STDMETHODIMP Console::SaveState (IProgress **aProgress)
         {
             Utf8Str dir = stateFilePath;
             dir.stripFilename();
-            if (!RTDirExists(dir))
+            if (!RTDirExists(dir.c_str()))
             {
-                int vrc = RTDirCreateFullPath (dir, 0777);
+                int vrc = RTDirCreateFullPath(dir.c_str(), 0777);
                 if (VBOX_FAILURE (vrc))
                 {
                     rc = setError (VBOX_E_FILE_ERROR,
@@ -3321,7 +3321,7 @@ HRESULT Console::onNetworkAdapterChange (INetworkAdapter *aNetworkAdapter, BOOL 
             int vrc = PDMR3QueryDeviceLun (mpVM, pszAdapterName,
                                            (unsigned) ulInstance, 0, &pBase);
             ComAssertRC (vrc);
-            if (VBOX_SUCCESS (vrc))
+            if (VBOX_SUCCESS(vrc))
             {
                 Assert(pBase);
                 PPDMINETWORKCONFIG pINetCfg = (PPDMINETWORKCONFIG) pBase->
@@ -3333,7 +3333,7 @@ HRESULT Console::onNetworkAdapterChange (INetworkAdapter *aNetworkAdapter, BOOL 
                     vrc = pINetCfg->pfnSetLinkState (pINetCfg,
                                                      fCableConnected ? PDMNETWORKLINKSTATE_UP
                                                                      : PDMNETWORKLINKSTATE_DOWN);
-                    ComAssertRC (vrc);
+                    ComAssertRC(vrc);
                 }
             }
 
@@ -4506,13 +4506,13 @@ HRESULT Console::consoleInitReleaseLog (const ComPtr<IMachine> aMachine)
 
     /* make sure the Logs folder exists */
     Assert(logDir.length());
-    if (!RTDirExists (logDir))
-        RTDirCreateFullPath (logDir, 0777);
+    if (!RTDirExists(logDir.c_str()))
+        RTDirCreateFullPath(logDir.c_str(), 0777);
 
-    Utf8Str logFile = Utf8StrFmt ("%s%cVBox.log",
-                                  logDir.raw(), RTPATH_DELIMITER);
-    Utf8Str pngFile = Utf8StrFmt ("%s%cVBox.png",
-                                  logDir.raw(), RTPATH_DELIMITER);
+    Utf8Str logFile = Utf8StrFmt("%s%cVBox.log",
+                                 logDir.raw(), RTPATH_DELIMITER);
+    Utf8Str pngFile = Utf8StrFmt("%s%cVBox.png",
+                                 logDir.raw(), RTPATH_DELIMITER);
 
     /*
      * Age the old log files
@@ -4547,9 +4547,9 @@ HRESULT Console::consoleInitReleaseLog (const ComPtr<IMachine> aMachine)
                 /* If the old file doesn't exist, delete the new file (if it
                  * exists) to provide correct rotation even if the sequence is
                  * broken */
-                if (   RTFileRename (oldName, newName, RTFILEMOVE_FLAGS_REPLACE)
+                if (   RTFileRename(oldName.c_str(), newName.c_str(), RTFILEMOVE_FLAGS_REPLACE)
                     == VERR_FILE_NOT_FOUND)
-                    RTFileDelete (newName);
+                    RTFileDelete(newName.c_str());
             }
         }
     }
@@ -4725,12 +4725,12 @@ HRESULT Console::powerUp (IProgress **aProgress, bool aPaused)
         rc = mMachine->COMGETTER(StateFilePath) (savedStateFile.asOutParam());
         CheckComRCReturnRC(rc);
         ComAssertRet (!!savedStateFile, E_FAIL);
-        int vrc = SSMR3ValidateFile (Utf8Str (savedStateFile), false /* fChecksumIt */);
-        if (VBOX_FAILURE (vrc))
-            return setError (VBOX_E_FILE_ERROR,
-                tr ("VM cannot start because the saved state file '%ls' is invalid (%Rrc). "
-                    "Discard the saved state prior to starting the VM"),
-                    savedStateFile.raw(), vrc);
+        int vrc = SSMR3ValidateFile(Utf8Str(savedStateFile).c_str(), false /* fChecksumIt */);
+        if (VBOX_FAILURE(vrc))
+            return setError(VBOX_E_FILE_ERROR,
+                            tr("VM cannot start because the saved state file '%ls' is invalid (%Rrc). "
+                               "Discard the saved state prior to starting the VM"),
+                            savedStateFile.raw(), vrc);
     }
 
     /* create a progress object to track progress of this operation */
@@ -6684,7 +6684,7 @@ DECLCALLBACK (int) Console::powerUpThread (RTTHREAD Thread, void *pvUser)
             }
             LogRel (("Failed to launch VRDP server (%Rrc), error message: '%s'\n",
                      vrc, errMsg.raw()));
-            throw setError (E_FAIL, errMsg);
+            throw setError(E_FAIL, errMsg.c_str());
         }
 
 #endif /* VBOX_WITH_VRDP */
@@ -6784,9 +6784,10 @@ DECLCALLBACK (int) Console::powerUpThread (RTTHREAD Thread, void *pvUser)
                     LogFlowFunc (("Restoring saved state from '%s'...\n",
                                   task->mSavedStateFile.raw()));
 
-                    vrc = VMR3Load (pVM, task->mSavedStateFile,
-                                    Console::stateProgressCallback,
-                                    static_cast <VMProgressTask *> (task.get()));
+                    vrc = VMR3Load(pVM,
+                                   task->mSavedStateFile.c_str(),
+                                   Console::stateProgressCallback,
+                                   static_cast<VMProgressTask*>(task.get()));
 
                     if (VBOX_SUCCESS (vrc))
                     {
@@ -6877,7 +6878,7 @@ DECLCALLBACK (int) Console::powerUpThread (RTTHREAD Thread, void *pvUser)
 
             /* Set the error message as the COM error.
              * Progress::notifyComplete() will pick it up later. */
-            throw setError (E_FAIL, task->mErrorMsg);
+            throw setError(E_FAIL, task->mErrorMsg.c_str());
         }
     }
     catch (HRESULT aRC) { rc = aRC; }
@@ -7093,10 +7094,10 @@ static DECLCALLBACK(int) reconfigureHardDisks(PVM pVM, ULONG lInstance,
      */
     hrc = hardDisk->COMGETTER(Location)(bstr.asOutParam());                     H();
     LogFlowFunc (("LUN#%d: leaf location '%ls'\n", iLUN, bstr.raw()));
-    rc = CFGMR3InsertString(pCfg, "Path", Utf8Str(bstr));                       RC_CHECK();
+    rc = CFGMR3InsertString(pCfg, "Path", Utf8Str(bstr).c_str());                       RC_CHECK();
     hrc = hardDisk->COMGETTER(Format)(bstr.asOutParam());                       H();
     LogFlowFunc (("LUN#%d: leaf format '%ls'\n", iLUN, bstr.raw()));
-    rc = CFGMR3InsertString(pCfg, "Format", Utf8Str(bstr));                     RC_CHECK();
+    rc = CFGMR3InsertString(pCfg, "Format", Utf8Str(bstr).c_str());                     RC_CHECK();
 
     /* Pass all custom parameters. */
     bool fHostIP = true;
@@ -7114,9 +7115,9 @@ static DECLCALLBACK(int) reconfigureHardDisks(PVM pVM, ULONG lInstance,
         {
             if (values [i])
             {
-                Utf8Str name = names [i];
-                Utf8Str value = values [i];
-                rc = CFGMR3InsertString (pVDC, name, value);
+                Utf8Str name = names[i];
+                Utf8Str value = values[i];
+                rc = CFGMR3InsertString(pVDC, name.c_str(), value.c_str());
                 if (    !(name.compare("HostIPStack"))
                     &&  !(value.compare("0")))
                     fHostIP = false;
@@ -7135,10 +7136,10 @@ static DECLCALLBACK(int) reconfigureHardDisks(PVM pVM, ULONG lInstance,
         PCFGMNODE pCur;
         rc = CFGMR3InsertNode(pParent, "Parent", &pCur);                        RC_CHECK();
         hrc = hardDisk->COMGETTER(Location)(bstr.asOutParam());                 H();
-        rc = CFGMR3InsertString(pCur,  "Path", Utf8Str(bstr));                  RC_CHECK();
+        rc = CFGMR3InsertString(pCur,  "Path", Utf8Str(bstr).c_str());          RC_CHECK();
 
         hrc = hardDisk->COMGETTER(Format)(bstr.asOutParam());                   H();
-        rc = CFGMR3InsertString(pCur,  "Format", Utf8Str(bstr));                RC_CHECK();
+        rc = CFGMR3InsertString(pCur,  "Format", Utf8Str(bstr).c_str());        RC_CHECK();
 
         /* Pass all custom parameters. */
         SafeArray<BSTR> names;
@@ -7157,7 +7158,7 @@ static DECLCALLBACK(int) reconfigureHardDisks(PVM pVM, ULONG lInstance,
                 {
                     Utf8Str name = names [i];
                     Utf8Str value = values [i];
-                    rc = CFGMR3InsertString (pVDC, name, value);
+                    rc = CFGMR3InsertString (pVDC, name.c_str(), value.c_str());
                     if (    !(name.compare("HostIPStack"))
                         &&  !(value.compare("0")))
                         fHostIP = false;
@@ -7240,9 +7241,10 @@ DECLCALLBACK (int) Console::saveStateThread (RTTHREAD Thread, void *pvUser)
     {
         LogFlowFunc (("Saving the state to '%s'...\n", task->mSavedStateFile.raw()));
 
-        int vrc = VMR3Save (that->mpVM, task->mSavedStateFile,
-                            Console::stateProgressCallback,
-                            static_cast <VMProgressTask *> (task.get()));
+        int vrc = VMR3Save(that->mpVM,
+                           task->mSavedStateFile.c_str(),
+                           Console::stateProgressCallback,
+                           static_cast<VMProgressTask*>(task.get()));
         if (VBOX_FAILURE (vrc))
         {
             errMsg = Utf8StrFmt (
@@ -7369,7 +7371,7 @@ DECLCALLBACK (int) Console::saveStateThread (RTTHREAD Thread, void *pvUser)
             task->mProgress->notifyComplete(rc,
                                             COM_IIDOF(IConsole),
                                             Console::getComponentName(),
-                                            errMsg);
+                                            errMsg.c_str());
         else
             task->mProgress->notifyComplete (rc);
     }

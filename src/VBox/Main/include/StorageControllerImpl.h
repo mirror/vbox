@@ -51,17 +51,18 @@ private:
 
         bool operator== (const Data &that) const
         {
-            return this == &that || ((mStorageControllerType == that.mStorageControllerType) &&
-                    (mName           == that.mName) &&
-                    (mPortCount   == that.mPortCount) &&
-                    (mPortIde0Master == that.mPortIde0Master) &&
-                    (mPortIde0Slave  == that.mPortIde0Slave)  &&
-                    (mPortIde1Master == that.mPortIde1Master) &&
-                    (mPortIde1Slave  == that.mPortIde1Slave));
+            return    this == &that
+                   || (    (mStorageControllerType == that.mStorageControllerType)
+                        && (strName           == that.strName)
+                        && (mPortCount   == that.mPortCount)
+                        && (mPortIde0Master == that.mPortIde0Master)
+                        && (mPortIde0Slave  == that.mPortIde0Slave)
+                        && (mPortIde1Master == that.mPortIde1Master)
+                        && (mPortIde1Slave  == that.mPortIde1Slave));
         }
 
-        /** Uniuqe name of the storage controller. */
-        Bstr mName;
+        /** Unique name of the storage controller. */
+        Utf8Str strName;
         /** The connection type of thestorage controller. */
         StorageBus_T mStorageBus;
         /** Type of the Storage controller. */
@@ -102,10 +103,14 @@ public:
     void FinalRelease();
 
     // public initializer/uninitializer for internal purposes only
-    HRESULT init (Machine *aParent, IN_BSTR aName,
-                  StorageBus_T aBus);
-    HRESULT init (Machine *aParent, StorageController *aThat, bool aReshare = false);
-    HRESULT initCopy (Machine *aParent, StorageController *aThat);
+    HRESULT init(Machine *aParent,
+                 const Utf8Str &aName,
+                 StorageBus_T aBus);
+    HRESULT init(Machine *aParent,
+                 StorageController *aThat,
+                 bool aReshare = false);
+    HRESULT initCopy(Machine *aParent,
+                     StorageController *aThat);
     void uninit();
 
     // IStorageController properties
@@ -127,8 +132,9 @@ public:
 
     // public methods only for internal purposes
 
-    const Bstr &name() const { return mData->mName; }
+    const Utf8Str &name() const { return mData->strName; }
     StorageControllerType_T controllerType() const { return mData->mStorageControllerType; }
+    StorageBus_T storageBus() const { return mData->mStorageBus; }
 
     bool isModified() { AutoWriteLock alock (this); return mData.isBackedUp(); }
     bool isReallyModified() { AutoWriteLock alock (this); return mData.hasActualChanges(); }
@@ -158,7 +164,7 @@ private:
     /** Peer object. */
     const ComObjPtr<StorageController> mPeer;
     /** Data. */
-    Backupable <Data> mData;
+    Backupable<Data> mData;
 
     /* Instance number of the device in the running VM. */
     ULONG mInstance;

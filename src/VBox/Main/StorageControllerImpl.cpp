@@ -62,12 +62,13 @@ void StorageController::FinalRelease()
  * @param aParent       Pointer to our parent object.
  * @param aName         Name of the storage controller.
  */
-HRESULT StorageController::init (Machine *aParent, IN_BSTR aName, 
-                                 StorageBus_T aStorageBus)
+HRESULT StorageController::init(Machine *aParent,
+                                const Utf8Str &aName,
+                                StorageBus_T aStorageBus)
 {
-    LogFlowThisFunc(("aParent=%p aName=\"%ls\"\n", aParent, aName));
+    LogFlowThisFunc(("aParent=%p aName=\"%s\"\n", aParent, aName.raw()));
 
-    ComAssertRet (aParent && aName, E_INVALIDARG);
+    ComAssertRet(aParent && !aName.isEmpty(), E_INVALIDARG);
     if (   (aStorageBus <= StorageBus_Null)
         || (aStorageBus >  StorageBus_SCSI))
         return setError (E_INVALIDARG,
@@ -86,7 +87,7 @@ HRESULT StorageController::init (Machine *aParent, IN_BSTR aName,
 
     mData.allocate();
 
-    mData->mName = aName;
+    mData->strName = aName;
     mData->mStorageBus = aStorageBus;
 
     switch (aStorageBus)
@@ -236,7 +237,7 @@ STDMETHODIMP StorageController::COMGETTER(Name) (BSTR *aName)
     CheckComRCReturnRC(autoCaller.rc());
 
     /* mName is constant during life time, no need to lock */
-    mData.data()->mName.cloneTo(aName);
+    mData.data()->strName.cloneTo(aName);
 
     return S_OK;
 }
@@ -460,7 +461,7 @@ STDMETHODIMP StorageController::COMSETTER(PortCount) (ULONG aPortCount)
         case StorageBus_IDE:
         {
             /*
-             * The port count is fixed to 2. 
+             * The port count is fixed to 2.
              */
             if (aPortCount != 2)
                 return setError (E_INVALIDARG,

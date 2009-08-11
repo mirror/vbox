@@ -33,6 +33,11 @@
 #include <string>
 #include <vector>
 
+namespace com
+{
+    class Utf8Str;
+}
+
 namespace pm
 {
     /* CPU load is measured in 1/1000 of per cent. */
@@ -413,7 +418,7 @@ namespace pm
 
         ElementList mElements;
 
-        void processMetricList(const std::string &name, const ComPtr<IUnknown> object);
+        void processMetricList(const com::Utf8Str &name, const ComPtr<IUnknown> object);
     };
 }
 

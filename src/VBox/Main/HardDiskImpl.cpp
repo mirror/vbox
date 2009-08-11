@@ -21,12 +21,10 @@
  * additional information or have any questions.
  */
 
-#include "HardDiskImpl.h"
-
-#include "ProgressImpl.h"
-#include "SystemPropertiesImpl.h"
-
-#include "Logging.h"
+#include <iprt/param.h>
+#include <iprt/path.h>
+#include <iprt/file.h>
+#include <iprt/tcp.h>
 
 #include <VBox/com/array.h>
 #include <VBox/com/SupportErrorInfo.h>
@@ -34,13 +32,14 @@
 #include <VBox/err.h>
 #include <VBox/settings.h>
 
-#include <iprt/param.h>
-#include <iprt/path.h>
-#include <iprt/file.h>
-#include <iprt/tcp.h>
-
 #include <list>
 #include <memory>
+
+#include "HardDiskImpl.h"
+#include "SystemPropertiesImpl.h"
+#include "ProgressImpl.h"
+
+#include "Logging.h"
 
 ////////////////////////////////////////////////////////////////////////////////
 // Globals
@@ -877,7 +876,7 @@ HRESULT HardDisk::init(VirtualBox *aVirtualBox,
         if (m.state == MediaState_Inaccessible)
         {
             Assert (!m.lastAccessError.isEmpty());
-            rc = setError (E_FAIL, Utf8Str (m.lastAccessError));
+            rc = setError(E_FAIL, Utf8Str(m.lastAccessError).c_str());
         }
         else
         {
@@ -905,12 +904,10 @@ HRESULT HardDisk::init(VirtualBox *aVirtualBox,
  *
  * @note Locks VirtualBox lock for writing, treeLock() for writing.
  */
-HRESULT HardDisk::init (VirtualBox *aVirtualBox,
-                        HardDisk *aParent,
-                        const settings::Key &aNode)
+HRESULT HardDisk::init(VirtualBox *aVirtualBox,
+                       HardDisk *aParent,
+                       const settings::Medium &data)
 {
-    using namespace settings;
-
     AssertReturn(aVirtualBox, E_INVALIDARG);
 
     /* Enclose the state transition NotReady->InInit->Ready */
@@ -929,7 +926,7 @@ HRESULT HardDisk::init (VirtualBox *aVirtualBox,
     else
     {
         /* we set mParent */
-        AutoWriteLock treeLock (this->treeLock());
+        AutoWriteLock treeLock(this->treeLock());
 
         mParent = aParent;
         aParent->addDependentChild (this);
@@ -938,27 +935,22 @@ HRESULT HardDisk::init (VirtualBox *aVirtualBox,
     /* see below why we don't call queryInfo() (and therefore treat the medium
      * as inaccessible for now */
     m.state = MediaState_Inaccessible;
-    m.lastAccessError = tr ("Accessibility check was not yet performed");
+    m.lastAccessError = tr("Accessibility check was not yet performed");
 
     /* required */
-    unconst(m.id) = aNode.value <Guid> ("uuid");
+    unconst(m.id) = data.uuid;
 
     /* optional */
-    {
-        settings::Key descNode = aNode.findKey ("Description");
-        if (!descNode.isNull())
-            m.description = descNode.keyStringValue();
-    }
+    m.description = data.strDescription;
 
     /* required */
-    Bstr format = aNode.stringValue ("format");
-    AssertReturn(!format.isNull(), E_FAIL);
-    rc = setFormat (format);
+    AssertReturn(!data.strFormat.isEmpty(), E_FAIL);
+    rc = setFormat(Bstr(data.strFormat));
     CheckComRCReturnRC(rc);
 
     /* optional, only for diffs, default is false */
     if (aParent != NULL)
-        mm.autoReset = aNode.value <bool> ("autoReset");
+        mm.autoReset = data.fAutoReset;
     else
         mm.autoReset = false;
 
@@ -967,32 +959,22 @@ HRESULT HardDisk::init (VirtualBox *aVirtualBox,
      * they will still be read and accessible (for possible backward
      * compatibility; we can also clean them up from the XML upon next
      * XML format version change if we wish) */
-    Key::List properties = aNode.keys ("Property");
-    for (Key::List::const_iterator it = properties.begin();
-         it != properties.end(); ++ it)
+    for (settings::PropertiesMap::const_iterator it = data.properties.begin();
+         it != data.properties.end();
+         ++it)
     {
-        mm.properties [Bstr (it->stringValue ("name"))] =
-            Bstr (it->stringValue ("value"));
+        const Utf8Str &name = it->first;
+        const Utf8Str &value = it->second;
+        mm.properties[Bstr(name)] = Bstr(value);
     }
 
     /* required */
-    Bstr location = aNode.stringValue ("location");
-    rc = setLocation (location);
+    rc = setLocation(data.strLocation);
     CheckComRCReturnRC(rc);
 
     /* type is only for base hard disks */
     if (mParent.isNull())
-    {
-        const char *type = aNode.stringValue ("type");
-        if      (strcmp (type, "Normal") == 0)
-            mm.type = HardDiskType_Normal;
-        else if (strcmp (type, "Immutable") == 0)
-            mm.type = HardDiskType_Immutable;
-        else if (strcmp (type, "Writethrough") == 0)
-            mm.type = HardDiskType_Writethrough;
-        else
-            AssertFailed();
-    }
+        mm.type = data.hdType;
 
     LogFlowThisFunc(("m.locationFull='%ls', mm.format=%ls, m.id={%RTuuid}\n",
                       m.locationFull.raw(), mm.format.raw(), m.id.raw()));
@@ -1005,16 +987,20 @@ HRESULT HardDisk::init (VirtualBox *aVirtualBox,
      * COMGETTER(State). */
 
     /* load all children */
-    Key::List hardDisks = aNode.keys ("HardDisk");
-    for (Key::List::const_iterator it = hardDisks.begin();
-         it != hardDisks.end(); ++ it)
+    for (settings::MediaList::const_iterator it = data.llChildren.begin();
+         it != data.llChildren.end();
+         ++it)
     {
-        ComObjPtr<HardDisk> hardDisk;
-        hardDisk.createObject();
-        rc = hardDisk->init(aVirtualBox, this, *it);
+        const settings::Medium &m = *it;
+
+        ComObjPtr<HardDisk> pHD;
+        pHD.createObject();
+        rc = pHD->init(aVirtualBox,
+                       this,            // parent
+                       m);              // child data
         CheckComRCBreakRC (rc);
 
-        rc = mVirtualBox->registerHardDisk(hardDisk, false /* aSaveRegistry */);
+        rc = mVirtualBox->registerHardDisk(pHD, false /* aSaveRegistry */);
         CheckComRCBreakRC (rc);
     }
 
@@ -1964,12 +1950,8 @@ bool HardDisk::isReadOnly()
  *
  * @note Locks this object, treeLock() and children for reading.
  */
-HRESULT HardDisk::saveSettings (settings::Key &aParentNode)
+HRESULT HardDisk::saveSettings(settings::Medium &data)
 {
-    using namespace settings;
-
-    AssertReturn(!aParentNode.isNull(), E_FAIL);
-
     AutoCaller autoCaller(this);
     CheckComRCReturnRC(autoCaller.rc());
 
@@ -1978,54 +1960,47 @@ HRESULT HardDisk::saveSettings (settings::Key &aParentNode)
     /* we access mParent */
     AutoReadLock treeLock (this->treeLock());
 
-    Key diskNode = aParentNode.appendKey ("HardDisk");
-    /* required */
-    diskNode.setValue <Guid> ("uuid", m.id);
-    /* required (note: the original locaiton, not full) */
-    diskNode.setValue <Bstr> ("location", m.location);
-    /* required */
-    diskNode.setValue <Bstr> ("format", mm.format);
+    data.uuid = m.id;
+    data.strLocation = m.location;
+    data.strFormat = mm.format;
+
     /* optional, only for diffs, default is false */
     if (!mParent.isNull())
-        diskNode.setValueOr <bool> ("autoReset", !!mm.autoReset, false);
+        data.fAutoReset = !!mm.autoReset;
+    else
+        data.fAutoReset = false;
+
     /* optional */
-    if (!m.description.isNull())
-    {
-        Key descNode = diskNode.createKey ("Description");
-        descNode.setKeyValue <Bstr> (m.description);
-    }
+    data.strDescription = m.description;
 
     /* optional properties */
+    data.properties.clear();
     for (Data::PropertyMap::const_iterator it = mm.properties.begin();
-         it != mm.properties.end(); ++ it)
+         it != mm.properties.end();
+         ++it)
     {
         /* only save properties that have non-default values */
         if (!it->second.isNull())
         {
-            Key propNode = diskNode.appendKey ("Property");
-            propNode.setValue <Bstr> ("name", it->first);
-            propNode.setValue <Bstr> ("value", it->second);
+            Utf8Str name = it->first;
+            Utf8Str value = it->second;
+            data.properties[name] = value;
         }
     }
 
     /* only for base hard disks */
     if (mParent.isNull())
-    {
-        const char *type =
-            mm.type == HardDiskType_Normal ? "Normal" :
-            mm.type == HardDiskType_Immutable ? "Immutable" :
-            mm.type == HardDiskType_Writethrough ? "Writethrough" : NULL;
-        Assert (type != NULL);
-        diskNode.setStringValue ("type", type);
-    }
+        data.hdType = mm.type;
 
     /* save all children */
     for (List::const_iterator it = children().begin();
          it != children().end();
-         ++ it)
+         ++it)
     {
-        HRESULT rc = (*it)->saveSettings (diskNode);
-        AssertComRCReturnRC(rc);
+        settings::Medium m;
+        HRESULT rc = (*it)->saveSettings(m);
+        AssertComRCReturnRC (rc);
+        data.llChildren.push_back(m);
     }
 
     return S_OK;
@@ -2043,7 +2018,7 @@ HRESULT HardDisk::saveSettings (settings::Key &aParentNode)
  *                      are equal, 1 if this object's location is greater than
  *                      the specified location, and -1 otherwise.
  */
-HRESULT HardDisk::compareLocationTo (const char *aLocation, int &aResult)
+HRESULT HardDisk::compareLocationTo(const Utf8Str &strLocation, int &aResult)
 {
     AutoCaller autoCaller(this);
     AssertComRCReturnRC(autoCaller.rc());
@@ -2056,28 +2031,27 @@ HRESULT HardDisk::compareLocationTo (const char *aLocation, int &aResult)
 
     if (mm.formatObj->capabilities() & HardDiskFormatCapabilities_File)
     {
-        Utf8Str location (aLocation);
+        Utf8Str location(strLocation);
 
         /* For locations represented by files, append the default path if
          * only the name is given, and then get the full path. */
-        if (!RTPathHavePath (aLocation))
-        {
-            AutoReadLock propsLock (mVirtualBox->systemProperties());
-            location = Utf8StrFmt ("%ls%c%s",
-                mVirtualBox->systemProperties()->defaultHardDiskFolder().raw(),
-                RTPATH_DELIMITER, aLocation);
-        }
+        if (!RTPathHavePath(strLocation.c_str()))
+            location = Utf8StrFmt("%s%c%s",
+                                  mVirtualBox->getDefaultHardDiskFolder().raw(),
+                                  RTPATH_DELIMITER,
+                                  strLocation.c_str());
 
-        int vrc = mVirtualBox->calculateFullPath (location, location);
+        int vrc = mVirtualBox->calculateFullPath(location, location);
         if (RT_FAILURE(vrc))
-            return setError (E_FAIL,
-                tr ("Invalid hard disk storage file location '%s' (%Rrc)"),
-                location.raw(), vrc);
+            return setError(E_FAIL,
+                            tr("Invalid hard disk storage file location '%s' (%Rrc)"),
+                            location.raw(),
+                            vrc);
 
-        aResult = RTPathCompare (locationFull, location);
+        aResult = RTPathCompare(locationFull.c_str(), location.c_str());
     }
     else
-        aResult = locationFull.compare (aLocation);
+        aResult = locationFull.compare(strLocation);
 
     return S_OK;
 }
@@ -2096,7 +2070,7 @@ Utf8Str HardDisk::name()
 
     Utf8Str location (m.locationFull);
 
-    Utf8Str name = RTPathFilename (location);
+    Utf8Str name = RTPathFilename(location.c_str());
     return name;
 }
 
@@ -2361,23 +2335,18 @@ void HardDisk::cancelDiscard (MergeChain *aChain)
  */
 Bstr HardDisk::preferredDiffFormat()
 {
-    Bstr format;
-
     AutoCaller autoCaller(this);
-    AssertComRCReturn (autoCaller.rc(), format);
+    AssertReturn(autoCaller.rc(), "");
 
     /* mm.format is const, no need to lock */
-    format = mm.format;
+    Bstr bstrFormat = mm.format;
 
     /* check that our own format supports diffs */
     if (!(mm.formatObj->capabilities() & HardDiskFormatCapabilities_Differencing))
-    {
         /* use the default format if not */
-        AutoReadLock propsLock (mVirtualBox->systemProperties());
-        format = mVirtualBox->systemProperties()->defaultHardDiskFormat();
-    }
+        bstrFormat = mVirtualBox->getDefaultHardDiskFormat();
 
-    return format;
+    return bstrFormat;
 }
 
 // protected methods
@@ -2950,12 +2919,9 @@ void HardDisk::cancelMergeTo (MergeChain *aChain)
  *
  * @note Must be called from under this object's write lock.
  */
-HRESULT HardDisk::setLocation (CBSTR aLocation)
+HRESULT HardDisk::setLocation(const Utf8Str &aLocation)
 {
-    /// @todo so far, we assert but later it makes sense to support null
-    /// locations for hard disks that are not yet created fail to create a
-    /// storage unit instead
-    CheckComArgStrNotEmptyOrNull (aLocation);
+    AssertReturn(!aLocation.isEmpty(), E_FAIL);
 
     AutoCaller autoCaller(this);
     AssertComRCReturnRC(autoCaller.rc());
@@ -2977,44 +2943,43 @@ HRESULT HardDisk::setLocation (CBSTR aLocation)
     {
         Guid id;
 
-        Utf8Str location (aLocation);
+        Utf8Str location(aLocation);
 
         if (m.state == MediaState_NotCreated)
         {
             /* must be a file (formatObj must be already known) */
             Assert (mm.formatObj->capabilities() & HardDiskFormatCapabilities_File);
 
-            if (RTPathFilename (location) == NULL)
+            if (RTPathFilename(location.c_str()) == NULL)
             {
                 /* no file name is given (either an empty string or ends with a
                  * slash), generate a new UUID + file name if the state allows
                  * this */
 
-                ComAssertMsgRet (!mm.formatObj->fileExtensions().empty(),
-                                 ("Must be at least one extension if it is HardDiskFormatCapabilities_File\n"),
-                                 E_FAIL);
+                ComAssertMsgRet(!mm.formatObj->fileExtensions().empty(),
+                                ("Must be at least one extension if it is HardDiskFormatCapabilities_File\n"),
+                                E_FAIL);
 
                 Bstr ext = mm.formatObj->fileExtensions().front();
-                ComAssertMsgRet (!ext.isEmpty(),
-                                 ("Default extension must not be empty\n"),
-                                 E_FAIL);
+                ComAssertMsgRet(!ext.isEmpty(),
+                                ("Default extension must not be empty\n"),
+                                E_FAIL);
 
                 id.create();
 
-                location = Utf8StrFmt ("%s{%RTuuid}.%ls",
-                                       location.raw(), id.raw(), ext.raw());
+                location = Utf8StrFmt("%s{%RTuuid}.%ls",
+                                      location.raw(),
+                                      id.raw(),
+                                      ext.raw());
             }
         }
 
         /* append the default folder if no path is given */
-        if (!RTPathHavePath (location))
-        {
-            AutoReadLock propsLock (mVirtualBox->systemProperties());
-            location = Utf8StrFmt ("%ls%c%s",
-                mVirtualBox->systemProperties()->defaultHardDiskFolder().raw(),
-                RTPATH_DELIMITER,
-                location.raw());
-        }
+        if (!RTPathHavePath(location.c_str()))
+            location = Utf8StrFmt("%s%c%s",
+                                  mVirtualBox->getDefaultHardDiskFolder().raw(),
+                                  RTPATH_DELIMITER,
+                                  location.raw());
 
         /* get the full file name */
         Utf8Str locationFull;
@@ -3032,19 +2997,19 @@ HRESULT HardDisk::setLocation (CBSTR aLocation)
             /* is it a file? */
             {
                 RTFILE file;
-                vrc = RTFileOpen (&file, locationFull, RTFILE_O_READ);
+                vrc = RTFileOpen(&file, locationFull.c_str(), RTFILE_O_READ);
                 if (RT_SUCCESS(vrc))
                     RTFileClose (file);
             }
             if (RT_SUCCESS(vrc))
             {
-                vrc = VDGetFormat (locationFull, &backendName);
+                vrc = VDGetFormat(locationFull.c_str(), &backendName);
             }
             else if (vrc != VERR_FILE_NOT_FOUND && vrc != VERR_PATH_NOT_FOUND)
             {
                 /* assume it's not a file, restore the original location */
                 location = locationFull = aLocation;
-                vrc = VDGetFormat (locationFull, &backendName);
+                vrc = VDGetFormat(locationFull.c_str(), &backendName);
             }
 
             if (RT_FAILURE(vrc))
@@ -3112,7 +3077,7 @@ HRESULT HardDisk::setFormat (CBSTR aFormat)
 {
     /* get the format object first */
     {
-        AutoReadLock propsLock (mVirtualBox->systemProperties());
+        AutoReadLock propsLock(mVirtualBox->systemProperties());
 
         unconst(mm.formatObj)
             = mVirtualBox->systemProperties()->hardDiskFormat (aFormat);
@@ -3252,8 +3217,8 @@ HRESULT HardDisk::queryInfo()
             /** @todo This kind of opening of images is assuming that diff
              * images can be opened as base images. Should be fixed ASAP. */
             vrc = VDOpen(hdd,
-                         Utf8Str(mm.format),
-                         location,
+                         Utf8Str(mm.format).c_str(),
+                         location.c_str(),
                          flags,
                          mm.vdDiskIfaces);
             if (RT_FAILURE(vrc))
@@ -3303,9 +3268,9 @@ HRESULT HardDisk::queryInfo()
                     if (m.id != uuid)
                     {
                         lastAccessError = Utf8StrFmt (
-                            tr ("UUID {%RTuuid} of the hard disk '%ls' does not match the value {%RTuuid} stored in the media registry ('%ls')"),
+                            tr ("UUID {%RTuuid} of the hard disk '%ls' does not match the value {%RTuuid} stored in the media registry ('%s')"),
                             &uuid, m.locationFull.raw(), m.id.raw(),
-                            mVirtualBox->settingsFileName().raw());
+                            mVirtualBox->settingsFilePath().raw());
                         throw S_OK;
                     }
                 }
@@ -3353,9 +3318,9 @@ HRESULT HardDisk::queryInfo()
                     if (FAILED (rc))
                     {
                         lastAccessError = Utf8StrFmt (
-                            tr ("Parent hard disk with UUID {%RTuuid} of the hard disk '%ls' is not found in the media registry ('%ls')"),
+                            tr ("Parent hard disk with UUID {%RTuuid} of the hard disk '%ls' is not found in the media registry ('%s')"),
                             &parentId, m.locationFull.raw(),
-                            mVirtualBox->settingsFileName().raw());
+                            mVirtualBox->settingsFilePath().raw());
                         throw S_OK;
                     }
 
@@ -3382,9 +3347,9 @@ HRESULT HardDisk::queryInfo()
                     if (mParent.isNull())
                     {
                         lastAccessError = Utf8StrFmt (
-                            tr ("Hard disk '%ls' is differencing but it is not associated with any parent hard disk in the media registry ('%ls')"),
+                            tr ("Hard disk '%ls' is differencing but it is not associated with any parent hard disk in the media registry ('%s')"),
                             m.locationFull.raw(),
-                            mVirtualBox->settingsFileName().raw());
+                            mVirtualBox->settingsFilePath().raw());
                         throw S_OK;
                     }
 
@@ -3393,10 +3358,10 @@ HRESULT HardDisk::queryInfo()
                         mParent->id() != parentId)
                     {
                         lastAccessError = Utf8StrFmt (
-                            tr ("Parent UUID {%RTuuid} of the hard disk '%ls' does not match UUID {%RTuuid} of its parent hard disk stored in the media registry ('%ls')"),
+                            tr ("Parent UUID {%RTuuid} of the hard disk '%ls' does not match UUID {%RTuuid} of its parent hard disk stored in the media registry ('%s')"),
                             &parentId, m.locationFull.raw(),
                             mParent->id().raw(),
-                            mVirtualBox->settingsFileName().raw());
+                            mVirtualBox->settingsFilePath().raw());
                         throw S_OK;
                     }
 
@@ -3677,8 +3642,8 @@ DECLCALLBACK(int) HardDisk::vdConfigQuerySize(void *pvUser, const char *pszName,
 }
 
 /* static */
-DECLCALLBACK(int) HardDisk::vdConfigQuery (void *pvUser, const char *pszName,
-                                            char *pszValue, size_t cchValue)
+DECLCALLBACK(int) HardDisk::vdConfigQuery(void *pvUser, const char *pszName,
+                                          char *pszValue, size_t cchValue)
 {
     AssertReturn(VALID_PTR (pszValue), VERR_INVALID_POINTER);
 
@@ -3698,7 +3663,7 @@ DECLCALLBACK(int) HardDisk::vdConfigQuery (void *pvUser, const char *pszName,
     if (it->second.isNull())
         return VERR_CFGM_VALUE_NOT_FOUND;
 
-    memcpy (pszValue, value, value.length() + 1);
+    memcpy(pszValue, value.c_str(), value.length() + 1);
 
     return VINF_SUCCESS;
 }
@@ -3772,7 +3737,7 @@ DECLCALLBACK(int) HardDisk::taskThread (RTTHREAD thread, void *pvUser)
                 try
                 {
                     /* ensure the directory exists */
-                    rc = VirtualBox::ensureFilePathExists (location);
+                    rc = VirtualBox::ensureFilePathExists(location.c_str());
                     CheckComRCThrowRC (rc);
 
                     PDMMEDIAGEOMETRY geo = { 0 }; /* auto-detect */
@@ -3780,12 +3745,18 @@ DECLCALLBACK(int) HardDisk::taskThread (RTTHREAD thread, void *pvUser)
                     /* needed for vdProgressCallback */
                     that->mm.vdProgress = task->progress;
 
-                    vrc = VDCreateBase (hdd, format, location,
-                                        task->d.size * _1M,
-                                        task->d.variant,
-                                        NULL, &geo, &geo, id.raw(),
-                                        VD_OPEN_FLAGS_NORMAL,
-                                        NULL, that->mm.vdDiskIfaces);
+                    vrc = VDCreateBase(hdd,
+                                       format.c_str(),
+                                       location.c_str(),
+                                       task->d.size * _1M,
+                                       task->d.variant,
+                                       NULL,
+                                       &geo,
+                                       &geo,
+                                       id.raw(),
+                                       VD_OPEN_FLAGS_NORMAL,
+                                       NULL,
+                                       that->mm.vdDiskIfaces);
 
                     if (RT_FAILURE(vrc))
                     {
@@ -3882,14 +3853,16 @@ DECLCALLBACK(int) HardDisk::taskThread (RTTHREAD thread, void *pvUser)
 
                 try
                 {
-                    vrc = VDOpen (hdd, format, location,
-                                  VD_OPEN_FLAGS_READONLY | VD_OPEN_FLAGS_INFO,
-                                  that->mm.vdDiskIfaces);
+                    vrc = VDOpen(hdd,
+                                 format.c_str(),
+                                 location.c_str(),
+                                 VD_OPEN_FLAGS_READONLY | VD_OPEN_FLAGS_INFO,
+                                 that->mm.vdDiskIfaces);
                     if (RT_FAILURE(vrc))
                     {
-                        throw setError (E_FAIL,
-                            tr ("Could not open the hard disk storage unit '%s'%s"),
-                            location.raw(), that->vdError (vrc).raw());
+                        throw setError(E_FAIL,
+                                       tr("Could not open the hard disk storage unit '%s'%s"),
+                                       location.raw(), that->vdError (vrc).raw());
                     }
 
                     /* ensure the target directory exists */
@@ -3901,13 +3874,16 @@ DECLCALLBACK(int) HardDisk::taskThread (RTTHREAD thread, void *pvUser)
 
                     /** @todo add VD_IMAGE_FLAGS_DIFF to the image flags, to
                      * be on the safe side. */
-                    vrc = VDCreateDiff (hdd, targetFormat, targetLocation,
-                                        task->d.variant,
-                                        NULL, targetId.raw(),
-                                        id.raw(),
-                                        VD_OPEN_FLAGS_NORMAL,
-                                        target->mm.vdDiskIfaces,
-                                        that->mm.vdDiskIfaces);
+                    vrc = VDCreateDiff(hdd,
+                                       targetFormat.c_str(),
+                                       targetLocation.c_str(),
+                                       task->d.variant,
+                                       NULL,
+                                       targetId.raw(),
+                                       id.raw(),
+                                       VD_OPEN_FLAGS_NORMAL,
+                                       target->mm.vdDiskIfaces,
+                                       that->mm.vdDiskIfaces);
 
                     that->mm.vdProgress = NULL;
 
@@ -4056,11 +4032,12 @@ DECLCALLBACK(int) HardDisk::taskThread (RTTHREAD thread, void *pvUser)
 
                         /* open the first image with VDOPEN_FLAGS_INFO because
                          * it's not necessarily the base one */
-                        vrc = VDOpen (hdd, Utf8Str ((*it)->mm.format),
-                                      Utf8Str ((*it)->m.locationFull),
-                                      it == chain->begin() ?
+                        vrc = VDOpen(hdd,
+                                     Utf8Str((*it)->mm.format).c_str(),
+                                     Utf8Str((*it)->m.locationFull).c_str(),
+                                     it == chain->begin() ?
                                           VD_OPEN_FLAGS_INFO : 0,
-                                      (*it)->mm.vdDiskIfaces);
+                                     (*it)->mm.vdDiskIfaces);
                         if (RT_FAILURE(vrc))
                             throw vrc;
 #if 0
@@ -4108,10 +4085,11 @@ DECLCALLBACK(int) HardDisk::taskThread (RTTHREAD thread, void *pvUser)
                                  it != chain->children().end(); ++ it)
                             {
                                 /* VD_OPEN_FLAGS_INFO since UUID is wrong yet */
-                                vrc = VDOpen (hdd, Utf8Str ((*it)->mm.format),
-                                              Utf8Str ((*it)->m.locationFull),
-                                              VD_OPEN_FLAGS_INFO,
-                                              (*it)->mm.vdDiskIfaces);
+                                vrc = VDOpen(hdd,
+                                             Utf8Str((*it)->mm.format).c_str(),
+                                             Utf8Str((*it)->m.locationFull).c_str(),
+                                             VD_OPEN_FLAGS_INFO,
+                                             (*it)->mm.vdDiskIfaces);
                                 if (RT_FAILURE(vrc))
                                     throw vrc;
 
@@ -4348,10 +4326,11 @@ DECLCALLBACK(int) HardDisk::taskThread (RTTHREAD thread, void *pvUser)
                         Assert ((*it)->m.state == MediaState_LockedRead);
 
                         /** Open all images in read-only mode. */
-                        vrc = VDOpen (hdd, Utf8Str ((*it)->mm.format),
-                                      Utf8Str ((*it)->m.locationFull),
-                                      VD_OPEN_FLAGS_READONLY,
-                                      (*it)->mm.vdDiskIfaces);
+                        vrc = VDOpen(hdd,
+                                     Utf8Str((*it)->mm.format).c_str(),
+                                     Utf8Str((*it)->m.locationFull).c_str(),
+                                     VD_OPEN_FLAGS_READONLY,
+                                     (*it)->mm.vdDiskIfaces);
                         if (RT_FAILURE(vrc))
                         {
                             throw setError (E_FAIL,
@@ -4394,10 +4373,11 @@ DECLCALLBACK(int) HardDisk::taskThread (RTTHREAD thread, void *pvUser)
                                     ||  (*it)->m.state == MediaState_LockedWrite);
 
                             /* Open all images in appropriate mode. */
-                            vrc = VDOpen (targetHdd, Utf8Str ((*it)->mm.format),
-                                          Utf8Str ((*it)->m.locationFull),
-                                          ((*it)->m.state == MediaState_LockedWrite) ? VD_OPEN_FLAGS_NORMAL : VD_OPEN_FLAGS_READONLY,
-                                          (*it)->mm.vdDiskIfaces);
+                            vrc = VDOpen(targetHdd,
+                                         Utf8Str((*it)->mm.format).c_str(),
+                                         Utf8Str((*it)->m.locationFull).c_str(),
+                                         ((*it)->m.state == MediaState_LockedWrite) ? VD_OPEN_FLAGS_NORMAL : VD_OPEN_FLAGS_READONLY,
+                                         (*it)->mm.vdDiskIfaces);
                             if (RT_FAILURE(vrc))
                             {
                                 throw setError (E_FAIL,
@@ -4407,13 +4387,15 @@ DECLCALLBACK(int) HardDisk::taskThread (RTTHREAD thread, void *pvUser)
                             }
                         }
 
-                        vrc = VDCopy (hdd, VD_LAST_IMAGE, targetHdd,
-                                      targetFormat,
-                                      target->m.state == MediaState_Creating ? targetLocation.raw() : (char *)NULL,
-                                      false, 0,
-                                      task->d.variant, targetId.raw(), NULL,
-                                      target->mm.vdDiskIfaces,
-                                      that->mm.vdDiskIfaces);
+                        vrc = VDCopy(hdd,
+                                     VD_LAST_IMAGE,
+                                     targetHdd,
+                                     targetFormat.c_str(),
+                                     target->m.state == MediaState_Creating ? targetLocation.raw() : (char *)NULL,
+                                     false, 0,
+                                     task->d.variant, targetId.raw(), NULL,
+                                     target->mm.vdDiskIfaces,
+                                     that->mm.vdDiskIfaces);
 
                         that->mm.vdProgress = NULL;
 
@@ -4532,9 +4514,11 @@ DECLCALLBACK(int) HardDisk::taskThread (RTTHREAD thread, void *pvUser)
 
                 try
                 {
-                    vrc = VDOpen (hdd, format, location,
-                                  VD_OPEN_FLAGS_READONLY | VD_OPEN_FLAGS_INFO,
-                                  that->mm.vdDiskIfaces);
+                    vrc = VDOpen(hdd,
+                                 format.c_str(),
+                                 location.c_str(),
+                                 VD_OPEN_FLAGS_READONLY | VD_OPEN_FLAGS_INFO,
+                                 that->mm.vdDiskIfaces);
                     if (RT_SUCCESS(vrc))
                         vrc = VDClose (hdd, true /* fDelete */);
 
@@ -4600,9 +4584,11 @@ DECLCALLBACK(int) HardDisk::taskThread (RTTHREAD thread, void *pvUser)
                 try
                 {
                     /* first, delete the storage unit */
-                    vrc = VDOpen (hdd, format, location,
-                                  VD_OPEN_FLAGS_READONLY | VD_OPEN_FLAGS_INFO,
-                                  that->mm.vdDiskIfaces);
+                    vrc = VDOpen(hdd,
+                                 format.c_str(),
+                                 location.c_str(),
+                                 VD_OPEN_FLAGS_READONLY | VD_OPEN_FLAGS_INFO,
+                                 that->mm.vdDiskIfaces);
                     if (RT_SUCCESS(vrc))
                         vrc = VDClose (hdd, true /* fDelete */);
 
@@ -4614,9 +4600,11 @@ DECLCALLBACK(int) HardDisk::taskThread (RTTHREAD thread, void *pvUser)
                     }
 
                     /* next, create it again */
-                    vrc = VDOpen (hdd, parentFormat, parentLocation,
-                                  VD_OPEN_FLAGS_READONLY | VD_OPEN_FLAGS_INFO,
-                                  that->mm.vdDiskIfaces);
+                    vrc = VDOpen(hdd,
+                                 parentFormat.c_str(),
+                                 parentLocation.c_str(),
+                                 VD_OPEN_FLAGS_READONLY | VD_OPEN_FLAGS_INFO,
+                                 that->mm.vdDiskIfaces);
                     if (RT_FAILURE(vrc))
                     {
                         throw setError (E_FAIL,
@@ -4627,14 +4615,17 @@ DECLCALLBACK(int) HardDisk::taskThread (RTTHREAD thread, void *pvUser)
                     /* needed for vdProgressCallback */
                     that->mm.vdProgress = task->progress;
 
-                    vrc = VDCreateDiff (hdd, format, location,
-                                        /// @todo use the same image variant as before
-                                        VD_IMAGE_FLAGS_NONE,
-                                        NULL, id.raw(),
-                                        parentId.raw(),
-                                        VD_OPEN_FLAGS_NORMAL,
-                                        that->mm.vdDiskIfaces,
-                                        that->mm.vdDiskIfaces);
+                    vrc = VDCreateDiff(hdd,
+                                       format.c_str(),
+                                       location.c_str(),
+                                       /// @todo use the same image variant as before
+                                       VD_IMAGE_FLAGS_NONE,
+                                       NULL,
+                                       id.raw(),
+                                       parentId.raw(),
+                                       VD_OPEN_FLAGS_NORMAL,
+                                       that->mm.vdDiskIfaces,
+                                       that->mm.vdDiskIfaces);
 
                     that->mm.vdProgress = NULL;
 
@@ -4704,10 +4695,11 @@ DECLCALLBACK(int) HardDisk::taskThread (RTTHREAD thread, void *pvUser)
                             Assert ((*it)->m.state == MediaState_LockedRead);
 
                         /** Open all images but last in read-only mode. */
-                        vrc = VDOpen (hdd, Utf8Str ((*it)->mm.format),
-                                      Utf8Str ((*it)->m.locationFull),
-                                      (it == last) ? VD_OPEN_FLAGS_NORMAL : VD_OPEN_FLAGS_READONLY,
-                                      (*it)->mm.vdDiskIfaces);
+                        vrc = VDOpen(hdd,
+                                     Utf8Str((*it)->mm.format).c_str(),
+                                     Utf8Str((*it)->m.locationFull).c_str(),
+                                     (it == last) ? VD_OPEN_FLAGS_NORMAL : VD_OPEN_FLAGS_READONLY,
+                                     (*it)->mm.vdDiskIfaces);
                         if (RT_FAILURE(vrc))
                         {
                             throw setError (E_FAIL,

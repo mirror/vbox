@@ -85,10 +85,9 @@ HRESULT DHCPServer::init(VirtualBox *aVirtualBox, IN_BSTR aName)
     return S_OK;
 }
 
-HRESULT DHCPServer::init(VirtualBox *aVirtualBox, const settings::Key &aNode)
+HRESULT DHCPServer::init(VirtualBox *aVirtualBox,
+                         const settings::DHCPServer &data)
 {
-    using namespace settings;
-
     /* Enclose the state transition NotReady->InInit->Ready */
     AutoInitSpan autoInitSpan(this);
     AssertReturn(autoInitSpan.isOk(), E_FAIL);
@@ -98,38 +97,31 @@ HRESULT DHCPServer::init(VirtualBox *aVirtualBox, const settings::Key &aNode)
 
     aVirtualBox->addDependentChild (this);
 
-    unconst(mName) = aNode.stringValue ("networkName");
-    m.IPAddress = aNode.stringValue ("IPAddress");
-    m.networkMask = aNode.stringValue ("networkMask");
-    m.enabled = aNode.value <bool> ("enabled");
-    m.lowerIP = aNode.stringValue ("lowerIP");
-    m.upperIP = aNode.stringValue ("upperIP");
+    unconst(mName) = data.strNetworkName;
+    m.IPAddress = data.strIPAddress;
+    m.networkMask = data.strIPNetworkMask;
+    m.enabled = data.fEnabled;
+    m.lowerIP = data.strIPLower;
+    m.upperIP = data.strIPUpper;
 
     autoInitSpan.setSucceeded();
 
     return S_OK;
 }
 
-HRESULT DHCPServer::saveSettings (settings::Key &aParentNode)
+HRESULT DHCPServer::saveSettings(settings::DHCPServer &data)
 {
-    using namespace settings;
-
-    AssertReturn(!aParentNode.isNull(), E_FAIL);
-
     AutoCaller autoCaller(this);
     CheckComRCReturnRC(autoCaller.rc());
 
     AutoReadLock alock(this);
 
-    Key aNode = aParentNode.appendKey ("DHCPServer");
-    /* required */
-    aNode.setValue <Bstr> ("networkName", mName);
-    aNode.setValue <Bstr> ("IPAddress", m.IPAddress);
-    aNode.setValue <Bstr> ("networkMask", m.networkMask);
-    aNode.setValue <Bstr> ("lowerIP", m.lowerIP);
-    aNode.setValue <Bstr> ("upperIP", m.upperIP);
-    /* To force it back to a numeric value; will otherwise break for 2.2.x. */
-    aNode.setValue <ULONG> ("enabled", m.enabled);
+    data.strNetworkName = mName;
+    data.strIPAddress = m.IPAddress;
+    data.strIPNetworkMask = m.networkMask;
+    data.fEnabled = m.enabled;
+    data.strIPLower = m.lowerIP;
+    data.strIPUpper = m.upperIP;
 
     return S_OK;
 }
@@ -242,7 +234,7 @@ STDMETHODIMP DHCPServer::SetConfiguration (IN_BSTR aIPAddress, IN_BSTR aNetworkM
     return mVirtualBox->saveSettings();
 }
 
-STDMETHODIMP DHCPServer::Start (IN_BSTR aNetworkName, IN_BSTR aTrunkName, IN_BSTR aTrunkType)
+STDMETHODIMP DHCPServer::Start(IN_BSTR aNetworkName, IN_BSTR aTrunkName, IN_BSTR aTrunkType)
 {
     /* Silently ignore attepmts to run disabled servers. */
     if (!m.enabled)

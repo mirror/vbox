@@ -896,12 +896,8 @@ STDMETHODIMP NetworkAdapter::Detach()
  *
  *  @note Locks this object for writing.
  */
-HRESULT NetworkAdapter::loadSettings (const settings::Key &aAdapterNode)
+HRESULT NetworkAdapter::loadSettings(const settings::NetworkAdapter &data)
 {
-    using namespace settings;
-
-    AssertReturn(!aAdapterNode.isNull(), E_FAIL);
-
     AutoCaller autoCaller(this);
     AssertComRCReturnRC(autoCaller.rc());
 
@@ -920,98 +916,55 @@ HRESULT NetworkAdapter::loadSettings (const settings::Key &aAdapterNode)
 
     HRESULT rc = S_OK;
 
-    /* type (optional, defaults to Am79C970A) */
-    const char *adapterType = aAdapterNode.stringValue ("type");
-
-    if (strcmp (adapterType, "Am79C970A") == 0)
-        mData->mAdapterType = NetworkAdapterType_Am79C970A;
-    else if (strcmp (adapterType, "Am79C973") == 0)
-        mData->mAdapterType = NetworkAdapterType_Am79C973;
-    else if (strcmp (adapterType, "82540EM") == 0)
-        mData->mAdapterType = NetworkAdapterType_I82540EM;
-    else if (strcmp (adapterType, "82543GC") == 0)
-        mData->mAdapterType = NetworkAdapterType_I82543GC;
-    else if (strcmp (adapterType, "82545EM") == 0)
-        mData->mAdapterType = NetworkAdapterType_I82545EM;
-    else
-        ComAssertMsgFailedRet (("Invalid adapter type '%s'", adapterType),
-                               E_FAIL);
-
-    /* enabled (required) */
-    mData->mEnabled = aAdapterNode.value <bool> ("enabled");
+    mData->mAdapterType = data.type;
+    mData->mEnabled = data.fEnabled;
     /* MAC address (can be null) */
-    rc = COMSETTER(MACAddress) (Bstr (aAdapterNode.stringValue ("MACAddress")));
+    rc = COMSETTER(MACAddress)(Bstr(data.strMACAddress));
     CheckComRCReturnRC(rc);
     /* cable (required) */
-    mData->mCableConnected = aAdapterNode.value <bool> ("cable");
+    mData->mCableConnected = data.fCableConnected;
     /* line speed (defaults to 100 Mbps) */
-    mData->mLineSpeed = aAdapterNode.value <ULONG> ("speed");
+    mData->mLineSpeed = data.ulLineSpeed;
     /* tracing (defaults to false) */
-    mData->mTraceEnabled = aAdapterNode.value <bool> ("trace");
-    mData->mTraceFile = aAdapterNode.stringValue ("tracefile");
+    mData->mTraceEnabled = data.fTraceEnabled;
+    mData->mTraceFile = data.strTraceFile;
 
-    /* One of NAT, HostInerface, Internal or nothing */
-    Key attachmentNode;
-
-    if (!(attachmentNode = aAdapterNode.findKey ("NAT")).isNull())
+    switch (data.mode)
     {
-        /* NAT */
+        case NetworkAttachmentType_NAT:
+            mData->mNATNetwork = data.strName;
+            rc = AttachToNAT();
+            CheckComRCReturnRC(rc);
+        break;
 
-        /* optional */
-        mData->mNATNetwork = attachmentNode.stringValue ("network");
+        case NetworkAttachmentType_Bridged:
+            rc = COMSETTER(HostInterface)(Bstr(data.strName));
+            CheckComRCReturnRC(rc);
+            rc = AttachToBridgedInterface();
+            CheckComRCReturnRC(rc);
+        break;
 
-        rc = AttachToNAT();
-        CheckComRCReturnRC(rc);
-    }
-    else
-    if (!(attachmentNode = aAdapterNode.findKey ("HostInterface")).isNull() /* backwards compatibility */
-            || !(attachmentNode = aAdapterNode.findKey ("BridgedInterface")).isNull())
-    {
-        /* Host Interface Networking */
+        case NetworkAttachmentType_Internal:
+            mData->mInternalNetwork = data.strName;
+            Assert(!mData->mInternalNetwork.isNull());
 
-        Bstr name = attachmentNode.stringValue ("name");
-        /* name can be empty, but not null */
-        ComAssertRet (!name.isNull(), E_FAIL);
+            rc = AttachToInternalNetwork();
+            CheckComRCReturnRC(rc);
+        break;
 
-        rc = COMSETTER(HostInterface) (name);
-        CheckComRCReturnRC(rc);
-
-        rc = AttachToBridgedInterface();
-        CheckComRCReturnRC(rc);
-    }
-    else
-    if (!(attachmentNode = aAdapterNode.findKey ("InternalNetwork")).isNull())
-    {
-        /* Internal Networking */
-
-        /* required */
-        mData->mInternalNetwork = attachmentNode.stringValue ("name");
-        Assert (!mData->mInternalNetwork.isNull());
-
-        rc = AttachToInternalNetwork();
-        CheckComRCReturnRC(rc);
-    }
-    else
-    if (!(attachmentNode = aAdapterNode.findKey ("HostOnlyInterface")).isNull())
-    {
+        case NetworkAttachmentType_HostOnly:
 #if defined(VBOX_WITH_NETFLT)
-        Bstr name = attachmentNode.stringValue ("name");
-        /* name can be empty, but not null */
-        ComAssertRet (!name.isNull(), E_FAIL);
-
-        rc = COMSETTER(HostInterface) (name);
-        CheckComRCReturnRC(rc);
+            rc = COMSETTER(HostInterface)(Bstr(data.strName));
+            CheckComRCReturnRC(rc);
 #endif
+            rc = AttachToHostOnlyInterface();
+            CheckComRCReturnRC(rc);
+        break;
 
-        /* Host Interface Networking */
-        rc = AttachToHostOnlyInterface();
-        CheckComRCReturnRC(rc);
-    }
-    else
-    {
-        /* Adapter has no children */
-        rc = Detach();
-        CheckComRCReturnRC(rc);
+        case NetworkAttachmentType_Null:
+            rc = Detach();
+            CheckComRCReturnRC(rc);
+        break;
     }
 
     return S_OK;
@@ -1026,95 +979,46 @@ HRESULT NetworkAdapter::loadSettings (const settings::Key &aAdapterNode)
  *
  *  @note Locks this object for reading.
  */
-HRESULT NetworkAdapter::saveSettings (settings::Key &aAdapterNode)
+HRESULT NetworkAdapter::saveSettings(settings::NetworkAdapter &data)
 {
-    using namespace settings;
-
-    AssertReturn(!aAdapterNode.isNull(), E_FAIL);
-
     AutoCaller autoCaller(this);
     AssertComRCReturnRC(autoCaller.rc());
 
     AutoReadLock alock(this);
 
-    aAdapterNode.setValue <bool> ("enabled", !!mData->mEnabled);
-    aAdapterNode.setValue <Bstr> ("MACAddress", mData->mMACAddress);
-    aAdapterNode.setValue <bool> ("cable", !!mData->mCableConnected);
+    data.fEnabled = !!mData->mEnabled;
+    data.strMACAddress = mData->mMACAddress;
+    data.fCableConnected = !!mData->mCableConnected;
 
-    aAdapterNode.setValue <ULONG> ("speed", mData->mLineSpeed);
+    data.ulLineSpeed = mData->mLineSpeed;
 
-    if (mData->mTraceEnabled)
-        aAdapterNode.setValue <bool> ("trace", true);
+    data.fTraceEnabled = mData->mTraceEnabled;
 
-    aAdapterNode.setValueOr <Bstr> ("tracefile", mData->mTraceFile, Bstr::Null);
+    data.strTraceFile = mData->mTraceFile;
 
-    const char *typeStr = NULL;
-    switch (mData->mAdapterType)
-    {
-        case NetworkAdapterType_Am79C970A:
-            typeStr = "Am79C970A";
-            break;
-        case NetworkAdapterType_Am79C973:
-            typeStr = "Am79C973";
-            break;
-        case NetworkAdapterType_I82540EM:
-            typeStr = "82540EM";
-            break;
-        case NetworkAdapterType_I82543GC:
-            typeStr = "82543GC";
-            break;
-        case NetworkAdapterType_I82545EM:
-            typeStr = "82545EM";
-            break;
-        default:
-            ComAssertMsgFailedRet (("Invalid network adapter type: %d",
-                                    mData->mAdapterType),
-                                   E_FAIL);
-    }
-    aAdapterNode.setStringValue ("type", typeStr);
+    data.type = mData->mAdapterType;
 
-    switch (mData->mAttachmentType)
+    switch (data.mode = mData->mAttachmentType)
     {
         case NetworkAttachmentType_Null:
-        {
-            /* do nothing -- empty content */
-            break;
-        }
+            data.strName.setNull();
+        break;
+
         case NetworkAttachmentType_NAT:
-        {
-            Key attachmentNode = aAdapterNode.createKey ("NAT");
-            if (!mData->mNATNetwork.isEmpty())
-                attachmentNode.setValue <Bstr> ("network",
-                                                mData->mNATNetwork);
-            break;
-        }
+            data.strName = mData->mNATNetwork;
+        break;
+
         case NetworkAttachmentType_Bridged:
-        {
-            Key attachmentNode = aAdapterNode.createKey ("BridgedInterface");
-            Assert (!mData->mHostInterface.isNull());
-            attachmentNode.setValue <Bstr> ("name", mData->mHostInterface);
-            break;
-        }
+            data.strName = mData->mHostInterface;
+        break;
+
         case NetworkAttachmentType_Internal:
-        {
-            Key attachmentNode = aAdapterNode.createKey ("InternalNetwork");
-            Assert (!mData->mInternalNetwork.isEmpty());
-            attachmentNode.setValue <Bstr> ("name", mData->mInternalNetwork);
-            break;
-        }
+            data.strName = mData->mInternalNetwork;
+        break;
+
         case NetworkAttachmentType_HostOnly:
-        {
-            Key attachmentNode = aAdapterNode.createKey ("HostOnlyInterface");
-#if defined(VBOX_WITH_NETFLT)
-            Assert (!mData->mHostInterface.isNull());
-            attachmentNode.setValue <Bstr> ("name", mData->mHostInterface);
-#endif
-            break;
-        }
-        default:
-        {
-            ComAssertFailedRet (E_FAIL);
-        }
+            data.strName = mData->mHostInterface;
+        break;
     }
 
     return S_OK;
