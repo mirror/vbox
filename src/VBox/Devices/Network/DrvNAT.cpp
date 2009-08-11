@@ -147,6 +147,8 @@ typedef struct DRVNAT
     PRTREQQUEUE             pReqQueue;
     /* Send queue */
     PPDMQUEUE               pSendQueue;
+
+    RTSEMEVENT semStatus;
 #ifdef VBOX_WITH_SLIRP_MT
     PPDMTHREAD              pGuestThread;
 #endif
@@ -168,10 +170,13 @@ typedef DRVNAT *PDRVNAT;
 /**
  * NAT queue item.
  */
+typedef enum SLIRP_EVENT {SLIRP_CHECK, SLIRP_SEND} SLIRP_EVENT;
 typedef struct DRVNATQUEUITEM
 {
     /** The core part owned by the queue manager. */
     PDMQUEUEITEMCORE    Core;
+    SLIRP_EVENT enmType;
+    int *pStatus;
     /** The buffer for output to guest. */
     const uint8_t       *pu8Buf;
     /* size of buffer */
@@ -274,7 +279,6 @@ static DECLCALLBACK(void) drvNATSetPromiscuousMode(PPDMINETWORKCONNECTOR pInterf
     LogFlow(("drvNATSetPromiscuousMode: fPromiscuous=%d\n", fPromiscuous));
     /* nothing to do */
 }
-
 
 /**
  * Worker function for drvNATNotifyLinkChanged().
@@ -532,10 +536,21 @@ static DECLCALLBACK(int) drvNATAsyncIoGuestWakeup(PPDMDRVINS pDrvIns, PPDMTHREAD
  */
 int slirp_can_output(void *pvUser)
 {
+    int status = 0;
+    int rc = 0;
     PDRVNAT pThis = (PDRVNAT)pvUser;
 
-    Assert(pThis);
-    return 1;
+    PDRVNATQUEUITEM pItem = (PDRVNATQUEUITEM)PDMQueueAlloc(pThis->pSendQueue);
+    if (pItem)
+    {
+        pItem->enmType = SLIRP_CHECK;
+        pItem->pStatus = &status;
+        PDMQueueInsert(pThis->pSendQueue, &pItem->Core);
+        rc = RTSemEventWait(pThis->semStatus, RT_INDEFINITE_WAIT); 
+        AssertRC(rc);
+        return status;
+    }
+    return 0;
 }
 
 
@@ -559,6 +574,7 @@ void slirp_output(void *pvUser, void *pvArg, const uint8_t *pu8Buf, int cb)
     PDRVNATQUEUITEM pItem = (PDRVNATQUEUITEM)PDMQueueAlloc(pThis->pSendQueue);
     if (pItem)
     {
+        pItem->enmType = SLIRP_SEND;
         pItem->pu8Buf = pu8Buf;
         pItem->cb = cb;
         pItem->mbuf = pvArg;
@@ -590,15 +606,25 @@ void slirp_output(void *pvUser, void *pvArg, const uint8_t *pu8Buf, int cb)
  */
 static DECLCALLBACK(bool) drvNATQueueConsumer(PPDMDRVINS pDrvIns, PPDMQUEUEITEMCORE pItemCore)
 {
+    int rc;
     PDRVNAT pThis = PDMINS_2_DATA(pDrvIns, PDRVNAT);
     PDRVNATQUEUITEM pItem = (PDRVNATQUEUITEM)pItemCore;
     PRTREQ pReq = NULL;
     Log(("drvNATQueueConsumer(pItem:%p, pu8Buf:%p, cb:%d)\n", pItem, pItem->pu8Buf, pItem->cb));
     Log2(("drvNATQueueConsumer: pu8Buf:\n%.Rhxd\n", pItem->pu8Buf));
-    int rc = pThis->pPort->pfnWaitReceiveAvail(pThis->pPort, 0);
-    if (RT_FAILURE(rc))
-        return false;
-    rc = pThis->pPort->pfnReceive(pThis->pPort, pItem->pu8Buf, pItem->cb);
+    switch (pItem->enmType) {
+        case SLIRP_SEND:
+            rc = pThis->pPort->pfnReceive(pThis->pPort, pItem->pu8Buf, pItem->cb);
+            RTMemFree((void *)pItem->pu8Buf);
+            break;
+        case SLIRP_CHECK:
+            
+            *pItem->pStatus = (RT_SUCCESS(pThis->pPort->pfnWaitReceiveAvail(pThis->pPort, 0))? 1 : 0);
+             rc = RTSemEventSignal(pThis->semStatus);
+             AssertRC(rc);
+            break;
+    }
+    return true;
 
 #if 0
     rc = RTReqAlloc(pThis->pReqQueue, &pReq, RTREQTYPE_INTERNAL);
@@ -612,7 +638,6 @@ static DECLCALLBACK(bool) drvNATQueueConsumer(PPDMDRVINS pDrvIns, PPDMQUEUEITEMC
 #else
     /*Copy buffer again, till seeking good way of syncronization with slirp mbuf management code*/
     AssertRelease(pItem->mbuf == NULL);
-    RTMemFree((void *)pItem->pu8Buf);
 #endif
     return RT_SUCCESS(rc);
 }
@@ -936,6 +961,9 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandl
                 LogRel(("NAT: Can't create send queue\n"));
                 return rc;
             }
+
+            rc = RTSemEventCreate(&pThis->semStatus);
+            AssertRC(rc);
 
 #ifndef RT_OS_WINDOWS
             /*
