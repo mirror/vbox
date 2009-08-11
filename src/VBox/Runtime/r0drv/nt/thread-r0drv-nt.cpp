@@ -32,13 +32,15 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #include "the-nt-kernel.h"
-
+#include "internal/iprt.h"
 #include <iprt/thread.h>
-#include <iprt/err.h>
-#include <iprt/assert.h>
-#include <iprt/asm.h>
 
+#include <iprt/asm.h>
+#include <iprt/assert.h>
+#include <iprt/err.h>
+#include <iprt/mp.h>
 #include "internal-r0drv-nt.h"
+
 
 RT_C_DECLS_BEGIN
 NTSTATUS NTAPI ZwYieldExecution(void);
