@@ -49,7 +49,6 @@
 #include <typeinfo>
 
 #include "VirtualBoxImpl.h"
-#include "VirtualBoxImplExtra.h"
 
 #include "Global.h"
 #include "MachineImpl.h"
