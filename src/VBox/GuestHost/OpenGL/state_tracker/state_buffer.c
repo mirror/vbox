@@ -489,15 +489,38 @@ void STATE_APIENTRY crStateDrawBuffer (GLenum mode)
         case GL_AUX1:
         case GL_AUX2:
         case GL_AUX3:
+            if (g->framebufferobject.framebuffer)
+            {
+                crStateError(__LINE__, __FILE__, GL_INVALID_OPERATION, "glDrawBuffer invalud mode while fbo is active");
+                return;
+            }
             break;
         default:
-            crStateError(__LINE__, __FILE__, GL_INVALID_ENUM, "glDrawBuffer called with bogus mode: %d", mode);
-            return;
+            if (mode>=GL_COLOR_ATTACHMENT0_EXT && mode<=GL_COLOR_ATTACHMENT15_EXT)
+            {
+                if (!g->framebufferobject.framebuffer)
+                {
+                    crStateError(__LINE__, __FILE__, GL_INVALID_OPERATION, "glDrawBuffer invalud mode while fbo is inactive");
+                    return;
+                }
+            }
+            else
+            {
+                crStateError(__LINE__, __FILE__, GL_INVALID_ENUM, "glDrawBuffer called with bogus mode: %d", mode);
+                return;
+            }
     }
 
-    b->drawBuffer = mode;
-    DIRTY(bb->dirty, g->neg_bitid);
-    DIRTY(bb->drawBuffer, g->neg_bitid);
+    if (g->framebufferobject.framebuffer)
+    {
+        g->framebufferobject.framebuffer->drawbuffer[0] = mode;
+    }
+    else
+    {
+        b->drawBuffer = mode;
+        DIRTY(bb->dirty, g->neg_bitid);
+        DIRTY(bb->drawBuffer, g->neg_bitid);
+    }
 }
 
 void STATE_APIENTRY crStateReadBuffer (GLenum mode) 
@@ -531,15 +554,42 @@ void STATE_APIENTRY crStateReadBuffer (GLenum mode)
         case GL_AUX1:
         case GL_AUX2:
         case GL_AUX3:
+            if (g->framebufferobject.framebuffer)
+            {
+                crStateError(__LINE__, __FILE__, GL_INVALID_OPERATION, "glReadBuffer invalud mode while fbo is active");
+                return;
+            }
             break;
         default:
-            crStateError(__LINE__, __FILE__, GL_INVALID_ENUM, "glReadBuffer called with bogus mode: %d", mode);
-            return;
+            if (mode>=GL_COLOR_ATTACHMENT0_EXT && mode<=GL_COLOR_ATTACHMENT15_EXT)
+            {
+                if (!g->framebufferobject.framebuffer)
+                {
+                    crStateError(__LINE__, __FILE__, GL_INVALID_OPERATION, "glReadBuffer invalud mode while fbo is inactive");
+                    return;
+                }
+                else
+                {
+                    /*@todo, check if fbo binding is complete*/
+                }
+            }
+            else
+            {
+                crStateError(__LINE__, __FILE__, GL_INVALID_ENUM, "glReadBuffer called with bogus mode: %d", mode);
+                return;
+            }
     }
 
-    b->readBuffer = mode;
-    DIRTY(bb->dirty, g->neg_bitid);
-    DIRTY(bb->readBuffer, g->neg_bitid);
+    if (g->framebufferobject.framebuffer)
+    {
+        g->framebufferobject.framebuffer->readbuffer = mode;
+    }
+    else
+    {
+        b->readBuffer = mode;
+        DIRTY(bb->dirty, g->neg_bitid);
+        DIRTY(bb->readBuffer, g->neg_bitid);
+    }
 }
 
 void STATE_APIENTRY crStateIndexMask (GLuint mask) 

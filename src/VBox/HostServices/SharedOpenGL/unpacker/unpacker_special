@@ -163,3 +163,5 @@ GetUniformLocation
 GetAttachedObjectsARB
 GetInfoLogARB
 DeleteQueriesARB
+DeleteFramebuffersEXT
+DeleteRenderbuffersEXT

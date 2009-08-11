@@ -374,7 +374,11 @@ extensions_num_get_values = {
     'GL_STENCIL_BACK_FUNC': (1, 'CR_OPENGL_VERSION_2_0'),
     'GL_STENCIL_BACK_PASS_DEPTH_FAIL': (1, 'CR_OPENGL_VERSION_2_0'),
     'GL_STENCIL_BACK_PASS_DEPTH_PASS': (1, 'CR_OPENGL_VERSION_2_0'),
-
+    # Frame buffer object EXT #
+    'GL_FRAMEBUFFER_BINDING_EXT': (1, 'CR_EXT_framebuffer_object'),
+    'GL_RENDERBUFFER_BINDING_EXT': (1, 'CR_EXT_framebuffer_object'),
+    'GL_MAX_COLOR_ATTACHMENTS_EXT': (1, 'CR_EXT_framebuffer_object'),
+    'GL_MAX_RENDERBUFFER_SIZE_EXT': (1, 'CR_EXT_framebuffer_object'),
 }
 
 get_keys = num_get_values.keys() + extensions_num_get_values.keys()

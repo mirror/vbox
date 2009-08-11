@@ -130,6 +130,16 @@ static GLint __clampf_to_int( GLfloat f )
 		return 0x80000000;
 	return (GLint) floor( f * 2147483647.5f );
 }
+
+static GLenum __getDrawBuffer(CRContext *g)
+{
+    return g->framebufferobject.framebuffer ? g->framebufferobject.framebuffer->drawbuffer[0] : g->buffer.drawBuffer;
+}
+
+static GLenum __getReadBuffer(CRContext *g)
+{
+    return g->framebufferobject.framebuffer ? g->framebufferobject.framebuffer->readbuffer : g->buffer.readBuffer;
+}
 """
 
 header = """

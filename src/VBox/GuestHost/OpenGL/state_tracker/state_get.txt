@@ -223,8 +223,8 @@ GLenum    GL_BLEND_DST                g->buffer.blendDstRGB
 GLenum    GL_DEPTH_FUNC               g->buffer.depthFunc
 GLenum    GL_ALPHA_TEST_FUNC          g->buffer.alphaTestFunc
 GLint     GL_ALPHA_TEST_REF           g->buffer.alphaTestRef
-GLenum    GL_DRAW_BUFFER              g->buffer.drawBuffer
-GLenum    GL_READ_BUFFER              g->buffer.readBuffer
+GLenum    GL_DRAW_BUFFER              __getDrawBuffer(g)
+GLenum    GL_READ_BUFFER              __getReadBuffer(g)
 GLboolean GL_COLOR_WRITEMASK          g->buffer.colorWriteMask.r g->buffer.colorWriteMask.g g->buffer.colorWriteMask.b g->buffer.colorWriteMask.a
 GLint     GL_INDEX_WRITEMASK          g->buffer.indexWriteMask
 
@@ -299,3 +299,7 @@ GLint	GL_RENDER_MODE					 g->renderMode
 GLint GL_FEEDBACK_BUFFER_SIZE g->feedback.bufferSize
 GLint GL_FEEDBACK_BUFFER_TYPE g->feedback.type
 GLint GL_SELECTION_BUFFER_SIZE g->selection.bufferSize
+
+# FBO
+GLint GL_FRAMEBUFFER_BINDING_EXT (g->framebufferobject.framebuffer?g->framebufferobject.framebuffer->id:0)
+GLint GL_RENDERBUFFER_BINDING_EXT (g->framebufferobject.renderbuffer?g->framebufferobject.renderbuffer->id:0)

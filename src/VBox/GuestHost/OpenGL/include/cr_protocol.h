@@ -15,7 +15,7 @@ extern "C" {
 
 /*For now guest is allowed to connect host opengl service if protocol version matches exactly*/
 /*Note: that after any change to this file, or glapi_parser\apispec.txt version should be changed*/
-#define CR_PROTOCOL_VERSION_MAJOR 1
+#define CR_PROTOCOL_VERSION_MAJOR 2
 #define CR_PROTOCOL_VERSION_MINOR 1
 
 typedef enum {

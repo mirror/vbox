@@ -123,7 +123,8 @@ crStateCreateContextId(int i, const CRLimitsState *limits,
     crStateTextureInit( ctx );
     crStateTransformInit( ctx );
     crStateViewportInit ( ctx );
-    
+    crStateFramebufferObjectInit(ctx);
+
     /* This has to come last. */
     crStateAttribInit( &(ctx->attrib) );
 
@@ -189,6 +190,7 @@ crStateFreeContext(CRContext *ctx)
     crStateTextureDestroy( ctx );
     crStateTransformDestroy( ctx );
     crStateFreeShared(ctx->shared);
+    crStateFramebufferObjectDestroy(ctx);
     crFree( ctx );
 }
 

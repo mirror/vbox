@@ -351,3 +351,14 @@ EndQueryARB
 GetQueryivARB
 GetQueryObjectivARB
 GetQueryObjectuivARB
+BindRenderbufferEXT
+DeleteRenderbuffersEXT
+RenderbufferStorageEXT
+BindFramebufferEXT
+DeleteFramebuffersEXT
+FramebufferTexture1DEXT
+FramebufferTexture2DEXT
+FramebufferTexture3DEXT
+FramebufferRenderbufferEXT
+GetFramebufferAttachmentParameterivEXT
+GenerateMipmapEXT

@@ -73,7 +73,9 @@ max_components = {
     'GetProgramiv' : 1,
     'GetShaderiv' : 1,
     'GetObjectParameterfvARB': 1,
-    'GetObjectParameterivARB': 1
+    'GetObjectParameterivARB': 1,
+    'GetRenderbufferParameterivEXT': 1,
+    'GetFramebufferAttachmentParameterivEXT': 1
 }
 
 no_pnames = [
@@ -92,7 +94,9 @@ no_pnames = [
     'GetProgramiv',
     'GetShaderiv',
     'GetObjectParameterfvARB',
-    'GetObjectParameterivARB'
+    'GetObjectParameterivARB',
+    'GetRenderbufferParameterivEXT',
+    'GetFramebufferAttachmentParameterivEXT'
 ];
 
 from get_components import *;

@@ -126,6 +126,7 @@ VBoxOGLcrserverlib_SOURCES := \
 	crserverlib/server_winpos.c \
 	crserverlib/server_writeback.c \
 	crserverlib/server_getshaders.c \
+	crserverlib/server_framebuffer.c \
 	$(VBOX_PATH_CROGL_GENFILES)/server_dispatch.c \
 	$(VBOX_PATH_CROGL_GENFILES)/server_retval.c \
 	$(VBOX_PATH_CROGL_GENFILES)/server_get.c \
@@ -140,11 +141,11 @@ VBoxOGLcrserverlib_CLEAN = \
 #
 # Generate files for VBoxOGLcrserverlib
 #
-$(VBOX_PATH_CROGL_GENFILES)/server_dispatch.h: $(addprefix $(PATH_SUB_CURRENT)/crserverlib/, server_dispatch_header.py server_special) $(VBOX_CROGL_API_FILES) | $$(dir $$@)
+$(VBOX_PATH_CROGL_GENFILES)/server_dispatch.h: $(addprefix $(PATH_SUB_CURRENT)/crserverlib/, server_dispatch_header.py server_special) $(VBOX_CROGL_API_FILES) $(PATH_ROOT)/src/VBox/GuestHost/OpenGL/state_tracker/state_special | $$(dir $$@)
 	$(call MSG_GENERATE,python,$@,$<)
 	$(QUIET)$(call VBOX_CROGL_PYTHON_ENV,$(VBOX_PATH_CROGL_PYTHON_INCLUDE),$@) $(VBOX_BLD_PYTHON) $< $(VBOX_PATH_CROGL_GLAPI) $(<D)
 
-$(VBOX_PATH_CROGL_GENFILES)/server_dispatch.c: $(addprefix $(PATH_SUB_CURRENT)/crserverlib/, server_dispatch.py server_special) $(VBOX_CROGL_API_FILES) | $$(dir $$@)
+$(VBOX_PATH_CROGL_GENFILES)/server_dispatch.c: $(addprefix $(PATH_SUB_CURRENT)/crserverlib/, server_dispatch.py server_special) $(VBOX_CROGL_API_FILES) $(PATH_ROOT)/src/VBox/GuestHost/OpenGL/state_tracker/state_special | $$(dir $$@)
 	$(call MSG_GENERATE,python,$@,$<)
 	$(QUIET)$(call VBOX_CROGL_PYTHON_ENV,$(VBOX_PATH_CROGL_PYTHON_INCLUDE),$@) $(VBOX_BLD_PYTHON) $< $(VBOX_PATH_CROGL_GLAPI) $(<D)
 
@@ -196,6 +197,7 @@ VBoxOGLcrunpacker_SOURCES  = \
 	unpacker/unpack_writeback.c \
 	unpacker/unpack_visibleregion.c \
 	unpacker/unpack_shaders.c \
+	unpacker/unpack_framebuffer.c \
 	$(VBOX_PATH_CROGL_GENFILES)/unpack.c
 VBoxOGLcrunpacker_CLEAN = \
 	$(VBOX_PATH_CROGL_GENFILES)/unpack.c \
