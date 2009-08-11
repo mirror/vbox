@@ -59,6 +59,7 @@
 
 PVBOXHGCMSVCHELPERS g_pHelpers;
 static IFramebuffer* g_pFrameBuffer;
+static PVM g_pVM = NULL;
 static ULONG64 g_winId = 0;
 
 #ifndef RT_OS_WINDOWS
@@ -233,7 +234,18 @@ static DECLCALLBACK(int) svcLoadState(void *, uint32_t u32ClientID, void *pvClie
 static void svcClientVersionUnsupported(uint32_t minor, uint32_t major)
 {
     LogRel(("SHARED_CROPENGL: unsupported client version %d.%d\n", minor, major));
-    /*todo add warning window*/
+
+    /*MS's opengl32 tryes to load our ICD around 30 times on failure...this is to prevent unnecessary spam*/
+    static int shown = 0;
+    
+    if (g_pVM && !shown)
+    {
+        VMSetRuntimeError(g_pVM, VMSETRTERR_FLAGS_NO_WAIT, "3DSupportIncompatibleAdditions",
+        "Guest application attempt to use hardware 3D acceleration failed, because"
+        " guest additions version doesn't match VirtualBox host version."
+        "Please install appropriate guest additions to fix this issue");
+        shown = 1;
+    }
 }
 
 static DECLCALLBACK(void) svcCall (void *, VBOXHGCMCALLHANDLE callHandle, uint32_t u32ClientID, void *pvClient, uint32_t u32Function, uint32_t cParms, VBOXHGCMSVCPARM paParms[])
@@ -402,7 +414,6 @@ static DECLCALLBACK(void) svcCall (void *, VBOXHGCMCALLHANDLE callHandle, uint32
 
                 if (!RT_SUCCESS(rc))
                 {
-                    /*@todo, add warning window*/
                     svcClientVersionUnsupported(vMajor, vMinor);
                 }
             }
@@ -471,6 +482,39 @@ static DECLCALLBACK(int) svcHostCall (void *, uint32_t u32Function, uint32_t cPa
                 {
                     /* Execute the function. */
                     g_pFrameBuffer = pFrameBuffer;
+                    rc = VINF_SUCCESS;
+                }
+            }
+            break;
+        }
+        case SHCRGL_HOST_FN_SET_VM:
+        {
+            Log(("svcCall: SHCRGL_HOST_FN_SET_VM\n"));
+
+            /* Verify parameter count and types. */
+            if (cParms != SHCRGL_CPARMS_SET_VM)
+            {
+                rc = VERR_INVALID_PARAMETER;
+            }
+            else if (paParms[0].type != VBOX_HGCM_SVC_PARM_PTR)
+            {
+                rc = VERR_INVALID_PARAMETER;
+            }
+            else
+            {
+                /* Fetch parameters. */
+                PVM pVM = (PVM)paParms[0].u.pointer.addr;
+                uint32_t  cbData = paParms[0].u.pointer.size;
+
+                /* Verify parameters values. */
+                if (cbData != sizeof (PVM))
+                {
+                    rc = VERR_INVALID_PARAMETER;
+                }
+                else
+                {
+                    /* Execute the function. */
+                    g_pVM = pVM;
                     rc = VINF_SUCCESS;
                 }
             }

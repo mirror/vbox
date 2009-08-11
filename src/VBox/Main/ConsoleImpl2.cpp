@@ -1789,14 +1789,20 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                 VBOXHGCMSVCPARM parm;
                 parm.type = VBOX_HGCM_SVC_PARM_PTR;
 
-                //parm.u.pointer.addr = static_cast <IConsole *> (pData->pVMMDev->getParent());
-                parm.u.pointer.addr = pConsole->mVMMDev->getParent()->getDisplay()->getFramebuffer();
+                parm.u.pointer.addr = pConsole->getDisplay()->getFramebuffer();
                 parm.u.pointer.size = sizeof(IFramebuffer *);
 
                 rc = pConsole->mVMMDev->hgcmHostCall("VBoxSharedCrOpenGL", SHCRGL_HOST_FN_SET_FRAMEBUFFER, 1, &parm);
                 if (!RT_SUCCESS(rc))
                     AssertMsgFailed(("SHCRGL_HOST_FN_SET_FRAMEBUFFER failed with %Rrc\n", rc));
-                }
+
+                parm.u.pointer.addr = pVM;
+                parm.u.pointer.size = sizeof(pVM);
+                rc = pConsole->mVMMDev->hgcmHostCall("VBoxSharedCrOpenGL", SHCRGL_HOST_FN_SET_VM, 1, &parm);
+                if (!RT_SUCCESS(rc))
+                    AssertMsgFailed(("SHCRGL_HOST_FN_SET_VM failed with %Rrc\n", rc));
+            }
+
         }
     }
 # endif
