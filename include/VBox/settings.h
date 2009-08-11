@@ -124,7 +124,7 @@ protected:
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-struct USBDeviceFilter
+struct VBOXXML_CLASS USBDeviceFilter
 {
     USBDeviceFilter()
         : fActive(false),
@@ -143,15 +143,15 @@ struct USBDeviceFilter
                             strPort;
     USBDeviceFilterAction_T action;                 // only used with host USB filters
     com::Utf8Str            strRemote;              // irrelevant for host USB objects
-    ULONG                   ulMaskedInterfaces;     // irrelevant for host USB objects
+    uint32_t                ulMaskedInterfaces;     // irrelevant for host USB objects
 };
 
-struct Host
+struct VBOXXML_CLASS Host
 {
     USBDeviceFiltersList    llUSBDeviceFilters;
 };
 
-struct SystemProperties
+struct VBOXXML_CLASS SystemProperties
 {
     SystemProperties()
         : ulLogHistoryCount(3)
@@ -162,7 +162,7 @@ struct SystemProperties
     com::Utf8Str            strDefaultHardDiskFormat;
     com::Utf8Str            strRemoteDisplayAuthLibrary;
     com::Utf8Str            strWebServiceAuthLibrary;
-    ULONG                   ulLogHistoryCount;
+    uint32_t                ulLogHistoryCount;
 };
 
 typedef std::map<com::Utf8Str, com::Utf8Str> PropertiesMap;
@@ -170,7 +170,7 @@ typedef std::map<com::Utf8Str, com::Utf8Str> PropertiesMap;
 struct Medium;
 typedef std::list<Medium> MediaList;
 
-struct Medium
+struct VBOXXML_CLASS Medium
 {
     com::Guid       uuid;
     com::Utf8Str    strLocation;
@@ -185,14 +185,14 @@ struct Medium
     MediaList       llChildren;         // only used with hard disks
 };
 
-struct MachineRegistryEntry
+struct VBOXXML_CLASS MachineRegistryEntry
 {
     com::Guid       uuid;
     com::Utf8Str    strSettingsFile;
 };
 typedef std::list<MachineRegistryEntry> MachinesRegistry;
 
-struct DHCPServer
+struct VBOXXML_CLASS DHCPServer
 {
     com::Utf8Str    strNetworkName,
                     strIPAddress,
@@ -235,7 +235,7 @@ public:
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-struct VRDPSettings
+struct VBOXXML_CLASS VRDPSettings
 {
     VRDPSettings()
         : fEnabled(true),
@@ -247,15 +247,15 @@ struct VRDPSettings
     {}
 
     bool            fEnabled;
-    ULONG           ulPort;
+    uint32_t        ulPort;
     com::Utf8Str    strNetAddress;
     VRDPAuthType_T  authType;
-    ULONG           ulAuthTimeout;
+    uint32_t        ulAuthTimeout;
     bool            fAllowMultiConnection,
                     fReuseSingleConnection;
 };
 
-struct BIOSSettings
+struct VBOXXML_CLASS BIOSSettings
 {
     BIOSSettings()
         : fACPIEnabled(true),
@@ -272,14 +272,14 @@ struct BIOSSettings
                     fIOAPICEnabled,
                     fLogoFadeIn,
                     fLogoFadeOut;
-    ULONG           ulLogoDisplayTime;
+    uint32_t        ulLogoDisplayTime;
     com::Utf8Str    strLogoImagePath;
     BIOSBootMenuMode_T  biosBootMenuMode;
     bool            fPXEDebugEnabled;
     LONG64          llTimeOffset;
 };
 
-struct DVDDrive
+struct VBOXXML_CLASS DVDDrive
 {
     DVDDrive()
         : fPassThrough(false)
@@ -290,7 +290,7 @@ struct DVDDrive
     com::Utf8Str    strHostDriveSrc;    // if != NULL, value of <HostDrive>/@src
 };
 
-struct FloppyDrive
+struct VBOXXML_CLASS FloppyDrive
 {
     FloppyDrive()
         : fEnabled(true)
@@ -301,7 +301,7 @@ struct FloppyDrive
     com::Utf8Str    strHostDriveSrc;    // if != NULL, value of <HostDrive>/@src
 };
 
-struct USBController
+struct VBOXXML_CLASS USBController
 {
     USBController()
         : fEnabled(false),
@@ -313,7 +313,7 @@ struct USBController
     USBDeviceFiltersList    llDeviceFilters;
 };
 
-struct NetworkAdapter
+struct VBOXXML_CLASS NetworkAdapter
 {
     NetworkAdapter()
         : ulSlot(0),
@@ -331,7 +331,7 @@ struct NetworkAdapter
     bool                    fEnabled;
     com::Utf8Str            strMACAddress;
     bool                    fCableConnected;
-    ULONG                   ulLineSpeed;
+    uint32_t                ulLineSpeed;
     bool                    fTraceEnabled;
     com::Utf8Str            strTraceFile;
 
@@ -342,7 +342,7 @@ struct NetworkAdapter
 };
 typedef std::list<NetworkAdapter> NetworkAdaptersList;
 
-struct SerialPort
+struct VBOXXML_CLASS SerialPort
 {
     SerialPort()
         : fEnabled(false),
@@ -355,15 +355,15 @@ struct SerialPort
     uint32_t        ulSlot;
 
     bool            fEnabled;
-    ULONG           ulIOBase;
-    ULONG           ulIRQ;
+    uint32_t        ulIOBase;
+    uint32_t        ulIRQ;
     PortMode_T      portMode;
     com::Utf8Str    strPath;
     bool            fServer;
 };
 typedef std::list<SerialPort> SerialPortsList;
 
-struct ParallelPort
+struct VBOXXML_CLASS ParallelPort
 {
     ParallelPort()
         : fEnabled(false),
@@ -374,13 +374,13 @@ struct ParallelPort
     uint32_t        ulSlot;
 
     bool            fEnabled;
-    ULONG           ulIOBase;
-    ULONG           ulIRQ;
+    uint32_t        ulIOBase;
+    uint32_t        ulIRQ;
     com::Utf8Str    strPath;
 };
 typedef std::list<ParallelPort> ParallelPortsList;
 
-struct AudioAdapter
+struct VBOXXML_CLASS AudioAdapter
 {
     AudioAdapter()
         : fEnabled(true),
@@ -393,7 +393,7 @@ struct AudioAdapter
     AudioDriverType_T       driverType;
 };
 
-struct SharedFolder
+struct VBOXXML_CLASS SharedFolder
 {
     SharedFolder()
         : fWritable(false)
@@ -405,7 +405,7 @@ struct SharedFolder
 };
 typedef std::list<SharedFolder> SharedFoldersList;
 
-struct GuestProperty
+struct VBOXXML_CLASS GuestProperty
 {
     GuestProperty()
         : timestamp(0)
@@ -413,14 +413,14 @@ struct GuestProperty
 
     com::Utf8Str    strName,
                     strValue;
-    ULONG64         timestamp;
+    uint64_t        timestamp;
     com::Utf8Str    strFlags;
 };
 typedef std::list<GuestProperty> GuestPropertiesList;
 
 typedef std::map<uint32_t, DeviceType_T> BootOrderMap;
 
-struct Hardware
+struct VBOXXML_CLASS Hardware
 {
     Hardware()
         : strVersion("2"),
@@ -485,7 +485,7 @@ struct Hardware
     com::Utf8Str        strNotificationPatterns;
 };
 
-struct AttachedDevice
+struct VBOXXML_CLASS AttachedDevice
 {
     AttachedDevice()
         : type(HardDisk),
@@ -500,7 +500,7 @@ struct AttachedDevice
 };
 typedef std::list<AttachedDevice> AttachedDevicesList;
 
-struct StorageController
+struct VBOXXML_CLASS StorageController
 {
     StorageController()
         : storageBus(StorageBus_IDE),
@@ -515,7 +515,7 @@ struct StorageController
     com::Utf8Str        strName;
     StorageBus_T        storageBus;             // _SATA, _SCSI, _IDE
     StorageControllerType_T controllerType;
-    ULONG               ulPortCount;
+    uint32_t            ulPortCount;
 
     // only for when controllerType == StorageControllerType_IntelAhci:
     LONG                lIDE0MasterEmulationPort,
@@ -529,7 +529,7 @@ typedef std::list<StorageController> StorageControllersList;
 
 // wrap the list into an extra struct so we can use the struct without
 // having to define the typedef above in headers
-struct Storage
+struct VBOXXML_CLASS Storage
 {
     StorageControllersList  llStorageControllers;
 };
@@ -537,7 +537,7 @@ struct Storage
 struct Snapshot;
 typedef std::list<Snapshot> SnapshotsList;
 
-struct Snapshot
+struct VBOXXML_CLASS Snapshot
 {
     com::Guid       uuid;
     com::Utf8Str    strName,
