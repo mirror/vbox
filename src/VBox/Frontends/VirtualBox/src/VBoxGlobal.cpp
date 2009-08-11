@@ -1560,8 +1560,8 @@ QString VBoxGlobal::detailsReport (const CMachine &aMachine, bool aWithLinks)
             : tr ("Disabled", "details report (2D Video Acceleration)");
 
         item += QString (sSectionItemTpl2)
-                       .arg (tr ("2D Video Acceleration", "details report"), acc2dVideo);
-        rows++;
+                .arg (tr ("2D Video Acceleration", "details report"), acc2dVideo);
+        ++ rows;
 #endif
 
         /* VRDP tab */
