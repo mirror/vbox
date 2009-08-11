@@ -666,7 +666,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
          * The Windows SMP kernel needs a CPU leaf or else its idle loop will burn cpu cycles; the
          * intelppm driver refuses to register an idle state handler.
          */
-        if ((cCpus > 1) ||  fIOAPIC)
+        if (cCpus > 1 || fIOAPIC)
             fShowCpu = true;
 
         rc = CFGMR3InsertNode(pDevices, "acpi", &pDev);                             RC_CHECK();
@@ -760,7 +760,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
     ULONG cVRamMBs;
     hrc = pMachine->COMGETTER(VRAMSize)(&cVRamMBs);                                 H();
     rc = CFGMR3InsertInteger(pCfg,  "VRamSize",             cVRamMBs * _1M);        RC_CHECK();
-#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE /* not safe here yet. */
+#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE /* not safe here yet. */ /** @todo this needs fixing !!! No wonder VGA is slooooooooow on 32-bit darwin! */
     rc = CFGMR3InsertInteger(pCfg,  "R0Enabled",            fHWVirtExEnabled);      RC_CHECK();
 #endif
 
@@ -783,21 +783,16 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
     /*
      * Boot menu
      */
-    BIOSBootMenuMode_T bootMenuMode;
-    int value;
-    biosSettings->COMGETTER(BootMenuMode)(&bootMenuMode);
-    switch (bootMenuMode)
+    BIOSBootMenuMode_T eBootMenuMode;
+    int iShowBootMenu;
+    biosSettings->COMGETTER(BootMenuMode)(&eBootMenuMode);
+    switch (eBootMenuMode)
     {
-        case BIOSBootMenuMode_Disabled:
-            value = 0;
-            break;
-        case BIOSBootMenuMode_MenuOnly:
-            value = 1;
-            break;
-        default:
-            value = 2;
+        case BIOSBootMenuMode_Disabled: iShowBootMenu = 0;  break;
+        case BIOSBootMenuMode_MenuOnly: iShowBootMenu = 1;  break;
+        default:                        iShowBootMenu = 2;  break;
     }
-    rc = CFGMR3InsertInteger(pCfg, "ShowBootMenu", value);                          RC_CHECK();
+    rc = CFGMR3InsertInteger(pCfg, "ShowBootMenu", iShowBootMenu);                  RC_CHECK();
 
     /* Custom VESA mode list */
     unsigned cModes = 0;
@@ -843,11 +838,11 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
 
     for (size_t i = 0; i < ctrls.size(); ++ i)
     {
-        PCFGMNODE pCtlInst = NULL;     /* /Devices/<name>/0/ */
+        PCFGMNODE               pCtlInst = NULL;    /* /Devices/<name>/0/ */
         StorageControllerType_T enmCtrlType;
-        StorageBus_T enmBus;
-        bool fSCSI = false;
-        BSTR controllerName;
+        StorageBus_T            enmBus;
+        bool                    fSCSI = false;
+        BSTR                    controllerName;
 
         rc = ctrls[i]->COMGETTER(ControllerType)(&enmCtrlType);                     H();
         rc = ctrls[i]->COMGETTER(Bus)(&enmBus);                                     H();
@@ -876,6 +871,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                 rc = CFGMR3InsertInteger(pCfg,  "Last",     15);                                  RC_CHECK();
                 break;
             }
+
             case StorageControllerType_BusLogic:
             {
                 rc = CFGMR3InsertNode(pDevices, "buslogic", &pDev);                    RC_CHECK();
@@ -897,6 +893,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                 rc = CFGMR3InsertInteger(pCfg,  "Last",     15);                                  RC_CHECK();
                 break;
             }
+
             case StorageControllerType_IntelAhci:
             {
                 rc = CFGMR3InsertNode(pDevices, "ahci", &pDev);                        RC_CHECK();
@@ -944,6 +941,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                 rc = CFGMR3InsertInteger(pCfg,  "Last",     cPorts - 1);                          RC_CHECK();
                 break;
             }
+
             case StorageControllerType_PIIX3:
             case StorageControllerType_PIIX4:
             case StorageControllerType_ICH6:
@@ -1016,10 +1014,9 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                 }
                 break;
             }
+
             default:
-                AssertMsgFailed (("invalid storage controller type: "
-                                    "%d\n", enmCtrlType));
-                return VERR_GENERAL_FAILURE;
+                AssertMsgFailedReturn(("invalid storage controller type: %d\n", enmCtrlType), VERR_GENERAL_FAILURE);
         }
 
         /* At the moment we only support one controller per type. So the instance id is always 0. */
@@ -1045,20 +1042,8 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
             {
                 case StorageBus_IDE:
                 {
-                    if (lPort >= 2 || lPort < 0)
-                    {
-                        AssertMsgFailed (("invalid controller channel number: "
-                                            "%d\n", lPort));
-                        return VERR_GENERAL_FAILURE;
-                    }
-
-                    if (lDev >= 2 || lDev < 0)
-                    {
-                        AssertMsgFailed (("invalid controller device number: "
-                                            "%d\n", lDev));
-                        return VERR_GENERAL_FAILURE;
-                    }
-
+                    AssertMsgReturn(lPort < 2 && lPort >= 0, ("%d\n", lPort), VERR_GENERAL_FAILURE);
+                    AssertMsgReturn(lDev < 2  && lDev >= 0,  ("%d\n", lDev),  VERR_GENERAL_FAILURE);
                     iLUN = 2 * lPort + lDev;
                     break;
                 }
@@ -1069,11 +1054,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                     break;
                 }
                 default:
-                {
-                    AssertMsgFailed (("invalid storage bus type: "
-                                        "%d\n", enmBus));
-                    return VERR_GENERAL_FAILURE;
-                }
+                    AssertMsgFailedReturn(("%d\n", enmBus), VERR_GENERAL_FAILURE);
             }
 
             rc = CFGMR3InsertNodeF(pCtlInst, &pLunL0, "LUN#%u", iLUN);          RC_CHECK();
@@ -1114,15 +1095,15 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
             {
                 PCFGMNODE pVDC;
                 rc = CFGMR3InsertNode(pCfg, "VDConfig", &pVDC);                 RC_CHECK();
-                for (size_t ii = 0; ii < names.size(); ++ ii)
+                for (size_t ii = 0; ii < names.size(); ++ii)
                 {
                     if (values[ii] && *values[ii])
                     {
                         Utf8Str name = names[ii];
                         Utf8Str value = values[ii];
                         rc = CFGMR3InsertString(pVDC, name, value);
-                        if (    !(name.compare("HostIPStack"))
-                            &&  !(value.compare("0")))
+                        if (    name.compare("HostIPStack") == 0
+                            &&  value.compare("0") == 0)
                             fHostIP = false;
                     }
                 }
@@ -1163,7 +1144,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                         {
                             Utf8Str name = names[ii];
                             Utf8Str value = values[ii];
-                            rc = CFGMR3InsertString (pVDC, name, value);
+                            rc = CFGMR3InsertString(pVDC, name, value);
                             if (    name.compare("HostIPStack") == 0
                                 &&  value.compare("0") == 0)
                                 fHostIP = false;
@@ -1344,10 +1325,8 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
         /*
          * Configure the network card now
          */
-
         rc = configNetwork(pConsole, pszAdapterName, ulInstance, 0, networkAdapter,
-                           pCfg, pLunL0, pInst, false /*fAttachDetach*/);
-        RC_CHECK();
+                           pCfg, pLunL0, pInst, false /*fAttachDetach*/);           RC_CHECK();
     }
 
     /*
@@ -1367,44 +1346,45 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
         rc = CFGMR3InsertNodeF(pDev, &pInst, "%u", ulInstance);                     RC_CHECK();
         rc = CFGMR3InsertNode(pInst, "Config", &pCfg);                              RC_CHECK();
 
-        ULONG ulIRQ, ulIOBase;
-        PortMode_T HostMode;
-        Bstr  path;
-        BOOL  fServer;
-        hrc = serialPort->COMGETTER(HostMode)(&HostMode);                           H();
+        ULONG ulIRQ;
         hrc = serialPort->COMGETTER(IRQ)(&ulIRQ);                                   H();
-        hrc = serialPort->COMGETTER(IOBase)(&ulIOBase);                             H();
-        hrc = serialPort->COMGETTER(Path)(path.asOutParam());                       H();
-        hrc = serialPort->COMGETTER(Server)(&fServer);                              H();
         rc = CFGMR3InsertInteger(pCfg,   "IRQ", ulIRQ);                             RC_CHECK();
+        ULONG ulIOBase;
+        hrc = serialPort->COMGETTER(IOBase)(&ulIOBase);                             H();
         rc = CFGMR3InsertInteger(pCfg,   "IOBase", ulIOBase);                       RC_CHECK();
-        if (HostMode != PortMode_Disconnected)
+        BOOL  fServer;
+        hrc = serialPort->COMGETTER(Server)(&fServer);                              H();
+        hrc = serialPort->COMGETTER(Path)(&str);                                    H();
+        PortMode_T eHostMode;
+        hrc = serialPort->COMGETTER(HostMode)(&eHostMode);                          H();
+        if (eHostMode != PortMode_Disconnected)
         {
             rc = CFGMR3InsertNode(pInst,     "LUN#0", &pLunL0);                     RC_CHECK();
-            if (HostMode == PortMode_HostPipe)
+            if (eHostMode == PortMode_HostPipe)
             {
                 rc = CFGMR3InsertString(pLunL0,  "Driver", "Char");                 RC_CHECK();
                 rc = CFGMR3InsertNode(pLunL0,    "AttachedDriver", &pLunL1);        RC_CHECK();
                 rc = CFGMR3InsertString(pLunL1,  "Driver", "NamedPipe");            RC_CHECK();
                 rc = CFGMR3InsertNode(pLunL1,    "Config", &pLunL2);                RC_CHECK();
-                rc = CFGMR3InsertString(pLunL2,  "Location", Utf8Str(path));        RC_CHECK();
+                rc = CFGMR3InsertStringW(pLunL2, "Location", str);                  RC_CHECK();
                 rc = CFGMR3InsertInteger(pLunL2, "IsServer", fServer);              RC_CHECK();
             }
-            else if (HostMode == PortMode_HostDevice)
+            else if (eHostMode == PortMode_HostDevice)
             {
                 rc = CFGMR3InsertString(pLunL0,  "Driver", "Host Serial");          RC_CHECK();
                 rc = CFGMR3InsertNode(pLunL0,    "Config", &pLunL1);                RC_CHECK();
-                rc = CFGMR3InsertString(pLunL1,  "DevicePath", Utf8Str(path));      RC_CHECK();
+                rc = CFGMR3InsertStringW(pLunL1, "DevicePath", str);                RC_CHECK();
             }
-            else if (HostMode == PortMode_RawFile)
+            else if (eHostMode == PortMode_RawFile)
             {
                 rc = CFGMR3InsertString(pLunL0,  "Driver", "Char");                 RC_CHECK();
                 rc = CFGMR3InsertNode(pLunL0,    "AttachedDriver", &pLunL1);        RC_CHECK();
                 rc = CFGMR3InsertString(pLunL1,  "Driver", "RawFile");              RC_CHECK();
                 rc = CFGMR3InsertNode(pLunL1,    "Config", &pLunL2);                RC_CHECK();
-                rc = CFGMR3InsertString(pLunL2,  "Location", Utf8Str(path));        RC_CHECK();
+                rc = CFGMR3InsertStringW(pLunL2, "Location", str);                  RC_CHECK();
             }
         }
+        STR_FREE();
     }
 
     /*
@@ -1414,27 +1394,30 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
     for (ULONG ulInstance = 0; ulInstance < SchemaDefs::ParallelPortCount; ulInstance++)
     {
         ComPtr<IParallelPort> parallelPort;
-        hrc = pMachine->GetParallelPort (ulInstance, parallelPort.asOutParam());    H();
+        hrc = pMachine->GetParallelPort(ulInstance, parallelPort.asOutParam());     H();
         BOOL fEnabled = FALSE;
         if (parallelPort)
+        {
             hrc = parallelPort->COMGETTER(Enabled)(&fEnabled);                      H();
+        }
         if (!fEnabled)
             continue;
 
         rc = CFGMR3InsertNodeF(pDev, &pInst, "%u", ulInstance);                     RC_CHECK();
         rc = CFGMR3InsertNode(pInst, "Config", &pCfg);                              RC_CHECK();
 
-        ULONG ulIRQ, ulIOBase;
-        Bstr  DevicePath;
+        ULONG ulIRQ;
         hrc = parallelPort->COMGETTER(IRQ)(&ulIRQ);                                 H();
-        hrc = parallelPort->COMGETTER(IOBase)(&ulIOBase);                           H();
-        hrc = parallelPort->COMGETTER(Path)(DevicePath.asOutParam());               H();
         rc = CFGMR3InsertInteger(pCfg,   "IRQ", ulIRQ);                             RC_CHECK();
+        ULONG ulIOBase;
+        hrc = parallelPort->COMGETTER(IOBase)(&ulIOBase);                           H();
         rc = CFGMR3InsertInteger(pCfg,   "IOBase", ulIOBase);                       RC_CHECK();
         rc = CFGMR3InsertNode(pInst,     "LUN#0", &pLunL0);                         RC_CHECK();
         rc = CFGMR3InsertString(pLunL0,  "Driver", "HostParallel");                 RC_CHECK();
         rc = CFGMR3InsertNode(pLunL0,    "AttachedDriver", &pLunL1);                RC_CHECK();
-        rc = CFGMR3InsertString(pLunL1,  "DevicePath", Utf8Str(DevicePath));        RC_CHECK();
+        hrc = parallelPort->COMGETTER(Path)(&str);                                  H();
+        rc = CFGMR3InsertStringW(pLunL1,  "DevicePath", str);                       RC_CHECK();
+        STR_FREE();
     }
 
     /*
