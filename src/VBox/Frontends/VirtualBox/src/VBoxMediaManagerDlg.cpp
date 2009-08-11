@@ -657,13 +657,13 @@ void VBoxMediaManagerDlg::retranslateUi()
 
     mLbHD1->setText (QString ("<nobr>%1:</nobr>").arg (tr ("Location")));
     mLbHD2->setText (QString ("<nobr>%1:</nobr>").arg (tr ("Type (Format)")));
-    mLbHD3->setText (QString ("<nobr>%1:</nobr>").arg (tr ("Attached to")));
+    mLbHD3->setText (QString ("<nobr>%1:</nobr>").arg (tr ("Attached to", "VMM: Virtual Disk")));
 
     mLbCD1->setText (QString ("<nobr>%1:</nobr>").arg (tr ("Location")));
-    mLbCD2->setText (QString ("<nobr>%1:</nobr>").arg (tr ("Attached to")));
+    mLbCD2->setText (QString ("<nobr>%1:</nobr>").arg (tr ("Attached to", "VMM: CD/DVD Image")));
 
     mLbFD1->setText (QString ("<nobr>%1:</nobr>").arg (tr ("Location")));
-    mLbFD2->setText (QString ("<nobr>%1:</nobr>").arg (tr ("Attached to")));
+    mLbFD2->setText (QString ("<nobr>%1:</nobr>").arg (tr ("Attached to", "VMM: Floppy Image")));
 
     mProgressBar->setText (tr ("Checking accessibility"));
 #ifdef Q_WS_MAC
