@@ -276,7 +276,7 @@ struct VBOXXML_CLASS BIOSSettings
     com::Utf8Str    strLogoImagePath;
     BIOSBootMenuMode_T  biosBootMenuMode;
     bool            fPXEDebugEnabled;
-    LONG64          llTimeOffset;
+    int64_t         llTimeOffset;
 };
 
 struct VBOXXML_CLASS DVDDrive
@@ -494,8 +494,8 @@ struct VBOXXML_CLASS AttachedDevice
     {}
 
     enum { HardDisk }   type;           // @todo: implement DVD attachments here
-    LONG                lPort;
-    LONG                lDevice;
+    int32_t             lPort;
+    int32_t             lDevice;
     com::Guid           uuid;
 };
 typedef std::list<AttachedDevice> AttachedDevicesList;
@@ -518,7 +518,7 @@ struct VBOXXML_CLASS StorageController
     uint32_t            ulPortCount;
 
     // only for when controllerType == StorageControllerType_IntelAhci:
-    LONG                lIDE0MasterEmulationPort,
+    int32_t             lIDE0MasterEmulationPort,
                         lIDE0SlaveEmulationPort,
                         lIDE1MasterEmulationPort,
                         lIDE1SlaveEmulationPort;
