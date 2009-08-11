@@ -2598,6 +2598,13 @@ PGM_BTH_DECL(int, SyncPT)(PVMCPU pVCpu, unsigned iPDSrc, PGSTPD pPDSrc, RTGCPTR 
         {
             PGMPOOLACCESS enmAccess;
 
+# if PGM_WITH_NX(PGM_GST_TYPE, PGM_SHW_TYPE)
+            const bool fNoExecuteBitValid = !!(CPUMGetGuestEFER(pVCpu) & MSR_K6_EFER_NXE);
+            const bool fNoExecute = fNoExecuteBitValid && PdeSrc.n.u1NoExecute;
+# else
+            const bool fNoExecute = false;
+# endif
+
             GCPhys = GST_GET_PDE_BIG_PG_GCPHYS(PdeSrc);
 # if PGM_SHW_TYPE == PGM_TYPE_PAE && PGM_GST_TYPE == PGM_TYPE_32BIT
             /* Select the right PDE as we're emulating a 4MB page directory with two 2 MB shadow PDEs.*/
@@ -2607,16 +2614,16 @@ PGM_BTH_DECL(int, SyncPT)(PVMCPU pVCpu, unsigned iPDSrc, PGSTPD pPDSrc, RTGCPTR 
             if (PdeSrc.n.u1User)
             {
                 if (PdeSrc.n.u1Write)
-                    enmAccess = PGMPOOLACCESS_USER_RW;
+                    enmAccess = (fNoExecute) ? PGMPOOLACCESS_USER_RW_NX : PGMPOOLACCESS_USER_RW;
                 else
-                    enmAccess = PGMPOOLACCESS_USER_R;
+                    enmAccess = (fNoExecute) ? PGMPOOLACCESS_USER_R_NX : PGMPOOLACCESS_USER_R;
             }
             else
             {
                 if (PdeSrc.n.u1Write)
-                    enmAccess = PGMPOOLACCESS_SUPERVISOR_RW;
+                    enmAccess = (fNoExecute) ? PGMPOOLACCESS_SUPERVISOR_RW_NX : PGMPOOLACCESS_SUPERVISOR_RW;
                 else
-                    enmAccess = PGMPOOLACCESS_SUPERVISOR_R;
+                    enmAccess = (fNoExecute) ? PGMPOOLACCESS_SUPERVISOR_R_NX : PGMPOOLACCESS_SUPERVISOR_R;
             }
             rc = pgmPoolAllocEx(pVM, GCPhys, BTH_PGMPOOLKIND_PT_FOR_BIG, enmAccess, pShwPde->idx, iPDDst, &pShwPage);
         }
