@@ -31,7 +31,7 @@
     <name>AttachmentsModel</name>
     <message>
         <source>Double-click to add a new attachment</source>
-        <translation>Double clic pour ajouter un attachement</translation>
+        <translation>Double-cliquez pour ajouter une connexion</translation>
     </message>
     <message>
         <source>Hard Disk</source>
@@ -328,7 +328,7 @@
     <name>QIHttp</name>
     <message>
         <source>Connection timed out</source>
-        <translation>Timeout pour la Connexion</translation>
+        <translation>Délai de connexion dépassé</translation>
     </message>
     <message>
         <source>Could not locate the file on the server (response: %1)</source>
@@ -863,7 +863,7 @@ Version %1</source>
     </message>
     <message>
         <source>Enable or disable remote desktop (RDP) connections to this machine</source>
-        <translation>Activer/Désactiver les connexions bureau à distance (RDP) sur cette machine</translation>
+        <translation>Activer/désactiver les connexions bureau à distance (RDP) sur cette machine</translation>
     </message>
     <message>
         <source>&amp;Shared Folders...</source>
@@ -911,7 +911,7 @@ Version %1</source>
     </message>
     <message>
         <source>Indicates whether the host mouse pointer is captured by the guest OS:&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_disabled_16px.png/&gt;&amp;nbsp;&amp;nbsp;pointer is not captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_16px.png/&gt;&amp;nbsp;&amp;nbsp;pointer is captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;mouse integration (MI) is On&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;MI is Off, pointer is captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_uncaptured_16px.png/&gt;&amp;nbsp;&amp;nbsp;MI is Off, pointer is not captured&lt;/nobr&gt;&lt;br&gt;Note that the mouse integration feature requires Guest Additions to be installed in the guest OS.</source>
-        <translation>Indique si le curseur de la souris est capturé par le système d&apos;exploitation invité&amp;nbsp;:&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_disabled_16px.png/&gt;&amp;nbsp;&amp;nbsp;curseur non capturé&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_16px.png/&gt;&amp;nbsp;&amp;nbsp;curseur capturé&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;Intégration souris MI) en service&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;MI hors service, pointeur capturé&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_uncaptured_16px.png/&gt;&amp;nbsp;&amp;nbsp;MI hors service, pointeur non capturé&lt;/nobr&gt;&lt;br&gt;Noter que l&apos;intégration de la souris nécessite l&apos;installation des Additions invité sur le système d&apos;exploitation invité.</translation>
+        <translation>Indique si le curseur de la souris est capturé par le système d&apos;exploitation invité&amp;nbsp;:&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_disabled_16px.png/&gt;&amp;nbsp;&amp;nbsp;curseur non capturé&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_16px.png/&gt;&amp;nbsp;&amp;nbsp;curseur capturé&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;Intégration souris en service&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;MI hors service, pointeur capturé&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_uncaptured_16px.png/&gt;&amp;nbsp;&amp;nbsp;Intégration souris hors service, pointeur non capturé&lt;/nobr&gt;&lt;br&gt;Noter que l&apos;intégration souris nécessite l&apos;installation des Additions invité sur le système d&apos;exploitation invité.</translation>
     </message>
     <message>
         <source>Shows the currently assigned Host key.&lt;br&gt;This key, when pressed alone, toggles the the keyboard and mouse capture state. It can also be used in combination with other keys to quickly perform actions from the main menu.</source>
@@ -1022,7 +1022,7 @@ Version %1</source>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;No media mounted&lt;/b&gt;&lt;/nobr&gt;</source>
         <comment>Floppy tooltip</comment>
-        <translation>&lt;b&gt;&lt;nobr&gt;&lt;b&gt;Disquette non attaché&lt;/b&gt;&lt;/nobr&gt;</translation>
+        <translation>&lt;b&gt;&lt;nobr&gt;&lt;b&gt;Disquette non insérée&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;qt&gt;&lt;nobr&gt;Indicates the activity of the CD/DVD-ROM media:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
@@ -1042,7 +1042,7 @@ Version %1</source>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;No media mounted&lt;/b&gt;&lt;/nobr&gt;</source>
         <comment>DVD-ROM tooltip</comment>
-        <translation>&lt;b&gt;&lt;nobr&gt;&lt;b&gt;Média non attaché&lt;/b&gt;&lt;/nobr&gt;</translation>
+        <translation>&lt;b&gt;&lt;nobr&gt;&lt;b&gt;Support optique non inséré&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;qt&gt;&lt;nobr&gt;Indicates the activity of virtual hard disks:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
@@ -1052,7 +1052,7 @@ Version %1</source>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;No hard disks attached&lt;/b&gt;&lt;/nobr&gt;</source>
         <comment>HDD tooltip</comment>
-        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Pas de disques dur attachés&lt;/b&gt;&lt;/nobr&gt;</translation>
+        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Aucun disque dur n&apos;est connecté&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;qt&gt;&lt;nobr&gt;Indicates the activity of the network interfaces:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
@@ -1087,7 +1087,7 @@ Version %1</source>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;No USB devices attached&lt;/b&gt;&lt;/nobr&gt;</source>
         <comment>USB device tooltip</comment>
-        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Aucun appareil USB est attaché&lt;/b&gt;&lt;/nobr&gt;</translation>
+        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Aucun appareil USB n&apos;est connecté&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;USB Controller is disabled&lt;/b&gt;&lt;/nobr&gt;</source>
@@ -2122,7 +2122,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Not Attached</source>
         <comment>details report (HDDs)</comment>
-        <translation>Non attaché</translation>
+        <translation>Non connecté</translation>
     </message>
     <message>
         <source>Hard Disks</source>
@@ -2436,7 +2436,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Not attached</source>
         <comment>NetworkAttachmentType</comment>
-        <translation>Non attaché</translation>
+        <translation>Aucun accès</translation>
     </message>
     <message>
         <source>NAT</source>
@@ -2809,12 +2809,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;Attached to:&amp;nbsp;&amp;nbsp;%1&lt;/nobr&gt;</source>
         <comment>medium</comment>
-        <translation>&lt;br&gt;&lt;nobr&gt;Attaché à&amp;nbsp;:&amp;nbsp;&amp;nbsp;%1&lt;/nobr&gt;</translation>
+        <translation>&lt;br&gt;&lt;nobr&gt;Inséré dans &amp;nbsp;:&amp;nbsp;&amp;nbsp;%1&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;i&gt;Not&amp;nbsp;Attached&lt;/i&gt;</source>
         <comment>medium</comment>
-        <translation>&lt;i&gt;Non&amp;nbsp;attaché&lt;/i&gt;</translation>
+        <translation>&lt;i&gt;Non&amp;nbsp;inséré&lt;/i&gt;</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;i&gt;Checking accessibility...&lt;/i&gt;</source>
@@ -2829,7 +2829,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>&lt;hr&gt;&lt;img src=%1/&gt;&amp;nbsp;Attaching this hard disk will be performed indirectly using a newly created differencing hard disk.</source>
         <comment>medium</comment>
-        <translation>&lt;hr&gt;&lt;img src=%1/&gt;&amp;nbsp;Ce disque dur sera attaché indirectement en utilisant un disque dur dévivé nouveau.</translation>
+        <translation>&lt;hr&gt;&lt;img src=%1/&gt;&amp;nbsp;Ce disque dur sera connecté indirectement en utilisant un disque dur dérivé nouveau.</translation>
     </message>
     <message>
         <source>Checking...</source>
@@ -2847,7 +2847,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>%1&lt;hr&gt;This base hard disk is indirectly attached using the following differencing hard disk:&lt;br&gt;%2%3</source>
-        <translation>%1&lt;hr&gt;Ce disque dur de base est attaché indirectement à travers le disque dur dérivé suivant :&lt;br&gt;%2%3</translation>
+        <translation>%1&lt;hr&gt;Ce disque dur de base est connecté indirectement à travers le disque dur dérivé suivant :&lt;br&gt;%2%3</translation>
     </message>
     <message>
         <source>3D Acceleration</source>
@@ -3384,7 +3384,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Attached to</source>
-        <translation>Attaché à </translation>
+        <translation>Associé à </translation>
     </message>
     <message>
         <source>Checking accessibility</source>
@@ -3424,7 +3424,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;i&gt;Not&amp;nbsp;Attached&lt;/i&gt;</source>
-        <translation>&lt;i&gt;Non&amp;nbsp;attaché&lt;/i&gt;</translation>
+        <translation>&lt;i&gt;Aucune&amp;nbsp;machine&lt;/i&gt;</translation>
     </message>
     <message>
         <source>--</source>
@@ -3806,7 +3806,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Media Manager dialog).&lt;/p&gt;&lt;p&gt;If you need a more complicated hard disk setup, you can also skip this step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Choisissez une image disque dur qui sera utilisée comme disque dur de démarrage de la machine virtuelle. Vous pouvez soit créer une nouvelle image en utilisant le bouton &lt;b&gt;Nouveau&lt;/b&gt; ou bien choisir une image existant dans la liste ou en activant le bouton &lt;b&gt;Existant&lt;/b&gt; (qui invoquera le Gestionnaire de supports virtuels).&lt;/p&gt;&lt;p&gt;Si vous nécéssitez une configuration disque plus complexe, vous pouvez sauter cette étape et attacher des disques dur plus tard en utilisant la boîte de dialogue Préférences.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Choisissez une image disque dur qui sera utilisée comme disque dur de démarrage de la machine virtuelle. Vous pouvez soit créer une nouvelle image en utilisant le bouton &lt;b&gt;Nouveau&lt;/b&gt; ou bien choisir une image existant dans la liste ou en activant le bouton &lt;b&gt;Existant&lt;/b&gt; (qui invoquera le Gestionnaire de supports virtuels).&lt;/p&gt;&lt;p&gt;Si vous nécéssitez une configuration disque plus complexe, vous pouvez sauter cette étape et connecter des disques dur plus tard en utilisant la boîte de dialogue Préférences.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Boot Hard &amp;Disk (Primary Master)</source>
@@ -4031,11 +4031,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Failed to attach the USB device &lt;b&gt;%1&lt;/b&gt; to the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
-        <translation>Échec : le périphérique USB  &lt;b&gt;%1&lt;/b&gt;n&apos;a pas été attaché à la machine virtuelle  &lt;b&gt;%2&lt;/b&gt;.</translation>
+        <translation>Échec : le périphérique USB &lt;b&gt;%1&lt;/b&gt;n&apos;a pas été connecté à la machine virtuelle  &lt;b&gt;%2&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to detach the USB device &lt;b&gt;%1&lt;/b&gt; from the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
-        <translation>Échec : le périphérique USB  &lt;b&gt;%1&lt;/b&gt;n&apos;a pas été désattaché de la machine virtuelle  &lt;b&gt;%2&lt;/b&gt;.</translation>
+        <translation>Échec : le périphérique USB &lt;b&gt;%1&lt;/b&gt;n&apos;a pas été déconnecté de la machine virtuelle  &lt;b&gt;%2&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to create a shared folder &lt;b&gt;%1&lt;/b&gt; (pointing to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) for the virtual machine &lt;b&gt;%3&lt;/b&gt;.</source>
@@ -4055,7 +4055,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;The Virtual Machine reports that the guest OS supports &lt;b&gt;mouse pointer integration&lt;/b&gt;. This means that you do not need to &lt;i&gt;capture&lt;/i&gt; the mouse pointer to be able to use it in your guest OS -- all mouse actions you perform when the mouse pointer is over the Virtual Machine&apos;s display are directly sent to the guest OS. If the mouse is currently captured, it will be automatically uncaptured.&lt;/p&gt;&lt;p&gt;The mouse icon on the status bar will look like&amp;nbsp;&lt;img src=:/mouse_seamless_16px.png/&gt;&amp;nbsp;to inform you that mouse pointer integration is supported by the guest OS and is currently turned on.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note&lt;/b&gt;: Some applications may behave incorrectly in mouse pointer integration mode. You can always disable it for the current session (and enable it again) by selecting the corresponding action from the menu bar.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;La machine virtuelle signale que le système d&apos;exploitation invité supporte &lt;b&gt;l&apos;intégration du pointeur de souris&lt;/b&gt;. Ceci signifie que vous n&apos;avez pas besoin de &lt;i&gt;capturer&lt;/i&gt; le pointeur de souris pour pouvoir l&apos;employer dans votre système d&apos;exploitation invité -- toutes les actions de la souris que vous effectuez quand le pointeur de la souris est au-dessus de la fenêtre de la machine virtuelle sont traitées par le système d&apos;exploitation invité. Si la souris est capturée, elle sera automatiquement libérée.&lt;/p&gt;&lt;p&gt;L&apos;icône de souris de la barre se statut prendra l&apos;apparence suivante &lt;img src=:/mouse_seamless_16px.png/&gt;&amp;nbsp;afin de vous signaler que l&apos;intégration est supportée et active.&lt;/p&gt;&lt;p&gt;Il est possible que certaines applications fonctionnent incorrectement en mode d&apos;intégration de pointeur de souris. Vous pouvez toujours activer ou désactiver ce mode en choisissant l&apos;action correspondante à partir de la barre de menu.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;La machine virtuelle signale que le système d&apos;exploitation invité supporte &lt;b&gt;l&apos;intégration du pointeur de souris&lt;/b&gt;. Ceci signifie que vous n&apos;avez pas besoin de &lt;i&gt;capturer&lt;/i&gt; le pointeur de souris pour pouvoir l&apos;employer dans votre système d&apos;exploitation invité -- toutes les actions de la souris que vous effectuez quand le pointeur de la souris est au-dessus de la fenêtre de la machine virtuelle sont traitées par le système d&apos;exploitation invité. Si la souris est capturée, elle sera automatiquement libérée.&lt;/p&gt;&lt;p&gt;L&apos;icône de souris de la barre de statut prendra l&apos;apparence suivante &lt;img src=:/mouse_seamless_16px.png/&gt;&amp;nbsp;afin de vous signaler que l&apos;intégration est supportée et active.&lt;/p&gt;&lt;p&gt;Il est possible que certaines applications fonctionnent incorrectement en mode d&apos;intégration de pointeur de souris. Vous pouvez toujours activer ou désactiver ce mode en choisissant l&apos;action correspondante à partir de la barre de menu.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;The Virtual Machine reports that the guest OS does not support &lt;b&gt;mouse pointer integration&lt;/b&gt; in the current video mode. You need to capture the mouse (by clicking over the VM display or pressing the host key) in order to use the mouse inside the guest OS.&lt;/p&gt;</source>
@@ -4181,7 +4181,7 @@ Pour que la souris soit capturée, cliquer dans la fenêtre de la machine virtue
     </message>
     <message>
         <source>&lt;p&gt;The virtual machine window is optimized to work in &lt;b&gt;%1&amp;nbsp;bit&lt;/b&gt; color mode but the color quality of the virtual display is currently set to &lt;b&gt;%2&amp;nbsp;bit&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Please open the display properties dialog of the guest OS and select a &lt;b&gt;%3&amp;nbsp;bit&lt;/b&gt; color mode, if it is available, for best possible performance of the virtual video subsystem.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note&lt;/b&gt;. Some operating systems, like OS/2, may actually work in 32&amp;nbsp;bit mode but report it as 24&amp;nbsp;bit (16 million colors). You may try to select a different color quality to see if this message disappears or you can simply disable the message now if you are sure the required color quality (%4&amp;nbsp;bit) is not available in the given guest OS.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;La fenêtre de la machine virtuelle est optimisé pour le traitement en mode couleur &lt;b&gt;%1&amp;nbsp;bits&lt;/b&gt; alors que le mode couleur de l&apos;écran virtuelle est de &lt;b&gt;%2&amp;nbsp;bits&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Pour une performance graphique optimale, veuillez configurer le système invité pour utiliser une mode coleur &lt;b&gt;%3&amp;nbsp;bits&lt;/b&gt; si possible.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note&amp;nbsp;:&lt;/b&gt; Certains systèmes d&apos;exploitations, tel que OS/2, peuvent fonctionner en mode couleur 32 bits mais annoncent 24 bits (16 millions de couleurs). Vous pouvez essayer de choisir un autre mode de couleur pour voir si ce message n&apos;est plus affiché ou simplement désactiver ce message si vous êtes sûr que votre système n&apos;offre pas de mode couleur approprié (%4&amp;nbsp;bits).&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;La fenêtre de la machine virtuelle est optimisé pour le traitement en mode couleur &lt;b&gt;%1&amp;nbsp;bits&lt;/b&gt; alors que le mode couleur de l&apos;écran virtuel est de &lt;b&gt;%2&amp;nbsp;bits&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Pour une performance graphique optimale, veuillez configurer le système invité pour utiliser un mode couleur &lt;b&gt;%3&amp;nbsp;bits&lt;/b&gt; si possible.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note&amp;nbsp;:&lt;/b&gt; Certains systèmes d&apos;exploitations, tel que OS/2, peuvent fonctionner en mode couleur 32 bits mais annoncent 24 bits (16 millions de couleurs). Vous pouvez essayer de choisir un autre mode de couleur pour voir si ce message n&apos;est plus affiché ou simplement désactiver ce message si vous êtes sûr que votre système n&apos;offre pas de mode couleur approprié (%4&amp;nbsp;bits).&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;A critical error has occurred while running the virtual machine and the machine execution has been stopped.&lt;/p&gt;&lt;p&gt;For help, please see the Community section on &lt;a href=http://www.virtualbox.org&gt;http://www.virtualbox.org&lt;/a&gt; or your support contract. Please provide the contents of the log file &lt;tt&gt;VBox.log&lt;/tt&gt; and the image file &lt;tt&gt;VBox.png&lt;/tt&gt;, which you can find in the &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; directory, as well as a description of what you were doing when this error happened. Note that you can also access the above files by selecting &lt;b&gt;Show Log&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirualBox window.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; if you want to power off the machine or press &lt;b&gt;Ignore&lt;/b&gt; if you want to leave it as is for debugging. Please note that debugging requires special knowledge and tools, so it is recommended to press &lt;b&gt;OK&lt;/b&gt; now.&lt;/p&gt;</source>
@@ -4189,7 +4189,7 @@ Pour que la souris soit capturée, cliquer dans la fenêtre de la machine virtue
     </message>
     <message>
         <source>&lt;p&gt;You didn&apos;t attach a hard disk to the new virtual machine. The machine will not be able to boot unless you attach a hard disk with a guest operating system or some other bootable media to it later using the machine settings dialog or the First Run Wizard.&lt;/p&gt;&lt;p&gt;Do you want to continue?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Vous n&apos;avez pas raccordé un disque dur à la nouvelle machine virtuelle. La machine ne pourra pas démarrer tant que vous ne raccorderez pas un disque dur contenant un système d&apos;exploitation ou un autre média d&apos;amorçage. Vous pouvez faire ceci en utilisant la boîte de dialogue Préférances pour cette machine ou bien en utilisant l&apos;assistant du premier lancement.&lt;/p&gt;&lt;p&gt;Voulez-vous continuer?&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Vous n&apos;avez pas connecté un disque dur à la nouvelle machine virtuelle. La machine ne pourra pas démarrer tant que vous ne connecterez pas un disque dur contenant un système d&apos;exploitation ou un autre média d&apos;amorçage. Vous pouvez faire ceci en utilisant la boîte de dialogue Préférances pour cette machine ou bien en utilisant l&apos;assistant du premier lancement.&lt;/p&gt;&lt;p&gt;Voulez-vous continuer?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Failed to find license files in &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</source>
@@ -4514,7 +4514,7 @@ Pour que la souris soit capturée, cliquer dans la fenêtre de la machine virtue
     </message>
     <message>
         <source>&lt;p&gt;There are no unused hard disks available for the newly created attachment.&lt;/p&gt;&lt;p&gt;Press the &lt;b&gt;Create&lt;/b&gt; button to start the &lt;i&gt;New Virtual Disk&lt;/i&gt; wizard and create a new hard disk, or press the &lt;b&gt;Select&lt;/b&gt; button to open the &lt;i&gt;Virtual Media Manager&lt;/i&gt; and select what to do.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Il n&apos;y a pas de disques durs inutilisés disponibles pour le nouvel attachement.&lt;/p&gt;&lt;p&gt;Activez le bouton &lt;b&gt;Créer&lt;/b&gt; pour démarrer l&apos;assistant &lt;i&gt;Nouveau disque virtuel&lt;/i&gt; et créer un nouveau disque dur virtuel, ou bien activez le bouton &lt;b&gt;Sélectionner&lt;/b&gt; afin d&apos;ouvrir le &lt;i&gt;Géstionnaire de supports virtuels&lt;/i&gt; pour tout autre choix.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Il n&apos;y a pas de disques durs inutilisés disponibles pour la nouvelle connexion.&lt;/p&gt;&lt;p&gt;Activez le bouton &lt;b&gt;Créer&lt;/b&gt; pour démarrer l&apos;assistant &lt;i&gt;Nouveau disque virtuel&lt;/i&gt; et créer un nouveau disque dur virtuel, ou bien activez le bouton &lt;b&gt;Sélectionner&lt;/b&gt; afin d&apos;ouvrir le &lt;i&gt;Géstionnaire de supports virtuels&lt;/i&gt; pour tout autre choix.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Failed to create the hard disk storage &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;</source>
@@ -4522,7 +4522,7 @@ Pour que la souris soit capturée, cliquer dans la fenêtre de la machine virtue
     </message>
     <message>
         <source>Failed to attach the hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; to the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation>Le disque dur &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; n&apos;a pas pu être attaché à l&apos;emplacement &lt;i&gt;%2&lt;/i&gt; de la machine &lt;b&gt;%3&lt;/b&gt;.</translation>
+        <translation>Le disque dur &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; n&apos;a pas pu être connecté à l&apos;emplacement &lt;i&gt;%2&lt;/i&gt; de la machine &lt;b&gt;%3&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to detach the hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
@@ -4550,7 +4550,7 @@ Pour que la souris soit capturée, cliquer dans la fenêtre de la machine virtue
     </message>
     <message>
         <source>&lt;p&gt;Failed to connect to the VirtualBox online registration service due to the following error:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</source>
-        <translation>La connection au service d&apos;enregistrement VirtualBox en-ligne a échoué en raison de l&apos;erreur suivante :&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</translation>
+        <translation>La connexion au service d&apos;enregistrement VirtualBox en-ligne a échoué en raison de l&apos;erreur suivante :&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Unable to obtain the new version information due to the following error:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</source>
@@ -4709,11 +4709,11 @@ Pour que la souris soit capturée, cliquer dans la fenêtre de la machine virtue
     </message>
     <message>
         <source>&lt;p&gt;There are hard disks attached to ports of the additional controller. If you disable the additional controller, all these hard disks will be automatically detached.&lt;/p&gt;&lt;p&gt;Are you sure you want to disable the additional controller?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Il y a des disques durs attachés aux ports du contrôleur supplémentaire. Si vous désactivez le contrôleur supplémentaire, ces disques seront automatiquement détachés.&lt;/p&gt;&lt;p&gt;Êtes-vous sûr de vouloir désactiver le contrôleur supplémentaire?&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Il y a des disques durs connectés aux ports du contrôleur supplémentaire. Si vous désactivez le contrôleur supplémentaire, ces disques seront automatiquement déconnectés.&lt;/p&gt;&lt;p&gt;Êtes-vous sûr de vouloir désactiver le contrôleur supplémentaire?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;There are hard disks attached to ports of the additional controller. If you change the additional controller, all these hard disks will be automatically detached.&lt;/p&gt;&lt;p&gt;Are you sure you want to change the additional controller?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Il y a des disques durs attachés aux ports du contrôleur supplémentaire. Si vous changez le contrôleur supplémentaire, ces disques seront automatiquement détachés.&lt;/p&gt;&lt;p&gt;Êtes-vous sûr de vouloir changer le contrôleur supplémentaire?&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Il y a des disques durs connectés aux ports du contrôleur supplémentaire. Si vous changez le contrôleur supplémentaire, ces disques seront automatiquement déconnectés.&lt;/p&gt;&lt;p&gt;Êtes-vous sûr de vouloir changer le contrôleur supplémentaire?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Failed to create appliance.</source>
@@ -4799,7 +4799,7 @@ Pour que la souris soit capturée, cliquer dans la fenêtre de la machine virtue
     </message>
     <message>
         <source>Could not perform connection handshake.</source>
-        <translation>Ne peut pas exécuter la &quot;poignée de main de connexion&quot;.</translation>
+        <translation>La négociation de la connexion a échoué.</translation>
     </message>
     <message>
         <source>&lt;p&gt;Please fill out this registration form to let us know that you use VirtualBox and, optionally, to keep you informed about VirtualBox news and updates.&lt;/p&gt;&lt;p&gt;Enter your full name using Latin characters and your e-mail address to the fields below. Please note that Sun Microsystems will use this information only to gather product usage statistics and to send you VirtualBox newsletters. In particular, Sun Microsystems will never pass your data to third parties. Detailed information about how we use your personal data can be found in the &lt;b&gt;Privacy Policy&lt;/b&gt; section of the VirtualBox Manual or on the &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt; page of the VirtualBox web-site.&lt;/p&gt;</source>
@@ -5298,7 +5298,7 @@ Pour que la souris soit capturée, cliquer dans la fenêtre de la machine virtue
     <message>
         <source>No supported devices connected to the host PC</source>
         <comment>USB device tooltip</comment>
-        <translation>Aucun périphérique supporté n&apos;est attaché à l&apos;ordinateur</translation>
+        <translation>Aucun périphérique supporté n&apos;est connecté à l&apos;ordinateur</translation>
     </message>
 </context>
 <context>
@@ -5514,7 +5514,7 @@ Pour que la souris soit capturée, cliquer dans la fenêtre de la machine virtue
     </message>
     <message>
         <source>&lt;p&gt;If the above is correct, press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, the selected media will be mounted on the virtual machine and the machine will start execution.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Si les données si dessus sont correctes, actionnez le bouton &lt;b&gt;Terminer&lt;/b&gt;. Le média sera attaché à la machine virtuelle et celle ci sera lancée.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Si les données si dessus sont correctes, actionnez le bouton &lt;b&gt;Terminer&lt;/b&gt;. Le support sera inséré dans la machine virtuelle et celle-ci sera lancée.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt; &amp;Back</source>
@@ -5788,7 +5788,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>When checked, mounts the specified media to the CD/DVD drive of the virtual machine. Note that the CD/DVD drive is always connected to the Secondary Master IDE controller of the machine.</source>
-        <translation>Si cette case est cochée, le média spécifié sera inséré dans lecteur optique de la machine virtuelle. Notez que le lecteur optique est toujours attaché sur le contrôleur IDE maître secondaire. </translation>
+        <translation>Si cette case est cochée, le support spécifié sera inséré dans le lecteur optique de la machine virtuelle. Notez que le lecteur optique est toujours connecté au contrôleur IDE maître secondaire. </translation>
     </message>
     <message>
         <source>&amp;Mount CD/DVD Drive</source>
@@ -5879,7 +5879,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>When checked, the VM will act as a Remote Desktop Protocol (RDP) server, allowing remote clients to connect and operate the VM (when it is running) using a standard RDP client.</source>
-        <translation>Si cette case est cochée, la machine virtuelle agira comme un serveur de protocole de bureau à distance (RDP), ce qui permet aux clients distants de se raccorder à la machine virtuelle (si elle est en fonction) en utilisant un client RDP standard.</translation>
+        <translation>Si cette case est cochée, la machine virtuelle agira comme un serveur de protocole de bureau à distance (RDP), ce qui permet aux clients distants de se connecter à la machine virtuelle (si elle est en fonction) en utilisant un client RDP standard.</translation>
     </message>
     <message>
         <source>&amp;Enable Server</source>
@@ -6287,15 +6287,15 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;i&gt;%1&lt;/i&gt; uses the hard disk that is already attached to &lt;i&gt;%2&lt;/i&gt;</source>
-        <translation>&lt;i&gt;%1&lt;/i&gt; utilise le disque dur déjà attaché à &lt;i&gt;%2&lt;/i&gt;</translation>
+        <translation>&lt;i&gt;%1&lt;/i&gt; utilise le disque dur déjà connecté à &lt;i&gt;%2&lt;/i&gt;</translation>
     </message>
     <message>
         <source>&amp;Add Attachment</source>
-        <translation>&amp;Ajouter un attachement</translation>
+        <translation>&amp;Ajouter une connexion</translation>
     </message>
     <message>
         <source>&amp;Remove Attachment</source>
-        <translation>Supprime&amp;r L&apos;attachement</translation>
+        <translation>Supprime&amp;r la connexion</translation>
     </message>
     <message>
         <source>&amp;Select Hard Disk</source>
@@ -6323,19 +6323,19 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&amp;Attachments</source>
-        <translation>&amp;Attachements</translation>
+        <translation>&amp;Connexions</translation>
     </message>
     <message>
         <source>Lists all hard disks attached to this machine. Use a mouse click or the &lt;tt&gt;Space&lt;/tt&gt; key on the highlighted item to activate the drop-down list and choose the desired value. Use the context menu or buttons to the right to add or remove hard disk attachments.</source>
-        <translation>Liste de tous les disques durs raccordés à cette machine. Cliquez avec la souris sur l&apos;élément sélectionné ou appuyez sur la touche &lt;tt&gt;Espace&lt;/tt&gt; afin d&apos;activer le menu déroulant et choisir la valeur désirée. Utilisez le menu contextuel  ou les bouttons à droite pour ajouter ou enlever un attachement.</translation>
+        <translation>Liste de tous les disques durs connectés à cette machine. Cliquez avec la souris sur l&apos;élément sélectionné ou appuyez sur la touche &lt;tt&gt;Espace&lt;/tt&gt; afin d&apos;activer le menu déroulant et choisir la valeur désirée. Utilisez le menu contextuel ou les bouttons à droite pour ajouter ou enlever une connexion.</translation>
     </message>
     <message>
         <source>Invokes the Virtual Media Manager to select a hard disk to attach to the currently highlighted slot.</source>
-        <translation>Invoque le Gestionnaire de supports virtuels pour séléctionner un disque dur à attacher à l&apos;emplacement mis en relief.</translation>
+        <translation>Invoque le Gestionnaire de supports virtuels pour séléctionner un disque dur à connecter à l&apos;emplacement mis en relief.</translation>
     </message>
     <message>
         <source>If checked, it will show differencing hard disks actually attached to the slots instead of their base hard disks (shown in case of indirect attachments) and will also let attach other differencing hard disks explicitly. Check this only if you need a complex hard disk setup.</source>
-        <translation>Cochez cette case pour voir les disques durs dérivés actuellement attachés aux emplacements au lieu de leurs disques durs de base (affichés dans le cas d&apos;attachements indirects) et pour permettre d&apos;attacher d&apos;autres disques durs dérivés explicitement. Ne cochez cette case que si vous nécéssitez une configuration disque complexe.</translation>
+        <translation>Cochez cette case pour voir les disques durs dérivés actuellement connectés aux emplacements au lieu de leurs disques durs de base (affichés dans le cas de connexions indirectes) et pour permettre de connecter d&apos;autres disques durs dérivés explicitement. Ne cochez cette case que si vous nécéssitez une configuration disque complexe.</translation>
     </message>
     <message>
         <source>&amp;Show Differencing Hard Disks</source>
@@ -7211,11 +7211,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Adds a new USB filter with all fields initially set to empty strings. Note that such a filter will match any attached USB device.</source>
-        <translation>Ajoute un nouveau filtre USB avec tous les champs initialisés à vide. Notez qu&apos;un tel filtre cadrera tous les périphériques USB raccordés.</translation>
+        <translation>Ajoute un nouveau filtre USB avec tous les champs initialisés à vide. Notez qu&apos;un tel filtre cadrera tous les périphériques USB connectés.</translation>
     </message>
     <message>
         <source>Adds a new USB filter with all fields set to the values of the selected USB device attached to the host PC.</source>
-        <translation>Ajoute un nouveau filtre USB avec tous les champs correspondants aux valeurs du périphérique raccordé à l&apos;ordinateur hôte.</translation>
+        <translation>Ajoute un nouveau filtre USB avec tous les champs correspondants aux valeurs du périphérique connecté à l&apos;ordinateur hôte.</translation>
     </message>
     <message>
         <source>Edits the selected USB filter.</source>
@@ -7354,7 +7354,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Defines whether this filter applies to USB devices attached locally to the host computer (&lt;i&gt;No&lt;/i&gt;), to a VRDP client&apos;s computer (&lt;i&gt;Yes&lt;/i&gt;), or both (&lt;i&gt;Any&lt;/i&gt;).</source>
-        <translation>Définit si le filtre sera appliqué sur les périphériques attachés à l&apos;ordinateur (&lt;i&gt;Non&lt;/i&gt;), à un client à distance VRDP (&lt;i&gt;Oui&lt;/i&gt;), ou aux deux (&lt;i&gt;Tous&lt;/i&gt;).</translation>
+        <translation>Définit si le filtre sera appliqué sur les périphériques connectés à l&apos;ordinateur (&lt;i&gt;Non&lt;/i&gt;), à un client à distance VRDP (&lt;i&gt;Oui&lt;/i&gt;), ou aux deux (&lt;i&gt;Tous&lt;/i&gt;).</translation>
     </message>
     <message>
         <source>&amp;Action:</source>
@@ -7362,7 +7362,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Defines an action performed by the host computer when a matching device is attached: give it up to the host OS (&lt;i&gt;Ignore&lt;/i&gt;) or grab it for later usage by virtual machines (&lt;i&gt;Hold&lt;/i&gt;).</source>
-        <translation>Définit une action effectuée par l&apos;ordinateur hôte quand une périphérique passant est attaché&amp;nbsp;: le laisser au système hôte (&lt;i&gt;Ignorer&lt;/i&gt;) ou bien le retenir pour une utilisation ultérieur par une machine virtuelle (&lt;i&gt;Retenir&lt;/i&gt;).</translation>
+        <translation>Définit une action effectuée par l&apos;ordinateur hôte quand un périphérique passant est connecté : le laisser au système hôte (&lt;i&gt;Ignorer&lt;/i&gt;) ou bien le retenir pour une utilisation ultérieur par une machine virtuelle (&lt;i&gt;Retenir&lt;/i&gt;).</translation>
     </message>
     <message>
         <source>USB Filter Details</source>
