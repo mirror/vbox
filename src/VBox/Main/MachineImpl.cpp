@@ -8455,7 +8455,7 @@ STDMETHODIMP SessionMachine::PushGuestProperty(IN_BSTR aName,
                                            aValue,
                                            aFlags);
     }
-    catch(std::bad_alloc &e)
+    catch(std::bad_alloc &)
     {
         return E_OUTOFMEMORY;
     }

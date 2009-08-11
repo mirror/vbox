@@ -119,7 +119,7 @@ HRESULT DHCPServer::saveSettings(settings::DHCPServer &data)
     data.strNetworkName = mName;
     data.strIPAddress = m.IPAddress;
     data.strIPNetworkMask = m.networkMask;
-    data.fEnabled = m.enabled;
+    data.fEnabled = !!m.enabled;
     data.strIPLower = m.lowerIP;
     data.strIPUpper = m.upperIP;
 

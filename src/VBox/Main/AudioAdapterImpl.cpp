@@ -399,7 +399,7 @@ HRESULT AudioAdapter::saveSettings(settings::AudioAdapter &data)
 
     AutoReadLock alock(this);
 
-    data.fEnabled = mData->mEnabled;
+    data.fEnabled = !!mData->mEnabled;
     data.controllerType = mData->mAudioController;
     data.driverType = mData->mAudioDriver;
     return S_OK;
