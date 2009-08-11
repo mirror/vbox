@@ -332,7 +332,6 @@ static int dhcp_send_ack(PNATState pData, struct bootp_t *bp, BOOTPClient *bc, s
 }
 static int dhcp_send_offer(PNATState pData, struct bootp_t *bp, BOOTPClient *bc, struct mbuf *m)
 {
-    struct bootp_t *rbp;
     int off = 0; /* boot_reply will fill general options and add END before sending response*/
 
     dhcp_create_msg(pData, bp, m, DHCPOFFER);
@@ -355,7 +354,7 @@ static int dhcp_send_offer(PNATState pData, struct bootp_t *bp, BOOTPClient *bc,
 enum DHCP_REQUEST_STATES{INIT_REBOOT, SELECTING, RENEWING, REBINDING, NONE};
 static int dhcp_decode_request(PNATState pData, struct bootp_t *bp, const uint8_t *buf, int size, struct mbuf *m)
 {
-    BOOTPClient *bc;
+    BOOTPClient *bc = NULL;
     struct in_addr daddr;
     int off;
     uint8_t *opt;
@@ -393,10 +392,11 @@ static int dhcp_decode_request(PNATState pData, struct bootp_t *bp, const uint8_
         }
         else
         {
+            /*see table 4 rfc2131*/
             if (bp->bp_flags & DHCP_FLAGS_B)
-                dhcp_stat = RENEWING;
+                dhcp_stat = REBINDING; 
             else 
-                dhcp_stat = REBINDING; /*??rebinding??*/
+                dhcp_stat = RENEWING; 
         }
     }
         /*?? renewing ??*/
