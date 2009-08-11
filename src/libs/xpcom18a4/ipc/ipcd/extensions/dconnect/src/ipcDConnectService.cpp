@@ -739,7 +739,11 @@ DeserializeResult(ipcMessageReader &reader, const nsXPTType &t, nsXPTCMiniVarian
         if (len == (PRUint32) -1)
         {
           // it's a null string
+#ifdef VBOX
+          *((char **) v.val.p) = NULL;
+#else
           v.val.p = 0;
+#endif
         }
         else
         {
@@ -758,7 +762,11 @@ DeserializeResult(ipcMessageReader &reader, const nsXPTType &t, nsXPTCMiniVarian
         if (len == (PRUint32) -1)
         {
           // it's a null string
+#ifdef VBOX
+          *((PRUnichar **) v.val.p) = 0;
+#else
           v.val.p = 0;
+#endif
         }
         else
         {
