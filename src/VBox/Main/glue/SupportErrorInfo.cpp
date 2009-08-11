@@ -191,7 +191,7 @@ HRESULT SupportErrorInfoBase::setErrorInternal(HRESULT aResultCode,
             rc = infoObj.createObject();
             CheckComRCBreakRC (rc);
 
-            rc = infoObj->init (aResultCode, aIID, aComponent, aText, curInfo);
+            rc = infoObj->init (aResultCode, aIID, aComponent, strText.c_str(), curInfo);
             CheckComRCBreakRC (rc);
 
             info = infoObj;
