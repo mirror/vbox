@@ -2041,6 +2041,34 @@ p, li { white-space: pre-wrap; }
         <source>Next Check:</source>
         <translation>Vérification suivante :</translation>
     </message>
+    <message>
+        <source>Check for:</source>
+        <translation>Signaller :</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Choose this if you only wish to be notified about stable updates to VirtualBox.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Cochez ceci si vous désirez reçevoir seulement des notifications sur les actualisations stables de VirtualBox&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&amp;Stable release versions</source>
+        <translation>Versions &amp;stables</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Choose this if you wish to be notified about all new VirtualBox releases.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Choisissez ceci pour reçevoir des notifications sur toutes les nouvelles versions de VirtualBox.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&amp;All new releases</source>
+        <translation>&amp;Toutes les nouvelles versions</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Choose this to be notified about all new VirtualBox releases and pre-release versions of VirtualBox.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Choisissez ceci pour reçevoir des notifications sur toutes les nouvelles versions de VirtualBox, y compris les versions experimentelles.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>All new releases and &amp;pre-releases</source>
+        <translation>Toutes les nouvelles versions, y compris les versions e&amp;xperimentelles</translation>
+    </message>
 </context>
 <context>
     <name>VBoxGlobal</name>
@@ -3019,6 +3047,29 @@ p, li { white-space: pre-wrap; }
         <comment>PortMode</comment>
         <translation>Redirection fichier</translation>
     </message>
+    <message>
+        <source>Enabled</source>
+        <comment>details report (2D Video Acceleration)</comment>
+        <translation>Activée</translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <comment>details report (2D Video Acceleration)</comment>
+        <translation>Désactivée</translation>
+    </message>
+    <message>
+        <source>2D Video Acceleration</source>
+        <comment>details report</comment>
+        <translation>Accélération graphique 2D</translation>
+    </message>
+    <message>
+        <source>Converting file... (%1/%2)</source>
+        <translation>Conversion de fichiers... (%1/%2)</translation>
+    </message>
+    <message>
+        <source>Conversion finished!</source>
+        <translation>Conversion terminé!</translation>
+    </message>
 </context>
 <context>
     <name>VBoxGlobalSettings</name>
@@ -3124,6 +3175,10 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Warnings:</source>
         <translation type="obsolete">Avertissements :</translation>
+    </message>
+    <message>
+        <source>Reading Appliance ...</source>
+        <translation>Lecture de l&apos;application virtuelle...</translation>
     </message>
 </context>
 <context>
@@ -3462,6 +3517,21 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>&amp;Floppy Images</source>
         <translation>Images &amp;Disquette</translation>
+    </message>
+    <message>
+        <source>Attached to</source>
+        <comment>VMM: Virtual Disk</comment>
+        <translation>Connecté à </translation>
+    </message>
+    <message>
+        <source>Attached to</source>
+        <comment>VMM: CD/DVD Image</comment>
+        <translation>Insérée dans </translation>
+    </message>
+    <message>
+        <source>Attached to</source>
+        <comment>VMM: Floppy Image</comment>
+        <translation>Insérée dans </translation>
     </message>
 </context>
 <context>
@@ -4330,7 +4400,7 @@ Pour que la souris soit capturée, cliquer dans la fenêtre de la machine virtue
     <message>
         <source>&amp;Backup</source>
         <comment>warnAboutAutoConvertedSettings message box</comment>
-        <translation>Sauve&amp;garde</translation>
+        <translation type="obsolete">Sauve&amp;garde</translation>
     </message>
     <message>
         <source>Cancel</source>
@@ -4562,30 +4632,30 @@ Pour que la souris soit capturée, cliquer dans la fenêtre de la machine virtue
     </message>
     <message>
         <source>&lt;p&gt;Your existing VirtualBox settings files were automatically converted from the old format to a new format necessary for the new version of VirtualBox.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; to start VirtualBox now or press &lt;b&gt;More&lt;/b&gt; if you want to get more information about what files were converted and access additional actions.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Exit&lt;/b&gt; to terminate the VirtualBox application without saving the results of the conversion to disk.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Vos fichiers de préferences ont été automatiquement convertis de l&apos;ancien format à un nouveau format nécéssaire pour la nouvelle version de VirtualBox.&lt;/p&gt;&lt;p&gt;Activez  &lt;b&gt;OK&lt;/b&gt; pour démarrer VirtualBox maintenant ou bien activez &lt;b&gt;Plus&lt;/b&gt; pour plus d&apos;information sur les fichiers convertis et des actions supplémentaires.&lt;/p&gt;&lt;p&gt;Activez &lt;b&gt;Quitter&lt;/b&gt; pour sortir de l&apos;application VirtualBox sans sauvegarder les résultats de la conversion sur disque.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Vos fichiers de préferences ont été automatiquement convertis de l&apos;ancien format à un nouveau format nécéssaire pour la nouvelle version de VirtualBox.&lt;/p&gt;&lt;p&gt;Activez  &lt;b&gt;OK&lt;/b&gt; pour démarrer VirtualBox maintenant ou bien activez &lt;b&gt;Plus&lt;/b&gt; pour plus d&apos;information sur les fichiers convertis et des actions supplémentaires.&lt;/p&gt;&lt;p&gt;Activez &lt;b&gt;Quitter&lt;/b&gt; pour sortir de l&apos;application VirtualBox sans sauvegarder les résultats de la conversion sur disque.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;More</source>
         <comment>warnAboutAutoConvertedSettings message box</comment>
-        <translation>&amp;Plus</translation>
+        <translation type="obsolete">&amp;Plus</translation>
     </message>
     <message>
         <source>E&amp;xit</source>
         <comment>warnAboutAutoConvertedSettings message box</comment>
-        <translation>&amp;Quitter</translation>
+        <translation type="obsolete">&amp;Quitter</translation>
     </message>
     <message>
         <source>&lt;p&gt;The following VirtualBox settings files have been automatically converted to the new settings file format version &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;However, the results of the conversion were not saved back to disk yet. Please press:&lt;/p&gt;&lt;ul&gt;&lt;li&gt;&lt;b&gt;Backup&lt;/b&gt; to create backup copies of the settings files in the old format before saving them in the new format;&lt;/li&gt;&lt;li&gt;&lt;b&gt;Overwrite&lt;/b&gt; to save all auto-converted files without creating backup copies (it will not be possible to use these settings files with an older version of VirtualBox afterwards);&lt;/li&gt;%2&lt;/ul&gt;&lt;p&gt;It is recommended to always select &lt;b&gt;Backup&lt;/b&gt; because in this case it will be possible to go back to the previous version of VirtualBox (if necessary) without losing your current settings. See the VirtualBox Manual for more information about downgrading.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Les fichiers de préferences VirtualBox suivants ont été automatiquement convertis au nouveau format version &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Les résultats de la conversion n&apos;ont pas encore été sauvegardés sur disque. Activez :&lt;/p&gt;&lt;ul&gt;&lt;li&gt;&lt;b&gt;Sauvegarde&lt;/b&gt; pour créer des copies de sauvegarde des fichiers de préférences dans l&apos;ancien format avant de les sauvegarder dans le nouveau format&lt;/li&gt;&lt;li&gt;&lt;b&gt;Remplacer&lt;/b&gt; pour écrire tous les fichiers convertis sans créer de copies de sauvegarde (ce qui empêchera l&apos;utilisation future des fichiers de préférences avec des anciens versions de VirtualBox)&lt;/li&gt;%2&lt;/ul&gt;&lt;p&gt;Il est conseillé de choisir &lt;b&gt;Sauvegarde&lt;/b&gt;, car ceci permettra de retourner à la version précédente de VirtualBox si nécéssaire sans perdre vos préférences actuelles. Consultez le manuel VirtualBox pour plus d&apos;informations.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Les fichiers de préferences VirtualBox suivants ont été automatiquement convertis au nouveau format version &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Les résultats de la conversion n&apos;ont pas encore été sauvegardés sur disque. Activez :&lt;/p&gt;&lt;ul&gt;&lt;li&gt;&lt;b&gt;Sauvegarde&lt;/b&gt; pour créer des copies de sauvegarde des fichiers de préférences dans l&apos;ancien format avant de les sauvegarder dans le nouveau format&lt;/li&gt;&lt;li&gt;&lt;b&gt;Remplacer&lt;/b&gt; pour écrire tous les fichiers convertis sans créer de copies de sauvegarde (ce qui empêchera l&apos;utilisation future des fichiers de préférences avec des anciens versions de VirtualBox)&lt;/li&gt;%2&lt;/ul&gt;&lt;p&gt;Il est conseillé de choisir &lt;b&gt;Sauvegarde&lt;/b&gt;, car ceci permettra de retourner à la version précédente de VirtualBox si nécéssaire sans perdre vos préférences actuelles. Consultez le manuel VirtualBox pour plus d&apos;informations.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;li&gt;&lt;b&gt;Exit&lt;/b&gt; to terminate VirtualBox without saving the results of the conversion to disk.&lt;/li&gt;</source>
-        <translation>&lt;li&gt;&lt;b&gt;Quitter&lt;/b&gt; pour sortir de VirtualBox sans sauvegarder les résultats de la conversion sur disque.&lt;/li&gt;</translation>
+        <translation type="obsolete">&lt;li&gt;&lt;b&gt;Quitter&lt;/b&gt; pour sortir de VirtualBox sans sauvegarder les résultats de la conversion sur disque.&lt;/li&gt;</translation>
     </message>
     <message>
         <source>O&amp;verwrite</source>
         <comment>warnAboutAutoConvertedSettings message box</comment>
-        <translation>&amp;Remplacer</translation>
+        <translation type="obsolete">&amp;Remplacer</translation>
     </message>
     <message>
         <source>&lt;p&gt;A critical error has occurred while running the virtual machine and the machine execution has been stopped.&lt;/p&gt;&lt;p&gt;For help, please see the Community section on &lt;a href=http://www.virtualbox.org&gt;http://www.virtualbox.org&lt;/a&gt; or your support contract. Please provide the contents of the log file &lt;tt&gt;VBox.log&lt;/tt&gt; and the image file &lt;tt&gt;VBox.png&lt;/tt&gt;, which you can find in the &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; directory, as well as a description of what you were doing when this error happened. Note that you can also access the above files by selecting &lt;b&gt;Show Log&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; if you want to power off the machine or press &lt;b&gt;Ignore&lt;/b&gt; if you want to leave it as is for debugging. Please note that debugging requires special knowledge and tools, so it is recommended to press &lt;b&gt;OK&lt;/b&gt; now.&lt;/p&gt;</source>
@@ -4746,6 +4816,19 @@ Pour que la souris soit capturée, cliquer dans la fenêtre de la machine virtue
     <message>
         <source>Failed to remove file.</source>
         <translation>Echec de suppression du fichier.</translation>
+    </message>
+    <message>
+        <source>Failed to eject the disk from the virtual drive. The drive may be locked by the guest operating system. Please check this and try again.</source>
+        <translation>L&apos;éjection du support virtuel a échoué. Le lecteur pourrait être vérouile par le système invité. Veuillez vérifier ceci et réessayer.</translation>
+    </message>
+    <message>
+        <source>E&amp;xit</source>
+        <comment>warnAboutSettingsAutoConversion message box</comment>
+        <translation>&amp;Quitter</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The following VirtualBox settings files will be automatically converted from the old format to a new format necessary for the new version of VirtualBox.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; to start VirtualBox now or press &lt;b&gt;Exit&lt;/b&gt; if you want to terminate the VirtualBox application without any further actions.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Les fichiers de configuration VirtualBox suivants seront convertis automatiquement de l&apos;ancien format à un nouveau format nécéssaire pour la nouvelle version de VirtualBox.&lt;/p&gt;&lt;p&gt;Choisissez &lt;b&gt;OK&lt;/b&gt; pour démarrer VirtualBox maintenant, ou bien &lt;b&gt;Quitter&lt;/b&gt; pour sortir de l&apos;application VirtualBox sans rien entreprendre.&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -5909,6 +5992,14 @@ p, li { white-space: pre-wrap; }
         <source>Specifies the timeout for guest authentication, in milliseconds.</source>
         <translation>Définie le timeout (en millisecondes) pour l&apos;authentification de l&apos;invité.</translation>
     </message>
+    <message>
+        <source>When checked, the virtual machine will get access to the Video Acceleration capabilities available on the host.</source>
+        <translation>Si cette case est cochée, la machine virtuelle aura accès aux capacités d&apos;accélération graphiques disponible sur le système hôte.</translation>
+    </message>
+    <message>
+        <source>Enable &amp;2D Video Acceleration</source>
+        <translation>Activer l&apos;accélération &amp;2D</translation>
+    </message>
 </context>
 <context>
     <name>VBoxVMSettingsDlg</name>
@@ -6277,6 +6368,14 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Show In &amp;Fullscreen/Seamless</source>
         <translation>A&amp;fficher en mode plein écran/intégré</translation>
+    </message>
+    <message>
+        <source>If checked, show the Mini ToolBar at the top of the screen, rather than in it&apos;s default position at the bottom of the screen.</source>
+        <translation>Si cette case est cochée, la barre d&apos;outils compacte sera affichée en haut de l&apos;écran, et non dans la position par défaut en bas de l&apos;écran.</translation>
+    </message>
+    <message>
+        <source>Show At &amp;Top Of Screen</source>
+        <translation>Afficher en hau&amp;t de l&apos;écran</translation>
     </message>
 </context>
 <context>
@@ -7076,7 +7175,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>&lt;qt&gt;%1&amp;nbsp;CPUs&lt;/qt&gt;</source>
         <comment>%1 is 32 for now</comment>
-        <translation>&lt;qt&gt;%1&amp;nbsp;processeurs&lt;/qt&gt;</translation>
+        <translation type="obsolete">&lt;qt&gt;%1&amp;nbsp;processeurs&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&amp;Motherboard</source>
@@ -7181,6 +7280,11 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Enable Nested Pa&amp;ging</source>
         <translation>Activer la pa&amp;gination enchevêtrée</translation>
+    </message>
+    <message>
+        <source>&lt;qt&gt;%1&amp;nbsp;CPUs&lt;/qt&gt;</source>
+        <comment>%1 is host cpu count * 2 for now</comment>
+        <translation>&lt;qt&gt;%1&amp;nbsp;processeurs&lt;/qt&gt;</translation>
     </message>
 </context>
 <context>
