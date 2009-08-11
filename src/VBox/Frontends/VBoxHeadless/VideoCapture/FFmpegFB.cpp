@@ -653,7 +653,7 @@ HRESULT FFmpegFB::setup_library()
     AssertReturn(mpFormatContext != 0, E_OUTOFMEMORY);
     mpStream = av_new_stream(mpFormatContext, 0);
     AssertReturn(mpStream != 0, E_UNEXPECTED);
-    strncpy(mpFormatContext->filename, com::Utf8Str(mFileName),
+    strncpy(mpFormatContext->filename, com::Utf8Str(mFileName).c_str(),
             sizeof(mpFormatContext->filename));
     return S_OK;
 }
@@ -670,7 +670,7 @@ HRESULT FFmpegFB::setup_library()
 HRESULT FFmpegFB::setup_output_format()
 {
     Assert(mpFormatContext != 0);
-    AVOutputFormat *pOutFormat = guess_format(0, com::Utf8Str(mFileName),
+    AVOutputFormat *pOutFormat = guess_format(0, com::Utf8Str(mFileName).c_str(),
                                               0);
 #ifdef VBOX_SHOW_AVAILABLE_FORMATS
     if (!pOutFormat)
@@ -788,7 +788,7 @@ HRESULT FFmpegFB::open_output_file()
     char szFileName[RTPATH_MAX];
     Assert(mpFormatContext);
     Assert(mpFormatContext->oformat);
-    strcpy(szFileName, com::Utf8Str(mFileName));
+    strcpy(szFileName, com::Utf8Str(mFileName).c_str());
     int rcUrlFopen = url_fopen(&mpFormatContext->pb,
                                szFileName, URL_WRONLY);
     AssertReturn(rcUrlFopen >= 0, E_UNEXPECTED);
@@ -974,7 +974,7 @@ HRESULT FFmpegFB::write_png()
     uint8_t *PNGBuffer;
     /* Work out the new file name - for some reason, we can't use
        the com::Utf8Str() directly, but have to copy it */
-    strcpy(oldName, com::Utf8Str(mFileName));
+    strcpy(oldName, com::Utf8Str(mFileName).c_str());
     int baseLen = strrchr(oldName, '.') - oldName;
     if (baseLen == 0)
         baseLen = strlen(oldName);
