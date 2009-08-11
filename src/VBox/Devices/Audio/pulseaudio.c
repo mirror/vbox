@@ -36,7 +36,7 @@
 #include "audio_int.h"
 #include <stdio.h>
 
-#define MAX_LOG_REL_ERRORS 128
+#define MAX_LOG_REL_ERRORS 32
 
 /*
  * We use a g_pMainLoop in a separate thread g_pContext. We have to call functions for
@@ -45,8 +45,6 @@
  */
 static struct pa_threaded_mainloop *g_pMainLoop;
 static struct pa_context           *g_pContext;
-
-static void   pulse_audio_fini (void *);
 
 typedef struct PulseVoice
 {
@@ -82,6 +80,16 @@ struct pulse_params_obt
     int                 nchannels;
     unsigned long       buffer_size;
 };
+
+static void pulse_check_fatal (PulseVoice *pulse, int rc)
+{
+    if (rc == PA_ERR_CONNECTIONTERMINATED)
+    {
+        /* XXX runtime warning */
+        LogRel(("Pulse: Audio input/output stopped!\n"));
+        pulse->cErrors = MAX_LOG_REL_ERRORS;
+    }
+}
 
 static pa_sample_format_t aud_to_pulsefmt (audfmt_e fmt)
 {
@@ -359,7 +367,7 @@ static void pulse_fini_out (HWVoiceOut *hw)
 static int pulse_run_out (HWVoiceOut *hw)
 {
     PulseVoice *pulse = (PulseVoice *) hw;
-    int          csLive, csDecr, csSamples, csToWrite, csAvail;
+    int          csLive, csDecr = 0, csSamples, csToWrite, csAvail;
     size_t       cbAvail, cbToWrite;
     uint8_t     *pu8Dst;
     st_sample_t *psSrc;
@@ -373,12 +381,17 @@ static int pulse_run_out (HWVoiceOut *hw)
     cbAvail = pa_stream_writable_size (pulse->pStream);
     if (cbAvail == (size_t)-1)
     {
-        if (pulse->cErrors++ < MAX_LOG_REL_ERRORS)
+        if (pulse->cErrors < MAX_LOG_REL_ERRORS)
+        {
+            int rc = pa_context_errno(g_pContext);
+            pulse->cErrors++;
             LogRel(("Pulse: Failed to determine the writable size: %s\n",
-                    pa_strerror(pa_context_errno(g_pContext))));
-        return 0;
+                     pa_strerror(rc)));
+            pulse_check_fatal(pulse, rc);
+        }
+        goto unlock_and_exit;
     }
-    
+
     csAvail   = cbAvail >> hw->info.shift; /* bytes => samples */
     csDecr    = audio_MIN (csLive, csAvail);
     csSamples = csDecr;
@@ -393,7 +406,7 @@ static int pulse_run_out (HWVoiceOut *hw)
 
         hw->clip (pu8Dst, psSrc, csToWrite);
 
-        if (pa_stream_write (pulse->pStream, pu8Dst, cbToWrite, 
+        if (pa_stream_write (pulse->pStream, pu8Dst, cbToWrite,
                              /*cleanup_callback=*/NULL, 0, PA_SEEK_RELATIVE) < 0)
         {
             LogRel(("Pulse: Failed to write %d samples: %s\n",
@@ -404,6 +417,7 @@ static int pulse_run_out (HWVoiceOut *hw)
         csSamples -= csToWrite;
     }
 
+unlock_and_exit:
     pa_threaded_mainloop_unlock(g_pMainLoop);
 
     return csDecr;
@@ -453,15 +467,23 @@ static int pulse_ctrl (HWVoiceOut *hw, pulse_cmd_t cmd)
             op = pa_stream_trigger(pulse->pStream, stream_success_callback, pulse);
             break;
         default:
-            goto fail;
+            goto unlock_and_exit;
     }
     if (!op)
-        LogRel(("Pulse: Failed ctrl cmd=%d to stream: %s\n",
-                cmd, pa_strerror(pa_context_errno(g_pContext))));
+    {
+        if (pulse->cErrors < MAX_LOG_REL_ERRORS)
+        {
+            int rc = pa_context_errno(g_pContext);
+            pulse->cErrors++;
+            LogRel(("Pulse: Failed ctrl cmd=%d to stream: %s\n",
+                    cmd, pa_strerror(pa_context_errno(g_pContext))));
+            pulse_check_fatal(pulse, rc);
+        }
+    }
     else
         pa_operation_unref(op);
 
-fail:
+unlock_and_exit:
     pa_threaded_mainloop_unlock(g_pMainLoop);
     return 0;
 }
@@ -556,10 +578,10 @@ static int pulse_run_in (HWVoiceIn *hw)
     {
         LogRel(("Pulse: Peek failed: %s\n",
                 pa_strerror(pa_context_errno(g_pContext))));
-        goto exit;
+        goto unlock_and_exit;
     }
     if (!pu8Src)
-        goto exit;
+        goto unlock_and_exit;
 
     csAvail = cbAvail >> hw->info.shift;
     csDecr  = audio_MIN (csDead, csAvail);
@@ -579,7 +601,7 @@ static int pulse_run_in (HWVoiceIn *hw)
 
     pa_stream_drop(pulse->pStream);
 
-exit:
+unlock_and_exit:
     pa_threaded_mainloop_unlock(g_pMainLoop);
 
     return csDecr;
