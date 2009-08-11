@@ -469,87 +469,6 @@ static const xf86OutputFuncsRec VBOXOutputFuncs = {
     .destroy = vbox_output_stub
 };
 
-/*
- * List of symbols from other modules that this module references.  This
- * list is used to tell the loader that it is OK for symbols here to be
- * unresolved providing that it hasn't been told that they are essential
- * via a call to xf86LoaderReqSymbols() or xf86LoaderReqSymLists().  The
- * purpose is this is to avoid warnings about unresolved symbols that are
- * not required.
- */
-static const char *fbSymbols[] = {
-    "fbPictureInit",
-    "fbScreenInit",
-    NULL
-};
-
-static const char *shadowfbSymbols[] = {
-  "ShadowFBInit2",
-  NULL
-};
-
-static const char *vbeSymbols[] = {
-    "VBEExtendedInit",
-    "VBEFindSupportedDepths",
-    "VBEGetModeInfo",
-    "VBEGetVBEInfo",
-    "VBEGetVBEMode",
-    "VBEPrintModes",
-    "VBESaveRestore",
-    "VBESetDisplayStart",
-    "VBESetGetDACPaletteFormat",
-    "VBESetGetLogicalScanlineLength",
-    "VBESetGetPaletteData",
-    "VBESetModeNames",
-    "VBESetModeParameters",
-    "VBESetVBEMode",
-    "VBEValidateModes",
-    "vbeDoEDID",
-    "vbeFree",
-    NULL
-};
-
-static const char *ramdacSymbols[] = {
-    "xf86InitCursor",
-    "xf86CreateCursorInfoRec",
-    NULL
-};
-
-static const char *vgahwSymbols[] = {
-    "vgaHWGetHWRec",
-    "vgaHWHandleColormaps",
-    "vgaHWFreeHWRec",
-    "vgaHWMapMem",
-    "vgaHWUnmapMem",
-    "vgaHWSaveFonts",
-    "vgaHWRestoreFonts",
-    NULL
-};
-
-#ifdef VBOX_DRI
-static const char *drmSymbols[] = {
-    "drmFreeVersion",
-    "drmGetVersion",
-    NULL
-};
-
-static const char *driSymbols[] = {
-    "DRICloseScreen",
-    "DRICreateInfoRec",
-    "DRIDestroyInfoRec",
-    "DRIFinishScreenInit",
-    "DRIGetSAREAPrivate",
-    "DRILock",
-    "DRIMoveBuffersHelper",
-    "DRIQueryVersion",
-    "DRIScreenInit",
-    "DRIUnlock",
-    "GlxSetVisualConfigs",
-    "DRICreatePCIBusID",
-    NULL
-};
-#endif
-
 #ifdef XFree86LOADER
 /* Module loader interface */
 static MODULESETUPPROTO(vboxSetup);
@@ -591,14 +510,6 @@ vboxSetup(pointer Module, pointer Options, int *ErrorMajor, int *ErrorMinor)
 #endif
         xf86Msg(X_CONFIG, "Load address of symbol \"VBOXVIDEO\" is %p\n",
                 (void *)&VBOXVIDEO);
-        LoaderRefSymLists(fbSymbols,
-                          shadowfbSymbols,
-                          vbeSymbols,
-                          ramdacSymbols,
-#ifdef VBOX_DRI
-                          drmSymbols, driSymbols,
-#endif
-                          NULL);
         return (pointer)TRUE;
     }
 
@@ -774,7 +685,6 @@ VBOXPreInit(ScrnInfoPtr pScrn, int flags)
        text mode, in order to keep our code simple. */
     if (!xf86LoadSubModule(pScrn, "vbe"))
         return (FALSE);
-    xf86LoaderReqSymLists(vbeSymbols, NULL);
 
     if ((pVBox->pVbe = VBEExtendedInit(NULL, pVBox->pEnt->index,
                                        SET_BIOS_SCRATCH
@@ -794,20 +704,16 @@ VBOXPreInit(ScrnInfoPtr pScrn, int flags)
     /* The ramdac module is needed for the hardware cursor. */
     if (!xf86LoadSubModule(pScrn, "ramdac"))
         return FALSE;
-    xf86LoaderReqSymLists(ramdacSymbols, NULL);
 
     /* The framebuffer module. */
     if (xf86LoadSubModule(pScrn, "fb") == NULL)
         return (FALSE);
-    xf86LoaderReqSymLists(fbSymbols, NULL);
 
     if (!xf86LoadSubModule(pScrn, "shadowfb"))
         return FALSE;
-    xf86LoaderReqSymLists(shadowfbSymbols, NULL);
 
     if (!xf86LoadSubModule(pScrn, "vgahw"))
         return FALSE;
-    xf86LoaderReqSymLists(vgahwSymbols, NULL);
 
     /* Set up our ScrnInfoRec structure to describe our virtual
        capabilities to X. */
@@ -901,9 +807,8 @@ VBOXPreInit(ScrnInfoPtr pScrn, int flags)
 
 #ifdef VBOX_DRI
     /* Load the dri module. */
-    if (xf86LoadSubModule(pScrn, "dri")) {
-        xf86LoaderReqSymLists(driSymbols, drmSymbols, NULL);
-    }
+    if (!xf86LoadSubModule(pScrn, "dri"))
+        return FALSE;
 #endif
     return (TRUE);
 }

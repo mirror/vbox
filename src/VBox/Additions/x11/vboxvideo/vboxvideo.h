@@ -48,7 +48,7 @@
  * dealings in this Software without prior written authorization from
  * Conectiva Linux.
  *
- * Authors: Paulo C�ar Pereira de Andrade <pcpa@conectiva.com.br>
+ * Authors: Paulo César Pereira de Andrade <pcpa@conectiva.com.br>
  *
  * $XFree86: xc/programs/Xserver/hw/xfree86/drivers/vesa/vesa.h,v 1.9 2001/05/04 19:05:49 dawes Exp $
  */
@@ -97,7 +97,9 @@ do { \
 /* All drivers should typically include these */
 #include "xf86.h"
 #include "xf86_OSproc.h"
-#include "xf86Resources.h"
+#if GET_ABI_MAJOR(ABI_VIDEODRV_VERSION) < 6
+# include "xf86Resources.h"
+#endif
 
 #ifndef NO_ANSIC
 /* All drivers need this */
@@ -140,7 +142,9 @@ do { \
 /* Dga definitions */
 #include "dgaproc.h"
 
-#include "xf86RAC.h"
+#if GET_ABI_MAJOR(ABI_VIDEODRV_VERSION) < 6
+# include "xf86RAC.h"
+#endif
 
 #include "fb.h"
 
