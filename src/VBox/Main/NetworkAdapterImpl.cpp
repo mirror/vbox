@@ -992,7 +992,7 @@ HRESULT NetworkAdapter::saveSettings(settings::NetworkAdapter &data)
 
     data.ulLineSpeed = mData->mLineSpeed;
 
-    data.fTraceEnabled = mData->mTraceEnabled;
+    data.fTraceEnabled = !!mData->mTraceEnabled;
 
     data.strTraceFile = mData->mTraceFile;
 

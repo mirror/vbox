@@ -427,7 +427,7 @@ STDMETHODIMP Host::COMGETTER(DVDDrives) (ComSafeArrayOut(IHostDVDDrive *, aDrive
         SafeIfaceArray<IHostDVDDrive> array (list);
         array.detachTo(ComSafeArrayOutArg(aDrives));
     }
-    catch(std::bad_alloc &e)
+    catch(std::bad_alloc &)
     {
         rc = E_OUTOFMEMORY;
     }
@@ -497,7 +497,7 @@ STDMETHODIMP Host::COMGETTER(FloppyDrives) (ComSafeArrayOut(IHostFloppyDrive *, 
         SafeIfaceArray<IHostFloppyDrive> collection (list);
         collection.detachTo(ComSafeArrayOutArg(aDrives));
     }
-    catch(std::bad_alloc &e)
+    catch(std::bad_alloc &)
     {
         rc = E_OUTOFMEMORY;
     }

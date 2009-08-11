@@ -68,7 +68,7 @@ class ConfigFileError;
 
 // ExtraDataItem (used by both VirtualBox.xml and machines XML)
 typedef std::map<com::Utf8Str, com::Utf8Str> ExtraDataItemsMap;
-class USBDeviceFilter;
+struct USBDeviceFilter;
 typedef std::list<USBDeviceFilter> USBDeviceFiltersList;
 
 /**
