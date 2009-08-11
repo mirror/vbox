@@ -1201,7 +1201,6 @@ ifeq ($(KBUILD_TARGET),darwin)
  LIB_REM         = $(PATH_LIB)/VBoxREM.dylib
  LIB_XPCOM       = $(PATH_BIN)/VBoxXPCOM.dylib
  LIB_DDU         = $(PATH_BIN)/VBoxDDU.dylib
- LIB_SETTINGS    = $(PATH_BIN)/VBoxSettings.dylib
 endif
 ifeq ($(KBUILD_TARGET),l4)
  LIB_RUNTIME     = $(PATH_BIN)/VBoxRT.s.so
@@ -1212,7 +1211,6 @@ ifeq ($(KBUILD_TARGET),l4)
  LIB_REM         = $(PATH_LIB)/VBoxREM.s.so
  LIB_XPCOM       = $(PATH_BIN)/VBoxXPCOM.s.so
  LIB_DDU         = $(PATH_BIN)/VBoxDDU.s.so
- LIB_SETTINGS    = $(PATH_BIN)/VBoxSettings.s.so
 endif
 if1of ($(KBUILD_TARGET), linux freebsd netbsd openbsd solaris)
  LIB_RUNTIME     = $(PATH_BIN)/VBoxRT.so
@@ -1223,7 +1221,6 @@ if1of ($(KBUILD_TARGET), linux freebsd netbsd openbsd solaris)
  LIB_REM         = $(PATH_LIB)/VBoxREM.so
  LIB_XPCOM       = $(PATH_BIN)/VBoxXPCOM.so
  LIB_DDU         = $(PATH_BIN)/VBoxDDU.so
- LIB_SETTINGS    = $(PATH_BIN)/VBoxSettings.so
 endif
 ifeq ($(KBUILD_TARGET),os2)
  LIB_RUNTIME     = $(PATH_BIN)/VBoxRT.dll
@@ -1234,7 +1231,6 @@ ifeq ($(KBUILD_TARGET),os2)
  LIB_REM         = $(PATH_LIB)/VBoxREMImp.lib
  LIB_XPCOM       = $(PATH_BIN)/VBoxXCOM.dll
  LIB_DDU         = $(PATH_BIN)/VBoxDDU.dll
- LIB_SETTINGS    = $(PATH_BIN)/VBoxSett.dll
  VBOX_OBJ_SYS0   = $(PATH_OBJ)/RuntimeR0/os2/sys0.obj
 endif
 ifeq ($(KBUILD_TARGET),win)
@@ -1246,7 +1242,6 @@ ifeq ($(KBUILD_TARGET),win)
  LIB_REM         = $(PATH_LIB)/VBoxREMImp.lib
  LIB_XPCOM       = $(PATH_BIN)/VBoxXPCOM.dll
  LIB_DDU         = $(PATH_LIB)/VBoxDDU.lib
- LIB_SETTINGS    = $(PATH_LIB)/VBoxSettings.lib
 endif
 VBOX_LIB_SUPHARDENED    = $(PATH_LIB)/SUPR3HardenedStatic$(VBOX_SUFF_LIB)
 VBOX_LIB_RUNTIME_STATIC = $(PATH_LIB)/RuntimeR3$(VBOX_SUFF_LIB)

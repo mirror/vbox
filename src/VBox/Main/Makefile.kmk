@@ -253,8 +253,7 @@ ifdef VBOX_WITH_USB
 endif
 
 VBoxSVC_LIBS += \
-	$(LIB_DDU) \
-	$(LIB_SETTINGS)
+	$(LIB_DDU)
 VBoxSVC_LIBS.darwin = \
 	$(LIB_VMM) \
 	$(LIB_REM)
@@ -315,6 +314,7 @@ VBoxSVC_SOURCES = \
 	BIOSSettingsImpl.cpp \
 	Version.cpp \
 	HostPower.cpp \
+	xml/Settings.cpp \
 	$(if $(VBOX_WITH_VRDP),VRDPServerImpl.cpp,) \
 	$(if $(VBOX_WITH_XPCOM),xpcom/server.cpp,) \
 	$(VBOX_XML_SCHEMADEFS_CPP)
@@ -513,22 +513,6 @@ $$(PATH_VBoxSVCM)/VBoxSVCM.def:
 VBoxSVCM_INTERMEDIATES += $(VBOX_IDL_HEADER.XPCOM)
 
 endif # VBOX_WITH_XPCOM
-
-
-#
-# VBoxSettings
-#
-DLLS += VBoxSettings
-VBoxSettings_TEMPLATE	= VBOXMAINDLL
-VBoxSettings_NAME       = $(basename $(notdir $(LIB_SETTINGS)))
-VBoxSettings_SDKS       = VBOX_LIBXSLT VBOX_LIBXML2 VBOX_ZLIB VBOX_BOOST
-VBoxSettings_DEFS       = IN_VBOXXML_R3
-VBoxSettings_INCS       = \
-	include
-VBoxSettings_SOURCES    = \
-	xml/Settings.cpp
-VBoxSettings_LDFLAGS.darwin = -install_name $(VBOX_DYLD_EXECUTABLE_PATH)/$(notdir $(LIB_SETTINGS)) -Wl,-x # no debug info please.
-
 
 #
 # VBoxC module
