@@ -2,9 +2,10 @@
 /** @file
  * VBox Console COM Class implementation
  *
- * @remark  We've split out the code that the 64-bit VC++ v8 compiler
- *          finds problematic to optimize so we can disable optimizations
- *          and later, perhaps, find a real solution for it.
+ * @remark  We've split out the code that the 64-bit VC++ v8 compiler finds
+ *          problematic to optimize so we can disable optimizations and later,
+ *          perhaps, find a real solution for it (like rewriting the code and
+ *          to stop resemble a tonne of spaghetti).
  */
 
 /*
@@ -1090,7 +1091,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
             }
 
             char szLUN[16];
-            RTStrPrintf (szLUN, sizeof(szLUN), "LUN#%d", iLUN);
+            RTStrPrintf (szLUN, sizeof(szLUN), "LUN#%u", iLUN);
 
             rc = CFGMR3InsertNode (pCtlInst, szLUN, &pLunL0);                       RC_CHECK();
             /* SCSI has a another driver between device and block. */
@@ -2084,8 +2085,9 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
  *  @param   pCfg                Configuration node for the device
  *  @param   pLunL0              To store the pointer to the LUN#0.
  *  @param   pInst               The instance CFGM node
- *  @param   attachDetach        To determine if the network attachment should be attached/detached
- *                               after/before configuration.
+ *  @param   fAttachDetach       To determine if the network attachment should
+ *                               be attached/detached after/before
+ *                               configuration.
  *
  *  @note Locks the Console object for writing.
  */
@@ -2093,13 +2095,12 @@ DECLCALLBACK(int)  Console::configNetwork(Console *pThis, const char *pszDevice,
                                           unsigned uInstance, unsigned uLun,
                                           INetworkAdapter *aNetworkAdapter,
                                           PCFGMNODE pCfg, PCFGMNODE pLunL0,
-                                          PCFGMNODE pInst, bool attachDetach)
+                                          PCFGMNODE pInst, bool fAttachDetach)
 {
     int rc = VINF_SUCCESS;
-    int rcRet = VINF_SUCCESS;
 
     AutoCaller autoCaller(pThis);
-    AssertComRCReturn (autoCaller.rc(), VERR_ACCESS_DENIED);
+    AssertComRCReturn(autoCaller.rc(), VERR_ACCESS_DENIED);
 
     /*
      * Locking the object before doing VMR3* calls is quite safe here, since
@@ -2108,143 +2109,453 @@ DECLCALLBACK(int)  Console::configNetwork(Console *pThis, const char *pszDevice,
      */
     AutoWriteLock alock(pThis);
 
-    PVM pVM = pThis->mpVM;
+    PVM     pVM = pThis->mpVM;
+    BSTR    str = NULL;
+    char   *psz = NULL;
 
 #define STR_CONV()  do { rc = RTUtf16ToUtf8(str, &psz); RC_CHECK(); } while (0)
 #define STR_FREE()  do { if (str) { SysFreeString(str); str = NULL; } if (psz) { RTStrFree(psz); psz = NULL; } } while (0)
-#define RC_CHECK()  do { if (RT_FAILURE(rc)) { AssertMsgFailed(("rc=%Rrc\n", rc)); return rc; } } while (0)
-#define H()         do { if (FAILED(hrc)) { AssertMsgFailed(("hrc=%#x\n", hrc)); return VERR_GENERAL_FAILURE; } } while (0)
-    do
+#define RC_CHECK()  do { if (RT_FAILURE(rc)) { AssertMsgFailed(("rc=%Rrc\n", rc)); STR_FREE(); return rc; } } while (0)
+#define H()         do { if (FAILED(hrc)) { AssertMsgFailed(("hrc=%#x\n", hrc)); STR_FREE(); return VERR_GENERAL_FAILURE; } } while (0)
+
+    HRESULT hrc;
+    ComPtr<IMachine> pMachine = pThis->machine();
+
+    ComPtr<IVirtualBox> virtualBox;
+    hrc = pMachine->COMGETTER(Parent)(virtualBox.asOutParam());
+    H();
+
+    ComPtr<IHost> host;
+    hrc = virtualBox->COMGETTER(Host)(host.asOutParam());
+    H();
+
+    /*
+     * Detach the device train for the current network attachment.
+     */
+    if (fAttachDetach)
     {
-        HRESULT hrc;
-        ComPtr<IMachine> pMachine = pThis->machine();
+        rc = PDMR3DeviceDetach(pVM, pszDevice, uInstance, uLun, 0 /*fFlags*/);
+        if (rc == VINF_PDM_NO_DRIVER_ATTACHED_TO_LUN)
+            rc = VINF_SUCCESS;
+        AssertLogRelRCReturn(rc, rc);
 
-        ComPtr<IVirtualBox> virtualBox;
-        hrc = pMachine->COMGETTER(Parent)(virtualBox.asOutParam());
-        H();
+        /* nuke anything which might have been left behind. */
+        CFGMR3RemoveNode(CFGMR3GetChildF(pInst, "LUN#%u", uLun));
+    }
 
-        ComPtr<IHost> host;
-        hrc = virtualBox->COMGETTER(Host)(host.asOutParam());
-        H();
-
-        BSTR      str = NULL;
-        char     *psz = NULL;
-
-        /*
-         * Detach the device train for the current network attachment.
-         */
-
-        if (attachDetach)
+    /*
+     * Enable the packet sniffer if requested.
+     */
+    BOOL fSniffer;
+    hrc = aNetworkAdapter->COMGETTER(TraceEnabled)(&fSniffer);
+    H();
+    if (fSniffer)
+    {
+        /* insert the sniffer filter driver. */
+        rc = CFGMR3InsertNode(pInst, "LUN#0", &pLunL0);                 RC_CHECK();
+        rc = CFGMR3InsertString(pLunL0, "Driver", "NetSniffer");        RC_CHECK();
+        rc = CFGMR3InsertNode(pLunL0, "Config", &pCfg);                 RC_CHECK();
+        hrc = aNetworkAdapter->COMGETTER(TraceFile)(&str);              H();
+        if (str) /* check convention for indicating default file. */
         {
-            rc = PDMR3DeviceDetach (pVM, pszDevice, uInstance, uLun, PDMDEVATT_FLAGS_NOT_HOT_PLUG);
-            if (rc == VINF_PDM_NO_DRIVER_ATTACHED_TO_LUN)
-                rc = VINF_SUCCESS;
-            AssertRC (rc);
-
-            /* nuke anything which might have been left behind. */
-            CFGMR3RemoveNode (CFGMR3GetChildF (pInst, "LUN#%d", uLun));
+            STR_CONV();
+            rc = CFGMR3InsertString(pCfg, "File", psz);                 RC_CHECK();
+            STR_FREE();
         }
+    }
 
-        /*
-         * Enable the packet sniffer if requested.
-         */
-        BOOL fSniffer;
-        hrc = aNetworkAdapter->COMGETTER(TraceEnabled)(&fSniffer);
-        H();
-        if (fSniffer)
+    Bstr networkName, trunkName, trunkType;
+    NetworkAttachmentType_T eAttachmentType;
+    hrc = aNetworkAdapter->COMGETTER(AttachmentType)(&eAttachmentType);
+    H();
+    switch (eAttachmentType)
+    {
+        case NetworkAttachmentType_Null:
+            break;
+
+        case NetworkAttachmentType_NAT:
         {
-            /* insert the sniffer filter driver. */
-            rc = CFGMR3InsertNode(pInst, "LUN#0", &pLunL0);
-            RC_CHECK();
-            rc = CFGMR3InsertString(pLunL0, "Driver", "NetSniffer");
-            RC_CHECK();
-            rc = CFGMR3InsertNode(pLunL0, "Config", &pCfg);
-            RC_CHECK();
-            hrc = aNetworkAdapter->COMGETTER(TraceFile)(&str);
-            H();
-            if (str) /* check convention for indicating default file. */
+            if (fSniffer)
             {
-                STR_CONV();
-                rc = CFGMR3InsertString(pCfg, "File", psz);
-                RC_CHECK();
-                STR_FREE();
+                rc = CFGMR3InsertNode(pLunL0, "AttachedDriver", &pLunL0); RC_CHECK();
             }
-        }
-
-        Bstr networkName, trunkName, trunkType;
-        NetworkAttachmentType_T eAttachmentType;
-        hrc = aNetworkAdapter->COMGETTER(AttachmentType)(&eAttachmentType);
-        H();
-        switch (eAttachmentType)
-        {
-            case NetworkAttachmentType_Null:
-                break;
-
-            case NetworkAttachmentType_NAT:
+            else
             {
-                if (fSniffer)
-                {
-                    rc = CFGMR3InsertNode(pLunL0, "AttachedDriver", &pLunL0);
-                    RC_CHECK();
-                }
-                else
-                {
-                    rc = CFGMR3InsertNode(pInst, "LUN#0", &pLunL0);
-                    RC_CHECK();
-                }
+                rc = CFGMR3InsertNode(pInst, "LUN#0", &pLunL0);         RC_CHECK();
+            }
+            rc = CFGMR3InsertString(pLunL0, "Driver", "NAT");           RC_CHECK();
+            rc = CFGMR3InsertNode(pLunL0, "Config", &pCfg);             RC_CHECK();
 
-                rc = CFGMR3InsertString(pLunL0, "Driver", "NAT");
-                RC_CHECK();
+            /* Configure TFTP prefix and boot filename. */
+            hrc = virtualBox->COMGETTER(HomeFolder)(&str);
+            H();
+            STR_CONV();
+            if (psz && *psz)
+            {
+                rc = CFGMR3InsertStringF(pCfg, "TFTPPrefix", "%s%c%s", psz, RTPATH_DELIMITER, "TFTP"); RC_CHECK();
+            }
+            STR_FREE();
+            hrc = pMachine->COMGETTER(Name)(&str);
+            H();
+            STR_CONV();
+            rc = CFGMR3InsertStringF(pCfg, "BootFile", "%s.pxe", psz); RC_CHECK();
+            STR_FREE();
 
-                rc = CFGMR3InsertNode(pLunL0, "Config", &pCfg);
-                RC_CHECK();
-
-                /* Configure TFTP prefix and boot filename. */
-                hrc = virtualBox->COMGETTER(HomeFolder)(&str);
-                H();
+            hrc = aNetworkAdapter->COMGETTER(NATNetwork)(&str);
+            H();
+            if (str)
+            {
                 STR_CONV();
                 if (psz && *psz)
                 {
-                    char *pszTFTPPrefix = NULL;
-                    RTStrAPrintf(&pszTFTPPrefix, "%s%c%s", psz, RTPATH_DELIMITER, "TFTP");
-                    rc = CFGMR3InsertString(pCfg, "TFTPPrefix", pszTFTPPrefix);
-                    RC_CHECK();
-                    RTStrFree(pszTFTPPrefix);
+                    rc = CFGMR3InsertString(pCfg, "Network", psz);      RC_CHECK();
+                    /* NAT uses its own DHCP implementation */
+                    //networkName = Bstr(psz);
                 }
-                STR_FREE();
-                hrc = pMachine->COMGETTER(Name)(&str);
-                H();
-                STR_CONV();
-                char *pszBootFile = NULL;
-                RTStrAPrintf(&pszBootFile, "%s.pxe", psz);
-                STR_FREE();
-                rc = CFGMR3InsertString(pCfg, "BootFile", pszBootFile);
-                RC_CHECK();
-                RTStrFree(pszBootFile);
 
-                hrc = aNetworkAdapter->COMGETTER(NATNetwork)(&str);
-                H();
-                if (str)
+                STR_FREE();
+            }
+            break;
+        }
+
+        case NetworkAttachmentType_Bridged:
+        {
+#if !defined(VBOX_WITH_NETFLT) && defined(RT_OS_LINUX)
+            Assert ((int)pThis->maTapFD[uInstance] >= 0);
+            if ((int)pThis->maTapFD[uInstance] >= 0)
+            {
+                if (fSniffer)
                 {
-                    STR_CONV();
-                    if (psz && *psz)
-                    {
-                        rc = CFGMR3InsertString(pCfg, "Network", psz);
-                        RC_CHECK();
-                        /* NAT uses its own DHCP implementation */
-                        //networkName = Bstr(psz);
-                    }
-
-                    STR_FREE();
+                    rc = CFGMR3InsertNode(pLunL0, "AttachedDriver", &pLunL0);               RC_CHECK();
                 }
-                break;
+                else
+                {
+                    rc = CFGMR3InsertNode(pInst, "LUN#0", &pLunL0);                         RC_CHECK();
+                }
+                rc = CFGMR3InsertString(pLunL0, "Driver", "HostInterface");                 RC_CHECK();
+                rc = CFGMR3InsertNode(pLunL0, "Config", &pCfg);                             RC_CHECK();
+                rc = CFGMR3InsertInteger(pCfg, "FileHandle", pThis->maTapFD[uInstance]);    RC_CHECK();
+            }
+#elif defined(VBOX_WITH_NETFLT)
+            /*
+             * This is the new VBoxNetFlt+IntNet stuff.
+             */
+            if (fSniffer)
+            {
+                rc = CFGMR3InsertNode(pLunL0, "AttachedDriver", &pLunL0);                   RC_CHECK();
+            }
+            else
+            {
+                rc = CFGMR3InsertNode(pInst, "LUN#0", &pLunL0);                             RC_CHECK();
             }
 
-            case NetworkAttachmentType_Bridged:
+            Bstr HifName;
+            hrc = aNetworkAdapter->COMGETTER(HostInterface)(HifName.asOutParam());
+            if (FAILED(hrc))
             {
-#if !defined(VBOX_WITH_NETFLT) && defined(RT_OS_LINUX)
-                Assert ((int)pThis->maTapFD[uInstance] >= 0);
-                if ((int)pThis->maTapFD[uInstance] >= 0)
+                LogRel(("NetworkAttachmentType_Bridged: COMGETTER(HostInterface) failed, hrc (0x%x)", hrc));
+                H();
+            }
+
+            Utf8Str HifNameUtf8(HifName);
+            const char *pszHifName = HifNameUtf8.raw();
+
+# if defined(RT_OS_DARWIN)
+            /* The name is on the form 'ifX: long name', chop it off at the colon. */
+            char szTrunk[8];
+            strncpy(szTrunk, pszHifName, sizeof(szTrunk));
+            char *pszColon = (char *)memchr(szTrunk, ':', sizeof(szTrunk));
+            if (!pszColon)
+            {
+                hrc = aNetworkAdapter->Detach();                        H();
+                return VMSetError(pVM, VERR_INTERNAL_ERROR, RT_SRC_POS,
+                                  N_("Malformed host interface networking name '%ls'"),
+                                  HifName.raw());
+            }
+            *pszColon = '\0';
+            const char *pszTrunk = szTrunk;
+
+# elif defined(RT_OS_SOLARIS)
+            /* The name is on the form format 'ifX[:1] - long name, chop it off at space. */
+            char szTrunk[256];
+            strlcpy(szTrunk, pszHifName, sizeof(szTrunk));
+            char *pszSpace = (char *)memchr(szTrunk, ' ', sizeof(szTrunk));
+
+            /*
+             * Currently don't bother about malformed names here for the sake of people using
+             * VBoxManage and setting only the NIC name from there. If there is a space we
+             * chop it off and proceed, otherwise just use whatever we've got.
+             */
+            if (pszSpace)
+                *pszSpace = '\0';
+
+            /* Chop it off at the colon (zone naming eg: e1000g:1 we need only the e1000g) */
+            char *pszColon = (char *)memchr(szTrunk, ':', sizeof(szTrunk));
+            if (pszColon)
+                *pszColon = '\0';
+
+            const char *pszTrunk = szTrunk;
+
+# elif defined(RT_OS_WINDOWS)
+            ComPtr<IHostNetworkInterface> hostInterface;
+            hrc = host->FindHostNetworkInterfaceByName(HifName, hostInterface.asOutParam());
+            if (!SUCCEEDED(hrc))
+            {
+                AssertLogRelMsgFailed(("NetworkAttachmentType_Bridged: FindByName failed, rc=%Rhrc (0x%x)", hrc, hrc));
+                return VMSetError(pVM, VERR_INTERNAL_ERROR, RT_SRC_POS,
+                                  N_("Inexistent host networking interface, name '%ls'"),
+                                  HifName.raw());
+            }
+
+            HostNetworkInterfaceType_T ifType;
+            hrc = hostInterface->COMGETTER(InterfaceType)(&ifType);
+            if (FAILED(hrc))
+            {
+                LogRel(("NetworkAttachmentType_Bridged: COMGETTER(InterfaceType) failed, hrc (0x%x)", hrc));
+                H();
+            }
+
+            if (ifType != HostNetworkInterfaceType_Bridged)
+            {
+                return VMSetError(pVM, VERR_INTERNAL_ERROR, RT_SRC_POS,
+                                                      N_("Interface ('%ls') is not a Bridged Adapter interface"),
+                                                      HifName.raw());
+            }
+
+            Bstr hostIFGuid_;
+            hrc = hostInterface->COMGETTER(Id)(hostIFGuid_.asOutParam());
+            if (FAILED(hrc))
+            {
+                LogRel(("NetworkAttachmentType_Bridged: COMGETTER(Id) failed, hrc (0x%x)", hrc));
+                H();
+            }
+            Guid hostIFGuid(hostIFGuid_);
+
+            INetCfg              *pNc;
+            ComPtr<INetCfgComponent> pAdaptorComponent;
+            LPWSTR                pszApp;
+            int rc = VERR_INTNET_FLT_IF_NOT_FOUND;
+
+            hrc = VBoxNetCfgWinQueryINetCfg(FALSE /*fGetWriteLock*/,
+                                            L"VirtualBox",
+                                            &pNc,
+                                            &pszApp);
+            Assert(hrc == S_OK);
+            if (hrc == S_OK)
+            {
+                /* get the adapter's INetCfgComponent*/
+                hrc = VBoxNetCfgWinGetComponentByGuid(pNc, &GUID_DEVCLASS_NET, (GUID*)hostIFGuid.ptr(), pAdaptorComponent.asOutParam());
+                if (hrc != S_OK)
+                {
+                    VBoxNetCfgWinReleaseINetCfg(pNc, FALSE /*fHasWriteLock*/);
+                    LogRel(("NetworkAttachmentType_Bridged: VBoxNetCfgWinGetComponentByGuid failed, hrc (0x%x)", hrc));
+                    H();
+                }
+            }
+#define VBOX_WIN_BINDNAME_PREFIX "\\DEVICE\\"
+            char szTrunkName[INTNET_MAX_TRUNK_NAME];
+            char *pszTrunkName = szTrunkName;
+            wchar_t * pswzBindName;
+            hrc = pAdaptorComponent->GetBindName(&pswzBindName);
+            Assert(hrc == S_OK);
+            if (hrc == S_OK)
+            {
+                int cwBindName = (int)wcslen(pswzBindName) + 1;
+                int cbFullBindNamePrefix = sizeof(VBOX_WIN_BINDNAME_PREFIX);
+                if (sizeof(szTrunkName) > cbFullBindNamePrefix + cwBindName)
+                {
+                    strcpy(szTrunkName, VBOX_WIN_BINDNAME_PREFIX);
+                    pszTrunkName += cbFullBindNamePrefix-1;
+                    if (!WideCharToMultiByte(CP_ACP, 0, pswzBindName, cwBindName, pszTrunkName,
+                                             sizeof(szTrunkName) - cbFullBindNamePrefix + 1, NULL, NULL))
+                    {
+                        DWORD err = GetLastError();
+                        hrc = HRESULT_FROM_WIN32(err);
+                        AssertMsgFailed(("%hrc=%Rhrc %#x\n", hrc, hrc));
+                        AssertLogRelMsgFailed(("NetworkAttachmentType_Bridged: WideCharToMultiByte failed, hr=%Rhrc (0x%x) err=%u\n", hrc, hrc, err));
+                    }
+                }
+                else
+                {
+                    AssertLogRelMsgFailed(("NetworkAttachmentType_Bridged: insufficient szTrunkName buffer space\n"));
+                    /** @todo set appropriate error code */
+                    hrc = E_FAIL;
+                }
+
+                if (hrc != S_OK)
+                {
+                    AssertFailed();
+                    CoTaskMemFree(pswzBindName);
+                    VBoxNetCfgWinReleaseINetCfg(pNc, FALSE /*fHasWriteLock*/);
+                    H();
+                }
+
+                /* we're not freeing the bind name since we'll use it later for detecting wireless*/
+            }
+            else
+            {
+                VBoxNetCfgWinReleaseINetCfg(pNc, FALSE /*fHasWriteLock*/);
+                AssertLogRelMsgFailed(("NetworkAttachmentType_Bridged: VBoxNetCfgWinGetComponentByGuid failed, hrc (0x%x)", hrc));
+                H();
+            }
+            const char *pszTrunk = szTrunkName;
+            /* we're not releasing the INetCfg stuff here since we use it later to figure out whether it is wireless */
+
+# elif defined(RT_OS_LINUX)
+            /* @todo Check for malformed names. */
+            const char *pszTrunk = pszHifName;
+
+# else
+#  error "PORTME (VBOX_WITH_NETFLT)"
+# endif
+
+            rc = CFGMR3InsertString(pLunL0, "Driver", "IntNet");                    RC_CHECK();
+            rc = CFGMR3InsertNode(pLunL0, "Config", &pCfg);                         RC_CHECK();
+            rc = CFGMR3InsertString(pCfg, "Trunk", pszTrunk);                       RC_CHECK();
+            rc = CFGMR3InsertInteger(pCfg, "TrunkType", kIntNetTrunkType_NetFlt);
+            RC_CHECK();
+            char szNetwork[80];
+            RTStrPrintf(szNetwork, sizeof(szNetwork), "HostInterfaceNetworking-%s", pszHifName);
+            rc = CFGMR3InsertString(pCfg, "Network", szNetwork);                    RC_CHECK();
+            networkName = Bstr(szNetwork);
+            trunkName = Bstr(pszTrunk);
+            trunkType = Bstr(TRUNKTYPE_NETFLT);
+
+# if defined(RT_OS_DARWIN)
+            /** @todo Come up with a better deal here. Problem is that IHostNetworkInterface is completely useless here. */
+            if (    strstr(pszHifName, "Wireless")
+                ||  strstr(pszHifName, "AirPort" ))
+            {
+                rc = CFGMR3InsertInteger(pCfg, "SharedMacOnWire", true);            RC_CHECK();
+            }
+# elif defined(RT_OS_LINUX)
+            int iSock = socket(AF_INET, SOCK_DGRAM, 0);
+            if (iSock >= 0)
+            {
+                struct iwreq WRq;
+
+                memset(&WRq, 0, sizeof(WRq));
+                strncpy(WRq.ifr_name, pszHifName, IFNAMSIZ);
+                bool fSharedMacOnWire = ioctl(iSock, SIOCGIWNAME, &WRq) >= 0;
+                close(iSock);
+                if (fSharedMacOnWire)
+                {
+                    rc = CFGMR3InsertInteger(pCfg, "SharedMacOnWire", true);
+                    RC_CHECK();
+                    Log(("Set SharedMacOnWire\n"));
+                }
+                else
+                    Log(("Failed to get wireless name\n"));
+            }
+            else
+                Log(("Failed to open wireless socket\n"));
+# elif defined(RT_OS_WINDOWS)
+#  define DEVNAME_PREFIX L"\\\\.\\"
+            /* we are getting the medium type via IOCTL_NDIS_QUERY_GLOBAL_STATS Io Control
+             * there is a pretty long way till there though since we need to obtain the symbolic link name
+             * for the adapter device we are going to query given the device Guid */
+
+
+            /* prepend the "\\\\.\\" to the bind name to obtain the link name */
+
+            wchar_t FileName[MAX_PATH];
+            wcscpy(FileName, DEVNAME_PREFIX);
+            wcscpy((wchar_t*)(((char*)FileName) + sizeof(DEVNAME_PREFIX) - sizeof(FileName[0])), pswzBindName);
+
+            /* open the device */
+            HANDLE hDevice = CreateFile(FileName,
+                                        GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE,
+                                        NULL,
+                                        OPEN_EXISTING,
+                                        FILE_ATTRIBUTE_NORMAL,
+                                        NULL);
+
+            if (hDevice != INVALID_HANDLE_VALUE)
+            {
+                bool fSharedMacOnWire = false;
+
+                /* now issue the OID_GEN_PHYSICAL_MEDIUM query */
+                DWORD Oid = OID_GEN_PHYSICAL_MEDIUM;
+                NDIS_PHYSICAL_MEDIUM PhMedium;
+                DWORD cbResult;
+                if (DeviceIoControl(hDevice,
+                                    IOCTL_NDIS_QUERY_GLOBAL_STATS,
+                                    &Oid,
+                                    sizeof(Oid),
+                                    &PhMedium,
+                                    sizeof(PhMedium),
+                                    &cbResult,
+                                    NULL))
+                {
+                    /* that was simple, now examine PhMedium */
+                    if (   PhMedium == NdisPhysicalMediumWirelessWan
+                        || PhMedium == NdisPhysicalMediumWirelessLan
+                        || PhMedium == NdisPhysicalMediumNative802_11
+                        || PhMedium == NdisPhysicalMediumBluetooth)
+                        fSharedMacOnWire = true;
+                }
+                else
+                {
+                    int winEr = GetLastError();
+                    LogRel(("Console::configConstructor: DeviceIoControl failed, err (0x%x), ignoring\n", winEr));
+                    Assert(winEr == ERROR_INVALID_PARAMETER || winEr == ERROR_NOT_SUPPORTED || winEr == ERROR_BAD_COMMAND);
+                }
+                CloseHandle(hDevice);
+                
+                if (fSharedMacOnWire)
+                {
+                    Log(("this is a wireless adapter"));
+                    rc = CFGMR3InsertInteger(pCfg, "SharedMacOnWire", true); RC_CHECK();
+                    Log(("Set SharedMacOnWire\n"));
+                }
+                else
+                    Log(("this is NOT a wireless adapter"));
+            }
+            else
+            {
+                int winEr = GetLastError();
+                AssertLogRelMsgFailed(("Console::configConstructor: CreateFile failed, err (0x%x), ignoring\n", winEr));
+            }
+
+            CoTaskMemFree(pswzBindName);
+
+            pAdaptorComponent.setNull();
+            /* release the pNc finally */
+            VBoxNetCfgWinReleaseINetCfg(pNc, FALSE /*fHasWriteLock*/);
+# else
+            /** @todo PORTME: wireless detection */
+# endif
+
+# if defined(RT_OS_SOLARIS)
+#  if 0 /* bird: this is a bit questionable and might cause more trouble than its worth.  */
+            /* Zone access restriction, don't allow snopping the global zone. */
+            zoneid_t ZoneId = getzoneid();
+            if (ZoneId != GLOBAL_ZONEID)
+            {
+                rc = CFGMR3InsertInteger(pCfg, "IgnoreAllPromisc", true);   RC_CHECK();
+            }
+#  endif
+# endif
+
+#elif defined(RT_OS_WINDOWS) /* not defined NetFlt */
+            /* NOTHING TO DO HERE */
+#elif defined(RT_OS_LINUX)
+/// @todo aleksey: is there anything to be done here?
+#elif defined(RT_OS_FREEBSD)
+/** @todo FreeBSD: Check out this later (HIF networking). */
+#else
+# error "Port me"
+#endif
+            break;
+        }
+
+        case NetworkAttachmentType_Internal:
+        {
+            hrc = aNetworkAdapter->COMGETTER(InternalNetwork)(&str);        H();
+            if (str)
+            {
+                STR_CONV();
+                if (psz && *psz)
                 {
                     if (fSniffer)
                     {
@@ -2256,670 +2567,296 @@ DECLCALLBACK(int)  Console::configNetwork(Console *pThis, const char *pszDevice,
                         rc = CFGMR3InsertNode(pInst, "LUN#0", &pLunL0);
                         RC_CHECK();
                     }
-                    rc = CFGMR3InsertString(pLunL0, "Driver", "HostInterface");
-                    RC_CHECK();
-                    rc = CFGMR3InsertNode(pLunL0, "Config", &pCfg);
-                    RC_CHECK();
-                    rc = CFGMR3InsertInteger(pCfg, "FileHandle", pThis->maTapFD[uInstance]);
-                    RC_CHECK();
+                    rc = CFGMR3InsertString(pLunL0, "Driver", "IntNet");    RC_CHECK();
+                    rc = CFGMR3InsertNode(pLunL0, "Config", &pCfg);         RC_CHECK();
+                    rc = CFGMR3InsertString(pCfg, "Network", psz);          RC_CHECK();
+                    rc = CFGMR3InsertInteger(pCfg, "TrunkType", kIntNetTrunkType_WhateverNone); RC_CHECK();
+                    networkName = Bstr(psz);
+                    trunkType = Bstr(TRUNKTYPE_WHATEVER);
                 }
-#elif defined(VBOX_WITH_NETFLT)
-                /*
-                 * This is the new VBoxNetFlt+IntNet stuff.
-                 */
-                if (fSniffer)
-                {
-                    rc = CFGMR3InsertNode(pLunL0, "AttachedDriver", &pLunL0);
-                    RC_CHECK();
-                }
-                else
-                {
-                    rc = CFGMR3InsertNode(pInst, "LUN#0", &pLunL0);
-                    RC_CHECK();
-                }
+                STR_FREE();
+            }
+            break;
+        }
 
-                Bstr HifName;
-                hrc = aNetworkAdapter->COMGETTER(HostInterface)(HifName.asOutParam());
-                if(FAILED(hrc))
-                {
-                    LogRel(("NetworkAttachmentType_Bridged: COMGETTER(HostInterface) failed, hrc (0x%x)", hrc));
-                    H();
-                }
-
-                Utf8Str HifNameUtf8(HifName);
-                const char *pszHifName = HifNameUtf8.raw();
-
-# if defined(RT_OS_DARWIN)
-                /* The name is on the form 'ifX: long name', chop it off at the colon. */
-                char szTrunk[8];
-                strncpy(szTrunk, pszHifName, sizeof(szTrunk));
-                char *pszColon = (char *)memchr(szTrunk, ':', sizeof(szTrunk));
-                if (!pszColon)
-                {
-                    hrc = aNetworkAdapter->Detach();
-                    H();
-                    return VMSetError(pVM, VERR_INTERNAL_ERROR, RT_SRC_POS,
-                                      N_("Malformed host interface networking name '%ls'"),
-                                      HifName.raw());
-                }
-                *pszColon = '\0';
-                const char *pszTrunk = szTrunk;
-
-# elif defined(RT_OS_SOLARIS)
-                /* The name is on the form format 'ifX[:1] - long name, chop it off at space. */
-                char szTrunk[256];
-                strlcpy(szTrunk, pszHifName, sizeof(szTrunk));
-                char *pszSpace = (char *)memchr(szTrunk, ' ', sizeof(szTrunk));
-
-                /*
-                 * Currently don't bother about malformed names here for the sake of people using
-                 * VBoxManage and setting only the NIC name from there. If there is a space we
-                 * chop it off and proceed, otherwise just use whatever we've got.
-                 */
-                if (pszSpace)
-                    *pszSpace = '\0';
-
-                /* Chop it off at the colon (zone naming eg: e1000g:1 we need only the e1000g) */
-                char *pszColon = (char *)memchr(szTrunk, ':', sizeof(szTrunk));
-                if (pszColon)
-                    *pszColon = '\0';
-
-                const char *pszTrunk = szTrunk;
-
-# elif defined(RT_OS_WINDOWS)
-                ComPtr<IHostNetworkInterface> hostInterface;
-                rc = host->FindHostNetworkInterfaceByName(HifName, hostInterface.asOutParam());
-                if (!SUCCEEDED(rc))
-                {
-                    AssertBreakpoint();
-                    LogRel(("NetworkAttachmentType_Bridged: FindByName failed, rc (0x%x)", rc));
-                    return VMSetError(pVM, VERR_INTERNAL_ERROR, RT_SRC_POS,
-                                      N_("Inexistent host networking interface, name '%ls'"),
-                                      HifName.raw());
-                }
-
-                HostNetworkInterfaceType_T ifType;
-                hrc = hostInterface->COMGETTER(InterfaceType)(&ifType);
-                if(FAILED(hrc))
-                {
-                    LogRel(("NetworkAttachmentType_Bridged: COMGETTER(InterfaceType) failed, hrc (0x%x)", hrc));
-                    H();
-                }
-
-                if(ifType != HostNetworkInterfaceType_Bridged)
-                {
-                    return VMSetError(pVM, VERR_INTERNAL_ERROR, RT_SRC_POS,
-                                                          N_("Interface ('%ls') is not a Bridged Adapter interface"),
-                                                          HifName.raw());
-                }
-
-                Bstr hostIFGuid_;
-                hrc = hostInterface->COMGETTER(Id)(hostIFGuid_.asOutParam());
-                if(FAILED(hrc))
-                {
-                    LogRel(("NetworkAttachmentType_Bridged: COMGETTER(Id) failed, hrc (0x%x)", hrc));
-                    H();
-                }
-                Guid hostIFGuid(hostIFGuid_);
-
-                INetCfg              *pNc;
-                ComPtr<INetCfgComponent> pAdaptorComponent;
-                LPWSTR               lpszApp;
-                int rc = VERR_INTNET_FLT_IF_NOT_FOUND;
-
-                hrc = VBoxNetCfgWinQueryINetCfg( FALSE,
-                                   L"VirtualBox",
-                                   &pNc,
-                                   &lpszApp );
-                Assert(hrc == S_OK);
-                if(hrc == S_OK)
-                {
-                    /* get the adapter's INetCfgComponent*/
-                    hrc = VBoxNetCfgWinGetComponentByGuid(pNc, &GUID_DEVCLASS_NET, (GUID*)hostIFGuid.ptr(), pAdaptorComponent.asOutParam());
-                    if(hrc != S_OK)
-                    {
-                        VBoxNetCfgWinReleaseINetCfg( pNc, FALSE );
-                        LogRel(("NetworkAttachmentType_Bridged: VBoxNetCfgWinGetComponentByGuid failed, hrc (0x%x)", hrc));
-                        H();
-                    }
-                }
-#define VBOX_WIN_BINDNAME_PREFIX "\\DEVICE\\"
-                char szTrunkName[INTNET_MAX_TRUNK_NAME];
-                char *pszTrunkName = szTrunkName;
-                wchar_t * pswzBindName;
-                hrc = pAdaptorComponent->GetBindName(&pswzBindName);
-                Assert(hrc == S_OK);
-                if (hrc == S_OK)
-                {
-                    int cwBindName = (int)wcslen(pswzBindName) + 1;
-                    int cbFullBindNamePrefix = sizeof(VBOX_WIN_BINDNAME_PREFIX);
-                    if(sizeof(szTrunkName) > cbFullBindNamePrefix + cwBindName)
-                    {
-                        strcpy(szTrunkName, VBOX_WIN_BINDNAME_PREFIX);
-                        pszTrunkName += cbFullBindNamePrefix-1;
-                        if(!WideCharToMultiByte(CP_ACP, 0, pswzBindName, cwBindName, pszTrunkName,
-                                sizeof(szTrunkName) - cbFullBindNamePrefix + 1, NULL, NULL))
-                        {
-                            Assert(0);
-                            DWORD err = GetLastError();
-                            hrc = HRESULT_FROM_WIN32(err);
-                            AssertMsgFailed(("%hrc=%Rhrc %#x\n", hrc, hrc));
-                            LogRel(("NetworkAttachmentType_Bridged: WideCharToMultiByte failed, hr=%Rhrc (0x%x)\n", hrc, hrc));
-                        }
-                    }
-                    else
-                    {
-                        Assert(0);
-                        LogRel(("NetworkAttachmentType_Bridged: insufficient szTrunkName buffer space\n"));
-                        /** @todo set appropriate error code */
-                        hrc = E_FAIL;
-                    }
-
-                    if(hrc != S_OK)
-                    {
-                        Assert(0);
-                        CoTaskMemFree(pswzBindName);
-                        VBoxNetCfgWinReleaseINetCfg( pNc, FALSE );
-                        H();
-                    }
-
-                    /* we're not freeing the bind name since we'll use it later for detecting wireless*/
-                }
-                else
-                {
-                    Assert(0);
-                    VBoxNetCfgWinReleaseINetCfg( pNc, FALSE );
-                    LogRel(("NetworkAttachmentType_Bridged: VBoxNetCfgWinGetComponentByGuid failed, hrc (0x%x)", hrc));
-                    H();
-                }
-                const char *pszTrunk = szTrunkName;
-                /* we're not releasing the INetCfg stuff here since we use it later to figure out whether it is wireless */
-
-# elif defined(RT_OS_LINUX)
-                /* @todo Check for malformed names. */
-                const char *pszTrunk = pszHifName;
-
-# else
-#  error "PORTME (VBOX_WITH_NETFLT)"
-# endif
-
-                rc = CFGMR3InsertString(pLunL0, "Driver", "IntNet");
+        case NetworkAttachmentType_HostOnly:
+        {
+            if (fSniffer)
+            {
+                rc = CFGMR3InsertNode(pLunL0, "AttachedDriver", &pLunL0);
                 RC_CHECK();
-                rc = CFGMR3InsertNode(pLunL0, "Config", &pCfg);
+            }
+            else
+            {
+                rc = CFGMR3InsertNode(pInst, "LUN#0", &pLunL0);
                 RC_CHECK();
-                rc = CFGMR3InsertString(pCfg, "Trunk", pszTrunk);
-                RC_CHECK();
-                rc = CFGMR3InsertInteger(pCfg, "TrunkType", kIntNetTrunkType_NetFlt);
-                RC_CHECK();
-                char szNetwork[80];
-                RTStrPrintf(szNetwork, sizeof(szNetwork), "HostInterfaceNetworking-%s", pszHifName);
-                rc = CFGMR3InsertString(pCfg, "Network", szNetwork);
-                RC_CHECK();
-                networkName = Bstr(szNetwork);
-                trunkName = Bstr(pszTrunk);
-                trunkType = Bstr(TRUNKTYPE_NETFLT);
-
-# if defined(RT_OS_DARWIN)
-                /** @todo Come up with a better deal here. Problem is that IHostNetworkInterface is completely useless here. */
-                if (    strstr(pszHifName, "Wireless")
-                    ||  strstr(pszHifName, "AirPort" ))
-                {
-                    rc = CFGMR3InsertInteger(pCfg, "SharedMacOnWire", true);
-                    RC_CHECK();
-                }
-# elif defined(RT_OS_LINUX)
-                int iSock = socket(AF_INET, SOCK_DGRAM, 0);
-                if (iSock >= 0)
-                {
-                    struct iwreq WRq;
-
-                    memset(&WRq, 0, sizeof(WRq));
-                    strncpy(WRq.ifr_name, pszHifName, IFNAMSIZ);
-                    if (ioctl(iSock, SIOCGIWNAME, &WRq) >= 0)
-                    {
-                        rc = CFGMR3InsertInteger(pCfg, "SharedMacOnWire", true);
-                        RC_CHECK();
-                        Log(("Set SharedMacOnWire\n"));
-                    }
-                    else
-                    {
-                        Log(("Failed to get wireless name\n"));
-                    }
-                    close(iSock);
-                }
-                else
-                {
-                    Log(("Failed to open wireless socket\n"));
-                }
-# elif defined(RT_OS_WINDOWS)
-#  define DEVNAME_PREFIX L"\\\\.\\"
-                /* we are getting the medium type via IOCTL_NDIS_QUERY_GLOBAL_STATS Io Control
-                 * there is a pretty long way till there though since we need to obtain the symbolic link name
-                 * for the adapter device we are going to query given the device Guid */
-
-
-                /* prepend the "\\\\.\\" to the bind name to obtain the link name */
-
-                wchar_t FileName[MAX_PATH];
-                wcscpy(FileName, DEVNAME_PREFIX);
-                wcscpy((wchar_t*)(((char*)FileName) + sizeof(DEVNAME_PREFIX) - sizeof(FileName[0])), pswzBindName);
-
-                /* open the device */
-                HANDLE hDevice = CreateFile(FileName,
-                                            GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE,
-                                            NULL,
-                                            OPEN_EXISTING,
-                                            FILE_ATTRIBUTE_NORMAL,
-                                            NULL);
-
-                if (hDevice != INVALID_HANDLE_VALUE)
-                {
-                    /* now issue the OID_GEN_PHYSICAL_MEDIUM query */
-                    DWORD Oid = OID_GEN_PHYSICAL_MEDIUM;
-                    NDIS_PHYSICAL_MEDIUM PhMedium;
-                    DWORD cbResult;
-                    if (DeviceIoControl(hDevice,
-                                        IOCTL_NDIS_QUERY_GLOBAL_STATS,
-                                        &Oid,
-                                        sizeof(Oid),
-                                        &PhMedium,
-                                        sizeof(PhMedium),
-                                        &cbResult,
-                                        NULL))
-                    {
-                        /* that was simple, now examine PhMedium */
-                        if (   PhMedium == NdisPhysicalMediumWirelessWan
-                            || PhMedium == NdisPhysicalMediumWirelessLan
-                            || PhMedium == NdisPhysicalMediumNative802_11
-                            || PhMedium == NdisPhysicalMediumBluetooth)
-                        {
-                            Log(("this is a wireless adapter"));
-                            rc = CFGMR3InsertInteger(pCfg, "SharedMacOnWire", true);
-                            RC_CHECK();
-                            Log(("Set SharedMacOnWire\n"));
-                        }
-                        else
-                        {
-                            Log(("this is NOT a wireless adapter"));
-                        }
-                    }
-                    else
-                    {
-                        int winEr = GetLastError();
-                        LogRel(("Console::configConstructor: DeviceIoControl failed, err (0x%x), ignoring\n", winEr));
-                        Assert(winEr == ERROR_INVALID_PARAMETER || winEr == ERROR_NOT_SUPPORTED || winEr == ERROR_BAD_COMMAND);
-                    }
-
-                    CloseHandle(hDevice);
-                }
-                else
-                {
-                    int winEr = GetLastError();
-                    LogRel(("Console::configConstructor: CreateFile failed, err (0x%x), ignoring\n", winEr));
-                    AssertBreakpoint();
-                }
-
-                CoTaskMemFree(pswzBindName);
-
-                pAdaptorComponent.setNull();
-                /* release the pNc finally */
-                VBoxNetCfgWinReleaseINetCfg( pNc, FALSE );
-# else
-                /** @todo PORTME: wireless detection */
-# endif
-
-# if defined(RT_OS_SOLARIS)
-#  if 0 /* bird: this is a bit questionable and might cause more trouble than its worth.  */
-                /* Zone access restriction, don't allow snopping the global zone. */
-                zoneid_t ZoneId = getzoneid();
-                if (ZoneId != GLOBAL_ZONEID)
-                {
-                    rc = CFGMR3InsertInteger(pCfg, "IgnoreAllPromisc", true);   RC_CHECK();
-                }
-#  endif
-# endif
-
-#elif defined(RT_OS_WINDOWS) /* not defined NetFlt */
-                /* NOTHING TO DO HERE */
-#elif defined(RT_OS_LINUX)
-/// @todo aleksey: is there anything to be done here?
-#elif defined(RT_OS_FREEBSD)
-/** @todo FreeBSD: Check out this later (HIF networking). */
-#else
-# error "Port me"
-#endif
-                break;
             }
 
-            case NetworkAttachmentType_Internal:
+            rc = CFGMR3InsertString(pLunL0, "Driver", "IntNet");            RC_CHECK();
+            rc = CFGMR3InsertNode(pLunL0, "Config", &pCfg);                 RC_CHECK();
+
+            Bstr HifName;
+            hrc = aNetworkAdapter->COMGETTER(HostInterface)(HifName.asOutParam());
+            if (FAILED(hrc))
             {
-                hrc = aNetworkAdapter->COMGETTER(InternalNetwork)(&str);
+                LogRel(("NetworkAttachmentType_HostOnly: COMGETTER(HostInterface) failed, hrc (0x%x)\n", hrc));
                 H();
-                if (str)
-                {
-                    STR_CONV();
-                    if (psz && *psz)
-                    {
-                        if (fSniffer)
-                        {
-                            rc = CFGMR3InsertNode(pLunL0, "AttachedDriver", &pLunL0);
-                            RC_CHECK();
-                        }
-                        else
-                        {
-                            rc = CFGMR3InsertNode(pInst, "LUN#0", &pLunL0);
-                            RC_CHECK();
-                        }
-                        rc = CFGMR3InsertString(pLunL0, "Driver", "IntNet");
-                        RC_CHECK();
-                        rc = CFGMR3InsertNode(pLunL0, "Config", &pCfg);
-                        RC_CHECK();
-                        rc = CFGMR3InsertString(pCfg, "Network", psz);
-                        RC_CHECK();
-                        rc = CFGMR3InsertInteger(pCfg, "TrunkType", kIntNetTrunkType_WhateverNone);
-                        RC_CHECK();
-                        networkName = Bstr(psz);
-                        trunkType = Bstr(TRUNKTYPE_WHATEVER);
-                    }
-                    STR_FREE();
-                }
-                break;
             }
 
-            case NetworkAttachmentType_HostOnly:
+            Utf8Str HifNameUtf8(HifName);
+            const char *pszHifName = HifNameUtf8.raw();
+            LogRel(("NetworkAttachmentType_HostOnly: COMGETTER(HostInterface): %s\n", pszHifName));
+            ComPtr<IHostNetworkInterface> hostInterface;
+            rc = host->FindHostNetworkInterfaceByName(HifName, hostInterface.asOutParam());
+            if (!SUCCEEDED(rc))
             {
-                if (fSniffer)
-                {
-                    rc = CFGMR3InsertNode(pLunL0, "AttachedDriver", &pLunL0);
-                    RC_CHECK();
-                }
-                else
-                {
-                    rc = CFGMR3InsertNode(pInst, "LUN#0", &pLunL0);
-                    RC_CHECK();
-                }
+                LogRel(("NetworkAttachmentType_HostOnly: FindByName failed, rc (0x%x)\n", rc));
+                return VMSetError(pVM, VERR_INTERNAL_ERROR, RT_SRC_POS,
+                                  N_("Inexistent host networking interface, name '%ls'"),
+                                  HifName.raw());
+            }
 
-                rc = CFGMR3InsertString(pLunL0, "Driver", "IntNet");
-                RC_CHECK();
-                rc = CFGMR3InsertNode(pLunL0, "Config", &pCfg);
-                RC_CHECK();
-
-                Bstr HifName;
-                hrc = aNetworkAdapter->COMGETTER(HostInterface)(HifName.asOutParam());
-                if(FAILED(hrc))
-                {
-                    LogRel(("NetworkAttachmentType_HostOnly: COMGETTER(HostInterface) failed, hrc (0x%x)\n", hrc));
-                    H();
-                }
-
-                Utf8Str HifNameUtf8(HifName);
-                const char *pszHifName = HifNameUtf8.raw();
-                LogRel(("NetworkAttachmentType_HostOnly: COMGETTER(HostInterface): %s\n", pszHifName));
-                ComPtr<IHostNetworkInterface> hostInterface;
-                rc = host->FindHostNetworkInterfaceByName(HifName, hostInterface.asOutParam());
-                if (!SUCCEEDED(rc))
-                {
-                    LogRel(("NetworkAttachmentType_HostOnly: FindByName failed, rc (0x%x)\n", rc));
-                    return VMSetError(pVM, VERR_INTERNAL_ERROR, RT_SRC_POS,
-                                      N_("Inexistent host networking interface, name '%ls'"),
-                                      HifName.raw());
-                }
-
-                char szNetwork[80];
-                RTStrPrintf(szNetwork, sizeof(szNetwork), "HostInterfaceNetworking-%s", pszHifName);
+            char szNetwork[80];
+            RTStrPrintf(szNetwork, sizeof(szNetwork), "HostInterfaceNetworking-%s", pszHifName);
 
 #if defined(RT_OS_WINDOWS)
 # ifndef VBOX_WITH_NETFLT
-                hrc = E_NOTIMPL;
-                LogRel(("NetworkAttachmentType_HostOnly: Not Implemented\n"));
-                H();
+            hrc = E_NOTIMPL;
+            LogRel(("NetworkAttachmentType_HostOnly: Not Implemented\n"));
+            H();
 # else  /* defined VBOX_WITH_NETFLT*/
+            /** @todo r=bird: Put this in a function. */
 
-                HostNetworkInterfaceType_T ifType;
-                hrc = hostInterface->COMGETTER(InterfaceType)(&ifType);
-                if(FAILED(hrc))
+            HostNetworkInterfaceType_T ifType;
+            hrc = hostInterface->COMGETTER(InterfaceType)(&ifType);
+            if (FAILED(hrc))
+            {
+                LogRel(("NetworkAttachmentType_HostOnly: COMGETTER(InterfaceType) failed, hrc (0x%x)\n", hrc));
+                H();
+            }
+
+            if (ifType != HostNetworkInterfaceType_HostOnly)
+                return VMSetError(pVM, VERR_INTERNAL_ERROR, RT_SRC_POS,
+                                  N_("Interface ('%ls') is not a Host-Only Adapter interface"),
+                                  HifName.raw());
+
+            Bstr hostIFGuid_;
+            hrc = hostInterface->COMGETTER(Id)(hostIFGuid_.asOutParam());
+            if (FAILED(hrc))
+            {
+                LogRel(("NetworkAttachmentType_HostOnly: COMGETTER(Id) failed, hrc (0x%x)\n", hrc));
+                H();
+            }
+            Guid hostIFGuid(hostIFGuid_);
+
+            INetCfg *pNc;
+            ComPtr<INetCfgComponent> pAdaptorComponent;
+            LPWSTR pszApp;
+            rc = VERR_INTNET_FLT_IF_NOT_FOUND;
+
+            hrc = VBoxNetCfgWinQueryINetCfg(FALSE,
+                                            L"VirtualBox",
+                                            &pNc,
+                                            &pszApp);
+            Assert(hrc == S_OK);
+            if (hrc == S_OK)
+            {
+                /* get the adapter's INetCfgComponent*/
+                hrc = VBoxNetCfgWinGetComponentByGuid(pNc, &GUID_DEVCLASS_NET, (GUID*)hostIFGuid.ptr(), pAdaptorComponent.asOutParam());
+                if (hrc != S_OK)
                 {
-                    LogRel(("NetworkAttachmentType_HostOnly: COMGETTER(InterfaceType) failed, hrc (0x%x)\n", hrc));
+                    VBoxNetCfgWinReleaseINetCfg(pNc, FALSE /*fHasWriteLock*/);
+                    LogRel(("NetworkAttachmentType_HostOnly: VBoxNetCfgWinGetComponentByGuid failed, hrc=%Rhrc (0x%x)\n", hrc, hrc));
                     H();
                 }
-
-                if(ifType != HostNetworkInterfaceType_HostOnly)
-                {
-                    return VMSetError(pVM, VERR_INTERNAL_ERROR, RT_SRC_POS,
-                                      N_("Interface ('%ls') is not a Host-Only Adapter interface"),
-                                      HifName.raw());
-                }
-
-                Bstr hostIFGuid_;
-                hrc = hostInterface->COMGETTER(Id)(hostIFGuid_.asOutParam());
-                if(FAILED(hrc))
-                {
-                    LogRel(("NetworkAttachmentType_HostOnly: COMGETTER(Id) failed, hrc (0x%x)\n", hrc));
-                    H();
-                }
-                Guid hostIFGuid(hostIFGuid_);
-
-                INetCfg *pNc;
-                ComPtr<INetCfgComponent> pAdaptorComponent;
-                LPWSTR lpszApp;
-                int rc = VERR_INTNET_FLT_IF_NOT_FOUND;
-
-                hrc = VBoxNetCfgWinQueryINetCfg(FALSE,
-                                                L"VirtualBox",
-                                                &pNc,
-                                                &lpszApp);
-                Assert(hrc == S_OK);
-                if(hrc == S_OK)
-                {
-                    /* get the adapter's INetCfgComponent*/
-                    hrc = VBoxNetCfgWinGetComponentByGuid(pNc, &GUID_DEVCLASS_NET, (GUID*)hostIFGuid.ptr(), pAdaptorComponent.asOutParam());
-                    if(hrc != S_OK)
-                    {
-                        VBoxNetCfgWinReleaseINetCfg( pNc, FALSE );
-                        LogRel(("NetworkAttachmentType_HostOnly: VBoxNetCfgWinGetComponentByGuid failed, hrc (0x%x)\n", hrc));
-                        H();
-                    }
-                }
+            }
 #define VBOX_WIN_BINDNAME_PREFIX "\\DEVICE\\"
-                char szTrunkName[INTNET_MAX_TRUNK_NAME];
-                char *pszTrunkName = szTrunkName;
-                wchar_t * pswzBindName;
-                hrc = pAdaptorComponent->GetBindName(&pswzBindName);
-                Assert(hrc == S_OK);
-                if (hrc == S_OK)
+            char szTrunkName[INTNET_MAX_TRUNK_NAME];
+            char *pszTrunkName = szTrunkName;
+            wchar_t * pswzBindName;
+            hrc = pAdaptorComponent->GetBindName(&pswzBindName);
+            Assert(hrc == S_OK);
+            if (hrc == S_OK)
+            {
+                int cwBindName = (int)wcslen(pswzBindName) + 1;
+                int cbFullBindNamePrefix = sizeof(VBOX_WIN_BINDNAME_PREFIX);
+                if (sizeof(szTrunkName) > cbFullBindNamePrefix + cwBindName)
                 {
-                    int cwBindName = (int)wcslen(pswzBindName) + 1;
-                    int cbFullBindNamePrefix = sizeof(VBOX_WIN_BINDNAME_PREFIX);
-                    if(sizeof(szTrunkName) > cbFullBindNamePrefix + cwBindName)
+                    strcpy(szTrunkName, VBOX_WIN_BINDNAME_PREFIX);
+                    pszTrunkName += cbFullBindNamePrefix-1;
+                    if (!WideCharToMultiByte(CP_ACP, 0, pswzBindName, cwBindName, pszTrunkName,
+                                             sizeof(szTrunkName) - cbFullBindNamePrefix + 1, NULL, NULL))
                     {
-                        strcpy(szTrunkName, VBOX_WIN_BINDNAME_PREFIX);
-                        pszTrunkName += cbFullBindNamePrefix-1;
-                        if(!WideCharToMultiByte(CP_ACP, 0, pswzBindName, cwBindName, pszTrunkName,
-                                sizeof(szTrunkName) - cbFullBindNamePrefix + 1, NULL, NULL))
-                        {
-                            Assert(0);
-                            DWORD err = GetLastError();
-                            hrc = HRESULT_FROM_WIN32(err);
-                            AssertMsgFailed(("%hrc=%Rhrc %#x\n", hrc, hrc));
-                            LogRel(("NetworkAttachmentType_HostOnly: WideCharToMultiByte failed, hr=%Rhrc (0x%x)\n", hrc, hrc));
-                        }
-                    }
-                    else
-                    {
-                        Assert(0);
-                        LogRel(("NetworkAttachmentType_HostOnly: insufficient szTrunkName buffer space\n"));
-                        /** @todo set appropriate error code */
-                        hrc = E_FAIL;
-                    }
-
-                    if(hrc != S_OK)
-                    {
-                        Assert(0);
-                        CoTaskMemFree(pswzBindName);
-                        VBoxNetCfgWinReleaseINetCfg( pNc, FALSE );
-                        H();
+                        DWORD err = GetLastError();
+                        hrc = HRESULT_FROM_WIN32(err);
+                        AssertLogRelMsgFailed(("NetworkAttachmentType_HostOnly: WideCharToMultiByte failed, hr=%Rhrc (0x%x) err=%u\n", hrc, hrc, err));
                     }
                 }
                 else
                 {
-                    Assert(0);
-                    VBoxNetCfgWinReleaseINetCfg( pNc, FALSE );
-                    LogRel(("NetworkAttachmentType_HostOnly: VBoxNetCfgWinGetComponentByGuid failed, hrc (0x%x)\n", hrc));
-                    H();
+                    AssertLogRelMsgFailed(("NetworkAttachmentType_HostOnly: insufficient szTrunkName buffer space\n"));
+                    /** @todo set appropriate error code */
+                    hrc = E_FAIL;
                 }
 
+                if (hrc != S_OK)
+                {
+                    AssertFailed();
+                    CoTaskMemFree(pswzBindName);
+                    VBoxNetCfgWinReleaseINetCfg(pNc, FALSE /*fHasWriteLock*/);
+                    H();
+                }
+            }
+            else
+            {
+                VBoxNetCfgWinReleaseINetCfg(pNc, FALSE /*fHasWriteLock*/);
+                AssertLogRelMsgFailed(("NetworkAttachmentType_HostOnly: VBoxNetCfgWinGetComponentByGuid failed, hrc=%Rhrc (0x%x)\n", hrc, hrc));
+                H();
+            }
 
-                CoTaskMemFree(pswzBindName);
 
-                pAdaptorComponent.setNull();
-                /* release the pNc finally */
-                VBoxNetCfgWinReleaseINetCfg( pNc, FALSE );
+            CoTaskMemFree(pswzBindName);
 
-                const char *pszTrunk = szTrunkName;
+            pAdaptorComponent.setNull();
+            /* release the pNc finally */
+            VBoxNetCfgWinReleaseINetCfg(pNc, FALSE /*fHasWriteLock*/);
+
+            const char *pszTrunk = szTrunkName;
 
 
-                /* TODO: set the proper Trunk and Network values, currently the driver uses the first adapter instance */
-                rc = CFGMR3InsertInteger(pCfg, "TrunkType", kIntNetTrunkType_NetAdp);
-                RC_CHECK();
-                rc = CFGMR3InsertString(pCfg, "Trunk", pszTrunk);
-                RC_CHECK();
-                rc = CFGMR3InsertString(pCfg, "Network", szNetwork);
-                RC_CHECK();
-                networkName = Bstr(szNetwork);
-                trunkName   = Bstr(pszTrunk);
-                trunkType   = TRUNKTYPE_NETADP;
+            /* TODO: set the proper Trunk and Network values, currently the driver uses the first adapter instance */
+            rc = CFGMR3InsertInteger(pCfg, "TrunkType", kIntNetTrunkType_NetAdp);   RC_CHECK();
+            rc = CFGMR3InsertString(pCfg, "Trunk", pszTrunk);                       RC_CHECK();
+            rc = CFGMR3InsertString(pCfg, "Network", szNetwork);                    RC_CHECK();
+            networkName = Bstr(szNetwork);
+            trunkName   = Bstr(pszTrunk);
+            trunkType   = TRUNKTYPE_NETADP;
 # endif /* defined VBOX_WITH_NETFLT*/
 #elif defined(RT_OS_DARWIN)
-                rc = CFGMR3InsertString(pCfg, "Trunk", pszHifName);
-                RC_CHECK();
-                rc = CFGMR3InsertString(pCfg, "Network", szNetwork);
-                RC_CHECK();
-                rc = CFGMR3InsertInteger(pCfg, "TrunkType", kIntNetTrunkType_NetAdp);
-                RC_CHECK();
-                networkName = Bstr(szNetwork);
-                trunkName   = Bstr(pszHifName);
-                trunkType   = TRUNKTYPE_NETADP;
+            rc = CFGMR3InsertString(pCfg, "Trunk", pszHifName);                     RC_CHECK();
+            rc = CFGMR3InsertString(pCfg, "Network", szNetwork);                    RC_CHECK();
+            rc = CFGMR3InsertInteger(pCfg, "TrunkType", kIntNetTrunkType_NetAdp);   RC_CHECK();
+            networkName = Bstr(szNetwork);
+            trunkName   = Bstr(pszHifName);
+            trunkType   = TRUNKTYPE_NETADP;
 #else
-                rc = CFGMR3InsertString(pCfg, "Trunk", pszHifName);
-                RC_CHECK();
-                rc = CFGMR3InsertString(pCfg, "Network", szNetwork);
-                RC_CHECK();
-                rc = CFGMR3InsertInteger(pCfg, "TrunkType", kIntNetTrunkType_NetFlt);
-                RC_CHECK();
-                networkName = Bstr(szNetwork);
-                trunkName   = Bstr(pszHifName);
-                trunkType   = TRUNKTYPE_NETFLT;
+            rc = CFGMR3InsertString(pCfg, "Trunk", pszHifName);                     RC_CHECK();
+            rc = CFGMR3InsertString(pCfg, "Network", szNetwork);                    RC_CHECK();
+            rc = CFGMR3InsertInteger(pCfg, "TrunkType", kIntNetTrunkType_NetFlt);   RC_CHECK();
+            networkName = Bstr(szNetwork);
+            trunkName   = Bstr(pszHifName);
+            trunkType   = TRUNKTYPE_NETFLT;
 #endif
 #if !defined(RT_OS_WINDOWS) && defined(VBOX_WITH_NETFLT)
 
-                Bstr tmpAddr, tmpMask;
+            Bstr tmpAddr, tmpMask;
 
-                hrc = virtualBox->GetExtraData(BstrFmt("HostOnly/%s/IPAddress", pszHifName), tmpAddr.asOutParam());
-                if (SUCCEEDED(hrc) && !tmpAddr.isEmpty())
-                {
-                    hrc = virtualBox->GetExtraData(BstrFmt("HostOnly/%s/IPNetMask", pszHifName), tmpMask.asOutParam());
-                    if (SUCCEEDED(hrc) && !tmpMask.isEmpty())
-                        hrc = hostInterface->EnableStaticIpConfig(BstrFmt("HostOnly/%s/IPAddress", pszHifName),
-                                                                  BstrFmt("HostOnly/%s/IPNetMask", pszHifName));
-                    else
-                        hrc = hostInterface->EnableStaticIpConfig(BstrFmt("HostOnly/%s/IPAddress", pszHifName),
-                                                                  Bstr(VBOXNET_IPV4MASK_DEFAULT));
-                }
-                else
-                    hrc = hostInterface->EnableStaticIpConfig(Bstr(VBOXNET_IPV4ADDR_DEFAULT),
-                                                              Bstr(VBOXNET_IPV4MASK_DEFAULT));
-
-                hrc = virtualBox->GetExtraData(BstrFmt("HostOnly/%s/IPV6Address", pszHifName), tmpAddr.asOutParam());
-                if (SUCCEEDED(hrc))
-                    hrc = virtualBox->GetExtraData(BstrFmt("HostOnly/%s/IPV6NetMask", pszHifName), tmpMask.asOutParam());
-                if (SUCCEEDED(hrc) && !tmpAddr.isEmpty() && !tmpMask.isEmpty())
-                    hrc = hostInterface->EnableStaticIpConfigV6(tmpAddr, Utf8Str(tmpMask).toUInt32());
-#endif
-                break;
-            }
-
-            default:
-                AssertMsgFailed(("should not get here!\n"));
-                break;
-        }
-
-        /*
-         * Attempt to attach the driver.
-         */
-        switch (eAttachmentType)
-        {
-            case NetworkAttachmentType_Null:
-                break;
-
-            case NetworkAttachmentType_Bridged:
-            case NetworkAttachmentType_Internal:
-            case NetworkAttachmentType_HostOnly:
-            case NetworkAttachmentType_NAT:
+            hrc = virtualBox->GetExtraData(BstrFmt("HostOnly/%s/IPAddress", pszHifName), tmpAddr.asOutParam());
+            if (SUCCEEDED(hrc) && !tmpAddr.isEmpty())
             {
-                if (SUCCEEDED(hrc) && SUCCEEDED(rc))
-                {
-                    if (attachDetach)
-                    {
-                        rc = PDMR3DeviceAttach (pVM, pszDevice, uInstance, uLun, NULL, PDMDEVATT_FLAGS_NOT_HOT_PLUG);
-                        AssertRC (rc);
-                    }
-
-                    {
-                        /** @todo r=pritesh: get the dhcp server name from the
-                         * previous network configuration and then stop the server
-                         * else it may conflict with the dhcp server running  with
-                         * the current attachment type
-                         */
-                        /* Stop the hostonly DHCP Server */
-                    }
-
-                    if(!networkName.isNull())
-                    {
-                        /*
-                         * Until we implement service reference counters DHCP Server will be stopped
-                         * by DHCPServerRunner destructor.
-                         */
-                        ComPtr<IDHCPServer> dhcpServer;
-                        hrc = virtualBox->FindDHCPServerByNetworkName(networkName.mutableRaw(), dhcpServer.asOutParam());
-                        if(SUCCEEDED(hrc))
-                        {
-                            /* there is a DHCP server available for this network */
-                            BOOL bEnabled;
-                            hrc = dhcpServer->COMGETTER(Enabled)(&bEnabled);
-                            if(FAILED(hrc))
-                            {
-                                LogRel(("DHCP svr: COMGETTER(Enabled) failed, hrc (0x%x)", hrc));
-                                H();
-                            }
-
-                            if(bEnabled)
-                                hrc = dhcpServer->Start(networkName, trunkName, trunkType);
-                        }
-                        else
-                        {
-                            hrc = S_OK;
-                        }
-                    }
-                }
-
-                break;
+                hrc = virtualBox->GetExtraData(BstrFmt("HostOnly/%s/IPNetMask", pszHifName), tmpMask.asOutParam());
+                if (SUCCEEDED(hrc) && !tmpMask.isEmpty())
+                    hrc = hostInterface->EnableStaticIpConfig(BstrFmt("HostOnly/%s/IPAddress", pszHifName),
+                                                              BstrFmt("HostOnly/%s/IPNetMask", pszHifName));
+                else
+                    hrc = hostInterface->EnableStaticIpConfig(BstrFmt("HostOnly/%s/IPAddress", pszHifName),
+                                                              Bstr(VBOXNET_IPV4MASK_DEFAULT));
             }
+            else
+                hrc = hostInterface->EnableStaticIpConfig(Bstr(VBOXNET_IPV4ADDR_DEFAULT),
+                                                          Bstr(VBOXNET_IPV4MASK_DEFAULT));
+            ComAssertComRC(hrc); /** @todo r=bird: Why this isn't fatal? (H()) */
 
-            default:
-                AssertMsgFailed(("should not get here!\n"));
-                break;
+            hrc = virtualBox->GetExtraData(BstrFmt("HostOnly/%s/IPV6Address", pszHifName), tmpAddr.asOutParam());
+            if (SUCCEEDED(hrc))
+                hrc = virtualBox->GetExtraData(BstrFmt("HostOnly/%s/IPV6NetMask", pszHifName), tmpMask.asOutParam());
+            if (SUCCEEDED(hrc) && !tmpAddr.isEmpty() && !tmpMask.isEmpty())
+            {    
+                hrc = hostInterface->EnableStaticIpConfigV6(tmpAddr, Utf8Str(tmpMask).toUInt32());
+                ComAssertComRC(hrc); /** @todo r=bird: Why this isn't fatal? (H()) */
+            }
+#endif
+            break;
         }
 
-        meAttachmentType[uInstance] = eAttachmentType;
+        default:
+            AssertMsgFailed(("should not get here!\n"));
+            break;
     }
-    while (0);
+
+    /*
+     * Attempt to attach the driver.
+     */
+    switch (eAttachmentType)
+    {
+        case NetworkAttachmentType_Null:
+            break;
+
+        case NetworkAttachmentType_Bridged:
+        case NetworkAttachmentType_Internal:
+        case NetworkAttachmentType_HostOnly:
+        case NetworkAttachmentType_NAT:
+        {
+            if (SUCCEEDED(hrc) && SUCCEEDED(rc))
+            {
+                if (fAttachDetach)
+                {
+                    rc = PDMR3DeviceAttach(pVM, pszDevice, uInstance, uLun, NULL, 0 /*fFlags*/);
+                    AssertRC(rc);
+                }
+
+                {
+                    /** @todo pritesh: get the dhcp server name from the
+                     * previous network configuration and then stop the server
+                     * else it may conflict with the dhcp server running  with
+                     * the current attachment type
+                     */
+                    /* Stop the hostonly DHCP Server */
+                }
+
+                if (!networkName.isNull())
+                {
+                    /*
+                     * Until we implement service reference counters DHCP Server will be stopped
+                     * by DHCPServerRunner destructor.
+                     */
+                    ComPtr<IDHCPServer> dhcpServer;
+                    hrc = virtualBox->FindDHCPServerByNetworkName(networkName.mutableRaw(), dhcpServer.asOutParam());
+                    if (SUCCEEDED(hrc))
+                    {
+                        /* there is a DHCP server available for this network */
+                        BOOL fEnabled;
+                        hrc = dhcpServer->COMGETTER(Enabled)(&fEnabled);
+                        if (FAILED(hrc))
+                        {
+                            LogRel(("DHCP svr: COMGETTER(Enabled) failed, hrc (%Rhrc)", hrc));
+                            H();
+                        }
+
+                        if (fEnabled)
+                            hrc = dhcpServer->Start(networkName, trunkName, trunkType);
+                    }
+                    else
+                        hrc = S_OK;
+                }
+            }
+
+            break;
+        }
+
+        default:
+            AssertMsgFailed(("should not get here!\n"));
+            break;
+    }
+
+    meAttachmentType[uInstance] = eAttachmentType;
 
 #undef STR_FREE
 #undef STR_CONV
 #undef H
 #undef RC_CHECK
 
-    return rcRet;
+    return VINF_SUCCESS;
 }
 
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */
