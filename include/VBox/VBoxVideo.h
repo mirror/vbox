@@ -254,6 +254,11 @@ typedef struct _VBOXVIDEOINFOQUERYCONF32
 # ifdef VBOX_WITH_VIDEOHWACCEL
 #pragma pack(1)
 
+#define VBOXVHWA_VERSION_MAJ 0
+#define VBOXVHWA_VERSION_MIN 0
+#define VBOXVHWA_VERSION_BLD 1
+#define VBOXVHWA_VERSION_RSV 0
+
 typedef enum
 {
     VBOXVHWACMD_TYPE_SURF_CANCREATE = 1,
@@ -510,17 +515,41 @@ typedef struct _VBOXVHWA_OVERLAYFX
 
 #define VBOXVHWA_OFFSET64_VOID        (~0L)
 
+typedef struct _VBOXVHWA_VERSION
+{
+    uint32_t maj;
+    uint32_t min;
+    uint32_t bld;
+    uint32_t reserved;
+} VBOXVHWA_VERSION;
+
 typedef struct _VBOXVHWACMD_QUERYINFO1
 {
-    uint32_t cfgFlags;
-    uint32_t caps;
-    uint32_t caps2;
-    uint32_t colorKeyCaps;
-    uint32_t stretchCaps;
-    uint32_t surfaceCaps;
-    uint32_t numOverlays;
-    uint32_t numFourCC;
+    union
+    {
+        struct
+        {
+            VBOXVHWA_VERSION guestVersion;
+        } in;
 
+        struct
+        {
+            uint32_t cfgFlags;
+            uint32_t caps;
+
+            uint32_t caps2;
+            uint32_t colorKeyCaps;
+
+            uint32_t stretchCaps;
+            uint32_t surfaceCaps;
+
+            uint32_t numOverlays;
+            uint32_t curOverlays;
+
+            uint32_t numFourCC;
+            uint32_t reserved;
+        } out;
+    } u;
 } VBOXVHWACMD_QUERYINFO1;
 
 typedef struct _VBOXVHWACMD_QUERYINFO2

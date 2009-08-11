@@ -748,7 +748,7 @@ public:
     static QString documentsPath();
 
 #ifdef VBOX_WITH_VIDEOHWACCEL
-    static bool isAcceleration2DVideoAvailable() { /* TODO: */ return true; }
+    static bool isAcceleration2DVideoAvailable();
     VBoxDefs::RenderMode vmAcceleration2DVideoRenderMode() { return VBoxDefs::QGLMode; }
 #endif
 

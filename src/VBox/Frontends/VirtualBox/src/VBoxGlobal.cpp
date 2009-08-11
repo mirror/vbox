@@ -36,6 +36,10 @@
 #endif
 #include "VBoxUpdateDlg.h"
 
+#ifdef VBOX_WITH_VIDEOHWACCEL
+#include "VBoxFrameBuffer.h"
+#endif
+
 /* Qt includes */
 #include <QProgressDialog>
 #include <QLibraryInfo>
@@ -4064,6 +4068,14 @@ QString VBoxGlobal::documentsPath()
             return QDir::homePath();
     }
 }
+
+#ifdef VBOX_WITH_VIDEOHWACCEL
+/* static */
+bool VBoxGlobal::isAcceleration2DVideoAvailable()
+{
+    return VBoxQGLFrameBuffer::isAcceleration2DVideoAvailable();
+}
+#endif
 
 // Public slots
 ////////////////////////////////////////////////////////////////////////////////
