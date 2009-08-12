@@ -225,7 +225,10 @@ if_start(PNATState pData)
 
         if_encap(pData, ETH_P_IP, ifm);
 
-        if (!if_queued)
+        if (!if_queued) 
+        {
+            slirp_flush_dev(pData->pvUser);
             return;
+        }
     }
 }

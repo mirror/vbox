@@ -60,6 +60,10 @@
  *        activity. This needs to be fixed properly.
  */
 #define VBOX_NAT_DELAY_HACK
+#if 0
+#define SLIRP_CAN_SAND_IN_PDM 1
+#define SLIRP_FLUSH_DEV 1
+#endif
 
 #define GET_EXTRADATA(pthis, node, name, rc, type, type_name, var)                                  \
 do {                                                                                                \
@@ -536,6 +540,7 @@ static DECLCALLBACK(int) drvNATAsyncIoGuestWakeup(PPDMDRVINS pDrvIns, PPDMTHREAD
  */
 int slirp_can_output(void *pvUser)
 {
+#ifdef SLIRP_CAN_SAND_IN_PDM
     int status = 0;
     int rc = 0;
     PDRVNAT pThis = (PDRVNAT)pvUser;
@@ -551,8 +556,20 @@ int slirp_can_output(void *pvUser)
         return status;
     }
     return 0;
+#else
+   PDRVNAT pThis = (PDRVNAT)pvUser;
+   return (RT_SUCCESS(pThis->pPort->pfnWaitReceiveAvail(pThis->pPort, 0))? 1 : 0);
+#endif
 }
 
+void slirp_flush_dev(void *pvUser)
+{
+#ifdef SLIRP_FLUSH_DEV
+    PDRVNAT pThis = (PDRVNAT)pvUser;
+    /*@todo: idealy should be done in other thread */
+    PDMQueueFlush(pThis->pSendQueue);
+#endif
+}
 
 /**
  * Function called by slirp to feed incoming data to the network port.
