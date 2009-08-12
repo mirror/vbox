@@ -1420,7 +1420,8 @@ STDMETHODIMP Machine::COMSETTER(Accelerate2DVideoEnabled)(BOOL enable)
     mHWData->mAccelerate2DVideoEnabled = enable;
 
     // this feature may require an XML version bump
-    mData->m_pMachineConfigFile->setRequiredSettingsVersion(SettingsVersion_v1_8);
+    if (enable)
+        mData->m_pMachineConfigFile->setRequiredSettingsVersion(SettingsVersion_v1_8);
 
     return S_OK;
 }
