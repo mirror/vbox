@@ -2336,7 +2336,7 @@ void HardDisk::cancelDiscard (MergeChain *aChain)
 Bstr HardDisk::preferredDiffFormat()
 {
     AutoCaller autoCaller(this);
-    AssertReturn(autoCaller.rc(), "");
+    AssertReturn(!autoCaller.rc(), "");
 
     /* mm.format is const, no need to lock */
     Bstr bstrFormat = mm.format;
