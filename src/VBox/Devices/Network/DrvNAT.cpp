@@ -537,7 +537,9 @@ static DECLCALLBACK(int) drvNATAsyncIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
         }
 # endif
 #endif /* RT_OS_WINDOWS */
+#ifdef SLIRP_SPLIT_CAN_OUTPUT
         drvNATPDMQueueFlusherWakeup(pThis->pDrvIns, pThis->pPDMQueueFlusher); 
+#endif
     }
 
     return VINF_SUCCESS;
