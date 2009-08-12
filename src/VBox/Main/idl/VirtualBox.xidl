@@ -4121,15 +4121,14 @@
 
     <attribute name="accelerate3DEnabled" type="boolean" default="false">
       <desc>
-        This setting determines whether VirtualBox allows guests to make use
-        of the 3D graphics support available on the host. Currently limited
-        to OpenGL only. </desc>
+        This setting determines whether VirtualBox allows this machine to make
+        use of the 3D graphics support available on the host.</desc>
     </attribute>
 
     <attribute name="accelerate2DVideoEnabled" type="boolean" default="false">
       <desc>
-        This setting determines whether VirtualBox allows guests to make use
-        of the 2D Video graphics support available on the host. </desc>
+        This setting determines whether VirtualBox allows this machine to make
+        use of the 2D video acceleration support available on the host.</desc>
     </attribute>
 
     <attribute name="monitorCount" type="unsigned long">
