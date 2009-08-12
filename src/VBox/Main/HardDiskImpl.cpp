@@ -1982,8 +1982,8 @@ HRESULT HardDisk::saveSettings(settings::Medium &data)
         /* only save properties that have non-default values */
         if (!it->second.isNull())
         {
-            Utf8Str name = it->first;
-            Utf8Str value = it->second;
+            const Utf8Str &name = it->first;
+            const Utf8Str &value = it->second;
             data.properties[name] = value;
         }
     }
