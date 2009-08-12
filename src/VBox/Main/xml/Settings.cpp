@@ -370,12 +370,9 @@ void ConfigFileBase::createStubDocument()
     m->pelmRoot = m->pDoc->createRootElement("VirtualBox");
     m->pelmRoot->setAttribute("xmlns", VBOX_XML_NAMESPACE);
 
-    const char *pcszVersion;
+    const char *pcszVersion = "1.7";
     switch (m->sv)
     {
-        case SettingsVersion_v1_7:
-            pcszVersion = "1.7";
-        break;
         case SettingsVersion_v1_8:
             pcszVersion = "1.8";
         break;
