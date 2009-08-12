@@ -525,7 +525,8 @@ void clipPeekEventAndDoXFixesHandling(CLIPBACKEND *pCtx)
     XEvent event = { 0 };
 
     if (XtAppPeekEvent(pCtx->appContext, &event))
-        if (event.type == pCtx->fixesEventBase)
+        if (   !pCtx->fOwnsClipboard
+            && (event.type == pCtx->fixesEventBase))
             clipQueryX11CBFormats(pCtx);
 }
 
@@ -1164,6 +1165,7 @@ static Boolean clipXtConvertSelectionProc(Widget widget, Atom *atomSelection,
     if (*atomTarget == clipGetAtom(pCtx->widget, "TARGETS"))
         rc = clipCreateX11Targets(pCtx, atomTypeReturn, pValReturn,
                                   pcLenReturn, piFormatReturn);
+    else
         rc = clipConvertVBoxCBForX11(pCtx, atomTarget, atomTypeReturn,
                                      pValReturn, pcLenReturn, piFormatReturn);
     LogRelFlowFunc(("returning, internal status code %Rrc\n", rc));
@@ -1219,11 +1221,12 @@ static void clipInvalidateVBoxCBCache(CLIPBACKEND *pCtx)
  */
 static void clipGrabX11CB(CLIPBACKEND *pCtx, uint32_t u32Formats)
 {
+    /* Make sure we don't try to query ourselves if we get the clipboard */
+    pCtx->fOwnsClipboard = true;
     if (XtOwnSelection(pCtx->widget, clipGetAtom(pCtx->widget, "CLIPBOARD"),
                        CurrentTime, clipXtConvertSelectionProc,
                        clipXtLoseSelectionProc, 0))
     {
-        pCtx->fOwnsClipboard = true;
         pCtx->vboxFormats = u32Formats;
         /* Grab the middle-button paste selection too. */
         XtOwnSelection(pCtx->widget, clipGetAtom(pCtx->widget, "PRIMARY"),
