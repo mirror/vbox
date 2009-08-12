@@ -61,8 +61,8 @@
  */
 #define VBOX_NAT_DELAY_HACK
 #if 0
-#define SLIRP_SPLIT_CAN_OUTPUT 1
 #define SLIRP_CAN_SAND_IN_PDM 1
+#define SLIRP_SPLIT_CAN_OUTPUT 1
 #define SLIRP_FLUSH_DEV 1
 #endif
 
@@ -176,6 +176,57 @@ typedef struct DRVNAT
 } DRVNAT;
 /** Pointer the NAT driver instance data. */
 typedef DRVNAT *PDRVNAT;
+
+#ifdef SLIRP_FLUSH_DEV
+static DECLCALLBACK(int) drvNATPDMQueueFlusher(PPDMDRVINS pDrvIns, PPDMTHREAD pThread)
+ {
+    PDRVNAT pThis = PDMINS_2_DATA(pDrvIns, PDRVNAT);
+    if (pThread->enmState == PDMTHREADSTATE_INITIALIZING)
+        return VINF_SUCCESS;
+    while (pThread->enmState == PDMTHREADSTATE_RUNNING)
+	{
+        int rc = pThis->pPort->pfnWaitReceiveAvail(pThis->pPort, 0);
+        int new_flag = RT_SUCCESS(rc) ? 1 : 0;
+
+        if (pThis->output_flag == 0 && new_flag == 1)
+        {
+            int rc;
+            pThis->output_flag = new_flag;
+            /*we need inform NAT thread*/
+#ifndef RT_OS_WINDOWS
+            /* kick select() */
+            rc = RTFileWrite(pThis->PipeWrite, "", 1, NULL);
+            AssertRC(rc);
+#else
+            /* kick WSAWaitForMultipleEvents */
+            rc = WSASetEvent(pThis->hWakeupEvent);
+            AssertRelease(rc == TRUE);
+#endif
+        } 
+        if (new_flag == 0)
+        {
+            pThis->output_flag = 0;
+            goto flusher_sleeping; /*flushing won't give any results */
+        }
+        pThis->output_flag = 0;
+        PDMQueueFlush(pThis->pSendQueue); 
+        rc = pThis->pPort->pfnWaitReceiveAvail(pThis->pPort, 0);
+        pThis->output_flag = RT_SUCCESS(rc) ? 1 : 0;
+    flusher_sleeping:
+        RTSemEventWait(pThis->semPDMQueueFlusher, RT_INDEFINITE_WAIT);
+	}
+    return VINF_SUCCESS;
+}
+
+
+static DECLCALLBACK(int) drvNATPDMQueueFlusherWakeup(PPDMDRVINS pDrvIns, PPDMTHREAD pThread)
+{
+    PDRVNAT pThis = PDMINS_2_DATA(pDrvIns, PDRVNAT);
+    int rc = RTSemEventSignal(pThis->semPDMQueueFlusher);
+    AssertReleaseRC(rc);
+    return VINF_SUCCESS;
+}
+#endif
 
 /**
  * NAT queue item.
@@ -486,6 +537,7 @@ static DECLCALLBACK(int) drvNATAsyncIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
         }
 # endif
 #endif /* RT_OS_WINDOWS */
+        drvNATPDMQueueFlusherWakeup(pThis->pDrvIns, pThis->pPDMQueueFlusher); 
     }
 
     return VINF_SUCCESS;
@@ -538,30 +590,6 @@ static DECLCALLBACK(int) drvNATAsyncIoGuestWakeup(PPDMDRVINS pDrvIns, PPDMTHREAD
 }
 
 #endif /* VBOX_WITH_SLIRP_MT */
-#ifdef SLIRP_FLUSH_DEV
-static DECLCALLBACK(int) drvNATPDMQueueFlusher(PPDMDRVINS pDrvIns, PPDMTHREAD pThread)
-{
-    PDRVNAT pThis = PDMINS_2_DATA(pDrvIns, PDRVNAT);
-    if (pThread->enmState == PDMTHREADSTATE_INITIALIZING)
-        return VINF_SUCCESS;
-    while (pThread->enmState == PDMTHREADSTATE_RUNNING)
-	{
-        pThis->output_flag = 0;
-        PDMQueueFlush(pThis->pSendQueue);
-        pThis->output_flag = 1;
-        RTSemEventWait(pThis->semPDMQueueFlusher, RT_INDEFINITE_WAIT);
-	}
-    return VINF_SUCCESS;
-}
-
-
-static DECLCALLBACK(int) drvNATPDMQueueFlusherWakeup(PPDMDRVINS pDrvIns, PPDMTHREAD pThread)
-{
-    PDRVNAT pThis = PDMINS_2_DATA(pDrvIns, PDRVNAT);
-
-    return VINF_SUCCESS;
-}
-#endif
 
 /**
  * Function called by slirp to check if it's possible to feed incoming data to the network port.
@@ -589,7 +617,8 @@ int slirp_can_output(void *pvUser)
     return 0;
 # else
    PDRVNAT pThis = (PDRVNAT)pvUser;
-   return (RT_SUCCESS(pThis->pPort->pfnWaitReceiveAvail(pThis->pPort, 0))? 1 : 0) & pThis->output_flag;
+   //drvNATPDMQueueFlusherWakeup(pThis->pDrvIns, pThis->pPDMQueueFlusher); 
+   return pThis->output_flag;
 # endif
 #else
     return 1;
@@ -599,8 +628,10 @@ int slirp_can_output(void *pvUser)
 void slirp_flush_dev(void *pvUser)
 {
 #ifdef SLIRP_FLUSH_DEV
+#if 0
     PDRVNAT pThis = (PDRVNAT)pvUser;
-    RTSemEventSignal(pThis->semPDMQueueFlusher);
+    drvNATPDMQueueFlusherWakeup(pThis->pDrvIns, pThis->pPDMQueueFlusher); 
+#endif
 #endif
 }
 
@@ -1018,7 +1049,7 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandl
 
             rc = RTSemEventCreate(&pThis->semStatus);
             AssertRC(rc);
-            pThis->output_flag = 1;
+            pThis->output_flag = 0;
 #ifdef SLIRP_FLUSH_DEV
             rc = PDMDrvHlpPDMThreadCreate(pDrvIns, &pThis->pPDMQueueFlusher, pThis, drvNATPDMQueueFlusher,
                                           drvNATPDMQueueFlusherWakeup, 128 * _1K, RTTHREADTYPE_IO, "NAT-PDMFLUSHER");
