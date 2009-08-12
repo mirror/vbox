@@ -1913,18 +1913,22 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
         */
     if (FAILED(hrc = virtualBox->GetExtraDataKeys(ComSafeArrayAsOutParam(aGlobalExtraDataKeys))))
         AssertMsgFailed(("VirtualBox::GetExtraDataKeys failed with %Rrc\n", hrc));
+
+    // remember the no. of global values so we can call the correct method below
     size_t cGlobalValues = aGlobalExtraDataKeys.size();
+
     if (FAILED(hrc = pMachine->GetExtraDataKeys(ComSafeArrayAsOutParam(aMachineExtraDataKeys))))
         AssertMsgFailed(("IMachine::GetExtraDataKeys failed with %Rrc\n", hrc));
 
-    // build a combined list, prefix global keys with "G:"...
+    // build a combined list from global keys...
     std::list<Utf8Str> llExtraDataKeys;
     size_t i;
     for (i = 0; i < aGlobalExtraDataKeys.size(); ++i)
         llExtraDataKeys.push_back(Utf8Str(aGlobalExtraDataKeys[i]));
-    // ... and machine keys with "M:" (so we know below which method to call)
+    // ... and machine keys
     for (i = 0; i < aMachineExtraDataKeys.size(); ++i)
         llExtraDataKeys.push_back(Utf8Str(aMachineExtraDataKeys[i]));
+
     i = 0;
     for (std::list<Utf8Str>::const_iterator it = llExtraDataKeys.begin();
          it != llExtraDataKeys.end();
@@ -2812,4 +2816,3 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
     return VINF_SUCCESS;
 }
 
-/* vi: set tabstop=4 shiftwidth=4 expandtab: */

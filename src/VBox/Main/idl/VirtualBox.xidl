@@ -375,7 +375,7 @@
       <desc>Legacy settings version, not currently supported.</desc>
     </const>
     <const name="v1_5"     value="7">
-      <desc>Settings version "1.5", written by VirtualBox 2.1.x.</desc>
+      <desc>Legacy settings version, not currently supported.</desc>
       <!-- 2008-09-04: 2.0.0 released
            2008-11-20: settings version 1.5 introduced
            2008-12-17: 2.1.0 released

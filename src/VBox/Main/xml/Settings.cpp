@@ -271,6 +271,11 @@ com::Utf8Str ConfigFileBase::makeString(const RTTIMESPEC &stamp)
                       (uint16_t)time.u8Second);
 }
 
+/**
+ * Helper to create a string for a GUID.
+ * @param guid
+ * @return
+ */
 com::Utf8Str ConfigFileBase::makeString(const Guid &guid)
 {
     Utf8Str str("{");
@@ -397,6 +402,11 @@ void ConfigFileBase::createStubDocument()
 }
 
 /**
+ * Creates an <ExtraData> node under the given parent element with
+ * <ExtraDataItem> childern according to the contents of the given
+ * map.
+ * This is in ConfigFileBase because it's used in both MainConfigFile
+ * MachineConfigFile, which both can have extradata.
  *
  * @param elmParent
  * @param me
@@ -422,10 +432,14 @@ void ConfigFileBase::writeExtraData(xml::ElementNode &elmParent,
 
 /**
  * Creates <DeviceFilter> nodes under the given parent element according to
- * the contents of the given USBDeviceFiltersList. If fHostMode is true,
- * this means that we're supposed to write filters for the IHost interface
- * (respect "action", omit "strRemote" and "ulMaskedInterfaces" in
- * struct USBDeviceFilter).
+ * the contents of the given USBDeviceFiltersList. This is in ConfigFileBase
+ * because it's used in both MainConfigFile (for host filters) and
+ * MachineConfigFile (for machine filters).
+ *
+ * If fHostMode is true, this means that we're supposed to write filters
+ * for the IHost interface (respect "action", omit "strRemote" and
+ * "ulMaskedInterfaces" in struct USBDeviceFilter).
+ *
  * @param elmParent
  * @param ll
  * @param fHostMode
@@ -680,8 +694,8 @@ void MainConfigFile::readDHCPServers(const xml::ElementNode &elmDHCPServers)
  * are initialized with default values.
  *
  * Throws variants of xml::Error for I/O, XML and logical content errors, which
- * the caller should catch; if this constructor does not throw, then the file has
- * been successfully read.
+ * the caller should catch; if this constructor does not throw, then the member
+ * variables contain meaningful values (either from the file or defaults).
  *
  * @param strFilename
  */
@@ -766,9 +780,10 @@ MainConfigFile::MainConfigFile(const Utf8Str *pstrFilename)
 }
 
 /**
- * Writes out a single <HardDisk> element for the given Medium structure
+ * Creates a single <HardDisk> element for the given Medium structure
  * and recurses to write the child hard disks underneath. Called from
  * MainConfigFile::write().
+ *
  * @param elmMedium
  * @param m
  * @param level
@@ -817,7 +832,7 @@ void MainConfigFile::writeHardDisk(xml::ElementNode &elmMedium,
 }
 
 /**
- * Called from the IMachine interface to write out a machine config file. This
+ * Called from the IVirtualBox interface to write out VirtualBox.xml. This
  * builds an XML DOM tree and writes it out to disk.
  */
 void MainConfigFile::write(const com::Utf8Str strFilename)
@@ -920,6 +935,7 @@ void MainConfigFile::write(const com::Utf8Str strFilename)
 }
 
 /**
+ * Called from MachineConfigFile::readHardware() to network information.
  * @param elmNetwork
  * @param ll
  */
@@ -1483,7 +1499,7 @@ void MachineConfigFile::readHardDiskAttachments_pre1_7(const xml::ElementNode &e
  * Used both directly from readMachine and from readSnapshot, since snapshots
  * have their own storage controllers sections.
  *
- * This is only called for settings version 1.7 and above; see readHardDiskAttachments_pre1_7
+ * This is only called for settings version 1.7 and above; see readHardDiskAttachments_pre1_7()
  * for earlier versions.
  *
  * @param elmStorageControllers
@@ -1644,7 +1660,7 @@ void MachineConfigFile::readSnapshot(const xml::ElementNode &elmSnapshot,
 }
 
 /**
- * Called from the constructor to actually read in the Machine element
+ * Called from the constructor to actually read in the <Machine> element
  * of a machine config file.
  * @param elmMachine
  */
@@ -1721,8 +1737,8 @@ void MachineConfigFile::readMachine(const xml::ElementNode &elmMachine)
  * are initialized with default values.
  *
  * Throws variants of xml::Error for I/O, XML and logical content errors, which
- * the caller should catch; if this constructor does not throw, then the file has
- * been successfully read and parsed.
+ * the caller should catch; if this constructor does not throw, then the member
+ * variables contain meaningful values (either from the file or defaults).
  *
  * @param strFilename
  */
