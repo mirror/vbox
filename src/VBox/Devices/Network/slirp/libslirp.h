@@ -112,7 +112,6 @@ void *slirp_get_queue(PNATState pData);
  * Returns the timeout.
  */
 unsigned int slirp_get_timeout_ms(PNATState pData);
-void slirp_flush_dev(void *pvUser);
 
 # ifndef RT_OS_WINDOWS
 /*
