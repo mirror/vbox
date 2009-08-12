@@ -1174,11 +1174,8 @@ Host::CreateHostOnlyNetworkInterface (IHostNetworkInterface **aHostNetworkInterf
 }
 
 STDMETHODIMP
-Host::RemoveHostOnlyNetworkInterface (IN_BSTR aId,
-                                  IHostNetworkInterface **aHostNetworkInterface,
-                                  IProgress **aProgress)
+Host::RemoveHostOnlyNetworkInterface (IN_BSTR aId, IProgress **aProgress)
 {
-    CheckComArgOutPointerValid(aHostNetworkInterface);
     CheckComArgOutPointerValid(aProgress);
 
     AutoCaller autoCaller(this);
@@ -1195,7 +1192,7 @@ Host::RemoveHostOnlyNetworkInterface (IN_BSTR aId,
                 Guid (aId).raw());
     }
 
-    int r = NetIfRemoveHostOnlyNetworkInterface (mParent, Guid(aId), aHostNetworkInterface, aProgress);
+    int r = NetIfRemoveHostOnlyNetworkInterface (mParent, Guid(aId), aProgress);
     if(RT_SUCCESS(r))
     {
         return S_OK;
@@ -1283,10 +1280,9 @@ STDMETHODIMP Host::InsertUSBDeviceFilter (ULONG aPosition, IHostUSBDeviceFilter 
 #endif
 }
 
-STDMETHODIMP Host::RemoveUSBDeviceFilter (ULONG aPosition, IHostUSBDeviceFilter **aFilter)
+STDMETHODIMP Host::RemoveUSBDeviceFilter (ULONG aPosition)
 {
 #ifdef VBOX_WITH_USB
-    CheckComArgOutPointerValid(aFilter);
 
     /* Note: HostUSBDeviceFilter and USBProxyService also uses this lock. */
     AutoCaller autoCaller(this);
@@ -1318,8 +1314,6 @@ STDMETHODIMP Host::RemoveUSBDeviceFilter (ULONG aPosition, IHostUSBDeviceFilter 
         mUSBDeviceFilters.erase (it);
     }
 
-    filter.queryInterfaceTo(aFilter);
-
     /* notify the proxy (only when the filter is active) */
     if (mUSBProxyService->isActive() && filter->data().mActive)
     {
@@ -1336,7 +1330,6 @@ STDMETHODIMP Host::RemoveUSBDeviceFilter (ULONG aPosition, IHostUSBDeviceFilter 
      * extended error info to indicate that USB is simply not available
      * (w/o treating it as a failure), for example, as in OSE. */
     NOREF(aPosition);
-    NOREF(aFilter);
     ReturnComNotImplemented();
 #endif
 }

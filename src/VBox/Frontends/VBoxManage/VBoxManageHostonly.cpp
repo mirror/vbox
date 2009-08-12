@@ -117,7 +117,7 @@ static int handleRemove(HandlerArg *a, int iStart, int *pcProcessed)
     CHECK_ERROR(hif, COMGETTER(Id)(guid.asOutParam()));
 
     ComPtr<IProgress> progress;
-    CHECK_ERROR(host, RemoveHostOnlyNetworkInterface (guid, hif.asOutParam(),progress.asOutParam()));
+    CHECK_ERROR(host, RemoveHostOnlyNetworkInterface (guid, progress.asOutParam()));
 
     showProgress(progress);
 

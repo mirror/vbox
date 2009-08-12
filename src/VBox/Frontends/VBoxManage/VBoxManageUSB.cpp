@@ -546,7 +546,7 @@ int handleUSBFilter (HandlerArg *a)
             if (cmd.mGlobal)
             {
                 ComPtr <IHostUSBDeviceFilter> flt;
-                CHECK_ERROR_BREAK (host, RemoveUSBDeviceFilter (cmd.mIndex, flt.asOutParam()));
+                CHECK_ERROR_BREAK (host, RemoveUSBDeviceFilter (cmd.mIndex));
             }
             else
             {

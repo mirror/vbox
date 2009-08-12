@@ -214,7 +214,8 @@ int NetIfCreateHostOnlyNetworkInterface (VirtualBox *pVBox, IHostNetworkInterfac
 #endif
 }
 
-int NetIfRemoveHostOnlyNetworkInterface (VirtualBox *pVBox, IN_GUID aId, IHostNetworkInterface **aHostNetworkInterface, IProgress **aProgress)
+int NetIfRemoveHostOnlyNetworkInterface (VirtualBox *pVBox, IN_GUID aId,
+                                         IProgress **aProgress)
 {
 #if defined(RT_OS_LINUX) || defined(RT_OS_DARWIN)
     /* create a progress object */
@@ -240,7 +241,6 @@ int NetIfRemoveHostOnlyNetworkInterface (VirtualBox *pVBox, IN_GUID aId, IHostNe
         {
             CheckComRCReturnRC(rc);
             progress.queryInterfaceTo(aProgress);
-            iface.queryInterfaceTo(aHostNetworkInterface);
             rc = NetIfAdpCtl(Utf8Str(ifname).c_str(), "remove", NULL, NULL);
             if (RT_FAILURE(rc))
                 progress->notifyComplete(E_FAIL, COM_IIDOF(IHostNetworkInterface), HostNetworkInterface::getComponentName(), "Failed to execute '"VBOXNETADPCTL_NAME "' (exit status: %d)", rc);
