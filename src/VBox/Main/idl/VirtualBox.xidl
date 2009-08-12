@@ -378,13 +378,15 @@
       <desc>Settings version "1.5", written by VirtualBox 2.1.x.</desc>
       <!-- 2008-09-04: 2.0.0 released
            2008-11-20: settings version 1.5 introduced
-           2008-12-17: 2.1.0 released -->
+           2008-12-17: 2.1.0 released
+      -->
     </const>
     <const name="v1_6"     value="8">
-      <desc>Intermediate settings version "1.6", understood by VirtualBox 2.2 and above.</desc>
+      <desc>Settings version "1.6", written by VirtualBox 2.1.4 (at least).</desc>
       <!-- 2008-12-17: 2.1.0 released
-           2008-12-19: settings version 1.6 introduced (is in 2.2 branch)
-           2009-04-08: 2.2.0 released -->
+           2008-12-19: settings version 1.6 introduced (is in 2.1 branch)
+           2009-04-08: 2.2.0 released
+      -->
     </const>
     <const name="v1_7"     value="9">
       <desc>Settings version "1.7", written by VirtualBox 2.2.x and 3.0.x.</desc>

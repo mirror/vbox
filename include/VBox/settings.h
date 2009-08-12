@@ -556,7 +556,9 @@ public:
     void readSerialPorts(const xml::ElementNode &elmUART, SerialPortsList &ll);
     void readParallelPorts(const xml::ElementNode &elmLPT, ParallelPortsList &ll);
     void readGuestProperties(const xml::ElementNode &elmGuestProperties, Hardware &hw);
-    void readHardware(const xml::ElementNode &elmHardware, Hardware &hw);
+    void readStorageControllerAttributes(const xml::ElementNode &elmStorageController, StorageController &sctl);
+    void readHardware(const xml::ElementNode &elmHardware, Hardware &hw, Storage &strg);
+    void readHardDiskAttachments_pre1_7(const xml::ElementNode &elmHardDiskAttachments, Storage &strg);
     void readStorageControllers(const xml::ElementNode &elmStorageControllers, Storage &strg);
     void readSnapshot(const xml::ElementNode &elmSnapshot, Snapshot &snap);
     void readMachine(const xml::ElementNode &elmMachine);
