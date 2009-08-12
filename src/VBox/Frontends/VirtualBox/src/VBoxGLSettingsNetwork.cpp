@@ -441,7 +441,7 @@ void VBoxGLSettingsNetwork::remInterface()
     if (!iface.isNull())
     {
         /* Delete interface */
-        CProgress progress = host.RemoveHostOnlyNetworkInterface (iface.GetId(), iface);
+        CProgress progress = host.RemoveHostOnlyNetworkInterface (iface.GetId());
         if (host.isOk())
         {
             vboxProblem().showModalProgressDialog (progress,

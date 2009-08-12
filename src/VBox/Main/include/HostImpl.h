@@ -101,13 +101,11 @@ public:
 
     // IHost methods
     STDMETHOD(CreateHostOnlyNetworkInterface) (IHostNetworkInterface **aHostNetworkInterface,
-                                           IProgress **aProgress);
-    STDMETHOD(RemoveHostOnlyNetworkInterface) (IN_BSTR aId,
-                                           IHostNetworkInterface **aHostNetworkInterface,
-                                           IProgress **aProgress);
+                                               IProgress **aProgress);
+    STDMETHOD(RemoveHostOnlyNetworkInterface) (IN_BSTR aId, IProgress **aProgress);
     STDMETHOD(CreateUSBDeviceFilter) (IN_BSTR aName, IHostUSBDeviceFilter **aFilter);
     STDMETHOD(InsertUSBDeviceFilter) (ULONG aPosition, IHostUSBDeviceFilter *aFilter);
-    STDMETHOD(RemoveUSBDeviceFilter) (ULONG aPosition, IHostUSBDeviceFilter **aFilter);
+    STDMETHOD(RemoveUSBDeviceFilter) (ULONG aPosition);
 
     STDMETHOD(FindHostDVDDrive) (IN_BSTR aName, IHostDVDDrive **aDrive);
     STDMETHOD(FindHostFloppyDrive) (IN_BSTR aName, IHostFloppyDrive **aDrive);

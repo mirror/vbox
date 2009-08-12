@@ -1102,8 +1102,7 @@ int NetIfCreateHostOnlyNetworkInterface (VirtualBox *pVBox,
 }
 
 int NetIfRemoveHostOnlyNetworkInterface (VirtualBox *pVBox, IN_GUID aId,
-                                  IHostNetworkInterface **aHostNetworkInterface,
-                                  IProgress **aProgress)
+                                         IProgress **aProgress)
 {
 #ifndef VBOX_WITH_NETFLT
     return VERR_NOT_IMPLEMENTED;
