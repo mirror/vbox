@@ -280,6 +280,7 @@ VBoxSVC_SOURCES = \
 	Logging.cpp \
 	AutoLock.cpp \
 	Matching.cpp \
+	xml/Settings.cpp \
 	VirtualBoxBase.cpp \
 	VirtualBoxErrorInfoImpl.cpp \
 	VirtualBoxImpl.cpp \
@@ -313,7 +314,6 @@ VBoxSVC_SOURCES = \
 	BIOSSettingsImpl.cpp \
 	Version.cpp \
 	HostPower.cpp \
-	xml/Settings.cpp \
 	$(if $(VBOX_WITH_VRDP),VRDPServerImpl.cpp,) \
 	$(if $(VBOX_WITH_XPCOM),xpcom/server.cpp,) \
 	$(VBOX_XML_SCHEMADEFS_CPP)

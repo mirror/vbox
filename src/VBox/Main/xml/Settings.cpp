@@ -127,11 +127,13 @@ ConfigFileBase::ConfigFileBase(const com::Utf8Str *pstrFilename)
         {
             const char *pcsz = m->strSettingsVersionFull.c_str();
             if (    (pcsz[0] == '1')
-                && (pcsz[1] == '.')
-                && (pcsz[3] == '-')
+                 && (pcsz[1] == '.')
+                 && (pcsz[3] == '-')
             )
             {
-                if (pcsz[2] == '7')
+                if (pcsz[2] == '6')
+                    m->sv = SettingsVersion_v1_6;
+                else if (pcsz[2] == '7')
                     m->sv = SettingsVersion_v1_7;
                 else if (pcsz[2] == '8')
                     m->sv = SettingsVersion_v1_8;
@@ -370,11 +372,23 @@ void ConfigFileBase::createStubDocument()
     m->pelmRoot = m->pDoc->createRootElement("VirtualBox");
     m->pelmRoot->setAttribute("xmlns", VBOX_XML_NAMESPACE);
 
-    const char *pcszVersion = "1.7";
+    // we always write at least version 1.7; we write 1.8
+    // if that was requested thru setRequiredSettingsVersion().
+    // we make no attempt at writing earlier versions.
+    // Writing 1.6 would be messy for machine files because
+    // of the hard disk attachment changes which are not
+    // necessarily backwards compatible and we don't want to
+    // introduce complex logic to see whether they are.
+    const char *pcszVersion = NULL;
     switch (m->sv)
     {
         case SettingsVersion_v1_8:
             pcszVersion = "1.8";
+        break;
+
+        default:
+            pcszVersion = "1.7";
+            m->sv = SettingsVersion_v1_7;
         break;
     }
     m->pelmRoot->setAttribute("version", Utf8StrFmt("%s-%s",
@@ -1088,14 +1102,35 @@ void MachineConfigFile::readGuestProperties(const xml::ElementNode &elmGuestProp
 }
 
 /**
+ * Helper function to read attributes that are common to <SATAController> (pre-1.7)
+ * and <StorageController>.
+ * @param elmStorageController
+ * @param strg
+ */
+void MachineConfigFile::readStorageControllerAttributes(const xml::ElementNode &elmStorageController,
+                                                        StorageController &sctl)
+{
+    elmStorageController.getAttributeValue("PortCount", sctl.ulPortCount);
+    elmStorageController.getAttributeValue("IDE0MasterEmulationPort", sctl.lIDE0MasterEmulationPort);
+    elmStorageController.getAttributeValue("IDE0SlaveEmulationPort", sctl.lIDE0SlaveEmulationPort);
+    elmStorageController.getAttributeValue("IDE1MasterEmulationPort", sctl.lIDE1MasterEmulationPort);
+    elmStorageController.getAttributeValue("IDE1SlaveEmulationPort", sctl.lIDE1SlaveEmulationPort);
+}
+
+/**
  * Reads in a <Hardware> block and stores it in the given structure. Used
  * both directly from readMachine and from readSnapshot, since snapshots
  * have their own hardware sections.
+ *
+ * For legacy pre-1.7 settings we also need a storage structure because
+ * the IDE and SATA controllers used to be defined under <Hardware>.
+ *
  * @param elmHardware
  * @param hw
  */
 void MachineConfigFile::readHardware(const xml::ElementNode &elmHardware,
-                                     Hardware &hw)
+                                     Hardware &hw,
+                                     Storage &strg)
 {
     elmHardware.getAttributeValue("version", hw.strVersion);
             // defaults to 2 and is only written if != 2
@@ -1214,6 +1249,31 @@ void MachineConfigFile::readHardware(const xml::ElementNode &elmHardware,
                 pelmBIOSChild->getAttributeValue("enabled", hw.biosSettings.fPXEDebugEnabled);
             if ((pelmBIOSChild = pelmHwChild->findChildElement("TimeOffset")))
                 pelmBIOSChild->getAttributeValue("value", hw.biosSettings.llTimeOffset);
+
+            // legacy BIOS/IDEController (pre 1.7)
+            if (    (m->sv < SettingsVersion_v1_7)
+                 && ((pelmBIOSChild = pelmHwChild->findChildElement("IDEController")))
+               )
+            {
+                StorageController sctl;
+                sctl.strName = "IDE";
+                sctl.storageBus = StorageBus_IDE;
+
+                Utf8Str strType;
+                if (pelmBIOSChild->getAttributeValue("type", strType))
+                {
+                    if (strType == "PIIX3")
+                        sctl.controllerType = StorageControllerType_PIIX3;
+                    else if (strType == "PIIX4")
+                        sctl.controllerType = StorageControllerType_PIIX4;
+                    else if (strType == "ICH6")
+                        sctl.controllerType = StorageControllerType_ICH6;
+                    else
+                        throw ConfigFileError(this, N_("Invalid value %s for IDEController/type attribute"), strType.c_str());
+                }
+                sctl.ulPortCount = 2;
+                strg.llStorageControllers.push_back(sctl);
+            }
         }
         else if (pelmHwChild->nameEquals("DVDDrive"))
         {
@@ -1246,6 +1306,25 @@ void MachineConfigFile::readHardware(const xml::ElementNode &elmHardware,
 
             readUSBDeviceFilters(*pelmHwChild,
                                  hw.usbController.llDeviceFilters);
+        }
+        else if (    (m->sv < SettingsVersion_v1_7)
+                  && (pelmHwChild->nameEquals("SATAController"))
+                )
+        {
+            bool f;
+            if (    (pelmHwChild->getAttributeValue("enabled", f))
+                 && (f)
+               )
+            {
+                StorageController sctl;
+                sctl.strName = "SATA";
+                sctl.storageBus = StorageBus_SATA;
+                sctl.controllerType = StorageControllerType_IntelAhci;
+
+                readStorageControllerAttributes(*pelmHwChild, sctl);
+
+                strg.llStorageControllers.push_back(sctl);
+            }
         }
         else if (pelmHwChild->nameEquals("Network"))
             readNetworkAdapters(*pelmHwChild, hw.llNetworkAdapters);
@@ -1337,9 +1416,75 @@ void MachineConfigFile::readHardware(const xml::ElementNode &elmHardware,
 }
 
 /**
+ * This gets called instead of readStorageControllers() for legacy pre-1.7 settings
+ * files which have a <HardDiskAttachments> node and storage controller settings
+ * hidden in the <Hardware> settings. We set the StorageControllers fields just the
+ * same, just from different sources.
+ * @param elmHardware <Hardware> XML node.
+ * @param elmHardDiskAttachments  <HardDiskAttachments> XML node.
+ * @param strg
+ */
+void MachineConfigFile::readHardDiskAttachments_pre1_7(const xml::ElementNode &elmHardDiskAttachments,
+                                                       Storage &strg)
+{
+    StorageController *pIDEController = NULL;
+    StorageController *pSATAController = NULL;
+
+    for (StorageControllersList::iterator it = strg.llStorageControllers.begin();
+         it != strg.llStorageControllers.end();
+         ++it)
+    {
+        StorageController &s = *it;
+        if (s.storageBus == StorageBus_IDE)
+            pIDEController = &s;
+        else if (s.storageBus == StorageBus_SATA)
+            pSATAController = &s;
+    }
+
+    xml::NodesLoop nl1(elmHardDiskAttachments, "HardDiskAttachment");
+    const xml::ElementNode *pelmAttachment;
+    while ((pelmAttachment = nl1.forAllNodes()))
+    {
+        AttachedDevice att;
+        Utf8Str strUUID, strBus;
+
+        if (!pelmAttachment->getAttributeValue("hardDisk", strUUID))
+            throw ConfigFileError(this, N_("Required HardDiskAttachment/hardDisk attribute is missing"));
+        parseUUID(att.uuid, strUUID);
+
+        if (!pelmAttachment->getAttributeValue("bus", strBus))
+            throw ConfigFileError(this, N_("Required HardDiskAttachment/bus attribute is missing"));
+        // pre-1.7 'channel' is now port
+        if (!pelmAttachment->getAttributeValue("channel", att.lPort))
+            throw ConfigFileError(this, N_("Required HardDiskAttachment/channel attribute is missing"));
+        // pre-1.7 'device' is still device
+        if (!pelmAttachment->getAttributeValue("device", att.lDevice))
+            throw ConfigFileError(this, N_("Required HardDiskAttachment/device attribute is missing"));
+
+        if (strBus == "IDE")
+        {
+            if (!pIDEController)
+                throw ConfigFileError(this, N_("HardDiskAttachment/bus is 'IDE' but cannot find IDE controller"));
+            pIDEController->llAttachedDevices.push_back(att);
+        }
+        else if (strBus == "SATA")
+        {
+            if (!pSATAController)
+                throw ConfigFileError(this, N_("HardDiskAttachment/bus is 'SATA' but cannot find SATA controller"));
+            pSATAController->llAttachedDevices.push_back(att);
+        }
+        else
+            throw ConfigFileError(this, N_("HardDiskAttachment/bus attribute has illegal value '%s'"), strBus.c_str());
+    }
+}
+
+/**
  * Reads in a <StorageControllers> block and stores it in the given Storage structure.
  * Used both directly from readMachine and from readSnapshot, since snapshots
  * have their own storage controllers sections.
+ *
+ * This is only called for settings version 1.7 and above; see readHardDiskAttachments_pre1_7
+ * for earlier versions.
  *
  * @param elmStorageControllers
  */
@@ -1391,12 +1536,7 @@ void MachineConfigFile::readStorageControllers(const xml::ElementNode &elmStorag
         else
             throw ConfigFileError(this, N_("Invalid value %s for StorageController/type attribute"), strType.c_str());
 
-        pelmController->getAttributeValue("PortCount", sctl.ulPortCount);
-
-        pelmController->getAttributeValue("IDE0MasterEmulationPort", sctl.lIDE0MasterEmulationPort);
-        pelmController->getAttributeValue("IDE0SlaveEmulationPort", sctl.lIDE0SlaveEmulationPort);
-        pelmController->getAttributeValue("IDE1MasterEmulationPort", sctl.lIDE1MasterEmulationPort);
-        pelmController->getAttributeValue("IDE1SlaveEmulationPort", sctl.lIDE1SlaveEmulationPort);
+        readStorageControllerAttributes(*pelmController, sctl);
 
         xml::NodesLoop nlAttached(*pelmController, "AttachedDevice");
         const xml::ElementNode *pelmAttached;
@@ -1460,15 +1600,25 @@ void MachineConfigFile::readSnapshot(const xml::ElementNode &elmSnapshot,
 
     elmSnapshot.getAttributeValue("stateFile", snap.strStateFile);      // online snapshots only
 
+    // parse Hardware before the other elements because other things depend on it
+    const xml::ElementNode *pelmHardware;
+    if (!(pelmHardware = elmSnapshot.findChildElement("Hardware")))
+        throw ConfigFileError(this, N_("Required Snapshot/Hardware element is missing"));
+    readHardware(*pelmHardware, snap.hardware, snap.storage);
+
     xml::NodesLoop nlSnapshotChildren(elmSnapshot);
     const xml::ElementNode *pelmSnapshotChild;
     while ((pelmSnapshotChild = nlSnapshotChildren.forAllNodes()))
     {
         if (pelmSnapshotChild->nameEquals("Description"))
             snap.strDescription = pelmSnapshotChild->getValue();
-        else if (pelmSnapshotChild->nameEquals("Hardware"))
-            readHardware(*pelmSnapshotChild, snap.hardware);
-        else if (pelmSnapshotChild->nameEquals("StorageControllers"))
+        else if (    (m->sv < SettingsVersion_v1_7)
+                  && (pelmSnapshotChild->nameEquals("HardDiskAttachments"))
+                )
+            readHardDiskAttachments_pre1_7(*pelmSnapshotChild, snap.storage);
+        else if (    (m->sv >= SettingsVersion_v1_7)
+                  && (pelmSnapshotChild->nameEquals("StorageControllers"))
+                )
             readStorageControllers(*pelmSnapshotChild, snap.storage);
         else if (pelmSnapshotChild->nameEquals("Snapshots"))
         {
@@ -1486,6 +1636,8 @@ void MachineConfigFile::readSnapshot(const xml::ElementNode &elmSnapshot,
                     throw ConfigFileError(this, N_("Invalid element %s under Snapshots element"), pelmChildSnapshot->getName());
             }
         }
+        else if (pelmSnapshotChild->nameEquals("Hardware"))
+            ; // handled above
         else
             throw ConfigFileError(this, N_("Invalid element %s under Snapshot element"), pelmSnapshotChild->getName());
     }
@@ -1521,6 +1673,12 @@ void MachineConfigFile::readMachine(const xml::ElementNode &elmMachine)
             parseTimestamp(timeLastStateChange, str);
             // constructor has called RTTimeNow(&timeLastStateChange) before
 
+        // parse Hardware before the other elements because other things depend on it
+        const xml::ElementNode *pelmHardware;
+        if (!(pelmHardware = elmMachine.findChildElement("Hardware")))
+            throw ConfigFileError(this, N_("Required Machine/Hardware element is missing"));
+        readHardware(*pelmHardware, hardwareMachine, storageMachine);
+
         xml::NodesLoop nlRootChildren(elmMachine);
         const xml::ElementNode *pelmMachineChild;
         while ((pelmMachineChild = nlRootChildren.forAllNodes()))
@@ -1528,9 +1686,13 @@ void MachineConfigFile::readMachine(const xml::ElementNode &elmMachine)
             if (pelmMachineChild->nameEquals("ExtraData"))
                 readExtraData(*pelmMachineChild,
                               mapExtraDataItems);
-            else if (pelmMachineChild->nameEquals("Hardware"))
-                readHardware(*pelmMachineChild, hardwareMachine);
-            else if (pelmMachineChild->nameEquals("StorageControllers"))
+            else if (    (m->sv < SettingsVersion_v1_7)
+                      && (pelmMachineChild->nameEquals("HardDiskAttachments"))
+                    )
+                readHardDiskAttachments_pre1_7(*pelmMachineChild, storageMachine);
+            else if (    (m->sv >= SettingsVersion_v1_7)
+                      && (pelmMachineChild->nameEquals("StorageControllers"))
+                    )
                 readStorageControllers(*pelmMachineChild, storageMachine);
             else if (pelmMachineChild->nameEquals("Snapshot"))
             {
@@ -1541,6 +1703,8 @@ void MachineConfigFile::readMachine(const xml::ElementNode &elmMachine)
             }
             else if (pelmMachineChild->nameEquals("Description"))
                 strDescription = pelmMachineChild->getValue();
+            else if (pelmMachineChild->nameEquals("Hardware"))
+                ; // read above
             else
                 throw ConfigFileError(this, N_("Invalid element %s under Machine element"), pelmMachineChild->getName());
         }
