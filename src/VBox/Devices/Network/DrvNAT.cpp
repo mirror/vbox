@@ -168,8 +168,8 @@ typedef struct DRVNAT
     STAMCOUNTER             StatQueuePktSent;       /**< counting packet sent via PDM queue */
     STAMCOUNTER             StatQueuePktDropped;    /**< counting packet drops by PDM queue */
 #ifdef SLIRP_SPLIT_CAN_OUTPUT
-    PPDMTHREAD              pPDMQueueFlusher;
-    RTSEMEVENT              semPDMQueueFlusher;
+    PPDMTHREAD              thrNATRx;
+    RTSEMEVENT              semNATRx;
 #endif
     int     output_flag;
 } DRVNAT;
@@ -177,7 +177,7 @@ typedef struct DRVNAT
 typedef DRVNAT *PDRVNAT;
 
 #ifdef SLIRP_SPLIT_CAN_OUTPUT
-static DECLCALLBACK(int) drvNATPDMQueueFlusher(PPDMDRVINS pDrvIns, PPDMTHREAD pThread)
+static DECLCALLBACK(int) drvNATRx(PPDMDRVINS pDrvIns, PPDMTHREAD pThread)
  {
     PDRVNAT pThis = PDMINS_2_DATA(pDrvIns, PDRVNAT);
     if (pThread->enmState == PDMTHREADSTATE_INITIALIZING)
@@ -203,16 +203,16 @@ static DECLCALLBACK(int) drvNATPDMQueueFlusher(PPDMDRVINS pDrvIns, PPDMTHREAD pT
 #endif
         } 
         pThis->output_flag = new_flag;
-        RTSemEventWait(pThis->semPDMQueueFlusher, RT_INDEFINITE_WAIT);
+        RTSemEventWait(pThis->semNATRx, RT_INDEFINITE_WAIT);
 	}
     return VINF_SUCCESS;
 }
 
 
-static DECLCALLBACK(int) drvNATPDMQueueFlusherWakeup(PPDMDRVINS pDrvIns, PPDMTHREAD pThread)
+static DECLCALLBACK(int) drvNATRxWakeup(PPDMDRVINS pDrvIns, PPDMTHREAD pThread)
 {
     PDRVNAT pThis = PDMINS_2_DATA(pDrvIns, PDRVNAT);
-    int rc = RTSemEventSignal(pThis->semPDMQueueFlusher);
+    int rc = RTSemEventSignal(pThis->semNATRx);
     AssertReleaseRC(rc);
     return VINF_SUCCESS;
 }
@@ -528,7 +528,7 @@ static DECLCALLBACK(int) drvNATAsyncIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
 # endif
 #endif /* RT_OS_WINDOWS */
 #ifdef SLIRP_SPLIT_CAN_OUTPUT
-        drvNATPDMQueueFlusherWakeup(pThis->pDrvIns, pThis->pPDMQueueFlusher); 
+        drvNATRxWakeup(pThis->pDrvIns, pThis->thrNATRx); 
 #endif
     }
 
@@ -1032,10 +1032,10 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandl
             AssertRC(rc);
             pThis->output_flag = 0;
 #ifdef SLIRP_SPLIT_CAN_OUTPUT
-            rc = PDMDrvHlpPDMThreadCreate(pDrvIns, &pThis->pPDMQueueFlusher, pThis, drvNATPDMQueueFlusher,
-                                          drvNATPDMQueueFlusherWakeup, 128 * _1K, RTTHREADTYPE_IO, "NAT-PDMFLUSHER");
+            rc = PDMDrvHlpPDMThreadCreate(pDrvIns, &pThis->thrNATRx, pThis, drvNATRx,
+                                          drvNATRxWakeup, 128 * _1K, RTTHREADTYPE_IO, "NATRX");
             AssertReleaseRC(rc);
-            rc = RTSemEventCreate(&pThis->semPDMQueueFlusher);
+            rc = RTSemEventCreate(&pThis->semNATRx);
 #endif
 
 #ifndef RT_OS_WINDOWS
