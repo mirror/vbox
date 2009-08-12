@@ -2187,7 +2187,7 @@ RT_EXPORT_SYMBOL(RTLogPrintfV);
  */
 static void rtlogFlush(PRTLOGGER pLogger)
 {
-    if (!pLogger->offScratch)
+    if (pLogger->offScratch == 0)
         return; /* nothing to flush. */
 
 #ifndef IN_RC
