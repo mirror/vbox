@@ -8926,7 +8926,8 @@ HRESULT SessionMachine::endTakingSnapshot (BOOL aSuccess)
     AutoCaller autoCaller(this);
     AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
 
-    AutoWriteLock alock(this);
+    AutoMultiWriteLock2 alock(mParent, this);
+            // saveSettings needs VirtualBox lock
 
     AssertReturn(!mSnapshotData.mSnapshot.isNull(), E_FAIL);
 
