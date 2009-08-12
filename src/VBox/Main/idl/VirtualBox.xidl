@@ -390,10 +390,15 @@
       <desc>Settings version "1.7", written by VirtualBox 2.2.x and 3.0.x.</desc>
       <!-- 2008-12-17: 2.1.0 released
            2009-03-11: settings version 1.7 introduced (is in 2.2 branch)
-           2009-04-08: 2.2.0 released -->
+           2009-04-08: 2.2.0 released
+           VirtualBox.xml additions: NetserviceRegistry with DHCPServers
+           Machine changes: HardDiskAttachments is now StorageControllers
+      -->
     </const>
     <const name="v1_8"     value="10">
       <desc>Settings version "1.8", written by VirtualBox 3.1.x.</desc>
+      <!-- Machine additions: Display/@accelerate2DVideo
+      -->
     </const>
   </enum>
 
@@ -3940,14 +3945,12 @@
       session has been successfully opened, a mutable machine object needs to
       be queried from the session object and then the desired settings changes
       can be applied to the returned object using IMachine attributes and
-      methods. See the ISession interface description for more information
-      about sessions.
+      methods. See the <link to="ISession"/> interface description for more
+      information about sessions.
 
-      Note that the IMachine interface does not provide methods to control
-      virtual machine execution (such as start the machine, or power it
-      down) -- these methods are grouped in a separate IConsole
-      interface. Refer to the IConsole interface description to get more
-      information about this topic.
+      Note that IMachine does not provide methods to control virtual machine
+      execution (such as start the machine, or power it down) -- these methods
+      are grouped in a separate interface called <link to="IConsole" />.
 
       <see>ISession, IConsole</see>
     </desc>
@@ -3960,24 +3963,15 @@
       <desc>
         Whether this virtual machine is currently accessible or not.
 
-        The machine is considered to be inaccessible when:
-        <ul>
-          <li>It is a registered virtual machine, and
-          </li>
-          <li>Its settings file is inaccessible (for example, it is
-            located on a network share that is not accessible during
-            VirtualBox startup, or becomes inaccessible later, or if
-            the settings file can be read but is invalid).
-          </li>
-        </ul>
-
-        Otherwise, the value of this property is always @c true.
+        A machine is always deemed accessible unless it is registered <i>and</i>
+        its settings file cannot be read or parsed (either because the file itself
+        is unavailable or has invalid XML contents).
 
         Every time this property is read, the accessibility state of
         this machine is re-evaluated. If the returned value is @c false,
         the <link to="#accessError"/> property may be used to get the
         detailed error information describing the reason of
-        inaccessibility.
+        inaccessibility, including XML error messages.
 
         When the machine is inaccessible, only the following properties
         can be used on it:
