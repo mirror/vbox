@@ -2187,6 +2187,9 @@ RT_EXPORT_SYMBOL(RTLogPrintfV);
  */
 static void rtlogFlush(PRTLOGGER pLogger)
 {
+    if (!pLogger->offScratch)
+        return; /* nothing to flush. */
+
 #ifndef IN_RC
     if (pLogger->fDestFlags & RTLOGDEST_USER)
         RTLogWriteUser(pLogger->achScratch, pLogger->offScratch);
