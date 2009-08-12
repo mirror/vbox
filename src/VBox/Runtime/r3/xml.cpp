@@ -473,19 +473,21 @@ void Node::buildChildren()       // private
     {
         boost::shared_ptr<Node> pNew;
 
-        if (plibNode->name)
+        if (plibNode->type == XML_ELEMENT_NODE)
             pNew = boost::shared_ptr<Node>(new ElementNode);
-        else
+        else if (plibNode->type == XML_TEXT_NODE)
             pNew = boost::shared_ptr<Node>(new ContentNode);
+        if (pNew)
+        {
+            pNew->m->plibNode = plibNode;
+            pNew->m->pcszName = (const char*)plibNode->name;
+            pNew->m->pParent = this;
+            // store
+            m->children.push_back(pNew);
 
-        pNew->m->plibNode = plibNode;
-        pNew->m->pcszName = (const char*)plibNode->name;
-        pNew->m->pParent = this;
-        // store
-        m->children.push_back(pNew);
-
-        // recurse for this child element to get its own children
-        pNew->buildChildren();
+            // recurse for this child element to get its own children
+            pNew->buildChildren();
+        }
 
         plibNode = plibNode->next;
     }
