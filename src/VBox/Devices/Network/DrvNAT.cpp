@@ -61,6 +61,7 @@
  */
 #define VBOX_NAT_DELAY_HACK
 #if 0
+#define SLIRP_SPLIT_CAN_OUTPUT 1
 #define SLIRP_CAN_SAND_IN_PDM 1
 #define SLIRP_FLUSH_DEV 1
 #endif
@@ -167,6 +168,11 @@ typedef struct DRVNAT
 #endif
     STAMCOUNTER             StatQueuePktSent;       /**< counting packet sent via PDM queue */
     STAMCOUNTER             StatQueuePktDropped;    /**< counting packet drops by PDM queue */
+#ifdef SLIRP_FLUSH_DEV
+    PPDMTHREAD              pPDMQueueFlusher;
+    RTSEMEVENT              semPDMQueueFlusher;
+#endif
+    int     output_flag;
 } DRVNAT;
 /** Pointer the NAT driver instance data. */
 typedef DRVNAT *PDRVNAT;
@@ -532,6 +538,30 @@ static DECLCALLBACK(int) drvNATAsyncIoGuestWakeup(PPDMDRVINS pDrvIns, PPDMTHREAD
 }
 
 #endif /* VBOX_WITH_SLIRP_MT */
+#ifdef SLIRP_FLUSH_DEV
+static DECLCALLBACK(int) drvNATPDMQueueFlusher(PPDMDRVINS pDrvIns, PPDMTHREAD pThread)
+{
+    PDRVNAT pThis = PDMINS_2_DATA(pDrvIns, PDRVNAT);
+    if (pThread->enmState == PDMTHREADSTATE_INITIALIZING)
+        return VINF_SUCCESS;
+    while (pThread->enmState == PDMTHREADSTATE_RUNNING)
+	{
+        pThis->output_flag = 0;
+        PDMQueueFlush(pThis->pSendQueue);
+        pThis->output_flag = 1;
+        RTSemEventWait(pThis->semPDMQueueFlusher, RT_INDEFINITE_WAIT);
+	}
+    return VINF_SUCCESS;
+}
+
+
+static DECLCALLBACK(int) drvNATPDMQueueFlusherWakeup(PPDMDRVINS pDrvIns, PPDMTHREAD pThread)
+{
+    PDRVNAT pThis = PDMINS_2_DATA(pDrvIns, PDRVNAT);
+
+    return VINF_SUCCESS;
+}
+#endif
 
 /**
  * Function called by slirp to check if it's possible to feed incoming data to the network port.
@@ -540,7 +570,8 @@ static DECLCALLBACK(int) drvNATAsyncIoGuestWakeup(PPDMDRVINS pDrvIns, PPDMTHREAD
  */
 int slirp_can_output(void *pvUser)
 {
-#ifdef SLIRP_CAN_SAND_IN_PDM
+#ifdef SLIRP_SPLIT_CAN_OUTPUT
+# ifdef SLIRP_CAN_SAND_IN_PDM
     int status = 0;
     int rc = 0;
     PDRVNAT pThis = (PDRVNAT)pvUser;
@@ -553,12 +584,15 @@ int slirp_can_output(void *pvUser)
         PDMQueueInsert(pThis->pSendQueue, &pItem->Core);
         rc = RTSemEventWait(pThis->semStatus, RT_INDEFINITE_WAIT); 
         AssertRC(rc);
-        return status;
+        return status & pThis->output_flag;
     }
     return 0;
-#else
+# else
    PDRVNAT pThis = (PDRVNAT)pvUser;
-   return (RT_SUCCESS(pThis->pPort->pfnWaitReceiveAvail(pThis->pPort, 0))? 1 : 0);
+   return (RT_SUCCESS(pThis->pPort->pfnWaitReceiveAvail(pThis->pPort, 0))? 1 : 0) & pThis->output_flag;
+# endif
+#else
+    return 1;
 #endif
 }
 
@@ -566,8 +600,7 @@ void slirp_flush_dev(void *pvUser)
 {
 #ifdef SLIRP_FLUSH_DEV
     PDRVNAT pThis = (PDRVNAT)pvUser;
-    /*@todo: idealy should be done in other thread */
-    PDMQueueFlush(pThis->pSendQueue);
+    RTSemEventSignal(pThis->semPDMQueueFlusher);
 #endif
 }
 
@@ -631,6 +664,10 @@ static DECLCALLBACK(bool) drvNATQueueConsumer(PPDMDRVINS pDrvIns, PPDMQUEUEITEMC
     Log2(("drvNATQueueConsumer: pu8Buf:\n%.Rhxd\n", pItem->pu8Buf));
     switch (pItem->enmType) {
         case SLIRP_SEND:
+#ifndef SLIRP_SPLIT_CAN_OUTPUT
+            if (RT_FAILURE(pThis->pPort->pfnWaitReceiveAvail(pThis->pPort, 0)))
+                return false;
+#endif
             rc = pThis->pPort->pfnReceive(pThis->pPort, pItem->pu8Buf, pItem->cb);
             RTMemFree((void *)pItem->pu8Buf);
             break;
@@ -981,6 +1018,13 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandl
 
             rc = RTSemEventCreate(&pThis->semStatus);
             AssertRC(rc);
+            pThis->output_flag = 1;
+#ifdef SLIRP_FLUSH_DEV
+            rc = PDMDrvHlpPDMThreadCreate(pDrvIns, &pThis->pPDMQueueFlusher, pThis, drvNATPDMQueueFlusher,
+                                          drvNATPDMQueueFlusherWakeup, 128 * _1K, RTTHREADTYPE_IO, "NAT-PDMFLUSHER");
+            AssertReleaseRC(rc);
+            rc = RTSemEventCreate(&pThis->semPDMQueueFlusher);
+#endif
 
 #ifndef RT_OS_WINDOWS
             /*
