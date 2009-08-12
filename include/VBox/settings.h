@@ -566,6 +566,8 @@ public:
     void writeSnapshot(xml::ElementNode &elmParent, const Snapshot &snap);
     void write(const com::Utf8Str &strFilename);
 
+    void setRequiredSettingsVersion(SettingsVersion_T sv);
+
     com::Guid               uuid;
     com::Utf8Str            strName;
     bool                    fNameSync;

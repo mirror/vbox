@@ -725,6 +725,30 @@ MainConfigFile::MainConfigFile(const Utf8Str *pstrFilename)
 
         clearDocument();
     }
+
+    // DHCP servers were introduced with settings version 1.7; if we're loading
+    // from an older version OR this is a fresh install, then add one DHCP server
+    // with default settings
+    if (    (!llDhcpServers.size())
+         && (    (!pstrFilename)                    // empty VirtualBox.xml file
+              || (m->sv < SettingsVersion_v1_7)     // upgrading from before 1.7
+            )
+       )
+    {
+        DHCPServer srv;
+        srv.strNetworkName =
+#ifdef RT_OS_WINDOWS
+            "HostInterfaceNetworking-VirtualBox Host-Only Ethernet Adapter";
+#else
+            "HostInterfaceNetworking-vboxnet0";
+#endif
+        srv.strIPAddress = "192.168.56.100";
+        srv.strIPNetworkMask = "255.255.255.0";
+        srv.strIPLower = "192.168.56.101";
+        srv.strIPUpper = "192.168.56.254";
+        srv.fEnabled = true;
+        llDhcpServers.push_back(srv);
+    }
 }
 
 /**
@@ -1990,3 +2014,19 @@ void MachineConfigFile::write(const com::Utf8Str &strFilename)
     clearDocument();
 }
 
+/**
+ * Called from Main code if settings are enabled that require a new settings
+ * version. For example, if someone enables 2D video acceleration, which is a
+ * new feature with VirtualBox 3.1 and which requires settings version 1.8,
+ * COMSETTER(Accelerate2DVideoEnabled) calls this method to make sure
+ * at least settings version 1.8 is enabled.
+ *
+ * This allows us to preserve the settings format for older machines and
+ * break it only if necessary, on a per-machine basis.
+ * @param sv
+ */
+void MachineConfigFile::setRequiredSettingsVersion(SettingsVersion_T sv)
+{
+    if (m->sv < sv)
+        m->sv = sv;
+}

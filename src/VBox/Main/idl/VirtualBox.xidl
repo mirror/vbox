@@ -345,49 +345,56 @@
   /////////////////////////////////////////////////////////////////////////
   -->
 
-  <enum
-       name="SettingsVersion"
-       uuid="6e151282-c338-428a-989d-5f2402d87e6f"
-       >
-      <desc>
-          Settings version of VirtualBox settings files. This is written to
+  <enum name="SettingsVersion"
+        uuid="6e151282-c338-428a-989d-5f2402d87e6f"
+    >
+    <desc>Settings version of VirtualBox settings files. This is written to
           the "version" attribute of the root "VirtualBox" element in the settings
           file XML and indicates which VirtualBox version wrote the file.
-      </desc>
+    </desc>
 
-      <const name="Null"    value="0">
-          <desc>Null value, indicates invalid version.</desc>
-      </const>
-      <const name="v1_0"     value="1">
-          <desc>Settings version "1.0", understood by VirtualBox 3.0 and above.</desc>
-      </const>
-      <const name="v1_1"     value="2">
-          <desc>Settings version "1.7", understood by VirtualBox 3.0 and above.</desc>
-      </const>
-      <const name="v1_2"     value="3">
-          <desc>Settings version "1.2", understood by VirtualBox 3.0 and above.</desc>
-      </const>
-      <const name="v1_3pre"  value="4">
-          <desc>Settings version "1.3pre", understood by VirtualBox 3.0 and above.</desc>
-      </const>
-      <const name="v1_3"     value="5">
-          <desc>Settings version "1.3", understood by VirtualBox 3.0 and above.</desc>
-      </const>
-      <const name="v1_4"     value="6">
-          <desc>Settings version "1.4", understood by VirtualBox 3.0 and above.</desc>
-      </const>
-      <const name="v1_5"     value="7">
-          <desc>Settings version "1.5", understood by VirtualBox 3.0 and above.</desc>
-      </const>
-      <const name="v1_6"     value="8">
-          <desc>Settings version "1.6", understood by VirtualBox 3.0 and above.</desc>
-      </const>
-      <const name="v1_7"     value="9">
-          <desc>Settings version "1.7", understood by VirtualBox 3.0 and above.</desc>
-      </const>
-      <const name="v1_8"     value="10">
-          <desc>Settings version "1.8", understood by VirtualBox 3.1 and above.</desc>
-      </const>
+    <const name="Null"    value="0">
+      <desc>Null value, indicates invalid version.</desc>
+    </const>
+    <const name="v1_0"     value="1">
+      <desc>Legacy settings version, not currently supported.</desc>
+    </const>
+    <const name="v1_1"     value="2">
+      <desc>Legacy settings version, not currently supported.</desc>
+    </const>
+    <const name="v1_2"     value="3">
+      <desc>Legacy settings version, not currently supported.</desc>
+    </const>
+    <const name="v1_3pre"  value="4">
+      <desc>Legacy settings version, not currently supported.</desc>
+    </const>
+    <const name="v1_3"     value="5">
+      <desc>Legacy settings version, not currently supported.</desc>
+    </const>
+    <const name="v1_4"     value="6">
+      <desc>Legacy settings version, not currently supported.</desc>
+    </const>
+    <const name="v1_5"     value="7">
+      <desc>Settings version "1.5", written by VirtualBox 2.1.x.</desc>
+      <!-- 2008-09-04: 2.0.0 released
+           2008-11-20: settings version 1.5 introduced
+           2008-12-17: 2.1.0 released -->
+    </const>
+    <const name="v1_6"     value="8">
+      <desc>Intermediate settings version "1.6", understood by VirtualBox 2.2 and above.</desc>
+      <!-- 2008-12-17: 2.1.0 released
+           2008-12-19: settings version 1.6 introduced (is in 2.2 branch)
+           2009-04-08: 2.2.0 released -->
+    </const>
+    <const name="v1_7"     value="9">
+      <desc>Settings version "1.7", written by VirtualBox 2.2.x and 3.0.x.</desc>
+      <!-- 2008-12-17: 2.1.0 released
+           2009-03-11: settings version 1.7 introduced (is in 2.2 branch)
+           2009-04-08: 2.2.0 released -->
+    </const>
+    <const name="v1_8"     value="10">
+      <desc>Settings version "1.8", written by VirtualBox 3.1.x.</desc>
+    </const>
   </enum>
 
   <enum
