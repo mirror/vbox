@@ -127,10 +127,8 @@ typedef struct SUPGIPCPU
      * This history is used to calculate u32UpdateIntervalTSC.
      */
     volatile uint32_t   au32TSCHistory[8];
-    /** The interval between the last two NanoTS updates. (experiment for now) */
-    volatile uint32_t   u32UpdateIntervalNS;
     /** Reserved for future per processor data. */
-    volatile uint32_t   au32Reserved[5];
+    volatile uint32_t   au32Reserved[6];
 } SUPGIPCPU;
 AssertCompileSize(SUPGIPCPU, 96);
 /*AssertCompileMemberAlignment(SUPGIPCPU, u64TSC, 8); -fixme */

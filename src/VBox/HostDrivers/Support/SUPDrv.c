@@ -5287,9 +5287,6 @@ static void supdrvGipDoUpdateCpu(PSUPGLOBALINFOPAGE pGip, PSUPGIPCPU pGipCpu, ui
     unsigned    iTSCHistoryHead;
     uint64_t    u64CpuHz;
 
-    /* Delta between this and the previous update. */
-    pGipCpu->u32UpdateIntervalNS = (uint32_t)(u64NanoTS - pGipCpu->u64NanoTS);
-
     /*
      * Update the NanoTS.
      */
