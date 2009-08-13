@@ -1652,7 +1652,7 @@ int slirp_redir(PNATState pData, int is_udp, struct in_addr host_addr, int host_
     rule->guest_addr.s_addr = guest_addr.s_addr;
 #endif
     rule->bind_ip.s_addr = host_addr.s_addr;
-    memcmp(rule->mac_address, ethaddr, ETH_ALEN);
+    memcpy(rule->mac_address, ethaddr, ETH_ALEN);
     /* @todo add mac address */
     LIST_INSERT_HEAD(&pData->port_forward_rule_head, rule, list);
     return 0;
