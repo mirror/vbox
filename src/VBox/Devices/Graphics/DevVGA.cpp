@@ -5290,9 +5290,19 @@ static DECLCALLBACK(int) vgaR3IORegionMap(PPCIDEVICE pPciDev, /*unsigned*/ int i
 static DECLCALLBACK(int) vgaR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle)
 {
     vga_save(pSSMHandle, PDMINS_2_DATA(pDevIns, PVGASTATE));
+#ifdef VBOX_WITH_VIDEOHWACCEL
+    return vbvaVHWASaveStateExec(pDevIns, pSSMHandle);
+#else
     return VINF_SUCCESS;
+#endif
 }
 
+#ifdef VBOX_WITH_VIDEOHWACCEL
+static DECLCALLBACK(int) vgaR3SavePrep(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
+{
+    return vbvaVHWASaveStatePrep(pDevIns, pSSM);
+}
+#endif
 
 /**
  * Loads a saved VGA device state.
@@ -5302,11 +5312,15 @@ static DECLCALLBACK(int) vgaR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle
  * @param   pSSMHandle  The handle to the saved state.
  * @param   u32Version  The data unit version number.
  */
-static DECLCALLBACK(int) vgaR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle, uint32_t u32Version)
+static DECLCALLBACK(int) vgaR3xec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle, uint32_t u32Version)
 {
     if (vga_load(pSSMHandle, PDMINS_2_DATA(pDevIns, PVGASTATE), u32Version))
         return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
+#ifdef VBOX_WITH_VIDEOHWACCEL
+    return vbvaVHWALoadStateExec(pDevIns, pSSMHandle);
+#else
     return VINF_SUCCESS;
+#endif
 }
 
 
@@ -5545,6 +5559,13 @@ static DECLCALLBACK(int)  vgaAttach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t 
                         pThis->pDrvBase = NULL;
                         rc = VERR_INTERNAL_ERROR;
                     }
+#ifdef VBOX_WITH_VIDEOHWACCEL
+                    if(rc == VINF_SUCCESS)
+                    {
+                        rc = vbvaVHWAConstruct(pThis);
+                        Assert(RT_SUCCESS(rc));
+                    }
+#endif
                 }
                 else
                 {
@@ -5921,7 +5942,13 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
 
     /* save */
     rc = PDMDevHlpSSMRegister(pDevIns, pDevIns->pDevReg->szDeviceName, iInstance, VGA_SAVEDSTATE_VERSION,
-                              sizeof(*pThis), NULL, vgaR3SaveExec, NULL, NULL, vgaR3LoadExec, NULL);
+                              sizeof(*pThis),
+#ifdef VBOX_WITH_VIDEOHWACCEL
+                              NULL, vgaR3SaveExec, NULL,
+#else
+                              NULL, vgaR3SaveExec, NULL,
+#endif
+                              NULL, vgaR3xec, NULL);
     if (RT_FAILURE(rc))
         return rc;
 

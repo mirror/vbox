@@ -452,6 +452,12 @@ int      VBVAUpdateDisplay (PVGASTATE pVGAState);
 
 # ifdef VBOX_WITH_VIDEOHWACCEL
 int vbvaVHWACommandCompleteAsynch(PPDMDDISPLAYVBVACALLBACKS pInterface, PVBOXVHWACMD pCmd);
+
+int vbvaVHWAConstruct (PVGASTATE pVGAState);
+int vbvaVHWADisable (PVGASTATE pVGAState);
+int vbvaVHWASaveStatePrep (PPDMDEVINS pDevIns, PSSMHANDLE pSSM);
+int vbvaVHWASaveStateExec (PPDMDEVINS pDevIns, PSSMHANDLE pSSM);
+int vbvaVHWALoadStateExec (PPDMDEVINS pDevIns, PSSMHANDLE pSSM);
 # endif
 #endif /* VBOX_WITH_HGSMI */
 

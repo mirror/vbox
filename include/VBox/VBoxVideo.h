@@ -256,7 +256,7 @@ typedef struct _VBOXVIDEOINFOQUERYCONF32
 
 #define VBOXVHWA_VERSION_MAJ 0
 #define VBOXVHWA_VERSION_MIN 0
-#define VBOXVHWA_VERSION_BLD 1
+#define VBOXVHWA_VERSION_BLD 2
 #define VBOXVHWA_VERSION_RSV 0
 
 typedef enum
@@ -274,7 +274,8 @@ typedef enum
     VBOXVHWACMD_TYPE_QUERY_INFO1,
     VBOXVHWACMD_TYPE_QUERY_INFO2,
     VBOXVHWACMD_TYPE_ENABLE,
-    VBOXVHWACMD_TYPE_DISABLE
+    VBOXVHWACMD_TYPE_DISABLE,
+    VBOXVHWACMD_TYPE_HH_CONSTRUCT
 } VBOXVHWACMD_TYPE;
 
 /* the command processing was asynch, set by the host to indicate asynch command completion
@@ -290,6 +291,8 @@ typedef enum
 #define VBOXVHWACMD_FLAG_GH_ASYNCH_NOCOMPLETION  0x00000004
 /* the host has copied the VBOXVHWACMD_FLAG_GH_ASYNCH_NOCOMPLETION command and returned it to the guest */
 #define VBOXVHWACMD_FLAG_HG_ASYNCH_RETURNED      0x00020000
+/* this is the host->host cmd, i.e. a configuration command posted by the host to the framebuffer */
+#define VBOXVHWACMD_FLAG_HH_CMD                  0x10000000
 
 typedef struct _VBOXVHWACMD
 {
@@ -299,6 +302,8 @@ typedef struct _VBOXVHWACMD
     volatile int32_t Flags; /* ored VBOXVHWACMD_FLAG_xxx values */
     uint64_t GuestVBVAReserved1; /* field internally used by the guest VBVA cmd handling, must NOT be modified by clients */
     uint64_t GuestVBVAReserved2; /* field internally used by the guest VBVA cmd handling, must NOT be modified by clients */
+    volatile uint32_t cRefs;
+    int32_t Reserved;
     union
     {
         struct _VBOXVHWACMD *pNext;
@@ -728,6 +733,11 @@ typedef struct _VBOXVHWACMD_SURF_OVERLAY_SETPOSITION
         } in;
     } u;
 } VBOXVHWACMD_SURF_OVERLAY_SETPOSITION;
+
+typedef struct _VBOXVHWACMD_HH_CONSTRUCT
+{
+    void * pVM;
+} VBOXVHWACMD_HH_CONSTRUCT;
 
 #pragma pack()
 # endif /* #ifdef VBOX_WITH_VIDEOHWACCEL */
