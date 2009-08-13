@@ -130,6 +130,8 @@ VMMDECL(uint64_t) TMCpuTickGet(PVMCPU pVCpu);
 VMMDECL(uint64_t) TMCpuTickGetNoCheck(PVMCPU pVCpu);
 VMMDECL(bool)     TMCpuTickCanUseRealTSC(PVMCPU pVCpu, uint64_t *poffRealTSC);
 VMMDECL(int)      TMCpuTickSet(PVM pVM, PVMCPU pVCpu, uint64_t u64Tick);
+VMMDECL(int)      TMCpuTickSetLastSeen(PVMCPU pVCpu, uint64_t u64LastSeenTick);
+VMMDECL(uint64_t) TMCpuTickGetLastSeen(PVMCPU pVCpu);
 VMMDECL(uint64_t) TMCpuTicksPerSecond(PVM pVM);
 /** @} */
 

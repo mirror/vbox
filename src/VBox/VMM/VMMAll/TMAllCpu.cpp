@@ -209,6 +209,14 @@ DECLINLINE(uint64_t) tmCpuTickGetInternal(PVMCPU pVCpu, bool fCheckTimers)
         }
         else
             u64 = ASMReadTSC();
+
+        /* Never return a value lower than what the guest has already seen. */
+        if (u64 < pVCpu->tm.s.u64TSCLastSeen)
+        {
+            STAM_COUNTER_INC(&pVM->tm.s.StatTSCUnderflow);
+            pVCpu->tm.s.u64TSCLastSeen += 64;   /* @todo choose a good increment here */
+            u64 = pVCpu->tm.s.u64TSCLastSeen;
+        }
     }
     else
         u64 = pVCpu->tm.s.u64TSC;
@@ -268,6 +276,39 @@ VMMDECL(int) TMCpuTickSet(PVM pVM, PVMCPU pVCpu, uint64_t u64Tick)
     /** @todo Try help synchronizing it better among the virtual CPUs? */
 
     return VINF_SUCCESS;
+}
+
+/**
+ * Sets the last seen CPU timestamp counter.
+ *
+ * @returns VBox status code.
+ * @param   pVCpu               The virtual CPU to operate on.
+ * @param   u64LastSeenTick     The last seen timestamp value.
+ *
+ * @thread  EMT which TSC is to be set.
+ */
+VMMDECL(int) TMCpuTickSetLastSeen(PVMCPU pVCpu, uint64_t u64LastSeenTick)
+{
+    VMCPU_ASSERT_EMT(pVCpu);
+
+    Assert(pVCpu->tm.s.u64TSCLastSeen < u64LastSeenTick);
+    pVCpu->tm.s.u64TSCLastSeen = u64LastSeenTick;
+    return VINF_SUCCESS;
+}
+
+/**
+ * Gets the last seen CPU timestamp counter.
+ *
+ * @returns last seen TSC
+ * @param   pVCpu               The virtual CPU to operate on.
+ *
+ * @thread  EMT which TSC is to be set.
+ */
+VMMDECL(uint64_t) TMCpuTickGetLastSeen(PVMCPU pVCpu)
+{
+    VMCPU_ASSERT_EMT(pVCpu);
+
+    return pVCpu->tm.s.u64TSCLastSeen;
 }
 
 
