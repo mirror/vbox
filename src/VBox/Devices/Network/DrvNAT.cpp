@@ -169,8 +169,8 @@ typedef struct DRVNAT
 #ifdef SLIRP_SPLIT_CAN_OUTPUT
     PPDMTHREAD              thrNATRx;
     RTSEMEVENT              semNATRx;
+    bool                    fCanOutput;
 #endif
-    int     output_flag;
 } DRVNAT;
 /** Pointer the NAT driver instance data. */
 typedef DRVNAT *PDRVNAT;
@@ -182,14 +182,14 @@ static DECLCALLBACK(int) drvNATRx(PPDMDRVINS pDrvIns, PPDMTHREAD pThread)
     if (pThread->enmState == PDMTHREADSTATE_INITIALIZING)
         return VINF_SUCCESS;
     while (pThread->enmState == PDMTHREADSTATE_RUNNING)
-	{
+    {
         int rc = pThis->pPort->pfnWaitReceiveAvail(pThis->pPort, 0);
-        int new_flag = RT_SUCCESS(rc) ? 1 : 0;
+        bool fHaveRxBuffers = RT_SUCCESS(rc);
 
-        if (pThis->output_flag == 0 && new_flag == 1)
+        if (!pThis->fCanOutput && fHaveRxBuffers)
         {
             int rc;
-            pThis->output_flag = new_flag;
+            pThis->fCanOutput = fHaveRxBuffers;
             /*we need inform NAT thread*/
 #ifndef RT_OS_WINDOWS
             /* kick select() */
@@ -200,10 +200,10 @@ static DECLCALLBACK(int) drvNATRx(PPDMDRVINS pDrvIns, PPDMTHREAD pThread)
             rc = WSASetEvent(pThis->hWakeupEvent);
             AssertRelease(rc == TRUE);
 #endif
-        } 
-        pThis->output_flag = new_flag;
+        }
+        pThis->fCanOutput = fHaveRxBuffers;
         RTSemEventWait(pThis->semNATRx, RT_INDEFINITE_WAIT);
-	}
+    }
     return VINF_SUCCESS;
 }
 
@@ -220,7 +220,12 @@ static DECLCALLBACK(int) drvNATRxWakeup(PPDMDRVINS pDrvIns, PPDMTHREAD pThread)
 /**
  * NAT queue item.
  */
-typedef enum SLIRP_EVENT {SLIRP_CHECK, SLIRP_SEND} SLIRP_EVENT;
+enum 
+{
+    SLIRP_CHECK, 
+    SLIRP_SEND
+};
+
 typedef struct DRVNATQUEUITEM
 {
     /** The core part owned by the queue manager. */
@@ -525,7 +530,7 @@ static DECLCALLBACK(int) drvNATAsyncIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
 # endif
 #endif /* RT_OS_WINDOWS */
 #ifdef SLIRP_SPLIT_CAN_OUTPUT
-        drvNATRxWakeup(pThis->pDrvIns, pThis->thrNATRx); 
+        drvNATRxWakeup(pThis->pDrvIns, pThis->thrNATRx);
 #endif
     }
 
@@ -561,12 +566,13 @@ static DECLCALLBACK(int) drvNATAsyncIoWakeup(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
 static DECLCALLBACK(int) drvNATAsyncIoGuest(PPDMDRVINS pDrvIns, PPDMTHREAD pThread)
 {
     PDRVNAT pThis = PDMINS_2_DATA(pDrvIns, PDRVNAT);
+
     if (pThread->enmState == PDMTHREADSTATE_INITIALIZING)
         return VINF_SUCCESS;
     while (pThread->enmState == PDMTHREADSTATE_RUNNING)
-	{
+    {
         slirp_process_queue(pThis->pNATState);
-	}
+    }
     return VINF_SUCCESS;
 }
 
@@ -588,7 +594,7 @@ static DECLCALLBACK(int) drvNATAsyncIoGuestWakeup(PPDMDRVINS pDrvIns, PPDMTHREAD
 int slirp_can_output(void *pvUser)
 {
 #ifdef SLIRP_SPLIT_CAN_OUTPUT
-   return pThis->output_flag;
+   return pThis->fCanOutput;
 #else
     return 1;
 #endif
@@ -839,6 +845,7 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandl
     PDRVNAT pThis = PDMINS_2_DATA(pDrvIns, PDRVNAT);
     char szNetAddr[16];
     char szNetwork[32]; /* xxx.xxx.xxx.xxx/yy */
+
     LogFlow(("drvNATConstruct:\n"));
 
     /*
@@ -985,8 +992,8 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandl
 
             rc = RTSemEventCreate(&pThis->semStatus);
             AssertRC(rc);
-            pThis->output_flag = 0;
 #ifdef SLIRP_SPLIT_CAN_OUTPUT
+            pThis->fCanOutput = false;
             rc = PDMDrvHlpPDMThreadCreate(pDrvIns, &pThis->thrNATRx, pThis, drvNATRx,
                                           drvNATRxWakeup, 128 * _1K, RTTHREADTYPE_IO, "NATRX");
             AssertReleaseRC(rc);
@@ -1080,4 +1087,3 @@ const PDMDRVREG g_DrvNAT =
     /* pfnPowerOff */
     NULL
 };
-
