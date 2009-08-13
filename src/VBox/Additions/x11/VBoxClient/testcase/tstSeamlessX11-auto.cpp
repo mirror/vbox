@@ -343,7 +343,7 @@ struct SMLSFIXTURE
 
 static Window g_ahWin1[] = { 20 };
 static XWindowAttributes g_aAttrib1Before[] =
-{ { 100, 200, 200, 300, 0, NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+{ { 100, 200, 200, 300, 0, 0, NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     IsViewable }
 };
 static XRectangle g_aRectangle1[] =
@@ -352,7 +352,7 @@ static XRectangle g_aRectangle1[] =
     { 50, 50, 150, 250 }
 };
 static XWindowAttributes g_aAttrib1After[] =
-{ { 200, 300, 200, 300, 0, NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+{ { 200, 300, 200, 300, 0, 0, NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     IsViewable }
 };
 static const char *g_apszNames1[] = { "Test Window" };
@@ -392,7 +392,7 @@ static SMLSFIXTURE g_testMove =
 /*** Test fixture to test the code against X11 configure (resize) events ***/
 
 static XWindowAttributes g_aAttrib2Before[] =
-{ { 100, 200, 200, 300, 0, NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+{ { 100, 200, 200, 300, 0, 0, NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     IsViewable }
 };
 static XRectangle g_aRectangle2Before[] =
@@ -428,7 +428,7 @@ static SMLSFIXTURE g_testResize =
 /*** Test fixture to test the code against X11 map events ***/
 
 static XWindowAttributes g_aAttrib3Before[] =
-{ { 200, 300, 200, 300, 0, NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+{ { 200, 300, 200, 300, 0, 0, NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     IsUnmapped }
 };
 
@@ -459,7 +459,7 @@ static SMLSFIXTURE g_testMap =
 /*** Test fixture to test the code against X11 unmap events ***/
 
 static XWindowAttributes g_aAttrib4After[] =
-{ { 100, 200, 300, 400, 0, NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+{ { 100, 200, 300, 400, 0, 0, NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     IsUnmapped }
 };
 
