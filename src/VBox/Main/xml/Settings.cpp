@@ -120,7 +120,7 @@ ConfigFileBase::ConfigFileBase(const com::Utf8Str *pstrFilename)
             throw ConfigFileError(this, N_("Root element in VirtualBox settings files must be \"VirtualBox\"."));
 
         if (!(m->pelmRoot->getAttributeValue("version", m->strSettingsVersionFull)))
-            throw ConfigFileError(this, N_("Required VirtualBox/version attribute is missing"));
+            throw ConfigFileError(this, N_("Required VirtualBox/@version attribute is missing"));
 
         m->sv = SettingsVersion_Null;
         if (m->strSettingsVersionFull.length() > 3)
@@ -307,10 +307,10 @@ void ConfigFileBase::readExtraData(const xml::ElementNode &elmExtraData,
                )
                 map[strName] = strValue;
             else
-                throw ConfigFileError(this, N_("ExtraDataItem element must have name and value attributes"));
+                throw ConfigFileError(this, N_("Required ExtraDataItem/@name or @value attribute is missing"));
         }
         else
-            throw ConfigFileError(this, N_("Invalid element %s in ExtraData section"), pelmExtraDataItem->getName());
+            throw ConfigFileError(this, N_("Invalid element '%s' in ExtraData section"), pelmExtraDataItem->getName());
     }
 }
 
@@ -356,7 +356,7 @@ void ConfigFileBase::readUSBDeviceFilters(const xml::ElementNode &elmDeviceFilte
                 else if (strAction == "Hold")
                     flt.action = USBDeviceFilterAction_Hold;
                 else
-                    throw ConfigFileError(this, N_("Invalid value %s in DeviceFilter/action attribute"), strAction.c_str());
+                    throw ConfigFileError(this, N_("Invalid value '%s' in DeviceFilter/@action attribute"), strAction.c_str());
             }
 
             ll.push_back(flt);
@@ -531,10 +531,8 @@ void MainConfigFile::readMachineRegistry(const xml::ElementNode &elmMachineRegis
                 llMachines.push_back(mre);
             }
             else
-                throw ConfigFileError(this, N_("MachineEntry element must have uuid and src attributes"));
+                throw ConfigFileError(this, N_("Required MachineEntry/@uuid or @src attribute is missing"));
         }
-        else
-            throw ConfigFileError(this, N_("Invalid element %s in MachineRegistry section"), pelmChild1->getName());
     }
 }
 
@@ -561,7 +559,7 @@ void MainConfigFile::readMedium(MediaType t,
         if (t == HardDisk)
         {
             if (!(elmMedium.getAttributeValue("format", med.strFormat)))
-                throw ConfigFileError(this, N_("HardDisk element must have format attribute"));
+                throw ConfigFileError(this, N_("Required HardDisk/@format attribute is missing"));
 
             if (!(elmMedium.getAttributeValue("autoReset", med.fAutoReset)))
                 med.fAutoReset = false;
@@ -576,7 +574,7 @@ void MainConfigFile::readMedium(MediaType t,
                 else if (strType == "Writethrough")
                     med.hdType = HardDiskType_Writethrough;
                 else
-                    throw ConfigFileError(this, N_("HardDisk/type attribute must be one of Normal, Immutable or Writethrough"));
+                    throw ConfigFileError(this, N_("HardDisk/@type attribute must be one of Normal, Immutable or Writethrough"));
             }
         }
 
@@ -600,14 +598,14 @@ void MainConfigFile::readMedium(MediaType t,
                    )
                     med.properties[strPropName] = strPropValue;
                 else
-                    throw ConfigFileError(this, N_("HardDisk/Property element must have name and value attributes"));
+                    throw ConfigFileError(this, N_("Required HardDisk/Property/@name or @value attribute is missing"));
             }
         }
 
         llMedia.push_back(med);
     }
     else
-        throw ConfigFileError(this, N_("%s element must have uuid and location attributes"), elmMedium.getName());
+        throw ConfigFileError(this, N_("Required %s/@uuid or @location attribute is missing"), elmMedium.getName());
 }
 
 /**
@@ -616,7 +614,6 @@ void MainConfigFile::readMedium(MediaType t,
  */
 void MainConfigFile::readMediaRegistry(const xml::ElementNode &elmMediaRegistry)
 {
-    // <MachineEntry uuid="{ xxx }" src="   xxx "/>
     xml::NodesLoop nl1(elmMediaRegistry);
     const xml::ElementNode *pelmChild1;
     while ((pelmChild1 = nl1.forAllNodes()))
@@ -629,7 +626,7 @@ void MainConfigFile::readMediaRegistry(const xml::ElementNode &elmMediaRegistry)
         else if (pelmChild1->nameEquals("FloppyImages"))
             t = FloppyImage;
         else
-            throw ConfigFileError(this, N_("Invalid element %s in MediaRegistry section"), pelmChild1->getName());
+            continue;
 
         xml::NodesLoop nl1(*pelmChild1);
         const xml::ElementNode *pelmMedium;
@@ -679,10 +676,8 @@ void MainConfigFile::readDHCPServers(const xml::ElementNode &elmDHCPServers)
                )
                 llDhcpServers.push_back(srv);
             else
-                throw ConfigFileError(this, N_("DHCPServer element must have networkName, IPAddress, networkMask, lowerIP, upperIP and enabled attributes"));
+                throw ConfigFileError(this, N_("Required DHCPServer/@networkName, @IPAddress, @networkMask, @lowerIP, @upperIP or @enabled attribute is missing"));
         }
-        else
-            throw ConfigFileError(this, N_("Invalid element %s in DHCPServers section"), pelmServer->getName());
     }
 }
 
@@ -739,14 +734,10 @@ MainConfigFile::MainConfigFile(const Utf8Str *pstrFilename)
                         {
                             if (pelmLevel4Child->nameEquals("DHCPServers"))
                                 readDHCPServers(*pelmLevel4Child);
-                            else
-                                throw ConfigFileError(this, N_("Invalid element %s in NetserviceRegistry section"), pelmLevel4Child->getName());
                         }
                     }
                     else if (pelmGlobalChild->nameEquals("USBDeviceFilters"))
                         readUSBDeviceFilters(*pelmGlobalChild, host.llUSBDeviceFilters);
-                    else
-                        throw ConfigFileError(this, N_("Invalid element %s in Global section"), pelmGlobalChild->getName());
                 }
             } // end if (pelmRootChild->nameEquals("Global"))
         }
@@ -949,7 +940,7 @@ void MachineConfigFile::readNetworkAdapters(const xml::ElementNode &elmNetwork,
         NetworkAdapter nic;
 
         if (!pelmAdapter->getAttributeValue("slot", nic.ulSlot))
-            throw ConfigFileError(this, N_("Required Adapter/slot attribute is missing"));
+            throw ConfigFileError(this, N_("Required Adapter/@slot attribute is missing"));
 
         Utf8Str strTemp;
         if (pelmAdapter->getAttributeValue("type", strTemp))
@@ -965,7 +956,7 @@ void MachineConfigFile::readNetworkAdapters(const xml::ElementNode &elmNetwork,
             else if (strTemp == "82545EM")
                 nic.type = NetworkAdapterType_I82545EM;
             else
-                throw ConfigFileError(this, N_("Invalid value %s in Adapter/type attribute"), strTemp.c_str());
+                throw ConfigFileError(this, N_("Invalid value '%s' in Adapter/type attribute"), strTemp.c_str());
         }
 
         pelmAdapter->getAttributeValue("enabled", nic.fEnabled);
@@ -992,13 +983,13 @@ void MachineConfigFile::readNetworkAdapters(const xml::ElementNode &elmNetwork,
         {
             nic.mode = NetworkAttachmentType_Internal;
             if (!pelmAdapterChild->getAttributeValue("name", nic.strName))    // required network name
-                throw ConfigFileError(this, N_("Required 'name' element is missing under 'InternalNetwork' element"));
+                throw ConfigFileError(this, N_("Required InternalNetwork/name element is missing"));
         }
         else if ((pelmAdapterChild = pelmAdapter->findChildElement("HostOnlyInterface")))
         {
             nic.mode = NetworkAttachmentType_HostOnly;
             if (!pelmAdapterChild->getAttributeValue("name", nic.strName))    // required network name
-                throw ConfigFileError(this, N_("Required 'name' element is missing under 'HostOnlyInterface' element"));
+                throw ConfigFileError(this, N_("Required HostOnlyInterface/name element is missing"));
         }
         // else: default is NetworkAttachmentType_Null
 
@@ -1020,25 +1011,25 @@ void MachineConfigFile::readSerialPorts(const xml::ElementNode &elmUART,
     {
         SerialPort port;
         if (!pelmPort->getAttributeValue("slot", port.ulSlot))
-            throw ConfigFileError(this, N_("Required UART/Port/slot attribute is missing"));
+            throw ConfigFileError(this, N_("Required UART/Port/@slot attribute is missing"));
 
         // slot must be unique
         for (SerialPortsList::const_iterator it = ll.begin();
              it != ll.end();
              ++it)
             if ((*it).ulSlot == port.ulSlot)
-                throw ConfigFileError(this, N_("UART/Port/slot attribute value %d is used twice, must be unique"), port.ulSlot);
+                throw ConfigFileError(this, N_("UART/Port/@slot attribute value %d is used twice, must be unique"), port.ulSlot);
 
         if (!pelmPort->getAttributeValue("enabled", port.fEnabled))
-            throw ConfigFileError(this, N_("Required UART/Port/enabled attribute is missing"));
+            throw ConfigFileError(this, N_("Required UART/Port/@enabled attribute is missing"));
         if (!pelmPort->getAttributeValue("IOBase", port.ulIOBase))
-            throw ConfigFileError(this, N_("Required UART/Port/IOBase attribute is missing"));
+            throw ConfigFileError(this, N_("Required UART/Port/@IOBase attribute is missing"));
         if (!pelmPort->getAttributeValue("IRQ", port.ulIRQ))
-            throw ConfigFileError(this, N_("Required UART/Port/IRQ attribute is missing"));
+            throw ConfigFileError(this, N_("Required UART/Port/@IRQ attribute is missing"));
 
         Utf8Str strPortMode;
         if (!pelmPort->getAttributeValue("hostMode", strPortMode))
-            throw ConfigFileError(this, N_("Required UART/Port/hostMode attribute is missing"));
+            throw ConfigFileError(this, N_("Required UART/Port/@hostMode attribute is missing"));
         if (strPortMode == "RawFile")
             port.portMode = PortMode_RawFile;
         else if (strPortMode == "HostPipe")
@@ -1048,7 +1039,7 @@ void MachineConfigFile::readSerialPorts(const xml::ElementNode &elmUART,
         else if (strPortMode == "Disconnected")
             port.portMode = PortMode_Disconnected;
         else
-            throw ConfigFileError(this, N_("Invalid value %s in UART/Port/hostMode attribute"), strPortMode.c_str());
+            throw ConfigFileError(this, N_("Invalid value '%s' in UART/Port/@hostMode attribute"), strPortMode.c_str());
 
         pelmPort->getAttributeValue("path", port.strPath);
         pelmPort->getAttributeValue("server", port.fServer);
@@ -1071,21 +1062,21 @@ void MachineConfigFile::readParallelPorts(const xml::ElementNode &elmLPT,
     {
         ParallelPort port;
         if (!pelmPort->getAttributeValue("slot", port.ulSlot))
-            throw ConfigFileError(this, N_("Required LPT/Port/slot attribute is missing"));
+            throw ConfigFileError(this, N_("Required LPT/Port/@slot attribute is missing"));
 
         // slot must be unique
         for (ParallelPortsList::const_iterator it = ll.begin();
              it != ll.end();
              ++it)
             if ((*it).ulSlot == port.ulSlot)
-                throw ConfigFileError(this, N_("LPT/Port/slot attribute value %d is used twice, must be unique"), port.ulSlot);
+                throw ConfigFileError(this, N_("LPT/Port/@slot attribute value %d is used twice, must be unique"), port.ulSlot);
 
         if (!pelmPort->getAttributeValue("enabled", port.fEnabled))
-            throw ConfigFileError(this, N_("Required LPT/Port/enabled attribute is missing"));
+            throw ConfigFileError(this, N_("Required LPT/Port/@enabled attribute is missing"));
         if (!pelmPort->getAttributeValue("IOBase", port.ulIOBase))
-            throw ConfigFileError(this, N_("Required LPT/Port/IOBase attribute is missing"));
+            throw ConfigFileError(this, N_("Required LPT/Port/@IOBase attribute is missing"));
         if (!pelmPort->getAttributeValue("IRQ", port.ulIRQ))
-            throw ConfigFileError(this, N_("Required LPT/Port/IRQ attribute is missing"));
+            throw ConfigFileError(this, N_("Required LPT/Port/@IRQ attribute is missing"));
 
         pelmPort->getAttributeValue("path", port.strPath);
 
@@ -1180,11 +1171,11 @@ void MachineConfigFile::readHardware(const xml::ElementNode &elmHardware,
                 uint32_t ulPos;
                 Utf8Str strDevice;
                 if (!pelmOrder->getAttributeValue("position", ulPos))
-                    throw ConfigFileError(this, N_("'Order' element lacks 'position' attribute"));
+                    throw ConfigFileError(this, N_("Required Order/@position attribute is missing"));
                 if (!pelmOrder->getAttributeValue("device", strDevice))
-                    throw ConfigFileError(this, N_("'Order' element lacks 'device' attribute"));
+                    throw ConfigFileError(this, N_("Required Order/@device attribute is missing"));
                 if (hw.mapBootOrder.find(ulPos) != hw.mapBootOrder.end())
-                    throw ConfigFileError(this, N_("Value %d of 'position' attribute in 'Order' element is not unique"), ulPos);
+                    throw ConfigFileError(this, N_("Order/@attribute value %d is not unique"), ulPos);
 
                 DeviceType_T type;
                 if (strDevice == "None")
@@ -1198,7 +1189,7 @@ void MachineConfigFile::readHardware(const xml::ElementNode &elmHardware,
                 else if (strDevice == "Network")
                     type = DeviceType_Network;
                 else
-                    throw ConfigFileError(this, N_("Invalid value %s in Boot/Order/device attribute"), strDevice.c_str());
+                    throw ConfigFileError(this, N_("Invalid value '%s' in Boot/Order/@device attribute"), strDevice.c_str());
                 hw.mapBootOrder[ulPos] = type;
             }
         }
@@ -1225,7 +1216,7 @@ void MachineConfigFile::readHardware(const xml::ElementNode &elmHardware,
                 else if (strAuthType == "External")
                     hw.vrdpSettings.authType = VRDPAuthType_External;
                 else
-                    throw ConfigFileError(this, N_("Invalid value %s in RemoteDisplay/authType attribute"), strAuthType.c_str());
+                    throw ConfigFileError(this, N_("Invalid value '%s' in RemoteDisplay/@authType attribute"), strAuthType.c_str());
             }
 
             pelmHwChild->getAttributeValue("authTimeout", hw.vrdpSettings.ulAuthTimeout);
@@ -1258,7 +1249,7 @@ void MachineConfigFile::readHardware(const xml::ElementNode &elmHardware,
                     else if (strBootMenuMode == "MessageAndMenu")
                         hw.biosSettings.biosBootMenuMode = BIOSBootMenuMode_MessageAndMenu;
                     else
-                        throw ConfigFileError(this, N_("Invalid value %s in BootMenu/mode attribute"), strBootMenuMode.c_str());
+                        throw ConfigFileError(this, N_("Invalid value '%s' in BootMenu/@mode attribute"), strBootMenuMode.c_str());
                 }
             }
             if ((pelmBIOSChild = pelmHwChild->findChildElement("PXEDebug")))
@@ -1285,7 +1276,7 @@ void MachineConfigFile::readHardware(const xml::ElementNode &elmHardware,
                     else if (strType == "ICH6")
                         sctl.controllerType = StorageControllerType_ICH6;
                     else
-                        throw ConfigFileError(this, N_("Invalid value %s for IDEController/type attribute"), strType.c_str());
+                        throw ConfigFileError(this, N_("Invalid value '%s' for IDEController/@type attribute"), strType.c_str());
                 }
                 sctl.ulPortCount = 2;
                 strg.llStorageControllers.push_back(sctl);
@@ -1360,7 +1351,7 @@ void MachineConfigFile::readHardware(const xml::ElementNode &elmHardware,
                 else if (strTemp == "AC97")
                     hw.audioAdapter.controllerType = AudioControllerType_AC97;
                 else
-                    throw ConfigFileError(this, N_("Invalid value %s in AudioAdapter/controller attribute"), strTemp.c_str());
+                    throw ConfigFileError(this, N_("Invalid value '%s' in AudioAdapter/@controller attribute"), strTemp.c_str());
             }
             if (pelmHwChild->getAttributeValue("driver", strTemp))
             {
@@ -1383,7 +1374,7 @@ void MachineConfigFile::readHardware(const xml::ElementNode &elmHardware,
                 else if (strTemp == "MMPM")
                     hw.audioAdapter.driverType = AudioDriverType_MMPM;
                 else
-                    throw ConfigFileError(this, N_("Invalid value %s in AudioAdapter/driver attribute"), strTemp.c_str());
+                    throw ConfigFileError(this, N_("Invalid value '%s' in AudioAdapter/@driver attribute"), strTemp.c_str());
             }
         }
         else if (pelmHwChild->nameEquals("SharedFolders"))
@@ -1413,7 +1404,7 @@ void MachineConfigFile::readHardware(const xml::ElementNode &elmHardware,
                 else if (strTemp == "Bidirectional")
                     hw.clipboardMode = ClipboardMode_Bidirectional;
                 else
-                    throw ConfigFileError(this, N_("Invalid value %s in Clipbord/mode attribute"), strTemp.c_str());
+                    throw ConfigFileError(this, N_("Invalid value '%s' in Clipbord/@mode attribute"), strTemp.c_str());
             }
         }
         else if (pelmHwChild->nameEquals("Guest"))
@@ -1424,11 +1415,11 @@ void MachineConfigFile::readHardware(const xml::ElementNode &elmHardware,
         else if (pelmHwChild->nameEquals("GuestProperties"))
             readGuestProperties(*pelmHwChild, hw);
         else
-            throw ConfigFileError(this, N_("Invalid element %s in Hardware section"), pelmHwChild->getName());
+            throw ConfigFileError(this, N_("Invalid element '%s' in Hardware section"), pelmHwChild->getName());
     }
 
     if (hw.ulMemorySizeMB == (uint32_t)-1)
-        throw ConfigFileError(this, N_("Required Memory/RAMSize element/attribute is missing"));
+        throw ConfigFileError(this, N_("Required Memory/@RAMSize element/attribute is missing"));
 }
 
 /**
@@ -1465,32 +1456,32 @@ void MachineConfigFile::readHardDiskAttachments_pre1_7(const xml::ElementNode &e
         Utf8Str strUUID, strBus;
 
         if (!pelmAttachment->getAttributeValue("hardDisk", strUUID))
-            throw ConfigFileError(this, N_("Required HardDiskAttachment/hardDisk attribute is missing"));
+            throw ConfigFileError(this, N_("Required HardDiskAttachment/@hardDisk attribute is missing"));
         parseUUID(att.uuid, strUUID);
 
         if (!pelmAttachment->getAttributeValue("bus", strBus))
-            throw ConfigFileError(this, N_("Required HardDiskAttachment/bus attribute is missing"));
+            throw ConfigFileError(this, N_("Required HardDiskAttachment/@bus attribute is missing"));
         // pre-1.7 'channel' is now port
         if (!pelmAttachment->getAttributeValue("channel", att.lPort))
-            throw ConfigFileError(this, N_("Required HardDiskAttachment/channel attribute is missing"));
+            throw ConfigFileError(this, N_("Required HardDiskAttachment/@channel attribute is missing"));
         // pre-1.7 'device' is still device
         if (!pelmAttachment->getAttributeValue("device", att.lDevice))
-            throw ConfigFileError(this, N_("Required HardDiskAttachment/device attribute is missing"));
+            throw ConfigFileError(this, N_("Required HardDiskAttachment/@device attribute is missing"));
 
         if (strBus == "IDE")
         {
             if (!pIDEController)
-                throw ConfigFileError(this, N_("HardDiskAttachment/bus is 'IDE' but cannot find IDE controller"));
+                throw ConfigFileError(this, N_("HardDiskAttachment/@bus is 'IDE' but cannot find IDE controller"));
             pIDEController->llAttachedDevices.push_back(att);
         }
         else if (strBus == "SATA")
         {
             if (!pSATAController)
-                throw ConfigFileError(this, N_("HardDiskAttachment/bus is 'SATA' but cannot find SATA controller"));
+                throw ConfigFileError(this, N_("HardDiskAttachment/@bus is 'SATA' but cannot find SATA controller"));
             pSATAController->llAttachedDevices.push_back(att);
         }
         else
-            throw ConfigFileError(this, N_("HardDiskAttachment/bus attribute has illegal value '%s'"), strBus.c_str());
+            throw ConfigFileError(this, N_("HardDiskAttachment/@bus attribute has illegal value '%s'"), strBus.c_str());
     }
 }
 
@@ -1514,10 +1505,10 @@ void MachineConfigFile::readStorageControllers(const xml::ElementNode &elmStorag
         StorageController sctl;
 
         if (!pelmController->getAttributeValue("name", sctl.strName))
-            throw ConfigFileError(this, N_("Required StorageController/name attribute is missing"));
+            throw ConfigFileError(this, N_("Required StorageController/@name attribute is missing"));
         Utf8Str strType;
         if (!pelmController->getAttributeValue("type", strType))
-            throw ConfigFileError(this, N_("Required StorageController/type attribute is missing"));
+            throw ConfigFileError(this, N_("Required StorageController/@type attribute is missing"));
 
         if (strType == "AHCI")
         {
@@ -1550,7 +1541,7 @@ void MachineConfigFile::readStorageControllers(const xml::ElementNode &elmStorag
             sctl.controllerType = StorageControllerType_ICH6;
         }
         else
-            throw ConfigFileError(this, N_("Invalid value %s for StorageController/type attribute"), strType.c_str());
+            throw ConfigFileError(this, N_("Invalid value '%s' for StorageController/@type attribute"), strType.c_str());
 
         readStorageControllerAttributes(*pelmController, sctl);
 
@@ -1562,23 +1553,24 @@ void MachineConfigFile::readStorageControllers(const xml::ElementNode &elmStorag
 
             Utf8Str strTemp;
             pelmAttached->getAttributeValue("type", strTemp);
-            if (strTemp != "HardDisk")
-                throw ConfigFileError(this, N_("AttachedDevice element must have 'HardDisk' type"));
+            // ignore everything but HardDisk entries for forward compatibility
+            if (strTemp == "HardDisk")
+            {
+                const xml::ElementNode *pelmImage;
+                if (!(pelmImage = pelmAttached->findChildElement("Image")))
+                    throw ConfigFileError(this, N_("Required AttachedDevice/Image element is missing"));
 
-            const xml::ElementNode *pelmImage;
-            if (!(pelmImage = pelmAttached->findChildElement("Image")))
-                throw ConfigFileError(this, N_("Required AttachedDevice/Image element is missing"));
+                if (!pelmImage->getAttributeValue("uuid", strTemp))
+                    throw ConfigFileError(this, N_("Required AttachedDevice/Image/@uuid attribute is missing"));
+                parseUUID(att.uuid, strTemp);
 
-            if (!pelmImage->getAttributeValue("uuid", strTemp))
-                throw ConfigFileError(this, N_("Required AttachedDevice/Image/uuid attributeis missing"));
-            parseUUID(att.uuid, strTemp);
+                if (!pelmAttached->getAttributeValue("port", att.lPort))
+                    throw ConfigFileError(this, N_("Required AttachedDevice/@port attribute is missing"));
+                if (!pelmAttached->getAttributeValue("device", att.lDevice))
+                    throw ConfigFileError(this, N_("Required AttachedDevice/@device attribute is missing"));
 
-            if (!pelmAttached->getAttributeValue("port", att.lPort))
-                throw ConfigFileError(this, N_("Required AttachedDevice/port attribute is missing"));
-            if (!pelmAttached->getAttributeValue("device", att.lDevice))
-                throw ConfigFileError(this, N_("Required AttachedDevice/device attribute is missing"));
-
-            sctl.llAttachedDevices.push_back(att);
+                sctl.llAttachedDevices.push_back(att);
+            }
         }
 
         strg.llStorageControllers.push_back(sctl);
@@ -1602,16 +1594,16 @@ void MachineConfigFile::readSnapshot(const xml::ElementNode &elmSnapshot,
     Utf8Str strTemp;
 
     if (!elmSnapshot.getAttributeValue("uuid", strTemp))
-        throw ConfigFileError(this, N_("Required Snapshot/uuid attribute is missing"));
+        throw ConfigFileError(this, N_("Required Snapshot/@uuid attribute is missing"));
     parseUUID(snap.uuid, strTemp);
 
     if (!elmSnapshot.getAttributeValue("name", snap.strName))
-        throw ConfigFileError(this, N_("Required Snapshot/name attribute is missing"));
+        throw ConfigFileError(this, N_("Required Snapshot/@name attribute is missing"));
 
     elmSnapshot.getAttributeValue("Description", snap.strDescription);
 
     if (!elmSnapshot.getAttributeValue("timeStamp", strTemp))
-        throw ConfigFileError(this, N_("Required Snapshot/timeStamp attribute is missing"));
+        throw ConfigFileError(this, N_("Required Snapshot/@timeStamp attribute is missing"));
     parseTimestamp(snap.timestamp, strTemp);
 
     elmSnapshot.getAttributeValue("stateFile", snap.strStateFile);      // online snapshots only
@@ -1619,7 +1611,7 @@ void MachineConfigFile::readSnapshot(const xml::ElementNode &elmSnapshot,
     // parse Hardware before the other elements because other things depend on it
     const xml::ElementNode *pelmHardware;
     if (!(pelmHardware = elmSnapshot.findChildElement("Hardware")))
-        throw ConfigFileError(this, N_("Required Snapshot/Hardware element is missing"));
+        throw ConfigFileError(this, N_("Required Snapshot/@Hardware element is missing"));
     readHardware(*pelmHardware, snap.hardware, snap.storage);
 
     xml::NodesLoop nlSnapshotChildren(elmSnapshot);
@@ -1648,14 +1640,8 @@ void MachineConfigFile::readSnapshot(const xml::ElementNode &elmSnapshot,
                     readSnapshot(*pelmChildSnapshot, child);
                     snap.llChildSnapshots.push_back(child);
                 }
-                else
-                    throw ConfigFileError(this, N_("Invalid element %s under Snapshots element"), pelmChildSnapshot->getName());
             }
         }
-        else if (pelmSnapshotChild->nameEquals("Hardware"))
-            ; // handled above
-        else
-            throw ConfigFileError(this, N_("Invalid element %s under Snapshot element"), pelmSnapshotChild->getName());
     }
 }
 
@@ -1719,14 +1705,10 @@ void MachineConfigFile::readMachine(const xml::ElementNode &elmMachine)
             }
             else if (pelmMachineChild->nameEquals("Description"))
                 strDescription = pelmMachineChild->getValue();
-            else if (pelmMachineChild->nameEquals("Hardware"))
-                ; // read above
-            else
-                throw ConfigFileError(this, N_("Invalid element %s under Machine element"), pelmMachineChild->getName());
         }
     }
     else
-        throw ConfigFileError(this, N_("Machine element must have uuid and name attributes"));
+        throw ConfigFileError(this, N_("Required Machine/@uuid or @name attributes is missing"));
 }
 
 /**
