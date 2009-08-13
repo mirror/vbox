@@ -167,8 +167,6 @@ struct _CLIPBACKEND
     /** The X Toolkit widget which we use as our clipboard client.  It is never made visible. */
     Widget widget;
 
-    /** Does VBox currently own the clipboard? */
-    bool fOwnsClipboard;
     /** Should we try to grab the clipboard on startup? */
     bool fGrabClipboardOnStart;
 
@@ -180,11 +178,6 @@ struct _CLIPBACKEND
     CLIPX11FORMAT X11BitmapFormat;
     /** What formats does VBox have on offer? */
     uint32_t vboxFormats;
-    /** Windows hosts and guests cache the clipboard data they receive.
-     * Since we have no way of knowing whether their cache is still valid,
-     * we always send a "data changed" message after a successful transfer
-     * to invalidate it. */
-    bool notifyVBox;
     /** Cache of the last unicode data that we received */
     void *pvUnicodeCache;
     /** Size of the unicode data in the cache */
@@ -400,21 +393,16 @@ static bool clipTestTextFormatConversion(CLIPBACKEND *pCtx)
  * @param  pCtx      the clipboard backend context structure
  * @param  pTargets  the list of targets
  * @param  cTargets  the size of the list in @a pTargets
- * @param  pChanged  This is set to true if the formats available have changed
- *                   from VBox's point of view, and to false otherwise.
- *                   Somehow this didn't feel right as a return value.
  */
 static void clipGetFormatsFromTargets(CLIPBACKEND *pCtx, Atom *pTargets,
-                                      size_t cTargets, bool *pChanged)
+                                      size_t cTargets)
 {
-    bool changed = false;
     AssertPtrReturnVoid(pCtx);
-    AssertReturnVoid(VALID_PTR(pTargets) || cTargets == 0);
+    AssertPtrReturnVoid(pTargets);
     CLIPX11FORMAT bestTextFormat;
     bestTextFormat = clipGetTextFormatFromTargets(pCtx, pTargets, cTargets);
     if (pCtx->X11TextFormat != bestTextFormat)
     {
-        changed = true;
         pCtx->X11TextFormat = bestTextFormat;
 #if defined(DEBUG) && !defined(TESTCASE)
         for (unsigned i = 0; i < cTargets; ++i)
@@ -428,8 +416,6 @@ static void clipGetFormatsFromTargets(CLIPBACKEND *pCtx, Atom *pTargets,
 #endif
     }
     pCtx->X11BitmapFormat = INVALID;  /* not yet supported */
-    if (pChanged)
-        *pChanged = changed;
 }
 
 /**
@@ -442,38 +428,10 @@ static void clipGetFormatsFromTargets(CLIPBACKEND *pCtx, Atom *pTargets,
 static void clipUpdateX11Targets(CLIPBACKEND *pCtx, Atom *pTargets,
                                  size_t cTargets)
 {
-    bool changed = false;
-
     LogRel2 (("%s: called\n", __PRETTY_FUNCTION__));
-    if (pCtx->fOwnsClipboard)
-        /* VBox raced us and we lost.  So we don't want to report anything. */
-        return;
-    clipGetFormatsFromTargets(pCtx, pTargets, cTargets, &changed);
+    clipGetFormatsFromTargets(pCtx, pTargets, cTargets);
     clipReportFormatsToVBox(pCtx);
 }
-
-#ifdef TESTCASE
-static bool clipTestTargetUpdate(CLIPBACKEND *pCtx)
-{
-    bool success = true;
-    bool changed = true;
-    clipGetFormatsFromTargets(pCtx, NULL, 0, &changed);
-    clipGetFormatsFromTargets(pCtx, NULL, 0, &changed);  /* twice */
-    if (changed)
-        success = false;
-    Atom targets[3];
-    targets[0] = clipGetAtom(NULL, "COMPOUND_TEXT");
-    targets[1] = clipGetAtom(NULL, "text/plain");
-    targets[2] = clipGetAtom(NULL, "TARGETS");
-    clipGetFormatsFromTargets(pCtx, targets, RT_ELEMENTS(targets), &changed);
-    if (!changed)
-        success = false;
-    clipGetFormatsFromTargets(pCtx, targets, RT_ELEMENTS(targets), &changed);
-    if (changed)
-        success = false;
-    return success;
-}
-#endif
 
 /**
  * Notify the VBox clipboard about available data formats, based on the
@@ -487,12 +445,15 @@ static void clipConvertX11Targets(Widget, XtPointer pClientData,
 {
     CLIPBACKEND *pCtx =
             reinterpret_cast<CLIPBACKEND *>(pClientData);
-    Atom *pTargets = (*atomType == XT_CONVERT_FAIL) ? NULL  /* timeout */
-                                                    : (Atom *)pValue;
-    size_t cTargets = pTargets ? *pcLen : 0;
     LogRel2(("clipConvertX11Targets: pValue=%p, *pcLen=%u, *atomType=%d, XT_CONVERT_FAIL=%d\n",
              pValue, *pcLen, *atomType, XT_CONVERT_FAIL));
-    clipUpdateX11Targets(pCtx, pTargets, cTargets);
+    if (   (*atomType == XT_CONVERT_FAIL)  /* timeout */
+        || (pValue == NULL))               /* No data available */
+    {
+        clipReportEmptyX11CB(pCtx);
+        return;
+    }
+    clipUpdateX11Targets(pCtx, (Atom *)pValue, *pcLen);
     XtFree(reinterpret_cast<char *>(pValue));
 }
 
@@ -501,33 +462,52 @@ static void clipConvertX11Targets(Widget, XtPointer pClientData,
  */
 void clipQueryX11CBFormats(CLIPBACKEND *pCtx)
 {
-    LogRel2 (("%s: called\n", __PRETTY_FUNCTION__));
-    /* Get the current clipboard contents if we don't own it ourselves */
-    if (!pCtx->fOwnsClipboard)
-    {
-        LogRel2 (("%s: requesting the targets that the X11 clipboard offers\n",
-               __PRETTY_FUNCTION__));
-        XtGetSelectionValue(pCtx->widget,
-                            clipGetAtom(pCtx->widget, "CLIPBOARD"),
-                            clipGetAtom(pCtx->widget, "TARGETS"),
-                            clipConvertX11Targets, pCtx,
-                            CurrentTime);
-    }
+    LogRel2 (("%s: requesting the targets that the X11 clipboard offers\n",
+           __PRETTY_FUNCTION__));
+    XtGetSelectionValue(pCtx->widget,
+                        clipGetAtom(pCtx->widget, "CLIPBOARD"),
+                        clipGetAtom(pCtx->widget, "TARGETS"),
+                        clipConvertX11Targets, pCtx,
+                        CurrentTime);
 }
 
 #ifndef TESTCASE
+
+typedef struct {
+    int type;                   /* event base */
+    unsigned long serial;
+    Bool send_event;
+    Display *display;
+    Window window;
+    int subtype;
+    Window owner;
+    Atom selection;
+    Time timestamp;
+    Time selection_timestamp;
+} XFixesSelectionNotifyEvent;
+
 /**
  * Wait until an event arrives and handle it if it is an XFIXES selection
  * event, which Xt doesn't know about.
  */
 void clipPeekEventAndDoXFixesHandling(CLIPBACKEND *pCtx)
 {
-    XEvent event = { 0 };
+    union
+    {
+        XEvent event;
+        XFixesSelectionNotifyEvent fixes;
+    } event = { { 0 } };
 
-    if (XtAppPeekEvent(pCtx->appContext, &event))
-        if (   !pCtx->fOwnsClipboard
-            && (event.type == pCtx->fixesEventBase))
-            clipQueryX11CBFormats(pCtx);
+    if (XtAppPeekEvent(pCtx->appContext, &event.event))
+        if (   (event.event.type == pCtx->fixesEventBase)
+            && (event.fixes.owner != XtWindow(pCtx->widget)))
+        {
+            if (   (event.fixes.subtype == 0  /* XFixesSetSelectionOwnerNotify */)
+                && (event.fixes.owner != 0))
+                clipQueryX11CBFormats(pCtx);
+            else
+                clipReportEmptyX11CB(pCtx);
+        }
 }
 
 /**
@@ -775,7 +755,6 @@ int ClipStartX11(CLIPBACKEND *pCtx, bool grab)
     rc = clipInit(pCtx);
     if (RT_SUCCESS(rc))
     {
-        pCtx->fOwnsClipboard = false;
         clipResetX11Formats(pCtx);
         pCtx->fGrabClipboardOnStart = grab;
     }
@@ -1159,8 +1138,7 @@ static Boolean clipXtConvertSelectionProc(Widget widget, Atom *atomSelection,
     int rc = VINF_SUCCESS;
 
     LogRelFlowFunc(("\n"));
-    if (   !pCtx->fOwnsClipboard   /* Drop requests we receive too late. */
-        || !clipIsSupportedSelectionType(pCtx->widget, *atomSelection))
+    if (!clipIsSupportedSelectionType(pCtx->widget, *atomSelection))
         return false;
     if (*atomTarget == clipGetAtom(pCtx->widget, "TARGETS"))
         rc = clipCreateX11Targets(pCtx, atomTypeReturn, pValReturn,
@@ -1170,31 +1148,6 @@ static Boolean clipXtConvertSelectionProc(Widget widget, Atom *atomSelection,
                                      pValReturn, pcLenReturn, piFormatReturn);
     LogRelFlowFunc(("returning, internal status code %Rrc\n", rc));
     return RT_SUCCESS(rc);
-}
-
-/**
- * Notify VBox that we have returned the clipboard to X11.
- */
-static void clipReleaseCB(CLIPBACKEND *pCtx)
-{
-    LogRelFlowFunc (("\n"));
-    /* The formats should be set to the right values as soon as X11 clipboard
-     * data becomes available. */
-    clipReportEmptyX11CB(pCtx);
-    pCtx->fOwnsClipboard = false;
-}
-
-/**
- * This is called by the X toolkit intrinsics to let us know that another
- * X11 client has taken the clipboard.  In this case we notify VBox that
- * X11 wants ownership of the clipboard.
- * @note  X11 backend code, callback for XtOwnSelection
- */
-static void clipXtLoseSelectionProc(Widget widget, Atom *)
-{
-    CLIPBACKEND *pCtx = clipLookupContext(widget);
-    LogRelFlowFunc (("\n"));
-    clipReleaseCB(pCtx);
 }
 
 /** Structure used to pass information about formats that VBox supports */
@@ -1221,20 +1174,14 @@ static void clipInvalidateVBoxCBCache(CLIPBACKEND *pCtx)
  */
 static void clipGrabX11CB(CLIPBACKEND *pCtx, uint32_t u32Formats)
 {
-    /* Make sure we don't try to query ourselves if we get the clipboard */
-    pCtx->fOwnsClipboard = true;
     if (XtOwnSelection(pCtx->widget, clipGetAtom(pCtx->widget, "CLIPBOARD"),
-                       CurrentTime, clipXtConvertSelectionProc,
-                       clipXtLoseSelectionProc, 0))
+                       CurrentTime, clipXtConvertSelectionProc, NULL, 0))
     {
         pCtx->vboxFormats = u32Formats;
         /* Grab the middle-button paste selection too. */
         XtOwnSelection(pCtx->widget, clipGetAtom(pCtx->widget, "PRIMARY"),
                        CurrentTime, clipXtConvertSelectionProc, NULL, 0);
     }
-    else
-        /* Someone raced us to get the clipboard and they won. */
-        pCtx->fOwnsClipboard = false;
 }
 
 /**
@@ -1590,33 +1537,27 @@ static void vboxClipboardReadX11Worker(XtPointer pUserData,
     LogRelFlowFunc (("pReq->mFormat = %02X\n", pReq->mFormat));
 
     int rc = VINF_SUCCESS;
-    /* Do not continue if we already own the clipboard */
-    if (pCtx->fOwnsClipboard == true)
-        rc = VERR_TIMEOUT;
-    else
+    /*
+     * VBox wants to read data in the given format.
+     */
+    if (pReq->mFormat == VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT)
     {
-        /*
-         * VBox wants to read data in the given format.
-         */
-        if (pReq->mFormat == VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT)
-        {
-            pReq->mTextFormat = pCtx->X11TextFormat;
-            if (pReq->mTextFormat == INVALID)
-                /* VBox thinks we have data and we don't */
-                rc = VERR_NO_DATA;
-            else
-                /* Send out a request for the data to the current clipboard
-                 * owner */
-                XtGetSelectionValue(pCtx->widget, clipGetAtom(pCtx->widget, "CLIPBOARD"),
-                                    clipAtomForX11Format(pCtx->widget,
-                                                         pCtx->X11TextFormat),
-                                    clipConvertX11CB,
-                                    reinterpret_cast<XtPointer>(pReq),
-                                    CurrentTime);
-        }
+        pReq->mTextFormat = pCtx->X11TextFormat;
+        if (pReq->mTextFormat == INVALID)
+            /* VBox thinks we have data and we don't */
+            rc = VERR_NO_DATA;
         else
-            rc = VERR_NOT_IMPLEMENTED;
+            /* Send out a request for the data to the current clipboard
+             * owner */
+            XtGetSelectionValue(pCtx->widget, clipGetAtom(pCtx->widget, "CLIPBOARD"),
+                                clipAtomForX11Format(pCtx->widget,
+                                                     pCtx->X11TextFormat),
+                                clipConvertX11CB,
+                                reinterpret_cast<XtPointer>(pReq),
+                                CurrentTime);
     }
+    else
+        rc = VERR_NOT_IMPLEMENTED;
     if (RT_FAILURE(rc))
     {
         /* The clipboard callback was never scheduled, so we must signal
@@ -2435,7 +2376,7 @@ int main()
     /*** Ensure that VBox is notified when we return the CB to X11 ***/
     RTTestSub(hTest, "notification of switch to X11 clipboard");
     clipInvalidateFormats();
-    clipReleaseCB(pCtx);
+    clipReportEmptyX11CB(pCtx);
     RTTEST_CHECK_MSG(hTest, clipQueryFormats() == 0,
                      (hTest, "Failed to send a format update (release) notification\n"));
 
@@ -2455,7 +2396,11 @@ int main()
     clipSetSelectionValues("UTF8_STRING", XA_STRING, "hello world",
                            sizeof("hello world"), 8);
     clipSetTargetsFailure(false, true);
-    clipUpdateX11Targets(pCtx, NULL, 0);
+    Atom atom = XA_STRING;
+    long unsigned int cLen = 0;
+    int format = 8;
+    clipConvertX11Targets(NULL, (XtPointer) pCtx, NULL, &atom, NULL, &cLen,
+                          &format);
     RTTEST_CHECK_MSG(hTest, clipQueryFormats() == 0,
                      (hTest, "Wrong targets reported: %02X\n",
                       clipQueryFormats()));
@@ -2464,8 +2409,6 @@ int main()
     RTTestSub(hTest, "handling of X11 selection targets");
     RTTEST_CHECK_MSG(hTest, clipTestTextFormatConversion(pCtx),
                      (hTest, "failed to select the right X11 text formats\n"));
-    RTTEST_CHECK_MSG(hTest, clipTestTargetUpdate(pCtx),
-                     (hTest, "incorrect reporting of new selection targets\n"));
 
     /*** Utf-8 from VBox ***/
     RTTestSub(hTest, "reading Utf-8 from VBox");
@@ -2555,16 +2498,18 @@ int main()
 
     /*** No data in VBox clipboard ***/
     RTTestSub(hTest, "an empty VBox clipboard");
+    clipSetSelectionValues("TEXT", XA_STRING, "", sizeof(""), 8);
     clipEmptyVBox(pCtx, VINF_SUCCESS);
-    RTTEST_CHECK_MSG(hTest, pCtx->fOwnsClipboard,
+    RTTEST_CHECK_MSG(hTest, g_ownsSel,
                      (hTest, "VBox grabbed the clipboard with no data and we ignored it\n"));
     testStringFromVBoxFailed(hTest, pCtx, "UTF8_STRING");
 
     /*** An unknown VBox format ***/
     RTTestSub(hTest, "reading an unknown VBox format");
+    clipSetSelectionValues("TEXT", XA_STRING, "", sizeof(""), 8);
     clipSetVBoxUtf16(pCtx, VINF_SUCCESS, "", 2);
     ClipAnnounceFormatToX11(pCtx, 0xa0000);
-    RTTEST_CHECK_MSG(hTest, pCtx->fOwnsClipboard,
+    RTTEST_CHECK_MSG(hTest, g_ownsSel,
                      (hTest, "VBox grabbed the clipboard with unknown data and we ignored it\n"));
     testStringFromVBoxFailed(hTest, pCtx, "UTF8_STRING");
     rc = ClipStopX11(pCtx);
