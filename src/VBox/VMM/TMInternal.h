@@ -545,6 +545,7 @@ typedef struct TM
     STAMCOUNTER                 StatTSCCatchupLE100;
     STAMCOUNTER                 StatTSCCatchupOther;
     STAMCOUNTER                 StatTSCWarp;
+    STAMCOUNTER                 StatTSCUnderflow;
     STAMCOUNTER                 StatTSCSyncNotTicking;
     /** @} */
 } TM;
@@ -572,6 +573,8 @@ typedef struct TMCPU
     /** The guest TSC when fTicking is cleared. */
     uint64_t                    u64TSC;
 
+    /** The last seen TSC by the guest. */
+    uint64_t                    u64TSCLastSeen;
 } TMCPU;
 /** Pointer to TM VMCPU instance data. */
 typedef TMCPU *PTMCPU;
