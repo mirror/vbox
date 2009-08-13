@@ -291,8 +291,9 @@ VMMDECL(int) TMCpuTickSetLastSeen(PVMCPU pVCpu, uint64_t u64LastSeenTick)
 {
     VMCPU_ASSERT_EMT(pVCpu);
 
-    Assert(pVCpu->tm.s.u64TSCLastSeen < u64LastSeenTick);
-    pVCpu->tm.s.u64TSCLastSeen = u64LastSeenTick;
+    LogFlow(("TMCpuTickSetLastSeen %RX64\n", u64LastSeenTick));
+    if (pVCpu->tm.s.u64TSCLastSeen < u64LastSeenTick)
+        pVCpu->tm.s.u64TSCLastSeen = u64LastSeenTick;
     return VINF_SUCCESS;
 }
 
