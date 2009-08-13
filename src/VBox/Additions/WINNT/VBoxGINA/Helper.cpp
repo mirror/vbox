@@ -75,7 +75,7 @@ bool credentialsAvailable(void)
         return false;
     }
     bool fAvailable = ((vmmreqCredentials.u32Flags & VMMDEV_CREDENTIALS_PRESENT) != 0);
-    Log(("VBoxGINA::credentialsAvailable: fAvailable: %d\n", fAvailable));
+    /*Log(("VBoxGINA::credentialsAvailable: fAvailable: %d\n", fAvailable));*/
     return fAvailable;
 }
 

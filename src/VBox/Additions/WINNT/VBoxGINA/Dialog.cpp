@@ -117,7 +117,7 @@ INT_PTR CALLBACK MyWlxLoggedOutSASDlgProc(HWND   hwndDlg,  // handle to dialog b
     static HWND hwndUserId, hwndPassword, hwndDomain = 0;
     static UINT_PTR timer = 0;
 
-    Log(("VBoxGINA::MyWlxLoggedOutSASDlgProc\n"));
+    /*Log(("VBoxGINA::MyWlxLoggedOutSASDlgProc\n"));*/
 
     //
     // Pass on to MSGINA first.
@@ -160,7 +160,19 @@ INT_PTR CALLBACK MyWlxLoggedOutSASDlgProc(HWND   hwndDlg,  // handle to dialog b
                     if (hwndPassword)
                         SendMessage(hwndPassword, WM_SETTEXT, 0, (LPARAM)g_Password);
                     if (hwndDomain)
-                        SendMessage(hwndDomain, WM_SETTEXT, 0, (LPARAM)g_Domain);
+                    {
+                        /* search the domain combo box for our required domain and select it */
+                        Log(("VBoxGINA::MyWlxLoggedOutSASDlgProc: Find domain entry ...\n"));
+                        DWORD dwIndex = (DWORD) SendMessage(hwndDomain, CB_FINDSTRING,
+                                                            0, (LPARAM)g_Domain);
+                        if (dwIndex != CB_ERR)
+                        {
+                            Log(("VBoxGINA::MyWlxLoggedOutSASDlgProc: Found domain at pos %ld\n", dwIndex));
+                            SendMessage(hwndDomain, CB_SETCURSEL, (WPARAM) dwIndex, 0);
+                            EnableWindow(hwndDomain, FALSE);
+                        }
+                        else Log(("VBoxGINA::MyWlxLoggedOutSASDlgProc: Domain entry not found!"));
+                    }
 
                     /* we got the credentials, null them out */
                     credentialsReset();
