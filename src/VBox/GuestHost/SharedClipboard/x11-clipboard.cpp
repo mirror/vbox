@@ -1082,6 +1082,23 @@ static bool clipIsSupportedSelectionType(Widget widget, Atom selType)
            || (selType == clipGetAtom(widget, "PRIMARY")));
 }
 
+/**
+ * Remove a trailing nul character from a string by adjusting the string
+ * length.  Some X11 applications don't like zero-terminated text...
+ * @param  pText   the text in question
+ * @param  pcText  the length of the text, adjusted on return
+ * @param  format  the format of the text
+ */
+static void clipTrimTrailingNul(XtPointer pText, unsigned long *pcText,
+                                CLIPFORMAT format)
+{
+    AssertPtrReturnVoid(pText);
+    AssertPtrReturnVoid(pcText);
+    AssertReturnVoid((format == UTF8) || (format == CTEXT) || (format == TEXT));
+    if (((char *)pText)[*pcText - 1] == '\0')
+       --(*pcText);
+}
+
 static int clipConvertVBoxCBForX11(CLIPBACKEND *pCtx, Atom *atomTarget,
                                    Atom *atomTypeReturn,
                                    XtPointer *pValReturn,
@@ -1112,6 +1129,8 @@ static int clipConvertVBoxCBForX11(CLIPBACKEND *pCtx, Atom *atomTarget,
                                            (PRTUTF16)pv, cb,
                                            atomTypeReturn, pValReturn,
                                            pcLenReturn, piFormatReturn);
+        if (RT_SUCCESS(rc))
+            clipTrimTrailingNul(*(XtPointer *)pValReturn, pcLenReturn, format);
         RTMemFree(pv);
     }
     else
@@ -2070,7 +2089,7 @@ const char XtShellStrings [] = "";
 #endif
 
 static void testStringFromX11(RTTEST hTest, CLIPBACKEND *pCtx,
-                              const char *pcszExp, int rcExp, size_t cbExpIn)
+                              const char *pcszExp, int rcExp)
 {
     bool retval = true;
     clipSendTargetUpdate(pCtx);
@@ -2101,7 +2120,7 @@ static void testStringFromX11(RTTEST hTest, CLIPBACKEND *pCtx,
             size_t cwc = 0;
             rc = RTStrToUtf16Ex(pcszExp, RTSTR_MAX, &pwcExp,
                                 RT_ELEMENTS(wcExp), &cwc);
-            size_t cbExp = cbExpIn ? cbExpIn : cwc * 2 + 2;
+            size_t cbExp = cwc * 2 + 2;
             AssertRC(rc);
             if (RT_SUCCESS(rc))
             {
@@ -2128,7 +2147,7 @@ static void testStringFromX11(RTTEST hTest, CLIPBACKEND *pCtx,
 }
 
 static void testLatin1FromX11(RTTEST hTest, CLIPBACKEND *pCtx,
-                              const char *pcszExp, int rcExp, size_t cbExpIn)
+                              const char *pcszExp, int rcExp)
 {
     bool retval = false;
     clipSendTargetUpdate(pCtx);
@@ -2159,7 +2178,7 @@ static void testLatin1FromX11(RTTEST hTest, CLIPBACKEND *pCtx,
             size_t cwc;
             for (cwc = 0; cwc == 0 || pcszExp[cwc - 1] != '\0'; ++cwc)
                 wcExp[cwc] = pcszExp[cwc];
-            size_t cbExp = cbExpIn ? cbExpIn : cwc * 2;
+            size_t cbExp = cwc * 2;
             if (cbActual != cbExp)
             {
                 RTTestFailed(hTest, "Returned string is the wrong size, string \"%.*ls\", size %u, expected \"%s\", size %u\n",
@@ -2183,13 +2202,14 @@ static void testLatin1FromX11(RTTEST hTest, CLIPBACKEND *pCtx,
 
 static void testStringFromVBox(RTTEST hTest, CLIPBACKEND *pCtx,
                                const char *pcszTarget, Atom typeExp,
-                               const void *valueExp, unsigned long lenExp)
+                               const char *valueExp)
 {
     bool retval = false;
     Atom type;
     XtPointer value = NULL;
     unsigned long length;
     int format;
+    size_t lenExp = strlen(valueExp);
     if (clipConvertSelection(pcszTarget, &type, &value, &length, &format))
     {
         if (   type != typeExp
@@ -2255,86 +2275,83 @@ int main()
     /* Simple test */
     clipSetSelectionValues("UTF8_STRING", XA_STRING, "hello world",
                            sizeof("hello world"), 8);
-    testStringFromX11(hTest, pCtx, "hello world", VINF_SUCCESS, 0);
+    testStringFromX11(hTest, pCtx, "hello world", VINF_SUCCESS);
     /* With an embedded carriage return */
     clipSetSelectionValues("text/plain;charset=UTF-8", XA_STRING,
                            "hello\nworld", sizeof("hello\nworld"), 8);
-    testStringFromX11(hTest, pCtx, "hello\r\nworld", VINF_SUCCESS, 0);
+    testStringFromX11(hTest, pCtx, "hello\r\nworld", VINF_SUCCESS);
     /* With an embedded CRLF */
     clipSetSelectionValues("text/plain;charset=UTF-8", XA_STRING,
                            "hello\r\nworld", sizeof("hello\r\nworld"), 8);
-    testStringFromX11(hTest, pCtx, "hello\r\r\nworld", VINF_SUCCESS, 0);
+    testStringFromX11(hTest, pCtx, "hello\r\r\nworld", VINF_SUCCESS);
     /* With an embedded LFCR */
     clipSetSelectionValues("text/plain;charset=UTF-8", XA_STRING,
                            "hello\n\rworld", sizeof("hello\n\rworld"), 8);
-    testStringFromX11(hTest, pCtx, "hello\r\n\rworld", VINF_SUCCESS, 0);
+    testStringFromX11(hTest, pCtx, "hello\r\n\rworld", VINF_SUCCESS);
     /* An empty string */
     clipSetSelectionValues("text/plain;charset=utf-8", XA_STRING, "",
                            sizeof(""), 8);
-    testStringFromX11(hTest, pCtx, "", VINF_SUCCESS, 0);
+    testStringFromX11(hTest, pCtx, "", VINF_SUCCESS);
     /* With an embedded Utf-8 character. */
     clipSetSelectionValues("STRING", XA_STRING,
                            "100\xE2\x82\xAC" /* 100 Euro */,
                            sizeof("100\xE2\x82\xAC"), 8);
-    testStringFromX11(hTest, pCtx, "100\xE2\x82\xAC", VINF_SUCCESS, 0);
+    testStringFromX11(hTest, pCtx, "100\xE2\x82\xAC", VINF_SUCCESS);
     /* A non-zero-terminated string */
     clipSetSelectionValues("TEXT", XA_STRING,
                            "hello world", sizeof("hello world") - 1, 8);
-    // testStringFromX11(hTest, pCtx, "hello world", VINF_SUCCESS,
-    //                   sizeof("hello world") * 2 - 2);
+    testStringFromX11(hTest, pCtx, "hello world", VINF_SUCCESS);
 
     /*** COMPOUND TEXT from X11 ***/
     RTTestSub(hTest, "reading compound text from X11");
     /* Simple test */
     clipSetSelectionValues("COMPOUND_TEXT", XA_STRING, "hello world",
                            sizeof("hello world"), 8);
-    testStringFromX11(hTest, pCtx, "hello world", VINF_SUCCESS, 0);
+    testStringFromX11(hTest, pCtx, "hello world", VINF_SUCCESS);
     /* With an embedded carriage return */
     clipSetSelectionValues("COMPOUND_TEXT", XA_STRING, "hello\nworld",
                            sizeof("hello\nworld"), 8);
-    testStringFromX11(hTest, pCtx, "hello\r\nworld", VINF_SUCCESS, 0);
+    testStringFromX11(hTest, pCtx, "hello\r\nworld", VINF_SUCCESS);
     /* With an embedded CRLF */
     clipSetSelectionValues("COMPOUND_TEXT", XA_STRING, "hello\r\nworld",
                            sizeof("hello\r\nworld"), 8);
-    testStringFromX11(hTest, pCtx, "hello\r\r\nworld", VINF_SUCCESS, 0);
+    testStringFromX11(hTest, pCtx, "hello\r\r\nworld", VINF_SUCCESS);
     /* With an embedded LFCR */
     clipSetSelectionValues("COMPOUND_TEXT", XA_STRING, "hello\n\rworld",
                            sizeof("hello\n\rworld"), 8);
-    testStringFromX11(hTest, pCtx, "hello\r\n\rworld", VINF_SUCCESS, 0);
+    testStringFromX11(hTest, pCtx, "hello\r\n\rworld", VINF_SUCCESS);
     /* An empty string */
     clipSetSelectionValues("COMPOUND_TEXT", XA_STRING, "",
                            sizeof(""), 8);
-    testStringFromX11(hTest, pCtx, "", VINF_SUCCESS, 0);
+    testStringFromX11(hTest, pCtx, "", VINF_SUCCESS);
     /* A non-zero-terminated string */
     clipSetSelectionValues("COMPOUND_TEXT", XA_STRING,
                            "hello world", sizeof("hello world") - 1, 8);
-    // testStringFromX11(hTest, pCtx, "hello world", VINF_SUCCESS,
-    //                   sizeof("hello world") * 2 - 2);
+    testStringFromX11(hTest, pCtx, "hello world", VINF_SUCCESS);
 
     /*** Latin1 from X11 ***/
     RTTestSub(hTest, "reading Latin1 from X11");
     /* Simple test */
     clipSetSelectionValues("STRING", XA_STRING, "Georges Dupr\xEA",
                            sizeof("Georges Dupr\xEA"), 8);
-    testLatin1FromX11(hTest, pCtx, "Georges Dupr\xEA", VINF_SUCCESS, 0);
+    testLatin1FromX11(hTest, pCtx, "Georges Dupr\xEA", VINF_SUCCESS);
     /* With an embedded carriage return */
     clipSetSelectionValues("TEXT", XA_STRING, "Georges\nDupr\xEA",
                            sizeof("Georges\nDupr\xEA"), 8);
-    testLatin1FromX11(hTest, pCtx, "Georges\r\nDupr\xEA", VINF_SUCCESS, 0);
+    testLatin1FromX11(hTest, pCtx, "Georges\r\nDupr\xEA", VINF_SUCCESS);
     /* With an embedded CRLF */
     clipSetSelectionValues("TEXT", XA_STRING, "Georges\r\nDupr\xEA",
                            sizeof("Georges\r\nDupr\xEA"), 8);
-    testLatin1FromX11(hTest, pCtx, "Georges\r\r\nDupr\xEA", VINF_SUCCESS, 0);
+    testLatin1FromX11(hTest, pCtx, "Georges\r\r\nDupr\xEA", VINF_SUCCESS);
     /* With an embedded LFCR */
     clipSetSelectionValues("TEXT", XA_STRING, "Georges\n\rDupr\xEA",
                            sizeof("Georges\n\rDupr\xEA"), 8);
-    testLatin1FromX11(hTest, pCtx, "Georges\r\n\rDupr\xEA", VINF_SUCCESS, 0);
+    testLatin1FromX11(hTest, pCtx, "Georges\r\n\rDupr\xEA", VINF_SUCCESS);
     /* A non-zero-terminated string */
     clipSetSelectionValues("text/plain", XA_STRING,
                            "Georges Dupr\xEA!",
                            sizeof("Georges Dupr\xEA!") - 1, 8);
-    // testLatin1FromX11(hTest, pCtx, "Georges Dupr\xEA!", VINF_SUCCESS,
-    //                   sizeof("Georges Dupr\xEA!") * 2 - 2);
+    testLatin1FromX11(hTest, pCtx, "Georges Dupr\xEA!", VINF_SUCCESS);
 
     /*** Unknown X11 format ***/
     RTTestSub(hTest, "handling of an unknown X11 format");
@@ -2349,7 +2366,7 @@ int main()
     RTTestSub(hTest, "X11 timeout");
     clipSetSelectionValues("UTF8_STRING", XT_CONVERT_FAIL, "hello world",
                            sizeof("hello world"), 8);
-    testStringFromX11(hTest, pCtx, "hello world", VERR_TIMEOUT, 0);
+    testStringFromX11(hTest, pCtx, "hello world", VERR_TIMEOUT);
 
     /*** No data in X11 clipboard ***/
     RTTestSub(hTest, "a data request from an empty X11 clipboard");
@@ -2408,43 +2425,39 @@ int main()
     clipSetVBoxUtf16(pCtx, VINF_SUCCESS, "hello world",
                      sizeof("hello world") * 2);
     testStringFromVBox(hTest, pCtx, "UTF8_STRING",
-                            clipGetAtom(NULL, "UTF8_STRING"),
-                            "hello world", sizeof("hello world"));
+                       clipGetAtom(NULL, "UTF8_STRING"), "hello world");
     /* With an embedded carriage return */
     clipSetVBoxUtf16(pCtx, VINF_SUCCESS, "hello\r\nworld",
                      sizeof("hello\r\nworld") * 2);
     testStringFromVBox(hTest, pCtx, "text/plain;charset=UTF-8",
-                            clipGetAtom(NULL, "text/plain;charset=UTF-8"),
-                            "hello\nworld", sizeof("hello\nworld"));
+                       clipGetAtom(NULL, "text/plain;charset=UTF-8"),
+                       "hello\nworld");
     /* With an embedded CRCRLF */
     clipSetVBoxUtf16(pCtx, VINF_SUCCESS, "hello\r\r\nworld",
                      sizeof("hello\r\r\nworld") * 2);
     testStringFromVBox(hTest, pCtx, "text/plain;charset=UTF-8",
-                            clipGetAtom(NULL, "text/plain;charset=UTF-8"),
-                            "hello\r\nworld", sizeof("hello\r\nworld"));
+                       clipGetAtom(NULL, "text/plain;charset=UTF-8"),
+                       "hello\r\nworld");
     /* With an embedded CRLFCR */
     clipSetVBoxUtf16(pCtx, VINF_SUCCESS, "hello\r\n\rworld",
                      sizeof("hello\r\n\rworld") * 2);
     testStringFromVBox(hTest, pCtx, "text/plain;charset=UTF-8",
-                            clipGetAtom(NULL, "text/plain;charset=UTF-8"),
-                            "hello\n\rworld", sizeof("hello\n\rworld"));
+                       clipGetAtom(NULL, "text/plain;charset=UTF-8"),
+                       "hello\n\rworld");
     /* An empty string */
     clipSetVBoxUtf16(pCtx, VINF_SUCCESS, "", 2);
     testStringFromVBox(hTest, pCtx, "text/plain;charset=utf-8",
-                            clipGetAtom(NULL, "text/plain;charset=utf-8"),
-                            "", sizeof(""));
+                       clipGetAtom(NULL, "text/plain;charset=utf-8"), "");
     /* With an embedded Utf-8 character. */
     clipSetVBoxUtf16(pCtx, VINF_SUCCESS, "100\xE2\x82\xAC" /* 100 Euro */,
                      10);
     testStringFromVBox(hTest, pCtx, "STRING",
-                            clipGetAtom(NULL, "STRING"),
-                            "100\xE2\x82\xAC", sizeof("100\xE2\x82\xAC"));
+                       clipGetAtom(NULL, "STRING"), "100\xE2\x82\xAC");
     /* A non-zero-terminated string */
     clipSetVBoxUtf16(pCtx, VINF_SUCCESS, "hello world",
                      sizeof("hello world") * 2 - 2);
-    // testStringFromVBox(hTest, pCtx, "TEXT",
-    //                         clipGetAtom(NULL, "TEXT"),
-    //                         "hello world", sizeof("hello world") - 1);
+    testStringFromVBox(hTest, pCtx, "TEXT", clipGetAtom(NULL, "TEXT"),
+                       "hello world");
 
     /*** COMPOUND TEXT from VBox ***/
     RTTestSub(hTest, "reading COMPOUND TEXT from VBox");
@@ -2452,37 +2465,31 @@ int main()
     clipSetVBoxUtf16(pCtx, VINF_SUCCESS, "hello world",
                      sizeof("hello world") * 2);
     testStringFromVBox(hTest, pCtx, "COMPOUND_TEXT",
-                            clipGetAtom(NULL, "COMPOUND_TEXT"),
-                            "hello world", sizeof("hello world"));
+                       clipGetAtom(NULL, "COMPOUND_TEXT"), "hello world");
     /* With an embedded carriage return */
     clipSetVBoxUtf16(pCtx, VINF_SUCCESS, "hello\r\nworld",
                      sizeof("hello\r\nworld") * 2);
     testStringFromVBox(hTest, pCtx, "COMPOUND_TEXT",
-                            clipGetAtom(NULL, "COMPOUND_TEXT"),
-                            "hello\nworld", sizeof("hello\nworld"));
+                       clipGetAtom(NULL, "COMPOUND_TEXT"), "hello\nworld");
     /* With an embedded CRCRLF */
     clipSetVBoxUtf16(pCtx, VINF_SUCCESS, "hello\r\r\nworld",
                      sizeof("hello\r\r\nworld") * 2);
     testStringFromVBox(hTest, pCtx, "COMPOUND_TEXT",
-                            clipGetAtom(NULL, "COMPOUND_TEXT"),
-                            "hello\r\nworld", sizeof("hello\r\nworld"));
+                       clipGetAtom(NULL, "COMPOUND_TEXT"), "hello\r\nworld");
     /* With an embedded CRLFCR */
     clipSetVBoxUtf16(pCtx, VINF_SUCCESS, "hello\r\n\rworld",
                      sizeof("hello\r\n\rworld") * 2);
     testStringFromVBox(hTest, pCtx, "COMPOUND_TEXT",
-                            clipGetAtom(NULL, "COMPOUND_TEXT"),
-                            "hello\n\rworld", sizeof("hello\n\rworld"));
+                       clipGetAtom(NULL, "COMPOUND_TEXT"), "hello\n\rworld");
     /* An empty string */
     clipSetVBoxUtf16(pCtx, VINF_SUCCESS, "", 2);
     testStringFromVBox(hTest, pCtx, "COMPOUND_TEXT",
-                            clipGetAtom(NULL, "COMPOUND_TEXT"),
-                            "", sizeof(""));
+                       clipGetAtom(NULL, "COMPOUND_TEXT"), "");
     /* A non-zero-terminated string */
     clipSetVBoxUtf16(pCtx, VINF_SUCCESS, "hello world",
                      sizeof("hello world") * 2 - 2);
-    // testStringFromVBox(hTest, pCtx, "COMPOUND_TEXT",
-    //                         clipGetAtom(NULL, "COMPOUND_TEXT"),
-    //                         "hello world", sizeof("hello world") - 1);
+    testStringFromVBox(hTest, pCtx, "COMPOUND_TEXT",
+                       clipGetAtom(NULL, "COMPOUND_TEXT"), "hello world");
 
     /*** Timeout from VBox ***/
     RTTestSub(hTest, "reading from VBox with timeout");
