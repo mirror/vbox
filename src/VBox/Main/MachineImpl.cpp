@@ -2695,10 +2695,7 @@ STDMETHODIMP Machine::SetExtraData(IN_BSTR aKey, IN_BSTR aValue)
 
         // data is changing and change not vetoed: then write it out under the locks
 
-        /* VirtualBox::onExtraDataCanChange() and saveSettings() need mParent
-         * lock (saveSettings() needs a write one). This object's write lock is
-         * also necessary to serialize file access (prevent concurrent reads and
-         * writes). */
+        // saveSettings() needs VirtualBox write lock
         AutoMultiWriteLock2 alock(mParent, this);
 
         if (mType == IsSnapshotMachine)
