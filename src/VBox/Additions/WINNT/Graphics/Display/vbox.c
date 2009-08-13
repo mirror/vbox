@@ -711,9 +711,6 @@ VBOXVHWACMD* vboxVHWACommandCreate (PPDEV ppdev, VBOXVHWACMD_TYPE enmCmd, VBOXVH
         pHdr->enmCmd = enmCmd;
     }
 
-    /* temporary hack */
-    vboxVHWACommandCheckHostCmds(ppdev);
-
     return pHdr;
 }
 
