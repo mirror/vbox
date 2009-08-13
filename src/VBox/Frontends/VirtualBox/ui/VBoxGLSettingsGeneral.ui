@@ -116,7 +116,7 @@
     </widget>
    </item>
    <item row="4" column="0" colspan="3" >
-    <widget class="Line" name="mLnSeparator" >
+    <widget class="Line" name="mLnSeparator2" >
      <property name="orientation" >
       <enum>Qt::Horizontal</enum>
      </property>

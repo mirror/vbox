@@ -36,6 +36,8 @@ VBoxGLSettingsGeneral::VBoxGLSettingsGeneral()
 #ifndef Q_WS_MAC
     mCbCheckDockPreview->hide();
 #endif /* Q_WS_MAC */
+    if (mCbCheckTrayIcon->isHidden() && mCbCheckDockPreview->isHidden())
+        mLnSeparator2->hide();
 
     mPsHardDisk->setHomeDir (vboxGlobal().virtualBox().GetHomeFolder());
     mPsMach->setHomeDir (vboxGlobal().virtualBox().GetHomeFolder());
