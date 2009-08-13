@@ -358,8 +358,8 @@ static int dhcp_decode_request(PNATState pData, struct bootp_t *bp, const uint8_
     struct in_addr daddr;
     int off;
     uint8_t *opt;
-    uint8_t *req_ip;
-    uint8_t *server_ip;
+    uint8_t *req_ip = NULL;
+    uint8_t *server_ip = NULL;
     uint32_t ui32;
     enum DHCP_REQUEST_STATES dhcp_stat = NONE;
     /*need to understand which type of request we get */
@@ -430,6 +430,7 @@ static int dhcp_decode_request(PNATState pData, struct bootp_t *bp, const uint8_
                bc->addr.s_addr = bp->bp_ciaddr.s_addr; 
             }
         }
+        break;
         case INIT_REBOOT:
             Assert(server_ip == NULL);
             Assert(req_ip != NULL);
