@@ -4958,8 +4958,10 @@ static DECLCALLBACK(void) supdrvGipSyncTimer(PRTTIMER pTimer, void *pvUser, uint
 {
     RTCCUINTREG     fOldFlags = ASMIntDisableFlags(); /* No interruptions please (real problem on S10). */
     PSUPDRVDEVEXT   pDevExt   = (PSUPDRVDEVEXT)pvUser;
+    uint64_t        u64TSC    = ASMReadTSC();
+    uint64_t        NanoTS    = RTTimeSystemNanoTS();
 
-    supdrvGipUpdate(pDevExt->pGip, RTTimeSystemNanoTS());
+    supdrvGipUpdate(pDevExt->pGip, NanoTS, u64TSC);
 
     ASMSetFlags(fOldFlags);
 }
@@ -4975,13 +4977,14 @@ static DECLCALLBACK(void) supdrvGipAsyncTimer(PRTTIMER pTimer, void *pvUser, uin
     RTCCUINTREG     fOldFlags = ASMIntDisableFlags(); /* No interruptions please (real problem on S10). */
     PSUPDRVDEVEXT   pDevExt   = (PSUPDRVDEVEXT)pvUser;
     RTCPUID         idCpu     = RTMpCpuId();
+    uint64_t        u64TSC    = ASMReadTSC();
     uint64_t        NanoTS    = RTTimeSystemNanoTS();
 
     /** @todo reset the transaction number and whatnot when iTick == 1. */
     if (pDevExt->idGipMaster == idCpu)
-        supdrvGipUpdate(pDevExt->pGip, NanoTS);
+        supdrvGipUpdate(pDevExt->pGip, NanoTS, u64TSC);
     else
-        supdrvGipUpdatePerCpu(pDevExt->pGip, NanoTS, ASMGetApicId());
+        supdrvGipUpdatePerCpu(pDevExt->pGip, NanoTS, u64TSC, ASMGetApicId());
 
     ASMSetFlags(fOldFlags);
 }
@@ -5277,15 +5280,18 @@ void VBOXCALL supdrvGipTerm(PSUPGLOBALINFOPAGE pGip)
  * @param   pGip            The GIP.
  * @param   pGipCpu         Pointer to the per cpu data.
  * @param   u64NanoTS       The current time stamp.
+ * @param   u64TSC          The current TSC.
  */
-static void supdrvGipDoUpdateCpu(PSUPGLOBALINFOPAGE pGip, PSUPGIPCPU pGipCpu, uint64_t u64NanoTS)
+static void supdrvGipDoUpdateCpu(PSUPGLOBALINFOPAGE pGip, PSUPGIPCPU pGipCpu, uint64_t u64NanoTS, uint64_t u64TSC)
 {
-    uint64_t    u64TSC;
     uint64_t    u64TSCDelta;
     uint32_t    u32UpdateIntervalTSC;
     uint32_t    u32UpdateIntervalTSCSlack;
     unsigned    iTSCHistoryHead;
     uint64_t    u64CpuHz;
+
+    /* Delta between this and the previous update. */
+    pGipCpu->u32UpdateIntervalNS = (uint32_t)(u64NanoTS - pGipCpu->u64NanoTS);
 
     /*
      * Update the NanoTS.
@@ -5296,7 +5302,6 @@ static void supdrvGipDoUpdateCpu(PSUPGLOBALINFOPAGE pGip, PSUPGIPCPU pGipCpu, ui
      * Calc TSC delta.
      */
     /** @todo validate the NanoTS delta, don't trust the OS to call us when it should... */
-    u64TSC = ASMReadTSC();
     u64TSCDelta = u64TSC - pGipCpu->u64TSC;
     ASMAtomicXchgU64(&pGipCpu->u64TSC, u64TSC);
 
@@ -5368,8 +5373,9 @@ static void supdrvGipDoUpdateCpu(PSUPGLOBALINFOPAGE pGip, PSUPGIPCPU pGipCpu, ui
  *
  * @param   pGip        Pointer to the GIP.
  * @param   u64NanoTS   The current nanosecond timesamp.
+ * @param   u64TSC      The current TSC timesamp.
  */
-void VBOXCALL supdrvGipUpdate(PSUPGLOBALINFOPAGE pGip, uint64_t u64NanoTS)
+void VBOXCALL supdrvGipUpdate(PSUPGLOBALINFOPAGE pGip, uint64_t u64NanoTS, uint64_t u64TSC)
 {
     /*
      * Determin the relevant CPU data.
@@ -5420,7 +5426,7 @@ void VBOXCALL supdrvGipUpdate(PSUPGLOBALINFOPAGE pGip, uint64_t u64NanoTS)
     /*
      * Update the data.
      */
-    supdrvGipDoUpdateCpu(pGip, pGipCpu, u64NanoTS);
+    supdrvGipDoUpdateCpu(pGip, pGipCpu, u64NanoTS, u64TSC);
 
     /*
      * Complete transaction.
@@ -5434,9 +5440,10 @@ void VBOXCALL supdrvGipUpdate(PSUPGLOBALINFOPAGE pGip, uint64_t u64NanoTS)
  *
  * @param   pGip        Pointer to the GIP.
  * @param   u64NanoTS   The current nanosecond timesamp.
+ * @param   u64TSC      The current TSC timesamp.
  * @param   iCpu        The CPU index.
  */
-void VBOXCALL supdrvGipUpdatePerCpu(PSUPGLOBALINFOPAGE pGip, uint64_t u64NanoTS, unsigned iCpu)
+void VBOXCALL supdrvGipUpdatePerCpu(PSUPGLOBALINFOPAGE pGip, uint64_t u64NanoTS, uint64_t u64TSC, unsigned iCpu)
 {
     PSUPGIPCPU  pGipCpu;
 
@@ -5458,7 +5465,7 @@ void VBOXCALL supdrvGipUpdatePerCpu(PSUPGLOBALINFOPAGE pGip, uint64_t u64NanoTS,
         /*
          * Update the data.
          */
-        supdrvGipDoUpdateCpu(pGip, pGipCpu, u64NanoTS);
+        supdrvGipDoUpdateCpu(pGip, pGipCpu, u64NanoTS, u64TSC);
 
         /*
          * Complete transaction.
