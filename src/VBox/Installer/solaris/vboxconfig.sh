@@ -130,7 +130,7 @@ check_root()
 {
     idbin=/usr/xpg4/bin/id
     if test ! -x "$idbin"; then
-        found=`which id`
+        found=`which id 2> /dev/null`
         if test ! -x "$found"; then
             errorprint "Failed to find a suitable user id executable."
             exit 1
