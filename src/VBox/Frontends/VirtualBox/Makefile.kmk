@@ -202,6 +202,10 @@ VirtualBox_INCS           = \
 # Necessary for the hdd backend enumeration
 VirtualBox_LIBS = $(LIB_DDU)
 
+ifdef VBOX_WITH_VIDEOHWACCEL
+# Necessary for save state support
+VirtualBox_LIBS += $(LIB_VMM)
+endif
 ifeq ($(KBUILD_TYPE),release)
  VirtualBox_LDFLAGS.win  += /SUBSYSTEM:windows
 else

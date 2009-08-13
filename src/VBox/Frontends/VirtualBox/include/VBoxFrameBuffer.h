@@ -639,9 +639,10 @@ public:
     void pixel2Normalized(uint32_t pix, float *r, float *g, float *b) const;
     uint32_t widthCompression() const {return mWidthCompression;}
     uint32_t heightCompression() const {return mHeightCompression;}
-//    uint32_t r(uint32_t pix);
-//    uint32_t g(uint32_t pix);
-//    uint32_t b(uint32_t pix);
+    const VBoxVHWAColorComponent& r() const {return mR;}
+    const VBoxVHWAColorComponent& g() const {return mG;}
+    const VBoxVHWAColorComponent& b() const {return mB;}
+    const VBoxVHWAColorComponent& a() const {return mA;}
 
 private:
     void VBoxVHWAColorFormat::init(uint32_t bitsPerPixel, uint32_t r, uint32_t g, uint32_t b);
@@ -1032,15 +1033,6 @@ private:
     VBoxVHWAColorKey mDefaultDstOverlayCKey;
     VBoxVHWAColorKey mDefaultSrcOverlayCKey;
 
-
-//    GLenum mFormat;
-//    GLint  mInternalFormat;
-//    GLenum mType;
-//    ulong  mDisplayWidth;
-//    ulong  mDisplayHeight;
-//    ulong  mBytesPerPixel;
-//    ulong  mBytesPerLine;
-
     int mLockCount;
     /* memory buffer not reflected in fm and texture, e.g if memory buffer is replaced or in case of lock/unlock  */
     VBoxVHWADirtyRect mUpdateMem2TexRect;
@@ -1077,6 +1069,7 @@ public:
 };
 
 typedef std::list <VBoxVHWASurfaceBase*> SurfList;
+typedef std::list <VBoxVHWASurfList*> OverlayList;
 
 class VBoxVHWASurfList
 {
@@ -1197,7 +1190,6 @@ public:
         mOverlays.remove(pSurf);
     }
 
-
     void performDisplay()
     {
         VBoxVHWASurfaceBase * pPrimary = mPrimary.current();
@@ -1210,16 +1202,15 @@ public:
             if(pOverlay)
             {
                 pOverlay->performDisplay(pPrimary);
-//                pPrimary->overlay(pOverlay);
             }
         }
     }
 
+    const OverlayList & overlays() const {return mOverlays;}
+
 private:
     VBoxVHWASurfaceBase *mSurfVGA;
     VBoxVHWASurfList mPrimary;
-
-    typedef std::list <VBoxVHWASurfList*> OverlayList;
 
     OverlayList mOverlays;
 };
@@ -1234,20 +1225,22 @@ public:
     bool vboxUsesGuestVRAM() { return mUsesGuestVRAM; }
 
     uchar *vboxAddress() { return mDisplay.getVGA() ? mDisplay.getVGA()->address() : NULL; }
+
 #ifdef VBOX_WITH_VIDEOHWACCEL
     uchar *vboxVRAMAddressFromOffset(uint64_t offset);
+
+    void vhwaSaveExec(struct SSMHANDLE * pSSM);
+    int vhwaLoadExec(struct SSMHANDLE * pSSM, uint32_t u32Version);
 #endif
+
     ulong vboxBitsPerPixel() { return mDisplay.getVGA()->bitsPerPixel(); }
     ulong vboxBytesPerLine() { return mDisplay.getVGA() ? mDisplay.getVGA()->bytesPerLine() : NULL; }
 
 typedef void (VBoxGLWidget::*PFNVBOXQGLOP)(void* );
-//typedef FNVBOXQGLOP *PFNVBOXQGLOP;
 
     void vboxPaintEvent (QPaintEvent *pe) {vboxPerformGLOp(&VBoxGLWidget::vboxDoPaint, pe);}
     void vboxResizeEvent (VBoxResizeEvent *re) {vboxPerformGLOp(&VBoxGLWidget::vboxDoResize, re);}
-//#ifdef VBOXQGL_DBG_SURF
-//    void vboxTestSurfaces () {vboxPerformGLOp(&VBoxGLWidget::vboxDoTestSurfaces, NULL);}
-//#endif
+
     void vboxProcessVHWACommands(VBoxVHWACommandProcessEvent * pEvent) {vboxPerformGLOp(&VBoxGLWidget::vboxDoProcessVHWACommands, pEvent);}
 #ifdef VBOX_WITH_VIDEOHWACCEL
     void vboxVHWACmd (struct _VBOXVHWACMD * pCmd) {vboxPerformGLOp(&VBoxGLWidget::vboxDoVHWACmd, pCmd);}
@@ -1258,13 +1251,9 @@ typedef void (VBoxGLWidget::*PFNVBOXQGLOP)(void* );
 
     void postCmd(VBOXVHWA_PIPECMD_TYPE aType, void * pvData);
 protected:
-//    void resizeGL (int height, int width);
 
     void paintGL()
     {
-//        Assert(mState.getCurrent() == NULL);
-//        /* we are called with QGLWidget context */
-//        mState.assertCurrent(mDisplay.getVGA(), false);
         if(mpfnOp)
         {
             (this->*mpfnOp)(mOpContext);
@@ -1274,17 +1263,10 @@ protected:
         {
             mDisplay.performDisplay();
         }
-//        /* restore the context */
-//        mState.makeCurrent(mDisplay.getVGA());
-//        /* clear*/
-//        mState.assertCurrent(NULL, false);
     }
 
     void initializeGL();
 private:
-//    void vboxDoInitDisplay();
-//    void vboxDoDeleteDisplay();
-//    void vboxDoPerformDisplay() { Assert(mDisplayInitialized); glCallList(mDisplay); }
     void vboxDoResize(void *re);
     void vboxDoPaint(void *rec);
 
@@ -1323,17 +1305,23 @@ private:
     int vhwaSurfaceColorkeySet(struct _VBOXVHWACMD_SURF_COLORKEY_SET *pCmd);
     int vhwaQueryInfo1(struct _VBOXVHWACMD_QUERYINFO1 *pCmd);
     int vhwaQueryInfo2(struct _VBOXVHWACMD_QUERYINFO2 *pCmd);
+    int vhwaConstruct(struct _VBOXVHWACMD_HH_CONSTRUCT *pCmd);
+
+    int vhwaSaveSurface(struct SSMHANDLE * pSSM, VBoxVHWASurfaceBase *pSurf, uint32_t surfCaps);
+    int vhwaLoadSurface(struct SSMHANDLE * pSSM, uint32_t u32Version);
+    int vhwaSaveOverlayData(struct SSMHANDLE * pSSM, VBoxVHWASurfaceBase *pSurf);
+    int vhwaLoadOverlayData(struct SSMHANDLE * pSSM, uint32_t u32Version);
 
     void vhwaDoSurfaceOverlayUpdate(VBoxVHWASurfaceBase *pDstSurf, VBoxVHWASurfaceBase *pSrcSurf, struct _VBOXVHWACMD_SURF_OVERLAY_UPDATE *pCmd);
 #endif
     static const QGLFormat & vboxGLFormat();
 
-//    VBoxVHWASurfaceQGL * pDisplay;
     VBoxVHWADisplay mDisplay;
 
 
-    /* we need to do all opengl stuff in the paintGL context,
-     * submit the operation to be performed */
+    /* we do all opengl stuff in the paintGL context,
+     * submit the operation to be performed
+     * @todo: could be moved outside the updateGL */
     void vboxPerformGLOp(PFNVBOXQGLOP pfn, void* pContext) {mpfnOp = pfn; mOpContext = pContext; updateGL();}
 
     void cmdPipeInit();
@@ -1346,12 +1334,9 @@ private:
     PFNVBOXQGLOP mpfnOp;
     void *mOpContext;
 
-//    ulong  mBitsPerPixel;
     ulong  mPixelFormat;
     bool   mUsesGuestVRAM;
-#if 0
-    VBoxVHWAGlContextState mState;
-#endif
+    bool   mVGASurfCreated;
 
     RTCRITSECT mCritSect;
     VBoxVHWACommandProcessEvent *mpFirstEvent;
