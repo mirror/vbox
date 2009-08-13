@@ -1,7 +1,7 @@
 /* $Id$ */
 
 /** @file
- * VBox OpenGL DRI driver functions
+ * VBox OpenGL GLSL related functions
  */
 
 /*
