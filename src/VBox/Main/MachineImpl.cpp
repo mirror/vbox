@@ -5829,6 +5829,8 @@ HRESULT Machine::saveHardware(settings::Hardware &data)
             s.ulSlot = slot;
             rc = mSerialPorts[slot]->saveSettings(s);
             CheckComRCReturnRC (rc);
+
+            data.llSerialPorts.push_back(s);
         }
 
         /* Parallel ports */
@@ -5841,6 +5843,8 @@ HRESULT Machine::saveHardware(settings::Hardware &data)
             p.ulSlot = slot;
             rc = mParallelPorts[slot]->saveSettings(p);
             CheckComRCReturnRC (rc);
+
+            data.llParallelPorts.push_back(p);
         }
 
         /* Audio adapter */
