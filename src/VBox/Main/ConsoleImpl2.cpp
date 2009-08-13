@@ -2714,10 +2714,9 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
             {
                 hrc = virtualBox->GetExtraData(BstrFmt("HostOnly/%s/IPNetMask", pszHifName), tmpMask.asOutParam());
                 if (SUCCEEDED(hrc) && !tmpMask.isEmpty())
-                    hrc = hostInterface->EnableStaticIpConfig(BstrFmt("HostOnly/%s/IPAddress", pszHifName),
-                                                              BstrFmt("HostOnly/%s/IPNetMask", pszHifName));
+                    hrc = hostInterface->EnableStaticIpConfig(tmpAddr, tmpMask);
                 else
-                    hrc = hostInterface->EnableStaticIpConfig(BstrFmt("HostOnly/%s/IPAddress", pszHifName),
+                    hrc = hostInterface->EnableStaticIpConfig(tmpAddr,
                                                               Bstr(VBOXNET_IPV4MASK_DEFAULT));
             }
             else
