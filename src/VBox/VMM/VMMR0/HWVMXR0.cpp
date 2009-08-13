@@ -1807,14 +1807,28 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 
     if (TMCpuTickCanUseRealTSC(pVCpu, &u64TSCOffset))
     {
-        /* Note: VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_RDTSC_EXIT takes precedence over TSC_OFFSET */
-        rc = VMXWriteVMCS64(VMX_VMCS_CTRL_TSC_OFFSET_FULL, u64TSCOffset);
-        AssertRC(rc);
+        uint64_t u64CurTSC = ASMReadTSC();
+        pVCpu->hwaccm.s.u64TSCOffset = u64TSCOffset;
+        if (u64CurTSC + u64TSCOffset >= pVCpu->hwaccm.s.u64LastTSC)
+        {
+            /* Note: VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_RDTSC_EXIT takes precedence over TSC_OFFSET */
+            rc = VMXWriteVMCS64(VMX_VMCS_CTRL_TSC_OFFSET_FULL, u64TSCOffset);
+            AssertRC(rc);
 
-        pVCpu->hwaccm.s.vmx.proc_ctls &= ~VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_RDTSC_EXIT;
-        rc = VMXWriteVMCS(VMX_VMCS_CTRL_PROC_EXEC_CONTROLS, pVCpu->hwaccm.s.vmx.proc_ctls);
-        AssertRC(rc);
-        STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatTSCOffset);
+            pVCpu->hwaccm.s.vmx.proc_ctls &= ~VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_RDTSC_EXIT;
+            rc = VMXWriteVMCS(VMX_VMCS_CTRL_PROC_EXEC_CONTROLS, pVCpu->hwaccm.s.vmx.proc_ctls);
+            AssertRC(rc);
+            STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatTSCOffset);
+        }
+        else
+        {
+            /* Fall back to rdtsc emulation as we would otherwise pass decreasing tsc values to the guest. */
+            Log(("TSC %RX64 offset %RX64 time=%RX64 last=%RX64 (diff=%RX64, virt_tsc=%RX64)\n", u64CurTSC, u64TSCOffset, u64CurTSC + u64TSCOffset, pVCpu->hwaccm.s.u64LastTSC, pVCpu->hwaccm.s.u64LastTSC - u64CurTSC - u64TSCOffset, TMCpuTickGet(pVCpu)));
+            pVCpu->hwaccm.s.vmx.proc_ctls |= VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_RDTSC_EXIT;
+            rc = VMXWriteVMCS(VMX_VMCS_CTRL_PROC_EXEC_CONTROLS, pVCpu->hwaccm.s.vmx.proc_ctls);
+            AssertRC(rc);
+            STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatTSCInterceptOverFlow);
+        }
     }
     else
     {
@@ -2579,6 +2593,10 @@ ResumeExecution:
 #else
     rc = pVCpu->hwaccm.s.vmx.pfnStartVM(pVCpu->hwaccm.s.fResumeVM, pCtx, &pVCpu->hwaccm.s.vmx.VMCSCache, pVM, pVCpu);
 #endif
+    /* Possibly the last TSC value seen by the guest (too high) (only when we're in tsc offset mode). */
+    if (!(pVCpu->hwaccm.s.vmx.proc_ctls & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_RDTSC_EXIT))
+        pVCpu->hwaccm.s.u64LastTSC = ASMReadTSC() + pVCpu->hwaccm.s.u64TSCOffset - 0x1000 /* guestimate of world switch overhead */;
+
     TMNotifyEndOfExecution(pVCpu);
     VMCPU_SET_STATE(pVCpu, VMCPUSTATE_STARTED);
     Assert(!(ASMGetFlags() & X86_EFL_IF));
@@ -3380,6 +3398,18 @@ ResumeExecution:
         rc = EMInterpretRdtsc(pVM, pVCpu, CPUMCTX2CORE(pCtx));
         if (rc == VINF_SUCCESS)
         {
+            uint64_t u64CurrentTSC = (uint64_t)pCtx->edx << 32ULL;
+            u64CurrentTSC += pCtx->eax;
+
+            if (u64CurrentTSC < pVCpu->hwaccm.s.u64LastTSC)
+            {
+                STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatTSCOverFlow);
+                Log(("invalid tsc %RX64 vs %RX64 (diff %RX64)\n", u64CurrentTSC, pVCpu->hwaccm.s.u64LastTSC, pVCpu->hwaccm.s.u64LastTSC - u64CurrentTSC));
+                pVCpu->hwaccm.s.u64LastTSC += 64;
+                pCtx->edx = (pVCpu->hwaccm.s.u64LastTSC >> 32ULL);
+                pCtx->eax = (pVCpu->hwaccm.s.u64LastTSC & 0xffffffff);
+            }
+
             /* Update EIP and continue execution. */
             Assert(cbInstr == 2);
             pCtx->rip += cbInstr;

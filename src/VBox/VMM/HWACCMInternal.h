@@ -556,6 +556,11 @@ typedef struct HWACCMCPU
     /* Current ASID in use by the VM */
     RTUINT                      uCurrentASID;
 
+    /* Last seen TSC by the guest when in offsetted mode. */
+    uint64_t                    u64LastTSC;
+    /* Last use TSC offset value. (cached) */
+    uint64_t                    u64TSCOffset;
+
     struct
     {
         /** Physical address of the VM control structure (VMCS). */
@@ -813,6 +818,8 @@ typedef struct HWACCMCPU
 
     STAMCOUNTER             StatTSCOffset;
     STAMCOUNTER             StatTSCIntercept;
+    STAMCOUNTER             StatTSCOverFlow;
+    STAMCOUNTER             StatTSCInterceptOverFlow;
 
     STAMCOUNTER             StatExitReasonNPF;
     STAMCOUNTER             StatDRxArmed;
