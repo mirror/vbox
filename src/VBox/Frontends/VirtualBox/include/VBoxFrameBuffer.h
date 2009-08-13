@@ -122,21 +122,36 @@ typedef enum
 {
     VBOXVHWA_PIPECMD_PAINT = 1,
     VBOXVHWA_PIPECMD_VHWA,
-
+    VBOXVHWA_PIPECMD_OP,
 }VBOXVHWA_PIPECMD_TYPE;
+
+typedef DECLCALLBACK(void) FNVBOXVHWACALLBACK(void * pContext);
+typedef FNVBOXVHWACALLBACK *PFNVBOXVHWACALLBACK;
+
+typedef struct VBOXVHWACALLBACKINFO
+{
+    PFNVBOXVHWACALLBACK pfnCallback;
+    void * pContext;
+}VBOXVHWACALLBACKINFO;
 class VBoxVHWACommandElement
 {
 public:
     void setVHWACmd(struct _VBOXVHWACMD * pCmd)
     {
         mType = VBOXVHWA_PIPECMD_VHWA;
-        mpCmd = pCmd;
+        u.mpCmd = pCmd;
     }
 
     void setPaintCmd(const QRect & aRect)
     {
         mType = VBOXVHWA_PIPECMD_PAINT;
         mRect = aRect;
+    }
+
+    void setOp(const VBOXVHWACALLBACKINFO & aOp)
+    {
+        mType = VBOXVHWA_PIPECMD_OP;
+        u.mCallback = aOp;
     }
 
     void setData(VBOXVHWA_PIPECMD_TYPE aType, void * pvData)
@@ -149,17 +164,27 @@ public:
         case VBOXVHWA_PIPECMD_VHWA:
             setVHWACmd((struct _VBOXVHWACMD *)pvData);
             break;
+        case VBOXVHWA_PIPECMD_OP:
+            setOp(*((VBOXVHWACALLBACKINFO *)pvData));
+            break;
+        default:
+            Assert(0);
+            break;
         }
     }
 
     VBOXVHWA_PIPECMD_TYPE type() const {return mType;}
     const QRect & rect() const {return mRect;}
-    struct _VBOXVHWACMD * vhwaCmd() const {return mpCmd;}
+    struct _VBOXVHWACMD * vhwaCmd() const {return u.mpCmd;}
 
 private:
     VBoxVHWACommandElement * mpNext;
     VBOXVHWA_PIPECMD_TYPE mType;
-    struct _VBOXVHWACMD * mpCmd;
+    union
+    {
+        struct _VBOXVHWACMD * mpCmd;
+        VBOXVHWACALLBACKINFO mCallback;
+    }u;
     QRect                 mRect;
 
     friend class VBoxVHWACommandElementPipe;
@@ -755,6 +780,24 @@ private:
     GLuint mPBO;
 };
 
+class VBoxVHWAHandleTable
+{
+public:
+    VBoxVHWAHandleTable(uint32_t initialSize);
+    ~VBoxVHWAHandleTable();
+    uint32_t put(void * data);
+    bool mapPut(uint32_t h, void * data);
+    void* get(uint32_t h);
+    void* remove(uint32_t h);
+private:
+    void doPut(uint32_t h, void * data);
+    void doRemove(uint32_t h);
+    void** mTable;
+    uint32_t mcSize;
+    uint32_t mcUsage;
+    uint32_t mCursor;
+};
+
 /* data flow:
  * I. NON-Yinverted surface:
  * 1.direct memory update (paint, lock/unlock):
@@ -934,83 +977,42 @@ public:
 
     const VBoxVHWAColorFormat & colorFormat() {return mColorFormat; }
 
-    /* clients should treat the returned texture as read-only */
-//    GLuint textureSynched(const QRect * aRect) { /*synchTex(aRect); */synchTexMem(aRect);  return mTexture; }
-
     void setAddress(uchar * addr);
 
     const QRect& rect() {return mRect;}
-//    const QRect& texRect() {return mTexRect;}
-
-//    /* surface currently being displayed in a flip chain */
-//    virtual bool isPrimary() = 0;
-//    /* surface representing the main framebuffer. */
-//    virtual bool isMainFramebuffer() = 0;
-#if 0
-    virtual void makeCurrent() = 0;
-    virtual void makeYInvertedCurrent() = 0;
-    bool isYInverted() {return mIsYInverted; }
-
-    bool isHidden() {return mIsYInverted; }
-    void setHidden(bool hidden)
-    {
-        if(hidden == mIsYInverted)
-            return;
-
-        invert();
-    }
-    int invert();
-
-    bool isFrontBuffer() {return !mIsYInverted; }
-#endif
 
     class VBoxVHWASurfList * getComplexList() {return mComplexList; }
 
     class VBoxVHWAGlProgramMngr * getGlProgramMngr();
     static int setCKey(class VBoxVHWAGlProgramVHWA * pProgram, const VBoxVHWAColorFormat * pFormat, const VBoxVHWAColorKey * pCKey, bool bDst);
+
+    uint64_t handle() {return mHGHandle;}
+    void setHandle(uint64_t h) {mHGHandle = h;}
 private:
     void setComplexList(VBoxVHWASurfList *aComplexList) { mComplexList = aComplexList; }
     void initDisplay(VBoxVHWASurfaceBase *pPrimary);
     void deleteDisplay();
-//    void initDisplay(bool bInverted);
-//    void deleteDisplay(bool bInverted);
-    GLuint createDisplay(VBoxVHWASurfaceBase *pPrimary
-#if 0
-            bool bInverted
-#endif
-            );
+
+    GLuint createDisplay(VBoxVHWASurfaceBase *pPrimary);
     void doDisplay(VBoxVHWASurfaceBase *pPrimary, VBoxVHWAGlProgramVHWA * pProgram, bool bBindDst);
     void synchTexMem(const QRect * aRect);
-#if 0
-    void synchTex(const QRect * aRect);
-    void synchTexFB(const QRect * aRect);
-    void synchMem(const QRect * aRect);
-    void synchFB(const QRect * aRect);
-    void synch(const QRect * aRect);
-#endif
+
     int performBlt(const QRect * pDstRect, VBoxVHWASurfaceBase * pSrcSurface, const QRect * pSrcRect, const VBoxVHWAColorKey * pDstCKey, const VBoxVHWAColorKey * pSrcCKey, bool blt);
 
-//    void doTex2FB(const QRect * aRect);
     void doTex2FB(const QRect * pDstRect, const QRect * pSrcRect);
     void doMultiTex2FB(const QRect * pDstRect, VBoxVHWATexture * pDstTex, const QRect * pSrcRect, int cSrcTex);
     void doMultiTex2FB(const QRect * pDstRect, const QRect * pSrcRect, int cSrcTex);
-//    void doMultiTex2FB(GLenum tex, const QRect * pDstRect, const QRect * pSrcRect);
 
     void doSetupMatrix(const QSize * pSize , bool bInverted);
 
     QRect mRect; /* == Inv FB size */
-//    QRect mTexRect; /* texture size */
 
     QRect mSrcRect;
     QRect mTargRect; /* == Vis FB size */
     QRect mTargSize;
-#if 0
-    GLuint mYInvertedDisplay;
-#endif
+
     GLuint mVisibleDisplay;
-#if 0
-    bool mYInvertedDisplayInitialized;
-#endif
+
     bool mVisibleDisplayInitialized;
 
     uchar * mAddress;
@@ -1036,29 +1038,15 @@ private:
     int mLockCount;
     /* memory buffer not reflected in fm and texture, e.g if memory buffer is replaced or in case of lock/unlock  */
     VBoxVHWADirtyRect mUpdateMem2TexRect;
-#if 0
-    /* memory buffer not reflected in fm and texture, e.g if memory buffer is replaced or in case of lock/unlock  */
-    VBoxVHWADirtyRect mUpdateTex2FBRect;
-    /*in case of blit we blit from another surface's texture, so our current texture gets durty  */
-    VBoxVHWADirtyRect mUpdateFB2TexRect;
-    /*in case of blit the memory buffer does not get updated until we need it, e.g. for paint or lock operations */
-    VBoxVHWADirtyRect mUpdateFB2MemRect;
-#endif
 
     bool mFreeAddress;
-#if 0
-    bool mIsYInverted;
-#endif
 
     class VBoxVHWASurfList *mComplexList;
 
     class VBoxGLWidget *mWidget;
 
+    uint64_t mHGHandle;
 protected:
-#if 0
-    virtual void init(uchar *pvMem, bool bInverted);
-    class VBoxVHWAGlContextState *mState;
-#endif
 
     friend class VBoxVHWASurfList;
 #ifdef DEBUG
@@ -1215,6 +1203,8 @@ private:
     OverlayList mOverlays;
 };
 
+typedef void (VBoxGLWidget::*PFNVBOXQGLOP)(void* );
+
 class VBoxGLWidget : public QGLWidget
 {
 public:
@@ -1235,8 +1225,6 @@ public:
 
     ulong vboxBitsPerPixel() { return mDisplay.getVGA()->bitsPerPixel(); }
     ulong vboxBytesPerLine() { return mDisplay.getVGA() ? mDisplay.getVGA()->bytesPerLine() : NULL; }
-
-typedef void (VBoxGLWidget::*PFNVBOXQGLOP)(void* );
 
     void vboxPaintEvent (QPaintEvent *pe) {vboxPerformGLOp(&VBoxGLWidget::vboxDoPaint, pe);}
     void vboxResizeEvent (VBoxResizeEvent *re) {vboxPerformGLOp(&VBoxGLWidget::vboxDoResize, re);}
@@ -1275,7 +1263,9 @@ private:
     void vboxDoTestSurfaces(void *context);
 #endif
 #ifdef VBOX_WITH_VIDEOHWACCEL
+    void vboxDoVHWACmdExec(void *cmd);
     void vboxDoVHWACmd(void *cmd);
+
     void vboxCheckUpdateAddress (VBoxVHWASurfaceBase * pSurface, uint64_t offset)
     {
 #ifndef VBOXQGL_DBG_SURF
@@ -1324,12 +1314,19 @@ private:
      * @todo: could be moved outside the updateGL */
     void vboxPerformGLOp(PFNVBOXQGLOP pfn, void* pContext) {mpfnOp = pfn; mOpContext = pContext; updateGL();}
 
+    /* posts op to UI thread */
+    int vboxExecOpSynch(PFNVBOXQGLOP pfn, void* pContext);
+
     void cmdPipeInit();
     void cmdPipeDelete();
     void vboxDoProcessVHWACommands(void *pContext);
 
     VBoxVHWACommandElement * detachCmdList(VBoxVHWACommandElement * pFirst2Free, VBoxVHWACommandElement * pLast2Free);
     VBoxVHWACommandElement * processCmdList(VBoxVHWACommandElement * pCmd);
+
+    VBoxVHWASurfaceBase* handle2Surface(uint32_t h) { return (VBoxVHWASurfaceBase*)mSurfHandleTable.get(h); }
+
+    VBoxVHWAHandleTable mSurfHandleTable;
 
     PFNVBOXQGLOP mpfnOp;
     void *mOpContext;

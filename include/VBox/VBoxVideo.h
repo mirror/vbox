@@ -256,7 +256,7 @@ typedef struct _VBOXVIDEOINFOQUERYCONF32
 
 #define VBOXVHWA_VERSION_MAJ 0
 #define VBOXVHWA_VERSION_MIN 0
-#define VBOXVHWA_VERSION_BLD 2
+#define VBOXVHWA_VERSION_BLD 3
 #define VBOXVHWA_VERSION_RSV 0
 
 typedef enum
@@ -317,7 +317,7 @@ typedef struct _VBOXVHWACMD
 #define VBOXVHWACMD_SIZE(_tCmd) (VBOXVHWACMD_HEADSIZE() + sizeof(_tCmd))
 typedef unsigned int VBOXVHWACMD_LENGTH;
 typedef uint64_t VBOXVHWA_SURFHANDLE;
-#define VBOXVHWACMD_SURFHANDLE_INVALID 0
+#define VBOXVHWA_SURFHANDLE_INVALID 0
 #define VBOXVHWACMD_BODY(_p, _t) ((_t*)(_p)->body)
 #define VBOXVHWACMD_HEAD(_pb) ((VBOXVHWACMD*)((uint8_t *)(_pb) - RT_OFFSETOF(VBOXVHWACMD, body)))
 
@@ -386,6 +386,8 @@ typedef struct _VBOXVHWA_SURFACEDESC
     VBOXVHWA_PIXELFORMAT PixelFormat;
     uint32_t surfCaps;
     uint32_t Reserved2;
+    VBOXVHWA_SURFHANDLE hSurf;
+    uint64_t offSurface;
 } VBOXVHWA_SURFACEDESC;
 
 typedef struct _VBOXVHWA_BLTFX
@@ -563,7 +565,7 @@ typedef struct _VBOXVHWACMD_QUERYINFO2
     uint32_t FourCC[1];
 } VBOXVHWACMD_QUERYINFO2;
 
-#define VBOXVHWAINFO2_SIZE(_cFourCC) RT_OFFSETOF(VBOXVHWAINFO2, FourCC[_cFourCC])
+#define VBOXVHWAINFO2_SIZE(_cFourCC) RT_OFFSETOF(VBOXVHWACMD_QUERYINFO2, FourCC[_cFourCC])
 
 typedef struct _VBOXVHWACMD_SURF_CANCREATE
 {
@@ -586,18 +588,6 @@ typedef struct _VBOXVHWACMD_SURF_CANCREATE
 typedef struct _VBOXVHWACMD_SURF_CREATE
 {
     VBOXVHWA_SURFACEDESC SurfInfo;
-    union
-    {
-        struct
-        {
-            uint64_t offSurface;
-        } in;
-
-        struct
-        {
-            VBOXVHWA_SURFHANDLE hSurf;
-        } out;
-    } u;
 } VBOXVHWACMD_SURF_CREATE;
 
 typedef struct _VBOXVHWACMD_SURF_DESTROY

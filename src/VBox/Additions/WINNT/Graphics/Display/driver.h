@@ -108,8 +108,8 @@ typedef struct _VBOXVHWASURFDESC
     volatile uint32_t cPendingFlipsCurr;
     volatile uint32_t cPendingFlipsTarg;
 #ifdef DEBUG
-    volatile uint64_t cFlipsCurr;
-    volatile uint64_t cFlipsTarg;
+    volatile uint32_t cFlipsCurr;
+    volatile uint32_t cFlipsTarg;
 #endif
 //    uint32_t cBitsPerPixel;
     bool bHidden;
