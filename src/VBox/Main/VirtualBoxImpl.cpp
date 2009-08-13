@@ -1510,33 +1510,39 @@ STDMETHODIMP VirtualBox::SetExtraData(IN_BSTR aKey,
     AutoCaller autoCaller(this);
     CheckComRCReturnRC(autoCaller.rc());
 
-    Guid emptyGuid;
-    Bstr val;
-    if (!aValue)
-        val = (const char *)"";
-    else
-        val = aValue;
-
     Utf8Str strKey(aKey);
-    Bstr oldVal("");
+    Utf8Str strValue(aValue);
+    Utf8Str strOldValue;            // empty
 
-    /* serialize file access (prevent concurrent reads and writes) */
-    AutoWriteLock alock(this);
+    // locking note: we only hold the read lock briefly to look up the old value,
+    // then release it and call the onExtraCanChange callbacks. There is a small
+    // chance of a race insofar as the callback might be called twice if two callers
+    // change the same key at the same time, but that's a much better solution
+    // than the deadlock we had here before. The actual changing of the extradata
+    // is then performed under the write lock and race-free.
 
-    settings::ExtraDataItemsMap::const_iterator it = m_pMainConfigFile->mapExtraDataItems.find(strKey);
-    if (it != m_pMainConfigFile->mapExtraDataItems.end())
+    // look up the old value first; if nothing's changed then we need not do anything
     {
-        // key exists:
-        const Utf8Str &strValue = it->second;
-        oldVal = strValue;
+        AutoReadLock alock(this); // hold read lock only while looking up
+        settings::ExtraDataItemsMap::const_iterator it = m_pMainConfigFile->mapExtraDataItems.find(strKey);
+        if (it != m_pMainConfigFile->mapExtraDataItems.end())
+            strOldValue = it->second;
     }
 
-    bool fChanged = (oldVal != val);
-    if (fChanged)
+    bool fChanged;
+    if (fChanged = (strOldValue != strValue))
     {
-        /* ask for permission from all listeners */
+        // ask for permission from all listeners outside the locks;
+        // onExtraDataCanChange() only briefly requests the VirtualBox
+        // lock to copy the list of callbacks to invoke
         Bstr error;
-        if (!onExtraDataCanChange(Guid::Empty, aKey, val, error))
+        Bstr bstrValue;
+        if (aValue)
+            bstrValue = aValue;
+        else
+            bstrValue = (const char *)"";
+
+        if (!onExtraDataCanChange(Guid::Empty, aKey, bstrValue, error))
         {
             const char *sep = error.isEmpty() ? "" : ": ";
             CBSTR err = error.isNull() ? (CBSTR) L"" : error.raw();
@@ -1545,19 +1551,24 @@ STDMETHODIMP VirtualBox::SetExtraData(IN_BSTR aKey,
             return setError(E_ACCESSDENIED,
                             tr("Could not set extra data because someone refused the requested change of '%ls' to '%ls'%s%ls"),
                             aKey,
-                            val.raw(),
+                            bstrValue.raw(),
                             sep,
                             err);
         }
 
-        m_pMainConfigFile->mapExtraDataItems[strKey] = val;
+        // data is changing and change not vetoed: then write it out under the lock
+
+        AutoWriteLock alock(this);
+
+        m_pMainConfigFile->mapExtraDataItems[strKey] = strValue;
+                // creates a new key if needed
 
         /* save settings on success */
         HRESULT rc = saveSettings();
         CheckComRCReturnRC (rc);
     }
 
-    /* fire a notification */
+    // fire notification outside the lock
     if (fChanged)
         onExtraDataChange(Guid::Empty, aKey, aValue);
 
