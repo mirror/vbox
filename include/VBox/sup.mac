@@ -41,7 +41,8 @@ struc SUPGIPCPU
     .cErrors                resd 1
     .iTSCHistoryHead        resd 1
     .au32TSCHistory         resd 8
-    .au32Reserved           resd 6
+    .u32UpdateIntervalNS    resd 1
+    .au32Reserved           resd 5
 endstruc
 
 %define SUPGLOBALINFOPAGE_MAGIC 0x19590106
