@@ -656,11 +656,11 @@ DWORD APIENTRY DdCreateSurface(PDD_CREATESURFACEDATA  lpCreateSurface)
 
             if (lpSurfaceLocal->ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE)
             {
-                pBody->u.in.offSurface = 0;
+                pBody->SurfInfo.offSurface = 0;
             }
             else
             {
-                pBody->u.in.offSurface = VBOXVHWA_OFFSET64_VOID;
+                pBody->SurfInfo.offSurface = VBOXVHWA_OFFSET64_VOID;
             }
 
 
@@ -673,7 +673,7 @@ DWORD APIENTRY DdCreateSurface(PDD_CREATESURFACEDATA  lpCreateSurface)
                 {
                 	uint32_t surfSizeX = pBody->SurfInfo.sizeX;
                 	uint32_t surfSizeY = pBody->SurfInfo.sizeY;
-                    pDesc->hHostHandle = pBody->u.out.hSurf;
+                    pDesc->hHostHandle = pBody->SurfInfo.hSurf;
                     lpSurfaceGlobal->dwReserved1 = (ULONG_PTR)pDesc;
                     lPitch = pBody->SurfInfo.pitch;
 //                    lBpp = pBody->SurfInfo.bitsPerPixel;
