@@ -898,9 +898,18 @@ VMMR0DECL(int) SVMR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     /* TSC offset. */
     if (TMCpuTickCanUseRealTSC(pVCpu, &pVMCB->ctrl.u64TSCOffset))
     {
-        pVMCB->ctrl.u32InterceptCtrl1 &= ~SVM_CTRL1_INTERCEPT_RDTSC;
-        pVMCB->ctrl.u32InterceptCtrl2 &= ~SVM_CTRL2_INTERCEPT_RDTSCP;
-        STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatTSCOffset);
+        uint64_t u64CurTSC = ASMReadTSC();
+        if (u64CurTSC + pVMCB->ctrl.u64TSCOffset >= TMCpuTickGetLastSeen(pVCpu))
+        {
+            pVMCB->ctrl.u32InterceptCtrl1 &= ~SVM_CTRL1_INTERCEPT_RDTSC;
+            pVMCB->ctrl.u32InterceptCtrl2 &= ~SVM_CTRL2_INTERCEPT_RDTSCP;
+            STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatTSCOffset);
+        }
+        else
+        {
+            /* Fall back to rdtsc emulation as we would otherwise pass decreasing tsc values to the guest. */
+            Log(("TSC %RX64 offset %RX64 time=%RX64 last=%RX64 (diff=%RX64, virt_tsc=%RX64)\n", u64CurTSC, pVMCB->ctrl.u64TSCOffset, u64CurTSC + pVMCB->ctrl.u64TSCOffset, TMCpuTickGetLastSeen(pVCpu), TMCpuTickGetLastSeen(pVCpu) - u64CurTSC - pVMCB->ctrl.u64TSCOffset, TMCpuTickGet(pVCpu)));
+        }
     }
     else
     {
@@ -1249,6 +1258,9 @@ ResumeExecution:
 #else
     pVCpu->hwaccm.s.svm.pfnVMRun(pVCpu->hwaccm.s.svm.pVMCBHostPhys, pVCpu->hwaccm.s.svm.pVMCBPhys, pCtx, pVM, pVCpu);
 #endif
+    /* Possibly the last TSC value seen by the guest (too high) (only when we're in tsc offset mode). */
+    if (!(pVMCB->ctrl.u32InterceptCtrl1 & SVM_CTRL1_INTERCEPT_RDTSC))
+        TMCpuTickSetLastSeen(pVCpu, ASMReadTSC() + pVMCB->ctrl.u64TSCOffset - 0x1000 /* guestimate of world switch overhead in clock ticks */);
     TMNotifyEndOfExecution(pVCpu);
     VMCPU_SET_STATE(pVCpu, VMCPUSTATE_STARTED);
     ASMSetFlags(uOldEFlags);
