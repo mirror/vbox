@@ -236,7 +236,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
     rc = CFGMR3InsertInteger(pRoot, "PATMEnabled",          1);     /* boolean */   RC_CHECK();
     rc = CFGMR3InsertInteger(pRoot, "CSAMEnabled",          1);     /* boolean */   RC_CHECK();
 
-    if (osTypeId == "WindowsNT")
+    if (osTypeId == "WindowsNT4")
     {
         /*
          * We must limit CPUID count for Windows NT 4, as otherwise it stops
