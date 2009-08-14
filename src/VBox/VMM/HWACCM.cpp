@@ -327,6 +327,31 @@ VMMR3DECL(int) HWACCMR3Init(PVM pVM)
      * Check CFGM options.
      */
     PCFGMNODE pRoot      = CFGMR3GetRoot(pVM);
+
+    char *pszOSType = NULL;
+    rc = CFGMR3QueryStringAlloc(pRoot, "OSType", &pszOSType);
+    AssertRC(rc);
+    
+    pVM->hwaccm.s.fTRPPatchingAllowed = false;
+    if (pszOSType)
+    {
+        /* @todo Not exactly pretty to check strings; VBOXOSTYPE would be better, but that requires quite a bit of API change in Main. */
+        if (    !RTStrCmp(pszOSType, "WindowsNT4")
+            ||  !RTStrCmp(pszOSType, "WindowsNT")
+            ||  !RTStrCmp(pszOSType, "Windows 2000")
+            ||  !RTStrCmp(pszOSType, "WindowsXP")
+            ||  !RTStrCmp(pszOSType, "Windows 2003"))
+        {
+            /* Only allow TPR patching for NT, Win2k, XP and Windows Server 2003. (32 bits mode)
+             * (IO-APIC presence is checked later on in HWACCMR3InitFinalizeR0)
+             *
+             * We may want to consider adding more guest OSes (Solaris) later on.
+             */
+            pVM->hwaccm.s.fTRPPatchingAllowed = true;
+        }
+        MMR3HeapFree(pszOSType);
+    }
+
     PCFGMNODE pHWVirtExt = CFGMR3GetChild(pRoot, "HWVirtExt/");
     /* Nested paging: disabled by default. */
     rc = CFGMR3QueryBoolDef(pRoot, "EnableNestedPaging", &pVM->hwaccm.s.fAllowNestedPaging, false);
@@ -645,6 +670,9 @@ VMMR3DECL(int) HWACCMR3InitFinalizeR0(PVM pVM)
     Assert(!pVM->fHWACCMEnabled || VMMIsHwVirtExtForced(pVM));
 
     pVM->hwaccm.s.fHasIoApic = PDMHasIoApic(pVM);
+    /* No TPR patching is required when the IO-APIC is not enabled for this VM. */
+    if (!pVM->hwaccm.s.fHasIoApic)
+        pVM->hwaccm.s.fTRPPatchingAllowed = false;
 
     if (pVM->hwaccm.s.vmx.fSupported)
     {

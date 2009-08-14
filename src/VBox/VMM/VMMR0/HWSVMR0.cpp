@@ -1640,8 +1640,8 @@ ResumeExecution:
 
 #ifdef VBOX_HWACCM_WITH_GUEST_PATCHING
             /* Shortcut for APIC TPR reads and writes; 32 bits guests only */
-            if (    (uFaultAddress & 0xfff) == 0x080
-                &&  pVM->hwaccm.s.fHasIoApic
+            if (    pVM->hwaccm.s.fTRPPatchingAllowed
+                &&  (uFaultAddress & 0xfff) == 0x080
                 &&  !(errCode & X86_TRAP_PF_P)  /* not present */
                 &&  CPUMGetGuestCPL(pVCpu, CPUMCTX2CORE(pCtx)) == 0
                 &&  !CPUMIsGuestInLongModeEx(pCtx)
@@ -1808,8 +1808,8 @@ ResumeExecution:
 
 #ifdef VBOX_HWACCM_WITH_GUEST_PATCHING
         /* Shortcut for APIC TPR reads and writes; 32 bits guests only */
-        if (    (uFaultAddress & 0xfff) == 0x080
-            &&  pVM->hwaccm.s.fHasIoApic
+        if (    pVM->hwaccm.s.fTRPPatchingAllowed
+            &&  (uFaultAddress & 0xfff) == 0x080
             &&  !(errCode & X86_TRAP_PF_P)  /* not present */
             &&  CPUMGetGuestCPL(pVCpu, CPUMCTX2CORE(pCtx)) == 0
             &&  !CPUMIsGuestInLongModeEx(pCtx)
