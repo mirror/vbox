@@ -166,6 +166,7 @@ typedef struct DRVNAT
 #endif
     STAMCOUNTER             StatQueuePktSent;       /**< counting packet sent via PDM queue */
     STAMCOUNTER             StatQueuePktDropped;    /**< counting packet drops by PDM queue */
+    STAMCOUNTER             StatConsumerFalse;
 #ifdef SLIRP_SPLIT_CAN_OUTPUT
     PPDMTHREAD              thrNATRx;
     RTSEMEVENT              semNATRx;
@@ -659,7 +660,10 @@ static DECLCALLBACK(bool) drvNATQueueConsumer(PPDMDRVINS pDrvIns, PPDMQUEUEITEMC
     Log2(("drvNATQueueConsumer: pu8Buf:\n%.Rhxd\n", pItem->pu8Buf));
 #ifndef SLIRP_SPLIT_CAN_OUTPUT
     if (RT_FAILURE(pThis->pPort->pfnWaitReceiveAvail(pThis->pPort, 0)))
+    {
+        STAM_COUNTER_INC(&pThis->StatConsumerFalse);
         return false;
+    }
 #endif
     rc = pThis->pPort->pfnReceive(pThis->pPort, pItem->pu8Buf, pItem->cb);
     RTMemFree((void *)pItem->pu8Buf);
@@ -826,6 +830,7 @@ static DECLCALLBACK(void) drvNATDestruct(PPDMDRVINS pDrvIns)
 #ifdef VBOX_WITH_STATISTICS
     PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->StatQueuePktSent);
     PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->StatQueuePktDropped);
+    PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->StatConsumerFalse);
 #endif
 }
 
@@ -961,6 +966,9 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandl
                               "PDM queue", "/Drivers/NAT%u/QueuePacketSent", pDrvIns->iInstance);
         PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->StatQueuePktDropped, STAMTYPE_COUNTER,
                               STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT, "counting packet sent via PDM"
+                              " queue", "/Drivers/NAT%u/QueuePacketDropped", pDrvIns->iInstance);
+        PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->StatConsumerFalse, STAMTYPE_COUNTER,
+                              STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT, "counting PDM consumer false"
                               " queue", "/Drivers/NAT%u/QueuePacketDropped", pDrvIns->iInstance);
 #endif
 
