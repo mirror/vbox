@@ -163,6 +163,7 @@ tcp_timers(PNATState pData, register struct tcpcb *tp, int timer)
          * to a longer retransmit interval and retransmit one segment.
          */
         case TCPT_REXMT:
+            STAM_COUNTER_INC(&pData->StatTCP_retransmit);
             /*
              * XXX If a packet has timed out, then remove all the queued
              * packets for that session.
