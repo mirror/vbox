@@ -43,6 +43,8 @@ typedef struct VMMDevState
     /** absolute mouse position in pixels */
     uint32_t mouseXAbs;
     uint32_t mouseYAbs;
+    /** Does the guest currently want the host pointer to be shown? */
+    uint32_t fHostCursorRequested;
 
     /** Pointer to device instance. */
     PPDMDEVINSR3 pDevIns;
