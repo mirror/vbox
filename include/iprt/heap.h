@@ -38,7 +38,7 @@ RT_C_DECLS_BEGIN
 /**
  * Initializes the heap.
  *
- * @returns IPRT status code on success.
+ * @returns IPRT status code.
  * @param   pHeap       Where to store the heap anchor block on success.
  * @param   pvMemory    Pointer to the heap memory.
  * @param   cbMemory    The size of the heap memory.
@@ -48,9 +48,9 @@ RTDECL(int) RTHeapSimpleInit(PRTHEAPSIMPLE pHeap, void *pvMemory, size_t cbMemor
 /**
  * Merge two simple heaps into one.
  *
- * The requiremet is of course that they next two each other memory wise.
+ * The requirement is of course that they next two each other memory wise.
  *
- * @returns IPRT status code on success.
+ * @returns IPRT status code.
  * @param   pHeap       Where to store the handle to the merged heap on success.
  * @param   Heap1       Handle to the first heap.
  * @param   Heap2       Handle to the second heap.
@@ -58,6 +58,23 @@ RTDECL(int) RTHeapSimpleInit(PRTHEAPSIMPLE pHeap, void *pvMemory, size_t cbMemor
  */
 RTDECL(int) RTHeapSimpleMerge(PRTHEAPSIMPLE pHeap, RTHEAPSIMPLE Heap1, RTHEAPSIMPLE Heap2);
 
+/** 
+ * Relocater the heap internal structures after copying it to a new location. 
+ *  
+ * This can be used when loading a saved heap. 
+ *  
+ * @returns IPRT status code. 
+ * @param   hHeap       Heap handle that has already been adjusted by to the new
+ *                      location.  That is to say, when calling
+ *                      RTHeapSimpleInit, the caller must note the offset of the
+ *                      returned heap handle into the heap memory.  This offset
+ *                      must be used when calcuating the handle value for the
+ *                      new location.  The offset may in some cases not be zero!
+ * @param   offDelta    The delta between the new and old location, i.e. what 
+ *                      should be added to the internal pointers.
+ */
+RTDECL(int) RTHeapSimpleRelocate(RTHEAPSIMPLE hHeap, uintptr_t offDelta);
+ 
 /**
  * Allocates memory from the specified simple heap.
  *
