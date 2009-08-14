@@ -88,6 +88,7 @@ WITH_HARDENING=1
 BUILD_LIBXML2=
 BUILD_LIBXSLT=
 BUILD_LIBCURL=
+BUILD_LIBSSL=
 CC="gcc"
 CC32=""
 CC64=""
@@ -808,8 +809,9 @@ check_libidl()
 #
 check_ssl()
 {
-  test_header ssl
-  cat > $ODIR.tmp_src.cc << EOF
+  if [ -z "$BUILD_LIBSSL" ]; then
+    test_header ssl
+    cat > $ODIR.tmp_src.cc << EOF
 #include <cstdio>
 #include <openssl/opensslv.h>
 extern "C" int main(void)
@@ -824,10 +826,11 @@ extern "C" int main(void)
 #endif
 }
 EOF
-  if test_compile $LIBCRYPTO libcrypto openssl; then
-    if test_execute nofatal; then
-      cnf_append "SDK_VBOX_OPENSSL_INCS" ""
-      cnf_append "SDK_VBOX_OPENSSL_LIBS" "`strip_l "$LIBCRYPTO"`"
+    if test_compile $LIBCRYPTO libcrypto openssl; then
+      if test_execute nofatal; then
+        cnf_append "SDK_VBOX_OPENSSL_INCS" ""
+        cnf_append "SDK_VBOX_OPENSSL_LIBS" "`strip_l "$LIBCRYPTO"`"
+      fi
     fi
   fi
 }
@@ -1835,6 +1838,9 @@ check_darwinversion()
   test_header "Darwin version"
   darwin_ver=`uname -r`
   case "$darwin_ver" in
+    10\.*)
+      darwin_ver="10.6"
+      ;;
     9\.*)
       darwin_ver="10.5"
       #cnf_append "VBOX_TARGET_MAC_OS_X_VERSION_10_5" "1"
@@ -1843,7 +1849,7 @@ check_darwinversion()
       darwin_ver="10.4"
       ;;
     *)
-      echo "  failed to determin darwin version. (uname -r: $darwin_ver)"
+      echo "  failed to determine Darwin version. (uname -r: $darwin_ver)"
       fail
       darwin_ver="unknown"
       ;;
@@ -2159,7 +2165,8 @@ fi
 if [ "$OS" = "darwin" ]; then
   BUILD_LIBXSLT=1
   BUILD_LIBXML2=1
-  [ $OSE -eq 1 ] && BUILD_LIBCURL=1
+  [ $OSE -eq 1 ] || BUILD_LIBCURL=1
+  [ $OSE -eq 1 ] || BUILD_LIBSSL=1
 fi
 
 # emit disable directives corresponding to any --disable-xxx options.
@@ -2185,11 +2192,10 @@ check_gcc
 [ $WITH_XPCOM  -eq 1 ] && check_libxml2
 [ $WITH_XPCOM  -eq 1 ] && check_libxslt
 [ $WITH_LIBIDL -eq 1 ] && check_libidl
-# build openssl on Darwin in every case
-[ "$OS" != "darwin"  ] && check_ssl
+check_ssl
+check_curl
 [ "$OS" != "darwin"  ] && check_z
 [ "$OS" != "darwin" -a "$OS" != "freebsd" ] && check_png
-check_curl
 [ $OSE -eq 0 -a "$OS" = "linux" ] && check_pam
 [ $WITH_SDL -eq 1 ]    && check_sdl
 [ $WITH_SDL_TTF -eq 1 -a $OSE -eq 0 ] && check_sdl_ttf
@@ -2245,7 +2251,7 @@ fi
 # Darwin-specific
 if [ "$OS" = "darwin" ]; then
   check_darwinversion
-  check_i386elfgcc
+#  check_i386elfgcc
 fi
 
 # success!
