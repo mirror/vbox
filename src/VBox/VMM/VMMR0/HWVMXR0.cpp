@@ -2591,7 +2591,7 @@ ResumeExecution:
 #endif
     /* Possibly the last TSC value seen by the guest (too high) (only when we're in tsc offset mode). */
     if (!(pVCpu->hwaccm.s.vmx.proc_ctls & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_RDTSC_EXIT))
-        TMCpuTickSetLastSeen(pVCpu, ASMReadTSC() + pVCpu->hwaccm.s.vmx.u64TSCOffset - 0x1000 /* guestimate of world switch overhead in clock ticks */);
+        TMCpuTickSetLastSeen(pVCpu, ASMReadTSC() + pVCpu->hwaccm.s.vmx.u64TSCOffset - 0x400 /* guestimate of world switch overhead in clock ticks */);
 
     TMNotifyEndOfExecution(pVCpu);
     VMCPU_SET_STATE(pVCpu, VMCPUSTATE_STARTED);
