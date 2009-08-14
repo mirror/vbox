@@ -979,8 +979,9 @@ public:
 
     void setAddress(uchar * addr);
 
-    const QRect& rect() {return mRect;}
-
+    const QRect& rect() const {return mRect;}
+    const QRect& srcRect() const {return mSrcRect; }
+    const QRect& targRect() const {return mTargRect; }
     class VBoxVHWASurfList * getComplexList() {return mComplexList; }
 
     class VBoxVHWAGlProgramMngr * getGlProgramMngr();
@@ -1218,6 +1219,8 @@ public:
 
 #ifdef VBOX_WITH_VIDEOHWACCEL
     uchar *vboxVRAMAddressFromOffset(uint64_t offset);
+    uint64_t vboxVRAMOffsetFromAddress(uchar* addr);
+    uint64_t vboxVRAMOffset(VBoxVHWASurfaceBase * pSurf);
 
     void vhwaSaveExec(struct SSMHANDLE * pSSM);
     int vhwaLoadExec(struct SSMHANDLE * pSSM, uint32_t u32Version);
@@ -1299,7 +1302,7 @@ private:
 
     int vhwaSaveSurface(struct SSMHANDLE * pSSM, VBoxVHWASurfaceBase *pSurf, uint32_t surfCaps);
     int vhwaLoadSurface(struct SSMHANDLE * pSSM, uint32_t u32Version);
-    int vhwaSaveOverlayData(struct SSMHANDLE * pSSM, VBoxVHWASurfaceBase *pSurf);
+    int vhwaSaveOverlayData(struct SSMHANDLE * pSSM, VBoxVHWASurfaceBase *pSurf, bool bVisible);
     int vhwaLoadOverlayData(struct SSMHANDLE * pSSM, uint32_t u32Version);
 
     void vhwaDoSurfaceOverlayUpdate(VBoxVHWASurfaceBase *pDstSurf, VBoxVHWASurfaceBase *pSrcSurf, struct _VBOXVHWACMD_SURF_OVERLAY_UPDATE *pCmd);
