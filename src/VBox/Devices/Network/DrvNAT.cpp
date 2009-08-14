@@ -171,6 +171,7 @@ typedef struct DRVNAT
     PPDMTHREAD              thrNATRx;
     RTSEMEVENT              semNATRx;
     bool                    fCanOutput;
+    STAMCOUNTER             StatNATRxWakeups;
 #endif
 } DRVNAT;
 /** Pointer the NAT driver instance data. */
@@ -184,8 +185,13 @@ static DECLCALLBACK(int) drvNATRx(PPDMDRVINS pDrvIns, PPDMTHREAD pThread)
         return VINF_SUCCESS;
     while (pThread->enmState == PDMTHREADSTATE_RUNNING)
     {
-        int rc = pThis->pPort->pfnWaitReceiveAvail(pThis->pPort, 0);
-        bool fHaveRxBuffers = RT_SUCCESS(rc);
+        int rc;
+        bool fHaveRxBuffers;
+        do {
+            rc = pThis->pPort->pfnWaitReceiveAvail(pThis->pPort, 0);
+            fHaveRxBuffers = RT_SUCCESS(rc);
+            if (!fHaveRxBuffers) RTThreadSleep(2);
+        } while (!fHaveRxBuffers && pThread->enmState == PDMTHREADSTATE_RUNNING);
 
         if (!pThis->fCanOutput && fHaveRxBuffers)
         {
@@ -213,6 +219,7 @@ static DECLCALLBACK(int) drvNATRxWakeup(PPDMDRVINS pDrvIns, PPDMTHREAD pThread)
 {
     PDRVNAT pThis = PDMINS_2_DATA(pDrvIns, PDRVNAT);
     int rc = RTSemEventSignal(pThis->semNATRx);
+    STAM_COUNTER_INC(&pThis->StatNATRxWakeups);
     AssertReleaseRC(rc);
     return VINF_SUCCESS;
 }
@@ -531,7 +538,8 @@ static DECLCALLBACK(int) drvNATAsyncIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
 # endif
 #endif /* RT_OS_WINDOWS */
 #ifdef SLIRP_SPLIT_CAN_OUTPUT
-        drvNATRxWakeup(pThis->pDrvIns, pThis->thrNATRx);
+        if (!pThis->fCanOutput)
+            drvNATRxWakeup(pThis->pDrvIns, pThis->thrNATRx);
 #endif
     }
 
@@ -595,6 +603,7 @@ static DECLCALLBACK(int) drvNATAsyncIoGuestWakeup(PPDMDRVINS pDrvIns, PPDMTHREAD
 int slirp_can_output(void *pvUser)
 {
 #ifdef SLIRP_SPLIT_CAN_OUTPUT
+   PDRVNAT pThis = (PDRVNAT)pvUser;
    return pThis->fCanOutput;
 #else
     return 1;
@@ -661,6 +670,13 @@ static DECLCALLBACK(bool) drvNATQueueConsumer(PPDMDRVINS pDrvIns, PPDMQUEUEITEMC
 #ifndef SLIRP_SPLIT_CAN_OUTPUT
     if (RT_FAILURE(pThis->pPort->pfnWaitReceiveAvail(pThis->pPort, 0)))
     {
+        STAM_COUNTER_INC(&pThis->StatConsumerFalse);
+        return false;
+    }
+#else
+    if (RT_FAILURE(pThis->pPort->pfnWaitReceiveAvail(pThis->pPort, 0)))
+    {
+        drvNATRxWakeup(pThis->pDrvIns, pThis->thrNATRx);
         STAM_COUNTER_INC(&pThis->StatConsumerFalse);
         return false;
     }
@@ -970,6 +986,11 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandl
         PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->StatConsumerFalse, STAMTYPE_COUNTER,
                               STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT, "counting PDM consumer false"
                               " queue", "/Drivers/NAT%u/PDMConsumerFalse", pDrvIns->iInstance);
+# ifdef SLIRP_SPLIT_CAN_OUTPUT
+        PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->StatNATRxWakeups, STAMTYPE_COUNTER,
+                              STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT, "counting wakeups of NATRX"
+                              " thread", "/Drivers/NAT%u/NATRxWakeups", pDrvIns->iInstance);
+# endif
 #endif
 
         int rc2 = drvNATConstructRedir(pDrvIns->iInstance, pThis, pCfgHandle, Network);
