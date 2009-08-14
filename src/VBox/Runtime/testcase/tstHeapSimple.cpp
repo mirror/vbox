@@ -1,4 +1,4 @@
-/* $Id $ */
+/* $Id$ */
 /** @file
  * IPRT Testcase - Simple Heap.
  */
@@ -39,6 +39,7 @@
 #include <iprt/param.h>
 #include <iprt/assert.h>
 #include <iprt/log.h>
+#include <iprt/test.h>
 
 
 int main(int argc, char *argv[])
@@ -46,36 +47,32 @@ int main(int argc, char *argv[])
     /*
      * Init runtime.
      */
-    int rc = RTR3Init();
-    if (RT_FAILURE(rc))
-    {
-        RTPrintf("RTR3Init failed: %Rrc\n", rc);
-        return 1;
-    }
-    RTPrintf("tstHeapSimple: TESTING...\n");
+    RTTEST hTest;
+    int rc = RTTestInitAndCreate("tstRTHeapSimple", &hTest);
+    if (rc)
+        return rc;
+    RTTestBanner(hTest);
 
     /*
      * Create a heap.
      */
+    RTTestSub(hTest, "Basics");
     static uint8_t s_abMem[128*1024];
     RTHEAPSIMPLE Heap;
-    rc = RTHeapSimpleInit(&Heap, &s_abMem[1], sizeof(s_abMem) - 1);
-    if (RT_FAILURE(rc))
-    {
-        RTPrintf("RTHeapSimpleInit failed: %Rrc\n", rc);
-        return 1;
-    }
+    RTTESTI_CHECK_RC(rc = RTHeapSimpleInit(&Heap, &s_abMem[1], sizeof(s_abMem) - 1), VINF_SUCCESS);
+    if (RT_FAILURE(rc)) 
+        return RTTestSummaryAndDestroy(hTest);
 
     /*
      * Try allocate.
      */
-    static struct
+    static struct TstHeapSimpleOps
     {
         size_t      cb;
         unsigned    uAlignment;
         void       *pvAlloc;
         unsigned    iFreeOrder;
-    } aOps[] =
+    } s_aOps[] =
     {
         {        16,          0,    NULL,  0 },  // 0
         {        16,          4,    NULL,  1 },
@@ -100,91 +97,123 @@ int main(int argc, char *argv[])
         {        50,          0,    NULL,  7 },  // 20
         {        16,          0,    NULL,  7 },
     };
-    unsigned i;
-    RTHeapSimpleDump(Heap, (PFNRTHEAPSIMPLEPRINTF)RTPrintf);
+    unsigned i;                                   
+    RTHeapSimpleDump(Heap, (PFNRTHEAPSIMPLEPRINTF)RTPrintf); /** @todo Add some detail info output with a signature identical to RTPrintf. */
     size_t cbBefore = RTHeapSimpleGetFreeSize(Heap);
     static char szFill[] = "01234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
     /* allocate */
-    for (i = 0; i < RT_ELEMENTS(aOps); i++)
+    for (i = 0; i < RT_ELEMENTS(s_aOps); i++)
     {
-        aOps[i].pvAlloc = RTHeapSimpleAlloc(Heap, aOps[i].cb, aOps[i].uAlignment);
-        if (!aOps[i].pvAlloc)
-        {
-            RTPrintf("Failure: RTHeapSimpleAlloc(%p, %#x, %#x,) -> NULL i=%d\n", (void *)Heap, aOps[i].cb, aOps[i].uAlignment, i);
-            return 1;
-        }
-        memset(aOps[i].pvAlloc, szFill[i], aOps[i].cb);
-        if (RT_ALIGN_P(aOps[i].pvAlloc, (aOps[i].uAlignment ? aOps[i].uAlignment : 8)) != aOps[i].pvAlloc)
-        {
-            RTPrintf("Failure: RTHeapSimpleAlloc(%p, %#x, %#x,) -> %p\n", (void *)Heap, aOps[i].cb, aOps[i].uAlignment, i);
-            return 1;
-        }
+        s_aOps[i].pvAlloc = RTHeapSimpleAlloc(Heap, s_aOps[i].cb, s_aOps[i].uAlignment);
+        RTTESTI_CHECK_MSG(s_aOps[i].pvAlloc, ("RTHeapSimpleAlloc(%p, %#x, %#x,) -> NULL i=%d\n", (void *)Heap, s_aOps[i].cb, s_aOps[i].uAlignment, i));
+        if (!s_aOps[i].pvAlloc)
+            return RTTestSummaryAndDestroy(hTest);
+
+        memset(s_aOps[i].pvAlloc, szFill[i], s_aOps[i].cb);
+        RTTESTI_CHECK_MSG(RT_ALIGN_P(s_aOps[i].pvAlloc, (s_aOps[i].uAlignment ? s_aOps[i].uAlignment : 8)) == s_aOps[i].pvAlloc,
+                          ("RTHeapSimpleAlloc(%p, %#x, %#x,) -> %p\n", (void *)Heap, s_aOps[i].cb, s_aOps[i].uAlignment, i));
+        if (!s_aOps[i].pvAlloc)
+            return RTTestSummaryAndDestroy(hTest);
     }
 
     /* free and allocate the same node again. */
-    for (i = 0; i < RT_ELEMENTS(aOps); i++)
+    for (i = 0; i < RT_ELEMENTS(s_aOps); i++)
     {
-        if (!aOps[i].pvAlloc)
+        if (!s_aOps[i].pvAlloc)
             continue;
-        //RTPrintf("debug: i=%d pv=%#x cb=%#zx align=%#zx cbReal=%#zx\n", i, aOps[i].pvAlloc,
-        //         aOps[i].cb, aOps[i].uAlignment, RTHeapSimpleSize(Heap, aOps[i].pvAlloc));
+        //RTPrintf("debug: i=%d pv=%#x cb=%#zx align=%#zx cbReal=%#zx\n", i, s_aOps[i].pvAlloc,
+        //         s_aOps[i].cb, s_aOps[i].uAlignment, RTHeapSimpleSize(Heap, s_aOps[i].pvAlloc));
         size_t cbBeforeSub = RTHeapSimpleGetFreeSize(Heap);
-        RTHeapSimpleFree(Heap, aOps[i].pvAlloc);
+        RTHeapSimpleFree(Heap, s_aOps[i].pvAlloc);
         size_t cbAfterSubFree = RTHeapSimpleGetFreeSize(Heap);
 
         void *pv;
-        pv = RTHeapSimpleAlloc(Heap, aOps[i].cb, aOps[i].uAlignment);
+        pv = RTHeapSimpleAlloc(Heap, s_aOps[i].cb, s_aOps[i].uAlignment);
+        RTTESTI_CHECK_MSG(pv, ("RTHeapSimpleAlloc(%p, %#x, %#x,) -> NULL i=%d\n", (void *)Heap, s_aOps[i].cb, s_aOps[i].uAlignment, i));
         if (!pv)
-        {
-            RTPrintf("Failure: RTHeapSimpleAlloc(%p, %#x, %#x,) -> NULL i=%d\n", (void *)Heap, aOps[i].cb, aOps[i].uAlignment, i);
-            return 1;
-        }
+            return RTTestSummaryAndDestroy(hTest);
         //RTPrintf("debug: i=%d pv=%p cbReal=%#zx cbBeforeSub=%#zx cbAfterSubFree=%#zx cbAfterSubAlloc=%#zx \n", i, pv, RTHeapSimpleSize(Heap, pv),
         //         cbBeforeSub, cbAfterSubFree, RTHeapSimpleGetFreeSize(Heap));
-        if (pv != aOps[i].pvAlloc)
-            RTPrintf("Warning: Free+Alloc returned different address. new=%p old=%p i=%d\n", pv, aOps[i].pvAlloc, i);
-        aOps[i].pvAlloc = pv;
+        if (pv != s_aOps[i].pvAlloc)
+            RTTestIPrintf(RTTESTLVL_ALWAYS, "Warning: Free+Alloc returned different address. new=%p old=%p i=%d\n", pv, s_aOps[i].pvAlloc, i);
+        s_aOps[i].pvAlloc = pv;
         size_t cbAfterSubAlloc = RTHeapSimpleGetFreeSize(Heap);
         if (cbBeforeSub != cbAfterSubAlloc)
         {
-            RTPrintf("Warning: cbBeforeSub=%#zx cbAfterSubFree=%#zx cbAfterSubAlloc=%#zx. i=%d\n",
-                     cbBeforeSub, cbAfterSubFree, cbAfterSubAlloc, i);
+            RTTestIPrintf(RTTESTLVL_ALWAYS, "Warning: cbBeforeSub=%#zx cbAfterSubFree=%#zx cbAfterSubAlloc=%#zx. i=%d\n",
+                          cbBeforeSub, cbAfterSubFree, cbAfterSubAlloc, i);
             //return 1; - won't work correctly until we start creating free block instead of donating memory on alignment.
         }
     }
+    
+    /* make a copy of the heap and the to-be-freed list. */
+    static uint8_t s_abMemCopy[sizeof(s_abMem)];
+    memcpy(s_abMemCopy, s_abMem, sizeof(s_abMem));
+    uintptr_t    offDelta  = (uintptr_t)&s_abMemCopy[0] - (uintptr_t)&s_abMem[0];
+    RTHEAPSIMPLE hHeapCopy = (RTHEAPSIMPLE)((uintptr_t)Heap + offDelta);
+    static struct TstHeapSimpleOps s_aOpsCopy[RT_ELEMENTS(s_aOps)];
+    memcpy(&s_aOpsCopy[0], &s_aOps[0], sizeof(s_aOps));
 
     /* free it in a specific order. */
     int cFreed = 0;
-    for (i = 0; i < RT_ELEMENTS(aOps); i++)
+    for (i = 0; i < RT_ELEMENTS(s_aOps); i++)
     {
         unsigned j;
-        for (j = 0; j < RT_ELEMENTS(aOps); j++)
+        for (j = 0; j < RT_ELEMENTS(s_aOps); j++)
         {
-            if (    aOps[j].iFreeOrder != i
-                ||  !aOps[j].pvAlloc)
+            if (    s_aOps[j].iFreeOrder != i
+                ||  !s_aOps[j].pvAlloc)
                 continue;
-            //RTPrintf("j=%d i=%d free=%d cb=%d pv=%p\n", j, i, RTHeapSimpleGetFreeSize(Heap), aOps[j].cb, aOps[j].pvAlloc);
-            RTHeapSimpleFree(Heap, aOps[j].pvAlloc);
-            aOps[j].pvAlloc = NULL;
+            //RTPrintf("j=%d i=%d free=%d cb=%d pv=%p\n", j, i, RTHeapSimpleGetFreeSize(Heap), s_aOps[j].cb, s_aOps[j].pvAlloc);
+            RTHeapSimpleFree(Heap, s_aOps[j].pvAlloc);
+            s_aOps[j].pvAlloc = NULL;
             cFreed++;
         }
     }
-    Assert(cFreed == RT_ELEMENTS(aOps));
-    RTPrintf("i=done free=%d\n", RTHeapSimpleGetFreeSize(Heap));
+    RTTESTI_CHECK(cFreed == RT_ELEMENTS(s_aOps));
+    RTTestIPrintf(RTTESTLVL_ALWAYS, "i=done free=%d\n", RTHeapSimpleGetFreeSize(Heap));
 
     /* check that we're back at the right amount of free memory. */
     size_t cbAfter = RTHeapSimpleGetFreeSize(Heap);
     if (cbBefore != cbAfter)
     {
-        RTPrintf("Warning: Either we've split out an alignment chunk at the start, or we've got\n"
-                 "         an alloc/free accounting bug: cbBefore=%d cbAfter=%d\n", cbBefore, cbAfter);
+        RTTestIPrintf(RTTESTLVL_ALWAYS, 
+                      "Warning: Either we've split out an alignment chunk at the start, or we've got\n"
+                      "         an alloc/free accounting bug: cbBefore=%d cbAfter=%d\n", cbBefore, cbAfter);
         RTHeapSimpleDump(Heap, (PFNRTHEAPSIMPLEPRINTF)RTPrintf);
     }
 
-    RTPrintf("tstHeapSimple: Success\n");
-#ifdef LOG_ENABLED
-    RTLogFlush(NULL);
-#endif
-    return 0;
+    /* relocate and free the bits in heap2 now. */
+    RTTestSub(hTest, "RTHeapSimpleRelocate");
+    rc = RTHeapSimpleRelocate(hHeapCopy, offDelta);
+    RTTESTI_CHECK_RC(rc, VINF_SUCCESS);
+    if (RT_FAILURE(rc))
+    {
+        /* free it in a specific order. */
+        int cFreed2 = 0;
+        for (i = 0; i < RT_ELEMENTS(s_aOpsCopy); i++)
+        {
+            unsigned j;
+            for (j = 0; j < RT_ELEMENTS(s_aOpsCopy); j++)
+            {
+                if (    s_aOpsCopy[j].iFreeOrder != i
+                    ||  !s_aOpsCopy[j].pvAlloc)
+                    continue;
+                //RTPrintf("j=%d i=%d free=%d cb=%d pv=%p\n", j, i, RTHeapSimpleGetFreeSize(hHeapCopy), s_aOpsCopy[j].cb, s_aOpsCopy[j].pvAlloc);
+                RTHeapSimpleFree(hHeapCopy, (uint8_t *)s_aOpsCopy[j].pvAlloc + offDelta);
+                s_aOpsCopy[j].pvAlloc = NULL;
+                cFreed++;
+            }
+        }
+        RTTESTI_CHECK(cFreed == RT_ELEMENTS(s_aOpsCopy));
+    
+        /* check that we're back at the right amount of free memory. */
+        size_t cbAfterCopy = RTHeapSimpleGetFreeSize(hHeapCopy);
+        RTTESTI_CHECK_MSG(cbAfterCopy == cbAfter, ("cbAfterCopy=%zu cbAfter=%zu\n", cbAfterCopy, cbAfter));
+    }
+
+
+    return RTTestSummaryAndDestroy(hTest);
 }
+
