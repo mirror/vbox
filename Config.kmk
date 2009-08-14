@@ -1899,7 +1899,7 @@ if1of ($(KBUILD_TARGET), linux)
    kernelpath := $(shell $(SED_EXT) -ne 's+^KERNELSRC.*= *\(.*\)+\1+p' $(VBOX_LINUX_SRC)/Makefile)
    ifeq ($(kernelpath),)
     # Linux >= 2.6.25
-    kernelpath := $(shell $(SED_EXT) -ne 's+^MAKEARGS *:= *-C *\(.*\)+\1+p' $(VBOX_LINUX_SRC)/Makefile)
+    kernelpath := $(shell $(SED_EXT) -ne 's+^MAKEARGS *:= *-C *\(\S*\).*+\1+p' $(VBOX_LINUX_SRC)/Makefile)
    endif
    ifneq ($(kernelpath),)
     # absolute path?
