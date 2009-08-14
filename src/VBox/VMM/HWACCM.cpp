@@ -1569,7 +1569,7 @@ DECLCALLBACK(int) hwaccmR3ReplaceTprInstr(PVM pVM, PVMCPU pVCpu, void *pvUser)
     PDISCPUSTATE pDis   = &pVCpu->hwaccm.s.DisState;
     unsigned     cbOp;
 
-    /* Only execute the handler on the VCPU the original patch request was issued. */
+    /* Only execute the handler on the VCPU the original patch request was issued. (the other CPU(s) might not yet have switched to protected mode) */
     if (pVCpu->idCpu != idCpu)
         return VINF_SUCCESS;
 
@@ -1730,7 +1730,7 @@ DECLCALLBACK(int) hwaccmR3PatchTprInstr(PVM pVM, PVMCPU pVCpu, void *pvUser)
     char         szOutput[256];
 #endif
 
-    /* Only execute the handler on the VCPU the original patch request was issued. */
+    /* Only execute the handler on the VCPU the original patch request was issued. (the other CPU(s) might not yet have switched to protected mode) */
     if (pVCpu->idCpu != idCpu)
         return VINF_SUCCESS;
 
