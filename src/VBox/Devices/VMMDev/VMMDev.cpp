@@ -2480,11 +2480,11 @@ static DECLCALLBACK(void) vmmdevReset(PPDMDEVINS pDevIns)
     VMMDevState *pThis = PDMINS_2_DATA(pDevIns, VMMDevState*);
 
     /*
-     * Reset the mouse integration feature bit
+     * Reset the mouse integration feature bits
      */
-    if (pThis->mouseCapabilities & (VMMDEV_MOUSE_GUEST_CAN_ABSOLUTE|VMMDEV_MOUSE_GUEST_NEEDS_HOST_CURSOR))
+    if (pThis->mouseCapabilities & VMMDEV_MOUSE_GUEST_MASK)
     {
-        pThis->mouseCapabilities &= ~VMMDEV_MOUSE_GUEST_CAN_ABSOLUTE;
+        pThis->mouseCapabilities &= ~VMMDEV_MOUSE_GUEST_MASK;
         /* notify the connector */
         Log(("vmmdevReset: capabilities changed (%x), informing connector\n", pThis->mouseCapabilities));
         pThis->pDrv->pfnUpdateMouseCapabilities(pThis->pDrv, pThis->mouseCapabilities);
