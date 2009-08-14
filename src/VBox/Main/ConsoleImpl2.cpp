@@ -210,6 +210,9 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
     Bstr osTypeId;
     hrc = pMachine->COMGETTER(OSTypeId)(osTypeId.asOutParam());                     H();
 
+    BOOL fIOAPIC;
+    hrc = biosSettings->COMGETTER(IOAPICEnabled)(&fIOAPIC);                          H();
+
     /*
      * Get root node first.
      * This is the only node in the tree.
@@ -226,7 +229,6 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
     rc = CFGMR3InsertInteger(pRoot, "RamSize",              cbRam);                 RC_CHECK();
     rc = CFGMR3InsertInteger(pRoot, "RamHoleSize",          cbRamHole);             RC_CHECK();
     rc = CFGMR3InsertInteger(pRoot, "NumCPUs",              cCpus);                 RC_CHECK();
-    rc = CFGMR3InsertString (pRoot, "OSType",               Utf8Str(osTypeId).c_str()); RC_CHECK();
     rc = CFGMR3InsertInteger(pRoot, "TimerMillies",         10);                    RC_CHECK();
     rc = CFGMR3InsertInteger(pRoot, "RawR3Enabled",         1);     /* boolean */   RC_CHECK();
     rc = CFGMR3InsertInteger(pRoot, "RawR0Enabled",         1);     /* boolean */   RC_CHECK();
@@ -234,7 +236,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
     rc = CFGMR3InsertInteger(pRoot, "PATMEnabled",          1);     /* boolean */   RC_CHECK();
     rc = CFGMR3InsertInteger(pRoot, "CSAMEnabled",          1);     /* boolean */   RC_CHECK();
 
-    if (osTypeId == "WindowsNT4")
+    if (osTypeId == "WindowsNT")
     {
         /*
          * We must limit CPUID count for Windows NT 4, as otherwise it stops
@@ -299,6 +301,21 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
             rc = CFGMR3InsertInteger(pHWVirtExt, "64bitEnabled", 0);                RC_CHECK();
         }
 #endif
+
+        /* @todo Not exactly pretty to check strings; VBOXOSTYPE would be better, but that requires quite a bit of API change in Main. */
+        if (    !fIs64BitGuest
+            &&  fIOAPIC
+            &&  (   osTypeId == "WindowsNT"
+                 || osTypeId == "Windows"
+                 || osTypeId == "Windows 2000"
+                 || osTypeId == "WindowsXP"
+                 || osTypeId == "Windows 2003"))
+        {
+            /* Only allow TPR patching for NT, Win2k, XP and Windows Server 2003. (32 bits mode)
+             * We may want to consider adding more guest OSes (Solaris) later on.
+             */
+            rc = CFGMR3InsertInteger(pHWVirtExt, "TPRPatchingEnabled", 1);          RC_CHECK();
+        }
     }
 
     /* Nested paging (VT-x/AMD-V) */
@@ -315,9 +332,6 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
     BOOL fEnablePAE = false;
     hrc = pMachine->COMGETTER(PAEEnabled)(&fEnablePAE);                             H();
     rc = CFGMR3InsertInteger(pRoot, "EnablePAE", fEnablePAE);                       RC_CHECK();
-
-    BOOL fIOAPIC;
-    hrc = biosSettings->COMGETTER(IOAPICEnabled)(&fIOAPIC);                          H();
 
     BOOL fPXEDebug;
     hrc = biosSettings->COMGETTER(PXEDebugEnabled)(&fPXEDebug);                      H();
