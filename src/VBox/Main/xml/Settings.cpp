@@ -1950,6 +1950,19 @@ void MachineConfigFile::writeHardware(xml::ElementNode &elmParent,
             case PortMode_RawFile: pcszHostMode = "RawFile"; break;
             default: /*case PortMode_Disconnected:*/ pcszHostMode = "Disconnected"; break;
         }
+        switch (port.portMode)
+        {
+            case PortMode_HostPipe:
+                pelmPort->setAttribute("server", port.fServer);
+                /* no break */
+            case PortMode_HostDevice:
+            case PortMode_RawFile:
+                pelmPort->setAttribute("path", port.strPath);
+                break;
+
+            default: 
+                break;
+        }
         pelmPort->setAttribute("hostMode", pcszHostMode);
     }
 
