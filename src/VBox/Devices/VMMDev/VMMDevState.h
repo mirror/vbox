@@ -37,12 +37,13 @@ typedef struct VMMDevState
     /** hypervisor address space size */
     uint32_t hypervisorSize;
 
-    /** bit 0: guest capability (1 == wants), bit 1: flag value has changed */
-    /** bit 2: host capability (1 == wants), bit 3: flag value has changed */
+    /** mouse capabilities of host and guest */
     uint32_t mouseCapabilities;
     /** absolute mouse position in pixels */
     uint32_t mouseXAbs;
     uint32_t mouseYAbs;
+    /** Does the guest currently want the host pointer to be shown? */
+    uint32_t fHostCursorRequested;
 
     /** Pointer to device instance. */
     PPDMDEVINSR3 pDevIns;

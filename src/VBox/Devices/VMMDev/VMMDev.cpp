@@ -706,6 +706,7 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
                                                        0, 0,
                                                        NULL);
                 }
+                pThis->fHostCursorRequested = fVisible;
                 pRequestHeader->rc = VINF_SUCCESS;
             }
             break;
@@ -2084,7 +2085,7 @@ static DECLCALLBACK(void) vmmdevVBVAChange(PPDMIVMMDEVPORT pInterface, bool fEna
 
 
 
-#define VMMDEV_SSM_VERSION  9
+#define VMMDEV_SSM_VERSION  10
 
 /**
  * Saves a state of the VMM device.
@@ -2118,6 +2119,8 @@ static DECLCALLBACK(int) vmmdevSaveState(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHand
 #ifdef VBOX_WITH_HGCM
     vmmdevHGCMSaveState (pThis, pSSMHandle);
 #endif /* VBOX_WITH_HGCM */
+
+    SSMR3PutU32(pSSMHandle, pThis->fHostCursorRequested);
 
     return VINF_SUCCESS;
 }
@@ -2165,10 +2168,13 @@ static DECLCALLBACK(int) vmmdevLoadState(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHand
         SSMR3GetU32(pSSMHandle, &temp);
         SSMR3GetU32(pSSMHandle, &temp);
     }
-
 #ifdef VBOX_WITH_HGCM
     vmmdevHGCMLoadState (pThis, pSSMHandle, u32Version);
 #endif /* VBOX_WITH_HGCM */
+
+    if (   SSM_VERSION_MAJOR(u32Version) ==  0
+        && SSM_VERSION_MINOR(u32Version) >= 10)
+        SSMR3GetU32(pSSMHandle, &pThis->fHostCursorRequested);
 
     /*
      * On a resume, we send the capabilities changed message so
@@ -2176,7 +2182,17 @@ static DECLCALLBACK(int) vmmdevLoadState(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHand
      */
     Log(("vmmdevLoadState: capabilities changed (%x), informing connector\n", pThis->mouseCapabilities));
     if (pThis->pDrv)
+    {
         pThis->pDrv->pfnUpdateMouseCapabilities(pThis->pDrv, pThis->mouseCapabilities);
+        if (   SSM_VERSION_MAJOR(u32Version) ==  0
+            && SSM_VERSION_MINOR(u32Version) >= 10)
+                pThis->pDrv->pfnUpdatePointerShape(pThis->pDrv,
+                                                   pThis->fHostCursorRequested,
+                                                   0,
+                                                   0, 0,
+                                                   0, 0,
+                                                   NULL);
+    }
 
     /* Reestablish the acceleration status. */
     if (    pThis->u32VideoAccelEnabled
@@ -2463,15 +2479,16 @@ static DECLCALLBACK(void) vmmdevReset(PPDMDEVINS pDevIns)
     VMMDevState *pThis = PDMINS_2_DATA(pDevIns, VMMDevState*);
 
     /*
-     * Reset the mouse integration feature bit
+     * Reset the mouse integration feature bits
      */
-    if (pThis->mouseCapabilities & (VMMDEV_MOUSE_GUEST_CAN_ABSOLUTE|VMMDEV_MOUSE_GUEST_NEEDS_HOST_CURSOR))
+    if (pThis->mouseCapabilities & VMMDEV_MOUSE_GUEST_MASK)
     {
-        pThis->mouseCapabilities &= ~VMMDEV_MOUSE_GUEST_CAN_ABSOLUTE;
+        pThis->mouseCapabilities &= ~VMMDEV_MOUSE_GUEST_MASK;
         /* notify the connector */
         Log(("vmmdevReset: capabilities changed (%x), informing connector\n", pThis->mouseCapabilities));
         pThis->pDrv->pfnUpdateMouseCapabilities(pThis->pDrv, pThis->mouseCapabilities);
     }
+    pThis->fHostCursorRequested = false;
 
     pThis->hypervisorSize = 0;
 
