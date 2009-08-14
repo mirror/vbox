@@ -1193,7 +1193,7 @@ int __vbox__IManagedObjectRef_USCOREgetInterfaceName(
     } while (0);
 
     WEBDEBUG(("-- leaving %s, rc: 0x%lX\n", __FUNCTION__, rc));
-    if (rc)
+    if (FAILED(rc))
         return SOAP_FAULT;
     return SOAP_OK;
 }
@@ -1233,7 +1233,7 @@ int __vbox__IManagedObjectRef_USCORErelease(
     } while (0);
 
     WEBDEBUG(("-- leaving %s, rc: 0x%lX\n", __FUNCTION__, rc));
-    if (rc)
+    if (FAILED(rc))
         return SOAP_FAULT;
     return SOAP_OK;
 }
@@ -1307,7 +1307,7 @@ int __vbox__IWebsessionManager_USCORElogon(
     } while (0);
 
     WEBDEBUG(("-- leaving %s, rc: 0x%lX\n", __FUNCTION__, rc));
-    if (rc)
+    if (FAILED(rc))
         return SOAP_FAULT;
     return SOAP_OK;
 }
@@ -1337,7 +1337,7 @@ int __vbox__IWebsessionManager_USCOREgetSessionObject(
     } while (0);
 
     WEBDEBUG(("-- leaving %s, rc: 0x%lX\n", __FUNCTION__, rc));
-    if (rc)
+    if (FAILED(rc))
         return SOAP_FAULT;
     return SOAP_OK;
 }
@@ -1374,7 +1374,7 @@ int __vbox__IWebsessionManager_USCORElogoff(
     } while (0);
 
     WEBDEBUG(("-- leaving %s, rc: 0x%lX\n", __FUNCTION__, rc));
-    if (rc)
+    if (FAILED(rc))
         return SOAP_FAULT;
     return SOAP_OK;
 }
