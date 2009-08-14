@@ -548,7 +548,7 @@ const char *g_pcszIUnknown = "IUnknown";
   <xsl:call-template name="emitNewline" />
   <xsl:if test="not($fSkipHRESULT)">
     <xsl:text>
-    if (rc)
+    if (FAILED(rc))
         return SOAP_FAULT;
     return SOAP_OK;</xsl:text>
   </xsl:if>
