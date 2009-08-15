@@ -651,8 +651,8 @@ void VBoxNetDhcp::explodeConfig(void)
         VBoxNetDhcpCfg *pCfg = m_Cfgs[iCfg];
 
         /* Expand the IP lease range. */
-        uint32_t const uEnd = RT_N2H_U32(pCfg->m_UpperAddr.u);
-        for (uint32_t i = RT_N2H_U32(pCfg->m_LowerAddr.u); i <= uEnd; i++)
+        uint32_t const uLast = RT_N2H_U32(pCfg->m_UpperAddr.u);
+        for (uint32_t i = RT_N2H_U32(pCfg->m_LowerAddr.u); i <= uLast; i++)
         {
             RTNETADDRIPV4 IPv4Addr;
             IPv4Addr.u = RT_H2N_U32(i);
