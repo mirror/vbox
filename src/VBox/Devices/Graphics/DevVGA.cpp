@@ -55,7 +55,11 @@
 /** The minimum amount of VRAM. */
 #define VGA_VRAM_MIN        (_1M)
 
-#define VGA_SAVEDSTATE_VERSION  2
+#ifdef VBOX_WITH_HGSMI
+# define VGA_SAVEDSTATE_VERSION  3
+#else
+# define VGA_SAVEDSTATE_VERSION  2
+#endif
 
 /** The size of the VGA GC mapping.
  * This is supposed to be all the VGA memory accessible to the guest.
@@ -5290,8 +5294,8 @@ static DECLCALLBACK(int) vgaR3IORegionMap(PPCIDEVICE pPciDev, /*unsigned*/ int i
 static DECLCALLBACK(int) vgaR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle)
 {
     vga_save(pSSMHandle, PDMINS_2_DATA(pDevIns, PVGASTATE));
-#ifdef VBOX_WITH_VIDEOHWACCEL
-    return vbvaVHWASaveStateExec(pDevIns, pSSMHandle);
+#ifdef VBOX_WITH_HGSMI
+    return vboxVBVASaveStateExec(pDevIns, pSSMHandle);
 #else
     return VINF_SUCCESS;
 #endif
@@ -5300,7 +5304,7 @@ static DECLCALLBACK(int) vgaR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle
 #ifdef VBOX_WITH_VIDEOHWACCEL
 static DECLCALLBACK(int) vgaR3SavePrep(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
-    return vbvaVHWASaveStatePrep(pDevIns, pSSM);
+    return vboxVBVASaveStatePrep(pDevIns, pSSM);
 }
 #endif
 
@@ -5316,8 +5320,8 @@ static DECLCALLBACK(int) vgaR3xec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle, uin
 {
     if (vga_load(pSSMHandle, PDMINS_2_DATA(pDevIns, PVGASTATE), u32Version))
         return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
-#ifdef VBOX_WITH_VIDEOHWACCEL
-    return vbvaVHWALoadStateExec(pDevIns, pSSMHandle);
+#ifdef VBOX_WITH_HGSMI
+    return vboxVBVALoadStateExec(pDevIns, pSSMHandle, u32Version);
 #else
     return VINF_SUCCESS;
 #endif
@@ -5944,7 +5948,7 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     rc = PDMDevHlpSSMRegister(pDevIns, pDevIns->pDevReg->szDeviceName, iInstance, VGA_SAVEDSTATE_VERSION,
                               sizeof(*pThis),
 #ifdef VBOX_WITH_VIDEOHWACCEL
-                              NULL, vgaR3SaveExec, NULL,
+                              vgaR3SavePrep, vgaR3SaveExec, NULL,
 #else
                               NULL, vgaR3SaveExec, NULL,
 #endif
