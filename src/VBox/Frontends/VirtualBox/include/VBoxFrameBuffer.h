@@ -176,6 +176,7 @@ public:
     VBOXVHWA_PIPECMD_TYPE type() const {return mType;}
     const QRect & rect() const {return mRect;}
     struct _VBOXVHWACMD * vhwaCmd() const {return u.mpCmd;}
+    const VBOXVHWACALLBACKINFO & op() const {return u.mCallback; }
 
 private:
     VBoxVHWACommandElement * mpNext;
@@ -1336,7 +1337,7 @@ private:
 
     ulong  mPixelFormat;
     bool   mUsesGuestVRAM;
-    bool   mVGASurfCreated;
+    uint32_t   mcVGASurfCreated;
 
     RTCRITSECT mCritSect;
     VBoxVHWACommandProcessEvent *mpFirstEvent;
