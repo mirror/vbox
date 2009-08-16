@@ -3065,7 +3065,7 @@ DECLCALLBACK(int) Console::changeDrive (Console *pThis, const char *pszDevice, u
 
             case DriveState_HostDriveCaptured:
             {
-                rc = PDMR3DeviceDetach (pVM, pszDevice, uInstance, uLun, PDMDEVATT_FLAGS_NOT_HOT_PLUG);
+                rc = PDMR3DeviceDetach (pVM, pszDevice, uInstance, uLun, PDM_TACH_FLAGS_NOT_HOT_PLUG);
                 if (rc == VINF_PDM_NO_DRIVER_ATTACHED_TO_LUN)
                     rc = VINF_SUCCESS;
                 AssertRC (rc);
@@ -3101,7 +3101,7 @@ DECLCALLBACK(int) Console::changeDrive (Console *pThis, const char *pszDevice, u
             /*
              * Detach existing driver chain (block).
              */
-            int rc = PDMR3DeviceDetach (pVM, pszDevice, uInstance, uLun, PDMDEVATT_FLAGS_NOT_HOT_PLUG);
+            int rc = PDMR3DeviceDetach (pVM, pszDevice, uInstance, uLun, PDM_TACH_FLAGS_NOT_HOT_PLUG);
             if (VBOX_FAILURE (rc))
             {
                 if (rc == VERR_PDM_LUN_NOT_FOUND)
@@ -3131,7 +3131,7 @@ DECLCALLBACK(int) Console::changeDrive (Console *pThis, const char *pszDevice, u
                 /*
                  * Attempt to attach the driver.
                  */
-                rc = PDMR3DeviceAttach (pVM, pszDevice, uInstance, uLun, NULL, PDMDEVATT_FLAGS_NOT_HOT_PLUG);
+                rc = PDMR3DeviceAttach(pVM, pszDevice, uInstance, uLun, PDM_TACH_FLAGS_NOT_HOT_PLUG, NULL /*ppBase*/);
                 AssertRC (rc);
             }
             if (VBOX_FAILURE (rc))
@@ -3187,7 +3187,7 @@ DECLCALLBACK(int) Console::changeDrive (Console *pThis, const char *pszDevice, u
                         /*
                          * Attach the driver.
                          */
-                        rc = PDMR3DeviceAttach (pVM, pszDevice, uInstance, uLun, &pBase, PDMDEVATT_FLAGS_NOT_HOT_PLUG);
+                        rc = PDMR3DeviceAttach(pVM, pszDevice, uInstance, uLun, PDM_TACH_FLAGS_NOT_HOT_PLUG, &pBase);
                         RC_CHECK();
                     }
                     else if (VBOX_FAILURE(rc))
@@ -7084,7 +7084,7 @@ static DECLCALLBACK(int) reconfigureHardDisks(PVM pVM, ULONG lInstance,
         /*
          * Detach the driver and replace the config node.
          */
-        rc = PDMR3DeviceDetach(pVM, pcszDevice, 0, iLUN, PDMDEVATT_FLAGS_NOT_HOT_PLUG); RC_CHECK();
+        rc = PDMR3DeviceDetach(pVM, pcszDevice, 0, iLUN, PDM_TACH_FLAGS_NOT_HOT_PLUG); RC_CHECK();
         CFGMR3RemoveNode(pCfg);
         rc = CFGMR3InsertNode(pLunL1, "Config", &pCfg);                             RC_CHECK();
     }
@@ -7185,7 +7185,7 @@ static DECLCALLBACK(int) reconfigureHardDisks(PVM pVM, ULONG lInstance,
     /*
      * Attach the new driver.
      */
-    rc = PDMR3DeviceAttach(pVM, pcszDevice, 0, iLUN, NULL, PDMDEVATT_FLAGS_NOT_HOT_PLUG); RC_CHECK();
+    rc = PDMR3DeviceAttach(pVM, pcszDevice, 0, iLUN, PDM_TACH_FLAGS_NOT_HOT_PLUG, NULL /*ppBase*/); RC_CHECK();
 
     LogFlowFunc (("Returns success\n"));
     return rc;
@@ -7505,14 +7505,9 @@ DECLCALLBACK(void) Console::drvStatus_Destruct(PPDMDRVINS pDrvIns)
 /**
  * Construct a status driver instance.
  *
- * @returns VBox status.
- * @param   pDrvIns     The driver instance data.
- *                      If the registration structure is needed, pDrvIns->pDrvReg points to it.
- * @param   pCfgHandle  Configuration node handle for the driver. Use this to obtain the configuration
- *                      of the driver instance. It's also found in pDrvIns->pCfgHandle, but like
- *                      iInstance it's expected to be used a bit in this function.
+ * @copydoc FNPDMDRVCONSTRUCT
  */
-DECLCALLBACK(int) Console::drvStatus_Construct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle)
+DECLCALLBACK(int) Console::drvStatus_Construct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle, uint32_t fFlags)
 {
     PDRVMAINSTATUS pData = PDMINS_2_DATA(pDrvIns, PDRVMAINSTATUS);
     LogFlowFunc(("iInstance=%d\n", pDrvIns->iInstance));
@@ -7522,13 +7517,9 @@ DECLCALLBACK(int) Console::drvStatus_Construct(PPDMDRVINS pDrvIns, PCFGMNODE pCf
      */
     if (!CFGMR3AreValuesValid(pCfgHandle, "papLeds\0First\0Last\0"))
         return VERR_PDM_DRVINS_UNKNOWN_CFG_VALUES;
-    PPDMIBASE pBaseIgnore;
-    int rc = pDrvIns->pDrvHlp->pfnAttach(pDrvIns, &pBaseIgnore);
-    if (rc != VERR_PDM_NO_ATTACHED_DRIVER)
-    {
-        AssertMsgFailed(("Configuration error: Not possible to attach anything to this driver!\n"));
-        return VERR_PDM_DRVINS_NO_ATTACH;
-    }
+    AssertMsgReturn(PDMDrvHlpNoAttach(pDrvIns) == VERR_PDM_NO_ATTACHED_DRIVER, 
+                    ("Configuration error: Not possible to attach anything to this driver!\n"),
+                    VERR_PDM_DRVINS_NO_ATTACH);
 
     /*
      * Data.
@@ -7539,7 +7530,7 @@ DECLCALLBACK(int) Console::drvStatus_Construct(PPDMDRVINS pDrvIns, PCFGMNODE pCf
     /*
      * Read config.
      */
-    rc = CFGMR3QueryPtr(pCfgHandle, "papLeds", (void **)&pData->papLeds);
+    int rc = CFGMR3QueryPtr(pCfgHandle, "papLeds", (void **)&pData->papLeds);
     if (VBOX_FAILURE(rc))
     {
         AssertMsgFailed(("Configuration error: Failed to query the \"papLeds\" value! rc=%Rrc\n", rc));
@@ -7620,8 +7611,16 @@ const PDMDRVREG Console::DrvStatusReg =
     NULL,
     /* pfnResume */
     NULL,
+    /* pfnAttach */
+    NULL,
     /* pfnDetach */
-    NULL
+    NULL, 
+    /* pfnPowerOff */
+    NULL, 
+    /* pfnSoftReset */
+    NULL,
+    /* u32EndVersion */
+    PDM_DRVREG_VERSION
 };
 
 /**

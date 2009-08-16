@@ -894,7 +894,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_DriverAttach(PPDMDEVINS pDevIns, RTUINT iLu
                          * Link with LUN and call the constructor.
                          */
                         pLun->pTop = pLun->pBottom = pNew;
-                        rc = pDrv->pDrvReg->pfnConstruct(pNew, pNew->pCfgHandle);
+                        rc = pDrv->pDrvReg->pfnConstruct(pNew, pNew->pCfgHandle, 0 /*fFlags*/);
                         if (RT_SUCCESS(rc))
                         {
                             MMR3HeapFree(pszName);

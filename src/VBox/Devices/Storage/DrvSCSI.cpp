@@ -752,17 +752,10 @@ static DECLCALLBACK(void) drvscsiDestruct(PPDMDRVINS pDrvIns)
 /**
  * Construct a block driver instance.
  *
- * @returns VBox status.
- * @param   pDrvIns     The driver instance data.
- *                      If the registration structure is needed, pDrvIns->pDrvReg points to it.
- * @param   pCfgHandle  Configuration node handle for the driver. Use this to obtain the configuration
- *                      of the driver instance. It's also found in pDrvIns->pCfgHandle, but like
- *                      iInstance it's expected to be used a bit in this function.
+ * @copydoc FNPDMDRVCONSTRUCT
  */
-static DECLCALLBACK(int) drvscsiConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle)
+static DECLCALLBACK(int) drvscsiConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle, uint32_t fFlags)
 {
-    int rc = VINF_SUCCESS;
-    PDMBLOCKTYPE enmType;
     PDRVSCSI pThis = PDMINS_2_DATA(pDrvIns, PDRVSCSI);
 
     LogFlowFunc(("pDrvIns=%#p pCfgHandle=%#p\n", pDrvIns, pCfgHandle));
@@ -776,7 +769,7 @@ static DECLCALLBACK(int) drvscsiConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHand
     /*
      * Try attach driver below and query it's block interface.
      */
-    rc = pDrvIns->pDrvHlp->pfnAttach(pDrvIns, &pThis->pDrvBase);
+    int rc = PDMDrvHlpAttach(pDrvIns, fFlags, &pThis->pDrvBase);
     AssertMsgReturn(RT_SUCCESS(rc), ("Attaching driver below failed rc=%Rrc\n", rc), rc);
 
     /*
@@ -816,7 +809,7 @@ static DECLCALLBACK(int) drvscsiConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHand
     /* Try to get the optional async block interface. */
     pThis->pDrvBlockAsync = (PDMIBLOCKASYNC *)pThis->pDrvBase->pfnQueryInterface(pThis->pDrvBase, PDMINTERFACE_BLOCK_ASYNC);
 
-    enmType = pThis->pDrvBlock->pfnGetType(pThis->pDrvBlock);
+    PDMBLOCKTYPE enmType = pThis->pDrvBlock->pfnGetType(pThis->pDrvBlock);
     if (enmType != PDMBLOCKTYPE_HARD_DISK)
     {
         AssertMsgFailed(("Configuration error: Not a disk or cd/dvd-rom. enmType=%d\n", enmType));
@@ -876,8 +869,14 @@ const PDMDRVREG g_DrvSCSI =
     NULL,
     /* pfnResume */
     NULL,
-    /* pfnDetach */
+    /* pfnAttach */
     NULL,
+    /* pfnDetach */
+    NULL, 
     /* pfnPowerOff */
-    NULL
+    NULL, 
+    /* pfnSoftReset */
+    NULL,
+    /* u32EndVersion */
+    PDM_DRVREG_VERSION
 };

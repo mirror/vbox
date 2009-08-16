@@ -55,15 +55,15 @@ private:
     static DECLCALLBACK(void)   UpdateGuestCapabilities(PPDMIVMMDEVCONNECTOR pInterface, uint32_t newCapabilities);
     static DECLCALLBACK(void)   UpdateMouseCapabilities(PPDMIVMMDEVCONNECTOR pInterface, uint32_t newCapabilities);
     static DECLCALLBACK(void)   UpdatePointerShape(PPDMIVMMDEVCONNECTOR pInterface, bool fVisible, bool fAlpha,
-                                                     uint32_t xHot, uint32_t yHot,
-                                                     uint32_t width, uint32_t height,
-                                                     void *pShape);
+                                                   uint32_t xHot, uint32_t yHot,
+                                                   uint32_t width, uint32_t height,
+                                                   void *pShape);
     static DECLCALLBACK(int)    VideoModeSupported(PPDMIVMMDEVCONNECTOR pInterface, uint32_t width, uint32_t height,
                                                    uint32_t bpp, bool *fSupported);
     static DECLCALLBACK(int)    GetHeightReduction(PPDMIVMMDEVCONNECTOR pInterface, uint32_t *heightReduction);
 
     static DECLCALLBACK(void *) drvQueryInterface(PPDMIBASE pInterface, PDMINTERFACE enmInterface);
-    static DECLCALLBACK(int)    drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle);
+    static DECLCALLBACK(int)    drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle, uint32_t fFlags);
     static DECLCALLBACK(void)   drvDestruct(PPDMDRVINS pDrvIns);
 };
 

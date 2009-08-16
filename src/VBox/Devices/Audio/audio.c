@@ -1970,21 +1970,17 @@ static DECLCALLBACK(void) drvAudioDestruct(PPDMDRVINS pDrvIns)
 
 /**
  * Construct an AUDIO driver instance.
- *
- * @returns VBox status.
- * @param   pDrvIns     The driver instance data.
- *                      If the registration structure is needed, pDrvIns->pDrvReg points to it.
- * @param   pCfgHandle  Configuration node handle for the driver. Use this to obtain the configuration
- *                      of the driver instance. It's also found in pDrvIns->pCfgHandle, but like
- *                      iInstance it's expected to be used a bit in this function.
+ *  
+ * @copydoc FNPDMDRVCONSTRUCT
  */
-static DECLCALLBACK(int) drvAudioConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle)
+static DECLCALLBACK(int) drvAudioConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle, uint32_t fFlags)
 {
-    int rc;
-    PDRVAUDIO pThis = PDMINS_2_DATA(pDrvIns, PDRVAUDIO);
-    char *drvname;
+    PDRVAUDIO   pThis = PDMINS_2_DATA(pDrvIns, PDRVAUDIO);
+    char       *drvname;
+    int         rc;
 
     LogFlow(("drvAUDIOConstruct:\n"));
+
     /*
      * Validate the config.
      */
@@ -2076,8 +2072,15 @@ const PDMDRVREG g_DrvAUDIO =
     drvAudioSuspend,
     /* pfnResume */
     audioResume,
+    /* pfnAttach */
+    NULL,
     /* pfnDetach */
     NULL,
     /* pfnPowerOff */
-    drvAudioPowerOff
+    drvAudioPowerOff,
+    /* pfnSoftReset */
+    NULL,
+    /* u32EndVersion */
+    PDM_DRVREG_VERSION
 };
+

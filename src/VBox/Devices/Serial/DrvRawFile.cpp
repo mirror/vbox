@@ -1,7 +1,6 @@
-/** @file
- *
- * VBox stream devices:
- * Raw file output
+/* $Id$ */
+/** @file 
+ * VBox stream drivers - Raw file output. 
  */
 
 /*
@@ -24,7 +23,7 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
-#define LOG_GROUP LOG_GROUP_DRV_NAMEDPIPE
+#define LOG_GROUP LOG_GROUP_DEFAULT
 #include <VBox/pdmdrv.h>
 #include <iprt/assert.h>
 #include <iprt/file.h>
@@ -59,7 +58,7 @@ typedef struct DRVRAWFILE
     /** Pointer to the driver instance. */
     PPDMDRVINS          pDrvIns;
     /** Pointer to the file name. (Freed by MM) */
-    char                *pszLocation;
+    char               *pszLocation;
     /** Flag whether VirtualBox represents the server or client side. */
     RTFILE              OutputFile;
 } DRVRAWFILE, *PDRVRAWFILE;
@@ -120,17 +119,10 @@ static DECLCALLBACK(void *) drvRawFileQueryInterface(PPDMIBASE pInterface, PDMIN
 /**
  * Construct a raw output stream driver instance.
  *
- * @returns VBox status.
- * @param   pDrvIns     The driver instance data.
- *                      If the registration structure is needed, pDrvIns->pDrvReg points to it.
- * @param   pCfgHandle  Configuration node handle for the driver. Use this to obtain the configuration
- *                      of the driver instance. It's also found in pDrvIns->pCfgHandle, but like
- *                      iInstance it's expected to be used a bit in this function.
+ * @copydoc FNPDMDRVCONSTRUCT
  */
-static DECLCALLBACK(int) drvRawFileConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle)
+static DECLCALLBACK(int) drvRawFileConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle, uint32_t fFlags)
 {
-    int rc;
-    char *pszLocation = NULL;
     PDRVRAWFILE pThis = PDMINS_2_DATA(pDrvIns, PDRVRAWFILE);
 
     /*
@@ -148,36 +140,24 @@ static DECLCALLBACK(int) drvRawFileConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgH
      * Read the configuration.
      */
     if (!CFGMR3AreValuesValid(pCfgHandle, "Location\0"))
-    {
-        rc = VERR_PDM_DRVINS_UNKNOWN_CFG_VALUES;
-        goto out;
-    }
+        AssertFailedReturn(VERR_PDM_DRVINS_UNKNOWN_CFG_VALUES);
 
-    rc = CFGMR3QueryStringAlloc(pCfgHandle, "Location", &pszLocation);
+    int rc = CFGMR3QueryStringAlloc(pCfgHandle, "Location", &pThis->pszLocation);
+    if (RT_FAILURE(rc))
+        AssertMsgFailedReturn(("Configuration error: query \"Location\" resulted in %Rrc.\n", rc), rc);
+
+    /*
+     * Open the raw file.
+     */
+    rc = RTFileOpen(&pThis->OutputFile, pThis->pszLocation, RTFILE_O_CREATE_REPLACE | RTFILE_O_WRITE | RTFILE_O_DENY_NONE);
     if (RT_FAILURE(rc))
     {
-        AssertMsgFailed(("Configuration error: query \"Location\" resulted in %Rrc.\n", rc));
-        goto out;
-    }
-    pThis->pszLocation = pszLocation;
-
-    rc = RTFileOpen(&pThis->OutputFile, pThis->pszLocation, RTFILE_O_WRITE | RTFILE_O_CREATE_REPLACE);
-    if (RT_FAILURE(rc))
-    {
-        LogRel(("RawFile%d: CreateFile failed rc=%Rrc\n", pThis->pDrvIns->iInstance));
-        return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS, N_("RawFile#%d failed to create the raw output file %s"), pDrvIns->iInstance, pszLocation);
+        LogRel(("RawFile%d: CreateFile failed rc=%Rrc\n", pDrvIns->iInstance));
+        return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS, N_("RawFile#%d failed to create the raw output file %s"), pDrvIns->iInstance, pThis->pszLocation);
     }
 
-out:
-    if (RT_FAILURE(rc))
-    {
-        if (pszLocation)
-            MMR3HeapFree(pszLocation);
-        return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS, N_("RawFile#%d failed to initialize"), pDrvIns->iInstance);
-    }
-
-    LogFlow(("drvRawFileConstruct: location %s\n", pszLocation));
-    LogRel(("RawFile: location %s\n", pszLocation));
+    LogFlow(("drvRawFileConstruct: location %s\n", pThis->pszLocation));
+    LogRel(("RawFile#%u: location %s\n", pDrvIns->iInstance, pThis->pszLocation));
     return VINF_SUCCESS;
 }
 
@@ -197,6 +177,12 @@ static DECLCALLBACK(void) drvRawFileDestruct(PPDMDRVINS pDrvIns)
 
     if (pThis->pszLocation)
         MMR3HeapFree(pThis->pszLocation);
+
+    if (pThis->OutputFile != NIL_RTFILE)
+    {    
+        RTFileClose(pThis->OutputFile);
+        pThis->OutputFile = NIL_RTFILE;
+    }
 }
 
 
@@ -213,7 +199,10 @@ static DECLCALLBACK(void) drvRawFilePowerOff(PPDMDRVINS pDrvIns)
     LogFlow(("%s: %s\n", __FUNCTION__, pThis->pszLocation));
 
     if (pThis->OutputFile != NIL_RTFILE)
+    {    
         RTFileClose(pThis->OutputFile);
+        pThis->OutputFile = NIL_RTFILE;
+    }
 }
 
 
@@ -250,8 +239,15 @@ const PDMDRVREG g_DrvRawFile =
     NULL,
     /* pfnResume */
     NULL,
+    /* pfnAttach */
+    NULL,
     /* pfnDetach */
     NULL,
     /* pfnPowerOff */
     drvRawFilePowerOff,
+    /* pfnSoftReset */
+    NULL,
+    /* u32EndVersion */
+    PDM_DRVREG_VERSION
 };
+

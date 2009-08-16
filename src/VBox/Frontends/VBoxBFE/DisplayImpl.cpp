@@ -1175,14 +1175,9 @@ DECLCALLBACK(void *)  VMDisplay::drvQueryInterface(PPDMIBASE pInterface, PDMINTE
 /**
  * Construct a display driver instance.
  *
- * @returns VBox status.
- * @param   pDrvIns     The driver instance data.
- *                      If the registration structure is needed, pDrvIns->pDrvReg points to it.
- * @param   pCfgHandle  Configuration node handle for the driver. Use this to obtain the configuration
- *                      of the driver instance. It's also found in pDrvIns->pCfgHandle, but like
- *                      iInstance it's expected to be used a bit in this function.
+ * @copydoc FNPDMDRVCONSTRUCT
  */
-DECLCALLBACK(int) VMDisplay::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle)
+DECLCALLBACK(int) VMDisplay::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle, uint32_t fFlags)
 {
     PDRVMAINDISPLAY pData = PDMINS_2_DATA(pDrvIns, PDRVMAINDISPLAY);
     LogFlow(("VMDisplay::drvConstruct: iInstance=%d\n", pDrvIns->iInstance));
@@ -1193,13 +1188,9 @@ DECLCALLBACK(int) VMDisplay::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHand
      */
     if (!CFGMR3AreValuesValid(pCfgHandle, "Object\0"))
         return VERR_PDM_DRVINS_UNKNOWN_CFG_VALUES;
-    PPDMIBASE pBaseIgnore;
-    int rc = pDrvIns->pDrvHlp->pfnAttach(pDrvIns, &pBaseIgnore);
-    if (rc != VERR_PDM_NO_ATTACHED_DRIVER)
-    {
-        AssertMsgFailed(("Configuration error: Not possible to attach anything to this driver!\n"));
-        return VERR_PDM_DRVINS_NO_ATTACH;
-    }
+    AssertMsgReturn(PDMDrvHlpNoAttach(pDrvIns) == VERR_PDM_NO_ATTACHED_DRIVER, 
+                    ("Configuration error: Not possible to attach anything to this driver!\n"),
+                    VERR_PDM_DRVINS_NO_ATTACH);
 
     /*
      * Init Interfaces.
@@ -1228,7 +1219,7 @@ DECLCALLBACK(int) VMDisplay::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHand
      * Get the VMDisplay object pointer and update the mpDrv member.
      */
     void *pv;
-    rc = CFGMR3QueryPtr(pCfgHandle, "Object", &pv);
+    int rc = CFGMR3QueryPtr(pCfgHandle, "Object", &pv);
     if (RT_FAILURE(rc))
     {
         AssertMsgFailed(("Configuration error: No/bad \"Object\" value! rc=%Rrc\n", rc));
@@ -1285,6 +1276,15 @@ const PDMDRVREG VMDisplay::DrvReg =
     NULL,
     /* pfnResume */
     NULL,
+    /* pfnAttach */
+    NULL,
     /* pfnDetach */
-    NULL
+    NULL, 
+    /* pfnPowerOff */
+    NULL, 
+    /* pfnSoftReset */
+    NULL,
+    /* u32EndVersion */
+    PDM_DRVREG_VERSION
 };
+

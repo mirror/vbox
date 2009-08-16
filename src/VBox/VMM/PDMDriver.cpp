@@ -274,38 +274,25 @@ static DECLCALLBACK(int) pdmR3DrvRegister(PCPDMDRVREGCB pCallbacks, PCPDMDRVREG 
     /*
      * Validate the registration structure.
      */
-    Assert(pDrvReg);
-    if (pDrvReg->u32Version != PDM_DRVREG_VERSION)
-    {
-        AssertMsgFailed(("Unknown struct version %#x!\n", pDrvReg->u32Version));
-        return VERR_PDM_UNKNOWN_DRVREG_VERSION;
-    }
-    if (    !pDrvReg->szDriverName[0]
-        ||  strlen(pDrvReg->szDriverName) >= sizeof(pDrvReg->szDriverName))
-    {
-        AssertMsgFailed(("Invalid name '%s'\n", pDrvReg->szDriverName));
-        return VERR_PDM_INVALID_DRIVER_REGISTRATION;
-    }
-    if ((pDrvReg->fFlags & PDM_DRVREG_FLAGS_HOST_BITS_MASK) != PDM_DRVREG_FLAGS_HOST_BITS_DEFAULT)
-    {
-        AssertMsgFailed(("Invalid host bits flags! fFlags=%#x (Driver %s)\n", pDrvReg->fFlags, pDrvReg->szDriverName));
-        return VERR_PDM_INVALID_DRIVER_HOST_BITS;
-    }
-    if (pDrvReg->cMaxInstances <= 0)
-    {
-        AssertMsgFailed(("Max instances %u! (Driver %s)\n", pDrvReg->cMaxInstances, pDrvReg->szDriverName));
-        return VERR_PDM_INVALID_DRIVER_REGISTRATION;
-    }
-    if (pDrvReg->cbInstance > _1M)
-    {
-        AssertMsgFailed(("Instance size above 1MB, %d bytes! (Driver %s)\n", pDrvReg->cbInstance, pDrvReg->szDriverName));
-        return VERR_PDM_INVALID_DRIVER_REGISTRATION;
-    }
-    if (!pDrvReg->pfnConstruct)
-    {
-        AssertMsgFailed(("No constructore! (Driver %s)\n", pDrvReg->szDriverName));
-        return VERR_PDM_INVALID_DRIVER_REGISTRATION;
-    }
+    AssertPtrReturn(pDrvReg, VERR_INVALID_POINTER);
+    AssertMsgReturn(pDrvReg->u32Version == PDM_DRVREG_VERSION, ("%#x\n", pDrvReg->u32Version), VERR_PDM_UNKNOWN_DRVREG_VERSION);
+    AssertReturn(pDrvReg->szDriverName[0], VERR_PDM_INVALID_DRIVER_REGISTRATION);
+    AssertMsgReturn(memchr(pDrvReg->szDriverName, '\0', sizeof(pDrvReg->szDriverName)), 
+                    (".*s\n", sizeof(pDrvReg->szDriverName), pDrvReg->szDriverName),
+                    VERR_PDM_INVALID_DRIVER_REGISTRATION);
+    AssertMsgReturn((pDrvReg->fFlags & PDM_DRVREG_FLAGS_HOST_BITS_MASK) == PDM_DRVREG_FLAGS_HOST_BITS_DEFAULT,
+                    ("%s: fFlags=%#x\n", pDrvReg->szDriverName, pDrvReg->fFlags),  
+                    VERR_PDM_INVALID_DRIVER_HOST_BITS);
+    AssertMsgReturn(pDrvReg->cMaxInstances > 0, ("%s: %#x\n", pDrvReg->szDriverName, pDrvReg->cMaxInstances),
+                    VERR_PDM_INVALID_DRIVER_REGISTRATION);
+    AssertMsgReturn(pDrvReg->cbInstance <= _1M, ("%s: %#x\n", pDrvReg->szDriverName, pDrvReg->cbInstance),
+                    VERR_PDM_INVALID_DRIVER_REGISTRATION);
+    AssertMsgReturn(VALID_PTR(pDrvReg->pfnConstruct), ("%s: %p\n", pDrvReg->szDriverName, pDrvReg->pfnConstruct),
+                    VERR_PDM_INVALID_DRIVER_REGISTRATION);
+    AssertMsgReturn(pDrvReg->pfnSoftReset == NULL, ("%s: %p\n", pDrvReg->szDriverName, pDrvReg->pfnSoftReset), 
+                    VERR_PDM_INVALID_DRIVER_REGISTRATION);
+    AssertMsgReturn(pDrvReg->u32VersionEnd == PDM_DRVREG_VERSION, ("%s: #x\n", pDrvReg->szDriverName, pDrvReg->u32VersionEnd), 
+                    VERR_PDM_INVALID_DRIVER_REGISTRATION);
 
     /*
      * Check for duplicate and find FIFO entry at the same time.
@@ -384,8 +371,8 @@ int pdmR3DrvDetach(PPDMDRVINS pDrvIns, uint32_t fFlags)
      * The requirement is that the driver/device above has a detach method.
      */
     if (pDrvIns->Internal.s.pUp
-            ? !pDrvIns->Internal.s.pUp->pDrvReg->pfnDetach
-            : !pDrvIns->Internal.s.pLun->pDevIns->pDevReg->pfnDetach)
+        ? !pDrvIns->Internal.s.pUp->pDrvReg->pfnDetach
+        : !pDrvIns->Internal.s.pLun->pDevIns->pDevReg->pfnDetach)
     {
         AssertMsgFailed(("Cannot detach driver instance because the driver/device above doesn't support it!\n"));
         return VERR_PDM_DRIVER_DETACH_NOT_POSSIBLE;
@@ -405,7 +392,7 @@ int pdmR3DrvDetach(PPDMDRVINS pDrvIns, uint32_t fFlags)
  * This is used when unplugging a device at run time.
  *
  * @param   pDrvIns     Pointer to the driver instance to start with.
- * @param   fFlags      Flags, combination of the PDMDEVATT_FLAGS_* \#defines.
+ * @param   fFlags      PDM_TACH_FLAGS_NOT_HOT_PLUG or 0. 
  */
 void pdmR3DrvDestroyChain(PPDMDRVINS pDrvIns, uint32_t fFlags)
 {
@@ -441,7 +428,7 @@ void pdmR3DrvDestroyChain(PPDMDRVINS pDrvIns, uint32_t fFlags)
             pParent->Internal.s.pDown = NULL;
 
             if (pParent->pDrvReg->pfnDetach)
-                pParent->pDrvReg->pfnDetach(pParent);
+                pParent->pDrvReg->pfnDetach(pParent, fFlags);
 
             pParent->pDownBase = NULL;
         }
@@ -491,12 +478,13 @@ void pdmR3DrvDestroyChain(PPDMDRVINS pDrvIns, uint32_t fFlags)
  */
 
 /** @copydoc PDMDRVHLP::pfnAttach */
-static DECLCALLBACK(int) pdmR3DrvHlp_Attach(PPDMDRVINS pDrvIns, PPDMIBASE *ppBaseInterface)
+static DECLCALLBACK(int) pdmR3DrvHlp_Attach(PPDMDRVINS pDrvIns, uint32_t fFlags, PPDMIBASE *ppBaseInterface)
 {
     PDMDRV_ASSERT_DRVINS(pDrvIns);
     VM_ASSERT_EMT(pDrvIns->Internal.s.pVM);
     LogFlow(("pdmR3DrvHlp_Attach: caller='%s'/%d:\n",
              pDrvIns->pDrvReg->szDriverName, pDrvIns->iInstance));
+    Assert(!(fFlags & ~(PDM_TACH_FLAGS_NOT_HOT_PLUG)));
 
     /*
      * Check that there isn't anything attached already.
@@ -563,7 +551,7 @@ static DECLCALLBACK(int) pdmR3DrvHlp_Attach(PPDMDRVINS pDrvIns, PPDMIBASE *ppBas
                             pDrvIns->Internal.s.pLun->pBottom = pNew;
 
                             Log(("PDM: Constructing driver '%s' instance %d...\n", pNew->pDrvReg->szDriverName, pNew->iInstance));
-                            rc = pDrv->pDrvReg->pfnConstruct(pNew, pNew->pCfgHandle);
+                            rc = pDrv->pDrvReg->pfnConstruct(pNew, pNew->pCfgHandle, 0 /*fFlags*/);
                             if (RT_SUCCESS(rc))
                             {
                                 *ppBaseInterface = &pNew->IBase;
@@ -621,11 +609,11 @@ static DECLCALLBACK(int) pdmR3DrvHlp_Attach(PPDMDRVINS pDrvIns, PPDMIBASE *ppBas
 
 
 /** @copydoc PDMDRVHLP::pfnDetach */
-static DECLCALLBACK(int) pdmR3DrvHlp_Detach(PPDMDRVINS pDrvIns)
+static DECLCALLBACK(int) pdmR3DrvHlp_Detach(PPDMDRVINS pDrvIns, uint32_t fFlags)
 {
     PDMDRV_ASSERT_DRVINS(pDrvIns);
-    LogFlow(("pdmR3DrvHlp_Detach: caller='%s'/%d:\n",
-             pDrvIns->pDrvReg->szDriverName, pDrvIns->iInstance));
+    LogFlow(("pdmR3DrvHlp_Detach: caller='%s'/%d: fFlags=%#x\n",
+             pDrvIns->pDrvReg->szDriverName, pDrvIns->iInstance, fFlags));
     VM_ASSERT_EMT(pDrvIns->Internal.s.pVM);
 
     /*
@@ -633,10 +621,7 @@ static DECLCALLBACK(int) pdmR3DrvHlp_Detach(PPDMDRVINS pDrvIns)
      */
     int rc;
     if (pDrvIns->Internal.s.pDown)
-    {
-        /** @todo: Current assumption is that drivers will never initiate hot plug events. */
-        rc = pdmR3DrvDetach(pDrvIns->Internal.s.pDown, PDMDEVATT_FLAGS_NOT_HOT_PLUG);
-    }
+        rc = pdmR3DrvDetach(pDrvIns->Internal.s.pDown, fFlags);
     else
     {
         AssertMsgFailed(("Nothing attached!\n"));
@@ -650,15 +635,14 @@ static DECLCALLBACK(int) pdmR3DrvHlp_Detach(PPDMDRVINS pDrvIns)
 
 
 /** @copydoc PDMDRVHLP::pfnDetachSelf */
-static DECLCALLBACK(int) pdmR3DrvHlp_DetachSelf(PPDMDRVINS pDrvIns)
+static DECLCALLBACK(int) pdmR3DrvHlp_DetachSelf(PPDMDRVINS pDrvIns, uint32_t fFlags)
 {
     PDMDRV_ASSERT_DRVINS(pDrvIns);
-    LogFlow(("pdmR3DrvHlp_DetachSelf: caller='%s'/%d:\n",
-             pDrvIns->pDrvReg->szDriverName, pDrvIns->iInstance));
+    LogFlow(("pdmR3DrvHlp_DetachSelf: caller='%s'/%d: fFlags=%#x\n",
+             pDrvIns->pDrvReg->szDriverName, pDrvIns->iInstance, fFlags));
     VM_ASSERT_EMT(pDrvIns->Internal.s.pVM);
 
-    /** @todo: Current assumption is that drivers will never initiate hot plug events. */
-    int rc = pdmR3DrvDetach(pDrvIns, PDMDEVATT_FLAGS_NOT_HOT_PLUG);
+    int rc = pdmR3DrvDetach(pDrvIns, fFlags);
 
     LogFlow(("pdmR3DrvHlp_Detach: returns %Rrc\n", rc)); /* pDrvIns is freed by now. */
     return rc;

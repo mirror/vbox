@@ -239,14 +239,9 @@ static DECLCALLBACK(void) drvKbdQueuePowerOff(PPDMDRVINS pDrvIns)
 /**
  * Construct a keyboard driver instance.
  *
- * @returns VBox status.
- * @param   pDrvIns     The driver instance data.
- *                      If the registration structure is needed, pDrvIns->pDrvReg points to it.
- * @param   pCfgHandle  Configuration node handle for the driver. Use this to obtain the configuration
- *                      of the driver instance. It's also found in pDrvIns->pCfgHandle, but like
- *                      iInstance it's expected to be used a bit in this function.
+ * @copydoc FNPDMDRVCONSTRUCT
  */
-static DECLCALLBACK(int) drvKbdQueueConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle)
+static DECLCALLBACK(int) drvKbdQueueConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle, uint32_t fFlags)
 {
     PDRVKBDQUEUE pDrv = PDMINS_2_DATA(pDrvIns, PDRVKBDQUEUE);
     LogFlow(("drvKbdQueueConstruct: iInstance=%d\n", pDrvIns->iInstance));
@@ -282,7 +277,7 @@ static DECLCALLBACK(int) drvKbdQueueConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
      * Attach driver below and query it's connector interface.
      */
     PPDMIBASE pDownBase;
-    int rc = pDrvIns->pDrvHlp->pfnAttach(pDrvIns, &pDownBase);
+    int rc = PDMDrvHlpAttach(pDrvIns, fFlags, &pDownBase);
     if (RT_FAILURE(rc))
     {
         AssertMsgFailed(("Failed to attach driver below us! rc=%Rra\n", rc));
@@ -362,9 +357,15 @@ const PDMDRVREG g_DrvKeyboardQueue =
     drvKbdQueueSuspend,
     /* pfnResume */
     drvKbdQueueResume,
+    /* pfnAttach */
+    NULL,
     /* pfnDetach */
     NULL,
-    /** pfnPowerOff */
-    drvKbdQueuePowerOff
+    /* pfnPowerOff */
+    drvKbdQueuePowerOff,
+    /* pfnSoftReset */
+    NULL,
+    /* u32EndVersion */
+    PDM_DRVREG_VERSION
 };
 

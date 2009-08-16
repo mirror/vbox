@@ -5714,7 +5714,7 @@ static DECLCALLBACK(void) ataDetach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t 
     unsigned        iController;
     unsigned        iInterface;
 
-    AssertMsg(fFlags & PDMDEVATT_FLAGS_NOT_HOT_PLUG,
+    AssertMsg(fFlags & PDM_TACH_FLAGS_NOT_HOT_PLUG,
               ("PIIX3IDE: Device does not support hotplugging\n"));
 
     /*
@@ -5892,7 +5892,7 @@ static DECLCALLBACK(int)  ataAttach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t 
     unsigned        iController;
     unsigned        iInterface;
 
-    AssertMsgReturn(fFlags & PDMDEVATT_FLAGS_NOT_HOT_PLUG,
+    AssertMsgReturn(fFlags & PDM_TACH_FLAGS_NOT_HOT_PLUG,
                     ("PIIX3IDE: Device does not support hotplugging\n"),
                     VERR_INVALID_PARAMETER);
 

@@ -440,16 +440,10 @@ static DECLCALLBACK(void) drvscsihostDestruct(PPDMDRVINS pDrvIns)
 /**
  * Construct a block driver instance.
  *
- * @returns VBox status.
- * @param   pDrvIns     The driver instance data.
- *                      If the registration structure is needed, pDrvIns->pDrvReg points to it.
- * @param   pCfgHandle  Configuration node handle for the driver. Use this to obtain the configuration
- *                      of the driver instance. It's also found in pDrvIns->pCfgHandle, but like
- *                      iInstance it's expected to be used a bit in this function.
+ * @copydoc FNPDMDRVCONSTRUCT
  */
-static DECLCALLBACK(int) drvscsihostConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle)
+static DECLCALLBACK(int) drvscsihostConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle, uint32_t fFlags)
 {
-    int rc = VINF_SUCCESS;
     PDRVSCSIHOST pThis = PDMINS_2_DATA(pDrvIns, PDRVSCSIHOST);
 
     LogFlowFunc(("pDrvIns=%#p pCfgHandle=%#p\n", pDrvIns, pCfgHandle));
@@ -474,7 +468,7 @@ static DECLCALLBACK(int) drvscsihostConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
     AssertMsgReturn(pThis->pDevScsiPort, ("Missing SCSI port interface above\n"), VERR_PDM_MISSING_INTERFACE);
 
     /* Create request queue. */
-    rc = RTReqCreateQueue(&pThis->pQueueRequests);
+    int rc = RTReqCreateQueue(&pThis->pQueueRequests);
     AssertMsgReturn(RT_SUCCESS(rc), ("Failed to create request queue rc=%Rrc\n"), rc);
 
     /* Open the device. */
@@ -527,8 +521,14 @@ const PDMDRVREG g_DrvSCSIHost =
     NULL,
     /* pfnSuspend */
     NULL,
-    /* pfnResume */
+    /* pfnAttach */
     NULL,
     /* pfnDetach */
-    NULL
+    NULL, 
+    /* pfnPowerOff */
+    NULL, 
+    /* pfnSoftReset */
+    NULL,
+    /* u32EndVersion */
+    PDM_DRVREG_VERSION
 };

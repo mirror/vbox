@@ -5534,7 +5534,7 @@ static DECLCALLBACK(int)  vgaAttach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t 
 {
     PVGASTATE   pThis = PDMINS_2_DATA(pDevIns, PVGASTATE);
 
-    AssertMsgReturn(fFlags & PDMDEVATT_FLAGS_NOT_HOT_PLUG,
+    AssertMsgReturn(fFlags & PDM_TACH_FLAGS_NOT_HOT_PLUG,
                     ("VGA device does not support hotplugging\n"),
                     VERR_INVALID_PARAMETER);
 
@@ -5614,7 +5614,7 @@ static DECLCALLBACK(void)  vgaDetach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t
      */
     PVGASTATE   pThis = PDMINS_2_DATA(pDevIns, PVGASTATE);
 
-    AssertMsg(fFlags & PDMDEVATT_FLAGS_NOT_HOT_PLUG,
+    AssertMsg(fFlags & PDM_TACH_FLAGS_NOT_HOT_PLUG,
               ("VGA device does not support hotplugging\n"));
 
     switch (iLUN)
@@ -5988,7 +5988,7 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     /*
      * Attach to the display.
      */
-    rc = vgaAttach(pDevIns, 0 /* display LUN # */, PDMDEVATT_FLAGS_NOT_HOT_PLUG);
+    rc = vgaAttach(pDevIns, 0 /* display LUN # */, PDM_TACH_FLAGS_NOT_HOT_PLUG);
     if (RT_FAILURE(rc))
         return rc;
 

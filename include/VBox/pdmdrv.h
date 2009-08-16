@@ -35,6 +35,7 @@
 #include <VBox/pdmthread.h>
 #include <VBox/pdmifs.h>
 #include <VBox/pdmins.h>
+#include <VBox/pdmdevdrv.h>
 #include <VBox/tm.h>
 #include <VBox/ssm.h>
 #include <VBox/cfgm.h>
@@ -63,8 +64,9 @@ RT_C_DECLS_BEGIN
  * @param   pCfgHandle  Configuration node handle for the driver. Use this to obtain the configuration
  *                      of the driver instance. It's also found in pDrvIns->pCfgHandle as it's expected
  *                      to be used frequently in this function.
+ * @param   fFlags      Flags, combination of the PDM_TACH_FLAGS_* \#defines.
  */
-typedef DECLCALLBACK(int)   FNPDMDRVCONSTRUCT(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle);
+typedef DECLCALLBACK(int)   FNPDMDRVCONSTRUCT(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle, uint32_t fFlags);
 /** Pointer to a FNPDMDRVCONSTRUCT() function. */
 typedef FNPDMDRVCONSTRUCT *PFNPDMDRVCONSTRUCT;
 
@@ -151,6 +153,23 @@ typedef DECLCALLBACK(void)   FNPDMDRVPOWEROFF(PPDMDRVINS pDrvIns);
 typedef FNPDMDRVPOWEROFF *PFNPDMDRVPOWEROFF;
 
 /**
+ * Attach command.
+ *
+ * This is called to let the drive attach to a driver at runtime.  This is not 
+ * called during VM construction, the driver constructor have to do this by 
+ * calling PDMDrvHlpAttach. 
+ *
+ * This is like plugging in the keyboard or mouse after turning on the PC.
+ *
+ * @returns VBox status code.
+ * @param   pDrvIns     The driver instance.
+ * @param   fFlags      Flags, combination of the PDM_TACH_FLAGS_* \#defines.
+ */
+typedef DECLCALLBACK(int)  FNPDMDRVATTACH(PPDMDRVINS pDrvIns, uint32_t fFlags);
+/** Pointer to a FNPDMDRVATTACH() function. */
+typedef FNPDMDRVATTACH *PFNPDMDRVATTACH;
+
+/**
  * Detach notification.
  *
  * This is called when a driver below it in the chain is detaching itself
@@ -158,9 +177,10 @@ typedef FNPDMDRVPOWEROFF *PFNPDMDRVPOWEROFF;
  *
  * This is like ejecting a cdrom or floppy.
  *
- * @param   pDrvIns     The driver instance.
+ * @param   pDrvIns     The driver instance. 
+ * @param   fFlags      PDM_TACH_FLAGS_NOT_HOT_PLUG or 0. 
  */
-typedef DECLCALLBACK(void)  FNPDMDRVDETACH(PPDMDRVINS pDrvIns);
+typedef DECLCALLBACK(void)  FNPDMDRVDETACH(PPDMDRVINS pDrvIns, uint32_t fFlags);
 /** Pointer to a FNPDMDRVDETACH() function. */
 typedef FNPDMDRVDETACH *PFNPDMDRVDETACH;
 
@@ -204,11 +224,16 @@ typedef struct PDMDRVREG
     PFNPDMDRVSUSPEND    pfnSuspend;
     /** Resume notification - optional. */
     PFNPDMDRVRESUME     pfnResume;
+    /** Attach command - optional. */
+    PFNPDMDRVATTACH     pfnAttach;
     /** Detach notification - optional. */
     PFNPDMDRVDETACH     pfnDetach;
     /** Power off notification - optional. */
     PFNPDMDRVPOWEROFF   pfnPowerOff;
-
+    /** @todo */
+    PFNRT               pfnSoftReset;
+    /** Initialization safty marker. */
+    uint32_t            u32VersionEnd;
 } PDMDRVREG;
 /** Pointer to a PDM Driver Structure. */
 typedef PDMDRVREG *PPDMDRVREG;
@@ -216,9 +241,9 @@ typedef PDMDRVREG *PPDMDRVREG;
 typedef PDMDRVREG const *PCPDMDRVREG;
 
 /** Current DRVREG version number. */
-#define PDM_DRVREG_VERSION  0x80010000
+#define PDM_DRVREG_VERSION  0x80020000
 
-/** PDM Device Flags.
+/** PDM Driver Flags.
  * @{ */
 /** @def PDM_DRVREG_FLAGS_HOST_BITS_DEFAULT
  * The bit count for the current host. */
@@ -363,17 +388,19 @@ typedef struct PDMDRVHLP
      *
      * @returns VBox status code.
      * @param   pDrvIns             Driver instance.
+     * @param   fFlags              PDM_TACH_FLAGS_NOT_HOT_PLUG or 0. 
      * @param   ppBaseInterface     Where to store the pointer to the base interface.
      */
-    DECLR3CALLBACKMEMBER(int, pfnAttach,(PPDMDRVINS pDrvIns, PPDMIBASE *ppBaseInterface));
+    DECLR3CALLBACKMEMBER(int, pfnAttach,(PPDMDRVINS pDrvIns, uint32_t fFlags, PPDMIBASE *ppBaseInterface));
 
     /**
      * Detach the driver the drivers below us.
      *
      * @returns VBox status code.
-     * @param   pDrvIns             Driver instance.
+     * @param   pDrvIns             Driver instance. 
+     * @param   fFlags              PDM_TACH_FLAGS_NOT_HOT_PLUG or 0. 
      */
-    DECLR3CALLBACKMEMBER(int, pfnDetach,(PPDMDRVINS pDrvIns));
+    DECLR3CALLBACKMEMBER(int, pfnDetach,(PPDMDRVINS pDrvIns, uint32_t fFlags));
 
     /**
      * Detach the driver from the driver above it and destroy this
@@ -381,8 +408,9 @@ typedef struct PDMDRVHLP
      *
      * @returns VBox status code.
      * @param   pDrvIns             Driver instance.
+     * @param   fFlags              PDM_TACH_FLAGS_NOT_HOT_PLUG or 0. 
      */
-    DECLR3CALLBACKMEMBER(int, pfnDetachSelf,(PPDMDRVINS pDrvIns));
+    DECLR3CALLBACKMEMBER(int, pfnDetachSelf,(PPDMDRVINS pDrvIns, uint32_t fFlags));
 
     /**
      * Prepare a media mount.
@@ -813,6 +841,41 @@ DECLINLINE(int) PDMDrvHlpVMSetRuntimeError(PPDMDRVINS pDrvIns, uint32_t fFlags, 
 
 
 #ifdef IN_RING3
+
+/**
+ * @copydoc PDMDRVHLP::pfnAttach
+ */
+DECLINLINE(int) PDMDrvHlpAttach(PPDMDRVINS pDrvIns, uint32_t fFlags, PPDMIBASE *ppBaseInterface)
+{
+    return pDrvIns->pDrvHlp->pfnAttach(pDrvIns, fFlags, ppBaseInterface);
+}
+
+/** 
+ * Check that there is no driver below the us that we should attach to. 
+ *  
+ * @returns VERR_PDM_NO_ATTACHED_DRIVER if there is no driver. 
+ * @param   pDrvIns     The driver instance. 
+ */
+DECLINLINE(int) PDMDrvHlpNoAttach(PPDMDRVINS pDrvIns)
+{
+    return pDrvIns->pDrvHlp->pfnAttach(pDrvIns, 0, NULL);
+}
+
+/**
+ * @copydoc PDMDRVHLP::pfnDetach
+ */
+DECLINLINE(int) PDMDrvHlpDetach(PPDMDRVINS pDrvIns, uint32_t fFlags)
+{
+    return pDrvIns->pDrvHlp->pfnDetach(pDrvIns, fFlags);
+}
+
+/**
+ * @copydoc PDMDRVHLP::pfnDetachSelf
+ */
+DECLINLINE(int) PDMDrvHlpDetachSelf(PPDMDRVINS pDrvIns, uint32_t fFlags)
+{
+    return pDrvIns->pDrvHlp->pfnDetachSelf(pDrvIns, fFlags);
+}
 
 /**
  * @copydoc PDMDRVHLP::pfnPDMQueueCreate

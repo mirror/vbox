@@ -2664,7 +2664,7 @@ static DECLCALLBACK(int)  fdcAttach (PPDMDEVINS pDevIns,
     int rc;
     LogFlow (("ideDetach: iLUN=%u\n", iLUN));
 
-    AssertMsgReturn(fFlags & PDMDEVATT_FLAGS_NOT_HOT_PLUG,
+    AssertMsgReturn(fFlags & PDM_TACH_FLAGS_NOT_HOT_PLUG,
                     ("The FDC device does not support hotplugging\n"),
                     VERR_INVALID_PARAMETER);
 
