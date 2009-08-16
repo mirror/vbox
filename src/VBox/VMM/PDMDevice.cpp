@@ -789,11 +789,11 @@ int pdmR3DevFindLun(PVM pVM, const char *pszDevice, unsigned iInstance, unsigned
  * @param   fFlags          Flags, combination of the PDMDEVATT_FLAGS_* \#defines.
  * @thread  EMT
  */
-VMMR3DECL(int) PDMR3DeviceAttach(PVM pVM, const char *pszDevice, unsigned iInstance, unsigned iLun, PPDMIBASE *ppBase, uint32_t fFlags)
+VMMR3DECL(int) PDMR3DeviceAttach(PVM pVM, const char *pszDevice, unsigned iInstance, unsigned iLun, uint32_t fFlags, PPDMIBASE *ppBase)
 {
     VM_ASSERT_EMT(pVM);
-    LogFlow(("PDMR3DeviceAttach: pszDevice=%p:{%s} iInstance=%d iLun=%d ppBase=%p\n",
-             pszDevice, pszDevice, iInstance, iLun, ppBase));
+    LogFlow(("PDMR3DeviceAttach: pszDevice=%p:{%s} iInstance=%d iLun=%d fFlags=%#x ppBase=%p\n",
+             pszDevice, pszDevice, iInstance, iLun, fFlags, ppBase));
 
     /*
      * Find the LUN in question.
@@ -870,8 +870,80 @@ VMMR3DECL(int) PDMR3DeviceDetach(PVM pVM, const char *pszDevice, unsigned iInsta
             else
                 rc = VINF_PDM_NO_DRIVER_ATTACHED_TO_LUN;
         }
+    }
+
+    LogFlow(("PDMR3DeviceDetach: returns %Rrc\n", rc));
+    return rc;
+}
+
+
+/**
+ * Detaches the specified driver instance.
+ *  
+ * This is used to replumb drivers at runtime for simulating hot plugging and 
+ * media changes. 
+ *  
+ * This is a superset of PDMR3DeviceDetach.  It allows detaching drivers from 
+ * any driver or device by specifying the driver to start detaching at.  The 
+ * only prerequisite is that the driver or device above implements the 
+ * pfnDetach callback (PDMDRVREG / PDMDEVREG). 
+ *  
+ * @returns VBox status code.
+ * @param   pVM             VM Handle.
+ * @param   pszDevice       Device name.
+ * @param   iDevIns         Device instance.
+ * @param   iLun            The Logical Unit in which to look for the driver.
+ * @param   pszDriver       The name of the driver which to detach.  If NULL 
+ *                          then the entire driver chain is detatched.
+ * @param   iOccurance      The occurance of that driver in the chain.  This is 
+ *                          usually 0.
+ * @param   fFlags          Flags, combination of the PDMDEVATT_FLAGS_* \#defines.
+ * @thread  EMT
+ */             
+VMMR3DECL(int) PDMR3DriverDetach(PVM pVM, const char *pszDevice, unsigned iDevIns, unsigned iLun, 
+                                 const char *pszDriver, unsigned iOccurance, uint32_t fFlags)
+{
+    LogFlow(("PDMR3DriverDetach: pszDevice=%p:{%s} iDevIns=%u iLun=%u pszDriver=%p:{%s} iOccurance=%u fFlags=%#x\n",
+             pszDevice, pszDevice, iDevIns, iLun, pszDriver, iOccurance, fFlags));
+    VM_ASSERT_EMT(pVM);
+    AssertPtr(pszDevice);
+    AssertPtrNull(pszDriver);
+    Assert(iOccurance == 0 || pszDriver);
+    Assert(!(fFlags & ~(PDM_TACH_FLAGS_NOT_HOT_PLUG)));
+
+    /*
+     * Find the LUN in question.
+     */
+    PPDMLUN pLun;
+    int rc = pdmR3DevFindLun(pVM, pszDevice, iDevIns, iLun, &pLun);
+    if (RT_SUCCESS(rc))
+    {
+        /*
+         * Locate the driver.
+         */
+        PPDMDRVINS pDrvIns = pLun->pTop;
+        if (pDrvIns)
+        {
+            if (pszDriver)
+            {
+                while (pDrvIns)
+                {
+                    if (!strcmp(pDrvIns->pDrvReg->szDriverName, pszDriver))
+                    {
+                        if (iOccurance == 0)
+                            break;
+                        iOccurance--;
+                    }
+                    pDrvIns = pDrvIns->Internal.s.pDown;
+                }
+            }
+            if (pDrvIns)
+                rc = pdmR3DrvDetach(pDrvIns, fFlags);
+            else
+                rc = VERR_PDM_DRIVER_INSTANCE_NOT_FOUND;
+        }
         else
-            rc = VERR_PDM_DEVICE_NO_RT_DETACH;
+            rc = VINF_PDM_NO_DRIVER_ATTACHED_TO_LUN;
     }
 
     LogFlow(("PDMR3DeviceDetach: returns %Rrc\n", rc));

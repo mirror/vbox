@@ -788,15 +788,11 @@ static DECLCALLBACK(void *) drvvdQueryInterface(PPDMIBASE pInterface,
 /**
  * Construct a VBox disk media driver instance.
  *
- * @returns VBox status.
- * @param   pDrvIns     The driver instance data.
- *                      If the registration structure is needed, pDrvIns->pDrvReg points to it.
- * @param   pCfgHandle  Configuration node handle for the driver. Use this to obtain the configuration
- *                      of the driver instance. It's also found in pDrvIns->pCfgHandle as it's expected
- *                      to be used frequently in this function.
+ * @copydoc FNPDMDRVCONSTRUCT
  */
 static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
-                                        PCFGMNODE pCfgHandle)
+                                        PCFGMNODE pCfgHandle,
+                                        uint32_t fFlags)
 {
     LogFlow(("%s:\n", __FUNCTION__));
     PVBOXDISK pThis = PDMINS_2_DATA(pDrvIns, PVBOXDISK);
@@ -884,7 +880,7 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
         /* Try to attach the driver. */
         PPDMIBASE pBase;
 
-        rc = pDrvIns->pDrvHlp->pfnAttach(pDrvIns, &pBase);
+        rc = PDMDrvHlpAttach(pDrvIns, fFlags, &pBase);
         if (rc == VERR_PDM_NO_ATTACHED_DRIVER)
         {
             /*
@@ -1307,8 +1303,15 @@ const PDMDRVREG g_DrvVD =
     drvvdSuspend,
     /* pfnResume */
     drvvdResume,
+    /* pfnAttach */
+    NULL,
     /* pfnDetach */
     NULL,
     /* pfnPowerOff */
-    drvvdPowerOff
+    drvvdPowerOff,
+    /* pfnSoftReset */
+    NULL,
+    /* u32EndVersion */
+    PDM_DRVREG_VERSION
 };
+

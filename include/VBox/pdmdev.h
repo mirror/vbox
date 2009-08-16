@@ -35,6 +35,7 @@
 #include <VBox/pdmthread.h>
 #include <VBox/pdmifs.h>
 #include <VBox/pdmins.h>
+#include <VBox/pdmdevdrv.h>
 #include <VBox/iom.h>
 #include <VBox/tm.h>
 #include <VBox/ssm.h>
@@ -173,12 +174,6 @@ typedef DECLCALLBACK(void)   FNPDMDEVPOWEROFF(PPDMDEVINS pDevIns);
 /** Pointer to a FNPDMDEVPOWEROFF() function. */
 typedef FNPDMDEVPOWEROFF *PFNPDMDEVPOWEROFF;
 
-/** PDM Device attach/detach callback Flags.
- * @{ */
-/** The attach/detach command is not a hotplug event. */
-#define PDMDEVATT_FLAGS_NOT_HOT_PLUG RT_BIT_32(0)
-/* @} */
-
 /**
  * Attach command.
  *
@@ -191,7 +186,7 @@ typedef FNPDMDEVPOWEROFF *PFNPDMDEVPOWEROFF;
  * @returns VBox status code.
  * @param   pDevIns     The device instance.
  * @param   iLUN        The logical unit which is being detached.
- * @param   fFlags      Flags, combination of the PDMDEVATT_FLAGS_* \#defines.
+ * @param   fFlags      Flags, combination of the PDM_TACH_FLAGS_* \#defines.
  */
 typedef DECLCALLBACK(int)  FNPDMDEVATTACH(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t fFlags);
 /** Pointer to a FNPDMDEVATTACH() function. */

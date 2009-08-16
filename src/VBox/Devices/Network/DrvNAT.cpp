@@ -854,27 +854,21 @@ static DECLCALLBACK(void) drvNATDestruct(PPDMDRVINS pDrvIns)
 /**
  * Construct a NAT network transport driver instance.
  *
- * @returns VBox status.
- * @param   pDrvIns     The driver instance data.
- *                      If the registration structure is needed, pDrvIns->pDrvReg points to it.
- * @param   pCfgHandle  Configuration node handle for the driver. Use this to obtain the configuration
- *                      of the driver instance. It's also found in pDrvIns->pCfgHandle, but like
- *                      iInstance it's expected to be used a bit in this function.
+ * @copydoc FNPDMDRVCONSTRUCT
  */
-static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle)
+static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle, uint32_t fFlags)
 {
     PDRVNAT pThis = PDMINS_2_DATA(pDrvIns, PDRVNAT);
-    char szNetAddr[16];
-    char szNetwork[32]; /* xxx.xxx.xxx.xxx/yy */
 
     LogFlow(("drvNATConstruct:\n"));
 
     /*
      * Validate the config.
      */
-    if (!CFGMR3AreValuesValid(pCfgHandle, "PassDomain\0TFTPPrefix\0BootFile\0Network"
-        "\0NextServer\0DNSProxy\0BindIP\0"
-        "SocketRcvBuf\0SocketSndBuf\0TcpRcvSpace\0TcpSndSpace\0"))
+    if (!CFGMR3AreValuesValid(pCfgHandle, 
+                              "PassDomain\0TFTPPrefix\0BootFile\0Network"
+                              "\0NextServer\0DNSProxy\0BindIP\0"
+                              "SocketRcvBuf\0SocketSndBuf\0TcpRcvSpace\0TcpSndSpace\0"))
         return PDMDRV_SET_ERROR(pDrvIns, VERR_PDM_DRVINS_UNKNOWN_CFG_VALUES,
                                 N_("Unknown NAT configuration option, only supports PassDomain,"
                                 " TFTPPrefix, BootFile and Network"));
@@ -927,6 +921,7 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandl
                                 "export the network config interface"));
 
     /* Generate a network address for this network card. */
+    char szNetwork[32]; /* xxx.xxx.xxx.xxx/yy */
     GET_STRING(rc, pThis, pCfgHandle, "Network", szNetwork[0], sizeof(szNetwork));
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
         RTStrPrintf(szNetwork, sizeof(szNetwork), "10.0.%d.0/24", pDrvIns->iInstance + 2);
@@ -939,6 +934,7 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandl
                                    "network '%s' describes not a valid IPv4 network"),
                                    pDrvIns->iInstance, szNetwork);
 
+    char szNetAddr[16];
     RTStrPrintf(szNetAddr, sizeof(szNetAddr), "%d.%d.%d.%d",
                (Network & 0xFF000000) >> 24, (Network & 0xFF0000) >> 16,
                (Network & 0xFF00) >> 8, Network & 0xFF);
@@ -978,18 +974,18 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandl
         slirp_register_statistics(pThis->pNATState, pDrvIns);
 #ifdef VBOX_WITH_STATISTICS
         PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->StatQueuePktSent,    STAMTYPE_COUNTER,
-                              STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT, "counting packet sent viai "
-                              "PDM queue", "/Drivers/NAT%u/QueuePacketSent", pDrvIns->iInstance);
+                               STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT, "counting packet sent viai "
+                               "PDM queue", "/Drivers/NAT%u/QueuePacketSent", pDrvIns->iInstance);
         PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->StatQueuePktDropped, STAMTYPE_COUNTER,
-                              STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT, "counting packet sent via PDM"
-                              " queue", "/Drivers/NAT%u/QueuePacketDropped", pDrvIns->iInstance);
+                               STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT, "counting packet sent via PDM"
+                               " queue", "/Drivers/NAT%u/QueuePacketDropped", pDrvIns->iInstance);
         PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->StatConsumerFalse, STAMTYPE_COUNTER,
-                              STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT, "counting PDM consumer false"
-                              " queue", "/Drivers/NAT%u/PDMConsumerFalse", pDrvIns->iInstance);
+                               STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT, "counting PDM consumer false"
+                               " queue", "/Drivers/NAT%u/PDMConsumerFalse", pDrvIns->iInstance);
 # ifdef SLIRP_SPLIT_CAN_OUTPUT
         PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->StatNATRxWakeups, STAMTYPE_COUNTER,
-                              STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT, "counting wakeups of NATRX"
-                              " thread", "/Drivers/NAT%u/NATRxWakeups", pDrvIns->iInstance);
+                               STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT, "counting wakeups of NATRX"
+                               " thread", "/Drivers/NAT%u/NATRxWakeups", pDrvIns->iInstance);
 # endif
 #endif
 
@@ -1111,8 +1107,15 @@ const PDMDRVREG g_DrvNAT =
     NULL,
     /* pfnResume */
     NULL,
-    /* pfnDetach */
+    /* pfnAttach */
     NULL,
+    /* pfnDetach */
+    NULL, 
     /* pfnPowerOff */
-    NULL
+    NULL, 
+    /* pfnSoftReset */
+    NULL,
+    /* u32EndVersion */
+    PDM_DRVREG_VERSION
 };
+

@@ -723,14 +723,9 @@ static DECLCALLBACK(void) drvACPIDestruct(PPDMDRVINS pDrvIns)
 /**
  * Construct an ACPI driver instance.
  *
- * @returns VBox status.
- * @param   pDrvIns     The driver instance data.
- *                      If the registration structure is needed, pDrvIns->pDrvReg points to it.
- * @param   pCfgHandle  Configuration node handle for the driver. Use this to obtain the configuration
- *                      of the driver instance. It's also found in pDrvIns->pCfgHandle, but like
- *                      iInstance it's expected to be used a bit in this function.
+ * @copydoc FNPDMDRVCONSTRUCT
  */
-static DECLCALLBACK(int) drvACPIConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle)
+static DECLCALLBACK(int) drvACPIConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle, uint32_t fFlags)
 {
     PDRVACPI pThis = PDMINS_2_DATA(pDrvIns, PDRVACPI);
 
@@ -753,12 +748,9 @@ static DECLCALLBACK(int) drvACPIConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHand
     /*
      * Check that no-one is attached to us.
      */
-    int rc = pDrvIns->pDrvHlp->pfnAttach(pDrvIns, NULL);
-    if (rc != VERR_PDM_NO_ATTACHED_DRIVER)
-    {
-        AssertMsgFailed(("Configuration error: Cannot attach drivers to the ACPI driver!\n"));
-        return VERR_PDM_DRVINS_NO_ATTACH;
-    }
+    AssertMsgReturn(PDMDrvHlpNoAttach(pDrvIns) == VERR_PDM_NO_ATTACHED_DRIVER, 
+                    ("Configuration error: Not possible to attach anything to this driver!\n"),
+                    VERR_PDM_DRVINS_NO_ATTACH);
 
     /*
      * Query the ACPI port interface.
@@ -767,8 +759,7 @@ static DECLCALLBACK(int) drvACPIConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHand
                                                                       PDMINTERFACE_ACPI_PORT);
     if (!pThis->pPort)
     {
-        AssertMsgFailed(("Configuration error: "
-                         "the above device/driver didn't export the ACPI port interface!\n"));
+        AssertMsgFailed(("Configuration error: the above device/driver didn't export the ACPI port interface!\n"));
         return VERR_PDM_MISSING_INTERFACE_ABOVE;
     }
 
@@ -809,9 +800,15 @@ const PDMDRVREG g_DrvACPI =
     NULL,
     /* pfnResume */
     NULL,
-    /* pfnDetach */
+    /* pfnAttach */
     NULL,
+    /* pfnDetach */
+    NULL, 
     /* pfnPowerOff */
-    NULL
+    NULL, 
+    /* pfnSoftReset */
+    NULL,
+    /* u32EndVersion */
+    PDM_DRVREG_VERSION
 };
 

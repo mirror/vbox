@@ -301,14 +301,9 @@ static DECLCALLBACK(void) drvNetSnifferDestruct(PPDMDRVINS pDrvIns)
 /**
  * Construct a NAT network transport driver instance.
  *
- * @returns VBox status.
- * @param   pDrvIns     The driver instance data.
- *                      If the registration structure is needed, pDrvIns->pDrvReg points to it.
- * @param   pCfgHandle  Configuration node handle for the driver. Use this to obtain the configuration
- *                      of the driver instance. It's also found in pDrvIns->pCfgHandle, but like
- *                      iInstance it's expected to be used a bit in this function.
+ * @copydoc FNPDMDRVCONSTRUCT
  */
-static DECLCALLBACK(int) drvNetSnifferConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle)
+static DECLCALLBACK(int) drvNetSnifferConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle, uint32_t fFlags)
 {
     PDRVNETSNIFFER pThis = PDMINS_2_DATA(pDrvIns, PDRVNETSNIFFER);
     LogFlow(("drvNetSnifferConstruct:\n"));
@@ -379,7 +374,7 @@ static DECLCALLBACK(int) drvNetSnifferConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
      * Query the network connector interface.
      */
     PPDMIBASE   pBaseDown;
-    rc = pDrvIns->pDrvHlp->pfnAttach(pDrvIns, &pBaseDown);
+    rc = PDMDrvHlpAttach(pDrvIns, fFlags, &pBaseDown);
     if (rc == VERR_PDM_NO_ATTACHED_DRIVER)
         pThis->pConnector = NULL;
     else if (RT_SUCCESS(rc))
@@ -457,9 +452,15 @@ const PDMDRVREG g_DrvNetSniffer =
     NULL,
     /* pfnResume */
     NULL,
-    /* pfnDetach */
+    /* pfnAttach */
     NULL,
+    /* pfnDetach */
+    NULL, 
     /* pfnPowerOff */
-    NULL
+    NULL, 
+    /* pfnSoftReset */
+    NULL,
+    /* u32EndVersion */
+    PDM_DRVREG_VERSION
 };
 

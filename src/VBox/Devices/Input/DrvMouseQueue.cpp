@@ -225,16 +225,11 @@ static DECLCALLBACK(void) drvMouseQueuePowerOff(PPDMDRVINS pDrvIns)
 
 
 /**
- * Construct a mouse driver instance.
- *
- * @returns VBox status.
- * @param   pDrvIns     The driver instance data.
- *                      If the registration structure is needed, pDrvIns->pDrvReg points to it.
- * @param   pCfgHandle  Configuration node handle for the driver. Use this to obtain the configuration
- *                      of the driver instance. It's also found in pDrvIns->pCfgHandle, but like
- *                      iInstance it's expected to be used a bit in this function.
+ * Construct a mouse driver instance. 
+ *  
+ * @copydoc FNPDMDRVCONSTRUCT
  */
-static DECLCALLBACK(int) drvMouseQueueConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle)
+static DECLCALLBACK(int) drvMouseQueueConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle, uint32_t fFlags)
 {
     PDRVMOUSEQUEUE pDrv = PDMINS_2_DATA(pDrvIns, PDRVMOUSEQUEUE);
     LogFlow(("drvMouseQueueConstruct: iInstance=%d\n", pDrvIns->iInstance));
@@ -268,7 +263,7 @@ static DECLCALLBACK(int) drvMouseQueueConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
      * Attach driver below and query it's connector interface.
      */
     PPDMIBASE pDownBase;
-    int rc = pDrvIns->pDrvHlp->pfnAttach(pDrvIns, &pDownBase);
+    int rc = PDMDrvHlpAttach(pDrvIns, fFlags, &pDownBase);
     if (RT_FAILURE(rc))
     {
         AssertMsgFailed(("Failed to attach driver below us! rc=%Rra\n", rc));
@@ -348,10 +343,15 @@ const PDMDRVREG g_DrvMouseQueue =
     drvMouseQueueSuspend,
     /* pfnResume */
     drvMouseQueueResume,
+    /* pfnAttach */
+    NULL,
     /* pfnDetach */
     NULL,
-    /** pfnPowerOff */
-    drvMouseQueuePowerOff
+    /* pfnPowerOff */
+    drvMouseQueuePowerOff,
+    /* pfnSoftReset */
+    NULL,
+    /* u32EndVersion */
+    PDM_DRVREG_VERSION
 };
-
 

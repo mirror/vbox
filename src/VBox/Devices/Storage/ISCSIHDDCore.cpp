@@ -1248,7 +1248,7 @@ static int iscsiDetach(PISCSIIMAGE pImage)
     uint32_t cnISCSIReq = 0;
     ISCSIREQ aISCSIReq[4];
     uint32_t aReqBHS[12];
-    LogFlow(("drvISCSIDetach: entering\n"));
+    LogFlow(("iscsiDetach: entering\n"));
 
     RTSemMutexRequest(pImage->Mutex, RT_INDEFINITE_WAIT);
 
@@ -1316,7 +1316,7 @@ static int iscsiDetach(PISCSIIMAGE pImage)
 
     RTSemMutexRelease(pImage->Mutex);
 
-    LogFlow(("drvISCSIDetach: leaving\n"));
+    LogFlow(("iscsiDetach: leaving\n"));
     LogRel(("iSCSI: logout to target %s\n", pImage->pszTargetName));
     return VINF_SUCCESS;
 }

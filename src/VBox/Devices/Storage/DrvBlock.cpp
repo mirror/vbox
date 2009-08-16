@@ -514,8 +514,9 @@ static DECLCALLBACK(int) drvblockMount(PPDMIMOUNT pInterface, const char *pszFil
     /*
      * Attach the media driver and query it's interface.
      */
+    uint32_t fTachFlags = 0; /** @todo figure attachment flags for mount. */
     PPDMIBASE pBase;
-    int rc = pThis->pDrvIns->pDrvHlp->pfnAttach(pThis->pDrvIns, &pBase);
+    int rc = PDMDrvHlpAttach(pThis->pDrvIns, fTachFlags, &pBase); 
     if (RT_FAILURE(rc))
     {
         Log(("drvblockMount: Attach failed rc=%Rrc\n", rc));
@@ -554,7 +555,7 @@ static DECLCALLBACK(int) drvblockMount(PPDMIMOUNT pInterface, const char *pszFil
      * Failed, detatch the media driver.
      */
     AssertMsgFailed(("No media interface!\n"));
-    int rc2 = pThis->pDrvIns->pDrvHlp->pfnDetach(pThis->pDrvIns);
+    int rc2 = pThis->pDrvIns->pDrvHlp->pfnDetach(pThis->pDrvIns, fTachFlags);
     AssertRC(rc2);
     pThis->pDrvMedia = NULL;
     return rc;
@@ -586,7 +587,7 @@ static DECLCALLBACK(int) drvblockUnmount(PPDMIMOUNT pInterface, bool fForce)
     /*
      * Detach the media driver and query it's interface.
      */
-    int rc = pThis->pDrvIns->pDrvHlp->pfnDetach(pThis->pDrvIns);
+    int rc = pThis->pDrvIns->pDrvHlp->pfnDetach(pThis->pDrvIns, 0 /*fFlags*/);
     if (RT_FAILURE(rc))
     {
         Log(("drvblockUnmount: Detach failed rc=%Rrc\n", rc));
@@ -667,11 +668,12 @@ static DECLCALLBACK(void *)  drvblockQueryInterface(PPDMIBASE pInterface, PDMINT
 /* -=-=-=-=- driver interface -=-=-=-=- */
 
 /** @copydoc FNPDMDRVDETACH. */
-static DECLCALLBACK(void)  drvblockDetach(PPDMDRVINS pDrvIns)
+static DECLCALLBACK(void)  drvblockDetach(PPDMDRVINS pDrvIns, uint32_t fFlags)
 {
     PDRVBLOCK pThis = PDMINS_2_DATA(pDrvIns, PDRVBLOCK);
     pThis->pDrvMedia = NULL;
     pThis->pDrvMediaAsync = NULL;
+    NOREF(fFlags);
 }
 
 /**
@@ -690,14 +692,9 @@ static DECLCALLBACK(void)  drvblockReset(PPDMDRVINS pDrvIns)
 /**
  * Construct a block driver instance.
  *
- * @returns VBox status.
- * @param   pDrvIns     The driver instance data.
- *                      If the registration structure is needed, pDrvIns->pDrvReg points to it.
- * @param   pCfgHandle  Configuration node handle for the driver. Use this to obtain the configuration
- *                      of the driver instance. It's also found in pDrvIns->pCfgHandle, but like
- *                      iInstance it's expected to be used a bit in this function.
+ * @copydoc FNPDMDRVCONSTRUCT
  */
-static DECLCALLBACK(int) drvblockConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle)
+static DECLCALLBACK(int) drvblockConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle, uint32_t fFlags)
 {
     PDRVBLOCK pThis = PDMINS_2_DATA(pDrvIns, PDRVBLOCK);
     LogFlow(("drvblockConstruct: iInstance=%d\n", pDrvIns->iInstance));
@@ -866,7 +863,7 @@ static DECLCALLBACK(int) drvblockConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHan
      * Try attach driver below and query it's media interface.
      */
     PPDMIBASE pBase;
-    rc = pDrvIns->pDrvHlp->pfnAttach(pDrvIns, &pBase);
+    rc = PDMDrvHlpAttach(pDrvIns, fFlags, &pBase);
     if (    rc == VERR_PDM_NO_ATTACHED_DRIVER
         &&  pThis->enmType != PDMBLOCKTYPE_HARD_DISK)
         return VINF_SUCCESS;
@@ -925,6 +922,15 @@ const PDMDRVREG g_DrvBlock =
     NULL,
     /* pfnResume */
     NULL,
+    /* pfnAttach */
+    NULL,
     /* pfnDetach */
-    drvblockDetach
+    drvblockDetach,
+    /* pfnPowerOff */
+    NULL, 
+    /* pfnSoftReset */
+    NULL,
+    /* u32EndVersion */
+    PDM_DRVREG_VERSION
 };
+

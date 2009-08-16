@@ -2772,7 +2772,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
             {
                 if (fAttachDetach)
                 {
-                    rc = PDMR3DeviceAttach(pVM, pszDevice, uInstance, uLun, NULL, 0 /*fFlags*/);
+                    rc = PDMR3DeviceAttach(pVM, pszDevice, uInstance, uLun, 0 /*fFlags*/, NULL /*ppBase*/);
                     AssertRC(rc);
                 }
 
