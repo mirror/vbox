@@ -521,6 +521,8 @@ const PDMDRVREG g_DrvSCSIHost =
     NULL,
     /* pfnSuspend */
     NULL,
+    /* pfnResume */
+    NULL,
     /* pfnAttach */
     NULL,
     /* pfnDetach */
@@ -532,3 +534,4 @@ const PDMDRVREG g_DrvSCSIHost =
     /* u32EndVersion */
     PDM_DRVREG_VERSION
 };
+
