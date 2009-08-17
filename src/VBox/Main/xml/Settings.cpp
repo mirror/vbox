@@ -26,6 +26,9 @@
 
 #include "VirtualBoxXMLUtil.h"
 
+// generated header
+#include "SchemaDefs.h"
+
 using namespace com;
 using namespace settings;
 
@@ -926,6 +929,31 @@ void MainConfigFile::write(const com::Utf8Str strFilename)
 }
 
 /**
+ * Hardware struct constructor.
+ */
+Hardware::Hardware()
+        : strVersion("2"),
+          fHardwareVirt(true),
+          fNestedPaging(false),
+          fVPID(false),
+          fPAE(false),
+          cCPUs(1),
+          ulMemorySizeMB((uint32_t)-1),
+          ulVRAMSizeMB(8),
+          cMonitors(1),
+          fAccelerate3D(false),
+          fAccelerate2DVideo(false),
+          clipboardMode(ClipboardMode_Bidirectional),
+          ulMemoryBalloonSize(0),
+          ulStatisticsUpdateInterval(0)
+{
+    mapBootOrder[0] = DeviceType_Floppy;
+    mapBootOrder[1] = DeviceType_DVD;
+    mapBootOrder[2] = DeviceType_HardDisk;
+}
+
+
+/**
  * Called from MachineConfigFile::readHardware() to network information.
  * @param elmNetwork
  * @param ll
@@ -1164,6 +1192,8 @@ void MachineConfigFile::readHardware(const xml::ElementNode &elmHardware,
             pelmHwChild->getAttributeValue("RAMSize", hw.ulMemorySizeMB);
         else if (pelmHwChild->nameEquals("Boot"))
         {
+            hw.mapBootOrder.clear();
+
             xml::NodesLoop nl2(*pelmHwChild, "Order");
             const xml::ElementNode *pelmOrder;
             while ((pelmOrder = nl2.forAllNodes()))
@@ -1171,11 +1201,23 @@ void MachineConfigFile::readHardware(const xml::ElementNode &elmHardware,
                 uint32_t ulPos;
                 Utf8Str strDevice;
                 if (!pelmOrder->getAttributeValue("position", ulPos))
-                    throw ConfigFileError(this, N_("Required Order/@position attribute is missing"));
-                if (!pelmOrder->getAttributeValue("device", strDevice))
-                    throw ConfigFileError(this, N_("Required Order/@device attribute is missing"));
+                    throw ConfigFileError(this, N_("Required Boot/Order/@position attribute is missing"));
+
+                if (    ulPos < 1
+                     || ulPos >= SchemaDefs::MaxBootPosition
+                   )
+                    throw ConfigFileError(this,
+                                          N_("Invalid value '%RU32' in Boot/Order/@position: must be between 0 and %RU32"),
+                                          ulPos,
+                                          SchemaDefs::MaxBootPosition + 1);
+                // XML is 1-based but internal data is 0-based
+                --ulPos;
+
                 if (hw.mapBootOrder.find(ulPos) != hw.mapBootOrder.end())
-                    throw ConfigFileError(this, N_("Order/@attribute value %d is not unique"), ulPos);
+                    throw ConfigFileError(this, N_("Invalid value '%RU32' in Boot/Order/@position: value is not unique"), ulPos);
+
+                if (!pelmOrder->getAttributeValue("device", strDevice))
+                    throw ConfigFileError(this, N_("Required Boot/Order/@device attribute is missing"));
 
                 DeviceType_T type;
                 if (strDevice == "None")
@@ -1797,7 +1839,8 @@ void MachineConfigFile::writeHardware(xml::ElementNode &elmParent,
         }
 
         xml::ElementNode *pelmOrder = pelmBoot->createChild("Order");
-        pelmOrder->setAttribute("position", i);
+        pelmOrder->setAttribute("position",
+                                i + 1);   // XML is 1-based but internal data is 0-based
         pelmOrder->setAttribute("device", pcszDevice);
     }
 
