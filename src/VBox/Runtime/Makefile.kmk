@@ -293,6 +293,7 @@ RuntimeR3_SOURCES       = \
 	common/table/avlroioport.cpp \
 	common/table/avlroogcptr.cpp \
 	common/table/avlruintptr.cpp \
+	common/table/avlrfoff.cpp \
 	common/table/avlu32.cpp \
 	common/table/avluintptr.cpp \
 	common/table/avlul.cpp \

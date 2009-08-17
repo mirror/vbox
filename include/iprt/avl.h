@@ -916,6 +916,55 @@ RTDECL(int)                     RTAvlHCPhysDestroy(PAVLHCPHYSTREE pTree, PAVLHCP
 /** @} */
 
 
+/** AVL tree of RTFOFF ranges.
+ * @{
+ */
+
+/**
+ * AVL Core node.
+ */
+typedef struct _AVLRFOFFNodeCore
+{
+    /** First key value in the range (inclusive). */
+    RTFOFF             Key;
+    /** Last key value in the range (inclusive). */
+    RTFOFF             KeyLast;
+    /** Offset to the left leaf node, relative to this field. */
+    struct _AVLRFOFFNodeCore  *pLeft;
+    /** Offset to the right leaf node, relative to this field. */
+    struct _AVLRFOFFNodeCore  *pRight;
+    /** Height of this tree: max(height(left), height(right)) + 1 */
+    unsigned char       uchHeight;
+} AVLRFOFFNODECORE, *PAVLRFOFFNODECORE;
+
+/** A pointer based tree with RTFOFF ranges. */
+typedef PAVLRFOFFNODECORE AVLRFOFFTREE;
+/** Pointer to a pointer based tree with RTFOFF ranges. */
+typedef AVLRFOFFTREE    *PAVLRFOFFTREE;
+
+/** Pointer to an internal tree pointer.
+ * In this case it's a pointer to a relative offset. */
+typedef AVLRFOFFTREE    *PPAVLRFOFFNODECORE;
+
+/** Callback function for RTAvlrGCPtrDoWithAll() and RTAvlrGCPtrDestroy(). */
+typedef DECLCALLBACK(int)   AVLRFOFFCALLBACK(PAVLRFOFFNODECORE pNode, void *pvUser);
+/** Pointer to callback function for RTAvlrGCPtrDoWithAll() and RTAvlrGCPtrDestroy(). */
+typedef AVLRFOFFCALLBACK *PAVLRFOFFCALLBACK;
+
+RTDECL(bool)                  RTAvlrFileOffsetInsert(       PAVLRFOFFTREE pTree, PAVLRFOFFNODECORE pNode);
+RTDECL(PAVLRFOFFNODECORE)     RTAvlrFileOffsetRemove(       PAVLRFOFFTREE pTree, RTFOFF Key);
+RTDECL(PAVLRFOFFNODECORE)     RTAvlrFileOffsetGet(          PAVLRFOFFTREE pTree, RTFOFF Key);
+RTDECL(PAVLRFOFFNODECORE)     RTAvlrFileOffsetGetBestFit(   PAVLRFOFFTREE pTree, RTFOFF Key, bool fAbove);
+RTDECL(PAVLRFOFFNODECORE)     RTAvlrFileOffsetRangeGet(     PAVLRFOFFTREE pTree, RTFOFF Key);
+RTDECL(PAVLRFOFFNODECORE)     RTAvlrFileOffsetRangeRemove(  PAVLRFOFFTREE pTree, RTFOFF Key);
+RTDECL(int)                   RTAvlrFileOffsetDoWithAll(    PAVLRFOFFTREE pTree, int fFromLeft, PAVLRFOFFCALLBACK pfnCallBack, void *pvParam);
+RTDECL(int)                   RTAvlrFileOffsetDestroy(      PAVLRFOFFTREE pTree, PAVLRFOFFCALLBACK pfnCallBack, void *pvParam);
+RTDECL(PAVLRFOFFNODECORE)     RTAvlrFileOffsetGetRoot(      PAVLRFOFFTREE pTree);
+RTDECL(PAVLRFOFFNODECORE)     RTAvlrFileOffsetGetLeft(      PAVLRFOFFNODECORE pNode);
+RTDECL(PAVLRFOFFNODECORE)     RTAvlrFileOffsetGetRight(     PAVLRFOFFNODECORE pNode);
+
+/** @} */
+
 /** @} */
 
 RT_C_DECLS_END
