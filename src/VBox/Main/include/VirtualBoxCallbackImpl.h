@@ -18,6 +18,9 @@
 #define ____H_VIRTUALBOXCALLBACKIMPL
 
 #include "VirtualBoxBase.h"
+#ifdef RT_OS_WINDOWS
+# include "win/resource.h"
+#endif
 
 class ATL_NO_VTABLE VirtualBoxCallback :
     public VirtualBoxBase,
@@ -34,6 +37,7 @@ public:
 
     DECLARE_CLASSFACTORY()
 
+    DECLARE_REGISTRY_RESOURCEID(IDR_VIRTUALBOX)
     DECLARE_NOT_AGGREGATABLE(VirtualBoxCallback)
 
     DECLARE_PROTECT_FINAL_CONSTRUCT()
