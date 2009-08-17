@@ -387,7 +387,7 @@ RTDECL(int) RTHeapSimpleRelocate(RTHEAPSIMPLE hHeap, uintptr_t offDelta)
     /*
      * Walk the heap blocks.
      */
-    for (pCur = PRTHEAPSIMPLEFREE(pHeapInt + 1); 
+    for (pCur = (PRTHEAPSIMPLEFREE)(pHeapInt + 1); 
          pCur && (uintptr_t)pCur < (uintptr_t)pHeapInt->pvEnd; 
          pCur = (PRTHEAPSIMPLEFREE)pCur->Core.pNext)
     {
