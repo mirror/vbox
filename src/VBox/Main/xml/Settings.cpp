@@ -1207,7 +1207,7 @@ void MachineConfigFile::readHardware(const xml::ElementNode &elmHardware,
                      || ulPos > SchemaDefs::MaxBootPosition
                    )
                     throw ConfigFileError(this,
-                                          N_("Invalid value '%RU32' in Boot/Order/@position: must be between 0 and %RU32"),
+                                          N_("Invalid value '%RU32' in Boot/Order/@position: must be greater than 0 and less than %RU32"),
                                           ulPos,
                                           SchemaDefs::MaxBootPosition + 1);
                 // XML is 1-based but internal data is 0-based
