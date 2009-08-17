@@ -2704,7 +2704,10 @@ STDMETHODIMP Machine::SetExtraData(IN_BSTR aKey, IN_BSTR aValue)
             CheckComRCReturnRC (rc);
         }
 
-        mData->m_pMachineConfigFile->mapExtraDataItems[strKey] = strValue;
+        if (strValue.isEmpty())
+            mData->m_pMachineConfigFile->mapExtraDataItems.erase(strKey);
+        else
+            mData->m_pMachineConfigFile->mapExtraDataItems[strKey] = strValue;
                 // creates a new key if needed
 
         /* save settings on success */
