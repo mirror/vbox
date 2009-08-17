@@ -1560,7 +1560,10 @@ STDMETHODIMP VirtualBox::SetExtraData(IN_BSTR aKey,
 
         AutoWriteLock alock(this);
 
-        m_pMainConfigFile->mapExtraDataItems[strKey] = strValue;
+        if (strValue.isEmpty())
+            m_pMainConfigFile->mapExtraDataItems.erase(strKey);
+        else
+            m_pMainConfigFile->mapExtraDataItems[strKey] = strValue;
                 // creates a new key if needed
 
         /* save settings on success */
