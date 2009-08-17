@@ -493,11 +493,11 @@ DECLINLINE(RTCCUINTREG) ASMGetFlags(void)
 #  ifdef RT_ARCH_AMD64
     __asm__ __volatile__("pushfq\n\t"
                          "popq  %0\n\t"
-                         : "=g" (uFlags));
+                         : "=r" (uFlags));
 #  else
     __asm__ __volatile__("pushfl\n\t"
                          "popl  %0\n\t"
-                         : "=g" (uFlags));
+                         : "=r" (uFlags));
 #  endif
 # else
     __asm
