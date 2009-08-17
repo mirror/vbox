@@ -1204,7 +1204,7 @@ void MachineConfigFile::readHardware(const xml::ElementNode &elmHardware,
                     throw ConfigFileError(this, N_("Required Boot/Order/@position attribute is missing"));
 
                 if (    ulPos < 1
-                     || ulPos >= SchemaDefs::MaxBootPosition
+                     || ulPos > SchemaDefs::MaxBootPosition
                    )
                     throw ConfigFileError(this,
                                           N_("Invalid value '%RU32' in Boot/Order/@position: must be between 0 and %RU32"),
