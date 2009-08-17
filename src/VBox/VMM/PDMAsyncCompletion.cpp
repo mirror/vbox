@@ -882,6 +882,22 @@ static void pdmR3AsyncCompletionPutTask(PPDMASYNCCOMPLETIONENDPOINT pEndpoint, P
     }
 }
 
+static PPDMASYNCCOMPLETIONENDPOINT pdmR3AsyncCompletionFindEndpointWithUri(PPDMASYNCCOMPLETIONEPCLASS pEndpointClass,
+                                                                           const char *pszUri)
+{
+    PPDMASYNCCOMPLETIONENDPOINT pEndpoint = pEndpointClass->pEndpointsHead;
+
+    while (pEndpoint)
+    {
+        if (!RTStrCmp(pEndpoint->pszUri, pszUri))
+            return pEndpoint;
+
+        pEndpoint = pEndpoint->pNext;
+    }
+
+    return NULL;
+}
+
 VMMR3DECL(int) PDMR3AsyncCompletionEpCreateForFile(PPPDMASYNCCOMPLETIONENDPOINT ppEndpoint,
                                                    const char *pszFilename, uint32_t fFlags,
                                                    PPDMASYNCCOMPLETIONTEMPLATE pTemplate)
@@ -906,61 +922,82 @@ VMMR3DECL(int) PDMR3AsyncCompletionEpCreateForFile(PPPDMASYNCCOMPLETIONENDPOINT 
 
     AssertMsg(pEndpointClass, ("File endpoint class was not initialized\n"));
 
-    rc = MMR3HeapAllocZEx(pVM, MM_TAG_PDM_ASYNC_COMPLETION,
-                          pEndpointClass->pEndpointOps->cbEndpoint,
-                          (void **)&pEndpoint);
-    if (RT_SUCCESS(rc))
+    /* Search for a already opened endpoint for this file. */
+    pEndpoint = pdmR3AsyncCompletionFindEndpointWithUri(pEndpointClass, pszFilename);
+
+    if(!pEndpoint)
     {
-
-        /* Initialize common parts. */
-        pEndpoint->pNext             = NULL;
-        pEndpoint->pPrev             = NULL;
-        pEndpoint->pEpClass          = pEndpointClass;
-        pEndpoint->pTasksFreeHead    = NULL;
-        pEndpoint->pTasksFreeTail    = NULL;
-        pEndpoint->cTasksCached      = 0;
-        pEndpoint->uTaskIdNext       = 0;
-        pEndpoint->fTaskIdWraparound = false;
-        pEndpoint->pTemplate         = pTemplate;
-        pEndpoint->iSlotStart        = pEndpointClass->cEndpoints % RT_ELEMENTS(pEndpointClass->apTaskCache);
-
-        /* Init the cache. */
         rc = MMR3HeapAllocZEx(pVM, MM_TAG_PDM_ASYNC_COMPLETION,
-                              pEndpointClass->pEndpointOps->cbTask,
-                              (void **)&pEndpoint->pTasksFreeHead);
+                              pEndpointClass->pEndpointOps->cbEndpoint,
+                              (void **)&pEndpoint);
         if (RT_SUCCESS(rc))
         {
-            pEndpoint->pTasksFreeTail = pEndpoint->pTasksFreeHead;
 
-            /* Call the initializer for the endpoint. */
-            rc = pEndpointClass->pEndpointOps->pfnEpInitialize(pEndpoint, pszFilename, fFlags);
-            if (RT_SUCCESS(rc))
+            /* Initialize common parts. */
+            pEndpoint->pNext             = NULL;
+            pEndpoint->pPrev             = NULL;
+            pEndpoint->pEpClass          = pEndpointClass;
+            pEndpoint->pTasksFreeHead    = NULL;
+            pEndpoint->pTasksFreeTail    = NULL;
+            pEndpoint->cTasksCached      = 0;
+            pEndpoint->uTaskIdNext       = 0;
+            pEndpoint->fTaskIdWraparound = false;
+            pEndpoint->pTemplate         = pTemplate;
+            pEndpoint->iSlotStart        = pEndpointClass->cEndpoints % RT_ELEMENTS(pEndpointClass->apTaskCache);
+            pEndpoint->pszUri            = RTStrDup(pszFilename);
+            pEndpoint->cUsers            = 1;
+            if (pEndpoint->pszUri)
             {
-                /* Link it into the list of endpoints. */
-                rc = RTCritSectEnter(&pEndpointClass->CritSect);
-                AssertMsg(RT_SUCCESS(rc), ("Failed to enter critical section rc=%Rrc\n", rc));
+                /* Init the cache. */
+                rc = MMR3HeapAllocZEx(pVM, MM_TAG_PDM_ASYNC_COMPLETION,
+                                      pEndpointClass->pEndpointOps->cbTask,
+                                      (void **)&pEndpoint->pTasksFreeHead);
+                if (RT_SUCCESS(rc))
+                {
+                    pEndpoint->pTasksFreeTail = pEndpoint->pTasksFreeHead;
 
-                pEndpoint->pNext = pEndpointClass->pEndpointsHead;
-                if (pEndpointClass->pEndpointsHead)
-                    pEndpointClass->pEndpointsHead->pPrev = pEndpoint;
+                    /* Call the initializer for the endpoint. */
+                    rc = pEndpointClass->pEndpointOps->pfnEpInitialize(pEndpoint, pszFilename, fFlags);
+                    if (RT_SUCCESS(rc))
+                    {
+                        /* Link it into the list of endpoints. */
+                        rc = RTCritSectEnter(&pEndpointClass->CritSect);
+                        AssertMsg(RT_SUCCESS(rc), ("Failed to enter critical section rc=%Rrc\n", rc));
 
-                pEndpointClass->pEndpointsHead = pEndpoint;
-                pEndpointClass->cEndpoints++;
+                        pEndpoint->pNext = pEndpointClass->pEndpointsHead;
+                        if (pEndpointClass->pEndpointsHead)
+                            pEndpointClass->pEndpointsHead->pPrev = pEndpoint;
 
-                rc = RTCritSectLeave(&pEndpointClass->CritSect);
-                AssertMsg(RT_SUCCESS(rc), ("Failed to enter critical section rc=%Rrc\n", rc));
+                        pEndpointClass->pEndpointsHead = pEndpoint;
+                        pEndpointClass->cEndpoints++;
 
-                /* Reference the template. */
-                ASMAtomicIncU32(&pTemplate->cUsed);
+                        rc = RTCritSectLeave(&pEndpointClass->CritSect);
+                        AssertMsg(RT_SUCCESS(rc), ("Failed to enter critical section rc=%Rrc\n", rc));
 
-                *ppEndpoint = pEndpoint;
+                        /* Reference the template. */
+                        ASMAtomicIncU32(&pTemplate->cUsed);
 
-                LogFlowFunc((": Created endpoint for %s: rc=%Rrc\n", pszFilename, rc));
-                return VINF_SUCCESS;
+                        *ppEndpoint = pEndpoint;
+
+                        LogFlowFunc((": Created endpoint for %s: rc=%Rrc\n", pszFilename, rc));
+                        return VINF_SUCCESS;
+                    }
+                    MMR3HeapFree(pEndpoint->pTasksFreeHead);
+                    RTStrFree(pEndpoint->pszUri);
+                }
+                else
+                    rc = VERR_NO_MEMORY;
             }
-            MMR3HeapFree(pEndpoint->pTasksFreeHead);
+            MMR3HeapFree(pEndpoint);
         }
-        MMR3HeapFree(pEndpoint);
+    }
+    else
+    {
+        /* Endpoint found. */
+        pEndpoint->cUsers++;
+
+        *ppEndpoint = pEndpoint;
+        return VINF_SUCCESS;
     }
 
     LogFlowFunc((": Creation of endpoint for %s failed: rc=%Rrc\n", pszFilename, rc));
@@ -975,42 +1012,49 @@ VMMR3DECL(void) PDMR3AsyncCompletionEpClose(PPDMASYNCCOMPLETIONENDPOINT pEndpoin
     /* Sanity checks. */
     AssertReturnVoid(VALID_PTR(pEndpoint));
 
-    PPDMASYNCCOMPLETIONEPCLASS pEndpointClass = pEndpoint->pEpClass;
-    pEndpointClass->pEndpointOps->pfnEpClose(pEndpoint);
+    pEndpoint->cUsers--;
 
-    /* Free cached tasks. */
-    PPDMASYNCCOMPLETIONTASK pTask = pEndpoint->pTasksFreeHead;
-
-    while (pTask)
+    /* If the last user closed the endpoint we will free it. */
+    if (!pEndpoint->cUsers)
     {
-        PPDMASYNCCOMPLETIONTASK pTaskFree = pTask;
-        pTask = pTask->pNext;
-        MMR3HeapFree(pTaskFree);
+        PPDMASYNCCOMPLETIONEPCLASS pEndpointClass = pEndpoint->pEpClass;
+        pEndpointClass->pEndpointOps->pfnEpClose(pEndpoint);
+
+        /* Free cached tasks. */
+        PPDMASYNCCOMPLETIONTASK pTask = pEndpoint->pTasksFreeHead;
+
+        while (pTask)
+        {
+            PPDMASYNCCOMPLETIONTASK pTaskFree = pTask;
+            pTask = pTask->pNext;
+            MMR3HeapFree(pTaskFree);
+        }
+
+        /* Drop reference from the template. */
+        ASMAtomicDecU32(&pEndpoint->pTemplate->cUsed);
+
+        /* Unlink the endpoint from the list. */
+        int rc = RTCritSectEnter(&pEndpointClass->CritSect);
+        AssertMsg(RT_SUCCESS(rc), ("Failed to enter critical section rc=%Rrc\n", rc));
+
+        PPDMASYNCCOMPLETIONENDPOINT pEndpointNext = pEndpoint->pNext;
+        PPDMASYNCCOMPLETIONENDPOINT pEndpointPrev = pEndpoint->pPrev;
+
+        if (pEndpointPrev)
+            pEndpointPrev->pNext = pEndpointNext;
+        else
+            pEndpointClass->pEndpointsHead = pEndpointNext;
+        if (pEndpointNext)
+            pEndpointNext->pPrev = pEndpointPrev;
+
+        pEndpointClass->cEndpoints--;
+
+        rc = RTCritSectLeave(&pEndpointClass->CritSect);
+        AssertMsg(RT_SUCCESS(rc), ("Failed to enter critical section rc=%Rrc\n", rc));
+
+        RTStrFree(pEndpoint->pszUri);
+        MMR3HeapFree(pEndpoint);
     }
-
-    /* Drop reference from the template. */
-    ASMAtomicDecU32(&pEndpoint->pTemplate->cUsed);
-
-    /* Unlink the endpoint from the list. */
-    int rc = RTCritSectEnter(&pEndpointClass->CritSect);
-    AssertMsg(RT_SUCCESS(rc), ("Failed to enter critical section rc=%Rrc\n", rc));
-
-    PPDMASYNCCOMPLETIONENDPOINT pEndpointNext = pEndpoint->pNext;
-    PPDMASYNCCOMPLETIONENDPOINT pEndpointPrev = pEndpoint->pPrev;
-
-    if (pEndpointPrev)
-        pEndpointPrev->pNext = pEndpointNext;
-    else
-        pEndpointClass->pEndpointsHead = pEndpointNext;
-    if (pEndpointNext)
-        pEndpointNext->pPrev = pEndpointPrev;
-
-    pEndpointClass->cEndpoints--;
-
-    rc = RTCritSectLeave(&pEndpointClass->CritSect);
-    AssertMsg(RT_SUCCESS(rc), ("Failed to enter critical section rc=%Rrc\n", rc));
-
-    MMR3HeapFree(pEndpoint);
 }
 
 VMMR3DECL(int) PDMR3AsyncCompletionEpRead(PPDMASYNCCOMPLETIONENDPOINT pEndpoint, RTFOFF off,

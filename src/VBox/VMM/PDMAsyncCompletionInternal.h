@@ -201,7 +201,7 @@ typedef struct PDMASYNCCOMPLETIONENDPOINT
 {
     /** Next endpoint in the list. */
     R3PTRTYPE(PPDMASYNCCOMPLETIONENDPOINT)      pNext;
-    /** previous endpoint in the list. */
+    /** Previous endpoint in the list. */
     R3PTRTYPE(PPDMASYNCCOMPLETIONENDPOINT)      pPrev;
     /** Pointer to the class this endpoint belongs to. */
     R3PTRTYPE(PPDMASYNCCOMPLETIONEPCLASS)       pEpClass;
@@ -221,6 +221,10 @@ typedef struct PDMASYNCCOMPLETIONENDPOINT
     bool                                        fTaskIdWraparound;
     /** Template associated with this endpoint. */
     PPDMASYNCCOMPLETIONTEMPLATE                 pTemplate;
+    /** Reference count. */
+    unsigned                                    cUsers;
+    /** URI describing the endpoint */
+    char                                       *pszUri;
 } PDMASYNCCOMPLETIONENDPOINT;
 
 /**
