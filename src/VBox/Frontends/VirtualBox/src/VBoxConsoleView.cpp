@@ -1332,11 +1332,10 @@ bool VBoxConsoleView::event (QEvent *e)
                 return true;
             }
 
-#ifdef VBOX_GUI_USE_QGL
+#ifdef VBOX_WITH_VIDEOHWACCEL
             case VBoxDefs::VHWACommandProcessType:
             {
-                VBoxVHWACommandProcessEvent *cmde = (VBoxVHWACommandProcessEvent *)e;
-                mFrameBuf->doProcessVHWACommand(cmde);
+                mFrameBuf->doProcessVHWACommand(e);
                 return true;
             }
 #endif

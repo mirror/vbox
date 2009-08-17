@@ -117,174 +117,6 @@ private:
     QRegion mReg;
 };
 
-#ifdef VBOX_GUI_USE_QGL
-typedef enum
-{
-    VBOXVHWA_PIPECMD_PAINT = 1,
-    VBOXVHWA_PIPECMD_VHWA,
-    VBOXVHWA_PIPECMD_OP,
-}VBOXVHWA_PIPECMD_TYPE;
-
-typedef DECLCALLBACK(void) FNVBOXVHWACALLBACK(void * pContext);
-typedef FNVBOXVHWACALLBACK *PFNVBOXVHWACALLBACK;
-
-typedef struct VBOXVHWACALLBACKINFO
-{
-    PFNVBOXVHWACALLBACK pfnCallback;
-    void * pContext;
-}VBOXVHWACALLBACKINFO;
-class VBoxVHWACommandElement
-{
-public:
-    void setVHWACmd(struct _VBOXVHWACMD * pCmd)
-    {
-        mType = VBOXVHWA_PIPECMD_VHWA;
-        u.mpCmd = pCmd;
-    }
-
-    void setPaintCmd(const QRect & aRect)
-    {
-        mType = VBOXVHWA_PIPECMD_PAINT;
-        mRect = aRect;
-    }
-
-    void setOp(const VBOXVHWACALLBACKINFO & aOp)
-    {
-        mType = VBOXVHWA_PIPECMD_OP;
-        u.mCallback = aOp;
-    }
-
-    void setData(VBOXVHWA_PIPECMD_TYPE aType, void * pvData)
-    {
-        switch(aType)
-        {
-        case VBOXVHWA_PIPECMD_PAINT:
-            setPaintCmd(*((QRect*)pvData));
-            break;
-        case VBOXVHWA_PIPECMD_VHWA:
-            setVHWACmd((struct _VBOXVHWACMD *)pvData);
-            break;
-        case VBOXVHWA_PIPECMD_OP:
-            setOp(*((VBOXVHWACALLBACKINFO *)pvData));
-            break;
-        default:
-            Assert(0);
-            break;
-        }
-    }
-
-    VBOXVHWA_PIPECMD_TYPE type() const {return mType;}
-    const QRect & rect() const {return mRect;}
-    struct _VBOXVHWACMD * vhwaCmd() const {return u.mpCmd;}
-    const VBOXVHWACALLBACKINFO & op() const {return u.mCallback; }
-
-private:
-    VBoxVHWACommandElement * mpNext;
-    VBOXVHWA_PIPECMD_TYPE mType;
-    union
-    {
-        struct _VBOXVHWACMD * mpCmd;
-        VBOXVHWACALLBACKINFO mCallback;
-    }u;
-    QRect                 mRect;
-
-    friend class VBoxVHWACommandElementPipe;
-    friend class VBoxVHWACommandElementStack;
-    friend class VBoxGLWidget;
-};
-
-class VBoxVHWACommandElementPipe
-{
-public:
-    VBoxVHWACommandElementPipe() :
-        mpFirst(NULL),
-        mpLast(NULL)
-    {}
-
-    void put(VBoxVHWACommandElement *pCmd)
-    {
-        if(mpLast)
-        {
-            Assert(mpFirst);
-            mpLast->mpNext = pCmd;
-            mpLast = pCmd;
-        }
-        else
-        {
-            Assert(!mpFirst);
-            mpFirst = pCmd;
-            mpLast = pCmd;
-        }
-        pCmd->mpNext= NULL;
-
-    }
-
-    VBoxVHWACommandElement * detachList()
-    {
-        if(mpLast)
-        {
-            VBoxVHWACommandElement * pHead = mpFirst;
-            mpFirst = NULL;
-            mpLast = NULL;
-            return pHead;
-        }
-        return NULL;
-    }
-private:
-    VBoxVHWACommandElement *mpFirst;
-    VBoxVHWACommandElement *mpLast;
-};
-
-class VBoxVHWACommandElementStack
-{
-public:
-    VBoxVHWACommandElementStack() :
-        mpFirst(NULL) {}
-
-    void push(VBoxVHWACommandElement *pCmd)
-    {
-        pCmd->mpNext = mpFirst;
-        mpFirst = pCmd;
-    }
-
-    void pusha(VBoxVHWACommandElement *pFirst, VBoxVHWACommandElement *pLast)
-    {
-        pLast->mpNext = mpFirst;
-        mpFirst = pFirst;
-    }
-
-    VBoxVHWACommandElement * pop()
-    {
-        if(mpFirst)
-        {
-            VBoxVHWACommandElement * ret = mpFirst;
-            mpFirst = ret->mpNext;
-            return ret;
-        }
-        return NULL;
-    }
-private:
-    VBoxVHWACommandElement *mpFirst;
-};
-
-class VBoxVHWACommandProcessEvent : public QEvent
-{
-public:
-    VBoxVHWACommandProcessEvent (VBoxVHWACommandElement *pEl)
-        : QEvent ((QEvent::Type) VBoxDefs::VHWACommandProcessType)
-    {
-        mCmdPipe.put(pEl);
-    }
-    VBoxVHWACommandElementPipe & pipe() { return mCmdPipe; }
-private:
-    VBoxVHWACommandElementPipe mCmdPipe;
-    VBoxVHWACommandProcessEvent *mpNext;
-
-    friend class VBoxGLWidget;
-};
-
-#endif
-
 /////////////////////////////////////////////////////////////////////////////
 
 /**
@@ -405,10 +237,11 @@ public:
      */
     virtual void moveEvent (QMoveEvent * /*me*/ ) {}
 
-#ifdef VBOX_GUI_USE_QGL
+#ifdef VBOX_WITH_VIDEOHWACCEL
     /* this method is called from the GUI thread
-     * to perform the actual Video HW Acceleration command processing */
-    virtual void doProcessVHWACommand(VBoxVHWACommandProcessEvent * pEvent);
+     * to perform the actual Video HW Acceleration command processing
+     * the event is framebuffer implementation specific */
+    virtual void doProcessVHWACommand(QEvent * pEvent);
 #endif
 
 protected:
@@ -669,6 +502,8 @@ public:
     const VBoxVHWAColorComponent& g() const {return mG;}
     const VBoxVHWAColorComponent& b() const {return mB;}
     const VBoxVHWAColorComponent& a() const {return mA;}
+
+    bool equals (const VBoxVHWAColorFormat & other) const;
 
 private:
     void VBoxVHWAColorFormat::init(uint32_t bitsPerPixel, uint32_t r, uint32_t g, uint32_t b);
@@ -1128,6 +963,7 @@ public:
         mPrimary.clear();
         if(pVga)
         {
+            Assert(!pVga->getComplexList());
             mPrimary.add(pVga);
             mPrimary.setCurrentVisible(pVga);
         }
@@ -1145,11 +981,6 @@ public:
     {
         return mPrimary.current();
     }
-//
-//    void setPrimary(VBoxVHWASurfList * pSurf)
-//    {
-//        mSurfPrimary = pSurf;
-//    }
 
     void addOverlay(VBoxVHWASurfList * pSurf)
     {
@@ -1207,6 +1038,154 @@ private:
 
 typedef void (VBoxGLWidget::*PFNVBOXQGLOP)(void* );
 
+typedef enum
+{
+    VBOXVHWA_PIPECMD_PAINT = 1,
+    VBOXVHWA_PIPECMD_VHWA,
+    VBOXVHWA_PIPECMD_OP,
+}VBOXVHWA_PIPECMD_TYPE;
+
+typedef struct VBOXVHWACALLBACKINFO
+{
+    VBoxGLWidget *pThis;
+    PFNVBOXQGLOP pfnCallback;
+    void * pContext;
+}VBOXVHWACALLBACKINFO;
+
+class VBoxVHWACommandElement
+{
+public:
+    void setVHWACmd(struct _VBOXVHWACMD * pCmd)
+    {
+        mType = VBOXVHWA_PIPECMD_VHWA;
+        u.mpCmd = pCmd;
+    }
+
+    void setPaintCmd(const QRect & aRect)
+    {
+        mType = VBOXVHWA_PIPECMD_PAINT;
+        mRect = aRect;
+    }
+
+    void setOp(const VBOXVHWACALLBACKINFO & aOp)
+    {
+        mType = VBOXVHWA_PIPECMD_OP;
+        u.mCallback = aOp;
+    }
+
+    void setData(VBOXVHWA_PIPECMD_TYPE aType, void * pvData)
+    {
+        switch(aType)
+        {
+        case VBOXVHWA_PIPECMD_PAINT:
+            setPaintCmd(*((QRect*)pvData));
+            break;
+        case VBOXVHWA_PIPECMD_VHWA:
+            setVHWACmd((struct _VBOXVHWACMD *)pvData);
+            break;
+        case VBOXVHWA_PIPECMD_OP:
+            setOp(*((VBOXVHWACALLBACKINFO *)pvData));
+            break;
+        default:
+            Assert(0);
+            break;
+        }
+    }
+
+    VBOXVHWA_PIPECMD_TYPE type() const {return mType;}
+    const QRect & rect() const {return mRect;}
+    struct _VBOXVHWACMD * vhwaCmd() const {return u.mpCmd;}
+    const VBOXVHWACALLBACKINFO & op() const {return u.mCallback; }
+
+private:
+    VBoxVHWACommandElement * mpNext;
+    VBOXVHWA_PIPECMD_TYPE mType;
+    union
+    {
+        struct _VBOXVHWACMD * mpCmd;
+        VBOXVHWACALLBACKINFO mCallback;
+    }u;
+    QRect                 mRect;
+
+    friend class VBoxVHWACommandElementPipe;
+    friend class VBoxVHWACommandElementStack;
+    friend class VBoxGLWidget;
+};
+
+class VBoxVHWACommandElementPipe
+{
+public:
+    VBoxVHWACommandElementPipe() :
+        mpFirst(NULL),
+        mpLast(NULL)
+    {}
+
+    void put(VBoxVHWACommandElement *pCmd)
+    {
+        if(mpLast)
+        {
+            Assert(mpFirst);
+            mpLast->mpNext = pCmd;
+            mpLast = pCmd;
+        }
+        else
+        {
+            Assert(!mpFirst);
+            mpFirst = pCmd;
+            mpLast = pCmd;
+        }
+        pCmd->mpNext= NULL;
+
+    }
+
+    VBoxVHWACommandElement * detachList()
+    {
+        if(mpLast)
+        {
+            VBoxVHWACommandElement * pHead = mpFirst;
+            mpFirst = NULL;
+            mpLast = NULL;
+            return pHead;
+        }
+        return NULL;
+    }
+private:
+    VBoxVHWACommandElement *mpFirst;
+    VBoxVHWACommandElement *mpLast;
+};
+
+class VBoxVHWACommandElementStack
+{
+public:
+    VBoxVHWACommandElementStack() :
+        mpFirst(NULL) {}
+
+    void push(VBoxVHWACommandElement *pCmd)
+    {
+        pCmd->mpNext = mpFirst;
+        mpFirst = pCmd;
+    }
+
+    void pusha(VBoxVHWACommandElement *pFirst, VBoxVHWACommandElement *pLast)
+    {
+        pLast->mpNext = mpFirst;
+        mpFirst = pFirst;
+    }
+
+    VBoxVHWACommandElement * pop()
+    {
+        if(mpFirst)
+        {
+            VBoxVHWACommandElement * ret = mpFirst;
+            mpFirst = ret->mpNext;
+            return ret;
+        }
+        return NULL;
+    }
+private:
+    VBoxVHWACommandElement *mpFirst;
+};
+
 class VBoxGLWidget : public QGLWidget
 {
 public:
@@ -1233,7 +1212,7 @@ public:
     void vboxPaintEvent (QPaintEvent *pe) {vboxPerformGLOp(&VBoxGLWidget::vboxDoPaint, pe);}
     void vboxResizeEvent (VBoxResizeEvent *re) {vboxPerformGLOp(&VBoxGLWidget::vboxDoResize, re);}
 
-    void vboxProcessVHWACommands(VBoxVHWACommandProcessEvent * pEvent) {vboxPerformGLOp(&VBoxGLWidget::vboxDoProcessVHWACommands, pEvent);}
+    void vboxProcessVHWACommands(class VBoxVHWACommandProcessEvent * pEvent) {vboxPerformGLOp(&VBoxGLWidget::vboxDoProcessVHWACommands, pEvent);}
 #ifdef VBOX_WITH_VIDEOHWACCEL
     void vboxVHWACmd (struct _VBOXVHWACMD * pCmd) {vboxPerformGLOp(&VBoxGLWidget::vboxDoVHWACmd, pCmd);}
 #endif
@@ -1268,6 +1247,7 @@ private:
 #endif
 #ifdef VBOX_WITH_VIDEOHWACCEL
     void vboxDoVHWACmdExec(void *cmd);
+    void vboxDoVHWACmdAndFree(void *cmd);
     void vboxDoVHWACmd(void *cmd);
 
     void vboxCheckUpdateAddress (VBoxVHWASurfaceBase * pSurface, uint64_t offset)
@@ -1318,17 +1298,23 @@ private:
      * @todo: could be moved outside the updateGL */
     void vboxPerformGLOp(PFNVBOXQGLOP pfn, void* pContext) {mpfnOp = pfn; mOpContext = pContext; updateGL();}
 
-    /* posts op to UI thread */
-    int vboxExecOpSynch(PFNVBOXQGLOP pfn, void* pContext);
+//    /* posts op to UI thread */
+//    int vboxExecOpSynch(PFNVBOXQGLOP pfn, void* pContext);
+    void vboxExecOnResize(PFNVBOXQGLOP pfn, void* pContext);
 
     void cmdPipeInit();
     void cmdPipeDelete();
     void vboxDoProcessVHWACommands(void *pContext);
 
-    VBoxVHWACommandElement * detachCmdList(VBoxVHWACommandElement * pFirst2Free, VBoxVHWACommandElement * pLast2Free);
-    VBoxVHWACommandElement * processCmdList(VBoxVHWACommandElement * pCmd);
+    class VBoxVHWACommandElement * detachCmdList(class VBoxVHWACommandElement * pFirst2Free, VBoxVHWACommandElement * pLast2Free);
+    class VBoxVHWACommandElement * processCmdList(class VBoxVHWACommandElement * pCmd);
 
-    VBoxVHWASurfaceBase* handle2Surface(uint32_t h) { return (VBoxVHWASurfaceBase*)mSurfHandleTable.get(h); }
+    VBoxVHWASurfaceBase* handle2Surface(uint32_t h)
+    {
+        VBoxVHWASurfaceBase* pSurf = (VBoxVHWASurfaceBase*)mSurfHandleTable.get(h);
+        Assert(pSurf);
+        return pSurf;
+    }
 
     VBoxVHWAHandleTable mSurfHandleTable;
 
@@ -1337,11 +1323,11 @@ private:
 
     ulong  mPixelFormat;
     bool   mUsesGuestVRAM;
-    uint32_t   mcVGASurfCreated;
+    bool   mbVGASurfCreated;
 
     RTCRITSECT mCritSect;
-    VBoxVHWACommandProcessEvent *mpFirstEvent;
-    VBoxVHWACommandProcessEvent *mpLastEvent;
+    class VBoxVHWACommandProcessEvent *mpFirstEvent;
+    class VBoxVHWACommandProcessEvent *mpLastEvent;
     bool mbNewEvent;
     VBoxVHWACommandElementStack mFreeElements;
     VBoxVHWACommandElement mElementsBuffer[2048];
@@ -1350,6 +1336,10 @@ private:
 
     VBoxVHWASurfList *mConstructingList;
     int32_t mcRemaining2Contruct;
+
+    /* this is used in saved state restore to postpone surface restoration
+     * till the framebuffer size is restored */
+    VBoxVHWACommandElementPipe mResizePostProcessCmds;
 
     class VBoxVHWAGlProgramMngr *mpMngr;
 };
@@ -1386,7 +1376,7 @@ public:
 
     void paintEvent (QPaintEvent *pe);
     void resizeEvent (VBoxResizeEvent *re);
-    void doProcessVHWACommand(VBoxVHWACommandProcessEvent * pEvent);
+    void doProcessVHWACommand(QEvent * pEvent);
 
 private:
 //    void vboxMakeCurrent();
