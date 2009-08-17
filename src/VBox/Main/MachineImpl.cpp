@@ -5862,6 +5862,8 @@ HRESULT Machine::saveHardware(settings::Hardware &data)
             sf.strName = pFolder->name();
             sf.strHostPath = pFolder->hostPath();
             sf.fWritable = !!pFolder->writable();
+
+            data.llSharedFolders.push_back(sf);
         }
 
         // clipboard
