@@ -8081,7 +8081,7 @@ STDMETHODIMP SessionMachine::DiscardSnapshot(IConsole *aInitiator,
     AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
 
     /* saveSettings() needs mParent lock */
-//     AutoMultiWriteLock2 alock (mParent, this);
+    AutoMultiWriteLock2 alock(mParent, this);
 
     ComAssertRet (!Global::IsOnlineOrTransient (mData->mMachineState), E_FAIL);
 
@@ -8108,16 +8108,8 @@ STDMETHODIMP SessionMachine::DiscardSnapshot(IConsole *aInitiator,
     {
         if (isModified())
         {
-            snapshotLock.unlock();
-            treeLock.unlock();
-
-            AutoWriteLock vboxLock(mParent);
             rc = saveSettings();
             CheckComRCReturnRC (rc);
-            vboxLock.unlock();
-
-            treeLock.lock();
-            snapshotLock.lock();
         }
     }
 
@@ -8145,7 +8137,7 @@ STDMETHODIMP SessionMachine::DiscardSnapshot(IConsole *aInitiator,
     ComAssertRCRet (vrc, E_FAIL);
 
     /* set the proper machine state (note: after creating a Task instance) */
-    setMachineState (MachineState_Discarding);
+    setMachineState(MachineState_Discarding);
 
     /* return the progress to the caller */
     progress.queryInterfaceTo(aProgress);
