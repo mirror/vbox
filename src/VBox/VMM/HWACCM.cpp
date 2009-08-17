@@ -1156,6 +1156,8 @@ VMMR3DECL(int) HWACCMR3InitFinalizeR0(PVM pVM)
                 LogRel((pVM->hwaccm.s.fAllow64BitGuests
                         ? "HWACCM:    32-bit and 64-bit guest supported.\n"
                         : "HWACCM:    32-bit guest supported.\n"));
+
+                LogRel(("HWACCM:    TPR Patching %s.\n", (pVM->hwaccm.s.fTRPPatchingAllowed) ? "enabled" : "disabled"));
             }
             else
             {
