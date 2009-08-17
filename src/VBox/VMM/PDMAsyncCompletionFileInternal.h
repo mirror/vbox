@@ -22,10 +22,14 @@
 #ifndef ___PDMAsyncCompletionFileInternal_h
 #define ___PDMAsyncCompletionFileInternal_h
 
+#include <VBox/cfgm.h>
+#include <VBox/stam.h>
 #include <iprt/types.h>
 #include <iprt/file.h>
 #include <iprt/thread.h>
 #include <iprt/semaphore.h>
+#include <iprt/critsect.h>
+#include <iprt/avl.h>
 
 #include "PDMAsyncCompletionInternal.h"
 
@@ -46,9 +50,13 @@ RT_C_DECLS_BEGIN
  */
 typedef struct PDMASYNCCOMPLETIONENDPOINTFILE *PPDMASYNCCOMPLETIONENDPOINTFILE;
 /** Pointer to a request segment. */
-typedef struct PDMACTASKFILESEG *PPDMACTASKFILESEG;
+typedef struct PDMACTASKFILE *PPDMACTASKFILE;
 /** Pointer to the endpoint class data. */
 typedef struct PDMASYNCCOMPLETIONTASKFILE *PPDMASYNCCOMPLETIONTASKFILE;
+/** Pointer to a cache LRU list. */
+typedef struct PDMACFILELRULIST *PPDMACFILELRULIST;
+/** Pointer to the global cache structure. */
+typedef struct PDMACFILECACHEGLOBAL *PPDMACFILECACHEGLOBAL;
 
 /**
  * Blocking event types.
@@ -67,9 +75,38 @@ typedef enum PDMACEPFILEAIOMGRBLOCKINGEVENT
     PDMACEPFILEAIOMGRBLOCKINGEVENT_SHUTDOWN,
     /** The manager is requested to suspend */
     PDMACEPFILEAIOMGRBLOCKINGEVENT_SUSPEND,
+    /** The manager is requested to resume */
+    PDMACEPFILEAIOMGRBLOCKINGEVENT_RESUME,
     /** 32bit hack */
     PDMACEPFILEAIOMGRBLOCKINGEVENT_32BIT_HACK = 0x7fffffff
 } PDMACEPFILEAIOMGRBLOCKINGEVENT;
+
+/**
+ * States of the I/O manager.
+ */
+typedef enum PDMACEPFILEMGRSTATE
+{
+    /** Invalid state. */
+    PDMACEPFILEMGRSTATE_INVALID = 0,
+    /** Normal running state accepting new requests
+     * and processing them.
+     */
+    PDMACEPFILEMGRSTATE_RUNNING,
+    /** Fault state - not accepting new tasks for endpoints but waiting for
+     * remaining ones to finish.
+     */
+    PDMACEPFILEMGRSTATE_FAULT,
+    /** Suspending state - not accepting new tasks for endpoints but waiting
+     * for remaining ones to finish.
+     */
+    PDMACEPFILEMGRSTATE_SUSPENDING,
+    /** Shutdown state - not accepting new tasks for endpoints but waiting
+     * for remaining ones to finish.
+     */
+    PDMACEPFILEMGRSTATE_SHUTDOWN,
+    /** 32bit hack */
+    PDMACEPFILEMGRSTATE_32BIT_HACK = 0x7fffffff
+} PDMACEPFILEMGRSTATE;
 
 /**
  * State of a async I/O manager.
@@ -80,6 +117,8 @@ typedef struct PDMACEPFILEMGR
     R3PTRTYPE(struct PDMACEPFILEMGR *)     pNext;
     /** Previous Aio manager in the list. */
     R3PTRTYPE(struct PDMACEPFILEMGR *)     pPrev;
+    /** Current state of the manager. */
+    PDMACEPFILEMGRSTATE                    enmState;
     /** Event semaphore the manager sleeps on when waiting for new requests. */
     RTSEMEVENT                             EventSem;
     /** Flag whether the thread waits in the event semaphore. */
@@ -90,14 +129,20 @@ typedef struct PDMACEPFILEMGR
     RTTHREAD                               Thread;
     /** The async I/O context for this manager. */
     RTFILEAIOCTX                           hAioCtx;
-    /** Flag whether the I/O manager is requested to terminate */
-    volatile bool                          fShutdown;
     /** Flag whether the I/O manager was woken up. */
     volatile bool                          fWokenUp;
     /** List of endpoints assigned to this manager. */
     R3PTRTYPE(PPDMASYNCCOMPLETIONENDPOINTFILE) pEndpointsHead;
     /** Number of requests active currently. */
     unsigned                               cRequestsActive;
+    /** Pointer to an array of free async I/O request handles. */
+    RTFILEAIOREQ                          *pahReqsFree;
+    /** Next free position for a free request handle. */
+    unsigned                               iFreeEntryNext;
+    /** Position of the next free task handle */
+    unsigned                               iFreeReqNext;
+    /** Size of the array. */
+    unsigned                               cReqEntries;
     /** Critical section protecting the blocking event handling. */
     RTCRITSECT                             CritSectBlockingEvent;
     /** Event sempahore for blocking external events.
@@ -138,6 +183,127 @@ typedef PDMACEPFILEMGR *PPDMACEPFILEMGR;
 typedef PPDMACEPFILEMGR *PPPDMACEPFILEMGR;
 
 /**
+ * Data for one request segment waiting for cache entry.
+ */
+typedef struct PDMACFILETASKSEG
+{
+    /** Next task segment in the list. */
+    struct PDMACFILETASKSEG    *pNext;
+    /** Task this segment is for. */
+    PPDMASYNCCOMPLETIONTASKFILE pTask;
+    /** Offset into the cache entry buffer to start reading from. */
+    uint32_t                    uBufOffset;
+    /** Number of bytes to transfer. */
+    size_t                      cbTransfer;
+    /** Pointer to the buffer. */
+    void                       *pvBuf;
+    /** Flag whether this entry writes data to the cache. */
+    bool                        fWrite;
+} PDMACFILETASKSEG, *PPDMACFILETASKSEG;
+
+/**
+ * A cache entry
+ */
+typedef struct PDMACFILECACHEENTRY
+{
+    /** The AVL entry data. */
+    AVLRFOFFNODECORE                Core;
+    /** Pointer to the previous element. Used in one of the LRU lists.*/
+    struct PDMACFILECACHEENTRY     *pPrev;
+    /** Pointer to the next element. Used in one of the LRU lists.*/
+    struct PDMACFILECACHEENTRY     *pNext;
+    /** Pointer to the list the entry is in. */
+    PPDMACFILELRULIST               pList;
+    /** Pointer to the global cache structure. */
+    PPDMACFILECACHEGLOBAL           pCache;
+    /** Endpoint the entry belongs to. */
+    PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint;
+    /** Flags for this entry. Combinations of PDMACFILECACHE_* #defines */
+    uint32_t                        fFlags;
+    /** Size of the entry. */
+    size_t                          cbData;
+    /** Pointer to the memory containing the data. */
+    uint8_t                        *pbData;
+    /** List of tasks waiting for this one to finish. */
+    PPDMACFILETASKSEG               pHead;
+} PDMACFILECACHEENTRY, *PPDMACFILECACHEENTRY;
+/** I/O is still in progress for this entry. This entry is not evictable. */
+#define PDMACFILECACHE_ENTRY_IO_IN_PROGRESS RT_BIT(0)
+/** Entry is locked and thus not evictable. */
+#define PDMACFILECACHE_ENTRY_LOCKED   RT_BIT(1)
+/** Entry is dirty */
+#define PDMACFILECACHE_ENTRY_IS_DIRTY RT_BIT(2)
+/** Entry is not evictable. */
+#define PDMACFILECACHE_NOT_EVICTABLE  (PDMACFILECACHE_ENTRY_LOCKED | PDMACFILECACHE_IO_IN_PROGRESS)
+
+/**
+ * LRU list data
+ */
+typedef struct PDMACFILELRULIST
+{
+    /** Head of the list. */
+    PPDMACFILECACHEENTRY pHead;
+    /** Tail of the list. */
+    PPDMACFILECACHEENTRY pTail;
+    /** Number of bytes cached in the list. */
+    uint32_t             cbCached;
+} PDMACFILELRULIST;
+
+/**
+ * Global cache data.
+ */
+typedef struct PDMACFILECACHEGLOBAL
+{
+    /** Maximum size of the cache in bytes. */
+    uint32_t         cbMax;
+    /** Current size of the cache in bytes. */
+    uint32_t         cbCached;
+    /** Critical section protecting the cache. */
+    RTCRITSECT       CritSect;
+    /** Adaption parameter (p) */
+    uint32_t         uAdaptVal;
+    /** LRU list for recently used entries (T1) */
+    PDMACFILELRULIST LruRecentlyUsed;
+    /** LRU list for frequently used entries (T2) */
+    PDMACFILELRULIST LruFrequentlyUsed;
+    /** LRU list for recently evicted entries (B1) */
+    PDMACFILELRULIST LruRecentlyGhost;
+    /** LRU list for evicted entries from T2 (B2) */
+    PDMACFILELRULIST LruFrequentlyGhost;
+#ifdef VBOX_WITH_STATISTICS
+    /** Hit counter. */
+    STAMCOUNTER      cHits;
+    /** Partial hit counter. */
+    STAMCOUNTER      cPartialHits;
+    /** Miss counter. */
+    STAMCOUNTER      cMisses;
+    /** Bytes read from cache. */
+    STAMCOUNTER      StatRead;
+    /** Bytes written to the cache. */
+    STAMCOUNTER      StatWritten;
+    /** Time spend to get an entry in the AVL tree. */
+    STAMPROFILEADV   StatTreeGet;
+    /** Time spend to insert an entry in the AVL tree. */
+    STAMPROFILEADV   StatTreeInsert;
+    /** Time spend to remove an entry in the AVL tree. */
+    STAMPROFILEADV   StatTreeRemove;
+#endif
+} PDMACFILECACHEGLOBAL;
+
+/**
+ * Per endpoint cache data.
+ */
+typedef struct PDMACFILEENDPOINTCACHE
+{
+    /** AVL tree managing cache entries. */
+    PAVLRFOFFTREE         pTree;
+    /** Critical section protecting the tree. */
+    RTCRITSECT            CritSect;
+    /** Pointer to the gobal cache data */
+    PPDMACFILECACHEGLOBAL pCache;
+} PDMACFILEENDPOINTCACHE, *PPDMACFILEENDPOINTCACHE;
+
+/**
  * Global data for the file endpoint class.
  */
 typedef struct PDMASYNCCOMPLETIONEPCLASSFILE
@@ -153,11 +319,13 @@ typedef struct PDMASYNCCOMPLETIONEPCLASSFILE
     /** Number of async I/O managers currently running. */
     unsigned                            cAioMgrs;
     /** Maximum number of segments to cache per endpoint */
-    unsigned                            cSegmentsCacheMax;
+    unsigned                            cTasksCacheMax;
     /** Maximum number of simultaneous outstandingrequests. */
     uint32_t                            cReqsOutstandingMax;
     /** Bitmask for checking the alignment of a buffer. */
     RTR3UINTPTR                         uBitmaskAlignment;
+    /** Global cache data. */
+    PDMACFILECACHEGLOBAL                Cache;
 } PDMASYNCCOMPLETIONEPCLASSFILE;
 /** Pointer to the endpoint class data. */
 typedef PDMASYNCCOMPLETIONEPCLASSFILE *PPDMASYNCCOMPLETIONEPCLASSFILE;
@@ -173,40 +341,69 @@ typedef enum PDMACEPFILEBLOCKINGEVENT
 } PDMACEPFILEBLOCKINGEVENT;
 
 /**
+ * States of the endpoint.
+ */
+typedef enum PDMASYNCCOMPLETIONENDPOINTFILESTATE
+{
+    /** Invalid state. */
+    PDMASYNCCOMPLETIONENDPOINTFILESTATE_INVALID = 0,
+    /** Normal running state accepting new requests
+     * and processing them.
+     */
+    PDMASYNCCOMPLETIONENDPOINTFILESTATE_ACTIVE,
+    /** The endpoint is about to be closed - not accepting new tasks for endpoints but waiting for
+     *  remaining ones to finish.
+     */
+    PDMASYNCCOMPLETIONENDPOINTFILESTATE_CLOSING,
+    /** Removing from current I/O manager state - not processing new tasks for endpoints but waiting
+     * for remaining ones to finish.
+     */
+    PDMASYNCCOMPLETIONENDPOINTFILESTATE_REMOVING,
+    /** The current endpoint will be migrated to another I/O manager. */
+    PDMASYNCCOMPLETIONENDPOINTFILESTATE_MIGRATING,
+    /** 32bit hack */
+    PDMASYNCCOMPLETIONENDPOINTFILESTATE_32BIT_HACK = 0x7fffffff
+} PDMASYNCCOMPLETIONENDPOINTFILESTATE;
+
+/**
  * Data for the file endpoint.
  */
 typedef struct PDMASYNCCOMPLETIONENDPOINTFILE
 {
     /** Common data. */
     PDMASYNCCOMPLETIONENDPOINT             Core;
+    /** Current state of the endpoint. */
+    PDMASYNCCOMPLETIONENDPOINTFILESTATE    enmState;
     /** async I/O manager this endpoint is assigned to. */
     R3PTRTYPE(volatile PPDMACEPFILEMGR)    pAioMgr;
-    /** Filename */
-    char                                  *pszFilename;
     /** Flags for opening the file. */
     unsigned                               fFlags;
     /** File handle. */
     RTFILE                                 File;
+    /** Size of the underlying file.
+     * Updated while data is appended. */
+    uint64_t                               cbFile;
     /** Flag whether caching is enabled for this file. */
     bool                                   fCaching;
+    /** Flag whether the file was opened readonly. */
+    bool                                   fReadonly;
     /** List of new tasks. */
-    R3PTRTYPE(volatile PPDMASYNCCOMPLETIONTASK) pTasksNewHead;
+    R3PTRTYPE(volatile PPDMACTASKFILE)     pTasksNewHead;
 
     /** Head of the small cache for allocated task segments for exclusive
      * use by this endpoint. */
-    R3PTRTYPE(volatile PPDMACTASKFILESEG)  pSegmentsFreeHead;
+    R3PTRTYPE(volatile PPDMACTASKFILE)     pTasksFreeHead;
     /** Tail of the small cache for allocated task segments for exclusive
      * use by this endpoint. */
-    R3PTRTYPE(volatile PPDMACTASKFILESEG)  pSegmentsFreeTail;
+    R3PTRTYPE(volatile PPDMACTASKFILE)     pTasksFreeTail;
     /** Number of elements in the cache. */
-    volatile uint32_t                      cSegmentsCached;
+    volatile uint32_t                      cTasksCached;
+
+    /** Cache of endpoint data. */
+    PDMACFILEENDPOINTCACHE                 DataCache;
 
     /** Flag whether a flush request is currently active */
-    R3PTRTYPE(PPDMASYNCCOMPLETIONTASKFILE) pFlushReq;
-
-    /** Flag whether the endpoint is currently closed or removed from
-     * the active endpoint. */
-    bool                                   fRemovedOrClosed;
+    PPDMACTASKFILE                         pFlushReq;
 
     /** Event sempahore for blocking external events.
      * The caller waits on it until the async I/O manager
@@ -224,7 +421,7 @@ typedef struct PDMASYNCCOMPLETIONENDPOINTFILE
         struct
         {
             /** The task to cancel. */
-            PPDMASYNCCOMPLETIONTASK        pTask;
+            PPDMACTASKFILE                 pTask;
         } Cancel;
     } BlockingEventData;
     /** Data for exclusive use by the assigned async I/O manager. */
@@ -236,38 +433,25 @@ typedef struct PDMASYNCCOMPLETIONENDPOINTFILE
         R3PTRTYPE(PPDMASYNCCOMPLETIONENDPOINTFILE) pEndpointPrev;
         /** List of pending requests (not submitted due to usage restrictions
          *  or a pending flush request) */
-        R3PTRTYPE(PPDMASYNCCOMPLETIONTASK)         pReqsPendingHead;
+        R3PTRTYPE(PPDMACTASKFILE)                  pReqsPendingHead;
         /** Tail of pending requests. */
-        R3PTRTYPE(PPDMASYNCCOMPLETIONTASK)         pReqsPendingTail;
+        R3PTRTYPE(PPDMACTASKFILE)                  pReqsPendingTail;
         /** Number of requests currently being processed for this endpoint
          * (excluded flush requests). */
         unsigned                                   cRequestsActive;
+        /** Number of requests processed during the last second. */
+        unsigned                                   cReqsPerSec;
+        /** Current number of processed requests for the current update period. */
+        unsigned                                   cReqsProcessed;
     } AioMgr;
 } PDMASYNCCOMPLETIONENDPOINTFILE;
 /** Pointer to the endpoint class data. */
 typedef PDMASYNCCOMPLETIONENDPOINTFILE *PPDMASYNCCOMPLETIONENDPOINTFILE;
 
-/**
- * Segment data of a request.
- */
-typedef struct PDMACTASKFILESEG
-{
-    /** Pointer to the next segment in the list. */
-    R3PTRTYPE(struct PDMACTASKFILESEG *) pNext;
-    /** Pointer to the previous segment in the list. */
-    R3PTRTYPE(struct PDMACTASKFILESEG *) pPrev;
-    /** Pointer to the task owning the segment. */
-    R3PTRTYPE(PPDMASYNCCOMPLETIONTASKFILE) pTask;
-    /** Data segment. */
-    PDMDATASEG                           DataSeg;
-    /** Flag whether this segment uses a bounce buffer
-     * because the provided buffer doesn't meet host requirements. */
-    bool                                 fBounceBuffer;
-    /** Pointer to the used bounce buffer if any. */
-    void                                *pvBounceBuffer;
-    /** AIO request */
-    RTFILEAIOREQ                         hAioReq;
-} PDMACTASKFILESEG;
+/** Request completion function */
+typedef DECLCALLBACK(void)   FNPDMACTASKCOMPLETED(PPDMACTASKFILE pTask, void *pvUser);
+/** Pointer to a request completion function. */
+typedef FNPDMACTASKCOMPLETED *PFNPDMACTASKCOMPLETED;
 
 /**
  * Transfer type.
@@ -285,31 +469,42 @@ typedef enum PDMACTASKFILETRANSFER
 } PDMACTASKFILETRANSFER;
 
 /**
+ * Data of a request.
+ */
+typedef struct PDMACTASKFILE
+{
+    /** next task in the list. */
+    struct PDMACTASKFILE                *pNext;
+    /** Endpoint */
+    PPDMASYNCCOMPLETIONENDPOINTFILE      pEndpoint;
+    /** Transfer type. */
+    PDMACTASKFILETRANSFER                enmTransferType;
+    /** Start offset */
+    RTFOFF                               Off;
+    /** Data segment. */
+    PDMDATASEG                           DataSeg;
+    /** Flag whether this segment uses a bounce buffer
+     * because the provided buffer doesn't meet host requirements. */
+    bool                                 fBounceBuffer;
+    /** Pointer to the used bounce buffer if any. */
+    void                                *pvBounceBuffer;
+    /** Completion function to call on completion. */
+    PFNPDMACTASKCOMPLETED                pfnCompleted;
+    /** User data */
+    void                                *pvUser;
+} PDMACTASKFILE;
+
+/**
  * Per task data.
  */
 typedef struct PDMASYNCCOMPLETIONTASKFILE
 {
     /** Common data. */
     PDMASYNCCOMPLETIONTASK Core;
-    /** Transfer type. */
-    PDMACTASKFILETRANSFER  enmTransferType;
-    /** Type dependent data. */
-    union
-    {
-        /** Data for a data transfer */
-        struct
-        {
-            /** Start offset. */
-            RTFOFF             off;
-            /** Number of bytes to transfer. */
-            size_t             cbTransfer;
-            /** Number of segments which still needs to be processed before the task
-             * completes. */
-            unsigned           cSegments;
-            /** Head of the request segments list for read and write requests. */
-            PPDMACTASKFILESEG  pSegmentsHead;
-        } DataTransfer;
-    } u;
+    /** Number of bytes to transfer until this task completes. */
+    volatile int32_t      cbTransferLeft;
+    /** Flag whether the task completed. */
+    volatile bool         fCompleted;
 } PDMASYNCCOMPLETIONTASKFILE;
 
 int pdmacFileAioMgrFailsafe(RTTHREAD ThreadSelf, void *pvUser);
@@ -318,10 +513,26 @@ int pdmacFileAioMgrNormal(RTTHREAD ThreadSelf, void *pvUser);
 int pdmacFileAioMgrNormalInit(PPDMACEPFILEMGR pAioMgr);
 void pdmacFileAioMgrNormalDestroy(PPDMACEPFILEMGR pAioMgr);
 
-PPDMASYNCCOMPLETIONTASK pdmacFileEpGetNewTasks(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint);
-PPDMACTASKFILESEG pdmacFileSegmentAlloc(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint);
-void pdmacFileSegmentFree(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint,
-                          PPDMACTASKFILESEG pSeg);
+PPDMACTASKFILE pdmacFileEpGetNewTasks(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint);
+PPDMACTASKFILE pdmacFileTaskAlloc(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint);
+void pdmacFileTaskFree(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint,
+                       PPDMACTASKFILE pTask);
+
+int pdmacFileEpAddTask(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint, PPDMACTASKFILE pTask);
+
+void pdmacFileEpTaskCompleted(PPDMACTASKFILE pTask, void *pvUser);
+
+int pdmacFileCacheInit(PPDMASYNCCOMPLETIONEPCLASSFILE pClassFile, PCFGMNODE pCfgNode);
+void pdmacFileCacheDestroy(PPDMASYNCCOMPLETIONEPCLASSFILE pClassFile);
+int pdmacFileEpCacheInit(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint, PPDMASYNCCOMPLETIONEPCLASSFILE pClassFile);
+void pdmacFileEpCacheDestroy(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint);
+
+int pdmacFileEpCacheRead(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint, PPDMASYNCCOMPLETIONTASKFILE pTask,
+                         RTFOFF off, PCPDMDATASEG paSegments, size_t cSegments,
+                         size_t cbRead);
+int pdmacFileEpCacheWrite(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint, PPDMASYNCCOMPLETIONTASKFILE pTask,
+                          RTFOFF off, PCPDMDATASEG paSegments, size_t cSegments,
+                          size_t cbWrite);
 
 RT_C_DECLS_END
 

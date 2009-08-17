@@ -169,7 +169,8 @@ ifdef VBOX_WITH_PDM_ASYNC_COMPLETION
  	PDMAsyncCompletion.cpp \
  	PDMAsyncCompletionFile.cpp \
  	PDMAsyncCompletionFileFailsafe.cpp \
- 	PDMAsyncCompletionFileNormal.cpp
+ 	PDMAsyncCompletionFileNormal.cpp \
+ 	PDMAsyncCompletionFileCache.cpp
 endif
 
 VMMR3_SOURCES.x86 += \

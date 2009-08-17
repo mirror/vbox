@@ -28,17 +28,13 @@
 static int pdmacFileAioMgrFailsafeProcessEndpoint(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint)
 {
     int rc = VINF_SUCCESS;
-    PPDMASYNCCOMPLETIONTASK pTasks = pdmacFileEpGetNewTasks(pEndpoint);
+    PPDMACTASKFILE pTasks = pdmacFileEpGetNewTasks(pEndpoint);
 
     while (pTasks)
     {
-        PPDMASYNCCOMPLETIONTASKFILE pTaskFile = (PPDMASYNCCOMPLETIONTASKFILE)pTasks;
+        PPDMACTASKFILE pCurr = pTasks;
 
-        if (pTasks->pNext)
-            AssertMsg(pTasks->uTaskId < pTasks->pNext->uTaskId,
-                      ("The task IDs are not ordered Curr=%u Next=%u\n", pTasks->uTaskId, pTasks->pNext->uTaskId));
-
-        switch (pTaskFile->enmTransferType)
+        switch (pCurr->enmTransferType)
         {
             case PDMACTASKFILETRANSFER_FLUSH:
             {
@@ -48,51 +44,33 @@ static int pdmacFileAioMgrFailsafeProcessEndpoint(PPDMASYNCCOMPLETIONENDPOINTFIL
             case PDMACTASKFILETRANSFER_READ:
             case PDMACTASKFILETRANSFER_WRITE:
             {
-                PPDMACTASKFILESEG pSeg = pTaskFile->u.DataTransfer.pSegmentsHead;
-                RTFOFF offCurr = pTaskFile->u.DataTransfer.off;
-
-                do
+                if (pCurr->enmTransferType == PDMACTASKFILETRANSFER_READ)
                 {
-                    if (pTaskFile->enmTransferType == PDMACTASKFILETRANSFER_READ)
-                    {
-                        rc = RTFileReadAt(pEndpoint->File, offCurr,
-                                          pSeg->DataSeg.pvSeg,
-                                          pSeg->DataSeg.cbSeg,
-                                          NULL);
-                    }
-                    else
-                    {
-                        rc = RTFileWriteAt(pEndpoint->File, offCurr,
-                                          pSeg->DataSeg.pvSeg,
-                                          pSeg->DataSeg.cbSeg,
-                                          NULL);
-                    }
-
-                    /* Free the segment. */
-                    PPDMACTASKFILESEG pCur = pSeg;
-                    pSeg = pSeg->pNext;
-
-                    offCurr += pCur->DataSeg.cbSeg;
-
-                    pdmacFileSegmentFree(pEndpoint, pCur);
-                } while(pSeg && RT_SUCCESS(rc));
-
-                AssertMsg(offCurr == (pTaskFile->u.DataTransfer.off + (RTFOFF)pTaskFile->u.DataTransfer.cbTransfer),
-                          ("Incomplete transfer %llu bytes requested offCurr=%llu rc=%Rrc\n",
-                           pTaskFile->u.DataTransfer.cbTransfer,
-                           offCurr, rc));
+                    rc = RTFileReadAt(pEndpoint->File, pCurr->Off,
+                                      pCurr->DataSeg.pvSeg,
+                                      pCurr->DataSeg.cbSeg,
+                                      NULL);
+                }
+                else
+                {
+                    rc = RTFileWriteAt(pEndpoint->File, pCurr->Off,
+                                       pCurr->DataSeg.pvSeg,
+                                       pCurr->DataSeg.cbSeg,
+                                        NULL);
+                }
 
                 break;
             }
             default:
-                AssertMsgFailed(("Invalid transfer type %d\n", pTaskFile->enmTransferType));
+                AssertMsgFailed(("Invalid transfer type %d\n", pTasks->enmTransferType));
         }
 
         AssertRC(rc);
-        pTasks = pTasks->pNext;
 
-        /* Notify task owner */
-        pdmR3AsyncCompletionCompleteTask(&pTaskFile->Core);
+        pCurr->pfnCompleted(pCurr, pCurr->pvUser);
+        pdmacFileTaskFree(pEndpoint, pCurr);
+
+        pTasks = pTasks->pNext;
     }
 
     return rc;
@@ -107,7 +85,8 @@ int pdmacFileAioMgrFailsafe(RTTHREAD ThreadSelf, void *pvUser)
     int rc = VINF_SUCCESS;
     PPDMACEPFILEMGR pAioMgr = (PPDMACEPFILEMGR)pvUser;
 
-    while (!pAioMgr->fShutdown)
+    while (   (pAioMgr->enmState == PDMACEPFILEMGRSTATE_RUNNING)
+           || (pAioMgr->enmState == PDMACEPFILEMGRSTATE_SUSPENDING))
     {
         if (!ASMAtomicReadBool(&pAioMgr->fWokenUp))
         {
@@ -137,6 +116,8 @@ int pdmacFileAioMgrFailsafe(RTTHREAD ThreadSelf, void *pvUser)
                     PPDMASYNCCOMPLETIONENDPOINTFILE pEndpointNew = pAioMgr->BlockingEventData.AddEndpoint.pEndpoint;
                     AssertMsg(VALID_PTR(pEndpointNew), ("Adding endpoint event without a endpoint to add\n"));
 
+                    pEndpointNew->enmState = PDMASYNCCOMPLETIONENDPOINTFILESTATE_ACTIVE;
+
                     pEndpointNew->AioMgr.pEndpointNext = pAioMgr->pEndpointsHead;
                     pEndpointNew->AioMgr.pEndpointPrev = NULL;
                     if (pAioMgr->pEndpointsHead)
@@ -148,6 +129,8 @@ int pdmacFileAioMgrFailsafe(RTTHREAD ThreadSelf, void *pvUser)
                 {
                     PPDMASYNCCOMPLETIONENDPOINTFILE pEndpointRemove = pAioMgr->BlockingEventData.RemoveEndpoint.pEndpoint;
                     AssertMsg(VALID_PTR(pEndpointRemove), ("Removing endpoint event without a endpoint to remove\n"));
+
+                    pEndpointRemove->enmState = PDMASYNCCOMPLETIONENDPOINTFILESTATE_REMOVING;
 
                     PPDMASYNCCOMPLETIONENDPOINTFILE pPrev = pEndpointRemove->AioMgr.pEndpointPrev;
                     PPDMASYNCCOMPLETIONENDPOINTFILE pNext = pEndpointRemove->AioMgr.pEndpointNext;
@@ -165,6 +148,8 @@ int pdmacFileAioMgrFailsafe(RTTHREAD ThreadSelf, void *pvUser)
                 {
                     PPDMASYNCCOMPLETIONENDPOINTFILE pEndpointClose = pAioMgr->BlockingEventData.CloseEndpoint.pEndpoint;
                     AssertMsg(VALID_PTR(pEndpointClose), ("Close endpoint event without a endpoint to Close\n"));
+
+                    pEndpointClose->enmState = PDMASYNCCOMPLETIONENDPOINTFILESTATE_CLOSING;
 
                     /* Make sure all tasks finished. */
                     rc = pdmacFileAioMgrFailsafeProcessEndpoint(pEndpointClose);

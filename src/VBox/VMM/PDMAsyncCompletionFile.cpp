@@ -44,27 +44,26 @@
 #include "PDMAsyncCompletionFileInternal.h"
 
 /**
- * Frees a task segment
+ * Frees a task.
  *
  * @returns nothing.
  * @param   pEndpoint    Pointer to the endpoint the segment was for.
- * @param   pSeg         The segment to free.
+ * @param   pTask        The task to free.
  */
-void pdmacFileSegmentFree(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint,
-                          PPDMACTASKFILESEG pSeg)
+void pdmacFileTaskFree(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint,
+                          PPDMACTASKFILE pTask)
 {
     PPDMASYNCCOMPLETIONEPCLASSFILE pEpClass = (PPDMASYNCCOMPLETIONEPCLASSFILE)pEndpoint->Core.pEpClass;
 
-    LogFlowFunc((": pEndpoint=%p pSeg=%p\n", pEndpoint, pSeg));
+    LogFlowFunc((": pEndpoint=%p pTask=%p\n", pEndpoint, pTask));
 
     /* Try the per endpoint cache first. */
-    if (pEndpoint->cSegmentsCached < pEpClass->cSegmentsCacheMax)
+    if (pEndpoint->cTasksCached < pEpClass->cTasksCacheMax)
     {
         /* Add it to the list. */
-        pSeg->pPrev = NULL;
-        pEndpoint->pSegmentsFreeTail->pNext = pSeg;
-        pEndpoint->pSegmentsFreeTail        = pSeg;
-        ASMAtomicIncU32(&pEndpoint->cSegmentsCached);
+        pEndpoint->pTasksFreeTail->pNext = pTask;
+        pEndpoint->pTasksFreeTail        = pTask;
+        ASMAtomicIncU32(&pEndpoint->cTasksCached);
     }
     else if (false)
     {
@@ -72,8 +71,8 @@ void pdmacFileSegmentFree(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint,
     }
     else
     {
-        Log(("Freeing segment %p because all caches are full\n", pSeg));
-        MMR3HeapFree(pSeg);
+        Log(("Freeing task %p because all caches are full\n", pTask));
+        MMR3HeapFree(pTask);
     }
 }
 
@@ -83,12 +82,12 @@ void pdmacFileSegmentFree(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint,
  * @returns Pointer to the new task segment or NULL
  * @param   pEndpoint    Pointer to the endpoint
  */
-PPDMACTASKFILESEG pdmacFileSegmentAlloc(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint)
+PPDMACTASKFILE pdmacFileTaskAlloc(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint)
 {
-    PPDMACTASKFILESEG pSeg = NULL;
+    PPDMACTASKFILE pTask = NULL;
 
     /* Try the small per endpoint cache first. */
-    if (pEndpoint->pSegmentsFreeHead == pEndpoint->pSegmentsFreeTail)
+    if (pEndpoint->pTasksFreeHead == pEndpoint->pTasksFreeTail)
     {
         /* Try the bigger endpoint class cache. */
         PPDMASYNCCOMPLETIONEPCLASSFILE pEndpointClass = (PPDMASYNCCOMPLETIONEPCLASSFILE)pEndpoint->Core.pEpClass;
@@ -105,19 +104,19 @@ PPDMACTASKFILESEG pdmacFileSegmentAlloc(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoin
             iSlot = (iSlot + 1) % RT_ELEMENTS(pEndpointClass->apTaskCache);
         } while (iSlot != pEndpoint->iSlotStart);
 #endif
-        if (!pSeg)
+        if (!pTask)
         {
             /*
              * Allocate completely new.
              * If this fails we return NULL.
              */
             int rc = MMR3HeapAllocZEx(pEndpointClass->Core.pVM, MM_TAG_PDM_ASYNC_COMPLETION,
-                                      sizeof(PDMACTASKFILESEG),
-                                      (void **)&pSeg);
+                                      sizeof(PDMACTASKFILE),
+                                      (void **)&pTask);
             if (RT_FAILURE(rc))
-                pSeg = NULL;
+                pTask = NULL;
 
-            LogFlow(("Allocated segment %p\n", pSeg));
+            LogFlow(("Allocated task %p\n", pTask));
         }
 #if 0
         else
@@ -160,38 +159,37 @@ PPDMACTASKFILESEG pdmacFileSegmentAlloc(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoin
     else
     {
         /* Grab a free task from the head. */
-        AssertMsg(pEndpoint->cSegmentsCached > 0, ("No segments cached but list contains more than one element\n"));
+        AssertMsg(pEndpoint->cTasksCached > 0, ("No tasks cached but list contains more than one element\n"));
 
-        pSeg = pEndpoint->pSegmentsFreeHead;
-        pEndpoint->pSegmentsFreeHead = pSeg->pNext;
-        ASMAtomicDecU32(&pEndpoint->cSegmentsCached);
+        pTask = pEndpoint->pTasksFreeHead;
+        pEndpoint->pTasksFreeHead = pTask->pNext;
+        ASMAtomicDecU32(&pEndpoint->cTasksCached);
     }
 
-    pSeg->pNext = NULL;
-    pSeg->pPrev = NULL;
+    pTask->pNext = NULL;
 
-    return pSeg;
+    return pTask;
 }
 
-PPDMASYNCCOMPLETIONTASK pdmacFileEpGetNewTasks(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint)
+PPDMACTASKFILE pdmacFileEpGetNewTasks(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint)
 {
-    PPDMASYNCCOMPLETIONTASK pTasks = NULL;
+    PPDMACTASKFILE pTasks = NULL;
 
     /*
      * Get pending tasks.
      */
-    pTasks = (PPDMASYNCCOMPLETIONTASK)ASMAtomicXchgPtr((void * volatile *)&pEndpoint->pTasksNewHead, NULL);
+    pTasks = (PPDMACTASKFILE)ASMAtomicXchgPtr((void * volatile *)&pEndpoint->pTasksNewHead, NULL);
 
     /* Reverse the list to process in FIFO order. */
     if (pTasks)
     {
-        PPDMASYNCCOMPLETIONTASK pTask = pTasks;
+        PPDMACTASKFILE pTask = pTasks;
 
         pTasks = NULL;
 
         while (pTask)
         {
-            PPDMASYNCCOMPLETIONTASK pCur = pTask;
+            PPDMACTASKFILE pCur = pTask;
             pTask = pTask->pNext;
             pCur->pNext = pTasks;
             pTasks = pCur;
@@ -289,8 +287,6 @@ static int pdmacFileAioMgrShutdown(PPDMACEPFILEMGR pAioMgr)
 {
     int rc;
 
-    ASMAtomicXchgBool(&pAioMgr->fShutdown, true);
-
     rc = RTCritSectEnter(&pAioMgr->CritSectBlockingEvent);
     AssertRCReturn(rc, rc);
 
@@ -301,13 +297,13 @@ static int pdmacFileAioMgrShutdown(PPDMACEPFILEMGR pAioMgr)
     return rc;
 }
 
-static int pdmacFileEpAddTask(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint, PPDMASYNCCOMPLETIONTASKFILE pTask)
+int pdmacFileEpAddTask(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint, PPDMACTASKFILE pTask)
 {
-    PPDMASYNCCOMPLETIONTASK pNext;
+    PPDMACTASKFILE pNext;
     do
     {
         pNext = pEndpoint->pTasksNewHead;
-        pTask->Core.pNext = pNext;
+        pTask->pNext = pNext;
     } while (!ASMAtomicCmpXchgPtr((void * volatile *)&pEndpoint->pTasksNewHead, (void *)pTask, (void *)pNext));
 
     pdmacFileAioMgrWakeup((PPDMACEPFILEMGR)ASMAtomicReadPtr((void * volatile *)&pEndpoint->pAioMgr));
@@ -315,10 +311,28 @@ static int pdmacFileEpAddTask(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint, PPDMASY
     return VINF_SUCCESS;
 }
 
-static int pdmacFileEpTaskInitiate(PPDMASYNCCOMPLETIONTASK pTask,
-                                   PPDMASYNCCOMPLETIONENDPOINT pEndpoint, RTFOFF off,
-                                   PCPDMDATASEG paSegments, size_t cSegments,
-                                   size_t cbTransfer, PDMACTASKFILETRANSFER enmTransfer)
+void pdmacFileEpTaskCompleted(PPDMACTASKFILE pTask, void *pvUser)
+{
+    PPDMASYNCCOMPLETIONTASKFILE pTaskFile = (PPDMASYNCCOMPLETIONTASKFILE)pvUser;
+
+    if (pTask->enmTransferType == PDMACTASKFILETRANSFER_FLUSH)
+    {
+        pdmR3AsyncCompletionCompleteTask(&pTaskFile->Core);
+    }
+    else
+    {
+        uint32_t uOld = ASMAtomicSubU32(&pTaskFile->cbTransferLeft, pTask->DataSeg.cbSeg);
+
+        if (!(uOld - pTask->DataSeg.cbSeg)
+            && !ASMAtomicXchgBool(&pTaskFile->fCompleted, true))
+            pdmR3AsyncCompletionCompleteTask(&pTaskFile->Core);
+    }
+}
+
+int pdmacFileEpTaskInitiate(PPDMASYNCCOMPLETIONTASK pTask,
+                            PPDMASYNCCOMPLETIONENDPOINT pEndpoint, RTFOFF off,
+                            PCPDMDATASEG paSegments, size_t cSegments,
+                            size_t cbTransfer, PDMACTASKFILETRANSFER enmTransfer)
 {
     int rc = VINF_SUCCESS;
     PPDMASYNCCOMPLETIONENDPOINTFILE pEpFile = (PPDMASYNCCOMPLETIONENDPOINTFILE)pEndpoint;
@@ -328,34 +342,28 @@ static int pdmacFileEpTaskInitiate(PPDMASYNCCOMPLETIONTASK pTask,
     Assert(   (enmTransfer == PDMACTASKFILETRANSFER_READ)
            || (enmTransfer == PDMACTASKFILETRANSFER_WRITE));
 
-    pTaskFile->enmTransferType              = enmTransfer;
-    pTaskFile->u.DataTransfer.cSegments     = cSegments;
-    pTaskFile->u.DataTransfer.pSegmentsHead = NULL;
-    pTaskFile->u.DataTransfer.off           = off;
-    pTaskFile->u.DataTransfer.cbTransfer    = cbTransfer;
-
-    PPDMACTASKFILESEG pSeg = pdmacFileSegmentAlloc(pEpFile);
-
-    pTaskFile->u.DataTransfer.pSegmentsHead = pSeg;
+    pTaskFile->cbTransferLeft = cbTransfer;
 
     for (unsigned i = 0; i < cSegments; i++)
     {
-        pSeg->DataSeg.cbSeg = paSegments[i].cbSeg;
-        pSeg->DataSeg.pvSeg = paSegments[i].pvSeg;
-        pSeg->pTask         = pTaskFile;
+        PPDMACTASKFILE pIoTask = pdmacFileTaskAlloc(pEpFile);
+        AssertPtr(pIoTask);
 
-        if (i < (cSegments-1))
-        {
-            /* Allocate new segment. */
-            PPDMACTASKFILESEG pSegNext = pdmacFileSegmentAlloc(pEpFile);
-            AssertPtr(pSeg);
-            pSeg->pNext = pSegNext;
-            pSeg = pSegNext;
-        }
+        pIoTask->pEndpoint       = pEpFile;
+        pIoTask->enmTransferType = enmTransfer;
+        pIoTask->Off             = off;
+        pIoTask->DataSeg.cbSeg   = paSegments[i].cbSeg;
+        pIoTask->DataSeg.pvSeg   = paSegments[i].pvSeg;
+        pIoTask->pvUser          = pTaskFile;
+        pIoTask->pfnCompleted    = pdmacFileEpTaskCompleted;
+
+        /* Send it off to the I/O manager. */
+        pdmacFileEpAddTask(pEpFile, pIoTask);
+        off        += paSegments[i].cbSeg;
+        cbTransfer -= paSegments[i].cbSeg;
     }
 
-    /* Send it off to the I/O manager. */
-    pdmacFileEpAddTask(pEpFile, pTaskFile);
+    AssertMsg(!cbTransfer, ("Incomplete transfer %u bytes left\n", cbTransfer));
 
     return VINF_SUCCESS;
 }
@@ -389,9 +397,13 @@ static int pdmacFileAioMgrCreate(PPDMASYNCCOMPLETIONEPCLASSFILE pEpClass, PPPDMA
                 if (RT_SUCCESS(rc))
                 {
                     /* Init the rest of the manager. */
-                    rc = pdmacFileAioMgrNormalInit(pAioMgrNew);
+                    if (!pAioMgrNew->fFailsafe)
+                        rc = pdmacFileAioMgrNormalInit(pAioMgrNew);
+
                     if (RT_SUCCESS(rc))
                     {
+                        pAioMgrNew->enmState = PDMACEPFILEMGRSTATE_RUNNING;
+
                         rc = RTThreadCreateF(&pAioMgrNew->Thread,
                                              pAioMgrNew->fFailsafe
                                              ? pdmacFileAioMgrFailsafe
@@ -444,8 +456,6 @@ static int pdmacFileAioMgrCreate(PPDMASYNCCOMPLETIONEPCLASSFILE pEpClass, PPPDMA
  */
 static void pdmacFileAioMgrDestroy(PPDMASYNCCOMPLETIONEPCLASSFILE pEpClassFile, PPDMACEPFILEMGR pAioMgr)
 {
-    /* A normal manager may have still endpoints attached and has to return them. */
-    Assert(pAioMgr->fFailsafe);
     int rc = pdmacFileAioMgrShutdown(pAioMgr);
     AssertRC(rc);
 
@@ -501,6 +511,14 @@ static int pdmacFileInitialize(PPDMASYNCCOMPLETIONEPCLASS pClassGlobals, PCFGMNO
 
     /* Init critical section. */
     rc = RTCritSectInit(&pEpClassFile->CritSect);
+    if (RT_SUCCESS(rc))
+    {
+        /* Init cache structure */
+        rc = pdmacFileCacheInit(pEpClassFile, pCfgNode);
+        if (RT_FAILURE(rc))
+            RTCritSectDelete(&pEpClassFile->CritSect);
+    }
+
     return rc;
 }
 
@@ -533,26 +551,51 @@ static int pdmacFileEpInitialize(PPDMASYNCCOMPLETIONENDPOINT pEndpoint,
                          : RTFILE_O_READWRITE | RTFILE_O_OPEN | RTFILE_O_DENY_WRITE;
 
     if (!pEpClassFile->fFailsafe)
-        fFileFlags |= (RTFILE_O_ASYNC_IO | RTFILE_O_NO_CACHE);
+    {
+        fFileFlags |= (RTFILE_O_ASYNC_IO | RTFILE_O_WRITE_THROUGH);
 
-    pEpFile->pszFilename = RTStrDup(pszUri);
-    if (!pEpFile->pszFilename)
-        return VERR_NO_MEMORY;
+        /*
+         * We only disable the cache if the size of the file is a multiple of 512.
+         * Certain hosts like Windows, Linux and Solaris require that transfer sizes
+         * are aligned to the volume sector size.
+         * If not we just make sure that the data is written to disk with RTFILE_O_WRITE_THROUGH
+         * which will trash the host cache but ensures that the host cache will not
+         * contain dirty buffers.
+         */
+        RTFILE File = NIL_RTFILE;
+
+        rc = RTFileOpen(&File, pszUri, RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_NONE);
+        if (RT_SUCCESS(rc))
+        {
+            uint64_t cbSize;
+
+            rc = RTFileGetSize(File, &cbSize);
+            if (RT_SUCCESS(rc) && ((cbSize % 512) == 0))
+            {
+                fFileFlags &= ~RTFILE_O_WRITE_THROUGH;
+                fFileFlags |= RTFILE_O_NO_CACHE;
+            }
+
+            RTFileClose(File);
+        }
+    }
+
     pEpFile->fFlags = fFileFlags;
 
+    /* Open with final flags. */
     rc = RTFileOpen(&pEpFile->File, pszUri, fFileFlags);
     if (RT_SUCCESS(rc))
     {
         /* Initialize the segment cache */
         rc = MMR3HeapAllocZEx(pEpClassFile->Core.pVM, MM_TAG_PDM_ASYNC_COMPLETION,
-                              sizeof(PDMACTASKFILESEG),
-                              (void **)&pEpFile->pSegmentsFreeHead);
+                              sizeof(PDMACTASKFILE),
+                              (void **)&pEpFile->pTasksFreeHead);
         if (RT_SUCCESS(rc))
         {
             PPDMACEPFILEMGR pAioMgr = NULL;
 
-            pEpFile->pSegmentsFreeTail = pEpFile->pSegmentsFreeHead;
-            pEpFile->cSegmentsCached = 0;
+            pEpFile->pTasksFreeTail = pEpFile->pTasksFreeHead;
+            pEpFile->cTasksCached = 0;
 
             if (pEpClassFile->fFailsafe)
             {
@@ -565,6 +608,12 @@ static int pdmacFileEpInitialize(PPDMASYNCCOMPLETIONENDPOINT pEndpoint,
                 if (fFlags & PDMACEP_FILE_FLAGS_CACHING)
                 {
                     pEpFile->fCaching = true;
+                    rc = pdmacFileEpCacheInit(pEpFile, pEpClassFile);
+                    if (RT_FAILURE(rc))
+                    {
+                        LogRel(("AIOMgr: Endpoint for \"%s\" was opened with caching but initializing cache failed. Disabled caching\n", pszUri));
+                        pEpFile->fCaching = false;
+                    }
                 }
 
                 /* Check for an idling one or create new if not found */
@@ -579,18 +628,17 @@ static int pdmacFileEpInitialize(PPDMASYNCCOMPLETIONENDPOINT pEndpoint,
                 }
             }
 
+            pEpFile->enmState = PDMASYNCCOMPLETIONENDPOINTFILESTATE_ACTIVE;
+
             /* Assign the endpoint to the thread. */
             rc = pdmacFileAioMgrAddEndpoint(pAioMgr, pEpFile);
             if (RT_FAILURE(rc))
-                MMR3HeapFree(pEpFile->pSegmentsFreeHead);
+                MMR3HeapFree(pEpFile->pTasksFreeHead);
         }
 
         if (RT_FAILURE(rc))
             RTFileClose(pEpFile->File);
     }
-
-    if (RT_FAILURE(rc))
-        RTStrFree(pEpFile->pszFilename);
 
     return rc;
 }
@@ -604,10 +652,6 @@ static int pdmacFileEpClose(PPDMASYNCCOMPLETIONENDPOINT pEndpoint)
     int rc = pdmacFileAioMgrCloseEndpoint(pEpFile->pAioMgr, pEpFile);
     AssertRC(rc);
 
-    /* Remove the endpoint from the thread. */
-    rc = pdmacFileAioMgrRemoveEndpoint(pEpFile->pAioMgr, pEpFile);
-    AssertRC(rc);
-
     /*
      * If the async I/O manager is in failsafe mode this is the only endpoint
      * he processes and thus can be destroyed now.
@@ -615,18 +659,19 @@ static int pdmacFileEpClose(PPDMASYNCCOMPLETIONENDPOINT pEndpoint)
     if (pEpFile->pAioMgr->fFailsafe)
         pdmacFileAioMgrDestroy(pEpClassFile, pEpFile->pAioMgr);
 
-    /* Free cached segments. */
-    PPDMACTASKFILESEG pSeg = pEpFile->pSegmentsFreeHead;
+    /* Free cached tasks. */
+    PPDMACTASKFILE pTask = pEpFile->pTasksFreeHead;
 
-    while (pSeg)
+    while (pTask)
     {
-        PPDMACTASKFILESEG pSegFree = pSeg;
-        pSeg = pSeg->pNext;
-        MMR3HeapFree(pSegFree);
+        PPDMACTASKFILE pTaskFree = pTask;
+        pTask = pTask->pNext;
+        MMR3HeapFree(pTaskFree);
     }
 
     /* Free the cached data. */
-    Assert(!pEpFile->fCaching);
+    if (pEpFile->fCaching)
+        pdmacFileEpCacheDestroy(pEpFile);
 
     return VINF_SUCCESS;
 }
@@ -636,8 +681,14 @@ static int pdmacFileEpRead(PPDMASYNCCOMPLETIONTASK pTask,
                            PCPDMDATASEG paSegments, size_t cSegments,
                            size_t cbRead)
 {
-    return pdmacFileEpTaskInitiate(pTask, pEndpoint, off, paSegments, cSegments, cbRead,
-                                   PDMACTASKFILETRANSFER_READ);
+    PPDMASYNCCOMPLETIONENDPOINTFILE pEpFile = (PPDMASYNCCOMPLETIONENDPOINTFILE)pEndpoint;
+
+    if (pEpFile->fCaching)
+        return pdmacFileEpCacheRead(pEpFile, (PPDMASYNCCOMPLETIONTASKFILE)pTask,
+                                    off, paSegments, cSegments, cbRead);
+    else
+        return pdmacFileEpTaskInitiate(pTask, pEndpoint, off, paSegments, cSegments, cbRead,
+                                       PDMACTASKFILETRANSFER_READ);
 }
 
 static int pdmacFileEpWrite(PPDMASYNCCOMPLETIONTASK pTask,
@@ -645,8 +696,17 @@ static int pdmacFileEpWrite(PPDMASYNCCOMPLETIONTASK pTask,
                             PCPDMDATASEG paSegments, size_t cSegments,
                             size_t cbWrite)
 {
-    return pdmacFileEpTaskInitiate(pTask, pEndpoint, off, paSegments, cSegments, cbWrite,
-                                   PDMACTASKFILETRANSFER_WRITE);
+    PPDMASYNCCOMPLETIONENDPOINTFILE pEpFile = (PPDMASYNCCOMPLETIONENDPOINTFILE)pEndpoint;
+
+    if (RT_UNLIKELY(pEpFile->fReadonly))
+        return VERR_NOT_SUPPORTED;
+
+    if (pEpFile->fCaching)
+        return pdmacFileEpCacheWrite(pEpFile, (PPDMASYNCCOMPLETIONTASKFILE)pTask,
+                                     off, paSegments, cSegments, cbWrite);
+    else
+        return pdmacFileEpTaskInitiate(pTask, pEndpoint, off, paSegments, cSegments, cbWrite,
+                                       PDMACTASKFILETRANSFER_WRITE);
 }
 
 static int pdmacFileEpFlush(PPDMASYNCCOMPLETIONTASK pTask,
@@ -655,8 +715,19 @@ static int pdmacFileEpFlush(PPDMASYNCCOMPLETIONTASK pTask,
     PPDMASYNCCOMPLETIONENDPOINTFILE pEpFile = (PPDMASYNCCOMPLETIONENDPOINTFILE)pEndpoint;
     PPDMASYNCCOMPLETIONTASKFILE pTaskFile = (PPDMASYNCCOMPLETIONTASKFILE)pTask;
 
-    pTaskFile->enmTransferType = PDMACTASKFILETRANSFER_FLUSH;
-    pdmacFileEpAddTask(pEpFile, pTaskFile);
+    if (RT_UNLIKELY(pEpFile->fReadonly))
+        return VERR_NOT_SUPPORTED;
+
+    pTaskFile->cbTransferLeft = 0;
+
+    PPDMACTASKFILE pIoTask = pdmacFileTaskAlloc(pEpFile);
+    AssertPtr(pIoTask);
+
+    pIoTask->pEndpoint       = pEpFile;
+    pIoTask->enmTransferType = PDMACTASKFILETRANSFER_FLUSH;
+    pIoTask->pvUser          = pTaskFile;
+    pIoTask->pfnCompleted    = pdmacFileEpTaskCompleted;
+    pdmacFileEpAddTask(pEpFile, pIoTask);
 
     return VINF_SUCCESS;
 }
