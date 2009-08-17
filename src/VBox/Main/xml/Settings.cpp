@@ -1960,7 +1960,7 @@ void MachineConfigFile::writeHardware(xml::ElementNode &elmParent,
                 pelmPort->setAttribute("path", port.strPath);
                 break;
 
-            default: 
+            default:
                 break;
         }
         pelmPort->setAttribute("hostMode", pcszHostMode);
