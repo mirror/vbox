@@ -136,6 +136,20 @@ void PACKSPU_APIENTRY packspu_VertexAttribPointerNV( GLuint index, GLint size, G
     crStateVertexAttribPointerNV( index, size, type, stride, pointer );
 }
 
+void PACKSPU_APIENTRY packspu_IndexPointer( GLenum type, GLsizei stride, const GLvoid *pointer )
+{
+#if CR_ARB_vertex_buffer_object
+    GET_CONTEXT(ctx);
+    if (ctx->clientState->extensions.ARB_vertex_buffer_object) {
+        if (pack_spu.swap)
+            crPackIndexPointerSWAP( type, stride, pointer );
+        else
+            crPackIndexPointer( type, stride, pointer );
+    }
+#endif
+    crStateIndexPointer(type, stride, pointer);
+}
+
 void PACKSPU_APIENTRY packspu_GetPointerv( GLenum pname, GLvoid **params )
 {
     crStateGetPointerv( pname, params );
@@ -174,6 +188,16 @@ packspu_ArrayElement( GLint index )
 #endif
 
     if (serverArrays) {
+        GET_CONTEXT(ctx);
+        CRClientState *clientState = &(ctx->clientState->client);
+
+        /*Note the comment in packspu_LockArraysEXT*/
+        if (clientState->array.locked && !clientState->array.synced)
+        {
+            crPackLockArraysEXT(clientState->array.lockFirst, clientState->array.lockCount);
+            clientState->array.synced = GL_TRUE;
+        }
+
         /* Send the DrawArrays command over the wire */
         if (pack_spu.swap)
             crPackArrayElementSWAP( index );
@@ -210,6 +234,16 @@ packspu_DrawElements( GLenum mode, GLsizei count, GLenum type, const GLvoid *ind
 #endif
 
     if (serverArrays) {
+        GET_CONTEXT(ctx);
+        CRClientState *clientState = &(ctx->clientState->client);
+
+        /*Note the comment in packspu_LockArraysEXT*/
+        if (clientState->array.locked && !clientState->array.synced)
+        {
+            crPackLockArraysEXT(clientState->array.lockFirst, clientState->array.lockCount);
+            clientState->array.synced = GL_TRUE;
+        }
+        
         /* Send the DrawArrays command over the wire */
         if (pack_spu.swap)
             crPackDrawElementsSWAP( mode, count, type, indices );
@@ -245,6 +279,16 @@ packspu_DrawRangeElements( GLenum mode, GLuint start, GLuint end, GLsizei count,
 #endif
 
     if (serverArrays) {
+        GET_CONTEXT(ctx);
+        CRClientState *clientState = &(ctx->clientState->client);
+
+        /*Note the comment in packspu_LockArraysEXT*/
+        if (clientState->array.locked && !clientState->array.synced)
+        {
+            crPackLockArraysEXT(clientState->array.lockFirst, clientState->array.lockCount);
+            clientState->array.synced = GL_TRUE;
+        }
+
         /* Send the DrawRangeElements command over the wire */
         if (pack_spu.swap)
             crPackDrawRangeElementsSWAP( mode, start, end, count, type, indices );
@@ -278,6 +322,16 @@ packspu_DrawArrays( GLenum mode, GLint first, GLsizei count )
 #endif
 
     if (serverArrays) {
+        GET_CONTEXT(ctx);
+        CRClientState *clientState = &(ctx->clientState->client);
+
+        /*Note the comment in packspu_LockArraysEXT*/
+        if (clientState->array.locked && !clientState->array.synced)
+        {
+            crPackLockArraysEXT(clientState->array.lockFirst, clientState->array.lockCount);
+            clientState->array.synced = GL_TRUE;
+        }
+
         /* Send the DrawArrays command over the wire */
         if (pack_spu.swap)
             crPackDrawArraysSWAP( mode, first, count );
@@ -400,4 +454,24 @@ void PACKSPU_APIENTRY packspu_PopClientAttrib( void )
 {
     crStatePopClientAttrib();
     crPackPopClientAttrib();
+}
+
+void PACKSPU_APIENTRY packspu_LockArraysEXT(GLint first, GLint count)
+{
+    if (first>=0 && count>0)
+    {
+        crStateLockArraysEXT(first, count);
+        /*Note: this is a workaround for quake3 based apps.
+          It's modifying vertex data between glLockArraysEXT and glDrawElements calls,
+          so we'd pass data to host right before the glDrawSomething call.
+        */
+        /*crPackLockArraysEXT(first, count);*/
+    } 
+    else crDebug("Ignoring packspu_LockArraysEXT: first:%i, count:%i", first, count);
+}
+
+void PACKSPU_APIENTRY packspu_UnlockArraysEXT()
+{
+    crStateUnlockArraysEXT();
+    crPackUnlockArraysEXT();
 }

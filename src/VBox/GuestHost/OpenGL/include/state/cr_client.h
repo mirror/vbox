@@ -65,6 +65,11 @@ typedef struct {
 #ifdef CR_ARB_vertex_buffer_object
     CRBufferObject *buffer;
 #endif
+#ifdef CR_EXT_compiled_vertex_array
+    GLboolean locked;
+    unsigned char *prevPtr;
+    GLint   prevStride;
+#endif
 } CRClientPointer;
 
 typedef struct {
@@ -85,7 +90,17 @@ typedef struct {
     void *arrayRangePointer;
     GLuint arrayRangeLength;
 #endif
+#ifdef CR_EXT_compiled_vertex_array
+    GLint lockFirst;
+    GLint lockCount;
+    GLboolean locked;
+# ifdef IN_GUEST
+    GLboolean synced;
+# endif
+#endif
 } CRVertexArrays;
+
+#define CRSTATECLIENT_MAX_VERTEXARRAYS (7+CR_MAX_TEXTURE_UNITS+CR_MAX_VERTEX_ATTRIBS)
 
 typedef struct {
     /* pixel pack/unpack */
@@ -116,6 +131,7 @@ DECLEXPORT(void) crStateClientDestroy(CRClientState *c);
 
 DECLEXPORT(GLboolean) crStateUseServerArrays(void);
 DECLEXPORT(GLboolean) crStateUseServerArrayElements(void);
+DECLEXPORT(CRClientPointer*) crStateGetClientPointerByIndex(int index, CRVertexArrays *array);
 
 #ifdef __cplusplus
 }

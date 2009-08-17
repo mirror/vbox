@@ -168,3 +168,4 @@ GetBufferSubDataARB
 DeleteQueriesARB
 DeleteFramebuffersEXT
 DeleteRenderbuffersEXT
+LockArraysEXT

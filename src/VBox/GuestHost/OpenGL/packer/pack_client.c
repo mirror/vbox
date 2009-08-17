@@ -304,6 +304,8 @@ crPackExpandArrayElement(GLint index, CRClientState *c)
     const CRVertexArrays *array = &(c->array);
     const GLboolean vpEnabled = crStateGetCurrent()->program.vpEnabled;
 
+    crDebug("crPackExpandArrayElement(%i)", index);
+
     if (array->n.enabled && !(vpEnabled && array->a[VERT_ATTRIB_NORMAL].enabled))
     {
         p = array->n.p + index * array->n.stride;
@@ -935,8 +937,8 @@ crPackMultiDrawElementsEXT( GLenum mode, const GLsizei *count, GLenum type,
  */
 void
 crPackExpandMultiDrawElementsEXT( GLenum mode, const GLsizei *count,
-                                                                    GLenum type, const GLvoid **indices,
-                                                                    GLsizei primcount, CRClientState *c )
+                                  GLenum type, const GLvoid **indices,
+                                  GLsizei primcount, CRClientState *c )
 {
    GLint i;
    for (i = 0; i < primcount; i++) {
@@ -946,3 +948,133 @@ crPackExpandMultiDrawElementsEXT( GLenum mode, const GLsizei *count,
    }
 }
 #endif /* CR_EXT_multi_draw_arrays */
+
+static int crPack_GetNumEnabledArrays(CRClientState *c, int *size)
+{
+    int i, count=0;
+
+    *size = 0;
+    
+    if (c->array.v.enabled)
+    {
+        count++;
+        *size += c->array.v.bytesPerIndex;
+    }
+
+    if (c->array.c.enabled)
+    {
+        count++;
+        *size += c->array.c.bytesPerIndex;
+    }
+
+    if (c->array.f.enabled)
+    {
+        count++;
+        *size += c->array.f.bytesPerIndex;
+    }
+
+    if (c->array.s.enabled)
+    {
+        count++;
+        *size += c->array.s.bytesPerIndex;
+    }
+
+    if (c->array.e.enabled)
+    {
+        count++;
+        *size += c->array.e.bytesPerIndex;
+    }
+
+    if (c->array.i.enabled)
+    {
+        count++;
+        *size += c->array.i.bytesPerIndex;
+    }
+
+    if (c->array.n.enabled)
+    {
+        count++;
+        *size += c->array.n.bytesPerIndex;
+    }
+
+    for (i = 0 ; i < CR_MAX_TEXTURE_UNITS ; i++)
+    {
+        if (c->array.t[i].enabled)
+        {
+            count++;
+            *size += c->array.t[i].bytesPerIndex;
+        }
+    }
+
+    for (i = 0; i < CR_MAX_VERTEX_ATTRIBS; i++)
+    {
+        if (c->array.a[i].enabled)
+        {
+            count++;
+            *size += c->array.a[i].bytesPerIndex;
+        }
+    }
+
+    return count;
+}
+
+static void crPackLockClientPointer(GLint first, GLint count, unsigned char **ppData, int index, CRClientState *c)
+{
+    CRClientPointer *cp;
+    unsigned char *data_ptr = *ppData, *cptr;
+    GLint i;
+
+    cp = crStateGetClientPointerByIndex(index, &c->array);
+
+    if (cp->enabled)
+    {
+        if (cp->buffer && cp->buffer->name)
+        {
+            crWarning("crPackLockClientPointer called when there's VBO enabled!");
+        }
+
+        WRITE_DATA_AI(int, index);
+        cptr = cp->p + first*cp->bytesPerIndex;
+        if (cp->bytesPerIndex==cp->stride)
+        {
+            crMemcpy(data_ptr, cptr, count*cp->bytesPerIndex);
+            data_ptr += count*cp->bytesPerIndex;
+        }
+        else
+        {
+            for (i=0; i<count; ++i)
+            {
+                crMemcpy(data_ptr, cptr, cp->bytesPerIndex);
+                data_ptr += cp->bytesPerIndex;
+                cptr += cp->stride;
+            }
+        }
+        *ppData = data_ptr;
+    }
+}
+
+void PACK_APIENTRY crPackLockArraysEXT(GLint first, GLint count)
+{
+    CRContext *g = crStateGetCurrent();
+    CRClientState *c = &g->client;
+    unsigned char *data_ptr, *start_ptr;
+    int packet_length = sizeof(int); /*extopcode*/
+    int vertex_size, i, numenabled;
+
+    packet_length += sizeof(first) + sizeof(count); /*params*/
+    numenabled = crPack_GetNumEnabledArrays(c, &vertex_size);
+    packet_length += sizeof(int) + numenabled*sizeof(int); /*numenabled + indices*/
+    packet_length += vertex_size * count; /*vertices data*/
+
+    start_ptr = data_ptr = (unsigned char *) crPackAlloc(packet_length);
+    WRITE_DATA_AI(GLenum, CR_LOCKARRAYSEXT_EXTEND_OPCODE );
+    WRITE_DATA_AI(GLint, first);
+    WRITE_DATA_AI(GLint, count);
+    WRITE_DATA_AI(int, numenabled);
+    for (i=0; i<CRSTATECLIENT_MAX_VERTEXARRAYS; ++i)
+    {
+        crPackLockClientPointer(first, count, &data_ptr, i, c);
+    }
+    crHugePacket(CR_EXTEND_OPCODE, start_ptr);
+    crPackFree(start_ptr);
+}

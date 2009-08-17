@@ -10203,6 +10203,20 @@ param       target          GLenum
 category    GL_EXT_framebuffer_object
 chromium    extpack
 
+# GL_EXT_compiled_vertex_array
+
+name        LockArraysEXT
+return      void
+param       first           GLint
+param       count           GLint
+category    GL_EXT_compiled_vertex_array
+chromium    extpack
+
+name        UnlockArraysEXT
+return      void
+category    GL_EXT_compiled_vertex_array
+chromium    extpack
+
 # end of file sentinel
 
 name        dummy

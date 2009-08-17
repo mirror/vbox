@@ -171,7 +171,9 @@ VBoxOGLcrunpacker_INCS           = \
 VBoxOGLcrunpacker_INTERMEDIATES  = \
 	$(VBOX_PATH_CROGL_GENFILES)/spu_dispatch_table.h \
 	$(VBOX_PATH_CROGL_GENFILES)/cr_opcodes.h \
-	$(VBOX_PATH_CROGL_GENFILES)/unpack_extend.h
+	$(VBOX_PATH_CROGL_GENFILES)/unpack_extend.h \
+	$(VBOX_PATH_CROGL_GENFILES)/state/cr_currentpointers.h \
+	$(VBOX_PATH_CROGL_GENFILES)/state/cr_statefuncs.h
 VBoxOGLcrunpacker_SOURCES  = \
 	unpacker/unpack_arrays.c \
 	unpacker/unpack_bounds.c \

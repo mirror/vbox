@@ -7,6 +7,7 @@
 #include "cr_error.h"
 #include "unpack_extend.h"
 #include "unpacker.h"
+#include "cr_glstate.h"
 /**
  * \mainpage Unpacker 
  *
@@ -156,4 +157,102 @@ void crUnpackMultiDrawArraysEXT(void)
 void crUnpackMultiDrawElementsEXT(void)
 {
     crError( "Can't decode MultiDrawElementsEXT" );
+}
+
+static void crUnpackSetClientPointerByIndex(int index, GLint size, 
+                                            GLenum type, GLboolean normalized,
+                                            GLsizei stride, const GLvoid *pointer, CRClientState *c)
+{
+    if (index<7)
+    {
+        switch (index)
+        {
+            case 0:
+                cr_unpackDispatch.VertexPointer(size, type, stride, pointer);
+                break;
+            case 1:
+                cr_unpackDispatch.ColorPointer(size, type, stride, pointer);
+                break;
+            case 2:
+                cr_unpackDispatch.FogCoordPointerEXT(type, stride, pointer);
+                break;
+            case 3:
+                cr_unpackDispatch.SecondaryColorPointerEXT(size, type, stride, pointer);
+                break;
+            case 4:
+                cr_unpackDispatch.EdgeFlagPointer(stride, pointer);
+                break;
+            case 5:
+                cr_unpackDispatch.IndexPointer(type, stride, pointer);
+                break;
+            case 6:
+                cr_unpackDispatch.NormalPointer(type, stride, pointer);
+                break;
+        }
+    }
+    else if (index<(7+CR_MAX_TEXTURE_UNITS))
+    {
+        int curTexUnit = c->curClientTextureUnit;
+        if ((index-7)!=curTexUnit)
+        {
+            cr_unpackDispatch.ClientActiveTextureARB(GL_TEXTURE0_ARB+index-7);
+        }
+        cr_unpackDispatch.TexCoordPointer(size, type, stride, pointer);
+        if ((index-7)!=curTexUnit)
+        {
+            cr_unpackDispatch.ClientActiveTextureARB(GL_TEXTURE0_ARB+curTexUnit);
+        }
+    }
+    else
+    {
+        cr_unpackDispatch.VertexAttribPointerARB(index-7-CR_MAX_TEXTURE_UNITS,
+                                                 size, type, normalized, stride, pointer);
+    }
+}
+
+void crUnpackExtendLockArraysEXT(void)
+{
+    GLint first    = READ_DATA(sizeof(int) + 4, GLint);
+    GLint count    = READ_DATA(sizeof(int) + 8, GLint);
+    int numenabled = READ_DATA(sizeof(int) + 12, int);
+
+    CRContext *g = crStateGetCurrent();
+    CRClientState *c = &g->client;
+    CRClientPointer *cp;
+    int i, index, offset;
+    unsigned char *data;
+    
+    offset = 2*sizeof(int)+12;
+
+    for (i=0; i<numenabled; ++i)
+    {
+        index = READ_DATA(offset, int);
+        offset += sizeof(int);
+        cp = crStateGetClientPointerByIndex(index, &c->array);
+        CRASSERT(cp && cp->enabled && (!cp->buffer || !cp->buffer->name));
+        data = crAlloc((first+count)*cp->bytesPerIndex);
+        crMemcpy(data+first*cp->bytesPerIndex, DATA_POINTER(offset, GLvoid), count*cp->bytesPerIndex);
+        offset += count*cp->bytesPerIndex;
+        crUnpackSetClientPointerByIndex(index, cp->size, cp->type, cp->normalized, 0, data, c);
+    }
+    cr_unpackDispatch.LockArraysEXT(first, count);
+}
+
+void crUnpackExtendUnlockArraysEXT(void)
+{
+    int i;
+    CRContext *g = crStateGetCurrent();
+    CRClientState *c = &g->client;
+    CRClientPointer *cp;
+
+    cr_unpackDispatch.UnlockArraysEXT();
+
+    for (i=0; i<CRSTATECLIENT_MAX_VERTEXARRAYS; ++i)
+    {
+        cp = crStateGetClientPointerByIndex(i, &c->array);
+        if (cp->enabled)
+        {
+            crUnpackSetClientPointerByIndex(i, cp->size, cp->type, cp->normalized, cp->prevStride, cp->prevPtr, c);
+        }
+    }
 }

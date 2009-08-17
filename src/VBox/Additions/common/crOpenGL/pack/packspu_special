@@ -21,6 +21,7 @@ VertexPointer
 NormalPointer
 TexCoordPointer
 EdgeFlagPointer
+IndexPointer
 ArrayElement
 DrawArrays
 DrawElements
@@ -76,3 +77,5 @@ EnableVertexAttribArrayARB
 DisableVertexAttribArrayARB
 GetBufferSubDataARB
 IsEnabled
+LockArraysEXT
+UnlockArraysEXT
