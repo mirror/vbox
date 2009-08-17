@@ -3555,6 +3555,12 @@ HRESULT VirtualBox::handleUnexpectedExceptions(RT_SRC_POS_DECL)
         /* re-throw the current exception */
         throw;
     }
+    catch (const xml::Error &err)
+    {
+        return setError(E_FAIL, tr("%s.\n%s[%d] (%s)"),
+                                err.what(),
+                                pszFile, iLine, pszFunction);
+    }
     catch (const std::exception &err)
     {
         return setError(E_FAIL, tr("Unexpected exception: %s [%s]\n%s[%d] (%s)"),
