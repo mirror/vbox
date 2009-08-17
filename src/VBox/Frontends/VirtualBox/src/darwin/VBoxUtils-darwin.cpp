@@ -409,7 +409,7 @@ void darwinDebugPrintEvent (const char *psz, EventRef evtRef)
       UInt32 keyCode = 0;
       ::GetEventParameter (evtRef, kEventParamKeyCode, typeUInt32, NULL,
                            sizeof (keyCode), NULL, &keyCode);
-      printf(" keyCode=%d (%#x) ", (unsigned)keyCode, (unsigned)keyCode);
+      printf(" keyCode=%d (%#x) ", (int)keyCode, (unsigned)keyCode);
 
       char macCharCodes[8] = {0,0,0,0, 0,0,0,0};
       ::GetEventParameter (evtRef, kEventParamKeyCode, typeChar, NULL,
