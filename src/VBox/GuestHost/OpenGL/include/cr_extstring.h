@@ -18,6 +18,18 @@
  * Yes, we want static declarations here to avoid linking problems.
  */
 static const char *crExtensions =
+#ifdef CR_EXT_texture_compression_s3tc
+    "GL_EXT_texture_compression_s3tc "
+#endif
+#ifdef CR_EXT_draw_range_elements
+    "GL_EXT_draw_range_elements "
+#endif
+#ifdef CR_EXT_framebuffer_object
+    "GL_EXT_framebuffer_object "
+#endif
+#ifdef CR_EXT_compiled_vertex_array
+    "GL_EXT_compiled_vertex_array "
+#endif
 #ifdef CR_ARB_depth_texture
 	"GL_ARB_depth_texture "
 #endif
@@ -193,19 +205,9 @@ static const char *crExtensions =
     "GL_ARB_vertex_shader "
 #endif
 #ifdef CR_ARB_fragment_shader
-    "GL_ARB_fragment_shader "
-#endif
-#ifdef CR_EXT_texture_compression_s3tc
-    "GL_EXT_texture_compression_s3tc "
-#endif
-#ifdef CR_EXT_draw_range_elements
-    "GL_EXT_draw_range_elements "
-#endif
-#ifdef CR_EXT_framebuffer_object
-    "GL_EXT_framebuffer_object"
+    "GL_ARB_fragment_shader"
 #endif
 	"";
-
 
 /*
  * Extensions which are only supported if the render/readback SPU is

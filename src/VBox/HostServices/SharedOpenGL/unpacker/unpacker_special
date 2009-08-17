@@ -165,3 +165,5 @@ GetInfoLogARB
 DeleteQueriesARB
 DeleteFramebuffersEXT
 DeleteRenderbuffersEXT
+LockArraysEXT
+UnlockArraysEXT

@@ -362,3 +362,5 @@ FramebufferTexture3DEXT
 FramebufferRenderbufferEXT
 GetFramebufferAttachmentParameterivEXT
 GenerateMipmapEXT
+LockArraysEXT
+UnlockArraysEXT
