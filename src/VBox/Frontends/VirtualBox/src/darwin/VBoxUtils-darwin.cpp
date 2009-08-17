@@ -409,7 +409,7 @@ void darwinDebugPrintEvent (const char *psz, EventRef evtRef)
       UInt32 keyCode = 0;
       ::GetEventParameter (evtRef, kEventParamKeyCode, typeUInt32, NULL,
                            sizeof (keyCode), NULL, &keyCode);
-      printf(" keyCode=%d (%#x) ", keyCode, keyCode);
+      printf(" keyCode=%d (%#x) ", (unsigned)keyCode, (unsigned)keyCode);
 
       char macCharCodes[8] = {0,0,0,0, 0,0,0,0};
       ::GetEventParameter (evtRef, kEventParamKeyCode, typeChar, NULL,
@@ -422,7 +422,7 @@ void darwinDebugPrintEvent (const char *psz, EventRef evtRef)
       UInt32 modifierMask = 0;
       ::GetEventParameter (evtRef, kEventParamKeyModifiers, typeUInt32, NULL,
                            sizeof (modifierMask), NULL, &modifierMask);
-      printf(" modifierMask=%08x", modifierMask);
+      printf(" modifierMask=%08x", (unsigned)modifierMask);
 
       UniChar keyUnicodes[8] = {0,0,0,0, 0,0,0,0};
       ::GetEventParameter (evtRef, kEventParamKeyUnicodes, typeUnicodeText, NULL,
@@ -435,12 +435,12 @@ void darwinDebugPrintEvent (const char *psz, EventRef evtRef)
       UInt32 keyboardType = 0;
       ::GetEventParameter (evtRef, kEventParamKeyboardType, typeUInt32, NULL,
                            sizeof (keyboardType), NULL, &keyboardType);
-      printf(" keyboardType=%08x", keyboardType);
+      printf(" keyboardType=%08x", (unsigned)keyboardType);
 
       EventHotKeyID evtHotKeyId = {0,0};
       ::GetEventParameter (evtRef, typeEventHotKeyID, typeEventHotKeyID, NULL,
                            sizeof (evtHotKeyId), NULL, &evtHotKeyId);
-      printf(" evtHotKeyId={signature=%08x, .id=%08x}", evtHotKeyId.signature, evtHotKeyId.id);
+      printf(" evtHotKeyId={signature=%08x, .id=%08x}", (unsigned)evtHotKeyId.signature, (unsigned)evtHotKeyId.id);
       printf("\n");
   }
   else
