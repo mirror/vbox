@@ -1587,6 +1587,19 @@ check_kbuild()
     echo "export PATH" >> $ENV
     echo "unset path_kbuild_bin path_dev_bin" >> $ENV
     KBUILD_SED="$KBUILDDIR_BIN/kmk_sed"
+  elif [ "$OS.$BUILD_MACHINE" = "darwin.amd64" ]; then
+    # Currently there are no amd64 kBuild bins. So use the x86 variant in any case.
+    KBUILDDIR_BIN="$KBUILDDIR/bin/$OS.x86"
+    echo "export PATH_KBUILD=\"`cd $KBUILDDIR ; pwd`\"" >> $ENV
+    echo "export PATH_DEVTOOLS=\"$DEVDIR\"" >> $ENV
+    echo "path_kbuild_bin=\"\$PATH_KBUILD/bin/\$BUILD_TARGET.x86\"" >> $ENV
+    echo "export PATH_KBUILD_BIN=\"\$path_kbuild_bin\"" >> $ENV
+    echo "path_dev_bin=\"\$PATH_DEVTOOLS/\$BUILD_TARGET.\$BUILD_PLATFORM_ARCH\"/bin" >> $ENV
+    echo "echo \"\$PATH\" | grep -q \"\$path_kbuild_bin\" || PATH=\"\$path_kbuild_bin:\$PATH\"" >> $ENV
+    echo "echo \"\$PATH\" | grep -q \"\$path_dev_bin\" || PATH=\"\$path_dev_bin:\$PATH\"" >> $ENV
+    echo "export PATH" >> $ENV
+    echo "unset path_kbuild_bin path_dev_bin" >> $ENV
+    KBUILD_SED="$KBUILDDIR_BIN/kmk_sed"
   elif check_avail "kmk" KBUILDDIR really; then
     # check for installed kBuild
     KBUILD_SED="`which_wrapper kmk_sed`"
