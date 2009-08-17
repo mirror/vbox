@@ -341,7 +341,7 @@ VMMR3DECL(int) HWACCMR3Init(PVM pVM)
     AssertRC(rc);
 
     /* TPR patching for 32 bits (Windows) guests with IO-APIC: disabled by default. */
-    rc = CFGMR3QueryBoolDef(pRoot, "TPRPatchingEnabled", &pVM->hwaccm.s.fTRPPatchingAllowed, false);
+    rc = CFGMR3QueryBoolDef(pHWVirtExt, "TPRPatchingEnabled", &pVM->hwaccm.s.fTRPPatchingAllowed, false);
     AssertRC(rc);
 
 #ifdef RT_OS_DARWIN
