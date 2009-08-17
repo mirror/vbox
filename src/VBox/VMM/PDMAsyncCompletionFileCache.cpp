@@ -19,6 +19,30 @@
  * Clara, CA 95054 USA or visit http://www.sun.com if you need
  * additional information or have any questions.
  */
+
+/** @page pg_pdm_async_completion_cache     PDM Async Completion Cache - The file I/O cache
+ * This component implements an I/O cache for file endpoints based on the ARC algorithm.
+ * http://en.wikipedia.org/wiki/Adaptive_Replacement_Cache
+ *
+ * The algorithm uses for LRU (Least frequently used) lists to store data in the cache.
+ * Two of them contain data where one stores entries which were accessed recently and one
+ * which is used for frequently accessed data.
+ * The other two lists are called ghost lists and store information about the accessed range
+ * but do not contain data. They are used to track data access. If these entries are accessed
+ * they will push the data to a higher position in the cache preventing it from getting removed
+ * quickly again.
+ *
+ * The algorithm needs to be modified to meet our requirements. Like the implementation
+ * for the ZFS filesystem we need to handle pages with a variable size. It would
+ * be possible to use a fixed size but would increase the computational
+ * and memory overhead.
+ * Because we do I/O asynchronously we also need to mark entries which are currently accessed
+ * as non evictable to prevent removal of the entry while the data is being accessed.
+ */
+
+/*******************************************************************************
+*   Header Files                                                               *
+*******************************************************************************/
 #define LOG_GROUP LOG_GROUP_PDM_ASYNC_COMPLETION
 #include <iprt/types.h>
 #include <iprt/mem.h>
@@ -27,8 +51,18 @@
 
 #include "PDMAsyncCompletionFileInternal.h"
 
+/*******************************************************************************
+*   Internal Functions                                                         *
+*******************************************************************************/
 static void pdmacFileCacheTaskCompleted(PPDMACTASKFILE pTask, void *pvUser);
 
+/**
+ * Checks consistency of a LRU list.
+ *
+ * @returns nothing
+ * @param    pList         The LRU list to check.
+ * @param    pNotInList    Element which is not allowed to occur in the list.
+ */
 static void pdmacFileCacheCheckList(PPDMACFILELRULIST pList, PPDMACFILECACHEENTRY pNotInList)
 {
 #ifdef PDMACFILECACHE_WITH_LRULIST_CHECKS
@@ -57,6 +91,12 @@ static void pdmacFileCacheCheckList(PPDMACFILELRULIST pList, PPDMACFILECACHEENTR
 #endif
 }
 
+/**
+ * Unlinks a cache entry from the LRU list it is assigned to.
+ *
+ * @returns nothing.
+ * @param   pEntry    The entry to unlink.
+ */
 static void pdmacFileCacheEntryRemoveFromList(PPDMACFILECACHEENTRY pEntry)
 {
     PPDMACFILELRULIST pList = pEntry->pList;
@@ -100,6 +140,14 @@ static void pdmacFileCacheEntryRemoveFromList(PPDMACFILECACHEENTRY pEntry)
     pdmacFileCacheCheckList(pList, pEntry);
 }
 
+/**
+ * Adds a cache entry to the given LRU list unlinking it from the currently
+ * assigned list if needed.
+ *
+ * @returns nothing.
+ * @param    pList    List to the add entry to.
+ * @param    pEntry   Entry to add.
+ */
 static void pdmacFileCacheEntryAddToList(PPDMACFILELRULIST pList, PPDMACFILECACHEENTRY pEntry)
 {
     LogFlowFunc((": Adding entry %#p to list %#p\n", pEntry, pList));
@@ -149,6 +197,20 @@ static void pdmacFileCacheDestroyList(PPDMACFILELRULIST pList)
     }
 }
 
+/**
+ * Tries to remove the given amount of bytes from a given list in the cache
+ * moving the entries to one of the given ghosts lists
+ *
+ * @returns Amount of data which could be freed.
+ * @param    pCache           Pointer to the global cache data.
+ * @param    cbData           The amount of the data to free.
+ * @param    pListSrc         The source list to evict data from.
+ * @param    pGhostListSrc    The ghost list removed entries should be moved to
+ *                            NULL if the entry should be freed.
+ *
+ * @notes This function may return fewer bytes than requested because entries
+ *        may be marked as non evictable if they are used for I/O at the moment.
+ */
 static size_t pdmacFileCacheEvictPagesFrom(PPDMACFILECACHEGLOBAL pCache, size_t cbData,
                                            PPDMACFILELRULIST pListSrc, PPDMACFILELRULIST pGhostListDst)
 {
@@ -225,6 +287,13 @@ static size_t pdmacFileCacheReplace(PPDMACFILECACHEGLOBAL pCache, size_t cbData,
     }
 }
 
+/**
+ * Tries to evict the given amount of the data from the cache.
+ *
+ * @returns Bytes removed.
+ * @param    pCache    The global cache data.
+ * @param    cbData    Number of bytes to evict.
+ */
 static size_t pdmacFileCacheEvict(PPDMACFILECACHEGLOBAL pCache, size_t cbData)
 {
     size_t cbRemoved = ~0;
@@ -265,6 +334,13 @@ static size_t pdmacFileCacheEvict(PPDMACFILECACHEGLOBAL pCache, size_t cbData)
     return cbRemoved;
 }
 
+/**
+ * Updates the cache parameters
+ *
+ * @returns nothing.
+ * @param    pCache    The global cache data.
+ * @param    pEntry    The entry usign for the update.
+ */
 static void pdmacFileCacheUpdate(PPDMACFILECACHEGLOBAL pCache, PPDMACFILECACHEENTRY pEntry)
 {
     int32_t uUpdateVal = 0;
@@ -292,6 +368,12 @@ static void pdmacFileCacheUpdate(PPDMACFILECACHEGLOBAL pCache, PPDMACFILECACHEEN
         AssertMsgFailed(("Invalid list type\n"));
 }
 
+/**
+ * Initiates a read I/O task for the given entry.
+ *
+ * @returns nothing.
+ * @param   pEntry    The entry to fetch the data to.
+ */
 static void pdmacFileCacheReadFromEndpoint(PPDMACFILECACHEENTRY pEntry)
 {
     /* Make sure no one evicts the entry while it is accessed. */
@@ -314,6 +396,12 @@ static void pdmacFileCacheReadFromEndpoint(PPDMACFILECACHEENTRY pEntry)
     pdmacFileEpAddTask(pEntry->pEndpoint, pIoTask);
 }
 
+/**
+ * Initiates a write I/O task for the given entry.
+ *
+ * @returns nothing.
+ * @param    pEntry The entry to read the data from.
+ */
 static void pdmacFileCacheWriteToEndpoint(PPDMACFILECACHEENTRY pEntry)
 {
     /* Make sure no one evicts the entry while it is accessed. */
@@ -336,6 +424,13 @@ static void pdmacFileCacheWriteToEndpoint(PPDMACFILECACHEENTRY pEntry)
     pdmacFileEpAddTask(pEntry->pEndpoint, pIoTask);
 }
 
+/**
+ * Completion callback for I/O tasks.
+ *
+ * @returns nothing.
+ * @param    pTask     The completed task.
+ * @param    pvUser    Opaque user data.
+ */
 static void pdmacFileCacheTaskCompleted(PPDMACTASKFILE pTask, void *pvUser)
 {
     PPDMACFILECACHEENTRY pEntry = (PPDMACFILECACHEENTRY)pvUser;
@@ -410,6 +505,13 @@ static void pdmacFileCacheTaskCompleted(PPDMACTASKFILE pTask, void *pvUser)
     RTCritSectLeave(&pCache->CritSect);
 }
 
+/**
+ * Initializies the I/O cache.
+ *
+ * returns VBox status code.
+ * @param    pClassFile    The global class data for file endpoints.
+ * @param    pCfgNode      CFGM node to query configuration data from.
+ */
 int pdmacFileCacheInit(PPDMASYNCCOMPLETIONEPCLASSFILE pClassFile, PCFGMNODE pCfgNode)
 {
     int rc = VINF_SUCCESS;
@@ -509,6 +611,12 @@ int pdmacFileCacheInit(PPDMASYNCCOMPLETIONEPCLASSFILE pClassFile, PCFGMNODE pCfg
     return rc;
 }
 
+/**
+ * Destroysthe cache freeing all data.
+ *
+ * returns nothing.
+ * @param    pClassFile    The global class data for file endpoints.
+ */
 void pdmacFileCacheDestroy(PPDMASYNCCOMPLETIONEPCLASSFILE pClassFile)
 {
     PPDMACFILECACHEGLOBAL pCache = &pClassFile->Cache;
@@ -527,6 +635,14 @@ void pdmacFileCacheDestroy(PPDMASYNCCOMPLETIONEPCLASSFILE pClassFile)
     RTCritSectDelete(&pCache->CritSect);
 }
 
+/**
+ * Initializes per endpoint cache data
+ * like the AVL tree used to access cached entries.
+ *
+ * @returns VBox status code.
+ * @param    pEndpoint     The endpoint to init the cache for,
+ * @param    pClassFile    The global class data for file endpoints.
+ */
 int pdmacFileEpCacheInit(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint, PPDMASYNCCOMPLETIONEPCLASSFILE pClassFile)
 {
     PPDMACFILEENDPOINTCACHE pEndpointCache = &pEndpoint->DataCache;
@@ -537,6 +653,13 @@ int pdmacFileEpCacheInit(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint, PPDMASYNCCOM
     return VINF_SUCCESS;
 }
 
+/**
+ * Callback for the AVL destroy routine. Frees a cache entry for this endpoint.
+ *
+ * @returns IPRT status code.
+ * @param    pNode     The node to destroy.
+ * @param    pvUser    Opaque user data.
+ */
 static int pdmacFileEpCacheEntryDestroy(PAVLRFOFFNODECORE pNode, void *pvUser)
 {
     PPDMACFILECACHEENTRY  pEntry = (PPDMACFILECACHEENTRY)pNode;
@@ -554,6 +677,12 @@ static int pdmacFileEpCacheEntryDestroy(PAVLRFOFFNODECORE pNode, void *pvUser)
     return VINF_SUCCESS;
 }
 
+/**
+ * Destroys all cache ressources used by the given endpoint.
+ *
+ * @returns nothing.
+ * @param    pEndpoint    The endpoint to the destroy.
+ */
 void pdmacFileEpCacheDestroy(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint)
 {
     PPDMACFILEENDPOINTCACHE pEndpointCache = &pEndpoint->DataCache;
@@ -584,6 +713,17 @@ void pdmacFileEpCacheDestroy(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint)
     } \
     while (0);
 
+/**
+ * Reads the specified data from the endpoint using the cache if possible.
+ *
+ * @returns VBox status code.
+ * @param    pEndpoint     The endpoint to read from.
+ * @param    pTask         The task structure used as identifier for this request.
+ * @param    off           The offset to start reading from.
+ * @param    paSegments    Pointer to the array holding the destination buffers.
+ * @param    cSegments     Number of segments in the array.
+ * @param    cbRead        Number of bytes to read.
+ */
 int pdmacFileEpCacheRead(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint, PPDMASYNCCOMPLETIONTASKFILE pTask,
                          RTFOFF off, PCPDMDATASEG paSegments, size_t cSegments,
                          size_t cbRead)
@@ -851,6 +991,17 @@ int pdmacFileEpCacheRead(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint, PPDMASYNCCOM
    return rc;
 }
 
+/**
+ * Writes the given data to the endpoint using the cache if possible.
+ *
+ * @returns VBox status code.
+ * @param    pEndpoint     The endpoint to write to.
+ * @param    pTask         The task structure used as identifier for this request.
+ * @param    off           The offset to start writing to
+ * @param    paSegments    Pointer to the array holding the source buffers.
+ * @param    cSegments     Number of segments in the array.
+ * @param    cbWrite       Number of bytes to write.
+ */
 int pdmacFileEpCacheWrite(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint, PPDMASYNCCOMPLETIONTASKFILE pTask,
                           RTFOFF off, PCPDMDATASEG paSegments, size_t cSegments,
                           size_t cbWrite)
