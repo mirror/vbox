@@ -416,28 +416,7 @@ typedef std::map<uint32_t, DeviceType_T> BootOrderMap;
 
 struct Hardware
 {
-    Hardware()
-        : strVersion("2"),
-          fHardwareVirt(true),
-          fNestedPaging(false),
-          fVPID(false),
-          fPAE(false),
-          cCPUs(1),
-          ulMemorySizeMB((uint32_t)-1),
-          ulVRAMSizeMB(8),
-          cMonitors(1),
-          fAccelerate3D(false),
-          fAccelerate2DVideo(false),
-          clipboardMode(ClipboardMode_Bidirectional),
-          ulMemoryBalloonSize(0),
-          ulStatisticsUpdateInterval(0)
-    {
-/*        mBootOrder [0] = DeviceType_Floppy;
-        mBootOrder [1] = DeviceType_DVD;
-        mBootOrder [2] = DeviceType_HardDisk;
-        for (size_t i = 3; i < RT_ELEMENTS (mBootOrder); i++)
-            mBootOrder [i] = DeviceType_Null;*/
-    }
+    Hardware();
 
     com::Utf8Str        strVersion;             // hardware version, optional
 
