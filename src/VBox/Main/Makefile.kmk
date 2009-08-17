@@ -589,6 +589,7 @@ VBoxC_SOURCES = \
 	ProgressImpl.cpp \
 	SharedFolderImpl.cpp \
 	SessionImpl.cpp \
+	VirtualBoxCallbackImpl.cpp \
 	ConsoleImpl.cpp \
 	ConsoleImpl2.cpp \
 	ConsoleVRDPServer.cpp \

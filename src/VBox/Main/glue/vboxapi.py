@@ -217,14 +217,15 @@ class PlatformMSCOM:
             DispatchBaseClass.__dict__['__setattr__'] = CustomSetAttr
             win32com.client.gencache.EnsureDispatch('VirtualBox.Session')
             win32com.client.gencache.EnsureDispatch('VirtualBox.VirtualBox')
+            win32com.client.gencache.EnsureDispatch('VirtualBox.VirtualBoxCallback')
 
     def getSessionObject(self, vbox):
         import win32com
         from win32com.client import Dispatch
-	return win32com.client.Dispatch("VirtualBox.Session")
+        return win32com.client.Dispatch("VirtualBox.Session")
 
     def getVirtualBox(self):
-	import win32com
+        import win32com
         from win32com.client import Dispatch
         return win32com.client.Dispatch("VirtualBox.VirtualBox")
 
@@ -266,7 +267,8 @@ class PlatformMSCOM:
              str += "   "+ComifyName(m)+"=BaseClass."+m+"\n"
 
         str += "   def __init__(self): BaseClass.__init__(self, arg)\n"
-        str += "result = win32com.server.util.wrap("+iface+"Impl())\n"
+        str += "result = win32com.client.Dispatch('VirtualBox.VirtualBoxCallback')\n"
+        str += "result.SetLocalObject(win32com.server.util.wrap("+iface+"Impl())\n"
         exec (str,d,d)
         return d['result']
 
@@ -341,7 +343,8 @@ class PlatformXPCOM:
         str += "class "+iface+"Impl(BaseClass):\n"
         str += "   _com_interfaces_ = xpcom.components.interfaces."+iface+"\n"
         str += "   def __init__(self): BaseClass.__init__(self, arg)\n"
-        str += "result = "+iface+"Impl()\n"
+        str += "result = xpcom.components.classes['@virtualbox.org/VirtualBoxCallback;1'].createInstance()\n"
+        str += "result.setLocalObject("+iface+"Impl())\n"
         exec (str,d,d)
         return d['result']
 

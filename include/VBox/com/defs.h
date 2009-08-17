@@ -607,7 +607,7 @@ private:
 #else
 #define VBOX_SCRIPTABLE_IMPL(iface)                     \
     public iface
-#define VBOX_SCRIPTABLE_DISPATCH_IMPL(iface)               
+#define VBOX_SCRIPTABLE_DISPATCH_IMPL(iface)
 #endif
 
 

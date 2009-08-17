@@ -435,8 +435,11 @@ static int handleWaitGuestProperty(HandlerArg *a)
      */
     Bstr uuid;
     machine->COMGETTER(Id)(uuid.asOutParam());
-    GuestPropertyCallback *callback = new GuestPropertyCallback(pszPatterns, uuid);
-    callback->AddRef();
+    GuestPropertyCallback* cbImpl = new GuestPropertyCallback(pszPatterns, uuid);
+    ComPtr<IVirtualBoxCallback> callback;
+    rc = createCallbackWrapper((IVirtualBoxCallback*)cbImpl, callback.asOutParam());
+    if (FAILED(rc))
+        return 1;
     a->virtualBox->RegisterCallback (callback);
     bool stop = false;
 #ifdef USE_XPCOM_QUEUE
@@ -465,7 +468,7 @@ static int handleWaitGuestProperty(HandlerArg *a)
             uint64_t u64NextTime = RTTimeSpecGetMilli(RTTimeNow(&TimeNow));
             u32Timeout += (uint32_t)(u64Time + 1000 - u64NextTime);
             a->eventQ->ProcessPendingEvents();
-            if (callback->Signalled())
+            if (cbImpl->Signalled())
                 stop = true;
         }
 #else  /* !USE_XPCOM_QUEUE */
@@ -473,7 +476,7 @@ static int handleWaitGuestProperty(HandlerArg *a)
          * running to test on. */
         /**@todo r=bird: get to it!*/
         RTThreadSleep(RT_MIN(1000, u32Timeout));
-        if (callback->Signalled())
+        if (cbImpl->Signalled())
             stop = true;
 #endif /* !USE_XPCOM_QUEUE */
     }
@@ -482,10 +485,8 @@ static int handleWaitGuestProperty(HandlerArg *a)
      * Clean up the callback.
      */
     a->virtualBox->UnregisterCallback(callback);
-    if (!callback->Signalled())
+    if (!cbImpl->Signalled())
         RTPrintf("Time out or interruption while waiting for a notification.\n");
-    callback->Release();
-
     /*
      * Done.
      */
@@ -520,4 +521,3 @@ int handleGuestProperty(HandlerArg *a)
     /* default: */
     return errorSyntax(USAGE_GUESTPROPERTY, "Incorrect parameters");
 }
-

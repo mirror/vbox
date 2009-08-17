@@ -853,8 +853,12 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
     DeviceType_T bootDevice = DeviceType_Null;
     uint32_t memorySize = 0;
     uint32_t vramSize = 0;
-    VBoxSDLCallback *callback = NULL;
-    VBoxSDLConsoleCallback *consoleCallback = NULL;
+    VBoxSDLCallback *cbVBoxImpl = NULL;
+    /* wrapper around above object */
+    ComPtr<IVirtualBoxCallback> callback;
+    VBoxSDLConsoleCallback *cbConsoleImpl = NULL;
+    ComPtr<IConsoleCallback> consoleCallback;
+
     bool fFullscreen = false;
     bool fResizable = true;
 #ifdef USE_XPCOM_QUEUE_THREAD
@@ -1849,11 +1853,12 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
     signal(SIGSEGV, signal_handler_SIGINT);
 #endif
 
+
     for (ULONG i = 0; i < gcMonitors; i++)
     {
         // register our framebuffer
         rc = gDisplay->SetFramebuffer(i, gpFramebuffer[i]);
-        if (rc != S_OK)
+        if (FAILED(rc))
         {
             RTPrintf("Error: could not register framebuffer object!\n");
             goto leave;
@@ -1865,16 +1870,20 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
     }
 
     // register a callback for global events
-    callback = new VBoxSDLCallback();
-    callback->AddRef();
+    cbVBoxImpl = new VBoxSDLCallback();
+    rc = createCallbackWrapper((IVirtualBoxCallback*)cbVBoxImpl, callback.asOutParam());
+    if (FAILED(rc))
+        goto leave;
     virtualBox->RegisterCallback(callback);
 
     // register a callback for machine events
-    consoleCallback = new VBoxSDLConsoleCallback();
-    consoleCallback->AddRef();
+    cbConsoleImpl = new VBoxSDLConsoleCallback();
+    rc = createCallbackWrapper((IConsoleCallback*)cbConsoleImpl, consoleCallback.asOutParam());
+    if (FAILED(rc))
+        goto leave;
     gConsole->RegisterCallback(consoleCallback);
     // until we've tried to to start the VM, ignore power off events
-    consoleCallback->ignorePowerOffEvents(true);
+    cbConsoleImpl->ignorePowerOffEvents(true);
 
 #ifdef VBOX_WITH_VRDP
     if (portVRDP != ~0)
@@ -2171,7 +2180,7 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
 
     // accept power off events from now on because we're running
     // note that there's a possible race condition here...
-    consoleCallback->ignorePowerOffEvents(false);
+    cbConsoleImpl->ignorePowerOffEvents(false);
 
     rc = gConsole->COMGETTER(Keyboard)(gKeyboard.asOutParam());
     if (!gKeyboard)
@@ -2684,7 +2693,7 @@ leave:
     if (   gConsole
         && machineState == MachineState_Running)
     {
-        consoleCallback->ignorePowerOffEvents(true);
+        cbConsoleImpl->ignorePowerOffEvents(true);
         ComPtr <IProgress> progress;
         CHECK_ERROR_BREAK(gConsole, PowerDown(progress.asOutParam()));
         CHECK_ERROR_BREAK (progress, WaitForCompletion (-1));
@@ -2791,12 +2800,6 @@ leave:
     LogFlow(("Releasing machine, session...\n"));
     gMachine = NULL;
     session = NULL;
-    LogFlow(("Releasing callback handlers...\n"));
-    if (callback)
-        callback->Release();
-    if (consoleCallback)
-        consoleCallback->Release();
-
     LogFlow(("Releasing VirtualBox object...\n"));
     virtualBox = NULL;
 

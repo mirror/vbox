@@ -46,6 +46,7 @@
 #include "SessionImpl.h"
 #include "ConsoleImpl.h"
 #include "ConsoleVRDPServer.h"
+#include "VirtualBoxCallbackImpl.h"
 
 #include "Logging.h"
 
@@ -78,7 +79,8 @@ NS_DECL_CLASSINFO(Session)
 NS_IMPL_THREADSAFE_ISUPPORTS2_CI(Session, ISession, IInternalSessionControl)
 NS_DECL_CLASSINFO(Console)
 NS_IMPL_THREADSAFE_ISUPPORTS1_CI(Console, IConsole)
-
+NS_DECL_CLASSINFO(VirtualBoxCallback)
+NS_IMPL_THREADSAFE_ISUPPORTS3_CI(VirtualBoxCallback, IVirtualBoxCallback, IConsoleCallback, ILocalOwner)
 /**
  *  Singleton class factory that holds a reference to the created instance
  *  (preventing it from being destroyed) until the module is explicitly
@@ -133,6 +135,8 @@ private:
 
 NS_GENERIC_FACTORY_CONSTRUCTOR_WITH_RC (Session)
 
+NS_GENERIC_FACTORY_CONSTRUCTOR_WITH_RC (VirtualBoxCallback)
+
 
 /**
  *  Component definition table.
@@ -152,7 +156,20 @@ static const nsModuleComponentInfo components[] =
         NS_CI_INTERFACE_GETTER_NAME(Session), // interfaces function
         NULL, // language helper
         &NS_CLASSINFO_NAME(Session) // global class info & flags
+    },
+    {
+        "VirtualBoxCallback component", // description
+        NS_VIRTUALBOXCALLBACK_CID, NS_VIRTUALBOXCALLBACK_CONTRACTID, // CID/ContractID
+        VirtualBoxCallbackConstructor, // constructor function
+        NULL, // registration function
+        NULL, // deregistration function
+//        SessionClassFactory::releaseInstance,
+        NULL, // destructor function
+        NS_CI_INTERFACE_GETTER_NAME(VirtualBoxCallback), // interfaces function
+        NULL, // language helper
+        &NS_CLASSINFO_NAME(VirtualBoxCallback) // global class info & flags
     }
+
 };
 
 NS_IMPL_NSGETMODULE (VirtualBox_Client_Module, components)

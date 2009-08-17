@@ -126,6 +126,7 @@
 
 #define NS_IMPL_THREADSAFE_QUERY_INTERFACE1_CI  NS_IMPL_QUERY_INTERFACE1_CI
 #define NS_IMPL_THREADSAFE_QUERY_INTERFACE2_CI  NS_IMPL_QUERY_INTERFACE2_CI
+#define NS_IMPL_THREADSAFE_QUERY_INTERFACE3_CI  NS_IMPL_QUERY_INTERFACE3_CI
 
 #ifndef NS_IMPL_THREADSAFE_ISUPPORTS1_CI
 # define NS_IMPL_THREADSAFE_ISUPPORTS1_CI(_class, _interface)                 \
@@ -141,6 +142,14 @@
    NS_IMPL_THREADSAFE_RELEASE(_class)                                         \
    NS_IMPL_THREADSAFE_QUERY_INTERFACE2_CI(_class, _i1, _i2)                   \
    NS_IMPL_CI_INTERFACE_GETTER2(_class, _i1, _i2)
+#endif
+
+#ifndef NS_IMPL_THREADSAFE_ISUPPORTS3_CI
+# define NS_IMPL_THREADSAFE_ISUPPORTS3_CI(_class, _i1, _i2, _i3)              \
+   NS_IMPL_THREADSAFE_ADDREF(_class)                                          \
+   NS_IMPL_THREADSAFE_RELEASE(_class)                                         \
+   NS_IMPL_THREADSAFE_QUERY_INTERFACE3_CI(_class, _i1, _i2, _i3)              \
+   NS_IMPL_CI_INTERFACE_GETTER3(_class, _i1, _i2, _i3)
 #endif
 
 #ifndef NS_IMPL_QUERY_INTERFACE1_AMBIGUOUS_CI
@@ -163,8 +172,21 @@
    NS_INTERFACE_MAP_END
 #endif
 
+#ifndef NS_IMPL_QUERY_INTERFACE3_AMBIGUOUS_CI
+# define NS_IMPL_QUERY_INTERFACE3_AMBIGUOUS_CI(_class, _i1, _ic1,             \
+                                               _i2, _ic2, _i3, _ic3)          \
+   NS_INTERFACE_MAP_BEGIN(_class)                                             \
+    NS_INTERFACE_MAP_ENTRY_AMBIGUOUS(_i1, _ic1)                               \
+    NS_INTERFACE_MAP_ENTRY_AMBIGUOUS(_i2, _ic2)                               \
+    NS_INTERFACE_MAP_ENTRY_AMBIGUOUS(_i3, _ic3)                               \
+    NS_INTERFACE_MAP_ENTRY_AMBIGUOUS(nsISupports, _ic1)                       \
+    NS_IMPL_QUERY_CLASSINFO(_class)                                           \
+   NS_INTERFACE_MAP_END
+#endif
+
 #define NS_IMPL_THREADSAFE_QUERY_INTERFACE1_AMBIGUOUS_CI NS_IMPL_QUERY_INTERFACE1_AMBIGUOUS_CI
 #define NS_IMPL_THREADSAFE_QUERY_INTERFACE2_AMBIGUOUS_CI NS_IMPL_QUERY_INTERFACE2_AMBIGUOUS_CI
+#define NS_IMPL_THREADSAFE_QUERY_INTERFACE3_AMBIGUOUS_CI NS_IMPL_QUERY_INTERFACE3_AMBIGUOUS_CI
 
 #ifndef NS_IMPL_THREADSAFE_ISUPPORTS1_AMBIGUOUS_CI
 # define NS_IMPL_THREADSAFE_ISUPPORTS1_AMBIGUOUS_CI(_class, _i1, _ic1)        \
@@ -183,6 +205,17 @@
                                                     _i2, _ic2)                \
    NS_IMPL_CI_INTERFACE_GETTER2(_class, _i1, _i2)
 #endif
+
+#ifndef NS_IMPL_THREADSAFE_ISUPPORTS3_AMBIGUOUS_CI
+# define NS_IMPL_THREADSAFE_ISUPPORTS3_AMBIGUOUS_CI(_class, _i1, _ic1,        \
+                                                     _i2, _ic2, _i3, _ic3)    \
+   NS_IMPL_THREADSAFE_ADDREF(_class)                                          \
+   NS_IMPL_THREADSAFE_RELEASE(_class)                                         \
+   NS_IMPL_THREADSAFE_QUERY_INTERFACE3_AMBIGUOUS_CI(_class, _i1, _ic1,        \
+                                                    _i2, _ic2, _i3, _ic3)     \
+   NS_IMPL_CI_INTERFACE_GETTER3(_class, _i1, _i2, _i3)
+#endif
+
   </cpp>
 </if>
 
@@ -1041,6 +1074,25 @@
 
   </interface>
 
+  <interface
+     name="ILocalOwner" extends="$dispatched"
+     uuid="308ff42a-dc45-49d4-a950-b1eee5e00bb5" wsmap="suppress"
+     >
+    <desc>
+      The ILocalOwner interface allows to provide custom implementation
+      of VirtualBox interfaces, not being fully remote-aware classes by themselved.
+      Most importnat usecase for this interface is callbacks implementation.
+    </desc>
+    <method name="setLocalObject">
+      <desc>
+        Set local object.
+      </desc>
+      <param name="object" type="$unknown" dir="in">
+        <desc>Local object, to forward requests to. 
+          If null, clears currently set local object(s).</desc>
+      </param>
+    </method>
+  </interface>
 
   <!--
   // IVirtualBox
@@ -1052,6 +1104,7 @@
      uuid="2990059f-5bc8-4635-8415-658917cd3186"
      wsmap="suppress"
      >
+
     <method name="onMachineStateChange">
       <desc>
         The execution state of the given machine has changed.
@@ -13088,9 +13141,14 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   </module>
 
   <module name="VBoxC" context="InprocServer" threadingModel="Free">
-    <class name="Session" uuid="3C02F46D-C9D2-4f11-A384-53F0CF917214"
+    <class name="Session" uuid="3C02F46D-C9D2-4F11-A384-53F0CF917214"
            namespace="virtualbox.org">
       <interface name="ISession" default="yes"/>
+    </class>
+    <class name="VirtualBoxCallback" uuid="49EE8561-5563-4715-B18C-A4B1A490DAFE"
+           namespace="virtualbox.org">
+      <interface name="IVirtualBoxCallback" default="yes"/>
+      <interface name="ILocalOwner"/>
     </class>
   </module>
 
