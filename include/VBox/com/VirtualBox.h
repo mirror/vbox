@@ -54,5 +54,27 @@
 
 // for convenience
 #include "VBox/com/defs.h"
+#include "VBox/com/ptr.h"
 
+template <class I>
+inline HRESULT createCallbackWrapper(I* aInstance,
+                                     I** paWrapper)
+{
+    ComPtr<ILocalOwner> ptr;
+
+    HRESULT rc = ptr.createInprocObject(CLSID_VirtualBoxCallback);
+    if (FAILED(rc))
+        return rc;
+
+    rc = ptr->SetLocalObject(aInstance);
+    if (FAILED(rc))
+        return rc;
+
+    ComPtr<I> ptr2 = ptr;
+    if (ptr2.isNull())
+        return E_FAIL;
+
+    rc = ptr2.queryInterfaceTo(paWrapper);
+    return rc;
+}
 #endif

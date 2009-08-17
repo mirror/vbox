@@ -23,6 +23,7 @@
 #include "VBox/com/defs.h"
 
 #include <SessionImpl.h>
+#include <VirtualBoxCallbackImpl.h>
 
 #include <atlbase.h>
 #include <atlcom.h>
@@ -33,6 +34,7 @@ CComModule _Module;
 
 BEGIN_OBJECT_MAP(ObjectMap)
     OBJECT_ENTRY(CLSID_Session, Session)
+    OBJECT_ENTRY(CLSID_VirtualBoxCallback, VirtualBoxCallback)
 END_OBJECT_MAP()
 
 /////////////////////////////////////////////////////////////////////////////
@@ -47,7 +49,7 @@ BOOL WINAPI DllMain(HINSTANCE hInstance, DWORD dwReason, LPVOID /*lpReserved*/)
         DisableThreadLibraryCalls(hInstance);
 
         // idempotent, so doesn't harm, and needed for COM embedding scenario
-        RTR3Init();        
+        RTR3Init();
     }
     else if (dwReason == DLL_PROCESS_DETACH)
         _Module.Term();
@@ -86,4 +88,3 @@ STDAPI DllUnregisterServer(void)
 {
     return _Module.UnregisterServer(TRUE);
 }
-
