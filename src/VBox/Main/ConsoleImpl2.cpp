@@ -306,7 +306,6 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
         if (    !fIs64BitGuest
             &&  fIOAPIC
             &&  (   osTypeId == "WindowsNT"
-                 || osTypeId == "Windows"
                  || osTypeId == "Windows 2000"
                  || osTypeId == "WindowsXP"
                  || osTypeId == "Windows 2003"))
