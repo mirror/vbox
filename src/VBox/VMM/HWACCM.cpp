@@ -652,7 +652,7 @@ VMMR3DECL(int) HWACCMR3InitFinalizeR0(PVM pVM)
     /* No TPR patching is required when the IO-APIC is not enabled for this VM. (Main should have taken care of this already) */
     if (!pVM->hwaccm.s.fHasIoApic)
     {
-        Assert(pVM->hwaccm.s.fTRPPatchingAllowed); /* paranoia */
+        Assert(!pVM->hwaccm.s.fTRPPatchingAllowed); /* paranoia */
         pVM->hwaccm.s.fTRPPatchingAllowed = false;
     }
 
