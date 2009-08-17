@@ -267,14 +267,11 @@ STDMETHODIMP VBoxFrameBuffer::ProcessVHWACommand(BYTE *pCommand)
     return E_NOTIMPL;
 }
 
-#ifdef VBOX_GUI_USE_QGL
-void VBoxFrameBuffer::doProcessVHWACommand(VBoxVHWACommandProcessEvent * pEvent)
+#ifdef VBOX_WITH_VIDEOHWACCEL
+void VBoxFrameBuffer::doProcessVHWACommand(QEvent * pEvent)
 {
-//    pCommand->rc = VERR_NOT_IMPLEMENTED;
-//    CDisplay display = mView->console().GetDisplay();
-//    Assert (!display.isNull());
-//
-//    display.CompleteVHWACommand((BYTE*)pCommand);
+    /* should never be here */
+    AssertBreakpoint();
 }
 #endif
 
