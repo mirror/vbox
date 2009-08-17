@@ -44,7 +44,7 @@
 RTDECL(int) RTPathTraverseList(const char *pszPathList, char chSep, PFNRTPATHTRAVERSER pfnCallback, void *pvUser1, void *pvUser2)
 {
     AssertPtrNull(pszPathList);
-    Assert(chSep >= 0 && chSep <= 127);
+    Assert((unsigned int)chSep <= 127);
 
     if (!pszPathList)
         return VERR_END_OF_STRING;
