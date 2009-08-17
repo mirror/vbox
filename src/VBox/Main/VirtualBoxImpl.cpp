@@ -1530,7 +1530,7 @@ STDMETHODIMP VirtualBox::SetExtraData(IN_BSTR aKey,
     }
 
     bool fChanged;
-    if (fChanged = (strOldValue != strValue))
+    if ((fChanged = (strOldValue != strValue)))
     {
         // ask for permission from all listeners outside the locks;
         // onExtraDataCanChange() only briefly requests the VirtualBox
