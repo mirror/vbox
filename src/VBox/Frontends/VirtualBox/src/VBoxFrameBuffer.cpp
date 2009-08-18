@@ -270,6 +270,7 @@ STDMETHODIMP VBoxFrameBuffer::ProcessVHWACommand(BYTE *pCommand)
 #ifdef VBOX_WITH_VIDEOHWACCEL
 void VBoxFrameBuffer::doProcessVHWACommand(QEvent * pEvent)
 {
+	Q_UNUSED(pEvent);
     /* should never be here */
     AssertBreakpoint();
 }

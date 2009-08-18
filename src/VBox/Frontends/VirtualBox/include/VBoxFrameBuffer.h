@@ -506,8 +506,8 @@ public:
     bool equals (const VBoxVHWAColorFormat & other) const;
 
 private:
-    void VBoxVHWAColorFormat::init(uint32_t bitsPerPixel, uint32_t r, uint32_t g, uint32_t b);
-    void VBoxVHWAColorFormat::init(uint32_t fourcc);
+    void init(uint32_t bitsPerPixel, uint32_t r, uint32_t g, uint32_t b);
+    void init(uint32_t fourcc);
 
     GLint mInternalFormat;
     GLenum mFormat;
@@ -529,7 +529,7 @@ class VBoxVHWATexture
 {
 public:
     VBoxVHWATexture() {}
-    VBoxVHWATexture(const QRect * pRect, const VBoxVHWAColorFormat *pFormat);
+    VBoxVHWATexture(const QRect & aRect, const VBoxVHWAColorFormat &aFormat);
     virtual ~VBoxVHWATexture();
     virtual void init(uchar *pvMem);
     void setAddress(uchar *pvMem) {mAddress = pvMem;}
@@ -580,9 +580,9 @@ class VBoxVHWATextureNP2 : public VBoxVHWATexture
 {
 public:
     VBoxVHWATextureNP2() : VBoxVHWATexture() {}
-    VBoxVHWATextureNP2(const QRect * pRect, const VBoxVHWAColorFormat *pFormat) :
-        VBoxVHWATexture(pRect, pFormat){
-        mTexRect = QRect(0, 0, pRect->width()/pFormat->widthCompression(), pRect->height()/pFormat->heightCompression());
+    VBoxVHWATextureNP2(const QRect & aRect, const VBoxVHWAColorFormat &aFormat) :
+        VBoxVHWATexture(aRect, aFormat){
+        mTexRect = QRect(0, 0, aRect.width()/aFormat.widthCompression(), aRect.height()/aFormat.heightCompression());
     }
 };
 
@@ -590,8 +590,8 @@ class VBoxVHWATextureNP2Rect : public VBoxVHWATextureNP2
 {
 public:
     VBoxVHWATextureNP2Rect() : VBoxVHWATextureNP2() {}
-    VBoxVHWATextureNP2Rect(const QRect * pRect, const VBoxVHWAColorFormat *pFormat) :
-        VBoxVHWATextureNP2(pRect, pFormat){}
+    VBoxVHWATextureNP2Rect(const QRect & aRect, const VBoxVHWAColorFormat &aFormat) :
+        VBoxVHWATextureNP2(aRect, aFormat){}
 
     virtual void texCoord(int x, int y);
     virtual void multiTexCoord(GLenum texUnit, int x, int y);
@@ -603,8 +603,8 @@ class VBoxVHWATextureNP2RectPBO : public VBoxVHWATextureNP2Rect
 {
 public:
 	VBoxVHWATextureNP2RectPBO() : VBoxVHWATextureNP2Rect() {}
-	VBoxVHWATextureNP2RectPBO(const QRect * pRect, const VBoxVHWAColorFormat *pFormat) :
-		VBoxVHWATextureNP2Rect(pRect, pFormat){}
+	VBoxVHWATextureNP2RectPBO(const QRect & aRect, const VBoxVHWAColorFormat &aFormat) :
+		VBoxVHWATextureNP2Rect(aRect, aFormat){}
     virtual ~VBoxVHWATextureNP2RectPBO();
 
     virtual void init(uchar *pvMem);
@@ -612,7 +612,6 @@ protected:
     virtual void load();
     virtual void doUpdate(uchar * pAddress, const QRect * pRect);
 private:
-    void updateBuffer(uchar * pBuf, const QRect * pRect);
     GLuint mPBO;
 };
 
@@ -823,8 +822,8 @@ public:
     class VBoxVHWAGlProgramMngr * getGlProgramMngr();
     static int setCKey(class VBoxVHWAGlProgramVHWA * pProgram, const VBoxVHWAColorFormat * pFormat, const VBoxVHWAColorKey * pCKey, bool bDst);
 
-    uint64_t handle() {return mHGHandle;}
-    void setHandle(uint64_t h) {mHGHandle = h;}
+    uint32_t handle() {return mHGHandle;}
+    void setHandle(uint32_t h) {mHGHandle = h;}
 private:
     void setComplexList(VBoxVHWASurfList *aComplexList) { mComplexList = aComplexList; }
     void initDisplay(VBoxVHWASurfaceBase *pPrimary);
@@ -840,7 +839,7 @@ private:
     void doMultiTex2FB(const QRect * pDstRect, VBoxVHWATexture * pDstTex, const QRect * pSrcRect, int cSrcTex);
     void doMultiTex2FB(const QRect * pDstRect, const QRect * pSrcRect, int cSrcTex);
 
-    void doSetupMatrix(const QSize * pSize , bool bInverted);
+    void doSetupMatrix(const QSize & aSize , bool bInverted);
 
     QRect mRect; /* == Inv FB size */
 
@@ -882,15 +881,14 @@ private:
 
     class VBoxGLWidget *mWidget;
 
-    uint64_t mHGHandle;
-protected:
+    uint32_t mHGHandle;
 
-    friend class VBoxVHWASurfList;
 #ifdef DEBUG
 public:
     uint64_t cFlipsCurr;
     uint64_t cFlipsTarg;
 #endif
+    friend class VBoxVHWASurfList;
 };
 
 typedef std::list <VBoxVHWASurfaceBase*> SurfList;
