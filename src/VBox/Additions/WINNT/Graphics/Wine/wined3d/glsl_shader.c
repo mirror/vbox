@@ -39,6 +39,7 @@
  */
 
 #include "config.h"
+#include "wine/port.h"
 #include <limits.h>
 #include <stdio.h>
 #include "wined3d_private.h"
@@ -259,7 +260,7 @@ static void shader_glsl_load_psamplers(const struct wined3d_gl_info *gl_info,
     char sampler_name[20];
 
     for (i = 0; i < MAX_FRAGMENT_SAMPLERS; ++i) {
-        _snprintf(sampler_name, sizeof(sampler_name), "Psampler%d", i);
+        snprintf(sampler_name, sizeof(sampler_name), "Psampler%d", i);
         name_loc = GL_EXTCALL(glGetUniformLocationARB(programId, sampler_name));
         if (name_loc != -1) {
             DWORD mapped_unit = tex_unit_map[i];
@@ -284,7 +285,7 @@ static void shader_glsl_load_vsamplers(const struct wined3d_gl_info *gl_info,
     int i;
 
     for (i = 0; i < MAX_VERTEX_SAMPLERS; ++i) {
-        _snprintf(sampler_name, sizeof(sampler_name), "Vsampler%d", i);
+        snprintf(sampler_name, sizeof(sampler_name), "Vsampler%d", i);
         name_loc = GL_EXTCALL(glGetUniformLocationARB(programId, sampler_name));
         if (name_loc != -1) {
             DWORD mapped_unit = tex_unit_map[MAX_FRAGMENT_SAMPLERS + i];
@@ -547,7 +548,7 @@ static void shader_glsl_load_constantsB(IWineD3DBaseShaderImpl *This, const stru
 
         /* TODO: Benchmark and see if it would be beneficial to store the
          * locations of the constants to avoid looking up each time */
-        _snprintf(tmp_name, sizeof(tmp_name), "%s[%i]", prefix, i);
+        snprintf(tmp_name, sizeof(tmp_name), "%s[%i]", prefix, i);
         tmp_loc = GL_EXTCALL(glGetUniformLocationARB(programId, tmp_name));
         if (tmp_loc != -1)
         {
@@ -566,7 +567,7 @@ static void shader_glsl_load_constantsB(IWineD3DBaseShaderImpl *This, const stru
 
         TRACE_(d3d_constants)("Loading local constants %i: %i\n", idx, values[0]);
 
-        _snprintf(tmp_name, sizeof(tmp_name), "%s[%i]", prefix, idx);
+        snprintf(tmp_name, sizeof(tmp_name), "%s[%i]", prefix, idx);
         tmp_loc = GL_EXTCALL(glGetUniformLocationARB(programId, tmp_name));
         if (tmp_loc != -1) {
             /* We found this uniform name in the program - go ahead and send the data */
@@ -3695,7 +3696,7 @@ static void hardcode_local_constants(IWineD3DBaseShaderImpl *shader, const struc
 
     LIST_FOR_EACH_ENTRY(lconst, &shader->baseShader.constantsF, local_constant, entry) {
         value = (const float *)lconst->value;
-        _snprintf(glsl_name, sizeof(glsl_name), "%cLC%u", prefix, lconst->idx);
+        snprintf(glsl_name, sizeof(glsl_name), "%cLC%u", prefix, lconst->idx);
         tmp_loc = GL_EXTCALL(glGetUniformLocationARB(programId, glsl_name));
         GL_EXTCALL(glUniform4fvARB(tmp_loc, 1, value));
     }
@@ -4076,7 +4077,7 @@ static void set_glsl_shader_program(IWineD3DDevice *iface, BOOL use_ps, BOOL use
         {
             if (!(map & 1)) continue;
 
-            _snprintf(tmp_name, sizeof(tmp_name), "attrib%u", i);
+            snprintf(tmp_name, sizeof(tmp_name), "attrib%u", i);
             GL_EXTCALL(glBindAttribLocationARB(programId, i, tmp_name));
         }
         checkGLcall("glBindAttribLocationARB");
@@ -4103,20 +4104,20 @@ static void set_glsl_shader_program(IWineD3DDevice *iface, BOOL use_ps, BOOL use
 
     entry->vuniformF_locations = HeapAlloc(GetProcessHeap(), 0, sizeof(GLhandleARB) * GL_LIMITS(vshader_constantsF));
     for (i = 0; i < GL_LIMITS(vshader_constantsF); ++i) {
-        _snprintf(glsl_name, sizeof(glsl_name), "VC[%i]", i);
+        snprintf(glsl_name, sizeof(glsl_name), "VC[%i]", i);
         entry->vuniformF_locations[i] = GL_EXTCALL(glGetUniformLocationARB(programId, glsl_name));
     }
     for (i = 0; i < MAX_CONST_I; ++i) {
-        _snprintf(glsl_name, sizeof(glsl_name), "VI[%i]", i);
+        snprintf(glsl_name, sizeof(glsl_name), "VI[%i]", i);
         entry->vuniformI_locations[i] = GL_EXTCALL(glGetUniformLocationARB(programId, glsl_name));
     }
     entry->puniformF_locations = HeapAlloc(GetProcessHeap(), 0, sizeof(GLhandleARB) * GL_LIMITS(pshader_constantsF));
     for (i = 0; i < GL_LIMITS(pshader_constantsF); ++i) {
-        _snprintf(glsl_name, sizeof(glsl_name), "PC[%i]", i);
+        snprintf(glsl_name, sizeof(glsl_name), "PC[%i]", i);
         entry->puniformF_locations[i] = GL_EXTCALL(glGetUniformLocationARB(programId, glsl_name));
     }
     for (i = 0; i < MAX_CONST_I; ++i) {
-        _snprintf(glsl_name, sizeof(glsl_name), "PI[%i]", i);
+        snprintf(glsl_name, sizeof(glsl_name), "PI[%i]", i);
         entry->puniformI_locations[i] = GL_EXTCALL(glGetUniformLocationARB(programId, glsl_name));
     }
 

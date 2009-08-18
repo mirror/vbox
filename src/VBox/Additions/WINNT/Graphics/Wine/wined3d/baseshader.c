@@ -34,6 +34,7 @@
  */
 
 #include "config.h"
+#include "wine/port.h"
 #include <string.h>
 #include <stdio.h>
 #include "wined3d_private.h"
@@ -178,7 +179,7 @@ int shader_vaddline(struct wined3d_shader_buffer *buffer, const char *format, va
     char* base = buffer->buffer + buffer->bsize;
     int rc;
 
-    rc = _vsnprintf(base, SHADER_PGMSIZE - 1 - buffer->bsize, format, args);
+    rc = vsnprintf(base, SHADER_PGMSIZE - 1 - buffer->bsize, format, args);
 
     if (rc < 0 /* C89 */ || (unsigned int)rc > SHADER_PGMSIZE - 1 - buffer->bsize /* C99 */)
     {
