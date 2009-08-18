@@ -155,9 +155,9 @@ typedef FNPDMDRVPOWEROFF *PFNPDMDRVPOWEROFF;
 /**
  * Attach command.
  *
- * This is called to let the drive attach to a driver at runtime.  This is not 
- * called during VM construction, the driver constructor have to do this by 
- * calling PDMDrvHlpAttach. 
+ * This is called to let the drive attach to a driver at runtime.  This is not
+ * called during VM construction, the driver constructor have to do this by
+ * calling PDMDrvHlpAttach.
  *
  * This is like plugging in the keyboard or mouse after turning on the PC.
  *
@@ -177,8 +177,8 @@ typedef FNPDMDRVATTACH *PFNPDMDRVATTACH;
  *
  * This is like ejecting a cdrom or floppy.
  *
- * @param   pDrvIns     The driver instance. 
- * @param   fFlags      PDM_TACH_FLAGS_NOT_HOT_PLUG or 0. 
+ * @param   pDrvIns     The driver instance.
+ * @param   fFlags      PDM_TACH_FLAGS_NOT_HOT_PLUG or 0.
  */
 typedef DECLCALLBACK(void)  FNPDMDRVDETACH(PPDMDRVINS pDrvIns, uint32_t fFlags);
 /** Pointer to a FNPDMDRVDETACH() function. */
@@ -388,7 +388,7 @@ typedef struct PDMDRVHLP
      *
      * @returns VBox status code.
      * @param   pDrvIns             Driver instance.
-     * @param   fFlags              PDM_TACH_FLAGS_NOT_HOT_PLUG or 0. 
+     * @param   fFlags              PDM_TACH_FLAGS_NOT_HOT_PLUG or 0.
      * @param   ppBaseInterface     Where to store the pointer to the base interface.
      */
     DECLR3CALLBACKMEMBER(int, pfnAttach,(PPDMDRVINS pDrvIns, uint32_t fFlags, PPDMIBASE *ppBaseInterface));
@@ -397,8 +397,8 @@ typedef struct PDMDRVHLP
      * Detach the driver the drivers below us.
      *
      * @returns VBox status code.
-     * @param   pDrvIns             Driver instance. 
-     * @param   fFlags              PDM_TACH_FLAGS_NOT_HOT_PLUG or 0. 
+     * @param   pDrvIns             Driver instance.
+     * @param   fFlags              PDM_TACH_FLAGS_NOT_HOT_PLUG or 0.
      */
     DECLR3CALLBACKMEMBER(int, pfnDetach,(PPDMDRVINS pDrvIns, uint32_t fFlags));
 
@@ -408,7 +408,7 @@ typedef struct PDMDRVHLP
      *
      * @returns VBox status code.
      * @param   pDrvIns             Driver instance.
-     * @param   fFlags              PDM_TACH_FLAGS_NOT_HOT_PLUG or 0. 
+     * @param   fFlags              PDM_TACH_FLAGS_NOT_HOT_PLUG or 0.
      */
     DECLR3CALLBACKMEMBER(int, pfnDetachSelf,(PPDMDRVINS pDrvIns, uint32_t fFlags));
 
@@ -850,11 +850,11 @@ DECLINLINE(int) PDMDrvHlpAttach(PPDMDRVINS pDrvIns, uint32_t fFlags, PPDMIBASE *
     return pDrvIns->pDrvHlp->pfnAttach(pDrvIns, fFlags, ppBaseInterface);
 }
 
-/** 
- * Check that there is no driver below the us that we should attach to. 
- *  
- * @returns VERR_PDM_NO_ATTACHED_DRIVER if there is no driver. 
- * @param   pDrvIns     The driver instance. 
+/**
+ * Check that there is no driver below the us that we should attach to.
+ *
+ * @returns VERR_PDM_NO_ATTACHED_DRIVER if there is no driver.
+ * @param   pDrvIns     The driver instance.
  */
 DECLINLINE(int) PDMDrvHlpNoAttach(PPDMDRVINS pDrvIns)
 {
