@@ -879,28 +879,28 @@ VMMR3DECL(int) PDMR3DeviceDetach(PVM pVM, const char *pszDevice, unsigned iInsta
 
 /**
  * Detaches the specified driver instance.
- *  
- * This is used to replumb drivers at runtime for simulating hot plugging and 
- * media changes. 
- *  
- * This is a superset of PDMR3DeviceDetach.  It allows detaching drivers from 
- * any driver or device by specifying the driver to start detaching at.  The 
- * only prerequisite is that the driver or device above implements the 
- * pfnDetach callback (PDMDRVREG / PDMDEVREG). 
- *  
+ *
+ * This is used to replumb drivers at runtime for simulating hot plugging and
+ * media changes.
+ *
+ * This is a superset of PDMR3DeviceDetach.  It allows detaching drivers from
+ * any driver or device by specifying the driver to start detaching at.  The
+ * only prerequisite is that the driver or device above implements the
+ * pfnDetach callback (PDMDRVREG / PDMDEVREG).
+ *
  * @returns VBox status code.
  * @param   pVM             VM Handle.
  * @param   pszDevice       Device name.
  * @param   iDevIns         Device instance.
  * @param   iLun            The Logical Unit in which to look for the driver.
- * @param   pszDriver       The name of the driver which to detach.  If NULL 
+ * @param   pszDriver       The name of the driver which to detach.  If NULL
  *                          then the entire driver chain is detatched.
- * @param   iOccurance      The occurance of that driver in the chain.  This is 
+ * @param   iOccurance      The occurance of that driver in the chain.  This is
  *                          usually 0.
  * @param   fFlags          Flags, combination of the PDMDEVATT_FLAGS_* \#defines.
  * @thread  EMT
- */             
-VMMR3DECL(int) PDMR3DriverDetach(PVM pVM, const char *pszDevice, unsigned iDevIns, unsigned iLun, 
+ */
+VMMR3DECL(int) PDMR3DriverDetach(PVM pVM, const char *pszDevice, unsigned iDevIns, unsigned iLun,
                                  const char *pszDriver, unsigned iOccurance, uint32_t fFlags)
 {
     LogFlow(("PDMR3DriverDetach: pszDevice=%p:{%s} iDevIns=%u iLun=%u pszDriver=%p:{%s} iOccurance=%u fFlags=%#x\n",
