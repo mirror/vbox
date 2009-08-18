@@ -1898,7 +1898,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
             Log(("Set VBoxGuestPropSvc property store\n"));
         }
     }
-    catch(std::bad_alloc &e)
+    catch(std::bad_alloc & /*e*/)
     {
         return VERR_NO_MEMORY;
     }
@@ -2304,7 +2304,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                 H();
             }
             Guid hostIFGuid(str);
-            STR_FREE(str);
+            STR_FREE();
 
             INetCfg              *pNc;
             ComPtr<INetCfgComponent> pAdaptorComponent;
@@ -2618,7 +2618,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                 H();
             }
             Guid hostIFGuid(str);
-            STR_FREE(str);
+            STR_FREE();
 
             INetCfg *pNc;
             ComPtr<INetCfgComponent> pAdaptorComponent;
