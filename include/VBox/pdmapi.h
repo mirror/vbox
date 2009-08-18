@@ -108,9 +108,9 @@ VMMR3DECL(int)  PDMR3QueryDeviceLun(PVM pVM, const char *pszDevice, unsigned iIn
 VMMR3DECL(int)  PDMR3QueryLun(PVM pVM, const char *pszDevice, unsigned iInstance, unsigned iLun, PPPDMIBASE ppBase);
 VMMR3DECL(int)  PDMR3DeviceAttach(PVM pVM, const char *pszDevice, unsigned iInstance, unsigned iLun, uint32_t fFlags, PPDMIBASE *ppBase);
 VMMR3DECL(int)  PDMR3DeviceDetach(PVM pVM, const char *pszDevice, unsigned iInstance, unsigned iLun, uint32_t fFlags);
-VMMR3DECL(int)  PDMR3DriverAttach(PVM pVM, const char *pszDevice, unsigned iDevIns, unsigned iLun, 
+VMMR3DECL(int)  PDMR3DriverAttach(PVM pVM, const char *pszDevice, unsigned iDevIns, unsigned iLun,
                                   const char *pszDriver, unsigned iOccurance, uint32_t fFlags, PPPDMIBASE ppBase);
-VMMR3DECL(int)  PDMR3DriverDetach(PVM pVM, const char *pszDevice, unsigned iDevIns, unsigned iLun, 
+VMMR3DECL(int)  PDMR3DriverDetach(PVM pVM, const char *pszDevice, unsigned iDevIns, unsigned iLun,
                                   const char *pszDriver, unsigned iOccurance, uint32_t fFlags);
 VMMR3DECL(void) PDMR3DmaRun(PVM pVM);
 VMMR3DECL(int)  PDMR3LockCall(PVM pVM);
