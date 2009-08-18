@@ -785,8 +785,8 @@ int pdmR3DevFindLun(PVM pVM, const char *pszDevice, unsigned iInstance, unsigned
  * @param   pszDevice       Device name.
  * @param   iInstance       Device instance.
  * @param   iLun            The Logical Unit to obtain the interface of.
- * @param   ppBase          Where to store the base interface pointer. Optional.
  * @param   fFlags          Flags, combination of the PDMDEVATT_FLAGS_* \#defines.
+ * @param   ppBase          Where to store the base interface pointer. Optional.
  * @thread  EMT
  */
 VMMR3DECL(int) PDMR3DeviceAttach(PVM pVM, const char *pszDevice, unsigned iInstance, unsigned iLun, uint32_t fFlags, PPDMIBASE *ppBase)
@@ -811,7 +811,6 @@ VMMR3DECL(int) PDMR3DeviceAttach(PVM pVM, const char *pszDevice, unsigned iInsta
             if (!pLun->pTop)
             {
                 rc = pDevIns->pDevReg->pfnAttach(pDevIns, iLun, fFlags);
-
             }
             else
                 rc = VERR_PDM_DRIVER_ALREADY_ATTACHED;
@@ -848,9 +847,35 @@ VMMR3DECL(int) PDMR3DeviceAttach(PVM pVM, const char *pszDevice, unsigned iInsta
  */
 VMMR3DECL(int) PDMR3DeviceDetach(PVM pVM, const char *pszDevice, unsigned iInstance, unsigned iLun, uint32_t fFlags)
 {
+    return PDMR3DriverDetach(pVM, pszDevice, iInstance, iLun, NULL, 0, fFlags);
+}
+
+
+/**
+ * Attaches a preconfigured driver to an existing device or driver instance.
+ *
+ * This is used to change drivers and suchlike at runtime.  The driver or device
+ * at the end of the chain will be told to attach to whatever is configured
+ * below it.
+ *
+ * @returns VBox status code.
+ * @param   pVM             VM Handle.
+ * @param   pszDevice       Device name.
+ * @param   iInstance       Device instance.
+ * @param   iLun            The Logical Unit to obtain the interface of.
+ * @param   fFlags          Flags, combination of the PDMDEVATT_FLAGS_* \#defines.
+ * @param   ppBase          Where to store the base interface pointer. Optional.
+ *
+ * @thread  EMT
+ */
+VMMR3DECL(int) PDMR3DriverAttach(PVM pVM, const char *pszDevice, unsigned iInstance, unsigned iLun, uint32_t fFlags, PPDMIBASE *ppBase)
+{
     VM_ASSERT_EMT(pVM);
-    LogFlow(("PDMR3DeviceDetach: pszDevice=%p:{%s} iInstance=%d iLun=%d\n",
-             pszDevice, pszDevice, iInstance, iLun));
+    LogFlow(("PDMR3DriverAttach: pszDevice=%p:{%s} iInstance=%d iLun=%d fFlags=%#x ppBase=%p\n",
+             pszDevice, pszDevice, iInstance, iLun, fFlags, ppBase));
+
+    if (ppBase)
+        *ppBase = NULL;
 
     /*
      * Find the LUN in question.
@@ -860,19 +885,44 @@ VMMR3DECL(int) PDMR3DeviceDetach(PVM pVM, const char *pszDevice, unsigned iInsta
     if (RT_SUCCESS(rc))
     {
         /*
-         * Can we detach anything at runtime?
+         * Anything attached to the LUN?
          */
-        PPDMDEVINS pDevIns = pLun->pDevIns;
-        if (pDevIns->pDevReg->pfnDetach)
+        PPDMDRVINS pDrvIns = pLun->pTop;
+        if (!pDrvIns)
         {
-            if (pLun->pTop)
-                rc = pdmR3DrvDetach(pLun->pTop, fFlags);
+            /* No, ask the device to attach to the new stuff. */
+            PPDMDEVINS pDevIns = pLun->pDevIns;
+            if (pDevIns->pDevReg->pfnAttach)
+            {
+                rc = pDevIns->pDevReg->pfnAttach(pDevIns, iLun, fFlags);
+                if (RT_SUCCESS(rc) && ppBase)
+                    *ppBase = pLun->pTop ? &pLun->pTop->IBase : NULL;
+            }
             else
-                rc = VINF_PDM_NO_DRIVER_ATTACHED_TO_LUN;
+                rc = VERR_PDM_DEVICE_NO_RT_ATTACH;
+        }
+        else
+        {
+            /* Yes, find the bottom most driver and ask it to attach to the new stuff. */
+            while (pDrvIns->Internal.s.pDown)
+                pDrvIns = pDrvIns->Internal.s.pDown;
+            if (pDrvIns->pDrvReg->pfnAttach)
+            {
+                rc = pDrvIns->pDrvReg->pfnAttach(pDrvIns, fFlags);
+                if (RT_SUCCESS(rc) && ppBase)
+                    *ppBase = pDrvIns->Internal.s.pDown
+                            ? &pDrvIns->Internal.s.pDown->IBase
+                            : NULL;
+            }
+            else
+                rc = VERR_PDM_DRIVER_NO_RT_ATTACH;
         }
     }
 
-    LogFlow(("PDMR3DeviceDetach: returns %Rrc\n", rc));
+    if (ppBase)
+        LogFlow(("PDMR3DriverAttach: returns %Rrc *ppBase=%p\n", rc, *ppBase));
+    else
+        LogFlow(("PDMR3DriverAttach: returns %Rrc\n", rc));
     return rc;
 }
 
@@ -948,5 +998,43 @@ VMMR3DECL(int) PDMR3DriverDetach(PVM pVM, const char *pszDevice, unsigned iDevIn
 
     LogFlow(("PDMR3DeviceDetach: returns %Rrc\n", rc));
     return rc;
+}
+
+
+/**
+ * Runtime detach and reattach of a new driver chain or sub chain.
+ *
+ * This is intended to be called on a non-EMT thread, this will instantiate the
+ * new driver (sub-)chain, and then the EMTs will do the actual replumbing.  The
+ * destruction of the old driver chain will be taken care of on the calling
+ * thread.
+ *
+ * @returns VBox status code.
+ * @param   pVM             VM Handle.
+ * @param   pszDevice       Device name.
+ * @param   iDevIns         Device instance.
+ * @param   iLun            The Logical Unit in which to look for the driver.
+ * @param   pszDriver       The name of the driver which to detach and replace.
+ *                          If NULL then the entire driver chain is to be
+ *                          reattached.
+ * @param   iOccurance      The occurance of that driver in the chain.  This is
+ *                          usually 0.
+ * @param   fFlags          Flags, combination of the PDMDEVATT_FLAGS_* \#defines.
+ * @param   pCfg            The configuration of the new driver chain that is
+ *                          going to be attached.  The subtree starts with the
+ *                          node containing a Driver key, a Config subtree and
+ *                          optionally an AttachedDriver subtree.
+ *                          If this parameter is NULL, then this call will work
+ *                          like at a non-pause version of PDMR3DriverDetach.
+ * @param   ppBase          Where to store the base interface pointer to the new
+ *                          driver.  Optional.
+ *
+ * @thread  Any thread. The EMTs will be involved at some point though.
+ */
+VMMR3DECL(int)  PDMR3DriverReattach(PVM pVM, const char *pszDevice, unsigned iDevIns, unsigned iLun,
+                                    const char *pszDriver, unsigned iOccurance, uint32_t fFlags,
+                                    PCFGMNODE pCfg, PPPDMIBASE *ppBase)
+{
+    return VERR_NOT_IMPLEMENTED;
 }
 

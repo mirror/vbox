@@ -640,6 +640,13 @@ typedef struct PGMPAGEMAPLOCK
 typedef PGMPAGEMAPLOCK *PPGMPAGEMAPLOCK;
 
 
+/** Configuration manager tree node - A key. */
+typedef struct CFGMNODE *PCFGMNODE;
+
+/** Configuration manager tree leaf - A value. */
+typedef struct CFGMLEAF *PCFGMLEAF;
+
+
 /** @} */
 
 #endif
