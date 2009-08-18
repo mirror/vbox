@@ -1465,7 +1465,7 @@ void slirp_input(PNATState pData, const uint8_t *pkt, int pkt_len)
 void if_encap(PNATState pData, uint16_t eth_proto, struct mbuf *m)
 {
     struct ethhdr *eh;
-    uint8_t *buf = RTMemAlloc(1600);
+    uint8_t *buf = NULL;
     STAM_PROFILE_START(&pData->StatIF_encap, a);
 
     m->m_data -= if_maxlinkhdr;
@@ -1489,7 +1489,12 @@ void if_encap(PNATState pData, uint16_t eth_proto, struct mbuf *m)
             goto done;
         }
     }
-
+    buf = RTMemAlloc(1600);
+    if (buf == NULL)
+    {
+        LogRel(("NAT: Can't alloc memory for outgoing buffer\n"));
+        goto done;
+    }
     eh->h_proto = htons(eth_proto);
     memcpy(buf, mtod(m, uint8_t *), m->m_len);
     slirp_output(pData->pvUser, NULL, buf, m->m_len);
