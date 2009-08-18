@@ -1778,10 +1778,11 @@ static void pgmR3InitStats(PVM pVM)
         PGM_REG_COUNTER(&pPGM->StatRZTrap0eGuestPFMapping,        "/PGM/CPU%d/RZ/Trap0e/GuestPF/InMapping",       "Number of real guest page faults in a mapping.");
         PGM_REG_COUNTER(&pPGM->StatRZTrap0eWPEmulInRZ,            "/PGM/CPU%d/RZ/Trap0e/WP/InRZ",                 "Number of guest page faults due to X86_CR0_WP emulation.");
         PGM_REG_COUNTER(&pPGM->StatRZTrap0eWPEmulToR3,            "/PGM/CPU%d/RZ/Trap0e/WP/ToR3",                 "Number of guest page faults due to X86_CR0_WP emulation (forward to R3 for emulation).");
+#if 0 /* rarely useful; leave for debugging. */
         for (unsigned j = 0; j < RT_ELEMENTS(pPGM->StatRZTrap0ePD); j++)
             STAMR3RegisterF(pVM, &pPGM->StatRZTrap0ePD[i], STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_OCCURENCES,
                             "The number of traps in page directory n.", "/PGM/CPU%d/RZ/Trap0e/PD/%04X", i, j);
-
+#endif
         PGM_REG_COUNTER(&pPGM->StatRZGuestCR3WriteHandled,        "/PGM/CPU%d/RZ/CR3WriteHandled",                "The number of times the Guest CR3 change was successfully handled.");
         PGM_REG_COUNTER(&pPGM->StatRZGuestCR3WriteUnhandled,      "/PGM/CPU%d/RZ/CR3WriteUnhandled",              "The number of times the Guest CR3 change was passed back to the recompiler.");
         PGM_REG_COUNTER(&pPGM->StatRZGuestCR3WriteConflict,       "/PGM/CPU%d/RZ/CR3WriteConflict",               "The number of times the Guest CR3 monitoring detected a conflict.");
