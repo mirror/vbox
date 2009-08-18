@@ -795,6 +795,14 @@ void VBoxProblemReporter::cannotSetSnapshotFolder (const CMachine &aMachine,
         formatErrorInfo (aMachine));
 }
 
+bool VBoxProblemReporter::askAboutSnapshotDiscarding()
+{
+    return messageOkCancel (mainWindowShown(), Question,
+        tr ("<p>Are you sure you wish to merge the selected snapshot?</p>"),
+        "confirmSnapshotDiscarding" /* aAutoConfirmId */,
+        tr ("Discard"), tr ("Cancel"));
+}
+
 bool VBoxProblemReporter::askAboutSnapshotAndStateDiscarding()
 {
     return messageOkCancel (mainWindowShown(), Question,
