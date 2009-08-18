@@ -208,6 +208,7 @@ public:
 
     void cannotSetSnapshotFolder (const CMachine &aMachine, const QString &aPath);
     bool askAboutSnapshotAndStateDiscarding();
+    bool askAboutSnapshotDiscarding();
     void cannotDiscardSnapshot (const CConsole &aConsole,
                                 const QString &aSnapshotName);
     void cannotDiscardSnapshot (const CProgress &aProgress,
