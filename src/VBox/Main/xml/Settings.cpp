@@ -378,6 +378,15 @@ void ConfigFileBase::readUSBDeviceFilters(const xml::ElementNode &elmDeviceFilte
  * Creates a new stub xml::Document in the m->pDoc member with the
  * root "VirtualBox" element set up. This is used by both
  * MainConfigFile and MachineConfigFile when writing out their XML.
+ *
+ * Before calling this, it is the responsibility of the caller to
+ * set the "sv" member to the required settings version that is to
+ * be written. For newly created files, the settings version will be
+ * the latest (1.8); for files read in from disk earlier, it will be
+ * the settings version indicated in the file. However, this method
+ * will silently make sure that the settings version is always
+ * at least 1.7 and change it if necessary, since there is no write
+ * support for earlier settings versions.
  */
 void ConfigFileBase::createStubDocument()
 {
@@ -387,13 +396,6 @@ void ConfigFileBase::createStubDocument()
     m->pelmRoot = m->pDoc->createRootElement("VirtualBox");
     m->pelmRoot->setAttribute("xmlns", VBOX_XML_NAMESPACE);
 
-    // we always write at least version 1.7; we write 1.8
-    // if that was requested thru setRequiredSettingsVersion().
-    // we make no attempt at writing earlier versions.
-    // Writing 1.6 would be messy for machine files because
-    // of the hard disk attachment changes which are not
-    // necessarily backwards compatible and we don't want to
-    // introduce complex logic to see whether they are.
     const char *pcszVersion = NULL;
     switch (m->sv)
     {
@@ -402,6 +404,7 @@ void ConfigFileBase::createStubDocument()
         break;
 
         default:
+            // silently upgrade if necessary
             pcszVersion = "1.7";
             m->sv = SettingsVersion_v1_7;
         break;
@@ -2196,6 +2199,15 @@ void MachineConfigFile::writeSnapshot(xml::ElementNode &elmParent,
  */
 void MachineConfigFile::write(const com::Utf8Str &strFilename)
 {
+    // createStubDocument() sets the settings version to at least 1.7; however,
+    // we might need to enfore a later settings version if incompatible settings
+    // are present:
+    if (m->sv < SettingsVersion_v1_8)
+    {
+        if (hardwareMachine.fAccelerate2DVideo)
+            m->sv = SettingsVersion_v1_8;
+    }
+
     m->strFilename = strFilename;
     createStubDocument();
 
@@ -2236,21 +2248,4 @@ void MachineConfigFile::write(const com::Utf8Str &strFilename)
     m->fFileExists = true;
 
     clearDocument();
-}
-
-/**
- * Called from Main code if settings are enabled that require a new settings
- * version. For example, if someone enables 2D video acceleration, which is a
- * new feature with VirtualBox 3.1 and which requires settings version 1.8,
- * COMSETTER(Accelerate2DVideoEnabled) calls this method to make sure
- * at least settings version 1.8 is enabled.
- *
- * This allows us to preserve the settings format for older machines and
- * break it only if necessary, on a per-machine basis.
- * @param sv
- */
-void MachineConfigFile::setRequiredSettingsVersion(SettingsVersion_T sv)
-{
-    if (m->sv < sv)
-        m->sv = sv;
 }
