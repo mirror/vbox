@@ -1689,13 +1689,15 @@ static void pgmR3InitStats(PVM pVM)
         PGM_REG_COUNTER(&pPGM->cGuestModeChanges, "/PGM/CPU%d/cGuestModeChanges",  "Number of guest mode changes.");
 
 #ifdef VBOX_WITH_STATISTICS
+
+# if 0 /* rarely useful; leave for debugging. */
         for (unsigned j = 0; j < RT_ELEMENTS(pPGM->StatSyncPtPD); j++)
             STAMR3RegisterF(pVM, &pPGM->StatSyncPtPD[i], STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_OCCURENCES,
                             "The number of SyncPT per PD n.", "/PGM/CPU%d/PDSyncPT/%04X", i, j);
         for (unsigned j = 0; j < RT_ELEMENTS(pPGM->StatSyncPagePD); j++)
             STAMR3RegisterF(pVM, &pPGM->StatSyncPagePD[i], STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_OCCURENCES,
                             "The number of SyncPage per PD n.", "/PGM/CPU%d/PDSyncPage/%04X", i, j);
-
+# endif
         /* R0 only: */
         PGM_REG_COUNTER(&pPGM->StatR0DynMapMigrateInvlPg,         "/PGM/CPU%d/R0/DynMapMigrateInvlPg",        "invlpg count in PGMDynMapMigrateAutoSet.");
         PGM_REG_PROFILE(&pPGM->StatR0DynMapGCPageInl,             "/PGM/CPU%d/R0/DynMapPageGCPageInl",        "Calls to pgmR0DynMapGCPageInlined.");

@@ -1662,7 +1662,9 @@ PGM_BTH_DECL(int, SyncPage)(PVMCPU pVCpu, GSTPDE PdeSrc, RTGCPTR GCPtrPage, unsi
      */
     Assert(PdeSrc.n.u1Present);
     Assert(cPages);
+# if 0 /* rarely useful; leave for debugging. */
     STAM_COUNTER_INC(&pVCpu->pgm.s.StatSyncPagePD[(GCPtrPage >> GST_PD_SHIFT) & GST_PD_MASK]);
+# endif
 
     /*
      * Get the shadow PDE, find the shadow page table in the pool.
@@ -2473,7 +2475,9 @@ PGM_BTH_DECL(int, SyncPT)(PVMCPU pVCpu, unsigned iPDSrc, PGSTPD pPDSrc, RTGCPTR 
     PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool);
 
     STAM_PROFILE_START(&pVCpu->pgm.s.CTX_MID_Z(Stat,SyncPT), a);
+#if 0 /* rarely useful; leave for debugging. */
     STAM_COUNTER_INC(&pVCpu->pgm.s.StatSyncPtPD[iPDSrc]);
+#endif
     LogFlow(("SyncPT: GCPtrPage=%RGv\n", GCPtrPage));
 
     Assert(PGMIsLocked(pVM));
