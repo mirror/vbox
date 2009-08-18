@@ -4016,7 +4016,7 @@ HRESULT Console::getGuestProperty (IN_BSTR aName, BSTR *aValue,
             rc = setError (E_UNEXPECTED,
                 tr ("The service call failed with the error %Rrc"), vrc);
     }
-    catch(std::bad_alloc &e)
+    catch(std::bad_alloc & /*e*/)
     {
         rc = E_OUTOFMEMORY;
     }

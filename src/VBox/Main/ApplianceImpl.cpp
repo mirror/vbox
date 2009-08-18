@@ -2440,7 +2440,7 @@ int Appliance::writeFS(TaskExportOVF *pTask)
                                 strDescription = "Number of virtual CPUs";
                                 type = OVFResourceType_Processor; // 3
                                 desc.strVbox.toInt(uTemp);
-                                lVirtualQuantity = uTemp;
+                                lVirtualQuantity = (int32_t)uTemp;
                                 strCaption = Utf8StrFmt("%d virtual CPU", lVirtualQuantity);     // without this ovftool won't eat the item
                             }
                         break;
