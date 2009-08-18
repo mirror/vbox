@@ -196,3 +196,4 @@ GenRenderbuffersEXT
 FramebufferTexture1DEXT
 FramebufferTexture2DEXT
 FramebufferTexture3DEXT
+CopyTexImage2D
