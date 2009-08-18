@@ -1079,17 +1079,19 @@
      uuid="308ff42a-dc45-49d4-a950-b1eee5e00bb5" wsmap="suppress"
      >
     <desc>
-      The ILocalOwner interface allows to provide custom implementation
-      of VirtualBox interfaces, not being fully remote-aware classes by themselved.
-      Most importnat usecase for this interface is callbacks implementation.
+      The ILocalOwner interface allows to register local objects
+      (created without COM calls). Once registered, calls to methods
+      of such objects can be made from remote COM processes.
+      The main usecase is the event callback implementation where
+      API clients provide callback objects.
     </desc>
     <method name="setLocalObject">
       <desc>
         Set local object.
       </desc>
       <param name="object" type="$unknown" dir="in">
-        <desc>Local object, to forward requests to. 
-          If null, clears currently set local object(s).</desc>
+        <desc>Local object to forward requests to. 
+          If null, clears currently set local object.</desc>
       </param>
     </method>
   </interface>
