@@ -960,7 +960,15 @@ static int pgmPoolAccessHandlerFlush(PVM pVM, PVMCPU pVCpu, PPGMPOOL pPool, PPGM
 DECLINLINE(int) pgmPoolAccessHandlerSTOSD(PVM pVM, PPGMPOOL pPool, PPGMPOOLPAGE pPage, PDISCPUSTATE pDis,
                                           PCPUMCTXCORE pRegFrame, RTGCPHYS GCPhysFault, RTGCPTR pvFault)
 {
-    Assert(pDis->mode == CPUMODE_32BIT);
+    unsigned uIncrement;
+
+    Assert(pDis->mode == CPUMODE_32BIT || pDis->mode == CPUMODE_64BIT);
+    Assert(pRegFrame->rcx <= 0x20);
+
+    if (pDis->mode == CPUMODE_32BIT)
+        uIncrement = 4;
+    else
+        uIncrement = 8;
 
     Log3(("pgmPoolAccessHandlerSTOSD\n"));
 
@@ -979,7 +987,7 @@ DECLINLINE(int) pgmPoolAccessHandlerSTOSD(PVM pVM, PPGMPOOL pPool, PPGMPOOLPAGE 
      */
     PVMCPU      pVCpu = VMMGetCpu(pPool->CTX_SUFF(pVM));
     RTGCUINTPTR pu32 = (RTGCUINTPTR)pvFault;
-    while (pRegFrame->ecx)
+    while (pRegFrame->rcx)
     {
 #ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
         uint32_t iPrevSubset = PGMDynMapPushAutoSubset(pVCpu);
@@ -991,12 +999,12 @@ DECLINLINE(int) pgmPoolAccessHandlerSTOSD(PVM pVM, PPGMPOOL pPool, PPGMPOOLPAGE 
 #ifdef IN_RC
         *(uint32_t *)pu32 = pRegFrame->eax;
 #else
-        PGMPhysSimpleWriteGCPhys(pVM, GCPhysFault, &pRegFrame->eax, 4);
+        PGMPhysSimpleWriteGCPhys(pVM, GCPhysFault, &pRegFrame->rax, uIncrement);
 #endif
-        pu32           += 4;
-        GCPhysFault    += 4;
-        pRegFrame->edi += 4;
-        pRegFrame->ecx--;
+        pu32           += uIncrement;
+        GCPhysFault    += uIncrement;
+        pRegFrame->rdi += uIncrement;
+        pRegFrame->rcx--;
     }
     pRegFrame->rip += pDis->opsize;
 
@@ -1154,21 +1162,41 @@ DECLEXPORT(int) pgmPoolAccessHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE 
          */
         if (    pDis->pCurInstr->opcode == OP_STOSWD
             &&  CPUMGetGuestCPL(pVCpu, pRegFrame) == 0
-            &&  pRegFrame->ecx <= 0x20
-            &&  pRegFrame->ecx * 4 <= PAGE_SIZE - ((uintptr_t)pvFault & PAGE_OFFSET_MASK)
-            &&  !((uintptr_t)pvFault & 3)
-            &&  (pRegFrame->eax == 0 || pRegFrame->eax == 0x80) /* the two values observed. */
-            &&  pDis->mode == CPUMODE_32BIT
-            &&  pDis->opmode == CPUMODE_32BIT
-            &&  pDis->addrmode == CPUMODE_32BIT
             &&  pDis->prefix == PREFIX_REP
             &&  !pRegFrame->eflags.Bits.u1DF
-            )
+            &&  pDis->opmode == pDis->mode
+            &&  pDis->addrmode == pDis->mode)
         {
-             rc = pgmPoolAccessHandlerSTOSD(pVM, pPool, pPage, pDis, pRegFrame, GCPhysFault, pvFault);
-             STAM_PROFILE_STOP_EX(&pVM->pgm.s.CTX_SUFF(pPool)->CTX_SUFF_Z(StatMonitor), &pPool->CTX_MID_Z(StatMonitor,RepStosd), a);
-             pgmUnlock(pVM);
-             return rc;
+            bool fValidStosd = false;
+
+            if (    pDis->mode == CPUMODE_32BIT
+                &&  pRegFrame->ecx <= 0x20
+                &&  pRegFrame->ecx * 4 <= PAGE_SIZE - ((uintptr_t)pvFault & PAGE_OFFSET_MASK)
+                &&  !((uintptr_t)pvFault & 3)
+                &&  (pRegFrame->eax == 0 || pRegFrame->eax == 0x80) /* the two values observed. */
+                )
+            {
+                fValidStosd = true;
+                pRegFrame->rcx &= 0xffffffff;   /* paranoia */
+            }
+            else
+            if (    pDis->mode == CPUMODE_64BIT
+                &&  pRegFrame->rcx <= 0x20
+                &&  pRegFrame->rcx * 4 <= PAGE_SIZE - ((uintptr_t)pvFault & PAGE_OFFSET_MASK)
+                &&  !((uintptr_t)pvFault & 3)
+                &&  (pRegFrame->rax == 0 || pRegFrame->rax == 0x80) /* the two values observed. */
+                )
+            {
+                fValidStosd = true;
+            }
+
+            if (fValidStosd)
+            {
+                rc = pgmPoolAccessHandlerSTOSD(pVM, pPool, pPage, pDis, pRegFrame, GCPhysFault, pvFault);
+                STAM_PROFILE_STOP_EX(&pVM->pgm.s.CTX_SUFF(pPool)->CTX_SUFF_Z(StatMonitor), &pPool->CTX_MID_Z(StatMonitor,RepStosd), a);
+                pgmUnlock(pVM);
+                return rc;
+            }
         }
 
         /* REP prefix, don't bother. */
