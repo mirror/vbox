@@ -1000,7 +1000,9 @@
 /** The device doesn't support runtime driver attaching.
  * The PDMDEVREG::pfnAttach callback function is NULL. */
 #define VERR_PDM_DEVICE_NO_RT_ATTACH                (-2853)
-
+/** The driver doesn't support runtime driver attaching.
+ * The PDMDRVREG::pfnAttach callback function is NULL. */ 
+#define VERR_PDM_DRIVER_NO_RT_ATTACH                (-2854)
 /** Invalid host interface version. */
 #define VERR_PDM_HIF_INVALID_VERSION                (-2855)
 

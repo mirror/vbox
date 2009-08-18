@@ -38,12 +38,6 @@
  * @{
  */
 
-/** Configuration manager tree node - A key. */
-typedef struct CFGMNODE *PCFGMNODE;
-
-/** Configuration manager tree leaf - A value. */
-typedef struct CFGMLEAF *PCFGMLEAF;
-
 /**
  * Configuration manager value type.
  */
