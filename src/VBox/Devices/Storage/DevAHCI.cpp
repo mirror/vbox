@@ -1391,7 +1391,7 @@ static int PortFisAddrUp_w(PAHCI ahci, PAHCIPort pAhciPort, uint32_t iReg, uint3
     ahciLog(("%s: write u32Value=%#010x\n", __FUNCTION__, u32Value));
 
     pAhciPort->regFBU = u32Value;
-    pAhciPort->GCPhysAddrFb |= ((RTGCPHYS)pAhciPort->regFBU) << 32;
+    pAhciPort->GCPhysAddrFb = AHCI_RTGCPHYS_FROM_U32(pAhciPort->regFBU, pAhciPort->regFB);
 
     return VINF_SUCCESS;
 }
@@ -1414,7 +1414,7 @@ static int PortFisAddr_w(PAHCI ahci, PAHCIPort pAhciPort, uint32_t iReg, uint32_
     ahciLog(("%s: write u32Value=%#010x\n", __FUNCTION__, u32Value));
 
     pAhciPort->regFB = (u32Value & AHCI_PORT_FB_RESERVED);
-    pAhciPort->GCPhysAddrFb |= pAhciPort->regFB;
+    pAhciPort->GCPhysAddrFb = AHCI_RTGCPHYS_FROM_U32(pAhciPort->regFBU, pAhciPort->regFB);
 
     return VINF_SUCCESS;
 }
@@ -1427,7 +1427,7 @@ static int PortCmdLstAddrUp_w(PAHCI ahci, PAHCIPort pAhciPort, uint32_t iReg, ui
     ahciLog(("%s: write u32Value=%#010x\n", __FUNCTION__, u32Value));
 
     pAhciPort->regCLBU = u32Value;
-    pAhciPort->GCPhysAddrClb |= ((RTGCPHYS)pAhciPort->regCLBU) << 32;
+    pAhciPort->GCPhysAddrClb = AHCI_RTGCPHYS_FROM_U32(pAhciPort->regCLBU, pAhciPort->regCLB);
 
     return VINF_SUCCESS;
 }
@@ -1460,7 +1460,7 @@ static int PortCmdLstAddr_w(PAHCI ahci, PAHCIPort pAhciPort, uint32_t iReg, uint
     ahciLog(("%s: write u32Value=%#010x\n", __FUNCTION__, u32Value));
 
     pAhciPort->regCLB = (u32Value & AHCI_PORT_CLB_RESERVED);
-    pAhciPort->GCPhysAddrClb |= pAhciPort->regCLB;
+    pAhciPort->GCPhysAddrClb = AHCI_RTGCPHYS_FROM_U32(pAhciPort->regCLBU, pAhciPort->regCLB);
 
     return VINF_SUCCESS;
 }
