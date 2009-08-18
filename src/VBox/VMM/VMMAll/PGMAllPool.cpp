@@ -1162,7 +1162,6 @@ DECLEXPORT(int) pgmPoolAccessHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE 
          */
         if (    pDis->pCurInstr->opcode == OP_STOSWD
             &&  CPUMGetGuestCPL(pVCpu, pRegFrame) == 0
-            &&  pDis->prefix == PREFIX_REP
             &&  !pRegFrame->eflags.Bits.u1DF
             &&  pDis->opmode == pDis->mode
             &&  pDis->addrmode == pDis->mode)
@@ -1170,6 +1169,7 @@ DECLEXPORT(int) pgmPoolAccessHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE 
             bool fValidStosd = false;
 
             if (    pDis->mode == CPUMODE_32BIT
+                &&  pDis->prefix == PREFIX_REP
                 &&  pRegFrame->ecx <= 0x20
                 &&  pRegFrame->ecx * 4 <= PAGE_SIZE - ((uintptr_t)pvFault & PAGE_OFFSET_MASK)
                 &&  !((uintptr_t)pvFault & 3)
@@ -1181,6 +1181,7 @@ DECLEXPORT(int) pgmPoolAccessHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE 
             }
             else
             if (    pDis->mode == CPUMODE_64BIT
+                &&  pDis->prefix == (PREFIX_REP | PREFIX_REX)
                 &&  pRegFrame->rcx <= 0x20
                 &&  pRegFrame->rcx * 4 <= PAGE_SIZE - ((uintptr_t)pvFault & PAGE_OFFSET_MASK)
                 &&  !((uintptr_t)pvFault & 3)
