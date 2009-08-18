@@ -304,23 +304,26 @@ static void context_check_fbo_status(struct WineD3DContext *context)
         unsigned int i;
         FIXME("FBO status %s (%#x)\n", debug_fbostatus(status), status);
 
-        /* Dump the FBO attachments */
-        for (i = 0; i < GL_LIMITS(buffers); ++i)
+        if (context->current_fbo)
         {
-            attachment = (IWineD3DSurfaceImpl *)context->current_fbo->render_targets[i];
+            /* Dump the FBO attachments */
+            for (i = 0; i < GL_LIMITS(buffers); ++i)
+            {
+                attachment = (IWineD3DSurfaceImpl *)context->current_fbo->render_targets[i];
+                if (attachment)
+                {
+                    FIXME("\tColor attachment %d: (%p) %s %ux%u\n",
+                            i, attachment, debug_d3dformat(attachment->resource.format_desc->format),
+                            attachment->pow2Width, attachment->pow2Height);
+                }
+            }
+            attachment = (IWineD3DSurfaceImpl *)context->current_fbo->depth_stencil;
             if (attachment)
             {
-                FIXME("\tColor attachment %d: (%p) %s %ux%u\n",
-                        i, attachment, debug_d3dformat(attachment->resource.format_desc->format),
+                FIXME("\tDepth attachment: (%p) %s %ux%u\n",
+                        attachment, debug_d3dformat(attachment->resource.format_desc->format),
                         attachment->pow2Width, attachment->pow2Height);
             }
-        }
-        attachment = (IWineD3DSurfaceImpl *)context->current_fbo->depth_stencil;
-        if (attachment)
-        {
-            FIXME("\tDepth attachment: (%p) %s %ux%u\n",
-                    attachment, debug_d3dformat(attachment->resource.format_desc->format),
-                    attachment->pow2Width, attachment->pow2Height);
         }
     }
 }
