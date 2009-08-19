@@ -736,7 +736,7 @@ static DECLCALLBACK(void *) pdmR3DevReg_MMHeapAlloc(PPDMDEVREGCB pCallbacks, siz
  * @param   ppLun           Where to store the pointer to the LUN if found.
  * @thread  Try only do this in EMT...
  */
-int pdmR3DevFindLun(PVM pVM, const char *pszDevice, unsigned iInstance, unsigned iLun, PPDMLUN *ppLun)
+int pdmR3DevFindLun(PVM pVM, const char *pszDevice, unsigned iInstance, unsigned iLun, PPPDMLUN ppLun)
 {
     /*
      * Iterate registered devices looking for the device.
@@ -789,7 +789,7 @@ int pdmR3DevFindLun(PVM pVM, const char *pszDevice, unsigned iInstance, unsigned
  * @param   ppBase          Where to store the base interface pointer. Optional.
  * @thread  EMT
  */
-VMMR3DECL(int) PDMR3DeviceAttach(PVM pVM, const char *pszDevice, unsigned iInstance, unsigned iLun, uint32_t fFlags, PPDMIBASE *ppBase)
+VMMR3DECL(int) PDMR3DeviceAttach(PVM pVM, const char *pszDevice, unsigned iInstance, unsigned iLun, uint32_t fFlags, PPPDMIBASE ppBase)
 {
     VM_ASSERT_EMT(pVM);
     LogFlow(("PDMR3DeviceAttach: pszDevice=%p:{%s} iInstance=%d iLun=%d fFlags=%#x ppBase=%p\n",
@@ -868,7 +868,7 @@ VMMR3DECL(int) PDMR3DeviceDetach(PVM pVM, const char *pszDevice, unsigned iInsta
  *
  * @thread  EMT
  */
-VMMR3DECL(int) PDMR3DriverAttach(PVM pVM, const char *pszDevice, unsigned iInstance, unsigned iLun, uint32_t fFlags, PPDMIBASE *ppBase)
+VMMR3DECL(int) PDMR3DriverAttach(PVM pVM, const char *pszDevice, unsigned iInstance, unsigned iLun, uint32_t fFlags, PPPDMIBASE ppBase)
 {
     VM_ASSERT_EMT(pVM);
     LogFlow(("PDMR3DriverAttach: pszDevice=%p:{%s} iInstance=%d iLun=%d fFlags=%#x ppBase=%p\n",
@@ -1033,7 +1033,7 @@ VMMR3DECL(int) PDMR3DriverDetach(PVM pVM, const char *pszDevice, unsigned iDevIn
  */
 VMMR3DECL(int)  PDMR3DriverReattach(PVM pVM, const char *pszDevice, unsigned iDevIns, unsigned iLun,
                                     const char *pszDriver, unsigned iOccurance, uint32_t fFlags,
-                                    PCFGMNODE pCfg, PPPDMIBASE *ppBase)
+                                    PCFGMNODE pCfg, PPPDMIBASE ppBase)
 {
     return VERR_NOT_IMPLEMENTED;
 }
