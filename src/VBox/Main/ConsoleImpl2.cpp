@@ -2819,8 +2819,6 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
             break;
     }
 
-    meAttachmentType[uInstance] = eAttachmentType;
-
 #undef STR_FREE
 #undef H
 #undef RC_CHECK

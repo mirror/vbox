@@ -7623,9 +7623,4 @@ const PDMDRVREG Console::DrvStatusReg =
     PDM_DRVREG_VERSION
 };
 
-/**
- * Initializing the attachment type for the network adapters
- */
-NetworkAttachmentType_T Console::meAttachmentType[] = {};
-
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */
