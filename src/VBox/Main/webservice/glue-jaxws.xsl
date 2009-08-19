@@ -758,8 +758,14 @@ public class IWebsessionManager {
 
     public void disconnect(IVirtualBox refIVirtualBox)
     {
-        logoff(refIVirtualBox);
-        pool.releasePort(this.port);
+        try {
+           logoff(refIVirtualBox);
+        } finally {
+           if (this.port != null) {
+             pool.releasePort(this.port);
+             this.port = null;
+           }
+        }
     }
 
     public void cleanupUnused()
