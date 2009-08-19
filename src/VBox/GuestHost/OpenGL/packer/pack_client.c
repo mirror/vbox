@@ -304,7 +304,7 @@ crPackExpandArrayElement(GLint index, CRClientState *c)
     const CRVertexArrays *array = &(c->array);
     const GLboolean vpEnabled = crStateGetCurrent()->program.vpEnabled;
 
-    crDebug("crPackExpandArrayElement(%i)", index);
+    /*crDebug("crPackExpandArrayElement(%i)", index);*/
 
     if (array->n.enabled && !(vpEnabled && array->a[VERT_ATTRIB_NORMAL].enabled))
     {
