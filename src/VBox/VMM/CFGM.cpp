@@ -2529,7 +2529,7 @@ VMMR3DECL(int) CFGMR3QueryStringAllocDef(PCFGMNODE pNode, const char *pszName, c
 VMMR3DECL(void) CFGMR3Dump(PCFGMNODE pRoot)
 {
     LogRel(("************************* CFGM dump *************************\n"));
-    cfgmR3Info(pRoot->pVM, DBGFR3InfoLogRelHlp(), NULL);
+    cfgmR3Dump(pRoot, 0, DBGFR3InfoLogRelHlp());
     LogRel(("********************* End of CFGM dump **********************\n"));
 }
 
