@@ -60,7 +60,7 @@
  *        activity. This needs to be fixed properly.
  */
 #define VBOX_NAT_DELAY_HACK
-#if 0
+#if 1
 #define SLIRP_SPLIT_CAN_OUTPUT 1
 #endif
 
@@ -636,7 +636,7 @@ void slirp_output(void *pvUser, void *pvArg, const uint8_t *pu8Buf, int cb)
     pReq->u.Internal.aArgs[1] = (uintptr_t)pu8Buf;
     pReq->u.Internal.aArgs[2] = (uintptr_t)cb;
     pReq->fFlags              = RTREQFLAGS_VOID|RTREQFLAGS_NO_WAIT;
-    rc = RTReqQueue(pReq, 0); /* don't wait, we have to wakeup the NAT thread fist */
+    rc = RTReqQueue(pReq, 0); 
     AssertReleaseRC(rc);
     drvNATRxWakeup(pThis->pDrvIns, pThis->thrNATRx);
     STAM_COUNTER_INC(&pThis->StatQueuePktSent);
