@@ -819,13 +819,14 @@ DECLINLINE(bool) pgmPoolMonitorIsForking(PPGMPOOL pPool, PDISCPUSTATE pDis, unsi
  * @returns true if we consider the page as being reused for a different purpose.
  * @returns false if we consider it to still be a paging page.
  * @param   pVM         VM Handle.
+ * @param   pVCpu       VMCPU Handle.
  * @param   pRegFrame   Trap register frame.
  * @param   pDis        The disassembly info for the faulting instruction.
  * @param   pvFault     The fault address.
  *
  * @remark  The REP prefix check is left to the caller because of STOSD/W.
  */
-DECLINLINE(bool) pgmPoolMonitorIsReused(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTATE pDis, RTGCPTR pvFault)
+DECLINLINE(bool) pgmPoolMonitorIsReused(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, PDISCPUSTATE pDis, RTGCPTR pvFault)
 {
 #ifndef IN_RC
     /** @todo could make this general, faulting close to rsp should be safe reuse heuristic. */
@@ -839,6 +840,12 @@ DECLINLINE(bool) pgmPoolMonitorIsReused(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPU
 #else
     NOREF(pVM); NOREF(pvFault);
 #endif
+
+    LogFlow(("Reused instr %RGv %d at %RGv param1.flags=%x param1.reg=%d\n", pRegFrame->rip, pDis->pCurInstr->opcode, pvFault, pDis->param1.flags,  pDis->param1.base.reg_gen));
+
+    /* Non-supervisor mode write means it's used for something else. */
+    if (CPUMGetGuestCPL(pVCpu, pRegFrame) != 0)
+        return true;
 
     switch (pDis->pCurInstr->opcode)
     {
@@ -960,15 +967,17 @@ static int pgmPoolAccessHandlerFlush(PVM pVM, PVMCPU pVCpu, PPGMPOOL pPool, PPGM
 DECLINLINE(int) pgmPoolAccessHandlerSTOSD(PVM pVM, PPGMPOOL pPool, PPGMPOOLPAGE pPage, PDISCPUSTATE pDis,
                                           PCPUMCTXCORE pRegFrame, RTGCPHYS GCPhysFault, RTGCPTR pvFault)
 {
-    unsigned uIncrement;
+    unsigned uIncrement = pDis->param1.size;
 
     Assert(pDis->mode == CPUMODE_32BIT || pDis->mode == CPUMODE_64BIT);
     Assert(pRegFrame->rcx <= 0x20);
 
-    if (pDis->mode == CPUMODE_32BIT)
-        uIncrement = 4;
+#ifdef VBOX_STRICT
+    if (pDis->opmode == CPUMODE_32BIT)
+        Assert(uIncrement == 4);
     else
-        uIncrement = 8;
+        Assert(uIncrement == 8);
+#endif
 
     Log3(("pgmPoolAccessHandlerSTOSD\n"));
 
@@ -1106,6 +1115,7 @@ DECLEXPORT(int) pgmPoolAccessHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE 
     PPGMPOOL        pPool = pVM->pgm.s.CTX_SUFF(pPool);
     PPGMPOOLPAGE    pPage = (PPGMPOOLPAGE)pvUser;
     PVMCPU          pVCpu = VMMGetCpu(pVM);
+    unsigned        cMaxModifications;
 
     LogFlow(("pgmPoolAccessHandler: pvFault=%RGv pPage=%p:{.idx=%d} GCPhysFault=%RGp\n", pvFault, pPage, pPage->idx, GCPhysFault));
 
@@ -1134,14 +1144,38 @@ DECLEXPORT(int) pgmPoolAccessHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE 
      */
     Assert(pPage->iMonitoredPrev == NIL_PGMPOOL_IDX);
 
+    /* Maximum nr of modifications depends on the guest mode. */
+    if (pDis->mode == CPUMODE_32BIT)
+        cMaxModifications = 32;
+    else
+        cMaxModifications = 16;
+
+    /*
+     * Incremental page table updates should weight more than random ones.
+     * (Only applies when started from offset 0)
+     */
+    pVCpu->pgm.s.cPoolAccessHandler++;
+    if (    pPage->pvLastAccessHandlerRip >= pRegFrame->rip - 0x40      /* observed loops in Windows 7 x64 */
+        &&  pPage->pvLastAccessHandlerRip <  pRegFrame->rip + 0x40
+        &&  pvFault == (pPage->pvLastAccessHandlerFault + pDis->param1.size)
+        &&  pVCpu->pgm.s.cPoolAccessHandler == (pPage->cLastAccessHandlerCount + 1))
+    {
+        Log(("Possible page reuse cMods=%d -> %d\n", pPage->cModifications, (pPage->cModifications + 2) * 2));
+        pPage->cModifications           = (pPage->cModifications + 1) * 2;
+        pPage->pvLastAccessHandlerFault = pvFault;
+        pPage->cLastAccessHandlerCount  = pVCpu->pgm.s.cPoolAccessHandler;
+        if (pPage->cModifications > cMaxModifications)
+            STAM_COUNTER_INC(&pPool->CTX_MID_Z(StatMonitor,FlushReinit));
+    }
+
     /*
      * Check if it's worth dealing with.
      */
     bool fReused = false;
-    if (    (   pPage->cModifications < 48   /** @todo #define */ /** @todo need to check that it's not mapping EIP. */ /** @todo adjust this! */
+    if (    (   pPage->cModifications < cMaxModifications   /** @todo #define */ /** @todo need to check that it's not mapping EIP. */ /** @todo adjust this! */
              || pgmPoolIsPageLocked(&pVM->pgm.s, pPage)
             )
-        &&  !(fReused = pgmPoolMonitorIsReused(pVM, pRegFrame, pDis, pvFault))
+        &&  !(fReused = pgmPoolMonitorIsReused(pVM, pVCpu, pRegFrame, pDis, pvFault))
         &&  !pgmPoolMonitorIsForking(pPool, pDis, GCPhysFault & PAGE_OFFSET_MASK))
     {
         /*
@@ -1150,6 +1184,30 @@ DECLEXPORT(int) pgmPoolAccessHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE 
         if (!(pDis->prefix & (PREFIX_REP | PREFIX_REPNE)))
         {
              rc = pgmPoolAccessHandlerSimple(pVM, pVCpu, pPool, pPage, pDis, pRegFrame, GCPhysFault, pvFault);
+
+             /* A mov instruction to change the first page table entry will be remembered so we can detect
+              * full page table changes early on. This will reduce the amount of unnecessary traps we'll take.
+              */
+             if (   rc == VINF_SUCCESS
+                 && pDis->pCurInstr->opcode == OP_MOV
+                 && (pvFault & PAGE_OFFSET_MASK) == 0)
+             {
+                 pPage->pvLastAccessHandlerFault = pvFault;
+                 pPage->cLastAccessHandlerCount  = pVCpu->pgm.s.cPoolAccessHandler;
+                 pPage->pvLastAccessHandlerRip   = pRegFrame->rip;
+             }
+             else
+             if (pPage->pvLastAccessHandlerFault == pvFault)
+             {
+                 /* ignore the 2nd write to this page table entry. */
+                 pPage->cLastAccessHandlerCount  = pVCpu->pgm.s.cPoolAccessHandler;
+             }
+             else
+             {
+                 pPage->pvLastAccessHandlerFault = 0;
+                 pPage->pvLastAccessHandlerRip   = 0;
+             }
+
              STAM_PROFILE_STOP_EX(&pVM->pgm.s.CTX_SUFF(pPool)->CTX_SUFF_Z(StatMonitor), &pPool->CTX_MID_Z(StatMonitor,Handled), a);
              pgmUnlock(pVM);
              return rc;
@@ -1160,7 +1218,6 @@ DECLEXPORT(int) pgmPoolAccessHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE 
          * We have to deal with these or we'll kill the cache and performance.
          */
         if (    pDis->pCurInstr->opcode == OP_STOSWD
-            &&  CPUMGetGuestCPL(pVCpu, pRegFrame) == 0
             &&  !pRegFrame->eflags.Bits.u1DF
             &&  pDis->opmode == pDis->mode
             &&  pDis->addrmode == pDis->mode)
@@ -1182,8 +1239,8 @@ DECLEXPORT(int) pgmPoolAccessHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE 
             if (    pDis->mode == CPUMODE_64BIT
                 &&  pDis->prefix == (PREFIX_REP | PREFIX_REX)
                 &&  pRegFrame->rcx <= 0x20
-                &&  pRegFrame->rcx * 4 <= PAGE_SIZE - ((uintptr_t)pvFault & PAGE_OFFSET_MASK)
-                &&  !((uintptr_t)pvFault & 3)
+                &&  pRegFrame->rcx * 8 <= PAGE_SIZE - ((uintptr_t)pvFault & PAGE_OFFSET_MASK)
+                &&  !((uintptr_t)pvFault & 7)
                 &&  (pRegFrame->rax == 0 || pRegFrame->rax == 0x80) /* the two values observed. */
                 )
             {
@@ -4161,6 +4218,9 @@ int pgmPoolAllocEx(PVM pVM, RTGCPHYS GCPhys, PGMPOOLKIND enmKind, PGMPOOLACCESS 
 #ifdef PGMPOOL_WITH_USER_TRACKING
     pPage->cPresent = 0;
     pPage->iFirstPresent = ~0;
+    pPage->pvLastAccessHandlerFault = 0;
+    pPage->cLastAccessHandlerCount  = 0;
+    pPage->pvLastAccessHandlerRip   = 0;
 
     /*
      * Insert into the tracking and cache. If this fails, free the page.

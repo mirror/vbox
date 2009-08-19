@@ -1608,6 +1608,12 @@ typedef struct PGMPOOLPAGE
     uint32_t            Alignment0;
 #endif
     RTGCPHYS            GCPhys;
+
+    /** Access handler statistics to determine whether the guest is (re)initializing a page table. */
+    RTGCPTR             pvLastAccessHandlerRip;
+    RTGCPTR             pvLastAccessHandlerFault;
+    uint64_t            cLastAccessHandlerCount;
+
     /** The kind of page we're shadowing. (This is really a PGMPOOLKIND enum.) */
     uint8_t             enmKind;
     /** The subkind of page we're shadowing. (This is really a PGMPOOLACCESS enum.) */
@@ -1791,6 +1797,8 @@ typedef struct PGMPOOL
     STAMCOUNTER                 StatMonitorRZEmulateInstr;
     /** Profiling the pgmPoolFlushPage calls made from the RC/R0 access handler. */
     STAMPROFILE                 StatMonitorRZFlushPage;
+    /* Times we've detected a page table reinit. */
+    STAMCOUNTER                 StatMonitorRZFlushReinit;
     /** Times we've detected fork(). */
     STAMCOUNTER                 StatMonitorRZFork;
     /** Profiling the RC/R0 access we've handled (except REP STOSD). */
@@ -1810,6 +1818,8 @@ typedef struct PGMPOOL
     STAMCOUNTER                 StatMonitorR3EmulateInstr;
     /** Profiling the pgmPoolFlushPage calls made from the R3 access handler. */
     STAMPROFILE                 StatMonitorR3FlushPage;
+    /* Times we've detected a page table reinit. */
+    STAMCOUNTER                 StatMonitorR3FlushReinit;
     /** Times we've detected fork(). */
     STAMCOUNTER                 StatMonitorR3Fork;
     /** Profiling the R3 access we've handled (except REP STOSD). */
@@ -2728,6 +2738,9 @@ typedef struct PGMCPU
         /** Padding. */
         uint8_t                     abDisStatePadding[DISCPUSTATE_PADDING_SIZE];
     };
+
+    /* Count the number of pgm pool access handler calls. */
+    uint64_t                        cPoolAccessHandler;
 
     /** @name Release Statistics
      * @{ */
