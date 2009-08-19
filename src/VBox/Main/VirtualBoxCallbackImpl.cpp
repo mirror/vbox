@@ -22,29 +22,29 @@
 #include "VirtualBoxCallbackImpl.h"
 #include "Logging.h"
 
-HRESULT VirtualBoxCallback::FinalConstruct()
+HRESULT CallbackWrapper::FinalConstruct()
 {
     return S_OK;
 }
 
-void VirtualBoxCallback::FinalRelease()
+void CallbackWrapper::FinalRelease()
 {
 }
 
 // public initializers/uninitializers only for internal purposes
-HRESULT VirtualBoxCallback::init()
+HRESULT CallbackWrapper::init()
 {
     return S_OK;
 }
 
-void VirtualBoxCallback::uninit(bool aFinalRelease)
+void CallbackWrapper::uninit(bool aFinalRelease)
 {
 }
 
 // ILocalOwner methods
 /////////////////////////////////////////////////////////////////////////////
 
-STDMETHODIMP VirtualBoxCallback::SetLocalObject(IUnknown *aCallback)
+STDMETHODIMP CallbackWrapper::SetLocalObject(IUnknown *aCallback)
 {
     if (aCallback == NULL)
     {
@@ -67,7 +67,7 @@ STDMETHODIMP VirtualBoxCallback::SetLocalObject(IUnknown *aCallback)
 
 // IVirtualBoxCallback methods
 /////////////////////////////////////////////////////////////////////////////
-STDMETHODIMP VirtualBoxCallback::OnMachineStateChange(IN_BSTR machineId, MachineState_T state)
+STDMETHODIMP CallbackWrapper::OnMachineStateChange(IN_BSTR machineId, MachineState_T state)
 {
     if (mVBoxCallback.isNull())
         return S_OK;
@@ -75,7 +75,7 @@ STDMETHODIMP VirtualBoxCallback::OnMachineStateChange(IN_BSTR machineId, Machine
     return mVBoxCallback->OnMachineStateChange(machineId, state);
 }
 
-STDMETHODIMP VirtualBoxCallback::OnMachineDataChange(IN_BSTR machineId)
+STDMETHODIMP CallbackWrapper::OnMachineDataChange(IN_BSTR machineId)
 {
     AutoReadLock alock(this);
 
@@ -86,7 +86,7 @@ STDMETHODIMP VirtualBoxCallback::OnMachineDataChange(IN_BSTR machineId)
 }
 
 
-STDMETHODIMP VirtualBoxCallback::OnExtraDataCanChange(IN_BSTR machineId, IN_BSTR key, IN_BSTR value,
+STDMETHODIMP CallbackWrapper::OnExtraDataCanChange(IN_BSTR machineId, IN_BSTR key, IN_BSTR value,
                                            BSTR *error, BOOL *changeAllowed)
 {
     if (mVBoxCallback.isNull())
@@ -95,7 +95,7 @@ STDMETHODIMP VirtualBoxCallback::OnExtraDataCanChange(IN_BSTR machineId, IN_BSTR
     return mVBoxCallback->OnExtraDataCanChange(machineId, key, value, error, changeAllowed);
 }
 
-STDMETHODIMP VirtualBoxCallback::OnExtraDataChange(IN_BSTR machineId, IN_BSTR key, IN_BSTR value)
+STDMETHODIMP CallbackWrapper::OnExtraDataChange(IN_BSTR machineId, IN_BSTR key, IN_BSTR value)
 {
     if (mVBoxCallback.isNull())
         return S_OK;
@@ -103,7 +103,7 @@ STDMETHODIMP VirtualBoxCallback::OnExtraDataChange(IN_BSTR machineId, IN_BSTR ke
     return mVBoxCallback->OnExtraDataChange(machineId, key, value);
 }
 
-STDMETHODIMP VirtualBoxCallback::OnMediaRegistered(IN_BSTR mediaId, DeviceType_T mediaType,
+STDMETHODIMP CallbackWrapper::OnMediaRegistered(IN_BSTR mediaId, DeviceType_T mediaType,
                               BOOL registered)
 {
     if (mVBoxCallback.isNull())
@@ -113,7 +113,7 @@ STDMETHODIMP VirtualBoxCallback::OnMediaRegistered(IN_BSTR mediaId, DeviceType_T
 }
 
 
-STDMETHODIMP VirtualBoxCallback::OnMachineRegistered(IN_BSTR aMachineId, BOOL registered)
+STDMETHODIMP CallbackWrapper::OnMachineRegistered(IN_BSTR aMachineId, BOOL registered)
 {
     if (mVBoxCallback.isNull())
         return S_OK;
@@ -121,7 +121,7 @@ STDMETHODIMP VirtualBoxCallback::OnMachineRegistered(IN_BSTR aMachineId, BOOL re
     return mVBoxCallback->OnMachineRegistered(aMachineId, registered);
 }
 
-STDMETHODIMP VirtualBoxCallback::OnSessionStateChange(IN_BSTR aMachineId, SessionState_T state)
+STDMETHODIMP CallbackWrapper::OnSessionStateChange(IN_BSTR aMachineId, SessionState_T state)
 {
     if (mVBoxCallback.isNull())
         return S_OK;
@@ -129,7 +129,7 @@ STDMETHODIMP VirtualBoxCallback::OnSessionStateChange(IN_BSTR aMachineId, Sessio
     return mVBoxCallback->OnSessionStateChange(aMachineId, state);
 }
 
-STDMETHODIMP VirtualBoxCallback::OnSnapshotTaken(IN_BSTR aMachineId, IN_BSTR aSnapshotId)
+STDMETHODIMP CallbackWrapper::OnSnapshotTaken(IN_BSTR aMachineId, IN_BSTR aSnapshotId)
 {
     if (mVBoxCallback.isNull())
         return S_OK;
@@ -137,7 +137,7 @@ STDMETHODIMP VirtualBoxCallback::OnSnapshotTaken(IN_BSTR aMachineId, IN_BSTR aSn
     return mVBoxCallback->OnSnapshotTaken(aMachineId, aSnapshotId);
 }
 
-STDMETHODIMP VirtualBoxCallback::OnSnapshotDiscarded(IN_BSTR aMachineId, IN_BSTR aSnapshotId)
+STDMETHODIMP CallbackWrapper::OnSnapshotDiscarded(IN_BSTR aMachineId, IN_BSTR aSnapshotId)
 {
     if (mVBoxCallback.isNull())
         return S_OK;
@@ -145,7 +145,7 @@ STDMETHODIMP VirtualBoxCallback::OnSnapshotDiscarded(IN_BSTR aMachineId, IN_BSTR
     return mVBoxCallback->OnSnapshotDiscarded(aMachineId, aSnapshotId);
 }
 
-STDMETHODIMP VirtualBoxCallback::OnSnapshotChange(IN_BSTR aMachineId, IN_BSTR aSnapshotId)
+STDMETHODIMP CallbackWrapper::OnSnapshotChange(IN_BSTR aMachineId, IN_BSTR aSnapshotId)
 {
     if (mVBoxCallback.isNull())
         return S_OK;
@@ -153,7 +153,7 @@ STDMETHODIMP VirtualBoxCallback::OnSnapshotChange(IN_BSTR aMachineId, IN_BSTR aS
     return mVBoxCallback->OnSnapshotChange(aMachineId, aSnapshotId);
 }
 
-STDMETHODIMP VirtualBoxCallback::OnGuestPropertyChange(IN_BSTR aMachineId, IN_BSTR key, IN_BSTR value, IN_BSTR flags)
+STDMETHODIMP CallbackWrapper::OnGuestPropertyChange(IN_BSTR aMachineId, IN_BSTR key, IN_BSTR value, IN_BSTR flags)
 {
     if (mVBoxCallback.isNull())
         return S_OK;
@@ -162,8 +162,10 @@ STDMETHODIMP VirtualBoxCallback::OnGuestPropertyChange(IN_BSTR aMachineId, IN_BS
 }
 
 
-STDMETHODIMP VirtualBoxCallback::OnMousePointerShapeChange(BOOL visible, BOOL alpha, ULONG xHot, ULONG yHot,
-                                         ULONG width, ULONG height, BYTE *shape)
+// IConsoleCallback methods
+/////////////////////////////////////////////////////////////////////////////
+STDMETHODIMP CallbackWrapper::OnMousePointerShapeChange(BOOL visible, BOOL alpha, ULONG xHot, ULONG yHot,
+                                                        ULONG width, ULONG height, BYTE *shape)
 {
     if (mConsoleCallback.isNull())
         return S_OK;
@@ -172,7 +174,7 @@ STDMETHODIMP VirtualBoxCallback::OnMousePointerShapeChange(BOOL visible, BOOL al
 }
 
 
-STDMETHODIMP VirtualBoxCallback::OnMouseCapabilityChange(BOOL supportsAbsolute, BOOL needsHostCursor)
+STDMETHODIMP CallbackWrapper::OnMouseCapabilityChange(BOOL supportsAbsolute, BOOL needsHostCursor)
 {
     if (mConsoleCallback.isNull())
         return S_OK;
@@ -180,7 +182,7 @@ STDMETHODIMP VirtualBoxCallback::OnMouseCapabilityChange(BOOL supportsAbsolute, 
     return mConsoleCallback->OnMouseCapabilityChange(supportsAbsolute, needsHostCursor);
 }
 
-STDMETHODIMP  VirtualBoxCallback::OnKeyboardLedsChange(BOOL fNumLock, BOOL fCapsLock, BOOL fScrollLock)
+STDMETHODIMP  CallbackWrapper::OnKeyboardLedsChange(BOOL fNumLock, BOOL fCapsLock, BOOL fScrollLock)
 {
     if (mConsoleCallback.isNull())
         return S_OK;
@@ -188,7 +190,7 @@ STDMETHODIMP  VirtualBoxCallback::OnKeyboardLedsChange(BOOL fNumLock, BOOL fCaps
     return mConsoleCallback->OnKeyboardLedsChange(fNumLock, fCapsLock, fScrollLock);
 }
 
-STDMETHODIMP VirtualBoxCallback::OnStateChange(MachineState_T machineState)
+STDMETHODIMP CallbackWrapper::OnStateChange(MachineState_T machineState)
 {
     if (mConsoleCallback.isNull())
         return S_OK;
@@ -196,7 +198,7 @@ STDMETHODIMP VirtualBoxCallback::OnStateChange(MachineState_T machineState)
     return mConsoleCallback->OnStateChange(machineState);
 }
 
-STDMETHODIMP VirtualBoxCallback::OnAdditionsStateChange()
+STDMETHODIMP CallbackWrapper::OnAdditionsStateChange()
 {
     if (mConsoleCallback.isNull())
         return S_OK;
@@ -204,7 +206,7 @@ STDMETHODIMP VirtualBoxCallback::OnAdditionsStateChange()
     return mConsoleCallback->OnAdditionsStateChange();
 }
 
-STDMETHODIMP VirtualBoxCallback::OnDVDDriveChange()
+STDMETHODIMP CallbackWrapper::OnDVDDriveChange()
 {
     if (mConsoleCallback.isNull())
         return S_OK;
@@ -212,7 +214,7 @@ STDMETHODIMP VirtualBoxCallback::OnDVDDriveChange()
     return mConsoleCallback->OnDVDDriveChange();
 }
 
-STDMETHODIMP VirtualBoxCallback::OnFloppyDriveChange()
+STDMETHODIMP CallbackWrapper::OnFloppyDriveChange()
 {
     if (mConsoleCallback.isNull())
         return S_OK;
@@ -220,7 +222,7 @@ STDMETHODIMP VirtualBoxCallback::OnFloppyDriveChange()
     return mConsoleCallback->OnFloppyDriveChange();
 }
 
-STDMETHODIMP VirtualBoxCallback::OnNetworkAdapterChange(INetworkAdapter *aNetworkAdapter)
+STDMETHODIMP CallbackWrapper::OnNetworkAdapterChange(INetworkAdapter *aNetworkAdapter)
 {
     if (mConsoleCallback.isNull())
         return S_OK;
@@ -228,7 +230,7 @@ STDMETHODIMP VirtualBoxCallback::OnNetworkAdapterChange(INetworkAdapter *aNetwor
     return mConsoleCallback->OnNetworkAdapterChange(aNetworkAdapter);
 }
 
-STDMETHODIMP VirtualBoxCallback::OnSerialPortChange(ISerialPort *aSerialPort)
+STDMETHODIMP CallbackWrapper::OnSerialPortChange(ISerialPort *aSerialPort)
 {
     if (mConsoleCallback.isNull())
         return S_OK;
@@ -236,14 +238,14 @@ STDMETHODIMP VirtualBoxCallback::OnSerialPortChange(ISerialPort *aSerialPort)
     return mConsoleCallback->OnSerialPortChange(aSerialPort);
 }
 
-STDMETHODIMP VirtualBoxCallback::OnParallelPortChange(IParallelPort *aParallelPort)
+STDMETHODIMP CallbackWrapper::OnParallelPortChange(IParallelPort *aParallelPort)
 {
     if (mConsoleCallback.isNull())
         return S_OK;
 
     return mConsoleCallback->OnParallelPortChange(aParallelPort);
 }
-STDMETHODIMP VirtualBoxCallback::OnVRDPServerChange()
+STDMETHODIMP CallbackWrapper::OnVRDPServerChange()
 {
     if (mConsoleCallback.isNull())
         return S_OK;
@@ -251,7 +253,7 @@ STDMETHODIMP VirtualBoxCallback::OnVRDPServerChange()
     return mConsoleCallback->OnVRDPServerChange();
 }
 
-STDMETHODIMP VirtualBoxCallback::OnUSBControllerChange()
+STDMETHODIMP CallbackWrapper::OnUSBControllerChange()
 {
     if (mConsoleCallback.isNull())
         return S_OK;
@@ -259,7 +261,7 @@ STDMETHODIMP VirtualBoxCallback::OnUSBControllerChange()
     return mConsoleCallback->OnUSBControllerChange();
 }
 
-STDMETHODIMP VirtualBoxCallback::OnUSBDeviceStateChange(IUSBDevice *aDevice,
+STDMETHODIMP CallbackWrapper::OnUSBDeviceStateChange(IUSBDevice *aDevice,
                                                         BOOL aAttached,
                                                         IVirtualBoxErrorInfo *aError)
 {
@@ -269,7 +271,7 @@ STDMETHODIMP VirtualBoxCallback::OnUSBDeviceStateChange(IUSBDevice *aDevice,
     return mConsoleCallback->OnUSBDeviceStateChange(aDevice, aAttached, aError);
 }
 
-STDMETHODIMP VirtualBoxCallback::OnSharedFolderChange(Scope_T aScope)
+STDMETHODIMP CallbackWrapper::OnSharedFolderChange(Scope_T aScope)
 {
     if (mConsoleCallback.isNull())
         return S_OK;
@@ -277,7 +279,7 @@ STDMETHODIMP VirtualBoxCallback::OnSharedFolderChange(Scope_T aScope)
     return mConsoleCallback->OnSharedFolderChange(aScope);
 }
 
-STDMETHODIMP VirtualBoxCallback::OnStorageControllerChange()
+STDMETHODIMP CallbackWrapper::OnStorageControllerChange()
 {
     if (mConsoleCallback.isNull())
         return S_OK;
@@ -285,7 +287,7 @@ STDMETHODIMP VirtualBoxCallback::OnStorageControllerChange()
     return mConsoleCallback->OnStorageControllerChange();
 }
 
-STDMETHODIMP VirtualBoxCallback::OnRuntimeError(BOOL fFatal, IN_BSTR id, IN_BSTR message)
+STDMETHODIMP CallbackWrapper::OnRuntimeError(BOOL fFatal, IN_BSTR id, IN_BSTR message)
 {
     if (mConsoleCallback.isNull())
         return S_OK;
@@ -293,7 +295,7 @@ STDMETHODIMP VirtualBoxCallback::OnRuntimeError(BOOL fFatal, IN_BSTR id, IN_BSTR
     return mConsoleCallback->OnRuntimeError(fFatal, id, message);
 }
 
-STDMETHODIMP VirtualBoxCallback::OnCanShowWindow(BOOL *canShow)
+STDMETHODIMP CallbackWrapper::OnCanShowWindow(BOOL *canShow)
 {
     if (mConsoleCallback.isNull())
         return S_OK;
@@ -301,7 +303,7 @@ STDMETHODIMP VirtualBoxCallback::OnCanShowWindow(BOOL *canShow)
     return mConsoleCallback->OnCanShowWindow(canShow);
 }
 
-STDMETHODIMP VirtualBoxCallback::OnShowWindow(ULONG64 *winId)
+STDMETHODIMP CallbackWrapper::OnShowWindow(ULONG64 *winId)
 {
     if (mConsoleCallback.isNull())
         return S_OK;

@@ -62,7 +62,7 @@ inline HRESULT createCallbackWrapper(I* aInstance,
 {
     ComPtr<ILocalOwner> ptr;
 
-    HRESULT rc = ptr.createInprocObject(CLSID_VirtualBoxCallback);
+    HRESULT rc = ptr.createInprocObject(CLSID_CallbackWrapper);
     if (FAILED(rc))
         return rc;
 

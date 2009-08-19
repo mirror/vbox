@@ -22,15 +22,15 @@
 # include "win/resource.h"
 #endif
 
-class ATL_NO_VTABLE VirtualBoxCallback :
+class ATL_NO_VTABLE CallbackWrapper :
     public VirtualBoxBase,
-    public VirtualBoxSupportErrorInfoImpl<VirtualBoxCallback, IVirtualBoxCallback>,
-    public VirtualBoxSupportTranslation<VirtualBoxCallback>,
+    public VirtualBoxSupportErrorInfoImpl<CallbackWrapper, IVirtualBoxCallback>,
+    public VirtualBoxSupportTranslation<CallbackWrapper>,
     VBOX_SCRIPTABLE_IMPL(ILocalOwner),
     VBOX_SCRIPTABLE_IMPL(IConsoleCallback),
     VBOX_SCRIPTABLE_IMPL(IVirtualBoxCallback)
 #ifdef RT_OS_WINDOWS
-    , public CComCoClass<VirtualBoxCallback, &CLSID_VirtualBoxCallback>
+    , public CComCoClass<CallbackWrapper, &CLSID_CallbackWrapper>
 #endif
 {
 public:
@@ -38,7 +38,7 @@ public:
     DECLARE_CLASSFACTORY()
 
     DECLARE_REGISTRY_RESOURCEID(IDR_VIRTUALBOX)
-    DECLARE_NOT_AGGREGATABLE(VirtualBoxCallback)
+    DECLARE_NOT_AGGREGATABLE(CallbackWrapper)
 
     DECLARE_PROTECT_FINAL_CONSTRUCT()
 
@@ -102,7 +102,7 @@ public:
     STDMETHOD(OnShowWindow) (ULONG64 *winId);
 
     // for VirtualBoxSupportErrorInfoImpl
-    static const wchar_t *getComponentName() { return L"VirtualBoxCallback"; }
+    static const wchar_t *getComponentName() { return L"CallbackWrapper"; }
 
 private:
     ComPtr<IVirtualBoxCallback> mVBoxCallback;

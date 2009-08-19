@@ -1080,8 +1080,9 @@
      >
     <desc>
       The ILocalOwner interface allows to register local objects
-      (created without COM calls). Once registered, calls to methods
-      of such objects can be made from remote COM processes.
+      (created without COM calls, but with new()). 
+      Once registered, calls to methods of such objects can be made 
+      from remote COM processes.
       The main usecase is the event callback implementation where
       API clients provide callback objects.
     </desc>
@@ -13147,10 +13148,11 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
            namespace="virtualbox.org">
       <interface name="ISession" default="yes"/>
     </class>
-    <class name="VirtualBoxCallback" uuid="49EE8561-5563-4715-B18C-A4B1A490DAFE"
+    <class name="CallbackWrapper" uuid="49EE8561-5563-4715-B18C-A4B1A490DAFE"
            namespace="virtualbox.org">
-      <interface name="IVirtualBoxCallback" default="yes"/>
-      <interface name="ILocalOwner"/>
+      <interface name="ILocalOwner" default="yes"/>
+      <interface name="IVirtualBoxCallback"/>
+      <interface name="IConsoleCallback"/>
     </class>
   </module>
 
