@@ -67,13 +67,7 @@
 /* XXX Temporarily. Don't rely on ther user to hack the Makefile himsef! */
 QString g_QStrHintLinuxNoMemory = QApplication::tr(
   "This error means that the kernel driver was either not able to "
-  "allocate enough memory or that some mapping operation failed.<br/><br/>"
-  "There are known problems with Linux 2.6.29. If you are running "
-  "such a kernel, please edit /usr/src/vboxdrv-*/Makefile and enable "
-  "<i>VBOX_USE_INSERT_PAGE = 1</i>. After that, re-compile the kernel "
-  "module by executing<br/><br/>"
-  "  <font color=blue>'/etc/init.d/vboxdrv setup'</font><br/><br/>"
-  "as root."
+  "allocate enough memory or that some mapping operation failed."
   );
 
 QString g_QStrHintLinuxNoDriver = QApplication::tr(
