@@ -530,6 +530,7 @@ int rtR0MemObjNativeAllocLow(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, bool fExecut
 # endif
         rc = rtR0MemObjLinuxAllocPages(&pMemLnx, RTR0MEMOBJTYPE_LOW, cb, GFP_DMA, false /* non-contiguous */);
 #else
+    /** XXX Wrong: GFP_USER can return page frames above 4GB! */
     rc = rtR0MemObjLinuxAllocPages(&pMemLnx, RTR0MEMOBJTYPE_LOW, cb, GFP_USER, false /* non-contiguous */);
 #endif
     if (RT_SUCCESS(rc))
@@ -1173,9 +1174,16 @@ int rtR0MemObjNativeMapUser(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ pMemToMap, RT
             {
                 for (iPage = 0; iPage < cPages; iPage++, ulAddrCur += PAGE_SIZE)
                 {
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 11)
+                    uint64_t u64Phys = page_to_phys(pMemLnxToMap->apPages[iPage]);
+#endif
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0) || defined(HAVE_26_STYLE_REMAP_PAGE_RANGE)
                     struct vm_area_struct *vma = find_vma(pTask->mm, ulAddrCur); /* this is probably the same for all the pages... */
                     AssertBreakStmt(vma, rc = VERR_INTERNAL_ERROR);
+#endif
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 11) && defined(RT_ARCH_X86)
+                    /* remap_page_range() limitation on x86 */
+                    AssertBreakStmt(u64Phys < _4G, rc = VERR_NO_MEMORY);
 #endif
 
 #if   defined(VBOX_USE_INSERT_PAGE) && LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 22)
@@ -1184,9 +1192,9 @@ int rtR0MemObjNativeMapUser(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ pMemToMap, RT
 #elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 11)
                     rc = remap_pfn_range(vma, ulAddrCur, page_to_pfn(pMemLnxToMap->apPages[iPage]), PAGE_SIZE, fPg);
 #elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0) || defined(HAVE_26_STYLE_REMAP_PAGE_RANGE)
-                    rc = remap_page_range(vma, ulAddrCur, page_to_phys(pMemLnxToMap->apPages[iPage]), PAGE_SIZE, fPg);
+                    rc = remap_page_range(vma, ulAddrCur, u64Phys, PAGE_SIZE, fPg);
 #else /* 2.4 */
-                    rc = remap_page_range(ulAddrCur, page_to_phys(pMemLnxToMap->apPages[iPage]), PAGE_SIZE, fPg);
+                    rc = remap_page_range(ulAddrCur, u64Phys, PAGE_SIZE, fPg);
 #endif
                     if (rc)
                         break;
@@ -1211,6 +1219,10 @@ int rtR0MemObjNativeMapUser(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ pMemToMap, RT
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0) || defined(HAVE_26_STYLE_REMAP_PAGE_RANGE)
                         struct vm_area_struct *vma = find_vma(pTask->mm, ulAddrCur); /* this is probably the same for all the pages... */
                         AssertBreakStmt(vma, rc = VERR_INTERNAL_ERROR);
+#endif
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 11) && defined(RT_ARCH_X86)
+                        /* remap_page_range() limitation on x86 */
+                        AssertBreakStmt(Phys < _4G, rc = VERR_NO_MEMORY);
 #endif
 
 #if   LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 11)
