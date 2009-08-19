@@ -238,9 +238,12 @@ RTR0DECL(void *) RTMemContAlloc(PRTCCPHYS pPhys, size_t cb)
     cb = RT_ALIGN_Z(cb, PAGE_SIZE);
     cPages = cb >> PAGE_SHIFT;
     cOrder = CalcPowerOf2Order(cPages);
-#ifdef RT_ARCH_AMD64 /** @todo check out if there is a correct way of getting memory below 4GB (physically). */
+#ifdef RT_ARCH_AMD64
+    /** @todo check out if there is a correct way of getting memory below 4GB (physically).
+     * GFP_DMA32 is available since Linux 2.6.15 */
     paPages = alloc_pages(GFP_DMA, cOrder);
 #else
+    /** XXX Wrong: GFP_USER can return page frames above 4GB! */
     paPages = alloc_pages(GFP_USER, cOrder);
 #endif
     if (paPages)
