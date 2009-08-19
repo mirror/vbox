@@ -37,6 +37,7 @@
 #include <iprt/err.h>
 #include <iprt/mp.h>
 #include "r0drv/mp-r0drv.h"
+#include "internal-r0drv-solaris.h"
 
 
 /*******************************************************************************
@@ -44,6 +45,7 @@
 *******************************************************************************/
 static vbi_cpu_watch_t *g_hVbiCpuWatch = NULL;
 
+RTCPUSET g_rtMpSolarisCpuSet;
 
 static void rtMpNotificationSolarisCallback(void *pvUser, int iCpu, int online)
 {
@@ -51,9 +53,15 @@ static void rtMpNotificationSolarisCallback(void *pvUser, int iCpu, int online)
 
     /* ASSUMES iCpu == RTCPUID */
     if (online)
+    {
+        RTCpuSetAdd(&g_rtMpSolarisCpuSet, iCpu);
         rtMpNotificationDoCallbacks(RTMPEVENT_ONLINE, iCpu);
+    }
     else
+    {
+        RTCpuSetDel(&g_rtMpSolarisCpuSet, iCpu);
         rtMpNotificationDoCallbacks(RTMPEVENT_OFFLINE, iCpu);
+    }
 }
 
 
@@ -63,7 +71,25 @@ int rtR0MpNotificationNativeInit(void)
         return VERR_NOT_SUPPORTED;
     if (g_hVbiCpuWatch != NULL)
         return VERR_WRONG_ORDER;
+
+    /*
+     * Cache the list of online CPUs.
+     */
+    RTCpuSetEmpty(&g_rtMpSolarisCpuSet);
+
     g_hVbiCpuWatch = vbi_watch_cpus(rtMpNotificationSolarisCallback, NULL, 0);
+
+    RTCPUID idCpu = RTMpGetMaxCpuId();
+    do
+    {
+        /** @todo vbi_cpu_online() should do boundary check "idCpu" rather than hang the system. */
+        if (   RTMpIsCpuPossible(idCpu)
+            && vbi_cpu_online(idCpu))
+        {
+            RTCpuSetAdd(&g_rtMpSolarisCpuSet, idCpu);
+        }
+    } while (idCpu-- > 0);
+
     return VINF_SUCCESS;
 }
 
