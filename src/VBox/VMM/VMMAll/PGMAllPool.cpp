@@ -1195,6 +1195,9 @@ DECLEXPORT(int) pgmPoolAccessHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE 
                  pPage->pvLastAccessHandlerFault = pvFault;
                  pPage->cLastAccessHandlerCount  = pVCpu->pgm.s.cPoolAccessHandler;
                  pPage->pvLastAccessHandlerRip   = pRegFrame->rip;
+                 /* Make sure we don't kick out a page too quickly. */
+                 if (pPage->cModifications > 8)
+                     pPage->cModifications = 2;
              }
              else
              if (pPage->pvLastAccessHandlerFault == pvFault)
