@@ -556,13 +556,6 @@ private:
      * This does not have to match the state maintained in the Floppy. */
     DriveState_T meFloppyState;
 
-    /** The current network attachment type in the VM.
-     * This doesn't have to match the network attachment type
-     * maintained in the NetworkAdapter. This is needed to
-     * change the network attachment dynamically.
-     */
-    static NetworkAttachmentType_T meAttachmentType[SchemaDefs::NetworkAdapterCount];
-
     VMMDev * const mVMMDev;
     AudioSniffer * const mAudioSniffer;
 
