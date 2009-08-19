@@ -1110,14 +1110,6 @@ DECLEXPORT(int) pgmPoolAccessHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE 
     LogFlow(("pgmPoolAccessHandler: pvFault=%RGv pPage=%p:{.idx=%d} GCPhysFault=%RGp\n", pvFault, pPage, pPage->idx, GCPhysFault));
 
     pgmLock(pVM);
-
-    /*
-     * Disassemble the faulting instruction.
-     */
-    PDISCPUSTATE pDis = &pVCpu->pgm.s.DisState;
-    int rc = EMInterpretDisasOne(pVM, pVCpu, pRegFrame, pDis, NULL);
-    AssertReturnStmt(rc == VINF_SUCCESS, pgmUnlock(pVM), rc);
-
     if (PHYS_PAGE_ADDRESS(GCPhysFault) != PHYS_PAGE_ADDRESS(pPage->GCPhys))
     {
         /* Pool page changed while we were waiting for the lock; ignore. */
@@ -1126,6 +1118,13 @@ DECLEXPORT(int) pgmPoolAccessHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE 
         pgmUnlock(pVM);
         return VINF_SUCCESS;
     }
+
+    /*
+     * Disassemble the faulting instruction.
+     */
+    PDISCPUSTATE pDis = &pVCpu->pgm.s.DisState;
+    int rc = EMInterpretDisasOne(pVM, pVCpu, pRegFrame, pDis, NULL);
+    AssertReturnStmt(rc == VINF_SUCCESS, pgmUnlock(pVM), rc);
 
     Assert(pPage->enmKind != PGMPOOLKIND_FREE);
 
