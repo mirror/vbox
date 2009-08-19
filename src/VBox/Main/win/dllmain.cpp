@@ -34,7 +34,7 @@ CComModule _Module;
 
 BEGIN_OBJECT_MAP(ObjectMap)
     OBJECT_ENTRY(CLSID_Session, Session)
-    OBJECT_ENTRY(CLSID_VirtualBoxCallback, VirtualBoxCallback)
+    OBJECT_ENTRY(CLSID_CallbackWrapper, CallbackWrapper)
 END_OBJECT_MAP()
 
 /////////////////////////////////////////////////////////////////////////////

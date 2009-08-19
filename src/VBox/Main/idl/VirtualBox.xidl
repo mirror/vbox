@@ -1075,7 +1075,7 @@
   </interface>
 
   <interface
-     name="ILocalOwner" extends="$dispatched"
+     name="ILocalOwner" extends="$unknown"
      uuid="308ff42a-dc45-49d4-a950-b1eee5e00bb5" wsmap="suppress"
      >
     <desc>
