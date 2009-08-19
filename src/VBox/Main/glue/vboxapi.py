@@ -217,7 +217,7 @@ class PlatformMSCOM:
             DispatchBaseClass.__dict__['__setattr__'] = CustomSetAttr
             win32com.client.gencache.EnsureDispatch('VirtualBox.Session')
             win32com.client.gencache.EnsureDispatch('VirtualBox.VirtualBox')
-            win32com.client.gencache.EnsureDispatch('VirtualBox.VirtualBoxCallback')
+            win32com.client.gencache.EnsureDispatch('VirtualBox.CallbackWrapper')
 
     def getSessionObject(self, vbox):
         import win32com
@@ -260,15 +260,15 @@ class PlatformMSCOM:
         str += "   _typelib_guid_ = tlb_guid\n"
         str += "   _typelib_version_ = 1, 0\n"
 
-        # generate capitalized version of callbacks - that's how Python COM
-        # looks them up on Windows
+        # generate capitalized version of callback methods - 
+        # that's how Python COM looks them up
         for m in dir(impl):
            if m.startswith("on"):
              str += "   "+ComifyName(m)+"=BaseClass."+m+"\n"
 
         str += "   def __init__(self): BaseClass.__init__(self, arg)\n"
-        str += "result = win32com.client.Dispatch('VirtualBox.VirtualBoxCallback')\n"
-        str += "result.SetLocalObject(win32com.server.util.wrap("+iface+"Impl())\n"
+        str += "result = win32com.client.Dispatch('VirtualBox.CallbackWrapper')\n"
+        str += "result.SetLocalObject("+iface+"Impl())\n"
         exec (str,d,d)
         return d['result']
 
@@ -329,10 +329,12 @@ class PlatformXPCOM:
         return obj.__getattr__('get'+ComifyName(field))()
 
     def initPerThread(self):
-        pass
+        import xpcom
+        xpcom._xpcom.AttachThread()
 
     def deinitPerThread(self):
-        pass
+        import xpcom
+        xpcom._xpcom.DetachThread()
 
     def createCallback(self, iface, impl, arg):
         d = {}

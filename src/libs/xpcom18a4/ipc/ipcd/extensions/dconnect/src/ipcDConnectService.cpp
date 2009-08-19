@@ -1603,7 +1603,9 @@ ipcDConnectService::SerializeInterfaceParam(ipcMessageWriter &writer,
 
       // send address of the instance wrapper, and set the low bit to indicate
       // to the remote party that this is a remote instance wrapper.
-      PtrBits bits = ((PtrBits)(uintptr_t) wrapper) | PTRBITS_REMOTE_BIT;
+      PtrBits bits = ((PtrBits)(uintptr_t) wrapper);
+      NS_ASSERTION((bits & PTRBITS_REMOTE_BIT) == 0, "remote bit wrong)");
+      bits |= PTRBITS_REMOTE_BIT;
       writer.PutBytes(&bits, sizeof(bits));
     }
     NS_IF_RELEASE(stub);
