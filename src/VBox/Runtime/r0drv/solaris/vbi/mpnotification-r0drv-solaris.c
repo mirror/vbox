@@ -77,12 +77,12 @@ int rtR0MpNotificationNativeInit(void)
      */
     RTCpuSetEmpty(&g_rtMpSolarisCpuSet);
 
-    g_hVbiCpuWatch = vbi_watch_cpus(rtMpNotificationSolarisCallback, NULL, 0);
+    g_hVbiCpuWatch = vbi_watch_cpus(rtMpNotificationSolarisCallback, NULL, 1 /* watch current CPU too */);
 
     RTCPUID idCpu = RTMpGetMaxCpuId();
     do
     {
-        /** @todo vbi_cpu_online() should do boundary check "idCpu" rather than hang the system. */
+        /** @todo vbi_cpu_online() should boundary check "idCpu" rather than hang the system. */
         if (   RTMpIsCpuPossible(idCpu)
             && vbi_cpu_online(idCpu))
         {
