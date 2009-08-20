@@ -21,7 +21,7 @@ echo "Removing VirtualBox drivers and services..."
 
 currentzone=`zonename`
 if test "$currentzone" = "global"; then
-    /opt/VirtualBox/vboxconfig.sh preremove
+    /opt/VirtualBox/vboxconfig.sh --preremove
 fi
 
 echo "Done."
