@@ -68,6 +68,7 @@ typedef struct {
 
 DECLEXPORT(void) STATE_APIENTRY crStateFramebufferObjectInit(CRContext *ctx);
 DECLEXPORT(void) STATE_APIENTRY crStateFramebufferObjectDestroy(CRContext *ctx);
+DECLEXPORT(void) STATE_APIENTRY crStateFramebufferObjectSwitch(CRContext *from, CRContext *to);
 
 DECLEXPORT(void) STATE_APIENTRY crStateBindRenderbufferEXT(GLenum target, GLuint renderbuffer);
 DECLEXPORT(void) STATE_APIENTRY crStateDeleteRenderbuffersEXT(GLsizei n, const GLuint *renderbuffers);
