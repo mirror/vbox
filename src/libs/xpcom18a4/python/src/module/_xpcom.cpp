@@ -526,7 +526,9 @@ PyXPCOMMethod_WaitForEvents(PyObject *self, PyObject *args)
   {
     /* fallback */
     PLEvent *pEvent = NULL;
+    Py_BEGIN_ALLOW_THREADS
     rc = q->WaitForEvent(&pEvent);
+    Py_END_ALLOW_THREADS
     if (NS_SUCCEEDED(rc))
       q->HandleEvent(pEvent);
     goto ok;
