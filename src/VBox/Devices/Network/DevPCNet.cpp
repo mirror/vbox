@@ -4630,9 +4630,13 @@ static DECLCALLBACK(int) pcnetSetLinkState(PPDMINETWORKCONFIG pInterface, PDMNET
         pThis->fLinkUp = fLinkUp;
         if (fLinkUp)
         {
-            /* connect */
-            pThis->aCSR[0] &= ~(RT_BIT(15) | RT_BIT(13)); /* ERR | CERR - probably not 100% correct either... */
-            pThis->Led.Actual.s.fError = 0;
+            /* connect  with a delay of 5 seconds */
+            pThis->fLinkTempDown = true;
+            pThis->cLinkDownReported = 0;
+            pThis->aCSR[0] |= RT_BIT(15) | RT_BIT(13); /* ERR | CERR (this is probably wrong) */
+            pThis->Led.Asserted.s.fError = pThis->Led.Actual.s.fError = 1;
+            int rc = TMTimerSetMillies(pThis->pTimerRestore, 5000);
+            AssertRC(rc);
         }
         else
         {
