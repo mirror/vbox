@@ -276,6 +276,83 @@ static DECLCALLBACK(void *) drvNetSnifferQueryInterface(PPDMIBASE pInterface, PD
 
 
 /**
+ * Detach a driver instance.
+ *
+ * @param   pDrvIns     The driver instance.
+ * @param   fFlags      Flags, combination of the PDM_TACH_FLAGS_* \#defines.
+ */
+static DECLCALLBACK(void) drvNetSnifferDetach(PPDMDRVINS pDrvIns, uint32_t fFlags)
+{
+    PDRVNETSNIFFER pThis = PDMINS_2_DATA(pDrvIns, PDRVNETSNIFFER);
+
+    LogFlow(("drvNetSnifferDetach: pDrvIns: %p, fFlags: %u\n", pDrvIns, fFlags));
+
+    pThis->pConnector = NULL;
+    pThis->pPort      = NULL;
+    pThis->pConfig    = NULL;
+}
+
+
+/**
+ * Attach a driver instance.
+ *
+ * @returns VBox status code.
+ * @param   pDrvIns     The driver instance.
+ * @param   fFlags      Flags, combination of the PDM_TACH_FLAGS_* \#defines.
+ */
+static DECLCALLBACK(int) drvNetSnifferAttach(PPDMDRVINS pDrvIns, uint32_t fFlags)
+{
+    PDRVNETSNIFFER pThis = PDMINS_2_DATA(pDrvIns, PDRVNETSNIFFER);
+
+    LogFlow(("drvNetSnifferAttach: pDrvIns: %p, fFlags: %u\n", pDrvIns, fFlags));
+
+    /*
+     * Query the network port interface.
+     */
+    pThis->pPort = (PPDMINETWORKPORT)pDrvIns->pUpBase->pfnQueryInterface(pDrvIns->pUpBase, PDMINTERFACE_NETWORK_PORT);
+    if (!pThis->pPort)
+    {
+        AssertMsgFailed(("Configuration error: the above device/driver didn't export the network port interface!\n"));
+        return VERR_PDM_MISSING_INTERFACE_ABOVE;
+    }
+
+    /*
+     * Query the network config interface.
+     */
+    pThis->pConfig = (PPDMINETWORKCONFIG)pDrvIns->pUpBase->pfnQueryInterface(pDrvIns->pUpBase, PDMINTERFACE_NETWORK_CONFIG);
+    if (!pThis->pConfig)
+    {
+        AssertMsgFailed(("Configuration error: the above device/driver didn't export the network config interface!\n"));
+        return VERR_PDM_MISSING_INTERFACE_ABOVE;
+    }
+
+    /*
+     * Query the network connector interface.
+     */
+    PPDMIBASE   pBaseDown;
+    int rc = PDMDrvHlpAttach(pDrvIns, fFlags, &pBaseDown);
+    if (rc == VERR_PDM_NO_ATTACHED_DRIVER)
+        pThis->pConnector = NULL;
+    else if (RT_SUCCESS(rc))
+    {
+        pThis->pConnector = (PPDMINETWORKCONNECTOR)pBaseDown->pfnQueryInterface(pBaseDown, PDMINTERFACE_NETWORK_CONNECTOR);
+        if (!pThis->pConnector)
+        {
+            AssertMsgFailed(("Configuration error: the driver below didn't export the network connector interface!\n"));
+            return VERR_PDM_MISSING_INTERFACE_BELOW;
+        }
+    }
+    else
+    {
+        AssertMsgFailed(("Failed to attach to driver below! rc=%Rrc\n", rc));
+        return rc;
+    }
+
+    return VINF_SUCCESS;
+}
+
+
+/**
  * Destruct a driver instance.
  *
  * Most VM resources are freed by the VM. This callback is provided so that any non-VM
@@ -453,11 +530,11 @@ const PDMDRVREG g_DrvNetSniffer =
     /* pfnResume */
     NULL,
     /* pfnAttach */
-    NULL,
+    drvNetSnifferAttach,
     /* pfnDetach */
-    NULL, 
+    drvNetSnifferDetach,
     /* pfnPowerOff */
-    NULL, 
+    NULL,
     /* pfnSoftReset */
     NULL,
     /* u32EndVersion */

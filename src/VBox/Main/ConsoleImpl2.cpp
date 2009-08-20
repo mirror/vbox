@@ -2116,10 +2116,29 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
     hrc = virtualBox->COMGETTER(Host)(host.asOutParam());
     H();
 
-    /*
-     * Detach the device train for the current network attachment.
-     */
-    if (fAttachDetach)
+    BOOL fSniffer;
+    hrc = aNetworkAdapter->COMGETTER(TraceEnabled)(&fSniffer);
+    H();
+
+    if (fAttachDetach && fSniffer)
+    {
+        const char *pszNetDriver = "IntNet";
+        if (meAttachmentType[uInstance] == NetworkAttachmentType_NAT)
+            pszNetDriver = "NAT";
+#if !defined(VBOX_WITH_NETFLT) && defined(RT_OS_LINUX)
+        if (meAttachmentType[uInstance] == NetworkAttachmentType_Bridged)
+            pszNetDriver = "HostInterface";
+#endif
+
+        rc = PDMR3DriverDetach(pVM, pszDevice, uInstance, uLun, pszNetDriver, 0, 0 /*fFlags*/);
+        if (rc == VINF_PDM_NO_DRIVER_ATTACHED_TO_LUN)
+            rc = VINF_SUCCESS;
+        AssertLogRelRCReturn(rc, rc);
+
+        pLunL0 = CFGMR3GetChildF(pInst, "LUN#%u", uLun);
+        CFGMR3RemoveNode(CFGMR3GetChildF(pLunL0, "AttachedDriver"));
+    }
+    else if (fAttachDetach && !fSniffer)
     {
         rc = PDMR3DeviceDetach(pVM, pszDevice, uInstance, uLun, 0 /*fFlags*/);
         if (rc == VINF_PDM_NO_DRIVER_ATTACHED_TO_LUN)
@@ -2129,14 +2148,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
         /* nuke anything which might have been left behind. */
         CFGMR3RemoveNode(CFGMR3GetChildF(pInst, "LUN#%u", uLun));
     }
-
-    /*
-     * Enable the packet sniffer if requested.
-     */
-    BOOL fSniffer;
-    hrc = aNetworkAdapter->COMGETTER(TraceEnabled)(&fSniffer);
-    H();
-    if (fSniffer)
+    else if (!fAttachDetach && fSniffer)
     {
         /* insert the sniffer filter driver. */
         rc = CFGMR3InsertNode(pInst, "LUN#0", &pLunL0);                 RC_CHECK();
@@ -2769,7 +2781,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
             {
                 if (fAttachDetach)
                 {
-                    rc = PDMR3DeviceAttach(pVM, pszDevice, uInstance, uLun, 0 /*fFlags*/, NULL /*ppBase*/);
+                    rc = PDMR3DriverAttach(pVM, pszDevice, uInstance, uLun, 0 /*fFlags*/, NULL /* ppBase */);
                     AssertRC(rc);
                 }
 
@@ -2816,6 +2828,8 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
             AssertMsgFailed(("should not get here!\n"));
             break;
     }
+
+    meAttachmentType[uInstance] = eAttachmentType;
 
 #undef STR_FREE
 #undef H
