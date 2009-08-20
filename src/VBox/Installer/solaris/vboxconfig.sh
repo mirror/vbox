@@ -58,7 +58,9 @@ DESC_VBOXUSBMON="USBMonitor"
 
 FATALOP=fatal
 SILENTOP=silent
+IPSOP=ips
 ISSILENT=
+ISIPS=
 
 infoprint()
 {
@@ -262,7 +264,11 @@ rem_driver()
     fatal=$3
     module_added $modname
     if test "$?" -eq 0; then
-        $BIN_REMDRV $modname
+        if test "$ISIPS" != "$IPSOP"; then
+            $BIN_REMDRV $modname
+        else
+            $BIN_REMDRV $modname >/dev/null 2>&1
+        fi
         if test $? -eq 0; then
             subprint "Removed: $moddesc module"
             return 0
@@ -443,7 +449,12 @@ remove_drivers()
 # failure: non fatal
 install_python_bindings()
 {
-    if test -z "$1" || test -z "$2"; then
+    # The python binary might not be there, so just exit silently
+    if test -z "$1"; then
+        return 0
+    fi
+
+    if test -z "$2"; then
         errorprint "missing argument to install_python_bindings"
         exit 1
     fi
@@ -644,31 +655,48 @@ check_isa
 check_zone
 find_bins
 
-drvop=$1
-if test "$2" = "$FATALOP" || test "$3" = "$FATALOP"; then
-    fatal=$FATALOP
-fi
-if test "$2" = "$SILENTOP" || test "$3" = "$SILENTOP"; then
-    ISSILENT=$SILENTOP
-fi
+# Get command line options
+while test $# -gt 0;
+do
+    case "$1" in
+        --postinstall | --preremove | --installdrivers | --removedrivers)
+            drvop="$1"
+            ;;
+        --fatal)
+            fatal="$FATALOP"
+            ;;
+        --silent)
+            ISSILENT="$SILENTOP"
+            ;;
+        --ips)
+            ISIPS="$IPSOP"
+            ;;
+        *)
+            errorprint "Invalid arguments"
+            exit 1
+            break
+            ;;
+    esac
+    shift
+done
 
 case "$drvop" in
-postinstall)
+--postinstall)
     check_module_arch
     postinstall
     ;;
-preremove)
+--preremove)
     preremove "$fatal"
     ;;
-install_drivers)
+--installdrivers)
     check_module_arch
     install_drivers
     ;;
-remove_drivers)
+--removedrivers)
     remove_drivers "$fatal"
     ;;
 *)
-    echo "Usage: $0 postinstall|preremove|install_drivers|remove_drivers [fatal] [silent]"
+    errorprint "Invalid operation $drvop"
     exit 1
 esac
 

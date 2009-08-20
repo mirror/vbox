@@ -20,27 +20,10 @@
 # additional information or have any questions.
 #
 
-# Check for xVM/Xen
-currentisa=`uname -i`
-if test "$currentisa" = "i86xpv"; then
-    echo "## VirtualBox cannot run under xVM Dom0! Fatal Error, Aborting installation!"
-    exit 1
-fi
-
 currentzone=`zonename`
 if test "$currentzone" = "global"; then
-    echo "Checking for older bits..."
-    /opt/VirtualBox/vboxconfig.sh preremove fatal
+    /opt/VirtualBox/ipsinstall.sh --srv4
     rc=$?
-    if test "$rc" -eq 0; then
-        echo "Installing new ones..."
-        /opt/VirtualBox/vboxconfig.sh postinstall
-    fi
-    rc=$?
-    if test "$rc" -ne 0; then
-        echo "Completed but with errors."
-        rc=20
-    fi
 fi
 
 /usr/sbin/installf -f $PKGINST
