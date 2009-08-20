@@ -150,9 +150,9 @@ typedef struct DRVNAT
     PPDMTHREAD              pSlirpThread;
     /** Queue for NAT-thread-external events. */
     PRTREQQUEUE             pSlirpReqQueue;
-    /* Send queue */
 #ifndef SLIRP_SPLIT_CAN_OUTPUT
-    PPDMQUEUE               pSendQueue;
+    /* Receive PDM queue (deliver packets to the guest) */
+    PPDMQUEUE               pRecvQueue;
 #endif
 
 #ifdef VBOX_WITH_SLIRP_MT
@@ -169,12 +169,15 @@ typedef struct DRVNAT
 #endif
     STAMCOUNTER             StatQueuePktSent;       /**< counting packet sent via PDM queue */
     STAMCOUNTER             StatQueuePktDropped;    /**< counting packet drops by PDM queue */
-    STAMCOUNTER             StatConsumerFalse;
+    STAMCOUNTER             StatConsumerFalse;      /**< how often to wait for guest RX buffers */
 #ifdef SLIRP_SPLIT_CAN_OUTPUT
+    /** thread delivering packets for receiving by the guest */
     PPDMTHREAD              pRecvThread;
+    /** event to wakeup the guest receive thread */
     RTSEMEVENT              EventRecv;
-    STAMCOUNTER             StatNATRecvWakeups;
+    /** Receive Req queue (deliver packets to the guest) */
     PRTREQQUEUE             pRecvReqQueue;
+    STAMCOUNTER             StatNATRecvWakeups;     /**< how often to wakeup the guest RX thread */
 #endif
 } DRVNAT;
 /** Pointer the NAT driver instance data. */
@@ -225,6 +228,7 @@ static DECLCALLBACK(int) drvNATRecvWakeup(PPDMDRVINS pDrvIns, PPDMTHREAD pThread
 {
     PDRVNAT pThis = PDMINS_2_DATA(pDrvIns, PDRVNAT);
     int rc = RTSemEventSignal(pThis->EventRecv);
+
     STAM_COUNTER_INC(&pThis->StatNATRecvWakeups);
     AssertReleaseRC(rc);
     return VINF_SUCCESS;
@@ -232,12 +236,11 @@ static DECLCALLBACK(int) drvNATRecvWakeup(PPDMDRVINS pDrvIns, PPDMTHREAD pThread
 
 static DECLCALLBACK(void) drvNATRecvWorker(PDRVNAT pThis, uint8_t *pu8Buf, int cb)
 {
-    int rc;
     if (RT_FAILURE(pThis->pPort->pfnWaitReceiveAvail(pThis->pPort, RT_INDEFINITE_WAIT)))
     {
         AssertMsgFailed(("No RX available even on indefinite wait"));
     }
-    rc = pThis->pPort->pfnReceive(pThis->pPort, pu8Buf, cb);
+    int rc = pThis->pPort->pfnReceive(pThis->pPort, pu8Buf, cb);
     RTMemFree(pu8Buf);
     AssertRC(rc);
 }
@@ -256,7 +259,7 @@ static void drvNATSendWorker(PDRVNAT pThis, const void *pvBuf, size_t cb)
 
 
 /**
- * Send data to the network.
+ * Called by the guest to send data to the network.
  *
  * @returns VBox status code.
  * @param   pInterface      Pointer to the interface structure containing the called function pointer.
@@ -607,14 +610,14 @@ void slirp_output(void *pvUser, void *pvArg, const uint8_t *pu8Buf, int cb)
     Log2(("slirp_output: pu8Buf=%p cb=%#x (pThis=%p)\n%.*Rhxd\n", pu8Buf, cb, pThis, cb, pu8Buf));
 
 #ifndef SLIRP_SPLIT_CAN_OUTPUT
-    PDRVNATQUEUITEM pItem = (PDRVNATQUEUITEM)PDMQueueAlloc(pThis->pSendQueue);
+    PDRVNATQUEUITEM pItem = (PDRVNATQUEUITEM)PDMQueueAlloc(pThis->pRecvQueue);
     if (pItem)
     {
         pItem->pu8Buf = pu8Buf;
         pItem->cb = cb;
         pItem->mbuf = pvArg;
         Log2(("pItem:%p %.Rhxd\n", pItem, pItem->pu8Buf));
-        PDMQueueInsert(pThis->pSendQueue, &pItem->Core);
+        PDMQueueInsert(pThis->pRecvQueue, &pItem->Core);
         STAM_COUNTER_INC(&pThis->StatQueuePktSent);
         return;
     }
@@ -1003,7 +1006,7 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandl
 
 #ifndef SLIRP_SPLIT_CAN_OUTPUT
             rc = PDMDrvHlpPDMQueueCreate(pDrvIns, sizeof(DRVNATQUEUITEM), QUEUE_SIZE, 0,
-                                         drvNATQueueConsumer, "NAT", &pThis->pSendQueue);
+                                         drvNATQueueConsumer, "NAT", &pThis->pRecvQueue);
             if (RT_FAILURE(rc))
             {
                 LogRel(("NAT: Can't create send queue\n"));
