@@ -1250,12 +1250,6 @@ private:
 
     void vboxCheckUpdateAddress (VBoxVHWASurfaceBase * pSurface, uint64_t offset)
     {
-#ifndef VBOXQGL_DBG_SURF
-    	if(offset == 0xffffffffffffffffL)
-    	{
-    		return;
-    	}
-#endif
         if (pSurface->addressAlocated())
         {
             uchar * addr = vboxVRAMAddressFromOffset(offset);
