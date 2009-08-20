@@ -345,7 +345,7 @@ class PlatformXPCOM:
         str += "class "+iface+"Impl(BaseClass):\n"
         str += "   _com_interfaces_ = xpcom.components.interfaces."+iface+"\n"
         str += "   def __init__(self): BaseClass.__init__(self, arg)\n"
-        str += "result = xpcom.components.classes['@virtualbox.org/VirtualBoxCallback;1'].createInstance()\n"
+        str += "result = xpcom.components.classes['@virtualbox.org/CallbackWrapper;1'].createInstance()\n"
         str += "result.setLocalObject("+iface+"Impl())\n"
         exec (str,d,d)
         return d['result']
