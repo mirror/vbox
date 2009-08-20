@@ -234,6 +234,9 @@ void crStateSwitchContext( CRContext *from, CRContext *to )
 		crStateMultisampleSwitch(&(sb->multisample), bitID, from, to );
 	}
 #endif
+#ifdef CR_EXT_framebuffer_object
+    crStateFramebufferObjectSwitch(from, to);
+#endif
 	if (CHECKDIRTY(sb->current.dirty, bitID))
 	{
 		crStateCurrentSwitch( &(sb->current), bitID, from, to );

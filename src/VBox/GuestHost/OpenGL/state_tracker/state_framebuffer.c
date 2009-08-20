@@ -514,3 +514,13 @@ crStateGenerateMipmapEXT(GLenum target)
 {
     /*@todo*/
 }
+
+DECLEXPORT(void) STATE_APIENTRY
+crStateFramebufferObjectSwitch(CRContext *from, CRContext *to)
+{
+    if (to->framebufferobject.framebuffer!=from->framebufferobject.framebuffer)
+    {
+        diff_api.BindFramebufferEXT(GL_FRAMEBUFFER_EXT, to->framebufferobject.framebuffer?
+            to->framebufferobject.framebuffer->id:0);
+    }
+}
