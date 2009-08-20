@@ -1502,13 +1502,13 @@ static void crStateDumpClientPointer(CRClientPointer *cp, const char *name, int 
 {
   if (i<0 && cp->enabled)
   {
-    crDebug("CP(%s): enabled:%d ptr:%p buffer:%p buffer.name:%i locked: %i",
+    crDebug("CP(%s): enabled:%d ptr:%p buffer:%p buffer.name:%i locked: %i %s",
             name, cp->enabled, cp->p, cp->buffer, cp->buffer? cp->buffer->name:-1, (int)cp->locked,
             CRSTATE_IS_SERVER_CP(*cp) ? "":"!FAIL!");
   }
   else if (0==i || cp->enabled)
   {
-    crDebug("CP(%s%i): enabled:%d ptr:%p buffer:%p buffer.name:%i locked: %i",
+    crDebug("CP(%s%i): enabled:%d ptr:%p buffer:%p buffer.name:%i locked: %i %s",
             name, i, cp->enabled, cp->p, cp->buffer, cp->buffer? cp->buffer->name:-1, (int)cp->locked,
             CRSTATE_IS_SERVER_CP(*cp) ? "":"!FAIL!");
   }
