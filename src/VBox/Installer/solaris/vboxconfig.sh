@@ -672,8 +672,6 @@ do
             ISIPS="$IPSOP"
             ;;
         *)
-            errorprint "Invalid arguments"
-            exit 1
             break
             ;;
     esac
