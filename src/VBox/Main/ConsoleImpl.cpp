@@ -3289,9 +3289,14 @@ HRESULT Console::onNetworkAdapterChange (INetworkAdapter *aNetworkAdapter, BOOL 
     CheckComRCReturnRC(autoVMCaller.rc());
 
     /* Get the properties we need from the adapter */
-    BOOL fCableConnected;
+    BOOL fCableConnected, fTraceEnabled;
     HRESULT rc = aNetworkAdapter->COMGETTER(CableConnected) (&fCableConnected);
     AssertComRC(rc);
+    if (SUCCEEDED(rc))
+    {
+        rc = aNetworkAdapter->COMGETTER(TraceEnabled) (&fTraceEnabled);
+        AssertComRC(rc);
+    }
     if (SUCCEEDED(rc))
     {
         ULONG ulInstance;
@@ -3335,17 +3340,31 @@ HRESULT Console::onNetworkAdapterChange (INetworkAdapter *aNetworkAdapter, BOOL 
                                                                      : PDMNETWORKLINKSTATE_DOWN);
                     ComAssertRC(vrc);
                 }
-            }
-
 #ifdef VBOX_DYNAMIC_NET_ATTACH
-            if (RT_SUCCESS(vrc) && changeAdapter)
-            {
-                VMSTATE enmVMState = VMR3GetState(mpVM);
-                if (   enmVMState == VMSTATE_RUNNING
-                    || enmVMState == VMSTATE_SUSPENDED)
-                    rc = doNetworkAdapterChange(pszAdapterName, ulInstance, 0, aNetworkAdapter);
-            }
+                if (RT_SUCCESS(vrc) && changeAdapter)
+                {
+                    VMSTATE enmVMState = VMR3GetState(mpVM);
+
+                    if (   enmVMState == VMSTATE_RUNNING
+                        || enmVMState == VMSTATE_SUSPENDED)
+                    {
+                        if (fTraceEnabled && fCableConnected && pINetCfg)
+                        {
+                            vrc = pINetCfg->pfnSetLinkState (pINetCfg, PDMNETWORKLINKSTATE_DOWN);
+                            ComAssertRC(vrc);
+                        }
+
+                        rc = doNetworkAdapterChange(pszAdapterName, ulInstance, 0, aNetworkAdapter);
+
+                        if (fTraceEnabled && fCableConnected && pINetCfg)
+                        {
+                            vrc = pINetCfg->pfnSetLinkState (pINetCfg, PDMNETWORKLINKSTATE_UP);
+                            ComAssertRC(vrc);
+                        }
+                    }
+                }
 #endif /* VBOX_DYNAMIC_NET_ATTACH */
+            }
 
             if (VBOX_FAILURE (vrc))
                 rc = E_FAIL;
@@ -7622,5 +7641,10 @@ const PDMDRVREG Console::DrvStatusReg =
     /* u32EndVersion */
     PDM_DRVREG_VERSION
 };
+
+/**
+ * Initializing the attachment type for the network adapters
+ */
+NetworkAttachmentType_T Console::meAttachmentType[] = {};
 
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */
