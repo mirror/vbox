@@ -186,8 +186,8 @@ binary binary-arch binary-indep: build $(if $(NOMODS),,modules)
 	install -d -g 0 -o 0 $(prefix)/usr/lib/$(package)
 	install -d -g 0 -o 0 $(prefix)/usr/share/$(package)
 	install -d -g 0 -o 0 $(prefix)/usr/share/doc/$(verpkg)
-	$(if $(NOQT),,mv $(archdir)/VirtualBox.desktop \
-	   $(prefix)/usr/share/applications/VirtualBox.desktop)
+	$(if $(NOQT),,mv $(archdir)/virtualbox.desktop \
+	   $(prefix)/usr/share/applications/virtualbox.desktop)
 	install -d -g 0 -o 0 $(prefix)/usr/share/pixmaps
 	install -d -g 0 -o 0 $(prefix)/usr/share/lintian/overrides
 	sed \
