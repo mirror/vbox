@@ -65,6 +65,16 @@ if test -x "$BIN_IFCONFIG"; then
             abort_error
         fi
     fi
+    vboxnetup=`$BIN_IFCONFIG vboxnet0 inet6 >/dev/null 2>&1`
+    if test "$?" -eq 0; then
+        echo "## VirtualBox NetAdapter (Ipv6) is still plumbed"
+        echo "## Trying to remove old NetAdapter..."
+        $BIN_IFCONFIG vboxnet0 inet6 unplumb
+        if test "$?" -ne 0; then
+            echo "## VirtualBox NetAdapter 'vboxnet0' IPv6 couldn't be unplumbed (probably in use)."
+            abort_error
+        fi
+    fi
 fi
 
 exit 0
