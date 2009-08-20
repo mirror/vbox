@@ -4302,9 +4302,12 @@ static DECLCALLBACK(int) e1kSetLinkState(PPDMINETWORKCONFIG pInterface, PDMNETWO
     {
         if (fNewUp)
         {
-            E1kLog(("%s Link is up\n", INSTANCE(pState)));
-            STATUS |= STATUS_LU;
-            Phy::setLinkStatus(&pState->phy, true);
+            E1kLog(("%s Link will be up in approximately 5 secs\n", INSTANCE(pState)));
+            STATUS &= ~STATUS_LU;
+            Phy::setLinkStatus(&pState->phy, false);
+            e1kRaiseInterrupt(pState, ICR_LSC);
+            /* Restore the link back in 5 second. */
+            e1kArmTimer(pState, pState->pLUTimer, 5000000);
         }
         else
         {
