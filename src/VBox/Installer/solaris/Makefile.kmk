@@ -156,7 +156,7 @@ solaris-bin_SOURCES = \
 	$(if $(VBOX_WITH_PYTHON),$(PATH_ROOT)/src/VBox/Frontends/VBoxShell/vboxshell.py,) \
 	$(VBOX_PATH_SOL_INST_SRC)/vboxconfig.sh \
 	$(VBOX_PATH_SOL_INST_SRC)/VBox.sh \
-	$(VBOX_PATH_SOL_INST_SRC)/ipsinstall.sh \
+	$(VBOX_PATH_SOL_INST_SRC)/pkginstall.sh \
 	$(if $(VBOX_WITH_WEBSERVICES),$(VBOX_PATH_SOL_INST_SRC)/smf-vboxwebsrv.sh,)
 
 solaris-drv-confs_INST = bin/
@@ -267,7 +267,7 @@ SOLARIS_USRBIN_LINKS = \
 SOLARIS_COMMON_EXES = \
 	vboxconfig.sh \
 	VBox.sh \
-	ipsinstall.sh \
+	pkginstall.sh \
 	$(if $(VBOX_WITH_PYTHON),vboxshell.py,) \
 	$(if $(VBOX_WITH_WEBSERVICES),smf-vboxwebsrv.sh,) \
 

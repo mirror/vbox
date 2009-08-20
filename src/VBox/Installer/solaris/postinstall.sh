@@ -22,7 +22,7 @@
 
 currentzone=`zonename`
 if test "$currentzone" = "global"; then
-    /opt/VirtualBox/ipsinstall.sh --srv4
+    /opt/VirtualBox/pkginstall.sh --srv4
     rc=$?
 fi
 
