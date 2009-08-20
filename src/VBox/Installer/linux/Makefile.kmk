@@ -76,10 +76,10 @@ linux-misc_MODE = a+r,u+w
 linux-misc_SOURCES = \
 	$(PATH_ROOT)/src/VBox/Frontends/VirtualBox/images/$(if $(VBOX_OSE),OSE,NonOSE)/VirtualBox_32px.png=>VBox.png \
 	$(if $(VBOX_OSE),,$(VBOX_BRAND_LICENSE_TXT)=>LICENSE) \
-	$(if $(VBOX_WITH_QTGUI),$(PATH_linux-misc)/VirtualBox.desktop,)
-linux-misc_CLEAN = $(PATH_linux-misc)/VirtualBox.desktop
+	$(if $(VBOX_WITH_QTGUI),$(PATH_linux-misc)/virtualbox.desktop,)
+linux-misc_CLEAN = $(PATH_linux-misc)/virtualbox.desktop
 
-$$(PATH_linux-misc)/VirtualBox.desktop: $(PATH_SUB_CURRENT)/VirtualBox.desktop $(VBOX_VERSION_STAMP) | $$(dir $$@)
+$$(PATH_linux-misc)/virtualbox.desktop: $(PATH_SUB_CURRENT)/virtualbox.desktop $(VBOX_VERSION_STAMP) | $$(dir $$@)
 	$(call MSG_GENERATE,,$@,$<)
 ifdef VBOX_PATH_PACKAGE_DOCS
 	$(QUIET)$(SED) -e "s+\$$VBOX_DOC_PATH+$(VBOX_PATH_PACKAGE_DOCS)+" --output $@ $<
@@ -157,7 +157,7 @@ ifdef VBOX_WITH_QTGUI
  	$(if $(VBOX_WITH_HARDENING),VirtualBox.so) \
 	$(if $(VBOX_WITH_DEBUGGER_GUI),VBoxDbg.so)
  VBOX_LNX_NO_STRIP += \
-	VirtualBox.desktop \
+	virtualbox.desktop \
 	$(VBOX_LICENSE_FILES) \
  	$(if $(VBOX_WITH_QT4_SUN),$(notdir $(wildcard $(PATH_BIN)/lib*VBox*)),) \
 	$(if $(VBOX_WITH_QT4_SUN),accessible/libqtaccessiblewidgets.so,) \
