@@ -60,9 +60,7 @@
  *        activity. This needs to be fixed properly.
  */
 #define VBOX_NAT_DELAY_HACK
-#if 0
 #define SLIRP_SPLIT_CAN_OUTPUT 1
-#endif
 
 #define GET_EXTRADATA(pthis, node, name, rc, type, type_name, var)                                  \
 do {                                                                                                \
