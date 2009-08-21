@@ -1642,6 +1642,9 @@ void VBoxConsoleWnd::retranslateUi()
     caption_prefix = tr ("Sun VirtualBox");
 #endif
 
+#ifdef VBOX_BLEEDING_EDGE
+    caption_prefix += QString(" EXPERIMENTAL build "VBOX_VERSION_STRING" r"VBOX_SVN_REV" - "VBOX_BLEEDING_EDGE);
+#endif
     /*
      *  Note: All action shortcuts should be added to the menu text in the
      *  form of "\tHost+<Key>" where <Key> is the shortcut key according
