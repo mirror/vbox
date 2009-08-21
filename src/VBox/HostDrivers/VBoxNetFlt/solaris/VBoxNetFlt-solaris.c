@@ -38,6 +38,9 @@
 #include <iprt/crc32.h>
 #include <iprt/err.h>
 #include <iprt/ctype.h>
+#ifdef VBOXNETFLT_SOLARIS_IPV6_POLLING
+# include <iprt/timer.h>
+#endif
 
 #include <inet/ip.h>
 #include <net/if.h>
@@ -86,16 +89,21 @@
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
 /** The module name. */
-#define DEVICE_NAME              "vboxflt"
+#define DEVICE_NAME                     "vboxflt"
 /** The module descriptions as seen in 'modinfo'. */
-#define DEVICE_DESC_DRV          "VirtualBox NetDrv"
-#define DEVICE_DESC_MOD          "VirtualBox NetMod"
+#define DEVICE_DESC_DRV                 "VirtualBox NetDrv"
+#define DEVICE_DESC_MOD                 "VirtualBox NetMod"
 
 #if defined(DEBUG_ramshankar)
 # undef Log
 # define Log        LogRel
 # undef LogFlow
 # define LogFlow    LogRel
+#endif
+
+#ifdef VBOXNETFLT_SOLARIS_IPV6_POLLING
+/** Driver properties */
+# define VBOXNETFLT_IP6POLLINTERVAL      "ipv6-pollinterval"
 #endif
 
 /** Maximum loopback packet queue size per interface */
@@ -312,10 +320,13 @@ typedef struct vboxnetflt_stream_t
  */
 typedef struct vboxnetflt_promisc_stream_t
 {
-    vboxnetflt_stream_t Stream;           /* The generic stream */
+    vboxnetflt_stream_t Stream;           /* dedicated/promiscuous stream */
     bool fPromisc;                        /* cached promiscous value */
     bool fRawMode;                        /* whether raw mode request was successful */
     uint32_t ModeReqId;                   /* track MIOCTLs for swallowing our fake request acknowledgements */
+#ifdef VBOXNETFLT_SOLARIS_IPV6_POLLING
+    PRTTIMER pIp6Timer;                   /* ipv6 stream poll timer for dynamic ipv6 stream attachment */
+#endif
     size_t cLoopback;                     /* loopback queue size list */
     PVBOXNETFLTPACKETID pHead;            /* loopback packet identifier head */
     PVBOXNETFLTPACKETID pTail;            /* loopback packet identifier tail */
@@ -672,6 +683,9 @@ static int VBoxNetFltSolarisModOpen(queue_t *pQueue, dev_t *pDev, int fOpenMode,
         pPromiscStream->pHead = NULL;
         pPromiscStream->pTail = NULL;
         pPromiscStream->cLoopback = 0;
+#ifdef VBOXNETFLT_SOLARIS_IPV6_POLLING
+        pPromiscStream->pIp6Timer = NULL;
+#endif
         pStream = (vboxnetflt_stream_t *)pPromiscStream;
     }
     else
@@ -837,6 +851,18 @@ static int VBoxNetFltSolarisModClose(queue_t *pQueue, int fOpenMode, cred_t *pCr
         pPromiscStream->pHead = NULL;
         pPromiscStream->pTail = NULL;
         pPromiscStream->cLoopback = 0;
+
+#ifdef VBOXNETFLT_SOLARIS_IPV6_POLLING
+        /*
+         * Sheer paranoia.
+         */
+        if (pPromiscStream->pIp6Timer != NULL)
+        {
+            RTTimerStop(pPromiscStream->pIp6Timer);
+            RTTimerDestroy(pPromiscStream->pIp6Timer);
+            ASMAtomicUoWritePtr((void * volatile *)&pPromiscStream->pIp6Timer, NULL);
+        }
+#endif
 
         RTSemFastMutexRelease(pStream->pThis->u.s.hFastMtx);
     }
@@ -1699,7 +1725,7 @@ static int vboxNetFltSolarisDetermineModPos(bool fAttach, vnode_t *pVNode, int *
 
 /**
  * Opens up the DLPI style 2 link that requires explicit PPA attach
- * phase. 
+ * phase.
  *
  * @returns VBox status code.
  * @param   pThis       The instance.
@@ -1796,7 +1822,7 @@ static int vboxNetFltSolarisOpenStream(PVBOXNETFLTINS pThis)
     {
         /*
          * Try DLPI style 2.
-         */        
+         */
         rc = vboxNetFltSolarisOpenStyle2(pThis, &DevId);
         if (RT_FAILURE(rc))
             LogRel((DEVICE_NAME ":vboxNetFltSolarisOpenStream vboxNetFltSolarisOpenStyle2 failed. rc=%d\n", rc));
@@ -2293,7 +2319,10 @@ static int vboxNetFltSolarisAttachIp6(PVBOXNETFLTINS pThis, bool fAttach)
             LogRel((DEVICE_NAME ":vboxNetFltSolarisAttachIp6: failed to open UDP. rc=%d\n", rc));
     }
     else
+    {
         LogFlow((DEVICE_NAME ":vboxNetFltSolarisAttachIp6: failed to get IPv6 flags.\n", pThis->szName));
+        rc = VERR_INTNET_FLT_IF_NOT_FOUND;
+    }
 
     ldi_close(Ip6DevHandle, FREAD | FWRITE, kcred);
 
@@ -2304,34 +2333,80 @@ static int vboxNetFltSolarisAttachIp6(PVBOXNETFLTINS pThis, bool fAttach)
 }
 
 
+#ifdef VBOXNETFLT_SOLARIS_IPV6_POLLING
 /**
- * Wrapper for attaching ourselves to the interface.
+ * Ipv6 dynamic attachment timer callback to attach to the Ipv6 stream if needed.
+ *
+ * @param   pThis           Pointer to the timer.
+ * @param   pvData          Opaque pointer to the instance.
+ * @param   iTick           Timer tick (unused).
+ */
+static void vboxNetFltSolarispIp6Timer(PRTTIMER pTimer, void *pvData, uint64_t iTick)
+{
+    LogFlow((DEVICE_NAME ":vboxNetFltSolarispIp6Timer pTimer=%p pvData=%p\n", pTimer, pvData));
+
+    /** @todo this callback takes a good deal of time attaching to the Ipv6 stream, optimize it. */
+    PVBOXNETFLTINS pThis = (PVBOXNETFLTINS)pvData;
+    if (   RT_LIKELY(pThis)
+        && RT_LIKELY(pTimer))
+    {
+        vboxnetflt_stream_t *pIp6Stream  = ASMAtomicUoReadPtr((void * volatile *)&pThis->u.s.pvIp6Stream);
+        if (!pIp6Stream)
+            vboxNetFltSolarisAttachIp6(pThis, true /* fAttach */);
+    }
+
+    NOREF(iTick);
+}
+
+
+/**
+ * Setups up a kernel timer based on the driver property for attaching to IPv6 stream
+ * whenever the stream gets plumbed for the interface.
  *
  * @returns VBox status code.
  * @param   pThis           The instance.
  */
-static int vboxNetFltSolarisAttachToInterface(PVBOXNETFLTINS pThis)
+static int vboxNetFltSolarisSetupIp6Polling(PVBOXNETFLTINS pThis)
 {
-    int rc = vboxNetFltSolarisOpenStream(pThis);
-    if (RT_SUCCESS(rc))
-    {
-        rc = vboxNetFltSolarisAttachIp4(pThis, true /* fAttach */);
-        if (RT_SUCCESS(rc))
-        {
-            vboxNetFltSolarisAttachIp6(pThis, true /* fAttach */);
-            /* Ignore Ipv6 binding errors as it's optional. */
+    LogFlow((DEVICE_NAME ":vboxNetFltSolarisSetupIp6Polling pThis=%p\n", pThis));
 
-            ASMAtomicWriteBool(&pThis->fDisconnectedFromHost, false);
+    int rc = VINF_SUCCESS;
+    vboxnetflt_promisc_stream_t *pPromiscStream = ASMAtomicUoReadPtr((void * volatile *)&pThis->u.s.pvPromiscStream);
+    if (RT_LIKELY(pPromiscStream))
+    {
+        if (RT_LIKELY(pPromiscStream->pIp6Timer == NULL))
+        {
+            /*
+             * Get the user prop. for polling interval.
+             */
+            int Interval = ddi_getprop(DDI_DEV_T_ANY, g_pVBoxNetFltSolarisDip, DDI_PROP_DONTPASS, VBOXNETFLT_IP6POLLINTERVAL, -1 /* default */);
+            if (Interval == -1)
+            {
+                LogFlow((DEVICE_NAME ":vboxNetFltSolarisSetupIp6Polling: no poll interval property specified. Skipping Ipv6 polling.\n"));
+                return VINF_SUCCESS;
+            }
+
+            if (Interval < 1 || Interval > 120)
+            {
+                LogRel((DEVICE_NAME ":vboxNetFltSolarisSetupIp6Polling: Invalid polling interval %d. Expected between 1 and 120 secs.\n",
+                    Interval));
+                return VINF_SUCCESS;
+            }
+
+            /*
+             * Setup kernel poll timer.
+             */
+            rc = RTTimerCreateEx(&pPromiscStream->pIp6Timer, Interval * (uint64_t)1000000000, RTTIMER_FLAGS_CPU_ALL,
+                                vboxNetFltSolarispIp6Timer, (void *)pThis);
+            if (RT_SUCCESS(rc))
+                rc = RTTimerStart(pPromiscStream->pIp6Timer, 0 /* fire ASAP */);
         }
         else
-            vboxNetFltSolarisCloseStream(pThis);
+            LogRel((DEVICE_NAME ":vboxNetFltSolarisSetupIp6Polling: Polling already started.\n"));
     }
-    else
-        LogRel((DEVICE_NAME ":vboxNetFltSolarisAttachToInterface vboxNetFltSolarisOpenStream failed rc=%Rrc\n", rc));
-
     return rc;
 }
-
+#endif
 
 /**
  * Wrapper for detaching ourselves from the interface.
@@ -2350,6 +2425,58 @@ static int vboxNetFltSolarisDetachFromInterface(PVBOXNETFLTINS pThis)
     int rc = vboxNetFltSolarisAttachIp4(pThis, false /* fAttach */);
     if (pThis->u.s.pvIp6Stream)
         rc = vboxNetFltSolarisAttachIp6(pThis, false /* fAttach */);
+
+#ifdef VBOXNETFLT_SOLARIS_IPV6_POLLING
+    vboxnetflt_promisc_stream_t *pPromiscStream = ASMAtomicUoReadPtr((void * volatile *)&pThis->u.s.pvPromiscStream);
+    if (   pPromiscStream
+        && pPromiscStream->pIp6Timer == NULL)
+    {
+        RTTimerStop(pPromiscStream->pIp6Timer);
+        RTTimerDestroy(pPromiscStream->pIp6Timer);
+        ASMAtomicUoWritePtr((void * volatile *)&pPromiscStream->pIp6Timer, NULL);
+    }
+#endif
+
+    return rc;
+}
+
+
+/**
+ * Wrapper for attaching ourselves to the interface.
+ *
+ * @returns VBox status code.
+ * @param   pThis           The instance.
+ */
+static int vboxNetFltSolarisAttachToInterface(PVBOXNETFLTINS pThis)
+{
+    LogFlow((DEVICE_NAME ":vboxNetFltSolarisAttachToInterface pThis=%p\n", pThis));
+
+    int rc = vboxNetFltSolarisOpenStream(pThis);
+    if (RT_SUCCESS(rc))
+    {
+        rc = vboxNetFltSolarisAttachIp4(pThis, true /* fAttach */);
+        if (RT_SUCCESS(rc))
+        {
+            int rc2 = vboxNetFltSolarisAttachIp6(pThis, true /* fAttach */);
+#ifdef VBOXNETFLT_SOLARIS_IPV6_POLLING
+            if (rc2 == VERR_INTNET_FLT_IF_NOT_FOUND)
+            {
+                rc = vboxNetFltSolarisSetupIp6Polling(pThis);
+                if (RT_FAILURE(rc))
+                {
+                    ASMAtomicUoWritePtr((void * volatile *)&pThis->u.s.pvIp6Stream, NULL);
+                    vboxNetFltSolarisDetachFromInterface(pThis);
+                }
+            }
+            else
+#endif
+                ASMAtomicWriteBool(&pThis->fDisconnectedFromHost, false);
+        }
+        else
+            vboxNetFltSolarisCloseStream(pThis);
+    }
+    else
+        LogRel((DEVICE_NAME ":vboxNetFltSolarisAttachToInterface vboxNetFltSolarisOpenStream failed rc=%Rrc\n", rc));
 
     return rc;
 }
