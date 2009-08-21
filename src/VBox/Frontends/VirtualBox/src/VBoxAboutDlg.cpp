@@ -46,7 +46,11 @@ void VBoxAboutDlg::retranslateUi()
 {
     setWindowTitle (tr ("VirtualBox - About"));
     QString aboutText =  tr ("VirtualBox Graphical User Interface");
+#ifdef VBOX_BLEEDING_EDGE
+    QString versionText = "EXPERIMENTAL build %1 - " + QString(VBOX_BLEEDING_EDGE);
+#else
     QString versionText = tr ("Version %1");
+#endif
 #if VBOX_OSE
     mAboutText = aboutText + " " + versionText.arg (mVersion) + "\n" +
                  QString ("%1 2004-2009 Sun Microsystems, Inc.").arg (QChar (0xa9));

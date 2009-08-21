@@ -1285,10 +1285,16 @@ bool VBoxSelectorWnd::eventFilter (QObject *aObject, QEvent *aEvent)
 void VBoxSelectorWnd::retranslateUi()
 {
 #ifdef VBOX_OSE
-    setWindowTitle (tr ("VirtualBox OSE"));
+    QString title (tr ("VirtualBox OSE"));
 #else
-    setWindowTitle (tr ("Sun VirtualBox"));
+    QString title (tr ("Sun VirtualBox"));
 #endif
+
+#ifdef VBOX_BLEEDING_EDGE
+    title += QString(" EXPERIMENTAL build "VBOX_VERSION_STRING" r"VBOX_SVN_REV" - "VBOX_BLEEDING_EDGE);
+#endif
+
+    setWindowTitle (title);
 
     mVmTabWidget->setTabText (mVmTabWidget->indexOf (mVmDetailsView), tr ("&Details"));
     /* note: Snapshots and Details tabs are changed dynamically by
