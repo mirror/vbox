@@ -924,6 +924,11 @@ else
  VBOX_ASFLAGS64 = $(VBOX_ASFLAGS_FMT64) -D__NASM__ -w+orphan-labels -g
 endif
 
+if defined(VBOX_WITH_VIDEOHWACCEL) && defined(VBOX_WITH_QTGUI)
+# QGL framebuffer is required
+ VBOX_GUI_USE_QGL=1
+endif
+
 #
 # Windows only has mingw handy. On *nix we have to deal with cross compiling
 # 32-bit targets on 64-bit platforms, meaning we'll be using gcc32/g++32.
