@@ -259,6 +259,9 @@ class PlatformMSCOM:
         str += "   _com_interfaces_ = ['"+iface+"']\n"
         str += "   _typelib_guid_ = tlb_guid\n"
         str += "   _typelib_version_ = 1, 0\n"
+        str += "   _reg_clsctx_ = pythoncom.CLSCTX_INPROC_SERVER\n"
+        # Maybe we'd better implement Dynamic invoke policy, to be more flexible here
+        str += "   _reg_policy_spec_ = 'win32com.server.policy.EventHandlerPolicy'\n"
 
         # generate capitalized version of callback methods - 
         # that's how Python COM looks them up
@@ -268,7 +271,7 @@ class PlatformMSCOM:
 
         str += "   def __init__(self): BaseClass.__init__(self, arg)\n"
         str += "result = win32com.client.Dispatch('VirtualBox.CallbackWrapper')\n"
-        str += "result.SetLocalObject("+iface+"Impl())\n"
+        str += "result.SetLocalObject(win32com.server.util.wrap("+iface+"Impl()))\n"
         exec (str,d,d)
         return d['result']
 
@@ -346,7 +349,8 @@ class PlatformXPCOM:
         str += "   _com_interfaces_ = xpcom.components.interfaces."+iface+"\n"
         str += "   def __init__(self): BaseClass.__init__(self, arg)\n"
         str += "result = xpcom.components.classes['@virtualbox.org/CallbackWrapper;1'].createInstance()\n"
-        str += "result.setLocalObject("+iface+"Impl())\n"
+        # This wrapping is not entirely correct - we shall create a local object
+        str += "result.setLocalObject(win32com.server.util.wrap("+iface+"Impl()))\n"
         exec (str,d,d)
         return d['result']
 
