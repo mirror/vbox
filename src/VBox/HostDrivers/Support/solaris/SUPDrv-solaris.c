@@ -46,6 +46,7 @@
 #include <sys/sunddi.h>
 #include <sys/file.h>
 #include <sys/priv_names.h>
+#include <sys/spl.h>
 #undef u /* /usr/include/sys/user.h:249:1 is where this is defined to (curproc->p_user). very cool. */
 
 #include "../SUPDrvInternal.h"
@@ -676,7 +677,9 @@ static int VBoxDrvSolarisIOCtl(dev_t Dev, int Cmd, intptr_t pArgs, int Mode, cre
         ||  Cmd == SUP_IOCTL_FAST_DO_HWACC_RUN
         ||  Cmd == SUP_IOCTL_FAST_DO_NOP)
     {
+        int SavePil = splr(ipltospl(DISP_LEVEL));
         *pVal = supdrvIOCtlFast(Cmd, pArgs, &g_DevExt, pSession);
+        splx(SavePil);
         return 0;
     }
 
