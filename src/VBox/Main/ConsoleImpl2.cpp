@@ -773,6 +773,9 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
     ULONG cVRamMBs;
     hrc = pMachine->COMGETTER(VRAMSize)(&cVRamMBs);                                 H();
     rc = CFGMR3InsertInteger(pCfg,  "VRamSize",             cVRamMBs * _1M);        RC_CHECK();
+    ULONG cMonitorCount;
+    hrc = pMachine->COMGETTER(MonitorCount)(&cMonitorCount);                        H();
+    rc = CFGMR3InsertInteger(pCfg,  "MonitorCount",         cMonitorCount);         RC_CHECK();
 #ifdef VBOX_WITH_2X_4GB_ADDR_SPACE /* not safe here yet. */ /** @todo this needs fixing !!! No wonder VGA is slooooooooow on 32-bit darwin! */
     rc = CFGMR3InsertInteger(pCfg,  "R0Enabled",            fHWVirtExEnabled);      RC_CHECK();
 #endif

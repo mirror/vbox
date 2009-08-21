@@ -284,6 +284,9 @@ typedef struct VGAState {
     bool                        fRenderVRAM;
     bool                        padding9[2];
 
+    uint32_t                    cMonitors;
+    uint32_t                    padding10;
+
 #ifdef VBOX_WITH_HGSMI
     R3PTRTYPE(PHGSMIINSTANCE)   pHGSMI;
 #endif /* VBOX_WITH_HGSMI */
