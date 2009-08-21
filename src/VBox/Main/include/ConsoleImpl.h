@@ -406,8 +406,10 @@ private:
 
     HRESULT callTapSetupApplication(bool isStatic, RTFILE tapFD, Bstr &tapDevice,
                                     Bstr &tapSetupApplication);
-    HRESULT attachToBridgedInterface(INetworkAdapter *networkAdapter);
-    HRESULT detachFromBridgedInterface(INetworkAdapter *networkAdapter);
+#if defined(RT_OS_LINUX) && !defined(VBOX_WITH_NETFLT)
+    HRESULT attachToTapInterface(INetworkAdapter *networkAdapter);
+    HRESULT detachFromTapInterface(INetworkAdapter *networkAdapter);
+#endif
     HRESULT powerDownHostInterfaces();
 
     HRESULT setMachineState (MachineState_T aMachineState, bool aUpdateServer = true);

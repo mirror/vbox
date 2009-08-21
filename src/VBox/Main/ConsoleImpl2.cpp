@@ -2207,7 +2207,26 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
 
         case NetworkAttachmentType_Bridged:
         {
-#if !defined(VBOX_WITH_NETFLT) && defined(RT_OS_LINUX)
+#if defined(RT_OS_LINUX) && !defined(VBOX_WITH_NETFLT)
+            hrc = pThis->attachToTapInterface(aNetworkAdapter);
+            if (FAILED(hrc))
+            {
+                switch (hrc)
+                {
+                    case VERR_ACCESS_DENIED:
+                        return VMSetError(pVM, VERR_HOSTIF_INIT_FAILED, RT_SRC_POS,  N_(
+                                         "Failed to open '/dev/net/tun' for read/write access. Please check the "
+                                         "permissions of that node. Either run 'chmod 0666 /dev/net/tun' or "
+                                         "change the group of that node and make yourself a member of that group. Make "
+                                         "sure that these changes are permanent, especially if you are "
+                                         "using udev"));
+                    default:
+                        AssertMsgFailed(("Could not attach to host interface! Bad!\n"));
+                        return VMSetError(pVM, VERR_HOSTIF_INIT_FAILED, RT_SRC_POS, N_(
+                                         "Failed to initialize Host Interface Networking"));
+                }
+            }
+
             Assert ((int)pThis->maTapFD[uInstance] >= 0);
             if ((int)pThis->maTapFD[uInstance] >= 0)
             {
@@ -2223,6 +2242,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                 rc = CFGMR3InsertNode(pLunL0, "Config", &pCfg);                             RC_CHECK();
                 rc = CFGMR3InsertInteger(pCfg, "FileHandle", pThis->maTapFD[uInstance]);    RC_CHECK();
             }
+
 #elif defined(VBOX_WITH_NETFLT)
             /*
              * This is the new VBoxNetFlt+IntNet stuff.
