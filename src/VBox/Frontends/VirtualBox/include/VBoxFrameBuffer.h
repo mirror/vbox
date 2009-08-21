@@ -671,14 +671,12 @@ public:
     virtual ~VBoxVHWASurfaceBase();
 
     void init(VBoxVHWASurfaceBase * pPrimary, uchar *pvMem);
-    void setupMatricies(VBoxVHWASurfaceBase *pPrimary);
 
     void uninit();
 
     static void globalInit();
 
 //    int blt(const QRect * aDstRect, VBoxVHWASurfaceBase * aSrtSurface, const QRect * aSrcRect, const VBoxVHWAColorKey * pDstCKeyOverride, const VBoxVHWAColorKey * pSrcCKeyOverride);
-//    int overlay(VBoxVHWASurfaceBase * aOverlaySurface);
 
     int lock(const QRect * pRect, uint32_t flags);
 
@@ -702,6 +700,7 @@ public:
 
     ulong width()  { return mRect.width();  }
     ulong height() { return mRect.height(); }
+    const QSize size() {return mRect.size();}
 
     GLenum format() {return mColorFormat.format(); }
     GLint  internalFormat() { return mColorFormat.internalFormat(); }
@@ -838,8 +837,6 @@ private:
     void doTex2FB(const QRect * pDstRect, const QRect * pSrcRect);
     void doMultiTex2FB(const QRect * pDstRect, VBoxVHWATexture * pDstTex, const QRect * pSrcRect, int cSrcTex);
     void doMultiTex2FB(const QRect * pDstRect, const QRect * pSrcRect, int cSrcTex);
-
-    void doSetupMatrix(const QSize & aSize , bool bInverted);
 
     QRect mRect; /* == Inv FB size */
 
@@ -1219,6 +1216,8 @@ public:
     VBoxVHWASurfaceBase * vboxGetVGASurface() { return mDisplay.getVGA(); }
 
     void postCmd(VBOXVHWA_PIPECMD_TYPE aType, void * pvData);
+
+    static void doSetupMatrix(const QSize & aSize, bool bInverted);
 protected:
 
     void paintGL()
@@ -1236,6 +1235,8 @@ protected:
 
     void initializeGL();
 private:
+    static void setupMatricies(const QSize &display);
+    static void adjustViewport(const QSize &display, const QRect &viewport);
     void vboxDoResize(void *re);
     void vboxDoPaint(void *rec);
 
@@ -1316,6 +1317,7 @@ private:
     ulong  mPixelFormat;
     bool   mUsesGuestVRAM;
     bool   mbVGASurfCreated;
+    QRect mViewport;
 
     RTCRITSECT mCritSect;
     class VBoxVHWACommandProcessEvent *mpFirstEvent;
