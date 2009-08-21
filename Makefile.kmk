@@ -151,6 +151,10 @@ ifeq ($(KBUILD_TARGET).$(VBOX_WITHOUT_COMPILER_REDIST),win.)
  endif
 endif
 
+ifdef VBOX_WITH_VIDEOHWACCEL
+# QGL framebuffer is required
+ VBOX_GUI_USE_QGL=1
+endif
 
 ifdef VBOX_WITH_QT4_SUN
 #
@@ -161,7 +165,7 @@ ifdef VBOX_WITH_QT4_SUN
  qt4-bin_MODE = 755
  ifeq ($(KBUILD_TARGET),darwin)
   qt4-bin_INST = $(INST_VIRTUALBOX)Contents/
-  qt4-bin_SOURCES = $(foreach qtmod, QtCore QtGui QtNetwork \
+  qt4-bin_SOURCES = $(foreach qtmod, QtCore QtGui QtNetwork $(if $(VBOX_GUI_USE_QGL), QtOpenGL,) \
    	,$(VBOX_PATH_QT4)/Frameworks/$(qtmod)VBox.framework/Versions/4/$(qtmod)VBox=>Frameworks/$(qtmod)VBox.framework/Versions/4/$(qtmod)VBox)
   ifdef VBOX_WITH_COCOA_QT
    qt4-bin_SOURCES += \
@@ -171,7 +175,7 @@ ifdef VBOX_WITH_QT4_SUN
   endif
   qt4-bin_SOURCES += \
   	$(VBOX_PATH_QT4)/plugins/accessible/libqtaccessiblewidgets.dylib=>MacOS/accessible/libqtaccessiblewidgets.dylib
-  qt4-bin_SYMLINKS = $(foreach qtmod, QtCore QtGui QtNetwork \
+  qt4-bin_SYMLINKS = $(foreach qtmod, QtCore QtGui QtNetwork $(if $(VBOX_GUI_USE_QGL), QtOpenGL,) \
   		,Frameworks/$(qtmod)VBox.framework/$(qtmod)VBox=>Versions/4/$(qtmod)VBox)
   ifdef VBOX_WITH_COCOA_QT
    qt4-bin_SYMLINKS += \
@@ -183,6 +187,7 @@ ifdef VBOX_WITH_QT4_SUN
 	$(VBOX_PATH_QT4_LIB)/QtCoreVBox4.dll \
 	$(VBOX_PATH_QT4_LIB)/QtGuiVBox4.dll \
 	$(VBOX_PATH_QT4_LIB)/QtNetworkVBox4.dll \
+	$(if $(VBOX_GUI_USE_QGL), $(VBOX_PATH_QT4_LIB)/QtOpenGLVBox4.dll,) \
 	$(VBOX_PATH_QT4)/plugins/accessible/qtaccessiblewidgets4.dll=>accessible/qtaccessiblewidgets4.dll
  else
   qt4-bin_INST = $(INST_BIN)
@@ -190,6 +195,7 @@ ifdef VBOX_WITH_QT4_SUN
 	$(VBOX_PATH_QT4_LIB)/libQtCoreVBox.so.4 \
 	$(VBOX_PATH_QT4_LIB)/libQtGuiVBox.so.4 \
 	$(VBOX_PATH_QT4_LIB)/libQtNetworkVBox.so.4 \
+	$(if $(VBOX_GUI_USE_QGL), $(VBOX_PATH_QT4_LIB)/libQtOpenGLVBox.so.4,) \
 	$(VBOX_PATH_QT4)/plugins/accessible/libqtaccessiblewidgets$(SUFF_DLL)=>accessible/libqtaccessiblewidgets$(SUFF_DLL)
  endif
 endif # VBOX_WITH_QT4_SUN
