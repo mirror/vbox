@@ -43,8 +43,6 @@ public:
     DECLARE_PROTECT_FINAL_CONSTRUCT()
 
     BEGIN_COM_MAP(CallbackWrapper)
-        COM_INTERFACE_ENTRY2(IDispatch, IVirtualBoxCallback)
-        COM_INTERFACE_ENTRY2(IDispatch, IConsoleCallback)
         COM_INTERFACE_ENTRY2(IDispatch, ILocalOwner)
         COM_INTERFACE_ENTRY(ISupportErrorInfo)
         COM_INTERFACE_ENTRY(ILocalOwner)

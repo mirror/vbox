@@ -1075,8 +1075,8 @@
   </interface>
 
   <interface
-     name="ILocalOwner" extends="$unknown"
-     uuid="308ff42a-dc45-49d4-a950-b1eee5e00bb5" wsmap="suppress"
+     name="ILocalOwner" extends="$dispatched"
+     uuid="308FF42A-DC45-49D4-A950-B1EEE5E00BB5" wsmap="suppress"
      >
     <desc>
       The ILocalOwner interface allows to register local objects
@@ -12334,7 +12334,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
      name="ISession" extends="$dispatched"
-     uuid="12F4DCDB-12B2-4ec1-B7CD-DDD9F6C5BF4D"
+     uuid="12F4DCDB-12B2-4EC1-B7CD-DDD9F6C5BF4D"
      wsmap="managed"
      >
     <desc>
