@@ -263,7 +263,7 @@ class PlatformMSCOM:
         # Maybe we'd better implement Dynamic invoke policy, to be more flexible here
         str += "   _reg_policy_spec_ = 'win32com.server.policy.EventHandlerPolicy'\n"
 
-        # generate capitalized version of callback methods - 
+        # generate capitalized version of callback methods -
         # that's how Python COM looks them up
         for m in dir(impl):
            if m.startswith("on"):
@@ -350,7 +350,7 @@ class PlatformXPCOM:
         str += "   def __init__(self): BaseClass.__init__(self, arg)\n"
         str += "result = xpcom.components.classes['@virtualbox.org/CallbackWrapper;1'].createInstance()\n"
         # This wrapping is not entirely correct - we shall create a local object
-        str += "result.setLocalObject(win32com.server.util.wrap("+iface+"Impl()))\n"
+        str += "result.setLocalObject("+iface+"Impl())\n"
         exec (str,d,d)
         return d['result']
 
