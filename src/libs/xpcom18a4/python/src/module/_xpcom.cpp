@@ -572,6 +572,41 @@ PyXPCOMMethod_WaitForEvents(PyObject *self, PyObject *args)
   return PyInt_FromLong(result);
 }
 
+PR_STATIC_CALLBACK(void *) PyHandleEvent(PLEvent *ev)
+{
+  return nsnull;
+}
+
+PR_STATIC_CALLBACK(void) PyDestroyEvent(PLEvent *ev)
+{
+  delete ev;
+}
+
+static PyObject* 
+PyXPCOMMethod_InterruptWait(PyObject *self, PyObject *args)
+{
+  nsIEventQueue* q = g_mainEventQ;
+  PRInt32 result = 0;
+  nsresult rc;
+
+  PLEvent *ev = new PLEvent();
+  if (!ev)
+  {
+    result = 1;
+    goto done;
+  }
+  q->InitEvent (ev, NULL, PyHandleEvent, PyDestroyEvent);
+  rc = q->PostEvent (ev);
+  if (NS_FAILED(rc))
+  {
+    result = 2;
+    goto done;
+  }
+
+ done:
+  return PyInt_FromLong(result);
+}
+
 static void deinitVBoxPython();
 
 static PyObject* 
@@ -677,6 +712,7 @@ static struct PyMethodDef xpcom_methods[]=
 	{"GetVariantValue", PyXPCOMMethod_GetVariantValue, 1},
 #ifdef VBOX
         {"WaitForEvents", PyXPCOMMethod_WaitForEvents, 1},
+        {"InterruptWait", PyXPCOMMethod_InterruptWait, 1},
         {"DeinitCOM",     PyXPCOMMethod_DeinitCOM, 1},
         {"AttachThread",  PyXPCOMMethod_AttachThread, 1},
         {"DetachThread",  PyXPCOMMethod_DetachThread, 1},

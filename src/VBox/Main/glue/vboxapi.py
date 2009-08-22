@@ -295,6 +295,11 @@ class PlatformMSCOM:
             # Timeout
             pass
 
+    def interruptWaitEvents(self):
+        from win32api import PostThreadMessage
+        from win32con import WM_USER
+        PostThreadMessage(self.tid, WM_USER, None, None)
+
     def deinit(self):
         import pythoncom
         from win32file import CloseHandle
@@ -357,6 +362,10 @@ class PlatformXPCOM:
     def waitForEvents(self, timeout):
         import xpcom
         xpcom._xpcom.WaitForEvents(timeout)
+
+    def interruptWaitEvents(self):
+        import xpcom
+        xpcom._xpcom.InterruptWait()
 
     def deinit(self):
         import xpcom
@@ -430,6 +439,10 @@ class PlatformWEBSERVICE:
         raise Exception("no callbacks for webservices")
 
     def waitForEvents(self, timeout):
+        # Webservices cannot do that yet
+        pass
+
+    def interruptWaitEvents(self, timeout):
         # Webservices cannot do that yet
         pass
 
@@ -513,6 +526,9 @@ class VirtualBoxManager:
 
     def waitForEvents(self, timeout):
         return self.platform.waitForEvents(timeout)
+
+    def interruptWaitEvents(self):
+        return self.platform.interruptWaitEvents()
 
     def getPerfCollector(self, vbox):
         return PerfCollector(self, vbox)
