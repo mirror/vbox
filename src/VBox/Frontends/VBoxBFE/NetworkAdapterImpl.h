@@ -61,7 +61,7 @@ public:
         BOOL mCableConnected;
         BOOL mTraceEnabled;
         Bstr mHostInterface;
-#ifdef RT_OS_LINUX
+#if defined(RT_OS_LINUX) || defined(RT_OS_FREEBSD)
         Bstr mTAPSetupApplication;
         Bstr mTAPTerminateApplication;
         RTFILE mTAPFD;
@@ -89,7 +89,7 @@ public:
     //    STDMETHOD(COMGETTER(AttachmentType))(NetworkAttachmentType_T *attachmentType);
     STDMETHOD(COMGETTER(HostInterface))(BSTR *hostInterface);
     STDMETHOD(COMSETTER(HostInterface))(INPTR BSTR hostInterface);
-#ifdef RT_OS_LINUX
+#if defined(RT_OS_LINUX) || defined(RT_OS_FREEBSD)
     STDMETHOD(COMGETTER(TAPFileDescriptor))(LONG *tapFileDescriptor);
     STDMETHOD(COMSETTER(TAPFileDescriptor))(LONG tapFileDescriptor);
     STDMETHOD(COMGETTER(TAPSetupApplication))(BSTR *tapSetupApplication);
