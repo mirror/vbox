@@ -625,7 +625,8 @@ STDMETHODIMP VFSExplorer::Exists(ComSafeArrayIn(IN_BSTR, aNames), ComSafeArrayOu
             if (entry.name == RTPathFilename(Utf8Str(sfaNames[a]).c_str()))
             {
                 BSTR name;
-                Bstr(sfaNames[a]).cloneTo(&name);
+                Bstr tmp(sfaNames[a]); /* gcc-3.3 cruft */
+                tmp.cloneTo(&name);
                 listExists.push_back(name);
             }
         }
