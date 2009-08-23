@@ -2210,7 +2210,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
 
         case NetworkAttachmentType_Bridged:
         {
-#if defined(RT_OS_LINUX) && !defined(VBOX_WITH_NETFLT)
+#if (defined(RT_OS_LINUX) || defined(RT_OS_FREEBSD)) && !defined(VBOX_WITH_NETFLT)
             hrc = pThis->attachToTapInterface(aNetworkAdapter);
             if (FAILED(hrc))
             {

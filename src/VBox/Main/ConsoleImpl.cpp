@@ -34,6 +34,16 @@
 #   include <stdio.h>
 #   include <stdlib.h>
 #   include <string.h>
+#elif defined(RT_OS_FREEBSD)
+#   include <errno.h>
+#   include <sys/ioctl.h>
+#   include <sys/poll.h>
+#   include <sys/fcntl.h>
+#   include <sys/types.h>
+#   include <sys/wait.h>
+#   include <stdio.h>
+#   include <stdlib.h>
+#   include <string.h>
 #endif
 
 #include "ConsoleImpl.h"
@@ -6040,7 +6050,7 @@ Console::usbDetachCallback (Console *that, USBDeviceList::iterator *aIt, PCRTUUI
  *
  *  @note The caller must lock this object for writing.
  */
-#if defined(RT_OS_LINUX) && !defined(VBOX_WITH_NETFLT)
+#if (defined(RT_OS_LINUX) || defined(RT_OS_FREEBSD)) && !defined(VBOX_WITH_NETFLT)
 HRESULT Console::attachToTapInterface(INetworkAdapter *networkAdapter)
 {
     LogFlowThisFunc(("\n"));
@@ -6060,6 +6070,7 @@ HRESULT Console::attachToTapInterface(INetworkAdapter *networkAdapter)
     rc = networkAdapter->COMGETTER(Slot)(&slot);
     AssertComRC(rc);
 
+#ifdef RT_OS_LINUX
     /*
      * Allocate a host interface device
      */
@@ -6141,6 +6152,47 @@ HRESULT Console::attachToTapInterface(INetworkAdapter *networkAdapter)
                 break;
         }
     }
+#elif RT_OS_FREEBSD
+    /*
+     * Set/obtain the tap interface.
+     */
+    /* The name of the TAP interface we are using */
+    Bstr tapDeviceName;
+    rc = networkAdapter->COMGETTER(HostInterface)(tapDeviceName.asOutParam());
+    if (FAILED(rc))
+        tapDeviceName.setNull();  /* Is this necessary? */
+    if (tapDeviceName.isEmpty())
+    {
+        LogRel(("No TAP device name was supplied.\n"));
+        rc = setError(E_FAIL, tr ("No TAP device name was supplied for the host networking interface"));
+    }
+    char szTapdev[1024] = "/dev/";
+    /* If we are using a static TAP device then try to open it. */
+    Utf8Str str(tapDeviceName);
+    if (str.length() + strlen(szTapdev) <= sizeof(szTapdev))
+        strcat(szTapdev, str.raw());
+    else
+        memcpy(szTapdev + strlen(szTapdev), str.raw(), sizeof(szTapdev) - strlen(szTapdev) - 1); /** @todo bitch about names which are too long... */
+    int rcVBox = RTFileOpen(&maTapFD[slot], szTapdev,
+                            RTFILE_O_READWRITE | RTFILE_O_OPEN | RTFILE_O_DENY_NONE | RTFILE_O_INHERIT | RTFILE_O_NON_BLOCK);
+
+    if (RT_SUCCESS(rcVBox))
+        maTAPDeviceName[slot] = tapDeviceName;
+    else
+    {
+        switch (rcVBox)
+        {
+            case VERR_ACCESS_DENIED:
+                /* will be handled by our caller */
+                rc = rcVBox;
+                break;
+            default:
+                rc = setError(E_FAIL, tr ("Failed to open the host network interface %ls"),
+                      tapDeviceName.raw());
+                break;
+        }
+    }
+#endif /* RT_OS_FREEBSD */
     /* in case of failure, cleanup. */
     if (VBOX_FAILURE(rcVBox) && SUCCEEDED(rc))
     {
@@ -6211,7 +6263,7 @@ HRESULT Console::detachFromTapInterface(INetworkAdapter *networkAdapter)
     LogFlowThisFunc(("returning %d\n", rc));
     return rc;
 }
-#endif /* RT_OS_LINUX && !VBOX_WITH_NETFLT */
+#endif /* (RT_OS_LINUX || RT_OS_FREEBSD) && !VBOX_WITH_NETFLT */
 
 
 /**

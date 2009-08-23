@@ -802,7 +802,8 @@ Drivers_SOURCES      := $(filter-out \
 	Storage/DrvHostFloppy% \
 	, $(Drivers_SOURCES)) \
 	Audio/ossaudio.c
-Drivers_SOURCES.freebsd =
+Drivers_SOURCES.freebsd = \
+	Network/DrvTAP.cpp
 endif # freebsd
 
 
