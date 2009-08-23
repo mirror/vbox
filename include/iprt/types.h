@@ -94,6 +94,17 @@
 
 # else
 #  include <stddef.h>
+#   if defined(RT_OS_FREEBSD) && (HC_ARCH_BITS == 64) && defined(RT_ARCH_X86)
+     /* Compiling on a 64bit machine in 32bit mode. FreeBSD declares
+      * uint64_t and int64_t wrong (long unsigned and long int
+      * though they need to be long long unsigned and long long int)
+      *
+      * These defines conflict with our decleration in stdint.h.
+      * Adding the defines below omits the definitions in the system header.
+      */
+#    define _UINT64_T_DECLARED
+#    define _INT64_T_DECLARED
+#   endif
 #  include <sys/types.h>
 # endif
 
