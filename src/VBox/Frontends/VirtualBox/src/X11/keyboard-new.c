@@ -404,32 +404,55 @@ X11DRV_InitKeyboardByType(Display *display)
 {
     unsigned i = 0, found = 0;
     
+    keyboard_type hostKB = { 0 };
+    hostKB.lctrl    = XKeysymToKeycode(display, XK_Control_L);
+    hostKB.capslock = XKeysymToKeycode(display, XK_Caps_Lock);
+    hostKB.lshift   = XKeysymToKeycode(display, XK_Shift_L);
+    hostKB.tab      = XKeysymToKeycode(display, XK_Tab);
+    hostKB.esc      = XKeysymToKeycode(display, XK_Escape);
+    hostKB.enter    = XKeysymToKeycode(display, XK_Return);
+    hostKB.up       = XKeysymToKeycode(display, XK_Up);
+    hostKB.down     = XKeysymToKeycode(display, XK_Down);
+    hostKB.left     = XKeysymToKeycode(display, XK_Left);
+    hostKB.right    = XKeysymToKeycode(display, XK_Right);
+    hostKB.f1       = XKeysymToKeycode(display, XK_F1);
+    hostKB.f2       = XKeysymToKeycode(display, XK_F2);
+    hostKB.f3       = XKeysymToKeycode(display, XK_F3);
+    hostKB.f4       = XKeysymToKeycode(display, XK_F4);
+    hostKB.f5       = XKeysymToKeycode(display, XK_F5);
+    hostKB.f6       = XKeysymToKeycode(display, XK_F6);
+    hostKB.f7       = XKeysymToKeycode(display, XK_F7);
+    hostKB.f8       = XKeysymToKeycode(display, XK_F8);
+
     for (; (main_keyboard_type_list[i].comment != NULL) && (0 == found); ++i)
-        if (   (   (   (XKeysymToKeycode(display, XK_Control_L) == main_keyboard_type_list[i].lctrl)
-                    && (XKeysymToKeycode(display, XK_Caps_Lock) == main_keyboard_type_list[i].capslock)
+    {
+        keyboard_type *pType = &main_keyboard_type_list[i];
+        if (   (   (   (pType->lctrl    && (hostKB.lctrl    == pType->lctrl))
+                    && (pType->capslock && (hostKB.capslock == pType->capslock))
                    )
-                || (   (XKeysymToKeycode(display, XK_Caps_Lock) == main_keyboard_type_list[i].lctrl)
-                    && (XKeysymToKeycode(display, XK_Control_L) == main_keyboard_type_list[i].capslock)
+                || (   (pType->lctrl    && (hostKB.capslock == pType->lctrl))
+                    && (pType->capslock && (hostKB.lctrl    == pType->capslock))
                    )
                ) /* Some people like to switch Capslock and left Ctrl */
-            && (XKeysymToKeycode(display, XK_Shift_L)   == main_keyboard_type_list[i].lshift)
-            && (XKeysymToKeycode(display, XK_Tab)       == main_keyboard_type_list[i].tab)
-            && (XKeysymToKeycode(display, XK_Escape)    == main_keyboard_type_list[i].esc)
-            && (XKeysymToKeycode(display, XK_Return)    == main_keyboard_type_list[i].enter)
-            && (XKeysymToKeycode(display, XK_Up)        == main_keyboard_type_list[i].up)
-            && (XKeysymToKeycode(display, XK_Down)      == main_keyboard_type_list[i].down)
-            && (XKeysymToKeycode(display, XK_Left)      == main_keyboard_type_list[i].left)
-            && (XKeysymToKeycode(display, XK_Right)     == main_keyboard_type_list[i].right)
-            && (XKeysymToKeycode(display, XK_F1)        == main_keyboard_type_list[i].f1)
-            && (XKeysymToKeycode(display, XK_F2)        == main_keyboard_type_list[i].f2)
-            && (XKeysymToKeycode(display, XK_F3)        == main_keyboard_type_list[i].f3)
-            && (XKeysymToKeycode(display, XK_F4)        == main_keyboard_type_list[i].f4)
-            && (XKeysymToKeycode(display, XK_F5)        == main_keyboard_type_list[i].f5)
-            && (XKeysymToKeycode(display, XK_F6)        == main_keyboard_type_list[i].f6)
-            && (XKeysymToKeycode(display, XK_F7)        == main_keyboard_type_list[i].f7)
-            && (XKeysymToKeycode(display, XK_F8)        == main_keyboard_type_list[i].f8)
+            && (pType->lshift && (hostKB.lshift == pType->lshift))
+            && (pType->tab    && (hostKB.tab    == pType->tab))
+            && (pType->esc    && (hostKB.esc    == pType->esc))
+            && (pType->enter  && (hostKB.enter  == pType->enter))
+            && (pType->up     && (hostKB.up     == pType->up))
+            && (pType->down   && (hostKB.down   == pType->down))
+            && (pType->left   && (hostKB.left   == pType->left))
+            && (pType->right  && (hostKB.right  == pType->right))
+            && (pType->f1     && (hostKB.f1     == pType->f1))
+            && (pType->f2     && (hostKB.f2     == pType->f2))
+            && (pType->f3     && (hostKB.f3     == pType->f3))
+            && (pType->f4     && (hostKB.f4     == pType->f4))
+            && (pType->f5     && (hostKB.f5     == pType->f5))
+            && (pType->f6     && (hostKB.f6     == pType->f6))
+            && (pType->f7     && (hostKB.f7     == pType->f7))
+            && (pType->f8     && (hostKB.f8     == pType->f8))
            )
             found = 1;
+    }
     if (found != 0)
 	memcpy(keyc2scan, main_keyboard_type_scans[i - 1], KEYC2SCAN_SIZE);
     return found;

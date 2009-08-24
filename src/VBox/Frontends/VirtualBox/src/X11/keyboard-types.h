@@ -51,7 +51,7 @@
  * that the keys chosen will be present on all keyboards, even very reduced
  * laptop keyboards. 
  */
-static const struct {
+typedef struct {
     const char *comment;
     unsigned lctrl;
     unsigned lshift;
@@ -71,7 +71,9 @@ static const struct {
     unsigned f6;
     unsigned f7;
     unsigned f8;
-} main_keyboard_type_list[] = {
+} keyboard_type;
+
+static keyboard_type main_keyboard_type_list[] = {
     { "XFree86", 0x25, 0x32, 0x42, 0x17, 0x9, 0x24, 0x62, 0x68,
       0x64, 0x66, 0x43, 0x44, 0x45, 0x46, 0x47, 0x48, 0x49, 0x4a },
     { "evdev", 0x25, 0x32, 0x42, 0x17, 0x9, 0x24, 0x6f, 0x74,
