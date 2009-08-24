@@ -1132,7 +1132,7 @@ VOID VBoxSetupDisplays(PDEVICE_EXTENSION PrimaryExtension, PVIDEO_PORT_CONFIG_IN
 
     dprintf(("VBoxVideo::VBoxSetupDisplays: finished\n"));
 }
-#endif /* VBOX_WITH_HGSMI */
+#endif /* !VBOX_WITH_HGSMI */
 
 VP_STATUS VBoxVideoFindAdapter(IN PVOID HwDeviceExtension,
                                IN PVOID HwContext, IN PWSTR ArgumentString,
@@ -1252,11 +1252,11 @@ VP_STATUS VBoxVideoFindAdapter(IN PVOID HwDeviceExtension,
        * The host will however support both old and new interface to keep compatibility
        * with old guest additions.
        */
-      if (VBoxHGSMIIsSupported ((PDEVICE_EXTENSION)HwDeviceExtension))
+      VBoxSetupDisplaysHGSMI((PDEVICE_EXTENSION)HwDeviceExtension, ConfigInfo, AdapterMemorySize);
+
+      if (((PDEVICE_EXTENSION)HwDeviceExtension)->u.primary.bHGSMI)
       {
           LogRel(("VBoxVideo: using HGSMI\n"));
-
-          VBoxSetupDisplaysHGSMI((PDEVICE_EXTENSION)HwDeviceExtension, ConfigInfo, AdapterMemorySize);
       }
 #endif /* VBOX_WITH_HGSMI */
 
