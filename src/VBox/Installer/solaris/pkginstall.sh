@@ -40,7 +40,7 @@ if test "$?" -eq 0; then
     rc=$?
     if test "$rc" -ne 0; then
         echo "Completed but with errors."
-        rc=20
+        rc=1
     else
         if test "$1" != "--srv4"; then
             echo "Post installation completed successfully!"
