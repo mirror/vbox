@@ -6641,8 +6641,18 @@ static HRESULT WINAPI IWineD3DDeviceImpl_SetDepthStencilSurface(IWineD3DDevice *
         tmp = This->stencilBufferTarget;
         This->stencilBufferTarget = pNewZStencil;
         /* should we be calling the parent or the wined3d surface? */
-        if (NULL != This->stencilBufferTarget) IWineD3DSurface_AddRef(This->stencilBufferTarget);
-        if (NULL != tmp) IWineD3DSurface_Release(tmp);
+        if (NULL != This->stencilBufferTarget) {
+            IUnknown *pParent;
+            IWineD3DSurface_AddRef(This->stencilBufferTarget);
+            IWineD3DSurface_GetParent(This->stencilBufferTarget, &pParent);
+        }
+        if (NULL != tmp) {
+            IUnknown *pParent;
+            IWineD3DSurface_GetParent(This->stencilBufferTarget, &pParent);
+            IUnknown_Release(pParent);
+            IUnknown_Release(pParent);
+            IWineD3DSurface_Release(tmp);
+        }
         hr = WINED3D_OK;
 
         if((!tmp && pNewZStencil) || (!pNewZStencil && tmp)) {

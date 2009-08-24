@@ -323,7 +323,7 @@ static void surface_bind_and_dirtify(IWineD3DSurfaceImpl *This, BOOL srgb) {
      *
      * TODO: Track the current active texture per GL context instead of using glGet
      */
-    GLint active_texture;
+    GLint active_texture=GL_TEXTURE0_ARB;
     ENTER_GL();
     glGetIntegerv(GL_ACTIVE_TEXTURE, &active_texture);
     LEAVE_GL();
