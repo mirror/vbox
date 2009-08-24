@@ -1,4 +1,3 @@
-#include "slirp.h"
 #ifdef RT_OS_OS2
 # include <paths.h>
 #endif
@@ -15,8 +14,6 @@
 # include <IPHlpApi.h>
 #endif
 #include <alias.h>
-#define COUNTERS_INIT
-#include "counters.h"
 
 #if !defined(RT_OS_WINDOWS)
 
@@ -569,9 +566,7 @@ void slirp_register_statistics(PNATState pData, PPDMDRVINS pDrvIns)
 #ifdef VBOX_WITH_STATISTICS
 # define PROFILE_COUNTER(name, dsc)     REGISTER_COUNTER(name, pData, STAMTYPE_PROFILE, STAMUNIT_TICKS_PER_CALL, dsc)
 # define COUNTING_COUNTER(name, dsc)    REGISTER_COUNTER(name, pData, STAMTYPE_COUNTER, STAMUNIT_COUNT,          dsc)
-
 # include "counters.h"
-
 # undef COUNTER
 /** @todo register statistics for the variables dumped by:
  *  ipstats(pData); tcpstats(pData); udpstats(pData); icmpstats(pData);
