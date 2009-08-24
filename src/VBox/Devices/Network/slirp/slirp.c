@@ -15,6 +15,8 @@
 # include <IPHlpApi.h>
 #endif
 #include <alias.h>
+#define COUNTERS_INIT
+#include "counters.h"
 
 #if !defined(RT_OS_WINDOWS)
 
@@ -565,20 +567,8 @@ int slirp_init(PNATState *ppData, uint32_t u32NetAddr, uint32_t u32Netmask,
 void slirp_register_statistics(PNATState pData, PPDMDRVINS pDrvIns)
 {
 #ifdef VBOX_WITH_STATISTICS
-# define COUNTER(name, type, units, dsc)                            \
-    do {                                                            \
-        PDMDrvHlpSTAMRegisterF(pDrvIns,                             \
-                               &pData->Stat ## name,                \
-                               type,                                \
-                               STAMVISIBILITY_ALWAYS,               \
-                               units,                               \
-                               dsc,                                 \
-                               "/Drivers/NAT%u/" #name,             \
-                               pDrvIns->iInstance);                 \
-    } while (0)
-
-# define PROFILE_COUNTER(name, dsc)     COUNTER(name, STAMTYPE_PROFILE, STAMUNIT_TICKS_PER_CALL, dsc)
-# define COUNTING_COUNTER(name, dsc)    COUNTER(name, STAMTYPE_COUNTER, STAMUNIT_COUNT,          dsc)
+# define PROFILE_COUNTER(name, dsc)     REGISTER_COUNTER(name, STAMTYPE_PROFILE, STAMUNIT_TICKS_PER_CALL, dsc)
+# define COUNTING_COUNTER(name, dsc)    REGISTER_COUNTER(name, STAMTYPE_COUNTER, STAMUNIT_COUNT,          dsc)
 
 # include "counters.h"
 
@@ -597,8 +587,8 @@ void slirp_register_statistics(PNATState pData, PPDMDRVINS pDrvIns)
 void slirp_deregister_statistics(PNATState pData, PPDMDRVINS pDrvIns)
 {
 #ifdef VBOX_WITH_STATISTICS
-# define PROFILE_COUNTER(name, dsc)     PDMDrvHlpSTAMDeregister(pDrvIns, &pData->Stat ## name)
-# define COUNTING_COUNTER(name, dsc)    PDMDrvHlpSTAMDeregister(pDrvIns, &pData->Stat ## name)
+# define PROFILE_COUNTER(name, dsc)     DEREGISTER_COUNTER(name)
+# define COUNTING_COUNTER(name, dsc)    DEREGISTER_COUNTER(name)
 
 # include "counters.h"
 
