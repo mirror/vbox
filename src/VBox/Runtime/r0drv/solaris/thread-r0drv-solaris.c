@@ -167,8 +167,8 @@ RTDECL(void) RTThreadPreemptRestore(PRTTHREADPREEMPTSTATE pState)
     Assert(pState->uOldPil != UINT32_MAX);
     RT_ASSERT_PREEMPT_CPUID_RESTORE(pState);
 
-    splx(pState->uOldPil);
     kpreempt_enable();
+    splx(pState->uOldPil);
 
     pState->uOldPil = UINT32_MAX;
 }
