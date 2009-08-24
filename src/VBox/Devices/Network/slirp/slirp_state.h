@@ -250,9 +250,6 @@ typedef struct NATState
 
 #include "counters.h"
 
-#undef PROFILE_COUNTER
-#undef COUNTING_COUNTER
-
 } NATState;
 
 
