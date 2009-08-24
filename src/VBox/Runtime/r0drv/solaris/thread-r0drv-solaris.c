@@ -156,7 +156,7 @@ RTDECL(void) RTThreadPreemptDisable(PRTTHREADPREEMPTSTATE pState)
 //        if (pState->uOldPil < DISP_LEVEL)
 //            pState->uOldPil = splx(DISP_LEVEL);
 //    }
-    Assert(pState->uOldPil != UINT32_MAX)
+    Assert(pState->uOldPil != UINT32_MAX);
     RT_ASSERT_PREEMPT_CPUID_DISABLE(pState);
 }
 
