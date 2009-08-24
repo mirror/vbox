@@ -4032,9 +4032,10 @@ PDMBOTHCBDECL(int) vbeIOPortWriteVBEExtra(PPDMDEVINS pDevIns, void *pvUser, RTIO
         Log(("vbeIOPortWriteVBEExtra: addr=%#RX32\n", u32));
         pThis->u16VBEExtraAddress = u32;
     }
+    else
+        Log(("vbeIOPortWriteVBEExtra: Ignoring invalid cb=%d writes to the VBE Extra port!!!\n", cb));
     PDMCritSectLeave(&pThis->lock);
 
-    Log(("vbeIOPortWriteVBEExtra: Ignoring invalid cb=%d writes to the VBE Extra port!!!\n", cb));
     return VINF_SUCCESS;
 }
 
@@ -4093,9 +4094,11 @@ PDMBOTHCBDECL(int) vbeIOPortReadVBEExtra(PPDMDEVINS pDevIns, void *pvUser, RTIOP
         rc = VINF_SUCCESS;
     }
     else
+    {
+        Log(("vbeIOPortReadVBEExtra: Invalid cb=%d read from the VBE Extra port!!!\n", cb));
         rc = VERR_IOM_IOPORT_UNUSED;
+    }
 
-    Log(("vbeIOPortReadVBEExtra: Invalid cb=%d read from the VBE Extra port!!!\n", cb));
     PDMCritSectLeave(&pThis->lock);
     return rc;
 }
