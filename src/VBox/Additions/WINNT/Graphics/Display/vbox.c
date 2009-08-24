@@ -344,6 +344,8 @@ static void vboxHGSMIBufferSubmit (PPDEV ppdev, void *p)
 {
     HGSMIOFFSET offBuffer = HGSMIHeapBufferOffset (&ppdev->hgsmiDisplayHeap, p);
 
+    DISPDBG((0, "VBoxDISP::vboxHGSMIBufferSubmit: offset 0x%x\n", offBuffer));
+
     ppdev->pfnHGSMIGHCommandPost(ppdev->hMpHGSMI, offBuffer);
 //    ASMOutU16 (VBE_DISPI_IOPORT_INDEX, VBE_DISPI_INDEX_VBVA_GUEST);
 //    ASMOutU32 (VBE_DISPI_IOPORT_DATA, offBuffer);
@@ -388,11 +390,13 @@ BOOL vboxVbvaEnable (PPDEV ppdev)
 {
     BOOL bRc = FALSE;
 
-    DISPDBG((1, "VBoxDisp::vboxVbvaEnable called\n"));
+    DISPDBG((1, "VBoxDisp::vboxVbvaEnable called ppdev %p, hgsmi %d, vbva %p\n", ppdev, ppdev->bHGSMISupported, ppdev->pVBVA));
 
     if (ppdev->bHGSMISupported)
     {
         VBVABUFFER *pVBVA = (VBVABUFFER *)((uint8_t *)ppdev->pjScreen + ppdev->layout.offVBVABuffer);
+
+        DISPDBG((1, "VBoxDisp::vboxVbvaEnable screen %p vbva off 0x%x\n", ppdev->pjScreen, ppdev->layout.offVBVABuffer));
 
         pVBVA->u32HostEvents      = 0;
         pVBVA->u32SupportedOrders = 0;
@@ -676,6 +680,7 @@ void VBoxProcessDisplayInfo (PPDEV ppdev)
             pScreen->u32ViewIndex    = ppdev->iDevice;
             pScreen->i32OriginX      = ppdev->ptlDevOrg.x;
             pScreen->i32OriginY      = ppdev->ptlDevOrg.y;
+            pScreen->u32StartOffset  = 0;
             pScreen->u32LineSize     = ppdev->lDeltaScreen > 0?ppdev->lDeltaScreen: -ppdev->lDeltaScreen;
             pScreen->u32Width        = ppdev->cxScreen;
             pScreen->u32Height       = ppdev->cyScreen;

@@ -33,6 +33,10 @@
 #include <iprt/cdefs.h>
 #include <iprt/types.h>
 
+#ifdef VBOX_WITH_HGSMI
+#include <VBox/VMMDev.h>
+#endif /* VBOX_WITH_HGSMI */
+
 /*
  * The last 4096 bytes of the guest VRAM contains the generic info for all
  * DualView chunks: sizes and offsets of chunks. This is filled by miniport.
@@ -520,7 +524,7 @@ typedef struct _VBOXVHWA_OVERLAYFX
 //#define VBOXVHWA_CAPS2_FLIPNOVSYNC                  0x00400000
 
 
-#define VBOXVHWA_OFFSET64_VOID        (~0L)
+#define VBOXVHWA_OFFSET64_VOID        (~0ULL)
 
 typedef struct _VBOXVHWA_VERSION
 {
@@ -830,7 +834,7 @@ typedef struct _VBVACONF32
     uint32_t u32Value;
 } VBVACONF32;
 
-typedef struct _VBVAINFOVIEW
+typedef struct VBVAINFOVIEW
 {
     /* Index of the screen, assigned by the guest. */
     uint32_t u32ViewIndex;
@@ -865,7 +869,7 @@ typedef struct _VBVAFLUSH
 #define VBVA_SCREEN_F_NONE   0x0000
 #define VBVA_SCREEN_F_ACTIVE 0x0001
 
-typedef struct _VBVAINFOSCREEN
+typedef struct VBVAINFOSCREEN
 {
     /* Which view contains the screen. */
     uint32_t u32ViewIndex;
@@ -875,6 +879,9 @@ typedef struct _VBVAINFOSCREEN
 
     /* Physical Y origin relative to the primary screen. */
     int32_t i32OriginY;
+
+    /* Offset of visible framebuffer relative to the framebuffer start. */
+    uint32_t u32StartOffset;
 
     /* The scan line size in bytes. */
     uint32_t u32LineSize;

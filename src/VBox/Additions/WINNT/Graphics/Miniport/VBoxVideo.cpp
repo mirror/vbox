@@ -1564,8 +1564,8 @@ BOOLEAN VBoxVideoStartIO(PVOID HwDeviceExtension,
 #ifndef VBOX_WITH_HGSMI
                 Result = vboxUpdatePointerShape(&PointerAttributes, sizeof (PointerAttributes));
 #else
-                Result = vboxUpdatePointerShape((PDEVICE_EXTENSION)HwDeviceExtension, &PointerAttributes, sizeof (PointerAttributes));
-#endif/* VBOX_WITH_HGSMI */
+                Result = vboxUpdatePointerShape(((PDEVICE_EXTENSION)HwDeviceExtension)->pPrimary, &PointerAttributes, sizeof (PointerAttributes));
+#endif /* VBOX_WITH_HGSMI */
 
                 if (!Result)
                     dprintf(("VBoxVideo::VBoxVideoStartIO: Could not hide hardware pointer -> fallback\n"));
@@ -1596,8 +1596,8 @@ BOOLEAN VBoxVideoStartIO(PVOID HwDeviceExtension,
 #ifndef VBOX_WITH_HGSMI
                 Result = vboxUpdatePointerShape(&PointerAttributes, sizeof (PointerAttributes));
 #else
-                Result = vboxUpdatePointerShape((PDEVICE_EXTENSION)HwDeviceExtension, &PointerAttributes, sizeof (PointerAttributes));
-#endif/* VBOX_WITH_HGSMI */
+                Result = vboxUpdatePointerShape(((PDEVICE_EXTENSION)HwDeviceExtension)->pPrimary, &PointerAttributes, sizeof (PointerAttributes));
+#endif /* VBOX_WITH_HGSMI */
 
                 if (!Result)
                     dprintf(("VBoxVideo::VBoxVideoStartIO: Could not hide hardware pointer -> fallback\n"));
@@ -1643,8 +1643,8 @@ BOOLEAN VBoxVideoStartIO(PVOID HwDeviceExtension,
 #ifndef VBOX_WITH_HGSMI
                 Result = vboxUpdatePointerShape(pPointerAttributes, RequestPacket->InputBufferLength);
 #else
-                Result = vboxUpdatePointerShape((PDEVICE_EXTENSION)HwDeviceExtension, pPointerAttributes, RequestPacket->InputBufferLength);
-#endif/* VBOX_WITH_HGSMI */
+                Result = vboxUpdatePointerShape(((PDEVICE_EXTENSION)HwDeviceExtension)->pPrimary, pPointerAttributes, RequestPacket->InputBufferLength);
+#endif /* VBOX_WITH_HGSMI */
                 if (!Result)
                     dprintf(("VBoxVideo::VBoxVideoStartIO: Could not set hardware pointer -> fallback\n"));
             } else
@@ -2224,7 +2224,7 @@ BOOLEAN FASTCALL VBoxVideoMapVideoMemory(PDEVICE_EXTENSION DeviceExtension,
     ULONG inIoSpace = 0;
     VP_STATUS Status;
 
-    dprintf(("VBoxVideo::VBoxVideoMapVideoMemory\n"));
+    dprintf(("VBoxVideo::VBoxVideoMapVideoMemory: fb offset 0x%x\n", DeviceExtension->ulFrameBufferOffset));
 
     FrameBuffer.QuadPart = VBE_DISPI_LFB_PHYSICAL_ADDRESS + DeviceExtension->ulFrameBufferOffset;
 
