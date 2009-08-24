@@ -244,7 +244,10 @@ static void vboxInitVBoxVideo (PPDEV ppdev, const VIDEO_MEMORY_INFORMATION *pMem
         int rc = HGSMIHeapSetup (&ppdev->hgsmiDisplayHeap,
                                  (uint8_t *)ppdev->pjScreen + ppdev->layout.offDisplayInformation + sizeof (HGSMIHOSTFLAGS),
                                  ppdev->layout.cbDisplayInformation - sizeof (HGSMIHOSTFLAGS),
-                                 ppdev->layout.offDisplayInformation + sizeof (HGSMIHOSTFLAGS));
+                                 info.areaDisplay.offBase + ppdev->layout.offDisplayInformation + sizeof (HGSMIHOSTFLAGS));
+
+        DISPDBG((0, "VBoxDISP::vboxInitVBoxVideo: offBase 0x%x\n",
+                 info.areaDisplay.offBase));
 
         if (RT_FAILURE (rc))
         {

@@ -557,9 +557,6 @@ VOID DrvDisablePDEV(DHPDEV dhpdev)
 //    vStopNotificationThread ((PPDEV) dhpdev);
     vDisablePalette((PPDEV) dhpdev);
 
-    /* Free the driver's VBVA resources. */
-    vboxVbvaDisable ((PPDEV) dhpdev);
-
     EngFreeMem(dhpdev);
 }
 
@@ -866,6 +863,11 @@ VOID DrvDisableSurface(DHPDEV dhpdev)
     /* tells we can not process host commands any more and ensures we've completed processing of the host VHWA commands */
     vboxVHWADisable(ppdev);
 #endif
+
+#ifdef VBOX_WITH_HGSMI
+    /* Free the driver's VBVA resources. */
+    vboxVbvaDisable ((PPDEV) dhpdev);
+#endif
     vDisableSURF(ppdev);
 }
 
@@ -958,6 +960,12 @@ BOOL DrvAssertMode(DHPDEV dhpdev, BOOL bEnable)
         /* tells we can not process host commands any more and ensures we've completed processing of the host VHWA commands */
         vboxVHWADisable(ppdev);
 #endif
+
+#ifdef VBOX_WITH_HGSMI
+        /* Free the driver's VBVA resources. */
+        vboxVbvaDisable ((PPDEV) dhpdev);
+#endif
+
         //
         // We must give up the display.
         // Call the kernel driver to reset the device to a known state.

@@ -163,7 +163,7 @@ ULONG DrvSetPointerShape
     PPDEV   ppdev = (PPDEV) pso->dhpdev;
     DWORD   returnedDataLength;
 
-    DISPDBG((0, "DISP bSetHardwarePointerShape SPS_ALPHA = %d\n", fl & SPS_ALPHA));
+    DISPDBG((0, "DISP[%d] bSetHardwarePointerShape SPS_ALPHA = %d\n", ppdev->iDevice, fl & SPS_ALPHA));
 
     // We don't use the exclusion rectangle because we only support
     // hardware Pointers. If we were doing our own Pointer simulations

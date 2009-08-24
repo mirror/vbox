@@ -79,6 +79,9 @@ typedef struct _DISPLAYFBINFO
         int h;
     } pendingResize;
 
+#ifdef VBOX_WITH_HGSMI
+    bool fVBVAEnabled;
+#endif /* VBOX_WITH_HGSMI */
 } DISPLAYFBINFO;
 
 class ATL_NO_VTABLE Display :
@@ -275,6 +278,17 @@ private:
 #ifdef VBOX_WITH_VIDEOHWACCEL
     static DECLCALLBACK(void) displayVHWACommandProcess(PPDMIDISPLAYCONNECTOR pInterface, PVBOXVHWACMD pCommand);
 #endif
+
+#ifdef VBOX_WITH_HGSMI
+    static DECLCALLBACK(int)  displayVBVAEnable(PPDMIDISPLAYCONNECTOR pInterface, unsigned uScreenId);
+    static DECLCALLBACK(void) displayVBVADisable(PPDMIDISPLAYCONNECTOR pInterface, unsigned uScreenId);
+    static DECLCALLBACK(void) displayVBVAUpdateBegin(PPDMIDISPLAYCONNECTOR pInterface, unsigned uScreenId);
+    static DECLCALLBACK(void) displayVBVAUpdateProcess(PPDMIDISPLAYCONNECTOR pInterface, unsigned uScreenId, const PVBVACMDHDR pCmd, size_t cbCmd);
+    static DECLCALLBACK(void) displayVBVAUpdateEnd(PPDMIDISPLAYCONNECTOR pInterface, unsigned uScreenId, uint32_t x, uint32_t y, uint32_t cx, uint32_t cy);
+    static DECLCALLBACK(int)  displayVBVAResize(PPDMIDISPLAYCONNECTOR pInterface, const PVBVAINFOVIEW pView, const PVBVAINFOSCREEN pScreen, void *pvVRAM);
+    static DECLCALLBACK(int)  displayVBVAMousePointerShape(PPDMIDISPLAYCONNECTOR pInterface, bool fVisible, bool fAlpha, uint32_t xHot, uint32_t yHot, uint32_t cx, uint32_t cy, const void *pvShape);
+#endif
+
 
     static DECLCALLBACK(void)   displaySSMSave (PSSMHANDLE pSSM, void *pvUser);
     static DECLCALLBACK(int)    displaySSMLoad (PSSMHANDLE pSSM, void *pvUser, uint32_t u32Version);

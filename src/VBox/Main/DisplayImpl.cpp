@@ -212,6 +212,9 @@ HRESULT Display::init (Console *aParent)
 
         memset (&maFramebuffers[ul].dirtyRect, 0 , sizeof (maFramebuffers[ul].dirtyRect));
         memset (&maFramebuffers[ul].pendingResize, 0 , sizeof (maFramebuffers[ul].pendingResize));
+#ifdef VBOX_WITH_HGSMI
+        maFramebuffers[ul].fVBVAEnabled = false;
+#endif /* VBOX_WITH_HGSMI */
     }
 
     mParent->RegisterCallback (this);
@@ -581,8 +584,14 @@ void Display::handleDisplayUpdate (int x, int y, int w, int h)
 
     pFramebuffer->Unlock();
 
+#ifndef VBOX_WITH_HGSMI
     if (!mfVideoAccelEnabled)
     {
+#else
+    if (!mfVideoAccelEnabled && !maFramebuffers[uScreenId].fVBVAEnabled)
+    {
+        LogFlowFunc(("HGSMI: VRDP update without VBVA.\n"));
+#endif /* VBOX_WITH_HGSMI */
         /* When VBVA is enabled, the VRDP server is informed in the VideoAccelFlush.
          * Inform the server here only if VBVA is disabled.
          */
@@ -2375,6 +2384,106 @@ DECLCALLBACK(void) Display::displayVHWACommandProcess(PPDMIDISPLAYCONNECTOR pInt
 }
 #endif
 
+#ifdef VBOX_WITH_HGSMI
+DECLCALLBACK(int) Display::displayVBVAEnable(PPDMIDISPLAYCONNECTOR pInterface, unsigned uScreenId)
+{
+    LogFlowFunc(("uScreenId %d\n", uScreenId));
+
+    PDRVMAINDISPLAY pDrv = PDMIDISPLAYCONNECTOR_2_MAINDISPLAY(pInterface);
+    Display *pThis = pDrv->pDisplay;
+
+    pThis->maFramebuffers[uScreenId].fVBVAEnabled = true;
+    
+    return VINF_SUCCESS;
+}
+
+DECLCALLBACK(void) Display::displayVBVADisable(PPDMIDISPLAYCONNECTOR pInterface, unsigned uScreenId)
+{
+    LogFlowFunc(("uScreenId %d\n", uScreenId));
+
+    PDRVMAINDISPLAY pDrv = PDMIDISPLAYCONNECTOR_2_MAINDISPLAY(pInterface);
+    Display *pThis = pDrv->pDisplay;
+
+    pThis->maFramebuffers[uScreenId].fVBVAEnabled = false;
+}
+
+DECLCALLBACK(void) Display::displayVBVAUpdateBegin(PPDMIDISPLAYCONNECTOR pInterface, unsigned uScreenId)
+{
+    LogFlowFunc(("uScreenId %d\n", uScreenId));
+
+    PDRVMAINDISPLAY pDrv = PDMIDISPLAYCONNECTOR_2_MAINDISPLAY(pInterface);
+    Display *pThis = pDrv->pDisplay;
+
+    NOREF(uScreenId);
+}
+
+DECLCALLBACK(void) Display::displayVBVAUpdateProcess(PPDMIDISPLAYCONNECTOR pInterface, unsigned uScreenId, const PVBVACMDHDR pCmd, size_t cbCmd)
+{
+    LogFlowFunc(("uScreenId %d pCmd %p cbCmd %d\n", uScreenId, pCmd, cbCmd));
+
+    PDRVMAINDISPLAY pDrv = PDMIDISPLAYCONNECTOR_2_MAINDISPLAY(pInterface);
+    Display *pThis = pDrv->pDisplay;
+
+    pThis->mParent->consoleVRDPServer()->SendUpdate (uScreenId, pCmd, cbCmd);
+}
+
+DECLCALLBACK(void) Display::displayVBVAUpdateEnd(PPDMIDISPLAYCONNECTOR pInterface, unsigned uScreenId, uint32_t x, uint32_t y, uint32_t cx, uint32_t cy)
+{
+    LogFlowFunc(("uScreenId %d %d,%d %dx%d\n", uScreenId, x, y, cx, cy));
+
+    PDRVMAINDISPLAY pDrv = PDMIDISPLAYCONNECTOR_2_MAINDISPLAY(pInterface);
+    Display *pThis = pDrv->pDisplay;
+
+    /* @todo handleFramebufferUpdate (uScreenId,
+     *                                x - pThis->maFramebuffers[uScreenId].xOrigin,
+     *                                y - pThis->maFramebuffers[uScreenId].yOrigin,
+     *                                cx, cy);
+     */
+    pThis->handleDisplayUpdate(x, y, cx, cy);
+}
+
+DECLCALLBACK(int) Display::displayVBVAResize(PPDMIDISPLAYCONNECTOR pInterface, const PVBVAINFOVIEW pView, const PVBVAINFOSCREEN pScreen, void *pvVRAM)
+{
+    LogFlowFunc(("pScreen %p, pvVRAM %p\n", pScreen, pvVRAM));
+
+    PDRVMAINDISPLAY pDrv = PDMIDISPLAYCONNECTOR_2_MAINDISPLAY(pInterface);
+    Display *pThis = pDrv->pDisplay;
+
+    DISPLAYFBINFO *pFBInfo = &pThis->maFramebuffers[pScreen->u32ViewIndex];
+
+    pFBInfo->u32Offset = pView->u32ViewOffset; /* Not used in HGSMI. */
+    pFBInfo->u32MaxFramebufferSize = pView->u32MaxScreenSize; /* Not used in HGSMI. */
+    pFBInfo->u32InformationSize = 0; /* Not used in HGSMI. */
+
+    pFBInfo->xOrigin = pScreen->i32OriginX;
+    pFBInfo->yOrigin = pScreen->i32OriginY;
+
+    pFBInfo->w = pScreen->u32Width;
+    pFBInfo->h = pScreen->u32Height;
+
+    return pThis->handleDisplayResize(pScreen->u32ViewIndex, pScreen->u16BitsPerPixel,
+                                      (uint8_t *)pvVRAM + pScreen->u32StartOffset,
+                                      pScreen->u32LineSize, pScreen->u32Width, pScreen->u32Height);
+}
+
+DECLCALLBACK(int) Display::displayVBVAMousePointerShape(PPDMIDISPLAYCONNECTOR pInterface, bool fVisible, bool fAlpha,
+                                                        uint32_t xHot, uint32_t yHot,
+                                                        uint32_t cx, uint32_t cy,
+                                                        const void *pvShape)
+{
+    LogFlowFunc(("\n"));
+
+    PDRVMAINDISPLAY pDrv = PDMIDISPLAYCONNECTOR_2_MAINDISPLAY(pInterface);
+    Display *pThis = pDrv->pDisplay;
+
+    /* Tell the console about it */
+    pDrv->pDisplay->mParent->onMousePointerShapeChange(fVisible, fAlpha,
+                                                       xHot, yHot, cx, cy, (void *)pvShape);
+
+    return VINF_SUCCESS;
+}
+#endif /* VBOX_WITH_HGSMI */
+
 /**
  * Queries an interface to the driver.
  *
@@ -2457,6 +2566,16 @@ DECLCALLBACK(int) Display::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle
 #ifdef VBOX_WITH_VIDEOHWACCEL
     pData->Connector.pfnVHWACommandProcess = Display::displayVHWACommandProcess;
 #endif
+#ifdef VBOX_WITH_HGSMI
+    pData->Connector.pfnVBVAEnable         = Display::displayVBVAEnable;
+    pData->Connector.pfnVBVADisable        = Display::displayVBVADisable;
+    pData->Connector.pfnVBVAUpdateBegin    = Display::displayVBVAUpdateBegin;
+    pData->Connector.pfnVBVAUpdateProcess  = Display::displayVBVAUpdateProcess;
+    pData->Connector.pfnVBVAUpdateEnd      = Display::displayVBVAUpdateEnd;
+    pData->Connector.pfnVBVAResize         = Display::displayVBVAResize;
+    pData->Connector.pfnVBVAMousePointerShape = Display::displayVBVAMousePointerShape;
+#endif
+
 
     /*
      * Get the IDisplayPort interface of the above driver/device.

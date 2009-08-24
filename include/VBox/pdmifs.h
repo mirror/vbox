@@ -421,6 +421,11 @@ typedef struct PDMIDISPLAYPORT
 
 
 typedef struct _VBOXVHWACMD *PVBOXVHWACMD; /**< @todo r=bird: _VBOXVHWACMD -> VBOXVHWACMD; avoid using 1 or 2 leading underscores. Also, a line what it is to make doxygen happy. */
+#ifdef VBOX_WITH_HGSMI
+typedef struct VBVACMDHDR *PVBVACMDHDR;
+typedef struct VBVAINFOSCREEN *PVBVAINFOSCREEN;
+typedef struct VBVAINFOVIEW *PVBVAINFOVIEW;
+#endif /* VBOX_WITH_HGSMI */
 
 /** Pointer to a display connector interface. */
 typedef struct PDMIDISPLAYCONNECTOR *PPDMIDISPLAYCONNECTOR;
@@ -530,6 +535,99 @@ typedef struct PDMIDISPLAYCONNECTOR
      * @thread  The emulation thread.
      */
     DECLR3CALLBACKMEMBER(void, pfnVHWACommandProcess, (PPDMIDISPLAYCONNECTOR pInterface, PVBOXVHWACMD pCmd));
+
+#ifdef VBOX_WITH_HGSMI
+    /**
+     * The specified screen enters VBVA mode.
+     *
+     * @param   pInterface          Pointer to this interface.
+     * @param   uScreenId           The screen updates are for.
+     * @thread  The emulation thread.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnVBVAEnable,(PPDMIDISPLAYCONNECTOR pInterface, unsigned uScreenId));
+
+    /**
+     * The specified screen leaves VBVA mode.
+     *
+     * @param   pInterface          Pointer to this interface.
+     * @param   uScreenId           The screen updates are for.
+     * @thread  The emulation thread.
+     */
+    DECLR3CALLBACKMEMBER(void, pfnVBVADisable,(PPDMIDISPLAYCONNECTOR pInterface, unsigned uScreenId));
+
+    /**
+     * A sequence of pfnVBVAUpdateProcess calls begins.
+     *
+     * @param   pInterface          Pointer to this interface.
+     * @param   uScreenId           The screen updates are for.
+     * @thread  The emulation thread.
+     */
+    DECLR3CALLBACKMEMBER(void, pfnVBVAUpdateBegin,(PPDMIDISPLAYCONNECTOR pInterface, unsigned uScreenId));
+
+    /**
+     * Process the guest VBVA command.
+     *
+     * @param   pInterface          Pointer to this interface.
+     * @param   pCmd                Video HW Acceleration Command to be processed.
+     * @thread  The emulation thread.
+     */
+    DECLR3CALLBACKMEMBER(void, pfnVBVAUpdateProcess,(PPDMIDISPLAYCONNECTOR pInterface, unsigned uScreenId, const PVBVACMDHDR pCmd, size_t cbCmd));
+
+    /**
+     * A sequence of pfnVBVAUpdateProcess calls ends.
+     *
+     * @param   pInterface          Pointer to this interface.
+     * @param   uScreenId           The screen updates are for.
+     * @param   x                   The upper left corner x coordinate of the combined rectangle of all VBVA updates.
+     * @param   y                   The upper left corner y coordinate of the rectangle.
+     * @param   cx                  The width of the rectangle.
+     * @param   cy                  The height of the rectangle.
+     * @thread  The emulation thread.
+     */
+    DECLR3CALLBACKMEMBER(void, pfnVBVAUpdateEnd,(PPDMIDISPLAYCONNECTOR pInterface, unsigned uScreenId, uint32_t x, uint32_t y, uint32_t cx, uint32_t cy));
+
+    /**
+     * Resize the display.
+     * This is called when the resolution changes. This usually happens on
+     * request from the guest os, but may also happen as the result of a reset.
+     * If the callback returns VINF_VGA_RESIZE_IN_PROGRESS, the caller (VGA device)
+     * must not access the connector and return.
+     *
+     * @todo Merge with pfnResize.
+     *
+     * @returns VINF_SUCCESS if the framebuffer resize was completed,
+     *          VINF_VGA_RESIZE_IN_PROGRESS if resize takes time and not yet finished.
+     * @param   pInterface          Pointer to this interface.
+     * @param   pView               The description of VRAM block for this screen.
+     * @param   pScreen             The data of screen being resized.
+     * @param   pvVRAM              Address of the guest VRAM.
+     * @thread  The emulation thread.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnVBVAResize,(PPDMIDISPLAYCONNECTOR pInterface, const PVBVAINFOVIEW pView, const PVBVAINFOSCREEN pScreen, void *pvVRAM));
+
+    /**
+     * Update the pointer shape.
+     * This is called when the mouse pointer shape changes. The new shape
+     * is passed as a caller allocated buffer that will be freed after returning
+     *
+     * @param   pInterface          Pointer to this interface.
+     * @param   fVisible            Visibility indicator (if false, the other parameters are undefined).
+     * @param   fAlpha              Flag whether alpha channel is being passed.
+     * @param   xHot                Pointer hot spot x coordinate.
+     * @param   yHot                Pointer hot spot y coordinate.
+     * @param   x                   Pointer new x coordinate on screen.
+     * @param   y                   Pointer new y coordinate on screen.
+     * @param   cx                  Pointer width in pixels.
+     * @param   cy                  Pointer height in pixels.
+     * @param   cbScanline          Size of one scanline in bytes.
+     * @param   pvShape             New shape buffer.
+     * @thread  The emulation thread.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnVBVAMousePointerShape,(PPDMIDISPLAYCONNECTOR pInterface, bool fVisible, bool fAlpha,
+                                                        uint32_t xHot, uint32_t yHot,
+                                                        uint32_t cx, uint32_t cy,
+                                                        const void *pvShape));
+#endif /* VBOX_WITH_HGSMI */
 
     /** Read-only attributes.
      * For preformance reasons some readonly attributes are kept in the interface.
