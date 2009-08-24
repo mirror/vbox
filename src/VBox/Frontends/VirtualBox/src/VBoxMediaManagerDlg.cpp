@@ -906,7 +906,14 @@ void VBoxMediaManagerDlg::mediumRemoved (VBoxDefs::MediaType aType,
 
     updateTabIcons (item, ItemAction_Removed);
 
+    /* We need to silently delete item without selecting
+     * the new one because of complex selection mechanism
+     * which could provoke a segfault choosing the new
+     * one item during last item deletion routine. So blocking
+     * the tree-view for the time of item removing. */
+    tree->blockSignals (true);
     delete item;
+    tree->blockSignals (false);
 
     /* Note: current items on invisible tabs are not updated because
      * it is always done in processCurrentChanged() when the user switches
