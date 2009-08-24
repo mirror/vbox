@@ -23,29 +23,55 @@
  * additional information or have any questions.
  */
 
-#if !defined(PROFILE_COUNTER) && !defined(DRV_PROFILE_COUNTER)
-# error (DRV_)PROFILE_COUNTER is not defied
+/*
+ * COUNTERS_INIT is used before using counters.h to declare helping macro 
+ * definitions for (de-)registering counters
+ */
+#ifndef COUNTERS_H
+# define COUNTERS_H
+# if defined(VBOX_WITH_STATISTICS) 
+#  define REGISTER_COUNTER(name, type, units, dsc)                  \
+    do {                                                            \
+        PDMDrvHlpSTAMRegisterF(pDrvIns,                             \
+                               &pData->Stat ## name,                \
+                               type,                                \
+                               STAMVISIBILITY_ALWAYS,               \
+                               units,                               \
+                               dsc,                                 \
+                               "/Drivers/NAT%u/" #name,             \
+                               pDrvIns->iInstance);                 \
+    } while (0)
+#  define DEREGISTER_COUNTER(name) PDMDrvHlpSTAMDeregister(pDrvIns, &pData->Stat ## name)
+# else
+#  define REGISTER_COUNTER(name, type, units, dsc) do {} while (0)
+#  define DEREGISTER_COUNTER(name) do {} while (0)
+# endif
 #endif
-#if !defined(COUNTING_COUNTER) && !defined(DRV_COUNTING_COUNTER)
-# error (DRV_)COUNTING_COUNTER is not defined
-#endif
+
+#ifndef COUNTERS_INIT
+# if !defined(PROFILE_COUNTER) && !defined(DRV_PROFILE_COUNTER)
+#  error (DRV_)PROFILE_COUNTER is not defied
+# endif
+# if !defined(COUNTING_COUNTER) && !defined(DRV_COUNTING_COUNTER)
+#  error (DRV_)COUNTING_COUNTER is not defined
+# endif
 
 /*
  * DRV_ prefixed are counters used in DrvNAT the rest are used in Slirp
  */
-#ifdef DRV_PROFILE_COUNTER
-# define PROFILE_COUNTER(name, dsc) do {} while (0)
-#endif
-#ifdef DRV_COUNTING_COUNTER
-# define COUNTING_COUNTER(name, dsc) do {} while (0)
-#endif
+# ifdef DRV_PROFILE_COUNTER
+#  define PROFILE_COUNTER(name, dsc) do {} while (0)
+# endif
+# ifdef DRV_COUNTING_COUNTER
+#  define COUNTING_COUNTER(name, dsc) do {} while (0)
+# endif
 
-#ifdef PROFILE_COUNTER
-# define DRV_PROFILE_COUNTER(name, dsc) do {} while (0)
-#endif
-#ifdef COUNTING_COUNTER
-# define DRV_COUNTING_COUNTER(name, dsc) do {} while (0)
-#endif
+# ifdef PROFILE_COUNTER
+#  define DRV_PROFILE_COUNTER(name, dsc) do {} while (0)
+# endif
+# ifdef COUNTING_COUNTER
+#  define DRV_COUNTING_COUNTER(name, dsc) do {} while (0)
+# endif
 
 PROFILE_COUNTER(Fill, "Profiling slirp fills");
 PROFILE_COUNTER(Poll, "Profiling slirp polls");
@@ -98,8 +124,9 @@ PROFILE_COUNTER(IF_encap, "IF::encap");
 PROFILE_COUNTER(ALIAS_input, "ALIAS::input");
 PROFILE_COUNTER(ALIAS_output, "ALIAS::output");
 
-#undef DRV_COUNTING_COUNTER
-#undef DRV_PROFILE_COUNTER
+# undef DRV_COUNTING_COUNTER
+# undef DRV_PROFILE_COUNTER
 
-#undef COUNTING_COUNTER
-#undef PROFILE_COUNTER
+# undef COUNTING_COUNTER
+# undef PROFILE_COUNTER
+#endif /*!COUNTERS_INIT*/
