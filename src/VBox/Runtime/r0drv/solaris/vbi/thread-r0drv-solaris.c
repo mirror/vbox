@@ -82,9 +82,8 @@ RTDECL(bool) RTThreadPreemptIsEnabled(RTTHREAD hThread)
 {
     Assert(hThread == NIL_RTTHREAD);
     if (    vbi_is_preempt_enabled()
-        &&  ASMIntAreEnabled())
-        return true;
-    if (getpil() < DISP_LEVEL)
+        &&  ASMIntAreEnabled()
+        &&  getpil() < DISP_LEVEL)
         return true;
     return false;
 }
