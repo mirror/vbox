@@ -317,6 +317,21 @@ void vboxVHWARegionTrySubstitute(PVBOXVHWAREGION pReg, const RECTL *pRect);
 
 VBOXVHWACMD* vboxVHWACommandCreate (PPDEV ppdev, VBOXVHWACMD_TYPE enmCmd, VBOXVHWACMD_LENGTH cbCmd);
 void vboxVHWACommandFree (PPDEV ppdev, VBOXVHWACMD* pCmd);
+DECLINLINE(void) vbvaVHWACommandRelease (PPDEV ppdev, VBOXVHWACMD* pCmd)
+{
+    uint32_t cRefs = ASMAtomicDecU32(&pCmd->cRefs);
+    Assert(cRefs < UINT32_MAX / 2);
+    if(!cRefs)
+    {
+        vboxVHWACommandFree(ppdev, pCmd);
+    }
+}
+
+DECLINLINE(void) vbvaVHWACommandRetain (PPDEV ppdev, VBOXVHWACMD* pCmd)
+{
+    ASMAtomicIncU32(&pCmd->cRefs);
+}
+
 BOOL vboxVHWACommandSubmit (PPDEV ppdev, VBOXVHWACMD* pCmd);
 void vboxVHWACommandSubmitAsynch (PPDEV ppdev, VBOXVHWACMD* pCmd, PFNVBOXVHWACMDCOMPLETION pfnCompletion, void * pContext);
 void vboxVHWACommandSubmitAsynchByEvent (PPDEV ppdev, VBOXVHWACMD* pCmd, PEVENT pEvent);
