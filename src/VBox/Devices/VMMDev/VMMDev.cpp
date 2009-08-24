@@ -895,7 +895,7 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
                 displayChangeRequest->yres = pThis->lastReadDisplayChangeRequest.yres;
                 displayChangeRequest->bpp  = pThis->lastReadDisplayChangeRequest.bpp;
                 Log(("VMMDev: returning display change request xres = %d, yres = %d, bpp = %d\n",
-                     displayChangeRequest.xres, displayChangeRequest.yres, displayChangeRequest.bpp));
+                     displayChangeRequest->xres, displayChangeRequest->yres, displayChangeRequest->bpp));
 
                 pRequestHeader->rc = VINF_SUCCESS;
             }
@@ -924,7 +924,7 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
                 displayChangeRequest->bpp     = pThis->lastReadDisplayChangeRequest.bpp;
                 displayChangeRequest->display = pThis->lastReadDisplayChangeRequest.display;
                 Log(("VMMDev: returning display change request xres = %d, yres = %d, bpp = %d at %d\n",
-                     displayChangeRequest.xres, displayChangeRequest.yres, displayChangeRequest.bpp, displayChangeRequest.display));
+                     displayChangeRequest->xres, displayChangeRequest->yres, displayChangeRequest->bpp, displayChangeRequest->display));
 
                 pRequestHeader->rc = VINF_SUCCESS;
             }
