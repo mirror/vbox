@@ -23,11 +23,28 @@
  * additional information or have any questions.
  */
 
-#ifndef PROFILE_COUNTER
-# error PROFILE_COUNTER is not defied
+#if !defined(PROFILE_COUNTER) && !(DRV_PROFILE_COUNTER)
+# error (DRV_)PROFILE_COUNTER is not defied
 #endif
-#ifndef COUNTING_COUNTER
-# error COUNTING_COUNTER is not defined
+#if !defined(COUNTING_COUNTER) && !(DRV_COUNTING_COUNTER)
+# error (DRV_)COUNTING_COUNTER is not defined
+#endif
+
+/*
+ * DRV_ prefixed are counters used in DrvNAT the rest are used in Slirp
+ */
+#ifdef DRV_PROFILE_COUNTER
+# define PROFILE_COUNTER(name, dsc) do {} while (0)
+#endif
+#ifdef DRV_COUNTING_COUNTER
+# define COUNTING_COUNTER(name, dsc) do {} while (0)
+#endif 
+
+#ifdef PROFILE_COUNTER
+# define DRV_PROFILE_COUNTER(name, dsc) do {} while (0)
+#endif
+#ifdef COUNTING_COUNTER
+# define DRV_COUNTING_COUNTER(name, dsc) do {} while (0)
 #endif
 
 PROFILE_COUNTER(Fill, "Profiling slirp fills");
