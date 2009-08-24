@@ -38,6 +38,7 @@
 #include <iprt/crc32.h>
 #include <iprt/err.h>
 #include <iprt/ctype.h>
+#define VBOXNETFLT_SOLARIS_IPV6_POLLING
 #ifdef VBOXNETFLT_SOLARIS_IPV6_POLLING
 # include <iprt/timer.h>
 #endif
