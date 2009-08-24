@@ -567,8 +567,8 @@ int slirp_init(PNATState *ppData, uint32_t u32NetAddr, uint32_t u32Netmask,
 void slirp_register_statistics(PNATState pData, PPDMDRVINS pDrvIns)
 {
 #ifdef VBOX_WITH_STATISTICS
-# define PROFILE_COUNTER(name, dsc)     REGISTER_COUNTER(name, STAMTYPE_PROFILE, STAMUNIT_TICKS_PER_CALL, dsc)
-# define COUNTING_COUNTER(name, dsc)    REGISTER_COUNTER(name, STAMTYPE_COUNTER, STAMUNIT_COUNT,          dsc)
+# define PROFILE_COUNTER(name, dsc)     REGISTER_COUNTER(name, pData, STAMTYPE_PROFILE, STAMUNIT_TICKS_PER_CALL, dsc)
+# define COUNTING_COUNTER(name, dsc)    REGISTER_COUNTER(name, pData, STAMTYPE_COUNTER, STAMUNIT_COUNT,          dsc)
 
 # include "counters.h"
 
@@ -585,8 +585,8 @@ void slirp_register_statistics(PNATState pData, PPDMDRVINS pDrvIns)
 void slirp_deregister_statistics(PNATState pData, PPDMDRVINS pDrvIns)
 {
 #ifdef VBOX_WITH_STATISTICS
-# define PROFILE_COUNTER(name, dsc)     DEREGISTER_COUNTER(name)
-# define COUNTING_COUNTER(name, dsc)    DEREGISTER_COUNTER(name)
+# define PROFILE_COUNTER(name, dsc)     DEREGISTER_COUNTER(name, pData)
+# define COUNTING_COUNTER(name, dsc)    DEREGISTER_COUNTER(name, pData)
 
 # include "counters.h"
 #endif /* VBOX_WITH_STATISTICS */

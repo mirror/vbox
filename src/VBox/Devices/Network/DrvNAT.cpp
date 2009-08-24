@@ -165,9 +165,10 @@ typedef struct DRVNAT
     /** for external notification */
     HANDLE                  hWakeupEvent;
 #endif
-    STAMCOUNTER             StatQueuePktSent;       /**< counting packet sent via PDM queue */
-    STAMCOUNTER             StatQueuePktDropped;    /**< counting packet drops by PDM queue */
-    STAMCOUNTER             StatConsumerFalse;      /**< how often to wait for guest RX buffers */
+    
+#define DRV_PROFILE_COUNTER(name, dsc)     STAMPROFILE Stat ## name
+#define DRV_COUNTING_COUNTER(name, dsc)    STAMCOUNTER Stat ## name
+#include "counters.h"
 #ifdef SLIRP_SPLIT_CAN_OUTPUT
     /** thread delivering packets for receiving by the guest */
     PPDMTHREAD              pRecvThread;
@@ -175,7 +176,6 @@ typedef struct DRVNAT
     RTSEMEVENT              EventRecv;
     /** Receive Req queue (deliver packets to the guest) */
     PRTREQQUEUE             pRecvReqQueue;
-    STAMCOUNTER             StatNATRecvWakeups;     /**< how often to wakeup the guest RX thread */
 #endif
 } DRVNAT;
 /** Pointer the NAT driver instance data. */
@@ -236,7 +236,7 @@ static DECLCALLBACK(void) drvNATRecvWorker(PDRVNAT pThis, uint8_t *pu8Buf, int c
 {
     if (RT_FAILURE(pThis->pPort->pfnWaitReceiveAvail(pThis->pPort, RT_INDEFINITE_WAIT)))
     {
-        AssertMsgFailed(("No RX available even on indefinite wait"));
+        AssertMsgFailed(("NAT: No RX available even on indefinite wait"));
     }
     int rc = pThis->pPort->pfnReceive(pThis->pPort, pu8Buf, cb);
     RTMemFree(pu8Buf);
@@ -838,9 +838,9 @@ static DECLCALLBACK(void) drvNATDestruct(PPDMDRVINS pDrvIns)
     slirp_deregister_statistics(pThis->pNATState, pDrvIns);
     pThis->pNATState = NULL;
 #ifdef VBOX_WITH_STATISTICS
-    PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->StatQueuePktSent);
-    PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->StatQueuePktDropped);
-    PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->StatConsumerFalse);
+# define DRV_PROFILE_COUNTER(name, dsc)     DEREGISTER_COUNTER(name, pThis)
+# define DRV_COUNTING_COUNTER(name, dsc)    DEREGISTER_COUNTER(name, pThis)
+# include "counters.h"
 #endif
 }
 
@@ -967,20 +967,9 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandl
 
         slirp_register_statistics(pThis->pNATState, pDrvIns);
 #ifdef VBOX_WITH_STATISTICS
-        PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->StatQueuePktSent,    STAMTYPE_COUNTER,
-                               STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT, "counting packet sent viai "
-                               "PDM queue", "/Drivers/NAT%u/QueuePacketSent", pDrvIns->iInstance);
-        PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->StatQueuePktDropped, STAMTYPE_COUNTER,
-                               STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT, "counting packet sent via PDM"
-                               " queue", "/Drivers/NAT%u/QueuePacketDropped", pDrvIns->iInstance);
-        PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->StatConsumerFalse, STAMTYPE_COUNTER,
-                               STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT, "counting PDM consumer false"
-                               " queue", "/Drivers/NAT%u/PDMConsumerFalse", pDrvIns->iInstance);
-# ifdef SLIRP_SPLIT_CAN_OUTPUT
-        PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->StatNATRecvWakeups, STAMTYPE_COUNTER,
-                               STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT, "counting wakeups of NATRX"
-                               " thread", "/Drivers/NAT%u/NATRecvWakeups", pDrvIns->iInstance);
-# endif
+# define DRV_PROFILE_COUNTER(name, dsc)     REGISTER_COUNTER(name, pThis, STAMTYPE_PROFILE, STAMUNIT_TICKS_PER_CALL, dsc)
+# define DRV_COUNTING_COUNTER(name, dsc)    REGISTER_COUNTER(name, pThis, STAMTYPE_COUNTER, STAMUNIT_COUNT,          dsc)
+# include "counters.h" 
 #endif
 
         int rc2 = drvNATConstructRedir(pDrvIns->iInstance, pThis, pCfgHandle, Network);
