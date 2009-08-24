@@ -22,12 +22,9 @@
 #define ___slirp_state_h
 
 #include <iprt/req.h>
-
-#define COUNTERS_INIT
-#include "counters.h"
-
 #include "ip_icmp.h"
 #include "dnsproxy/dnsproxy.h"
+
 /** Number of DHCP clients supported by NAT. */
 #define NB_ADDR     16
 
@@ -250,6 +247,7 @@ typedef struct NATState
 
 #define PROFILE_COUNTER(name, dsc)     STAMPROFILE Stat ## name
 #define COUNTING_COUNTER(name, dsc)    STAMCOUNTER Stat ## name
+
 #include "counters.h"
 
 } NATState;
