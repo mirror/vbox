@@ -891,11 +891,11 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
                 }
 
                 /* just pass on the information */
-                Log(("VMMDev: returning display change request xres = %d, yres = %d, bpp = %d\n",
-                     pThis->displayChangeRequest.xres, pThis->displayChangeRequest.yres, pThis->displayChangeRequest.bpp));
                 displayChangeRequest->xres = pThis->lastReadDisplayChangeRequest.xres;
                 displayChangeRequest->yres = pThis->lastReadDisplayChangeRequest.yres;
                 displayChangeRequest->bpp  = pThis->lastReadDisplayChangeRequest.bpp;
+                Log(("VMMDev: returning display change request xres = %d, yres = %d, bpp = %d\n",
+                     displayChangeRequest.xres, displayChangeRequest.yres, displayChangeRequest.bpp));
 
                 pRequestHeader->rc = VINF_SUCCESS;
             }
@@ -919,12 +919,12 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
                 }
 
                 /* just pass on the information */
-                Log(("VMMDev: returning display change request xres = %d, yres = %d, bpp = %d at %d\n",
-                     pThis->displayChangeRequest.xres, pThis->displayChangeRequest.yres, pThis->displayChangeRequest.bpp, pThis->displayChangeRequest.display));
                 displayChangeRequest->xres    = pThis->lastReadDisplayChangeRequest.xres;
                 displayChangeRequest->yres    = pThis->lastReadDisplayChangeRequest.yres;
                 displayChangeRequest->bpp     = pThis->lastReadDisplayChangeRequest.bpp;
                 displayChangeRequest->display = pThis->lastReadDisplayChangeRequest.display;
+                Log(("VMMDev: returning display change request xres = %d, yres = %d, bpp = %d at %d\n",
+                     displayChangeRequest.xres, displayChangeRequest.yres, displayChangeRequest.bpp, displayChangeRequest.display));
 
                 pRequestHeader->rc = VINF_SUCCESS;
             }
