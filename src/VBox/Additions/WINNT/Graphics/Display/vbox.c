@@ -709,6 +709,7 @@ VBOXVHWACMD* vboxVHWACommandCreate (PPDEV ppdev, VBOXVHWACMD_TYPE enmCmd, VBOXVH
         pHdr->iDisplay = ppdev->iDevice;
         pHdr->rc = VERR_GENERAL_FAILURE;
         pHdr->enmCmd = enmCmd;
+        pHdr->cRefs = 1;
     }
 
     /* temporary hack */
@@ -783,18 +784,20 @@ void vboxVHWACommandSubmitAsynchByEvent (PPDEV ppdev, VBOXVHWACMD* pCmd, PEVENT 
 //    Assert(0);
     pCmd->GuestVBVAReserved1 = (uintptr_t)pEvent;
     pCmd->GuestVBVAReserved2 = 0;
+    /* ensure the command is not removed until we're processing it */
+    vbvaVHWACommandRetain(ppdev, pCmd);
 
     /* complete it asynchronously by setting event */
     pCmd->Flags |= VBOXVHWACMD_FLAG_GH_ASYNCH_EVENT;
     vboxHGSMIBufferSubmit (ppdev, pCmd);
-    //TODO: dbg
-#if 0
+
     if(!(ASMAtomicReadU32((volatile uint32_t *)&pCmd->Flags)  & VBOXVHWACMD_FLAG_HG_ASYNCH))
     {
         /* the command is completed */
         EngSetEvent(pEvent);
     }
-#endif
+
+    vbvaVHWACommandRelease(ppdev, pCmd);
 }
 
 BOOL vboxVHWACommandSubmit (PPDEV ppdev, VBOXVHWACMD* pCmd)
@@ -826,21 +829,22 @@ void vboxVHWACommandSubmitAsynch (PPDEV ppdev, VBOXVHWACMD* pCmd, PFNVBOXVHWACMD
 //    Assert(0);
     pCmd->GuestVBVAReserved1 = (uintptr_t)pfnCompletion;
     pCmd->GuestVBVAReserved2 = (uintptr_t)pContext;
+    vbvaVHWACommandRetain(ppdev, pCmd);
 
     vboxHGSMIBufferSubmit (ppdev, pCmd);
-    //TODO: dbg
-#if 0
+
     if(!(pCmd->Flags & VBOXVHWACMD_FLAG_HG_ASYNCH))
     {
         /* the command is completed */
         pfnCompletion(ppdev, pCmd, pContext);
     }
-#endif
+
+    vbvaVHWACommandRelease(ppdev, pCmd);
 }
 
 static DECLCALLBACK(void) vboxVHWAFreeCmdCompletion(PPDEV ppdev, VBOXVHWACMD * pCmd, void * pContext)
 {
-    vboxVHWACommandFree(ppdev, pCmd);
+    vbvaVHWACommandRelease(ppdev, pCmd);
 }
 
 void vboxVHWACommandSubmitAsynchAndComplete (PPDEV ppdev, VBOXVHWACMD* pCmd)
@@ -848,30 +852,32 @@ void vboxVHWACommandSubmitAsynchAndComplete (PPDEV ppdev, VBOXVHWACMD* pCmd)
 //    Assert(0);
     pCmd->GuestVBVAReserved1 = (uintptr_t)vboxVHWAFreeCmdCompletion;
 
+    vbvaVHWACommandRetain(ppdev, pCmd);
+
     pCmd->Flags |= VBOXVHWACMD_FLAG_GH_ASYNCH_NOCOMPLETION;
 
     vboxHGSMIBufferSubmit (ppdev, pCmd);
-    //TODO: dbg
-#if 0
+
     if(!(pCmd->Flags & VBOXVHWACMD_FLAG_HG_ASYNCH)
             || pCmd->Flags & VBOXVHWACMD_FLAG_HG_ASYNCH_RETURNED)
     {
         /* the command is completed */
         vboxVHWAFreeCmdCompletion(ppdev, pCmd, NULL);
     }
-#endif
+
+    vbvaVHWACommandRelease(ppdev, pCmd);
 }
 
 void vboxVHWAFreeHostInfo1(PPDEV ppdev, VBOXVHWACMD_QUERYINFO1* pInfo)
 {
     VBOXVHWACMD* pCmd = VBOXVHWACMD_HEAD(pInfo);
-    vboxVHWACommandFree (ppdev, pCmd);
+    vbvaVHWACommandRelease (ppdev, pCmd);
 }
 
 void vboxVHWAFreeHostInfo2(PPDEV ppdev, VBOXVHWACMD_QUERYINFO2* pInfo)
 {
     VBOXVHWACMD* pCmd = VBOXVHWACMD_HEAD(pInfo);
-    vboxVHWACommandFree (ppdev, pCmd);
+    vbvaVHWACommandRelease (ppdev, pCmd);
 }
 
 VBOXVHWACMD_QUERYINFO1* vboxVHWAQueryHostInfo1(PPDEV ppdev)
@@ -904,7 +910,7 @@ VBOXVHWACMD_QUERYINFO1* vboxVHWAQueryHostInfo1(PPDEV ppdev)
         }
     }
 
-    vboxVHWACommandFree (ppdev, pCmd);
+    vbvaVHWACommandRelease (ppdev, pCmd);
     return NULL;
 }
 
@@ -932,7 +938,7 @@ VBOXVHWACMD_QUERYINFO2* vboxVHWAQueryHostInfo2(PPDEV ppdev, uint32_t numFourCC)
         }
     }
 
-    vboxVHWACommandFree (ppdev, pCmd);
+    vbvaVHWACommandRelease (ppdev, pCmd);
     return NULL;
 }
 
@@ -999,7 +1005,7 @@ int vboxVHWAEnable(PPDEV ppdev)
         }
     }
 
-    vboxVHWACommandFree (ppdev, pCmd);
+    vbvaVHWACommandRelease (ppdev, pCmd);
     return rc;
 }
 
@@ -1021,7 +1027,7 @@ int vboxVHWADisable(PPDEV ppdev)
         }
     }
 
-    vboxVHWACommandFree (ppdev, pCmd);
+    vbvaVHWACommandRelease (ppdev, pCmd);
 
     vboxVHWACommandCheckHostCmds(ppdev);
 

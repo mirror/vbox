@@ -700,7 +700,7 @@ DWORD APIENTRY DdCreateSurface(PDD_CREATESURFACEDATA  lpCreateSurface)
                     lpCreateSurface->ddRVal = DDERR_GENERIC;
                 }
             }
-            vboxVHWACommandFree(pDev, pCmd);
+            vbvaVHWACommandRelease(pDev, pCmd);
         }
         return DDHAL_DRIVER_NOTHANDLED;
     }
@@ -829,7 +829,7 @@ DWORD APIENTRY DdCanCreateSurface(PDD_CANCREATESURFACEDATA lpCanCreateSurface)
             {
                 lpCanCreateSurface->ddRVal = DDERR_GENERIC;
             }
-            vboxVHWACommandFree(pDev, pCmd);
+            vbvaVHWACommandRelease(pDev, pCmd);
         }
         else
         {
@@ -1090,7 +1090,7 @@ DWORD APIENTRY DdLock(PDD_LOCKDATA lpLock)
 
                 /* wait for the surface to be locked and memory buffer updated */
                 vboxVHWACommandSubmit(pDev, pCmd);
-                vboxVHWACommandFree(pDev, pCmd);
+                vbvaVHWACommandRelease(pDev, pCmd);
                 vboxVHWARegionClear(&pDesc->NonupdatedMemRegion);
                 lpLock->ddRVal = DD_OK;
             }
@@ -2506,7 +2506,7 @@ static DECLCALLBACK(void) vboxVHWASurfBltCompletion(PPDEV ppdev, VBOXVHWACMD * p
     ASMAtomicDecU32(&pSrcDesc->cPendingBltsSrc);
     ASMAtomicDecU32(&pDestDesc->cPendingBltsDst);
 
-    vboxVHWACommandFree(ppdev, pCmd);
+    vbvaVHWACommandRelease(ppdev, pCmd);
 }
 
 static DECLCALLBACK(void) vboxVHWASurfFlipCompletion(PPDEV ppdev, VBOXVHWACMD * pCmd, void * pContext)
@@ -2518,7 +2518,7 @@ static DECLCALLBACK(void) vboxVHWASurfFlipCompletion(PPDEV ppdev, VBOXVHWACMD * 
     ASMAtomicDecU32(&pCurrDesc->cPendingFlipsCurr);
     ASMAtomicDecU32(&pTargDesc->cPendingFlipsTarg);
 
-    vboxVHWACommandFree(ppdev, pCmd);
+    vbvaVHWACommandRelease(ppdev, pCmd);
 }
 
 #endif
