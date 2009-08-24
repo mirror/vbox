@@ -78,7 +78,7 @@ static GLuint ComputeVisBits( HDC hdc )
 
 void APIENTRY DrvReleaseContext(HGLRC hglrc)
 {
-    /*crDebug( "DrvReleaseContext(%x) called", hglrc );*/
+    /*crDebug( "DrvReleaseContext(0x%x) called", hglrc );*/
     stubMakeCurrent( NULL, NULL );
 }
 
@@ -100,7 +100,7 @@ PICDTABLE APIENTRY DrvSetContext(HDC hdc, HGLRC hglrc, void *callback)
     ContextInfo *context;
     WindowInfo *window;
 
-    /*crDebug( "DrvSetContext called(%x, %x)", hdc, hglrc );*/
+    /*crDebug( "DrvSetContext called(0x%x, 0x%x)", hdc, hglrc );*/
     (void) (callback);
 
     context = (ContextInfo *) crHashtableSearch(stub.contextTable, (unsigned long) hglrc);
@@ -116,10 +116,10 @@ PICDTABLE APIENTRY DrvSetContext(HDC hdc, HGLRC hglrc, void *callback)
 
 BOOL APIENTRY DrvSetPixelFormat(HDC hdc, int iPixelFormat)
 {
-    crDebug( "DrvSetPixelFormat called.\n" );
+    crDebug( "DrvSetPixelFormat(0x%x, %i) called.", hdc, iPixelFormat );
 
     if ( (iPixelFormat<1) || (iPixelFormat>2) ) {
-        crError( "wglSetPixelFormat: iPixelFormat=%d?\n", iPixelFormat );
+        crError( "wglSetPixelFormat: iPixelFormat=%d?", iPixelFormat );
     }
 
     return 1;
@@ -130,7 +130,7 @@ HGLRC APIENTRY DrvCreateContext(HDC hdc)
     char dpyName[MAX_DPY_NAME];
     ContextInfo *context;
 
-    crDebug( "DrvCreateContext called.\n" );
+    crDebug( "DrvCreateContext(0x%x) called.", hdc);
 
     stubInit();
 
@@ -149,6 +149,7 @@ HGLRC APIENTRY DrvCreateContext(HDC hdc)
 
 HGLRC APIENTRY DrvCreateLayerContext(HDC hdc, int iLayerPlane)
 {
+    crDebug( "DrvCreateLayerContext(0x%x, %i) called.", hdc, iLayerPlane);
     //We don't support more than 1 layers.
     if (iLayerPlane == 0) {
         return DrvCreateContext(hdc);
@@ -184,7 +185,7 @@ int APIENTRY DrvDescribePixelFormat(HDC hdc, int iPixelFormat, UINT nBytes, LPPI
     }
 
     if ( nBytes != sizeof(*pfd) ) {
-        crWarning( "DrvDescribePixelFormat: nBytes=%u?\n", nBytes );
+        crWarning( "DrvDescribePixelFormat: nBytes=%u?", nBytes );
         return 2;
     }
 
@@ -259,6 +260,7 @@ int APIENTRY DrvDescribePixelFormat(HDC hdc, int iPixelFormat, UINT nBytes, LPPI
 
 BOOL APIENTRY DrvDeleteContext(HGLRC hglrc)
 {
+    crDebug( "DrvDeleteContext(0x%x) called", hglrc );
     stubDestroyContext( (unsigned long) hglrc );
     return 1;
 }
@@ -272,7 +274,7 @@ BOOL APIENTRY DrvCopyContext(HGLRC hglrcSrc, HGLRC hglrcDst, UINT mask)
 BOOL APIENTRY DrvShareLists(HGLRC hglrc1, HGLRC hglrc2)
 {
     crWarning( "DrvShareLists: unsupported" );
-    return 0;
+    return 1;
 }
 
 int APIENTRY DrvSetLayerPaletteEntries(HDC hdc, int iLayerPlane,
@@ -308,7 +310,7 @@ BOOL APIENTRY DrvSwapLayerBuffers(HDC hdc, UINT fuPlanes)
 BOOL APIENTRY DrvSwapBuffers(HDC hdc)
 {
     const WindowInfo *window;
-    //crDebug( "DrvSwapBuffers(%x) called", hdc );
+    /*crDebug( "DrvSwapBuffers(0x%x) called", hdc );*/
     window = stubGetWindowInfo(hdc);    
     stubSwapBuffers( window, 0 );
     return 1;
