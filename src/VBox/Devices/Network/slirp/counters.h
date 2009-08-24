@@ -30,10 +30,10 @@
 #ifndef COUNTERS_H
 # define COUNTERS_H
 # if defined(VBOX_WITH_STATISTICS) 
-#  define REGISTER_COUNTER(name, type, units, dsc)                  \
+#  define REGISTER_COUNTER(name, storage, type, units, dsc)         \
     do {                                                            \
         PDMDrvHlpSTAMRegisterF(pDrvIns,                             \
-                               &pData->Stat ## name,                \
+                               &(storage)->Stat ## name,            \
                                type,                                \
                                STAMVISIBILITY_ALWAYS,               \
                                units,                               \
@@ -41,10 +41,10 @@
                                "/Drivers/NAT%u/" #name,             \
                                pDrvIns->iInstance);                 \
     } while (0)
-#  define DEREGISTER_COUNTER(name) PDMDrvHlpSTAMDeregister(pDrvIns, &pData->Stat ## name)
+#  define DEREGISTER_COUNTER(name, storage) PDMDrvHlpSTAMDeregister(pDrvIns, &(storage)->Stat ## name)
 # else
-#  define REGISTER_COUNTER(name, type, units, dsc) do {} while (0)
-#  define DEREGISTER_COUNTER(name) do {} while (0)
+#  define REGISTER_COUNTER(name, storage, type, units, dsc) do {} while (0)
+#  define DEREGISTER_COUNTER(name, storage) do {} while (0)
 # endif
 # undef COUNTERS_INIT
 #endif
@@ -60,20 +60,8 @@
 /*
  * DRV_ prefixed are counters used in DrvNAT the rest are used in Slirp
  */
-# ifdef DRV_PROFILE_COUNTER
-#  define PROFILE_COUNTER(name, dsc) do {} while (0)
-# endif
-# ifdef DRV_COUNTING_COUNTER
-#  define COUNTING_COUNTER(name, dsc) do {} while (0)
-# endif
 
-# ifdef PROFILE_COUNTER
-#  define DRV_PROFILE_COUNTER(name, dsc) do {} while (0)
-# endif
-# ifdef COUNTING_COUNTER
-#  define DRV_COUNTING_COUNTER(name, dsc) do {} while (0)
-# endif
-
+# if defined(PROFILE_COUNTER) || defined(COUNTING_COUNTER)
 PROFILE_COUNTER(Fill, "Profiling slirp fills");
 PROFILE_COUNTER(Poll, "Profiling slirp polls");
 PROFILE_COUNTER(FastTimer, "Profiling slirp fast timer");
@@ -124,6 +112,16 @@ PROFILE_COUNTER(IP_output, "IP::output");
 PROFILE_COUNTER(IF_encap, "IF::encap");
 PROFILE_COUNTER(ALIAS_input, "ALIAS::input");
 PROFILE_COUNTER(ALIAS_output, "ALIAS::output");
+
+# else
+/*DrvNAT.cpp*/
+#  ifdef SLIRP_SPLIT_CAN_OUTPUT
+DRV_COUNTING_COUNTER(NATRecvWakeups, "counting wakeups of NAT RX thread");
+#  endif
+DRV_COUNTING_COUNTER(QueuePktSent, "counting packet sent via PDM Queue");       /**< counting packet sent via PDM queue */
+DRV_COUNTING_COUNTER(QueuePktDropped, "counting packet drops by PDM Queue");    /**< counting packet drops by PDM queue */
+DRV_COUNTING_COUNTER(ConsumerFalse, "counting consumer's reject number to process the queue's item");      /**< how often to wait for guest RX buffers */
+# endif
 #endif /*!COUNTERS_INIT*/
 
 #ifdef DRV_COUNTING_COUNTER
