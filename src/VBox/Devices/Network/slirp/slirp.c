@@ -573,8 +573,6 @@ void slirp_register_statistics(PNATState pData, PPDMDRVINS pDrvIns)
 # include "counters.h"
 
 # undef COUNTER
-# undef PROFILE_COUNTER
-# undef COUNTING_COUNTER
 /** @todo register statistics for the variables dumped by:
  *  ipstats(pData); tcpstats(pData); udpstats(pData); icmpstats(pData);
  *  mbufstats(pData); sockstats(pData); */
@@ -591,9 +589,6 @@ void slirp_deregister_statistics(PNATState pData, PPDMDRVINS pDrvIns)
 # define COUNTING_COUNTER(name, dsc)    DEREGISTER_COUNTER(name)
 
 # include "counters.h"
-
-# undef COUNTING_COUNTER
-# undef PROFILE_COUNTER
 #endif /* VBOX_WITH_STATISTICS */
 }
 
