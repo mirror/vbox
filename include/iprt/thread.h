@@ -474,7 +474,7 @@ typedef struct RTTHREADPREEMPTSTATE
     /** In debug builds this will be used to check for cpu migration. */
     RTCPUID         idCpu;
 #ifdef RT_OS_WINDOWS
-    /** The old IRQL. Don't touch. */
+    /** The old IRQL. Don't touch! */
     unsigned char   uchOldIrql;
     /** Reserved, MBZ. */
     uint8_t         bReserved1;
@@ -483,6 +483,10 @@ typedef struct RTTHREADPREEMPTSTATE
     /** Reserved, MBZ. */
     uint8_t         bReserved3;
 # define RTTHREADPREEMPTSTATE_INITIALIZER { NIL_RTCPUID, 255, 0, 0, 0 }
+#elif defined(RT_OS_SOLARIS)
+    /** The old PIL. Don't touch! */
+    uint32_t        uOldPil;
+# define RTTHREADPREEMPTSTATE_INITIALIZER { NIL_RTCPUID, UINT32_MAX }
 #else
     /** Reserved, MBZ. */
     uint32_t        u32Reserved;

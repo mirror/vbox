@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2009 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -112,6 +112,8 @@ RTDECL(bool) RTThreadPreemptIsEnabled(RTTHREAD hThread)
         return false;
     if (!ASMIntAreEnabled())
         return false;
+    if (getpil() >= DISP_LEVEL)
+        return false;
     return true;
 }
 
@@ -119,7 +121,6 @@ RTDECL(bool) RTThreadPreemptIsEnabled(RTTHREAD hThread)
 RTDECL(bool) RTThreadPreemptIsPending(RTTHREAD hThread)
 {
     Assert(hThread == NIL_RTTHREAD);
-    /** @todo Review this! */
     return CPU->cpu_runrun   != 0
         || CPU->cpu_kprunrun != 0;
 }
@@ -142,10 +143,20 @@ RTDECL(bool) RTThreadPreemptIsPossible(void)
 RTDECL(void) RTThreadPreemptDisable(PRTTHREADPREEMPTSTATE pState)
 {
     AssertPtr(pState);
-    Assert(pState->u32Reserved == 0);
-    pState->u32Reserved = 42;
+    Assert(pState->uOldPil == UINT32_MAX);
 
     kpreempt_disable();
+/// @todo check out splr and splx on S10!
+//    if (ASMIntAreEnabled())
+        pState->uOldPil = splr(ipltospl(DISP_LEVEL));
+//    else
+//    {
+//        /* splr doesn't restore the interrupt flag on S10. */
+//        pState->uOldPil = getpil();
+//        if (pState->uOldPil < DISP_LEVEL)
+//            pState->uOldPil = splx(DISP_LEVEL);
+//    }
+    Assert(pState->uOldPil != UINT32_MAX)
     RT_ASSERT_PREEMPT_CPUID_DISABLE(pState);
 }
 
@@ -153,16 +164,20 @@ RTDECL(void) RTThreadPreemptDisable(PRTTHREADPREEMPTSTATE pState)
 RTDECL(void) RTThreadPreemptRestore(PRTTHREADPREEMPTSTATE pState)
 {
     AssertPtr(pState);
-    Assert(pState->u32Reserved == 42);
-    pState->u32Reserved = 0;
+    Assert(pState->uOldPil != UINT32_MAX)
     RT_ASSERT_PREEMPT_CPUID_RESTORE(pState);
 
+    splx(pState->uOldPil);
     kpreempt_enable();
+
+    pState->uOldPil = UINT32_MAX;
 }
 
 
 RTDECL(bool) RTThreadIsInInterrupt(RTTHREAD hThread)
 {
+    /** @todo it looks like checking for spl > LOCK_LEVEL and interrupts disabled
+     *        is more accurate than this... */
     /* This is the best we currently can do here. :-( */
     return !RTThreadPreemptIsEnabled(hThread)
         && getpil() > 0;

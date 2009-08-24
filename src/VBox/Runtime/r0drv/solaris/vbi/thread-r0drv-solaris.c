@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2009 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -81,11 +81,13 @@ RTDECL(bool) RTThreadYield(void)
 RTDECL(bool) RTThreadPreemptIsEnabled(RTTHREAD hThread)
 {
     Assert(hThread == NIL_RTTHREAD);
-    if (    vbi_is_preempt_enabled()
-        &&  ASMIntAreEnabled()
-        &&  getpil() < DISP_LEVEL)
-        return true;
-    return false;
+    if (!vbi_is_preempt_enabled())
+        return false;
+    if (!ASMIntAreEnabled())
+        return false;
+    if (getpil() >= DISP_LEVEL)
+        return false;
+    return true;
 }
 
 
@@ -113,9 +115,21 @@ RTDECL(bool) RTThreadPreemptIsPossible(void)
 RTDECL(void) RTThreadPreemptDisable(PRTTHREADPREEMPTSTATE pState)
 {
     AssertPtr(pState);
-    Assert(pState->u32Reserved == 0);
-    pState->u32Reserved = 42;
+    Assert(pState->uOldPil == UINT32_MAX);
+
     vbi_preempt_disable();
+/// @todo check out splr and splx on S10!
+//    if (ASMIntAreEnabled())
+        pState->uOldPil = splr(ipltospl(DISP_LEVEL));
+//    else
+//    {
+//        /* splr doesn't restore the interrupt flag on S10. */
+//        pState->uOldPil = getpil();
+//        if (pState->uOldPil < DISP_LEVEL)
+//            pState->uOldPil = splx(DISP_LEVEL);
+//    }
+
+    Assert(pState->uOldPil != UINT32_MAX)
     RT_ASSERT_PREEMPT_CPUID_DISABLE(pState);
 }
 
@@ -123,10 +137,13 @@ RTDECL(void) RTThreadPreemptDisable(PRTTHREADPREEMPTSTATE pState)
 RTDECL(void) RTThreadPreemptRestore(PRTTHREADPREEMPTSTATE pState)
 {
     AssertPtr(pState);
-    Assert(pState->u32Reserved == 42);
-    pState->u32Reserved = 0;
+    Assert(pState->uOldPil != UINT32_MAX)
     RT_ASSERT_PREEMPT_CPUID_RESTORE(pState);
+
+    splx(pState->uOldPil);
     vbi_preempt_enable();
+
+    pState->uOldPil = UINT32_MAX;
 }
 
 
