@@ -40,7 +40,7 @@
 #include <iprt/assert.h>
 #include <iprt/err.h>
 #include <iprt/mp.h>
-
+#include <sys/spl.h>
 
 
 RTDECL(RTNATIVETHREAD) RTThreadNativeSelf(void)
