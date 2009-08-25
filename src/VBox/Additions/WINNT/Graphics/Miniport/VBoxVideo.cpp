@@ -1205,29 +1205,60 @@ VP_STATUS VBoxVideoFindAdapter(IN PVOID HwDeviceExtension,
          L"HardwareInformation.BiosString",
          VBoxBiosString,
          sizeof(VBoxBiosString));
-#if defined(VBOX_WITH_HGSMI) && defined(VBOX_WITH_VIDEOHWACCEL)
-      VIDEO_ACCESS_RANGE tmpRanges[1];
-      ULONG slot;
+#ifdef VBOX_WITH_HGSMI
+      if (VBoxHGSMIIsSupported ((PDEVICE_EXTENSION)HwDeviceExtension))
+      {
+          dprintf(("VBoxVideo::VBoxVideoFindAdapter: calling VideoPortGetAccessRanges\n"));
 
-      /* need to call VideoPortGetAccessRanges to ensure interrupt info in ConfigInfo gets set up */
-      VP_STATUS status = VideoPortGetAccessRanges(HwDeviceExtension,
-                                        0,
-                                        NULL,
-                                        1,
-                                        tmpRanges,
-                                        NULL,
-                                        NULL,
-                                        (PULONG) &slot);
-      Assert(status == NO_ERROR );
-//      Assert(AccessRanges[0].RangeStart.QuadPart == tmpRanges[0].RangeStart.QuadPart);
-//      Assert(AccessRanges[0].RangeLength == tmpRanges[0].RangeLength);
-//      Assert(AccessRanges[0].RangeInIoSpace == tmpRanges[0].RangeInIoSpace);
-//      Assert(AccessRanges[0].RangeVisible == tmpRanges[0].RangeVisible);
-//      Assert(AccessRanges[0].RangeShareable == tmpRanges[0].RangeShareable);
-//      Assert(AccessRanges[0].RangePassive == tmpRanges[0].RangePassive);
+          /* Ports not yet found. */
+          ((PDEVICE_EXTENSION)HwDeviceExtension)->u.primary.IOPortHost = 0;
+          ((PDEVICE_EXTENSION)HwDeviceExtension)->u.primary.IOPortGuest = 0;
 
-      /* no matter what we get with VideoPortGetAccessRanges, we assert the default ranges */
-#endif
+          VIDEO_ACCESS_RANGE tmpRanges[2];
+          ULONG slot;
+
+          /* need to call VideoPortGetAccessRanges to ensure interrupt info in ConfigInfo gets set up */
+          VP_STATUS status = VideoPortGetAccessRanges(HwDeviceExtension,
+                                            0,
+                                            NULL,
+                                            sizeof (tmpRanges)/sizeof (tmpRanges[0]),
+                                            tmpRanges,
+                                            NULL,
+                                            NULL,
+                                            (PULONG) &slot);
+          if (status == NO_ERROR)
+          {
+              ULONG iRange = 0;
+              for (; iRange < sizeof (tmpRanges)/sizeof (tmpRanges[0]); iRange++)
+              {
+                  dprintf(("VBoxVideo::VBoxVideoFindAdapter: range[%i]:\n"
+                           "    RangeStart = 0x%llx\n"
+                           "    RangeLength = %d\n"
+                           "    RangeInIoSpace = %d\n"
+                           "    RangeVisible = %d\n"
+                           "    RangeShareable = %d\n"
+                           "    RangePassive = %d\n",
+                           iRange,
+                           tmpRanges[iRange].RangeStart.QuadPart,
+                           tmpRanges[iRange].RangeLength,
+                           tmpRanges[iRange].RangeInIoSpace,
+                           tmpRanges[iRange].RangeVisible,
+                           tmpRanges[iRange].RangeShareable,
+                           tmpRanges[iRange].RangePassive));
+                   if (tmpRanges[iRange].RangeInIoSpace)
+                   {
+                       PVOID ioBase = VideoPortGetDeviceBase(HwDeviceExtension, tmpRanges[iRange].RangeStart, 8, VIDEO_MEMORY_SPACE_IO);
+                       dprintf (("ioBase %p\n", ioBase));
+
+                       ((PDEVICE_EXTENSION)HwDeviceExtension)->u.primary.IOPortHost = (RTIOPORT)ioBase + VGA_PORT_OFF_HGSMI_HOST;
+                       ((PDEVICE_EXTENSION)HwDeviceExtension)->u.primary.IOPortGuest = (RTIOPORT)ioBase + VGA_PORT_OFF_HGSMI_GUEST;
+                   }
+              }
+          }
+
+          /* no matter what we get with VideoPortGetAccessRanges, we assert the default ranges */
+      }
+#endif /* VBOX_WITH_HGSMI */
       rc = VideoPortVerifyAccessRanges(HwDeviceExtension, 1, AccessRanges);
       dprintf(("VBoxVideo::VBoxVideoFindAdapter: VideoPortVerifyAccessRanges returned 0x%x\n", rc));
       // @todo for some reason, I get an ERROR_INVALID_PARAMETER from NT4 SP0
@@ -1776,7 +1807,7 @@ BOOLEAN VBoxVideoStartIO(PVOID HwDeviceExtension,
                 VideoPortWritePortUshort((PUSHORT)VBE_DISPI_IOPORT_INDEX, VBE_DISPI_INDEX_VBOX_VIDEO);
                 VideoPortWritePortUlong((PULONG)VBE_DISPI_IOPORT_DATA, VBOX_VIDEO_INTERPRET_DISPLAY_MEMORY_BASE + pDevExt->iDevice);
 #else
-                VBoxVideoHostWriteUlong(((PDEVICE_EXTENSION)HwDeviceExtension)->pPrimary, VBE_DISPI_INDEX_VBOX_VIDEO, VBOX_VIDEO_INTERPRET_DISPLAY_MEMORY_BASE + pDevExt->iDevice);
+                VBoxVideoVBEWriteUlong(((PDEVICE_EXTENSION)HwDeviceExtension)->pPrimary, VBE_DISPI_INDEX_VBOX_VIDEO, VBOX_VIDEO_INTERPRET_DISPLAY_MEMORY_BASE + pDevExt->iDevice);
 #endif
             }
             else
@@ -2043,7 +2074,7 @@ BOOLEAN VBoxVideoResetHW(PVOID HwDeviceExtension, ULONG Columns, ULONG Rows)
     VideoPortWritePortUshort((PUSHORT)VBE_DISPI_IOPORT_INDEX, VBE_DISPI_INDEX_ENABLE);
     VideoPortWritePortUshort((PUSHORT)VBE_DISPI_IOPORT_DATA, VBE_DISPI_DISABLED);
 #else
-    VBoxVideoHostWriteUshort(((PDEVICE_EXTENSION)HwDeviceExtension)->pPrimary, VBE_DISPI_INDEX_ENABLE, VBE_DISPI_DISABLED);
+    VBoxVideoVBEWriteUshort(((PDEVICE_EXTENSION)HwDeviceExtension)->pPrimary, VBE_DISPI_INDEX_ENABLE, VBE_DISPI_DISABLED);
 #endif
 
     if (pDevExt->u.primary.pvReqFlush != NULL)
@@ -2158,10 +2189,10 @@ BOOLEAN FASTCALL VBoxVideoSetCurrentMode(PDEVICE_EXTENSION DeviceExtension,
     VideoPortWritePortUshort((PUSHORT)VBE_DISPI_IOPORT_DATA, VBE_DISPI_ENABLED | VBE_DISPI_LFB_ENABLED);
     /** @todo read from the port to see if the mode switch was successful */
 #else
-    VBoxVideoHostWriteUshort(DeviceExtension->pPrimary, VBE_DISPI_INDEX_XRES, (USHORT)ModeInfo->VisScreenWidth);
-    VBoxVideoHostWriteUshort(DeviceExtension->pPrimary, VBE_DISPI_INDEX_YRES, (USHORT)ModeInfo->VisScreenHeight);
-    VBoxVideoHostWriteUshort(DeviceExtension->pPrimary, VBE_DISPI_INDEX_BPP, (USHORT)ModeInfo->BitsPerPlane);
-    VBoxVideoHostWriteUshort(DeviceExtension->pPrimary, VBE_DISPI_INDEX_ENABLE, VBE_DISPI_ENABLED | VBE_DISPI_LFB_ENABLED);
+    VBoxVideoVBEWriteUshort(DeviceExtension->pPrimary, VBE_DISPI_INDEX_XRES, (USHORT)ModeInfo->VisScreenWidth);
+    VBoxVideoVBEWriteUshort(DeviceExtension->pPrimary, VBE_DISPI_INDEX_YRES, (USHORT)ModeInfo->VisScreenHeight);
+    VBoxVideoVBEWriteUshort(DeviceExtension->pPrimary, VBE_DISPI_INDEX_BPP, (USHORT)ModeInfo->BitsPerPlane);
+    VBoxVideoVBEWriteUshort(DeviceExtension->pPrimary, VBE_DISPI_INDEX_ENABLE, VBE_DISPI_ENABLED | VBE_DISPI_LFB_ENABLED);
 #endif
 
     /* Tell the host that we now support graphics in the additions.
