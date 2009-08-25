@@ -113,6 +113,9 @@ typedef struct VMMDevState
     /** Video acceleration status set by guest. */
     uint32_t u32VideoAccelEnabled;
 
+    /** true if the guest responded to VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST at least once */
+    bool fGuestSentChangeEventAck;
+
     /** resolution change request */
     struct
     {

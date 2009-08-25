@@ -886,14 +886,27 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
 
                 if (displayChangeRequest->eventAck == VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST)
                 {
-                    /* Remember which resolution the client has queried, subsequent reads will return the same values. */
+                    /* Remember which resolution the client has queried, subsequent reads
+                     * will return the same values. */
                     pThis->lastReadDisplayChangeRequest = pThis->displayChangeRequest;
+                    pThis->fGuestSentChangeEventAck = true;
                 }
 
-                /* just pass on the information */
-                displayChangeRequest->xres = pThis->lastReadDisplayChangeRequest.xres;
-                displayChangeRequest->yres = pThis->lastReadDisplayChangeRequest.yres;
-                displayChangeRequest->bpp  = pThis->lastReadDisplayChangeRequest.bpp;
+                if (pThis->fGuestSentChangeEventAck)
+                {
+                    displayChangeRequest->xres = pThis->lastReadDisplayChangeRequest.xres;
+                    displayChangeRequest->yres = pThis->lastReadDisplayChangeRequest.yres;
+                    displayChangeRequest->bpp  = pThis->lastReadDisplayChangeRequest.bpp;
+                }
+                else
+                {
+                    /* This is not a response to a VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST, just
+                     * read the last valid video mode hint. This happens when the guest X server
+                     * determines the initial mode. */
+                    displayChangeRequest->xres = pThis->displayChangeRequest.xres;
+                    displayChangeRequest->yres = pThis->displayChangeRequest.yres;
+                    displayChangeRequest->bpp = pThis->displayChangeRequest.bpp;
+                }
                 Log(("VMMDev: returning display change request xres = %d, yres = %d, bpp = %d\n",
                      displayChangeRequest->xres, displayChangeRequest->yres, displayChangeRequest->bpp));
 
@@ -914,15 +927,29 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
 
                 if (displayChangeRequest->eventAck == VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST)
                 {
-                    /* Remember which resolution the client has queried, subsequent reads will return the same values. */
+                    /* Remember which resolution the client has queried, subsequent reads
+                     * will return the same values. */
                     pThis->lastReadDisplayChangeRequest = pThis->displayChangeRequest;
+                    pThis->fGuestSentChangeEventAck = true;
                 }
 
-                /* just pass on the information */
-                displayChangeRequest->xres    = pThis->lastReadDisplayChangeRequest.xres;
-                displayChangeRequest->yres    = pThis->lastReadDisplayChangeRequest.yres;
-                displayChangeRequest->bpp     = pThis->lastReadDisplayChangeRequest.bpp;
-                displayChangeRequest->display = pThis->lastReadDisplayChangeRequest.display;
+                if (pThis->fGuestSentChangeEventAck)
+                {
+                    displayChangeRequest->xres    = pThis->lastReadDisplayChangeRequest.xres;
+                    displayChangeRequest->yres    = pThis->lastReadDisplayChangeRequest.yres;
+                    displayChangeRequest->bpp     = pThis->lastReadDisplayChangeRequest.bpp;
+                    displayChangeRequest->display = pThis->lastReadDisplayChangeRequest.display;
+                }
+                else
+                {
+                    /* This is not a response to a VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST, just
+                     * read the last valid video mode hint. This happens when the guest X server
+                     * determines the initial video mode. */
+                    displayChangeRequest->xres    = pThis->displayChangeRequest.xres;
+                    displayChangeRequest->yres    = pThis->displayChangeRequest.yres;
+                    displayChangeRequest->bpp     = pThis->displayChangeRequest.bpp;
+                    displayChangeRequest->display = pThis->displayChangeRequest.display;
+                }
                 Log(("VMMDev: returning display change request xres = %d, yres = %d, bpp = %d at %d\n",
                      displayChangeRequest->xres, displayChangeRequest->yres, displayChangeRequest->bpp, displayChangeRequest->display));
 
@@ -2085,7 +2112,7 @@ static DECLCALLBACK(void) vmmdevVBVAChange(PPDMIVMMDEVPORT pInterface, bool fEna
 
 
 
-#define VMMDEV_SSM_VERSION  10
+#define VMMDEV_SSM_VERSION  11
 
 /**
  * Saves a state of the VMM device.
@@ -2113,6 +2140,7 @@ static DECLCALLBACK(int) vmmdevSaveState(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHand
     SSMR3PutMem(pSSMHandle, &pThis->guestInfo, sizeof (pThis->guestInfo));
     SSMR3PutU32(pSSMHandle, pThis->fu32AdditionsOk);
     SSMR3PutU32(pSSMHandle, pThis->u32VideoAccelEnabled);
+    SSMR3PutBool(pSSMHandle, pThis->fGuestSentChangeEventAck);
 
     SSMR3PutU32(pSSMHandle, pThis->guestCaps);
 
@@ -2157,6 +2185,8 @@ static DECLCALLBACK(int) vmmdevLoadState(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHand
     SSMR3GetMem(pSSMHandle, &pThis->guestInfo, sizeof (pThis->guestInfo));
     SSMR3GetU32(pSSMHandle, &pThis->fu32AdditionsOk);
     SSMR3GetU32(pSSMHandle, &pThis->u32VideoAccelEnabled);
+    if (u32Version > 10)
+        SSMR3GetBool(pSSMHandle, &pThis->fGuestSentChangeEventAck);
 
     SSMR3GetU32(pSSMHandle, &pThis->guestCaps);
 
@@ -2522,6 +2552,7 @@ static DECLCALLBACK(void) vmmdevReset(PPDMDEVINS pDevIns)
 
     /* clear pending display change request. */
     memset (&pThis->lastReadDisplayChangeRequest, 0, sizeof (pThis->lastReadDisplayChangeRequest));
+    pThis->fGuestSentChangeEventAck = false;
 
     /* disable seamless mode */
     pThis->fLastSeamlessEnabled = false;
