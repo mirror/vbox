@@ -43,9 +43,14 @@
 /*******************************************************************************
 *   Global Variables                                                           *
 *******************************************************************************/
+/** CPU watch callback handle. */
 static vbi_cpu_watch_t *g_hVbiCpuWatch = NULL;
-
+/** Set of online cpus that is maintained by the MP callback.
+ * This avoids locking issues quering the set from the kernel as well as
+ * eliminating any uncertainty regarding the online status during the
+ * callback. */
 RTCPUSET g_rtMpSolarisCpuSet;
+
 
 static void rtMpNotificationSolarisCallback(void *pvUser, int iCpu, int online)
 {
@@ -73,22 +78,11 @@ int rtR0MpNotificationNativeInit(void)
         return VERR_WRONG_ORDER;
 
     /*
-     * Cache the list of online CPUs.
+     * Register the callback building the online cpu set as we
+     * do so (current_too = 1).
      */
     RTCpuSetEmpty(&g_rtMpSolarisCpuSet);
-
-    g_hVbiCpuWatch = vbi_watch_cpus(rtMpNotificationSolarisCallback, NULL, 1 /* watch current CPU too */);
-
-    RTCPUID idCpu = RTMpGetMaxCpuId();
-    do
-    {
-        /** @todo vbi_cpu_online() should boundary check "idCpu" rather than hang the system. */
-        if (   RTMpIsCpuPossible(idCpu)
-            && vbi_cpu_online(idCpu))
-        {
-            RTCpuSetAdd(&g_rtMpSolarisCpuSet, idCpu);
-        }
-    } while (idCpu-- > 0);
+    g_hVbiCpuWatch = vbi_watch_cpus(rtMpNotificationSolarisCallback, NULL, 1 /*current_too*/);
 
     return VINF_SUCCESS;
 }
