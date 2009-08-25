@@ -4602,7 +4602,7 @@ HRESULT Console::consoleInitReleaseLog (const ComPtr<IMachine> aMachine)
         RTLogRelLogger(loggerRelease, 0, ~0U,
                        "VirtualBox %s r%d %s (%s %s) release log\n"
 #ifdef VBOX_BLEEDING_EDGE
-                       "EXPERIMENTAL build" VBOX_BLEEDING_EDGE "\n"
+                       "EXPERIMENTAL build " VBOX_BLEEDING_EDGE "\n"
 #endif
                        "Log opened %s\n",
                        VBOX_VERSION_STRING, VBoxSVNRev (), VBOX_BUILD_TARGET,
