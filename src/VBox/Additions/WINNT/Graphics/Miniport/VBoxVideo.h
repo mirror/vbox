@@ -126,6 +126,8 @@ typedef struct _DEVICE_EXTENSION
 
            ULONG ulMaxFrameBufferSize;         /* The size of the VRAM allocated for the a single framebuffer. */
 
+           BOOLEAN fMouseHidden;               /* Has the mouse cursor been hidden by the guest? */
+
 #ifndef VBOX_WITH_HGSMI
            ULONG ulDisplayInformationSize;     /* The size of the Display information, which is at offset:
                                                 * ulFrameBufferOffset + ulMaxFrameBufferSize.
@@ -161,6 +163,16 @@ typedef struct _DEVICE_EXTENSION
    HGSMIAREA areaDisplay;                      /* Entire VRAM chunk for this display device. */
 #endif /* VBOX_WITH_HGSMI */
 } DEVICE_EXTENSION, *PDEVICE_EXTENSION;
+
+#define DEV_MOUSE_HIDDEN(dev) ((dev)->pPrimary->u.primary.fMouseHidden)
+#define DEV_SET_MOUSE_HIDDEN(dev)   \
+do { \
+    (dev)->pPrimary->u.primary.fMouseHidden = TRUE; \
+} while (0)
+#define DEV_SET_MOUSE_SHOWN(dev)   \
+do { \
+    (dev)->pPrimary->u.primary.fMouseHidden = FALSE; \
+} while (0)
 
 extern "C"
 {

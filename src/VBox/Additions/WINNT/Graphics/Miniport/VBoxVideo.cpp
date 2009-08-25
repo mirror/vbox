@@ -1582,7 +1582,8 @@ BOOLEAN VBoxVideoStartIO(PVOID HwDeviceExtension,
         {
             dprintf(("VBoxVideo::VBoxVideoStartIO: IOCTL_VIDEO_ENABLE_POINTER\n"));
             // find out whether the host wants absolute positioning
-            if (vboxQueryHostWantsAbsolute())
+            if (   DEV_MOUSE_HIDDEN((PDEVICE_EXTENSION)HwDeviceExtension)
+                && vboxQueryHostWantsAbsolute())
             {
                 // tell the host to use the guest's pointer
                 VIDEO_POINTER_ATTRIBUTES PointerAttributes;
@@ -1598,8 +1599,11 @@ BOOLEAN VBoxVideoStartIO(PVOID HwDeviceExtension,
                 Result = vboxUpdatePointerShape(((PDEVICE_EXTENSION)HwDeviceExtension)->pPrimary, &PointerAttributes, sizeof (PointerAttributes));
 #endif /* VBOX_WITH_HGSMI */
 
-                if (!Result)
+            if (Result)
+                    DEV_SET_MOUSE_SHOWN((PDEVICE_EXTENSION)HwDeviceExtension);
+                else
                     dprintf(("VBoxVideo::VBoxVideoStartIO: Could not hide hardware pointer -> fallback\n"));
+
             } else
             {
                 // fallback to software pointer
@@ -1630,7 +1634,9 @@ BOOLEAN VBoxVideoStartIO(PVOID HwDeviceExtension,
                 Result = vboxUpdatePointerShape(((PDEVICE_EXTENSION)HwDeviceExtension)->pPrimary, &PointerAttributes, sizeof (PointerAttributes));
 #endif /* VBOX_WITH_HGSMI */
 
-                if (!Result)
+                if (Result)
+                    DEV_SET_MOUSE_HIDDEN((PDEVICE_EXTENSION)HwDeviceExtension);
+                else
                     dprintf(("VBoxVideo::VBoxVideoStartIO: Could not hide hardware pointer -> fallback\n"));
             } else
             {
