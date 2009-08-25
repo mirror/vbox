@@ -256,36 +256,6 @@ static void vboxInitVBoxVideo (PPDEV ppdev, const VIDEO_MEMORY_INFORMATION *pMem
 
             ppdev->bHGSMISupported = FALSE;
         }
-        else
-        {
-#if 0
-            /* Inform the host about the HGSMIHOSTEVENTS location. */
-            void *p = HGSMIHeapAlloc (&ppdev->hgsmiDisplayHeap,
-                                      sizeof (HGSMI_BUFFER_LOCATION),
-                                      HGSMI_CH_HGSMI,
-                                      HGSMI_CC_HOST_FLAGS_LOCATION);
-
-            if (!p)
-            {
-                DISPDBG((0, "VBoxDISP::vboxInitVBoxVideo: HGSMIHeapAlloc failed\n"));
-                rc = VERR_NO_MEMORY;
-            }
-            else
-            {
-                HGSMIOFFSET offBuffer = HGSMIHeapBufferOffset (&ppdev->hgsmiDisplayHeap,
-                                                               p);
-
-                ((HGSMI_BUFFER_LOCATION *)p)->offLocation = ppdev->layout.offDisplayInformation;
-                ((HGSMI_BUFFER_LOCATION *)p)->cbLocation = sizeof (HGSMIHOSTFLAGS);
-
-                /* Submit the buffer to the host. */
-                ASMOutU16 (VBE_DISPI_IOPORT_INDEX, VBE_DISPI_INDEX_VBVA_GUEST);
-                ASMOutU32 (VBE_DISPI_IOPORT_DATA, offBuffer);
-
-                HGSMIHeapFree (&ppdev->hgsmiDisplayHeap, p);
-            }
-#endif
-        }
     }
 #endif /* VBOX_WITH_HGSMI */
 
