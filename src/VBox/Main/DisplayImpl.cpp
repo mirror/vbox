@@ -590,7 +590,6 @@ void Display::handleDisplayUpdate (int x, int y, int w, int h)
 #else
     if (!mfVideoAccelEnabled && !maFramebuffers[uScreenId].fVBVAEnabled)
     {
-        LogFlowFunc(("HGSMI: VRDP update without VBVA.\n"));
 #endif /* VBOX_WITH_HGSMI */
         /* When VBVA is enabled, the VRDP server is informed in the VideoAccelFlush.
          * Inform the server here only if VBVA is disabled.
