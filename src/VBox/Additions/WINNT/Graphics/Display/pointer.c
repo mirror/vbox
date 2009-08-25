@@ -115,17 +115,10 @@ VOID DrvMovePointer
     }
     else
     {
-        NewPointerPosition.Column = (SHORT) x - (SHORT) (ppdev->ptlHotSpot.x);
-        NewPointerPosition.Row    = (SHORT) y - (SHORT) (ppdev->ptlHotSpot.y);
-
-        //
-        // Call miniport driver to move Pointer.
-        //
-
         if (EngDeviceIoControl(ppdev->hDriver,
-                               IOCTL_VIDEO_SET_POINTER_POSITION,
-                               &NewPointerPosition,
-                               sizeof(VIDEO_POINTER_POSITION),
+                               IOCTL_VIDEO_ENABLE_POINTER,
+                               NULL,
+                               0,
                                NULL,
                                0,
                                &returnedDataLength))
@@ -134,7 +127,7 @@ VOID DrvMovePointer
             // Not the end of the world, print warning in checked build.
             //
 
-            DISPDBG((1, "DISP vMoveHardwarePointer failed IOCTL_VIDEO_SET_POINTER_POSITION\n"));
+            DISPDBG((1, "DISP vMoveHardwarePointer failed IOCTL_VIDEO_ENABLE_POINTER\n"));
         }
     }
 }
