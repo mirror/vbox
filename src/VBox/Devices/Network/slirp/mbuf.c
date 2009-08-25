@@ -82,6 +82,7 @@ m_get(PNATState pData)
     m->m_nextpkt = 0;
     m->m_prevpkt = 0;
     m->m_la = NULL;
+    memset(m->m_data, 0, if_maxlinkhdr); /*initialization of ether area */
 
 end_error:
     DEBUG_ARG("m = %lx", (long )m);
