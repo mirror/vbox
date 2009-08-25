@@ -343,6 +343,7 @@ private:
     QRect mLastSizeHint;
     bool mPassCAD;
     bool mHideHostPointer;
+    QCursor mLastCursor;
 };
 
 #endif // !___VBoxConsoleView_h___
