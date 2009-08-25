@@ -39,7 +39,6 @@ RT_C_DECLS_BEGIN
 #include "video.h"
 RT_C_DECLS_END
 
-
 #define VBE_DISPI_IOPORT_INDEX          0x01CE
 #define VBE_DISPI_IOPORT_DATA           0x01CF
 #define VBE_DISPI_INDEX_ID              0x0
@@ -150,6 +149,9 @@ typedef struct _DEVICE_EXTENSION
 
            /* The IO Port Number for guest commands. */
            RTIOPORT IOPortGuest;
+
+           /* Video Port API dynamically picked up at runtime for binary backwards compatibility with older NT versions */
+           VBOXVIDEOPORTPROCS VideoPortProcs;
 #endif /* VBOX_WITH_HGSMI */
        } primary;
 
@@ -295,11 +297,11 @@ DECLINLINE(ULONG) VBoxVideoVBEReadUlongLocked (USHORT dataType)
 DECLINLINE(void) VBoxVideoVBEWriteUlong(PDEVICE_EXTENSION PrimaryExtension, USHORT dataType, ULONG data)
 {
     UCHAR oldIrql;
-    VideoPortAcquireSpinLock(PrimaryExtension,
+    PrimaryExtension->u.primary.VideoPortProcs.pfnAcquireSpinLock(PrimaryExtension,
     		PrimaryExtension->u.primary.pGHRWLock,
             &oldIrql);
     VBoxVideoVBEWriteUlongLocked(dataType, data);
-    VideoPortReleaseSpinLock(PrimaryExtension,
+    PrimaryExtension->u.primary.VideoPortProcs.pfnReleaseSpinLock(PrimaryExtension,
     		PrimaryExtension->u.primary.pGHRWLock,
             oldIrql);
 }
@@ -307,11 +309,11 @@ DECLINLINE(void) VBoxVideoVBEWriteUlong(PDEVICE_EXTENSION PrimaryExtension, USHO
 DECLINLINE(void) VBoxVideoVBEWriteUshort(PDEVICE_EXTENSION PrimaryExtension, USHORT dataType, USHORT data)
 {
     UCHAR oldIrql;
-    VideoPortAcquireSpinLock(PrimaryExtension,
+    PrimaryExtension->u.primary.VideoPortProcs.pfnAcquireSpinLock(PrimaryExtension,
     		PrimaryExtension->u.primary.pGHRWLock,
             &oldIrql);
     VBoxVideoVBEWriteUshortLocked(dataType, data);
-    VideoPortReleaseSpinLock(PrimaryExtension,
+    PrimaryExtension->u.primary.VideoPortProcs.pfnReleaseSpinLock(PrimaryExtension,
     		PrimaryExtension->u.primary.pGHRWLock,
             oldIrql);
 }
@@ -320,11 +322,11 @@ DECLINLINE(ULONG) VBoxVideoVBEReadUlong(PDEVICE_EXTENSION PrimaryExtension, USHO
 {
     ULONG data;
     UCHAR oldIrql;
-    VideoPortAcquireSpinLock(PrimaryExtension,
+    PrimaryExtension->u.primary.VideoPortProcs.pfnAcquireSpinLock(PrimaryExtension,
     		PrimaryExtension->u.primary.pGHRWLock,
             &oldIrql);
     data = VBoxVideoVBEReadUlongLocked(dataType);
-    VideoPortReleaseSpinLock(PrimaryExtension,
+    PrimaryExtension->u.primary.VideoPortProcs.pfnReleaseSpinLock(PrimaryExtension,
     		PrimaryExtension->u.primary.pGHRWLock,
             oldIrql);
     return data;
@@ -354,6 +356,10 @@ DECLINLINE(ULONG) VBoxHGSMIGuestRead(PDEVICE_EXTENSION PrimaryExtension)
 }
 
 BOOLEAN VBoxHGSMIIsSupported (PDEVICE_EXTENSION PrimaryExtension);
+
+void VBoxSetupVideoPortFunctions(PDEVICE_EXTENSION PrimaryExtension,
+                                VBOXVIDEOPORTPROCS *pCallbacks,
+                                PVIDEO_PORT_CONFIG_INFO pConfigInfo);
 
 VOID VBoxSetupDisplaysHGSMI (PDEVICE_EXTENSION PrimaryExtension,
                              PVIDEO_PORT_CONFIG_INFO pConfigInfo,

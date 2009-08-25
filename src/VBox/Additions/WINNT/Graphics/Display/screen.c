@@ -118,30 +118,46 @@ static void vboxInitVBoxVideo (PPDEV ppdev, const VIDEO_MEMORY_INFORMATION *pMem
         Assert(!err);
         if(!err)
         {
-            HGSMIHANDLERENABLE HandlerReg;
-            RtlZeroMemory(&HandlerReg, sizeof(HandlerReg));
+            HGSMIQUERYCPORTPROCS PortProcs;
+            RtlZeroMemory(&PortProcs, sizeof(PortProcs));
 
             ppdev->hMpHGSMI = Callbacks.hContext;
             ppdev->pfnHGSMIGHCommandPost = Callbacks.pfnHGSMIGHCommandPost;
             ppdev->pfnHGSMICommandComplete = Callbacks.pfnCompletionHandler;
             ppdev->pfnHGSMIRequestCommands = Callbacks.pfnRequestCommandsHandler;
 
-            HandlerReg.u8Channel = HGSMI_CH_VBVA;
             err = EngDeviceIoControl(ppdev->hDriver,
-                    IOCTL_VIDEO_HGSMI_HANDLER_ENABLE,
-                    &HandlerReg,
-                    sizeof(HandlerReg),
+                    IOCTL_VIDEO_HGSMI_QUERY_PORTPROCS,
                     NULL,
                     0,
+                    &PortProcs,
+                    sizeof(PortProcs),
                     &returnedDataLength);
             Assert(!err);
+            if(!err)
+            {
+                HGSMIHANDLERENABLE HandlerReg;
+                RtlZeroMemory(&HandlerReg, sizeof(HandlerReg));
+
+                ppdev->pVideoPortContext = PortProcs.pContext;
+                ppdev->VideoPortProcs = PortProcs.VideoPortProcs;
+
+                HandlerReg.u8Channel = HGSMI_CH_VBVA;
+                err = EngDeviceIoControl(ppdev->hDriver,
+                        IOCTL_VIDEO_HGSMI_HANDLER_ENABLE,
+                        &HandlerReg,
+                        sizeof(HandlerReg),
+                        NULL,
+                        0,
+                        &returnedDataLength);
+                Assert(!err);
+            }
         }
 
         if(err)
         {
             ppdev->bHGSMISupported = FALSE;
         }
-
     }
 #endif /* VBOX_WITH_HGSMI */
 
