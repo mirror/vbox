@@ -156,7 +156,7 @@ DECLHIDDEN(void) vboxNetFltWinWaitDereference(PADAPT_DEVICE pState)
         {
             DBGPRINT(("device not idle"));
             Assert(0);
-            break;
+//            break;
         }
 #endif
     }
@@ -3489,20 +3489,35 @@ void vboxNetFltPortOsSetActive(PVBOXNETFLTINS pThis, bool fActive)
     NDIS_STATUS Status;
 #endif
     PADAPT pAdapt = PVBOXNETFLTINS_2_PADAPT(pThis);
-    if(!vboxNetFltWinReferenceAdapt(pAdapt))
-        return;
 
-#ifndef VBOXNETADP
-# ifndef VBOX_NETFLT_ONDEMAND_BIND
-    if(fActive)
+    /* we first wait for all pending ops to complete
+     * this might include all packets queued for processing */
+    for(;;)
     {
-        /*
-         * flush any pass-thru receive-queued packets
-         */
-        vboxNetFltWinPtFlushReceiveQueue(pAdapt, false /*fReturn*/);
+    	if(fActive)
+    	{
+    		if(!pThis->u.s.cModePassThruRefs)
+    		{
+    			break;
+    		}
+    	}
+    	else
+    	{
+    		if(!pThis->u.s.cModeNetFltRefs)
+    		{
+    			break;
+    		}
+    	}
+		vboxNetFltWinSleep(2);
     }
-# endif
 
+    if(!vboxNetFltWinReferenceAdapt(pAdapt))
+    	return;
+#ifndef VBOXNETADP
+
+    /* the packets put to ReceiveQueue Array are currently not holding the references,
+     * simply need to flush them */
+    vboxNetFltWinPtFlushReceiveQueue(pAdapt, false /*fReturn*/);
 
     if(fActive)
     {
@@ -3670,6 +3685,8 @@ int vboxNetFltOsInitInstance(PVBOXNETFLTINS pThis, void *pvContext)
 int vboxNetFltOsPreInitInstance(PVBOXNETFLTINS pThis)
 {
     PADAPT pAdapt = PVBOXNETFLTINS_2_PADAPT(pThis);
+    pThis->u.s.cModeNetFltRefs = 0;
+    pThis->u.s.cModePassThruRefs = 0;
     vboxNetFltWinSetAdaptState(pAdapt, kVBoxAdaptState_Disconnected);
     vboxNetFltWinSetOpState(&pAdapt->MPState, kVBoxNetDevOpState_Deinitialized);
 #ifndef VBOXNETADP

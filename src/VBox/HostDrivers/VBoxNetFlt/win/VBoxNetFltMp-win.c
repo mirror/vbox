@@ -814,14 +814,26 @@ vboxNetFltWinMpSendPackets(
     PADAPT pAdapt = (PADAPT)fMiniportAdapterContext;
     NDIS_STATUS         fStatus;
     UINT                i;
-    PVBOXNETFLTINS pNetFltIf;
+    PVBOXNETFLTINS pNetFlt = PADAPT_2_PVBOXNETFLTINS(pAdapt);
+    bool bNetFltActive;
 
     Assert(cNumberOfPackets);
 
-    if(vboxNetFltWinIncReferenceAdaptNetFltFromAdapt(pAdapt, &pNetFltIf, cNumberOfPackets))
+    if(vboxNetFltWinIncReferenceAdaptNetFlt(pNetFlt, pAdapt, cNumberOfPackets, &bNetFltActive))
     {
         uint32_t cAdaptRefs = cNumberOfPackets;
-        uint32_t cNetFltRefs = pNetFltIf ? cNumberOfPackets : 0;
+        uint32_t cNetFltRefs;
+        uint32_t cPassThruRefs;
+        if(bNetFltActive)
+        {
+        	cNetFltRefs = cNumberOfPackets;
+        	cPassThruRefs = 0;
+        }
+        else
+        {
+        	cPassThruRefs = cNumberOfPackets;
+        	cNetFltRefs = 0;
+        }
 
         for (i = 0; i < cNumberOfPackets; i++)
         {
@@ -852,7 +864,7 @@ vboxNetFltWinMpSendPackets(
             else
             {
                 if(!cNetFltRefs
-                    || (fStatus = vboxNetFltWinQuEnqueuePacket(pNetFltIf, pPacket, PACKET_SRC_HOST)) != NDIS_STATUS_SUCCESS)
+                    || (fStatus = vboxNetFltWinQuEnqueuePacket(pNetFlt, pPacket, PACKET_SRC_HOST)) != NDIS_STATUS_SUCCESS)
                 {
 #ifndef VBOXNETADP
                     fStatus = vboxNetFltWinSendPassThru(pAdapt, pPacket);
@@ -888,9 +900,17 @@ vboxNetFltWinMpSendPackets(
         }
 
         if(cNetFltRefs)
-            vboxNetFltWinDecReferenceNetFlt(pNetFltIf, cNetFltRefs);
+        {
+            vboxNetFltWinDecReferenceNetFlt(pNetFlt, cNetFltRefs);
+        }
+        else if(cPassThruRefs)
+        {
+            vboxNetFltWinDecReferenceModePassThru(pNetFlt, cPassThruRefs);
+        }
         if(cAdaptRefs)
+        {
             vboxNetFltWinDecReferenceAdapt(pAdapt, cAdaptRefs);
+        }
     }
     else
     {
@@ -1050,19 +1070,19 @@ vboxNetFltWinMpQueryInformation(
         RTSpinlockRelease(pNetFlt->hSpinlock, &Tmp);
         if(Oid == OID_GEN_CURRENT_PACKET_FILTER && VBOXNETFLT_PROMISCUOUS_SUPPORTED(pAdapt))
         {
-            PVBOXNETFLTINS pNetFltIf;
-            const bool fAdaptActive = vboxNetFltWinReferenceAdaptNetFltFromAdapt(pAdapt, &pNetFltIf);
+            bool fNetFltActive;
+            const bool fAdaptActive = vboxNetFltWinReferenceAdaptNetFlt(pNetFlt, pAdapt, &fNetFltActive);
 
             Assert(InformationBuffer);
-            Assert(!pAdapt->bProcessingPacketFilter);
+            Assert(!pAdapt->fProcessingPacketFilter);
 
-            if(pNetFltIf)
+            if(fNetFltActive)
             {
                 /* netflt is active, simply return the cached value */
                 *((PULONG)InformationBuffer) = pAdapt->fUpperProtocolSetFilter;
 
                 Status = NDIS_STATUS_SUCCESS;
-                vboxNetFltWinDereferenceNetFlt(pNetFltIf);
+                vboxNetFltWinDereferenceNetFlt(pNetFlt);
                 vboxNetFltWinDereferenceAdapt(pAdapt);
 
                 RTSpinlockAcquire(pNetFlt->hSpinlock, &Tmp);
@@ -1072,7 +1092,8 @@ vboxNetFltWinMpQueryInformation(
             }
             else if(fAdaptActive)
             {
-                vboxNetFltWinDereferenceAdapt(pAdapt);
+            	pAdapt->fProcessingPacketFilter = VBOXNETFLT_PFP_PASSTHRU;
+                /* we're cleaning it in RequestComplete */
             }
         }
 
@@ -1396,13 +1417,13 @@ vboxNetFltWinMpSetInformation(
         if(Oid == OID_GEN_CURRENT_PACKET_FILTER && VBOXNETFLT_PROMISCUOUS_SUPPORTED(pAdapt))
         {
             /* need to disable cleaning promiscuous here ?? */
-            PVBOXNETFLTINS pNetFltIf;
-            const bool fAdaptActive = vboxNetFltWinReferenceAdaptNetFltFromAdapt(pAdapt, &pNetFltIf);
+        	bool fNetFltActive;
+            const bool fAdaptActive = vboxNetFltWinReferenceAdaptNetFlt(pNetFlt, pAdapt, &fNetFltActive);
 
             Assert(InformationBuffer);
-            Assert(!pAdapt->bProcessingPacketFilter);
+            Assert(!pAdapt->fProcessingPacketFilter);
 
-            if(pNetFltIf)
+            if(fNetFltActive)
             {
                 Assert(fAdaptActive);
 
@@ -1418,13 +1439,13 @@ vboxNetFltWinMpSetInformation(
                     pAdapt->fSetFilterBuffer = NDIS_PACKET_TYPE_PROMISCUOUS;
                     pAdapt->Request.DATA.SET_INFORMATION.InformationBuffer = &pAdapt->fSetFilterBuffer;
                     pAdapt->Request.DATA.SET_INFORMATION.InformationBufferLength = sizeof(pAdapt->fSetFilterBuffer);
-                    pAdapt->bProcessingPacketFilter = true;
+                    pAdapt->fProcessingPacketFilter = VBOXNETFLT_PFP_NETFLT;
                     /* we'll do dereferencing in request complete */
                 }
                 else
                 {
                     Status = NDIS_STATUS_SUCCESS;
-                    vboxNetFltWinDereferenceNetFlt(pNetFltIf);
+                    vboxNetFltWinDereferenceNetFlt(pNetFlt);
                     vboxNetFltWinDereferenceAdapt(pAdapt);
 
                     RTSpinlockAcquire(pNetFlt->hSpinlock, &Tmp);
@@ -1435,7 +1456,8 @@ vboxNetFltWinMpSetInformation(
             }
             else if(fAdaptActive)
             {
-                vboxNetFltWinDereferenceAdapt(pAdapt);
+                pAdapt->fProcessingPacketFilter = VBOXNETFLT_PFP_PASSTHRU;
+                /* dereference on completion */
             }
         }
 
@@ -1791,9 +1813,10 @@ Notes: Read "Minimizing Miniport Driver Initialization Time" in the DDK
             //
 #ifdef VBOXNETADP_REPORT_DISCONNECTED
             {
-                PVBOXNETFLTINS pNetFltIf = NULL;
-                bool bActive = vboxNetFltWinReferenceAdaptNetFltFromAdapt(pAdapt, &pNetFltIf);
-                if(bActive && pNetFltIf)
+                PVBOXNETFLTINS pNetFlt = PADAPT_2_PVBOXNETFLTINS(pAdapt);
+                bool bNetFltActive;
+                bool bActive = vboxNetFltWinReferenceAdaptNetFltFromAdapt(pNetFlt, pAdapt, bNetFltActive);
+                if(bActive && bNetFltActive)
                 {
                     ulInfo = NdisMediaStateConnected;
                 }
@@ -1806,9 +1829,13 @@ Notes: Read "Minimizing Miniport Driver Initialization Time" in the DDK
                 {
                     vboxNetFltWinDereferenceAdapt(pAdapt);
                 }
-                if(pNetFltIf)
+                if(bNetFltActive)
                 {
-                    vboxNetFltWinDereferenceNetFlt(pNetFltIf);
+                    vboxNetFltWinDereferenceNetFlt(pNetFlt);
+                }
+                else
+                {
+                    vboxNetFltWinDereferenceModePassThru(pNetFlt);
                 }
             }
 #else

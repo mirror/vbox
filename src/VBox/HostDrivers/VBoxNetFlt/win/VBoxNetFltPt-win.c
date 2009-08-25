@@ -558,6 +558,16 @@ vboxNetFltWinPtRequestComplete(
         }
         if(Oid == OID_GEN_CURRENT_PACKET_FILTER && VBOXNETFLT_PROMISCUOUS_SUPPORTED(pAdapt))
         {
+        	/* we're here _ONLY_ in the passthru mode */
+        	Assert(pAdapt->fProcessingPacketFilter == VBOXNETFLT_PFP_PASSTHRU);
+        	if(pAdapt->fProcessingPacketFilter == VBOXNETFLT_PFP_PASSTHRU)
+        	{
+				PVBOXNETFLTINS pNetFltIf = PADAPT_2_PVBOXNETFLTINS(pAdapt);
+				Assert(!pNetFltIf->fActive);
+				vboxNetFltWinDereferenceModePassThru(pNetFltIf);
+				vboxNetFltWinDereferenceAdapt(pAdapt);
+        	}
+
             if(Status == NDIS_STATUS_SUCCESS)
             {
                 /* the filter request is issued below only in case netflt is not active,
@@ -581,8 +591,9 @@ vboxNetFltWinPtRequestComplete(
           {
               PVBOXNETFLTINS pNetFltIf = PADAPT_2_PVBOXNETFLTINS(pAdapt);
               Assert(Status == NDIS_STATUS_SUCCESS);
-              if(pAdapt->bProcessingPacketFilter)
+              if(pAdapt->fProcessingPacketFilter == VBOXNETFLT_PFP_NETFLT)
               {
+            	  Assert(pNetFltIf->fActive);
                   if(Status == NDIS_STATUS_SUCCESS)
                   {
                       pAdapt->fOurSetFilter = *((PULONG)pAdapt->Request.DATA.SET_INFORMATION.InformationBuffer);
@@ -590,16 +601,21 @@ vboxNetFltWinPtRequestComplete(
                   }
                   vboxNetFltWinDereferenceNetFlt(pNetFltIf);
                   vboxNetFltWinDereferenceAdapt(pAdapt);
-                  pAdapt->bProcessingPacketFilter = false;
+                  pAdapt->fProcessingPacketFilter = 0;
               }
-              else
+              else if(pAdapt->fProcessingPacketFilter == VBOXNETFLT_PFP_PASSTHRU)
               {
+            	  Assert(!pNetFltIf->fActive);
+
                   if(Status == NDIS_STATUS_SUCCESS)
                   {
                       /* the request was issued when the netflt was not active, simply update the cache here */
                       pAdapt->fUpperProtocolSetFilter = *((PULONG)pAdapt->Request.DATA.SET_INFORMATION.InformationBuffer);
                       pAdapt->bUpperProtSetFilterInitialized = true;
                   }
+                  vboxNetFltWinDereferenceModePassThru(pNetFltIf);
+                  vboxNetFltWinDereferenceAdapt(pAdapt);
+                  pAdapt->fProcessingPacketFilter = 0;
               }
           }
 
@@ -1487,7 +1503,7 @@ vboxNetFltWinPtReceive(
 {
     PADAPT            pAdapt = (PADAPT)ProtocolBindingContext;
     NDIS_STATUS       Status = NDIS_STATUS_SUCCESS;
-    PVBOXNETFLTINS pNetFltIf;
+    PVBOXNETFLTINS pNetFlt = PADAPT_2_PVBOXNETFLTINS(pAdapt);
 #ifdef VBOX_NETFLT_ONDEMAND_BIND
 #if 0
     uint32_t fFlags;
@@ -1570,7 +1586,9 @@ vboxNetFltWinPtReceive(
     return NDIS_STATUS_NOT_ACCEPTED;
 #else /* if NOT defined VBOX_NETFLT_ONDEMAND_BIND */
     PNDIS_PACKET      pPacket = NULL;
-    bool fAdaptActive = vboxNetFltWinReferenceAdaptNetFltFromAdapt(pAdapt, &pNetFltIf);
+    bool bNetFltActive;
+    bool fAdaptActive = vboxNetFltWinReferenceAdaptNetFlt(pNetFlt, pAdapt, &bNetFltActive);
+    const bool bPassThruActive = !bNetFltActive;
     if(fAdaptActive)
     {
         do
@@ -1604,14 +1622,14 @@ vboxNetFltWinPtReceive(
                         break;
                     }
 
-                    if(pNetFltIf)
+                    if(bNetFltActive)
                     {
-                        Status = vboxNetFltWinQuEnqueuePacket(pNetFltIf, pPacket, PACKET_COPY);
+                        Status = vboxNetFltWinQuEnqueuePacket(pNetFlt, pPacket, PACKET_COPY);
                         if(Status == NDIS_STATUS_SUCCESS)
                         {
                             //NdisReturnPackets(&pPacket, 1);
                             fAdaptActive = false;
-                            pNetFltIf = NULL;
+                            bNetFltActive = false;
                             break;
                         }
                     }
@@ -1629,7 +1647,7 @@ vboxNetFltWinPtReceive(
                 }
             }
 #endif /* todo: remove */
-            if(pNetFltIf)
+            if(bNetFltActive)
             {
                 Status = vboxNetFltWinPtReceiveActive(pAdapt, MacReceiveContext, pHeaderBuffer, cbHeaderBuffer,
                         pLookAheadBuffer, cbLookAheadBuffer, cbPacket);
@@ -1638,7 +1656,7 @@ vboxNetFltWinPtReceive(
                     if(Status != NDIS_STATUS_NOT_ACCEPTED)
                     {
                         fAdaptActive = false;
-                        pNetFltIf = NULL;
+                        bNetFltActive = false;
                     }
                     else
                     {
@@ -1682,10 +1700,18 @@ vboxNetFltWinPtReceive(
             }
         } while(0);
 
-        if(pNetFltIf)
-            vboxNetFltWinDereferenceNetFlt(pNetFltIf);
+        if(bNetFltActive)
+        {
+            vboxNetFltWinDereferenceNetFlt(pNetFlt);
+        }
+        else if(bPassThruActive)
+        {
+            vboxNetFltWinDereferenceModePassThru(pNetFlt);
+        }
         if(fAdaptActive)
+        {
             vboxNetFltWinDereferenceAdapt(pAdapt);
+        }
     }
     else
     {
@@ -1709,7 +1735,14 @@ vboxNetFltWinPtReceiveComplete(
 {
 #ifndef VBOX_NETFLT_ONDEMAND_BIND
     PADAPT        pAdapt =(PADAPT)ProtocolBindingContext;
+    PVBOXNETFLTINS pNetFlt = PADAPT_2_PVBOXNETFLTINS(pAdapt);
     ULONG         NumberOfPackets = 0;
+    /* since the receive array queued packets do not hold the reference we need to
+     * reference  the PassThru/NetFlt mode here to avoid packet reordering caused by
+     * concurrently running vboxNetFltWinPtReceiveComplete and vboxNetFltPortOsSetActive
+     * on netflt activation/deactivation */
+    bool bNetFltActive;
+    bool fAdaptActive = vboxNetFltWinReferenceAdaptNetFlt(pNetFlt, pAdapt, &bNetFltActive);
 
     vboxNetFltWinPtFlushReceiveQueue(pAdapt, false);
 
@@ -1730,6 +1763,19 @@ vboxNetFltWinPtReceiveComplete(
     }
 
     pAdapt->bIndicateRcvComplete = FALSE;
+
+    if(fAdaptActive)
+    {
+        if(bNetFltActive)
+        {
+            vboxNetFltWinDereferenceNetFlt(pNetFlt);
+        }
+        else
+        {
+            vboxNetFltWinDereferenceModePassThru(pNetFlt);
+        }
+        vboxNetFltWinDereferenceAdapt(pAdapt);
+    }
 #endif
 }
 
@@ -1752,7 +1798,7 @@ vboxNetFltWinPtReceivePacket(
 {
     PADAPT              pAdapt =(PADAPT)ProtocolBindingContext;
     INT         cRefCount = 0;
-    PVBOXNETFLTINS pNetFltIf;
+    PVBOXNETFLTINS pNetFlt = PADAPT_2_PVBOXNETFLTINS(pAdapt);
 #ifdef VBOX_NETFLT_ONDEMAND_BIND
     PNDIS_BUFFER pBuffer;
     PVOID pVA;
@@ -1841,7 +1887,9 @@ vboxNetFltWinPtReceivePacket(
     NdisReturnPackets(&pPacket, 1);
     return 0;
 #else
-    bool fAdaptActive = vboxNetFltWinReferenceAdaptNetFltFromAdapt(pAdapt, &pNetFltIf);
+    bool bNetFltActive;
+    bool fAdaptActive = vboxNetFltWinReferenceAdaptNetFlt(pNetFlt, pAdapt, &bNetFltActive);
+    const bool bPassThruActive = !bNetFltActive;
     if(fAdaptActive)
     {
         do
@@ -1868,7 +1916,7 @@ vboxNetFltWinPtReceivePacket(
                 break;
             }
 
-            if(pNetFltIf)
+            if(bNetFltActive)
             {
                 bool bResources = NDIS_GET_PACKET_STATUS(pPacket) == NDIS_STATUS_RESOURCES;
                 NDIS_STATUS fStatus;
@@ -1878,10 +1926,10 @@ vboxNetFltWinPtReceivePacket(
                  * we're probably doing something wrong with the packets if the miniport reports NDIS_STATUS_RESOURCES */
                 Assert(!bResources);
 
-                fStatus = vboxNetFltWinQuEnqueuePacket(pNetFltIf, pPacket, bResources ? PACKET_COPY : 0);
+                fStatus = vboxNetFltWinQuEnqueuePacket(pNetFlt, pPacket, bResources ? PACKET_COPY : 0);
                 if(fStatus == NDIS_STATUS_SUCCESS)
                 {
-                    pNetFltIf = NULL;
+                    bNetFltActive = false;
                     fAdaptActive = false;
                     if(bResources)
                     {
@@ -1909,10 +1957,18 @@ vboxNetFltWinPtReceivePacket(
 
         } while(FALSE);
 
-        if(pNetFltIf)
-            vboxNetFltWinDereferenceNetFlt(pNetFltIf);
+        if(bNetFltActive)
+        {
+            vboxNetFltWinDereferenceNetFlt(pNetFlt);
+        }
+        else if(bPassThruActive)
+        {
+            vboxNetFltWinDereferenceModePassThru(pNetFlt);
+        }
         if(fAdaptActive)
+        {
             vboxNetFltWinDereferenceAdapt(pAdapt);
+        }
     }
     else
     {
