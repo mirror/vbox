@@ -2263,7 +2263,7 @@ typedef const X86DESC64 *PCX86DESC64;
 /** @def X86DESC64_BASE
  * Return the base of a 64-bit descriptor.
  */
-#define X86DESC64_BASE(desc) \
+#define X86DESC64_BASE(desc) /*ASM-NOINC*/ \
         (  ((uint64_t)((desc).Gen.u32BaseHigh3) << 32) \
          | ((uint32_t)((desc).Gen.u8BaseHigh2)  << 24) \
          | (           (desc).Gen.u8BaseHigh1   << 16) \

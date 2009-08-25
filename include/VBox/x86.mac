@@ -417,7 +417,6 @@
 %define X86_PML4E_NX                        RT_BIT_64(63)
 %define X86_PML4_SHIFT              39
 %define X86_PML4_MASK               0x1ff
-%define X86DESC64_BASE(desc) \
 %if HC_ARCH_BITS == 64
 %else
 %endif
