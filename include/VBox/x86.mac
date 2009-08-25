@@ -417,10 +417,16 @@
 %define X86_PML4E_NX                        RT_BIT_64(63)
 %define X86_PML4_SHIFT              39
 %define X86_PML4_MASK               0x1ff
+%define X86DESC64_BASE(desc) \
 %if HC_ARCH_BITS == 64
 %else
 %endif
-%define X86DESC64_BASE(desc) \
+%if HC_ARCH_BITS == 64
+%else
+%endif
+%if HC_ARCH_BITS == 64
+%else
+%endif
 %define X86_SEL_TYPE_CODE                   8
 %define X86_SEL_TYPE_MEMORY                 RT_BIT(4)
 %define X86_SEL_TYPE_ACCESSED               1
@@ -474,12 +480,6 @@
 %define X86_DESC_DB                         RT_BIT(22)
 %define X86_DESC_G                          RT_BIT(23)
 %define X86_SEL_SHIFT       3
-%define AMD64_SEL_SHIFT     4
-%if HC_ARCH_BITS == 64
-%define X86_SEL_SHIFT_HC    AMD64_SEL_SHIFT
-%else
-%define X86_SEL_SHIFT_HC    X86_SEL_SHIFT
-%endif
 %define X86_SEL_MASK        0xfff8
 %define X86_SEL_LDT         0x0004
 %define X86_SEL_RPL         0x0003
