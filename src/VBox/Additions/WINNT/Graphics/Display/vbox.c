@@ -347,8 +347,6 @@ static void vboxHGSMIBufferSubmit (PPDEV ppdev, void *p)
     DISPDBG((0, "VBoxDISP::vboxHGSMIBufferSubmit: offset 0x%x\n", offBuffer));
 
     ppdev->pfnHGSMIGHCommandPost(ppdev->hMpHGSMI, offBuffer);
-//    ASMOutU16 (VBE_DISPI_IOPORT_INDEX, VBE_DISPI_INDEX_VBVA_GUEST);
-//    ASMOutU32 (VBE_DISPI_IOPORT_DATA, offBuffer);
 }
 
 static BOOL vboxVBVAInformHost (PPDEV ppdev, BOOL bEnable)
@@ -520,7 +518,7 @@ static void vboxHwBufferFlush (PPDEV ppdev)
 {
     /* Issue the flush command. */
     void *p = HGSMIHeapAlloc (&ppdev->hgsmiDisplayHeap,
-                              sizeof (VBVA_FLUSH),
+                              sizeof (VBVAFLUSH),
                               HGSMI_CH_VBVA,
                               VBVA_FLUSH);
     if (!p)
@@ -671,7 +669,7 @@ void VBoxProcessDisplayInfo (PPDEV ppdev)
                                   VBVA_INFO_SCREEN);
         if (!p)
         {
-            DISPDBG((0, "VBoxDISP::vboxHwBufferFlush: HGSMIHeapAlloc failed\n"));
+            DISPDBG((0, "VBoxDISP::VBoxProcessDisplayInfo: HGSMIHeapAlloc failed\n"));
         }
         else
         {
