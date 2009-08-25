@@ -490,11 +490,15 @@ extern "C" DECLEXPORT(int) TrustedMain (int argc, char **argv, char ** /*envp*/)
             }
             else
             {
-#ifndef DEBUG
+#ifdef VBOX_BLEEDING_EDGE
+                vboxProblem().showBEBWarning();
+#else
+# ifndef DEBUG
                 /* Check for BETA version */
                 QString vboxVersion (vboxGlobal().virtualBox().GetVersion());
                 if (vboxVersion.contains ("BETA"))
                     vboxProblem().showBETAWarning();
+# endif
 #endif
 
                 vboxGlobal().setMainWindow (&vboxGlobal().selectorWnd());

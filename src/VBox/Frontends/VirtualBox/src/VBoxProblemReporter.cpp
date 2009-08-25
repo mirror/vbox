@@ -352,6 +352,14 @@ void VBoxProblemReporter::showBETAWarning()
              "This version is not suitable for production use."));
 }
 
+void VBoxProblemReporter::showBEBWarning()
+{
+    message
+        (0, Warning,
+         tr ("You are running an EXPERIMENTAL build of VirtualBox. "
+             "This version is not suitable for production use."));
+}
+
 #ifdef Q_WS_X11
 void VBoxProblemReporter::cannotFindLicenseFiles (const QString &aPath)
 {

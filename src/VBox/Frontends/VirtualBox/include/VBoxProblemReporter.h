@@ -154,6 +154,7 @@ public:
 
     /* Special problem handlers */
     void showBETAWarning();
+    void showBEBWarning();
 
 #ifdef Q_WS_X11
     void cannotFindLicenseFiles (const QString &aPath);
