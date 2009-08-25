@@ -728,8 +728,8 @@ void vboxVHWACommandFree (PPDEV ppdev, VBOXVHWACMD* pCmd)
 
 static DECLCALLBACK(void) vboxVHWACommandCompletionCallbackEvent(PPDEV ppdev, VBOXVHWACMD * pCmd, void * pContext)
 {
-    PEVENT pEvent = (PEVENT)pContext;
-    LONG oldState = EngSetEvent(pEvent);
+    VBOXPEVENT pEvent = (VBOXPEVENT)pContext;
+    LONG oldState = ppdev->VideoPortProcs.pfnSetEvent(ppdev->pVideoPortContext, pEvent);
     Assert(!oldState);
 }
 
@@ -782,7 +782,7 @@ void vboxVHWACommandCheckHostCmds(PPDEV ppdev)
     }
 }
 
-void vboxVHWACommandSubmitAsynchByEvent (PPDEV ppdev, VBOXVHWACMD* pCmd, PEVENT pEvent)
+void vboxVHWACommandSubmitAsynchByEvent (PPDEV ppdev, VBOXVHWACMD* pCmd, VBOXPEVENT pEvent)
 {
 //    Assert(0);
     pCmd->GuestVBVAReserved1 = (uintptr_t)pEvent;
@@ -797,7 +797,7 @@ void vboxVHWACommandSubmitAsynchByEvent (PPDEV ppdev, VBOXVHWACMD* pCmd, PEVENT 
     if(!(ASMAtomicReadU32((volatile uint32_t *)&pCmd->Flags)  & VBOXVHWACMD_FLAG_HG_ASYNCH))
     {
         /* the command is completed */
-        EngSetEvent(pEvent);
+        ppdev->VideoPortProcs.pfnSetEvent(ppdev->pVideoPortContext, pEvent);
     }
 
     vbvaVHWACommandRelease(ppdev, pCmd);
@@ -805,25 +805,25 @@ void vboxVHWACommandSubmitAsynchByEvent (PPDEV ppdev, VBOXVHWACMD* pCmd, PEVENT 
 
 BOOL vboxVHWACommandSubmit (PPDEV ppdev, VBOXVHWACMD* pCmd)
 {
-    PEVENT pEvent;
-    BOOL brc = EngCreateEvent(&pEvent);
-    Assert(brc);
+    VBOXPEVENT pEvent;
+    VBOXVP_STATUS rc = ppdev->VideoPortProcs.pfnCreateEvent(ppdev->pVideoPortContext, VBOXNOTIFICATION_EVENT, NULL, &pEvent);
+    Assert(rc == VBOXNO_ERROR);
 
-    if(brc)
+    if(rc == VBOXNO_ERROR)
     {
         pCmd->Flags |= VBOXVHWACMD_FLAG_GH_ASYNCH_IRQ;
         vboxVHWACommandSubmitAsynchByEvent (ppdev, pCmd, pEvent);
 
-        brc = EngWaitForSingleObject(pEvent,
+        rc = ppdev->VideoPortProcs.pfnWaitForSingleObject(ppdev->pVideoPortContext, pEvent,
                 NULL /*IN PLARGE_INTEGER  pTimeOut*/
                 );
-        Assert(brc);
-        if(brc)
+        Assert(rc == VBOXNO_ERROR);
+        if(rc == VBOXNO_ERROR)
         {
-            EngDeleteEvent(pEvent);
+            ppdev->VideoPortProcs.pfnDeleteEvent(ppdev->pVideoPortContext, pEvent);
         }
     }
-    return brc;
+    return rc == VBOXNO_ERROR;
 }
 
 /* do not wait for completion */

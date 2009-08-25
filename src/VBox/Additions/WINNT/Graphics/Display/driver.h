@@ -40,6 +40,9 @@
 #include "../Miniport/vboxioctl.h"
 
 #include <VBox/VBoxVideo.h>
+#ifdef VBOX_WITH_VIDEOHWACCEL
+#include <iprt/asm.h>
+#endif
 
 /* Forward declaration. */
 struct _PDEV;
@@ -206,6 +209,9 @@ struct  _PDEV
     PFNVBOXVIDEOHGSMIPOSTCOMMAND pfnHGSMIGHCommandPost; /* called to post the guest command (offset) to the host */
     PFNVBOXVIDEOHGSMICOMPLETION pfnHGSMICommandComplete; /* called to complete the command we receive from the miniport */
     PFNVBOXVIDEOHGSMICOMMANDS   pfnHGSMIRequestCommands; /* called to requests the commands posted to us from the host */
+
+    PVOID pVideoPortContext;
+    VBOXVIDEOPORTPROCS VideoPortProcs;
 #endif /* VBOX_WITH_HGSMI */
 
 #ifdef VBOX_WITH_VIDEOHWACCEL
@@ -328,7 +334,7 @@ DECLINLINE(void) vbvaVHWACommandRetain (PPDEV ppdev, VBOXVHWACMD* pCmd)
 
 BOOL vboxVHWACommandSubmit (PPDEV ppdev, VBOXVHWACMD* pCmd);
 void vboxVHWACommandSubmitAsynch (PPDEV ppdev, VBOXVHWACMD* pCmd, PFNVBOXVHWACMDCOMPLETION pfnCompletion, void * pContext);
-void vboxVHWACommandSubmitAsynchByEvent (PPDEV ppdev, VBOXVHWACMD* pCmd, PEVENT pEvent);
+void vboxVHWACommandSubmitAsynchByEvent (PPDEV ppdev, VBOXVHWACMD* pCmd, VBOXPEVENT pEvent);
 void vboxVHWACommandCheckHostCmds(PPDEV ppdev);
 void vboxVHWACommandSubmitAsynchAndComplete (PPDEV ppdev, VBOXVHWACMD* pCmd);
 

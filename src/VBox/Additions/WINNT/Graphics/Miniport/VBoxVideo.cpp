@@ -1157,7 +1157,8 @@ VP_STATUS VBoxVideoFindAdapter(IN PVOID HwDeviceExtension,
    dprintf(("VBoxVideo::VBoxVideoFindAdapter\n"));
 
 #ifdef VBOX_WITH_HGSMI
-   VideoPortCreateSpinLock(HwDeviceExtension, &((PDEVICE_EXTENSION)HwDeviceExtension)->u.primary.pGHRWLock);
+   VBoxSetupVideoPortFunctions((PDEVICE_EXTENSION)HwDeviceExtension, &((PDEVICE_EXTENSION)HwDeviceExtension)->u.primary.VideoPortProcs, ConfigInfo);
+   ((PDEVICE_EXTENSION)HwDeviceExtension)->u.primary.VideoPortProcs.pfnCreateSpinLock(HwDeviceExtension, &((PDEVICE_EXTENSION)HwDeviceExtension)->u.primary.pGHRWLock);
 #endif
 
    VideoPortWritePortUshort((PUSHORT)VBE_DISPI_IOPORT_INDEX, VBE_DISPI_INDEX_ID);
@@ -1994,6 +1995,32 @@ BOOLEAN VBoxVideoStartIO(PVOID HwDeviceExtension,
             pInfo->pfnRequestCommandsHandler = hgsmiHostCmdRequest;
 
             RequestPacket->StatusBlock->Information = sizeof(HGSMIQUERYCALLBACKS);
+            Result = TRUE;
+            break;
+        }
+        case IOCTL_VIDEO_HGSMI_QUERY_PORTPROCS:
+        {
+            dprintf(("VBoxVideo::VBoxVideoStartIO: IOCTL_VIDEO_HGSMI_QUERY_PORTPROCS\n"));
+
+            if (RequestPacket->OutputBufferLength < sizeof(HGSMIQUERYCPORTPROCS))
+            {
+                dprintf(("VBoxVideo::VBoxVideoStartIO: Output buffer too small: %d needed: %d!!!\n",
+                         RequestPacket->OutputBufferLength, sizeof(HGSMIQUERYCPORTPROCS)));
+                RequestPacket->StatusBlock->Status = ERROR_INSUFFICIENT_BUFFER;
+                return FALSE;
+            }
+
+            if (!pDevExt->pPrimary->u.primary.bHGSMI)
+            {
+                RequestPacket->StatusBlock->Status = ERROR_INVALID_FUNCTION;
+                return FALSE;
+            }
+
+            HGSMIQUERYCPORTPROCS *pInfo = (HGSMIQUERYCPORTPROCS *)RequestPacket->OutputBuffer;
+            pInfo->pContext = pDevExt->pPrimary;
+            pInfo->VideoPortProcs = pDevExt->pPrimary->u.primary.VideoPortProcs;
+
+            RequestPacket->StatusBlock->Information = sizeof(HGSMIQUERYCPORTPROCS);
             Result = TRUE;
             break;
         }
