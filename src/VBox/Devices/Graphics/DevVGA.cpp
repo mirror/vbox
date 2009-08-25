@@ -70,6 +70,9 @@
  */
 #define VGA_MAPPING_SIZE    _512K
 
+#ifdef VBOX_WITH_HGSMI
+#define PCIDEV_2_VGASTATE(pPciDev)    ((VGAState *)((uintptr_t)pPciDev - RT_OFFSETOF(VGAState, Dev)))
+#endif /* VBOX_WITH_HGSMI */
 /** Converts a vga adaptor state pointer to a device instance pointer. */
 #define VGASTATE2DEVINS(pVgaState)    ((pVgaState)->CTX_SUFF(pDevIns))
 
@@ -3413,6 +3416,125 @@ PDMBOTHCBDECL(int) vgaIOPortReadVBEIndex(PPDMDEVINS pDevIns, void *pvUser, RTIOP
     return VERR_IOM_IOPORT_UNUSED;
 }
 
+#ifdef VBOX_WITH_HGSMI
+#ifdef IN_RING3
+/**
+ * Port I/O Handler for PCI Ports OUT operations.
+ *
+ * @returns VBox status code.
+ *
+ * @param   pDevIns     The device instance.
+ * @param   pvUser      User argument - ignored.
+ * @param   Port        Port number used for the operation.
+ * @param   u32         The value to output.
+ * @param   cb          The value size in bytes.
+ */
+static DECLCALLBACK(int) vgaR3IOPortPCIWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
+{
+    LogFlowFunc(("Port 0x%x, u32 0x%x, cb %d\n", Port, u32, cb));
+    VGAState *s = PDMINS_2_DATA(pDevIns, PVGASTATE);
+
+    int rc = PDMCritSectEnter(&s->lock, VERR_SEM_BUSY);
+    if (rc != VINF_SUCCESS)
+        return rc;
+
+    NOREF(pvUser);
+
+    if (cb == 4)
+    {
+        RTIOPORT portOffset = Port - s->IOPortBase;
+
+        switch (portOffset)
+        {
+            case VGA_PORT_OFF_HGSMI_HOST:
+            {
+#if defined(VBOX_WITH_VIDEOHWACCEL)
+                if(u32 == HGSMIOFFSET_VOID)
+                {
+                    PDMDevHlpPCISetIrq(pDevIns, 0, PDM_IRQ_LEVEL_LOW);
+                    HGSMIClearHostGuestFlags(s->pHGSMI, HGSMIHOSTFLAGS_IRQ);
+                }
+                else
+#endif
+                {
+                    HGSMIHostWrite(s->pHGSMI, u32);
+                }
+            } break;
+
+            case VGA_PORT_OFF_HGSMI_GUEST:
+            {
+                HGSMIGuestWrite(s->pHGSMI, u32);
+            } break;
+
+            default:
+            {
+                AssertMsgFailed(("vgaR3IOPortPCIWrite: Port=%#x cb=%d u32=%#x\n", Port, cb, u32));
+            } break;
+        }
+    }
+    else
+    {
+        AssertMsgFailed(("vgaR3IOPortPCIWrite: Port=%#x cb=%d u32=%#x\n", Port, cb, u32));
+    }
+
+    PDMCritSectLeave(&s->lock);
+    return VINF_SUCCESS;
+}
+
+/**
+ * Port I/O Handler for PCI Port IN operations.
+ *
+ * @returns VBox status code.
+ *
+ * @param   pDevIns     The device instance.
+ * @param   pvUser      User argument - ignored.
+ * @param   Port        Port number used for the operation.
+ * @param   pu32        Where to store the result.
+ * @param   cb          Number of bytes to read.
+ */
+static DECLCALLBACK(int) vgaR3IOPortPCIRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb)
+{
+    LogFlowFunc(("Port 0x%x, cb %d\n", Port, cb));
+    VGAState *s = PDMINS_2_DATA(pDevIns, PVGASTATE);
+
+    int rc = PDMCritSectEnter(&s->lock, VERR_SEM_BUSY);
+    if (rc != VINF_SUCCESS)
+        return rc;
+
+    NOREF(pvUser);
+
+    if (cb == 4)
+    {
+        RTIOPORT portOffset = Port - s->IOPortBase;
+
+        switch (portOffset)
+        {
+            case VGA_PORT_OFF_HGSMI_HOST:
+            {
+                *pu32 = HGSMIHostRead(s->pHGSMI);
+            } break;
+            case VGA_PORT_OFF_HGSMI_GUEST:
+            {
+                *pu32 = HGSMIGuestRead(s->pHGSMI);
+            } break;
+            default:
+            {
+                AssertMsgFailed(("vgaR3IOPortPCIRead: Port=%#x cb=%d\n", Port, cb));
+                rc = VERR_IOM_IOPORT_UNUSED;
+            } break;
+        }
+    }
+    else
+    {
+        AssertMsgFailed(("vgaR3IOPortPCIRead: Port=%#x cb=%d\n", Port, cb));
+        rc = VERR_IOM_IOPORT_UNUSED;
+    }
+
+    PDMCritSectLeave(&s->lock);
+    return rc;
+}
+#endif /* IN_RING3 */
+#endif /* VBOX_WITH_HGSMI */
 
 
 
@@ -5639,7 +5761,45 @@ static DECLCALLBACK(void)  vgaDetach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t
     }
 }
 
+#ifdef VBOX_WITH_HGSMI
+#ifdef IN_RING3
+/**
+ * Callback function for mapping a PCI I/O region.
+ *
+ * @return VBox status code.
+ * @param   pPciDev         Pointer to PCI device. Use pPciDev->pDevIns to get the device instance.
+ * @param   iRegion         The region number.
+ * @param   GCPhysAddress   Physical address of the region. If iType is PCI_ADDRESS_SPACE_IO, this is an
+ *                          I/O port, else it's a physical address.
+ *                          This address is *NOT* relative to pci_mem_base like earlier!
+ * @param   enmType         One of the PCI_ADDRESS_SPACE_* values.
+ */
+static DECLCALLBACK(int) vgaR3IOPortRegionMap(PPCIDEVICE pPciDev, /*unsigned*/ int iRegion, RTGCPHYS GCPhysAddress, uint32_t cb, PCIADDRESSSPACE enmType)
+{
+    VGAState *pThis = PCIDEV_2_VGASTATE(pPciDev);
+    int rc = VINF_SUCCESS;
 
+    Assert(enmType == PCI_ADDRESS_SPACE_IO);
+    Assert(iRegion == 1);
+    AssertMsg(RT_ALIGN(GCPhysAddress, 8) == GCPhysAddress, ("Expected 8 byte alignment. GCPhysAddress=%#x\n", GCPhysAddress));
+
+    /*
+     * Save the base port address to simplify Port offset calculations.
+     */
+    pThis->IOPortBase = (RTIOPORT)GCPhysAddress;
+
+    /*
+     * Register port IO handlers.
+     */
+    rc = PDMDevHlpIOPortRegister(pPciDev->pDevIns,
+                                 (RTIOPORT)GCPhysAddress, cb,
+                                 (void*)pThis, vgaR3IOPortPCIWrite, vgaR3IOPortPCIRead,
+                                 NULL, NULL, "VGA PCI IO Ports");
+    AssertRC(rc);
+    return rc;
+}
+#endif /* IN_RING3 */
+#endif /* VBOX_WITH_HGSMI */
 
 /**
  * Construct a VGA device instance for a VM.
@@ -5979,6 +6139,11 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     rc = PDMDevHlpPCIIORegionRegister(pDevIns, 0 /* iRegion */, pThis->vram_size, PCI_ADDRESS_SPACE_MEM_PREFETCH, vgaR3IORegionMap);
     if (RT_FAILURE(rc))
         return rc;
+#ifdef VBOX_WITH_HGSMI
+    rc = PDMDevHlpPCIIORegionRegister(pDevIns, 1, 0x10, PCI_ADDRESS_SPACE_IO, vgaR3IOPortRegionMap);
+    if (RT_FAILURE(rc))
+        return rc;
+#endif /* VBOX_WITH_HGSMI */
 
     /* Initialize the PDM lock. */
     rc = PDMDevHlpCritSectInit(pDevIns, &pThis->lock, "VGA");

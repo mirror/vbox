@@ -46,6 +46,9 @@
 
 #ifdef VBOX_WITH_HGSMI
 #include "HGSMI/HGSMIHost.h"
+
+#define VGA_PORT_OFF_HGSMI_HOST  0
+#define VGA_PORT_OFF_HGSMI_GUEST 4
 #endif /* VBOX_WITH_HGSMI */
 
 #define MSR_COLOR_EMULATION 0x01
@@ -397,6 +400,11 @@ typedef struct VGAState {
     /** Palette data. */
     uint32_t                    au32LogoPalette[256];
 #endif /* VBOX */
+#ifdef VBOX_WITH_HGSMI
+    /** Base port in the assigned PCI I/O space. */
+    RTIOPORT                    IOPortBase;
+    uint8_t                     Padding11[6];    /**< Alignment padding. */
+#endif /* VBOX_WITH_HGSMI */
 } VGAState;
 #ifdef VBOX
 /** VGA state. */
