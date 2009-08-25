@@ -2260,14 +2260,6 @@ typedef X86DESC64 *PX86DESC64;
 /** Pointer to const descriptor table entry. */
 typedef const X86DESC64 *PCX86DESC64;
 
-#if HC_ARCH_BITS == 64
-typedef X86DESC64   X86DESCHC;
-typedef X86DESC64   *PX86DESCHC;
-#else
-typedef X86DESC     X86DESCHC;
-typedef X86DESC     *PX86DESCHC;
-#endif
-
 /** @def X86DESC64_BASE
  * Return the base of a 64-bit descriptor.
  */
@@ -2276,6 +2268,30 @@ typedef X86DESC     *PX86DESCHC;
          | ((uint32_t)((desc).Gen.u8BaseHigh2)  << 24) \
          | (           (desc).Gen.u8BaseHigh1   << 16) \
          | (           (desc).Gen.u16BaseLow         ) )
+
+
+
+/** @name Host system descriptor table entry - Use with care!
+ * @{ */
+/** Host system descriptor table entry. */
+#if HC_ARCH_BITS == 64
+typedef X86DESC64   X86DESCHC;
+#else
+typedef X86DESC     X86DESCHC;
+#endif
+/** Pointer to a host system descriptor table entry. */
+#if HC_ARCH_BITS == 64
+typedef PX86DESC64  PX86DESCHC;
+#else
+typedef PX86DESC    PX86DESCHC;
+#endif
+/** Pointer to a const host system descriptor table entry. */
+#if HC_ARCH_BITS == 64
+typedef PCX86DESC64 PCX86DESCHC;
+#else
+typedef PCX86DESC   PCX86DESCHC;
+#endif
+/** @} */
 
 
 /** @name Selector Descriptor Types.
@@ -2543,19 +2559,6 @@ AssertCompileSize(X86TSS64, 136);
  * The shift used to convert a selector from and to index an index (C).
  */
 #define X86_SEL_SHIFT       3
-
-/**
- * The shift used to convert a selector from and to index an index (C).
- */
-#define AMD64_SEL_SHIFT     4
-
-/** @def X86_SEL_SHIFT_HC
- * This is for use with X86DESCHC. */
-#if HC_ARCH_BITS == 64
-#define X86_SEL_SHIFT_HC    AMD64_SEL_SHIFT
-#else
-#define X86_SEL_SHIFT_HC    X86_SEL_SHIFT
-#endif
 
 /**
  * The mask used to mask off the table indicator and CPL of an selector.

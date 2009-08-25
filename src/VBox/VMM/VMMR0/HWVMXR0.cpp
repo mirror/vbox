@@ -714,7 +714,7 @@ static void vmxR0SetMSRPermission(PVMCPU pVCpu, unsigned ulMSR, bool fRead, bool
         ASMBitClear(pMSRBitmap, ulBit);
     else
         ASMBitSet(pMSRBitmap, ulBit);
-    
+
     if (fWrite)
         ASMBitClear(pMSRBitmap + 0x800, ulBit);
     else
@@ -1007,7 +1007,7 @@ VMMR0DECL(int) VMXR0SaveHostState(PVM pVM, PVMCPU pVCpu)
         RTIDTR      idtr;
         RTGDTR      gdtr;
         RTSEL       SelTR;
-        PX86DESCHC  pDesc;
+        PCX86DESCHC pDesc;
         uintptr_t   trBase;
         RTSEL       cs;
         RTSEL       ss;
@@ -1108,10 +1108,10 @@ VMMR0DECL(int) VMXR0SaveHostState(PVM pVM, PVMCPU pVCpu)
             return VERR_VMX_INVALID_HOST_STATE;
         }
 
+        pDesc = (PCX86DESCHC)(gdtr.pGdt + (SelTR & X86_SEL_MASK));
 #ifdef VBOX_WITH_HYBRID_32BIT_KERNEL
         if (VMX_IS_64BIT_HOST_MODE())
         {
-            pDesc  = &((PX86DESCHC)gdtr.pGdt)[SelTR >> X86_SEL_SHIFT_HC]; /// ????
             uint64_t trBase64 = X86DESC64_BASE(*(PX86DESC64)pDesc);
             rc = VMXWriteVMCS64(VMX_VMCS_HOST_TR_BASE, trBase64);
             Log2(("VMX_VMCS_HOST_TR_BASE %RX64\n", trBase64));
@@ -1120,7 +1120,6 @@ VMMR0DECL(int) VMXR0SaveHostState(PVM pVM, PVMCPU pVCpu)
         else
 #endif
         {
-            pDesc  = &((PX86DESCHC)gdtr.pGdt)[SelTR >> X86_SEL_SHIFT_HC];
 #if HC_ARCH_BITS == 64
             trBase = X86DESC64_BASE(*pDesc);
 #else
@@ -4232,7 +4231,7 @@ static void VMXR0ReportWorldSwitchError(PVM pVM, PVMCPU pVCpu, int rc, PCPUMCTX 
 
 #ifdef VBOX_STRICT
             RTGDTR      gdtr;
-            PX86DESCHC  pDesc;
+            PCX86DESCHC pDesc;
             RTCCUINTREG val;
 
             ASMGetGDTR(&gdtr);
@@ -4265,7 +4264,7 @@ static void VMXR0ReportWorldSwitchError(PVM pVM, PVMCPU pVCpu, int rc, PCPUMCTX 
 
             if (val < gdtr.cbGdt)
             {
-                pDesc  = &((PX86DESCHC)gdtr.pGdt)[val >> X86_SEL_SHIFT_HC];
+                pDesc  = (PCX86DESCHC)(gdtr.pGdt + (val & X86_SEL_MASK));
                 HWACCMR0DumpDescriptor(pDesc, val, "CS: ");
             }
 
@@ -4273,7 +4272,7 @@ static void VMXR0ReportWorldSwitchError(PVM pVM, PVMCPU pVCpu, int rc, PCPUMCTX 
             Log(("VMX_VMCS_HOST_FIELD_DS %08x\n", val));
             if (val < gdtr.cbGdt)
             {
-                pDesc  = &((PX86DESCHC)gdtr.pGdt)[val >> X86_SEL_SHIFT_HC];
+                pDesc  = (PCX86DESCHC)(gdtr.pGdt + (val & X86_SEL_MASK));
                 HWACCMR0DumpDescriptor(pDesc, val, "DS: ");
             }
 
@@ -4281,7 +4280,7 @@ static void VMXR0ReportWorldSwitchError(PVM pVM, PVMCPU pVCpu, int rc, PCPUMCTX 
             Log(("VMX_VMCS_HOST_FIELD_ES %08x\n", val));
             if (val < gdtr.cbGdt)
             {
-                pDesc  = &((PX86DESCHC)gdtr.pGdt)[val >> X86_SEL_SHIFT_HC];
+                pDesc  = (PCX86DESCHC)(gdtr.pGdt + (val & X86_SEL_MASK));
                 HWACCMR0DumpDescriptor(pDesc, val, "ES: ");
             }
 
@@ -4289,7 +4288,7 @@ static void VMXR0ReportWorldSwitchError(PVM pVM, PVMCPU pVCpu, int rc, PCPUMCTX 
             Log(("VMX_VMCS16_HOST_FIELD_FS %08x\n", val));
             if (val < gdtr.cbGdt)
             {
-                pDesc  = &((PX86DESCHC)gdtr.pGdt)[val >> X86_SEL_SHIFT_HC];
+                pDesc  = (PCX86DESCHC)(gdtr.pGdt + (val & X86_SEL_MASK));
                 HWACCMR0DumpDescriptor(pDesc, val, "FS: ");
             }
 
@@ -4297,7 +4296,7 @@ static void VMXR0ReportWorldSwitchError(PVM pVM, PVMCPU pVCpu, int rc, PCPUMCTX 
             Log(("VMX_VMCS16_HOST_FIELD_GS %08x\n", val));
             if (val < gdtr.cbGdt)
             {
-                pDesc  = &((PX86DESCHC)gdtr.pGdt)[val >> X86_SEL_SHIFT_HC];
+                pDesc  = (PCX86DESCHC)(gdtr.pGdt + (val & X86_SEL_MASK));
                 HWACCMR0DumpDescriptor(pDesc, val, "GS: ");
             }
 
@@ -4305,7 +4304,7 @@ static void VMXR0ReportWorldSwitchError(PVM pVM, PVMCPU pVCpu, int rc, PCPUMCTX 
             Log(("VMX_VMCS16_HOST_FIELD_SS %08x\n", val));
             if (val < gdtr.cbGdt)
             {
-                pDesc  = &((PX86DESCHC)gdtr.pGdt)[val >> X86_SEL_SHIFT_HC];
+                pDesc  = (PCX86DESCHC)(gdtr.pGdt + (val & X86_SEL_MASK));
                 HWACCMR0DumpDescriptor(pDesc, val, "SS: ");
             }
 
@@ -4313,7 +4312,7 @@ static void VMXR0ReportWorldSwitchError(PVM pVM, PVMCPU pVCpu, int rc, PCPUMCTX 
             Log(("VMX_VMCS16_HOST_FIELD_TR %08x\n", val));
             if (val < gdtr.cbGdt)
             {
-                pDesc  = &((PX86DESCHC)gdtr.pGdt)[val >> X86_SEL_SHIFT_HC];
+                pDesc  = (PCX86DESCHC)(gdtr.pGdt + (val & X86_SEL_MASK));
                 HWACCMR0DumpDescriptor(pDesc, val, "TR: ");
             }
 

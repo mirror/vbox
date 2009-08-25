@@ -1335,7 +1335,6 @@ VMMR0DECL(int) HWACCMR0LeaveSwitcher(PVM pVM, bool fVTxDisabled)
 }
 
 #ifdef VBOX_STRICT
-# include <iprt/string.h>
 /**
  * Dumps a descriptor.
  *
@@ -1343,7 +1342,7 @@ VMMR0DECL(int) HWACCMR0LeaveSwitcher(PVM pVM, bool fVTxDisabled)
  * @param   Sel     Selector number.
  * @param   pszMsg  Message to prepend the log entry with.
  */
-VMMR0DECL(void) HWACCMR0DumpDescriptor(PX86DESCHC pDesc, RTSEL Sel, const char *pszMsg)
+VMMR0DECL(void) HWACCMR0DumpDescriptor(PCX86DESCHC pDesc, RTSEL Sel, const char *pszMsg)
 {
     /*
      * Make variable description string.
@@ -1352,7 +1351,7 @@ VMMR0DECL(void) HWACCMR0DumpDescriptor(PX86DESCHC pDesc, RTSEL Sel, const char *
     {
         unsigned    cch;
         const char *psz;
-    } const aTypes[32] =
+    } const s_aTypes[32] =
     {
 # define STRENTRY(str) { sizeof(str) - 1, str }
 
@@ -1415,8 +1414,8 @@ VMMR0DECL(void) HWACCMR0DumpDescriptor(PX86DESCHC pDesc, RTSEL Sel, const char *
     char        szMsg[128];
     char       *psz = &szMsg[0];
     unsigned    i = pDesc->Gen.u1DescType << 4 | pDesc->Gen.u4Type;
-    memcpy(psz, aTypes[i].psz, aTypes[i].cch);
-    psz += aTypes[i].cch;
+    memcpy(psz, s_aTypes[i].psz, s_aTypes[i].cch);
+    psz += s_aTypes[i].cch;
 
     if (pDesc->Gen.u1Present)
         ADD_STR(psz, "Present ");
