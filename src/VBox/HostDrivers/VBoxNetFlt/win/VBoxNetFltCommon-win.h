@@ -297,6 +297,22 @@ typedef struct _ADAPT_DEVICE
 /*    NDIS_HANDLE                    hHandle; */
 } ADAPT_DEVICE, *PADAPT_DEVICE;
 
+
+typedef enum VBOXNETDEVMODE_TYPE
+{
+    kVBoxNetDevMode_InvalidValue = 0,
+    kVBoxNetDevMode_NetFltInitializing,
+    kVBoxNetDevMode_NetFltInitialized,
+    kVBoxNetDevMode_NetFltDeinitializing,
+    kVBoxNetDevMode_NetFltWaitDeinitialized,
+    kVBoxNetDevMode_NetFltDeinitialized,
+
+} VBOXNETDEVMODE_TYPE;
+
+/* packet filter processing mode constants */
+#define VBOXNETFLT_PFP_NETFLT   1
+#define VBOXNETFLT_PFP_PASSTHRU 2
+
 /** represents filter driver device context*/
 typedef struct _ADAPT
 {
@@ -350,7 +366,7 @@ typedef struct _ADAPT
     bool                        bQueuedRequest;
     /** @todo join all boolean states to one field treated as flags bitmap */
     /** true iff we are processing Set packet filter OID */
-    bool                        bProcessingPacketFilter;
+    uint8_t                        fProcessingPacketFilter;
     /** true iff the upper protocol filter cache was initialized */
     bool                        bUpperProtSetFilterInitialized;
     /** trus if the adapter is closing */
