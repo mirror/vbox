@@ -151,6 +151,7 @@ ifeq ($(KBUILD_TARGET).$(VBOX_WITHOUT_COMPILER_REDIST),win.)
  endif
 endif
 
+
 ifdef VBOX_WITH_QT4_SUN
 #
 # Install our Qt DLLs / Shared Objects / Frameworks.
