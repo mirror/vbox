@@ -329,9 +329,9 @@ int handleUSBFilter (HandlerArg *a)
                         return errorArgument("Missing argument to '%s'", a->argv[i]);
                     i++;
                     uint32_t u32;
-                    rc = RTStrToUInt32Full(a->argv[i], 0, &u32);
-                    if (RT_FAILURE(rc))
-                        return errorArgument("Failed to convert the --maskedinterfaces value '%s' to a number, rc=%Rrc", a->argv[i], rc);
+                    int vrc = RTStrToUInt32Full(a->argv[i], 0, &u32);
+                    if (RT_FAILURE(vrc))
+                        return errorArgument("Failed to convert the --maskedinterfaces value '%s' to a number, vrc=%Rrc", a->argv[i], vrc);
                     cmd.mFilter.mMaskedInterfaces = u32;
                 }
                 else if (   !strcmp(a->argv[i], "--action")
