@@ -97,7 +97,7 @@ VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinEnumNetDevices(LPWSTR pPnPId, VBOXNETCF
 
 VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinRemoveHostOnlyNetworkInterface (const GUID *pGUID, BSTR *pErrMsg);
 VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinRemoveAllNetDevicesOfId(LPWSTR pPnPId);
-VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinCreateHostOnlyNetworkInterface (GUID *pGuid, BSTR *lppszName, BSTR *pErrMsg);
+VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinCreateHostOnlyNetworkInterface (LPCWSTR pInfPath, bool bIsInfPathFile, GUID *pGuid, BSTR *lppszName, BSTR *pErrMsg);
 
 VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinDhcpRediscover(const GUID *pGuid);
 VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinEnableDynamicIpConfig(const GUID *pGuid);

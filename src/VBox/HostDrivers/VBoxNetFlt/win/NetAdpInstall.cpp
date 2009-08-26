@@ -22,6 +22,8 @@
 #include <vbox/WinNetConfig.h>
 #include <stdio.h>
 
+#define VBOX_NETADP_INF L".\\VBoxNetAdp.inf"
+
 static VOID winNetCfgLogger (LPCWSTR szString)
 {
     wprintf(L"%s", szString);
@@ -29,7 +31,7 @@ static VOID winNetCfgLogger (LPCWSTR szString)
 
 static int InstallNetAdp()
 {
-    int r = 0;
+    int r = 1;
     VBoxNetCfgWinSetLogging(winNetCfgLogger);
 
     HRESULT hr = CoInitialize(NULL);
@@ -45,41 +47,53 @@ static int InstallNetAdp()
         GUID guid;
         BSTR name, errMsg;
         printf("adding host-only interface..\n");
-        hr = VBoxNetCfgWinCreateHostOnlyNetworkInterface (&guid, &name, &errMsg);
-        if(hr == S_OK)
+        DWORD WinEr;
+        WCHAR MpInf[MAX_PATH];
+        GetFullPathNameW(VBOX_NETADP_INF, sizeof(MpInf)/sizeof(MpInf[0]), MpInf, NULL);
+        WinEr = GetLastError();
+        if(WinEr == ERROR_SUCCESS)
         {
-            ULONG ip, mask;
-            hr = VBoxNetCfgWinGenHostOnlyNetworkNetworkIp(&ip, &mask);
+            hr = VBoxNetCfgWinCreateHostOnlyNetworkInterface (MpInf, true, &guid, &name, &errMsg);
             if(hr == S_OK)
             {
-                /* ip returned by VBoxNetCfgWinGenHostOnlyNetworkNetworkIp is a network ip,
-                 * i.e. 192.168.xxx.0, assign  192.168.xxx.1 for the hostonly adapter */
-                ip = ip | (1 << 24);
-                hr = VBoxNetCfgWinEnableStaticIpConfig(&guid, ip, mask);
-                if(hr != S_OK)
+                ULONG ip, mask;
+                hr = VBoxNetCfgWinGenHostOnlyNetworkNetworkIp(&ip, &mask);
+                if(hr == S_OK)
                 {
-                    printf("VBoxNetCfgWinEnableStaticIpConfig failed: hr = 0x%x\n", hr);
+                    /* ip returned by VBoxNetCfgWinGenHostOnlyNetworkNetworkIp is a network ip,
+                     * i.e. 192.168.xxx.0, assign  192.168.xxx.1 for the hostonly adapter */
+                    ip = ip | (1 << 24);
+                    hr = VBoxNetCfgWinEnableStaticIpConfig(&guid, ip, mask);
+                    if(hr != S_OK)
+                    {
+                        printf("VBoxNetCfgWinEnableStaticIpConfig failed: hr = 0x%x\n", hr);
+                    }
+                    else
+                    {
+                        r = 0;
+                    }
+                }
+                else
+                {
+                    printf("VBoxNetCfgWinGenHostOnlyNetworkNetworkIp failed: hr = 0x%x\n", hr);
                 }
             }
             else
             {
-                printf("VBoxNetCfgWinGenHostOnlyNetworkNetworkIp failed: hr = 0x%x\n", hr);
+                printf("VBoxNetCfgWinCreateHostOnlyNetworkInterface failed: hr = 0x%x\n", hr);
             }
         }
         else
         {
-            printf("VBoxNetCfgWinCreateHostOnlyNetworkInterface failed: hr = 0x%x\n", hr);
+            printf("GetFullPathNameW failed: winEr = %d\n", WinEr);
         }
 #endif
-
-        r = 1;
 
         CoUninitialize();
     }
     else
     {
         wprintf(L"Error initializing COM (0x%x)\n", hr);
-        r = 1;
     }
 
     VBoxNetCfgWinSetLogging(NULL);

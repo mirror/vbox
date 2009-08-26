@@ -629,7 +629,7 @@ int netIfNetworkInterfaceHelperServer (SVCHlpClient *aClient,
             Bstr name;
             Bstr bstrErr;
 
-            hrc = VBoxNetCfgWinCreateHostOnlyNetworkInterface (guid.asOutParam(), name.asOutParam(), bstrErr.asOutParam());
+            hrc = VBoxNetCfgWinCreateHostOnlyNetworkInterface (NULL, false, guid.asOutParam(), name.asOutParam(), bstrErr.asOutParam());
 
             if (hrc == S_OK)
             {
