@@ -66,6 +66,13 @@
 #define PGM_SKIP_GLOBAL_PAGEDIRS_ON_NONGLOBAL_FLUSH
 
 /**
+ * Optimization for PAE page tables that are modified often
+ */
+#ifndef IN_RC
+////# define PGMPOOL_WITH_OPTIMIZED_DIRTY_PT
+#endif
+
+/**
  * Sync N pages instead of a whole page table
  */
 #define PGM_SYNC_N_PAGES
@@ -1661,11 +1668,20 @@ typedef struct PGMPOOLPAGE
     /** This is used by the R3 access handlers when invoked by an async thread.
      * It's a hack required because of REMR3NotifyHandlerPhysicalDeregister. */
     bool volatile       fReusedFlushPending;
+#ifdef PGMPOOL_WITH_OPTIMIZED_DIRTY_PT
+    /** Used to mark the page as dirty (write monitoring if temporarily off. */
+    bool                fDirty;
+#else
     bool                bPadding1;
+#endif
 
     /** Used to indicate that this page can't be flushed. Important for cr3 root pages or shadow pae pd pages). */
     uint32_t            cLocked;
+#ifdef PGMPOOL_WITH_OPTIMIZED_DIRTY_PT
+    uint32_t            idxDirty;
+#else
     uint32_t            bPadding2;
+#endif
 } PGMPOOLPAGE, *PPGMPOOLPAGE, **PPPGMPOOLPAGE;
 /** Pointer to a const pool page. */
 typedef PGMPOOLPAGE const *PCPGMPOOLPAGE;
@@ -1751,11 +1767,20 @@ typedef struct PGMPOOL
     R3PTRTYPE(PFNPGMR3PHYSHANDLER)  pfnAccessHandlerR3;
     /** The access handler description (HC ptr). */
     R3PTRTYPE(const char *)         pszAccessHandler;
+# ifdef PGMPOOL_WITH_OPTIMIZED_DIRTY_PT
+    /* Next available slot. */
+    uint32_t                    idxFreeDirtyPage;
+    /* Number of active dirty pages. */
+    uint32_t                    cDirtyPages;
+    /* Array of current dirty pgm pool page indices. */
+    uint16_t                    aIdxDirtyPages[8];
+    uint64_t                    aDirtyPages[8][512];
+# endif /* PGMPOOL_WITH_OPTIMIZED_DIRTY_PT */
 #endif /* PGMPOOL_WITH_MONITORING */
     /** The number of pages currently in use. */
     uint16_t                    cUsedPages;
 #ifdef VBOX_WITH_STATISTICS
-    /** The high wather mark for cUsedPages. */
+    /** The high water mark for cUsedPages. */
     uint16_t                    cUsedPagesHigh;
     uint32_t                    Alignment1;         /**< Align the next member on a 64-bit boundrary. */
     /** Profiling pgmPoolAlloc(). */
@@ -1830,6 +1855,11 @@ typedef struct PGMPOOL
     STAMPROFILE                 StatMonitorR3RepStosd;
     /** The number of times we're called in an async thread an need to flush. */
     STAMCOUNTER                 StatMonitorR3Async;
+    /** Times we've called pgmPoolResetDirtyPages (and there were dirty page). */
+    STAMCOUNTER                 StatResetDirtyPages;
+    /** Times we've called pgmPoolAddDirtyPage. */
+    STAMCOUNTER                 StatDirtyPage;
+
     /** The high wather mark for cModifiedPages. */
     uint16_t                    cModifiedPagesHigh;
     uint16_t                    Alignment2[3];      /**< Align the next member on a 64-bit boundrary. */
@@ -3022,11 +3052,15 @@ int             pgmPoolSyncCR3(PVMCPU pVCpu);
 int             pgmPoolTrackFlushGCPhys(PVM pVM, PPGMPAGE pPhysPage, bool *pfFlushTLBs);
 uint16_t        pgmPoolTrackPhysExtAddref(PVM pVM, uint16_t u16, uint16_t iShwPT);
 void            pgmPoolTrackPhysExtDerefGCPhys(PPGMPOOL pPool, PPGMPOOLPAGE pPoolPage, PPGMPAGE pPhysPage);
+void            pgmPoolTracDerefGCPhysHint(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTHCPHYS HCPhys, RTGCPHYS GCPhysHint);
 #ifdef PGMPOOL_WITH_MONITORING
 void            pgmPoolMonitorChainChanging(PVMCPU pVCpu, PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTGCPHYS GCPhysFault, CTXTYPE(RTGCPTR, RTHCPTR, RTGCPTR) pvAddress, PDISCPUSTATE pCpu);
 int             pgmPoolMonitorChainFlush(PPGMPOOL pPool, PPGMPOOLPAGE pPage);
 void            pgmPoolMonitorModifiedInsert(PPGMPOOL pPool, PPGMPOOLPAGE pPage);
 #endif
+
+void            pgmPoolAddDirtyPage(PVM pVM, PPGMPOOL pPool, PPGMPOOLPAGE pPage);
+void            pgmPoolResetDirtyPages(PVM pVM, bool fForceRemoval = false);
 
 int             pgmR3ExitShadowModeBeforePoolFlush(PVM pVM, PVMCPU pVCpu);
 int             pgmR3ReEnterShadowModeAfterPoolFlush(PVM pVM, PVMCPU pVCpu);
