@@ -741,6 +741,9 @@ RTDECL(PCRTCOMERRMSG) RTErrCOMGet(uint32_t rc);
 #define VERR_IPE_UNEXPECTED_INFO_STATUS     (-231)
 /** Internal error: Unexpected status code. */
 #define VERR_IPE_UNEXPECTED_ERROR_STATUS    (-232)
+/** Internal error: Uninitialized status code.
+ * @remarks This is used by value elsewhere.  */
+#define VERR_IPE_UNINITIALIZED_STATUS       (-233)
 /** @} */
 
 
