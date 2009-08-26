@@ -59,10 +59,10 @@ static const uint8_t* rt_lookup_in_cache(PNATState pData, uint32_t dst)
             && bootp_clients[i].addr.s_addr == dst)
             return &bootp_clients[i].macaddr[0];
     }
-
-    if (dst != 0)
-        return pData->slirp_ethaddr;
-
+    /* 
+     * no chance to send this packet, sorry, we will request ether address via ARP 
+     */
+    slirp_arp_who_has(pData, dst); 
     return NULL; 
 }
 
