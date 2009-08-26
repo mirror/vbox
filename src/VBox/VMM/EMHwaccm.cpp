@@ -307,7 +307,7 @@ static int emR3ExecuteIOInstruction(PVM pVM, PVMCPU pVCpu)
         STAM_PROFILE_STOP(&pVCpu->em.s.StatIOEmu, a);
         return rc;     /* rip already updated. */
     }
-    AssertMsgReturn(rc == VERR_NOT_FOUND, ("%Rrc\n", rc), VERR_INTERNAL_ERROR_5);
+    AssertMsgReturn(rc == VERR_NOT_FOUND, ("%Rrc\n", rc), RT_SUCCESS_NP(rc) ? VERR_INTERNAL_ERROR_5 : rc);
 
     /** @todo probably we should fall back to the recompiler; otherwise we'll go back and forth between HC & GC
      *   as io instructions tend to come in packages of more than one
