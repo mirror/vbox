@@ -421,11 +421,9 @@ typedef struct PDMIDISPLAYPORT
 
 
 typedef struct _VBOXVHWACMD *PVBOXVHWACMD; /**< @todo r=bird: _VBOXVHWACMD -> VBOXVHWACMD; avoid using 1 or 2 leading underscores. Also, a line what it is to make doxygen happy. */
-#ifdef VBOX_WITH_HGSMI
 typedef struct VBVACMDHDR *PVBVACMDHDR;
 typedef struct VBVAINFOSCREEN *PVBVAINFOSCREEN;
 typedef struct VBVAINFOVIEW *PVBVAINFOVIEW;
-#endif /* VBOX_WITH_HGSMI */
 
 /** Pointer to a display connector interface. */
 typedef struct PDMIDISPLAYCONNECTOR *PPDMIDISPLAYCONNECTOR;
@@ -536,7 +534,6 @@ typedef struct PDMIDISPLAYCONNECTOR
      */
     DECLR3CALLBACKMEMBER(void, pfnVHWACommandProcess, (PPDMIDISPLAYCONNECTOR pInterface, PVBOXVHWACMD pCmd));
 
-#ifdef VBOX_WITH_HGSMI
     /**
      * The specified screen enters VBVA mode.
      *
@@ -627,7 +624,6 @@ typedef struct PDMIDISPLAYCONNECTOR
                                                         uint32_t xHot, uint32_t yHot,
                                                         uint32_t cx, uint32_t cy,
                                                         const void *pvShape));
-#endif /* VBOX_WITH_HGSMI */
 
     /** Read-only attributes.
      * For preformance reasons some readonly attributes are kept in the interface.
