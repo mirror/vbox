@@ -1374,6 +1374,39 @@ BOOLEAN VBoxVideoInterrupt(PVOID  HwDeviceExtension)
 #endif
 
 /**
+ * Send a request to the host to make the absolute pointer visible
+ */
+static BOOLEAN ShowPointer(PVOID HwDeviceExtension)
+{
+    LogRelFlowFunc(("\n"));
+    BOOLEAN Result;
+
+    if (DEV_MOUSE_HIDDEN((PDEVICE_EXTENSION)HwDeviceExtension))
+    {
+        // tell the host to use the guest's pointer
+        VIDEO_POINTER_ATTRIBUTES PointerAttributes;
+
+        /* Visible and No Shape means Show the pointer.
+         * It is enough to init only this field.
+         */
+        PointerAttributes.Enable = VBOX_MOUSE_POINTER_VISIBLE;
+
+#ifndef VBOX_WITH_HGSMI
+        Result = vboxUpdatePointerShape(&PointerAttributes, sizeof (PointerAttributes));
+#else
+        Result = vboxUpdatePointerShape(((PDEVICE_EXTENSION)HwDeviceExtension)->pPrimary, &PointerAttributes, sizeof (PointerAttributes));
+#endif /* VBOX_WITH_HGSMI */
+
+        if (Result)
+            DEV_SET_MOUSE_SHOWN((PDEVICE_EXTENSION)HwDeviceExtension);
+        else
+            dprintf(("VBoxVideo::ShowPointer: Could not show the hardware pointer -> fallback\n"));
+    }
+    LogRelFlowFunc(("returning %d\n", Result));
+    return Result;
+}
+
+/**
  * VBoxVideoStartIO
  *
  * Processes the specified Video Request Packet.
@@ -1583,25 +1616,10 @@ BOOLEAN VBoxVideoStartIO(PVOID HwDeviceExtension,
         {
             dprintf(("VBoxVideo::VBoxVideoStartIO: IOCTL_VIDEO_ENABLE_POINTER\n"));
             // find out whether the host wants absolute positioning
+            /// @todo this is now obsolete - remove it?
             if (vboxQueryHostWantsAbsolute())
-            {
-                // tell the host to use the guest's pointer
-                VIDEO_POINTER_ATTRIBUTES PointerAttributes;
-
-                /* Visible and No Shape means Show the pointer.
-                 * It is enough to init only this field.
-                 */
-                PointerAttributes.Enable = VBOX_MOUSE_POINTER_VISIBLE;
-
-#ifndef VBOX_WITH_HGSMI
-                Result = vboxUpdatePointerShape(&PointerAttributes, sizeof (PointerAttributes));
-#else
-                Result = vboxUpdatePointerShape(((PDEVICE_EXTENSION)HwDeviceExtension)->pPrimary, &PointerAttributes, sizeof (PointerAttributes));
-#endif /* VBOX_WITH_HGSMI */
-
-                if (!Result)
-                    dprintf(("VBoxVideo::VBoxVideoStartIO: Could not hide hardware pointer -> fallback\n"));
-            } else
+                Result = ShowPointer(HwDeviceExtension);
+            else
             {
                 // fallback to software pointer
                 RequestPacket->StatusBlock->Status = ERROR_INVALID_FUNCTION;
@@ -1631,7 +1649,9 @@ BOOLEAN VBoxVideoStartIO(PVOID HwDeviceExtension,
                 Result = vboxUpdatePointerShape(((PDEVICE_EXTENSION)HwDeviceExtension)->pPrimary, &PointerAttributes, sizeof (PointerAttributes));
 #endif /* VBOX_WITH_HGSMI */
 
-                if (!Result)
+                if (Result)
+                    DEV_SET_MOUSE_HIDDEN((PDEVICE_EXTENSION)HwDeviceExtension);
+                else
                     dprintf(("VBoxVideo::VBoxVideoStartIO: Could not hide hardware pointer -> fallback\n"));
             } else
             {
@@ -1701,18 +1721,11 @@ BOOLEAN VBoxVideoStartIO(PVOID HwDeviceExtension,
         // set the pointer position
         case IOCTL_VIDEO_SET_POINTER_POSITION:
         {
-            /// @todo There is an issue when we disable pointer integration.
-            // The guest pointer will be invisible. We have to somehow cause
-            // the pointer attributes to be set again. But how? The same holds
-            // true for the opposite case where we get two pointers.
-
-            //dprintf(("VBoxVideo::VBoxVideoStartIO: IOCTL_VIDEO_SET_POINTER_POSITION\n"));
             // find out whether the host wants absolute positioning
+            /// @todo this is now obsolete - remove it?
             if (vboxQueryHostWantsAbsolute())
-            {
-                // @todo we are supposed to show currently invisible pointer?
-                Result = TRUE;
-            } else
+                Result = ShowPointer(HwDeviceExtension);
+            else
             {
                 // fallback to software pointer
                 RequestPacket->StatusBlock->Status = ERROR_INVALID_FUNCTION;
