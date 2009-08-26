@@ -1384,6 +1384,7 @@ void VBoxMediaManagerDlg::setCurrentItem (QTreeWidget *aTree,
         aTree->setCurrentItem (aItem);
         aTree->scrollToItem (aItem, QAbstractItemView::EnsureVisible);
     }
+    else processCurrentChanged();
 }
 
 void VBoxMediaManagerDlg::processCurrentChanged (int /* index = -1 */)
