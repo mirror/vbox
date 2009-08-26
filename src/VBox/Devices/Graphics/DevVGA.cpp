@@ -5387,6 +5387,15 @@ static DECLCALLBACK(int) vgaR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle
 #endif
 }
 
+static DECLCALLBACK(int) vgaR3LoadDone(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
+{
+#ifndef VBOX_WITH_HGSMI
+    return VINF_SUCCESS;
+#else
+    return vboxVBVALoadStateDone(pDevIns, pSSM);
+#endif
+}
+
 
 /* -=-=-=-=-=- Ring 3: Device callbacks -=-=-=-=-=- */
 
@@ -6059,7 +6068,7 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
 #else
                                 NULL, vgaR3SaveExec, NULL,
 #endif
-                                NULL, vgaR3LoadExec, NULL);
+                                NULL, vgaR3LoadExec, vgaR3LoadDone);
     if (RT_FAILURE(rc))
         return rc;
 
