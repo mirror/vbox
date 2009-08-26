@@ -22,6 +22,9 @@
 #include <vbox/WinNetConfig.h>
 #include <stdio.h>
 
+#include <devguid.h>
+
+
 static VOID winNetCfgLogger (LPCWSTR szString)
 {
     wprintf(L"%s", szString);
@@ -29,7 +32,7 @@ static VOID winNetCfgLogger (LPCWSTR szString)
 
 static int UninstallNetAdp()
 {
-    int r = 0;
+    int r = 1;
     VBoxNetCfgWinSetLogging(winNetCfgLogger);
 
     printf("uninstalling all Host-Only interfaces..\n");
@@ -40,7 +43,16 @@ static int UninstallNetAdp()
         hr = VBoxNetCfgWinRemoveAllNetDevicesOfId(L"sun_VBoxNetAdp");
         if(hr == S_OK)
         {
-            printf("uninstalled successfully\n");
+            hr = VBoxNetCfgWinUninstallInfs (&GUID_DEVCLASS_NET, L"sun_VBoxNetAdp");
+            if(hr == S_OK)
+            {
+                printf("uninstalled successfully\n");
+            }
+            else
+            {
+                printf("uninstalled successfully, but failed to remove infs\n");
+            }
+            r = 0;
         }
         else
         {
@@ -52,7 +64,6 @@ static int UninstallNetAdp()
     else
     {
         wprintf(L"Error initializing COM (0x%x)\n", hr);
-        r = 1;
     }
 
     VBoxNetCfgWinSetLogging(NULL);
