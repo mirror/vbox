@@ -21,6 +21,7 @@
  * additional information or have any questions.
  */
 
+/** @todo Move the TAP mess back into the driver! */
 #if defined(RT_OS_WINDOWS)
 #elif defined(RT_OS_LINUX)
 #   include <errno.h>
@@ -6046,7 +6047,7 @@ Console::usbDetachCallback (Console *that, USBDeviceList::iterator *aIt, PCRTUUI
 }
 
 #endif /* VBOX_WITH_USB */
-
+#if (defined(RT_OS_LINUX) || defined(RT_OS_FREEBSD)) && !defined(VBOX_WITH_NETFLT)
 
 /**
  *  Helper function to handle host interface device creation and attachment.
@@ -6055,8 +6056,9 @@ Console::usbDetachCallback (Console *that, USBDeviceList::iterator *aIt, PCRTUUI
  *  @return  COM status code
  *
  *  @note The caller must lock this object for writing.
+ *
+ *  @todo Move this back into the driver!
  */
-#if (defined(RT_OS_LINUX) || defined(RT_OS_FREEBSD)) && !defined(VBOX_WITH_NETFLT)
 HRESULT Console::attachToTapInterface(INetworkAdapter *networkAdapter)
 {
     LogFlowThisFunc(("\n"));
@@ -6076,7 +6078,7 @@ HRESULT Console::attachToTapInterface(INetworkAdapter *networkAdapter)
     rc = networkAdapter->COMGETTER(Slot)(&slot);
     AssertComRC(rc);
 
-#ifdef RT_OS_LINUX
+# ifdef RT_OS_LINUX
     /*
      * Allocate a host interface device
      */
@@ -6158,7 +6160,8 @@ HRESULT Console::attachToTapInterface(INetworkAdapter *networkAdapter)
                 break;
         }
     }
-#elif RT_OS_FREEBSD
+
+# elif defined(RT_OS_FREEBSD)
     /*
      * Set/obtain the tap interface.
      */
@@ -6198,7 +6201,9 @@ HRESULT Console::attachToTapInterface(INetworkAdapter *networkAdapter)
                 break;
         }
     }
-#endif /* RT_OS_FREEBSD */
+# else
+#  error "huh?"
+# endif
     /* in case of failure, cleanup. */
     if (VBOX_FAILURE(rcVBox) && SUCCEEDED(rc))
     {
@@ -6217,6 +6222,8 @@ HRESULT Console::attachToTapInterface(INetworkAdapter *networkAdapter)
  *  @return  COM status code
  *
  *  @note The caller must lock this object for writing.
+ *
+ *  @todo Move this back into the driver!
  */
 HRESULT Console::detachFromTapInterface(INetworkAdapter *networkAdapter)
 {
@@ -6269,8 +6276,8 @@ HRESULT Console::detachFromTapInterface(INetworkAdapter *networkAdapter)
     LogFlowThisFunc(("returning %d\n", rc));
     return rc;
 }
-#endif /* (RT_OS_LINUX || RT_OS_FREEBSD) && !VBOX_WITH_NETFLT */
 
+#endif /* (RT_OS_LINUX || RT_OS_FREEBSD) && !VBOX_WITH_NETFLT */
 
 /**
  *  Called at power down to terminate host interface networking.
@@ -7576,7 +7583,7 @@ DECLCALLBACK(int) Console::drvStatus_Construct(PPDMDRVINS pDrvIns, PCFGMNODE pCf
      */
     if (!CFGMR3AreValuesValid(pCfgHandle, "papLeds\0First\0Last\0"))
         return VERR_PDM_DRVINS_UNKNOWN_CFG_VALUES;
-    AssertMsgReturn(PDMDrvHlpNoAttach(pDrvIns) == VERR_PDM_NO_ATTACHED_DRIVER, 
+    AssertMsgReturn(PDMDrvHlpNoAttach(pDrvIns) == VERR_PDM_NO_ATTACHED_DRIVER,
                     ("Configuration error: Not possible to attach anything to this driver!\n"),
                     VERR_PDM_DRVINS_NO_ATTACH);
 
@@ -7673,9 +7680,9 @@ const PDMDRVREG Console::DrvStatusReg =
     /* pfnAttach */
     NULL,
     /* pfnDetach */
-    NULL, 
+    NULL,
     /* pfnPowerOff */
-    NULL, 
+    NULL,
     /* pfnSoftReset */
     NULL,
     /* u32EndVersion */
