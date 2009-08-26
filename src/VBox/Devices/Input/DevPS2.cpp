@@ -289,7 +289,7 @@ static void kbd_update_irq(KBDState *s)
     if (q->count != 0)
     {
         s->status |= KBD_STAT_OBF;
-        if ((s->mode & KBD_MODE_KBD_INT) /*&& !(s->mode & KBD_MODE_DISABLE_KBD)*/)
+        if ((s->mode & KBD_MODE_KBD_INT) && !(s->mode & KBD_MODE_DISABLE_KBD))
             irq1_level = 1;
     }
     else if (mcq->count != 0 || meq->count != 0)
