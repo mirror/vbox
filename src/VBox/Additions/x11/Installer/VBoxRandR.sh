@@ -68,34 +68,11 @@ if test "$1" = "--test"; then
     xout=`$xorgbin -version 2>&1`
     if echo "$xout" | grep "1\.4\.99\.90[12345]" > /dev/null
     then
-        echo "Warning: the version of the X Window system on your guest has a known"
-        echo "problem. Because of this, dynamic resizing and seamless mode will not work."
+        echo "Warning: the version of the X Window system on your guest has known"
+        echo "problems which prevent dynamic resizing and seamless mode from working."
         echo
         exit 1
     fi
-    # Check to see if the server is configured to use static modes only.
-    for conf in "/etc/X11/xorg.conf-4" "/etc/X11/xorg.conf" "/etc/X11/.xorg.conf" "/etc/xorg.conf" \
-                "/usr/etc/X11/xorg.conf-4" "/usr/etc/X11/xorg.conf" "/usr/lib/X11/xorg.conf-4" \
-                "/usr/lib/X11/xorg.conf"
-    do
-        if [ -r $conf ]
-        then
-            if awk -v IN_SECTION=0 \
-'tolower($0) ~ /^[ \t]*section/ { IN_SECTION=1 } '\
-'tolower($0) ~ /^[ \t]*modes/ { if (IN_SECTION) { print "mode"; exit } } '\
-'tolower($0) ~ /^[ \t]*option[ \t]+\"preferredmode\"/ { if (IN_SECTION) { print "mode"; exit } } '\
-'tolower($0) ~ /endsection/ { IN_SECTION=0 }' \
-                $conf 2>/dev/null | grep mode > /dev/null
-            then
-                echo "Disabling dynamic resizing as the X server is configured to only use static"
-                echo "resolutions.  To fix this, edit the server configuration file, remove all"
-                echo "\"Modes\" lines from the \"Screen\" section and any Option \"PreferredMode\""
-                echo "lines from \"Monitor\" sections and restart the server."
-                echo
-                exit 1
-            fi
-        fi
-    done
     # Don't write out error information in this case, as this script is also
     # called from the installer, and vboxvideo will not yet be in place yet in
     # that case.
