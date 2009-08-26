@@ -848,6 +848,7 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
     }
 
     HRESULT rc;
+    int vrc;
     Guid uuid;
     char *vmName = NULL;
     DeviceType_T bootDevice = DeviceType_Null;
@@ -1484,8 +1485,8 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
     }
 
     /* create SDL event semaphore */
-    rc = RTSemEventCreate(&g_EventSemSDLEvents);
-    AssertReleaseRC(rc);
+    vrc = RTSemEventCreate(&g_EventSemSDLEvents);
+    AssertReleaseRC(vrc);
 
     rc = virtualBox->OpenSession(session, uuid.toUtf16());
     if (FAILED(rc))
@@ -1806,31 +1807,30 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
             goto leave;
         }
         /* load the SDL_ttf library and get the required imports */
-        int rcVBox;
-        rcVBox = RTLdrLoad(LIBSDL_TTF_NAME, &gLibrarySDL_ttf);
-        if (RT_SUCCESS(rcVBox))
-            rcVBox = RTLdrGetSymbol(gLibrarySDL_ttf, "TTF_Init", (void**)&pTTF_Init);
-        if (RT_SUCCESS(rcVBox))
-            rcVBox = RTLdrGetSymbol(gLibrarySDL_ttf, "TTF_OpenFont", (void**)&pTTF_OpenFont);
-        if (RT_SUCCESS(rcVBox))
-            rcVBox = RTLdrGetSymbol(gLibrarySDL_ttf, "TTF_RenderUTF8_Solid", (void**)&pTTF_RenderUTF8_Solid);
-        if (RT_SUCCESS(rcVBox))
+        vrc = RTLdrLoad(LIBSDL_TTF_NAME, &gLibrarySDL_ttf);
+        if (RT_SUCCESS(vrc))
+            vrc = RTLdrGetSymbol(gLibrarySDL_ttf, "TTF_Init", (void**)&pTTF_Init);
+        if (RT_SUCCESS(vrc))
+            vrc = RTLdrGetSymbol(gLibrarySDL_ttf, "TTF_OpenFont", (void**)&pTTF_OpenFont);
+        if (RT_SUCCESS(vrc))
+            vrc = RTLdrGetSymbol(gLibrarySDL_ttf, "TTF_RenderUTF8_Solid", (void**)&pTTF_RenderUTF8_Solid);
+        if (RT_SUCCESS(vrc))
         {
             /* silently ignore errors here */
-            rcVBox = RTLdrGetSymbol(gLibrarySDL_ttf, "TTF_RenderUTF8_Blended", (void**)&pTTF_RenderUTF8_Blended);
-            if (RT_FAILURE(rcVBox))
+            vrc = RTLdrGetSymbol(gLibrarySDL_ttf, "TTF_RenderUTF8_Blended", (void**)&pTTF_RenderUTF8_Blended);
+            if (RT_FAILURE(vrc))
                 pTTF_RenderUTF8_Blended = NULL;
-            rcVBox = VINF_SUCCESS;
+            vrc = VINF_SUCCESS;
         }
-        if (RT_SUCCESS(rcVBox))
-            rcVBox = RTLdrGetSymbol(gLibrarySDL_ttf, "TTF_CloseFont", (void**)&pTTF_CloseFont);
-        if (RT_SUCCESS(rcVBox))
-            rcVBox = RTLdrGetSymbol(gLibrarySDL_ttf, "TTF_Quit", (void**)&pTTF_Quit);
-        if (RT_SUCCESS(rcVBox))
-            rcVBox = gpFramebuffer[0]->initSecureLabel(SECURE_LABEL_HEIGHT, secureLabelFontFile, secureLabelPointSize, secureLabelFontOffs);
-        if (RT_FAILURE(rcVBox))
+        if (RT_SUCCESS(vrc))
+            vrc = RTLdrGetSymbol(gLibrarySDL_ttf, "TTF_CloseFont", (void**)&pTTF_CloseFont);
+        if (RT_SUCCESS(vrc))
+            vrc = RTLdrGetSymbol(gLibrarySDL_ttf, "TTF_Quit", (void**)&pTTF_Quit);
+        if (RT_SUCCESS(vrc))
+            vrc = gpFramebuffer[0]->initSecureLabel(SECURE_LABEL_HEIGHT, secureLabelFontFile, secureLabelPointSize, secureLabelFontOffs);
+        if (RT_FAILURE(vrc))
         {
-            RTPrintf("Error: could not initialize secure labeling: rc = %Rrc\n", rcVBox);
+            RTPrintf("Error: could not initialize secure labeling: rc = %Rrc\n", vrc);
             goto leave;
         }
         Bstr key = VBOXSDL_SECURELABEL_EXTRADATA;
