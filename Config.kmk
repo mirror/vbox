@@ -812,6 +812,17 @@ ifdef VBOX_OSE
 VBOX_VERSION_STRING = $(VBOX_VERSION_MAJOR).$(VBOX_VERSION_MINOR).$(VBOX_VERSION_BUILD)_OSE
 endif
 
+#
+# Derived / helper config indicators.  Not configurable.
+#
+
+# Use the OpenGL module in qt when the video hardware acceleartion feature
+# is enabled.
+if defined(VBOX_WITH_VIDEOHWACCEL) && defined(VBOX_WITH_QTGUI)
+ VBOX_GUI_USE_QGL=1
+else
+ VBOX_GUI_USE_QGL=
+endif
 
 #
 # Image and object format config.
@@ -922,11 +933,6 @@ else
  VBOX_ASFLAGS   = $(subst elf32,elf,$(VBOX_ASFLAGS_FMT))   -D__NASM__ -w+orphan-labels -g
  VBOX_ASFLAGS32 = $(subst elf32,elf,$(VBOX_ASFLAGS_FMT32)) -D__NASM__ -w+orphan-labels -g
  VBOX_ASFLAGS64 = $(VBOX_ASFLAGS_FMT64) -D__NASM__ -w+orphan-labels -g
-endif
-
-if defined(VBOX_WITH_VIDEOHWACCEL) && defined(VBOX_WITH_QTGUI)
-# QGL framebuffer is required
- VBOX_GUI_USE_QGL=1
 endif
 
 #
