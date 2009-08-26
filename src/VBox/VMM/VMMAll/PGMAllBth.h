@@ -966,6 +966,12 @@ PGM_BTH_DECL(int, InvalidatePage)(PVMCPU pVCpu, RTGCPTR GCPtrPage)
     Assert(PGMIsLockOwner(pVM));
 
     LogFlow(("InvalidatePage %RGv\n", GCPtrPage));
+
+# ifdef PGMPOOL_WITH_OPTIMIZED_DIRTY_PT
+    if (pPool->cDirtyPages)
+        pgmPoolResetDirtyPages(pVM);
+# endif
+
     /*
      * Get the shadow PD entry and skip out if this PD isn't present.
      * (Guessing that it is frequent for a shadow PDE to not be present, do this first.)
@@ -1469,6 +1475,18 @@ DECLINLINE(void) PGM_BTH_NAME(SyncPageWorker)(PVMCPU pVCpu, PSHWPTE pPteDst, GST
     {
         PVM pVM = pVCpu->CTX_SUFF(pVM);
 
+# if    defined(PGMPOOL_WITH_OPTIMIZED_DIRTY_PT)                            \
+     && PGM_WITH_PAGING(PGM_GST_TYPE, PGM_SHW_TYPE)                         \
+     && (PGM_GST_TYPE == PGM_TYPE_PAE || PGM_GST_TYPE == PGM_TYPE_AMD64)
+        if (pShwPage->fDirty)
+        {
+            PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool);
+            PX86PTPAE pGstPT;
+            
+            pGstPT = (PX86PTPAE)&pPool->aDirtyPages[pShwPage->idxDirty][0];
+            pGstPT->a[iPTDst].u = PteSrc.u;
+        }
+# endif
         /*
          * Find the ram range.
          */
@@ -1710,6 +1728,7 @@ PGM_BTH_DECL(int, SyncPage)(PVMCPU pVCpu, GSTPDE PdeSrc, RTGCPTR GCPtrPage, unsi
     }
 
     PPGMPOOLPAGE    pShwPage = pgmPoolGetPage(pPool, PdeDst.u & SHW_PDE_PG_MASK);
+    Assert(pShwPage);
 
 # if PGM_GST_TYPE == PGM_TYPE_AMD64
     /* Fetch the pgm pool shadow descriptor. */
@@ -1837,11 +1856,12 @@ PGM_BTH_DECL(int, SyncPage)(PVMCPU pVCpu, GSTPDE PdeSrc, RTGCPTR GCPtrPage, unsi
                         GSTPTE PteSrc = pPTSrc->a[iPTSrc];
                         const unsigned iPTDst = (GCPtrPage >> SHW_PT_SHIFT) & SHW_PT_MASK;
                         PGM_BTH_NAME(SyncPageWorker)(pVCpu, &pPTDst->a[iPTDst], PdeSrc, PteSrc, pShwPage, iPTDst);
-                        Log2(("SyncPage: 4K  %RGv PteSrc:{P=%d RW=%d U=%d raw=%08llx}%s\n",
+                        Log2(("SyncPage: 4K  %RGv PteSrc:{P=%d RW=%d U=%d raw=%08llx} PteDst=%08llx %s\n",
                               GCPtrPage, PteSrc.n.u1Present,
                               PteSrc.n.u1Write & PdeSrc.n.u1Write,
                               PteSrc.n.u1User & PdeSrc.n.u1User,
                               (uint64_t)PteSrc.u,
+                              (uint64_t)pPTDst->a[iPTDst].u,
                               pPTDst->a[iPTDst].u & PGM_PTFLAGS_TRACK_DIRTY ? " Track-Dirty" : ""));
                     }
                 }
@@ -3394,6 +3414,14 @@ PGM_BTH_DECL(int, SyncCR3)(PVMCPU pVCpu, uint64_t cr0, uint64_t cr3, uint64_t cr
     LogFlow(("SyncCR3 %d\n", fGlobal));
 
 #if PGM_SHW_TYPE != PGM_TYPE_NESTED && PGM_SHW_TYPE != PGM_TYPE_EPT
+
+    pgmLock(pVM);
+# ifdef PGMPOOL_WITH_OPTIMIZED_DIRTY_PT
+    PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool);
+    if (pPool->cDirtyPages)
+        pgmPoolResetDirtyPages(pVM);
+# endif
+
     /*
      * Update page access handlers.
      * The virtual are always flushed, while the physical are only on demand.
@@ -3406,6 +3434,7 @@ PGM_BTH_DECL(int, SyncCR3)(PVMCPU pVCpu, uint64_t cr0, uint64_t cr3, uint64_t cr
     STAM_PROFILE_START(&pVCpu->pgm.s.CTX_MID_Z(Stat,SyncCR3Handlers), h);
     PGM_GST_NAME(HandlerVirtualUpdate)(pVM, cr4);
     STAM_PROFILE_STOP(&pVCpu->pgm.s.CTX_MID_Z(Stat,SyncCR3Handlers), h);
+    pgmUnlock(pVM);
 #endif
 
 #if PGM_SHW_TYPE == PGM_TYPE_NESTED || PGM_SHW_TYPE == PGM_TYPE_EPT
@@ -4377,6 +4406,11 @@ PGM_BTH_DECL(int, MapCR3)(PVMCPU pVCpu, RTGCPHYS GCPhysCR3)
     PPGMPOOLPAGE pNewShwPageCR3;
 
     pgmLock(pVM);
+
+# ifdef PGMPOOL_WITH_OPTIMIZED_DIRTY_PT
+    if (pPool->cDirtyPages)
+        pgmPoolResetDirtyPages(pVM);
+# endif
 
     Assert(!(GCPhysCR3 >> (PAGE_SHIFT + 32)));
     rc = pgmPoolAlloc(pVM, GCPhysCR3 & GST_CR3_PAGE_MASK, BTH_PGMPOOLKIND_ROOT, SHW_POOL_ROOT_IDX, GCPhysCR3 >> PAGE_SHIFT, &pNewShwPageCR3, true /* lock page */);

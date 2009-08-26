@@ -776,7 +776,7 @@ void pgmPoolMonitorChainChanging(PVMCPU pVCpu, PPGMPOOL pPool, PPGMPOOLPAGE pPag
 /**
  * Checks if a access could be a fork operation in progress.
  *
- * Meaning, that the guest is setuping up the parent process for Copy-On-Write.
+ * Meaning, that the guest is setting up the parent process for Copy-On-Write.
  *
  * @returns true if it's likly that we're forking, otherwise false.
  * @param   pPool       The pool.
@@ -829,7 +829,7 @@ DECLINLINE(bool) pgmPoolMonitorIsForking(PPGMPOOL pPool, PDISCPUSTATE pDis, unsi
 DECLINLINE(bool) pgmPoolMonitorIsReused(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, PDISCPUSTATE pDis, RTGCPTR pvFault)
 {
 #ifndef IN_RC
-    /** @todo could make this general, faulting close to rsp should be safe reuse heuristic. */
+    /** @todo could make this general, faulting close to rsp should be a safe reuse heuristic. */
     if (   HWACCMHasPendingIrq(pVM)
         && (pRegFrame->rsp - pvFault) < 32)
     {
@@ -884,7 +884,8 @@ DECLINLINE(bool) pgmPoolMonitorIsReused(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pReg
             }
             return false;
     }
-    if (    (pDis->param1.flags & USE_REG_GEN32)
+    if (    (    (pDis->param1.flags & USE_REG_GEN32) 
+             ||  (pDis->param1.flags & USE_REG_GEN64))
         &&  (pDis->param1.base.reg_gen == USE_REG_ESP))
     {
         Log4(("pgmPoolMonitorIsReused: ESP\n"));
@@ -918,6 +919,7 @@ static int pgmPoolAccessHandlerFlush(PVM pVM, PVMCPU pVCpu, PPGMPOOL pPool, PPGM
 
     /*
      * Emulate the instruction (xp/w2k problem, requires pc/cr2/sp detection).
+     * @todo: why is this necessary? an instruction restart would be sufficient, wouldn't it?
      */
     uint32_t cbWritten;
     int rc2 = EMInterpretInstructionCPU(pVM, pVCpu, pDis, pRegFrame, pvFault, &cbWritten);
@@ -1116,6 +1118,7 @@ DECLEXPORT(int) pgmPoolAccessHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE 
     PPGMPOOLPAGE    pPage = (PPGMPOOLPAGE)pvUser;
     PVMCPU          pVCpu = VMMGetCpu(pVM);
     unsigned        cMaxModifications;
+    bool            fForcedFlush = false;
 
     LogFlow(("pgmPoolAccessHandler: pvFault=%RGv pPage=%p:{.idx=%d} GCPhysFault=%RGp\n", pvFault, pPage, pPage->idx, GCPhysFault));
 
@@ -1143,6 +1146,9 @@ DECLEXPORT(int) pgmPoolAccessHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE 
      * is because we use that page to record the changes.
      */
     Assert(pPage->iMonitoredPrev == NIL_PGMPOOL_IDX);
+#ifdef PGMPOOL_WITH_OPTIMIZED_DIRTY_PT
+    Assert(!pPage->fDirty);
+#endif
 
     /* Maximum nr of modifications depends on the guest mode. */
     if (pDis->mode == CPUMODE_32BIT)
@@ -1165,8 +1171,14 @@ DECLEXPORT(int) pgmPoolAccessHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE 
         pPage->pvLastAccessHandlerFault = pvFault;
         pPage->cLastAccessHandlerCount  = pVCpu->pgm.s.cPoolAccessHandler;
         if (pPage->cModifications > cMaxModifications)
+        {
             STAM_COUNTER_INC(&pPool->CTX_MID_Z(StatMonitor,FlushReinit));
+            fForcedFlush = true;
+        }
     }
+
+    if (pPage->cModifications >= cMaxModifications)
+        Log(("Mod overflow %VGv cMods=%d (locked=%d type=%s)\n", pvFault, pPage->cModifications, pgmPoolIsPageLocked(&pVM->pgm.s, pPage), pgmPoolPoolKindToStr(pPage->enmKind)));
 
     /*
      * Check if it's worth dealing with.
@@ -1265,6 +1277,39 @@ DECLEXPORT(int) pgmPoolAccessHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE 
               pRegFrame->eax, pRegFrame->ecx, pRegFrame->edi, pRegFrame->esi, (RTGCPTR)pRegFrame->rip, pDis->pCurInstr->opcode, pDis->prefix));
     }
 
+#ifdef PGMPOOL_WITH_OPTIMIZED_DIRTY_PT
+    /* E.g. Windows 7 x64 initializes page tables and touches some pages in the table during the process. This
+     * leads to pgm pool trashing and an excessive amount of write faults due to page monitoring.
+     */
+    if (    !fReused
+        &&  !fForcedFlush
+        &&  pPage->enmKind == PGMPOOLKIND_PAE_PT_FOR_PAE_PT
+        &&  pPage->cModifications >= cMaxModifications
+        &&  pPage->iModifiedNext == NIL_PGMPOOL_IDX
+        &&  pPage->iModifiedPrev == NIL_PGMPOOL_IDX)
+    {
+        Assert(!pgmPoolIsPageLocked(&pVM->pgm.s, pPage));
+        Assert(pPage->fDirty == false);
+
+        rc = PGMHandlerPhysicalPageTempOff(pVM, pPage->GCPhys, pPage->GCPhys);
+        if (rc == VINF_SUCCESS)
+        {
+            rc = PGMShwModifyPage(pVCpu, pvFault, 1, X86_PTE_RW, ~(uint64_t)X86_PTE_RW);
+            AssertMsg(rc == VINF_SUCCESS 
+                      /* In the SMP case the page table might be removed while we wait for the PGM lock in the trap handler. */
+                      ||  rc == VERR_PAGE_TABLE_NOT_PRESENT 
+                      ||  rc == VERR_PAGE_NOT_PRESENT, 
+                      ("PGMShwModifyPage -> GCPtr=%RGv rc=%d\n", pvFault, rc));
+
+            pgmPoolAddDirtyPage(pVM, pPool, pPage);
+ 
+            STAM_PROFILE_STOP(&pVM->pgm.s.CTX_SUFF(pPool)->CTX_SUFF_Z(StatMonitor), a);
+            pgmUnlock(pVM);
+            return rc;
+        }
+    }
+#endif /* PGMPOOL_WITH_OPTIMIZED_DIRTY_PT */
+
     /*
      * Not worth it, so flush it.
      *
@@ -1272,7 +1317,7 @@ DECLEXPORT(int) pgmPoolAccessHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE 
      * to emulate failed instructions since we usually cannot
      * interpret then. This may be a bit risky, in which case
      * the reuse detection must be fixed.
-     */
+     */       
     rc = pgmPoolAccessHandlerFlush(pVM, pVCpu, pPool, pPage, pDis, pRegFrame, GCPhysFault, pvFault);
     if (rc == VINF_EM_RAW_EMULATE_INSTR && fReused)
         rc = VINF_SUCCESS;
@@ -1282,6 +1327,215 @@ DECLEXPORT(int) pgmPoolAccessHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE 
 }
 
 # endif /* !IN_RING3 */
+
+# ifdef PGMPOOL_WITH_OPTIMIZED_DIRTY_PT
+/**
+ * Clear references to guest physical memory in a PAE / PAE page table.
+ *
+ * @returns nr of changed PTEs
+ * @param   pPool       The pool.
+ * @param   pPage       The page.
+ * @param   pShwPT      The shadow page table (mapping of the page).
+ * @param   pGstPT      The guest page table.
+ * @param   pGstPT      The old cached guest page table.
+ */
+DECLINLINE(unsigned) pgmPoolTrackFlushPTPaePae(PPGMPOOL pPool, PPGMPOOLPAGE pPage, PX86PTPAE pShwPT, PCX86PTPAE pGstPT, PCX86PTPAE pOldGstPT)
+{
+    unsigned cChanged = 0;
+
+    for (unsigned i = 0; i < RT_ELEMENTS(pShwPT->a); i++)
+    {
+        if (pShwPT->a[i].n.u1Present)
+        {
+            /* The the old cached PTE is identical, then there's no need to flush the shadow copy. */
+            if ((pGstPT->a[i].u & X86_PTE_PAE_PG_MASK) == (pOldGstPT->a[i].u & X86_PTE_PAE_PG_MASK))
+            {
+#ifdef VBOX_STRICT
+                RTHCPHYS HCPhys = -1;
+                int rc = PGMPhysGCPhys2HCPhys(pPool->CTX_SUFF(pVM), pGstPT->a[i].u & X86_PTE_PAE_PG_MASK, &HCPhys);
+                AssertMsg(rc == VINF_SUCCESS && (pShwPT->a[i].u & X86_PTE_PAE_PG_MASK) == HCPhys, ("rc=%d guest %RGp %RHp vs %RHp\n", rc, pGstPT->a[i].u & X86_PTE_PAE_PG_MASK, (pShwPT->a[i].u & X86_PTE_PAE_PG_MASK), HCPhys));
+#endif
+                uint64_t uHostAttr  = pShwPT->a[i].u & (X86_PTE_P | X86_PTE_US | X86_PTE_A | X86_PTE_D | X86_PTE_G | X86_PTE_PAE_NX);
+                bool     fHostRW    = !!(pShwPT->a[i].u & X86_PTE_RW);
+                uint64_t uGuestAttr = pGstPT->a[i].u & (X86_PTE_P | X86_PTE_US | X86_PTE_A | X86_PTE_D | X86_PTE_G | X86_PTE_PAE_NX);
+                bool     fGuestRW   = !!(pGstPT->a[i].u & X86_PTE_RW);
+
+                if (    uHostAttr == uGuestAttr
+                    &&  fHostRW <= fGuestRW)
+                    continue;
+            }
+            cChanged++;
+            /* Something was changed, so flush it. */
+            Log4(("pgmPoolTrackDerefPTPaePae: i=%d pte=%RX32 hint=%RX32\n",
+                  i, pShwPT->a[i].u & X86_PTE_PAE_PG_MASK, pGstPT->a[i].u & X86_PTE_PAE_PG_MASK));
+            pgmPoolTracDerefGCPhysHint(pPool, pPage, pShwPT->a[i].u & X86_PTE_PAE_PG_MASK, pOldGstPT->a[i].u & X86_PTE_PAE_PG_MASK);
+            ASMAtomicWriteSize(&pShwPT->a[i].u, 0);
+        }
+    }
+    return cChanged;
+}
+
+
+/**
+ * Flush a dirty page
+ *
+ * @param   pVM             VM Handle.
+ * @param   pPool           The pool.
+ * @param   idxSlot         Dirty array slot index
+ * @param   fForceRemoval   Force removal from the dirty page list
+ */
+static void pgmPoolFlushDirtyPage(PVM pVM, PPGMPOOL pPool, unsigned idxSlot, bool fForceRemoval = false)
+{
+    PPGMPOOLPAGE pPage;
+    unsigned     idxPage;
+
+    Assert(idxSlot < RT_ELEMENTS(pPool->aIdxDirtyPages));
+    if (pPool->aIdxDirtyPages[idxSlot] == NIL_PGMPOOL_IDX)
+        return;
+
+    idxPage = pPool->aIdxDirtyPages[idxSlot];
+    AssertRelease(idxPage != NIL_PGMPOOL_IDX);
+    pPage = &pPool->aPages[idxPage];
+    Assert(pPage->idx == idxPage);
+    Assert(pPage->iModifiedNext == NIL_PGMPOOL_IDX && pPage->iModifiedPrev == NIL_PGMPOOL_IDX);
+
+    AssertMsg(pPage->fDirty, ("Page %RGp (slot=%d) not marked dirty!", pPage->GCPhys, idxSlot));
+    Log(("Flush dirty page %RGp cMods=%d\n", pPage->GCPhys, pPage->cModifications));
+
+    /* Flush those PTEs that have changed. */
+    STAM_PROFILE_START(&pPool->StatTrackDeref,a);
+    void *pvShw = PGMPOOL_PAGE_2_LOCKED_PTR(pPool->CTX_SUFF(pVM), pPage);
+    void *pvGst;
+    int rc = PGM_GCPHYS_2_PTR(pPool->CTX_SUFF(pVM), pPage->GCPhys, &pvGst); AssertReleaseRC(rc);
+    unsigned cChanges = pgmPoolTrackFlushPTPaePae(pPool, pPage, (PX86PTPAE)pvShw, (PCX86PTPAE)pvGst, (PCX86PTPAE)&pPool->aDirtyPages[idxSlot][0]);
+    STAM_PROFILE_STOP(&pPool->StatTrackDeref,a);
+
+    /** Note: we might want to consider keeping the dirty page active in case there were many changes. */
+
+    /* Write protect the page again to catch all write accesses. */
+    rc = PGMHandlerPhysicalReset(pVM, pPage->GCPhys);
+    Assert(rc == VINF_SUCCESS);
+    pPage->fDirty         = false;
+    pPage->fZeroed        = true;
+
+    /* This page is likely to be modified again, so reduce the nr of modifications just a bit here. */
+    Assert(pPage->cModifications);
+    if (cChanges < 4)
+        pPage->cModifications = 1;      /* must use > 0 here */
+    else
+        pPage->cModifications = RT_MAX(1, pPage->cModifications / 2);
+
+    STAM_COUNTER_INC(&pPool->StatResetDirtyPages);
+    if (pPool->cDirtyPages == RT_ELEMENTS(pPool->aIdxDirtyPages))
+        pPool->idxFreeDirtyPage = idxSlot;
+
+    pPool->cDirtyPages--;
+    pPool->aIdxDirtyPages[idxSlot] = NIL_PGMPOOL_IDX;
+    Assert(pPool->cDirtyPages <= RT_ELEMENTS(pPool->aIdxDirtyPages));
+    Log(("Removed dirty page %RGp cMods=%d\n", pPage->GCPhys, pPage->cModifications));
+}
+
+/**
+ * Add a new dirty page
+ *
+ * @param   pVM         VM Handle.
+ * @param   pPool       The pool.
+ * @param   pPage       The page.
+ */
+void pgmPoolAddDirtyPage(PVM pVM, PPGMPOOL pPool, PPGMPOOLPAGE pPage)
+{
+    unsigned idxFree;
+
+    Assert(PGMIsLocked(pVM));
+    AssertCompile(RT_ELEMENTS(pPool->aIdxDirtyPages) == 8 || RT_ELEMENTS(pPool->aIdxDirtyPages) == 16);
+
+    if (pPage->fDirty)
+        return;
+
+    idxFree = pPool->idxFreeDirtyPage;
+    Assert(idxFree < RT_ELEMENTS(pPool->aIdxDirtyPages));
+    Assert(pPage->iModifiedNext == NIL_PGMPOOL_IDX && pPage->iModifiedPrev == NIL_PGMPOOL_IDX);
+
+    if (pPool->cDirtyPages >= RT_ELEMENTS(pPool->aIdxDirtyPages))
+        pgmPoolFlushDirtyPage(pVM, pPool, idxFree, true /* force removal */);
+    Assert(pPool->cDirtyPages < RT_ELEMENTS(pPool->aIdxDirtyPages));
+    AssertMsg(pPool->aIdxDirtyPages[idxFree] == NIL_PGMPOOL_IDX, ("idxFree=%d cDirtyPages=%d\n", idxFree, pPool->cDirtyPages));
+
+    /* Make a copy of the guest page table as we require valid GCPhys addresses when removing
+     * references to physical pages. (the HCPhys linear lookup is *extremely* expensive!)
+     */
+    void *pvGst;
+    int rc = PGM_GCPHYS_2_PTR(pPool->CTX_SUFF(pVM), pPage->GCPhys, &pvGst); AssertReleaseRC(rc);
+    memcpy(&pPool->aDirtyPages[idxFree][0], pvGst, PAGE_SIZE);
+
+    STAM_COUNTER_INC(&pPool->StatDirtyPage);
+    Log(("Mark dirty page %RGp (slot=%d)\n", pPage->GCPhys, idxFree));
+    pPage->fDirty                  = true;
+    pPage->idxDirty                = idxFree;
+    pPool->aIdxDirtyPages[idxFree] = pPage->idx;
+    pPool->cDirtyPages++;
+
+    pPool->idxFreeDirtyPage        = (pPool->idxFreeDirtyPage + 1) & (RT_ELEMENTS(pPool->aIdxDirtyPages) - 1);
+    if (    pPool->cDirtyPages < RT_ELEMENTS(pPool->aIdxDirtyPages)
+        &&  pPool->aIdxDirtyPages[pPool->idxFreeDirtyPage] != NIL_PGMPOOL_IDX)
+    {
+        unsigned i;
+        for (i = 1; i < RT_ELEMENTS(pPool->aIdxDirtyPages); i++)
+        {
+            idxFree = (pPool->idxFreeDirtyPage + i) & (RT_ELEMENTS(pPool->aIdxDirtyPages) - 1);
+            if (pPool->aIdxDirtyPages[idxFree] == NIL_PGMPOOL_IDX)
+            {
+                pPool->idxFreeDirtyPage = idxFree;
+                break;
+            }
+        }
+        Assert(i != RT_ELEMENTS(pPool->aIdxDirtyPages));
+    }
+
+    Assert(pPool->cDirtyPages == RT_ELEMENTS(pPool->aIdxDirtyPages) || pPool->aIdxDirtyPages[pPool->idxFreeDirtyPage] == NIL_PGMPOOL_IDX);
+    return;
+}
+
+
+/**
+ * Reset all dirty pages by reinstating page monitoring.
+ *
+ * @param   pVM             VM Handle.
+ * @param   fForceRemoval   Force removal of all dirty pages
+ */
+void pgmPoolResetDirtyPages(PVM pVM, bool fForceRemoval)
+{
+    PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool);
+    Assert(PGMIsLocked(pVM));
+    Assert(pPool->cDirtyPages <= RT_ELEMENTS(pPool->aIdxDirtyPages));
+
+    if (!pPool->cDirtyPages)
+        return;
+
+    Log(("pgmPoolResetDirtyPages\n"));
+    for (unsigned i = 0; i < RT_ELEMENTS(pPool->aIdxDirtyPages); i++)
+        pgmPoolFlushDirtyPage(pVM, pPool, i, fForceRemoval);
+
+    pPool->idxFreeDirtyPage = 0;
+    if (    pPool->cDirtyPages != RT_ELEMENTS(pPool->aIdxDirtyPages)
+        &&  pPool->aIdxDirtyPages[pPool->idxFreeDirtyPage] != NIL_PGMPOOL_IDX)
+    {
+        unsigned i;
+        for (i = 1; i < RT_ELEMENTS(pPool->aIdxDirtyPages); i++)
+        {
+            if (pPool->aIdxDirtyPages[i] == NIL_PGMPOOL_IDX)
+            {
+                pPool->idxFreeDirtyPage = i;
+                break;
+            }
+        }
+        AssertMsg(i != RT_ELEMENTS(pPool->aIdxDirtyPages), ("cDirtyPages %d", pPool->cDirtyPages));
+    }
+
+    Assert(pPool->aIdxDirtyPages[pPool->idxFreeDirtyPage] == NIL_PGMPOOL_IDX || pPool->cDirtyPages == RT_ELEMENTS(pPool->aIdxDirtyPages));
+    return;
+}
+# endif /* PGMPOOL_WITH_OPTIMIZED_DIRTY_PT */
 #endif  /* PGMPOOL_WITH_MONITORING */
 
 #ifdef PGMPOOL_WITH_CACHE
@@ -1817,6 +2071,12 @@ static int pgmPoolMonitorInsert(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
     {
         Assert(pPageHead != pPage); Assert(pPageHead->iMonitoredNext != pPage->idx);
         Assert(pPageHead->iMonitoredPrev != pPage->idx);
+
+#ifdef PGMPOOL_WITH_OPTIMIZED_DIRTY_PT
+        if (pPageHead->fDirty)
+            pgmPoolFlushDirtyPage(pPool->CTX_SUFF(pVM), pPool, pPageHead->idxDirty, true /* force removal */);
+#endif
+
         pPage->iMonitoredPrev = pPageHead->idx;
         pPage->iMonitoredNext = pPageHead->iMonitoredNext;
         if (pPageHead->iMonitoredNext != NIL_PGMPOOL_IDX)
@@ -2023,13 +2283,18 @@ static void pgmPoolMonitorModifiedRemove(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
  *
  * @param   pVM     The VM handle.
  */
-void pgmPoolMonitorModifiedClearAll(PVM pVM)
+static void pgmPoolMonitorModifiedClearAll(PVM pVM)
 {
     pgmLock(pVM);
     PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool);
     LogFlow(("pgmPoolMonitorModifiedClearAll: cModifiedPages=%d\n", pPool->cModifiedPages));
 
     unsigned cPages = 0; NOREF(cPages);
+
+#ifdef PGMPOOL_WITH_OPTIMIZED_DIRTY_PT
+    pgmPoolResetDirtyPages(pVM, true /* force removal. */);
+#endif
+
     uint16_t idx = pPool->iModifiedHead;
     pPool->iModifiedHead = NIL_PGMPOOL_IDX;
     while (idx != NIL_PGMPOOL_IDX)
@@ -2170,6 +2435,14 @@ DECLCALLBACK(int) pgmPoolClearAll(PVM pVM, PVMCPU pVCpu, void *pvUser)
         paPhysExts[i].aidx[2] = NIL_PGMPOOL_IDX;
     }
     paPhysExts[cMaxPhysExts - 1].iNext = NIL_PGMPOOL_PHYSEXT_INDEX;
+#endif
+
+#ifdef PGMPOOL_WITH_OPTIMIZED_DIRTY_PT
+    /* Clear all dirty pages. */
+    pPool->idxFreeDirtyPage = 0;
+    pPool->cDirtyPages      = 0;
+    for (unsigned i = 0; i < RT_ELEMENTS(pPool->aIdxDirtyPages); i++)
+        pPool->aIdxDirtyPages[i] = NIL_PGMPOOL_IDX;
 #endif
 
     /* Clear the PGM_SYNC_CLEAR_PGM_POOL flag on all VCPUs to prevent redundant flushes. */
@@ -3986,6 +4259,11 @@ int pgmPoolFlushPage(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
      */
     pPage->fZeroed = false;
 
+#ifdef PGMPOOL_WITH_OPTIMIZED_DIRTY_PT
+    if (pPage->fDirty)
+        pgmPoolFlushDirtyPage(pVM, pPool, pPage->idxDirty, true /* force removal */);
+#endif
+
 #ifdef PGMPOOL_WITH_USER_TRACKING
     /*
      * Clear the page.
@@ -4210,6 +4488,9 @@ int pgmPoolAllocEx(PVM pVM, RTGCPHYS GCPhys, PGMPOOLKIND enmKind, PGMPOOLACCESS 
     pPage->fSeenNonGlobal = false;      /* Set this to 'true' to disable this feature. */
     pPage->fMonitored = false;
     pPage->fCached = false;
+#ifdef PGMPOOL_WITH_OPTIMIZED_DIRTY_PT
+    pPage->fDirty = false;
+#endif
     pPage->fReusedFlushPending = false;
 #ifdef PGMPOOL_WITH_MONITORING
     pPage->cModifications = 0;
@@ -4372,6 +4653,9 @@ void pgmR3PoolReset(PVM pVM)
         pPage->fZeroed    = false;       /* This could probably be optimized, but better safe than sorry. */
         pPage->fSeenNonGlobal = false;
         pPage->fMonitored = false;
+#ifdef PGMPOOL_WITH_OPTIMIZED_DIRTY_PT
+        pPage->fDirty     = false;
+#endif
         pPage->fCached    = false;
         pPage->fReusedFlushPending = false;
 #ifdef PGMPOOL_WITH_USER_TRACKING
@@ -4448,6 +4732,14 @@ void pgmR3PoolReset(PVM pVM)
         pPool->aiHash[i] = NIL_PGMPOOL_IDX;
     pPool->iAgeHead = NIL_PGMPOOL_IDX;
     pPool->iAgeTail = NIL_PGMPOOL_IDX;
+#endif
+
+#ifdef PGMPOOL_WITH_OPTIMIZED_DIRTY_PT
+    /* Clear all dirty pages. */
+    pPool->idxFreeDirtyPage = 0;
+    pPool->cDirtyPages      = 0;
+    for (unsigned i = 0; i < RT_ELEMENTS(pPool->aIdxDirtyPages); i++)
+        pPool->aIdxDirtyPages[i] = NIL_PGMPOOL_IDX;
 #endif
 
     /*
