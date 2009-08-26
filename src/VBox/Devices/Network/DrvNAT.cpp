@@ -71,7 +71,7 @@ do {                                                                            
     if (RT_FAILURE((rc)) && (rc) != VERR_CFGM_VALUE_NOT_FOUND)                                      \
         return PDMDrvHlpVMSetError((pthis)->pDrvIns, (rc), RT_SRC_POS, N_("NAT#%d: configuration query for \""name"\" " #type_name " failed"), \
                                    (pthis)->pDrvIns->iInstance);                                    \
-}while(0)
+} while (0)
 
 #define GET_ED_STRICT(pthis, node, name, rc, type, type_name, var)                                  \
 do {                                                                                                \
@@ -79,7 +79,7 @@ do {                                                                            
     if (RT_FAILURE((rc)))                                                                           \
         return PDMDrvHlpVMSetError((pthis)->pDrvIns, (rc), RT_SRC_POS, N_("NAT#%d: configuration query for \""name"\" " #type_name " failed"), \
                                   (pthis)->pDrvIns->iInstance);                                     \
-}while(0)
+} while (0)
 
 #define GET_EXTRADATA_N(pthis, node, name, rc, type, type_name, var, var_size)                      \
 do {                                                                                                \
@@ -87,7 +87,7 @@ do {                                                                            
     if (RT_FAILURE((rc)) && (rc) != VERR_CFGM_VALUE_NOT_FOUND)                                      \
         return PDMDrvHlpVMSetError((pthis)->pDrvIns, (rc), RT_SRC_POS, N_("NAT#%d: configuration query for \""name"\" " #type_name " failed"), \
                                   (pthis)->pDrvIns->iInstance);                                     \
-}while(0)
+} while (0)
 
 #define GET_BOOL(rc, pthis, node, name, var) \
     GET_EXTRADATA(pthis, node, name, (rc), Bool, bolean, (var))
@@ -102,24 +102,26 @@ do {                                                                            
 
 
 
-#define DOGETIP(rc, node, instance, status, x)                                      \
-do {                                                                                \
-        char    sz##x[32];                                                          \
-        GET_STRING((rc), (node), (instance), #x, sz ## x[0],  sizeof(sz ## x));     \
-        if (rc != VERR_CFGM_VALUE_NOT_FOUND)                                        \
-            (status) = inet_aton(sz ## x, &x);                                      \
-}while(0)
+#define DO_GET_IP(rc, node, instance, status, x)                                \
+do {                                                                            \
+    char    sz##x[32];                                                          \
+    GET_STRING((rc), (node), (instance), #x, sz ## x[0],  sizeof(sz ## x));     \
+    if (rc != VERR_CFGM_VALUE_NOT_FOUND)                                        \
+        (status) = inet_aton(sz ## x, &x);                                      \
+} while (0)
 
 #define GETIP_DEF(rc, node, instance, x, def)           \
 do                                                      \
 {                                                       \
     int status = 0;                                     \
-    DOGETIP((rc), (node), (instance),  status, x);      \
+    DO_GET_IP((rc), (node), (instance),  status, x);    \
     if (status == 0 || rc == VERR_CFGM_VALUE_NOT_FOUND) \
         x.s_addr = def;                                 \
-}while(0)
+} while (0)
 
+/** Queue depth (!SLIRP_SPLIT_CAN_OUTPUT). */
 #define QUEUE_SIZE 50
+
 
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
