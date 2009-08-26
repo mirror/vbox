@@ -22,6 +22,10 @@
 #define ___slirp_state_h
 
 #include <iprt/req.h>
+
+#define COUNTERS_INIT
+#include "counters.h"
+
 #include "ip_icmp.h"
 #include "dnsproxy/dnsproxy.h"
 
