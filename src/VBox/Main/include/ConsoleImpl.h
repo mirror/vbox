@@ -563,7 +563,7 @@ private:
      * maintained in the NetworkAdapter. This is needed to
      * change the network attachment dynamically.
      */
-    static NetworkAttachmentType_T meAttachmentType[SchemaDefs::NetworkAdapterCount];
+    NetworkAttachmentType_T meAttachmentType[SchemaDefs::NetworkAdapterCount];
 
     VMMDev * const mVMMDev;
     AudioSniffer * const mAudioSniffer;

@@ -2126,10 +2126,10 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
     if (fAttachDetach && fSniffer)
     {
         const char *pszNetDriver = "IntNet";
-        if (meAttachmentType[uInstance] == NetworkAttachmentType_NAT)
+        if (pThis->meAttachmentType[uInstance] == NetworkAttachmentType_NAT)
             pszNetDriver = "NAT";
 #if !defined(VBOX_WITH_NETFLT) && defined(RT_OS_LINUX)
-        if (meAttachmentType[uInstance] == NetworkAttachmentType_Bridged)
+        if (pThis->meAttachmentType[uInstance] == NetworkAttachmentType_Bridged)
             pszNetDriver = "HostInterface";
 #endif
 
@@ -2852,7 +2852,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
             break;
     }
 
-    meAttachmentType[uInstance] = eAttachmentType;
+    pThis->meAttachmentType[uInstance] = eAttachmentType;
 
 #undef STR_FREE
 #undef H
