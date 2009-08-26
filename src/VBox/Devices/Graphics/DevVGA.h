@@ -86,14 +86,7 @@
 #define VBE_DISPI_INDEX_X_OFFSET        0x8
 #define VBE_DISPI_INDEX_Y_OFFSET        0x9
 #define VBE_DISPI_INDEX_VBOX_VIDEO      0xa
-#ifdef VBOX_WITH_HGSMI
-/* @todo this will break saved state and is inefficient. use 2 PCI io ports. */
-#define VBE_DISPI_INDEX_VBVA_HOST       0xb
-#define VBE_DISPI_INDEX_VBVA_GUEST      0xc
-#define VBE_DISPI_INDEX_NB              0xd
-#else
 #define VBE_DISPI_INDEX_NB              0xb
-#endif /* !VBOX_WITH_HGSMI */
 
 #define VBE_DISPI_ID0                   0xB0C0
 #define VBE_DISPI_ID1                   0xB0C1
@@ -105,9 +98,7 @@
 /* The VBOX interface id. Indicates support for VBE_DISPI_INDEX_VBOX_VIDEO. */
 #define VBE_DISPI_ID_VBOX_VIDEO         0xBE00
 #ifdef VBOX_WITH_HGSMI
-/* The VBOX interface id. Indicates support for VBVA shared memory interface,
- * VBE_DISPI_INDEX_VBVA_GUEST_CMD and VBE_DISPI_INDEX_VBVA_HOST_CMD VBE indexes.
- */
+/* The VBOX interface id. Indicates support for VBVA shared memory interface. */
 #define VBE_DISPI_ID_HGSMI              0xBE01
 #endif /* VBOX_WITH_HGSMI */
 #endif /* VBOX */
