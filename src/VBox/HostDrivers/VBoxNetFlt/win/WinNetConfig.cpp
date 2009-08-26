@@ -2191,7 +2191,8 @@ static BOOL vboxNetCfgWinAdjustHostOnlyNetworkInterfacePriority (IN INetCfg *pNc
     return true;
 }
 
-VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinCreateHostOnlyNetworkInterface (GUID *pGuid, BSTR *lppszName, BSTR *pErrMsg)
+VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinCreateHostOnlyNetworkInterface (LPCWSTR pInfPath, bool bIsInfPathFile, /* <- input params */
+        GUID *pGuid, BSTR *lppszName, BSTR *pErrMsg) /* <- output params */
 {
     HRESULT hrc = S_OK;
 
@@ -2256,6 +2257,51 @@ VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinCreateHostOnlyNetworkInterface (GUID *p
         if (!ok)
             SetErrBreak ((L"SetupDiSetSelectedDevice failed (0x%08X)",
                           GetLastError()));
+
+        if(pInfPath)
+        {
+            /* get the device install parameters and disable filecopy */
+            DeviceInstallParams.cbSize = sizeof(SP_DEVINSTALL_PARAMS);
+            ok = SetupDiGetDeviceInstallParams (hDeviceInfo, &DeviceInfoData,
+                                                &DeviceInstallParams);
+            if (ok)
+            {
+                memset(DeviceInstallParams.DriverPath, 0, sizeof(DeviceInstallParams.DriverPath));
+                int pathLenght = wcslen(pInfPath) + 1/* null terminator */;
+                if(pathLenght < sizeof(DeviceInstallParams.DriverPath)/sizeof(DeviceInstallParams.DriverPath[0]))
+                {
+                    memcpy(DeviceInstallParams.DriverPath, pInfPath, pathLenght*sizeof(DeviceInstallParams.DriverPath[0]));
+
+                    if(bIsInfPathFile)
+                    {
+                        DeviceInstallParams.Flags |= DI_ENUMSINGLEINF;
+                    }
+
+                    ok = SetupDiSetDeviceInstallParams (hDeviceInfo, &DeviceInfoData,
+                                                        &DeviceInstallParams);
+                    if(!ok)
+                    {
+                        DWORD winEr = GetLastError();
+                        Log(L"SetupDiSetDeviceInstallParams: SetupDiSetDeviceInstallParams failed, winEr (%d)\n", winEr);
+                        Assert(0);
+                        break;
+                    }
+                }
+                else
+                {
+                    Log(L"SetupDiSetDeviceInstallParams: inf path is too long\n");
+                    Assert(0);
+                    break;
+                }
+            }
+            else
+            {
+                DWORD winEr = GetLastError();
+                Assert(0);
+                Log(L"VBoxNetCfgWinCreateHostOnlyNetworkInterface: SetupDiGetDeviceInstallParams failed, winEr (%d)\n", winEr);
+            }
+
+        }
 
         /* build a list of class drivers */
         ok = SetupDiBuildDriverInfoList (hDeviceInfo, &DeviceInfoData,
