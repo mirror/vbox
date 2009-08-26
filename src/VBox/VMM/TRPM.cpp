@@ -438,7 +438,7 @@ static VBOXIDTE_GENERIC     g_aIdt[256] =
 *   Internal Functions                                                         *
 *******************************************************************************/
 static DECLCALLBACK(int) trpmR3Save(PVM pVM, PSSMHANDLE pSSM);
-static DECLCALLBACK(int) trpmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version);
+static DECLCALLBACK(int) trpmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPhase);
 static DECLCALLBACK(int) trpmR3GuestIDTWriteHandler(PVM pVM, RTGCPTR GCPtr, void *pvPtr, void *pvBuf, size_t cbBuf, PGMACCESSTYPE enmAccessType, void *pvUser);
 
 
@@ -507,6 +507,7 @@ VMMR3DECL(int) TRPMR3Init(PVM pVM)
      * Register the saved state data unit.
      */
     int rc = SSMR3RegisterInternal(pVM, "trpm", 1, TRPM_SAVED_STATE_VERSION, sizeof(TRPM),
+                                   NULL, NULL, NULL,
                                    NULL, trpmR3Save, NULL,
                                    NULL, trpmR3Load, NULL);
     if (RT_FAILURE(rc))
@@ -817,19 +818,21 @@ static DECLCALLBACK(int) trpmR3Save(PVM pVM, PSSMHANDLE pSSM)
  * @returns VBox status code.
  * @param   pVM             VM Handle.
  * @param   pSSM            SSM operation handle.
- * @param   u32Version      Data layout version.
+ * @param   uVersion        Data layout version.
+ * @param   uPhase          The data phase.
  */
-static DECLCALLBACK(int) trpmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version)
+static DECLCALLBACK(int) trpmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPhase)
 {
     LogFlow(("trpmR3Load:\n"));
+    Assert(uPhase == SSM_PHASE_FINAL); NOREF(uPhase);
 
     /*
      * Validate version.
      */
-    if (    u32Version != TRPM_SAVED_STATE_VERSION
-        &&  u32Version != TRPM_SAVED_STATE_VERSION_UNI)
+    if (    uVersion != TRPM_SAVED_STATE_VERSION
+        &&  uVersion != TRPM_SAVED_STATE_VERSION_UNI)
     {
-        AssertMsgFailed(("trpmR3Load: Invalid version u32Version=%d!\n", u32Version));
+        AssertMsgFailed(("trpmR3Load: Invalid version uVersion=%d!\n", uVersion));
         return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
     }
 
@@ -843,9 +846,9 @@ static DECLCALLBACK(int) trpmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Versio
      */
     PTRPM pTrpm = &pVM->trpm.s;
 
-    if (u32Version == TRPM_SAVED_STATE_VERSION)
+    if (uVersion == TRPM_SAVED_STATE_VERSION)
     {
-        for (unsigned i=0;i<pVM->cCPUs;i++)
+        for (VMCPUID i = 0; i < pVM->cCPUs; i++)
         {
             PTRPMCPU pTrpmCpu = &pVM->aCpus[i].trpm.s;
             SSMR3GetUInt(pSSM,      &pTrpmCpu->uActiveVector);

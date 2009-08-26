@@ -152,16 +152,16 @@ static DECLCALLBACK(int) patmSaveFixupRecords(PAVLPVNODECORE pNode, void *pVM1)
         /* Core.Key abused to store the fixup type. */
         if (*pFixup == pVM->pVMRC + RT_OFFSETOF(VM, aCpus[0].fLocalForcedActions))
             rec.Core.Key = (AVLPVKEY)PATM_FIXUP_CPU_FF_ACTION;
-        else 
+        else
         if (*pFixup == CPUMR3GetGuestCpuIdDefRCPtr(pVM))
             rec.Core.Key = (AVLPVKEY)PATM_FIXUP_CPUID_DEFAULT;
-        else 
+        else
         if (*pFixup == CPUMR3GetGuestCpuIdStdRCPtr(pVM))
             rec.Core.Key = (AVLPVKEY)PATM_FIXUP_CPUID_STANDARD;
-        else 
+        else
         if (*pFixup == CPUMR3GetGuestCpuIdExtRCPtr(pVM))
             rec.Core.Key = (AVLPVKEY)PATM_FIXUP_CPUID_EXTENDED;
-        else 
+        else
         if (*pFixup == CPUMR3GetGuestCpuIdCentaurRCPtr(pVM))
             rec.Core.Key = (AVLPVKEY)PATM_FIXUP_CPUID_CENTAUR;
     }
@@ -235,7 +235,7 @@ static DECLCALLBACK(int) patmSavePatchState(PAVLOU32NODECORE pNode, void *pVM1)
  * @param   pVM             VM Handle.
  * @param   pSSM            SSM operation handle.
  */
-DECLCALLBACK(int) patmr3Save(PVM pVM, PSSMHANDLE pSSM)
+DECLCALLBACK(int) patmR3Save(PVM pVM, PSSMHANDLE pSSM)
 {
     PATM patmInfo = pVM->patm.s;
     int  rc;
@@ -298,23 +298,24 @@ DECLCALLBACK(int) patmr3Save(PVM pVM, PSSMHANDLE pSSM)
  * @returns VBox status code.
  * @param   pVM             VM Handle.
  * @param   pSSM            SSM operation handle.
- * @param   u32Version      Data layout version.
+ * @param   uVersion        Data layout version.
+ * @param   uPhase          The data phase.
  */
-DECLCALLBACK(int) patmr3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version)
+DECLCALLBACK(int) patmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPhase)
 {
     PATM patmInfo;
     int  rc;
 
-    if (    u32Version != PATM_SSM_VERSION
-        &&  u32Version != PATM_SSM_VERSION_FIXUP_HACK
-        &&  u32Version != PATM_SSM_VERSION_VER16
+    if (    uVersion != PATM_SSM_VERSION
+        &&  uVersion != PATM_SSM_VERSION_FIXUP_HACK
+        &&  uVersion != PATM_SSM_VERSION_VER16
 #ifdef PATM_WITH_NEW_SSM
-        &&  u32Version != PATM_SSM_VERSION_GETPUTMEM)
+        &&  uVersion != PATM_SSM_VERSION_GETPUTMEM)
 #else
        )
 #endif
     {
-        AssertMsgFailed(("patmR3Load: Invalid version u32Version=%d!\n", u32Version));
+        AssertMsgFailed(("patmR3Load: Invalid version uVersion=%d!\n", uVersion));
         return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
     }
 
@@ -324,7 +325,7 @@ DECLCALLBACK(int) patmr3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version)
      * Restore PATM structure
      */
 #ifdef PATM_WITH_NEW_SSM
-    if (u32Version == PATM_SSM_VERSION_GETPUTMEM)
+    if (uVersion == PATM_SSM_VERSION_GETPUTMEM)
     {
 #endif
         rc = SSMR3GetMem(pSSM, &patmInfo, sizeof(patmInfo));
@@ -477,7 +478,7 @@ DECLCALLBACK(int) patmr3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version)
      * Restore GC state memory
      */
 #ifdef PATM_WITH_NEW_SSM
-    if (u32Version == PATM_SSM_VERSION_GETPUTMEM)
+    if (uVersion == PATM_SSM_VERSION_GETPUTMEM)
     {
 #endif
         rc = SSMR3GetMem(pSSM, pVM->patm.s.pGCStateHC, sizeof(PATMGCSTATE));
@@ -643,7 +644,7 @@ DECLCALLBACK(int) patmr3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version)
                     pFixup        = (RTRCPTR *)rec.pRelocPos;
                 }
 
-                patmCorrectFixup(pVM, u32Version, patmInfo, &pPatchRec->patch, &rec, offset, pFixup);
+                patmCorrectFixup(pVM, uVersion, patmInfo, &pPatchRec->patch, &rec, offset, pFixup);
             }
 
             rc = patmPatchAddReloc32(pVM, &pPatchRec->patch, rec.pRelocPos, rec.uType, rec.pSource, rec.pDest);
@@ -718,7 +719,7 @@ DECLCALLBACK(int) patmr3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version)
         pFixup = (RTRCPTR *)pRec->pRelocPos;
 
         /* Correct fixups that refer to PATM structures in the hypervisor region (their addresses might have changed). */
-        patmCorrectFixup(pVM, u32Version, patmInfo, &pVM->patm.s.pGlobalPatchRec->patch, pRec, offset, pFixup);
+        patmCorrectFixup(pVM, uVersion, patmInfo, &pVM->patm.s.pGlobalPatchRec->patch, pRec, offset, pFixup);
     }
 
 #ifdef VBOX_WITH_STATISTICS

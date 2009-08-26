@@ -73,6 +73,12 @@ typedef struct SSMUNIT
         /** SSMUNITTYPE_DEV. */
         struct
         {
+            /** Prepare live save. */
+            PFNSSMDEVLIVEPREP   pfnLivePrep;
+            /** Execute live save. */
+            PFNSSMDEVLIVEEXEC   pfnLiveExec;
+            /** Vote live save complete. */
+            PFNSSMDEVLIVEVOTE   pfnLiveVote;
             /** Prepare save. */
             PFNSSMDEVSAVEPREP   pfnSavePrep;
             /** Execute save. */
@@ -92,6 +98,12 @@ typedef struct SSMUNIT
         /** SSMUNITTYPE_DRV. */
         struct
         {
+            /** Prepare live save. */
+            PFNSSMDRVLIVEPREP   pfnLivePrep;
+            /** Execute live save. */
+            PFNSSMDRVLIVEEXEC   pfnLiveExec;
+            /** Vote live save complete. */
+            PFNSSMDRVLIVEVOTE   pfnLiveVote;
             /** Prepare save. */
             PFNSSMDRVSAVEPREP   pfnSavePrep;
             /** Execute save. */
@@ -111,6 +123,12 @@ typedef struct SSMUNIT
         /** SSMUNITTYPE_INTERNAL. */
         struct
         {
+            /** Prepare live save. */
+            PFNSSMINTLIVEPREP   pfnLivePrep;
+            /** Execute live save. */
+            PFNSSMINTLIVEEXEC   pfnLiveExec;
+            /** Vote live save complete. */
+            PFNSSMINTLIVEVOTE   pfnLiveVote;
             /** Prepare save. */
             PFNSSMINTSAVEPREP   pfnSavePrep;
             /** Execute save. */
@@ -128,6 +146,12 @@ typedef struct SSMUNIT
         /** SSMUNITTYPE_EXTERNAL. */
         struct
         {
+            /** Prepare live save. */
+            PFNSSMEXTLIVEPREP   pfnLivePrep;
+            /** Execute live save. */
+            PFNSSMEXTLIVEEXEC   pfnLiveExec;
+            /** Vote live save complete. */
+            PFNSSMEXTLIVEVOTE   pfnLiveVote;
             /** Prepare save. */
             PFNSSMEXTSAVEPREP   pfnSavePrep;
             /** Execute save. */
@@ -146,6 +170,12 @@ typedef struct SSMUNIT
 
         struct
         {
+            /** Prepare live save. */
+            PFNRT               pfnLivePrep;
+            /** Execute live save. */
+            PFNRT               pfnLiveExec;
+            /** Vote live save complete. */
+            PFNRT               pfnLiveVote;
             /** Prepare save. */
             PFNRT               pfnSavePrep;
             /** Execute save. */
@@ -177,6 +207,9 @@ typedef struct SSMUNIT
     char                    szName[1];
 } SSMUNIT;
 
+AssertCompile2MemberOffsets(SSMUNIT, u.Common.pfnLivePrep, u.Dev.pfnLivePrep);
+AssertCompile2MemberOffsets(SSMUNIT, u.Common.pfnLiveExec, u.Dev.pfnLiveExec);
+AssertCompile2MemberOffsets(SSMUNIT, u.Common.pfnLiveVote, u.Dev.pfnLiveVote);
 AssertCompile2MemberOffsets(SSMUNIT, u.Common.pfnSavePrep, u.Dev.pfnSavePrep);
 AssertCompile2MemberOffsets(SSMUNIT, u.Common.pfnSaveExec, u.Dev.pfnSaveExec);
 AssertCompile2MemberOffsets(SSMUNIT, u.Common.pfnSaveDone, u.Dev.pfnSaveDone);
@@ -185,6 +218,9 @@ AssertCompile2MemberOffsets(SSMUNIT, u.Common.pfnLoadExec, u.Dev.pfnLoadExec);
 AssertCompile2MemberOffsets(SSMUNIT, u.Common.pfnLoadDone, u.Dev.pfnLoadDone);
 AssertCompile2MemberOffsets(SSMUNIT, u.Common.pvKey,       u.Dev.pDevIns);
 
+AssertCompile2MemberOffsets(SSMUNIT, u.Common.pfnLivePrep, u.Drv.pfnLivePrep);
+AssertCompile2MemberOffsets(SSMUNIT, u.Common.pfnLiveExec, u.Drv.pfnLiveExec);
+AssertCompile2MemberOffsets(SSMUNIT, u.Common.pfnLiveVote, u.Drv.pfnLiveVote);
 AssertCompile2MemberOffsets(SSMUNIT, u.Common.pfnSavePrep, u.Drv.pfnSavePrep);
 AssertCompile2MemberOffsets(SSMUNIT, u.Common.pfnSaveExec, u.Drv.pfnSaveExec);
 AssertCompile2MemberOffsets(SSMUNIT, u.Common.pfnSaveDone, u.Drv.pfnSaveDone);
@@ -193,6 +229,9 @@ AssertCompile2MemberOffsets(SSMUNIT, u.Common.pfnLoadExec, u.Drv.pfnLoadExec);
 AssertCompile2MemberOffsets(SSMUNIT, u.Common.pfnLoadDone, u.Drv.pfnLoadDone);
 AssertCompile2MemberOffsets(SSMUNIT, u.Common.pvKey,       u.Drv.pDrvIns);
 
+AssertCompile2MemberOffsets(SSMUNIT, u.Common.pfnLivePrep, u.Internal.pfnLivePrep);
+AssertCompile2MemberOffsets(SSMUNIT, u.Common.pfnLiveExec, u.Internal.pfnLiveExec);
+AssertCompile2MemberOffsets(SSMUNIT, u.Common.pfnLiveVote, u.Internal.pfnLiveVote);
 AssertCompile2MemberOffsets(SSMUNIT, u.Common.pfnSavePrep, u.Internal.pfnSavePrep);
 AssertCompile2MemberOffsets(SSMUNIT, u.Common.pfnSaveExec, u.Internal.pfnSaveExec);
 AssertCompile2MemberOffsets(SSMUNIT, u.Common.pfnSaveDone, u.Internal.pfnSaveDone);
@@ -200,6 +239,9 @@ AssertCompile2MemberOffsets(SSMUNIT, u.Common.pfnLoadPrep, u.Internal.pfnLoadPre
 AssertCompile2MemberOffsets(SSMUNIT, u.Common.pfnLoadExec, u.Internal.pfnLoadExec);
 AssertCompile2MemberOffsets(SSMUNIT, u.Common.pfnLoadDone, u.Internal.pfnLoadDone);
 
+AssertCompile2MemberOffsets(SSMUNIT, u.Common.pfnLivePrep, u.External.pfnLivePrep);
+AssertCompile2MemberOffsets(SSMUNIT, u.Common.pfnLiveExec, u.External.pfnLiveExec);
+AssertCompile2MemberOffsets(SSMUNIT, u.Common.pfnLiveVote, u.External.pfnLiveVote);
 AssertCompile2MemberOffsets(SSMUNIT, u.Common.pfnSavePrep, u.External.pfnSavePrep);
 AssertCompile2MemberOffsets(SSMUNIT, u.Common.pfnSaveExec, u.External.pfnSaveExec);
 AssertCompile2MemberOffsets(SSMUNIT, u.Common.pfnSaveDone, u.External.pfnSaveDone);

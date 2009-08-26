@@ -556,20 +556,24 @@ typedef struct PDMDRVHLP
      *
      * @returns VBox status.
      * @param   pDrvIns         Driver instance.
-     * @param   pszName         Data unit name.
-     * @param   u32Instance     The instance identifier of the data unit.
-     *                          This must together with the name be unique.
-     * @param   u32Version      Data layout version number.
+     * @param   uVersion        Data layout version number.
      * @param   cbGuess         The approximate amount of data in the unit.
      *                          Only for progress indicators.
+     *
+     * @param   pfnLivePrep     Prepare live save callback, optional.
+     * @param   pfnLiveExec     Execute live save callback, optional.
+     * @param   pfnLiveVote     Vote live save callback, optional.
+     *
      * @param   pfnSavePrep     Prepare save callback, optional.
      * @param   pfnSaveExec     Execute save callback, optional.
      * @param   pfnSaveDone     Done save callback, optional.
+     *
      * @param   pfnLoadPrep     Prepare load callback, optional.
      * @param   pfnLoadExec     Execute load callback, optional.
      * @param   pfnLoadDone     Done load callback, optional.
      */
-    DECLR3CALLBACKMEMBER(int, pfnSSMRegister,(PPDMDRVINS pDrvIns, const char *pszName, uint32_t u32Instance, uint32_t u32Version, size_t cbGuess,
+    DECLR3CALLBACKMEMBER(int, pfnSSMRegister,(PPDMDRVINS pDrvIns, uint32_t uVersion, size_t cbGuess,
+                                              PFNSSMDRVLIVEPREP pfnLivePrep, PFNSSMDRVLIVEEXEC pfnLiveExec, PFNSSMDRVLIVEVOTE pfnLiveVote,
                                               PFNSSMDRVSAVEPREP pfnSavePrep, PFNSSMDRVSAVEEXEC pfnSaveExec, PFNSSMDRVSAVEDONE pfnSaveDone,
                                               PFNSSMDRVLOADPREP pfnLoadPrep, PFNSSMDRVLOADEXEC pfnLoadExec, PFNSSMDRVLOADDONE pfnLoadDone));
 
@@ -579,10 +583,10 @@ typedef struct PDMDRVHLP
      * @returns VBox status.
      * @param   pDrvIns         Driver instance.
      * @param   pszName         Data unit name.
-     * @param   u32Instance     The instance identifier of the data unit.
+     * @param   uInstance       The instance identifier of the data unit.
      *                          This must together with the name be unique.
      */
-    DECLR3CALLBACKMEMBER(int, pfnSSMDeregister,(PPDMDRVINS pDrvIns, const char *pszName, uint32_t u32Instance));
+    DECLR3CALLBACKMEMBER(int, pfnSSMDeregister,(PPDMDRVINS pDrvIns, const char *pszName, uint32_t uInstance));
 
     /**
      * Registers a statistics sample if statistics are enabled.
@@ -911,15 +915,52 @@ DECLINLINE(int) PDMDrvHlpTMTimerCreate(PPDMDRVINS pDrvIns, TMCLOCK enmClock, PFN
 }
 
 /**
+ * Register a save state data unit.
+ *
+ * @returns VBox status.
+ * @param   pDrvIns         Driver instance.
+ * @param   uVersion        Data layout version number.
+ * @param   cbGuess         The approximate amount of data in the unit.
+ *                          Only for progress indicators.
+ * @param   pfnSaveExec     Execute save callback, optional.
+ * @param   pfnLoadExec     Execute load callback, optional.
+ */
+DECLINLINE(int) PDMDrvHlpSSMRegister(PPDMDRVINS pDrvIns, uint32_t uVersion, size_t cbGuess,
+                                     PFNSSMDRVSAVEEXEC pfnSaveExec, PFNSSMDRVLOADEXEC pfnLoadExec)
+{
+    return pDrvIns->pDrvHlp->pfnSSMRegister(pDrvIns, uVersion, cbGuess,
+                                            NULL /*pfnLivePrep*/, NULL /*pfnLiveExec*/, NULL /*pfnLiveVote*/,
+                                            NULL /*pfnSavePrep*/, pfnSaveExec,          NULL /*pfnSaveDone*/,
+                                            NULL /*pfnLoadPrep*/, pfnLoadExec,          NULL /*pfnLoadDone*/);
+}
+
+/**
  * @copydoc PDMDRVHLP::pfnSSMRegister
  */
-DECLINLINE(int) PDMDrvHlpSSMRegister(PPDMDRVINS pDrvIns, const char *pszName, uint32_t u32Instance, uint32_t u32Version, size_t cbGuess,
-                                     PFNSSMDRVSAVEPREP pfnSavePrep, PFNSSMDRVSAVEEXEC pfnSaveExec, PFNSSMDRVSAVEDONE pfnSaveDone,
-                                     PFNSSMDRVLOADPREP pfnLoadPrep, PFNSSMDRVLOADEXEC pfnLoadExec, PFNSSMDRVLOADDONE pfnLoadDone)
+DECLINLINE(int) PDMDrvHlpSSMRegisterEx(PPDMDRVINS pDrvIns, uint32_t uVersion, size_t cbGuess,
+                                       PFNSSMDRVLIVEPREP pfnLivePrep, PFNSSMDRVLIVEEXEC pfnLiveExec, PFNSSMDRVLIVEVOTE pfnLiveVote,
+                                       PFNSSMDRVSAVEPREP pfnSavePrep, PFNSSMDRVSAVEEXEC pfnSaveExec, PFNSSMDRVSAVEDONE pfnSaveDone,
+                                       PFNSSMDRVLOADPREP pfnLoadPrep, PFNSSMDRVLOADEXEC pfnLoadExec, PFNSSMDRVLOADDONE pfnLoadDone)
 {
-    return pDrvIns->pDrvHlp->pfnSSMRegister(pDrvIns, pszName, u32Instance, u32Version, cbGuess,
+    return pDrvIns->pDrvHlp->pfnSSMRegister(pDrvIns, uVersion, cbGuess,
+                                            pfnLivePrep, pfnLiveExec, pfnLiveVote,
                                             pfnSavePrep, pfnSaveExec, pfnSaveDone,
                                             pfnLoadPrep, pfnLoadExec, pfnLoadDone);
+}
+
+/**
+ * Register a load done callback.
+ *
+ * @returns VBox status.
+ * @param   pDrvIns         Driver instance.
+ * @param   pfnLoadDone         Done load callback, optional.
+ */
+DECLINLINE(int) PDMDrvHlpSSMRegisterLoadDone(PPDMDRVINS pDrvIns, PFNSSMDRVLOADDONE pfnLoadDone)
+{
+    return pDrvIns->pDrvHlp->pfnSSMRegister(pDrvIns, 0 /*uVersion*/, 0 /*cbGuess*/,
+                                            NULL /*pfnLivePrep*/, NULL /*pfnLiveExec*/, NULL /*pfnLiveVote*/,
+                                            NULL /*pfnSavePrep*/, NULL /*pfnSaveExec*/, NULL /*pfnSaveDone*/,
+                                            NULL /*pfnLoadPrep*/, NULL /*pfnLoadExec*/, pfnLoadDone);
 }
 
 /**

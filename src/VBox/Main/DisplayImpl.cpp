@@ -115,49 +115,41 @@ void Display::FinalRelease()
  * Save/Load some important guest state
  */
 DECLCALLBACK(void)
-Display::displaySSMSave (PSSMHANDLE pSSM, void *pvUser)
+Display::displaySSMSave(PSSMHANDLE pSSM, void *pvUser)
 {
     Display *that = static_cast<Display*>(pvUser);
 
-    int rc = SSMR3PutU32 (pSSM, that->mcMonitors);
-    AssertRC(rc);
-
+    SSMR3PutU32(pSSM, that->mcMonitors);
     for (unsigned i = 0; i < that->mcMonitors; i++)
     {
-        rc = SSMR3PutU32 (pSSM, that->maFramebuffers[i].u32Offset);
-        AssertRC(rc);
-        rc = SSMR3PutU32 (pSSM, that->maFramebuffers[i].u32MaxFramebufferSize);
-        AssertRC(rc);
-        rc = SSMR3PutU32 (pSSM, that->maFramebuffers[i].u32InformationSize);
-        AssertRC(rc);
+        SSMR3PutU32(pSSM, that->maFramebuffers[i].u32Offset);
+        SSMR3PutU32(pSSM, that->maFramebuffers[i].u32MaxFramebufferSize);
+        SSMR3PutU32(pSSM, that->maFramebuffers[i].u32InformationSize);
     }
 }
 
 DECLCALLBACK(int)
-Display::displaySSMLoad (PSSMHANDLE pSSM, void *pvUser, uint32_t u32Version)
+Display::displaySSMLoad(PSSMHANDLE pSSM, void *pvUser, uint32_t uVersion, uint32_t uPhase)
 {
     Display *that = static_cast<Display*>(pvUser);
-    uint32_t cMonitors;
 
-    if (u32Version != sSSMDisplayVer)
+    if (uVersion != sSSMDisplayVer)
         return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
 
-    int rc = SSMR3GetU32 (pSSM, &cMonitors);
+    uint32_t cMonitors;
+    int rc = SSMR3GetU32(pSSM, &cMonitors);
     if (cMonitors != that->mcMonitors)
     {
         LogRel(("Display: Number of monitors changed (%d->%d)!\n",
-                 cMonitors, that->mcMonitors));
+                cMonitors, that->mcMonitors));
         return VERR_SSM_LOAD_CONFIG_MISMATCH;
     }
 
-    for (unsigned i = 0; i < cMonitors; i++)
+    for (uint32_t i = 0; i < cMonitors; i++)
     {
-        rc = SSMR3GetU32 (pSSM, &that->maFramebuffers[i].u32Offset);
-        AssertRC(rc);
-        rc = SSMR3GetU32 (pSSM, &that->maFramebuffers[i].u32MaxFramebufferSize);
-        AssertRC(rc);
-        rc = SSMR3GetU32 (pSSM, &that->maFramebuffers[i].u32InformationSize);
-        AssertRC(rc);
+        SSMR3GetU32(pSSM, &that->maFramebuffers[i].u32Offset);
+        SSMR3GetU32(pSSM, &that->maFramebuffers[i].u32MaxFramebufferSize);
+        SSMR3GetU32(pSSM, &that->maFramebuffers[i].u32InformationSize);
     }
 
     return VINF_SUCCESS;
@@ -261,10 +253,29 @@ void Display::uninit()
  */
 int Display::registerSSM(PVM pVM)
 {
-    return SSMR3RegisterExternal(pVM, "DisplayData", 3*sizeof(uint32_t*),
-                                 sSSMDisplayVer, 0,
-                                 NULL, displaySSMSave, NULL,
-                                 NULL, displaySSMLoad, NULL, this);
+    int rc = SSMR3RegisterExternal(pVM, "DisplayData", 0, sSSMDisplayVer,
+                                   mcMonitors * sizeof(uint32_t) * 3 + sizeof(uint32_t),
+                                   NULL, NULL, NULL,
+                                   NULL, displaySSMSave, NULL,
+                                   NULL, displaySSMLoad, NULL, this);
+
+    AssertRCReturn(rc, rc);
+
+    /*
+     * Register loaders for old saved states where iInstance was 3 * sizeof(uint32_t *).
+     */
+    rc = SSMR3RegisterExternal(pVM, "DisplayData", 12 /*uInstance*/, sSSMDisplayVer, 0 /*cbGuess*/,
+                               NULL, NULL, NULL,
+                               NULL, NULL, NULL,
+                               NULL, displaySSMLoad, NULL, this);
+    AssertRCReturn(rc, rc);
+
+    rc = SSMR3RegisterExternal(pVM, "DisplayData", 24 /*uInstance*/, sSSMDisplayVer, 0 /*cbGuess*/,
+                               NULL, NULL, NULL,
+                               NULL, NULL, NULL,
+                               NULL, displaySSMLoad, NULL, this);
+    AssertRCReturn(rc, rc);
+    return VINF_SUCCESS;
 }
 
 // IConsoleCallback method
@@ -2392,7 +2403,7 @@ DECLCALLBACK(int) Display::displayVBVAEnable(PPDMIDISPLAYCONNECTOR pInterface, u
     Display *pThis = pDrv->pDisplay;
 
     pThis->maFramebuffers[uScreenId].fVBVAEnabled = true;
-    
+
     return VINF_SUCCESS;
 }
 
@@ -2546,7 +2557,7 @@ DECLCALLBACK(int) Display::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle
      */
     if (!CFGMR3AreValuesValid(pCfgHandle, "Object\0"))
         return VERR_PDM_DRVINS_UNKNOWN_CFG_VALUES;
-    AssertMsgReturn(PDMDrvHlpNoAttach(pDrvIns) == VERR_PDM_NO_ATTACHED_DRIVER, 
+    AssertMsgReturn(PDMDrvHlpNoAttach(pDrvIns) == VERR_PDM_NO_ATTACHED_DRIVER,
                     ("Configuration error: Not possible to attach anything to this driver!\n"),
                     VERR_PDM_DRVINS_NO_ATTACH);
 
@@ -2656,9 +2667,9 @@ const PDMDRVREG Display::DrvReg =
     /* pfnAttach */
     NULL,
     /* pfnDetach */
-    NULL, 
+    NULL,
     /* pfnPowerOff */
-    NULL, 
+    NULL,
     /* pfnSoftReset */
     NULL,
     /* u32EndVersion */

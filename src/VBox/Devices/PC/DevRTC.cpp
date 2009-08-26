@@ -627,14 +627,16 @@ static DECLCALLBACK(int) rtcSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle)
  * @returns VBox status code.
  * @param   pDevIns     The device instance.
  * @param   pSSMHandle  The handle to the saved state.
- * @param   u32Version  The data unit version number.
+ * @param   uVersion    The data unit version number.
+ * @param   uPhase      The data phase.
  */
-static DECLCALLBACK(int) rtcLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle, uint32_t u32Version)
+static DECLCALLBACK(int) rtcLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle, uint32_t uVersion, uint32_t uPhase)
 {
     RTCState *pThis = PDMINS_2_DATA(pDevIns, RTCState *);
 
-    if (u32Version != 1)
+    if (uVersion != 1)
         return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
+    Assert(uPhase == SSM_PHASE_FINAL); NOREF(uPhase);
 
     SSMR3GetMem(pSSMHandle, pThis->cmos_data, 128);
     SSMR3GetU8(pSSMHandle, &pThis->cmos_index);
@@ -915,9 +917,7 @@ static DECLCALLBACK(int)  rtcConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
             return rc;
     }
 
-    rc = PDMDevHlpSSMRegister(pDevIns, pDevIns->pDevReg->szDeviceName, iInstance, 1 /* version */, sizeof(*pThis),
-                              NULL, rtcSaveExec, NULL,
-                              NULL, rtcLoadExec, NULL);
+    rc = PDMDevHlpSSMRegister(pDevIns, 1 /* version */, sizeof(*pThis), rtcSaveExec, rtcLoadExec);
     if (RT_FAILURE(rc))
         return rc;
 

@@ -99,7 +99,7 @@ typedef CPUMDUMPTYPE *PCPUMDUMPTYPE;
 *******************************************************************************/
 static int cpumR3CpuIdInit(PVM pVM);
 static DECLCALLBACK(int)  cpumR3Save(PVM pVM, PSSMHANDLE pSSM);
-static DECLCALLBACK(int)  cpumR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version);
+static DECLCALLBACK(int)  cpumR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPhase);
 static DECLCALLBACK(void) cpumR3InfoAll(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs);
 static DECLCALLBACK(void) cpumR3InfoGuest(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs);
 static DECLCALLBACK(void) cpumR3InfoGuestInstr(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs);
@@ -198,6 +198,7 @@ VMMR3DECL(int) CPUMR3Init(PVM pVM)
      * Register saved state data item.
      */
     int rc = SSMR3RegisterInternal(pVM, "cpum", 1, CPUM_SAVED_STATE_VERSION, sizeof(CPUM),
+                                   NULL, NULL, NULL,
                                    NULL, cpumR3Save, NULL,
                                    NULL, cpumR3Load, NULL);
     if (RT_FAILURE(rc))
@@ -989,32 +990,34 @@ static void cpumR3LoadCPUM1_6(PVM pVM, CPUMCTX_VER1_6 *pCpumctx16)
  * @returns VBox status code.
  * @param   pVM             VM Handle.
  * @param   pSSM            SSM operation handle.
- * @param   u32Version      Data layout version.
+ * @param   uVersion        Data layout version.
  */
-static DECLCALLBACK(int) cpumR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version)
+static DECLCALLBACK(int) cpumR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPhase)
 {
+    Assert(uPhase == SSM_PHASE_FINAL); NOREF(uPhase);
+
     /*
      * Validate version.
      */
-    if (    u32Version != CPUM_SAVED_STATE_VERSION
-        &&  u32Version != CPUM_SAVED_STATE_VERSION_VER2_1_NOMSR
-        &&  u32Version != CPUM_SAVED_STATE_VERSION_VER2_0
-        &&  u32Version != CPUM_SAVED_STATE_VERSION_VER1_6)
+    if (    uVersion != CPUM_SAVED_STATE_VERSION
+        &&  uVersion != CPUM_SAVED_STATE_VERSION_VER2_1_NOMSR
+        &&  uVersion != CPUM_SAVED_STATE_VERSION_VER2_0
+        &&  uVersion != CPUM_SAVED_STATE_VERSION_VER1_6)
     {
-        AssertMsgFailed(("cpuR3Load: Invalid version u32Version=%d!\n", u32Version));
+        AssertMsgFailed(("cpuR3Load: Invalid version uVersion=%d!\n", uVersion));
         return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
     }
 
     /* Set the size of RTGCPTR for SSMR3GetGCPtr. */
-    if (u32Version == CPUM_SAVED_STATE_VERSION_VER1_6)
+    if (uVersion == CPUM_SAVED_STATE_VERSION_VER1_6)
         SSMR3SetGCPtrSize(pSSM, sizeof(RTGCPTR32));
-    else if (u32Version <= CPUM_SAVED_STATE_VERSION)
+    else if (uVersion <= CPUM_SAVED_STATE_VERSION)
         SSMR3SetGCPtrSize(pSSM, HC_ARCH_BITS == 32 ? sizeof(RTGCPTR32) : sizeof(RTGCPTR));
 
     /*
      * Restore.
      */
-    for (unsigned i=0;i<pVM->cCPUs;i++)
+    for (VMCPUID i = 0; i < pVM->cCPUs; i++)
     {
         PVMCPU   pVCpu = &pVM->aCpus[i];
         uint32_t uCR3  = pVCpu->cpum.s.Hyper.cr3;
@@ -1025,7 +1028,7 @@ static DECLCALLBACK(int) cpumR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Versio
         pVCpu->cpum.s.Hyper.esp = uESP;
     }
 
-    if (u32Version == CPUM_SAVED_STATE_VERSION_VER1_6)
+    if (uVersion == CPUM_SAVED_STATE_VERSION_VER1_6)
     {
         CPUMCTX_VER1_6 cpumctx16;
         memset(&pVM->aCpus[0].cpum.s.Guest, 0, sizeof(pVM->aCpus[0].cpum.s.Guest));
@@ -1039,7 +1042,7 @@ static DECLCALLBACK(int) cpumR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Versio
     }
     else
     {
-        if (u32Version >= CPUM_SAVED_STATE_VERSION_VER2_1_NOMSR)
+        if (uVersion >= CPUM_SAVED_STATE_VERSION_VER2_1_NOMSR)
         {
             int rc = SSMR3GetU32(pSSM, &pVM->cCPUs);
             AssertRCReturn(rc, rc);
@@ -1047,19 +1050,19 @@ static DECLCALLBACK(int) cpumR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Versio
 
         if (    !pVM->cCPUs
             ||  pVM->cCPUs > VMM_MAX_CPU_COUNT
-            ||  (   u32Version == CPUM_SAVED_STATE_VERSION_VER2_0
+            ||  (   uVersion == CPUM_SAVED_STATE_VERSION_VER2_0
                  && pVM->cCPUs != 1))
         {
             AssertMsgFailed(("Unexpected number of VMCPUs (%d)\n", pVM->cCPUs));
             return VERR_SSM_UNEXPECTED_DATA;
         }
 
-        for (unsigned i=0;i<pVM->cCPUs;i++)
+        for (VMCPUID i = 0; i < pVM->cCPUs; i++)
         {
             SSMR3GetMem(pSSM, &pVM->aCpus[i].cpum.s.Guest, sizeof(pVM->aCpus[i].cpum.s.Guest));
             SSMR3GetU32(pSSM, &pVM->aCpus[i].cpum.s.fUseFlags);
             SSMR3GetU32(pSSM, &pVM->aCpus[i].cpum.s.fChanged);
-            if (u32Version == CPUM_SAVED_STATE_VERSION)
+            if (uVersion == CPUM_SAVED_STATE_VERSION)
                 SSMR3GetMem(pSSM, &pVM->aCpus[i].cpum.s.GuestMsr, sizeof(pVM->aCpus[i].cpum.s.GuestMsr));
         }
     }

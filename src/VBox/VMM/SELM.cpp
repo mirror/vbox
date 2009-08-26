@@ -111,7 +111,7 @@
 *   Internal Functions                                                         *
 *******************************************************************************/
 static DECLCALLBACK(int)  selmR3Save(PVM pVM, PSSMHANDLE pSSM);
-static DECLCALLBACK(int)  selmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version);
+static DECLCALLBACK(int)  selmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPhase);
 static DECLCALLBACK(int)  selmR3LoadDone(PVM pVM, PSSMHANDLE pSSM);
 static DECLCALLBACK(int)  selmR3GuestGDTWriteHandler(PVM pVM, RTGCPTR GCPtr, void *pvPhys, void *pvBuf, size_t cbBuf, PGMACCESSTYPE enmAccessType, void *pvUser);
 static DECLCALLBACK(int)  selmR3GuestLDTWriteHandler(PVM pVM, RTGCPTR GCPtr, void *pvPhys, void *pvBuf, size_t cbBuf, PGMACCESSTYPE enmAccessType, void *pvUser);
@@ -198,6 +198,7 @@ VMMR3DECL(int) SELMR3Init(PVM pVM)
      * Register the saved state data unit.
      */
     rc = SSMR3RegisterInternal(pVM, "selm", 1, SELM_SAVED_STATE_VERSION, sizeof(SELM),
+                               NULL, NULL, NULL,
                                NULL, selmR3Save, NULL,
                                NULL, selmR3Load, selmR3LoadDone);
     if (RT_FAILURE(rc))
@@ -694,18 +695,20 @@ static DECLCALLBACK(int) selmR3Save(PVM pVM, PSSMHANDLE pSSM)
  * @returns VBox status code.
  * @param   pVM             VM Handle.
  * @param   pSSM            SSM operation handle.
- * @param   u32Version      Data layout version.
+ * @param   uVersion        Data layout version.
+ * @param   uPhase          The data phase.
  */
-static DECLCALLBACK(int) selmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version)
+static DECLCALLBACK(int) selmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPhase)
 {
     LogFlow(("selmR3Load:\n"));
+    Assert(uPhase == SSM_PHASE_FINAL); NOREF(uPhase);
 
     /*
      * Validate version.
      */
-    if (u32Version != SELM_SAVED_STATE_VERSION)
+    if (uVersion != SELM_SAVED_STATE_VERSION)
     {
-        AssertMsgFailed(("selmR3Load: Invalid version u32Version=%d!\n", u32Version));
+        AssertMsgFailed(("selmR3Load: Invalid version uVersion=%d!\n", uVersion));
         return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
     }
 

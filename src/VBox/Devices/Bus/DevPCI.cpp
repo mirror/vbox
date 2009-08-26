@@ -1526,9 +1526,10 @@ static void pciR3CommonRestoreConfig(PPCIDEVICE pDev, uint8_t const *pbSrcConfig
  * @returns VBox status code.
  * @param   pDevIns     The device instance.
  * @param   pSSMHandle  The handle to the saved state.
- * @param   u32Version  The data unit version number.
+ * @param   uVersion    The data unit version number.
+ * @param   uPhase      The data phase.
  */
-static DECLCALLBACK(int) pciR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle, uint32_t u32Version)
+static DECLCALLBACK(int) pciR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle, uint32_t uVersion, uint32_t uPhase)
 {
     PPCIGLOBALS pThis = PDMINS_2_DATA(pDevIns, PPCIGLOBALS);
     PPCIBUS     pBus  = &pThis->PciBus;
@@ -1539,21 +1540,19 @@ static DECLCALLBACK(int) pciR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle
     /*
      * Check the version.
      */
-    if (u32Version > VBOX_PCI_SAVED_STATE_VERSION)
-    {
-        AssertFailed();
+    if (uVersion > VBOX_PCI_SAVED_STATE_VERSION)
         return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
-    }
+    Assert(uPhase == SSM_PHASE_FINAL); NOREF(uPhase);
 
     /*
      * Bus state data.
      */
     SSMR3GetU32(pSSMHandle, &pThis->uConfigReg);
-    if (u32Version > 1)
+    if (uVersion > 1)
         SSMR3GetBool(pSSMHandle, &pThis->fUseIoApic);
 
     /* Load IRQ states. */
-    if (u32Version > 2)
+    if (uVersion > 2)
     {
         for (uint8_t i = 0; i < PCI_IRQ_PINS; i++)
             SSMR3GetU32(pSSMHandle, (uint32_t *)&pThis->pci_irq_levels[i]);
@@ -1607,7 +1606,7 @@ static DECLCALLBACK(int) pciR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle
         /* Get the data */
         DevTmp.Int.s.uIrqPinState = ~0; /* Invalid value in case we have an older saved state to force a state change in pciSetIrq. */
         SSMR3GetMem(pSSMHandle, DevTmp.config, sizeof(DevTmp.config));
-        if (u32Version < 3)
+        if (uVersion < 3)
         {
             int32_t i32Temp;
             /* Irq value not needed anymore. */
@@ -2049,7 +2048,7 @@ static DECLCALLBACK(int)   pciConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     if (pBus->pPciHlpR3->u32Version != PDM_PCIHLPR3_VERSION)
         return PDMDevHlpVMSetError(pDevIns, VERR_VERSION_MISMATCH, RT_SRC_POS,
                                    N_("PCI helper version mismatch; got %#x expected %#x"),
-                                  pBus->pPciHlpR3->u32Version != PDM_PCIHLPR3_VERSION);
+                                   pBus->pPciHlpR3->u32Version != PDM_PCIHLPR3_VERSION);
 
     pBus->pPciHlpRC = pBus->pPciHlpR3->pfnGetRCHelpers(pDevIns);
     pBus->pPciHlpR0 = pBus->pPciHlpR3->pfnGetR0Helpers(pDevIns);
@@ -2111,8 +2110,10 @@ static DECLCALLBACK(int)   pciConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
             return rc;
     }
 
-    rc = SSMR3RegisterDevice(PDMDevHlpGetVM(pDevIns), pDevIns, "pci", iInstance, VBOX_PCI_SAVED_STATE_VERSION, sizeof(*pBus) + 16*128, "pgm",
-                             NULL, pciR3SaveExec, NULL, pciR3LoadPrep, pciR3LoadExec, NULL);
+    rc = PDMDevHlpSSMRegisterEx(pDevIns, VBOX_PCI_SAVED_STATE_VERSION, sizeof(*pBus) + 16*128, "pgm",
+                                NULL, NULL, NULL,
+                                NULL, pciR3SaveExec, NULL,
+                                pciR3LoadPrep, pciR3LoadExec, NULL);
     if (RT_FAILURE(rc))
         return rc;
 
@@ -2329,9 +2330,10 @@ static DECLCALLBACK(int) pcibridgeR3LoadPrep(PPDMDEVINS pDevIns, PSSMHANDLE pSSM
  * @returns VBox status code.
  * @param   pDevIns     The device instance.
  * @param   pSSMHandle  The handle to the saved state.
- * @param   u32Version  The data unit version number.
+ * @param   uVersion    The data unit version number.
+ * @param   uPhase      The data phase.
  */
-static DECLCALLBACK(int) pcibridgeR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle, uint32_t u32Version)
+static DECLCALLBACK(int) pcibridgeR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle, uint32_t uVersion, uint32_t uPhase)
 {
     PPCIBUS     pBus  = PDMINS_2_DATA(pDevIns, PPCIBUS);
     uint32_t    u32;
@@ -2343,11 +2345,9 @@ static DECLCALLBACK(int) pcibridgeR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM
     /*
      * Check the version.
      */
-    if (u32Version > VBOX_PCI_SAVED_STATE_VERSION)
-    {
-        AssertFailed();
+    if (uVersion > VBOX_PCI_SAVED_STATE_VERSION)
         return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
-    }
+    Assert(uPhase == SSM_PHASE_FINAL); NOREF(uPhase);
 
     /*
      * Iterate all the devices.
@@ -2596,8 +2596,10 @@ static DECLCALLBACK(int)   pcibridgeConstruct(PPDMDEVINS pDevIns, int iInstance,
      * Register SSM handlers. We use the same saved state version as for the host bridge
      * to make changes easier.
      */
-    rc = SSMR3RegisterDevice(PDMDevHlpGetVM(pDevIns), pDevIns, "pcibridge", iInstance, VBOX_PCI_SAVED_STATE_VERSION, sizeof(*pBus) + 16*128, "pgm",
-                             NULL, pcibridgeR3SaveExec, NULL, pcibridgeR3LoadPrep, pcibridgeR3LoadExec, NULL);
+    rc = PDMDevHlpSSMRegisterEx(pDevIns, VBOX_PCI_SAVED_STATE_VERSION, sizeof(*pBus) + 16*128, "pgm",
+                                NULL, NULL, NULL,
+                                NULL, pcibridgeR3SaveExec, NULL,
+                                pcibridgeR3LoadPrep, pcibridgeR3LoadExec, NULL);
     if (RT_FAILURE(rc))
         return rc;
 

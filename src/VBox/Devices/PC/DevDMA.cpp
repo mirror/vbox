@@ -845,14 +845,14 @@ static uint8_t get_mode_wrapper (PPDMDEVINS pDevIns, unsigned nchan)
     return DMA_get_channel_mode (s, nchan);
 }
 
-static void DMAReset (PPDMDEVINS pDevIns)
+static void dmaReset (PPDMDEVINS pDevIns)
 {
     DMAState *s = PDMINS_2_DATA (pDevIns, DMAState *);
     dma_reset (&s->dma_controllers[0]);
     dma_reset (&s->dma_controllers[1]);
 }
 
-static DECLCALLBACK(int) SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle)
+static DECLCALLBACK(int) dmaSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle)
 {
     DMAState *s = PDMINS_2_DATA (pDevIns, DMAState *);
     dma_save (pSSMHandle, &s->dma_controllers[0]);
@@ -860,19 +860,18 @@ static DECLCALLBACK(int) SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle)
     return VINF_SUCCESS;
 }
 
-static DECLCALLBACK(int) LoadExec (PPDMDEVINS pDevIns,
-                                   PSSMHANDLE pSSMHandle,
-                                   uint32_t u32Version)
+static DECLCALLBACK(int) dmaLoadExec (PPDMDEVINS pDevIns,
+                                      PSSMHANDLE pSSMHandle,
+                                      uint32_t uVersion,
+                                      uint32_t uPhase)
 {
     DMAState *s = PDMINS_2_DATA (pDevIns, DMAState *);
 
-    if (u32Version != 1) {
-        AssertFailed ();
-        return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
-    }
+    AssertMsgReturn (uVersion == 1, ("%d\n", uVersion), VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION);
+    Assert (uPhase == SSM_PHASE_FINAL);
 
-    dma_load (pSSMHandle, &s->dma_controllers[0], u32Version);
-    return dma_load (pSSMHandle, &s->dma_controllers[1], u32Version);
+    dma_load (pSSMHandle, &s->dma_controllers[0], uVersion);
+    return dma_load (pSSMHandle, &s->dma_controllers[1], uVersion);
 }
 
 /**
@@ -888,7 +887,7 @@ static DECLCALLBACK(int) LoadExec (PPDMDEVINS pDevIns,
  *                      of the device instance. It's also found in pDevIns->pCfgHandle, but like
  *                      iInstance it's expected to be used a bit in this function.
  */
-static DECLCALLBACK(int) DMAConstruct(PPDMDEVINS pDevIns,
+static DECLCALLBACK(int) dmaConstruct(PPDMDEVINS pDevIns,
                                       int iInstance,
                                       PCFGMNODE pCfgHandle)
 {
@@ -931,8 +930,7 @@ static DECLCALLBACK(int) DMAConstruct(PPDMDEVINS pDevIns,
         return rc;
     }
 
-    rc = PDMDevHlpSSMRegister (pDevIns, pDevIns->pDevReg->szDeviceName, iInstance, 1, sizeof (*s),
-                               NULL, SaveExec, NULL, NULL, LoadExec, NULL);
+    rc = PDMDevHlpSSMRegister (pDevIns, 1 /*uVersion*/, sizeof (*s), dmaSaveExec, dmaLoadExec);
     if (RT_FAILURE(rc))
         return rc;
 
@@ -963,7 +961,7 @@ const PDMDEVREG g_DeviceDMA =
     /* cbInstance */
     sizeof(DMAState),
     /* pfnConstruct */
-    DMAConstruct,
+    dmaConstruct,
     /* pfnDestruct */
     NULL,
     /* pfnRelocate */
@@ -973,7 +971,7 @@ const PDMDEVREG g_DeviceDMA =
     /* pfnPowerOn */
     NULL,
     /* pfnReset */
-    DMAReset,
+    dmaReset,
     /* pfnSuspend */
     NULL,
     /* pfnResume */

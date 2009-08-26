@@ -176,7 +176,7 @@ Hypervisor Memory Area (HMA) Layout: Base 00000000a0000000, 0x00800000 bytes
 *   Internal Functions                                                         *
 *******************************************************************************/
 static DECLCALLBACK(int) mmR3Save(PVM pVM, PSSMHANDLE pSSM);
-static DECLCALLBACK(int) mmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version);
+static DECLCALLBACK(int) mmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPhase);
 
 
 
@@ -265,6 +265,7 @@ VMMR3DECL(int) MMR3Init(PVM pVM)
              * Register the saved state data unit.
              */
             rc = SSMR3RegisterInternal(pVM, "mm", 1, MM_SAVED_STATE_VERSION, sizeof(uint32_t) * 2,
+                                       NULL, NULL, NULL,
                                        NULL, mmR3Save, NULL,
                                        NULL, mmR3Load, NULL);
             if (RT_SUCCESS(rc))
@@ -527,19 +528,21 @@ static DECLCALLBACK(int) mmR3Save(PVM pVM, PSSMHANDLE pSSM)
  * @returns VBox status code.
  * @param   pVM             VM Handle.
  * @param   pSSM            SSM operation handle.
- * @param   u32Version      Data layout version.
+ * @param   uVersion       Data layout version.
+ * @param   uPhase          The data phase.
  */
-static DECLCALLBACK(int) mmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version)
+static DECLCALLBACK(int) mmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPhase)
 {
     LogFlow(("mmR3Load:\n"));
+    Assert(uPhase == SSM_PHASE_FINAL); NOREF(uPhase);
 
     /*
      * Validate version.
      */
-    if (    SSM_VERSION_MAJOR_CHANGED(u32Version, MM_SAVED_STATE_VERSION)
-        ||  !u32Version)
+    if (    SSM_VERSION_MAJOR_CHANGED(uVersion, MM_SAVED_STATE_VERSION)
+        ||  !uVersion)
     {
-        AssertMsgFailed(("mmR3Load: Invalid version u32Version=%d!\n", u32Version));
+        AssertMsgFailed(("mmR3Load: Invalid version uVersion=%d!\n", uVersion));
         return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
     }
 
@@ -551,7 +554,7 @@ static DECLCALLBACK(int) mmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version)
 
     /* cBasePages (ignored) */
     uint64_t cPages;
-    if (u32Version >= 2)
+    if (uVersion >= 2)
         rc = SSMR3GetU64(pSSM, &cPages);
     else
     {
@@ -563,7 +566,7 @@ static DECLCALLBACK(int) mmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version)
 
     /* cbRamBase */
     uint64_t cb;
-    if (u32Version != 1)
+    if (uVersion != 1)
         rc = SSMR3GetU64(pSSM, &cb);
     else
     {

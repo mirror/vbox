@@ -87,7 +87,7 @@ unsigned long get_phys_page_offset(target_ulong addr);
 *   Internal Functions                                                         *
 *******************************************************************************/
 static DECLCALLBACK(int) remR3Save(PVM pVM, PSSMHANDLE pSSM);
-static DECLCALLBACK(int) remR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version);
+static DECLCALLBACK(int) remR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPhase);
 static void     remR3StateUpdate(PVM pVM, PVMCPU pVCpu);
 static int      remR3InitPhysRamSizeAndDirtyMap(PVM pVM, bool fGuarded);
 
@@ -338,6 +338,7 @@ REMR3DECL(int) REMR3Init(PVM pVM)
      * Register the saved state data unit.
      */
     rc = SSMR3RegisterInternal(pVM, "rem", 1, REM_SAVED_STATE_VERSION, sizeof(uint32_t) * 10,
+                               NULL, NULL, NULL,
                                NULL, remR3Save, NULL,
                                NULL, remR3Load, NULL);
     if (RT_FAILURE(rc))
@@ -658,9 +659,10 @@ static DECLCALLBACK(int) remR3Save(PVM pVM, PSSMHANDLE pSSM)
  * @returns VBox status code.
  * @param   pVM             VM Handle.
  * @param   pSSM            SSM operation handle.
- * @param   u32Version      Data layout version.
+ * @param   uVersion        Data layout version.
+ * @param   uPhase          The data phase.
  */
-static DECLCALLBACK(int) remR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version)
+static DECLCALLBACK(int) remR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPhase)
 {
     uint32_t u32Dummy;
     uint32_t fRawRing0 = false;
@@ -668,15 +670,17 @@ static DECLCALLBACK(int) remR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version
     unsigned i;
     int rc;
     PREM pRem;
+
     LogFlow(("remR3Load:\n"));
+    Assert(uPhase == SSM_PHASE_FINAL); NOREF(uPhase);
 
     /*
      * Validate version.
      */
-    if (    u32Version != REM_SAVED_STATE_VERSION
-        &&  u32Version != REM_SAVED_STATE_VERSION_VER1_6)
+    if (    uVersion != REM_SAVED_STATE_VERSION
+        &&  uVersion != REM_SAVED_STATE_VERSION_VER1_6)
     {
-        AssertMsgFailed(("remR3Load: Invalid version u32Version=%d!\n", u32Version));
+        AssertMsgFailed(("remR3Load: Invalid version uVersion=%d!\n", uVersion));
         return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
     }
 
@@ -698,7 +702,7 @@ static DECLCALLBACK(int) remR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version
     pRem = &pVM->rem.s;
     Assert(!pRem->fInREM);
     SSMR3GetU32(pSSM,   &pRem->Env.hflags);
-    if (u32Version == REM_SAVED_STATE_VERSION_VER1_6)
+    if (uVersion == REM_SAVED_STATE_VERSION_VER1_6)
     {
         /* Redundant REM CPU state has to be loaded, but can be ignored. */
         CPUX86State_Ver16 temp;
@@ -719,7 +723,7 @@ static DECLCALLBACK(int) remR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version
     if (fRawRing0)
         pRem->Env.state |= CPU_RAW_RING0;
 
-    if (u32Version == REM_SAVED_STATE_VERSION_VER1_6)
+    if (uVersion == REM_SAVED_STATE_VERSION_VER1_6)
     {
         /*
          * Load the REM stuff.

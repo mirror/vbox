@@ -2671,14 +2671,14 @@ static int vga_load(QEMUFile *f, void *opaque, int version_id)
     is_vbe = qemu_get_byte(f);
 #ifdef CONFIG_BOCHS_VBE
     if (!is_vbe)
-#ifndef VBOX
+# ifndef VBOX
         return -EINVAL;
-#else /* VBOX */
+# else /* VBOX */
     {
         Log(("vga_load: !is_vbe !!\n"));
         return VERR_SSM_DATA_UNIT_FORMAT_CHANGED;
     }
-#endif /* VBOX */
+# endif /* VBOX */
     qemu_get_be16s(f, &s->vbe_index);
     for(i = 0; i < VBE_DISPI_INDEX_NB; i++)
         qemu_get_be16s(f, &s->vbe_regs[i]);
@@ -2689,14 +2689,14 @@ static int vga_load(QEMUFile *f, void *opaque, int version_id)
     s->vbe_bank_max = s->vram_size >> 16;
 #else
     if (is_vbe)
-#ifndef VBOX
+# ifndef VBOX
         return -EINVAL;
-#else /* VBOX */
+# else /* VBOX */
     {
         Log(("vga_load: is_vbe !!\n"));
         return VERR_SSM_DATA_UNIT_FORMAT_CHANGED;
     }
-#endif /* VBOX */
+# endif /* VBOX */
 #endif
 
     /* force refresh */
@@ -3881,11 +3881,11 @@ static int vgaLFBAccess(PVM pVM, PVGASTATE pThis, RTGCPHYS GCPhys, RTGCPTR GCPtr
 #ifndef IN_RING3
         rc = PGMShwModifyPage(PDMDevHlpGetVMCPU(pThis->CTX_SUFF(pDevIns)), GCPtr, 1, X86_PTE_RW, ~(uint64_t)X86_PTE_RW);
         PDMCritSectLeave(&pThis->lock);
-        AssertMsgReturn(    rc == VINF_SUCCESS 
+        AssertMsgReturn(    rc == VINF_SUCCESS
                         /* In the SMP case the page table might be removed while we wait for the PGM lock in the trap handler. */
-                        ||  rc == VERR_PAGE_TABLE_NOT_PRESENT 
-                        ||  rc == VERR_PAGE_NOT_PRESENT, 
-                        ("PGMShwModifyPage -> GCPtr=%RGv rc=%d\n", GCPtr, rc), 
+                        ||  rc == VERR_PAGE_TABLE_NOT_PRESENT
+                        ||  rc == VERR_PAGE_NOT_PRESENT,
+                        ("PGMShwModifyPage -> GCPtr=%RGv rc=%d\n", GCPtr, rc),
                         rc);
         return VINF_SUCCESS;
 #else /* IN_RING3 : We don't have any virtual page address of the access here. */
@@ -5371,14 +5371,17 @@ static DECLCALLBACK(int) vgaR3SavePrep(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
  * @returns VBox status code.
  * @param   pDevIns     The device instance.
  * @param   pSSMHandle  The handle to the saved state.
- * @param   u32Version  The data unit version number.
+ * @param   uVersion    The data unit version number.
+ * @param   uPhase      The data phase.
  */
-static DECLCALLBACK(int) vgaR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle, uint32_t u32Version)
+static DECLCALLBACK(int) vgaR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle, uint32_t uVersion, uint32_t uPhase)
 {
-    if (vga_load(pSSMHandle, PDMINS_2_DATA(pDevIns, PVGASTATE), u32Version))
-        return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
+    Assert(uPhase == SSM_PHASE_FINAL); NOREF(uPhase);
+    int rc = vga_load(pSSMHandle, PDMINS_2_DATA(pDevIns, PVGASTATE), uVersion);
+    if (RT_FAILURE(rc))
+        return rc;
 #ifdef VBOX_WITH_HGSMI
-    return vboxVBVALoadStateExec(pDevIns, pSSMHandle, u32Version);
+    return vboxVBVALoadStateExec(pDevIns, pSSMHandle, uVersion);
 #else
     return VINF_SUCCESS;
 #endif
@@ -6049,14 +6052,14 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
         return rc;
 
     /* save */
-    rc = PDMDevHlpSSMRegister(pDevIns, pDevIns->pDevReg->szDeviceName, iInstance, VGA_SAVEDSTATE_VERSION,
-                              sizeof(*pThis),
+    rc = PDMDevHlpSSMRegisterEx(pDevIns, VGA_SAVEDSTATE_VERSION, sizeof(*pThis), NULL,
+                                NULL, NULL, NULL,
 #ifdef VBOX_WITH_VIDEOHWACCEL
-                              vgaR3SavePrep, vgaR3SaveExec, NULL,
+                                vgaR3SavePrep, vgaR3SaveExec, NULL,
 #else
-                              NULL, vgaR3SaveExec, NULL,
+                                NULL, vgaR3SaveExec, NULL,
 #endif
-                              NULL, vgaR3LoadExec, NULL);
+                                NULL, vgaR3LoadExec, NULL);
     if (RT_FAILURE(rc))
         return rc;
 

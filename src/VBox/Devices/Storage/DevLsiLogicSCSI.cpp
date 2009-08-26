@@ -4895,14 +4895,14 @@ static DECLCALLBACK(int) lsilogicSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
     return SSMR3PutU32(pSSM, ~0);
 }
 
-static DECLCALLBACK(int) lsilogicLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t u32Version)
+static DECLCALLBACK(int) lsilogicLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPhase)
 {
     PLSILOGICSCSI pLsiLogic = PDMINS_2_DATA(pDevIns, PLSILOGICSCSI);
-    int rc = VINF_SUCCESS;
 
     /* We support saved states only from this and older versions. */
-    if (u32Version > LSILOGIC_SAVED_STATE_MINOR_VERSION)
+    if (uVersion > LSILOGIC_SAVED_STATE_MINOR_VERSION)
         return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
+    Assert(uPhase == SSM_PHASE_FINAL); NOREF(uPhase);
 
     /* Every device first. */
     for (unsigned i = 0; i < RT_ELEMENTS(pLsiLogic->aDeviceStates); i++)
@@ -4969,14 +4969,10 @@ static DECLCALLBACK(int) lsilogicLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, u
     }
 
     uint32_t u32;
-    SSMR3GetU32(pSSM, &u32);
+    int rc = SSMR3GetU32(pSSM, &u32);
     if (RT_FAILURE(rc))
         return rc;
-    if (u32 != ~0U)
-    {
-        AssertMsgFailed(("u32=%#x expected ~0\n", u32));
-        return VERR_SSM_DATA_UNIT_FORMAT_CHANGED;
-    }
+    AssertMsgReturn(u32 == ~0U, ("%#x\n", u32), VERR_SSM_DATA_UNIT_FORMAT_CHANGED);
 
     return VINF_SUCCESS;
 }
@@ -5419,10 +5415,10 @@ static DECLCALLBACK(int) lsilogicConstruct(PPDMDEVINS pDevIns, int iInstance, PC
         return PDMDEV_SET_ERROR(pDevIns, rc, N_("LsiLogic cannot register legacy I/O handlers"));
 
     /* Register save state handlers. */
-    rc = PDMDevHlpSSMRegister(pDevIns, pDevIns->pDevReg->szDeviceName, iInstance,
-                              LSILOGIC_SAVED_STATE_MINOR_VERSION, sizeof(*pThis),
-                              lsilogicSaveLoadPrep, lsilogicSaveExec, NULL,
-                              lsilogicSaveLoadPrep, lsilogicLoadExec, NULL);
+    rc = PDMDevHlpSSMRegisterEx(pDevIns, LSILOGIC_SAVED_STATE_MINOR_VERSION, sizeof(*pThis), NULL,
+                                NULL, NULL, NULL,
+                                lsilogicSaveLoadPrep, lsilogicSaveExec, NULL,
+                                lsilogicSaveLoadPrep, lsilogicLoadExec, NULL);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc, N_("LsiLogic cannot register save state handlers"));
 

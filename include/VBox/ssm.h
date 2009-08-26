@@ -59,6 +59,9 @@ RT_C_DECLS_BEGIN
  */
 #define SSM_VERSION_MAJOR_CHANGED(ver1,ver2)    (SSM_VERSION_MAJOR(ver1) != SSM_VERSION_MAJOR(ver2))
 
+/** The special value for the final phase.  */
+#define SSM_PHASE_FINAL                         UINT32_MAX
+
 
 #ifdef IN_RING3
 /** @defgroup grp_ssm_r3     The SSM Host Context Ring-3 API
@@ -126,6 +129,49 @@ typedef const SSMFIELD *PCSSMFIELD;
  */
 
 /**
+ * Prepare state live save operation.
+ *
+ * @returns VBox status code.
+ * @param   pDevIns         Device instance of the device which registered the data unit.
+ * @param   pSSM            SSM operation handle.
+ * @thread  Any.
+ */
+typedef DECLCALLBACK(int) FNSSMDEVLIVEPREP(PPDMDEVINS pDevIns, PSSMHANDLE pSSM);
+/** Pointer to a FNSSMDEVLIVEPREP() function. */
+typedef FNSSMDEVLIVEPREP *PFNSSMDEVLIVEPREP;
+
+/**
+ * Execute state live save operation.
+ *
+ * This will be called repeatedly until all units vote that the live phase has
+ * been concluded.
+ *
+ * @returns VBox status code.
+ * @param   pDevIns         Device instance of the device which registered the data unit.
+ * @param   pSSM            SSM operation handle.
+ * @param   uPhase          The phase.
+ * @thread  Any.
+ */
+typedef DECLCALLBACK(int) FNSSMDEVLIVEEXEC(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uPhase);
+/** Pointer to a FNSSMDEVLIVEEXEC() function. */
+typedef FNSSMDEVLIVEEXEC *PFNSSMDEVLIVEEXEC;
+
+/**
+ * Vote on whether the live part of the saving has been concluded.
+ *
+ * The vote stops once a unit has vetoed the decision, so don't rely upon this
+ * being called every time.
+ *
+ * @returns true if done, false if there is more that needs to be saved first.
+ * @param   pDevIns         Device instance of the device which registered the data unit.
+ * @param   pSSM            SSM operation handle.
+ * @thread  Any.
+ */
+typedef DECLCALLBACK(int) FNSSMDEVLIVEVOTE(PPDMDEVINS pDevIns, PSSMHANDLE pSSM);
+/** Pointer to a FNSSMDEVLIVEVOTE() function. */
+typedef FNSSMDEVLIVEVOTE *PFNSSMDEVLIVEVOTE;
+
+/**
  * Prepare state save operation.
  *
  * @returns VBox status code.
@@ -175,9 +221,11 @@ typedef FNSSMDEVLOADPREP *PFNSSMDEVLOADPREP;
  * @returns VBox status code.
  * @param   pDevIns         Device instance of the device which registered the data unit.
  * @param   pSSM            SSM operation handle.
- * @param   u32Version      Data layout version.
+ * @param   uVersion        Data layout version.
+ * @param   uPhase          The phase. This is always SSM_PHASE_FINAL for units
+ *                          that doesn't specify a pfnSaveLive callback.
  */
-typedef DECLCALLBACK(int) FNSSMDEVLOADEXEC(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t u32Version);
+typedef DECLCALLBACK(int) FNSSMDEVLOADEXEC(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPhase);
 /** Pointer to a FNSSMDEVLOADEXEC() function. */
 typedef FNSSMDEVLOADEXEC *PFNSSMDEVLOADEXEC;
 
@@ -198,6 +246,53 @@ typedef FNSSMDEVLOADDONE *PFNSSMDEVLOADDONE;
 /** The PDM Driver callback variants.
  * @{
  */
+
+/**
+ * Prepare state live save operation.
+ *
+ * @returns VBox status code.
+ * @param   pDrvIns         Driver instance of the device which registered the
+ *                          data unit.
+ * @param   pSSM            SSM operation handle.
+ * @thread  Any.
+ */
+typedef DECLCALLBACK(int) FNSSMDRVLIVEPREP(PPDMDRVINS pDrvIns, PSSMHANDLE pSSM);
+/** Pointer to a FNSSMDRVLIVEPREP() function. */
+typedef FNSSMDRVLIVEPREP *PFNSSMDRVLIVEPREP;
+
+/**
+ * Execute state live save operation.
+ *
+ * This will be called repeatedly until all units vote that the live phase has
+ * been concluded.
+ *
+ * @returns VBox status code.
+ * @param   pDrvIns         Driver instance of the device which registered the
+ *                          data unit.
+ * @param   pSSM            SSM operation handle.
+ * @param   uPhase          The phase.
+ * @thread  Any.
+ */
+typedef DECLCALLBACK(int) FNSSMDRVLIVEEXEC(PPDMDRVINS pDrvIns, PSSMHANDLE pSSM, uint32_t uPhase);
+/** Pointer to a FNSSMDRVLIVEEXEC() function. */
+typedef FNSSMDRVLIVEEXEC *PFNSSMDRVLIVEEXEC;
+
+/**
+ * Vote on whether the live part of the saving has been concluded.
+ *
+ * The vote stops once a unit has vetoed the decision, so don't rely upon this
+ * being called every time.
+ *
+ * @returns true if done, false if there is more that needs to be saved first.
+ * @param   pDrvIns         Driver instance of the device which registered the
+ *                          data unit.
+ * @param   pSSM            SSM operation handle.
+ * @thread  Any.
+ */
+typedef DECLCALLBACK(int) FNSSMDRVLIVEVOTE(PPDMDRVINS pDrvIns, PSSMHANDLE pSSM);
+/** Pointer to a FNSSMDRVLIVEVOTE() function. */
+typedef FNSSMDRVLIVEVOTE *PFNSSMDRVLIVEVOTE;
+
 
 /**
  * Prepare state save operation.
@@ -249,9 +344,11 @@ typedef FNSSMDRVLOADPREP *PFNSSMDRVLOADPREP;
  * @returns VBox status code.
  * @param   pDrvIns         Driver instance of the driver which registered the data unit.
  * @param   pSSM            SSM operation handle.
- * @param   u32Version      Data layout version.
+ * @param   uVersion        Data layout version.
+ * @param   uPhase          The phase. This is always SSM_PHASE_FINAL for units
+ *                          that doesn't specify a pfnSaveLive callback.
  */
-typedef DECLCALLBACK(int) FNSSMDRVLOADEXEC(PPDMDRVINS pDrvIns, PSSMHANDLE pSSM, uint32_t u32Version);
+typedef DECLCALLBACK(int) FNSSMDRVLOADEXEC(PPDMDRVINS pDrvIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPhase);
 /** Pointer to a FNSSMDRVLOADEXEC() function. */
 typedef FNSSMDRVLOADEXEC *PFNSSMDRVLOADEXEC;
 
@@ -272,6 +369,50 @@ typedef FNSSMDRVLOADDONE *PFNSSMDRVLOADDONE;
 /** The internal callback variants.
  * @{
  */
+
+
+/**
+ * Prepare state live save operation.
+ *
+ * @returns VBox status code.
+ * @param   pVM             VM Handle.
+ * @param   pSSM            SSM operation handle.
+ * @thread  Any.
+ */
+typedef DECLCALLBACK(int) FNSSMINTLIVEPREP(PVM pVM, PSSMHANDLE pSSM);
+/** Pointer to a FNSSMINTLIVEPREP() function. */
+typedef FNSSMINTLIVEPREP *PFNSSMINTLIVEPREP;
+
+/**
+ * Execute state live save operation.
+ *
+ * This will be called repeatedly until all units vote that the live phase has
+ * been concluded.
+ *
+ * @returns VBox status code.
+ * @param   pVM             VM Handle.
+ * @param   pSSM            SSM operation handle.
+ * @param   uPhase          The phase.
+ * @thread  Any.
+ */
+typedef DECLCALLBACK(int) FNSSMINTLIVEEXEC(PVM pVM, PSSMHANDLE pSSM, uint32_t uPhase);
+/** Pointer to a FNSSMINTLIVEEXEC() function. */
+typedef FNSSMINTLIVEEXEC *PFNSSMINTLIVEEXEC;
+
+/**
+ * Vote on whether the live part of the saving has been concluded.
+ *
+ * The vote stops once a unit has vetoed the decision, so don't rely upon this
+ * being called every time.
+ *
+ * @returns true if done, false if there is more that needs to be saved first.
+ * @param   pVM             VM Handle.
+ * @param   pSSM            SSM operation handle.
+ * @thread  Any.
+ */
+typedef DECLCALLBACK(bool) FNSSMINTLIVEVOTE(PVM pVM, PSSMHANDLE pSSM);
+/** Pointer to a FNSSMINTLIVEVOTE() function. */
+typedef FNSSMINTLIVEVOTE *PFNSSMINTLIVEVOTE;
 
 /**
  * Prepare state save operation.
@@ -323,9 +464,11 @@ typedef FNSSMINTLOADPREP *PFNSSMINTLOADPREP;
  * @returns VBox status code.
  * @param   pVM             VM Handle.
  * @param   pSSM            SSM operation handle.
- * @param   u32Version      Data layout version.
+ * @param   uVersion        Data layout version.
+ * @param   uPhase          The phase. This is always SSM_PHASE_FINAL for units
+ *                          that doesn't specify a pfnSaveLive callback.
  */
-typedef DECLCALLBACK(int) FNSSMINTLOADEXEC(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version);
+typedef DECLCALLBACK(int) FNSSMINTLOADEXEC(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPhase);
 /** Pointer to a FNSSMINTLOADEXEC() function. */
 typedef FNSSMINTLOADEXEC *PFNSSMINTLOADEXEC;
 
@@ -346,6 +489,49 @@ typedef FNSSMINTLOADDONE *PFNSSMINTLOADDONE;
 /** The External callback variants.
  * @{
  */
+
+/**
+ * Prepare state live save operation.
+ *
+ * @returns VBox status code.
+ * @param   pSSM            SSM operation handle.
+ * @param   pvUser          User argument.
+ * @thread  Any.
+ */
+typedef DECLCALLBACK(int) FNSSMEXTLIVEPREP(PSSMHANDLE pSSM, void *pvUser);
+/** Pointer to a FNSSMEXTLIVEPREP() function. */
+typedef FNSSMEXTLIVEPREP *PFNSSMEXTLIVEPREP;
+
+/**
+ * Execute state live save operation.
+ *
+ * This will be called repeatedly until all units vote that the live phase has
+ * been concluded.
+ *
+ * @returns VBox status code.
+ * @param   pSSM            SSM operation handle.
+ * @param   pvUser          User argument.
+ * @param   uPhase          The phase.
+ * @thread  Any.
+ */
+typedef DECLCALLBACK(int) FNSSMEXTLIVEEXEC(PSSMHANDLE pSSM, void *pvUser, uint32_t uPhase);
+/** Pointer to a FNSSMEXTLIVEEXEC() function. */
+typedef FNSSMEXTLIVEEXEC *PFNSSMEXTLIVEEXEC;
+
+/**
+ * Vote on whether the live part of the saving has been concluded.
+ *
+ * The vote stops once a unit has vetoed the decision, so don't rely upon this
+ * being called every time.
+ *
+ * @returns true if done, false if there is more that needs to be saved first.
+ * @param   pSSM            SSM operation handle.
+ * @param   pvUser          User argument.
+ * @thread  Any.
+ */
+typedef DECLCALLBACK(int) FNSSMEXTLIVEVOTE(PSSMHANDLE pSSM, void *pvUser);
+/** Pointer to a FNSSMEXTLIVEVOTE() function. */
+typedef FNSSMEXTLIVEVOTE *PFNSSMEXTLIVEVOTE;
 
 /**
  * Prepare state save operation.
@@ -397,10 +583,12 @@ typedef FNSSMEXTLOADPREP *PFNSSMEXTLOADPREP;
  * @returns VBox status code.
  * @param   pSSM            SSM operation handle.
  * @param   pvUser          User argument.
- * @param   u32Version      Data layout version.
+ * @param   uVersion        Data layout version.
+ * @param   uPhase          The phase. This is always SSM_PHASE_FINAL for units
+ *                          that doesn't specify a pfnSaveLive callback.
  * @remark  The odd return value is for legacy reasons.
  */
-typedef DECLCALLBACK(int) FNSSMEXTLOADEXEC(PSSMHANDLE pSSM, void *pvUser, uint32_t u32Version);
+typedef DECLCALLBACK(int) FNSSMEXTLOADEXEC(PSSMHANDLE pSSM, void *pvUser, uint32_t uVersion, uint32_t uPhase);
 /** Pointer to a FNSSMEXTLOADEXEC() function. */
 typedef FNSSMEXTLOADEXEC *PFNSSMEXTLOADEXEC;
 
@@ -418,20 +606,24 @@ typedef FNSSMEXTLOADDONE *PFNSSMEXTLOADDONE;
 /** @} */
 
 
-VMMR3DECL(int) SSMR3RegisterDevice(PVM pVM, PPDMDEVINS pDevIns, const char *pszName, uint32_t u32Instance, uint32_t u32Version, size_t cbGuess, const char *pszBefore,
+VMMR3DECL(int) SSMR3RegisterDevice(PVM pVM, PPDMDEVINS pDevIns, const char *pszName, uint32_t uInstance, uint32_t uVersion, size_t cbGuess, const char *pszBefore,
+    PFNSSMDEVLIVEPREP pfnLivePrep, PFNSSMDEVLIVEEXEC pfnLiveExec, PFNSSMDEVLIVEVOTE pfnLiveVote,
     PFNSSMDEVSAVEPREP pfnSavePrep, PFNSSMDEVSAVEEXEC pfnSaveExec, PFNSSMDEVSAVEDONE pfnSaveDone,
     PFNSSMDEVLOADPREP pfnLoadPrep, PFNSSMDEVLOADEXEC pfnLoadExec, PFNSSMDEVLOADDONE pfnLoadDone);
-VMMR3DECL(int) SSMR3RegisterDriver(PVM pVM, PPDMDRVINS pDrvIns, const char *pszName, uint32_t u32Instance, uint32_t u32Version, size_t cbGuess,
+VMMR3DECL(int) SSMR3RegisterDriver(PVM pVM, PPDMDRVINS pDrvIns, const char *pszName, uint32_t uInstance, uint32_t uVersion, size_t cbGuess,
+    PFNSSMDRVLIVEPREP pfnLivePrep, PFNSSMDRVLIVEEXEC pfnLiveExec, PFNSSMDRVLIVEVOTE pfnLiveVote,
     PFNSSMDRVSAVEPREP pfnSavePrep, PFNSSMDRVSAVEEXEC pfnSaveExec, PFNSSMDRVSAVEDONE pfnSaveDone,
     PFNSSMDRVLOADPREP pfnLoadPrep, PFNSSMDRVLOADEXEC pfnLoadExec, PFNSSMDRVLOADDONE pfnLoadDone);
-VMMR3DECL(int) SSMR3RegisterInternal(PVM pVM, const char *pszName, uint32_t u32Instance, uint32_t u32Version, size_t cbGuess,
+VMMR3DECL(int) SSMR3RegisterInternal(PVM pVM, const char *pszName, uint32_t uInstance, uint32_t uVersion, size_t cbGuess,
+    PFNSSMINTLIVEPREP pfnLivePrep, PFNSSMINTLIVEEXEC pfnLiveExec, PFNSSMINTLIVEVOTE pfnLiveVote,
     PFNSSMINTSAVEPREP pfnSavePrep, PFNSSMINTSAVEEXEC pfnSaveExec, PFNSSMINTSAVEDONE pfnSaveDone,
     PFNSSMINTLOADPREP pfnLoadPrep, PFNSSMINTLOADEXEC pfnLoadExec, PFNSSMINTLOADDONE pfnLoadDone);
-VMMR3DECL(int) SSMR3RegisterExternal(PVM pVM, const char *pszName, uint32_t u32Instance, uint32_t u32Version, size_t cbGuess,
+VMMR3DECL(int) SSMR3RegisterExternal(PVM pVM, const char *pszName, uint32_t uInstance, uint32_t uVersion, size_t cbGuess,
+    PFNSSMEXTLIVEPREP pfnLivePrep, PFNSSMEXTLIVEEXEC pfnLiveExec, PFNSSMEXTLIVEVOTE pfnLiveVote,
     PFNSSMEXTSAVEPREP pfnSavePrep, PFNSSMEXTSAVEEXEC pfnSaveExec, PFNSSMEXTSAVEDONE pfnSaveDone,
     PFNSSMEXTLOADPREP pfnLoadPrep, PFNSSMEXTLOADEXEC pfnLoadExec, PFNSSMEXTLOADDONE pfnLoadDone, void *pvUser);
-VMMR3DECL(int) SSMR3DeregisterDevice(PVM pVM, PPDMDEVINS pDevIns, const char *pszName, uint32_t u32Instance);
-VMMR3DECL(int) SSMR3DeregisterDriver(PVM pVM, PPDMDRVINS pDrvIns, const char *pszName, uint32_t u32Instance);
+VMMR3DECL(int) SSMR3DeregisterDevice(PVM pVM, PPDMDEVINS pDevIns, const char *pszName, uint32_t uInstance);
+VMMR3DECL(int) SSMR3DeregisterDriver(PVM pVM, PPDMDRVINS pDrvIns, const char *pszName, uint32_t uInstance);
 VMMR3DECL(int) SSMR3DeregisterInternal(PVM pVM, const char *pszName);
 VMMR3DECL(int) SSMR3DeregisterExternal(PVM pVM, const char *pszName);
 VMMR3DECL(int) SSMR3Save(PVM pVM, const char *pszFilename, SSMAFTER enmAfter, PFNVMPROGRESS pfnProgress, void *pvUser);

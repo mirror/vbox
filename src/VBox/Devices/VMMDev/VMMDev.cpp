@@ -2159,15 +2159,18 @@ static DECLCALLBACK(int) vmmdevSaveState(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHand
  * @returns VBox status code.
  * @param   pDevIns     The device instance.
  * @param   pSSMHandle  The handle to the saved state.
- * @param   u32Version  The data unit version number.
+ * @param   uVersion    The data unit version number.
+ * @param   uPhase      The data phase.
  */
-static DECLCALLBACK(int) vmmdevLoadState(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle, uint32_t u32Version)
+static DECLCALLBACK(int) vmmdevLoadState(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle, uint32_t uVersion, uint32_t uPhase)
 {
-    /** @todo The code load code is assuming we're always loaded into a fresh VM. */
+    /** @todo The code load code is assuming we're always loaded into a freshly
+     *        constructed VM. */
     VMMDevState *pThis = PDMINS_2_DATA(pDevIns, VMMDevState*);
-    if (   SSM_VERSION_MAJOR_CHANGED(u32Version, VMMDEV_SSM_VERSION)
-        || (SSM_VERSION_MINOR(u32Version) < 6))
+    if (   SSM_VERSION_MAJOR_CHANGED(uVersion, VMMDEV_SSM_VERSION)
+        || (SSM_VERSION_MINOR(uVersion) < 6))
         return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
+    Assert(uPhase == SSM_PHASE_FINAL); NOREF(uPhase);
 
     SSMR3GetU32(pSSMHandle, &pThis->hypervisorSize);
     SSMR3GetU32(pSSMHandle, &pThis->mouseCapabilities);
@@ -2185,14 +2188,14 @@ static DECLCALLBACK(int) vmmdevLoadState(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHand
     SSMR3GetMem(pSSMHandle, &pThis->guestInfo, sizeof (pThis->guestInfo));
     SSMR3GetU32(pSSMHandle, &pThis->fu32AdditionsOk);
     SSMR3GetU32(pSSMHandle, &pThis->u32VideoAccelEnabled);
-    if (u32Version > 10)
+    if (uVersion > 10)
         SSMR3GetBool(pSSMHandle, &pThis->fGuestSentChangeEventAck);
 
     SSMR3GetU32(pSSMHandle, &pThis->guestCaps);
 
     /* Attributes which were temporarily introduced in r30072 */
-    if (   SSM_VERSION_MAJOR(u32Version) ==  0
-        && SSM_VERSION_MINOR(u32Version) == 7)
+    if (   SSM_VERSION_MAJOR(uVersion) ==  0
+        && SSM_VERSION_MINOR(uVersion) == 7)
     {
         uint32_t temp;
         SSMR3GetU32(pSSMHandle, &temp);
@@ -2200,11 +2203,11 @@ static DECLCALLBACK(int) vmmdevLoadState(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHand
     }
 
 #ifdef VBOX_WITH_HGCM
-    vmmdevHGCMLoadState (pThis, pSSMHandle, u32Version);
+    vmmdevHGCMLoadState (pThis, pSSMHandle, uVersion);
 #endif /* VBOX_WITH_HGCM */
 
-    if (   SSM_VERSION_MAJOR(u32Version) ==  0
-        && SSM_VERSION_MINOR(u32Version) >= 10)
+    if (   SSM_VERSION_MAJOR(uVersion) ==  0
+        && SSM_VERSION_MINOR(uVersion) >= 10)
         SSMR3GetU32(pSSMHandle, &pThis->fHostCursorRequested);
 
     /*
@@ -2215,8 +2218,8 @@ static DECLCALLBACK(int) vmmdevLoadState(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHand
     if (pThis->pDrv)
     {
         pThis->pDrv->pfnUpdateMouseCapabilities(pThis->pDrv, pThis->mouseCapabilities);
-        if (   SSM_VERSION_MAJOR(u32Version) ==  0
-            && SSM_VERSION_MINOR(u32Version) >= 10)
+        if (   SSM_VERSION_MAJOR(uVersion) ==  0
+            && SSM_VERSION_MINOR(uVersion) >= 10)
                 pThis->pDrv->pfnUpdatePointerShape(pThis->pDrv,
                                                    pThis->fHostCursorRequested,
                                                    0,
@@ -2484,9 +2487,10 @@ static DECLCALLBACK(int) vmmdevConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
     /*
      * Register saved state and init the HGCM CmdList critsect.
      */
-    rc = PDMDevHlpSSMRegister(pDevIns, "VMMDev", iInstance, VMMDEV_SSM_VERSION, sizeof(*pThis),
-                              NULL, vmmdevSaveState, NULL,
-                              NULL, vmmdevLoadState, vmmdevLoadStateDone);
+    rc = PDMDevHlpSSMRegisterEx(pDevIns, VMMDEV_SSM_VERSION, sizeof(*pThis), NULL,
+                                NULL, NULL, NULL,
+                                NULL, vmmdevSaveState, NULL,
+                                NULL, vmmdevLoadState, vmmdevLoadStateDone);
     AssertRCReturn(rc, rc);
 
 #ifdef VBOX_WITH_HGCM

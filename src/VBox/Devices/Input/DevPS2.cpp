@@ -1427,11 +1427,13 @@ static DECLCALLBACK(int) kbdSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle)
  * @returns VBox status code.
  * @param   pDevIns     The device instance.
  * @param   pSSMHandle  The handle to the saved state.
- * @param   u32Version  The data unit version number.
+ * @param   uVersion    The data unit version number.
+ * @param   uPhase      The data phase.
  */
-static DECLCALLBACK(int) kbdLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle, uint32_t u32Version)
+static DECLCALLBACK(int) kbdLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle, uint32_t uVersion, uint32_t uPhase)
 {
-    return kbd_load(pSSMHandle, PDMINS_2_DATA(pDevIns, KBDState *), u32Version);
+    Assert(uPhase == SSM_PHASE_FINAL); NOREF(uPhase);
+    return kbd_load(pSSMHandle, PDMINS_2_DATA(pDevIns, KBDState *), uVersion);
 }
 
 /**
@@ -1669,6 +1671,7 @@ static DECLCALLBACK(void)  kbdDetach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t
 #endif
 }
 
+
 /**
  * @copydoc FNPDMDEVRELOCATE
  */
@@ -1677,6 +1680,7 @@ static DECLCALLBACK(void) kdbRelocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
     KBDState   *pThis = PDMINS_2_DATA(pDevIns, KBDState *);
     pThis->pDevInsRC = PDMDEVINS_2_RCPTR(pDevIns);
 }
+
 
 /**
  * Destruct a device instance for a VM.
@@ -1691,6 +1695,7 @@ static DECLCALLBACK(int) kbdDestruct(PPDMDEVINS pDevIns)
 
     return VINF_SUCCESS;
 }
+
 
 /**
  * Construct a device instance for a VM.
@@ -1775,9 +1780,7 @@ static DECLCALLBACK(int) kbdConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
         if (RT_FAILURE(rc))
             return rc;
     }
-    rc = PDMDevHlpSSMRegister(pDevIns, g_DevicePS2KeyboardMouse.szDeviceName, iInstance, PCKBD_SAVED_STATE_VERSION, sizeof(*pThis),
-                              NULL, kbdSaveExec, NULL,
-                              NULL, kbdLoadExec, NULL);
+    rc = PDMDevHlpSSMRegister(pDevIns, PCKBD_SAVED_STATE_VERSION, sizeof(*pThis), kbdSaveExec, kbdLoadExec);
     if (RT_FAILURE(rc))
         return rc;
 
