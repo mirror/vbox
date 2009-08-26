@@ -46,7 +46,7 @@ static uint8_t *dhcp_find_option(uint8_t *vend, uint8_t tag)
     }
     return NULL; 
 }
-static BOOTPClient *alloc_addr(PNATState pData)
+BOOTPClient *alloc_addr(PNATState pData)
 {
     int i;
     for (i = 0; i < NB_ADDR; i++)
@@ -73,7 +73,6 @@ static BOOTPClient *get_new_addr(PNATState pData, struct in_addr *paddr)
     paddr->s_addr = htonl(ntohl(special_addr.s_addr) | (bc->number + START_ADDR));
     bc->addr.s_addr = paddr->s_addr;
     return bc;
-    return NULL;
 }
 
 static int release_addr(PNATState pData, struct in_addr *paddr)

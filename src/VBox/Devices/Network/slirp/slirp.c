@@ -549,6 +549,9 @@ int slirp_init(PNATState *ppData, uint32_t u32NetAddr, uint32_t u32Netmask,
             AssertMsgFailed(("NAT: LibAlias default rule wasn't initialized\n"));
         }
         flags = LibAliasSetMode(pData->proxy_alias, 0, 0);
+#ifndef NO_FW_PUNCH
+        flags |= PKT_ALIAS_PUNCH_FW;
+#endif
         flags |= PKT_ALIAS_LOG; /* set logging */
         flags = LibAliasSetMode(pData->proxy_alias, flags, ~0);
         proxy_addr.s_addr = htonl(ntohl(special_addr.s_addr) | CTL_ALIAS);
@@ -1366,6 +1369,16 @@ static void arp_input(PNATState pData, struct mbuf *m)
                 m_free(pData, m);
             }
             break;
+        case ARPOP_REPLY:
+        /* @todo check if we already have requested address */
+        /* if no*/
+        {
+            BOOTPClient *bc = alloc_addr(pData);
+            bc->addr.s_addr = *(uint32_t *)ah->ar_sip;
+            memcpy(bc->macaddr, ah->ar_sha, ETH_ALEN);
+            m_free(pData, m);
+        }
+        break;
         default:
             break;
     }
@@ -1782,3 +1795,32 @@ void slirp_set_tcp_sndspace(PNATState pData, int kilobytes)
     tcp_sndspace = kilobytes * _1K;
 }
 
+void slirp_arp_who_has(PNATState pData, uint32_t dst)
+{
+    struct mbuf *m;
+    struct ethhdr *ehdr;
+    struct arphdr *ahdr;
+
+    m = m_get(pData);
+    if (m == NULL)
+    {   
+        LogRel(("NAT: Can't alloc mbuf for ARP request\n")); 
+        return;
+    }
+    ehdr = mtod(m, struct ethhdr *);
+    memset(ehdr->h_source, 0xff, ETH_ALEN);
+    ahdr = (struct ahdr *)&ehdr[1];
+    ahdr->ar_hrd = htons(1);
+    ahdr->ar_pro = htons(ETH_P_IP);
+    ahdr->ar_hln = ETH_ALEN;
+    ahdr->ar_pln = 4;
+    ahdr->ar_op = htons(ARPOP_REQUEST);
+    memcpy(ahdr->ar_sha, special_ethaddr, ETH_ALEN);
+    *(uint32_t *)ahdr->ar_sip = htonl(ntohl(special_addr.s_addr) | CTL_ALIAS);
+    memset(ahdr->ar_tha, 0xff, ETH_ALEN); /*broadcast*/
+    *(uint32_t *)ahdr->ar_tip = dst;
+    m->m_data += if_maxlinkhdr;
+    m->m_len = sizeof(struct arphdr);
+    if_encap(pData, ETH_P_ARP, m);
+    LogRel(("NAT: ARP request sent\n"));
+}
