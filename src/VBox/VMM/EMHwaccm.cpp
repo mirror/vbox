@@ -301,12 +301,13 @@ static int emR3ExecuteIOInstruction(PVM pVM, PVMCPU pVCpu)
 
     /* Try to restart the io instruction that was refused in ring-0. */
     rc = HWACCMR3RestartPendingIOInstr(pVM, pVCpu, pCtx);
-    if (rc == VINF_SUCCESS || rc == VINF_EM_OFF)
+    if (IOM_SUCCESS(rc))
     {
         STAM_COUNTER_INC(&pVCpu->em.s.CTX_SUFF(pStats)->StatIoRestarted);
         STAM_PROFILE_STOP(&pVCpu->em.s.StatIOEmu, a);
         return rc;     /* rip already updated. */
     }
+    AssertMsgReturn(rc == VERR_NOT_FOUND, ("%Rrc\n", rc), VERR_INTERNAL_ERROR_5);
 
     /** @todo probably we should fall back to the recompiler; otherwise we'll go back and forth between HC & GC
      *   as io instructions tend to come in packages of more than one
