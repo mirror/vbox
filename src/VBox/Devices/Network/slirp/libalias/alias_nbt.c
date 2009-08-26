@@ -187,7 +187,8 @@ nbt_alias_handler(PNATState pData, int type)
 {
     int error;
 #ifdef VBOX
-    handlers = RTMemAllocZ(4 * sizeof(struct proto_handler));
+    if (handlers == NULL)
+        handlers = RTMemAllocZ(4 * sizeof(struct proto_handler));
     handlers[0].pri = 130;
     handlers[0].dir = IN|OUT;
     handlers[0].proto = UDP;

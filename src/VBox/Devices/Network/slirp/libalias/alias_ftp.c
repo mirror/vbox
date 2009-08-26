@@ -168,7 +168,8 @@ ftp_alias_handler(PNATState pData, int type)
 {
     int error;
 #ifdef VBOX
-    handlers = RTMemAllocZ(2 * sizeof(struct proto_handler));
+    if (handlers == NULL)
+        handlers = RTMemAllocZ(2 * sizeof(struct proto_handler));
     handlers[0].pri = 80;
     handlers[0].dir = OUT;
     handlers[0].proto = TCP;
