@@ -524,7 +524,7 @@ typedef struct _VBOXVHWA_OVERLAYFX
 //#define VBOXVHWA_CAPS2_FLIPNOVSYNC                  0x00400000
 
 
-#define VBOXVHWA_OFFSET64_VOID        (~0ULL)
+#define VBOXVHWA_OFFSET64_VOID        (UINT64_MAX)
 
 typedef struct _VBOXVHWA_VERSION
 {
