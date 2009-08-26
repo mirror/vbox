@@ -55,12 +55,6 @@
 /** The minimum amount of VRAM. */
 #define VGA_VRAM_MIN        (_1M)
 
-#ifdef VBOX_WITH_HGSMI
-# define VGA_SAVEDSTATE_VERSION  3
-#else
-# define VGA_SAVEDSTATE_VERSION  2
-#endif
-
 /** The size of the VGA GC mapping.
  * This is supposed to be all the VGA memory accessible to the guest.
  * The initial value was 256KB but NTAllInOne.iso appears to access more
@@ -5441,7 +5435,7 @@ static DECLCALLBACK(int) vgaR3SavePrep(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
  * @param   pSSMHandle  The handle to the saved state.
  * @param   u32Version  The data unit version number.
  */
-static DECLCALLBACK(int) vgaR3xec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle, uint32_t u32Version)
+static DECLCALLBACK(int) vgaR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle, uint32_t u32Version)
 {
     if (vga_load(pSSMHandle, PDMINS_2_DATA(pDevIns, PVGASTATE), u32Version))
         return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
@@ -6124,7 +6118,7 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
 #else
                               NULL, vgaR3SaveExec, NULL,
 #endif
-                              NULL, vgaR3xec, NULL);
+                              NULL, vgaR3LoadExec, NULL);
     if (RT_FAILURE(rc))
         return rc;
 

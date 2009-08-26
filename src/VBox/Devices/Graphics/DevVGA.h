@@ -51,6 +51,12 @@
 #define VGA_PORT_OFF_HGSMI_GUEST 4
 #endif /* VBOX_WITH_HGSMI */
 
+#ifdef VBOX_WITH_HGSMI
+# define VGA_SAVEDSTATE_VERSION  3
+#else
+# define VGA_SAVEDSTATE_VERSION  2
+#endif
+
 #define MSR_COLOR_EMULATION 0x01
 #define MSR_PAGE_SELECT     0x20
 
