@@ -5928,7 +5928,7 @@ HRESULT Machine::saveStorageControllers(settings::Storage &data)
         /* Save the port count. */
         ULONG portCount;
         rc = pCtl->COMGETTER(PortCount)(&portCount);
-        ComAssertRCRet(rc, rc);
+        ComAssertComRCRet(rc, rc);
         ctl.ulPortCount = portCount;
 
         /* Save IDE emulation settings. */
@@ -5939,12 +5939,12 @@ HRESULT Machine::saveStorageControllers(settings::Storage &data)
                  || (FAILED(rc = pCtl->GetIDEEmulationPort(2, (LONG*)&ctl.lIDE1MasterEmulationPort)))
                  || (FAILED(rc = pCtl->GetIDEEmulationPort(3, (LONG*)&ctl.lIDE1SlaveEmulationPort)))
                )
-                ComAssertRCRet(rc, rc);
+                ComAssertComRCRet(rc, rc);
         }
 
         /* save the devices now. */
         rc = saveStorageDevices(pCtl, ctl);
-        ComAssertRCRet(rc, rc);
+        ComAssertComRCRet(rc, rc);
 
         data.llStorageControllers.push_back(ctl);
     }

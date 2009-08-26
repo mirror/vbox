@@ -7328,11 +7328,10 @@ DECLCALLBACK (int) Console::saveStateThread (RTTHREAD Thread, void *pvUser)
         if (task->mIsSnapshot)
         do
         {
-            LogFlowFunc (("Reattaching new differencing hard disks...\n"));
+            LogFlowFunc(("Reattaching new differencing hard disks...\n"));
 
             com::SafeIfaceArray<IHardDiskAttachment> atts;
-            rc = that->mMachine->
-                COMGETTER(HardDiskAttachments) (ComSafeArrayAsOutParam (atts));
+            rc = that->mMachine->COMGETTER(HardDiskAttachments)(ComSafeArrayAsOutParam(atts));
             if (FAILED (rc))
                 break;
             for (size_t i = 0; i < atts.size(); ++ i)
@@ -7349,11 +7348,11 @@ DECLCALLBACK (int) Console::saveStateThread (RTTHREAD Thread, void *pvUser)
                  * so we have to query needed values here and pass them.
                  */
                 rc = atts[i]->COMGETTER(Controller)(&controllerName);
-                if (FAILED (rc))
+                if (FAILED(rc))
                     break;
 
                 rc = that->mMachine->GetStorageControllerByName(controllerName, controller.asOutParam());
-                if (FAILED (rc))
+                if (FAILED(rc))
                     break;
 
                 rc = controller->COMGETTER(ControllerType)(&enmController);
@@ -7362,20 +7361,19 @@ DECLCALLBACK (int) Console::saveStateThread (RTTHREAD Thread, void *pvUser)
                  *  don't leave the lock since reconfigureHardDisks isn't going
                  *  to access Console.
                  */
-                int vrc = VMR3ReqCall (that->mpVM, VMCPUID_ANY, &pReq, RT_INDEFINITE_WAIT,
-                                       (PFNRT)reconfigureHardDisks, 5, that->mpVM, lInstance,
-                                       enmController, atts [i], &rc);
-                if (VBOX_SUCCESS (rc))
-                    rc = pReq->iStatus;
-                VMR3ReqFree (pReq);
-                if (FAILED (rc))
-                    break;
-                if (VBOX_FAILURE (vrc))
+                int vrc = VMR3ReqCall(that->mpVM, VMCPUID_ANY, &pReq, RT_INDEFINITE_WAIT,
+                                      (PFNRT)reconfigureHardDisks, 5, that->mpVM, lInstance, enmController, atts[i], &rc);
+                if (RT_SUCCESS(vrc))
+                    vrc = pReq->iStatus;
+                VMR3ReqFree(pReq);
+                if (RT_FAILURE(vrc))
                 {
-                    errMsg = Utf8StrFmt (Console::tr ("%Rrc"), vrc);
+                    errMsg = Utf8StrFmt(Console::tr("%Rrc"), vrc);
                     rc = E_FAIL;
                     break;
                 }
+                if (FAILED(rc))
+                    break;
             }
         }
         while (0);
