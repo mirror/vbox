@@ -43,7 +43,7 @@ static int UninstallNetAdp()
         hr = VBoxNetCfgWinRemoveAllNetDevicesOfId(L"sun_VBoxNetAdp");
         if(hr == S_OK)
         {
-            hr = VBoxNetCfgWinUninstallInfs (&GUID_DEVCLASS_NET, L"sun_VBoxNetAdp");
+            hr = VBoxNetCfgWinUninstallInfs (&GUID_DEVCLASS_NET, L"sun_VBoxNetAdp", 0/* could be SUOI_FORCEDELETE */);
             if(hr == S_OK)
             {
                 printf("uninstalled successfully\n");
