@@ -75,16 +75,16 @@ RT_C_DECLS_BEGIN
 #define HWACCMCanEmulateIoBlock(pVCpu)     (!CPUMIsGuestInPagedProtectedMode(pVCpu))
 #define HWACCMCanEmulateIoBlockEx(pCtx)    (!CPUMIsGuestInPagedProtectedModeEx(pCtx))
 
-VMMDECL(int)    HWACCMInvalidatePage(PVMCPU pVCpu, RTGCPTR GCVirt);
-VMMDECL(bool)   HWACCMHasPendingIrq(PVM pVM);
+VMMDECL(int)            HWACCMInvalidatePage(PVMCPU pVCpu, RTGCPTR GCVirt);
+VMMDECL(bool)           HWACCMHasPendingIrq(PVM pVM);
 
 #ifndef IN_RC
-VMMDECL(int)     HWACCMFlushTLB(PVMCPU pVCpu);
-VMMDECL(int)     HWACCMFlushTLBOnAllVCpus(PVM pVM);
-VMMDECL(int)     HWACCMInvalidatePageOnAllVCpus(PVM pVM, RTGCPTR GCVirt);
-VMMDECL(int)     HWACCMInvalidatePhysPage(PVM pVM, RTGCPHYS GCPhys);
-VMMDECL(bool)    HWACCMIsNestedPagingActive(PVM pVM);
-VMMDECL(PGMMODE) HWACCMGetShwPagingMode(PVM pVM);
+VMMDECL(int)            HWACCMFlushTLB(PVMCPU pVCpu);
+VMMDECL(int)            HWACCMFlushTLBOnAllVCpus(PVM pVM);
+VMMDECL(int)            HWACCMInvalidatePageOnAllVCpus(PVM pVM, RTGCPTR GCVirt);
+VMMDECL(int)            HWACCMInvalidatePhysPage(PVM pVM, RTGCPHYS GCPhys);
+VMMDECL(bool)           HWACCMIsNestedPagingActive(PVM pVM);
+VMMDECL(PGMMODE)        HWACCMGetShwPagingMode(PVM pVM);
 #else
 /* Nop in GC */
 # define HWACCMFlushTLB(pVCpu)                  do { } while (0)
@@ -97,19 +97,19 @@ VMMDECL(PGMMODE) HWACCMGetShwPagingMode(PVM pVM);
  * @ingroup grp_hwaccm
  * @{
  */
-VMMR0DECL(int)  HWACCMR0Init(void);
-VMMR0DECL(int)  HWACCMR0Term(void);
-VMMR0DECL(int)  HWACCMR0InitVM(PVM pVM);
-VMMR0DECL(int)  HWACCMR0TermVM(PVM pVM);
-VMMR0DECL(int)  HWACCMR0EnableAllCpus(PVM pVM);
-VMMR0DECL(int)  HWACCMR0EnterSwitcher(PVM pVM, bool *pfVTxDisabled);
-VMMR0DECL(int)  HWACCMR0LeaveSwitcher(PVM pVM, bool fVTxDisabled);
+VMMR0DECL(int)          HWACCMR0Init(void);
+VMMR0DECL(int)          HWACCMR0Term(void);
+VMMR0DECL(int)          HWACCMR0InitVM(PVM pVM);
+VMMR0DECL(int)          HWACCMR0TermVM(PVM pVM);
+VMMR0DECL(int)          HWACCMR0EnableAllCpus(PVM pVM);
+VMMR0DECL(int)          HWACCMR0EnterSwitcher(PVM pVM, bool *pfVTxDisabled);
+VMMR0DECL(int)          HWACCMR0LeaveSwitcher(PVM pVM, bool fVTxDisabled);
 
-VMMR0DECL(PVMCPU)  HWACCMR0GetVMCPU(PVM pVM);
-VMMR0DECL(VMCPUID) HWACCMR0GetVMCPUId(PVM pVM);
+VMMR0DECL(PVMCPU)       HWACCMR0GetVMCPU(PVM pVM);
+VMMR0DECL(VMCPUID)      HWACCMR0GetVMCPUId(PVM pVM);
 
-VMMR0DECL(void) HWACCMR0SavePendingIOPortWrite(PVMCPU pVCpu, RTGCPTR GCPtrRip, RTGCPTR GCPtrRipNext, unsigned uPort, unsigned uAndVal, unsigned cbSize);
-VMMR0DECL(void) HWACCMR0SavePendingIOPortRead(PVMCPU pVCpu, RTGCPTR GCPtrRip, RTGCPTR GCPtrRipNext, unsigned uPort, unsigned uAndVal, unsigned cbSize);
+VMMR0DECL(void)         HWACCMR0SavePendingIOPortWrite(PVMCPU pVCpu, RTGCPTR GCPtrRip, RTGCPTR GCPtrRipNext, unsigned uPort, unsigned uAndVal, unsigned cbSize);
+VMMR0DECL(void)         HWACCMR0SavePendingIOPortRead(PVMCPU pVCpu, RTGCPTR GCPtrRip, RTGCPTR GCPtrRipNext, unsigned uPort, unsigned uAndVal, unsigned cbSize);
 
 /** @} */
 #endif /* IN_RING0 */
@@ -120,29 +120,29 @@ VMMR0DECL(void) HWACCMR0SavePendingIOPortRead(PVMCPU pVCpu, RTGCPTR GCPtrRip, RT
  * @ingroup grp_hwaccm
  * @{
  */
-VMMR3DECL(bool) HWACCMR3IsEventPending(PVMCPU pVCpu);
-VMMR3DECL(int)  HWACCMR3Init(PVM pVM);
-VMMR3DECL(int)  HWACCMR3InitCPU(PVM pVM);
-VMMR3DECL(int)  HWACCMR3InitFinalizeR0(PVM pVM);
-VMMR3DECL(void) HWACCMR3Relocate(PVM pVM);
-VMMR3DECL(int)  HWACCMR3Term(PVM pVM);
-VMMR3DECL(int)  HWACCMR3TermCPU(PVM pVM);
-VMMR3DECL(void) HWACCMR3Reset(PVM pVM);
-VMMR3DECL(void) HWACCMR3CheckError(PVM pVM, int iStatusCode);
-VMMR3DECL(bool) HWACCMR3CanExecuteGuest(PVM pVM, PCPUMCTX pCtx);
-VMMR3DECL(void) HWACCMR3NotifyScheduled(PVMCPU pVCpu);
-VMMR3DECL(void) HWACCMR3NotifyEmulated(PVMCPU pVCpu);
-VMMR3DECL(bool) HWACCMR3IsActive(PVMCPU pVCpu);
-VMMR3DECL(bool) HWACCMR3IsNestedPagingActive(PVM pVM);
-VMMR3DECL(bool) HWACCMR3IsAllowed(PVM pVM);
-VMMR3DECL(void) HWACCMR3PagingModeChanged(PVM pVM, PVMCPU pVCpu, PGMMODE enmShadowMode, PGMMODE enmGuestMode);
-VMMR3DECL(bool) HWACCMR3IsVPIDActive(PVM pVM);
-VMMR3DECL(int)  HWACCMR3InjectNMI(PVM pVM);
-VMMR3DECL(int)  HWACCMR3EmulateIoBlock(PVM pVM, PCPUMCTX pCtx);
-VMMR3DECL(int)  HWACCMR3RestartPendingIOInstr(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx);
-VMMR3DECL(int)  HWACMMR3EnablePatching(PVM pVM, RTGCPTR pPatchMem, unsigned cbPatchMem);
-VMMR3DECL(int)  HWACMMR3DisablePatching(PVM pVM, RTGCPTR pPatchMem, unsigned cbPatchMem);
-VMMR3DECL(int)  HWACCMR3PatchTprInstr(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx);
+VMMR3DECL(bool)         HWACCMR3IsEventPending(PVMCPU pVCpu);
+VMMR3DECL(int)          HWACCMR3Init(PVM pVM);
+VMMR3DECL(int)          HWACCMR3InitCPU(PVM pVM);
+VMMR3DECL(int)          HWACCMR3InitFinalizeR0(PVM pVM);
+VMMR3DECL(void)         HWACCMR3Relocate(PVM pVM);
+VMMR3DECL(int)          HWACCMR3Term(PVM pVM);
+VMMR3DECL(int)          HWACCMR3TermCPU(PVM pVM);
+VMMR3DECL(void)         HWACCMR3Reset(PVM pVM);
+VMMR3DECL(void)         HWACCMR3CheckError(PVM pVM, int iStatusCode);
+VMMR3DECL(bool)         HWACCMR3CanExecuteGuest(PVM pVM, PCPUMCTX pCtx);
+VMMR3DECL(void)         HWACCMR3NotifyScheduled(PVMCPU pVCpu);
+VMMR3DECL(void)         HWACCMR3NotifyEmulated(PVMCPU pVCpu);
+VMMR3DECL(bool)         HWACCMR3IsActive(PVMCPU pVCpu);
+VMMR3DECL(bool)         HWACCMR3IsNestedPagingActive(PVM pVM);
+VMMR3DECL(bool)         HWACCMR3IsAllowed(PVM pVM);
+VMMR3DECL(void)         HWACCMR3PagingModeChanged(PVM pVM, PVMCPU pVCpu, PGMMODE enmShadowMode, PGMMODE enmGuestMode);
+VMMR3DECL(bool)         HWACCMR3IsVPIDActive(PVM pVM);
+VMMR3DECL(int)          HWACCMR3InjectNMI(PVM pVM);
+VMMR3DECL(int)          HWACCMR3EmulateIoBlock(PVM pVM, PCPUMCTX pCtx);
+VMMR3DECL(VBOXSTRICTRC) HWACCMR3RestartPendingIOInstr(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx);
+VMMR3DECL(int)          HWACMMR3EnablePatching(PVM pVM, RTGCPTR pPatchMem, unsigned cbPatchMem);
+VMMR3DECL(int)          HWACMMR3DisablePatching(PVM pVM, RTGCPTR pPatchMem, unsigned cbPatchMem);
+VMMR3DECL(int)          HWACCMR3PatchTprInstr(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx);
 
 /** @} */
 #endif /* IN_RING3 */
@@ -151,18 +151,18 @@ VMMR3DECL(int)  HWACCMR3PatchTprInstr(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx);
 /** @addtogroup grp_hwaccm_r0
  * @{
  */
-VMMR0DECL(int)   HWACCMR0SetupVM(PVM pVM);
-VMMR0DECL(int)   HWACCMR0RunGuestCode(PVM pVM, PVMCPU pVCpu);
-VMMR0DECL(int)   HWACCMR0Enter(PVM pVM, PVMCPU pVCpu);
-VMMR0DECL(int)   HWACCMR0Leave(PVM pVM, PVMCPU pVCpu);
-VMMR0DECL(int)   HWACCMR0InvalidatePage(PVM pVM, PVMCPU pVCpu);
-VMMR0DECL(int)   HWACCMR0FlushTLB(PVM pVM);
-VMMR0DECL(bool)  HWACCMR0SuspendPending();
+VMMR0DECL(int)          HWACCMR0SetupVM(PVM pVM);
+VMMR0DECL(int)          HWACCMR0RunGuestCode(PVM pVM, PVMCPU pVCpu);
+VMMR0DECL(int)          HWACCMR0Enter(PVM pVM, PVMCPU pVCpu);
+VMMR0DECL(int)          HWACCMR0Leave(PVM pVM, PVMCPU pVCpu);
+VMMR0DECL(int)          HWACCMR0InvalidatePage(PVM pVM, PVMCPU pVCpu);
+VMMR0DECL(int)          HWACCMR0FlushTLB(PVM pVM);
+VMMR0DECL(bool)         HWACCMR0SuspendPending();
 
 # if HC_ARCH_BITS == 32 && defined(VBOX_WITH_64_BITS_GUESTS)
-VMMR0DECL(int)   HWACCMR0SaveFPUState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx);
-VMMR0DECL(int)   HWACCMR0SaveDebugState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx);
-VMMR0DECL(int)   HWACCMR0TestSwitcher3264(PVM pVM);
+VMMR0DECL(int)          HWACCMR0SaveFPUState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx);
+VMMR0DECL(int)          HWACCMR0SaveDebugState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx);
+VMMR0DECL(int)          HWACCMR0TestSwitcher3264(PVM pVM);
 # endif
 
 /** @} */

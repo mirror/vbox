@@ -503,8 +503,7 @@ DECLINLINE(int) emR3ExecuteInstruction(PVM pVM, PVMCPU pVCpu, const char *pszPre
  */
 static int emR3ExecuteIOInstruction(PVM pVM, PVMCPU pVCpu)
 {
-    int         rc;
-    PCPUMCTX    pCtx = pVCpu->em.s.pCtx;
+    PCPUMCTX pCtx = pVCpu->em.s.pCtx;
 
     STAM_PROFILE_START(&pVCpu->em.s.StatIOEmu, a);
 
@@ -512,10 +511,10 @@ static int emR3ExecuteIOInstruction(PVM pVM, PVMCPU pVCpu)
      *   as io instructions tend to come in packages of more than one
      */
     DISCPUSTATE Cpu;
-    rc = CPUMR3DisasmInstrCPU(pVM, pVCpu, pCtx, pCtx->rip, &Cpu, "IO EMU");
+    int rc = CPUMR3DisasmInstrCPU(pVM, pVCpu, pCtx, pCtx->rip, &Cpu, "IO EMU");
     if (RT_SUCCESS(rc))
     {
-        rc = VINF_EM_RAW_EMULATE_INSTR;
+        VBOXSTRICTRC rcStrict = VINF_EM_RAW_EMULATE_INSTR;
 
         if (!(Cpu.prefix & (PREFIX_REP | PREFIX_REPNE)))
         {
@@ -524,14 +523,14 @@ static int emR3ExecuteIOInstruction(PVM pVM, PVMCPU pVCpu)
                 case OP_IN:
                 {
                     STAM_COUNTER_INC(&pVCpu->em.s.CTX_SUFF(pStats)->StatIn);
-                    rc = IOMInterpretIN(pVM, CPUMCTX2CORE(pCtx), &Cpu);
+                    rcStrict = IOMInterpretIN(pVM, CPUMCTX2CORE(pCtx), &Cpu);
                     break;
                 }
 
                 case OP_OUT:
                 {
                     STAM_COUNTER_INC(&pVCpu->em.s.CTX_SUFF(pStats)->StatOut);
-                    rc = IOMInterpretOUT(pVM, CPUMCTX2CORE(pCtx), &Cpu);
+                    rcStrict = IOMInterpretOUT(pVM, CPUMCTX2CORE(pCtx), &Cpu);
                     break;
                 }
             }
@@ -544,7 +543,7 @@ static int emR3ExecuteIOInstruction(PVM pVM, PVMCPU pVCpu)
                 case OP_INSWD:
                 {
                     STAM_COUNTER_INC(&pVCpu->em.s.CTX_SUFF(pStats)->StatIn);
-                    rc = IOMInterpretINS(pVM, CPUMCTX2CORE(pCtx), &Cpu);
+                    rcStrict = IOMInterpretINS(pVM, CPUMCTX2CORE(pCtx), &Cpu);
                     break;
                 }
 
@@ -552,7 +551,7 @@ static int emR3ExecuteIOInstruction(PVM pVM, PVMCPU pVCpu)
                 case OP_OUTSWD:
                 {
                     STAM_COUNTER_INC(&pVCpu->em.s.CTX_SUFF(pStats)->StatOut);
-                    rc = IOMInterpretOUTS(pVM, CPUMCTX2CORE(pCtx), &Cpu);
+                    rcStrict = IOMInterpretOUTS(pVM, CPUMCTX2CORE(pCtx), &Cpu);
                     break;
                 }
             }
@@ -560,29 +559,29 @@ static int emR3ExecuteIOInstruction(PVM pVM, PVMCPU pVCpu)
 
         /*
          * Handled the I/O return codes.
-         * (The unhandled cases end up with rc == VINF_EM_RAW_EMULATE_INSTR.)
+         * (The unhandled cases end up with rcStrict == VINF_EM_RAW_EMULATE_INSTR.)
          */
-        if (IOM_SUCCESS(rc))
+        if (IOM_SUCCESS(rcStrict))
         {
             pCtx->rip += Cpu.opsize;
             STAM_PROFILE_STOP(&pVCpu->em.s.StatIOEmu, a);
-            return rc;
+            return VBOXSTRICTRC_TODO(rcStrict);
         }
 
-        if (rc == VINF_EM_RAW_GUEST_TRAP)
+        if (rcStrict == VINF_EM_RAW_GUEST_TRAP)
         {
             STAM_PROFILE_STOP(&pVCpu->em.s.StatIOEmu, a);
-            rc = emR3RawGuestTrap(pVM, pVCpu);
-            return rc;
+            rcStrict = emR3RawGuestTrap(pVM, pVCpu);
+            return VBOXSTRICTRC_TODO(rcStrict);
         }
-        AssertMsg(rc != VINF_TRPM_XCPT_DISPATCHED, ("Handle VINF_TRPM_XCPT_DISPATCHED\n"));
+        AssertMsg(rcStrict != VINF_TRPM_XCPT_DISPATCHED, ("Handle VINF_TRPM_XCPT_DISPATCHED\n"));
 
-        if (RT_FAILURE(rc))
+        if (RT_FAILURE(rcStrict))
         {
             STAM_PROFILE_STOP(&pVCpu->em.s.StatIOEmu, a);
-            return rc;
+            return VBOXSTRICTRC_TODO(rcStrict);
         }
-        AssertMsg(rc == VINF_EM_RAW_EMULATE_INSTR || rc == VINF_EM_RESCHEDULE_REM, ("rc=%Rrc\n", rc));
+        AssertMsg(rcStrict == VINF_EM_RAW_EMULATE_INSTR || rcStrict == VINF_EM_RESCHEDULE_REM, ("rcStrict=%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
     }
     STAM_PROFILE_STOP(&pVCpu->em.s.StatIOEmu, a);
     return emR3ExecuteInstruction(pVM, pVCpu, "IO: ");

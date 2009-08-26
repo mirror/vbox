@@ -94,9 +94,9 @@ typedef R3PTRTYPE(struct UVM *)     PUVM;
 typedef R3PTRTYPE(struct UVMCPU *)  PUVMCPU;
 
 /** Virtual CPU ID. */
-typedef uint32_t VMCPUID;
+typedef uint32_t                    VMCPUID;
 /** Pointer to a virtual CPU ID. */
-typedef VMCPUID *PVMCPUID;
+typedef VMCPUID                    *PVMCPUID;
 /** @name Special CPU ID values.
  * Most of these are for request scheduling.
  *
@@ -142,7 +142,8 @@ typedef VMCPUSET const *PCVMCPUSET;
 #define VMCPUSET_IS_EQUAL(pSet1, pSet2)     (memcmp(&(pSet1)->au32Bitmap, &(pSet2)->au32Bitmap, sizeof((pSet1)->au32Bitmap)) == 0)
 
 
-/** VM State
+/**
+ * VM State
  */
 typedef enum VMSTATE
 {
@@ -173,6 +174,103 @@ typedef enum VMSTATE
     /** hack forcing the size of the enum to 32-bits. */
     VMSTATE_MAKE_32BIT_HACK = 0x7fffffff
 } VMSTATE;
+
+/** @def VBOXSTRICTRC_STRICT_ENABLED
+ * Indicates that VBOXSTRICTRC is in strict mode.
+ */
+#if defined(__cplusplus) \
+ &&  (   defined(RT_STRICT) \
+      || defined(VBOX_STRICT) \
+      || defined(DEBUG) \
+      || defined(DOXYGEN_RUNNING) )
+# define VBOXSTRICTRC_STRICT_ENABLED 1
+#endif
+
+/** We need RTERR_STRICT_RC.  */
+#if defined(VBOXSTRICTRC_STRICT_ENABLED) && !defined(RTERR_STRICT_RC)
+# define RTERR_STRICT_RC 1
+#endif
+
+/**
+ * Strict VirtualBox status code.
+ *
+ * This is normally an 32-bit integer and the only purpose of the type is to
+ * highlight the special handling that is required.  But in strict build it is a
+ * class that causes compilation and runtime errors for some of the incorrect
+ * handling.
+ */
+#ifdef VBOXSTRICTRC_STRICT_ENABLED
+class VBOXSTRICTRC
+{
+protected:
+    /** The status code. */
+    int32_t m_rc;
+
+public:
+    /** Default constructor setting the status to VERR_IPE_UNINITIALIZED_STATUS. */
+    VBOXSTRICTRC()
+#ifdef VERR_IPE_UNINITIALIZED_STATUS
+        : m_rc(VERR_IPE_UNINITIALIZED_STATUS)
+#else
+        : m_rc(-233 /*VERR_IPE_UNINITIALIZED_STATUS*/)
+#endif
+    {
+    }
+
+    /** Constructor for normal integer status codes. */
+    VBOXSTRICTRC(int32_t const rc)
+        : m_rc(rc)
+    {
+    }
+
+    /** Getter that VBOXSTRICTRC_VAL can use. */
+    int32_t getValue() const                    { return m_rc; }
+
+    /** @name Comparison operators
+     * @{ */
+    bool operator==(int32_t rc) const           { return m_rc == rc; }
+    bool operator!=(int32_t rc) const           { return m_rc != rc; }
+    bool operator<=(int32_t rc) const           { return m_rc <= rc; }
+    bool operator>=(int32_t rc) const           { return m_rc >= rc; }
+    bool operator<(int32_t rc) const            { return m_rc < rc; }
+    bool operator>(int32_t rc) const            { return m_rc > rc; }
+    /** @} */
+
+    /** Special automatic cast for RT_SUCCESS_NP. */
+    operator RTErrStrictType2() const           { return RTErrStrictType2(m_rc); }
+
+private:
+    /** @name Constructors that will prevent some of the bad types.
+     * @{ */
+    VBOXSTRICTRC(uint8_t  rc) : m_rc(-999)      { NOREF(rc); }
+    VBOXSTRICTRC(uint16_t rc) : m_rc(-999)      { NOREF(rc); }
+    VBOXSTRICTRC(uint32_t rc) : m_rc(-999)      { NOREF(rc); }
+    VBOXSTRICTRC(uint64_t rc) : m_rc(-999)      { NOREF(rc); }
+
+    VBOXSTRICTRC(int8_t rc)   : m_rc(-999)      { NOREF(rc); }
+    VBOXSTRICTRC(int16_t rc)  : m_rc(-999)      { NOREF(rc); }
+    VBOXSTRICTRC(int64_t rc)  : m_rc(-999)      { NOREF(rc); }
+    /** @} */
+};
+#else
+typedef int32_t VBOXSTRICTRC;
+#endif
+
+/** @def VBOXSTRICTRC_VAL
+ * Explicit getter.
+ * @param rcStrict  The strict VirtualBox status code.
+ */
+#ifdef VBOXSTRICTRC_STRICT_ENABLED
+# define VBOXSTRICTRC_VAL(rcStrict) ( (rcStrict).getValue() )
+#else
+# define VBOXSTRICTRC_VAL(rcStrict) (rcStrict)
+#endif
+
+/** @def VBOXSTRICTRC_TODO
+ * Returns that needs dealing with.
+ * @param rcStrict  The strict VirtualBox status code.
+ */
+#define VBOXSTRICTRC_TODO(rcStrict) VBOXSTRICTRC_VAL(rcStrict)
 
 
 /** Pointer to a PDM Driver Base Interface. */

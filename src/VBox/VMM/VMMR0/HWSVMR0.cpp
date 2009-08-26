@@ -364,7 +364,7 @@ VMMR0DECL(int) SVMR0SetupVM(PVM pVM)
         pVMCB->guest.u64GPAT = 0x0007040600070406ULL;
 
         /* The following MSRs are saved automatically by vmload/vmsave, so we allow the guest
-         * to modify them directly. 
+         * to modify them directly.
          */
         svmR0SetMSRPermission(pVCpu, MSR_K8_LSTAR, true, true);
         svmR0SetMSRPermission(pVCpu, MSR_K8_CSTAR, true, true);
@@ -426,7 +426,7 @@ static void svmR0SetMSRPermission(PVMCPU pVCpu, unsigned ulMSR, bool fRead, bool
         ASMBitClear(pMSRBitmap, ulBit);
     else
         ASMBitSet(pMSRBitmap, ulBit);
-    
+
     if (fWrite)
         ASMBitClear(pMSRBitmap, ulBit + 1);
     else
@@ -2177,13 +2177,13 @@ ResumeExecution:
                 {
                     Log2(("IOMInterpretOUTSEx %RGv %x size=%d\n", (RTGCPTR)pCtx->rip, IoExitInfo.n.u16Port, uIOSize));
                     STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitIOStringWrite);
-                    rc = IOMInterpretOUTSEx(pVM, CPUMCTX2CORE(pCtx), IoExitInfo.n.u16Port, pDis->prefix, uIOSize);
+                    rc = VBOXSTRICTRC_TODO(IOMInterpretOUTSEx(pVM, CPUMCTX2CORE(pCtx), IoExitInfo.n.u16Port, pDis->prefix, uIOSize));
                 }
                 else
                 {
                     Log2(("IOMInterpretINSEx  %RGv %x size=%d\n", (RTGCPTR)pCtx->rip, IoExitInfo.n.u16Port, uIOSize));
                     STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitIOStringRead);
-                    rc = IOMInterpretINSEx(pVM, CPUMCTX2CORE(pCtx), IoExitInfo.n.u16Port, pDis->prefix, uIOSize);
+                    rc = VBOXSTRICTRC_TODO(IOMInterpretINSEx(pVM, CPUMCTX2CORE(pCtx), IoExitInfo.n.u16Port, pDis->prefix, uIOSize));
                 }
             }
             else
@@ -2198,7 +2198,7 @@ ResumeExecution:
             {
                 Log2(("IOMIOPortWrite %RGv %x %x size=%d\n", (RTGCPTR)pCtx->rip, IoExitInfo.n.u16Port, pCtx->eax & uAndVal, uIOSize));
                 STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitIOWrite);
-                rc = IOMIOPortWrite(pVM, IoExitInfo.n.u16Port, pCtx->eax & uAndVal, uIOSize);
+                rc = VBOXSTRICTRC_TODO(IOMIOPortWrite(pVM, IoExitInfo.n.u16Port, pCtx->eax & uAndVal, uIOSize));
                 if (rc == VINF_IOM_HC_IOPORT_WRITE)
                     HWACCMR0SavePendingIOPortWrite(pVCpu, pCtx->rip, pVMCB->ctrl.u64ExitInfo2, IoExitInfo.n.u16Port, uAndVal, uIOSize);
             }
@@ -2207,7 +2207,7 @@ ResumeExecution:
                 uint32_t u32Val = 0;
 
                 STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitIORead);
-                rc = IOMIOPortRead(pVM, IoExitInfo.n.u16Port, &u32Val, uIOSize);
+                rc = VBOXSTRICTRC_TODO(IOMIOPortRead(pVM, IoExitInfo.n.u16Port, &u32Val, uIOSize));
                 if (IOM_SUCCESS(rc))
                 {
                     /* Write back to the EAX register. */
