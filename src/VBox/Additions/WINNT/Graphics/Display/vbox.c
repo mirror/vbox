@@ -923,7 +923,7 @@ VBOXVHWACMD_QUERYINFO2* vboxVHWAQueryHostInfo2(PPDEV ppdev, uint32_t numFourCC)
     VBOXVHWACMD_QUERYINFO2 *pInfo2;
     if (!pCmd)
     {
-        DISPDBG((0, "VBoxDISP::vboxVHWAQueryHostInfo1: vboxVHWACommandCreate failed\n"));
+        DISPDBG((0, "VBoxDISP::vboxVHWAQueryHostInfo2: vboxVHWACommandCreate failed\n"));
         return NULL;
     }
 
@@ -947,7 +947,12 @@ VBOXVHWACMD_QUERYINFO2* vboxVHWAQueryHostInfo2(PPDEV ppdev, uint32_t numFourCC)
 
 int vboxVHWAInitHostInfo1(PPDEV ppdev)
 {
-    VBOXVHWACMD_QUERYINFO1* pInfo = vboxVHWAQueryHostInfo1(ppdev);
+    VBOXVHWACMD_QUERYINFO1* pInfo;
+
+    if (!ppdev->bHGSMISupported)
+        return VERR_NOT_SUPPORTED;
+
+    pInfo = vboxVHWAQueryHostInfo1(ppdev);
     if(!pInfo)
     {
         ppdev->vhwaInfo.bVHWAEnabled = false;
@@ -968,8 +973,13 @@ int vboxVHWAInitHostInfo1(PPDEV ppdev)
 
 int vboxVHWAInitHostInfo2(PPDEV ppdev, DWORD *pFourCC)
 {
-    VBOXVHWACMD_QUERYINFO2* pInfo = vboxVHWAQueryHostInfo2(ppdev, ppdev->vhwaInfo.numFourCC);
+    VBOXVHWACMD_QUERYINFO2* pInfo;
     int rc = VINF_SUCCESS;
+
+    if (!ppdev->bHGSMISupported)
+        return VERR_NOT_SUPPORTED;
+
+    pInfo = vboxVHWAQueryHostInfo2(ppdev, ppdev->vhwaInfo.numFourCC);
 
     Assert(pInfo);
     if(!pInfo)
@@ -993,10 +1003,15 @@ int vboxVHWAInitHostInfo2(PPDEV ppdev, DWORD *pFourCC)
 int vboxVHWAEnable(PPDEV ppdev)
 {
     int rc = VERR_GENERAL_FAILURE;
-    VBOXVHWACMD* pCmd = vboxVHWACommandCreate (ppdev, VBOXVHWACMD_TYPE_ENABLE, 0);
+    VBOXVHWACMD* pCmd;
+
+    if (!ppdev->bHGSMISupported)
+        return VERR_NOT_SUPPORTED;
+
+    pCmd = vboxVHWACommandCreate (ppdev, VBOXVHWACMD_TYPE_ENABLE, 0);
     if (!pCmd)
     {
-        DISPDBG((0, "VBoxDISP::vboxVHWAQueryHostInfo1: vboxVHWACommandCreate failed\n"));
+        DISPDBG((0, "VBoxDISP::vboxVHWAEnable: vboxVHWACommandCreate failed\n"));
         return rc;
     }
 
@@ -1015,10 +1030,15 @@ int vboxVHWAEnable(PPDEV ppdev)
 int vboxVHWADisable(PPDEV ppdev)
 {
     int rc = VERR_GENERAL_FAILURE;
-    VBOXVHWACMD* pCmd = vboxVHWACommandCreate (ppdev, VBOXVHWACMD_TYPE_DISABLE, 0);
+    VBOXVHWACMD* pCmd;
+
+    if (!ppdev->bHGSMISupported)
+        return VERR_NOT_SUPPORTED;
+
+    pCmd = vboxVHWACommandCreate (ppdev, VBOXVHWACMD_TYPE_DISABLE, 0);
     if (!pCmd)
     {
-        DISPDBG((0, "VBoxDISP::vboxVHWAQueryHostInfo1: vboxVHWACommandCreate failed\n"));
+        DISPDBG((0, "VBoxDISP::vboxVHWADisable: vboxVHWACommandCreate failed\n"));
         return rc;
     }
 
