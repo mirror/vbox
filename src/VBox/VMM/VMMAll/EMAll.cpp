@@ -360,16 +360,16 @@ VMMDECL(int) EMInterpretInstructionCPU(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis,
  * @param   cbOp        The size of the instruction.
  * @remark  This may raise exceptions.
  */
-VMMDECL(int) EMInterpretPortIO(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pCtxCore, PDISCPUSTATE pDis, uint32_t cbOp)
+VMMDECL(VBOXSTRICTRC) EMInterpretPortIO(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pCtxCore, PDISCPUSTATE pDis, uint32_t cbOp)
 {
     /*
      * Hand it on to IOM.
      */
 #ifdef IN_RC
-    int rc = IOMGCIOPortHandler(pVM, pCtxCore, pDis);
-    if (IOM_SUCCESS(rc))
+    VBOXSTRICTRC rcStrict = IOMGCIOPortHandler(pVM, pCtxCore, pDis);
+    if (IOM_SUCCESS(rcStrict))
         pCtxCore->rip += cbOp;
-    return rc;
+    return rcStrict;
 #else
     AssertReleaseMsgFailed(("not implemented\n"));
     return VERR_NOT_IMPLEMENTED;

@@ -1258,7 +1258,8 @@ VMMDECL(int) IOMMMIOHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pCtxCore,
 {
     LogFlow(("IOMMMIOHandler: GCPhys=%RGp uErr=%#x pvFault=%RGv rip=%RGv\n",
              GCPhysFault, (uint32_t)uErrorCode, pvFault, (RTGCPTR)pCtxCore->rip));
-    return iomMMIOHandler(pVM, uErrorCode, pCtxCore, GCPhysFault, pvUser);
+    VBOXSTRICTRC rcStrict = iomMMIOHandler(pVM, uErrorCode, pCtxCore, GCPhysFault, pvUser);
+    return VBOXSTRICTRC_VAL(rcStrict);
 }
 
 /**
@@ -1270,17 +1271,16 @@ VMMDECL(int) IOMMMIOHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pCtxCore,
  * @param   pCtxCore    Trap register frame.
  * @param   GCPhysFault The GC physical address.
  */
-VMMDECL(int) IOMMMIOPhysHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pCtxCore, RTGCPHYS GCPhysFault)
+VMMDECL(VBOXSTRICTRC) IOMMMIOPhysHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pCtxCore, RTGCPHYS GCPhysFault)
 {
-    int rc;
-    rc = iomLock(pVM);
+    int rc2 = iomLock(pVM);
 #ifndef IN_RING3
-    if (rc == VERR_SEM_BUSY)
+    if (rc2 == VERR_SEM_BUSY)
         return (uErrorCode & X86_TRAP_PF_RW) ? VINF_IOM_HC_MMIO_WRITE : VINF_IOM_HC_MMIO_READ;
 #endif
-    rc = iomMMIOHandler(pVM, uErrorCode, pCtxCore, GCPhysFault, iomMMIOGetRange(&pVM->iom.s, GCPhysFault));
+    VBOXSTRICTRC rcStrict = iomMMIOHandler(pVM, uErrorCode, pCtxCore, GCPhysFault, iomMMIOGetRange(&pVM->iom.s, GCPhysFault));
     iomUnlock(pVM);
-    return rc;
+    return VBOXSTRICTRC_VAL(rcStrict);
 }
 
 #ifdef IN_RING3
@@ -1332,7 +1332,7 @@ DECLCALLBACK(int) IOMR3MMIOHandler(PVM pVM, RTGCPHYS GCPhysFault, void *pvPhys, 
  * @param   pu32Value   Where to store the value read.
  * @param   cbValue     The size of the register to read in bytes. 1, 2 or 4 bytes.
  */
-VMMDECL(int) IOMMMIORead(PVM pVM, RTGCPHYS GCPhys, uint32_t *pu32Value, size_t cbValue)
+VMMDECL(VBOXSTRICTRC) IOMMMIORead(PVM pVM, RTGCPHYS GCPhys, uint32_t *pu32Value, size_t cbValue)
 {
     /* Take the IOM lock before performing any MMIO. */
     int rc = iomLock(pVM);
@@ -1453,7 +1453,7 @@ VMMDECL(int) IOMMMIORead(PVM pVM, RTGCPHYS GCPhys, uint32_t *pu32Value, size_t c
  * @param   u32Value    The value to write.
  * @param   cbValue     The size of the register to read in bytes. 1, 2 or 4 bytes.
  */
-VMMDECL(int) IOMMMIOWrite(PVM pVM, RTGCPHYS GCPhys, uint32_t u32Value, size_t cbValue)
+VMMDECL(VBOXSTRICTRC) IOMMMIOWrite(PVM pVM, RTGCPHYS GCPhys, uint32_t u32Value, size_t cbValue)
 {
     /* Take the IOM lock before performing any MMIO. */
     int rc = iomLock(pVM);
@@ -1548,7 +1548,7 @@ VMMDECL(int) IOMMMIOWrite(PVM pVM, RTGCPHYS GCPhys, uint32_t u32Value, size_t cb
  * @param   uPrefix         IO instruction prefix
  * @param   cbTransfer      Size of transfer unit
  */
-VMMDECL(int) IOMInterpretINSEx(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t uPort, uint32_t uPrefix, uint32_t cbTransfer)
+VMMDECL(VBOXSTRICTRC) IOMInterpretINSEx(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t uPort, uint32_t uPrefix, uint32_t cbTransfer)
 {
 #ifdef VBOX_WITH_STATISTICS
     STAM_COUNTER_INC(&pVM->iom.s.StatInstIns);
@@ -1586,46 +1586,46 @@ VMMDECL(int) IOMInterpretINSEx(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t uPort, 
 
     /* Convert destination address es:edi. */
     RTGCPTR GCPtrDst;
-    int rc = SELMToFlatEx(pVM, DIS_SELREG_ES, pRegFrame, (RTGCPTR)pRegFrame->rdi,
-                          SELMTOFLAT_FLAGS_HYPER | SELMTOFLAT_FLAGS_NO_PL,
-                          &GCPtrDst);
-    if (RT_FAILURE(rc))
+    int rc2 = SELMToFlatEx(pVM, DIS_SELREG_ES, pRegFrame, (RTGCPTR)pRegFrame->rdi,
+                           SELMTOFLAT_FLAGS_HYPER | SELMTOFLAT_FLAGS_NO_PL,
+                           &GCPtrDst);
+    if (RT_FAILURE(rc2))
     {
-        Log(("INS destination address conversion failed -> fallback, rc=%d\n", rc));
+        Log(("INS destination address conversion failed -> fallback, rc2=%d\n", rc2));
         return VINF_EM_RAW_EMULATE_INSTR;
     }
 
     /* Access verification first; we can't recover from traps inside this instruction, as the port read cannot be repeated. */
     uint32_t cpl = CPUMGetGuestCPL(pVCpu, pRegFrame);
 
-    rc = PGMVerifyAccess(pVCpu, (RTGCUINTPTR)GCPtrDst, cTransfers * cbTransfer,
-                         X86_PTE_RW | ((cpl == 3) ? X86_PTE_US : 0));
-    if (rc != VINF_SUCCESS)
+    rc2 = PGMVerifyAccess(pVCpu, (RTGCUINTPTR)GCPtrDst, cTransfers * cbTransfer,
+                          X86_PTE_RW | ((cpl == 3) ? X86_PTE_US : 0));
+    if (rc2 != VINF_SUCCESS)
     {
-        Log(("INS will generate a trap -> fallback, rc=%d\n", rc));
+        Log(("INS will generate a trap -> fallback, rc2=%d\n", rc2));
         return VINF_EM_RAW_EMULATE_INSTR;
     }
 
     Log(("IOM: rep ins%d port %#x count %d\n", cbTransfer * 8, uPort, cTransfers));
+    VBOXSTRICTRC rcStrict = VINF_SUCCESS;
     if (cTransfers > 1)
     {
         /* If the device supports string transfers, ask it to do as
          * much as it wants. The rest is done with single-word transfers. */
         const RTGCUINTREG cTransfersOrg = cTransfers;
-        rc = IOMIOPortReadString(pVM, uPort, &GCPtrDst, &cTransfers, cbTransfer);
-        AssertRC(rc); Assert(cTransfers <= cTransfersOrg);
+        rcStrict = IOMIOPortReadString(pVM, uPort, &GCPtrDst, &cTransfers, cbTransfer);
+        AssertRC(VBOXSTRICTRC_VAL(rcStrict)); Assert(cTransfers <= cTransfersOrg);
         pRegFrame->rdi += (cTransfersOrg - cTransfers) * cbTransfer;
     }
 
 #ifdef IN_RC
     MMGCRamRegisterTrapHandler(pVM);
 #endif
-
-    while (cTransfers && rc == VINF_SUCCESS)
+    while (cTransfers && rcStrict == VINF_SUCCESS)
     {
         uint32_t u32Value;
-        rc = IOMIOPortRead(pVM, uPort, &u32Value, cbTransfer);
-        if (!IOM_SUCCESS(rc))
+        rcStrict = IOMIOPortRead(pVM, uPort, &u32Value, cbTransfer);
+        if (!IOM_SUCCESS(rcStrict))
             break;
         int rc2 = iomRamWrite(pVCpu, pRegFrame, GCPtrDst, &u32Value, cbTransfer);
         Assert(rc2 == VINF_SUCCESS); NOREF(rc2);
@@ -1641,8 +1641,8 @@ VMMDECL(int) IOMInterpretINSEx(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t uPort, 
     if (uPrefix & PREFIX_REP)
         pRegFrame->ecx = cTransfers;
 
-    AssertMsg(rc == VINF_SUCCESS || rc == VINF_IOM_HC_IOPORT_READ || (rc >= VINF_EM_FIRST && rc <= VINF_EM_LAST) || RT_FAILURE(rc), ("%Rrc\n", rc));
-    return rc;
+    AssertMsg(rcStrict == VINF_SUCCESS || rcStrict == VINF_IOM_HC_IOPORT_READ || (rcStrict >= VINF_EM_FIRST && rcStrict <= VINF_EM_LAST) || RT_FAILURE(rcStrict), ("%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
+    return rcStrict;
 }
 
 
@@ -1665,7 +1665,7 @@ VMMDECL(int) IOMInterpretINSEx(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t uPort, 
  * @param   pRegFrame   Pointer to CPUMCTXCORE guest registers structure.
  * @param   pCpu        Disassembler CPU state.
  */
-VMMDECL(int) IOMInterpretINS(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTATE pCpu)
+VMMDECL(VBOXSTRICTRC) IOMInterpretINS(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTATE pCpu)
 {
     /*
      * Get port number directly from the register (no need to bother the
@@ -1678,11 +1678,11 @@ VMMDECL(int) IOMInterpretINS(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTATE pCpu)
     else
         cb = (pCpu->opmode == CPUMODE_16BIT) ? 2 : 4;       /* dword in both 32 & 64 bits mode */
 
-    int rc = IOMInterpretCheckPortIOAccess(pVM, pRegFrame, Port, cb);
-    if (RT_UNLIKELY(rc != VINF_SUCCESS))
+    VBOXSTRICTRC rcStrict = IOMInterpretCheckPortIOAccess(pVM, pRegFrame, Port, cb);
+    if (RT_UNLIKELY(rcStrict != VINF_SUCCESS))
     {
-        AssertMsg(rc == VINF_EM_RAW_GUEST_TRAP || rc == VINF_TRPM_XCPT_DISPATCHED || rc == VINF_TRPM_XCPT_DISPATCHED || RT_FAILURE(rc), ("%Rrc\n", rc));
-        return rc;
+        AssertMsg(rcStrict == VINF_EM_RAW_GUEST_TRAP || rcStrict == VINF_TRPM_XCPT_DISPATCHED || rcStrict == VINF_TRPM_XCPT_DISPATCHED || RT_FAILURE(rcStrict), ("%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
+        return rcStrict;
     }
 
     return IOMInterpretINSEx(pVM, pRegFrame, Port, pCpu->prefix, cb);
@@ -1711,7 +1711,7 @@ VMMDECL(int) IOMInterpretINS(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTATE pCpu)
  * @param   uPrefix         IO instruction prefix
  * @param   cbTransfer      Size of transfer unit
  */
-VMMDECL(int) IOMInterpretOUTSEx(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t uPort, uint32_t uPrefix, uint32_t cbTransfer)
+VMMDECL(VBOXSTRICTRC) IOMInterpretOUTSEx(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t uPort, uint32_t uPrefix, uint32_t cbTransfer)
 {
 #ifdef VBOX_WITH_STATISTICS
     STAM_COUNTER_INC(&pVM->iom.s.StatInstOuts);
@@ -1748,26 +1748,27 @@ VMMDECL(int) IOMInterpretOUTSEx(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t uPort,
 
     /* Convert source address ds:esi. */
     RTGCPTR GCPtrSrc;
-    int rc = SELMToFlatEx(pVM, DIS_SELREG_DS, pRegFrame, (RTGCPTR)pRegFrame->rsi,
-                          SELMTOFLAT_FLAGS_HYPER | SELMTOFLAT_FLAGS_NO_PL,
-                          &GCPtrSrc);
-    if (RT_FAILURE(rc))
+    int rc2 = SELMToFlatEx(pVM, DIS_SELREG_DS, pRegFrame, (RTGCPTR)pRegFrame->rsi,
+                           SELMTOFLAT_FLAGS_HYPER | SELMTOFLAT_FLAGS_NO_PL,
+                           &GCPtrSrc);
+    if (RT_FAILURE(rc2))
     {
-        Log(("OUTS source address conversion failed -> fallback, rc=%Rrc\n", rc));
+        Log(("OUTS source address conversion failed -> fallback, rc2=%Rrc\n", rc2));
         return VINF_EM_RAW_EMULATE_INSTR;
     }
 
     /* Access verification first; we currently can't recover properly from traps inside this instruction */
     uint32_t cpl = CPUMGetGuestCPL(pVCpu, pRegFrame);
-    rc = PGMVerifyAccess(pVCpu, (RTGCUINTPTR)GCPtrSrc, cTransfers * cbTransfer,
-                         (cpl == 3) ? X86_PTE_US : 0);
-    if (rc != VINF_SUCCESS)
+    rc2 = PGMVerifyAccess(pVCpu, (RTGCUINTPTR)GCPtrSrc, cTransfers * cbTransfer,
+                          (cpl == 3) ? X86_PTE_US : 0);
+    if (rc2 != VINF_SUCCESS)
     {
-        Log(("OUTS will generate a trap -> fallback, rc=%Rrc\n", rc));
+        Log(("OUTS will generate a trap -> fallback, rc2=%Rrc\n", rc2));
         return VINF_EM_RAW_EMULATE_INSTR;
     }
 
     Log(("IOM: rep outs%d port %#x count %d\n", cbTransfer * 8, uPort, cTransfers));
+    VBOXSTRICTRC rcStrict = VINF_SUCCESS;
     if (cTransfers > 1)
     {
         /*
@@ -1775,8 +1776,8 @@ VMMDECL(int) IOMInterpretOUTSEx(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t uPort,
          * much as it wants. The rest is done with single-word transfers.
          */
         const RTGCUINTREG cTransfersOrg = cTransfers;
-        rc = IOMIOPortWriteString(pVM, uPort, &GCPtrSrc, &cTransfers, cbTransfer);
-        AssertRC(rc); Assert(cTransfers <= cTransfersOrg);
+        rcStrict = IOMIOPortWriteString(pVM, uPort, &GCPtrSrc, &cTransfers, cbTransfer);
+        AssertRC(VBOXSTRICTRC_VAL(rcStrict)); Assert(cTransfers <= cTransfersOrg);
         pRegFrame->rsi += (cTransfersOrg - cTransfers) * cbTransfer;
     }
 
@@ -1784,14 +1785,14 @@ VMMDECL(int) IOMInterpretOUTSEx(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t uPort,
     MMGCRamRegisterTrapHandler(pVM);
 #endif
 
-    while (cTransfers && rc == VINF_SUCCESS)
+    while (cTransfers && rcStrict == VINF_SUCCESS)
     {
         uint32_t u32Value = 0;
-        rc = iomRamRead(pVCpu, &u32Value, GCPtrSrc, cbTransfer);
-        if (rc != VINF_SUCCESS)
+        rcStrict = iomRamRead(pVCpu, &u32Value, GCPtrSrc, cbTransfer);
+        if (rcStrict != VINF_SUCCESS)
             break;
-        rc = IOMIOPortWrite(pVM, uPort, u32Value, cbTransfer);
-        if (!IOM_SUCCESS(rc))
+        rcStrict = IOMIOPortWrite(pVM, uPort, u32Value, cbTransfer);
+        if (!IOM_SUCCESS(rcStrict))
             break;
         GCPtrSrc = (RTGCPTR)((RTUINTPTR)GCPtrSrc + cbTransfer);
         pRegFrame->rsi += cbTransfer;
@@ -1806,8 +1807,8 @@ VMMDECL(int) IOMInterpretOUTSEx(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t uPort,
     if (uPrefix & PREFIX_REP)
         pRegFrame->ecx = cTransfers;
 
-    AssertMsg(rc == VINF_SUCCESS || rc == VINF_IOM_HC_IOPORT_WRITE || (rc >= VINF_EM_FIRST && rc <= VINF_EM_LAST) || RT_FAILURE(rc), ("%Rrc\n", rc));
-    return rc;
+    AssertMsg(rcStrict == VINF_SUCCESS || rcStrict == VINF_IOM_HC_IOPORT_WRITE || (rcStrict >= VINF_EM_FIRST && rcStrict <= VINF_EM_LAST) || RT_FAILURE(rcStrict), ("%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
+    return rcStrict;
 }
 
 
@@ -1830,7 +1831,7 @@ VMMDECL(int) IOMInterpretOUTSEx(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_t uPort,
  * @param   pRegFrame   Pointer to CPUMCTXCORE guest registers structure.
  * @param   pCpu        Disassembler CPU state.
  */
-VMMDECL(int) IOMInterpretOUTS(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTATE pCpu)
+VMMDECL(VBOXSTRICTRC) IOMInterpretOUTS(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTATE pCpu)
 {
     /*
      * Get port number from the first parameter.
@@ -1845,11 +1846,11 @@ VMMDECL(int) IOMInterpretOUTS(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTATE pCpu
     else
         cb = (pCpu->opmode == CPUMODE_16BIT) ? 2 : 4;       /* dword in both 32 & 64 bits mode */
 
-    int rc = IOMInterpretCheckPortIOAccess(pVM, pRegFrame, Port, cb);
-    if (RT_UNLIKELY(rc != VINF_SUCCESS))
+    VBOXSTRICTRC rcStrict = IOMInterpretCheckPortIOAccess(pVM, pRegFrame, Port, cb);
+    if (RT_UNLIKELY(rcStrict != VINF_SUCCESS))
     {
-        AssertMsg(rc == VINF_EM_RAW_GUEST_TRAP || rc == VINF_TRPM_XCPT_DISPATCHED || rc == VINF_TRPM_XCPT_DISPATCHED || RT_FAILURE(rc), ("%Rrc\n", rc));
-        return rc;
+        AssertMsg(rcStrict == VINF_EM_RAW_GUEST_TRAP || rcStrict == VINF_TRPM_XCPT_DISPATCHED || rcStrict == VINF_TRPM_XCPT_DISPATCHED || RT_FAILURE(rcStrict), ("%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
+        return rcStrict;
     }
 
     return IOMInterpretOUTSEx(pVM, pRegFrame, Port, pCpu->prefix, cb);

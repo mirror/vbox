@@ -1918,13 +1918,13 @@ static DECLCALLBACK(int) pciFakePCIBIOS(PPDMDEVINS pDevIns)
     }
 
     /* Tell to the PIC. */
-    rc = IOMIOPortWrite(pVM, 0x4d0, elcr[0], sizeof(uint8_t));
-    if (rc == VINF_SUCCESS)
-        rc = IOMIOPortWrite(pVM, 0x4d1, elcr[1], sizeof(uint8_t));
-    if (rc != VINF_SUCCESS)
+    VBOXSTRICTRC rcStrict = IOMIOPortWrite(pVM, 0x4d0, elcr[0], sizeof(uint8_t));
+    if (rcStrict == VINF_SUCCESS)
+        rcStrict = IOMIOPortWrite(pVM, 0x4d1, elcr[1], sizeof(uint8_t));
+    if (rcStrict != VINF_SUCCESS)
     {
-        AssertMsgFailed(("Writing to PIC failed!\n"));
-        return RT_SUCCESS(rc) ? VERR_INTERNAL_ERROR : rc;
+        AssertMsgFailed(("Writing to PIC failed! rcStrict=%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
+        return RT_SUCCESS(rcStrict) ? VERR_INTERNAL_ERROR : VBOXSTRICTRC_VAL(rcStrict);
     }
 
     /*

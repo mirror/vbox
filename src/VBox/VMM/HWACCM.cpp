@@ -2231,10 +2231,9 @@ VMMR3DECL(bool) HWACCMR3IsEventPending(PVMCPU pVCpu)
  * @param   pVCpu       The VMCPU to operate on.
  * @param   pCtx        VCPU register context
  */
-VMMR3DECL(int)  HWACCMR3RestartPendingIOInstr(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
+VMMR3DECL(VBOXSTRICTRC) HWACCMR3RestartPendingIOInstr(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 {
     HWACCMPENDINGIO enmType = pVCpu->hwaccm.s.PendingIO.enmType;
-    int rc;
 
     pVCpu->hwaccm.s.PendingIO.enmType = HWACCMPENDINGIO_INVALID;
 
@@ -2242,6 +2241,7 @@ VMMR3DECL(int)  HWACCMR3RestartPendingIOInstr(PVM pVM, PVMCPU pVCpu, PCPUMCTX pC
         ||  enmType  == HWACCMPENDINGIO_INVALID)
         return VERR_NOT_FOUND;
 
+    VBOXSTRICTRC rcStrict;
     switch (enmType)
     {
     case HWACCMPENDINGIO_PORT_READ:
@@ -2249,10 +2249,10 @@ VMMR3DECL(int)  HWACCMR3RestartPendingIOInstr(PVM pVM, PVMCPU pVCpu, PCPUMCTX pC
         uint32_t uAndVal = pVCpu->hwaccm.s.PendingIO.s.Port.uAndVal;
         uint32_t u32Val  = 0;
 
-        rc = IOMIOPortRead(pVM, pVCpu->hwaccm.s.PendingIO.s.Port.uPort,
-                           &u32Val,
-                           pVCpu->hwaccm.s.PendingIO.s.Port.cbSize);
-        if (IOM_SUCCESS(rc))
+        rcStrict = IOMIOPortRead(pVM, pVCpu->hwaccm.s.PendingIO.s.Port.uPort,
+                                 &u32Val,
+                                 pVCpu->hwaccm.s.PendingIO.s.Port.cbSize);
+        if (IOM_SUCCESS(rcStrict))
         {
             /* Write back to the EAX register. */
             pCtx->eax = (pCtx->eax & ~uAndVal) | (u32Val & uAndVal);
@@ -2262,10 +2262,10 @@ VMMR3DECL(int)  HWACCMR3RestartPendingIOInstr(PVM pVM, PVMCPU pVCpu, PCPUMCTX pC
     }
 
     case HWACCMPENDINGIO_PORT_WRITE:
-        rc = IOMIOPortWrite(pVM, pVCpu->hwaccm.s.PendingIO.s.Port.uPort,
-                            pCtx->eax & pVCpu->hwaccm.s.PendingIO.s.Port.uAndVal,
-                            pVCpu->hwaccm.s.PendingIO.s.Port.cbSize);
-        if (IOM_SUCCESS(rc))
+        rcStrict = IOMIOPortWrite(pVM, pVCpu->hwaccm.s.PendingIO.s.Port.uPort,
+                                  pCtx->eax & pVCpu->hwaccm.s.PendingIO.s.Port.uAndVal,
+                                  pVCpu->hwaccm.s.PendingIO.s.Port.cbSize);
+        if (IOM_SUCCESS(rcStrict))
             pCtx->rip = pVCpu->hwaccm.s.PendingIO.GCPtrRipNext;
         break;
 
@@ -2274,7 +2274,7 @@ VMMR3DECL(int)  HWACCMR3RestartPendingIOInstr(PVM pVM, PVMCPU pVCpu, PCPUMCTX pC
         return VERR_INTERNAL_ERROR;
     }
 
-    return rc;
+    return rcStrict;
 }
 
 /**
