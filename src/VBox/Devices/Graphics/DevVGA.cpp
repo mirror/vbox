@@ -3121,42 +3121,6 @@ PDMBOTHCBDECL(int) vgaIOPortWriteVBEData(PPDMDEVINS pDevIns, void *pvUser, RTIOP
 
     NOREF(pvUser);
 
-#ifdef VBOX_WITH_HGSMI
-#ifdef IN_RING3
-    if (s->vbe_index == VBE_DISPI_INDEX_VBVA_GUEST)
-    {
-        HGSMIGuestWrite (s->pHGSMI, u32);
-        PDMCritSectLeave(&s->lock);
-        return VINF_SUCCESS;
-    }
-    if (s->vbe_index == VBE_DISPI_INDEX_VBVA_HOST)
-    {
-#if defined(VBOX_WITH_VIDEOHWACCEL)
-        if(u32 == HGSMIOFFSET_VOID)
-        {
-            PDMDevHlpPCISetIrq(pDevIns, 0, PDM_IRQ_LEVEL_LOW);
-            HGSMIClearHostGuestFlags(s->pHGSMI, HGSMIHOSTFLAGS_IRQ);
-        }
-        else
-#endif
-        {
-            HGSMIHostWrite (s->pHGSMI, u32);
-        }
-        PDMCritSectLeave(&s->lock);
-        return VINF_SUCCESS;
-    }
-#else
-    if (   s->vbe_index == VBE_DISPI_INDEX_VBVA_HOST
-        || s->vbe_index == VBE_DISPI_INDEX_VBVA_GUEST)
-    {
-        Log(("vgaIOPortWriteVBEData: %s - Switching to host...\n",
-             s->vbe_index == VBE_DISPI_INDEX_VBVA_HOST? "VBE_DISPI_INDEX_VBVA_HOST": "VBE_DISPI_INDEX_VBVA_GUEST"));
-        PDMCritSectLeave(&s->lock);
-        return VINF_IOM_HC_IOPORT_WRITE;
-    }
-#endif /* !IN_RING3 */
-#endif /* VBOX_WITH_HGSMI */
-
 #ifndef IN_RING3
     /*
      * This has to be done on the host in order to execute the connector callbacks.
@@ -3293,32 +3257,6 @@ PDMBOTHCBDECL(int) vgaIOPortReadVBEData(PPDMDEVINS pDevIns, void *pvUser, RTIOPO
     int rc = PDMCritSectEnter(&s->lock, VINF_IOM_HC_IOPORT_READ);
     if (rc != VINF_SUCCESS)
         return rc;
-
-#ifdef VBOX_WITH_HGSMI
-#ifdef IN_RING3
-    if (s->vbe_index == VBE_DISPI_INDEX_VBVA_GUEST)
-    {
-        *pu32 = HGSMIGuestRead (s->pHGSMI);
-        PDMCritSectLeave(&s->lock);
-        return VINF_SUCCESS;
-    }
-    if (s->vbe_index == VBE_DISPI_INDEX_VBVA_HOST)
-    {
-        *pu32 = HGSMIHostRead (s->pHGSMI);
-        PDMCritSectLeave(&s->lock);
-        return VINF_SUCCESS;
-    }
-#else
-    if (   s->vbe_index == VBE_DISPI_INDEX_VBVA_HOST
-        || s->vbe_index == VBE_DISPI_INDEX_VBVA_GUEST)
-    {
-        Log(("vgaIOPortWriteVBEData: %s - Switching to host...\n",
-             s->vbe_index == VBE_DISPI_INDEX_VBVA_HOST? "VBE_DISPI_INDEX_VBVA_HOST": "VBE_DISPI_INDEX_VBVA_GUEST"));
-        PDMCritSectLeave(&s->lock);
-        return VINF_IOM_HC_IOPORT_READ;
-    }
-#endif /* !IN_RING3 */
-#endif /* VBOX_WITH_HGSMI */
 
 #ifdef VBE_BYTEWISE_IO
     if (cb == 1)
