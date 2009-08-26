@@ -82,11 +82,81 @@ static VOID DoLogging(LPCWSTR szString, ...);
 
 typedef bool (*ENUMERATION_CALLBACK) (LPWSTR pFileName, PVOID pContext);
 
-static HRESULT vboxNetCfgWinCollectInfs(LPCWSTR pPnPId)
+class VBoxNetCfgStringList
+{
+public:
+    VBoxNetCfgStringList(int aSize);
+
+    ~VBoxNetCfgStringList();
+
+    HRESULT add(LPWSTR pStr);
+
+    int size() {return mSize;}
+
+    LPWSTR get(int i) {return maList[i];}
+private:
+    HRESULT resize(int newSize);
+
+    LPWSTR *maList;
+    int mBufSize;
+    int mSize;
+};
+
+VBoxNetCfgStringList::VBoxNetCfgStringList(int aSize)
+{
+    maList = (LPWSTR*)CoTaskMemAlloc( sizeof(maList[0]) * aSize);
+    mBufSize = aSize;
+    mSize = 0;
+}
+
+VBoxNetCfgStringList::~VBoxNetCfgStringList()
+{
+    if(!mBufSize)
+        return;
+
+    for(int i = 0; i < mSize; ++i)
+    {
+        CoTaskMemFree(maList[i]);
+    }
+
+    CoTaskMemFree(maList);
+}
+
+HRESULT VBoxNetCfgStringList::add(LPWSTR pStr)
+{
+    if(mSize == mBufSize)
+    {
+        int hr = resize(mBufSize+10);
+        if(SUCCEEDED(hr))
+            return hr;
+    }
+    size_t cStr = wcslen(pStr) + 1;
+    LPWSTR str = (LPWSTR)CoTaskMemAlloc( sizeof(maList[0][0]) * cStr);
+    memcpy(str, pStr, sizeof(maList[0][0]) * cStr);
+    maList[mSize] = str;
+    ++mSize;
+    return S_OK;
+}
+
+HRESULT VBoxNetCfgStringList::resize(int newSize)
+{
+    Assert(newSize >= mSize);
+    if(newSize < mSize)
+        return E_FAIL;
+    LPWSTR* pOld = maList;
+    maList = (LPWSTR*)CoTaskMemAlloc( sizeof(maList[0]) * newSize);
+    mBufSize = newSize;
+    memcpy(maList, pOld, mSize*sizeof(maList[0]));
+    CoTaskMemFree(pOld);
+    return S_OK;
+}
+
+static HRESULT vboxNetCfgWinCollectInfs(const GUID * pGuid, LPCWSTR pPnPId, VBoxNetCfgStringList & list)
 {
     DWORD winEr = ERROR_SUCCESS;
+    int counter = 0;
     HDEVINFO hDevInfo = SetupDiCreateDeviceInfoList(
-                            &GUID_DEVCLASS_NETSERVICE, /* IN LPGUID  ClassGuid,  OPTIONAL */
+                            pGuid, /* IN LPGUID  ClassGuid,  OPTIONAL */
                             NULL /*IN HWND  hwndParent  OPTIONAL */
                             );
     if(hDevInfo != INVALID_HANDLE_VALUE)
@@ -123,7 +193,14 @@ static HRESULT vboxNetCfgWinCollectInfs(LPCWSTR pPnPId)
                     {
                         for(WCHAR * pHwId = pDrvDetail->HardwareID; pHwId && *pHwId && pHwId < (TCHAR*)(DetailBuf + sizeof(DetailBuf)/sizeof(DetailBuf[0])) ;pHwId += _tcslen(pHwId) + 1)
                         {
-                            //TODO:
+                            if(!wcsicmp(pHwId, pPnPId))
+                            {
+                                Assert(pDrvDetail->InfFileName[0]);
+                                if(pDrvDetail->InfFileName)
+                                {
+                                    list.add(pDrvDetail->InfFileName);
+                                }
+                            }
                         }
                     }
                     else
@@ -320,20 +397,20 @@ static HRESULT vboxNetCfgWinGetPnpID (LPCWSTR lpszInfFile,
     return hr;
 }
 
-//VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinUninstallInfs (LPCWSTR pPnPId)
-//{
-//    std::list<std::wstring> InfList;
-//    HRESULT hr = vboxNetCfgWinCollectInfs(pPnPId, &InfList);
-//    if(hr == S_OK)
-//    {
-//        std::list <std::wstring>::iterator it;
-//        for (it = InfList.begin(); it != InfList.end(); ++it)
-//        {
-//            Log(L"inf : %s\n", (*it).c_str());
-//        }
-//    }
-//    return hr;
-//}
+VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinUninstallInfs (const GUID * pGuid, LPCWSTR pPnPId)
+{
+    VBoxNetCfgStringList list(128);
+    HRESULT hr = vboxNetCfgWinCollectInfs(pGuid, pPnPId, list);
+    if(hr == S_OK)
+    {
+        int size = list.size();
+        for (int i = 0; i < size; ++i)
+        {
+            Log(L"inf : %s\n", list.get(i));
+        }
+    }
+    return hr;
+}
 
 static HRESULT vboxNetCfgWinEnumFiles(LPCWSTR pPattern, ENUMERATION_CALLBACK pCallback, PVOID pContext)
 {
@@ -1554,39 +1631,50 @@ static BOOL vboxNetCfgWinRemoveAllNetDevicesOfIdCallback(HDEVINFO hDevInfo, PSP_
     DWORD winEr;
     HRESULT hr = S_OK;
     SP_REMOVEDEVICE_PARAMS rmdParams;
-    SP_DEVINSTALL_PARAMS devParams;
     rmdParams.ClassInstallHeader.cbSize = sizeof(SP_CLASSINSTALL_HEADER);
     rmdParams.ClassInstallHeader.InstallFunction = DIF_REMOVE;
     rmdParams.Scope = DI_REMOVEDEVICE_GLOBAL;
     rmdParams.HwProfile = 0;
     if(SetupDiSetClassInstallParams(hDevInfo,pDev,&rmdParams.ClassInstallHeader,sizeof(rmdParams)))
     {
-        if(SetupDiCallClassInstaller(DIF_REMOVE,hDevInfo,pDev))
+        if(SetupDiSetSelectedDevice (hDevInfo, pDev))
         {
-            /*
-             * see if device needs reboot
-             */
-            devParams.cbSize = sizeof(devParams);
-            if(SetupDiGetDeviceInstallParams(hDevInfo,pDev,&devParams))
+            if(SetupDiCallClassInstaller(DIF_REMOVE,hDevInfo,pDev))
             {
-                if(devParams.Flags & (DI_NEEDRESTART|DI_NEEDREBOOT))
+                SP_DEVINSTALL_PARAMS devParams;
+                /*
+                 * see if device needs reboot
+                 */
+                devParams.cbSize = sizeof(devParams);
+                if(SetupDiGetDeviceInstallParams(hDevInfo,pDev,&devParams))
+                {
+                    if(devParams.Flags & (DI_NEEDRESTART|DI_NEEDREBOOT))
+                    {
+                        //
+                        // reboot required
+                        //
+                        hr = S_FALSE;
+                        Log(L"vboxNetCfgWinRemoveAllNetDevicesOfIdCallback: !!!REBOOT REQUIRED!!!\n", winEr);
+                    }
+                }
+                else
                 {
                     //
-                    // reboot required
+                    // appears to have succeeded
                     //
-                    hr = S_FALSE;
                 }
             }
             else
             {
-                //
-                // appears to have succeeded
-                //
+                winEr = GetLastError();
+                Log(L"vboxNetCfgWinRemoveAllNetDevicesOfIdCallback: SetupDiCallClassInstaller failed (0x%08X)\n", winEr);
+                hr = HRESULT_FROM_WIN32(winEr);
             }
         }
         else
         {
             winEr = GetLastError();
+            Log(L"vboxNetCfgWinRemoveAllNetDevicesOfIdCallback: SetupDiSetSelectedDevice failed (0x%08X)\n", winEr);
             hr = HRESULT_FROM_WIN32(winEr);
         }
     }
@@ -1676,6 +1764,7 @@ VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinEnumNetDevices(LPWSTR pPnPId, VBOXNETCF
                 pCurId += cCurId - cPnPId;
                 if(!wcsnicmp(pCurId, pPnPId, cPnPId))
                 {
+
                     if(!callback(hDevInfo,&Dev,pContext))
                         break;
                 }
