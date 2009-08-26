@@ -859,15 +859,6 @@ VOID DrvDisableSurface(DHPDEV dhpdev)
     }
 #endif
 
-#ifdef VBOX_WITH_VIDEOHWACCEL
-    /* tells we can not process host commands any more and ensures we've completed processing of the host VHWA commands */
-    vboxVHWADisable(ppdev);
-#endif
-
-#ifdef VBOX_WITH_HGSMI
-    /* Free the driver's VBVA resources. */
-    vboxVbvaDisable ((PPDEV) dhpdev);
-#endif
     vDisableSURF(ppdev);
 }
 
