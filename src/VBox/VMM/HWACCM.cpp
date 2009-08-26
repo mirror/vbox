@@ -2220,7 +2220,13 @@ VMMR3DECL(bool) HWACCMR3IsEventPending(PVMCPU pVCpu)
 /**
  * Restart an I/O instruction that was refused in ring-0
  *
- * @returns VBox status code
+ * @returns Strict VBox status code. Informational status codes other than the one documented
+ *          here are to be treated as internal failure. Use IOM_SUCCESS() to check for success.
+ * @retval  VINF_SUCCESS                Success.
+ * @retval  VINF_EM_FIRST-VINF_EM_LAST  Success with some exceptions (see IOM_SUCCESS()), the
+ *                                      status code must be passed on to EM.
+ * @retval  VERR_NOT_FOUND if no pending I/O instruction.
+ *
  * @param   pVM         The VM to operate on.
  * @param   pVCpu       The VMCPU to operate on.
  * @param   pCtx        VCPU register context
