@@ -161,7 +161,7 @@ struct proto_handler handlers[] = {
     { EOH }
 };
 #else /* !VBOX */
-static struct proto_handler handlers[4];
+#define handlers pData->nbt_module 
 #endif /*VBOX*/
 
 #ifndef VBOX
@@ -187,7 +187,7 @@ nbt_alias_handler(PNATState pData, int type)
 {
     int error;
 #ifdef VBOX
-    
+    handlers = RTMemAllocZ(4 * sizeof(struct proto_handler));
     handlers[0].pri = 130;
     handlers[0].dir = IN|OUT;
     handlers[0].proto = UDP;
@@ -224,6 +224,8 @@ nbt_alias_handler(PNATState pData, int type)
         error = 0;
 #ifdef VBOX
         LibAliasDetachHandlers(pData, handlers);
+        RTMemFree(handlers);
+        handlers = NULL;
 #else
         LibAliasDetachHandlers(handlers);
 #endif

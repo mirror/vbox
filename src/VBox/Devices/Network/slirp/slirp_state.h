@@ -90,6 +90,9 @@ struct port_forward_rule
 };
 LIST_HEAD(port_forward_rule_list, port_forward_rule);
 
+/* forward declaration */
+struct proto_handler;
+
 /** Main state/configuration structure for slirp NAT. */
 typedef struct NATState
 {
@@ -248,6 +251,9 @@ typedef struct NATState
     LIST_HEAD(handler_chain, proto_handler) handler_chain;
     struct port_forward_rule_list port_forward_rule_head;
     int port_forwarding_activated;
+    /*libalis modules' handlers*/
+    struct proto_handler *ftp_module;
+    struct proto_handler *nbt_module;
 
 #define PROFILE_COUNTER(name, dsc)     STAMPROFILE Stat ## name
 #define COUNTING_COUNTER(name, dsc)    STAMCOUNTER Stat ## name
