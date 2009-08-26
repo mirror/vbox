@@ -288,8 +288,6 @@ static DECLCALLBACK(void) drvNetSnifferDetach(PPDMDRVINS pDrvIns, uint32_t fFlag
     LogFlow(("drvNetSnifferDetach: pDrvIns: %p, fFlags: %u\n", pDrvIns, fFlags));
 
     pThis->pConnector = NULL;
-    pThis->pPort      = NULL;
-    pThis->pConfig    = NULL;
 }
 
 
@@ -305,26 +303,6 @@ static DECLCALLBACK(int) drvNetSnifferAttach(PPDMDRVINS pDrvIns, uint32_t fFlags
     PDRVNETSNIFFER pThis = PDMINS_2_DATA(pDrvIns, PDRVNETSNIFFER);
 
     LogFlow(("drvNetSnifferAttach: pDrvIns: %p, fFlags: %u\n", pDrvIns, fFlags));
-
-    /*
-     * Query the network port interface.
-     */
-    pThis->pPort = (PPDMINETWORKPORT)pDrvIns->pUpBase->pfnQueryInterface(pDrvIns->pUpBase, PDMINTERFACE_NETWORK_PORT);
-    if (!pThis->pPort)
-    {
-        AssertMsgFailed(("Configuration error: the above device/driver didn't export the network port interface!\n"));
-        return VERR_PDM_MISSING_INTERFACE_ABOVE;
-    }
-
-    /*
-     * Query the network config interface.
-     */
-    pThis->pConfig = (PPDMINETWORKCONFIG)pDrvIns->pUpBase->pfnQueryInterface(pDrvIns->pUpBase, PDMINTERFACE_NETWORK_CONFIG);
-    if (!pThis->pConfig)
-    {
-        AssertMsgFailed(("Configuration error: the above device/driver didn't export the network config interface!\n"));
-        return VERR_PDM_MISSING_INTERFACE_ABOVE;
-    }
 
     /*
      * Query the network connector interface.
