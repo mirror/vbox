@@ -45,6 +45,95 @@ RT_C_DECLS_BEGIN
  * @{
  */
 
+#ifdef __cplusplus
+/**
+ * Strict type validation class.
+ *
+ * This is only really useful for type checking the arguments to RT_SUCCESS,
+ * RT_SUCCESS_NP, RT_FAILURE and RT_FAILURE_NP.  The RTErrStrictType2
+ * constructor is for integration with external status code strictness regimes.
+ */
+class RTErrStrictType
+{
+protected:
+    int32_t m_rc;
+
+public:
+    /**
+     * Constructor for interaction with external status code strictness regimes.
+     *
+     * This is a special constructor for helping external return code validator
+     * classes interact cleanly with RT_SUCCESS, RT_SUCCESS_NP, RT_FAILURE and
+     * RT_FAILURE_NP while barring automatic cast to integer.
+     *
+     * @param   rcObj       IPRT status code object from an automatic cast.
+     */
+    RTErrStrictType(RTErrStrictType2 const rcObj)
+        : m_rc(rcObj.getValue())
+    {
+    }
+
+    /**
+     * Integer constructor used by RT_SUCCESS_NP.
+     *
+     * @param   rc          IPRT style status code.
+     */
+    RTErrStrictType(int32_t rc)
+        : m_rc(rc)
+    {
+    }
+
+#if 0 /** @todo figure where int32_t is long instead of int. */
+    /**
+     * Integer constructor used by RT_SUCCESS_NP.
+     *
+     * @param   rc          IPRT style status code.
+     */
+    RTErrStrictType(signed int rc)
+        : m_rc(rc)
+    {
+    }
+#endif
+
+    /**
+     * Test for success.
+     */
+    bool success() const
+    {
+        return m_rc >= 0;
+    }
+
+private:
+    /** @name Try ban a number of wrong types.
+     * @{ */
+    RTErrStrictType(uint8_t rc)         : m_rc(-999) { NOREF(rc); }
+    RTErrStrictType(uint16_t rc)        : m_rc(-999) { NOREF(rc); }
+    RTErrStrictType(uint32_t rc)        : m_rc(-999) { NOREF(rc); }
+    RTErrStrictType(uint64_t rc)        : m_rc(-999) { NOREF(rc); }
+    RTErrStrictType(int8_t rc)          : m_rc(-999) { NOREF(rc); }
+    RTErrStrictType(int16_t rc)         : m_rc(-999) { NOREF(rc); }
+    RTErrStrictType(int64_t rc)         : m_rc(-999) { NOREF(rc); }
+    /** @todo fight long here - clashes with int32_t/int64_t on some platforms. */
+    /** @} */
+};
+#endif /* __cplusplus */
+
+
+/** @def RTERR_STRICT_RC
+ * Indicates that RT_SUCCESS_NP, RT_SUCCESS, RT_FAILURE_NP and RT_FAILURE should
+ * make type enforcing at compile time.
+ *
+ * @remarks     Only define this for C++ code.
+ */
+#if defined(__cplusplus) \
+ && !defined(RTERR_STRICT_RC) \
+ && (   defined(DOXYGEN_RUNNING) \
+     || defined(DEBUG) \
+     || defined(RT_STRICT) )
+# define RTERR_STRICT_RC        1
+#endif
+
+
 /** @def RT_SUCCESS
  * Check for success. We expect success in normal cases, that is the code path depending on
  * this check is normally taken. To prevent any prediction use RT_SUCCESS_NP instead.
@@ -54,7 +143,7 @@ RT_C_DECLS_BEGIN
  *
  * @param   rc  The iprt status code to test.
  */
-#define RT_SUCCESS(rc)      ( RT_LIKELY((int)(rc) >= VINF_SUCCESS) )
+#define RT_SUCCESS(rc)      ( RT_LIKELY(RT_SUCCESS_NP(rc)) )
 
 /** @def RT_SUCCESS_NP
  * Check for success. Don't predict the result.
@@ -64,7 +153,11 @@ RT_C_DECLS_BEGIN
  *
  * @param   rc  The iprt status code to test.
  */
-#define RT_SUCCESS_NP(rc)   ( (int)(rc) >= VINF_SUCCESS )
+#ifdef RTERR_STRICT_RC
+# define RT_SUCCESS_NP(rc)   ( RTErrStrictType(rc).success() )
+#else
+# define RT_SUCCESS_NP(rc)   ( (int)(rc) >= VINF_SUCCESS )
+#endif
 
 /** @def RT_FAILURE
  * Check for failure. We don't expect in normal cases, that is the code path depending on

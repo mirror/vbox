@@ -1451,6 +1451,38 @@ typedef RTMAC *PRTMAC;
 /** Pointer to a readonly MAC address. */
 typedef const RTMAC *PCRTMAC;
 
+
+#ifdef __cplusplus
+/**
+ * Strict type validation helper class.
+ *
+ * See RTErrStrictType and RT_SUCCESS_NP.
+ */
+class RTErrStrictType2
+{
+protected:
+    /** The status code.  */
+    int32_t m_rc;
+
+public:
+    /**
+     * Constructor.
+     * @param   rc      IPRT style status code.
+     */
+    RTErrStrictType2(int32_t rc) : m_rc(rc)
+    {
+    }
+
+    /**
+     * Get the status code.
+     * @returns IPRT style status code.
+     */
+    int32_t getValue() const
+    {
+        return m_rc;
+    }
+};
+#endif /* __cplusplus */
 /** @} */
 
 #endif
