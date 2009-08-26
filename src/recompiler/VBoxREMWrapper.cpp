@@ -894,7 +894,7 @@ static const REMPARMDESC g_aArgsSSMIntLiveVoteCallback[] =
 };
 static REMFNDESC g_SSMIntLiveVoteCallback =
 {
-    "SSMIntLiveVoteCallback", NULL, &g_aArgsSSMIntLiveVoteCallback[0], RT_ELEMENTS(g_aArgsSSMIntLiveVotecCallback), REMFNDESC_FLAGS_RET_INT, sizeof(bool),  NULL
+    "SSMIntLiveVoteCallback", NULL, &g_aArgsSSMIntLiveVoteCallback[0], RT_ELEMENTS(g_aArgsSSMIntLiveVoteCallback), REMFNDESC_FLAGS_RET_INT, sizeof(bool),  NULL
 };
 
 static const REMPARMDESC g_aArgsSSMIntCallback[] =
