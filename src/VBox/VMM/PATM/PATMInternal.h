@@ -523,26 +523,11 @@ typedef struct PATM
 } PATM, *PPATM;
 
 
-/**
- * Execute state save operation.
- *
- * @returns VBox status code.
- * @param   pVM             VM Handle.
- * @param   pSSM            SSM operation handle.
- */
-DECLCALLBACK(int) patmr3Save(PVM pVM, PSSMHANDLE pSSM);
 
 DECLCALLBACK(int) patmVirtPageHandler(PVM pVM, RTGCPTR GCPtr, void *pvPtr, void *pvBuf, size_t cbBuf, PGMACCESSTYPE enmAccessType, void *pvUser);
 
-/**
- * Execute state load operation.
- *
- * @returns VBox status code.
- * @param   pVM             VM Handle.
- * @param   pSSM            SSM operation handle.
- * @param   u32Version      Data layout version.
- */
-DECLCALLBACK(int) patmr3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version);
+DECLCALLBACK(int) patmR3Save(PVM pVM, PSSMHANDLE pSSM);
+DECLCALLBACK(int) patmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPhase);
 
 #ifdef IN_RING3
 RTRCPTR patmPatchGCPtr2GuestGCPtr(PVM pVM, PPATCHINFO pPatch, RCPTRTYPE(uint8_t *) pPatchGC);

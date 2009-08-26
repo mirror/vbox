@@ -2364,14 +2364,14 @@ static DECLCALLBACK(int) buslogicSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
     return SSMR3PutU32(pSSM, ~0);
 }
 
-static DECLCALLBACK(int) buslogicLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t u32Version)
+static DECLCALLBACK(int) buslogicLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPhase)
 {
     PBUSLOGIC pBusLogic = PDMINS_2_DATA(pDevIns, PBUSLOGIC);
-    int rc = VINF_SUCCESS;
 
     /* We support saved states only from this and older versions. */
-    if (u32Version > BUSLOGIC_SAVED_STATE_MINOR_VERSION)
+    if (uVersion > BUSLOGIC_SAVED_STATE_MINOR_VERSION)
         return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
+    Assert(uPhase == SSM_PHASE_FINAL); NOREF(uPhase);
 
     /* Every device first. */
     for (unsigned i = 0; i < RT_ELEMENTS(pBusLogic->aDeviceStates); i++)
@@ -2431,14 +2431,10 @@ static DECLCALLBACK(int) buslogicLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, u
     }
 
     uint32_t u32;
-    SSMR3GetU32(pSSM, &u32);
+    int rc = SSMR3GetU32(pSSM, &u32);
     if (RT_FAILURE(rc))
         return rc;
-    if (u32 != ~0U)
-    {
-        AssertMsgFailed(("u32=%#x expected ~0\n", u32));
-        return VERR_SSM_DATA_UNIT_FORMAT_CHANGED;
-    }
+    AssertMsgReturn(u32 == ~0U, ("%#x\n", u32), VERR_SSM_DATA_UNIT_FORMAT_CHANGED);
 
     return VINF_SUCCESS;
 }
@@ -2815,10 +2811,10 @@ static DECLCALLBACK(int) buslogicConstruct(PPDMDEVINS pDevIns, int iInstance, PC
         return PDMDEV_SET_ERROR(pDevIns, rc, N_("BusLogic cannot attach to status driver"));
     }
 
-    rc = PDMDevHlpSSMRegister(pDevIns, pDevIns->pDevReg->szDeviceName, iInstance,
-                              BUSLOGIC_SAVED_STATE_MINOR_VERSION, sizeof(*pThis),
-                              buslogicSaveLoadPrep, buslogicSaveExec, NULL,
-                              buslogicSaveLoadPrep, buslogicLoadExec, NULL);
+    rc = PDMDevHlpSSMRegisterEx(pDevIns, BUSLOGIC_SAVED_STATE_MINOR_VERSION, sizeof(*pThis), NULL,
+                                NULL, NULL, NULL,
+                                buslogicSaveLoadPrep, buslogicSaveExec, NULL,
+                                buslogicSaveLoadPrep, buslogicLoadExec, NULL);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc, N_("BusLogic cannot register save state handlers"));
 

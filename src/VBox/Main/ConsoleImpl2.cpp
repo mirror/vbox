@@ -1456,7 +1456,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
 
     /* the VMM device's Main driver */
     rc = CFGMR3InsertNode(pInst,    "LUN#0", &pLunL0);                              RC_CHECK();
-    rc = CFGMR3InsertString(pLunL0, "Driver",               "MainVMMDev");          RC_CHECK();
+    rc = CFGMR3InsertString(pLunL0, "Driver",               "HGCM");                RC_CHECK();
     rc = CFGMR3InsertNode(pLunL0,   "Config", &pCfg);                               RC_CHECK();
     VMMDev *pVMMDev = pConsole->mVMMDev;
     rc = CFGMR3InsertInteger(pCfg,  "Object", (uintptr_t)pVMMDev);                  RC_CHECK();

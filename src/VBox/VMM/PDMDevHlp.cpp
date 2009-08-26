@@ -398,16 +398,23 @@ static DECLCALLBACK(int) pdmR3DevHlp_ROMRegister(PPDMDEVINS pDevIns, RTGCPHYS GC
 
 
 /** @copydoc PDMDEVHLPR3::pfnSSMRegister */
-static DECLCALLBACK(int) pdmR3DevHlp_SSMRegister(PPDMDEVINS pDevIns, const char *pszName, uint32_t u32Instance, uint32_t u32Version, size_t cbGuess,
+static DECLCALLBACK(int) pdmR3DevHlp_SSMRegister(PPDMDEVINS pDevIns, uint32_t uVersion, size_t cbGuess, const char *pszBefore,
+                                                 PFNSSMDEVLIVEPREP pfnLivePrep, PFNSSMDEVLIVEEXEC pfnLiveExec, PFNSSMDEVLIVEVOTE pfnLiveVote,
                                                  PFNSSMDEVSAVEPREP pfnSavePrep, PFNSSMDEVSAVEEXEC pfnSaveExec, PFNSSMDEVSAVEDONE pfnSaveDone,
                                                  PFNSSMDEVLOADPREP pfnLoadPrep, PFNSSMDEVLOADEXEC pfnLoadExec, PFNSSMDEVLOADDONE pfnLoadDone)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
     VM_ASSERT_EMT(pDevIns->Internal.s.pVMR3);
-    LogFlow(("pdmR3DevHlp_SSMRegister: caller='%s'/%d: pszName=%p:{%s} u32Instance=%#x u32Version=#x cbGuess=%#x pfnSavePrep=%p pfnSaveExec=%p pfnSaveDone=%p pszLoadPrep=%p pfnLoadExec=%p pfnLoaddone=%p\n",
-             pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, pszName, pszName, u32Instance, u32Version, cbGuess, pfnSavePrep, pfnSaveExec, pfnSaveDone, pfnLoadPrep, pfnLoadExec, pfnLoadDone));
+    LogFlow(("pdmR3DevHlp_SSMRegister: caller='%s'/%d: uVersion=#x cbGuess=%#x pszBefore=%p:{%s}\n"
+             "    pfnLivePrep=%p pfnLiveExec=%p pfnLiveVote=%p pfnSavePrep=%p pfnSaveExec=%p pfnSaveDone=%p pszLoadPrep=%p pfnLoadExec=%p pfnLoadDone=%p\n",
+             pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, uVersion, cbGuess, pszBefore, pszBefore,
+             pfnLivePrep, pfnLiveExec, pfnLiveVote,
+             pfnSavePrep, pfnSaveExec, pfnSaveDone,
+             pfnLoadPrep, pfnLoadExec, pfnLoadDone));
 
-    int rc = SSMR3RegisterDevice(pDevIns->Internal.s.pVMR3, pDevIns, pszName, u32Instance, u32Version, cbGuess, NULL,
+    int rc = SSMR3RegisterDevice(pDevIns->Internal.s.pVMR3, pDevIns, pDevIns->pDevReg->szDeviceName, pDevIns->iInstance,
+                                 uVersion, cbGuess, pszBefore,
+                                 pfnLivePrep, pfnLiveExec, pfnLiveVote,
                                  pfnSavePrep, pfnSaveExec, pfnSaveDone,
                                  pfnLoadPrep, pfnLoadExec, pfnLoadDone);
 

@@ -633,7 +633,7 @@ static DECLCALLBACK(int)  pgmR3RelocateHyperVirtHandler(PAVLROGCPTRNODECORE pNod
 static DECLCALLBACK(void) pgmR3ResetNoMorePhysWritesFlag(PVM pVM, VMSTATE enmState, VMSTATE enmOldState, void *pvUser);
 #endif
 static DECLCALLBACK(int)  pgmR3Save(PVM pVM, PSSMHANDLE pSSM);
-static DECLCALLBACK(int)  pgmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version);
+static DECLCALLBACK(int)  pgmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPhase);
 static int                pgmR3ModeDataInit(PVM pVM, bool fResolveGCAndR0);
 static void               pgmR3ModeDataSwitch(PVM pVM, PVMCPU pVCpu, PGMMODE enmShw, PGMMODE enmGst);
 static PGMMODE            pgmR3CalcShadowMode(PVM pVM, PGMMODE enmGuestMode, SUPPAGINGMODE enmHostMode, PGMMODE enmShadowMode, VMMSWITCHER *penmSwitcher);
@@ -1282,6 +1282,7 @@ VMMR3DECL(int) PGMR3Init(PVM pVM)
     PGMRegisterStringFormatTypes();
 
     rc = SSMR3RegisterInternal(pVM, "pgm", 1, PGM_SAVED_STATE_VERSION, (size_t)cbRam + sizeof(PGM),
+                               NULL, NULL, NULL,
                                NULL, pgmR3Save, NULL,
                                NULL, pgmR3Load, NULL);
     if (RT_FAILURE(rc))
@@ -2674,9 +2675,9 @@ static int pgmR3LoadShadowedRomPage(PVM pVM, PSSMHANDLE pSSM, PPGMPAGE pPage, RT
  *
  * @param   pVM                 The VM handle.
  * @param   pSSM                The SSM handle.
- * @param   u32Version          The saved state version.
+ * @param   uVersion            The saved state version.
  */
-static int pgmR3LoadLocked(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version)
+static int pgmR3LoadLocked(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion)
 {
     PPGM        pPGM = &pVM->pgm.s;
     int         rc;
@@ -2685,7 +2686,7 @@ static int pgmR3LoadLocked(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version)
     /*
      * Load basic data (required / unaffected by relocation).
      */
-    if (u32Version >= PGM_SAVED_STATE_VERSION)
+    if (uVersion >= PGM_SAVED_STATE_VERSION)
     {
         rc = SSMR3GetStruct(pSSM, pPGM, &s_aPGMFields[0]);
         AssertLogRelRCReturn(rc, rc);
@@ -2696,7 +2697,7 @@ static int pgmR3LoadLocked(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version)
             AssertLogRelRCReturn(rc, rc);
         }
     }
-    else if (u32Version >= PGM_SAVED_STATE_VERSION_RR_DESC)
+    else if (uVersion >= PGM_SAVED_STATE_VERSION_RR_DESC)
     {
         AssertRelease(pVM->cCPUs == 1);
 
@@ -2834,14 +2835,14 @@ static int pgmR3LoadLocked(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version)
         size_t  cchDesc = 0;
         char    szDesc[256];
         szDesc[0] = '\0';
-        if (u32Version >= PGM_SAVED_STATE_VERSION_RR_DESC)
+        if (uVersion >= PGM_SAVED_STATE_VERSION_RR_DESC)
         {
             rc = SSMR3GetStrZ(pSSM, szDesc, sizeof(szDesc));
             if (RT_FAILURE(rc))
                 return rc;
             /* Since we've modified the description strings in r45878, only compare
                them if the saved state is more recent. */
-            if (u32Version != PGM_SAVED_STATE_VERSION_RR_DESC)
+            if (uVersion != PGM_SAVED_STATE_VERSION_RR_DESC)
                 cchDesc = strlen(szDesc);
         }
 
@@ -2858,7 +2859,7 @@ static int pgmR3LoadLocked(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version)
                  ||  (   cchDesc
                       && strcmp(szDesc, pRam->pszDesc)) )
                 /* Hack for PDMDevHlpPhysReserve(pDevIns, 0xfff80000, 0x80000, "High ROM Region"); */
-            &&  (   u32Version != PGM_SAVED_STATE_VERSION_OLD_PHYS_CODE
+            &&  (   uVersion != PGM_SAVED_STATE_VERSION_OLD_PHYS_CODE
                  || GCPhys     != UINT32_C(0xfff80000)
                  || GCPhysLast != UINT32_C(0xffffffff)
                  || pRam->GCPhysLast != GCPhysLast
@@ -2883,7 +2884,7 @@ static int pgmR3LoadLocked(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version)
         }
 
         uint32_t cPages = (GCPhysLast - GCPhys + 1) >> PAGE_SHIFT;
-        if (u32Version >= PGM_SAVED_STATE_VERSION_RR_DESC)
+        if (uVersion >= PGM_SAVED_STATE_VERSION_RR_DESC)
         {
             /*
              * Load the pages one by one.
@@ -3028,22 +3029,24 @@ static int pgmR3LoadLocked(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version)
  * @returns VBox status code.
  * @param   pVM             VM Handle.
  * @param   pSSM            SSM operation handle.
- * @param   u32Version      Data layout version.
+ * @param   uVersion        Data layout version.
+ * @param   uPhase          The data phase.
  */
-static DECLCALLBACK(int) pgmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version)
+static DECLCALLBACK(int) pgmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPhase)
 {
     int     rc;
     PPGM    pPGM = &pVM->pgm.s;
+    Assert(uPhase == SSM_PHASE_FINAL); NOREF(uPhase);
 
     /*
      * Validate version.
      */
-    if (    u32Version != PGM_SAVED_STATE_VERSION
-        &&  u32Version != PGM_SAVED_STATE_VERSION_2_2_2
-        &&  u32Version != PGM_SAVED_STATE_VERSION_RR_DESC
-        &&  u32Version != PGM_SAVED_STATE_VERSION_OLD_PHYS_CODE)
+    if (    uVersion != PGM_SAVED_STATE_VERSION
+        &&  uVersion != PGM_SAVED_STATE_VERSION_2_2_2
+        &&  uVersion != PGM_SAVED_STATE_VERSION_RR_DESC
+        &&  uVersion != PGM_SAVED_STATE_VERSION_OLD_PHYS_CODE)
     {
-        AssertMsgFailed(("pgmR3Load: Invalid version u32Version=%d (current %d)!\n", u32Version, PGM_SAVED_STATE_VERSION));
+        AssertMsgFailed(("pgmR3Load: Invalid version uVersion=%d (current %d)!\n", uVersion, PGM_SAVED_STATE_VERSION));
         return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
     }
 
@@ -3057,14 +3060,14 @@ static DECLCALLBACK(int) pgmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version
      * we're using requires this.
      */
     pgmLock(pVM);
-    rc = pgmR3LoadLocked(pVM, pSSM, u32Version);
+    rc = pgmR3LoadLocked(pVM, pSSM, uVersion);
     pgmUnlock(pVM);
     if (RT_SUCCESS(rc))
     {
         /*
          * We require a full resync now.
          */
-        for (unsigned i=0;i<pVM->cCPUs;i++)
+        for (VMCPUID i = 0; i < pVM->cCPUs; i++)
         {
             PVMCPU pVCpu = &pVM->aCpus[i];
             VMCPU_FF_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL);
@@ -3075,7 +3078,7 @@ static DECLCALLBACK(int) pgmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version
 
         pgmR3HandlerPhysicalUpdateAll(pVM);
 
-        for (unsigned i=0;i<pVM->cCPUs;i++)
+        for (VMCPUID i = 0; i < pVM->cCPUs; i++)
         {
             PVMCPU pVCpu = &pVM->aCpus[i];
 

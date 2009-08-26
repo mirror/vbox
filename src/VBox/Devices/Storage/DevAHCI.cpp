@@ -5853,17 +5853,18 @@ static DECLCALLBACK(int) ahciSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle)
  * @returns VBox status code.
  * @param   pDevIns     The device instance.
  * @param   pSSMHandle  The handle to the saved state.
- * @param   u32Version  The data unit version number.
+ * @param   uVersion  The data unit version number.
+ * @param   uPhase      The data phase.
  */
-static DECLCALLBACK(int) ahciLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle, uint32_t u32Version)
+static DECLCALLBACK(int) ahciLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle, uint32_t uVersion, uint32_t uPhase)
 {
     PAHCI pAhci = PDMINS_2_DATA(pDevIns, PAHCI);
     uint32_t u32;
     uint32_t i;
-    int rc = VINF_SUCCESS;
 
-    if (u32Version != AHCI_SAVED_STATE_VERSION)
+    if (uVersion != AHCI_SAVED_STATE_VERSION)
         return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
+    Assert(uPhase == SSM_PHASE_FINAL); NOREF(uPhase);
 
     /* Restore data. */
 
@@ -5927,22 +5928,15 @@ static DECLCALLBACK(int) ahciLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle,
     /* Now the emulated ata controllers. */
     for (i = 0; i < RT_ELEMENTS(pAhci->aCts); i++)
     {
-        int rc;
-
-        rc = ataControllerLoadExec(&pAhci->aCts[i], pSSMHandle);
+        int rc = ataControllerLoadExec(&pAhci->aCts[i], pSSMHandle);
         if (RT_FAILURE(rc))
             return rc;
     }
 
-    rc = SSMR3GetU32(pSSMHandle, &u32);
+    int rc = SSMR3GetU32(pSSMHandle, &u32);
     if (RT_FAILURE(rc))
         return rc;
-    if (u32 != ~0U)
-    {
-        AssertMsgFailed(("u32=%#x expected ~0\n", u32));
-        rc = VERR_SSM_DATA_UNIT_FORMAT_CHANGED;
-        return rc;
-    }
+    AssertMsgReturn(u32 == ~0U, ("%#x\n", u32), VERR_SSM_DATA_UNIT_FORMAT_CHANGED);
 
     return VINF_SUCCESS;
 }
@@ -6567,10 +6561,10 @@ static DECLCALLBACK(int) ahciConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
         }
     }
 
-    rc = PDMDevHlpSSMRegister(pDevIns, pDevIns->pDevReg->szDeviceName, iInstance,
-                              AHCI_SAVED_STATE_VERSION, sizeof(*pThis)+cbTotalBufferSize,
-                              ahciSavePrep, ahciSaveExec, NULL,
-                              ahciLoadPrep, ahciLoadExec, NULL);
+    rc = PDMDevHlpSSMRegisterEx(pDevIns, AHCI_SAVED_STATE_VERSION, sizeof(*pThis)+cbTotalBufferSize, NULL,
+                                NULL, NULL, NULL,
+                                ahciSavePrep, ahciSaveExec, NULL,
+                                ahciLoadPrep, ahciLoadExec, NULL);
     if (RT_FAILURE(rc))
         return rc;
 

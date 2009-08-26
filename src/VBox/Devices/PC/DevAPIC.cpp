@@ -2356,12 +2356,14 @@ static DECLCALLBACK(int) apicSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle)
 /**
  * @copydoc FNSSMDEVLOADEXEC
  */
-static DECLCALLBACK(int) apicLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle, uint32_t u32Version)
+static DECLCALLBACK(int) apicLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle, uint32_t uVersion, uint32_t uPhase)
 {
     APICDeviceInfo *dev = PDMINS_2_DATA(pDevIns, APICDeviceInfo *);
-    /* load all APICs data, @todo: is it correct? */
+    Assert(uPhase == SSM_PHASE_FINAL); NOREF(uPhase);
+
+    /* load all APICs data */ /** @todo: is it correct? */
     foreach_apic(dev, 0xffffffff,
-                 if (apic_load(pSSMHandle, apic, u32Version))
+                 if (apic_load(pSSMHandle, apic, uVersion))
                  {
                       AssertFailed();
                       return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
@@ -2639,8 +2641,7 @@ static DECLCALLBACK(int) apicConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     /*
      * Saved state.
      */
-    rc = PDMDevHlpSSMRegister(pDevIns, pDevIns->pDevReg->szDeviceName, iInstance, 2 /* version */,
-                              sizeof(*pThis), NULL, apicSaveExec, NULL, NULL, apicLoadExec, NULL);
+    rc = PDMDevHlpSSMRegister(pDevIns, 2 /* version */, sizeof(*pThis), apicSaveExec, apicLoadExec);
     if (RT_FAILURE(rc))
         return rc;
 
@@ -2806,14 +2807,15 @@ static DECLCALLBACK(int) ioapicSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandl
 /**
  * @copydoc FNSSMDEVLOADEXEC
  */
-static DECLCALLBACK(int) ioapicLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle, uint32_t u32Version)
+static DECLCALLBACK(int) ioapicLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle, uint32_t uVersion, uint32_t uPhase)
 {
     IOAPICState *s = PDMINS_2_DATA(pDevIns, IOAPICState *);
 
-    if (ioapic_load(pSSMHandle, s, u32Version)) {
+    if (ioapic_load(pSSMHandle, s, uVersion)) {
         AssertFailed();
         return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
     }
+    Assert(uPhase == SSM_PHASE_FINAL); NOREF(uPhase);
 
     return VINF_SUCCESS;
 }
@@ -2918,8 +2920,7 @@ static DECLCALLBACK(int) ioapicConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
             return rc;
     }
 
-    rc = PDMDevHlpSSMRegister(pDevIns, pDevIns->pDevReg->szDeviceName, iInstance, 1 /* version */,
-                              sizeof(*s), NULL, ioapicSaveExec, NULL, NULL, ioapicLoadExec, NULL);
+    rc = PDMDevHlpSSMRegister(pDevIns, 1 /* version */, sizeof(*s), ioapicSaveExec, ioapicLoadExec);
     if (RT_FAILURE(rc))
         return rc;
 

@@ -1957,19 +1957,28 @@ typedef struct PDMDEVHLPR3
      * @returns VBox status.
      * @param   pDevIns             Device instance.
      * @param   pszName             Data unit name.
-     * @param   u32Instance         The instance identifier of the data unit.
+     * @param   uInstance           The instance identifier of the data unit.
      *                              This must together with the name be unique.
-     * @param   u32Version          Data layout version number.
+     * @param   uVersion            Data layout version number.
      * @param   cbGuess             The approximate amount of data in the unit.
      *                              Only for progress indicators.
+     * @param   pszBefore           Name of data unit which we should be put in
+     *                              front of. Optional (NULL).
+     *
+     * @param   pfnLivePrep         Prepare live save callback, optional.
+     * @param   pfnLiveExec         Execute live save callback, optional.
+     * @param   pfnLiveVote         Vote live save callback, optional.
+     *
      * @param   pfnSavePrep         Prepare save callback, optional.
      * @param   pfnSaveExec         Execute save callback, optional.
      * @param   pfnSaveDone         Done save callback, optional.
+     *
      * @param   pfnLoadPrep         Prepare load callback, optional.
      * @param   pfnLoadExec         Execute load callback, optional.
      * @param   pfnLoadDone         Done load callback, optional.
      */
-    DECLR3CALLBACKMEMBER(int, pfnSSMRegister,(PPDMDEVINS pDevIns, const char *pszName, uint32_t u32Instance, uint32_t u32Version, size_t cbGuess,
+    DECLR3CALLBACKMEMBER(int, pfnSSMRegister,(PPDMDEVINS pDevIns, uint32_t uVersion, size_t cbGuess, const char *pszBefore,
+                                              PFNSSMDEVLIVEPREP pfnLivePrep, PFNSSMDEVLIVEEXEC pfnLiveExec, PFNSSMDEVLIVEVOTE pfnLiveVote,
                                               PFNSSMDEVSAVEPREP pfnSavePrep, PFNSSMDEVSAVEEXEC pfnSaveExec, PFNSSMDEVSAVEDONE pfnSaveDone,
                                               PFNSSMDEVLOADPREP pfnLoadPrep, PFNSSMDEVLOADEXEC pfnLoadExec, PFNSSMDEVLOADDONE pfnLoadDone));
 
@@ -2877,7 +2886,7 @@ typedef R3PTRTYPE(struct PDMDEVHLPR3 *) PPDMDEVHLPR3;
 typedef R3PTRTYPE(const struct PDMDEVHLPR3 *) PCPDMDEVHLPR3;
 
 /** Current PDMDEVHLP version number. */
-#define PDM_DEVHLP_VERSION  0xf20b0000
+#define PDM_DEVHLP_VERSION  0xf20c0000
 
 
 /**
@@ -3477,15 +3486,37 @@ DECLINLINE(int) PDMDevHlpUnregisterVMMDevHeap(PPDMDEVINS pDevIns, RTGCPHYS GCPhy
 }
 
 /**
+ * Register a save state data unit.
+ *
+ * @returns VBox status.
+ * @param   pDevIns             Device instance.
+ * @param   uVersion            Data layout version number.
+ * @param   cbGuess             The approximate amount of data in the unit.
+ *                              Only for progress indicators.
+ * @param   pfnSaveExec         Execute save callback, optional.
+ * @param   pfnLoadExec         Execute load callback, optional.
+ */
+DECLINLINE(int) PDMDevHlpSSMRegister(PPDMDEVINS pDevIns, uint32_t uVersion, size_t cbGuess,
+                                     PFNSSMDEVSAVEEXEC pfnSaveExec, PFNSSMDEVLOADEXEC pfnLoadExec)
+{
+    return pDevIns->pDevHlpR3->pfnSSMRegister(pDevIns, uVersion, cbGuess, NULL /*pszBefore*/,
+                                              NULL /*pfnLivePrep*/, NULL /*pfnLiveExec*/,  NULL /*pfnLiveDone*/,
+                                              NULL /*pfnSavePrep*/, pfnSaveExec,           NULL /*pfnSaveDone*/,
+                                              NULL /*pfnLoadPrep*/, pfnLoadExec,           NULL /*pfnLoadDone*/);
+}
+
+/**
  * @copydoc PDMDEVHLPR3::pfnSSMRegister
  */
-DECLINLINE(int) PDMDevHlpSSMRegister(PPDMDEVINS pDevIns, const char *pszName, uint32_t u32Instance, uint32_t u32Version, size_t cbGuess,
-                                     PFNSSMDEVSAVEPREP pfnSavePrep, PFNSSMDEVSAVEEXEC pfnSaveExec, PFNSSMDEVSAVEDONE pfnSaveDone,
-                                     PFNSSMDEVLOADPREP pfnLoadPrep, PFNSSMDEVLOADEXEC pfnLoadExec, PFNSSMDEVLOADDONE pfnLoadDone)
+DECLINLINE(int) PDMDevHlpSSMRegisterEx(PPDMDEVINS pDevIns, uint32_t uVersion, size_t cbGuess, const char *pszBefore,
+                                       PFNSSMDEVLIVEPREP pfnLivePrep, PFNSSMDEVLIVEEXEC pfnLiveExec, PFNSSMDEVLIVEVOTE pfnLiveVote,
+                                       PFNSSMDEVSAVEPREP pfnSavePrep, PFNSSMDEVSAVEEXEC pfnSaveExec, PFNSSMDEVSAVEDONE pfnSaveDone,
+                                       PFNSSMDEVLOADPREP pfnLoadPrep, PFNSSMDEVLOADEXEC pfnLoadExec, PFNSSMDEVLOADDONE pfnLoadDone)
 {
-    return pDevIns->pDevHlpR3->pfnSSMRegister(pDevIns, pszName, u32Instance, u32Version, cbGuess,
-                                            pfnSavePrep, pfnSaveExec, pfnSaveDone,
-                                            pfnLoadPrep, pfnLoadExec, pfnLoadDone);
+    return pDevIns->pDevHlpR3->pfnSSMRegister(pDevIns, uVersion, cbGuess, pszBefore,
+                                              pfnLivePrep, pfnLiveExec, pfnLiveVote,
+                                              pfnSavePrep, pfnSaveExec, pfnSaveDone,
+                                              pfnLoadPrep, pfnLoadExec, pfnLoadDone);
 }
 
 /**

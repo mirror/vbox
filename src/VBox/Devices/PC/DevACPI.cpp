@@ -1773,20 +1773,21 @@ static DECLCALLBACK(int) acpi_save_state(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHand
 }
 
 static DECLCALLBACK(int) acpi_load_state(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle,
-                                         uint32_t u32Version)
+                                         uint32_t uVersion, uint32_t uPhase)
 {
     ACPIState *s = PDMINS_2_DATA(pDevIns, ACPIState *);
-    int rc;
+
+    Assert(uPhase == SSM_PHASE_FINAL); NOREF(uPhase);
 
     /*
      * Unregister PM handlers, will register with actual base
      * after state successfully loaded.
      */
-    rc = acpiUnregisterPmHandlers(s);
+    int rc = acpiUnregisterPmHandlers(s);
     if (RT_FAILURE(rc))
         return rc;
 
-    switch (u32Version)
+    switch (uVersion)
     {
         case 4:
             rc = SSMR3GetStruct(pSSMHandle, s, &g_AcpiSavedStateFields4[0]);
@@ -2181,8 +2182,7 @@ static DECLCALLBACK(int) acpiConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
                                    acpiPciConfigRead,  &s->pfnAcpiPciConfigRead,
                                    acpiPciConfigWrite, &s->pfnAcpiPciConfigWrite);
 
-    rc = PDMDevHlpSSMRegister(pDevIns, pDevIns->pDevReg->szDeviceName, iInstance, 5, sizeof(*s),
-                              NULL, acpi_save_state, NULL, NULL, acpi_load_state,  NULL);
+    rc = PDMDevHlpSSMRegister(pDevIns, 5, sizeof(*s), acpi_save_state, acpi_load_state);
     if (RT_FAILURE(rc))
         return rc;
 

@@ -758,17 +758,18 @@ static DECLCALLBACK(int) pitSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle)
  * @returns VBox status code.
  * @param   pDevIns     The device instance.
  * @param   pSSMHandle  The handle to the saved state.
- * @param   u32Version  The data unit version number.
+ * @param   uVersion    The data unit version number.
+ * @param   uPhase      The data phase.
  */
-static DECLCALLBACK(int) pitLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle, uint32_t u32Version)
+static DECLCALLBACK(int) pitLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle, uint32_t uVersion, uint32_t uPhase)
 {
     PITState *pThis = PDMINS_2_DATA(pDevIns, PITState *);
-    unsigned i;
 
-    if (u32Version != PIT_SAVED_STATE_VERSION)
+    if (uVersion != PIT_SAVED_STATE_VERSION)
         return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
+    Assert(uPhase == SSM_PHASE_FINAL); NOREF(uPhase);
 
-    for (i = 0; i < RT_ELEMENTS(pThis->channels); i++)
+    for (unsigned i = 0; i < RT_ELEMENTS(pThis->channels); i++)
     {
         PITChannelState *s = &pThis->channels[i];
         SSMR3GetU32(pSSMHandle, &s->count);
@@ -1033,9 +1034,7 @@ static DECLCALLBACK(int)  pitConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
         }
     }
 
-    rc = PDMDevHlpSSMRegister(pDevIns, pDevIns->pDevReg->szDeviceName, iInstance, PIT_SAVED_STATE_VERSION, sizeof(*pThis),
-                                          NULL, pitSaveExec, NULL,
-                                          NULL, pitLoadExec, NULL);
+    rc = PDMDevHlpSSMRegister(pDevIns, PIT_SAVED_STATE_VERSION, sizeof(*pThis), pitSaveExec, pitLoadExec);
     if (RT_FAILURE(rc))
         return rc;
 

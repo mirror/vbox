@@ -161,7 +161,7 @@
 static bool                 tmR3HasFixedTSC(PVM pVM);
 static uint64_t             tmR3CalibrateTSC(PVM pVM);
 static DECLCALLBACK(int)    tmR3Save(PVM pVM, PSSMHANDLE pSSM);
-static DECLCALLBACK(int)    tmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version);
+static DECLCALLBACK(int)    tmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPhase);
 static DECLCALLBACK(void)   tmR3TimerCallback(PRTTIMER pTimer, void *pvUser, uint64_t iTick);
 static void                 tmR3TimerQueueRun(PVM pVM, PTMTIMERQUEUE pQueue);
 static void                 tmR3TimerQueueRunVirtualSync(PVM pVM);
@@ -525,6 +525,7 @@ VMMR3DECL(int) TMR3Init(PVM pVM)
      * Register saved state.
      */
     rc = SSMR3RegisterInternal(pVM, "tm", 1, TM_SAVED_STATE_VERSION, sizeof(uint64_t) * 8,
+                               NULL, NULL, NULL,
                                NULL, tmR3Save, NULL,
                                NULL, tmR3Load, NULL);
     if (RT_FAILURE(rc))
@@ -1087,12 +1088,14 @@ static DECLCALLBACK(int) tmR3Save(PVM pVM, PSSMHANDLE pSSM)
  * @returns VBox status code.
  * @param   pVM             VM Handle.
  * @param   pSSM            SSM operation handle.
- * @param   u32Version      Data layout version.
+ * @param   uVersion        Data layout version.
+ * @param   uPhase          The data phase.
  */
-static DECLCALLBACK(int) tmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version)
+static DECLCALLBACK(int) tmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPhase)
 {
     LogFlow(("tmR3Load:\n"));
 
+    Assert(uPhase == SSM_PHASE_FINAL); NOREF(uPhase);
 #ifdef VBOX_STRICT
     for (VMCPUID i = 0; i < pVM->cCPUs; i++)
     {
@@ -1106,9 +1109,9 @@ static DECLCALLBACK(int) tmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version)
     /*
      * Validate version.
      */
-    if (u32Version != TM_SAVED_STATE_VERSION)
+    if (uVersion != TM_SAVED_STATE_VERSION)
     {
-        AssertMsgFailed(("tmR3Load: Invalid version u32Version=%d!\n", u32Version));
+        AssertMsgFailed(("tmR3Load: Invalid version uVersion=%d!\n", uVersion));
         return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
     }
 

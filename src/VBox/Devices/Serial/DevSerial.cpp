@@ -597,21 +597,18 @@ static DECLCALLBACK(int) serialSaveExec(PPDMDEVINS pDevIns,
  * @returns VBox status code.
  * @param   pDevIns     The device instance.
  * @param   pSSMHandle  The handle to the saved state.
- * @param   u32Version  The data unit version number.
+ * @param   uVersion    The data unit version number.
+ * @param   uPhase      The data phase.
  */
 static DECLCALLBACK(int) serialLoadExec(PPDMDEVINS pDevIns,
                                         PSSMHANDLE pSSMHandle,
-                                        uint32_t u32Version)
+                                        uint32_t uVersion,
+                                        uint32_t uPhase)
 {
-    int          rc;
-    uint32_t     u32;
     SerialState *pThis = PDMINS_2_DATA(pDevIns, SerialState *);
 
-    if (u32Version != SERIAL_SAVED_STATE_VERSION)
-    {
-        AssertMsgFailed(("u32Version=%d\n", u32Version));
-        return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
-    }
+    Assert(uPhase == SSM_PHASE_FINAL); NOREF(uPhase);
+    AssertMsgReturn(uVersion == SERIAL_SAVED_STATE_VERSION, ("%d\n", uVersion), VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION);
 
     SSMR3GetU16(pSSMHandle, &pThis->divider);
     SSMR3GetU8(pSSMHandle, &pThis->rbr);
@@ -627,17 +624,11 @@ static DECLCALLBACK(int) serialLoadExec(PPDMDEVINS pDevIns,
     SSMR3GetU32(pSSMHandle, &pThis->base);
     SSMR3GetBool(pSSMHandle, &pThis->msr_changed);
 
-    rc = SSMR3GetU32(pSSMHandle, &u32);
+    uint32_t u32;
+    int rc = SSMR3GetU32(pSSMHandle, &u32);
     if (RT_FAILURE(rc))
         return rc;
-
-    if (u32 != ~0U)
-    {
-        AssertLogRelMsgFailed(("u32=%#x expected ~0\n", u32));
-        return VERR_SSM_DATA_UNIT_FORMAT_CHANGED;
-    }
-    /* Be careful with pointers in the structure; they are not preserved
-     * in the saved state. */
+    AssertMsgReturn(u32 == ~0U, ("%#x\n", u32), VERR_SSM_DATA_UNIT_FORMAT_CHANGED);
 
     if (pThis->lsr & UART_LSR_DR)
     {
@@ -892,19 +883,7 @@ static DECLCALLBACK(int) serialConstruct(PPDMDEVINS pDevIns,
     /*
      * Saved state.
      */
-    rc = PDMDevHlpSSMRegister(
-        pDevIns,                /* pDevIns */
-        pDevIns->pDevReg->szDeviceName, /* pszName */
-        iInstance,              /* u32Instance */
-        SERIAL_SAVED_STATE_VERSION, /* u32Version */
-        sizeof (*pThis),        /* cbGuess */
-        NULL,                   /* pfnSavePrep */
-        serialSaveExec,         /* pfnSaveExec */
-        NULL,                   /* pfnSaveDone */
-        NULL,                   /* pfnLoadPrep */
-        serialLoadExec,         /* pfnLoadExec */
-        NULL                    /* pfnLoadDone */
-        );
+    rc = PDMDevHlpSSMRegister(pDevIns, SERIAL_SAVED_STATE_VERSION, sizeof (*pThis), serialSaveExec, serialLoadExec);
     if (RT_FAILURE(rc))
         return rc;
 

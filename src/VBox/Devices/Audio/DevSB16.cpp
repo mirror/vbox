@@ -1481,7 +1481,7 @@ static void SB_save (QEMUFile *f, void *opaque)
 {
     SB16State *s = opaque;
 #else
-static DECLCALLBACK(int) SaveExec (PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle)
+static DECLCALLBACK(int) sb16SaveExec (PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle)
 {
     SB16State *s = PDMINS_2_DATA (pDevIns, SB16State *);
     QEMUFile *f = pSSMHandle;
@@ -1549,17 +1549,14 @@ static int SB_load (QEMUFile *f, void *opaque, int version_id)
         return -EINVAL;
     }
 #else  /* VBOX */
-static DECLCALLBACK(int) LoadExec (PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle,
-                                   uint32_t u32Version)
+static DECLCALLBACK(int) sb16LoadExec (PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle,
+                                       uint32_t uVersion, uint32_t uPhase)
 {
     SB16State *s = PDMINS_2_DATA (pDevIns, SB16State *);
     QEMUFile *f = pSSMHandle;
 
-    if (u32Version != SB16_SSM_VERSION)
-    {
-        AssertMsgFailed(("u32Version=%d\n", u32Version));
-        return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
-    }
+    AssertMsgReturn(uVersion == SB16_SSM_VERSION, ("%d\n", uVersion),  VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION);
+    Assert(uPhase == SSM_PHASE_FINAL); NOREF(uPhase);
 #endif /* VBOX */
 
     s->irq=qemu_get_be32 (f);
@@ -1817,8 +1814,7 @@ static DECLCALLBACK(int) sb16Construct (PPDMDEVINS pDevIns, int iInstance, PCFGM
 
     s->can_write = 1;
 
-    rc = PDMDevHlpSSMRegister(pDevIns, pDevIns->pDevReg->szDeviceName, iInstance, SB16_SSM_VERSION,
-                              sizeof(*s), NULL, SaveExec, NULL, NULL, LoadExec, NULL);
+    rc = PDMDevHlpSSMRegister(pDevIns, SB16_SSM_VERSION, sizeof(*s), sb16SaveExec, sb16LoadExec);
     if (RT_FAILURE(rc))
         return rc;
 

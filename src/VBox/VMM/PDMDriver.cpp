@@ -277,11 +277,11 @@ static DECLCALLBACK(int) pdmR3DrvRegister(PCPDMDRVREGCB pCallbacks, PCPDMDRVREG 
     AssertPtrReturn(pDrvReg, VERR_INVALID_POINTER);
     AssertMsgReturn(pDrvReg->u32Version == PDM_DRVREG_VERSION, ("%#x\n", pDrvReg->u32Version), VERR_PDM_UNKNOWN_DRVREG_VERSION);
     AssertReturn(pDrvReg->szDriverName[0], VERR_PDM_INVALID_DRIVER_REGISTRATION);
-    AssertMsgReturn(memchr(pDrvReg->szDriverName, '\0', sizeof(pDrvReg->szDriverName)), 
+    AssertMsgReturn(memchr(pDrvReg->szDriverName, '\0', sizeof(pDrvReg->szDriverName)),
                     (".*s\n", sizeof(pDrvReg->szDriverName), pDrvReg->szDriverName),
                     VERR_PDM_INVALID_DRIVER_REGISTRATION);
     AssertMsgReturn((pDrvReg->fFlags & PDM_DRVREG_FLAGS_HOST_BITS_MASK) == PDM_DRVREG_FLAGS_HOST_BITS_DEFAULT,
-                    ("%s: fFlags=%#x\n", pDrvReg->szDriverName, pDrvReg->fFlags),  
+                    ("%s: fFlags=%#x\n", pDrvReg->szDriverName, pDrvReg->fFlags),
                     VERR_PDM_INVALID_DRIVER_HOST_BITS);
     AssertMsgReturn(pDrvReg->cMaxInstances > 0, ("%s: %#x\n", pDrvReg->szDriverName, pDrvReg->cMaxInstances),
                     VERR_PDM_INVALID_DRIVER_REGISTRATION);
@@ -289,9 +289,9 @@ static DECLCALLBACK(int) pdmR3DrvRegister(PCPDMDRVREGCB pCallbacks, PCPDMDRVREG 
                     VERR_PDM_INVALID_DRIVER_REGISTRATION);
     AssertMsgReturn(VALID_PTR(pDrvReg->pfnConstruct), ("%s: %p\n", pDrvReg->szDriverName, pDrvReg->pfnConstruct),
                     VERR_PDM_INVALID_DRIVER_REGISTRATION);
-    AssertMsgReturn(pDrvReg->pfnSoftReset == NULL, ("%s: %p\n", pDrvReg->szDriverName, pDrvReg->pfnSoftReset), 
+    AssertMsgReturn(pDrvReg->pfnSoftReset == NULL, ("%s: %p\n", pDrvReg->szDriverName, pDrvReg->pfnSoftReset),
                     VERR_PDM_INVALID_DRIVER_REGISTRATION);
-    AssertMsgReturn(pDrvReg->u32VersionEnd == PDM_DRVREG_VERSION, ("%s: #x\n", pDrvReg->szDriverName, pDrvReg->u32VersionEnd), 
+    AssertMsgReturn(pDrvReg->u32VersionEnd == PDM_DRVREG_VERSION, ("%s: #x\n", pDrvReg->szDriverName, pDrvReg->u32VersionEnd),
                     VERR_PDM_INVALID_DRIVER_REGISTRATION);
 
     /*
@@ -392,7 +392,7 @@ int pdmR3DrvDetach(PPDMDRVINS pDrvIns, uint32_t fFlags)
  * This is used when unplugging a device at run time.
  *
  * @param   pDrvIns     Pointer to the driver instance to start with.
- * @param   fFlags      PDM_TACH_FLAGS_NOT_HOT_PLUG or 0. 
+ * @param   fFlags      PDM_TACH_FLAGS_NOT_HOT_PLUG or 0.
  */
 void pdmR3DrvDestroyChain(PPDMDRVINS pDrvIns, uint32_t fFlags)
 {
@@ -854,16 +854,22 @@ static DECLCALLBACK(int) pdmR3DrvHlp_TMTimerCreate(PPDMDRVINS pDrvIns, TMCLOCK e
 
 
 /** @copydoc PDMDRVHLP::pfnSSMRegister */
-static DECLCALLBACK(int) pdmR3DrvHlp_SSMRegister(PPDMDRVINS pDrvIns, const char *pszName, uint32_t u32Instance, uint32_t u32Version, size_t cbGuess,
+static DECLCALLBACK(int) pdmR3DrvHlp_SSMRegister(PPDMDRVINS pDrvIns, uint32_t uVersion, size_t cbGuess,
+                                                 PFNSSMDRVLIVEPREP pfnLivePrep, PFNSSMDRVLIVEEXEC pfnLiveExec, PFNSSMDRVLIVEVOTE pfnLiveVote,
                                                  PFNSSMDRVSAVEPREP pfnSavePrep, PFNSSMDRVSAVEEXEC pfnSaveExec, PFNSSMDRVSAVEDONE pfnSaveDone,
                                                  PFNSSMDRVLOADPREP pfnLoadPrep, PFNSSMDRVLOADEXEC pfnLoadExec, PFNSSMDRVLOADDONE pfnLoadDone)
 {
     PDMDRV_ASSERT_DRVINS(pDrvIns);
     VM_ASSERT_EMT(pDrvIns->Internal.s.pVM);
-    LogFlow(("pdmR3DrvHlp_SSMRegister: caller='%s'/%d: pszName=%p:{%s} u32Instance=%#x u32Version=#x cbGuess=%#x pfnSavePrep=%p pfnSaveExec=%p pfnSaveDone=%p pszLoadPrep=%p pfnLoadExec=%p pfnLoaddone=%p\n",
-             pDrvIns->pDrvReg->szDriverName, pDrvIns->iInstance, pszName, pszName, u32Instance, u32Version, cbGuess, pfnSavePrep, pfnSaveExec, pfnSaveDone, pfnLoadPrep, pfnLoadExec, pfnLoadDone));
+    LogFlow(("pdmR3DrvHlp_SSMRegister: caller='%s'/%d: uVersion=#x cbGuess=%#x \n"
+             "    pfnLivePrep=%p pfnLiveExec=%p pfnLiveVote=%p  pfnSavePrep=%p pfnSaveExec=%p pfnSaveDone=%p pszLoadPrep=%p pfnLoadExec=%p pfnLoaddone=%p\n",
+             pDrvIns->pDrvReg->szDriverName, pDrvIns->iInstance, uVersion, cbGuess,
+             pfnLivePrep, pfnLiveExec, pfnLiveVote,
+             pfnSavePrep, pfnSaveExec, pfnSaveDone, pfnLoadPrep, pfnLoadExec, pfnLoadDone));
 
-    int rc = SSMR3RegisterDriver(pDrvIns->Internal.s.pVM, pDrvIns, pszName, u32Instance, u32Version, cbGuess,
+    int rc = SSMR3RegisterDriver(pDrvIns->Internal.s.pVM, pDrvIns, pDrvIns->pDrvReg->szDriverName, pDrvIns->iInstance,
+                                 uVersion, cbGuess,
+                                 pfnLivePrep, pfnLiveExec, pfnLiveVote,
                                  pfnSavePrep, pfnSaveExec, pfnSaveDone,
                                  pfnLoadPrep, pfnLoadExec, pfnLoadDone);
 

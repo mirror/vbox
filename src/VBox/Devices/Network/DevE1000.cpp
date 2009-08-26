@@ -4474,17 +4474,19 @@ static DECLCALLBACK(int) e1kLoadPrep(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle)
  * @returns VBox status code.
  * @param   pDevIns     The device instance.
  * @param   pSSMHandle  The handle to the saved state.
- * @param   u32Version  The data unit version number.
+ * @param   uVersion    The data unit version number.
+ * @param   uPhase      The data phase.
  */
-static DECLCALLBACK(int) e1kLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle, uint32_t u32Version)
+static DECLCALLBACK(int) e1kLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle, uint32_t uVersion, uint32_t uPhase)
 {
-    if (u32Version != E1K_SAVEDSTATE_VERSION)
+    if (uVersion != E1K_SAVEDSTATE_VERSION)
         return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
+    Assert(uPhase == SSM_PHASE_FINAL); NOREF(uPhase);
 
     E1KSTATE* pState = PDMINS_2_DATA(pDevIns, E1KSTATE*);
     SSMR3GetMem(pSSMHandle, &pState->auRegs, sizeof(pState->auRegs));
     SSMR3GetBool(pSSMHandle, &pState->fIntRaised);
-    /** @todo: PHY should be made a separate device with its own versioning */
+    /** @todo: PHY could be made a separate device with its own versioning */
     Phy::loadState(pSSMHandle, &pState->phy);
     SSMR3GetU32(pSSMHandle, &pState->uSelectedReg);
     SSMR3GetMem(pSSMHandle, &pState->auMTA, sizeof(pState->auMTA));
@@ -4759,10 +4761,10 @@ static DECLCALLBACK(int) e1kConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
               PHY_EPID_M881000 : PHY_EPID_M881011);
     Phy::setLinkStatus(&pState->phy, pState->fCableConnected);
 
-    rc = PDMDevHlpSSMRegister(pDevIns, pDevIns->pDevReg->szDeviceName, iInstance,
-                              E1K_SAVEDSTATE_VERSION, sizeof(E1KSTATE),
-                              e1kSavePrep, e1kSaveExec, NULL,
-                              e1kLoadPrep, e1kLoadExec, NULL);
+    rc = PDMDevHlpSSMRegisterEx(pDevIns, E1K_SAVEDSTATE_VERSION, sizeof(E1KSTATE), NULL,
+                                NULL, NULL, NULL,
+                                e1kSavePrep, e1kSaveExec, NULL,
+                                e1kLoadPrep, e1kLoadExec, NULL);
     if (RT_FAILURE(rc))
         return rc;
 

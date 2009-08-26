@@ -876,6 +876,27 @@ static const REMPARMDESC g_aArgsSSMR3PutUInt[] =
     { REMPARMDESC_FLAGS_INT,        sizeof(RTUINT), NULL },
 };
 
+static const REMPARMDESC g_aArgsSSMIntLiveExecCallback[] =
+{
+    { REMPARMDESC_FLAGS_INT,        sizeof(PVM),                NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(PSSMHANDLE),         NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(uint32_t),           NULL },
+};
+static REMFNDESC g_SSMIntLiveExecCallback =
+{
+    "SSMIntLiveExecCallback", NULL, &g_aArgsSSMIntLiveExecCallback[0], RT_ELEMENTS(g_aArgsSSMIntLiveExecCallback), REMFNDESC_FLAGS_RET_INT, sizeof(int),  NULL
+};
+
+static const REMPARMDESC g_aArgsSSMIntLiveVoteCallback[] =
+{
+    { REMPARMDESC_FLAGS_INT,        sizeof(PVM),                NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(PSSMHANDLE),         NULL },
+};
+static REMFNDESC g_SSMIntLiveVoteCallback =
+{
+    "SSMIntLiveVoteCallback", NULL, &g_aArgsSSMIntLiveVoteCallback[0], RT_ELEMENTS(g_aArgsSSMIntLiveVotecCallback), REMFNDESC_FLAGS_RET_INT, sizeof(bool),  NULL
+};
+
 static const REMPARMDESC g_aArgsSSMIntCallback[] =
 {
     { REMPARMDESC_FLAGS_INT,        sizeof(PVM), NULL },
@@ -891,6 +912,7 @@ static const REMPARMDESC g_aArgsSSMIntLoadExecCallback[] =
     { REMPARMDESC_FLAGS_INT,        sizeof(PVM),                NULL },
     { REMPARMDESC_FLAGS_INT,        sizeof(PSSMHANDLE),         NULL },
     { REMPARMDESC_FLAGS_INT,        sizeof(uint32_t),           NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(uint32_t),           NULL },
 };
 static REMFNDESC g_SSMIntLoadExecCallback =
 {
@@ -903,6 +925,9 @@ static const REMPARMDESC g_aArgsSSMR3RegisterInternal[] =
     { REMPARMDESC_FLAGS_INT,        sizeof(uint32_t),           NULL },
     { REMPARMDESC_FLAGS_INT,        sizeof(uint32_t),           NULL },
     { REMPARMDESC_FLAGS_INT,        sizeof(size_t),             NULL },
+    { REMPARMDESC_FLAGS_PFN,        sizeof(PFNSSMINTLIVEPREP),  &g_SSMIntCallback },
+    { REMPARMDESC_FLAGS_PFN,        sizeof(PFNSSMINTLIVEEXEC),  &g_SSMIntLiveExecCallback },
+    { REMPARMDESC_FLAGS_PFN,        sizeof(PFNSSMINTLIVEVOTE),  &g_SSMIntLiveVoteCallback },
     { REMPARMDESC_FLAGS_PFN,        sizeof(PFNSSMINTSAVEPREP),  &g_SSMIntCallback },
     { REMPARMDESC_FLAGS_PFN,        sizeof(PFNSSMINTSAVEEXEC),  &g_SSMIntCallback },
     { REMPARMDESC_FLAGS_PFN,        sizeof(PFNSSMINTSAVEDONE),  &g_SSMIntCallback },

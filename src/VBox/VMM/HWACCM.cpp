@@ -269,7 +269,7 @@ static const char * const g_apszAmdVExitReasons[MAX_EXITREASON_STAT] =
 *   Internal Functions                                                         *
 *******************************************************************************/
 static DECLCALLBACK(int) hwaccmR3Save(PVM pVM, PSSMHANDLE pSSM);
-static DECLCALLBACK(int) hwaccmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version);
+static DECLCALLBACK(int) hwaccmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPhase);
 
 
 /**
@@ -307,6 +307,7 @@ VMMR3DECL(int) HWACCMR3Init(PVM pVM)
      * Register the saved state data unit.
      */
     int rc = SSMR3RegisterInternal(pVM, "HWACCM", 0, HWACCM_SSM_VERSION, sizeof(HWACCM),
+                                   NULL, NULL, NULL,
                                    NULL, hwaccmR3Save, NULL,
                                    NULL, hwaccmR3Load, NULL);
     if (RT_FAILURE(rc))
@@ -326,7 +327,7 @@ VMMR3DECL(int) HWACCMR3Init(PVM pVM)
     /*
      * Check CFGM options.
      */
-    PCFGMNODE pRoot      = CFGMR3GetRoot(pVM); 
+    PCFGMNODE pRoot      = CFGMR3GetRoot(pVM);
     PCFGMNODE pHWVirtExt = CFGMR3GetChild(pRoot, "HWVirtExt/");
     /* Nested paging: disabled by default. */
     rc = CFGMR3QueryBoolDef(pRoot, "EnableNestedPaging", &pVM->hwaccm.s.fAllowNestedPaging, false);
@@ -408,7 +409,7 @@ VMMR3DECL(int) HWACCMR3InitCPU(PVM pVM)
     STAM_REG(pVM, &pVM->hwaccm.s.StatTPRPatchFailure, STAMTYPE_COUNTER,   "/HWACCM/TPR/Patch/Failed",  STAMUNIT_OCCURENCES, "Number of unsuccessful patch attempts.");
     STAM_REG(pVM, &pVM->hwaccm.s.StatTPRReplaceSuccess, STAMTYPE_COUNTER, "/HWACCM/TPR/Replace/Success", STAMUNIT_OCCURENCES, "Number of times an instruction was successfully patched.");
     STAM_REG(pVM, &pVM->hwaccm.s.StatTPRReplaceFailure, STAMTYPE_COUNTER, "/HWACCM/TPR/Replace/Failed",  STAMUNIT_OCCURENCES, "Number of unsuccessful patch attempts.");
-    
+
     /*
      * Statistics.
      */
@@ -511,7 +512,7 @@ VMMR3DECL(int) HWACCMR3InitCPU(PVM pVM)
         HWACCM_REG_COUNTER(&pVCpu->hwaccm.s.StatTSCOffset,              "/HWACCM/CPU%d/TSC/Offset");
         HWACCM_REG_COUNTER(&pVCpu->hwaccm.s.StatTSCIntercept,           "/HWACCM/CPU%d/TSC/Intercept");
         HWACCM_REG_COUNTER(&pVCpu->hwaccm.s.StatTSCInterceptOverFlow,   "/HWACCM/CPU%d/TSC/InterceptOverflow");
-        
+
         HWACCM_REG_COUNTER(&pVCpu->hwaccm.s.StatDRxArmed,               "/HWACCM/CPU%d/Debug/Armed");
         HWACCM_REG_COUNTER(&pVCpu->hwaccm.s.StatDRxContextSwitch,       "/HWACCM/CPU%d/Debug/ContextSwitch");
         HWACCM_REG_COUNTER(&pVCpu->hwaccm.s.StatDRxIOCheck,             "/HWACCM/CPU%d/Debug/IOCheck");
@@ -1418,7 +1419,7 @@ VMMR3DECL(void) HWACCMR3Reset(PVM pVM)
  *
  * @returns VBox status code.
  * @param   pVM     The VM handle.
- * @param   pVCpu   The VMCPU for the EMT we're being called on. 
+ * @param   pVCpu   The VMCPU for the EMT we're being called on.
  * @param   pvUser  Unused
  *
  */
@@ -1559,7 +1560,7 @@ VMMR3DECL(int)  HWACMMR3DisablePatching(PVM pVM, RTGCPTR pPatchMem, unsigned cbP
  *
  * @returns VBox status code.
  * @param   pVM     The VM handle.
- * @param   pVCpu   The VMCPU for the EMT we're being called on. 
+ * @param   pVCpu   The VMCPU for the EMT we're being called on.
  * @param   pvUser  User specified CPU context
  *
  */
@@ -1716,7 +1717,7 @@ DECLCALLBACK(int) hwaccmR3ReplaceTprInstr(PVM pVM, PVMCPU pVCpu, void *pvUser)
  *
  * @returns VBox status code.
  * @param   pVM     The VM handle.
- * @param   pVCpu   The VMCPU for the EMT we're being called on. 
+ * @param   pVCpu   The VMCPU for the EMT we're being called on.
  * @param   pvUser  User specified CPU context
  *
  */
@@ -2242,8 +2243,8 @@ VMMR3DECL(int)  HWACCMR3RestartPendingIOInstr(PVM pVM, PVMCPU pVCpu, PCPUMCTX pC
         uint32_t uAndVal = pVCpu->hwaccm.s.PendingIO.s.Port.uAndVal;
         uint32_t u32Val  = 0;
 
-        rc = IOMIOPortRead(pVM, pVCpu->hwaccm.s.PendingIO.s.Port.uPort, 
-                           &u32Val, 
+        rc = IOMIOPortRead(pVM, pVCpu->hwaccm.s.PendingIO.s.Port.uPort,
+                           &u32Val,
                            pVCpu->hwaccm.s.PendingIO.s.Port.cbSize);
         if (IOM_SUCCESS(rc))
         {
@@ -2255,8 +2256,8 @@ VMMR3DECL(int)  HWACCMR3RestartPendingIOInstr(PVM pVM, PVMCPU pVCpu, PCPUMCTX pC
     }
 
     case HWACCMPENDINGIO_PORT_WRITE:
-        rc = IOMIOPortWrite(pVM, pVCpu->hwaccm.s.PendingIO.s.Port.uPort, 
-                            pCtx->eax & pVCpu->hwaccm.s.PendingIO.s.Port.uAndVal, 
+        rc = IOMIOPortWrite(pVM, pVCpu->hwaccm.s.PendingIO.s.Port.uPort,
+                            pCtx->eax & pVCpu->hwaccm.s.PendingIO.s.Port.uAndVal,
                             pVCpu->hwaccm.s.PendingIO.s.Port.cbSize);
         if (IOM_SUCCESS(rc))
             pCtx->rip = pVCpu->hwaccm.s.PendingIO.GCPtrRipNext;
@@ -2416,25 +2417,27 @@ static DECLCALLBACK(int) hwaccmR3Save(PVM pVM, PSSMHANDLE pSSM)
  * @returns VBox status code.
  * @param   pVM             VM Handle.
  * @param   pSSM            SSM operation handle.
- * @param   u32Version      Data layout version.
+ * @param   uVersion        Data layout version.
+ * @param   uPhase          The data phase.
  */
-static DECLCALLBACK(int) hwaccmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version)
+static DECLCALLBACK(int) hwaccmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPhase)
 {
     int rc;
 
     Log(("hwaccmR3Load:\n"));
+    Assert(uPhase == SSM_PHASE_FINAL); NOREF(uPhase);
 
     /*
      * Validate version.
      */
-    if (   u32Version != HWACCM_SSM_VERSION
-        && u32Version != HWACCM_SSM_VERSION_NO_PATCHING
-        && u32Version != HWACCM_SSM_VERSION_2_0_X)
+    if (   uVersion != HWACCM_SSM_VERSION
+        && uVersion != HWACCM_SSM_VERSION_NO_PATCHING
+        && uVersion != HWACCM_SSM_VERSION_2_0_X)
     {
-        AssertMsgFailed(("hwaccmR3Load: Invalid version u32Version=%d!\n", u32Version));
+        AssertMsgFailed(("hwaccmR3Load: Invalid version uVersion=%d!\n", uVersion));
         return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
     }
-    for (unsigned i=0;i<pVM->cCPUs;i++)
+    for (VMCPUID i = 0; i < pVM->cCPUs; i++)
     {
         rc = SSMR3GetU32(pSSM, &pVM->aCpus[i].hwaccm.s.Event.fPending);
         AssertRCReturn(rc, rc);
@@ -2443,7 +2446,7 @@ static DECLCALLBACK(int) hwaccmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Vers
         rc = SSMR3GetU64(pSSM, &pVM->aCpus[i].hwaccm.s.Event.intInfo);
         AssertRCReturn(rc, rc);
 
-        if (u32Version >= HWACCM_SSM_VERSION_NO_PATCHING)
+        if (uVersion >= HWACCM_SSM_VERSION_NO_PATCHING)
         {
             uint32_t val;
 
@@ -2461,7 +2464,7 @@ static DECLCALLBACK(int) hwaccmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Vers
         }
     }
 #ifdef VBOX_HWACCM_WITH_GUEST_PATCHING
-    if (u32Version > HWACCM_SSM_VERSION_NO_PATCHING)
+    if (uVersion > HWACCM_SSM_VERSION_NO_PATCHING)
     {
         rc = SSMR3GetGCPtr(pSSM, &pVM->hwaccm.s.pGuestPatchMem);
         AssertRCReturn(rc, rc);
@@ -2507,7 +2510,7 @@ static DECLCALLBACK(int) hwaccmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Vers
 
             rc = SSMR3GetU32(pSSM, &pPatch->pJumpTarget);
             AssertRCReturn(rc, rc);
-            
+
             rc = RTAvloU32Insert(&pVM->hwaccm.s.svm.PatchTree, &pPatch->Core);
             AssertRC(rc);
         }

@@ -827,14 +827,16 @@ static DECLCALLBACK(int) picSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle)
  * @returns VBox status code.
  * @param   pDevIns     The device instance.
  * @param   pSSMHandle  The handle to the saved state.
- * @param   u32Version  The data unit version number.
+ * @param   uVersion    The data unit version number.
+ * @param   uPhase      The data phase.
  */
-static DECLCALLBACK(int) picLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle, uint32_t u32Version)
+static DECLCALLBACK(int) picLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle, uint32_t uVersion, uint32_t uPhase)
 {
     PDEVPIC pThis = PDMINS_2_DATA(pDevIns, PDEVPIC);
 
-    if (u32Version != 1)
+    if (uVersion != 1)
         return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
+    Assert(uPhase == SSM_PHASE_FINAL); NOREF(uPhase);
 
     for (unsigned i = 0; i < RT_ELEMENTS(pThis->aPics); i++)
     {
@@ -1040,9 +1042,7 @@ static DECLCALLBACK(int)  picConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
             return rc;
     }
 
-    rc = PDMDevHlpSSMRegister(pDevIns, pDevIns->pDevReg->szDeviceName, iInstance, 1 /* version */, sizeof(*pThis),
-                              NULL, picSaveExec, NULL,
-                              NULL, picLoadExec, NULL);
+    rc = PDMDevHlpSSMRegister(pDevIns, 1 /* uVersion */, sizeof(*pThis), picSaveExec, picLoadExec);
     if (RT_FAILURE(rc))
         return rc;
 

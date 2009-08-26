@@ -586,21 +586,18 @@ static DECLCALLBACK(int) parallelSaveExec(PPDMDEVINS pDevIns,
  * @returns VBox status code.
  * @param   pDevIns     The device instance.
  * @param   pSSMHandle  The handle to the saved state.
- * @param   u32Version  The data unit version number.
+ * @param   uVersion    The data unit version number.
+ * @param   uPhase      The data phase.
  */
 static DECLCALLBACK(int) parallelLoadExec(PPDMDEVINS pDevIns,
                                           PSSMHANDLE pSSMHandle,
-                                          uint32_t u32Version)
+                                          uint32_t uVersion,
+                                          uint32_t uPhase)
 {
-    int          rc;
-    uint32_t     u32;
     ParallelState *pThis = PDMINS_2_DATA(pDevIns, ParallelState *);
 
-    if (u32Version != PARALLEL_SAVED_STATE_VERSION)
-    {
-        AssertLogRelMsgFailed(("u32Version=%d\n", u32Version));
-        return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
-    }
+    AssertMsgReturn(uVersion == PARALLEL_SAVED_STATE_VERSION, ("%d\n", uVersion), VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION);
+    Assert(uPhase == SSM_PHASE_FINAL); NOREF(uPhase);
 
     SSMR3GetU8(pSSMHandle, &pThis->reg_data);
     SSMR3GetU8(pSSMHandle, &pThis->reg_status);
@@ -608,15 +605,11 @@ static DECLCALLBACK(int) parallelLoadExec(PPDMDEVINS pDevIns,
     SSMR3GetS32(pSSMHandle, &pThis->irq);
     SSMR3GetU32(pSSMHandle, &pThis->base);
 
-    rc = SSMR3GetU32(pSSMHandle, &u32);
+    uint32_t u32;
+    int rc = SSMR3GetU32(pSSMHandle, &u32);
     if (RT_FAILURE(rc))
         return rc;
-
-    if (u32 != ~0U)
-    {
-        AssertLogRelMsgFailed(("u32=%#x expected ~0\n", u32));
-        return VERR_SSM_DATA_UNIT_FORMAT_CHANGED;
-    }
+    AssertMsgReturn(u32 == ~0U, ("%#x\n", u32), VERR_SSM_DATA_UNIT_FORMAT_CHANGED);
 
     /* not necessary... but it doesn't harm. */
     pThis->pDevInsR3 = pDevIns;
@@ -808,19 +801,7 @@ static DECLCALLBACK(int) parallelConstruct(PPDMDEVINS pDevIns,
 #endif
     }
 
-    rc = PDMDevHlpSSMRegister(
-        pDevIns,                        /* pDevIns */
-        pDevIns->pDevReg->szDeviceName, /* pszName */
-        iInstance,                      /* u32Instance */
-        PARALLEL_SAVED_STATE_VERSION,   /* u32Version */
-        sizeof (*pThis),                /* cbGuess */
-        NULL,                           /* pfnSavePrep */
-        parallelSaveExec,               /* pfnSaveExec */
-        NULL,                           /* pfnSaveDone */
-        NULL,                           /* pfnLoadPrep */
-        parallelLoadExec,               /* pfnLoadExec */
-        NULL                            /* pfnLoadDone */
-        );
+    rc = PDMDevHlpSSMRegister(pDevIns, PARALLEL_SAVED_STATE_VERSION, sizeof(*pThis), parallelSaveExec, parallelLoadExec);
     if (RT_FAILURE(rc))
         return rc;
 

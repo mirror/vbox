@@ -2044,16 +2044,14 @@ int DRVHostBaseInitFinish(PDRVHOSTBASE pThis)
     /*
      * Check that there are no drivers below us.
      */
-    AssertMsgReturn(PDMDrvHlpNoAttach(pDrvIns) == VERR_PDM_NO_ATTACHED_DRIVER, 
+    AssertMsgReturn(PDMDrvHlpNoAttach(pDrvIns) == VERR_PDM_NO_ATTACHED_DRIVER,
                     ("Configuration error: Not possible to attach anything to this driver!\n"),
                     VERR_PDM_DRVINS_NO_ATTACH);
 
     /*
      * Register saved state.
      */
-    int rc = pDrvIns->pDrvHlp->pfnSSMRegister(pDrvIns, pDrvIns->pDrvReg->szDriverName, pDrvIns->iInstance, 1, 0,
-                                              NULL, NULL, NULL,
-                                              NULL, NULL, drvHostBaseLoadDone);
+    int rc = PDMDrvHlpSSMRegisterLoadDone(pDrvIns, drvHostBaseLoadDone);
     if (RT_FAILURE(rc))
         return rc;
 

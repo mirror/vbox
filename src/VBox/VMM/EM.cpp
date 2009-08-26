@@ -83,7 +83,7 @@
 *   Internal Functions                                                         *
 *******************************************************************************/
 static DECLCALLBACK(int) emR3Save(PVM pVM, PSSMHANDLE pSSM);
-static DECLCALLBACK(int) emR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version);
+static DECLCALLBACK(int) emR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPhase);
 static int emR3Debug(PVM pVM, PVMCPU pVCpu, int rc);
 static int emR3RemStep(PVM pVM, PVMCPU pVCpu);
 static int emR3RemExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone);
@@ -130,6 +130,7 @@ VMMR3DECL(int) EMR3Init(PVM pVM)
      * Saved state.
      */
     rc = SSMR3RegisterInternal(pVM, "em", 0, EM_SAVED_STATE_VERSION, 16,
+                               NULL, NULL, NULL,
                                NULL, emR3Save, NULL,
                                NULL, emR3Load, NULL);
     if (RT_FAILURE(rc))
@@ -515,19 +516,18 @@ static DECLCALLBACK(int) emR3Save(PVM pVM, PSSMHANDLE pSSM)
  * @returns VBox status code.
  * @param   pVM             VM Handle.
  * @param   pSSM            SSM operation handle.
- * @param   u32Version      Data layout version.
+ * @param   uVersion        Data layout version.
+ * @param   uPhase          The data phase.
  */
-static DECLCALLBACK(int) emR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version)
+static DECLCALLBACK(int) emR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPhase)
 {
-    int rc = VINF_SUCCESS;
-
     /*
      * Validate version.
      */
-    if (    u32Version != EM_SAVED_STATE_VERSION
-        &&  u32Version != EM_SAVED_STATE_VERSION_PRE_SMP)
+    if (    uVersion != EM_SAVED_STATE_VERSION
+        &&  uVersion != EM_SAVED_STATE_VERSION_PRE_SMP)
     {
-        AssertMsgFailed(("emR3Load: Invalid version u32Version=%d (current %d)!\n", u32Version, EM_SAVED_STATE_VERSION));
+        AssertMsgFailed(("emR3Load: Invalid version uVersion=%d (current %d)!\n", uVersion, EM_SAVED_STATE_VERSION));
         return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
     }
 
@@ -538,11 +538,12 @@ static DECLCALLBACK(int) emR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version)
     {
         PVMCPU pVCpu = &pVM->aCpus[i];
 
-        rc = SSMR3GetBool(pSSM, &pVCpu->em.s.fForceRAW);
+        int rc = SSMR3GetBool(pSSM, &pVCpu->em.s.fForceRAW);
         if (RT_FAILURE(rc))
             pVCpu->em.s.fForceRAW = false;
+        AssertRCReturn(rc, rc);
 
-        if (u32Version > EM_SAVED_STATE_VERSION_PRE_SMP)
+        if (uVersion > EM_SAVED_STATE_VERSION_PRE_SMP)
         {
             AssertCompile(sizeof(pVCpu->em.s.enmPrevState) == sizeof(uint32_t));
             rc = SSMR3GetU32(pSSM, (uint32_t *)&pVCpu->em.s.enmPrevState);
@@ -553,7 +554,7 @@ static DECLCALLBACK(int) emR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version)
         }
         Assert(!pVCpu->em.s.pCliStatTree);
     }
-    return rc;
+    return VINF_SUCCESS;
 }
 
 

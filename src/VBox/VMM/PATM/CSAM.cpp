@@ -69,7 +69,7 @@
 *   Internal Functions                                                         *
 *******************************************************************************/
 static DECLCALLBACK(int) csamr3Save(PVM pVM, PSSMHANDLE pSSM);
-static DECLCALLBACK(int) csamr3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version);
+static DECLCALLBACK(int) csamr3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPhase);
 static DECLCALLBACK(int) CSAMCodePageWriteHandler(PVM pVM, RTGCPTR GCPtr, void *pvPtr, void *pvBuf, size_t cbBuf, PGMACCESSTYPE enmAccessType, void *pvUser);
 static DECLCALLBACK(int) CSAMCodePageInvalidate(PVM pVM, RTGCPTR GCPtr);
 
@@ -129,6 +129,7 @@ VMMR3DECL(int) CSAMR3Init(PVM pVM)
      * Register save and load state notificators.
      */
     rc = SSMR3RegisterInternal(pVM, "CSAM", 0, CSAM_SSM_VERSION, sizeof(pVM->csam.s) + PAGE_SIZE*16,
+                               NULL, NULL, NULL,
                                NULL, csamr3Save, NULL,
                                NULL, csamr3Load, NULL);
     AssertRCReturn(rc, rc);
@@ -439,16 +440,18 @@ static DECLCALLBACK(int) csamr3Save(PVM pVM, PSSMHANDLE pSSM)
  * @returns VBox status code.
  * @param   pVM             VM Handle.
  * @param   pSSM            SSM operation handle.
- * @param   u32Version      Data layout version.
+ * @param   uVersion        Data layout version.
+ * @param   uPhase          The data phase.
  */
-static DECLCALLBACK(int) csamr3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version)
+static DECLCALLBACK(int) csamr3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPhase)
 {
     int  rc;
     CSAM csamInfo;
 
-    if (u32Version != CSAM_SSM_VERSION)
+    Assert(uPhase == SSM_PHASE_FINAL); NOREF(uPhase);
+    if (uVersion != CSAM_SSM_VERSION)
     {
-        AssertMsgFailed(("csamR3Load: Invalid version u32Version=%d!\n", u32Version));
+        AssertMsgFailed(("csamR3Load: Invalid version uVersion=%d!\n", uVersion));
         return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
     }
 

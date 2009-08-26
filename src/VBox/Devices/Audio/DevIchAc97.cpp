@@ -1457,21 +1457,19 @@ static DECLCALLBACK(int) ichac97SaveExec (PPDMDEVINS pDevIns, PSSMHANDLE pSSMHan
  * @returns VBox status code.
  * @param   pDevIns     The device instance.
  * @param   pSSMHandle  The handle to the saved state.
- * @param   u32Version  The data unit version number.
+ * @param   uVersion    The data unit version number.
+ * @param   uPhase      The data phase.
  */
 static DECLCALLBACK(int) ichac97LoadExec (PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle,
-                                          uint32_t u32Version)
+                                          uint32_t uVersion, uint32_t uPhase)
 {
     PCIAC97LinkState *pThis = PDMINS_2_DATA(pDevIns, PCIAC97LinkState *);
-    size_t  i;
-    uint8_t active[LAST_INDEX];
     AC97LinkState *s = &pThis->ac97;
+    uint8_t active[LAST_INDEX];
+    size_t  i;
 
-    if (u32Version != AC97_SSM_VERSION)
-    {
-        AssertFailed();
-        return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
-    }
+    AssertMsgReturn (uVersion == AC97_SSM_VERSION, ("%d\n", uVersion), VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION);
+    Assert (uPhase == SSM_PHASE_FINAL); NOREF (uPhase);
 
     SSMR3GetU32 (pSSMHandle, &s->glob_cnt);
     SSMR3GetU32 (pSSMHandle, &s->glob_sta);
@@ -1634,10 +1632,7 @@ static DECLCALLBACK(int) ichac97Construct (PPDMDEVINS pDevIns, int iInstance,
     if (RT_FAILURE (rc))
         return rc;
 
-    rc = PDMDevHlpSSMRegister (pDevIns, pDevIns->pDevReg->szDeviceName,
-                               iInstance, AC97_SSM_VERSION, sizeof(*pThis),
-                               NULL, ichac97SaveExec, NULL,
-                               NULL, ichac97LoadExec, NULL);
+    rc = PDMDevHlpSSMRegister (pDevIns, AC97_SSM_VERSION, sizeof(*pThis), ichac97SaveExec, ichac97LoadExec);
     if (RT_FAILURE (rc))
         return rc;
 

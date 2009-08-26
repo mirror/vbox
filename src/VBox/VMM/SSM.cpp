@@ -162,9 +162,6 @@
 /*******************************************************************************
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
-/** The special value for the final phase.  */
-#define SSM_PHASE_FINAL                         UINT32_MAX
-
 /** The max length of a unit name. */
 #define SSM_MAX_NAME_SIZE                       48
 
@@ -753,14 +750,15 @@ typedef SSMFILEFTR const *PCSSMFILEFTR;
 *   Internal Functions                                                         *
 *******************************************************************************/
 static int                  ssmR3LazyInit(PVM pVM);
+static DECLCALLBACK(int)    ssmR3SelfLiveExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uPhase);
 static DECLCALLBACK(int)    ssmR3SelfSaveExec(PVM pVM, PSSMHANDLE pSSM);
-static DECLCALLBACK(int)    ssmR3SelfLoadExec(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version);
-static int                  ssmR3Register(PVM pVM, const char *pszName, uint32_t u32Instance, uint32_t u32Version, size_t cbGuess, const char *pszBefore, PSSMUNIT *ppUnit);
+static DECLCALLBACK(int)    ssmR3SelfLoadExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPhase);
+static int                  ssmR3Register(PVM pVM, const char *pszName, uint32_t uInstance, uint32_t uVersion, size_t cbGuess, const char *pszBefore, PSSMUNIT *ppUnit);
 static int                  ssmR3StrmWriteBuffers(PSSMSTRM pStrm);
 static int                  ssmR3StrmReadMore(PSSMSTRM pStrm);
 static int                  ssmR3CalcChecksum(RTFILE File, uint64_t cbFile, uint32_t *pu32CRC);
 static void                 ssmR3Progress(PSSMHANDLE pSSM, uint64_t cbAdvance);
-static PSSMUNIT             ssmR3Find(PVM pVM, const char *pszName, uint32_t u32Instance);
+static PSSMUNIT             ssmR3Find(PVM pVM, const char *pszName, uint32_t uInstance);
 static int                  ssmR3DataWriteFinish(PSSMHANDLE pSSM);
 static void                 ssmR3DataWriteBegin(PSSMHANDLE pSSM);
 static int                  ssmR3DataWriteRaw(PSSMHANDLE pSSM, const void *pvBuf, size_t cbBuf);
@@ -786,11 +784,28 @@ static int ssmR3LazyInit(PVM pVM)
      * revision and similar stuff in.
      */
     pVM->ssm.s.fInitialized = true;
-    int rc = SSMR3RegisterInternal(pVM, "SSM", 0 /*u32Instance*/, 1/*u32Version*/, 64 /*cbGuess*/,
+    int rc = SSMR3RegisterInternal(pVM, "SSM", 0 /*uInstance*/, 1 /*uVersion*/, 64 /*cbGuess*/,
+                                   NULL /*pfnLivePrep*/, ssmR3SelfLiveExec, NULL /*pfnLiveVote*/,
                                    NULL /*pfnSavePrep*/, ssmR3SelfSaveExec, NULL /*pfnSaveDone*/,
                                    NULL /*pfnSavePrep*/, ssmR3SelfLoadExec, NULL /*pfnSaveDone*/);
     pVM->ssm.s.fInitialized = RT_SUCCESS(rc);
     return rc;
+}
+
+
+/**
+ * Do ssmR3SelfSaveExec in phase 0.
+ *
+ * @returns VBox status code.
+ * @param   pVM             Pointer to the shared VM structure.
+ * @param   pSSM            The SSM handle.
+ * @param   uPhase          The data phase number.
+ */
+static DECLCALLBACK(int) ssmR3SelfLiveExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uPhase)
+{
+    if (uPhase == 0)
+        return ssmR3SelfSaveExec(pVM, pSSM);
+    return VINF_SUCCESS;
 }
 
 
@@ -825,11 +840,12 @@ static DECLCALLBACK(int) ssmR3SelfSaveExec(PVM pVM, PSSMHANDLE pSSM)
  * @returns VBox status code.
  * @param   pVM             Pointer to the shared VM structure.
  * @param   pSSM            The SSM handle.
- * @param   u32Version      The version (1).
+ * @param   uVersion        The version (1).
+ * @param   uPhase          The phase.
  */
-static DECLCALLBACK(int) ssmR3SelfLoadExec(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version)
+static DECLCALLBACK(int) ssmR3SelfLoadExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPhase)
 {
-    AssertLogRelMsgReturn(u32Version == 1, ("%d", u32Version), VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION);
+    AssertLogRelMsgReturn(uVersion == 1, ("%d", uVersion), VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION);
 
     /*
      * String table containg pairs of variable and value string.
@@ -859,16 +875,16 @@ static DECLCALLBACK(int) ssmR3SelfLoadExec(PVM pVM, PSSMHANDLE pSSM, uint32_t u3
  * @returns VBox status code.
  * @param   pVM             The VM handle.
  * @param   pszName         Data unit name.
- * @param   u32Instance     The instance id.
- * @param   u32Version      The data unit version.
+ * @param   uInstance       The instance id.
+ * @param   uVersion        The data unit version.
  * @param   cbGuess         The guessed data unit size.
  * @param   pszBefore       Name of data unit to be placed in front of.
  *                          Optional.
  * @param   ppUnit          Where to store the insterted unit node.
  *                          Caller must fill in the missing details.
  */
-static int ssmR3Register(PVM pVM, const char *pszName, uint32_t u32Instance,
-                         uint32_t u32Version, size_t cbGuess, const char *pszBefore, PSSMUNIT *ppUnit)
+static int ssmR3Register(PVM pVM, const char *pszName, uint32_t uInstance,
+                         uint32_t uVersion, size_t cbGuess, const char *pszBefore, PSSMUNIT *ppUnit)
 {
     /*
      * Validate input.
@@ -900,7 +916,7 @@ static int ssmR3Register(PVM pVM, const char *pszName, uint32_t u32Instance,
     PSSMUNIT    pUnit           = pVM->ssm.s.pHead;
     while (pUnit)
     {
-        if (    pUnit->u32Instance == u32Instance
+        if (    pUnit->u32Instance == uInstance
             &&  pUnit->cchName == cchName
             &&  !memcmp(pUnit->szName, pszName, cchName))
         {
@@ -930,8 +946,8 @@ static int ssmR3Register(PVM pVM, const char *pszName, uint32_t u32Instance,
     /*
      * Fill in (some) data. (Stuff is zero'ed.)
      */
-    pUnit->u32Version   = u32Version;
-    pUnit->u32Instance  = u32Instance;
+    pUnit->u32Version   = uVersion;
+    pUnit->u32Instance  = uInstance;
     pUnit->cbGuess      = cbGuess;
     pUnit->cchName      = cchName;
     memcpy(pUnit->szName, pszName, cchName);
@@ -966,29 +982,39 @@ static int ssmR3Register(PVM pVM, const char *pszName, uint32_t u32Instance,
  * @param   pVM             The VM handle.
  * @param   pDevIns         Device instance.
  * @param   pszName         Data unit name.
- * @param   u32Instance     The instance identifier of the data unit.
+ * @param   uInstance       The instance identifier of the data unit.
  *                          This must together with the name be unique.
- * @param   u32Version      Data layout version number.
+ * @param   uVersion        Data layout version number.
  * @param   cbGuess         The approximate amount of data in the unit.
  *                          Only for progress indicators.
  * @param   pszBefore       Name of data unit which we should be put in front
  *                          of. Optional (NULL).
+ *
+ * @param   pfnLivePrep     Prepare live save callback, optional.
+ * @param   pfnLiveExec     Execute live save callback, optional.
+ * @param   pfnLiveVote     Vote live save callback, optional.
+ *
  * @param   pfnSavePrep     Prepare save callback, optional.
  * @param   pfnSaveExec     Execute save callback, optional.
  * @param   pfnSaveDone     Done save callback, optional.
+ *
  * @param   pfnLoadPrep     Prepare load callback, optional.
  * @param   pfnLoadExec     Execute load callback, optional.
  * @param   pfnLoadDone     Done load callback, optional.
  */
-VMMR3DECL(int) SSMR3RegisterDevice(PVM pVM, PPDMDEVINS pDevIns, const char *pszName, uint32_t u32Instance, uint32_t u32Version, size_t cbGuess, const char *pszBefore,
+VMMR3DECL(int) SSMR3RegisterDevice(PVM pVM, PPDMDEVINS pDevIns, const char *pszName, uint32_t uInstance, uint32_t uVersion, size_t cbGuess, const char *pszBefore,
+    PFNSSMDEVLIVEPREP pfnLivePrep, PFNSSMDEVLIVEEXEC pfnLiveExec, PFNSSMDEVLIVEVOTE pfnLiveVote,
     PFNSSMDEVSAVEPREP pfnSavePrep, PFNSSMDEVSAVEEXEC pfnSaveExec, PFNSSMDEVSAVEDONE pfnSaveDone,
     PFNSSMDEVLOADPREP pfnLoadPrep, PFNSSMDEVLOADEXEC pfnLoadExec, PFNSSMDEVLOADDONE pfnLoadDone)
 {
     PSSMUNIT pUnit;
-    int rc = ssmR3Register(pVM, pszName, u32Instance, u32Version, cbGuess, pszBefore, &pUnit);
+    int rc = ssmR3Register(pVM, pszName, uInstance, uVersion, cbGuess, pszBefore, &pUnit);
     if (RT_SUCCESS(rc))
     {
         pUnit->enmType = SSMUNITTYPE_DEV;
+        pUnit->u.Dev.pfnLivePrep = pfnLivePrep;
+        pUnit->u.Dev.pfnLiveExec = pfnLiveExec;
+        pUnit->u.Dev.pfnLiveVote = pfnLiveVote;
         pUnit->u.Dev.pfnSavePrep = pfnSavePrep;
         pUnit->u.Dev.pfnSaveExec = pfnSaveExec;
         pUnit->u.Dev.pfnSaveDone = pfnSaveDone;
@@ -1009,24 +1035,31 @@ VMMR3DECL(int) SSMR3RegisterDevice(PVM pVM, PPDMDEVINS pDevIns, const char *pszN
  * @param   pVM             The VM handle.
  * @param   pDrvIns         Driver instance.
  * @param   pszName         Data unit name.
- * @param   u32Instance     The instance identifier of the data unit.
+ * @param   uInstance       The instance identifier of the data unit.
  *                          This must together with the name be unique.
- * @param   u32Version      Data layout version number.
+ * @param   uVersion        Data layout version number.
  * @param   cbGuess         The approximate amount of data in the unit.
  *                          Only for progress indicators.
+ *
+ * @param   pfnLivePrep     Prepare live save callback, optional.
+ * @param   pfnLiveExec     Execute live save callback, optional.
+ * @param   pfnLiveVote     Vote live save callback, optional.
+ *
  * @param   pfnSavePrep     Prepare save callback, optional.
  * @param   pfnSaveExec     Execute save callback, optional.
  * @param   pfnSaveDone     Done save callback, optional.
+ *
  * @param   pfnLoadPrep     Prepare load callback, optional.
  * @param   pfnLoadExec     Execute load callback, optional.
  * @param   pfnLoadDone     Done load callback, optional.
  */
-VMMR3DECL(int) SSMR3RegisterDriver(PVM pVM, PPDMDRVINS pDrvIns, const char *pszName, uint32_t u32Instance, uint32_t u32Version, size_t cbGuess,
+VMMR3DECL(int) SSMR3RegisterDriver(PVM pVM, PPDMDRVINS pDrvIns, const char *pszName, uint32_t uInstance, uint32_t uVersion, size_t cbGuess,
+    PFNSSMDRVLIVEPREP pfnLivePrep, PFNSSMDRVLIVEEXEC pfnLiveExec, PFNSSMDRVLIVEVOTE pfnLiveVote,
     PFNSSMDRVSAVEPREP pfnSavePrep, PFNSSMDRVSAVEEXEC pfnSaveExec, PFNSSMDRVSAVEDONE pfnSaveDone,
     PFNSSMDRVLOADPREP pfnLoadPrep, PFNSSMDRVLOADEXEC pfnLoadExec, PFNSSMDRVLOADDONE pfnLoadDone)
 {
     PSSMUNIT pUnit;
-    int rc = ssmR3Register(pVM, pszName, u32Instance, u32Version, cbGuess, NULL, &pUnit);
+    int rc = ssmR3Register(pVM, pszName, uInstance, uVersion, cbGuess, NULL, &pUnit);
     if (RT_SUCCESS(rc))
     {
         pUnit->enmType = SSMUNITTYPE_DRV;
@@ -1049,27 +1082,37 @@ VMMR3DECL(int) SSMR3RegisterDriver(PVM pVM, PPDMDRVINS pDrvIns, const char *pszN
  *
  * @param   pVM             The VM handle.
  * @param   pszName         Data unit name.
- * @param   u32Instance     The instance identifier of the data unit.
+ * @param   uInstance       The instance identifier of the data unit.
  *                          This must together with the name be unique.
- * @param   u32Version      Data layout version number.
+ * @param   uVersion        Data layout version number.
  * @param   cbGuess         The approximate amount of data in the unit.
  *                          Only for progress indicators.
+ *
+ * @param   pfnLivePrep     Prepare live save callback, optional.
+ * @param   pfnLiveExec     Execute live save callback, optional.
+ * @param   pfnLiveVote     Vote live save callback, optional.
+ *
  * @param   pfnSavePrep     Prepare save callback, optional.
  * @param   pfnSaveExec     Execute save callback, optional.
  * @param   pfnSaveDone     Done save callback, optional.
+ *
  * @param   pfnLoadPrep     Prepare load callback, optional.
  * @param   pfnLoadExec     Execute load callback, optional.
  * @param   pfnLoadDone     Done load callback, optional.
  */
-VMMR3DECL(int) SSMR3RegisterInternal(PVM pVM, const char *pszName, uint32_t u32Instance, uint32_t u32Version, size_t cbGuess,
+VMMR3DECL(int) SSMR3RegisterInternal(PVM pVM, const char *pszName, uint32_t uInstance, uint32_t uVersion, size_t cbGuess,
+    PFNSSMINTLIVEPREP pfnLivePrep, PFNSSMINTLIVEEXEC pfnLiveExec, PFNSSMINTLIVEVOTE pfnLiveVote,
     PFNSSMINTSAVEPREP pfnSavePrep, PFNSSMINTSAVEEXEC pfnSaveExec, PFNSSMINTSAVEDONE pfnSaveDone,
     PFNSSMINTLOADPREP pfnLoadPrep, PFNSSMINTLOADEXEC pfnLoadExec, PFNSSMINTLOADDONE pfnLoadDone)
 {
     PSSMUNIT pUnit;
-    int rc = ssmR3Register(pVM, pszName, u32Instance, u32Version, cbGuess, NULL, &pUnit);
+    int rc = ssmR3Register(pVM, pszName, uInstance, uVersion, cbGuess, NULL, &pUnit);
     if (RT_SUCCESS(rc))
     {
         pUnit->enmType = SSMUNITTYPE_INTERNAL;
+        pUnit->u.Internal.pfnLivePrep = pfnLivePrep;
+        pUnit->u.Internal.pfnLiveExec = pfnLiveExec;
+        pUnit->u.Internal.pfnLiveVote = pfnLiveVote;
         pUnit->u.Internal.pfnSavePrep = pfnSavePrep;
         pUnit->u.Internal.pfnSaveExec = pfnSaveExec;
         pUnit->u.Internal.pfnSaveDone = pfnSaveDone;
@@ -1088,28 +1131,38 @@ VMMR3DECL(int) SSMR3RegisterInternal(PVM pVM, const char *pszName, uint32_t u32I
  *
  * @param   pVM             The VM handle.
  * @param   pszName         Data unit name.
- * @param   u32Instance     The instance identifier of the data unit.
+ * @param   uInstance       The instance identifier of the data unit.
  *                          This must together with the name be unique.
- * @param   u32Version      Data layout version number.
+ * @param   uVersion        Data layout version number.
  * @param   cbGuess         The approximate amount of data in the unit.
  *                          Only for progress indicators.
+ *
+ * @param   pfnLivePrep     Prepare live save callback, optional.
+ * @param   pfnLiveExec     Execute live save callback, optional.
+ * @param   pfnLiveVote     Vote live save callback, optional.
+ *
  * @param   pfnSavePrep     Prepare save callback, optional.
  * @param   pfnSaveExec     Execute save callback, optional.
  * @param   pfnSaveDone     Done save callback, optional.
+ *
  * @param   pfnLoadPrep     Prepare load callback, optional.
  * @param   pfnLoadExec     Execute load callback, optional.
  * @param   pfnLoadDone     Done load callback, optional.
  * @param   pvUser          User argument.
  */
-VMMR3DECL(int) SSMR3RegisterExternal(PVM pVM, const char *pszName, uint32_t u32Instance, uint32_t u32Version, size_t cbGuess,
+VMMR3DECL(int) SSMR3RegisterExternal(PVM pVM, const char *pszName, uint32_t uInstance, uint32_t uVersion, size_t cbGuess,
+    PFNSSMEXTLIVEPREP pfnLivePrep, PFNSSMEXTLIVEEXEC pfnLiveExec, PFNSSMEXTLIVEVOTE pfnLiveVote,
     PFNSSMEXTSAVEPREP pfnSavePrep, PFNSSMEXTSAVEEXEC pfnSaveExec, PFNSSMEXTSAVEDONE pfnSaveDone,
     PFNSSMEXTLOADPREP pfnLoadPrep, PFNSSMEXTLOADEXEC pfnLoadExec, PFNSSMEXTLOADDONE pfnLoadDone, void *pvUser)
 {
     PSSMUNIT pUnit;
-    int rc = ssmR3Register(pVM, pszName, u32Instance, u32Version, cbGuess, NULL, &pUnit);
+    int rc = ssmR3Register(pVM, pszName, uInstance, uVersion, cbGuess, NULL, &pUnit);
     if (RT_SUCCESS(rc))
     {
         pUnit->enmType = SSMUNITTYPE_EXTERNAL;
+        pUnit->u.External.pfnLivePrep = pfnLivePrep;
+        pUnit->u.External.pfnLiveExec = pfnLiveExec;
+        pUnit->u.External.pfnLiveVote = pfnLiveVote;
         pUnit->u.External.pfnSavePrep = pfnSavePrep;
         pUnit->u.External.pfnSaveExec = pfnSaveExec;
         pUnit->u.External.pfnSaveDone = pfnSaveDone;
@@ -1131,11 +1184,11 @@ VMMR3DECL(int) SSMR3RegisterExternal(PVM pVM, const char *pszName, uint32_t u32I
  * @param   pDevIns         Device instance.
  * @param   pszName         Data unit name.
  *                          Use NULL to deregister all data units for that device instance.
- * @param   u32Instance     The instance identifier of the data unit.
+ * @param   uInstance       The instance identifier of the data unit.
  *                          This must together with the name be unique.
  * @remark  Only for dynmaic data units and dynamic unloaded modules.
  */
-VMMR3DECL(int) SSMR3DeregisterDevice(PVM pVM, PPDMDEVINS pDevIns, const char *pszName, uint32_t u32Instance)
+VMMR3DECL(int) SSMR3DeregisterDevice(PVM pVM, PPDMDEVINS pDevIns, const char *pszName, uint32_t uInstance)
 {
     /*
      * Validate input.
@@ -1159,7 +1212,7 @@ VMMR3DECL(int) SSMR3DeregisterDevice(PVM pVM, PPDMDEVINS pDevIns, const char *ps
             &&  (   !pszName
                  || (   pUnit->cchName == cchName
                      && !memcmp(pUnit->szName, pszName, cchName)))
-            &&  pUnit->u32Instance == u32Instance
+            &&  pUnit->u32Instance == uInstance
             )
         {
             if (pUnit->u.Dev.pDevIns == pDevIns)
@@ -1207,11 +1260,11 @@ VMMR3DECL(int) SSMR3DeregisterDevice(PVM pVM, PPDMDEVINS pDevIns, const char *ps
  * @param   pDrvIns         Driver instance.
  * @param   pszName         Data unit name.
  *                          Use NULL to deregister all data units for that driver instance.
- * @param   u32Instance     The instance identifier of the data unit.
+ * @param   uInstance       The instance identifier of the data unit.
  *                          This must together with the name be unique. Ignored if pszName is NULL.
  * @remark  Only for dynmaic data units and dynamic unloaded modules.
  */
-VMMR3DECL(int) SSMR3DeregisterDriver(PVM pVM, PPDMDRVINS pDrvIns, const char *pszName, uint32_t u32Instance)
+VMMR3DECL(int) SSMR3DeregisterDriver(PVM pVM, PPDMDRVINS pDrvIns, const char *pszName, uint32_t uInstance)
 {
     /*
      * Validate input.
@@ -1235,7 +1288,7 @@ VMMR3DECL(int) SSMR3DeregisterDriver(PVM pVM, PPDMDRVINS pDrvIns, const char *ps
             &&  (   !pszName
                  || (   pUnit->cchName == cchName
                      && !memcmp(pUnit->szName, pszName, cchName)
-                     && pUnit->u32Instance == u32Instance))
+                     && pUnit->u32Instance == uInstance))
             )
         {
             if (pUnit->u.Drv.pDrvIns == pDrvIns)
@@ -3397,14 +3450,14 @@ static int ssmR3OpenFile(PVM pVM, const char *pszFilename, bool fChecksumIt, boo
  *
  * @param   pVM             VM handle.
  * @param   pszName         Data unit name.
- * @param   u32Instance     The data unit instance id.
+ * @param   uInstance       The data unit instance id.
  */
-static PSSMUNIT ssmR3Find(PVM pVM, const char *pszName, uint32_t u32Instance)
+static PSSMUNIT ssmR3Find(PVM pVM, const char *pszName, uint32_t uInstance)
 {
     size_t   cchName = strlen(pszName);
     PSSMUNIT pUnit = pVM->ssm.s.pHead;
     while (     pUnit
-           &&   (   pUnit->u32Instance != u32Instance
+           &&   (   pUnit->u32Instance != uInstance
                  || pUnit->cchName != cchName
                  || memcmp(pUnit->szName, pszName, cchName)))
         pUnit = pUnit->pNext;
@@ -3497,16 +3550,16 @@ static int ssmR3LoadExecV1(PVM pVM, PSSMHANDLE pSSM)
                         switch (pUnit->enmType)
                         {
                             case SSMUNITTYPE_DEV:
-                                rc = pUnit->u.Dev.pfnLoadExec(pUnit->u.Dev.pDevIns, pSSM, UnitHdr.u32Version);
+                                rc = pUnit->u.Dev.pfnLoadExec(pUnit->u.Dev.pDevIns, pSSM, UnitHdr.u32Version, SSM_PHASE_FINAL);
                                 break;
                             case SSMUNITTYPE_DRV:
-                                rc = pUnit->u.Drv.pfnLoadExec(pUnit->u.Drv.pDrvIns, pSSM, UnitHdr.u32Version);
+                                rc = pUnit->u.Drv.pfnLoadExec(pUnit->u.Drv.pDrvIns, pSSM, UnitHdr.u32Version, SSM_PHASE_FINAL);
                                 break;
                             case SSMUNITTYPE_INTERNAL:
-                                rc = pUnit->u.Internal.pfnLoadExec(pVM, pSSM, UnitHdr.u32Version);
+                                rc = pUnit->u.Internal.pfnLoadExec(pVM, pSSM, UnitHdr.u32Version, SSM_PHASE_FINAL);
                                 break;
                             case SSMUNITTYPE_EXTERNAL:
-                                rc = pUnit->u.External.pfnLoadExec(pSSM, pUnit->u.External.pvUser, UnitHdr.u32Version);
+                                rc = pUnit->u.External.pfnLoadExec(pSSM, pUnit->u.External.pvUser, UnitHdr.u32Version, SSM_PHASE_FINAL);
                                 break;
                         }
 
@@ -3676,16 +3729,16 @@ static int ssmR3LoadExecV2(PVM pVM, PSSMHANDLE pSSM)
             switch (pUnit->enmType)
             {
                 case SSMUNITTYPE_DEV:
-                    rc = pUnit->u.Dev.pfnLoadExec(pUnit->u.Dev.pDevIns, pSSM, UnitHdr.u32Version);
+                    rc = pUnit->u.Dev.pfnLoadExec(pUnit->u.Dev.pDevIns, pSSM, UnitHdr.u32Version, UnitHdr.u32Phase);
                     break;
                 case SSMUNITTYPE_DRV:
-                    rc = pUnit->u.Drv.pfnLoadExec(pUnit->u.Drv.pDrvIns, pSSM, UnitHdr.u32Version);
+                    rc = pUnit->u.Drv.pfnLoadExec(pUnit->u.Drv.pDrvIns, pSSM, UnitHdr.u32Version, UnitHdr.u32Phase);
                     break;
                 case SSMUNITTYPE_INTERNAL:
-                    rc = pUnit->u.Internal.pfnLoadExec(pVM, pSSM, UnitHdr.u32Version);
+                    rc = pUnit->u.Internal.pfnLoadExec(pVM, pSSM, UnitHdr.u32Version, UnitHdr.u32Phase);
                     break;
                 case SSMUNITTYPE_EXTERNAL:
-                    rc = pUnit->u.External.pfnLoadExec(pSSM, pUnit->u.External.pvUser, UnitHdr.u32Version);
+                    rc = pUnit->u.External.pfnLoadExec(pSSM, pUnit->u.External.pvUser, UnitHdr.u32Version, UnitHdr.u32Phase);
                     break;
             }
             ssmR3DataReadFinishV2(pSSM);

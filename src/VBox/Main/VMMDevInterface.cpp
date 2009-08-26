@@ -600,14 +600,16 @@ static DECLCALLBACK(int) iface_hgcmSave(PPDMDRVINS pDrvIns, PSSMHANDLE pSSM)
  * @returns VBox status code.
  * @param   pDrvIns         Driver instance of the driver which registered the data unit.
  * @param   pSSM            SSM operation handle.
- * @param   u32Version      Data layout version.
+ * @param   uVersion        Data layout version.
+ * @param   uPhase          The data phase.
  */
-static DECLCALLBACK(int) iface_hgcmLoad(PPDMDRVINS pDrvIns, PSSMHANDLE pSSM, uint32_t u32Version)
+static DECLCALLBACK(int) iface_hgcmLoad(PPDMDRVINS pDrvIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPhase)
 {
     LogFlowFunc(("Enter\n"));
 
-    if (u32Version != HGCM_SSM_VERSION)
+    if (uVersion != HGCM_SSM_VERSION)
         return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
+    Assert(uPhase == SSM_PHASE_FINAL); NOREF(uPhase);
 
     return HGCMHostLoadState (pSSM);
 }
@@ -715,7 +717,7 @@ DECLCALLBACK(int) VMMDev::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle,
      */
     if (!CFGMR3AreValuesValid(pCfgHandle, "Object\0"))
         return VERR_PDM_DRVINS_UNKNOWN_CFG_VALUES;
-    AssertMsgReturn(PDMDrvHlpNoAttach(pDrvIns) == VERR_PDM_NO_ATTACHED_DRIVER, 
+    AssertMsgReturn(PDMDrvHlpNoAttach(pDrvIns) == VERR_PDM_NO_ATTACHED_DRIVER,
                     ("Configuration error: Not possible to attach anything to this driver!\n"),
                     VERR_PDM_DRVINS_NO_ATTACH);
 
@@ -811,7 +813,13 @@ DECLCALLBACK(int) VMMDev::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle,
     else
         LogRel(("Failed to load Shared Folders service %Rrc\n", rc));
 
-    pDrvIns->pDrvHlp->pfnSSMRegister(pDrvIns, "HGCM", 0, HGCM_SSM_VERSION, 4096/* bad guess */, NULL, iface_hgcmSave, NULL, NULL, iface_hgcmLoad, NULL);
+    rc = PDMDrvHlpSSMRegisterEx(pDrvIns, HGCM_SSM_VERSION, 4096 /* bad guess */,
+                                NULL, NULL, NULL,
+                                NULL, iface_hgcmSave, NULL,
+                                NULL, iface_hgcmLoad, NULL);
+    if (RT_FAILURE(rc))
+        return rc;
+
 #endif /* VBOX_WITH_HGCM */
 
     return VINF_SUCCESS;
@@ -826,7 +834,7 @@ const PDMDRVREG VMMDev::DrvReg =
     /* u32Version */
     PDM_DRVREG_VERSION,
     /* szDriverName */
-    "MainVMMDev",
+    "HGCM",
     /* pszDescription */
     "Main VMMDev driver (Main as in the API).",
     /* fFlags */
@@ -854,9 +862,9 @@ const PDMDRVREG VMMDev::DrvReg =
     /* pfnAttach */
     NULL,
     /* pfnDetach */
-    NULL, 
+    NULL,
     /* pfnPowerOff */
-    NULL, 
+    NULL,
     /* pfnSoftReset */
     NULL,
     /* u32EndVersion */

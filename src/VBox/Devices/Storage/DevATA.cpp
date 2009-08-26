@@ -6104,22 +6104,24 @@ static DECLCALLBACK(int) ataSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle)
  * @returns VBox status code.
  * @param   pDevIns     The device instance.
  * @param   pSSMHandle  The handle to the saved state.
- * @param   u32Version  The data unit version number.
+ * @param   uVersion  The data unit version number.
+ * @param   uPhase      The data phase.
  */
-static DECLCALLBACK(int) ataLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle, uint32_t u32Version)
+static DECLCALLBACK(int) ataLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle, uint32_t uVersion, uint32_t uPhase)
 {
     PCIATAState    *pThis = PDMINS_2_DATA(pDevIns, PCIATAState *);
     int             rc;
     uint32_t        u32;
 
-    if (   u32Version != ATA_SAVED_STATE_VERSION
-        && u32Version != ATA_SAVED_STATE_VERSION_WITHOUT_FULL_SENSE
-        && u32Version != ATA_SAVED_STATE_VERSION_WITHOUT_EVENT_STATUS
-        && u32Version != ATA_SAVED_STATE_VERSION_WITH_BOOL_TYPE)
+    if (   uVersion != ATA_SAVED_STATE_VERSION
+        && uVersion != ATA_SAVED_STATE_VERSION_WITHOUT_FULL_SENSE
+        && uVersion != ATA_SAVED_STATE_VERSION_WITHOUT_EVENT_STATUS
+        && uVersion != ATA_SAVED_STATE_VERSION_WITH_BOOL_TYPE)
     {
-        AssertMsgFailed(("u32Version=%d\n", u32Version));
+        AssertMsgFailed(("uVersion=%d\n", uVersion));
         return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
     }
+    Assert(uPhase == SSM_PHASE_FINAL); NOREF(uPhase);
 
     /*
      * Restore valid parts of the PCIATAState structure
@@ -6189,7 +6191,7 @@ static DECLCALLBACK(int) ataLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle, 
             SSMR3GetU32(pSSMHandle, &pThis->aCts[i].aIfs[j].iATAPILBA);
             SSMR3GetU32(pSSMHandle, &pThis->aCts[i].aIfs[j].cbATAPISector);
             SSMR3GetMem(pSSMHandle, &pThis->aCts[i].aIfs[j].aATAPICmd, sizeof(pThis->aCts[i].aIfs[j].aATAPICmd));
-            if (u32Version > ATA_SAVED_STATE_VERSION_WITHOUT_FULL_SENSE)
+            if (uVersion > ATA_SAVED_STATE_VERSION_WITHOUT_FULL_SENSE)
             {
                 SSMR3GetMem(pSSMHandle, pThis->aCts[i].aIfs[j].abATAPISense, sizeof(pThis->aCts[i].aIfs[j].abATAPISense));
             }
@@ -6206,7 +6208,7 @@ static DECLCALLBACK(int) ataLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle, 
             }
             /** @todo triple-check this hack after passthrough is working */
             SSMR3GetU8(pSSMHandle, &pThis->aCts[i].aIfs[j].cNotifiedMediaChange);
-            if (u32Version > ATA_SAVED_STATE_VERSION_WITHOUT_EVENT_STATUS)
+            if (uVersion > ATA_SAVED_STATE_VERSION_WITHOUT_EVENT_STATUS)
                 SSMR3GetU32(pSSMHandle, (uint32_t*)&pThis->aCts[i].aIfs[j].MediaEventStatus);
             else
                 pThis->aCts[i].aIfs[j].MediaEventStatus = ATA_EVENT_STATUS_UNCHANGED;
@@ -6691,10 +6693,10 @@ static DECLCALLBACK(int)   ataConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
         }
     }
 
-    rc = PDMDevHlpSSMRegister(pDevIns, pDevIns->pDevReg->szDeviceName, iInstance,
-                              ATA_SAVED_STATE_VERSION, sizeof(*pThis) + cbTotalBuffer,
-                              ataSaveLoadPrep, ataSaveExec, NULL,
-                              ataSaveLoadPrep, ataLoadExec, NULL);
+    rc = PDMDevHlpSSMRegisterEx(pDevIns, ATA_SAVED_STATE_VERSION, sizeof(*pThis) + cbTotalBuffer, NULL,
+                                NULL, NULL, NULL,
+                                ataSaveLoadPrep, ataSaveExec, NULL,
+                                ataSaveLoadPrep, ataLoadExec, NULL);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc, N_("PIIX3 cannot register save state handlers"));
 

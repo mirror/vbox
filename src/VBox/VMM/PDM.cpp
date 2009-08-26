@@ -287,7 +287,7 @@
 *   Internal Functions                                                         *
 *******************************************************************************/
 static DECLCALLBACK(int) pdmR3Save(PVM pVM, PSSMHANDLE pSSM);
-static DECLCALLBACK(int) pdmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version);
+static DECLCALLBACK(int) pdmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPhase);
 static DECLCALLBACK(int) pdmR3LoadPrep(PVM pVM, PSSMHANDLE pSSM);
 
 
@@ -356,6 +356,7 @@ VMMR3DECL(int) PDMR3Init(PVM pVM)
          * Register the saved state data unit.
          */
         rc = SSMR3RegisterInternal(pVM, "pdm", 1, PDM_SAVED_STATE_VERSION, 128,
+                                   NULL, NULL, NULL,
                                    NULL, pdmR3Save, NULL,
                                    pdmR3LoadPrep, pdmR3Load, NULL);
         if (RT_SUCCESS(rc))
@@ -716,28 +717,30 @@ static DECLCALLBACK(int) pdmR3LoadPrep(PVM pVM, PSSMHANDLE pSSM)
  * @returns VBox status code.
  * @param   pVM             VM Handle.
  * @param   pSSM            SSM operation handle.
- * @param   u32Version      Data layout version.
+ * @param   uVersion        Data layout version.
+ * @param   uPhase          The data phase.
  */
-static DECLCALLBACK(int) pdmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version)
+static DECLCALLBACK(int) pdmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPhase)
 {
     int rc;
 
     LogFlow(("pdmR3Load:\n"));
+    Assert(uPhase == SSM_PHASE_FINAL); NOREF(uPhase);
 
     /*
      * Validate version.
      */
-    if (    u32Version != PDM_SAVED_STATE_VERSION
-        &&  u32Version != PDM_SAVED_STATE_VERSION_PRE_NMI_FF)
+    if (    uVersion != PDM_SAVED_STATE_VERSION
+        &&  uVersion != PDM_SAVED_STATE_VERSION_PRE_NMI_FF)
     {
-        AssertMsgFailed(("pdmR3Load: Invalid version u32Version=%d!\n", u32Version));
+        AssertMsgFailed(("pdmR3Load: Invalid version uVersion=%d!\n", uVersion));
         return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
     }
 
     /*
      * Load the interrupt and DMA states.
      */
-    for (unsigned idCpu = 0; idCpu < pVM->cCPUs; idCpu++)
+    for (VMCPUID idCpu = 0; idCpu < pVM->cCPUs; idCpu++)
     {
         PVMCPU pVCpu = &pVM->aCpus[idCpu];
 
@@ -769,7 +772,7 @@ static DECLCALLBACK(int) pdmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version
         if (fInterruptPending)
             VMCPU_FF_SET(pVCpu, VMCPU_FF_INTERRUPT_PIC);
 
-        if (u32Version > PDM_SAVED_STATE_VERSION_PRE_NMI_FF)
+        if (uVersion > PDM_SAVED_STATE_VERSION_PRE_NMI_FF)
         {
             /* NMI interrupt */
             RTUINT fInterruptPending = 0;
@@ -823,7 +826,7 @@ static DECLCALLBACK(int) pdmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version
      */
     uint32_t i = 0;
     PPDMDEVINS pDevIns = pVM->pdm.s.pDevInstances;
-    for (;;pDevIns = pDevIns->Internal.s.pNextR3, i++)
+    for (;; pDevIns = pDevIns->Internal.s.pNextR3, i++)
     {
         /* Get the separator / terminator. */
         uint32_t    u32Sep;

@@ -185,12 +185,14 @@ DECLCALLBACK(int) Item01Save(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
  * @returns VBox status code.
  * @param   pDevIns         Device instance of the device which registered the data unit.
  * @param   pSSM            SSM operation handle.
+ * @param   uVersion        The data layout version.
+ * @param   uPhase          The data phase.
  */
-DECLCALLBACK(int) Item01Load(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t u32Version)
+DECLCALLBACK(int) Item01Load(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPhase)
 {
-    if (u32Version != 0)
+    if (uVersion != 0)
     {
-        RTPrintf("Item01: u32Version=%#x, expected 0\n", u32Version);
+        RTPrintf("Item01: uVersion=%#x, expected 0\n", uVersion);
         return VERR_GENERAL_FAILURE;
     }
 
@@ -339,12 +341,14 @@ DECLCALLBACK(int) Item02Save(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
  * @returns VBox status code.
  * @param   pDevIns         Device instance of the device which registered the data unit.
  * @param   pSSM            SSM operation handle.
+ * @param   uVersion        The data layout version.
+ * @param   uPhase          The data phase.
  */
-DECLCALLBACK(int) Item02Load(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t u32Version)
+DECLCALLBACK(int) Item02Load(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPhase)
 {
-    if (u32Version != 0)
+    if (uVersion != 0)
     {
-        RTPrintf("Item02: u32Version=%#x, expected 0\n", u32Version);
+        RTPrintf("Item02: uVersion=%#x, expected 0\n", uVersion);
         return VERR_GENERAL_FAILURE;
     }
 
@@ -451,12 +455,14 @@ DECLCALLBACK(int) Item03Save(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
  * @returns VBox status code.
  * @param   pDevIns         Device instance of the device which registered the data unit.
  * @param   pSSM            SSM operation handle.
+ * @param   uVersion        The data layout version.
+ * @param   uPhase          The data phase.
  */
-DECLCALLBACK(int) Item03Load(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t u32Version)
+DECLCALLBACK(int) Item03Load(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPhase)
 {
-    if (u32Version != 123)
+    if (uVersion != 123)
     {
-        RTPrintf("Item03: u32Version=%#x, expected 123\n", u32Version);
+        RTPrintf("Item03: uVersion=%#x, expected 123\n", uVersion);
         return VERR_GENERAL_FAILURE;
     }
 
@@ -555,12 +561,14 @@ DECLCALLBACK(int) Item04Save(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
  * @returns VBox status code.
  * @param   pDevIns         Device instance of the device which registered the data unit.
  * @param   pSSM            SSM operation handle.
+ * @param   uVersion        The data layout version.
+ * @param   uPhase          The data phase.
  */
-DECLCALLBACK(int) Item04Load(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t u32Version)
+DECLCALLBACK(int) Item04Load(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPhase)
 {
-    if (u32Version != 42)
+    if (uVersion != 42)
     {
-        RTPrintf("Item04: u32Version=%#x, expected 42\n", u32Version);
+        RTPrintf("Item04: uVersion=%#x, expected 42\n", uVersion);
         return VERR_GENERAL_FAILURE;
     }
 
@@ -697,8 +705,9 @@ int main(int argc, char **argv)
      * Register a few callbacks.
      */
     rc = SSMR3RegisterDevice(pVM, NULL, "SSM Testcase Data Item no.1 (all types)", 1, 0, 256, NULL,
-        NULL, Item01Save, NULL,
-        NULL, Item01Load, NULL);
+                             NULL, NULL, NULL,
+                             NULL, Item01Save, NULL,
+                             NULL, Item01Load, NULL);
     if (RT_FAILURE(rc))
     {
         RTPrintf("SSMR3Register #1 -> %Rrc\n", rc);
@@ -706,8 +715,9 @@ int main(int argc, char **argv)
     }
 
     rc = SSMR3RegisterDevice(pVM, NULL, "SSM Testcase Data Item no.2 (rand mem)", 2, 0, _1M * 8, NULL,
-        NULL, Item02Save, NULL,
-        NULL, Item02Load, NULL);
+                             NULL, NULL, NULL,
+                             NULL, Item02Save, NULL,
+                             NULL, Item02Load, NULL);
     if (RT_FAILURE(rc))
     {
         RTPrintf("SSMR3Register #2 -> %Rrc\n", rc);
@@ -715,8 +725,9 @@ int main(int argc, char **argv)
     }
 
     rc = SSMR3RegisterDevice(pVM, NULL, "SSM Testcase Data Item no.3 (big mem)", 0, 123, 512*_1M, NULL,
-        NULL, Item03Save, NULL,
-        NULL, Item03Load, NULL);
+                             NULL, NULL, NULL,
+                             NULL, Item03Save, NULL,
+                             NULL, Item03Load, NULL);
     if (RT_FAILURE(rc))
     {
         RTPrintf("SSMR3Register #3 -> %Rrc\n", rc);
@@ -724,8 +735,9 @@ int main(int argc, char **argv)
     }
 
     rc = SSMR3RegisterDevice(pVM, NULL, "SSM Testcase Data Item no.4 (big zero mem)", 0, 42, 512*_1M, NULL,
-        NULL, Item04Save, NULL,
-        NULL, Item04Load, NULL);
+                             NULL, NULL, NULL,
+                             NULL, Item04Save, NULL,
+                             NULL, Item04Load, NULL);
     if (RT_FAILURE(rc))
     {
         RTPrintf("SSMR3Register #4 -> %Rrc\n", rc);
@@ -830,15 +842,15 @@ int main(int argc, char **argv)
         RTPrintf("SSMR3Seek #1 unit 2 -> %Rrc [2]\n", rc);
         return 1;
     }
-    uint32_t u32Version = 0xbadc0ded;
-    rc = SSMR3Seek(pSSM, "SSM Testcase Data Item no.2 (rand mem)", 2, &u32Version);
+    uint32_t uVersion = 0xbadc0ded;
+    rc = SSMR3Seek(pSSM, "SSM Testcase Data Item no.2 (rand mem)", 2, &uVersion);
     if (RT_FAILURE(rc))
     {
         RTPrintf("SSMR3Seek #1 unit 2 -> %Rrc [3]\n", rc);
         return 1;
     }
     u64Start = RTTimeNanoTS();
-    rc = Item02Load(NULL, pSSM, u32Version);
+    rc = Item02Load(NULL, pSSM, uVersion, SSM_PHASE_FINAL);
     if (RT_FAILURE(rc))
     {
         RTPrintf("Item02Load #1 -> %Rrc\n", rc);
@@ -848,15 +860,15 @@ int main(int argc, char **argv)
     RTPrintf("tstSSM: Loaded 2nd item in %'RI64 ns\n", u64Elapsed);
 
     /* 1st unit */
-    u32Version = 0xbadc0ded;
-    rc = SSMR3Seek(pSSM, "SSM Testcase Data Item no.1 (all types)", 1, &u32Version);
+    uVersion = 0xbadc0ded;
+    rc = SSMR3Seek(pSSM, "SSM Testcase Data Item no.1 (all types)", 1, &uVersion);
     if (RT_FAILURE(rc))
     {
         RTPrintf("SSMR3Seek #1 unit 1 -> %Rrc\n", rc);
         return 1;
     }
     u64Start = RTTimeNanoTS();
-    rc = Item01Load(NULL, pSSM, u32Version);
+    rc = Item01Load(NULL, pSSM, uVersion, SSM_PHASE_FINAL);
     if (RT_FAILURE(rc))
     {
         RTPrintf("Item01Load #1 -> %Rrc\n", rc);
@@ -866,15 +878,15 @@ int main(int argc, char **argv)
     RTPrintf("tstSSM: Loaded 1st item in %'RI64 ns\n", u64Elapsed);
 
     /* 3st unit */
-    u32Version = 0xbadc0ded;
-    rc = SSMR3Seek(pSSM, "SSM Testcase Data Item no.3 (big mem)", 0, &u32Version);
+    uVersion = 0xbadc0ded;
+    rc = SSMR3Seek(pSSM, "SSM Testcase Data Item no.3 (big mem)", 0, &uVersion);
     if (RT_FAILURE(rc))
     {
         RTPrintf("SSMR3Seek #3 unit 1 -> %Rrc\n", rc);
         return 1;
     }
     u64Start = RTTimeNanoTS();
-    rc = Item03Load(NULL, pSSM, u32Version);
+    rc = Item03Load(NULL, pSSM, uVersion, SSM_PHASE_FINAL);
     if (RT_FAILURE(rc))
     {
         RTPrintf("Item01Load #3 -> %Rrc\n", rc);

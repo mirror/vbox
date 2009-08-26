@@ -4329,30 +4329,32 @@ static DECLCALLBACK(int) pcnetLoadPrep(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle
  * @returns VBox status code.
  * @param   pDevIns     The device instance.
  * @param   pSSMHandle  The handle to the saved state.
- * @param   u32Version  The data unit version number.
+ * @param   uVersion  The data unit version number.
+ * @param   uPhase      The data phase.
  */
-static DECLCALLBACK(int) pcnetLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle, uint32_t u32Version)
+static DECLCALLBACK(int) pcnetLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle, uint32_t uVersion, uint32_t uPhase)
 {
     PCNetState *pThis = PDMINS_2_DATA(pDevIns, PCNetState *);
     RTMAC       Mac;
-    if (   SSM_VERSION_MAJOR_CHANGED(u32Version, PCNET_SAVEDSTATE_VERSION)
-        || SSM_VERSION_MINOR(u32Version) < 7)
+    if (   SSM_VERSION_MAJOR_CHANGED(uVersion, PCNET_SAVEDSTATE_VERSION)
+        || SSM_VERSION_MINOR(uVersion) < 7)
         return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
+    Assert(uPhase == SSM_PHASE_FINAL); NOREF(uPhase);
 
     /* restore data */
     SSMR3GetBool(pSSMHandle, &pThis->fLinkUp);
     SSMR3GetU32(pSSMHandle, &pThis->u32RAP);
     SSMR3GetS32(pSSMHandle, &pThis->iISR);
     SSMR3GetU32(pSSMHandle, &pThis->u32Lnkst);
-    if (   SSM_VERSION_MAJOR(u32Version) >  0
-        || SSM_VERSION_MINOR(u32Version) >= 9)
+    if (   SSM_VERSION_MAJOR(uVersion) >  0
+        || SSM_VERSION_MINOR(uVersion) >= 9)
     {
         SSMR3GetBool(pSSMHandle, &pThis->fPrivIfEnabled);
         if (pThis->fPrivIfEnabled)
             LogRel(("PCNet#%d: Enabling private interface\n", PCNET_INST_NR));
     }
-    if (   SSM_VERSION_MAJOR(u32Version) >  0
-        || SSM_VERSION_MINOR(u32Version) >= 10)
+    if (   SSM_VERSION_MAJOR(uVersion) >  0
+        || SSM_VERSION_MINOR(uVersion) >= 10)
     {
         SSMR3GetBool(pSSMHandle, &pThis->fSignalRxMiss);
     }
@@ -4374,8 +4376,8 @@ static DECLCALLBACK(int) pcnetLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle
 #endif
     if (pThis->fAm79C973)
     {
-        if (   SSM_VERSION_MAJOR(u32Version) >  0
-            || SSM_VERSION_MINOR(u32Version) >= 8)
+        if (   SSM_VERSION_MAJOR(uVersion) >  0
+            || SSM_VERSION_MINOR(uVersion) >= 8)
             TMR3TimerLoad(pThis->CTX_SUFF(pTimerSoftInt), pSSMHandle);
     }
 
@@ -5086,10 +5088,10 @@ static DECLCALLBACK(int) pcnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     if (RT_FAILURE(rc))
         return rc;
 
-    rc = PDMDevHlpSSMRegister(pDevIns, pDevIns->pDevReg->szDeviceName, iInstance,
-                              PCNET_SAVEDSTATE_VERSION, sizeof(*pThis),
-                              pcnetSavePrep, pcnetSaveExec, NULL,
-                              pcnetLoadPrep, pcnetLoadExec, NULL);
+    rc = PDMDevHlpSSMRegisterEx(pDevIns, PCNET_SAVEDSTATE_VERSION, sizeof(*pThis), NULL,
+                                NULL, NULL, NULL,
+                                pcnetSavePrep, pcnetSaveExec, NULL,
+                                pcnetLoadPrep, pcnetLoadExec, NULL);
     if (RT_FAILURE(rc))
         return rc;
 

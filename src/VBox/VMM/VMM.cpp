@@ -109,7 +109,7 @@ static int                  vmmR3InitStacks(PVM pVM);
 static int                  vmmR3InitLoggers(PVM pVM);
 static void                 vmmR3InitRegisterStats(PVM pVM);
 static DECLCALLBACK(int)    vmmR3Save(PVM pVM, PSSMHANDLE pSSM);
-static DECLCALLBACK(int)    vmmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version);
+static DECLCALLBACK(int)    vmmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPhase);
 static DECLCALLBACK(void)   vmmR3YieldEMT(PVM pVM, PTMTIMER pTimer, void *pvUser);
 static int                  vmmR3ServiceCallRing3Request(PVM pVM, PVMCPU pVCpu);
 static DECLCALLBACK(void)   vmmR3InfoFF(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs);
@@ -168,6 +168,7 @@ VMMR3DECL(int) VMMR3Init(PVM pVM)
      * Register the saved state data unit.
      */
     rc = SSMR3RegisterInternal(pVM, "vmm", 1, VMM_SAVED_STATE_VERSION, VMM_STACK_SIZE + sizeof(RTGCPTR),
+                               NULL, NULL, NULL,
                                NULL, vmmR3Save, NULL,
                                NULL, vmmR3Load, NULL);
     if (RT_FAILURE(rc))
@@ -251,9 +252,9 @@ static int vmmR3InitStacks(PVM pVM)
         PVMCPU pVCpu = &pVM->aCpus[idCpu];
 
 #ifdef VBOX_STRICT_VMM_STACK
-        rc = MMR3HyperAllocOnceNoRelEx(pVM, PAGE_SIZE + VMM_STACK_SIZE + PAGE_SIZE, 
+        rc = MMR3HyperAllocOnceNoRelEx(pVM, PAGE_SIZE + VMM_STACK_SIZE + PAGE_SIZE,
 #else
-        rc = MMR3HyperAllocOnceNoRelEx(pVM, VMM_STACK_SIZE, 
+        rc = MMR3HyperAllocOnceNoRelEx(pVM, VMM_STACK_SIZE,
 #endif
                                        PAGE_SIZE, MM_TAG_VMM, fFlags, (void **)&pVCpu->vmm.s.pbEMTStackR3);
         if (RT_SUCCESS(rc))
@@ -933,18 +934,20 @@ static DECLCALLBACK(int) vmmR3Save(PVM pVM, PSSMHANDLE pSSM)
  * @returns VBox status code.
  * @param   pVM             VM Handle.
  * @param   pSSM            SSM operation handle.
- * @param   u32Version      Data layout version.
+ * @param   uVersion        Data layout version.
+ * @param   uPhase          The data phase.
  */
-static DECLCALLBACK(int) vmmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t u32Version)
+static DECLCALLBACK(int) vmmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPhase)
 {
     LogFlow(("vmmR3Load:\n"));
+    Assert(uPhase == SSM_PHASE_FINAL); NOREF(uPhase);
 
     /*
      * Validate version.
      */
-    if (u32Version != VMM_SAVED_STATE_VERSION)
+    if (uVersion != VMM_SAVED_STATE_VERSION)
     {
-        AssertMsgFailed(("vmmR3Load: Invalid version u32Version=%d!\n", u32Version));
+        AssertMsgFailed(("vmmR3Load: Invalid version uVersion=%d!\n", uVersion));
         return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
     }
 

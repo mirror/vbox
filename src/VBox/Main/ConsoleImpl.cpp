@@ -1054,21 +1054,23 @@ Console::saveStateFileExec (PSSMHANDLE pSSM, void *pvUser)
  *  Called when the VM is being restored from the saved state.
  *
  *  @param pvUser       pointer to Console
- *  @param u32Version   Console unit version.
+ *  @param uVersion     Console unit version.
  *                      Should match sSSMConsoleVer.
+ *  @param uPhase       The data phase.
  *
  *  @note Should locks the Console object for writing, if necessary.
  */
 //static
 DECLCALLBACK(int)
-Console::loadStateFileExec (PSSMHANDLE pSSM, void *pvUser, uint32_t u32Version)
+Console::loadStateFileExec(PSSMHANDLE pSSM, void *pvUser, uint32_t uVersion, uint32_t uPhase)
 {
     LogFlowFunc (("\n"));
 
-    if (SSM_VERSION_MAJOR_CHANGED(u32Version, sSSMConsoleVer))
+    if (SSM_VERSION_MAJOR_CHANGED(uVersion, sSSMConsoleVer))
         return VERR_VERSION_MISMATCH;
+    Assert(uPhase == SSM_PHASE_FINAL); NOREF(uPhase);
 
-    Console *that = static_cast <Console *> (pvUser);
+    Console *that = static_cast<Console *>(pvUser);
     AssertReturn(that, VERR_INVALID_PARAMETER);
 
     /* Currently, nothing to do when we've been called from VMR3Load. */
@@ -6785,16 +6787,14 @@ DECLCALLBACK (int) Console::powerUpThread (RTTHREAD Thread, void *pvUser)
             do
             {
                 /*
-                 *  Register our load/save state file handlers
+                 * Register our load/save state file handlers
                  */
-                vrc = SSMR3RegisterExternal (pVM,
-                    sSSMConsoleUnit, 0 /* iInstance */, sSSMConsoleVer,
-                    0 /* cbGuess */,
-                    NULL, saveStateFileExec, NULL, NULL, loadStateFileExec, NULL,
-                    static_cast <Console *> (console));
-                AssertRC (vrc);
-                if (VBOX_FAILURE (vrc))
-                    break;
+                vrc = SSMR3RegisterExternal(pVM, sSSMConsoleUnit, 0 /*iInstance*/, sSSMConsoleVer, 0 /* cbGuess */,
+                                            NULL, NULL, NULL,
+                                            NULL, saveStateFileExec, NULL,
+                                            NULL, loadStateFileExec, NULL,
+                                            static_cast<Console *>(console));
+                AssertRCBreak(vrc);
 
                 vrc = static_cast <Console *>(console)->getDisplay()->registerSSM(pVM);
                 AssertRC (vrc);
