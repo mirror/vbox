@@ -119,7 +119,8 @@ RTDECL(void) RTThreadPreemptDisable(PRTTHREADPREEMPTSTATE pState)
     vbi_preempt_disable();
 /// @todo check out splr and splx on S10!
 //    if (ASMIntAreEnabled())
-        pState->uOldPil = splr(ipltospl(DISP_LEVEL));
+        //pState->uOldPil = splr(ipltospl(DISP_LEVEL));
+        pState->uOldPil = splr(ipltospl(LOCK_LEVEL - 1));  //temporary
 //    else
 //    {
 //        /* splr doesn't restore the interrupt flag on S10. */
