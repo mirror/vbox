@@ -80,7 +80,21 @@ static VOID DoLogging(LPCWSTR szString, ...);
 
 #define VBOX_NETCFG_LOCK_TIME_OUT     5000
 
-typedef bool (*ENUMERATION_CALLBACK) (LPWSTR pFileName, PVOID pContext);
+typedef bool (*ENUMERATION_CALLBACK) (LPCWSTR pFileName, PVOID pContext);
+
+typedef struct _INF_INFO
+{
+    LPCWSTR pPnPId;
+}INF_INFO, *PINF_INFO;
+
+typedef struct _INFENUM_CONTEXT
+{
+    INF_INFO InfInfo;
+    DWORD Flags;
+    HRESULT hr;
+} INFENUM_CONTEXT, *PINFENUM_CONTEXT;
+
+static bool vboxNetCfgWinInfEnumerationCallback(LPCWSTR pFileName, PVOID pCtxt);
 
 class VBoxNetCfgStringList
 {
@@ -397,16 +411,28 @@ static HRESULT vboxNetCfgWinGetPnpID (LPCWSTR lpszInfFile,
     return hr;
 }
 
-VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinUninstallInfs (const GUID * pGuid, LPCWSTR pPnPId)
+VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinUninstallInfs (const GUID * pGuid, LPCWSTR pPnPId, DWORD Flags)
 {
     VBoxNetCfgStringList list(128);
     HRESULT hr = vboxNetCfgWinCollectInfs(pGuid, pPnPId, list);
     if(hr == S_OK)
     {
+        INFENUM_CONTEXT Context;
+        Context.InfInfo.pPnPId = pPnPId;
+        Context.Flags = Flags;
+        Context.hr = S_OK;
         int size = list.size();
         for (int i = 0; i < size; ++i)
         {
-            Log(L"inf : %s\n", list.get(i));
+            LPCWSTR pInf = list.get(i);
+            const WCHAR* pRel = wcsrchr(pInf, '\\');
+            if(pRel)
+                ++pRel;
+            else
+                pRel = pInf;
+
+            vboxNetCfgWinInfEnumerationCallback(pRel, &Context);
+//            Log(L"inf : %s\n", list.get(i));
         }
     }
     return hr;
@@ -460,20 +486,9 @@ static HRESULT vboxNetCfgWinEnumFiles(LPCWSTR pPattern, ENUMERATION_CALLBACK pCa
     return hr;
 }
 
-typedef struct _INF_INFO
+static bool vboxNetCfgWinInfEnumerationCallback(LPCWSTR pFileName, PVOID pCtxt)
 {
-    LPCWSTR pPnPId;
-}INF_INFO, *PINF_INFO;
-
-typedef struct _INFENUM_CONTEXT
-{
-    INF_INFO InfInfo;
-    DWORD Flags;
-    HRESULT hr;
-} INFENUM_CONTEXT, *PINFENUM_CONTEXT;
-
-static bool vboxNetCfgWinInfEnumerationCallback(LPCWSTR pFileName, PINFENUM_CONTEXT pContext)
-{
+    PINFENUM_CONTEXT pContext = (PINFENUM_CONTEXT)pCtxt;
 //    Log(L"vboxNetCfgWinInfEnumerationCallback: pFileName (%s)\n", pFileName);
 
     LPWSTR lpszPnpID;
@@ -524,7 +539,7 @@ static HRESULT VBoxNetCfgWinUninstallInfs(LPCWSTR pPnPId, DWORD Flags)
         Context.InfInfo.pPnPId = pPnPId;
         Context.Flags = Flags;
         Context.hr = S_OK;
-        hr = vboxNetCfgWinEnumFiles(InfDirPath, (ENUMERATION_CALLBACK)vboxNetCfgWinInfEnumerationCallback, (PVOID)&Context);
+        hr = vboxNetCfgWinEnumFiles(InfDirPath, vboxNetCfgWinInfEnumerationCallback, &Context);
         Assert(hr == S_OK);
         if(hr == S_OK)
         {
@@ -1654,7 +1669,7 @@ static BOOL vboxNetCfgWinRemoveAllNetDevicesOfIdCallback(HDEVINFO hDevInfo, PSP_
                         // reboot required
                         //
                         hr = S_FALSE;
-                        Log(L"vboxNetCfgWinRemoveAllNetDevicesOfIdCallback: !!!REBOOT REQUIRED!!!\n", winEr);
+                        Log(L"vboxNetCfgWinRemoveAllNetDevicesOfIdCallback: !!!REBOOT REQUIRED!!!\n");
                     }
                 }
                 else
@@ -2356,7 +2371,7 @@ VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinCreateHostOnlyNetworkInterface (LPCWSTR
             if (ok)
             {
                 memset(DeviceInstallParams.DriverPath, 0, sizeof(DeviceInstallParams.DriverPath));
-                int pathLenght = wcslen(pInfPath) + 1/* null terminator */;
+                size_t pathLenght = wcslen(pInfPath) + 1/* null terminator */;
                 if(pathLenght < sizeof(DeviceInstallParams.DriverPath)/sizeof(DeviceInstallParams.DriverPath[0]))
                 {
                     memcpy(DeviceInstallParams.DriverPath, pInfPath, pathLenght*sizeof(DeviceInstallParams.DriverPath[0]));
