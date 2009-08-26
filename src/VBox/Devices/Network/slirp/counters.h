@@ -24,12 +24,12 @@
  */
 
 /*
- * COUNTERS_INIT is used before using counters.h to declare helping macro 
+ * COUNTERS_INIT is used before using counters.h to declare helping macro
  * definitions for (de-)registering counters
  */
 #ifndef COUNTERS_H
 # define COUNTERS_H
-# if defined(VBOX_WITH_STATISTICS) 
+# if defined(VBOX_WITH_STATISTICS)
 #  define REGISTER_COUNTER(name, storage, type, units, dsc)         \
     do {                                                            \
         PDMDrvHlpSTAMRegisterF(pDrvIns,                             \
@@ -121,9 +121,9 @@ DRV_COUNTING_COUNTER(NATRecvWakeups, "counting wakeups of NAT RX thread");
 DRV_PROFILE_COUNTER(NATRecv,"Time spent in NATRecv worker");
 DRV_PROFILE_COUNTER(NATRecvWait,"Time spent in NATRecv worker in waiting of free RX buffers");
 #  endif
-DRV_COUNTING_COUNTER(QueuePktSent, "counting packet sent via PDM Queue");       /**< counting packet sent via PDM queue */
-DRV_COUNTING_COUNTER(QueuePktDropped, "counting packet drops by PDM Queue");    /**< counting packet drops by PDM queue */
-DRV_COUNTING_COUNTER(ConsumerFalse, "counting consumer's reject number to process the queue's item");      /**< how often to wait for guest RX buffers */
+DRV_COUNTING_COUNTER(QueuePktSent, "counting packet sent via PDM Queue");
+DRV_COUNTING_COUNTER(QueuePktDropped, "counting packet drops by PDM Queue");
+DRV_COUNTING_COUNTER(ConsumerFalse, "counting consumer's reject number to process the queue's item");
 # endif
 #endif /*!COUNTERS_INIT*/
 

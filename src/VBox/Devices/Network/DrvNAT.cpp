@@ -54,6 +54,7 @@
 #define COUNTERS_INIT
 #include "counters.h"
 
+
 /*******************************************************************************
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
@@ -167,7 +168,7 @@ typedef struct DRVNAT
     /** for external notification */
     HANDLE                  hWakeupEvent;
 #endif
-    
+
 #define DRV_PROFILE_COUNTER(name, dsc)     STAMPROFILE Stat ## name
 #define DRV_COUNTING_COUNTER(name, dsc)    STAMCOUNTER Stat ## name
 #include "counters.h"
@@ -208,6 +209,7 @@ static void drvNATNotifyNATThread(PDRVNAT pThis);
 
 
 #ifdef SLIRP_SPLIT_CAN_OUTPUT
+
 static DECLCALLBACK(int) drvNATRecv(PPDMDRVINS pDrvIns, PPDMTHREAD pThread)
  {
     PDRVNAT pThis = PDMINS_2_DATA(pDrvIns, PDRVNAT);
@@ -217,7 +219,7 @@ static DECLCALLBACK(int) drvNATRecv(PPDMDRVINS pDrvIns, PPDMTHREAD pThread)
 
     while (pThread->enmState == PDMTHREADSTATE_RUNNING)
     {
-        RTReqProcess(pThis->pRecvReqQueue, 0); 
+        RTReqProcess(pThis->pRecvReqQueue, 0);
         RTSemEventWait(pThis->EventRecv, RT_INDEFINITE_WAIT);
     }
     return VINF_SUCCESS;
@@ -234,20 +236,25 @@ static DECLCALLBACK(int) drvNATRecvWakeup(PPDMDRVINS pDrvIns, PPDMTHREAD pThread
     return VINF_SUCCESS;
 }
 
+
 static DECLCALLBACK(void) drvNATRecvWorker(PDRVNAT pThis, uint8_t *pu8Buf, int cb)
 {
     STAM_PROFILE_START(&pThis->StatNATRecv, a);
-    if (RT_FAILURE(pThis->pPort->pfnWaitReceiveAvail(pThis->pPort, RT_INDEFINITE_WAIT)))
-    {
-        AssertMsgFailed(("NAT: No RX available even on indefinite wait"));
-    }
-    STAM_PROFILE_STOP(&pThis->StatNATRecvWait, a);
-    int rc = pThis->pPort->pfnReceive(pThis->pPort, pu8Buf, cb);
-    RTMemFree(pu8Buf);
-    STAM_PROFILE_STOP(&pThis->StatNATRecv, a);
+
+    STAM_PROFILE_START(&pThis->StatNATRecvWait, b);
+    int rc = pThis->pPort->pfnWaitReceiveAvail(pThis->pPort, RT_INDEFINITE_WAIT);
+    AssertMsgRC(rc, ("NAT: No RX available even on indefinite wait; rc=%Rrc", rc));
+
+    STAM_PROFILE_STOP(&pThis->StatNATRecvWait, b);
+
+    rc = pThis->pPort->pfnReceive(pThis->pPort, pu8Buf, cb);
     AssertRC(rc);
+    RTMemFree(pu8Buf);
+
+    STAM_PROFILE_STOP(&pThis->StatNATRecv, a);
 }
-#endif
+
+#endif /* SLIRP_SPLIT_CAN_OUTPUT */
 
 /**
  * Worker function for drvNATSend().
@@ -649,7 +656,7 @@ void slirp_output(void *pvUser, void *pvArg, const uint8_t *pu8Buf, int cb)
     pReq->u.Internal.aArgs[1] = (uintptr_t)pu8Buf;
     pReq->u.Internal.aArgs[2] = (uintptr_t)cb;
     pReq->fFlags              = RTREQFLAGS_VOID|RTREQFLAGS_NO_WAIT;
-    rc = RTReqQueue(pReq, 0); 
+    rc = RTReqQueue(pReq, 0);
     AssertReleaseRC(rc);
     drvNATRecvWakeup(pThis->pDrvIns, pThis->pRecvThread);
     STAM_COUNTER_INC(&pThis->StatQueuePktSent);
@@ -864,7 +871,7 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandl
     /*
      * Validate the config.
      */
-    if (!CFGMR3AreValuesValid(pCfgHandle, 
+    if (!CFGMR3AreValuesValid(pCfgHandle,
                               "PassDomain\0TFTPPrefix\0BootFile\0Network"
                               "\0NextServer\0DNSProxy\0BindIP\0"
                               "SocketRcvBuf\0SocketSndBuf\0TcpRcvSpace\0TcpSndSpace\0"))
@@ -974,7 +981,7 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandl
 #ifdef VBOX_WITH_STATISTICS
 # define DRV_PROFILE_COUNTER(name, dsc)     REGISTER_COUNTER(name, pThis, STAMTYPE_PROFILE, STAMUNIT_TICKS_PER_CALL, dsc)
 # define DRV_COUNTING_COUNTER(name, dsc)    REGISTER_COUNTER(name, pThis, STAMTYPE_COUNTER, STAMUNIT_COUNT,          dsc)
-# include "counters.h" 
+# include "counters.h"
 #endif
 
         int rc2 = drvNATConstructRedir(pDrvIns->iInstance, pThis, pCfgHandle, Network);
@@ -1102,9 +1109,9 @@ const PDMDRVREG g_DrvNAT =
     /* pfnAttach */
     NULL,
     /* pfnDetach */
-    NULL, 
+    NULL,
     /* pfnPowerOff */
-    NULL, 
+    NULL,
     /* pfnSoftReset */
     NULL,
     /* u32EndVersion */
