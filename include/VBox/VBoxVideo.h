@@ -915,7 +915,7 @@ typedef struct _VBVAENABLE
 typedef struct _VBVAMOUSEPOINTERSHAPE
 {
     /* The host result. */
-    uint32_t u32Result;
+    int32_t i32Result;
 
     /* VBOX_MOUSE_POINTER_* bit flags. */
     uint32_t fu32Flags;
