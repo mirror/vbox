@@ -1014,15 +1014,22 @@ renderspuGetString(GLenum pname)
 
 
 #if defined(DARWIN)
+# ifdef VBOX_WITH_COCOA_QT
 void renderspuFlush()
 {
-    glFlush();
+    renderspu_SystemFlush();
 }
 
 void renderspuFinish()
 {
-    glFinish();
+    renderspu_SystemFinish();
 }
+
+void renderspuBindFramebufferEXT(GLenum target, GLuint framebuffer)
+{
+    renderspu_SystemBindFramebufferEXT(target, framebuffer);
+}
+# endif
 #endif
 
 #define FILLIN( NAME, FUNC ) \
@@ -1062,8 +1069,11 @@ renderspuCreateFunctions(SPUNamedFunctionTable table[])
     FILLIN( "GetChromiumParametervCR", renderspuGetChromiumParametervCR );
     FILLIN( "GetString", renderspuGetString );
 #if defined(DARWIN)
-    FILLIN( "Finish", renderspuFinish );
+# ifdef VBOX_WITH_COCOA_QT
     FILLIN( "Flush", renderspuFlush );
+    FILLIN( "Finish", renderspuFinish );
+    FILLIN( "BindFramebufferEXT", renderspuBindFramebufferEXT );
+# endif
 #endif
     return i;
 }
