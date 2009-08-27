@@ -89,6 +89,25 @@ extern int futimes(int __fd, __const struct timeval __tvp[2]) __THROW;
 #endif
 
 
+RTDECL(bool) RTFileExists(const char *pszPath)
+{
+    bool fRc = false;
+    char *pszNativePath;
+    int rc = rtPathToNative(&pszNativePath, pszPath);
+    if (RT_SUCCESS(rc))
+    {
+        struct stat s;
+        fRc = !stat(pszNativePath, &s)
+            && S_ISREG(s.st_mode);
+
+        rtPathFreeNative(pszNativePath);
+    }
+
+    LogFlow(("RTFileExists(%p={%s}): returns %RTbool\n", pszPath, pszPath, fRc));
+    return fRc;
+}
+
+
 RTR3DECL(int)  RTFileOpen(PRTFILE pFile, const char *pszFilename, unsigned fOpen)
 {
     /*

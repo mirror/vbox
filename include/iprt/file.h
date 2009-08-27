@@ -54,6 +54,19 @@ RT_C_DECLS_BEGIN
 
 #ifdef IN_RING3
 
+/**
+ * Checks if the specified file name exists and is a regular file.
+ *
+ * Symbolic links will be resolved.
+ *
+ * @returns true if it's a regular file, false if it isn't.
+ * @param   pszPath         The path to the file.
+ *
+ * @sa      RTDirExists, RTPathExists, RTSymlinkExists.
+ */
+RTDECL(bool) RTFileExists(const char *pszPath);
+
+
 /** @name Open flags
  * @{ */
 /** Open the file with read access. */
