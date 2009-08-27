@@ -523,15 +523,18 @@ int rtR0MemObjNativeAllocLow(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, bool fExecut
     PRTR0MEMOBJLNX pMemLnx;
     int rc;
 
-#ifdef RT_ARCH_AMD64
-# ifdef GFP_DMA32
+    /* Try to avoid GFP_DMA. GFM_DMA32 was introduced with Linux 2.6.15. */
+#if (defined(RT_ARCH_AMD64) || defined(CONFIG_X86_PAE)) && defined(GFP_DMA32)
     rc = rtR0MemObjLinuxAllocPages(&pMemLnx, RTR0MEMOBJTYPE_LOW, cb, GFP_DMA32, false /* non-contiguous */);
     if (RT_FAILURE(rc))
-# endif
+#endif
+#ifdef RT_ARCH_AMD64
         rc = rtR0MemObjLinuxAllocPages(&pMemLnx, RTR0MEMOBJTYPE_LOW, cb, GFP_DMA, false /* non-contiguous */);
 #else
-    /** XXX Wrong: GFP_USER can return page frames above 4GB! */
-    rc = rtR0MemObjLinuxAllocPages(&pMemLnx, RTR0MEMOBJTYPE_LOW, cb, GFP_USER, false /* non-contiguous */);
+# ifdef CONFIG_X86_PAE
+        /** XXX GFP_USER can return page frames above 4GB on PAE systems => GFP_DMA? */
+# endif
+        rc = rtR0MemObjLinuxAllocPages(&pMemLnx, RTR0MEMOBJTYPE_LOW, cb, GFP_USER, false /* non-contiguous */);
 #endif
     if (RT_SUCCESS(rc))
     {
@@ -555,14 +558,17 @@ int rtR0MemObjNativeAllocCont(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, bool fExecu
     PRTR0MEMOBJLNX pMemLnx;
     int rc;
 
-#ifdef RT_ARCH_AMD64
-# ifdef GFP_DMA32
+#if (defined(RT_ARCH_AMD64) || defined(CONFIG_X86_PAE)) && defined(GFP_DMA32)
     rc = rtR0MemObjLinuxAllocPages(&pMemLnx, RTR0MEMOBJTYPE_CONT, cb, GFP_DMA32, true /* contiguous */);
     if (RT_FAILURE(rc))
-# endif
+#endif
+#ifdef RT_ARCH_AMD64
         rc = rtR0MemObjLinuxAllocPages(&pMemLnx, RTR0MEMOBJTYPE_CONT, cb, GFP_DMA, true /* contiguous */);
 #else
-    rc = rtR0MemObjLinuxAllocPages(&pMemLnx, RTR0MEMOBJTYPE_CONT, cb, GFP_USER, true /* contiguous */);
+# if defined(CONFIG_X86_PAE)
+        /** XXX GFP_USER can return page frames above 4GB on PAE systems => GFP_DMA? */
+# endif
+        rc = rtR0MemObjLinuxAllocPages(&pMemLnx, RTR0MEMOBJTYPE_CONT, cb, GFP_USER, true /* contiguous */);
 #endif
     if (RT_SUCCESS(rc))
     {
