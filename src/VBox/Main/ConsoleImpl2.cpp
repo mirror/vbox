@@ -1743,8 +1743,6 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
     }
 
 #ifdef VBOX_WITH_CROGL
-/* Currently broken on Snow Leopard 64-bit */
-# if !(defined(RT_OS_DARWIN) && defined(RT_ARCH_AMD64))
     /*
      * crOpenGL
      */
@@ -1786,7 +1784,6 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
 
         }
     }
-# endif
 #endif
 
 #ifdef VBOX_WITH_GUEST_PROPS

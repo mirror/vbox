@@ -89,10 +89,7 @@ VBoxVMSettingsDisplay::VBoxVMSettingsDisplay()
     /* Initially disabled */
     mCbVRDP->setChecked (false);
 
-#ifdef QT_MAC_USE_COCOA
-    /* No OpenGL on Snow Leopard 64-bit yet */
     mCb3D->setEnabled (false);
-#endif /* QT_MAC_USE_COCOA */
 
 #ifndef VBOX_WITH_VIDEOHWACCEL
     mCb2DVideo->setVisible (false);
