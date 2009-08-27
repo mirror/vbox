@@ -192,9 +192,9 @@ void VBoxServiceVerbose(int iLevel, const char *pszFormat, ...)
         RTStrmPrintfV(g_pStdOut, pszFormat, va);
         va_end(va);
 
-#if 0 /* enable after 2.2 */
-        Log(("%s: %N", g_pszProgName, pszFormat, &va));
-#endif
+        va_start(va, pszFormat);
+        LogRel(("%s: %N", g_pszProgName, pszFormat, &va));
+        va_end(va);
     }
 }
 
@@ -518,7 +518,6 @@ int main(int argc, char **argv)
             }
         } while (psz && *++psz);
     }
-
     /*
      * Check that at least one service is enabled.
      */
@@ -534,6 +533,8 @@ int main(int argc, char **argv)
     rc = VbglR3Init();
     if (RT_FAILURE(rc))
         return VBoxServiceError("VbglR3Init failed with rc=%Rrc.\n", rc);
+
+    VBoxServiceVerbose(0, "Started. Verbose level = %d\n", g_cVerbosity);
 
     /*
      * Daemonize if requested.
@@ -592,6 +593,7 @@ int main(int argc, char **argv)
     }
 #endif
 
+    VBoxServiceVerbose(0, "Ended.\n");
     return RT_SUCCESS(rc) ? 0 : 1;
 }
 
