@@ -1373,7 +1373,7 @@ static void arp_input(PNATState pData, struct mbuf *m)
         /* @todo check if we already have requested address */
         /* if no*/
         {
-            BOOTPClient *bc = alloc_addr(pData);
+            BOOTPClient *bc = bc_alloc_client(pData);
             bc->addr.s_addr = *(uint32_t *)ah->ar_sip;
             memcpy(bc->macaddr, ah->ar_sha, ETH_ALEN);
             m_free(pData, m);

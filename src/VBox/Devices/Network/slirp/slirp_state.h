@@ -38,17 +38,6 @@
 /** DHCP Lease time. */
 #define LEASE_TIME (24 * 3600)
 
-/** Entry in the table of known DHCP clients. */
-typedef struct
-{
-    uint32_t xid;
-    bool allocated;
-    uint8_t macaddr[6];
-    struct in_addr addr;
-    int number;
-} BOOTPClient;
-
-
 /** TFTP session entry. */
 struct tftp_session
 {

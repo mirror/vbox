@@ -307,6 +307,8 @@ int tcp_emu (PNATState, struct socket *, struct mbuf *);
 int tcp_ctl (PNATState, struct socket *);
 struct tcpcb *tcp_drop(PNATState, struct tcpcb *tp, int err);
 
+/*slirp.c*/
+void slirp_arp_who_has(PNATState pData, uint32_t dst);
 #define MIN_MRU 128
 #define MAX_MRU 16384
 
@@ -383,7 +385,11 @@ static void vbox_slirp_printV(char *format, va_list args)
     memset(buffer, 0, 1024);
     RTStrPrintfV(buffer, 1024, format, args);
 
+#if defined(DEBUG_vvl) && 0
+    LogRel(("NAT:ALIAS: %s\n", buffer));
+#else
     Log2(("NAT:ALIAS: %s\n", buffer));
+#endif
 }
 static void vbox_slirp_printf(char *format, ...)
 {

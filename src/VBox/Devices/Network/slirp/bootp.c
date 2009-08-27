@@ -46,7 +46,7 @@ static uint8_t *dhcp_find_option(uint8_t *vend, uint8_t tag)
     }
     return NULL; 
 }
-BOOTPClient *alloc_addr(PNATState pData)
+BOOTPClient *bc_alloc_client(PNATState pData)
 {
     int i;
     for (i = 0; i < NB_ADDR; i++)
@@ -67,7 +67,7 @@ BOOTPClient *alloc_addr(PNATState pData)
 static BOOTPClient *get_new_addr(PNATState pData, struct in_addr *paddr)
 {
     BOOTPClient *bc;
-    bc = alloc_addr(pData);
+    bc = bc_alloc_client(pData);
     if (bc == NULL)
         return NULL;
     paddr->s_addr = htonl(ntohl(special_addr.s_addr) | (bc->number + START_ADDR));
@@ -418,7 +418,7 @@ static int dhcp_decode_request(PNATState pData, struct bootp_t *bp, const uint8_
                     off = dhcp_send_nack(pData, bp, bc, m);
                     return off;
                }
-               bc = alloc_addr(pData);
+               bc = bc_alloc_client(pData);
                if (bc == NULL)
                {
                    LogRel(("NAT: can't alloc address. RENEW has been silently ignored\n"));
@@ -440,7 +440,7 @@ static int dhcp_decode_request(PNATState pData, struct bootp_t *bp, const uint8_
                  off = dhcp_send_nack(pData, bp, bc, m);
                  return off;
             }
-            bc = alloc_addr(pData);
+            bc = bc_alloc_client(pData);
             if (bc == NULL)
             {
                 LogRel(("NAT: can't alloc address. RENEW has been silently ignored\n"));
