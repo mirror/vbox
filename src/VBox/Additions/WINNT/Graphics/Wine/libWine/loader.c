@@ -58,7 +58,9 @@
 #include <crt_externs.h>
 #define environ (*_NSGetEnviron())
 #else
+# ifndef _MSC_VER
 extern char **environ;
+# endif
 #endif
 
 /* argc/argv for the Windows application */
@@ -457,7 +459,11 @@ static void *map_dll( const IMAGE_NT_HEADERS *nt_descr )
  */
 char **__wine_get_main_environment(void)
 {
+#ifndef _MSC_VER
     return environ;
+#else
+    return _environ;
+#endif
 }
 
 

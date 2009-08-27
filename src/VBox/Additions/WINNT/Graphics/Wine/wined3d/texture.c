@@ -72,7 +72,7 @@ static void texture_internal_preload(IWineD3DBaseTexture *iface, enum WINED3DSRG
     {
         /* ActivateContext sets isInDraw to TRUE when loading a pbuffer into a texture,
          * thus no danger of recursive calls. */
-        ActivateContext(device, device->lastActiveRenderTarget, CTXUSAGE_RESOURCELOAD);
+        ActivateContext(device, NULL, CTXUSAGE_RESOURCELOAD);
     }
 
     if (This->resource.format_desc->format == WINED3DFMT_P8
@@ -204,17 +204,6 @@ HRESULT texture_init(IWineD3DTextureImpl *texture, UINT width, UINT height, UINT
     {
         WARN("Failed to initialize basetexture, returning %#x.\n", hr);
         return hr;
-    }
-
-    if (texture->resource.format_desc->Flags & WINED3DFMT_FLAG_FILTERING)
-    {
-        texture->baseTexture.minMipLookup = minMipLookup;
-        texture->baseTexture.magLookup = magLookup;
-    }
-    else
-    {
-        texture->baseTexture.minMipLookup = minMipLookup_noFilter;
-        texture->baseTexture.magLookup = magLookup_noFilter;
     }
 
     /* Precalculated scaling for 'faked' non power of two texture coords.

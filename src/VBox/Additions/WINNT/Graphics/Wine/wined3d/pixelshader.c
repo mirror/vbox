@@ -371,7 +371,7 @@ void find_ps_compile_args(IWineD3DPixelShaderImpl *shader, IWineD3DStateBlockImp
     UINT i;
     IWineD3DBaseTextureImpl *tex;
 
-    memset(args, 0, sizeof(*args));
+    memset(args, 0, sizeof(*args)); /* FIXME: Make sure all bits are set */
     args->srgb_correction = stateblock->renderState[WINED3DRS_SRGBWRITEENABLE] ? 1 : 0;
     args->np2_fixup = 0;
 

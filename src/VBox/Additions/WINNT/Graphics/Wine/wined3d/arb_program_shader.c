@@ -58,11 +58,18 @@ static BOOL need_mova_const(IWineD3DBaseShader *shader, const struct wined3d_gl_
     return !GL_SUPPORT(NV_VERTEX_PROGRAM2_OPTION);
 }
 
+/* Returns TRUE if result.clip from GL_NV_vertex_program2 should be used and FALSE otherwise */
+static inline BOOL use_nv_clip(const struct wined3d_gl_info *gl_info)
+{
+    return GL_SUPPORT(NV_VERTEX_PROGRAM2_OPTION);
+}
+
 static BOOL need_helper_const(const struct wined3d_gl_info *gl_info)
 {
     if (!GL_SUPPORT(NV_VERTEX_PROGRAM) /* Need to init colors. */
-            || gl_info->quirks & WINED3D_QUIRK_ARB_VS_OFFSET_LIMIT /* Load the immval offset. */
-            || gl_info->quirks & WINED3D_QUIRK_SET_TEXCOORD_W) /* Have to init texcoords. */
+        || gl_info->quirks & WINED3D_QUIRK_ARB_VS_OFFSET_LIMIT /* Load the immval offset. */
+        || gl_info->quirks & WINED3D_QUIRK_SET_TEXCOORD_W /* Have to init texcoords. */
+        || (!use_nv_clip(gl_info)) /* Init the clip texcoord */)
     {
         return TRUE;
     }
@@ -83,12 +90,6 @@ static unsigned int reserved_vs_const(IWineD3DBaseShader *shader, const struct w
 static inline BOOL ffp_clip_emul(IWineD3DStateBlockImpl *stateblock)
 {
     return stateblock->lowest_disabled_stage < 7;
-}
-
-/* Returns TRUE if result.clip from GL_NV_vertex_program2 should be used and FALSE otherwise */
-static inline BOOL use_nv_clip(const struct wined3d_gl_info *gl_info)
-{
-    return GL_SUPPORT(NV_VERTEX_PROGRAM2_OPTION);
 }
 
 /* Internally used shader constants. Applications can use constants 0 to GL_LIMITS(vshader_constantsF) - 1,
@@ -292,7 +293,7 @@ static unsigned int shader_arb_load_constantsF(IWineD3DBaseShaderImpl *This, con
         GLuint target_type, unsigned int max_constants, const float *constants, char *dirty_consts)
 {
     local_constant* lconst;
-    DWORD i, j;
+    DWORD i = 0, j;
     unsigned int ret;
 
     if (TRACE_ON(d3d_shader)) {
@@ -307,7 +308,10 @@ static unsigned int shader_arb_load_constantsF(IWineD3DBaseShaderImpl *This, con
     if (target_type == GL_FRAGMENT_PROGRAM_ARB && This->baseShader.reg_maps.shader_version.major == 1)
     {
         float lcl_const[4];
-        for(i = 0; i < max_constants; i++) {
+        /* ps 1.x supports only 8 constants, clamp only those. When switching between 1.x and higher
+         * shaders, the first 8 constants are marked dirty for reload
+         */
+        for(; i < min(8, max_constants); i++) {
             if(!dirty_consts[i]) continue;
             dirty_consts[i] = 0;
 
@@ -330,31 +334,39 @@ static unsigned int shader_arb_load_constantsF(IWineD3DBaseShaderImpl *This, con
 
             GL_EXTCALL(glProgramEnvParameter4fvARB(target_type, i, lcl_const));
         }
-    } else {
-        if(GL_SUPPORT(EXT_GPU_PROGRAM_PARAMETERS)) {
-            /* TODO: Benchmark if we're better of with finding the dirty constants ourselves,
-             * or just reloading *all* constants at once
-             *
-            GL_EXTCALL(glProgramEnvParameters4fvEXT(target_type, 0, max_constants, constants));
-             */
-            for(i = 0; i < max_constants; i++) {
-                if(!dirty_consts[i]) continue;
 
-                /* Find the next block of dirty constants */
+        /* If further constants are dirty, reload them without clamping.
+         *
+         * The alternative is not to touch them, but then we cannot reset the dirty constant count
+         * to zero. That's bad for apps that only use PS 1.x shaders, because in that case the code
+         * above would always re-check the first 8 constants since max_constant remains at the init
+         * value
+         */
+    }
+
+    if(GL_SUPPORT(EXT_GPU_PROGRAM_PARAMETERS)) {
+        /* TODO: Benchmark if we're better of with finding the dirty constants ourselves,
+         * or just reloading *all* constants at once
+         *
+        GL_EXTCALL(glProgramEnvParameters4fvEXT(target_type, i, max_constants, constants + (i * 4)));
+         */
+        for(; i < max_constants; i++) {
+            if(!dirty_consts[i]) continue;
+
+            /* Find the next block of dirty constants */
+            dirty_consts[i] = 0;
+            j = i;
+            for(i++; (i < max_constants) && dirty_consts[i]; i++) {
                 dirty_consts[i] = 0;
-                j = i;
-                for(i++; (i < max_constants) && dirty_consts[i]; i++) {
-                    dirty_consts[i] = 0;
-                }
-
-                GL_EXTCALL(glProgramEnvParameters4fvEXT(target_type, j, i - j, constants + (j * 4)));
             }
-        } else {
-            for(i = 0; i < max_constants; i++) {
-                if(dirty_consts[i]) {
-                    dirty_consts[i] = 0;
-                    GL_EXTCALL(glProgramEnvParameter4fvARB(target_type, i, constants + (i * 4)));
-                }
+
+            GL_EXTCALL(glProgramEnvParameters4fvEXT(target_type, j, i - j, constants + (j * 4)));
+        }
+    } else {
+        for(; i < max_constants; i++) {
+            if(dirty_consts[i]) {
+                dirty_consts[i] = 0;
+                GL_EXTCALL(glProgramEnvParameter4fvARB(target_type, i, constants + (i * 4)));
             }
         }
     }
@@ -436,8 +448,9 @@ static void shader_arb_load_np2fixup_constants(
 /* GL locking is done by the caller. */
 static inline void shader_arb_ps_local_constants(IWineD3DDeviceImpl* deviceImpl)
 {
+    const struct wined3d_context *context = context_get_current();
     IWineD3DStateBlockImpl* stateBlock = deviceImpl->stateBlock;
-    const struct wined3d_gl_info *gl_info = &deviceImpl->adapter->gl_info;
+    const struct wined3d_gl_info *gl_info = context->gl_info;
     unsigned char i;
     struct shader_arb_priv *priv = deviceImpl->shader_priv;
     const struct arb_ps_compiled_shader *gl_shader = priv->compiled_fprog;
@@ -471,8 +484,9 @@ static inline void shader_arb_ps_local_constants(IWineD3DDeviceImpl* deviceImpl)
         * ycorrection.w: 0.0
         */
         float val[4];
-        val[0] = deviceImpl->render_offscreen ? 0.0f : ((IWineD3DSurfaceImpl *) deviceImpl->render_targets[0])->currentDesc.Height;
-        val[1] = deviceImpl->render_offscreen ? 1.0f : -1.0f;
+        val[0] = context->render_offscreen ? 0.0f
+                : ((IWineD3DSurfaceImpl *) deviceImpl->render_targets[0])->currentDesc.Height;
+        val[1] = context->render_offscreen ? 1.0f : -1.0f;
         val[2] = 1.0f;
         val[3] = 0.0f;
         GL_EXTCALL(glProgramLocalParameter4fvARB(GL_FRAGMENT_PROGRAM_ARB, gl_shader->ycorrection, val));
@@ -536,60 +550,54 @@ static inline void shader_arb_vs_local_constants(IWineD3DDeviceImpl* deviceImpl)
  * worry about the Integers or Booleans
  */
 /* GL locking is done by the caller (state handler) */
-static void shader_arb_load_constants(
-    IWineD3DDevice* device,
-    char usePixelShader,
-    char useVertexShader) {
-   
-    IWineD3DDeviceImpl* deviceImpl = (IWineD3DDeviceImpl*) device; 
-    IWineD3DStateBlockImpl* stateBlock = deviceImpl->stateBlock;
-    const struct wined3d_gl_info *gl_info = &deviceImpl->adapter->gl_info;
+static void shader_arb_load_constants(const struct wined3d_context *context, char usePixelShader, char useVertexShader)
+{
+    IWineD3DDeviceImpl *device = ((IWineD3DSurfaceImpl *)context->surface)->resource.wineD3DDevice;
+    IWineD3DStateBlockImpl* stateBlock = device->stateBlock;
+    const struct wined3d_gl_info *gl_info = context->gl_info;
 
     if (useVertexShader) {
         IWineD3DBaseShaderImpl* vshader = (IWineD3DBaseShaderImpl*) stateBlock->vertexShader;
 
         /* Load DirectX 9 float constants for vertex shader */
-        deviceImpl->highest_dirty_vs_const = shader_arb_load_constantsF(
-                vshader, gl_info, GL_VERTEX_PROGRAM_ARB,
-                deviceImpl->highest_dirty_vs_const,
-                stateBlock->vertexShaderConstantF,
-                deviceImpl->activeContext->vshader_const_dirty);
-
-        shader_arb_vs_local_constants(deviceImpl);
+        device->highest_dirty_vs_const = shader_arb_load_constantsF(vshader, gl_info, GL_VERTEX_PROGRAM_ARB,
+                device->highest_dirty_vs_const, stateBlock->vertexShaderConstantF, context->vshader_const_dirty);
+        shader_arb_vs_local_constants(device);
     }
 
     if (usePixelShader) {
         IWineD3DBaseShaderImpl* pshader = (IWineD3DBaseShaderImpl*) stateBlock->pixelShader;
 
         /* Load DirectX 9 float constants for pixel shader */
-        deviceImpl->highest_dirty_ps_const = shader_arb_load_constantsF(
-                pshader, gl_info, GL_FRAGMENT_PROGRAM_ARB,
-                deviceImpl->highest_dirty_ps_const,
-                stateBlock->pixelShaderConstantF,
-                deviceImpl->activeContext->pshader_const_dirty);
-        shader_arb_ps_local_constants(deviceImpl);
+        device->highest_dirty_ps_const = shader_arb_load_constantsF(pshader, gl_info, GL_FRAGMENT_PROGRAM_ARB,
+                device->highest_dirty_ps_const, stateBlock->pixelShaderConstantF, context->pshader_const_dirty);
+        shader_arb_ps_local_constants(device);
     }
 }
 
 static void shader_arb_update_float_vertex_constants(IWineD3DDevice *iface, UINT start, UINT count)
 {
     IWineD3DDeviceImpl *This = (IWineD3DDeviceImpl *)iface;
+    struct wined3d_context *context = context_get_current();
 
     /* We don't want shader constant dirtification to be an O(contexts), so just dirtify the active
      * context. On a context switch the old context will be fully dirtified */
-    memset(This->activeContext->vshader_const_dirty + start, 1,
-            sizeof(*This->activeContext->vshader_const_dirty) * count);
+    if (!context || ((IWineD3DSurfaceImpl *)context->surface)->resource.wineD3DDevice != This) return;
+
+    memset(context->vshader_const_dirty + start, 1, sizeof(*context->vshader_const_dirty) * count);
     This->highest_dirty_vs_const = max(This->highest_dirty_vs_const, start + count);
 }
 
 static void shader_arb_update_float_pixel_constants(IWineD3DDevice *iface, UINT start, UINT count)
 {
     IWineD3DDeviceImpl *This = (IWineD3DDeviceImpl *)iface;
+    struct wined3d_context *context = context_get_current();
 
     /* We don't want shader constant dirtification to be an O(contexts), so just dirtify the active
      * context. On a context switch the old context will be fully dirtified */
-    memset(This->activeContext->pshader_const_dirty + start, 1,
-            sizeof(*This->activeContext->pshader_const_dirty) * count);
+    if (!context || ((IWineD3DSurfaceImpl *)context->surface)->resource.wineD3DDevice != This) return;
+
+    memset(context->pshader_const_dirty + start, 1, sizeof(*context->pshader_const_dirty) * count);
     This->highest_dirty_ps_const = max(This->highest_dirty_ps_const, start + count);
 }
 
@@ -4222,10 +4230,11 @@ static inline void find_arb_vs_compile_args(IWineD3DVertexShaderImpl *shader, IW
 }
 
 /* GL locking is done by the caller */
-static void shader_arb_select(IWineD3DDevice *iface, BOOL usePS, BOOL useVS) {
-    IWineD3DDeviceImpl *This = (IWineD3DDeviceImpl *)iface;
+static void shader_arb_select(const struct wined3d_context *context, BOOL usePS, BOOL useVS)
+{
+    IWineD3DDeviceImpl *This = ((IWineD3DSurfaceImpl *)context->surface)->resource.wineD3DDevice;
     struct shader_arb_priv *priv = This->shader_priv;
-    const struct wined3d_gl_info *gl_info = &This->adapter->gl_info;
+    const struct wined3d_gl_info *gl_info = context->gl_info;
     int i;
 
     /* Deal with pixel shaders first so the vertex shader arg function has the input signature ready */
@@ -4260,10 +4269,10 @@ static void shader_arb_select(IWineD3DDevice *iface, BOOL usePS, BOOL useVS) {
             This->highest_dirty_ps_const = max(This->highest_dirty_ps_const, 8);
             for(i = 0; i < 8; i++)
             {
-                This->activeContext->pshader_const_dirty[i] = 1;
+                context->pshader_const_dirty[i] = 1;
             }
             /* Also takes care of loading local constants */
-            shader_arb_load_constants(iface, TRUE, FALSE);
+            shader_arb_load_constants(context, TRUE, FALSE);
         }
         else
         {
@@ -4271,7 +4280,8 @@ static void shader_arb_select(IWineD3DDevice *iface, BOOL usePS, BOOL useVS) {
         }
 
         /* Force constant reloading for the NP2 fixup (see comment in shader_glsl_select for more info) */
-        if (compiled->np2fixup_info.super.active) This->shader_backend->shader_load_np2fixup_constants(iface, usePS, useVS);
+        if (compiled->np2fixup_info.super.active)
+            shader_arb_load_np2fixup_constants((IWineD3DDevice *)This, usePS, useVS);
     } else if(GL_SUPPORT(ARB_FRAGMENT_PROGRAM) && !priv->use_arbfp_fixed_func) {
         /* Disable only if we're not using arbfp fixed function fragment processing. If this is used,
         * keep GL_FRAGMENT_PROGRAM_ARB enabled, and the fixed function pipeline will bind the fixed function
@@ -4368,8 +4378,6 @@ static void shader_arb_destroy(IWineD3DBaseShader *iface) {
     IWineD3DDeviceImpl *device = (IWineD3DDeviceImpl *)baseShader->baseShader.device;
     const struct wined3d_gl_info *gl_info = &device->adapter->gl_info;
 
-    ActivateContext(device, device->lastActiveRenderTarget, CTXUSAGE_RESOURCELOAD);
-
     if (shader_is_pshader_version(baseShader->baseShader.reg_maps.shader_version.type))
     {
         IWineD3DPixelShaderImpl *This = (IWineD3DPixelShaderImpl *) iface;
@@ -4378,6 +4386,9 @@ static void shader_arb_destroy(IWineD3DBaseShader *iface) {
 
         if(!shader_data) return; /* This can happen if a shader was never compiled */
         ENTER_GL();
+
+        if(shader_data->num_gl_shaders) ActivateContext(device, NULL, CTXUSAGE_RESOURCELOAD);
+
         for(i = 0; i < shader_data->num_gl_shaders; i++) {
             GL_EXTCALL(glDeleteProgramsARB(1, &shader_data->gl_shaders[i].prgId));
             checkGLcall("GL_EXTCALL(glDeleteProgramsARB(1, &shader_data->gl_shaders[i].prgId))");
@@ -4393,6 +4404,9 @@ static void shader_arb_destroy(IWineD3DBaseShader *iface) {
 
         if(!shader_data) return; /* This can happen if a shader was never compiled */
         ENTER_GL();
+
+        if(shader_data->num_gl_shaders) ActivateContext(device, NULL, CTXUSAGE_RESOURCELOAD);
+
         for(i = 0; i < shader_data->num_gl_shaders; i++) {
             GL_EXTCALL(glDeleteProgramsARB(1, &shader_data->gl_shaders[i].prgId));
             checkGLcall("GL_EXTCALL(glDeleteProgramsARB(1, &shader_data->gl_shaders[i].prgId))");
@@ -5166,7 +5180,8 @@ static void arbfp_get_caps(WINED3DDEVTYPE devtype, const struct wined3d_gl_info 
 #undef GLINFO_LOCATION
 
 #define GLINFO_LOCATION stateblock->wineD3DDevice->adapter->gl_info
-static void state_texfactor_arbfp(DWORD state, IWineD3DStateBlockImpl *stateblock, WineD3DContext *context) {
+static void state_texfactor_arbfp(DWORD state, IWineD3DStateBlockImpl *stateblock, struct wined3d_context *context)
+{
     float col[4];
     IWineD3DDeviceImpl *device = stateblock->wineD3DDevice;
 
@@ -5177,7 +5192,7 @@ static void state_texfactor_arbfp(DWORD state, IWineD3DStateBlockImpl *statebloc
         if (use_ps(stateblock)) return;
 
         device = stateblock->wineD3DDevice;
-        device->activeContext->pshader_const_dirty[ARB_FFP_CONST_TFACTOR] = 1;
+        context->pshader_const_dirty[ARB_FFP_CONST_TFACTOR] = 1;
         device->highest_dirty_ps_const = max(device->highest_dirty_ps_const, ARB_FFP_CONST_TFACTOR + 1);
     }
 
@@ -5187,7 +5202,8 @@ static void state_texfactor_arbfp(DWORD state, IWineD3DStateBlockImpl *statebloc
 
 }
 
-static void state_arb_specularenable(DWORD state, IWineD3DStateBlockImpl *stateblock, WineD3DContext *context) {
+static void state_arb_specularenable(DWORD state, IWineD3DStateBlockImpl *stateblock, struct wined3d_context *context)
+{
     float col[4];
     IWineD3DDeviceImpl *device = stateblock->wineD3DDevice;
 
@@ -5198,7 +5214,7 @@ static void state_arb_specularenable(DWORD state, IWineD3DStateBlockImpl *stateb
         if (use_ps(stateblock)) return;
 
         device = stateblock->wineD3DDevice;
-        device->activeContext->pshader_const_dirty[ARB_FFP_CONST_SPECULAR_ENABLE] = 1;
+        context->pshader_const_dirty[ARB_FFP_CONST_SPECULAR_ENABLE] = 1;
         device->highest_dirty_ps_const = max(device->highest_dirty_ps_const, ARB_FFP_CONST_SPECULAR_ENABLE + 1);
     }
 
@@ -5214,7 +5230,8 @@ static void state_arb_specularenable(DWORD state, IWineD3DStateBlockImpl *stateb
     checkGLcall("glProgramEnvParameter4fvARB(GL_FRAGMENT_PROGRAM_ARB, ARB_FFP_CONST_SPECULAR_ENABLE, col)");
 }
 
-static void set_bumpmat_arbfp(DWORD state, IWineD3DStateBlockImpl *stateblock, WineD3DContext *context) {
+static void set_bumpmat_arbfp(DWORD state, IWineD3DStateBlockImpl *stateblock, struct wined3d_context *context)
+{
     DWORD stage = (state - STATE_TEXTURESTAGE(0, 0)) / (WINED3D_HIGHEST_TEXTURE_STATE + 1);
     IWineD3DDeviceImpl *device = stateblock->wineD3DDevice;
     float mat[2][2];
@@ -5236,7 +5253,7 @@ static void set_bumpmat_arbfp(DWORD state, IWineD3DStateBlockImpl *stateblock, W
             return;
         }
     } else if(device->shader_backend == &arb_program_shader_backend) {
-        device->activeContext->pshader_const_dirty[ARB_FFP_CONST_BUMPMAT(stage)] = 1;
+        context->pshader_const_dirty[ARB_FFP_CONST_BUMPMAT(stage)] = 1;
         device->highest_dirty_ps_const = max(device->highest_dirty_ps_const, ARB_FFP_CONST_BUMPMAT(stage) + 1);
     }
 
@@ -5249,7 +5266,8 @@ static void set_bumpmat_arbfp(DWORD state, IWineD3DStateBlockImpl *stateblock, W
     checkGLcall("glProgramEnvParameter4fvARB(GL_FRAGMENT_PROGRAM_ARB, ARB_FFP_CONST_BUMPMAT(stage), &mat[0][0])");
 }
 
-static void tex_bumpenvlum_arbfp(DWORD state, IWineD3DStateBlockImpl *stateblock, WineD3DContext *context) {
+static void tex_bumpenvlum_arbfp(DWORD state, IWineD3DStateBlockImpl *stateblock, struct wined3d_context *context)
+{
     DWORD stage = (state - STATE_TEXTURESTAGE(0, 0)) / (WINED3D_HIGHEST_TEXTURE_STATE + 1);
     IWineD3DDeviceImpl *device = stateblock->wineD3DDevice;
     float param[4];
@@ -5271,7 +5289,7 @@ static void tex_bumpenvlum_arbfp(DWORD state, IWineD3DStateBlockImpl *stateblock
             return;
         }
     } else if(device->shader_backend == &arb_program_shader_backend) {
-        device->activeContext->pshader_const_dirty[ARB_FFP_CONST_LUMINANCE(stage)] = 1;
+        context->pshader_const_dirty[ARB_FFP_CONST_LUMINANCE(stage)] = 1;
         device->highest_dirty_ps_const = max(device->highest_dirty_ps_const, ARB_FFP_CONST_LUMINANCE(stage) + 1);
     }
 
@@ -5756,7 +5774,8 @@ static GLuint gen_arbfp_ffp_shader(const struct ffp_frag_settings *settings, IWi
     return ret;
 }
 
-static void fragment_prog_arbfp(DWORD state, IWineD3DStateBlockImpl *stateblock, WineD3DContext *context) {
+static void fragment_prog_arbfp(DWORD state, IWineD3DStateBlockImpl *stateblock, struct wined3d_context *context)
+{
     IWineD3DDeviceImpl *device = stateblock->wineD3DDevice;
     struct shader_arb_priv *priv = device->fragment_priv;
     BOOL use_pshader = use_ps(stateblock);
@@ -5776,7 +5795,7 @@ static void fragment_prog_arbfp(DWORD state, IWineD3DStateBlockImpl *stateblock,
             state_texfactor_arbfp(STATE_RENDER(WINED3DRS_TEXTUREFACTOR), stateblock, context);
             state_arb_specularenable(STATE_RENDER(WINED3DRS_SPECULARENABLE), stateblock, context);
         } else if(use_pshader && !isStateDirty(context, device->StateTable[STATE_VSHADER].representative)) {
-            device->shader_backend->shader_select((IWineD3DDevice *)stateblock->wineD3DDevice, use_pshader, use_vshader);
+            device->shader_backend->shader_select(context, use_pshader, use_vshader);
         }
         return;
     }
@@ -5792,7 +5811,6 @@ static void fragment_prog_arbfp(DWORD state, IWineD3DStateBlockImpl *stateblock,
                 ERR("Out of memory\n");
                 return;
             }
-
             new_desc->num_textures_used = 0;
             for(i = 0; i < GL_LIMITS(texture_stages); i++) {
                 if(settings.op[i].cop == WINED3DTOP_DISABLE) break;
@@ -5837,7 +5855,7 @@ static void fragment_prog_arbfp(DWORD state, IWineD3DStateBlockImpl *stateblock,
      * shader handler
      */
     if(!isStateDirty(context, device->StateTable[STATE_VSHADER].representative)) {
-        device->shader_backend->shader_select((IWineD3DDevice *)stateblock->wineD3DDevice, use_pshader, use_vshader);
+        device->shader_backend->shader_select(context, use_pshader, use_vshader);
 
         if (!isStateDirty(context, STATE_VERTEXSHADERCONSTANT) && (use_vshader || use_pshader)) {
             device->StateTable[STATE_VERTEXSHADERCONSTANT].apply(STATE_VERTEXSHADERCONSTANT, stateblock, context);
@@ -5854,7 +5872,8 @@ static void fragment_prog_arbfp(DWORD state, IWineD3DStateBlockImpl *stateblock,
  * is that changing the fog start and fog end(which links to FOGENABLE in vertex) results in the
  * fragment_prog_arbfp function being called because FOGENABLE is dirty, which calls this function here
  */
-static void state_arbfp_fog(DWORD state, IWineD3DStateBlockImpl *stateblock, WineD3DContext *context) {
+static void state_arbfp_fog(DWORD state, IWineD3DStateBlockImpl *stateblock, struct wined3d_context *context)
+{
     enum fogsource new_source;
 
     TRACE("state %#x, stateblock %p, context %p\n", state, stateblock, context);
@@ -5884,7 +5903,8 @@ static void state_arbfp_fog(DWORD state, IWineD3DStateBlockImpl *stateblock, Win
     }
 }
 
-static void textransform(DWORD state, IWineD3DStateBlockImpl *stateblock, WineD3DContext *context) {
+static void textransform(DWORD state, IWineD3DStateBlockImpl *stateblock, struct wined3d_context *context)
+{
     if(!isStateDirty(context, STATE_PIXELSHADER)) {
         fragment_prog_arbfp(state, stateblock, context);
     }

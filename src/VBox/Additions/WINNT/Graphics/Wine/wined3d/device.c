@@ -1200,32 +1200,13 @@ static HRESULT WINAPI IWineD3DDeviceImpl_CreateQuery(IWineD3DDevice *iface, WINE
     /* allocated the 'extended' data based on the type of query requested */
     switch(Type){
     case WINED3DQUERYTYPE_OCCLUSION:
-        object->extendedData = HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, sizeof(WineQueryOcclusionData));
-        ((WineQueryOcclusionData *)(object->extendedData))->ctx = This->activeContext;
+        object->extendedData = HeapAlloc(GetProcessHeap(), 0, sizeof(struct wined3d_occlusion_query));
+        ((struct wined3d_occlusion_query *)object->extendedData)->context = NULL;
+        break;
 
-        if(GL_SUPPORT(ARB_OCCLUSION_QUERY)) {
-            TRACE("(%p) Allocating data for an occlusion query\n", This);
-
-            ActivateContext(This, This->lastActiveRenderTarget, CTXUSAGE_RESOURCELOAD);
-            ENTER_GL();
-            GL_EXTCALL(glGenQueriesARB(1, &((WineQueryOcclusionData *)(object->extendedData))->queryId));
-            LEAVE_GL();
-            break;
-        }
     case WINED3DQUERYTYPE_EVENT:
-        object->extendedData = HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, sizeof(WineQueryEventData));
-        ((WineQueryEventData *)(object->extendedData))->ctx = This->activeContext;
-
-        ActivateContext(This, This->lastActiveRenderTarget, CTXUSAGE_RESOURCELOAD);
-        ENTER_GL();
-        if(GL_SUPPORT(APPLE_FENCE)) {
-            GL_EXTCALL(glGenFencesAPPLE(1, &((WineQueryEventData *)(object->extendedData))->fenceId));
-            checkGLcall("glGenFencesAPPLE");
-        } else if(GL_SUPPORT(NV_FENCE)) {
-            GL_EXTCALL(glGenFencesNV(1, &((WineQueryEventData *)(object->extendedData))->fenceId));
-            checkGLcall("glGenFencesNV");
-        }
-        LEAVE_GL();
+        object->extendedData = HeapAlloc(GetProcessHeap(), 0, sizeof(struct wined3d_event_query));
+        ((struct wined3d_event_query *)object->extendedData)->context = NULL;
         break;
 
     case WINED3DQUERYTYPE_VCACHE:
@@ -2167,16 +2148,12 @@ static HRESULT WINAPI IWineD3DDeviceImpl_Init3D(IWineD3DDevice *iface,
     if(swapchain->backBuffer && swapchain->backBuffer[0]) {
         TRACE("Setting rendertarget to %p\n", swapchain->backBuffer);
         This->render_targets[0] = swapchain->backBuffer[0];
-        This->lastActiveRenderTarget = swapchain->backBuffer[0];
     }
     else {
         TRACE("Setting rendertarget to %p\n", swapchain->frontBuffer);
         This->render_targets[0] = swapchain->frontBuffer;
-        This->lastActiveRenderTarget = swapchain->frontBuffer;
     }
     IWineD3DSurface_AddRef(This->render_targets[0]);
-    This->activeContext = swapchain->context[0];
-    This->lastThread = GetCurrentThreadId();
 
     /* Depth Stencil support */
     This->stencilBufferTarget = This->auto_depth_stencil_buffer;
@@ -2222,7 +2199,8 @@ static HRESULT WINAPI IWineD3DDeviceImpl_Init3D(IWineD3DDevice *iface,
 
         case ORM_BACKBUFFER:
         {
-            if(This->activeContext->aux_buffers > 0) {
+            if (context_get_current()->aux_buffers > 0)
+            {
                 TRACE("Using auxilliary buffer for offscreen rendering\n");
                 This->offscreenBuffer = GL_AUX0;
             } else {
@@ -2327,7 +2305,7 @@ static HRESULT WINAPI IWineD3DDeviceImpl_Uninit3D(IWineD3DDevice *iface, D3DCB_D
     /* I don't think that the interface guarantees that the device is destroyed from the same thread
      * it was created. Thus make sure a context is active for the glDelete* calls
      */
-    ActivateContext(This, This->lastActiveRenderTarget, CTXUSAGE_RESOURCELOAD);
+    ActivateContext(This, NULL, CTXUSAGE_RESOURCELOAD);
 
     if(This->logo_surface) IWineD3DSurface_Release(This->logo_surface);
 
@@ -4409,7 +4387,7 @@ static HRESULT WINAPI IWineD3DDeviceImpl_ProcessVertices(IWineD3DDevice *iface, 
     }
 
     /* Need any context to write to the vbo. */
-    ActivateContext(This, This->lastActiveRenderTarget, CTXUSAGE_RESOURCELOAD);
+    ActivateContext(This, NULL, CTXUSAGE_RESOURCELOAD);
 
     /* ProcessVertices reads from vertex buffers, which have to be assigned. DrawPrimitive and DrawPrimitiveUP
      * control the streamIsUP flag, thus restore it afterwards.
@@ -4875,7 +4853,7 @@ static HRESULT WINAPI IWineD3DDeviceImpl_EndScene(IWineD3DDevice *iface) {
         return WINED3DERR_INVALIDCALL;
     }
 
-    ActivateContext(This, This->lastActiveRenderTarget, CTXUSAGE_RESOURCELOAD);
+    ActivateContext(This, NULL, CTXUSAGE_RESOURCELOAD);
     /* We only have to do this if we need to read the, swapbuffers performs a flush for us */
     glFlush();
     /* No checkGLcall here to avoid locking the lock just for checking a call that hardly ever
@@ -4919,6 +4897,7 @@ HRESULT IWineD3DDeviceImpl_ClearSurface(IWineD3DDeviceImpl *This,  IWineD3DSurfa
     UINT drawable_width, drawable_height;
     IWineD3DSurfaceImpl *depth_stencil = (IWineD3DSurfaceImpl *) This->stencilBufferTarget;
     IWineD3DSwapChainImpl *swapchain = NULL;
+    struct wined3d_context *context;
 
     /* When we're clearing parts of the drawable, make sure that the target surface is well up to date in the
      * drawable. After the clear we'll mark the drawable up to date, so we have to make sure that this is true
@@ -4954,9 +4933,10 @@ HRESULT IWineD3DDeviceImpl_ClearSurface(IWineD3DDeviceImpl *This,  IWineD3DSurfa
         }
     }
 
-    target->get_drawable_size(target, &drawable_width, &drawable_height);
+    context = ActivateContext(This, (IWineD3DSurface *)target, CTXUSAGE_CLEAR);
 
-    ActivateContext(This, (IWineD3DSurface *) target, CTXUSAGE_CLEAR);
+    target->get_drawable_size(context, &drawable_width, &drawable_height);
+
     ENTER_GL();
 
     /* Only set the values up once, as they are not changing */
@@ -4968,7 +4948,7 @@ HRESULT IWineD3DDeviceImpl_ClearSurface(IWineD3DDeviceImpl *This,  IWineD3DSurfa
     }
 
     if (Flags & WINED3DCLEAR_ZBUFFER) {
-        DWORD location = This->render_offscreen ? SFLAG_DS_OFFSCREEN : SFLAG_DS_ONSCREEN;
+        DWORD location = context->render_offscreen ? SFLAG_DS_OFFSCREEN : SFLAG_DS_ONSCREEN;
         glDepthMask(GL_TRUE);
         glClearDepth(Z);
         checkGLcall("glClearDepth");
@@ -4977,19 +4957,19 @@ HRESULT IWineD3DDeviceImpl_ClearSurface(IWineD3DDeviceImpl *This,  IWineD3DSurfa
 
         if (vp->X != 0 || vp->Y != 0 ||
                 vp->Width < depth_stencil->currentDesc.Width || vp->Height < depth_stencil->currentDesc.Height) {
-            surface_load_ds_location(This->stencilBufferTarget, location);
+            surface_load_ds_location(This->stencilBufferTarget, context, location);
         }
         else if (This->stateBlock->renderState[WINED3DRS_SCISSORTESTENABLE] && (
                 This->stateBlock->scissorRect.left > 0 || This->stateBlock->scissorRect.top > 0 ||
                 This->stateBlock->scissorRect.right < depth_stencil->currentDesc.Width ||
                 This->stateBlock->scissorRect.bottom < depth_stencil->currentDesc.Height)) {
-            surface_load_ds_location(This->stencilBufferTarget, location);
+            surface_load_ds_location(This->stencilBufferTarget, context, location);
         }
         else if (Count > 0 && pRects && (
                 pRects[0].x1 > 0 || pRects[0].y1 > 0 ||
                 pRects[0].x2 < depth_stencil->currentDesc.Width ||
                 pRects[0].y2 < depth_stencil->currentDesc.Height)) {
-            surface_load_ds_location(This->stencilBufferTarget, location);
+            surface_load_ds_location(This->stencilBufferTarget, context, location);
         }
     }
 
@@ -5014,7 +4994,8 @@ HRESULT IWineD3DDeviceImpl_ClearSurface(IWineD3DDeviceImpl *This,  IWineD3DSurfa
         if(This->stateBlock->renderState[WINED3DRS_SCISSORTESTENABLE]) {
             IntersectRect(&vp_rect, &vp_rect, &This->stateBlock->scissorRect);
         }
-        if(This->render_offscreen) {
+        if (context->render_offscreen)
+        {
             glScissor(vp_rect.left, vp_rect.top,
                         vp_rect.right - vp_rect.left, vp_rect.bottom - vp_rect.top);
         } else {
@@ -5046,7 +5027,8 @@ HRESULT IWineD3DDeviceImpl_ClearSurface(IWineD3DDeviceImpl *This,  IWineD3DSurfa
                 continue;
             }
 
-            if(This->render_offscreen) {
+            if (context->render_offscreen)
+            {
                 glScissor(curRect.x1, curRect.y1,
                           curRect.x2 - curRect.x1, curRect.y2 - curRect.y1);
             } else {
@@ -5074,11 +5056,11 @@ HRESULT IWineD3DDeviceImpl_ClearSurface(IWineD3DDeviceImpl *This,  IWineD3DSurfa
         /* Dirtify the target surface for now. If the surface is locked regularly, and an up to date sysmem copy exists,
          * it is most likely more efficient to perform a clear on the sysmem copy too instead of downloading it
          */
-        IWineD3DSurface_ModifyLocation(This->lastActiveRenderTarget, SFLAG_INDRAWABLE, TRUE);
+        IWineD3DSurface_ModifyLocation((IWineD3DSurface *)target, SFLAG_INDRAWABLE, TRUE);
     }
     if (Flags & WINED3DCLEAR_ZBUFFER) {
         /* Note that WINED3DCLEAR_ZBUFFER implies a depth stencil exists on the device */
-        DWORD location = This->render_offscreen ? SFLAG_DS_OFFSCREEN : SFLAG_DS_ONSCREEN;
+        DWORD location = context->render_offscreen ? SFLAG_DS_OFFSCREEN : SFLAG_DS_ONSCREEN;
         surface_modify_ds_location(This->stencilBufferTarget, location);
     }
 
@@ -5804,7 +5786,7 @@ static HRESULT  WINAPI  IWineD3DDeviceImpl_UpdateSurface(IWineD3DDevice *iface, 
         IWineD3DSurface_GetDesc(pDestinationSurface, &winedesc);
     }
 
-    ActivateContext(This, This->lastActiveRenderTarget, CTXUSAGE_RESOURCELOAD);
+    ActivateContext(This, NULL, CTXUSAGE_RESOURCELOAD);
 
     ENTER_GL();
     GL_EXTCALL(glActiveTextureARB(GL_TEXTURE0_ARB));
@@ -6040,6 +6022,7 @@ static void color_fill_fbo(IWineD3DDevice *iface, IWineD3DSurface *surface,
         const WINED3DRECT *rect, const float color[4])
 {
     IWineD3DDeviceImpl *This = (IWineD3DDeviceImpl *) iface;
+    struct wined3d_context *context;
     IWineD3DSwapChain *swapchain;
 
     swapchain = get_swapchain(surface);
@@ -6048,20 +6031,20 @@ static void color_fill_fbo(IWineD3DDevice *iface, IWineD3DSurface *surface,
 
         TRACE("Surface %p is onscreen\n", surface);
 
-        ActivateContext(This, surface, CTXUSAGE_RESOURCELOAD);
+        context = ActivateContext(This, surface, CTXUSAGE_RESOURCELOAD);
         ENTER_GL();
-        context_bind_fbo(This->activeContext, GL_FRAMEBUFFER_EXT, NULL);
+        context_bind_fbo(context, GL_FRAMEBUFFER_EXT, NULL);
         buffer = surface_get_gl_buffer(surface, swapchain);
         glDrawBuffer(buffer);
         checkGLcall("glDrawBuffer()");
     } else {
         TRACE("Surface %p is offscreen\n", surface);
 
-        ActivateContext(This, This->lastActiveRenderTarget, CTXUSAGE_RESOURCELOAD);
+        context = ActivateContext(This, NULL, CTXUSAGE_RESOURCELOAD);
         ENTER_GL();
-        context_bind_fbo(This->activeContext, GL_FRAMEBUFFER_EXT, &This->activeContext->dst_fbo);
-        context_attach_surface_fbo(This->activeContext, GL_FRAMEBUFFER_EXT, 0, surface);
-        context_attach_depth_stencil_fbo(This->activeContext, GL_FRAMEBUFFER_EXT, NULL, FALSE);
+        context_bind_fbo(context, GL_FRAMEBUFFER_EXT, &context->dst_fbo);
+        context_attach_surface_fbo(context, GL_FRAMEBUFFER_EXT, 0, surface);
+        context_attach_depth_stencil_fbo(context, GL_FRAMEBUFFER_EXT, NULL, FALSE);
     }
 
     if (rect) {
@@ -6088,12 +6071,6 @@ static void color_fill_fbo(IWineD3DDevice *iface, IWineD3DSurface *surface,
     glClearColor(color[0], color[1], color[2], color[3]);
     glClear(GL_COLOR_BUFFER_BIT);
     checkGLcall("glClear");
-
-    if (This->activeContext->current_fbo) {
-        context_bind_fbo(This->activeContext, GL_FRAMEBUFFER_EXT, &This->activeContext->current_fbo->id);
-    } else {
-        context_bind_fbo(This->activeContext, GL_FRAMEBUFFER_EXT, NULL);
-    }
 
     if (swapchain && surface == ((IWineD3DSwapChainImpl *)swapchain)->frontBuffer
             && ((IWineD3DSwapChainImpl *)swapchain)->backBuffer) {
@@ -6232,7 +6209,7 @@ static HRESULT WINAPI IWineD3DDeviceImpl_ColorFill(IWineD3DDevice *iface, IWineD
         BltFx.dwSize = sizeof(BltFx);
         BltFx.u5.dwFillColor = argb_to_fmt(color, surface->resource.format_desc->format);
         return IWineD3DSurface_Blt(pSurface, (const RECT *)pRect, NULL, NULL,
-                WINEDDBLT_COLORFILL, &BltFx, WINED3DTEXF_NONE);
+                WINEDDBLT_COLORFILL, &BltFx, WINED3DTEXF_POINT);
     }
 }
 
@@ -6279,7 +6256,7 @@ static void WINAPI IWineD3DDeviceImpl_ClearRendertargetView(IWineD3DDevice *ifac
         memset(&BltFx, 0, sizeof(BltFx));
         BltFx.dwSize = sizeof(BltFx);
         BltFx.u5.dwFillColor = argb_to_fmt(c, ((IWineD3DSurfaceImpl *)surface)->resource.format_desc->format);
-        hr = IWineD3DSurface_Blt(surface, NULL, NULL, NULL, WINEDDBLT_COLORFILL, &BltFx, WINED3DTEXF_NONE);
+        hr = IWineD3DSurface_Blt(surface, NULL, NULL, NULL, WINEDDBLT_COLORFILL, &BltFx, WINED3DTEXF_POINT);
         if (FAILED(hr))
         {
             ERR("Blt failed, hr %#x\n", hr);
@@ -6424,6 +6401,7 @@ void stretch_rect_fbo(IWineD3DDevice *iface, IWineD3DSurface *src_surface, WINED
     IWineD3DDeviceImpl *This = (IWineD3DDeviceImpl *)iface;
     GLbitfield mask = GL_COLOR_BUFFER_BIT; /* TODO: Support blitting depth/stencil surfaces */
     IWineD3DSwapChain *src_swapchain, *dst_swapchain;
+    struct wined3d_context *context;
     GLenum gl_filter;
     POINT offset = {0, 0};
 
@@ -6449,9 +6427,9 @@ void stretch_rect_fbo(IWineD3DDevice *iface, IWineD3DSurface *src_surface, WINED
     src_swapchain = get_swapchain(src_surface);
     dst_swapchain = get_swapchain(dst_surface);
 
-    if (src_swapchain) ActivateContext(This, src_surface, CTXUSAGE_RESOURCELOAD);
-    else if (dst_swapchain) ActivateContext(This, dst_surface, CTXUSAGE_RESOURCELOAD);
-    else ActivateContext(This, This->lastActiveRenderTarget, CTXUSAGE_RESOURCELOAD);
+    if (src_swapchain) context = ActivateContext(This, src_surface, CTXUSAGE_RESOURCELOAD);
+    else if (dst_swapchain) context = ActivateContext(This, dst_surface, CTXUSAGE_RESOURCELOAD);
+    else context = ActivateContext(This, NULL, CTXUSAGE_RESOURCELOAD);
 
     if (src_swapchain) {
         GLenum buffer = surface_get_gl_buffer(src_surface, src_swapchain);
@@ -6476,17 +6454,17 @@ void stretch_rect_fbo(IWineD3DDevice *iface, IWineD3DSurface *src_surface, WINED
         }
 
         ENTER_GL();
-        context_bind_fbo(This->activeContext, GL_READ_FRAMEBUFFER_EXT, NULL);
+        context_bind_fbo(context, GL_READ_FRAMEBUFFER_EXT, NULL);
         glReadBuffer(buffer);
         checkGLcall("glReadBuffer()");
     } else {
         TRACE("Source surface %p is offscreen\n", src_surface);
         ENTER_GL();
-        context_bind_fbo(This->activeContext, GL_READ_FRAMEBUFFER_EXT, &This->activeContext->src_fbo);
-        context_attach_surface_fbo(This->activeContext, GL_READ_FRAMEBUFFER_EXT, 0, src_surface);
+        context_bind_fbo(context, GL_READ_FRAMEBUFFER_EXT, &context->src_fbo);
+        context_attach_surface_fbo(context, GL_READ_FRAMEBUFFER_EXT, 0, src_surface);
         glReadBuffer(GL_COLOR_ATTACHMENT0_EXT);
         checkGLcall("glReadBuffer()");
-        context_attach_depth_stencil_fbo(This->activeContext, GL_READ_FRAMEBUFFER_EXT, NULL, FALSE);
+        context_attach_depth_stencil_fbo(context, GL_READ_FRAMEBUFFER_EXT, NULL, FALSE);
     }
     LEAVE_GL();
 
@@ -6515,18 +6493,18 @@ void stretch_rect_fbo(IWineD3DDevice *iface, IWineD3DSurface *src_surface, WINED
         }
 
         ENTER_GL();
-        context_bind_fbo(This->activeContext, GL_DRAW_FRAMEBUFFER_EXT, NULL);
+        context_bind_fbo(context, GL_DRAW_FRAMEBUFFER_EXT, NULL);
         glDrawBuffer(buffer);
         checkGLcall("glDrawBuffer()");
     } else {
         TRACE("Destination surface %p is offscreen\n", dst_surface);
 
         ENTER_GL();
-        context_bind_fbo(This->activeContext, GL_DRAW_FRAMEBUFFER_EXT, &This->activeContext->dst_fbo);
-        context_attach_surface_fbo(This->activeContext, GL_DRAW_FRAMEBUFFER_EXT, 0, dst_surface);
+        context_bind_fbo(context, GL_DRAW_FRAMEBUFFER_EXT, &context->dst_fbo);
+        context_attach_surface_fbo(context, GL_DRAW_FRAMEBUFFER_EXT, 0, dst_surface);
         glDrawBuffer(GL_COLOR_ATTACHMENT0_EXT);
         checkGLcall("glDrawBuffer()");
-        context_attach_depth_stencil_fbo(This->activeContext, GL_DRAW_FRAMEBUFFER_EXT, NULL, FALSE);
+        context_attach_depth_stencil_fbo(context, GL_DRAW_FRAMEBUFFER_EXT, NULL, FALSE);
     }
     glDisable(GL_SCISSOR_TEST);
     IWineD3DDeviceImpl_MarkStateDirty(This, STATE_RENDER(WINED3DRS_SCISSORTESTENABLE));
@@ -6542,12 +6520,6 @@ void stretch_rect_fbo(IWineD3DDevice *iface, IWineD3DSurface *src_surface, WINED
     }
 
     IWineD3DSurface_ModifyLocation(dst_surface, SFLAG_INDRAWABLE, TRUE);
-
-    if (This->activeContext->current_fbo) {
-        context_bind_fbo(This->activeContext, GL_FRAMEBUFFER_EXT, &This->activeContext->current_fbo->id);
-    } else {
-        context_bind_fbo(This->activeContext, GL_FRAMEBUFFER_EXT, NULL);
-    }
 
     /* If we switched from GL_BACK to GL_FRONT above, we need to switch back here */
     if (dst_swapchain && dst_surface == ((IWineD3DSwapChainImpl *)dst_swapchain)->frontBuffer
@@ -6632,8 +6604,8 @@ static HRESULT WINAPI IWineD3DDeviceImpl_SetDepthStencilSurface(IWineD3DDevice *
                     || ((IWineD3DSurfaceImpl *)This->stencilBufferTarget)->Flags & SFLAG_DISCARD) {
                 surface_modify_ds_location(This->stencilBufferTarget, SFLAG_DS_DISCARDED);
             } else {
-                ActivateContext(This, This->render_targets[0], CTXUSAGE_RESOURCELOAD);
-                surface_load_ds_location(This->stencilBufferTarget, SFLAG_DS_OFFSCREEN);
+                struct wined3d_context *context = ActivateContext(This, This->render_targets[0], CTXUSAGE_RESOURCELOAD);
+                surface_load_ds_location(This->stencilBufferTarget, context, SFLAG_DS_OFFSCREEN);
                 surface_modify_ds_location(This->stencilBufferTarget, SFLAG_DS_OFFSCREEN);
             }
         }
@@ -6641,18 +6613,8 @@ static HRESULT WINAPI IWineD3DDeviceImpl_SetDepthStencilSurface(IWineD3DDevice *
         tmp = This->stencilBufferTarget;
         This->stencilBufferTarget = pNewZStencil;
         /* should we be calling the parent or the wined3d surface? */
-        if (NULL != This->stencilBufferTarget) {
-            IUnknown *pParent;
-            IWineD3DSurface_AddRef(This->stencilBufferTarget);
-            IWineD3DSurface_GetParent(This->stencilBufferTarget, &pParent);
-        }
-        if (NULL != tmp) {
-            IUnknown *pParent;
-            IWineD3DSurface_GetParent(This->stencilBufferTarget, &pParent);
-            IUnknown_Release(pParent);
-            IUnknown_Release(pParent);
-            IWineD3DSurface_Release(tmp);
-        }
+        if (NULL != This->stencilBufferTarget) IWineD3DSurface_AddRef(This->stencilBufferTarget);
+        if (NULL != tmp) IWineD3DSurface_Release(tmp);
         hr = WINED3D_OK;
 
         if((!tmp && pNewZStencil) || (!pNewZStencil && tmp)) {
@@ -6677,7 +6639,7 @@ static HRESULT  WINAPI  IWineD3DDeviceImpl_SetCursorProperties(IWineD3DDevice* i
 
     /* some basic validation checks */
     if(This->cursorTexture) {
-        ActivateContext(This, This->lastActiveRenderTarget, CTXUSAGE_RESOURCELOAD);
+        ActivateContext(This, NULL, CTXUSAGE_RESOURCELOAD);
         ENTER_GL();
         glDeleteTextures(1, &This->cursorTexture);
         LEAVE_GL();
@@ -6736,7 +6698,7 @@ static HRESULT  WINAPI  IWineD3DDeviceImpl_SetCursorProperties(IWineD3DDevice* i
                     memcpy(&mem[width * bpp * i], &bits[rect.Pitch * i], width * bpp);
                 IWineD3DSurface_UnlockRect(pCursorBitmap);
 
-                ActivateContext(This, This->lastActiveRenderTarget, CTXUSAGE_RESOURCELOAD);
+                ActivateContext(This, NULL, CTXUSAGE_RESOURCELOAD);
 
                 ENTER_GL();
 
@@ -6937,7 +6899,7 @@ static void updateSurfaceDesc(IWineD3DSurfaceImpl *surface, const WINED3DPRESENT
 
     if (surface->texture_name)
     {
-        ActivateContext(This, This->lastActiveRenderTarget, CTXUSAGE_RESOURCELOAD);
+        ActivateContext(This, NULL, CTXUSAGE_RESOURCELOAD);
         ENTER_GL();
         glDeleteTextures(1, &surface->texture_name);
         LEAVE_GL();
@@ -7002,7 +6964,7 @@ void delete_opengl_contexts(IWineD3DDevice *iface, IWineD3DSwapChain *swapchain_
     UINT i;
     IWineD3DBaseShaderImpl *shader;
 
-    ActivateContext(This, This->lastActiveRenderTarget, CTXUSAGE_RESOURCELOAD);
+    ActivateContext(This, NULL, CTXUSAGE_RESOURCELOAD);
 
     IWineD3DDevice_EnumResources(iface, reset_unload_resources, NULL);
     LIST_FOR_EACH_ENTRY(shader, &This->shaders, IWineD3DBaseShaderImpl, baseShader.shader_list_entry) {
@@ -7038,7 +7000,6 @@ void delete_opengl_contexts(IWineD3DDevice *iface, IWineD3DSwapChain *swapchain_
     while(This->numContexts) {
         DestroyContext(This, This->contexts[0]);
     }
-    This->activeContext = NULL;
     HeapFree(GetProcessHeap(), 0, swapchain->context);
     swapchain->context = NULL;
     swapchain->num_contexts = 0;
@@ -7060,7 +7021,6 @@ HRESULT create_primary_opengl_context(IWineD3DDevice *iface, IWineD3DSwapChain *
     swapchain->context[0] = CreateContext(This, target, swapchain->win_handle, FALSE,
                                           &swapchain->presentParms);
     swapchain->num_contexts = 1;
-    This->activeContext = swapchain->context[0];
 
     create_dummy_textures(This);
 
@@ -7730,10 +7690,10 @@ const DWORD SavedVertexStates_S[NUM_SAVEDVERTEXSTATES_S] = {
 
 void IWineD3DDeviceImpl_MarkStateDirty(IWineD3DDeviceImpl *This, DWORD state) {
     DWORD rep = This->StateTable[state].representative;
+    struct wined3d_context *context;
     DWORD idx;
     BYTE shift;
     UINT i;
-    WineD3DContext *context;
 
     if(!rep) return;
     for(i = 0; i < This->numContexts; i++) {
@@ -7747,28 +7707,29 @@ void IWineD3DDeviceImpl_MarkStateDirty(IWineD3DDeviceImpl *This, DWORD state) {
     }
 }
 
-void get_drawable_size_pbuffer(IWineD3DSurfaceImpl *This, UINT *width, UINT *height) {
-    IWineD3DDeviceImpl *dev = This->resource.wineD3DDevice;
-    /* The drawable size of a pbuffer render target is the current pbuffer size
-     */
-    *width = dev->pbufferWidth;
-    *height = dev->pbufferHeight;
+void get_drawable_size_pbuffer(struct wined3d_context *context, UINT *width, UINT *height)
+{
+    IWineD3DDeviceImpl *device = ((IWineD3DSurfaceImpl *)context->current_rt)->resource.wineD3DDevice;
+    /* The drawable size of a pbuffer render target is the current pbuffer size. */
+    *width = device->pbufferWidth;
+    *height = device->pbufferHeight;
 }
 
-void get_drawable_size_fbo(IWineD3DSurfaceImpl *This, UINT *width, UINT *height) {
-    /* The drawable size of a fbo target is the opengl texture size, which is the power of two size
-     */
-    *width = This->pow2Width;
-    *height = This->pow2Height;
+void get_drawable_size_fbo(struct wined3d_context *context, UINT *width, UINT *height)
+{
+    IWineD3DSurfaceImpl *surface = (IWineD3DSurfaceImpl *)context->current_rt;
+    /* The drawable size of a fbo target is the opengl texture size, which is the power of two size. */
+    *width = surface->pow2Width;
+    *height = surface->pow2Height;
 }
 
-void get_drawable_size_backbuffer(IWineD3DSurfaceImpl *This, UINT *width, UINT *height) {
-    IWineD3DDeviceImpl *dev = This->resource.wineD3DDevice;
+void get_drawable_size_backbuffer(struct wined3d_context *context, UINT *width, UINT *height)
+{
+    IWineD3DSurfaceImpl *surface = (IWineD3DSurfaceImpl *)context->surface;
     /* The drawable size of a backbuffer / aux buffer offscreen target is the size of the
      * current context's drawable, which is the size of the back buffer of the swapchain
      * the active context belongs to. The back buffer of the swapchain is stored as the
-     * surface the context belongs to.
-     */
-    *width = ((IWineD3DSurfaceImpl *) dev->activeContext->surface)->currentDesc.Width;
-    *height = ((IWineD3DSurfaceImpl *) dev->activeContext->surface)->currentDesc.Height;
+     * surface the context belongs to. */
+    *width = surface->currentDesc.Width;
+    *height = surface->currentDesc.Height;
 }

@@ -204,6 +204,14 @@ static HRESULT  WINAPI  IDirect3D8Impl_CheckDeviceFormat          (LPDIRECT3D8 i
     WINED3DRESOURCETYPE WineD3DRType;
     TRACE("(%p)->(%d, %d, %d, %08x, %d, %d)\n", This, Adapter, DeviceType, AdapterFormat, Usage, RType, CheckFormat);
 
+    if(CheckFormat == D3DFMT_R8G8B8)
+    {
+        /* See comment in dlls/d3d9/directx.c, IDirect3D9Impl_CheckDeviceFormat for details */
+        WARN("D3DFMT_R8G8B8 is not available on windows, returning D3DERR_NOTAVAILABLE\n");
+        return D3DERR_NOTAVAILABLE;
+    }
+
+
     switch(RType) {
         case D3DRTYPE_VERTEXBUFFER:
         case D3DRTYPE_INDEXBUFFER:
@@ -251,6 +259,20 @@ static HRESULT  WINAPI  IDirect3D8Impl_CheckDepthStencilMatch(LPDIRECT3D8 iface,
     return hr;
 }
 
+void fixup_caps(WINED3DCAPS *caps)
+{
+    /* D3D8 doesn't support SM 2.0 or higher, so clamp to 1.x */
+    if (caps->PixelShaderVersion > D3DPS_VERSION(1,4)) {
+        caps->PixelShaderVersion = D3DPS_VERSION(1,4);
+    }
+    if (caps->VertexShaderVersion > D3DVS_VERSION(1,1)) {
+        caps->VertexShaderVersion = D3DVS_VERSION(1,1);
+    }
+    caps->MaxVertexShaderConst = min(D3D8_MAX_VERTEX_SHADER_CONSTANTF, caps->MaxVertexShaderConst);
+
+    caps->StencilCaps &= ~WINED3DSTENCILCAPS_TWOSIDED;
+}
+
 static HRESULT  WINAPI  IDirect3D8Impl_GetDeviceCaps(LPDIRECT3D8 iface, UINT Adapter, D3DDEVTYPE DeviceType, D3DCAPS8* pCaps) {
     IDirect3D8Impl *This = (IDirect3D8Impl *)iface;
     HRESULT hrc = D3D_OK;
@@ -268,17 +290,9 @@ static HRESULT  WINAPI  IDirect3D8Impl_GetDeviceCaps(LPDIRECT3D8 iface, UINT Ada
     EnterCriticalSection(&d3d8_cs);
     hrc = IWineD3D_GetDeviceCaps(This->WineD3D, Adapter, DeviceType, pWineCaps);
     LeaveCriticalSection(&d3d8_cs);
+    fixup_caps(pWineCaps);
     WINECAPSTOD3D8CAPS(pCaps, pWineCaps)
     HeapFree(GetProcessHeap(), 0, pWineCaps);
-
-    /* D3D8 doesn't support SM 2.0 or higher, so clamp to 1.x */
-    if(pCaps->PixelShaderVersion > D3DPS_VERSION(1,4)){
-        pCaps->PixelShaderVersion = D3DPS_VERSION(1,4);
-    }
-    if(pCaps->VertexShaderVersion > D3DVS_VERSION(1,1)){
-        pCaps->VertexShaderVersion = D3DVS_VERSION(1,1);
-    }
-    pCaps->MaxVertexShaderConst = min(D3D8_MAX_VERTEX_SHADER_CONSTANTF, pCaps->MaxVertexShaderConst);
 
     TRACE("(%p) returning %p\n", This, pCaps);
     return hrc;

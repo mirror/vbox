@@ -177,19 +177,32 @@ const int maxLookup[MAX_LOOKUPS] =
 
 DWORD *stateLookup[MAX_LOOKUPS];
 
-struct min_lookup minMipLookup[WINED3DTEXF_ANISOTROPIC + 1];
-const struct min_lookup minMipLookup_noFilter[WINED3DTEXF_ANISOTROPIC + 1] =
+const struct min_lookup minMipLookup[] =
 {
-    {{GL_NEAREST, GL_NEAREST, GL_NEAREST}},
-    {{GL_NEAREST, GL_NEAREST, GL_NEAREST}},
-    {{GL_NEAREST, GL_NEAREST, GL_NEAREST}},
-    {{GL_NEAREST, GL_NEAREST, GL_NEAREST}},
+    /* NONE         POINT                       LINEAR */
+    {{GL_NEAREST,   GL_NEAREST,                 GL_NEAREST}},               /* NONE */
+    {{GL_NEAREST,   GL_NEAREST_MIPMAP_NEAREST,  GL_NEAREST_MIPMAP_LINEAR}}, /* POINT*/
+    {{GL_LINEAR,    GL_LINEAR_MIPMAP_NEAREST,   GL_LINEAR_MIPMAP_LINEAR}},  /* LINEAR */
 };
 
-GLenum magLookup[WINED3DTEXF_ANISOTROPIC + 1];
-const GLenum magLookup_noFilter[WINED3DTEXF_ANISOTROPIC + 1] =
+const struct min_lookup minMipLookup_noFilter[] =
 {
-    GL_NEAREST, GL_NEAREST, GL_NEAREST, GL_NEAREST
+    /* NONE         POINT                       LINEAR */
+    {{GL_NEAREST,   GL_NEAREST,                 GL_NEAREST}},               /* NONE */
+    {{GL_NEAREST,   GL_NEAREST,                 GL_NEAREST}},               /* POINT */
+    {{GL_NEAREST,   GL_NEAREST,                 GL_NEAREST}},               /* LINEAR */
+};
+
+const GLenum magLookup[] =
+{
+    /* NONE     POINT       LINEAR */
+    GL_NEAREST, GL_NEAREST, GL_LINEAR,
+};
+
+const GLenum magLookup_noFilter[] =
+{
+    /* NONE     POINT       LINEAR */
+    GL_NEAREST, GL_NEAREST, GL_NEAREST,
 };
 
 /* drawStridedSlow attributes */
@@ -283,12 +296,16 @@ static BOOL WineD3D_CreateFakeGLContext(struct wined3d_fake_gl_ctx *ctx)
     }
 
     /* Make it the current GL context. */
+    if (!context_set_current(NULL))
+    {
+        ERR_(d3d_caps)("Failed to clear current D3D context.\n");
+    }
+
     if (!pwglMakeCurrent(ctx->dc, ctx->gl_ctx))
     {
         ERR_(d3d_caps)("Failed to make fake GL context current.\n");
         goto fail;
     }
-    context_set_last_device(NULL);
 
     return TRUE;
 
@@ -705,9 +722,12 @@ static void quirk_ati_dx9(struct wined3d_gl_info *gl_info)
      * fglrx doesn't advertise GL_ARB_texture_non_power_of_two, but it advertises opengl 2.0 which
      * has this extension promoted to core. The extension loading code sets this extension supported
      * due to that, so this code works on fglrx as well. */
-    TRACE("GL_ARB_texture_non_power_of_two advertised on R500 or earlier card, removing.\n");
-    gl_info->supported[ARB_TEXTURE_NON_POWER_OF_TWO] = FALSE;
-    gl_info->supported[WINE_NORMALIZED_TEXRECT] = TRUE;
+    if(gl_info->supported[ARB_TEXTURE_NON_POWER_OF_TWO])
+    {
+        TRACE("GL_ARB_texture_non_power_of_two advertised on R500 or earlier card, removing.\n");
+        gl_info->supported[ARB_TEXTURE_NON_POWER_OF_TWO] = FALSE;
+        gl_info->supported[WINE_NORMALIZED_TEXRECT] = TRUE;
+    }
 
     /* fglrx has the same structural issues as the one described in quirk_apple_glsl_constants, although
      * it is generally more efficient. Reserve just 8 constants. */
@@ -1996,31 +2016,6 @@ static BOOL IWineD3DImpl_FillGLCaps(struct wined3d_gl_info *gl_info)
     stateLookup[WINELOOKUP_WARPPARAM][WINED3DTADDRESS_MIRRORONCE - minLookup[WINELOOKUP_WARPPARAM]] =
              gl_info->supported[ATI_TEXTURE_MIRROR_ONCE] ? GL_MIRROR_CLAMP_TO_EDGE_ATI : GL_REPEAT;
 
-    magLookup[WINED3DTEXF_NONE        - WINED3DTEXF_NONE]  = GL_NEAREST;
-    magLookup[WINED3DTEXF_POINT       - WINED3DTEXF_NONE] = GL_NEAREST;
-    magLookup[WINED3DTEXF_LINEAR      - WINED3DTEXF_NONE] = GL_LINEAR;
-    magLookup[WINED3DTEXF_ANISOTROPIC - WINED3DTEXF_NONE] =
-             gl_info->supported[EXT_TEXTURE_FILTER_ANISOTROPIC] ? GL_LINEAR : GL_NEAREST;
-
-
-    minMipLookup[WINED3DTEXF_NONE].mip[WINED3DTEXF_NONE]     = GL_LINEAR;
-    minMipLookup[WINED3DTEXF_NONE].mip[WINED3DTEXF_POINT]    = GL_LINEAR;
-    minMipLookup[WINED3DTEXF_NONE].mip[WINED3DTEXF_LINEAR]   = GL_LINEAR;
-    minMipLookup[WINED3DTEXF_POINT].mip[WINED3DTEXF_NONE]    = GL_NEAREST;
-    minMipLookup[WINED3DTEXF_POINT].mip[WINED3DTEXF_POINT]   = GL_NEAREST_MIPMAP_NEAREST;
-    minMipLookup[WINED3DTEXF_POINT].mip[WINED3DTEXF_LINEAR]  = GL_NEAREST_MIPMAP_LINEAR;
-    minMipLookup[WINED3DTEXF_LINEAR].mip[WINED3DTEXF_NONE]   = GL_LINEAR;
-    minMipLookup[WINED3DTEXF_LINEAR].mip[WINED3DTEXF_POINT]  = GL_LINEAR_MIPMAP_NEAREST;
-    minMipLookup[WINED3DTEXF_LINEAR].mip[WINED3DTEXF_LINEAR] = GL_LINEAR_MIPMAP_LINEAR;
-    minMipLookup[WINED3DTEXF_ANISOTROPIC].mip[WINED3DTEXF_NONE]
-            = gl_info->supported[EXT_TEXTURE_FILTER_ANISOTROPIC] ? GL_LINEAR_MIPMAP_LINEAR : GL_LINEAR;
-    minMipLookup[WINED3DTEXF_ANISOTROPIC].mip[WINED3DTEXF_POINT]
-            = gl_info->supported[EXT_TEXTURE_FILTER_ANISOTROPIC] ? GL_LINEAR_MIPMAP_NEAREST : GL_LINEAR;
-    minMipLookup[WINED3DTEXF_ANISOTROPIC].mip[WINED3DTEXF_LINEAR]
-            = gl_info->supported[EXT_TEXTURE_FILTER_ANISOTROPIC] ? GL_LINEAR_MIPMAP_LINEAR : GL_LINEAR;
-
-/* TODO: config lookups */
-
     /* Make sure there's an active HDC else the WGL extensions will fail */
     hdc = pwglGetCurrentDC();
     if (hdc) {
@@ -2703,7 +2698,7 @@ static BOOL CheckDepthStencilCapability(struct WineD3DAdapter *adapter,
     int it=0;
 
     /* Only allow depth/stencil formats */
-    if (!(ds_format_desc->Flags & (WINED3DFMT_FLAG_DEPTH | WINED3DFMT_FLAG_STENCIL))) return FALSE;
+    if (!(ds_format_desc->depth_size || ds_format_desc->stencil_size)) return FALSE;
 
     /* Walk through all WGL pixel formats to find a match */
     for (it = 0; it < adapter->nCfgs; ++it)
@@ -2893,6 +2888,7 @@ static BOOL CheckTextureCapability(struct WineD3DAdapter *adapter,
         case WINED3DFMT_A2R10G10B10:
         case WINED3DFMT_R10G10B10A2_UNORM:
         case WINED3DFMT_R16G16_UNORM:
+        case WINED3DFMT_R16G16B16A16_UNORM:
             TRACE_(d3d_caps)("[OK]\n");
             return TRUE;
 
@@ -3005,7 +3001,6 @@ static BOOL CheckTextureCapability(struct WineD3DAdapter *adapter,
             return FALSE;
 
             /* Not supported */
-        case WINED3DFMT_R16G16B16A16_UNORM:
         case WINED3DFMT_A8R3G3B2:
             TRACE_(d3d_caps)("[FAILED]\n"); /* Enable when implemented */
             return FALSE;
@@ -3658,18 +3653,6 @@ static HRESULT WINAPI IWineD3DImpl_CheckDeviceFormat(IWineD3D *iface, UINT Adapt
         return WINED3DERR_NOTAVAILABLE;
     }
 
-    /* This format is nothing special and it is supported perfectly.
-     * However, ati and nvidia driver on windows do not mark this format as
-     * supported (tested with the dxCapsViewer) and pretending to
-     * support this format uncovers a bug in Battlefield 1942 (fonts are missing)
-     * So do the same as Windows drivers and pretend not to support it on dx8 and 9
-     * Enable it on dx7. It will need additional checking on dx10 when we support it.
-     */
-    if(This->dxVersion > 7 && CheckFormat == WINED3DFMT_R8G8B8) {
-        TRACE_(d3d_caps)("[FAILED]\n");
-        return WINED3DERR_NOTAVAILABLE;
-    }
-
     /* When the UsageCaps exactly matches Usage return WINED3D_OK except for the situation in which
      * WINED3DUSAGE_AUTOGENMIPMAP isn't around, then WINED3DOK_NOAUTOGEN is returned if all the other
      * usage flags match. */
@@ -4076,9 +4059,7 @@ static HRESULT WINAPI IWineD3DImpl_GetDeviceCaps(IWineD3D *iface, UINT Adapter, 
         pCaps->StencilCaps |= WINED3DSTENCILCAPS_DECR  |
                               WINED3DSTENCILCAPS_INCR;
     }
-    if ( This->dxVersion > 8 &&
-        ( GL_SUPPORT(EXT_STENCIL_TWO_SIDE) ||
-            GL_SUPPORT(ATI_SEPARATE_STENCIL) ) ) {
+    if (GL_SUPPORT(EXT_STENCIL_TWO_SIDE) || GL_SUPPORT(ATI_SEPARATE_STENCIL)) {
         pCaps->StencilCaps |= WINED3DSTENCILCAPS_TWOSIDED;
     }
 
