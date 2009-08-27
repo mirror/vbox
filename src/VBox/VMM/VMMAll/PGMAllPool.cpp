@@ -1285,13 +1285,40 @@ DECLEXPORT(int) pgmPoolAccessHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE 
     if (    !fReused
         &&  !fForcedFlush
         &&  pPage->enmKind == PGMPOOLKIND_PAE_PT_FOR_PAE_PT
-        &&  pPage->cModifications >= cMaxModifications
-        &&  pPage->iMonitoredNext != NIL_PGMPOOL_IDX
-        &&  pPage->iMonitoredPrev != NIL_PGMPOOL_IDX)
+        &&  pPage->cModifications >= cMaxModifications)
     {
         Assert(!pgmPoolIsPageLocked(&pVM->pgm.s, pPage));
         Assert(pPage->fDirty == false);
 
+        /* Flush any monitored duplicates as we will disable write protection. */
+        if (    pPage->iMonitoredNext != NIL_PGMPOOL_IDX
+            ||  pPage->iMonitoredPrev != NIL_PGMPOOL_IDX)
+        {
+            PPGMPOOLPAGE pPageHead = pPage;
+
+            /* Find the monitor head. */
+            while (pPageHead->iMonitoredPrev != NIL_PGMPOOL_IDX)
+                pPageHead = &pPool->aPages[pPageHead->iMonitoredPrev];
+
+            while (pPageHead)
+            {
+                unsigned idxNext = pPageHead->iMonitoredNext;
+
+                if (pPageHead != pPage)
+                {
+                    Log(("Flush duplicate page idx=%d GCPhys=%RGp type=%s\n", pPageHead->idx, pPageHead->GCPhys, pgmPoolPoolKindToStr(pPageHead->enmKind)));
+                    int rc2 = pgmPoolFlushPage(pPool, pPageHead);
+                    AssertRC(rc2);
+                }
+
+                if (idxNext == NIL_PGMPOOL_IDX)
+                    break;
+
+                pPageHead = &pPool->aPages[idxNext];
+            }
+        }
+
+        /* Temporarily allow write access to the page table again. */
         rc = PGMHandlerPhysicalPageTempOff(pVM, pPage->GCPhys, pPage->GCPhys);
         if (rc == VINF_SUCCESS)
         {
