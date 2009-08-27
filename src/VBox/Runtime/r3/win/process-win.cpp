@@ -82,7 +82,7 @@ NtQueryInformationProcess (
 
 /** @todo r=michael This function currently does not work correctly if the arguments
                     contain spaces. */
-RTR3DECL(int)   RTProcCreate(const char *pszExec, const char * const *papszArgs, RTENV Env, unsigned fFlags, PRTPROCESS pProcess)
+RTR3DECL(int) RTProcCreate(const char *pszExec, const char * const *papszArgs, RTENV Env, unsigned fFlags, PRTPROCESS pProcess)
 {
     /*
      * Validate input.
