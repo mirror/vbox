@@ -684,7 +684,7 @@ crPackDrawElements(GLenum mode, GLsizei count, GLenum type, const GLvoid *indice
     WRITE_DATA_AI(GLenum, mode );
     WRITE_DATA_AI(GLsizei, count);
     WRITE_DATA_AI(GLenum, type);
-    WRITE_DATA_AI(GLuint, (GLuint) indices );
+    WRITE_DATA_AI(GLuint, (GLuint) ((uintptr_t) indices) );
 #ifdef CR_ARB_vertex_buffer_object
     WRITE_DATA_AI(GLint, (GLint)(indexsize>0));
 #endif
@@ -733,7 +733,7 @@ crPackDrawRangeElements(GLenum mode, GLuint start, GLuint end, GLsizei count,
     WRITE_DATA_AI(GLuint, end);
     WRITE_DATA_AI(GLsizei, count);
     WRITE_DATA_AI(GLenum, type);
-    WRITE_DATA_AI(GLuint, (GLuint) indices);
+    WRITE_DATA_AI(GLuint, (GLuint) ((uintptr_t) indices));
 #ifdef CR_ARB_vertex_buffer_object
     WRITE_DATA_AI(GLint, (GLint) (indexsize>0));
 #endif

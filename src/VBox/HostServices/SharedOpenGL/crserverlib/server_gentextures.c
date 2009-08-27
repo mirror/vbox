@@ -22,7 +22,7 @@ void SERVER_DISPATCH_APIENTRY crServerDispatchGenTextures( GLsizei n, GLuint *te
      * We have to make sure we're going to generate unique texture IDs.
      * That wasn't the case before snapshot loading, because we could just rely on host video drivers.
      * Now we could have a set of loaded texture IDs which aren't already reserved in the host driver.
-     * Note: It seems, that it's easy to reserve ATI/NVidia IDs, by simply calling glGenTextures 
+     * Note: It seems, that it's easy to reserve ATI/NVidia IDs, by simply calling glGenTextures
      * with n==number of loaded textures. But it's really implementation dependant. So can't rely that it'll not change.
      */
     for (i=0; i<n; ++i)
@@ -86,7 +86,7 @@ void SERVER_DISPATCH_APIENTRY crServerDispatchGenProgramsARB( GLsizei n, GLuint 
     crFree( local_progs );
 }
 
-void SERVER_DISPATCH_APIENTRY 
+void SERVER_DISPATCH_APIENTRY
 crServerDispatchCopyTexImage2D(GLenum target, GLint level, GLenum internalFormat, GLint x, GLint y, GLsizei width, GLsizei height, GLint border)
 {
     GLsizei tw, th;
@@ -95,6 +95,9 @@ crServerDispatchCopyTexImage2D(GLenum target, GLint level, GLenum internalFormat
     cr_server.head_spu->dispatch_table.GetTexLevelParameteriv(target, level, GL_TEXTURE_HEIGHT, &height);
 
     /* Workaround for a wine or ati bug. Host drivers crash unless we first provide texture bounds. */
+    /* @todo: r=poetzsch: gcc warns here. tw & th is uninitialized in any case.
+     * I guess they should be filled with the above two calls & compared
+     * against the method params width & height! */
     if (((tw!=width) || (th!=height)) && (internalFormat==GL_DEPTH_COMPONENT24))
     {
         crServerDispatchTexImage2D(target, level, internalFormat, width, height, border, GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, NULL);
