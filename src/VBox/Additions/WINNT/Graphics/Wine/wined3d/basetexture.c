@@ -57,6 +57,17 @@ HRESULT basetexture_init(IWineD3DBaseTextureImpl *texture, UINT levels, WINED3DR
     texture->baseTexture.is_srgb = FALSE;
     texture->baseTexture.pow2Matrix_identity = TRUE;
 
+    if (texture->resource.format_desc->Flags & WINED3DFMT_FLAG_FILTERING)
+    {
+        texture->baseTexture.minMipLookup = minMipLookup;
+        texture->baseTexture.magLookup = magLookup;
+    }
+    else
+    {
+        texture->baseTexture.minMipLookup = minMipLookup_noFilter;
+        texture->baseTexture.magLookup = magLookup_noFilter;
+    }
+
     return WINED3D_OK;
 }
 
@@ -72,7 +83,7 @@ void basetexture_unload(IWineD3DBaseTexture *iface)
     IWineD3DDeviceImpl *device = This->resource.wineD3DDevice;
 
     if(This->baseTexture.textureName) {
-        ActivateContext(device, device->lastActiveRenderTarget, CTXUSAGE_RESOURCELOAD);
+        ActivateContext(device, NULL, CTXUSAGE_RESOURCELOAD);
         ENTER_GL();
         glDeleteTextures(1, &This->baseTexture.textureName);
         This->baseTexture.textureName = 0;
@@ -80,7 +91,7 @@ void basetexture_unload(IWineD3DBaseTexture *iface)
     }
 
     if(This->baseTexture.srgbTextureName) {
-        ActivateContext(device, device->lastActiveRenderTarget, CTXUSAGE_RESOURCELOAD);
+        ActivateContext(device, NULL, CTXUSAGE_RESOURCELOAD);
         ENTER_GL();
         glDeleteTextures(1, &This->baseTexture.srgbTextureName);
         This->baseTexture.srgbTextureName = 0;
@@ -144,7 +155,7 @@ HRESULT basetexture_set_autogen_filter_type(IWineD3DBaseTexture *iface, WINED3DT
        * Or should we delay the applying until the texture is used for drawing? For now, apply
        * immediately.
        */
-      ActivateContext(device, device->lastActiveRenderTarget, CTXUSAGE_RESOURCELOAD);
+      ActivateContext(device, NULL, CTXUSAGE_RESOURCELOAD);
       ENTER_GL();
       glBindTexture(textureDimensions, This->baseTexture.textureName);
       checkGLcall("glBindTexture");
@@ -174,12 +185,11 @@ HRESULT basetexture_set_autogen_filter_type(IWineD3DBaseTexture *iface, WINED3DT
 
 WINED3DTEXTUREFILTERTYPE basetexture_get_autogen_filter_type(IWineD3DBaseTexture *iface)
 {
-  IWineD3DBaseTextureImpl *This = (IWineD3DBaseTextureImpl *)iface;
-  FIXME("(%p) : stub\n", This);
-  if (!(This->resource.usage & WINED3DUSAGE_AUTOGENMIPMAP)) {
-     return WINED3DTEXF_NONE;
-  }
-  return This->baseTexture.filterType;
+    IWineD3DBaseTextureImpl *This = (IWineD3DBaseTextureImpl *)iface;
+
+    FIXME("(%p) : stub\n", This);
+
+    return This->baseTexture.filterType;
 }
 
 void basetexture_generate_mipmaps(IWineD3DBaseTexture *iface)
@@ -251,7 +261,7 @@ HRESULT basetexture_bind(IWineD3DBaseTexture *iface, BOOL srgb, BOOL *set_surfac
         states[WINED3DTEXSTA_MINFILTER]     = WINED3DTEXF_POINT; /* GL_NEAREST_MIPMAP_LINEAR */
         states[WINED3DTEXSTA_MIPFILTER]     = WINED3DTEXF_LINEAR; /* GL_NEAREST_MIPMAP_LINEAR */
         states[WINED3DTEXSTA_MAXMIPLEVEL]   = 0;
-        states[WINED3DTEXSTA_MAXANISOTROPY] = 0;
+        states[WINED3DTEXSTA_MAXANISOTROPY] = 1;
         states[WINED3DTEXSTA_SRGBTEXTURE]   = 0;
         states[WINED3DTEXSTA_ELEMENTINDEX]  = 0;
         states[WINED3DTEXSTA_DMAPOFFSET]    = 0;
@@ -340,6 +350,7 @@ void basetexture_apply_state_changes(IWineD3DBaseTexture *iface,
     DWORD state, *states;
     GLint textureDimensions = IWineD3DBaseTexture_GetTextureDimensions(iface);
     BOOL cond_np2 = IWineD3DBaseTexture_IsCondNP2(iface);
+    DWORD aniso;
 
     TRACE("iface %p, textureStates %p, samplerStates %p\n", iface, textureStates, samplerStates);
 
@@ -385,17 +396,14 @@ void basetexture_apply_state_changes(IWineD3DBaseTexture *iface,
         state = samplerStates[WINED3DSAMP_MAGFILTER];
         if (state > WINED3DTEXF_ANISOTROPIC) {
             FIXME("Unrecognized or unsupported MAGFILTER* value %d\n", state);
-        } else {
-            glValue = This->baseTexture.magLookup[state - WINED3DTEXF_NONE];
-            TRACE("ValueMAG=%d setting MAGFILTER to %x\n", state, glValue);
-            glTexParameteri(textureDimensions, GL_TEXTURE_MAG_FILTER, glValue);
-            /* We need to reset the Anisotropic filtering state when we change the mag filter to WINED3DTEXF_ANISOTROPIC (this seems a bit weird, check the documentation to see how it should be switched off. */
-            if (GL_SUPPORT(EXT_TEXTURE_FILTER_ANISOTROPIC) && WINED3DTEXF_ANISOTROPIC == state &&
-                !cond_np2) {
-                glTexParameteri(textureDimensions, GL_TEXTURE_MAX_ANISOTROPY_EXT, samplerStates[WINED3DSAMP_MAXANISOTROPY]);
-            }
-            states[WINED3DTEXSTA_MAGFILTER] = state;
         }
+
+        glValue = wined3d_gl_mag_filter(This->baseTexture.magLookup,
+                min(max(state, WINED3DTEXF_POINT), WINED3DTEXF_LINEAR));
+        TRACE("ValueMAG=%d setting MAGFILTER to %x\n", state, glValue);
+        glTexParameteri(textureDimensions, GL_TEXTURE_MAG_FILTER, glValue);
+
+        states[WINED3DTEXSTA_MAGFILTER] = state;
     }
 
     if((samplerStates[WINED3DSAMP_MINFILTER]     != states[WINED3DTEXSTA_MINFILTER] ||
@@ -407,17 +415,17 @@ void basetexture_apply_state_changes(IWineD3DBaseTexture *iface,
         states[WINED3DTEXSTA_MINFILTER] = samplerStates[WINED3DSAMP_MINFILTER];
         states[WINED3DTEXSTA_MAXMIPLEVEL] = samplerStates[WINED3DSAMP_MAXMIPLEVEL];
 
-        if (states[WINED3DTEXSTA_MINFILTER] > WINED3DTEXF_ANISOTROPIC ||
-            states[WINED3DTEXSTA_MIPFILTER] > WINED3DTEXF_LINEAR)
+        if (states[WINED3DTEXSTA_MINFILTER] > WINED3DTEXF_ANISOTROPIC
+                || states[WINED3DTEXSTA_MIPFILTER] > WINED3DTEXF_ANISOTROPIC)
         {
 
             FIXME("Unrecognized or unsupported D3DSAMP_MINFILTER value %d D3DSAMP_MIPFILTER value %d\n",
                   states[WINED3DTEXSTA_MINFILTER],
                   states[WINED3DTEXSTA_MIPFILTER]);
         }
-        glValue = This->baseTexture.minMipLookup
-                [min(max(samplerStates[WINED3DSAMP_MINFILTER],WINED3DTEXF_NONE), WINED3DTEXF_ANISOTROPIC)]
-                .mip[min(max(samplerStates[WINED3DSAMP_MIPFILTER],WINED3DTEXF_NONE), WINED3DTEXF_LINEAR)];
+        glValue = wined3d_gl_min_mip_filter(This->baseTexture.minMipLookup,
+                min(max(samplerStates[WINED3DSAMP_MINFILTER], WINED3DTEXF_POINT), WINED3DTEXF_LINEAR),
+                min(max(samplerStates[WINED3DSAMP_MIPFILTER], WINED3DTEXF_NONE), WINED3DTEXF_LINEAR));
 
         TRACE("ValueMIN=%d, ValueMIP=%d, setting MINFILTER to %x\n",
               samplerStates[WINED3DSAMP_MINFILTER],
@@ -437,13 +445,29 @@ void basetexture_apply_state_changes(IWineD3DBaseTexture *iface,
         }
     }
 
-    if(samplerStates[WINED3DSAMP_MAXANISOTROPY] != states[WINED3DTEXSTA_MAXANISOTROPY]) {
-        if (GL_SUPPORT(EXT_TEXTURE_FILTER_ANISOTROPIC) && !cond_np2) {
-            glTexParameteri(textureDimensions, GL_TEXTURE_MAX_ANISOTROPY_EXT, samplerStates[WINED3DSAMP_MAXANISOTROPY]);
-            checkGLcall("glTexParameteri GL_TEXTURE_MAX_ANISOTROPY_EXT ...");
-        } else {
-            WARN("Unsupported in local OpenGL implementation: glTexParameteri GL_TEXTURE_MAX_ANISOTROPY_EXT\n");
+    if ((states[WINED3DSAMP_MAGFILTER] != WINED3DTEXF_ANISOTROPIC
+            && states[WINED3DSAMP_MINFILTER] != WINED3DTEXF_ANISOTROPIC
+            && states[WINED3DSAMP_MIPFILTER] != WINED3DTEXF_ANISOTROPIC)
+            || cond_np2)
+    {
+        aniso = 1;
+    }
+    else
+    {
+        aniso = samplerStates[WINED3DSAMP_MAXANISOTROPY];
+    }
+
+    if (states[WINED3DTEXSTA_MAXANISOTROPY] != aniso)
+    {
+        if (GL_SUPPORT(EXT_TEXTURE_FILTER_ANISOTROPIC))
+        {
+            glTexParameteri(textureDimensions, GL_TEXTURE_MAX_ANISOTROPY_EXT, aniso);
+            checkGLcall("glTexParameteri(GL_TEXTURE_MAX_ANISOTROPY_EXT, aniso)");
         }
-        states[WINED3DTEXSTA_MAXANISOTROPY] = samplerStates[WINED3DSAMP_MAXANISOTROPY];
+        else
+        {
+            WARN("Anisotropic filtering not supported.\n");
+        }
+        states[WINED3DTEXSTA_MAXANISOTROPY] = aniso;
     }
 }

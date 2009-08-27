@@ -612,7 +612,7 @@ static void STDMETHODCALLTYPE buffer_UnLoad(IWineD3DBuffer *iface)
     {
         IWineD3DDeviceImpl *device = This->resource.wineD3DDevice;
 
-        ActivateContext(device, device->lastActiveRenderTarget, CTXUSAGE_RESOURCELOAD);
+        ActivateContext(device, NULL, CTXUSAGE_RESOURCELOAD);
 
         /* Download the buffer, but don't permanently enable double buffering */
         if(!(This->flags & WINED3D_BUFFER_DOUBLEBUFFER))
@@ -699,7 +699,7 @@ static void STDMETHODCALLTYPE buffer_PreLoad(IWineD3DBuffer *iface)
 
     TRACE("iface %p\n", iface);
 
-    ActivateContext(device, device->lastActiveRenderTarget, CTXUSAGE_RESOURCELOAD);
+    ActivateContext(device, NULL, CTXUSAGE_RESOURCELOAD);
 
     if (!This->buffer_object)
     {
@@ -809,7 +809,7 @@ static void STDMETHODCALLTYPE buffer_PreLoad(IWineD3DBuffer *iface)
 
         if (!device->isInDraw)
         {
-            ActivateContext(device, device->lastActiveRenderTarget, CTXUSAGE_RESOURCELOAD);
+            ActivateContext(device, NULL, CTXUSAGE_RESOURCELOAD);
         }
         ENTER_GL();
         GL_EXTCALL(glBindBufferARB(This->buffer_type_hint, This->buffer_object));
@@ -959,7 +959,7 @@ static HRESULT STDMETHODCALLTYPE buffer_Map(IWineD3DBuffer *iface, UINT offset, 
                 IWineD3DDeviceImpl_MarkStateDirty(This->resource.wineD3DDevice, STATE_INDEXBUFFER);
             }
 
-            ActivateContext(device, device->lastActiveRenderTarget, CTXUSAGE_RESOURCELOAD);
+            ActivateContext(device, NULL, CTXUSAGE_RESOURCELOAD);
             ENTER_GL();
             GL_EXTCALL(glBindBufferARB(This->buffer_type_hint, This->buffer_object));
             This->resource.allocatedMemory = GL_EXTCALL(glMapBufferARB(This->buffer_type_hint, GL_READ_WRITE_ARB));
@@ -1011,7 +1011,7 @@ static HRESULT STDMETHODCALLTYPE buffer_Unmap(IWineD3DBuffer *iface)
             IWineD3DDeviceImpl_MarkStateDirty(This->resource.wineD3DDevice, STATE_INDEXBUFFER);
         }
 
-        ActivateContext(device, device->lastActiveRenderTarget, CTXUSAGE_RESOURCELOAD);
+        ActivateContext(device, NULL, CTXUSAGE_RESOURCELOAD);
         ENTER_GL();
         GL_EXTCALL(glBindBufferARB(This->buffer_type_hint, This->buffer_object));
         GL_EXTCALL(glUnmapBufferARB(This->buffer_type_hint));

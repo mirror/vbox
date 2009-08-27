@@ -75,7 +75,7 @@ static void cubetexture_internal_preload(IWineD3DBaseTexture *iface, enum WINED3
     {
         /* No danger of recursive calls, ActivateContext sets isInDraw to true
          * when loading offscreen render targets into their texture. */
-        ActivateContext(device, device->lastActiveRenderTarget, CTXUSAGE_RESOURCELOAD);
+        ActivateContext(device, NULL, CTXUSAGE_RESOURCELOAD);
     }
 
     if (This->resource.format_desc->format == WINED3DFMT_P8
@@ -199,17 +199,6 @@ HRESULT cubetexture_init(IWineD3DCubeTextureImpl *texture, UINT edge_length, UIN
     {
         WARN("Failed to initialize basetexture, returning %#x\n", hr);
         return hr;
-    }
-
-    if (texture->resource.format_desc->Flags & WINED3DFMT_FLAG_FILTERING)
-    {
-        texture->baseTexture.minMipLookup = minMipLookup;
-        texture->baseTexture.magLookup = magLookup;
-    }
-    else
-    {
-        texture->baseTexture.minMipLookup = minMipLookup_noFilter;
-        texture->baseTexture.magLookup = magLookup_noFilter;
     }
 
     /* Find the nearest pow2 match. */

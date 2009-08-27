@@ -75,22 +75,6 @@ static void WINAPI IWineD3DSwapChainImpl_Destroy(IWineD3DSwapChain *iface, D3DCB
 
     for (i = 0; i < This->num_contexts; ++i)
     {
-        if (This->context[i] == This->wineD3DDevice->activeContext)
-        {
-            IWineD3DSwapChainImpl *swapchain = (IWineD3DSwapChainImpl *)This->wineD3DDevice->swapchains[0];
-
-            /* Avoid destroying the currently active context for non-implicit swapchains. */
-            if (This != swapchain)
-            {
-                TRACE("Would destroy currently active context %p on a non-implicit swapchain.\n", This->context[i]);
-
-                if (swapchain->backBuffer)
-                    ActivateContext(This->wineD3DDevice, swapchain->backBuffer[0], CTXUSAGE_RESOURCELOAD);
-                else
-                    ActivateContext(This->wineD3DDevice, swapchain->frontBuffer, CTXUSAGE_RESOURCELOAD);
-            }
-        }
-
         DestroyContext(This->wineD3DDevice, This->context[i]);
     }
     /* Restore the screen resolution if we rendered in fullscreen
@@ -157,7 +141,8 @@ static HRESULT WINAPI IWineD3DSwapChainImpl_Present(IWineD3DSwapChain *iface, CO
         if (This->presentParms.Windowed) {
             MapWindowPoints(NULL, This->win_handle, (LPPOINT)&destRect, 2);
         }
-        IWineD3DSurface_Blt(This->backBuffer[0], &destRect, (IWineD3DSurface *) &cursor, NULL, WINEDDBLT_KEYSRC, NULL, WINED3DTEXF_NONE);
+        IWineD3DSurface_Blt(This->backBuffer[0], &destRect, (IWineD3DSurface *)&cursor,
+                NULL, WINEDDBLT_KEYSRC, NULL, WINED3DTEXF_POINT);
     }
     if(This->wineD3DDevice->logo_surface) {
         /* Blit the logo into the upper left corner of the drawable */
@@ -397,10 +382,11 @@ const IWineD3DSwapChainVtbl IWineD3DSwapChain_Vtbl =
     IWineD3DBaseSwapChainImpl_GetGammaRamp
 };
 
-WineD3DContext *IWineD3DSwapChainImpl_CreateContextForThread(IWineD3DSwapChain *iface) {
-    WineD3DContext *ctx;
+struct wined3d_context *IWineD3DSwapChainImpl_CreateContextForThread(IWineD3DSwapChain *iface)
+{
     IWineD3DSwapChainImpl *This = (IWineD3DSwapChainImpl *) iface;
-    WineD3DContext **newArray;
+    struct wined3d_context **newArray;
+    struct wined3d_context *ctx;
 
     TRACE("Creating a new context for swapchain %p, thread %d\n", This, GetCurrentThreadId());
 
@@ -427,10 +413,11 @@ WineD3DContext *IWineD3DSwapChainImpl_CreateContextForThread(IWineD3DSwapChain *
     return ctx;
 }
 
-void get_drawable_size_swapchain(IWineD3DSurfaceImpl *This, UINT *width, UINT *height) {
+void get_drawable_size_swapchain(struct wined3d_context *context, UINT *width, UINT *height)
+{
+    IWineD3DSurfaceImpl *surface = (IWineD3DSurfaceImpl *)context->current_rt;
     /* The drawable size of an onscreen drawable is the surface size.
-     * (Actually: The window size, but the surface is created in window size)
-     */
-    *width = This->currentDesc.Width;
-    *height = This->currentDesc.Height;
+     * (Actually: The window size, but the surface is created in window size) */
+    *width = surface->currentDesc.Width;
+    *height = surface->currentDesc.Height;
 }

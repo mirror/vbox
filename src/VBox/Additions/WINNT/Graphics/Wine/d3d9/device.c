@@ -881,12 +881,23 @@ static HRESULT  WINAPI  IDirect3DDevice9Impl_GetRenderTarget(LPDIRECT3DDEVICE9EX
 static HRESULT  WINAPI  IDirect3DDevice9Impl_SetDepthStencilSurface(LPDIRECT3DDEVICE9EX iface, IDirect3DSurface9* pZStencilSurface) {
     IDirect3DDevice9Impl *This = (IDirect3DDevice9Impl *)iface;
     IDirect3DSurface9Impl *pSurface;
+    IDirect3DSurface9 *pOldSurface;
     HRESULT hr;
     TRACE("(%p) Relay\n" , This);
 
-    pSurface = (IDirect3DSurface9Impl*)pZStencilSurface;
+
     EnterCriticalSection(&d3d9_cs);
+    hr = IDirect3DDevice9_GetDepthStencilSurface(iface, &pOldSurface);
+    if (D3D_OK==hr) {
+        IDirect3DSurface9_Release(pOldSurface);
+        IDirect3DSurface9_Release(pOldSurface);
+    }
+
+    pSurface = (IDirect3DSurface9Impl*)pZStencilSurface;
     hr = IWineD3DDevice_SetDepthStencilSurface(This->WineD3DDevice, NULL==pSurface ? NULL : pSurface->wineD3DSurface);
+    if (pZStencilSurface) {
+        IDirect3DSurface9_AddRef(pZStencilSurface);
+    }
     LeaveCriticalSection(&d3d9_cs);
     return hr;
 }

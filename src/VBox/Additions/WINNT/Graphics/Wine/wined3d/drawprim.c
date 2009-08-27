@@ -81,8 +81,9 @@ static void drawStridedFast(IWineD3DDevice *iface, GLenum primitive_type,
  */
 
 /* GL locking is done by the caller */
-static void drawStridedSlow(IWineD3DDevice *iface, const struct wined3d_stream_info *si, UINT NumVertexes,
-        GLenum glPrimType, const void *idxData, UINT idxSize, UINT minIndex, UINT startIdx)
+static void drawStridedSlow(IWineD3DDevice *iface, const struct wined3d_context *context,
+        const struct wined3d_stream_info *si, UINT NumVertexes, GLenum glPrimType,
+        const void *idxData, UINT idxSize, UINT minIndex, UINT startIdx)
 {
     unsigned int               textureNo    = 0;
     const WORD                *pIdxBufS     = NULL;
@@ -133,7 +134,7 @@ static void drawStridedSlow(IWineD3DDevice *iface, const struct wined3d_stream_i
     element = &si->elements[WINED3D_FFP_DIFFUSE];
     if (element->data) diffuse = element->data + streamOffset[element->stream_idx];
     else glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
-    num_untracked_materials = This->activeContext->num_untracked_materials;
+    num_untracked_materials = context->num_untracked_materials;
     if (num_untracked_materials && element->format_desc->format != WINED3DFMT_A8R8G8B8)
         FIXME("Implement diffuse color tracking from %s\n", debug_d3dformat(element->format_desc->format));
 
@@ -272,7 +273,7 @@ static void drawStridedSlow(IWineD3DDevice *iface, const struct wined3d_stream_i
 
                 for (i = 0; i < num_untracked_materials; ++i)
                 {
-                    glMaterialfv(GL_FRONT_AND_BACK, This->activeContext->untracked_materials[i], color);
+                    glMaterialfv(GL_FRONT_AND_BACK, context->untracked_materials[i], color);
                 }
             }
         }
@@ -569,6 +570,7 @@ void drawPrimitive(IWineD3DDevice *iface, UINT index_count, UINT numberOfVertice
 
     IWineD3DDeviceImpl           *This = (IWineD3DDeviceImpl *)iface;
     IWineD3DSurfaceImpl          *target;
+    struct wined3d_context *context;
     unsigned int i;
 
     if (!index_count) return;
@@ -590,7 +592,7 @@ void drawPrimitive(IWineD3DDevice *iface, UINT index_count, UINT numberOfVertice
     /* Signals other modules that a drawing is in progress and the stateblock finalized */
     This->isInDraw = TRUE;
 
-    ActivateContext(This, This->render_targets[0], CTXUSAGE_DRAWPRIM);
+    context = ActivateContext(This, This->render_targets[0], CTXUSAGE_DRAWPRIM);
 
     if (This->stencilBufferTarget) {
         /* Note that this depends on the ActivateContext call above to set
@@ -598,10 +600,10 @@ void drawPrimitive(IWineD3DDevice *iface, UINT index_count, UINT numberOfVertice
          * Z-compare function into account, but we could skip loading the
          * depthstencil for D3DCMP_NEVER and D3DCMP_ALWAYS as well. Also note
          * that we never copy the stencil data.*/
-        DWORD location = This->render_offscreen ? SFLAG_DS_OFFSCREEN : SFLAG_DS_ONSCREEN;
+        DWORD location = context->render_offscreen ? SFLAG_DS_OFFSCREEN : SFLAG_DS_ONSCREEN;
         if (This->stateBlock->renderState[WINED3DRS_ZWRITEENABLE]
                 || This->stateBlock->renderState[WINED3DRS_ZENABLE])
-            surface_load_ds_location(This->stencilBufferTarget, location);
+            surface_load_ds_location(This->stencilBufferTarget, context, location);
         if (This->stateBlock->renderState[WINED3DRS_ZWRITEENABLE])
             surface_modify_ds_location(This->stencilBufferTarget, location);
     }
@@ -618,7 +620,7 @@ void drawPrimitive(IWineD3DDevice *iface, UINT index_count, UINT numberOfVertice
 
         if (!use_vs(This->stateBlock))
         {
-            if (!This->strided_streams.position_transformed && This->activeContext->num_untracked_materials
+            if (!This->strided_streams.position_transformed && context->num_untracked_materials
                     && This->stateBlock->renderState[WINED3DRS_LIGHTING])
             {
                 static BOOL warned;
@@ -630,7 +632,8 @@ void drawPrimitive(IWineD3DDevice *iface, UINT index_count, UINT numberOfVertice
                 }
                 emulation = TRUE;
             }
-            else if(This->activeContext->fog_coord && This->stateBlock->renderState[WINED3DRS_FOGENABLE]) {
+            else if (context->fog_coord && This->stateBlock->renderState[WINED3DRS_FOGENABLE])
+            {
                 /* Either write a pipeline replacement shader or convert the specular alpha from unsigned byte
                  * to a float in the vertex buffer
                  */
@@ -664,7 +667,8 @@ void drawPrimitive(IWineD3DDevice *iface, UINT index_count, UINT numberOfVertice
                 }
                 drawStridedSlowVs(iface, stream_info, index_count, glPrimType, idxData, idxSize, minIndex, StartIdx);
             } else {
-                drawStridedSlow(iface, stream_info, index_count, glPrimType, idxData, idxSize, minIndex, StartIdx);
+                drawStridedSlow(iface, context, stream_info, index_count,
+                        glPrimType, idxData, idxSize, minIndex, StartIdx);
             }
         } else if(This->instancedDraw) {
             /* Instancing emulation with mixing immediate mode and arrays */
@@ -770,7 +774,7 @@ HRESULT tesselate_rectpatch(IWineD3DDeviceImpl *This,
     /* Simply activate the context for blitting. This disables all the things we don't want and
      * takes care of dirtifying. Dirtifying is preferred over pushing / popping, since drawing the
      * patch (as opposed to normal draws) will most likely need different changes anyway. */
-    ActivateContext(This, This->lastActiveRenderTarget, CTXUSAGE_BLIT);
+    ActivateContext(This, NULL, CTXUSAGE_BLIT);
 
     /* First, locate the position data. This is provided in a vertex buffer in the stateblock.
      * Beware of vbos

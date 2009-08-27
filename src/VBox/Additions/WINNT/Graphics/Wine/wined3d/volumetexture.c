@@ -50,7 +50,7 @@ static void volumetexture_internal_preload(IWineD3DBaseTexture *iface, enum WINE
 
     if (!device->isInDraw)
     {
-        ActivateContext(device, device->lastActiveRenderTarget, CTXUSAGE_RESOURCELOAD);
+        ActivateContext(device, NULL, CTXUSAGE_RESOURCELOAD);
     }
     else if (GL_SUPPORT(EXT_TEXTURE_SRGB) && This->baseTexture.bindCount > 0)
     {
@@ -157,17 +157,6 @@ HRESULT volumetexture_init(IWineD3DVolumeTextureImpl *texture, UINT width, UINT 
     {
         WARN("Failed to initialize basetexture, returning %#x.\n", hr);
         return hr;
-    }
-
-    if (texture->resource.format_desc->Flags & WINED3DFMT_FLAG_FILTERING)
-    {
-        texture->baseTexture.minMipLookup = minMipLookup;
-        texture->baseTexture.magLookup = magLookup;
-    }
-    else
-    {
-        texture->baseTexture.minMipLookup = minMipLookup_noFilter;
-        texture->baseTexture.magLookup = magLookup_noFilter;
     }
 
     /* Is NP2 support for volumes needed? */

@@ -27,6 +27,9 @@
  * of the LGPL is applied is otherwise unspecified.
  */
 
+#include "config.h"
+#include "wine/port.h"
+
 #include <string.h>
 
 #include "wine/unicode.h"
