@@ -2724,6 +2724,11 @@ static int pgmPoolTrackAddUser(PPGMPOOL pPool, PPGMPOOLPAGE pPage, uint16_t iUse
     paUsers[i].iUserTable = iUserTable;
     pPage->iUserHead = i;
 
+#  ifdef PGMPOOL_WITH_OPTIMIZED_DIRTY_PT
+    if (pPage->fDirty)
+        pgmPoolFlushDirtyPage(pPool->CTX_SUFF(pVM), pPool, pPage->idxDirty, true /* force removal */);
+#  endif
+
 #  ifdef PGMPOOL_WITH_CACHE
     /*
      * Tell the cache to update its replacement stats for this page.
