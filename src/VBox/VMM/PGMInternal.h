@@ -1859,6 +1859,8 @@ typedef struct PGMPOOL
     STAMCOUNTER                 StatResetDirtyPages;
     /** Times we've called pgmPoolAddDirtyPage. */
     STAMCOUNTER                 StatDirtyPage;
+    /** Times we've had to flush duplicates for dirty page management. */
+    STAMCOUNTER                 StatDirtyPageDupFlush;
 
     /** The high wather mark for cModifiedPages. */
     uint16_t                    cModifiedPagesHigh;
