@@ -169,7 +169,7 @@ static void crPackVertexAttrib(const CRVertexArrays *array, unsigned int attr, G
                         crPackVertexAttrib3fARB(attr, CRP_UI2F_NORM(uiPtr[0]), CRP_UI2F_NORM(uiPtr[1]), CRP_UI2F_NORM(uiPtr[2]));
                         break;
                     case 4:
-                        crPackVertexAttrib4NivARB(attr, uiPtr);
+                        crPackVertexAttrib4NuivARB(attr, uiPtr);
                         break;
                 }
             }
