@@ -38,6 +38,9 @@ VBoxService_DEFS.win     += _WIN32_WINNT=0x0501 _UNICODE UNICODE
 VBoxService_DEFS.os2      = VBOX_WITH_HGCM VBOXSERVICE_CLIPBOARD
 ifdef VBOX_WITH_GUEST_PROPS
  VBoxService_DEFS        += VBOX_WITH_GUEST_PROPS VBOXSERVICE_VMINFO
+ if1of ($(KBUILD_TARGET), win)
+  VBoxService_DEFS       += VBOX_WITH_HGCM VBOXSERVICE_VMEXEC
+ endif
 endif
 VBoxService_SOURCES       = \
 	VBoxService.cpp \
@@ -45,7 +48,8 @@ VBoxService_SOURCES       = \
 	VBoxServiceUtils.cpp
 ifdef VBOX_WITH_GUEST_PROPS
  VBoxService_SOURCES.win  = \
-	VBoxServiceVMInfo-win.cpp
+	VBoxServiceVMInfo-win.cpp \
+	VBoxServiceExec.cpp
  VBoxService_SOURCES     += \
 	VBoxServiceVMInfo.cpp
 endif

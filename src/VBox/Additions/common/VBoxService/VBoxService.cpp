@@ -84,6 +84,9 @@ static struct
 #ifdef VBOXSERVICE_VMINFO
     { &g_VMInfo, NIL_RTTHREAD, false, false, false, true },
 #endif
+#ifdef VBOXSERVICE_VMEXEC
+    { &g_VMExec, NIL_RTTHREAD, false, false, false, true },
+#endif
 };
 
 
@@ -320,7 +323,10 @@ int VBoxServiceStartServices(unsigned iMain)
         /* The final service runs in the main thread. */
         VBoxServiceVerbose(1, "Starting '%s' in the main thread\n", g_aServices[iMain].pDesc->pszName);
         rc = g_aServices[iMain].pDesc->pfnWorker(&g_fShutdown);
-        VBoxServiceError("Service '%s' stopped unexpected; rc=%Rrc\n", g_aServices[iMain].pDesc->pszName, rc);
+        if (rc != VINF_SUCCESS) /* Only complain if service returned an error. Otherwise the service is a one-timer. */
+        {
+            VBoxServiceError("Service '%s' stopped unexpected; rc=%Rrc\n", g_aServices[iMain].pDesc->pszName, rc);
+        }
     }
 
     /* Should never get here. */

@@ -135,6 +135,7 @@ extern VBOXSERVICE g_TimeSync;
 extern VBOXSERVICE g_Clipboard;
 extern VBOXSERVICE g_Control;
 extern VBOXSERVICE g_VMInfo;
+extern VBOXSERVICE g_VMExec;
 
 #ifdef RT_OS_WINDOWS
 extern DWORD g_rcWinService;
