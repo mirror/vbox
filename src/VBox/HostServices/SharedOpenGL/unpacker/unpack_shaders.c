@@ -43,7 +43,7 @@ void crUnpackExtendShaderSource(void)
     GLsizei count = READ_DATA(12, GLsizei);
     GLint hasNonLocalLen = READ_DATA(16, GLsizei);
     GLint *pLocalLength = DATA_POINTER(20, GLint);
-    char **ppStrings = NULL;
+    const char **ppStrings = NULL;
     GLsizei i;
     int pos=20+count*sizeof(*pLocalLength);
 
