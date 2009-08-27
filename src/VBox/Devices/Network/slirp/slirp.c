@@ -1421,7 +1421,7 @@ void slirp_input(PNATState pData, const uint8_t *pkt, int pkt_len)
 
     m->m_len = pkt_len ;
     memcpy(m->m_data, pkt, pkt_len);
-    
+
     if (pData->port_forwarding_activated == 0)
         acivate_port_forwarding(pData, mtod(m, struct ethhdr *));
 
@@ -1516,18 +1516,18 @@ done:
     return INADDR_ANY;
 }
 
-/** 
+/**
  * We need check if we've activated port forwarding
- * for specific machine ... that of course relates to 
+ * for specific machine ... that of course relates to
  * service mode
  * @todo finish this for service case
  */
 static void acivate_port_forwarding(PNATState pData, struct ethhdr *ethdr)
 {
     struct port_forward_rule *rule = NULL;
-    
+
     pData->port_forwarding_activated = 1;
-    /* check mac here */ 
+    /* check mac here */
     LIST_FOREACH(rule, &pData->port_forward_rule_head, list)
     {
         struct socket *so;
@@ -1552,7 +1552,7 @@ static void acivate_port_forwarding(PNATState pData, struct ethhdr *ethdr)
             continue;
         guest_addr = find_guest_ip(pData, ethdr->h_source);
 #endif
-        if (guest_addr == INADDR_ANY) 
+        if (guest_addr == INADDR_ANY)
         {
             /* the address wasn't granted */
             pData->port_forwarding_activated = 0;
@@ -1575,7 +1575,7 @@ static void acivate_port_forwarding(PNATState pData, struct ethhdr *ethdr)
                           htons(rule->guest_port), 0);
         }
         if (so == NULL)
-        {   
+        {
             LogRel(("NAT: failed redirect %s hp:%d gp:%d\n", (rule->proto == IPPROTO_UDP?"UDP":"TCP"),
                 rule->host_port, rule->guest_port));
             goto remove_port_forwarding;
@@ -1630,9 +1630,9 @@ static void acivate_port_forwarding(PNATState pData, struct ethhdr *ethdr)
  *  2. host port
  *  3. guest port
  *  4. proto
- *  5. guest MAC address 
- * the guest's MAC address is rather important for service, but we easily 
- * could get it from VM configuration in DrvNAT or Service, the idea is activating 
+ *  5. guest MAC address
+ * the guest's MAC address is rather important for service, but we easily
+ * could get it from VM configuration in DrvNAT or Service, the idea is activating
  * corresponding port-forwarding
  */
 int slirp_redir(PNATState pData, int is_udp, struct in_addr host_addr, int host_port,
@@ -1803,8 +1803,8 @@ void slirp_arp_who_has(PNATState pData, uint32_t dst)
 
     m = m_get(pData);
     if (m == NULL)
-    {   
-        LogRel(("NAT: Can't alloc mbuf for ARP request\n")); 
+    {
+        LogRel(("NAT: Can't alloc mbuf for ARP request\n"));
         return;
     }
     ehdr = mtod(m, struct ethhdr *);
