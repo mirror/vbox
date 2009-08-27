@@ -206,7 +206,7 @@ DECLINLINE(CGRect) darwinCenterRectTo (CGRect aRect, const CGRect& aToRect)
 #  ifdef RT_STRICT
 #   define AssertCarbonOSStatus(a) AssertMsg ((a) == noErr, ("Carbon OSStatus: %d\n", static_cast<int> (a)))
 #  else
-#   define AssertCarbonOSStatus(a) do { NOREF(a) } while (0)
+#   define AssertCarbonOSStatus(a) do { NOREF(a); } while (0)
 #  endif
 
 
