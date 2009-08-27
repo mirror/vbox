@@ -46,7 +46,7 @@ static uint8_t *dhcp_find_option(uint8_t *vend, uint8_t tag)
     }
     return NULL; 
 }
-BOOTPClient *bc_alloc_client(PNATState pData)
+static BOOTPClient *bc_alloc_client(PNATState pData)
 {
     int i;
     for (i = 0; i < NB_ADDR; i++)
@@ -427,6 +427,7 @@ static int dhcp_decode_request(PNATState pData, struct bootp_t *bp, const uint8_
                Assert((bp->bp_hlen == ETH_ALEN));
                memcpy(bc->macaddr, bp->bp_hwaddr, bp->bp_hlen);
                bc->addr.s_addr = bp->bp_ciaddr.s_addr; 
+               slirp_update_arp_cache(pData, bp->bp_ciaddr.s_addr, bp->bp_hwaddr);
             }
         }
         break;
@@ -449,6 +450,7 @@ static int dhcp_decode_request(PNATState pData, struct bootp_t *bp, const uint8_
             Assert((bp->bp_hlen == ETH_ALEN));
             memcpy(bc->macaddr, bp->bp_hwaddr, bp->bp_hlen);
             bc->addr.s_addr = ui32; 
+            slirp_update_arp_cache(pData, bp->bp_ciaddr.s_addr, bp->bp_hwaddr);
         break;
         case NONE:
             Assert((dhcp_stat != NONE));

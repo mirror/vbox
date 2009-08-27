@@ -38,6 +38,19 @@
 /** DHCP Lease time. */
 #define LEASE_TIME (24 * 3600)
 
+/*
+ * ARP cache this is naive implementaion of ARP 
+ * cache of mapping 4 byte IPv4 address to 6 byte 
+ * ethernet one.
+ */
+struct arp_cache_entry
+{
+    uint32_t ip;
+    uint8_t ether[6];
+    LIST_ENTRY(arp_cache_entry) list;
+};
+LIST_HEAD(arp_cache_head, arp_cache_entry);
+
 /** TFTP session entry. */
 struct tftp_session
 {
@@ -240,6 +253,7 @@ typedef struct NATState
     LIST_HEAD(handler_chain, proto_handler) handler_chain;
     struct port_forward_rule_list port_forward_rule_head;
     int port_forwarding_activated;
+    struct arp_cache_head arp_cache;
     /*libalis modules' handlers*/
     struct proto_handler *ftp_module;
     struct proto_handler *nbt_module;

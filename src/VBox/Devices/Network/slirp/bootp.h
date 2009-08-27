@@ -132,4 +132,3 @@ struct bootp_ext
 };
 
 void bootp_input(PNATState, struct mbuf *m);
-BOOTPClient *bc_alloc_client(PNATState pData);
