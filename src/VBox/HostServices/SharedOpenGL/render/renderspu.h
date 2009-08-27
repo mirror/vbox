@@ -251,7 +251,7 @@ typedef struct _VBOX_RENDERSPU_DESTROY_WINDOW {
 extern RenderSPU render_spu;
 
 /* @todo remove this hack */
-extern unsigned int render_spu_parent_window_id;
+extern uint64_t render_spu_parent_window_id;
 
 #ifdef CHROMIUM_THREADSAFE
 extern CRtsd _RenderTSD;
@@ -292,7 +292,7 @@ extern void RENDER_APIENTRY renderspuSwapBuffers( GLint window, GLint flags );
 #ifdef __cplusplus
 extern "C" {
 #endif
-DECLEXPORT(void) renderspuSetWindowId(unsigned int winId);
+DECLEXPORT(void) renderspuSetWindowId(uint64_t winId);
 DECLEXPORT(void) renderspuSetRootVisibleRegion(GLint cRects, GLint *pRects);
 #ifdef __cplusplus
 }
