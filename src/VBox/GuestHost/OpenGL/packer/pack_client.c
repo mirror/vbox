@@ -65,7 +65,7 @@ static void crPackVertexAttrib(const CRVertexArrays *array, unsigned int attr, G
                     else
                         crPackVertexAttrib3svARB(attr, sPtr);
                     break;
-                case 4: 
+                case 4:
                     if (array->a[attr].normalized)
                         crPackVertexAttrib4NsvARB(attr, sPtr);
                     else
@@ -82,7 +82,7 @@ static void crPackVertexAttrib(const CRVertexArrays *array, unsigned int attr, G
                 switch (array->a[attr].size)
                 {
                     case 1:
-                        crPackVertexAttrib1fARB(attr, CRP_US2F_NORM(usPtr[0])); 
+                        crPackVertexAttrib1fARB(attr, CRP_US2F_NORM(usPtr[0]));
                         break;
                     case 2:
                         crPackVertexAttrib2fARB(attr, CRP_US2F_NORM(usPtr[0]), CRP_US2F_NORM(usPtr[1]));
@@ -95,17 +95,17 @@ static void crPackVertexAttrib(const CRVertexArrays *array, unsigned int attr, G
                         break;
                 }
             }
-            else 
+            else
             {
                 GLushort usv[4];
                 switch (array->a[attr].size)
                 {
-                    case 4: 
+                    case 4:
                         crPackVertexAttrib4usvARB(attr, usPtr);
                         break;
                     case 3: usv[2] = usPtr[2];
                     case 2: usv[1] = usPtr[1];
-                    case 1: 
+                    case 1:
                         usv[0] = usPtr[0];
                         crPackVertexAttrib4usvARB(attr, usv);
                         break;
@@ -139,12 +139,12 @@ static void crPackVertexAttrib(const CRVertexArrays *array, unsigned int attr, G
                 GLint iv[4];
                 switch (array->a[attr].size)
                 {
-                    case 4: 
+                    case 4:
                         crPackVertexAttrib4ivARB(attr, iPtr);
                         break;
                     case 3: iv[2] = iPtr[2];
                     case 2: iv[1] = iPtr[1];
-                    case 1: 
+                    case 1:
                         iv[0] = iPtr[0];
                         crPackVertexAttrib4ivARB(attr, iv);
                         break;
@@ -178,12 +178,12 @@ static void crPackVertexAttrib(const CRVertexArrays *array, unsigned int attr, G
                 GLuint uiv[4];
                 switch (array->a[attr].size)
                 {
-                    case 4: 
+                    case 4:
                         crPackVertexAttrib4uivARB(attr, uiPtr);
                         break;
                     case 3: uiv[2] = uiPtr[2];
                     case 2: uiv[1] = uiPtr[1];
-                    case 1: 
+                    case 1:
                         uiv[0] = uiPtr[0];
                         crPackVertexAttrib4uivARB(attr, uiv);
                         break;
@@ -235,12 +235,12 @@ static void crPackVertexAttrib(const CRVertexArrays *array, unsigned int attr, G
                 GLbyte bv[4];
                 switch (array->a[attr].size)
                 {
-                    case 4: 
+                    case 4:
                         crPackVertexAttrib4bvARB(attr, bPtr);
                         break;
                     case 3: bv[2] = bPtr[2];
                     case 2: bv[1] = bPtr[1];
-                    case 1: 
+                    case 1:
                         bv[0] = bPtr[0];
                         crPackVertexAttrib4bvARB(attr, bv);
                         break;
@@ -274,12 +274,12 @@ static void crPackVertexAttrib(const CRVertexArrays *array, unsigned int attr, G
                 GLubyte ubv[4];
                 switch (array->a[attr].size)
                 {
-                    case 4: 
+                    case 4:
                         crPackVertexAttrib4ubvARB(attr, ubPtr);
                         break;
                     case 3: ubv[2] = ubPtr[2];
                     case 2: ubv[1] = ubPtr[1];
-                    case 1: 
+                    case 1:
                         ubv[0] = ubPtr[0];
                         crPackVertexAttrib4ubvARB(attr, ubv);
                         break;
@@ -398,7 +398,7 @@ crPackExpandArrayElement(GLint index, CRClientState *c)
                     case 4: crPackColor4dv((GLdouble *)p); break;
                 }
                 break;
-            default: 
+            default:
                 crWarning("Unhandled: crPackExpandArrayElement, array->c.type 0x%x", array->c.type);
         }
     }
@@ -848,14 +848,14 @@ crPackUnrollDrawElements(GLsizei count, GLenum type,
     case GL_UNSIGNED_SHORT:
         {
             const GLushort *p = (const GLushort *) indices;
-            for (i = 0; i < count; i++) 
+            for (i = 0; i < count; i++)
                 crPackArrayElement(p[i]);
         }
         break;
     case GL_UNSIGNED_INT:
         {
             const GLuint *p = (const GLuint *) indices;
-            for (i = 0; i < count; i++) 
+            for (i = 0; i < count; i++)
                 crPackArrayElement(p[i]);
         }
         break;
@@ -954,7 +954,7 @@ static int crPack_GetNumEnabledArrays(CRClientState *c, int *size)
     int i, count=0;
 
     *size = 0;
-    
+
     if (c->array.v.enabled)
     {
         count++;
