@@ -136,4 +136,4 @@
 #define CheckComRCThrowRC(rc)      \
     if (!SUCCEEDED (rc)) { throw rc; } else do {} while (0)
 
-#endif // ___VBox_com_assert_h
+#endif // !___VBox_com_assert_h
