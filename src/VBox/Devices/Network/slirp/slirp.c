@@ -636,10 +636,17 @@ void slirp_term(PNATState pData)
     slirp_release_dns_list(pData);
     ftp_alias_unload(pData);
     nbt_alias_unload(pData);
-    while(!LIST_EMPTY(&instancehead)) {
+    while(!LIST_EMPTY(&instancehead)) 
+    {
         struct libalias *la = LIST_FIRST(&instancehead);
         /* libalias do all clean up */
         LibAliasUninit(la);
+    }
+    while(!LIST_EMPTY(&pData->arp_cache)) 
+    {
+        struct arp_cache_entry *ac = LIST_FIRST(&pData->arp_cache);
+        LIST_REMOVE(ac, list);
+        RTMemFree(ac);
     }
 #ifdef RT_OS_WINDOWS
     WSACleanup();
@@ -1370,13 +1377,20 @@ static void arp_input(PNATState pData, struct mbuf *m)
             }
             break;
         case ARPOP_REPLY:
-        /* @todo check if we already have requested address */
-        /* if no*/
         {
-            BOOTPClient *bc = bc_alloc_client(pData);
-            bc->addr.s_addr = *(uint32_t *)ah->ar_sip;
-            memcpy(bc->macaddr, ah->ar_sha, ETH_ALEN);
-            m_free(pData, m);
+            struct arp_cache_entry *ac = NULL;
+            if (slirp_update_arp_cache(pData, ah->ar_sip, ah->ar_sha) == 0)
+                break;
+            ac = RTMemAllocZ(sizeof(struct arp_cache_entry));
+            if (ac == NULL)
+            {
+                LogRel(("NAT: Can´t allocate arp cache entry\n"));
+                m_free(pData, m);
+                return;
+            }
+            ac->ip = *(uint32_t *)ah->ar_sip;
+            memcpy(ac->ether, ah->ar_sha, ETH_ALEN);
+            LIST_INSERT_HEAD(&pData->arp_cache, ac, list);
         }
         break;
         default:
@@ -1823,4 +1837,21 @@ void slirp_arp_who_has(PNATState pData, uint32_t dst)
     m->m_len = sizeof(struct arphdr);
     if_encap(pData, ETH_P_ARP, m);
     LogRel(("NAT: ARP request sent\n"));
+}
+/* updates the arp cache 
+ * @returns 0 - if has found and updated
+ *          1 - if hasn´t found.
+ */
+int slirp_update_arp_cache(PNATState pData, uint32_t dst, const uint8_t *mac)
+{
+    struct arp_cache_entry *ac;
+    LIST_FOREACH(ac, &pData->arp_cache, list)
+    {
+        if (memcmp(ac->ether, mac, ETH_ALEN) == 0)
+        {
+            ac->ip = dst;
+            return 0;
+        }
+    }
+    return 1;
 }
