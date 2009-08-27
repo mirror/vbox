@@ -30,7 +30,9 @@ print """
 #elif defined (DARWIN)
 #define SYSTEM_GL "libGL.dylib"
 #define SYSTEM_CGL "OpenGL"
-#define SYSTEM_AGL "AGL"
+# ifndef VBOX_WITH_COCOA_QT
+#  define SYSTEM_AGL "AGL"
+# endif
 #elif defined(IRIX) || defined(IRIX64) || defined(Linux) || defined(FreeBSD) || defined(AIX) || defined(SunOS) || defined(OSF1)
 #if defined(Linux)
 #include <string.h>
@@ -51,10 +53,11 @@ static CRDLL *glDll = NULL;
 #ifdef DARWIN
 #define SYSTEM_GL_LIB_DIR   "/System/Library/Frameworks/OpenGL.framework/Libraries"
 #define SYSTEM_CGL_DIR  "/System/Library/Frameworks/OpenGL.framework"
-#define SYSTEM_AGL_DIR  "/System/Library/Frameworks/AGL.framework"
-
 static CRDLL *cglDll = NULL;
+# ifndef VBOX_WITH_COCOA_QT
+#  define SYSTEM_AGL_DIR  "/System/Library/Frameworks/AGL.framework"
 static CRDLL *aglDll = NULL;
+# endif
 #endif
 
 #if defined(WINDOWS)
@@ -258,8 +261,10 @@ crUnloadOpenGL( void )
 	crDLLClose( cglDll );
 	cglDll = NULL;
 
+# ifndef VBOX_WITH_COCOA_QT
 	crDLLClose( aglDll );
 	aglDll = NULL;
+# endif
 #endif
 }
 
@@ -289,7 +294,9 @@ print """
 	const char *env_syspath = crGetenv( "CR_SYSTEM_GL_PATH" );
 #ifdef DARWIN
 	const char *env_cgl_syspath = crGetenv( "CR_SYSTEM_CGL_PATH" );
+# ifndef VBOX_WITH_COCOA_QT
 	const char *env_agl_syspath = crGetenv( "CR_SYSTEM_AGL_PATH" );
+# endif
 #endif
 	
 	crDebug( "Looking for the system's OpenGL library..." );
@@ -317,6 +324,7 @@ print """
 
 	crDebug( "Found it in %s.", !env_cgl_syspath ? "default path" : env_cgl_syspath );
 
+# ifndef VBOX_WITH_COCOA_QT
 	crDebug( "Looking for the system's AGL library..." );
 	aglDll = __findSystemGL( env_agl_syspath, SYSTEM_AGL_DIR, SYSTEM_AGL );
 	if (!aglDll)
@@ -326,6 +334,7 @@ print """
 	}
 
 	crDebug( "Found it in %s.", !env_agl_syspath ? "default path" : env_agl_syspath );
+# endif
 #endif
 """
 
@@ -453,8 +462,10 @@ for fun in useful_wgl_functions:
 	print '\tinterface->%s = (%sFunc_t) crDLLGetNoError( glDll, "%s" );' % (fun,fun,fun)
 
 print '#elif defined(DARWIN)'
+print '# ifndef VBOX_WITH_COCOA_QT'
 for fun in useful_agl_functions:
 	print '\tinterface->%s = (%sFunc_t) crDLLGetNoError( aglDll, "%s" );' % (fun,fun,fun)
+print '# endif'
 
 for fun in useful_cgl_functions:
 	print '\tinterface->%s = (%sFunc_t) crDLLGetNoError( cglDll, "%s" );' % (fun, fun,fun)

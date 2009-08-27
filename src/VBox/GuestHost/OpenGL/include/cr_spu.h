@@ -19,8 +19,11 @@
 #include <iprt/types.h>
 
 #ifdef DARWIN
-#include <OpenGL/OpenGL.h>
-#include <AGL/agl.h>
+# include <OpenGL/OpenGL.h>
+# ifdef VBOX_WITH_COCOA_QT
+# else
+#  include <AGL/agl.h>
+# endif
 #endif
 
 #define SPU_ENTRY_POINT_NAME "SPULoad"
@@ -149,6 +152,7 @@ typedef const GLubyte *(WGL_APIENTRY *wglGetExtensionsStringEXTFunc_t)();
 typedef const GLubyte *(WGL_APIENTRY *wglGetExtensionsStringARBFunc_t)(HDC);
 /*@}*/
 #elif defined(DARWIN)
+# ifndef VBOX_WITH_COCOA_QT
 /**
  * Apple/AGL
  */
@@ -189,6 +193,7 @@ typedef GLboolean (*aglSetOffScreenFunc_t)( AGLContext, GLsizei, GLsizei, GLsize
 typedef GLboolean (*aglSetVirtualScreenFunc_t)( AGLContext, GLint );
 typedef GLboolean (*aglUpdateContextFunc_t)( AGLContext );
 typedef GLboolean (*aglUseFontFunc_t)( AGLContext, GLint, Style, GLint, GLint, GLint, GLint );
+# endif
 
 typedef const GLubyte *(*glGetStringFunc_t)( GLenum );
 /*@}*/
@@ -320,6 +325,7 @@ typedef struct {
     wglGetPixelFormatAttribfvEXTFunc_t wglGetPixelFormatAttribfvEXT;
     wglGetExtensionsStringEXTFunc_t wglGetExtensionsStringEXT;
 #elif defined(DARWIN)
+# ifndef VBOX_WITH_COCOA_QT
     aglCreateContextFunc_t          aglCreateContext;
     aglDestroyContextFunc_t         aglDestroyContext;
     aglSetCurrentContextFunc_t      aglSetCurrentContext;
@@ -339,6 +345,7 @@ typedef struct {
     aglGetIntegerFunc_t             aglGetInteger;
     aglEnableFunc_t                 aglEnable;
     aglDisableFunc_t                aglDisable;
+# endif
 
     CGLChoosePixelFormatFunc_t      CGLChoosePixelFormat;
     CGLDestroyPixelFormatFunc_t     CGLDestroyPixelFormat;
