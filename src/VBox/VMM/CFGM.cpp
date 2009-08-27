@@ -548,7 +548,7 @@ VMMR3DECL(int) CFGMR3QuerySize(PCFGMNODE pNode, const char *pszName, size_t *pcb
                 break;
 
             case CFGMVALUETYPE_STRING:
-                *pcb = pLeaf->Value.String.cch;
+                *pcb = pLeaf->Value.String.cb;
                 break;
 
             case CFGMVALUETYPE_BYTES:
@@ -637,10 +637,11 @@ VMMR3DECL(int) CFGMR3QueryString(PCFGMNODE pNode, const char *pszName, char *psz
     {
         if (pLeaf->enmType == CFGMVALUETYPE_STRING)
         {
-            if (cchString >= pLeaf->Value.String.cch)
+            size_t cbSrc = pLeaf->Value.String.cb;
+            if (cchString >= cbSrc)
             {
-                memcpy(pszString, pLeaf->Value.String.psz, pLeaf->Value.String.cch);
-                memset(pszString + pLeaf->Value.String.cch, 0, cchString - pLeaf->Value.String.cch);
+                memcpy(pszString, pLeaf->Value.String.psz, cbSrc);
+                memset(pszString + cbSrc, 0, cchString - cbSrc);
             }
             else
                 rc = VERR_CFGM_NOT_ENOUGH_SPACE;
@@ -670,10 +671,11 @@ VMMR3DECL(int) CFGMR3QueryStringDef(PCFGMNODE pNode, const char *pszName, char *
     {
         if (pLeaf->enmType == CFGMVALUETYPE_STRING)
         {
-            if (cchString >= pLeaf->Value.String.cch)
+            size_t cbSrc = pLeaf->Value.String.cb;
+            if (cchString >= cbSrc)
             {
-                memcpy(pszString, pLeaf->Value.String.psz, pLeaf->Value.String.cch);
-                memset(pszString + pLeaf->Value.String.cch, 0, cchString - pLeaf->Value.String.cch);
+                memcpy(pszString, pLeaf->Value.String.psz, cbSrc);
+                memset(pszString + cbSrc, 0, cchString - cbSrc);
             }
             else
                 rc = VERR_CFGM_NOT_ENOUGH_SPACE;
@@ -1534,7 +1536,7 @@ static void cfgmR3FreeValue(PCFGMLEAF pLeaf)
             case CFGMVALUETYPE_STRING:
                 MMR3HeapFree(pLeaf->Value.String.psz);
                 pLeaf->Value.String.psz = NULL;
-                pLeaf->Value.String.cch = 0;
+                pLeaf->Value.String.cb = 0;
                 break;
 
             case CFGMVALUETYPE_INTEGER:
@@ -1573,7 +1575,7 @@ VMMR3DECL(int) CFGMR3InsertInteger(PCFGMNODE pNode, const char *pszName, uint64_
  * @param   pNode           Parent node.
  * @param   pszName         Value name.
  * @param   pszString       The value.
- */            
+ */
 VMMR3DECL(int) CFGMR3InsertString(PCFGMNODE pNode, const char *pszName, const char *pszString)
 {
     int rc;
@@ -1582,11 +1584,11 @@ VMMR3DECL(int) CFGMR3InsertString(PCFGMNODE pNode, const char *pszName, const ch
         /*
          * Allocate string object first.
          */
-        size_t cchString = strlen(pszString) + 1;
-        char *pszStringCopy = (char *)MMR3HeapAlloc(pNode->pVM, MM_TAG_CFGM_STRING, RT_ALIGN_Z(cchString, 16));
+        size_t cbString = strlen(pszString) + 1;
+        char *pszStringCopy = (char *)MMR3HeapAlloc(pNode->pVM, MM_TAG_CFGM_STRING, cbString);
         if (pszStringCopy)
         {
-            memcpy(pszStringCopy, pszString, cchString);
+            memcpy(pszStringCopy, pszString, cbString);
 
             /*
              * Create value leaf and set it to string type.
@@ -1597,7 +1599,7 @@ VMMR3DECL(int) CFGMR3InsertString(PCFGMNODE pNode, const char *pszName, const ch
             {
                 pLeaf->enmType = CFGMVALUETYPE_STRING;
                 pLeaf->Value.String.psz = pszStringCopy;
-                pLeaf->Value.String.cch = cchString;
+                pLeaf->Value.String.cb  = cbString;
             }
             else
                 MMR3HeapFree(pszStringCopy);
@@ -1613,9 +1615,9 @@ VMMR3DECL(int) CFGMR3InsertString(PCFGMNODE pNode, const char *pszName, const ch
 
 
 /**
- * Same as CFGMR3InsertString except the string value given in RTStrPrintfV 
- * fashion. 
- *  
+ * Same as CFGMR3InsertString except the string value given in RTStrPrintfV
+ * fashion.
+ *
  * @returns VBox status code.
  * @param   pNode           Parent node.
  * @param   pszName         Value name.
@@ -1642,7 +1644,7 @@ VMMR3DECL(int) CFGMR3InsertStringFV(PCFGMNODE pNode, const char *pszName, const 
             {
                 pLeaf->enmType = CFGMVALUETYPE_STRING;
                 pLeaf->Value.String.psz = pszString;
-                pLeaf->Value.String.cch = strlen(pszString);
+                pLeaf->Value.String.cb  = strlen(pszString) + 1;
             }
             else
                 MMR3HeapFree(pszString);
@@ -1658,9 +1660,9 @@ VMMR3DECL(int) CFGMR3InsertStringFV(PCFGMNODE pNode, const char *pszName, const 
 
 
 /**
- * Same as CFGMR3InsertString except the string value given in RTStrPrintf 
- * fashion. 
- *  
+ * Same as CFGMR3InsertString except the string value given in RTStrPrintf
+ * fashion.
+ *
  * @returns VBox status code.
  * @param   pNode           Parent node.
  * @param   pszName         Value name.
@@ -1679,7 +1681,7 @@ VMMR3DECL(int) CFGMR3InsertStringF(PCFGMNODE pNode, const char *pszName, const c
 
 /**
  * Same as CFGMR3InsertString except the string value given as a UTF-16 string.
- *  
+ *
  * @returns VBox status code.
  * @param   pNode           Parent node.
  * @param   pszName         Value name.
@@ -1717,7 +1719,7 @@ VMMR3DECL(int) CFGMR3InsertBytes(PCFGMNODE pNode, const char *pszName, const voi
             /*
              * Allocate string object first.
              */
-            void *pvCopy = MMR3HeapAlloc(pNode->pVM, MM_TAG_CFGM_STRING, RT_ALIGN_Z(cbBytes, 16));
+            void *pvCopy = MMR3HeapAlloc(pNode->pVM, MM_TAG_CFGM_STRING, cbBytes);
             if (pvCopy || !cbBytes)
             {
                 memcpy(pvCopy, pvBytes, cbBytes);
@@ -2464,14 +2466,14 @@ VMMR3DECL(int) CFGMR3QueryGCPtrSDef(PCFGMNODE pNode, const char *pszName, PRTGCI
  */
 VMMR3DECL(int) CFGMR3QueryStringAlloc(PCFGMNODE pNode, const char *pszName, char **ppszString)
 {
-    size_t cch;
-    int rc = CFGMR3QuerySize(pNode, pszName, &cch);
+    size_t cbString;
+    int rc = CFGMR3QuerySize(pNode, pszName, &cbString);
     if (RT_SUCCESS(rc))
     {
-        char *pszString = (char *)MMR3HeapAlloc(pNode->pVM, MM_TAG_CFGM_USER, cch);
+        char *pszString = (char *)MMR3HeapAlloc(pNode->pVM, MM_TAG_CFGM_USER, cbString);
         if (pszString)
         {
-            rc = CFGMR3QueryString(pNode, pszName, pszString, cch);
+            rc = CFGMR3QueryString(pNode, pszName, pszString, cbString);
             if (RT_SUCCESS(rc))
                 *ppszString = pszString;
             else
@@ -2496,19 +2498,19 @@ VMMR3DECL(int) CFGMR3QueryStringAlloc(PCFGMNODE pNode, const char *pszName, char
  */
 VMMR3DECL(int) CFGMR3QueryStringAllocDef(PCFGMNODE pNode, const char *pszName, char **ppszString, const char *pszDef)
 {
-    size_t cch;
-    int rc = CFGMR3QuerySize(pNode, pszName, &cch);
+    size_t cbString;
+    int rc = CFGMR3QuerySize(pNode, pszName, &cbString);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND || rc == VERR_CFGM_NO_PARENT)
     {
-        cch = strlen(pszDef) + 1;
+        cbString = strlen(pszDef) + 1;
         rc = VINF_SUCCESS;
     }
     if (RT_SUCCESS(rc))
     {
-        char *pszString = (char *)MMR3HeapAlloc(pNode->pVM, MM_TAG_CFGM_USER, cch);
+        char *pszString = (char *)MMR3HeapAlloc(pNode->pVM, MM_TAG_CFGM_USER, cbString);
         if (pszString)
         {
-            rc = CFGMR3QueryStringDef(pNode, pszName, pszString, cch, pszDef);
+            rc = CFGMR3QueryStringDef(pNode, pszName, pszString, cbString, pszDef);
             if (RT_SUCCESS(rc))
                 *ppszString = pszString;
             else
@@ -2606,11 +2608,11 @@ static void cfgmR3Dump(PCFGMNODE pRoot, unsigned iLevel, PCDBGFINFOHLP pHlp)
                 break;
 
             case CFGMVALUETYPE_STRING:
-                pHlp->pfnPrintf(pHlp, "  %-*s <string>  = \"%s\" (cch=%d)\n", (int)cchMax, pLeaf->szName, pLeaf->Value.String.psz, pLeaf->Value.String.cch);
+                pHlp->pfnPrintf(pHlp, "  %-*s <string>  = \"%s\" (cb=%zu)\n", (int)cchMax, pLeaf->szName, pLeaf->Value.String.psz, pLeaf->Value.String.cb);
                 break;
 
             case CFGMVALUETYPE_BYTES:
-                pHlp->pfnPrintf(pHlp, "  %-*s <bytes>   = \"%.*Rhxs\" (cb=%d)\n", (int)cchMax, pLeaf->szName, pLeaf->Value.Bytes.cb, pLeaf->Value.Bytes.pau8, pLeaf->Value.Bytes.cb);
+                pHlp->pfnPrintf(pHlp, "  %-*s <bytes>   = \"%.*Rhxs\" (cb=%zu)\n", (int)cchMax, pLeaf->szName, pLeaf->Value.Bytes.cb, pLeaf->Value.Bytes.pau8, pLeaf->Value.Bytes.cb);
                 break;
 
             default:

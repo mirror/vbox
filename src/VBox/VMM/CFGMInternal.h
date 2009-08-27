@@ -48,7 +48,7 @@ typedef union CFGMVALUE
     struct CFGMVALUE_STRING
     {
         /** Length of string. (In bytes, including the terminator.) */
-        size_t          cch;
+        size_t          cb;
         /** Pointer to the string. */
         char           *psz;
     } String;
