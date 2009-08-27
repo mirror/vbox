@@ -5387,6 +5387,7 @@ static DECLCALLBACK(int) vgaR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle
 #endif
 }
 
+/** @copydoc FNSSMDEVLOADDONE */
 static DECLCALLBACK(int) vgaR3LoadDone(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
 #ifndef VBOX_WITH_HGSMI
