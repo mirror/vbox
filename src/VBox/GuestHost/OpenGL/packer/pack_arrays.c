@@ -7,6 +7,7 @@
 #include "packer.h"
 #include "cr_opcodes.h"
 #include "cr_error.h"
+#include "iprt/types.h"
 
 #define UNUSED(x) ((void)(x))
 /**
@@ -37,7 +38,7 @@ void PACK_APIENTRY crPackVertexPointer( GLint size, GLenum type, GLsizei stride,
 	WRITE_DATA( 8, GLint, size );
 	WRITE_DATA( 12, GLenum, type );
 	WRITE_DATA( 16, GLsizei, stride );
-	WRITE_DATA( 20, GLuint, (GLuint) pointer );
+	WRITE_DATA( 20, GLuint, (GLuint) ((uintptr_t) pointer) );
 	WRITE_OPCODE( pc, CR_EXTEND_OPCODE );
 }
 
@@ -52,7 +53,7 @@ void PACK_APIENTRY crPackColorPointer( GLint size, GLenum type, GLsizei stride, 
 	WRITE_DATA( 8, GLint, size );
 	WRITE_DATA( 12, GLenum, type );
 	WRITE_DATA( 16, GLsizei, stride );
-	WRITE_DATA( 20, GLuint, (GLuint) pointer );
+	WRITE_DATA( 20, GLuint, (GLuint) ((uintptr_t) pointer) );
 	WRITE_OPCODE( pc, CR_EXTEND_OPCODE );
 }
 
@@ -66,7 +67,7 @@ void PACK_APIENTRY crPackNormalPointer( GLenum type, GLsizei stride, const GLvoi
 	WRITE_DATA( 4, GLenum, CR_NORMALPOINTER_EXTEND_OPCODE );
 	WRITE_DATA( 8, GLenum, type );
 	WRITE_DATA( 12, GLsizei, stride );
-	WRITE_DATA( 16, GLuint, (GLuint) pointer );
+	WRITE_DATA( 16, GLuint, (GLuint) ((uintptr_t) pointer) );
 	WRITE_OPCODE( pc, CR_EXTEND_OPCODE );
 }
 
@@ -81,7 +82,7 @@ void PACK_APIENTRY crPackTexCoordPointer( GLint size, GLenum type, GLsizei strid
 	WRITE_DATA( 8, GLint, size );
 	WRITE_DATA( 12, GLenum, type );
 	WRITE_DATA( 16, GLsizei, stride );
-	WRITE_DATA( 20, GLuint, (GLuint) pointer );
+	WRITE_DATA( 20, GLuint, (GLuint) ((uintptr_t) pointer) );
 	WRITE_OPCODE( pc, CR_EXTEND_OPCODE );
 }
 
@@ -94,7 +95,7 @@ void PACK_APIENTRY crPackEdgeFlagPointer( GLsizei stride, const GLvoid *pointer 
 	WRITE_DATA( 0, GLint, packet_length );
 	WRITE_DATA( 4, GLenum, CR_EDGEFLAGPOINTER_EXTEND_OPCODE );
 	WRITE_DATA( 8, GLsizei, stride );
-	WRITE_DATA( 12, GLuint, (GLuint) pointer );
+	WRITE_DATA( 12, GLuint, (GLuint) ((uintptr_t) pointer) );
 	WRITE_OPCODE( pc, CR_EXTEND_OPCODE );
 }
 
@@ -108,7 +109,7 @@ void PACK_APIENTRY crPackIndexPointer( GLenum type, GLsizei stride, const GLvoid
 	WRITE_DATA( 4, GLenum, CR_INDEXPOINTER_EXTEND_OPCODE );
 	WRITE_DATA( 8, GLenum, type );
 	WRITE_DATA( 12, GLsizei, stride );
-	WRITE_DATA( 16, GLuint, (GLuint) pointer );
+	WRITE_DATA( 16, GLuint, (GLuint) ((uintptr_t) pointer) );
 	WRITE_OPCODE( pc, CR_EXTEND_OPCODE );
 }
 
@@ -123,7 +124,7 @@ void PACK_APIENTRY crPackSecondaryColorPointerEXT( GLint size, GLenum type, GLsi
 	WRITE_DATA( 8, GLint, size );
 	WRITE_DATA( 12, GLenum, type );
 	WRITE_DATA( 16, GLsizei, stride );
-	WRITE_DATA( 20, GLuint, (GLuint) pointer );
+	WRITE_DATA( 20, GLuint, (GLuint) ((uintptr_t) pointer) );
 	WRITE_OPCODE( pc, CR_EXTEND_OPCODE );
 }
 
@@ -137,7 +138,7 @@ void PACK_APIENTRY crPackFogCoordPointerEXT( GLenum type, GLsizei stride, const 
 	WRITE_DATA( 4, GLenum, CR_FOGCOORDPOINTEREXT_EXTEND_OPCODE );
 	WRITE_DATA( 8, GLenum, type );
 	WRITE_DATA( 12, GLsizei, stride );
-	WRITE_DATA( 16, GLuint, (GLuint) pointer );
+	WRITE_DATA( 16, GLuint, (GLuint) ((uintptr_t) pointer) );
 	WRITE_OPCODE( pc, CR_EXTEND_OPCODE );
 }
 
@@ -154,7 +155,7 @@ void PACK_APIENTRY crPackVertexAttribPointerARB( GLuint index, GLint size, GLenu
 	WRITE_DATA( 16, GLenum, type );
 	WRITE_DATA( 20, GLboolean, normalized );
 	WRITE_DATA( 24, GLsizei, stride );
-	WRITE_DATA( 28, GLuint, (GLuint) pointer );
+	WRITE_DATA( 28, GLuint, (GLuint) ((uintptr_t) pointer) );
 	WRITE_OPCODE( pc, CR_EXTEND_OPCODE );
 }
 
@@ -170,7 +171,7 @@ void PACK_APIENTRY crPackVertexAttribPointerNV( GLuint index, GLint size, GLenum
 	WRITE_DATA( 12, GLint, size );
 	WRITE_DATA( 16, GLenum, type );
 	WRITE_DATA( 20, GLsizei, stride );
-	WRITE_DATA( 24, GLuint, (GLuint) pointer );
+	WRITE_DATA( 24, GLuint, (GLuint) ((uintptr_t) pointer) );
 	WRITE_OPCODE( pc, CR_EXTEND_OPCODE );
 }
 
@@ -184,7 +185,7 @@ void PACK_APIENTRY crPackInterleavedArrays( GLenum format, GLsizei stride, const
 	WRITE_DATA( 4, GLenum, CR_INTERLEAVEDARRAYS_EXTEND_OPCODE );
 	WRITE_DATA( 8, GLenum, format );
 	WRITE_DATA( 12, GLsizei, stride );
-	WRITE_DATA( 16, GLuint, (GLuint) pointer );
+	WRITE_DATA( 16, GLuint, (GLuint) ((uintptr_t) pointer) );
 	WRITE_OPCODE( pc, CR_EXTEND_OPCODE );
 }
 
