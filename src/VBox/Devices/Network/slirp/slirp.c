@@ -1380,7 +1380,10 @@ static void arp_input(PNATState pData, struct mbuf *m)
         {
             struct arp_cache_entry *ac = NULL;
             if (slirp_update_arp_cache(pData, ah->ar_sip, ah->ar_sha) == 0)
+            {
+                m_free(pData, m);
                 break;
+            }
             ac = RTMemAllocZ(sizeof(struct arp_cache_entry));
             if (ac == NULL)
             {
