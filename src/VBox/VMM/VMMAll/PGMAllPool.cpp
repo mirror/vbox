@@ -1305,6 +1305,7 @@ DECLEXPORT(int) pgmPoolAccessHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE 
 
                 if (pPageHead != pPage)
                 {
+                    STAM_COUNTER_INC(&pPool->StatDirtyPageDupFlush);
                     Log(("Flush duplicate page idx=%d GCPhys=%RGp type=%s\n", pPageHead->idx, pPageHead->GCPhys, pgmPoolPoolKindToStr(pPageHead->enmKind)));
                     int rc2 = pgmPoolFlushPage(pPool, pPageHead);
                     AssertRC(rc2);
