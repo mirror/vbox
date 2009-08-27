@@ -239,15 +239,15 @@ RTR0DECL(void *) RTMemContAlloc(PRTCCPHYS pPhys, size_t cb)
     cPages = cb >> PAGE_SHIFT;
     cOrder = CalcPowerOf2Order(cPages);
 #if (defined(RT_ARCH_AMD64) || defined(CONFIG_X86_PAE)) && defined(GFP_DMA32)
+    /* ZONE_DMA32: 0-4GB */
     paPages = alloc_pages(GFP_DMA32, cOrder);
     if (!paPages)
 #endif
 #ifdef RT_ARCH_AMD64
+        /* ZONE_DMA; 0-16MB */
         paPages = alloc_pages(GFP_DMA, cOrder);
 #else
-# if defined(CONFIG_X86_PAE)
-    /** GFP_USER can return page frames above 4GB on PAE systems => GFP_DMA? */
-# endif
+        /* ZONE_NORMAL: 0-896MB */
         paPages = alloc_pages(GFP_USER, cOrder);
 #endif
     if (paPages)

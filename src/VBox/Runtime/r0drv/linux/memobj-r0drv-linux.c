@@ -525,15 +525,17 @@ int rtR0MemObjNativeAllocLow(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, bool fExecut
 
     /* Try to avoid GFP_DMA. GFM_DMA32 was introduced with Linux 2.6.15. */
 #if (defined(RT_ARCH_AMD64) || defined(CONFIG_X86_PAE)) && defined(GFP_DMA32)
+    /* ZONE_DMA32: 0-4GB */
     rc = rtR0MemObjLinuxAllocPages(&pMemLnx, RTR0MEMOBJTYPE_LOW, cb, GFP_DMA32, false /* non-contiguous */);
     if (RT_FAILURE(rc))
 #endif
 #ifdef RT_ARCH_AMD64
+        /* ZONE_DMA: 0-16MB */
         rc = rtR0MemObjLinuxAllocPages(&pMemLnx, RTR0MEMOBJTYPE_LOW, cb, GFP_DMA, false /* non-contiguous */);
 #else
 # ifdef CONFIG_X86_PAE
-        /** XXX GFP_USER can return page frames above 4GB on PAE systems => GFP_DMA? */
 # endif
+        /* ZONE_NORMAL: 0-896MB */
         rc = rtR0MemObjLinuxAllocPages(&pMemLnx, RTR0MEMOBJTYPE_LOW, cb, GFP_USER, false /* non-contiguous */);
 #endif
     if (RT_SUCCESS(rc))
@@ -559,15 +561,15 @@ int rtR0MemObjNativeAllocCont(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, bool fExecu
     int rc;
 
 #if (defined(RT_ARCH_AMD64) || defined(CONFIG_X86_PAE)) && defined(GFP_DMA32)
+    /* ZONE_DMA32: 0-4GB */
     rc = rtR0MemObjLinuxAllocPages(&pMemLnx, RTR0MEMOBJTYPE_CONT, cb, GFP_DMA32, true /* contiguous */);
     if (RT_FAILURE(rc))
 #endif
 #ifdef RT_ARCH_AMD64
+        /* ZONE_DMA: 0-16MB */
         rc = rtR0MemObjLinuxAllocPages(&pMemLnx, RTR0MEMOBJTYPE_CONT, cb, GFP_DMA, true /* contiguous */);
 #else
-# if defined(CONFIG_X86_PAE)
-        /** XXX GFP_USER can return page frames above 4GB on PAE systems => GFP_DMA? */
-# endif
+        /* ZONE_NORMAL (32-bit hosts): 0-896MB */
         rc = rtR0MemObjLinuxAllocPages(&pMemLnx, RTR0MEMOBJTYPE_CONT, cb, GFP_USER, true /* contiguous */);
 #endif
     if (RT_SUCCESS(rc))
@@ -665,21 +667,27 @@ static int rtR0MemObjLinuxAllocPhysSub(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJTYP
      * we don't expect this to be a performance issue just yet it can wait.
      */
     if (PhysHighest == NIL_RTHCPHYS)
+        /* ZONE_HIGHMEM: the whole physical memory */
         rc = rtR0MemObjLinuxAllocPhysSub2(ppMem, enmType, cb, PhysHighest, GFP_HIGHUSER);
     else if (PhysHighest <= _1M * 16)
+        /* ZONE_DMA: 0-16MB */
         rc = rtR0MemObjLinuxAllocPhysSub2(ppMem, enmType, cb, PhysHighest, GFP_DMA);
     else
     {
         rc = VERR_NO_MEMORY;
         if (RT_FAILURE(rc))
+            /* ZONE_HIGHMEM: the whole physical memory */
             rc = rtR0MemObjLinuxAllocPhysSub2(ppMem, enmType, cb, PhysHighest, GFP_HIGHUSER);
         if (RT_FAILURE(rc))
+            /* ZONE_NORMAL: 0-896MB */
             rc = rtR0MemObjLinuxAllocPhysSub2(ppMem, enmType, cb, PhysHighest, GFP_USER);
 #ifdef GFP_DMA32
         if (RT_FAILURE(rc))
+            /* ZONE_DMA32: 0-4GB */
             rc = rtR0MemObjLinuxAllocPhysSub2(ppMem, enmType, cb, PhysHighest, GFP_DMA32);
 #endif
         if (RT_FAILURE(rc))
+            /* ZONE_DMA: 0-16MB */
             rc = rtR0MemObjLinuxAllocPhysSub2(ppMem, enmType, cb, PhysHighest, GFP_DMA);
     }
     return rc;
