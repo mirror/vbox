@@ -1384,7 +1384,7 @@ static void arp_input(PNATState pData, struct mbuf *m)
             ac = RTMemAllocZ(sizeof(struct arp_cache_entry));
             if (ac == NULL)
             {
-                LogRel(("NAT: Can´t allocate arp cache entry\n"));
+                LogRel(("NAT: Can't allocate arp cache entry\n"));
                 m_free(pData, m);
                 return;
             }
@@ -1840,7 +1840,7 @@ void slirp_arp_who_has(PNATState pData, uint32_t dst)
 }
 /* updates the arp cache 
  * @returns 0 - if has found and updated
- *          1 - if hasn´t found.
+ *          1 - if hasn't found.
  */
 int slirp_update_arp_cache(PNATState pData, uint32_t dst, const uint8_t *mac)
 {
