@@ -1892,6 +1892,19 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
             parms[2].u.pointer.size = sizeof("TRANSIENT, RDONLYGUEST");
             pConsole->mVMMDev->hgcmHostCall ("VBoxGuestPropSvc", guestProp::SET_PROP_HOST, 3, &parms[0]);
 
+            /* Initialize the remote execution properties for ready-on access by the guest */
+            Utf8Str utf8ValEmpty = "";
+            parms[0].type = VBOX_HGCM_SVC_PARM_PTR;
+            parms[0].u.pointer.addr = (void *)"/VirtualBox/HostGuest/SysprepArgs";
+            parms[0].u.pointer.size = sizeof("/VirtualBox/HostGuest/SysprepArgs");
+            parms[1].type = VBOX_HGCM_SVC_PARM_PTR;
+            parms[1].u.pointer.addr = (void*)utf8ValEmpty.c_str();
+            parms[1].u.pointer.size = (uint32_t)utf8ValEmpty.length() + 1;
+            parms[2].type = VBOX_HGCM_SVC_PARM_PTR;
+            parms[2].u.pointer.addr = (void *)"TRANSIENT, RDONLYGUEST";
+            parms[2].u.pointer.size = sizeof("TRANSIENT, RDONLYGUEST");
+            pConsole->mVMMDev->hgcmHostCall ("VBoxGuestPropSvc", guestProp::SET_PROP_HOST, 3, &parms[0]);
+
             /* Register the host notification callback */
             HGCMSVCEXTHANDLE hDummy;
             HGCMHostRegisterServiceExtension (&hDummy, "VBoxGuestPropSvc",
