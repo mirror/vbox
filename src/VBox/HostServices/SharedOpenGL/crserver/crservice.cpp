@@ -84,7 +84,7 @@ static int crIsThreadWorking=0;
 static DWORD WINAPI crServerProc(void* pv)
 {
     uint64_t winId = *((uint64_t*)pv);
-    renderspuSetWindowId((uint32_t)winId);
+    renderspuSetWindowId(winId);
     CRServerMain(0, NULL);
     crIsThreadWorking = 0;
     return 0;
@@ -131,7 +131,7 @@ static DECLCALLBACK(int) svcConnect (void *, uint32_t u32ClientID, void *pvClien
         rc = VERR_MAX_THRDS_REACHED;
 #else
     g_pFrameBuffer->COMGETTER(WinId)(&g_winId);
-    renderspuSetWindowId((uint32_t)g_winId);
+    renderspuSetWindowId(g_winId);
     rc = crVBoxServerAddClient(u32ClientID);
 #endif
 
@@ -237,7 +237,7 @@ static void svcClientVersionUnsupported(uint32_t minor, uint32_t major)
 
     /*MS's opengl32 tryes to load our ICD around 30 times on failure...this is to prevent unnecessary spam*/
     static int shown = 0;
-    
+
     if (g_pVM && !shown)
     {
         VMSetRuntimeError(g_pVM, VMSETRTERR_FLAGS_NO_WAIT, "3DSupportIncompatibleAdditions",

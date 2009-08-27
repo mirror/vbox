@@ -25,7 +25,7 @@ SPUFunctions render_functions = {
 };
 
 RenderSPU render_spu;
-unsigned int render_spu_parent_window_id;
+uint64_t render_spu_parent_window_id;
 
 #ifdef CHROMIUM_THREADSAFE
 CRtsd _RenderTSD;
@@ -434,7 +434,7 @@ int SPULoad( char **name, char **super, SPUInitFuncPtr *init,
     return 1;
 }
 
-DECLEXPORT(void) renderspuSetWindowId(unsigned int winId)
+DECLEXPORT(void) renderspuSetWindowId(uint64_t winId)
 {
     render_spu_parent_window_id = winId;
 }
