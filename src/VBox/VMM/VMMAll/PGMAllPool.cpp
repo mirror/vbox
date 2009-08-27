@@ -1444,7 +1444,6 @@ static void pgmPoolFlushDirtyPage(PVM pVM, PPGMPOOL pPool, unsigned idxSlot, boo
     rc = PGMHandlerPhysicalReset(pVM, pPage->GCPhys);
     Assert(rc == VINF_SUCCESS);
     pPage->fDirty         = false;
-    pPage->fZeroed        = true;
 
     /* This page is likely to be modified again, so reduce the nr of modifications just a bit here. */
     Assert(pPage->cModifications);
@@ -4283,7 +4282,7 @@ int pgmPoolFlushPage(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
 #endif
 
     /*
-     * Mark the page as being in need of a ASMMemZeroPage().
+     * Mark the page as being in need of an ASMMemZeroPage().
      */
     pPage->fZeroed = false;
 
