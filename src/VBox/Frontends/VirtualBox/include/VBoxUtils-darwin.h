@@ -203,10 +203,10 @@ DECLINLINE(CGRect) darwinCenterRectTo (CGRect aRect, const CGRect& aToRect)
 # ifndef QT_MAC_USE_COCOA
 
 /* Asserts if a != noErr and prints the error code */
-#  ifdef RT_STRICT \
-#   define AssertCarbonOSStatus(a) AssertMsg ((a) == noErr, ("Carbon OSStatus: %d\n", static_cast<int> (a))) \
-#  else \
-#   define AssertCarbonOSStatus(a) do { NOREF(a) } while (0) \
+#  ifdef RT_STRICT
+#   define AssertCarbonOSStatus(a) AssertMsg ((a) == noErr, ("Carbon OSStatus: %d\n", static_cast<int> (a)))
+#  else
+#   define AssertCarbonOSStatus(a) do { NOREF(a) } while (0)
 #  endif
 
 
