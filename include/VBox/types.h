@@ -179,6 +179,7 @@ typedef enum VMSTATE
  * Indicates that VBOXSTRICTRC is in strict mode.
  */
 #if defined(__cplusplus) \
+ && !defined(_MSC_VER) /* doesn't like classes and extern "C" __cdecl functions. */ \
  &&  (   defined(RT_STRICT) \
       || defined(VBOX_STRICT) \
       || defined(DEBUG) \
