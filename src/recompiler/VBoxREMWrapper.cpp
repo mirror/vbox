@@ -918,6 +918,7 @@ static REMFNDESC g_SSMIntLoadExecCallback =
 {
     "SSMIntLoadExecCallback", NULL, &g_aArgsSSMIntLoadExecCallback[0], RT_ELEMENTS(g_aArgsSSMIntLoadExecCallback), REMFNDESC_FLAGS_RET_INT, sizeof(int),  NULL
 };
+/* Note: don't forget about the handwritten assembly wrapper when changing this! */
 static const REMPARMDESC g_aArgsSSMR3RegisterInternal[] =
 {
     { REMPARMDESC_FLAGS_INT,        sizeof(PVM),                NULL },
