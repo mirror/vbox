@@ -91,13 +91,10 @@ crServerDispatchCopyTexImage2D(GLenum target, GLint level, GLenum internalFormat
 {
     GLsizei tw, th;
 
-    cr_server.head_spu->dispatch_table.GetTexLevelParameteriv(target, level, GL_TEXTURE_WIDTH, &width);
-    cr_server.head_spu->dispatch_table.GetTexLevelParameteriv(target, level, GL_TEXTURE_HEIGHT, &height);
+    cr_server.head_spu->dispatch_table.GetTexLevelParameteriv(target, level, GL_TEXTURE_WIDTH, &tw);
+    cr_server.head_spu->dispatch_table.GetTexLevelParameteriv(target, level, GL_TEXTURE_HEIGHT, &th);
 
     /* Workaround for a wine or ati bug. Host drivers crash unless we first provide texture bounds. */
-    /* @todo: r=poetzsch: gcc warns here. tw & th is uninitialized in any case.
-     * I guess they should be filled with the above two calls & compared
-     * against the method params width & height! */
     if (((tw!=width) || (th!=height)) && (internalFormat==GL_DEPTH_COMPONENT24))
     {
         crServerDispatchTexImage2D(target, level, internalFormat, width, height, border, GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, NULL);
