@@ -64,6 +64,7 @@ DECLEXPORT(int) pgmPoolAccessHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE 
 #ifdef LOG_ENABLED
 static const char *pgmPoolPoolKindToStr(uint8_t enmKind);
 #endif
+static PPGMPOOLPAGE pgmPoolMonitorGetPageByGCPhys(PPGMPOOL pPool, PPGMPOOLPAGE pNewPage);
 
 void            pgmPoolTrackFlushGCPhysPT(PVM pVM, PPGMPAGE pPhysPage, uint16_t iShw, uint16_t cRefs);
 void            pgmPoolTrackFlushGCPhysPTs(PVM pVM, PPGMPAGE pPhysPage, uint16_t iPhysExt);
@@ -249,7 +250,8 @@ void pgmPoolMonitorChainChanging(PVMCPU pVCpu, PPGMPOOL pPool, PPGMPOOLPAGE pPag
     const unsigned cbWrite = pDis ? pgmPoolDisasWriteSize(pDis) : 0;
     PVM pVM = pPool->CTX_SUFF(pVM);
 
-    LogFlow(("pgmPoolMonitorChainChanging: %RGv phys=%RGp kind=%s cbWrite=%d\n", (RTGCPTR)pvAddress, GCPhysFault, pgmPoolPoolKindToStr(pPage->enmKind), cbWrite));
+    LogFlow(("pgmPoolMonitorChainChanging: %RGv phys=%RGp cbWrite=%d\n", (RTGCPTR)pvAddress, GCPhysFault, cbWrite));
+
     for (;;)
     {
        union
@@ -262,6 +264,8 @@ void pgmPoolMonitorChainChanging(PVMCPU pVCpu, PPGMPOOL pPool, PPGMPOOLPAGE pPag
             PX86PDPT    pPDPT;
             PX86PML4    pPML4;
         } uShw;
+
+        LogFlow(("pgmPoolMonitorChainChanging: page idx=%d phys=%RGp (next=%d) kind=%s\n", pPage->idx, pPage->GCPhys, pPage->iMonitoredNext, pgmPoolPoolKindToStr(pPage->enmKind), cbWrite));
 
         uShw.pv = NULL;
         switch (pPage->enmKind)
@@ -1282,8 +1286,8 @@ DECLEXPORT(int) pgmPoolAccessHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE 
         &&  !fForcedFlush
         &&  pPage->enmKind == PGMPOOLKIND_PAE_PT_FOR_PAE_PT
         &&  pPage->cModifications >= cMaxModifications
-        &&  pPage->iModifiedNext == NIL_PGMPOOL_IDX
-        &&  pPage->iModifiedPrev == NIL_PGMPOOL_IDX)
+        &&  pPage->iMonitoredNext != NIL_PGMPOOL_IDX
+        &&  pPage->iMonitoredPrev != NIL_PGMPOOL_IDX)
     {
         Assert(!pgmPoolIsPageLocked(&pVM->pgm.s, pPage));
         Assert(pPage->fDirty == false);
@@ -1394,7 +1398,7 @@ static void pgmPoolFlushDirtyPage(PVM pVM, PPGMPOOL pPool, unsigned idxSlot, boo
     AssertRelease(idxPage != NIL_PGMPOOL_IDX);
     pPage = &pPool->aPages[idxPage];
     Assert(pPage->idx == idxPage);
-    Assert(pPage->iModifiedNext == NIL_PGMPOOL_IDX && pPage->iModifiedPrev == NIL_PGMPOOL_IDX);
+    Assert(pPage->iMonitoredNext == NIL_PGMPOOL_IDX && pPage->iMonitoredPrev == NIL_PGMPOOL_IDX);
 
     AssertMsg(pPage->fDirty, ("Page %RGp (slot=%d) not marked dirty!", pPage->GCPhys, idxSlot));
     Log(("Flush dirty page %RGp cMods=%d\n", pPage->GCPhys, pPage->cModifications));
@@ -1451,7 +1455,7 @@ void pgmPoolAddDirtyPage(PVM pVM, PPGMPOOL pPool, PPGMPOOLPAGE pPage)
 
     idxFree = pPool->idxFreeDirtyPage;
     Assert(idxFree < RT_ELEMENTS(pPool->aIdxDirtyPages));
-    Assert(pPage->iModifiedNext == NIL_PGMPOOL_IDX && pPage->iModifiedPrev == NIL_PGMPOOL_IDX);
+    Assert(pPage->iMonitoredNext == NIL_PGMPOOL_IDX && pPage->iMonitoredPrev == NIL_PGMPOOL_IDX);
 
     if (pPool->cDirtyPages >= RT_ELEMENTS(pPool->aIdxDirtyPages))
         pgmPoolFlushDirtyPage(pVM, pPool, idxFree, true /* force removal */);
@@ -2068,6 +2072,8 @@ static int pgmPoolMonitorInsert(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
     {
         Assert(pPageHead != pPage); Assert(pPageHead->iMonitoredNext != pPage->idx);
         Assert(pPageHead->iMonitoredPrev != pPage->idx);
+        Assert(pPageHead->iMonitoredPrev == NIL_PGMPOOL_IDX || pPool->aPages[pPageHead->iMonitoredPrev].GCPhys == pPage->GCPhys);
+        Assert(pPageHead->iMonitoredNext == NIL_PGMPOOL_IDX || pPool->aPages[pPageHead->iMonitoredNext].GCPhys == pPage->GCPhys);
 
 #ifdef PGMPOOL_WITH_OPTIMIZED_DIRTY_PT
         if (pPageHead->fDirty)
