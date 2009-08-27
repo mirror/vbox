@@ -29,10 +29,6 @@
 #include <VBox/VBoxGuestLib.h>
 #include <VBoxDisplay.h>
 
-#ifdef VBOX_WITH_HGSMI
-#include <iprt/initterm.h>
-#endif
-
 #if _MSC_VER >= 1400 /* bird: MS fixed swprintf to be standard-conforming... */
 #define _INC_SWPRINTF_INL_
 extern "C" int __cdecl swprintf(wchar_t *, const wchar_t *, ...);
@@ -62,10 +58,6 @@ ULONG DriverEntry(IN PVOID Context1, IN PVOID Context2)
 {
     VIDEO_HW_INITIALIZATION_DATA InitData;
     ULONG rc;
-
-#ifdef VBOX_WITH_HGSMI
-    RTR0Init(0);
-#endif
 
     dprintf(("VBoxVideo::DriverEntry. Built %s %s\n", __DATE__, __TIME__));
 
@@ -1215,8 +1207,10 @@ VP_STATUS VBoxVideoFindAdapter(IN PVOID HwDeviceExtension,
           ((PDEVICE_EXTENSION)HwDeviceExtension)->u.primary.IOPortHost = 0;
           ((PDEVICE_EXTENSION)HwDeviceExtension)->u.primary.IOPortGuest = 0;
 
-          VIDEO_ACCESS_RANGE tmpRanges[2];
+          VIDEO_ACCESS_RANGE tmpRanges[4];
           ULONG slot;
+
+          VideoPortZeroMemory(tmpRanges, sizeof(tmpRanges));
 
           /* need to call VideoPortGetAccessRanges to ensure interrupt info in ConfigInfo gets set up */
           VP_STATUS status = VideoPortGetAccessRanges(HwDeviceExtension,
