@@ -2099,8 +2099,8 @@ static int pgmPoolMonitorInsert(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
     {
         Assert(pPageHead != pPage); Assert(pPageHead->iMonitoredNext != pPage->idx);
         Assert(pPageHead->iMonitoredPrev != pPage->idx);
-        AssertMsg(pPageHead->iMonitoredPrev == NIL_PGMPOOL_IDX || pPool->aPages[pPageHead->iMonitoredPrev].GCPhys == pPage->GCPhys, ("%RGp vs %RGp\n", pPool->aPages[pPageHead->iMonitoredPrev].GCPhys, pPage->GCPhys);
-        AssertMsg(pPageHead->iMonitoredNext == NIL_PGMPOOL_IDX || pPool->aPages[pPageHead->iMonitoredNext].GCPhys == pPage->GCPhys, ("%RGp vs %RGp\n", pPool->aPages[pPageHead->iMonitoredNext].GCPhys, pPage->GCPhys);
+        AssertMsg(pPageHead->iMonitoredPrev == NIL_PGMPOOL_IDX || pPool->aPages[pPageHead->iMonitoredPrev].GCPhys == pPage->GCPhys, ("%RGp vs %RGp\n", pPool->aPages[pPageHead->iMonitoredPrev].GCPhys, pPage->GCPhys));
+        AssertMsg(pPageHead->iMonitoredNext == NIL_PGMPOOL_IDX || pPool->aPages[pPageHead->iMonitoredNext].GCPhys == pPage->GCPhys, ("%RGp vs %RGp\n", pPool->aPages[pPageHead->iMonitoredNext].GCPhys, pPage->GCPhys));
 
 #ifdef PGMPOOL_WITH_OPTIMIZED_DIRTY_PT
         if (pPageHead->fDirty)
