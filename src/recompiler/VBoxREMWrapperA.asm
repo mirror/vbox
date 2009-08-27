@@ -543,12 +543,15 @@ ENDPROC WrapGCC2MSCVariadictInt
 ; @param    u32Instance     rdx              2
 ; @param    u32Version      rcx              3
 ; @param    cbGuess         r8               4
-; @param    pfnSavePrep     r9               5
-; @param    pfnSaveExec     rbp + 10h        6
-; @param    pfnSaveDone     rbp + 18h        7
-; @param    pfnLoadPrep     rbp + 20h        8
-; @param    pfnLoadExec     rbp + 28h        9
-; @param    pfnLoadDone     rbp + 30h       10
+; @param    pfnLivePrep     r9               5
+; @param    pfnLiveExec     rbp + 10h        6
+; @param    pfnLiveVote     rbp + 18h        7
+; @param    pfnSavePrep     rbp + 20h        8
+; @param    pfnSaveExec     rbp + 28h        9
+; @param    pfnSaveDone     rbp + 30h       10
+; @param    pfnLoadPrep     rbp + 38h       11
+; @param    pfnLoadExec     rbp + 40h       12
+; @param    pfnLoadDone     rbp + 48h       13
 ;
 BEGINPROC WrapGCC2MSC_SSMR3RegisterInternal
     LOG_ENTRY
