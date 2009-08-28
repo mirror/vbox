@@ -1390,6 +1390,8 @@ static void arp_input(PNATState pData, struct mbuf *m)
                     break;
                 }
                 slirp_arp_cache_add(pData, *(uint32_t *)ah->ar_tip, &eh->h_dest[0]);     
+                /* good opportunity to activate port-forwarding on address (self)asignment*/
+                activate_port_forwarding(pData, eh);
             }
             break;
         case ARPOP_REPLY:
@@ -1400,6 +1402,9 @@ static void arp_input(PNATState pData, struct mbuf *m)
                 break;
             }
             slirp_arp_cache_add(pData, *(uint32_t *)ah->ar_sip, ah->ar_sha);
+            /*after/save restore we need up port forwarding again*/
+            if (pData->port_forwarding_activated == 0)
+                activate_port_forwarding(pData, eh); 
             m_free(pData, m);
         }
         break;
@@ -1446,8 +1451,10 @@ void slirp_input(PNATState pData, const uint8_t *pkt, int pkt_len)
     m->m_len = pkt_len ;
     memcpy(m->m_data, pkt, pkt_len);
 
+#if 0
     if (pData->port_forwarding_activated == 0)
         activate_port_forwarding(pData, mtod(m, struct ethhdr *));
+#endif
 
     proto = ntohs(*(uint16_t *)(pkt + 12));
     switch(proto)
