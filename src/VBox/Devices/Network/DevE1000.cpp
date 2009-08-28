@@ -4305,7 +4305,7 @@ static DECLCALLBACK(int) e1kSetLinkState(PPDMINETWORKCONFIG pInterface, PDMNETWO
             E1kLog(("%s Link will be up in approximately 5 secs\n", INSTANCE(pState)));
             STATUS &= ~STATUS_LU;
             Phy::setLinkStatus(&pState->phy, false);
-            e1kRaiseInterrupt(pState, ICR_LSC);
+            e1kRaiseInterrupt(pState, VERR_SEM_BUSY, ICR_LSC);
             /* Restore the link back in 5 second. */
             e1kArmTimer(pState, pState->pLUTimer, 5000000);
         }
@@ -4314,8 +4314,8 @@ static DECLCALLBACK(int) e1kSetLinkState(PPDMINETWORKCONFIG pInterface, PDMNETWO
             E1kLog(("%s Link is down\n", INSTANCE(pState)));
             STATUS &= ~STATUS_LU;
             Phy::setLinkStatus(&pState->phy, false);
+            e1kRaiseInterrupt(pState, VERR_SEM_BUSY, ICR_LSC);
         }
-        e1kRaiseInterrupt(pState, VERR_SEM_BUSY, ICR_LSC);
         if (pState->pDrv)
             pState->pDrv->pfnNotifyLinkChanged(pState->pDrv, enmState);
     }
@@ -4514,7 +4514,6 @@ static DECLCALLBACK(int) e1kLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle, 
  * @param   pDevIns     The device instance.
  * @param   pSSMHandle  The handle to the saved state.
  */
-#if 0
 static DECLCALLBACK(int) e1kLoadDone(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle)
 {
     E1KSTATE* pState = PDMINS_2_DATA(pDevIns, E1KSTATE*);
@@ -4531,14 +4530,13 @@ static DECLCALLBACK(int) e1kLoadDone(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle)
         E1kLog(("%s Link is down temporarely\n", INSTANCE(pState)));
         STATUS &= ~STATUS_LU;
         Phy::setLinkStatus(&pState->phy, false);
-        e1kRaiseInterrupt(pState, ICR_LSC);
+        e1kRaiseInterrupt(pState, VERR_SEM_BUSY, ICR_LSC);
         /* Restore the link back in half a second. */
-        e1kArmTimer(pState, pState->pLUTimer, 500000);
+        e1kArmTimer(pState, pState->pLUTimer, 5000000);
     }
     e1kMutexRelease(pState);
     return VINF_SUCCESS;
 }
-#endif
 
 /**
  * Sets 8-bit register in PCI configuration space.
@@ -4764,7 +4762,7 @@ static DECLCALLBACK(int) e1kConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
     rc = PDMDevHlpSSMRegisterEx(pDevIns, E1K_SAVEDSTATE_VERSION, sizeof(E1KSTATE), NULL,
                                 NULL, NULL, NULL,
                                 e1kSavePrep, e1kSaveExec, NULL,
-                                e1kLoadPrep, e1kLoadExec, NULL);
+                                e1kLoadPrep, e1kLoadExec, e1kLoadDone);
     if (RT_FAILURE(rc))
         return rc;
 
@@ -5125,7 +5123,7 @@ static DECLCALLBACK(int) e1kAttach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t f
     {
         STATUS &= ~STATUS_LU;
         Phy::setLinkStatus(&pState->phy, false);
-        e1kRaiseInterrupt(pState, ICR_LSC);
+        e1kRaiseInterrupt(pState, VERR_SEM_BUSY, ICR_LSC);
         /* Restore the link back in 5 second. */
         e1kArmTimer(pState, pState->pLUTimer, 5000000);
     }
