@@ -48,10 +48,13 @@ VBoxService_SOURCES       = \
 	VBoxServiceUtils.cpp
 ifdef VBOX_WITH_GUEST_PROPS
  VBoxService_SOURCES.win  = \
-	VBoxServiceVMInfo-win.cpp \
-	VBoxServiceExec.cpp
+ 	VBoxServiceVMInfo-win.cpp
  VBoxService_SOURCES     += \
-	VBoxServiceVMInfo.cpp
+ 	VBoxServiceVMInfo.cpp
+ if1of ($(KBUILD_TARGET), win)
+  VBoxService_SOURCES    += \
+	VBoxServiceExec.cpp
+ endif
 endif
 VBoxService_SOURCES.win  += \
 	VBoxService-win.rc \
