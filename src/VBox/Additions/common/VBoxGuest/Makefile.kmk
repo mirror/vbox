@@ -54,7 +54,7 @@ if1of ($(KBUILD_TARGET), \
   VBoxGuest_LIBS         = \
   	$(VBOX_LIB_VBGL_R0BASE) \
   	$(VBOX_LIB_IPRT_GUEST_R0)
-  VBoxGuest_INTERMEDIATES.freebsd = \
+  VBoxGuest_ORDERDEPS.freebsd = \
   	$(PATH_INS)/gen-sys-hdrs/pci_if.h \
   	$(PATH_INS)/gen-sys-hdrs/bus_if.h \
   	$(PATH_INS)/gen-sys-hdrs/device_if.h
