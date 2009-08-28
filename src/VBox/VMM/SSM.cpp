@@ -3348,12 +3348,11 @@ VMMR3DECL(int) SSMR3Save(PVM pVM, const char *pszFilename, SSMAFTER enmAfter, PF
     /*
      * Validate input.
      */
-    if (    enmAfter != SSMAFTER_DESTROY
-        &&  enmAfter != SSMAFTER_CONTINUE)
-    {
-        AssertMsgFailed(("Invalid enmAfter=%d!\n", enmAfter));
-        return VERR_INVALID_PARAMETER;
-    }
+    AssertMsgReturn(   enmAfter == SSMAFTER_DESTROY
+                    || enmAfter == SSMAFTER_CONTINUE
+                    || enmAfter == SSMAFTER_MIGRATE,
+                    ("%d\n", enmAfter),
+                    VERR_INVALID_PARAMETER);
 
     /*
      * Create the handle and try open the file.
@@ -5842,12 +5841,11 @@ VMMR3DECL(int) SSMR3Load(PVM pVM, const char *pszFilename, SSMAFTER enmAfter, PF
     /*
      * Validate input.
      */
-    if (    enmAfter != SSMAFTER_RESUME
-        &&  enmAfter != SSMAFTER_DEBUG_IT)
-    {
-        AssertMsgFailed(("Invalid enmAfter=%d!\n", enmAfter));
-        return VERR_INVALID_PARAMETER;
-    }
+    AssertMsgReturn(   enmAfter == SSMAFTER_RESUME
+                    || enmAfter == SSMAFTER_MIGRATE
+                    || enmAfter == SSMAFTER_DEBUG_IT,
+                    ("%d\n", enmAfter),
+                    VERR_INVALID_PARAMETER);
 
     /*
      * Create the handle and open the file.

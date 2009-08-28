@@ -82,6 +82,10 @@ typedef enum SSMAFTER
     SSMAFTER_DESTROY,
     /** Will continue execution after saving the VM. */
     SSMAFTER_CONTINUE,
+    /** Will migrate the VM.
+     * The source VM will be destroyed (then one saving), the destination VM
+     * will continue execution. */
+    SSMAFTER_MIGRATE,
     /** Will debug the saved state.
      * This is used to drop some of the stricter consitentcy checks so it'll
      * load fine in the debugger or animator. */
