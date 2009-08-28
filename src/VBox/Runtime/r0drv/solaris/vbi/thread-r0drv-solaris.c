@@ -149,9 +149,7 @@ RTDECL(void) RTThreadPreemptRestore(PRTTHREADPREEMPTSTATE pState)
 
 RTDECL(bool) RTThreadIsInInterrupt(RTTHREAD hThread)
 {
-    /* This is the best we currently can do here. :-( */
-    return !RTThreadPreemptIsEnabled(hThread)
-        && getpil() > 0;
+    Assert(hThread == NIL_RTTHREAD);
+    return servicing_interrupt() ? true : false;
 }
-
 

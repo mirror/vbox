@@ -175,10 +175,7 @@ RTDECL(void) RTThreadPreemptRestore(PRTTHREADPREEMPTSTATE pState)
 
 RTDECL(bool) RTThreadIsInInterrupt(RTTHREAD hThread)
 {
-    /** @todo it looks like checking for spl > LOCK_LEVEL and interrupts disabled
-     *        is more accurate than this... */
-    /* This is the best we currently can do here. :-( */
-    return !RTThreadPreemptIsEnabled(hThread)
-        && getpil() > 0;
+    Assert(hThread == NIL_RTTHREAD);
+    return servicing_interrupt() ? true : false;
 }
 
