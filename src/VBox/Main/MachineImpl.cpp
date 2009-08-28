@@ -8331,8 +8331,14 @@ STDMETHODIMP SessionMachine::PullGuestProperties(ComSafeArrayOut(BSTR, aNames),
         it->strName.cloneTo(&names[i]);
         it->strValue.cloneTo(&values[i]);
         timestamps[i] = it->mTimestamp;
-        writeFlags(it->mFlags, szFlags);
-        Bstr(szFlags).cloneTo(&flags[i]);
+        /* If it is NULL, keep it NULL. */
+        if (it->mFlags)
+        {
+            writeFlags(it->mFlags, szFlags);
+            Bstr(szFlags).cloneTo(&flags[i]);
+        }
+        else
+            flags[i] = NULL;
         ++i;
     }
     names.detachTo(ComSafeArrayOutArg(aNames));
