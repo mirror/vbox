@@ -1,10 +1,10 @@
 /* $Id$ */
 /** @file
- * IPRT - VBoxRT.dll/so dependencies.
+ * IPRT - Build Configuration Information.
  */
 
 /*
- * Copyright (C) 2006-2007 Sun Microsystems, Inc.
+ * Copyright (C) 2009 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -28,45 +28,58 @@
  * additional information or have any questions.
  */
 
+
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
-#include <VBox/sup.h>
-#include <iprt/asm.h>
-#include <iprt/assert.h>
+#include "internal/iprt.h"
 #include <iprt/buildconfig.h>
-#include <iprt/system.h>
-
-# include <libxml/xmlmodule.h>
-# include <libxml/globals.h>
-# include <openssl/md5.h>
-# include <openssl/rc4.h>
-# include <openssl/pem.h>
-# include <openssl/x509.h>
-# include <openssl/rsa.h>
 
 
-/*******************************************************************************
-*   Global Variables                                                           *
-*******************************************************************************/
-PFNRT g_VBoxRTDeps[] =
+
+#ifdef IPRT_BLDCFG_SCM_REV
+RTDECL(uint32_t) RTBldCfgRevision(void)
 {
-    (PFNRT)SUPR3Init,
-    (PFNRT)SUPR3PageAllocEx,
-    (PFNRT)SUPSemEventCreate,
-    (PFNRT)xmlModuleOpen,
-    (PFNRT)MD5_Init,
-    (PFNRT)RC4,
-    (PFNRT)RC4_set_key,
-    (PFNRT)PEM_read_bio_X509,
-    (PFNRT)PEM_read_bio_PrivateKey,
-    (PFNRT)X509_free,
-    (PFNRT)i2d_X509,
-    (PFNRT)RSA_generate_key,
-    (PFNRT)RTAssertShouldPanic,
-    (PFNRT)ASMAtomicReadU64,
-    (PFNRT)ASMAtomicCmpXchgU64,
-    (PFNRT)RTBldCfgRevision,
-    NULL
-};
+    return IPRT_BLDCFG_SCM_REV;
+}
+
+
+RTDECL(const char *) RTBldCfgRevisionStr(void)
+{
+    return RT_XSTR(IPRT_BLDCFG_SCM_REV);
+}
+#endif
+
+
+#ifdef IPRT_BLDCFG_VERSION_STRING
+RTDECL(const char *) RTBldCfgVersion(void)
+{
+    return IPRT_BLDCFG_VERSION_STRING;
+}
+#endif
+
+
+#ifdef IPRT_BLDCFG_VERSION_MAJOR
+RTDECL(uint32_t) RTBldCfgVersionMajor(void)
+{
+    return IPRT_BLDCFG_VERSION_MAJOR;
+}
+#endif
+
+
+#ifdef IPRT_BLDCFG_VERSION_MINOR
+RTDECL(uint32_t) RTBldCfgVersionMinor(void)
+{
+    return IPRT_BLDCFG_VERSION_MINOR;
+}
+#endif
+
+
+#ifdef IPRT_BLDCFG_VERSION_BUILD
+RTDECL(uint32_t) RTBldCfgVersionBuild(void)
+{
+    return IPRT_BLDCFG_VERSION_BUILD;
+}
+#endif
+
 
