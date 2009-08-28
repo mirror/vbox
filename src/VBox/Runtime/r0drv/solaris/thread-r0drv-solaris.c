@@ -42,6 +42,7 @@
 #include <iprt/mp.h>
 
 
+
 RTDECL(RTNATIVETHREAD) RTThreadNativeSelf(void)
 {
     return (RTNATIVETHREAD)curthread;
@@ -142,20 +143,10 @@ RTDECL(bool) RTThreadPreemptIsPossible(void)
 RTDECL(void) RTThreadPreemptDisable(PRTTHREADPREEMPTSTATE pState)
 {
     AssertPtr(pState);
-    Assert(pState->uOldPil == UINT32_MAX);
+    Assert(pState->u32Reserved == 0);
+    pState->u32Reserved = 42;
 
     kpreempt_disable();
-/// @todo check out splr and splx on S10!
-//    if (ASMIntAreEnabled())
-        pState->uOldPil = splr(ipltospl(DISP_LEVEL));
-//    else
-//    {
-//        /* splr doesn't restore the interrupt flag on S10. */
-//        pState->uOldPil = getpil();
-//        if (pState->uOldPil < DISP_LEVEL)
-//            pState->uOldPil = splx(DISP_LEVEL);
-//    }
-    Assert(pState->uOldPil != UINT32_MAX);
     RT_ASSERT_PREEMPT_CPUID_DISABLE(pState);
 }
 
@@ -163,13 +154,11 @@ RTDECL(void) RTThreadPreemptDisable(PRTTHREADPREEMPTSTATE pState)
 RTDECL(void) RTThreadPreemptRestore(PRTTHREADPREEMPTSTATE pState)
 {
     AssertPtr(pState);
-    Assert(pState->uOldPil != UINT32_MAX);
+    Assert(pState->u32Reserved == 42);
+    pState->u32Reserved = 0;
     RT_ASSERT_PREEMPT_CPUID_RESTORE(pState);
 
     kpreempt_enable();
-    splx(pState->uOldPil);
-
-    pState->uOldPil = UINT32_MAX;
 }
 
 
