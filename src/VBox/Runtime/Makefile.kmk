@@ -1456,7 +1456,7 @@ endif # !VBOX_WITH_SOLARIS_VBI
 
 ## PORTME: Porters create and add their selection of platform specific Ring-0 Driver files here.
 
-RuntimeR0Drv_INTERMEDIATES.freebsd = \
+RuntimeR0Drv_ORDERDEPS.freebsd = \
   	$(PATH_INS)/gen-sys-hdrs/bus_if.h \
   	$(PATH_INS)/gen-sys-hdrs/device_if.h
 
