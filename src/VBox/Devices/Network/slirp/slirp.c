@@ -188,7 +188,7 @@
 
 #define LOG_NAT_SOCK(so, proto, winevent, r_fdset, w_fdset, x_fdset) DO_LOG_NAT_SOCK((so), proto, (winevent), r_fdset, w_fdset, x_fdset)
 
-static void acivate_port_forwarding(PNATState, struct ethhdr *);
+static void activate_port_forwarding(PNATState, struct ethhdr *);
 static uint32_t find_guest_ip(PNATState, uint8_t *);
 
 static const uint8_t special_ethaddr[6] =
@@ -1447,7 +1447,7 @@ void slirp_input(PNATState pData, const uint8_t *pkt, int pkt_len)
     memcpy(m->m_data, pkt, pkt_len);
 
     if (pData->port_forwarding_activated == 0)
-        acivate_port_forwarding(pData, mtod(m, struct ethhdr *));
+        activate_port_forwarding(pData, mtod(m, struct ethhdr *));
 
     proto = ntohs(*(uint16_t *)(pkt + 12));
     switch(proto)
@@ -1546,7 +1546,7 @@ done:
  * service mode
  * @todo finish this for service case
  */
-static void acivate_port_forwarding(PNATState pData, struct ethhdr *ethdr)
+static void activate_port_forwarding(PNATState pData, struct ethhdr *ethdr)
 {
     struct port_forward_rule *rule = NULL;
 
