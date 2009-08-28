@@ -96,6 +96,16 @@ VBOX_PATH_RUNTIME_SRC := $(PATH_SUB_CURRENT)
 
 
 #
+# Set the defines that buildconfig.cpp needs. Its used by several targets.
+#
+common/misc/buildconfig.cpp_DEFS = \
+	IPRT_BLDCFG_SCM_REV=$(VBOX_SVN_REV) \
+	IPRT_BLDCFG_VERSION_STRING=\"$(VBOX_VERSION_STRING)\" \
+	IPRT_BLDCFG_VERSION_MAJOR=$(VBOX_VERSION_MAJOR) \
+	IPRT_BLDCFG_VERSION_MINOR=$(VBOX_VERSION_MINOR) \
+	IPRT_BLDCFG_VERSION_BUILD=$(VBOX_VERSION_BUILD)
+
+#
 # Unicode Specification reader used to regenerate unidata.cpp.
 #
 uniread_TEMPLATE = VBOXBLDPROG
@@ -226,6 +236,7 @@ RuntimeR3_SOURCES       = \
 	common/log/logcom.cpp \
 	common/log/logformat.cpp \
 	common/misc/assert.cpp \
+	common/misc/buildconfig.cpp \
 	common/misc/cache.cpp \
 	common/misc/cidr.cpp \
 	common/misc/getopt.cpp \
@@ -737,6 +748,7 @@ RuntimeGuestR3Mini_SOURCES = \
 	common/err/RTErrConvertFromErrno.cpp \
 	common/log/logformat.cpp \
 	common/misc/assert.cpp \
+	common/misc/buildconfig.cpp \
 	common/misc/sanity-c.c \
 	common/misc/sanity-cpp.cpp \
 	common/path/rtPathVolumeSpecLen.cpp \
@@ -1018,6 +1030,7 @@ RuntimeR0_SOURCES       = \
 	common/log/logcom.cpp \
 	common/log/logformat.cpp \
 	common/misc/assert.cpp \
+	common/misc/buildconfig.cpp \
 	common/misc/handletable.cpp \
 	common/misc/handletablectx.cpp \
 	common/misc/handletablesimple.cpp \
@@ -1122,6 +1135,7 @@ RuntimeR0Drv_SOURCES    = \
 	common/log/logcom.cpp \
 	common/log/logformat.cpp \
 	common/misc/assert.cpp \
+	common/misc/buildconfig.cpp \
 	common/misc/handletable.cpp \
 	common/misc/handletablectx.cpp \
 	common/misc/handletablesimple.cpp \
@@ -1545,6 +1559,7 @@ RuntimeGC_SOURCES       = \
 	common/log/logcom.cpp \
 	common/log/logformat.cpp \
 	common/misc/assert.cpp \
+	common/misc/buildconfig.cpp \
 	common/misc/sanity-c.c \
 	common/misc/sanity-cpp.cpp \
 	common/string/strformat.cpp \
@@ -1767,7 +1782,6 @@ test-doxygen::
 	@echo $(IPRT_DOXYFILE_OUTPUT)
 	@echo $(DOXYGEN_OUTPUT_PREV)
 	@echo $(IPRT_DOXYFILE_INPUT)
-
 
 #
 # Generate the rules (we're the to sub-makefile).
