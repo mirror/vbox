@@ -38,7 +38,7 @@ VBoxVideo.Display  = 11 ; system32
 %VBoxVideo.SvcDesc% = VBoxVideo, PCI\VEN_80EE&DEV_BEEF
 
 ;amd64 [Model.NTamd64.6.0]
-%VBoxVideo.SvcDesc% = VBoxVideo, PCI\VEN_80EE&DEV_BEEF
+;amd64 %VBoxVideo.SvcDesc% = VBoxVideo, PCI\VEN_80EE&DEV_BEEF
 
 [VBoxVideo]
 ;amd64 FeatureScore = F8
