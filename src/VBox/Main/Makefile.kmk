@@ -312,7 +312,6 @@ VBoxSVC_SOURCES = \
 	SharedFolderImpl.cpp \
 	SystemPropertiesImpl.cpp \
 	BIOSSettingsImpl.cpp \
-	Version.cpp \
 	HostPower.cpp \
 	$(if $(VBOX_WITH_VRDP),VRDPServerImpl.cpp,) \
 	$(if $(VBOX_WITH_XPCOM),xpcom/server.cpp,) \
@@ -584,7 +583,6 @@ VBoxC_SOURCES = \
 	Logging.cpp \
 	AutoLock.cpp \
 	VBoxDll.cpp \
-	Version.cpp \
 	USBDeviceImpl.cpp \
 	RemoteUSBDeviceImpl.cpp \
 	VirtualBoxBase.cpp \
@@ -640,9 +638,6 @@ ConsoleImpl.cpp_DEFS = \
 	VBOX_BUILD_TARGET=\"$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)\" \
 	$(if $(VBOX_BLEEDING_EDGE),VBOX_BLEEDING_EDGE=\"$(VBOX_BLEEDING_EDGE)\",)
 
-
-Version.cpp_DEFS  = VBOX_SVN_REV=$(VBOX_SVN_REV)
-Version.cpp_DEPS  = $(VBOX_SVN_REV_KMK)
 
 win/VBoxC.rc_DEPS = $(PATH_VBoxC)/VBoxC.rgs $(PATH_VBoxCOM)/VirtualBox.tlb
 VBoxC_CLEAN.win  += $(PATH_VBoxC)/VBoxC.rgs

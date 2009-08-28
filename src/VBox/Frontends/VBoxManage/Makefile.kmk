@@ -28,8 +28,7 @@ ifdef VBOX_ONLY_DOCS
  VBoxManage_DEFS      += VBOX_ONLY_DOCS
  VBoxManage_SOURCES = \
 	VBoxManage.cpp \
- 	VBoxManageHelp.cpp \
-	VBoxManageSVN.cpp
+ 	VBoxManageHelp.cpp
  VBoxManage_LIBS      += $(LIB_RUNTIME)
 else # !VBOX_ONLY_DOCS
  VBoxManage_TEMPLATE   = VBOXMAINCLIENTEXE
@@ -69,8 +68,7 @@ endif
  	VBoxInternalManage.cpp \
  	VBoxManageHostonly.cpp \
  	VBoxManageDHCPServer.cpp \
- 	$(if $(VBOX_WITH_GUEST_PROPS),VBoxManageGuestProp.cpp) \
- 	VBoxManageSVN.cpp
+ 	$(if $(VBOX_WITH_GUEST_PROPS),VBoxManageGuestProp.cpp)
 endif # !VBOX_ONLY_DOCS
 ifneq ($(KBUILD_TARGET),win)
  # Workaround for buggy gcc-4.3 compilers, see
@@ -85,10 +83,6 @@ endif
 ifndef VBOX_ONLY_DOCS
  VBoxManage_LIBS      += $(LIB_DDU)
 endif # !VBOX_ONLY_DOCS
-
-# VBoxManageSVN.cpp uses VBOX_SVN_REV.
-VBoxManageSVN.cpp_DEFS = VBOX_SVN_REV=$(VBOX_SVN_REV)
-VBoxManageSVN.cpp_DEPS = $(VBOX_SVN_REV_KMK)
 
 include $(KBUILD_PATH)/subfooter.kmk
 

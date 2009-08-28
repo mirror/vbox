@@ -1,4 +1,4 @@
-/** $Id$ */
+/* $Id$ */
 /** @file
  * VBoxControl - Guest Additions Command Line Management Interface, test case
  */

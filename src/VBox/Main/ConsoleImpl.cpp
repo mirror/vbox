@@ -61,7 +61,6 @@
 #include "AudioSnifferInterface.h"
 #include "ConsoleVRDPServer.h"
 #include "VMMDev.h"
-#include "Version.h"
 #include "package-generated.h"
 
 // generated header
@@ -71,14 +70,15 @@
 
 #include <VBox/com/array.h>
 
-#include <iprt/string.h>
 #include <iprt/asm.h>
-#include <iprt/file.h>
-#include <iprt/path.h>
-#include <iprt/dir.h>
-#include <iprt/process.h>
-#include <iprt/ldr.h>
+#include <iprt/buildconfig.h>
 #include <iprt/cpputils.h>
+#include <iprt/dir.h>
+#include <iprt/file.h>
+#include <iprt/ldr.h>
+#include <iprt/path.h>
+#include <iprt/process.h>
+#include <iprt/string.h>
 #include <iprt/system.h>
 
 #include <VBox/vmapi.h>
@@ -4606,12 +4606,12 @@ HRESULT Console::consoleInitReleaseLog (const ComPtr<IMachine> aMachine)
         char szTmp[256];
         RTTimeSpecToString(RTTimeNow(&timeSpec), szTmp, sizeof(szTmp));
         RTLogRelLogger(loggerRelease, 0, ~0U,
-                       "VirtualBox %s r%d %s (%s %s) release log\n"
+                       "VirtualBox %s r%u %s (%s %s) release log\n"
 #ifdef VBOX_BLEEDING_EDGE
                        "EXPERIMENTAL build " VBOX_BLEEDING_EDGE "\n"
 #endif
                        "Log opened %s\n",
-                       VBOX_VERSION_STRING, VBoxSVNRev (), VBOX_BUILD_TARGET,
+                       VBOX_VERSION_STRING, RTBldCfgRevision(), VBOX_BUILD_TARGET,
                        __DATE__, __TIME__, szTmp);
 
         vrc = RTSystemQueryOSInfo(RTSYSOSINFO_PRODUCT, szTmp, sizeof(szTmp));
@@ -6681,8 +6681,8 @@ DECLCALLBACK (int) Console::powerUpThread (RTTHREAD Thread, void *pvUser)
     /* Set up a build identifier so that it can be seen from core dumps what
      * exact build was used to produce the core. */
     static char saBuildID[40];
-    RTStrPrintf(saBuildID, sizeof(saBuildID), "%s%s%s%s VirtualBox %s r%d %s%s%s%s",
-                "BU", "IL", "DI", "D", VBOX_VERSION_STRING, VBoxSVNRev (), "BU", "IL", "DI", "D");
+    RTStrPrintf(saBuildID, sizeof(saBuildID), "%s%s%s%s VirtualBox %s r%u %s%s%s%s",
+                "BU", "IL", "DI", "D", VBOX_VERSION_STRING, RTBldCfgRevision(), "BU", "IL", "DI", "D");
 
     ComObjPtr<Console> console = task->mConsole;
 
