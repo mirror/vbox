@@ -29,7 +29,6 @@
 *******************************************************************************/
 #include "ConsoleImpl.h"
 #include "DisplayImpl.h"
-#include "Version.h"
 #include "VMMDev.h"
 
 // generated header
@@ -37,13 +36,13 @@
 
 #include "Logging.h"
 
+#include <iprt/buildconfig.h>
 #include <iprt/string.h>
 #include <iprt/path.h>
 #include <iprt/dir.h>
 #include <iprt/param.h>
 #if 0 /* enable to play with lots of memory. */
 # include <iprt/env.h>
-# include <iprt/string.h>
 #endif
 
 #include <VBox/vmapi.h>
@@ -2889,7 +2888,7 @@ static void configSetProperty(VMMDev * const pVMMDev, const char *pszName,
                           VBOX_VERSION_STRING, "TRANSIENT, RDONLYGUEST");
         /* Set the VBox SVN revision as a guest property */
         configSetProperty(pConsole->mVMMDev, "/VirtualBox/HostInfo/VBoxRev",
-                          VBoxSVNRevString(), "TRANSIENT, RDONLYGUEST");
+                          RTBldCfgRevisionStr(), "TRANSIENT, RDONLYGUEST");
         /* Initialize the remote execution properties for ready-on access by
          * the guest */
         configSetProperty(pConsole->mVMMDev,

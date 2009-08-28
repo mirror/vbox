@@ -30,14 +30,10 @@ if defined(VBOX_WITH_TESTCASES) && !defined(VBOX_ONLY_ADDITIONS)
 PROGRAMS += tstVBoxControl
 tstVBoxControl_TEMPLATE = VBOXR3TSTEXE
 tstVBoxControl_DEFS     = VBOX_CONTROL_TEST
-tstVBoxControl_SOURCES  = tstVBoxControl.cpp ../VBoxControl.cpp ../VBoxControlSVN.cpp
+tstVBoxControl_SOURCES  = tstVBoxControl.cpp ../VBoxControl.cpp
 tstVBoxControl_LIBS     = $(LIB_RUNTIME)
 tstVBoxControl_DEFS    += \
 	$(if $(VBOX_WITH_GUEST_PROPS),VBOX_WITH_GUEST_PROPS VBOX_WITH_HGCM,)
-
-# VBoxControlSVN.cpp uses VBOX_SVN_REV.
-tstVBoxControl_DEFS    += VBOX_SVN_REV=$(VBOX_SVN_REV)
-tstVBoxControl_DEPS     = $(VBOX_SVN_REV_KMK)
 
 endif # VBOX_WITH_TESTCASES
 

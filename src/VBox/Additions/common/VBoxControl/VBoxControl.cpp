@@ -1,4 +1,4 @@
-/** $Id$ */
+/* $Id$ */
 /** @file
  * VBoxControl - Guest Additions Command Line Management Interface.
  */
@@ -24,6 +24,7 @@
 *******************************************************************************/
 #include <iprt/alloca.h>
 #include <iprt/autores.h>
+#include <iprt/buildconfig.h>
 #include <iprt/initterm.h>
 #include <iprt/mem.h>
 #include <iprt/path.h>
@@ -38,7 +39,6 @@
 #ifdef VBOX_WITH_GUEST_PROPS
 # include <VBox/HostServices/GuestPropertySvc.h>
 #endif
-#include "VBoxControl.h"
 
 /*******************************************************************************
 *   Global Variables                                                           *
@@ -1311,7 +1311,7 @@ int main(int argc, char **argv)
            )
             {
                 /* Print version number, and do nothing else. */
-                RTPrintf("%sr%d\n", VBOX_VERSION_STRING, VBoxSVNRev ());
+                RTPrintf("%sr%u\n", VBOX_VERSION_STRING, RTBldCfgRevision());
                 onlyinfo = true;
                 showlogo = false;
                 done = true;

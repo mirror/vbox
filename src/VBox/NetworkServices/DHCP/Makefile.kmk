@@ -46,7 +46,6 @@ VBoxNetDHCPHardened_NAME = VBoxNetDHCP
 #
 VBoxNetDHCP_TEMPLATE =
 VBoxNetDHCP_TEMPLATE := VBOXR3$(if-expr defined(VBOX_WITH_HARDENING),,EXE)
-VBoxNetDHCP_DEFS = VBOX_SVN_REV=$(VBOX_SVN_REV)
 VBoxNetDHCP_SOURCES = \
 	VBoxNetDHCP.cpp \
 	../NetLib/VBoxNetIntIf.cpp \

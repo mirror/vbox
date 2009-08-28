@@ -20,16 +20,17 @@
  * additional information or have any questions.
  */
 
-#include <iprt/path.h>
+#include <iprt/buildconfig.h>
+#include <iprt/cpputils.h>
 #include <iprt/dir.h>
+#include <iprt/env.h>
 #include <iprt/file.h>
+#include <iprt/path.h>
+#include <iprt/process.h>
 #include <iprt/string.h>
-#include <iprt/uuid.h>
 #include <iprt/stream.h>
 #include <iprt/thread.h>
-#include <iprt/process.h>
-#include <iprt/env.h>
-#include <iprt/cpputils.h>
+#include <iprt/uuid.h>
 #include <iprt/xml_cpp.h>
 
 #include <VBox/com/com.h>
@@ -61,7 +62,6 @@
 #include "USBControllerImpl.h"
 #include "SystemPropertiesImpl.h"
 #include "GuestOSTypeImpl.h"
-#include "Version.h"
 #include "DHCPServerRunner.h"
 #include "DHCPServerImpl.h"
 
@@ -140,7 +140,7 @@ HRESULT VirtualBox::init()
 
     if (sVersion.isNull())
         sVersion = VBOX_VERSION_STRING;
-    sRevision = VBoxSVNRev();
+    sRevision = RTBldCfgRevision();
     if (sPackageType.isNull())
         sPackageType = VBOX_PACKAGE_STRING;
     LogFlowThisFunc(("Version: %ls, Package: %ls\n", sVersion.raw(), sPackageType.raw()));

@@ -213,7 +213,6 @@ int handleHostonlyIf(HandlerArg *a);
 int handleDHCPServer(HandlerArg *a);
 
 #endif /* !VBOX_ONLY_DOCS */
-unsigned long VBoxSVNRev();
 
 #endif /* !___H_VBOXMANAGE */
 
