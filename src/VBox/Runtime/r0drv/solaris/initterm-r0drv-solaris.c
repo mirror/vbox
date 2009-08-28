@@ -36,12 +36,33 @@
 #include "internal/iprt.h"
 
 #include <iprt/err.h>
+#include <iprt/asm.h>
 #include "internal/initterm.h"
 
+
+/*******************************************************************************
+*   Global Variables                                                           *
+*******************************************************************************/
+/** Indicates that the spl routines (and therefore a bunch of other ones too)
+ * will set EFLAGS::IF and break code that disables interrupts.  */
+bool g_frtSolarisSplSetsEIF = false;
 
 
 int rtR0InitNative(void)
 {
+    /*
+     * Detech whether spl*() is preserving the interrupt flag or not.
+     * This is a problem on S10.
+     */
+    RTCCUINTREG uOldFlags = ASMIntDisableFlags();
+    int iOld = splr(DISP_LEVEL);
+    if (ASMIntAreEnabled())
+        g_frtSolarisSplSetsEIF = true;
+    splx(iOld);
+    if (ASMIntAreEnabled())
+        g_frtSolarisSplSetsEIF = true;
+    ASMSetFlags(uOldFlags);
+
     return VINF_SUCCESS;
 }
 

@@ -57,4 +57,8 @@
 
 #include <iprt/cdefs.h>
 
+RT_C_DECLS_BEGIN
+extern bool                 g_frtSolarisSplSetsEIF;
+RT_C_DECLS_END
+
 #endif
