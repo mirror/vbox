@@ -42,7 +42,7 @@ if1of ($(KBUILD_TARGET), \
  VBoxGuest_DEPS.solaris += $(VBOX_SVN_REV_KMK)
  VBoxGuest_DEFS          = VBGL_VBOXGUEST VBOX_WITH_HGCM
  VBoxGuest_INCS          = .
- VBoxGuest_INCS.freebsd  = $(PATH_VBoxGuest) $(PATH_OUT)/gen-sys-hdrs
+ VBoxGuest_INCS.freebsd  = $(PATH_VBoxGuest) $(PATH_INS)/gen-sys-hdrs
  VBoxGuest_INCS.linux    = ../../../Runtime/r0drv/linux
  ifneq ($(KBUILD_TARGET),os2)
   ifn1of ($(KBUILD_TARGET), linux freebsd solaris)
@@ -55,9 +55,9 @@ if1of ($(KBUILD_TARGET), \
   	$(VBOX_LIB_VBGL_R0BASE) \
   	$(VBOX_LIB_IPRT_GUEST_R0)
   VBoxGuest_INTERMEDIATES.freebsd = \
-  	$(PATH_OUT)/gen-sys-hdrs/pci_if.h \
-  	$(PATH_OUT)/gen-sys-hdrs/bus_if.h \
-  	$(PATH_OUT)/gen-sys-hdrs/device_if.h
+  	$(PATH_INS)/gen-sys-hdrs/pci_if.h \
+  	$(PATH_INS)/gen-sys-hdrs/bus_if.h \
+  	$(PATH_INS)/gen-sys-hdrs/device_if.h
 
  else # OS/2:
   # The library order is crucial, so a bit of trickery is necessary.

@@ -1382,10 +1382,10 @@ RuntimeR0Drv_SOURCES.freebsd = \
 	r0drv/memobj-r0drv.cpp \
 	r0drv/powernotification-r0drv.c
 RuntimeR0Drv_INTERMEDIATES.freebsd = \
-  	$(PATH_OUT)/gen-sys-hdrs/bus_if.h \
-  	$(PATH_OUT)/gen-sys-hdrs/device_if.h
+  	$(PATH_INS)/gen-sys-hdrs/bus_if.h \
+  	$(PATH_INS)/gen-sys-hdrs/device_if.h
 RuntimeR0Drv_INCS.freebsd += \
-	$(PATH_OUT)/gen-sys-hdrs
+	$(PATH_INS)/gen-sys-hdrs
 
 RuntimeR0Drv_SOURCES.solaris = \
 	common/err/RTErrConvertFromErrno.cpp \
