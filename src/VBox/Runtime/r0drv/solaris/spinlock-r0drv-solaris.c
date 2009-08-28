@@ -123,6 +123,7 @@ RTDECL(void) RTSpinlockAcquireNoInts(RTSPINLOCK Spinlock, PRTSPINLOCKTMP pTmp)
     pTmp->uFlags = ASMIntDisableFlags();
     mutex_enter(&pThis->Mtx);
 
+    Assert(!ASMIntAreEnabled());
     RT_ASSERT_PREEMPT_CPUID_SPIN_ACQUIRED(pThis);
 }
 
@@ -151,8 +152,13 @@ RTDECL(void) RTSpinlockAcquire(RTSPINLOCK Spinlock, PRTSPINLOCKTMP pTmp)
     AssertPtr(pThis);
     Assert(pThis->u32Magic == RTSPINLOCK_MAGIC);
     NOREF(pTmp);
+#ifdef RT_STRICT
+    bool fIntsOn = ASMIntAreEnabled();
+#endif
 
     mutex_enter(&pThis->Mtx);
+
+    AssertMsg(fIntsOn == ASMIntAreEnabled(), ("fIntsOn=%RTbool\n", fIntsOn));
 
     RT_ASSERT_PREEMPT_CPUID_SPIN_ACQUIRED(pThis);
 }
@@ -167,9 +173,13 @@ RTDECL(void) RTSpinlockRelease(RTSPINLOCK Spinlock, PRTSPINLOCKTMP pTmp)
     Assert(pThis->u32Magic == RTSPINLOCK_MAGIC);
     RT_ASSERT_PREEMPT_CPUID_SPIN_RELEASE(pThis);
     NOREF(pTmp);
+#ifdef RT_STRICT
+    bool fIntsOn = ASMIntAreEnabled();
+#endif
 
     mutex_exit(&pThis->Mtx);
 
+    AssertMsg(fIntsOn == ASMIntAreEnabled(), ("fIntsOn=%RTbool\n", fIntsOn));
     RT_ASSERT_PREEMPT_CPUID();
 }
 
