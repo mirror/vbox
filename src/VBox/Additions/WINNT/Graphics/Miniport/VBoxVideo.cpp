@@ -1963,6 +1963,8 @@ BOOLEAN VBoxVideoStartIO(PVOID HwDeviceExtension,
             pInfo->u32DisplayInfoSize   = VBVA_DISPLAY_INFORMATION_SIZE;
             pInfo->u32MinVBVABufferSize = VBVA_MIN_BUFFER_SIZE;
 
+            pInfo->IOPortGuestCommand = pDevExt->pPrimary->u.primary.IOPortGuest;
+
             RequestPacket->StatusBlock->Information = sizeof(QUERYHGSMIRESULT);
             Result = TRUE;
 
@@ -1989,7 +1991,6 @@ BOOLEAN VBoxVideoStartIO(PVOID HwDeviceExtension,
             HGSMIQUERYCALLBACKS *pInfo = (HGSMIQUERYCALLBACKS *)RequestPacket->OutputBuffer;
 
             pInfo->hContext = pDevExt;
-            pInfo->pfnHGSMIGHCommandPost = hgsmiGHCommandPost;
             pInfo->pfnCompletionHandler = hgsmiHostCmdComplete;
             pInfo->pfnRequestCommandsHandler = hgsmiHostCmdRequest;
 
