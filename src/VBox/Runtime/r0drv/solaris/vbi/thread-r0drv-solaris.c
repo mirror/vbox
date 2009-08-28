@@ -114,13 +114,13 @@ RTDECL(bool) RTThreadPreemptIsPossible(void)
 RTDECL(void) RTThreadPreemptDisable(PRTTHREADPREEMPTSTATE pState)
 {
     AssertPtr(pState);
-    Assert(pState->uOldPil == UINT32_MAX);
+//    Assert(pState->uOldPil == UINT32_MAX);
 
     vbi_preempt_disable();
 /// @todo check out splr and splx on S10!
 //    if (ASMIntAreEnabled())
         //pState->uOldPil = splr(ipltospl(DISP_LEVEL));
-        pState->uOldPil = splr(ipltospl(LOCK_LEVEL - 1));  //temporary
+//        pState->uOldPil = splr(ipltospl(LOCK_LEVEL - 1));  //temporary
 //    else
 //    {
 //        /* splr doesn't restore the interrupt flag on S10. */
@@ -129,7 +129,7 @@ RTDECL(void) RTThreadPreemptDisable(PRTTHREADPREEMPTSTATE pState)
 //            pState->uOldPil = splx(DISP_LEVEL);
 //    }
 
-    Assert(pState->uOldPil != UINT32_MAX);
+//    Assert(pState->uOldPil != UINT32_MAX);
     RT_ASSERT_PREEMPT_CPUID_DISABLE(pState);
 }
 
@@ -137,13 +137,13 @@ RTDECL(void) RTThreadPreemptDisable(PRTTHREADPREEMPTSTATE pState)
 RTDECL(void) RTThreadPreemptRestore(PRTTHREADPREEMPTSTATE pState)
 {
     AssertPtr(pState);
-    Assert(pState->uOldPil != UINT32_MAX);
+//    Assert(pState->uOldPil != UINT32_MAX);
     RT_ASSERT_PREEMPT_CPUID_RESTORE(pState);
 
     vbi_preempt_enable();
-    splx(pState->uOldPil);
+//    splx(pState->uOldPil);
 
-    pState->uOldPil = UINT32_MAX;
+//    pState->uOldPil = UINT32_MAX;
 }
 
 
