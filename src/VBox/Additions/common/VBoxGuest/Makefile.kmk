@@ -42,7 +42,7 @@ if1of ($(KBUILD_TARGET), \
  VBoxGuest_DEPS.solaris += $(VBOX_SVN_REV_KMK)
  VBoxGuest_DEFS          = VBGL_VBOXGUEST VBOX_WITH_HGCM
  VBoxGuest_INCS          = .
- VBoxGuest_INCS.freebsd  = $(PATH_VBoxGuest)
+ VBoxGuest_INCS.freebsd  = $(PATH_VBoxGuest) $(PATH_OUT)/gen-sys-hdrs
  VBoxGuest_INCS.linux    = ../../../Runtime/r0drv/linux
  ifneq ($(KBUILD_TARGET),os2)
   ifn1of ($(KBUILD_TARGET), linux freebsd solaris)
@@ -51,14 +51,13 @@ if1of ($(KBUILD_TARGET), \
    VBoxGuest_SOURCES     = VBoxGuest-$(KBUILD_TARGET).c
   endif
   VBoxGuest_SOURCES     += VBoxGuest.cpp
-  VBoxGuest_LIBS          = \
+  VBoxGuest_LIBS         = \
   	$(VBOX_LIB_VBGL_R0BASE) \
   	$(VBOX_LIB_IPRT_GUEST_R0)
   VBoxGuest_INTERMEDIATES.freebsd = \
-  	$(PATH_VBoxGuest)/pci_if.h \
-  	$(PATH_VBoxGuest)/bus_if.h \
-  	$(PATH_VBoxGuest)/device_if.h
-  VBoxGuest_CLEAN.freebsd = $(VBoxGuest_INTERMEDIATES.freebsd)
+  	$(PATH_OUT)/gen-sys-hdrs/pci_if.h \
+  	$(PATH_OUT)/gen-sys-hdrs/bus_if.h \
+  	$(PATH_OUT)/gen-sys-hdrs/device_if.h
 
  else # OS/2:
   # The library order is crucial, so a bit of trickery is necessary.
@@ -88,34 +87,6 @@ if1of ($(KBUILD_TARGET), \
   	VBoxGuest-os2.cpp \
   	VBoxGuest.cpp
  endif # OS/2
-
- ifeq ($(KBUILD_TARGET),freebsd)
-  #
-  # FreeBSD: Genereate bus, device and pci interface headers. (explain why)
-  #
-  # We cannot give a output path to the awk program, it will always generate
-  # the header next to the source. So, we'll have to temporarily copy the
-  # source file to the destination direction for it to work out correctly.
-  #
-  VBOX_AWK := /usr/bin/awk
-  $$(PATH_VBoxGuest)/bus_if.h: $(VBOX_FREEBSD_SRC)/kern/bus_if.m
-	$(call MSG_TOOL,awk,VBoxGuest,$<,$@)
-	$(QUIET)$(CP) -f $(VBOX_FREEBSD_SRC)/kern/bus_if.m $(PATH_VBoxGuest)/bus_if.m
-	$(QUIET)$(VBOX_AWK) -f $(VBOX_FREEBSD_SRC)/tools/makeobjops.awk $(PATH_VBoxGuest)/bus_if.m -h -p
-	$(QUIET)$(RM) $(PATH_VBoxGuest)/bus_if.m
-
-  $$(PATH_VBoxGuest)/device_if.h: $(VBOX_FREEBSD_SRC)/kern/device_if.m
-	$(call MSG_TOOL,awk,VBoxGuest,$<,$@)
-	$(QUIET)$(CP) -f $(VBOX_FREEBSD_SRC)/kern/device_if.m $(PATH_VBoxGuest)/device_if.m
-	$(QUIET)$(VBOX_AWK) -f $(VBOX_FREEBSD_SRC)/tools/makeobjops.awk $(PATH_VBoxGuest)/device_if.m -h -p
-	$(QUIET)$(RM) $(PATH_VBoxGuest)/device_if.m
-
-  $$(PATH_VBoxGuest)/pci_if.h: $(VBOX_FREEBSD_SRC)/dev/pci/pci_if.m
-	$(call MSG_TOOL,awk,VBoxGuest,$<,$@)
-	$(QUIET)$(CP) -f $(VBOX_FREEBSD_SRC)/dev/pci/pci_if.m $(PATH_VBoxGuest)/pci_if.m
-	$(QUIET)$(VBOX_AWK) -f $(VBOX_FREEBSD_SRC)/tools/makeobjops.awk $(PATH_VBoxGuest)/pci_if.m -h -p
-	$(QUIET)$(RM) $(PATH_VBoxGuest)/pci_if.m
- endif # FreeBSD
 
 endif # enabled
 

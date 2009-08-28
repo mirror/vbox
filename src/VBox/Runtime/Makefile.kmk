@@ -1381,36 +1381,11 @@ RuntimeR0Drv_SOURCES.freebsd = \
 	generic/timer-generic.cpp \
 	r0drv/memobj-r0drv.cpp \
 	r0drv/powernotification-r0drv.c
-RuntimeR0Drv_DEPS.freebsd = \
-  	$(PATH_RuntimeR0Drv)/bus_if.h \
-  	$(PATH_RuntimeR0Drv)/device_if.h
-RuntimeR0Drv_CLEAN.freebsd = $(RuntimeR0Drv_DEPS.freebsd)
-RuntimeR0Drv_INCS.freebsd += $(PATH_RuntimeR0Drv)
-
- if "$(KBUILD_TARGET)" == "freebsd" && $(intersects RuntimeR0Drv,$(LIBRARIES))
-  #
-  # FreeBSD: Generate bus and device interface headers.
-  # We have to include headers for the RTMp* API which
-  # depends on these files.
-  #
-  # We cannot give a output path to the awk program, it will always generate
-  # the header next to the source. So, we'll have to temporarily copy the
-  # source file to the destination directory to work.
-  #
-  ## @todo Create an install target for this and install it to gen-sys-hdrs/, user order deps to force RuntimeR0Drv to build it. Use it for the other drivers as well.
-  VBOX_AWK := /usr/bin/awk
-  $$(PATH_RuntimeR0Drv)/bus_if.h: $(VBOX_FREEBSD_SRC)/kern/bus_if.m | $$(dir $$@)
-	$(call MSG_TOOL,awk,RuntimeR0Drv,$<,$@)
-	$(QUIET)$(CP) -f $(VBOX_FREEBSD_SRC)/kern/bus_if.m $(PATH_RuntimeR0Drv)/bus_if.m
-	$(QUIET)$(VBOX_AWK) -f $(VBOX_FREEBSD_SRC)/tools/makeobjops.awk $(PATH_RuntimeR0Drv)/bus_if.m -h -p
-	$(QUIET)$(RM) $(PATH_RuntimeR0Drv)/bus_if.m
-
-  $$(PATH_RuntimeR0Drv)/device_if.h: $(VBOX_FREEBSD_SRC)/kern/device_if.m | $$(dir $$@)
-	$(call MSG_TOOL,awk,RuntimeR0Drv,$<,$@)
-	$(QUIET)$(CP) -f $(VBOX_FREEBSD_SRC)/kern/device_if.m $(PATH_RuntimeR0Drv)/device_if.m
-	$(QUIET)$(VBOX_AWK) -f $(VBOX_FREEBSD_SRC)/tools/makeobjops.awk $(PATH_RuntimeR0Drv)/device_if.m -h -p
-	$(QUIET)$(RM) $(PATH_RuntimeR0Drv)/device_if.m
- endif # FreeBSD + RuntimeR0Drv being built.
+RuntimeR0Drv_INTERMEDIATES.freebsd = \
+  	$(PATH_OUT)/gen-sys-hdrs/bus_if.h \
+  	$(PATH_OUT)/gen-sys-hdrs/device_if.h
+RuntimeR0Drv_INCS.freebsd += \
+	$(PATH_OUT)/gen-sys-hdrs
 
 RuntimeR0Drv_SOURCES.solaris = \
 	common/err/RTErrConvertFromErrno.cpp \
@@ -1680,6 +1655,47 @@ $(IPRT_OUT_DIR)/errmsgvboxcomdata.h: \
 		| $$(dir $$@)
 	$(call MSG_GENERATE,,$@,$(filter %.xidl,$^))
 	$(VBOX_XSLTPROC) -o $@ $< $(filter %.xidl,$^)
+
+
+if "$(KBUILD_TARGET)" == "freebsd"
+#
+# FreeBSDGeneratedKernelHeaders - Generate some kernel interface headers.
+#
+# These are used by:
+#      - The RTMp* API in IPRT.
+#      - VBoxGuest
+#
+# Note! We cannot give a output path to the awk program, it will always
+# generate the header next to the source. So, we'll have to temporarily copy
+# the source file to the destination directory to work.
+#
+VBOX_AWK := /usr/bin/awk
+INSTALLS += FreeBSDGeneratedKernelHeaders
+FreeBSDGeneratedKernelHeaders_INST = gen-sys-hdrs/
+FreeBSDGeneratedKernelHeaders_SOURCES = \
+	$(FreeBSDGeneratedKernelHeaders_0_OUTDIR)/bus_if.h \
+	$(FreeBSDGeneratedKernelHeaders_0_OUTDIR)/device_if.h \
+	$(FreeBSDGeneratedKernelHeaders_0_OUTDIR)/pci_if.h
+FreeBSDGeneratedKernelHeaders_CLEAN = $(FreeBSDGeneratedKernelHeaders_SOURCES)
+
+$$(FreeBSDGeneratedKernelHeaders_0_OUTDIR)/bus_if.h: $(VBOX_FREEBSD_SRC)/kern/bus_if.m | $$(dir $$@)
+	$(call MSG_TOOL,awk,FreeBSDGeneratedKernelHeaders,$<,$@)
+	$(QUIET)$(CP) -f $< $(@)/bus_if.m
+	$(QUIET)$(VBOX_AWK) -f $(VBOX_FREEBSD_SRC)/tools/makeobjops.awk $(@D)/bus_if.m -h -p
+	$(QUIET)$(RM) $(@D)/bus_if.m
+
+$$(FreeBSDGeneratedKernelHeaders_0_OUTDIR)/device_if.h: $(VBOX_FREEBSD_SRC)/kern/device_if.m | $$(dir $$@)
+	$(call MSG_TOOL,awk,FreeBSDGeneratedKernelHeaders,$<,$@)
+	$(QUIET)$(CP) -f $< $(@D)/device_if.m
+	$(QUIET)$(VBOX_AWK) -f $(VBOX_FREEBSD_SRC)/tools/makeobjops.awk $(@D)/device_if.m -h -p
+	$(QUIET)$(RM) $(@D)/device_if.m
+
+$$(FreeBSDGeneratedKernelHeaders_0_OUTDIR)/pci_if.h: $(VBOX_FREEBSD_SRC)/dev/pci/pci_if.m
+	$(call MSG_TOOL,awk,FreeBSDGeneratedKernelHeaders,$<,$@)
+	$(QUIET)$(CP) -f $< $(@D)/pci_if.m
+	$(QUIET)$(VBOX_AWK) -f $(VBOX_FREEBSD_SRC)/tools/makeobjops.awk $(@D)/pci_if.m -h -p
+	$(QUIET)$(RM) $(@D)/pci_if.m
+endif # FreeBSD
 
 
 #
