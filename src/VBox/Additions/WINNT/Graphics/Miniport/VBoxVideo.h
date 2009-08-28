@@ -142,8 +142,6 @@ typedef struct _DEVICE_EXTENSION
 
            HGSMIHEAP hgsmiAdapterHeap;
 
-           PSPIN_LOCK pGHRWLock; /* lock for making guest->host read/writes atomic */
-
            /* The IO Port Number for host commands. */
            RTIOPORT IOPortHost;
 
@@ -275,62 +273,6 @@ void VBoxUnmapAdapterMemory (PDEVICE_EXTENSION PrimaryExtension,
 void VBoxComputeFrameBufferSizes (PDEVICE_EXTENSION PrimaryExtension);
 
 #ifdef VBOX_WITH_HGSMI
-
-DECLINLINE(void) VBoxVideoVBEWriteUlongLocked(USHORT dataType, ULONG data)
-{
-    VideoPortWritePortUshort((PUSHORT)VBE_DISPI_IOPORT_INDEX, dataType);
-    VideoPortWritePortUlong((PULONG)VBE_DISPI_IOPORT_DATA, data);
-}
-
-DECLINLINE(void) VBoxVideoVBEWriteUshortLocked(USHORT dataType, USHORT data)
-{
-    VideoPortWritePortUshort((PUSHORT)VBE_DISPI_IOPORT_INDEX, dataType);
-    VideoPortWritePortUshort((PUSHORT)VBE_DISPI_IOPORT_DATA, data);
-}
-
-DECLINLINE(ULONG) VBoxVideoVBEReadUlongLocked (USHORT dataType)
-{
-    VideoPortWritePortUshort((PUSHORT)VBE_DISPI_IOPORT_INDEX, dataType);
-    return VideoPortReadPortUlong((PULONG)VBE_DISPI_IOPORT_DATA);
-}
-
-DECLINLINE(void) VBoxVideoVBEWriteUlong(PDEVICE_EXTENSION PrimaryExtension, USHORT dataType, ULONG data)
-{
-    UCHAR oldIrql;
-    PrimaryExtension->u.primary.VideoPortProcs.pfnAcquireSpinLock(PrimaryExtension,
-    		PrimaryExtension->u.primary.pGHRWLock,
-            &oldIrql);
-    VBoxVideoVBEWriteUlongLocked(dataType, data);
-    PrimaryExtension->u.primary.VideoPortProcs.pfnReleaseSpinLock(PrimaryExtension,
-    		PrimaryExtension->u.primary.pGHRWLock,
-            oldIrql);
-}
-
-DECLINLINE(void) VBoxVideoVBEWriteUshort(PDEVICE_EXTENSION PrimaryExtension, USHORT dataType, USHORT data)
-{
-    UCHAR oldIrql;
-    PrimaryExtension->u.primary.VideoPortProcs.pfnAcquireSpinLock(PrimaryExtension,
-    		PrimaryExtension->u.primary.pGHRWLock,
-            &oldIrql);
-    VBoxVideoVBEWriteUshortLocked(dataType, data);
-    PrimaryExtension->u.primary.VideoPortProcs.pfnReleaseSpinLock(PrimaryExtension,
-    		PrimaryExtension->u.primary.pGHRWLock,
-            oldIrql);
-}
-
-DECLINLINE(ULONG) VBoxVideoVBEReadUlong(PDEVICE_EXTENSION PrimaryExtension, USHORT dataType)
-{
-    ULONG data;
-    UCHAR oldIrql;
-    PrimaryExtension->u.primary.VideoPortProcs.pfnAcquireSpinLock(PrimaryExtension,
-    		PrimaryExtension->u.primary.pGHRWLock,
-            &oldIrql);
-    data = VBoxVideoVBEReadUlongLocked(dataType);
-    PrimaryExtension->u.primary.VideoPortProcs.pfnReleaseSpinLock(PrimaryExtension,
-    		PrimaryExtension->u.primary.pGHRWLock,
-            oldIrql);
-    return data;
-}
 
 /*
  * Host and Guest port IO helpers.

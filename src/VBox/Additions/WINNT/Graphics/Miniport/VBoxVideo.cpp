@@ -1150,7 +1150,6 @@ VP_STATUS VBoxVideoFindAdapter(IN PVOID HwDeviceExtension,
 
 #ifdef VBOX_WITH_HGSMI
    VBoxSetupVideoPortFunctions((PDEVICE_EXTENSION)HwDeviceExtension, &((PDEVICE_EXTENSION)HwDeviceExtension)->u.primary.VideoPortProcs, ConfigInfo);
-   ((PDEVICE_EXTENSION)HwDeviceExtension)->u.primary.VideoPortProcs.pfnCreateSpinLock(HwDeviceExtension, &((PDEVICE_EXTENSION)HwDeviceExtension)->u.primary.pGHRWLock);
 #endif
 
    VideoPortWritePortUshort((PUSHORT)VBE_DISPI_IOPORT_INDEX, VBE_DISPI_INDEX_ID);
@@ -1809,12 +1808,8 @@ BOOLEAN VBoxVideoStartIO(PVOID HwDeviceExtension,
             if (pDevExt->pPrimary->u.primary.bVBoxVideoSupported)
             {
                 /* The display driver must have prepared the monitor information. */
-#ifndef VBOX_WITH_HGSMI
                 VideoPortWritePortUshort((PUSHORT)VBE_DISPI_IOPORT_INDEX, VBE_DISPI_INDEX_VBOX_VIDEO);
                 VideoPortWritePortUlong((PULONG)VBE_DISPI_IOPORT_DATA, VBOX_VIDEO_INTERPRET_DISPLAY_MEMORY_BASE + pDevExt->iDevice);
-#else
-                VBoxVideoVBEWriteUlong(((PDEVICE_EXTENSION)HwDeviceExtension)->pPrimary, VBE_DISPI_INDEX_VBOX_VIDEO, VBOX_VIDEO_INTERPRET_DISPLAY_MEMORY_BASE + pDevExt->iDevice);
-#endif
             }
             else
             {
@@ -2103,12 +2098,8 @@ BOOLEAN VBoxVideoResetHW(PVOID HwDeviceExtension, ULONG Columns, ULONG Rows)
         return TRUE;
     }
 
-#ifndef VBOX_WITH_HGSMI
     VideoPortWritePortUshort((PUSHORT)VBE_DISPI_IOPORT_INDEX, VBE_DISPI_INDEX_ENABLE);
     VideoPortWritePortUshort((PUSHORT)VBE_DISPI_IOPORT_DATA, VBE_DISPI_DISABLED);
-#else
-    VBoxVideoVBEWriteUshort(((PDEVICE_EXTENSION)HwDeviceExtension)->pPrimary, VBE_DISPI_INDEX_ENABLE, VBE_DISPI_DISABLED);
-#endif
 
     if (pDevExt->u.primary.pvReqFlush != NULL)
     {
@@ -2210,7 +2201,6 @@ BOOLEAN FASTCALL VBoxVideoSetCurrentMode(PDEVICE_EXTENSION DeviceExtension,
     }
 
     /* set the mode characteristics */
-#ifndef VBOX_WITH_HGSMI
     VideoPortWritePortUshort((PUSHORT)VBE_DISPI_IOPORT_INDEX, VBE_DISPI_INDEX_XRES);
     VideoPortWritePortUshort((PUSHORT)VBE_DISPI_IOPORT_DATA, (USHORT)ModeInfo->VisScreenWidth);
     VideoPortWritePortUshort((PUSHORT)VBE_DISPI_IOPORT_INDEX, VBE_DISPI_INDEX_YRES);
@@ -2221,12 +2211,6 @@ BOOLEAN FASTCALL VBoxVideoSetCurrentMode(PDEVICE_EXTENSION DeviceExtension,
     VideoPortWritePortUshort((PUSHORT)VBE_DISPI_IOPORT_INDEX, VBE_DISPI_INDEX_ENABLE);
     VideoPortWritePortUshort((PUSHORT)VBE_DISPI_IOPORT_DATA, VBE_DISPI_ENABLED | VBE_DISPI_LFB_ENABLED);
     /** @todo read from the port to see if the mode switch was successful */
-#else
-    VBoxVideoVBEWriteUshort(DeviceExtension->pPrimary, VBE_DISPI_INDEX_XRES, (USHORT)ModeInfo->VisScreenWidth);
-    VBoxVideoVBEWriteUshort(DeviceExtension->pPrimary, VBE_DISPI_INDEX_YRES, (USHORT)ModeInfo->VisScreenHeight);
-    VBoxVideoVBEWriteUshort(DeviceExtension->pPrimary, VBE_DISPI_INDEX_BPP, (USHORT)ModeInfo->BitsPerPlane);
-    VBoxVideoVBEWriteUshort(DeviceExtension->pPrimary, VBE_DISPI_INDEX_ENABLE, VBE_DISPI_ENABLED | VBE_DISPI_LFB_ENABLED);
-#endif
 
     /* Tell the host that we now support graphics in the additions.
      * @todo: Keep old behaviour, because VBoxVideoResetDevice is called on every graphics
