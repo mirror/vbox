@@ -1319,22 +1319,22 @@ static void arp_input(PNATState pData, struct mbuf *m)
     htip = ntohl(*(uint32_t*)ah->ar_tip);
     tip = *(uint32_t*)ah->ar_tip;
 
-    mr = m_get(pData);
-
-    reh = mtod(mr, struct ethhdr *);
-    memcpy(reh->h_source, eh->h_source, ETH_ALEN); /* XXX: if_encap will swap src and dst*/
-    Log4(("NAT: arp:%R[ether]->%R[ether]\n",
-        reh->h_source, reh->h_dest));
-    Log4(("NAT: arp: %R[IP4]\n", &tip));
-
-    mr->m_data += if_maxlinkhdr;
-    mr->m_len = sizeof(struct arphdr);
-    rah = mtod(mr, struct arphdr *);
 
     ar_op = ntohs(ah->ar_op);
     switch(ar_op)
     {
         case ARPOP_REQUEST:
+            mr = m_get(pData);
+
+            reh = mtod(mr, struct ethhdr *);
+            memcpy(reh->h_source, eh->h_source, ETH_ALEN); /* XXX: if_encap will swap src and dst*/
+            Log4(("NAT: arp:%R[ether]->%R[ether]\n",
+                reh->h_source, reh->h_dest));
+            Log4(("NAT: arp: %R[IP4]\n", &tip));
+
+            mr->m_data += if_maxlinkhdr;
+            mr->m_len = sizeof(struct arphdr);
+            rah = mtod(mr, struct arphdr *);
 #ifdef VBOX_WITH_NAT_SERVICE
             if (tip == special_addr.s_addr) goto arp_ok;
 #endif
@@ -1375,25 +1375,32 @@ static void arp_input(PNATState pData, struct mbuf *m)
                 if_encap(pData, ETH_P_ARP, mr);
                 m_free(pData, m);
             }
+            /*Gratuitous ARP*/
+            if (  *(uint32_t *)ah->ar_sip == *(uint32_t *)ah->ar_tip
+                && memcmp(ah->ar_tha, broadcast_ethaddr, ETH_ALEN) == 0
+                &&  memcmp(eh->h_dest, broadcast_ethaddr, ETH_ALEN) == 0)
+            {
+                /* we've received anounce about address asignment 
+                 * Let's do ARP cache update
+                 */
+                if (slirp_arp_cache_update(pData, *(uint32_t *)ah->ar_tip, &eh->h_dest[0]) == 0) 
+                {
+                    m_free(pData, mr);
+                    m_free(pData, m);
+                    break;
+                }
+                slirp_arp_cache_add(pData, *(uint32_t *)ah->ar_tip, &eh->h_dest[0]);     
+            }
             break;
         case ARPOP_REPLY:
         {
-            struct arp_cache_entry *ac = NULL;
-            if (slirp_update_arp_cache(pData, ah->ar_sip, ah->ar_sha) == 0)
+            if (slirp_arp_cache_update(pData, *(uint32_t *)ah->ar_sip, &ah->ar_sha[0]) == 0)
             {
                 m_free(pData, m);
                 break;
             }
-            ac = RTMemAllocZ(sizeof(struct arp_cache_entry));
-            if (ac == NULL)
-            {
-                LogRel(("NAT: Can't allocate arp cache entry\n"));
-                m_free(pData, m);
-                return;
-            }
-            ac->ip = *(uint32_t *)ah->ar_sip;
-            memcpy(ac->ether, ah->ar_sha, ETH_ALEN);
-            LIST_INSERT_HEAD(&pData->arp_cache, ac, list);
+            slirp_arp_cache_add(pData, *(uint32_t *)ah->ar_sip, ah->ar_sha);
+            m_free(pData, m);
         }
         break;
         default:
@@ -1845,7 +1852,7 @@ void slirp_arp_who_has(PNATState pData, uint32_t dst)
  * @returns 0 - if has found and updated
  *          1 - if hasn't found.
  */
-int slirp_update_arp_cache(PNATState pData, uint32_t dst, const uint8_t *mac)
+int slirp_arp_cache_update(PNATState pData, uint32_t dst, const uint8_t *mac)
 {
     struct arp_cache_entry *ac;
     LIST_FOREACH(ac, &pData->arp_cache, list)
@@ -1857,4 +1864,17 @@ int slirp_update_arp_cache(PNATState pData, uint32_t dst, const uint8_t *mac)
         }
     }
     return 1;
+}
+void slirp_arp_cache_add(PNATState pData, uint32_t ip, const uint8_t *ether)
+{
+    struct arp_cache_entry *ac = NULL;
+    ac = RTMemAllocZ(sizeof(struct arp_cache_entry));
+    if (ac == NULL)
+    {
+        LogRel(("NAT: Can't allocate arp cache entry\n"));
+        return;
+    }
+    ac->ip = ip;
+    memcpy(ac->ether, ether, ETH_ALEN);
+    LIST_INSERT_HEAD(&pData->arp_cache, ac, list);
 }
