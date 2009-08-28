@@ -206,9 +206,10 @@ struct  _PDEV
     VBVABUFFER *pVBVA; /* Pointer to the pjScreen + layout->offVBVABuffer. NULL if VBVA is not enabled. */
 
     HVBOXVIDEOHGSMI hMpHGSMI; /* context handler passed to miniport HGSMI callbacks */
-    PFNVBOXVIDEOHGSMIPOSTCOMMAND pfnHGSMIGHCommandPost; /* called to post the guest command (offset) to the host */
     PFNVBOXVIDEOHGSMICOMPLETION pfnHGSMICommandComplete; /* called to complete the command we receive from the miniport */
     PFNVBOXVIDEOHGSMICOMMANDS   pfnHGSMIRequestCommands; /* called to requests the commands posted to us from the host */
+
+    RTIOPORT IOPortGuestCommand;
 
     PVOID pVideoPortContext;
     VBOXVIDEOPORTPROCS VideoPortProcs;

@@ -122,7 +122,6 @@ static void vboxInitVBoxVideo (PPDEV ppdev, const VIDEO_MEMORY_INFORMATION *pMem
             RtlZeroMemory(&PortProcs, sizeof(PortProcs));
 
             ppdev->hMpHGSMI = Callbacks.hContext;
-            ppdev->pfnHGSMIGHCommandPost = Callbacks.pfnHGSMIGHCommandPost;
             ppdev->pfnHGSMICommandComplete = Callbacks.pfnCompletionHandler;
             ppdev->pfnHGSMIRequestCommands = Callbacks.pfnRequestCommandsHandler;
 
@@ -271,6 +270,10 @@ static void vboxInitVBoxVideo (PPDEV ppdev, const VIDEO_MEMORY_INFORMATION *pMem
                      rc));
 
             ppdev->bHGSMISupported = FALSE;
+        }
+        else
+        {
+            ppdev->IOPortGuestCommand = info.IOPortGuestCommand;
         }
     }
 #endif /* VBOX_WITH_HGSMI */

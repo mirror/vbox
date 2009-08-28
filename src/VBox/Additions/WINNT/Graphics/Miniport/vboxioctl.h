@@ -121,8 +121,11 @@ typedef struct _QUERYHGSMIRESULT
     /* Size of the display information area. */
     uint32_t u32DisplayInfoSize;
 
-    /* Minimum size of the VBAV buffer. */
+    /* Minimum size of the VBVA buffer. */
     uint32_t u32MinVBVABufferSize;
+
+    /* IO port to submit guest HGSMI commands. */
+    RTIOPORT IOPortGuestCommand;
 } QUERYHGSMIRESULT;
 
 /**
@@ -132,7 +135,6 @@ typedef struct _QUERYHGSMIRESULT
 typedef struct _HGSMIQUERYCALLBACKS
 {
     HVBOXVIDEOHGSMI hContext;
-    PFNVBOXVIDEOHGSMIPOSTCOMMAND pfnHGSMIGHCommandPost;
     PFNVBOXVIDEOHGSMICOMPLETION pfnCompletionHandler;
     PFNVBOXVIDEOHGSMICOMMANDS   pfnRequestCommandsHandler;
 } HGSMIQUERYCALLBACKS;

@@ -346,7 +346,7 @@ static void vboxHGSMIBufferSubmit (PPDEV ppdev, void *p)
 
     DISPDBG((0, "VBoxDISP::vboxHGSMIBufferSubmit: offset 0x%x\n", offBuffer));
 
-    ppdev->pfnHGSMIGHCommandPost(ppdev->hMpHGSMI, offBuffer);
+    ASMOutU32(ppdev->IOPortGuestCommand, offBuffer);
 }
 
 static BOOL vboxVBVAInformHost (PPDEV ppdev, BOOL bEnable)
