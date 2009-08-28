@@ -180,12 +180,14 @@ typedef enum VMSTATE
  */
 #if defined(__cplusplus) \
  && ARCH_BITS == 64    /* cdecl requires classes and structs as hidden params. */ \
- && !defined(_MSC_VER) /* doesn't like classes and extern "C" __cdecl functions. */ \
  &&  (   defined(RT_STRICT) \
       || defined(VBOX_STRICT) \
       || defined(DEBUG) \
       || defined(DOXYGEN_RUNNING) )
 # define VBOXSTRICTRC_STRICT_ENABLED 1
+# ifdef _MSC_VER
+#  pragma warning(disable:4190)
+# endif
 #endif
 
 /** We need RTERR_STRICT_RC.  */
