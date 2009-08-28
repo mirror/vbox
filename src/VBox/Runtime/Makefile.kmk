@@ -1387,7 +1387,7 @@ RuntimeR0Drv_DEPS.freebsd = \
 RuntimeR0Drv_CLEAN.freebsd = $(RuntimeR0Drv_DEPS.freebsd)
 RuntimeR0Drv_INCS.freebsd += $(PATH_RuntimeR0Drv)
 
- ifeq ($(KBUILD_TARGET),freebsd)
+ if "$(KBUILD_TARGET)" == "freebsd" && $(intersects RuntimeR0Drv,$(LIBRARIES))
   #
   # FreeBSD: Generate bus and device interface headers.
   # We have to include headers for the RTMp* API which
@@ -1410,7 +1410,7 @@ RuntimeR0Drv_INCS.freebsd += $(PATH_RuntimeR0Drv)
 	$(QUIET)$(CP) -f $(VBOX_FREEBSD_SRC)/kern/device_if.m $(PATH_RuntimeR0Drv)/device_if.m
 	$(QUIET)$(VBOX_AWK) -f $(VBOX_FREEBSD_SRC)/tools/makeobjops.awk $(PATH_RuntimeR0Drv)/device_if.m -h -p
 	$(QUIET)$(RM) $(PATH_RuntimeR0Drv)/device_if.m
- endif # FreeBSD
+ endif # FreeBSD + RuntimeR0Drv being built.
 
 RuntimeR0Drv_SOURCES.solaris = \
 	common/err/RTErrConvertFromErrno.cpp \
