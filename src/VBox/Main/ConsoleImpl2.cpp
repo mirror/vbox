@@ -2843,26 +2843,25 @@ static void configSetProperty(VMMDev * const pVMMDev, const char *pszName,
             std::vector<Utf8Str> utf8Names, utf8Values, utf8Flags;
             std::vector<const char *> names, values, flags;
             std::vector<ULONG64> timestamps;
-            for (unsigned i = 0; i < cProps; ++i)
+            for (unsigned i = 0; i < cProps && RT_SUCCESS(rc); ++i)
             {
                 AssertPtrReturn(namesOut[i], VERR_INVALID_PARAMETER);
                 utf8Names.push_back(Bstr(namesOut[i]));
-                names.push_back(utf8Names.back().c_str());
+                utf8Values.push_back(Bstr(valuesOut[i]));
+                timestamps.push_back(timestampsOut[i]);
+                utf8Flags.push_back(Bstr(flagsOut[i]));
+            }
+            for (unsigned i = 0; i < cProps && RT_SUCCESS(rc); ++i)
+            {
+                names.push_back(utf8Names[i].c_str());
                 AssertPtrReturn(names[i], VERR_NO_MEMORY);
                 if (valuesOut[i])
-                {
-                    utf8Values.push_back(Bstr(valuesOut[i]));
-                    values.push_back(utf8Values.back().c_str());
-                }
+                    values.push_back(utf8Values[i].c_str());
                 else
                     values.push_back("");
                 AssertPtrReturn(values[i], VERR_NO_MEMORY);
-                timestamps.push_back(timestampsOut[i]);
                 if (flagsOut[i])
-                {
-                    utf8Flags.push_back(Bstr(flagsOut[i]));
-                    flags.push_back(utf8Flags.back().c_str());
-                }
+                    flags.push_back(utf8Flags[i].c_str());
                 else
                     flags.push_back("");
                 AssertPtrReturn(flags[i], VERR_NO_MEMORY);
