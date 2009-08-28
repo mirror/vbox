@@ -1700,11 +1700,11 @@ VMMDECL(int) PGMFlushTLB(PVMCPU pVCpu, uint64_t cr3, bool fGlobal)
     }
     else
     {
-        pgmLock(pVM);
 # ifdef PGMPOOL_WITH_OPTIMIZED_DIRTY_PT
+        pgmLock(pVM);
         pgmPoolResetDirtyPages(pVM);
-# endif
         pgmUnlock(pVM);
+# endif
         /*
          * Check if we have a pending update of the CR3 monitoring.
          */
