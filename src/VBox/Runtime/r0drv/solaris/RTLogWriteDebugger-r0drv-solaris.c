@@ -36,6 +36,7 @@
 #include "internal/iprt.h"
 #include <iprt/log.h>
 
+#include <iprt/asm.h>
 #include <iprt/assert.h>
 
 
@@ -44,7 +45,9 @@ RTDECL(void) RTLogWriteDebugger(const char *pch, size_t cb)
 {
     if (pch[cb] != '\0')
         AssertBreakpoint();
-    cmn_err(CE_CONT, pch);
+    if (    !g_frtSolarisSplSetsEIF
+        ||  ASMIntAreEnabled())
+        cmn_err(CE_CONT, pch);
     return;
 }
 

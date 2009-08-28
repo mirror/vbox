@@ -63,7 +63,8 @@
 #include <iprt/cdefs.h>
 
 RT_C_DECLS_BEGIN
-extern struct ddi_dma_attr g_SolarisX86PhysMemLimits;
+extern bool                 g_frtSolarisSplSetsEIF;
+extern struct ddi_dma_attr  g_SolarisX86PhysMemLimits;
 extern uintptr_t kernelbase;
 RT_C_DECLS_END
 
