@@ -1108,11 +1108,13 @@ RuntimeR0_SOURCES.os2 = \
 #
 RuntimeR0Drv_TEMPLATE   = VBOXR0DRV
 RuntimeR0Drv_SDKS.win   = W2K3DDK WINPSDKINCS
-RuntimeR0Drv_INCS      := $(PATH_SUB_CURRENT) include
 RuntimeR0Drv_DEFS       = IN_RT_R0 RT_WITH_VBOX RT_WITHOUT_NOCRT_WRAPPERS RT_NO_EXPORT_SYMBOL
 RuntimeR0Drv_DEFS.win   = IN_SUP_R0
 RuntimeR0Drv_DEFS.linux = MODULE KBUILD_MODNAME=KBUILD_STR\(vboxdrv\) KBUILD_BASENAME=KBUILD_STR\(vboxdrv\) IN_SUP_R0
 
+RuntimeR0Drv_INCS      := $(PATH_SUB_CURRENT) include
+RuntimeR0Drv_INCS.freebsd = \
+	$(PATH_INS)/gen-sys-hdrs
 RuntimeR0Drv_INCS.linux = \
 	r0drv/linux
 ifdef VBOX_WITH_SOLARIS_VBI
@@ -1381,11 +1383,6 @@ RuntimeR0Drv_SOURCES.freebsd = \
 	generic/timer-generic.cpp \
 	r0drv/memobj-r0drv.cpp \
 	r0drv/powernotification-r0drv.c
-RuntimeR0Drv_INTERMEDIATES.freebsd = \
-  	$(PATH_INS)/gen-sys-hdrs/bus_if.h \
-  	$(PATH_INS)/gen-sys-hdrs/device_if.h
-RuntimeR0Drv_INCS.freebsd += \
-	$(PATH_INS)/gen-sys-hdrs
 
 RuntimeR0Drv_SOURCES.solaris = \
 	common/err/RTErrConvertFromErrno.cpp \
@@ -1458,6 +1455,10 @@ else  # !VBOX_WITH_SOLARIS_VBI
 endif # !VBOX_WITH_SOLARIS_VBI
 
 ## PORTME: Porters create and add their selection of platform specific Ring-0 Driver files here.
+
+RuntimeR0Drv_INTERMEDIATES.freebsd = \
+  	$(PATH_INS)/gen-sys-hdrs/bus_if.h \
+  	$(PATH_INS)/gen-sys-hdrs/device_if.h
 
 
 #
@@ -1680,7 +1681,7 @@ FreeBSDGeneratedKernelHeaders_CLEAN = $(FreeBSDGeneratedKernelHeaders_SOURCES)
 
 $$(FreeBSDGeneratedKernelHeaders_0_OUTDIR)/bus_if.h: $(VBOX_FREEBSD_SRC)/kern/bus_if.m | $$(dir $$@)
 	$(call MSG_TOOL,awk,FreeBSDGeneratedKernelHeaders,$<,$@)
-	$(QUIET)$(CP) -f $< $(@)/bus_if.m
+	$(QUIET)$(CP) -f $< $(@D)/bus_if.m
 	$(QUIET)$(VBOX_AWK) -f $(VBOX_FREEBSD_SRC)/tools/makeobjops.awk $(@D)/bus_if.m -h -p
 	$(QUIET)$(RM) $(@D)/bus_if.m
 
