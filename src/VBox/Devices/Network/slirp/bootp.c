@@ -427,7 +427,7 @@ static int dhcp_decode_request(PNATState pData, struct bootp_t *bp, const uint8_
                Assert((bp->bp_hlen == ETH_ALEN));
                memcpy(bc->macaddr, bp->bp_hwaddr, bp->bp_hlen);
                bc->addr.s_addr = bp->bp_ciaddr.s_addr; 
-               slirp_update_arp_cache(pData, bp->bp_ciaddr.s_addr, bp->bp_hwaddr);
+               slirp_arp_cache_update(pData, bp->bp_ciaddr.s_addr, bp->bp_hwaddr);
             }
         }
         break;
@@ -450,7 +450,7 @@ static int dhcp_decode_request(PNATState pData, struct bootp_t *bp, const uint8_
             Assert((bp->bp_hlen == ETH_ALEN));
             memcpy(bc->macaddr, bp->bp_hwaddr, bp->bp_hlen);
             bc->addr.s_addr = ui32; 
-            slirp_update_arp_cache(pData, bp->bp_ciaddr.s_addr, bp->bp_hwaddr);
+            slirp_arp_cache_update(pData, bp->bp_ciaddr.s_addr, bp->bp_hwaddr);
         break;
         case NONE:
             Assert((dhcp_stat != NONE));
