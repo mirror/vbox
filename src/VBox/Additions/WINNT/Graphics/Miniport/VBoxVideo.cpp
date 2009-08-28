@@ -1146,7 +1146,7 @@ VP_STATUS VBoxVideoFindAdapter(IN PVOID HwDeviceExtension,
       }
    };
 
-   dprintf(("VBoxVideo::VBoxVideoFindAdapter\n"));
+   dprintf(("VBoxVideo::VBoxVideoFindAdapter %p\n", HwDeviceExtension));
 
 #ifdef VBOX_WITH_HGSMI
    VBoxSetupVideoPortFunctions((PDEVICE_EXTENSION)HwDeviceExtension, &((PDEVICE_EXTENSION)HwDeviceExtension)->u.primary.VideoPortProcs, ConfigInfo);
@@ -1372,8 +1372,7 @@ BOOLEAN VBoxVideoInterrupt(PVOID  HwDeviceExtension)
  */
 static BOOLEAN ShowPointer(PVOID HwDeviceExtension)
 {
-    LogRelFlowFunc(("\n"));
-    BOOLEAN Result;
+    BOOLEAN Result = TRUE;
 
     if (DEV_MOUSE_HIDDEN((PDEVICE_EXTENSION)HwDeviceExtension))
     {
@@ -1396,7 +1395,6 @@ static BOOLEAN ShowPointer(PVOID HwDeviceExtension)
         else
             dprintf(("VBoxVideo::ShowPointer: Could not show the hardware pointer -> fallback\n"));
     }
-    LogRelFlowFunc(("returning %d\n", Result));
     return Result;
 }
 
