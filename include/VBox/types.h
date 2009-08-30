@@ -180,6 +180,7 @@ typedef enum VMSTATE
  */
 #if defined(__cplusplus) \
  && ARCH_BITS == 64    /* cdecl requires classes and structs as hidden params. */ \
+ && !defined(_MSC_VER) /* trouble similar to 32-bit gcc. */ \
  &&  (   defined(RT_STRICT) \
       || defined(VBOX_STRICT) \
       || defined(DEBUG) \
