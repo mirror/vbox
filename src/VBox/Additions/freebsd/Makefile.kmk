@@ -27,7 +27,8 @@ $(error "The FreeBSD guest additions installer can only be built on FreeBSD!")
 endif
 
 # Include sub-makefiles.
-include $(PATH_SUB_CURRENT)/vboxvfs/Makefile.kmk
+#include $(PATH_SUB_CURRENT)/vboxvfs/Makefile.kmk
+#include $(PATH_SUB_CURRENT)/drm/Makefile.kmk
 
 # Globals
 VBOX_FBSD_ADD_INS_OUT_DIR := $(PATH_TARGET)/Additions/FreeBSD/Installer
@@ -59,6 +60,8 @@ $(PATH_BIN)/additions/VBoxFreeBSDAdditions.tbz: \
 		$(VBOX_PATH_X11_ADDITION_INSTALLER)/98vboxadd-xclient \
 		$(VBOX_PATH_X11_ADDITION_INSTALLER)/x11config.pl \
 		$(PATH_BIN)/additions/vboxguest.ko \
+		$(PATH_BIN)/additions/vboxvideo.ko \
+		$(PATH_BIN)/additions/vboxvfs.ko \
 		$(PATH_BIN)/additions/VBoxClient \
 		$(PATH_BIN)/additions/VBoxService \
 		$(PATH_BIN)/additions/VBoxControl \
