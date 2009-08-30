@@ -52,8 +52,8 @@ typedef struct RTSEMFASTMUTEXINTERNAL
 {
     /** Magic value (RTSEMFASTMUTEX_MAGIC). */
     uint32_t            u32Magic;
-    /** The FreeBSD (sleep) mutex. */
-    struct mtx          Mtx;
+    /** The FreeBSD shared/exclusive lock mutex. */
+    struct sx           SxLock;
 } RTSEMFASTMUTEXINTERNAL, *PRTSEMFASTMUTEXINTERNAL;
 
 
@@ -66,7 +66,7 @@ RTDECL(int)  RTSemFastMutexCreate(PRTSEMFASTMUTEX pMutexSem)
     if (pFastInt)
     {
         pFastInt->u32Magic = RTSEMFASTMUTEX_MAGIC;
-        mtx_init(&pFastInt->Mtx, "IPRT Fast Mutex Semaphore", NULL, MTX_DEF | MTX_RECURSE);
+        sx_init(&pFastInt->SxLock, "IPRT Fast Mutex Semaphore");
         *pMutexSem = pFastInt;
         return VINF_SUCCESS;
     }
@@ -85,7 +85,7 @@ RTDECL(int)  RTSemFastMutexDestroy(RTSEMFASTMUTEX MutexSem)
                     VERR_INVALID_PARAMETER);
 
     ASMAtomicXchgU32(&pFastInt->u32Magic, RTSEMFASTMUTEX_MAGIC_DEAD);
-    mtx_destroy(&pFastInt->Mtx);
+    sx_destroy(&pFastInt->SxLock);
     RTMemFree(pFastInt);
 
     return VINF_SUCCESS;
@@ -100,7 +100,7 @@ RTDECL(int)  RTSemFastMutexRequest(RTSEMFASTMUTEX MutexSem)
                     ("pFastInt->u32Magic=%RX32 pFastInt=%p\n", pFastInt->u32Magic, pFastInt),
                     VERR_INVALID_PARAMETER);
 
-    mtx_lock(&pFastInt->Mtx);
+    sx_xlock(&pFastInt->SxLock);
     return VINF_SUCCESS;
 }
 
@@ -113,7 +113,7 @@ RTDECL(int)  RTSemFastMutexRelease(RTSEMFASTMUTEX MutexSem)
                     ("pFastInt->u32Magic=%RX32 pFastInt=%p\n", pFastInt->u32Magic, pFastInt),
                     VERR_INVALID_PARAMETER);
 
-    mtx_unlock(&pFastInt->Mtx);
+    sx_xunlock(&pFastInt->SxLock);
     return VINF_SUCCESS;
 }
 
