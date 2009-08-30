@@ -55,6 +55,8 @@
 #include <sys/callout.h>
 #include <sys/cpu.h>
 #include <sys/smp.h>
+#include <sys/sleepqueue.h>
+#include <sys/sx.h>
 #include <vm/vm.h>
 #include <vm/pmap.h>            /* for vtophys */
 #include <vm/vm_map.h>
@@ -63,6 +65,7 @@
 #include <vm/vm_param.h>        /* KERN_SUCCESS ++ */
 #include <vm/vm_page.h>
 #include <sys/resourcevar.h>
+#include <machine/cpu.h>
 
 /*#ifdef __cplusplus
 # error "This header doesn't work for C++ code. Sorry, typical kernel crap."
