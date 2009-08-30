@@ -1840,7 +1840,7 @@ void slirp_arp_who_has(PNATState pData, uint32_t dst)
     }
     ehdr = mtod(m, struct ethhdr *);
     memset(ehdr->h_source, 0xff, ETH_ALEN);
-    ahdr = (struct ahdr *)&ehdr[1];
+    ahdr = (struct arphdr *)&ehdr[1];
     ahdr->ar_hrd = htons(1);
     ahdr->ar_pro = htons(ETH_P_IP);
     ahdr->ar_hln = ETH_ALEN;
@@ -1855,6 +1855,7 @@ void slirp_arp_who_has(PNATState pData, uint32_t dst)
     if_encap(pData, ETH_P_ARP, m);
     LogRel(("NAT: ARP request sent\n"));
 }
+
 /* updates the arp cache 
  * @returns 0 - if has found and updated
  *          1 - if hasn't found.
@@ -1872,6 +1873,7 @@ int slirp_arp_cache_update(PNATState pData, uint32_t dst, const uint8_t *mac)
     }
     return 1;
 }
+
 void slirp_arp_cache_add(PNATState pData, uint32_t ip, const uint8_t *ether)
 {
     struct arp_cache_entry *ac = NULL;

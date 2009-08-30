@@ -81,7 +81,7 @@ sbappend(PNATState pData, struct socket *so, struct mbuf *m)
     DEBUG_CALL("sbappend");
     DEBUG_ARG("so = %lx", (long)so);
     DEBUG_ARG("m = %lx", (long)m);
-    DEBUG_ARG("m->m_len = %d", m->m_len);
+    DEBUG_ARG("m->m_len = %d", m ? m->m_len : 0);
 
     STAM_COUNTER_INC(&pData->StatIOSBAppend);
     /* Shouldn't happen, but...  e.g. foreign host closes connection */
