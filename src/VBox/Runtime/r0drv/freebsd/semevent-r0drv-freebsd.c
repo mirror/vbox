@@ -38,6 +38,7 @@
 #include <iprt/asm.h>
 #include <iprt/assert.h>
 #include <iprt/err.h>
+#include <iprt/spinlock.h>
 
 #include "internal/magics.h"
 
@@ -58,8 +59,8 @@ typedef struct RTSEMEVENTINTERNAL
     uint8_t volatile    fSignaled;
     /** The number of threads in the process of waking up. */
     uint32_t volatile   cWaking;
-    /** The FreeBSD spinlock protecting this structure. */
-    struct mtx          Mtx;
+    /** Spinlock protecting this structure. */
+    RTSPINLOCK          hSpinLock;
 } RTSEMEVENTINTERNAL, *PRTSEMEVENTINTERNAL;
 
 
@@ -75,9 +76,15 @@ RTDECL(int)  RTSemEventCreate(PRTSEMEVENT pEventSem)
         pEventInt->cWaiters = 0;
         pEventInt->cWaking = 0;
         pEventInt->fSignaled = 0;
-        mtx_init(&pEventInt->Mtx, "IPRT Event Semaphore", NULL, 0);
-        *pEventSem = pEventInt;
-        return VINF_SUCCESS;
+        int rc = RTSpinlockCreate(&pEventInt->hSpinLock);
+        if (RT_SUCCESS(rc))
+        {
+            *pEventSem = pEventInt;
+            return VINF_SUCCESS;
+        }
+
+        RTMemFree(pEventInt);
+        return rc;
     }
     return VERR_NO_MEMORY;
 }
@@ -88,27 +95,32 @@ RTDECL(int)  RTSemEventDestroy(RTSEMEVENT EventSem)
     if (EventSem == NIL_RTSEMEVENT)     /* don't bitch */
         return VERR_INVALID_HANDLE;
     PRTSEMEVENTINTERNAL pEventInt = (PRTSEMEVENTINTERNAL)EventSem;
+    RTSPINLOCKTMP Tmp;
+
     AssertPtrReturn(pEventInt, VERR_INVALID_HANDLE);
     AssertMsgReturn(pEventInt->u32Magic == RTSEMEVENT_MAGIC,
                     ("pEventInt=%p u32Magic=%#x\n", pEventInt, pEventInt->u32Magic),
                     VERR_INVALID_HANDLE);
 
-    mtx_lock(&pEventInt->Mtx);
+    RTSpinlockAcquire(pEventInt->hSpinLock, &Tmp);
+
     ASMAtomicIncU32(&pEventInt->u32Magic); /* make the handle invalid */
     if (pEventInt->cWaiters > 0)
     {
         /* abort waiting thread, last man cleans up. */
         ASMAtomicXchgU32(&pEventInt->cWaking, pEventInt->cWaking + pEventInt->cWaiters);
-        wakeup(pEventInt);
-        mtx_unlock(&pEventInt->Mtx);
+        sleepq_lock(pEventInt);
+        sleepq_broadcast(pEventInt, SLEEPQ_CONDVAR, 0, 0);
+        sleepq_release(pEventInt);
+        RTSpinlockRelease(pEventInt->hSpinLock, &Tmp);
     }
     else if (pEventInt->cWaking)
         /* the last waking thread is gonna do the cleanup */
-        mtx_unlock(&pEventInt->Mtx);
+        RTSpinlockRelease(pEventInt->hSpinLock, &Tmp);
     else
     {
-        mtx_unlock(&pEventInt->Mtx);
-        mtx_destroy(&pEventInt->Mtx);
+        RTSpinlockRelease(pEventInt->hSpinLock, &Tmp);
+        RTSpinlockDestroy(pEventInt->hSpinLock);
         RTMemFree(pEventInt);
     }
 
@@ -118,24 +130,29 @@ RTDECL(int)  RTSemEventDestroy(RTSEMEVENT EventSem)
 
 RTDECL(int)  RTSemEventSignal(RTSEMEVENT EventSem)
 {
+    RTSPINLOCKTMP       Tmp;
     PRTSEMEVENTINTERNAL pEventInt = (PRTSEMEVENTINTERNAL)EventSem;
     AssertPtrReturn(pEventInt, VERR_INVALID_HANDLE);
     AssertMsgReturn(pEventInt->u32Magic == RTSEMEVENT_MAGIC,
                     ("pEventInt=%p u32Magic=%#x\n", pEventInt, pEventInt->u32Magic),
                     VERR_INVALID_HANDLE);
 
-    mtx_lock(&pEventInt->Mtx);
+    RTSpinlockAcquire(pEventInt->hSpinLock, &Tmp);
 
     if (pEventInt->cWaiters > 0)
     {
         ASMAtomicDecU32(&pEventInt->cWaiters);
         ASMAtomicIncU32(&pEventInt->cWaking);
-        wakeup_one(pEventInt);
+        sleepq_lock(pEventInt);
+        int fWakeupSwapProc = sleepq_signal(pEventInt, SLEEPQ_CONDVAR, 0, 0);
+        sleepq_release(pEventInt);
+        if (fWakeupSwapProc)
+            kick_proc0();
     }
     else
         ASMAtomicXchgU8(&pEventInt->fSignaled, true);
 
-    mtx_unlock(&pEventInt->Mtx);
+    RTSpinlockRelease(pEventInt->hSpinLock, &Tmp);
     return VINF_SUCCESS;
 }
 
@@ -143,13 +160,14 @@ RTDECL(int)  RTSemEventSignal(RTSEMEVENT EventSem)
 static int rtSemEventWait(RTSEMEVENT EventSem, unsigned cMillies, bool fInterruptible)
 {
     int rc;
+    RTSPINLOCKTMP       Tmp;
     PRTSEMEVENTINTERNAL pEventInt = (PRTSEMEVENTINTERNAL)EventSem;
     AssertPtrReturn(pEventInt, VERR_INVALID_HANDLE);
     AssertMsgReturn(pEventInt->u32Magic == RTSEMEVENT_MAGIC,
                     ("pEventInt=%p u32Magic=%#x\n", pEventInt, pEventInt->u32Magic),
                     VERR_INVALID_HANDLE);
 
-    mtx_lock(&pEventInt->Mtx);
+    RTSpinlockAcquire(pEventInt->hSpinLock, &Tmp);
 
     if (pEventInt->fSignaled)
     {
@@ -159,78 +177,103 @@ static int rtSemEventWait(RTSEMEVENT EventSem, unsigned cMillies, bool fInterrup
     }
     else
     {
-        /*
-         * Translate milliseconds into ticks and go to sleep.
-         */
-        struct timeval tv;
-
-        if (cMillies != RT_INDEFINITE_WAIT)
+        if (cMillies == 0)
+            rc = VERR_TIMEOUT;
+        else
         {
-            tv.tv_sec = cMillies / 1000;
-            tv.tv_usec = (cMillies % 1000) * 1000;
-        }
+            ASMAtomicIncU32(&pEventInt->cWaiters);
 
-        ASMAtomicIncU32(&pEventInt->cWaiters);
+            int fFlags = SLEEPQ_CONDVAR;
 
-        /** @todo r=bird: This doesn't handle cMillies == 0 correctly, it will assert
-         *        and or sleep for ever according to r47861. (That's probably an old bug
-         *        of my making.)
-         */
-        rc = mtx_sleep(pEventInt,          /* block id */
-                       &pEventInt->Mtx,    /* mtx */
-                       fInterruptible ? PZERO | PCATCH : PZERO,
-                       "iprtev",           /* max 6 chars */
-                       cMillies == RT_INDEFINITE_WAIT
-                       ? 0
-                       : tvtohz(&tv));
+            if (fInterruptible)
+                fFlags |= SLEEPQ_INTERRUPTIBLE;
 
-        switch (rc)
-        {
-            case 0:
-                if (pEventInt->u32Magic == RTSEMEVENT_MAGIC)
-                {
-                    ASMAtomicDecU32(&pEventInt->cWaking);
-                    rc = VINF_SUCCESS;
-                }
+            sleepq_lock(pEventInt);
+            sleepq_add(pEventInt, NULL, "IPRT Event Semaphore", fFlags, 0);
+
+            if (cMillies != RT_INDEFINITE_WAIT)
+            {
+                /*
+                 * Translate milliseconds into ticks and go to sleep.
+                 */
+                struct timeval tv;
+
+                tv.tv_sec = cMillies / 1000;
+                tv.tv_usec = (cMillies % 1000) * 1000;
+
+                sleepq_set_timeout(pEventInt, tvtohz(&tv));
+
+                RTSpinlockRelease(pEventInt->hSpinLock, &Tmp);
+
+                if (fInterruptible)
+                    rc = sleepq_timedwait_sig(pEventInt, 0);
+                else
+                    rc = sleepq_timedwait(pEventInt, 0);
+            }
+            else
+            {
+                RTSpinlockRelease(pEventInt->hSpinLock, &Tmp);
+
+                if (fInterruptible)
+                    rc = sleepq_wait_sig(pEventInt, 0);
                 else
                 {
-                    rc = VERR_SEM_DESTROYED; /** @todo this isn't necessarily correct, we've
-                                              * could've woken up just before destruction... */
-                    if (!ASMAtomicDecU32(&pEventInt->cWaking))
-                    {
-                        /* The event was destroyed, as the last thread do the cleanup.
-                           we don't actually know whether */
-                        mtx_unlock(&pEventInt->Mtx);
-                        mtx_destroy(&pEventInt->Mtx);
-                        RTMemFree(pEventInt);
-                        return rc;
-                    }
+                    rc = 0;
+                    sleepq_wait(pEventInt, 0);
                 }
-                break;
+            }
 
-            case EWOULDBLOCK:
-                Assert(cMillies != RT_INDEFINITE_WAIT);
-                if (pEventInt->cWaiters > 0)
-                    ASMAtomicDecU32(&pEventInt->cWaiters);
-                rc = VERR_TIMEOUT;
-                break;
+            RTSpinlockAcquire(pEventInt->hSpinLock, &Tmp);
 
-            case EINTR:
-            case ERESTART:
-                Assert(fInterruptible);
-                if (pEventInt->cWaiters > 0)
-                    ASMAtomicDecU32(&pEventInt->cWaiters);
-                rc = VERR_INTERRUPTED;
-                break;
+            switch (rc)
+            {
+                case 0:
+                    if (pEventInt->u32Magic == RTSEMEVENT_MAGIC)
+                    {
+                        ASMAtomicDecU32(&pEventInt->cWaking);
+                        rc = VINF_SUCCESS;
+                    }
+                    else
+                    {
+                        rc = VERR_SEM_DESTROYED; /** @todo this isn't necessarily correct, we've
+                                                  * could've woken up just before destruction... */
+                        if (!ASMAtomicDecU32(&pEventInt->cWaking))
+                        {
+                            /* The event was destroyed, as the last thread do the cleanup.
+                               we don't actually know whether */
+                            RTSpinlockRelease(pEventInt->hSpinLock, &Tmp);
+                            RTSpinlockDestroy(pEventInt->hSpinLock);
+                            RTMemFree(pEventInt);
+                            return rc;
+                        }
+                    }
+                    break;
 
-            default:
-                AssertMsgFailed(("tsleep -> %d\n", rc));
-                rc = VERR_GENERAL_FAILURE;
-                break;
+                case EWOULDBLOCK:
+                    Assert(cMillies != RT_INDEFINITE_WAIT);
+                    if (pEventInt->cWaiters > 0)
+                        ASMAtomicDecU32(&pEventInt->cWaiters);
+                    rc = VERR_TIMEOUT;
+                    break;
+
+                case EINTR:
+                case ERESTART:
+                    Assert(fInterruptible);
+                    if (pEventInt->cWaiters > 0)
+                        ASMAtomicDecU32(&pEventInt->cWaiters);
+                    rc = VERR_INTERRUPTED;
+                    break;
+
+                default:
+                    AssertMsgFailed(("sleepq_* -> %d\n", rc));
+                    rc = VERR_GENERAL_FAILURE;
+                    break;
+            }
         }
     }
 
-    mtx_unlock(&pEventInt->Mtx);
+    RTSpinlockRelease(pEventInt->hSpinLock, &Tmp);
+
     return rc;
 }
 
