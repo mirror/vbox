@@ -306,7 +306,7 @@ icmp_input(PNATState pData, struct mbuf *m, int hlen)
 
     DEBUG_CALL("icmp_input");
     DEBUG_ARG("m = %lx", (long )m);
-    DEBUG_ARG("m_len = %d", m->m_len);
+    DEBUG_ARG("m_len = %d", m ? m->m_len : 0);
 
     icmpstat.icps_received++;
 
