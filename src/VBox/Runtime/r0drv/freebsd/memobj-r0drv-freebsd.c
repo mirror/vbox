@@ -469,7 +469,7 @@ static int rtR0MemObjNativeReserveInMap(PPRTR0MEMOBJINTERNAL ppMem, void *pvFixe
         vm_offset_t MapAddress = pvFixed != (void *)-1
                                ? (vm_offset_t)pvFixed
                                : vm_map_min(pMap);
-        if (pvFixed)
+        if (pvFixed != (void *)-1)
             vm_map_remove(pMap,
                           MapAddress,
                           MapAddress + cb);
