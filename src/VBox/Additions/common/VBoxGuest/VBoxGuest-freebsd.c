@@ -247,7 +247,7 @@ static int VBoxGuestFreeBSDOpen(struct cdev *pDev, int fOpen, struct thread *pTd
 static int VBoxGuestFreeBSDClose(struct cdev *pDev, int fFile, int DevType, struct thread *pTd)
 {
     PVBOXGUESTSESSION pSession = (PVBOXGUESTSESSION)pDev->si_drv1;
-    Log(("VBoxGuestFreeBSDClose: fFile=%#x iUnit=%d pSession=%p\n", fFile, minor2unit(minor(pDev)), pSession));
+    Log(("VBoxGuestFreeBSDClose: fFile=%#x pSession=%p\n", fFile, pSession));
 
     /*
      * Close the session if it's still hanging on to the device...
