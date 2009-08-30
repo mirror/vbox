@@ -206,7 +206,7 @@ VBOX_SINGLE_MAKEFILE = 1
 # This indicates that additions (of some kind or another) is being _built_.
 # VBOX_WITHOUT_ADDITIONS overrides it.
 #if1of ($(KBUILD_TARGET), freebsd linux os2 solaris win)
-if1of ($(KBUILD_TARGET), linux solaris win)
+if1of ($(KBUILD_TARGET), linux solaris win freebsd)
  VBOX_WITH_ADDITIONS = 1
 endif
 # Build the optional ring-0 part of the additions for syntax checking.
@@ -3539,7 +3539,8 @@ TEMPLATE_VBOXGUESTR3XORGMOD_LIBS = \
 	$(VBOX_LIB_VBGL_R3_SHARED) \
 	$(VBOX_LIB_IPRT_GUEST_R3_MINI) \
 	$(VBOX_LIB_VBGL_R3_SHARED)
-
+TEMPLATE_VBOXGUESTR3XORGMOD_LIBS.freebsd += \
+	iconv
 
 #
 # Template for guest stuff that makes use of the C++ library and features.
