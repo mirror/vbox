@@ -186,42 +186,7 @@ static int vbglR3Init(const char *pszDeviceName)
     }
     g_File = hf;
 
-#elif defined(RT_OS_FREEBSD)
-    /*
-     * Try open the BSD device. The device cloning makes this a bit of work.
-     */
-# if defined(VBOX_VBGLR3_XFREE86)
-    int File = 0;
-# else
-    RTFILE File = 0;
-# endif
-    int rc;
-    char szDevice[RT_MAX(sizeof(VBOXGUEST_DEVICE_NAME), sizeof(VBOXGUEST_USER_DEVICE_NAME)) + 16];
-    for (unsigned iUnit = 0; iUnit < 1024; iUnit++)
-    {
-        RTStrPrintf(szDevice, sizeof(szDevice), pszDeviceName "%d", iUnit);
-# if defined(VBOX_VBGLR3_XFREE86)
-        File = xf86open(szDevice, XF86_O_RDWR);
-        if (File >= 0)
-            break;
-# else
-        rc = RTFileOpen(&File, szDevice, RTFILE_O_READWRITE | RTFILE_O_OPEN | RTFILE_O_DENY_NONE);
-        if (RT_SUCCESS(rc))
-            break;
-# endif
-    }
-
-# if defined(VBOX_VBGLR3_XFREE86)
-    if (File == -1)
-        return VERR_OPEN_FAILED;
-# else
-    if (RT_FAILURE(rc))
-        return rc;
-# endif
-
-    g_File = File;
-
-#elif defined(VBOX_VBGLR3_XFREE86) && !defined(RT_OS_FREEBSD)
+#elif defined(VBOX_VBGLR3_XFREE86)
     int File = xf86open(pszDeviceName, XF86_O_RDWR);
     if (File == -1)
         return VERR_OPEN_FAILED;
@@ -229,7 +194,7 @@ static int vbglR3Init(const char *pszDeviceName)
 
 #else
 
-    /* The default implemenation. (linux, solaris) */
+    /* The default implemenation. (linux, solaris, freebsd) */
     RTFILE File;
     int rc = RTFileOpen(&File, pszDeviceName, RTFILE_O_READWRITE | RTFILE_O_OPEN | RTFILE_O_DENY_NONE);
     if (RT_FAILURE(rc))
