@@ -194,14 +194,7 @@ typedef struct VBOXNETFLTINS
              * @{ */
             /** Filter driver device context. */
             ADAPT IfAdaptor;
-            /** since the driver is able to work in different modes (NetFlt or PassThru)
-             * we need to wait for the old-mode operations to complete before switching to the new mode
-             * The most trickiest here is NetFlt->PassThru switch as we can not block in PtSent/Receive
-             * because they typically run at DPC level
-             * we also not allowed to re-order packets, so on NetFlt-PassThru switch (kVBoxNetDevMode_NetFltDeinitializing mode)
-             * we put them to the pending queue to process them in order on final mode activation stage */
-            volatile VBOXNETDEVMODE_TYPE enmModeMP;
-            volatile VBOXNETDEVMODE_TYPE enmModePT;
+
             volatile uint32_t cModeNetFltRefs;
             volatile uint32_t cModePassThruRefs;
 

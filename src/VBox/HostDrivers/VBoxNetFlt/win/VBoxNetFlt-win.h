@@ -231,6 +231,7 @@ DECLINLINE(void) vboxNetFltWinPutTail(PSINGLE_LIST pList, PSINGLE_LIST_ENTRY pEn
 {
     pList->pTail->Next = pEntry;
     pList->pTail = pEntry;
+    pEntry->Next = NULL;
 }
 
 DECLINLINE(PSINGLE_LIST_ENTRY) vboxNetFltWinGetHead(PSINGLE_LIST pList)
