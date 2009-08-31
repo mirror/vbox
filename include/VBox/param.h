@@ -75,12 +75,7 @@
 #if HC_ARCH_BITS == 64
 # define MM_RAM_MAX_IN_MB           UINT32_C(16384)
 #else
-# if RT_OS_WINDOWS
-/* By default you can't allocate much more than 1.5 GB in a 32 bits Windows process. */
-#  define MM_RAM_MAX_IN_MB           UINT32_C(1500)
-# else
-#  define MM_RAM_MAX_IN_MB           UINT32_C(3584)
-# endif
+# define MM_RAM_MAX_IN_MB           UINT32_C(3584)
 #endif
 /** The default size of the below 4GB RAM hole. */
 #define MM_RAM_HOLE_SIZE_DEFAULT    (512U * _1M)
