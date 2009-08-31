@@ -637,6 +637,20 @@ VMMR3DECL(int) HWACCMR3InitFinalizeR0(PVM pVM)
         return VINF_SUCCESS;
     }
 
+    if (pVM->hwaccm.s.vmx.fSupported)
+    {
+        rc = SUPR3QueryVTxSupported();
+        if (RT_FAILURE(rc))
+        {
+#ifdef RT_OS_LINUX
+            LogRel(("HWACCM: The host kernel does not support VT-x -- Linux 2.6.13 or newer required!\n"));
+#else
+            LogRel(("HWACCM: The host kernel does not support VT-x!\n"));
+#endif
+            return VINF_SUCCESS;
+        }
+    }
+
     if (!pVM->hwaccm.s.fAllowed)
         return VINF_SUCCESS;    /* nothing to do */
 

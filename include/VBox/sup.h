@@ -925,6 +925,15 @@ SUPR3DECL(int) SUPR3HardenedLdrLoad(const char *pszFilename, PRTLDRMOD phLdrMod)
  */
 SUPR3DECL(int) SUPR3HardenedLdrLoadAppPriv(const char *pszFilename, PRTLDRMOD phLdrMod);
 
+
+/**
+ * Check if the host kernel can run in VMX root mode. 
+ *    
+ * @returns VINF_SUCCESS if supported, error code indicating why if not. 
+ */
+SUPR3DECL(int) SUPR3QueryVTxSupported(void);
+
+
 /** @} */
 #endif /* IN_RING3 */
 
@@ -994,7 +1003,6 @@ SUPR0DECL(int) SUPR0GipUnmap(PSUPDRVSESSION pSession);
 SUPR0DECL(int) SUPR0Printf(const char *pszFormat, ...);
 SUPR0DECL(SUPPAGINGMODE) SUPR0GetPagingMode(void);
 SUPR0DECL(int) SUPR0EnableVTx(bool fEnable);
-SUPR0DECL(int) SUPR0QueryVTxSupport(void);
 
 /** @name Absolute symbols
  * Take the address of these, don't try call them.
