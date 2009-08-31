@@ -781,6 +781,8 @@ BOOL context_set_current(struct wined3d_context *ctx)
         if (!pwglMakeCurrent(NULL, NULL))
         {
             ERR("Failed to clear current GL context.\n");
+            /*In case of failure, wglMakeCurrent makes current GLRC not current anyway.*/
+            TlsSetValue(wined3d_context_tls_idx, NULL);
             return FALSE;
         }
     }
