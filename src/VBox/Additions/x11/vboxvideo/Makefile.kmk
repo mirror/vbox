@@ -237,6 +237,27 @@ vboxvideo_drv_16_SOURCES  = \
 	vboxutils.c \
 	vboxvideo_dri.c
 
+#
+# vboxvideo_drv_17
+#
+DLLS += vboxvideo_drv_17
+vboxvideo_drv_17_TEMPLATE = VBOXGUESTR3XORGMOD
+vboxvideo_drv_17_CFLAGS := $(vboxvideo_drv_70_CFLAGS)
+vboxvideo_drv_17_DEFS := $(vboxvideo_drv_15_DEFS)
+vboxvideo_drv_17_INCS = \
+	$(VBOX_PATH_X11_ROOT)/glproto-1.4.9 \
+	$(VBOX_PATH_X11_ROOT)/libdrm-2.4.5 \
+	$(VBOX_PATH_X11_ROOT)/pixman-0.16.0 \
+	$(VBOX_PATH_X11_ROOT)/xextproto-7.1.1 \
+	$(VBOX_PATH_X11_ROOT)/xf86driproto-2.0.4 \
+	$(VBOX_PATH_X11_ROOT)/xorg-server-1.6.99-20090831 \
+	$(VBOX_PATH_X11_ROOT)/xorg-server-1.6.0-local
+vboxvideo_drv_17_SOURCES  = \
+	vboxvideo_13.c \
+	vboxutils.c \
+	vboxvideo_dri.c
+
+
 # Check the undefined symbols in the X.Org modules against lists of allowed
 # symbols.  Not very elegant, but it will catch problems early.
 ifdef VBOX_WITH_TESTCASES
@@ -295,6 +316,13 @@ $$(PATH_vboxvideo_drv_15)/tstvboxvideo15.run: $$(INSTARGET_vboxvideo_drv_15)
 $$(PATH_vboxvideo_drv_16)/tstvboxvideo16.run: $$(INSTARGET_vboxvideo_drv_16)
 	$(QUIET)/bin/sh $(PATH_ROOT)/src/bldprogs/checkUndefined.sh $(KBUILD_TARGET)  \
 	    $(INSTARGET_vboxvideo_drv_16) $(OUR_PATH_VBOXVIDEO)/undefined_13
+	$(QUIET)$(APPEND) -t "$@" "done"
+
+     TESTING  += $(PATH_vboxvideo_drv_17)/tstvboxvideo17.run
+     OTHERS += $(PATH_vboxvideo_drv_17)/tstvboxvideo17.run
+$$(PATH_vboxvideo_drv_17)/tstvboxvideo17.run: $$(INSTARGET_vboxvideo_drv_17)
+	$(QUIET)/bin/sh $(PATH_ROOT)/src/bldprogs/checkUndefined.sh $(KBUILD_TARGET)  \
+	    $(INSTARGET_vboxvideo_drv_17) $(OUR_PATH_VBOXVIDEO)/undefined_13
 	$(QUIET)$(APPEND) -t "$@" "done"
 
     endif # ! VBOX_ONLY_SDK
