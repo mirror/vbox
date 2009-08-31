@@ -1005,24 +1005,6 @@ bool VBOXCALL supdrvOSGetForcedAsyncTscMode(PSUPDRVDEVEXT pDevExt)
 
 
 /**
- * Check if the host kernel supports VT-x or not.
- *
- * Older Linux kernels clear the VMXE bit in the CR4 register (function
- * tlb_flush_all()) leading to a host kernel panic.
- *
- * @returns VBox error code
- */
-int VBOXCALL supdrvOSQueryVTxSupport(void)
-{
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 13)
-    return VINF_SUCCESS;
-#else
-    return VERR_SUPDRV_KERNEL_TOO_OLD_FOR_VTX;
-#endif
-}
-
-
-/**
  * Converts a supdrv error code to an linux error code.
  *
  * @returns corresponding linux error code.

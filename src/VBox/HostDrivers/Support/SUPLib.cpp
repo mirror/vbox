@@ -272,7 +272,7 @@ SUPR3DECL(int) SUPR3Init(PSUPDRVSESSION *ppSession)
         strcpy(CookieReq.u.In.szMagic, SUPCOOKIE_MAGIC);
         CookieReq.u.In.u32ReqVersion = SUPDRV_IOC_VERSION;
         const uint32_t MinVersion = (SUPDRV_IOC_VERSION & 0xffff0000) == 0x000f0000
-                                  ?  0x000f0001
+                                  ?  0x000f0000
                                   :  SUPDRV_IOC_VERSION & 0xffff0000;
         CookieReq.u.In.u32MinVersion = MinVersion;
         rc = suplibOsIOCtl(&g_supLibData, SUP_IOCTL_COOKIE, &CookieReq, SUP_IOCTL_COOKIE_SIZE);
@@ -412,7 +412,6 @@ static int supInitFake(PSUPDRVSESSION *ppSession)
         { "SUPR0MemFree",                           0xefef000a },
         { "SUPR0Printf",                            0xefef000b },
         { "SUPR0GetPagingMode",                     0xefef000c },
-        { "SUPR0QueryVTxSupport",                   0xefef000d },
         { "SUPR0EnableVTx",                         0xefef000e },
         { "RTMemAlloc",                             0xefef000f },
         { "RTMemAllocZ",                            0xefef0010 },
@@ -2056,3 +2055,12 @@ SUPR3DECL(int) SUPR3HardenedLdrLoadAppPriv(const char *pszFilename, PRTLDRMOD ph
     return rc;
 }
 
+
+SUPR3DECL(int) SUPR3QueryVTxSupported(void)
+{
+#ifdef RT_OS_LINUX
+    return suplibOsQueryVTxSupported();
+#else
+    return VINF_SUCCESS;
+#endif
+}

@@ -603,10 +603,6 @@ VMMR0DECL(int) HWACCMR0EnableAllCpus(PVM pVM)
             int     aRc[RTCPUSET_MAX_CPUS];
             RTCPUID idCpu = 0;
 
-            rc = SUPR0QueryVTxSupport();
-            if (RT_FAILURE(rc))
-                return rc;
-
             memset(aRc, 0, sizeof(aRc));
 
             /* Allocate one page per cpu for the global vt-x and amd-v pages */

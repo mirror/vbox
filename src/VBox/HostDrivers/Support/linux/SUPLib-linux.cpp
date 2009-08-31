@@ -55,6 +55,7 @@
 #include <iprt/assert.h>
 #include <VBox/types.h>
 #include <iprt/string.h>
+#include <iprt/system.h>
 #include <VBox/err.h>
 #include <VBox/param.h>
 #include "../SUPLibInternal.h"
@@ -253,3 +254,40 @@ int suplibOsPageFree(PSUPLIBDATA pThis, void *pvPages, size_t cPages)
 
 #endif /* !IN_SUP_HARDENED_R3 */
 
+
+/** Check if the host kernel supports VT-x or not.
+ *
+ * Older Linux kernels clear the VMXE bit in the CR4 register (function
+ * tlb_flush_all()) leading to a host kernel panic.
+ */
+int suplibOsQueryVTxSupported(void)
+{
+    char szBuf[256];
+    int rc = RTSystemQueryOSInfo(RTSYSOSINFO_RELEASE, szBuf, sizeof(szBuf));
+
+    if (RT_SUCCESS(rc))
+    {
+        char *pszNext;
+        uint32_t uA, uB, uC;
+
+        rc = RTStrToUInt32Ex(szBuf, &pszNext, 10, &uA);
+        if (   RT_SUCCESS(rc)
+                && *pszNext == '.')
+        {
+            rc = RTStrToUInt32Ex(pszNext+1, &pszNext, 10, &uB);
+            if (   RT_SUCCESS(rc)
+                    && *pszNext == '.')
+            {
+                rc = RTStrToUInt32Ex(pszNext+1, &pszNext, 10, &uC);
+                if (RT_SUCCESS(rc))
+                {
+                    uint32_t uLinuxVersion = (uA << 16) + (uB << 8) + uC;
+                    if (uLinuxVersion >= (2 << 16) + (6 << 8) + 32)
+                        return VINF_SUCCESS;
+                }
+            }
+        }
+    }
+
+    return VERR_SUPDRV_KERNEL_TOO_OLD_FOR_VTX;
+}

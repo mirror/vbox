@@ -631,7 +631,6 @@ void VBOXCALL   supdrvOSObjInitCreator(PSUPDRVOBJ pObj, PSUPDRVSESSION pSession)
 bool VBOXCALL   supdrvOSObjCanAccess(PSUPDRVOBJ pObj, PSUPDRVSESSION pSession, const char *pszObjName, int *prc);
 bool VBOXCALL   supdrvOSGetForcedAsyncTscMode(PSUPDRVDEVEXT pDevExt);
 int  VBOXCALL   supdrvOSEnableVTx(bool fEnabled);
-int  VBOXCALL   supdrvOSQueryVTxSupport(void);
 
 /*******************************************************************************
 *   Shared Functions                                                           *

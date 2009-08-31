@@ -351,7 +351,6 @@ static SUPFUNC g_aFunctions[] =
     { "SUPSemEventMultiWaitNoResume",           (void *)UNWIND_WRAP(SUPSemEventMultiWaitNoResume) },
     { "SUPR0GetPagingMode",                     (void *)UNWIND_WRAP(SUPR0GetPagingMode) },
     { "SUPR0EnableVTx",                         (void *)SUPR0EnableVTx },
-    { "SUPR0QueryVTxSupport",                   (void *)SUPR0QueryVTxSupport },
     { "RTMemAlloc",                             (void *)UNWIND_WRAP(RTMemAlloc) },
     { "RTMemAllocZ",                            (void *)UNWIND_WRAP(RTMemAllocZ) },
     { "RTMemFree",                              (void *)UNWIND_WRAP(RTMemFree) },
@@ -4789,21 +4788,6 @@ SUPR0DECL(int) SUPR0EnableVTx(bool fEnable)
     return supdrvOSEnableVTx(fEnable);
 #else
     return VERR_NOT_SUPPORTED;
-#endif
-}
-
-
-/**
- * Check if the host kernel can run in VMX root mode.
- *
- * @returns VINF_SUCCESS if supported, error code indicating why if not.
- */
-SUPR0DECL(int) SUPR0QueryVTxSupport(void)
-{
-#ifdef RT_OS_LINUX
-    return supdrvOSQueryVTxSupport();
-#else
-    return VINF_SUCCESS;
 #endif
 }
 
