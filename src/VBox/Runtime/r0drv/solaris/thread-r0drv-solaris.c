@@ -66,32 +66,7 @@ RTDECL(int) RTThreadSleep(unsigned cMillies)
     else
         cTicks = 0;
 
-#if 0
-    timeout = ddi_get_lbolt();
-    timeout += cTicks;
-
-    kcondvar_t cnd;
-    kmutex_t mtx;
-    mutex_init(&mtx, "IPRT Sleep Mutex", MUTEX_DRIVER, NULL);
-    cv_init(&cnd, "IPRT Sleep CV", CV_DRIVER, NULL);
-    mutex_enter(&mtx);
-    cv_timedwait (&cnd, &mtx, timeout);
-    mutex_exit(&mtx);
-    cv_destroy(&cnd);
-    mutex_destroy(&mtx);
-#endif
-
-#if 1
     delay(cTicks);
-#endif
-
-#if 0
-    /*   Hmm, no same effect as using delay() */
-    struct timespec t;
-    t.tv_sec = 0;
-    t.tv_nsec = cMillies * 1000000L;
-    nanosleep (&t, NULL);
-#endif
 
     return VINF_SUCCESS;
 }
@@ -143,10 +118,10 @@ RTDECL(bool) RTThreadPreemptIsPossible(void)
 RTDECL(void) RTThreadPreemptDisable(PRTTHREADPREEMPTSTATE pState)
 {
     AssertPtr(pState);
-    Assert(pState->u32Reserved == 0);
-    pState->u32Reserved = 42;
-
+    Assert(pState->uOldPil == UINT32_MAX);
     kpreempt_disable();
+    pState->uOldPil = splr(ipltospl(LOCK_LEVEL - 1));
+    Assert(pState->uOldPil != UINT32_MAX);    
     RT_ASSERT_PREEMPT_CPUID_DISABLE(pState);
 }
 
@@ -154,11 +129,11 @@ RTDECL(void) RTThreadPreemptDisable(PRTTHREADPREEMPTSTATE pState)
 RTDECL(void) RTThreadPreemptRestore(PRTTHREADPREEMPTSTATE pState)
 {
     AssertPtr(pState);
-    Assert(pState->u32Reserved == 42);
-    pState->u32Reserved = 0;
+    Assert(pState->uOldPil != UINT32_MAX);
     RT_ASSERT_PREEMPT_CPUID_RESTORE(pState);
-
+    splx(pState->uOldPil);    
     kpreempt_enable();
+    pState->uOldPil = UINT32_MAX;
 }
 
 
