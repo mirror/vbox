@@ -629,14 +629,15 @@ xpidl_TEMPLATE = XPCOMBLDPROG
 xpidl_DEFS = EXPORT_XPT_API
 ## @todo This assumes HOST == TARGET.
 xpidl_INST = $(INST_BIN)
-if "$(KBUILD_HOST).$(KBUILD_HOST_ARCH)" == "darwin.amd64" && "$(USER)" != "bird" # HACK ALERT!
- xpidl_BLD_TRG_ARCH = x86
- ## @todo kBuild ticket 84 workarounds:
- xpidl_DEFS.x86     = $(TEMPLATE_XPCOMBLDPROG_DEFS.x86)
- xpidl_CFLAGS.x86   = $(TEMPLATE_XPCOMBLDPROG_CFLAGS.x86)
- xpidl_CXXFLAGS.x86 = $(TEMPLATE_XPCOMBLDPROG_CXXFLAGS.x86)
- xpidl_LDFLAGS.x86  = $(TEMPLATE_XPCOMBLDPROG_LDFLAGS.x86)
-endif
+## Obsolete hack: MacPorts is 32-bit on 10.5 and 64-bit on 10.6. Set your KBUILD_HOST_ARCH env.vars. accordingly.
+#if "$(KBUILD_HOST).$(KBUILD_HOST_ARCH)" == "darwin.amd64" && defined(VBOX_MACOS_10_5_WORKAROUND)
+# xpidl_BLD_TRG_ARCH = x86
+# ## @todo kBuild ticket 84 workarounds:
+# xpidl_DEFS.x86     = $(TEMPLATE_XPCOMBLDPROG_DEFS.x86)
+# xpidl_CFLAGS.x86   = $(TEMPLATE_XPCOMBLDPROG_CFLAGS.x86)
+# xpidl_CXXFLAGS.x86 = $(TEMPLATE_XPCOMBLDPROG_CXXFLAGS.x86)
+# xpidl_LDFLAGS.x86  = $(TEMPLATE_XPCOMBLDPROG_LDFLAGS.x86)
+#endif
 xpidl_SOURCES = \
 	xpcom/typelib/xpidl/xpidl.c \
 	xpcom/typelib/xpidl/xpidl_idl.c \
