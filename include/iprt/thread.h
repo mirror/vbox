@@ -483,6 +483,10 @@ typedef struct RTTHREADPREEMPTSTATE
     /** Reserved, MBZ. */
     uint8_t         bReserved3;
 # define RTTHREADPREEMPTSTATE_INITIALIZER { NIL_RTCPUID, 255, 0, 0, 0 }
+#elif defined(RT_OS_SOLARIS)
+    /** The Old PIL. Don't touch! */
+    uint32_t        uOldPil;
+# define RTTHREADPREEMPTSTATE_INITIALIZER { NIL_RTCPUID, UINT32_MAX } 
 #else
     /** Reserved, MBZ. */
     uint32_t        u32Reserved;
