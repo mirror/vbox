@@ -1451,7 +1451,7 @@ void slirp_input(PNATState pData, const uint8_t *pkt, int pkt_len)
     m->m_len = pkt_len ;
     memcpy(m->m_data, pkt, pkt_len);
 
-#if 0
+#if 1
     if (pData->port_forwarding_activated == 0)
         activate_port_forwarding(pData, mtod(m, struct ethhdr *));
 #endif
@@ -1579,8 +1579,10 @@ static void activate_port_forwarding(PNATState pData, struct ethhdr *ethdr)
             continue; /*not right mac, @todo: it'd be better do the list port forwarding per mac */
         guest_addr = find_guest_ip(pData, ethdr->h_source);
 #else
+#if 0
         if (memcmp(client_ethaddr, ethdr->h_source, ETH_ALEN) != 0)
             continue;
+#endif
         guest_addr = find_guest_ip(pData, ethdr->h_source);
 #endif
         if (guest_addr == INADDR_ANY)
