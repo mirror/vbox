@@ -4531,7 +4531,7 @@ static DECLCALLBACK(int) e1kLoadDone(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle)
         STATUS &= ~STATUS_LU;
         Phy::setLinkStatus(&pState->phy, false);
         e1kRaiseInterrupt(pState, VERR_SEM_BUSY, ICR_LSC);
-        /* Restore the link back in half a second. */
+        /* Restore the link back in five seconds. */
         e1kArmTimer(pState, pState->pLUTimer, 5000000);
     }
     e1kMutexRelease(pState);
