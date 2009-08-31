@@ -32,6 +32,7 @@
 
 #ifdef VBOX_WITH_HGSMI
 #include <iprt/asm.h>
+#include <VBox/log.h>
 #include <VBox/HGSMI/HGSMI.h>
 #include <VBox/HGSMI/HGSMIChSetup.h>
 #endif
@@ -511,7 +512,8 @@ BOOL bInitSURF(PPDEV ppdev, BOOL bFirst)
         if (ppdev->bHGSMISupported)
         {
             /* Enable VBVA for this video mode. */
-            vboxVbvaEnable (ppdev);
+            ppdev->bHGSMISupported = vboxVbvaEnable (ppdev);
+            LogRel(("VBoxDisp[%d]: VBVA %senabled\n", ppdev->iDevice, ppdev->bHGSMISupported? "": "not "));
         }
 #endif /* VBOX_WITH_HGSMI */
     }
