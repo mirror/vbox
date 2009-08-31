@@ -156,7 +156,7 @@ void bt_sighandler (int sig, siginfo_t *info, void *secret) {
 
 #endif /* DEBUG && X11 && LINUX*/
 
-#if defined(RT_OS_DARWIN) && defined(RT_ARCH_AMD64)
+#if defined(RT_OS_DARWIN)
 # include <dlfcn.h>
 # include <sys/mman.h>
 # include <iprt/asm.h>
@@ -172,7 +172,7 @@ static void ShutUpAppKit(void)
     if (!rc)
         ASMAtomicWriteU32((volatile uint32_t *)addr, 0xccc3c031); /* xor eax, eax; ret; int3 */
 }
-#endif /* DARWIN + AMD64 */
+#endif /* DARWIN */
 
 static void QtMessageOutput (QtMsgType type, const char *msg)
 {
