@@ -1427,8 +1427,8 @@ DECLINLINE(unsigned) pgmPoolTrackFlushPTPaePae(PPGMPOOL pPool, PPGMPOOLPAGE pPag
             }
             cChanged++;
             /* Something was changed, so flush it. */
-            Log4(("pgmPoolTrackDerefPTPaePae: i=%d pte=%RX32 hint=%RX32\n",
-                  i, pShwPT->a[i].u & X86_PTE_PAE_PG_MASK, pGstPT->a[i].u & X86_PTE_PAE_PG_MASK));
+            Log4(("pgmPoolTrackDerefPTPaePae: i=%d pte=%RX64 hint=%RX64\n",
+                  i, pShwPT->a[i].u & X86_PTE_PAE_PG_MASK, pOldGstPT->a[i].u & X86_PTE_PAE_PG_MASK));
             pgmPoolTracDerefGCPhysHint(pPool, pPage, pShwPT->a[i].u & X86_PTE_PAE_PG_MASK, pOldGstPT->a[i].u & X86_PTE_PAE_PG_MASK);
             ASMAtomicWriteSize(&pShwPT->a[i].u, 0);
         }
