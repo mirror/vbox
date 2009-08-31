@@ -523,13 +523,17 @@ void stubSetDefaultConfigurationOptions(void)
         char name[1000];
         int i;
 
-        crGetProcName(name, 1000);
-        for (i=0; gsViewportHackApps[i]; ++i)
+        /* Apply viewport hack only if we're running under wine */
+        if (NULL!=GetModuleHandle("wined3d.dll"))
         {
-            if (!stricmp(name, gsViewportHackApps[i]))
+            crGetProcName(name, 1000);
+            for (i=0; gsViewportHackApps[i]; ++i)
             {
-                stub.viewportHack = 1;
-                break;
+                if (!stricmp(name, gsViewportHackApps[i]))
+                {
+                    stub.viewportHack = 1;
+                    break;
+                }
             }
         }
     }
