@@ -43,7 +43,7 @@
 #include <iprt/semaphore.h>
 #include <iprt/initterm.h>
 #include <iprt/process.h>
-#include <iprt/err.h>
+#include <VBox/err.h>
 #include <iprt/mem.h>
 #include <VBox/log.h>
 #include <iprt/mp.h>
@@ -1001,6 +1001,24 @@ bool VBOXCALL supdrvOSObjCanAccess(PSUPDRVOBJ pObj, PSUPDRVSESSION pSession, con
 bool VBOXCALL supdrvOSGetForcedAsyncTscMode(PSUPDRVDEVEXT pDevExt)
 {
     return force_async_tsc != 0;
+}
+
+
+/**
+ * Check if the host kernel supports VT-x or not.
+ *
+ * Older Linux kernels clear the VMXE bit in the CR4 register (function
+ * tlb_flush_all()) leading to a host kernel panic.
+ *
+ * @returns VBox error code
+ */
+int VBOXCALL supdrvOSQueryVTxSupport(void)
+{
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 13)
+    return VINF_SUCCESS;
+#else
+    return VERR_SUPDRV_KERNEL_TOO_OLD_FOR_VTX;
+#endif
 }
 
 

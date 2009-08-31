@@ -294,6 +294,12 @@ VMMR3DECL(int)   VMR3Create(uint32_t cCPUs, PFNVMATERROR pfnVMAtError, void *pvU
                     break;
 #endif
 
+                case VERR_SUPDRV_KERNEL_TOO_OLD_FOR_VTX:
+                    pszError = N_("The host Linux kernel is too old to support hardware acceleration. "
+                                  "Either upgrade your host kernel to Linux 2.6.13 or later or "
+                                  "disable hardware acceleration in the VM settings");
+                    break;
+
                 default:
                     pszError = N_("Unknown error creating VM");
                     break;
