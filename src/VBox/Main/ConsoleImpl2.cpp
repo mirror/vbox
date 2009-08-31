@@ -2831,56 +2831,57 @@ static void configSetProperty(VMMDev * const pVMMDev, const char *pszName,
                                        ComSafeArrayAsOutParam(flagsOut));
         AssertMsgReturn(SUCCEEDED(hrc), ("hrc=%#x\n", hrc),
                         VERR_GENERAL_FAILURE);
-        size_t cProps = namesOut.size();
+        size_t cProps = namesOut.size(), cAlloc = cProps + 1;
         if (   valuesOut.size() != cProps
             || timestampsOut.size() != cProps
             || flagsOut.size() != cProps
            )
             AssertFailedReturn(VERR_INVALID_PARAMETER);
 
-        try
+        char **pacszNames, **pacszValues, **pacszFlags;
+        char szEmpty[] = "";
+        ULONG64 *pau64Timestamps;
+        pacszNames = (char **)RTMemTmpAllocZ(sizeof(void *) * cAlloc);
+        pacszValues = (char **)RTMemTmpAllocZ(sizeof(void *) * cAlloc);
+        pau64Timestamps = (ULONG64 *)RTMemTmpAllocZ(sizeof(ULONG64) * cAlloc);
+        pacszFlags = (char **)RTMemTmpAllocZ(sizeof(void *) * cAlloc);
+        if (!(pacszNames && pacszValues && pau64Timestamps && pacszFlags))
+            rc = VERR_NO_MEMORY;
+        for (unsigned i = 0; RT_SUCCESS(rc) && i < cProps; ++i)
         {
-            std::vector<Utf8Str> utf8Names, utf8Values, utf8Flags;
-            std::vector<const char *> names, values, flags;
-            std::vector<ULONG64> timestamps;
-            for (unsigned i = 0; i < cProps && RT_SUCCESS(rc); ++i)
+            AssertPtrReturn(namesOut[i], VERR_INVALID_PARAMETER);
+            rc = RTUtf16ToUtf8(namesOut[i], &pacszNames[i]);
+            if (RT_FAILURE(rc))
+                break;
+            if (valuesOut[i])
+                rc = RTUtf16ToUtf8(valuesOut[i], &pacszValues[i]);
+            else
+                pacszValues[i] = szEmpty;
+            if (RT_FAILURE(rc))
+                break;
+            pau64Timestamps[i] = timestampsOut[i];
+            if (flagsOut[i])
+                rc = RTUtf16ToUtf8(flagsOut[i], &pacszFlags[i]);
+            else
+                pacszFlags[i] = szEmpty;
+        }
+        if (RT_SUCCESS(rc))
+            configSetProperties(pConsole->mVMMDev, (void *)pacszNames,
+                                (void *)pacszValues, (void *)pau64Timestamps,
+                                (void *)pacszFlags);
+        if (pacszNames && pacszValues && pau64Timestamps && pacszFlags)
+            for (unsigned i = 0; i < cProps; ++i)
             {
-                AssertPtrReturn(namesOut[i], VERR_INVALID_PARAMETER);
-                utf8Names.push_back(Bstr(namesOut[i]));
-                utf8Values.push_back(Bstr(valuesOut[i]));
-                timestamps.push_back(timestampsOut[i]);
-                utf8Flags.push_back(Bstr(flagsOut[i]));
-            }
-            for (unsigned i = 0; i < cProps && RT_SUCCESS(rc); ++i)
-            {
-                names.push_back(utf8Names[i].c_str());
-                AssertPtrReturn(names[i], VERR_NO_MEMORY);
+                RTStrFree(pacszNames[i]);
                 if (valuesOut[i])
-                    values.push_back(utf8Values[i].c_str());
-                else
-                    values.push_back("");
-                AssertPtrReturn(values[i], VERR_NO_MEMORY);
+                    RTStrFree(pacszValues[i]);
                 if (flagsOut[i])
-                    flags.push_back(utf8Flags[i].c_str());
-                else
-                    flags.push_back("");
-                AssertPtrReturn(flags[i], VERR_NO_MEMORY);
+                    RTStrFree(pacszFlags[i]);
             }
-            names.push_back(NULL);
-            values.push_back(NULL);
-            timestamps.push_back(0);
-            flags.push_back(NULL);
-
-            configSetProperties(pConsole->mVMMDev,
-                                (void *)&names.front(),
-                                (void *)&values.front(),
-                                (void *)&timestamps.front(),
-                                (void *)&flags.front());
-        }
-        catch(std::bad_alloc & /*e*/)
-        {
-            return VERR_NO_MEMORY;
-        }
+        RTMemTmpFree(pacszNames);
+        RTMemTmpFree(pacszValues);
+        RTMemTmpFree(pau64Timestamps);
+        RTMemTmpFree(pacszFlags);
 
         /* Set the VBox version string as a guest property */
         configSetProperty(pConsole->mVMMDev, "/VirtualBox/HostInfo/VBoxVer",
