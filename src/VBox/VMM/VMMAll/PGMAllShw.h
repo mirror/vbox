@@ -366,7 +366,7 @@ PGM_SHW_DECL(int, ModifyPage)(PVMCPU pVCpu, RTGCUINTPTR GCPtr, size_t cb, uint64
 # if PGM_SHW_TYPE == PGM_TYPE_EPT
                 HWACCMInvalidatePhysPage(pVM, (RTGCPHYS)GCPtr);
 # else
-                PGM_INVL_ALL_VCPU_PG(pVM, GCPtr);
+                PGM_INVL_PG_ALL_VCPU(pVM, GCPtr);
 # endif
             }
 
