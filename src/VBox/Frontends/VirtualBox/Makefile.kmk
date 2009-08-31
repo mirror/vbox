@@ -241,6 +241,10 @@ VirtualBox_LDFLAGS.darwin.x86 = -framework QuickTime
 ifdef VBOX_WITH_ICHAT_THEATER
  VirtualBox_LDFLAGS.darwin += -framework InstantMessage -framework QuartzCore
 endif
+if defined(VBOX_WITH_VIDEOHWACCEL) || defined(VBOX_GUI_USE_QGL) 
+ VirtualBox_LDFLAGS.darwin += -framework OpenGL
+endif
+
 VirtualBox_LIBS.win       = \
 	$(PATH_SDK_WINPSDK_LIB)/Htmlhelp.Lib \
 	$(PATH_SDK_DXSDK_LIB)/ddraw.lib \
