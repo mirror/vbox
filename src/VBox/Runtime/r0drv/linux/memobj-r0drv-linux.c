@@ -1251,7 +1251,7 @@ int rtR0MemObjNativeMapUser(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ pMemToMap, RT
 #endif
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 0) && defined(RT_ARCH_X86)
                     /* remap_page_range() limitation on x86 */
-                    AssertBreakStmt(u64Phys < _4G, rc = VERR_NO_MEMORY);
+                    AssertBreakStmt(Phys < _4G, rc = VERR_NO_MEMORY);
 #endif
 
 #if   defined(VBOX_USE_INSERT_PAGE) && LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 22)
@@ -1260,15 +1260,15 @@ int rtR0MemObjNativeMapUser(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ pMemToMap, RT
 #elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 11)
                     rc = remap_pfn_range(vma, ulAddrCur, page_to_pfn(pMemLnxToMap->apPages[iPage]), PAGE_SIZE, fPg);
 #elif defined(VBOX_USE_PAE_HACK)
-                    rc = remap_page_range(vma, ulAddrCur, u64Phys, PAGE_SIZE, fPg);
+                    rc = remap_page_range(vma, ulAddrCur, DummyPhys, PAGE_SIZE, fPg);
                     if (rc)
                     {
                         rc = VERR_NO_MEMORY;
                         break;
                     }
-                    rc = fixPte(pTask->mm, ulAddrCur, u64Phys);
+                    rc = fixPte(pTask->mm, ulAddrCur, Phys);
 #else /* 2.4 */
-                    rc = remap_page_range(ulAddrCur, u64Phys, PAGE_SIZE, fPg);
+                    rc = remap_page_range(ulAddrCur, Phys, PAGE_SIZE, fPg);
 #endif
                     if (rc)
                     {
