@@ -78,13 +78,13 @@ class ATL_NO_VTABLE VirtualBox :
 
 public:
 
-    typedef std::list <ComPtr<IVirtualBoxCallback> > CallbackList;
-    typedef std::vector <ComPtr<IVirtualBoxCallback> > CallbackVector;
+    typedef std::list< ComPtr<IVirtualBoxCallback> > CallbackList;
+    typedef std::vector< ComPtr<IVirtualBoxCallback> > CallbackVector;
 
-    typedef std::vector <ComObjPtr<SessionMachine> > SessionMachineVector;
-    typedef std::vector <ComObjPtr<Machine> > MachineVector;
+    typedef std::vector< ComObjPtr<SessionMachine> > SessionMachineVector;
+    typedef std::vector< ComObjPtr<Machine> > MachineVector;
 
-    typedef std::vector <ComPtr<IInternalSessionControl> > InternalControlVector;
+    typedef std::vector< ComPtr<IInternalSessionControl> > InternalControlVector;
 
     class CallbackEvent;
     friend class CallbackEvent;
@@ -106,7 +106,7 @@ public:
 
     NS_DECL_ISUPPORTS
 
-    /* to postpone generation of the default ctor/dtor */
+    // to postpone generation of the default ctor/dtor
     VirtualBox();
     ~VirtualBox();
 
@@ -388,31 +388,29 @@ private:
 
     Data mData;
 
+#if defined(RT_OS_WINDOWS)
+    #define UPDATEREQARG NULL
+    #define UPDATEREQTYPE HANDLE
+#elif defined(RT_OS_OS2)
+    #define UPDATEREQARG NIL_RTSEMEVENT
+    #define UPDATEREQTYPE RTSEMEVENT
+#elif defined(VBOX_WITH_SYS_V_IPC_SESSION_WATCHER)
+    #define UPDATEREQARG
+    #define UPDATEREQTYPE RTSEMEVENT
+#else
+# error "Port me!"
+#endif
+
     /** Client watcher thread data structure */
     struct ClientWatcherData
     {
         ClientWatcherData()
-#if defined(RT_OS_WINDOWS)
-            : mUpdateReq (NULL)
-#elif defined(RT_OS_OS2)
-            : mUpdateReq (NIL_RTSEMEVENT)
-#elif defined(VBOX_WITH_SYS_V_IPC_SESSION_WATCHER)
-            : mUpdateReq (NIL_RTSEMEVENT)
-#else
-# error "Port me!"
-#endif
-            , mThread (NIL_RTTHREAD) {}
+            : mUpdateReq(UPDATEREQARG),
+              mThread(NIL_RTTHREAD)
+        {}
 
         // const objects not requiring locking
-#if defined(RT_OS_WINDOWS)
-        const HANDLE mUpdateReq;
-#elif defined(RT_OS_OS2)
-        const RTSEMEVENT mUpdateReq;
-#elif defined(VBOX_WITH_SYS_V_IPC_SESSION_WATCHER)
-        const RTSEMEVENT mUpdateReq;
-#else
-# error "Port me!"
-#endif
+        const UPDATEREQTYPE mUpdateReq;
         const RTTHREAD mThread;
 
         typedef std::list <RTPROCESS> ProcessList;

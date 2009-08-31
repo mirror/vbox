@@ -90,7 +90,7 @@ public:
 
     // public methods only for internal purposes
 
-    const Bstr &stateFilePath() const;
+    const Bstr& stateFilePath() const;
 
     ComObjPtr<Snapshot> parent() const
     {

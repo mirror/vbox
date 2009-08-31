@@ -5893,12 +5893,12 @@ HRESULT Machine::saveHardware(settings::Hardware &data)
         }
 
         data.strNotificationPatterns = mHWData->mGuestPropertyNotificationPatterns;
+#endif /* VBOX_WITH_GUEST_PROPS defined */
     }
     catch(std::bad_alloc &)
     {
         return E_OUTOFMEMORY;
     }
-#endif /* VBOX_WITH_GUEST_PROPS defined */
 
     AssertComRC(rc);
     return rc;
@@ -6113,10 +6113,10 @@ HRESULT Machine::createImplicitDiffs (const Bstr &aFolder,
                 ComObjPtr<HardDiskAttachment> hda = *it;
                 ComObjPtr<HardDisk> hd = hda->hardDisk();
 
-                rc = hd->LockRead (NULL);
+                rc = hd->LockRead(NULL);
                 CheckComRCThrowRC(rc);
 
-                lockedMedia.push_back (hd);
+                lockedMedia.push_back(hd);
             }
         }
 
@@ -6130,8 +6130,9 @@ HRESULT Machine::createImplicitDiffs (const Bstr &aFolder,
         /* go through remembered attachments and create diffs for normal hard
          * disks and attach them */
 
-        for (HDData::AttachmentList::const_iterator
-             it = atts.begin(); it != atts.end(); ++ it)
+        for (HDData::AttachmentList::const_iterator it = atts.begin();
+             it != atts.end();
+             ++it)
         {
             ComObjPtr<HardDiskAttachment> hda = *it;
             ComObjPtr<HardDisk> hd = hda->hardDisk();
@@ -6140,20 +6141,18 @@ HRESULT Machine::createImplicitDiffs (const Bstr &aFolder,
             if (hd->type() != HardDiskType_Normal)
             {
                 /* copy the attachment as is */
-
-                Assert (hd->type() == HardDiskType_Writethrough);
+                Assert(hd->type() == HardDiskType_Writethrough);
 
                 rc = aProgress->setNextOperation(BstrFmt(tr("Skipping writethrough hard disk '%s'"),
                                                          hd->root()->name().raw()),
                                                  1);        // weight
                 CheckComRCThrowRC(rc);
 
-                mHDData->mAttachments.push_back (hda);
+                mHDData->mAttachments.push_back(hda);
                 continue;
             }
 
             /* need a diff */
-
             rc = aProgress->setNextOperation(BstrFmt(tr("Creating differencing hard disk for '%s'"),
                                                      hd->root()->name().raw()),
                                              1);        // weight
@@ -6170,24 +6169,30 @@ HRESULT Machine::createImplicitDiffs (const Bstr &aFolder,
             /* leave the lock before the potentially lengthy operation */
             alock.leave();
 
-            rc = hd->createDiffStorageAndWait (diff, HardDiskVariant_Standard,
-                                               &aProgress);
+            LogFlowThisFunc(("Calling createDiffStorageAndWait() on hard disk '%s'\n", hd->root()->name().raw()));
+
+            rc = hd->createDiffStorageAndWait(diff,
+                                              HardDiskVariant_Standard,
+                                              &aProgress);
 
             alock.enter();
 
             CheckComRCThrowRC(rc);
 
-            rc = diff->attachTo (mData->mUuid);
-            AssertComRCThrowRC (rc);
+            rc = diff->attachTo(mData->mUuid);
+            AssertComRCThrowRC(rc);
 
             /* add a new attachment */
             ComObjPtr<HardDiskAttachment> attachment;
             attachment.createObject();
-            rc = attachment->init (diff, hda->controller(), hda->port(),
-                                   hda->device(), true /* aImplicit */);
+            rc = attachment->init(diff,
+                                  hda->controller(),
+                                  hda->port(),
+                                  hda->device(),
+                                  true /* aImplicit */);
             CheckComRCThrowRC(rc);
 
-            mHDData->mAttachments.push_back (attachment);
+            mHDData->mAttachments.push_back(attachment);
         }
     }
     catch (HRESULT aRC) { rc = aRC; }
@@ -6198,9 +6203,10 @@ HRESULT Machine::createImplicitDiffs (const Bstr &aFolder,
         ErrorInfoKeeper eik;
 
         for (LockedMedia::const_iterator it = lockedMedia.begin();
-             it != lockedMedia.end(); ++ it)
+             it != lockedMedia.end();
+             ++it)
         {
-            HRESULT rc2 = (*it)->UnlockRead (NULL);
+            HRESULT rc2 = (*it)->UnlockRead(NULL);
             AssertComRC(rc2);
         }
     }
@@ -7012,45 +7018,61 @@ struct SessionMachine::Task
 };
 
 /** Take snapshot task */
-struct SessionMachine::TakeSnapshotTask : public SessionMachine::Task
+struct SessionMachine::TakeSnapshotTask
+    : public SessionMachine::Task
 {
-    TakeSnapshotTask (SessionMachine *m)
-        : Task (m, NULL) {}
+    TakeSnapshotTask(SessionMachine *m)
+        : Task(m, NULL)
+    {}
 
-    void handler() { machine->takeSnapshotHandler (*this); }
+    void handler()
+    {
+        machine->takeSnapshotHandler(*this);
+    }
 };
 
 /** Discard snapshot task */
-struct SessionMachine::DiscardSnapshotTask : public SessionMachine::Task
+struct SessionMachine::DiscardSnapshotTask
+    : public SessionMachine::Task
 {
-    DiscardSnapshotTask (SessionMachine *m, Progress *p, Snapshot *s)
-        : Task (m, p)
-        , snapshot (s) {}
+    DiscardSnapshotTask(SessionMachine *m, Progress *p, Snapshot *s)
+        : Task (m, p),
+          snapshot (s)
+    {}
 
     DiscardSnapshotTask (const Task &task, Snapshot *s)
         : Task (task)
-        , snapshot (s) {}
+        , snapshot (s)
+    {}
 
-    void handler() { machine->discardSnapshotHandler (*this); }
+    void handler()
+    {
+        machine->discardSnapshotHandler(*this);
+    }
 
     ComObjPtr<Snapshot> snapshot;
 };
 
 /** Discard current state task */
-struct SessionMachine::DiscardCurrentStateTask : public SessionMachine::Task
+struct SessionMachine::DiscardCurrentStateTask
+    : public SessionMachine::Task
 {
-    DiscardCurrentStateTask (SessionMachine *m, Progress *p,
-                             bool discardCurSnapshot)
-        : Task (m, p), discardCurrentSnapshot (discardCurSnapshot) {}
+    DiscardCurrentStateTask(SessionMachine *m, Progress *p, bool discardCurSnapshot)
+        : Task(m, p),
+          discardCurrentSnapshot(discardCurSnapshot)
+    {}
 
-    void handler() { machine->discardCurrentStateHandler (*this); }
+    void handler()
+    {
+        machine->discardCurrentStateHandler(*this);
+    }
 
     const bool discardCurrentSnapshot;
 };
 
 ////////////////////////////////////////////////////////////////////////////////
 
-DEFINE_EMPTY_CTOR_DTOR (SessionMachine)
+DEFINE_EMPTY_CTOR_DTOR(SessionMachine)
 
 HRESULT SessionMachine::FinalConstruct()
 {
@@ -7873,10 +7895,12 @@ STDMETHODIMP SessionMachine::AdoptSavedState (IN_BSTR aSavedStateFile)
 /**
  *  @note Locks mParent + this object for writing.
  */
-STDMETHODIMP SessionMachine::BeginTakingSnapshot (
-    IConsole *aInitiator, IN_BSTR aName, IN_BSTR aDescription,
-    IProgress *aProgress, BSTR *aStateFilePath,
-    IProgress **aServerProgress)
+STDMETHODIMP SessionMachine::BeginTakingSnapshot(IConsole *aInitiator,
+                                                 IN_BSTR aName,
+                                                 IN_BSTR aDescription,
+                                                 IProgress *aProgress,
+                                                 BSTR *aStateFilePath,
+                                                 IProgress **aServerProgress)
 {
     LogFlowThisFuncEnter();
 
@@ -7891,17 +7915,18 @@ STDMETHODIMP SessionMachine::BeginTakingSnapshot (
     /* saveSettings() needs mParent lock */
     AutoMultiWriteLock2 alock (mParent, this);
 
-    AssertReturn((!Global::IsOnlineOrTransient (mData->mMachineState) ||
-                   mData->mMachineState == MachineState_Paused) &&
-                  mSnapshotData.mLastState == MachineState_Null &&
-                  mSnapshotData.mSnapshot.isNull() &&
-                  mSnapshotData.mServerProgress.isNull() &&
-                  mSnapshotData.mCombinedProgress.isNull(),
-                  E_FAIL);
+    AssertReturn(    (    !Global::IsOnlineOrTransient (mData->mMachineState)
+                       || mData->mMachineState == MachineState_Paused
+                     )
+                  && mSnapshotData.mLastState == MachineState_Null
+                  && mSnapshotData.mSnapshot.isNull()
+                  && mSnapshotData.mServerProgress.isNull()
+                  && mSnapshotData.mCombinedProgress.isNull(), E_FAIL);
 
-    bool takingSnapshotOnline = mData->mMachineState == MachineState_Paused;
+    bool fTakingSnapshotOnline = (mData->mMachineState == MachineState_Paused);
 
-    if (!takingSnapshotOnline && mData->mMachineState != MachineState_Saved)
+    if (    !fTakingSnapshotOnline
+         && mData->mMachineState != MachineState_Saved)
     {
         /* save all current settings to ensure current changes are committed and
          * hard disks are fixed up */
@@ -7928,7 +7953,7 @@ STDMETHODIMP SessionMachine::BeginTakingSnapshot (
     }
 #endif
 
-    AssertReturn(aProgress || !takingSnapshotOnline, E_FAIL);
+    AssertReturn(aProgress || !fTakingSnapshotOnline, E_FAIL);
 
     /* create an ID for the snapshot */
     Guid snapshotId;
@@ -7936,11 +7961,12 @@ STDMETHODIMP SessionMachine::BeginTakingSnapshot (
 
     Bstr stateFilePath;
     /* stateFilePath is null when the machine is not online nor saved */
-    if (takingSnapshotOnline || mData->mMachineState == MachineState_Saved)
-        stateFilePath = Utf8StrFmt ("%ls%c{%RTuuid}.sav",
-                                    mUserData->mSnapshotFolderFull.raw(),
-                                    RTPATH_DELIMITER,
-                                    snapshotId.ptr());
+    if (    fTakingSnapshotOnline
+         || mData->mMachineState == MachineState_Saved)
+        stateFilePath = BstrFmt("%ls%c{%RTuuid}.sav",
+                                mUserData->mSnapshotFolderFull.raw(),
+                                RTPATH_DELIMITER,
+                                snapshotId.ptr());
 
     /* ensure the directory for the saved state file exists */
     if (stateFilePath)
@@ -7952,12 +7978,12 @@ STDMETHODIMP SessionMachine::BeginTakingSnapshot (
     /* create a snapshot machine object */
     ComObjPtr<SnapshotMachine> snapshotMachine;
     snapshotMachine.createObject();
-    HRESULT rc = snapshotMachine->init (this, snapshotId, stateFilePath);
+    HRESULT rc = snapshotMachine->init(this, snapshotId, stateFilePath);
     AssertComRCReturn (rc, rc);
 
-    Bstr progressDesc = BstrFmt (tr ("Taking snapshot of virtual machine '%ls'"),
-                                 mUserData->mName.raw());
-    Bstr firstOpDesc = Bstr (tr ("Preparing to take snapshot"));
+    Bstr progressDesc = BstrFmt(tr("Taking snapshot of virtual machine '%ls'"),
+                                mUserData->mName.raw());
+    Bstr firstOpDesc = Bstr(tr("Preparing to take snapshot"));
 
     /* create a server-side progress object (it will be descriptionless when we
      * need to combine it with the VM-side progress, i.e. when we're taking a
@@ -7970,17 +7996,17 @@ STDMETHODIMP SessionMachine::BeginTakingSnapshot (
         ULONG opCount = 1 + (ULONG)mHDData->mAttachments.size();
         if (mData->mMachineState == MachineState_Saved)
             opCount ++;
-        if (takingSnapshotOnline)
-            rc = serverProgress->init (FALSE, opCount, firstOpDesc);
+        if (fTakingSnapshotOnline)
+            rc = serverProgress->init(FALSE, opCount, firstOpDesc);
         else
-            rc = serverProgress->init (mParent, aInitiator, progressDesc, FALSE,
-                                       opCount, firstOpDesc);
+            rc = serverProgress->init(mParent, aInitiator, progressDesc, FALSE,
+                                      opCount, firstOpDesc);
         AssertComRCReturn (rc, rc);
     }
 
     /* create a combined server-side progress object when necessary */
     ComObjPtr<CombinedProgress> combinedProgress;
-    if (takingSnapshotOnline)
+    if (fTakingSnapshotOnline)
     {
         combinedProgress.createObject();
         rc = combinedProgress->init (mParent, aInitiator, progressDesc,
@@ -8003,10 +8029,14 @@ STDMETHODIMP SessionMachine::BeginTakingSnapshot (
 
     /* create and start the task on a separate thread (note that it will not
      * start working until we release alock) */
-    TakeSnapshotTask *task = new TakeSnapshotTask (this);
-    int vrc = RTThreadCreate (NULL, taskHandler,
-                              (void *) task,
-                              0, RTTHREADTYPE_MAIN_WORKER, 0, "TakeSnapshot");
+    TakeSnapshotTask *task = new TakeSnapshotTask(this);
+    int vrc = RTThreadCreate(NULL,
+                             taskHandler,
+                             (void*)task,
+                             0,
+                             RTTHREADTYPE_MAIN_WORKER,
+                             0,
+                             "TakeSnapshot");
     if (RT_FAILURE(vrc))
     {
         snapshot->uninit();
@@ -8021,9 +8051,9 @@ STDMETHODIMP SessionMachine::BeginTakingSnapshot (
     mSnapshotData.mCombinedProgress = combinedProgress;
 
     /* set the state to Saving (this is expected by Console::TakeSnapshot()) */
-    setMachineState (MachineState_Saving);
+    setMachineState(MachineState_Saving);
 
-    if (takingSnapshotOnline)
+    if (fTakingSnapshotOnline)
         stateFilePath.cloneTo(aStateFilePath);
     else
         *aStateFilePath = NULL;
@@ -8037,7 +8067,7 @@ STDMETHODIMP SessionMachine::BeginTakingSnapshot (
 /**
  * @note Locks this object for writing.
  */
-STDMETHODIMP SessionMachine::EndTakingSnapshot (BOOL aSuccess)
+STDMETHODIMP SessionMachine::EndTakingSnapshot(BOOL aSuccess)
 {
     LogFlowThisFunc(("\n"));
 
@@ -8057,9 +8087,9 @@ STDMETHODIMP SessionMachine::EndTakingSnapshot (BOOL aSuccess)
     /* set the state to the state we had when BeginTakingSnapshot() was called
      * (this is expected by Console::TakeSnapshot() and
      * Console::saveStateThread()) */
-    setMachineState (mSnapshotData.mLastState);
+    setMachineState(mSnapshotData.mLastState);
 
-    return endTakingSnapshot (aSuccess);
+    return endTakingSnapshot(aSuccess);
 }
 
 /**
@@ -8929,7 +8959,9 @@ HRESULT SessionMachine::endSavingState (BOOL aSuccess)
 
 /**
  * Helper method to finalize taking a snapshot. Gets called to finalize the
- * "take snapshot" procedure.
+ * "take snapshot" procedure, either from the public SessionMachine::EndTakingSnapshot()
+ * if taking the snapshot failed/was aborted or from the takeSnapshotHandler thread
+ * when taking the snapshot succeeded.
  *
  * Expected to be called after completing *all* the tasks related to taking the
  * snapshot, either successfully or unsuccessfilly.
@@ -8938,7 +8970,7 @@ HRESULT SessionMachine::endSavingState (BOOL aSuccess)
  *
  * @note Locks this objects for writing.
  */
-HRESULT SessionMachine::endTakingSnapshot (BOOL aSuccess)
+HRESULT SessionMachine::endTakingSnapshot(BOOL aSuccess)
 {
     LogFlowThisFuncEnter();
 
@@ -8955,7 +8987,7 @@ HRESULT SessionMachine::endTakingSnapshot (BOOL aSuccess)
     if (aSuccess)
     {
         /* the server progress must be completed on success */
-        Assert (mSnapshotData.mServerProgress->completed());
+        Assert(mSnapshotData.mServerProgress->completed());
 
         mData->mCurrentSnapshot = mSnapshotData.mSnapshot;
 
@@ -8963,7 +8995,7 @@ HRESULT SessionMachine::endTakingSnapshot (BOOL aSuccess)
         if (!mData->mFirstSnapshot)
             mData->mFirstSnapshot = mData->mCurrentSnapshot;
 
-        if (!Global::IsOnline (mSnapshotData.mLastState))
+        if (!Global::IsOnline(mSnapshotData.mLastState))
             /* the machine was powered off or saved when taking a snapshot, so
              * reset the mCurrentStateModified flag */
             mData->mCurrentStateModified = FALSE;
@@ -9017,8 +9049,9 @@ HRESULT SessionMachine::endTakingSnapshot (BOOL aSuccess)
 }
 
 /**
- * Take snapshot task handler. Must be called only by
- * TakeSnapshotTask::handler()!
+ * Take snapshot task handler.
+ * This gets called from TakeSnapshotTask::handler(), which got created by
+ * SnapshotMachine::BeginTakingSnapshot().
  *
  * The sole purpose of this task is to asynchronously create differencing VDIs
  * and copy the saved state file (when necessary). The VM process will wait for
@@ -9026,7 +9059,7 @@ HRESULT SessionMachine::endTakingSnapshot (BOOL aSuccess)
  *
  * @note Locks this object for writing.
  */
-void SessionMachine::takeSnapshotHandler (TakeSnapshotTask & /* aTask */)
+void SessionMachine::takeSnapshotHandler(TakeSnapshotTask & /* aTask */)
 {
     LogFlowThisFuncEnter();
 
@@ -9045,19 +9078,20 @@ void SessionMachine::takeSnapshotHandler (TakeSnapshotTask & /* aTask */)
 
     HRESULT rc = S_OK;
 
-    bool online = Global::IsOnline (mSnapshotData.mLastState);
+    bool online = Global::IsOnline(mSnapshotData.mLastState);
 
     LogFlowThisFunc(("Creating differencing hard disks (online=%d)...\n",
-                      online));
+                     online));
 
     mHDData.backup();
 
     /* create new differencing hard disks and attach them to this machine */
-    rc = createImplicitDiffs (mUserData->mSnapshotFolderFull,
-                              mSnapshotData.mServerProgress,
-                              online);
+    rc = createImplicitDiffs(mUserData->mSnapshotFolderFull,
+                             mSnapshotData.mServerProgress,
+                             online);
 
-    if (SUCCEEDED(rc) && mSnapshotData.mLastState == MachineState_Saved)
+    if (    SUCCEEDED(rc)
+         && mSnapshotData.mLastState == MachineState_Saved)
     {
         Utf8Str stateFrom = mSSData->mStateFilePath;
         Utf8Str stateTo = mSnapshotData.mSnapshot->stateFilePath();
@@ -9070,7 +9104,6 @@ void SessionMachine::takeSnapshotHandler (TakeSnapshotTask & /* aTask */)
 
         /* Leave the lock before a lengthy operation (mMachineState is
          * MachineState_Saving here) */
-
         alock.leave();
 
         /* copy the state file */
@@ -9100,14 +9133,14 @@ void SessionMachine::takeSnapshotHandler (TakeSnapshotTask & /* aTask */)
         {
             ErrorInfoKeeper eik;
 
-            setMachineState (mSnapshotData.mLastState);
+            setMachineState(mSnapshotData.mLastState);
             updateMachineStateOnClient();
         }
 
         /* finalize the progress after setting the state, for consistency */
-        mSnapshotData.mServerProgress->notifyComplete (rc);
+        mSnapshotData.mServerProgress->notifyComplete(rc);
 
-        endTakingSnapshot (SUCCEEDED(rc));
+        endTakingSnapshot(SUCCEEDED(rc));
     }
     else
     {
@@ -9372,7 +9405,7 @@ void SessionMachine::discardSnapshotHandler(DiscardSnapshotTask &aTask)
     }
     catch (HRESULT aRC) { rc = aRC; }
 
-    if FAILED(rc)
+    if (FAILED(rc))
     {
         HRESULT rc2 = S_OK;
 
