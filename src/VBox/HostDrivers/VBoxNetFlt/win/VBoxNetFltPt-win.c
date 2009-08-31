@@ -798,7 +798,7 @@ vboxNetFltWinPtSendComplete(
  */
 static bool vboxNetFltWinRemovePacketFromList(PINTERLOCKED_SINGLE_LIST pList, PNDIS_PACKET pPacket)
 {
-    PTRANSFERDATA_RSVD pTDR = &((PPT_RSVD)pPacket->ProtocolReserved)->TransferDataRsvd;
+    PTRANSFERDATA_RSVD pTDR = &((PPT_RSVD)pPacket->ProtocolReserved)->u.TransferDataRsvd;
     return vboxNetFltWinInterlockedSearchListEntry(pList, &pTDR->ListEntry,
             true /* remove*/);
 }
@@ -808,7 +808,7 @@ static bool vboxNetFltWinRemovePacketFromList(PINTERLOCKED_SINGLE_LIST pList, PN
  */
 static void vboxNetFltWinPutPacketToList(PINTERLOCKED_SINGLE_LIST pList, PNDIS_PACKET pPacket, PNDIS_BUFFER pOrigBuffer)
 {
-    PTRANSFERDATA_RSVD pTDR = &((PPT_RSVD)pPacket->ProtocolReserved)->TransferDataRsvd;
+    PTRANSFERDATA_RSVD pTDR = &((PPT_RSVD)pPacket->ProtocolReserved)->u.TransferDataRsvd;
     pTDR->pOriginalBuffer = pOrigBuffer;
     vboxNetFltWinInterlockedPutTail(pList, &pTDR->ListEntry);
 }
@@ -826,7 +826,7 @@ static bool vboxNetFltWinPtTransferDataCompleteActive(IN PADAPT pAdapt,
     if(!vboxNetFltWinRemovePacketFromList(&pAdapt->TransferDataList, pPacket))
         return false;
 
-    pTDR = &((PPT_RSVD)pPacket->ProtocolReserved)->TransferDataRsvd;
+    pTDR = &((PPT_RSVD)pPacket->ProtocolReserved)->u.TransferDataRsvd;
     Assert(pTDR);
     Assert(pTDR->pOriginalBuffer);
 

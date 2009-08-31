@@ -297,18 +297,6 @@ typedef struct _ADAPT_DEVICE
 /*    NDIS_HANDLE                    hHandle; */
 } ADAPT_DEVICE, *PADAPT_DEVICE;
 
-
-typedef enum VBOXNETDEVMODE_TYPE
-{
-    kVBoxNetDevMode_InvalidValue = 0,
-    kVBoxNetDevMode_NetFltInitializing,
-    kVBoxNetDevMode_NetFltInitialized,
-    kVBoxNetDevMode_NetFltDeinitializing,
-    kVBoxNetDevMode_NetFltWaitDeinitialized,
-    kVBoxNetDevMode_NetFltDeinitialized,
-
-} VBOXNETDEVMODE_TYPE;
-
 /* packet filter processing mode constants */
 #define VBOXNETFLT_PFP_NETFLT   1
 #define VBOXNETFLT_PFP_PASSTHRU 2
@@ -480,17 +468,6 @@ typedef struct _TRANSFERDATA_RSVD
     PNDIS_BUFFER pOriginalBuffer;
 } TRANSFERDATA_RSVD, *PTRANSFERDATA_RSVD;
 
-typedef struct _PT_RSVD
-{
-    union
-    {
-        SEND_RSVD SendRsvd;
-        TRANSFERDATA_RSVD TransferDataRsvd;
-    };
-} PT_RSVD, *PPT_RSVD;
-
-
-#ifndef VBOX_NETFLT_ONDEMAND_BIND
 /** Miniport reserved part of a received packet that is allocated by
  * us. Note that this should fit into the MiniportReserved space
  * in an NDIS_PACKET. */
@@ -503,6 +480,18 @@ typedef struct _RECV_RSVD
      * can be null if no buffer is to be freed */
     PVOID           pBufToFree;
 } RECV_RSVD, *PRECV_RSVD;
+
+typedef struct _PT_RSVD
+{
+    union
+    {
+        RECV_RSVD RecvRsvd;
+        TRANSFERDATA_RSVD TransferDataRsvd;
+    } u;
+} PT_RSVD, *PPT_RSVD;
+
+
+#ifndef VBOX_NETFLT_ONDEMAND_BIND
 
 C_ASSERT(sizeof(RECV_RSVD) <= sizeof(((PNDIS_PACKET)0)->MiniportReserved));
 #endif
