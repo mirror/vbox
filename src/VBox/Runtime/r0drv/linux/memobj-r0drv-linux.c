@@ -1267,6 +1267,8 @@ int rtR0MemObjNativeMapUser(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ pMemToMap, RT
                         break;
                     }
                     rc = fixPte(pTask->mm, ulAddrCur, Phys);
+#elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0) || defined(HAVE_26_STYLE_REMAP_PAGE_RANGE)
+                    rc = remap_page_range(vma, ulAddrCur, Phys, PAGE_SIZE, fPg);
 #else /* 2.4 */
                     rc = remap_page_range(ulAddrCur, Phys, PAGE_SIZE, fPg);
 #endif
@@ -1312,6 +1314,8 @@ int rtR0MemObjNativeMapUser(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ pMemToMap, RT
                             break;
                         }
                         rc = fixPte(pTask->mm, ulAddrCur, Phys);
+#elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0) || defined(HAVE_26_STYLE_REMAP_PAGE_RANGE)
+                        rc = remap_page_range(vma, ulAddrCur, Phys, PAGE_SIZE, fPg);
 #else /* 2.4 */
                         rc = remap_page_range(ulAddrCur, Phys, PAGE_SIZE, fPg);
 #endif
