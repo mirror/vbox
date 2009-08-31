@@ -909,6 +909,7 @@ typedef struct _VBVAENABLE
 {
     uint32_t u32Flags;
     uint32_t u32Offset;
+    int32_t  i32Result;
 
 } VBVAENABLE;
 
