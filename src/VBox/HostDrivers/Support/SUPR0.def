@@ -53,6 +53,7 @@ EXPORTS
     SUPR0MemGetPhys
     SUPR0MemFree
     SUPR0Printf
+    SUPR0QueryVTxSupport
     SUPSemEventCreate
     SUPSemEventClose
     SUPSemEventSignal
