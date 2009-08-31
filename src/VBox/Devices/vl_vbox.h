@@ -57,8 +57,8 @@ RT_C_DECLS_BEGIN
 #ifndef glue
 # define _glue(x, y)    x ## y
 # define glue(x, y)     _glue(x, y)
-# define tostring(s)	#s
-# define stringify(s)	tostring(s)
+# define tostring(s)    #s
+# define stringify(s)   tostring(s)
 #endif
 
 #if defined(_MSC_VER) && !defined(__cplusplus)
@@ -193,7 +193,7 @@ inline int ffs(int mask)
 /* bswap.h */
 #ifdef _MSC_VER
 #ifndef LITTLE_ENDIAN
-#define	LITTLE_ENDIAN   1234
+#define LITTLE_ENDIAN   1234
 #endif
 #ifndef BYTE_ORDER
 #define BYTE_ORDER      LITTLE_ENDIAN
@@ -202,30 +202,30 @@ inline int ffs(int mask)
 static _inline uint16_t bswap_16(register uint16_t x)
 {
     return ((uint16_t)( \
-		(((uint16_t)(x) & (uint16_t)0x00ffU) << 8) | \
-		(((uint16_t)(x) & (uint16_t)0xff00U) >> 8) )); \
+                (((uint16_t)(x) & (uint16_t)0x00ffU) << 8) | \
+                (((uint16_t)(x) & (uint16_t)0xff00U) >> 8) )); \
 }
 
 static _inline uint32_t bswap_32(register uint32_t x) \
 { \
     return ((uint32_t)( \
-		(((uint32_t)(x) & (uint32_t)0x000000ffUL) << 24) | \
-		(((uint32_t)(x) & (uint32_t)0x0000ff00UL) <<  8) | \
-		(((uint32_t)(x) & (uint32_t)0x00ff0000UL) >>  8) | \
-		(((uint32_t)(x) & (uint32_t)0xff000000UL) >> 24) )); \
+                (((uint32_t)(x) & (uint32_t)0x000000ffUL) << 24) | \
+                (((uint32_t)(x) & (uint32_t)0x0000ff00UL) <<  8) | \
+                (((uint32_t)(x) & (uint32_t)0x00ff0000UL) >>  8) | \
+                (((uint32_t)(x) & (uint32_t)0xff000000UL) >> 24) )); \
 }
 
 static _inline uint64_t bswap_64(register uint64_t x) \
 { \
     return ((uint64_t)( \
-		(uint64_t)(((uint64_t)(x) & (uint64_t)0x00000000000000ffULL) << 56) | \
-		(uint64_t)(((uint64_t)(x) & (uint64_t)0x000000000000ff00ULL) << 40) | \
-		(uint64_t)(((uint64_t)(x) & (uint64_t)0x0000000000ff0000ULL) << 24) | \
-		(uint64_t)(((uint64_t)(x) & (uint64_t)0x00000000ff000000ULL) <<  8) | \
-	        (uint64_t)(((uint64_t)(x) & (uint64_t)0x000000ff00000000ULL) >>  8) | \
-		(uint64_t)(((uint64_t)(x) & (uint64_t)0x0000ff0000000000ULL) >> 24) | \
-		(uint64_t)(((uint64_t)(x) & (uint64_t)0x00ff000000000000ULL) >> 40) | \
-		(uint64_t)(((uint64_t)(x) & (uint64_t)0xff00000000000000ULL) >> 56) )); \
+                (uint64_t)(((uint64_t)(x) & (uint64_t)0x00000000000000ffULL) << 56) | \
+                (uint64_t)(((uint64_t)(x) & (uint64_t)0x000000000000ff00ULL) << 40) | \
+                (uint64_t)(((uint64_t)(x) & (uint64_t)0x0000000000ff0000ULL) << 24) | \
+                (uint64_t)(((uint64_t)(x) & (uint64_t)0x00000000ff000000ULL) <<  8) | \
+                (uint64_t)(((uint64_t)(x) & (uint64_t)0x000000ff00000000ULL) >>  8) | \
+                (uint64_t)(((uint64_t)(x) & (uint64_t)0x0000ff0000000000ULL) >> 24) | \
+                (uint64_t)(((uint64_t)(x) & (uint64_t)0x00ff000000000000ULL) >> 40) | \
+                (uint64_t)(((uint64_t)(x) & (uint64_t)0xff00000000000000ULL) >> 56) )); \
 }
 
 #else
@@ -233,7 +233,7 @@ static _inline uint64_t bswap_64(register uint64_t x) \
 #undef __attribute__
 
 #ifndef LITTLE_ENDIAN
-#define	LITTLE_ENDIAN   1234
+#define LITTLE_ENDIAN   1234
 #endif
 #ifndef BYTE_ORDER
 #define BYTE_ORDER      LITTLE_ENDIAN
@@ -241,34 +241,34 @@ static _inline uint64_t bswap_64(register uint64_t x) \
 
 #define bswap_16(x) \
 (__extension__ ({ \
-	uint16_t __x = (x); \
-	((uint16_t)( \
-		(((uint16_t)(__x) & (uint16_t)0x00ffU) << 8) | \
-		(((uint16_t)(__x) & (uint16_t)0xff00U) >> 8) )); \
+        uint16_t __x = (x); \
+        ((uint16_t)( \
+                (((uint16_t)(__x) & (uint16_t)0x00ffU) << 8) | \
+                (((uint16_t)(__x) & (uint16_t)0xff00U) >> 8) )); \
 }))
 
 #define bswap_32(x) \
 (__extension__ ({ \
-	uint32_t __x = (x); \
-	((uint32_t)( \
-		(((uint32_t)(__x) & (uint32_t)0x000000ffUL) << 24) | \
-		(((uint32_t)(__x) & (uint32_t)0x0000ff00UL) <<  8) | \
-		(((uint32_t)(__x) & (uint32_t)0x00ff0000UL) >>  8) | \
-		(((uint32_t)(__x) & (uint32_t)0xff000000UL) >> 24) )); \
+        uint32_t __x = (x); \
+        ((uint32_t)( \
+                (((uint32_t)(__x) & (uint32_t)0x000000ffUL) << 24) | \
+                (((uint32_t)(__x) & (uint32_t)0x0000ff00UL) <<  8) | \
+                (((uint32_t)(__x) & (uint32_t)0x00ff0000UL) >>  8) | \
+                (((uint32_t)(__x) & (uint32_t)0xff000000UL) >> 24) )); \
 }))
 
 #define bswap_64(x) \
 (__extension__ ({ \
-	uint64_t __x = (x); \
-	((uint64_t)( \
-		(uint64_t)(((uint64_t)(__x) & (uint64_t)0x00000000000000ffULL) << 56) | \
-		(uint64_t)(((uint64_t)(__x) & (uint64_t)0x000000000000ff00ULL) << 40) | \
-		(uint64_t)(((uint64_t)(__x) & (uint64_t)0x0000000000ff0000ULL) << 24) | \
-		(uint64_t)(((uint64_t)(__x) & (uint64_t)0x00000000ff000000ULL) <<  8) | \
-	        (uint64_t)(((uint64_t)(__x) & (uint64_t)0x000000ff00000000ULL) >>  8) | \
-		(uint64_t)(((uint64_t)(__x) & (uint64_t)0x0000ff0000000000ULL) >> 24) | \
-		(uint64_t)(((uint64_t)(__x) & (uint64_t)0x00ff000000000000ULL) >> 40) | \
-		(uint64_t)(((uint64_t)(__x) & (uint64_t)0xff00000000000000ULL) >> 56) )); \
+        uint64_t __x = (x); \
+        ((uint64_t)( \
+                (uint64_t)(((uint64_t)(__x) & (uint64_t)0x00000000000000ffULL) << 56) | \
+                (uint64_t)(((uint64_t)(__x) & (uint64_t)0x000000000000ff00ULL) << 40) | \
+                (uint64_t)(((uint64_t)(__x) & (uint64_t)0x0000000000ff0000ULL) << 24) | \
+                (uint64_t)(((uint64_t)(__x) & (uint64_t)0x00000000ff000000ULL) <<  8) | \
+                (uint64_t)(((uint64_t)(__x) & (uint64_t)0x000000ff00000000ULL) >>  8) | \
+                (uint64_t)(((uint64_t)(__x) & (uint64_t)0x0000ff0000000000ULL) >> 24) | \
+                (uint64_t)(((uint64_t)(__x) & (uint64_t)0x00ff000000000000ULL) >> 40) | \
+                (uint64_t)(((uint64_t)(__x) & (uint64_t)0xff00000000000000ULL) >> 56) )); \
 }))
 #endif
 

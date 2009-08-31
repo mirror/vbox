@@ -358,9 +358,9 @@ AssertCompileSize(struct ethhdr, 14);
 # undef malloc
 # undef calloc
 # undef free
-# define	malloc(x) RTMemAlloc((x))
-# define	calloc(x, n) RTMemAllocZ((x)*(n))
-# define	free(x)	RTMemFree((x))
+# define malloc(x)    RTMemAlloc((x))
+# define calloc(x, n) RTMemAllocZ((x)*(n))
+# define free(x)      RTMemFree((x))
 # ifndef __unused
 #  define __unused
 # endif

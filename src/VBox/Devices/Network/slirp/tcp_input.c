@@ -307,15 +307,17 @@ tcp_input(PNATState pData, register struct mbuf *m, int iphlen, struct socket *i
 
         so->so_m = 0;
         ti = so->so_ti;
-		/* @todo (r -vvl) clarify why it might happens */
-		if (ti == NULL)
-		{
-			LogRel(("NAT: ti is null. can't do any reseting connection actions\n"));
-			/* mbuf should be cleared in sofree called from tcp_close */
-			tcp_close(pData, tp);
-                        STAM_PROFILE_STOP(&pData->StatTCP_input, counter_input);
-			return;
-		}
+
+        /** @todo (vvl) clarify why it might happens */
+        if (ti == NULL)
+        {
+            LogRel(("NAT: ti is null. can't do any reseting connection actions\n"));
+            /* mbuf should be cleared in sofree called from tcp_close */
+            tcp_close(pData, tp);
+            STAM_PROFILE_STOP(&pData->StatTCP_input, counter_input);
+            return;
+        }
+
         tiwin = ti->ti_win;
         tiflags = ti->ti_flags;
 

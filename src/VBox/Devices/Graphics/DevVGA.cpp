@@ -438,10 +438,10 @@ const uint8_t gr_mask[16] = {
 
 #define cbswap_32(__x) \
 ((uint32_t)( \
-		(((uint32_t)(__x) & (uint32_t)0x000000ffUL) << 24) | \
-		(((uint32_t)(__x) & (uint32_t)0x0000ff00UL) <<  8) | \
-		(((uint32_t)(__x) & (uint32_t)0x00ff0000UL) >>  8) | \
-		(((uint32_t)(__x) & (uint32_t)0xff000000UL) >> 24) ))
+                (((uint32_t)(__x) & (uint32_t)0x000000ffUL) << 24) | \
+                (((uint32_t)(__x) & (uint32_t)0x0000ff00UL) <<  8) | \
+                (((uint32_t)(__x) & (uint32_t)0x00ff0000UL) >>  8) | \
+                (((uint32_t)(__x) & (uint32_t)0xff000000UL) >> 24) ))
 
 #ifdef WORDS_BIGENDIAN
 #define PAT(x) cbswap_32(x)
@@ -566,9 +566,9 @@ static uint32_t vga_ioport_read(void *opaque, uint32_t addr)
         case 0x3c7:
             val = s->dac_state;
             break;
-	case 0x3c8:
-	    val = s->dac_write_index;
-	    break;
+        case 0x3c8:
+            val = s->dac_write_index;
+            break;
         case 0x3c9:
             val = s->palette[s->dac_read_index * 3 + s->dac_sub_index];
             if (++s->dac_sub_index == 3) {
