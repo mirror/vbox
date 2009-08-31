@@ -80,24 +80,40 @@ VBoxInit(DeviceIntPtr device)
     InputInfoPtr pInfo;
 
     pInfo = device->public.devicePrivate;
+    Atom axis_labels[2] = { 0, 0 };
+    Atom button_labels[2] = { 0, 0 };
 
     if (!InitValuatorClassDeviceStruct(device, 2,
 #if GET_ABI_MAJOR(ABI_XINPUT_VERSION) < 3
                                        GetMotionHistory,
+#elif GET_ABI_MAJOR(ABI_XINPUT_VERSION) >= 7
+                                       axis_labels,
 #endif
                                        GetMotionHistorySize(), Absolute))
         return !Success;
 
     /* Pretend we have buttons so the server accepts us as a pointing device. */
-    if (!InitButtonClassDeviceStruct(device, 2 /* number of buttons */, map))
+    if (!InitButtonClassDeviceStruct(device, 2, /* number of buttons */
+#if GET_ABI_MAJOR(ABI_XINPUT_VERSION) >= 7
+                                     button_labels,
+#endif
+                                     map))
         return !Success;
 
     /* Tell the server about the range of axis values we report */
-    xf86InitValuatorAxisStruct(device, 0, 0 /* min X */, 65536 /* max X */,
+    xf86InitValuatorAxisStruct(device, 0,
+#if GET_ABI_MAJOR(ABI_XINPUT_VERSION) >= 7
+                               axis_labels[0],
+#endif
+                               0 /* min X */, 65536 /* max X */,
                                10000, 0, 10000);
     xf86InitValuatorDefaults(device, 0);
 
-    xf86InitValuatorAxisStruct(device, 1, 0 /* min Y */, 65536 /* max Y */,
+    xf86InitValuatorAxisStruct(device, 1,
+#if GET_ABI_MAJOR(ABI_XINPUT_VERSION) >= 7
+                               axis_labels[1],
+#endif
+                               0 /* min Y */, 65536 /* max Y */,
                                10000, 0, 10000);
     xf86InitValuatorDefaults(device, 1);
     xf86MotionHistoryAllocate(pInfo);
