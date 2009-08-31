@@ -270,7 +270,7 @@ static void showHelp()
 extern "C" DECLEXPORT(int) TrustedMain (int argc, char **argv, char ** /*envp*/)
 {
     LogFlowFuncEnter();
-# if defined(RT_OS_DARWIN) && defined(RT_ARCH_AMD64)
+# if defined(RT_OS_DARWIN)
     ShutUpAppKit();
 # endif
 
@@ -629,7 +629,7 @@ int main (int argc, char **argv, char **envp)
  */
 extern "C" DECLEXPORT(void) TrustedError (const char *pszWhere, SUPINITOP enmWhat, int rc, const char *pszMsgFmt, va_list va)
 {
-# if defined(RT_OS_DARWIN) && defined(RT_ARCH_AMD64)
+# if defined(RT_OS_DARWIN)
     ShutUpAppKit();
 # endif
 
