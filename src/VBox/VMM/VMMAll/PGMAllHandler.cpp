@@ -925,9 +925,6 @@ VMMDECL(int)  PGMHandlerPhysicalPageTempOff(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS G
             AssertReturnStmt(RT_SUCCESS_NP(rc), pgmUnlock(pVM), rc);
             PGM_PAGE_SET_HNDL_PHYS_STATE(pPage, PGM_PAGE_HNDL_PHYS_STATE_DISABLED);
             pgmUnlock(pVM);
-#ifndef IN_RC
-            HWACCMInvalidatePhysPage(pVM, GCPhysPage);
-#endif
             return VINF_SUCCESS;
         }
         pgmUnlock(pVM);
@@ -1047,9 +1044,6 @@ VMMDECL(int)  PGMHandlerPhysicalPageAlias(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS GCP
             LogFlow(("PGMHandlerPhysicalPageAlias: => %R[pgmpage]\n", pPage));
 
             pgmUnlock(pVM);
-#ifndef IN_RC
-            HWACCMInvalidatePhysPage(pVM, GCPhysPage);
-#endif
             return VINF_SUCCESS;
         }
 
@@ -1149,9 +1143,6 @@ VMMDECL(int)  PGMHandlerPhysicalPageAliasHC(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS G
             PGM_PAGE_SET_HNDL_PHYS_STATE(pPage, PGM_PAGE_HNDL_PHYS_STATE_DISABLED);
             LogFlow(("PGMHandlerPhysicalPageAliasHC: => %R[pgmpage]\n", pPage));
             pgmUnlock(pVM);
-#ifndef IN_RC
-            HWACCMInvalidatePhysPage(pVM, GCPhysPage);
-#endif
             return VINF_SUCCESS;
         }
         pgmUnlock(pVM);

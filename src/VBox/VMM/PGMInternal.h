@@ -342,18 +342,18 @@
 # define PGM_INVL_PG(pVCpu, GCVirt)             HWACCMInvalidatePage(pVCpu, (RTGCPTR)(GCVirt))
 #endif
 
-/** @def PGM_INVL_PG
+/** @def PGM_INVL_PG_ALL_VCPU
  * Invalidates a page on all VCPUs
  *
  * @param   pVM         The VM handle.
  * @param   GCVirt      The virtual address of the page to invalidate.
  */
 #ifdef IN_RC
-# define PGM_INVL_ALL_VCPU_PG(pVM, GCVirt)      ASMInvalidatePage((void *)(GCVirt))
+# define PGM_INVL_PG_ALL_VCPU(pVM, GCVirt)      ASMInvalidatePage((void *)(GCVirt))
 #elif defined(IN_RING0)
-# define PGM_INVL_ALL_VCPU_PG(pVM, GCVirt)      HWACCMInvalidatePageOnAllVCpus(pVM, (RTGCPTR)(GCVirt))
+# define PGM_INVL_PG_ALL_VCPU(pVM, GCVirt)      HWACCMInvalidatePageOnAllVCpus(pVM, (RTGCPTR)(GCVirt))
 #else
-# define PGM_INVL_ALL_VCPU_PG(pVM, GCVirt)      HWACCMInvalidatePageOnAllVCpus(pVM, (RTGCPTR)(GCVirt))
+# define PGM_INVL_PG_ALL_VCPU(pVM, GCVirt)      HWACCMInvalidatePageOnAllVCpus(pVM, (RTGCPTR)(GCVirt))
 #endif
 
 /** @def PGM_INVL_BIG_PG
@@ -1679,6 +1679,7 @@ typedef struct PGMPOOLPAGE
     uint32_t            cLocked;
 #ifdef PGMPOOL_WITH_OPTIMIZED_DIRTY_PT
     uint32_t            idxDirty;
+    RTGCPTR             pvDirtyFault;
 #else
     uint32_t            bPadding2;
 #endif
