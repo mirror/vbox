@@ -1236,6 +1236,8 @@
 #define VERR_SUPDRV_INTERFACE_NOT_SUPPORTED         (-3701)
 /** The service module was not found. */
 #define VERR_SUPDRV_SERVICE_NOT_FOUND               (-3702)
+/** The host kernel is too old. */
+#define VERR_SUPDRV_KERNEL_TOO_OLD_FOR_VTX          (-3703)
 /** @} */
 
 

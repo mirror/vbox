@@ -234,7 +234,40 @@ HRESULT Host::init(VirtualBox *aParent)
                  && (u32FeaturesEDX & X86_CPUID_FEATURE_EDX_MSR)
                  && (u32FeaturesEDX & X86_CPUID_FEATURE_EDX_FXSR)
                )
+            {
+#ifdef RT_OS_LINUX
+                /* Linux: VT-x is not supported on Linux < 2.6.13 because older kernels
+                 * unconditionally disable the VMXE flag */
+                char szBuf[64];
+                int rc = RTSystemQueryOSInfo(RTSYSOSINFO_RELEASE, szBuf, sizeof(szBuf));
+
+                if (RT_SUCCESS(rc))
+                {
+                    char *pszNext;
+                    uint32_t uA, uB, uC;
+
+                    rc = RTStrToUInt32Ex(szBuf, &pszNext, 10, &uA);
+                    if (   RT_SUCCESS(rc)
+                        && *pszNext == '.')
+                    {
+                        rc = RTStrToUInt32Ex(pszNext+1, &pszNext, 10, &uB);
+                        if (   RT_SUCCESS(rc)
+                            && *pszNext == '.')
+                        {
+                            rc = RTStrToUInt32Ex(pszNext+1, &pszNext, 10, &uC);
+                            if (RT_SUCCESS(rc))
+                            {
+                                uint32_t uLinuxVersion = (uA << 16) + (uB << 8) + uC;
+                                if (uLinuxVersion >= (2 << 16) + (6 << 8) + 13)
+                                    fVTxAMDVSupported = true;
+                            }
+                        }
+                    }
+                }
+#else
                 fVTxAMDVSupported = true;
+#endif
+            }
         }
         else
         if (    u32VendorEBX == X86_CPUID_VENDOR_AMD_EBX
