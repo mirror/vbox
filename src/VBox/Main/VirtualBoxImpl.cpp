@@ -4279,7 +4279,7 @@ HRESULT VirtualBox::registerDHCPServer(DHCPServer *aDHCPServer,
  * @note Locks this object for writing and @a aHardDisk for reading.
  */
 HRESULT VirtualBox::unregisterDHCPServer(DHCPServer *aDHCPServer,
-                                       bool aSaveRegistry /*= true*/)
+                                         bool aSaveRegistry /*= true*/)
 {
     AssertReturn(aDHCPServer != NULL, E_INVALIDARG);
 

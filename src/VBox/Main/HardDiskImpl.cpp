@@ -2543,6 +2543,8 @@ HRESULT HardDisk::createDiffStorage(ComObjPtr<HardDisk> &aTarget,
 
     AssertReturn(mm.type != HardDiskType_Writethrough, E_FAIL);
 
+    LogFlowThisFunc(("Hard disk '%s' has media status %d\n", name().raw(), m.state));
+
     /* Note: MediaState_LockedWrite is ok when taking an online snapshot */
     AssertReturn(m.state == MediaState_LockedRead ||
                   m.state == MediaState_LockedWrite, E_FAIL);
@@ -2554,7 +2556,8 @@ HRESULT HardDisk::createDiffStorage(ComObjPtr<HardDisk> &aTarget,
 
     /* check that the hard disk is not attached to any VM in the current state*/
     for (BackRefList::const_iterator it = m.backRefs.begin();
-         it != m.backRefs.end(); ++ it)
+         it != m.backRefs.end();
+         ++it)
     {
         if (it->inCurState)
         {
@@ -2589,10 +2592,11 @@ HRESULT HardDisk::createDiffStorage(ComObjPtr<HardDisk> &aTarget,
         if (progress.isNull())
         {
             progress.createObject();
-            rc = progress->init (mVirtualBox, static_cast<IHardDisk*> (this),
-                BstrFmt (tr ("Creating differencing hard disk storage unit '%ls'"),
-                         aTarget->m.locationFull.raw()),
-                TRUE /* aCancelable */);
+            rc = progress->init(mVirtualBox,
+                                static_cast<IHardDisk*>(this),
+                                BstrFmt(tr("Creating differencing hard disk storage unit '%ls'"),
+                                           aTarget->m.locationFull.raw()),
+                                TRUE /* aCancelable */);
             CheckComRCReturnRC(rc);
         }
     }
@@ -2600,14 +2604,14 @@ HRESULT HardDisk::createDiffStorage(ComObjPtr<HardDisk> &aTarget,
     /* setup task object and thread to carry out the operation
      * asynchronously */
 
-    std::auto_ptr <Task> task (new Task (this, progress, Task::CreateDiff));
+    std::auto_ptr<Task> task(new Task(this, progress, Task::CreateDiff));
     AssertComRCReturnRC(task->autoCaller.rc());
 
     task->setData (aTarget);
     task->d.variant = aVariant;
 
     /* register a task (it will deregister itself when done) */
-    ++ mm.numCreateDiffTasks;
+    ++mm.numCreateDiffTasks;
     Assert (mm.numCreateDiffTasks != 0); /* overflow? */
 
     if (aWait)
@@ -3971,7 +3975,7 @@ DECLCALLBACK(int) HardDisk::taskThread (RTTHREAD thread, void *pvUser)
 
             /* deregister the task registered in createDiffStorage() */
             Assert (that->mm.numCreateDiffTasks != 0);
-            -- that->mm.numCreateDiffTasks;
+            --that->mm.numCreateDiffTasks;
 
             /* Note that in sync mode, it's the caller's responsibility to
              * unlock the hard disk */

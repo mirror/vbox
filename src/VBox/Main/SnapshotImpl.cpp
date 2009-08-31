@@ -345,7 +345,7 @@ STDMETHODIMP Snapshot::COMGETTER(TimeStamp) (LONG64 *aTimeStamp)
     return S_OK;
 }
 
-STDMETHODIMP Snapshot::COMGETTER(Online) (BOOL *aOnline)
+STDMETHODIMP Snapshot::COMGETTER(Online)(BOOL *aOnline)
 {
     CheckComArgOutPointerValid(aOnline);
 

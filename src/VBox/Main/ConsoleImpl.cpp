@@ -1822,8 +1822,8 @@ STDMETHODIMP Console::SaveState (IProgress **aProgress)
                     Bstr (tr ("Saving the execution state of the virtual machine")),
                     FALSE /* aCancelable */);
 
-    bool beganSavingState = false;
-    bool taskCreationFailed = false;
+    bool fBeganSavingState = false;
+    bool fTaskCreationFailed = false;
 
     do
     {
@@ -1838,7 +1838,7 @@ STDMETHODIMP Console::SaveState (IProgress **aProgress)
          */
         if (FAILED (rc))
         {
-            taskCreationFailed = true;
+            fTaskCreationFailed = true;
             break;
         }
 
@@ -1852,7 +1852,7 @@ STDMETHODIMP Console::SaveState (IProgress **aProgress)
         rc = mControl->BeginSavingState (progress, stateFilePath.asOutParam());
         CheckComRCBreakRC (rc);
 
-        beganSavingState = true;
+        fBeganSavingState = true;
 
         /* sync the state with the server */
         setMachineStateLocally (MachineState_Saving);
@@ -1895,12 +1895,12 @@ STDMETHODIMP Console::SaveState (IProgress **aProgress)
     }
     while (0);
 
-    if (FAILED (rc) && !taskCreationFailed)
+    if (FAILED (rc) && !fTaskCreationFailed)
     {
         /* preserve existing error info */
         ErrorInfoKeeper eik;
 
-        if (beganSavingState)
+        if (fBeganSavingState)
         {
             /*
              *  cancel the requested save state procedure.
@@ -2362,8 +2362,9 @@ STDMETHODIMP Console::RemoveSharedFolder (IN_BSTR aName)
     return rc;
 }
 
-STDMETHODIMP Console::TakeSnapshot (IN_BSTR aName, IN_BSTR aDescription,
-                                    IProgress **aProgress)
+STDMETHODIMP Console::TakeSnapshot(IN_BSTR aName,
+                                   IN_BSTR aDescription,
+                                   IProgress **aProgress)
 {
     LogFlowThisFuncEnter();
     LogFlowThisFunc(("aName='%ls' mMachineState=%08X\n", aName, mMachineState));
@@ -2376,13 +2377,10 @@ STDMETHODIMP Console::TakeSnapshot (IN_BSTR aName, IN_BSTR aDescription,
 
     AutoWriteLock alock(this);
 
-    if (Global::IsTransient (mMachineState))
-    {
-        return setError (VBOX_E_INVALID_VM_STATE,
-            tr ("Cannot take a snapshot of the machine "
-                "while it is changing the state (machine state: %d)"),
-            mMachineState);
-    }
+    if (Global::IsTransient(mMachineState))
+        return setError(VBOX_E_INVALID_VM_STATE,
+                        tr("Cannot take a snapshot of the machine while it is changing the state (machine state: %d)"),
+                        mMachineState);
 
     /* memorize the current machine state */
     MachineState_T lastMachineState = mMachineState;
@@ -2395,30 +2393,30 @@ STDMETHODIMP Console::TakeSnapshot (IN_BSTR aName, IN_BSTR aDescription,
 
     HRESULT rc = S_OK;
 
-    bool takingSnapshotOnline = mMachineState == MachineState_Paused;
+    bool fTakingSnapshotOnline = (mMachineState == MachineState_Paused);
 
     /*
      *  create a descriptionless VM-side progress object
      *  (only when creating a snapshot online)
      */
     ComObjPtr<Progress> saveProgress;
-    if (takingSnapshotOnline)
+    if (fTakingSnapshotOnline)
     {
         saveProgress.createObject();
-        rc = saveProgress->init (FALSE, 1, Bstr (tr ("Saving the execution state")));
+        rc = saveProgress->init(FALSE, 1, Bstr(tr("Saving the execution state")));
         AssertComRCReturn (rc, rc);
     }
 
-    bool beganTakingSnapshot = false;
-    bool taskCreationFailed = false;
+    bool fBeganTakingSnapshot = false;
+    bool fTaskCreationFailed = false;
 
     do
     {
         /* create a task object early to ensure mpVM protection is successful */
-        std::auto_ptr <VMSaveTask> task;
-        if (takingSnapshotOnline)
+        std::auto_ptr<VMSaveTask> task;
+        if (fTakingSnapshotOnline)
         {
-            task.reset (new VMSaveTask (this, saveProgress));
+            task.reset(new VMSaveTask(this, saveProgress));
             rc = task->rc();
             /*
              *  If we fail here it means a PowerDown() call happened on another
@@ -2428,7 +2426,7 @@ STDMETHODIMP Console::TakeSnapshot (IN_BSTR aName, IN_BSTR aDescription,
              */
             if (FAILED (rc))
             {
-                taskCreationFailed = true;
+                fTaskCreationFailed = true;
                 break;
             }
         }
@@ -2441,9 +2439,12 @@ STDMETHODIMP Console::TakeSnapshot (IN_BSTR aName, IN_BSTR aDescription,
          *  (this will set the machine state to Saving on the server to block
          *  others from accessing this machine)
          */
-        rc = mControl->BeginTakingSnapshot (this, aName, aDescription,
-                                            saveProgress, stateFilePath.asOutParam(),
-                                            serverProgress.asOutParam());
+        rc = mControl->BeginTakingSnapshot(this,
+                                           aName,
+                                           aDescription,
+                                           saveProgress,
+                                           stateFilePath.asOutParam(),
+                                           serverProgress.asOutParam());
         if (FAILED (rc))
             break;
 
@@ -2451,27 +2452,27 @@ STDMETHODIMP Console::TakeSnapshot (IN_BSTR aName, IN_BSTR aDescription,
          *  state file is non-null only when the VM is paused
          *  (i.e. creating a snapshot online)
          */
-        ComAssertBreak (
-            (!stateFilePath.isNull() && takingSnapshotOnline) ||
-            (stateFilePath.isNull() && !takingSnapshotOnline),
-            rc = E_FAIL);
+        ComAssertBreak(    (!stateFilePath.isNull() && fTakingSnapshotOnline)
+                        || (stateFilePath.isNull() && !fTakingSnapshotOnline),
+                       rc = E_FAIL);
 
-        beganTakingSnapshot = true;
+        fBeganTakingSnapshot = true;
 
         /* sync the state with the server */
-        setMachineStateLocally (MachineState_Saving);
+        setMachineStateLocally(MachineState_Saving);
 
         /*
          *  create a combined VM-side progress object and start the save task
          *  (only when creating a snapshot online)
          */
         ComObjPtr<CombinedProgress> combinedProgress;
-        if (takingSnapshotOnline)
+        if (fTakingSnapshotOnline)
         {
             combinedProgress.createObject();
-            rc = combinedProgress->init (static_cast <IConsole *> (this),
-                                         Bstr (tr ("Taking snapshot of virtual machine")),
-                                         serverProgress, saveProgress);
+            rc = combinedProgress->init(static_cast<IConsole*>(this),
+                                        Bstr(tr("Taking snapshot of virtual machine")),
+                                        serverProgress,
+                                        saveProgress);
             AssertComRCBreakRC (rc);
 
             /* setup task object and thread to carry out the operation asynchronously */
@@ -2482,11 +2483,17 @@ STDMETHODIMP Console::TakeSnapshot (IN_BSTR aName, IN_BSTR aDescription,
             task->mLastMachineState = lastMachineState;
 
             /* create a thread to wait until the VM state is saved */
-            int vrc = RTThreadCreate (NULL, Console::saveStateThread, (void *) task.get(),
-                                      0, RTTHREADTYPE_MAIN_WORKER, 0, "VMTakeSnap");
+            int vrc = RTThreadCreate(NULL,
+                                     Console::saveStateThread,
+                                     (void*)task.get(),
+                                     0,
+                                     RTTHREADTYPE_MAIN_WORKER,
+                                     0,
+                                     "VMTakeSnap");
 
-            ComAssertMsgRCBreak (vrc, ("Could not create VMTakeSnap thread (%Rrc)", vrc),
-                                 rc = E_FAIL);
+            ComAssertMsgRCBreak(vrc,
+                                ("Could not create VMTakeSnap thread (%Rrc)", vrc),
+                                rc = E_FAIL);
 
             /* task is now owned by saveStateThread(), so release it */
             task.release();
@@ -2500,15 +2507,14 @@ STDMETHODIMP Console::TakeSnapshot (IN_BSTR aName, IN_BSTR aDescription,
             else
                 serverProgress.queryInterfaceTo(aProgress);
         }
-    }
-    while (0);
+    } while (0);
 
-    if (FAILED (rc) && !taskCreationFailed)
+    if (FAILED(rc) && !fTaskCreationFailed)
     {
         /* preserve existing error info */
         ErrorInfoKeeper eik;
 
-        if (beganTakingSnapshot && takingSnapshotOnline)
+        if (fBeganTakingSnapshot && fTakingSnapshotOnline)
         {
             /*
              *  cancel the requested snapshot (only when creating a snapshot
@@ -2516,18 +2522,18 @@ STDMETHODIMP Console::TakeSnapshot (IN_BSTR aName, IN_BSTR aDescription,
              *  This will reset the machine state to the state it had right
              *  before calling mControl->BeginTakingSnapshot().
              */
-            mControl->EndTakingSnapshot (FALSE);
+            mControl->EndTakingSnapshot(FALSE);
         }
 
         if (lastMachineState == MachineState_Running)
         {
             /* restore the paused state if appropriate */
-            setMachineStateLocally (MachineState_Paused);
+            setMachineStateLocally(MachineState_Paused);
             /* restore the running state if appropriate */
             Resume();
         }
         else
-            setMachineStateLocally (lastMachineState);
+            setMachineStateLocally(lastMachineState);
     }
 
     LogFlowThisFunc(("rc=%08X\n", rc));
@@ -2535,7 +2541,7 @@ STDMETHODIMP Console::TakeSnapshot (IN_BSTR aName, IN_BSTR aDescription,
     return rc;
 }
 
-STDMETHODIMP Console::DiscardSnapshot (IN_BSTR aId, IProgress **aProgress)
+STDMETHODIMP Console::DiscardSnapshot(IN_BSTR aId, IProgress **aProgress)
 {
     CheckComArgExpr(aId, Guid (aId).isEmpty() == false);
     CheckComArgOutPointerValid(aProgress);
