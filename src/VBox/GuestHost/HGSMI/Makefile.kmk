@@ -1,0 +1,46 @@
+# $Id$
+## @file
+# Sub-Makefile for the common HGSMI library.
+#
+
+#
+# Copyright (C) 2006-2009 Sun Microsystems, Inc.
+#
+# Sun Microsystems, Inc. confidential
+# All rights reserved
+#
+
+SUB_DEPTH = ../../../..
+include	$(KBUILD_PATH)/subheader.kmk
+
+#
+# HGSMIGuestR0Lib - for guest additions drivers
+#
+LIBRARIES += \
+	HGSMIGuestR0Lib
+
+#
+# HGSMIHostLib - for host devices (R3 only)
+#
+LIBRARIES += \
+	HGSMIHostR3Lib
+
+
+#
+# HGSMIGuestR0Lib
+#
+HGSMIGuestR0Lib_TEMPLATE     = VBOXGUESTR0LIB
+HGSMIGuestR0Lib_DEFS         =
+HGSMIGuestR0Lib_SOURCES      = \
+	HGSMICommon.cpp
+
+#
+# HGSMIHostR3Lib
+#
+HGSMIHostR3Lib_TEMPLATE      = VBOXR3
+HGSMIHostR3Lib_DEFS          =
+HGSMIHostR3Lib_SOURCES       = \
+	HGSMICommon.cpp
+
+include	$(KBUILD_PATH)/subfooter.kmk
+
