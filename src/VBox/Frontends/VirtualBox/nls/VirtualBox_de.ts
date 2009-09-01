@@ -5090,6 +5090,14 @@ p, li {white-space: pre-wrap; }
         <translation>Falls aktiviert wird die Mini-Toolbar im Vollbildmodus und im nahtlosen Modus gezeigt.</translation>
     </message>
     <message>
+        <source>If checked, show the Mini ToolBar at the top of the screen, rather than in it&apos;s default position at the bottom of the screen.</source>
+        <translation>Falls aktiviert wird die Mini-Toolbar am oberen Bildschirmrand gezeigt</translation>
+    </message>
+    <message>
+        <source>Show At &amp;Top Of Screen</source>
+        <translation>Zeige am oberen Bildschirmrand</translation>
+    </message>
+    <message>
         <source>Show In &amp;Fullscreen/Seamless</source>
         <translation>Zeige im &amp;Fullscreen/Seamless-Modus</translation>
     </message>
