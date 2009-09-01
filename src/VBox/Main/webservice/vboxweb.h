@@ -25,11 +25,7 @@
 
 void WebLog(const char *pszFormat, ...);
 
-// #ifdef DEBUG
 #define WEBDEBUG(a) if (g_fVerbose) { WebLog a; }
-// #else
-// #define WEBDEBUG(a) do { } while(0)
-// #endif
 
 /****************************************************************************
  *
@@ -37,7 +33,7 @@ void WebLog(const char *pszFormat, ...);
  *
  ****************************************************************************/
 
-extern ComPtr<IVirtualBox> G_pVirtualBox;
+extern ComPtr<IVirtualBox> g_pVirtualBox;
 extern bool g_fVerbose;
 
 extern PRTSTREAM g_pstrLog;
@@ -51,13 +47,6 @@ extern PRTSTREAM g_pstrLog;
 // type used by gSOAP-generated code
 typedef std::string WSDLT_ID;               // combined managed object ref (session ID plus object ID)
 typedef std::string vbox__uuid;
-
-// type used internally by our class
-// typedef WSDLT_ID ManagedObjectID;
-
-// #define VBOXWEB_ERROR_BASE                      10000
-// #define VBOXWEB_INVALID_MANAGED_OBJECT          (VBOXWEB_ERROR_BASE + 0)
-// #define VBOXWEB_INVALID_MANAGED_OBJECT_TYPE     (VBOXWEB_ERROR_BASE + 1)
 
 /****************************************************************************
  *
@@ -89,7 +78,9 @@ class WebServiceSessionPrivate;
 class ManagedObjectRef;
 
 /**
- *
+ *  An instance of this gets created for every client that logs onto the
+ *  webservice (via the special IWebsessionManager::logon() SOAP API) and
+ *  maintains the managed object references for that session.
  */
 class WebServiceSession
 {
@@ -97,7 +88,7 @@ class WebServiceSession
 
     private:
         uint64_t                    _uSessionID;
-        WebServiceSessionPrivate    *_pp;
+        WebServiceSessionPrivate    *_pp;               // opaque data struct (defined in vboxweb.cpp)
         bool                        _fDestructing;
 
         ManagedObjectRef            *_pISession;
@@ -227,12 +218,12 @@ int findComPtrFromId(struct soap *soap,
     {
         if (fNullAllowed && pRef == NULL)
         {
-          pComPtr.setNull();
-          return 0;
+            pComPtr.setNull();
+            return 0;
         }
 
         // pRef->getComPtr returns a ComPtr<IUnknown>; by casting it to
-        // ComPtr<T>, we implicitly do a queryInterface() call
+        // ComPtr<T>, we implicitly do a COM queryInterface() call
         if (pComPtr = pRef->getComPtr())
             return 0;
 
@@ -265,7 +256,7 @@ WSDLT_ID createOrFindRefFromComPtr(const WSDLT_ID &idParent,
         return "";
     }
 
-    WebServiceSession* pSession;
+    WebServiceSession *pSession;
     if ((pSession = WebServiceSession::findSessionFromRef(idParent)))
     {
         // WEBDEBUG(("\n-- found session for %s\n", idParent.c_str()));
