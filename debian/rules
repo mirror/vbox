@@ -29,6 +29,7 @@ export DH_COMPAT=4
 #  HEADLESS=1       build the headless version
 #  NOWEBSVC=1       don't build the webservice API, default for OSE
 #  STAGEDISO=<path> don't build the VBoxAdditions, use the precompiled .iso
+#  BLEEDING_EDGE=xyz
 
 package  := virtualbox
 verpkg   := virtualbox-ose
@@ -109,6 +110,8 @@ debian/build-stamp $(verfile):
 	    LOCALCFG=$(current)/debian/LocalConfig.kmk \
 	    PATH_OUT=$(current)/debian/builddir \
 	    VBOX_DO_STRIP= VBOX_DO_STRIP_MODULES= \
+	    $(if $(BLEEDING_EDGE),VBOX_BLEEDING_EDGE=$(BLEEDING_EDGE),) \
+	    VBOX_WITH_MULTIVERSION_PYTHON= \
 	    $(if $(filter _Debian_sarge _xandros4.1 _ucs1.3,$(debrel)),VBOX_LD_as_needed= ,) \
 	    $(debcfgs) \
 	    all
@@ -124,6 +127,8 @@ debian/build-stamp $(verfile):
 	    LOCALCFG=$(current)/debian/LocalConfig.kmk \
 	    PATH_OUT=$(current)/debian/builddir \
 	    VBOX_DO_STRIP= VBOX_DO_STRIP_MODULES= \
+	    $(if $(BLEEDING_EDGE),VBOX_BLEEDING_EDGE=$(BLEEDING_EDGE),) \
+	    VBOX_WITH_MULTIVERSION_PYTHON= \
 	    $(if $(filter _Debian_sarge _xandros4.1 _ucs1.3,$(debrel)),VBOX_LD_as_needed= ,) \
 	    VBOX_NO_LINUX_RUN_INSTALLER=1 $(if $(NODOCS),VBOX_WITH_DOCS= ,) \
 	    VBOX_PATH_ADDITIONS.linux.x86=$(builddir)/bin/additions \
