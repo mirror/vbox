@@ -1396,13 +1396,6 @@ else
  endif
  INSTALLS += VBoxPython-inst-py-xpcom
 
- # Kind of hack: we don't want to limit VBoxPython.so to single Python version
- # on Linux, where we can avoid putting explicit libpythonX.Y.so dependency
- # to VBoxPython.so
- if "$(KBUILD_TARGET)" == "linux"
-  VBOX_LIB_PYTHON=
- endif
-
 # Python Client Module - the C++/XPCOM bits.
 VBoxPython_TEMPLATE = XPCOM
 VBoxPython_DEFS = _IMPL_NS_COM _IMPL_NS_BASE EXPORT_XPTI_API EXPORT_XPT_API \
