@@ -514,7 +514,12 @@ int slirp_init(PNATState *ppData, uint32_t u32NetAddr, uint32_t u32Netmask,
 
     link_up = 1;
 
-    bootp_dhcp_init(pData);
+    rc = bootp_dhcp_init(pData);
+    if (rc != 0)
+    {
+        LogRel(("NAT: DHCP server initialization was falled\n"))
+        return VINF_NAT_DNS; 
+    }
     debug_init();
     if_init(pData);
     ip_init(pData);
@@ -1535,7 +1540,6 @@ done:
  */
 static uint32_t find_guest_ip(PNATState pData, const uint8_t *eth_addr)
 {
-    int i;
     uint32_t ip = INADDR_ANY;
     if (eth_addr == NULL)
         goto done;
