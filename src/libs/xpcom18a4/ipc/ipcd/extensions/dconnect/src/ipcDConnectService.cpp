@@ -3755,7 +3755,11 @@ ipcDConnectService::OnInvoke(PRUint32 peer, const DConnectInvoke *invoke, PRUint
       if (type.IsInterfacePointer())
       {
         // grab the DConAddr value temporarily stored in the param
+#ifdef VBOX
+        PtrBits bits = params[i].val.u64;
+#else
         PtrBits bits = (PtrBits)(uintptr_t) params[i].val.p;
+#endif
 
         // DeserializeInterfaceParamBits needs IID only if it's a remote object
         nsID iid;
