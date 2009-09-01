@@ -46,8 +46,9 @@ int main(int argc, char* argv[])
                "webtest: VirtualBox webservice testcase.\n"
                "Usage:\n"
                " - IWebsessionManager:\n"
-               "   - webtest logon <user> <pass>: IWebsessionManage::logon().\n"
-               "   - webtest getsession <vboxref>: IWebsessionManage::getSessionObject().\n"
+               "   - webtest logon <user> <pass>: IWebsessionManager::logon().\n"
+               "   - webtest getsession <vboxref>: IWebsessionManager::getSessionObject().\n"
+               "   - webtest logoff <vboxref>: IWebsessionManager::logoff().\n"
                " - IVirtualBox:\n"
                "   - webtest version <vboxref>: IVirtualBox::getVersion().\n"
                "   - webtest gethost <vboxref>: IVirtualBox::getHost().\n"
@@ -83,7 +84,6 @@ int main(int argc, char* argv[])
             _vbox__IWebsessionManager_USCORElogon req;
             req.username = argv[2];
             req.password = argv[3];
-            std::cout << "logon: user = \"" << req.username << "\", pass = \"" << req.password << "\"\n";
             _vbox__IWebsessionManager_USCORElogonResponse resp;
 
             if (!(soaprc = soap_call___vbox__IWebsessionManager_USCORElogon(&soap,
@@ -110,6 +110,24 @@ int main(int argc, char* argv[])
                                                             &req,
                                                             &resp)))
                 std::cout << "session: \"" << resp.returnval << "\"\n";
+        }
+    }
+    else if (!strcmp(pcszMode, "logoff"))
+    {
+        if (argc < 3)
+            std::cout << "Not enough arguments for \"" << pcszMode << "\" mode.\n";
+        else
+        {
+            _vbox__IWebsessionManager_USCORElogoff req;
+            req.refIVirtualBox = argv[2];
+            _vbox__IWebsessionManager_USCORElogoffResponse resp;
+
+            if (!(soaprc = soap_call___vbox__IWebsessionManager_USCORElogoff(&soap,
+                                                            pcszArgEndpoint,
+                                                            NULL,
+                                                            &req,
+                                                            &resp)))
+                ;
         }
     }
     else if (!strcmp(pcszMode, "version"))

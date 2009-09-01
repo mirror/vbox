@@ -2,7 +2,7 @@
  * vboxweb.cpp:
  *      hand-coded parts of the webservice server. This is linked with the
  *      generated code in out/.../src/VBox/Main/webservice/methodmaps.cpp
- *      (and static gSOAP server code) to implement the actual webservice
+ *      (plus static gSOAP server code) to implement the actual webservice
  *      server, to which clients can connect.
  *
  * Copyright (C) 2006-2009 Sun Microsystems, Inc.
@@ -97,13 +97,13 @@ ComPtr<IVirtualBox>     g_pVirtualBox = NULL;
 extern const char       *g_pcszISession,
                         *g_pcszIVirtualBox;
 
+// globals for vboxweb command-line arguments
 #define DEFAULT_TIMEOUT_SECS 300
 #define DEFAULT_TIMEOUT_SECS_STRING "300"
-
 int                     g_iWatchdogTimeoutSecs = DEFAULT_TIMEOUT_SECS;
 int                     g_iWatchdogCheckInterval = 5;
 
-const char              *g_pcszBindToHost = NULL;        // host; NULL = current machine
+const char              *g_pcszBindToHost = NULL;       // host; NULL = current machine
 unsigned int            g_uBindToPort = 18083;          // port
 unsigned int            g_uBacklog = 100;               // backlog = max queue size for requests
 
@@ -204,6 +204,12 @@ void DisplayHelp()
     }
 }
 
+/**
+ * Implementation for WEBLOG macro defined in vboxweb.h; this prints a message
+ * to the console and optionally to the file that may have been given to the
+ * vboxwebsrv command line.
+ * @param pszFormat
+ */
 void WebLog(const char *pszFormat, ...)
 {
     va_list args;
@@ -222,6 +228,10 @@ void WebLog(const char *pszFormat, ...)
     }
 }
 
+/**
+ * Helper for printing SOAP error messages.
+ * @param soap
+ */
 void WebLogSoapError(struct soap *soap)
 {
     if (soap_check_state(soap))
@@ -240,7 +250,9 @@ void WebLogSoapError(struct soap *soap)
 
 /**
  * Start up the webservice server. This keeps running and waits
- * for incoming SOAP connections.
+ * for incoming SOAP connections; for each request that comes in,
+ * it calls method implementation code, most of it in the generated
+ * code in methodmaps.cpp.
  *
  * @param argc
  * @param argv[]
@@ -416,10 +428,11 @@ int main(int argc, char* argv[])
                g_uBindToPort,
                m);
 
-        for (unsigned long long i = 1;
+        for (uint64_t i = 1;
              ;
              i++)
         {
+            // call gSOAP to handle incoming SOAP connection
             s = soap_accept(&soap);
             if (s < 0)
             {
@@ -478,7 +491,7 @@ int fntWatchdog(RTTHREAD ThreadSelf, void *pvUser)
     while (1)
     {
         WEBDEBUG(("Watchdog: sleeping %d seconds\n", g_iWatchdogCheckInterval));
-        RTThreadSleep(g_iWatchdogCheckInterval*1000);
+        RTThreadSleep(g_iWatchdogCheckInterval * 1000);
 
         time_t                      tNow;
         time(&tNow);
@@ -568,9 +581,6 @@ void RaiseSoapInvalidObjectFault(struct soap *soap,
 {
     _vbox__InvalidObjectFault *ex = soap_new__vbox__InvalidObjectFault(soap, 1);
     ex->badObjectID = obj;
-
-    /* std::ostringstream ostr;
-    ostr << std::hex << ex->badObjectID; */
 
     std::string str("VirtualBox error: ");
     str += "Invalid managed object reference \"" + obj + "\"";
