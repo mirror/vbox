@@ -1,6 +1,6 @@
 /* $Id$ */
-/** @file 
- * VBox stream drivers - Raw file output. 
+/** @file
+ * VBox stream drivers - Raw file output.
  */
 
 /*
