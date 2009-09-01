@@ -92,15 +92,15 @@
     </message>
     <message>
         <source>Kernel driver not accessible</source>
-        <translation type="unfinished"></translation>
+        <translation>커널 드라이버에 접근할 수 없음</translation>
     </message>
     <message>
         <source>The VirtualBox kernel modules do not fit to this version of VirtualBox. The installation of VirtualBox was apparently not successful. It may help to completely uninstall and re-install VirtualBox.</source>
-        <translation type="unfinished"></translation>
+        <translation>이 버전의 VirtualBox에서는 현재 설치되어 있는 커널 모듈을 사용할 수 없습니다. VirtualBox 설치 과정이 실패했을 수도 있습니다. 완전히 삭제한 다음 다시 설치해 보십시오.</translation>
     </message>
     <message>
         <source>The VirtualBox kernel modules do not fit to this version of VirtualBox. The installation of VirtualBox was apparently not successful. Executing&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;should fix that problem. Make sure that you don&apos;t mix the OSE version and the PUEL version of VirtualBox.</source>
-        <translation type="unfinished"></translation>
+        <translation>이 버전의 VirtualBox에서는 현재 설치되어 있는 커널 모듈을 사용할 수 없습니다. VirtualBox 설치 과정이 실패했을 수도 있습니다. &lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt; 명령을 실행시키면 문제를 해결할 수도 있습니다. VirtualBox OSE 버전과 PUEL 버전을 같이 설치하지 마십시오..</translation>
     </message>
 </context>
 <context>
@@ -118,11 +118,11 @@
     <name>QIFileDialog</name>
     <message>
         <source>Select a directory</source>
-        <translation type="unfinished">디렉터리를 선택하십시오</translation>
+        <translation>디렉터리를 선택하십시오</translation>
     </message>
     <message>
         <source>Select a file</source>
-        <translation type="unfinished">파일을 선택하십시오</translation>
+        <translation>파일을 선택하십시오</translation>
     </message>
 </context>
 <context>
@@ -997,12 +997,12 @@
     <message>
         <source>Indicates the status of the hardware virtualization features used by this virtual machine:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;</source>
         <comment>Virtualization Stuff LED</comment>
-        <translation type="unfinished"></translation>
+        <translation>이 가상 머신에서 사용하는 하드웨어 가상화 기능의 상태를 표시합니다:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;</source>
         <comment>Virtualization Stuff LED</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;</translation>
     </message>
 </context>
 <context>
@@ -1095,67 +1095,67 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Write in legacy OVF 0.9 format for compatibility with other virtualization products.</source>
-        <translation type="unfinished"></translation>
+        <translation>다른 가상화 제품과의 호환을 위하여 OVF 0.9 형식을 사용합니다.</translation>
     </message>
     <message>
         <source>&amp;Write legacy OVF 0.9</source>
-        <translation type="unfinished"></translation>
+        <translation>OVF 0.9로 쓰기(&amp;W)</translation>
     </message>
     <message>
         <source>Please choose a filename to export the OVF in.</source>
-        <translation type="unfinished"></translation>
+        <translation>내보낼 OVF 파일을 선택하십시오.</translation>
     </message>
     <message>
         <source>Please complete the additionally fields like the username, password and the bucket. Finally you have to provide a filename for the OVF target.</source>
-        <translation type="unfinished"></translation>
+        <translation>사용자 이름, 암호, 저장소 정보와 같은 추가 정보를 입력해 주십시오. 그 다음 OVF 파일 이름을 지정하십시오.</translation>
     </message>
     <message>
         <source>Please complete the additionally fields like the username, password, hostname and the bucket. Finally you have to provide a filename for the OVF target.</source>
-        <translation type="unfinished"></translation>
+        <translation>사용자 이름, 암호, 호스트 이름, 저장소 정보와 같은 추가 정보를 입력해 주십시오. 그 다음 OVF 파일 이름을 지정하십시오.</translation>
     </message>
     <message>
         <source>Checking files ...</source>
-        <translation type="unfinished"></translation>
+        <translation>파일 검사 중...</translation>
     </message>
     <message>
         <source>Removing files ...</source>
-        <translation type="unfinished"></translation>
+        <translation>파일 삭제 중...</translation>
     </message>
     <message>
         <source>Please specify the target for the OVF export. You can choose between a local file system export, the uploading of the OVF to the Sun Cloud service or an S3 storage server.</source>
-        <translation type="unfinished"></translation>
+        <translation>OVF로 내보낼 장소를 선택하십시오. 로컬 파일로 내보내거나, OVF 파일을 Sun 클라우드 서비스 및 S3 저장소 서버로 바로 업로드할 수 있습니다.</translation>
     </message>
     <message>
         <source>&amp;Local Filesystem </source>
-        <translation type="unfinished"></translation>
+        <translation>로컬 파일시스템(&amp;L)</translation>
     </message>
     <message>
         <source>Sun &amp;Cloud</source>
-        <translation type="unfinished"></translation>
+        <translation>Sun 클라우드(&amp;C)</translation>
     </message>
     <message>
         <source>&amp;Simple Storage System (S3)</source>
-        <translation type="unfinished"></translation>
+        <translation>간단한 저장소 시스템(S3)(&amp;S)</translation>
     </message>
     <message>
         <source>&amp;Username:</source>
-        <translation type="unfinished"></translation>
+        <translation>사용자 이름(&amp;U):</translation>
     </message>
     <message>
         <source>&amp;Password:</source>
-        <translation type="unfinished"></translation>
+        <translation>암호(&amp;P):</translation>
     </message>
     <message>
         <source>&amp;File:</source>
-        <translation type="unfinished"></translation>
+        <translation>파일(&amp;F):</translation>
     </message>
     <message>
         <source>&amp;Bucket:</source>
-        <translation type="unfinished"></translation>
+        <translation>저장소(&amp;B):</translation>
     </message>
     <message>
         <source>&amp;Hostname:</source>
-        <translation type="unfinished"></translation>
+        <translation>호스트 이름(&amp;H):</translation>
     </message>
 </context>
 <context>
@@ -2455,72 +2455,72 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Bridged adapter, %1</source>
         <comment>details report (network)</comment>
-        <translation type="unfinished"></translation>
+        <translation>브리지 어댑터, %1</translation>
     </message>
     <message>
         <source>Host-only adapter, &apos;%1&apos;</source>
         <comment>details report (network)</comment>
-        <translation type="unfinished"></translation>
+        <translation>호스트 전용 어댑터, &apos;%1&apos;</translation>
     </message>
     <message>
         <source>Intel PRO/1000 MT Server (82545EM)</source>
         <comment>NetworkAdapterType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Intel PRO/1000 MT Server (82545EM)</translation>
     </message>
     <message>
         <source>Bridged Adapter</source>
         <comment>NetworkAttachmentType</comment>
-        <translation type="unfinished"></translation>
+        <translation>브리지 어댑터</translation>
     </message>
     <message>
         <source>Host-only Adapter</source>
         <comment>NetworkAttachmentType</comment>
-        <translation type="unfinished"></translation>
+        <translation>호스트 전용 어댑터</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;%1 MB&lt;/nobr&gt;</source>
         <comment>details report</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;%1 MB&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>Processor(s)</source>
         <comment>details report</comment>
-        <translation type="unfinished"></translation>
+        <translation>프로세서</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;%1&lt;/nobr&gt;</source>
         <comment>details report</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;%1&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>System</source>
         <comment>details report</comment>
-        <translation type="unfinished"></translation>
+        <translation>시스템</translation>
     </message>
     <message>
         <source>Remote Display Server Port</source>
         <comment>details report (VRDP Server)</comment>
-        <translation type="unfinished"></translation>
+        <translation>원격 디스플레이 서버 포트</translation>
     </message>
     <message>
         <source>Remote Display Server</source>
         <comment>details report (VRDP Server)</comment>
-        <translation type="unfinished"></translation>
+        <translation>원격 디스플레이 서버</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details report (VRDP Server)</comment>
-        <translation type="unfinished">사용 안함</translation>
+        <translation>사용 안함</translation>
     </message>
     <message>
         <source>Display</source>
         <comment>details report</comment>
-        <translation type="unfinished"></translation>
+        <translation>디스플레이</translation>
     </message>
     <message>
         <source>Raw File</source>
         <comment>PortMode</comment>
-        <translation type="unfinished"></translation>
+        <translation>생(RAW) 파일</translation>
     </message>
 </context>
 <context>
@@ -2859,15 +2859,15 @@ p, li { white-space: pre-wrap; }
     <name>VBoxMiniToolBar</name>
     <message>
         <source>Always show the toolbar</source>
-        <translation type="unfinished"></translation>
+        <translation>항상 도구 모음 보이기</translation>
     </message>
     <message>
         <source>Exit Full Screen or Seamless Mode</source>
-        <translation type="unfinished"></translation>
+        <translation>전체 화면 및 심리스 모드 끝내기</translation>
     </message>
     <message>
         <source>Close VM</source>
-        <translation type="unfinished">가상 머신 닫기</translation>
+        <translation>가상 머신 닫기</translation>
     </message>
 </context>
 <context>
@@ -3133,7 +3133,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&amp;Version:</source>
-        <translation type="unfinished"></translation>
+        <translation>버전(&amp;V):</translation>
     </message>
 </context>
 <context>
@@ -3880,31 +3880,31 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;Deleting this host-only network will lead to the deleting of the host-only interface this network is based on. Do you want to remove the (host-only network) interface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note:&lt;/b&gt; this interface may be in use by one or more virtual network adapters belonging to one of your VMs. After it is removed, these adapters will no longer be usable until you correct their settings by either choosing a different interface name or a different adapter attachment type.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;이 호스트 전용 네트워크를 삭제하면, 이 네트워크가 사용하는 호스트 전용 인터페이스를 삭제합니다. 호스트 전용 네트워크 인터페이스 &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;을(를)&lt;/nobr&gt; 삭제하시겠습니까?&lt;/p&gt;&lt;p&gt;&lt;b&gt;메모:&lt;/b&gt; 하나 이상의 다른 가상 머신에서 이 인터페이스를 사용하고 있을 수도 있습니다. 다른 어댑터를 연결하거나, 새 인터페이스 이름을 지정하지 않는 한 이 어댑터를 다른 가상 머신에서 사용할 수 없습니다.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>A file named &lt;b&gt;%1&lt;/b&gt; already exists. Are you sure you want to replace it?&lt;br /&gt;&lt;br /&gt;Replacing it will overwrite its contents.</source>
-        <translation type="unfinished"></translation>
+        <translation>파일 &lt;b&gt;%1&lt;/b&gt;이(가) 이미 존재합니다. 새 파일로 덮어쓰시겠습니까?&lt;br /&gt;&lt;br /&gt;파일을 덮어 쓰면 내용이 바뀔 것입니다.</translation>
     </message>
     <message>
         <source>&lt;p&gt;VT-x/AMD-V hardware acceleration has been enabled, but is not operational. Certain guests (e.g. OS/2 and QNX) require this feature.&lt;/p&gt;&lt;p&gt;Please ensure that you have enabled VT-x/AMD-V properly in the BIOS of your host computer.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;VT-x/AMD-V 하드웨어 가속 기능이 활성화되었지만, 현재 작동하지 않습니다. 일부 게스트 운영체제(OS/2, QNX 등)에서는 이 기능이 필요합니다.&lt;/p&gt;&lt;p&gt;컴퓨터 바이오스에서 VT-x/AMD-V를 활성화했는지 확인해 보십시오.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Invalid e-mail address or password specified.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;전자 우편 주소나 암호가 잘못되었습니다.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Failed to register the VirtualBox product.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;VirtualBox 제품을 등록하는 데 실패했습니다.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Failed to check files.</source>
-        <translation type="unfinished"></translation>
+        <translation>파일을 검사하는 데 실패했습니다.</translation>
     </message>
     <message>
         <source>Failed to remove file.</source>
-        <translation type="unfinished"></translation>
+        <translation>파일을 삭제하는 데 실패했습니다.</translation>
     </message>
 </context>
 <context>
@@ -3915,7 +3915,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Time remaining: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>남은 시간: %1</translation>
     </message>
 </context>
 <context>
@@ -3970,59 +3970,59 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Select Country/Territory</source>
-        <translation type="unfinished"></translation>
+        <translation>국가 및 지역 선택</translation>
     </message>
     <message>
         <source>&lt;p&gt;Please fill out this registration form to let us know that you use VirtualBox and, optionally, to keep you informed about VirtualBox news and updates.&lt;/p&gt;&lt;p&gt;Please use the Latin characters to fill the fields below. Please note that Sun Microsystems will use this information only to gather product usage statistics and to send you VirtualBox newsletters. In particular, Sun Microsystems will never pass your data to third parties. Detailed information about how we use your personal data can be found in the &lt;b&gt;Privacy Policy&lt;/b&gt; section of the VirtualBox Manual or on the &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt; page of the VirtualBox web-site.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;이 등록 양식을 작성하셔서 VirtualBox를 사용하고 있다는 것을 알려 주십시오. 선택적으로 VirtualBox 뉴스와 업데이트를 받을 수도 있습니다.&lt;/p&gt;&lt;p&gt;영문자로 전체 이름을 작성하시고 전자 우편 주소를 적어 주십시오. Sun 마이크로시스템즈에서는 수집한 개인 정보를 제 3자에게 보내지 않으며, 이 정보를 사용하여 VirtualBox 사용 통계를 모으고 연락하는 데만 사용할 것입니다. 개인 정보를 어떻게 사용하는가에 대해서 알아보시려면 VirtualBox 설명서의 &lt;b&gt;개인 정보 정책&lt;/b&gt; 섹션이나 VirtualBox 웹 사이트의 &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;개인 정보 정책&lt;/a&gt;을 참고하십시오.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>I &amp;have a Sun Online account already:</source>
-        <translation type="unfinished"></translation>
+        <translation>Sun 온라인 계정이 이미 있습니다(&amp;H):</translation>
     </message>
     <message>
         <source>&amp;E-mail:</source>
-        <translation type="unfinished"></translation>
+        <translation>전자 우편 주소(&amp;E):</translation>
     </message>
     <message>
         <source>&amp;Password:</source>
-        <translation type="unfinished"></translation>
+        <translation>암호(&amp;P):</translation>
     </message>
     <message>
         <source>I &amp;would like to register creating a new Sun Online account:</source>
-        <translation type="unfinished"></translation>
+        <translation>Sun 온라인 계정을 등록하겠습니다(&amp;W):</translation>
     </message>
     <message>
         <source>&amp;First Name:</source>
-        <translation type="unfinished"></translation>
+        <translation>이름(&amp;F):</translation>
     </message>
     <message>
         <source>&amp;Last Name:</source>
-        <translation type="unfinished"></translation>
+        <translation>성(&amp;L):</translation>
     </message>
     <message>
         <source>&amp;Company:</source>
-        <translation type="unfinished"></translation>
+        <translation>회사(&amp;C):</translation>
     </message>
     <message>
         <source>Co&amp;untry:</source>
-        <translation type="unfinished"></translation>
+        <translation>국가(&amp;U):</translation>
     </message>
     <message>
         <source>E-&amp;mail:</source>
-        <translation type="unfinished"></translation>
+        <translation>전자 우편 주소(&amp;M):</translation>
     </message>
     <message>
         <source>P&amp;assword:</source>
-        <translation type="unfinished"></translation>
+        <translation>암호(&amp;A):</translation>
     </message>
     <message>
         <source>Co&amp;nfirm Password:</source>
-        <translation type="unfinished"></translation>
+        <translation>암호 확인(&amp;N):</translation>
     </message>
     <message>
         <source>&amp;Register</source>
-        <translation type="unfinished"></translation>
+        <translation>등록(&amp;R)</translation>
     </message>
 </context>
 <context>
@@ -4621,7 +4621,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for booting an operating system of your choice on the virtual machine.&lt;/p&gt;&lt;p&gt;Note that you will not be able to install an operating system into this virtual machine right now because you did not attach any hard disk to it. If this is not what you want, you can cancel execution of this wizard, select &lt;b&gt;Settings&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window to access the settings dialog of this machine and change the hard disk configuration.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page. You can also press &lt;b&gt;Cancel&lt;/b&gt; if you want to cancel execution of this wizard.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;새 가상 머신을 처음으로 시작했습니다. 이 마법사는 선택한 가상 머신에서 운영체제를 시작하기 위한 단계를 도와 줍니다.&lt;/p&gt;&lt;p&gt;아직까지 하드디스크가 연결되어 있지 않기 때문에 이 가상 머신에 운영체제를 즉시 설치할 수는 없습니다. 이것을 원하지 않으신다면 이 마법사의 실행을 취소한 다음 주 창의 &lt;b&gt;머신&lt;/b&gt; 메뉴의 &lt;b&gt;설정&lt;/b&gt; 항목에서 하드디스크 설정을 편집하십시오.&lt;/p&gt;&lt;p&gt;&lt;b&gt;다음&lt;/b&gt; 단추를 누르면 이 마법사의 다음 쪽으로 진행하며 &lt;b&gt;이전&lt;/b&gt; 단추를 누르면 이전 쪽으로 돌아갑니다. &lt;b&gt;취소&lt;/b&gt; 단추를 눌러서 언제든지 마법사를 끝낼 수 있습니다.</translation>
+        <translation>&lt;p&gt;새 가상 머신을 처음으로 시작했습니다. 이 마법사는 선택한 가상 머신에서 운영체제를 시작하기 위한 단계를 도와 줍니다.&lt;/p&gt;&lt;p&gt;아직까지 하드디스크가 연결되어 있지 않기 때문에 이 가상 머신에 운영체제를 즉시 설치할 수는 없습니다. 이것을 원하지 않으신다면 이 마법사의 실행을 취소한 다음 주 창의 &lt;b&gt;머신&lt;/b&gt; 메뉴의 &lt;b&gt;설정&lt;/b&gt; 항목에서 하드디스크 설정을 편집하십시오.&lt;/p&gt;&lt;p&gt;&lt;b&gt;다음&lt;/b&gt; 단추를 누르면 이 마법사의 다음 쪽으로 진행하며 &lt;b&gt;이전&lt;/b&gt; 단추를 누르면 이전 쪽으로 돌아갑니다. &lt;b&gt;취소&lt;/b&gt; 단추를 눌러서 언제든지 마법사를 끝낼 수 있습니다.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Select the type of the media you would like to use for booting an operating system.&lt;/p&gt;</source>
@@ -4958,75 +4958,75 @@ p, li { white-space: pre-wrap; }
     <name>VBoxVMSettingsDisplay</name>
     <message>
         <source>you have assigned less than &lt;b&gt;%1&lt;/b&gt; for video memory which is the minimum amount required to switch the virtual machine to fullscreen or seamless mode.</source>
-        <translation type="unfinished">가상 머신의 비디오 메모리가 전체 화면이나 심리스 모드로 전환하기 위해 필요한 것(&lt;b&gt;%1&lt;/b&gt;)보다 부족합니다.</translation>
+        <translation>가상 머신을 전체 화면이나 심리스 모드로 전환하려면 가상 머신에 &lt;b&gt;%1&lt;/b&gt; 이상의 비디오 메모리를 할당해야 합니다.</translation>
     </message>
     <message>
         <source>&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</source>
-        <translation type="unfinished">&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</translation>
+        <translation>&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&amp;Video</source>
-        <translation type="unfinished"></translation>
+        <translation>비디오(&amp;V)</translation>
     </message>
     <message>
         <source>Video &amp;Memory:</source>
-        <translation type="unfinished"></translation>
+        <translation>비디오 메모리(&amp;M):</translation>
     </message>
     <message>
         <source>Controls the amount of video memory provided to the virtual machine.</source>
-        <translation type="unfinished">가상 머신에 할당할 비디오 메모리 크기를 설정합니다.</translation>
+        <translation>가상 머신에 할당할 비디오 메모리 크기를 설정합니다.</translation>
     </message>
     <message>
         <source>MB</source>
-        <translation type="unfinished">MB</translation>
+        <translation>MB</translation>
     </message>
     <message>
         <source>Extended Features:</source>
-        <translation type="unfinished">확장된 기능:</translation>
+        <translation>확장 기능:</translation>
     </message>
     <message>
         <source>When checked, the virtual machine will get access to the 3D graphics capabilities available on the host.</source>
-        <translation type="unfinished">호스트 머신에서 3차원 그래픽을 사용할 수 있는 경우 선택하면 가상 머신에서도 3차원 그래픽을 사용할 수 있습니다.</translation>
+        <translation>호스트 머신에서 3차원 그래픽을 사용할 수 있는 경우 선택하면 가상 머신에서도 3차원 그래픽을 사용할 수 있습니다.</translation>
     </message>
     <message>
         <source>Enable &amp;3D Acceleration</source>
-        <translation type="unfinished">3차원 가속 사용하기(&amp;3)</translation>
+        <translation>3차원 가속 사용하기(&amp;3)</translation>
     </message>
     <message>
         <source>&amp;Remote Display</source>
-        <translation type="unfinished"></translation>
+        <translation>원격 디스플레이(&amp;R)</translation>
     </message>
     <message>
         <source>When checked, the VM will act as a Remote Desktop Protocol (RDP) server, allowing remote clients to connect and operate the VM (when it is running) using a standard RDP client.</source>
-        <translation type="unfinished">선택하면 가상 머신은 원격 데스크톱(RDP) 서버로 작동합니다. 가상 머신이 실행 중일 때 RDP 클라이언트를 통해서 가상 머신을 제어할 수 있도록 합니다.</translation>
+        <translation>선택하면 가상 머신은 원격 데스크톱(RDP) 서버로 작동합니다. 가상 머신이 실행 중일 때 RDP 클라이언트를 통해서 가상 머신을 제어할 수 있습니다.</translation>
     </message>
     <message>
         <source>&amp;Enable Server</source>
-        <translation type="unfinished">서버 사용함(&amp;E)</translation>
+        <translation>서버 사용하기(&amp;E)</translation>
     </message>
     <message>
         <source>Server &amp;Port:</source>
-        <translation type="unfinished">서버 포트(&amp;P):</translation>
+        <translation>서버 포트(&amp;P):</translation>
     </message>
     <message>
         <source>Displays the VRDP Server port number. You may specify &lt;tt&gt;0&lt;/tt&gt; (zero) to reset the port to the default value.</source>
-        <translation type="unfinished">VRDP 서버 포트 번호를 표시합니다. &lt;tt&gt;0&lt;/tt&gt;을 지정하면 기본값으로 초기화합니다.</translation>
+        <translation>VRDP 서버 포트 번호를 표시합니다. &lt;tt&gt;0&lt;/tt&gt;을 지정하면 기본값으로 초기화합니다.</translation>
     </message>
     <message>
         <source>Authentication &amp;Method:</source>
-        <translation type="unfinished">인증 방법(&amp;M):</translation>
+        <translation>인증 방법(&amp;M):</translation>
     </message>
     <message>
         <source>Defines the VRDP authentication method.</source>
-        <translation type="unfinished">VRDP 인증 방법을 표시합니다.</translation>
+        <translation>VRDP 인증 방법을 표시합니다.</translation>
     </message>
     <message>
         <source>Authentication &amp;Timeout:</source>
-        <translation type="unfinished">인증 제한 시간(&amp;T):</translation>
+        <translation>인증 제한 시간(&amp;T):</translation>
     </message>
     <message>
         <source>Specifies the timeout for guest authentication, in milliseconds.</source>
-        <translation type="unfinished">밀리초 단위의 게스트 인증 제한 시간을 표시합니다.</translation>
+        <translation>밀리초 단위의 게스트 인증 제한 시간을 표시합니다.</translation>
     </message>
 </context>
 <context>
@@ -5089,19 +5089,19 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>System</source>
-        <translation type="unfinished"></translation>
+        <translation>시스템</translation>
     </message>
     <message>
         <source>Display</source>
-        <translation type="unfinished"></translation>
+        <translation>디스플레이</translation>
     </message>
     <message>
         <source>you have selected a 64-bit guest OS type for this VM. As such guests require hardware virtualization (VT-x/AMD-V), this feature will be enabled automatically.</source>
-        <translation type="unfinished"></translation>
+        <translation>이 가상 머신에 64비트 게스트 운영체제를 사용하려면 하드웨어 가상화(VT-x/AMD-V)가 필요하므로, 이 기능은 자동으로 활성화됩니다.</translation>
     </message>
     <message>
         <source>you have selected a 64-bit guest OS type for this VM. VirtualBox does not currently support more than one virtual CPU for 64-bit guests executed on 32-bit hosts.</source>
-        <translation type="unfinished"></translation>
+        <translation>이 가상 머신에 64비트 게스트 운영체제를 사용하기로 선택했습니다. VirtualBox에서는 32비트 호스트에서 64비트 게스트를 실행할 때, 게스트 운영체제에 하나 이상의 가상 CPU를 할당할 수 없습니다.</translation>
     </message>
 </context>
 <context>
@@ -5351,23 +5351,23 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Removable Media:</source>
-        <translation type="unfinished"></translation>
+        <translation>이동식 미디어:</translation>
     </message>
     <message>
         <source>&amp;Remember Runtime Changes</source>
-        <translation type="unfinished"></translation>
+        <translation>실행 중 변경 사항 기억하기(&amp;R)</translation>
     </message>
     <message>
         <source>Mini ToolBar:</source>
-        <translation type="unfinished"></translation>
+        <translation>작은 도구 모음:</translation>
     </message>
     <message>
         <source>If checked, show the Mini ToolBar in Fullscreen and Seamless modes.</source>
-        <translation type="unfinished"></translation>
+        <translation>선택하면 전체 화면 및 심리스 모드에서 작은 도구 모음을 표시합니다.</translation>
     </message>
     <message>
         <source>Show In &amp;Fullscreen/Seamless</source>
-        <translation type="unfinished"></translation>
+        <translation>전체 화면/심리스 모드에서 보이기(&amp;F)</translation>
     </message>
 </context>
 <context>
@@ -5430,11 +5430,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>IDE &amp;Controller Type</source>
-        <translation type="unfinished"></translation>
+        <translation>IDE 컨트롤러 종류(&amp;C)</translation>
     </message>
     <message>
         <source>Defines the type of the virtual IDE controller. Depending on this value, VirtualBox will provide different virtual IDE hardware devices to the guest OS.</source>
-        <translation type="unfinished">가상 IDE 컨트롤러의 종류를 정의합니다. 이 값에 따라서 VirtualBox 가상 머신의 IDE 하드웨어 종류가 달라집니다.</translation>
+        <translation>가상 IDE 컨트롤러의 종류를 정의합니다. 이 값에 따라서 VirtualBox 가상 머신의 IDE 하드웨어 종류가 달라집니다.</translation>
     </message>
 </context>
 <context>
@@ -5512,32 +5512,32 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>no bridged network adapter is selected</source>
-        <translation type="unfinished">브리지 네트워크 어댑터가 선택되지 않았음</translation>
+        <translation>브리지 네트워크 어댑터가 선택되지 않았음</translation>
     </message>
     <message>
         <source>no internal network name is specified</source>
-        <translation type="unfinished">내부 네트워크 이름이 지정되지 않았음</translation>
+        <translation>내부 네트워크 이름이 지정되지 않았음</translation>
     </message>
     <message>
         <source>no host-only network adapter is selected</source>
-        <translation type="unfinished"></translation>
+        <translation>호스트 전용 어댑터가 선택되지 않았음</translation>
     </message>
     <message>
         <source>Not selected</source>
         <comment>network adapter name</comment>
-        <translation type="unfinished">선택하지 않음</translation>
+        <translation>선택하지 않음</translation>
     </message>
     <message>
         <source>Open additional options dialog for current attachment type.</source>
-        <translation type="unfinished"></translation>
+        <translation>현재 연결 종류의 고급 설정 대화 상자를 표시합니다.</translation>
     </message>
     <message>
         <source>&amp;Name:</source>
-        <translation type="unfinished">이름(&amp;N):</translation>
+        <translation>이름(&amp;N):</translation>
     </message>
     <message>
         <source>Selects the name of the network adapter if attachment type is equivalent to &lt;b&gt;Bridged Adapter&lt;/b&gt; or &lt;b&gt;Host-only Adapter&lt;/b&gt; and the name of the internal network if attachment type is equivalent to &lt;b&gt;Internal Network&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>연결 종류가 &lt;b&gt;브리지 어댑터&lt;/b&gt; 및 &lt;b&gt;호스트 전용 어댑터&lt;/b&gt;인 경우 해당하는 어댑터를 선택하시고, &lt;b&gt;내부 네트워크&lt;/b&gt;인 경우 내부 네트워크의 이름을 입력하십시오.</translation>
     </message>
 </context>
 <context>
@@ -5628,7 +5628,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Additional Options</source>
-        <translation type="unfinished"></translation>
+        <translation>추가 옵션</translation>
     </message>
 </context>
 <context>
@@ -5857,7 +5857,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Port/File &amp;Path:</source>
-        <translation type="unfinished"></translation>
+        <translation>포트/파일 경로(&amp;P):</translation>
     </message>
 </context>
 <context>
@@ -5879,145 +5879,145 @@ p, li { white-space: pre-wrap; }
     <name>VBoxVMSettingsSystem</name>
     <message>
         <source>you have assigned more than &lt;b&gt;%1%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%2&lt;/b&gt;) to the virtual machine. Not enough memory is left for your host operating system. Please select a smaller amount.</source>
-        <translation type="unfinished">컴퓨터의 메모리(&lt;b&gt;%2&lt;/b&gt;)의 &lt;b&gt;%1%&lt;/b&gt; 이상을 가상 머신에 할당하였습니다. 호스트 운영체제의 메모리가 부족합니다. 좀 더 적은 양을 선택하십시오.</translation>
+        <translation>컴퓨터 메모리(&lt;b&gt;%2&lt;/b&gt;)의 &lt;b&gt;%1%&lt;/b&gt; 이상을 가상 머신에 할당하였습니다. 호스트 운영체제의 메모리가 부족합니다. 좀 더 적은 양을 선택하십시오.</translation>
     </message>
     <message>
         <source>you have assigned more than &lt;b&gt;%1%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%2&lt;/b&gt;) to the virtual machine. Not enough memory might be left for your host operating system. Continue at your own risk.</source>
-        <translation type="unfinished">컴퓨터의 메모리(&lt;b&gt;%2&lt;/b&gt;)의 &lt;b&gt;%1%&lt;/b&gt; 이상을 가상 머신에 할당하였습니다. 호스트 운영체제의 메모리가 부족해질 수도 있습니다. 실행하는 동안 주의하십시오.</translation>
+        <translation>컴퓨터 메모리(&lt;b&gt;%2&lt;/b&gt;)의 &lt;b&gt;%1%&lt;/b&gt; 이상을 가상 머신에 할당하였습니다. 호스트 운영체제의 메모리가 부족해질 수도 있습니다. 실행하는 동안 주의하십시오.</translation>
     </message>
     <message>
         <source>for performance reasons, the number of virtual CPUs attached to the virtual machine may not be more than twice the number of physical CPUs on the host (&lt;b&gt;%1&lt;/b&gt;). Please reduce the number of virtual CPUs.</source>
-        <translation type="unfinished"></translation>
+        <translation>성능상의 이유로 가상 머신에 연결된 CPU 갯수는 호스트 머신의 CPU 갯수(&lt;b&gt;%1개&lt;/b&gt;)의 2배 이상이 될 수 없습니다. 가상 CPU를 더 적게 연결하십시오.</translation>
     </message>
     <message>
         <source>you have assigned more virtual CPUs to the virtual machine than the number of physical CPUs on your host system (&lt;b&gt;%1&lt;/b&gt;). This is likely to degrade the performance of your virtual machine. Please consider reducing the number of virtual CPUs.</source>
-        <translation type="unfinished"></translation>
+        <translation>가상 머신에 호스트 시스템의 CPU(&lt;b&gt;%1개&lt;/b&gt;)보다 더 많은 CPU를 연결했습니다. 가상 머신의 성능을 떨어트릴 수도 있으므로, 가상 CPU를 더 적게 연결하십시오.</translation>
     </message>
     <message>
         <source>you have assigned more than one virtual CPU to this VM. This will not work unless the IO-APIC feature is also enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
-        <translation type="unfinished"></translation>
+        <translation>이 가상 머신에 하나 이상의 가상 CPU를 할당하였습니다. IO-APIC 기능이 켜져 있지 않으면 작동하지 않을 것입니다. 가상 머신 설정을 저장할 때 자동으로 켜질 것입니다.</translation>
     </message>
     <message>
         <source>you have assigned more than one virtual CPU to this VM. This will not work unless hardware virtualization (VT-x/AMD-V) is also enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
-        <translation type="unfinished"></translation>
+        <translation>이 가상 머신에 하나 이상의 가상 CPU를 할당하였습니다. 하드웨어 가상화(VT-x/AMD-V) 기능이 켜져 있지 않으면 작동하지 않을 것입니다. 가상 머신 설정을 저장할 때 자동으로 켜질 것입니다.</translation>
     </message>
     <message>
         <source>&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</source>
-        <translation type="unfinished">&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</translation>
+        <translation>&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&lt;qt&gt;%1&amp;nbsp;CPU&lt;/qt&gt;</source>
         <comment>%1 is 1 for now</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;CPU&amp;nbsp;%1개&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&lt;qt&gt;%1&amp;nbsp;CPUs&lt;/qt&gt;</source>
         <comment>%1 is 32 for now</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;CPU&amp;nbsp;%1개&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&amp;Motherboard</source>
-        <translation type="unfinished"></translation>
+        <translation>마더보드(&amp;M)</translation>
     </message>
     <message>
         <source>Base &amp;Memory:</source>
-        <translation type="unfinished"></translation>
+        <translation>기본 메모리(&amp;M):</translation>
     </message>
     <message>
         <source>Controls the amount of memory provided to the virtual machine. If you assign too much, the machine might not start.</source>
-        <translation type="unfinished">가상 머신에 할당할 메모리 크기를 설정합니다. 너무 크면 가상 머신이 시작하지 않을 수 있습니다.</translation>
+        <translation>가상 머신에 할당할 메모리 크기를 설정합니다. 너무 크면 가상 머신이 시작하지 않을 수 있습니다.</translation>
     </message>
     <message>
         <source>MB</source>
-        <translation type="unfinished">MB</translation>
+        <translation>MB</translation>
     </message>
     <message>
         <source>&amp;Boot Order:</source>
-        <translation type="unfinished"></translation>
+        <translation>부팅 순서(&amp;B):</translation>
     </message>
     <message>
         <source>Defines the boot device order. Use checkboxes to the left to enable or disable individual boot devices. Move items up and down to change the device order.</source>
-        <translation type="unfinished">부트 장치의 순서를 정합니다. 체크 상자를 사용해서 각각 부트 장치를 켜거나 끌 수 있습니다. 항목을 위나 아래로 이동해서 순서를 바꿀 수 있습니다.</translation>
+        <translation>부트 장치의 순서를 정합니다. 체크 상자를 사용해서 각각 부트 장치를 켜거나 끌 수 있습니다. 항목을 위나 아래로 이동해서 순서를 바꿀 수 있습니다.</translation>
     </message>
     <message>
         <source>Move Down (Ctrl-Down)</source>
-        <translation type="unfinished">아래로 이동 (Ctrl-Down)</translation>
+        <translation>아래로 이동 (Ctrl-Down)</translation>
     </message>
     <message>
         <source>Moves the selected boot device down.</source>
-        <translation type="unfinished">선택한 부트 장치를 아래로 이동합니다.</translation>
+        <translation>선택한 부트 장치를 아래로 이동합니다.</translation>
     </message>
     <message>
         <source>Move Up (Ctrl-Up)</source>
-        <translation type="unfinished">위로 이동 (Ctrl-Up)</translation>
+        <translation>위로 이동 (Ctrl-Up)</translation>
     </message>
     <message>
         <source>Moves the selected boot device up.</source>
-        <translation type="unfinished">선택한 부트 장치를 위로 이동합니다.</translation>
+        <translation>선택한 부트 장치를 위로 이동합니다.</translation>
     </message>
     <message>
         <source>Extended Features:</source>
-        <translation type="unfinished">확장된 기능:</translation>
+        <translation>확장된 기능:</translation>
     </message>
     <message>
         <source>When checked, the virtual machine will support the Advanced Configuration and Power Management Interface (ACPI). &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable this feature after having installed a Windows guest operating system!</source>
-        <translation type="unfinished">선택하면 가상 머신에서 고급 설정 및 전원 관리(ACPI)를 사용합니다. &lt;b&gt;주의:&lt;/b&gt; 게스트 운영체제로 윈도를 설치한 후에 이 기능을 끄지 마십시오!</translation>
+        <translation>선택하면 가상 머신에서 고급 설정 및 전원 관리(ACPI)를 사용합니다. &lt;b&gt;주의:&lt;/b&gt; 게스트 운영체제로 윈도를 설치한 후에 이 기능을 끄지 마십시오!</translation>
     </message>
     <message>
         <source>Enable &amp;ACPI</source>
-        <translation type="unfinished"></translation>
+        <translation>ACPI 사용하기(&amp;A)</translation>
     </message>
     <message>
         <source>When checked, the virtual machine will support the Input Output APIC (IO APIC), which may slightly decrease the VM performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable this feature after having installed a Windows guest operating system!</source>
-        <translation type="unfinished">선택하면 가상 머신에서 IO APIC를 사용합니다. 이 경우 가상 머신의 성능이 저하될 수도 있습니다. &lt;b&gt;주의:&lt;/b&gt; 게스트 운영체제로 윈도를 설치한 후에 이 기능을 끄지 마십시오!</translation>
+        <translation>선택하면 가상 머신에서 IO APIC를 사용합니다. 이 경우 가상 머신의 성능이 저하될 수도 있습니다. &lt;b&gt;주의:&lt;/b&gt; 게스트 운영체제로 윈도를 설치한 후에 이 기능을 끄지 마십시오!</translation>
     </message>
     <message>
         <source>Enable &amp;IO APIC</source>
-        <translation type="unfinished"></translation>
+        <translation>IO APIC 사용하기(&amp;I)</translation>
     </message>
     <message>
         <source>&amp;Processor</source>
-        <translation type="unfinished"></translation>
+        <translation>프로세서(&amp;P)</translation>
     </message>
     <message>
         <source>&amp;Processor(s):</source>
-        <translation type="unfinished"></translation>
+        <translation>프로세서 갯수(&amp;P):</translation>
     </message>
     <message>
         <source>Controls the number of virtual CPUs in the virtual machine.</source>
-        <translation type="unfinished"></translation>
+        <translation>가상 머신의 CPU 갯수를 조정합니다.</translation>
     </message>
     <message>
         <source>When checked, the Physical Address Extension (PAE) feature of the host CPU will be exposed to the virtual machine.</source>
-        <translation type="unfinished">선택하면 호스트 CPU의 물리적 주소 확장(PAE) 기능을 가상 머신에서도 사용할 수 있게 됩니다.</translation>
+        <translation>선택하면 호스트 CPU의 물리적 주소 확장(PAE) 기능을 가상 머신에서도 사용할 수 있게 됩니다.</translation>
     </message>
     <message>
         <source>Enable PA&amp;E/NX</source>
-        <translation type="unfinished">PAE/NX 사용하기(&amp;E)</translation>
+        <translation>PAE/NX 사용하기(&amp;E)</translation>
     </message>
     <message>
         <source>Acce&amp;leration</source>
-        <translation type="unfinished"></translation>
+        <translation>가속(&amp;L)</translation>
     </message>
     <message>
         <source>Hardware Virtualization:</source>
-        <translation type="unfinished"></translation>
+        <translation>하드웨어 가상화:</translation>
     </message>
     <message>
         <source>When checked, the virtual machine will try to make use of the host CPU&apos;s hardware virtualization extensions such as Intel VT-x and AMD-V.</source>
-        <translation type="unfinished">선택하면 인텔의 VT-x나 AMD-V 같은 호스트 CPU의 하드웨어 가상화 확장을 사용합니다.</translation>
+        <translation>선택하면 인텔의 VT-x나 AMD-V 같은 호스트 CPU의 하드웨어 가상화 확장을 사용합니다.</translation>
     </message>
     <message>
         <source>Enable &amp;VT-x/AMD-V</source>
-        <translation type="unfinished">VT-x/AMD-V 사용하기(&amp;V)</translation>
+        <translation>VT-x/AMD-V 사용하기(&amp;V)</translation>
     </message>
     <message>
         <source>When checked, the virtual machine will try to make use of the nested paging extension of Intel VT-x and AMD-V.</source>
-        <translation type="unfinished">선택하면 가상 머신에서 인텔 VT-x 및 AMD-V의 네스티드 페이징을 사용할 것입니다.</translation>
+        <translation>선택하면 가상 머신에서 인텔 VT-x 및 AMD-V의 네스티드 페이징을 사용할 것입니다.</translation>
     </message>
     <message>
         <source>Enable Nested Pa&amp;ging</source>
-        <translation type="unfinished">네스티드 페이징 사용하기(&amp;G)</translation>
+        <translation>네스티드 페이징 사용하기(&amp;G)</translation>
     </message>
 </context>
 <context>
