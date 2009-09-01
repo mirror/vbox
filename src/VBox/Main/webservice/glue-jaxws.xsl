@@ -7,7 +7,7 @@
         a Java wrapper that allows client code to use the
         webservice in an object-oriented way.
 
-     Copyright (C) 2006-2008 Sun Microsystems, Inc.
+     Copyright (C) 2008-2009 Sun Microsystems, Inc.
 
      This file is part of VirtualBox Open Source Edition (OSE), as
      available from http://www.virtualbox.org. This file is free software;
