@@ -34,12 +34,16 @@
 #include <VBox/com/VirtualBox.h>
 
 #include <VBox/log.h>
+#include <iprt/asm.h>
+#include <iprt/semaphore.h>
 #include <iprt/stream.h>
-#include <iprt/thread.h>
+#include <iprt/string.h>
 #include <iprt/time.h>
+#include <iprt/thread.h>
 
 #ifdef USE_XPCOM_QUEUE
 # include <sys/select.h>
+# include <errno.h>
 #endif
 
 using namespace com;
@@ -58,9 +62,20 @@ public:
 #ifndef VBOX_WITH_XPCOM
         refcnt = 0;
 #endif
+#ifndef USE_XPCOM_QUEUE
+        int rc = RTSemEventMultiCreate(&mhEvent);
+        if (RT_FAILURE(rc))
+            mhEvent = NIL_RTSEMEVENTMULTI;
+#endif
     }
 
-    virtual ~GuestPropertyCallback() {}
+    virtual ~GuestPropertyCallback()
+    {
+#ifndef USE_XPCOM_QUEUE
+        RTSemEventMultiDestroy(mhEvent);
+        mhEvent = NIL_RTSEMEVENTMULTI;
+#endif
+    }
 
 #ifndef VBOX_WITH_XPCOM
     STDMETHOD_(ULONG, AddRef)()
@@ -149,36 +164,51 @@ public:
                                      IN_BSTR name, IN_BSTR value,
                                      IN_BSTR flags)
     {
-        HRESULT rc = S_OK;
         Utf8Str utf8Name(name);
         Guid uuid(machineId);
-        if (   SUCCEEDED (rc)
-            && uuid == mUuid
+        if (   uuid == mUuid
             && RTStrSimplePatternMultiMatch(mPatterns, RTSTR_MAX,
                                             utf8Name.raw(), RTSTR_MAX, NULL))
         {
-            RTPrintf("Name: %lS, value: %lS, flags: %lS\n", name, value,
-                     flags);
-            mSignalled = true;
+            RTPrintf("Name: %lS, value: %lS, flags: %lS\n", name, value, flags);
+            ASMAtomicWriteBool(&mSignalled, true);
+#ifndef USE_XPCOM_QUEUE
+            int rc = RTSemEventMultiSignal(mhEvent);
+            AssertRC(rc);
+#endif
         }
-        return rc;
+        return S_OK;
     }
 
-    bool Signalled(void) { return mSignalled; }
+    bool Signalled(void) const
+    {
+        return mSignalled;
+    }
+
+#ifndef USE_XPCOM_QUEUE
+    /** Wrapper around RTSemEventMultiWait. */
+    int wait(uint32_t cMillies)
+    {
+        return RTSemEventMultiWait(mhEvent, cMillies);
+    }
+#endif
 
 private:
-    bool mSignalled;
+    bool volatile mSignalled;
     const char *mPatterns;
     Guid mUuid;
 #ifndef VBOX_WITH_XPCOM
     long refcnt;
 #endif
-
+#ifndef USE_XPCOM_QUEUE
+    /** Event semaphore to wait on. */
+    RTSEMEVENTMULTI mhEvent;
+#endif
 };
 
 #ifdef VBOX_WITH_XPCOM
 NS_DECL_CLASSINFO(GuestPropertyCallback)
-NS_IMPL_ISUPPORTS1_CI(GuestPropertyCallback, IVirtualBoxCallback)
+NS_IMPL_THREADSAFE_ISUPPORTS1_CI(GuestPropertyCallback, IVirtualBoxCallback)
 #endif /* VBOX_WITH_XPCOM */
 
 void usageGuestProperty(void)
@@ -193,7 +223,7 @@ void usageGuestProperty(void)
              "                            [--patterns <patterns>]\n"
              "\n");
     RTPrintf("VBoxManage guestproperty    wait <vmname>|<uuid> <patterns>\n"
-             "                            [--timeout <timeout>]\n"
+             "                            [--timeout <milliseconds>] [--fail-on-timeout]\n"
              "\n");
 }
 
@@ -394,9 +424,10 @@ static int handleWaitGuestProperty(HandlerArg *a)
     /*
      * Handle arguments
      */
-    const char *pszPatterns = NULL;
-    uint32_t u32Timeout = RT_INDEFINITE_WAIT;
-    bool usageOK = true;
+    bool        fFailOnTimeout = false;
+    const char *pszPatterns    = NULL;
+    uint32_t    cMsTimeout     = RT_INDEFINITE_WAIT;
+    bool        usageOK        = true;
     if (a->argc < 2)
         usageOK = false;
     else
@@ -417,13 +448,13 @@ static int handleWaitGuestProperty(HandlerArg *a)
             || !strcmp(a->argv[i], "-timeout"))
         {
             if (   i + 1 >= a->argc
-                || RTStrToUInt32Full(a->argv[i + 1], 10, &u32Timeout)
-                       != VINF_SUCCESS
-               )
+                || RTStrToUInt32Full(a->argv[i + 1], 10, &cMsTimeout) != VINF_SUCCESS)
                 usageOK = false;
             else
                 ++i;
         }
+        else if (!strcmp(a->argv[i], "--fail-on-timeout"))
+            fFailOnTimeout = true;
         else
             usageOK = false;
     }
@@ -432,65 +463,98 @@ static int handleWaitGuestProperty(HandlerArg *a)
 
     /*
      * Set up the callback and wait.
+     *
+     * The waiting is done is 1 sec at the time since there there are races
+     * between the callback and us going to sleep.  This also guards against
+     * neglecting XPCOM event queues as well as any select timeout restrictions.
      */
     Bstr uuid;
     machine->COMGETTER(Id)(uuid.asOutParam());
-    GuestPropertyCallback* cbImpl = new GuestPropertyCallback(pszPatterns, uuid);
+    GuestPropertyCallback *cbImpl = new GuestPropertyCallback(pszPatterns, uuid);
     ComPtr<IVirtualBoxCallback> callback;
-    rc = createCallbackWrapper((IVirtualBoxCallback*)cbImpl, callback.asOutParam());
+    rc = createCallbackWrapper((IVirtualBoxCallback *)cbImpl, callback.asOutParam());
     if (FAILED(rc))
-        return 1;
-    a->virtualBox->RegisterCallback (callback);
-    bool stop = false;
-#ifdef USE_XPCOM_QUEUE
-    int max_fd = a->eventQ->GetEventQueueSelectFD();
-#endif
-    for (; !stop && u32Timeout > 0; u32Timeout -= RT_MIN(u32Timeout, 1000))
     {
+        RTPrintf("Error creating callback wrapper: %Rhrc\n", rc);
+        return 1;
+    }
+    a->virtualBox->RegisterCallback(callback);
+
 #ifdef USE_XPCOM_QUEUE
-        int prc;
+    int const       fdQueue      = a->eventQ->GetEventQueueSelectFD();
+#endif
+    uint64_t const  StartMilliTS = RTTimeMilliTS();
+    for (;;)
+    {
+#ifdef VBOX_WITH_XPCOM
+        /* Process pending XPCOM events. */
+        a->eventQ->ProcessPendingEvents();
+#endif
+
+        /* Signalled? */
+        if (cbImpl->Signalled())
+            break;
+
+        /* Figure out how much we have left to wait and if we've timed out already. */
+        uint32_t cMsLeft;
+        if (cMsTimeout == RT_INDEFINITE_WAIT)
+            cMsLeft = RT_INDEFINITE_WAIT;
+        else
+        {
+            uint64_t cMsElapsed = RTTimeMilliTS() - StartMilliTS;
+            if (cMsElapsed >= cMsTimeout)
+                break; /* timeout */
+            cMsLeft = cMsTimeout - (uint32_t)cMsElapsed;
+        }
+
+        /* Wait in a platform specific manner. */
+#ifdef USE_XPCOM_QUEUE
         fd_set fdset;
+        FD_ZERO(&fdset);
+        FD_SET(fdQueue, &fdset);
         struct timeval tv;
-        FD_ZERO (&fdset);
-        FD_SET(max_fd, &fdset);
-        tv.tv_sec = RT_MIN(u32Timeout, 1000);
-        tv.tv_usec = u32Timeout > 1000 ? 0 : u32Timeout * 1000;
-        RTTIMESPEC TimeNow;
-        uint64_t u64Time = RTTimeSpecGetMilli(RTTimeNow(&TimeNow));
-        prc = select(max_fd + 1, &fdset, NULL, NULL, &tv);
+        if (    cMsLeft == RT_INDEFINITE_WAIT
+            ||  cMsLeft >= 1000)
+        {
+            tv.tv_sec = 1;
+            tv.tv_usec = 0;
+        }
+        else
+        {
+            tv.tv_sec = 0;
+            tv.tv_usec = cMsLeft * 1000;
+        }
+        int prc = select(fdQueue + 1, &fdset, NULL, NULL, &tv);
         if (prc == -1)
         {
-            RTPrintf("Error waiting for event.\n");
-            stop = true;
-        }
-        else if (prc != 0)
-        {
-            uint64_t u64NextTime = RTTimeSpecGetMilli(RTTimeNow(&TimeNow));
-            u32Timeout += (uint32_t)(u64Time + 1000 - u64NextTime);
-            a->eventQ->ProcessPendingEvents();
-            if (cbImpl->Signalled())
-                stop = true;
+            RTPrintf("Error waiting for event: %s (%d)\n", strerror(errno), errno);
+            break;
         }
 #else  /* !USE_XPCOM_QUEUE */
-        /** @todo Use a semaphore.  But I currently don't have a Windows system
-         * running to test on. */
-        /**@todo r=bird: get to it!*/
-        RTThreadSleep(RT_MIN(1000, u32Timeout));
-        if (cbImpl->Signalled())
-            stop = true;
+/** @todo make this faster on Mac OS X (and possible Windows+OS/2 too), we should probably use WaitNextEvent() to wait here. */
+        int vrc = cbImpl->wait(RT_MIN(cMsLeft, 1000));
+        if (    vrc != VERR_TIMEOUT
+            &&  RT_FAILURE(vrc))
+        {
+            RTPrintf("Error waiting for event: %Rrc\n", vrc);
+            break;
+        }
 #endif /* !USE_XPCOM_QUEUE */
-    }
+    } /* for (;;) */
 
     /*
-     * Clean up the callback.
+     * Clean up the callback and report timeout.
      */
     a->virtualBox->UnregisterCallback(callback);
+
+    int rcRet = 0;
     if (!cbImpl->Signalled())
+    {
         RTPrintf("Time out or interruption while waiting for a notification.\n");
-    /*
-     * Done.
-     */
-    return 0;
+        if (fFailOnTimeout)
+            rcRet = 2;
+    }
+    return rcRet;
 }
 
 /**
@@ -521,3 +585,4 @@ int handleGuestProperty(HandlerArg *a)
     /* default: */
     return errorSyntax(USAGE_GUESTPROPERTY, "Incorrect parameters");
 }
+
