@@ -143,6 +143,26 @@ vboxmouse_drv_16_INCS := \
 vboxmouse_drv_16_SOURCES = \
 	vboxmouse_15.c
 
+
+#
+# vboxmouse_drv_17
+#
+DLLS += vboxmouse_drv_17
+vboxmouse_drv_17_TEMPLATE = VBOXGUESTR3XORGMOD
+vboxmouse_drv_17_DEFS := $(vboxmouse_drv_70_DEFS) NO_ANSIC
+## @todo replace $(VBOX_PATH_X11_ROOT)/xorg-server-1.6.0-local
+vboxmouse_drv_17_INCS := \
+	$(VBOX_PATH_X11_ROOT)/inputproto-1.9.99.902 \
+	$(VBOX_PATH_X11_ROOT)/pixman-0.16.0 \
+	$(VBOX_PATH_X11_ROOT)/xextproto-7.1.1 \
+	$(VBOX_PATH_X11_ROOT)/xorg-server-1.6.99-20090831 \
+	$(VBOX_PATH_X11_ROOT)/xorg-server-1.6.0-local \
+	$(VBOX_PATH_X11_ROOT)/xproto-7.0.15 \
+	$(PATH_SUB_CURRENT)
+vboxmouse_drv_17_SOURCES = \
+	vboxmouse_15.c
+
+
 # Check the undefined symbols in the X.Org modules against lists of allowed
 # symbols.  Not very elegant, but it will catch problems early.
 ifdef VBOX_WITH_TESTCASES
@@ -194,6 +214,13 @@ $$(PATH_vboxmouse_drv_15)/tstvboxmouse15.run: $$(INSTARGET_vboxmouse_drv_15)
 $$(PATH_vboxmouse_drv_16)/tstvboxmouse16.run: $$(INSTARGET_vboxmouse_drv_16)
 	$(QUIET)/bin/sh $(PATH_ROOT)/src/bldprogs/checkUndefined.sh $(KBUILD_TARGET)  \
 	    $(INSTARGET_vboxmouse_drv_16) $(OUR_PATH_VBOXMOUSE)/undefined_16
+	$(QUIET)$(APPEND) -t "$@" "done"
+
+     TESTING  += $(PATH_vboxmouse_drv_17)/tstvboxmouse17.run
+     OTHERS += $(PATH_vboxmouse_drv_17)/tstvboxmouse17.run
+$$(PATH_vboxmouse_drv_17)/tstvboxmouse17.run: $$(INSTARGET_vboxmouse_drv_17)
+	$(QUIET)/bin/sh $(PATH_ROOT)/src/bldprogs/checkUndefined.sh $(KBUILD_TARGET)  \
+	    $(INSTARGET_vboxmouse_drv_17) $(OUR_PATH_VBOXMOUSE)/undefined_15
 	$(QUIET)$(APPEND) -t "$@" "done"
 
     endif # ! VBOX_ONLY_SDK
