@@ -41,10 +41,17 @@ void (*function ## _fn)(void); \
 void function signature \
 { ( (void (*) signature) function ## _fn ) shortsig; }
 
+#if PA_PROTOCOL_VERSION >= 16
+PROXY_STUB     (pa_stream_connect_playback, int,
+                (pa_stream *s, const char *dev, const pa_buffer_attr *attr,
+                 pa_stream_flags_t flags, const pa_cvolume *volume, pa_stream *sync_stream),
+                (s, dev, attr, flags, volume, sync_stream))
+#else
 PROXY_STUB     (pa_stream_connect_playback, int,
                 (pa_stream *s, const char *dev, const pa_buffer_attr *attr,
                  pa_stream_flags_t flags, pa_cvolume *volume, pa_stream *sync_stream),
                 (s, dev, attr, flags, volume, sync_stream))
+#endif
 PROXY_STUB     (pa_stream_connect_record, int,
                 (pa_stream *s, const char *dev, const pa_buffer_attr *attr,
                 pa_stream_flags_t flags),
