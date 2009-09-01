@@ -2888,7 +2888,8 @@ STDMETHODIMP VBoxQGLFrameBuffer::NotifyUpdate (ULONG aX, ULONG aY,
     QApplication::postEvent (mView,
                              new VBoxRepaintEvent (aX, aY, aW, aH));
 #else
-    vboxWidget()->postCmd(VBOXVHWA_PIPECMD_PAINT, &QRect(aX, aY, aW, aH));
+    QRect r(aX, aY, aW, aH);
+    vboxWidget()->postCmd(VBOXVHWA_PIPECMD_PAINT, &r);
 #endif
     return S_OK;
 }
@@ -2948,14 +2949,15 @@ void VBoxQGLFrameBuffer::doProcessVHWACommand(QEvent * pEvent)
 
 VBoxGLWidget::VBoxGLWidget (VBoxConsoleView *aView, QWidget *aParent)
     : QGLWidget (VBoxGLWidget::vboxGLFormat(), aParent),
+    mSurfHandleTable(128), /* 128 should be enough */
+    mpfnOp(NULL),
+    mOpContext(NULL),
     mPixelFormat(0),
     mUsesGuestVRAM(false),
     mbVGASurfCreated(false),
     mView(aView),
     mConstructingList(NULL),
-    mcRemaining2Contruct(0),
-    mpfnOp(NULL),
-    mSurfHandleTable(128) /* 128 should be enough */
+    mcRemaining2Contruct(0)
 {
     cmdPipeInit();
     mpMngr = new VBoxVHWAGlProgramMngr();
@@ -3168,6 +3170,7 @@ VBoxVHWACommandElement * VBoxGLWidget::processCmdList(VBoxVHWACommandElement * p
 
 void VBoxGLWidget::vboxDoProcessVHWACommands(void *pContext)
 {
+    Q_UNUSED(pContext);
     VBoxVHWACommandElement * pFirst = detachCmdList(NULL, NULL);
     do
     {
@@ -3214,7 +3217,7 @@ void VBoxGLWidget::vboxDoVHWACmdAndFree(void *cmd)
 {
     vboxDoVHWACmdExec(cmd);
 
-    delete cmd;
+    free(cmd);
 }
 
 void VBoxGLWidget::vboxDoVHWACmdExec(void *cmd)
@@ -3471,23 +3474,28 @@ int VBoxGLWidget::vhwaSurfaceCreate(struct _VBOXVHWACMD_SURF_CREATE *pCmd)
     {
         if(pCmd->SurfInfo.PixelFormat.flags & VBOXVHWA_PF_RGB)
         {
-        	VBoxVHWAColorFormat format(pCmd->SurfInfo.PixelFormat.c.rgbBitCount,
+            VBoxVHWAColorFormat format(pCmd->SurfInfo.PixelFormat.c.rgbBitCount,
         	                                pCmd->SurfInfo.PixelFormat.m1.rgbRBitMask,
         	                                pCmd->SurfInfo.PixelFormat.m2.rgbGBitMask,
         	                                pCmd->SurfInfo.PixelFormat.m3.rgbBBitMask);
-            surf = new VBoxVHWASurfaceBase(this, &QSize(pCmd->SurfInfo.width, pCmd->SurfInfo.height),
-//                        ((pCmd->SurfInfo.surfCaps & VBOXVHWA_SCAPS_OVERLAY) ? mDisplay.getPrimary()->rect().size() : &QSize(pCmd->SurfInfo.width, pCmd->SurfInfo.height)),
-                        &mDisplay.getPrimary()->rect().size(),
+            QSize surfSize(pCmd->SurfInfo.width, pCmd->SurfInfo.height);
+            QSize primarySize = mDisplay.getPrimary()->rect().size();
+            surf = new VBoxVHWASurfaceBase(this, &surfSize,
+//                        ((pCmd->SurfInfo.surfCaps & VBOXVHWA_SCAPS_OVERLAY) ? mDisplay.getPrimary()->rect().size() : &surfSize),
+                        &primarySize,
                         format,
                         pSrcBltCKey, pDstBltCKey, pSrcOverlayCKey, pDstOverlayCKey,
                         bPrimary);
         }
         else if(pCmd->SurfInfo.PixelFormat.flags & VBOXVHWA_PF_FOURCC)
         {
+            QSize surfSize(pCmd->SurfInfo.width, pCmd->SurfInfo.height);
+            QSize primarySize = mDisplay.getPrimary()->rect().size();
+
             VBoxVHWAColorFormat format(pCmd->SurfInfo.PixelFormat.fourCC);
-            surf = new VBoxVHWASurfaceBase(this, &QSize(pCmd->SurfInfo.width, pCmd->SurfInfo.height),
+            surf = new VBoxVHWASurfaceBase(this, &surfSize,
             //                        ((pCmd->SurfInfo.surfCaps & VBOXVHWA_SCAPS_OVERLAY) ? mDisplay.getPrimary()->rect().size() : &QSize(pCmd->SurfInfo.width, pCmd->SurfInfo.height)),
-                                    &mDisplay.getPrimary()->rect().size(),
+                                    &primarySize,
                                     format,
                                     pSrcBltCKey, pDstBltCKey, pSrcOverlayCKey, pDstOverlayCKey,
                                     bPrimary);
@@ -3656,6 +3664,7 @@ int VBoxGLWidget::vhwaSurfaceUnlock(struct _VBOXVHWACMD_SURF_UNLOCK *pCmd)
 int VBoxGLWidget::vhwaSurfaceBlt(struct _VBOXVHWACMD_SURF_BLT *pCmd)
 {
     /**/
+    Q_UNUSED(pCmd);
     return VERR_NOT_IMPLEMENTED;
 //    VBoxVHWASurfaceBase *pDstSurf = (VBoxVHWASurfaceBase*)pCmd->u.in.hDstSurf;
 //    VBoxVHWASurfaceBase *pSrcSurf = (VBoxVHWASurfaceBase*)pCmd->u.in.hSrcSurf;
@@ -3753,7 +3762,8 @@ void VBoxGLWidget::vhwaDoSurfaceOverlayUpdate(VBoxVHWASurfaceBase *pDstSurf, VBo
          * this allows the NULL to be a valid overridden value as well
          * i.e.
          * 1. indicate the value is overridden (no matter what we write here, bu it should be not NULL)*/
-        pSrcSurf->setOverriddenDstOverlayCKey(&VBoxVHWAColorKey(0, 0));
+        VBoxVHWAColorKey dummyCKey(0, 0);
+        pSrcSurf->setOverriddenDstOverlayCKey(&dummyCKey);
         /* tell the ckey is disabled */
         pSrcSurf->setDefaultDstOverlayCKey(NULL);
     }
@@ -3766,7 +3776,8 @@ void VBoxGLWidget::vhwaDoSurfaceOverlayUpdate(VBoxVHWASurfaceBase *pDstSurf, VBo
     else if(pCmd->u.in.flags & VBOXVHWA_OVER_KEYSRCOVERRIDE)
     {
         VBOXQGLLOG((", KEYSRCOVERRIDE"));
-        pSrcSurf->setOverriddenSrcOverlayCKey(&VBoxVHWAColorKey(pCmd->u.in.desc.SrcCK.high, pCmd->u.in.desc.SrcCK.low));
+        VBoxVHWAColorKey ckey(pCmd->u.in.desc.SrcCK.high, pCmd->u.in.desc.SrcCK.low);
+        pSrcSurf->setOverriddenSrcOverlayCKey(&ckey);
     }
     else
     {
@@ -3878,11 +3889,13 @@ int VBoxGLWidget::vhwaSurfaceOverlaySetPosition(struct _VBOXVHWACMD_SURF_OVERLAY
     VBoxVHWASurfList *pList = pSrcSurf->getComplexList();
     const SurfList & surfaces = pList->surfaces();
 
+    QPoint pos(pCmd->u.in.xPos, pCmd->u.in.yPos);
+
     for (SurfList::const_iterator it = surfaces.begin();
              it != surfaces.end(); ++ it)
     {
         VBoxVHWASurfaceBase *pCurSrcSurf = (*it);
-        pCurSrcSurf->setTargetRectPosition(pDstSurf, &QPoint(pCmd->u.in.xPos, pCmd->u.in.yPos));;
+        pCurSrcSurf->setTargetRectPosition(pDstSurf, &pos);
     }
 
     return VINF_SUCCESS;
@@ -3899,19 +3912,23 @@ int VBoxGLWidget::vhwaSurfaceColorkeySet(struct _VBOXVHWACMD_SURF_COLORKEY_SET *
 //    VBOXVHWA_CKEY_COLORSPACE
     if(pCmd->u.in.flags & VBOXVHWA_CKEY_DESTBLT)
     {
-        pSurf->setDstBltCKey(&VBoxVHWAColorKey(pCmd->u.in.CKey.high, pCmd->u.in.CKey.low));
+        VBoxVHWAColorKey ckey(pCmd->u.in.CKey.high, pCmd->u.in.CKey.low);
+        pSurf->setDstBltCKey(&ckey);
     }
     if(pCmd->u.in.flags & VBOXVHWA_CKEY_DESTOVERLAY)
     {
-        pSurf->setDefaultDstOverlayCKey(&VBoxVHWAColorKey(pCmd->u.in.CKey.high, pCmd->u.in.CKey.low));
+        VBoxVHWAColorKey ckey(pCmd->u.in.CKey.high, pCmd->u.in.CKey.low);
+        pSurf->setDefaultDstOverlayCKey(&ckey);
     }
     if(pCmd->u.in.flags & VBOXVHWA_CKEY_SRCBLT)
     {
-        pSurf->setSrcBltCKey(&VBoxVHWAColorKey(pCmd->u.in.CKey.high, pCmd->u.in.CKey.low));
+        VBoxVHWAColorKey ckey(pCmd->u.in.CKey.high, pCmd->u.in.CKey.low);
+        pSurf->setSrcBltCKey(&ckey);
     }
     if(pCmd->u.in.flags & VBOXVHWA_CKEY_SRCOVERLAY)
     {
-        pSurf->setDefaultSrcOverlayCKey(&VBoxVHWAColorKey(pCmd->u.in.CKey.high, pCmd->u.in.CKey.low));
+        VBoxVHWAColorKey ckey(pCmd->u.in.CKey.high, pCmd->u.in.CKey.low);
+        pSurf->setDefaultSrcOverlayCKey(&ckey);
     }
 
     return VINF_SUCCESS;
@@ -4036,6 +4053,7 @@ static DECLCALLBACK(void) vboxQGLSaveExec(PSSMHANDLE pSSM, void *pvUser)
 
 static DECLCALLBACK(int) vboxQGLLoadExec(PSSMHANDLE pSSM, void *pvUser, uint32_t u32Version, uint32_t uPhase)
 {
+    Q_UNUSED(uPhase);
     VBoxGLWidget * pw = (VBoxGLWidget*)pvUser;
     return pw->vhwaLoadExec(pSSM, u32Version);
 }
@@ -4121,9 +4139,11 @@ int VBoxGLWidget::vhwaSaveSurface(struct SSMHANDLE * pSSM, VBoxVHWASurfaceBase *
 
 int VBoxGLWidget::vhwaLoadSurface(struct SSMHANDLE * pSSM, uint32_t u32Version)
 {
+    Q_UNUSED(u32Version);
+
     VBOXQGL_LOAD_SURFSTART(pSSM);
 
-    char *buf = new char[VBOXVHWACMD_SIZE(VBOXVHWACMD_SURF_CREATE)];
+    char *buf = (char*)malloc(VBOXVHWACMD_SIZE(VBOXVHWACMD_SURF_CREATE));
     memset(buf, 0, sizeof(buf));
     VBOXVHWACMD * pCmd = (VBOXVHWACMD*)buf;
     pCmd->enmCmd = VBOXVHWACMD_TYPE_SURF_CREATE;
@@ -4270,6 +4290,8 @@ int VBoxGLWidget::vhwaSaveOverlayData(struct SSMHANDLE * pSSM, VBoxVHWASurfaceBa
 
 int VBoxGLWidget::vhwaLoadOverlayData(struct SSMHANDLE * pSSM, uint32_t u32Version)
 {
+    Q_UNUSED(u32Version);
+    
     VBOXQGL_LOAD_OVERLAYSTART(pSSM);
 
 //    char buf[VBOXVHWACMD_SIZE(VBOXVHWACMD_SURF_OVERLAY_UPDATE)];
@@ -4587,6 +4609,8 @@ void VBoxGLWidget::vboxDoTestSurfaces(void* context)
 
 void VBoxGLWidget::vboxDoPaint(void *pe)
 {
+    Q_UNUSED(pe);
+
 #ifdef VBOXQGL_DBG_SURF
     vboxDoTestSurfaces(NULL);
 #endif
@@ -4717,7 +4741,7 @@ void VBoxGLWidget::vboxDoResize(void *resize)
         }
         if (!fallback)
         {
-            ulong virtWdt = bitsPerLine / re->bitsPerPixel();
+            // ulong virtWdt = bitsPerLine / re->bitsPerPixel();
             mPixelFormat = FramebufferPixelFormat_FOURCC_RGB;
             mUsesGuestVRAM = true;
         }
