@@ -139,7 +139,9 @@ static int VBoxDrvFreeBSDModuleEvent(struct module *pMod, int enmEventType, void
             break;
 
         case MOD_UNLOAD:
+            mtx_unlock(&Giant);
             rc = VBoxDrvFreeBSDUnload();
+            mtx_lock(&Giant);
             break;
 
         case MOD_SHUTDOWN:
