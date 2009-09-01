@@ -147,11 +147,13 @@ ip_output(PNATState pData, struct socket *so, struct mbuf *m0)
         Assert((rc == 0));
         memcpy(eh->h_source, eth_dst, ETH_ALEN); 
     
-        STAM_PROFILE_START(&pData->StatALIAS_output, a);
-        rc = LibAliasOut((m->m_la ? m->m_la : pData->proxy_alias), 
-            mtod(m, char *), m->m_len);
-        Log2(("NAT: LibAlias return %d\n", rc));
-        STAM_PROFILE_STOP(&pData->StatALIAS_output, a);
+        {
+            STAM_PROFILE_START(&pData->StatALIAS_output, a);
+            rc = LibAliasOut((m->m_la ? m->m_la : pData->proxy_alias), 
+                mtod(m, char *), m->m_len);
+            Log2(("NAT: LibAlias return %d\n", rc));
+            STAM_PROFILE_STOP(&pData->StatALIAS_output, a);
+        }
 
         if_output(pData, so, m);
         goto done;
