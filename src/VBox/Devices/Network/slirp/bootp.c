@@ -702,7 +702,7 @@ int bootp_cache_lookup_ip_by_ether(PNATState pData,const uint8_t* ether, uint32_
     uint32_t ip = INADDR_ANY; 
     int i;
     if (ether == NULL || pip == NULL)
-        goto done;
+        return rc;
     for (i = 0; i < NB_ADDR; i++)
     {
         if (   bootp_clients[i].allocated
@@ -713,7 +713,6 @@ int bootp_cache_lookup_ip_by_ether(PNATState pData,const uint8_t* ether, uint32_
             break;
         }
     }
-done:
     *pip = ip;
     return rc;
 }
@@ -723,7 +722,7 @@ int bootp_cache_lookup_ether_by_ip(PNATState pData, uint32_t ip, uint8_t *ether)
     int rc = 1;
     int i;
     if (ether == NULL)
-        goto done;
+        return rc;
     for (i = 0; i < NB_ADDR; i++)
     {
         if (   bootp_clients[i].allocated
@@ -734,7 +733,6 @@ int bootp_cache_lookup_ether_by_ip(PNATState pData, uint32_t ip, uint8_t *ether)
             break;
         }
     }
-done:
     return rc;
 }
 
