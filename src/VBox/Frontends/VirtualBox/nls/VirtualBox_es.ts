@@ -5943,7 +5943,7 @@ este paso y luego conectar los Discos Duros desde el diálogo de Configuración 
     </message>
     <message>
         <source>Create a new virtual machine</source>
-        <translation>Crear una Nueva Máquin Virtual</translation>
+        <translation>Crear una Nueva Máquina Virtual</translation>
     </message>
     <message>
         <source>&amp;Settings...</source>
