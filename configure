@@ -2234,13 +2234,13 @@ check_curl
 [ "$OS" != "darwin"  ] && check_z
 [ "$OS" != "darwin" -a "$OS" != "freebsd" ] && check_png
 [ $OSE -eq 0 -a "$OS" = "linux" ] && check_pam
-[ $WITH_SDL -eq 1 ]    && check_sdl
+[ $WITH_SDL -eq 1 -a "$OS" != "darwin" ]    && check_sdl
 [ $WITH_SDL_TTF -eq 1 -a $OSE -eq 0 ] && check_sdl_ttf
-[ $WITH_X11    -eq 1 ] && check_x
+[ $WITH_X11    -eq 1 -a "$OS" != "darwin" ] && check_x
 # TODO check for xcomposite-dev (X11/extensions/Xcomposite.h, additions only)
 # TODO check for libxdamange-dev (X11/extensions/Xdamage.h, additions only)
-[ $WITH_X11    -eq 1 ] && check_xcursor
-[ $WITH_OPENGL -eq 1 ] && check_xmu
+[ $WITH_X11    -eq 1 -a "$OS" != "darwin" ] && check_xcursor
+[ $WITH_OPENGL -eq 1 -a "$OS" != "darwin" ] && check_xmu
 [ "$OS" != "darwin" -a $WITH_OPENGL -eq 1 ] && check_mesa
 [ $WITH_QT4    -eq 1 ] && check_qt4
 [ $WITH_PYTHON -eq 1 -a "$OS" != "darwin" ] && check_python
