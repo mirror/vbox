@@ -22,36 +22,24 @@
 SUB_DEPTH = ../../../..
 include	$(KBUILD_PATH)/subheader.kmk
 
-#
-# HGSMIGuestR0Lib - for guest additions drivers
-#
-LIBRARIES += \
-	HGSMIGuestR0Lib
 
-#
-# HGSMIHostLib - for host devices (R3 only)
-#
-LIBRARIES += \
-	HGSMIHostR3Lib
-
-ifndef VBOX_WITH_ADDITION_DRIVERS
- if1of ($(KBUILD_TARGET), linux l4) # All drivers are optional, can skip HGSMIGuestR0Lib.
-  LIBRARIES := $(filter-out HGSMIGuestR0Lib, $(LIBRARIES))
- endif
-endif
 
 
 #
-# HGSMIGuestR0Lib
+# HGSMIGuestR0Lib - For guest additions drivers.
 #
+ifdef VBOX_WITH_ADDITION_DRIVERS
+LIBRARIES += HGSMIGuestR0Lib
 HGSMIGuestR0Lib_TEMPLATE     = VBOXGUESTR0LIB
 HGSMIGuestR0Lib_DEFS         =
 HGSMIGuestR0Lib_SOURCES      = \
 	HGSMICommon.cpp
+endif
 
 #
-# HGSMIHostR3Lib
+# HGSMIHostLib - For host devices (R3 only).
 #
+LIBRARIES += HGSMIHostR3Lib
 HGSMIHostR3Lib_TEMPLATE      = VBOXR3
 HGSMIHostR3Lib_DEFS          =
 HGSMIHostR3Lib_SOURCES       = \

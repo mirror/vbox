@@ -25,21 +25,17 @@ include	$(KBUILD_PATH)/subheader.kmk
 #
 # Target config.
 #
-LIBRARIES += \
-	VBoxGuestR0Lib \
-	VBoxGuestR0LibBase
+ifdef VBOX_WITH_ADDITION_DRIVERS
+ LIBRARIES += \
+ 	VBoxGuestR0Lib \
+ 	VBoxGuestR0LibBase
+endif
 LIBRARIES += \
 	VBoxGuestR3Lib \
 	VBoxGuestR3LibShared
 if1of ($(KBUILD_TARGET), freebsd linux netbsd openbsd)
  LIBRARIES += \
-  	VBoxGuestR3LibXFree86
-endif
-
-ifndef VBOX_WITH_ADDITION_DRIVERS
- if1of ($(KBUILD_TARGET), linux l4) # All drivers are optional, can skip RuntimeGuestR0.
-  LIBRARIES := $(filter-out VBoxGuestR0Lib VBoxGuestR0LibBase, $(LIBRARIES))
- endif
+ 	VBoxGuestR3LibXFree86
 endif
 
 

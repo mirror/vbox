@@ -35,14 +35,12 @@ ifdef VBOX_ONLY_ADDITIONS
  #
  # Only build the additions, sort out the legacy names first.
  #
- LIBRARIES += RuntimeGuestR0 RuntimeGuestR3 RuntimeGuestR3Shared RuntimeGuestR3Mini
- #LIBRARIES.os2 = RuntimeGuestR0OS2Warp3
- LIBRARIES.win.x86 += RuntimeGuestR0NT4
- ifndef VBOX_WITH_ADDITION_DRIVERS
-  if1of ($(KBUILD_TARGET), linux l4) # All drivers are optional, can skip RuntimeGuestR0.
-   LIBRARIES := $(filter-out RuntimeGuestR0, $(LIBRARIES))
-  endif
+ LIBRARIES += RuntimeGuestR3 RuntimeGuestR3Shared RuntimeGuestR3Mini
+ ifdef VBOX_WITH_ADDITION_DRIVERS
+  LIBRARIES += RuntimeGuestR0
  endif
+ #LIBRARIES.os2 += RuntimeGuestR0OS2Warp3
+ LIBRARIES.win.x86 += RuntimeGuestR0NT4
 
 else ifdef VBOX_ONLY_DOCS
  #
@@ -64,14 +62,12 @@ else # !VBOX_ONLY_ADDITIONS && !VBOX_ONLY_DOCS
   LIBRARIES += RuntimeR0Drv
  endif
  ifdef VBOX_WITH_ADDITIONS
-  LIBRARIES += RuntimeGuestR0 RuntimeGuestR3 RuntimeGuestR3Shared RuntimeGuestR3Mini
+  LIBRARIES += RuntimeGuestR3 RuntimeGuestR3Shared RuntimeGuestR3Mini
+  ifdef VBOX_WITH_ADDITION_DRIVERS
+   LIBRARIES += RuntimeGuestR0
+  endif
   #LIBRARIES.os2 += RuntimeGuestR0OS2Warp3
   LIBRARIES.win.x86 += RuntimeGuestR0NT4
-  ifndef VBOX_WITH_ADDITION_DRIVERS
-   if1of ($(KBUILD_TARGET), linux l4) # All drivers are optional, can skip RuntimeGuestR0.
-    LIBRARIES := $(filter-out RuntimeGuestR0, $(LIBRARIES))
-   endif
-  endif
  endif # VBOX_WITH_ADDITIONS
  LIBRARIES.l4 += RuntimeR3L4 RuntimeLnxHostR3
  DLLS += VBoxRT
