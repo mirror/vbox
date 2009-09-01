@@ -1206,6 +1206,10 @@ int rtR0MemObjNativeMapUser(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ pMemToMap, RT
     PRTR0MEMOBJLNX      pMemLnxToMap = (PRTR0MEMOBJLNX)pMemToMap;
     int                 rc           = VERR_NO_MEMORY;
     PRTR0MEMOBJLNX      pMemLnx;
+#ifdef VBOX_USE_PAE_HACK
+    struct page        *pDummyPage;
+    RTHCPHYS            DummyPhys;
+#endif
 
     /*
      * Check for restrictions.
@@ -1214,6 +1218,17 @@ int rtR0MemObjNativeMapUser(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ pMemToMap, RT
         return VERR_NOT_SUPPORTED;
     if (uAlignment > PAGE_SIZE)
         return VERR_NOT_SUPPORTED;
+
+#ifdef VBOX_USE_PAE_HACK
+    /*
+     * Allocate a dummy page for use when mapping the memory.
+     */
+    pDummyPage = alloc_page(GFP_USER);
+    if (!pDummyPage)
+        return VERR_NO_MEMORY;
+    SetPageReserved(pDummyPage);
+    DummyPhys = page_to_phys(pDummyPage);
+#endif
 
     /*
      * Create the IPRT memory object.
@@ -1237,15 +1252,6 @@ int rtR0MemObjNativeMapUser(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ pMemToMap, RT
             unsigned long   ulAddrCur = (unsigned long)pv;
             const size_t    cPages = pMemLnxToMap->Core.cb >> PAGE_SHIFT;
             size_t          iPage;
-#ifdef VBOX_USE_PAE_HACK
-            struct page    *pDummyPage = alloc_page(GFP_USER);
-            RTHCPHYS        DummyPhys;
-
-            if (!pDummyPage)
-                goto l_error;
-            SetPageReserved(pDummyPage);
-            DummyPhys = page_to_phys(pDummyPage);
-#endif
 
             rc = 0;
             if (pMemLnxToMap->cPages)
@@ -1329,12 +1335,12 @@ int rtR0MemObjNativeMapUser(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ pMemToMap, RT
                     }
                 }
             }
-#ifdef VBOX_USE_PAE_HACK
-            __free_page(pDummyPage);
-#endif
             if (!rc)
             {
                 up_write(&pTask->mm->mmap_sem);
+#ifdef VBOX_USE_PAE_HACK
+                __free_page(pDummyPage);
+#endif
 
                 pMemLnx->Core.pv = pv;
                 pMemLnx->Core.u.Mapping.R0Process = R0Process;
@@ -1347,14 +1353,12 @@ int rtR0MemObjNativeMapUser(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ pMemToMap, RT
              */
             MY_DO_MUNMAP(pTask->mm, (unsigned long)pv, pMemLnxToMap->Core.cb);
         }
-
-#ifdef VBOX_USE_PAE_HACK
-l_error:
-#endif
         up_write(&pTask->mm->mmap_sem);
-
         rtR0MemObjDelete(&pMemLnx->Core);
     }
+#ifdef VBOX_USE_PAE_HACK
+    __free_page(pDummyPage);
+#endif
 
     return rc;
 }
