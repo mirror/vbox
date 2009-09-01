@@ -280,7 +280,7 @@ int suplibOsQueryVTxSupported(void)
                 if (RT_SUCCESS(rc))
                 {
                     uint32_t uLinuxVersion = (uA << 16) + (uB << 8) + uC;
-                    if (uLinuxVersion >= (2 << 16) + (6 << 8) + 32)
+                    if (uLinuxVersion >= (2 << 16) + (6 << 8) + 13)
                         return VINF_SUCCESS;
                 }
             }
