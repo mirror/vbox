@@ -1868,7 +1868,7 @@ Vuoi eliminarlo comunque?</translation>
     </message>
     <message>
         <source>Plugin verification data mismatch in &apos;%1&apos;</source>
-        <translation type="unfinished"></translation>
+        <translation>Mancata corrispondenza dei dati di verifica dell&apos;estensione in &apos;%1&apos;</translation>
     </message>
     <message>
         <source>Could not unmap &apos;%1&apos;: %2</source>
@@ -1965,7 +1965,7 @@ Vuoi eliminarlo comunque?</translation>
     </message>
     <message>
         <source>%1: Socket access error</source>
-        <translation type="unfinished"></translation>
+        <translation>%1: Errore di accesso al socket</translation>
     </message>
     <message>
         <source>%1: Socket resource error</source>
@@ -1977,11 +1977,11 @@ Vuoi eliminarlo comunque?</translation>
     </message>
     <message>
         <source>%1: Datagram too large</source>
-        <translation type="unfinished"></translation>
+        <translation>%1: Datagramma troppo grande</translation>
     </message>
     <message>
         <source>%1: Connection error</source>
-        <translation type="unfinished"></translation>
+        <translation>%1: Errore di connessione</translation>
     </message>
     <message>
         <source>%1: The socket operation is not supported</source>
@@ -2055,7 +2055,7 @@ Vuoi eliminarlo comunque?</translation>
     </message>
     <message>
         <source>Unable to execute next query</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile eseguire la query successiva</translation>
     </message>
     <message>
         <source>Unable to store next result</source>
@@ -2109,7 +2109,7 @@ Vuoi eliminarlo comunque?</translation>
     </message>
     <message>
         <source>Stay on &amp;Top</source>
-        <translation type="unfinished">Sempre in &amp;primo piano</translation>
+        <translation>Sempre in &amp;primo piano</translation>
     </message>
     <message>
         <source>&amp;Close</source>
@@ -2117,11 +2117,11 @@ Vuoi eliminarlo comunque?</translation>
     </message>
     <message>
         <source>- [%1]</source>
-        <translation type="unfinished"></translation>
+        <translation>- [%1]</translation>
     </message>
     <message>
         <source>Maximize</source>
-        <translation type="unfinished">Massimizza</translation>
+        <translation>Massimizza</translation>
     </message>
     <message>
         <source>Unshade</source>
@@ -2323,30 +2323,30 @@ Vuoi eliminarlo comunque?</translation>
     <name>QNetworkAccessFileBackend</name>
     <message>
         <source>Request for opening non-local file %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Richiesta di apertura del file non locale %1</translation>
     </message>
     <message>
         <source>Error opening %1: %2</source>
-        <translation type="unfinished"></translation>
+        <translation>Errore in fase di apertura di %1: %2</translation>
     </message>
     <message>
         <source>Write error writing to %1: %2</source>
-        <translation type="unfinished"></translation>
+        <translation>Errore in fase di scrittura di %1: %2</translation>
     </message>
     <message>
         <source>Cannot open %1: Path is a directory</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile aprire %1: il percorso è una cartella</translation>
     </message>
     <message>
         <source>Read error reading from %1: %2</source>
-        <translation type="unfinished"></translation>
+        <translation>Errore di lettura da %1: %2</translation>
     </message>
 </context>
 <context>
     <name>QNetworkAccessFtpBackend</name>
     <message>
         <source>Cannot open %1: is a directory</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile aprire %1: è una cartella</translation>
     </message>
     <message>
         <source>Logging in to %1 failed: authentication required</source>
@@ -2365,7 +2365,7 @@ Vuoi eliminarlo comunque?</translation>
     <name>QNetworkReply</name>
     <message>
         <source>Error downloading %1 - server replied: %2</source>
-        <translation type="unfinished"></translation>
+        <translation>Errore durante lo scaricamento di %1 - il server ha risposto: %2</translation>
     </message>
     <message>
         <source>Protocol &quot;%1&quot; is unknown</source>
@@ -2392,7 +2392,7 @@ Vuoi eliminarlo comunque?</translation>
     </message>
     <message>
         <source>Unable to begin transaction</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile iniziare la transazione</translation>
     </message>
     <message>
         <source>Unable to commit transaction</source>
@@ -2508,19 +2508,19 @@ Vuoi eliminarlo comunque?</translation>
     <name>QObject</name>
     <message>
         <source>Operation not supported on %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Operazione non supportata su %1</translation>
     </message>
     <message>
         <source>Invalid URI: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>URI non valido: %1</translation>
     </message>
     <message>
         <source>Write error writing to %1: %2</source>
-        <translation type="unfinished"></translation>
+        <translation>Errore di scrittura su %1: %2</translation>
     </message>
     <message>
         <source>Read error reading from %1: %2</source>
-        <translation type="unfinished"></translation>
+        <translation>Errore di lettura da %1: %2</translation>
     </message>
     <message>
         <source>Socket error on %1: %2</source>
@@ -2911,50 +2911,50 @@ Scegli un nome diverso.</translation>
     </message>
     <message>
         <source>Portrait</source>
-        <translation type="unfinished">Verticale</translation>
+        <translation>Verticale</translation>
     </message>
     <message>
         <source>Landscape</source>
-        <translation type="unfinished">Orizzontale</translation>
+        <translation>Orizzontale</translation>
     </message>
     <message>
         <source>Show single page</source>
-        <translation type="unfinished"></translation>
+        <translation>Mostra pagina singola</translation>
     </message>
     <message>
         <source>Show facing pages</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Mostra pagine</translation>
     </message>
     <message>
         <source>Show overview of all pages</source>
-        <translation type="unfinished"></translation>
+        <translation>Mostra l&apos;anteprima di tutte le pagine</translation>
     </message>
     <message>
         <source>Print</source>
-        <translation type="unfinished">Stamp</translation>
+        <translation>Stampa</translation>
     </message>
     <message>
         <source>Page setup</source>
-        <translation type="unfinished"></translation>
+        <translation>Impostazioni pagina</translation>
     </message>
     <message>
         <source>Close</source>
-        <translation type="unfinished">Chiudi</translation>
+        <translation>Chiudi</translation>
     </message>
 </context>
 <context>
     <name>QPrintPropertiesWidget</name>
     <message>
         <source>Form</source>
-        <translation type="unfinished"></translation>
+        <translation>Modulo</translation>
     </message>
     <message>
         <source>Page</source>
-        <translation type="unfinished"></translation>
+        <translation>Pagina</translation>
     </message>
     <message>
         <source>Advanced</source>
-        <translation type="unfinished"></translation>
+        <translation>Avanzate</translation>
     </message>
 </context>
 <context>
@@ -2989,7 +2989,7 @@ Scegli un nome diverso.</translation>
     </message>
     <message>
         <source>Output Settings</source>
-        <translation type="unfinished"></translation>
+        <translation>Impostazioni d&apos;uscita</translation>
     </message>
     <message>
         <source>Copies:</source>
@@ -3021,7 +3021,7 @@ Scegli un nome diverso.</translation>
     </message>
     <message>
         <source>Duplex Printing</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Stampa fronte/retro</translation>
     </message>
     <message>
         <source>None</source>
@@ -4006,94 +4006,94 @@ Scegli un nome diverso.</translation>
     <name>QWebFrame</name>
     <message>
         <source>Request cancelled</source>
-        <translation type="unfinished"></translation>
+        <translation>Richiesta annullata</translation>
     </message>
     <message>
         <source>Request blocked</source>
-        <translation type="unfinished"></translation>
+        <translation>Richiest bloccata</translation>
     </message>
     <message>
         <source>Cannot show URL</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile visualizzare l&apos;URL</translation>
     </message>
     <message>
         <source>Frame load interruped by policy change</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Caricamento frame interrotto da un cambiamento di regole</translation>
     </message>
     <message>
         <source>Cannot show mimetype</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile visualizzare il tipo mime</translation>
     </message>
     <message>
         <source>File does not exist</source>
-        <translation type="unfinished"></translation>
+        <translation>Il file non esiste</translation>
     </message>
 </context>
 <context>
     <name>QWebPage</name>
     <message>
         <source>Bad HTTP request</source>
-        <translation type="unfinished"></translation>
+        <translation>Richiesta HTTP non valida</translation>
     </message>
     <message>
         <source>Submit</source>
         <comment>default label for Submit buttons in forms on web pages</comment>
-        <translation type="unfinished"></translation>
+        <translation>Invia</translation>
     </message>
     <message>
         <source>Submit</source>
         <comment>Submit (input element) alt text for &lt;input&gt; elements with no alt, title, or value</comment>
-        <translation type="unfinished"></translation>
+        <translation>Invia</translation>
     </message>
     <message>
         <source>Reset</source>
         <comment>default label for Reset buttons in forms on web pages</comment>
-        <translation type="unfinished">Ripristina</translation>
+        <translation>Ripristina</translation>
     </message>
     <message>
         <source>This is a searchable index. Enter search keywords: </source>
         <comment>text that appears at the start of nearly-obsolete web pages in the form of a &apos;searchable index&apos;</comment>
-        <translation type="unfinished"></translation>
+        <translation>Questo è l&apos;indice ricercabile. Digita la parola chiave di ricerca: </translation>
     </message>
     <message>
         <source>Choose File</source>
         <comment>title for file button used in HTML forms</comment>
-        <translation type="unfinished"></translation>
+        <translation>Scegli file</translation>
     </message>
     <message>
         <source>No file selected</source>
         <comment>text to display in file button used in HTML forms when no file is selected</comment>
-        <translation type="unfinished"></translation>
+        <translation>Nessun file selezionato</translation>
     </message>
     <message>
         <source>Open in New Window</source>
         <comment>Open in New Window context menu item</comment>
-        <translation type="unfinished"></translation>
+        <translation>Apri in una nuova finestra</translation>
     </message>
     <message>
         <source>Save Link...</source>
         <comment>Download Linked File context menu item</comment>
-        <translation type="unfinished"></translation>
+        <translation>Salva collegamento...</translation>
     </message>
     <message>
         <source>Copy Link</source>
         <comment>Copy Link context menu item</comment>
-        <translation type="unfinished"></translation>
+        <translation>Copia collegamento</translation>
     </message>
     <message>
         <source>Open Image</source>
         <comment>Open Image in New Window context menu item</comment>
-        <translation type="unfinished"></translation>
+        <translation>Apri immagine</translation>
     </message>
     <message>
         <source>Save Image</source>
         <comment>Download Image context menu item</comment>
-        <translation type="unfinished"></translation>
+        <translation>Salva immagine</translation>
     </message>
     <message>
         <source>Copy Image</source>
         <comment>Copy Link context menu item</comment>
-        <translation type="unfinished"></translation>
+        <translation>Copia immagine</translation>
     </message>
     <message>
         <source>Open Frame</source>
@@ -4103,37 +4103,37 @@ Scegli un nome diverso.</translation>
     <message>
         <source>Copy</source>
         <comment>Copy context menu item</comment>
-        <translation type="unfinished"></translation>
+        <translation>Copia</translation>
     </message>
     <message>
         <source>Go Back</source>
         <comment>Back context menu item</comment>
-        <translation type="unfinished">Indietro</translation>
+        <translation>Indietro</translation>
     </message>
     <message>
         <source>Go Forward</source>
         <comment>Forward context menu item</comment>
-        <translation type="unfinished"></translation>
+        <translation>Avanti</translation>
     </message>
     <message>
         <source>Stop</source>
         <comment>Stop context menu item</comment>
-        <translation type="unfinished">Ferma</translation>
+        <translation>Ferma</translation>
     </message>
     <message>
         <source>Reload</source>
         <comment>Reload context menu item</comment>
-        <translation type="unfinished"></translation>
+        <translation>Ricarica</translation>
     </message>
     <message>
         <source>Cut</source>
         <comment>Cut context menu item</comment>
-        <translation type="unfinished"></translation>
+        <translation>Taglia</translation>
     </message>
     <message>
         <source>Paste</source>
         <comment>Paste context menu item</comment>
-        <translation type="unfinished"></translation>
+        <translation>Incolla</translation>
     </message>
     <message>
         <source>No Guesses Found</source>
@@ -4143,17 +4143,17 @@ Scegli un nome diverso.</translation>
     <message>
         <source>Ignore</source>
         <comment>Ignore Spelling context menu item</comment>
-        <translation type="unfinished">Ignora</translation>
+        <translation>Ignora</translation>
     </message>
     <message>
         <source>Add To Dictionary</source>
         <comment>Learn Spelling context menu item</comment>
-        <translation type="unfinished"></translation>
+        <translation>Aggiungi al dizionario</translation>
     </message>
     <message>
         <source>Search The Web</source>
         <comment>Search The Web context menu item</comment>
-        <translation type="unfinished"></translation>
+        <translation>Cerca nel Web</translation>
     </message>
     <message>
         <source>Look Up In Dictionary</source>
@@ -4163,12 +4163,12 @@ Scegli un nome diverso.</translation>
     <message>
         <source>Open Link</source>
         <comment>Open Link context menu item</comment>
-        <translation type="unfinished"></translation>
+        <translation>Apri collegamento</translation>
     </message>
     <message>
         <source>Ignore</source>
         <comment>Ignore Grammar context menu item</comment>
-        <translation type="unfinished">Ignora</translation>
+        <translation>Ignora</translation>
     </message>
     <message>
         <source>Spelling</source>
@@ -4188,12 +4188,12 @@ Scegli un nome diverso.</translation>
     <message>
         <source>Check Spelling</source>
         <comment>Check spelling context menu item</comment>
-        <translation type="unfinished"></translation>
+        <translation>Controlla ortografia</translation>
     </message>
     <message>
         <source>Check Spelling While Typing</source>
         <comment>Check spelling while typing context menu item</comment>
-        <translation type="unfinished"></translation>
+        <translation>Controlla l&apos;ortografia durante la digitazione</translation>
     </message>
     <message>
         <source>Check Grammar With Spelling</source>
@@ -4203,22 +4203,22 @@ Scegli un nome diverso.</translation>
     <message>
         <source>Fonts</source>
         <comment>Font context sub-menu item</comment>
-        <translation type="unfinished"></translation>
+        <translation>Caratteri</translation>
     </message>
     <message>
         <source>Bold</source>
         <comment>Bold context menu item</comment>
-        <translation type="unfinished"></translation>
+        <translation>Grassetto</translation>
     </message>
     <message>
         <source>Italic</source>
         <comment>Italic context menu item</comment>
-        <translation type="unfinished"></translation>
+        <translation>Corsivo</translation>
     </message>
     <message>
         <source>Underline</source>
         <comment>Underline context menu item</comment>
-        <translation type="unfinished"></translation>
+        <translation>Sottolineato</translation>
     </message>
     <message>
         <source>Outline</source>
@@ -4228,12 +4228,12 @@ Scegli un nome diverso.</translation>
     <message>
         <source>Direction</source>
         <comment>Writing direction context sub-menu item</comment>
-        <translation type="unfinished"></translation>
+        <translation>Direzione</translation>
     </message>
     <message>
         <source>Default</source>
         <comment>Default writing direction context menu item</comment>
-        <translation type="unfinished"></translation>
+        <translation>Predefinita</translation>
     </message>
     <message>
         <source>LTR</source>
@@ -4258,7 +4258,7 @@ Scegli un nome diverso.</translation>
     <message>
         <source>Recent searches</source>
         <comment>label for first item in the menu that appears when clicking on the search field image, used as embedded menu title</comment>
-        <translation type="unfinished"></translation>
+        <translation>Ricerche recenti</translation>
     </message>
     <message>
         <source>Clear recent searches</source>
@@ -4268,16 +4268,16 @@ Scegli un nome diverso.</translation>
     <message>
         <source>Unknown</source>
         <comment>Unknown filesize FTP directory listing item</comment>
-        <translation type="unfinished">Sconosciuto</translation>
+        <translation>Sconosciuta</translation>
     </message>
     <message>
         <source>%1 (%2x%3 pixels)</source>
         <comment>Title string for images</comment>
-        <translation type="unfinished"></translation>
+        <translation>%1 (%2x%3 pixel)</translation>
     </message>
     <message>
         <source>Web Inspector - %2</source>
-        <translation type="unfinished"></translation>
+        <translation>Analizzatore web - %2</translation>
     </message>
 </context>
 <context>
@@ -4338,11 +4338,11 @@ Scegli un nome diverso.</translation>
     </message>
     <message>
         <source>&amp;Next</source>
-        <translation type="unfinished"></translation>
+        <translation>Ava&amp;nti</translation>
     </message>
     <message>
         <source>&amp;Next &gt;</source>
-        <translation type="unfinished">&amp;Avanti &gt;</translation>
+        <translation>Ava&amp;nti &gt;</translation>
     </message>
 </context>
 <context>
@@ -4814,11 +4814,11 @@ Scegli un nome diverso.</translation>
     </message>
     <message>
         <source>A comment cannot contain %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Un commento non può contenere %1</translation>
     </message>
     <message>
         <source>A comment cannot end with a %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>Un commentio non può terminare con un %1.</translation>
     </message>
     <message>
         <source>No comparisons can be done involving the type %1.</source>
@@ -4870,7 +4870,7 @@ Scegli un nome diverso.</translation>
     </message>
     <message>
         <source>%1 is an invalid %2</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 è un %2 non valido</translation>
     </message>
     <message numerus="yes">
         <source>%1 takes at most %n argument(s). %2 is therefore invalid.</source>
@@ -5008,7 +5008,7 @@ Scegli un nome diverso.</translation>
     </message>
     <message>
         <source>The variable %1 is unused</source>
-        <translation type="unfinished"></translation>
+        <translation>La variabile %1 è inutilizzata</translation>
     </message>
     <message>
         <source>Version %1 is not supported. The supported XQuery version is 1.0.</source>
@@ -5180,23 +5180,23 @@ Scegli un nome diverso.</translation>
     </message>
     <message>
         <source>empty</source>
-        <translation type="unfinished"></translation>
+        <translation>vuoto</translation>
     </message>
     <message>
         <source>zero or one</source>
-        <translation type="unfinished"></translation>
+        <translation>zero o uno</translation>
     </message>
     <message>
         <source>exactly one</source>
-        <translation type="unfinished"></translation>
+        <translation>esattamente uno</translation>
     </message>
     <message>
         <source>one or more</source>
-        <translation type="unfinished"></translation>
+        <translation>uno o più</translation>
     </message>
     <message>
         <source>zero or more</source>
-        <translation type="unfinished"></translation>
+        <translation>zero o più</translation>
     </message>
     <message>
         <source>Required type is %1, but %2 was found.</source>

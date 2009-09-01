@@ -4645,11 +4645,11 @@ Trieu un nom de fitxer diferent.</translation>
     <name>QtXmlPatterns</name>
     <message>
         <source>An %1-attribute with value %2 has already been declared.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ja s&apos;ha declarat un atribut %1 amb un valor %2.</translation>
     </message>
     <message>
         <source>An %1-attribute must have a valid %2 as value, which %3 isn&apos;t.</source>
-        <translation type="unfinished"></translation>
+        <translation>Un atribut %1 ha de tenir com a valor vàlid %2, cosa que %3 no és.</translation>
     </message>
     <message>
         <source>Network timeout.</source>
@@ -4657,63 +4657,63 @@ Trieu un nom de fitxer diferent.</translation>
     </message>
     <message>
         <source>Element %1 can&apos;t be serialized because it appears outside the document element.</source>
-        <translation type="unfinished"></translation>
+        <translation>No es pot llistar l&apos;element %1 perquè sembla que es troba fora l&apos;element document.</translation>
     </message>
     <message>
         <source>Attribute %1 can&apos;t be serialized because it appears at the top level.</source>
-        <translation type="unfinished"></translation>
+        <translation>No es pot llistar l&apos;atribut %1 perquè sembla que es troba a dalt de tot.</translation>
     </message>
     <message>
         <source>Year %1 is invalid because it begins with %2.</source>
-        <translation type="unfinished"></translation>
+        <translation>L&apos;any %1 no és vàlid perquè comença amb %2.</translation>
     </message>
     <message>
         <source>Day %1 is outside the range %2..%3.</source>
-        <translation type="unfinished"></translation>
+        <translation>El dia %1 es troba fora del rang %2..%3.</translation>
     </message>
     <message>
         <source>Month %1 is outside the range %2..%3.</source>
-        <translation type="unfinished"></translation>
+        <translation>El mes %1 es troba fora del rang %2..%3.</translation>
     </message>
     <message>
         <source>Overflow: Can&apos;t represent date %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>Desbordament: no es pot representar la data %1.</translation>
     </message>
     <message>
         <source>Day %1 is invalid for month %2.</source>
-        <translation type="unfinished"></translation>
+        <translation>El dia %1 no és vàlid per al mes %2.</translation>
     </message>
     <message>
         <source>Time 24:%1:%2.%3 is invalid. Hour is 24, but minutes, seconds, and milliseconds are not all 0; </source>
-        <translation type="unfinished"></translation>
+        <translation>Temps 24:%1:%2.%3 no és vàlid. L&apos;&apos;hora és 24, però els minuts, segons i milisegons no són tots 0; </translation>
     </message>
     <message>
         <source>Time %1:%2:%3.%4 is invalid.</source>
-        <translation type="unfinished"></translation>
+        <translation>Temps %1:%2.%3.%4 no és vàlid.</translation>
     </message>
     <message>
         <source>Overflow: Date can&apos;t be represented.</source>
-        <translation type="unfinished"></translation>
+        <translation>Desbordament: no es pot representar la data.</translation>
     </message>
     <message>
         <source>At least one component must be present.</source>
-        <translation type="unfinished"></translation>
+        <translation>Com a mínim un dels elements ha de ser present.</translation>
     </message>
     <message>
         <source>At least one time component must appear after the %1-delimiter.</source>
-        <translation type="unfinished"></translation>
+        <translation>Com a mínim un component de l&apos;hora ha d&apos;aparèixer després del delimitador %1.</translation>
     </message>
     <message>
         <source>No operand in an integer division, %1, can be %2.</source>
-        <translation type="unfinished"></translation>
+        <translation>Sense operants en una divisó d&apos;enters, %1, pot ser %2.</translation>
     </message>
     <message>
         <source>The first operand in an integer division, %1, cannot be infinity (%2).</source>
-        <translation type="unfinished"></translation>
+        <translation>El primer operant en una divisió d&apos;enters, %1, no pot ser infinit (%2).</translation>
     </message>
     <message>
         <source>The second operand in a division, %1, cannot be zero (%2).</source>
-        <translation type="unfinished"></translation>
+        <translation>El segon operant en una divisió, %1, no pot ser cero (%2).</translation>
     </message>
     <message>
         <source>%1 is not a valid value of type %2.</source>
@@ -4721,11 +4721,11 @@ Trieu un nom de fitxer diferent.</translation>
     </message>
     <message>
         <source>When casting to %1 from %2, the source value cannot be %3.</source>
-        <translation type="unfinished"></translation>
+        <translation>Quan s&apos;emet %1 des de %2, el valor font no pot ser %3.</translation>
     </message>
     <message>
         <source>Integer division (%1) by zero (%2) is undefined.</source>
-        <translation type="unfinished"></translation>
+        <translation>La divisió entera (%1) per cero (%2) no està definida.</translation>
     </message>
     <message>
         <source>Division (%1) by zero (%2) is undefined.</source>
@@ -4733,39 +4733,39 @@ Trieu un nom de fitxer diferent.</translation>
     </message>
     <message>
         <source>Modulus division (%1) by zero (%2) is undefined.</source>
-        <translation type="unfinished"></translation>
+        <translation>La divisió modular (%1) per cero (%2) no està definida.</translation>
     </message>
     <message>
         <source>Dividing a value of type %1 by %2 (not-a-number) is not allowed.</source>
-        <translation type="unfinished"></translation>
+        <translation>No està permès dividir un valor del tipus %1 per un del tipus %2 (no és un número).</translation>
     </message>
     <message>
         <source>Dividing a value of type %1 by %2 or %3 (plus or minus zero) is not allowed.</source>
-        <translation type="unfinished"></translation>
+        <translation>No està permesa la divisió d&apos;un valor del tipus %1 per un del tipus %2 o %3 (per sobre o sota de cero).</translation>
     </message>
     <message>
         <source>Multiplication of a value of type %1 by %2 or %3 (plus or minus infinity) is not allowed.</source>
-        <translation type="unfinished"></translation>
+        <translation>No està permesa la multiplicació d&apos;un valor del tipus %1 per un del tipus %2 o %3 (més o menys infinit).</translation>
     </message>
     <message>
         <source>A value of type %1 cannot have an Effective Boolean Value.</source>
-        <translation type="unfinished"></translation>
+        <translation>Un valor del tipus %1 no pot tindre un valor booleà efectiu.</translation>
     </message>
     <message>
         <source>Effective Boolean Value cannot be calculated for a sequence containing two or more atomic values.</source>
-        <translation type="unfinished"></translation>
+        <translation>Un valor booleà efectiu no pot calcular-se per a una seqüència contenint dos o més valors atòmics.</translation>
     </message>
     <message>
         <source>Value %1 of type %2 exceeds maximum (%3).</source>
-        <translation type="unfinished"></translation>
+        <translation>El valor %1 del tipus %2 excedeix el màxim (%3).</translation>
     </message>
     <message>
         <source>Value %1 of type %2 is below minimum (%3).</source>
-        <translation type="unfinished"></translation>
+        <translation>El valor %1 del tipus %2 es troba per sota del mínim (%3).</translation>
     </message>
     <message>
         <source>A value of type %1 must contain an even number of digits. The value %2 does not.</source>
-        <translation type="unfinished"></translation>
+        <translation>Un valor del tipus %1 ha de contenir un valor senar de dígits. El valor %2 no el conté.</translation>
     </message>
     <message>
         <source>%1 is not valid as a value of type %2.</source>
@@ -4773,47 +4773,47 @@ Trieu un nom de fitxer diferent.</translation>
     </message>
     <message>
         <source>Operator %1 cannot be used on type %2.</source>
-        <translation type="unfinished"></translation>
+        <translation>L&apos;operador %1 no pot fer-se servir en el tipus %2.</translation>
     </message>
     <message>
         <source>Operator %1 cannot be used on atomic values of type %2 and %3.</source>
-        <translation type="unfinished"></translation>
+        <translation>L&apos;operador %1 no pot fer-se servir en valors atòmics del tipus %2 i %3.</translation>
     </message>
     <message>
         <source>The namespace URI in the name for a computed attribute cannot be %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>L&apos;URI del nom per a un atribut computat no pot ser %1.</translation>
     </message>
     <message>
         <source>The name for a computed attribute cannot have the namespace URI %1 with the local name %2.</source>
-        <translation type="unfinished"></translation>
+        <translation>El nom per a un valor computat no pot tenir una URI %1 amb un nom local %2.</translation>
     </message>
     <message>
         <source>Type error in cast, expected %1, received %2.</source>
-        <translation type="unfinished"></translation>
+        <translation>S&apos;ha produït un error, s&apos;esperava %1 i s&apos;ha rebut %2.</translation>
     </message>
     <message>
         <source>When casting to %1 or types derived from it, the source value must be of the same type, or it must be a string literal. Type %2 is not allowed.</source>
-        <translation type="unfinished"></translation>
+        <translation>Quan s&apos;emet a %1 o a tipus derivats, la font del valor ha de ser del mateix tipus, o una cadena literal. El tipus %2 no està permès.</translation>
     </message>
     <message>
         <source>No casting is possible with %1 as the target type.</source>
-        <translation type="unfinished"></translation>
+        <translation>No hi ha possibilitat d&apos;emissió amb %1 com a tipus objectiu.</translation>
     </message>
     <message>
         <source>It is not possible to cast from %1 to %2.</source>
-        <translation type="unfinished"></translation>
+        <translation>No és possible emitir des de %1 a %2.</translation>
     </message>
     <message>
         <source>Casting to %1 is not possible because it is an abstract type, and can therefore never be instantiated.</source>
-        <translation type="unfinished"></translation>
+        <translation>No és possible l&apos;emissió a %1 perquè és un tipus abstract, i no podrà ser mai instanciat.</translation>
     </message>
     <message>
         <source>It&apos;s not possible to cast the value %1 of type %2 to %3</source>
-        <translation type="unfinished"></translation>
+        <translation>No és possible emitir el valor %1 del tipus %2 a %3</translation>
     </message>
     <message>
         <source>Failure when casting from %1 to %2: %3</source>
-        <translation type="unfinished"></translation>
+        <translation>S&apos;ha produït una fallada quan s&apos;emetia des de %1 a %2: %3</translation>
     </message>
     <message>
         <source>A comment cannot contain %1</source>
@@ -4825,51 +4825,51 @@ Trieu un nom de fitxer diferent.</translation>
     </message>
     <message>
         <source>No comparisons can be done involving the type %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>No es poden fer comparacions amb el tipus %1.</translation>
     </message>
     <message>
         <source>Operator %1 is not available between atomic values of type %2 and %3.</source>
-        <translation type="unfinished"></translation>
+        <translation>L&apos;operador %1 no està disponible per a valors atòmics del tipus %2 i %3.</translation>
     </message>
     <message>
         <source>An attribute node cannot be a child of a document node. Therefore, the attribute %1 is out of place.</source>
-        <translation type="unfinished"></translation>
+        <translation>Un node atribut no pot ser un fill d&apos;un node document. Per tant, l&apos;atribut %1 està fora de lloc.</translation>
     </message>
     <message>
         <source>A library module cannot be evaluated directly. It must be imported from a main module.</source>
-        <translation type="unfinished"></translation>
+        <translation>Un mòdul de biblioteca no pot evaluar-se directament. Ha de ser importat des d&apos;un mòdul principal.</translation>
     </message>
     <message>
         <source>A value of type %1 cannot be a predicate. A predicate must have either a numeric type or an Effective Boolean Value type.</source>
-        <translation type="unfinished"></translation>
+        <translation>Un valor del tipus %1 no pot ser un predicat. Un predicat ha de tenir un tipus numèric o un tipus valor booleà efectiu.</translation>
     </message>
     <message>
         <source>A positional predicate must evaluate to a single numeric value.</source>
-        <translation type="unfinished"></translation>
+        <translation>Un predicat posicioanl ha d&apos;evaluar un únic valor numèric.</translation>
     </message>
     <message>
         <source>The target name in a processing instruction cannot be %1 in any combination of upper and lower case. Therefore, is %2 invalid.</source>
-        <translation type="unfinished"></translation>
+        <translation>El nom objectiu en una instració de processat no pot ser %1 en cap combinació en majúscules o minúscules. Per tant, no és vàlid %2.</translation>
     </message>
     <message>
         <source>%1 is not a valid target name in a processing instruction. It must be a %2 value, e.g. %3.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 no és un nom objectiu vàlid en una instrucció de processat. Ha de ser un valor %2, e.x. %3.</translation>
     </message>
     <message>
         <source>The last step in a path must contain either nodes or atomic values. It cannot be a mixture between the two.</source>
-        <translation type="unfinished"></translation>
+        <translation>L&apos;últim pas a una ruta ha de contenir nodes o valors atòmics. No pot ser una barreja dels dos.</translation>
     </message>
     <message>
         <source>The data of a processing instruction cannot contain the string %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Les dades d&apos;una instrucció de processat no poden contenir la cadena %1</translation>
     </message>
     <message>
         <source>No namespace binding exists for the prefix %1</source>
-        <translation type="unfinished"></translation>
+        <translation>No existeix cap vinculació per al prefix %1</translation>
     </message>
     <message>
         <source>No namespace binding exists for the prefix %1 in %2</source>
-        <translation type="unfinished"></translation>
+        <translation>No existeix cap vinculació per al prefix %1 a %2</translation>
     </message>
     <message>
         <source>%1 is an invalid %2</source>
@@ -4877,29 +4877,29 @@ Trieu un nom de fitxer diferent.</translation>
     </message>
     <message numerus="yes">
         <source>%1 takes at most %n argument(s). %2 is therefore invalid.</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>%1 fa servir com a màxim %n(s) arguments. Per tant, %2 no és vàlid.</numerusform>
             <numerusform></numerusform>
         </translation>
     </message>
     <message numerus="yes">
         <source>%1 requires at least %n argument(s). %2 is therefore invalid.</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>%1 requereix com a mínim %n arguments. Per tant, %2 no és vàlid.</numerusform>
             <numerusform></numerusform>
         </translation>
     </message>
     <message>
         <source>The first argument to %1 cannot be of type %2. It must be a numeric type, xs:yearMonthDuration or xs:dayTimeDuration.</source>
-        <translation type="unfinished"></translation>
+        <translation>El primer argument per a %1 no pot ser del tipus %2. Ha de ser un tipus numèric, xs:anymesdurada o xs:diahoradurada.</translation>
     </message>
     <message>
         <source>The first argument to %1 cannot be of type %2. It must be of type %3, %4, or %5.</source>
-        <translation type="unfinished"></translation>
+        <translation>El primer argument per a %1 no pot ser del tipus %2. Ha de ser del tipus %3, %4 o %5.</translation>
     </message>
     <message>
         <source>The second argument to %1 cannot be of type %2. It must be of type %3, %4, or %5.</source>
-        <translation type="unfinished"></translation>
+        <translation>El segon argument per a %1 no pot ser del tipus %2. Ha de ser del tipus %3, %4 o %5.</translation>
     </message>
     <message>
         <source>%1 is not a valid XML 1.0 character.</source>
@@ -4907,11 +4907,11 @@ Trieu un nom de fitxer diferent.</translation>
     </message>
     <message>
         <source>The first argument to %1 cannot be of type %2.</source>
-        <translation type="unfinished"></translation>
+        <translation>El primer argument per a %1 no pot ser del tipus %2.</translation>
     </message>
     <message>
         <source>If both values have zone offsets, they must have the same zone offset. %1 and %2 are not the same.</source>
-        <translation type="unfinished"></translation>
+        <translation>Si els dos valors tenen retards de zona, han de tenir el mateix retard de zona. %1 i %2 no tenen el mateix.</translation>
     </message>
     <message>
         <source>%1 was called.</source>
@@ -4919,19 +4919,19 @@ Trieu un nom de fitxer diferent.</translation>
     </message>
     <message>
         <source>%1 must be followed by %2 or %3, not at the end of the replacement string.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 ha de ser continuat per %2 o %3, no un final de la cadena de reemplaç.</translation>
     </message>
     <message>
         <source>In the replacement string, %1 must be followed by at least one digit when not escaped.</source>
-        <translation type="unfinished"></translation>
+        <translation>A la cadena de reemplaç, %1 ha d&apos;estar seguit per almenys un dígit quan no s&apos;ometi.</translation>
     </message>
     <message>
         <source>In the replacement string, %1 can only be used to escape itself or %2, not %3</source>
-        <translation type="unfinished"></translation>
+        <translation>A la cadena de reemplaç, %1 només pot fer-se servir per omissió o %2, no per %3</translation>
     </message>
     <message>
         <source>%1 matches newline characters</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 coincideix amb caràcters de nova línia</translation>
     </message>
     <message>
         <source>%1 and %2 match the start and end of a line.</source>
@@ -4943,19 +4943,19 @@ Trieu un nom de fitxer diferent.</translation>
     </message>
     <message>
         <source>Whitespace characters are removed, except when they appear in character classes</source>
-        <translation type="unfinished"></translation>
+        <translation>Els espais en blanc s&apos;eliminen, excepte quan apareixen en classes de caràcter</translation>
     </message>
     <message>
         <source>%1 is an invalid regular expression pattern: %2</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 no és un patró d&apos;expressió regular: %2</translation>
     </message>
     <message>
         <source>%1 is an invalid flag for regular expressions. Valid flags are:</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 és un indicador no vàlid per a expressions regulars. Indicadors vàlids són:</translation>
     </message>
     <message>
         <source>If the first argument is the empty sequence or a zero-length string (no namespace), a prefix cannot be specified. Prefix %1 was specified.</source>
-        <translation type="unfinished"></translation>
+        <translation>Si el primer argument és una seqüència buida o una cadena de mida cero (sense espais), no es pot especificar un prefix. S&apos;ha especificat el prefix %1.</translation>
     </message>
     <message>
         <source>It will not be possible to retrieve %1.</source>
@@ -4963,11 +4963,11 @@ Trieu un nom de fitxer diferent.</translation>
     </message>
     <message>
         <source>The root node of the second argument to function %1 must be a document node. %2 is not a document node.</source>
-        <translation type="unfinished"></translation>
+        <translation>El node root del segon argument de la funció %1 ha de ser un node document. %2 no és un node document.</translation>
     </message>
     <message>
         <source>The default collection is undefined</source>
-        <translation type="unfinished"></translation>
+        <translation>No està definida la col·lecció per defecte</translation>
     </message>
     <message>
         <source>%1 cannot be retrieved</source>
@@ -4975,67 +4975,67 @@ Trieu un nom de fitxer diferent.</translation>
     </message>
     <message>
         <source>The normalization form %1 is unsupported. The supported forms are %2, %3, %4, and %5, and none, i.e. the empty string (no normalization).</source>
-        <translation type="unfinished"></translation>
+        <translation>No està suportat el formulari de normalització %1. El formularis suportats són %2, %3, %4 i %5, i buit, i.e. una cadena buida (sense normalització).</translation>
     </message>
     <message>
         <source>A zone offset must be in the range %1..%2 inclusive. %3 is out of range.</source>
-        <translation type="unfinished"></translation>
+        <translation>Una zona de retard ha d&apos;estar en el rang %1..%2 inclosos. %3 està fora del rang.</translation>
     </message>
     <message>
         <source>%1 is not a whole number of minutes.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 no és un valor enter de minuts.</translation>
     </message>
     <message>
         <source>Required cardinality is %1; got cardinality %2.</source>
-        <translation type="unfinished"></translation>
+        <translation>Es requereix un cardinal %1; es va enviar el cardinal %2.</translation>
     </message>
     <message>
         <source>The item %1 did not match the required type %2.</source>
-        <translation type="unfinished"></translation>
+        <translation>L&apos;ítem %1 no coincideix amb el tipus requerit %2.</translation>
     </message>
     <message>
         <source>%1 is an unknown schema type.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 és un tipus esquema desconegut.</translation>
     </message>
     <message>
         <source>Only one %1 declaration can occur in the query prolog.</source>
-        <translation type="unfinished"></translation>
+        <translation>Només una declaració %1 pot aparèixer en el pròleg de consulta.</translation>
     </message>
     <message>
         <source>The initialization of variable %1 depends on itself</source>
-        <translation type="unfinished"></translation>
+        <translation>La inicialització de la variable %1 depèn d&apos;ella mateixa</translation>
     </message>
     <message>
         <source>No variable by name %1 exists</source>
-        <translation type="unfinished"></translation>
+        <translation>No existeix cap variable amb el nom %1</translation>
     </message>
     <message>
         <source>The variable %1 is unused</source>
-        <translation type="unfinished"></translation>
+        <translation>No es fa servir la variable %1</translation>
     </message>
     <message>
         <source>Version %1 is not supported. The supported XQuery version is 1.0.</source>
-        <translation type="unfinished"></translation>
+        <translation>No està suportada la versió %1. La versió suportada d&apos;XQuery és l&apos;1.0.</translation>
     </message>
     <message>
         <source>The encoding %1 is invalid. It must contain Latin characters only, must not contain whitespace, and must match the regular expression %2.</source>
-        <translation type="unfinished"></translation>
+        <translation>La codificació %1 no és vàlida. Només ha de contenir caràcters llatins, no pot contenir espais i ha de coincidir amb l&apos;expressió regular %2.</translation>
     </message>
     <message>
         <source>No function with signature %1 is available</source>
-        <translation type="unfinished"></translation>
+        <translation>No hi ha cap funció disponible am la signatura %1</translation>
     </message>
     <message>
         <source>A default namespace declaration must occur before function, variable, and option declarations.</source>
-        <translation type="unfinished"></translation>
+        <translation>Una declaració nomespai per defecte ha d&apos;ocòrrer abans de la funció, variable i declaracions d&apos;opció.</translation>
     </message>
     <message>
         <source>Namespace declarations must occur before function, variable, and option declarations.</source>
-        <translation type="unfinished"></translation>
+        <translation>Una declaració nomespai ha d&apos;ocòrrer abans de la funció, variable i declaracions d&apos;opció.</translation>
     </message>
     <message>
         <source>Module imports must occur before function, variable, and option declarations.</source>
-        <translation type="unfinished"></translation>
+        <translation>La importació de mòduls ha d&apos;ocòrrer abans de la funció, variable i declaracions d&apos;opció.</translation>
     </message>
     <message>
         <source>It is not possible to redeclare prefix %1.</source>
@@ -5043,23 +5043,23 @@ Trieu un nom de fitxer diferent.</translation>
     </message>
     <message>
         <source>Only the prefix %1 can be declared to bind the namespace %2. By default, it is already bound to the prefix %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>Només el prefix %1 pot ser declarat per enllaçar el nomespai %2. Per defecte, ja està enllaçat al prefix %1.</translation>
     </message>
     <message>
         <source>Prefix %1 is already declared in the prolog.</source>
-        <translation type="unfinished"></translation>
+        <translation>El prefix %1 ja està declarat al pròleg.</translation>
     </message>
     <message>
         <source>The name of an option must have a prefix. There is no default namespace for options.</source>
-        <translation type="unfinished"></translation>
+        <translation>El nom d&apos;una opció ha de tenir un prefix. No hi ha nomespai per defecte per a opcions.</translation>
     </message>
     <message>
         <source>The Schema Import feature is not supported, and therefore %1 declarations cannot occur.</source>
-        <translation type="unfinished"></translation>
+        <translation>No està suportada la característica d&apos;importació d&apos;esquema, i per tant les delcaracions %1 no ocorreran.</translation>
     </message>
     <message>
         <source>The target namespace of a %1 cannot be empty.</source>
-        <translation type="unfinished"></translation>
+        <translation>El nomespai objectiu de un %1 no pot ser buit.</translation>
     </message>
     <message>
         <source>The module import feature is not supported</source>
