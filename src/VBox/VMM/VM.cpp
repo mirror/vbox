@@ -297,7 +297,7 @@ VMMR3DECL(int)   VMR3Create(uint32_t cCPUs, PFNVMATERROR pfnVMAtError, void *pvU
                 case VERR_RAW_MODE_INVALID_SMP:
                     pszError = N_("VT-x/AMD-V is either not available on your host or disabled. "
                                   "VirtualBox requires this hardware extension to emulate more than one "
-                                  "guest CPU.");
+                                  "guest CPU");
                     break;
 
                 case VERR_SUPDRV_KERNEL_TOO_OLD_FOR_VTX:
