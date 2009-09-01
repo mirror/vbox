@@ -250,6 +250,18 @@ TEMPLATE_XPCOMBLDPROG_ORDERDEPS         = $(foreach hdrinst, $(filter %-HEADERS,
 # Template for building VBoxPhython against the Mac OS X 10.5 SDK.
 # ASSUMES that the SDK bits are in the .darwin properties we're overriding below.
 #
+TEMPLATE_XPCOMOSX104                    = XPCOM libraries (shared) built against the Mac OS X 10.4 SDK
+TEMPLATE_XPCOMOSX104_EXTENDS            = XPCOM
+TEMPLATE_XPCOMOSX104_CXXFLAGS.darwin    = $(filter-out $(VBOX_DARWIN_DEF_SDK_CXXFLAGS),$(TEMPLATE_XPCOM_CXXFLAGS.darwin)) $(VBOX_DARWIN_DEF_SDK_10_4_CXXFLAGS)
+TEMPLATE_XPCOMOSX104_CFLAGS.darwin      = $(filter-out $(VBOX_DARWIN_DEF_SDK_CFLAGS),$(TEMPLATE_XPCOM_CFLAGS.darwin)) $(VBOX_DARWIN_DEF_SDK_10_4_CFLAGS)
+TEMPLATE_XPCOMOSX104_LDFLAGS.darwin     = $(filter-out $(VBOX_DARWIN_DEF_SDK_LDFLAGS),$(TEMPLATE_XPCOM_LDFLAGS.darwin)) $(VBOX_DARWIN_DEF_SDK_10_4_LDFLAGS)
+TEMPLATE_XPCOMOSX104_DEFS.darwin        = $(filter-out $(VBOX_DARWIN_DEF_SDK_DEFS),$(TEMPLATE_XPCOM_DEFS.darwin)) $(VBOX_DARWIN_DEF_SDK_10_4_DEFS)
+TEMPLATE_XPCOMOSX104_INCS.darwin        = $(VBOX_PATH_MACOSX_SDK_10_4)/Developer/Headers/FlatCarbon
+
+#
+# Template for building VBoxPhython against the Mac OS X 10.5 SDK.
+# ASSUMES that the SDK bits are in the .darwin properties we're overriding below.
+#
 TEMPLATE_XPCOMOSX105                    = XPCOM libraries (shared) built against the Mac OS X 10.5 SDK
 TEMPLATE_XPCOMOSX105_EXTENDS            = XPCOM
 TEMPLATE_XPCOMOSX105_CXXFLAGS.darwin    = $(filter-out $(VBOX_DARWIN_DEF_SDK_CXXFLAGS),$(TEMPLATE_XPCOM_CXXFLAGS.darwin)) $(VBOX_DARWIN_DEF_SDK_10_5_CXXFLAGS)
@@ -257,6 +269,18 @@ TEMPLATE_XPCOMOSX105_CFLAGS.darwin      = $(filter-out $(VBOX_DARWIN_DEF_SDK_CFL
 TEMPLATE_XPCOMOSX105_LDFLAGS.darwin     = $(filter-out $(VBOX_DARWIN_DEF_SDK_LDFLAGS),$(TEMPLATE_XPCOM_LDFLAGS.darwin)) $(VBOX_DARWIN_DEF_SDK_10_5_LDFLAGS)
 TEMPLATE_XPCOMOSX105_DEFS.darwin        = $(filter-out $(VBOX_DARWIN_DEF_SDK_DEFS),$(TEMPLATE_XPCOM_DEFS.darwin)) $(VBOX_DARWIN_DEF_SDK_10_5_DEFS)
 TEMPLATE_XPCOMOSX105_INCS.darwin        = $(VBOX_PATH_MACOSX_SDK_10_5)/Developer/Headers/FlatCarbon
+
+#
+# Template for building VBoxPhython against the Mac OS X 10.6 SDK.
+# ASSUMES that the SDK bits are in the .darwin properties we're overriding below.
+#
+TEMPLATE_XPCOMOSX106                    = XPCOM libraries (shared) built against the Mac OS X 10.6 SDK
+TEMPLATE_XPCOMOSX106_EXTENDS            = XPCOM
+TEMPLATE_XPCOMOSX106_CXXFLAGS.darwin    = $(filter-out $(VBOX_DARWIN_DEF_SDK_CXXFLAGS),$(TEMPLATE_XPCOM_CXXFLAGS.darwin)) $(VBOX_DARWIN_DEF_SDK_10_6_CXXFLAGS)
+TEMPLATE_XPCOMOSX106_CFLAGS.darwin      = $(filter-out $(VBOX_DARWIN_DEF_SDK_CFLAGS),$(TEMPLATE_XPCOM_CFLAGS.darwin)) $(VBOX_DARWIN_DEF_SDK_10_6_CFLAGS)
+TEMPLATE_XPCOMOSX106_LDFLAGS.darwin     = $(filter-out $(VBOX_DARWIN_DEF_SDK_LDFLAGS),$(TEMPLATE_XPCOM_LDFLAGS.darwin)) $(VBOX_DARWIN_DEF_SDK_10_6_LDFLAGS)
+TEMPLATE_XPCOMOSX106_DEFS.darwin        = $(filter-out $(VBOX_DARWIN_DEF_SDK_DEFS),$(TEMPLATE_XPCOM_DEFS.darwin)) $(VBOX_DARWIN_DEF_SDK_10_6_DEFS)
+TEMPLATE_XPCOMOSX106_INCS.darwin        = $(VBOX_PATH_MACOSX_SDK_10_6)/Developer/Headers/FlatCarbon
 
 
 #
@@ -1396,95 +1420,106 @@ else
  endif
  INSTALLS += VBoxPython-inst-py-xpcom
 
-# Python Client Module - the C++/XPCOM bits.
-VBoxPython_TEMPLATE = XPCOM
-VBoxPython_DEFS = _IMPL_NS_COM _IMPL_NS_BASE EXPORT_XPTI_API EXPORT_XPT_API \
-                  VBOX_PYXPCOM VBOX_WITH_XPCOM
-VBoxPython_DEFS.darwin = VBOX_PYXPCOM_VERSIONED
-VBoxPython_NAME.darwin = VBoxPython2_3
-VBoxPython_NAME.darwin.amd64 = VBoxPython2_6
-ifeq ($(KBUILD_TARGET),darwin)
- ## @todo kBuild - this ain't working: VBoxPython_DLLSUFF.darwin = .so
- VBoxPython_DLLSUFF = .so
-endif
-VBoxPython_CFLAGS.darwin   = $(VBOX_PYTHON_FRAMEWORK)
-VBoxPython_CXXFLAGS.darwin = $(VBOX_PYTHON_FRAMEWORK)
-VBoxPython_LDFLAGS.darwin  = $(VBOX_PYTHON_FRAMEWORK)
-VBoxPython_INCS = \
-	python/src \
-	$(VBOX_PATH_PYTHON_INC)
-VBoxPython_SOURCES = \
-	python/src/module/_xpcom.cpp \
-	python/src/dllmain.cpp \
-	python/src/ErrorUtils.cpp \
-	python/src/PyGBase.cpp \
-	python/src/PyGInputStream.cpp \
-	python/src/PyGModule.cpp \
-	python/src/PyGStub.cpp \
-	python/src/PyGWeakReference.cpp \
-	python/src/PyIClassInfo.cpp \
-	python/src/PyIComponentManager.cpp \
-	python/src/PyIComponentManagerObsolete.cpp \
-	python/src/PyIEnumerator.cpp \
-	python/src/PyIID.cpp \
-	python/src/PyIInputStream.cpp \
-	python/src/PyIInterfaceInfo.cpp \
-	python/src/PyIInterfaceInfoManager.cpp \
-	python/src/PyISimpleEnumerator.cpp \
-	python/src/PyISupports.cpp \
-	python/src/PyIVariant.cpp \
-	python/src/Pyxpt_info.cpp \
-	python/src/TypeObject.cpp \
-	python/src/VariantUtils.cpp
-VBoxPython_LIBS = \
-	$(PATH_LIB)/VBoxCOM$(VBOX_SUFF_LIB) \
-	$(PATH_BIN)/VBoxXPCOM$(VBOX_SUFF_DLL) \
-	$(VBOX_LIB_PYTHON)
+ # Python Client Module - the C++/XPCOM bits.
+ VBoxPython_TEMPLATE = XPCOM
+ VBoxPython_DEFS = _IMPL_NS_COM _IMPL_NS_BASE EXPORT_XPTI_API EXPORT_XPT_API \
+                   VBOX_PYXPCOM VBOX_WITH_XPCOM
+ VBoxPython_DEFS.darwin = VBOX_PYXPCOM_VERSIONED
+ VBoxPython_NAME.darwin = VBoxPython2_3
+ VBoxPython_NAME.darwin.amd64 = VBoxPython2_6
+ ifeq ($(KBUILD_TARGET),darwin)
+  ## @todo kBuild - this ain't working: VBoxPython_DLLSUFF.darwin = .so
+  VBoxPython_DLLSUFF = .so
+ endif
+ VBoxPython_CFLAGS.darwin   = $(VBOX_PYTHON_FRAMEWORK)
+ VBoxPython_CXXFLAGS.darwin = $(VBOX_PYTHON_FRAMEWORK)
+ VBoxPython_LDFLAGS.darwin  = $(VBOX_PYTHON_FRAMEWORK)
+ VBoxPython_INCS = \
+ 	python/src \
+ 	$(VBOX_PATH_PYTHON_INC)
+ VBoxPython_SOURCES = \
+ 	python/src/module/_xpcom.cpp \
+ 	python/src/dllmain.cpp \
+ 	python/src/ErrorUtils.cpp \
+ 	python/src/PyGBase.cpp \
+ 	python/src/PyGInputStream.cpp \
+ 	python/src/PyGModule.cpp \
+ 	python/src/PyGStub.cpp \
+ 	python/src/PyGWeakReference.cpp \
+ 	python/src/PyIClassInfo.cpp \
+ 	python/src/PyIComponentManager.cpp \
+ 	python/src/PyIComponentManagerObsolete.cpp \
+ 	python/src/PyIEnumerator.cpp \
+ 	python/src/PyIID.cpp \
+ 	python/src/PyIInputStream.cpp \
+ 	python/src/PyIInterfaceInfo.cpp \
+ 	python/src/PyIInterfaceInfoManager.cpp \
+ 	python/src/PyISimpleEnumerator.cpp \
+ 	python/src/PyISupports.cpp \
+ 	python/src/PyIVariant.cpp \
+ 	python/src/Pyxpt_info.cpp \
+ 	python/src/TypeObject.cpp \
+ 	python/src/VariantUtils.cpp
+ VBoxPython_LIBS = \
+ 	$(PATH_LIB)/VBoxCOM$(VBOX_SUFF_LIB) \
+ 	$(PATH_BIN)/VBoxXPCOM$(VBOX_SUFF_DLL) \
+ 	$(VBOX_LIB_PYTHON)
 
-if defined(VBOX_WITH_VBOXPYTHON_FOR_OSX_10_5) && "$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)" == "darwin.x86"
-# Same VBoxPython except built against the Mac OS X 10.5 SDK.
-DLLS += VBoxPython2_5
-VBoxPython2_5_EXTENDS = VBoxPython
-VBoxPython2_5_TEMPLATE = XPCOMOSX105
-VBoxPython2_5_NAME.darwin = VBoxPython2_5
-VBoxPython2_5_INCS = \
-	python/src \
-	$(VBOX_PATH_MACOSX_SDK_10_5)/System/Library/Frameworks/Python.framework/Headers
-endif
+ if !defined(VBOX_WITHOUT_VBOXPYTHON_FOR_OSX_10_5) && "$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)" == "darwin.x86"
+  # Same as VBoxPython except built against the Mac OS X 10.5 SDK.
+  DLLS += VBoxPython2_5
+  VBoxPython2_5_EXTENDS = VBoxPython
+  VBoxPython2_5_TEMPLATE = XPCOMOSX105
+  VBoxPython2_5_NAME.darwin = VBoxPython2_5
+  VBoxPython2_5_INCS = \
+  	python/src \
+  	$(VBOX_PATH_MACOSX_SDK_10_5)/System/Library/Frameworks/Python.framework/Headers
+ endif
 
-if defined(VBOX_WITH_VBOXPYTHON25_FOR_SOLARIS) && "$(KBUILD_TARGET)" == "solaris"
-# Same VBoxPython except built against the newer python version.
-DLLS += VBoxPython2_5
-VBoxPython2_5_EXTENDS = VBoxPython
-VBoxPython2_5_TEMPLATE = XPCOM
-VBoxPython2_5_NAME = VBoxPython2_5
-VBoxPython2_5_INCS = \
-	python/src \
-	/usr/include/python2.5
-VBoxPython2_5_LIBS = \
-	$(PATH_LIB)/VBoxCOM$(VBOX_SUFF_LIB) \
-	$(PATH_BIN)/VBoxXPCOM$(VBOX_SUFF_DLL) \
-	/usr/lib/$(VBOX_TMP)libpython2.5$(SUFF_DLL)
-endif
+ if defined(VBOX_WITH_VBOXPYTHON25_FOR_SOLARIS) && "$(KBUILD_TARGET)" == "solaris"
+  # Same as VBoxPython except built against the newer python version.
+  DLLS += VBoxPython2_5
+  VBoxPython2_5_EXTENDS = VBoxPython
+  VBoxPython2_5_TEMPLATE = XPCOM
+  VBoxPython2_5_NAME = VBoxPython2_5
+  VBoxPython2_5_INCS = \
+  	python/src \
+  	/usr/include/python2.5
+  VBoxPython2_5_LIBS = \
+  	$(PATH_LIB)/VBoxCOM$(VBOX_SUFF_LIB) \
+  	$(PATH_BIN)/VBoxXPCOM$(VBOX_SUFF_DLL) \
+  	/usr/lib/$(VBOX_TMP)libpython2.5$(SUFF_DLL)
+ endif
 
-# Python Client Module - the Python bits.
-VBoxPython-inst-py-xpcom_INST = $(INST_SDK)bindings/xpcom/python/xpcom/
-VBoxPython-inst-py-xpcom_SOURCES = \
-	python/vboxxpcom.py \
-	python/components.py \
-	python/file.py \
-	python/__init__.py \
-	python/nsError.py \
-	python/primitives.py \
-	python/xpcom_consts.py \
-	python/xpt.py \
-	python/client/__init__.py=>client/__init__.py \
-	python/server/__init__.py=>server/__init__.py \
-	python/server/enumerator.py=>server/enumerator.py \
-	python/server/factory.py=>server/factory.py \
-	python/server/loader.py=>server/loader.py \
-	python/server/module.py=>server/module.py \
-	python/server/policy.py=>server/policy.py
+ if !defined(VBOX_WITHOUT_VBOXPYTHON_FOR_OSX_10_6) && "$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)" == "darwin.x86"
+  # Same as VBoxPython except built against the Mac OS X 10.6 SDK.
+  DLLS += VBoxPython2_6
+  VBoxPython2_6_EXTENDS = VBoxPython
+  VBoxPython2_6_TEMPLATE = XPCOMOSX106
+  VBoxPython2_6_NAME.darwin = VBoxPython2_6
+  VBoxPython2_6_INCS = \
+ 	python/src \
+ 	$(VBOX_PATH_MACOSX_SDK_10_6)/System/Library/Frameworks/Python.framework/Headers
+ endif
+
+ # Python Client Module - the Python bits.
+ VBoxPython-inst-py-xpcom_INST = $(INST_SDK)bindings/xpcom/python/xpcom/
+ VBoxPython-inst-py-xpcom_SOURCES = \
+ 	python/vboxxpcom.py \
+ 	python/components.py \
+ 	python/file.py \
+ 	python/__init__.py \
+ 	python/nsError.py \
+ 	python/primitives.py \
+ 	python/xpcom_consts.py \
+ 	python/xpt.py \
+ 	python/client/__init__.py=>client/__init__.py \
+ 	python/server/__init__.py=>server/__init__.py \
+ 	python/server/enumerator.py=>server/enumerator.py \
+ 	python/server/factory.py=>server/factory.py \
+ 	python/server/loader.py=>server/loader.py \
+ 	python/server/module.py=>server/module.py \
+ 	python/server/policy.py=>server/policy.py
 
 endif # !VBOX_WITH_MULTIVERSION_PYTHON
 endif # VBOX_WITH_PYTHON
