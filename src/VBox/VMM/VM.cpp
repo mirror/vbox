@@ -294,10 +294,24 @@ VMMR3DECL(int)   VMR3Create(uint32_t cCPUs, PFNVMATERROR pfnVMAtError, void *pvU
                     break;
 #endif
 
+                case VERR_RAW_MODE_INVALID_SMP:
+                    pszError = N_("VT-x/AMD-V is either not available on your host or disabled. "
+                                  "VirtualBox requires this hardware extension to emulate more than one "
+                                  "guest CPU.");
+                    break;
+
                 case VERR_SUPDRV_KERNEL_TOO_OLD_FOR_VTX:
-                    pszError = N_("The host Linux kernel is too old to support hardware acceleration. "
-                                  "Either upgrade your host kernel to Linux 2.6.13 or later or "
-                                  "disable hardware acceleration in the VM settings");
+#ifdef RT_OS_LINUX
+                    pszError = N_("Because the host kernel is too old, VirtualBox cannot enable the VT-x "
+                                  "extension. Either upgrade your kernel to Linux 2.6.13 or later or disable "
+                                  "the VT-x extension in the VM settings. Note that without VT-x you have "
+                                  "to reduce the number of guest CPUs to one");
+#else
+                    pszError = N_("Because the host kernel is too old, VirtualBox cannot enable the VT-x "
+                                  "extension. Either upgrade your kernel or disable the VT-x extension in the "
+                                  "VM settings. Note that without VT-x you have to reduce the number of guest "
+                                  "CPUs to one");
+#endif
                     break;
 
                 default:
