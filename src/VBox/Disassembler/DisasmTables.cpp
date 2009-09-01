@@ -1143,6 +1143,7 @@ const OPCODE g_aTwoByteMapX86_PFF3[256] =
     INVALID_OPCODE,
     INVALID_OPCODE,
     INVALID_OPCODE,
+    INVALID_OPCODE,
     OP("movdqu %Vdq,%Wdq",   IDX_ParseModRM,     IDX_UseModRM,   0,          OP_MOVDQU,  OP_PARM_Vdq,        OP_PARM_Wdq,    OP_PARM_NONE,   OPTYPE_HARMLESS),
 
     /* 7 */
