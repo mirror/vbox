@@ -517,7 +517,7 @@ int slirp_init(PNATState *ppData, uint32_t u32NetAddr, uint32_t u32Netmask,
     rc = bootp_dhcp_init(pData);
     if (rc != 0)
     {
-        LogRel(("NAT: DHCP server initialization was falled\n"))
+        LogRel(("NAT: DHCP server initialization was falled\n"));
         return VINF_NAT_DNS; 
     }
     debug_init();
