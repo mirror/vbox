@@ -245,11 +245,13 @@ ip_output(PNATState pData, struct socket *so, struct mbuf *m0)
         ip->ip_sum = 0;
         ip->ip_sum = cksum(m, hlen);
 
-        STAM_PROFILE_START(&pData->StatALIAS_output, a);
-        rc = LibAliasOut((m->m_la ? m->m_la : pData->proxy_alias), 
-            mtod(m, char *), m->m_len);
-        Log2(("NAT: LibAlias return %d\n", rc));
-        STAM_PROFILE_STOP(&pData->StatALIAS_output, a);
+        {
+            STAM_PROFILE_START(&pData->StatALIAS_output, a);
+            rc = LibAliasOut((m->m_la ? m->m_la : pData->proxy_alias), 
+                mtod(m, char *), m->m_len);
+            Log2(("NAT: LibAlias return %d\n", rc));
+            STAM_PROFILE_STOP(&pData->StatALIAS_output, a);
+        }
 
 sendorfree:
         for (m = m0; m; m = m0)
