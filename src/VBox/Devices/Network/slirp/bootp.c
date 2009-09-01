@@ -23,8 +23,21 @@
  */
 #include <slirp.h>
 
-/* XXX: only DHCP is supported */
+/** Entry in the table of known DHCP clients. */
+typedef struct
+{
+    uint32_t xid;
+    bool allocated;
+    uint8_t macaddr[6];
+    struct in_addr addr;
+    int number;
+} BOOTPClient;
+/** Number of DHCP clients supported by NAT. */
+#define NB_ADDR     16
 
+#define bootp_clients ((BOOTPClient *)pData->pbootp_clients)
+
+/* XXX: only DHCP is supported */
 static const uint8_t rfc1533_cookie[] = { RFC1533_COOKIE };
 static void bootp_reply(PNATState pData, struct mbuf *m0, int off, uint16_t flags);
 
@@ -681,4 +694,65 @@ void bootp_input(PNATState pData, struct mbuf *m)
     {
         dhcp_decode(pData, bp, bp->bp_vend, DHCP_OPT_LEN);
     }
+}
+
+int bootp_cache_lookup_ip_by_ether(PNATState pData,const uint8_t* ether, uint32_t *pip)
+{
+    int rc = 1;
+    uint32_t ip = INADDR_ANY; 
+    int i;
+    if (ether == NULL || pip == NULL)
+        goto done;
+    for (i = 0; i < NB_ADDR; i++)
+    {
+        if (   bootp_clients[i].allocated
+            && memcmp(bootp_clients[i].macaddr, ether, ETH_ALEN) == 0)
+        {
+            ip = bootp_clients[i].addr.s_addr;
+            rc = 0;
+            break;
+        }
+    }
+done:
+    *pip = ip;
+    return rc;
+}
+
+int bootp_cache_lookup_ether_by_ip(PNATState pData, uint32_t ip, uint8_t *ether)
+{
+    int rc = 1;
+    int i;
+    if (ether == NULL)
+        goto done;
+    for (i = 0; i < NB_ADDR; i++)
+    {
+        if (   bootp_clients[i].allocated
+            && ip == bootp_clients[i].addr.s_addr)
+        {
+            memcpy(ether, bootp_clients[i].macaddr, ETH_ALEN);
+            rc = 0;
+            break;
+        }
+    }
+done:
+    return rc;
+}
+
+/*
+ * Initialize dhcp server 
+ * @returns 0 - if initialization is ok, non-zero otherwise
+ */
+int bootp_dhcp_init(PNATState pData)
+{
+    int rc = 1;
+    pData->pbootp_clients = RTMemAllocZ(sizeof(BOOTPClient) * NB_ADDR);
+    if (pData->pbootp_clients != NULL)
+        rc = 0;
+    return rc;
+}
+
+int bootp_dhcp_fini(PNATState pData)
+{
+    if (pData->pbootp_clients != NULL)
+        RTMemFree(pData->pbootp_clients);
 }

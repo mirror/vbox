@@ -29,8 +29,6 @@
 #include "ip_icmp.h"
 #include "dnsproxy/dnsproxy.h"
 
-/** Number of DHCP clients supported by NAT. */
-#define NB_ADDR     16
 
 /** Where to start DHCP IP number allocation. */
 #define START_ADDR  15
@@ -99,7 +97,7 @@ struct proto_handler;
 typedef struct NATState
 {
     /* Stuff from boot.c */
-    BOOTPClient bootp_clients[NB_ADDR];
+    void *pbootp_clients;
     const char *bootp_filename;
     /* Stuff from if.c */
     int if_mtu, if_mru;
@@ -305,7 +303,6 @@ typedef struct NATState
 
 
 #define bootp_filename pData->bootp_filename
-#define bootp_clients pData->bootp_clients
 
 #define if_mtu pData->if_mtu
 #define if_mru pData->if_mru
