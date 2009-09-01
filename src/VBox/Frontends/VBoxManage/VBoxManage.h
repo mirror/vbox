@@ -107,7 +107,7 @@ struct HandlerArg
     int argc;
     char **argv;
 
-#ifdef USE_XPCOM_QUEUE
+#ifdef VBOX_WITH_XPCOM
     nsCOMPtr<nsIEventQueue> eventQ;
 #endif
 #ifndef VBOX_ONLY_DOCS
