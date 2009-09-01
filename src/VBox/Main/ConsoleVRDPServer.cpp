@@ -707,6 +707,74 @@ DECLCALLBACK(int)  ConsoleVRDPServer::VRDPCallbackQueryProperty (void *pvCallbac
             *pcbOut = sizeof (uint32_t);
         } break;
 
+        case VRDP_QP_NETWORK_PORT_RANGE:
+        {
+            com::Bstr bstr;
+            HRESULT hrc = server->mConsole->machine ()->GetExtraData(Bstr("VBoxInternal2/VRDPPortRange"), bstr.asOutParam());
+            if (hrc != S_OK)
+            {
+                bstr = "";
+            }
+
+            /* The server expects UTF8. */
+            com::Utf8Str portRange = bstr;
+
+            size_t cbPortRange = portRange.length () + 1;
+
+            if (cbPortRange >= 0x10000)
+            {
+                /* More than 64K seems to be an  invalid port range string. */
+                rc = VERR_TOO_MUCH_DATA;
+                break;
+            }
+
+            if ((size_t)cbBuffer >= cbPortRange)
+            {
+                if (cbPortRange > 0)
+                {
+                    if (portRange.raw())
+                    {
+                        memcpy (pvBuffer, portRange.raw(), cbPortRange);
+                    }
+                    else
+                    {
+                        /* The value is an empty string. */
+                        *(uint8_t *)pvBuffer = 0;
+                    }
+                }
+
+                rc = VINF_SUCCESS;
+            }
+            else
+            {
+                rc = VINF_BUFFER_OVERFLOW;
+            }
+
+            *pcbOut = (uint32_t)cbPortRange;
+        } break;
+
+        case VRDP_SP_NETWORK_BIND_PORT:
+        {
+            if (cbBuffer != sizeof (uint32_t))
+            {
+                rc = VERR_INVALID_PARAMETER;
+                break;
+            }
+
+            ULONG port = *(uint32_t *)pvBuffer;
+
+            com::Bstr bstr = Utf8StrFmt("%d", port);
+
+            server->mConsole->machine ()->SetExtraData(Bstr("VBoxInternal2/VRDPBindPort"), bstr);
+
+            rc = VINF_SUCCESS;
+
+            if (pcbOut)
+            {
+                *pcbOut = sizeof (uint32_t);
+            }
+        } break;
+
         default:
             break;
     }

@@ -950,6 +950,10 @@ typedef struct _VRDPENTRYPOINTS_2
 #define VRDP_QP_NETWORK_PORT      (1)
 #define VRDP_QP_NETWORK_ADDRESS   (2)
 #define VRDP_QP_NUMBER_MONITORS   (3)
+#define VRDP_QP_NETWORK_PORT_RANGE (4)
+
+#define VRDP_SP_BASE 0x1000
+#define VRDP_SP_NETWORK_BIND_PORT (VRDP_SP_BASE + 1)
 
 #pragma pack(1)
 /* A framebuffer description. */
@@ -1005,7 +1009,8 @@ typedef struct _VRDPCALLBACKS_1
     VRDPINTERFACEHDR header;
 
     /**
-     * Query various information, on how the VRDP server must operate, from the application.
+     * Query or set various information, on how the VRDP server operates, from or to the application.
+     * 
      *
      * @param pvCallback  The callback specific pointer.
      * @param index       VRDP_QP_* identifier of information to be returned.
