@@ -647,6 +647,10 @@ VMMR3DECL(int) HWACCMR3InitFinalizeR0(PVM pVM)
 #else
             LogRel(("HWACCM: The host kernel does not support VT-x!\n"));
 #endif
+            if (pVM->cCPUs > 1)
+                return rc;
+
+            /* silently fall back to raw mode */
             return VINF_SUCCESS;
         }
     }
