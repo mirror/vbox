@@ -1322,15 +1322,29 @@ check_qt4()
   foundqt4=
   test_header Qt4
   if [ "$OS" = "darwin" ]; then
-    if [ -f "/System/Library/Frameworks/QtCore.framework/QtCore" ]; then
-      PATH_SDK_QT4="/System/Library/Framework/QtCore.framework"
-    elif [ -f "/Library/Frameworks/QtCore.framework/QtCore" ]; then
-      PATH_SDK_QT4="/Library/Frameworks/QtCore.framework"
-    fi
+    # First check if there is the internal version of Qt. If yes nothing else
+    # has to be done.
+    QT_INTERNAL=`/bin/ls -rd1 $PWD/tools/$BUILD_TARGET.$BUILD_PLATFORM_ARCH/qt/* 2> /dev/null`
+    for t in $QT_INTERNAL; do
+        if [ -f "$t/Frameworks/QtCoreVBox.framework/QtCoreVBox" ]; then
+          cnf_append "VBOX_WITH_QT4_SUN" "1"
+          log_success "use internal version"
+          return
+        fi
+    done
+    # Now try the user provided directory and some of the standard directories. 
+    QT_TRIES="$QT4DIR /System/Library /Library"
+    for t in $QT_TRIES; do
+        if [ -f "$t/Frameworks/QtCore.framework/QtCore" ]; then
+          PATH_SDK_QT4="$t"
+          break
+        fi
+    done
+    # Add the necessary params for building the test application
     if [ -n "$PATH_SDK_QT4" ]; then
       foundqt4=1
-      INCQT4="$PATH_SDK_QT4/Headers"
-      LIBQT4=
+      INCQT4=-I$PATH_SDK_QT4/Frameworks/QtCore.framework/Headers
+      LIBQT4=-F$PATH_SDK_QT4/Frameworks
       FLGQT4="-framework QtCore"
     else
       log_failure "Qt4 framework not found (can be disabled using --disable-qt4)"
@@ -1415,7 +1429,21 @@ EOF
     [ -n "$INCQT4" ] && I_INCQT4=`prefix_I "$INCQT4"`
     if test_compile "$LIBQT4 $LIBPTHREAD $I_INCQT4 $FLGQT4" qt4 qt4 nofatal; then
       if test_execute_path "`strip_L "$LIBQT4"`"; then
-        if [ "$OS" != "darwin" ]; then
+        if [ "$OS" = "darwin" ]; then
+          # Successful build & run the test application so add the necessary
+          # params to AutoConfig.kmk
+          cnf_append "PATH_SDK_QT4_INC" "$PATH_SDK_QT4/Frameworks" 
+          cnf_append "PATH_SDK_QT4_LIB" "$PATH_SDK_QT4/Frameworks" 
+          cnf_append "PATH_SDK_QT4" "$PATH_SDK_QT4/Frameworks" 
+          # Check for the moc tool in the Qt directory found & some standard
+          # directories.
+          for q in $PATH_SDK_QT4 /usr /Developer/Tools/Qt; do
+            if which_wrapper "$q/bin/moc" > /dev/null; then
+              cnf_append "PATH_TOOL_QT4" "$q"
+              cnf_append "PATH_TOOL_QT4_BIN" "$q/bin"
+            fi
+          done
+        else
           # strip .../QtCore as we add components ourself
           INCQT4=`echo "$INCQT4"|$KBUILD_SED 's|\([^ ]*\)/QtCore|\1|g; s| $||g'`
           # store only the first path, remove all other pathes
