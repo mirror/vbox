@@ -119,7 +119,7 @@ RTDECL(void) RTThreadPreemptDisable(PRTTHREADPREEMPTSTATE pState)
 
     vbi_preempt_disable();
 
-    pState->uOldPil = splr(ipltospl(LOCK_LEVEL - 8));
+    pState->uOldPil = splr(ipltospl(1));
     Assert(pState->uOldPil != UINT32_MAX);
     RT_ASSERT_PREEMPT_CPUID_DISABLE(pState);
 }
@@ -129,7 +129,7 @@ RTDECL(void) RTThreadPreemptRestore(PRTTHREADPREEMPTSTATE pState)
 {
     AssertPtr(pState);
     RT_ASSERT_PREEMPT_CPUID_RESTORE(pState);
-    Assert(g_frtSolarisSplSetsEIF && pState->uOldPil != UINT32_MAX);
+    Assert(pState->uOldPil != UINT32_MAX);
     splx(pState->uOldPil);
 
     vbi_preempt_enable();
