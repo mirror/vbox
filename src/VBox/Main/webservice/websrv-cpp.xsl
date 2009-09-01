@@ -247,7 +247,7 @@ const char *g_pcszIUnknown = "IUnknown";
 
     <xsl:call-template name="emitPrologue"><xsl:with-param name="fSkipHRESULT" select="'1'"/></xsl:call-template>
 
-    <xsl:value-of select="concat('        resp = soap_new_vbox__', $structname, '(soap, 1);')" />
+    <xsl:value-of select="concat('        resp = soap_new_vbox__', $structname, '(soap, -1);')" />
     <xsl:call-template name="emitNewline" />
     <xsl:call-template name="emitNewline" />
 
@@ -963,7 +963,7 @@ const char *g_pcszIUnknown = "IUnknown";
       <!-- the type is a collection of our own types: then build an array from it -->
       <xsl:variable name="collectiontype" select="//collection[@name=$type]/@type" />
       <xsl:variable name="targetwsmap" select="//interface[@name=$collectiontype]/@wsmap" />
-      <xsl:value-of select="concat('soap_new_vbox__ArrayOf', $collectiontype, '(soap, 1);')" />
+      <xsl:value-of select="concat('soap_new_vbox__ArrayOf', $collectiontype, '(soap, -1);')" />
       <xsl:call-template name="emitNewlineIndent8" />
       <xsl:variable name="enumerator" select="concat('comcall_', $callerprefix, $name, '_enum')" />
       <xsl:value-of select="concat('ComPtr&lt;', $collectiontype, 'Enumerator&gt; ', $enumerator, ';')" />
