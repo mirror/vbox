@@ -95,7 +95,7 @@ RTDECL(int)  RTSemEventMultiDestroy(RTSEMEVENTMULTI EventMultiSem)
     if (EventMultiSem == NIL_RTSEMEVENTMULTI)     /* don't bitch */
         return VERR_INVALID_HANDLE;
     PRTSEMEVENTMULTIINTERNAL pEventMultiInt = (PRTSEMEVENTMULTIINTERNAL)EventMultiSem;
-    RTSPINLOCKTMP            Tmp;
+    RTSPINLOCKTMP            Tmp = RTSPINLOCKTMP_INITIALIZER;
 
     AssertPtrReturn(pEventMultiInt, VERR_INVALID_HANDLE);
     AssertMsgReturn(pEventMultiInt->u32Magic == RTSEMEVENTMULTI_MAGIC,
@@ -129,7 +129,7 @@ RTDECL(int)  RTSemEventMultiDestroy(RTSEMEVENTMULTI EventMultiSem)
 
 RTDECL(int)  RTSemEventMultiSignal(RTSEMEVENTMULTI EventMultiSem)
 {
-    RTSPINLOCKTMP            Tmp;
+    RTSPINLOCKTMP            Tmp = RTSPINLOCKTMP_INITIALIZER;
     PRTSEMEVENTMULTIINTERNAL pEventMultiInt = (PRTSEMEVENTMULTIINTERNAL)EventMultiSem;
     AssertPtrReturn(pEventMultiInt, VERR_INVALID_HANDLE);
     AssertMsgReturn(pEventMultiInt->u32Magic == RTSEMEVENTMULTI_MAGIC,
@@ -157,7 +157,7 @@ RTDECL(int)  RTSemEventMultiSignal(RTSEMEVENTMULTI EventMultiSem)
 
 RTDECL(int)  RTSemEventMultiReset(RTSEMEVENTMULTI EventMultiSem)
 {
-    RTSPINLOCKTMP            Tmp;
+    RTSPINLOCKTMP            Tmp = RTSPINLOCKTMP_INITIALIZER;
     PRTSEMEVENTMULTIINTERNAL pEventMultiInt = (PRTSEMEVENTMULTIINTERNAL)EventMultiSem;
     AssertPtrReturn(pEventMultiInt, VERR_INVALID_HANDLE);
     AssertMsgReturn(pEventMultiInt->u32Magic == RTSEMEVENTMULTI_MAGIC,
@@ -174,7 +174,7 @@ RTDECL(int)  RTSemEventMultiReset(RTSEMEVENTMULTI EventMultiSem)
 static int rtSemEventMultiWait(RTSEMEVENTMULTI EventMultiSem, unsigned cMillies, bool fInterruptible)
 {
     int rc;
-    RTSPINLOCKTMP            Tmp;
+    RTSPINLOCKTMP            Tmp = RTSPINLOCKTMP_INITIALIZER;
     PRTSEMEVENTMULTIINTERNAL pEventMultiInt = (PRTSEMEVENTMULTIINTERNAL)EventMultiSem;
     AssertPtrReturn(pEventMultiInt, VERR_INVALID_HANDLE);
     AssertMsgReturn(pEventMultiInt->u32Magic == RTSEMEVENTMULTI_MAGIC,

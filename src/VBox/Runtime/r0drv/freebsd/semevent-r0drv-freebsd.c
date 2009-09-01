@@ -95,7 +95,7 @@ RTDECL(int)  RTSemEventDestroy(RTSEMEVENT EventSem)
     if (EventSem == NIL_RTSEMEVENT)     /* don't bitch */
         return VERR_INVALID_HANDLE;
     PRTSEMEVENTINTERNAL pEventInt = (PRTSEMEVENTINTERNAL)EventSem;
-    RTSPINLOCKTMP Tmp;
+    RTSPINLOCKTMP Tmp = RTSPINLOCKTMP_INITIALIZER;
 
     AssertPtrReturn(pEventInt, VERR_INVALID_HANDLE);
     AssertMsgReturn(pEventInt->u32Magic == RTSEMEVENT_MAGIC,
@@ -130,7 +130,7 @@ RTDECL(int)  RTSemEventDestroy(RTSEMEVENT EventSem)
 
 RTDECL(int)  RTSemEventSignal(RTSEMEVENT EventSem)
 {
-    RTSPINLOCKTMP       Tmp;
+    RTSPINLOCKTMP       Tmp = RTSPINLOCKTMP_INITIALIZER;
     PRTSEMEVENTINTERNAL pEventInt = (PRTSEMEVENTINTERNAL)EventSem;
     AssertPtrReturn(pEventInt, VERR_INVALID_HANDLE);
     AssertMsgReturn(pEventInt->u32Magic == RTSEMEVENT_MAGIC,
@@ -160,7 +160,7 @@ RTDECL(int)  RTSemEventSignal(RTSEMEVENT EventSem)
 static int rtSemEventWait(RTSEMEVENT EventSem, unsigned cMillies, bool fInterruptible)
 {
     int rc;
-    RTSPINLOCKTMP       Tmp;
+    RTSPINLOCKTMP       Tmp = RTSPINLOCKTMP_INITIALIZER;
     PRTSEMEVENTINTERNAL pEventInt = (PRTSEMEVENTINTERNAL)EventSem;
     AssertPtrReturn(pEventInt, VERR_INVALID_HANDLE);
     AssertMsgReturn(pEventInt->u32Magic == RTSEMEVENT_MAGIC,

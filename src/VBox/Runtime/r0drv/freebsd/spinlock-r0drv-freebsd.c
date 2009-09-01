@@ -172,7 +172,7 @@ RTDECL(void) RTSpinlockAcquire(RTSPINLOCK Spinlock, PRTSPINLOCKTMP pTmp)
     Assert(pThis->u32Magic == RTSPINLOCK_MAGIC);
 #ifdef RT_STRICT
     Assert(pTmp->uFlags == 0);
-    pTmp->uFlags = 0;
+    pTmp->uFlags = 42;
 #endif
 
     NOREF(pTmp);
