@@ -232,7 +232,7 @@ void HostPowerServiceDarwin::checkBatteryCriticalLevel (bool *pfCriticalChanged)
                     mCritical != critical &&
                     pfCriticalChanged)
                     *pfCriticalChanged = true;
-                Log (("checkBatteryCriticalLevel: Remains: %.0f%% Critical: %d Critical State Changed: %d\n", remCapacity, critical, pfCriticalChanged?*pfCriticalChanged:-1));
+                Log (("checkBatteryCriticalLevel: Remains: %d.%d%% Critical: %d Critical State Changed: %d\n", (int)remCapacity, (int)(remCapacity * 10) % 10, critical, pfCriticalChanged?*pfCriticalChanged:-1));
             }
         }
     }
