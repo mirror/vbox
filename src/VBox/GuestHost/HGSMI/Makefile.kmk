@@ -25,6 +25,12 @@ LIBRARIES += \
 LIBRARIES += \
 	HGSMIHostR3Lib
 
+ifndef VBOX_WITH_ADDITION_DRIVERS
+ if1of ($(KBUILD_TARGET), linux l4) # All drivers are optional, can skip HGSMIGuestR0Lib.
+  LIBRARIES := $(filter-out HGSMIGuestR0Lib, $(LIBRARIES))
+ endif
+endif
+
 
 #
 # HGSMIGuestR0Lib
