@@ -753,4 +753,5 @@ int bootp_dhcp_fini(PNATState pData)
 {
     if (pData->pbootp_clients != NULL)
         RTMemFree(pData->pbootp_clients);
+    return 0;
 }
