@@ -153,6 +153,7 @@ vboxmouse_drv_17_DEFS := $(vboxmouse_drv_70_DEFS) NO_ANSIC
 ## @todo replace $(VBOX_PATH_X11_ROOT)/xorg-server-1.6.0-local
 vboxmouse_drv_17_INCS := \
 	$(VBOX_PATH_X11_ROOT)/inputproto-1.9.99.902 \
+	$(VBOX_PATH_X11_ROOT)/libpciaccess-0.10.8 \
 	$(VBOX_PATH_X11_ROOT)/pixman-0.16.0 \
 	$(VBOX_PATH_X11_ROOT)/xextproto-7.1.1 \
 	$(VBOX_PATH_X11_ROOT)/xorg-server-1.6.99-20090831 \
