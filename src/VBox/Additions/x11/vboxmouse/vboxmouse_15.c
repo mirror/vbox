@@ -73,16 +73,21 @@ VBoxReadInput(InputInfoPtr pInfo)
         xf86PostMotionEvent(pInfo->dev, 1, 0, 2, cx, cy);
 }
 
+static void
+VBoxPtrCtrlProc(DeviceIntPtr device, PtrCtrl *ctrl)
+{
+    /* Nothing to do, dix handles all settings */
+}
+
 static int
 VBoxInit(DeviceIntPtr device)
 {
     CARD8 map[2] = { 0, 1 };
+    Atom axis_labels[2] = { 0, 0 };
+    Atom button_labels[2] = { 0, 0 };
     InputInfoPtr pInfo;
 
     pInfo = device->public.devicePrivate;
-    Atom axis_labels[2] = { 0, 0 };
-    Atom button_labels[2] = { 0, 0 };
-
     if (!InitValuatorClassDeviceStruct(device, 2,
 #if GET_ABI_MAJOR(ABI_XINPUT_VERSION) < 3
                                        GetMotionHistory,
@@ -98,6 +103,8 @@ VBoxInit(DeviceIntPtr device)
                                      button_labels,
 #endif
                                      map))
+        return !Success;
+    if (!InitPtrFeedbackClassDeviceStruct(device, VBoxPtrCtrlProc))
         return !Success;
 
     /* Tell the server about the range of axis values we report */
