@@ -588,18 +588,6 @@ send:
         error = ip_output(m, tp->t_inpcb->inp_options, &tp->t_inpcb->inp_route,
                          so->so_options & SO_DONTROUTE, 0);
 #endif
-#ifdef VBOX_WITH_NAT_SERVICE
-        {
-            struct ethhdr *eh0, *eh;
-            eh = (struct ethhdr *)m->m_dat;
-
-            if (so->so_m != NULL)
-            {
-                eh0 = (struct ethhdr *)so->so_m->m_dat;
-                memcpy(eh->h_source, eh0->h_source, ETH_ALEN);
-            }
-        }
-#endif
         if(so->so_la != NULL)
             m->m_la = so->so_la;
         error = ip_output(pData, so, m);

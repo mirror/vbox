@@ -45,31 +45,20 @@
 #include <slirp.h>
 #include "alias.h"
 
-static const uint8_t* rt_lookup_in_cache(PNATState pData, uint32_t dst)
+static int rt_lookup_in_cache(PNATState pData, uint32_t dst, uint8_t *ether)
 {
-    int i;
-    struct arp_cache_entry *ac = NULL;
-   /* @todo (vasily) to quick ramp up on routing rails
-    * we use information from DHCP server leasings, this
-    * code couldn't detect any changes in network topology
-    * and should be borrowed from other places
-    */
-    LIST_FOREACH(ac, &pData->arp_cache, list)
-    {
-        if (ac->ip == dst)
-            return &ac->ether[0];
-    }
-    for (i = 0; i < NB_ADDR; i++)
-    {
-        if (   bootp_clients[i].allocated
-            && bootp_clients[i].addr.s_addr == dst)
-            return &bootp_clients[i].macaddr[0];
-    }
+    int rc = 1;
+    rc = slirp_arp_lookup_ether_by_ip(pData, dst, ether);
+    if (rc == 0)
+        return rc;
+    rc = bootp_cache_lookup_ether_by_ip(pData, dst, ether);
+    if (rc == 0)
+        return rc;
     /* 
      * no chance to send this packet, sorry, we will request ether address via ARP 
      */
     slirp_arp_who_has(pData, dst); 
-    return NULL; 
+    return rc; 
 }
 
 /*
@@ -87,7 +76,8 @@ ip_output(PNATState pData, struct socket *so, struct mbuf *m0)
     int len, off, error = 0;
     extern uint8_t zerro_ethaddr[ETH_ALEN];
     struct ethhdr *eh = NULL;
-    const uint8_t *eth_dst = NULL;
+    uint8_t eth_dst[ETH_ALEN];
+    int rc = 1;
 
     STAM_PROFILE_START(&pData->StatIP_output, a);
 
@@ -133,7 +123,16 @@ ip_output(PNATState pData, struct socket *so, struct mbuf *m0)
        */
      eh = (struct ethhdr *)MBUF_HEAD(m);
      if (memcmp(eh->h_source, zerro_ethaddr, ETH_ALEN) == 0)
-         eth_dst = rt_lookup_in_cache(pData, ip->ip_dst.s_addr); 
+     {
+        rc = rt_lookup_in_cache(pData, ip->ip_dst.s_addr, eth_dst);
+        if (rc != 0)
+            goto bad;
+     }
+     else
+    {
+        memcpy(eth_dst, eh->h_source, ETH_ALEN);
+        rc = 0; /*some times we've already know where to send packet*/
+    }
 
     /*
      * If small enough for interface, can just send directly.
@@ -144,16 +143,15 @@ ip_output(PNATState pData, struct socket *so, struct mbuf *m0)
         ip->ip_off = htons((u_int16_t)ip->ip_off);
         ip->ip_sum = 0;
         ip->ip_sum = cksum(m, hlen);
-        if (eth_dst != NULL) 
-            memcpy(eh->h_source, eth_dst, ETH_ALEN); 
-        {
-            int rc;
-            STAM_PROFILE_START(&pData->StatALIAS_output, a);
-            rc = LibAliasOut((m->m_la ? m->m_la : pData->proxy_alias), 
-                mtod(m, char *), m->m_len);
-            Log2(("NAT: LibAlias return %d\n", rc));
-            STAM_PROFILE_STOP(&pData->StatALIAS_output, a);
-        }
+    
+        Assert((rc == 0));
+        memcpy(eh->h_source, eth_dst, ETH_ALEN); 
+    
+        STAM_PROFILE_START(&pData->StatALIAS_output, a);
+        rc = LibAliasOut((m->m_la ? m->m_la : pData->proxy_alias), 
+            mtod(m, char *), m->m_len);
+        Log2(("NAT: LibAlias return %d\n", rc));
+        STAM_PROFILE_STOP(&pData->StatALIAS_output, a);
 
         if_output(pData, so, m);
         goto done;
@@ -202,9 +200,9 @@ ip_output(PNATState pData, struct socket *so, struct mbuf *m0)
             *mhip = *ip;
             /* we've calculated eth_dst for first packet */
             eh = (struct ethhdr *)MBUF_HEAD(m);
-            if (eth_dst != NULL) {
-                memcpy(eh->h_source, eth_dst, ETH_ALEN); 
-            }
+            Assert((rc == 0));
+
+            memcpy(eh->h_source, eth_dst, ETH_ALEN); 
 
 #if 0 /* No options */
             if (hlen > sizeof (struct ip))
@@ -246,14 +244,12 @@ ip_output(PNATState pData, struct socket *so, struct mbuf *m0)
         ip->ip_off = htons((u_int16_t)(ip->ip_off | IP_MF));
         ip->ip_sum = 0;
         ip->ip_sum = cksum(m, hlen);
-        {
-            int rc;
-            STAM_PROFILE_START(&pData->StatALIAS_output, a);
-            rc = LibAliasOut((m->m_la ? m->m_la : pData->proxy_alias), 
-                mtod(m, char *), m->m_len);
-            Log2(("NAT: LibAlias return %d\n", rc));
-            STAM_PROFILE_STOP(&pData->StatALIAS_output, a);
-        }
+
+        STAM_PROFILE_START(&pData->StatALIAS_output, a);
+        rc = LibAliasOut((m->m_la ? m->m_la : pData->proxy_alias), 
+            mtod(m, char *), m->m_len);
+        Log2(("NAT: LibAlias return %d\n", rc));
+        STAM_PROFILE_STOP(&pData->StatALIAS_output, a);
 
 sendorfree:
         for (m = m0; m; m = m0)

@@ -114,15 +114,6 @@ struct bootp_t
     uint8_t        bp_vend[DHCP_OPT_LEN];
 };
 
-/** Entry in the table of known DHCP clients. */
-typedef struct
-{
-    uint32_t xid;
-    bool allocated;
-    uint8_t macaddr[6];
-    struct in_addr addr;
-    int number;
-} BOOTPClient;
 
 #define DHCP_FLAGS_B (1<<15)
 struct bootp_ext
@@ -132,3 +123,7 @@ struct bootp_ext
 };
 
 void bootp_input(PNATState, struct mbuf *m);
+int bootp_cache_lookup_ip_by_ether(PNATState, const uint8_t *, uint32_t *);
+int bootp_cache_lookup_ether_by_ip(PNATState, uint32_t, uint8_t *);
+int bootp_dhcp_init(PNATState);
+int bootp_dhcp_fini(PNATState);

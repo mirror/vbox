@@ -189,7 +189,7 @@
 #define LOG_NAT_SOCK(so, proto, winevent, r_fdset, w_fdset, x_fdset) DO_LOG_NAT_SOCK((so), proto, (winevent), r_fdset, w_fdset, x_fdset)
 
 static void activate_port_forwarding(PNATState, struct ethhdr *);
-static uint32_t find_guest_ip(PNATState, uint8_t *);
+static uint32_t find_guest_ip(PNATState, const uint8_t *);
 
 static const uint8_t special_ethaddr[6] =
 {
@@ -514,6 +514,7 @@ int slirp_init(PNATState *ppData, uint32_t u32NetAddr, uint32_t u32Netmask,
 
     link_up = 1;
 
+    bootp_dhcp_init(pData);
     debug_init();
     if_init(pData);
     ip_init(pData);
@@ -648,6 +649,7 @@ void slirp_term(PNATState pData)
         LIST_REMOVE(ac, list);
         RTMemFree(ac);
     }
+    bootp_dhcp_fini(pData);
 #ifdef RT_OS_WINDOWS
     WSACleanup();
 #endif
@@ -1531,20 +1533,20 @@ done:
  * Still we're using dhcp server leasing to map ether to IP
  * @todo  see rt_lookup_in_cache
  */
-static uint32_t find_guest_ip(PNATState pData, uint8_t *eth_addr)
+static uint32_t find_guest_ip(PNATState pData, const uint8_t *eth_addr)
 {
     int i;
+    uint32_t ip = INADDR_ANY;
+    if (eth_addr == NULL)
+        goto done;
     if (memcmp(eth_addr, zerro_ethaddr, ETH_ALEN) == 0
         || memcmp(eth_addr, broadcast_ethaddr, ETH_ALEN) == 0)
         goto done;
-    for (i = 0; i < NB_ADDR; i++)
-    {
-        if (   bootp_clients[i].allocated
-            && memcmp(bootp_clients[i].macaddr, eth_addr, ETH_ALEN) == 0)
-            return bootp_clients[i].addr.s_addr;
-    }
+    if(slirp_arp_lookup_ip_by_ether(pData, eth_addr, &ip) == 0)
+        goto done;
+    bootp_cache_lookup_ip_by_ether(pData, eth_addr, &ip);
 done:
-    return INADDR_ANY;
+    return ip;
 }
 
 /**
@@ -1826,6 +1828,57 @@ void slirp_set_tcp_sndspace(PNATState pData, int kilobytes)
 {
     _8K_1M_CHECK_ARG("TCP_SNDSPACE", kilobytes);
     tcp_sndspace = kilobytes * _1K;
+}
+
+/*
+ * Looking for Ether by ip in ARP-cache
+ * Note: it´s responsible of caller to allocate buffer for result
+ * @returns 0 - if found, 1 - otherwise
+ */
+int slirp_arp_lookup_ether_by_ip(PNATState pData, uint32_t ip, uint8_t *ether)
+{
+    struct arp_cache_entry *ac = NULL;
+    int rc = 1;
+    if (ether == NULL)
+        return rc;
+
+    if (LIST_EMPTY(&pData->arp_cache))
+        return rc;
+
+    LIST_FOREACH(ac, &pData->arp_cache, list)
+    {
+        if (ac->ip == ip)
+        {
+            memcpy(ether, ac->ether, ETH_ALEN);
+            rc = 0;
+            return rc;
+        }
+    }
+    return rc;
+}
+
+/*
+ * Looking for IP by Ether in ARP-cache
+ * Note: it´s responsible of caller to allocate buffer for result
+ * @returns 0 - if found, 1 - otherwise
+ */
+int slirp_arp_lookup_ip_by_ether(PNATState pData, const uint8_t *ether, uint32_t *ip)
+{
+    struct arp_cache_entry *ac = NULL;
+    int rc = 1;
+    *ip = INADDR_ANY;
+    if (LIST_EMPTY(&pData->arp_cache))
+        return rc;
+    LIST_FOREACH(ac, &pData->arp_cache, list)
+    {
+        if (memcmp(ether, ac->ether, ETH_ALEN))
+        {
+            *ip = ac->ip;
+            rc = 0;
+            return rc;
+        }
+    }
+    return rc;
 }
 
 void slirp_arp_who_has(PNATState pData, uint32_t dst)
