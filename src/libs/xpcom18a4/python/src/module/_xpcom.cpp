@@ -495,15 +495,6 @@ PyObject *LogConsoleMessage(PyObject *self, PyObject *args)
 
 static nsIEventQueue* g_mainEventQ = nsnull;
 
-# ifdef RT_OS_DARWIN
-#  include <iprt/time.h>
-#  include <iprt/thread.h>
-#  include <iprt/err.h>
-#  include <CoreFoundation/CFRunLoop.h>
-#  if MAC_OS_X_VERSION_MAX_ALLOWED == 1040 /* ASSUMES this means we're using the 10.4 SDK. */
-#   include <CarbonEvents.h>
-#  endif
-
 // Wrapper that checks if the queue has pending events.
 DECLINLINE(bool)
 hasEventQueuePendingEvents(nsIEventQueue *pQueue)
@@ -513,7 +504,7 @@ hasEventQueuePendingEvents(nsIEventQueue *pQueue)
 	return NS_SUCCEEDED(rc) && fHasEvents ? true : false;
 }
 
-// Wrapper that checks if the queue has pending events.
+// Wrapper that checks if the queue is native or not.
 DECLINLINE(bool)
 isEventQueueNative(nsIEventQueue *pQueue)
 {
@@ -522,6 +513,14 @@ isEventQueueNative(nsIEventQueue *pQueue)
 	return NS_SUCCEEDED(rc) && fIsNative ? true : false;
 }
 
+# ifdef RT_OS_DARWIN
+#  include <iprt/time.h>
+#  include <iprt/thread.h>
+#  include <iprt/err.h>
+#  include <CoreFoundation/CFRunLoop.h>
+#  if MAC_OS_X_VERSION_MAX_ALLOWED == 1040 /* ASSUMES this means we're using the 10.4 SDK. */
+#   include <CarbonEvents.h>
+#  endif
 
 // Common fallback for waiting (and maybe processing) events. Caller process
 // any pending events when 0 is returned.
