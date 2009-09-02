@@ -1369,6 +1369,8 @@ DECLEXPORT(int) pgmPoolAccessHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE 
 # endif /* !IN_RING3 */
 
 # ifdef PGMPOOL_WITH_OPTIMIZED_DIRTY_PT
+
+#  ifdef VBOX_STRICT
 /**
  * Check references to guest physical memory in a PAE / PAE page table.
  *
@@ -1420,6 +1422,7 @@ DECLINLINE(void) pgmPoolTrackCheckPTPaePae(PPGMPOOL pPool, PPGMPOOLPAGE pPage, P
     }
     Assert(!cErrors);
 }
+#  endif /* VBOX_STRICT */
 
 /**
  * Clear references to guest physical memory in a PAE / PAE page table.
@@ -1511,12 +1514,14 @@ static void pgmPoolFlushDirtyPage(PVM pVM, PPGMPOOL pPool, unsigned idxSlot, boo
 
 #ifdef VBOX_STRICT
     uint64_t fFlags = 0;
-    rc = PGMShwGetPage(VMMGetCpu(pVM), pPage->pvDirtyFault, &fFlags, NULL);
-    AssertMsg(      (rc == VINF_SUCCESS && !(fFlags & X86_PTE_RW))
-                /* In the SMP case the page table might be removed while we wait for the PGM lock in the trap handler. */
-                ||  rc == VERR_PAGE_TABLE_NOT_PRESENT 
-                ||  rc == VERR_PAGE_NOT_PRESENT, 
-                ("PGMShwGetPage -> GCPtr=%RGv rc=%d flags=%RX64\n", pPage->pvDirtyFault, rc, fFlags));
+    RTHCPHYS HCPhys;
+    rc = PGMShwGetPage(VMMGetCpu(pVM), pPage->pvDirtyFault, &fFlags, &HCPhys);
+    AssertMsg(      (   rc == VINF_SUCCESS 
+                     && (!(fFlags & X86_PTE_RW) || HCPhys != pPage->Core.Key))
+              /* In the SMP case the page table might be removed while we wait for the PGM lock in the trap handler. */
+              ||    rc == VERR_PAGE_TABLE_NOT_PRESENT 
+              ||    rc == VERR_PAGE_NOT_PRESENT, 
+              ("PGMShwGetPage -> GCPtr=%RGv rc=%d flags=%RX64\n", pPage->pvDirtyFault, rc, fFlags));
 #endif
 
     /* This page is likely to be modified again, so reduce the nr of modifications just a bit here. */
@@ -1570,7 +1575,9 @@ void pgmPoolAddDirtyPage(PVM pVM, PPGMPOOL pPool, PPGMPOOLPAGE pPage)
     void *pvGst;
     int rc = PGM_GCPHYS_2_PTR(pPool->CTX_SUFF(pVM), pPage->GCPhys, &pvGst); AssertReleaseRC(rc);
     memcpy(&pPool->aDirtyPages[idxFree][0], pvGst, PAGE_SIZE);
+#ifdef VBOX_STRICT
     pgmPoolTrackCheckPTPaePae(pPool, pPage, (PX86PTPAE)pvShw, (PCX86PTPAE)pvGst);
+#endif
 
     STAM_COUNTER_INC(&pPool->StatDirtyPage);
     pPage->fDirty                  = true;
