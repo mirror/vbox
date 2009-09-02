@@ -1421,26 +1421,6 @@ DECLINLINE(void) pgmPoolTrackCheckPTPaePae(PPGMPOOL pPool, PPGMPOOLPAGE pPage, P
     Assert(!cErrors);
 }
 
-void pgmPoolTrackCheckAllPTPaePae(pVM)
-{
-    PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool);
-
-    for (unsigned i = 0; i < pPool->cCurPages; i++)
-    {
-        PPGMPOOLPAGE pPage = &pPool->aPages[i];
-
-        if (    pPage->enmKind == PGMPOOLKIND_PAE_PT_FOR_PAE_PT
-            &&  !pPage->fDirty)
-        {
-            void *pvShw = PGMPOOL_PAGE_2_LOCKED_PTR(pPool->CTX_SUFF(pVM), pPage);
-            void *pvGst;
-            int rc = PGM_GCPHYS_2_PTR(pPool->CTX_SUFF(pVM), pPage->GCPhys, &pvGst); AssertReleaseRC(rc);
-
-            pgmPoolTrackCheckPTPaePae(pPool, pPage, (PX86PTPAE)pvShw, (PCX86PTPAE)pvGst);
-        }
-    }
-}
-
 /**
  * Clear references to guest physical memory in a PAE / PAE page table.
  *
