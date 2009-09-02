@@ -89,6 +89,9 @@ public:
     BOOL postEvent (Event *event);
     BOOL waitForEvent (Event **event);
     BOOL handleEvent (Event *event);
+    static int processThreadEventQueue(uint32_t cMsTimeout, bool (*pfnExitCheck)(void *pvUser) = 0,
+                                       void *pvUser = 0, uint32_t cMsPollInterval = 1000,
+                                       bool fReturnOnEvent = true);
 
 private:
 
