@@ -664,7 +664,7 @@ static DECLCALLBACK(int) pgmR3PoolCmdCheck(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, 
                     }
                     else
                     if (    pShwPT->a[j].n.u1Write
-                        &&  pGstPT->a[j].n.u1Write)
+                        &&  !pGstPT->a[j].n.u1Write)
                     {
                         if (fFirstMsg)
                         {
