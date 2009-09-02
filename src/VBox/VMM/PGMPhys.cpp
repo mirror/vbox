@@ -421,6 +421,8 @@ VMMR3DECL(int) PGMR3PhysGCPhys2CCPtrExternal(PVM pVM, RTGCPHYS GCPhys, void **pp
     AssertPtr(ppv);
     AssertPtr(pLock);
 
+    Assert(VM_IS_EMT(pVM) || !PGMIsLockOwner(pVM));
+
     int rc = pgmLock(pVM);
     AssertRCReturn(rc, rc);
 
@@ -435,24 +437,14 @@ VMMR3DECL(int) PGMR3PhysGCPhys2CCPtrExternal(PVM pVM, RTGCPHYS GCPhys, void **pp
         if (PGM_PAGE_IS_MMIO(pPage))
             rc = VERR_PGM_PHYS_PAGE_RESERVED;
         else
-#if 0
-        if (PGM_PAGE_HAS_ACTIVE_HANDLERS(pPage))
-        {
-            /* We *must* flush any corresponding pgm pool page here, otherwise we'll
-             * not be informed about writes and keep bogus gst->shw mappings around.
-             */
-            PGMPoolFlushPage(pVM, GCPhys);
-            Assert(!PGM_PAGE_HAS_ACTIVE_HANDLERS(pPage));
-        }
-        else
-#endif
         {
             /*
              * If the page is shared, the zero page, or being write monitored
              * it must be converted to an page that's writable if possible.
              * This has to be done on an EMT.
              */
-            if (RT_UNLIKELY(PGM_PAGE_GET_STATE(pPage) != PGM_PAGE_STATE_ALLOCATED))
+            if (    PGM_PAGE_HAS_ACTIVE_HANDLERS(pPage)
+                ||  RT_UNLIKELY(PGM_PAGE_GET_STATE(pPage) != PGM_PAGE_STATE_ALLOCATED))
             {
                 pgmUnlock(pVM);
 

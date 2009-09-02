@@ -4710,6 +4710,8 @@ VMMDECL(void) PGMPoolFlushPage(PVM pVM, RTGCPHYS GCPhys)
 #ifdef PGMPOOL_WITH_CACHE
     PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool);
 
+    VM_ASSERT_EMT(pVM);
+
     /*
      * Look up the GCPhys in the hash.
      */
