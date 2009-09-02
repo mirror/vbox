@@ -1617,6 +1617,7 @@ void pgmPoolAddDirtyPage(PVM pVM, PPGMPOOL pPool, PPGMPOOLPAGE pPage)
 bool pgmPoolIsDirtyPage(PVM pVM, RTGCPHYS GCPhys)
 {
     PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool);
+    Assert(PGMIsLocked(pVM));
     if (!pPool->cDirtyPages)
         return false;
 
