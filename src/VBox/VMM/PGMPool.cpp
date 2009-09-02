@@ -644,6 +644,7 @@ static DECLCALLBACK(int) pgmR3PoolCmdCheck(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, 
             PX86PTPAE pGstPT;
             int rc = PGM_GCPHYS_2_PTR(pPool->CTX_SUFF(pVM), pPage->GCPhys, &pGstPT); AssertReleaseRC(rc);
 
+            /* Check if any PTEs are out of sync. */
             for (unsigned j = 0; j < RT_ELEMENTS(pShwPT->a); j++)
             {
                 if (pShwPT->a[j].n.u1Present)
@@ -655,17 +656,37 @@ static DECLCALLBACK(int) pgmR3PoolCmdCheck(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, 
                     {
                         pCmdHlp->pfnPrintf(pCmdHlp, NULL, "Pool check: rc=%d idx=%d guest %RX64 shw=%RX64 vs %RHp\n", rc, j, pGstPT->a[j].u, pShwPT->a[j].u, HCPhys);
                     }
-                    else
-                    if (    pShwPT->a[j].n.u1Write
-# ifdef PGMPOOL_WITH_OPTIMIZED_DIRTY_PT
-                        &&  !pPage->fDirty
-# endif
-                       )
+                }
+            }
+
+            /* Make sure this page table can't be written to from any shadow mapping. */
+            RTHCPHYS HCPhysPT = -1;
+            rc = PGMPhysGCPhys2HCPhys(pPool->CTX_SUFF(pVM), pPage->GCPhys, &HCPhysPT);
+            AssertRC(rc);
+
+            for (unsigned j = 0; j < pPool->cCurPages; j++)
+            {
+                PPGMPOOLPAGE pTempPage = &pPool->aPages[j];
+
+                if (pTempPage->enmKind == PGMPOOLKIND_PAE_PT_FOR_PAE_PT)
+                {
+                    PX86PTPAE pShwPT2 = (PX86PTPAE)PGMPOOL_PAGE_2_PTR(pPool->CTX_SUFF(pVM), pTempPage);
+
+                    for (unsigned k = 0; k < RT_ELEMENTS(pShwPT->a); k++)
                     {
-                        pCmdHlp->pfnPrintf(pCmdHlp, NULL, "Pool check r/w: rc=%d idx=%d guest %RX64 shw=%RX64 vs %RHp\n", rc, j, pGstPT->a[j].u, pShwPT->a[j].u, HCPhys);
+                        if (    pShwPT2->a[k].n.u1Present
+                            &&  pShwPT2->a[k].n.u1Write
+# ifdef PGMPOOL_WITH_OPTIMIZED_DIRTY_PT
+                            &&  !pPage->fDirty
+# endif
+                            &&  ((pShwPT2->a[k].u & X86_PTE_PAE_PG_MASK) == HCPhysPT))
+                        {
+                            pCmdHlp->pfnPrintf(pCmdHlp, NULL, "Pool check r/w: GCPhys=%RGp idx=%d shw %RX64 %RX64\n", pTempPage->GCPhys, k, pShwPT->a[k].u, pShwPT2->a[k].u);
+                        }
                     }
                 }
             }
+
         }
     }
     return VINF_SUCCESS;
