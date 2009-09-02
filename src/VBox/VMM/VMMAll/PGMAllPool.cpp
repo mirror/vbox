@@ -1629,7 +1629,6 @@ bool pgmPoolIsDirtyPage(PVM pVM, RTGCPHYS GCPhys)
         {
             PPGMPOOLPAGE pPage;
             unsigned     idxPage = pPool->aIdxDirtyPages[i];
-            AssertRelease(idxPage != NIL_PGMPOOL_IDX);
 
             pPage = &pPool->aPages[idxPage];
             if (pPage->GCPhys == GCPhys)
