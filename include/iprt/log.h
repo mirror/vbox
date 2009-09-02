@@ -401,8 +401,10 @@ typedef enum RTLOGGRPFLAGS
     RTLOGGRPFLAGS_BIRD         = 0x00010000,
     /** aleksey logging. */
     RTLOGGRPFLAGS_ALEKSEY      = 0x00020000,
+    /** dj logging. */
+    RTLOGGRPFLAGS_DJ           = 0x00040000,
     /** NoName logging. */
-    RTLOGGRPFLAGS_NONAME       = 0x00040000
+    RTLOGGRPFLAGS_NONAME       = 0x00080000
 } RTLOGGRPFLAGS;
 
 /**
@@ -611,11 +613,15 @@ RTDECL(void) RTLogPrintfEx(void *pvInstance, unsigned fFlags, unsigned iGroup, c
  */
 #define LogAleksey(a)   LogIt(LOG_INSTANCE, RTLOGGRPFLAGS_ALEKSEY,  LOG_GROUP, a)
 
+/** @def LogDJ
+ * dj logging.
+ */
+#define LogDJ(a)        LogIt(LOG_INSTANCE, RTLOGGRPFLAGS_DJ,  LOG_GROUP, a)
+
 /** @def LogNoName
  * NoName logging.
  */
 #define LogNoName(a)    LogIt(LOG_INSTANCE, RTLOGGRPFLAGS_NONAME,   LOG_GROUP, a)
-
 
 /** @def LogWarning
  * The same as Log(), but prepents a <tt>"WARNING! "</tt> string to the message.
