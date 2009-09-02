@@ -418,6 +418,20 @@ static int handleEnumGuestProperty(HandlerArg *a)
 }
 
 /**
+ * Callback for processThreadEventQueue.
+ *
+ * @param   pvUser  Pointer to the callback object.
+ *
+ * @returns true if it should return or false if it should continue waiting for
+ *          events.
+ */
+static bool eventExitCheck(void *pvUser)
+{
+    GuestPropertyCallback const *pCallbacks = (GuestPropertyCallback const *)pvUser;
+    return pCallbacks->Signalled();
+}
+
+/**
  * Enumerates the properties in the guest property store.
  *
  * @returns 0 on success, 1 on failure
@@ -468,6 +482,7 @@ static int handleWaitGuestProperty(HandlerArg *a)
     /*
      * Set up the callback and wait.
      *
+     *
      * The waiting is done is 1 sec at the time since there there are races
      * between the callback and us going to sleep.  This also guards against
      * neglecting XPCOM event queues as well as any select timeout restrictions.
@@ -484,85 +499,16 @@ static int handleWaitGuestProperty(HandlerArg *a)
     }
     a->virtualBox->RegisterCallback(callback);
 
-#ifdef USE_XPCOM_QUEUE
-    int const       fdQueue   = a->eventQ->GetEventQueueSelectFD();
-#endif
-    uint64_t const  StartMsTS = RTTimeMilliTS();
-    for (;;)
+    int vrc = com::EventQueue::processThreadEventQueue(cMsTimeout, eventExitCheck, (void *)cbImpl,
+                                                       1000 /*cMsPollInterval*/, false /*fReturnOnEvent*/);
+    if (   RT_FAILURE(vrc)
+        && vrc != VERR_CALLBACK_RETURN
+        && vrc != VERR_TIMEOUT)
     {
-#ifdef VBOX_WITH_XPCOM
-        /* Process pending XPCOM events. */
-        a->eventQ->ProcessPendingEvents();
-#endif
+        RTPrintf("Error waiting for event: %Rrc\n", vrc);
+        return 1;
+    }
 
-        /* Signalled? */
-        if (cbImpl->Signalled())
-            break;
-
-        /* Figure out how much we have left to wait and if we've timed out already. */
-        uint32_t cMsLeft;
-        if (cMsTimeout == RT_INDEFINITE_WAIT)
-            cMsLeft = RT_INDEFINITE_WAIT;
-        else
-        {
-            uint64_t cMsElapsed = RTTimeMilliTS() - StartMsTS;
-            if (cMsElapsed >= cMsTimeout)
-                break; /* timeout */
-            cMsLeft = cMsTimeout - (uint32_t)cMsElapsed;
-        }
-
-        /* Wait in a platform specific manner. */
-#define POLL_MS_INTERVAL    1000
-#ifdef USE_XPCOM_QUEUE
-        fd_set fdset;
-        FD_ZERO(&fdset);
-        FD_SET(fdQueue, &fdset);
-        struct timeval tv;
-        if (    cMsLeft == RT_INDEFINITE_WAIT
-            ||  cMsLeft >= POLL_MS_INTERVAL)
-        {
-            tv.tv_sec = POLL_MS_INTERVAL / 1000;
-            tv.tv_usec = 0;
-        }
-        else
-        {
-            tv.tv_sec = 0;
-            tv.tv_usec = cMsLeft * 1000;
-        }
-        int prc = select(fdQueue + 1, &fdset, NULL, NULL, &tv);
-        if (prc == -1)
-        {
-            RTPrintf("Error waiting for event: %s (%d)\n", strerror(errno), errno);
-            break;
-        }
-
-#elif defined(RT_OS_DARWIN)
-        CFTimeInterval rdTimeout = (double)RT_MIN(cMsLeft, POLL_MS_INTERVAL) / 1000;
-        OSStatus orc = CFRunLoopRunInMode(kCFRunLoopDefaultMode, rdTimeout, true /*returnAfterSourceHandled*/);
-        if (orc == kCFRunLoopRunHandledSource)
-            orc = CFRunLoopRunInMode(kCFRunLoopDefaultMode, 0.0, false /*returnAfterSourceHandled*/);
-        if (   orc != 0
-            && orc != kCFRunLoopRunHandledSource
-            && orc != kCFRunLoopRunTimedOut)
-        {
-            RTPrintf("Error waiting for event: %d\n", orc);
-            break;
-        }
-
-#else  /* !USE_XPCOM_QUEUE */
-        int vrc = cbImpl->wait(RT_MIN(cMsLeft, POLL_MS_INTERVAL));
-        if (    vrc != VERR_TIMEOUT
-            &&  RT_FAILURE(vrc))
-        {
-            RTPrintf("Error waiting for event: %Rrc\n", vrc);
-            break;
-        }
-#endif /* !USE_XPCOM_QUEUE */
-    } /* for (;;) */
-
-    /*
-     * Clean up the callback and report timeout.
-     */
     a->virtualBox->UnregisterCallback(callback);
 
     int rcRet = 0;

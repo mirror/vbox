@@ -598,6 +598,10 @@ RTDECL(PCRTCOMERRMSG) RTErrCOMGet(uint32_t rc);
 #define VWRN_DANGLING_OBJECTS               86
 /** Invalid Base64 encoding. */
 #define VERR_INVALID_BASE64_ENCODING        (-87)
+/** Return instigated by a callback or similar. */
+#define VERR_CALLBACK_RETURN                (-88)
+/** Return instigated by a callback or similar. */
+#define VINF_CALLBACK_RETURN                88
 /** @} */
 
 

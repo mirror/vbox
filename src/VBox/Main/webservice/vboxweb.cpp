@@ -461,6 +461,13 @@ int main(int argc, char* argv[])
 
             WebLog("Request served\n");
 
+#if 0 /* Ulrich, try enable this and see if the leak goes away. */
+{
+ int vrc = com::EventQueue::processThreadEventQueue(0);
+ WebLog("processThreadEventQueue -> %Rrc\n", vrc);
+}
+#endif
+
             soap_destroy(&soap); // clean up class instances
             soap_end(&soap); // clean up everything and close socket
         }
