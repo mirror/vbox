@@ -256,8 +256,11 @@ AssertCompileSize(VMMDevReqMouseStatus, 24+12);
 #define VMMDEV_MOUSE_HOST_CANNOT_HWPOINTER                  RT_BIT(3)
 /** The guest can read VMMDev events to find out about pointer movement */
 #define VMMDEV_MOUSE_GUEST_USES_VMMDEV                      RT_BIT(4)
+/** If the guest changes the status of the
+ * VMMDEV_MOUSE_GUEST_NEEDS_HOST_CURSOR bit, the host will honour this */
+#define VMMDEV_MOUSE_HOST_RECHECKS_NEEDS_HOST_CURSOR        RT_BIT(5)
 /** The mask of all VMMDEV_MOUSE_* flags */
-#define VMMDEV_MOUSE_MASK                                   UINT32_C(0x0000001f)
+#define VMMDEV_MOUSE_MASK                                   UINT32_C(0x0000003f)
 /** The mask of guest capability changes for which notification events should
  * be sent */
 #define VMMDEV_MOUSE_NOTIFY_HOST_MASK \

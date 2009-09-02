@@ -2499,6 +2499,8 @@ static DECLCALLBACK(int) vmmdevConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
     AssertRCReturn(rc, rc);
     pThis->u32HGCMEnabled = 0;
 #endif /* VBOX_WITH_HGCM */
+    /* The GUI checks whether this changes in this version of VirtualBox. */
+    pThis->mouseCapabilities |= VMMDEV_MOUSE_HOST_RECHECKS_NEEDS_HOST_CURSOR;
 
     return rc;
 }
