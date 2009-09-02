@@ -4781,7 +4781,12 @@ VMMDECL(void) PGMPoolFlushPage(PVM pVM, RTGCPHYS GCPhys)
                 case PGMPOOLKIND_PAE_PDPT:
                 {
                     Log(("PGMPoolFlushPage: found pgm pool pages for %RGp\n", GCPhys));
-                    STAM_COUNTER_INC(&pPool->StatForceFlushPage);
+#ifdef PGMPOOL_WITH_OPTIMIZED_DIRTY_PT
+                    if (pPage->fDirty)
+                        STAM_COUNTER_INC(&pPool->StatForceFlushDirtyPage);
+                    else
+#endif
+                        STAM_COUNTER_INC(&pPool->StatForceFlushPage);
                     Assert(!pgmPoolIsPageLocked(&pVM->pgm.s, pPage));
                     pgmPoolMonitorChainFlush(pPool, pPage);
                     return;

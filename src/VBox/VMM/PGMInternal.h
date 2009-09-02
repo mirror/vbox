@@ -1796,6 +1796,8 @@ typedef struct PGMPOOL
     STAMPROFILE                 StatFree;
     /** Counting explicit flushes by PGMPoolFlushPage(). */
     STAMCOUNTER                 StatForceFlushPage;
+    /** Counting explicit flushes of dirty pages by PGMPoolFlushPage(). */
+    STAMCOUNTER                 StatForceFlushDirtyPage;
     /** Profiling time spent zeroing pages. */
     STAMPROFILE                 StatZeroPage;
 # ifdef PGMPOOL_WITH_USER_TRACKING
