@@ -661,14 +661,14 @@ VBoxCOM_SOURCES         = \
 	glue/errorprint.cpp \
 	glue/SupportErrorInfo.cpp \
 	glue/VirtualBoxErrorInfo.cpp
+VBoxCOM_INCS          += \
+	include
 ifeq ($(KBUILD_TARGET),win)
  VBoxCOM_DEFS.x86      += _WIN32_WINNT=0x0500
  VBoxCOM_DEFS.amd64    += _WIN32_WINNT=0x0510
  VBoxCOM_SOURCES       += \
 	$(PATH_VBoxCOM)/VirtualBox_i.c
 else # !win
- VBoxCOM_INCS          += \
-	include
  VBoxCOM_SOURCES       += \
 	xpcom/helpers.cpp
 endif # !win
