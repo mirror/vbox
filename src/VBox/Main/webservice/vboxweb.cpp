@@ -461,15 +461,11 @@ int main(int argc, char* argv[])
 
             WebLog("Request served\n");
 
-#if 0 /* Ulrich, try enable this and see if the leak goes away. */
-{
- int vrc = com::EventQueue::processThreadEventQueue(0);
- WebLog("processThreadEventQueue -> %Rrc\n", vrc);
-}
-#endif
-
             soap_destroy(&soap); // clean up class instances
             soap_end(&soap); // clean up everything and close socket
+
+            // every COM thread needs to process its event queue, or memory leaks
+            int vrc = com::EventQueue::processThreadEventQueue(0);
         }
     }
     soap_done(&soap); // close master socket and detach environment
@@ -932,7 +928,6 @@ ManagedObjectRef* WebServiceSession::findRefFromPtr(const ComPtr<IUnknown> &pcu)
         pRef = it->second;
         WSDLT_ID id = pRef->toWSDL();
         WEBDEBUG(("   %s: found existing ref %s for COM obj 0x%lX\n", __FUNCTION__, id.c_str(), ulp));
-        LogDJ(("   %s: found existing ref %s for COM obj 0x%lX\n", __FUNCTION__, id.c_str(), ulp));
     }
     else
         pRef = NULL;
@@ -1062,7 +1057,6 @@ ManagedObjectRef::ManagedObjectRef(WebServiceSession &session,
     session.touch();
 
     WEBDEBUG(("   * %s: MOR created for ulp 0x%lX (%s), new ID is %llX; now %lld objects total\n", __FUNCTION__, _ulp, pcszInterface, _id, cTotal));
-    LogDJ(("   * %s: MOR created for ulp 0x%lX (%s), new ID is %llX; now %lld objects total\n", __FUNCTION__, _ulp, pcszInterface, _id, cTotal));
 }
 
 /**
