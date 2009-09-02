@@ -499,7 +499,10 @@ static nsIEventQueue* g_mainEventQ = nsnull;
 #  include <iprt/time.h>
 #  include <iprt/thread.h>
 #  include <iprt/err.h>
-#  include <CarbonEvents.h>
+#  include <CoreFoundation/CFRunLoop.h>
+#  if MAC_OS_X_VERSION_MAX_ALLOWED == 1040 /* ASSUMES this means we're using the 10.4 SDK. */
+#   include <CarbonEvents.h>
+#  endif
 
 // Wrapper that checks if the queue has pending events.
 DECLINLINE(bool)
@@ -548,7 +551,7 @@ waitForEventsCommonFallback(nsIEventQueue *pQueue, PRInt32 cMsTimeout)
 
     			// Work any native per-thread event loops for good measure.
 #  ifdef RT_OS_DARWIN
-			RunCurrentEventLoop(0.0005 /*sec*/);
+			CFRunLoopRunInMode(kCFRunLoopDefaultMode, 0.0, false /*returnAfterSourceHandled*/);
 #  endif
 
 			// Any pending events?
@@ -579,21 +582,27 @@ waitForEventsOnDarwin(nsIEventQueue *pQueue, PRInt32 cMsTimeout)
 {
 	// This deals with the common case where the caller is the main
 	// application thread and the queue is a native one.
-    	if (	isEventQueueNative(pQueue)
-	    &&	GetCurrentEventLoop() == GetMainEventLoop()
+    	if (    isEventQueueNative(pQueue)
+#  if MAC_OS_X_VERSION_MAX_ALLOWED == 1040 /* ASSUMES this means we're using the 10.4 SDK. */
+	    &&  GetCurrentEventLoop() == GetMainEventLoop()
+#  else
+	    &&  CFRunLoopGetMain() == CFRunLoopGetCurrent()
+#  endif
 	) {
-    		OSStatus     orc       = -1;
-		EventTimeout rdTimeout = cMsTimeout < 0
-		                       ? kEventDurationForever
-		                       : (double)cMsTimeout / 1000;
+    		OSStatus       orc       = -1;
+		CFTimeInterval rdTimeout = cMsTimeout < 0
+		                         ? 1.0e10
+		                         : (double)cMsTimeout / 1000;
 		Py_BEGIN_ALLOW_THREADS;
-		orc = RunCurrentEventLoop(rdTimeout);
+		orc = CFRunLoopRunInMode(kCFRunLoopDefaultMode, rdTimeout, true /*returnAfterSourceHandled*/);
+		if (orc == kCFRunLoopRunHandledSource)
+		    orc = CFRunLoopRunInMode(kCFRunLoopDefaultMode, 0.0, false /*returnAfterSourceHandled*/);
 		Py_END_ALLOW_THREADS;
-		if (!orc || orc == eventLoopQuitErr)
+		if (!orc || orc == kCFRunLoopRunHandledSource)
 			return 0;
 
-		if (orc != eventLoopTimedOutErr) {
-			NS_WARNING("Unexpected status code from RunCurrentEventLoop");
+		if (orc != kCFRunLoopRunTimedOut) {
+			NS_WARNING("Unexpected status code from CFRunLoopRunInMode");
 			RTThreadSleep(1); // throttle
 		}
 
