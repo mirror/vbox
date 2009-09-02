@@ -50,14 +50,13 @@
 
 #include <VBox/err.h>
 
-#include <Logging.h>
-
 #ifdef RT_OS_DARWIN
 #define VBOX_USER_HOME_SUFFIX   "Library/VirtualBox"
 #else
 #define VBOX_USER_HOME_SUFFIX   ".VirtualBox"
 #endif
 
+#include "Logging.h"
 
 namespace com
 {

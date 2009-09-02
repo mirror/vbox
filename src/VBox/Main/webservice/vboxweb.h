@@ -27,6 +27,19 @@ void WebLog(const char *pszFormat, ...);
 
 #define WEBDEBUG(a) if (g_fVerbose) { WebLog a; }
 
+#define LOG_GROUP LOG_GROUP_WEBSERVICE
+#include <VBox/log.h>
+
+#include <VBox/com/VirtualBox.h>
+#include <VBox/com/Guid.h>
+
+#include <VBox/err.h>
+
+#include <iprt/stream.h>
+
+#include <string>
+
+
 /****************************************************************************
  *
  * global variables

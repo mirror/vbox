@@ -66,9 +66,10 @@
 #include <VBox/com/defs.h>
 #include <VBox/com/assert.h>
 
+#define LOGREF(prefix, pObj, cRefs) com::LogRef("%s {%p} cRefs=%d\n", (prefix), (pObj), (cRefs))
+
 namespace com
 {
-    #define LOGREF(prefix, pObj, cRefs) com::LogRef(#pObj "{%p}.refCnt=%d\n", (pObj), (cRefs));
     void LogRef(const char *pcszFormat, ...);
 }
 
@@ -82,14 +83,13 @@ protected:
 
     static void addref(C *p)
     {
-        size_t cRefs = p->AddRef();
+        int cRefs = p->AddRef();
         LOGREF("ADDREF ", p, cRefs);
     }
     static void release(C *p)
     {
-        size_t cRefs = p->Release();
-        LOGREF("RELEASE ", p, cRefs);
-        p->Release();
+        int cRefs = p->Release();
+        LOGREF("RELEASE", p, cRefs);
     }
 };
 
@@ -101,8 +101,8 @@ class ComWeakRef
 {
 protected:
 
-    static void addref  (C * /* p */) {}
-    static void release (C * /* p */) {}
+    static void addref(C * /* p */) {}
+    static void release(C * /* p */) {}
 };
 
 /**
@@ -119,14 +119,14 @@ protected:
  *              IUnknown).
  */
 template <class I1, class I2>
-inline bool ComPtrEquals (I1 *aThis, I2 *aThat)
+inline bool ComPtrEquals(I1 *aThis, I2 *aThat)
 {
     IUnknown *thatUnk = NULL, *thisUnk = NULL;
     if (aThat)
-        aThat->QueryInterface (COM_IIDOF (IUnknown), (void **) &thatUnk);
+        aThat->QueryInterface(COM_IIDOF(IUnknown), (void**)&thatUnk);
     if (aThis)
-        aThis->QueryInterface (COM_IIDOF (IUnknown), (void **) &thisUnk);
-    bool equal = thisUnk == thatUnk;
+        aThis->QueryInterface(COM_IIDOF(IUnknown), (void**)&thisUnk);
+    bool equal = (thisUnk == thatUnk);
     if (thisUnk)
         thisUnk->Release();
     if (thatUnk)
@@ -136,12 +136,12 @@ inline bool ComPtrEquals (I1 *aThis, I2 *aThat)
 
 /* specialization for <Any, IUnknown> */
 template <class I1>
-inline bool ComPtrEquals (I1 *aThis, IUnknown *aThat)
+inline bool ComPtrEquals(I1 *aThis, IUnknown *aThat)
 {
     IUnknown *thisUnk = NULL;
     if (aThis)
-        aThis->QueryInterface (COM_IIDOF (IUnknown), (void **) &thisUnk);
-    bool equal = thisUnk == aThat;
+        aThis->QueryInterface(COM_IIDOF(IUnknown), (void**)&thisUnk);
+    bool equal = (thisUnk == aThat);
     if (thisUnk)
         thisUnk->Release();
     return equal;
@@ -149,12 +149,12 @@ inline bool ComPtrEquals (I1 *aThis, IUnknown *aThat)
 
 /** Specialization for <IUnknown, Any> */
 template <class I2>
-inline bool ComPtrEquals (IUnknown *aThis, I2 *aThat)
+inline bool ComPtrEquals(IUnknown *aThis, I2 *aThat)
 {
     IUnknown *thatUnk = NULL;
     if (aThat)
-        aThat->QueryInterface (COM_IIDOF (IUnknown), (void **) &thatUnk);
-    bool equal = aThis == thatUnk;
+        aThat->QueryInterface(COM_IIDOF(IUnknown), (void**)&thatUnk);
+    bool equal = (aThis == thatUnk);
     if (thatUnk)
         thatUnk->Release();
     return equal;
@@ -162,7 +162,7 @@ inline bool ComPtrEquals (IUnknown *aThis, I2 *aThat)
 
 /* specialization for IUnknown */
 template<>
-inline bool ComPtrEquals <IUnknown, IUnknown> (IUnknown *aThis, IUnknown *aThat)
+inline bool ComPtrEquals<IUnknown, IUnknown>(IUnknown *aThis, IUnknown *aThat)
 {
     return aThis == aThat;
 }

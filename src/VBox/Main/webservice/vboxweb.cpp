@@ -20,18 +20,16 @@
  * additional information or have any questions.
  */
 
+// shared webservice header
+#include "vboxweb.h"
+
 // vbox headers
 #include <VBox/com/com.h>
-#include <VBox/com/string.h>
-#include <VBox/com/Guid.h>
 #include <VBox/com/ErrorInfo.h>
 #include <VBox/com/errorprint.h>
 #include <VBox/com/EventQueue.h>
-#include <VBox/com/VirtualBox.h>
-#include <VBox/err.h>
 #include <VBox/VRDPAuth.h>
 #include <VBox/version.h>
-#include <VBox/log.h>
 
 #include <iprt/lock.h>
 #include <iprt/rand.h>
@@ -39,7 +37,6 @@
 #include <iprt/getopt.h>
 #include <iprt/ctype.h>
 #include <iprt/process.h>
-#include <iprt/stream.h>
 #include <iprt/string.h>
 #include <iprt/ldr.h>
 
@@ -53,14 +50,10 @@
 
 // standard headers
 #include <map>
-#include <sstream>
 
 #ifdef __GNUC__
 #pragma GCC visibility pop
 #endif
-
-// shared webservice header
-#include "vboxweb.h"
 
 // include generated namespaces table
 #include "vboxwebsrv.nsmap"
@@ -214,18 +207,24 @@ void WebLog(const char *pszFormat, ...)
 {
     va_list args;
     va_start(args, pszFormat);
-    RTPrintfV(pszFormat, args);
+    char *psz = NULL;
+    RTStrAPrintfV(&psz, pszFormat, args);
     va_end(args);
 
+    // terminal
+    RTPrintf("%s", psz);
+
+    // log file
     if (g_pstrLog)
     {
-        va_list args2;
-        va_start(args2, pszFormat);
-        RTStrmPrintfV(g_pstrLog, pszFormat, args);
-        va_end(args2);
-
+        RTStrmPrintf(g_pstrLog, "%s", psz);
         RTStrmFlush(g_pstrLog);
     }
+
+    // logger instance
+    RTLogLoggerEx(LOG_INSTANCE, RTLOGGRPFLAGS_DJ, LOG_GROUP, "%s", psz);
+
+    RTStrFree(psz);
 }
 
 /**
@@ -540,12 +539,12 @@ int fntWatchdog(RTTHREAD ThreadSelf, void *pvUser)
  * @param ex
  */
 void RaiseSoapFault(struct soap *soap,
-                    const std::string &str,
+                    const char *pcsz,
                     int extype,
                     void *ex)
 {
     // raise the fault
-    soap_sender_fault(soap, str.c_str(), NULL);
+    soap_sender_fault(soap, pcsz, NULL);
 
     struct SOAP_ENV__Detail *pDetail = (struct SOAP_ENV__Detail*)soap_malloc(soap, sizeof(struct SOAP_ENV__Detail));
 
@@ -586,7 +585,7 @@ void RaiseSoapInvalidObjectFault(struct soap *soap,
     str += "Invalid managed object reference \"" + obj + "\"";
 
     RaiseSoapFault(soap,
-                   str,
+                   str.c_str(),
                    SOAP_TYPE__vbox__InvalidObjectFault,
                    ex);
 }
@@ -647,17 +646,10 @@ void RaiseSoapRuntimeFault(struct soap *soap,
     ex->interfaceID = ConvertComString(info.getInterfaceID());
 
     // compose descriptive message
-    std::ostringstream ostr;
-    ostr << std::hex << ex->resultCode;
-
-    std::string str("VirtualBox error: ");
-    str += ex->text;
-    str += " (0x";
-    str += ostr.str();
-    str += ")";
+    com::Utf8StrFmt str("VirtualBox error: %s (0x%RU32)", ex->text.c_str(), ex->resultCode);
 
     RaiseSoapFault(soap,
-                   str,
+                   str.c_str(),
                    SOAP_TYPE__vbox__RuntimeFault,
                    ex);
 }
@@ -933,6 +925,7 @@ ManagedObjectRef* WebServiceSession::findRefFromPtr(const ComPtr<IUnknown> &pcu)
         pRef = it->second;
         WSDLT_ID id = pRef->toWSDL();
         WEBDEBUG(("   %s: found existing ref %s for COM obj 0x%lX\n", __FUNCTION__, id.c_str(), ulp));
+        LogDJ(("   %s: found existing ref %s for COM obj 0x%lX\n", __FUNCTION__, id.c_str(), ulp));
     }
     else
         pRef = NULL;
@@ -1062,6 +1055,7 @@ ManagedObjectRef::ManagedObjectRef(WebServiceSession &session,
     session.touch();
 
     WEBDEBUG(("   * %s: MOR created for ulp 0x%lX (%s), new ID is %llX; now %lld objects total\n", __FUNCTION__, _ulp, pcszInterface, _id, cTotal));
+    LogDJ(("   * %s: MOR created for ulp 0x%lX (%s), new ID is %llX; now %lld objects total\n", __FUNCTION__, _ulp, pcszInterface, _id, cTotal));
 }
 
 /**
