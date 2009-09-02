@@ -1205,8 +1205,8 @@ void VBoxConsoleWnd::unlockActionsSwitch()
 
 void VBoxConsoleWnd::setMouseIntegrationLocked (bool aDisabled)
 {
-    mVmDisableMouseIntegrAction->setChecked (aDisabled);
-    mVmDisableMouseIntegrAction->setEnabled (false);
+    mVmDisableMouseIntegrAction->setChecked (false);
+    mVmDisableMouseIntegrAction->setEnabled (aDisabled);
 }
 
 /**

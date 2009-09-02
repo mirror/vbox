@@ -1391,6 +1391,8 @@ bool VBoxConsoleView::event (QEvent *e)
                 }
                 if (me->needsHostCursor())
                     mMainWnd->setMouseIntegrationLocked (false);
+                else
+                    mMainWnd->setMouseIntegrationLocked (true);
                 return true;
             }
 
