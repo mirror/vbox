@@ -4067,6 +4067,87 @@ static int ahciScatterGatherListAllocate(PAHCIPORTTASKSTATE pAhciPortTaskState, 
 }
 
 /**
+ * Fallback scatter gather list creator.
+ * Used if the normal one fails in PDMDevHlpPhysGCPhys2CCPtr() or
+ * PDMDevHlpPhysGCPhys2CCPtrReadonly()
+ *
+ * returns VBox status code.
+ * @param   pAhciPort              The ahci port.
+ * @param   pAhciPortTaskState     The task state which contains the S/G list entries.
+ * @param   fReadonly              If the mappings should be readonly.
+ * @param   cSGEntriesProcessed    Number of entries the normal creator procecssed
+ *                                 before an error occurred. Used to free
+ *                                 any ressources allocated before.
+ * @thread  EMT
+ */
+static int ahciScatterGatherListCreateSafe(PAHCIPort pAhciPort, PAHCIPORTTASKSTATE pAhciPortTaskState,
+                                           bool fReadonly, unsigned cSGEntriesProcessed)
+{
+    CmdHdr                    *pCmdHdr = &pAhciPortTaskState->cmdHdr;
+    PPDMDEVINS                 pDevIns = pAhciPort->CTX_SUFF(pDevIns);
+    PAHCIPORTTASKSTATESGENTRY  pSGInfoCurr  = pAhciPortTaskState->paSGEntries;
+
+    AssertPtr(pAhciPortTaskState->pSGListHead);
+    AssertPtr(pAhciPortTaskState->paSGEntries);
+
+    for (unsigned cSGEntryCurr = 0; cSGEntryCurr < cSGEntriesProcessed; cSGEntryCurr++)
+    {
+        if (pSGInfoCurr->fGuestMemory)
+        {
+            /* Release the lock. */
+            PDMDevHlpPhysReleasePageMappingLock(pDevIns, &pSGInfoCurr->u.direct.PageLock);
+        }
+
+        /* Go to the next entry. */
+        pSGInfoCurr++;
+    }
+
+    if (pAhciPortTaskState->pvBufferUnaligned)
+        RTMemFree(pAhciPortTaskState->pvBufferUnaligned);
+
+    pAhciPortTaskState->cSGListTooBig     = 0;
+
+    RTMemFree(pAhciPortTaskState->pSGListHead);
+    RTMemFree(pAhciPortTaskState->paSGEntries);
+    pAhciPortTaskState->cSGEntries = 1;
+    pAhciPortTaskState->cSGListSize = 1;
+    pAhciPortTaskState->cbBufferUnaligned = pAhciPortTaskState->cbTransfer;
+
+    /* Allocate new buffers and SG lists. */
+    pAhciPortTaskState->pvBufferUnaligned = RTMemAlloc(pAhciPortTaskState->cbTransfer);
+    if (!pAhciPortTaskState->pvBufferUnaligned)
+        return VERR_NO_MEMORY;
+
+    pAhciPortTaskState->pSGListHead = (PPDMDATASEG)RTMemAllocZ(1 * sizeof(PDMDATASEG));
+    if (!pAhciPortTaskState->pSGListHead)
+    {
+        RTMemFree(pAhciPortTaskState->pvBufferUnaligned);
+        return VERR_NO_MEMORY;
+    }
+
+    pAhciPortTaskState->paSGEntries = (PAHCIPORTTASKSTATESGENTRY)RTMemAllocZ(1 * sizeof(AHCIPORTTASKSTATESGENTRY));
+    if (!pAhciPortTaskState->paSGEntries)
+    {
+        RTMemFree(pAhciPortTaskState->pvBufferUnaligned);
+        RTMemFree(pAhciPortTaskState->pSGListHead);
+        return VERR_NO_MEMORY;
+    }
+
+    /* Set pointers. */
+    pAhciPortTaskState->pSGListHead[0].cbSeg = pAhciPortTaskState->cbTransfer;
+    pAhciPortTaskState->pSGListHead[0].pvSeg = pAhciPortTaskState->pvBufferUnaligned;
+
+    pAhciPortTaskState->paSGEntries[0].fGuestMemory = false;
+    pAhciPortTaskState->paSGEntries[0].u.temp.cUnaligned   = AHCI_CMDHDR_PRDTL_ENTRIES(pCmdHdr->u32DescInf);
+    pAhciPortTaskState->paSGEntries[0].u.temp.GCPhysAddrBaseFirstUnaligned = AHCI_RTGCPHYS_FROM_U32(pCmdHdr->u32CmdTblAddrUp, pCmdHdr->u32CmdTblAddr) + AHCI_CMDHDR_PRDT_OFFSET;
+
+    if (pAhciPortTaskState->uTxDir == PDMBLOCKTXDIR_TO_DEVICE)
+        ahciCopyFromSGListIntoBuffer(pDevIns, &pAhciPortTaskState->paSGEntries[0]);
+
+    return VINF_SUCCESS;
+}
+
+/**
  * Create scatter gather list descriptors.
  *
  * @returns VBox status code.
@@ -4081,7 +4162,8 @@ static int ahciScatterGatherListCreate(PAHCIPort pAhciPort, PAHCIPORTTASKSTATE p
     CmdHdr    *pCmdHdr = &pAhciPortTaskState->cmdHdr;
     PPDMDEVINS pDevIns = pAhciPort->CTX_SUFF(pDevIns);
     unsigned   cActualSGEntry;
-    unsigned   cSGEntriesR3   = 0;             /* Needed scatter gather list entries in R3. */
+    unsigned   cSGEntriesR3 = 0;               /* Needed scatter gather list entries in R3. */
+    unsigned   cSGEntriesProcessed = 0;        /* Number of SG entries procesed. */
     SGLEntry   aSGLEntry[32];                  /* Holds read sg entries from guest. Biggest seen number of entries a guest set up. */
     unsigned   cSGLEntriesGCRead;
     unsigned   cSGLEntriesGCLeft;              /* Available scatter gather list entries in GC */
@@ -4218,6 +4300,7 @@ static int ahciScatterGatherListCreate(PAHCIPort pAhciPort, PAHCIPORTTASKSTATE p
                                 pSGInfoPrev  = pSGInfoCurr;
                                 pSGInfoCurr++;
                                 pSGEntryCurr++;
+                                cSGEntriesProcessed++;
                             }
                         }
                         else
@@ -4302,7 +4385,14 @@ static int ahciScatterGatherListCreate(PAHCIPort pAhciPort, PAHCIPORTTASKSTATE p
                                                                            &pSGInfoCurr->u.direct.PageLock);
 
                                         if (RT_FAILURE(rc))
-                                            AssertMsgFailed(("Creating mapping failed rc=%Rrc\n", rc));
+                                        {
+                                            /* Mapping failed. Fall back to a bounce buffer. */
+                                            ahciLog(("%s: Mapping guest physical address %RGp failed with rc=%Rc\n",
+                                                     __FUNCTION__, GCPhysBufferPageAligned, rc));
+
+                                            return ahciScatterGatherListCreateSafe(pAhciPort, pAhciPortTaskState, fReadonly,
+                                                                                   cSGEntriesProcessed);
+                                        }
 
                                         if ((pbMapping + (GCPhysAddrDataBase - GCPhysBufferPageAligned) == ((uint8_t *)pSGEntryPrev->pvSeg + pSGEntryCurr->cbSeg)))
                                         {
@@ -4328,6 +4418,7 @@ static int ahciScatterGatherListCreate(PAHCIPort pAhciPort, PAHCIPORTTASKSTATE p
 
                                         pSGInfoPrev  = pSGInfoCurr;
                                         pSGInfoCurr++;
+                                        cSGEntriesProcessed++;
                                     }
                                     else
                                         cSGEntriesR3++;
@@ -4370,7 +4461,14 @@ static int ahciScatterGatherListCreate(PAHCIPort pAhciPort, PAHCIPORTTASKSTATE p
                                         rc = PDMDevHlpPhysGCPhys2CCPtr(pDevIns, GCPhysAddrDataBase, 0, &pvMapping, &pSGInfoCurr->u.direct.PageLock);
 
                                     if (RT_FAILURE(rc))
-                                        AssertMsgFailed(("Creating mapping failed rc=%Rrc\n", rc));
+                                    {
+                                        /* Mapping failed. Fall back to a bounce buffer. */
+                                        ahciLog(("%s: Mapping guest physical address %RGp failed with rc=%Rc\n",
+                                                    __FUNCTION__, GCPhysAddrDataBase, rc));
+
+                                        return ahciScatterGatherListCreateSafe(pAhciPort, pAhciPortTaskState, fReadonly,
+                                                                               cSGEntriesProcessed);
+                                    }
 
                                     /* Check for adjacent mappings. */
                                     if (pvMapping == ((uint8_t *)pSGEntryPrev->pvSeg + pSGEntryPrev->cbSeg)
@@ -4395,6 +4493,7 @@ static int ahciScatterGatherListCreate(PAHCIPort pAhciPort, PAHCIPORTTASKSTATE p
 
                                     pSGInfoPrev = pSGInfoCurr;
                                     pSGInfoCurr++;
+                                    cSGEntriesProcessed++;
                                 }
                                 else
                                     cSGEntriesR3++;
