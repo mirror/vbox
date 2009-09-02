@@ -1616,15 +1616,16 @@ void pgmPoolAddDirtyPage(PVM pVM, PPGMPOOL pPool, PPGMPOOLPAGE pPage)
  */
 bool pgmPoolIsDirtyPage(PVM pVM, RTGCPHYS GCPhys)
 {
+    PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool);
     if (!pPool->cDirtyPages)
         return false;
 
     for (unsigned i = 0; i < RT_ELEMENTS(pPool->aIdxDirtyPages); i++)
     {
-        if (pPool->aIdxDirtyPages[idxSlot] != NIL_PGMPOOL_IDX)
+        if (pPool->aIdxDirtyPages[i] != NIL_PGMPOOL_IDX)
         {
             PPGMPOOLPAGE pPage;
-            unsigned     idxPage = pPool->aIdxDirtyPages[idxSlot];
+            unsigned     idxPage = pPool->aIdxDirtyPages[i];
             AssertRelease(idxPage != NIL_PGMPOOL_IDX);
 
             pPage = &pPool->aPages[idxPage];
