@@ -636,6 +636,7 @@ static DECLCALLBACK(int) pgmR3PoolCmdCheck(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, 
     for (unsigned i = 0; i < pPool->cCurPages; i++)
     {
         PPGMPOOLPAGE pPage = &pPool->aPages[i];
+        bool fFirstMsg = true;
 
         /* Todo: cover other paging modes too. */
         if (pPage->enmKind == PGMPOOLKIND_PAE_PT_FOR_PAE_PT)
@@ -654,7 +655,12 @@ static DECLCALLBACK(int) pgmR3PoolCmdCheck(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, 
                     if (    rc != VINF_SUCCESS 
                         ||  (pShwPT->a[j].u & X86_PTE_PAE_PG_MASK) != HCPhys)
                     {
-                        pCmdHlp->pfnPrintf(pCmdHlp, NULL, "Pool check: rc=%d idx=%d guest %RX64 shw=%RX64 vs %RHp\n", rc, j, pGstPT->a[j].u, pShwPT->a[j].u, HCPhys);
+                        if (fFirstMsg)
+                        {
+                            pCmdHlp->pfnPrintf(pCmdHlp, NULL, "Check pool page %RGp\n", pPage->GCPhys);
+                            fFirstMsg = false;
+                        }
+                        pCmdHlp->pfnPrintf(pCmdHlp, NULL, "Mismatch HCPhys: rc=%d idx=%d guest %RX64 shw=%RX64 vs %RHp\n", rc, j, pGstPT->a[j].u, pShwPT->a[j].u, HCPhys);
                     }
                 }
             }
@@ -663,30 +669,36 @@ static DECLCALLBACK(int) pgmR3PoolCmdCheck(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, 
             RTHCPHYS HCPhysPT = -1;
             rc = PGMPhysGCPhys2HCPhys(pPool->CTX_SUFF(pVM), pPage->GCPhys, &HCPhysPT);
             AssertRC(rc);
-
-            for (unsigned j = 0; j < pPool->cCurPages; j++)
+            if (rc == VINF_SUCCESS)
             {
-                PPGMPOOLPAGE pTempPage = &pPool->aPages[j];
-
-                if (pTempPage->enmKind == PGMPOOLKIND_PAE_PT_FOR_PAE_PT)
+                for (unsigned j = 0; j < pPool->cCurPages; j++)
                 {
-                    PX86PTPAE pShwPT2 = (PX86PTPAE)PGMPOOL_PAGE_2_PTR(pPool->CTX_SUFF(pVM), pTempPage);
+                    PPGMPOOLPAGE pTempPage = &pPool->aPages[j];
 
-                    for (unsigned k = 0; k < RT_ELEMENTS(pShwPT->a); k++)
+                    if (pTempPage->enmKind == PGMPOOLKIND_PAE_PT_FOR_PAE_PT)
                     {
-                        if (    pShwPT2->a[k].n.u1Present
-                            &&  pShwPT2->a[k].n.u1Write
-# ifdef PGMPOOL_WITH_OPTIMIZED_DIRTY_PT
-                            &&  !pPage->fDirty
-# endif
-                            &&  ((pShwPT2->a[k].u & X86_PTE_PAE_PG_MASK) == HCPhysPT))
+                        PX86PTPAE pShwPT2 = (PX86PTPAE)PGMPOOL_PAGE_2_PTR(pPool->CTX_SUFF(pVM), pTempPage);
+
+                        for (unsigned k = 0; k < RT_ELEMENTS(pShwPT->a); k++)
                         {
-                            pCmdHlp->pfnPrintf(pCmdHlp, NULL, "Pool check r/w: GCPhys=%RGp idx=%d shw %RX64 %RX64\n", pTempPage->GCPhys, k, pShwPT->a[k].u, pShwPT2->a[k].u);
+                            if (    pShwPT2->a[k].n.u1Present
+                                &&  pShwPT2->a[k].n.u1Write
+# ifdef PGMPOOL_WITH_OPTIMIZED_DIRTY_PT
+                                &&  !pPage->fDirty
+# endif
+                                &&  ((pShwPT2->a[k].u & X86_PTE_PAE_PG_MASK) == HCPhysPT))
+                            {
+                                if (fFirstMsg)
+                                {
+                                    pCmdHlp->pfnPrintf(pCmdHlp, NULL, "Check pool page %RGp\n", pPage->GCPhys);
+                                    fFirstMsg = false;
+                                }
+                                pCmdHlp->pfnPrintf(pCmdHlp, NULL, "Mismatch: r/w: GCPhys=%RGp idx=%d shw %RX64 %RX64\n", pTempPage->GCPhys, k, pShwPT->a[k].u, pShwPT2->a[k].u);
+                            }
                         }
                     }
                 }
             }
-
         }
     }
     return VINF_SUCCESS;
