@@ -68,7 +68,7 @@
 
 namespace com
 {
-    #define LOGREF(pObj, cRefs) com::LogRef(#pObj "{%p}.refCnt=%d\n", (pObj), (cRefs));
+    #define LOGREF(prefix, pObj, cRefs) com::LogRef(#pObj "{%p}.refCnt=%d\n", (pObj), (cRefs));
     void LogRef(const char *pcszFormat, ...);
 }
 
@@ -83,10 +83,12 @@ protected:
     static void addref(C *p)
     {
         size_t cRefs = p->AddRef();
-        LOGREF(p, cRefs);
+        LOGREF("ADDREF ", p, cRefs);
     }
     static void release(C *p)
     {
+        size_t cRefs = p->Release();
+        LOGREF("RELEASE ", p, cRefs);
         p->Release();
     }
 };

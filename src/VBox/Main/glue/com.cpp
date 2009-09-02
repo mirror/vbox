@@ -47,10 +47,10 @@
 #include <iprt/dir.h>
 #include <iprt/env.h>
 #include <iprt/string.h>
-#include <iprt/log.h>
 
 #include <VBox/err.h>
 
+#include <Logging.h>
 
 #ifdef RT_OS_DARWIN
 #define VBOX_USER_HOME_SUFFIX   "Library/VirtualBox"
@@ -207,14 +207,13 @@ const nsID *SafeGUIDArray::nsIDRef::Empty = (const nsID *) Guid::Empty.raw();
  */
 void LogRef(const char *pcszFormat, ...)
 {
-    va_list va;
-    va_start(va, pcszFormat);
-    va_end(va);
-
-    char *psz = NULL;
-    RTStrAPrintfV(&psz, pcszFormat, va);
-    LogDJ((psz));
-    RTStrFree(psz);
+    char *pszNewMsg;
+    va_list args;
+    va_start(args, pcszFormat);
+    RTStrAPrintfV(&pszNewMsg, pcszFormat, args);
+    LogDJ((pszNewMsg));
+    RTStrFree(pszNewMsg);
+    va_end(args);
 }
 
 } /* namespace com */
