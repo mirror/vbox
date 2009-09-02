@@ -374,7 +374,11 @@ static DECLCALLBACK(int) pgmR3PhysGCPhys2CCPtrDelegated(PVM pVM, PRTGCPHYS pGCPh
             rc = VERR_PGM_PHYS_PAGE_RESERVED;
         }
         else
-        if (PGM_PAGE_HAS_ACTIVE_HANDLERS(pPage))
+        if (    PGM_PAGE_HAS_ACTIVE_HANDLERS(pPage)
+#ifdef PGMPOOL_WITH_OPTIMIZED_DIRTY_PT
+            ||  pgmPoolIsDirtyPage(pVM, GCPhys)
+#endif
+           )
         {
             /* We *must* flush any corresponding pgm pool page here, otherwise we'll
              * not be informed about writes and keep bogus gst->shw mappings around.
@@ -444,6 +448,9 @@ VMMR3DECL(int) PGMR3PhysGCPhys2CCPtrExternal(PVM pVM, RTGCPHYS GCPhys, void **pp
              * This has to be done on an EMT.
              */
             if (    PGM_PAGE_HAS_ACTIVE_HANDLERS(pPage)
+#ifdef PGMPOOL_WITH_OPTIMIZED_DIRTY_PT
+                ||  pgmPoolIsDirtyPage(pVM, GCPhys)
+#endif
                 ||  RT_UNLIKELY(PGM_PAGE_GET_STATE(pPage) != PGM_PAGE_STATE_ALLOCATED))
             {
                 pgmUnlock(pVM);
