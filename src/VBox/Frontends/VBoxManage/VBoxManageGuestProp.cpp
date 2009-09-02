@@ -46,6 +46,10 @@
 # include <errno.h>
 #endif
 
+#ifdef RT_OS_DARWIN
+# include <CoreFoundation/CFRunLoop.h>
+#endif
+
 using namespace com;
 
 /**
@@ -164,6 +168,7 @@ public:
                                      IN_BSTR name, IN_BSTR value,
                                      IN_BSTR flags)
     {
+RTPrintf("OnGuestPropertyChange:\n");
         Utf8Str utf8Name(name);
         Guid uuid(machineId);
         if (   uuid == mUuid
@@ -481,9 +486,9 @@ static int handleWaitGuestProperty(HandlerArg *a)
     a->virtualBox->RegisterCallback(callback);
 
 #ifdef USE_XPCOM_QUEUE
-    int const       fdQueue      = a->eventQ->GetEventQueueSelectFD();
+    int const       fdQueue   = a->eventQ->GetEventQueueSelectFD();
 #endif
-    uint64_t const  StartMilliTS = RTTimeMilliTS();
+    uint64_t const  StartMsTS = RTTimeMilliTS();
     for (;;)
     {
 #ifdef VBOX_WITH_XPCOM
@@ -501,22 +506,23 @@ static int handleWaitGuestProperty(HandlerArg *a)
             cMsLeft = RT_INDEFINITE_WAIT;
         else
         {
-            uint64_t cMsElapsed = RTTimeMilliTS() - StartMilliTS;
+            uint64_t cMsElapsed = RTTimeMilliTS() - StartMsTS;
             if (cMsElapsed >= cMsTimeout)
                 break; /* timeout */
             cMsLeft = cMsTimeout - (uint32_t)cMsElapsed;
         }
 
         /* Wait in a platform specific manner. */
+#define POLL_MS_INTERVAL    1000
 #ifdef USE_XPCOM_QUEUE
         fd_set fdset;
         FD_ZERO(&fdset);
         FD_SET(fdQueue, &fdset);
         struct timeval tv;
         if (    cMsLeft == RT_INDEFINITE_WAIT
-            ||  cMsLeft >= 1000)
+            ||  cMsLeft >= POLL_MS_INTERVAL)
         {
-            tv.tv_sec = 1;
+            tv.tv_sec = POLL_MS_INTERVAL / 1000;
             tv.tv_usec = 0;
         }
         else
@@ -530,9 +536,22 @@ static int handleWaitGuestProperty(HandlerArg *a)
             RTPrintf("Error waiting for event: %s (%d)\n", strerror(errno), errno);
             break;
         }
+
+#elif defined(RT_OS_DARWIN)
+        CFTimeInterval rdTimeout = (double)RT_MIN(cMsLeft, POLL_MS_INTERVAL) / 1000;
+        OSStatus orc = CFRunLoopRunInMode(kCFRunLoopDefaultMode, rdTimeout, true /*returnAfterSourceHandled*/);
+        if (orc == kCFRunLoopRunHandledSource)
+            orc = CFRunLoopRunInMode(kCFRunLoopDefaultMode, 0.0, false /*returnAfterSourceHandled*/);
+        if (   orc != 0
+            && orc != kCFRunLoopRunHandledSource
+            && orc != kCFRunLoopRunTimedOut)
+        {
+            RTPrintf("Error waiting for event: %d\n", orc);
+            break;
+        }
+
 #else  /* !USE_XPCOM_QUEUE */
-/** @todo make this faster on Mac OS X (and possible Windows+OS/2 too), we should probably use WaitNextEvent() to wait here. */
-        int vrc = cbImpl->wait(RT_MIN(cMsLeft, 1000));
+        int vrc = cbImpl->wait(RT_MIN(cMsLeft, POLL_MS_INTERVAL));
         if (    vrc != VERR_TIMEOUT
             &&  RT_FAILURE(vrc))
         {
