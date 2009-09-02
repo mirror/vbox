@@ -324,7 +324,9 @@ typedef enum LOGGROUP
     /** VMM group. */
     LOG_GROUP_VMM,
     /** VRDP group */
-    LOG_GROUP_VRDP
+    LOG_GROUP_VRDP,
+    /** Webservice group. */
+    LOG_GROUP_WEBSERVICE
     /* !!!ALPHABETICALLY!!! */
 } VBOX_LOGGROUP;
 
@@ -477,6 +479,7 @@ typedef enum LOGGROUP
     "VM",           \
     "VMM",          \
     "VRDP",         \
+    "WEBSERVICE",   \
 }
 
 /** @} */
