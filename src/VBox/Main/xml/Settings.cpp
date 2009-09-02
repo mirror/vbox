@@ -1653,6 +1653,7 @@ void MachineConfigFile::readSnapshot(const xml::ElementNode &elmSnapshot,
     if (!elmSnapshot.getAttributeValue("name", snap.strName))
         throw ConfigFileError(this, &elmSnapshot, N_("Required Snapshot/@name attribute is missing"));
 
+    // earlier 3.1 trunk builds had a bug and added Description as an attribute, read it silently and write it back as an element
     elmSnapshot.getAttributeValue("Description", snap.strDescription);
 
     if (!elmSnapshot.getAttributeValue("timeStamp", strTemp))
@@ -2169,12 +2170,13 @@ void MachineConfigFile::writeSnapshot(xml::ElementNode &elmParent,
 
     pelmSnapshot->setAttribute("uuid", makeString(snap.uuid));
     pelmSnapshot->setAttribute("name", snap.strName);
-    pelmSnapshot->setAttribute("Description", snap.strDescription);
-
     pelmSnapshot->setAttribute("timeStamp", makeString(snap.timestamp));
 
     if (snap.strStateFile.length())
         pelmSnapshot->setAttribute("stateFile", snap.strStateFile);
+
+    if (snap.strDescription.length())
+        pelmSnapshot->createChild("Description")->addContent(snap.strDescription);
 
     writeHardware(*pelmSnapshot, snap.hardware);
     writeStorageControllers(*pelmSnapshot, snap.storage);
