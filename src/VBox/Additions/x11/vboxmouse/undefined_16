@@ -84,3 +84,4 @@ __divdi3
 __umoddi3
 __moddi3
 __udivdi3
+InitPtrFeedbackClassDeviceStruct
