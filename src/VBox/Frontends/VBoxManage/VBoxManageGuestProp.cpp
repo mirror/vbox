@@ -168,7 +168,6 @@ public:
                                      IN_BSTR name, IN_BSTR value,
                                      IN_BSTR flags)
     {
-RTPrintf("OnGuestPropertyChange:\n");
         Utf8Str utf8Name(name);
         Guid uuid(machineId);
         if (   uuid == mUuid
