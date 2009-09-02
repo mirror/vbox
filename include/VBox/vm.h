@@ -972,7 +972,7 @@ typedef struct VM
 
 /** @def VM_REM_SIZE
  * Must be multiple of 32 and coherent with REM_ENV_SIZE from REMInternal.h. */
-# define VM_REM_SIZE        0x10A00
+# define VM_REM_SIZE        0x11100
         char        padding[VM_REM_SIZE];   /* multiple of 32 */
     } rem;
 
