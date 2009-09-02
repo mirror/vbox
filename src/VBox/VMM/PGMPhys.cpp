@@ -435,6 +435,7 @@ VMMR3DECL(int) PGMR3PhysGCPhys2CCPtrExternal(PVM pVM, RTGCPHYS GCPhys, void **pp
         if (PGM_PAGE_IS_MMIO(pPage))
             rc = VERR_PGM_PHYS_PAGE_RESERVED;
         else
+#if 0
         if (PGM_PAGE_HAS_ACTIVE_HANDLERS(pPage))
         {
             /* We *must* flush any corresponding pgm pool page here, otherwise we'll
@@ -444,6 +445,7 @@ VMMR3DECL(int) PGMR3PhysGCPhys2CCPtrExternal(PVM pVM, RTGCPHYS GCPhys, void **pp
             Assert(!PGM_PAGE_HAS_ACTIVE_HANDLERS(pPage));
         }
         else
+#endif
         {
             /*
              * If the page is shared, the zero page, or being write monitored
