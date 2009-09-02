@@ -174,7 +174,7 @@ typedef struct REM
 
     /** Array of recorded handler noticications.
      * These are replayed when entering REM. */
-    REMHANDLERNOTIFICATION  aHandlerNotifications[32];
+    REMHANDLERNOTIFICATION  aHandlerNotifications[64];
     volatile uint32_t       idxPendingList;
     volatile uint32_t       idxFreeList;
 
