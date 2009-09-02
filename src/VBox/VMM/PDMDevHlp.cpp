@@ -2093,7 +2093,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_PhysRead(PPDMDEVINS pDevIns, RTGCPHYS GCPhy
              pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, GCPhys, pvBuf, cbRead));
 
 #if defined(VBOX_STRICT) && defined(PDM_DEVHLP_DEADLOCK_DETECTION)
-    if (!VM_IS_EMT(pVM)) /** @todo not true for SMP. oh joy! */
+    if (!VM_IS_EMT(pVM))
     {
         char szNames[128];
         uint32_t cLocks = PDMR3CritSectCountOwned(pVM, szNames, sizeof(szNames));
@@ -2121,7 +2121,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_PhysWrite(PPDMDEVINS pDevIns, RTGCPHYS GCPh
              pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, GCPhys, pvBuf, cbWrite));
 
 #if defined(VBOX_STRICT) && defined(PDM_DEVHLP_DEADLOCK_DETECTION)
-    if (!VM_IS_EMT(pVM)) /** @todo not true for SMP. oh joy! */
+    if (!VM_IS_EMT(pVM))
     {
         char szNames[128];
         uint32_t cLocks = PDMR3CritSectCountOwned(pVM, szNames, sizeof(szNames));
@@ -2150,7 +2150,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_PhysGCPhys2CCPtr(PPDMDEVINS pDevIns, RTGCPH
     AssertReturn(!fFlags, VERR_INVALID_PARAMETER);
 
 #if defined(VBOX_STRICT) && defined(PDM_DEVHLP_DEADLOCK_DETECTION)
-    if (!VM_IS_EMT(pVM)) /** @todo not true for SMP. oh joy! */
+    if (!VM_IS_EMT(pVM))
     {
         char szNames[128];
         uint32_t cLocks = PDMR3CritSectCountOwned(pVM, szNames, sizeof(szNames));
@@ -2175,7 +2175,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_PhysGCPhys2CCPtrReadOnly(PPDMDEVINS pDevIns
     AssertReturn(!fFlags, VERR_INVALID_PARAMETER);
 
 #if defined(VBOX_STRICT) && defined(PDM_DEVHLP_DEADLOCK_DETECTION)
-    if (!VM_IS_EMT(pVM)) /** @todo not true for SMP. oh joy! */
+    if (!VM_IS_EMT(pVM))
     {
         char szNames[128];
         uint32_t cLocks = PDMR3CritSectCountOwned(pVM, szNames, sizeof(szNames));
