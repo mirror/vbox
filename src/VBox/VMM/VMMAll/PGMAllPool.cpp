@@ -1621,6 +1621,8 @@ bool pgmPoolIsDirtyPage(PVM pVM, RTGCPHYS GCPhys)
     if (!pPool->cDirtyPages)
         return false;
 
+    GCPhys = GCPhys & ~(RTGCPHYS)(PAGE_SIZE - 1);
+
     for (unsigned i = 0; i < RT_ELEMENTS(pPool->aIdxDirtyPages); i++)
     {
         if (pPool->aIdxDirtyPages[i] != NIL_PGMPOOL_IDX)
