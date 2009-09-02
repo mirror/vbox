@@ -679,7 +679,7 @@ static DECLCALLBACK(int) pgmR3PoolCmdCheck(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, 
             /* Make sure this page table can't be written to from any shadow mapping. */
             RTHCPHYS HCPhysPT = -1;
             rc = PGMPhysGCPhys2HCPhys(pPool->CTX_SUFF(pVM), pPage->GCPhys, &HCPhysPT);
-            AssertRC(rc);
+            AssertMsgRC(rc, ("PGMPhysGCPhys2HCPhys failed with rc=%d for %RGp\n", rc, pPage->GCPhys));
             if (rc == VINF_SUCCESS)
             {
                 for (unsigned j = 0; j < pPool->cCurPages; j++)
