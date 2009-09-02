@@ -44,7 +44,7 @@ static int initDisplay()
     int rcSystem, rcErrno;
     uint32_t fMouseFeatures = 0;
 
-    LogFlowFunc(("\n"));
+    LogFlowFunc(("enabling dynamic resizing\n"));
     rcSystem = system("VBoxRandR --test");
     if (-1 == rcSystem)
     {
@@ -58,17 +58,28 @@ static int initDisplay()
     }
     if (RT_SUCCESS(rc))
         rc = VbglR3CtlFilterMask(VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST, 0);
+    /* Log and ignore the return value, as there is not much we can do with
+     * it. */
+    LogFlowFunc(("dynamic resizing: result %Rrc\n", rc));
     /* Enable support for switching between hardware and software cursors */
-    rc = VbglR3CtlFilterMask(VMMDEV_EVENT_MOUSE_CAPABILITIES_CHANGED, 0);
+    LogFlowFunc(("enabling relative mouse re-capturing support\n"));
+    rc = VbglR3GetMouseStatus(&fMouseFeatures, NULL, NULL);
     if (RT_SUCCESS(rc))
     {
-        rc = VbglR3GetMouseStatus(&fMouseFeatures, NULL, NULL);
-        if (RT_SUCCESS(rc))
-            VbglR3SetMouseStatus(  fMouseFeatures
-                                 & ~VMMDEV_MOUSE_GUEST_NEEDS_HOST_CURSOR);
+        if (fMouseFeatures & VMMDEV_MOUSE_HOST_RECHECKS_NEEDS_HOST_CURSOR)
+        {
+            rc = VbglR3CtlFilterMask(VMMDEV_EVENT_MOUSE_CAPABILITIES_CHANGED,
+                                     0);
+            if (RT_SUCCESS(rc))
+                rc = VbglR3SetMouseStatus
+                                   (  fMouseFeatures
+                                    & ~VMMDEV_MOUSE_GUEST_NEEDS_HOST_CURSOR);
+        }
+        else
+            rc = VERR_NOT_SUPPORTED;
     }
-    LogFlowFunc(("returning %Rrc\n", rc));
-    return rc;
+    LogFlowFunc(("mouse re-capturing support: result %Rrc\n", rc));
+    return VINF_SUCCESS;
 }
 
 void cleanupDisplay(void)
