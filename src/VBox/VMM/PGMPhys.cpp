@@ -376,7 +376,7 @@ static DECLCALLBACK(int) pgmR3PhysGCPhys2CCPtrDelegated(PVM pVM, PRTGCPHYS pGCPh
         else
         if (    PGM_PAGE_HAS_ACTIVE_HANDLERS(pPage)
 #ifdef PGMPOOL_WITH_OPTIMIZED_DIRTY_PT
-            ||  pgmPoolIsDirtyPage(pVM, GCPhys)
+            ||  pgmPoolIsDirtyPage(pVM, *pGCPhys)
 #endif
            )
         {
