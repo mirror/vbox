@@ -385,6 +385,8 @@ static DECLCALLBACK(int) pgmR3PhysGCPhys2CCPtrDelegated(PVM pVM, PRTGCPHYS pGCPh
              */
             PGMPoolFlushPage(pVM, *pGCPhys);
             Assert(!PGM_PAGE_HAS_ACTIVE_HANDLERS(pPage));
+            /** @todo r=bird: return VERR_PGM_PHYS_PAGE_RESERVED here if it still has
+             *        active handlers, see the PGMR3PhysGCPhys2CCPtrExternal docs. */
         }
     }
 
@@ -2946,7 +2948,7 @@ int pgmR3PhysChunkMap(PVM pVM, uint32_t idChunk, PPPGMCHUNKR3MAP ppChunk)
     if (pVM->pgm.s.ChunkR3Map.c >= pVM->pgm.s.ChunkR3Map.cMax)
         Req.idChunkUnmap = pgmR3PhysChunkFindUnmapCandidate(pVM);
 /** @todo This is wrong. Any thread in the VM process should be able to do this,
- *        there are depenenecies on this.  What currently saves the day is that 
+ *        there are depenenecies on this.  What currently saves the day is that
  *        we don't unmap anything and that all non-zero memory will therefore
  *        be present when non-EMTs tries to access it.  */
     rc = VMMR3CallR0(pVM, VMMR0_DO_GMM_MAP_UNMAP_CHUNK, 0, &Req.Hdr);
