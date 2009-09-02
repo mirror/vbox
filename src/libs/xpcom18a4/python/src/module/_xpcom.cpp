@@ -492,10 +492,18 @@ PyObject *LogConsoleMessage(PyObject *self, PyObject *args)
 }
 
 #ifdef VBOX
-# include <iprt/cdefs.h>
+#define USE_EVENTQUEUE  1
+
+# ifdef USE_EVENTQUEUE
+#  include <VBox/com/EventQueue.h>
+#  include <iprt/err.h>
+# else
+#  include <iprt/cdefs.h>
+# endif
 
 static nsIEventQueue* g_mainEventQ = nsnull;
 
+# ifndef USE_EVENTQUEUE /** @todo Make USE_EVENTQUEUE default. */
 // Wrapper that checks if the queue has pending events.
 DECLINLINE(bool)
 hasEventQueuePendingEvents(nsIEventQueue *pQueue)
@@ -615,6 +623,7 @@ waitForEventsOnDarwin(nsIEventQueue *pQueue, PRInt32 cMsTimeout)
 }
 
 # endif /* RT_OS_DARWIN */
+# endif /* !USE_EVENTQUEUE */
 
 static PyObject*
 PyXPCOMMethod_WaitForEvents(PyObject *self, PyObject *args)
@@ -622,22 +631,32 @@ PyXPCOMMethod_WaitForEvents(PyObject *self, PyObject *args)
   PRInt32 aTimeout;
 
   if (!PyArg_ParseTuple(args, "i", &aTimeout))
-    return NULL;
+    return NULL; /** @todo throw exception */
 
   nsIEventQueue* q = g_mainEventQ;
   if (q == nsnull)
-    return NULL;
+    return NULL; /** @todo throw exception */
 
+# ifdef USE_EVENTQUEUE
+  int rc = com::EventQueue::processThreadEventQueue(aTimeout < 0 ? RT_INDEFINITE_WAIT : (uint32_t)aTimeout);
+  if (RT_SUCCESS(rc))
+      return PyInt_FromLong(0);
+  if (   rc == VERR_TIMEOUT
+      || rc == VERR_INTERRUPTED)
+      return PyInt_FromLong(1);
+  return NULL; /** @todo throw exception */
+
+# else  /* !USE_EVENTQUEUE */
   NS_WARN_IF_FALSE(isEventQueueNative(q), "The event queue must be native!");
 
   PRInt32 result = 0;
-# ifdef RT_OS_DARWIN
+#  ifdef RT_OS_DARWIN
   if (aTimeout != 0 && !hasEventQueuePendingEvents(q))
     result = waitForEventsOnDarwin(q, aTimeout);
   if (result == 0)
     q->ProcessPendingEvents();
 
-# else  /* !RT_OS_DARWIN */
+#  else  /* !RT_OS_DARWIN */
 
   PRBool hasEvents = PR_FALSE;
   nsresult rc;
@@ -692,9 +711,9 @@ PyXPCOMMethod_WaitForEvents(PyObject *self, PyObject *args)
   }
  ok:
   q->ProcessPendingEvents();
-# endif /* !RT_OS_DARWIN */
-
+#  endif /* !RT_OS_DARWIN */
   return PyInt_FromLong(result);
+# endif /* !USE_EVENTQUEUE */
 }
 
 PR_STATIC_CALLBACK(void *) PyHandleEvent(PLEvent *ev)
