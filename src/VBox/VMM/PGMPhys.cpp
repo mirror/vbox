@@ -368,14 +368,19 @@ static DECLCALLBACK(int) pgmR3PhysGCPhys2CCPtrDelegated(PVM pVM, PRTGCPHYS pGCPh
         int rc2 = pgmPhysPageQueryTlbe(&pVM->pgm.s, *pGCPhys, &pTlbe);
         AssertFatalRC(rc2);
         PPGMPAGE pPage = pTlbe->pPage;
-#if 1
         if (PGM_PAGE_IS_MMIO(pPage))
-#else
-        if (PGM_PAGE_HAS_ACTIVE_HANDLERS(pPage))
-#endif
         {
             PGMPhysReleasePageMappingLock(pVM, pLock);
             rc = VERR_PGM_PHYS_PAGE_RESERVED;
+        }
+        else
+        if (PGM_PAGE_HAS_ACTIVE_HANDLERS(pPage))
+        {
+            /* We *must* flush any corresponding pgm pool page here, otherwise we'll
+             * not be informed about writes and keep bogus gst->shw mappings around.
+             */
+            PGMPoolFlushPage(pVM, *pGCPhys);
+            Assert(!PGM_PAGE_HAS_ACTIVE_HANDLERS(pPage));
         }
     }
 
@@ -427,13 +432,17 @@ VMMR3DECL(int) PGMR3PhysGCPhys2CCPtrExternal(PVM pVM, RTGCPHYS GCPhys, void **pp
     if (RT_SUCCESS(rc))
     {
         PPGMPAGE pPage = pTlbe->pPage;
-#if 1
         if (PGM_PAGE_IS_MMIO(pPage))
             rc = VERR_PGM_PHYS_PAGE_RESERVED;
-#else
+        else
         if (PGM_PAGE_HAS_ACTIVE_HANDLERS(pPage))
-            rc = VERR_PGM_PHYS_PAGE_RESERVED;
-#endif
+        {
+            /* We *must* flush any corresponding pgm pool page here, otherwise we'll
+             * not be informed about writes and keep bogus gst->shw mappings around.
+             */
+            PGMPoolFlushPage(pVM, GCPhys);
+            Assert(!PGM_PAGE_HAS_ACTIVE_HANDLERS(pPage));
+        }
         else
         {
             /*

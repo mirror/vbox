@@ -1379,13 +1379,64 @@ DECLEXPORT(int) pgmPoolAccessHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE 
  */
 DECLINLINE(void) pgmPoolTrackCheckPTPaePae(PPGMPOOL pPool, PPGMPOOLPAGE pPage, PX86PTPAE pShwPT, PCX86PTPAE pGstPT)
 {
+    unsigned cErrors = 0;
     for (unsigned i = 0; i < RT_ELEMENTS(pShwPT->a); i++)
     {
         if (pShwPT->a[i].n.u1Present)
         {
             RTHCPHYS HCPhys = -1;
             int rc = PGMPhysGCPhys2HCPhys(pPool->CTX_SUFF(pVM), pGstPT->a[i].u & X86_PTE_PAE_PG_MASK, &HCPhys);
-            AssertMsg(rc == VINF_SUCCESS && (pShwPT->a[i].u & X86_PTE_PAE_PG_MASK) == HCPhys, ("rc=%d guest %RX64 shw=%RX64 vs %RHp\n", rc, pGstPT->a[i].u, pShwPT->a[i].u, HCPhys));
+            if (    rc != VINF_SUCCESS 
+                ||  (pShwPT->a[i].u & X86_PTE_PAE_PG_MASK) != HCPhys)
+            {
+                RTHCPHYS HCPhysPT = -1;
+                Log(("rc=%d idx=%d guest %RX64 shw=%RX64 vs %RHp\n", rc, i, pGstPT->a[i].u, pShwPT->a[i].u, HCPhys));
+                cErrors++;
+
+                int rc = PGMPhysGCPhys2HCPhys(pPool->CTX_SUFF(pVM), pPage->GCPhys, &HCPhysPT);
+                AssertRC(rc);
+
+                for (unsigned i = 0; i < pPool->cCurPages; i++)
+                {
+                    PPGMPOOLPAGE pTempPage = &pPool->aPages[i];
+
+                    if (pTempPage->enmKind == PGMPOOLKIND_PAE_PT_FOR_PAE_PT)
+                    {
+                        PX86PTPAE pShwPT2 = (PX86PTPAE)PGMPOOL_PAGE_2_LOCKED_PTR(pPool->CTX_SUFF(pVM), pTempPage);
+
+                        for (unsigned j = 0; j < RT_ELEMENTS(pShwPT->a); j++)
+                        {
+                            if (    pShwPT2->a[j].n.u1Present
+                                &&  pShwPT2->a[j].n.u1Write
+                                &&  ((pShwPT2->a[j].u & X86_PTE_PAE_PG_MASK) == HCPhysPT))
+                            {
+                                Log(("GCPhys=%RGp idx=%d %RX64 vs %RX64\n", pTempPage->GCPhys, j, pShwPT->a[j].u, pShwPT2->a[j].u));
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    Assert(!cErrors);
+}
+
+void pgmPoolTrackCheckAllPTPaePae(pVM)
+{
+    PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool);
+
+    for (unsigned i = 0; i < pPool->cCurPages; i++)
+    {
+        PPGMPOOLPAGE pPage = &pPool->aPages[i];
+
+        if (    pPage->enmKind == PGMPOOLKIND_PAE_PT_FOR_PAE_PT
+            &&  !pPage->fDirty)
+        {
+            void *pvShw = PGMPOOL_PAGE_2_LOCKED_PTR(pPool->CTX_SUFF(pVM), pPage);
+            void *pvGst;
+            int rc = PGM_GCPHYS_2_PTR(pPool->CTX_SUFF(pVM), pPage->GCPhys, &pvGst); AssertReleaseRC(rc);
+
+            pgmPoolTrackCheckPTPaePae(pPool, pPage, (PX86PTPAE)pvShw, (PCX86PTPAE)pvGst);
         }
     }
 }
@@ -4668,6 +4719,82 @@ PPGMPOOLPAGE pgmPoolGetPage(PPGMPOOL pPool, RTHCPHYS HCPhys)
     return pPage;
 }
 
+/**
+ * Flush the specified page if present
+ *
+ * @param   pVM     The VM handle.
+ * @param   GCPhys  Guest physical address of the page to flush
+ */
+VMMDECL(void) PGMPoolFlushPage(PVM pVM, RTGCPHYS GCPhys)
+{
+#ifdef PGMPOOL_WITH_CACHE
+    PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool);
+
+    /*
+     * Look up the GCPhys in the hash.
+     */
+    GCPhys = GCPhys & ~(RTGCPHYS)(PAGE_SIZE - 1);
+    unsigned i = pPool->aiHash[PGMPOOL_HASH(GCPhys)];
+    if (i == NIL_PGMPOOL_IDX)
+        return;
+
+    do
+    {
+        PPGMPOOLPAGE pPage = &pPool->aPages[i];
+        if (pPage->GCPhys - GCPhys < PAGE_SIZE)
+        {
+            switch (pPage->enmKind)
+            {
+                case PGMPOOLKIND_32BIT_PT_FOR_32BIT_PT:
+                case PGMPOOLKIND_PAE_PT_FOR_32BIT_PT:
+                case PGMPOOLKIND_PAE_PT_FOR_PAE_PT:
+                case PGMPOOLKIND_PAE_PD0_FOR_32BIT_PD:
+                case PGMPOOLKIND_PAE_PD1_FOR_32BIT_PD:
+                case PGMPOOLKIND_PAE_PD2_FOR_32BIT_PD:
+                case PGMPOOLKIND_PAE_PD3_FOR_32BIT_PD:
+                case PGMPOOLKIND_PAE_PD_FOR_PAE_PD:
+                case PGMPOOLKIND_64BIT_PD_FOR_64BIT_PD:
+                case PGMPOOLKIND_64BIT_PDPT_FOR_64BIT_PDPT:
+                case PGMPOOLKIND_64BIT_PML4:
+                case PGMPOOLKIND_32BIT_PD:
+                case PGMPOOLKIND_PAE_PDPT:
+                {
+                    Log(("PGMPoolFlushPage: found pgm pool pages for %RGp\n", GCPhys));
+                    STAM_COUNTER_INC(&pPool->StatForceFlushPage);
+                    Assert(!pgmPoolIsPageLocked(&pVM->pgm.s, pPage));
+                    pgmPoolMonitorChainFlush(pPool, pPage);
+                    return;
+                }
+
+                /* ignore, no monitoring. */
+                case PGMPOOLKIND_32BIT_PT_FOR_32BIT_4MB:
+                case PGMPOOLKIND_PAE_PT_FOR_PAE_2MB:
+                case PGMPOOLKIND_PAE_PT_FOR_32BIT_4MB:
+                case PGMPOOLKIND_32BIT_PT_FOR_PHYS:
+                case PGMPOOLKIND_PAE_PT_FOR_PHYS:
+                case PGMPOOLKIND_64BIT_PDPT_FOR_PHYS:
+                case PGMPOOLKIND_64BIT_PD_FOR_PHYS:
+                case PGMPOOLKIND_EPT_PDPT_FOR_PHYS:
+                case PGMPOOLKIND_EPT_PD_FOR_PHYS:
+                case PGMPOOLKIND_EPT_PT_FOR_PHYS:
+                case PGMPOOLKIND_ROOT_NESTED:
+                case PGMPOOLKIND_PAE_PD_PHYS:
+                case PGMPOOLKIND_PAE_PDPT_PHYS:
+                case PGMPOOLKIND_32BIT_PD_PHYS:
+                case PGMPOOLKIND_PAE_PDPT_FOR_32BIT:
+                    break;
+
+                default:
+                    AssertFatalMsgFailed(("enmKind=%d idx=%d\n", pPage->enmKind, pPage->idx));
+            }
+        }
+
+        /* next */
+        i = pPage->iNext;
+    } while (i != NIL_PGMPOOL_IDX);
+#endif
+    return;
+}
 
 #ifdef IN_RING3
 /**
