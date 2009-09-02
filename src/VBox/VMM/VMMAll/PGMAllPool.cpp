@@ -1608,6 +1608,34 @@ void pgmPoolAddDirtyPage(PVM pVM, PPGMPOOL pPool, PPGMPOOLPAGE pPage)
 # endif /* !IN_RING3 */
 
 /**
+ * Check if the specified page is dirty (not write monitored)
+ *
+ * @return dirty or not
+ * @param   pVM             VM Handle.
+ * @param   GCPhys          Guest physical address
+ */
+bool pgmPoolIsDirtyPage(PVM pVM, RTGCPHYS GCPhys)
+{
+    if (!pPool->cDirtyPages)
+        return false;
+
+    for (unsigned i = 0; i < RT_ELEMENTS(pPool->aIdxDirtyPages); i++)
+    {
+        if (pPool->aIdxDirtyPages[idxSlot] != NIL_PGMPOOL_IDX)
+        {
+            PPGMPOOLPAGE pPage;
+            unsigned     idxPage = pPool->aIdxDirtyPages[idxSlot];
+            AssertRelease(idxPage != NIL_PGMPOOL_IDX);
+
+            pPage = &pPool->aPages[idxPage];
+            if (pPage->GCPhys == GCPhys)
+                return true;
+        }
+    }
+    return false;
+}
+
+/**
  * Reset all dirty pages by reinstating page monitoring.
  *
  * @param   pVM             VM Handle.
