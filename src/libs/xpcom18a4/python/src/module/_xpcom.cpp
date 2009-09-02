@@ -492,6 +492,7 @@ PyObject *LogConsoleMessage(PyObject *self, PyObject *args)
 }
 
 #ifdef VBOX
+# include <iprt/cdefs.h>
 
 static nsIEventQueue* g_mainEventQ = nsnull;
 
