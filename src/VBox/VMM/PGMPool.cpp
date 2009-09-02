@@ -109,6 +109,7 @@
 #include <VBox/err.h>
 #include <iprt/asm.h>
 #include <iprt/string.h>
+#include <VBox/dbg.h>
 
 
 /*******************************************************************************
@@ -117,7 +118,18 @@
 #ifdef PGMPOOL_WITH_MONITORING
 static DECLCALLBACK(int) pgmR3PoolAccessHandler(PVM pVM, RTGCPHYS GCPhys, void *pvPhys, void *pvBuf, size_t cbBuf, PGMACCESSTYPE enmAccessType, void *pvUser);
 #endif /* PGMPOOL_WITH_MONITORING */
+#ifdef VBOX_WITH_DEBUGGER
+static DECLCALLBACK(int)  pgmR3PoolCmdCheck(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult);
+#endif
 
+#ifdef VBOX_WITH_DEBUGGER
+/** Command descriptors. */
+static const DBGCCMD    g_aCmds[] =
+{
+    /* pszCmd,  cArgsMin, cArgsMax, paArgDesc,                cArgDescs,    pResultDesc,        fFlags,     pfnHandler          pszSyntax,          ....pszDescription */
+    { "pgmpoolcheck",  0, 0,        NULL,                     0,            NULL,               0,          pgmR3PoolCmdCheck,  "",                 "Check the pgm pool pages." },
+};
+#endif
 
 /**
  * Initalizes the pool
@@ -378,6 +390,19 @@ int pgmR3PoolInit(PVM pVM)
 # endif
 #endif /* VBOX_WITH_STATISTICS */
 
+#ifdef VBOX_WITH_DEBUGGER
+    /*
+     * Debugger commands.
+     */
+    static bool s_fRegisteredCmds = false;
+    if (!s_fRegisteredCmds)
+    {
+        int rc = DBGCRegisterCommands(&g_aCmds[0], RT_ELEMENTS(g_aCmds));
+        if (RT_SUCCESS(rc))
+            s_fRegisteredCmds = true;
+    }
+#endif
+
     return VINF_SUCCESS;
 }
 
@@ -587,3 +612,62 @@ static DECLCALLBACK(int) pgmR3PoolAccessHandler(PVM pVM, RTGCPHYS GCPhys, void *
 
 #endif /* PGMPOOL_WITH_MONITORING */
 
+#ifdef VBOX_WITH_DEBUGGER
+/**
+ * The '.pgmpoolcheck' command.
+ *
+ * @returns VBox status.
+ * @param   pCmd        Pointer to the command descriptor (as registered).
+ * @param   pCmdHlp     Pointer to command helper functions.
+ * @param   pVM         Pointer to the current VM (if any).
+ * @param   paArgs      Pointer to (readonly) array of arguments.
+ * @param   cArgs       Number of arguments in the array.
+ */
+static DECLCALLBACK(int) pgmR3PoolCmdCheck(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult)
+{
+    /*
+     * Validate input.
+     */
+    if (!pVM)
+        return pCmdHlp->pfnPrintf(pCmdHlp, NULL, "error: The command requires a VM to be selected.\n");
+
+    PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool);
+
+    for (unsigned i = 0; i < pPool->cCurPages; i++)
+    {
+        PPGMPOOLPAGE pPage = &pPool->aPages[i];
+
+        /* Todo: cover other paging modes too. */
+        if (pPage->enmKind == PGMPOOLKIND_PAE_PT_FOR_PAE_PT)
+        {
+            PX86PTPAE pShwPT = (PX86PTPAE)PGMPOOL_PAGE_2_PTR(pPool->CTX_SUFF(pVM), pPage);
+            PX86PTPAE pGstPT;
+            int rc = PGM_GCPHYS_2_PTR(pPool->CTX_SUFF(pVM), pPage->GCPhys, &pGstPT); AssertReleaseRC(rc);
+
+            for (unsigned j = 0; j < RT_ELEMENTS(pShwPT->a); j++)
+            {
+                if (pShwPT->a[j].n.u1Present)
+                {
+                    RTHCPHYS HCPhys = -1;
+                    rc = PGMPhysGCPhys2HCPhys(pPool->CTX_SUFF(pVM), pGstPT->a[j].u & X86_PTE_PAE_PG_MASK, &HCPhys);
+                    if (    rc != VINF_SUCCESS 
+                        ||  (pShwPT->a[j].u & X86_PTE_PAE_PG_MASK) != HCPhys)
+                    {
+                        pCmdHlp->pfnPrintf(pCmdHlp, NULL, "Pool check: rc=%d idx=%d guest %RX64 shw=%RX64 vs %RHp\n", rc, j, pGstPT->a[j].u, pShwPT->a[j].u, HCPhys);
+                    }
+                    else
+                    if (    pShwPT->a[j].n.u1Write
+# ifdef PGMPOOL_WITH_OPTIMIZED_DIRTY_PT
+                        &&  !pPage->fDirty
+# endif
+                       )
+                    {
+                        pCmdHlp->pfnPrintf(pCmdHlp, NULL, "Pool check r/w: rc=%d idx=%d guest %RX64 shw=%RX64 vs %RHp\n", rc, j, pGstPT->a[j].u, pShwPT->a[j].u, HCPhys);
+                    }
+                }
+            }
+        }
+    }
+    return VINF_SUCCESS;
+}
+#endif
