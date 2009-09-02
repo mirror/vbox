@@ -463,9 +463,6 @@ static int vbvaResize (PVGASTATE pVGAState, VBVAVIEW *pView, const VBVAINFOSCREE
 
 static int vbvaEnable (unsigned uScreenId, PVGASTATE pVGAState, VBVACONTEXT *pCtx, VBVABUFFER *pVBVA, uint32_t u32Offset)
 {
-    /* Process any pending orders and empty the VBVA ring buffer. */
-    vbvaFlush (pVGAState, pCtx);
-
     /* @todo old code did a UpdateDisplayAll at this place. */
 
     int rc;
@@ -695,7 +692,7 @@ int vboxVBVASaveStateExec (PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
                 rc = SSMR3PutU16 (pSSM, pView->screen.u16Flags);
                 AssertRCReturn(rc, rc);
 
-                rc = SSMR3PutU32 (pSSM, pView->u32VBVAOffset);
+                rc = SSMR3PutU32 (pSSM, pView->pVBVA? pView->u32VBVAOffset: HGSMIOFFSET_VOID);
                 AssertRCReturn(rc, rc);
 
                 rc = SSMR3PutU32 (pSSM, pView->partialRecord.cb);
@@ -801,7 +798,8 @@ int vboxVBVALoadStateExec (PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t u32Vers
                     AssertRCReturn(rc, rc);
                 }
 
-                if (pView->u32VBVAOffset == HGSMIOFFSET_VOID)
+                if (   pView->u32VBVAOffset == HGSMIOFFSET_VOID
+                    || pView->screen.u32LineSize == 0) /* Earlier broken saved states. */
                 {
                     pView->pVBVA = NULL;
                 }
@@ -837,6 +835,7 @@ int vboxVBVALoadStateDone (PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 
             if (pView->pVBVA)
             {
+                vbvaEnable (iView, pVGAState, pCtx, pView->pVBVA, pView->u32VBVAOffset);
                 vbvaResize (pVGAState, pView, &pView->screen);
             }
         }
@@ -1271,6 +1270,9 @@ static DECLCALLBACK(int) vbvaChannelHandler (void *pvHandler, uint16_t u16Channe
 
                 if (pVBVA)
                 {
+                    /* Process any pending orders and empty the VBVA ring buffer. */
+                    vbvaFlush (pVGAState, pCtx);
+
                     rc = vbvaEnable (uScreenId, pVGAState, pCtx, pVBVA, u32Offset);
                 }
                 else
