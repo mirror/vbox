@@ -32,7 +32,7 @@
 
 #ifndef IN_RING3
 # error "There are no XML APIs available in Ring-0 Context!"
-#else /* IN_RING3 */
+#endif
 
 #include <list>
 #include <memory>
@@ -647,8 +647,6 @@ private:
 #if defined(_MSC_VER)
 #pragma warning (default:4251)
 #endif
-
-#endif /* IN_RING3 */
 
 /** @} */
 

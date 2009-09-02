@@ -47,6 +47,7 @@
 #include <iprt/dir.h>
 #include <iprt/env.h>
 #include <iprt/string.h>
+#include <iprt/log.h>
 
 #include <VBox/err.h>
 
@@ -199,5 +200,21 @@ const Guid Guid::Empty; /* default ctor is OK */
 const nsID *SafeGUIDArray::nsIDRef::Empty = (const nsID *) Guid::Empty.raw();
 
 #endif /* (VBOX_WITH_XPCOM) */
+
+/**
+ * Used by ComPtr and friends to log details about reference counting.
+ * @param pcszFormat
+ */
+void LogRef(const char *pcszFormat, ...)
+{
+    va_list va;
+    va_start(va, pcszFormat);
+    va_end(va);
+
+    char *psz = NULL;
+    RTStrAPrintfV(&psz, pcszFormat, va);
+    LogDJ((psz));
+    RTStrFree(psz);
+}
 
 } /* namespace com */

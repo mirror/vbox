@@ -66,6 +66,12 @@
 #include <VBox/com/defs.h>
 #include <VBox/com/assert.h>
 
+namespace com
+{
+    #define LOGREF(pObj, cRefs) com::LogRef(#pObj "{%p}.refCnt=%d\n", (pObj), (cRefs));
+    void LogRef(const char *pcszFormat, ...);
+}
+
 /**
  *  Strong referencing operators. Used as a second argument to ComPtr<>/ComObjPtr<>.
  */
@@ -74,8 +80,15 @@ class ComStrongRef
 {
 protected:
 
-    static void addref (C *p) { p->AddRef(); }
-    static void release (C *p) { p->Release(); }
+    static void addref(C *p)
+    {
+        size_t cRefs = p->AddRef();
+        LOGREF(p, cRefs);
+    }
+    static void release(C *p)
+    {
+        p->Release();
+    }
 };
 
 /**
