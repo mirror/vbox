@@ -1382,10 +1382,10 @@ DECLEXPORT(int) pgmPoolAccessHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE 
 DECLINLINE(void) pgmPoolTrackCheckPTPaePae(PPGMPOOL pPool, PPGMPOOLPAGE pPage, PX86PTPAE pShwPT, PCX86PTPAE pGstPT)
 {
     unsigned cErrors = 0;
-    Assert(pPage->iFirstPresent != ~0);
 #ifdef VBOX_STRICT
-    for (unsigned i = 0; i < pPage->iFirstPresent; i++)
-        AssertMsg(!pShwPT->a[i].n.u1Present, ("Unexpected PTE: idx=%d %RX64 (first=%d)\n", i, pShwPT->a[i].u,  pPage->iFirstPresent));
+    if (pPage->iFirstPresent != NIL_PGMPOOL_PRESENT_INDEX);
+        for (unsigned i = 0; i < pPage->iFirstPresent; i++)
+            AssertMsg(!pShwPT->a[i].n.u1Present, ("Unexpected PTE: idx=%d %RX64 (first=%d)\n", i, pShwPT->a[i].u,  pPage->iFirstPresent));
 #endif
     for (unsigned i = pPage->iFirstPresent; i < RT_ELEMENTS(pShwPT->a); i++)
     {
@@ -1443,10 +1443,10 @@ DECLINLINE(unsigned) pgmPoolTrackFlushPTPaePae(PPGMPOOL pPool, PPGMPOOLPAGE pPag
 {
     unsigned cChanged = 0;
 
-    Assert(pPage->iFirstPresent != ~0);
 #ifdef VBOX_STRICT
-    for (unsigned i = 0; i < pPage->iFirstPresent; i++)
-        AssertMsg(!pShwPT->a[i].n.u1Present, ("Unexpected PTE: idx=%d %RX64 (first=%d)\n", i, pShwPT->a[i].u,  pPage->iFirstPresent));
+    if (pPage->iFirstPresent != NIL_PGMPOOL_PRESENT_INDEX);
+        for (unsigned i = 0; i < pPage->iFirstPresent; i++)
+            AssertMsg(!pShwPT->a[i].n.u1Present, ("Unexpected PTE: idx=%d %RX64 (first=%d)\n", i, pShwPT->a[i].u,  pPage->iFirstPresent));
 #endif
     for (unsigned i = pPage->iFirstPresent; i < RT_ELEMENTS(pShwPT->a); i++)
     {
@@ -2522,7 +2522,7 @@ DECLCALLBACK(int) pgmPoolClearAll(PVM pVM, PVMCPU pVCpu, void *pvUser)
                         STAM_PROFILE_STOP(&pPool->StatZeroPage, z);
 #ifdef PGMPOOL_WITH_USER_TRACKING
                         pPage->cPresent = 0;
-                        pPage->iFirstPresent = ~0;
+                        pPage->iFirstPresent = NIL_PGMPOOL_PRESENT_INDEX;
 #endif
                     }
 #ifdef PGMPOOL_WITH_OPTIMIZED_DIRTY_PT
@@ -4666,7 +4666,7 @@ int pgmPoolAllocEx(PVM pVM, RTGCPHYS GCPhys, PGMPOOLKIND enmKind, PGMPOOLACCESS 
 #endif
 #ifdef PGMPOOL_WITH_USER_TRACKING
     pPage->cPresent = 0;
-    pPage->iFirstPresent = ~0;
+    pPage->iFirstPresent = NIL_PGMPOOL_PRESENT_INDEX;
     pPage->pvLastAccessHandlerFault = 0;
     pPage->cLastAccessHandlerCount  = 0;
     pPage->pvLastAccessHandlerRip   = 0;
