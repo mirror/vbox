@@ -2523,6 +2523,9 @@ DECLCALLBACK(int) pgmPoolClearAll(PVM pVM, PVMCPU pVCpu, void *pvUser)
                 /* fall thru */
 
                 default:
+#ifdef PGMPOOL_WITH_OPTIMIZED_DIRTY_PT
+                    Assert(!pPage->fDirty);
+#endif
                     Assert(!pPage->cModifications || ++cModifiedPages);
                     Assert(pPage->iModifiedNext == NIL_PGMPOOL_IDX || pPage->cModifications);
                     Assert(pPage->iModifiedPrev == NIL_PGMPOOL_IDX || pPage->cModifications);
