@@ -301,7 +301,7 @@ static int handleSetGuestProperty(HandlerArg *a)
     {
         pszValue = a->argv[2];
         if (   !strcmp(a->argv[3], "--flags")
-            || !strcmp(a->argv[3], "-flags"))
+            && !strcmp(a->argv[3], "-flags"))
             usageOK = false;
         pszFlags = a->argv[4];
     }

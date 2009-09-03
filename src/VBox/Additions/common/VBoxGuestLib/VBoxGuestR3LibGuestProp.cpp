@@ -259,7 +259,7 @@ VBGLR3DECL(int) VbglR3GuestPropWriteValueF(uint32_t u32ClientId, const char *psz
  *                          The returned data is only valid for it's lifetime.
  *                          @a ppszValue will point to the start of this buffer.
  * @param   cbBuf           The size of @a pcBuf
- * @param   pszValue        Where to store the pointer to the value retrieved.
+ * @param   ppszValue       Where to store the pointer to the value retrieved.
  *                          Optional.
  * @param   pu64Timestamp   Where to store the timestamp.  Optional.
  * @param   pszFlags        Where to store the pointer to the flags.  Optional.
