@@ -1358,34 +1358,36 @@ int HGCMService::DisconnectClient (uint32_t u32ClientId, bool fFromService)
 
             rc = hgcmMsgSend (hMsg);
         }
-    }
-
-    if (RT_SUCCESS(rc))
-    {
-        /* Remove the client id from the array in any case. */
-        int i;
-
-        for (i = 0; i < m_cClients; i++)
+        else
         {
-            if (m_paClientIds[i] == u32ClientId)
-            {
-                m_cClients--;
-
-                if (m_cClients > i)
-                {
-                    memmove (&m_paClientIds[i], &m_paClientIds[i + 1], m_cClients - i);
-                }
-
-                break;
-            }
+            LogRel(("[%s] hgcmMsgAlloc(%p, SVC_MSG_DISCONNECT) failed %Rrc\n",
+                    RT_VALID_PTR(m_pszSvcName)? m_pszSvcName: "", m_thread, rc));
         }
-
-        /* Delete the client handle. */
-        hgcmObjDeleteHandle (u32ClientId);
-
-        /* The service must be released. */
-        ReleaseService ();
     }
+
+    /* Remove the client id from the array in any case, rc does not matter. */
+    int i;
+
+    for (i = 0; i < m_cClients; i++)
+    {
+        if (m_paClientIds[i] == u32ClientId)
+        {
+            m_cClients--;
+
+            if (m_cClients > i)
+            {
+                memmove (&m_paClientIds[i], &m_paClientIds[i + 1], m_cClients - i);
+            }
+
+            break;
+        }
+    }
+
+    /* Delete the client handle. */
+    hgcmObjDeleteHandle (u32ClientId);
+
+    /* The service must be released. */
+    ReleaseService ();
 
     LogFlowFunc(("rc = %Rrc\n", rc));
     return rc;
