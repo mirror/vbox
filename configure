@@ -151,10 +151,8 @@ fi
 # darwin /bin/sh has a builtin echo that doesn't grok -n. gotta love it.
 if [ "$OS" = "darwin" ]; then
   ECHO_N="/bin/echo -n"
-  ECHO_E="echo"
 else
   ECHO_N="echo -n"
-  ECHO_E="echo -e"
 fi
 
 
@@ -1929,15 +1927,15 @@ Configuration:
   -h, --help               display this help and exit
   --nofatal                don't abort on errors
 EOF
-[ $WITH_XPCOM   -eq 1 ] && $ECHO_E "  --disable-xpcom          disable XPCOM and related stuff"
-[ $WITH_PYTHON  -eq 1 ] && $ECHO_E "  --disable-python         disable python bindings"
-[ $WITH_SDL_TTF -eq 1 ] && $ECHO_E "  --disable-sdl-ttf        disable SDL_ttf detection"
-[ $WITH_ALSA    -eq 1 ] && $ECHO_E "  --disable-alsa           disable the ALSA sound backend"
-[ $WITH_PULSE   -eq 1 ] && $ECHO_E "  --disable-pulse          disable the PulseAudio backend"
-[ $WITH_DBUS    -eq 1 ] && $ECHO_E "  --disable-dbus           don't use DBus and hal for hardware detection"
-[ $WITH_KMODS   -eq 1 ] && $ECHO_E "  --disable-kmods          don't build Linux kernel modules (host and guest)"
-[ $WITH_OPENGL  -eq 1 ] && $ECHO_E "  --disable-opengl         disable OpenGL support"
-[ $WITH_GSOAP   -eq 1 ] && $ECHO_E "  --enable-webservice      enable the webservice stuff"
+[ $WITH_XPCOM   -eq 1 ] && echo "  --disable-xpcom          disable XPCOM and related stuff"
+[ $WITH_PYTHON  -eq 1 ] && echo "  --disable-python         disable python bindings"
+[ $WITH_SDL_TTF -eq 1 ] && echo "  --disable-sdl-ttf        disable SDL_ttf detection"
+[ $WITH_ALSA    -eq 1 ] && echo "  --disable-alsa           disable the ALSA sound backend"
+[ $WITH_PULSE   -eq 1 ] && echo "  --disable-pulse          disable the PulseAudio backend"
+[ $WITH_DBUS    -eq 1 ] && echo "  --disable-dbus           don't use DBus and hal for hardware detection"
+[ $WITH_KMODS   -eq 1 ] && echo "  --disable-kmods          don't build Linux kernel modules (host and guest)"
+[ $WITH_OPENGL  -eq 1 ] && echo "  --disable-opengl         disable OpenGL support"
+[ $WITH_GSOAP   -eq 0 ] && echo "  --enable-webservice      enable the webservice stuff"
 cat << EOF
   --disable-hardening      don't be strict about /dev/vboxdrv access
   --build-libxml2          build libxml2 from sources
@@ -1952,11 +1950,11 @@ Paths:
   --with-iasl=PATH         location of the iasl compiler [$IASL]
   --with-mkisofs=PATH      location of mkisofs [$MKISOFS]
 EOF
-[ "$OS"    = "linux" ] && $ECHO_E "  --with-linux=DIR         Linux kernel source directory [$LINUX]"
-[ $WITH_QT4    -eq 1 ] && $ECHO_E "  --with-qt-dir=DIR        directory for Qt4 headers/libraries [pkgconfig]"
-[ $WITH_GSOAP  -eq 1 ] && $ECHO_E "  --with-gsoap-dir=PATH    directory for gSOAP compiler/headers/libraries" \
-                                  "\n                           (soapcpp2 and wsdl2h, soapstd2.h, libgsoap++.a/so)" \
-                                  "\n  --with-gsoap-import=PATH directory for gSOAP import files (stlvector.h)"
+[ "$OS"    = "linux" ] && echo "  --with-linux=DIR         Linux kernel source directory [$LINUX]"
+[ $WITH_QT4    -eq 1 ] && echo "  --with-qt-dir=DIR        directory for Qt4 headers/libraries [pkgconfig]"
+[ $WITH_GSOAP  -eq 1 ] && echo "  --with-gsoap-dir=PATH    directory for gSOAP compiler/headers/libraries"
+[ $WITH_GSOAP  -eq 1 ] && echo "                           (soapcpp2 and wsdl2h, soapstd2.h, libgsoap++.a/so)"
+[ $WITH_GSOAP  -eq 1 ] && echo "  --with-gsoap-import=PATH directory for gSOAP import files (stlvector.h)"
 cat << EOF
   --out-path=PATH          the folder to which configuration and build output
                            should go
@@ -2076,7 +2074,7 @@ for option in $*; do
       [ $WITH_OPENGL -eq 1 ] && WITH_OPENGL=0
       ;;
     --enable-webservice)
-      [ $WITH_GSOAP -eq 1 ] && WITH_GSOAP=0
+      [ $WITH_GSOAP -eq 0 ] && WITH_GSOAP=1
       ;;
     --disable-hardening)
       WITH_HARDENING=0
