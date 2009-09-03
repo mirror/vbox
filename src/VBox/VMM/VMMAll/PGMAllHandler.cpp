@@ -167,7 +167,7 @@ VMMDECL(int) PGMHandlerPhysicalRegisterEx(PVM pVM, PGMPHYSHANDLERTYPE enmType, R
         if (rc == VINF_PGM_SYNC_CR3)
             rc = VINF_PGM_GCPHYS_ALIASED;
         pgmUnlock(pVM);
-        HWACCMFlushTLBOnAllVCpus(pVM);
+        PGM_INVL_ALL_VCPU_TLBS(pVM);
 #ifndef IN_RING3
         REMNotifyHandlerPhysicalRegister(pVM, enmType, GCPhys, GCPhysLast - GCPhys + 1, !!pfnHandlerR3);
 #else
@@ -272,7 +272,7 @@ VMMDECL(int)  PGMHandlerPhysicalDeregister(PVM pVM, RTGCPHYS GCPhys)
         pgmHandlerPhysicalDeregisterNotifyREM(pVM, pCur);
         MMHyperFree(pVM, pCur);
         pgmUnlock(pVM);
-        HWACCMFlushTLBOnAllVCpus(pVM);
+        PGM_INVL_ALL_VCPU_TLBS(pVM);
         return VINF_SUCCESS;
     }
     pgmUnlock(pVM);
@@ -555,7 +555,7 @@ VMMDECL(int) PGMHandlerPhysicalModify(PVM pVM, RTGCPHYS GCPhysCurrent, RTGCPHYS 
                     REMR3NotifyHandlerPhysicalModify(pVM, enmType, GCPhysCurrent, GCPhys,
                                                      GCPhysLast, fHasHCHandler, fRestoreAsRAM);
 #endif
-                    HWACCMFlushTLBOnAllVCpus(pVM);
+                    PGM_INVL_ALL_VCPU_TLBS(pVM);
                     Log(("PGMHandlerPhysicalModify: GCPhysCurrent=%RGp -> GCPhys=%RGp GCPhysLast=%RGp\n",
                          GCPhysCurrent, GCPhys, GCPhysLast));
                     return VINF_SUCCESS;
@@ -850,7 +850,7 @@ VMMDECL(int)  PGMHandlerPhysicalReset(PVM pVM, RTGCPHYS GCPhys)
                      * Set the flags and flush shadow PT entries.
                      */
                     rc = pgmHandlerPhysicalSetRamFlagsAndFlushShadowPTs(pVM, pCur, pRam);
-                    HWACCMFlushTLBOnAllVCpus(pVM);
+                    PGM_INVL_ALL_VCPU_TLBS(pVM);
                 }
 
                 rc = VINF_SUCCESS;
