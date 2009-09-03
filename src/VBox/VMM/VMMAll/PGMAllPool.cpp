@@ -2513,6 +2513,10 @@ DECLCALLBACK(int) pgmPoolClearAll(PVM pVM, PVMCPU pVCpu, void *pvUser)
                         pPage->iFirstPresent = ~0;
 #endif
                     }
+#ifdef PGMPOOL_WITH_OPTIMIZED_DIRTY_PT
+                    else
+                        Assert(!pPage->fDirty);
+#endif
                 }
                 /* fall thru */
 
