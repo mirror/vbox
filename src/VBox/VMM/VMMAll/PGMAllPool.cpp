@@ -1383,9 +1383,8 @@ DECLINLINE(void) pgmPoolTrackCheckPTPaePae(PPGMPOOL pPool, PPGMPOOLPAGE pPage, P
 {
     unsigned cErrors = 0;
 #ifdef VBOX_STRICT
-    if (pPage->iFirstPresent != NIL_PGMPOOL_PRESENT_INDEX);
-        for (unsigned i = 0; i < pPage->iFirstPresent; i++)
-            AssertMsg(!pShwPT->a[i].n.u1Present, ("Unexpected PTE: idx=%d %RX64 (first=%d)\n", i, pShwPT->a[i].u,  pPage->iFirstPresent));
+    for (unsigned i = 0; i < RT_MIN(RT_ELEMENTS(pShwPT->a), pPage->iFirstPresent); i++)
+        AssertMsg(!pShwPT->a[i].n.u1Present, ("Unexpected PTE: idx=%d %RX64 (first=%d)\n", i, pShwPT->a[i].u,  pPage->iFirstPresent));
 #endif
     for (unsigned i = pPage->iFirstPresent; i < RT_ELEMENTS(pShwPT->a); i++)
     {
@@ -1444,9 +1443,8 @@ DECLINLINE(unsigned) pgmPoolTrackFlushPTPaePae(PPGMPOOL pPool, PPGMPOOLPAGE pPag
     unsigned cChanged = 0;
 
 #ifdef VBOX_STRICT
-    if (pPage->iFirstPresent != NIL_PGMPOOL_PRESENT_INDEX);
-        for (unsigned i = 0; i < pPage->iFirstPresent; i++)
-            AssertMsg(!pShwPT->a[i].n.u1Present, ("Unexpected PTE: idx=%d %RX64 (first=%d)\n", i, pShwPT->a[i].u,  pPage->iFirstPresent));
+    for (unsigned i = 0; i < RT_MIN(RT_ELEMENTS(pShwPT->a), pPage->iFirstPresent); i++)
+        AssertMsg(!pShwPT->a[i].n.u1Present, ("Unexpected PTE: idx=%d %RX64 (first=%d)\n", i, pShwPT->a[i].u,  pPage->iFirstPresent));
 #endif
     for (unsigned i = pPage->iFirstPresent; i < RT_ELEMENTS(pShwPT->a); i++)
     {
