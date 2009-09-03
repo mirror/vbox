@@ -151,8 +151,10 @@ fi
 # darwin /bin/sh has a builtin echo that doesn't grok -n. gotta love it.
 if [ "$OS" = "darwin" ]; then
   ECHO_N="/bin/echo -n"
+  ECHO_E="echo"
 else
   ECHO_N="echo -n"
+  ECHO_E="echo -e"
 fi
 
 
@@ -1920,22 +1922,24 @@ check_i386elfgcc()
 #
 show_help()
 {
-  cat << EOF
+cat << EOF
 Usage: ./configure [OPTIONS]...
 
 Configuration:
   -h, --help               display this help and exit
   --nofatal                don't abort on errors
-  --disable-xpcom          disable XPCOM and related stuff
-  --disable-python         disable python bindings
-  --disable-sdl-ttf        disable SDL_ttf detection
-  --disable-alsa           disable the ALSA sound backend
-  --disable-pulse          disable the PulseAudio backend
-  --disable-dbus           don't use DBus and hal for hardware detection
-  --disable-kmods          don't build Linux kernel modules (host and guest)
+EOF
+[ $WITH_XPCOM   -eq 1 ] && $ECHO_E "  --disable-xpcom          disable XPCOM and related stuff"
+[ $WITH_PYTHON  -eq 1 ] && $ECHO_E "  --disable-python         disable python bindings"
+[ $WITH_SDL_TTF -eq 1 ] && $ECHO_E "  --disable-sdl-ttf        disable SDL_ttf detection"
+[ $WITH_ALSA    -eq 1 ] && $ECHO_E "  --disable-alsa           disable the ALSA sound backend"
+[ $WITH_PULSE   -eq 1 ] && $ECHO_E "  --disable-pulse          disable the PulseAudio backend"
+[ $WITH_DBUS    -eq 1 ] && $ECHO_E "  --disable-dbus           don't use DBus and hal for hardware detection"
+[ $WITH_KMODS   -eq 1 ] && $ECHO_E "  --disable-kmods          don't build Linux kernel modules (host and guest)"
+[ $WITH_OPENGL  -eq 1 ] && $ECHO_E "  --disable-opengl         disable OpenGL support"
+[ $WITH_GSOAP   -eq 1 ] && $ECHO_E "  --enable-webservice      enable the webservice stuff"
+cat << EOF
   --disable-hardening      don't be strict about /dev/vboxdrv access
-  --disable-opengl         disable OpenGL support
-  --enable-webservice      enable the webservice stuff
   --build-libxml2          build libxml2 from sources
   --build-libxslt          build libxslt from sources
   --build-libcurl          build libcurl from sources (PUEL only)
@@ -1946,19 +1950,21 @@ Paths:
   --with-g++=PATH          location of the g++ compiler [$CXX]
   --with-kbuild=DIR        kbuild directory [$KBUILDDIR]
   --with-iasl=PATH         location of the iasl compiler [$IASL]
-  --with-linux=DIR         Linux kernel source directory [$LINUX]
   --with-mkisofs=PATH      location of mkisofs [$MKISOFS]
-  --with-qt-dir=DIR        directory for Qt4 headers/libraries [pkgconfig]
-  --with-gsoap-dir=PATH    directory for gSOAP compiler/headers/libraries
-                           (soapcpp2 and wsdl2h, soapstd2.h, libgsoap++.a/so)
-  --with-gsoap-import=PATH directory for gSOAP import files (stlvector.h)
+EOF
+[ "$OS"    = "linux" ] && $ECHO_E "  --with-linux=DIR         Linux kernel source directory [$LINUX]"
+[ $WITH_QT4    -eq 1 ] && $ECHO_E "  --with-qt-dir=DIR        directory for Qt4 headers/libraries [pkgconfig]"
+[ $WITH_GSOAP  -eq 1 ] && $ECHO_E "  --with-gsoap-dir=PATH    directory for gSOAP compiler/headers/libraries" \
+                                  "\n                           (soapcpp2 and wsdl2h, soapstd2.h, libgsoap++.a/so)" \
+                                  "\n  --with-gsoap-import=PATH directory for gSOAP import files (stlvector.h)"
+cat << EOF
   --out-path=PATH          the folder to which configuration and build output
                            should go
 
 Build type:
   -d, --build-debug        build with debugging symbols and assertions
   --build-profile          build with profiling support
-  --build-headless         build headless (without any X11 frontend)
+  --build-headless         build headless (without any GUI frontend)
 EOF
   exit 0
 }
@@ -1967,6 +1973,30 @@ EOF
 #
 # The body.
 #
+
+# test if we are OSE
+if [ $OSE -eq 1 -a -d "`cd \`dirname $0\`; pwd`/src/VBox/Devices/USB" ]; then
+  echo "Found USB devices, assuming VBOX_OSE = FALSE" >> $LOG
+  echo >> $LOG
+  OSE=0
+fi
+
+# Change OS specific defaults; must be before all other stuff
+if [ "$OS" = "darwin" ]; then
+  WITH_SDL=0
+  WITH_SDL_TTF=0
+  WITH_X11=0
+  WITH_ALSA=0
+  WITH_PULSE=0
+  WITH_DBUS=0
+  WITH_KMODS=0
+  WITH_OPENGL=0
+  BUILD_LIBXSLT=1
+  BUILD_LIBXML2=1
+  [ $OSE -eq 1 ] || BUILD_LIBCURL=1
+  [ $OSE -eq 1 ] || BUILD_LIBSSL=1
+fi
+
 
 # scan command line options
 for option in $*; do
@@ -2012,44 +2042,47 @@ for option in $*; do
     --with-mkisofs=*)
       MKISOFS=`echo $option | cut -d'=' -f2`
       ;;
+    --target-arch=*)
+      TARGET_MACHINE=`echo $option | cut -d'=' -f2`
+      ;;
     --disable-xpcom)
-      WITH_XPCOM=0
+      [ $WITH_XPCOM -eq 1 ] && WITH_XPCOM=0
       ;;
     --disable-python)
-      WITH_PYTHON=0
+      [ $WITH_PYTHON -eq 1 ] && WITH_PYTHON=0
       ;;
     --disable-sdl-ttf)
-      WITH_SDL_TTF=0
+      [ $WITH_SDL_TTF -eq 1 ] && WITH_SDL_TTF=0
       ;;
     --disable-qt)
-      WITH_QT4=0
+      [ $WITH_QT4 -eq 1 ] && WITH_QT4=0
       ;;
     --disable-qt4)
-      WITH_QT4=0
+      [ $WITH_QT4 -eq 1 ] && WITH_QT4=0
       ;;
     --disable-alsa)
-      WITH_ALSA=0
+      [ $WITH_ALSA -eq 1 ] && WITH_ALSA=0
       ;;
     --disable-pulse)
-      WITH_PULSE=0
+      [ $WITH_PULSE -eq 1 ] && WITH_PULSE=0
       ;;
     --disable-dbus)
-      WITH_DBUS=0
+      [ $WITH_DBUS -eq 1 ] && WITH_DBUS=0
       ;;
     --disable-kmods)
-      WITH_KMODS=0
+      [ $WITH_KMODS -eq 1 ] && WITH_KMODS=0
       ;;
     --disable-opengl)
-      WITH_OPENGL=0
+      [ $WITH_OPENGL -eq 1 ] && WITH_OPENGL=0
+      ;;
+    --enable-webservice)
+      [ $WITH_GSOAP -eq 1 ] && WITH_GSOAP=0
       ;;
     --disable-hardening)
       WITH_HARDENING=0
       ;;
     --enable-hardening)
       WITH_HARDENING=2
-      ;;
-    --enable-webservice)
-      WITH_GSOAP=1
       ;;
     --build-debug|-d)
       BUILD_TYPE=debug
@@ -2146,13 +2179,6 @@ cat > $ENV << EOF
 
 EOF
 
-# test if we are OSE
-if [ $OSE -eq 1 -a -d "`cd \`dirname $0\`; pwd`/src/VBox/Devices/USB" ]; then
-  echo "Found USB devices, assuming VBOX_OSE = FALSE" >> $LOG
-  echo >> $LOG
-  OSE=0
-fi
-
 if [ "$BUILD_TYPE" = "debug" ]; then
   echo "Creating DEBUG build!" >> $LOG
 elif [ "$BUILD_TYPE" = "profile" ]; then
@@ -2199,13 +2225,6 @@ if [ $WITH_OPENGL -eq 0 ]; then
   cnf_append "VBOX_WITH_CROGL" ""
 fi
 
-if [ "$OS" = "darwin" ]; then
-  BUILD_LIBXSLT=1
-  BUILD_LIBXML2=1
-  [ $OSE -eq 1 ] || BUILD_LIBCURL=1
-  [ $OSE -eq 1 ] || BUILD_LIBSSL=1
-fi
-
 # emit disable directives corresponding to any --disable-xxx options.
 [ $WITH_XPCOM -eq 0 ]     && cnf_append "VBOX_WITH_MAIN" ""
 [ $WITH_QT4 -eq 0   ]     && cnf_append "VBOX_WITH_QTGUI" ""
@@ -2234,16 +2253,16 @@ check_curl
 [ "$OS" != "darwin"  ] && check_z
 [ "$OS" != "darwin" -a "$OS" != "freebsd" ] && check_png
 [ $OSE -eq 0 -a "$OS" = "linux" ] && check_pam
-[ $WITH_SDL -eq 1 -a "$OS" != "darwin" ]    && check_sdl
+[ $WITH_SDL -eq 1 ]    && check_sdl
 [ $WITH_SDL_TTF -eq 1 -a $OSE -eq 0 ] && check_sdl_ttf
-[ $WITH_X11    -eq 1 -a "$OS" != "darwin" ] && check_x
+[ $WITH_X11    -eq 1 ] && check_x
 # TODO check for xcomposite-dev (X11/extensions/Xcomposite.h, additions only)
 # TODO check for libxdamange-dev (X11/extensions/Xdamage.h, additions only)
-[ $WITH_X11    -eq 1 -a "$OS" != "darwin" ] && check_xcursor
-[ $WITH_OPENGL -eq 1 -a "$OS" != "darwin" ] && check_xmu
-[ "$OS" != "darwin" -a $WITH_OPENGL -eq 1 ] && check_mesa
+[ $WITH_X11    -eq 1 ] && check_xcursor
+[ $WITH_OPENGL -eq 1 ] && check_xmu
+[ $WITH_OPENGL -eq 1 ] && check_mesa
 [ $WITH_QT4    -eq 1 ] && check_qt4
-[ $WITH_PYTHON -eq 1 -a "$OS" != "darwin" ] && check_python
+[ $WITH_PYTHON -eq 1 ] && check_python
 
 # Linux-specific
 if [ "$OS" = "linux" ]; then
