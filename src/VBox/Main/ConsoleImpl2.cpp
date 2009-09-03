@@ -2819,7 +2819,24 @@ static void configSetProperty(VMMDev * const pVMMDev, const char *pszName,
     }
     else
     {
-        /* Pull over the properties from the server. */
+        /*
+         * Initialize built-in properties that can be changed and saved.
+         *
+         * These are typically transient properties that the guest cannot
+         * change.
+         */
+
+        /* Sysprep execution by VBoxService. */
+        configSetProperty(pConsole->mVMMDev,
+                          "/VirtualBox/HostGuest/SysprepExec", "",
+                          "TRANSIENT, RDONLYGUEST");
+        configSetProperty(pConsole->mVMMDev,
+                          "/VirtualBox/HostGuest/SysprepArgs", "",
+                          "TRANSIENT, RDONLYGUEST");
+
+        /*
+         * Pull over the properties from the server.
+         */
         SafeArray<BSTR> namesOut;
         SafeArray<BSTR> valuesOut;
         SafeArray<ULONG64> timestampsOut;
@@ -2888,23 +2905,23 @@ static void configSetProperty(VMMDev * const pVMMDev, const char *pszName,
         RTMemTmpFree(papszFlags);
         AssertRCReturn(rc, rc);
 
+        /*
+         * Set properties which cannot be saved.
+         */
         /* Set the VBox version string as a guest property */
         configSetProperty(pConsole->mVMMDev, "/VirtualBox/HostInfo/VBoxVer",
                           VBOX_VERSION_STRING, "TRANSIENT, RDONLYGUEST");
         /* Set the VBox SVN revision as a guest property */
         configSetProperty(pConsole->mVMMDev, "/VirtualBox/HostInfo/VBoxRev",
                           RTBldCfgRevisionStr(), "TRANSIENT, RDONLYGUEST");
-        /* Initialize the remote execution properties for ready-on access by
-         * the guest */
-        configSetProperty(pConsole->mVMMDev,
-                          "/VirtualBox/HostGuest/SysprepArgs", "",
-                          "TRANSIENT, RDONLYGUEST");
 
-        /* Register the host notification callback */
+        /*
+         * Register the host notification callback
+         */
         HGCMSVCEXTHANDLE hDummy;
-        HGCMHostRegisterServiceExtension (&hDummy, "VBoxGuestPropSvc",
-                                          Console::doGuestPropNotification,
-                                          pvConsole);
+        HGCMHostRegisterServiceExtension(&hDummy, "VBoxGuestPropSvc",
+                                         Console::doGuestPropNotification,
+                                         pvConsole);
 
         Log(("Set VBoxGuestPropSvc property store\n"));
     }
