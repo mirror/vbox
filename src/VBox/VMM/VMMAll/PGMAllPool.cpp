@@ -1382,11 +1382,10 @@ DECLEXPORT(int) pgmPoolAccessHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE 
 DECLINLINE(void) pgmPoolTrackCheckPTPaePae(PPGMPOOL pPool, PPGMPOOLPAGE pPage, PX86PTPAE pShwPT, PCX86PTPAE pGstPT)
 {
     unsigned cErrors = 0;
+    Assert(pPage->iFirstPresent != ~0);
 #ifdef VBOX_STRICT
     for (unsigned i = 0; i < pPage->iFirstPresent; i++)
-    {
-        Assert(!pShwPT->a[i].n.u1Present);
-    }
+        AssertMsg(!pShwPT->a[i].n.u1Present, ("Unexpected PTE: idx=%d %RX64 (first=%d)\n", i, pShwPT->a[i].u,  pPage->iFirstPresent));
 #endif
     for (unsigned i = pPage->iFirstPresent; i < RT_ELEMENTS(pShwPT->a); i++)
     {
@@ -1444,11 +1443,10 @@ DECLINLINE(unsigned) pgmPoolTrackFlushPTPaePae(PPGMPOOL pPool, PPGMPOOLPAGE pPag
 {
     unsigned cChanged = 0;
 
+    Assert(pPage->iFirstPresent != ~0);
 #ifdef VBOX_STRICT
     for (unsigned i = 0; i < pPage->iFirstPresent; i++)
-    {
-        Assert(!pShwPT->a[i].n.u1Present);
-    }
+        AssertMsg(!pShwPT->a[i].n.u1Present, ("Unexpected PTE: idx=%d %RX64 (first=%d)\n", i, pShwPT->a[i].u,  pPage->iFirstPresent));
 #endif
     for (unsigned i = pPage->iFirstPresent; i < RT_ELEMENTS(pShwPT->a); i++)
     {
