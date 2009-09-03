@@ -1467,6 +1467,7 @@ typedef PGMMAPSET *PPGMMAPSET;
 
 /** The NIL index for the parent chain. */
 #define NIL_PGMPOOL_USER_INDEX          ((uint16_t)0xffff)
+#define NIL_PGMPOOL_PRESENT_INDEX       ((uint16_t)0xffff)
 
 /**
  * Node in the chain linking a shadowed page to it's parent (user).
