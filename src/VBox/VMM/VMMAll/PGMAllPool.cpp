@@ -1382,7 +1382,13 @@ DECLEXPORT(int) pgmPoolAccessHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE 
 DECLINLINE(void) pgmPoolTrackCheckPTPaePae(PPGMPOOL pPool, PPGMPOOLPAGE pPage, PX86PTPAE pShwPT, PCX86PTPAE pGstPT)
 {
     unsigned cErrors = 0;
-    for (unsigned i = 0; i < RT_ELEMENTS(pShwPT->a); i++)
+#ifdef VBOX_STRICT
+    for (unsigned i = 0; i < pPage->iFirstPresent; i++)
+    {
+        Assert(!pShwPT->a[i].n.u1Present);
+    }
+#endif
+    for (unsigned i = pPage->iFirstPresent; i < RT_ELEMENTS(pShwPT->a); i++)
     {
         if (pShwPT->a[i].n.u1Present)
         {
@@ -1438,7 +1444,13 @@ DECLINLINE(unsigned) pgmPoolTrackFlushPTPaePae(PPGMPOOL pPool, PPGMPOOLPAGE pPag
 {
     unsigned cChanged = 0;
 
-    for (unsigned i = 0; i < RT_ELEMENTS(pShwPT->a); i++)
+#ifdef VBOX_STRICT
+    for (unsigned i = 0; i < pPage->iFirstPresent; i++)
+    {
+        Assert(!pShwPT->a[i].n.u1Present);
+    }
+#endif
+    for (unsigned i = pPage->iFirstPresent; i < RT_ELEMENTS(pShwPT->a); i++)
     {
         if (pShwPT->a[i].n.u1Present)
         {
@@ -2474,6 +2486,10 @@ DECLCALLBACK(int) pgmPoolClearAll(PVM pVM, PVMCPU pVCpu, void *pvUser)
 
     pgmLock(pVM);
 
+#ifdef PGMPOOL_WITH_OPTIMIZED_DIRTY_PT
+    pgmPoolResetDirtyPages(pVM, true /* force removal. */);
+#endif
+
     /*
      * Iterate all the pages until we've encountered all that in use.
      * This is simple but not quite optimal solution.
@@ -2498,10 +2514,6 @@ DECLCALLBACK(int) pgmPoolClearAll(PVM pVM, PVMCPU pVCpu, void *pvUser)
                 case PGMPOOLKIND_PAE_PT_FOR_PAE_PT:
                 case PGMPOOLKIND_PAE_PT_FOR_PAE_2MB:
                 {
-#ifdef PGMPOOL_WITH_OPTIMIZED_DIRTY_PT
-                    if (pPage->fDirty)
-                        pgmPoolFlushDirtyPage(pVM, pPool, pPage->idxDirty, true /* force removal */);
-#endif
 #ifdef PGMPOOL_WITH_USER_TRACKING
                     if (pPage->cPresent)
 #endif
