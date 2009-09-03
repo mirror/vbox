@@ -4140,6 +4140,7 @@ static int ahciScatterGatherListCreateSafe(PAHCIPort pAhciPort, PAHCIPORTTASKSTA
     pAhciPortTaskState->paSGEntries[0].fGuestMemory = false;
     pAhciPortTaskState->paSGEntries[0].u.temp.cUnaligned   = AHCI_CMDHDR_PRDTL_ENTRIES(pCmdHdr->u32DescInf);
     pAhciPortTaskState->paSGEntries[0].u.temp.GCPhysAddrBaseFirstUnaligned = AHCI_RTGCPHYS_FROM_U32(pCmdHdr->u32CmdTblAddrUp, pCmdHdr->u32CmdTblAddr) + AHCI_CMDHDR_PRDT_OFFSET;
+    pAhciPortTaskState->paSGEntries[0].u.temp.pvBuf = pAhciPortTaskState->pvBufferUnaligned;
 
     if (pAhciPortTaskState->uTxDir == PDMBLOCKTXDIR_TO_DEVICE)
         ahciCopyFromSGListIntoBuffer(pDevIns, &pAhciPortTaskState->paSGEntries[0]);
@@ -4387,7 +4388,7 @@ static int ahciScatterGatherListCreate(PAHCIPort pAhciPort, PAHCIPORTTASKSTATE p
                                         if (RT_FAILURE(rc))
                                         {
                                             /* Mapping failed. Fall back to a bounce buffer. */
-                                            ahciLog(("%s: Mapping guest physical address %RGp failed with rc=%Rc\n",
+                                            ahciLog(("%s: Mapping guest physical address %RGp failed with rc=%Rrc\n",
                                                      __FUNCTION__, GCPhysBufferPageAligned, rc));
 
                                             return ahciScatterGatherListCreateSafe(pAhciPort, pAhciPortTaskState, fReadonly,
@@ -4463,7 +4464,7 @@ static int ahciScatterGatherListCreate(PAHCIPort pAhciPort, PAHCIPORTTASKSTATE p
                                     if (RT_FAILURE(rc))
                                     {
                                         /* Mapping failed. Fall back to a bounce buffer. */
-                                        ahciLog(("%s: Mapping guest physical address %RGp failed with rc=%Rc\n",
+                                        ahciLog(("%s: Mapping guest physical address %RGp failed with rc=%Rrc\n",
                                                     __FUNCTION__, GCPhysAddrDataBase, rc));
 
                                         return ahciScatterGatherListCreateSafe(pAhciPort, pAhciPortTaskState, fReadonly,
