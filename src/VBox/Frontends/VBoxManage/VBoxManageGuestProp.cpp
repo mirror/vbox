@@ -35,7 +35,6 @@
 
 #include <VBox/log.h>
 #include <iprt/asm.h>
-#include <iprt/semaphore.h>
 #include <iprt/stream.h>
 #include <iprt/string.h>
 #include <iprt/time.h>
@@ -66,19 +65,10 @@ public:
 #ifndef VBOX_WITH_XPCOM
         refcnt = 0;
 #endif
-#ifndef USE_XPCOM_QUEUE
-        int rc = RTSemEventMultiCreate(&mhEvent);
-        if (RT_FAILURE(rc))
-            mhEvent = NIL_RTSEMEVENTMULTI;
-#endif
     }
 
     virtual ~GuestPropertyCallback()
     {
-#ifndef USE_XPCOM_QUEUE
-        RTSemEventMultiDestroy(mhEvent);
-        mhEvent = NIL_RTSEMEVENTMULTI;
-#endif
     }
 
 #ifndef VBOX_WITH_XPCOM
@@ -176,10 +166,6 @@ public:
         {
             RTPrintf("Name: %lS, value: %lS, flags: %lS\n", name, value, flags);
             ASMAtomicWriteBool(&mSignalled, true);
-#ifndef USE_XPCOM_QUEUE
-            int rc = RTSemEventMultiSignal(mhEvent);
-            AssertRC(rc);
-#endif
         }
         return S_OK;
     }
@@ -189,24 +175,12 @@ public:
         return mSignalled;
     }
 
-#ifndef USE_XPCOM_QUEUE
-    /** Wrapper around RTSemEventMultiWait. */
-    int wait(uint32_t cMillies)
-    {
-        return RTSemEventMultiWait(mhEvent, cMillies);
-    }
-#endif
-
 private:
     bool volatile mSignalled;
     const char *mPatterns;
     Guid mUuid;
 #ifndef VBOX_WITH_XPCOM
     long refcnt;
-#endif
-#ifndef USE_XPCOM_QUEUE
-    /** Event semaphore to wait on. */
-    RTSEMEVENTMULTI mhEvent;
 #endif
 };
 
