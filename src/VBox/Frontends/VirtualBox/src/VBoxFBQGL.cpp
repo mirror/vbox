@@ -973,7 +973,7 @@ int VBoxVHWAGlShader::init()
  //   int length = program.length();
     QByteArray asciiStr = program.toAscii();
     const char * contents = asciiStr.constData();
-    GLint length = (GLint)strlen(contents) + 1;
+    GLint length = (GLint)strlen(contents);
 
     VBOXQGL_CHECKERR(
             vboxglShaderSource(mShader, 1, &contents, &length);

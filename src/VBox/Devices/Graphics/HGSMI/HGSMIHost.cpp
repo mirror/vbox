@@ -373,9 +373,11 @@ void HGSMIHostWrite (HGSMIINSTANCE *pIns,
                 break;
             }
 
+#ifdef DEBUG_misha
             /* guest usually completes commands in the order it receives it
              * if we're here this would typically means there is some cmd loss */
             Assert(0);
+#endif
 
             pPrev = pEntry;
             pEntry = HGSMILISTENTRY_2_FIFOENTRY(pEntry->entry.pNext);
