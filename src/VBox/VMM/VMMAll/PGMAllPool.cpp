@@ -2498,6 +2498,10 @@ DECLCALLBACK(int) pgmPoolClearAll(PVM pVM, PVMCPU pVCpu, void *pvUser)
                 case PGMPOOLKIND_PAE_PT_FOR_PAE_PT:
                 case PGMPOOLKIND_PAE_PT_FOR_PAE_2MB:
                 {
+#ifdef PGMPOOL_WITH_OPTIMIZED_DIRTY_PT
+                    if (pPage->fDirty)
+                        pgmPoolFlushDirtyPage(pVM, pPool, pPage->idxDirty, true /* force removal */);
+#endif
 #ifdef PGMPOOL_WITH_USER_TRACKING
                     if (pPage->cPresent)
 #endif
