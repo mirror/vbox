@@ -113,15 +113,17 @@ static DECLCALLBACK(int) VBoxServiceExecInit(void)
  */
 bool VBoxServiceExecValidateFlags(char* pszFlags)
 {
-    if (pszFlags == NULL)
-        return false;
+    bool ret = false;
 
     if (   (NULL != RTStrStr(pszFlags, "TRANSIENT"))
         && (NULL != RTStrStr(pszFlags, "RDONLYGUEST")))
     {
-        return true;
+        ret = true;
     }
-    return false;
+    VBoxServiceVerbose(3, "Validating flags %s = %s\n", 
+                       ((pszFlags == NULL) || (RTStrICmp(pszFlags, "") == 0)) ? "<NULL>" : pszFlags, 
+                       ret ? "true" : "false");
+    return ret;
 }
 
 
@@ -185,7 +187,7 @@ DECLCALLBACK(int) VBoxServiceExecWorker(bool volatile *pfShutdown)
                 }
                 else
                 {
-                    !VBoxServiceExecValidateFlags(pszSysprepCmdFlags) ? rc = rc : rc = VERR_ACCESS_DENIED;
+                    VBoxServiceExecValidateFlags(pszSysprepCmdFlags) ? rc = rc : rc = VERR_ACCESS_DENIED;
                     if (RT_SUCCESS(rc))
                     {
                         if (RTStrNLen(pszSysprepCmdValue, _MAX_PATH) <= 0)
@@ -231,7 +233,7 @@ DECLCALLBACK(int) VBoxServiceExecWorker(bool volatile *pfShutdown)
                 }
                 else
                 {
-                    !VBoxServiceExecValidateFlags(pszSysprepArgsFlags) ? rc = rc : rc = VERR_ACCESS_DENIED;
+                    VBoxServiceExecValidateFlags(pszSysprepArgsFlags) ? rc = rc : rc = VERR_ACCESS_DENIED;
                     if (RT_SUCCESS(rc))
                     {
                         if (RTStrNLen(pszSysprepArgsValue, EXEC_MAX_ARGS) <= 0)
