@@ -82,10 +82,10 @@ static struct
     { &g_Clipboard, NIL_RTTHREAD, false, false, false, true },
 #endif
 #ifdef VBOXSERVICE_VMINFO
-    { &g_VMInfo, NIL_RTTHREAD, false, false, false, true },
+    { &g_VMInfo,    NIL_RTTHREAD, false, false, false, true },
 #endif
-#ifdef VBOXSERVICE_VMEXEC
-    { &g_VMExec, NIL_RTTHREAD, false, false, false, true },
+#ifdef VBOXSERVICE_EXEC
+    { &g_Exec,      NIL_RTTHREAD, false, false, false, true },
 #endif
 };
 
