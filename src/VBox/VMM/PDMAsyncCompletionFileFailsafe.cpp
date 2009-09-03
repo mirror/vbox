@@ -46,6 +46,12 @@ static int pdmacFileAioMgrFailsafeProcessEndpoint(PPDMASYNCCOMPLETIONENDPOINTFIL
             {
                 if (pCurr->enmTransferType == PDMACTASKFILETRANSFER_READ)
                 {
+                    if (RT_UNLIKELY((pCurr->Off + pCurr->DataSeg.cbSeg) > pEndpoint->cbFile))
+                    {
+                        ASMAtomicWriteU64(&pEndpoint->cbFile, pCurr->Off + pCurr->DataSeg.cbSeg);
+                        RTFileSetSize(pEndpoint->File, pCurr->Off + pCurr->DataSeg.cbSeg);
+                    }
+
                     rc = RTFileReadAt(pEndpoint->File, pCurr->Off,
                                       pCurr->DataSeg.pvSeg,
                                       pCurr->DataSeg.cbSeg,

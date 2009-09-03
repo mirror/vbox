@@ -21,6 +21,7 @@
  */
 #define LOG_GROUP LOG_GROUP_PDM_ASYNC_COMPLETION
 #include <iprt/types.h>
+#include <iprt/asm.h>
 #include <iprt/file.h>
 #include <iprt/mem.h>
 #include <iprt/string.h>
@@ -77,6 +78,192 @@ void pdmacFileAioMgrNormalDestroy(PPDMACEPFILEMGR pAioMgr)
 }
 
 /**
+ * Sorts the endpoint list with insertion sort.
+ */
+static void pdmacFileAioMgrNormalEndpointsSortByLoad(PPDMACEPFILEMGR pAioMgr)
+{
+    PPDMASYNCCOMPLETIONENDPOINTFILE pEpPrev, pEpCurr, pEpNextToSort;
+
+    pEpPrev = pAioMgr->pEndpointsHead;
+    pEpCurr = pEpPrev->AioMgr.pEndpointNext;
+
+    while (pEpCurr)
+    {
+        /* Remember the next element to sort because the list might change. */
+        pEpNextToSort = pEpCurr->AioMgr.pEndpointNext;
+
+        /* Unlink the current element from the list. */
+        PPDMASYNCCOMPLETIONENDPOINTFILE pPrev = pEpCurr->AioMgr.pEndpointPrev;
+        PPDMASYNCCOMPLETIONENDPOINTFILE pNext = pEpCurr->AioMgr.pEndpointNext;
+
+        if (pPrev)
+            pPrev->AioMgr.pEndpointNext = pNext;
+        else
+            pAioMgr->pEndpointsHead = pNext;
+
+        if (pNext)
+            pNext->AioMgr.pEndpointPrev = pPrev;
+
+        /* Go back until we reached the place to insert the current endpoint into. */
+        while (pEpPrev && (pEpPrev->AioMgr.cReqsPerSec < pEpCurr->AioMgr.cReqsPerSec))
+            pEpPrev = pEpPrev->AioMgr.pEndpointPrev;
+
+        /* Link the endpoint into the list. */
+        if (pEpPrev)
+            pNext = pEpPrev->AioMgr.pEndpointNext;
+        else
+            pNext = pAioMgr->pEndpointsHead;
+
+        pEpCurr->AioMgr.pEndpointNext = pNext;
+        pEpCurr->AioMgr.pEndpointPrev = pEpPrev;
+        pNext->AioMgr.pEndpointPrev = pEpCurr;
+        if (pEpPrev)
+            pEpPrev->AioMgr.pEndpointNext = pEpCurr;
+        else
+            pAioMgr->pEndpointsHead = pEpCurr;
+
+        pEpCurr = pEpNextToSort;
+    }
+
+#ifdef DEBUG
+    /* Validate sorting alogrithm */
+    unsigned cEndpoints = 0;
+    pEpCurr = pAioMgr->pEndpointsHead;
+
+    AssertMsg(pEpCurr, ("No endpoint in the list?\n"));
+    AssertMsg(!pEpCurr->AioMgr.pEndpointPrev, ("First element in the list points to previous element\n"));
+
+    while (pEpCurr)
+    {
+        cEndpoints++;
+
+        PPDMASYNCCOMPLETIONENDPOINTFILE pNext = pEpCurr->AioMgr.pEndpointNext;
+        PPDMASYNCCOMPLETIONENDPOINTFILE pPrev = pEpCurr->AioMgr.pEndpointPrev;
+
+        Assert(!pNext || pNext->AioMgr.cReqsPerSec <= pEpCurr->AioMgr.cReqsPerSec);
+        Assert(!pPrev || pPrev->AioMgr.cReqsPerSec >= pEpCurr->AioMgr.cReqsPerSec);
+
+        pEpCurr = pNext;
+    }
+
+    AssertMsg(cEndpoints == pAioMgr->cEndpoints, ("Endpoints lost during sort!\n"));
+
+#endif
+}
+
+/**
+ * Removes an endpoint from the currently assigned manager.
+ *
+ * @returns TRUE if there are still requests pending on the current manager for this endpoint.
+ *          FALSE otherwise.
+ * @param   pEndpointRemove    The endpoint to remove.
+ */
+static bool pdmacFileAioMgrNormalRemoveEndpoint(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpointRemove)
+{
+    PPDMASYNCCOMPLETIONENDPOINTFILE pPrev   = pEndpointRemove->AioMgr.pEndpointPrev;
+    PPDMASYNCCOMPLETIONENDPOINTFILE pNext   = pEndpointRemove->AioMgr.pEndpointNext;
+    PPDMACEPFILEMGR                 pAioMgr = pEndpointRemove->pAioMgr;
+
+    pAioMgr->cEndpoints--;
+
+    if (pPrev)
+        pPrev->AioMgr.pEndpointNext = pNext;
+    else
+        pAioMgr->pEndpointsHead = pNext;
+
+    if (pNext)
+        pNext->AioMgr.pEndpointPrev = pPrev;
+
+    /* Make sure that there is no request pending on this manager for the endpoint. */
+    if (!pEndpointRemove->AioMgr.cRequestsActive)
+    {
+        Assert(!pEndpointRemove->pFlushReq);
+
+        /* Reopen the file so that the new endpoint can reassociate with the file */
+        RTFileClose(pEndpointRemove->File);
+        int rc = RTFileOpen(&pEndpointRemove->File, pEndpointRemove->Core.pszUri, pEndpointRemove->fFlags);
+        AssertRC(rc);
+        return false;
+    }
+
+    return true;
+}
+
+/**
+ * Creates a new I/O manager and spreads the I/O load of the endpoints
+ * between the given I/O manager and the new one.
+ *
+ * @returns nothing.
+ * @param   pAioMgr    The I/O manager with high I/O load.
+ */
+static void pdmacFileAioMgrNormalBalanceLoad(PPDMACEPFILEMGR pAioMgr)
+{
+    PPDMACEPFILEMGR pAioMgrNew = NULL;
+    int rc = VINF_SUCCESS;
+
+    /* Splitting can't be done with only one open endpoint. */
+    if (pAioMgr->cEndpoints > 1)
+    {
+        rc = pdmacFileAioMgrCreate((PPDMASYNCCOMPLETIONEPCLASSFILE)pAioMgr->pEndpointsHead->Core.pEpClass,
+                                   &pAioMgrNew);
+        if (RT_SUCCESS(rc))
+        {
+            /* We will sort the list by request count per second. */
+            pdmacFileAioMgrNormalEndpointsSortByLoad(pAioMgr);
+
+            /* Now move some endpoints to the new manager. */
+            unsigned cReqsHere  = pAioMgr->pEndpointsHead->AioMgr.cReqsPerSec;
+            unsigned cReqsOther = 0;
+            PPDMASYNCCOMPLETIONENDPOINTFILE pCurr = pAioMgr->pEndpointsHead->AioMgr.pEndpointNext;
+
+            while (pCurr)
+            {
+                if (cReqsHere <= cReqsOther)
+                {
+                    /*
+                     * The other manager has more requests to handle now.
+                     * We will keep the current endpoint.
+                     */
+                    Log(("Keeping endpoint %#p{%s} with %u reqs/s\n", pCurr->Core.pszUri, pCurr->AioMgr.cReqsPerSec));
+                    cReqsHere += pCurr->AioMgr.cReqsPerSec;
+                    pCurr = pCurr->AioMgr.pEndpointNext;
+                }
+                else
+                {
+                    /* Move to other endpoint. */
+                    Log(("Moving endpoint %#p{%s} with %u reqs/s to other manager\n", pCurr->Core.pszUri, pCurr->AioMgr.cReqsPerSec));
+                    cReqsOther += pCurr->AioMgr.cReqsPerSec;
+
+                    PPDMASYNCCOMPLETIONENDPOINTFILE pMove = pCurr;
+
+                    pCurr = pCurr->AioMgr.pEndpointNext;
+
+                    bool fReqsPending = pdmacFileAioMgrNormalRemoveEndpoint(pMove);
+
+                    if (fReqsPending)
+                    {
+                        pMove->enmState          = PDMASYNCCOMPLETIONENDPOINTFILESTATE_REMOVING;
+                        pMove->AioMgr.fMoving    = true;
+                        pMove->AioMgr.pAioMgrDst = pAioMgrNew;
+                    }
+                    else
+                    {
+                        pMove->AioMgr.fMoving    = false;
+                        pMove->AioMgr.pAioMgrDst = NULL;
+                        pdmacFileAioMgrAddEndpoint(pAioMgrNew, pMove);
+                    }
+                }
+            }
+        }
+        else
+        {
+            /* Don't process further but leave a log entry about reduced performance. */
+            LogRel(("AIOMgr: Could not create new I/O manager (rc=%Rrc). Expect reduced performance\n", rc));
+        }
+    }
+}
+
+/**
  * Error handler which will create the failsafe managers and destroy the failed I/O manager.
  *
  * @returns VBox status code
@@ -105,6 +292,7 @@ static int pdmacFileAioMgrNormalProcessTaskList(PPDMACTASKFILE pTaskHead,
 {
     RTFILEAIOREQ  apReqs[20];
     unsigned      cRequests = 0;
+    unsigned      cMaxRequests = PDMACEPFILEMGR_REQS_MAX - pAioMgr->cRequestsActive;
     int           rc = VINF_SUCCESS;
     PPDMASYNCCOMPLETIONEPCLASSFILE pEpClassFile = (PPDMASYNCCOMPLETIONEPCLASSFILE)pEndpoint->Core.pEpClass;
 
@@ -112,7 +300,7 @@ static int pdmacFileAioMgrNormalProcessTaskList(PPDMACTASKFILE pTaskHead,
               ("Trying to process request lists of a non active endpoint!\n"));
 
     /* Go through the list and queue the requests until we get a flush request */
-    while (pTaskHead && !pEndpoint->pFlushReq)
+    while (pTaskHead && !pEndpoint->pFlushReq && (cMaxRequests > 0))
     {
         PPDMACTASKFILE pCurr = pTaskHead;
 
@@ -204,8 +392,17 @@ static int pdmacFileAioMgrNormalProcessTaskList(PPDMACTASKFILE pTaskHead,
                             ("AIO: Alignment restrictions not met!\n"));
 
                 if (pCurr->enmTransferType == PDMACTASKFILETRANSFER_WRITE)
+                {
+                    /* Grow the file if needed. */
+                    if (RT_UNLIKELY((pCurr->Off + pCurr->DataSeg.cbSeg) > pEndpoint->cbFile))
+                    {
+                        ASMAtomicWriteU64(&pEndpoint->cbFile, pCurr->Off + pCurr->DataSeg.cbSeg);
+                        RTFileSetSize(pEndpoint->File, pCurr->Off + pCurr->DataSeg.cbSeg);
+                    }
+
                     rc = RTFileAioReqPrepareWrite(hReq, pEndpoint->File,
                                                   pCurr->Off, pvBuf, pCurr->DataSeg.cbSeg, pCurr);
+                }
                 else
                     rc = RTFileAioReqPrepareRead(hReq, pEndpoint->File,
                                                  pCurr->Off, pvBuf, pCurr->DataSeg.cbSeg, pCurr);
@@ -213,6 +410,7 @@ static int pdmacFileAioMgrNormalProcessTaskList(PPDMACTASKFILE pTaskHead,
 
                 apReqs[cRequests] = hReq;
                 pEndpoint->AioMgr.cReqsProcessed++;
+                cMaxRequests--;
                 cRequests++;
                 if (cRequests == RT_ELEMENTS(apReqs))
                 {
@@ -237,12 +435,36 @@ static int pdmacFileAioMgrNormalProcessTaskList(PPDMACTASKFILE pTaskHead,
     {
         pAioMgr->cRequestsActive += cRequests;
         rc = RTFileAioCtxSubmit(pAioMgr->hAioCtx, apReqs, cRequests);
-        if (RT_FAILURE(rc))
+        AssertMsgReturn(RT_SUCCESS(rc), ("Could not submit %u requests %Rrc\n", cRequests, rc), rc);
+    }
+
+    if (RT_UNLIKELY(!cMaxRequests && pTaskHead && !pEndpoint->pFlushReq))
+    {
+        /*
+         * The I/O manager has no room left for more requests
+         * but there are still requests to process.
+         * Create a new I/O manager and let it handle some endpoints.
+         */
+
+        /* Add the rest of the tasks to the pending list first */
+        if (!pEndpoint->AioMgr.pReqsPendingHead)
         {
-            /* Not enough ressources on this context anymore. */
-            /* @todo implement */
-            AssertMsgFailed(("Implement\n"));
+            Assert(!pEndpoint->AioMgr.pReqsPendingTail);
+            pEndpoint->AioMgr.pReqsPendingHead = pTaskHead;
         }
+        else
+        {
+            Assert(pEndpoint->AioMgr.pReqsPendingTail);
+            pEndpoint->AioMgr.pReqsPendingTail->pNext = pTaskHead;
+        }
+
+        /* Update the tail. */
+        while (pTaskHead->pNext)
+            pTaskHead = pTaskHead->pNext;
+
+        pEndpoint->AioMgr.pReqsPendingTail = pTaskHead;
+
+        pdmacFileAioMgrNormalBalanceLoad(pAioMgr);
     }
 
     return rc;
@@ -321,6 +543,7 @@ static int pdmacFileAioMgrNormalProcessBlockingEvent(PPDMACEPFILEMGR pAioMgr)
             /* Assign the completion point to this file. */
             rc = RTFileAioCtxAssociateWithFile(pAioMgr->hAioCtx, pEndpointNew->File);
             fNotifyWaiter = true;
+            pAioMgr->cEndpoints++;
             break;
         }
         case PDMACEPFILEAIOMGRBLOCKINGEVENT_REMOVE_ENDPOINT:
@@ -328,29 +551,8 @@ static int pdmacFileAioMgrNormalProcessBlockingEvent(PPDMACEPFILEMGR pAioMgr)
             PPDMASYNCCOMPLETIONENDPOINTFILE pEndpointRemove = (PPDMASYNCCOMPLETIONENDPOINTFILE)ASMAtomicReadPtr((void * volatile *)&pAioMgr->BlockingEventData.RemoveEndpoint.pEndpoint);
             AssertMsg(VALID_PTR(pEndpointRemove), ("Removing endpoint event without a endpoint to remove\n"));
 
-            PPDMASYNCCOMPLETIONENDPOINTFILE pPrev = pEndpointRemove->AioMgr.pEndpointPrev;
-            PPDMASYNCCOMPLETIONENDPOINTFILE pNext = pEndpointRemove->AioMgr.pEndpointNext;
-
             pEndpointRemove->enmState = PDMASYNCCOMPLETIONENDPOINTFILESTATE_REMOVING;
-
-            if (pPrev)
-                pPrev->AioMgr.pEndpointNext = pNext;
-            else
-                pAioMgr->pEndpointsHead = pNext;
-
-            if (pNext)
-                pNext->AioMgr.pEndpointPrev = pPrev;
-
-            /* Make sure that there is no request pending on this manager for the endpoint. */
-            if (!pEndpointRemove->AioMgr.cRequestsActive)
-            {
-                Assert(!pEndpointRemove->pFlushReq);
-
-                /* Reopen the file so that the new endpoint can reassociate with the file */
-                RTFileClose(pEndpointRemove->File);
-                rc = RTFileOpen(&pEndpointRemove->File, pEndpointRemove->Core.pszUri, pEndpointRemove->fFlags);
-                AssertRC(rc);
-            }
+            fNotifyWaiter = !pdmacFileAioMgrNormalRemoveEndpoint(pEndpointRemove);
             break;
         }
         case PDMACEPFILEAIOMGRBLOCKINGEVENT_CLOSE_ENDPOINT:
@@ -363,28 +565,7 @@ static int pdmacFileAioMgrNormalProcessBlockingEvent(PPDMACEPFILEMGR pAioMgr)
             AssertRC(rc);
 
             pEndpointClose->enmState = PDMASYNCCOMPLETIONENDPOINTFILESTATE_CLOSING;
-
-            PPDMASYNCCOMPLETIONENDPOINTFILE pPrev = pEndpointClose->AioMgr.pEndpointPrev;
-            PPDMASYNCCOMPLETIONENDPOINTFILE pNext = pEndpointClose->AioMgr.pEndpointNext;
-
-            if (pPrev)
-                pPrev->AioMgr.pEndpointNext = pNext;
-            else
-                pAioMgr->pEndpointsHead = pNext;
-
-            if (pNext)
-                pNext->AioMgr.pEndpointPrev = pPrev;
-
-            if (!pEndpointClose->AioMgr.cRequestsActive)
-            {
-                Assert(!pEndpointClose->pFlushReq);
-
-                /* Reopen the file to deassociate it from the endpoint. */
-                RTFileClose(pEndpointClose->File);
-                rc = RTFileOpen(&pEndpointClose->File, pEndpointClose->Core.pszUri, pEndpointClose->fFlags);
-                AssertRC(rc);
-                fNotifyWaiter = true;
-            }
+            fNotifyWaiter = !pdmacFileAioMgrNormalRemoveEndpoint(pEndpointClose);
             break;
         }
         case PDMACEPFILEAIOMGRBLOCKINGEVENT_SHUTDOWN:
@@ -482,10 +663,19 @@ int pdmacFileAioMgrNormal(RTTHREAD ThreadSelf, void *pvUser)
             {
                 RTFILEAIOREQ  apReqs[20];
                 uint32_t cReqsCompleted = 0;
+                size_t cReqsWait;
 
-                rc = RTFileAioCtxWait(pAioMgr->hAioCtx, 1, RT_INDEFINITE_WAIT, apReqs,
+                if (pAioMgr->cRequestsActive > RT_ELEMENTS(apReqs))
+                    cReqsWait = RT_ELEMENTS(apReqs);
+                else
+                    cReqsWait = pAioMgr->cRequestsActive;
+
+                rc = RTFileAioCtxWait(pAioMgr->hAioCtx,
+                                      cReqsWait,
+                                      RT_INDEFINITE_WAIT, apReqs,
                                       RT_ELEMENTS(apReqs), &cReqsCompleted);
-                CHECK_RC(pAioMgr, rc);
+                if (RT_FAILURE(rc) && (rc != VERR_INTERRUPTED))
+                    CHECK_RC(pAioMgr, rc);
 
                 for (uint32_t i = 0; i < cReqsCompleted; i++)
                 {
@@ -546,12 +736,25 @@ int pdmacFileAioMgrNormal(RTTHREAD ThreadSelf, void *pvUser)
                     }
                     else if (!pEndpoint->AioMgr.cRequestsActive)
                     {
-                        Assert(pAioMgr->fBlockingEventPending);
-                        ASMAtomicWriteBool(&pAioMgr->fBlockingEventPending, false);
-
-                        /* Release the waiting thread. */
-                        rc = RTSemEventSignal(pAioMgr->EventSemBlock);
+                        /* Reopen the file so that the new endpoint can reassociate with the file */
+                        RTFileClose(pEndpoint->File);
+                        rc = RTFileOpen(&pEndpoint->File, pEndpoint->Core.pszUri, pEndpoint->fFlags);
                         AssertRC(rc);
+
+                        if (pEndpoint->AioMgr.fMoving)
+                        {
+                            pEndpoint->AioMgr.fMoving = false;
+                            pdmacFileAioMgrAddEndpoint(pEndpoint->AioMgr.pAioMgrDst, pEndpoint);
+                        }
+                        else
+                        {
+                            Assert(pAioMgr->fBlockingEventPending);
+                            ASMAtomicWriteBool(&pAioMgr->fBlockingEventPending, false);
+
+                            /* Release the waiting thread. */
+                            rc = RTSemEventSignal(pAioMgr->EventSemBlock);
+                            AssertRC(rc);
+                        }
                     }
                 }
 
