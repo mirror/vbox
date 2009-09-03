@@ -2497,8 +2497,6 @@ DECLCALLBACK(int) pgmPoolClearAll(PVM pVM, PVMCPU pVCpu, void *pvUser)
                 case PGMPOOLKIND_PAE_PT_FOR_32BIT_4MB:
                 case PGMPOOLKIND_PAE_PT_FOR_PAE_PT:
                 case PGMPOOLKIND_PAE_PT_FOR_PAE_2MB:
-                case PGMPOOLKIND_32BIT_PT_FOR_PHYS:
-                case PGMPOOLKIND_PAE_PT_FOR_PHYS:
                 {
 #ifdef PGMPOOL_WITH_USER_TRACKING
                     if (pPage->cPresent)
