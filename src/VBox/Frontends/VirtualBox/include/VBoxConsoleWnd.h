@@ -43,6 +43,9 @@
 #endif
 #ifdef Q_WS_MAC
 # include <ApplicationServices/ApplicationServices.h>
+# ifndef QT_MAC_USE_COCOA
+#  include <Carbon/Carbon.h>
+# endif /* !QT_MAC_USE_COCOA */
 #endif
 
 class QAction;
