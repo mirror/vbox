@@ -235,7 +235,7 @@ static int pdmacFileAioMgrWaitForBlockingEvent(PPDMACEPFILEMGR pAioMgr, PDMACEPF
     return rc;
 }
 
-static int pdmacFileAioMgrAddEndpoint(PPDMACEPFILEMGR pAioMgr, PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint)
+int pdmacFileAioMgrAddEndpoint(PPDMACEPFILEMGR pAioMgr, PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint)
 {
     int rc;
 
@@ -342,7 +342,8 @@ int pdmacFileEpTaskInitiate(PPDMASYNCCOMPLETIONTASK pTask,
     Assert(   (enmTransfer == PDMACTASKFILETRANSFER_READ)
            || (enmTransfer == PDMACTASKFILETRANSFER_WRITE));
 
-    pTaskFile->cbTransferLeft = cbTransfer;
+    ASMAtomicWriteS32(&pTaskFile->cbTransferLeft, cbTransfer);
+    ASMAtomicWriteBool(&pTaskFile->fCompleted, false);
 
     for (unsigned i = 0; i < cSegments; i++)
     {
@@ -365,6 +366,10 @@ int pdmacFileEpTaskInitiate(PPDMASYNCCOMPLETIONTASK pTask,
 
     AssertMsg(!cbTransfer, ("Incomplete transfer %u bytes left\n", cbTransfer));
 
+    if (ASMAtomicReadS32(&pTaskFile->cbTransferLeft) == 0
+        && !ASMAtomicXchgBool(&pTaskFile->fCompleted, true))
+        pdmR3AsyncCompletionCompleteTask(pTask);
+
     return VINF_SUCCESS;
 }
 
@@ -375,7 +380,7 @@ int pdmacFileEpTaskInitiate(PPDMASYNCCOMPLETIONTASK pTask,
  * @param   pEpClass    Pointer to the endpoint class data.
  * @param   ppAioMgr    Where to store the pointer to the new async I/O manager on success.
  */
-static int pdmacFileAioMgrCreate(PPDMASYNCCOMPLETIONEPCLASSFILE pEpClass, PPPDMACEPFILEMGR ppAioMgr)
+int pdmacFileAioMgrCreate(PPDMASYNCCOMPLETIONEPCLASSFILE pEpClass, PPPDMACEPFILEMGR ppAioMgr)
 {
     int rc = VINF_SUCCESS;
     PPDMACEPFILEMGR pAioMgrNew;
@@ -576,6 +581,8 @@ static int pdmacFileEpInitialize(PPDMASYNCCOMPLETIONENDPOINT pEndpoint,
                 fFileFlags |= RTFILE_O_NO_CACHE;
             }
 
+            pEpFile->cbFile = cbSize;
+
             RTFileClose(File);
         }
     }
@@ -736,7 +743,9 @@ static int pdmacFileEpGetSize(PPDMASYNCCOMPLETIONENDPOINT pEndpoint, uint64_t *p
 {
     PPDMASYNCCOMPLETIONENDPOINTFILE pEpFile = (PPDMASYNCCOMPLETIONENDPOINTFILE)pEndpoint;
 
-    return RTFileGetSize(pEpFile->File, pcbSize);
+    *pcbSize = ASMAtomicReadU64(&pEpFile->cbFile);
+
+    return VINF_SUCCESS;
 }
 
 const PDMASYNCCOMPLETIONEPCLASSOPS g_PDMAsyncCompletionEndpointClassFile =

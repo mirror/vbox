@@ -133,6 +133,8 @@ typedef struct PDMACEPFILEMGR
     volatile bool                          fWokenUp;
     /** List of endpoints assigned to this manager. */
     R3PTRTYPE(PPDMASYNCCOMPLETIONENDPOINTFILE) pEndpointsHead;
+    /** Number of endpoints assigned to the manager. */
+    unsigned                               cEndpoints;
     /** Number of requests active currently. */
     unsigned                               cRequestsActive;
     /** Pointer to an array of free async I/O request handles. */
@@ -220,6 +222,8 @@ typedef struct PDMACFILECACHEENTRY
     PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint;
     /** Flags for this entry. Combinations of PDMACFILECACHE_* #defines */
     uint32_t                        fFlags;
+    /** Reference counter. Prevents eviction of the entry if > 0. */
+    volatile uint32_t               cRefs;
     /** Size of the entry. */
     size_t                          cbData;
     /** Pointer to the memory containing the data. */
@@ -297,8 +301,8 @@ typedef struct PDMACFILEENDPOINTCACHE
 {
     /** AVL tree managing cache entries. */
     PAVLRFOFFTREE         pTree;
-    /** Critical section protecting the tree. */
-    RTCRITSECT            CritSect;
+    /** R/W semaphore protecting cached entries for this endpoint. */
+    RTSEMRW               SemRWEntries;
     /** Pointer to the gobal cache data */
     PPDMACFILECACHEGLOBAL pCache;
 } PDMACFILEENDPOINTCACHE, *PPDMACFILEENDPOINTCACHE;
@@ -382,7 +386,7 @@ typedef struct PDMASYNCCOMPLETIONENDPOINTFILE
     RTFILE                                 File;
     /** Size of the underlying file.
      * Updated while data is appended. */
-    uint64_t                               cbFile;
+    volatile uint64_t                      cbFile;
     /** Flag whether caching is enabled for this file. */
     bool                                   fCaching;
     /** Flag whether the file was opened readonly. */
@@ -443,6 +447,10 @@ typedef struct PDMASYNCCOMPLETIONENDPOINTFILE
         unsigned                                   cReqsPerSec;
         /** Current number of processed requests for the current update period. */
         unsigned                                   cReqsProcessed;
+        /** Flag whether the endpoint is about to be moved to another manager. */
+        bool                                       fMoving;
+        /** Destination I/O manager. */
+        PPDMACEPFILEMGR                            pAioMgrDst;
     } AioMgr;
 } PDMASYNCCOMPLETIONENDPOINTFILE;
 /** Pointer to the endpoint class data. */
@@ -512,6 +520,10 @@ int pdmacFileAioMgrNormal(RTTHREAD ThreadSelf, void *pvUser);
 
 int pdmacFileAioMgrNormalInit(PPDMACEPFILEMGR pAioMgr);
 void pdmacFileAioMgrNormalDestroy(PPDMACEPFILEMGR pAioMgr);
+
+int pdmacFileAioMgrCreate(PPDMASYNCCOMPLETIONEPCLASSFILE pEpClass, PPPDMACEPFILEMGR ppAioMgr);
+
+int pdmacFileAioMgrAddEndpoint(PPDMACEPFILEMGR pAioMgr, PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint);
 
 PPDMACTASKFILE pdmacFileEpGetNewTasks(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint);
 PPDMACTASKFILE pdmacFileTaskAlloc(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint);
