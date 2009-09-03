@@ -25,8 +25,7 @@
 #include <stdio.h>
 #ifdef RT_OS_WINDOWS
 # include <Windows.h>
-# include <tchar.h>   /**@todo just drop this, this will be compiled as UTF-8/ANSI. */
-# include <process.h> /**@todo what's this here for?  */
+# include <process.h> /* Needed for file version information. */
 #endif
 
 /**
@@ -95,23 +94,23 @@ typedef VBOXSERVICE const *PCVBOXSERVICE;
 
 #ifdef RT_OS_WINDOWS
 /** The service name (needed for mutex creation on Windows). */
-#define VBOXSERVICE_NAME           L"VBoxService"
+#define VBOXSERVICE_NAME          "VBoxService"
 /** The friendly service name. */
-#define VBOXSERVICE_FRIENDLY_NAME  L"VBoxService"
+#define VBOXSERVICE_FRIENDLY_NAME "VBoxService"
 /** The following constant may be defined by including NtStatus.h. */
 #define STATUS_SUCCESS ((NTSTATUS)0x00000000L)
 /** Structure for storing the looked up user information. */
 typedef struct
 {
-    TCHAR szUser [_MAX_PATH];
-    TCHAR szAuthenticationPackage [_MAX_PATH];
-    TCHAR szLogonDomain [_MAX_PATH];
+    WCHAR szUser [_MAX_PATH];
+    WCHAR szAuthenticationPackage [_MAX_PATH];
+    WCHAR szLogonDomain [_MAX_PATH];
 } VBOXSERVICEVMINFOUSER, *PVBOXSERVICEVMINFOUSER;
 /** Structure for the file information lookup. */
 typedef struct
 {
-    TCHAR* pszFilePath;
-    TCHAR* pszFileName;
+    char* pszFilePath;
+    char* pszFileName;
 } VBOXSERVICEVMINFOFILE, *PVBOXSERVICEVMINFOFILE;
 /** Function prototypes for dynamic loading. */
 typedef DWORD (WINAPI* fnWTSGetActiveConsoleSessionId)();

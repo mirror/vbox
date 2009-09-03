@@ -271,7 +271,7 @@ BOOL VboxServiceVMInfoWinIsLoggedIn(VBOXSERVICEVMINFOUSER* a_pUserInfo,
 
                 if (SidTypeUser == ownerType)
                 {
-                    LPWSTR pBuffer = NULL;
+                    char* pBuffer = NULL;
                     DWORD dwBytesRet = 0;
                     int iState = 0;
 
@@ -410,54 +410,54 @@ int VboxServiceWinGetComponentVersions(uint32_t uiClientID)
     int rc;
     char szVer[_MAX_PATH] = {0};
     char szPropPath[_MAX_PATH] = {0};
-    TCHAR szSysDir[_MAX_PATH] = {0};
-    TCHAR szWinDir[_MAX_PATH] = {0};
-    TCHAR szDriversDir[_MAX_PATH + 32] = {0};
+    char szSysDir[_MAX_PATH] = {0};
+    char szWinDir[_MAX_PATH] = {0};
+    char szDriversDir[_MAX_PATH + 32] = {0};
 
     GetSystemDirectory(szSysDir, _MAX_PATH);
     GetWindowsDirectory(szWinDir, _MAX_PATH);
-    swprintf(szDriversDir, (_MAX_PATH + 32), TEXT("%s\\drivers"), szSysDir);
+    RTStrPrintf(szDriversDir, (_MAX_PATH + 32), "%s\\drivers", szSysDir);
 #ifdef RT_ARCH_AMD64
-    TCHAR szSysWowDir[_MAX_PATH + 32] = {0};
-    swprintf(szSysWowDir, (_MAX_PATH + 32), TEXT("%s\\SysWow64"), szWinDir);
+    char szSysWowDir[_MAX_PATH + 32] = {0};
+    RTStrPrintf(szSysWowDir, (_MAX_PATH + 32), "%s\\SysWow64", szWinDir);
 #endif
 
     /* The file information table. */
 #ifndef TARGET_NT4
     VBOXSERVICEVMINFOFILE vboxFileInfoTable[] =
     {
-        { szSysDir, TEXT("VBoxControl.exe"), },
-        { szSysDir, TEXT("VBoxHook.dll"), },
-        { szSysDir, TEXT("VBoxDisp.dll"), },
-        { szSysDir, TEXT("VBoxMRXNP.dll"), },
-        { szSysDir, TEXT("VBoxService.exe"), },
-        { szSysDir, TEXT("VBoxTray.exe"), },
-        { szSysDir, TEXT("VBoxGINA.dll"), },
+        { szSysDir, "VBoxControl.exe", },
+        { szSysDir, "VBoxHook.dll", },
+        { szSysDir, "VBoxDisp.dll", },
+        { szSysDir, "VBoxMRXNP.dll", },
+        { szSysDir, "VBoxService.exe", },
+        { szSysDir, "VBoxTray.exe", },
+        { szSysDir, "VBoxGINA.dll", },
 
  /* On 64-bit we don't yet have the OpenGL DLLs in native format.
     So just enumerate the 32-bit files in the SYSWOW directory. */
  #ifdef RT_ARCH_AMD64
-        { szSysWowDir, TEXT("VBoxOGLarrayspu.dll"), },
-        { szSysWowDir, TEXT("VBoxOGLcrutil.dll"), },
-        { szSysWowDir, TEXT("VBoxOGLerrorspu.dll"), },
-        { szSysWowDir, TEXT("VBoxOGLpackspu.dll"), },
-        { szSysWowDir, TEXT("VBoxOGLpassthroughspu.dll"), },
-        { szSysWowDir, TEXT("VBoxOGLfeedbackspu.dll"), },
-        { szSysWowDir, TEXT("VBoxOGL.dll"), },
+        { szSysWowDir, "VBoxOGLarrayspu.dll", },
+        { szSysWowDir, "VBoxOGLcrutil.dll", },
+        { szSysWowDir, "VBoxOGLerrorspu.dll", },
+        { szSysWowDir, "VBoxOGLpackspu.dll", },
+        { szSysWowDir, "VBoxOGLpassthroughspu.dll", },
+        { szSysWowDir, "VBoxOGLfeedbackspu.dll", },
+        { szSysWowDir, "VBoxOGL.dll", },
  #else
-        { szSysDir, TEXT("VBoxOGLarrayspu.dll"), },
-        { szSysDir, TEXT("VBoxOGLcrutil.dll"), },
-        { szSysDir, TEXT("VBoxOGLerrorspu.dll"), },
-        { szSysDir, TEXT("VBoxOGLpackspu.dll"), },
-        { szSysDir, TEXT("VBoxOGLpassthroughspu.dll"), },
-        { szSysDir, TEXT("VBoxOGLfeedbackspu.dll"), },
-        { szSysDir, TEXT("VBoxOGL.dll"), },  
+        { szSysDir, "VBoxOGLarrayspu.dll", },
+        { szSysDir, "VBoxOGLcrutil.dll", },
+        { szSysDir, "VBoxOGLerrorspu.dll", },
+        { szSysDir, "VBoxOGLpackspu.dll", },
+        { szSysDir, "VBoxOGLpassthroughspu.dll", },
+        { szSysDir, "VBoxOGLfeedbackspu.dll", },
+        { szSysDir, "VBoxOGL.dll", },
  #endif
 
-        { szDriversDir, TEXT("VBoxGuest.sys"), },
-        { szDriversDir, TEXT("VBoxMouse.sys"), },
-        { szDriversDir, TEXT("VBoxSF.sys"),    },
-        { szDriversDir, TEXT("VBoxVideo.sys"), },
+        { szDriversDir, "VBoxGuest.sys", },
+        { szDriversDir, "VBoxMouse.sys", },
+        { szDriversDir, "VBoxSF.sys",    },
+        { szDriversDir, "VBoxVideo.sys", },
 
         {
             NULL
@@ -466,15 +466,15 @@ int VboxServiceWinGetComponentVersions(uint32_t uiClientID)
 #else /* File lookup for NT4. */
     VBOXSERVICEVMINFOFILE vboxFileInfoTable[] =
     {
-        { szSysDir, TEXT("VBoxControl.exe"), },
-        { szSysDir, TEXT("VBoxHook.dll"), },
-        { szSysDir, TEXT("VBoxDisp.dll"), },
-        { szSysDir, TEXT("VBoxService.exe"), },
-        { szSysDir, TEXT("VBoxTray.exe"), },
+        { szSysDir, "VBoxControl.exe", },
+        { szSysDir, "VBoxHook.dll", },
+        { szSysDir, "VBoxDisp.dll", },
+        { szSysDir, "VBoxService.exe", },
+        { szSysDir, "VBoxTray.exe", },
 
-        { szDriversDir, TEXT("VBoxGuestNT.sys"), },
-        { szDriversDir, TEXT("VBoxMouseNT.sys"), },
-        { szDriversDir, TEXT("VBoxVideo.sys"), },
+        { szDriversDir, "VBoxGuestNT.sys", },
+        { szDriversDir, "VBoxMouseNT.sys", },
+        { szDriversDir, "VBoxVideo.sys", },
 
         {
             NULL
@@ -487,7 +487,7 @@ int VboxServiceWinGetComponentVersions(uint32_t uiClientID)
     while (pTable->pszFileName)
     {
         rc = VboxServiceGetFileVersionString(pTable->pszFilePath, pTable->pszFileName, szVer, sizeof(szVer));
-        RTStrPrintf(szPropPath, sizeof(szPropPath), "GuestAdd/Components/%ls", pTable->pszFileName);
+        RTStrPrintf(szPropPath, sizeof(szPropPath), "GuestAdd/Components/%s", pTable->pszFileName);
         VboxServiceWriteProp(uiClientID, szPropPath, szVer);
         pTable++;
     }

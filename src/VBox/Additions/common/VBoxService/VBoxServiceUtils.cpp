@@ -89,15 +89,14 @@ int VboxServiceWritePropInt(uint32_t uiClientID, const char *pszKey, int32_t iVa
 
 
 #ifdef RT_OS_WINDOWS
-/** @todo Use TCHAR here instead of LPC*STR crap. */
-BOOL VboxServiceGetFileString(LPCWSTR pszFileName,
-                              LPWSTR pszBlock,
-                              LPWSTR pszString,
+BOOL VboxServiceGetFileString(const char* pszFileName,
+                              char* pszBlock,
+                              char* pszString,
                               PUINT puiSize)
 {
     DWORD dwHandle, dwLen = 0;
     UINT uiDataLen = 0;
-    LPTSTR lpData = NULL;
+    char* lpData = NULL;
     UINT uiValueLen = 0;
     LPTSTR lpValue = NULL;
     BOOL bRet = FALSE;
@@ -114,7 +113,7 @@ BOOL VboxServiceGetFileString(LPCWSTR pszFileName,
 
     if (!dwLen)
     {
-        VBoxServiceError("No file information found! File = %ls, Error: %ld\n", pszFileName, GetLastError());
+        VBoxServiceError("No file information found! File = %s, Error: %ld\n", pszFileName, GetLastError());
         return FALSE;
     }
 
@@ -129,7 +128,7 @@ BOOL VboxServiceGetFileString(LPCWSTR pszFileName,
     {
         if((bRet = VerQueryValue(lpData, pszBlock, (LPVOID*)&lpValue, (PUINT)&uiValueLen)))
         {
-            UINT uiSize = uiValueLen * sizeof(TCHAR);
+            UINT uiSize = uiValueLen * sizeof(char);
 
             if(uiSize > *puiSize)
                 uiSize = *puiSize;
@@ -146,7 +145,7 @@ BOOL VboxServiceGetFileString(LPCWSTR pszFileName,
 }
 
 
-BOOL VboxServiceGetFileVersion(LPCWSTR pszFileName,
+BOOL VboxServiceGetFileVersion(const char* pszFileName,
                                DWORD* pdwMajor,
                                DWORD* pdwMinor,
                                DWORD* pdwBuildNumber,
@@ -169,17 +168,15 @@ BOOL VboxServiceGetFileVersion(LPCWSTR pszFileName,
     dwLen = GetFileVersionInfoSize(pszFileName, &dwHandle);
 
     /* Try own fields defined in block "\\StringFileInfo\\040904b0\\FileVersion". */
-    TCHAR szValueUTF16[_MAX_PATH] = {0};
-    char szValueUTF8[_MAX_PATH] = {0};
-    char *pszValueUTF8  = szValueUTF8;
+    char szValue[_MAX_PATH] = {0};
+    char *pszValue  = szValue;
     UINT uiSize = _MAX_PATH;
     int r = 0;
 
-    bRet = VboxServiceGetFileString(pszFileName, TEXT("\\StringFileInfo\\040904b0\\FileVersion"), szValueUTF16, &uiSize);
+    bRet = VboxServiceGetFileString(pszFileName, "\\StringFileInfo\\040904b0\\FileVersion", szValue, &uiSize);
     if (bRet)
     {
-        r = RTUtf16ToUtf8Ex(szValueUTF16, uiSize, &pszValueUTF8, _MAX_PATH, NULL);
-        sscanf(szValueUTF8, "%ld.%ld.%ld.%ld", pdwMajor, pdwMinor, pdwBuildNumber, pdwRevisionNumber);
+        sscanf(pszValue, "%ld.%ld.%ld.%ld", pdwMajor, pdwMinor, pdwBuildNumber, pdwRevisionNumber);
     }
     else if (dwLen > 0)
     {
@@ -193,7 +190,7 @@ BOOL VboxServiceGetFileVersion(LPCWSTR pszFileName,
 
         if (GetFileVersionInfo(pszFileName, dwHandle, dwLen, lpData))
         {
-            if((bRet = VerQueryValue(lpData, TEXT("\\"), (LPVOID*)&pFileInfo, (PUINT)&BufLen)))
+            if((bRet = VerQueryValue(lpData, "\\", (LPVOID*)&pFileInfo, (PUINT)&BufLen)))
             {
                 *pdwMajor = HIWORD(pFileInfo->dwFileVersionMS);
                 *pdwMinor = LOWORD(pFileInfo->dwFileVersionMS);
@@ -210,15 +207,14 @@ BOOL VboxServiceGetFileVersion(LPCWSTR pszFileName,
 }
 
 
-BOOL VboxServiceGetFileVersionString(LPCWSTR pszPath, LPCWSTR pszFileName, char* pszVersion, UINT uiSize)
+BOOL VboxServiceGetFileVersionString(const char* pszPath, const char* pszFileName, char* pszVersion, UINT uiSize)
 {
     BOOL bRet = FALSE;
-    TCHAR szFullPath[_MAX_PATH] = {0};
-    TCHAR szValueUTF16[_MAX_PATH] = {0};
-    char szValueUTF8[_MAX_PATH] = {0};
+    char szFullPath[_MAX_PATH] = {0};
+    char szValue[_MAX_PATH] = {0};
     int r = 0;
 
-    swprintf(szFullPath, 4096, TEXT("%s\\%s"), pszPath, pszFileName); /** @todo here as well. */
+    RTStrPrintf(szFullPath, 4096, "%s\\%s", pszPath, pszFileName);
 
     DWORD dwMajor, dwMinor, dwBuild, dwRev;
 

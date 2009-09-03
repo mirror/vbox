@@ -37,6 +37,9 @@
 #include <VBox/VBoxGuestLib.h>
 #include "VBoxServiceInternal.h"
 #include "VBoxServiceUtils.h"
+#ifdef VBOX_WITH_GUEST_PROPS
+# include <VBox/HostServices/GuestPropertySvc.h>
+#endif
 
 
 /*******************************************************************************
@@ -48,7 +51,8 @@ uint32_t                g_VMExecInterval = 0;
 static RTSEMEVENTMULTI  g_VMExecEvent = NIL_RTSEMEVENTMULTI;
 /** The guest property service client ID. */
 static uint32_t         g_VMExecGuestPropSvcClientID = 0;
-
+/** The maximum of arguments a command can have. */
+#define EXEC_MAX_ARGS   32
 
 /** @copydoc VBOXSERVICE::pfnPreInit */
 static DECLCALLBACK(int) VBoxServiceExecPreInit(void)
@@ -98,9 +102,33 @@ static DECLCALLBACK(int) VBoxServiceExecInit(void)
 }
 
 
+/**
+ * Validates flags for executable guest properties.
+ *
+ * @returns boolean.
+ * @retval  true on success.
+ * @retval  false if not valid.
+ *
+ * @param   pszFlags     Pointer to flags to be checked.
+ */
+bool VBoxServiceExecValidateFlags(char* pszFlags)
+{
+    if (pszFlags == NULL)
+        return false;
+
+    if (   (NULL != RTStrStr(pszFlags, "TRANSIENT"))
+        && (NULL != RTStrStr(pszFlags, "RDONLYGUEST")))
+    {
+        return true;
+    }
+    return false;
+}
+
+
 /** @copydoc VBOXSERVICE::pfnWorker */
 DECLCALLBACK(int) VBoxServiceExecWorker(bool volatile *pfShutdown)
 {
+    using namespace guestProp;
     int rc = VINF_SUCCESS;
 
     /*
@@ -108,6 +136,7 @@ DECLCALLBACK(int) VBoxServiceExecWorker(bool volatile *pfShutdown)
      * spawning services.
      */
     RTThreadUserSignal(RTThreadSelf());
+    Assert(g_VMExecGuestPropSvcClientID > 0);
 
     /*
      * Execution loop.
@@ -118,7 +147,6 @@ DECLCALLBACK(int) VBoxServiceExecWorker(bool volatile *pfShutdown)
     bool        fSysprepDone     = false;
     for (;;)
     {
-#ifndef TARGET_NT4 /** @todo r=bird: Add comment explaining why please. */
         /*
          * The thread at the moment does nothing but checking for one specific guest property
          * for triggering a hard coded sysprep command with parameters given by the host. This
@@ -128,6 +156,8 @@ DECLCALLBACK(int) VBoxServiceExecWorker(bool volatile *pfShutdown)
          */
         if (!fSysprepDone)
         {
+            uint32_t cbBuf = MAX_VALUE_LEN + MAX_FLAGS_LEN + 1024;
+
             /* Get arguments. */
             /** @todo r=bird: How exactly does this work wrt. enabled/disabled?  In
              *        ConsoleImpl2.cpp it's now always set to "", which means it will
@@ -135,31 +165,122 @@ DECLCALLBACK(int) VBoxServiceExecWorker(bool volatile *pfShutdown)
              *        c:\\sysprep\\sysprep.exe to their system and install the latest
              *        additions this will be executed everytime the system starts now - if
              *        I understand the code correctly. Is this intentional? */
-            char *pszArgs;
-            rc = VbglR3GuestPropReadValueAlloc(g_VMExecGuestPropSvcClientID, "/VirtualBox/HostGuest/SysprepArgs", &pszArgs);
-            if (RT_FAILURE(rc))
-                VBoxServiceVerbose(2, "Sysprep guest property not found or broken communication. Error: %Rrc\n", pszArgs, rc);
-
-            /** @todo r=bird: You must check that the flags, you should require it to the
-             *  TRANSIENT and RDONLYGUEST. Otherwise, we'll have a potential priviledge
-             *  escalation issue inside the guest if the variable is removed. */
-
-            static char *s_pszSysprepImage = "c:\\sysprep\\sysprep.exe";
-            if (    RT_SUCCESS(rc)
-                &&  !RTFileExists(s_pszSysprepImage))
+            void* pvSysprepCmd = RTMemAllocZ(cbBuf);
+            char* pszSysprepCmdValue = NULL;
+            uint64_t u64SysprepCmdTimestamp = 0;
+            char* pszSysprepCmdFlags = NULL;
+#ifdef SYSPREP_WITH_CMD
+            /* Get sysprep properties. */
+            if (RT_SUCCESS(rc))
             {
-                VBoxServiceError("Sysprep executable not found! Search path=%s\n", s_pszSysprepImage);
+                rc = VbglR3GuestPropRead(g_VMExecGuestPropSvcClientID, "/VirtualBox/HostGuest/SysprepCmd",
+                                         pvSysprepCmd, cbBuf,
+                                         &pszSysprepCmdValue, &u64SysprepCmdTimestamp, &pszSysprepCmdFlags, NULL);
+                if (RT_FAILURE(rc))
+                {
+                    if (rc == VERR_NOT_FOUND)
+                        VBoxServiceVerbose(2, "Sysprep cmd guest property not found\n");
+                    else
+                        VBoxServiceError("Sysprep cmd guest property: Error = %Rrc\n", rc);
+                }
+                else
+                {
+                    !VBoxServiceExecValidateFlags(pszSysprepCmdFlags) ? rc = rc : rc = VERR_ACCESS_DENIED;
+                    if (RT_SUCCESS(rc))
+                    {
+                        if (RTStrNLen(pszSysprepCmdValue, _MAX_PATH) <= 0)
+                            rc = VERR_NOT_FOUND;
+                    }
+                    VBoxServiceVerbose(2, "Sysprep cmd guest property: %Rrc\n", rc);
+                }
+            }
+#else
+            /* Choose sysprep image based on OS version. */
+            char szSysprepCmd[_MAX_PATH] = "c:\\sysprep\\sysprep.exe";
+            OSVERSIONINFOEX OSInfoEx;
+            memset(&OSInfoEx, '\0', sizeof(OSInfoEx));
+            OSInfoEx.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
+            if (GetVersionEx((LPOSVERSIONINFO) &OSInfoEx))
+            {
+                if (OSInfoEx.dwMajorVersion >= 6) /* Use built-in sysprep on Vista or later. */
+                    RTStrPrintf(szSysprepCmd, sizeof(szSysprepCmd), "%s\\system32\\sysprep\\sysprep.exe", RTEnvGet("windir"));
+            }
+            pszSysprepCmdValue = szSysprepCmd;
+#endif
+            void* pvSysprepArgs = RTMemAllocZ(cbBuf);
+            char* pszSysprepArgsValue = NULL;
+            uint64_t u64SysprepArgsTimestamp = 0;
+            char* pszSysprepArgsFlags = NULL;
+
+            if (RT_SUCCESS(rc))
+            {
+                pvSysprepArgs = RTMemAllocZ(cbBuf);
+                char szVal[] = "/VirtualBox/HostGuest/SysprepArgs";
+                char *pTmp = NULL;
+                rc = RTStrCurrentCPToUtf8(&pTmp, szVal);
+                rc = VbglR3GuestPropRead(g_VMExecGuestPropSvcClientID, pTmp,
+                                         pvSysprepArgs, cbBuf,
+                                         &pszSysprepArgsValue, &u64SysprepArgsTimestamp, &pszSysprepArgsFlags, NULL);
+                RTStrFree(pTmp);
+                if (RT_FAILURE(rc))
+                {
+                    if (rc == VERR_NOT_FOUND)
+                        VBoxServiceVerbose(2, "Sysprep argument guest property not found\n");
+                    else
+                        VBoxServiceError("Sysprep argument guest property: Error = %Rrc\n", rc);
+                }
+                else
+                {
+                    !VBoxServiceExecValidateFlags(pszSysprepArgsFlags) ? rc = rc : rc = VERR_ACCESS_DENIED;
+                    if (RT_SUCCESS(rc))
+                    {
+                        if (RTStrNLen(pszSysprepArgsValue, EXEC_MAX_ARGS) <= 0)
+                            rc = VERR_NOT_FOUND;
+                    }
+                    VBoxServiceVerbose(2, "Sysprep argument guest property: %Rrc\n", rc);
+                }
+            }
+
+            if (   RT_SUCCESS(rc)
+                && !RTFileExists(pszSysprepCmdValue))
+            {
+                VBoxServiceError("Sysprep executable not found! Search path=%s\n", pszSysprepCmdValue);
                 rc = VERR_FILE_NOT_FOUND;
             }
 
             if (RT_SUCCESS(rc))
             {
-                RTPROCESS   pid;
-                const char *papszArgs[6] = { s_pszSysprepImage, "-quiet", "-reseal", "-mini", "-activated", NULL};
+                RTPROCESS pid;
 
-                /** @todo append the arguments in SysprepArgs/pszArgs.  */
+                /* Construct arguments list. */
+                /** @todo would be handy to have such a function in IPRT. */
+                int16_t index = 0;
+                char* pszArg = pszSysprepArgsValue;
+
+                const char* pArgs[EXEC_MAX_ARGS]; /* Do we have a #define in IPRT for max args? */
+
+                VBoxServiceVerbose(3, "Sysprep argument value: %s\n", pszSysprepArgsValue);
+                pArgs[index++] = pszSysprepCmdValue; /* Store image name as first argument. */
+                while (   (pszArg != NULL)
+                       && (*pszArg != NULL))
+                {
+                    char* pCurArg = (char*)RTMemAllocZ(_MAX_PATH);
+                    int arg = 0;
+                    while (   (*pszArg != ' ')
+                           && (*pszArg != NULL))
+                    {
+                        pCurArg[arg++] = *pszArg;
+                        pszArg++;
+                    }
+                    pszArg++; /* Skip leading space. */
+                    VBoxServiceVerbose(3, "Sysprep argument %d = %s\n", index, pCurArg);
+                    pArgs[index++] = pCurArg;
+                }
+                pArgs[index] = NULL;
+
+                /* Execute ... */
                 VBoxServiceVerbose(3, "Executing sysprep ...\n");
-                rc = RTProcCreate(papszArgs[0], papszArgs, RTENV_DEFAULT, 0, &pid);
+                rc = RTProcCreate(pszSysprepCmdValue, pArgs, RTENV_DEFAULT, 0, &pid);
                 if (RT_SUCCESS(rc))
                 {
                     RTPROCSTATUS Status;
@@ -171,21 +292,21 @@ DECLCALLBACK(int) VBoxServiceExecWorker(bool volatile *pfShutdown)
                         if (    Status.iStatus == 0
                             &&  Status.enmReason == RTPROCEXITREASON_NORMAL)
                         {
-                            rc = VINF_SUCCESS;
-                            fSysprepDone = true; /** r=bird: So, if sysprep fails, the idea is to continue executing the code every 10 seconds? */
+                            fSysprepDone = true; /* We're done, no need to repeat the sysprep exec. */
                         }
                     }
 
                     /* Set return value so the host knows what happend. */
-                    rc = VbglR3GuestPropWriteValueF(g_VMExecGuestPropSvcClientID, "/VirtualBox/HostGuest/SysprepRet", "%d", Status.iStatus);
+                    rc = VboxServiceWritePropInt(g_VMExecGuestPropSvcClientID, "HostGuest/SysprepRet", Status.iStatus);
                     if (RT_FAILURE(rc))
                         VBoxServiceError("Failed to write SysprepRet: rc=%Rrc\n", rc);
                 }
-            }
 
-            VbglR3GuestPropReadValueFree(pszArgs);
+                /* Destroy argument list (all but the first and last arg, it's just a pointer). */
+                for (int i=1; i<index-1; i++)
+                    RTMemFree((void*)pArgs[i]);
+            }
         }
-#endif /* !TARGET_NT4 */
 
 #ifdef FULL_FEATURED_EXEC
         1. Read the command - value, timestamp and flags.
@@ -243,13 +364,11 @@ static DECLCALLBACK(void) VBoxServiceExecStop(void)
 static DECLCALLBACK(void) VBoxServiceExecTerm(void)
 {
     /* Nothing here yet. */
-    /** @todo r=bird: Shouldn't you do the following here:
-     *        VbglR3GuestPropDisconnect(g_VMExecGuestPropSvcClientID);
-     *        g_VMExecGuestPropSvcClientID = 0;
-     * And quite possibly:
-     *        RTSemEventMultiDestroy(g_hVMExecEvent);
-     *        g_hVMExecEvent = NIL_RTSEMEVENTMULTI;
-     */
+    VbglR3GuestPropDisconnect(g_VMExecGuestPropSvcClientID);
+    g_VMExecGuestPropSvcClientID = 0;
+
+    RTSemEventMultiDestroy(g_VMExecEvent);
+    g_VMExecEvent = NIL_RTSEMEVENTMULTI;
 }
 
 
