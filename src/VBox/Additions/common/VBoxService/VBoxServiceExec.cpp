@@ -1,9 +1,7 @@
 /* $Id$ */
 /** @file
- * VBoxServiceExec - In-VM Command Execution Service.
+ * VBoxServiceExec - Host-driven Command Execution.
  */
-/** @todo r=bird: Why is this called VMExec while the filename is VBoxServiceExec.cpp? See VMInfo... */
-/** @todo r=bird: Use svn-ps.[sh|cmd] -a when adding new files, please. Then the EOLs and $Id$ won't be messed up all the time. */
 
 /*
  * Copyright (C) 2009 Sun Microsystems, Inc.
@@ -26,9 +24,12 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #include <iprt/assert.h>
+#include <iprt/ctype.h>
 #include <iprt/env.h>
 #include <iprt/file.h>
 #include <iprt/mem.h>
+#include <iprt/path.h>
+#include <iprt/param.h>
 #include <iprt/process.h>
 #include <iprt/string.h>
 #include <iprt/semaphore.h>
@@ -37,22 +38,18 @@
 #include <VBox/VBoxGuestLib.h>
 #include "VBoxServiceInternal.h"
 #include "VBoxServiceUtils.h"
-#ifdef VBOX_WITH_GUEST_PROPS
-# include <VBox/HostServices/GuestPropertySvc.h>
-#endif
 
 
 /*******************************************************************************
 *   Global Variables                                                           *
 *******************************************************************************/
 /** The vminfo interval (millseconds). */
-uint32_t                g_VMExecInterval = 0;
+static uint32_t         g_cMsExecInterval = 0;
 /** The semaphore we're blocking on. */
-static RTSEMEVENTMULTI  g_VMExecEvent = NIL_RTSEMEVENTMULTI;
+static RTSEMEVENTMULTI  g_hExecEvent = NIL_RTSEMEVENTMULTI;
 /** The guest property service client ID. */
-static uint32_t         g_VMExecGuestPropSvcClientID = 0;
-/** The maximum of arguments a command can have. */
-#define EXEC_MAX_ARGS   32
+static uint32_t         g_uExecGuestPropSvcClientID = 0;
+
 
 /** @copydoc VBOXSERVICE::pfnPreInit */
 static DECLCALLBACK(int) VBoxServiceExecPreInit(void)
@@ -67,8 +64,8 @@ static DECLCALLBACK(int) VBoxServiceExecOption(const char **ppszShort, int argc,
     int rc = -1;
     if (ppszShort)
         /* no short options */;
-    else if (!strcmp(argv[*pi], "--vmexec-interval"))
-        rc = VBoxServiceArgUInt32(argc, argv, "", pi, &g_VMExecInterval, 1, UINT32_MAX - 1);
+    else if (!strcmp(argv[*pi], "--exec-interval"))
+        rc = VBoxServiceArgUInt32(argc, argv, "", pi, &g_cMsExecInterval, 1, UINT32_MAX - 1);
     return rc;
 }
 
@@ -80,22 +77,22 @@ static DECLCALLBACK(int) VBoxServiceExecInit(void)
      * If not specified, find the right interval default.
      * Then create the event sem to block on.
      */
-    if (!g_VMExecInterval)
-        g_VMExecInterval = g_DefaultInterval * 1000;
-    if (!g_VMExecInterval)
-        g_VMExecInterval = 10 * 1000;
+    if (!g_cMsExecInterval)
+        g_cMsExecInterval = g_DefaultInterval * 1000;
+    if (!g_cMsExecInterval)
+        g_cMsExecInterval = 10 * 1000;
 
-    int rc = RTSemEventMultiCreate(&g_VMExecEvent);
+    int rc = RTSemEventMultiCreate(&g_hExecEvent);
     AssertRCReturn(rc, rc);
 
-    rc = VbglR3GuestPropConnect(&g_VMExecGuestPropSvcClientID);
+    rc = VbglR3GuestPropConnect(&g_uExecGuestPropSvcClientID);
     if (RT_SUCCESS(rc))
-        VBoxServiceVerbose(3, "Property Service Client ID: %#x\n", g_VMExecGuestPropSvcClientID);
+        VBoxServiceVerbose(3, "Exec: Property Service Client ID: %#x\n", g_uExecGuestPropSvcClientID);
     else
     {
-        VBoxServiceError("Failed to connect to the guest property service! Error: %Rrc\n", rc);
-        RTSemEventMultiDestroy(g_VMExecEvent);
-        g_VMExecEvent = NIL_RTSEMEVENTMULTI;
+        VBoxServiceError("Exec: Failed to connect to the guest property service! Error: %Rrc\n", rc);
+        RTSemEventMultiDestroy(g_hExecEvent);
+        g_hExecEvent = NIL_RTSEMEVENTMULTI;
     }
 
     return rc;
@@ -105,210 +102,347 @@ static DECLCALLBACK(int) VBoxServiceExecInit(void)
 /**
  * Validates flags for executable guest properties.
  *
- * @returns boolean.
- * @retval  true on success.
- * @retval  false if not valid.
+ * @returns VBox status code. Success means they are valid.
  *
  * @param   pszFlags     Pointer to flags to be checked.
  */
-bool VBoxServiceExecValidateFlags(char* pszFlags)
+static int VBoxServiceExecValidateFlags(const char *pszFlags)
 {
-    bool ret = false;
+    if (!pszFlags)
+        return VERR_ACCESS_DENIED;
+    if (!RTStrStr(pszFlags, "TRANSIENT"))
+        return VERR_ACCESS_DENIED;
+    if (!RTStrStr(pszFlags, "RDONLYGUEST"))
+        return VERR_ACCESS_DENIED;
+    return VINF_SUCCESS;
+}
 
-    if (   (NULL != RTStrStr(pszFlags, "TRANSIENT"))
-        && (NULL != RTStrStr(pszFlags, "RDONLYGUEST")))
+
+/**
+ * Reads a host transient property.
+ *
+ * This will validate the flags to make sure it is a transient property that can
+ * only be change by the host.
+ *
+ * @returns VBox status code, fully bitched.
+ * @param   pszPropName         The property name.
+ * @param   ppszValue           Where to return the value.  This is always set
+ *                              to NULL.  Free it using RTStrFree().
+ * @param   puTimestamp         Where to return the timestamp.  This is only set
+ *                              on success.  Optional.
+ */
+static int VBoxServiceExecReadHostProp(const char *pszPropName, char **ppszValue, uint64_t *puTimestamp)
+{
+    size_t  cbBuf = _1K;
+    void   *pvBuf = NULL;
+    int     rc;
+
+    *ppszValue = NULL;
+
+    for (unsigned cTries = 0; cTries < 10; cTries++)
     {
-        ret = true;
+        /*
+         * (Re-)Allocate the buffer and try read the property.
+         */
+        RTMemFree(pvBuf);
+        pvBuf = RTMemAlloc(cbBuf);
+        if (!pvBuf)
+        {
+            VBoxServiceError("Exec: Failed to allocate %zu bytes\n", cbBuf);
+            rc = VERR_NO_MEMORY;
+            break;
+        }
+        char    *pszValue;
+        char    *pszFlags;
+        uint64_t uTimestamp;
+        rc = VbglR3GuestPropRead(g_uExecGuestPropSvcClientID, pszPropName,
+                                 pvBuf, cbBuf,
+                                 &pszValue, &uTimestamp, &pszFlags, NULL);
+        if (RT_FAILURE(rc))
+        {
+            if (rc == VERR_BUFFER_OVERFLOW)
+            {
+                /* try again with a bigger buffer. */
+                cbBuf *= 2;
+                continue;
+            }
+            if (rc == VERR_NOT_FOUND)
+                VBoxServiceVerbose(2, "Exec: %s not found\n", pszPropName);
+            else
+                VBoxServiceError("Exec: Failed to query \"%s\": %Rrc\n", pszPropName, rc);
+            break;
+        }
+
+        /*
+         * Validate it and set return values on success.
+         */
+        rc = VBoxServiceExecValidateFlags(pszFlags);
+        if (RT_FAILURE(rc))
+        {
+            static uint32_t s_cBitched = 0;
+            if (++s_cBitched < 10)
+                VBoxServiceError("Exec: Flag validation failed for \"%s\": %Rrc; flags=\"%s\"\n",
+                                 pszPropName, rc, pszFlags);
+            break;
+        }
+        VBoxServiceVerbose(2, "Exec: Read \"%s\" = \"%s\", timestamp %RU64n\n",
+                           pszPropName, pszValue, uTimestamp);
+        *ppszValue = RTStrDup(pszValue);
+        if (!*ppszValue)
+        {
+            VBoxServiceError("Exec: RTStrDup failed for \"%s\"\n", pszValue);
+            rc = VERR_NO_MEMORY;
+            break;
+        }
+
+        if (puTimestamp)
+            *puTimestamp = uTimestamp;
+        break; /* done */
     }
-    VBoxServiceVerbose(3, "Validating flags %s = %s\n", 
-                       ((pszFlags == NULL) || (RTStrICmp(pszFlags, "") == 0)) ? "<NULL>" : pszFlags, 
-                       ret ? "true" : "false");
-    return ret;
+
+    RTMemFree(pvBuf);
+    return rc;
+}
+
+
+/**
+ * Frees an argument vector constructed by VBoxServiceExecCreateArgV.
+ *
+ * @param   papszArgs           The vector to free.
+ */
+static void VBoxServiceExecFreeArgV(char **papszArgs)
+{
+    for (size_t i = 0; papszArgs[i]; i++)
+    {
+        RTStrFree(papszArgs[i]);
+        papszArgs[i] = NULL;
+    }
+    RTMemFree(papszArgs);
+}
+
+
+/**
+ * Creates an argument vector out of an executable name and a string containing
+ * the arguments separated by spaces.
+ *
+ * @returns VBox status code. Not bitched.
+ * @param   pszExec             The executable name.
+ * @param   pszArgs             The string containging the arguments.
+ * @param   ppapszArgs          Where to return the argument vector.  Not set on
+ *                              failure.  Use VBoxServiceExecFreeArgV to free.
+ *
+ * @todo    Quoted strings. Do it unix (bourne shell) fashion.
+ */
+static int VBoxServiceExecCreateArgV(const char *pszExec, const char *pszArgs, char ***ppapszArgs)
+{
+    size_t  cAlloc   = 1;
+    size_t  cUsed    = 1;
+    char **papszArgs = (char **)RTMemAlloc(sizeof(char *) * (cAlloc + 1));
+    if (!papszArgs)
+        return VERR_NO_MEMORY;
+
+    /*
+     * Start by adding the executable name first.
+     * Note! We keep the papszArgs fully terminated at all times to keep cleanup simple.
+     */
+    int     rc   = VERR_NO_MEMORY;
+    papszArgs[1] = NULL;
+    papszArgs[0] = RTStrDup(pszExec);
+    if (papszArgs[0])
+    {
+        /*
+         * Parse the argument string and add any arguments found in it.
+         */
+        for (;;)
+        {
+            /* skip leading spaces */
+            char ch;
+            while ((ch = *pszArgs) && RT_C_IS_SPACE(ch))
+                pszArgs++;
+            if (!*pszArgs)
+            {
+                *ppapszArgs = papszArgs;
+                return VINF_SUCCESS;
+            }
+
+            /* find the of the current word. Quoting is ignored atm. */
+            char const *pszEnd = pszArgs + 1;
+            while ((ch = *pszEnd) && !RT_C_IS_SPACE(ch))
+                pszEnd++;
+
+            /* resize the vector. */
+            if (cUsed == cAlloc)
+            {
+                cAlloc += 10;
+                void *pvNew = RTMemRealloc(papszArgs, sizeof(char *) * (cAlloc + 1));
+                if (!pvNew)
+                    break;
+                papszArgs = (char **)pvNew;
+                for (size_t i = cUsed; i <= cAlloc; i++)
+                    papszArgs[i] = NULL;
+            }
+
+            /* add it */
+            papszArgs[cUsed++] = RTStrDupN(pszArgs, (uintptr_t)pszEnd - (uintptr_t)pszArgs);
+            if (!papszArgs[cUsed++])
+                break;
+
+            /* advance */
+            pszArgs = pszEnd;
+        }
+    }
+
+    VBoxServiceExecFreeArgV(papszArgs);
+    return rc;
 }
 
 
 /** @copydoc VBOXSERVICE::pfnWorker */
 DECLCALLBACK(int) VBoxServiceExecWorker(bool volatile *pfShutdown)
 {
-    using namespace guestProp;
-    int rc = VINF_SUCCESS;
+    int rcRet = VINF_SUCCESS;
 
     /*
      * Tell the control thread that it can continue
      * spawning services.
      */
     RTThreadUserSignal(RTThreadSelf());
-    Assert(g_VMExecGuestPropSvcClientID > 0);
+    Assert(g_uExecGuestPropSvcClientID > 0);
 
     /*
      * Execution loop.
+     *
+     * The thread at the moment does nothing but checking for one specific guest property
+     * for triggering a hard coded sysprep command with parameters given by the host. This
+     * feature was required by the VDI guys.
+     *
+     * Later this thread could become a general host->guest executor.. there are some
+     * sketches for this in the code.
      */
 #ifdef FULL_FEATURED_EXEC
     uint64_t    u64TimestampPrev = UINT64_MAX;
 #endif
-    bool        fSysprepDone     = false;
+    bool        fSysprepDone = false;
+    bool        fBitchedAboutMissingSysPrepCmd = false;
     for (;;)
     {
-        /*
-         * The thread at the moment does nothing but checking for one specific guest property
-         * for triggering a hard coded sysprep command with parameters given by the host. This
-         * feature was required by the VDI guys.
-         *
-         * Later this thread could become a general host->guest executor (remote shell?).
-         */
+#if 0 /** @todo r=bird: This code needs reviewing and testing before it can be enabled. */
         if (!fSysprepDone)
         {
-            uint32_t cbBuf = MAX_VALUE_LEN + MAX_FLAGS_LEN + 1024;
-
-            /* Get arguments. */
-            /** @todo r=bird: How exactly does this work wrt. enabled/disabled?  In
-             *        ConsoleImpl2.cpp it's now always set to "", which means it will
-             *        always be executed. So, if someone adds a bogus
-             *        c:\\sysprep\\sysprep.exe to their system and install the latest
-             *        additions this will be executed everytime the system starts now - if
-             *        I understand the code correctly. Is this intentional? */
-            void* pvSysprepCmd = RTMemAllocZ(cbBuf);
-            char* pszSysprepCmdValue = NULL;
-            uint64_t u64SysprepCmdTimestamp = 0;
-            char* pszSysprepCmdFlags = NULL;
+            /*
+             * Get the sysprep command and arguments.
+             *
+             * The sysprep executable location is either retrieved from the host
+             * or is in a hard coded location depending on the Windows version.
+             */
+            char *pszSysprepExec = NULL;
 #ifdef SYSPREP_WITH_CMD
-            /* Get sysprep properties. */
-            if (RT_SUCCESS(rc))
-            {
-                rc = VbglR3GuestPropRead(g_VMExecGuestPropSvcClientID, "/VirtualBox/HostGuest/SysprepCmd",
-                                         pvSysprepCmd, cbBuf,
-                                         &pszSysprepCmdValue, &u64SysprepCmdTimestamp, &pszSysprepCmdFlags, NULL);
-                if (RT_FAILURE(rc))
-                {
-                    if (rc == VERR_NOT_FOUND)
-                        VBoxServiceVerbose(2, "Sysprep cmd guest property not found\n");
-                    else
-                        VBoxServiceError("Sysprep cmd guest property: Error = %Rrc\n", rc);
-                }
-                else
-                {
-                    VBoxServiceExecValidateFlags(pszSysprepCmdFlags) ? rc = rc : rc = VERR_ACCESS_DENIED;
-                    if (RT_SUCCESS(rc))
-                    {
-                        if (RTStrNLen(pszSysprepCmdValue, _MAX_PATH) <= 0)
-                            rc = VERR_NOT_FOUND;
-                    }
-                    VBoxServiceVerbose(2, "Sysprep cmd guest property: %Rrc\n", rc);
-                }
-            }
+            int rc = VBoxServiceExecReadHostProp("/VirtualBox/HostGuest/SysprepExec", &pszSysprepExec, NULL);
+            if (RT_SUCCESS(rc) && !*pszSysprepExec)
+                rc = VERR_NOT_FOUND;
 #else
-            /* Choose sysprep image based on OS version. */
-            char szSysprepCmd[_MAX_PATH] = "c:\\sysprep\\sysprep.exe";
+            /* Predefined sys. */
+            int  rc = VINF_SUCCESS;
+            char szSysprepCmd[RTPATH_MAX] = "C:\\sysprep\\sysprep.exe";
             OSVERSIONINFOEX OSInfoEx;
-            memset(&OSInfoEx, '\0', sizeof(OSInfoEx));
+            RT_ZERO(OSInfoEx);
             OSInfoEx.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
-            if (GetVersionEx((LPOSVERSIONINFO) &OSInfoEx))
+            if (    GetVersionEx((LPOSVERSIONINFO) &OSInfoEx)
+                &&  OSInfoEx.dwPlatformId == VER_PLATFORM_WIN32_NT
+                &&  OSInfoEx.dwMajorVersion >= 6 /* Vista */)
             {
-                if (OSInfoEx.dwMajorVersion >= 6) /* Use built-in sysprep on Vista or later. */
-                    RTStrPrintf(szSysprepCmd, sizeof(szSysprepCmd), "%s\\system32\\sysprep\\sysprep.exe", RTEnvGet("windir"));
+                rc = RTEnvGetEx(RTENV_DEFAULT, "windir", szSysPrepCmd, sizeof(szSysPrepCmd), NULL);
+                if (RT_SUCCESS(rc))
+                    rc = RTPathAppend(szSysPrepCmd, sizeof(szSysPrepCmd), "system32\\sysprep\\sysprep.exe");
             }
-            pszSysprepCmdValue = szSysprepCmd;
+            pszSysprepExec = szSysprepCmd;
 #endif
-            void* pvSysprepArgs = RTMemAllocZ(cbBuf);
-            char* pszSysprepArgsValue = NULL;
-            uint64_t u64SysprepArgsTimestamp = 0;
-            char* pszSysprepArgsFlags = NULL;
-
             if (RT_SUCCESS(rc))
             {
-                pvSysprepArgs = RTMemAllocZ(cbBuf);
-                char szVal[] = "/VirtualBox/HostGuest/SysprepArgs";
-                char *pTmp = NULL;
-                rc = RTStrCurrentCPToUtf8(&pTmp, szVal);
-                rc = VbglR3GuestPropRead(g_VMExecGuestPropSvcClientID, pTmp,
-                                         pvSysprepArgs, cbBuf,
-                                         &pszSysprepArgsValue, &u64SysprepArgsTimestamp, &pszSysprepArgsFlags, NULL);
-                RTStrFree(pTmp);
-                if (RT_FAILURE(rc))
-                {
-                    if (rc == VERR_NOT_FOUND)
-                        VBoxServiceVerbose(2, "Sysprep argument guest property not found\n");
-                    else
-                        VBoxServiceError("Sysprep argument guest property: Error = %Rrc\n", rc);
-                }
-                else
-                {
-                    VBoxServiceExecValidateFlags(pszSysprepArgsFlags) ? rc = rc : rc = VERR_ACCESS_DENIED;
-                    if (RT_SUCCESS(rc))
-                    {
-                        if (RTStrNLen(pszSysprepArgsValue, EXEC_MAX_ARGS) <= 0)
-                            rc = VERR_NOT_FOUND;
-                    }
-                    VBoxServiceVerbose(2, "Sysprep argument guest property: %Rrc\n", rc);
-                }
-            }
-
-            if (   RT_SUCCESS(rc)
-                && !RTFileExists(pszSysprepCmdValue))
-            {
-                VBoxServiceError("Sysprep executable not found! Search path=%s\n", pszSysprepCmdValue);
-                rc = VERR_FILE_NOT_FOUND;
-            }
-
-            if (RT_SUCCESS(rc))
-            {
-                RTPROCESS pid;
-
-                /* Construct arguments list. */
-                /** @todo would be handy to have such a function in IPRT. */
-                int16_t index = 0;
-                char* pszArg = pszSysprepArgsValue;
-
-                const char* pArgs[EXEC_MAX_ARGS]; /* Do we have a #define in IPRT for max args? */
-
-                VBoxServiceVerbose(3, "Sysprep argument value: %s\n", pszSysprepArgsValue);
-                pArgs[index++] = pszSysprepCmdValue; /* Store image name as first argument. */
-                while (   (pszArg != NULL)
-                       && (*pszArg != NULL))
-                {
-                    char* pCurArg = (char*)RTMemAllocZ(_MAX_PATH);
-                    int arg = 0;
-                    while (   (*pszArg != ' ')
-                           && (*pszArg != NULL))
-                    {
-                        pCurArg[arg++] = *pszArg;
-                        pszArg++;
-                    }
-                    pszArg++; /* Skip leading space. */
-                    VBoxServiceVerbose(3, "Sysprep argument %d = %s\n", index, pCurArg);
-                    pArgs[index++] = pCurArg;
-                }
-                pArgs[index] = NULL;
-
-                /* Execute ... */
-                VBoxServiceVerbose(3, "Executing sysprep ...\n");
-                rc = RTProcCreate(pszSysprepCmdValue, pArgs, RTENV_DEFAULT, 0, &pid);
+                char *pszSysprepArgs;
+                rc = VBoxServiceExecReadHostProp("/VirtualBox/HostGuest/SysprepArgs", &pszSysprepArgs, NULL);
+                if (RT_SUCCESS(rc) && !*pszSysprepArgs)
+                    rc = VERR_NOT_FOUND;
                 if (RT_SUCCESS(rc))
                 {
-                    RTPROCSTATUS Status;
-                    rc = RTProcWait(pid, RTPROCWAIT_FLAGS_BLOCK, &Status);
-
-                    VBoxServiceVerbose(3, "Sysprep returned: %d\n", Status.iStatus);
-                    if (RT_SUCCESS(rc))
+                    if (RTFileExists(pszSysprepExec))
                     {
-                        if (    Status.iStatus == 0
-                            &&  Status.enmReason == RTPROCEXITREASON_NORMAL)
+                        char **papszArgs;
+                        rc = VBoxServiceExecCreateArgV(pszSysprepExec, pszSysprepArgs, &papszArgs);
+                        if (RT_SUCCESS(rc))
                         {
-                            fSysprepDone = true; /* We're done, no need to repeat the sysprep exec. */
+                            /*
+                             * Execute it synchronously and store the result.
+                             *
+                             * Note that RTProcWait should never fail here and
+                             * that (the host is screwed if it does though).
+                             */
+                            VBoxServiceVerbose(3, "Exec: Executing sysprep ...\n");
+                            for (size_t i = 0; papszArgs[i]; i++)
+                                VBoxServiceVerbose(3, "Exec: sysprep argv[%u]: \"%s\"\n", i, papszArgs[i]);
+
+                            RTPROCESS pid;
+                            rc = RTProcCreate(pszSysprepExec, papszArgs, RTENV_DEFAULT, 0 /*fFlags*/, &pid);
+                            if (RT_SUCCESS(rc))
+                            {
+                                RTPROCSTATUS Status;
+                                rc = RTProcWait(pid, RTPROCWAIT_FLAGS_BLOCK, &Status);
+                                if (RT_SUCCESS(rc))
+                                {
+                                    VBoxServiceVerbose(1, "Sysprep returned: %d (reason %d)\n",
+                                                       Status.iStatus, Status.enmReason);
+/** @todo r=bird: Figure out whether you should try re-execute sysprep if it
+ *        fails or not. This is not mentioned in the defect.  */
+                                    fSysprepDone = true; /* paranoia */
+
+                                    /*
+                                     * Store the result in Set return value so the host knows what happend.
+                                     */
+                                    rc = VbglR3GuestPropWriteValueF(g_uExecGuestPropSvcClientID,
+                                                                    "/VirtualBox/HostGuest/SysprepRet",
+                                                                    "%d", Status.iStatus);
+                                    if (RT_FAILURE(rc))
+                                        VBoxServiceError("Exec: Failed to write SysprepRet: rc=%Rrc\n", rc);
+                                }
+                                else
+                                    VBoxServiceError("Exec: RTProcWait failed for sysprep: %Rrc\n", rc);
+                            }
+                            VBoxServiceExecFreeArgV(papszArgs);
                         }
+                        else
+                            VBoxServiceError("Exec: VBoxServiceExecCreateArgV: %Rrc\n", rc);
                     }
-
-                    /* Set return value so the host knows what happend. */
-                    rc = VboxServiceWritePropInt(g_VMExecGuestPropSvcClientID, "HostGuest/SysprepRet", Status.iStatus);
-                    if (RT_FAILURE(rc))
-                        VBoxServiceError("Failed to write SysprepRet: rc=%Rrc\n", rc);
+                    else
+                    {
+                        if (!fBitchedAboutMissingSysPrepCmd)
+                        {
+                            VBoxServiceError("Exec: Sysprep executable not found! Search path=%s\n", pszSysprepExec);
+                            fBitchedAboutMissingSysPrepCmd = true;
+                        }
+                        rc = VERR_FILE_NOT_FOUND;
+                    }
+                    RTStrFree(pszSysprepArgs);
                 }
+#ifndef SYSPREP_WITH_CMD
+                RTStrFree(pszSysprepExec);
+#endif
+            }
 
-                /* Destroy argument list (all but the first and last arg, it's just a pointer). */
-                for (int i=1; i<index-1; i++)
-                    RTMemFree((void*)pArgs[i]);
+            /*
+             * Only continue polling if the guest property value is empty/missing
+             * or if the sysprep command is missing.
+             */
+            if (    rc != VERR_NOT_FOUND
+                &&  rc != VERR_FILE_NOT_FOUND)
+            {
+                VBoxServiceVerbose(1, "Exec: Stopping sysprep processing (rc=%Rrc)\n", rc);
+                rc = VbglR3GuestPropWriteValueF(g_uExecGuestPropSvcClientID, "/VirtualBox/HostGuest/SysprepVBoxRC", "%d", rc);
+                if (RT_FAILURE(rc))
+                    VBoxServiceError("Exec: Failed to write SysprepVBoxRC: rc=%Rrc\n", rc);
+                fSysprepDone = true;
             }
         }
+#endif /* temporarily disabled. */
 
 #ifdef FULL_FEATURED_EXEC
         1. Read the command - value, timestamp and flags.
@@ -332,21 +466,21 @@ DECLCALLBACK(int) VBoxServiceExecWorker(bool volatile *pfShutdown)
 #ifdef FULL_FEATURED_EXEC
         Wait for changes to the command value. If that fails for some reason other than timeout / interrupt, fall back on the semaphore.
 #else
-        int rc2 = RTSemEventMultiWait(g_VMExecEvent, g_VMExecInterval);
+        int rc2 = RTSemEventMultiWait(g_hExecEvent, g_cMsExecInterval);
 #endif
         if (*pfShutdown)
             break;
         if (rc2 != VERR_TIMEOUT && RT_FAILURE(rc2))
         {
-            VBoxServiceError("RTSemEventMultiWait failed; rc2=%Rrc\n", rc2);
-            rc = rc2;
+            VBoxServiceError("Exec: Service terminating - RTSemEventMultiWait: %Rrc\n", rc2);
+            rcRet = rc2;
             break;
         }
     }
 
-    RTSemEventMultiDestroy(g_VMExecEvent);
-    g_VMExecEvent = NIL_RTSEMEVENTMULTI;
-    return rc;
+    RTSemEventMultiDestroy(g_hExecEvent);
+    g_hExecEvent = NIL_RTSEMEVENTMULTI;
+    return rcRet;
 }
 
 
@@ -355,7 +489,7 @@ static DECLCALLBACK(void) VBoxServiceExecStop(void)
 {
     /** @todo Later, figure what to do if we're in RTProcWait(). it's a very
      *        annoying call since doesn't support timeouts in the posix world. */
-    RTSemEventMultiSignal(g_VMExecEvent);
+    RTSemEventMultiSignal(g_hExecEvent);
 #ifdef FULL_FEATURED_EXEC
     Interrupts waits.
 #endif
@@ -366,28 +500,28 @@ static DECLCALLBACK(void) VBoxServiceExecStop(void)
 static DECLCALLBACK(void) VBoxServiceExecTerm(void)
 {
     /* Nothing here yet. */
-    VbglR3GuestPropDisconnect(g_VMExecGuestPropSvcClientID);
-    g_VMExecGuestPropSvcClientID = 0;
+    VbglR3GuestPropDisconnect(g_uExecGuestPropSvcClientID);
+    g_uExecGuestPropSvcClientID = 0;
 
-    RTSemEventMultiDestroy(g_VMExecEvent);
-    g_VMExecEvent = NIL_RTSEMEVENTMULTI;
+    RTSemEventMultiDestroy(g_hExecEvent);
+    g_hExecEvent = NIL_RTSEMEVENTMULTI;
 }
 
 
 /**
  * The 'vminfo' service description.
  */
-VBOXSERVICE g_VMExec =
+VBOXSERVICE g_Exec =
 {
     /* pszName. */
-    "vmexec",
+    "exec",
     /* pszDescription. */
-    "Virtual Machine Remote Execution",
+    "Host-driven Command Execution",
     /* pszUsage. */
-    "[--vmexec-interval <ms>]"
+    "[--exec-interval <ms>]"
     ,
     /* pszOptions. */
-    "    --vmexec-interval   Specifies the interval at which to check for new\n"
+    "    --exec-interval     Specifies the interval at which to check for new\n"
     "                        remote execution commands. The default is 10000 ms.\n"
     ,
     /* methods */
