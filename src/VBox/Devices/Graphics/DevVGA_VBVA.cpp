@@ -590,7 +590,7 @@ static unsigned vbvaViewFromOffset (PHGSMIINSTANCE pIns, VBVACONTEXT *pCtx, cons
         }
     }
 
-    return ~0;
+    return ~0U;
 }
 
 #ifdef DEBUG_sunlover
@@ -1251,7 +1251,7 @@ static DECLCALLBACK(int) vbvaChannelHandler (void *pvHandler, uint16_t u16Channe
 
             unsigned uScreenId = vbvaViewFromOffset (pIns, pCtx, pvBuffer);
 
-            if (uScreenId == ~0)
+            if (uScreenId == ~0U)
             {
                 rc = VERR_INVALID_PARAMETER;
                 break;
