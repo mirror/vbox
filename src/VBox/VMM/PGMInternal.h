@@ -69,7 +69,7 @@
  * Optimization for PAE page tables that are modified often
  */
 #ifndef IN_RC
-////# define PGMPOOL_WITH_OPTIMIZED_DIRTY_PT
+# define PGMPOOL_WITH_OPTIMIZED_DIRTY_PT
 #endif
 
 /**
@@ -1669,21 +1669,13 @@ typedef struct PGMPOOLPAGE
     /** This is used by the R3 access handlers when invoked by an async thread.
      * It's a hack required because of REMR3NotifyHandlerPhysicalDeregister. */
     bool volatile       fReusedFlushPending;
-#ifdef PGMPOOL_WITH_OPTIMIZED_DIRTY_PT
     /** Used to mark the page as dirty (write monitoring if temporarily off. */
     bool                fDirty;
-#else
-    bool                bPadding1;
-#endif
 
     /** Used to indicate that this page can't be flushed. Important for cr3 root pages or shadow pae pd pages). */
     uint32_t            cLocked;
-#ifdef PGMPOOL_WITH_OPTIMIZED_DIRTY_PT
     uint32_t            idxDirty;
     RTGCPTR             pvDirtyFault;
-#else
-    uint32_t            bPadding2;
-#endif
 } PGMPOOLPAGE, *PPGMPOOLPAGE, **PPPGMPOOLPAGE;
 /** Pointer to a const pool page. */
 typedef PGMPOOLPAGE const *PCPGMPOOLPAGE;
@@ -1769,7 +1761,6 @@ typedef struct PGMPOOL
     R3PTRTYPE(PFNPGMR3PHYSHANDLER)  pfnAccessHandlerR3;
     /** The access handler description (HC ptr). */
     R3PTRTYPE(const char *)         pszAccessHandler;
-# ifdef PGMPOOL_WITH_OPTIMIZED_DIRTY_PT
     /* Next available slot. */
     uint32_t                    idxFreeDirtyPage;
     /* Number of active dirty pages. */
@@ -1777,7 +1768,6 @@ typedef struct PGMPOOL
     /* Array of current dirty pgm pool page indices. */
     uint16_t                    aIdxDirtyPages[8];
     uint64_t                    aDirtyPages[8][512];
-# endif /* PGMPOOL_WITH_OPTIMIZED_DIRTY_PT */
 #endif /* PGMPOOL_WITH_MONITORING */
     /** The number of pages currently in use. */
     uint16_t                    cUsedPages;
