@@ -30,7 +30,7 @@ int VboxServiceWriteProp(uint32_t uiClientID, const char *pszKey, const char *ps
 #endif
 #ifdef RT_OS_WINDOWS
 /** Gets a pre-formatted version string from the VS_FIXEDFILEINFO table. */
-BOOL VboxServiceGetFileVersionString(LPCWSTR pszPath, LPCWSTR pszFileName, char* pszVersion, UINT uiSize);
+BOOL VboxServiceGetFileVersionString(const char* pszPath, const char* pszFileName, char* pszVersion, UINT uiSize);
 #endif
 
 #endif

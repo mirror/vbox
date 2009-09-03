@@ -194,7 +194,7 @@ int VBoxServiceWinUninstall ()
     else
     {
         HKEY hKey = NULL;
-        if (RegOpenKeyEx(HKEY_LOCAL_MACHINE, _T("SYSTEM\\CurrentControlSet\\Services\\EventLog\\System"), 0, KEY_ALL_ACCESS, &hKey) == ERROR_SUCCESS) {
+        if (RegOpenKeyEx(HKEY_LOCAL_MACHINE, "SYSTEM\\CurrentControlSet\\Services\\EventLog\\System", 0, KEY_ALL_ACCESS, &hKey) == ERROR_SUCCESS) {
             RegDeleteKey(hKey, VBOXSERVICE_NAME);
             RegCloseKey(hKey);
         }

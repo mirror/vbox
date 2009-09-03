@@ -114,7 +114,7 @@ static DECLCALLBACK(int) VBoxServiceVMInfoInit(void)
 
 #ifdef RT_OS_WINDOWS
     /* Get function pointers. */
-    HMODULE hKernel32 = LoadLibrary(_T("kernel32"));
+    HMODULE hKernel32 = LoadLibrary("kernel32");
     if (NULL != hKernel32)
     {
         g_pfnWTSGetActiveConsoleSessionId = (fnWTSGetActiveConsoleSessionId)GetProcAddress(hKernel32, "WTSGetActiveConsoleSessionId");
