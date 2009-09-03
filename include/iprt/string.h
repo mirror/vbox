@@ -172,6 +172,16 @@ RTDECL(char *) RTStrDup(const char *pszString);
 RTDECL(int)  RTStrDupEx(char **ppszString, const char *pszString);
 
 /**
+ * Allocates a new copy of the given UTF-8 substring.
+ *
+ * @returns Pointer to the allocated UTF-8 substring.
+ * @param   pszString       UTF-8 string to duplicate.
+ * @param   cchMax          The max number of chars to duplicate, not counting
+ *                          the terminator.
+ */
+RTDECL(char *) RTStrDupN(const char *pszString, size_t cchMax);
+
+/**
  * Validates the UTF-8 encoding of the string.
  *
  * @returns iprt status code.
