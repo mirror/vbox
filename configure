@@ -1237,6 +1237,22 @@ EOF
   fi
 }
 
+#
+# Check for OpenGL
+#
+check_opengl()
+{
+  # On darwin this is a on/off decision only
+  if [ "$OS" = "darwin" ]; then
+    test_header "OpenGL support"
+    echo "enabled"
+    cnf_append "VBOX_WITH_CROGL"     "1"
+  else
+    check_xmu
+    check_mesa
+  fi
+}
+
 
 #
 # Check for the Xmu library, needed by OpenGL
@@ -1274,7 +1290,6 @@ EOF
     cnf_append "VBOX_XMU_LIBS" "`strip_l "$LIBXMU"`"
   fi
 }
-
 
 #
 # Check for Mesa, needed by OpenGL
@@ -1715,6 +1730,14 @@ EOF
 check_python()
 {
   test_header "python support"
+
+  # On darwin this is a on/off decision only
+  if [ "$OS" = "darwin" ]; then
+    echo "enabled"
+    cnf_append "VBOX_WITH_PYTHON"     "1"
+    return
+  fi
+
   cat > $ODIR.tmp_src.cc << EOF
 #include <cstdio>
 #include <Python.h>
@@ -1877,6 +1900,7 @@ check_darwinversion()
   case "$darwin_ver" in
     10\.*)
       darwin_ver="10.6"
+      [ "$TARGET_MACHINE" = "amd64" ] && cnf_append "VBOX_WITH_COCOA_QT" "1"
       ;;
     9\.*)
       darwin_ver="10.5"
@@ -1941,7 +1965,9 @@ cat << EOF
   --build-libxml2          build libxml2 from sources
   --build-libxslt          build libxslt from sources
   --build-libcurl          build libcurl from sources (PUEL only)
-  --setup-wine             setup a Wine directory and register the hhc hack
+EOF
+[ "$OS"   != "darwin" ] && echo "  --setup-wine             setup a Wine directory and register the hhc hack"
+cat << EOF
 
 Paths:
   --with-gcc=PATH          location of the gcc compiler [$CC]
@@ -1988,7 +2014,6 @@ if [ "$OS" = "darwin" ]; then
   WITH_PULSE=0
   WITH_DBUS=0
   WITH_KMODS=0
-  WITH_OPENGL=0
   BUILD_LIBXSLT=1
   BUILD_LIBXML2=1
   [ $OSE -eq 1 ] || BUILD_LIBCURL=1
@@ -2130,7 +2155,7 @@ for option in $*; do
       fi
       ;;
     --setup-wine)
-      SETUP_WINE=1
+      [ "$OS" != "darwin" ] && SETUP_WINE=1
       ;;
     *)
       echo
@@ -2219,11 +2244,8 @@ if [ -n "$HEADLESS" ]; then
   cnf_append "VBOX_HEADLESS" "1"
 fi
 
-if [ $WITH_OPENGL -eq 0 ]; then
-  cnf_append "VBOX_WITH_CROGL" ""
-fi
-
 # emit disable directives corresponding to any --disable-xxx options.
+[ $WITH_OPENGL -eq 0 ]    && cnf_append "VBOX_WITH_CROGL" ""
 [ $WITH_XPCOM -eq 0 ]     && cnf_append "VBOX_WITH_MAIN" ""
 [ $WITH_QT4 -eq 0   ]     && cnf_append "VBOX_WITH_QTGUI" ""
 [ $WITH_SDL_TTF -eq 0 ]   && cnf_append "VBOX_WITH_SECURELABEL" ""
@@ -2257,8 +2279,7 @@ check_curl
 # TODO check for xcomposite-dev (X11/extensions/Xcomposite.h, additions only)
 # TODO check for libxdamange-dev (X11/extensions/Xdamage.h, additions only)
 [ $WITH_X11    -eq 1 ] && check_xcursor
-[ $WITH_OPENGL -eq 1 ] && check_xmu
-[ $WITH_OPENGL -eq 1 ] && check_mesa
+[ $WITH_OPENGL -eq 1 ] && check_opengl
 [ $WITH_QT4    -eq 1 ] && check_qt4
 [ $WITH_PYTHON -eq 1 ] && check_python
 
@@ -2305,7 +2326,6 @@ fi
 # Darwin-specific
 if [ "$OS" = "darwin" ]; then
   check_darwinversion
-#  check_i386elfgcc
 fi
 
 # success!
