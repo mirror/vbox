@@ -69,7 +69,7 @@
  * Optimization for PAE page tables that are modified often
  */
 #ifndef IN_RC
-# define PGMPOOL_WITH_OPTIMIZED_DIRTY_PT
+//# define PGMPOOL_WITH_OPTIMIZED_DIRTY_PT
 #endif
 
 /**
