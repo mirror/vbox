@@ -64,6 +64,7 @@
 #include <sys/stropts.h>
 #include <sys/strsun.h>
 #include <sys/modctl.h>
+#include <sys/archsystm.h>
 #include <sys/ddi.h>
 #include <sys/sunddi.h>
 #include <sys/sunldi.h>
@@ -3077,7 +3078,15 @@ static int vboxNetFltSolarisRecv(PVBOXNETFLTINS pThis, vboxnetflt_stream_t *pStr
     PINTNETSG pSG = (PINTNETSG)alloca(RT_OFFSETOF(INTNETSG, aSegs[cSegs]));
     int rc = vboxNetFltSolarisMBlkToSG(pThis, pMsg, pSG, cSegs, fSrc);
     if (RT_SUCCESS(rc))
+    {
+        /*
+         * If we're -still- in interrupt context we need to unpin the underlying current
+         * thread as this could lead to a deadlock (see #4259 for the full explanation)
+         */
+        if (curthread->t_intr && getpil() < DISP_LEVEL)
+            swtch();
         pThis->pSwitchPort->pfnRecv(pThis->pSwitchPort, pSG, fSrc);
+    }
     else
         LogRel((DEVICE_NAME ":vboxNetFltSolarisMBlkToSG failed. rc=%d\n", rc));
 
