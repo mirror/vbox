@@ -504,12 +504,27 @@ if1of ($(KBUILD_TARGET), darwin linux solaris win)
  endif
 endif
 
+#
+# Config items for enabling work in progress.
+#
+# It's good pratice to add stuff here even if it is currently disabled by
+# default.
+#
+# Note! Please, do *not* add stuff to the global DEFS unless it is *really*
+#       necessary!  The other guys will hate for it you when they have to
+#       recompile everything when the feature is enabled or disabled.  Put
+#       the ifdefs in target or template definitions.
+#
+
 ## For experimenting with disabling preemption instead of interrupts
 # when working VT-x/AMD-V in VMMR0.
 ## @todo os2? Reconsider perhaps windows? (see defect) This should be made the default.
 if1of ($(KBUILD_TARGET), darwin freebsd linux windows solaris)
  VBOX_WITH_VMMR0_DISABLE_PREEMPTION = 1
 endif
+
+## Enabled the live migration API changes.
+#VBOX_WITH_LIVE_MIGRATION = 1
 
 #
 # Branding

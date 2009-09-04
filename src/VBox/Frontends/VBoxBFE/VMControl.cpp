@@ -160,7 +160,7 @@ DECLCALLBACK(int) VMSaveThread(RTTHREAD Thread, void *pvUser)
 
     startProgressInfo("Saving");
     rc = VMR3ReqCall(pVM, VMCPUID_ANY, &pReq, RT_INDEFINITE_WAIT,
-                     (PFNRT)VMR3Save, 4, pVM, g_pszStateFile, &callProgressInfo, (uintptr_t)NULL);
+                     (PFNRT)VMR3Save, 5, pVM, g_pszStateFile, false /*fContinueAftewards*/, &callProgressInfo, (uintptr_t)NULL);
     endProgressInfo();
     if (RT_SUCCESS(rc))
     {

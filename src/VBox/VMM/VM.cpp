@@ -134,7 +134,7 @@ static DECLCALLBACK(size_t) vmR3LogPrefixCallback(PRTLOGGER pLogger, char *pchBu
 static DECLCALLBACK(int) vmR3PowerOn(PVM pVM);
 static DECLCALLBACK(int) vmR3Suspend(PVM pVM);
 static DECLCALLBACK(int) vmR3Resume(PVM pVM);
-static DECLCALLBACK(int) vmR3Save(PVM pVM, const char *pszFilename, PFNVMPROGRESS pfnProgress, void *pvUser);
+static DECLCALLBACK(int) vmR3Save(PVM pVM, const char *pszFilename, SSMAFTER enmAfter, PFNVMPROGRESS pfnProgress, void *pvUser);
 static DECLCALLBACK(int) vmR3Load(PVM pVM, const char *pszFilename, PFNVMPROGRESS pfnProgress, void *pvUser);
 static DECLCALLBACK(int) vmR3PowerOff(PVM pVM);
 static void              vmR3DestroyUVM(PUVM pUVM, uint32_t cMilliesEMTWait);
@@ -1385,41 +1385,47 @@ static DECLCALLBACK(int) vmR3Resume(PVM pVM)
 /**
  * Save current VM state.
  *
- * To save and terminate the VM, the VM must be suspended before the call.
+ * Can be used for both saving the state and creating snapshots.
  *
- * @returns 0 on success.
- * @returns VBox error code on failure.
- * @param   pVM             VM which state should be saved.
- * @param   pszFilename     Name of the save state file.
- * @param   pfnProgress     Progress callback. Optional.
- * @param   pvUser          User argument for the progress callback.
- * @thread      Any thread.
- * @vmstate     Suspended
- * @vmstateto   Unchanged state.
+ * When called for a VM in the RUNNING state, the saved state is created live
+ * and the VM is only suspended when the final part of the saving is preformed.
+ * The VM state will not be restored to RUNNING in this case and it's up to the
+ * caller to call VMR3Resume if this is desirable.  (The rational is that the
+ * caller probably wish to reconfigure the disks before resuming the VM.)
+ *
+ * @returns VBox status code.
+ *
+ * @param   pVM                 VM which state should be saved.
+ * @param   pszFilename         Name of the save state file.
+ * @param   fContinueAftewards  Continue execution afterwards. When in doubt,
+ *                              set this to true.
+ * @param   pfnProgress         Progress callback. Optional.
+ * @param   pvUser              User argument for the progress callback.
+ *
+ * @thread      Any thread. Will forward the request to EMT(0).
+ * @vmstate     Suspended, Running
+ * @vmstateto   Suspended.
  */
-VMMR3DECL(int) VMR3Save(PVM pVM, const char *pszFilename, PFNVMPROGRESS pfnProgress, void *pvUser)
+VMMR3DECL(int) VMR3Save(PVM pVM, const char *pszFilename, bool fContinueAftewards, PFNVMPROGRESS pfnProgress, void *pvUser)
 {
-    LogFlow(("VMR3Save: pVM=%p pszFilename=%p:{%s} pfnProgress=%p pvUser=%p\n", pVM, pszFilename, pszFilename, pfnProgress, pvUser));
+    LogFlow(("VMR3Save: pVM=%p pszFilename=%p:{%s} fContinueAftewards=%RTbool pfnProgress=%p pvUser=%p\n",
+             pVM, pszFilename, pszFilename, fContinueAftewards, pfnProgress, pvUser));
 
     /*
      * Validate input.
      */
-    if (!pVM)
-    {
-        AssertMsgFailed(("Invalid VM pointer\n"));
-        return VERR_INVALID_PARAMETER;
-    }
-    if (!pszFilename)
-    {
-        AssertMsgFailed(("Must specify a filename to save the state to, wise guy!\n"));
-        return VERR_INVALID_PARAMETER;
-    }
+    VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
+    AssertPtrReturn(pszFilename, VERR_INVALID_POINTER);
+    AssertReturn(*pszFilename, VERR_INVALID_PARAMETER);
+    AssertPtrNullReturn(pfnProgress, VERR_INVALID_POINTER);
 
     /*
-     * Request the operation in EMT.
+     * Request the operation in EMT(0).
      */
+    SSMAFTER enmAfter = fContinueAftewards ? SSMAFTER_CONTINUE : SSMAFTER_DESTROY;
     PVMREQ pReq;
-    int rc = VMR3ReqCall(pVM, 0 /* VCPU 0 */, &pReq, RT_INDEFINITE_WAIT, (PFNRT)vmR3Save, 4, pVM, pszFilename, pfnProgress, pvUser);
+    int rc = VMR3ReqCall(pVM, 0 /* VCPU 0 */, &pReq, RT_INDEFINITE_WAIT,
+                         (PFNRT)vmR3Save, 5, pVM, pszFilename, enmAfter, pfnProgress, pvUser);
     if (RT_SUCCESS(rc))
     {
         rc = pReq->iStatus;
@@ -1432,33 +1438,32 @@ VMMR3DECL(int) VMR3Save(PVM pVM, const char *pszFilename, PFNVMPROGRESS pfnProgr
 
 
 /**
- * Save current VM state.
- *
- * To save and terminate the VM, the VM must be suspended before the call.
+ * Worker for VMR3Save that validates the state and calls SSMR3Save.
  *
  * @returns 0 on success.
  * @returns VBox error code on failure.
  * @param   pVM             VM which state should be saved.
  * @param   pszFilename     Name of the save state file.
+ * @param   enmAfter        What to do afterwards.
  * @param   pfnProgress     Progress callback. Optional.
  * @param   pvUser          User argument for the progress callback.
  * @thread  EMT
  */
-static DECLCALLBACK(int) vmR3Save(PVM pVM, const char *pszFilename, PFNVMPROGRESS pfnProgress, void *pvUser)
+static DECLCALLBACK(int) vmR3Save(PVM pVM, const char *pszFilename, SSMAFTER enmAfter, PFNVMPROGRESS pfnProgress, void *pvUser)
 {
-    LogFlow(("vmR3Save: pVM=%p pszFilename=%p:{%s} pfnProgress=%p pvUser=%p\n", pVM, pszFilename, pszFilename, pfnProgress, pvUser));
+    LogFlow(("vmR3Save: pVM=%p pszFilename=%p:{%s} enmAfter=%d pfnProgress=%p pvUser=%p\n", pVM, pszFilename, pszFilename, enmAfter, pfnProgress, pvUser));
 
     /*
      * Validate input.
      */
-    if (pVM->enmVMState != VMSTATE_SUSPENDED)
-    {
-        AssertMsgFailed(("Invalid VM state %d\n", pVM->enmVMState));
-        return VERR_VM_INVALID_VM_STATE;
-    }
+    /** @todo SMP: Check that vmR3SetState always done by EMT(0). If not add a vmR3TrySetState(). */
+    AssertMsgReturn(   pVM->enmVMState == VMSTATE_SUSPENDED
+                    || pVM->enmVMState == VMSTATE_RUNNING,
+                    ("%d\n", pVM->enmVMState),
+                    VERR_VM_INVALID_VM_STATE);
 
     /* If we are in an inconsistent state, then we don't allow state saving. */
-    if (pVM->vm.s.fPreventSaveState)
+    if (pVM->vm.s.fPreventSaveState)    /** @todo Incorporate VMINT::fPreventSaveState into the VMSTATE. There is a defect for this. */
     {
         LogRel(("VMM: vmR3Save: saving the VM state is not allowed at this moment\n"));
         return VERR_VM_SAVE_STATE_NOT_ALLOWED;
@@ -1467,8 +1472,8 @@ static DECLCALLBACK(int) vmR3Save(PVM pVM, const char *pszFilename, PFNVMPROGRES
     /*
      * Change the state and perform the save.
      */
-    vmR3SetState(pVM, VMSTATE_SAVING);
-    int rc = SSMR3Save(pVM, pszFilename, SSMAFTER_CONTINUE, pfnProgress,  pvUser);
+    vmR3SetState(pVM, VMSTATE_SAVING); /** @todo Should probably use a different state for live snapshots and/or live migration. Will fix the state machine later. */
+    int rc = SSMR3Save(pVM, pszFilename, enmAfter, pfnProgress,  pvUser);
     vmR3SetState(pVM, VMSTATE_SUSPENDED);
 
     return rc;
