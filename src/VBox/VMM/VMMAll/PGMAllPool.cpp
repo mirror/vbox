@@ -911,9 +911,6 @@ DECLINLINE(bool) pgmPoolMonitorIsReused(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pReg
 static int pgmPoolAccessHandlerFlush(PVM pVM, PVMCPU pVCpu, PPGMPOOL pPool, PPGMPOOLPAGE pPage, PDISCPUSTATE pDis,
                                      PCPUMCTXCORE pRegFrame, RTGCPHYS GCPhysFault, RTGCPTR pvFault)
 {
-#ifdef IN_RING0
-    int rc = pgmPoolMonitorChainFlush(pPool, pPage);
-#else
     /*
      * First, do the flushing.
      */
@@ -948,7 +945,6 @@ static int pgmPoolAccessHandlerFlush(PVM pVM, PVMCPU pVCpu, PPGMPOOL pPool, PPGM
 
     /* See use in pgmPoolAccessHandlerSimple(). */
     PGM_INVL_VCPU_TLBS(pVCpu);
-#endif
     LogFlow(("pgmPoolAccessHandlerPT: returns %Rrc (flushed)\n", rc));
     return rc;
 }
