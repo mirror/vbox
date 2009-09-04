@@ -837,6 +837,13 @@ static DECLCALLBACK(int) ssmR3SelfSaveExec(PVM pVM, PSSMHANDLE pSSM)
      * String table containg pairs of variable and value string.
      * Terminated by two empty strings.
      */
+#ifdef DEBUG
+    SSMR3PutStrZ(pSSM, "Build Type");
+    SSMR3PutStrZ(pSSM, "debug");
+#elif defined(VBOX_STRICT)
+    SSMR3PutStrZ(pSSM, "Build Type");
+    SSMR3PutStrZ(pSSM, "strict");
+#endif
 #ifdef VBOX_OSE
     SSMR3PutStrZ(pSSM, "OSE");
     SSMR3PutStrZ(pSSM, "true");
