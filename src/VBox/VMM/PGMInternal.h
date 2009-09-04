@@ -1863,6 +1863,8 @@ typedef struct PGMPOOL
     STAMCOUNTER                 StatDirtyPage;
     /** Times we've had to flush duplicates for dirty page management. */
     STAMCOUNTER                 StatDirtyPageDupFlush;
+    /** Times we've had to flush because of overflow. */
+    STAMCOUNTER                 StatDirtyPageOverFlowFlush;
 
     /** The high wather mark for cModifiedPages. */
     uint16_t                    cModifiedPagesHigh;
