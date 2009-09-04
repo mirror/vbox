@@ -1600,7 +1600,10 @@ void pgmPoolAddDirtyPage(PVM pVM, PPGMPOOL pPool, PPGMPOOLPAGE pPage)
     Assert(pPage->iMonitoredNext == NIL_PGMPOOL_IDX && pPage->iMonitoredPrev == NIL_PGMPOOL_IDX);
 
     if (pPool->cDirtyPages >= RT_ELEMENTS(pPool->aIdxDirtyPages))
+    {
+        STAM_COUNTER_INC(&pPool->StatDirtyPageOverFlowFlush);
         pgmPoolFlushDirtyPage(pVM, pPool, idxFree, true /* force removal */);
+    }
     Assert(pPool->cDirtyPages < RT_ELEMENTS(pPool->aIdxDirtyPages));
     AssertMsg(pPool->aIdxDirtyPages[idxFree] == NIL_PGMPOOL_IDX, ("idxFree=%d cDirtyPages=%d\n", idxFree, pPool->cDirtyPages));
 
