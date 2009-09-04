@@ -1,9 +1,7 @@
-
-float splitBGRA(vec4 color, float coord)
+float vboxSplitBGRA(vec4 color, float coord)
 {
     int pix = int(coord);
 	float part = coord - float(pix);
-	/* todo: do not use if */
 	if(part < 0.25)
 		return color.b;
 	if(part < 0.5)

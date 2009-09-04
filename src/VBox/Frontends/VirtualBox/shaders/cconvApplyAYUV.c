@@ -1,9 +1,4 @@
-/* AYUV <-> GL_BGRA_EXT
- * A <-> B
- * Y <-> G
- * U <-> R
- * V <-> A */
-void cconvApplyAYUV(vec4 color)
+void vboxCConvApplyAYUV(vec4 color)
 {
     float y, u, v, r, g, b;
     y = color.g;

@@ -298,8 +298,10 @@ private:
 #ifdef DEBUG
 #include "iprt/stream.h"
 #define VBOXQGLLOG(_m) RTPrintf _m
+#define VBOXQGLLOGREL(_m) do { RTPrintf _m ; LogRel( _m ); } while(0)
 #else
 #define VBOXQGLLOG(_m)
+#define VBOXQGLLOGREL(_m) LogRel( _m )
 #endif
 #define VBOXQGLLOG_ENTER(_m)
 //do{VBOXQGLLOG(("==>[%s]:", __FUNCTION__)); VBOXQGLLOG(_m);}while(0)

@@ -1,20 +1,9 @@
 #extension GL_ARB_texture_rectangle : enable
-
 uniform sampler2DRect uSrcTex;
-
-void cconvApplyAYUV(vec4 color);
-/* texture internalFormat: 4
- * size: width/2 X height
- * data format: GL_BGRA_EXT
- * UYVY ->
- * U = B
- * V = R
- * for even -> Y = G
- * for odd  -> Y = A
-/* UYVY-rgb888 conversion shader */
-/* this is also Y422 and UYNV */
-void cconvUYVY(vec2 srcCoord)
+void vboxCConvApplyAYUV(vec4 color);
+void vboxCConv(int srcI)
 {
+    vec2 srcCoord = vec2(gl_TexCoord[srcI]);
     float x = srcCoord.x;
     vec4 srcClr = texture2DRect(uSrcTex, vec2(x, srcCoord.y));
     float u = srcClr.b;
@@ -30,9 +19,5 @@ void cconvUYVY(vec2 srcCoord)
     {
         y = srcClr.a;
     }
-    /* convert it to AYUV (for the GL_BGRA_EXT texture this is mapped as follows:
-     * A -> B
-     * Y -> G
-     * U -> R
-     * V -> A */
-    cconvApplyAYUV(vec4(u, y, 0.0, v));}
+    vboxCConvApplyAYUV(vec4(u, y, 0.0, v));}
+}
