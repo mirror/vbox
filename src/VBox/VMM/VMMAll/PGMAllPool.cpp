@@ -4718,7 +4718,7 @@ PPGMPOOLPAGE pgmPoolGetPage(PPGMPOOL pPool, RTHCPHYS HCPhys)
     return pPage;
 }
 
-#ifdef IN_RING3 /* currently only used in ring 3; save some space in the R0 & GC modules */
+#ifdef IN_RING3 /* currently only used in ring 3; save some space in the R0 & GC modules (left it here as we might need it elsewhere later on) */
 /**
  * Flush the specified page if present
  *
