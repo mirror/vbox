@@ -213,7 +213,7 @@ VBGLR3DECL(int) VbglR3GuestPropWriteValueV(uint32_t u32ClientId, const char *psz
      */
     int rc = VERR_NO_STR_MEMORY;
     char *pszValue;
-    if (RTStrAPrintfV(&pszValue, pszValueFormat, va) < 0)
+    if (RTStrAPrintfV(&pszValue, pszValueFormat, va) > 0)
     {
         rc = VbglR3GuestPropWriteValue(u32ClientId, pszName, pszValue);
         RTStrFree(pszValue);
