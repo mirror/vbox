@@ -182,12 +182,16 @@ typedef struct VBOXNETFLTINS
             void volatile *pvArpStream;
             /** Pointer to the unbound promiscuous stream. */
             void volatile *pvPromiscStream;
+            /** Whether we are attaching to IPv6 stream dynamically now. */
+            bool volatile fAttaching;
             /** Layered device handle to the interface. */
             ldi_handle_t hIface;
             /** The MAC address of the interface. */
             RTMAC Mac;
             /** Mutex protection used for loopback. */
             RTSEMFASTMUTEX hFastMtx;
+            /** Mutex protection used for dynamic IPv6 attaches. */
+            RTSEMFASTMUTEX hPollMtx;
             /** @} */
 # elif defined(RT_OS_WINDOWS)
             /** @name Windows instance data.
@@ -222,7 +226,7 @@ typedef struct VBOXNETFLTINS
 #elif defined(RT_OS_LINUX)
         uint8_t abPadding[320];
 #else
-        uint8_t abPadding[64];
+        uint8_t abPadding[128];
 #endif
     } u;
 
