@@ -1,4 +1,4 @@
-vec2 ckeyDst(void)
+int vboxCKeyDst(void)
 {
-    return vec2(gl_TexCoord[0]);
+    return 0;
 }

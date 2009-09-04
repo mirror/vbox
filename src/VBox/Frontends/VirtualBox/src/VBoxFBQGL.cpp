@@ -20,6 +20,8 @@
  */
 #if defined (VBOX_GUI_USE_QGL)
 
+#define LOG_GROUP LOG_GROUP_GUI
+
 #include "VBoxFrameBuffer.h"
 
 #include "VBoxConsoleView.h"
@@ -516,13 +518,13 @@ static void vboxVHWAGlInitExtSupport(const QGLContext & context)
         glGetIntegerv(GL_MAX_TEXTURE_COORDS, &maxCoords);
         glGetIntegerv(GL_MAX_TEXTURE_IMAGE_UNITS, &maxUnits);
 
-        VBOXQGLLOG(("Max Tex Coords (%d), Img Units (%d)\n", maxCoords, maxUnits));
+        VBOXQGLLOGREL(("Max Tex Coords (%d), Img Units (%d)\n", maxCoords, maxUnits));
         /* take the minimum of those */
         if(maxUnits < maxCoords)
         	maxCoords = maxUnits;
         if(maxUnits < 2)
         {
-            VBOXQGLLOG(("Max Tex Coord or Img Units < 2 disabling MultiTex support\n"));
+            VBOXQGLLOGREL(("Max Tex Coord or Img Units < 2 disabling MultiTex support\n"));
         	break;
         }
 
@@ -708,7 +710,7 @@ static void vboxVHWAGlInit(const QGLContext * pContext)
             str = glGetString(GL_VERSION);
             );
 
-    VBOXQGLLOG (("gl version string: 0%s\n", str));
+    VBOXQGLLOGREL (("gl version string: 0%s\n", str));
 
     g_vboxVHWAGlVersion = vboxVHWAGlParseVersion(str);
     Assert(g_vboxVHWAGlVersion > 0);
@@ -718,42 +720,42 @@ static void vboxVHWAGlInit(const QGLContext * pContext)
     }
     else
     {
-        VBOXQGLLOG (("gl version: 0x%x\n", g_vboxVHWAGlVersion));
+        VBOXQGLLOGREL (("gl version: 0x%x\n", g_vboxVHWAGlVersion));
         VBOXQGL_CHECKERR(
                 str = glGetString(GL_EXTENSIONS);
                 );
 
         const char * pos = strstr((const char *)str, "GL_ARB_multitexture");
         g_GL_ARB_multitexture = pos != NULL;
-        VBOXQGLLOG (("GL_ARB_multitexture: %d\n", g_GL_ARB_multitexture));
+        VBOXQGLLOGREL (("GL_ARB_multitexture: %d\n", g_GL_ARB_multitexture));
 
         pos = strstr((const char *)str, "GL_ARB_shader_objects");
         g_GL_ARB_shader_objects = pos != NULL;
-        VBOXQGLLOG (("GL_ARB_shader_objects: %d\n", g_GL_ARB_shader_objects));
+        VBOXQGLLOGREL (("GL_ARB_shader_objects: %d\n", g_GL_ARB_shader_objects));
 
         pos = strstr((const char *)str, "GL_ARB_fragment_shader");
         g_GL_ARB_fragment_shader = pos != NULL;
-        VBOXQGLLOG (("GL_ARB_fragment_shader: %d\n", g_GL_ARB_fragment_shader));
+        VBOXQGLLOGREL (("GL_ARB_fragment_shader: %d\n", g_GL_ARB_fragment_shader));
 
         pos = strstr((const char *)str, "GL_ARB_pixel_buffer_object");
         g_GL_ARB_pixel_buffer_object = pos != NULL;
-        VBOXQGLLOG (("GL_ARB_pixel_buffer_object: %d\n", g_GL_ARB_pixel_buffer_object));
+        VBOXQGLLOGREL (("GL_ARB_pixel_buffer_object: %d\n", g_GL_ARB_pixel_buffer_object));
 
         pos = strstr((const char *)str, "GL_ARB_texture_rectangle");
         g_GL_ARB_texture_rectangle = pos != NULL;
-        VBOXQGLLOG (("GL_ARB_texture_rectangle: %d\n", g_GL_ARB_texture_rectangle));
+        VBOXQGLLOGREL (("GL_ARB_texture_rectangle: %d\n", g_GL_ARB_texture_rectangle));
 
         pos = strstr((const char *)str, "GL_EXT_texture_rectangle");
         g_GL_EXT_texture_rectangle = pos != NULL;
-        VBOXQGLLOG (("GL_EXT_texture_rectangle: %d\n", g_GL_EXT_texture_rectangle));
+        VBOXQGLLOGREL (("GL_EXT_texture_rectangle: %d\n", g_GL_EXT_texture_rectangle));
 
         pos = strstr((const char *)str, "GL_NV_texture_rectangle");
         g_GL_NV_texture_rectangle = pos != NULL;
-        VBOXQGLLOG (("GL_NV_texture_rectangle: %d\n", g_GL_NV_texture_rectangle));
+        VBOXQGLLOGREL (("GL_NV_texture_rectangle: %d\n", g_GL_NV_texture_rectangle));
 
         pos = strstr((const char *)str, "GL_ARB_texture_non_power_of_two");
         g_GL_ARB_texture_non_power_of_two = pos != NULL;
-        VBOXQGLLOG (("GL_ARB_texture_non_power_of_two: %d\n", g_GL_ARB_texture_non_power_of_two));
+        VBOXQGLLOGREL (("GL_ARB_texture_non_power_of_two: %d\n", g_GL_ARB_texture_non_power_of_two));
 
         vboxVHWAGlInitExtSupport(*pContext);
 
@@ -973,7 +975,7 @@ int VBoxVHWAGlShader::init()
  //   int length = program.length();
     QByteArray asciiStr = program.toAscii();
     const char * contents = asciiStr.constData();
-    GLint length = (GLint)strlen(contents);
+    GLint length = -1;
 
     VBOXQGL_CHECKERR(
             vboxglShaderSource(mShader, 1, &contents, &length);
@@ -1436,21 +1438,22 @@ public:
     VBoxVHWAGlProgramMngr() :
         mShaderCConvApplyAYUV(":/cconvApplyAYUV.c", GL_FRAGMENT_SHADER),
         mShaderCConvAYUV(":/cconvAYUV.c", GL_FRAGMENT_SHADER),
-        mShaderCConvAYUVVoid(":/cconvAYUV_void.c", GL_FRAGMENT_SHADER),
+//        mShaderCConvAYUVVoid(":/cconvAYUV_void.c", GL_FRAGMENT_SHADER),
         mShaderCConvBGR(":/cconvBGR.c", GL_FRAGMENT_SHADER),
-        mShaderCConvBGRVoid(":/cconvBGR_void.c", GL_FRAGMENT_SHADER),
+//        mShaderCConvBGRVoid(":/cconvBGR_void.c", GL_FRAGMENT_SHADER),
         mShaderCConvUYVY(":/cconvUYVY.c", GL_FRAGMENT_SHADER),
-        mShaderCConvUYVYVoid(":/cconvUYVY_void.c", GL_FRAGMENT_SHADER),
+//        mShaderCConvUYVYVoid(":/cconvUYVY_void.c", GL_FRAGMENT_SHADER),
         mShaderCConvYUY2(":/cconvYUY2.c", GL_FRAGMENT_SHADER),
-        mShaderCConvYUY2Void(":/cconvYUY2_void.c", GL_FRAGMENT_SHADER),
+//        mShaderCConvYUY2Void(":/cconvYUY2_void.c", GL_FRAGMENT_SHADER),
         mShaderCConvYV12(":/cconvYV12.c", GL_FRAGMENT_SHADER),
-        mShaderCConvYV12Void(":/cconvYV12_void.c", GL_FRAGMENT_SHADER),
+//        mShaderCConvYV12Void(":/cconvYV12_void.c", GL_FRAGMENT_SHADER),
         mShaderSplitBGRA(":/splitBGRA.c", GL_FRAGMENT_SHADER),
         mShaderCKeyDst(":/ckeyDst.c", GL_FRAGMENT_SHADER),
-        mShaderCKeyDstVoid(":/ckeyDst_void.c", GL_FRAGMENT_SHADER),
+//        mShaderCKeyDstVoid(":/ckeyDst_void.c", GL_FRAGMENT_SHADER),
     //  mShaderCKeySrc;
     //  mShaderCKeySrcVoid;
-        mShaderMainOverlay(":/mainOverlay.c", GL_FRAGMENT_SHADER)
+        mShaderMainOverlay(":/mainOverlay.c", GL_FRAGMENT_SHADER),
+        mShaderMainOverlayNoCKey(":/mainOverlayNoCKey.c", GL_FRAGMENT_SHADER)
     {}
 
     VBoxVHWAGlProgramVHWA * getProgram(bool bDstCKey, bool bSrcCKey, const VBoxVHWAColorFormat * pFrom, const VBoxVHWAColorFormat * pTo);
@@ -1476,23 +1479,24 @@ private:
     VBoxVHWAGlShader mShaderCConvApplyAYUV;
 
     VBoxVHWAGlShader mShaderCConvAYUV;
-    VBoxVHWAGlShader mShaderCConvAYUVVoid;
+//    VBoxVHWAGlShader mShaderCConvAYUVVoid;
     VBoxVHWAGlShader mShaderCConvBGR;
-    VBoxVHWAGlShader mShaderCConvBGRVoid;
+//    VBoxVHWAGlShader mShaderCConvBGRVoid;
     VBoxVHWAGlShader mShaderCConvUYVY;
-    VBoxVHWAGlShader mShaderCConvUYVYVoid;
+//    VBoxVHWAGlShader mShaderCConvUYVYVoid;
     VBoxVHWAGlShader mShaderCConvYUY2;
-    VBoxVHWAGlShader mShaderCConvYUY2Void;
+//    VBoxVHWAGlShader mShaderCConvYUY2Void;
     VBoxVHWAGlShader mShaderCConvYV12;
-    VBoxVHWAGlShader mShaderCConvYV12Void;
+//    VBoxVHWAGlShader mShaderCConvYV12Void;
     VBoxVHWAGlShader mShaderSplitBGRA;
 
     VBoxVHWAGlShader mShaderCKeyDst;
-    VBoxVHWAGlShader mShaderCKeyDstVoid;
+//    VBoxVHWAGlShader mShaderCKeyDstVoid;
 //    VBoxVHWAGlShader mShaderCKeySrc;
 //    VBoxVHWAGlShader mShaderCKeySrcVoid;
 
     VBoxVHWAGlShader mShaderMainOverlay;
+    VBoxVHWAGlShader mShaderMainOverlayNoCKey;
 
     friend class VBoxVHWAGlProgramVHWA;
 };
@@ -1511,10 +1515,11 @@ VBoxVHWAGlProgramVHWA * VBoxVHWAGlProgramMngr::createProgram(uint32_t type, uint
     {
         apShaders[cShaders++] = &mShaderCKeyDst;
     }
-    else
-    {
-        apShaders[cShaders++] = &mShaderCKeyDstVoid;
-    }
+// ensure we don't have empty functions /* paranoya for for ATI on linux */
+//    else
+//    {
+//        apShaders[cShaders++] = &mShaderCKeyDstVoid;
+//    }
 
     if(type & VBOXVHWA_PROGRAM_SRCCOLORKEY)
     {
@@ -1531,40 +1536,21 @@ VBoxVHWAGlProgramVHWA * VBoxVHWAGlProgramMngr::createProgram(uint32_t type, uint
             apShaders[cShaders++] = &mShaderCConvUYVY;
             bFound = true;
         }
-        else
-        {
-            apShaders[cShaders++] = &mShaderCConvUYVYVoid;
-        }
-
-        if(fourcc == FOURCC_YUY2)
+        else if(fourcc == FOURCC_YUY2)
         {
             apShaders[cShaders++] = &mShaderCConvYUY2;
             bFound = true;
         }
-        else
-        {
-            apShaders[cShaders++] = &mShaderCConvYUY2Void;
-        }
-
-        if(fourcc == FOURCC_YV12)
+        else if(fourcc == FOURCC_YV12)
         {
             apShaders[cShaders++] = &mShaderSplitBGRA;
             apShaders[cShaders++] = &mShaderCConvYV12;
             bFound = true;
         }
-        else
-        {
-            apShaders[cShaders++] = &mShaderCConvYV12Void;
-        }
-
-        if(fourcc == FOURCC_AYUV)
+        else if(fourcc == FOURCC_AYUV)
         {
             apShaders[cShaders++] = &mShaderCConvAYUV;
             bFound = true;
-        }
-        else
-        {
-            apShaders[cShaders++] = &mShaderCConvAYUVVoid;
         }
     }
 
@@ -1572,7 +1558,6 @@ VBoxVHWAGlProgramVHWA * VBoxVHWAGlProgramMngr::createProgram(uint32_t type, uint
     {
         type |= VBOXVHWA_PROGRAM_COLORCONV;
         apShaders[0] = &mShaderCConvApplyAYUV;
-        apShaders[cShaders++] = &mShaderCConvBGRVoid;
     }
     else
     {
@@ -1580,7 +1565,15 @@ VBoxVHWAGlProgramVHWA * VBoxVHWAGlProgramMngr::createProgram(uint32_t type, uint
         apShaders[0] = &mShaderCConvBGR;
     }
 
-    apShaders[cShaders++] = &mShaderMainOverlay;
+    if(type &  VBOXVHWA_PROGRAM_DSTCOLORKEY)
+    {
+        apShaders[cShaders++] = &mShaderMainOverlay;
+    }
+    else
+    {
+        // ensure we don't have empty functions /* paranoya for for ATI on linux */
+        apShaders[cShaders++] = &mShaderMainOverlayNoCKey;
+    }
 
     Assert(cShaders <= RT_ELEMENTS(apShaders));
 
@@ -4801,7 +4794,7 @@ void VBoxGLWidget::vboxDoResize(void *resize)
             (VBoxVHWAColorKey*)NULL, (VBoxVHWAColorKey*)NULL, (VBoxVHWAColorKey*)NULL, (VBoxVHWAColorKey*)NULL, true);
     pDisplay->init(NULL, mUsesGuestVRAM ? re->VRAM() : NULL);
     mDisplay.setVGA(pDisplay);
-    VBOXQGLLOG(("\n\n*******\n\n     viewport size is: (%d):(%d)\n\n*******\n\n", size().width(), size().height()));
+//    VBOXQGLLOG(("\n\n*******\n\n     viewport size is: (%d):(%d)\n\n*******\n\n", size().width(), size().height()));
     mViewport = QRect(0,0,displayWidth, displayHeight);
     adjustViewport(dispSize, mViewport);
     setupMatricies(dispSize);

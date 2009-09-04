@@ -1,2 +1,2 @@
-void cconvAYUV(vec2 srcCoord)
+void vboxCConv(int srcI)
 {}
