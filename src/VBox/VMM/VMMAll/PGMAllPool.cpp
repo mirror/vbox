@@ -897,64 +897,6 @@ DECLINLINE(bool) pgmPoolMonitorIsReused(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pReg
 
 
 /**
- * Flushes the page being accessed.
- *
- * @returns VBox status code suitable for scheduling.
- * @param   pVM         The VM handle.
- * @param   pVCpu       The VMCPU handle.
- * @param   pPool       The pool.
- * @param   pPage       The pool page (head).
- * @param   pDis        The disassembly of the write instruction.
- * @param   pRegFrame   The trap register frame.
- * @param   GCPhysFault The fault address as guest physical address.
- * @param   pvFault     The fault address.
- */
-static int pgmPoolAccessHandlerFlush(PVM pVM, PVMCPU pVCpu, PPGMPOOL pPool, PPGMPOOLPAGE pPage, PDISCPUSTATE pDis,
-                                     PCPUMCTXCORE pRegFrame, RTGCPHYS GCPhysFault, RTGCPTR pvFault)
-{
-    /*
-     * First, do the flushing.
-     */
-    int rc = pgmPoolMonitorChainFlush(pPool, pPage);
-
-    /*
-     * Emulate the instruction (xp/w2k problem, requires pc/cr2/sp detection).
-     * @todo: why is this necessary? an instruction restart would be sufficient, wouldn't it?
-     */
-    uint32_t cbWritten;
-    int rc2 = EMInterpretInstructionCPU(pVM, pVCpu, pDis, pRegFrame, pvFault, &cbWritten);
-    if (RT_SUCCESS(rc2))
-        pRegFrame->rip += pDis->opsize;
-    else if (rc2 == VERR_EM_INTERPRETER)
-    {
-#ifdef IN_RC
-        if (PATMIsPatchGCAddr(pVM, (RTRCPTR)pRegFrame->eip))
-        {
-            LogFlow(("pgmPoolAccessHandlerPTWorker: Interpretation failed for patch code %04x:%RGv, ignoring.\n",
-                     pRegFrame->cs, (RTGCPTR)pRegFrame->eip));
-            rc = VINF_SUCCESS;
-            STAM_COUNTER_INC(&pPool->StatMonitorRZIntrFailPatch2);
-        }
-        else
-#endif
-        {
-            rc = VINF_EM_RAW_EMULATE_INSTR;
-            STAM_COUNTER_INC(&pPool->CTX_MID_Z(StatMonitor,EmulateInstr));
-        }
-    }
-    else
-        rc = rc2;
-
-    /* See use in pgmPoolAccessHandlerSimple(). */
-    PGM_INVL_VCPU_TLBS(pVCpu);
-
-    LogFlow(("pgmPoolAccessHandlerPT: returns %Rrc (flushed)\n", rc));
-    return rc;
-
-}
-
-
-/**
  * Handles the STOSD write accesses.
  *
  * @returns VBox status code suitable for scheduling.
@@ -1041,9 +983,10 @@ DECLINLINE(int) pgmPoolAccessHandlerSTOSD(PVM pVM, PPGMPOOL pPool, PPGMPOOLPAGE 
  * @param   pRegFrame   The trap register frame.
  * @param   GCPhysFault The fault address as guest physical address.
  * @param   pvFault     The fault address.
+ * @param   pfReused    Reused state (out)
  */
 DECLINLINE(int) pgmPoolAccessHandlerSimple(PVM pVM, PVMCPU pVCpu, PPGMPOOL pPool, PPGMPOOLPAGE pPage, PDISCPUSTATE pDis,
-                                           PCPUMCTXCORE pRegFrame, RTGCPHYS GCPhysFault, RTGCPTR pvFault)
+                                           PCPUMCTXCORE pRegFrame, RTGCPHYS GCPhysFault, RTGCPTR pvFault, bool *pfReused)
 {
     Log3(("pgmPoolAccessHandlerSimple\n"));
     /*
@@ -1077,6 +1020,34 @@ DECLINLINE(int) pgmPoolAccessHandlerSimple(PVM pVM, PVMCPU pVCpu, PPGMPOOL pPool
                   pRegFrame->cs, (RTGCPTR)pRegFrame->rip, pDis->pCurInstr->opcode));
         rc = VINF_EM_RAW_EMULATE_INSTR;
         STAM_COUNTER_INC(&pPool->CTX_MID_Z(StatMonitor,EmulateInstr));
+    }
+
+    if (rc == VINF_SUCCESS)
+    {
+        switch (pPage->enmKind)
+        {
+        case PGMPOOLKIND_PAE_PT_FOR_PAE_PT:
+        {
+            X86PTEPAE GstPte;
+            int rc = pgmPoolPhysSimpleReadGCPhys(pVM, &GstPte, pvFault, GCPhysFault, sizeof(GstPte));
+            AssertRC(rc);
+
+            /* Check the new value written by the guest. If present and with a bogus physical address, then
+             * it's fairly safe to assume the guest is reusing the PT.
+             */
+            if (GstPte.n.u1Present)
+            {
+                RTHCPHYS HCPhys = -1;
+                int rc = PGMPhysGCPhys2HCPhys(pVM, GstPte.u & X86_PTE_PAE_PG_MASK, &HCPhys);
+                if (rc != VINF_SUCCESS)
+                {
+                    *pfReused = true;
+                    STAM_COUNTER_INC(&pPool->StatForceFlushReused);
+                }
+            }
+            break;
+        }
+        }
     }
 
 #ifdef IN_RC
@@ -1196,37 +1167,39 @@ DECLEXPORT(int) pgmPoolAccessHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE 
          */
         if (!(pDis->prefix & (PREFIX_REP | PREFIX_REPNE)))
         {
-             rc = pgmPoolAccessHandlerSimple(pVM, pVCpu, pPool, pPage, pDis, pRegFrame, GCPhysFault, pvFault);
+            rc = pgmPoolAccessHandlerSimple(pVM, pVCpu, pPool, pPage, pDis, pRegFrame, GCPhysFault, pvFault, &fReused);
+            if (fReused)
+                goto flushPage;
+                
+            /* A mov instruction to change the first page table entry will be remembered so we can detect
+             * full page table changes early on. This will reduce the amount of unnecessary traps we'll take.
+             */
+            if (   rc == VINF_SUCCESS
+                && pDis->pCurInstr->opcode == OP_MOV
+                && (pvFault & PAGE_OFFSET_MASK) == 0)
+            {
+                pPage->pvLastAccessHandlerFault = pvFault;
+                pPage->cLastAccessHandlerCount  = pVCpu->pgm.s.cPoolAccessHandler;
+                pPage->pvLastAccessHandlerRip   = pRegFrame->rip;
+                /* Make sure we don't kick out a page too quickly. */
+                if (pPage->cModifications > 8)
+                    pPage->cModifications = 2;
+            }
+            else
+            if (pPage->pvLastAccessHandlerFault == pvFault)
+            {
+                /* ignore the 2nd write to this page table entry. */
+                pPage->cLastAccessHandlerCount  = pVCpu->pgm.s.cPoolAccessHandler;
+            }
+            else
+            {
+                pPage->pvLastAccessHandlerFault = 0;
+                pPage->pvLastAccessHandlerRip   = 0;
+            }
 
-             /* A mov instruction to change the first page table entry will be remembered so we can detect
-              * full page table changes early on. This will reduce the amount of unnecessary traps we'll take.
-              */
-             if (   rc == VINF_SUCCESS
-                 && pDis->pCurInstr->opcode == OP_MOV
-                 && (pvFault & PAGE_OFFSET_MASK) == 0)
-             {
-                 pPage->pvLastAccessHandlerFault = pvFault;
-                 pPage->cLastAccessHandlerCount  = pVCpu->pgm.s.cPoolAccessHandler;
-                 pPage->pvLastAccessHandlerRip   = pRegFrame->rip;
-                 /* Make sure we don't kick out a page too quickly. */
-                 if (pPage->cModifications > 8)
-                     pPage->cModifications = 2;
-             }
-             else
-             if (pPage->pvLastAccessHandlerFault == pvFault)
-             {
-                 /* ignore the 2nd write to this page table entry. */
-                 pPage->cLastAccessHandlerCount  = pVCpu->pgm.s.cPoolAccessHandler;
-             }
-             else
-             {
-                 pPage->pvLastAccessHandlerFault = 0;
-                 pPage->pvLastAccessHandlerRip   = 0;
-             }
-
-             STAM_PROFILE_STOP_EX(&pVM->pgm.s.CTX_SUFF(pPool)->CTX_SUFF_Z(StatMonitor), &pPool->CTX_MID_Z(StatMonitor,Handled), a);
-             pgmUnlock(pVM);
-             return rc;
+            STAM_PROFILE_STOP_EX(&pVM->pgm.s.CTX_SUFF(pPool)->CTX_SUFF_Z(StatMonitor), &pPool->CTX_MID_Z(StatMonitor,Handled), a);
+            pgmUnlock(pVM);
+            return rc;
         }
 
         /*
@@ -1352,15 +1325,9 @@ DECLEXPORT(int) pgmPoolAccessHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE 
 
     /*
      * Not worth it, so flush it.
-     *
-     * If we considered it to be reused, don't go back to ring-3
-     * to emulate failed instructions since we usually cannot
-     * interpret then. This may be a bit risky, in which case
-     * the reuse detection must be fixed.
-     */       
-    rc = pgmPoolAccessHandlerFlush(pVM, pVCpu, pPool, pPage, pDis, pRegFrame, GCPhysFault, pvFault);
-    if (rc == VINF_EM_RAW_EMULATE_INSTR && fReused)
-        rc = VINF_SUCCESS;
+     */      
+flushPage:
+    rc = pgmPoolMonitorChainFlush(pPool, pPage);
     STAM_PROFILE_STOP_EX(&pVM->pgm.s.CTX_SUFF(pPool)->CTX_SUFF_Z(StatMonitor), &pPool->CTX_MID_Z(StatMonitor,FlushPage), a);
     pgmUnlock(pVM);
     return rc;
@@ -1794,13 +1761,9 @@ static int pgmPoolCacheFreeOne(PPGMPOOL pPool, uint16_t iUser)
     }
 
     /*
-     * Found a usable page, flush it and return.
+     * Found a usable page, flush it and return. 
      */
-    int rc = pgmPoolFlushPage(pPool, pPage);
-    /* This flush was initiated by us and not the guest, so explicitly flush the TLB. */
-    if (rc == VINF_SUCCESS)
-        PGM_INVL_ALL_VCPU_TLBS(pVM);
-    return rc;
+    return pgmPoolFlushPage(pPool, pPage);
 }
 
 
@@ -1974,7 +1937,6 @@ static int pgmPoolCacheAlloc(PPGMPOOL pPool, RTGCPHYS GCPhys, PGMPOOLKIND enmKin
                     {
                         STAM_COUNTER_INC(&pPool->StatCacheKindMismatches);
                         pgmPoolFlushPage(pPool, pPage);
-                        PGM_INVL_VCPU_TLBS(VMMGetCpu(pVM)); /* see PT handler. */
                         break;
                     }
                 }
@@ -2509,6 +2471,8 @@ DECLCALLBACK(int) pgmPoolClearAll(PVM pVM, PVMCPU pVCpu, void *pvUser)
                 case PGMPOOLKIND_PAE_PT_FOR_32BIT_4MB:
                 case PGMPOOLKIND_PAE_PT_FOR_PAE_PT:
                 case PGMPOOLKIND_PAE_PT_FOR_PAE_2MB:
+                case PGMPOOLKIND_32BIT_PT_FOR_PHYS:
+                case PGMPOOLKIND_PAE_PT_FOR_PHYS:
                 {
 #ifdef PGMPOOL_WITH_USER_TRACKING
                     if (pPage->cPresent)
