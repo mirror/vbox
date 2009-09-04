@@ -166,7 +166,11 @@ typedef FNSSMDEVLIVEEXEC *PFNSSMDEVLIVEEXEC;
  * The vote stops once a unit has vetoed the decision, so don't rely upon this
  * being called every time.
  *
- * @returns true if done, false if there is more that needs to be saved first.
+ * @returns VBox status code.
+ * @retval  VINF_SUCCESS if done.
+ * @retval  VINF_SSM_VOTE_FOR_ANOTHER_PASS if another pass is needed.
+ * @retval  VERR_SSM_VOTE_FOR_GIVING_UP if its time to give up.
+ *
  * @param   pDevIns         Device instance of the device which registered the data unit.
  * @param   pSSM            SSM operation handle.
  * @thread  Any.
@@ -287,7 +291,11 @@ typedef FNSSMDRVLIVEEXEC *PFNSSMDRVLIVEEXEC;
  * The vote stops once a unit has vetoed the decision, so don't rely upon this
  * being called every time.
  *
- * @returns true if done, false if there is more that needs to be saved first.
+ * @returns VBox status code.
+ * @retval  VINF_SUCCESS if done.
+ * @retval  VINF_SSM_VOTE_FOR_ANOTHER_PASS if another pass is needed.
+ * @retval  VERR_SSM_VOTE_FOR_GIVING_UP if its time to give up.
+ *
  * @param   pDrvIns         Driver instance of the device which registered the
  *                          data unit.
  * @param   pSSM            SSM operation handle.
@@ -409,12 +417,16 @@ typedef FNSSMINTLIVEEXEC *PFNSSMINTLIVEEXEC;
  * The vote stops once a unit has vetoed the decision, so don't rely upon this
  * being called every time.
  *
- * @returns true if done, false if there is more that needs to be saved first.
+ * @returns VBox status code.
+ * @retval  VINF_SUCCESS if done.
+ * @retval  VINF_SSM_VOTE_FOR_ANOTHER_PASS if another pass is needed.
+ * @retval  VERR_SSM_VOTE_FOR_GIVING_UP if its time to give up.
+ *
  * @param   pVM             VM Handle.
  * @param   pSSM            SSM operation handle.
  * @thread  Any.
  */
-typedef DECLCALLBACK(bool) FNSSMINTLIVEVOTE(PVM pVM, PSSMHANDLE pSSM);
+typedef DECLCALLBACK(int) FNSSMINTLIVEVOTE(PVM pVM, PSSMHANDLE pSSM);
 /** Pointer to a FNSSMINTLIVEVOTE() function. */
 typedef FNSSMINTLIVEVOTE *PFNSSMINTLIVEVOTE;
 
@@ -631,6 +643,11 @@ VMMR3DECL(int) SSMR3DeregisterDriver(PVM pVM, PPDMDRVINS pDrvIns, const char *ps
 VMMR3DECL(int) SSMR3DeregisterInternal(PVM pVM, const char *pszName);
 VMMR3DECL(int) SSMR3DeregisterExternal(PVM pVM, const char *pszName);
 VMMR3DECL(int) SSMR3Save(PVM pVM, const char *pszFilename, SSMAFTER enmAfter, PFNVMPROGRESS pfnProgress, void *pvUser);
+VMMR3DECL(int) SSMR3LiveToFile(PVM pVM, const char *pszFilename, SSMAFTER enmAfter,
+                               PFNVMPROGRESS pfnProgress, void *pvUser, PSSMHANDLE *ppSSM);
+VMMR3DECL(int) SSMR3LiveDoStep1(PSSMHANDLE pSSM);
+VMMR3DECL(int) SSMR3LiveDoStep2(PSSMHANDLE pSSM);
+VMMR3DECL(int) SSMR3LiveDone(PSSMHANDLE pSSM);
 VMMR3DECL(int) SSMR3Load(PVM pVM, const char *pszFilename, SSMAFTER enmAfter, PFNVMPROGRESS pfnProgress, void *pvUser);
 VMMR3DECL(int) SSMR3ValidateFile(const char *pszFilename, bool fChecksumIt);
 VMMR3DECL(int) SSMR3Open(const char *pszFilename, unsigned fFlags, PSSMHANDLE *ppSSM);
