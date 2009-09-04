@@ -384,6 +384,11 @@ PVBOXNETFLTINS volatile g_VBoxNetFltSolarisInstance;
 /** Goes along with the instance to determine type of stream being opened/created. */
 VBOXNETFLTSTREAMTYPE volatile g_VBoxNetFltSolarisStreamType;
 
+#ifdef VBOXNETFLT_SOLARIS_IPV6_POLLING
+/** Globla IPv6 polling interval */
+static int g_VBoxNetFltSolarisPollInterval = 0;
+#endif
+
 
 /**
  * Kernel entry points
@@ -513,6 +518,22 @@ static int VBoxNetFltSolarisAttach(dev_info_t *pDip, ddi_attach_cmd_t enmCmd)
             if (rc == DDI_SUCCESS)
             {
                 g_pVBoxNetFltSolarisDip = pDip;
+
+                /*
+                 * Get the user prop. for polling interval.
+                 */
+                int Interval = ddi_getprop(DDI_DEV_T_ANY, pDip, DDI_PROP_DONTPASS, VBOXNETFLT_IP6POLLINTERVAL, -1 /* default */);
+                if (Interval == -1)
+                    LogFlow((DEVICE_NAME ":vboxNetFltSolarisSetupIp6Polling: no poll interval property specified. Skipping Ipv6 polling.\n"));
+
+                if (Interval < 1 || Interval > 120)
+                {
+                    LogRel((DEVICE_NAME ":vboxNetFltSolarisSetupIp6Polling: Invalid polling interval %d. Expected between 1 and 120 secs.\n",
+                                        Interval));
+                    Interval = -1;
+                }
+
+                g_VBoxNetFltSolarisPollInterval = Interval;
                 ddi_report_dev(pDip);
                 return DDI_SUCCESS;
             }
@@ -2122,6 +2143,8 @@ static int vboxNetFltSolarisAttachIp4(PVBOXNETFLTINS pThis, bool fAttach)
         }
         else
             LogRel((DEVICE_NAME ":vboxNetFltSolarisAttachIp4: failed to open UDP. rc=%d\n", rc));
+
+        rc = VERR_INTNET_FLT_IF_FAILED;
     }
     else
     {
@@ -2135,10 +2158,7 @@ static int vboxNetFltSolarisAttachIp4(PVBOXNETFLTINS pThis, bool fAttach)
     ldi_close(ArpDevHandle, FREAD | FWRITE, kcred);
     ldi_close(Ip4DevHandle, FREAD | FWRITE, kcred);
 
-    if (RT_SUCCESS(rc))
-        return rc;
-
-    return VERR_INTNET_FLT_IF_FAILED;
+    return rc;
 }
 
 
@@ -2314,10 +2334,13 @@ static int vboxNetFltSolarisAttachIp6(PVBOXNETFLTINS pThis, bool fAttach)
             }
             else
                 LogRel((DEVICE_NAME ":vboxNetFltSolarisAttachIp6: failed to get Mux Ids. rc=%d\n", rc));
+
             vboxNetFltSolarisCloseDev(pUdp6VNodeHeld, pUdp6User);
         }
         else
             LogRel((DEVICE_NAME ":vboxNetFltSolarisAttachIp6: failed to open UDP. rc=%d\n", rc));
+
+        rc = VERR_INTNET_FLT_IF_FAILED;
     }
     else
     {
@@ -2327,10 +2350,7 @@ static int vboxNetFltSolarisAttachIp6(PVBOXNETFLTINS pThis, bool fAttach)
 
     ldi_close(Ip6DevHandle, FREAD | FWRITE, kcred);
 
-    if (RT_SUCCESS(rc))
-        return rc;
-
-    return VERR_INTNET_FLT_IF_FAILED;
+    return rc;
 }
 
 
@@ -2346,14 +2366,28 @@ static void vboxNetFltSolarispIp6Timer(PRTTIMER pTimer, void *pvData, uint64_t i
 {
     LogFlow((DEVICE_NAME ":vboxNetFltSolarispIp6Timer pTimer=%p pvData=%p\n", pTimer, pvData));
 
-    /** @todo this callback takes a good deal of time attaching to the Ipv6 stream, optimize it. */
     PVBOXNETFLTINS pThis = (PVBOXNETFLTINS)pvData;
     if (   RT_LIKELY(pThis)
         && RT_LIKELY(pTimer))
     {
         vboxnetflt_stream_t *pIp6Stream  = ASMAtomicUoReadPtr((void * volatile *)&pThis->u.s.pvIp6Stream);
-        if (!pIp6Stream)
-            vboxNetFltSolarisAttachIp6(pThis, true /* fAttach */);
+        bool fIp6Attaching = ASMAtomicUoReadBool(&pThis->u.s.fAttaching);
+        if (   !pIp6Stream
+            && !fIp6Attaching)
+        {
+            int rc = RTSemFastMutexRequest(pThis->u.s.hPollMtx);
+            if (RT_SUCCESS(rc))
+            {
+                ASMAtomicUoWriteBool(&pThis->u.s.fAttaching, true);
+
+                vboxNetFltSolarisAttachIp6(pThis, true /* fAttach */);
+
+                ASMAtomicUoWriteBool(&pThis->u.s.fAttaching, false);
+                RTSemFastMutexRelease(pThis->u.s.hPollMtx);
+            }
+            else
+                LogRel((DEVICE_NAME ":vboxNetFltSolarispIp6Timer failed to obtain mutex. rc=%Rrc\n", rc));
+        }
     }
 
     NOREF(iTick);
@@ -2378,19 +2412,13 @@ static int vboxNetFltSolarisSetupIp6Polling(PVBOXNETFLTINS pThis)
         if (RT_LIKELY(pPromiscStream->pIp6Timer == NULL))
         {
             /*
-             * Get the user prop. for polling interval.
+             * Validate IPv6 polling interval.
              */
-            int Interval = ddi_getprop(DDI_DEV_T_ANY, g_pVBoxNetFltSolarisDip, DDI_PROP_DONTPASS, VBOXNETFLT_IP6POLLINTERVAL, -1 /* default */);
-            if (Interval == -1)
-            {
-                LogFlow((DEVICE_NAME ":vboxNetFltSolarisSetupIp6Polling: no poll interval property specified. Skipping Ipv6 polling.\n"));
-                return VINF_SUCCESS;
-            }
-
+            int Interval = g_VBoxNetFltSolarisPollInterval;
             if (Interval < 1 || Interval > 120)
             {
                 LogRel((DEVICE_NAME ":vboxNetFltSolarisSetupIp6Polling: Invalid polling interval %d. Expected between 1 and 120 secs.\n",
-                    Interval));
+                                    Interval));
                 return VINF_SUCCESS;
             }
 
@@ -2401,6 +2429,8 @@ static int vboxNetFltSolarisSetupIp6Polling(PVBOXNETFLTINS pThis)
                                 vboxNetFltSolarispIp6Timer, (void *)pThis);
             if (RT_SUCCESS(rc))
                 rc = RTTimerStart(pPromiscStream->pIp6Timer, 0 /* fire ASAP */);
+            else
+                LogRel((DEVICE_NAME ":vboxNetFltSolarisSetupIp6Polling: Failed to create timer. rc=%d\n", rc));
         }
         else
             LogRel((DEVICE_NAME ":vboxNetFltSolarisSetupIp6Polling: Polling already started.\n"));
@@ -3359,6 +3389,15 @@ int vboxNetFltOsDisconnectIt(PVBOXNETFLTINS pThis)
         RTSemFastMutexDestroy(pThis->u.s.hFastMtx);
         pThis->u.s.hFastMtx = NIL_RTSEMFASTMUTEX;
     }
+
+#ifdef VBOXNETFLT_SOLARIS_IPV6_POLLING
+    if (pThis->u.s.hPollMtx != NIL_RTSEMFASTMUTEX)
+    {
+        RTSemFastMutexDestroy(pThis->u.s.hPollMtx);
+        pThis->u.s.hPollMtx = NIL_RTSEMFASTMUTEX;
+    }
+#endif
+
     return VINF_SUCCESS;
 }
 
@@ -3387,11 +3426,25 @@ int vboxNetFltOsInitInstance(PVBOXNETFLTINS pThis, void *pvContext)
     int rc = RTSemFastMutexCreate(&pThis->u.s.hFastMtx);
     if (RT_SUCCESS(rc))
     {
-        rc = vboxNetFltSolarisAttachToInterface(pThis);
+#ifdef VBOXNETFLT_SOLARIS_IPV6_POLLING
+        int rc = RTSemFastMutexCreate(&pThis->u.s.hPollMtx);
         if (RT_SUCCESS(rc))
-            return rc;
+        {
+#endif
+            rc = vboxNetFltSolarisAttachToInterface(pThis);
+            if (RT_SUCCESS(rc))
+                return rc;
 
-        LogRel((DEVICE_NAME ":vboxNetFltSolarisAttachToInterface failed. rc=%Rrc\n", rc));
+            LogRel((DEVICE_NAME ":vboxNetFltSolarisAttachToInterface failed. rc=%Rrc\n", rc));
+
+#ifdef VBOXNETFLT_SOLARIS_IPV6_POLLING
+            RTSemFastMutexDestroy(pThis->u.s.hPollMtx);
+            pThis->u.s.hPollMtx = NIL_RTSEMFASTMUTEX;
+        }
+        else
+            LogRel((DEVICE_NAME ":vboxNetFltOsInitInstance failed to create poll mutex. rc=%Rrc\n", rc));
+#endif
+
         RTSemFastMutexDestroy(pThis->u.s.hFastMtx);
         pThis->u.s.hFastMtx = NIL_RTSEMFASTMUTEX;
     }
@@ -3413,6 +3466,9 @@ int vboxNetFltOsPreInitInstance(PVBOXNETFLTINS pThis)
     pThis->u.s.pvArpStream = NULL;
     pThis->u.s.pvPromiscStream = NULL;
     pThis->u.s.hFastMtx = NIL_RTSEMFASTMUTEX;
+#ifdef VBOXNETFLT_SOLARIS_IPV6_POLLING
+    pThis->u.s.hPollMtx = NIL_RTSEMFASTMUTEX;
+#endif
     bzero(&pThis->u.s.Mac, sizeof(pThis->u.s.Mac));
     return VINF_SUCCESS;
 }
