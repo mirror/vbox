@@ -895,6 +895,63 @@ DECLINLINE(bool) pgmPoolMonitorIsReused(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pReg
     return false;
 }
 
+/**
+ * Flushes the page being accessed.
+ *
+ * @returns VBox status code suitable for scheduling.
+ * @param   pVM         The VM handle.
+ * @param   pVCpu       The VMCPU handle.
+ * @param   pPool       The pool.
+ * @param   pPage       The pool page (head).
+ * @param   pDis        The disassembly of the write instruction.
+ * @param   pRegFrame   The trap register frame.
+ * @param   GCPhysFault The fault address as guest physical address.
+ * @param   pvFault     The fault address.
+ */
+static int pgmPoolAccessHandlerFlush(PVM pVM, PVMCPU pVCpu, PPGMPOOL pPool, PPGMPOOLPAGE pPage, PDISCPUSTATE pDis,
+                                     PCPUMCTXCORE pRegFrame, RTGCPHYS GCPhysFault, RTGCPTR pvFault)
+{
+#ifdef IN_RING0
+    int rc = pgmPoolMonitorChainFlush(pPool, pPage);
+#else
+    /*
+     * First, do the flushing.
+     */
+    int rc = pgmPoolMonitorChainFlush(pPool, pPage);
+
+    /*
+     * Emulate the instruction (xp/w2k problem, requires pc/cr2/sp detection). Must do this in raw mode (!); XP boot will fail otherwise
+     */
+    uint32_t cbWritten;
+    int rc2 = EMInterpretInstructionCPU(pVM, pVCpu, pDis, pRegFrame, pvFault, &cbWritten);
+    if (RT_SUCCESS(rc2))
+        pRegFrame->rip += pDis->opsize;
+    else if (rc2 == VERR_EM_INTERPRETER)
+    {
+#ifdef IN_RC
+        if (PATMIsPatchGCAddr(pVM, (RTRCPTR)pRegFrame->eip))
+        {
+            LogFlow(("pgmPoolAccessHandlerPTWorker: Interpretation failed for patch code %04x:%RGv, ignoring.\n",
+                     pRegFrame->cs, (RTGCPTR)pRegFrame->eip));
+            rc = VINF_SUCCESS;
+            STAM_COUNTER_INC(&pPool->StatMonitorRZIntrFailPatch2);
+        }
+        else
+#endif
+        {
+            rc = VINF_EM_RAW_EMULATE_INSTR;
+            STAM_COUNTER_INC(&pPool->CTX_MID_Z(StatMonitor,EmulateInstr));
+        }
+    }
+    else
+        rc = rc2;
+
+    /* See use in pgmPoolAccessHandlerSimple(). */
+    PGM_INVL_VCPU_TLBS(pVCpu);
+#endif
+    LogFlow(("pgmPoolAccessHandlerPT: returns %Rrc (flushed)\n", rc));
+    return rc;
+}
 
 /**
  * Handles the STOSD write accesses.
@@ -1323,11 +1380,18 @@ DECLEXPORT(int) pgmPoolAccessHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE 
     }
 #endif /* PGMPOOL_WITH_OPTIMIZED_DIRTY_PT */
 
+flushPage:
     /*
      * Not worth it, so flush it.
-     */      
-flushPage:
-    rc = pgmPoolMonitorChainFlush(pPool, pPage);
+     *
+     * If we considered it to be reused, don't go back to ring-3
+     * to emulate failed instructions since we usually cannot
+     * interpret then. This may be a bit risky, in which case
+     * the reuse detection must be fixed.
+     */       
+    rc = pgmPoolAccessHandlerFlush(pVM, pVCpu, pPool, pPage, pDis, pRegFrame, GCPhysFault, pvFault);
+    if (rc == VINF_EM_RAW_EMULATE_INSTR && fReused)
+        rc = VINF_SUCCESS;
     STAM_PROFILE_STOP_EX(&pVM->pgm.s.CTX_SUFF(pPool)->CTX_SUFF_Z(StatMonitor), &pPool->CTX_MID_Z(StatMonitor,FlushPage), a);
     pgmUnlock(pVM);
     return rc;
