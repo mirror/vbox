@@ -338,7 +338,7 @@ int pgmR3PoolInit(PVM pVM)
     STAM_REG(pVM, &pPool->StatFree,                     STAMTYPE_PROFILE,   "/PGM/Pool/Free",           STAMUNIT_TICKS_PER_CALL,    "Profiling of pgmPoolFree.");
     STAM_REG(pVM, &pPool->StatForceFlushPage,           STAMTYPE_COUNTER,   "/PGM/Pool/FlushForce",     STAMUNIT_OCCURENCES,        "Counting explicit flushes by PGMPoolFlushPage().");    
     STAM_REG(pVM, &pPool->StatForceFlushDirtyPage,      STAMTYPE_COUNTER,   "/PGM/Pool/FlushForceDirty",     STAMUNIT_OCCURENCES,   "Counting explicit flushes of dirty pages by PGMPoolFlushPage().");    
-    STAM_REG(pVM, &pPool->StatForceFlushReused,         STAMTYPE_COUNTER,   "/PGM/Pool/FlushReused",    STAMUNIT_OCCURENCES,        "Counting flushes for reused pages.");    
+    STAM_REG(pVM, &pPool->StatForceFlushReused,         STAMTYPE_COUNTER,   "/PGM/Pool/FlushReused",    STAMUNIT_OCCURENCES,        "Counting flushes for reused pages.");
     STAM_REG(pVM, &pPool->StatZeroPage,                 STAMTYPE_PROFILE,   "/PGM/Pool/ZeroPage",       STAMUNIT_TICKS_PER_CALL,    "Profiling time spent zeroing pages. Overlaps with Alloc.");
 # ifdef PGMPOOL_WITH_USER_TRACKING
     STAM_REG(pVM, &pPool->cMaxUsers,                    STAMTYPE_U16,       "/PGM/Pool/Track/cMaxUsers",            STAMUNIT_COUNT,      "Max user tracking records.");
@@ -359,6 +359,7 @@ int pgmR3PoolInit(PVM pVM)
     STAM_REG(pVM, &pPool->StatMonitorRZEmulateInstr,    STAMTYPE_COUNTER,   "/PGM/Pool/Monitor/RZ/EmulateInstr",    STAMUNIT_OCCURENCES,     "Times we've failed interpreting the instruction.");
     STAM_REG(pVM, &pPool->StatMonitorRZFlushPage,       STAMTYPE_PROFILE,   "/PGM/Pool/Monitor/RZ/FlushPage",       STAMUNIT_TICKS_PER_CALL, "Profiling the pgmPoolFlushPage calls made from the RC/R0 access handler.");
     STAM_REG(pVM, &pPool->StatMonitorRZFlushReinit,     STAMTYPE_COUNTER,   "/PGM/Pool/Monitor/RZ/FlushReinit",     STAMUNIT_OCCURENCES,     "Times we've detected a page table reinit.");
+    STAM_REG(pVM, &pPool->StatMonitorRZFlushModOverflow,STAMTYPE_COUNTER,   "/PGM/Pool/Monitor/RZ/FlushOverflow",   STAMUNIT_OCCURENCES,     "Counting flushes for pages that are modified too often.");
     STAM_REG(pVM, &pPool->StatMonitorRZFork,            STAMTYPE_COUNTER,   "/PGM/Pool/Monitor/RZ/Fork",            STAMUNIT_OCCURENCES,     "Times we've detected fork().");
     STAM_REG(pVM, &pPool->StatMonitorRZHandled,         STAMTYPE_PROFILE,   "/PGM/Pool/Monitor/RZ/Handled",         STAMUNIT_TICKS_PER_CALL, "Profiling the RC/R0 access we've handled (except REP STOSD).");
     STAM_REG(pVM, &pPool->StatMonitorRZIntrFailPatch1,  STAMTYPE_COUNTER,   "/PGM/Pool/Monitor/RZ/IntrFailPatch1",  STAMUNIT_OCCURENCES,     "Times we've failed interpreting a patch code instruction.");
@@ -369,6 +370,7 @@ int pgmR3PoolInit(PVM pVM)
     STAM_REG(pVM, &pPool->StatMonitorR3EmulateInstr,    STAMTYPE_COUNTER,   "/PGM/Pool/Monitor/R3/EmulateInstr",    STAMUNIT_OCCURENCES,     "Times we've failed interpreting the instruction.");
     STAM_REG(pVM, &pPool->StatMonitorR3FlushPage,       STAMTYPE_PROFILE,   "/PGM/Pool/Monitor/R3/FlushPage",       STAMUNIT_TICKS_PER_CALL, "Profiling the pgmPoolFlushPage calls made from the R3 access handler.");
     STAM_REG(pVM, &pPool->StatMonitorR3FlushReinit,     STAMTYPE_COUNTER,   "/PGM/Pool/Monitor/R3/FlushReinit",     STAMUNIT_OCCURENCES,     "Times we've detected a page table reinit.");
+    STAM_REG(pVM, &pPool->StatMonitorR3FlushModOverflow,STAMTYPE_COUNTER,   "/PGM/Pool/Monitor/R3/FlushOverflow",   STAMUNIT_OCCURENCES,     "Counting flushes for pages that are modified too often.");
     STAM_REG(pVM, &pPool->StatMonitorR3Fork,            STAMTYPE_COUNTER,   "/PGM/Pool/Monitor/R3/Fork",            STAMUNIT_OCCURENCES,     "Times we've detected fork().");
     STAM_REG(pVM, &pPool->StatMonitorR3Handled,         STAMTYPE_PROFILE,   "/PGM/Pool/Monitor/R3/Handled",         STAMUNIT_TICKS_PER_CALL, "Profiling the R3 access we've handled (except REP STOSD).");
     STAM_REG(pVM, &pPool->StatMonitorR3RepPrefix,       STAMTYPE_COUNTER,   "/PGM/Pool/Monitor/R3/RepPrefix",       STAMUNIT_OCCURENCES,     "The number of times we've seen rep prefixes we can't handle.");

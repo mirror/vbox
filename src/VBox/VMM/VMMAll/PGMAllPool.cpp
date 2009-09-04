@@ -1378,6 +1378,7 @@ DECLEXPORT(int) pgmPoolAccessHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE 
     }
 #endif /* PGMPOOL_WITH_OPTIMIZED_DIRTY_PT */
 
+    STAM_COUNTER_INC(&pPool->CTX_MID_Z(StatMonitor,FlushModOverflow));
 flushPage:
     /*
      * Not worth it, so flush it.
