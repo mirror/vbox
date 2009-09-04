@@ -186,6 +186,11 @@ VMMR3_SOURCES.amd64 = \
 VMMR3_SOURCES.darwin.x86 += \
 	VMMSwitcher/AMD64ToPAE.asm
 
+# SSM wish to know the build type, host os and arch.
+SSM.cpp_DEFS +=	\
+	KBUILD_TYPE=\"$(KBUILD_TYPE)\" \
+	KBUILD_TARGET=\"$(KBUILD_TARGET)\" \
+	KBUILD_TARGET_ARCH=\"$(KBUILD_TARGET_ARCH)\"
 
 #
 # The VMM DLL.
