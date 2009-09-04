@@ -1766,8 +1766,8 @@ typedef struct PGMPOOL
     /* Number of active dirty pages. */
     uint32_t                    cDirtyPages;
     /* Array of current dirty pgm pool page indices. */
-    uint16_t                    aIdxDirtyPages[8];
-    uint64_t                    aDirtyPages[8][512];
+    uint16_t                    aIdxDirtyPages[16];
+    uint64_t                    aDirtyPages[16][512];
 #endif /* PGMPOOL_WITH_MONITORING */
     /** The number of pages currently in use. */
     uint16_t                    cUsedPages;
