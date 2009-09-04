@@ -1898,7 +1898,7 @@ ComObjPtr<HardDisk> HardDisk::root (uint32_t *aLevel /*= NULL*/)
 
 /**
  * Returns @c true if this hard disk cannot be modified because it has
- * dependants (children) or is part of the snapshot. Related to the hard disk
+ * dependents (children) or is part of the snapshot. Related to the hard disk
  * type and posterity, not to the current media state.
  *
  * @note Locks this object and treeLock() for reading.
