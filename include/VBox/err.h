@@ -566,6 +566,10 @@
 #define VERR_SSM_GCPHYS_OVERFLOW                (-1849)
 /** Trying to read a 64-bit guest virtual address into a 32-bit variable. */
 #define VERR_SSM_GCPTR_OVERFLOW                 (-1850)
+/** Vote for another pass.  */
+#define VINF_SSM_VOTE_FOR_ANOTHER_PASS          1851
+/** Vote for giving up.  */
+#define VERR_SSM_VOTE_FOR_GIVING_UP             (-1852)
 /** @} */
 
 
@@ -1001,7 +1005,7 @@
  * The PDMDEVREG::pfnAttach callback function is NULL. */
 #define VERR_PDM_DEVICE_NO_RT_ATTACH                (-2853)
 /** The driver doesn't support runtime driver attaching.
- * The PDMDRVREG::pfnAttach callback function is NULL. */ 
+ * The PDMDRVREG::pfnAttach callback function is NULL. */
 #define VERR_PDM_DRIVER_NO_RT_ATTACH                (-2854)
 /** Invalid host interface version. */
 #define VERR_PDM_HIF_INVALID_VERSION                (-2855)
