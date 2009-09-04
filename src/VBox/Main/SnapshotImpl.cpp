@@ -575,7 +575,7 @@ void Snapshot::updateSavedStatePathsImpl(const char *aOldPath, const char *aNewP
     AutoWriteLock alock(this);
 
     Utf8Str path = m->pMachine->mSSData->mStateFilePath;
-    LogFlowThisFunc(("Snap[%s].statePath={%s}\n", m->strName.raw(), path.raw()));
+    LogFlowThisFunc(("Snap[%s].statePath={%s}\n", m->strName.c_str(), path.c_str()));
 
     /* state file may be NULL (for offline snapshots) */
     if (    path.length()
@@ -592,7 +592,8 @@ void Snapshot::updateSavedStatePathsImpl(const char *aOldPath, const char *aNewP
          it != m->llChildren.end();
          ++it)
     {
-        updateSavedStatePathsImpl(aOldPath, aNewPath);
+        Snapshot *pChild = *it;
+        pChild->updateSavedStatePathsImpl(aOldPath, aNewPath);
     }
 }
 
