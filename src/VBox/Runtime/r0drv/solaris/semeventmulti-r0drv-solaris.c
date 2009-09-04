@@ -137,7 +137,18 @@ RTDECL(int)  RTSemEventMultiSignal(RTSEMEVENTMULTI EventMultiSem)
                     VERR_INVALID_HANDLE);
     RT_ASSERT_INTS_ON();
 
-    mutex_enter(&pThis->Mtx);
+    /*
+     * If we're in interrupt context we need to unpin the underlying current
+     * thread as this could lead to a deadlock (see #4259 for the full explanation)
+     */
+    int fAcquired = mutex_tryenter(&pThis->Mtx);
+    if (!fAcquired)
+    {
+        if (curthread->t_intr && getpil() < DISP_LEVEL)
+            swtch();
+
+        mutex_enter(&pThis->Mtx);
+    }
 
     ASMAtomicXchgU8(&pThis->fSignaled, true);
     if (pThis->cWaiters > 0)
