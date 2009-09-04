@@ -3046,6 +3046,7 @@ DECLINLINE(int) pgmPoolAlloc(PVM pVM, RTGCPHYS GCPhys, PGMPOOLKIND enmKind, uint
 void            pgmPoolFree(PVM pVM, RTHCPHYS HCPhys, uint16_t iUser, uint32_t iUserTable);
 void            pgmPoolFreeByPage(PPGMPOOL pPool, PPGMPOOLPAGE pPage, uint16_t iUser, uint32_t iUserTable);
 int             pgmPoolFlushPage(PPGMPOOL pPool, PPGMPOOLPAGE pPage);
+void            pgmPoolFlushPageByGCPhys(PVM pVM, RTGCPHYS GCPhys);
 void            pgmPoolClearAll(PVM pVM);
 PPGMPOOLPAGE    pgmPoolGetPage(PPGMPOOL pPool, RTHCPHYS HCPhys);
 int             pgmPoolSyncCR3(PVMCPU pVCpu);

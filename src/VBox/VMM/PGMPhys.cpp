@@ -383,7 +383,7 @@ static DECLCALLBACK(int) pgmR3PhysGCPhys2CCPtrDelegated(PVM pVM, PRTGCPHYS pGCPh
             /* We *must* flush any corresponding pgm pool page here, otherwise we'll
              * not be informed about writes and keep bogus gst->shw mappings around.
              */
-            PGMPoolFlushPage(pVM, *pGCPhys);
+            pgmPoolFlushPageByGCPhys(pVM, *pGCPhys);
             Assert(!PGM_PAGE_HAS_ACTIVE_HANDLERS(pPage));
             /** @todo r=bird: return VERR_PGM_PHYS_PAGE_RESERVED here if it still has
              *        active handlers, see the PGMR3PhysGCPhys2CCPtrExternal docs. */

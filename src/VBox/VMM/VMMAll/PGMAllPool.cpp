@@ -4724,7 +4724,7 @@ PPGMPOOLPAGE pgmPoolGetPage(PPGMPOOL pPool, RTHCPHYS HCPhys)
  * @param   pVM     The VM handle.
  * @param   GCPhys  Guest physical address of the page to flush
  */
-VMMDECL(void) PGMPoolFlushPage(PVM pVM, RTGCPHYS GCPhys)
+void pgmPoolFlushPageByGCPhys(PVM pVM, RTGCPHYS GCPhys)
 {
 #ifdef PGMPOOL_WITH_CACHE
     PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool);

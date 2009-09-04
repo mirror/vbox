@@ -348,7 +348,6 @@ VMMDECL(int)        PGMHandlerPhysicalPageAliasHC(PVM pVM, RTGCPHYS GCPhys, RTGC
 VMMDECL(int)        PGMHandlerPhysicalReset(PVM pVM, RTGCPHYS GCPhys);
 VMMDECL(bool)       PGMHandlerPhysicalIsRegistered(PVM pVM, RTGCPHYS GCPhys);
 VMMDECL(bool)       PGMHandlerVirtualIsRegistered(PVM pVM, RTGCPTR GCPtr);
-VMMDECL(void)       PGMPoolFlushPage(PVM pVM, RTGCPHYS GCPhys);
 VMMDECL(bool)       PGMPhysIsA20Enabled(PVMCPU pVCpu);
 VMMDECL(bool)       PGMPhysIsGCPhysValid(PVM pVM, RTGCPHYS GCPhys);
 VMMDECL(bool)       PGMPhysIsGCPhysNormal(PVM pVM, RTGCPHYS GCPhys);
