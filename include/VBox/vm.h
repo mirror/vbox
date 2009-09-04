@@ -596,6 +596,17 @@ typedef struct VMCPU
               (rc))
 #endif
 
+/** @def VM_ASSERT_EMT0
+ * Asserts that the current thread IS emulation thread \#0 (EMT0).
+ */
+#define VM_ASSERT_EMT0(pVM)                 VMCPU_ASSERT_EMT(&(pVM)->aCpus[0])
+
+/** @def VM_ASSERT_EMT0_RETURN
+ * Asserts that the current thread IS emulation thread \#0 (EMT0) and returns if
+ * it isn't.
+ */
+#define VM_ASSERT_EMT0_RETURN(pVM, rc)      VMCPU_ASSERT_EMT_RETURN(&(pVM)->aCpus[0], (rc))
+
 
 /**
  * Asserts that the current thread is NOT the emulation thread.
