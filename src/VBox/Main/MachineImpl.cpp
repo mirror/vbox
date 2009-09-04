@@ -3117,9 +3117,6 @@ STDMETHODIMP Machine::SetGuestProperty(IN_BSTR aName,
             bool found = false;
             HWData::GuestProperty property;
             property.mFlags = NILFLAG;
-            if (fFlags & TRANSIENT)
-                rc = setError(VBOX_E_INVALID_OBJECT_STATE,
-                              tr("Cannot set a transient property when the machine is not running"));
 
             if (SUCCEEDED(rc))
             {
