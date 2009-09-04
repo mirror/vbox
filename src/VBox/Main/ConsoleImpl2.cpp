@@ -2906,7 +2906,9 @@ static void configSetProperty(VMMDev * const pVMMDev, const char *pszName,
         AssertRCReturn(rc, rc);
 
         /*
-         * Set properties which cannot be saved.
+         * These properties have to be set before pulling over the properties
+         * from the machine XML, to ensure that properties saved in the XML
+         * will override them.
          */
         /* Set the VBox version string as a guest property */
         configSetProperty(pConsole->mVMMDev, "/VirtualBox/HostInfo/VBoxVer",
