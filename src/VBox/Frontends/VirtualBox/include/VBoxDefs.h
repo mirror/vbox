@@ -83,7 +83,7 @@ struct VBoxDefs
     {
         InvalidRenderMode, TimerMode, QImageMode, SDLMode, DDRAWMode, Quartz2DMode
 #ifdef VBOX_GUI_USE_QGL
-        , QGLMode
+        , QGLMode, QGLOverlayMode
 #endif
     };
 

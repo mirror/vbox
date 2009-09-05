@@ -419,6 +419,15 @@ public:
 
     const QRect & rect() const {return mRect;}
 
+    const QRect & toRect()
+    {
+        if(isClear())
+        {
+            mRect.setCoords(0, 0, -1, -1);
+        }
+        return mRect;
+    }
+
     bool intersects(const QRect & aRect) const {return mIsClear ? false : mRect.intersects(aRect);}
 
     bool intersects(const VBoxVHWADirtyRect & aRect) const {return mIsClear ? false : aRect.intersects(mRect);}
@@ -664,7 +673,10 @@ public:
             class VBoxVHWAGlContextState *aState,
             bool aIsYInverted,
 #endif
-            const QSize * aSize, const QSize * aTargetSize,
+            const QSize & aSize,
+            const QRect & aTargRect,
+            const QRect & aSrcRect,
+            const QRect & aVisTargRect,
             VBoxVHWAColorFormat & aColorFormat,
             VBoxVHWAColorKey * pSrcBltCKey, VBoxVHWAColorKey * pDstBltCKey,
             VBoxVHWAColorKey * pSrcOverlayCKey, VBoxVHWAColorKey * pDstOverlayCKey,
@@ -688,8 +700,9 @@ public:
 
     void performDisplay(VBoxVHWASurfaceBase *pPrimary);
 
-    void setRects(VBoxVHWASurfaceBase *pPrimary, const QRect * aTargRect, const QRect * aSrcRect);
-    void setTargetRectPosition(VBoxVHWASurfaceBase *pPrimary, const QPoint * aPoint);
+    void setRects(VBoxVHWASurfaceBase *pPrimary, const QRect & aTargRect, const QRect & aSrcRect, const QRect & aVisibleTargRect, bool bForceReinit);
+    void setTargRectPosition(VBoxVHWASurfaceBase *pPrimary, const QPoint & aPoint, const QRect & aVisibleTargRect);
+    void updateVisibleTargRect(VBoxVHWASurfaceBase *pPrimary, const QRect & aVisibleTargRect);
 
     static ulong calcBytesPerPixel(GLenum format, GLenum type);
 
@@ -823,9 +836,12 @@ public:
     class VBoxVHWAGlProgramMngr * getGlProgramMngr();
     static int setCKey(class VBoxVHWAGlProgramVHWA * pProgram, const VBoxVHWAColorFormat * pFormat, const VBoxVHWAColorKey * pCKey, bool bDst);
 
-    uint32_t handle() {return mHGHandle;}
+    uint32_t handle() const {return mHGHandle;}
     void setHandle(uint32_t h) {mHGHandle = h;}
+
 private:
+    void doSetRectValuesInternal(const QRect & aTargRect, const QRect & aSrcRect, const QRect & aVisTargRect);
+
     void setComplexList(VBoxVHWASurfList *aComplexList) { mComplexList = aComplexList; }
     void initDisplay(VBoxVHWASurfaceBase *pPrimary);
     void deleteDisplay();
@@ -844,7 +860,9 @@ private:
 
     QRect mSrcRect;
     QRect mTargRect; /* == Vis FB size */
-    QRect mTargSize;
+
+    QRect mVisibleTargRect;
+    QRect mVisibleSrcRect;
 
     GLuint mVisibleDisplay;
 
@@ -1025,6 +1043,7 @@ public:
     }
 
     const OverlayList & overlays() const {return mOverlays;}
+    const VBoxVHWASurfList & primaries() const { return mPrimary; }
 
 private:
     VBoxVHWASurfaceBase *mSurfVGA;
@@ -1201,12 +1220,30 @@ public:
 
     void vhwaSaveExec(struct SSMHANDLE * pSSM);
     int vhwaLoadExec(struct SSMHANDLE * pSSM, uint32_t u32Version);
+
+    int vhwaSurfaceCanCreate(struct _VBOXVHWACMD_SURF_CANCREATE *pCmd);
+    int vhwaSurfaceCreate(struct _VBOXVHWACMD_SURF_CREATE *pCmd);
+    int vhwaSurfaceDestroy(struct _VBOXVHWACMD_SURF_DESTROY *pCmd);
+    int vhwaSurfaceLock(struct _VBOXVHWACMD_SURF_LOCK *pCmd);
+    int vhwaSurfaceUnlock(struct _VBOXVHWACMD_SURF_UNLOCK *pCmd);
+    int vhwaSurfaceBlt(struct _VBOXVHWACMD_SURF_BLT *pCmd);
+    int vhwaSurfaceFlip(struct _VBOXVHWACMD_SURF_FLIP *pCmd);
+    int vhwaSurfaceOverlayUpdate(struct _VBOXVHWACMD_SURF_OVERLAY_UPDATE *pCmf);
+    int vhwaSurfaceOverlaySetPosition(struct _VBOXVHWACMD_SURF_OVERLAY_SETPOSITION *pCmd);
+    int vhwaSurfaceColorkeySet(struct _VBOXVHWACMD_SURF_COLORKEY_SET *pCmd);
+    int vhwaQueryInfo1(struct _VBOXVHWACMD_QUERYINFO1 *pCmd);
+    int vhwaQueryInfo2(struct _VBOXVHWACMD_QUERYINFO2 *pCmd);
+    int vhwaConstruct(struct _VBOXVHWACMD_HH_CONSTRUCT *pCmd);
+
+    bool hasSurfaces() const;
+    bool hasVisibleOverlays();
+    const QRect & overlaysRectUnion();
 #endif
 
     ulong vboxBitsPerPixel() { return mDisplay.getVGA()->bitsPerPixel(); }
     ulong vboxBytesPerLine() { return mDisplay.getVGA() ? mDisplay.getVGA()->bytesPerLine() : 0; }
 
-    void vboxPaintEvent (QPaintEvent *pe) {vboxPerformGLOp(&VBoxGLWidget::vboxDoPaint, pe); }
+//    void vboxPaintEvent (QPaintEvent *pe) {vboxPerformGLOp(&VBoxGLWidget::vboxDoPaint, pe); }
     void vboxResizeEvent (VBoxResizeEvent *re) {vboxPerformGLOp(&VBoxGLWidget::vboxDoResize, re); }
 
     void vboxProcessVHWACommands(class VBoxVHWACommandProcessEvent * pEvent) {vboxPerformGLOp(&VBoxGLWidget::vboxDoProcessVHWACommands, pEvent);}
@@ -1220,6 +1257,11 @@ public:
     void postCmd(VBOXVHWA_PIPECMD_TYPE aType, void * pvData);
 
     static void doSetupMatrix(const QSize & aSize, bool bInverted);
+
+    void vboxDoUpdateViewport(const QRect * pRect);
+    const QRect & vboxViewport() const {return mViewport;}
+
+    void performDisplay() { mDisplay.performDisplay(); }
 protected:
 
     void paintGL()
@@ -1229,18 +1271,20 @@ protected:
             (this->*mpfnOp)(mOpContext);
             mpfnOp = NULL;
         }
-        else
-        {
+//        else
+//        {
             mDisplay.performDisplay();
-        }
+//        }
     }
 
     void initializeGL();
+
 private:
     static void setupMatricies(const QSize &display);
     static void adjustViewport(const QSize &display, const QRect &viewport);
     void vboxDoResize(void *re);
-    void vboxDoPaint(void *rec);
+//    void vboxDoPaint(void *rec);
+
 
     void vboxDoUpdateRect(const QRect * pRect);
 #ifdef VBOXQGL_DBG_SURF
@@ -1262,25 +1306,11 @@ private:
             }
         }
     }
-    int vhwaSurfaceCanCreate(struct _VBOXVHWACMD_SURF_CANCREATE *pCmd);
-    int vhwaSurfaceCreate(struct _VBOXVHWACMD_SURF_CREATE *pCmd);
-    int vhwaSurfaceDestroy(struct _VBOXVHWACMD_SURF_DESTROY *pCmd);
-    int vhwaSurfaceLock(struct _VBOXVHWACMD_SURF_LOCK *pCmd);
-    int vhwaSurfaceUnlock(struct _VBOXVHWACMD_SURF_UNLOCK *pCmd);
-    int vhwaSurfaceBlt(struct _VBOXVHWACMD_SURF_BLT *pCmd);
-    int vhwaSurfaceFlip(struct _VBOXVHWACMD_SURF_FLIP *pCmd);
-    int vhwaSurfaceOverlayUpdate(struct _VBOXVHWACMD_SURF_OVERLAY_UPDATE *pCmf);
-    int vhwaSurfaceOverlaySetPosition(struct _VBOXVHWACMD_SURF_OVERLAY_SETPOSITION *pCmd);
-    int vhwaSurfaceColorkeySet(struct _VBOXVHWACMD_SURF_COLORKEY_SET *pCmd);
-    int vhwaQueryInfo1(struct _VBOXVHWACMD_QUERYINFO1 *pCmd);
-    int vhwaQueryInfo2(struct _VBOXVHWACMD_QUERYINFO2 *pCmd);
-    int vhwaConstruct(struct _VBOXVHWACMD_HH_CONSTRUCT *pCmd);
 
     int vhwaSaveSurface(struct SSMHANDLE * pSSM, VBoxVHWASurfaceBase *pSurf, uint32_t surfCaps);
     int vhwaLoadSurface(struct SSMHANDLE * pSSM, uint32_t u32Version);
     int vhwaSaveOverlayData(struct SSMHANDLE * pSSM, VBoxVHWASurfaceBase *pSurf, bool bVisible);
     int vhwaLoadOverlayData(struct SSMHANDLE * pSSM, uint32_t u32Version);
-
     void vhwaDoSurfaceOverlayUpdate(VBoxVHWASurfaceBase *pDstSurf, VBoxVHWASurfaceBase *pSrcSurf, struct _VBOXVHWACMD_SURF_OVERLAY_UPDATE *pCmd);
 #endif
     static const QGLFormat & vboxGLFormat();
@@ -1291,7 +1321,12 @@ private:
     /* we do all opengl stuff in the paintGL context,
      * submit the operation to be performed
      * @todo: could be moved outside the updateGL */
-    void vboxPerformGLOp(PFNVBOXQGLOP pfn, void* pContext) {mpfnOp = pfn; mOpContext = pContext; updateGL();}
+    void vboxPerformGLOp(PFNVBOXQGLOP pfn, void* pContext)
+    {
+        mpfnOp = pfn;
+        mOpContext = pContext;
+        updateGL();
+    }
 
 //    /* posts op to UI thread */
 //    int vboxExecOpSynch(PFNVBOXQGLOP pfn, void* pContext);
@@ -1379,6 +1414,38 @@ private:
     VBoxGLWidget * vboxWidget();
 };
 
+#ifdef VBOX_WITH_VIDEOHWACCEL
+class VBoxQGLOverlayFrameBuffer : public VBoxQImageFrameBuffer
+{
+public:
+    VBoxQGLOverlayFrameBuffer (VBoxConsoleView *aView);
+
+
+    STDMETHOD(ProcessVHWACommand)(BYTE *pCommand);
+
+    void doProcessVHWACommand(QEvent * pEvent);
+
+    STDMETHOD(NotifyUpdate) (ULONG aX, ULONG aY,
+                             ULONG aW, ULONG aH);
+
+    void paintEvent (QPaintEvent *pe);
+    void resizeEvent (VBoxResizeEvent *re);
+
+    void vboxUpdateRect(const QRect * pRect);
+private:
+    void vboxSetGlOn(bool on);
+    bool vboxGetGlOn() { return mGlOn; }
+    void vboxSynchGl();
+    void vboxDoVHWACmdExec(void *cmd);
+    void vboxShowOverlay(bool show);
+    void vboxUpdateOverlayPosition(const QPoint & pos);
+    void vboxUpdateOverlay(const QPoint & pos, const QRect & rect, bool show);
+    VBoxGLWidget *mpOverlayWidget;
+    bool mGlOn;
+    bool mOverlayVisible;
+    VBoxVHWADirtyRect mMainDirtyRect;
+};
+#endif
 
 #endif
 

@@ -825,6 +825,9 @@ VBoxConsoleView::VBoxConsoleView (VBoxConsoleWnd *mainWnd,
         case VBoxDefs::QGLMode:
             mFrameBuf = new VBoxQGLFrameBuffer (this);
             break;
+        case VBoxDefs::QGLOverlayMode:
+            mFrameBuf = new VBoxQGLOverlayFrameBuffer (this);
+            break;
 #endif
 #if defined (VBOX_GUI_USE_QIMAGE)
         case VBoxDefs::QImageMode:

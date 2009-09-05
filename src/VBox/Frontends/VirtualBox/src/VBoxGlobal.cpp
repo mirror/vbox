@@ -548,6 +548,11 @@ static VBoxDefs::RenderMode vboxGetRenderMode (const char *aModeStr)
         else if (::strcmp (aModeStr, "qgl") == 0)
             mode = VBoxDefs::QGLMode;
 #endif
+#if defined (VBOX_GUI_USE_QGL)
+        else if (::strcmp (aModeStr, "qgloverlay") == 0)
+            mode = VBoxDefs::QGLOverlayMode;
+#endif
+
     }
 
     return mode;
