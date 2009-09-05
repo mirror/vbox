@@ -1439,7 +1439,7 @@ private:
     void vboxDoVHWACmdExec(void *cmd);
     void vboxShowOverlay(bool show);
     void vboxUpdateOverlayPosition(const QPoint & pos);
-    void vboxUpdateOverlay(const QPoint & pos, const QRect & rect, bool show);
+    void vboxUpdateOverlay(const QRect & rect, bool show);
     VBoxGLWidget *mpOverlayWidget;
     bool mGlOn;
     bool mOverlayVisible;
