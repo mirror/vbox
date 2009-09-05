@@ -6104,10 +6104,10 @@ static DECLCALLBACK(int) ataSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle)
  * @returns VBox status code.
  * @param   pDevIns     The device instance.
  * @param   pSSMHandle  The handle to the saved state.
- * @param   uVersion  The data unit version number.
- * @param   uPhase      The data phase.
+ * @param   uVersion    The data unit version number.
+ * @param   uPass       The data pass.
  */
-static DECLCALLBACK(int) ataLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle, uint32_t uVersion, uint32_t uPhase)
+static DECLCALLBACK(int) ataLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle, uint32_t uVersion, uint32_t uPass)
 {
     PCIATAState    *pThis = PDMINS_2_DATA(pDevIns, PCIATAState *);
     int             rc;
@@ -6121,7 +6121,7 @@ static DECLCALLBACK(int) ataLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle, 
         AssertMsgFailed(("uVersion=%d\n", uVersion));
         return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
     }
-    Assert(uPhase == SSM_PHASE_FINAL); NOREF(uPhase);
+    Assert(uPass == SSM_PASS_FINAL); NOREF(uPass);
 
     /*
      * Restore valid parts of the PCIATAState structure

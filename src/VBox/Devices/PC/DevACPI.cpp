@@ -1773,12 +1773,12 @@ static DECLCALLBACK(int) acpi_save_state(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHand
 }
 
 static DECLCALLBACK(int) acpi_load_state(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle,
-                                         uint32_t uVersion, uint32_t uPhase)
+                                         uint32_t uVersion, uint32_t uPass)
 {
     ACPIState *s = PDMINS_2_DATA(pDevIns, ACPIState *);
 
-    Assert(uPhase == SSM_PHASE_FINAL); NOREF(uPhase);
 
+    Assert(uPass == SSM_PASS_FINAL); NOREF(uPass);
     /*
      * Unregister PM handlers, will register with actual base
      * after state successfully loaded.

@@ -59,8 +59,8 @@ RT_C_DECLS_BEGIN
  */
 #define SSM_VERSION_MAJOR_CHANGED(ver1,ver2)    (SSM_VERSION_MAJOR(ver1) != SSM_VERSION_MAJOR(ver2))
 
-/** The special value for the final phase.  */
-#define SSM_PHASE_FINAL                         UINT32_MAX
+/** The special value for the final pass.  */
+#define SSM_PASS_FINAL                          UINT32_MAX
 
 
 #ifdef IN_RING3
@@ -153,10 +153,10 @@ typedef FNSSMDEVLIVEPREP *PFNSSMDEVLIVEPREP;
  * @returns VBox status code.
  * @param   pDevIns         Device instance of the device which registered the data unit.
  * @param   pSSM            SSM operation handle.
- * @param   uPhase          The phase.
+ * @param   uPass           The pass.
  * @thread  Any.
  */
-typedef DECLCALLBACK(int) FNSSMDEVLIVEEXEC(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uPhase);
+typedef DECLCALLBACK(int) FNSSMDEVLIVEEXEC(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uPass);
 /** Pointer to a FNSSMDEVLIVEEXEC() function. */
 typedef FNSSMDEVLIVEEXEC *PFNSSMDEVLIVEEXEC;
 
@@ -230,10 +230,10 @@ typedef FNSSMDEVLOADPREP *PFNSSMDEVLOADPREP;
  * @param   pDevIns         Device instance of the device which registered the data unit.
  * @param   pSSM            SSM operation handle.
  * @param   uVersion        Data layout version.
- * @param   uPhase          The phase. This is always SSM_PHASE_FINAL for units
+ * @param   uPass           The pass. This is always SSM_PASS_FINAL for units
  *                          that doesn't specify a pfnSaveLive callback.
  */
-typedef DECLCALLBACK(int) FNSSMDEVLOADEXEC(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPhase);
+typedef DECLCALLBACK(int) FNSSMDEVLOADEXEC(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass);
 /** Pointer to a FNSSMDEVLOADEXEC() function. */
 typedef FNSSMDEVLOADEXEC *PFNSSMDEVLOADEXEC;
 
@@ -278,10 +278,10 @@ typedef FNSSMDRVLIVEPREP *PFNSSMDRVLIVEPREP;
  * @param   pDrvIns         Driver instance of the device which registered the
  *                          data unit.
  * @param   pSSM            SSM operation handle.
- * @param   uPhase          The phase.
+ * @param   uPass           The data pass.
  * @thread  Any.
  */
-typedef DECLCALLBACK(int) FNSSMDRVLIVEEXEC(PPDMDRVINS pDrvIns, PSSMHANDLE pSSM, uint32_t uPhase);
+typedef DECLCALLBACK(int) FNSSMDRVLIVEEXEC(PPDMDRVINS pDrvIns, PSSMHANDLE pSSM, uint32_t uPass);
 /** Pointer to a FNSSMDRVLIVEEXEC() function. */
 typedef FNSSMDRVLIVEEXEC *PFNSSMDRVLIVEEXEC;
 
@@ -357,10 +357,10 @@ typedef FNSSMDRVLOADPREP *PFNSSMDRVLOADPREP;
  * @param   pDrvIns         Driver instance of the driver which registered the data unit.
  * @param   pSSM            SSM operation handle.
  * @param   uVersion        Data layout version.
- * @param   uPhase          The phase. This is always SSM_PHASE_FINAL for units
+ * @param   uPass           The pass. This is always SSM_PASS_FINAL for units
  *                          that doesn't specify a pfnSaveLive callback.
  */
-typedef DECLCALLBACK(int) FNSSMDRVLOADEXEC(PPDMDRVINS pDrvIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPhase);
+typedef DECLCALLBACK(int) FNSSMDRVLOADEXEC(PPDMDRVINS pDrvIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass);
 /** Pointer to a FNSSMDRVLOADEXEC() function. */
 typedef FNSSMDRVLOADEXEC *PFNSSMDRVLOADEXEC;
 
@@ -404,10 +404,10 @@ typedef FNSSMINTLIVEPREP *PFNSSMINTLIVEPREP;
  * @returns VBox status code.
  * @param   pVM             VM Handle.
  * @param   pSSM            SSM operation handle.
- * @param   uPhase          The phase.
+ * @param   uPass           The data pass.
  * @thread  Any.
  */
-typedef DECLCALLBACK(int) FNSSMINTLIVEEXEC(PVM pVM, PSSMHANDLE pSSM, uint32_t uPhase);
+typedef DECLCALLBACK(int) FNSSMINTLIVEEXEC(PVM pVM, PSSMHANDLE pSSM, uint32_t uPass);
 /** Pointer to a FNSSMINTLIVEEXEC() function. */
 typedef FNSSMINTLIVEEXEC *PFNSSMINTLIVEEXEC;
 
@@ -481,10 +481,10 @@ typedef FNSSMINTLOADPREP *PFNSSMINTLOADPREP;
  * @param   pVM             VM Handle.
  * @param   pSSM            SSM operation handle.
  * @param   uVersion        Data layout version.
- * @param   uPhase          The phase. This is always SSM_PHASE_FINAL for units
+ * @param   uPass           The pass. This is always SSM_PASS_FINAL for units
  *                          that doesn't specify a pfnSaveLive callback.
  */
-typedef DECLCALLBACK(int) FNSSMINTLOADEXEC(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPhase);
+typedef DECLCALLBACK(int) FNSSMINTLOADEXEC(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass);
 /** Pointer to a FNSSMINTLOADEXEC() function. */
 typedef FNSSMINTLOADEXEC *PFNSSMINTLOADEXEC;
 
@@ -527,10 +527,10 @@ typedef FNSSMEXTLIVEPREP *PFNSSMEXTLIVEPREP;
  * @returns VBox status code.
  * @param   pSSM            SSM operation handle.
  * @param   pvUser          User argument.
- * @param   uPhase          The phase.
+ * @param   uPass           The data pass.
  * @thread  Any.
  */
-typedef DECLCALLBACK(int) FNSSMEXTLIVEEXEC(PSSMHANDLE pSSM, void *pvUser, uint32_t uPhase);
+typedef DECLCALLBACK(int) FNSSMEXTLIVEEXEC(PSSMHANDLE pSSM, void *pvUser, uint32_t uPass);
 /** Pointer to a FNSSMEXTLIVEEXEC() function. */
 typedef FNSSMEXTLIVEEXEC *PFNSSMEXTLIVEEXEC;
 
@@ -600,11 +600,11 @@ typedef FNSSMEXTLOADPREP *PFNSSMEXTLOADPREP;
  * @param   pSSM            SSM operation handle.
  * @param   pvUser          User argument.
  * @param   uVersion        Data layout version.
- * @param   uPhase          The phase. This is always SSM_PHASE_FINAL for units
+ * @param   uPass           The pass. This is always SSM_PASS_FINAL for units
  *                          that doesn't specify a pfnSaveLive callback.
  * @remark  The odd return value is for legacy reasons.
  */
-typedef DECLCALLBACK(int) FNSSMEXTLOADEXEC(PSSMHANDLE pSSM, void *pvUser, uint32_t uVersion, uint32_t uPhase);
+typedef DECLCALLBACK(int) FNSSMEXTLOADEXEC(PSSMHANDLE pSSM, void *pvUser, uint32_t uVersion, uint32_t uPass);
 /** Pointer to a FNSSMEXTLOADEXEC() function. */
 typedef FNSSMEXTLOADEXEC *PFNSSMEXTLOADEXEC;
 

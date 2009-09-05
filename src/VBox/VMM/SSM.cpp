@@ -52,7 +52,7 @@
  * still running and a final one after it has been paused.  The runtime stages
  * is executed on a dedicated thread running at at the same priority as the EMTs
  * so that the saving doesn't starve or lose in scheduling questions.  The final
- * phase is done on EMT(0).
+ * pass is done on EMT(0).
  *
  * There are a couple of common reasons why LS and LM will fail:
  *   - Memory configuration changed (PCI memory mappings).
@@ -82,14 +82,14 @@
  *
  * The stream format starts with a header (SSMFILEHDR) that indicates the
  * version and such things, it is followed by zero or more saved state units
- * (name + instance + phase), and the stream concludes with a footer
+ * (name + instance + pass), and the stream concludes with a footer
  * (SSMFILEFTR) that contains unit counts and optionally a checksum for the
  * entire file.  (In version 1.2 and earlier, the checksum was in the header and
  * there was no footer.  This meant that the header was updated after the entire
  * file was written.)
  *
  * The saved state units each starts with a variable sized header
- * (SSMFILEUNITHDRV2) that contains the name, instance and phase.  The data
+ * (SSMFILEUNITHDRV2) that contains the name, instance and pass.  The data
  * follows the header and is encoded as records with a 2-8 byte record header
  * indicating the type, flags and size.  The first byte in the record header
  * indicates the type and flags:
@@ -295,8 +295,10 @@ typedef enum SSMSTATE
 {
     SSMSTATE_INVALID = 0,
     SSMSTATE_LIVE_PREP,
+    SSMSTATE_LIVE_STEP1,
     SSMSTATE_LIVE_EXEC,
     SSMSTATE_LIVE_VOTE,
+    SSMSTATE_LIVE_STEP2,
     SSMSTATE_SAVE_PREP,
     SSMSTATE_SAVE_EXEC,
     SSMSTATE_SAVE_DONE,
@@ -637,8 +639,8 @@ typedef struct SSMFILEUNITHDRV2
     uint32_t        u32Version;
     /** Instance number. */
     uint32_t        u32Instance;
-    /** Data phase number. */
-    uint32_t        u32Phase;
+    /** Data pass number. */
+    uint32_t        u32Pass;
     /** Flags reserved for future extensions. Must be zero. */
     uint32_t        fFlags;
     /** Size of the data unit name including the terminator. (bytes) */
@@ -719,7 +721,7 @@ typedef SSMFILEDIRENTRY *PSSMFILEDIRENTRY;
 typedef SSMFILEDIRENTRY const *PCSSMFILEDIRENTRY;
 
 /**
- * Directory for the data units from the final phase.
+ * Directory for the data units from the final pass.
  *
  * This is used to speed up SSMR3Seek (it would have to decompress and parse the
  * whole stream otherwise).
@@ -774,9 +776,9 @@ typedef SSMFILEFTR const *PCSSMFILEFTR;
 *   Internal Functions                                                         *
 *******************************************************************************/
 static int                  ssmR3LazyInit(PVM pVM);
-static DECLCALLBACK(int)    ssmR3SelfLiveExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uPhase);
+static DECLCALLBACK(int)    ssmR3SelfLiveExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uPass);
 static DECLCALLBACK(int)    ssmR3SelfSaveExec(PVM pVM, PSSMHANDLE pSSM);
-static DECLCALLBACK(int)    ssmR3SelfLoadExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPhase);
+static DECLCALLBACK(int)    ssmR3SelfLoadExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass);
 static int                  ssmR3Register(PVM pVM, const char *pszName, uint32_t uInstance, uint32_t uVersion, size_t cbGuess, const char *pszBefore, PSSMUNIT *ppUnit);
 
 static int                  ssmR3StrmWriteBuffers(PSSMSTRM pStrm);
@@ -810,16 +812,16 @@ static int ssmR3LazyInit(PVM pVM)
 
 
 /**
- * Do ssmR3SelfSaveExec in phase 0.
+ * Do ssmR3SelfSaveExec in pass 0.
  *
  * @returns VBox status code.
  * @param   pVM             Pointer to the shared VM structure.
  * @param   pSSM            The SSM handle.
- * @param   uPhase          The data phase number.
+ * @param   uPass           The data pass number.
  */
-static DECLCALLBACK(int) ssmR3SelfLiveExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uPhase)
+static DECLCALLBACK(int) ssmR3SelfLiveExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uPass)
 {
-    if (uPhase == 0)
+    if (uPass == 0)
         return ssmR3SelfSaveExec(pVM, pSSM);
     return VINF_SUCCESS;
 }
@@ -861,9 +863,9 @@ static DECLCALLBACK(int) ssmR3SelfSaveExec(PVM pVM, PSSMHANDLE pSSM)
  * @param   pVM             Pointer to the shared VM structure.
  * @param   pSSM            The SSM handle.
  * @param   uVersion        The version (1).
- * @param   uPhase          The phase.
+ * @param   uPass           The pass.
  */
-static DECLCALLBACK(int) ssmR3SelfLoadExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPhase)
+static DECLCALLBACK(int) ssmR3SelfLoadExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
 {
     AssertLogRelMsgReturn(uVersion == 1, ("%d", uVersion), VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION);
 
@@ -3509,7 +3511,7 @@ static int ssmR3SaveDoFinalization(PVM pVM, PSSMHANDLE pSSM)
     UnitHdr.u32CRC          = 0;
     UnitHdr.u32Version      = 0;
     UnitHdr.u32Instance     = 0;
-    UnitHdr.u32Phase        = SSM_PHASE_FINAL;
+    UnitHdr.u32Pass         = SSM_PASS_FINAL;
     UnitHdr.fFlags          = 0;
     UnitHdr.cbName          = 0;
     UnitHdr.u32CRC          = RTCrc32(&UnitHdr, RT_OFFSETOF(SSMFILEUNITHDRV2, szName[0]));
@@ -3564,8 +3566,8 @@ static int ssmR3SaveDoFinalization(PVM pVM, PSSMHANDLE pSSM)
 static int ssmR3SaveDoExecRun(PVM pVM, PSSMHANDLE pSSM)
 {
     VM_ASSERT_EMT0(pVM);
-    Assert(RT_SUCCESS(pSSM->rc));
-
+    AssertRC(pSSM->rc);
+    pSSM->rc = VINF_SUCCESS;
     pSSM->enmOp = SSMSTATE_SAVE_EXEC;
     for (PSSMUNIT pUnit = pVM->ssm.s.pHead; pUnit; pUnit = pUnit->pNext)
     {
@@ -3593,13 +3595,13 @@ static int ssmR3SaveDoExecRun(PVM pVM, PSSMHANDLE pSSM)
         UnitHdr.u32CRC          = 0;
         UnitHdr.u32Version      = pUnit->u32Version;
         UnitHdr.u32Instance     = pUnit->u32Instance;
-        UnitHdr.u32Phase        = SSM_PHASE_FINAL;
+        UnitHdr.u32Pass         = SSM_PASS_FINAL;
         UnitHdr.fFlags          = 0;
         UnitHdr.cbName          = (uint32_t)pUnit->cchName + 1;
         memcpy(&UnitHdr.szName[0], &pUnit->szName[0], UnitHdr.cbName);
         UnitHdr.u32CRC          = RTCrc32(&UnitHdr, RT_OFFSETOF(SSMFILEUNITHDRV2, szName[UnitHdr.cbName]));
-        Log(("SSM: Unit at %#9llx: '%s', instance %u, phase %#x, version %u\n",
-             UnitHdr.offStream, UnitHdr.szName, UnitHdr.u32Instance, UnitHdr.u32Phase, UnitHdr.u32Version));
+        Log(("SSM: Unit at %#9llx: '%s', instance %u, pass %#x, version %u\n",
+             UnitHdr.offStream, UnitHdr.szName, UnitHdr.u32Instance, UnitHdr.u32Pass, UnitHdr.u32Version));
         int rc = ssmR3StrmWrite(&pSSM->Strm, &UnitHdr, RT_OFFSETOF(SSMFILEUNITHDRV2, szName[UnitHdr.cbName]));
         if (RT_FAILURE(rc))
         {
@@ -3663,7 +3665,7 @@ static int ssmR3SaveDoExecRun(PVM pVM, PSSMHANDLE pSSM)
             rc = ssmR3DataWriteFinish(pSSM);
         if (RT_FAILURE(rc))
         {
-            LogRel(("SSM: Failed ending compression stream. rc=%Rrc\n", rc));
+            LogRel(("SSM: Failed terminating unit: %Rrc\n", rc));
             return pSSM->rc = rc;
         }
 
@@ -3691,10 +3693,6 @@ static int ssmR3SaveDoPrepRun(PVM pVM, PSSMHANDLE pSSM)
 {
     VM_ASSERT_EMT0(pVM);
     Assert(RT_SUCCESS(pSSM->rc));
-
-    /*
-     * Do the prepare run.
-     */
     pSSM->enmOp = SSMSTATE_SAVE_PREP;
     for (PSSMUNIT pUnit = pVM->ssm.s.pHead; pUnit; pUnit = pUnit->pNext)
     {
@@ -3802,7 +3800,8 @@ VMMR3DECL(int) SSMR3LiveDoStep2(PSSMHANDLE pSSM)
                     || pSSM->enmAfter == SSMAFTER_CONTINUE,
                     ("%d\n", pSSM->enmAfter),
                     VERR_INVALID_PARAMETER);
-    AssertMsgReturn(pSSM->enmOp == SSMSTATE_SAVE_PREP, ("%d\n", pSSM->enmOp), VERR_INVALID_STATE);
+    AssertMsgReturn(pSSM->enmOp == SSMSTATE_LIVE_STEP2, ("%d\n", pSSM->enmOp), VERR_INVALID_STATE);
+    AssertRCReturn(pSSM->rc, pSSM->rc);
 
     /*
      * Join paths with VMMR3Save.
@@ -3962,15 +3961,16 @@ VMMR3DECL(int) SSMR3Save(PVM pVM, const char *pszFilename, SSMAFTER enmAfter, PF
  * Calls pfnLiveVote for all units.
  *
  * @returns VBox status code (no need to check pSSM->rc).
+ * @retval  VINF_SUCCESS if we can pass on to step 2.
+ * @retval  VINF_SSM_VOTE_FOR_ANOTHER_PASS if we need another pass.
+ *
  * @param   pVM                 The VM handle.
  * @param   pSSM                The saved state handle.
+ * @param   uPass               The current pass.
  */
-static int ssmR3DoLiveVoteRun(PVM pVM, PSSMHANDLE pSSM)
+static int ssmR3LiveDoVoteRun(PVM pVM, PSSMHANDLE pSSM, uint32_t uPass)
 {
-    /*
-     * Do the prepare run.
-     */
-    AssertRCReturn(pSSM->rc, pSSM->rc);
+    AssertRC(pSSM->rc);
     pSSM->rc = VINF_SUCCESS;
     pSSM->enmOp = SSMSTATE_LIVE_VOTE;
     for (PSSMUNIT pUnit = pVM->ssm.s.pHead; pUnit; pUnit = pUnit->pNext)
@@ -4003,23 +4003,141 @@ static int ssmR3DoLiveVoteRun(PVM pVM, PSSMHANDLE pSSM)
             {
                 if (rc == VINF_SSM_VOTE_FOR_ANOTHER_PASS)
                 {
-                    Log(("ssmR3DoLiveVoteRun: '%s'/#%u -> VINF_SSM_VOTE_FOR_ANOTHER_PASS\n", pUnit, pUnit->u32Instance));
+                    Log(("ssmR3DoLiveVoteRun: '%s'/#%u -> VINF_SSM_VOTE_FOR_ANOTHER_PASS (pass=%u)\n", pUnit->szName, pUnit->u32Instance, uPass));
                     return VINF_SSM_VOTE_FOR_ANOTHER_PASS;
                 }
-                Log(("ssmR3DoLiveVoteRun: '%s'/#%u -> %Rrc!!\n", pUnit, pUnit->u32Instance, rc));
+
+                /*
+                 * rc is usually VERR_SSM_VOTE_FOR_GIVING_UP here, but we allow
+                 * other status codes for better user feed back.  However, no
+                 * other non-error status is allowed.
+                 */
+                LogRel(("SSM: Error - '%s'/#%u voted %Rrc! (pass=%u)\n", pUnit->szName, pUnit->u32Instance, rc, uPass));
                 AssertMsgReturn(RT_FAILURE(rc), ("%Rrc; '%s'\n", rc, pUnit->szName), pSSM->rc = VERR_IPE_UNEXPECTED_INFO_STATUS);
-                return rc;
+                return pSSM->rc = rc;
             }
         }
     }
+
+    LogRel(("SSM: Step 1 completed after pass %u.\n", uPass));
     return VINF_SUCCESS;
 }
 
 
 /**
- * Continue a live state saving operation on the worker thread.
+ * Calls pfnLiveExec for all units.
  *
- * The
+ * @returns VBox status code (no need to check pSSM->rc).
+ *
+ * @param   pVM                 The VM handle.
+ * @param   pSSM                The saved state handle.
+ * @param   uPass               The current pass.
+ */
+static int ssmR3LiveDoExecRun(PVM pVM, PSSMHANDLE pSSM, uint32_t uPass)
+{
+    AssertRC(pSSM->rc);
+    pSSM->rc = VINF_SUCCESS;
+    pSSM->enmOp = SSMSTATE_LIVE_EXEC;
+    for (PSSMUNIT pUnit = pVM->ssm.s.pHead; pUnit; pUnit = pUnit->pNext)
+    {
+        /*
+         * Skip units without a callback (this is most).
+         */
+        if (!pUnit->u.Common.pfnLiveExec)
+            continue;
+        pUnit->offStream = ssmR3StrmTell(&pSSM->Strm);
+
+        /*
+         * Write data unit header.
+         */
+        SSMFILEUNITHDRV2 UnitHdr;
+        memcpy(&UnitHdr.szMagic[0], SSMFILEUNITHDR_MAGIC, sizeof(UnitHdr.szMagic));
+        UnitHdr.offStream       = pUnit->offStream;
+        UnitHdr.u32CurStreamCRC = ssmR3StrmCurCRC(&pSSM->Strm);
+        UnitHdr.u32CRC          = 0;
+        UnitHdr.u32Version      = pUnit->u32Version;
+        UnitHdr.u32Instance     = pUnit->u32Instance;
+        UnitHdr.u32Pass         = uPass;
+        UnitHdr.fFlags          = 0;
+        UnitHdr.cbName          = (uint32_t)pUnit->cchName + 1;
+        memcpy(&UnitHdr.szName[0], &pUnit->szName[0], UnitHdr.cbName);
+        UnitHdr.u32CRC          = RTCrc32(&UnitHdr, RT_OFFSETOF(SSMFILEUNITHDRV2, szName[UnitHdr.cbName]));
+        Log(("SSM: Unit at %#9llx: '%s', instance %u, pass %#x, version %u\n",
+             UnitHdr.offStream, UnitHdr.szName, UnitHdr.u32Instance, UnitHdr.u32Pass, UnitHdr.u32Version));
+        int rc = ssmR3StrmWrite(&pSSM->Strm, &UnitHdr, RT_OFFSETOF(SSMFILEUNITHDRV2, szName[UnitHdr.cbName]));
+        if (RT_FAILURE(rc))
+        {
+            LogRel(("SSM: Failed to write unit header. rc=%Rrc\n", rc));
+            return pSSM->rc = rc;
+        }
+
+        /*
+         * Call the execute handler.
+         */
+        ssmR3DataWriteBegin(pSSM);
+        switch (pUnit->enmType)
+        {
+            case SSMUNITTYPE_DEV:
+                rc = pUnit->u.Dev.pfnLiveExec(pUnit->u.Dev.pDevIns, pSSM, uPass);
+                break;
+            case SSMUNITTYPE_DRV:
+                rc = pUnit->u.Drv.pfnLiveExec(pUnit->u.Drv.pDrvIns, pSSM, uPass);
+                break;
+            case SSMUNITTYPE_INTERNAL:
+                rc = pUnit->u.Internal.pfnLiveExec(pVM, pSSM, uPass);
+                break;
+            case SSMUNITTYPE_EXTERNAL:
+                rc = pUnit->u.External.pfnLiveExec(pSSM, pUnit->u.External.pvUser, uPass);
+                break;
+            default:
+                rc = VERR_INTERNAL_ERROR;
+                break;
+        }
+        pUnit->fCalled = true;
+        if (RT_SUCCESS(rc))
+            rc = ssmR3DataFlushBuffer(pSSM); /* will return SSMHANDLE::rc if it is set */
+        if (RT_FAILURE(rc))
+        {
+            LogRel(("SSM: Execute save failed with rc=%Rrc for data unit '%s'/#%u.\n", rc, pUnit->szName, pUnit->u32Instance));
+            if (RT_SUCCESS(pSSM->rc))
+                pSSM->rc = rc;
+            return rc;
+        }
+
+        /*
+         * Write the termination record and flush the compression stream.
+         */
+        SSMRECTERM TermRec;
+        TermRec.u8TypeAndFlags   = SSM_REC_FLAGS_FIXED | SSM_REC_FLAGS_IMPORTANT | SSM_REC_TYPE_TERM;
+        TermRec.cbRec            = sizeof(TermRec) - 2;
+        if (pSSM->Strm.fChecksummed)
+        {
+            TermRec.fFlags       = SSMRECTERM_FLAGS_CRC32;
+            TermRec.u32StreamCRC = RTCrc32Finish(RTCrc32Process(ssmR3StrmCurCRC(&pSSM->Strm), &TermRec, 2));
+        }
+        else
+        {
+            TermRec.fFlags       = 0;
+            TermRec.u32StreamCRC = 0;
+        }
+        TermRec.cbUnit           = pSSM->offUnit + sizeof(TermRec);
+        rc = ssmR3DataWriteRaw(pSSM, &TermRec, sizeof(TermRec));
+        if (RT_SUCCESS(rc))
+            rc = ssmR3DataWriteFinish(pSSM);
+        if (RT_FAILURE(rc))
+        {
+            LogRel(("SSM: Failed terminating unit: %Rrc (pass=%u)\n", rc, uPass));
+            return pSSM->rc = rc;
+        }
+    } /* for each unit */
+
+    return VINF_SUCCESS;
+}
+
+
+
+/**
+ * Continue a live state saving operation on the worker thread.
  *
  * @returns VBox status.
  *
@@ -4043,13 +4161,80 @@ VMMR3DECL(int) SSMR3LiveDoStep1(PSSMHANDLE pSSM)
                     || pSSM->enmAfter == SSMAFTER_CONTINUE,
                     ("%d\n", pSSM->enmAfter),
                     VERR_INVALID_PARAMETER);
-    AssertMsgReturn(pSSM->enmOp == SSMSTATE_LIVE_EXEC, ("%d\n", pSSM->enmOp), VERR_INVALID_STATE);
+    AssertMsgReturn(pSSM->enmOp == SSMSTATE_LIVE_STEP1, ("%d\n", pSSM->enmOp), VERR_INVALID_STATE);
+    AssertRCReturn(pSSM->rc, pSSM->rc);
 
     /*
-     * ...
+     * Calc the max saved state size before we should give up because of insane
+     * amounts of data.
      */
+#define SSM_MAX_GROWTH_FILE      10000
+#define SSM_MAX_GROWTH_REMOTE   100000
+    uint64_t cbSum = 0;
+    for (PSSMUNIT pUnit = pVM->ssm.s.pHead; pUnit; pUnit = pUnit->pNext)
+        cbSum += pUnit->cbGuess;
+    uint64_t cbMax = cbSum * (pSSM->pszFilename ? SSM_MAX_GROWTH_FILE : SSM_MAX_GROWTH_REMOTE);
+    AssertLogRelMsgReturn(cbMax > cbSum, ("cbMax=%#RX64, cbSum=%#RX64\n", cbMax, cbSum), pSSM->rc = VERR_OUT_OF_RANGE);
+    if (cbMax < _1G)
+        cbMax = _1G;
 
-    return VERR_NOT_IMPLEMENTED;
+    /*
+     * The pass loop.
+     *
+     * The number of interations is restricted for two reasons, first
+     * to make sure
+     */
+#define SSM_MAX_PASSES  _1M
+    for (uint32_t uPass = 0; uPass < SSM_MAX_PASSES; uPass++)
+    {
+        /*
+         * Save state and vote on whether we need more passes or not.
+         */
+        int rc = ssmR3LiveDoExecRun(pVM, pSSM, uPass);
+        if (RT_FAILURE(rc))
+            return rc;
+        rc = ssmR3LiveDoVoteRun(pVM, pSSM, uPass);
+        if (rc == VINF_SUCCESS)
+        {
+            pSSM->enmOp = SSMSTATE_LIVE_STEP2;
+            return VINF_SUCCESS;
+        }
+        if (RT_FAILURE(rc))
+            return rc;
+
+        /*
+         * Check that we're still within sane data amounts.
+         */
+        uint64_t cbSaved = ssmR3StrmTell(&pSSM->Strm);
+        if (cbSaved > cbMax)
+        {
+            LogRel(("SSM: Giving up: Exceeded max state size. (cbSaved=%#RX64, cbMax=%#RX64)\n", cbSaved, cbMax));
+            return pSSM->rc = VERR_SSM_STATE_GREW_TOO_BIG;
+        }
+
+        /*
+         * Check that there is still some space left on the disk.
+         */
+        /** @todo move this to the stream flushing code? It's not perfect when done
+         *        here, it could be way better if we did it there. */
+        if (pSSM->pszFilename)
+        {
+            RTFOFF cbFree;
+            rc = RTFsQuerySizes(pSSM->pszFilename, NULL, &cbFree, NULL, NULL);
+            AssertRC(rc);
+#define SSM_MIN_DISK_FREE    ((RTFOFF)( 10 * _1M ))
+            if (   RT_SUCCESS(rc)
+                && cbFree < SSM_MIN_DISK_FREE)
+            {
+                LogRel(("SSM: Giving up: Low on disk space. (cbFree=%RTfoff, SSM_MIN_DISK_FREE=%RTfoff).\n",
+                        cbFree, SSM_MIN_DISK_FREE));
+                return pSSM->rc = VERR_SSM_LOW_ON_DISK_SPACE;
+            }
+        }
+    }
+
+    LogRel(("SSM: Giving up: Too many passes! (%u)\n", SSM_MAX_PASSES));
+    return pSSM->rc = VERR_SSM_TOO_MANY_PASSES;
 }
 
 
@@ -4191,6 +4376,7 @@ VMMR3DECL(int) SSMR3LiveToFile(PVM pVM, const char *pszFilename, SSMAFTER enmAft
              * Return and let the requstor thread do the pfnLiveExec/Vote part
              * via SSMR3SaveFinishLive
              */
+            pSSM->enmOp = SSMSTATE_LIVE_STEP1;
             *ppSSM = pSSM;
             return VINF_SUCCESS;
         }
@@ -6122,16 +6308,16 @@ static int ssmR3LoadExecV1(PVM pVM, PSSMHANDLE pSSM)
                         switch (pUnit->enmType)
                         {
                             case SSMUNITTYPE_DEV:
-                                rc = pUnit->u.Dev.pfnLoadExec(pUnit->u.Dev.pDevIns, pSSM, UnitHdr.u32Version, SSM_PHASE_FINAL);
+                                rc = pUnit->u.Dev.pfnLoadExec(pUnit->u.Dev.pDevIns, pSSM, UnitHdr.u32Version, SSM_PASS_FINAL);
                                 break;
                             case SSMUNITTYPE_DRV:
-                                rc = pUnit->u.Drv.pfnLoadExec(pUnit->u.Drv.pDrvIns, pSSM, UnitHdr.u32Version, SSM_PHASE_FINAL);
+                                rc = pUnit->u.Drv.pfnLoadExec(pUnit->u.Drv.pDrvIns, pSSM, UnitHdr.u32Version, SSM_PASS_FINAL);
                                 break;
                             case SSMUNITTYPE_INTERNAL:
-                                rc = pUnit->u.Internal.pfnLoadExec(pVM, pSSM, UnitHdr.u32Version, SSM_PHASE_FINAL);
+                                rc = pUnit->u.Internal.pfnLoadExec(pVM, pSSM, UnitHdr.u32Version, SSM_PASS_FINAL);
                                 break;
                             case SSMUNITTYPE_EXTERNAL:
-                                rc = pUnit->u.External.pfnLoadExec(pSSM, pUnit->u.External.pvUser, UnitHdr.u32Version, SSM_PHASE_FINAL);
+                                rc = pUnit->u.External.pfnLoadExec(pSSM, pUnit->u.External.pvUser, UnitHdr.u32Version, SSM_PASS_FINAL);
                                 break;
                             default:
                                 rc = VERR_INTERNAL_ERROR;
@@ -6272,7 +6458,7 @@ static int ssmR3LoadExecV2(PVM pVM, PSSMHANDLE pSSM)
             AssertLogRelMsgReturn(   UnitHdr.cbName       == 0
                                   && UnitHdr.u32Instance  == 0
                                   && UnitHdr.u32Version   == 0
-                                  && UnitHdr.u32Phase     == SSM_PHASE_FINAL,
+                                  && UnitHdr.u32Pass      == SSM_PASS_FINAL,
                                   ("Unit at %#llx (%lld): Malformed END unit\n", offUnit, offUnit),
                                   VERR_SSM_INTEGRITY_UNIT);
 
@@ -6285,8 +6471,8 @@ static int ssmR3LoadExecV2(PVM pVM, PSSMHANDLE pSSM)
         }
         AssertLogRelMsgReturn(UnitHdr.cbName > 1, ("Unit at %#llx (%lld): No name\n", offUnit, offUnit), VERR_SSM_INTEGRITY);
 
-        Log(("SSM: Unit at %#9llx: '%s', instance %u, phase %#x, version %u\n",
-             offUnit, UnitHdr.szName, UnitHdr.u32Instance, UnitHdr.u32Phase, UnitHdr.u32Version));
+        Log(("SSM: Unit at %#9llx: '%s', instance %u, pass %#x, version %u\n",
+             offUnit, UnitHdr.szName, UnitHdr.u32Instance, UnitHdr.u32Pass, UnitHdr.u32Version));
 
         /*
          * Find the data unit in our internal table.
@@ -6304,16 +6490,16 @@ static int ssmR3LoadExecV2(PVM pVM, PSSMHANDLE pSSM)
             switch (pUnit->enmType)
             {
                 case SSMUNITTYPE_DEV:
-                    rc = pUnit->u.Dev.pfnLoadExec(pUnit->u.Dev.pDevIns, pSSM, UnitHdr.u32Version, UnitHdr.u32Phase);
+                    rc = pUnit->u.Dev.pfnLoadExec(pUnit->u.Dev.pDevIns, pSSM, UnitHdr.u32Version, UnitHdr.u32Pass);
                     break;
                 case SSMUNITTYPE_DRV:
-                    rc = pUnit->u.Drv.pfnLoadExec(pUnit->u.Drv.pDrvIns, pSSM, UnitHdr.u32Version, UnitHdr.u32Phase);
+                    rc = pUnit->u.Drv.pfnLoadExec(pUnit->u.Drv.pDrvIns, pSSM, UnitHdr.u32Version, UnitHdr.u32Pass);
                     break;
                 case SSMUNITTYPE_INTERNAL:
-                    rc = pUnit->u.Internal.pfnLoadExec(pVM, pSSM, UnitHdr.u32Version, UnitHdr.u32Phase);
+                    rc = pUnit->u.Internal.pfnLoadExec(pVM, pSSM, UnitHdr.u32Version, UnitHdr.u32Pass);
                     break;
                 case SSMUNITTYPE_EXTERNAL:
-                    rc = pUnit->u.External.pfnLoadExec(pSSM, pUnit->u.External.pvUser, UnitHdr.u32Version, UnitHdr.u32Phase);
+                    rc = pUnit->u.External.pfnLoadExec(pSSM, pUnit->u.External.pvUser, UnitHdr.u32Version, UnitHdr.u32Pass);
                     break;
                 default:
                     rc = VERR_INTERNAL_ERROR;
@@ -6327,8 +6513,8 @@ static int ssmR3LoadExecV2(PVM pVM, PSSMHANDLE pSSM)
                 pSSM->offUnit = UINT64_MAX;
             else
             {
-                LogRel(("SSM: LoadExec failed for '%s' instance #%u (version %u, phase %#x): %Rrc\n",
-                        UnitHdr.szName, UnitHdr.u32Instance, UnitHdr.u32Version, UnitHdr.u32Phase, rc));
+                LogRel(("SSM: LoadExec failed for '%s' instance #%u (version %u, pass %#x): %Rrc\n",
+                        UnitHdr.szName, UnitHdr.u32Instance, UnitHdr.u32Version, UnitHdr.u32Pass, rc));
                 return VMSetError(pVM, rc, RT_SRC_POS, N_("Failed to load unit '%s'"), UnitHdr.szName);
             }
         }

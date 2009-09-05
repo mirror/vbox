@@ -1428,11 +1428,11 @@ static DECLCALLBACK(int) kbdSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle)
  * @param   pDevIns     The device instance.
  * @param   pSSMHandle  The handle to the saved state.
  * @param   uVersion    The data unit version number.
- * @param   uPhase      The data phase.
+ * @param   uPass       The data pass.
  */
-static DECLCALLBACK(int) kbdLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle, uint32_t uVersion, uint32_t uPhase)
+static DECLCALLBACK(int) kbdLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle, uint32_t uVersion, uint32_t uPass)
 {
-    Assert(uPhase == SSM_PHASE_FINAL); NOREF(uPhase);
+    Assert(uPass == SSM_PASS_FINAL); NOREF(uPass);
     return kbd_load(pSSMHandle, PDMINS_2_DATA(pDevIns, KBDState *), uVersion);
 }
 

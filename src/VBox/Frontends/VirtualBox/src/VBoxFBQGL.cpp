@@ -4044,9 +4044,9 @@ static DECLCALLBACK(void) vboxQGLSaveExec(PSSMHANDLE pSSM, void *pvUser)
     pw->vhwaSaveExec(pSSM);
 }
 
-static DECLCALLBACK(int) vboxQGLLoadExec(PSSMHANDLE pSSM, void *pvUser, uint32_t u32Version, uint32_t uPhase)
+static DECLCALLBACK(int) vboxQGLLoadExec(PSSMHANDLE pSSM, void *pvUser, uint32_t u32Version, uint32_t uPass)
 {
-    Q_UNUSED(uPhase);
+    Assert(uPass == SSM_PASS_FINAL); NOREF(uPass);
     VBoxGLWidget * pw = (VBoxGLWidget*)pvUser;
     return pw->vhwaLoadExec(pSSM, u32Version);
 }
@@ -4284,7 +4284,7 @@ int VBoxGLWidget::vhwaSaveOverlayData(struct SSMHANDLE * pSSM, VBoxVHWASurfaceBa
 int VBoxGLWidget::vhwaLoadOverlayData(struct SSMHANDLE * pSSM, uint32_t u32Version)
 {
     Q_UNUSED(u32Version);
-    
+
     VBOXQGL_LOAD_OVERLAYSTART(pSSM);
 
 //    char buf[VBOXVHWACMD_SIZE(VBOXVHWACMD_SURF_OVERLAY_UPDATE)];

@@ -863,12 +863,12 @@ static DECLCALLBACK(int) dmaSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle)
 static DECLCALLBACK(int) dmaLoadExec (PPDMDEVINS pDevIns,
                                       PSSMHANDLE pSSMHandle,
                                       uint32_t uVersion,
-                                      uint32_t uPhase)
+                                      uint32_t uPass)
 {
     DMAState *s = PDMINS_2_DATA (pDevIns, DMAState *);
 
     AssertMsgReturn (uVersion == 1, ("%d\n", uVersion), VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION);
-    Assert (uPhase == SSM_PHASE_FINAL);
+    Assert (uPass == SSM_PASS_FINAL); NOREF(uPass);
 
     dma_load (pSSMHandle, &s->dma_controllers[0], uVersion);
     return dma_load (pSSMHandle, &s->dma_controllers[1], uVersion);

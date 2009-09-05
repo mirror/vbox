@@ -1550,13 +1550,13 @@ static int SB_load (QEMUFile *f, void *opaque, int version_id)
     }
 #else  /* VBOX */
 static DECLCALLBACK(int) sb16LoadExec (PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle,
-                                       uint32_t uVersion, uint32_t uPhase)
+                                       uint32_t uVersion, uint32_t uPass)
 {
     SB16State *s = PDMINS_2_DATA (pDevIns, SB16State *);
     QEMUFile *f = pSSMHandle;
 
     AssertMsgReturn(uVersion == SB16_SSM_VERSION, ("%d\n", uVersion),  VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION);
-    Assert(uPhase == SSM_PHASE_FINAL); NOREF(uPhase);
+    Assert(uPass == SSM_PASS_FINAL); NOREF(uPass);
 #endif /* VBOX */
 
     s->irq=qemu_get_be32 (f);

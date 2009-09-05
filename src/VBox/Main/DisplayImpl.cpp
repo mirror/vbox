@@ -129,12 +129,13 @@ Display::displaySSMSave(PSSMHANDLE pSSM, void *pvUser)
 }
 
 DECLCALLBACK(int)
-Display::displaySSMLoad(PSSMHANDLE pSSM, void *pvUser, uint32_t uVersion, uint32_t uPhase)
+Display::displaySSMLoad(PSSMHANDLE pSSM, void *pvUser, uint32_t uVersion, uint32_t uPass)
 {
     Display *that = static_cast<Display*>(pvUser);
 
     if (uVersion != sSSMDisplayVer)
         return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
+    Assert(uPass == SSM_PASS_FINAL); NOREF(uPass);
 
     uint32_t cMonitors;
     int rc = SSMR3GetU32(pSSM, &cMonitors);

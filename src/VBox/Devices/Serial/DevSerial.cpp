@@ -598,16 +598,16 @@ static DECLCALLBACK(int) serialSaveExec(PPDMDEVINS pDevIns,
  * @param   pDevIns     The device instance.
  * @param   pSSMHandle  The handle to the saved state.
  * @param   uVersion    The data unit version number.
- * @param   uPhase      The data phase.
+ * @param   uPass       The data pass.
  */
 static DECLCALLBACK(int) serialLoadExec(PPDMDEVINS pDevIns,
                                         PSSMHANDLE pSSMHandle,
                                         uint32_t uVersion,
-                                        uint32_t uPhase)
+                                        uint32_t uPass)
 {
     SerialState *pThis = PDMINS_2_DATA(pDevIns, SerialState *);
 
-    Assert(uPhase == SSM_PHASE_FINAL); NOREF(uPhase);
+    Assert(uPass == SSM_PASS_FINAL); NOREF(uPass);
     AssertMsgReturn(uVersion == SERIAL_SAVED_STATE_VERSION, ("%d\n", uVersion), VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION);
 
     SSMR3GetU16(pSSMHandle, &pThis->divider);
