@@ -2678,6 +2678,7 @@ void VBoxVHWASurfaceBase::doSetRectValuesInternal(const QRect & aTargRect, const
         vsx2 = sx2 + int(dx2*stretchX);
         vsy2 = sy2 + int(dy2*stretchY);
         mVisibleSrcRect.setCoords(vsx1, vsy1, vsx2, vsy2);
+        Assert(!mVisibleSrcRect.isEmpty());
         Assert(mSrcRect.contains(mVisibleSrcRect));
     }
 }
@@ -2776,20 +2777,20 @@ void VBoxVHWASurfaceBase::doDisplay(VBoxVHWASurfaceBase *pPrimary, VBoxVHWAGlPro
 
     if(bInvokeMultiTex2)
     {
-        doMultiTex2FB(&mTargRect, pPrimary->mpTex[0], &mSrcRect,
+        doMultiTex2FB(&mVisibleTargRect, pPrimary->mpTex[0], &mVisibleSrcRect,
                 (fourcc() == FOURCC_YV12) ? 3 : 1);
     }
     else
     {
         if(fourcc() == FOURCC_YV12)
         {
-            doMultiTex2FB(&mTargRect, &mSrcRect, 3 );
+            doMultiTex2FB(&mVisibleTargRect, &mVisibleSrcRect, 3 );
         }
         else
         {
-            VBOXQGLLOG_QRECT("mTargRect: ", &mTargRect, "\n");
-            VBOXQGLLOG_QRECT("mSrcRect: ", &mSrcRect, "\n");
-            doTex2FB(&mTargRect, &mSrcRect);
+            VBOXQGLLOG_QRECT("mVisibleTargRect: ", &mVisibleTargRect, "\n");
+            VBOXQGLLOG_QRECT("mVisibleSrcRect: ", &mVisibleSrcRect, "\n");
+            doTex2FB(&mVisibleTargRect, &mVisibleSrcRect);
         }
     }
 
@@ -2801,6 +2802,18 @@ void VBoxVHWASurfaceBase::doDisplay(VBoxVHWASurfaceBase *pPrimary, VBoxVHWAGlPro
 
 GLuint VBoxVHWASurfaceBase::createDisplay(VBoxVHWASurfaceBase *pPrimary)
 {
+    if(mVisibleTargRect.isEmpty())
+    {
+        Assert(mVisibleSrcRect.isEmpty());
+        return 0;
+    }
+    Assert(!mVisibleSrcRect.isEmpty());
+    /* just for the fallback */
+    if(mVisibleSrcRect.isEmpty())
+    {
+        return 0;
+    }
+
     VBoxVHWAGlProgramVHWA * pProgram = NULL;
     const VBoxVHWAColorKey * pSrcCKey = NULL, *pDstCKey = NULL;
     if(pPrimary)
@@ -2834,11 +2847,8 @@ void VBoxVHWASurfaceBase::initDisplay(VBoxVHWASurfaceBase *pPrimary)
 {
     deleteDisplay();
 
-
-    {
-        mVisibleDisplay = createDisplay(pPrimary);
-        mVisibleDisplayInitialized = true;
-    }
+    mVisibleDisplay = createDisplay(pPrimary);
+    mVisibleDisplayInitialized = true;
 }
 
 void VBoxVHWASurfaceBase::updatedMem(const QRect *rec)
@@ -2859,11 +2869,24 @@ void VBoxVHWASurfaceBase::updatedMem(const QRect *rec)
 void VBoxVHWASurfaceBase::performDisplay(VBoxVHWASurfaceBase *pPrimary)
 {
     Assert(mVisibleDisplayInitialized);
+    if(mVisibleDisplay == 0)
+    {
+        /* nothing to display, i.e. the surface is not visible,
+         * in the sense that it's located behind the viewport ranges */
+        Assert(mVisibleSrcRect.isEmpty());
+        Assert(mVisibleTargRect.isEmpty());
+        return;
+    }
+    else
+    {
+        Assert(!mVisibleSrcRect.isEmpty());
+        Assert(!mVisibleTargRect.isEmpty());
+    }
 
-    synchTexMem(&mSrcRect);
+    synchTexMem(&mVisibleSrcRect);
     if(pPrimary && getActiveDstOverlayCKey(pPrimary))
     {
-        pPrimary->synchTexMem(&mTargRect);
+        pPrimary->synchTexMem(&mVisibleTargRect);
     }
 
 #ifdef DEBUG_misha
@@ -3374,12 +3397,13 @@ int VBoxGLWidget::vhwaSurfaceCanCreate(struct _VBOXVHWACMD_SURF_CANCREATE *pCmd)
 
     if(pCmd->SurfInfo.surfCaps & VBOXVHWA_SCAPS_OFFSCREENPLAIN)
     {
+        Assert(0);
         pCmd->u.out.ErrInfo = 1;
         return VINF_SUCCESS;
     }
 
-    Assert(pCmd->SurfInfo.surfCaps & VBOXVHWA_SCAPS_OFFSCREENPLAIN
-            || pCmd->SurfInfo.surfCaps & VBOXVHWA_SCAPS_OVERLAY);
+    Assert(/*pCmd->SurfInfo.surfCaps & VBOXVHWA_SCAPS_OFFSCREENPLAIN
+            || */ pCmd->SurfInfo.surfCaps & VBOXVHWA_SCAPS_OVERLAY);
 
     if(pCmd->u.in.bIsDifferentPixelFormat)
     {
@@ -5350,20 +5374,19 @@ void VBoxQGLOverlayFrameBuffer::vboxSetGlOn(bool on)
 
 void VBoxQGLOverlayFrameBuffer::vboxShowOverlay(bool show)
 {
-    /** @todo */
-    Assert(0);
+    mpOverlayWidget->setVisible(show);
 }
 
 void VBoxQGLOverlayFrameBuffer::vboxUpdateOverlayPosition(const QPoint & pos)
 {
-    /** @todo */
-    Assert(0);
+    mpOverlayWidget->move(pos);
 }
 
-void VBoxQGLOverlayFrameBuffer::vboxUpdateOverlay(const QPoint & pos, const QRect & rect, bool show)
+void VBoxQGLOverlayFrameBuffer::vboxUpdateOverlay(const QRect & rect, bool show)
 {
-    /** @todo */
-    Assert(0);
+    mpOverlayWidget->move(rect.x(), rect.y());
+    mpOverlayWidget->resize(rect.width(), rect.height());
+    mpOverlayWidget->setVisible(show);
 }
 
 void VBoxQGLOverlayFrameBuffer::vboxDoVHWACmdExec(void *cmd)
@@ -5388,7 +5411,7 @@ void VBoxQGLOverlayFrameBuffer::vboxDoVHWACmdExec(void *cmd)
             else if(mpOverlayWidget->hasVisibleOverlays())
             {
                 QRect overRect = mpOverlayWidget->overlaysRectUnion();
-                vboxUpdateOverlay(QPoint(overRect.x(), overRect.y()), overRect, true);
+                vboxUpdateOverlay(overRect, true);
             }
         } break;
         case VBOXVHWACMD_TYPE_SURF_DESTROY:
@@ -5427,7 +5450,7 @@ void VBoxQGLOverlayFrameBuffer::vboxDoVHWACmdExec(void *cmd)
             if(mpOverlayWidget->hasVisibleOverlays())
             {
                 QRect overRect = mpOverlayWidget->overlaysRectUnion();
-                vboxUpdateOverlay(QPoint(overRect.x(), overRect.y()), overRect, true);
+                vboxUpdateOverlay(overRect, true);
             }
         } break;
         case VBOXVHWACMD_TYPE_SURF_OVERLAY_SETPOSITION:
