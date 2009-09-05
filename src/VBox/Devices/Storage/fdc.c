@@ -2431,14 +2431,14 @@ static DECLCALLBACK(int) fdcSaveExec (PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle)
 static DECLCALLBACK(int) fdcLoadExec (PPDMDEVINS pDevIns,
                                       PSSMHANDLE pSSMHandle,
                                       uint32_t uVersion,
-                                      uint32_t uPhase)
+                                      uint32_t uPass)
 {
     fdctrl_t *s = PDMINS_2_DATA (pDevIns, fdctrl_t *);
     QEMUFile *f = pSSMHandle;
     unsigned int i;
 
     AssertMsgReturn(uVersion == 1, ("%d\n", uVersion), VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION);
-    Assert(uPhase == SSM_PHASE_FINAL); NOREF(uPhase);
+    Assert(uPass == SSM_PASS_FINAL); NOREF(uPass);
 
     qemu_get_8s (f, &s->version);
     qemu_get_8s (f, &s->irq_lvl);

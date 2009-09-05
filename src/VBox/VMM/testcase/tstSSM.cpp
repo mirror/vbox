@@ -186,9 +186,9 @@ DECLCALLBACK(int) Item01Save(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
  * @param   pDevIns         Device instance of the device which registered the data unit.
  * @param   pSSM            SSM operation handle.
  * @param   uVersion        The data layout version.
- * @param   uPhase          The data phase.
+ * @param   uPass           The data pass.
  */
-DECLCALLBACK(int) Item01Load(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPhase)
+DECLCALLBACK(int) Item01Load(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
 {
     if (uVersion != 0)
     {
@@ -342,9 +342,9 @@ DECLCALLBACK(int) Item02Save(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
  * @param   pDevIns         Device instance of the device which registered the data unit.
  * @param   pSSM            SSM operation handle.
  * @param   uVersion        The data layout version.
- * @param   uPhase          The data phase.
+ * @param   uPass           The data pass.
  */
-DECLCALLBACK(int) Item02Load(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPhase)
+DECLCALLBACK(int) Item02Load(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
 {
     if (uVersion != 0)
     {
@@ -456,9 +456,9 @@ DECLCALLBACK(int) Item03Save(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
  * @param   pDevIns         Device instance of the device which registered the data unit.
  * @param   pSSM            SSM operation handle.
  * @param   uVersion        The data layout version.
- * @param   uPhase          The data phase.
+ * @param   uPass           The data pass.
  */
-DECLCALLBACK(int) Item03Load(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPhase)
+DECLCALLBACK(int) Item03Load(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
 {
     if (uVersion != 123)
     {
@@ -562,9 +562,9 @@ DECLCALLBACK(int) Item04Save(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
  * @param   pDevIns         Device instance of the device which registered the data unit.
  * @param   pSSM            SSM operation handle.
  * @param   uVersion        The data layout version.
- * @param   uPhase          The data phase.
+ * @param   uPass           The data pass.
  */
-DECLCALLBACK(int) Item04Load(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPhase)
+DECLCALLBACK(int) Item04Load(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
 {
     if (uVersion != 42)
     {
@@ -850,7 +850,7 @@ int main(int argc, char **argv)
         return 1;
     }
     u64Start = RTTimeNanoTS();
-    rc = Item02Load(NULL, pSSM, uVersion, SSM_PHASE_FINAL);
+    rc = Item02Load(NULL, pSSM, uVersion, SSM_PASS_FINAL);
     if (RT_FAILURE(rc))
     {
         RTPrintf("Item02Load #1 -> %Rrc\n", rc);
@@ -868,7 +868,7 @@ int main(int argc, char **argv)
         return 1;
     }
     u64Start = RTTimeNanoTS();
-    rc = Item01Load(NULL, pSSM, uVersion, SSM_PHASE_FINAL);
+    rc = Item01Load(NULL, pSSM, uVersion, SSM_PASS_FINAL);
     if (RT_FAILURE(rc))
     {
         RTPrintf("Item01Load #1 -> %Rrc\n", rc);
@@ -886,7 +886,7 @@ int main(int argc, char **argv)
         return 1;
     }
     u64Start = RTTimeNanoTS();
-    rc = Item03Load(NULL, pSSM, uVersion, SSM_PHASE_FINAL);
+    rc = Item03Load(NULL, pSSM, uVersion, SSM_PASS_FINAL);
     if (RT_FAILURE(rc))
     {
         RTPrintf("Item01Load #3 -> %Rrc\n", rc);

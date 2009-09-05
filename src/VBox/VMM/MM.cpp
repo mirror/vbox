@@ -176,7 +176,7 @@ Hypervisor Memory Area (HMA) Layout: Base 00000000a0000000, 0x00800000 bytes
 *   Internal Functions                                                         *
 *******************************************************************************/
 static DECLCALLBACK(int) mmR3Save(PVM pVM, PSSMHANDLE pSSM);
-static DECLCALLBACK(int) mmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPhase);
+static DECLCALLBACK(int) mmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass);
 
 
 
@@ -529,12 +529,12 @@ static DECLCALLBACK(int) mmR3Save(PVM pVM, PSSMHANDLE pSSM)
  * @param   pVM             VM Handle.
  * @param   pSSM            SSM operation handle.
  * @param   uVersion       Data layout version.
- * @param   uPhase          The data phase.
+ * @param   uPass           The data pass.
  */
-static DECLCALLBACK(int) mmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPhase)
+static DECLCALLBACK(int) mmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
 {
     LogFlow(("mmR3Load:\n"));
-    Assert(uPhase == SSM_PHASE_FINAL); NOREF(uPhase);
+    Assert(uPass == SSM_PASS_FINAL); NOREF(uPass);
 
     /*
      * Validate version.

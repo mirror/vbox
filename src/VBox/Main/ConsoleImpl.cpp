@@ -1056,19 +1056,19 @@ Console::saveStateFileExec (PSSMHANDLE pSSM, void *pvUser)
  *  @param pvUser       pointer to Console
  *  @param uVersion     Console unit version.
  *                      Should match sSSMConsoleVer.
- *  @param uPhase       The data phase.
+ *  @param uPass        The data pass.
  *
  *  @note Should locks the Console object for writing, if necessary.
  */
 //static
 DECLCALLBACK(int)
-Console::loadStateFileExec(PSSMHANDLE pSSM, void *pvUser, uint32_t uVersion, uint32_t uPhase)
+Console::loadStateFileExec(PSSMHANDLE pSSM, void *pvUser, uint32_t uVersion, uint32_t uPass)
 {
     LogFlowFunc (("\n"));
 
     if (SSM_VERSION_MAJOR_CHANGED(uVersion, sSSMConsoleVer))
         return VERR_VERSION_MISMATCH;
-    Assert(uPhase == SSM_PHASE_FINAL); NOREF(uPhase);
+    Assert(uPass == SSM_PASS_FINAL); NOREF(uPass);
 
     Console *that = static_cast<Console *>(pvUser);
     AssertReturn(that, VERR_INVALID_PARAMETER);

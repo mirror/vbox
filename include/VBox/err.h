@@ -570,6 +570,13 @@
 #define VINF_SSM_VOTE_FOR_ANOTHER_PASS          1851
 /** Vote for giving up.  */
 #define VERR_SSM_VOTE_FOR_GIVING_UP             (-1852)
+/** Giving up a live snapshot/migration attempt because of too many passes. */
+#define VERR_SSM_TOO_MANY_PASSES                (-1853)
+/** Giving up a live snapshot/migration attempt because the state grew to
+ * big. */
+#define VERR_SSM_STATE_GREW_TOO_BIG             (-1854)
+/** Giving up a live snapshot attempt because we're low on disk space.  */
+#define VERR_SSM_LOW_ON_DISK_SPACE              (-1855)
 /** @} */
 
 
