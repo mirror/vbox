@@ -3002,7 +3002,7 @@ void VBoxQGLFrameBuffer::paintEvent (QPaintEvent *pe)
     QRect vp(mView->contentsX(), mView->contentsY(), pw->width(), pw->height());
     if(vp != pw->vboxViewport())
     {
-        pw->vboxDoUpdateViewport(&vp);
+        pw->vboxDoUpdateViewport(vp);
     }
 
     pw->performDisplay();
@@ -3559,7 +3559,10 @@ int VBoxGLWidget::vhwaSurfaceCreate(struct _VBOXVHWACMD_SURF_CREATE *pCmd)
         pCmd->SurfInfo.hSurf = (VBOXVHWA_SURFHANDLE)handle;
     }
 
+    Assert(handle != VBOXVHWA_SURFHANDLE_INVALID);
+    Assert(surf->handle() == VBOXVHWA_SURFHANDLE_INVALID);
     surf->setHandle(handle);
+    Assert(surf->handle() == handle);
 
     VBOXQGLLOG_EXIT(("pSurf (0x%x)\n",surf));
 
@@ -4627,10 +4630,10 @@ void VBoxGLWidget::vboxDoTestSurfaces(void* context)
 }
 #endif
 
-void VBoxGLWidget::vboxDoUpdateViewport(const QRect * pRect)
+void VBoxGLWidget::vboxDoUpdateViewport(const QRect & aRect)
 {
-    adjustViewport(mDisplay.getPrimary()->size(), *pRect);
-    mViewport = *pRect;
+    adjustViewport(mDisplay.getPrimary()->size(), aRect);
+    mViewport = aRect;
 
     const SurfList & primaryList = mDisplay.primaries().surfaces();
 
@@ -4638,7 +4641,7 @@ void VBoxGLWidget::vboxDoUpdateViewport(const QRect * pRect)
          pr != primaryList.end(); ++ pr)
     {
         VBoxVHWASurfaceBase *pSurf = *pr;
-        pSurf->updateVisibleTargRect(NULL, *pRect);
+        pSurf->updateVisibleTargRect(NULL, aRect);
     }
 
     const OverlayList & overlays = mDisplay.overlays();
@@ -4652,7 +4655,7 @@ void VBoxGLWidget::vboxDoUpdateViewport(const QRect * pRect)
              sit != surfaces.end(); ++ sit)
         {
             VBoxVHWASurfaceBase *pSurf = *sit;
-            pSurf->updateVisibleTargRect(mDisplay.getPrimary(), *pRect);
+            pSurf->updateVisibleTargRect(mDisplay.getPrimary(), aRect);
         }
     }
 }
@@ -5228,6 +5231,8 @@ VBoxQGLOverlayFrameBuffer::VBoxQGLOverlayFrameBuffer (VBoxConsoleView *aView)
     : VBoxQImageFrameBuffer(aView),
       mGlOn(false),
       mOverlayVisible(false),
+      mGlCurrent(false),
+      mProcessingCommands(false),
       mCmdPipe(aView)
 {
     mpOverlayWidget = new VBoxGLWidget (aView, aView->viewport());
@@ -5251,6 +5256,10 @@ STDMETHODIMP VBoxQGLOverlayFrameBuffer::ProcessVHWACommand(BYTE *pCommand)
 void VBoxQGLOverlayFrameBuffer::doProcessVHWACommand(QEvent * pEvent)
 {
     Q_UNUSED(pEvent);
+    Assert(!mProcessingCommands);
+    mProcessingCommands = true;
+    Assert(!mGlCurrent);
+    mGlCurrent = false; /* just a fall-back */
     VBoxVHWACommandElement * pFirst = mCmdPipe.detachCmdList(NULL, NULL);
     do
     {
@@ -5258,18 +5267,50 @@ void VBoxQGLOverlayFrameBuffer::doProcessVHWACommand(QEvent * pEvent)
 
         pFirst = mCmdPipe.detachCmdList(pFirst, pLast);
     } while(pFirst);
+
+    mProcessingCommands = false;
+    vboxOpExit();
 }
 
 STDMETHODIMP VBoxQGLOverlayFrameBuffer::NotifyUpdate(ULONG aX, ULONG aY,
                          ULONG aW, ULONG aH)
 {
+#if 1
     QRect r(aX, aY, aW, aH);
     mCmdPipe.postCmd(VBOXVHWA_PIPECMD_PAINT, &r);
     return S_OK;
+#else
+    /* We're not on the GUI thread and update() isn't thread safe in
+     * Qt 4.3.x on the Win, Qt 3.3.x on the Mac (4.2.x is),
+     * on Linux (didn't check Qt 4.x there) and probably on other
+     * non-DOS platforms, so post the event instead. */
+    QApplication::postEvent (mView,
+                             new VBoxRepaintEvent (aX, aY, aW, aH));
+
+    return S_OK;
+#endif
+}
+
+bool VBoxQGLOverlayFrameBuffer::vboxDoCheckUpdateViewport()
+{
+    Assert(0);
+//    QRect vp(mView->contentsX(), mView->contentsY(), mpOverlayWidget->width(), mpOverlayWidget->height());
+//    if(vp != mpOverlayWidget->vboxViewport())
+//    {
+//        mpOverlayWidget->vboxDoUpdateViewport(vp);
+//        return true;
+//    }
+    return false;
 }
 
 void VBoxQGLOverlayFrameBuffer::paintEvent (QPaintEvent *pe)
 {
+    if(mOverlayVisible && !mProcessingCommands)
+    {
+        Assert(!mGlCurrent);
+        vboxOpExit();
+    }
+
     VBoxQImageFrameBuffer::paintEvent (pe);
 }
 
@@ -5279,9 +5320,48 @@ void VBoxQGLOverlayFrameBuffer::resizeEvent (VBoxResizeEvent *re)
 
     if(mGlOn)
     {
+        Assert(!mGlCurrent);
+        mGlCurrent = false;
+        makeCurrent();
         /* need to ensure we're in synch */
         vboxSynchGl();
+        vboxOpExit();
+        Assert(mGlCurrent == false);
     }
+}
+
+void VBoxQGLOverlayFrameBuffer::vboxDoVHWACmd(void *cmd)
+{
+    vboxDoVHWACmdExec(cmd);
+
+    CDisplay display = mView->console().GetDisplay();
+    Assert (!display.isNull());
+
+    display.CompleteVHWACommand((BYTE*)cmd);
+}
+
+void VBoxQGLOverlayFrameBuffer::vboxDoUpdateRect(const QRect * pRect)
+{
+    if(mGlOn)
+    {
+        makeCurrent();
+        mpOverlayWidget->vboxDoUpdateRect(pRect);
+//        if(mOverlayVisible)
+//        {
+//            mpOverlayWidget->performDisplay();
+//            mpOverlayWidget->swapBuffers();
+//        }
+        vboxOpExit();
+    }
+
+    mView->viewport()->repaint (pRect->x() - mView->contentsX(),
+            pRect->y() - mView->contentsY(),
+            pRect->width(), pRect->height());
+
+    /* translate to widget coords
+     * @todo: may eliminate this */
+//    QPaintEvent pe(pRect->translated(-mView->contentsX(), -mView->contentsY()));
+//    VBoxQImageFrameBuffer::paintEvent (&pe);
 }
 
 void VBoxQGLOverlayFrameBuffer::vboxSynchGl()
@@ -5323,23 +5403,35 @@ void VBoxQGLOverlayFrameBuffer::vboxSetGlOn(bool on)
 void VBoxQGLOverlayFrameBuffer::vboxShowOverlay(bool show)
 {
     mpOverlayWidget->setVisible(show);
+    mOverlayVisible = show;
 }
 
 void VBoxQGLOverlayFrameBuffer::vboxUpdateOverlayPosition(const QPoint & pos)
 {
+    makeCurrent();
+
     mpOverlayWidget->move(pos);
+
+    /* */
+    QRect rect = mpOverlayWidget->vboxViewport();
+    rect.moveTo(pos);
+    mpOverlayWidget->vboxDoUpdateViewport(rect);
 }
 
 void VBoxQGLOverlayFrameBuffer::vboxUpdateOverlay(const QRect & rect, bool show)
 {
     mpOverlayWidget->move(rect.x(), rect.y());
     mpOverlayWidget->resize(rect.width(), rect.height());
-    mpOverlayWidget->setVisible(show);
+
+    mpOverlayWidget->vboxDoUpdateViewport(rect);
+
+    vboxShowOverlay(show);
 }
 
 void VBoxQGLOverlayFrameBuffer::vboxDoVHWACmdExec(void *cmd)
 {
     struct _VBOXVHWACMD * pCmd = (struct _VBOXVHWACMD *)cmd;
+    makeCurrent();
     switch(pCmd->enmCmd)
     {
         case VBOXVHWACMD_TYPE_SURF_CANCREATE:
@@ -5400,6 +5492,10 @@ void VBoxQGLOverlayFrameBuffer::vboxDoVHWACmdExec(void *cmd)
                 QRect overRect = mpOverlayWidget->overlaysRectUnion();
                 vboxUpdateOverlay(overRect, true);
             }
+            else
+            {
+                vboxShowOverlay(false);
+            }
         } break;
         case VBOXVHWACMD_TYPE_SURF_OVERLAY_SETPOSITION:
         {
@@ -5451,11 +5547,11 @@ VBoxVHWACommandElement * VBoxQGLOverlayFrameBuffer::processCmdList(VBoxVHWAComma
         switch(pCmd->type())
         {
         case VBOXVHWA_PIPECMD_PAINT:
-//            vboxDoUpdateRect(&pCmd->rect());
+            vboxDoUpdateRect(&pCmd->rect());
             break;
 #ifdef VBOX_WITH_VIDEOHWACCEL
         case VBOXVHWA_PIPECMD_VHWA:
-//            vboxDoVHWACmd(pCmd->vhwaCmd());
+            vboxDoVHWACmd(pCmd->vhwaCmd());
             break;
         case VBOXVHWA_PIPECMD_OP:
         {

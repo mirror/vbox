@@ -1281,7 +1281,9 @@ public:
 
     static void doSetupMatrix(const QSize & aSize, bool bInverted);
 
-    void vboxDoUpdateViewport(const QRect * pRect);
+    void vboxDoUpdateViewport(const QRect & aRect);
+    void vboxDoUpdateRect(const QRect * pRect);
+
     const QRect & vboxViewport() const {return mViewport;}
 
     void performDisplay() { mDisplay.performDisplay(); }
@@ -1309,7 +1311,6 @@ private:
 //    void vboxDoPaint(void *rec);
 
 
-    void vboxDoUpdateRect(const QRect * pRect);
 #ifdef VBOXQGL_DBG_SURF
     void vboxDoTestSurfaces(void *context);
 #endif
@@ -1448,17 +1449,53 @@ public:
 
     void vboxUpdateRect(const QRect * pRect);
 private:
+    void makeCurrent()
+    {
+        if(!mGlCurrent)
+        {
+            mGlCurrent = true;
+            mpOverlayWidget->makeCurrent();
+        }
+    }
+
+    void performDisplayOverlay()
+    {
+        if(mOverlayVisible)
+        {
+#if 0
+            mpOverlayWidget->updateGL();
+#else
+            makeCurrent();
+            mpOverlayWidget->performDisplay();
+            mpOverlayWidget->swapBuffers();
+#endif
+        }
+    }
+
+    void vboxOpExit()
+    {
+        performDisplayOverlay();
+        mGlCurrent = false;
+    }
+
+
     void vboxSetGlOn(bool on);
     bool vboxGetGlOn() { return mGlOn; }
     void vboxSynchGl();
     void vboxDoVHWACmdExec(void *cmd);
     void vboxShowOverlay(bool show);
+    bool vboxDoCheckUpdateViewport();
+    void vboxDoVHWACmd(void *cmd);
+    void vboxDoUpdateRect(const QRect * pRect);
     void vboxUpdateOverlayPosition(const QPoint & pos);
     void vboxUpdateOverlay(const QRect & rect, bool show);
     VBoxVHWACommandElement * processCmdList(VBoxVHWACommandElement * pCmd);
     VBoxGLWidget *mpOverlayWidget;
     bool mGlOn;
     bool mOverlayVisible;
+    bool mGlCurrent;
+    bool mProcessingCommands;
+    QRect mOverlayViewportCoords;
     VBoxVHWADirtyRect mMainDirtyRect;
 
     VBoxVHWACommandElementProcessor mCmdPipe;
