@@ -938,7 +938,7 @@ public:
         mCurrent = NULL;
     }
 
-    size_t size() {return mSurfaces.size(); }
+    size_t size() const {return mSurfaces.size(); }
 
     void remove(VBoxVHWASurfaceBase *pSurf)
     {
@@ -997,7 +997,7 @@ public:
         return old;
     }
 
-    VBoxVHWASurfaceBase * getVGA()
+    VBoxVHWASurfaceBase * getVGA() const
     {
         return mSurfVGA;
     }
@@ -1484,18 +1484,19 @@ private:
     void vboxSynchGl();
     void vboxDoVHWACmdExec(void *cmd);
     void vboxShowOverlay(bool show);
-    bool vboxDoCheckUpdateViewport();
+    void vboxDoCheckUpdateViewport();
     void vboxDoVHWACmd(void *cmd);
     void vboxDoUpdateRect(const QRect * pRect);
-    void vboxUpdateOverlayPosition(const QPoint & pos);
-    void vboxUpdateOverlay(const QRect & rect, bool show);
+//    void vboxUpdateOverlayPosition(const QPoint & pos);
+    void vboxCheckUpdateOverlay(const QRect & rect);
     VBoxVHWACommandElement * processCmdList(VBoxVHWACommandElement * pCmd);
     VBoxGLWidget *mpOverlayWidget;
     bool mGlOn;
+    bool mOverlayWidgetVisible;
     bool mOverlayVisible;
     bool mGlCurrent;
     bool mProcessingCommands;
-    QRect mOverlayViewportCoords;
+    QRect mOverlayViewport;
     VBoxVHWADirtyRect mMainDirtyRect;
 
     VBoxVHWACommandElementProcessor mCmdPipe;
