@@ -805,11 +805,10 @@ public:
         mCmdPipe.put(pEl);
     }
     VBoxVHWACommandElementPipe & pipe() { return mCmdPipe; }
+
+    VBoxVHWACommandProcessEvent *mpNext;
 private:
     VBoxVHWACommandElementPipe mCmdPipe;
-    VBoxVHWACommandProcessEvent *mpNext;
-
-    friend class VBoxGLWidget;
 };
 
 
@@ -2930,7 +2929,8 @@ void VBoxVHWASurfaceBase::performDisplay(VBoxVHWASurfaceBase *pPrimary)
  */
 
 VBoxQGLFrameBuffer::VBoxQGLFrameBuffer (VBoxConsoleView *aView) :
-    VBoxFrameBuffer (aView)
+    VBoxFrameBuffer (aView),
+    mCmdPipe(aView)
 {
 //    mWidget = new GLWidget(aView->viewport());
 #ifndef VBOXQGL_PROF_BASE
@@ -2955,7 +2955,7 @@ STDMETHODIMP VBoxQGLFrameBuffer::NotifyUpdate (ULONG aX, ULONG aY,
                              new VBoxRepaintEvent (aX, aY, aW, aH));
 #else
     QRect r(aX, aY, aW, aH);
-    vboxWidget()->postCmd(VBOXVHWA_PIPECMD_PAINT, &r);
+    mCmdPipe.postCmd(VBOXVHWA_PIPECMD_PAINT, &r);
 #endif
     return S_OK;
 }
@@ -3021,7 +3021,7 @@ void VBoxQGLFrameBuffer::resizeEvent (VBoxResizeEvent *re)
 /* processing the VHWA command, called from the GUI thread */
 void VBoxQGLFrameBuffer::doProcessVHWACommand(QEvent * pEvent)
 {
-    vboxWidget()->vboxProcessVHWACommands((VBoxVHWACommandProcessEvent*)pEvent);
+    vboxWidget()->vboxProcessVHWACommands(&mCmdPipe);
 }
 
 VBoxGLWidget::VBoxGLWidget (VBoxConsoleView *aView, QWidget *aParent)
@@ -3031,12 +3031,11 @@ VBoxGLWidget::VBoxGLWidget (VBoxConsoleView *aView, QWidget *aParent)
     mOpContext(NULL),
     mPixelFormat(0),
     mUsesGuestVRAM(false),
-    mbVGASurfCreated(false),
+//    mbVGASurfCreated(false),
     mView(aView),
     mConstructingList(NULL),
     mcRemaining2Contruct(0)
 {
-    cmdPipeInit();
     mpMngr = new VBoxVHWAGlProgramMngr();
 //        /* No need for background drawing */
 //        setAttribute (Qt::WA_OpaquePaintEvent);
@@ -3059,27 +3058,8 @@ const QGLFormat & VBoxGLWidget::vboxGLFormat()
 VBoxGLWidget::~VBoxGLWidget()
 {
     delete mpMngr;
-    cmdPipeDelete();
 }
 
-void VBoxGLWidget::cmdPipeInit()
-{
-    int rc = RTCritSectInit(&mCritSect);
-    AssertRC(rc);
-
-    mpFirstEvent = NULL;
-    mpLastEvent = NULL;
-    mbNewEvent = false;
-    for(int i = RT_ELEMENTS(mElementsBuffer) - 1; i >= 0; i--)
-    {
-        mFreeElements.push(&mElementsBuffer[i]);
-    }
-}
-
-void VBoxGLWidget::cmdPipeDelete()
-{
-    RTCritSectDelete(&mCritSect);
-}
 
 void VBoxGLWidget::doSetupMatrix(const QSize & aSize, bool bInverted)
 {
@@ -3126,94 +3106,6 @@ void VBoxGLWidget::setupMatricies(const QSize &display)
     doSetupMatrix(display, false);
 }
 
-void VBoxGLWidget::postCmd(VBOXVHWA_PIPECMD_TYPE aType, void * pvData)
-{
-    /* 1. lock*/
-    RTCritSectEnter(&mCritSect);
-    VBoxVHWACommandElement * pCmd = mFreeElements.pop();
-    if(!pCmd)
-    {
-        VBOXQGLLOG(("!!!no more free elements!!!\n"));
-#ifdef VBOXQGL_PROF_BASE
-        RTCritSectLeave(&mCritSect);
-        return;
-#else
-    //TODO:
-#endif
-    }
-    pCmd->setData(aType, pvData);
-    /* 2. if can add to current*/
-    if(!mbNewEvent)
-    {
-        /* 3. if event is being processed (event != 0) */
-        if(mpLastEvent)
-        {
-            /* 3.a add cmd to event */
-            mpLastEvent->pipe().put(pCmd);
-            /* 3.b unlock and return */
-            RTCritSectLeave(&mCritSect);
-            return;
-        }
-    }
-
-    /* we're here because the cmd was NOT be added to the current event queue */
-    /* 4. unlock*/
-    RTCritSectLeave(&mCritSect);
-    /* 5. create & initialize new Event */
-    VBoxVHWACommandProcessEvent *pCurrentEvent = new VBoxVHWACommandProcessEvent(pCmd);
-    /* 6. lock */
-    RTCritSectEnter(&mCritSect);
-    /* 7. if no current event set event as current */
-    if(!mpLastEvent)
-    {
-        Assert(!mpFirstEvent);
-        mpFirstEvent = pCurrentEvent;
-        mpLastEvent = pCurrentEvent;
-        pCurrentEvent->mpNext = NULL;
-    }
-    else
-    {
-        mpLastEvent->mpNext = pCurrentEvent;
-        mpLastEvent = pCurrentEvent;
-    }
-    /* 8. reset blocking events counter */
-    mbNewEvent = false;
-    /* 9. unlock */
-    RTCritSectLeave(&mCritSect);
-    /* 10. post event */
-    QApplication::postEvent (mView, pCurrentEvent);
-}
-
-VBoxVHWACommandElement * VBoxGLWidget::detachCmdList(VBoxVHWACommandElement * pFirst2Free, VBoxVHWACommandElement * pLast2Free)
-{
-    VBoxVHWACommandElement * pList = NULL;
-    RTCritSectEnter(&mCritSect);
-    if(pFirst2Free)
-    {
-        mFreeElements.pusha(pFirst2Free, pLast2Free);
-    }
-    if(mpFirstEvent)
-    {
-        pList = mpFirstEvent->pipe().detachList();
-        if(!pList)
-        {
-            VBoxVHWACommandProcessEvent *pNext = mpFirstEvent->mpNext;
-            if(pNext)
-            {
-                mpFirstEvent = pNext;
-            }
-            else
-            {
-                mpFirstEvent = NULL;
-                mpLastEvent = NULL;
-            }
-        }
-    }
-    RTCritSectLeave(&mCritSect);
-
-    return pList;
-}
-
 VBoxVHWACommandElement * VBoxGLWidget::processCmdList(VBoxVHWACommandElement * pCmd)
 {
     VBoxVHWACommandElement * pCur;
@@ -3247,13 +3139,13 @@ VBoxVHWACommandElement * VBoxGLWidget::processCmdList(VBoxVHWACommandElement * p
 
 void VBoxGLWidget::vboxDoProcessVHWACommands(void *pContext)
 {
-    Q_UNUSED(pContext);
-    VBoxVHWACommandElement * pFirst = detachCmdList(NULL, NULL);
+    VBoxVHWACommandElementProcessor * pPipe = (VBoxVHWACommandElementProcessor*)pContext;
+    VBoxVHWACommandElement * pFirst = pPipe->detachCmdList(NULL, NULL);
     do
     {
         VBoxVHWACommandElement * pLast = processCmdList(pFirst);
 
-        pFirst = detachCmdList(pFirst, pLast);
+        pFirst = pPipe->detachCmdList(pFirst, pLast);
     } while(pFirst);
 
 //    mDisplay.performDisplay();
@@ -3276,7 +3168,7 @@ STDMETHODIMP VBoxQGLFrameBuffer::ProcessVHWACommand(BYTE *pCommand)
     /* post the command to the GUI thread for processing */
 //    QApplication::postEvent (mView,
 //                             new VBoxVHWACommandProcessEvent (pCmd));
-    vboxWidget()->postCmd(VBOXVHWA_PIPECMD_VHWA, pCmd);
+    mCmdPipe.postCmd(VBOXVHWA_PIPECMD_VHWA, pCmd);
     return S_OK;
 }
 
@@ -3517,19 +3409,24 @@ int VBoxGLWidget::vhwaSurfaceCreate(struct _VBOXVHWACMD_SURF_CREATE *pCmd)
     if(pCmd->SurfInfo.surfCaps & VBOXVHWA_SCAPS_PRIMARYSURFACE)
     {
         bPrimary = true;
-        if(!mbVGASurfCreated)
+        VBoxVHWASurfaceBase * pVga = vboxGetVGASurface();
+
+        if(pVga->handle() == VBOXVHWA_SURFHANDLE_INVALID)
         {
-            VBoxVHWASurfaceBase * pVga = vboxGetVGASurface();
-            if(pCmd->SurfInfo.PixelFormat.flags & VBOXVHWA_PF_RGB)
+            Assert(pCmd->SurfInfo.PixelFormat.flags & VBOXVHWA_PF_RGB);
+//            if(pCmd->SurfInfo.PixelFormat.flags & VBOXVHWA_PF_RGB)
             {
-                if(pCmd->SurfInfo.width == pVga->width()
-                        && pCmd->SurfInfo.height == pVga->height())
+                Assert(pCmd->SurfInfo.width == pVga->width());
+                Assert(pCmd->SurfInfo.height == pVga->height());
+//                if(pCmd->SurfInfo.width == pVga->width()
+//                        && pCmd->SurfInfo.height == pVga->height())
                 {
                     VBoxVHWAColorFormat format(pCmd->SurfInfo.PixelFormat.c.rgbBitCount,
                                                 pCmd->SurfInfo.PixelFormat.m1.rgbRBitMask,
                                                 pCmd->SurfInfo.PixelFormat.m2.rgbGBitMask,
                                                 pCmd->SurfInfo.PixelFormat.m3.rgbBBitMask);
-                    if(pVga->colorFormat().equals(format))
+                    Assert(pVga->colorFormat().equals(format));
+//                    if(pVga->colorFormat().equals(format))
                     {
                         surf = pVga;
 
@@ -3541,7 +3438,7 @@ int VBoxGLWidget::vhwaSurfaceCreate(struct _VBOXVHWACMD_SURF_CREATE *pCmd)
 
                         surf->setDefaultSrcOverlayCKey(pDstOverlayCKey);
                         surf->resetDefaultSrcOverlayCKey();
-                        mbVGASurfCreated = true;
+//                        mbVGASurfCreated = true;
                     }
                 }
             }
@@ -3612,12 +3509,17 @@ int VBoxGLWidget::vhwaSurfaceCreate(struct _VBOXVHWACMD_SURF_CREATE *pCmd)
         }
         else if(bPrimary)
         {
-            Assert(mbVGASurfCreated);
+            VBoxVHWASurfaceBase * pVga = vboxGetVGASurface();
+            Assert(pVga->handle() != VBOXVHWA_SURFHANDLE_INVALID);
+            Assert(pVga != surf);
+//            Assert(mbVGASurfCreated);
             mDisplay.getVGA()->getComplexList()->add(surf);
-            if(pCmd->SurfInfo.surfCaps & VBOXVHWA_SCAPS_VISIBLE)
+            Assert(pCmd->SurfInfo.surfCaps & VBOXVHWA_SCAPS_VISIBLE);
+//            if(pCmd->SurfInfo.surfCaps & VBOXVHWA_SCAPS_VISIBLE)
             {
                 Assert(surf->getComplexList() == mDisplay.getVGA()->getComplexList());
                 surf->getComplexList()->setCurrentVisible(surf);
+                mDisplay.updateVGA(surf);
             }
         }
         else if(pCmd->SurfInfo.surfCaps & VBOXVHWA_SCAPS_COMPLEX)
@@ -3630,6 +3532,8 @@ int VBoxGLWidget::vhwaSurfaceCreate(struct _VBOXVHWACMD_SURF_CREATE *pCmd)
             Assert(0);
         }
     }
+
+    Assert(mDisplay.getVGA() == mDisplay.getPrimary());
 
     /* tell the guest how we think the memory is organized */
     VBOXQGLLOG(("bps: %d\n", surf->bitsPerPixel()));
@@ -3665,39 +3569,57 @@ int VBoxGLWidget::vhwaSurfaceCreate(struct _VBOXVHWACMD_SURF_CREATE *pCmd)
 int VBoxGLWidget::vhwaSurfaceDestroy(struct _VBOXVHWACMD_SURF_DESTROY *pCmd)
 {
     VBoxVHWASurfaceBase *pSurf = handle2Surface(pCmd->u.in.hSurf);
+    VBoxVHWASurfList *pList = pSurf->getComplexList();
+    Assert(pSurf->handle() != VBOXVHWA_SURFHANDLE_INVALID);
+
     VBOXQGLLOG_ENTER(("pSurf (0x%x)\n",pSurf));
-    if(pSurf != mDisplay.getVGA())
+    if(pList != mDisplay.getVGA()->getComplexList())
     {
-        VBoxVHWASurfList *pList = pSurf->getComplexList();
-        if(pList)
+        Assert(pList);
+        pList->remove(pSurf);
+        if(pList->surfaces().empty())
         {
-            pList->remove(pSurf);
-            if(pList->surfaces().empty())
-            {
-                mDisplay.removeOverlay(pList);
+            mDisplay.removeOverlay(pList);
 //                Assert(mConstructingList != pList);
-                if(pList == mConstructingList)
-                {
-                    mConstructingList = NULL;
-                    mcRemaining2Contruct = 0;
-                }
-                delete pList;
-            }
-            else if(pList == mDisplay.getVGA()->getComplexList())
+            if(pList == mConstructingList)
             {
-                if(pList->current() == NULL)
-                {
-                    pList->setCurrentVisible(mDisplay.getVGA());
-                }
+                mConstructingList = NULL;
+                mcRemaining2Contruct = 0;
             }
+            delete pList;
         }
 
         delete(pSurf);
     }
     else
     {
-        Assert(mbVGASurfCreated);
-        mbVGASurfCreated = false;
+        Assert(pList->size() >= 1);
+        if(pList->size() > 1)
+        {
+            if(pSurf == mDisplay.getVGA())
+            {
+                const SurfList & surfaces = pList->surfaces();
+
+                for (SurfList::const_iterator it = surfaces.begin();
+                         it != surfaces.end(); ++ it)
+                {
+                    VBoxVHWASurfaceBase *pCurSurf = (*it);
+                    if(pCurSurf != pSurf)
+                    {
+                        mDisplay.updateVGA(pCurSurf);
+                        pList->setCurrentVisible(pCurSurf);
+                        break;
+                    }
+                }
+            }
+
+            pList->remove(pSurf);
+            delete(pSurf);
+        }
+        else
+        {
+            pSurf->setHandle(VBOXVHWA_SURFHANDLE_INVALID);
+        }
     }
 
     void * test = mSurfHandleTable.remove(pCmd->u.in.hSurf);
@@ -3933,6 +3855,18 @@ int VBoxGLWidget::vhwaSurfaceOverlayUpdate(struct _VBOXVHWACMD_SURF_OVERLAY_UPDA
         pDstSurf = handle2Surface(pCmd->u.in.hDstSurf);
         vboxCheckUpdateAddress (pDstSurf, pCmd->u.in.offDstSurface);
         VBOXQGLLOG(("pDstSurf (0x%x)\n",pDstSurf));
+        Assert(pDstSurf == mDisplay.getVGA());
+        Assert(mDisplay.getVGA() == mDisplay.getPrimary());
+        Assert(pDstSurf->getComplexList() == mDisplay.getVGA()->getComplexList());
+
+        if(pCmd->u.in.flags & VBOXVHWA_OVER_SHOW)
+        {
+            if(pDstSurf != mDisplay.getPrimary())
+            {
+                mDisplay.updateVGA(pDstSurf);
+                pDstSurf->getComplexList()->setCurrentVisible(pDstSurf);
+            }
+        }
     }
 
     const SurfList & surfaces = pList->surfaces();
@@ -4467,7 +4401,7 @@ void VBoxGLWidget::vhwaSaveExec(struct SSMHANDLE * pSSM)
     const SurfList & primaryList = mDisplay.getVGA()->getComplexList()->surfaces();
     uint32_t cPrimary = (uint32_t)primaryList.size();
     Assert(cPrimary >= 1);
-    if(!mbVGASurfCreated)
+    if(mDisplay.getVGA()->handle() == VBOXVHWA_SURFHANDLE_INVALID)
     {
         cPrimary -= 1;
     }
@@ -4477,19 +4411,23 @@ void VBoxGLWidget::vhwaSaveExec(struct SSMHANDLE * pSSM)
          pr != primaryList.end(); ++ pr)
     {
         VBoxVHWASurfaceBase *pSurf = *pr;
-        bool bVga = (pSurf == mDisplay.getVGA());
+//        bool bVga = (pSurf == mDisplay.getVGA());
         bool bVisible = (pSurf == mDisplay.getPrimary());
         uint32_t flags = VBOXVHWA_SCAPS_PRIMARYSURFACE;
         if(bVisible)
             flags |= VBOXVHWA_SCAPS_VISIBLE;
 
-        if(mbVGASurfCreated || !bVga)
+        if(pSurf->handle() != VBOXVHWA_SURFHANDLE_INVALID)
         {
             rc = vhwaSaveSurface(pSSM, *pr, flags);    AssertRC(rc);
 #ifdef DEBUG
             --cPrimary;
             Assert(cPrimary < UINT32_MAX / 2);
 #endif
+        }
+        else
+        {
+            Assert(pSurf == mDisplay.getVGA());
         }
     }
 
@@ -5289,7 +5227,8 @@ void VBoxVHWAColorFormat::pixel2Normalized (uint32_t pix, float *r, float *g, fl
 VBoxQGLOverlayFrameBuffer::VBoxQGLOverlayFrameBuffer (VBoxConsoleView *aView)
     : VBoxQImageFrameBuffer(aView),
       mGlOn(false),
-      mOverlayVisible(false)
+      mOverlayVisible(false),
+      mCmdPipe(aView)
 {
     mpOverlayWidget = new VBoxGLWidget (aView, aView->viewport());
     mpOverlayWidget->setVisible(false);
@@ -5304,20 +5243,29 @@ STDMETHODIMP VBoxQGLOverlayFrameBuffer::ProcessVHWACommand(BYTE *pCommand)
     /* post the command to the GUI thread for processing */
 //    QApplication::postEvent (mView,
 //                             new VBoxVHWACommandProcessEvent (pCmd));
-    mpOverlayWidget->postCmd(VBOXVHWA_PIPECMD_VHWA, pCmd);
+    mCmdPipe.postCmd(VBOXVHWA_PIPECMD_VHWA, pCmd);
     return S_OK;
 //    return E_NOTIMPL;
 }
 
 void VBoxQGLOverlayFrameBuffer::doProcessVHWACommand(QEvent * pEvent)
 {
-    mpOverlayWidget->vboxProcessVHWACommands((VBoxVHWACommandProcessEvent*)pEvent);
+    Q_UNUSED(pEvent);
+    VBoxVHWACommandElement * pFirst = mCmdPipe.detachCmdList(NULL, NULL);
+    do
+    {
+        VBoxVHWACommandElement * pLast = processCmdList(pFirst);
+
+        pFirst = mCmdPipe.detachCmdList(pFirst, pLast);
+    } while(pFirst);
 }
 
 STDMETHODIMP VBoxQGLOverlayFrameBuffer::NotifyUpdate(ULONG aX, ULONG aY,
                          ULONG aW, ULONG aH)
 {
-    return VBoxQImageFrameBuffer::NotifyUpdate(aX, aY, aW, aH);
+    QRect r(aX, aY, aW, aH);
+    mCmdPipe.postCmd(VBOXVHWA_PIPECMD_PAINT, &r);
+    return S_OK;
 }
 
 void VBoxQGLOverlayFrameBuffer::paintEvent (QPaintEvent *pe)
@@ -5493,5 +5441,146 @@ void VBoxQGLOverlayFrameBuffer::vboxDoVHWACmdExec(void *cmd)
             break;
     }
 }
+
+VBoxVHWACommandElement * VBoxQGLOverlayFrameBuffer::processCmdList(VBoxVHWACommandElement * pCmd)
+{
+    VBoxVHWACommandElement * pCur;
+    do
+    {
+        pCur = pCmd;
+        switch(pCmd->type())
+        {
+        case VBOXVHWA_PIPECMD_PAINT:
+//            vboxDoUpdateRect(&pCmd->rect());
+            break;
+#ifdef VBOX_WITH_VIDEOHWACCEL
+        case VBOXVHWA_PIPECMD_VHWA:
+//            vboxDoVHWACmd(pCmd->vhwaCmd());
+            break;
+        case VBOXVHWA_PIPECMD_OP:
+        {
+            const VBOXVHWACALLBACKINFO & info = pCmd->op();
+            (info.pThis->*(info.pfnCallback))(info.pContext);
+            break;
+        }
 #endif
+        default:
+            Assert(0);
+        }
+        pCmd = pCmd->mpNext;
+    } while(pCmd);
+
+    return pCur;
+}
+
+#endif
+
+VBoxVHWACommandElementProcessor::VBoxVHWACommandElementProcessor(VBoxConsoleView *aView)
+{
+    int rc = RTCritSectInit(&mCritSect);
+    AssertRC(rc);
+
+    mpFirstEvent = NULL;
+    mpLastEvent = NULL;
+    mbNewEvent = false;
+    mView = aView;
+    for(int i = RT_ELEMENTS(mElementsBuffer) - 1; i >= 0; i--)
+    {
+        mFreeElements.push(&mElementsBuffer[i]);
+    }
+}
+
+VBoxVHWACommandElementProcessor::~VBoxVHWACommandElementProcessor()
+{
+    RTCritSectDelete(&mCritSect);
+}
+
+void VBoxVHWACommandElementProcessor::postCmd(VBOXVHWA_PIPECMD_TYPE aType, void * pvData)
+{
+    /* 1. lock*/
+    RTCritSectEnter(&mCritSect);
+    VBoxVHWACommandElement * pCmd = mFreeElements.pop();
+    if(!pCmd)
+    {
+        VBOXQGLLOG(("!!!no more free elements!!!\n"));
+#ifdef VBOXQGL_PROF_BASE
+        RTCritSectLeave(&mCritSect);
+        return;
+#else
+    //TODO:
+#endif
+    }
+    pCmd->setData(aType, pvData);
+    /* 2. if can add to current*/
+    if(!mbNewEvent)
+    {
+        /* 3. if event is being processed (event != 0) */
+        if(mpLastEvent)
+        {
+            /* 3.a add cmd to event */
+            mpLastEvent->pipe().put(pCmd);
+            /* 3.b unlock and return */
+            RTCritSectLeave(&mCritSect);
+            return;
+        }
+    }
+
+    /* we're here because the cmd was NOT be added to the current event queue */
+    /* 4. unlock*/
+    RTCritSectLeave(&mCritSect);
+    /* 5. create & initialize new Event */
+    VBoxVHWACommandProcessEvent *pCurrentEvent = new VBoxVHWACommandProcessEvent(pCmd);
+    /* 6. lock */
+    RTCritSectEnter(&mCritSect);
+    /* 7. if no current event set event as current */
+    if(!mpLastEvent)
+    {
+        Assert(!mpFirstEvent);
+        mpFirstEvent = pCurrentEvent;
+        mpLastEvent = pCurrentEvent;
+        pCurrentEvent->mpNext = NULL;
+    }
+    else
+    {
+        mpLastEvent->mpNext = pCurrentEvent;
+        mpLastEvent = pCurrentEvent;
+    }
+    /* 8. reset blocking events counter */
+    mbNewEvent = false;
+    /* 9. unlock */
+    RTCritSectLeave(&mCritSect);
+    /* 10. post event */
+    QApplication::postEvent (mView, pCurrentEvent);
+}
+
+VBoxVHWACommandElement * VBoxVHWACommandElementProcessor::detachCmdList(VBoxVHWACommandElement * pFirst2Free, VBoxVHWACommandElement * pLast2Free)
+{
+    VBoxVHWACommandElement * pList = NULL;
+    RTCritSectEnter(&mCritSect);
+    if(pFirst2Free)
+    {
+        mFreeElements.pusha(pFirst2Free, pLast2Free);
+    }
+    if(mpFirstEvent)
+    {
+        pList = mpFirstEvent->pipe().detachList();
+        if(!pList)
+        {
+            VBoxVHWACommandProcessEvent *pNext = mpFirstEvent->mpNext;
+            if(pNext)
+            {
+                mpFirstEvent = pNext;
+            }
+            else
+            {
+                mpFirstEvent = NULL;
+                mpLastEvent = NULL;
+            }
+        }
+    }
+    RTCritSectLeave(&mCritSect);
+
+    return pList;
+}
+
 #endif

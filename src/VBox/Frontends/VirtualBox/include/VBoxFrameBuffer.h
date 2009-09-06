@@ -938,6 +938,8 @@ public:
         mCurrent = NULL;
     }
 
+    size_t size() {return mSurfaces.size(); }
+
     void remove(VBoxVHWASurfaceBase *pSurf)
     {
         mSurfaces.remove(pSurf);
@@ -984,6 +986,14 @@ public:
         }
 //        mSurfPrimary = pVga;
         mOverlays.clear();
+        return old;
+    }
+
+    VBoxVHWASurfaceBase * updateVGA(VBoxVHWASurfaceBase * pVga)
+    {
+        VBoxVHWASurfaceBase * old = mSurfVGA;
+        Assert(old);
+        mSurfVGA = pVga;
         return old;
     }
 
@@ -1113,8 +1123,8 @@ public:
     struct _VBOXVHWACMD * vhwaCmd() const {return u.mpCmd;}
     const VBOXVHWACALLBACKINFO & op() const {return u.mCallback; }
 
-private:
     VBoxVHWACommandElement * mpNext;
+private:
     VBOXVHWA_PIPECMD_TYPE mType;
     union
     {
@@ -1122,10 +1132,6 @@ private:
         VBOXVHWACALLBACKINFO mCallback;
     }u;
     QRect                 mRect;
-
-    friend class VBoxVHWACommandElementPipe;
-    friend class VBoxVHWACommandElementStack;
-    friend class VBoxGLWidget;
 };
 
 class VBoxVHWACommandElementPipe
@@ -1202,6 +1208,25 @@ private:
     VBoxVHWACommandElement *mpFirst;
 };
 
+class VBoxVHWACommandElementProcessor
+{
+public:
+    VBoxVHWACommandElementProcessor(VBoxConsoleView *aView);
+    ~VBoxVHWACommandElementProcessor();
+    void postCmd(VBOXVHWA_PIPECMD_TYPE aType, void * pvData);
+    class VBoxVHWACommandElement * detachCmdList(class VBoxVHWACommandElement * pFirst2Free, VBoxVHWACommandElement * pLast2Free);
+
+private:
+    RTCRITSECT mCritSect;
+    class VBoxVHWACommandProcessEvent *mpFirstEvent;
+    class VBoxVHWACommandProcessEvent *mpLastEvent;
+    VBoxConsoleView *mView;
+    bool mbNewEvent;
+    VBoxVHWACommandElementStack mFreeElements;
+    VBoxVHWACommandElement mElementsBuffer[2048];
+};
+
+
 class VBoxGLWidget : public QGLWidget
 {
 public:
@@ -1246,15 +1271,13 @@ public:
 //    void vboxPaintEvent (QPaintEvent *pe) {vboxPerformGLOp(&VBoxGLWidget::vboxDoPaint, pe); }
     void vboxResizeEvent (VBoxResizeEvent *re) {vboxPerformGLOp(&VBoxGLWidget::vboxDoResize, re); }
 
-    void vboxProcessVHWACommands(class VBoxVHWACommandProcessEvent * pEvent) {vboxPerformGLOp(&VBoxGLWidget::vboxDoProcessVHWACommands, pEvent);}
+    void vboxProcessVHWACommands(class VBoxVHWACommandElementProcessor * pPipe) {vboxPerformGLOp(&VBoxGLWidget::vboxDoProcessVHWACommands, pPipe);}
 #ifdef VBOX_WITH_VIDEOHWACCEL
     void vboxVHWACmd (struct _VBOXVHWACMD * pCmd) {vboxPerformGLOp(&VBoxGLWidget::vboxDoVHWACmd, pCmd);}
 #endif
     class VBoxVHWAGlProgramMngr * vboxVHWAGetGlProgramMngr() { return mpMngr; }
 
     VBoxVHWASurfaceBase * vboxGetVGASurface() { return mDisplay.getVGA(); }
-
-    void postCmd(VBOXVHWA_PIPECMD_TYPE aType, void * pvData);
 
     static void doSetupMatrix(const QSize & aSize, bool bInverted);
 
@@ -1332,11 +1355,8 @@ private:
 //    int vboxExecOpSynch(PFNVBOXQGLOP pfn, void* pContext);
     void vboxExecOnResize(PFNVBOXQGLOP pfn, void* pContext);
 
-    void cmdPipeInit();
-    void cmdPipeDelete();
     void vboxDoProcessVHWACommands(void *pContext);
 
-    class VBoxVHWACommandElement * detachCmdList(class VBoxVHWACommandElement * pFirst2Free, VBoxVHWACommandElement * pLast2Free);
     class VBoxVHWACommandElement * processCmdList(class VBoxVHWACommandElement * pCmd);
 
     VBoxVHWASurfaceBase* handle2Surface(uint32_t h)
@@ -1353,15 +1373,8 @@ private:
 
     ulong  mPixelFormat;
     bool   mUsesGuestVRAM;
-    bool   mbVGASurfCreated;
+//    bool   mbVGASurfCreated;
     QRect mViewport;
-
-    RTCRITSECT mCritSect;
-    class VBoxVHWACommandProcessEvent *mpFirstEvent;
-    class VBoxVHWACommandProcessEvent *mpLastEvent;
-    bool mbNewEvent;
-    VBoxVHWACommandElementStack mFreeElements;
-    VBoxVHWACommandElement mElementsBuffer[2048];
 
     VBoxConsoleView *mView;
 
@@ -1412,6 +1425,8 @@ public:
 private:
 //    void vboxMakeCurrent();
     VBoxGLWidget * vboxWidget();
+
+    VBoxVHWACommandElementProcessor mCmdPipe;
 };
 
 #ifdef VBOX_WITH_VIDEOHWACCEL
@@ -1440,10 +1455,13 @@ private:
     void vboxShowOverlay(bool show);
     void vboxUpdateOverlayPosition(const QPoint & pos);
     void vboxUpdateOverlay(const QRect & rect, bool show);
+    VBoxVHWACommandElement * processCmdList(VBoxVHWACommandElement * pCmd);
     VBoxGLWidget *mpOverlayWidget;
     bool mGlOn;
     bool mOverlayVisible;
     VBoxVHWADirtyRect mMainDirtyRect;
+
+    VBoxVHWACommandElementProcessor mCmdPipe;
 };
 #endif
 
