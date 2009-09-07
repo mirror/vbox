@@ -810,11 +810,14 @@ bool VBoxConsoleWnd::openView (const CSession &session)
 
 #ifdef VBOX_WITH_VIDEOHWACCEL
     /* Need to force the QGL framebuffer in case 2D Video Acceleration is supported & enabled */
-    if (cmachine.GetAccelerate2DVideoEnabled() && VBoxGlobal::isAcceleration2DVideoAvailable())
-        mode = vboxGlobal().vmAcceleration2DVideoRenderMode();
+    bool bAccelerate2DVideo = cmachine.GetAccelerate2DVideoEnabled() && VBoxGlobal::isAcceleration2DVideoAvailable();
 #endif
 
-    console = new VBoxConsoleView (this, cconsole, mode, centralWidget());
+    console = new VBoxConsoleView (this, cconsole, mode,
+#ifdef VBOX_WITH_VIDEOHWACCEL
+                    bAccelerate2DVideo,
+#endif
+                    centralWidget());
     static_cast <QGridLayout*> (centralWidget()->layout())->addWidget (console, 1, 1, Qt::AlignVCenter | Qt::AlignHCenter);
 
     /* Mini toolbar */

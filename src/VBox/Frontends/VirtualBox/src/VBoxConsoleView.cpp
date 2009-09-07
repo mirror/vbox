@@ -695,6 +695,9 @@ public:
 VBoxConsoleView::VBoxConsoleView (VBoxConsoleWnd *mainWnd,
                                   const CConsole &console,
                                   VBoxDefs::RenderMode rm,
+#ifdef VBOX_WITH_VIDEOHWACCEL
+                                  bool accelerate2DVideo,
+#endif
                                   QWidget *parent)
     : QAbstractScrollArea (parent)
     , mMainWnd (mainWnd)
@@ -719,6 +722,9 @@ VBoxConsoleView::VBoxConsoleView (VBoxConsoleWnd *mainWnd,
     , muNumLockAdaptionCnt (2)
     , muCapsLockAdaptionCnt (2)
     , mode (rm)
+#ifdef VBOX_WITH_VIDEOHWACCEL
+    , mAccelerate2DVideo(accelerate2DVideo)
+#endif
 #if defined(Q_WS_WIN)
     , mAlphaCursor (NULL)
 #endif
@@ -825,13 +831,17 @@ VBoxConsoleView::VBoxConsoleView (VBoxConsoleWnd *mainWnd,
         case VBoxDefs::QGLMode:
             mFrameBuf = new VBoxQGLFrameBuffer (this);
             break;
-        case VBoxDefs::QGLOverlayMode:
-            mFrameBuf = new VBoxQGLOverlayFrameBuffer (this);
-            break;
+//        case VBoxDefs::QGLOverlayMode:
+//            mFrameBuf = new VBoxQGLOverlayFrameBuffer (this);
+//            break;
 #endif
 #if defined (VBOX_GUI_USE_QIMAGE)
         case VBoxDefs::QImageMode:
-            mFrameBuf = new VBoxQImageFrameBuffer (this);
+            mFrameBuf =
+#ifdef VBOX_WITH_VIDEOHWACCEL
+                    mAccelerate2DVideo ? new VBoxQImageOverlayFrameBuffer (this) :
+#endif
+                    new VBoxQImageFrameBuffer (this);
             break;
 #endif
 #if defined (VBOX_GUI_USE_SDL)

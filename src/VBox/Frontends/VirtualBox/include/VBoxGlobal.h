@@ -749,13 +749,13 @@ public:
 
 #ifdef VBOX_WITH_VIDEOHWACCEL
     static bool isAcceleration2DVideoAvailable();
-    VBoxDefs::RenderMode vmAcceleration2DVideoRenderMode() {
-#if 0
-        return VBoxDefs::QGLOverlayMode;
-#else
-        return VBoxDefs::QGLMode;
-#endif
-        }
+//    VBoxDefs::RenderMode vmAcceleration2DVideoRenderMode() {
+//#if 0
+//        return VBoxDefs::QGLOverlayMode;
+//#else
+//        return VBoxDefs::QGLMode;
+//#endif
+//        }
 #endif
 
 signals:
