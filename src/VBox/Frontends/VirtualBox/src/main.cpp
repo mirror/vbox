@@ -49,6 +49,7 @@
 # include <X11/Xlib.h>
 #endif
 
+#include <iprt/buildconfig.h>
 #include <iprt/err.h>
 #include <iprt/initterm.h>
 #include <iprt/process.h>
@@ -240,7 +241,7 @@ static void showHelp()
     dflt = "image";
 #endif
 
-    RTPrintf("Sun VirtualBox Graphical User Interface "VBOX_VERSION_STRING"\n"
+    RTPrintf("Sun VirtualBox Graphical User Interface %s\n"
             "(C) 2005-2009 Sun Microsystems, Inc.\n"
             "All rights reserved.\n"
             "\n"
@@ -262,6 +263,7 @@ static void showHelp()
             "  VBOX_GUI_NO_DEBUGGER       disable the GUI debug menu and debug windows\n"
 # endif
             "\n",
+            RTBldCfgVersion(),
             mode.toLatin1().constData(),
             dflt.toLatin1().constData());
     /** @todo Show this as a dialog on windows. */

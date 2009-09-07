@@ -513,10 +513,6 @@ ifneq ($(filter pe lx,$(VBOX_LDR_FMT)),)
  	$(PATH_LIB)/SUPR0$(VBOX_SUFF_LIB)
 endif
 
-#
-# For vmmGetSvnRev.
-#
-VMMAll/VMMAll.cpp_DEFS = VBOX_SVN_REV=$(VBOX_SVN_REV)
 
 include	$(KBUILD_PATH)/subfooter.kmk
 
