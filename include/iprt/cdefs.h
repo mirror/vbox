@@ -573,6 +573,20 @@
 # define DECLHIDDEN(type)       __attribute__((visibility("hidden"))) type
 #endif
 
+/** @def DECL_INVALID
+ * How to declare a function not available for linking in the current context.
+ * The purpose is to create compile or like time errors when used.  This isn't
+ * possible on all platforms.
+ * @param   type    The return type of the function.
+ */
+#if defined(_MSC_VER)
+# define DECL_INVALID(type)     __declspec(dllimport) type __stdcall
+#elif defined(__GNUC__) && defined(__cplusplus)
+# define DECL_INVALID(type)     extern "C++" type
+#else
+# define DECL_INVALID(type)     type
+#endif
+
 /** @def DECLASM
  * How to declare an internal assembly function.
  * @param   type    The return type of the function declaration.
