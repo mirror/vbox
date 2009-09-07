@@ -49,6 +49,8 @@
 #include <QDesktopWidget>
 #include <QToolButton>
 
+#include <iprt/buildconfig.h>
+
 // VBoxVMDetailsView class
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -1291,7 +1293,11 @@ void VBoxSelectorWnd::retranslateUi()
 #endif
 
 #ifdef VBOX_BLEEDING_EDGE
-    title += QString(" EXPERIMENTAL build "VBOX_VERSION_STRING" r"VBOX_SVN_REV" - "VBOX_BLEEDING_EDGE);
+    title += QString(" EXPERIMENTAL build ")
+          +  QString(RTBldCfgVersion())
+          +  QString(" r")
+          +  QString(RTBldCfgRevisionStr())
+          +  QString(" - "VBOX_BLEEDING_EDGE);
 #endif
 
     setWindowTitle (title);

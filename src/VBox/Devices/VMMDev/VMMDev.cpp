@@ -34,9 +34,9 @@
 #include <VBox/pgm.h>
 #include <VBox/err.h>
 #include <VBox/vm.h> /* for VM_IS_EMT */
-#include <VBox/version.h>
 
 #include <iprt/assert.h>
+#include <iprt/buildconfig.h>
 #include <iprt/string.h>
 #include <iprt/time.h>
 #ifndef IN_RC
@@ -1631,10 +1631,10 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
                                ("%#x < %#x\n", pRequestHeader->size, sizeof(VMMDevReqLogString)),
                                pRequestHeader->rc = VERR_INVALID_PARAMETER);
             VMMDevReqHostVersion *pReqHostVer = (VMMDevReqHostVersion*)pRequestHeader;
-            pReqHostVer->major = VBOX_VERSION_MAJOR;
-            pReqHostVer->minor = VBOX_VERSION_MINOR;
-            pReqHostVer->build = VBOX_VERSION_BUILD;
-            pReqHostVer->revision = VBOX_SVN_REV;
+            pReqHostVer->major = RTBldCfgVersionMajor();
+            pReqHostVer->minor = RTBldCfgVersionMinor();
+            pReqHostVer->build = RTBldCfgVersionBuild();
+            pReqHostVer->revision = RTBldCfgRevision();
             pReqHostVer->features = VMMDEV_HVF_HGCM_PHYS_PAGE_LIST;
             pReqHostVer->header.rc = VINF_SUCCESS;
             break;

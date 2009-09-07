@@ -71,6 +71,7 @@
 # include <iprt/ldr.h>
 #endif
 
+#include <iprt/buildconfig.h>
 #include <iprt/param.h>
 #include <iprt/path.h>
 
@@ -1646,7 +1647,11 @@ void VBoxConsoleWnd::retranslateUi()
 #endif
 
 #ifdef VBOX_BLEEDING_EDGE
-    caption_prefix += QString(" EXPERIMENTAL build "VBOX_VERSION_STRING" r"VBOX_SVN_REV" - "VBOX_BLEEDING_EDGE);
+    caption_prefix += QString(" EXPERIMENTAL build ")
+                   + QString(RTBldCfgVersion())
+                   + QString("r")
+                   + QString(RTBldCfgRevisionStr()) 
+                   + QString(" - "VBOX_BLEEDING_EDGE);
 #endif
     /*
      *  Note: All action shortcuts should be added to the menu text in the

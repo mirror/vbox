@@ -192,24 +192,15 @@ else ifdef VBOX_GUI_USE_QGL
  VirtualBox_DEFS        += VBOX_GUI_USE_QGL
 endif
 
-VirtualBox_src/main.cpp_DEFS += VBOX_VERSION_STRING=\"$(VBOX_VERSION_STRING)\"
-VirtualBox_src/main.cpp_DEPS += $(VBOX_VERSION_MK)
-
 ifdef VBOX_BLEEDING_EDGE
 VirtualBox_src/VBoxConsoleWnd.cpp_DEFS += \
-    VBOX_VERSION_STRING=\"$(VBOX_VERSION_STRING)\" \
-    VBOX_SVN_REV=\"$(VBOX_SVN_REV)\" \
     VBOX_BLEEDING_EDGE=\"$(VBOX_BLEEDING_EDGE)\"
 VirtualBox_src/VBoxSelectorWnd.cpp_DEFS += \
-    VBOX_VERSION_STRING=\"$(VBOX_VERSION_STRING)\" \
-    VBOX_SVN_REV=\"$(VBOX_SVN_REV)\" \
     VBOX_BLEEDING_EDGE=\"$(VBOX_BLEEDING_EDGE)\"
 VirtualBox_src/VBoxAboutDlg.cpp_DEFS += \
     VBOX_BLEEDING_EDGE=\"$(VBOX_BLEEDING_EDGE)\"
 VirtualBox_src/main.cpp_DEFS += \
     VBOX_BLEEDING_EDGE=\"$(VBOX_BLEEDING_EDGE)\"
-VirtualBox_src/VBoxConsoleWnd.cpp_DEPS += $(VBOX_VERSION_MK) $(VBOX_SVN_REV_KMK)
-VirtualBox_src/VBoxSelectorWnd.cpp_DEPS += $(VBOX_VERSION_MK) $(VBOX_SVN_REV_KMK)
 endif
 
 VirtualBox_INCS           = \
