@@ -71,6 +71,9 @@ public:
     VBoxConsoleView (VBoxConsoleWnd *mainWnd,
                      const CConsole &console,
                      VBoxDefs::RenderMode rm,
+#ifdef VBOX_WITH_VIDEOHWACCEL
+                     bool accelerate2DVideo,
+#endif
                      QWidget *parent = 0);
     ~VBoxConsoleView();
 
@@ -294,6 +297,9 @@ private:
 
 
     VBoxDefs::RenderMode mode;
+#ifdef VBOX_WITH_VIDEOHWACCEL
+    bool mAccelerate2DVideo;
+#endif
 
     QRegion mLastVisibleRegion;
     QSize mNormalSize;

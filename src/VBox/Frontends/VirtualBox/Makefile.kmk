@@ -483,7 +483,8 @@ endif
 
 if defined(VBOX_WITH_VIDEOHWACCEL) || defined(VBOX_GUI_USE_QGL)
  VirtualBox_SOURCES += \
-	src/VBoxFBQGL.cpp
+	src/VBoxFBQGL.cpp \
+    src/VBoxFBOverlay.cpp
 endif
 # The Qt modules we're using.
 # (The include directory and lib/framework for each module will be added by the Qt4 unit.)
