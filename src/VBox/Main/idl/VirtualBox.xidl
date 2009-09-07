@@ -9910,7 +9910,9 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <const name="MiddleButton"      value="0x04"/>
     <const name="WheelUp"           value="0x08"/>
     <const name="WheelDown"         value="0x10"/>
-    <const name="MouseStateMask"    value="0x1F"/>
+    <const name="XButton1"          value="0x20"/>
+    <const name="XButton2"          value="0x40"/>
+    <const name="MouseStateMask"    value="0x7F"/>
   </enum>
 
   <interface
@@ -9974,6 +9976,13 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
           negative values describe counterclockwise rotations.
         </desc>
       </param>
+      <param name="dw" type="long" dir="in">
+        <desc>
+          Amount of horizontal mouse wheel moves.
+          Positive values describe a movement to the left,
+          negative values describe a movement to the right.
+        </desc>
+      </param>
       <param name="buttonState" type="long" dir="in">
         <desc>
           The current state of mouse buttons. Every bit represents
@@ -10026,6 +10035,13 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
           Amount of mouse wheel moves.
           Positive values describe clockwise wheel rotations,
           negative values describe counterclockwise rotations.
+        </desc>
+      </param>
+      <param name="dw" type="long" dir="in">
+        <desc>
+          Amount of horizontal mouse wheel moves.
+          Positive values describe a movement to the left,
+          negative values describe a movement to the right.
         </desc>
       </param>
       <param name="buttonState" type="long" dir="in">

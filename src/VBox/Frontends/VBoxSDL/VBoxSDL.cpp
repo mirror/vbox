@@ -3978,11 +3978,14 @@ static void SendMouseEvent(VBoxSDLFB *fb, int dz, int down, int button)
              */
             gMouse->PutMouseEventAbsolute(x + 1 - xMin + xOrigin,
                                           y + 1 - yMin + yOrigin,
-                                          dz, buttons | tmp_button);
+                                          dz, 0 /* horizontal scroll wheel */,
+                                          buttons | tmp_button);
         }
         else
         {
-            gMouse->PutMouseEvent(0, 0, dz, buttons | tmp_button);
+            gMouse->PutMouseEvent(0, 0, dz,
+                                  0 /* horizontal scroll wheel */,
+                                  buttons | tmp_button);
         }
     }
 
@@ -3997,11 +4000,11 @@ static void SendMouseEvent(VBoxSDLFB *fb, int dz, int down, int button)
          */
         gMouse->PutMouseEventAbsolute(x + 1 - xMin + xOrigin,
                                       y + 1 - yMin + yOrigin,
-                                      dz, buttons);
+                                      dz, 0 /* Horizontal wheel */, buttons);
     }
     else
     {
-        gMouse->PutMouseEvent(x, y, dz, buttons);
+        gMouse->PutMouseEvent(x, y, dz, 0 /* Horizontal wheel */, buttons);
     }
 }
 
@@ -4626,7 +4629,7 @@ static void HandleGuestCapsChanged(void)
         // Actually switch to absolute coordinates
         if (gfGrabbed)
             InputGrabEnd();
-        gMouse->PutMouseEventAbsolute(-1, -1, 0, 0);
+        gMouse->PutMouseEventAbsolute(-1, -1, 0, 0, 0);
     }
 }
 

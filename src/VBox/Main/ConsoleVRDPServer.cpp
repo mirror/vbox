@@ -1025,12 +1025,12 @@ DECLCALLBACK(void) ConsoleVRDPServer::VRDPCallbackInput (void *pvCallback, int t
 
                 if (server->m_fGuestWantsAbsolute)
                 {
-                    pConsole->getMouse()->PutMouseEventAbsolute (pInputPoint->x + 1, pInputPoint->y + 1, iWheel, mouseButtons);
+                    pConsole->getMouse()->PutMouseEventAbsolute (pInputPoint->x + 1, pInputPoint->y + 1, iWheel, 0 /* Horizontal wheel */, mouseButtons);
                 } else
                 {
                     pConsole->getMouse()->PutMouseEvent (pInputPoint->x - server->m_mousex,
                                                          pInputPoint->y - server->m_mousey,
-                                                         iWheel, mouseButtons);
+                                                         iWheel, 0 /* Horizontal wheel */, mouseButtons);
                     server->m_mousex = pInputPoint->x;
                     server->m_mousey = pInputPoint->y;
                 }

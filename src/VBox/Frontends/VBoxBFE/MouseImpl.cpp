@@ -108,7 +108,7 @@ int Mouse::PutMouseEvent(LONG dx, LONG dy, LONG dz, LONG buttonState)
     if (buttonState & PDMIMOUSEPORT_BUTTON_MIDDLE)
         fButtons |= PDMIMOUSEPORT_BUTTON_MIDDLE;
 
-    int vrc = mpDrv->pUpPort->pfnPutEvent(mpDrv->pUpPort, dx, dy, dz, fButtons);
+    int vrc = mpDrv->pUpPort->pfnPutEvent(mpDrv->pUpPort, dx, dy, dz, 0 /* Horizontal wheel */, fButtons);
     if (RT_FAILURE (vrc))
         return E_FAIL;
 
@@ -165,7 +165,7 @@ int Mouse::PutMouseEventAbsolute(LONG x, LONG y, LONG dz, LONG buttonState)
         if (buttonState & PDMIMOUSEPORT_BUTTON_MIDDLE)
             fButtons |= PDMIMOUSEPORT_BUTTON_MIDDLE;
 
-        vrc = mpDrv->pUpPort->pfnPutEvent(mpDrv->pUpPort, 1, 1, dz, fButtons);
+        vrc = mpDrv->pUpPort->pfnPutEvent(mpDrv->pUpPort, 1, 1, dz, 0 /* Horizontal wheel */, fButtons);
         if (RT_FAILURE (vrc))
             return E_FAIL;
     }
