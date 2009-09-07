@@ -48,21 +48,31 @@
  *
  * Compared to normal saved stated and snapshots, the difference is in that the
  * VM is running while we do most of the saving.  Prior to LS, there was only
- * round of callback during saving, after LS there are 1 or more while the VM is
- * still running and a final one after it has been paused.  The runtime stages
- * is executed on a dedicated thread running at at the same priority as the EMTs
- * so that the saving doesn't starve or lose in scheduling questions.  The final
+ * one round of callbacks during saving and the VM was paused during it.  With
+ * LS there are 1 or more passes while the VM is still running and a final one
+ * after it has been paused.  The runtime passes are executed on a dedicated
+ * thread running at at the same priority as the EMTs so that the saving doesn't
+ * starve or lose in scheduling questions (note: not implemented yet). The final
  * pass is done on EMT(0).
  *
  * There are a couple of common reasons why LS and LM will fail:
  *   - Memory configuration changed (PCI memory mappings).
  *   - Takes too long (LM) / Too much output (LS).
  *
- * FIGURE THIS: It is currently unclear who will resume the VM after it has been
- * paused.  The most efficient way to do this is by doing it before returning
- * from the VMR3Save call and use a callback for reconfiguring the disk images.
- * (It is more efficient because of fewer thread switches.) The more convenient
- * way is to have main do it after calling VMR3Save.
+ *
+ * The live saving sequence is something like this:
+ *
+ *      -# SSMR3LiveToFile is called on EMT0.  It returns a saved state
+ *         handle.
+ *      -# SSMR3LiveDoStep1 is called on a non-EMT.  This will save the major
+ *         parts of the state while the VM may still be running.
+ *      -# The VM is suspended.
+ *      -# SSMR3LiveDoStep2 is called on EMT0 to save the remainder of the state
+ *         in the normal way.
+ *      -# The client does any necessary reconfiguration of harddisks and
+ *         similar.
+ *      -# SSMR3LiveDone is called on EMT0 to close the handle.
+ *      -# The VM is resumed or powered off and destroyed.
  *
  *
  * @section sec_ssm_live_migration  Live Migration
@@ -4038,7 +4048,9 @@ static int ssmR3LiveDoExecRun(PVM pVM, PSSMHANDLE pSSM, uint32_t uPass)
     AssertRC(pSSM->rc);
     pSSM->rc = VINF_SUCCESS;
     pSSM->enmOp = SSMSTATE_LIVE_EXEC;
-    for (PSSMUNIT pUnit = pVM->ssm.s.pHead; pUnit; pUnit = pUnit->pNext)
+    for (PSSMUNIT pUnit = pVM->ssm.s.pHead;
+         /** @todo VMR3GetState(pVM) == VMSTATE_LIVE_SAVING &&*/ pUnit;
+         pUnit = pUnit->pNext)
     {
         /*
          * Skip units without a callback (this is most).
@@ -4231,6 +4243,30 @@ VMMR3_INT_DECL(int) SSMR3LiveDoStep1(PSSMHANDLE pSSM)
                 return pSSM->rc = VERR_SSM_LOW_ON_DISK_SPACE;
             }
         }
+#if 0
+        /*
+         * Check the VM state to see if it has changed.
+         */
+        VMSTATE enmState = VMR3GetState(pVM);
+        if (enmState != VMSTATE_LIVE_SAVING)
+        {
+            switch (enmState)
+            {
+                case VMSTATE_LIVE_CANCELLED:
+                    LogRel(("SSM: Cancelled\n"));
+                    return pSSM->rc = VERR_SSM_LIVE_CANCELLED;
+                case VMSTATE_LIVE_POWERED_OFF:
+                    LogRel(("SSM: Powered off, no state to save, aborting.\n"));
+                    return pSSM->rc = VERR_SSM_LIVE_POWERED_OFF;
+                case VMSTATE_GURU_MEDITATION:
+                    LogRel(("SSM: Guru meditation, aborting.\n"));
+                    return pSSM->rc = VERR_SSM_LIVE_GURU_MEDITATION;
+                default:
+                    LogRel(("SSM: Invalid VM state transition: %d->%d\n", VMSTATE_LIVE_SAVING, enmState));
+                    return pSSM->rc = VERR_INTERNAL_ERROR_3;
+            }
+        }
+#endif
     }
 
     LogRel(("SSM: Giving up: Too many passes! (%u)\n", SSM_MAX_PASSES));
@@ -4304,20 +4340,7 @@ static int ssmR3DoLivePrepRun(PVM pVM, PSSMHANDLE pSSM)
 /**
  * Start saving the live state to a file.
  *
- * The live saving sequence is something like this:
- *
- *      -# SSMR3LiveToFile is called on EMT0.  It returns a saved state
- *         handle.
- *      -# SSMR3LiveDoStep1 is called on a non-EMT.  This will save the major
- *         parts of the state while the VM may still be running.
- *      -# The VM is suspended.
- *      -# SSMR3LiveDoStep2 is called on EMT0 to save the remainder of the state
- *         in the normal way.
- *      -# The client does any necessary reconfiguration of harddisks and
- *         similar.
- *      -# SSMR3LiveDone is called on EMT0 to close the handle.
- *      -# The VM is resumed or powered off and destroyed.
- *
+ * Call SSMR3LiveDoStep1, SSMR3LiveDoStep2 and finally SSMR3LiveDone on success.
  * SSMR3LiveDone should be called even if SSMR3LiveDoStep1 or SSMR3LiveDoStep2
  * fails.
  *

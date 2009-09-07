@@ -577,6 +577,15 @@
 #define VERR_SSM_STATE_GREW_TOO_BIG             (-1854)
 /** Giving up a live snapshot attempt because we're low on disk space.  */
 #define VERR_SSM_LOW_ON_DISK_SPACE              (-1855)
+/** The machine was powered off while saving. */
+#define VERR_SSM_LIVE_POWERED_OFF               (-1856)
+/** The live snapshot/migration operation was cancelled. */
+#define VERR_SSM_LIVE_CANCELLED                 (-1857)
+/** The live snapshot/migration operation was aborted because of a guru
+ *  meditation. */
+#define VERR_SSM_LIVE_GURU_MEDITATION           (-1858)
+/** The VM was paused while saving, don't resume execution. */
+#define VINF_SSM_LIVE_PAUSED                    1859
 /** @} */
 
 
