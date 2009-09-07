@@ -1268,7 +1268,7 @@ public:
 
     STDMETHOD(ProcessVHWACommand)(BYTE *pCommand)
     {
-        return mOverlay.onVHWACommand((VBOXVHWACMD*)pCommand);
+        return mOverlay.onVHWACommand((struct _VBOXVHWACMD*)pCommand);
     }
 
     void doProcessVHWACommand(QEvent * pEvent)
