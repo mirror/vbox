@@ -57,6 +57,10 @@
 
 #define VBOXQGL_STATE_NAMEBASE "QGLVHWAData"
 #define VBOXQGL_STATE_VERSION 1
+
+//#define VBOXQGLOVERLAY_STATE_NAMEBASE "QGLOverlayVHWAData"
+//#define VBOXQGLOVERLAY_STATE_VERSION 1
+
 #ifdef DEBUG_misha
 # define VBOXQGL_STATE_DEBUG
 #endif
@@ -3127,6 +3131,12 @@ VBoxVHWACommandElement * VBoxGLWidget::processCmdList(VBoxVHWACommandElement * p
             (info.pThis->*(info.pfnCallback))(info.pContext);
             break;
         }
+        case VBOXVHWA_PIPECMD_FUNC:
+        {
+            const VBOXVHWAFUNCCALLBACKINFO & info = pCmd->func();
+            info.pfnCallback(info.pContext1, info.pContext2);
+            break;
+        }
 #endif
         default:
             Assert(0);
@@ -4074,7 +4084,7 @@ static DECLCALLBACK(int) vboxQGLLoadExec(PSSMHANDLE pSSM, void *pvUser, uint32_t
 {
     Assert(uPass == SSM_PASS_FINAL); NOREF(uPass);
     VBoxGLWidget * pw = (VBoxGLWidget*)pvUser;
-    return pw->vhwaLoadExec(pSSM, u32Version);
+    return pw->vhwaLoadExec(NULL, pSSM, u32Version);
 }
 
 int VBoxGLWidget::vhwaSaveSurface(struct SSMHANDLE * pSSM, VBoxVHWASurfaceBase *pSurf, uint32_t surfCaps)
@@ -4156,7 +4166,7 @@ int VBoxGLWidget::vhwaSaveSurface(struct SSMHANDLE * pSSM, VBoxVHWASurfaceBase *
     return rc;
 }
 
-int VBoxGLWidget::vhwaLoadSurface(struct SSMHANDLE * pSSM, uint32_t u32Version)
+int VBoxGLWidget::vhwaLoadSurface(VHWACommandList * pCmdList, struct SSMHANDLE * pSSM, uint32_t u32Version)
 {
     Q_UNUSED(u32Version);
 
@@ -4219,7 +4229,8 @@ int VBoxGLWidget::vhwaLoadSurface(struct SSMHANDLE * pSSM, uint32_t u32Version)
             Assert(0);
         }
 
-        vboxExecOnResize(&VBoxGLWidget::vboxDoVHWACmdAndFree, pCmd); AssertRC(rc);
+        pCmdList->push_back(pCmd);
+//        vboxExecOnResize(&VBoxGLWidget::vboxDoVHWACmdAndFree, pCmd); AssertRC(rc);
 //        if(RT_SUCCESS(rc))
 //        {
 //            rc = pCmd->rc;
@@ -4307,7 +4318,7 @@ int VBoxGLWidget::vhwaSaveOverlayData(struct SSMHANDLE * pSSM, VBoxVHWASurfaceBa
     return rc;
 }
 
-int VBoxGLWidget::vhwaLoadOverlayData(struct SSMHANDLE * pSSM, uint32_t u32Version)
+int VBoxGLWidget::vhwaLoadOverlayData(VHWACommandList * pCmdList, struct SSMHANDLE * pSSM, uint32_t u32Version)
 {
     Q_UNUSED(u32Version);
 
@@ -4363,7 +4374,8 @@ int VBoxGLWidget::vhwaLoadOverlayData(struct SSMHANDLE * pSSM, uint32_t u32Versi
         rc = SSMR3GetS32(pSSM, &pUpdateOverlay->u.in.srcRect.top); AssertRC(rc);
         rc = SSMR3GetS32(pSSM, &pUpdateOverlay->u.in.srcRect.bottom); AssertRC(rc);
 
-        vboxExecOnResize(&VBoxGLWidget::vboxDoVHWACmdAndFree, pCmd); AssertRC(rc);
+        pCmdList->push_back(pCmd);
+//        vboxExecOnResize(&VBoxGLWidget::vboxDoVHWACmdAndFree, pCmd); AssertRC(rc);
 //        if(RT_SUCCESS(rc))
 //        {
 //            rc = pCmd->rc;
@@ -4401,10 +4413,10 @@ void VBoxGLWidget::vhwaSaveExec(struct SSMHANDLE * pSSM)
      * IV.2.b    generate & execute UpdateOverlay cmd (see below on the generation logic)
      *
      */
-    const SurfList & primaryList = mDisplay.getVGA()->getComplexList()->surfaces();
+    const SurfList & primaryList = mDisplay.primaries().surfaces();
     uint32_t cPrimary = (uint32_t)primaryList.size();
     Assert(cPrimary >= 1);
-    if(mDisplay.getVGA()->handle() == VBOXVHWA_SURFHANDLE_INVALID)
+    if(mDisplay.getVGA() == NULL || mDisplay.getVGA()->handle() == VBOXVHWA_SURFHANDLE_INVALID)
     {
         cPrimary -= 1;
     }
@@ -4471,19 +4483,25 @@ void VBoxGLWidget::vhwaSaveExec(struct SSMHANDLE * pSSM)
     VBOXQGL_SAVE_STOP(pSSM);
 }
 
-int VBoxGLWidget::vhwaLoadExec(struct SSMHANDLE * pSSM, uint32_t u32Version)
+int VBoxGLWidget::vhwaLoadExec(VHWACommandList * pCmdList, struct SSMHANDLE * pSSM, uint32_t u32Version)
 {
     VBOXQGL_LOAD_START(pSSM);
 
     int rc;
     uint32_t u32;
 
+    if(pCmdList == NULL)
+    {
+        /* use our own list */
+        pCmdList = &mOnResizeCmdList;
+    }
+
     rc = SSMR3GetU32(pSSM, &u32); AssertRC(rc);
     if(RT_SUCCESS(rc))
     {
         for(uint32_t i = 0; i < u32; ++i)
         {
-            rc = vhwaLoadSurface(pSSM, u32Version);  AssertRC(rc);
+            rc = vhwaLoadSurface(pCmdList, pSSM, u32Version);  AssertRC(rc);
             if(RT_FAILURE(rc))
                 break;
         }
@@ -4499,14 +4517,14 @@ int VBoxGLWidget::vhwaLoadExec(struct SSMHANDLE * pSSM, uint32_t u32Version)
                     rc = SSMR3GetU32(pSSM, &cSurfs); AssertRC(rc);
                     for(uint32_t j = 0; j < cSurfs; ++j)
                     {
-                        rc = vhwaLoadSurface(pSSM, u32Version);  AssertRC(rc);
+                        rc = vhwaLoadSurface(pCmdList, pSSM, u32Version);  AssertRC(rc);
                         if(RT_FAILURE(rc))
                             break;
                     }
 
                     if(RT_SUCCESS(rc))
                     {
-                        rc = vhwaLoadOverlayData(pSSM, u32Version);  AssertRC(rc);
+                        rc = vhwaLoadOverlayData(pCmdList, pSSM, u32Version);  AssertRC(rc);
                     }
 
                     if(RT_FAILURE(rc))
@@ -4987,16 +5005,16 @@ void VBoxGLWidget::vboxDoResize(void *resize)
     }
 #endif
 
-    VBoxVHWACommandElement * pPpCmd = mResizePostProcessCmds.detachList();
-    if(pPpCmd)
+    if(!mOnResizeCmdList.empty())
     {
-        processCmdList(pPpCmd);
-        while(pPpCmd)
+        for (VHWACommandList::const_iterator it = mOnResizeCmdList.begin();
+             it != mOnResizeCmdList.end(); ++ it)
         {
-            VBoxVHWACommandElement * pCur = pPpCmd;
-            pPpCmd = pCur->mpNext;
-            delete pCur;
+            VBOXVHWACMD * pCmd = (*it);
+            vboxDoVHWACmdExec(pCmd);
+            free(pCmd);
         }
+        mOnResizeCmdList.clear();
     }
 
 
@@ -5032,17 +5050,6 @@ void VBoxGLWidget::vboxDoResize(void *resize)
 //    this->*(pData->pfn)(pData->pContext);
 //    delete pEl;
 //}
-
-void VBoxGLWidget::vboxExecOnResize(PFNVBOXQGLOP pfn, void* pContext)
-{
-    VBoxVHWACommandElement *pCmd = new VBoxVHWACommandElement();
-    VBOXVHWACALLBACKINFO info;
-    info.pThis = this;
-    info.pfnCallback = pfn;
-    info.pContext = pContext;
-    pCmd->setOp(info);
-    mResizePostProcessCmds.put(pCmd);
-}
 
 //int VBoxGLWidget::vboxExecOpSynch(PFNVBOXQGLOP pfn, void* pContext)
 //{
@@ -5243,6 +5250,9 @@ VBoxQGLOverlayFrameBuffer::VBoxQGLOverlayFrameBuffer (VBoxConsoleView *aView)
     mpOverlayWidget = new VBoxGLWidget (aView, aView->viewport());
     mOverlayWidgetVisible = true; /* to ensure it is set hidden with vboxShowOverlay */
     vboxShowOverlay(false);
+
+    resizeEvent (new VBoxResizeEvent (FramebufferPixelFormat_Opaque,
+                                      NULL, 0, 0, 640, 480));
 }
 
 STDMETHODIMP VBoxQGLOverlayFrameBuffer::ProcessVHWACommand(BYTE *pCommand)
@@ -5313,6 +5323,10 @@ void VBoxQGLOverlayFrameBuffer::resizeEvent (VBoxResizeEvent *re)
 {
     VBoxQImageFrameBuffer::resizeEvent(re);
 
+    bool bDoOpExit = false;
+
+    Assert(0);
+
     if(mGlOn)
     {
         Assert(!mGlCurrent);
@@ -5320,9 +5334,28 @@ void VBoxQGLOverlayFrameBuffer::resizeEvent (VBoxResizeEvent *re)
         makeCurrent();
         /* need to ensure we're in synch */
         vboxSynchGl();
-        vboxOpExit();
-        Assert(mGlCurrent == false);
+        bDoOpExit = true;
     }
+
+    if(!mOnResizeCmdList.empty())
+    {
+        for (VHWACommandList::const_iterator it = mOnResizeCmdList.begin();
+             it != mOnResizeCmdList.end(); ++ it)
+        {
+            VBOXVHWACMD * pCmd = (*it);
+            vboxDoVHWACmdExec(pCmd);
+            free(pCmd);
+        }
+        mOnResizeCmdList.clear();
+        bDoOpExit = true;
+    }
+
+    if(bDoOpExit)
+    {
+        vboxOpExit();
+    }
+    Assert(mGlCurrent == false);
+
 }
 
 void VBoxQGLOverlayFrameBuffer::vboxDoVHWACmd(void *cmd)
@@ -5356,6 +5389,16 @@ void VBoxQGLOverlayFrameBuffer::vboxDoUpdateRect(const QRect * pRect)
 
 void VBoxQGLOverlayFrameBuffer::vboxSynchGl()
 {
+    if(mpOverlayWidget->vboxIsInitialized()
+            && pixelFormat() == mpOverlayWidget->vboxPixelFormat()
+            && address() == mpOverlayWidget->vboxAddress()
+            && bitsPerPixel() == mpOverlayWidget->vboxBitsPerPixel()
+            && bytesPerLine() == mpOverlayWidget->vboxBytesPerLine()
+            && width() == mpOverlayWidget->vboxFbWidth()
+            && height() == mpOverlayWidget->vboxFbHeight())
+    {
+        return;
+    }
     /* create and issue a resize event to the gl widget to ensure we have all gl data initialized
      * and synchronized with the framebuffer */
     VBoxResizeEvent re(pixelFormat(),
@@ -5395,7 +5438,12 @@ void VBoxQGLOverlayFrameBuffer::vboxSetGlOn(bool on)
 
 void VBoxQGLOverlayFrameBuffer::vboxDoCheckUpdateViewport()
 {
-    Assert(0);
+    if(!mOverlayVisible)
+    {
+        vboxShowOverlay(false);
+        return;
+    }
+
     int cX = mView->contentsX();
     int cY = mView->contentsY();
     QRect fbVp(cX, cY, mView->viewport()->width(), mView->viewport()->height());
@@ -5487,6 +5535,7 @@ void VBoxQGLOverlayFrameBuffer::vboxDoVHWACmdExec(void *cmd)
                 {
                     mOverlayViewport = mpOverlayWidget->overlaysRectUnion();
                 }
+                vboxDoCheckUpdateViewport();
             }
         } break;
         case VBOXVHWACMD_TYPE_SURF_DESTROY:
@@ -5504,6 +5553,7 @@ void VBoxQGLOverlayFrameBuffer::vboxDoVHWACmdExec(void *cmd)
                 {
                     mOverlayViewport = mpOverlayWidget->overlaysRectUnion();
                 }
+                vboxDoCheckUpdateViewport();
             }
         } break;
         case VBOXVHWACMD_TYPE_SURF_LOCK:
@@ -5570,13 +5620,74 @@ void VBoxQGLOverlayFrameBuffer::vboxDoVHWACmdExec(void *cmd)
         case VBOXVHWACMD_TYPE_HH_CONSTRUCT:
         {
             VBOXVHWACMD_HH_CONSTRUCT * pBody = VBOXVHWACMD_BODY(pCmd, VBOXVHWACMD_HH_CONSTRUCT);
-            pCmd->rc = mpOverlayWidget->vhwaConstruct(pBody);
+            pCmd->rc = vhwaConstruct(pBody);
         } break;
         default:
             Assert(0);
             pCmd->rc = VERR_NOT_IMPLEMENTED;
             break;
     }
+}
+
+static DECLCALLBACK(void) vboxQGLOverlaySaveExec(PSSMHANDLE pSSM, void *pvUser)
+{
+    VBoxQGLOverlayFrameBuffer * fb = (VBoxQGLOverlayFrameBuffer*)pvUser;
+    fb->vhwaSaveExec(pSSM);
+}
+
+static DECLCALLBACK(int) vboxQGLOverlayLoadExec(PSSMHANDLE pSSM, void *pvUser, uint32_t u32Version, uint32_t uPass)
+{
+    Assert(uPass == SSM_PASS_FINAL); NOREF(uPass);
+    VBoxQGLOverlayFrameBuffer * fb = (VBoxQGLOverlayFrameBuffer*)pvUser;
+    return fb->vhwaLoadExec(pSSM, u32Version);
+}
+
+int VBoxQGLOverlayFrameBuffer::vhwaLoadExec(struct SSMHANDLE * pSSM, uint32_t u32Version)
+{
+//    bool bTmp;
+//    int rc = SSMR3GetBool(pSSM, &bTmp /*&mGlOn*/);         AssertRC(rc);
+//    rc = SSMR3GetBool(pSSM, &bTmp /*&mOverlayVisible*/);         AssertRC(rc);
+//    if(RT_SUCCESS(rc))
+    return mpOverlayWidget->vhwaLoadExec(&mOnResizeCmdList, pSSM, u32Version);
+//    return rc;
+}
+
+void VBoxQGLOverlayFrameBuffer::vhwaSaveExec(struct SSMHANDLE * pSSM)
+{
+//    int rc = SSMR3PutBool(pSSM, mGlOn);         AssertRC(rc);
+//    rc = SSMR3PutBool(pSSM, mOverlayVisible);         AssertRC(rc);
+//
+    mpOverlayWidget->vhwaSaveExec(pSSM);
+}
+
+int VBoxQGLOverlayFrameBuffer::vhwaConstruct(struct _VBOXVHWACMD_HH_CONSTRUCT *pCmd)
+{
+    PVM pVM = (PVM)pCmd->pVM;
+    uint32_t intsId = 0; /* @todo: set the proper id */
+
+    char nameFuf[sizeof(VBOXQGL_STATE_NAMEBASE) + 8];
+
+    char * pszName = nameFuf;
+    sprintf(pszName, "%s%d", VBOXQGL_STATE_NAMEBASE, intsId);
+    int rc = SSMR3RegisterExternal(
+            pVM,                    /* The VM handle*/
+            pszName,                /* Data unit name. */
+            intsId,                 /* The instance identifier of the data unit.
+                                     * This must together with the name be unique. */
+            VBOXQGL_STATE_VERSION,   /* Data layout version number. */
+            128,             /* The approximate amount of data in the unit.
+                              * Only for progress indicators. */
+            NULL, NULL, NULL, /* pfnLiveXxx */
+            NULL,            /* Prepare save callback, optional. */
+            vboxQGLOverlaySaveExec, /* Execute save callback, optional. */
+            NULL,            /* Done save callback, optional. */
+            NULL,            /* Prepare load callback, optional. */
+            vboxQGLOverlayLoadExec, /* Execute load callback, optional. */
+            NULL,            /* Done load callback, optional. */
+            this             /* User argument. */
+            );
+    Assert(RT_SUCCESS(rc));
+    return rc;
 }
 
 VBoxVHWACommandElement * VBoxQGLOverlayFrameBuffer::processCmdList(VBoxVHWACommandElement * pCmd)
@@ -5598,6 +5709,12 @@ VBoxVHWACommandElement * VBoxQGLOverlayFrameBuffer::processCmdList(VBoxVHWAComma
         {
             const VBOXVHWACALLBACKINFO & info = pCmd->op();
             (info.pThis->*(info.pfnCallback))(info.pContext);
+            break;
+        }
+        case VBOXVHWA_PIPECMD_FUNC:
+        {
+            const VBOXVHWAFUNCCALLBACKINFO & info = pCmd->func();
+            info.pfnCallback(info.pContext1, info.pContext2);
             break;
         }
 #endif
@@ -5720,4 +5837,30 @@ VBoxVHWACommandElement * VBoxVHWACommandElementProcessor::detachCmdList(VBoxVHWA
     return pList;
 }
 
+
+void VBoxVHWACommandsQueue::enqueue(PFNVBOXQGLFUNC pfn, void* pContext1, void* pContext2)
+{
+    VBoxVHWACommandElement *pCmd = new VBoxVHWACommandElement();
+    VBOXVHWAFUNCCALLBACKINFO info;
+    info.pfnCallback = pfn;
+    info.pContext1 = pContext1;
+    info.pContext2 = pContext2;
+    pCmd->setFunc(info);
+    mCmds.put(pCmd);
+}
+
+VBoxVHWACommandElement * VBoxVHWACommandsQueue::detachList()
+{
+    return mCmds.detachList();
+}
+
+void VBoxVHWACommandsQueue::freeList(VBoxVHWACommandElement * pList)
+{
+    while(pList)
+    {
+        VBoxVHWACommandElement * pCur = pList;
+        pList = pCur->mpNext;
+        delete pCur;
+    }
+}
 #endif

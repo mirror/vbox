@@ -910,6 +910,7 @@ public:
 
 typedef std::list <VBoxVHWASurfaceBase*> SurfList;
 typedef std::list <VBoxVHWASurfList*> OverlayList;
+typedef std::list <struct _VBOXVHWACMD *> VHWACommandList;
 
 class VBoxVHWASurfList
 {
@@ -1064,11 +1065,14 @@ private:
 
 typedef void (VBoxGLWidget::*PFNVBOXQGLOP)(void* );
 
+typedef void (*PFNVBOXQGLFUNC)(void*, void*);
+
 typedef enum
 {
     VBOXVHWA_PIPECMD_PAINT = 1,
     VBOXVHWA_PIPECMD_VHWA,
     VBOXVHWA_PIPECMD_OP,
+    VBOXVHWA_PIPECMD_FUNC,
 }VBOXVHWA_PIPECMD_TYPE;
 
 typedef struct VBOXVHWACALLBACKINFO
@@ -1077,6 +1081,13 @@ typedef struct VBOXVHWACALLBACKINFO
     PFNVBOXQGLOP pfnCallback;
     void * pContext;
 }VBOXVHWACALLBACKINFO;
+
+typedef struct VBOXVHWAFUNCCALLBACKINFO
+{
+    PFNVBOXQGLFUNC pfnCallback;
+    void * pContext1;
+    void * pContext2;
+}VBOXVHWAFUNCCALLBACKINFO;
 
 class VBoxVHWACommandElement
 {
@@ -1099,6 +1110,12 @@ public:
         u.mCallback = aOp;
     }
 
+    void setFunc(const VBOXVHWAFUNCCALLBACKINFO & aOp)
+    {
+        mType = VBOXVHWA_PIPECMD_FUNC;
+        u.mFuncCallback = aOp;
+    }
+
     void setData(VBOXVHWA_PIPECMD_TYPE aType, void * pvData)
     {
         switch(aType)
@@ -1112,6 +1129,9 @@ public:
         case VBOXVHWA_PIPECMD_OP:
             setOp(*((VBOXVHWACALLBACKINFO *)pvData));
             break;
+        case VBOXVHWA_PIPECMD_FUNC:
+            setFunc(*((VBOXVHWAFUNCCALLBACKINFO *)pvData));
+            break;
         default:
             Assert(0);
             break;
@@ -1122,6 +1142,7 @@ public:
     const QRect & rect() const {return mRect;}
     struct _VBOXVHWACMD * vhwaCmd() const {return u.mpCmd;}
     const VBOXVHWACALLBACKINFO & op() const {return u.mCallback; }
+    const VBOXVHWAFUNCCALLBACKINFO & func() const {return u.mFuncCallback; }
 
     VBoxVHWACommandElement * mpNext;
 private:
@@ -1130,6 +1151,7 @@ private:
     {
         struct _VBOXVHWACMD * mpCmd;
         VBOXVHWACALLBACKINFO mCallback;
+        VBOXVHWAFUNCCALLBACKINFO mFuncCallback;
     }u;
     QRect                 mRect;
 };
@@ -1226,6 +1248,18 @@ private:
     VBoxVHWACommandElement mElementsBuffer[2048];
 };
 
+class VBoxVHWACommandsQueue
+{
+public:
+    void enqueue(PFNVBOXQGLFUNC pfn, void* pContext1, void* pContext2);
+
+    VBoxVHWACommandElement * detachList();
+
+    void freeList(VBoxVHWACommandElement * pList);
+
+private:
+    VBoxVHWACommandElementPipe mCmds;
+};
 
 class VBoxGLWidget : public QGLWidget
 {
@@ -1244,7 +1278,7 @@ public:
     uint64_t vboxVRAMOffset(VBoxVHWASurfaceBase * pSurf);
 
     void vhwaSaveExec(struct SSMHANDLE * pSSM);
-    int vhwaLoadExec(struct SSMHANDLE * pSSM, uint32_t u32Version);
+    int vhwaLoadExec(VHWACommandList * pCmdList, struct SSMHANDLE * pSSM, uint32_t u32Version);
 
     int vhwaSurfaceCanCreate(struct _VBOXVHWACMD_SURF_CANCREATE *pCmd);
     int vhwaSurfaceCreate(struct _VBOXVHWACMD_SURF_CREATE *pCmd);
@@ -1267,6 +1301,9 @@ public:
 
     ulong vboxBitsPerPixel() { return mDisplay.getVGA()->bitsPerPixel(); }
     ulong vboxBytesPerLine() { return mDisplay.getVGA() ? mDisplay.getVGA()->bytesPerLine() : 0; }
+    int vboxFbWidth() {return mDisplay.getVGA()->width(); }
+    int vboxFbHeight() {return mDisplay.getVGA()->height(); }
+    bool vboxIsInitialized() {return mDisplay.getVGA() != NULL; }
 
 //    void vboxPaintEvent (QPaintEvent *pe) {vboxPerformGLOp(&VBoxGLWidget::vboxDoPaint, pe); }
     void vboxResizeEvent (VBoxResizeEvent *re) {vboxPerformGLOp(&VBoxGLWidget::vboxDoResize, re); }
@@ -1332,9 +1369,9 @@ private:
     }
 
     int vhwaSaveSurface(struct SSMHANDLE * pSSM, VBoxVHWASurfaceBase *pSurf, uint32_t surfCaps);
-    int vhwaLoadSurface(struct SSMHANDLE * pSSM, uint32_t u32Version);
+    int vhwaLoadSurface(VHWACommandList * pCmdList, struct SSMHANDLE * pSSM, uint32_t u32Version);
     int vhwaSaveOverlayData(struct SSMHANDLE * pSSM, VBoxVHWASurfaceBase *pSurf, bool bVisible);
-    int vhwaLoadOverlayData(struct SSMHANDLE * pSSM, uint32_t u32Version);
+    int vhwaLoadOverlayData(VHWACommandList * pCmdList, struct SSMHANDLE * pSSM, uint32_t u32Version);
     void vhwaDoSurfaceOverlayUpdate(VBoxVHWASurfaceBase *pDstSurf, VBoxVHWASurfaceBase *pSrcSurf, struct _VBOXVHWACMD_SURF_OVERLAY_UPDATE *pCmd);
 #endif
     static const QGLFormat & vboxGLFormat();
@@ -1354,7 +1391,7 @@ private:
 
 //    /* posts op to UI thread */
 //    int vboxExecOpSynch(PFNVBOXQGLOP pfn, void* pContext);
-    void vboxExecOnResize(PFNVBOXQGLOP pfn, void* pContext);
+//    void vboxExecOnResize(PFNVBOXQGLOP pfn, void* pContext);
 
     void vboxDoProcessVHWACommands(void *pContext);
 
@@ -1384,7 +1421,7 @@ private:
 
     /* this is used in saved state restore to postpone surface restoration
      * till the framebuffer size is restored */
-    VBoxVHWACommandElementPipe mResizePostProcessCmds;
+    VHWACommandList mOnResizeCmdList;
 
     class VBoxVHWAGlProgramMngr *mpMngr;
 };
@@ -1448,6 +1485,9 @@ public:
     void resizeEvent (VBoxResizeEvent *re);
 
     void vboxUpdateRect(const QRect * pRect);
+
+    int vhwaLoadExec(struct SSMHANDLE * pSSM, uint32_t u32Version);
+    void vhwaSaveExec(struct SSMHANDLE * pSSM);
 private:
     void makeCurrent()
     {
@@ -1490,6 +1530,9 @@ private:
 //    void vboxUpdateOverlayPosition(const QPoint & pos);
     void vboxCheckUpdateOverlay(const QRect & rect);
     VBoxVHWACommandElement * processCmdList(VBoxVHWACommandElement * pCmd);
+
+    int vhwaConstruct(struct _VBOXVHWACMD_HH_CONSTRUCT *pCmd);
+
     VBoxGLWidget *mpOverlayWidget;
     bool mGlOn;
     bool mOverlayWidgetVisible;
@@ -1500,6 +1543,10 @@ private:
     VBoxVHWADirtyRect mMainDirtyRect;
 
     VBoxVHWACommandElementProcessor mCmdPipe;
+
+    /* this is used in saved state restore to postpone surface restoration
+     * till the framebuffer size is restored */
+    VHWACommandList mOnResizeCmdList;
 };
 #endif
 
