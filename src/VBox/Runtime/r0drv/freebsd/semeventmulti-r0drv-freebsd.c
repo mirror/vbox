@@ -42,7 +42,6 @@
 
 #include "internal/magics.h"
 
-
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
 *******************************************************************************/
@@ -216,20 +215,20 @@ static int rtSemEventMultiWait(RTSEMEVENTMULTI EventMultiSem, unsigned cMillies,
                 RTSpinlockRelease(pEventMultiInt->hSpinLock, &Tmp);
 
                 if (fInterruptible)
-                    rc = sleepq_timedwait_sig(pEventMultiInt, 0);
+                    rc = SLEEPQ_TIMEDWAIT_SIG(pEventMultiInt);
                 else
-                    rc = sleepq_timedwait(pEventMultiInt, 0);
+                    rc = SLEEPQ_TIMEDWAIT(pEventMultiInt);
             }
             else
             {
                 RTSpinlockRelease(pEventMultiInt->hSpinLock, &Tmp);
 
                 if (fInterruptible)
-                    rc = sleepq_wait_sig(pEventMultiInt, 0);
+                    rc = SLEEPQ_WAIT_SIG(pEventMultiInt);
                 else
                 {
                     rc = 0;
-                    sleepq_wait(pEventMultiInt, 0);
+                    SLEEPQ_WAIT(pEventMultiInt);
                 }
             }
 
