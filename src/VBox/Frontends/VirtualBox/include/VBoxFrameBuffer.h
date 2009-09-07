@@ -332,29 +332,6 @@ private:
     class VBoxVHWACommandElementProcessor mCmdPipe;
 };
 
-# ifdef VBOX_WITH_VIDEOHWACCEL
-#  ifdef VBOX_GUI_USE_QIMAGE
-class VBoxQImageOverlayFrameBuffer : public VBoxQImageFrameBuffer
-{
-public:
-    VBoxQImageOverlayFrameBuffer (VBoxConsoleView *aView);
-
-
-    STDMETHOD(ProcessVHWACommand)(BYTE *pCommand);
-
-    void doProcessVHWACommand(QEvent * pEvent);
-
-    STDMETHOD(NotifyUpdate) (ULONG aX, ULONG aY,
-                             ULONG aW, ULONG aH);
-
-    void paintEvent (QPaintEvent *pe);
-    void resizeEvent (VBoxResizeEvent *re);
-private:
-    VBoxQGLOverlay mOverlay;
-};
-#  endif /* #  ifdef VBOX_GUI_USE_QIMAGE */
-# endif /* # ifdef VBOX_WITH_VIDEOHWACCEL */
-
 #endif
 
 /////////////////////////////////////////////////////////////////////////////

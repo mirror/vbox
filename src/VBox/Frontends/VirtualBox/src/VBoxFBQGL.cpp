@@ -163,55 +163,6 @@ STDMETHODIMP VBoxQGLFrameBuffer::ProcessVHWACommand(BYTE *pCommand)
     return S_OK;
 }
 
-
-VBoxQImageOverlayFrameBuffer::VBoxQImageOverlayFrameBuffer (VBoxConsoleView *aView)
-    : VBoxQImageFrameBuffer(aView),
-      mOverlay(aView, this)
-{}
-
-
-STDMETHODIMP VBoxQImageOverlayFrameBuffer::ProcessVHWACommand(BYTE *pCommand)
-{
-    return mOverlay.onVHWACommand((VBOXVHWACMD*)pCommand);
-}
-
-void VBoxQImageOverlayFrameBuffer::doProcessVHWACommand(QEvent * pEvent)
-{
-    mOverlay.onVHWACommandEvent(pEvent);
-}
-
-STDMETHODIMP VBoxQImageOverlayFrameBuffer::NotifyUpdate (ULONG aX, ULONG aY,
-                             ULONG aW, ULONG aH)
-{
-    if(mOverlay.onNotifyUpdate(aX, aY, aW, aH))
-        return S_OK;
-    return VBoxQImageFrameBuffer::NotifyUpdate(aX, aY, aW, aH);
-}
-
-void VBoxQImageOverlayFrameBuffer::paintEvent (QPaintEvent *pe)
-{
-    QRect rect;
-    VBOXFBOVERLAY_RESUT res = mOverlay.onPaintEvent(pe, &rect);
-    switch(res)
-    {
-        case VBOXFBOVERLAY_MODIFIED:
-        {
-            QPaintEvent modified(rect);
-            VBoxQImageFrameBuffer::paintEvent(&modified);
-        } break;
-        case VBOXFBOVERLAY_UNTOUCHED:
-            VBoxQImageFrameBuffer::paintEvent(pe);
-            break;
-    }
-}
-
-void VBoxQImageOverlayFrameBuffer::resizeEvent (VBoxResizeEvent *re)
-{
-    mOverlay.onResizeEvent(re);
-    VBoxQImageFrameBuffer::resizeEvent(re);
-    mOverlay.onResizeEventPostprocess(re);
-}
-
 #endif
 
 #endif

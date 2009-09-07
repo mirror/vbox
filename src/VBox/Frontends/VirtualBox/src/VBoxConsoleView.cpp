@@ -839,7 +839,7 @@ VBoxConsoleView::VBoxConsoleView (VBoxConsoleWnd *mainWnd,
         case VBoxDefs::QImageMode:
             mFrameBuf =
 #ifdef VBOX_WITH_VIDEOHWACCEL
-                    mAccelerate2DVideo ? new VBoxQImageOverlayFrameBuffer (this) :
+                    mAccelerate2DVideo ? new VBoxOverlayFrameBuffer<VBoxQImageFrameBuffer>(this) :
 #endif
                     new VBoxQImageFrameBuffer (this);
             break;
@@ -854,7 +854,11 @@ VBoxConsoleView::VBoxConsoleView (VBoxConsoleWnd *mainWnd,
              * i386 and segfaults on x86_64. */
             XFlush(QX11Info::display());
 # endif
-            mFrameBuf = new VBoxSDLFrameBuffer (this);
+            mFrameBuf =
+#if defined(VBOX_WITH_VIDEOHWACCEL) && defined(DEBUG_misha) /* not tested yet */
+                    mAccelerate2DVideo ? new VBoxOverlayFrameBuffer<VBoxSDLFrameBuffer>(this) :
+#endif
+                    new VBoxSDLFrameBuffer (this);
             /*
              *  disable scrollbars because we cannot correctly draw in a
              *  scrolled window using SDL
