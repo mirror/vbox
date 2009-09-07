@@ -21,7 +21,7 @@
 
 #include "VBoxUtils-darwin.h"
 
-#include <iprt/assert.h>
+#include <iprt/mem.h>
 
 #include <QApplication>
 #include <QWidget>
@@ -221,7 +221,36 @@ CGImageRef darwinToCGImageRef (const QImage *aImage)
  */
 CGImageRef darwinToCGImageRef (const QPixmap *aPixmap)
 {
-    return aPixmap->toMacCGImageRef();
+    /* It seems Qt releases the memory to an returned CGImageRef when the
+     * associated QPixmap is destroyed. This shouldn't happen as long a
+     * CGImageRef has a retrain count. As a workaround we make a real copy. */
+    int bitmapBytesPerRow = aPixmap->width() * 4;
+    int bitmapByteCount = (bitmapBytesPerRow * aPixmap->height());
+    /* Create a memory block for the temporary image. It is initialized by zero
+     * which means black & zero alpha. */
+    void *pBitmapData = RTMemAllocZ (bitmapByteCount);
+    CGColorSpaceRef cs = CGColorSpaceCreateDeviceRGB();
+    /* Create a context to paint on */
+    CGContextRef ctx = CGBitmapContextCreate (pBitmapData,
+                                              aPixmap->width(),
+                                              aPixmap->height(),
+                                              8,
+                                              bitmapBytesPerRow,
+                                              cs,
+                                              kCGImageAlphaPremultipliedFirst);
+    /* Get the CGImageRef from Qt */
+    CGImageRef qtPixmap = aPixmap->toMacCGImageRef();
+    /* Draw the image from Qt & convert the context back to a new CGImageRef. */
+    CGContextDrawImage (ctx, CGRectMake (0, 0, aPixmap->width(), aPixmap->height()), qtPixmap);
+    CGImageRef newImage = CGBitmapContextCreateImage (ctx);
+    /* Now release all used resources */
+    CGImageRelease (qtPixmap);
+    CGContextRelease (ctx);
+    CGColorSpaceRelease (cs);
+    RTMemFree (pBitmapData);
+
+    /* Return the new CGImageRef */
+    return newImage;
 }
 
 /**
