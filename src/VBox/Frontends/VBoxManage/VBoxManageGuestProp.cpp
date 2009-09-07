@@ -456,7 +456,6 @@ static int handleWaitGuestProperty(HandlerArg *a)
     /*
      * Set up the callback and wait.
      *
-     *
      * The waiting is done is 1 sec at the time since there there are races
      * between the callback and us going to sleep.  This also guards against
      * neglecting XPCOM event queues as well as any select timeout restrictions.
