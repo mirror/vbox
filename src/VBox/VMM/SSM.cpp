@@ -1210,7 +1210,7 @@ VMMR3DECL(int) SSMR3RegisterExternal(PVM pVM, const char *pszName, uint32_t uIns
  *                          This must together with the name be unique.
  * @remark  Only for dynmaic data units and dynamic unloaded modules.
  */
-VMMR3DECL(int) SSMR3DeregisterDevice(PVM pVM, PPDMDEVINS pDevIns, const char *pszName, uint32_t uInstance)
+VMMR3_INT_DECL(int) SSMR3DeregisterDevice(PVM pVM, PPDMDEVINS pDevIns, const char *pszName, uint32_t uInstance)
 {
     /*
      * Validate input.
@@ -1286,7 +1286,7 @@ VMMR3DECL(int) SSMR3DeregisterDevice(PVM pVM, PPDMDEVINS pDevIns, const char *ps
  *                          This must together with the name be unique. Ignored if pszName is NULL.
  * @remark  Only for dynmaic data units and dynamic unloaded modules.
  */
-VMMR3DECL(int) SSMR3DeregisterDriver(PVM pVM, PPDMDRVINS pDrvIns, const char *pszName, uint32_t uInstance)
+VMMR3_INT_DECL(int) SSMR3DeregisterDriver(PVM pVM, PPDMDRVINS pDrvIns, const char *pszName, uint32_t uInstance)
 {
     /*
      * Validate input.
@@ -3354,7 +3354,7 @@ static int ssmR3SaveDoClose(PVM pVM, PSSMHANDLE pSSM)
  *
  * @thread  EMT(0).
  */
-VMMR3DECL(int) SSMR3LiveDone(PSSMHANDLE pSSM)
+VMMR3_INT_DECL(int) SSMR3LiveDone(PSSMHANDLE pSSM)
 {
     LogFlow(("SSMR3LiveDone: pSSM=%p\n", pSSM));
 
@@ -3785,7 +3785,7 @@ static int ssmR3SaveDoCommon(PVM pVM, PSSMHANDLE pSSM)
  *
  * @thread  Non-EMT thread. Will involve the EMT at the end of the operation.
  */
-VMMR3DECL(int) SSMR3LiveDoStep2(PSSMHANDLE pSSM)
+VMMR3_INT_DECL(int) SSMR3LiveDoStep2(PSSMHANDLE pSSM)
 {
     LogFlow(("SSMR3LiveDoStep2: pSSM=%p\n", pSSM));
 
@@ -4146,7 +4146,7 @@ static int ssmR3LiveDoExecRun(PVM pVM, PSSMHANDLE pSSM, uint32_t uPass)
  *
  * @thread  Non-EMT thread. Will involve the EMT at the end of the operation.
  */
-VMMR3DECL(int) SSMR3LiveDoStep1(PSSMHANDLE pSSM)
+VMMR3_INT_DECL(int) SSMR3LiveDoStep1(PSSMHANDLE pSSM)
 {
     LogFlow(("SSMR3LiveDoStep1: pSSM=%p\n", pSSM));
 
@@ -4332,8 +4332,8 @@ static int ssmR3DoLivePrepRun(PVM pVM, PSSMHANDLE pSSM)
  *
  * @thread  EMT0
  */
-VMMR3DECL(int) SSMR3LiveToFile(PVM pVM, const char *pszFilename, SSMAFTER enmAfter,
-                               PFNVMPROGRESS pfnProgress, void *pvUser, PSSMHANDLE *ppSSM)
+VMMR3_INT_DECL(int) SSMR3LiveToFile(PVM pVM, const char *pszFilename, SSMAFTER enmAfter,
+                                    PFNVMPROGRESS pfnProgress, void *pvUser, PSSMHANDLE *ppSSM)
 {
     LogFlow(("SSMR3LiveToFile: pszFilename=%p:{%s} enmAfter=%d pfnProgress=%p pvUser=%p\n", pszFilename, pszFilename, enmAfter, pfnProgress, pvUser));
     VM_ASSERT_EMT0(pVM);
@@ -5466,7 +5466,7 @@ VMMR3DECL(int) SSMR3GetGCPhys(PSSMHANDLE pSSM, PRTGCPHYS pGCPhys)
  * @remarks This interface only works with saved state version 1.1, if the
  *          format isn't 1.1 the call will be ignored.
  */
-VMMR3DECL(int) SSMR3SetGCPtrSize(PSSMHANDLE pSSM, unsigned cbGCPtr)
+VMMR3_INT_DECL(int) SSMR3SetGCPtrSize(PSSMHANDLE pSSM, unsigned cbGCPtr)
 {
     Assert(cbGCPtr == sizeof(RTGCPTR32) || cbGCPtr == sizeof(RTGCPTR64));
     if (!pSSM->u.Read.fFixedGCPtrSize)

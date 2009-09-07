@@ -638,26 +638,26 @@ VMMR3DECL(int) SSMR3RegisterExternal(PVM pVM, const char *pszName, uint32_t uIns
     PFNSSMEXTLIVEPREP pfnLivePrep, PFNSSMEXTLIVEEXEC pfnLiveExec, PFNSSMEXTLIVEVOTE pfnLiveVote,
     PFNSSMEXTSAVEPREP pfnSavePrep, PFNSSMEXTSAVEEXEC pfnSaveExec, PFNSSMEXTSAVEDONE pfnSaveDone,
     PFNSSMEXTLOADPREP pfnLoadPrep, PFNSSMEXTLOADEXEC pfnLoadExec, PFNSSMEXTLOADDONE pfnLoadDone, void *pvUser);
-VMMR3DECL(int) SSMR3DeregisterDevice(PVM pVM, PPDMDEVINS pDevIns, const char *pszName, uint32_t uInstance);
-VMMR3DECL(int) SSMR3DeregisterDriver(PVM pVM, PPDMDRVINS pDrvIns, const char *pszName, uint32_t uInstance);
-VMMR3DECL(int) SSMR3DeregisterInternal(PVM pVM, const char *pszName);
-VMMR3DECL(int) SSMR3DeregisterExternal(PVM pVM, const char *pszName);
-VMMR3DECL(int) SSMR3Save(PVM pVM, const char *pszFilename, SSMAFTER enmAfter, PFNVMPROGRESS pfnProgress, void *pvUser);
-VMMR3DECL(int) SSMR3LiveToFile(PVM pVM, const char *pszFilename, SSMAFTER enmAfter,
-                               PFNVMPROGRESS pfnProgress, void *pvUser, PSSMHANDLE *ppSSM);
-VMMR3DECL(int) SSMR3LiveDoStep1(PSSMHANDLE pSSM);
-VMMR3DECL(int) SSMR3LiveDoStep2(PSSMHANDLE pSSM);
-VMMR3DECL(int) SSMR3LiveDone(PSSMHANDLE pSSM);
-VMMR3DECL(int) SSMR3Load(PVM pVM, const char *pszFilename, SSMAFTER enmAfter, PFNVMPROGRESS pfnProgress, void *pvUser);
-VMMR3DECL(int) SSMR3ValidateFile(const char *pszFilename, bool fChecksumIt);
-VMMR3DECL(int) SSMR3Open(const char *pszFilename, unsigned fFlags, PSSMHANDLE *ppSSM);
-VMMR3DECL(int) SSMR3Close(PSSMHANDLE pSSM);
-VMMR3DECL(int) SSMR3Seek(PSSMHANDLE pSSM, const char *pszUnit, uint32_t iInstance, uint32_t *piVersion);
-VMMR3DECL(int) SSMR3HandleGetStatus(PSSMHANDLE pSSM);
-VMMR3DECL(int) SSMR3HandleSetStatus(PSSMHANDLE pSSM, int iStatus);
+VMMR3_INT_DECL(int) SSMR3DeregisterDevice(PVM pVM, PPDMDEVINS pDevIns, const char *pszName, uint32_t uInstance);
+VMMR3_INT_DECL(int) SSMR3DeregisterDriver(PVM pVM, PPDMDRVINS pDrvIns, const char *pszName, uint32_t uInstance);
+VMMR3DECL(int)      SSMR3DeregisterInternal(PVM pVM, const char *pszName);
+VMMR3DECL(int)      SSMR3DeregisterExternal(PVM pVM, const char *pszName);
+VMMR3DECL(int)      SSMR3Save(PVM pVM, const char *pszFilename, SSMAFTER enmAfter, PFNVMPROGRESS pfnProgress, void *pvUser);
+VMMR3_INT_DECL(int) SSMR3LiveToFile(PVM pVM, const char *pszFilename, SSMAFTER enmAfter,
+                                    PFNVMPROGRESS pfnProgress, void *pvUser, PSSMHANDLE *ppSSM);
+VMMR3_INT_DECL(int) SSMR3LiveDoStep1(PSSMHANDLE pSSM);
+VMMR3_INT_DECL(int) SSMR3LiveDoStep2(PSSMHANDLE pSSM);
+VMMR3_INT_DECL(int) SSMR3LiveDone(PSSMHANDLE pSSM);
+VMMR3DECL(int)      SSMR3Load(PVM pVM, const char *pszFilename, SSMAFTER enmAfter, PFNVMPROGRESS pfnProgress, void *pvUser);
+VMMR3DECL(int)      SSMR3ValidateFile(const char *pszFilename, bool fChecksumIt);
+VMMR3DECL(int)      SSMR3Open(const char *pszFilename, unsigned fFlags, PSSMHANDLE *ppSSM);
+VMMR3DECL(int)      SSMR3Close(PSSMHANDLE pSSM);
+VMMR3DECL(int)      SSMR3Seek(PSSMHANDLE pSSM, const char *pszUnit, uint32_t iInstance, uint32_t *piVersion);
+VMMR3DECL(int)      SSMR3HandleGetStatus(PSSMHANDLE pSSM);
+VMMR3DECL(int)      SSMR3HandleSetStatus(PSSMHANDLE pSSM, int iStatus);
 VMMR3DECL(SSMAFTER) SSMR3HandleGetAfter(PSSMHANDLE pSSM);
 VMMR3DECL(uint64_t) SSMR3HandleGetUnitOffset(PSSMHANDLE pSSM);
-VMMR3DECL(int) SSMR3SetGCPtrSize(PSSMHANDLE pSSM, unsigned cbGCPtr);
+VMMR3_INT_DECL(int) SSMR3SetGCPtrSize(PSSMHANDLE pSSM, unsigned cbGCPtr);
 
 
 /** Save operations.
