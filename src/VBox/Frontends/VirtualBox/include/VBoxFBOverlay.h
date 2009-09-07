@@ -1256,6 +1256,61 @@ private:
 };
 
 
+template <class T>
+class VBoxOverlayFrameBuffer : public T
+{
+public:
+    VBoxOverlayFrameBuffer (class VBoxConsoleView *aView)
+        : T(aView),
+          mOverlay(aView, this)
+    {}
+
+
+    STDMETHOD(ProcessVHWACommand)(BYTE *pCommand)
+    {
+        return mOverlay.onVHWACommand((VBOXVHWACMD*)pCommand);
+    }
+
+    void doProcessVHWACommand(QEvent * pEvent)
+    {
+        mOverlay.onVHWACommandEvent(pEvent);
+    }
+
+    STDMETHOD(NotifyUpdate) (ULONG aX, ULONG aY,
+                             ULONG aW, ULONG aH)
+    {
+        if(mOverlay.onNotifyUpdate(aX, aY, aW, aH))
+            return S_OK;
+        return T::NotifyUpdate(aX, aY, aW, aH);
+    }
+
+    void paintEvent (QPaintEvent *pe)
+    {
+        QRect rect;
+        VBOXFBOVERLAY_RESUT res = mOverlay.onPaintEvent(pe, &rect);
+        switch(res)
+        {
+            case VBOXFBOVERLAY_MODIFIED:
+            {
+                QPaintEvent modified(rect);
+                T::paintEvent(&modified);
+            } break;
+            case VBOXFBOVERLAY_UNTOUCHED:
+                T::paintEvent(pe);
+                break;
+        }
+    }
+
+    void resizeEvent (VBoxResizeEvent *re)
+    {
+        mOverlay.onResizeEvent(re);
+        T::resizeEvent(re);
+        mOverlay.onResizeEventPostprocess(re);
+    }
+private:
+    VBoxQGLOverlay mOverlay;
+};
+
 #endif
 
 #endif /* #ifndef __VBoxFBOverlay_h__ */

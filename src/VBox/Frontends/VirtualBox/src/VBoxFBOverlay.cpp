@@ -5710,4 +5710,5 @@ void VBoxVHWACommandsQueue::freeList(VBoxVHWACommandElement * pList)
         delete pCur;
     }
 }
+
 #endif
