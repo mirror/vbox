@@ -353,7 +353,7 @@ private:
     VBoxQGLOverlay mOverlay;
 };
 #  endif /* #  ifdef VBOX_GUI_USE_QIMAGE */
-# endif /* *# ifdef VBOX_WITH_VIDEOHWACCEL /
+# endif /* # ifdef VBOX_WITH_VIDEOHWACCEL */
 
 #endif
 
