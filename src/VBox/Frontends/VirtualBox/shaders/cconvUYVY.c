@@ -19,5 +19,5 @@ void vboxCConv(int srcI)
     {
         y = srcClr.a;
     }
-    vboxCConvApplyAYUV(vec4(u, y, 0.0, v));}
+    vboxCConvApplyAYUV(vec4(u, y, 0.0, v));
 }
