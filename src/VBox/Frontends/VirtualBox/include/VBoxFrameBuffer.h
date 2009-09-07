@@ -332,7 +332,8 @@ private:
     class VBoxVHWACommandElementProcessor mCmdPipe;
 };
 
-#ifdef VBOX_WITH_VIDEOHWACCEL
+# ifdef VBOX_WITH_VIDEOHWACCEL
+#  ifdef VBOX_GUI_USE_QIMAGE
 class VBoxQImageOverlayFrameBuffer : public VBoxQImageFrameBuffer
 {
 public:
@@ -351,7 +352,8 @@ public:
 private:
     VBoxQGLOverlay mOverlay;
 };
-#endif
+#  endif /* #  ifdef VBOX_GUI_USE_QIMAGE */
+# endif /* *# ifdef VBOX_WITH_VIDEOHWACCEL /
 
 #endif
 
