@@ -33,17 +33,16 @@
 class MouseEvent
 {
 public:
-    MouseEvent() : dx(0), dy(0), dz(0), state(-1) {}
-    MouseEvent(int _dx, int _dy, int _dz, int _state) :
-        dx(_dx), dy(_dy), dz(_dz), state(_state) {}
+    MouseEvent() : dx(0), dy(0), dz(0), dw(0), state(-1) {}
+    MouseEvent(int32_t _dx, int32_t _dy, int32_t _dz, int32_t _dw, int32_t _state) :
+        dx(_dx), dy(_dy), dz(_dz), dw(_dw), state(_state) {}
     bool isValid()
     {
         return state != -1;
     }
-    // not logical to be int but that's how it's defined in QEMU
-    /** @todo r=bird: and what is the logical declaration then? We'll be using int32_t btw. */
-    int dx, dy, dz;
-    int state;
+    /* Note: dw is the horizontal scroll wheel */
+    int32_t dx, dy, dz, dw;
+    int32_t state;
 };
 // template instantiation
 typedef ConsoleEventBuffer<MouseEvent> MouseEventBuffer;
@@ -84,9 +83,9 @@ public:
     STDMETHOD(COMGETTER(NeedsHostCursor)) (BOOL *needsHostCursor);
 
     // IMouse methods
-    STDMETHOD(PutMouseEvent)(LONG dx, LONG dy, LONG dz,
+    STDMETHOD(PutMouseEvent)(LONG dx, LONG dy, LONG dz, LONG dw,
                              LONG buttonState);
-    STDMETHOD(PutMouseEventAbsolute)(LONG x, LONG y, LONG dz,
+    STDMETHOD(PutMouseEventAbsolute)(LONG x, LONG y, LONG dz, LONG dw,
                                      LONG buttonState);
 
     // for VirtualBoxSupportErrorInfoImpl

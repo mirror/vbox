@@ -326,6 +326,7 @@ int main()
     GEN_CHECK_OFF(KBDState, mouse_dx);
     GEN_CHECK_OFF(KBDState, mouse_dy);
     GEN_CHECK_OFF(KBDState, mouse_dz);
+    GEN_CHECK_OFF(KBDState, mouse_dw);
     GEN_CHECK_OFF(KBDState, mouse_buttons);
     GEN_CHECK_OFF(KBDState, pDevInsR3);
     GEN_CHECK_OFF(KBDState, pDevInsR0);

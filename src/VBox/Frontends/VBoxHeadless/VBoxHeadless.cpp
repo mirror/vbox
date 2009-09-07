@@ -151,7 +151,7 @@ public:
             gConsole->COMGETTER(Mouse)(mouse.asOutParam());
             if (mouse)
             {
-                mouse->PutMouseEventAbsolute(-1, -1, 0, 0);
+                mouse->PutMouseEventAbsolute(-1, -1, 0, 0 /* Horizontal wheel */, 0);
             }
         }
         return S_OK;

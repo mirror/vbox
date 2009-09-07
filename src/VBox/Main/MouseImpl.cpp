@@ -197,7 +197,7 @@ STDMETHODIMP Mouse::COMGETTER(NeedsHostCursor) (BOOL *needsHostCursor)
  * @param dz          Z movement
  * @param buttonState The mouse button state
  */
-STDMETHODIMP Mouse::PutMouseEvent(LONG dx, LONG dy, LONG dz, LONG buttonState)
+STDMETHODIMP Mouse::PutMouseEvent(LONG dx, LONG dy, LONG dz, LONG dw, LONG buttonState)
 {
     HRESULT rc = S_OK;
 
@@ -212,6 +212,8 @@ STDMETHODIMP Mouse::PutMouseEvent(LONG dx, LONG dy, LONG dz, LONG buttonState)
     ComAssertRet (mParent->getVMMDev()->getVMMDevPort(), E_FAIL);
 
     uint32_t mouseCaps;
+    LogRel3(("%s: dx=%d, dy=%d, dz=%d, dw=%d\n", __PRETTY_FUNCTION__,
+             dx, dy, dz, dw));
     mParent->getVMMDev()->getVMMDevPort()
         ->pfnQueryMouseCapabilities(mParent->getVMMDev()->getVMMDevPort(),
                                     &mouseCaps);
@@ -233,8 +235,12 @@ STDMETHODIMP Mouse::PutMouseEvent(LONG dx, LONG dy, LONG dz, LONG buttonState)
         fButtons |= PDMIMOUSEPORT_BUTTON_RIGHT;
     if (buttonState & MouseButtonState_MiddleButton)
         fButtons |= PDMIMOUSEPORT_BUTTON_MIDDLE;
+    if (buttonState & MouseButtonState_XButton1)
+        fButtons |= PDMIMOUSEPORT_BUTTON_X1;
+    if (buttonState & MouseButtonState_XButton2)
+        fButtons |= PDMIMOUSEPORT_BUTTON_X2;
 
-    int vrc = mpDrv->pUpPort->pfnPutEvent(mpDrv->pUpPort, dx, dy, dz, fButtons);
+    int vrc = mpDrv->pUpPort->pfnPutEvent(mpDrv->pUpPort, dx, dy, dz, dw, fButtons);
     if (RT_FAILURE(vrc))
         rc = setError (VBOX_E_IPRT_ERROR,
             tr ("Could not send the mouse event to the virtual mouse (%Rrc)"),
@@ -253,7 +259,7 @@ STDMETHODIMP Mouse::PutMouseEvent(LONG dx, LONG dy, LONG dz, LONG buttonState)
  * @param dz         Z movement
  * @param buttonState The mouse button state
  */
-STDMETHODIMP Mouse::PutMouseEventAbsolute(LONG x, LONG y, LONG dz,
+STDMETHODIMP Mouse::PutMouseEventAbsolute(LONG x, LONG y, LONG dz, LONG dw,
                                           LONG buttonState)
 {
     HRESULT rc = S_OK;
@@ -269,6 +275,8 @@ STDMETHODIMP Mouse::PutMouseEventAbsolute(LONG x, LONG y, LONG dz,
     ComAssertRet (mParent->getVMMDev()->getVMMDevPort(), E_FAIL);
 
     uint32_t mouseCaps;
+    LogRel3(("%s: x=%d, y=%d, dz=%d, dw=%d\n", __PRETTY_FUNCTION__,
+             x, y, dz, dw));
     mParent->getVMMDev()->getVMMDevPort()
         ->pfnQueryMouseCapabilities(mParent->getVMMDev()->getVMMDevPort(),
                                     &mouseCaps);
@@ -315,6 +323,10 @@ STDMETHODIMP Mouse::PutMouseEventAbsolute(LONG x, LONG y, LONG dz,
             fButtons |= PDMIMOUSEPORT_BUTTON_RIGHT;
         if (buttonState & MouseButtonState_MiddleButton)
             fButtons |= PDMIMOUSEPORT_BUTTON_MIDDLE;
+        if (buttonState & MouseButtonState_XButton1)
+            fButtons |= PDMIMOUSEPORT_BUTTON_X1;
+        if (buttonState & MouseButtonState_XButton2)
+            fButtons |= PDMIMOUSEPORT_BUTTON_X2;
 
         /* This is a workaround.  In order to alert the Guest Additions to the
          * fact that the absolute pointer position has changed, we send a
@@ -324,10 +336,10 @@ STDMETHODIMP Mouse::PutMouseEventAbsolute(LONG x, LONG y, LONG dz,
          */
         if (   ((mLastAbsX == mouseXAbs) && (mLastAbsY == mouseYAbs))
             || (mouseCaps & VMMDEV_MOUSE_GUEST_USES_VMMDEV))
-            vrc = mpDrv->pUpPort->pfnPutEvent(mpDrv->pUpPort, 0, 0, dz,
+            vrc = mpDrv->pUpPort->pfnPutEvent(mpDrv->pUpPort, 0, 0, dz, dw,
                                               fButtons);
         else
-            vrc = mpDrv->pUpPort->pfnPutEvent(mpDrv->pUpPort, 1, 1, dz,
+            vrc = mpDrv->pUpPort->pfnPutEvent(mpDrv->pUpPort, 1, 1, dz, dw,
                                               fButtons);
         mLastAbsX = mouseXAbs;
         mLastAbsY = mouseYAbs;

@@ -1384,7 +1384,9 @@ bool VBoxConsoleView::event (QEvent *e)
                     if (mMouseAbsolute)
                     {
                         CMouse mouse = mConsole.GetMouse();
-                        mouse.PutMouseEventAbsolute (-1, -1, 0, 0);
+                        mouse.PutMouseEventAbsolute (-1, -1, 0,
+                                                     0 /* Horizontal wheel */,
+                                                     0);
                         captureMouse (false, false);
                     }
                     else
@@ -2959,14 +2961,19 @@ bool VBoxConsoleView::mouseEvent (int aType, const QPoint &aPos, const QPoint &a
                                   Qt::MouseButtons aButtons, Qt::KeyboardModifiers aModifiers,
                                   int aWheelDelta, Qt::Orientation aWheelDir)
 {
-#if 0
-    char buf [256];
-    sprintf (buf,
-             "MOUSE: type=%03d x=%03d y=%03d btn=%03d btns=%08X mod=%08X "
-             "wdelta=%03d wdir=%03d",
-             aType, aPos.x(), aPos.y(), aButtons, aModifiers,
-             aWheelDelta, aWheelDir);
-    mMainWnd->statusBar()->message (buf);
+#if 1
+    
+    LogRel3(("%s: type=%03d x=%03d y=%03d btns=%08X wdelta=%03d wdir=%s\n",
+             __PRETTY_FUNCTION__ , aType, aPos.x(), aPos.y(),
+               (aButtons & Qt::LeftButton ? 1 : 0)
+             | (aButtons & Qt::RightButton ? 2 : 0)
+             | (aButtons & Qt::MidButton ? 4 : 0)
+             | (aButtons & Qt::XButton1 ? 8 : 0)
+             | (aButtons & Qt::XButton2 ? 16 : 0),
+             aWheelDelta,
+               aWheelDir == Qt::Horizontal ? "Horizontal"
+             : aWheelDir == Qt::Vertical ? "Vertical" : "Unknown"));
+    Q_UNUSED (aModifiers);
 #else
     Q_UNUSED (aModifiers);
 #endif
@@ -2978,6 +2985,10 @@ bool VBoxConsoleView::mouseEvent (int aType, const QPoint &aPos, const QPoint &a
         state |= KMouseButtonState_RightButton;
     if (aButtons & Qt::MidButton)
         state |= KMouseButtonState_MiddleButton;
+    if (aButtons & Qt::XButton1)
+        state |= KMouseButtonState_XButton1;
+    if (aButtons & Qt::XButton2)
+        state |= KMouseButtonState_XButton2;
 
 #ifdef Q_WS_MAC
     /* Simulate the right click on
@@ -2988,14 +2999,17 @@ bool VBoxConsoleView::mouseEvent (int aType, const QPoint &aPos, const QPoint &a
         state = KMouseButtonState_RightButton;
 #endif /* Q_WS_MAC */
 
-    int wheel = 0;
+    int wheelVertical = 0;
+    int wheelHorizontal = 0;
     if (aWheelDir == Qt::Vertical)
     {
         /* the absolute value of wheel delta is 120 units per every wheel
          * move; positive deltas correspond to counterclockwize rotations
          * (usually up), negative -- to clockwize (usually down). */
-        wheel = - (aWheelDelta / 120);
+        wheelVertical = - (aWheelDelta / 120);
     }
+    else if (aWheelDir == Qt::Horizontal)
+        wheelHorizontal = aWheelDelta / 120;
 
     if (mMouseCaptured)
     {
@@ -3007,7 +3021,7 @@ bool VBoxConsoleView::mouseEvent (int aType, const QPoint &aPos, const QPoint &a
         CMouse mouse = mConsole.GetMouse();
         mouse.PutMouseEvent (aGlobalPos.x() - mLastPos.x(),
                              aGlobalPos.y() - mLastPos.y(),
-                             wheel, state);
+                             wheelVertical, wheelHorizontal, state);
 
 #if defined (Q_WS_MAC)
         /*
@@ -3150,7 +3164,8 @@ bool VBoxConsoleView::mouseEvent (int aType, const QPoint &aPos, const QPoint &a
             else if (cpnt.y() > ch) cpnt.setY (ch);
 
             CMouse mouse = mConsole.GetMouse();
-            mouse.PutMouseEventAbsolute (cpnt.x(), cpnt.y(), wheel, state);
+            mouse.PutMouseEventAbsolute (cpnt.x(), cpnt.y(), wheelVertical,
+                                         wheelHorizontal, state);
             return true; /* stop further event handling */
         }
         else
@@ -3425,7 +3440,7 @@ void VBoxConsoleView::captureMouse (bool aCapture, bool aEmitSignal /* = true */
 #endif
         /* release mouse buttons */
         CMouse mouse = mConsole.GetMouse();
-        mouse.PutMouseEvent (0, 0, 0, 0);
+        mouse.PutMouseEvent (0, 0, 0, 0 /* Horizontal wheel */, 0);
     }
 
     mMouseCaptured = aCapture;
