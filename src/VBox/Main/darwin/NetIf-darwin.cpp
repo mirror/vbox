@@ -271,7 +271,7 @@ static int getDefaultIfaceIndex(unsigned short *pu16Index)
         }
     }
     free(pBuf);
-    return VERR_INTERNAL_ERROR;
+    return 0; /* Failed to find default interface, take the first one in the list. */
 }
 
 int NetIfList(std::list <ComObjPtr<HostNetworkInterface> > &list)
