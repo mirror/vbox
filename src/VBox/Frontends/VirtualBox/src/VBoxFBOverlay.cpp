@@ -5150,6 +5150,9 @@ bool VBoxQGLOverlay::onNotifyUpdate(ULONG aX, ULONG aY,
 
 VBOXFBOVERLAY_RESUT VBoxQGLOverlay::onPaintEvent (const QPaintEvent *pe, QRect *pRect)
 {
+    Q_UNUSED(pe);
+    Q_UNUSED(pRect);
+
     if(mOverlayWidgetVisible && !mProcessingCommands)
     {
         Assert(!mGlCurrent);
@@ -5161,11 +5164,13 @@ VBOXFBOVERLAY_RESUT VBoxQGLOverlay::onPaintEvent (const QPaintEvent *pe, QRect *
 
 void VBoxQGLOverlay::onResizeEvent (const VBoxResizeEvent *re)
 {
-
+    Q_UNUSED(re);
 }
 
 void VBoxQGLOverlay::onResizeEventPostprocess (const VBoxResizeEvent *re)
 {
+    Q_UNUSED(re);
+
     bool bDoOpExit = false;
 
     if(mGlOn)
