@@ -108,7 +108,7 @@ int tmCpuTickPause(PVM pVM, PVMCPU pVCpu)
  *                          Can be NULL.
  * @thread EMT.
  */
-VMMDECL(bool) TMCpuTickCanUseRealTSC(PVMCPU pVCpu, uint64_t *poffRealTSC)
+VMM_INT_DECL(bool) TMCpuTickCanUseRealTSC(PVMCPU pVCpu, uint64_t *poffRealTSC)
 {
     PVM pVM = pVCpu->CTX_SUFF(pVM);
 
@@ -242,7 +242,7 @@ VMMDECL(uint64_t) TMCpuTickGet(PVMCPU pVCpu)
  * @returns Gets the CPU tsc.
  * @param   pVCpu       The VMCPU to operate on.
  */
-VMMDECL(uint64_t) TMCpuTickGetNoCheck(PVMCPU pVCpu)
+VMM_INT_DECL(uint64_t) TMCpuTickGetNoCheck(PVMCPU pVCpu)
 {
     return tmCpuTickGetInternal(pVCpu, false /* fCheckTimers */);
 }
@@ -258,7 +258,7 @@ VMMDECL(uint64_t) TMCpuTickGetNoCheck(PVMCPU pVCpu)
  *
  * @thread  EMT which TSC is to be set.
  */
-VMMDECL(int) TMCpuTickSet(PVM pVM, PVMCPU pVCpu, uint64_t u64Tick)
+VMM_INT_DECL(int) TMCpuTickSet(PVM pVM, PVMCPU pVCpu, uint64_t u64Tick)
 {
     VMCPU_ASSERT_EMT(pVCpu);
     STAM_COUNTER_INC(&pVM->tm.s.StatTSCSet);
@@ -288,7 +288,7 @@ VMMDECL(int) TMCpuTickSet(PVM pVM, PVMCPU pVCpu, uint64_t u64Tick)
  *
  * @thread  EMT which TSC is to be set.
  */
-VMMDECL(int) TMCpuTickSetLastSeen(PVMCPU pVCpu, uint64_t u64LastSeenTick)
+VMM_INT_DECL(int) TMCpuTickSetLastSeen(PVMCPU pVCpu, uint64_t u64LastSeenTick)
 {
     VMCPU_ASSERT_EMT(pVCpu);
 
@@ -306,7 +306,7 @@ VMMDECL(int) TMCpuTickSetLastSeen(PVMCPU pVCpu, uint64_t u64LastSeenTick)
  *
  * @thread  EMT which TSC is to be set.
  */
-VMMDECL(uint64_t) TMCpuTickGetLastSeen(PVMCPU pVCpu)
+VMM_INT_DECL(uint64_t) TMCpuTickGetLastSeen(PVMCPU pVCpu)
 {
     VMCPU_ASSERT_EMT(pVCpu);
 

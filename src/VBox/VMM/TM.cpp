@@ -177,7 +177,7 @@ static DECLCALLBACK(void)   tmR3InfoClocks(PVM pVM, PCDBGFINFOHLP pHlp, const ch
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
  */
-VMMR3DECL(int) TMR3Init(PVM pVM)
+VMM_INT_DECL(int) TMR3Init(PVM pVM)
 {
     LogFlow(("TMR3Init:\n"));
 
@@ -667,7 +667,7 @@ VMMR3DECL(int) TMR3Init(PVM pVM)
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
  */
-VMMR3DECL(int) TMR3InitCPU(PVM pVM)
+VMM_INT_DECL(int) TMR3InitCPU(PVM pVM)
 {
     LogFlow(("TMR3InitCPU\n"));
     return VINF_SUCCESS;
@@ -836,7 +836,7 @@ static uint64_t tmR3CalibrateTSC(PVM pVM)
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
  */
-VMMR3DECL(int) TMR3InitFinalize(PVM pVM)
+VMM_INT_DECL(int) TMR3InitFinalize(PVM pVM)
 {
     int rc;
 
@@ -884,7 +884,7 @@ VMMR3DECL(int) TMR3InitFinalize(PVM pVM)
  * @param   pVM     The VM.
  * @param   offDelta    Relocation delta relative to old location.
  */
-VMMR3DECL(void) TMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
+VMM_INT_DECL(void) TMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
 {
     int rc;
     LogFlow(("TMR3Relocate\n"));
@@ -932,7 +932,7 @@ VMMR3DECL(void) TMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
  */
-VMMR3DECL(int) TMR3Term(PVM pVM)
+VMM_INT_DECL(int) TMR3Term(PVM pVM)
 {
     AssertMsg(pVM->tm.s.offVM, ("bad init order!\n"));
     if (pVM->tm.s.pTimer)
@@ -955,9 +955,9 @@ VMMR3DECL(int) TMR3Term(PVM pVM)
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
  */
-VMMR3DECL(int) TMR3TermCPU(PVM pVM)
+VMM_INT_DECL(int) TMR3TermCPU(PVM pVM)
 {
-    return 0;
+    return VINF_SUCCESS;
 }
 
 
@@ -970,7 +970,7 @@ VMMR3DECL(int) TMR3TermCPU(PVM pVM)
  *
  * @param   pVM     VM handle.
  */
-VMMR3DECL(void) TMR3Reset(PVM pVM)
+VMM_INT_DECL(void) TMR3Reset(PVM pVM)
 {
     LogFlow(("TMR3Reset:\n"));
     VM_ASSERT_EMT(pVM);
@@ -1023,7 +1023,7 @@ VMMR3DECL(void) TMR3Reset(PVM pVM)
  * @param   pRCPtrValue     Where to store the symbol value.
  * @remark  This has to     work before TMR3Relocate() is called.
  */
-VMMR3DECL(int) TMR3GetImportRC(PVM pVM, const char *pszSymbol, PRTRCPTR pRCPtrValue)
+VMM_INT_DECL(int) TMR3GetImportRC(PVM pVM, const char *pszSymbol, PRTRCPTR pRCPtrValue)
 {
     if (!strcmp(pszSymbol, "g_pSUPGlobalInfoPage"))
         *pRCPtrValue = MMHyperR3ToRC(pVM, &pVM->tm.s.pvGIPRC);
@@ -1269,7 +1269,7 @@ static int tmr3TimerCreate(PVM pVM, TMCLOCK enmClock, const char *pszDesc, PPTMT
  *                          until the timer is fully destroyed (i.e. a bit after TMTimerDestroy()).
  * @param   ppTimer         Where to store the timer on success.
  */
-VMMR3DECL(int) TMR3TimerCreateDevice(PVM pVM, PPDMDEVINS pDevIns, TMCLOCK enmClock, PFNTMTIMERDEV pfnCallback, void *pvUser, uint32_t fFlags, const char *pszDesc, PPTMTIMERR3 ppTimer)
+VMM_INT_DECL(int) TMR3TimerCreateDevice(PVM pVM, PPDMDEVINS pDevIns, TMCLOCK enmClock, PFNTMTIMERDEV pfnCallback, void *pvUser, uint32_t fFlags, const char *pszDesc, PPTMTIMERR3 ppTimer)
 {
     AssertReturn(!(fFlags & ~(TMTIMER_FLAGS_NO_CRIT_SECT)), VERR_INVALID_PARAMETER);
 
@@ -1306,8 +1306,8 @@ VMMR3DECL(int) TMR3TimerCreateDevice(PVM pVM, PPDMDEVINS pDevIns, TMCLOCK enmClo
  *                          until the timer is fully destroyed (i.e. a bit after TMTimerDestroy()).
  * @param   ppTimer         Where to store the timer on success.
  */
-VMMR3DECL(int) TMR3TimerCreateDriver(PVM pVM, PPDMDRVINS pDrvIns, TMCLOCK enmClock, PFNTMTIMERDRV pfnCallback, void *pvUser,
-                                     uint32_t fFlags, const char *pszDesc, PPTMTIMERR3 ppTimer)
+VMM_INT_DECL(int) TMR3TimerCreateDriver(PVM pVM, PPDMDRVINS pDrvIns, TMCLOCK enmClock, PFNTMTIMERDRV pfnCallback, void *pvUser,
+                                        uint32_t fFlags, const char *pszDesc, PPTMTIMERR3 ppTimer)
 {
     AssertReturn(!(fFlags & ~(TMTIMER_FLAGS_NO_CRIT_SECT)), VERR_INVALID_PARAMETER);
 
@@ -1562,7 +1562,7 @@ VMMR3DECL(int) TMR3TimerDestroy(PTMTIMER pTimer)
  * @param   pVM             VM handle.
  * @param   pDevIns         Device which timers should be destroyed.
  */
-VMMR3DECL(int) TMR3TimerDestroyDevice(PVM pVM, PPDMDEVINS pDevIns)
+VMM_INT_DECL(int) TMR3TimerDestroyDevice(PVM pVM, PPDMDEVINS pDevIns)
 {
     LogFlow(("TMR3TimerDestroyDevice: pDevIns=%p\n", pDevIns));
     if (!pDevIns)
@@ -1595,7 +1595,7 @@ VMMR3DECL(int) TMR3TimerDestroyDevice(PVM pVM, PPDMDEVINS pDevIns)
  * @param   pVM             VM handle.
  * @param   pDrvIns         Driver which timers should be destroyed.
  */
-VMMR3DECL(int) TMR3TimerDestroyDriver(PVM pVM, PPDMDRVINS pDrvIns)
+VMM_INT_DECL(int) TMR3TimerDestroyDriver(PVM pVM, PPDMDRVINS pDrvIns)
 {
     LogFlow(("TMR3TimerDestroyDriver: pDrvIns=%p\n", pDrvIns));
     if (!pDrvIns)
@@ -2208,7 +2208,7 @@ static void tmR3TimerQueueRunVirtualSync(PVM pVM)
  *
  * @thread  EMTs
  */
-VMMR3DECL(void) TMR3VirtualSyncFF(PVM pVM, PVMCPU pVCpu)
+VMM_INT_DECL(void) TMR3VirtualSyncFF(PVM pVM, PVMCPU pVCpu)
 {
     Log2(("TMR3VirtualSyncFF:\n"));
 
@@ -2438,7 +2438,7 @@ VMMR3DECL(int) TMR3TimerSetCritSect(PTMTIMERR3 pTimer, PPDMCRITSECT pCritSect)
  * @param   pVM             The VM instance.
  * @param   pTime           Where to store the time.
  */
-VMMR3DECL(PRTTIMESPEC) TMR3UTCNow(PVM pVM, PRTTIMESPEC pTime)
+VMM_INT_DECL(PRTTIMESPEC) TMR3UTCNow(PVM pVM, PRTTIMESPEC pTime)
 {
     RTTimeNow(pTime);
     RTTimeSpecSubNano(pTime, ASMAtomicReadU64(&pVM->tm.s.offVirtualSync) - ASMAtomicReadU64((uint64_t volatile *)&pVM->tm.s.offVirtualSyncGivenUp));

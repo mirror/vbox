@@ -203,7 +203,7 @@ VMMDECL(void) TMNotifyEndOfExecution(PVMCPU pVCpu)
  *
  * @param   pVCpu       The VMCPU to operate on.
  */
-VMMDECL(void) TMNotifyStartOfHalt(PVMCPU pVCpu)
+VMM_INT_DECL(void) TMNotifyStartOfHalt(PVMCPU pVCpu)
 {
     PVM pVM = pVCpu->CTX_SUFF(pVM);
 
@@ -223,7 +223,7 @@ VMMDECL(void) TMNotifyStartOfHalt(PVMCPU pVCpu)
  *
  * @param   pVCpu       The VMCPU to operate on.
  */
-VMMDECL(void) TMNotifyEndOfHalt(PVMCPU pVCpu)
+VMM_INT_DECL(void) TMNotifyEndOfHalt(PVMCPU pVCpu)
 {
     PVM pVM = pVCpu->CTX_SUFF(pVM);
 
@@ -680,7 +680,7 @@ VMMDECL(bool) TMTimerPollBool(PVM pVM, PVMCPU pVCpu)
  * @param   pVCpu       Pointer to the shared VMCPU structure of the caller.
  * @thread  The emulation thread.
  */
-VMMDECL(void) TMTimerPollVoid(PVM pVM, PVMCPU pVCpu)
+VMM_INT_DECL(void) TMTimerPollVoid(PVM pVM, PVMCPU pVCpu)
 {
     uint64_t off;
     tmTimerPollInternal(pVM, pVCpu, &off);
@@ -699,7 +699,7 @@ VMMDECL(void) TMTimerPollVoid(PVM pVM, PVMCPU pVCpu)
  * @param   pu64Delta   Where to store the delta.
  * @thread  The emulation thread.
  */
-VMMDECL(uint64_t) TMTimerPollGIP(PVM pVM, PVMCPU pVCpu, uint64_t *pu64Delta)
+VMM_INT_DECL(uint64_t) TMTimerPollGIP(PVM pVM, PVMCPU pVCpu, uint64_t *pu64Delta)
 {
     return tmTimerPollInternal(pVM, pVCpu, pu64Delta);
 }

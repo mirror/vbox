@@ -36,7 +36,7 @@
  * @returns Real time.
  * @param   pVM             The VM handle.
  */
-VMMDECL(uint64_t) TMRealGet(PVM pVM)
+VMM_INT_DECL(uint64_t) TMRealGet(PVM pVM)
 {
     return RTTimeMilliTS();
 }
@@ -48,7 +48,7 @@ VMMDECL(uint64_t) TMRealGet(PVM pVM)
  * @returns frequency.
  * @param   pVM             The VM handle.
  */
-VMMDECL(uint64_t) TMRealGetFreq(PVM pVM)
+VMM_INT_DECL(uint64_t) TMRealGetFreq(PVM pVM)
 {
     return TMCLOCK_FREQ_REAL;
 }
