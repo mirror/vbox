@@ -216,10 +216,11 @@ typedef struct PDMIMOUSEPORT
      * @param   i32DeltaX       The X delta.
      * @param   i32DeltaY       The Y delta.
      * @param   i32DeltaZ       The Z delta.
+     * @param   i32DeltaW       The W (horizontal scroll button) delta.
      * @param   fButtonStates   The button states, see the PDMIMOUSEPORT_BUTTON_* \#defines.
      * @thread  The emulation thread.
      */
-    DECLR3CALLBACKMEMBER(int, pfnPutEvent,(PPDMIMOUSEPORT pInterface, int32_t i32DeltaX, int32_t i32DeltaY, int32_t i32DeltaZ, uint32_t fButtonStates));
+    DECLR3CALLBACKMEMBER(int, pfnPutEvent,(PPDMIMOUSEPORT pInterface, int32_t i32DeltaX, int32_t i32DeltaY, int32_t i32DeltaZ, int32_t i32DeltaW, uint32_t fButtonStates));
 } PDMIMOUSEPORT;
 
 /** Mouse button defines for PDMIMOUSEPORT::pfnPutEvent.
@@ -227,6 +228,8 @@ typedef struct PDMIMOUSEPORT
 #define PDMIMOUSEPORT_BUTTON_LEFT   RT_BIT(0)
 #define PDMIMOUSEPORT_BUTTON_RIGHT  RT_BIT(1)
 #define PDMIMOUSEPORT_BUTTON_MIDDLE RT_BIT(2)
+#define PDMIMOUSEPORT_BUTTON_X1     RT_BIT(3)
+#define PDMIMOUSEPORT_BUTTON_X2     RT_BIT(4)
 /** @} */
 
 
