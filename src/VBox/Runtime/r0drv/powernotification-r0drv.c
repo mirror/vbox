@@ -91,7 +91,7 @@ static uint32_t volatile g_cRTPowerUsers = 0;
 RTDECL(int) RTPowerSignalEvent(RTPOWEREVENT enmEvent)
 {
     PRTPOWERNOTIFYREG pCur;
-    RTSPINLOCKTMP Tmp;
+    RTSPINLOCKTMP Tmp = RTSPINLOCKTMP_INITIALIZER;;
     RTSPINLOCK hSpinlock;
 
     /*
@@ -163,7 +163,7 @@ RTDECL(int) RTPowerNotificationRegister(PFNRTPOWERNOTIFICATION pfnCallback, void
 {
     PRTPOWERNOTIFYREG pCur;
     PRTPOWERNOTIFYREG pNew;
-    RTSPINLOCKTMP Tmp;
+    RTSPINLOCKTMP Tmp = RTSPINLOCKTMP_INITIALIZER;;
 
     /*
      * Validation.
@@ -231,7 +231,7 @@ RTDECL(int) RTPowerNotificationDeregister(PFNRTPOWERNOTIFICATION pfnCallback, vo
 {
     PRTPOWERNOTIFYREG pPrev;
     PRTPOWERNOTIFYREG pCur;
-    RTSPINLOCKTMP Tmp;
+    RTSPINLOCKTMP Tmp = RTSPINLOCKTMP_INITIALIZER;;
 
     /*
      * Validation.
@@ -308,7 +308,7 @@ void rtR0PowerNotificationTerm(void)
         if (ASMAtomicDecU32(&g_cRTPowerUsers) == 0)
         {
             PRTPOWERNOTIFYREG pHead;
-            RTSPINLOCKTMP Tmp;
+            RTSPINLOCKTMP Tmp = RTSPINLOCKTMP_INITIALIZER;;
 
             /** @todo OS specific term here */
 
