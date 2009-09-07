@@ -41,6 +41,7 @@
 #define VBOXNETFLT_SOLARIS_IPV6_POLLING
 #ifdef VBOXNETFLT_SOLARIS_IPV6_POLLING
 # include <iprt/timer.h>
+# include <iprt/time.h>
 #endif
 
 #include <inet/ip.h>
@@ -385,7 +386,7 @@ PVBOXNETFLTINS volatile g_VBoxNetFltSolarisInstance;
 VBOXNETFLTSTREAMTYPE volatile g_VBoxNetFltSolarisStreamType;
 
 #ifdef VBOXNETFLT_SOLARIS_IPV6_POLLING
-/** Globla IPv6 polling interval */
+/** Global IPv6 polling interval */
 static int g_VBoxNetFltSolarisPollInterval = 0;
 #endif
 
@@ -525,8 +526,7 @@ static int VBoxNetFltSolarisAttach(dev_info_t *pDip, ddi_attach_cmd_t enmCmd)
                 int Interval = ddi_getprop(DDI_DEV_T_ANY, pDip, DDI_PROP_DONTPASS, VBOXNETFLT_IP6POLLINTERVAL, -1 /* default */);
                 if (Interval == -1)
                     LogFlow((DEVICE_NAME ":vboxNetFltSolarisSetupIp6Polling: no poll interval property specified. Skipping Ipv6 polling.\n"));
-
-                if (Interval < 1 || Interval > 120)
+                else if (Interval < 1 || Interval > 120)
                 {
                     LogRel((DEVICE_NAME ":vboxNetFltSolarisSetupIp6Polling: Invalid polling interval %d. Expected between 1 and 120 secs.\n",
                                         Interval));
@@ -2425,10 +2425,13 @@ static int vboxNetFltSolarisSetupIp6Polling(PVBOXNETFLTINS pThis)
             /*
              * Setup kernel poll timer.
              */
-            rc = RTTimerCreateEx(&pPromiscStream->pIp6Timer, Interval * (uint64_t)1000000000, RTTIMER_FLAGS_CPU_ALL,
+            rc = RTTimerCreateEx(&pPromiscStream->pIp6Timer, Interval * (uint64_t)1000000000, RTTIMER_FLAGS_CPU_ANY,
                                 vboxNetFltSolarispIp6Timer, (void *)pThis);
             if (RT_SUCCESS(rc))
-                rc = RTTimerStart(pPromiscStream->pIp6Timer, 0 /* fire ASAP */);
+            {
+                rc = RTTimerStart(pPromiscStream->pIp6Timer, 10 * (uint64_t)1000000000 /* 10 seconds to blastoff */);
+                LogFlow((DEVICE_NAME ":vboxNetFltSolarisSetupIp6Polling: Ipv6 %d second timer begins firing in 10 seconds.\n", Interval));
+            }
             else
                 LogRel((DEVICE_NAME ":vboxNetFltSolarisSetupIp6Polling: Failed to create timer. rc=%d\n", rc));
         }
@@ -2490,7 +2493,8 @@ static int vboxNetFltSolarisAttachToInterface(PVBOXNETFLTINS pThis)
         {
             int rc2 = vboxNetFltSolarisAttachIp6(pThis, true /* fAttach */);
 #ifdef VBOXNETFLT_SOLARIS_IPV6_POLLING
-            if (rc2 == VERR_INTNET_FLT_IF_NOT_FOUND)
+            if (   rc2 == VERR_INTNET_FLT_IF_NOT_FOUND
+                && g_VBoxNetFltSolarisPollInterval != -1)
             {
                 rc = vboxNetFltSolarisSetupIp6Polling(pThis);
                 if (RT_FAILURE(rc))
