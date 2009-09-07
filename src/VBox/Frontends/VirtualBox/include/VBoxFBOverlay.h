@@ -1298,6 +1298,8 @@ public:
             case VBOXFBOVERLAY_UNTOUCHED:
                 T::paintEvent(pe);
                 break;
+            default:
+                break;
         }
     }
 

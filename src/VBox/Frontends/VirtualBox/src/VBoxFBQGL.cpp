@@ -119,6 +119,7 @@ VBoxGLWidget* VBoxQGLFrameBuffer::vboxWidget()
 
 void VBoxQGLFrameBuffer::paintEvent (QPaintEvent *pe)
 {
+    Q_UNUSED(pe);
     VBoxGLWidget * pw = vboxWidget();
     pw->makeCurrent();
 
@@ -144,6 +145,7 @@ void VBoxQGLFrameBuffer::resizeEvent (VBoxResizeEvent *re)
 /* processing the VHWA command, called from the GUI thread */
 void VBoxQGLFrameBuffer::doProcessVHWACommand(QEvent * pEvent)
 {
+    Q_UNUSED(pEvent);
     vboxWidget()->vboxProcessVHWACommands(&mCmdPipe);
 }
 
