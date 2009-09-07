@@ -83,56 +83,56 @@ typedef enum TMCLOCK
 /** @} */
 
 
-VMMDECL(void)     TMNotifyStartOfExecution(PVMCPU pVCpu);
-VMMDECL(void)     TMNotifyEndOfExecution(PVMCPU pVCpu);
-VMMDECL(void)     TMNotifyStartOfHalt(PVMCPU pVCpu);
-VMMDECL(void)     TMNotifyEndOfHalt(PVMCPU pVCpu);
+VMMDECL(void)           TMNotifyStartOfExecution(PVMCPU pVCpu);
+VMMDECL(void)           TMNotifyEndOfExecution(PVMCPU pVCpu);
+VMM_INT_DECL(void)      TMNotifyStartOfHalt(PVMCPU pVCpu);
+VMM_INT_DECL(void)      TMNotifyEndOfHalt(PVMCPU pVCpu);
 #ifdef IN_RING3
-VMMR3DECL(int)    TMR3NotifySuspend(PVM pVM, PVMCPU pVCpu);
-VMMR3DECL(int)    TMR3NotifyResume(PVM pVM, PVMCPU pVCpu);
-VMMR3DECL(int)    TMR3SetWarpDrive(PVM pVM, uint32_t u32Percent);
+VMMR3DECL(int)          TMR3NotifySuspend(PVM pVM, PVMCPU pVCpu);
+VMMR3DECL(int)          TMR3NotifyResume(PVM pVM, PVMCPU pVCpu);
+VMMR3DECL(int)          TMR3SetWarpDrive(PVM pVM, uint32_t u32Percent);
 #endif
-VMMDECL(uint32_t) TMGetWarpDrive(PVM pVM);
+VMMDECL(uint32_t)       TMGetWarpDrive(PVM pVM);
 
 
 /** @name Real Clock Methods
  * @{
  */
-VMMDECL(uint64_t) TMRealGet(PVM pVM);
-VMMDECL(uint64_t) TMRealGetFreq(PVM pVM);
+VMM_INT_DECL(uint64_t)  TMRealGet(PVM pVM);
+VMM_INT_DECL(uint64_t)  TMRealGetFreq(PVM pVM);
 /** @} */
 
 
 /** @name Virtual Clock Methods
  * @{
  */
-VMMDECL(uint64_t) TMVirtualGet(PVM pVM);
-VMMDECL(uint64_t) TMVirtualGetNoCheck(PVM pVM);
-VMMDECL(uint64_t) TMVirtualSyncGetLag(PVM pVM);
-VMMDECL(uint32_t) TMVirtualSyncGetCatchUpPct(PVM pVM);
-VMMDECL(uint64_t) TMVirtualGetFreq(PVM pVM);
-VMMDECL(uint64_t) TMVirtualSyncGet(PVM pVM);
-VMMDECL(uint64_t) TMVirtualSyncGetNoCheck(PVM pVM);
-VMMDECL(uint64_t) TMVirtualSyncGetEx(PVM pVM, bool fCheckTimers);
-VMMDECL(uint64_t) TMVirtualToNano(PVM pVM, uint64_t u64VirtualTicks);
-VMMDECL(uint64_t) TMVirtualToMicro(PVM pVM, uint64_t u64VirtualTicks);
-VMMDECL(uint64_t) TMVirtualToMilli(PVM pVM, uint64_t u64VirtualTicks);
-VMMDECL(uint64_t) TMVirtualFromNano(PVM pVM, uint64_t u64NanoTS);
-VMMDECL(uint64_t) TMVirtualFromMicro(PVM pVM, uint64_t u64MicroTS);
-VMMDECL(uint64_t) TMVirtualFromMilli(PVM pVM, uint64_t u64MilliTS);
+VMM_INT_DECL(uint64_t)  TMVirtualGet(PVM pVM);
+VMM_INT_DECL(uint64_t)  TMVirtualGetNoCheck(PVM pVM);
+VMM_INT_DECL(uint64_t)  TMVirtualSyncGetLag(PVM pVM);
+VMM_INT_DECL(uint32_t)  TMVirtualSyncGetCatchUpPct(PVM pVM);
+VMM_INT_DECL(uint64_t)  TMVirtualGetFreq(PVM pVM);
+VMM_INT_DECL(uint64_t)  TMVirtualSyncGet(PVM pVM);
+VMM_INT_DECL(uint64_t)  TMVirtualSyncGetNoCheck(PVM pVM);
+VMM_INT_DECL(uint64_t)  TMVirtualSyncGetEx(PVM pVM, bool fCheckTimers);
+VMM_INT_DECL(uint64_t)  TMVirtualToNano(PVM pVM, uint64_t u64VirtualTicks);
+VMM_INT_DECL(uint64_t)  TMVirtualToMicro(PVM pVM, uint64_t u64VirtualTicks);
+VMM_INT_DECL(uint64_t)  TMVirtualToMilli(PVM pVM, uint64_t u64VirtualTicks);
+VMM_INT_DECL(uint64_t)  TMVirtualFromNano(PVM pVM, uint64_t u64NanoTS);
+VMM_INT_DECL(uint64_t)  TMVirtualFromMicro(PVM pVM, uint64_t u64MicroTS);
+VMM_INT_DECL(uint64_t)  TMVirtualFromMilli(PVM pVM, uint64_t u64MilliTS);
 /** @} */
 
 
 /** @name CPU Clock Methods
  * @{
  */
-VMMDECL(uint64_t) TMCpuTickGet(PVMCPU pVCpu);
-VMMDECL(uint64_t) TMCpuTickGetNoCheck(PVMCPU pVCpu);
-VMMDECL(bool)     TMCpuTickCanUseRealTSC(PVMCPU pVCpu, uint64_t *poffRealTSC);
-VMMDECL(int)      TMCpuTickSet(PVM pVM, PVMCPU pVCpu, uint64_t u64Tick);
-VMMDECL(int)      TMCpuTickSetLastSeen(PVMCPU pVCpu, uint64_t u64LastSeenTick);
-VMMDECL(uint64_t) TMCpuTickGetLastSeen(PVMCPU pVCpu);
-VMMDECL(uint64_t) TMCpuTicksPerSecond(PVM pVM);
+VMMDECL(uint64_t)       TMCpuTickGet(PVMCPU pVCpu);
+VMM_INT_DECL(uint64_t)  TMCpuTickGetNoCheck(PVMCPU pVCpu);
+VMM_INT_DECL(bool)      TMCpuTickCanUseRealTSC(PVMCPU pVCpu, uint64_t *poffRealTSC);
+VMM_INT_DECL(int)       TMCpuTickSet(PVM pVM, PVMCPU pVCpu, uint64_t u64Tick);
+VMM_INT_DECL(int)       TMCpuTickSetLastSeen(PVMCPU pVCpu, uint64_t u64LastSeenTick);
+VMM_INT_DECL(uint64_t)  TMCpuTickGetLastSeen(PVMCPU pVCpu);
+VMMDECL(uint64_t)       TMCpuTicksPerSecond(PVM pVM);
 /** @} */
 
 
@@ -191,31 +191,31 @@ typedef DECLCALLBACK(void) FNTMTIMEREXT(void *pvUser);
 /** Pointer to an external timer callback function. */
 typedef FNTMTIMEREXT *PFNTMTIMEREXT;
 
-VMMDECL(PTMTIMERR3) TMTimerR3Ptr(PTMTIMER pTimer);
-VMMDECL(PTMTIMERR0) TMTimerR0Ptr(PTMTIMER pTimer);
-VMMDECL(PTMTIMERRC) TMTimerRCPtr(PTMTIMER pTimer);
-VMMDECL(int)        TMTimerSet(PTMTIMER pTimer, uint64_t u64Expire);
-VMMDECL(int)        TMTimerSetRelative(PTMTIMER pTimer, uint64_t cTicksToNext, uint64_t *pu64Now);
-VMMDECL(int)        TMTimerSetMillies(PTMTIMER pTimer, uint32_t cMilliesToNext);
-VMMDECL(int)        TMTimerSetMicro(PTMTIMER pTimer, uint64_t cMicrosToNext);
-VMMDECL(int)        TMTimerSetNano(PTMTIMER pTimer, uint64_t cNanosToNext);
-VMMDECL(uint64_t)   TMTimerGet(PTMTIMER pTimer);
-VMMDECL(uint64_t)   TMTimerGetNano(PTMTIMER pTimer);
-VMMDECL(uint64_t)   TMTimerGetMicro(PTMTIMER pTimer);
-VMMDECL(uint64_t)   TMTimerGetMilli(PTMTIMER pTimer);
-VMMDECL(uint64_t)   TMTimerGetFreq(PTMTIMER pTimer);
-VMMDECL(uint64_t)   TMTimerGetExpire(PTMTIMER pTimer);
-VMMDECL(uint64_t)   TMTimerToNano(PTMTIMER pTimer, uint64_t u64Ticks);
-VMMDECL(uint64_t)   TMTimerToMicro(PTMTIMER pTimer, uint64_t u64Ticks);
-VMMDECL(uint64_t)   TMTimerToMilli(PTMTIMER pTimer, uint64_t u64Ticks);
-VMMDECL(uint64_t)   TMTimerFromNano(PTMTIMER pTimer, uint64_t u64NanoTS);
-VMMDECL(uint64_t)   TMTimerFromMicro(PTMTIMER pTimer, uint64_t u64MicroTS);
-VMMDECL(uint64_t)   TMTimerFromMilli(PTMTIMER pTimer, uint64_t u64MilliTS);
-VMMDECL(int)        TMTimerStop(PTMTIMER pTimer);
-VMMDECL(bool)       TMTimerIsActive(PTMTIMER pTimer);
-VMMDECL(bool)       TMTimerPollBool(PVM pVM, PVMCPU pVCpu);
-VMMDECL(void)       TMTimerPollVoid(PVM pVM, PVMCPU pVCpu);
-VMMDECL(uint64_t)   TMTimerPollGIP(PVM pVM, PVMCPU pVCpu, uint64_t *pu64Delta);
+VMMDECL(PTMTIMERR3)     TMTimerR3Ptr(PTMTIMER pTimer);
+VMMDECL(PTMTIMERR0)     TMTimerR0Ptr(PTMTIMER pTimer);
+VMMDECL(PTMTIMERRC)     TMTimerRCPtr(PTMTIMER pTimer);
+VMMDECL(int)            TMTimerSet(PTMTIMER pTimer, uint64_t u64Expire);
+VMMDECL(int)            TMTimerSetRelative(PTMTIMER pTimer, uint64_t cTicksToNext, uint64_t *pu64Now);
+VMMDECL(int)            TMTimerSetMillies(PTMTIMER pTimer, uint32_t cMilliesToNext);
+VMMDECL(int)            TMTimerSetMicro(PTMTIMER pTimer, uint64_t cMicrosToNext);
+VMMDECL(int)            TMTimerSetNano(PTMTIMER pTimer, uint64_t cNanosToNext);
+VMMDECL(uint64_t)       TMTimerGet(PTMTIMER pTimer);
+VMMDECL(uint64_t)       TMTimerGetNano(PTMTIMER pTimer);
+VMMDECL(uint64_t)       TMTimerGetMicro(PTMTIMER pTimer);
+VMMDECL(uint64_t)       TMTimerGetMilli(PTMTIMER pTimer);
+VMMDECL(uint64_t)       TMTimerGetFreq(PTMTIMER pTimer);
+VMMDECL(uint64_t)       TMTimerGetExpire(PTMTIMER pTimer);
+VMMDECL(uint64_t)       TMTimerToNano(PTMTIMER pTimer, uint64_t u64Ticks);
+VMMDECL(uint64_t)       TMTimerToMicro(PTMTIMER pTimer, uint64_t u64Ticks);
+VMMDECL(uint64_t)       TMTimerToMilli(PTMTIMER pTimer, uint64_t u64Ticks);
+VMMDECL(uint64_t)       TMTimerFromNano(PTMTIMER pTimer, uint64_t u64NanoTS);
+VMMDECL(uint64_t)       TMTimerFromMicro(PTMTIMER pTimer, uint64_t u64MicroTS);
+VMMDECL(uint64_t)       TMTimerFromMilli(PTMTIMER pTimer, uint64_t u64MilliTS);
+VMMDECL(int)            TMTimerStop(PTMTIMER pTimer);
+VMMDECL(bool)           TMTimerIsActive(PTMTIMER pTimer);
+VMMDECL(bool)           TMTimerPollBool(PVM pVM, PVMCPU pVCpu);
+VMM_INT_DECL(void)      TMTimerPollVoid(PVM pVM, PVMCPU pVCpu);
+VMM_INT_DECL(uint64_t)  TMTimerPollGIP(PVM pVM, PVMCPU pVCpu, uint64_t *pu64Delta);
 
 /** @} */
 
@@ -225,27 +225,27 @@ VMMDECL(uint64_t)   TMTimerPollGIP(PVM pVM, PVMCPU pVCpu, uint64_t *pu64Delta);
  * @ingroup grp_tm
  * @{
  */
-VMMR3DECL(int)    TMR3Init(PVM pVM);
-VMMR3DECL(int)    TMR3InitCPU(PVM pVM);
-VMMR3DECL(int)    TMR3InitFinalize(PVM pVM);
-VMMR3DECL(void)   TMR3Relocate(PVM pVM, RTGCINTPTR offDelta);
-VMMR3DECL(int)    TMR3Term(PVM pVM);
-VMMR3DECL(int)    TMR3TermCPU(PVM pVM);
-VMMR3DECL(void)   TMR3Reset(PVM pVM);
-VMMR3DECL(int)    TMR3GetImportRC(PVM pVM, const char *pszSymbol, PRTRCPTR pRCPtrValue);
-VMMR3DECL(int)    TMR3TimerCreateDevice(PVM pVM, PPDMDEVINS pDevIns, TMCLOCK enmClock, PFNTMTIMERDEV pfnCallback, void *pvUser, uint32_t fFlags, const char *pszDesc, PPTMTIMERR3 ppTimer);
-VMMR3DECL(int)    TMR3TimerCreateDriver(PVM pVM, PPDMDRVINS pDrvIns, TMCLOCK enmClock, PFNTMTIMERDRV pfnCallback, void *pvUser, uint32_t fFlags, const char *pszDesc, PPTMTIMERR3 ppTimer);
-VMMR3DECL(int)    TMR3TimerCreateInternal(PVM pVM, TMCLOCK enmClock, PFNTMTIMERINT pfnCallback, void *pvUser, const char *pszDesc, PPTMTIMERR3 ppTimer);
-VMMR3DECL(PTMTIMERR3) TMR3TimerCreateExternal(PVM pVM, TMCLOCK enmClock, PFNTMTIMEREXT pfnCallback, void *pvUser, const char *pszDesc);
-VMMR3DECL(int)    TMR3TimerDestroy(PTMTIMER pTimer);
-VMMR3DECL(int)    TMR3TimerDestroyDevice(PVM pVM, PPDMDEVINS pDevIns);
-VMMR3DECL(int)    TMR3TimerDestroyDriver(PVM pVM, PPDMDRVINS pDrvIns);
-VMMR3DECL(int)    TMR3TimerSave(PTMTIMERR3 pTimer, PSSMHANDLE pSSM);
-VMMR3DECL(int)    TMR3TimerLoad(PTMTIMERR3 pTimer, PSSMHANDLE pSSM);
-VMMR3DECL(int)    TMR3TimerSetCritSect(PTMTIMERR3 pTimer, PPDMCRITSECT pCritSect);
-VMMR3DECL(void)   TMR3TimerQueuesDo(PVM pVM);
-VMMR3DECL(void)   TMR3VirtualSyncFF(PVM pVM, PVMCPU pVCpu);
-VMMR3DECL(PRTTIMESPEC) TMR3UTCNow(PVM pVM, PRTTIMESPEC pTime);
+VMM_INT_DECL(int)       TMR3Init(PVM pVM);
+VMM_INT_DECL(int)       TMR3InitCPU(PVM pVM);
+VMM_INT_DECL(int)       TMR3InitFinalize(PVM pVM);
+VMM_INT_DECL(void)      TMR3Relocate(PVM pVM, RTGCINTPTR offDelta);
+VMM_INT_DECL(int)       TMR3Term(PVM pVM);
+VMM_INT_DECL(int)       TMR3TermCPU(PVM pVM);
+VMM_INT_DECL(void)      TMR3Reset(PVM pVM);
+VMM_INT_DECL(int)       TMR3GetImportRC(PVM pVM, const char *pszSymbol, PRTRCPTR pRCPtrValue);
+VMM_INT_DECL(int)       TMR3TimerCreateDevice(PVM pVM, PPDMDEVINS pDevIns, TMCLOCK enmClock, PFNTMTIMERDEV pfnCallback, void *pvUser, uint32_t fFlags, const char *pszDesc, PPTMTIMERR3 ppTimer);
+VMM_INT_DECL(int)       TMR3TimerCreateDriver(PVM pVM, PPDMDRVINS pDrvIns, TMCLOCK enmClock, PFNTMTIMERDRV pfnCallback, void *pvUser, uint32_t fFlags, const char *pszDesc, PPTMTIMERR3 ppTimer);
+VMMR3DECL(int)          TMR3TimerCreateInternal(PVM pVM, TMCLOCK enmClock, PFNTMTIMERINT pfnCallback, void *pvUser, const char *pszDesc, PPTMTIMERR3 ppTimer);
+VMMR3DECL(PTMTIMERR3)   TMR3TimerCreateExternal(PVM pVM, TMCLOCK enmClock, PFNTMTIMEREXT pfnCallback, void *pvUser, const char *pszDesc);
+VMMR3DECL(int)          TMR3TimerDestroy(PTMTIMER pTimer);
+VMM_INT_DECL(int)       TMR3TimerDestroyDevice(PVM pVM, PPDMDEVINS pDevIns);
+VMM_INT_DECL(int)       TMR3TimerDestroyDriver(PVM pVM, PPDMDRVINS pDrvIns);
+VMMR3DECL(int)          TMR3TimerSave(PTMTIMERR3 pTimer, PSSMHANDLE pSSM);
+VMMR3DECL(int)          TMR3TimerLoad(PTMTIMERR3 pTimer, PSSMHANDLE pSSM);
+VMMR3DECL(int)          TMR3TimerSetCritSect(PTMTIMERR3 pTimer, PPDMCRITSECT pCritSect);
+VMMR3DECL(void)         TMR3TimerQueuesDo(PVM pVM);
+VMM_INT_DECL(void)      TMR3VirtualSyncFF(PVM pVM, PVMCPU pVCpu);
+VMM_INT_DECL(PRTTIMESPEC) TMR3UTCNow(PVM pVM, PRTTIMESPEC pTime);
 /** @} */
 #endif /* IN_RING3 */
 
