@@ -150,7 +150,11 @@ static void vboxInitVBoxVideo (PPDEV ppdev, const VIDEO_MEMORY_INFORMATION *pMem
                         NULL,
                         0,
                         &returnedDataLength);
+#ifdef DEBUG_misha
                 Assert(!err);
+#endif
+                /* this is not fatal, just means Video 2D acceleration will not be supported */
+                err = 0;
             }
         }
 

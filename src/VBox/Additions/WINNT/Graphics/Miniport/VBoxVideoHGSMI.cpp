@@ -460,6 +460,15 @@ VOID vboxReleaseSpinLockFromDpcLevelVoid (IN PVOID  HwDeviceExtension, IN PSPIN_
 {
 }
 
+PVOID vboxAllocatePoolVoid(IN PVOID  HwDeviceExtension, IN VBOXVP_POOL_TYPE  PoolType, IN size_t  NumberOfBytes, IN ULONG  Tag)
+{
+    return NULL;
+}
+
+VOID vboxFreePoolVoid(IN PVOID  HwDeviceExtension, IN PVOID  Ptr)
+{
+}
+
 void VBoxSetupVideoPortFunctions(PDEVICE_EXTENSION PrimaryExtension, VBOXVIDEOPORTPROCS *pCallbacks, PVIDEO_PORT_CONFIG_INFO pConfigInfo)
 {
     memset(pCallbacks, 0, sizeof(VBOXVIDEOPORTPROCS));
@@ -561,8 +570,31 @@ void VBoxSetupVideoPortFunctions(PDEVICE_EXTENSION PrimaryExtension, VBOXVIDEOPO
         pCallbacks->pfnReleaseSpinLockFromDpcLevel = vboxReleaseSpinLockFromDpcLevelVoid;
     }
 
+    pCallbacks->pfnAllocatePool = (PFNALLOCATEPOOL)(pConfigInfo->VideoPortGetProcAddress)
+            (PrimaryExtension,
+             (PUCHAR)"VideoPortAllocatePool");
+    Assert(pCallbacks->pfnAllocatePool);
+
+    pCallbacks->pfnFreePool = (PFNFREEPOOL)(pConfigInfo->VideoPortGetProcAddress)
+            (PrimaryExtension,
+             (PUCHAR)"VideoPortFreePool");
+    Assert(pCallbacks->pfnFreePool);
+
+    if(pCallbacks->pfnAllocatePool
+            && pCallbacks->pfnFreePool)
+    {
+        pCallbacks->fSupportedTypes |= VBOXVIDEOPORTPROCS_POOL;
+    }
+    else
+    {
+        pCallbacks->pfnAllocatePool = vboxAllocatePoolVoid;
+        pCallbacks->pfnFreePool = vboxFreePoolVoid;
+    }
+
+#ifdef DEBUG_misha
     Assert(pCallbacks->fSupportedTypes & VBOXVIDEOPORTPROCS_EVENT);
     Assert(pCallbacks->fSupportedTypes & VBOXVIDEOPORTPROCS_SPINLOCK);
+#endif
 }
 
 /**
@@ -976,7 +1008,7 @@ typedef struct _VBVA_CHANNELCONTEXTS
 
 static int vboxVBVADeleteChannelContexts(PDEVICE_EXTENSION PrimaryExtension, VBVA_CHANNELCONTEXTS * pContext)
 {
-    VideoPortFreePool(PrimaryExtension,pContext);
+    PrimaryExtension->u.primary.VideoPortProcs.pfnFreePool(PrimaryExtension,pContext);
 	return VINF_SUCCESS;
 }
 
@@ -984,8 +1016,8 @@ static int vboxVBVACreateChannelContexts(PDEVICE_EXTENSION PrimaryExtension, VBV
 {
 	uint32_t cDisplays = (uint32_t)PrimaryExtension->u.primary.cDisplays;
 	const size_t size = RT_OFFSETOF(VBVA_CHANNELCONTEXTS, aContexts[cDisplays]);
-	VBVA_CHANNELCONTEXTS * pContext = (VBVA_CHANNELCONTEXTS*)VideoPortAllocatePool(PrimaryExtension,
-	        VpNonPagedPool,
+	VBVA_CHANNELCONTEXTS * pContext = (VBVA_CHANNELCONTEXTS*)PrimaryExtension->u.primary.VideoPortProcs.pfnAllocatePool(PrimaryExtension,
+	        VBoxVpNonPagedPool,
 	        size,
 	        MEM_TAG);
 	if(pContext)

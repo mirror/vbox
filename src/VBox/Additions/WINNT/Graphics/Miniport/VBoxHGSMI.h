@@ -59,6 +59,14 @@ typedef struct _VIDEO_PORT_EVENT *VBOXPEVENT;
 typedef struct _VIDEO_PORT_SPIN_LOCK *VBOXPSPIN_LOCK;
 typedef union _LARGE_INTEGER *VBOXPLARGE_INTEGER;
 
+typedef enum VBOXVP_POOL_TYPE
+{
+    VBoxVpNonPagedPool,
+    VBoxVpPagedPool,
+    VBoxVpNonPagedPoolCacheAligned = 4,
+    VBoxVpPagedPoolCacheAligned
+} VBOXVP_POOL_TYPE;
+
 #define VBOXNOTIFICATION_EVENT 0x00000001UL
 
 #define VBOXNO_ERROR           0x00000000UL
@@ -78,11 +86,15 @@ typedef void (*PFNRELEASESPINLOCK) (void*  HwDeviceExtension, VBOXPSPIN_LOCK  Sp
 typedef void (*PFNACQUIRESPINLOCKATDPCLEVEL) (void*  HwDeviceExtension, VBOXPSPIN_LOCK  SpinLock);
 typedef void (*PFNRELEASESPINLOCKFROMDPCLEVEL) (void*  HwDeviceExtension, VBOXPSPIN_LOCK  SpinLock);
 
+typedef void* (*PFNALLOCATEPOOL) (void*  HwDeviceExtension, VBOXVP_POOL_TYPE PoolType, size_t NumberOfBytes, unsigned long Tag);
+typedef void (*PFNFREEPOOL) (void*  HwDeviceExtension, void*  Ptr);
 
 /* pfn*SpinLock* functions are available */
 #define VBOXVIDEOPORTPROCS_SPINLOCK 0x00000001
 /* pfn*Event and pfnWaitForSingleObject functions are available */
 #define VBOXVIDEOPORTPROCS_EVENT    0x00000002
+/* pfn*Pool functions are available */
+#define VBOXVIDEOPORTPROCS_POOL     0x00000004
 
 typedef struct VBOXVIDEOPORTPROCS
 {
@@ -102,6 +114,9 @@ typedef struct VBOXVIDEOPORTPROCS
     PFNRELEASESPINLOCK pfnReleaseSpinLock;
     PFNACQUIRESPINLOCKATDPCLEVEL pfnAcquireSpinLockAtDpcLevel;
     PFNRELEASESPINLOCKFROMDPCLEVEL pfnReleaseSpinLockFromDpcLevel;
+
+    PFNALLOCATEPOOL pfnAllocatePool;
+    PFNFREEPOOL pfnFreePool;
 } VBOXVIDEOPORTPROCS;
 
 #endif /* #ifndef ___VBoxHGSMI_h_ */
