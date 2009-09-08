@@ -430,7 +430,7 @@ public:
 
     void updatedMem(const QRect * aRect);
 
-    void performDisplay(VBoxVHWASurfaceBase *pPrimary);
+    bool performDisplay(VBoxVHWASurfaceBase *pPrimary, bool bForce);
 
     void setRects(VBoxVHWASurfaceBase *pPrimary, const QRect & aTargRect, const QRect & aSrcRect, const QRect & aVisibleTargRect, bool bForceReinit);
     void setTargRectPosition(VBoxVHWASurfaceBase *pPrimary, const QPoint & aPoint, const QRect & aVisibleTargRect);
@@ -582,7 +582,7 @@ private:
 
     GLuint createDisplay(VBoxVHWASurfaceBase *pPrimary);
     void doDisplay(VBoxVHWASurfaceBase *pPrimary, VBoxVHWAGlProgramVHWA * pProgram, bool bBindDst);
-    void synchTexMem(const QRect * aRect);
+    bool synchTexMem(const QRect * aRect);
 
     int performBlt(const QRect * pDstRect, VBoxVHWASurfaceBase * pSrcSurface, const QRect * pSrcRect, const VBoxVHWAColorKey * pDstCKey, const VBoxVHWAColorKey * pSrcCKey, bool blt);
 
@@ -771,10 +771,10 @@ public:
         mOverlays.remove(pSurf);
     }
 
-    void performDisplay()
+    bool performDisplay(bool bForce)
     {
         VBoxVHWASurfaceBase * pPrimary = mPrimary.current();
-        pPrimary->performDisplay(NULL);
+        bForce |= pPrimary->performDisplay(NULL, bForce);
 
         for (OverlayList::const_iterator it = mOverlays.begin();
              it != mOverlays.end(); ++ it)
@@ -782,9 +782,10 @@ public:
             VBoxVHWASurfaceBase * pOverlay = (*it)->current();
             if(pOverlay)
             {
-                pOverlay->performDisplay(pPrimary);
+                bForce |= pOverlay->performDisplay(pPrimary, bForce);
             }
         }
+        return bForce;
     }
 
     const OverlayList & overlays() const {return mOverlays;}
@@ -1060,7 +1061,7 @@ public:
 
     const QRect & vboxViewport() const {return mViewport;}
 
-    void performDisplay() { mDisplay.performDisplay(); }
+    bool performDisplay(bool bForce) { return mDisplay.performDisplay(bForce); }
 protected:
 
     void paintGL()
@@ -1072,7 +1073,7 @@ protected:
         }
 //        else
 //        {
-            mDisplay.performDisplay();
+            mDisplay.performDisplay(true);
 //        }
     }
 
@@ -1164,12 +1165,12 @@ private:
 };
 
 
-typedef enum
-{
-    VBOXFBOVERLAY_DONE = 1,
-    VBOXFBOVERLAY_MODIFIED,
-    VBOXFBOVERLAY_UNTOUCHED
-} VBOXFBOVERLAY_RESUT;
+//typedef enum
+//{
+//    VBOXFBOVERLAY_DONE = 1,
+//    VBOXFBOVERLAY_MODIFIED,
+//    VBOXFBOVERLAY_UNTOUCHED
+//} VBOXFBOVERLAY_RESUT;
 
 class VBoxQGLOverlay
 {
@@ -1200,17 +1201,18 @@ public:
         return false;
     }
 
-    VBOXFBOVERLAY_RESUT onPaintEvent (const QPaintEvent *pe, QRect *pRect);
+//    VBOXFBOVERLAY_RESUT onPaintEvent (const QPaintEvent *pe, QRect *pRect);
+
     void onResizeEvent (const class VBoxResizeEvent *re);
     void onResizeEventPostprocess (const class VBoxResizeEvent *re);
 
-    void viewportResized(QResizeEvent * re)
+    void onViewportResized(QResizeEvent * re)
     {
         vboxDoCheckUpdateViewport();
         mGlCurrent = false;
     }
 
-    void viewportScrolled(int dx, int dy)
+    void onViewportScrolled(int dx, int dy)
     {
         vboxDoCheckUpdateViewport();
         mGlCurrent = false;
@@ -1256,7 +1258,7 @@ private:
             mpOverlayWidget->updateGL();
 #else
             makeCurrent();
-            mpOverlayWidget->performDisplay();
+            mpOverlayWidget->performDisplay(false);
             mpOverlayWidget->swapBuffers();
 #endif
         }
@@ -1349,24 +1351,24 @@ public:
         return T::NotifyUpdate(aX, aY, aW, aH);
     }
 
-    void paintEvent (QPaintEvent *pe)
-    {
-        QRect rect;
-        VBOXFBOVERLAY_RESUT res = mOverlay.onPaintEvent(pe, &rect);
-        switch(res)
-        {
-            case VBOXFBOVERLAY_MODIFIED:
-            {
-                QPaintEvent modified(rect);
-                T::paintEvent(&modified);
-            } break;
-            case VBOXFBOVERLAY_UNTOUCHED:
-                T::paintEvent(pe);
-                break;
-            default:
-                break;
-        }
-    }
+//    void paintEvent (QPaintEvent *pe)
+//    {
+//        QRect rect;
+//        VBOXFBOVERLAY_RESUT res = mOverlay.onPaintEvent(pe, &rect);
+//        switch(res)
+//        {
+//            case VBOXFBOVERLAY_MODIFIED:
+//            {
+//                QPaintEvent modified(rect);
+//                T::paintEvent(&modified);
+//            } break;
+//            case VBOXFBOVERLAY_UNTOUCHED:
+//                T::paintEvent(pe);
+//                break;
+//            default:
+//                break;
+//        }
+//    }
 
     void resizeEvent (VBoxResizeEvent *re)
     {
@@ -1377,13 +1379,13 @@ public:
 
     void viewportResized(QResizeEvent * re)
     {
-        mOverlay.viewportResized(re);
+        mOverlay.onViewportResized(re);
         T::viewportResized(re);
     }
 
     void viewportScrolled(int dx, int dy)
     {
-        mOverlay.viewportScrolled(dx, dy);
+        mOverlay.onViewportScrolled(dx, dy);
         T::viewportScrolled(dx, dy);
     }
 private:
