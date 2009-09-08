@@ -2146,7 +2146,7 @@ void VBoxVHWATextureNP2Rect::multiTexCoord(GLenum texUnit, int x, int y)
 
 GLenum VBoxVHWATextureNP2Rect::texTarget() {return GL_TEXTURE_RECTANGLE; }
 
-void VBoxVHWASurfaceBase::synchTexMem(const QRect * pRect)
+bool VBoxVHWASurfaceBase::synchTexMem(const QRect * pRect)
 {
     if(pRect)
     {
@@ -2154,10 +2154,10 @@ void VBoxVHWASurfaceBase::synchTexMem(const QRect * pRect)
     }
 
     if(mUpdateMem2TexRect.isClear())
-        return;
+        return false;
 
     if(pRect && !mUpdateMem2TexRect.rect().intersects(*pRect))
-        return;
+        return false;
 
     mpTex[0]->update(&mUpdateMem2TexRect.rect());
     if(fourcc() == FOURCC_YV12)
@@ -2178,6 +2178,7 @@ void VBoxVHWASurfaceBase::synchTexMem(const QRect * pRect)
 //#ifdef DEBUG
 //    VBOXPRINTDIF(dbgTime, ("texMem:"));
 //#endif
+    return true;
 }
 
 void VBoxVHWATextureNP2RectPBO::init(uchar *pvMem)
@@ -2869,7 +2870,7 @@ void VBoxVHWASurfaceBase::updatedMem(const QRect *rec)
 //    mVisibleRect = mSrcRect.intersected(aRect);
 //}
 
-void VBoxVHWASurfaceBase::performDisplay(VBoxVHWASurfaceBase *pPrimary)
+bool VBoxVHWASurfaceBase::performDisplay(VBoxVHWASurfaceBase *pPrimary, bool bForce)
 {
     Assert(mVisibleDisplayInitialized);
     if(mVisibleDisplay == 0)
@@ -2878,7 +2879,7 @@ void VBoxVHWASurfaceBase::performDisplay(VBoxVHWASurfaceBase *pPrimary)
          * in the sense that it's located behind the viewport ranges */
         Assert(mVisibleSrcRect.isEmpty());
         Assert(mVisibleTargRect.isEmpty());
-        return;
+        return false;
     }
     else
     {
@@ -2886,11 +2887,14 @@ void VBoxVHWASurfaceBase::performDisplay(VBoxVHWASurfaceBase *pPrimary)
         Assert(!mVisibleTargRect.isEmpty());
     }
 
-    synchTexMem(&mVisibleSrcRect);
+    bForce |= synchTexMem(&mVisibleSrcRect);
     if(pPrimary && getActiveDstOverlayCKey(pPrimary))
     {
-        pPrimary->synchTexMem(&mVisibleTargRect);
+        bForce |= pPrimary->synchTexMem(&mVisibleTargRect);
     }
+
+    if(!bForce)
+        return false;
 
 #ifdef DEBUG_misha
     if(0)
@@ -2923,6 +2927,9 @@ void VBoxVHWASurfaceBase::performDisplay(VBoxVHWASurfaceBase *pPrimary)
                 glCallList(mVisibleDisplay);
                 );
     }
+
+    Assert(bForce);
+    return true;
 }
 
 
@@ -5164,19 +5171,19 @@ bool VBoxQGLOverlay::onNotifyUpdate(ULONG aX, ULONG aY,
 #endif
 }
 
-VBOXFBOVERLAY_RESUT VBoxQGLOverlay::onPaintEvent (const QPaintEvent *pe, QRect *pRect)
-{
-    Q_UNUSED(pe);
-    Q_UNUSED(pRect);
-
-//    if(mOverlayWidgetVisible && !mProcessingCommands)
-//    {
-//        Assert(!mGlCurrent);
-//        vboxDoCheckUpdateViewport();
-//        vboxOpExit();
-//    }
-    return VBOXFBOVERLAY_UNTOUCHED;
-}
+//VBOXFBOVERLAY_RESUT VBoxQGLOverlay::onPaintEvent (const QPaintEvent *pe, QRect *pRect)
+//{
+//    Q_UNUSED(pe);
+//    Q_UNUSED(pRect);
+//
+////    if(mOverlayWidgetVisible && !mProcessingCommands)
+////    {
+////        Assert(!mGlCurrent);
+////        vboxDoCheckUpdateViewport();
+////        vboxOpExit();
+////    }
+//    return VBOXFBOVERLAY_UNTOUCHED;
+//}
 
 void VBoxQGLOverlay::onResizeEvent (const VBoxResizeEvent *re)
 {
@@ -5390,10 +5397,7 @@ void VBoxQGLOverlay::addMainDirtyRect(const QRect & aRect)
     if(mGlOn)
     {
         mpOverlayWidget->vboxDoUpdateRect(&aRect);
-        if(aRect.intersects(mpOverlayWidget->vboxViewport()))
-        {
-            mNeedOverlayRepaint = true;
-        }
+        mNeedOverlayRepaint = true;
     }
 }
 
@@ -5402,6 +5406,7 @@ int VBoxQGLOverlay::vhwaSurfaceUnlock(struct _VBOXVHWACMD_SURF_UNLOCK *pCmd)
     int rc = mpOverlayWidget->vhwaSurfaceUnlock(pCmd);
     VBoxVHWASurfaceBase * pVGA = mpOverlayWidget->vboxGetVGASurface();
     const VBoxVHWADirtyRect & rect = pVGA->getDirtyRect();
+    mNeedOverlayRepaint = true;
     if(!rect.isClear())
     {
         mMainDirtyRect.add(rect);
@@ -5437,6 +5442,7 @@ void VBoxQGLOverlay::vboxDoVHWACmdExec(void *cmd)
                     mOverlayViewport = mpOverlayWidget->overlaysRectUnion();
                 }
                 vboxDoCheckUpdateViewport();
+                mNeedOverlayRepaint = true;
             }
         } break;
         case VBOXVHWACMD_TYPE_SURF_DESTROY:
@@ -5455,6 +5461,7 @@ void VBoxQGLOverlay::vboxDoVHWACmdExec(void *cmd)
                     mOverlayViewport = mpOverlayWidget->overlaysRectUnion();
                 }
                 vboxDoCheckUpdateViewport();
+                mNeedOverlayRepaint = true;
             }
         } break;
         case VBOXVHWACMD_TYPE_SURF_LOCK:
@@ -5471,6 +5478,7 @@ void VBoxQGLOverlay::vboxDoVHWACmdExec(void *cmd)
         {
             VBOXVHWACMD_SURF_BLT * pBody = VBOXVHWACMD_BODY(pCmd, VBOXVHWACMD_SURF_BLT);
             pCmd->rc = mpOverlayWidget->vhwaSurfaceBlt(pBody);
+            mNeedOverlayRepaint = true;
         } break;
         case VBOXVHWACMD_TYPE_SURF_FLIP:
         {
@@ -5488,6 +5496,7 @@ void VBoxQGLOverlay::vboxDoVHWACmdExec(void *cmd)
                 mOverlayViewport = mpOverlayWidget->overlaysRectUnion();
             }
             vboxDoCheckUpdateViewport();
+            mNeedOverlayRepaint = true;
         } break;
         case VBOXVHWACMD_TYPE_SURF_OVERLAY_SETPOSITION:
         {
@@ -5499,6 +5508,7 @@ void VBoxQGLOverlay::vboxDoVHWACmdExec(void *cmd)
                 mOverlayViewport = mpOverlayWidget->overlaysRectUnion();
             }
             vboxDoCheckUpdateViewport();
+            mNeedOverlayRepaint = true;
         } break;
         case VBOXVHWACMD_TYPE_SURF_COLORKEY_SET:
         {
