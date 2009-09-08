@@ -3402,7 +3402,9 @@ int VBoxGLWidget::vhwaSurfaceCreate(struct _VBOXVHWACMD_SURF_CREATE *pCmd)
             Assert(pVga != surf);
 //            Assert(mbVGASurfCreated);
             mDisplay.getVGA()->getComplexList()->add(surf);
+#ifdef DEBUG_misha
             Assert(pCmd->SurfInfo.surfCaps & VBOXVHWA_SCAPS_VISIBLE);
+#endif
 //            if(pCmd->SurfInfo.surfCaps & VBOXVHWA_SCAPS_VISIBLE)
             {
                 Assert(surf->getComplexList() == mDisplay.getVGA()->getComplexList());
@@ -3746,8 +3748,10 @@ int VBoxGLWidget::vhwaSurfaceOverlayUpdate(struct _VBOXVHWACMD_SURF_OVERLAY_UPDA
         pDstSurf = handle2Surface(pCmd->u.in.hDstSurf);
         vboxCheckUpdateAddress (pDstSurf, pCmd->u.in.offDstSurface);
         VBOXQGLLOG(("pDstSurf (0x%x)\n",pDstSurf));
+#ifdef DEBUG_misha
         Assert(pDstSurf == mDisplay.getVGA());
         Assert(mDisplay.getVGA() == mDisplay.getPrimary());
+#endif
         Assert(pDstSurf->getComplexList() == mDisplay.getVGA()->getComplexList());
 
         if(pCmd->u.in.flags & VBOXVHWA_OVER_SHOW)
@@ -5099,16 +5103,23 @@ VBoxQGLOverlay::VBoxQGLOverlay (VBoxConsoleView *aView, VBoxFrameBuffer * aConta
 
 int VBoxQGLOverlay::onVHWACommand(struct _VBOXVHWACMD * pCmd)
 {
-//    Assert(0);
-//    VBOXVHWACMD * pCmd = (VBOXVHWACMD*)pCommand;
+    uint32_t flags = 0;
+    switch(pCmd->enmCmd)
+    {
+        case VBOXVHWACMD_TYPE_SURF_FLIP:
+        case VBOXVHWACMD_TYPE_SURF_OVERLAY_UPDATE:
+        case VBOXVHWACMD_TYPE_SURF_OVERLAY_SETPOSITION:
+            flags |= VBOXVHWACMDPIPEC_COMPLETEEVENT;
+            break;
+        default:
+            break;
+    }//    Assert(0);
     /* indicate that we process and complete the command asynchronously */
     pCmd->Flags |= VBOXVHWACMD_FLAG_HG_ASYNCH;
-    /* post the command to the GUI thread for processing */
-//    QApplication::postEvent (mView,
-//                             new VBoxVHWACommandProcessEvent (pCmd));
-    mCmdPipe.postCmd(VBOXVHWA_PIPECMD_VHWA, pCmd);
+
+    mCmdPipe.postCmd(VBOXVHWA_PIPECMD_VHWA, pCmd, flags);
     return VINF_SUCCESS;
-//    return E_NOTIMPL;
+
 }
 
 void VBoxQGLOverlay::onVHWACommandEvent(QEvent * pEvent)
@@ -5137,7 +5148,7 @@ bool VBoxQGLOverlay::onNotifyUpdate(ULONG aX, ULONG aY,
 {
 #if 1
     QRect r(aX, aY, aW, aH);
-    mCmdPipe.postCmd(VBOXVHWA_PIPECMD_PAINT, &r);
+    mCmdPipe.postCmd(VBOXVHWA_PIPECMD_PAINT, &r, 0);
     return true;
 #else
     /* We're not on the GUI thread and update() isn't thread safe in
@@ -5644,7 +5655,14 @@ VBoxVHWACommandElementProcessor::~VBoxVHWACommandElementProcessor()
     RTCritSectDelete(&mCritSect);
 }
 
-void VBoxVHWACommandElementProcessor::postCmd(VBOXVHWA_PIPECMD_TYPE aType, void * pvData)
+void VBoxVHWACommandElementProcessor::completeCurrentEvent()
+{
+    RTCritSectEnter(&mCritSect);
+    mbNewEvent = true;
+    RTCritSectLeave(&mCritSect);
+}
+
+void VBoxVHWACommandElementProcessor::postCmd(VBOXVHWA_PIPECMD_TYPE aType, void * pvData, uint32_t flags)
 {
     /* 1. lock*/
     RTCritSectEnter(&mCritSect);
@@ -5660,6 +5678,12 @@ void VBoxVHWACommandElementProcessor::postCmd(VBOXVHWA_PIPECMD_TYPE aType, void 
 #endif
     }
     pCmd->setData(aType, pvData);
+
+    if((flags & VBOXVHWACMDPIPEC_NEWEVENT) != 0)
+    {
+        mbNewEvent = true;
+    }
+
     /* 2. if can add to current*/
     if(!mbNewEvent)
     {
@@ -5669,6 +5693,10 @@ void VBoxVHWACommandElementProcessor::postCmd(VBOXVHWA_PIPECMD_TYPE aType, void 
             /* 3.a add cmd to event */
             mpLastEvent->pipe().put(pCmd);
             /* 3.b unlock and return */
+            if((flags & VBOXVHWACMDPIPEC_COMPLETEEVENT) != 0)
+            {
+                mbNewEvent = true;
+            }
             RTCritSectLeave(&mCritSect);
             return;
         }
@@ -5679,6 +5707,8 @@ void VBoxVHWACommandElementProcessor::postCmd(VBOXVHWA_PIPECMD_TYPE aType, void 
     RTCritSectLeave(&mCritSect);
     /* 5. create & initialize new Event */
     VBoxVHWACommandProcessEvent *pCurrentEvent = new VBoxVHWACommandProcessEvent(pCmd);
+    pCurrentEvent->mpNext = NULL;
+
     /* 6. lock */
     RTCritSectEnter(&mCritSect);
     /* 7. if no current event set event as current */
@@ -5687,7 +5717,6 @@ void VBoxVHWACommandElementProcessor::postCmd(VBOXVHWA_PIPECMD_TYPE aType, void 
         Assert(!mpFirstEvent);
         mpFirstEvent = pCurrentEvent;
         mpLastEvent = pCurrentEvent;
-        pCurrentEvent->mpNext = NULL;
     }
     else
     {
@@ -5695,7 +5724,7 @@ void VBoxVHWACommandElementProcessor::postCmd(VBOXVHWA_PIPECMD_TYPE aType, void 
         mpLastEvent = pCurrentEvent;
     }
     /* 8. reset blocking events counter */
-    mbNewEvent = false;
+    mbNewEvent = ((flags & VBOXVHWACMDPIPEC_COMPLETEEVENT) != 0);
     /* 9. unlock */
     RTCritSectLeave(&mCritSect);
     /* 10. post event */

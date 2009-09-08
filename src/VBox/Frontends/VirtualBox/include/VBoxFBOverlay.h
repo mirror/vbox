@@ -964,12 +964,15 @@ private:
     VBoxVHWACommandElement *mpFirst;
 };
 
+#define VBOXVHWACMDPIPEC_NEWEVENT      0x00000001
+#define VBOXVHWACMDPIPEC_COMPLETEEVENT 0x00000002
 class VBoxVHWACommandElementProcessor
 {
 public:
     VBoxVHWACommandElementProcessor(class VBoxConsoleView *aView);
     ~VBoxVHWACommandElementProcessor();
-    void postCmd(VBOXVHWA_PIPECMD_TYPE aType, void * pvData);
+    void postCmd(VBOXVHWA_PIPECMD_TYPE aType, void * pvData, uint32_t flags);
+    void completeCurrentEvent();
     class VBoxVHWACommandElement * detachCmdList(class VBoxVHWACommandElement * pFirst2Free, VBoxVHWACommandElement * pLast2Free);
 
 private:
@@ -1184,6 +1187,19 @@ public:
     bool onNotifyUpdate (ULONG aX, ULONG aY,
                              ULONG aW, ULONG aH);
 
+    /**
+     * to be called on RequestResize framebuffer call
+     * @return true if the request was processed & should not be forwarded to the framebuffer
+     * false - otherwise */
+    bool onRequestResize (ULONG aScreenId, ULONG aPixelFormat,
+                              BYTE *aVRAM, ULONG aBitsPerPixel, ULONG aBytesPerLine,
+                              ULONG aWidth, ULONG aHeight,
+                              BOOL *aFinished)
+    {
+        mCmdPipe.completeCurrentEvent();
+        return false;
+    }
+
     VBOXFBOVERLAY_RESUT onPaintEvent (const QPaintEvent *pe, QRect *pRect);
     void onResizeEvent (const class VBoxResizeEvent *re);
     void onResizeEventPostprocess (const class VBoxResizeEvent *re);
@@ -1306,6 +1322,24 @@ public:
     {
         mOverlay.onVHWACommandEvent(pEvent);
     }
+
+    STDMETHOD(RequestResize) (ULONG aScreenId, ULONG aPixelFormat,
+                              BYTE *aVRAM, ULONG aBitsPerPixel, ULONG aBytesPerLine,
+                              ULONG aWidth, ULONG aHeight,
+                              BOOL *aFinished)
+   {
+        if(mOverlay.onRequestResize (aScreenId, aPixelFormat,
+                aVRAM, aBitsPerPixel, aBytesPerLine,
+                aWidth, aHeight,
+                aFinished))
+        {
+            return S_OK;
+        }
+        return T::RequestResize (aScreenId, aPixelFormat,
+                aVRAM, aBitsPerPixel, aBytesPerLine,
+                aWidth, aHeight,
+                aFinished);
+   }
 
     STDMETHOD(NotifyUpdate) (ULONG aX, ULONG aY,
                              ULONG aW, ULONG aH)
