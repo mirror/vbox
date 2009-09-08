@@ -235,7 +235,7 @@ static void cstr2qstr(char *cstr, char *qstr)
         if (*c == '.' || (c == cstr && q == qstr)) 
         {
             if (c != cstr) c++;
-            pc = index(c, '.');
+            pc = strchr(c, '.');
             *q = pc != NULL ? (pc - c) : strlen(c);
             q++;
             continue;
