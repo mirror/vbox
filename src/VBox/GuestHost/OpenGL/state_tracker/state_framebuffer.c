@@ -47,10 +47,12 @@ static void crStateFreeFBO(void *data)
 {
     CRFramebufferObject *pObj = (CRFramebufferObject *)data;
 
-    if (diff_api.AlphaFunc)
+#ifndef IN_GUEST
+    if (diff_api.DeleteFramebuffersEXT)
     {
         diff_api.DeleteFramebuffersEXT(1, &pObj->id);
     }
+#endif
 
     crFree(pObj);
 }
@@ -59,10 +61,12 @@ static void crStateFreeRBO(void *data)
 {
     CRRenderbufferObject *pObj = (CRRenderbufferObject *)data;
 
-    if (diff_api.AlphaFunc)
+#ifndef IN_GUEST
+    if (diff_api.DeleteRenderbuffersEXT)
     {
         diff_api.DeleteRenderbuffersEXT(1, &pObj->id);
     }
+#endif
 
     crFree(pObj);
 }
