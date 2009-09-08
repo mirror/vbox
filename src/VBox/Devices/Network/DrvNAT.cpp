@@ -62,7 +62,7 @@
  * @todo: This is a bad hack to prevent freezing the guest during high network
  *        activity. This needs to be fixed properly.
  */
-#define VBOX_NAT_DELAY_HACK
+//#define VBOX_NAT_DELAY_HACK
 #define SLIRP_SPLIT_CAN_OUTPUT 1
 
 #define GET_EXTRADATA(pthis, node, name, rc, type, type_name, var)                                  \
