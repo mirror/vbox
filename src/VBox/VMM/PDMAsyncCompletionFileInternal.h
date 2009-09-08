@@ -496,6 +496,10 @@ typedef struct PDMACTASKFILE
     bool                                 fBounceBuffer;
     /** Pointer to the used bounce buffer if any. */
     void                                *pvBounceBuffer;
+    /** Start offset in the bounce buffer to copy from. */
+    uint32_t                             uBounceBufOffset;
+    /** Flag whether this is a prefetch request. */
+    bool                                 fPrefetch;
     /** Completion function to call on completion. */
     PFNPDMACTASKCOMPLETED                pfnCompleted;
     /** User data */
