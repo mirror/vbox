@@ -242,6 +242,10 @@ public:
      * to perform the actual Video HW Acceleration command processing
      * the event is framebuffer implementation specific */
     virtual void doProcessVHWACommand(QEvent * pEvent);
+
+    virtual void viewportResized(QResizeEvent * re){}
+
+    virtual void viewportScrolled(int dx, int dy){}
 #endif
 
 protected:

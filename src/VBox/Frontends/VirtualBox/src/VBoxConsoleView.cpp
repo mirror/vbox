@@ -1732,6 +1732,18 @@ bool VBoxConsoleView::event (QEvent *e)
     return QAbstractScrollArea::event (e);
 }
 
+#ifdef VBOX_WITH_VIDEOHWACCEL
+void VBoxConsoleView::scrollContentsBy (int dx, int dy)
+{
+    if (mAttached && mFrameBuf)
+    {
+        mFrameBuf->viewportScrolled(dx, dy);
+    }
+    QAbstractScrollArea::scrollContentsBy (dx, dy);
+}
+#endif
+
+
 bool VBoxConsoleView::eventFilter (QObject *watched, QEvent *e)
 {
     if (mAttached && watched == viewport())
@@ -1782,6 +1794,12 @@ bool VBoxConsoleView::eventFilter (QObject *watched, QEvent *e)
             {
                 if (mMouseCaptured)
                     updateMouseClipping();
+#ifdef VBOX_WITH_VIDEOHWACCEL
+                if (mFrameBuf)
+                {
+                    mFrameBuf->viewportResized((QResizeEvent*)e);
+                }
+#endif
                 break;
             }
             default:
@@ -2976,7 +2994,7 @@ bool VBoxConsoleView::mouseEvent (int aType, const QPoint &aPos, const QPoint &a
                                   int aWheelDelta, Qt::Orientation aWheelDir)
 {
 #if 1
-    
+
     LogRel3(("%s: type=%03d x=%03d y=%03d btns=%08X wdelta=%03d wdir=%s\n",
              __PRETTY_FUNCTION__ , aType, aPos.x(), aPos.y(),
                (aButtons & Qt::LeftButton ? 1 : 0)

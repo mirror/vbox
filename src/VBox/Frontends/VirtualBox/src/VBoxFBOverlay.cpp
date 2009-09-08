@@ -5086,6 +5086,7 @@ VBoxQGLOverlay::VBoxQGLOverlay (VBoxConsoleView *aView, VBoxFrameBuffer * aConta
       mOverlayVisible(false),
       mGlCurrent(false),
       mProcessingCommands(false),
+      mNeedOverlayRepaint(false),
       mCmdPipe(aView)
 {
     mpOverlayWidget = new VBoxGLWidget (aView, aView->viewport());
@@ -5126,7 +5127,9 @@ void VBoxQGLOverlay::onVHWACommandEvent(QEvent * pEvent)
     } while(pFirst);
 
     mProcessingCommands = false;
-    vboxOpExit();
+    repaint();
+//    vboxOpExit();
+    mGlCurrent = false;
 }
 
 bool VBoxQGLOverlay::onNotifyUpdate(ULONG aX, ULONG aY,
@@ -5153,12 +5156,12 @@ VBOXFBOVERLAY_RESUT VBoxQGLOverlay::onPaintEvent (const QPaintEvent *pe, QRect *
     Q_UNUSED(pe);
     Q_UNUSED(pRect);
 
-    if(mOverlayWidgetVisible && !mProcessingCommands)
-    {
-        Assert(!mGlCurrent);
-        vboxDoCheckUpdateViewport();
-        vboxOpExit();
-    }
+//    if(mOverlayWidgetVisible && !mProcessingCommands)
+//    {
+//        Assert(!mGlCurrent);
+//        vboxDoCheckUpdateViewport();
+//        vboxOpExit();
+//    }
     return VBOXFBOVERLAY_UNTOUCHED;
 }
 
@@ -5171,16 +5174,14 @@ void VBoxQGLOverlay::onResizeEventPostprocess (const VBoxResizeEvent *re)
 {
     Q_UNUSED(re);
 
-    bool bDoOpExit = false;
-
     if(mGlOn)
     {
         Assert(!mGlCurrent);
+        Assert(!mNeedOverlayRepaint);
         mGlCurrent = false;
         makeCurrent();
         /* need to ensure we're in synch */
-        vboxSynchGl();
-        bDoOpExit = true;
+        mNeedOverlayRepaint = vboxSynchGl();
     }
 
     if(!mOnResizeCmdList.empty())
@@ -5193,15 +5194,29 @@ void VBoxQGLOverlay::onResizeEventPostprocess (const VBoxResizeEvent *re)
             free(pCmd);
         }
         mOnResizeCmdList.clear();
-        bDoOpExit = true;
     }
 
-    if(bDoOpExit)
+    repaintOverlay();
+    mGlCurrent = false;
+}
+
+void VBoxQGLOverlay::repaintMain()
+{
+    if(mMainDirtyRect.isClear())
+        return;
+
+    const QRect &rect = mMainDirtyRect.rect();
+    if(mOverlayWidgetVisible)
     {
-        vboxOpExit();
+        if(mOverlayViewport.contains(rect))
+            return;
     }
-    Assert(mGlCurrent == false);
 
+    mView->viewport()->repaint (rect.x() - mView->contentsX(),
+            rect.y() - mView->contentsY(),
+            rect.width(), rect.height());
+
+    mMainDirtyRect.clear();
 }
 
 void VBoxQGLOverlay::vboxDoVHWACmd(void *cmd)
@@ -5214,26 +5229,26 @@ void VBoxQGLOverlay::vboxDoVHWACmd(void *cmd)
     display.CompleteVHWACommand((BYTE*)cmd);
 }
 
-void VBoxQGLOverlay::vboxDoUpdateRect(const QRect * pRect)
-{
-    if(mGlOn)
-    {
-        makeCurrent();
-        mpOverlayWidget->vboxDoUpdateRect(pRect);
-        vboxOpExit();
-    }
+//void VBoxQGLOverlay::vboxDoUpdateRect(const QRect * pRect)
+//{
+//    if(mGlOn)
+//    {
+//        makeCurrent();
+//        mpOverlayWidget->vboxDoUpdateRect(pRect);
+//        vboxOpExit();
+//    }
+//
+//    mView->viewport()->repaint (pRect->x() - mView->contentsX(),
+//            pRect->y() - mView->contentsY(),
+//            pRect->width(), pRect->height());
+//
+//    /* translate to widget coords
+//     * @todo: may eliminate this */
+////    QPaintEvent pe(pRect->translated(-mView->contentsX(), -mView->contentsY()));
+////    VBoxQImageFrameBuffer::paintEvent (&pe);
+//}
 
-    mView->viewport()->repaint (pRect->x() - mView->contentsX(),
-            pRect->y() - mView->contentsY(),
-            pRect->width(), pRect->height());
-
-    /* translate to widget coords
-     * @todo: may eliminate this */
-//    QPaintEvent pe(pRect->translated(-mView->contentsX(), -mView->contentsY()));
-//    VBoxQImageFrameBuffer::paintEvent (&pe);
-}
-
-void VBoxQGLOverlay::vboxSynchGl()
+bool VBoxQGLOverlay::vboxSynchGl()
 {
     if(mpOverlayWidget->vboxIsInitialized()
             && mContainer->pixelFormat() == mpOverlayWidget->vboxPixelFormat()
@@ -5243,7 +5258,7 @@ void VBoxQGLOverlay::vboxSynchGl()
             && mContainer->width() == mpOverlayWidget->vboxFbWidth()
             && mContainer->height() == mpOverlayWidget->vboxFbHeight())
     {
-        return;
+        return false;
     }
     /* create and issue a resize event to the gl widget to ensure we have all gl data initialized
      * and synchronized with the framebuffer */
@@ -5255,6 +5270,7 @@ void VBoxQGLOverlay::vboxSynchGl()
             mContainer->height());
 
     mpOverlayWidget->vboxResizeEvent(&re);
+    return true;
 }
 
 void VBoxQGLOverlay::vboxSetGlOn(bool on)
@@ -5305,6 +5321,7 @@ void VBoxQGLOverlay::vboxDoCheckUpdateViewport()
         {
             makeCurrent();
             mpOverlayWidget->vboxDoUpdateViewport(overVp);
+            mNeedOverlayRepaint = true;
         }
 
         QRect rect(overVp.x() - cX, overVp.y() - cY, overVp.width(), overVp.height());
@@ -5352,6 +5369,31 @@ void VBoxQGLOverlay::vboxCheckUpdateOverlay(const QRect & rect)
 //    mpOverlayWidget->vboxDoUpdateViewport(rect);
 //
 //    vboxShowOverlay(show);
+}
+
+void VBoxQGLOverlay::addMainDirtyRect(const QRect & aRect)
+{
+    mMainDirtyRect.add(aRect);
+    if(mGlOn)
+    {
+        mpOverlayWidget->vboxDoUpdateRect(&aRect);
+        if(aRect.intersects(mpOverlayWidget->vboxViewport()))
+        {
+            mNeedOverlayRepaint = true;
+        }
+    }
+}
+
+int VBoxQGLOverlay::vhwaSurfaceUnlock(struct _VBOXVHWACMD_SURF_UNLOCK *pCmd)
+{
+    int rc = mpOverlayWidget->vhwaSurfaceUnlock(pCmd);
+    VBoxVHWASurfaceBase * pVGA = mpOverlayWidget->vboxGetVGASurface();
+    const VBoxVHWADirtyRect & rect = pVGA->getDirtyRect();
+    if(!rect.isClear())
+    {
+        mMainDirtyRect.add(rect);
+    }
+    return rc;
 }
 
 void VBoxQGLOverlay::vboxDoVHWACmdExec(void *cmd)
@@ -5410,7 +5452,7 @@ void VBoxQGLOverlay::vboxDoVHWACmdExec(void *cmd)
         case VBOXVHWACMD_TYPE_SURF_UNLOCK:
         {
             VBOXVHWACMD_SURF_UNLOCK * pBody = VBOXVHWACMD_BODY(pCmd, VBOXVHWACMD_SURF_UNLOCK);
-            pCmd->rc = mpOverlayWidget->vhwaSurfaceUnlock(pBody);
+            pCmd->rc = vhwaSurfaceUnlock(pBody);
         } break;
         case VBOXVHWACMD_TYPE_SURF_BLT:
         {
@@ -5421,6 +5463,7 @@ void VBoxQGLOverlay::vboxDoVHWACmdExec(void *cmd)
         {
             VBOXVHWACMD_SURF_FLIP * pBody = VBOXVHWACMD_BODY(pCmd, VBOXVHWACMD_SURF_FLIP);
             pCmd->rc = mpOverlayWidget->vhwaSurfaceFlip(pBody);
+            mNeedOverlayRepaint = true;
         } break;
         case VBOXVHWACMD_TYPE_SURF_OVERLAY_UPDATE:
         {
@@ -5552,7 +5595,7 @@ VBoxVHWACommandElement * VBoxQGLOverlay::processCmdList(VBoxVHWACommandElement *
         switch(pCmd->type())
         {
         case VBOXVHWA_PIPECMD_PAINT:
-            vboxDoUpdateRect(&pCmd->rect());
+            addMainDirtyRect(pCmd->rect());
             break;
 #ifdef VBOX_WITH_VIDEOHWACCEL
         case VBOXVHWA_PIPECMD_VHWA:
