@@ -318,7 +318,7 @@ int EventQueue::processEventQueue(uint32_t cMsTimeout)
         {
             Event* aEvent = NULL;
           
-            fHasEvent = waitForEvent(&aEvent);
+            BOOL fHasEvent = waitForEvent(&aEvent);
             if (fHasEvent)
               handleEvent(aEvent);
             else
@@ -329,13 +329,13 @@ int EventQueue::processEventQueue(uint32_t cMsTimeout)
         /* Perform timed wait */
         MyThreadHandle aHandle;
 
-        DWORD aCode = MsgWaitForMultipleObjects(1, &aHandle.mh, 
-                                             TRUE /*fWaitAll*/, 
-                                             0 /*ms*/, 
-                                             QS_ALLINPUT);
-        if (aCode == WAIT_TIMEOUT)
+        DWORD aCode2 = MsgWaitForMultipleObjects(1, &aHandle.mh, 
+                                                 TRUE /*fWaitAll*/, 
+                                                 0 /*ms*/, 
+                                                 QS_ALLINPUT);
+        if (aCode2 == WAIT_TIMEOUT)
             rc = VERR_TIMEOUT;
-        else if (aCode == WAIT_OBJECT_0)
+        else if (aCode2 == WAIT_OBJECT_0)
             rc = VINF_SUCCESS;
         else
             rc = VERR_INTERNAL_ERROR_4;
