@@ -69,6 +69,8 @@ namespace com
 
 #endif // !defined (RT_OS_WINDOWS)
 
+EventQueue* EventQueue::mMainQueue = NULL;
+
 /**
  *  Constructs an event queue for the current thread.
  *
@@ -143,6 +145,212 @@ EventQueue::~EventQueue()
         mEventQService = nsnull;
     }
 #endif
+}
+
+/* static */ int EventQueue::init()
+{
+    mMainQueue = new EventQueue();
+#if defined (VBOX_WITH_XPCOM)
+    nsCOMPtr<nsIEventQueue> q;
+    nsresult rv = NS_GetMainEventQ(getter_AddRefs(q));
+    Assert(NS_SUCCEEDED(rv));
+    Assert(q == mMainQueue->mEventQ);
+    PRBool fIsNative = PR_FALSE;
+    rv = mMainQueue->mEventQ->IsQueueNative(&fIsNative);
+    Assert(NS_SUCCEEDED(rv) && fIsNative);
+#endif
+    return VINF_SUCCESS;
+}
+
+/* static */ int EventQueue::deinit()
+{
+    delete mMainQueue;
+    mMainQueue = NULL;
+    return VINF_SUCCESS;
+}
+
+/* static */ EventQueue* EventQueue::getMainEventQueue()
+{
+    return mMainQueue;
+}
+
+#ifdef RT_OS_DARWIN
+static int
+timedWaitForEventsOnDarwin(nsIEventQueue *pQueue, PRInt32 cMsTimeout)
+{
+  // This deals with the common case where the caller is the main
+  // application thread and the queue is a native one.
+  OSStatus       orc       = -1;
+  CFTimeInterval rdTimeout = (double)cMsTimeout / 1000;
+  orc = CFRunLoopRunInMode(kCFRunLoopDefaultMode, rdTimeout, true /*returnAfterSourceHandled*/);
+  if (orc == kCFRunLoopRunHandledSource)
+    orc = CFRunLoopRunInMode(kCFRunLoopDefaultMode, 0.0, false /*returnAfterSourceHandled*/);
+  if (!orc || orc == kCFRunLoopRunHandledSource)
+    return VINF_SUCCESS;
+
+  if (orc != kCFRunLoopRunTimedOut) 
+  {
+      NS_WARNING("Unexpected status code from CFRunLoopRunInMode");
+  }
+
+  return VERR_TIMEOUT;
+}
+#endif
+
+#ifdef RT_OS_WINDOWS
+static int
+processPendingEventsOnWindows()
+{
+    MSG Msg;
+    int rc = VERR_TIMEOUT;
+    while (PeekMessage(&Msg, NULL /*hWnd*/, 0 /*wMsgFilterMin*/, 0 /*wMsgFilterMax*/, PM_REMOVE))
+    {
+        if (Msg.message == WM_QUIT)
+            rc = VERR_INTERRUPTED;
+        DispatchMessage(&Msg);
+        if (rc == VERR_INTERRUPTED)
+            break;
+        rc = VINF_SUCCESS; 
+    }    
+    return rc;
+}
+/** For automatic cleanup,   */
+class MyThreadHandle
+{
+public:
+  HANDLE mh;
+  
+  MyThreadHandle()
+  {
+    if (!DuplicateHandle(GetCurrentProcess(), 
+                         GetCurrentThread(), 
+                         GetCurrentProcess(),
+                         &mh, 
+                         0 /*dwDesiredAccess*/, 
+                         FALSE /*bInheritHandle*/,
+                         DUPLICATE_SAME_ACCESS))
+      mh = INVALID_HANDLE_VALUE;
+  }
+
+  ~MyThreadHandle()
+  {
+    CloseHandle(mh);
+    mh = INVALID_HANDLE_VALUE;
+  }
+};
+#endif
+#include <stdio.h>
+int EventQueue::processEventQueue(uint32_t cMsTimeout)
+{
+    int rc = VINF_SUCCESS;
+#if defined (VBOX_WITH_XPCOM)
+    do {
+      PRBool fHasEvents = PR_FALSE;
+      nsresult rc;
+      
+      rc = mEventQ->PendingEvents(&fHasEvents);
+      if (NS_FAILED (rc))
+          return VERR_INTERNAL_ERROR_3;
+
+      if (fHasEvents || cMsTimeout == 0)
+          break;
+
+      /**
+       * Unfortunately, WaitForEvent isn't interruptible with Ctrl-C,
+       * while select() is.
+       */
+
+      if (cMsTimeout == RT_INDEFINITE_WAIT)
+      {
+#if 0
+          PLEvent *pEvent = NULL;
+          int rc1 = mEventQ->WaitForEvent(&pEvent);
+          if (NS_FAILED(rc1) || pEvent == NULL)
+          {
+                rc = VERR_INTERRUPTED;
+                break;
+          }
+          mEventQ->HandleEvent(pEvent);
+          break;
+#else
+          /* Pretty close to forever */
+          cMsTimeout = 0xffff0000;
+#endif
+      }
+      
+      /* Bit tricky part - perform timed wait */
+#  ifdef RT_OS_DARWIN
+      rc = timedWaitForEventsOnDarwin(mEventQ, cMsTimeout);
+#  else
+      int fd = mEventQ->GetEventQueueSelectFD();
+      fd_set fdsetR, fdsetE;
+      struct timeval tv;
+      
+      FD_ZERO(&fdsetR);
+      FD_SET(fd, &fdsetR);
+      
+      fdsetE = fdsetR;
+      tv.tv_sec = (PRInt64)cMsTimeout / 1000;
+      tv.tv_usec = ((PRInt64)cMsTimeout % 1000) * 1000;
+
+      int aCode = select(fd + 1, &fdsetR, NULL, &fdsetE, &tv);
+      if (aCode == 0)
+        rc = VERR_TIMEOUT;
+      else if (aCode == EINTR)
+        rc = VERR_INTERRUPTED;
+      else if (aCode < 0)
+        rc = VERR_INTERNAL_ERROR_4;
+      
+#  endif      
+    } while (0);
+
+    mEventQ->ProcessPendingEvents();
+#else /* Windows */
+    do {
+        int aCode = processPendingEventsOnWindows();
+        if (aCode != VERR_TIMEOUT || cMsTimeout == 0)
+        {
+            rc = aCode;
+            break;
+        }
+        
+        if (cMsTimeout == RT_INDEFINITE_WAIT)
+        {
+            Event* aEvent = NULL;
+          
+            fHasEvent = waitForEvent(&aEvent);
+            if (fHasEvent)
+              handleEvent(aEvent);
+            else
+              rc = VERR_INTERRUPTED;
+            break;
+        }
+
+        /* Perform timed wait */
+        MyThreadHandle aHandle;
+
+        DWORD aCode = MsgWaitForMultipleObjects(1, &aHandle.mh, 
+                                             TRUE /*fWaitAll*/, 
+                                             0 /*ms*/, 
+                                             QS_ALLINPUT);
+        if (aCode == WAIT_TIMEOUT)
+            rc = VERR_TIMEOUT;
+        else if (aCode == WAIT_OBJECT_0)
+            rc = VINF_SUCCESS;
+        else
+            rc = VERR_INTERNAL_ERROR_4;
+    } while (0);
+
+    processPendingEventsOnWindows();
+#endif
+    return rc;
+
+}
+
+int EventQueue::interruptEventQueueProcessing()
+{
+    postEvent(NULL);
+    return VINF_SUCCESS;
 }
 
 /**
@@ -287,27 +495,6 @@ DECLINLINE(void) processPendingEvents(nsIEventQueue *pQueue)
 
 #else
 
-/** For automatic cleanup.  */
-class MyThreadHandle
-{
-public:
-    HANDLE mh;
-
-    MyThreadHandle(HANDLE hThread)
-    {
-        if (!DuplicateHandle(GetCurrentProcess(), hThread, GetCurrentProcess(),
-                             &mh, 0 /*dwDesiredAccess*/, FALSE /*bInheritHandle*/,
-                             DUPLICATE_SAME_ACCESS))
-            mh = INVALID_HANDLE_VALUE;
-    }
-
-    ~MyThreadHandle()
-    {
-        CloseHandle(mh);
-        mh = INVALID_HANDLE_VALUE;
-    }
-};
-
 /** COM version of nsIEventQueue::PendingEvents. */
 DECLINLINE(bool) hasEventQueuePendingEvents(MyThreadHandle &Handle)
 {
@@ -385,7 +572,7 @@ EventQueue::processThreadEventQueue(uint32_t cMsTimeout, bool (*pfnExitCheck)(vo
     if (NS_FAILED(rv))
         return VERR_NOT_FOUND;
 #else
-    MyThreadHandle q(GetCurrentThread());
+    MyThreadHandle q;
 #endif
 
     /*
@@ -529,7 +716,6 @@ EventQueue::processThreadEventQueue(uint32_t cMsTimeout, bool (*pfnExitCheck)(vo
 
     return VINF_SUCCESS;
 }
-
 }
 /* namespace com */
 

@@ -492,138 +492,9 @@ PyObject *LogConsoleMessage(PyObject *self, PyObject *args)
 }
 
 #ifdef VBOX
-//#define USE_EVENTQUEUE  1
 
-# ifdef USE_EVENTQUEUE
 #  include <VBox/com/EventQueue.h>
 #  include <iprt/err.h>
-# else
-#  include <iprt/cdefs.h>
-# endif
-
-static nsIEventQueue* g_mainEventQ = nsnull;
-
-# ifndef USE_EVENTQUEUE /** @todo Make USE_EVENTQUEUE default. */
-// Wrapper that checks if the queue has pending events.
-DECLINLINE(bool)
-hasEventQueuePendingEvents(nsIEventQueue *pQueue)
-{
-	PRBool fHasEvents = PR_FALSE;
-	nsresult rc = pQueue->PendingEvents(&fHasEvents);
-	return NS_SUCCEEDED(rc) && fHasEvents ? true : false;
-}
-
-// Wrapper that checks if the queue is native or not.
-DECLINLINE(bool)
-isEventQueueNative(nsIEventQueue *pQueue)
-{
-	PRBool fIsNative = PR_FALSE;
-	nsresult rc = pQueue->IsQueueNative(&fIsNative);
-	return NS_SUCCEEDED(rc) && fIsNative ? true : false;
-}
-
-# ifdef RT_OS_DARWIN
-#  include <iprt/time.h>
-#  include <iprt/thread.h>
-#  include <iprt/err.h>
-#  include <CoreFoundation/CFRunLoop.h>
-#  if MAC_OS_X_VERSION_MAX_ALLOWED == 1040 /* ASSUMES this means we're using the 10.4 SDK. */
-#   include <CarbonEvents.h>
-#  endif
-
-// Common fallback for waiting (and maybe processing) events. Caller process
-// any pending events when 0 is returned.
-static nsresult
-waitForEventsCommonFallback(nsIEventQueue *pQueue, PRInt32 cMsTimeout)
-{
-	if (cMsTimeout < 0) {
-		// WaitForEvent probably does the trick here.
-		PLEvent *pEvent = NULL;
-		nsresult rc = -1;
-		Py_BEGIN_ALLOW_THREADS;
-		rc = pQueue->WaitForEvent(&pEvent);
-		Py_END_ALLOW_THREADS;
-		if (NS_SUCCEEDED(rc)) {
-			pQueue->HandleEvent(pEvent);
-			return 0;
-		}
-	} else {
-		// Poll until time out or event is encountered. We have
-		// no other choice here.
-		uint64_t const StartMillTS = RTTimeMilliTS();
-		for (;;)
-		{
-			// Any pending events?
-			if (hasEventQueuePendingEvents(pQueue))
-				return 0;
-
-    			// Work any native per-thread event loops for good measure.
-#  ifdef RT_OS_DARWIN
-			CFRunLoopRunInMode(kCFRunLoopDefaultMode, 0.0, false /*returnAfterSourceHandled*/);
-#  endif
-
-			// Any pending events?
-			if (hasEventQueuePendingEvents(pQueue))
-				return 0;
-
-			// Timed out?
-			uint64_t cMsElapsed = RTTimeMilliTS() - StartMillTS;
-			if (cMsElapsed > (uint32_t)cMsTimeout)
-				break;
-
-			// Sleep a bit; return 0 if interrupt (see the select code edition).
-			uint32_t cMsLeft = (uint32_t)cMsTimeout - (uint32_t)cMsElapsed;
-			int rc = RTThreadSleep(RT_MIN(cMsLeft, 250));
-			if (rc == VERR_INTERRUPTED)
-				return 0;
-		}
-	}
-
-	return 1;
-}
-
-
-// Takes care of the waiting on darwin. Caller process any pending events when
-// 0 is returned.
-static nsresult
-waitForEventsOnDarwin(nsIEventQueue *pQueue, PRInt32 cMsTimeout)
-{
-	// This deals with the common case where the caller is the main
-	// application thread and the queue is a native one.
-    	if (    isEventQueueNative(pQueue)
-#  if MAC_OS_X_VERSION_MAX_ALLOWED == 1040 /* ASSUMES this means we're using the 10.4 SDK. */
-	    &&  GetCurrentEventLoop() == GetMainEventLoop()
-#  else
-	    &&  CFRunLoopGetMain() == CFRunLoopGetCurrent()
-#  endif
-	) {
-    		OSStatus       orc       = -1;
-		CFTimeInterval rdTimeout = cMsTimeout < 0
-		                         ? 1.0e10
-		                         : (double)cMsTimeout / 1000;
-		Py_BEGIN_ALLOW_THREADS;
-		orc = CFRunLoopRunInMode(kCFRunLoopDefaultMode, rdTimeout, true /*returnAfterSourceHandled*/);
-		if (orc == kCFRunLoopRunHandledSource)
-		    orc = CFRunLoopRunInMode(kCFRunLoopDefaultMode, 0.0, false /*returnAfterSourceHandled*/);
-		Py_END_ALLOW_THREADS;
-		if (!orc || orc == kCFRunLoopRunHandledSource)
-			return 0;
-
-		if (orc != kCFRunLoopRunTimedOut) {
-			NS_WARNING("Unexpected status code from CFRunLoopRunInMode");
-			RTThreadSleep(1); // throttle
-		}
-
-		return hasEventQueuePendingEvents(pQueue) ? 0 : 1;
-	}
-
-	// All native queus are driven by the main application loop... Use the
-	// fallback for now.
-	return waitForEventsCommonFallback(pQueue, cMsTimeout);
-}
-
-# endif /* RT_OS_DARWIN */
-# endif /* !USE_EVENTQUEUE */
 
 static PyObject*
 PyXPCOMMethod_WaitForEvents(PyObject *self, PyObject *args)
@@ -633,127 +504,36 @@ PyXPCOMMethod_WaitForEvents(PyObject *self, PyObject *args)
   if (!PyArg_ParseTuple(args, "i", &aTimeout))
     return NULL; /** @todo throw exception */
 
-  nsIEventQueue* q = g_mainEventQ;
-  if (q == nsnull)
-    return NULL; /** @todo throw exception */
-
-# ifdef USE_EVENTQUEUE
   int rc;
-  
-  Py_BEGIN_ALLOW_THREADS;
-  rc = com::EventQueue::processThreadEventQueue(aTimeout < 0 ? RT_INDEFINITE_WAIT : (uint32_t)aTimeout);
-  Py_END_ALLOW_THREADS;
-  
+  com::EventQueue* aEventQ = com::EventQueue::getMainEventQueue();
+  NS_WARN_IF_FALSE(aEventQ != nsnull, "Null main event queue");
+  if (!aEventQ)
+      return NULL;
+
+  Py_BEGIN_ALLOW_THREADS
+  rc = aEventQ->processEventQueue(aTimeout < 0 ? RT_INDEFINITE_WAIT : (uint32_t)aTimeout);
+  Py_END_ALLOW_THREADS
   if (RT_SUCCESS(rc))
       return PyInt_FromLong(0);
+
   if (   rc == VERR_TIMEOUT
       || rc == VERR_INTERRUPTED)
       return PyInt_FromLong(1);
-  return NULL; /** @todo throw exception */
 
-# else  /* !USE_EVENTQUEUE */
-  NS_WARN_IF_FALSE(isEventQueueNative(q), "The event queue must be native!");
-
-  PRInt32 result = 0;
-#  ifdef RT_OS_DARWIN
-  if (aTimeout != 0 && !hasEventQueuePendingEvents(q))
-    result = waitForEventsOnDarwin(q, aTimeout);
-  if (result == 0)
-    q->ProcessPendingEvents();
-
-#  else  /* !RT_OS_DARWIN */
-
-  PRBool hasEvents = PR_FALSE;
-  nsresult rc;
-  PRInt32 fd;
-
-  if (aTimeout == 0)
-    goto ok;
-
-  rc = q->PendingEvents(&hasEvents);
-  if (NS_FAILED (rc))
-    return NULL;
-
-  if (hasEvents)
-    goto ok;
-
-  fd = q->GetEventQueueSelectFD();
-  if (fd < 0 && aTimeout < 0)
-  {
-    /* fallback */
-    PLEvent *pEvent = NULL;
-    Py_BEGIN_ALLOW_THREADS
-    rc = q->WaitForEvent(&pEvent);
-    Py_END_ALLOW_THREADS
-    if (NS_SUCCEEDED(rc))
-      q->HandleEvent(pEvent);
-    goto ok;
-  }
-
-  /* Cannot perform timed wait otherwise */
-  if (fd < 0)
-      return NULL;
-
-  {
-    fd_set fdsetR, fdsetE;
-    struct timeval tv;
-
-    FD_ZERO(&fdsetR);
-    FD_SET(fd, &fdsetR);
-
-    fdsetE = fdsetR;
-    if (aTimeout > 0)
-      {
-        tv.tv_sec = (PRInt64)aTimeout / 1000;
-        tv.tv_usec = ((PRInt64)aTimeout % 1000) * 1000;
-      }
-
-    /** @todo: What to do for XPCOM platforms w/o select() ? */
-    Py_BEGIN_ALLOW_THREADS;
-    int n = select(fd + 1, &fdsetR, NULL, &fdsetE, aTimeout < 0 ? NULL : &tv);
-    result = (n == 0) ?  1 :  0;
-    Py_END_ALLOW_THREADS;
-  }
- ok:
-  q->ProcessPendingEvents();
-#  endif /* !RT_OS_DARWIN */
-  return PyInt_FromLong(result);
-# endif /* !USE_EVENTQUEUE */
-}
-
-PR_STATIC_CALLBACK(void *) PyHandleEvent(PLEvent *ev)
-{
-  return nsnull;
-}
-
-PR_STATIC_CALLBACK(void) PyDestroyEvent(PLEvent *ev)
-{
-  delete ev;
+  return NULL; /** @todo throw correct exception */
 }
 
 static PyObject*
 PyXPCOMMethod_InterruptWait(PyObject *self, PyObject *args)
 {
-  nsIEventQueue* q = g_mainEventQ;
-  PRInt32 result = 0;
-  nsresult rc;
+  com::EventQueue* aEventQ = com::EventQueue::getMainEventQueue();
+  NS_WARN_IF_FALSE(aEventQ != nsnull, "Null main event queue");
+  if (!aEventQ)
+      return NULL;
 
-  PLEvent *ev = new PLEvent();
-  if (!ev)
-  {
-    result = 1;
-    goto done;
-  }
-  q->InitEvent (ev, NULL, PyHandleEvent, PyDestroyEvent);
-  rc = q->PostEvent (ev);
-  if (NS_FAILED(rc))
-  {
-    result = 2;
-    goto done;
-  }
+  aEventQ->interruptEventQueueProcessing();
 
- done:
-  return PyInt_FromLong(result);
+  return PyInt_FromLong(0);
 }
 
 static void deinitVBoxPython();
@@ -1003,11 +783,6 @@ initVBoxPython() {
 
     rc = com::Initialize();
 
-    if (NS_SUCCEEDED(rc))
-    {
-      NS_GetMainEventQ (&g_mainEventQ);
-    }
-
     init_xpcom();
   }
 }
@@ -1015,10 +790,6 @@ initVBoxPython() {
 static
 void deinitVBoxPython()
 {
-
-  if (g_mainEventQ)
-    NS_RELEASE(g_mainEventQ);
-
   com::Shutdown();
 }
 

@@ -90,10 +90,31 @@ public:
     BOOL waitForEvent (Event **event);
     BOOL handleEvent (Event *event);
     static int processThreadEventQueue(uint32_t cMsTimeout, bool (*pfnExitCheck)(void *pvUser) = 0,
-                                       void *pvUser = 0, uint32_t cMsPollInterval = 1000,
-                                       bool fReturnOnEvent = true);
+                                     void *pvUser = 0, uint32_t cMsPollInterval = 1000,
+                                     bool fReturnOnEvent = true);
+    /**
+     * Process events pending on this event queue, and wait 
+     * up to given timeout, if nothing is available.
+     * Must be called on same thread this event queue was created on.
+     */
+    int processEventQueue(uint32_t cMsTimeout);
+    /**
+     * Interrupt thread waiting on event queue processing.
+     * Can be called on any thread.
+     */
+    int interruptEventQueueProcessing();
+    /** 
+     * Initialize/deinitialize event queues.
+     */
+    static int init();
+    static int deinit();
+    /**
+     * Get main event queue instance.
+     */
+    static EventQueue* getMainEventQueue();
 
 private:
+    static EventQueue* mMainQueue;
 
 #if !defined (VBOX_WITH_XPCOM)
 
