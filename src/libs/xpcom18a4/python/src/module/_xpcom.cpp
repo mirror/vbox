@@ -492,7 +492,7 @@ PyObject *LogConsoleMessage(PyObject *self, PyObject *args)
 }
 
 #ifdef VBOX
-#define USE_EVENTQUEUE  1
+//#define USE_EVENTQUEUE  1
 
 # ifdef USE_EVENTQUEUE
 #  include <VBox/com/EventQueue.h>
@@ -638,7 +638,12 @@ PyXPCOMMethod_WaitForEvents(PyObject *self, PyObject *args)
     return NULL; /** @todo throw exception */
 
 # ifdef USE_EVENTQUEUE
-  int rc = com::EventQueue::processThreadEventQueue(aTimeout < 0 ? RT_INDEFINITE_WAIT : (uint32_t)aTimeout);
+  int rc;
+  
+  Py_BEGIN_ALLOW_THREADS;
+  rc = com::EventQueue::processThreadEventQueue(aTimeout < 0 ? RT_INDEFINITE_WAIT : (uint32_t)aTimeout);
+  Py_END_ALLOW_THREADS;
+  
   if (RT_SUCCESS(rc))
       return PyInt_FromLong(0);
   if (   rc == VERR_TIMEOUT
