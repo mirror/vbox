@@ -722,6 +722,14 @@ static int pdmacFileEpCacheEntryDestroy(PAVLRFOFFNODECORE pNode, void *pvUser)
 {
     PPDMACFILECACHEENTRY  pEntry = (PPDMACFILECACHEENTRY)pNode;
     PPDMACFILECACHEGLOBAL pCache = (PPDMACFILECACHEGLOBAL)pvUser;
+    PPDMACFILEENDPOINTCACHE pEndpointCache = &pEntry->pEndpoint->DataCache;
+
+    while (pEntry->fFlags & (PDMACFILECACHE_ENTRY_IO_IN_PROGRESS | PDMACFILECACHE_ENTRY_IS_DIRTY))
+    {
+        RTSemRWReleaseWrite(pEndpointCache->SemRWEntries);
+        RTThreadSleep(250);
+        RTSemRWRequestWrite(pEndpointCache->SemRWEntries, RT_INDEFINITE_WAIT);
+    }
 
     AssertMsg(!(pEntry->fFlags & (PDMACFILECACHE_ENTRY_IO_IN_PROGRESS | PDMACFILECACHE_ENTRY_IS_DIRTY)),
                 ("Entry is dirty and/or still in progress fFlags=%#x\n", pEntry->fFlags));

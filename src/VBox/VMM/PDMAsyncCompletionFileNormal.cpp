@@ -367,23 +367,52 @@ static int pdmacFileAioMgrNormalProcessTaskList(PPDMACTASKFILE pTaskHead,
 
                 AssertMsg(hReq != NIL_RTFILEAIOREQ, ("Out of request handles\n"));
 
-                /* Check if the alignment requirements are met. */
-                if ((pEpClassFile->uBitmaskAlignment & (RTR3UINTPTR)pvBuf) != (RTR3UINTPTR)pvBuf)
+                /* Check if the alignment requirements are met.
+                 * Offset, transfer size and buffer address
+                 * need to be on a 512 boundary. */
+                size_t cbToTransfer = RT_ALIGN_Z(pCurr->DataSeg.cbSeg, 512);
+                RTFOFF OffStart = pCurr->Off & ~(RTFOFF)(512-1);
+                PDMACTASKFILETRANSFER enmTransferType = pCurr->enmTransferType;
+
+                AssertMsg((  (pCurr->enmTransferType == PDMACTASKFILETRANSFER_WRITE)
+                           || (OffStart + cbToTransfer <= pEndpoint->cbFile)),
+                          ("Read exceeds file size OffStart=%RTfoff cbToTransfer=%d cbFile=%llu\n",
+                          OffStart, cbToTransfer, pEndpoint->cbFile));
+
+                pCurr->fPrefetch = false;
+
+                if (   RT_UNLIKELY(cbToTransfer != pCurr->DataSeg.cbSeg)
+                    || RT_UNLIKELY(OffStart != pCurr->Off)
+                    || ((pEpClassFile->uBitmaskAlignment & (RTR3UINTPTR)pvBuf) != (RTR3UINTPTR)pvBuf))
                 {
                     /* Create bounce buffer. */
                     pCurr->fBounceBuffer = true;
+
+                    AssertMsg(pCurr->Off >= OffStart, ("Overflow in calculation Off=%llu OffStart=%llu\n",
+                              pCurr->Off, OffStart));
+                    pCurr->uBounceBufOffset = pCurr->Off - OffStart;
 
                     /** @todo: I think we need something like a RTMemAllocAligned method here.
                      * Current assumption is that the maximum alignment is 4096byte
                      * (GPT disk on Windows)
                      * so we can use RTMemPageAlloc here.
                      */
-                    pCurr->pvBounceBuffer = RTMemPageAlloc(pCurr->DataSeg.cbSeg);
+                    pCurr->pvBounceBuffer = RTMemPageAlloc(cbToTransfer);
                     AssertPtr(pCurr->pvBounceBuffer);
                     pvBuf = pCurr->pvBounceBuffer;
 
                     if (pCurr->enmTransferType == PDMACTASKFILETRANSFER_WRITE)
-                        memcpy(pvBuf, pCurr->DataSeg.pvSeg, pCurr->DataSeg.cbSeg);
+                    {
+                        if (   RT_UNLIKELY(cbToTransfer != pCurr->DataSeg.cbSeg)
+                            || RT_UNLIKELY(OffStart != pCurr->Off))
+                        {
+                            /* We have to fill the buffer first before we can update the data. */
+                            pCurr->fPrefetch = true;
+                            enmTransferType = PDMACTASKFILETRANSFER_READ;
+                        }
+                        else
+                            memcpy(pvBuf, pCurr->DataSeg.pvSeg, pCurr->DataSeg.cbSeg);
+                    }
                 }
                 else
                     pCurr->fBounceBuffer = false;
@@ -391,7 +420,7 @@ static int pdmacFileAioMgrNormalProcessTaskList(PPDMACTASKFILE pTaskHead,
                 AssertMsg((pEpClassFile->uBitmaskAlignment & (RTR3UINTPTR)pvBuf) == (RTR3UINTPTR)pvBuf,
                             ("AIO: Alignment restrictions not met!\n"));
 
-                if (pCurr->enmTransferType == PDMACTASKFILETRANSFER_WRITE)
+                if (enmTransferType == PDMACTASKFILETRANSFER_WRITE)
                 {
                     /* Grow the file if needed. */
                     if (RT_UNLIKELY((pCurr->Off + pCurr->DataSeg.cbSeg) > pEndpoint->cbFile))
@@ -401,11 +430,11 @@ static int pdmacFileAioMgrNormalProcessTaskList(PPDMACTASKFILE pTaskHead,
                     }
 
                     rc = RTFileAioReqPrepareWrite(hReq, pEndpoint->File,
-                                                  pCurr->Off, pvBuf, pCurr->DataSeg.cbSeg, pCurr);
+                                                  OffStart, pvBuf, cbToTransfer, pCurr);
                 }
                 else
                     rc = RTFileAioReqPrepareRead(hReq, pEndpoint->File,
-                                                 pCurr->Off, pvBuf, pCurr->DataSeg.cbSeg, pCurr);
+                                                 OffStart, pvBuf, cbToTransfer, pCurr);
                 AssertRC(rc);
 
                 apReqs[cRequests] = hReq;
@@ -686,43 +715,76 @@ int pdmacFileAioMgrNormal(RTTHREAD ThreadSelf, void *pvUser)
                     pEndpoint = pTask->pEndpoint;
 
                     AssertMsg(   RT_SUCCESS(rcReq)
-                              && (cbTransfered == pTask->DataSeg.cbSeg),
+                              && (   (cbTransfered == pTask->DataSeg.cbSeg)
+                                  || (pTask->fBounceBuffer)),
                               ("Task didn't completed successfully (rc=%Rrc) or was incomplete (cbTransfered=%u)\n", rc, cbTransfered));
 
-                    if (pTask->fBounceBuffer)
+                    if (pTask->fPrefetch)
                     {
-                        if (pTask->enmTransferType == PDMACTASKFILETRANSFER_READ)
-                            memcpy(pTask->DataSeg.pvSeg, pTask->pvBounceBuffer, pTask->DataSeg.cbSeg);
+                        Assert(pTask->enmTransferType == PDMACTASKFILETRANSFER_WRITE);
+                        Assert(pTask->fBounceBuffer);
 
-                        RTMemPageFree(pTask->pvBounceBuffer);
+                        memcpy(((uint8_t *)pTask->pvBounceBuffer) + pTask->uBounceBufOffset,
+                                pTask->DataSeg.pvSeg,
+                                pTask->DataSeg.cbSeg);
+
+                        /* Write it now. */
+                        pTask->fPrefetch = false;
+                        size_t cbToTransfer = RT_ALIGN_Z(pTask->DataSeg.cbSeg, 512);
+                        RTFOFF OffStart = pTask->Off & ~(RTFOFF)(512-1);
+
+                        /* Grow the file if needed. */
+                        if (RT_UNLIKELY((pTask->Off + pTask->DataSeg.cbSeg) > pEndpoint->cbFile))
+                        {
+                            ASMAtomicWriteU64(&pEndpoint->cbFile, pTask->Off + pTask->DataSeg.cbSeg);
+                            RTFileSetSize(pEndpoint->File, pTask->Off + pTask->DataSeg.cbSeg);
+                        }
+
+                        rc = RTFileAioReqPrepareWrite(apReqs[i], pEndpoint->File,
+                                                      OffStart, pTask->pvBounceBuffer, cbToTransfer, pTask);
+                        AssertRC(rc);
+                        rc = RTFileAioCtxSubmit(pAioMgr->hAioCtx, &apReqs[i], 1);
+                        AssertRC(rc);
                     }
-
-                    /* Put the entry on the free array */
-                    pAioMgr->pahReqsFree[pAioMgr->iFreeEntryNext] = apReqs[i];
-                    pAioMgr->iFreeEntryNext = (pAioMgr->iFreeEntryNext + 1) %pAioMgr->cReqEntries;
-
-                    pAioMgr->cRequestsActive--;
-                    pEndpoint->AioMgr.cReqsProcessed++;
-
-                    /* Call completion callback */
-                    pTask->pfnCompleted(pTask, pTask->pvUser);
-                    pdmacFileTaskFree(pEndpoint, pTask);
-
-                    /*
-                     * If there is no request left on the endpoint but a flush request is set
-                     * it completed now and we notify the owner.
-                     * Furthermore we look for new requests and continue.
-                     */
-                    if (!pEndpoint->AioMgr.cRequestsActive && pEndpoint->pFlushReq)
+                    else
                     {
+                        if (pTask->fBounceBuffer)
+                        {
+                            if (pTask->enmTransferType == PDMACTASKFILETRANSFER_READ)
+                                memcpy(pTask->DataSeg.pvSeg,
+                                       ((uint8_t *)pTask->pvBounceBuffer) + pTask->uBounceBufOffset,
+                                       pTask->DataSeg.cbSeg);
+
+                            RTMemPageFree(pTask->pvBounceBuffer);
+                        }
+
+                        /* Put the entry on the free array */
+                        pAioMgr->pahReqsFree[pAioMgr->iFreeEntryNext] = apReqs[i];
+                        pAioMgr->iFreeEntryNext = (pAioMgr->iFreeEntryNext + 1) %pAioMgr->cReqEntries;
+
+                        pAioMgr->cRequestsActive--;
+                        pEndpoint->AioMgr.cReqsProcessed++;
+
                         /* Call completion callback */
-                        pTask = pEndpoint->pFlushReq;
-                        pEndpoint->pFlushReq = NULL;
-
-                        AssertMsg(pTask->pEndpoint == pEndpoint, ("Endpoint of the flush request does not match assigned one\n"));
-
                         pTask->pfnCompleted(pTask, pTask->pvUser);
                         pdmacFileTaskFree(pEndpoint, pTask);
+
+                        /*
+                         * If there is no request left on the endpoint but a flush request is set
+                         * it completed now and we notify the owner.
+                         * Furthermore we look for new requests and continue.
+                         */
+                        if (!pEndpoint->AioMgr.cRequestsActive && pEndpoint->pFlushReq)
+                        {
+                            /* Call completion callback */
+                            pTask = pEndpoint->pFlushReq;
+                            pEndpoint->pFlushReq = NULL;
+
+                            AssertMsg(pTask->pEndpoint == pEndpoint, ("Endpoint of the flush request does not match assigned one\n"));
+
+                            pTask->pfnCompleted(pTask, pTask->pvUser);
+                            pdmacFileTaskFree(pEndpoint, pTask);
+                        }
                     }
 
                     if (pEndpoint->enmState == PDMASYNCCOMPLETIONENDPOINTFILESTATE_ACTIVE)
