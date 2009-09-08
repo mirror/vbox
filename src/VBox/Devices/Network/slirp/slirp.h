@@ -387,7 +387,7 @@ static void vbox_slirp_printV(char *format, va_list args)
     memset(buffer, 0, 1024);
     RTStrPrintfV(buffer, 1024, format, args);
 
-#if defined(DEBUG_vvl) && 0
+#if defined(DEBUG_vvl)
     LogRel(("NAT:ALIAS: %s\n", buffer));
 #else
     Log2(("NAT:ALIAS: %s\n", buffer));
@@ -414,7 +414,8 @@ int ftp_alias_load(PNATState);
 int ftp_alias_unload(PNATState);
 int nbt_alias_load(PNATState);
 int nbt_alias_unload(PNATState);
-
+int dns_alias_load(PNATState);
+int dns_alias_unload(PNATState);
 int slirp_arp_lookup_ip_by_ether(PNATState, const uint8_t *, uint32_t *);
 int slirp_arp_lookup_ether_by_ip(PNATState, uint32_t, uint8_t *);
 #endif

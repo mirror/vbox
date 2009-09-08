@@ -756,6 +756,7 @@ VBOX_SLIRP_ALIAS_SOURCES = \
 	Network/slirp/libalias/alias_mod.c \
 	Network/slirp/libalias/alias_proxy.c \
 	Network/slirp/libalias/alias_ftp.c \
+	Network/slirp/libalias/alias_dns.c \
 	Network/slirp/libalias/alias_nbt.c \
 	Network/slirp/libalias/alias_util.c
 

@@ -206,6 +206,7 @@ const uint8_t zerro_ethaddr[6] =
     0x0, 0x0, 0x0, 0x0, 0x0, 0x0
 };
 
+
 #ifdef RT_OS_WINDOWS
 static int get_dns_addr_domain(PNATState pData, bool fVerbose,
                                struct in_addr *pdns_addr,
@@ -339,6 +340,7 @@ static int get_dns_addr_domain(PNATState pData, bool fVerbose,
     FILE *f = NULL;
     int found = 0;
     struct in_addr tmp_addr;
+    int nameservers = 0;
 
 #ifdef RT_OS_OS2
     /* Try various locations. */
@@ -441,6 +443,29 @@ static int get_dns_addr_domain(PNATState pData, bool fVerbose,
 
 #endif
 
+static void alias_init(PNATState pData, struct libalias **pla, int la_flags, struct in_addr addr)
+{
+        int flags = 0;
+        struct libalias *la;
+        la = LibAliasInit(pData, NULL);
+        if (la == NULL)
+        {
+            LogRel(("NAT: LibAlias default rule wasn't initialized\n"));
+            AssertMsgFailed(("NAT: LibAlias default rule wasn't initialized\n"));
+        }
+        flags = LibAliasSetMode(la, 0, 0);
+#ifndef NO_FW_PUNCH
+        flags |= PKT_ALIAS_PUNCH_FW;
+#endif
+#ifdef DEBUG
+        flags |= PKT_ALIAS_LOG; /* set logging */
+#endif
+        flags |= la_flags;
+        flags = LibAliasSetMode(la, flags, ~0);
+        LibAliasSetAddress(la, addr);
+        *pla = la;
+}
+
 static int slirp_init_dns_list(PNATState pData)
 {
     TAILQ_INIT(&pData->dns_list_head);
@@ -538,7 +563,7 @@ int slirp_init(PNATState *ppData, uint32_t u32NetAddr, uint32_t u32Netmask,
     /* @todo: add ability to configure this staff */
 
     /* set default addresses */
-    inet_aton("127.0.0.1", &loopback_addr);
+    loopback_addr.s_addr = INADDR_LOOPBACK;
     if (slirp_init_dns_list(pData) < 0)
         fNATfailed = 1;
 
@@ -546,24 +571,18 @@ int slirp_init(PNATState *ppData, uint32_t u32NetAddr, uint32_t u32Netmask,
 
     getouraddr(pData);
     {
-        int flags = 0;
         struct in_addr proxy_addr;
-        pData->proxy_alias = LibAliasInit(pData, NULL);
-        if (pData->proxy_alias == NULL)
-        {
-            LogRel(("NAT: LibAlias default rule wasn't initialized\n"));
-            AssertMsgFailed(("NAT: LibAlias default rule wasn't initialized\n"));
-        }
-        flags = LibAliasSetMode(pData->proxy_alias, 0, 0);
-#ifndef NO_FW_PUNCH
-        flags |= PKT_ALIAS_PUNCH_FW;
-#endif
-        flags |= PKT_ALIAS_LOG; /* set logging */
-        flags = LibAliasSetMode(pData->proxy_alias, flags, ~0);
         proxy_addr.s_addr = htonl(ntohl(special_addr.s_addr) | CTL_ALIAS);
-        LibAliasSetAddress(pData->proxy_alias, proxy_addr);
+        alias_init(pData, &pData->proxy_alias, 0, proxy_addr);
+
+#if 0
+        proxy_addr.s_addr = htonl(ntohl(special_addr.s_addr) | CTL_DNS);
+        alias_init(pData, &pData->dns_alias, PKT_ALIAS_REVERSE, proxy_addr);
+#endif
+
         ftp_alias_load(pData);
         nbt_alias_load(pData);
+        dns_alias_load(pData);
     }
     return fNATfailed ? VINF_NAT_DNS : VINF_SUCCESS;
 }
@@ -642,6 +661,7 @@ void slirp_term(PNATState pData)
     slirp_release_dns_list(pData);
     ftp_alias_unload(pData);
     nbt_alias_unload(pData);
+    dns_alias_unload(pData);
     while(!LIST_EMPTY(&instancehead)) 
     {
         struct libalias *la = LIST_FIRST(&instancehead);
@@ -1636,14 +1656,10 @@ static void activate_port_forwarding(PNATState pData, struct ethhdr *ethdr)
 
         psin = (struct sockaddr_in *)&sa;
 
-        lib = LibAliasInit(pData, NULL);
-        flags = LibAliasSetMode(lib, 0, 0);
-        flags |= PKT_ALIAS_LOG; /* set logging */
-        flags |= PKT_ALIAS_REVERSE; /* set logging */
-        flags = LibAliasSetMode(lib, flags, ~0);
 
         alias.s_addr =  htonl(ntohl(guest_addr) | CTL_ALIAS);
-        link = LibAliasRedirectPort(lib, psin->sin_addr, htons(rule->host_port),
+        alias_init(pData, &so->so_la, PKT_ALIAS_REVERSE, alias);
+        link = LibAliasRedirectPort(so->so_la, psin->sin_addr, htons(rule->host_port),
             alias, htons(rule->guest_port),
             special_addr,  -1, /* not very clear for now*/
             rule->proto);
@@ -1653,7 +1669,6 @@ static void activate_port_forwarding(PNATState pData, struct ethhdr *ethdr)
                 rule->host_port, rule->guest_port));
             goto remove_port_forwarding;
         }
-        so->so_la = lib;
         rule->activated = 1;
         continue;
     remove_port_forwarding:

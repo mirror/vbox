@@ -248,6 +248,7 @@ typedef struct NATState
 
     LIST_HEAD(RT_NOTHING, libalias) instancehead;
     struct libalias *proxy_alias;
+    struct libalias *dns_alias;
     LIST_HEAD(handler_chain, proto_handler) handler_chain;
     struct port_forward_rule_list port_forward_rule_head;
     int port_forwarding_activated;
@@ -255,6 +256,7 @@ typedef struct NATState
     /*libalis modules' handlers*/
     struct proto_handler *ftp_module;
     struct proto_handler *nbt_module;
+    struct proto_handler *dns_module;
 
 #define PROFILE_COUNTER(name, dsc)     STAMPROFILE Stat ## name
 #define COUNTING_COUNTER(name, dsc)    STAMCOUNTER Stat ## name

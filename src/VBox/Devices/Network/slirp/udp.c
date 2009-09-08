@@ -106,6 +106,8 @@ udp_input(PNATState pData, register struct mbuf *m, int iphlen)
      * If not enough data to reflect UDP length, drop.
      */
     len = ntohs((u_int16_t)uh->uh_ulen);
+    Assert((ip->ip_len == len));
+    Assert((ip->ip_len + iphlen == m->m_len));
 
     if (ip->ip_len != len)
     {
@@ -158,6 +160,21 @@ udp_input(PNATState pData, register struct mbuf *m, int iphlen)
         goto bad;
     }
 
+    if (   ntohs(uh->uh_dport) == 53
+        && CTL_CHECK(ntohl(ip->ip_dst.s_addr), CTL_DNS))
+    {
+        struct sockaddr_in dst, src;
+        src.sin_addr.s_addr = ip->ip_dst.s_addr;
+        src.sin_port = uh->uh_dport;
+        dst.sin_addr.s_addr = ip->ip_src.s_addr;
+        dst.sin_port = uh->uh_sport;
+        /* udp_output2 will do opposite operations on mbuf*/
+        
+        m->m_data += sizeof(struct udpiphdr);
+        m->m_len -= sizeof(struct udpiphdr);
+        udp_output2(pData, NULL, m, &src, &dst, IPTOS_LOWDELAY);
+        goto bad;
+    }
     /*
      *  handle TFTP
      */
@@ -233,12 +250,14 @@ udp_input(PNATState pData, register struct mbuf *m, int iphlen)
     /*
      * DNS proxy
      */
+#if 0
     if (   (ip->ip_dst.s_addr == htonl(ntohl(special_addr.s_addr) | CTL_DNS))
         && (ntohs(uh->uh_dport) == 53)) 
     {
         dnsproxy_query(pData, so, m, iphlen);
         goto bad; /* it isn't bad, probably better to add additional label done for boot/tftf :)  */
     }
+#endif
 
     iphlen += sizeof(struct udphdr);
     m->m_len -= iphlen;
