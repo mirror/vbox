@@ -65,6 +65,30 @@ ip_init(PNATState pData)
     tcp_init(pData);
 }
 
+static struct libalias *select_alias(PNATState pData, struct mbuf* m)
+{
+    struct libalias *la = pData->proxy_alias;
+    struct udphdr *udp = NULL;
+    struct ip *pip = NULL;
+
+    if (m->m_la)
+        return m->m_la;
+
+#if 0
+    pip = mtod(m, struct ip *);
+    if (pip->ip_p == IPPROTO_UDP) {
+        udp = (struct udphdr *)((uint8_t *)pip + (pip->ip_hl << 2));
+        if (   pip->ip_dst.s_addr == htonl(ntohl(special_addr.s_addr) | CTL_DNS) 
+            && htons(udp->uh_dport) == 53)
+        {
+            return pData->dns_alias;
+        }
+        /* here we can add catch for dhcp and tftp servers */
+    }
+#endif
+    return la;
+}
+
 /*
  * Ip input routine.  Checksum and byte swap header.  If fragmented
  * try to reassemble.  Process options.  Pass to next level.
@@ -86,8 +110,7 @@ ip_input(PNATState pData, struct mbuf *m)
     {
         int rc;
         STAM_PROFILE_START(&pData->StatALIAS_input, a);
-        rc = LibAliasIn(m->m_la ? m->m_la : pData->proxy_alias, mtod(m, char *), 
-            m->m_len);
+        rc = LibAliasIn(select_alias(pData, m), mtod(m, char *), m->m_len);
         STAM_PROFILE_STOP(&pData->StatALIAS_input, a);
         Log2(("NAT: LibAlias return %d\n", rc));
     }
@@ -134,6 +157,7 @@ ip_input(PNATState pData, struct mbuf *m)
         ipstat.ips_badlen++;
         goto bad;
     }
+
     NTOHS(ip->ip_id);
     NTOHS(ip->ip_off);
 
@@ -148,6 +172,7 @@ ip_input(PNATState pData, struct mbuf *m)
         ipstat.ips_tooshort++;
         goto bad;
     }
+
     /* Should drop packet if mbuf too long? hmmm... */
     if (m->m_len > ip->ip_len)
         m_adj(m, ip->ip_len - m->m_len);
