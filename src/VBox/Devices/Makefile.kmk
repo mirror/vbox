@@ -498,6 +498,10 @@ ifdef VBOX_WITH_E1000
 	Network/DevE1000Phy.cpp
 endif
 
+ifdef VBOX_WITH_HGSMI
+ VBoxDDGC_DEFS         += VBOX_WITH_HGSMI
+endif
+
 ifdef VBOX_WITH_USB
 VBoxDDGC_DEFS          += VBOX_WITH_USB IN_USB_GC
 VBoxDDGC_SOURCES       += \
@@ -583,6 +587,10 @@ ifdef VBOX_WITH_E1000
  VBoxDDR0_SOURCES      += \
 	Network/DevE1000.cpp \
 	Network/DevE1000Phy.cpp
+endif
+
+ifdef VBOX_WITH_HGSMI
+ VBoxDDR0_DEFS         += VBOX_WITH_HGSMI
 endif
 
 ifdef VBOX_WITH_USB
