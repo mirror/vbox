@@ -571,6 +571,8 @@ public:
     uint32_t handle() const {return mHGHandle;}
     void setHandle(uint32_t h) {mHGHandle = h;}
 
+    const VBoxVHWADirtyRect & getDirtyRect() { return mUpdateMem2TexRect; }
+
 private:
     void doSetRectValuesInternal(const QRect & aTargRect, const QRect & aSrcRect, const QRect & aVisTargRect);
 
@@ -1186,12 +1188,40 @@ public:
     void onResizeEvent (const class VBoxResizeEvent *re);
     void onResizeEventPostprocess (const class VBoxResizeEvent *re);
 
+    void viewportResized(QResizeEvent * re)
+    {
+        vboxDoCheckUpdateViewport();
+        mGlCurrent = false;
+    }
+
+    void viewportScrolled(int dx, int dy)
+    {
+        vboxDoCheckUpdateViewport();
+        mGlCurrent = false;
+    }
+
     static bool isAcceleration2DVideoAvailable();
 
     /* not supposed to be called by clients */
     int vhwaLoadExec(struct SSMHANDLE * pSSM, uint32_t u32Version);
     void vhwaSaveExec(struct SSMHANDLE * pSSM);
 private:
+    int vhwaSurfaceUnlock(struct _VBOXVHWACMD_SURF_UNLOCK *pCmd);
+
+    void repaintMain();
+    void repaintOverlay()
+    {
+        if(mNeedOverlayRepaint)
+        {
+            mNeedOverlayRepaint = false;
+            performDisplayOverlay();
+        }
+    }
+    void repaint()
+    {
+        repaintOverlay();
+        repaintMain();
+    }
 
     void makeCurrent()
     {
@@ -1216,21 +1246,21 @@ private:
         }
     }
 
-    void vboxOpExit()
-    {
-        performDisplayOverlay();
-        mGlCurrent = false;
-    }
+//    void vboxOpExit()
+//    {
+//        performDisplayOverlay();
+//        mGlCurrent = false;
+//    }
 
 
     void vboxSetGlOn(bool on);
     bool vboxGetGlOn() { return mGlOn; }
-    void vboxSynchGl();
+    bool vboxSynchGl();
     void vboxDoVHWACmdExec(void *cmd);
     void vboxShowOverlay(bool show);
     void vboxDoCheckUpdateViewport();
     void vboxDoVHWACmd(void *cmd);
-    void vboxDoUpdateRect(const QRect * pRect);
+    void addMainDirtyRect(const QRect & aRect);
 //    void vboxUpdateOverlayPosition(const QPoint & pos);
     void vboxCheckUpdateOverlay(const QRect & rect);
     VBoxVHWACommandElement * processCmdList(VBoxVHWACommandElement * pCmd);
@@ -1245,6 +1275,7 @@ private:
     bool mOverlayVisible;
     bool mGlCurrent;
     bool mProcessingCommands;
+    bool mNeedOverlayRepaint;
     QRect mOverlayViewport;
     VBoxVHWADirtyRect mMainDirtyRect;
 
@@ -1308,6 +1339,18 @@ public:
         mOverlay.onResizeEvent(re);
         T::resizeEvent(re);
         mOverlay.onResizeEventPostprocess(re);
+    }
+
+    void viewportResized(QResizeEvent * re)
+    {
+        mOverlay.viewportResized(re);
+        T::viewportResized(re);
+    }
+
+    void viewportScrolled(int dx, int dy)
+    {
+        mOverlay.viewportScrolled(dx, dy);
+        T::viewportScrolled(dx, dy);
     }
 private:
     VBoxQGLOverlay mOverlay;

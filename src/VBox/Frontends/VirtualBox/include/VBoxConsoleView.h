@@ -137,6 +137,10 @@ public:
 
     void requestToResize (const QSize &aSize);
 
+#ifdef VBOX_WITH_VIDEOHWACCEL
+    void scrollContentsBy (int dx, int dy);
+#endif
+
 #if defined(Q_WS_MAC)
     void updateDockIcon();
     void updateDockOverlay();
