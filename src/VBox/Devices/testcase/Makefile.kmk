@@ -72,6 +72,12 @@ endif
 ifdef VBOX_WITH_HPET
 tstDeviceStructSizeGC_DEFS     += VBOX_WITH_HPET
 endif
+ifdef VBOX_WITH_HGSMI
+tstDeviceStructSizeGC_DEFS     += VBOX_WITH_HGSMI
+endif
+ifdef VBOX_WITH_VIDEOHWACCEL
+tstDeviceStructSizeGC_DEFS     += VBOX_WITH_VIDEOHWACCEL
+endif
 tstDeviceStructSizeGC_SOURCES   = tstDeviceStructSizeGC.cpp
 tstDeviceStructSizeGC_INCS      = \
 	$(VBOX_PATH_DEVICES_SRC) \
@@ -107,6 +113,12 @@ tstDeviceStructSize_DEFS     += VBOX_WITH_SMC
 endif
 ifdef VBOX_WITH_LPC
 tstDeviceStructSize_DEFS     += VBOX_WITH_LPC
+endif
+ifdef VBOX_WITH_HGSMI
+tstDeviceStructSize_DEFS     += VBOX_WITH_HGSMI
+endif
+ifdef VBOX_WITH_VIDEOHWACCEL
+tstDeviceStructSize_DEFS     += VBOX_WITH_VIDEOHWACCEL
 endif
 tstDeviceStructSize_INCS     = \
 	$(VBOX_PATH_DEVICES_SRC) \

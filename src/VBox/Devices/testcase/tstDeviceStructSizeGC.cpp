@@ -256,19 +256,27 @@ int main()
     GEN_CHECK_OFF(VGASTATE, fHasDirtyBits);
     GEN_CHECK_OFF(VGASTATE, fRemappedVGA);
     GEN_CHECK_OFF(VGASTATE, fRenderVRAM);
-    GEN_CHECK_OFF(VGASTATE, RCPtrLFBHandler);
+    GEN_CHECK_OFF(VGASTATE, cMonitors);
+#ifdef VBOX_WITH_HGSMI
+    GEN_CHECK_OFF(VGASTATE, pHGSMI);
+#endif
+    GEN_CHECK_OFF(VGASTATE, cMilliesRefreshInterval);
+    GEN_CHECK_OFF(VGASTATE, RefreshTimer);
     GEN_CHECK_OFF(VGASTATE, au32DirtyBitmap);
     GEN_CHECK_OFF(VGASTATE, au32DirtyBitmap[1]);
     GEN_CHECK_OFF(VGASTATE, au32DirtyBitmap[(VGA_VRAM_MAX / PAGE_SIZE / 32) - 1]);
+    GEN_CHECK_OFF(VGASTATE, RCPtrLFBHandler);
+    GEN_CHECK_OFF(VGASTATE, pDevInsRC);
     GEN_CHECK_OFF(VGASTATE, pDevInsR3);
     GEN_CHECK_OFF(VGASTATE, pDevInsR0);
-    GEN_CHECK_OFF(VGASTATE, pDevInsRC);
+    GEN_CHECK_OFF(VGASTATE, lock);
     GEN_CHECK_OFF(VGASTATE, Base);
     GEN_CHECK_OFF(VGASTATE, Port);
+#if defined(VBOX_WITH_HGSMI) && defined(VBOX_WITH_VIDEOHWACCEL)
+    GEN_CHECK_OFF(VGASTATE, VBVACallbacks);
+#endif
     GEN_CHECK_OFF(VGASTATE, pDrvBase);
     GEN_CHECK_OFF(VGASTATE, pDrv);
-    GEN_CHECK_OFF(VGASTATE, RefreshTimer);
-    GEN_CHECK_OFF(VGASTATE, cMilliesRefreshInterval);
     GEN_CHECK_OFF(VGASTATE, Dev);
     GEN_CHECK_OFF(VGASTATE, StatRZMemoryRead);
     GEN_CHECK_OFF(VGASTATE, StatR3MemoryRead);
@@ -281,14 +289,17 @@ int main()
     GEN_CHECK_OFF(VGASTATE, fWriteVBEIndex);
     GEN_CHECK_OFF(VGASTATE, cbWriteVBEData);
     GEN_CHECK_OFF(VGASTATE, cbWriteVBEIndex);
-#ifdef VBE_NEW_DYN_LIST
+# ifdef VBE_NEW_DYN_LIST
     GEN_CHECK_OFF(VGASTATE, cbWriteVBEExtraAddress);
-#endif
+# endif
 #endif
 #ifdef VBE_NEW_DYN_LIST
     GEN_CHECK_OFF(VGASTATE, cbVBEExtraData);
     GEN_CHECK_OFF(VGASTATE, pu8VBEExtraData);
     GEN_CHECK_OFF(VGASTATE, u16VBEExtraAddress);
+#endif
+#ifdef VBOX_WITH_HGSMI
+    GEN_CHECK_OFF(VGASTATE, IOPortBase);
 #endif
 
     /* Input/pckbd.c */
