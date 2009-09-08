@@ -3177,7 +3177,9 @@ int VBoxGLWidget::vhwaSurfaceCanCreate(struct _VBOXVHWACMD_SURF_CANCREATE *pCmd)
 
     if(pCmd->SurfInfo.surfCaps & VBOXVHWA_SCAPS_OFFSCREENPLAIN)
     {
+#ifdef DEBUG_misha
         Assert(0);
+#endif
         pCmd->u.out.ErrInfo = 1;
         return VINF_SUCCESS;
     }
