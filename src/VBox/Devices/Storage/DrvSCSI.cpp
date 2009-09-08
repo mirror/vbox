@@ -393,11 +393,6 @@ static int drvscsiProcessCDB(PDRVSCSI pThis, PPDMSCSIREQUEST pRequest, uint64_t 
                         rc =  drvscsiCmdOk(pRequest);
                         break;
                     }
-                    case SCSI_SERVICE_ACTION_IN_16:
-                    {
-                        AssertMsgFailed(("Not implemented yet.\n"));
-                        break;
-                    }
                     case SCSI_MODE_SENSE_6:
                     {
                         uint8_t uModePage = pRequest->pbCDB[2] & 0x3f;
