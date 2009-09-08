@@ -1,4 +1,6 @@
+#ifndef RT_OS_WINDOWS
 # include <netdb.h>
+#endif
 # include <iprt/ctype.h>
 # include <iprt/assert.h>
 # include <slirp.h>
