@@ -109,7 +109,8 @@ typedef struct VMCPU
      * Only valid when in RC or HWACCMR0 with scheduling disabled. */
     RTCPUID volatile        idHostCpu;
 
-    /** Align the next bit on a 64-byte boundary.
+    /** Align the next bit on a 64-byte boundary and make sure it starts at the same
+     *  offset in both 64-bit and 32-bit builds.
      *
      * @remarks The aligments of the members that are larger than 48 bytes should be
      *          64-byte for cache line reasons. structs containing small amounts of
@@ -210,7 +211,7 @@ typedef struct VMCPU
     } dbgf;
 
     /** Align at page boundrary. */
-    uint8_t                 abReserved[HC_ARCH_BITS == 32 ? 448 : 960];
+    uint8_t                 abReserved[960];
 } VMCPU;
 
 
@@ -809,10 +810,9 @@ typedef struct VM
     STAMPROFILEADV              StatSwitcherLldt;
     STAMPROFILEADV              StatSwitcherTSS;
 
-/** @todo Realign everything on 64 byte boundaries to better match the
- *        cache-line size. */
-    /* padding - the unions must be aligned on 32 bytes boundraries. */
-    uint32_t                padding[HC_ARCH_BITS == 32 ? 4+8 : 6];
+    /** Padding - the unions must be aligned on a 64 bytes boundrary and the unions
+     *  must start at the same offset on both 64-bit and 32-bit hosts. */
+    uint32_t                    padding[HC_ARCH_BITS == 32 ? 4+8 : 6];
 
     /** CPUM part. */
     union
@@ -968,19 +968,10 @@ typedef struct VM
     union
     {
 #ifdef ___VMInternal_h
-        struct VMINT    s;
+        struct VMINT s;
 #endif
         uint8_t     padding[24];        /* multiple of 8 */
     } vm;
-
-    /** PARAV part. */
-    union
-    {
-#ifdef ___PARAVInternal_h
-        struct PARAV s;
-#endif
-        uint8_t     padding[24];        /* multiple of 8 */
-    } parav;
 
     /** CFGM part. */
     union
@@ -991,8 +982,17 @@ typedef struct VM
         uint8_t     padding[8];         /* multiple of 8 */
     } cfgm;
 
-    /** Padding for aligning the cpu array on a 64 byte boundrary. */
-    uint8_t         abReserved2[8 + (HC_ARCH_BITS == 32 ? 3712 : 2112)];
+    /** PARAV part. */
+    union
+    {
+#ifdef ___PARAVInternal_h
+        struct PARAV s;
+#endif
+        uint8_t     padding[24];        /* multiple of 8 */
+    } parav;
+
+    /** Padding for aligning the cpu array on a page boundrary. */
+    uint8_t         abReserved2[2120];
 
     /* ---- end small stuff ---- */
 

@@ -166,10 +166,10 @@ int main()
     CHECK_PADDING_VM(64, ssm);
     CHECK_PADDING_VM(64, rem);
     CHECK_PADDING_VM(8, vm);
+    CHECK_PADDING_VM(8, cfgm);
 #ifdef VBOX_WITH_VMI
     CHECK_PADDING_VM(8, parav);
 #endif
-    CHECK_PADDING_VM(8, cfgm);
 
     PRINT_OFFSET(VMCPU, cpum);
     CHECK_PADDING_VMCPU(64, cpum);
