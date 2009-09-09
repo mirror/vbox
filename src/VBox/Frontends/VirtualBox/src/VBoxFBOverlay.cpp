@@ -2940,6 +2940,7 @@ VBoxGLWidget::VBoxGLWidget (VBoxConsoleView *aView, QWidget *aParent)
     mOpContext(NULL),
     mPixelFormat(0),
     mUsesGuestVRAM(false),
+    mRepaintNeeded(false),
 //    mbVGASurfCreated(false),
     mView(aView),
     mConstructingList(NULL),
@@ -3524,6 +3525,9 @@ int VBoxGLWidget::vhwaSurfaceDestroy(struct _VBOXVHWACMD_SURF_DESTROY *pCmd)
         }
     }
 
+    /* just in case we destroy a visible overlay sorface */
+    mRepaintNeeded = true;
+
     void * test = mSurfHandleTable.remove(pCmd->u.in.hSurf);
     Assert(test);
 
@@ -3618,6 +3622,7 @@ int VBoxGLWidget::vhwaSurfaceFlip(struct _VBOXVHWACMD_SURF_FLIP *pCmd)
     }
     pTargSurf->getComplexList()->setCurrentVisible(pTargSurf);
 
+    mRepaintNeeded = true;
 #ifdef DEBUG
     pCurrSurf->cFlipsCurr++;
     pTargSurf->cFlipsTarg++;
@@ -3793,6 +3798,8 @@ int VBoxGLWidget::vhwaSurfaceOverlayUpdate(struct _VBOXVHWACMD_SURF_OVERLAY_UPDA
         pList->setCurrentVisible(pSrcSurf);
     }
 
+    mRepaintNeeded = true;
+
     return VINF_SUCCESS;
 }
 
@@ -3811,6 +3818,22 @@ int VBoxGLWidget::vhwaSurfaceOverlaySetPosition(struct _VBOXVHWACMD_SURF_OVERLAY
 
     QPoint pos(pCmd->u.in.xPos, pCmd->u.in.yPos);
 
+#ifdef DEBUG_misha
+    Assert(pDstSurf == mDisplay.getVGA());
+    Assert(mDisplay.getVGA() == mDisplay.getPrimary());
+#endif
+    if(pSrcSurf->getComplexList()->current() != NULL)
+    {
+        Assert(pDstSurf);
+        if(pDstSurf != mDisplay.getPrimary())
+        {
+            mDisplay.updateVGA(pDstSurf);
+            pDstSurf->getComplexList()->setCurrentVisible(pDstSurf);
+        }
+    }
+
+    mRepaintNeeded = true;
+
     for (SurfList::const_iterator it = surfaces.begin();
              it != surfaces.end(); ++ it)
     {
@@ -3828,6 +3851,8 @@ int VBoxGLWidget::vhwaSurfaceColorkeySet(struct _VBOXVHWACMD_SURF_COLORKEY_SET *
     VBOXQGLLOG_ENTER(("pSurf (0x%x)\n",pSurf));
 
     vboxCheckUpdateAddress (pSurf, pCmd->u.in.offSurface);
+
+    mRepaintNeeded = true;
 
 //    VBOXVHWA_CKEY_COLORSPACE
     if(pCmd->u.in.flags & VBOXVHWA_CKEY_DESTBLT)
@@ -5473,6 +5498,7 @@ void VBoxQGLOverlay::vboxDoVHWACmdExec(void *cmd)
         {
             VBOXVHWACMD_SURF_UNLOCK * pBody = VBOXVHWACMD_BODY(pCmd, VBOXVHWACMD_SURF_UNLOCK);
             pCmd->rc = vhwaSurfaceUnlock(pBody);
+            /* mNeedOverlayRepaint is set inside the vhwaSurfaceUnlock */
         } break;
         case VBOXVHWACMD_TYPE_SURF_BLT:
         {
@@ -5514,6 +5540,7 @@ void VBoxQGLOverlay::vboxDoVHWACmdExec(void *cmd)
         {
             VBOXVHWACMD_SURF_COLORKEY_SET * pBody = VBOXVHWACMD_BODY(pCmd, VBOXVHWACMD_SURF_COLORKEY_SET);
             pCmd->rc = mpOverlayWidget->vhwaSurfaceColorkeySet(pBody);
+            mNeedOverlayRepaint = true;
         } break;
         case VBOXVHWACMD_TYPE_QUERY_INFO1:
         {

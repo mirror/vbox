@@ -572,7 +572,6 @@ public:
     void setHandle(uint32_t h) {mHGHandle = h;}
 
     const VBoxVHWADirtyRect & getDirtyRect() { return mUpdateMem2TexRect; }
-
 private:
     void doSetRectValuesInternal(const QRect & aTargRect, const QRect & aSrcRect, const QRect & aVisTargRect);
 
@@ -1061,7 +1060,15 @@ public:
 
     const QRect & vboxViewport() const {return mViewport;}
 
-    bool performDisplay(bool bForce) { return mDisplay.performDisplay(bForce); }
+    bool performDisplayAndSwap(bool bForce)
+    {
+        bForce = mDisplay.performDisplay(bForce | mRepaintNeeded);
+        if(bForce)
+        {
+            swapBuffers();
+        }
+        return bForce;
+    }
 protected:
 
     void paintGL()
@@ -1149,6 +1156,9 @@ private:
 
     ulong  mPixelFormat;
     bool   mUsesGuestVRAM;
+
+    bool mRepaintNeeded;
+
 //    bool   mbVGASurfCreated;
     QRect mViewport;
 
@@ -1258,8 +1268,7 @@ private:
             mpOverlayWidget->updateGL();
 #else
             makeCurrent();
-            mpOverlayWidget->performDisplay(false);
-            mpOverlayWidget->swapBuffers();
+            mpOverlayWidget->performDisplayAndSwap(false);
 #endif
         }
     }
