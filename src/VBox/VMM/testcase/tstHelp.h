@@ -69,10 +69,15 @@ RT_C_DECLS_END
 #define CHECK_MEMBER_ALIGNMENT(strct, member, align) \
     do \
     { \
-        if ( RT_OFFSETOF(strct, member) & ((align) - 1) ) \
+        if (RT_OFFSETOF(strct, member) & ((align) - 1) ) \
         { \
-            printf("%s::%s offset=%#x expected alignment %x, meaning %#x off\n", #strct, #member, (unsigned)RT_OFFSETOF(strct, member), \
-                   (unsigned)(align), (unsigned)(RT_OFFSETOF(strct, member) & ((align) - 1))); \
+            printf("%s::%s offset=%#x (%u) expected alignment %x, meaning %#x (%u) off\n", \
+                   #strct, #member, \
+                   (unsigned)RT_OFFSETOF(strct, member), \
+                   (unsigned)RT_OFFSETOF(strct, member), \
+                   (unsigned)(align), \
+                   (unsigned)((align) - RT_OFFSETOF(strct, member) & ((align) - 1)), \
+                   (unsigned)((align) - RT_OFFSETOF(strct, member) & ((align) - 1)) ); \
             rc++; \
         } \
     } while (0)
@@ -84,8 +89,13 @@ RT_C_DECLS_END
     do { \
         if (RT_ALIGN_Z(sizeof(type), (align)) != sizeof(type)) \
         { \
-            printf("%s size=%#x, align=%#x %#x bytes off\n", #type, (int)sizeof(type), \
-                  (align), (int)RT_ALIGN_Z(sizeof(type), align) - (int)sizeof(type)); \
+            printf("%s size=%#x (%u), align=%#x %#x (%u) bytes off\n", \
+                   #type, \
+                   (unsigned)sizeof(type), \
+                   (unsigned)sizeof(type), \
+                   (align), \
+                   (unsigned)RT_ALIGN_Z(sizeof(type), align) - (unsigned)sizeof(type), \
+                   (unsigned)RT_ALIGN_Z(sizeof(type), align) - (unsigned)sizeof(type)); \
             rc++; \
         } \
     } while (0)
@@ -93,14 +103,20 @@ RT_C_DECLS_END
 /**
  * Checks that a internal struct padding is big enough.
  */
-#define CHECK_PADDING(strct, member) \
+#define CHECK_PADDING(strct, member, align) \
     do \
     { \
         strct *p; \
         if (sizeof(p->member.s) > sizeof(p->member.padding)) \
         { \
             printf("padding of %s::%s is too small, padding=%d struct=%d correct=%d\n", #strct, #member, \
-                   (int)sizeof(p->member.padding), (int)sizeof(p->member.s), (int)RT_ALIGN_Z(sizeof(p->member.s), 64)); \
+                   (int)sizeof(p->member.padding), (int)sizeof(p->member.s), (int)RT_ALIGN_Z(sizeof(p->member.s), (align))); \
+            rc++; \
+        } \
+        else if (RT_ALIGN_Z(sizeof(p->member.padding), (align)) != sizeof(p->member.padding)) \
+        { \
+            printf("padding of %s::%s is misaligned, padding=%d correct=%d\n", #strct, #member, \
+                   (int)sizeof(p->member.padding), (int)RT_ALIGN_Z(sizeof(p->member.s), (align))); \
             rc++; \
         } \
     } while (0)

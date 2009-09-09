@@ -72,19 +72,31 @@ int main()
 
     printf("struct VM: %d bytes\n", (int)sizeof(VM));
 
-#define CHECK_PADDING_VM(member) \
+#define CHECK_PADDING_VM(align, member) \
     do \
     { \
-        CHECK_PADDING(VM, member); \
-        CHECK_MEMBER_ALIGNMENT(VM, member, 32); \
+        CHECK_PADDING(VM, member, align); \
+        CHECK_MEMBER_ALIGNMENT(VM, member, align); \
+        VM *p; \
+        if (sizeof(p->member.padding) >= (ssize_t)sizeof(p->member.s) + 128 + sizeof(p->member.s) / 20) \
+            printf("warning: VM::%-8s: padding=%-5d s=%-5d -> %-4d  suggest=%-5u\n", \
+                   #member, (int)sizeof(p->member.padding), (int)sizeof(p->member.s), \
+                   (int)sizeof(p->member.padding) - (int)sizeof(p->member.s), \
+                   (int)RT_ALIGN_Z(sizeof(p->member.s), (align))); \
     } while (0)
 
 
-#define CHECK_PADDING_VMCPU(member) \
+#define CHECK_PADDING_VMCPU(align, member) \
     do \
     { \
-        CHECK_PADDING(VMCPU, member); \
-        CHECK_MEMBER_ALIGNMENT(VMCPU, member, 32); \
+        CHECK_PADDING(VMCPU, member, align); \
+        CHECK_MEMBER_ALIGNMENT(VMCPU, member, align); \
+        VMCPU *p; \
+        if (sizeof(p->member.padding) >= (ssize_t)sizeof(p->member.s) + 128 + sizeof(p->member.s) / 20) \
+            printf("warning: VMCPU::%-8s: padding=%-5d s=%-5d -> %-4d  suggest=%-5u\n", \
+                   #member, (int)sizeof(p->member.padding), (int)sizeof(p->member.s), \
+                   (int)sizeof(p->member.padding) - (int)sizeof(p->member.s), \
+                   (int)RT_ALIGN_Z(sizeof(p->member.s), (align))); \
     } while (0)
 
 #define CHECK_CPUMCTXCORE(member) \
@@ -136,32 +148,38 @@ int main()
     CHECK_SIZE(X86PML4E, 8);
     CHECK_SIZE(X86PML4, PAGE_SIZE);
 
-    CHECK_PADDING_VM(cfgm);
-    CHECK_PADDING_VM(cpum);
-    CHECK_PADDING_VM(dbgf);
-    CHECK_PADDING_VM(em);
-    CHECK_PADDING_VM(iom);
-    CHECK_PADDING_VM(mm);
-    CHECK_PADDING_VM(pdm);
-    CHECK_PADDING_VM(pgm);
-    CHECK_PADDING_VM(selm);
-    CHECK_PADDING_VM(tm);
-    CHECK_PADDING_VM(trpm);
-    CHECK_PADDING_VM(vm);
-    CHECK_PADDING_VM(vmm);
-    CHECK_PADDING_VM(ssm);
-    CHECK_PADDING_VM(rem);
-    CHECK_PADDING_VM(hwaccm);
-    CHECK_PADDING_VM(patm);
-    CHECK_PADDING_VM(csam);
+    CHECK_PADDING_VM(64, cpum);
+    CHECK_PADDING_VM(64, vmm);
+    CHECK_PADDING_VM(64, pgm);
+    CHECK_PADDING_VM(64, hwaccm);
+    CHECK_PADDING_VM(64, trpm);
+    CHECK_PADDING_VM(64, selm);
+    CHECK_PADDING_VM(64, mm);
+    CHECK_PADDING_VM(64, pdm);
+    CHECK_PADDING_VM(64, iom);
+    CHECK_PADDING_VM(64, patm);
+    CHECK_PADDING_VM(64, csam);
+    CHECK_PADDING_VM(64, em);
+    CHECK_PADDING_VM(64, tm);
+    CHECK_PADDING_VM(64, dbgf);
+    CHECK_PADDING_VM(64, ssm);
+    CHECK_PADDING_VM(64, rem);
+    CHECK_PADDING_VM(8, vm);
+#ifdef VBOX_WITH_VMI
+    CHECK_PADDING_VM(8, parav);
+#endif
+    CHECK_PADDING_VM(8, cfgm);
 
-    CHECK_PADDING_VMCPU(cpum);
-    CHECK_PADDING_VMCPU(pgm);
-    CHECK_PADDING_VMCPU(em);
-    CHECK_PADDING_VMCPU(hwaccm);
-    CHECK_PADDING_VMCPU(trpm);
-    CHECK_PADDING_VMCPU(tm);
-    CHECK_PADDING_VMCPU(vmm);
+    CHECK_PADDING_VMCPU(64, cpum);
+    CHECK_PADDING_VMCPU(64, pgm);
+    CHECK_PADDING_VMCPU(64, hwaccm);
+    CHECK_PADDING_VMCPU(64, em);
+    CHECK_PADDING_VMCPU(64, trpm);
+    CHECK_PADDING_VMCPU(64, tm);
+    CHECK_PADDING_VMCPU(64, vmm);
+    CHECK_PADDING_VMCPU(64, pdm);
+    CHECK_PADDING_VMCPU(64, iom);
+    CHECK_PADDING_VMCPU(64, dbgf);
 
     CHECK_MEMBER_ALIGNMENT(VM, selm.s.Tss, 16);
     PRINT_OFFSET(VM, selm.s.Tss);
@@ -206,16 +224,10 @@ int main()
     CHECK_MEMBER_ALIGNMENT(VM, rem.s.uPendingExcptCR2, 8);
     CHECK_MEMBER_ALIGNMENT(VM, rem.s.StatsInQEMU, 8);
     CHECK_MEMBER_ALIGNMENT(VM, rem.s.Env, 32);
-    CHECK_MEMBER_ALIGNMENT(VM, aCpus, 64);
 
-    /* vmcpu */
-    CHECK_MEMBER_ALIGNMENT(VMCPU, cpum, 64);
-    CHECK_MEMBER_ALIGNMENT(VMCPU, vmm, 32);
-    CHECK_MEMBER_ALIGNMENT(VMCPU, pgm, 32);
-    CHECK_MEMBER_ALIGNMENT(VMCPU, em, 32);
-    CHECK_MEMBER_ALIGNMENT(VMCPU, hwaccm, 32);
-    CHECK_MEMBER_ALIGNMENT(VMCPU, tm, 32);
-    CHECK_SIZE_ALIGNMENT(VMCPU, 32);
+    /* the VMCPUs are page aligned TLB hit reassons. */
+    CHECK_MEMBER_ALIGNMENT(VM, aCpus, 4096);
+    CHECK_SIZE_ALIGNMENT(VMCPU, 4096);
 
     /* cpumctx */
     CHECK_MEMBER_ALIGNMENT(CPUMCTX, fpu, 32);
@@ -267,11 +279,11 @@ int main()
 
     /* pdm */
     CHECK_MEMBER_ALIGNMENT(PDMDEVINS, achInstanceData, 64);
-    CHECK_PADDING(PDMDEVINS, Internal);
+    CHECK_PADDING(PDMDEVINS, Internal, 1);
     CHECK_MEMBER_ALIGNMENT(PDMUSBINS, achInstanceData, 16);
-    CHECK_PADDING(PDMUSBINS, Internal);
+    CHECK_PADDING(PDMUSBINS, Internal, 1);
     CHECK_MEMBER_ALIGNMENT(PDMDRVINS, achInstanceData, 16);
-    CHECK_PADDING(PDMDRVINS, Internal);
+    CHECK_PADDING(PDMDRVINS, Internal, 1);
     CHECK_PADDING2(PDMCRITSECT);
     CHECK_MEMBER_ALIGNMENT(PGMPOOLPAGE, idx, sizeof(uint16_t));
     CHECK_MEMBER_ALIGNMENT(PGMPOOLPAGE, pvPageR3, sizeof(RTHCPTR));

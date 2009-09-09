@@ -133,7 +133,7 @@ typedef struct VMCPU
 #ifdef ___PGMInternal_h
         struct PGMCPU       s;
 #endif
-        char                padding[32*1024];   /* multiple of 64 */
+        char                padding[28*1024];   /* multiple of 64 */
     } pgm;
 
     /** HWACCM part. */
@@ -142,7 +142,7 @@ typedef struct VMCPU
 #ifdef ___HWACCMInternal_h
         struct HWACCMCPU    s;
 #endif
-        char                padding[6144];      /* multiple of 64 */
+        char                padding[5248];      /* multiple of 64 */
     } hwaccm;
 
     /** EM part. */
@@ -151,7 +151,7 @@ typedef struct VMCPU
 #ifdef ___EMInternal_h
         struct EMCPU        s;
 #endif
-        char                padding[2048];      /* multiple of 64 */
+        char                padding[1280];      /* multiple of 64 */
     } em;
 
     /** TRPM part. */
@@ -178,7 +178,7 @@ typedef struct VMCPU
 #ifdef ___VMMInternal_h
         struct VMMCPU       s;
 #endif
-        char                padding[384];       /* multiple of 64 */
+        char                padding[256];       /* multiple of 64 */
     } vmm;
 
     /** PDM part. */
@@ -209,6 +209,8 @@ typedef struct VMCPU
         uint8_t             padding[64];        /* multiple of 64 */
     } dbgf;
 
+    /** Align at page boundrary. */
+    uint8_t                 abReserved[HC_ARCH_BITS == 32 ? 448 : 64];
 } VMCPU;
 
 
@@ -715,7 +717,7 @@ typedef struct VM
      * @param   Ctx         The guest core context.
      * @remark  Assume interrupts disabled.
      */
-    RTRCPTR             pfnVMMGCGuestToHostAsmGuestCtx/*(int32_t eax, CPUMCTXCORE Ctx)*/;
+    RTRCPTR                     pfnVMMGCGuestToHostAsmGuestCtx/*(int32_t eax, CPUMCTXCORE Ctx)*/;
 
     /**
      * Assembly switch entry point for returning to host context.
@@ -730,7 +732,7 @@ typedef struct VM
      * @param   ecx         Pointer to the  hypervisor core context, register.
      * @remark  Assume interrupts disabled.
      */
-    RTRCPTR             pfnVMMGCGuestToHostAsmHyperCtx/*(int32_t eax, PCPUMCTXCORE ecx)*/;
+    RTRCPTR                     pfnVMMGCGuestToHostAsmHyperCtx/*(int32_t eax, PCPUMCTXCORE ecx)*/;
 
     /**
      * Assembly switch entry point for returning to host context.
@@ -742,75 +744,75 @@ typedef struct VM
      * @param   eax         The return code, register.
      * @remark  Assume interrupts disabled.
      */
-    RTRCPTR             pfnVMMGCGuestToHostAsm/*(int32_t eax)*/;
+    RTRCPTR                     pfnVMMGCGuestToHostAsm/*(int32_t eax)*/;
     /** @} */
 
 
     /** @name Various VM data owned by VM.
      * @{ */
-    RTTHREAD            uPadding1;
+    RTTHREAD                    uPadding1;
     /** The native handle of ThreadEMT. Getting the native handle
      * is generally faster than getting the IPRT one (except on OS/2 :-). */
-    RTNATIVETHREAD      uPadding2;
+    RTNATIVETHREAD              uPadding2;
     /** @} */
 
 
     /** @name Various items that are frequently accessed.
      * @{ */
     /** Raw ring-3 indicator.  */
-    bool                fRawR3Enabled;
+    bool                        fRawR3Enabled;
     /** Raw ring-0 indicator. */
-    bool                fRawR0Enabled;
+    bool                        fRawR0Enabled;
     /** PATM enabled flag.
      * This is placed here for performance reasons. */
-    bool                fPATMEnabled;
+    bool                        fPATMEnabled;
     /** CSAM enabled flag.
      * This is placed here for performance reasons. */
-    bool                fCSAMEnabled;
+    bool                        fCSAMEnabled;
     /** Hardware VM support is available and enabled.
      * This is placed here for performance reasons. */
-    bool                fHWACCMEnabled;
+    bool                        fHWACCMEnabled;
     /** Hardware VM support is required and non-optional.
      * This is initialized together with the rest of the VM structure. */
-    bool                fHwVirtExtForced;
+    bool                        fHwVirtExtForced;
     /** PARAV enabled flag. */
-    bool                fPARAVEnabled;
+    bool                        fPARAVEnabled;
     /** @} */
 
 
     /* padding to make gnuc put the StatQemuToGC where msc does. */
 #if HC_ARCH_BITS == 32
-    uint32_t            padding0;
+    uint32_t                    padding0;
 #endif
 
     /** Profiling the total time from Qemu to GC. */
-    STAMPROFILEADV      StatTotalQemuToGC;
+    STAMPROFILEADV              StatTotalQemuToGC;
     /** Profiling the total time from GC to Qemu. */
-    STAMPROFILEADV      StatTotalGCToQemu;
+    STAMPROFILEADV              StatTotalGCToQemu;
     /** Profiling the total time spent in GC. */
-    STAMPROFILEADV      StatTotalInGC;
+    STAMPROFILEADV              StatTotalInGC;
     /** Profiling the total time spent not in Qemu. */
-    STAMPROFILEADV      StatTotalInQemu;
+    STAMPROFILEADV              StatTotalInQemu;
     /** Profiling the VMMSwitcher code for going to GC. */
-    STAMPROFILEADV      StatSwitcherToGC;
+    STAMPROFILEADV              StatSwitcherToGC;
     /** Profiling the VMMSwitcher code for going to HC. */
-    STAMPROFILEADV      StatSwitcherToHC;
-    STAMPROFILEADV      StatSwitcherSaveRegs;
-    STAMPROFILEADV      StatSwitcherSysEnter;
-    STAMPROFILEADV      StatSwitcherDebug;
-    STAMPROFILEADV      StatSwitcherCR0;
-    STAMPROFILEADV      StatSwitcherCR4;
-    STAMPROFILEADV      StatSwitcherJmpCR3;
-    STAMPROFILEADV      StatSwitcherRstrRegs;
-    STAMPROFILEADV      StatSwitcherLgdt;
-    STAMPROFILEADV      StatSwitcherLidt;
-    STAMPROFILEADV      StatSwitcherLldt;
-    STAMPROFILEADV      StatSwitcherTSS;
+    STAMPROFILEADV              StatSwitcherToHC;
+    STAMPROFILEADV              StatSwitcherSaveRegs;
+    STAMPROFILEADV              StatSwitcherSysEnter;
+    STAMPROFILEADV              StatSwitcherDebug;
+    STAMPROFILEADV              StatSwitcherCR0;
+    STAMPROFILEADV              StatSwitcherCR4;
+    STAMPROFILEADV              StatSwitcherJmpCR3;
+    STAMPROFILEADV              StatSwitcherRstrRegs;
+    STAMPROFILEADV              StatSwitcherLgdt;
+    STAMPROFILEADV              StatSwitcherLidt;
+    STAMPROFILEADV              StatSwitcherLldt;
+    STAMPROFILEADV              StatSwitcherTSS;
 
 /** @todo Realign everything on 64 byte boundaries to better match the
  *        cache-line size. */
     /* padding - the unions must be aligned on 32 bytes boundraries. */
-    uint32_t            padding[HC_ARCH_BITS == 32 ? 4+8 : 6];
+    uint32_t                padding[HC_ARCH_BITS == 32 ? 4+8 : 6];
 
     /** CPUM part. */
     union
@@ -818,7 +820,7 @@ typedef struct VM
 #ifdef ___CPUMInternal_h
         struct CPUM s;
 #endif
-        char        padding[2048];        /* multiple of 32 */
+        uint8_t     padding[1472];      /* multiple of 64 */
     } cpum;
 
     /** VMM part. */
@@ -827,7 +829,7 @@ typedef struct VM
 #ifdef ___VMMInternal_h
         struct VMM  s;
 #endif
-        char        padding[1600];       /* multiple of 32 */
+        uint8_t     padding[1536];      /* multiple of 64 */
     } vmm;
 
     /** PGM part. */
@@ -836,7 +838,7 @@ typedef struct VM
 #ifdef ___PGMInternal_h
         struct PGM  s;
 #endif
-        char        padding[16*1024];   /* multiple of 32 */
+        uint8_t     padding[5184];      /* multiple of 64 */
     } pgm;
 
     /** HWACCM part. */
@@ -845,7 +847,7 @@ typedef struct VM
 #ifdef ___HWACCMInternal_h
         struct HWACCM s;
 #endif
-        char        padding[8192];       /* multiple of 32 */
+        uint8_t     padding[5376];      /* multiple of 64 */
     } hwaccm;
 
     /** TRPM part. */
@@ -854,7 +856,7 @@ typedef struct VM
 #ifdef ___TRPMInternal_h
         struct TRPM s;
 #endif
-        char        padding[5344];      /* multiple of 32 */
+        uint8_t     padding[5184];      /* multiple of 64 */
     } trpm;
 
     /** SELM part. */
@@ -863,7 +865,7 @@ typedef struct VM
 #ifdef ___SELMInternal_h
         struct SELM s;
 #endif
-        char        padding[544];      /* multiple of 32 */
+        uint8_t     padding[576];       /* multiple of 64 */
     } selm;
 
     /** MM part. */
@@ -872,17 +874,8 @@ typedef struct VM
 #ifdef ___MMInternal_h
         struct MM   s;
 #endif
-        char        padding[192];       /* multiple of 32 */
+        uint8_t     padding[192];       /* multiple of 64 */
     } mm;
-
-    /** CFGM part. */
-    union
-    {
-#ifdef ___CFGMInternal_h
-        struct CFGM s;
-#endif
-        char        padding[32];        /* multiple of 32 */
-    } cfgm;
 
     /** PDM part. */
     union
@@ -890,7 +883,7 @@ typedef struct VM
 #ifdef ___PDMInternal_h
         struct PDM s;
 #endif
-        char        padding[1824];      /* multiple of 32 */
+        uint8_t     padding[1024];      /* multiple of 64 */
     } pdm;
 
     /** IOM part. */
@@ -899,7 +892,7 @@ typedef struct VM
 #ifdef ___IOMInternal_h
         struct IOM s;
 #endif
-        char        padding[4544];      /* multiple of 32 */
+        uint8_t     padding[768];       /* multiple of 64 */
     } iom;
 
     /** PATM part. */
@@ -908,7 +901,7 @@ typedef struct VM
 #ifdef ___PATMInternal_h
         struct PATM s;
 #endif
-        char        padding[768];       /* multiple of 32 */
+        uint8_t     padding[768];       /* multiple of 64 */
     } patm;
 
     /** CSAM part. */
@@ -917,17 +910,8 @@ typedef struct VM
 #ifdef ___CSAMInternal_h
         struct CSAM s;
 #endif
-        char        padding[3328];    /* multiple of 32 */
+        uint8_t     padding[1024];      /* multiple of 64 */
     } csam;
-
-    /** PARAV part. */
-    union
-    {
-#ifdef ___PARAVInternal_h
-        struct PARAV s;
-#endif
-        char        padding[128];
-    } parav;
 
     /** EM part. */
     union
@@ -935,7 +919,7 @@ typedef struct VM
 #ifdef ___EMInternal_h
         struct EM   s;
 #endif
-        char        padding[256];         /* multiple of 32 */
+        uint8_t     padding[256];       /* multiple of 64 */
     } em;
 
     /** TM part. */
@@ -944,7 +928,7 @@ typedef struct VM
 #ifdef ___TMInternal_h
         struct TM   s;
 #endif
-        char        padding[2112];      /* multiple of 32 */
+        uint8_t     padding[2112];      /* multiple of 64 */
     } tm;
 
     /** DBGF part. */
@@ -953,7 +937,7 @@ typedef struct VM
 #ifdef ___DBGFInternal_h
         struct DBGF s;
 #endif
-        char        padding[2368];      /* multiple of 32 */
+        uint8_t     padding[2368];      /* multiple of 64 */
     } dbgf;
 
     /** SSM part. */
@@ -962,17 +946,8 @@ typedef struct VM
 #ifdef ___SSMInternal_h
         struct SSM  s;
 #endif
-        char        padding[32];        /* multiple of 32 */
+        uint8_t     padding[64];        /* multiple of 64 */
     } ssm;
-
-    /** VM part. */
-    union
-    {
-#ifdef ___VMInternal_h
-        struct VMINT    s;
-#endif
-        char        padding[768];       /* multiple of 32 */
-    } vm;
 
     /** REM part. */
     union
@@ -984,15 +959,47 @@ typedef struct VM
 /** @def VM_REM_SIZE
  * Must be multiple of 32 and coherent with REM_ENV_SIZE from REMInternal.h. */
 # define VM_REM_SIZE        0x11100
-        char        padding[VM_REM_SIZE];   /* multiple of 32 */
+        uint8_t     padding[VM_REM_SIZE];   /* multiple of 32 */
     } rem;
 
+    /* ---- begin small stuff ---- */
+
+    /** VM part. */
+    union
+    {
+#ifdef ___VMInternal_h
+        struct VMINT    s;
+#endif
+        uint8_t     padding[24];        /* multiple of 8 */
+    } vm;
+
+    /** PARAV part. */
+    union
+    {
+#ifdef ___PARAVInternal_h
+        struct PARAV s;
+#endif
+        uint8_t     padding[24];        /* multiple of 8 */
+    } parav;
+
+    /** CFGM part. */
+    union
+    {
+#ifdef ___CFGMInternal_h
+        struct CFGM s;
+#endif
+        uint8_t     padding[8];         /* multiple of 8 */
+    } cfgm;
+
     /** Padding for aligning the cpu array on a 64 byte boundrary. */
-    uint32_t    u32Reserved2[8];
+    uint8_t         abReserved2[8 + (HC_ARCH_BITS == 32 ? 3712 : 0)];
+
+    /* ---- end small stuff ---- */
 
     /** VMCPU array for the configured number of virtual CPUs.
-     * Must be aligned on a 64-byte boundrary.  */
-    VMCPU       aCpus[1];
+     * Must be aligned on a page boundrary for TLB hit reasons as well as
+     * alignment of VMCPU members. */
+    VMCPU           aCpus[1];
 } VM;
 
 
