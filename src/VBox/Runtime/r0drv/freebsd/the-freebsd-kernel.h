@@ -71,7 +71,7 @@
 # error "This header doesn't work for C++ code. Sorry, typical kernel crap."
 #endif*/
 
-#ifdef __FreeBSD_version >= 800026
+#if __FreeBSD_version >= 800026
 # define SLEEPQ_TIMEDWAIT(EventInt) sleepq_timedwait(EventInt, 0)
 # define SLEEPQ_TIMEDWAIT_SIG(EventInt) sleepq_timedwait_sig(EventInt, 0)
 # define SLEEPQ_WAIT(EventInt) sleepq_wait(EventInt, 0)
