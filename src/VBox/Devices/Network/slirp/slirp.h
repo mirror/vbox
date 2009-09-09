@@ -375,17 +375,17 @@ int sscanf(const char *s, const char *format, ...);
 # define stderr NULL 
 # define stdout NULL 
 # ifdef DEBUG
-# define LIBALIAS_DEBUG
-# ifdef fprintf
-#  undef fprintf
-# endif
-# ifdef fflush
-#  undef fflush
-# endif
-# ifdef printf
-#  undef printf
-# endif
-#define fflush(x) do{}while(0)
+#  define LIBALIAS_DEBUG
+#  ifdef fprintf
+#   undef fprintf
+#  endif
+#  ifdef fflush
+#   undef fflush
+#  endif
+#  ifdef printf
+#   undef printf
+#  endif
+# define fflush(x) do{} while(0)
 # define fprintf vbox_slirp_fprintf
 # define printf vbox_slirp_printf
 static void vbox_slirp_printV(char *format, va_list args)
@@ -394,11 +394,11 @@ static void vbox_slirp_printV(char *format, va_list args)
     memset(buffer, 0, 1024);
     RTStrPrintfV(buffer, 1024, format, args);
 
-#if defined(DEBUG_vvl)
+# if defined(DEBUG_vvl)
     LogRel(("NAT:ALIAS: %s\n", buffer));
-#else
+# else
     Log2(("NAT:ALIAS: %s\n", buffer));
-#endif
+# endif
 }
 static void vbox_slirp_printf(char *format, ...)
 {
