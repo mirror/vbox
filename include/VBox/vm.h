@@ -124,7 +124,7 @@ typedef struct VMCPU
 #ifdef ___CPUMInternal_h
         struct CPUMCPU      s;
 #endif
-        char                padding[4096];      /* multiple of 64 */
+        char                padding[3456];      /* multiple of 64 */
     } cpum;
 
     /** PGM part. */
@@ -151,7 +151,7 @@ typedef struct VMCPU
 #ifdef ___EMInternal_h
         struct EMCPU        s;
 #endif
-        char                padding[1280];      /* multiple of 64 */
+        char                padding[1408];      /* multiple of 64 */
     } em;
 
     /** TRPM part. */
@@ -210,7 +210,7 @@ typedef struct VMCPU
     } dbgf;
 
     /** Align at page boundrary. */
-    uint8_t                 abReserved[HC_ARCH_BITS == 32 ? 448 : 64];
+    uint8_t                 abReserved[HC_ARCH_BITS == 32 ? 448 : 960];
 } VMCPU;
 
 
@@ -838,7 +838,7 @@ typedef struct VM
 #ifdef ___PGMInternal_h
         struct PGM  s;
 #endif
-        uint8_t     padding[5184];      /* multiple of 64 */
+        uint8_t     padding[6080];      /* multiple of 64 */
     } pgm;
 
     /** HWACCM part. */
@@ -883,7 +883,7 @@ typedef struct VM
 #ifdef ___PDMInternal_h
         struct PDM s;
 #endif
-        uint8_t     padding[1024];      /* multiple of 64 */
+        uint8_t     padding[1536];      /* multiple of 64 */
     } pdm;
 
     /** IOM part. */
@@ -892,7 +892,7 @@ typedef struct VM
 #ifdef ___IOMInternal_h
         struct IOM s;
 #endif
-        uint8_t     padding[768];       /* multiple of 64 */
+        uint8_t     padding[832];       /* multiple of 64 */
     } iom;
 
     /** PATM part. */
@@ -910,7 +910,7 @@ typedef struct VM
 #ifdef ___CSAMInternal_h
         struct CSAM s;
 #endif
-        uint8_t     padding[1024];      /* multiple of 64 */
+        uint8_t     padding[1088];      /* multiple of 64 */
     } csam;
 
     /** EM part. */
@@ -946,7 +946,7 @@ typedef struct VM
 #ifdef ___SSMInternal_h
         struct SSM  s;
 #endif
-        uint8_t     padding[64];        /* multiple of 64 */
+        uint8_t     padding[128];        /* multiple of 64 */
     } ssm;
 
     /** REM part. */
@@ -992,7 +992,7 @@ typedef struct VM
     } cfgm;
 
     /** Padding for aligning the cpu array on a 64 byte boundrary. */
-    uint8_t         abReserved2[8 + (HC_ARCH_BITS == 32 ? 3712 : 0)];
+    uint8_t         abReserved2[8 + (HC_ARCH_BITS == 32 ? 3712 : 2112)];
 
     /* ---- end small stuff ---- */
 
