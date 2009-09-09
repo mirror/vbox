@@ -139,15 +139,6 @@ static int VBoxServiceExecReadHostProp(const char *pszPropName, char **ppszValue
 
     *ppszValue = NULL;
 
-    char *pszPropNameUtf8;
-    rc = RTStrCurrentCPToUtf8(&pszPropNameUtf8, pszPropName);
-    if (RT_FAILURE(rc))
-    {
-        VBoxServiceError("Exec: Failed to convert property name %s to UTF-8: %Rrc",
-                         pszPropName, rc);
-        return rc;
-    }
-
     for (unsigned cTries = 0; cTries < 10; cTries++)
     {
         /*
@@ -164,7 +155,7 @@ static int VBoxServiceExecReadHostProp(const char *pszPropName, char **ppszValue
         char    *pszValue;
         char    *pszFlags;
         uint64_t uTimestamp;
-        rc = VbglR3GuestPropRead(g_uExecGuestPropSvcClientID, pszPropNameUtf8,
+        rc = VbglR3GuestPropRead(g_uExecGuestPropSvcClientID, pszPropName,
                                  pvBuf, cbBuf,
                                  &pszValue, &uTimestamp, &pszFlags, NULL);
         if (RT_FAILURE(rc))
@@ -210,7 +201,6 @@ static int VBoxServiceExecReadHostProp(const char *pszPropName, char **ppszValue
     }
 
     RTMemFree(pvBuf);
-    RTStrFree(pszPropNameUtf8);
     return rc;
 }
 
@@ -294,8 +284,9 @@ static int VBoxServiceExecCreateArgV(const char *pszExec, const char *pszArgs, c
 
             /* add it */
             papszArgs[cUsed] = RTStrDupN(pszArgs, (uintptr_t)pszEnd - (uintptr_t)pszArgs);
-            if (!papszArgs[cUsed++])
+            if (!papszArgs[cUsed])
                 break;
+            cUsed++;
 
             /* advance */
             pszArgs = pszEnd;
@@ -407,21 +398,11 @@ DECLCALLBACK(int) VBoxServiceExecWorker(bool volatile *pfShutdown)
                                     /*
                                      * Store the result in Set return value so the host knows what happend.
                                      */
-                                    char* pszValueUtf8;
-                                    rc = RTStrCurrentCPToUtf8(&pszValueUtf8, "/VirtualBox/HostGuest/SysprepRet");
+                                    rc = VbglR3GuestPropWriteValueF(g_uExecGuestPropSvcClientID,
+                                                                    "/VirtualBox/HostGuest/SysprepRet",
+                                                                    "%d", Status.iStatus);
                                     if (RT_FAILURE(rc))
-                                    {
-                                        VBoxServiceError("Exec: Failed to convert SysprepVBoxRC name to UTF-8: rc=%Rrc\n", rc);
-                                    }
-                                    else
-                                    {
-                                        rc = VbglR3GuestPropWriteValueF(g_uExecGuestPropSvcClientID,
-                                                                        pszValueUtf8,
-                                                                        "%d", Status.iStatus);
-                                        if (RT_FAILURE(rc))
-                                            VBoxServiceError("Exec: Failed to write SysprepRet: rc=%Rrc\n", rc);
-                                        RTStrFree(pszValueUtf8);
-                                    }
+                                        VBoxServiceError("Exec: Failed to write SysprepRet: rc=%Rrc\n", rc);
                                 }
                                 else
                                     VBoxServiceError("Exec: RTProcWait failed for sysprep: %Rrc\n", rc);
@@ -455,23 +436,13 @@ DECLCALLBACK(int) VBoxServiceExecWorker(bool volatile *pfShutdown)
                 &&  rc != VERR_FILE_NOT_FOUND)
             {
                 VBoxServiceVerbose(1, "Exec: Stopping sysprep processing (rc=%Rrc)\n", rc);
-
-                char* pszValueUtf8;
-                rc = RTStrCurrentCPToUtf8(&pszValueUtf8, "/VirtualBox/HostGuest/SysprepVBoxRC");
+                rc = VbglR3GuestPropWriteValueF(g_uExecGuestPropSvcClientID, "/VirtualBox/HostGuest/SysprepVBoxRC", "%d", rc);
                 if (RT_FAILURE(rc))
-                {
-                    VBoxServiceError("Exec: Failed to convert SysprepVBoxRC name to UTF-8: rc=%Rrc\n", rc);
-                }
-                else 
-                {
-                    rc = VbglR3GuestPropWriteValueF(g_uExecGuestPropSvcClientID, pszValueUtf8, "%d", rc);
-                    if (RT_FAILURE(rc))
-                        VBoxServiceError("Exec: Failed to write SysprepVBoxRC: rc=%Rrc\n", rc);
-                    RTStrFree(pszValueUtf8);
-                }
+                    VBoxServiceError("Exec: Failed to write SysprepVBoxRC: rc=%Rrc\n", rc);
                 fSysprepDone = true;
             }
         }
+
 #ifdef FULL_FEATURED_EXEC
         1. Read the command - value, timestamp and flags.
         2. Check that the flags indicates that the guest cannot write to it and that it's transient.
