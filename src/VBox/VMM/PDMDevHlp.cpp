@@ -2354,7 +2354,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_VMSuspend(PPDMDEVINS pDevIns)
     LogFlow(("pdmR3DevHlp_VMSuspend: caller='%s'/%d:\n",
              pDevIns->pDevReg->szDeviceName, pDevIns->iInstance));
 
-    if (pVM->cCPUs > 1)
+    if (pVM->cCpus > 1)
     {
         /* We own the IOM lock here and could cause a deadlock by waiting for a VCPU that is blocking on the IOM lock. */
         PVMREQ pReq;
@@ -2381,7 +2381,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_VMPowerOff(PPDMDEVINS pDevIns)
     LogFlow(("pdmR3DevHlp_VMPowerOff: caller='%s'/%d:\n",
              pDevIns->pDevReg->szDeviceName, pDevIns->iInstance));
 
-    if (pVM->cCPUs > 1)
+    if (pVM->cCpus > 1)
     {
         /* We own the IOM lock here and could cause a deadlock by waiting for a VCPU that is blocking on the IOM lock. */
         PVMREQ pReq;

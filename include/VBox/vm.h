@@ -697,7 +697,7 @@ typedef struct VM
     /** The GVM VM handle. Only the GVM should modify this field. */
     uint32_t                    hSelf;
     /** Number of virtual CPUs. */
-    uint32_t                    cCPUs;
+    uint32_t                    cCpus;
 
     /** Size of the VM structure including the VMCPU array. */
     uint32_t                    cbSelf;

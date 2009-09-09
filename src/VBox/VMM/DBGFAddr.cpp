@@ -102,7 +102,7 @@ static int dbgfR3AddrFromSelInfoOffWorker(PDBGFADDRESS pAddress, PCDBGFSELINFO p
  */
 VMMR3DECL(int) DBGFR3AddrFromSelOff(PVM pVM, VMCPUID idCpu, PDBGFADDRESS pAddress, RTSEL Sel, RTUINTPTR off)
 {
-    AssertReturn(idCpu < pVM->cCPUs, VERR_INVALID_PARAMETER);
+    AssertReturn(idCpu < pVM->cCpus, VERR_INVALID_PARAMETER);
 
     pAddress->Sel = Sel;
     pAddress->off = off;
@@ -257,7 +257,7 @@ VMMR3DECL(int)  DBGFR3AddrToPhys(PVM pVM, VMCPUID idCpu, PDBGFADDRESS pAddress, 
     AssertPtr(pAddress);
     AssertReturn(DBGFADDRESS_IS_VALID(pAddress), VERR_INVALID_PARAMETER);
     VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_STATE);
-    AssertReturn(idCpu < pVM->cCPUs, VERR_INVALID_PARAMETER);
+    AssertReturn(idCpu < pVM->cCpus, VERR_INVALID_PARAMETER);
 
     /*
      * Convert by address type.
@@ -323,7 +323,7 @@ VMMR3DECL(int)  DBGFR3AddrToHostPhys(PVM pVM, VMCPUID idCpu, PDBGFADDRESS pAddre
     AssertPtr(pAddress);
     AssertReturn(DBGFADDRESS_IS_VALID(pAddress), VERR_INVALID_PARAMETER);
     VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_STATE);
-    AssertReturn(idCpu < pVM->cCPUs, VERR_INVALID_PARAMETER);
+    AssertReturn(idCpu < pVM->cCpus, VERR_INVALID_PARAMETER);
 
     /*
      * Convert it if we can.
@@ -437,7 +437,7 @@ VMMR3DECL(int)  DBGFR3AddrToVolatileR3Ptr(PVM pVM, VMCPUID idCpu, PDBGFADDRESS p
     AssertPtr(pAddress);
     AssertReturn(DBGFADDRESS_IS_VALID(pAddress), VERR_INVALID_PARAMETER);
     VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_STATE);
-    AssertReturn(idCpu < pVM->cCPUs, VERR_INVALID_PARAMETER);
+    AssertReturn(idCpu < pVM->cCpus, VERR_INVALID_PARAMETER);
 
     /*
      * Convert it.

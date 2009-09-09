@@ -55,7 +55,7 @@ struc VM
     .pVMR0                  RTR0PTR_RES 1
     .pVMRC                  RTRCPTR_RES 1
     .hSelf                  resd 1
-    .cCPUs                  resd 1
+    .cCpus                  resd 1
     .cbSelf                 resd 1
     .offVMCPU               resd 1
     .u32Reserved            resd 6

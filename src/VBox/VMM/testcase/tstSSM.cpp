@@ -653,7 +653,7 @@ static int createFakeVM(PVM *ppVM)
                     pVM->enmVMState = VMSTATE_CREATED;
                     pVM->pVMR3 = pVM;
                     pVM->pUVM = pUVM;
-                    pVM->cCPUs = 1;
+                    pVM->cCpus = 1;
                     pVM->aCpus[0].pVMR3 = pVM;
                     pVM->aCpus[0].hNativeThread = RTThreadNativeSelf();
 

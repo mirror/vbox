@@ -41,7 +41,7 @@
 
 typedef struct GVMCPU
 {
-    /** VCPU id (0 - (pVM->cCPUs - 1). */
+    /** VCPU id (0 - (pVM->cCpus - 1). */
     VMCPUID         idCpu;
 
     /** Handle to the EMT thread. */
@@ -83,7 +83,7 @@ typedef struct GVM
     /** The ring-0 mapping of the VM structure. */
     PVM             pVM;
     /** Number of Virtual CPUs, i.e. how many entries there are in aCpus.
-     * Same same as PVM::cCPUs. */
+     * Same same as VM::cCpus. */
     uint32_t        cCpus;
     uint32_t        padding;
 

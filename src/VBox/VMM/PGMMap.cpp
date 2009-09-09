@@ -213,7 +213,7 @@ VMMR3DECL(int) PGMR3MapPT(PVM pVM, RTGCPTR GCPtr, uint32_t cb, uint32_t fFlags, 
         pVM->pgm.s.pMappingsR0 = MMHyperR3ToR0(pVM, pNew);
     }
 
-    for (unsigned i=0;i<pVM->cCPUs;i++)
+    for (VMCPUID i = 0; i < pVM->cCpus; i++)
     {
         PVMCPU pVCpu = &pVM->aCpus[i];
         VMCPU_FF_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3);
@@ -270,7 +270,7 @@ VMMR3DECL(int)  PGMR3UnmapPT(PVM pVM, RTGCPTR GCPtr)
             pgmR3MapClearPDEs(pVM, pCur, pCur->GCPtr >> X86_PD_SHIFT);
             MMHyperFree(pVM, pCur);
 
-            for (unsigned i=0;i<pVM->cCPUs;i++)
+            for (VMCPUID i = 0; i < pVM->cCpus; i++)
             {
                 PVMCPU pVCpu = &pVM->aCpus[i];
                 VMCPU_FF_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3);
@@ -520,7 +520,7 @@ VMMR3DECL(int) PGMR3MappingsFix(PVM pVM, RTGCPTR GCPtrBase, uint32_t cb)
         return VINF_SUCCESS;
 
     /* Only applies to VCPU 0 as we don't support SMP guests with raw mode. */
-    Assert(pVM->cCPUs == 1);
+    Assert(pVM->cCpus == 1);
 
     PVMCPU pVCpu = &pVM->aCpus[0];
 
@@ -652,10 +652,10 @@ VMMR3DECL(int) PGMR3MappingsFix(PVM pVM, RTGCPTR GCPtrBase, uint32_t cb)
     pVM->pgm.s.GCPtrMappingFixed = GCPtrBase;
     pVM->pgm.s.cbMappingFixed    = cb;
 
-    for (unsigned i=0;i<pVM->cCPUs;i++)
+    for (VMCPUID i = 0; i < pVM->cCpus; i++)
     {
         PVMCPU pVCpu = &pVM->aCpus[i];
-        pVCpu->pgm.s.fSyncFlags       &= ~PGM_SYNC_MONITOR_CR3;
+        pVCpu->pgm.s.fSyncFlags &= ~PGM_SYNC_MONITOR_CR3;
         VMCPU_FF_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3);
     }
     return VINF_SUCCESS;
@@ -688,11 +688,10 @@ VMMR3DECL(int) PGMR3MappingsDisable(PVM pVM)
     pVM->pgm.s.fMappingsFixed    = true;
     pVM->pgm.s.GCPtrMappingFixed = MM_HYPER_AREA_ADDRESS;
     pVM->pgm.s.cbMappingFixed    = cb;
-    for (unsigned i=0;i<pVM->cCPUs;i++)
+    for (VMCPUID i = 0; i < pVM->cCpus; i++)
     {
         PVMCPU pVCpu = &pVM->aCpus[i];
-
-        pVCpu->pgm.s.fSyncFlags       &= ~PGM_SYNC_MONITOR_CR3;
+        pVCpu->pgm.s.fSyncFlags &= ~PGM_SYNC_MONITOR_CR3;
         VMCPU_FF_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3);
     }
     return VINF_SUCCESS;
@@ -717,10 +716,9 @@ VMMR3DECL(int) PGMR3MappingsUnfix(PVM pVM)
     pVM->pgm.s.fMappingsFixed    = false;
     pVM->pgm.s.GCPtrMappingFixed = 0;
     pVM->pgm.s.cbMappingFixed    = 0;
-    for (unsigned i=0;i<pVM->cCPUs;i++)
+    for (VMCPUID i = 0; i < pVM->cCpus; i++)
     {
         PVMCPU pVCpu = &pVM->aCpus[i];
-
         VMCPU_FF_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3);
     }
     return VINF_SUCCESS;
@@ -1160,7 +1158,7 @@ int pgmR3SyncPTResolveConflict(PVM pVM, PPGMMAPPING pMapping, PX86PD pPDSrc, RTG
     STAM_PROFILE_START(&pVM->pgm.s.StatR3ResolveConflict, a);
 
     /* Raw mode only which implies one VCPU. */
-    Assert(pVM->cCPUs == 1);
+    Assert(pVM->cCpus == 1);
 
     pMapping->aGCPtrConflicts[pMapping->cConflicts & (PGMMAPPING_CONFLICT_MAX-1)] = GCPtrOldMapping;
     pMapping->cConflicts++;
@@ -1236,7 +1234,7 @@ int pgmR3SyncPTResolveConflictPAE(PVM pVM, PPGMMAPPING pMapping, RTGCPTR GCPtrOl
     STAM_PROFILE_START(&pVM->pgm.s.StatR3ResolveConflict, a);
 
     /* Raw mode only which implies one VCPU. */
-    Assert(pVM->cCPUs == 1);
+    Assert(pVM->cCpus == 1);
     PVMCPU pVCpu = VMMGetCpu(pVM);
 
     pMapping->aGCPtrConflicts[pMapping->cConflicts & (PGMMAPPING_CONFLICT_MAX-1)] = GCPtrOldMapping;

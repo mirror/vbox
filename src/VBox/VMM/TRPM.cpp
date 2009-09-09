@@ -466,7 +466,7 @@ VMMR3DECL(int) TRPMR3Init(PVM pVM)
     pVM->trpm.s.offVM              = RT_OFFSETOF(VM, trpm);
     pVM->trpm.s.offTRPMCPU         = RT_OFFSETOF(VM, aCpus[0].trpm) - RT_OFFSETOF(VM, trpm);
 
-    for (VMCPUID i = 0; i < pVM->cCPUs; i++)
+    for (VMCPUID i = 0; i < pVM->cCpus; i++)
     {
         PVMCPU pVCpu = &pVM->aCpus[i];
 
@@ -743,7 +743,7 @@ VMMR3DECL(void) TRPMR3Reset(PVM pVM)
     /*
      * Reinitialize other members calling the relocator to get things right.
      */
-    for (unsigned i=0;i<pVM->cCPUs;i++)
+    for (VMCPUID i = 0; i < pVM->cCpus; i++)
     {
         PVMCPU pVCpu = &pVM->aCpus[i];
         pVCpu->trpm.s.uActiveVector = ~0;
@@ -775,10 +775,9 @@ static DECLCALLBACK(int) trpmR3Save(PVM pVM, PSSMHANDLE pSSM)
     /*
      * Active and saved traps.
      */
-    for (unsigned i=0;i<pVM->cCPUs;i++)
+    for (VMCPUID i = 0; i < pVM->cCpus; i++)
     {
         PTRPMCPU pTrpmCpu = &pVM->aCpus[i].trpm.s;
-
         SSMR3PutUInt(pSSM,      pTrpmCpu->uActiveVector);
         SSMR3PutUInt(pSSM,      pTrpmCpu->enmActiveType);
         SSMR3PutGCUInt(pSSM,    pTrpmCpu->uActiveErrorCode);
@@ -848,7 +847,7 @@ static DECLCALLBACK(int) trpmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion,
 
     if (uVersion == TRPM_SAVED_STATE_VERSION)
     {
-        for (VMCPUID i = 0; i < pVM->cCPUs; i++)
+        for (VMCPUID i = 0; i < pVM->cCpus; i++)
         {
             PTRPMCPU pTrpmCpu = &pVM->aCpus[i].trpm.s;
             SSMR3GetUInt(pSSM,      &pTrpmCpu->uActiveVector);
@@ -1236,7 +1235,7 @@ VMMR3DECL(RTRCPTR) TRPMR3GetGuestTrapHandler(PVM pVM, unsigned iTrap)
 VMMR3DECL(int) TRPMR3SetGuestTrapHandler(PVM pVM, unsigned iTrap, RTRCPTR pHandler)
 {
     /* Only valid in raw mode which implies 1 VCPU */
-    Assert(PATMIsEnabled(pVM) && pVM->cCPUs == 1);
+    Assert(PATMIsEnabled(pVM) && pVM->cCpus == 1);
     PVMCPU pVCpu = &pVM->aCpus[0];
 
     /*
@@ -1359,7 +1358,7 @@ VMMR3DECL(int) TRPMR3SetGuestTrapHandler(PVM pVM, unsigned iTrap, RTRCPTR pHandl
 VMMR3DECL(bool) TRPMR3IsGateHandler(PVM pVM, RTRCPTR GCPtr)
 {
     /* Only valid in raw mode which implies 1 VCPU */
-    Assert(PATMIsEnabled(pVM) && pVM->cCPUs == 1);
+    Assert(PATMIsEnabled(pVM) && pVM->cCpus == 1);
     PVMCPU pVCpu = &pVM->aCpus[0];
 
     /*

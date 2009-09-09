@@ -136,7 +136,7 @@ VMMR3DECL(int) EMR3Init(PVM pVM)
     if (RT_FAILURE(rc))
         return rc;
 
-    for (unsigned i=0;i<pVM->cCPUs;i++)
+    for (VMCPUID i = 0; i < pVM->cCpus; i++)
     {
         PVMCPU pVCpu = &pVM->aCpus[i];
 
@@ -427,10 +427,9 @@ VMMR3DECL(int) EMR3InitCPU(PVM pVM)
 VMMR3DECL(void) EMR3Relocate(PVM pVM)
 {
     LogFlow(("EMR3Relocate\n"));
-    for (unsigned i=0;i<pVM->cCPUs;i++)
+    for (VMCPUID i = 0; i < pVM->cCpus; i++)
     {
         PVMCPU pVCpu = &pVM->aCpus[i];
-
         if (pVCpu->em.s.pStatsR3)
             pVCpu->em.s.pStatsRC = MMHyperR3ToRC(pVM, pVCpu->em.s.pStatsR3);
     }
@@ -445,10 +444,9 @@ VMMR3DECL(void) EMR3Relocate(PVM pVM)
 VMMR3DECL(void) EMR3Reset(PVM pVM)
 {
     LogFlow(("EMR3Reset: \n"));
-    for (unsigned i=0;i<pVM->cCPUs;i++)
+    for (VMCPUID i = 0; i < pVM->cCpus; i++)
     {
         PVMCPU pVCpu = &pVM->aCpus[i];
-
         pVCpu->em.s.fForceRAW = false;
     }
 }
@@ -494,7 +492,7 @@ VMMR3DECL(int) EMR3TermCPU(PVM pVM)
  */
 static DECLCALLBACK(int) emR3Save(PVM pVM, PSSMHANDLE pSSM)
 {
-    for (VMCPUID i = 0; i < pVM->cCPUs; i++)
+    for (VMCPUID i = 0; i < pVM->cCpus; i++)
     {
         PVMCPU pVCpu = &pVM->aCpus[i];
 
@@ -535,7 +533,7 @@ static DECLCALLBACK(int) emR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, u
     /*
      * Load the saved state.
      */
-    for (VMCPUID i = 0; i < pVM->cCPUs; i++)
+    for (VMCPUID i = 0; i < pVM->cCpus; i++)
     {
         PVMCPU pVCpu = &pVM->aCpus[i];
 
@@ -1364,7 +1362,7 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
         if (VM_FF_IS_PENDING_EXCEPT(pVM, VM_FF_REM_HANDLER_NOTIFY, VM_FF_PGM_NO_MEMORY))
         {
             /* Try not to cause deadlocks. */
-            if (    pVM->cCPUs == 1
+            if (    pVM->cCpus == 1
                 ||  (   !PGMIsLockOwner(pVM)
                      && !IOMIsLockOwner(pVM))
                )

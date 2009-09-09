@@ -121,7 +121,7 @@ static DECLCALLBACK(int) dbgfR3MemScan(PVM pVM, VMCPUID idCpu, PCDBGFADDRESS pAd
  */
 VMMR3DECL(int) DBGFR3MemScan(PVM pVM, VMCPUID idCpu, PCDBGFADDRESS pAddress, RTGCUINTPTR cbRange, const uint8_t *pabNeedle, size_t cbNeedle, PDBGFADDRESS pHitAddress)
 {
-    AssertReturn(idCpu < pVM->cCPUs, VERR_INVALID_PARAMETER);
+    AssertReturn(idCpu < pVM->cCpus, VERR_INVALID_PARAMETER);
 
     PVMREQ pReq;
     int rc = VMR3ReqCall(pVM, idCpu, &pReq, RT_INDEFINITE_WAIT,
@@ -206,7 +206,7 @@ static DECLCALLBACK(int) dbgfR3MemRead(PVM pVM, VMCPUID idCpu, PCDBGFADDRESS pAd
  */
 VMMR3DECL(int) DBGFR3MemRead(PVM pVM, VMCPUID idCpu, PCDBGFADDRESS pAddress, void *pvBuf, size_t cbRead)
 {
-    AssertReturn(idCpu < pVM->cCPUs, VERR_INVALID_PARAMETER);
+    AssertReturn(idCpu < pVM->cCpus, VERR_INVALID_PARAMETER);
     if ((pAddress->fFlags & DBGFADDRESS_FLAGS_TYPE_MASK) == DBGFADDRESS_FLAGS_RING0)
     {
         AssertCompile(sizeof(RTHCUINTPTR) <= sizeof(pAddress->FlatPtr));
@@ -294,7 +294,7 @@ VMMR3DECL(int) DBGFR3MemReadString(PVM pVM, VMCPUID idCpu, PCDBGFADDRESS pAddres
     if (cchBuf <= 0)
         return VERR_INVALID_PARAMETER;
     memset(pszBuf, 0, cchBuf);
-    AssertReturn(idCpu < pVM->cCPUs, VERR_INVALID_PARAMETER);
+    AssertReturn(idCpu < pVM->cCpus, VERR_INVALID_PARAMETER);
 
     /*
      * Pass it on to the EMT.
@@ -380,7 +380,7 @@ static DECLCALLBACK(int) dbgfR3MemWrite(PVM pVM, VMCPUID idCpu, PCDBGFADDRESS pA
  */
 VMMR3DECL(int) DBGFR3MemWrite(PVM pVM, VMCPUID idCpu, PCDBGFADDRESS pAddress, void const *pvBuf, size_t cbWrite)
 {
-    AssertReturn(idCpu < pVM->cCPUs, VERR_INVALID_PARAMETER);
+    AssertReturn(idCpu < pVM->cCpus, VERR_INVALID_PARAMETER);
 
     PVMREQ pReq;
     int rc = VMR3ReqCallU(pVM->pUVM, idCpu, &pReq, RT_INDEFINITE_WAIT, 0,
@@ -480,7 +480,7 @@ static DECLCALLBACK(int) dbgfR3SelQueryInfo(PVM pVM, VMCPUID idCpu, RTSEL Sel, u
  */
 VMMR3DECL(int) DBGFR3SelQueryInfo(PVM pVM, VMCPUID idCpu, RTSEL Sel, uint32_t fFlags, PDBGFSELINFO pSelInfo)
 {
-    AssertReturn(idCpu < pVM->cCPUs, VERR_INVALID_PARAMETER);
+    AssertReturn(idCpu < pVM->cCpus, VERR_INVALID_PARAMETER);
     AssertReturn(!(fFlags & ~(DBGFSELQI_FLAGS_DT_GUEST | DBGFSELQI_FLAGS_DT_SHADOW | DBGFSELQI_FLAGS_DT_ADJ_64BIT_MODE)), VERR_INVALID_PARAMETER);
     AssertReturn(    (fFlags & (DBGFSELQI_FLAGS_DT_SHADOW | DBGFSELQI_FLAGS_DT_ADJ_64BIT_MODE))
                   !=           (DBGFSELQI_FLAGS_DT_SHADOW | DBGFSELQI_FLAGS_DT_ADJ_64BIT_MODE), VERR_INVALID_PARAMETER);

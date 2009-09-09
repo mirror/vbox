@@ -609,7 +609,7 @@ GVMMR0DECL(int) GVMMR0CreateVM(PSUPDRVSESSION pSession, uint32_t cCpus, PVM *ppV
                             pVM->pSession   = pSession;
                             pVM->hSelf      = iHandle;
                             pVM->cbSelf     = cbVM;
-                            pVM->cCPUs      = cCpus;
+                            pVM->cCpus      = cCpus;
                             pVM->offVMCPU   = RT_UOFFSETOF(VM, aCpus);
 
                             rc = RTR0MemObjAllocPage(&pGVM->gvmm.s.VMPagesMemObj, cPages * sizeof(SUPPAGE), false /* fExecutable */);
@@ -1099,7 +1099,7 @@ GVMMR0DECL(int) GVMMR0RegisterVCpu(PVM pVM, VMCPUID idCpu)
     if (RT_FAILURE(rc))
         return rc;
 
-    AssertReturn(idCpu < pVM->cCPUs, VERR_INVALID_CPU_ID);
+    AssertReturn(idCpu < pVM->cCpus, VERR_INVALID_CPU_ID);
     AssertReturn(pGVM->aCpus[idCpu].hEMT == NIL_RTNATIVETHREAD, VERR_ACCESS_DENIED);
 
     pGVM->aCpus[idCpu].hEMT = RTThreadNativeSelf();

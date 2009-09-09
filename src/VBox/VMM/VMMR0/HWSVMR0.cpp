@@ -174,7 +174,7 @@ VMMR0DECL(int) SVMR0InitVM(PVM pVM)
     }
 
     /* Allocate VMCBs for all guest CPUs. */
-    for (unsigned i=0;i<pVM->cCPUs;i++)
+    for (VMCPUID i = 0; i < pVM->cCpus; i++)
     {
         PVMCPU pVCpu = &pVM->aCpus[i];
 
@@ -222,7 +222,7 @@ VMMR0DECL(int) SVMR0InitVM(PVM pVM)
  */
 VMMR0DECL(int) SVMR0TermVM(PVM pVM)
 {
-    for (unsigned i=0;i<pVM->cCPUs;i++)
+    for (VMCPUID i = 0; i < pVM->cCpus; i++)
     {
         PVMCPU pVCpu = &pVM->aCpus[i];
 
@@ -273,7 +273,7 @@ VMMR0DECL(int) SVMR0SetupVM(PVM pVM)
 
     Assert(pVM->hwaccm.s.svm.fSupported);
 
-    for (unsigned i=0;i<pVM->cCPUs;i++)
+    for (VMCPUID i = 0; i < pVM->cCpus; i++)
     {
         PVMCPU    pVCpu = &pVM->aCpus[i];
         SVM_VMCB *pVMCB = (SVM_VMCB *)pVM->aCpus[i].hwaccm.s.svm.pVMCB;
@@ -2777,7 +2777,7 @@ VMMR0DECL(int) SVMR0Execute64BitsHandler(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, R
     RTHCUINTREG     uOldEFlags;
 
     /* @todo This code is not guest SMP safe (hyper stack and switchers) */
-    AssertReturn(pVM->cCPUs == 1, VERR_TOO_MANY_CPUS);
+    AssertReturn(pVM->cCpus == 1, VERR_TOO_MANY_CPUS);
     Assert(pfnHandler);
 
     uOldEFlags = ASMIntDisableFlags();

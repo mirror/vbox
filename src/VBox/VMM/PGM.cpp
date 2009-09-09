@@ -1197,7 +1197,7 @@ VMMR3DECL(int) PGMR3Init(PVM pVM)
     pVM->pgm.s.offVCpuPGM  = RT_OFFSETOF(VMCPU, pgm.s);
 
     /* Init the per-CPU part. */
-    for (unsigned i=0;i<pVM->cCPUs;i++)
+    for (VMCPUID i = 0; i < pVM->cCpus; i++)
     {
         PVMCPU pVCpu = &pVM->aCpus[i];
         PPGMCPU pPGM = &pVCpu->pgm.s;
@@ -1339,10 +1339,9 @@ VMMR3DECL(int) PGMR3Init(PVM pVM)
     }
     if (RT_SUCCESS(rc))
     {
-        for (unsigned i=0;i<pVM->cCPUs;i++)
+        for (VMCPUID i = 0; i < pVM->cCpus; i++)
         {
             PVMCPU pVCpu = &pVM->aCpus[i];
-
             rc = PGMR3ChangeMode(pVM, pVCpu, PGMMODE_REAL);
             if (RT_FAILURE(rc))
                 break;
@@ -1425,7 +1424,7 @@ static int pgmR3InitPaging(PVM pVM)
     /*
      * Force a recalculation of modes and switcher so everyone gets notified.
      */
-    for (unsigned i=0;i<pVM->cCPUs;i++)
+    for (VMCPUID i = 0; i < pVM->cCpus; i++)
     {
         PVMCPU pVCpu = &pVM->aCpus[i];
 
@@ -1673,10 +1672,10 @@ static void pgmR3InitStats(PVM pVM)
     /*
      * Common - stats
      */
-    for (unsigned i=0;i<pVM->cCPUs;i++)
+    for (VMCPUID i = 0; i < pVM->cCpus; i++)
     {
         PVMCPU  pVCpu = &pVM->aCpus[i];
-        PPGMCPU pPGM = &pVCpu->pgm.s;
+        PPGMCPU pPGM  = &pVCpu->pgm.s;
 
 #define PGM_REG_COUNTER(a, b, c) \
         rc = STAMR3RegisterF(pVM, a, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, c, b, i); \
@@ -2008,7 +2007,7 @@ VMMR3DECL(void) PGMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
     pgmR3ModeDataInit(pVM, true /* resolve GC/R0 symbols */);
 
     /* Shadow, guest and both mode switch & relocation for each VCPU. */
-    for (unsigned i=0;i<pVM->cCPUs;i++)
+    for (VMCPUID i = 0; i < pVM->cCpus; i++)
     {
         PVMCPU  pVCpu = &pVM->aCpus[i];
 
@@ -2179,10 +2178,9 @@ VMMR3DECL(void) PGMR3Reset(PVM pVM)
     /* Exit the guest paging mode before the pgm pool gets reset.
      * Important to clean up the amd64 case.
      */
-    for (unsigned i=0;i<pVM->cCPUs;i++)
+    for (VMCPUID i = 0; i < pVM->cCpus; i++)
     {
         PVMCPU  pVCpu = &pVM->aCpus[i];
-
         rc = PGM_GST_PFN(Exit, pVCpu)(pVCpu);
         AssertRC(rc);
     }
@@ -2195,7 +2193,7 @@ VMMR3DECL(void) PGMR3Reset(PVM pVM)
     /*
      * Switch mode back to real mode. (before resetting the pgm pool!)
      */
-    for (unsigned i=0;i<pVM->cCPUs;i++)
+    for (VMCPUID i = 0; i < pVM->cCpus; i++)
     {
         PVMCPU  pVCpu = &pVM->aCpus[i];
 
@@ -2210,7 +2208,7 @@ VMMR3DECL(void) PGMR3Reset(PVM pVM)
      */
     pgmR3PoolReset(pVM);
 
-    for (unsigned i=0;i<pVM->cCPUs;i++)
+    for (VMCPUID i = 0; i < pVM->cCpus; i++)
     {
         PVMCPU  pVCpu = &pVM->aCpus[i];
 
@@ -2438,10 +2436,9 @@ static DECLCALLBACK(int) pgmR3Save(PVM pVM, PSSMHANDLE pSSM)
      */
     SSMR3PutStruct(pSSM, pPGM, &s_aPGMFields[0]);
 
-    for (i=0;i<pVM->cCPUs;i++)
+    for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
     {
-        PVMCPU pVCpu = &pVM->aCpus[i];
-
+        PVMCPU pVCpu = &pVM->aCpus[idCpu];
         SSMR3PutStruct(pSSM, &pVCpu->pgm.s, &s_aPGMCpuFields[0]);
     }
 
@@ -2689,7 +2686,7 @@ static int pgmR3LoadLocked(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion)
         rc = SSMR3GetStruct(pSSM, pPGM, &s_aPGMFields[0]);
         AssertLogRelRCReturn(rc, rc);
 
-        for (VMCPUID i = 0; i < pVM->cCPUs; i++)
+        for (VMCPUID i = 0; i < pVM->cCpus; i++)
         {
             rc = SSMR3GetStruct(pSSM, &pVM->aCpus[i].pgm.s, &s_aPGMCpuFields[0]);
             AssertLogRelRCReturn(rc, rc);
@@ -2697,7 +2694,7 @@ static int pgmR3LoadLocked(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion)
     }
     else if (uVersion >= PGM_SAVED_STATE_VERSION_RR_DESC)
     {
-        AssertRelease(pVM->cCPUs == 1);
+        AssertRelease(pVM->cCpus == 1);
 
         PGMOLD pgmOld;
         rc = SSMR3GetStruct(pSSM, &pgmOld, &s_aPGMFields_Old[0]);
@@ -2713,7 +2710,7 @@ static int pgmR3LoadLocked(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion)
     }
     else
     {
-        AssertRelease(pVM->cCPUs == 1);
+        AssertRelease(pVM->cCpus == 1);
 
         SSMR3GetBool(pSSM,      &pPGM->fMappingsFixed);
         SSMR3GetGCPtr(pSSM,     &pPGM->GCPtrMappingFixed);
@@ -3065,7 +3062,7 @@ static DECLCALLBACK(int) pgmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, 
         /*
          * We require a full resync now.
          */
-        for (VMCPUID i = 0; i < pVM->cCPUs; i++)
+        for (VMCPUID i = 0; i < pVM->cCpus; i++)
         {
             PVMCPU pVCpu = &pVM->aCpus[i];
             VMCPU_FF_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL);
@@ -3076,7 +3073,7 @@ static DECLCALLBACK(int) pgmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, 
 
         pgmR3HandlerPhysicalUpdateAll(pVM);
 
-        for (VMCPUID i = 0; i < pVM->cCPUs; i++)
+        for (VMCPUID i = 0; i < pVM->cCpus; i++)
         {
             PVMCPU pVCpu = &pVM->aCpus[i];
 

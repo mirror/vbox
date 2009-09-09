@@ -846,7 +846,7 @@ VMMR0DECL(int) HWACCMR0InitVM(PVM pVM)
 #endif
     }
 
-    for (unsigned i=0;i<pVM->cCPUs;i++)
+    for (VMCPUID i = 0; i < pVM->cCpus; i++)
     {
         PVMCPU pVCpu = &pVM->aCpus[i];
 
@@ -931,7 +931,7 @@ VMMR0DECL(int) HWACCMR0SetupVM(PVM pVM)
 
     ASMAtomicWriteBool(&pCpu->fInUse, true);
 
-    for (unsigned i=0;i<pVM->cCPUs;i++)
+    for (VMCPUID i = 0; i < pVM->cCpus; i++)
     {
         /* On first entry we'll sync everything. */
         pVM->aCpus[i].hwaccm.s.fContextUseFlags = HWACCM_CHANGED_ALL;
@@ -1195,7 +1195,7 @@ VMMR0DECL(PVMCPU)  HWACCMR0GetVMCPU(PVM pVM)
     RTCPUID idHostCpu = RTMpCpuId();
 
     /** @todo optimize for large number of VCPUs when that becomes more common. */
-    for (unsigned idCpu=0;idCpu<pVM->cCPUs;idCpu++)
+    for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
     {
         PVMCPU pVCpu = &pVM->aCpus[idCpu];
 

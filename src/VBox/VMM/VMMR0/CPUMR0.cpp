@@ -143,7 +143,7 @@ VMMR0DECL(int) CPUMR0Init(PVM pVM)
     uint32_t u32DR7 = ASMGetDR7();
     if (u32DR7 & X86_DR7_ENABLED_MASK)
     {
-        for (unsigned i=0;i<pVM->cCPUs;i++)
+        for (VMCPUID i = 0; i < pVM->cCpus; i++)
             pVM->aCpus[i].cpum.s.fUseFlags |= CPUM_USE_DEBUG_REGS_HOST;
         Log(("CPUMR0Init: host uses debug registers (dr7=%x)\n", u32DR7));
     }

@@ -348,7 +348,7 @@ typedef enum VMINITCOMPLETED
 } VMINITCOMPLETED;
 
 
-VMMR3DECL(int)  VMR3Create(uint32_t cCPUs, PFNVMATERROR pfnVMAtError, void *pvUserVM, PFNCFGMCONSTRUCTOR pfnCFGMConstructor, void *pvUserCFGM, PVM *ppVM);
+VMMR3DECL(int)  VMR3Create(uint32_t cCpus, PFNVMATERROR pfnVMAtError, void *pvUserVM, PFNCFGMCONSTRUCTOR pfnCFGMConstructor, void *pvUserCFGM, PVM *ppVM);
 VMMR3DECL(int)  VMR3PowerOn(PVM pVM);
 VMMR3DECL(int)  VMR3Suspend(PVM pVM);
 VMMR3DECL(int)  VMR3SuspendNoSave(PVM pVM);

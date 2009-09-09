@@ -432,7 +432,7 @@ static int dbgfR3StackWalkBeginCommon(PVM pVM,
      */
     *ppFirstFrame = NULL;
     VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
-    AssertReturn(idCpu < pVM->cCPUs, VERR_INVALID_CPU_ID);
+    AssertReturn(idCpu < pVM->cCpus, VERR_INVALID_CPU_ID);
     if (pAddrFrame)
         AssertReturn(DBGFR3AddrIsValid(pVM, pAddrFrame), VERR_INVALID_PARAMETER);
     if (pAddrStack)

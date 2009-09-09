@@ -79,8 +79,8 @@ int mmR3HyperInit(PVM pVM)
     int rc = CFGMR3QueryU32(CFGMR3GetChild(CFGMR3GetRoot(pVM), "MM"), "cbHyperHeap", &cbHyperHeap);
     if (rc == VERR_CFGM_NO_PARENT || rc == VERR_CFGM_VALUE_NOT_FOUND)
     {
-        if (pVM->cCPUs > 1)
-            cbHyperHeap = _2M + pVM->cCPUs * _64K;
+        if (pVM->cCpus > 1)
+            cbHyperHeap = _2M + pVM->cCpus * _64K;
         else
             cbHyperHeap = VMMIsHwVirtExtForced(pVM)
                         ? 640*_1K
@@ -108,13 +108,13 @@ int mmR3HyperInit(PVM pVM)
         /*
          * Map the VM structure into the hypervisor space.
          */
-        AssertRelease(pVM->cbSelf == RT_UOFFSETOF(VM, aCpus[pVM->cCPUs]));
+        AssertRelease(pVM->cbSelf == RT_UOFFSETOF(VM, aCpus[pVM->cCpus]));
         RTGCPTR GCPtr;
         rc = MMR3HyperMapPages(pVM, pVM, pVM->pVMR0, RT_ALIGN_Z(pVM->cbSelf, PAGE_SIZE) >> PAGE_SHIFT, pVM->paVMPagesR3, "VM", &GCPtr);
         if (RT_SUCCESS(rc))
         {
             pVM->pVMRC = (RTRCPTR)GCPtr;
-            for (uint32_t i = 0; i < pVM->cCPUs; i++)
+            for (VMCPUID i = 0; i < pVM->cCpus; i++)
                 pVM->aCpus[i].pVMRC = pVM->pVMRC;
 
             /* Reserve a page for fencing. */
@@ -319,7 +319,7 @@ static DECLCALLBACK(bool) mmR3HyperRelocateCallback(PVM pVM, RTGCPTR GCPtrOld, R
              */
             RTGCINTPTR offDelta = GCPtrNew - GCPtrOld;
             pVM->pVMRC                          += offDelta;
-            for (uint32_t i = 0; i < pVM->cCPUs; i++)
+            for (VMCPUID i = 0; i < pVM->cCpus; i++)
                 pVM->aCpus[i].pVMRC              = pVM->pVMRC;
 
             pVM->mm.s.pvHyperAreaGC             += offDelta;

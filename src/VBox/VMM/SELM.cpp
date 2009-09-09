@@ -397,7 +397,7 @@ VMMR3DECL(void) SELMR3Relocate(PVM pVM)
     PX86DESC paGdt = pVM->selm.s.paGdtR3;
     LogFlow(("SELMR3Relocate\n"));
 
-    for (unsigned i=0;i<pVM->cCPUs;i++)
+    for (VMCPUID i = 0; i < pVM->cCpus; i++)
     {
         PVMCPU pVCpu = &pVM->aCpus[i];
 

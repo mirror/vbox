@@ -215,7 +215,7 @@ VMMR0DECL(int) VMXR0InitVM(PVM pVM)
 #endif
 
     /* Allocate VMCBs for all guest CPUs. */
-    for (unsigned i=0;i<pVM->cCPUs;i++)
+    for (VMCPUID i = 0; i < pVM->cCpus; i++)
     {
         PVMCPU pVCpu = &pVM->aCpus[i];
 
@@ -298,7 +298,7 @@ VMMR0DECL(int) VMXR0InitVM(PVM pVM)
  */
 VMMR0DECL(int) VMXR0TermVM(PVM pVM)
 {
-    for (unsigned i=0;i<pVM->cCPUs;i++)
+    for (VMCPUID i = 0; i < pVM->cCpus; i++)
     {
         PVMCPU pVCpu = &pVM->aCpus[i];
 
@@ -373,7 +373,7 @@ VMMR0DECL(int) VMXR0SetupVM(PVM pVM)
 
     AssertReturn(pVM, VERR_INVALID_PARAMETER);
 
-    for (unsigned i=0;i<pVM->cCPUs;i++)
+    for (VMCPUID i = 0; i < pVM->cCpus; i++)
     {
         PVMCPU pVCpu = &pVM->aCpus[i];
 
@@ -4446,7 +4446,7 @@ VMMR0DECL(int) VMXR0Execute64BitsHandler(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, R
     RTHCPHYS        pPageCpuPhys;
 
     /* @todo This code is not guest SMP safe (hyper stack and switchers) */
-    AssertReturn(pVM->cCPUs == 1, VERR_TOO_MANY_CPUS);
+    AssertReturn(pVM->cCpus == 1, VERR_TOO_MANY_CPUS);
     AssertReturn(pVM->hwaccm.s.pfnHost32ToGuest64R0, VERR_INTERNAL_ERROR);
     Assert(pVCpu->hwaccm.s.vmx.VMCSCache.Write.cValidEntries <= RT_ELEMENTS(pVCpu->hwaccm.s.vmx.VMCSCache.Write.aField));
     Assert(pVCpu->hwaccm.s.vmx.VMCSCache.Read.cValidEntries <= RT_ELEMENTS(pVCpu->hwaccm.s.vmx.VMCSCache.Read.aField));

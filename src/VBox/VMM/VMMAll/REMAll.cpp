@@ -210,7 +210,7 @@ VMMDECL(void) REMNotifyHandlerPhysicalModify(PVM pVM, PGMPHYSHANDLERTYPE enmType
  */
 VMMDECL(void) REMNotifyHandlerPhysicalFlushIfAlmostFull(PVM pVM, PVMCPU pVCpu)
 {
-    Assert(pVM->cCPUs == 1);
+    Assert(pVM->cCpus == 1);
 
     /*
      * Less than 48 items means we should flush.

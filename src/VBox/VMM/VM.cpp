@@ -123,8 +123,8 @@ static PVMATDTOR    g_pVMAtDtorHead = NULL;
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
-static int               vmR3CreateUVM(uint32_t cCPUs, PUVM *ppUVM);
-static int               vmR3CreateU(PUVM pUVM, uint32_t cCPUs, PFNCFGMCONSTRUCTOR pfnCFGMConstructor, void *pvUserCFGM);
+static int               vmR3CreateUVM(uint32_t cCpus, PUVM *ppUVM);
+static int               vmR3CreateU(PUVM pUVM, uint32_t cCpus, PFNCFGMCONSTRUCTOR pfnCFGMConstructor, void *pvUserCFGM);
 static int               vmR3InitRing3(PVM pVM, PUVM pUVM);
 static int               vmR3InitVMCpu(PVM pVM);
 static int               vmR3InitRing0(PVM pVM);
@@ -181,7 +181,7 @@ VMMR3DECL(int)   VMR3GlobalInit(void)
  *
  * @returns 0 on success.
  * @returns VBox error code on failure.
- * @param   cCPUs               Number of virtual CPUs for the new VM.
+ * @param   cCpus               Number of virtual CPUs for the new VM.
  * @param   pfnVMAtError        Pointer to callback function for setting VM
  *                              errors. This was added as an implicit call to
  *                              VMR3AtErrorRegister() since there is no way the
@@ -194,9 +194,10 @@ VMMR3DECL(int)   VMR3GlobalInit(void)
  * @param   pvUserCFGM          The user argument passed to pfnCFGMConstructor.
  * @param   ppVM                Where to store the 'handle' of the created VM.
  */
-VMMR3DECL(int)   VMR3Create(uint32_t cCPUs, PFNVMATERROR pfnVMAtError, void *pvUserVM, PFNCFGMCONSTRUCTOR pfnCFGMConstructor, void *pvUserCFGM, PVM *ppVM)
+VMMR3DECL(int)   VMR3Create(uint32_t cCpus, PFNVMATERROR pfnVMAtError, void *pvUserVM, PFNCFGMCONSTRUCTOR pfnCFGMConstructor, void *pvUserCFGM, PVM *ppVM)
 {
-    LogFlow(("VMR3Create: cCPUs=%RU32 pfnVMAtError=%p pvUserVM=%p  pfnCFGMConstructor=%p pvUserCFGM=%p ppVM=%p\n", cCPUs, pfnVMAtError, pvUserVM, pfnCFGMConstructor, pvUserCFGM, ppVM));
+    LogFlow(("VMR3Create: cCpus=%RU32 pfnVMAtError=%p pvUserVM=%p  pfnCFGMConstructor=%p pvUserCFGM=%p ppVM=%p\n",
+             cCpus, pfnVMAtError, pvUserVM, pfnCFGMConstructor, pvUserCFGM, ppVM));
 
     /*
      * Because of the current hackiness of the applications
@@ -215,14 +216,14 @@ VMMR3DECL(int)   VMR3Create(uint32_t cCPUs, PFNVMATERROR pfnVMAtError, void *pvU
     /*
      * Validate input.
      */
-    AssertLogRelMsgReturn(cCPUs > 0 && cCPUs <= VMM_MAX_CPU_COUNT, ("%RU32\n", cCPUs), VERR_TOO_MANY_CPUS);
+    AssertLogRelMsgReturn(cCpus > 0 && cCpus <= VMM_MAX_CPU_COUNT, ("%RU32\n", cCpus), VERR_TOO_MANY_CPUS);
 
     /*
      * Create the UVM so we can register the at-error callback
      * and consoliate a bit of cleanup code.
      */
     PUVM pUVM = NULL;                   /* shuts up gcc */
-    int rc = vmR3CreateUVM(cCPUs, &pUVM);
+    int rc = vmR3CreateUVM(cCpus, &pUVM);
     if (RT_FAILURE(rc))
         return rc;
     if (pfnVMAtError)
@@ -245,7 +246,7 @@ VMMR3DECL(int)   VMR3Create(uint32_t cCPUs, PFNVMATERROR pfnVMAtError, void *pvU
              */
             PVMREQ pReq;
             rc = VMR3ReqCallU(pUVM, VMCPUID_ANY, &pReq, RT_INDEFINITE_WAIT, 0, (PFNRT)vmR3CreateU, 4,
-                              pUVM, cCPUs, pfnCFGMConstructor, pvUserCFGM);
+                              pUVM, cCpus, pfnCFGMConstructor, pvUserCFGM);
             if (RT_SUCCESS(rc))
             {
                 rc = pReq->iStatus;
@@ -554,18 +555,18 @@ static int vmR3CreateU(PUVM pUVM, uint32_t cCpus, PFNCFGMCONSTRUCTOR pfnCFGMCons
         AssertRelease(VALID_PTR(pVM));
         AssertRelease(pVM->pVMR0 == CreateVMReq.pVMR0);
         AssertRelease(pVM->pSession == pUVM->vm.s.pSession);
-        AssertRelease(pVM->cCPUs == cCpus);
+        AssertRelease(pVM->cCpus == cCpus);
         AssertRelease(pVM->offVMCPU == RT_UOFFSETOF(VM, aCpus));
 
-        Log(("VMR3Create: Created pUVM=%p pVM=%p pVMR0=%p hSelf=%#x cCPUs=%RU32\n",
-             pUVM, pVM, pVM->pVMR0, pVM->hSelf, pVM->cCPUs));
+        Log(("VMR3Create: Created pUVM=%p pVM=%p pVMR0=%p hSelf=%#x cCpus=%RU32\n",
+             pUVM, pVM, pVM->pVMR0, pVM->hSelf, pVM->cCpus));
 
         /*
          * Initialize the VM structure and our internal data (VMINT).
          */
         pVM->pUVM = pUVM;
 
-        for (uint32_t i = 0; i < pVM->cCPUs; i++)
+        for (VMCPUID i = 0; i < pVM->cCpus; i++)
         {
             pVM->aCpus[i].pUVCpu        = &pUVM->aCpus[i];
             pVM->aCpus[i].idCpu         = i;
@@ -609,7 +610,7 @@ static int vmR3CreateU(PUVM pUVM, uint32_t cCpus, PFNCFGMCONSTRUCTOR pfnCFGMCons
                 AssertLogRelMsgRC(rc, ("Configuration error: Querying \"NumCPUs\" as integer failed, rc=%Rrc\n", rc));
                 if (RT_SUCCESS(rc) && cCPUsCfg != cCpus)
                 {
-                    AssertLogRelMsgFailed(("Configuration error: \"NumCPUs\"=%RU32 and VMR3CreateVM::cCPUs=%RU32 does not match!\n",
+                    AssertLogRelMsgFailed(("Configuration error: \"NumCPUs\"=%RU32 and VMR3CreateVM::cCpus=%RU32 does not match!\n",
                                            cCPUsCfg, cCpus));
                     rc = VERR_INVALID_PARAMETER;
                 }
@@ -755,7 +756,7 @@ static int vmR3InitRing3(PVM pVM, PUVM pUVM)
     /*
      * Register the other EMTs with GVM.
      */
-    for (VMCPUID idCpu = 1; idCpu < pVM->cCPUs; idCpu++)
+    for (VMCPUID idCpu = 1; idCpu < pVM->cCpus; idCpu++)
     {
         PVMREQ pReq;
         rc = VMR3ReqCallU(pUVM, idCpu, &pReq, RT_INDEFINITE_WAIT, 0 /*fFlags*/,
@@ -788,13 +789,13 @@ static int vmR3InitRing3(PVM pVM, PUVM pUVM)
         STAM_REG(pVM, &pVM->StatSwitcherJmpCR3,     STAMTYPE_PROFILE_ADV, "/VM/Switcher/ToGC/JmpCR3",   STAMUNIT_TICKS_PER_CALL,"Profiling switching to GC.");
         STAM_REG(pVM, &pVM->StatSwitcherRstrRegs,   STAMTYPE_PROFILE_ADV, "/VM/Switcher/ToGC/RstrRegs", STAMUNIT_TICKS_PER_CALL,"Profiling switching to GC.");
 
-        for (unsigned iCpu=0;iCpu<pVM->cCPUs;iCpu++)
+        for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
         {
-            rc = STAMR3RegisterF(pVM, &pUVM->aCpus[iCpu].vm.s.StatHaltYield,  STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling halted state yielding.", "/PROF/VM/CPU%d/Halt/Yield", iCpu);
+            rc = STAMR3RegisterF(pVM, &pUVM->aCpus[idCpu].vm.s.StatHaltYield,  STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling halted state yielding.", "/PROF/VM/CPU%d/Halt/Yield", idCpu);
             AssertRC(rc);
-            rc = STAMR3RegisterF(pVM, &pUVM->aCpus[iCpu].vm.s.StatHaltBlock,  STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling halted state blocking.", "/PROF/VM/CPU%d/Halt/Block", iCpu);
+            rc = STAMR3RegisterF(pVM, &pUVM->aCpus[idCpu].vm.s.StatHaltBlock,  STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling halted state blocking.", "/PROF/VM/CPU%d/Halt/Block", idCpu);
             AssertRC(rc);
-            rc = STAMR3RegisterF(pVM, &pUVM->aCpus[iCpu].vm.s.StatHaltTimers, STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling halted state timer tasks.", "/PROF/VM/CPU%d/Halt/Timers", iCpu);
+            rc = STAMR3RegisterF(pVM, &pUVM->aCpus[idCpu].vm.s.StatHaltTimers, STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling halted state timer tasks.", "/PROF/VM/CPU%d/Halt/Timers", idCpu);
             AssertRC(rc);
         }
 
@@ -1787,7 +1788,7 @@ VMMR3DECL(int)   VMR3Destroy(PVM pVM)
         VM_FF_SET(pVM, VM_FF_TERMINATE);
 
         /* Inform all other VCPUs too. */
-        for (VMCPUID idCpu = 1; idCpu < pVM->cCPUs; idCpu++)
+        for (VMCPUID idCpu = 1; idCpu < pVM->cCpus; idCpu++)
         {
             /*
              * Request EMT to do the larger part of the destruction.
