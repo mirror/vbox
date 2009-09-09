@@ -1265,43 +1265,17 @@ int VBoxVHWAGlProgramVHWA::init()
 
     do
     {
+        GLint tex = 0;
         mUniSrcTex = vboxglGetUniformLocation(program(), "uSrcTex");
         Assert(mUniSrcTex != -1);
         if(mUniSrcTex == -1)
             break;
-        if(type() & VBOXVHWA_PROGRAM_DSTCOLORKEY)
-        {
-            VBOXQGL_CHECKERR(
-                    vboxglUniform1i(mUniSrcTex, 1);
-                    );
-            mSrcTex = 1;
 
-            mUniDstTex = vboxglGetUniformLocation(program(), "uDstTex");
-            Assert(mUniDstTex != -1);
-            if(mUniDstTex == -1)
-                break;
-            VBOXQGL_CHECKERR(
-                    vboxglUniform1i(mUniDstTex, 0);
-                    );
-            mDstTex = 0;
-            mUniDstLowerColor = vboxglGetUniformLocation(program(), "uDstClr");
-            Assert(mUniDstLowerColor != -1);
-            if(mUniDstLowerColor == -1)
-                break;
-
-            mDstLowerR = 0.0; mDstLowerG = 0.0; mDstLowerB = 0.0;
-
-            VBOXQGL_CHECKERR(
-                    vboxglUniform4f(mUniDstLowerColor, 0.0, 0.0, 0.0, 0.0);
-                    );
-        }
-        else
-        {
-            VBOXQGL_CHECKERR(
-                    vboxglUniform1i(mUniSrcTex, 1);
-                    );
-            mSrcTex = 0;
-        }
+        VBOXQGL_CHECKERR(
+                vboxglUniform1i(mUniSrcTex, tex);
+                );
+        mSrcTex = tex;
+        ++tex;
 
         if(type() & VBOXVHWA_PROGRAM_SRCCOLORKEY)
         {
@@ -1322,10 +1296,7 @@ int VBoxVHWAGlProgramVHWA::init()
             {
                 case FOURCC_YV12:
                 {
-                    GLint tex = mSrcTex + 1;
-
                     mUniVTex = vboxglGetUniformLocation(program(), "uVTex");
-
                     Assert(mUniVTex != -1);
                     if(mUniVTex == -1)
                         break;
@@ -1334,18 +1305,17 @@ int VBoxVHWAGlProgramVHWA::init()
                             vboxglUniform1i(mUniVTex, tex);
                             );
                     mVTex = tex;
-
-                    tex++;
+                    ++tex;
 
                     mUniUTex = vboxglGetUniformLocation(program(), "uUTex");
                     Assert(mUniUTex != -1);
                     if(mUniUTex == -1)
                         break;
-
                     VBOXQGL_CHECKERR(
                             vboxglUniform1i(mUniUTex, tex);
                             );
                     mUTex = tex;
+                    ++tex;
 
                     break;
                 }
@@ -1357,6 +1327,31 @@ int VBoxVHWAGlProgramVHWA::init()
                     Assert(0);
                     break;
             }
+        }
+
+        if(type() & VBOXVHWA_PROGRAM_DSTCOLORKEY)
+        {
+
+            mUniDstTex = vboxglGetUniformLocation(program(), "uDstTex");
+            Assert(mUniDstTex != -1);
+            if(mUniDstTex == -1)
+                break;
+            VBOXQGL_CHECKERR(
+                    vboxglUniform1i(mUniDstTex, tex);
+                    );
+            mDstTex = tex;
+            ++tex;
+
+            mUniDstLowerColor = vboxglGetUniformLocation(program(), "uDstClr");
+            Assert(mUniDstLowerColor != -1);
+            if(mUniDstLowerColor == -1)
+                break;
+
+            mDstLowerR = 0.0; mDstLowerG = 0.0; mDstLowerB = 0.0;
+
+            VBOXQGL_CHECKERR(
+                    vboxglUniform4f(mUniDstLowerColor, 0.0, 0.0, 0.0, 0.0);
+                    );
         }
 
         rc = VINF_SUCCESS;
@@ -1452,6 +1447,7 @@ public:
 //        mShaderCConvYV12Void(":/cconvYV12_void.c", GL_FRAGMENT_SHADER),
         mShaderSplitBGRA(":/splitBGRA.c", GL_FRAGMENT_SHADER),
         mShaderCKeyDst(":/ckeyDst.c", GL_FRAGMENT_SHADER),
+        mShaderCKeyDst2(":/ckeyDst2.c", GL_FRAGMENT_SHADER),
 //        mShaderCKeyDstVoid(":/ckeyDst_void.c", GL_FRAGMENT_SHADER),
     //  mShaderCKeySrc;
     //  mShaderCKeySrcVoid;
@@ -1493,7 +1489,10 @@ private:
 //    VBoxVHWAGlShader mShaderCConvYV12Void;
     VBoxVHWAGlShader mShaderSplitBGRA;
 
+    /* expected the dst surface texture to be bound to the 1-st tex unit */
     VBoxVHWAGlShader mShaderCKeyDst;
+    /* expected the dst surface texture to be bound to the 2-nd tex unit */
+    VBoxVHWAGlShader mShaderCKeyDst2;
 //    VBoxVHWAGlShader mShaderCKeyDstVoid;
 //    VBoxVHWAGlShader mShaderCKeySrc;
 //    VBoxVHWAGlShader mShaderCKeySrcVoid;
@@ -1516,7 +1515,14 @@ VBoxVHWAGlProgramVHWA * VBoxVHWAGlProgramMngr::createProgram(uint32_t type, uint
 
     if(type &  VBOXVHWA_PROGRAM_DSTCOLORKEY)
     {
-        apShaders[cShaders++] = &mShaderCKeyDst;
+        if(fourcc == FOURCC_YV12)
+        {
+            apShaders[cShaders++] = &mShaderCKeyDst2;
+        }
+        else
+        {
+            apShaders[cShaders++] = &mShaderCKeyDst;
+        }
     }
 // ensure we don't have empty functions /* paranoya for for ATI on linux */
 //    else
@@ -2572,42 +2578,35 @@ void VBoxVHWASurfaceBase::doMultiTex2FB(const QRect * pDstRect, VBoxVHWATexture 
 
 //    VBOXQGL_CHECKERR(
             glBegin(GL_QUADS);
-            pDstTex->multiTexCoord(GL_TEXTURE0, bx1, by1);
+
             for(int i = 0; i < cSrcTex; i++)
             {
-//                vboxglMultiTexCoord2d(GL_TEXTURE1 + i, ((double)tx1)/mpTex[i]->texRect().width()/(width()/mpTex[i]->rect().width()),
-//                        ((double)ty1)/mpTex[i]->texRect().height()/(height()/mpTex[i]->rect().height()));
-                mpTex[i]->multiTexCoord(GL_TEXTURE1 + i, tx1/(t0width/mpTex[i]->rect().width()), ty1/(t0height/mpTex[i]->rect().height()));
-
+                mpTex[i]->multiTexCoord(GL_TEXTURE0 + i, tx1/(t0width/mpTex[i]->rect().width()), ty1/(t0height/mpTex[i]->rect().height()));
             }
+            pDstTex->multiTexCoord(GL_TEXTURE0 + cSrcTex, bx1, by1);
             glVertex2i(bx1, by1);
-            pDstTex->multiTexCoord(GL_TEXTURE0, bx1, by2);
+
             for(int i = 0; i < cSrcTex; i++)
             {
-//                vboxglMultiTexCoord2d(GL_TEXTURE1 + i, ((double)tx1)/mpTex[i]->texRect().width()/(width()/mpTex[i]->rect().width()),
-//                        ((double)ty2)/mpTex[i]->texRect().height()/(height()/mpTex[i]->rect().height()));
-                mpTex[i]->multiTexCoord(GL_TEXTURE1 + i, tx1/(t0width/mpTex[i]->rect().width()), ty2/(t0height/mpTex[i]->rect().height()));
-
+                mpTex[i]->multiTexCoord(GL_TEXTURE0 + i, tx1/(t0width/mpTex[i]->rect().width()), ty2/(t0height/mpTex[i]->rect().height()));
             }
+            pDstTex->multiTexCoord(GL_TEXTURE0 + cSrcTex, bx1, by2);
             glVertex2i(bx1, by2);
-            pDstTex->multiTexCoord(GL_TEXTURE0, bx2, by2);
+
             for(int i = 0; i < cSrcTex; i++)
             {
-//                vboxglMultiTexCoord2d(GL_TEXTURE1 + i, ((double)tx2)/mpTex[i]->texRect().width()/(width()/mpTex[i]->rect().width()),
-//                        ((double)ty2)/mpTex[i]->texRect().height()/(height()/mpTex[i]->rect().height()));
-                mpTex[i]->multiTexCoord(GL_TEXTURE1 + i, tx2/(t0width/mpTex[i]->rect().width()), ty2/(t0height/mpTex[i]->rect().height()));
-
+                mpTex[i]->multiTexCoord(GL_TEXTURE0 + i, tx2/(t0width/mpTex[i]->rect().width()), ty2/(t0height/mpTex[i]->rect().height()));
             }
+            pDstTex->multiTexCoord(GL_TEXTURE0 + cSrcTex, bx2, by2);
             glVertex2i(bx2, by2);
-            pDstTex->multiTexCoord(GL_TEXTURE0, bx2, by1);
+
             for(int i = 0; i < cSrcTex; i++)
             {
-//                vboxglMultiTexCoord2d(GL_TEXTURE1 + i, ((double)tx2)/mpTex[i]->texRect().width()/(width()/mpTex[i]->rect().width()),
-//                        ((double)ty1)/mpTex[i]->texRect().height()/(height()/mpTex[i]->rect().height()));
-                mpTex[i]->multiTexCoord(GL_TEXTURE1 + i, tx2/(t0width/mpTex[i]->rect().width()), ty1/(t0height/mpTex[i]->rect().height()));
-
+                mpTex[i]->multiTexCoord(GL_TEXTURE0 + i, tx2/(t0width/mpTex[i]->rect().width()), ty1/(t0height/mpTex[i]->rect().height()));
             }
+            pDstTex->multiTexCoord(GL_TEXTURE0 + cSrcTex, bx2, by1);
             glVertex2i(bx2, by1);
+
             glEnd();
 //            );
 
@@ -2746,17 +2745,23 @@ void VBoxVHWASurfaceBase::doDisplay(VBoxVHWASurfaceBase *pPrimary, VBoxVHWAGlPro
 
         if(bBindDst)
         {
-            vboxglActiveTexture(GL_TEXTURE1);
-            mpTex[0]->bind();
             if(fourcc() == FOURCC_YV12)
             {
-                vboxglActiveTexture(GL_TEXTURE1+1);
+                vboxglActiveTexture(GL_TEXTURE1);
                 mpTex[1]->bind();
-                vboxglActiveTexture(GL_TEXTURE1 + 2);
+                vboxglActiveTexture(GL_TEXTURE1+1);
                 mpTex[2]->bind();
+
+                vboxglActiveTexture(GL_TEXTURE1+2);
             }
-            vboxglActiveTexture(GL_TEXTURE0);
+            else
+            {
+                vboxglActiveTexture(GL_TEXTURE1);
+            }
             pPrimary->mpTex[0]->bind();
+
+            vboxglActiveTexture(GL_TEXTURE0);
+            mpTex[0]->bind();
             bInvokeMultiTex2 = true;
         }
         else
@@ -2765,8 +2770,6 @@ void VBoxVHWASurfaceBase::doDisplay(VBoxVHWASurfaceBase *pPrimary, VBoxVHWAGlPro
             {
                 vboxglActiveTexture(GL_TEXTURE1);
                 mpTex[1]->bind();
-                vboxglActiveTexture(GL_TEXTURE1 + 1);
-                mpTex[2]->bind();
                 vboxglActiveTexture(GL_TEXTURE0);
             }
             mpTex[0]->bind();
@@ -2782,13 +2785,13 @@ void VBoxVHWASurfaceBase::doDisplay(VBoxVHWASurfaceBase *pPrimary, VBoxVHWAGlPro
     if(bInvokeMultiTex2)
     {
         doMultiTex2FB(&mVisibleTargRect, pPrimary->mpTex[0], &mVisibleSrcRect,
-                (fourcc() == FOURCC_YV12) ? 3 : 1);
+                (fourcc() == FOURCC_YV12) ? 2 : 1);
     }
     else
     {
         if(fourcc() == FOURCC_YV12)
         {
-            doMultiTex2FB(&mVisibleTargRect, &mVisibleSrcRect, 3 );
+            doMultiTex2FB(&mVisibleTargRect, &mVisibleSrcRect, 2);
         }
         else
         {

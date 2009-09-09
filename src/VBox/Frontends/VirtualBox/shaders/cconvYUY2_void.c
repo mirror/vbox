@@ -1,2 +1,2 @@
-void vboxCConv(int srcI)
+void vboxCConv()
 {}

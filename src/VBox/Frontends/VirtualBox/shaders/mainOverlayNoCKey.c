@@ -1,5 +1,5 @@
-void vboxCConv(int srcI);
+void vboxCConv();
 void main(void)
 {
-    vboxCConv(0);
+    vboxCConv();
 }
