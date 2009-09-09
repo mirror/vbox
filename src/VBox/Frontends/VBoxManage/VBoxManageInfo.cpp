@@ -830,6 +830,11 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
                     strNICType = "82545EM";
                     break;
 #endif
+#ifdef VBOX_WITH_VIRTIO
+                case NetworkAdapterType_Virtio:
+                    strNICType = "virtio";
+                    break;
+#endif /* VBOX_WITH_VIRTIO */
                 default:
                     strNICType = "unknown";
                     break;

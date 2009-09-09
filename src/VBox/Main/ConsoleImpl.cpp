@@ -3346,6 +3346,10 @@ HRESULT Console::onNetworkAdapterChange (INetworkAdapter *aNetworkAdapter, BOOL 
                 adapterType == NetworkAdapterType_I82543GC ||
                 adapterType == NetworkAdapterType_I82545EM)
                 pszAdapterName = "e1000";
+#ifdef VBOX_WITH_VIRTIO
+            if (adapterType == NetworkAdapterType_Virtio)
+                pszAdapterName = "virtio";
+#endif /* VBOX_WITH_VIRTIO */
 #endif
             int vrc = PDMR3QueryDeviceLun (mpVM, pszAdapterName,
                                            (unsigned) ulInstance, 0, &pBase);
