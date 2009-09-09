@@ -564,6 +564,7 @@ int slirp_init(PNATState *ppData, uint32_t u32NetAddr, uint32_t u32Netmask,
         LibAliasSetAddress(pData->proxy_alias, proxy_addr);
         ftp_alias_load(pData);
         nbt_alias_load(pData);
+        dns_alias_load(pData);
     }
     return fNATfailed ? VINF_NAT_DNS : VINF_SUCCESS;
 }
@@ -642,6 +643,7 @@ void slirp_term(PNATState pData)
     slirp_release_dns_list(pData);
     ftp_alias_unload(pData);
     nbt_alias_unload(pData);
+    dns_alias_unload(pData);
     while(!LIST_EMPTY(&instancehead)) 
     {
         struct libalias *la = LIST_FIRST(&instancehead);
