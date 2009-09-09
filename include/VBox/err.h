@@ -586,6 +586,12 @@
 #define VERR_SSM_LIVE_GURU_MEDITATION           (-1858)
 /** The VM was paused while saving, don't resume execution. */
 #define VINF_SSM_LIVE_PAUSED                    1859
+/** The operation was cancelled. */
+#define VERR_SSM_CANCELLED                      (-1860)
+/** Nothing that can be cancelled.  */
+#define VERR_SSM_NO_PENDING_OPERATION           (-1861)
+/** The operation has already been cancelled. */
+#define VERR_SSM_ALREADY_CANCELLED              (-1862)
 /** @} */
 
 

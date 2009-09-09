@@ -259,6 +259,12 @@
 /** Number of bytes to log in Log2 and Log4 statements. */
 #define SSM_LOG_BYTES                           16
 
+/** SSMHANDLE::fCancelled value indicating that the operation has been
+ *  cancelled. */
+#define SSMHANDLE_CANCELLED                     UINT32_C(0xdeadbeef)
+/** SSMHANDLE::fCancelled value indicating no cancellation. */
+#define SSMHANDLE_OK                            UINT32_C(0x77777777)
+
 
 /** Macro for checking the u32CRC field of a structure.
  * The Msg can assume there are  u32ActualCRC and u32CRC in the context. */
@@ -295,6 +301,21 @@ AssertCompile(SSM_ZIP_BLOCK_SIZE / _1K * _1K == SSM_ZIP_BLOCK_SIZE);
     AssertMsgReturn(   pSSM->enmOp == SSMSTATE_LOAD_EXEC \
                     || pSSM->enmOp == SSMSTATE_OPEN_READ,\
                     ("Invalid state %d\n", pSSM->enmOp), VERR_SSM_INVALID_STATE);
+
+/** Checks for cancellation and returns if pending.
+ * Sets SSMHANDLE::rc to VERR_SSM_CANCELLED (if it still indicates success) and
+ * then returns SSMHANDLE::rc. (Debug logging only.) */
+#define SSM_CHECK_CANCELLED_RET(pSSM) \
+    do \
+    { \
+        if (RT_UNLIKELY(ASMAtomicUoReadU32(&(pSSM)->fCancelled) == SSMHANDLE_CANCELLED)) \
+        { \
+            LogFlow(("%Rfn: Cancelled -> VERR_SSM_CANCELLED\n", __PRETTY_FUNCTION__)); \
+            if (RT_SUCCESS((pSSM)->rc)) \
+                (pSSM)->rc = VERR_SSM_CANCELLED; \
+            return (pSSM)->rc; \
+        } \
+    } while (0)
 
 
 /*******************************************************************************
@@ -402,42 +423,44 @@ typedef SSMSTRM *PSSMSTRM;
 typedef struct SSMHANDLE
 {
     /** Stream/buffer manager. */
-    SSMSTRM         Strm;
+    SSMSTRM                 Strm;
 
     /** The VM handle. */
-    PVM             pVM;
+    PVM                     pVM;
     /** The current operation. */
-    SSMSTATE        enmOp;
+    SSMSTATE                enmOp;
     /** What to do after save completes. (move the enum) */
-    SSMAFTER        enmAfter;
+    SSMAFTER                enmAfter;
+    /** Flag indicating that the operation has been cancelled. */
+    uint32_t volatile       fCancelled;
     /** The current rc of the save operation. */
-    int             rc;
+    int32_t                 rc;
     /** Number of compressed bytes left in the current data unit (V1). */
-    uint64_t        cbUnitLeftV1;
+    uint64_t                cbUnitLeftV1;
     /** The current uncompressed offset into the data unit. */
-    uint64_t        offUnit;
+    uint64_t                offUnit;
 
     /** Pointer to the progress callback function. */
-    PFNVMPROGRESS   pfnProgress;
+    PFNVMPROGRESS           pfnProgress;
     /** User specified arguemnt to the callback function. */
-    void           *pvUser;
+    void                   *pvUser;
     /** Next completion percentage. (corresponds to offEstProgress) */
-    unsigned        uPercent;
+    unsigned                uPercent;
     /** The position of the next progress callback in the estimated file. */
-    uint64_t        offEstProgress;
+    uint64_t                offEstProgress;
     /** The estimated total byte count.
      * (Only valid after the prep.) */
-    uint64_t        cbEstTotal;
+    uint64_t                cbEstTotal;
     /** Current position in the estimated file. */
-    uint64_t        offEst;
+    uint64_t                offEst;
     /** End of current unit in the estimated file. */
-    uint64_t        offEstUnitEnd;
+    uint64_t                offEstUnitEnd;
     /** the amount of % we reserve for the 'prepare' phase */
-    unsigned        uPercentPrepare;
+    unsigned                uPercentPrepare;
     /** the amount of % we reserve for the 'done' stage */
-    unsigned        uPercentDone;
+    unsigned                uPercentDone;
     /** The filename, NULL if remote stream. */
-    const char     *pszFilename;
+    const char             *pszFilename;
 
     union
     {
@@ -800,6 +823,21 @@ static int                  ssmR3DataReadRecHdrV2(PSSMHANDLE pSSM);
 
 
 /**
+ * Cleans up resources allocated by SSM on VM termination.
+ *
+ * @param   pVM                 The VM handle.
+ */
+VMMR3_INT_DECL(void) SSMR3Term(PVM pVM)
+{
+    if (pVM->ssm.s.fInitialized)
+    {
+        pVM->ssm.s.fInitialized = false;
+        RTCritSectDelete(&pVM->ssm.s.CancelCritSect);
+    }
+}
+
+
+/**
  * Performs lazy initialization of the SSM.
  *
  * @returns VBox status code.
@@ -816,6 +854,13 @@ static int ssmR3LazyInit(PVM pVM)
                                    NULL /*pfnLivePrep*/, ssmR3SelfLiveExec, NULL /*pfnLiveVote*/,
                                    NULL /*pfnSavePrep*/, ssmR3SelfSaveExec, NULL /*pfnSaveDone*/,
                                    NULL /*pfnSavePrep*/, ssmR3SelfLoadExec, NULL /*pfnSaveDone*/);
+
+    /*
+     * Initialize the cancellation critsect now.
+     */
+    if (RT_SUCCESS(rc))
+        rc = RTCritSectInit(&pVM->ssm.s.CancelCritSect);
+
     pVM->ssm.s.fInitialized = RT_SUCCESS(rc);
     return rc;
 }
@@ -2577,6 +2622,36 @@ static void ssmR3Progress(PSSMHANDLE pSSM, uint64_t cbAdvance)
 
 
 /**
+ * Makes the SSM operation cancellable or not (via SSMR3Cancel).
+ *
+ * @param   pVM             The VM handle.
+ * @param   pSSM            The saved state handle. (SSMHANDLE::rc may be set.)
+ * @param   fCancellable    The new state.
+ */
+static void ssmR3SetCancellable(PVM pVM, PSSMHANDLE pSSM, bool fCancellable)
+{
+    RTCritSectEnter(&pVM->ssm.s.CancelCritSect);
+    if (fCancellable)
+    {
+        Assert(!pVM->ssm.s.pSSM);
+        pVM->ssm.s.pSSM = pSSM;
+    }
+    else
+    {
+        if (pVM->ssm.s.pSSM == pSSM)
+            pVM->ssm.s.pSSM = NULL;
+
+        uint32_t fCancelled = ASMAtomicUoReadU32(&pSSM->fCancelled);
+        if (    fCancelled == SSMHANDLE_CANCELLED
+            &&  RT_SUCCESS(pSSM->rc))
+            pSSM->rc = VERR_SSM_CANCELLED;
+    }
+
+    RTCritSectLeave(&pVM->ssm.s.CancelCritSect);
+}
+
+
+/**
  * Finishes a data unit.
  * All buffers and compressor instances are flushed and destroyed.
  *
@@ -2942,6 +3017,7 @@ VMMR3DECL(int) SSMR3PutStruct(PSSMHANDLE pSSM, const void *pvStruct, PCSSMFIELD 
 VMMR3DECL(int) SSMR3PutBool(PSSMHANDLE pSSM, bool fBool)
 {
     SSM_ASSERT_WRITEABLE_RET(pSSM);
+    SSM_CHECK_CANCELLED_RET(pSSM);
     uint8_t u8 = fBool; /* enforce 1 byte size */
     return ssmR3DataWrite(pSSM, &u8, sizeof(u8));
 }
@@ -2957,6 +3033,7 @@ VMMR3DECL(int) SSMR3PutBool(PSSMHANDLE pSSM, bool fBool)
 VMMR3DECL(int) SSMR3PutU8(PSSMHANDLE pSSM, uint8_t u8)
 {
     SSM_ASSERT_WRITEABLE_RET(pSSM);
+    SSM_CHECK_CANCELLED_RET(pSSM);
     return ssmR3DataWrite(pSSM, &u8, sizeof(u8));
 }
 
@@ -2971,6 +3048,7 @@ VMMR3DECL(int) SSMR3PutU8(PSSMHANDLE pSSM, uint8_t u8)
 VMMR3DECL(int) SSMR3PutS8(PSSMHANDLE pSSM, int8_t i8)
 {
     SSM_ASSERT_WRITEABLE_RET(pSSM);
+    SSM_CHECK_CANCELLED_RET(pSSM);
     return ssmR3DataWrite(pSSM, &i8, sizeof(i8));
 }
 
@@ -2985,6 +3063,7 @@ VMMR3DECL(int) SSMR3PutS8(PSSMHANDLE pSSM, int8_t i8)
 VMMR3DECL(int) SSMR3PutU16(PSSMHANDLE pSSM, uint16_t u16)
 {
     SSM_ASSERT_WRITEABLE_RET(pSSM);
+    SSM_CHECK_CANCELLED_RET(pSSM);
     return ssmR3DataWrite(pSSM, &u16, sizeof(u16));
 }
 
@@ -2999,6 +3078,7 @@ VMMR3DECL(int) SSMR3PutU16(PSSMHANDLE pSSM, uint16_t u16)
 VMMR3DECL(int) SSMR3PutS16(PSSMHANDLE pSSM, int16_t i16)
 {
     SSM_ASSERT_WRITEABLE_RET(pSSM);
+    SSM_CHECK_CANCELLED_RET(pSSM);
     return ssmR3DataWrite(pSSM, &i16, sizeof(i16));
 }
 
@@ -3013,6 +3093,7 @@ VMMR3DECL(int) SSMR3PutS16(PSSMHANDLE pSSM, int16_t i16)
 VMMR3DECL(int) SSMR3PutU32(PSSMHANDLE pSSM, uint32_t u32)
 {
     SSM_ASSERT_WRITEABLE_RET(pSSM);
+    SSM_CHECK_CANCELLED_RET(pSSM);
     return ssmR3DataWrite(pSSM, &u32, sizeof(u32));
 }
 
@@ -3027,6 +3108,7 @@ VMMR3DECL(int) SSMR3PutU32(PSSMHANDLE pSSM, uint32_t u32)
 VMMR3DECL(int) SSMR3PutS32(PSSMHANDLE pSSM, int32_t i32)
 {
     SSM_ASSERT_WRITEABLE_RET(pSSM);
+    SSM_CHECK_CANCELLED_RET(pSSM);
     return ssmR3DataWrite(pSSM, &i32, sizeof(i32));
 }
 
@@ -3041,6 +3123,7 @@ VMMR3DECL(int) SSMR3PutS32(PSSMHANDLE pSSM, int32_t i32)
 VMMR3DECL(int) SSMR3PutU64(PSSMHANDLE pSSM, uint64_t u64)
 {
     SSM_ASSERT_WRITEABLE_RET(pSSM);
+    SSM_CHECK_CANCELLED_RET(pSSM);
     return ssmR3DataWrite(pSSM, &u64, sizeof(u64));
 }
 
@@ -3055,6 +3138,7 @@ VMMR3DECL(int) SSMR3PutU64(PSSMHANDLE pSSM, uint64_t u64)
 VMMR3DECL(int) SSMR3PutS64(PSSMHANDLE pSSM, int64_t i64)
 {
     SSM_ASSERT_WRITEABLE_RET(pSSM);
+    SSM_CHECK_CANCELLED_RET(pSSM);
     return ssmR3DataWrite(pSSM, &i64, sizeof(i64));
 }
 
@@ -3069,6 +3153,7 @@ VMMR3DECL(int) SSMR3PutS64(PSSMHANDLE pSSM, int64_t i64)
 VMMR3DECL(int) SSMR3PutU128(PSSMHANDLE pSSM, uint128_t u128)
 {
     SSM_ASSERT_WRITEABLE_RET(pSSM);
+    SSM_CHECK_CANCELLED_RET(pSSM);
     return ssmR3DataWrite(pSSM, &u128, sizeof(u128));
 }
 
@@ -3083,6 +3168,7 @@ VMMR3DECL(int) SSMR3PutU128(PSSMHANDLE pSSM, uint128_t u128)
 VMMR3DECL(int) SSMR3PutS128(PSSMHANDLE pSSM, int128_t i128)
 {
     SSM_ASSERT_WRITEABLE_RET(pSSM);
+    SSM_CHECK_CANCELLED_RET(pSSM);
     return ssmR3DataWrite(pSSM, &i128, sizeof(i128));
 }
 
@@ -3097,6 +3183,7 @@ VMMR3DECL(int) SSMR3PutS128(PSSMHANDLE pSSM, int128_t i128)
 VMMR3DECL(int) SSMR3PutUInt(PSSMHANDLE pSSM, RTUINT u)
 {
     SSM_ASSERT_WRITEABLE_RET(pSSM);
+    SSM_CHECK_CANCELLED_RET(pSSM);
     return ssmR3DataWrite(pSSM, &u, sizeof(u));
 }
 
@@ -3111,6 +3198,7 @@ VMMR3DECL(int) SSMR3PutUInt(PSSMHANDLE pSSM, RTUINT u)
 VMMR3DECL(int) SSMR3PutSInt(PSSMHANDLE pSSM, RTINT i)
 {
     SSM_ASSERT_WRITEABLE_RET(pSSM);
+    SSM_CHECK_CANCELLED_RET(pSSM);
     return ssmR3DataWrite(pSSM, &i, sizeof(i));
 }
 
@@ -3127,6 +3215,7 @@ VMMR3DECL(int) SSMR3PutSInt(PSSMHANDLE pSSM, RTINT i)
 VMMR3DECL(int) SSMR3PutGCUInt(PSSMHANDLE pSSM, RTGCUINT u)
 {
     SSM_ASSERT_WRITEABLE_RET(pSSM);
+    SSM_CHECK_CANCELLED_RET(pSSM);
     return ssmR3DataWrite(pSSM, &u, sizeof(u));
 }
 
@@ -3141,6 +3230,7 @@ VMMR3DECL(int) SSMR3PutGCUInt(PSSMHANDLE pSSM, RTGCUINT u)
 VMMR3DECL(int) SSMR3PutGCUIntReg(PSSMHANDLE pSSM, RTGCUINTREG u)
 {
     SSM_ASSERT_WRITEABLE_RET(pSSM);
+    SSM_CHECK_CANCELLED_RET(pSSM);
     return ssmR3DataWrite(pSSM, &u, sizeof(u));
 }
 
@@ -3155,6 +3245,7 @@ VMMR3DECL(int) SSMR3PutGCUIntReg(PSSMHANDLE pSSM, RTGCUINTREG u)
 VMMR3DECL(int) SSMR3PutGCPhys32(PSSMHANDLE pSSM, RTGCPHYS32 GCPhys)
 {
     SSM_ASSERT_WRITEABLE_RET(pSSM);
+    SSM_CHECK_CANCELLED_RET(pSSM);
     return ssmR3DataWrite(pSSM, &GCPhys, sizeof(GCPhys));
 }
 
@@ -3169,6 +3260,7 @@ VMMR3DECL(int) SSMR3PutGCPhys32(PSSMHANDLE pSSM, RTGCPHYS32 GCPhys)
 VMMR3DECL(int) SSMR3PutGCPhys64(PSSMHANDLE pSSM, RTGCPHYS64 GCPhys)
 {
     SSM_ASSERT_WRITEABLE_RET(pSSM);
+    SSM_CHECK_CANCELLED_RET(pSSM);
     return ssmR3DataWrite(pSSM, &GCPhys, sizeof(GCPhys));
 }
 
@@ -3183,6 +3275,7 @@ VMMR3DECL(int) SSMR3PutGCPhys64(PSSMHANDLE pSSM, RTGCPHYS64 GCPhys)
 VMMR3DECL(int) SSMR3PutGCPhys(PSSMHANDLE pSSM, RTGCPHYS GCPhys)
 {
     SSM_ASSERT_WRITEABLE_RET(pSSM);
+    SSM_CHECK_CANCELLED_RET(pSSM);
     return ssmR3DataWrite(pSSM, &GCPhys, sizeof(GCPhys));
 }
 
@@ -3197,6 +3290,7 @@ VMMR3DECL(int) SSMR3PutGCPhys(PSSMHANDLE pSSM, RTGCPHYS GCPhys)
 VMMR3DECL(int) SSMR3PutGCPtr(PSSMHANDLE pSSM, RTGCPTR GCPtr)
 {
     SSM_ASSERT_WRITEABLE_RET(pSSM);
+    SSM_CHECK_CANCELLED_RET(pSSM);
     return ssmR3DataWrite(pSSM, &GCPtr, sizeof(GCPtr));
 }
 
@@ -3211,6 +3305,7 @@ VMMR3DECL(int) SSMR3PutGCPtr(PSSMHANDLE pSSM, RTGCPTR GCPtr)
 VMMR3DECL(int) SSMR3PutRCPtr(PSSMHANDLE pSSM, RTRCPTR RCPtr)
 {
     SSM_ASSERT_WRITEABLE_RET(pSSM);
+    SSM_CHECK_CANCELLED_RET(pSSM);
     return ssmR3DataWrite(pSSM, &RCPtr, sizeof(RCPtr));
 }
 
@@ -3225,6 +3320,7 @@ VMMR3DECL(int) SSMR3PutRCPtr(PSSMHANDLE pSSM, RTRCPTR RCPtr)
 VMMR3DECL(int) SSMR3PutGCUIntPtr(PSSMHANDLE pSSM, RTGCUINTPTR GCPtr)
 {
     SSM_ASSERT_WRITEABLE_RET(pSSM);
+    SSM_CHECK_CANCELLED_RET(pSSM);
     return ssmR3DataWrite(pSSM, &GCPtr, sizeof(GCPtr));
 }
 
@@ -3239,6 +3335,7 @@ VMMR3DECL(int) SSMR3PutGCUIntPtr(PSSMHANDLE pSSM, RTGCUINTPTR GCPtr)
 VMMR3DECL(int) SSMR3PutIOPort(PSSMHANDLE pSSM, RTIOPORT IOPort)
 {
     SSM_ASSERT_WRITEABLE_RET(pSSM);
+    SSM_CHECK_CANCELLED_RET(pSSM);
     return ssmR3DataWrite(pSSM, &IOPort, sizeof(IOPort));
 }
 
@@ -3253,6 +3350,7 @@ VMMR3DECL(int) SSMR3PutIOPort(PSSMHANDLE pSSM, RTIOPORT IOPort)
 VMMR3DECL(int) SSMR3PutSel(PSSMHANDLE pSSM, RTSEL Sel)
 {
     SSM_ASSERT_WRITEABLE_RET(pSSM);
+    SSM_CHECK_CANCELLED_RET(pSSM);
     return ssmR3DataWrite(pSSM, &Sel, sizeof(Sel));
 }
 
@@ -3268,6 +3366,7 @@ VMMR3DECL(int) SSMR3PutSel(PSSMHANDLE pSSM, RTSEL Sel)
 VMMR3DECL(int) SSMR3PutMem(PSSMHANDLE pSSM, const void *pv, size_t cb)
 {
     SSM_ASSERT_WRITEABLE_RET(pSSM);
+    SSM_CHECK_CANCELLED_RET(pSSM);
     return ssmR3DataWrite(pSSM, pv, cb);
 }
 
@@ -3282,6 +3381,7 @@ VMMR3DECL(int) SSMR3PutMem(PSSMHANDLE pSSM, const void *pv, size_t cb)
 VMMR3DECL(int) SSMR3PutStrZ(PSSMHANDLE pSSM, const char *psz)
 {
     SSM_ASSERT_WRITEABLE_RET(pSSM);
+    SSM_CHECK_CANCELLED_RET(pSSM);
 
     size_t cch = strlen(psz);
     if (cch > _1M)
@@ -3310,8 +3410,9 @@ static int ssmR3SaveDoClose(PVM pVM, PSSMHANDLE pSSM)
     VM_ASSERT_EMT0(pVM);
 
     /*
-     * Close the stream and delete the file on failure.
+     * Make it non-cancellable, close the stream and delete the file on failure.
      */
+    ssmR3SetCancellable(pVM, pSSM, false);
     int rc = ssmR3StrmClose(&pSSM->Strm);
     if (RT_SUCCESS(rc))
         rc = pSSM->rc;
@@ -3342,6 +3443,7 @@ static int ssmR3SaveDoClose(PVM pVM, PSSMHANDLE pSSM)
     /*
      * Trash the handle before freeing it.
      */
+    ASMAtomicWriteU32(&pSSM->fCancelled, 0);
     pSSM->pVM = NULL;
     pSSM->enmAfter = SSMAFTER_INVALID;
     pSSM->enmOp = SSMSTATE_INVALID;
@@ -3594,6 +3696,16 @@ static int ssmR3SaveDoExecRun(PVM pVM, PSSMHANDLE pSSM)
             continue;
         }
         pUnit->offStream = ssmR3StrmTell(&pSSM->Strm);
+
+        /*
+         * Check for cancellation.
+         */
+        if (RT_UNLIKELY(ASMAtomicUoReadU32(&(pSSM)->fCancelled) == SSMHANDLE_CANCELLED))
+        {
+            LogRel(("SSM: Cancelled!\n"));
+            AssertRC(pSSM->rc);
+            return pSSM->rc = VERR_SSM_CANCELLED;
+        }
 
         /*
          * Write data unit header
@@ -3887,6 +3999,7 @@ static int ssmR3SaveDoCreateFile(PVM pVM, const char *pszFilename, SSMAFTER enmA
     pSSM->pVM                   = pVM;
     pSSM->enmOp                 = SSMSTATE_INVALID;
     pSSM->enmAfter              = enmAfter;
+    pSSM->fCancelled            = SSMHANDLE_OK;
     pSSM->rc                    = VINF_SUCCESS;
     pSSM->cbUnitLeftV1          = 0;
     pSSM->offUnit               = UINT64_MAX;
@@ -3962,7 +4075,11 @@ VMMR3DECL(int) SSMR3Save(PVM pVM, const char *pszFilename, SSMAFTER enmAfter, PF
     ssmR3StrmStartIoThread(&pSSM->Strm);
     rc = ssmR3WriteHeaderAndClearPerUnitData(pVM, pSSM);
     if (RT_SUCCESS(rc))
+    {
+        ssmR3SetCancellable(pVM, pSSM, true);
         ssmR3SaveDoCommon(pVM, pSSM);
+    }
+
     return ssmR3SaveDoClose(pVM, pSSM);
 }
 
@@ -4058,6 +4175,16 @@ static int ssmR3LiveDoExecRun(PVM pVM, PSSMHANDLE pSSM, uint32_t uPass)
         if (!pUnit->u.Common.pfnLiveExec)
             continue;
         pUnit->offStream = ssmR3StrmTell(&pSSM->Strm);
+
+        /*
+         * Check for cancellation.
+         */
+        if (RT_UNLIKELY(ASMAtomicUoReadU32(&(pSSM)->fCancelled) == SSMHANDLE_CANCELLED))
+        {
+            LogRel(("SSM: Cancelled!\n"));
+            AssertRC(pSSM->rc);
+            return pSSM->rc = VERR_SSM_CANCELLED;
+        }
 
         /*
          * Write data unit header.
@@ -4400,6 +4527,7 @@ VMMR3_INT_DECL(int) SSMR3LiveToFile(PVM pVM, const char *pszFilename, SSMAFTER e
              * via SSMR3SaveFinishLive
              */
             pSSM->enmOp = SSMSTATE_LIVE_STEP1;
+            ssmR3SetCancellable(pVM, pSSM, true);
             *ppSSM = pSSM;
             return VINF_SUCCESS;
         }
@@ -5193,6 +5321,7 @@ VMMR3DECL(int) SSMR3GetStruct(PSSMHANDLE pSSM, void *pvStruct, PCSSMFIELD paFiel
 VMMR3DECL(int) SSMR3GetBool(PSSMHANDLE pSSM, bool *pfBool)
 {
     SSM_ASSERT_READABLE_RET(pSSM);
+    SSM_CHECK_CANCELLED_RET(pSSM);
     uint8_t u8; /* see SSMR3PutBool */
     int rc = ssmR3DataRead(pSSM, &u8, sizeof(u8));
     if (RT_SUCCESS(rc))
@@ -5214,6 +5343,7 @@ VMMR3DECL(int) SSMR3GetBool(PSSMHANDLE pSSM, bool *pfBool)
 VMMR3DECL(int) SSMR3GetU8(PSSMHANDLE pSSM, uint8_t *pu8)
 {
     SSM_ASSERT_READABLE_RET(pSSM);
+    SSM_CHECK_CANCELLED_RET(pSSM);
     return ssmR3DataRead(pSSM, pu8, sizeof(*pu8));
 }
 
@@ -5228,6 +5358,7 @@ VMMR3DECL(int) SSMR3GetU8(PSSMHANDLE pSSM, uint8_t *pu8)
 VMMR3DECL(int) SSMR3GetS8(PSSMHANDLE pSSM, int8_t *pi8)
 {
     SSM_ASSERT_READABLE_RET(pSSM);
+    SSM_CHECK_CANCELLED_RET(pSSM);
     return ssmR3DataRead(pSSM, pi8, sizeof(*pi8));
 }
 
@@ -5242,6 +5373,7 @@ VMMR3DECL(int) SSMR3GetS8(PSSMHANDLE pSSM, int8_t *pi8)
 VMMR3DECL(int) SSMR3GetU16(PSSMHANDLE pSSM, uint16_t *pu16)
 {
     SSM_ASSERT_READABLE_RET(pSSM);
+    SSM_CHECK_CANCELLED_RET(pSSM);
     return ssmR3DataRead(pSSM, pu16, sizeof(*pu16));
 }
 
@@ -5256,6 +5388,7 @@ VMMR3DECL(int) SSMR3GetU16(PSSMHANDLE pSSM, uint16_t *pu16)
 VMMR3DECL(int) SSMR3GetS16(PSSMHANDLE pSSM, int16_t *pi16)
 {
     SSM_ASSERT_READABLE_RET(pSSM);
+    SSM_CHECK_CANCELLED_RET(pSSM);
     return ssmR3DataRead(pSSM, pi16, sizeof(*pi16));
 }
 
@@ -5270,6 +5403,7 @@ VMMR3DECL(int) SSMR3GetS16(PSSMHANDLE pSSM, int16_t *pi16)
 VMMR3DECL(int) SSMR3GetU32(PSSMHANDLE pSSM, uint32_t *pu32)
 {
     SSM_ASSERT_READABLE_RET(pSSM);
+    SSM_CHECK_CANCELLED_RET(pSSM);
     return ssmR3DataRead(pSSM, pu32, sizeof(*pu32));
 }
 
@@ -5284,6 +5418,7 @@ VMMR3DECL(int) SSMR3GetU32(PSSMHANDLE pSSM, uint32_t *pu32)
 VMMR3DECL(int) SSMR3GetS32(PSSMHANDLE pSSM, int32_t *pi32)
 {
     SSM_ASSERT_READABLE_RET(pSSM);
+    SSM_CHECK_CANCELLED_RET(pSSM);
     return ssmR3DataRead(pSSM, pi32, sizeof(*pi32));
 }
 
@@ -5298,6 +5433,7 @@ VMMR3DECL(int) SSMR3GetS32(PSSMHANDLE pSSM, int32_t *pi32)
 VMMR3DECL(int) SSMR3GetU64(PSSMHANDLE pSSM, uint64_t *pu64)
 {
     SSM_ASSERT_READABLE_RET(pSSM);
+    SSM_CHECK_CANCELLED_RET(pSSM);
     return ssmR3DataRead(pSSM, pu64, sizeof(*pu64));
 }
 
@@ -5312,6 +5448,7 @@ VMMR3DECL(int) SSMR3GetU64(PSSMHANDLE pSSM, uint64_t *pu64)
 VMMR3DECL(int) SSMR3GetS64(PSSMHANDLE pSSM, int64_t *pi64)
 {
     SSM_ASSERT_READABLE_RET(pSSM);
+    SSM_CHECK_CANCELLED_RET(pSSM);
     return ssmR3DataRead(pSSM, pi64, sizeof(*pi64));
 }
 
@@ -5326,6 +5463,7 @@ VMMR3DECL(int) SSMR3GetS64(PSSMHANDLE pSSM, int64_t *pi64)
 VMMR3DECL(int) SSMR3GetU128(PSSMHANDLE pSSM, uint128_t *pu128)
 {
     SSM_ASSERT_READABLE_RET(pSSM);
+    SSM_CHECK_CANCELLED_RET(pSSM);
     return ssmR3DataRead(pSSM, pu128, sizeof(*pu128));
 }
 
@@ -5340,6 +5478,7 @@ VMMR3DECL(int) SSMR3GetU128(PSSMHANDLE pSSM, uint128_t *pu128)
 VMMR3DECL(int) SSMR3GetS128(PSSMHANDLE pSSM, int128_t *pi128)
 {
     SSM_ASSERT_READABLE_RET(pSSM);
+    SSM_CHECK_CANCELLED_RET(pSSM);
     return ssmR3DataRead(pSSM, pi128, sizeof(*pi128));
 }
 
@@ -5354,6 +5493,7 @@ VMMR3DECL(int) SSMR3GetS128(PSSMHANDLE pSSM, int128_t *pi128)
 VMMR3DECL(int) SSMR3GetUInt(PSSMHANDLE pSSM, PRTUINT pu)
 {
     SSM_ASSERT_READABLE_RET(pSSM);
+    SSM_CHECK_CANCELLED_RET(pSSM);
     return ssmR3DataRead(pSSM, pu, sizeof(*pu));
 }
 
@@ -5368,6 +5508,7 @@ VMMR3DECL(int) SSMR3GetUInt(PSSMHANDLE pSSM, PRTUINT pu)
 VMMR3DECL(int) SSMR3GetSInt(PSSMHANDLE pSSM, PRTINT pi)
 {
     SSM_ASSERT_READABLE_RET(pSSM);
+    SSM_CHECK_CANCELLED_RET(pSSM);
     return ssmR3DataRead(pSSM, pi, sizeof(*pi));
 }
 
@@ -5412,6 +5553,7 @@ VMMR3DECL(int) SSMR3GetGCUIntReg(PSSMHANDLE pSSM, PRTGCUINTREG pu)
 VMMR3DECL(int) SSMR3GetGCPhys32(PSSMHANDLE pSSM, PRTGCPHYS32 pGCPhys)
 {
     SSM_ASSERT_READABLE_RET(pSSM);
+    SSM_CHECK_CANCELLED_RET(pSSM);
     return ssmR3DataRead(pSSM, pGCPhys, sizeof(*pGCPhys));
 }
 
@@ -5426,6 +5568,7 @@ VMMR3DECL(int) SSMR3GetGCPhys32(PSSMHANDLE pSSM, PRTGCPHYS32 pGCPhys)
 VMMR3DECL(int) SSMR3GetGCPhys64(PSSMHANDLE pSSM, PRTGCPHYS64 pGCPhys)
 {
     SSM_ASSERT_READABLE_RET(pSSM);
+    SSM_CHECK_CANCELLED_RET(pSSM);
     return ssmR3DataRead(pSSM, pGCPhys, sizeof(*pGCPhys));
 }
 
@@ -5440,6 +5583,7 @@ VMMR3DECL(int) SSMR3GetGCPhys64(PSSMHANDLE pSSM, PRTGCPHYS64 pGCPhys)
 VMMR3DECL(int) SSMR3GetGCPhys(PSSMHANDLE pSSM, PRTGCPHYS pGCPhys)
 {
     SSM_ASSERT_READABLE_RET(pSSM);
+    SSM_CHECK_CANCELLED_RET(pSSM);
 
     /*
      * Default size?
@@ -5517,6 +5661,7 @@ VMMR3_INT_DECL(int) SSMR3SetGCPtrSize(PSSMHANDLE pSSM, unsigned cbGCPtr)
 VMMR3DECL(int) SSMR3GetGCPtr(PSSMHANDLE pSSM, PRTGCPTR pGCPtr)
 {
     SSM_ASSERT_READABLE_RET(pSSM);
+    SSM_CHECK_CANCELLED_RET(pSSM);
 
     /*
      * Default size?
@@ -5572,6 +5717,7 @@ VMMR3DECL(int) SSMR3GetGCUIntPtr(PSSMHANDLE pSSM, PRTGCUINTPTR pGCPtr)
 VMMR3DECL(int) SSMR3GetRCPtr(PSSMHANDLE pSSM, PRTRCPTR pRCPtr)
 {
     SSM_ASSERT_READABLE_RET(pSSM);
+    SSM_CHECK_CANCELLED_RET(pSSM);
     return ssmR3DataRead(pSSM, pRCPtr, sizeof(*pRCPtr));
 }
 
@@ -5586,6 +5732,7 @@ VMMR3DECL(int) SSMR3GetRCPtr(PSSMHANDLE pSSM, PRTRCPTR pRCPtr)
 VMMR3DECL(int) SSMR3GetIOPort(PSSMHANDLE pSSM, PRTIOPORT pIOPort)
 {
     SSM_ASSERT_READABLE_RET(pSSM);
+    SSM_CHECK_CANCELLED_RET(pSSM);
     return ssmR3DataRead(pSSM, pIOPort, sizeof(*pIOPort));
 }
 
@@ -5600,6 +5747,7 @@ VMMR3DECL(int) SSMR3GetIOPort(PSSMHANDLE pSSM, PRTIOPORT pIOPort)
 VMMR3DECL(int) SSMR3GetSel(PSSMHANDLE pSSM, PRTSEL pSel)
 {
     SSM_ASSERT_READABLE_RET(pSSM);
+    SSM_CHECK_CANCELLED_RET(pSSM);
     return ssmR3DataRead(pSSM, pSel, sizeof(*pSel));
 }
 
@@ -5615,6 +5763,7 @@ VMMR3DECL(int) SSMR3GetSel(PSSMHANDLE pSSM, PRTSEL pSel)
 VMMR3DECL(int) SSMR3GetMem(PSSMHANDLE pSSM, void *pv, size_t cb)
 {
     SSM_ASSERT_READABLE_RET(pSSM);
+    SSM_CHECK_CANCELLED_RET(pSSM);
     return ssmR3DataRead(pSSM, pv, cb);
 }
 
@@ -5645,6 +5794,7 @@ VMMR3DECL(int) SSMR3GetStrZ(PSSMHANDLE pSSM, char *psz, size_t cbMax)
 VMMR3DECL(int) SSMR3GetStrZEx(PSSMHANDLE pSSM, char *psz, size_t cbMax, size_t *pcbStr)
 {
     SSM_ASSERT_READABLE_RET(pSSM);
+    SSM_CHECK_CANCELLED_RET(pSSM);
 
     /* read size prefix. */
     uint32_t u32;
@@ -5675,6 +5825,7 @@ VMMR3DECL(int) SSMR3GetStrZEx(PSSMHANDLE pSSM, char *psz, size_t cbMax, size_t *
 VMMR3DECL(int) SSMR3Skip(PSSMHANDLE pSSM, size_t cb)
 {
     SSM_ASSERT_READABLE_RET(pSSM);
+    SSM_CHECK_CANCELLED_RET(pSSM);
     while (cb > 0)
     {
         uint8_t abBuf[8192];
@@ -5702,6 +5853,7 @@ VMMR3DECL(int) SSMR3Skip(PSSMHANDLE pSSM, size_t cb)
 VMMR3DECL(int) SSMR3SkipToEndOfUnit(PSSMHANDLE pSSM)
 {
     SSM_ASSERT_READABLE_RET(pSSM);
+    SSM_CHECK_CANCELLED_RET(pSSM);
     if (pSSM->u.Read.uFmtVerMajor >= 2)
     {
         /*
@@ -6167,22 +6319,23 @@ static int ssmR3OpenFile(PVM pVM, const char *pszFilename, bool fChecksumIt, boo
     /*
      * Initialize the handle.
      */
-    pSSM->pVM              = pVM;
-    pSSM->enmOp            = SSMSTATE_INVALID;
-    pSSM->enmAfter         = SSMAFTER_INVALID;
-    pSSM->rc               = VINF_SUCCESS;
-    pSSM->cbUnitLeftV1     = 0;
-    pSSM->offUnit          = UINT64_MAX;
-    pSSM->pfnProgress      = NULL;
-    pSSM->pvUser           = NULL;
-    pSSM->uPercent         = 0;
-    pSSM->offEstProgress   = 0;
-    pSSM->cbEstTotal       = 0;
-    pSSM->offEst           = 0;
-    pSSM->offEstUnitEnd    = 0;
-    pSSM->uPercentPrepare  = 5;
-    pSSM->uPercentDone     = 2;
-    pSSM->pszFilename      = pszFilename;
+    pSSM->pVM               = pVM;
+    pSSM->enmOp             = SSMSTATE_INVALID;
+    pSSM->enmAfter          = SSMAFTER_INVALID;
+    pSSM->fCancelled        = SSMHANDLE_OK;
+    pSSM->rc                = VINF_SUCCESS;
+    pSSM->cbUnitLeftV1      = 0;
+    pSSM->offUnit           = UINT64_MAX;
+    pSSM->pfnProgress       = NULL;
+    pSSM->pvUser            = NULL;
+    pSSM->uPercent          = 0;
+    pSSM->offEstProgress    = 0;
+    pSSM->cbEstTotal        = 0;
+    pSSM->offEst            = 0;
+    pSSM->offEstUnitEnd     = 0;
+    pSSM->uPercentPrepare   = 5;
+    pSSM->uPercentDone      = 2;
+    pSSM->pszFilename       = pszFilename;
 
     pSSM->u.Read.pZipDecompV1   = NULL;
     pSSM->u.Read.uFmtVerMajor   = UINT32_MAX;
@@ -6416,6 +6569,18 @@ static int ssmR3LoadExecV1(PVM pVM, PSSMHANDLE pSSM)
             LogRel(("SSM: I/O error. rc=%Rrc\n", rc));
             break;
         }
+
+        /*
+         * Check for cancellation.
+         */
+        if (RT_UNLIKELY(ASMAtomicUoReadU32(&(pSSM)->fCancelled) == SSMHANDLE_CANCELLED))
+        {
+            LogRel(("SSM: Cancelled!n"));
+            rc = pSSM->rc;
+            if (RT_SUCCESS(pSSM->rc))
+                pSSM->rc = rc = VERR_SSM_CANCELLED;
+            break;
+        }
     }
 
     RTMemTmpFree(pszName);
@@ -6553,6 +6718,17 @@ static int ssmR3LoadExecV2(PVM pVM, PSSMHANDLE pSSM)
             SSMR3SkipToEndOfUnit(pSSM);
             ssmR3DataReadFinishV2(pSSM);
         }
+
+        /*
+         * Check for cancellation.
+         */
+        if (RT_UNLIKELY(ASMAtomicUoReadU32(&(pSSM)->fCancelled) == SSMHANDLE_CANCELLED))
+        {
+            LogRel(("SSM: Cancelled!\n"));
+            if (RT_SUCCESS(pSSM->rc))
+                pSSM->rc = VERR_SSM_CANCELLED;
+            return pSSM->rc;
+        }
     }
     /* won't get here */
 }
@@ -6596,6 +6772,7 @@ VMMR3DECL(int) SSMR3Load(PVM pVM, const char *pszFilename, SSMAFTER enmAfter, PF
     if (RT_SUCCESS(rc))
     {
         ssmR3StrmStartIoThread(&Handle.Strm);
+        ssmR3SetCancellable(pVM, &Handle, true);
 
         Handle.enmAfter     = enmAfter;
         Handle.pfnProgress  = pfnProgress;
@@ -6713,6 +6890,7 @@ VMMR3DECL(int) SSMR3Load(PVM pVM, const char *pszFilename, SSMAFTER enmAfter, PF
                             rc, pUnit->szName, pUnit->u32Instance));
                     if (RT_SUCCESS(Handle.rc))
                         Handle.rc = rc;
+                    break;
                 }
             }
         }
@@ -6722,6 +6900,7 @@ VMMR3DECL(int) SSMR3Load(PVM pVM, const char *pszFilename, SSMAFTER enmAfter, PF
         if (pfnProgress)
             pfnProgress(pVM, 99, pvUser);
 
+        ssmR3SetCancellable(pVM, &Handle, false);
         ssmR3StrmClose(&Handle.Strm);
     }
 
@@ -6837,6 +7016,7 @@ VMMR3DECL(int) SSMR3Close(PSSMHANDLE pSSM)
     AssertMsgReturn(VALID_PTR(pSSM), ("%p\n", pSSM), VERR_INVALID_PARAMETER);
     AssertMsgReturn(pSSM->enmAfter == SSMAFTER_OPENED, ("%d\n", pSSM->enmAfter),VERR_INVALID_PARAMETER);
     AssertMsgReturn(pSSM->enmOp == SSMSTATE_OPEN_READ, ("%d\n", pSSM->enmOp), VERR_INVALID_PARAMETER);
+    Assert(pSSM->fCancelled == SSMHANDLE_OK);
 
     /*
      * Close the stream and free the handle.
@@ -7135,7 +7315,7 @@ VMMR3DECL(int) SSMR3HandleGetStatus(PSSMHANDLE pSSM)
  * return code isn't necessarily heeded by the caller but is important
  * to SSM.
  *
- * @returns SSMAFTER enum value.
+ * @returns VBox status code of the handle, or VERR_INVALID_PARAMETER.
  * @param   pSSM            SSM operation handle.
  * @param   iStatus         Failure status code. This MUST be a VERR_*.
  */
@@ -7144,9 +7324,10 @@ VMMR3DECL(int) SSMR3HandleSetStatus(PSSMHANDLE pSSM, int iStatus)
     Assert(pSSM->enmOp != SSMSTATE_LIVE_VOTE);
     if (RT_FAILURE(iStatus))
     {
-        if (RT_SUCCESS(pSSM->rc))
-            pSSM->rc = iStatus;
-        return pSSM->rc = iStatus;
+        int rc = pSSM->rc;
+        if (RT_SUCCESS(rc))
+            pSSM->rc = rc = iStatus;
+        return rc;
     }
     AssertMsgFailed(("iStatus=%d %Rrc\n", iStatus, iStatus));
     return VERR_INVALID_PARAMETER;
@@ -7175,5 +7356,51 @@ VMMR3DECL(uint64_t) SSMR3HandleGetUnitOffset(PSSMHANDLE pSSM)
 {
     AssertMsgFailed(("/** @todo this isn't correct any longer. */"));
     return pSSM->offUnit;
+}
+
+
+/**
+ * Asynchronously cancels the current SSM operation ASAP.
+ *
+ * @returns VBox status code.
+ * @retval  VINF_SUCCESS on success.
+ * @retval  VERR_SSM_NO_PENDING_OPERATION if nothing around that can be
+ *          cancelled.
+ * @retval  VERR_SSM_ALREADY_CANCELLED if the operation as already been
+ *          cancelled.
+ *
+ * @param   pVM                 The VM handle.
+ *
+ * @thread  Any.
+ */
+VMMR3DECL(int) SSMR3Cancel(PVM pVM)
+{
+    VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
+
+    int rc = RTCritSectEnter(&pVM->ssm.s.CancelCritSect);
+    AssertRCReturn(rc, rc);
+
+    PSSMHANDLE pSSM = pVM->ssm.s.pSSM;
+    if (pSSM)
+    {
+        uint32_t u32Old;
+        if (ASMAtomicCmpXchgExU32(&pSSM->fCancelled, SSMHANDLE_CANCELLED, SSMHANDLE_OK, &u32Old))
+        {
+            LogRel(("SSM: Cancelled pending operation\n"));
+            rc = VINF_SUCCESS;
+        }
+        else if (u32Old == SSMHANDLE_CANCELLED)
+            rc = VERR_SSM_ALREADY_CANCELLED;
+        else
+        {
+            AssertLogRelMsgFailed(("fCancelled=%RX32 enmOp=%d\n", u32Old, pSSM->enmOp));
+            rc = VERR_INTERNAL_ERROR_2;
+        }
+    }
+    else
+        rc = VERR_SSM_NO_PENDING_OPERATION;
+
+    RTCritSectLeave(&pVM->ssm.s.CancelCritSect);
+    return rc;
 }
 
