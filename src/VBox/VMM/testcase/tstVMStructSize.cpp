@@ -148,6 +148,7 @@ int main()
     CHECK_SIZE(X86PML4E, 8);
     CHECK_SIZE(X86PML4, PAGE_SIZE);
 
+    PRINT_OFFSET(VM, cpum);
     CHECK_PADDING_VM(64, cpum);
     CHECK_PADDING_VM(64, vmm);
     CHECK_PADDING_VM(64, pgm);
@@ -170,6 +171,7 @@ int main()
 #endif
     CHECK_PADDING_VM(8, cfgm);
 
+    PRINT_OFFSET(VMCPU, cpum);
     CHECK_PADDING_VMCPU(64, cpum);
     CHECK_PADDING_VMCPU(64, pgm);
     CHECK_PADDING_VMCPU(64, hwaccm);
