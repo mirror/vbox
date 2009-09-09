@@ -376,15 +376,16 @@ int sscanf(const char *s, const char *format, ...);
 # define stdout NULL 
 # ifdef DEBUG
 #  define LIBALIAS_DEBUG
-#  ifdef fprintf
-#   undef fprintf
-#  endif
-#  ifdef fflush
-#   undef fflush
-#  endif
-#  ifdef printf
-#   undef printf
-#  endif
+# endif
+# ifdef fprintf
+#  undef fprintf
+# endif
+# ifdef fflush
+#  undef fflush
+# endif
+# ifdef printf
+#  undef printf
+# endif
 # define fflush(x) do{} while(0)
 # define fprintf vbox_slirp_fprintf
 # define printf vbox_slirp_printf
@@ -414,7 +415,6 @@ static void vbox_slirp_fprintf(void *ignored, char *format, ...)
     vbox_slirp_printV(format, args);
     va_end(args);
 }
-# endif /* DEBUG */
 #endif /*VBOX_SLIRP_ALIAS*/
 
 int ftp_alias_load(PNATState);
