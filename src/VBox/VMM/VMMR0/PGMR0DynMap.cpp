@@ -1724,7 +1724,6 @@ VMMDECL(uint32_t) PGMDynMapPushAutoSubset(PVMCPU pVCpu)
     PPGMMAPSET      pSet = &pVCpu->pgm.s.AutoSet;
     AssertReturn(pSet->cEntries != PGMMAPSET_CLOSED, UINT32_MAX);
     uint32_t        iPrevSubset = pSet->iSubset;
-Assert(iPrevSubset == UINT32_MAX);
     pSet->iSubset = pSet->cEntries;
     STAM_COUNTER_INC(&pVCpu->pgm.s.StatR0DynMapSubsets);
     return iPrevSubset;
@@ -1743,7 +1742,6 @@ VMMDECL(void) PGMDynMapPopAutoSubset(PVMCPU pVCpu, uint32_t iPrevSubset)
     uint32_t        cEntries = pSet->cEntries;
     AssertReturnVoid(cEntries != PGMMAPSET_CLOSED);
     AssertReturnVoid(pSet->iSubset <= iPrevSubset || iPrevSubset == UINT32_MAX);
-Assert(iPrevSubset == UINT32_MAX);
     STAM_COUNTER_INC(&pVCpu->pgm.s.aStatR0DynMapSetSize[(cEntries * 10 / RT_ELEMENTS(pSet->aEntries)) % 11]);
     if (    cEntries >= RT_ELEMENTS(pSet->aEntries) * 40 / 100
         &&  cEntries != pSet->iSubset)
