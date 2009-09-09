@@ -83,7 +83,7 @@ if1of ($(KBUILD_TARGET),linux solaris)
 	$(VBOX_PATH_MESA_SOURCE)/src/mesa/glapi \
 	$(VBOX_PATH_MESA_SOURCE)/src/mesa/main \
 	$(VBOX_PATH_MESA_SOURCE)/src/mesa/drivers/dri/common \
-	$(PATH_ROOT)/src/VBox/Additions/x11/x11include/libdrm-2.4.5
+	$(PATH_ROOT)/src/VBox/Additions/x11/x11include/libdrm-2.4.13
  VBoxOGL_DEFS     += VBOX_NO_NATIVEGL
 endif
 ifdef VBoxOGL_DRI
