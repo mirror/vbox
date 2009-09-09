@@ -194,7 +194,7 @@ protohandler(struct libalias *la, struct ip *pip, struct alias_data *ah)
     udp->uh_sum = 0;
     udp->uh_ulen = ntohs(htons(pip->ip_len) - (pip->ip_hl << 2));
     pip->ip_sum = 0;
-    pip->ip_sum = LibAliasInternetChecksum(la, pip, pip->ip_hl << 2);
+    pip->ip_sum = LibAliasInternetChecksum(la, (char *)pip, pip->ip_hl << 2);
     return (0);
 }
 /*
