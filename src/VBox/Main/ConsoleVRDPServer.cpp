@@ -1132,6 +1132,8 @@ ConsoleVRDPServer::ConsoleVRDPServer (Console *console)
     mConsoleCallback = new VRDPConsoleCallback(this);
     mConsoleCallback->AddRef();
     console->RegisterCallback(mConsoleCallback);
+
+    mConsole->machine ()->SetExtraData(Bstr("VBoxInternal2/VRDPPortRange"), Bstr(""));
 #endif /* VBOX_WITH_VRDP */
 
     mAuthLibrary = 0;
