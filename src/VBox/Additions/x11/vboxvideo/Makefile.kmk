@@ -135,6 +135,14 @@ vboxvideo_drv_70_SOURCES  = \
 	vboxvideo_70.c \
 	vboxutils.c
 
+OTHERS += $(PATH_vboxvideo_drv_70)/vboxvideo_drv_70.so.dbgsym
+$$(PATH_vboxvideo_drv_70)/vboxvideo_drv_70.so.dbgsym: \
+		$$(TARGET_vboxvideo_drv_70)
+	$(QUIET)objcopy --only-keep-debug $< $(PATH_vboxvideo_drv_70)/vboxvideo_drv.so
+	$(QUIET)objcopy --add-gnu-debuglink=$(PATH_vboxvideo_drv_70)/vboxvideo_drv.so $<
+	$(QUIET)mv $(PATH_vboxvideo_drv_70)/vboxvideo_drv.so $@
+	$(QUIET)cp $@ $(PATH_OUT)/$(INST_ADDITIONS)
+
 
 #
 # vboxvideo_drv_71
@@ -154,6 +162,14 @@ vboxvideo_drv_71_SOURCES  = \
 	vboxvideo_70.c \
 	vboxutils.c
 
+OTHERS += $(PATH_vboxvideo_drv_71)/vboxvideo_drv_71.so.dbgsym
+$$(PATH_vboxvideo_drv_71)/vboxvideo_drv_71.so.dbgsym: \
+		$$(TARGET_vboxvideo_drv_71)
+	$(QUIET)objcopy --only-keep-debug $< $(PATH_vboxvideo_drv_71)/vboxvideo_drv.so
+	$(QUIET)objcopy --add-gnu-debuglink=$(PATH_vboxvideo_drv_71)/vboxvideo_drv.so $<
+	$(QUIET)mv $(PATH_vboxvideo_drv_71)/vboxvideo_drv.so $@
+	$(QUIET)cp $@ $(PATH_OUT)/$(INST_ADDITIONS)
+
 
 #
 # vboxvideo_drv_13
@@ -172,6 +188,14 @@ vboxvideo_drv_13_INCS = \
 vboxvideo_drv_13_SOURCES = \
 	vboxvideo_13.c \
 	vboxutils.c
+
+OTHERS += $(PATH_vboxvideo_drv_13)/vboxvideo_drv_13.so.dbgsym
+$$(PATH_vboxvideo_drv_13)/vboxvideo_drv_13.so.dbgsym: \
+		$$(TARGET_vboxvideo_drv_13)
+	$(QUIET)objcopy --only-keep-debug $< $(PATH_vboxvideo_drv_13)/vboxvideo_drv.so
+	$(QUIET)objcopy --add-gnu-debuglink=$(PATH_vboxvideo_drv_13)/vboxvideo_drv.so $<
+	$(QUIET)mv $(PATH_vboxvideo_drv_13)/vboxvideo_drv.so $@
+	$(QUIET)cp $@ $(PATH_OUT)/$(INST_ADDITIONS)
 
 
 #
@@ -195,6 +219,14 @@ vboxvideo_drv_14_SOURCES  = \
 	vboxvideo_13.c \
 	vboxutils.c
 
+OTHERS += $(PATH_vboxvideo_drv_14)/vboxvideo_drv_14.so.dbgsym
+$$(PATH_vboxvideo_drv_14)/vboxvideo_drv_14.so.dbgsym: \
+		$$(TARGET_vboxvideo_drv_14)
+	$(QUIET)objcopy --only-keep-debug $< $(PATH_vboxvideo_drv_14)/vboxvideo_drv.so
+	$(QUIET)objcopy --add-gnu-debuglink=$(PATH_vboxvideo_drv_14)/vboxvideo_drv.so $<
+	$(QUIET)mv $(PATH_vboxvideo_drv_14)/vboxvideo_drv.so $@
+	$(QUIET)cp $@ $(PATH_OUT)/$(INST_ADDITIONS)
+
 
 #
 # vboxvideo_drv_15
@@ -216,6 +248,14 @@ vboxvideo_drv_15_SOURCES  = \
 	vboxutils.c \
 	vboxvideo_dri.c
 
+OTHERS += $(PATH_vboxvideo_drv_15)/vboxvideo_drv_15.so.dbgsym
+$$(PATH_vboxvideo_drv_15)/vboxvideo_drv_15.so.dbgsym: \
+		$$(TARGET_vboxvideo_drv_15)
+	$(QUIET)objcopy --only-keep-debug $< $(PATH_vboxvideo_drv_15)/vboxvideo_drv.so
+	$(QUIET)objcopy --add-gnu-debuglink=$(PATH_vboxvideo_drv_15)/vboxvideo_drv.so $<
+	$(QUIET)mv $(PATH_vboxvideo_drv_15)/vboxvideo_drv.so $@
+	$(QUIET)cp $@ $(PATH_OUT)/$(INST_ADDITIONS)
+
 
 #
 # vboxvideo_drv_16
@@ -236,6 +276,14 @@ vboxvideo_drv_16_SOURCES  = \
 	vboxvideo_13.c \
 	vboxutils.c \
 	vboxvideo_dri.c
+
+OTHERS += $(PATH_vboxvideo_drv_16)/vboxvideo_drv_16.so.dbgsym
+$$(PATH_vboxvideo_drv_16)/vboxvideo_drv_16.so.dbgsym: \
+		$$(TARGET_vboxvideo_drv_16)
+	$(QUIET)objcopy --only-keep-debug $< $(PATH_vboxvideo_drv_16)/vboxvideo_drv.so
+	$(QUIET)objcopy --add-gnu-debuglink=$(PATH_vboxvideo_drv_16)/vboxvideo_drv.so $<
+	$(QUIET)mv $(PATH_vboxvideo_drv_16)/vboxvideo_drv.so $@
+	$(QUIET)cp $@ $(PATH_OUT)/$(INST_ADDITIONS)
 
 
 #
@@ -265,6 +313,15 @@ vboxvideo_drv_17_SOURCES  = \
 	vboxvideo_13.c \
 	vboxutils.c \
 	vboxvideo_dri.c
+
+OTHERS += $(PATH_vboxvideo_drv_17)/vboxvideo_drv_17.so.dbgsym
+$$(PATH_vboxvideo_drv_17)/vboxvideo_drv_17.so.dbgsym: \
+		$$(TARGET_vboxvideo_drv_17)
+	$(QUIET)objcopy --only-keep-debug $< $(PATH_vboxvideo_drv_17)/vboxvideo_drv.so
+	$(QUIET)objcopy --strip-debug $<
+	$(QUIET)objcopy --add-gnu-debuglink=$(PATH_vboxvideo_drv_17)/vboxvideo_drv.so $<
+	$(QUIET)mv $(PATH_vboxvideo_drv_17)/vboxvideo_drv.so $@
+	$(QUIET)cp $@ $(PATH_OUT)/$(INST_ADDITIONS)
 
 
 # Check the undefined symbols in the X.Org modules against lists of allowed
