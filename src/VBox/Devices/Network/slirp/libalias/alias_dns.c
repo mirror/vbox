@@ -59,7 +59,7 @@ fingerprint(struct libalias *la, struct ip *pip, struct alias_data *ah)
     return (-1);
 }
 
-static doanswer(struct libalias *la, union dnsmsg_header *hdr,char *qname, struct ip *pip, struct hostent *h)
+static void doanswer(struct libalias *la, union dnsmsg_header *hdr,char *qname, struct ip *pip, struct hostent *h)
 {
     int i;
     if (h == NULL)
@@ -131,7 +131,7 @@ static doanswer(struct libalias *la, union dnsmsg_header *hdr,char *qname, struc
 
         for(i = 0; i < h->h_length && h->h_addr_list[i] != NULL; ++i)
         {
-            struct dnsmsg_answer *ans = answers;
+            struct dnsmsg_answer *ans = (struct dnsmsg_answer *)answers;
             
             ans->name = htons(off);
             ans->type = htons(1);
