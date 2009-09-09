@@ -857,7 +857,8 @@ ifeq ($(KBUILD_TARGET),freebsd)
 Drivers_SOURCES      := $(filter-out \
 	Storage/DrvHostFloppy% \
 	, $(Drivers_SOURCES)) \
-	Audio/ossaudio.c
+	Audio/ossaudio.c \
+	Serial/DrvHostSerial.cpp
 Drivers_SOURCES.freebsd = \
 	Network/DrvTAP.cpp
 endif # freebsd
