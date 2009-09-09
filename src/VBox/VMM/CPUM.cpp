@@ -1045,21 +1045,15 @@ static DECLCALLBACK(int) cpumR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion,
     {
         if (uVersion >= CPUM_SAVED_STATE_VERSION_VER2_1_NOMSR)
         {
-            /** @todo r=bird: cCPUs: Why are we doing this?!? cCpus is a config value that
-             *        cannot be changed by a saved state. If the saved one differs we
-             *        fail. */
-            int rc = SSMR3GetU32(pSSM, &pVM->cCpus);
-            AssertRCReturn(rc, rc);
+            uint32_t cCpus;
+            int rc = SSMR3GetU32(pSSM, &cCpus); AssertRCReturn(rc, rc);
+            AssertLogRelMsgReturn(cCpus == pVM->cCpus, ("Mismatching CPU counts: saved: %u; configured: %u \n", cCpus, pVM->cCpus),
+                                  VERR_SSM_UNEXPECTED_DATA);
         }
-
-        if (    !pVM->cCpus
-            ||  pVM->cCpus > VMM_MAX_CPU_COUNT
-            ||  (   uVersion == CPUM_SAVED_STATE_VERSION_VER2_0
-                 && pVM->cCpus != 1))
-        {
-            AssertMsgFailed(("Unexpected number of VMCPUs (%u)\n", pVM->cCpus));
-            return VERR_SSM_UNEXPECTED_DATA;
-        }
+        AssertLogRelMsgReturn(   uVersion != CPUM_SAVED_STATE_VERSION_VER2_0
+                              || pVM->cCpus == 1,
+                              ("cCpus=%u\n", pVM->cCpus),
+                              VERR_SSM_UNEXPECTED_DATA);
 
         for (VMCPUID i = 0; i < pVM->cCpus; i++)
         {
@@ -1071,10 +1065,14 @@ static DECLCALLBACK(int) cpumR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion,
         }
     }
 
-
+    /*
+     * Restore the CPUID leaves.
+     *
+     * Note that we support restoring less than the current amount of standard
+     * leaves because we've been allowed more is newer version of VBox.
+     */
     uint32_t cElements;
     int rc = SSMR3GetU32(pSSM, &cElements); AssertRCReturn(rc, rc);
-    /* Support old saved states with a smaller standard cpuid array. */
     if (cElements > RT_ELEMENTS(pVM->cpum.s.aGuestCpuIdStd))
         return VERR_SSM_DATA_UNIT_FORMAT_CHANGED;
     SSMR3GetMem(pSSM, &pVM->cpum.s.aGuestCpuIdStd[0], cElements*sizeof(pVM->cpum.s.aGuestCpuIdStd[0]));
