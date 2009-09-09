@@ -1,4 +1,3 @@
-int vboxCKeyDst(void)
+void vboxCKeyDst(void)
 {
-    return 0;
 }
