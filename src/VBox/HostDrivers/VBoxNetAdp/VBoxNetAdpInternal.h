@@ -147,6 +147,11 @@ struct VBoxNetAdapter
             /** Pointer to Linux network device structure. */
             struct net_device *pNetDev;
             /** @} */
+# elif defined(RT_OS_FREEBSD)
+            /** @name FreeBSD instance data.
+             * @{ */
+            struct ifnet *ifp;
+            /** @} */
 # else
 # error PORTME
 # endif
