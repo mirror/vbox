@@ -1895,6 +1895,7 @@ DECLCALLBACK(int) vmR3Destroy(PVM pVM)
     AssertRC(rc);
     rc = CPUMR3Term(pVM);
     AssertRC(rc);
+    SSMR3Term(pVM);
     rc = PDMR3CritSectTerm(pVM);
     AssertRC(rc);
     rc = MMR3Term(pVM);

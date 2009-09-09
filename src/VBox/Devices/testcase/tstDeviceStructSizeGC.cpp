@@ -93,9 +93,9 @@
 /* we don't use iprt here because we're pretending to be in GC! */
 #include <stdio.h>
 
-#define GEN_CHECK_SIZE(s)   printf("    CHECK_SIZE(%s, %d);\n", #s, (int)sizeof(s))
-#define GEN_CHECK_OFF(s, m) printf("    CHECK_OFF(%s, %d, %s);\n", #s, (int)RT_OFFSETOF(s, m), #m)
-#define GEN_CHECK_PADDING(s, m) printf("    CHECK_PADDING(%s, %s);\n", #s, #m)
+#define GEN_CHECK_SIZE(s)           printf("    CHECK_SIZE(%s, %d);\n", #s, (int)sizeof(s))
+#define GEN_CHECK_OFF(s, m)         printf("    CHECK_OFF(%s, %d, %s);\n", #s, (int)RT_OFFSETOF(s, m), #m)
+#define GEN_CHECK_PADDING(s, m, a)  printf("    CHECK_PADDING(%s, %s, %u);\n", #s, #m, (a))
 
 int main()
 {
@@ -140,7 +140,7 @@ int main()
     GEN_CHECK_OFF(PCIDEVICE, Int.s.uIrqPinState);
     GEN_CHECK_OFF(PCIDEVICE, Int.s.pfnBridgeConfigRead);
     GEN_CHECK_OFF(PCIDEVICE, Int.s.pfnBridgeConfigWrite);
-    GEN_CHECK_PADDING(PCIDEVICE, Int);
+    GEN_CHECK_PADDING(PCIDEVICE, Int, 8);
     GEN_CHECK_SIZE(PIIX3State);
     GEN_CHECK_SIZE(PCIBUS);
     GEN_CHECK_OFF(PCIBUS, iBus);
