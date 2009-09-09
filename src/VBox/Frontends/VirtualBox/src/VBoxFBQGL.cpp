@@ -129,9 +129,7 @@ void VBoxQGLFrameBuffer::paintEvent (QPaintEvent *pe)
         pw->vboxDoUpdateViewport(vp);
     }
 
-    pw->performDisplay(true);
-
-    pw->swapBuffers();
+    pw->performDisplayAndSwap(true);
 }
 
 void VBoxQGLFrameBuffer::resizeEvent (VBoxResizeEvent *re)
