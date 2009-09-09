@@ -168,8 +168,8 @@ protohandler(struct libalias *la, struct ip *pip, struct alias_data *ah)
 
     struct udphdr *udp = NULL;
     union dnsmsg_header *hdr = NULL;
-    udp = (struct udphdr *)((char *)pip) + (pip->ip_hl << 2);
-    hdr = (union dnsmsg_header *)&udp[1];
+    udp = (struct udphdr *)ip_next(pip);
+    hdr = (union dnsmsg_header *)udp_next(udp);
 
     if (hdr->X.qr == 1)
         return 0; /* this is respose*/
