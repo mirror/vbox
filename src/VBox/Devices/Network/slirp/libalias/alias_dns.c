@@ -4,6 +4,7 @@
 # include <iprt/ctype.h>
 # include <iprt/assert.h>
 # include <slirp.h>
+# include "alias.h"
 # include "alias_local.h"
 # include "alias_mod.h"
 
