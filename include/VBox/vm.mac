@@ -95,6 +95,15 @@ struc VM
     .StatSwitcherLldt       resb STAMPROFILEADV_size
     .StatSwitcherTSS        resb STAMPROFILEADV_size
 
+%ifndef HC_ARCH_BITS
+ %error "Missing HC_ARCH_BITS"
+%endif
+%if HC_ARCH_BITS == 32
+    .abAlignment1           resb 48
+%else
+    .abAlignment1           resb 24
+%endif
+
     alignb 64
     .cpum                   resb 1472
     .vmm                    resb 1536

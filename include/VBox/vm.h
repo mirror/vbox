@@ -117,7 +117,7 @@ typedef struct VMCPU
      *          data could be lumped together at the end with a < 64 byte padding
      *          following it (to grow into and align the struct size).
      *   */
-    uint32_t                au32Alignment[HC_ARCH_BITS == 32 ? 7 : 3];
+    uint8_t                 abAlignment1[HC_ARCH_BITS == 32 ? 28 : 12];
 
     /** CPUM part. */
     union
@@ -210,8 +210,8 @@ typedef struct VMCPU
         uint8_t             padding[64];        /* multiple of 64 */
     } dbgf;
 
-    /** Align at page boundrary. */
-    uint8_t                 abReserved[960];
+    /** Align the structure size at page boundrary. */
+    uint8_t                 abAlignment2[960];
 } VMCPU;
 
 
@@ -812,7 +812,7 @@ typedef struct VM
 
     /** Padding - the unions must be aligned on a 64 bytes boundrary and the unions
      *  must start at the same offset on both 64-bit and 32-bit hosts. */
-    uint32_t                    padding[HC_ARCH_BITS == 32 ? 4+8 : 6];
+    uint8_t                     abAlignment1[HC_ARCH_BITS == 32 ? 48 : 24];
 
     /** CPUM part. */
     union
@@ -992,7 +992,7 @@ typedef struct VM
     } parav;
 
     /** Padding for aligning the cpu array on a page boundrary. */
-    uint8_t         abReserved2[2120];
+    uint8_t         abAlignment2[2120];
 
     /* ---- end small stuff ---- */
 
