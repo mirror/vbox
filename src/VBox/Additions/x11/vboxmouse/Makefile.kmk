@@ -78,14 +78,6 @@ vboxmouse_drv_70_SOURCES = \
 	xorg70/pnp.c \
 	VBoxUtils.c
 
-OTHERS.linux += $(PATH_vboxmouse_drv_70)/vboxmouse_drv_70.so.dbgsym
-$$(PATH_vboxmouse_drv_70)/vboxmouse_drv_70.so.dbgsym: \
-		$$(TARGET_vboxmouse_drv_70)
-	$(QUIET)objcopy --only-keep-debug $< $(PATH_vboxmouse_drv_70)/vboxmouse_drv.so
-	$(QUIET)objcopy --add-gnu-debuglink=$(PATH_vboxmouse_drv_70)/vboxmouse_drv.so $<
-	$(QUIET)mv $(PATH_vboxmouse_drv_70)/vboxmouse_drv.so $@
-	$(QUIET)cp $@ $(PATH_OUT)/$(INST_ADDITIONS)
-
 
 #
 # vboxmouse_drv_71
@@ -102,14 +94,6 @@ vboxmouse_drv_71_SOURCES = \
 	xorg71/mouse.c \
 	xorg71/pnp.c \
 	VBoxUtils.c
-
-OTHERS.linux += $(PATH_vboxmouse_drv_71)/vboxmouse_drv_71.so.dbgsym
-$$(PATH_vboxmouse_drv_71)/vboxmouse_drv_71.so.dbgsym: \
-		$$(TARGET_vboxmouse_drv_71)
-	$(QUIET)objcopy --only-keep-debug $< $(PATH_vboxmouse_drv_71)/vboxmouse_drv.so
-	$(QUIET)objcopy --add-gnu-debuglink=$(PATH_vboxmouse_drv_71)/vboxmouse_drv.so $<
-	$(QUIET)mv $(PATH_vboxmouse_drv_71)/vboxmouse_drv.so $@
-	$(QUIET)cp $@ $(PATH_OUT)/$(INST_ADDITIONS)
 
 
 #
@@ -128,14 +112,6 @@ vboxmouse_drv_14_SOURCES = \
 	xorg14/pnp.c \
 	VBoxUtils.c
 
-OTHERS.linux += $(PATH_vboxmouse_drv_14)/vboxmouse_drv_14.so.dbgsym
-$$(PATH_vboxmouse_drv_14)/vboxmouse_drv_14.so.dbgsym: \
-		$$(TARGET_vboxmouse_drv_14)
-	$(QUIET)objcopy --only-keep-debug $< $(PATH_vboxmouse_drv_14)/vboxmouse_drv.so
-	$(QUIET)objcopy --add-gnu-debuglink=$(PATH_vboxmouse_drv_14)/vboxmouse_drv.so $<
-	$(QUIET)mv $(PATH_vboxmouse_drv_14)/vboxmouse_drv.so $@
-	$(QUIET)cp $@ $(PATH_OUT)/$(INST_ADDITIONS)
-
 
 #
 # vboxmouse_drv_15
@@ -150,14 +126,6 @@ vboxmouse_drv_15_INCS := \
 	$(PATH_SUB_CURRENT)
 vboxmouse_drv_15_SOURCES = \
 	vboxmouse_15.c
-
-OTHERS.linux += $(PATH_vboxmouse_drv_15)/vboxmouse_drv_15.so.dbgsym
-$$(PATH_vboxmouse_drv_15)/vboxmouse_drv_15.so.dbgsym: \
-		$$(TARGET_vboxmouse_drv_15)
-	$(QUIET)objcopy --only-keep-debug $< $(PATH_vboxmouse_drv_15)/vboxmouse_drv.so
-	$(QUIET)objcopy --add-gnu-debuglink=$(PATH_vboxmouse_drv_15)/vboxmouse_drv.so $<
-	$(QUIET)mv $(PATH_vboxmouse_drv_15)/vboxmouse_drv.so $@
-	$(QUIET)cp $@ $(PATH_OUT)/$(INST_ADDITIONS)
 
 
 #
@@ -174,14 +142,6 @@ vboxmouse_drv_16_INCS := \
 	$(PATH_SUB_CURRENT)
 vboxmouse_drv_16_SOURCES = \
 	vboxmouse_15.c
-
-OTHERS.linux += $(PATH_vboxmouse_drv_16)/vboxmouse_drv_16.so.dbgsym
-$$(PATH_vboxmouse_drv_16)/vboxmouse_drv_16.so.dbgsym: \
-		$$(TARGET_vboxmouse_drv_16)
-	$(QUIET)objcopy --only-keep-debug $< $(PATH_vboxmouse_drv_16)/vboxmouse_drv.so
-	$(QUIET)objcopy --add-gnu-debuglink=$(PATH_vboxmouse_drv_16)/vboxmouse_drv.so $<
-	$(QUIET)mv $(PATH_vboxmouse_drv_16)/vboxmouse_drv.so $@
-	$(QUIET)cp $@ $(PATH_OUT)/$(INST_ADDITIONS)
 
 
 #
@@ -202,14 +162,6 @@ vboxmouse_drv_17_INCS := \
 	$(PATH_SUB_CURRENT)
 vboxmouse_drv_17_SOURCES = \
 	vboxmouse_15.c
-
-OTHERS.linux += $(PATH_vboxmouse_drv_17)/vboxmouse_drv_17.so.dbgsym
-$$(PATH_vboxmouse_drv_17)/vboxmouse_drv_17.so.dbgsym: \
-		$$(TARGET_vboxmouse_drv_17)
-	$(QUIET)objcopy --only-keep-debug $< $(PATH_vboxmouse_drv_17)/vboxmouse_drv.so
-	$(QUIET)objcopy --add-gnu-debuglink=$(PATH_vboxmouse_drv_17)/vboxmouse_drv.so $<
-	$(QUIET)mv $(PATH_vboxmouse_drv_17)/vboxmouse_drv.so $@
-	$(QUIET)cp $@ $(PATH_OUT)/$(INST_ADDITIONS)
 
 
 # Check the undefined symbols in the X.Org modules against lists of allowed
@@ -279,4 +231,3 @@ $$(PATH_vboxmouse_drv_17)/tstvboxmouse17.run: $$(INSTARGET_vboxmouse_drv_17)
 endif # VBOX_WITH_TESTCASES
 
 include	$(KBUILD_PATH)/subfooter.kmk
-
