@@ -125,17 +125,8 @@ typedef struct VMCPU
 #ifdef ___CPUMInternal_h
         struct CPUMCPU      s;
 #endif
-        char                padding[3456];      /* multiple of 64 */
+        uint8_t             padding[3456];      /* multiple of 64 */
     } cpum;
-
-    /** PGM part. */
-    union
-    {
-#ifdef ___PGMInternal_h
-        struct PGMCPU       s;
-#endif
-        char                padding[28*1024];   /* multiple of 64 */
-    } pgm;
 
     /** HWACCM part. */
     union
@@ -143,7 +134,7 @@ typedef struct VMCPU
 #ifdef ___HWACCMInternal_h
         struct HWACCMCPU    s;
 #endif
-        char                padding[5248];      /* multiple of 64 */
+        uint8_t             padding[5248];      /* multiple of 64 */
     } hwaccm;
 
     /** EM part. */
@@ -152,7 +143,7 @@ typedef struct VMCPU
 #ifdef ___EMInternal_h
         struct EMCPU        s;
 #endif
-        char                padding[1408];      /* multiple of 64 */
+        uint8_t             padding[1408];      /* multiple of 64 */
     } em;
 
     /** TRPM part. */
@@ -161,7 +152,7 @@ typedef struct VMCPU
 #ifdef ___TRPMInternal_h
         struct TRPMCPU      s;
 #endif
-        char                padding[128];       /* multiple of 64 */
+        uint8_t             padding[128];       /* multiple of 64 */
     } trpm;
 
     /** TM part. */
@@ -170,7 +161,7 @@ typedef struct VMCPU
 #ifdef ___TMInternal_h
         struct TMCPU        s;
 #endif
-        char                padding[64];        /* multiple of 64 */
+        uint8_t             padding[64];        /* multiple of 64 */
     } tm;
 
     /** VMM part. */
@@ -179,7 +170,7 @@ typedef struct VMCPU
 #ifdef ___VMMInternal_h
         struct VMMCPU       s;
 #endif
-        char                padding[384];       /* multiple of 64 */
+        uint8_t             padding[384];       /* multiple of 64 */
     } vmm;
 
     /** PDM part. */
@@ -188,7 +179,7 @@ typedef struct VMCPU
 #ifdef ___PDMInternal_h
         struct PDMCPU       s;
 #endif
-        char                padding[128];       /* multiple of 64 */
+        uint8_t             padding[128];       /* multiple of 64 */
     } pdm;
 
     /** IOM part. */
@@ -197,7 +188,7 @@ typedef struct VMCPU
 #ifdef ___IOMInternal_h
         struct IOMCPU       s;
 #endif
-        char                padding[512];       /* multiple of 64 */
+        uint8_t             padding[512];       /* multiple of 64 */
     } iom;
 
     /** DBGF part.
@@ -210,8 +201,18 @@ typedef struct VMCPU
         uint8_t             padding[64];        /* multiple of 64 */
     } dbgf;
 
-    /** Align the structure size at page boundrary. */
+    /** Align the following members on page boundrary. */
     uint8_t                 abAlignment2[832];
+
+    /** PGM part. */
+    union
+    {
+#ifdef ___PGMInternal_h
+        struct PGMCPU       s;
+#endif
+        uint8_t             padding[28*1024];   /* multiple of 4096 */
+    } pgm;
+
 } VMCPU;
 
 
