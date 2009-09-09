@@ -758,57 +758,47 @@ HSURF DrvEnableSurface(DHPDEV dhpdev)
     ppdev->flHooks      = flHooks;
     ppdev->ulBitmapType = ulBitmapType;
 #else
-    hsurf = (HSURF) EngCreateBitmap(sizl,
-                                    ppdev->lDeltaScreen,
-                                    ulBitmapType,
-                                    (ppdev->lDeltaScreen > 0) ? BMF_TOPDOWN : 0,
-                                    (PVOID) (ppdev->pjScreen));
+    /* Create a GDI bitmap which will be used to draw with Eng* functions. */
+    ppdev->hsurfScreenBitmap = (HSURF)EngCreateBitmap(sizl,
+                                                      ppdev->lDeltaScreen,
+                                                      ulBitmapType,
+                                                      (ppdev->lDeltaScreen > 0) ? BMF_TOPDOWN : 0,
+                                                      (PVOID) (ppdev->pjScreen));
 
-    if (hsurf == (HSURF) 0)
+    if (ppdev->hsurfScreenBitmap == (HSURF) 0)
     {
-        DISPDBG((0, "DISP DrvEnableSurface failed EngCreateBitmap\n"));
+        DISPDBG((0, "DISP DrvEnableSurface failed EngCreateBitmap ppdev->hsurfScreenBitmap\n"));
         goto l_Failure;
     }
     else
     {
-        ppdev->hsurfScreenBitmap = hsurf;
+        /* Get the GDI bitmap SURFOBJ, which will be passed to Eng*. */
+        ppdev->psoScreenBitmap = EngLockSurface(ppdev->hsurfScreenBitmap);
 
-        if (!EngAssociateSurface(hsurf, ppdev->hdevEng, 0))
+        /* Create device managed surface, which will represent screen for GDI. */
+        ppdev->hsurfScreen = (HSURF)EngCreateDeviceSurface((DHSURF)ppdev, /* Handle assigned by the device. */
+                                                           sizl,
+                                                           ulBitmapType);
+
+        if (ppdev->hsurfScreen == (HSURF) 0)
         {
-            DISPDBG((0, "DISP DrvEnableSurface failed EngAssociateSurface for ScreenBitmap.\n"));
+            DISPDBG((0, "DISP DrvEnableSurface failed EngCreateDeviceSurface ppdev->hsurfScreen\n"));
             goto l_Failure;
         }
         else
         {
-            SURFOBJ *pso = EngLockSurface(hsurf);
-
-            ppdev->psoScreenBitmap = pso;
-
-            hsurf = (HSURF) EngCreateDeviceSurface((DHSURF)pso,
-                                                    sizl,
-                                                    ulBitmapType);
-
-            if (hsurf == (HSURF) 0)
+            /* Tell GDI that the driver will handle drawing operations on the screen surface. */
+            if (!EngAssociateSurface(ppdev->hsurfScreen, ppdev->hdevEng, flHooks))
             {
-                DISPDBG((0, "DISP DrvEnableSurface failed EngCreateDeviceSurface\n"));
+                DISPDBG((0, "DISP DrvEnableSurface failed EngAssociateSurface for Screen.\n"));
                 goto l_Failure;
             }
             else
             {
-                ppdev->hsurfScreen = hsurf;
-                /* Must set dhsurf to make sure GDI doesn't ignore our hooks */
-                ppdev->psoScreenBitmap->dhsurf = (DHSURF)hsurf;
+                ppdev->flHooks = flHooks;
+                ppdev->ulBitmapType = ulBitmapType;
 
-                if (!EngAssociateSurface(hsurf, ppdev->hdevEng, flHooks))
-                {
-                    DISPDBG((0, "DISP DrvEnableSurface failed EngAssociateSurface for Screen.\n"));
-                    goto l_Failure;
-                }
-                else
-                {
-                    ppdev->flHooks = flHooks;
-                    ppdev->ulBitmapType = ulBitmapType;
-                }
+                DISPDBG((0, "DISP DrvEnableSurface success ppdev %p, ppdev->hsurfScreen %p\n", ppdev, ppdev->hsurfScreen));
             }
         }
     }
