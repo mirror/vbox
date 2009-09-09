@@ -6,6 +6,7 @@
 #include <VBox/err.h>
 #include <VBox/pdmdrv.h>
 #include <iprt/assert.h>
+#include <iprt/file.h>
 #ifndef RT_OS_WINDOWS
 # include <sys/ioctl.h>
 # include <poll.h>
@@ -330,59 +331,85 @@ static int get_dns_addr_domain(PNATState pData, bool fVerbose,
 
 #else /* !RT_OS_WINDOWS */
 
+static int RTFileGets(RTFILE File, void *pvBuf, size_t cbBufSize, size_t *pcbRead)
+{
+    size_t cbRead;
+    char bTest;
+    int rc = VERR_NO_MEMORY;
+    char *pu8Buf = (char *)pvBuf;
+    *pcbRead = 0;
+    while(   RT_SUCCESS(rc = RTFileRead(File, &bTest, 1, &cbRead)) 
+          && (pu8Buf - (char *)pvBuf) < cbBufSize)
+    {
+        if (cbRead == 0)
+            return VERR_EOF;
+        if (bTest == '\r' || bTest == '\n')
+        {
+            *pu8Buf = 0;
+            return VINF_SUCCESS;
+        }
+        *pu8Buf = bTest;
+         pu8Buf++;
+        (*pcbRead)++;
+    }
+    return rc;
+}
 static int get_dns_addr_domain(PNATState pData, bool fVerbose,
                                struct in_addr *pdns_addr,
                                const char **ppszDomain)
 {
     char buff[512];
     char buff2[256];
-    FILE *f = NULL;
+    RTFILE f;
     int found = 0;
     struct in_addr tmp_addr;
+    int rc;
+    size_t bytes;
 
 #ifdef RT_OS_OS2
     /* Try various locations. */
     char *etc = getenv("ETC");
     if (etc)
     {
-        snprintf(buff, sizeof(buff), "%s/RESOLV2", etc);
-        f = fopen(buff, "rt");
+        RTStrmPrintf(buff, sizeof(buff), "%s/RESOLV2", etc);
+        rc = RTFileOpen(&f, buff, RTFILE_O_READ);
     }
-    if (!f)
+    if (RT_FAILURE(rc))
     {
-        snprintf(buff, sizeof(buff), "%s/RESOLV2", _PATH_ETC);
-        f = fopen(buff, "rt");
+        RTStrmPrintf(buff, sizeof(buff), "%s/RESOLV2", _PATH_ETC);
+        rc = RTFileOpen(&f, buff, RTFILE_O_READ);
     }
-    if (!f)
+    if (RT_FAILURE(rc))
     {
-        snprintf(buff, sizeof(buff), "%s/resolv.conf", _PATH_ETC);
-        f = fopen(buff, "rt");
+        RTStrmPrintf(buff, sizeof(buff), "%s/resolv.conf", _PATH_ETC);
+        rc = RTFileOpen(&f, buff, RTFILE_O_READ);
     }
 #else
-#ifndef DEBUG_vvl
-    f = fopen("/etc/resolv.conf", "r");
-#else
+# ifndef DEBUG_vvl
+    rc = RTFileOpen(&f, "/etc/resolv.conf", RTFILE_O_READ);
+# else
     char *home = getenv("HOME");
-    snprintf(buff, sizeof(buff), "%s/resolv.conf", home);
-    f = fopen(buff, "r");
-    if (f != NULL)
+    RTStrPrintf(buff, sizeof(buff), "%s/resolv.conf", home);
+    rc = RTFileOpen(&f, buff, RTFILE_O_READ);
+    if (RT_SUCCESS(rc))
     {
         Log(("NAT: DNS we're using %s\n", buff));
     }
     else
     {
-        f = fopen("/etc/resolv.conf", "r");
+        rc = RTFileOpen(&f, "/etc/resolv.conf", RTFILE_O_READ);
         Log(("NAT: DNS we're using %s\n", buff));
     }
+# endif
 #endif
-#endif
-    if (!f)
+    if (RT_FAILURE(rc))
         return -1;
 
     if (ppszDomain)
         *ppszDomain = NULL;
     Log(("nat: DNS Servers:\n"));
-    while (fgets(buff, 512, f) != NULL)
+    while (    RT_SUCCESS(rc = RTFileGets(f, buff, 512, &bytes))
+            && rc != VERR_EOF)
     {
         struct dns_entry *da = NULL;
         if (sscanf(buff, "nameserver%*[ \t]%256s", buff2) == 1)
@@ -433,7 +460,7 @@ static int get_dns_addr_domain(PNATState pData, bool fVerbose,
             }
         }
     }
-    fclose(f);
+    RTFileClose(f);
     if (!found)
         return -1;
     return 0;

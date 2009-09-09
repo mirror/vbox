@@ -136,8 +136,8 @@ static int tftp_send_oack(PNATState pData,
     m->m_data += sizeof(struct udpiphdr);
 
     tp->tp_op = htons(TFTP_OACK);
-    n += sprintf((char *)tp->x.tp_buf + n, "%s", key) + 1;
-    n += sprintf((char *)tp->x.tp_buf + n, "%u", value) + 1;
+    n += RTStrPrintf((char *)tp->x.tp_buf + n, M_FREEROOM(m), "%s", key) + 1;
+    n += RTStrPrintf((char *)tp->x.tp_buf + n, M_FREEROOM(m), "%u", value) + 1;
 
     saddr.sin_addr = recv_tp->ip.ip_dst;
     saddr.sin_port = recv_tp->udp.uh_dport;
