@@ -822,6 +822,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
         STR_FREE();
         cModes++;
     }
+    STR_FREE();
     rc = CFGMR3InsertInteger(pCfg,  "CustomVideoModes", cModes);
 
     /* VESA height reduction */
@@ -2858,7 +2859,8 @@ static void configSetProperty(VMMDev * const pVMMDev, const char *pszName,
                                        ComSafeArrayAsOutParam(flagsOut));
         AssertMsgReturn(SUCCEEDED(hrc), ("hrc=%#x\n", hrc),
                         VERR_GENERAL_FAILURE);
-        size_t cProps = namesOut.size(), cAlloc = cProps + 1;
+        size_t cProps = namesOut.size();
+        size_t cAlloc = cProps + 1;
         if (   valuesOut.size() != cProps
             || timestampsOut.size() != cProps
             || flagsOut.size() != cProps
