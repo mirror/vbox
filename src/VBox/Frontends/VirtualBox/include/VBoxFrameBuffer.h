@@ -243,9 +243,9 @@ public:
      * the event is framebuffer implementation specific */
     virtual void doProcessVHWACommand(QEvent * pEvent);
 
-    virtual void viewportResized(QResizeEvent * re){}
+    virtual void viewportResized(QResizeEvent * /*re*/){}
 
-    virtual void viewportScrolled(int dx, int dy){}
+    virtual void viewportScrolled(int /*dx*/, int /*dy*/){}
 #endif
 
 protected:
