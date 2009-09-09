@@ -193,6 +193,22 @@ typedef struct VBOXNETFLTINS
             /** Mutex protection used for dynamic IPv6 attaches. */
             RTSEMFASTMUTEX hPollMtx;
             /** @} */
+# elif defined(RT_OS_FREEBSD)
+            /** @name FreeBSD instance data.
+             * @{ */
+            /** Interface handle */
+            struct ifnet *ifp;
+            /** Netgraph node handle */
+            node_p node;
+            /** Input hook */
+            hook_p input;
+            /** Output hook */
+            hook_p output;
+            /** Original interface flags */
+            unsigned int flags;
+            /** The MAC address of the interface. */
+            RTMAC Mac;
+            /** @} */
 # elif defined(RT_OS_WINDOWS)
             /** @name Windows instance data.
              * @{ */

@@ -23,7 +23,7 @@ SUB_DEPTH = ../../../..
 include	$(KBUILD_PATH)/subheader.kmk
 
 
-if1of ($(KBUILD_TARGET), solaris darwin linux)
+if1of ($(KBUILD_TARGET), solaris darwin linux freebsd)
 #
 # VBoxNetAdp - Virtual Network Adapter
 # Note! On Solaris the name has to be <= 8 chars long.
@@ -34,6 +34,7 @@ VBoxNetAdp_TEMPLATE         = VBOXR0DRV
 VBoxNetAdp_INST = $(INST_VBOXNETADP)$(if $(eq $(KBUILD_TARGET),darwin),Contents/MacOS/)
 VBoxNetAdp_NAME.solaris     = vboxnet
 VBoxNetAdp_NAME.linux       = vboxnetadp
+VBoxNetAdp_NAME.freebsd       = vboxnetadp
 VBoxNetAdp_NOINST.linux     = true
 VBoxNetAdp_DEPS.solaris    += $(VBOX_SVN_REV_KMK)
 VBoxNetAdp_DEFS             = IN_RT_R0 VBOX_SVN_REV=$(VBOX_SVN_REV) IN_SUP_STATIC
@@ -50,6 +51,9 @@ VBoxNetAdp_SOURCES.solaris  = \
 	solaris/VBoxNetAdp-solaris.c
 VBoxNetAdp_SOURCES.linux   = \
 	linux/VBoxNetAdp-linux.c \
+	VBoxNetAdp.c
+VBoxNetAdp_SOURCES.freebsd   = \
+	freebsd/VBoxNetAdp-freebsd.c \
 	VBoxNetAdp.c
 VBoxNetAdp_SOURCES          =
 #VBoxNetAdp_SOURCES          = \

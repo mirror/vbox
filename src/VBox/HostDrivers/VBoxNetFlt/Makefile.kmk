@@ -298,7 +298,7 @@ $(PATH_TARGET)/VBoxNetAdpCat.dir/VBoxNetAdp.cat: \
 
 endif #ifeq ($(KBUILD_TARGET), win)
 
-else if1of ($(KBUILD_TARGET), linux solaris) ## @todo merge this with the mixed case stuff.
+else if1of ($(KBUILD_TARGET), linux solaris freebsd) ## @todo merge this with the mixed case stuff.
 #
 # vboxnetflt(.ko/.o/) - The lower case driver.
 # Note! On Solaris the name has to be <= 8 chars long.
@@ -327,6 +327,7 @@ vboxnetflt_LIBS = \
 #	$(PATH_LIB)/RuntimeR0Drv$(VBOX_SUFF_LIB)
 vboxnetflt_SOURCES.linux = linux/VBoxNetFlt-linux.c
 vboxnetflt_SOURCES.solaris = solaris/VBoxNetFlt-solaris.c
+vboxnetflt_SOURCES.freebsd = freebsd/VBoxNetFlt-freebsd.c
 vboxnetflt_SOURCES = VBoxNetFlt.c
  endif
 
@@ -392,6 +393,14 @@ ifeq ($(KBUILD_TARGET),linux)
 	$(QUIET)$(SED) -e "s;_VERSION_;${VBOX_VERSION_STRING};g" --output $@ $<
 
 endif # linux
+
+# Gross hack for FreeBSD 7, should figure this out properly
+## @todo Properly generate opt_netgraph.h
+ifeq ($(KBUILD_TARGET),freebsd)
+vboxnetflt_DEPS.freebsd += $(PATH_OUT)/opt_netgraph.h
+$(PATH_OUT)/opt_netgraph.h:
+	echo > $(PATH_OUT)/opt_netgraph.h
+endif # freebsd
 
 include	$(KBUILD_PATH)/subfooter.kmk
 
