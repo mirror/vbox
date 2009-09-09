@@ -210,6 +210,9 @@ STDMETHODIMP NetworkAdapter::COMSETTER(AdapterType) (NetworkAdapterType_T aAdapt
         case NetworkAdapterType_I82543GC:
         case NetworkAdapterType_I82545EM:
 #endif
+#ifdef VBOX_WITH_VIRTIO
+        case NetworkAdapterType_Virtio:
+#endif /* VBOX_WITH_VIRTIO */
             break;
         default:
             return setError (E_FAIL,

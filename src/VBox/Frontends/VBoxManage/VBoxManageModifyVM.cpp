@@ -1614,6 +1614,12 @@ int handleModifyVM(HandlerArg *a)
                     CHECK_ERROR_RET(nic, COMSETTER(AdapterType)(NetworkAdapterType_I82545EM), 1);
                 }
 #endif
+#ifdef VBOX_WITH_VIRTIO
+                else if (!strcmp(nictype[n], "virtio"))
+                {
+                    CHECK_ERROR_RET(nic, COMSETTER(AdapterType)(NetworkAdapterType_Virtio), 1);
+                }
+#endif /* VBOX_WITH_VIRTIO */
                 else
                 {
                     errorArgument("Invalid NIC type '%s' specified for NIC %lu", nictype[n], n + 1);

@@ -10729,6 +10729,9 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <const name="I82545EM"              value="5">
         <desc>Intel PRO/1000 MT Server network card (82545EM).</desc>
     </const>
+    <const name="Virtio"                value="6">
+        <desc>Virtio network device.</desc>
+    </const>
   </enum>
 
   <interface
