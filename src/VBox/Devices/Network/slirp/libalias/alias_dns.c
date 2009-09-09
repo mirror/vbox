@@ -109,7 +109,7 @@ static void doanswer(struct libalias *la, union dnsmsg_header *hdr,char *qname, 
         while(*cstr) 
         {
             uint16_t len;
-            struct dnsmsg_answer *ans = answers;
+            struct dnsmsg_answer *ans = (struct dnsmsg_answer *)answers;
             ans->name = htons(off);
             ans->type = htons(5); /*CNAME*/
             ans->class = htons(1);
@@ -118,7 +118,7 @@ static void doanswer(struct libalias *la, union dnsmsg_header *hdr,char *qname, 
             len = strlen(c) + 2;
             ans->rdata_len = htons(len);
             ans->rdata[len - 1] = 0;
-            cstr2qstr(c, ans->rdata);
+            cstr2qstr(c, (char *)ans->rdata);
             off = (char *)&ans->rdata - (char *)hdr;
             off |= (0x3 << 14);
             if (addr_off == (uint16_t)~0)
@@ -168,7 +168,7 @@ protohandler(struct libalias *la, struct ip *pip, struct alias_data *ah)
 
     struct udphdr *udp = NULL;
     union dnsmsg_header *hdr = NULL;
-    udp = ((char *)pip) + (pip->ip_hl << 2);
+    udp = (struct udphdr *)((char *)pip) + (pip->ip_hl << 2);
     hdr = (union dnsmsg_header *)&udp[1];
 
     if (hdr->X.qr == 1)
@@ -184,8 +184,8 @@ protohandler(struct libalias *la, struct ip *pip, struct alias_data *ah)
         fprintf(stderr, "qname:%s qtype:%hd qclass:%hd\n", 
             qw_qname, ntohs(*qw_qtype), ntohs(*qw_qclass));
     }
-    qstr2cstr(qw_qname, cname);
-    h = gethostbyname(cname);
+    qstr2cstr(qw_qname, (char *)cname);
+    h = gethostbyname((char *)cname);
     fprintf(stderr, "cname:%s\n", cname);
     doanswer(la, hdr, qw_qname, pip, h);
     /*we've chenged size and conten of udp, to avoid double csum calcualtion 
@@ -194,7 +194,7 @@ protohandler(struct libalias *la, struct ip *pip, struct alias_data *ah)
     udp->uh_sum = 0;
     udp->uh_ulen = ntohs(htons(pip->ip_len) - (pip->ip_hl << 2));
     pip->ip_sum = 0;
-    pip->ip_sum = LibAliasInternetChecksum(la, (char *)pip, pip->ip_hl << 2);
+    pip->ip_sum = LibAliasInternetChecksum(la, (uint16_t *)pip, pip->ip_hl << 2);
     return (0);
 }
 /*
