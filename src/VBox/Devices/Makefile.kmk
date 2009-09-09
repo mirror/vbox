@@ -730,13 +730,11 @@ Drivers_SOURCES    = \
 VBOX_SLIRP_SOURCES = \
 	Network/DrvNAT.cpp \
 	Network/slirp/bootp.c \
-	Network/slirp/cksum.c \
 	Network/slirp/debug.c \
 	Network/slirp/if.c \
 	Network/slirp/ip_icmp.c \
 	Network/slirp/ip_input.c \
 	Network/slirp/ip_output.c \
-	Network/slirp/mbuf.c \
 	Network/slirp/misc.c \
 	Network/slirp/sbuf.c \
 	Network/slirp/slirp.c \
@@ -745,10 +743,21 @@ VBOX_SLIRP_SOURCES = \
 	Network/slirp/tcp_output.c \
 	Network/slirp/tcp_subr.c \
 	Network/slirp/tcp_timer.c \
-	Network/slirp/tftp.c \
 	Network/slirp/udp.c \
 	Network/slirp/dnsproxy/hash.c \
 	Network/slirp/dnsproxy/dnsproxy.c
+
+ifdef VBOX_WITH_SLIRP_BSD_MBUF
+BSD_ARCH=$(if-expr $(KBUILD_TARGET_ARCH) == "amd64",amd64,i386)
+	VBOX_SLIRP_BSD_SOURCES += Network/slirp/bsd/kern/kern_mbuf.c
+	VBOX_SLIRP_BSD_SOURCES += Network/slirp/bsd/kern/uipc_mbuf.c
+	VBOX_SLIRP_BSD_SOURCES += Network/slirp/bsd/kern/uipc_mbuf2.c
+	VBOX_SLIRP_BSD_SOURCES += Network/slirp/bsd/$(BSD_ARCH)/in_cksum.c
+else
+	VBOX_SLIRP_SOURCES += Network/slirp/mbuf.c \
+	    Network/slirp/cksum.c \
+	    Network/slirp/tftp.c 
+endif
 
 VBOX_SLIRP_ALIAS_SOURCES = \
 	Network/slirp/libalias/alias.c \
@@ -767,15 +776,27 @@ define def_vbox_slirp_cflags
   $(file)_DEFS += \
       $(if $(VBOX_WITH_SLIRP_MEMORY_CHECK),RTMEM_WRAP_TO_EF_APIS,) \
       $(if $(VBOX_WITH_DEBUG_NAT_SOCKETS),VBOX_WITH_DEBUG_NAT_SOCKETS,)	\
-      $(if $(VBOX_WITH_SLIRP_MT),VBOX_WITH_SLIRP_MT,)
+      $(if $(VBOX_WITH_SLIRP_MT),VBOX_WITH_SLIRP_MT,) \
+      $(if $(VBOX_WITH_SLIRP_BSD_MBUF),VBOX_WITH_SLIRP_BSD_MBUF,)
+ ifdef VBOX_WITH_SLIRP_BSD_MBUF
+  $(file)_INCS += $(1)/slirp/bsd/sys
+  $(file)_INCS += $(1)/slirp/bsd/sys/sys
+  $(file)_INCS += $(1)/slirp/bsd/$(BSD_ARCH)/include
+  $(file)_INCS += $(1)/slirp/bsd/netinet
+ endif
  $(file)_INCS += $(1)/slirp
  $(file)_INCS += $(1)/slirp/libalias
  ifeq ($(KBUILD_TARGET),win)
   $(file)_CFLAGS = -wd4018
  else
-  $(file)_CFLAGS = -Wno-sign-compare
+  $(file)_CFLAGS += -Wno-sign-compare
+  ifdef VBOX_WITH_SLIRP_BSD_MBUF
+   $(file)_CFLAGS += -Wno-format
+   $(file)_CFLAGS += -Wno-bad-function-cast
+  endif
  endif
 endef
+
 $(foreach file,$(VBOX_SLIRP_SOURCES),$(eval $(call def_vbox_slirp_cflags, Network)))
 
 Drivers_SOURCES += $(VBOX_SLIRP_ALIAS_SOURCES)
@@ -787,6 +808,17 @@ define def_vbox_slirp_alias_cflags
 endef
 $(foreach file,$(VBOX_SLIRP_ALIAS_SOURCES),$(eval $(call def_vbox_slirp_cflags, Network)))
 $(foreach file,$(VBOX_SLIRP_ALIAS_SOURCES),$(eval $(call def_vbox_slirp_alias_cflags, Network)))
+
+ifdef VBOX_WITH_SLIRP_BSD_MBUF
+VBOX_SLIRP_BSD_SOURCES += $(VBOX_SLIRP_BSD_SOURCES.${KBUILD_TARGET_ARCH})
+Drivers_SOURCES += $(VBOX_SLIRP_BSD_SOURCES)
+define def_vbox_slirp_bsd_cflags
+  $(file)_DEFS += VBOX_SLIRP_BSD
+  $(file)_INCS += $(1)/slirp/dnsproxy
+endef
+$(foreach file,$(VBOX_SLIRP_BSD_SOURCES),$(eval $(call def_vbox_slirp_cflags, Network)))
+$(foreach file,$(VBOX_SLIRP_BSD_SOURCES),$(eval $(call def_vbox_slirp_bsd_cflags, Network)))
+endif
 
 # -- OS specific --
 
