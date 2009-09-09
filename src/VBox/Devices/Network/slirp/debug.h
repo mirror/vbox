@@ -17,6 +17,8 @@
 #define DEBUG_DEFAULT DBG_CALL|DBG_MISC|DBG_ERROR
 
 #include <VBox/log.h>
+/* we've excluded stdio.h */
+# define FILE void
 
 #ifdef LOG_ENABLED
 #define DEBUG_CALL(x)       LogFlow(("%s:\n", x))

@@ -193,7 +193,7 @@ sockstats(PNATState pData)
 
     QSOCKET_FOREACH(so, so_next, tcp)
     /* { */
-        n = sprintf(buff, "tcp[%s]", so->so_tcpcb?tcpstates[so->so_tcpcb->t_state]:"NONE");
+        n = RTStrPrintf(buff, sizeof(buff), "tcp[%s]", so->so_tcpcb?tcpstates[so->so_tcpcb->t_state]:"NONE");
         while (n < 17)
             buff[n++] = ' ';
         buff[17] = 0;
@@ -207,7 +207,7 @@ sockstats(PNATState pData)
 
     QSOCKET_FOREACH(so, so_next, udp)
     /* { */
-        n = sprintf(buff, "udp[%d sec]", (so->so_expire - curtime) / 1000);
+        n = RTStrPrintf(buff, sizeof(buff), "udp[%d sec]", (so->so_expire - curtime) / 1000);
         while (n < 17)
             buff[n++] = ' ';
         buff[17] = 0;

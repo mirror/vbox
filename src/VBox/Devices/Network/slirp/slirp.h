@@ -127,8 +127,8 @@ typedef unsigned char u_int8_t;
 # include <stdlib.h>
 #endif
 
-#include <stdio.h>
 #include <errno.h>
+
 
 #ifndef HAVE_MEMMOVE
 # define memmove(x, y, z) bcopy(y, x, z)
@@ -342,6 +342,12 @@ struct ethhdr
     unsigned short  h_proto;                    /* packet type ID field */
 };
 AssertCompileSize(struct ethhdr, 14);
+
+/*
+ * (vvl) externing of sscanf.
+ */
+int sscanf(const char *s, const char *format, ...);
+
 #if defined(VBOX_SLIRP_ALIAS)
 
 # define ip_next(ip) (void *)((uint8_t *)(ip) + ((ip)->ip_hl << 2))
@@ -366,7 +372,8 @@ AssertCompileSize(struct ethhdr, 14);
 # endif
 
 # define strncasecmp RTStrNICmp
-
+# define stderr NULL 
+# define stdout NULL 
 # ifdef DEBUG
 # define LIBALIAS_DEBUG
 # ifdef fprintf
