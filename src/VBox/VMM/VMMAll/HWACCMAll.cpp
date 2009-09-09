@@ -115,7 +115,7 @@ VMMDECL(int) HWACCMInvalidatePageOnAllVCpus(PVM pVM, RTGCPTR GCPtr)
 {
     VMCPUID idCurCpu = VMMGetCpuId(pVM);
 
-    for (unsigned idCpu = 0; idCpu < pVM->cCPUs; idCpu++)
+    for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
     {
         PVMCPU pVCpu = &pVM->aCpus[idCpu];
 
@@ -153,12 +153,12 @@ VMMDECL(int) HWACCMInvalidatePageOnAllVCpus(PVM pVM, RTGCPTR GCPtr)
  */
 VMMDECL(int) HWACCMFlushTLBOnAllVCpus(PVM pVM)
 {
-    if (pVM->cCPUs == 1)
+    if (pVM->cCpus == 1)
         return HWACCMFlushTLB(&pVM->aCpus[0]);
 
     VMCPUID idThisCpu = VMMGetCpuId(pVM);
 
-    for (unsigned idCpu = 0; idCpu < pVM->cCPUs; idCpu++)
+    for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
     {
         PVMCPU pVCpu = &pVM->aCpus[idCpu];
 
@@ -230,7 +230,7 @@ VMMDECL(int) HWACCMInvalidatePhysPage(PVM pVM, RTGCPHYS GCPhys)
     {
         VMCPUID idThisCpu = VMMGetCpuId(pVM);
 
-        for (unsigned idCpu = 0; idCpu < pVM->cCPUs; idCpu++)
+        for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
         {
             PVMCPU pVCpu = &pVM->aCpus[idCpu];
 

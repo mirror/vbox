@@ -550,7 +550,7 @@ VMMR3DECL(int) DBGFR3DisasInstrEx(PVM pVM, VMCPUID idCpu, RTSEL Sel, RTGCPTR GCP
                                   char *pszOutput, uint32_t cchOutput, uint32_t *pcbInstr)
 {
     VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
-    AssertReturn(idCpu < pVM->cCPUs, VERR_INVALID_CPU_ID);
+    AssertReturn(idCpu < pVM->cCpus, VERR_INVALID_CPU_ID);
 
     /*
      * Optimize the common case where we're called on the EMT of idCpu since

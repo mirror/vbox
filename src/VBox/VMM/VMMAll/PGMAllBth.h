@@ -855,7 +855,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVMCPU pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegF
                         }
                         uint64_t fPageShw;
                         rc = PGMShwGetPage(pVCpu, pvFault, &fPageShw, NULL);
-                        AssertMsg((RT_SUCCESS(rc) && (fPageShw & X86_PTE_RW)) || pVM->cCPUs > 1 /* new monitor can be installed/page table flushed between the trap exit and PGMTrap0eHandler */, ("rc=%Rrc fPageShw=%RX64\n", rc, fPageShw));
+                        AssertMsg((RT_SUCCESS(rc) && (fPageShw & X86_PTE_RW)) || pVM->cCpus > 1 /* new monitor can be installed/page table flushed between the trap exit and PGMTrap0eHandler */, ("rc=%Rrc fPageShw=%RX64\n", rc, fPageShw));
 #   endif /* VBOX_STRICT */
                         STAM_PROFILE_STOP(&pVCpu->pgm.s.StatRZTrap0eTimeOutOfSync, c);
                         STAM_STATS({ pVCpu->pgm.s.CTX_SUFF(pStatTrap0eAttribution) = &pVCpu->pgm.s.StatRZTrap0eTime2OutOfSyncHndObs; });
@@ -1728,7 +1728,7 @@ PGM_BTH_DECL(int, SyncPage)(PVMCPU pVCpu, GSTPDE PdeSrc, RTGCPTR GCPtrPage, unsi
     SHWPDE          PdeDst   = *pPdeDst;
     if (!PdeDst.n.u1Present)
     {
-        AssertMsg(pVM->cCPUs > 1, ("%Unexpected missing PDE p=%llx\n", pPdeDst, (uint64_t)PdeDst.u));
+        AssertMsg(pVM->cCpus > 1, ("%Unexpected missing PDE p=%llx\n", pPdeDst, (uint64_t)PdeDst.u));
         Log(("CPU%d: SyncPage: Pde at %RGv changed behind our back!\n", GCPtrPage));
         return VINF_SUCCESS;    /* force the instruction to be executed again. */
     }
@@ -2254,7 +2254,7 @@ PGM_BTH_DECL(int, CheckPageFault)(PVMCPU pVCpu, uint32_t uErr, PSHWPDE pPdeDst, 
 # ifdef IN_RING0
                 else
                 /* Check for stale TLB entry; only applies to the SMP guest case. */
-                if (    pVM->cCPUs > 1
+                if (    pVM->cCpus > 1
                     &&  pPdeDst->n.u1Write
                     &&  pPdeDst->n.u1Accessed)
                 {
@@ -2394,7 +2394,7 @@ PGM_BTH_DECL(int, CheckPageFault)(PVMCPU pVCpu, uint32_t uErr, PSHWPDE pPdeDst, 
 # ifdef IN_RING0
                         else
                         /* Check for stale TLB entry; only applies to the SMP guest case. */
-                        if (    pVM->cCPUs > 1
+                        if (    pVM->cCpus > 1
                             &&  pPteDst->n.u1Write == 1
                             &&  pPteDst->n.u1Accessed == 1)
                         {
@@ -4470,7 +4470,7 @@ PGM_BTH_DECL(int, MapCR3)(PVMCPU pVCpu, RTGCPHYS GCPhysCR3)
 #  endif
 
     /* Clean up the old CR3 root. */
-    if (    pOldShwPageCR3 
+    if (    pOldShwPageCR3
         &&  pOldShwPageCR3 != pNewShwPageCR3    /* @todo can happen due to incorrect syncing between REM & PGM; find the real cause */)
     {
         Assert(pOldShwPageCR3->enmKind != PGMPOOLKIND_FREE);

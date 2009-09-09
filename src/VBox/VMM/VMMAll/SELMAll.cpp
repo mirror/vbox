@@ -55,7 +55,7 @@
  */
 VMMDECL(RTGCPTR) SELMToFlatBySel(PVM pVM, RTSEL Sel, RTGCPTR Addr)
 {
-    Assert(pVM->cCPUs == 1 && !CPUMIsGuestInLongMode(VMMGetCpu(pVM)));    /* DON'T USE! */
+    Assert(pVM->cCpus == 1 && !CPUMIsGuestInLongMode(VMMGetCpu(pVM)));    /* DON'T USE! */
 
     /** @todo check the limit. */
     X86DESC    Desc;
@@ -834,7 +834,7 @@ DECLINLINE(int) selmValidateAndConvertCSAddrHidden(PVMCPU pVCpu, RTSEL SelCPL, R
  */
 VMMDECL(int) SELMValidateAndConvertCSAddrGCTrap(PVM pVM, X86EFLAGS eflags, RTSEL SelCPL, RTSEL SelCS, RTGCPTR Addr, PRTGCPTR ppvFlat, uint32_t *pcBits)
 {
-    Assert(pVM->cCPUs == 1);
+    Assert(pVM->cCpus == 1);
     PVMCPU pVCpu = &pVM->aCpus[0];
 
     if (    CPUMIsGuestInRealMode(pVCpu)
@@ -995,7 +995,7 @@ void selmSetRing1Stack(PVM pVM, uint32_t ss, RTGCPTR32 esp)
  */
 VMMDECL(int) SELMGetRing1Stack(PVM pVM, uint32_t *pSS, PRTGCPTR32 pEsp)
 {
-    Assert(pVM->cCPUs == 1);
+    Assert(pVM->cCpus == 1);
     PVMCPU pVCpu = &pVM->aCpus[0];
 
     if (pVM->selm.s.fSyncTSSRing0Stack)

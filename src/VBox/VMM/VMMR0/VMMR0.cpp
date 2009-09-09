@@ -511,7 +511,7 @@ VMMR0DECL(int) VMMR0EntryInt(PVM pVM, VMMR0OPERATION enmOperation, void *pvArg)
  */
 VMMR0DECL(void) VMMR0EntryFast(PVM pVM, VMCPUID idCpu, VMMR0OPERATION enmOperation)
 {
-    if (RT_UNLIKELY(idCpu >= pVM->cCPUs))
+    if (RT_UNLIKELY(idCpu >= pVM->cCpus))
         return;
     PVMCPU pVCpu = &pVM->aCpus[idCpu];
 
@@ -530,7 +530,7 @@ VMMR0DECL(void) VMMR0EntryFast(PVM pVM, VMCPUID idCpu, VMMR0OPERATION enmOperati
                 int         rc;
                 bool        fVTxDisabled;
 
-                if (RT_UNLIKELY(pVM->cCPUs > 1))
+                if (RT_UNLIKELY(pVM->cCpus > 1))
                 {
                     pVCpu->vmm.s.iLastGZRc = VERR_RAW_MODE_INVALID_SMP;
                     return;
@@ -727,9 +727,9 @@ static int vmmR0EntryExWorker(PVM pVM, VMCPUID idCpu, VMMR0OPERATION enmOperatio
             return VERR_INVALID_POINTER;
         }
 
-        if (RT_UNLIKELY(idCpu >= pVM->cCPUs && idCpu != NIL_VMCPUID))
+        if (RT_UNLIKELY(idCpu >= pVM->cCpus && idCpu != NIL_VMCPUID))
         {
-            SUPR0Printf("vmmR0EntryExWorker: Invalid idCpu (%u vs cCPUs=%u)\n", idCpu, pVM->cCPUs);
+            SUPR0Printf("vmmR0EntryExWorker: Invalid idCpu (%u vs cCpus=%u)\n", idCpu, pVM->cCpus);
             return VERR_INVALID_PARAMETER;
         }
     }
@@ -1089,7 +1089,7 @@ VMMR0DECL(int) VMMR0EntryEx(PVM pVM, VMCPUID idCpu, VMMR0OPERATION enmOperation,
      */
     if (    VALID_PTR(pVM)
         &&  pVM->pVMR0
-        &&  idCpu < pVM->cCPUs)
+        &&  idCpu < pVM->cCpus)
     {
         switch (enmOperation)
         {

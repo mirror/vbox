@@ -72,8 +72,8 @@ int main(int argc, char **argv)
     pUVM->pVM = pVM;
     pVM->pUVM = pUVM;
 
-    pVM->cCPUs = NUM_CPUS;
-    pVM->cbSelf = RT_UOFFSETOF(VM, aCpus[pVM->cCPUs]);
+    pVM->cCpus = NUM_CPUS;
+    pVM->cbSelf = RT_UOFFSETOF(VM, aCpus[pVM->cCpus]);
 
     rc = STAMR3InitUVM(pUVM);
     if (RT_FAILURE(rc))

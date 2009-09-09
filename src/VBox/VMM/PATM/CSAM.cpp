@@ -562,7 +562,7 @@ static R3PTRTYPE(void *) CSAMGCVirtToHCVirt(PVM pVM, PCSAMP2GLOOKUPREC pCacheRec
 {
     int rc;
     R3PTRTYPE(void *) pHCPtr;
-    Assert(pVM->cCPUs == 1);
+    Assert(pVM->cCpus == 1);
     PVMCPU pVCpu = VMMGetCpu0(pVM);
 
     STAM_PROFILE_START(&pVM->csam.s.StatTimeAddrConv, a);
@@ -611,7 +611,7 @@ static DECLCALLBACK(int) CSAMR3ReadBytes(RTUINTPTR pSrc, uint8_t *pDest, unsigne
     RTHCUINTPTR   pInstrHC = (RTHCUINTPTR)pCpu->apvUserData[1];
     RTGCUINTPTR32 pInstrGC = (uintptr_t)pCpu->apvUserData[2];
     int           orgsize  = size;
-    Assert(pVM->cCPUs == 1);
+    Assert(pVM->cCpus == 1);
     PVMCPU        pVCpu = VMMGetCpu0(pVM);
 
     /* We are not interested in patched instructions, so read the original opcode bytes. */
@@ -1086,7 +1086,7 @@ static int csamAnalyseCodeStream(PVM pVM, RCPTRTYPE(uint8_t *) pInstrGC, RCPTRTY
     uint32_t opsize;
     R3PTRTYPE(uint8_t *) pCurInstrHC = 0;
     int rc2;
-    Assert(pVM->cCPUs == 1);
+    Assert(pVM->cCpus == 1);
     PVMCPU pVCpu = VMMGetCpu0(pVM);
 
 #ifdef DEBUG
@@ -1362,7 +1362,7 @@ uint64_t csamR3CalcPageHash(PVM pVM, RTRCPTR pInstr)
     uint64_t hash   = 0;
     uint32_t val[5];
     int      rc;
-    Assert(pVM->cCPUs == 1);
+    Assert(pVM->cCpus == 1);
     PVMCPU pVCpu = VMMGetCpu0(pVM);
 
     Assert((pInstr & PAGE_OFFSET_MASK) == 0);
@@ -1430,7 +1430,7 @@ static int csamFlushPage(PVM pVM, RTRCPTR addr, bool fRemovePage)
     int rc;
     RTGCPHYS GCPhys = 0;
     uint64_t fFlags = 0;
-    Assert(pVM->cCPUs == 1 || !CSAMIsEnabled(pVM));
+    Assert(pVM->cCpus == 1 || !CSAMIsEnabled(pVM));
 
     if (!CSAMIsEnabled(pVM))
         return VINF_SUCCESS;
@@ -1623,7 +1623,7 @@ static PCSAMPAGE csamCreatePageRecord(PVM pVM, RTRCPTR GCPtr, CSAMTAG enmTag, bo
     PCSAMPAGEREC pPage;
     int          rc;
     bool         ret;
-    Assert(pVM->cCPUs == 1);
+    Assert(pVM->cCpus == 1);
     PVMCPU pVCpu = VMMGetCpu0(pVM);
 
     Log(("New page record for %RRv\n", GCPtr & PAGE_BASE_GC_MASK));
@@ -1726,7 +1726,7 @@ VMMR3DECL(int) CSAMR3MonitorPage(PVM pVM, RTRCPTR pPageAddrGC, CSAMTAG enmTag)
     PCSAMPAGEREC pPageRec = NULL;
     int          rc;
     bool         fMonitorInvalidation;
-    Assert(pVM->cCPUs == 1);
+    Assert(pVM->cCpus == 1);
     PVMCPU pVCpu = VMMGetCpu0(pVM);
 
     /* Dirty pages must be handled before calling this function!. */
@@ -1872,7 +1872,7 @@ VMMR3DECL(int) CSAMR3UnmonitorPage(PVM pVM, RTRCPTR pPageAddrGC, CSAMTAG enmTag)
 static int csamRemovePageRecord(PVM pVM, RTRCPTR GCPtr)
 {
     PCSAMPAGEREC pPageRec;
-    Assert(pVM->cCPUs == 1);
+    Assert(pVM->cCpus == 1);
     PVMCPU pVCpu = VMMGetCpu0(pVM);
 
     Log(("csamRemovePageRecord %RRv\n", GCPtr));
@@ -2193,7 +2193,7 @@ VMMR3DECL(int) CSAMR3CheckCode(PVM pVM, RTRCPTR pInstrGC)
  */
 static int csamR3FlushDirtyPages(PVM pVM)
 {
-    Assert(pVM->cCPUs == 1);
+    Assert(pVM->cCpus == 1);
     PVMCPU pVCpu = VMMGetCpu0(pVM);
 
     STAM_PROFILE_START(&pVM->csam.s.StatFlushDirtyPages, a);
@@ -2244,7 +2244,7 @@ static int csamR3FlushDirtyPages(PVM pVM)
  */
 static int csamR3FlushCodePages(PVM pVM)
 {
-    Assert(pVM->cCPUs == 1);
+    Assert(pVM->cCpus == 1);
     PVMCPU pVCpu = VMMGetCpu0(pVM);
 
     for (uint32_t i=0;i<pVM->csam.s.cPossibleCodePages;i++)
@@ -2288,7 +2288,7 @@ VMMR3DECL(int) CSAMR3DoPendingAction(PVM pVM, PVMCPU pVCpu)
  */
 VMMR3DECL(int) CSAMR3CheckGates(PVM pVM, uint32_t iGate, uint32_t cGates)
 {
-    Assert(pVM->cCPUs == 1);
+    Assert(pVM->cCpus == 1);
     PVMCPU      pVCpu = VMMGetCpu0(pVM);
     uint16_t    cbIDT;
     RTRCPTR     GCPtrIDT = CPUMGetGuestIDTR(pVCpu, &cbIDT);

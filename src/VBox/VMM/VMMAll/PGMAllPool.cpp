@@ -884,7 +884,7 @@ DECLINLINE(bool) pgmPoolMonitorIsReused(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pReg
             }
             return false;
     }
-    if (    (    (pDis->param1.flags & USE_REG_GEN32) 
+    if (    (    (pDis->param1.flags & USE_REG_GEN32)
              ||  (pDis->param1.flags & USE_REG_GEN64))
         &&  (pDis->param1.base.reg_gen == USE_REG_ESP))
     {
@@ -1225,7 +1225,7 @@ DECLEXPORT(int) pgmPoolAccessHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE 
             rc = pgmPoolAccessHandlerSimple(pVM, pVCpu, pPool, pPage, pDis, pRegFrame, GCPhysFault, pvFault, &fReused);
             if (fReused)
                 goto flushPage;
-                
+
             /* A mov instruction to change the first page table entry will be remembered so we can detect
              * full page table changes early on. This will reduce the amount of unnecessary traps we'll take.
              */
@@ -1314,7 +1314,7 @@ DECLEXPORT(int) pgmPoolAccessHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE 
     if (    pPage->cModifications >= cMaxModifications
         &&  !fForcedFlush
         &&  pPage->enmKind == PGMPOOLKIND_PAE_PT_FOR_PAE_PT
-        &&  (   fNotReusedNotForking 
+        &&  (   fNotReusedNotForking
              || (   !pgmPoolMonitorIsReused(pVM, pVCpu, pRegFrame, pDis, pvFault)
                  && !pgmPoolMonitorIsForking(pPool, pDis, GCPhysFault & PAGE_OFFSET_MASK))
             )
@@ -1361,15 +1361,15 @@ DECLEXPORT(int) pgmPoolAccessHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE 
             if (rc == VINF_SUCCESS)
             {
                 rc = PGMShwModifyPage(pVCpu, pvFault, 1, X86_PTE_RW, ~(uint64_t)X86_PTE_RW);
-                AssertMsg(rc == VINF_SUCCESS 
+                AssertMsg(rc == VINF_SUCCESS
                         /* In the SMP case the page table might be removed while we wait for the PGM lock in the trap handler. */
-                        ||  rc == VERR_PAGE_TABLE_NOT_PRESENT 
-                        ||  rc == VERR_PAGE_NOT_PRESENT, 
+                        ||  rc == VERR_PAGE_TABLE_NOT_PRESENT
+                        ||  rc == VERR_PAGE_NOT_PRESENT,
                         ("PGMShwModifyPage -> GCPtr=%RGv rc=%d\n", pvFault, rc));
 
                 pgmPoolAddDirtyPage(pVM, pPool, pPage);
                 pPage->pvDirtyFault = pvFault;
-     
+
                 STAM_PROFILE_STOP(&pVM->pgm.s.CTX_SUFF(pPool)->CTX_SUFF_Z(StatMonitor), a);
                 pgmUnlock(pVM);
                 return rc;
@@ -1387,7 +1387,7 @@ flushPage:
      * to emulate failed instructions since we usually cannot
      * interpret then. This may be a bit risky, in which case
      * the reuse detection must be fixed.
-     */       
+     */
     rc = pgmPoolAccessHandlerFlush(pVM, pVCpu, pPool, pPage, pDis, pRegFrame, GCPhysFault, pvFault);
     if (rc == VINF_EM_RAW_EMULATE_INSTR && fReused)
         rc = VINF_SUCCESS;
@@ -1422,7 +1422,7 @@ DECLINLINE(void) pgmPoolTrackCheckPTPaePae(PPGMPOOL pPool, PPGMPOOLPAGE pPage, P
         {
             RTHCPHYS HCPhys = -1;
             int rc = PGMPhysGCPhys2HCPhys(pPool->CTX_SUFF(pVM), pGstPT->a[i].u & X86_PTE_PAE_PG_MASK, &HCPhys);
-            if (    rc != VINF_SUCCESS 
+            if (    rc != VINF_SUCCESS
                 ||  (pShwPT->a[i].u & X86_PTE_PAE_PG_MASK) != HCPhys)
             {
                 RTHCPHYS HCPhysPT = -1;
@@ -1554,11 +1554,11 @@ static void pgmPoolFlushDirtyPage(PVM pVM, PPGMPOOL pPool, unsigned idxSlot, boo
     uint64_t fFlags = 0;
     RTHCPHYS HCPhys;
     rc = PGMShwGetPage(VMMGetCpu(pVM), pPage->pvDirtyFault, &fFlags, &HCPhys);
-    AssertMsg(      (   rc == VINF_SUCCESS 
+    AssertMsg(      (   rc == VINF_SUCCESS
                      && (!(fFlags & X86_PTE_RW) || HCPhys != pPage->Core.Key))
               /* In the SMP case the page table might be removed while we wait for the PGM lock in the trap handler. */
-              ||    rc == VERR_PAGE_TABLE_NOT_PRESENT 
-              ||    rc == VERR_PAGE_NOT_PRESENT, 
+              ||    rc == VERR_PAGE_TABLE_NOT_PRESENT
+              ||    rc == VERR_PAGE_NOT_PRESENT,
               ("PGMShwGetPage -> GCPtr=%RGv rc=%d flags=%RX64\n", pPage->pvDirtyFault, rc, fFlags));
 #endif
 
@@ -1827,7 +1827,7 @@ static int pgmPoolCacheFreeOne(PPGMPOOL pPool, uint16_t iUser)
     }
 
     /*
-     * Found a usable page, flush it and return. 
+     * Found a usable page, flush it and return.
      */
     return pgmPoolFlushPage(pPool, pPage);
 }
@@ -2634,10 +2634,9 @@ DECLCALLBACK(int) pgmPoolClearAll(PVM pVM, PVMCPU pVCpu, void *pvUser)
 #endif
 
     /* Clear the PGM_SYNC_CLEAR_PGM_POOL flag on all VCPUs to prevent redundant flushes. */
-    for (unsigned idCpu = 0; idCpu < pVM->cCPUs; idCpu++)
+    for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
     {
         PVMCPU pVCpu = &pVM->aCpus[idCpu];
-
         pVCpu->pgm.s.fSyncFlags &= ~PGM_SYNC_CLEAR_PGM_POOL;
     }
 
@@ -4910,7 +4909,7 @@ void pgmR3PoolReset(PVM pVM)
      * Exit the shadow mode since we're going to clear everything,
      * including the root page.
      */
-    for (unsigned i=0;i<pVM->cCPUs;i++)
+    for (VMCPUID i = 0; i < pVM->cCpus; i++)
     {
         PVMCPU pVCpu = &pVM->aCpus[i];
         pgmR3ExitShadowModeBeforePoolFlush(pVM, pVCpu);
@@ -5066,12 +5065,12 @@ void pgmR3PoolReset(PVM pVM)
 #endif
     }
 
-    for (unsigned i=0;i<pVM->cCPUs;i++)
+    for (VMCPUID i = 0; i < pVM->cCpus; i++)
     {
-        PVMCPU pVCpu = &pVM->aCpus[i];
         /*
          * Re-enter the shadowing mode and assert Sync CR3 FF.
          */
+        PVMCPU pVCpu = &pVM->aCpus[i];
         pgmR3ReEnterShadowModeAfterPoolFlush(pVM, pVCpu);
         VMCPU_FF_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3);
     }

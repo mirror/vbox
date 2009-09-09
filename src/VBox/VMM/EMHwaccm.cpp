@@ -517,7 +517,7 @@ int emR3HwAccExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone)
 
         uint32_t cpl = CPUMGetGuestCPL(pVCpu, CPUMCTX2CORE(pCtx));
 
-        if (pVM->cCPUs == 1)
+        if (pVM->cCpus == 1)
         {
             if (pCtx->eflags.Bits.u1VM)
                 Log(("HWV86: %08X IF=%d\n", pCtx->eip, pCtx->eflags.Bits.u1IF));

@@ -667,7 +667,7 @@ static DECLCALLBACK(int) remR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, 
     uint32_t u32Dummy;
     uint32_t fRawRing0 = false;
     uint32_t u32Sep;
-    unsigned i;
+    uint32_t i;
     int rc;
     PREM pRem;
 
@@ -776,10 +776,9 @@ static DECLCALLBACK(int) remR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, 
     /*
      * Sync the whole CPU state when executing code in the recompiler.
      */
-    for (i=0;i<pVM->cCPUs;i++)
+    for (i = 0; i < pVM->cCpus; i++)
     {
         PVMCPU pVCpu = &pVM->aCpus[i];
-
         CPUMSetChangedFlags(pVCpu, CPUM_CHANGED_ALL);
     }
     return VINF_SUCCESS;
@@ -2826,7 +2825,7 @@ REMR3DECL(void) REMR3ReplayHandlerNotifications(PVM pVM)
         } while (idxHead != UINT32_MAX);
 
 #ifdef VBOX_STRICT
-        if (pVM->cCPUs == 1)
+        if (pVM->cCpus == 1)
         {
             /* Check that all records are now on the free list. */
             for (c = 0, idxNext = pVM->rem.s.idxFreeList; idxNext != UINT32_MAX;

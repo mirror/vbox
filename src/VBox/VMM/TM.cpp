@@ -200,7 +200,7 @@ VMM_INT_DECL(int) TMR3Init(PVM pVM)
     pVM->tm.s.paTimerQueuesRC = MMHyperR3ToRC(pVM, pv);
 
     pVM->tm.s.offVM = RT_OFFSETOF(VM, tm.s);
-    pVM->tm.s.idTimerCpu = pVM->cCPUs - 1; /* The last CPU. */
+    pVM->tm.s.idTimerCpu = pVM->cCpus - 1; /* The last CPU. */
     pVM->tm.s.paTimerQueuesR3[TMCLOCK_VIRTUAL].enmClock        = TMCLOCK_VIRTUAL;
     pVM->tm.s.paTimerQueuesR3[TMCLOCK_VIRTUAL].u64Expire       = INT64_MAX;
     pVM->tm.s.paTimerQueuesR3[TMCLOCK_VIRTUAL_SYNC].enmClock   = TMCLOCK_VIRTUAL_SYNC;
@@ -626,7 +626,7 @@ VMM_INT_DECL(int) TMR3Init(PVM pVM)
     STAM_REG(pVM, &pVM->tm.s.StatTSCUnderflow,                        STAMTYPE_COUNTER, "/TM/TSC/Underflow",                   STAMUNIT_OCCURENCES, "TSC underflow; corrected with last seen value .");
 #endif /* VBOX_WITH_STATISTICS */
 
-    for (VMCPUID i = 0; i < pVM->cCPUs; i++)
+    for (VMCPUID i = 0; i < pVM->cCpus; i++)
         STAMR3RegisterF(pVM, &pVM->aCpus[i].tm.s.offTSCRawSrc, STAMTYPE_U64, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS, "TSC offset relative the raw source", "/TM/TSC/offCPU%u", i);
 
 #ifdef VBOX_WITH_STATISTICS
@@ -1045,7 +1045,7 @@ static DECLCALLBACK(int) tmR3Save(PVM pVM, PSSMHANDLE pSSM)
 {
     LogFlow(("tmR3Save:\n"));
 #ifdef VBOX_STRICT
-    for (VMCPUID i = 0; i < pVM->cCPUs; i++)
+    for (VMCPUID i = 0; i < pVM->cCpus; i++)
     {
         PVMCPU pVCpu = &pVM->aCpus[i];
         Assert(!pVCpu->tm.s.fTSCTicking);
@@ -1071,11 +1071,10 @@ static DECLCALLBACK(int) tmR3Save(PVM pVM, PSSMHANDLE pSSM)
     /* real time clock */
     SSMR3PutU64(pSSM, TMCLOCK_FREQ_REAL);
 
-    for (VMCPUID i = 0; i < pVM->cCPUs; i++)
+    /* the cpu tick clock. */
+    for (VMCPUID i = 0; i < pVM->cCpus; i++)
     {
         PVMCPU pVCpu = &pVM->aCpus[i];
-
-        /* the cpu tick clock. */
         SSMR3PutU64(pSSM, TMCpuTickGet(pVCpu));
     }
     return SSMR3PutU64(pSSM, pVM->tm.s.cTSCTicksPerSecond);
@@ -1097,7 +1096,7 @@ static DECLCALLBACK(int) tmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, u
 
     Assert(uPass == SSM_PASS_FINAL); NOREF(uPass);
 #ifdef VBOX_STRICT
-    for (VMCPUID i = 0; i < pVM->cCPUs; i++)
+    for (VMCPUID i = 0; i < pVM->cCpus; i++)
     {
         PVMCPU pVCpu = &pVM->aCpus[i];
         Assert(!pVCpu->tm.s.fTSCTicking);
@@ -1160,7 +1159,7 @@ static DECLCALLBACK(int) tmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, u
     }
 
     /* the cpu tick clock. */
-    for (VMCPUID i = 0; i < pVM->cCPUs; i++)
+    for (VMCPUID i = 0; i < pVM->cCpus; i++)
     {
         PVMCPU pVCpu = &pVM->aCpus[i];
 
@@ -1747,11 +1746,11 @@ VMMR3DECL(void) TMR3TimerQueuesDo(PVM pVM)
      * Only the dedicated timer EMT should do stuff here.
      * (fRunningQueues is only used as an indicator.)
      */
-    Assert(pVM->tm.s.idTimerCpu < pVM->cCPUs);
+    Assert(pVM->tm.s.idTimerCpu < pVM->cCpus);
     PVMCPU pVCpuDst = &pVM->aCpus[pVM->tm.s.idTimerCpu];
     if (VMMGetCpu(pVM) != pVCpuDst)
     {
-        Assert(pVM->cCPUs > 1);
+        Assert(pVM->cCpus > 1);
         return;
     }
     STAM_PROFILE_START(&pVM->tm.s.StatDoQueues, a);
@@ -2685,7 +2684,7 @@ static DECLCALLBACK(void) tmR3InfoClocks(PVM pVM, PCDBGFINFOHLP pHlp, const char
     const uint64_t u64VirtualSync = TMVirtualSyncGet(pVM);
     const uint64_t u64Real        = TMRealGet(pVM);
 
-    for (unsigned i = 0; i < pVM->cCPUs; i++)
+    for (VMCPUID i = 0; i < pVM->cCpus; i++)
     {
         PVMCPU   pVCpu  = &pVM->aCpus[i];
         uint64_t u64TSC = TMCpuTickGet(pVCpu);

@@ -247,7 +247,7 @@ static int vmmR3InitStacks(PVM pVM)
     uint32_t fFlags = 0;
 #endif
 
-    for (VMCPUID idCpu = 0; idCpu < pVM->cCPUs; idCpu++)
+    for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
     {
         PVMCPU pVCpu = &pVM->aCpus[idCpu];
 
@@ -305,7 +305,7 @@ static int vmmR3InitLoggers(PVM pVM)
         pVM->vmm.s.pRCLoggerRC = MMHyperR3ToRC(pVM, pVM->vmm.s.pRCLoggerR3);
 
 # ifdef VBOX_WITH_R0_LOGGING
-        for (VMCPUID i = 0; i < pVM->cCPUs; i++)
+        for (VMCPUID i = 0; i < pVM->cCpus; i++)
         {
             PVMCPU pVCpu = &pVM->aCpus[i];
 
@@ -403,7 +403,7 @@ static void vmmR3InitRegisterStats(PVM pVM)
     STAM_REG(pVM, &pVM->vmm.s.StatRZCallVMSetRuntimeError,  STAMTYPE_COUNTER, "/VMM/RZCallR3/VMRuntimeError",   STAMUNIT_OCCURENCES, "Number of VMMCALLRING3_VM_SET_RUNTIME_ERROR calls.");
 
 #ifdef VBOX_WITH_STATISTICS
-    for (VMCPUID i = 0; i < pVM->cCPUs; i++)
+    for (VMCPUID i = 0; i < pVM->cCpus; i++)
     {
         STAMR3RegisterF(pVM, &pVM->aCpus[i].vmm.s.CallRing3JmpBufR0.cbUsedMax,  STAMTYPE_U32_RESET, STAMVISIBILITY_ALWAYS, STAMUNIT_BYTES,      "Max amount of stack used.", "/VMM/Stack/CPU%u/Max", i);
         STAMR3RegisterF(pVM, &pVM->aCpus[i].vmm.s.CallRing3JmpBufR0.cbUsedAvg,  STAMTYPE_U32,       STAMVISIBILITY_ALWAYS, STAMUNIT_BYTES,      "Average stack usage.",      "/VMM/Stack/CPU%u/Avg", i);
@@ -436,7 +436,7 @@ VMMR3DECL(int) VMMR3InitFinalize(PVM pVM)
 {
     int rc = VINF_SUCCESS;
 
-    for (VMCPUID idCpu = 0; idCpu < pVM->cCPUs; idCpu++)
+    for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
     {
         PVMCPU pVCpu = &pVM->aCpus[idCpu];
 
@@ -558,7 +558,7 @@ VMMR3DECL(int) VMMR3InitRC(PVM pVM)
     if (pVM->vmm.s.fSwitcherDisabled)
         return VINF_SUCCESS;
 
-    AssertReturn(pVM->cCPUs == 1, VERR_RAW_MODE_INVALID_SMP);
+    AssertReturn(pVM->cCpus == 1, VERR_RAW_MODE_INVALID_SMP);
 
     /*
      * Call VMMGCInit():
@@ -680,7 +680,7 @@ VMMR3DECL(int) VMMR3Term(PVM pVM)
     /*
      * Make the two stack guard pages present again.
      */
-    for (VMCPUID i = 0; i < pVM->cCPUs; i++)
+    for (VMCPUID i = 0; i < pVM->cCpus; i++)
     {
         MMR3HyperSetGuard(pVM, pVM->aCpus[i].vmm.s.pbEMTStackR3 - PAGE_SIZE,      PAGE_SIZE, false /*fSet*/);
         MMR3HyperSetGuard(pVM, pVM->aCpus[i].vmm.s.pbEMTStackR3 + VMM_STACK_SIZE, PAGE_SIZE, false /*fSet*/);
@@ -727,7 +727,7 @@ VMMR3DECL(void) VMMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
     /*
      * The stack.
      */
-    for (VMCPUID i = 0; i < pVM->cCPUs; i++)
+    for (VMCPUID i = 0; i < pVM->cCpus; i++)
     {
         PVMCPU pVCpu = &pVM->aCpus[i];
 
@@ -813,7 +813,7 @@ VMMR3DECL(int)  VMMR3UpdateLoggers(PVM pVM)
      * For the ring-0 EMT logger, we use a per-thread logger instance
      * in ring-0. Only initialize it once.
      */
-    for (VMCPUID i = 0; i < pVM->cCPUs; i++)
+    for (VMCPUID i = 0; i < pVM->cCpus; i++)
     {
         PVMCPU       pVCpu = &pVM->aCpus[i];
         PVMMR0LOGGER pR0LoggerR3 = pVCpu->vmm.s.pR0LoggerR3;
@@ -921,7 +921,7 @@ static DECLCALLBACK(int) vmmR3Save(PVM pVM, PSSMHANDLE pSSM)
      * Save the started/stopped state of all CPUs except 0 as it will always
      * be running. This avoids breaking the saved state version. :-)
      */
-    for (VMCPUID i = 1; i < pVM->cCPUs; i++)
+    for (VMCPUID i = 1; i < pVM->cCpus; i++)
         SSMR3PutBool(pSSM, VMCPUSTATE_IS_STARTED(VMCPU_GET_STATE(&pVM->aCpus[i])));
 
     return SSMR3PutU32(pSSM, ~0); /* terminator */
@@ -968,7 +968,7 @@ static DECLCALLBACK(int) vmmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, 
 
     /* Restore the VMCPU states. VCPU 0 is always started. */
     VMCPU_SET_STATE(&pVM->aCpus[0], VMCPUSTATE_STARTED);
-    for (VMCPUID i = 1; i < pVM->cCPUs; i++)
+    for (VMCPUID i = 1; i < pVM->cCpus; i++)
     {
         bool fStarted;
         rc = SSMR3GetBool(pSSM, &fStarted);
@@ -1128,7 +1128,7 @@ VMMR3DECL(int) VMMR3RawRunGC(PVM pVM, PVMCPU pVCpu)
 {
     Log2(("VMMR3RawRunGC: (cs:eip=%04x:%08x)\n", CPUMGetGuestCS(pVCpu), CPUMGetGuestEIP(pVCpu)));
 
-    AssertReturn(pVM->cCPUs == 1, VERR_RAW_MODE_INVALID_SMP);
+    AssertReturn(pVM->cCpus == 1, VERR_RAW_MODE_INVALID_SMP);
 
     /*
      * Set the EIP and ESP.
@@ -1288,7 +1288,7 @@ DECLCALLBACK(int) vmmR3SendInitIpi(PVM pVM, VMCPUID idCpu)
  */
 VMMR3DECL(void) VMMR3SendSipi(PVM pVM, VMCPUID idCpu,  uint32_t uVector)
 {
-    AssertReturnVoid(idCpu < pVM->cCPUs);
+    AssertReturnVoid(idCpu < pVM->cCpus);
 
     PVMREQ pReq;
     int rc = VMR3ReqCallU(pVM->pUVM, idCpu, &pReq, 0, VMREQFLAGS_NO_WAIT,
@@ -1304,7 +1304,7 @@ VMMR3DECL(void) VMMR3SendSipi(PVM pVM, VMCPUID idCpu,  uint32_t uVector)
  */
 VMMR3DECL(void) VMMR3SendInitIpi(PVM pVM, VMCPUID idCpu)
 {
-    AssertReturnVoid(idCpu < pVM->cCPUs);
+    AssertReturnVoid(idCpu < pVM->cCpus);
 
     PVMREQ pReq;
     int rc = VMR3ReqCallU(pVM->pUVM, idCpu, &pReq, 0, VMREQFLAGS_NO_WAIT,
@@ -1378,11 +1378,11 @@ VMMR3DECL(int) VMMR3AtomicExecuteHandler(PVM pVM, PFNATOMICHANDLER pfnHandler, v
     AssertReturn(pVCpu, VERR_VM_THREAD_NOT_EMT);
 
     /* Shortcut for the uniprocessor case. */
-    if (pVM->cCPUs == 1)
+    if (pVM->cCpus == 1)
         return pfnHandler(pVM, pvUser);
 
     RTCritSectEnter(&pVM->vmm.s.CritSectSync);
-    for (VMCPUID idCpu = 0; idCpu < pVM->cCPUs; idCpu++)
+    for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
     {
         if (idCpu != pVCpu->idCpu)
         {
@@ -1392,7 +1392,7 @@ VMMR3DECL(int) VMMR3AtomicExecuteHandler(PVM pVM, PFNATOMICHANDLER pfnHandler, v
         }
     }
     /* Wait until all other VCPUs are waiting for us. */
-    while (RTCritSectGetWaiters(&pVM->vmm.s.CritSectSync) != (int32_t)(pVM->cCPUs - 1))
+    while (RTCritSectGetWaiters(&pVM->vmm.s.CritSectSync) != (int32_t)(pVM->cCpus - 1))
         RTThreadSleep(1);
 
     rc = pfnHandler(pVM, pvUser);
@@ -1409,7 +1409,7 @@ VMMR3DECL(int) VMMR3AtomicExecuteHandler(PVM pVM, PFNATOMICHANDLER pfnHandler, v
 DECL_FORCE_INLINE(void) vmmR3EmtRendezvousNonCallerReturn(PVM pVM)
 {
     uint32_t cReturned = ASMAtomicIncU32(&pVM->vmm.s.cRendezvousEmtsReturned);
-    if (cReturned == pVM->cCPUs - 1U)
+    if (cReturned == pVM->cCpus - 1U)
     {
         int rc = RTSemEventSignal(pVM->vmm.s.hEvtRendezvousDoneCaller);
         AssertLogRelRC(rc);
@@ -1437,7 +1437,7 @@ static void vmmR3EmtRendezvousCommon(PVM pVM, PVMCPU pVCpu, bool fIsCaller,
      * Enter, the last EMT triggers the next callback phase.
      */
     uint32_t cEntered = ASMAtomicIncU32(&pVM->vmm.s.cRendezvousEmtsEntered);
-    if (cEntered != pVM->cCPUs)
+    if (cEntered != pVM->cCpus)
     {
         if ((fFlags & VMMEMTRENDEZVOUS_FLAGS_TYPE_MASK) == VMMEMTRENDEZVOUS_FLAGS_TYPE_ONE_BY_ONE)
         {
@@ -1513,7 +1513,7 @@ static void vmmR3EmtRendezvousCommon(PVM pVM, PVMCPU pVCpu, bool fIsCaller,
      * the last to finish callback execution.
      */
     uint32_t cDone = ASMAtomicIncU32(&pVM->vmm.s.cRendezvousEmtsDone);
-    if (    cDone != pVM->cCPUs
+    if (    cDone != pVM->cCpus
         &&  (fFlags & VMMEMTRENDEZVOUS_FLAGS_TYPE_MASK) != VMMEMTRENDEZVOUS_FLAGS_TYPE_ONCE)
     {
         /* Signal the next EMT? */
@@ -1586,7 +1586,7 @@ VMMR3DECL(int) VMMR3EmtRendezvous(PVM pVM, uint32_t fFlags, PFNVMMEMTRENDEZVOUS 
               && !(fFlags & ~VMMEMTRENDEZVOUS_FLAGS_VALID_MASK), ("%#x\n", fFlags));
 
     int rc;
-    if (pVM->cCPUs == 1)
+    if (pVM->cCpus == 1)
         /*
          * Shortcut for the single EMT case.
          */
@@ -1705,7 +1705,7 @@ VMMR3DECL(int) VMMR3CallRC(PVM pVM, RTRCPTR RCPtrEntry, unsigned cArgs, ...)
 VMMR3DECL(int) VMMR3CallRCV(PVM pVM, RTRCPTR RCPtrEntry, unsigned cArgs, va_list args)
 {
     /* Raw mode implies 1 VCPU. */
-    AssertReturn(pVM->cCPUs == 1, VERR_RAW_MODE_INVALID_SMP);
+    AssertReturn(pVM->cCpus == 1, VERR_RAW_MODE_INVALID_SMP);
     PVMCPU pVCpu = &pVM->aCpus[0];
 
     Log2(("VMMR3CallGCV: RCPtrEntry=%RRv cArgs=%d\n", RCPtrEntry, cArgs));
@@ -1831,7 +1831,7 @@ VMMR3DECL(int) VMMR3CallR0(PVM pVM, uint32_t uOperation, uint64_t u64Arg, PSUPVM
 VMMR3DECL(int) VMMR3ResumeHyper(PVM pVM, PVMCPU pVCpu)
 {
     Log(("VMMR3ResumeHyper: eip=%RRv esp=%RRv\n", CPUMGetHyperEIP(pVCpu), CPUMGetHyperESP(pVCpu)));
-    AssertReturn(pVM->cCPUs == 1, VERR_RAW_MODE_INVALID_SMP);
+    AssertReturn(pVM->cCpus == 1, VERR_RAW_MODE_INVALID_SMP);
 
     /*
      * We hide log flushes (outer) and hypervisor interrupts (inner).
@@ -2108,7 +2108,7 @@ static DECLCALLBACK(void) vmmR3InfoFF(PVM pVM, PCDBGFINFOHLP pHlp, const char *p
     /*
      * Per CPU flags.
      */
-    for (VMCPUID i = 0; i < pVM->cCPUs; i++)
+    for (VMCPUID i = 0; i < pVM->cCpus; i++)
     {
         const uint32_t fLocalForcedActions = pVM->aCpus[i].fLocalForcedActions;
         pHlp->pfnPrintf(pHlp, "CPU %u FFs: %#RX32", i, fLocalForcedActions);

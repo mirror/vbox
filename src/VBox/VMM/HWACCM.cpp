@@ -397,7 +397,7 @@ VMMR3DECL(int) HWACCMR3InitCPU(PVM pVM)
 {
     LogFlow(("HWACCMR3InitCPU\n"));
 
-    for (unsigned i=0;i<pVM->cCPUs;i++)
+    for (VMCPUID i = 0; i < pVM->cCpus; i++)
     {
         PVMCPU pVCpu = &pVM->aCpus[i];
 
@@ -413,7 +413,7 @@ VMMR3DECL(int) HWACCMR3InitCPU(PVM pVM)
     /*
      * Statistics.
      */
-    for (unsigned i=0;i<pVM->cCPUs;i++)
+    for (VMCPUID i = 0; i < pVM->cCpus; i++)
     {
         PVMCPU pVCpu = &pVM->aCpus[i];
         int    rc;
@@ -572,7 +572,7 @@ VMMR3DECL(int) HWACCMR3InitCPU(PVM pVM)
 
 #ifdef VBOX_WITH_CRASHDUMP_MAGIC
     /* Magic marker for searching in crash dumps. */
-    for (unsigned i=0;i<pVM->cCPUs;i++)
+    for (VMCPUID i = 0; i < pVM->cCpus; i++)
     {
         PVMCPU pVCpu = &pVM->aCpus[i];
 
@@ -609,7 +609,7 @@ static void hwaccmR3DisableRawMode(PVM pVM)
     VMMR3DisableSwitcher(pVM);
 
     /* Reinit the paging mode to force the new shadow mode. */
-    for (unsigned i=0;i<pVM->cCPUs;i++)
+    for (VMCPUID i = 0; i < pVM->cCpus; i++)
     {
         PVMCPU pVCpu = &pVM->aCpus[i];
 
@@ -647,7 +647,7 @@ VMMR3DECL(int) HWACCMR3InitFinalizeR0(PVM pVM)
 #else
             LogRel(("HWACCM: The host kernel does not support VT-x!\n"));
 #endif
-            if (   pVM->cCPUs > 1
+            if (   pVM->cCpus > 1
                 || VMMIsHwVirtExtForced(pVM))
                 return rc;
 
@@ -980,7 +980,7 @@ VMMR3DECL(int) HWACCMR3InitFinalizeR0(PVM pVM)
             /* Paranoia */
             AssertRelease(MSR_IA32_VMX_MISC_MAX_MSR(pVM->hwaccm.s.vmx.msr.vmx_misc) >= 512);
 
-            for (unsigned i=0;i<pVM->cCPUs;i++)
+            for (VMCPUID i = 0; i < pVM->cCpus; i++)
             {
                 LogRel(("HWACCM: VCPU%d: MSR bitmap physaddr      = %RHp\n", i, pVM->aCpus[i].hwaccm.s.vmx.pMSRBitmapPhys));
                 LogRel(("HWACCM: VCPU%d: VMCS physaddr            = %RHp\n", i, pVM->aCpus[i].hwaccm.s.vmx.pVMCSPhys));
@@ -1202,7 +1202,7 @@ VMMR3DECL(void) HWACCMR3Relocate(PVM pVM)
     /* Fetch the current paging mode during the relocate callback during state loading. */
     if (VMR3GetState(pVM) == VMSTATE_LOADING)
     {
-        for (unsigned i=0;i<pVM->cCPUs;i++)
+        for (VMCPUID i = 0; i < pVM->cCpus; i++)
         {
             PVMCPU pVCpu = &pVM->aCpus[i];
 
@@ -1350,7 +1350,7 @@ VMMR3DECL(int) HWACCMR3Term(PVM pVM)
  */
 VMMR3DECL(int) HWACCMR3TermCPU(PVM pVM)
 {
-    for (unsigned i=0;i<pVM->cCPUs;i++)
+    for (VMCPUID i = 0; i < pVM->cCpus; i++)
     {
         PVMCPU pVCpu = &pVM->aCpus[i];
 
@@ -1393,7 +1393,7 @@ VMMR3DECL(void) HWACCMR3Reset(PVM pVM)
     if (pVM->fHWACCMEnabled)
         hwaccmR3DisableRawMode(pVM);
 
-    for (unsigned i=0;i<pVM->cCPUs;i++)
+    for (VMCPUID i = 0; i < pVM->cCpus; i++)
     {
         PVMCPU pVCpu = &pVM->aCpus[i];
 
@@ -1534,7 +1534,7 @@ VMMR3DECL(int)  HWACMMR3EnablePatching(PVM pVM, RTGCPTR pPatchMem, unsigned cbPa
     if (CPUMGetCPUVendor(pVM) != CPUMCPUVENDOR_AMD)
         return VERR_NOT_SUPPORTED;
 
-    if (pVM->cCPUs > 1)
+    if (pVM->cCpus > 1)
     {
         /* We own the IOM lock here and could cause a deadlock by waiting for a VCPU that is blocking on the IOM lock. */
         PVMREQ pReq;
@@ -2317,7 +2317,7 @@ VMMR3DECL(int)  HWACCMR3InjectNMI(PVM pVM)
  */
 VMMR3DECL(void) HWACCMR3CheckError(PVM pVM, int iStatusCode)
 {
-    for (unsigned i=0;i<pVM->cCPUs;i++)
+    for (VMCPUID i = 0; i < pVM->cCpus; i++)
     {
         switch(iStatusCode)
         {
@@ -2366,7 +2366,7 @@ static DECLCALLBACK(int) hwaccmR3Save(PVM pVM, PSSMHANDLE pSSM)
 
     Log(("hwaccmR3Save:\n"));
 
-    for (unsigned i=0;i<pVM->cCPUs;i++)
+    for (VMCPUID i = 0; i < pVM->cCpus; i++)
     {
         /*
          * Save the basic bits - fortunately all the other things can be resynced on load.
@@ -2462,7 +2462,7 @@ static DECLCALLBACK(int) hwaccmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersio
         AssertMsgFailed(("hwaccmR3Load: Invalid version uVersion=%d!\n", uVersion));
         return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
     }
-    for (VMCPUID i = 0; i < pVM->cCPUs; i++)
+    for (VMCPUID i = 0; i < pVM->cCpus; i++)
     {
         rc = SSMR3GetU32(pSSM, &pVM->aCpus[i].hwaccm.s.Event.fPending);
         AssertRCReturn(rc, rc);

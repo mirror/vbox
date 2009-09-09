@@ -827,7 +827,7 @@ VMM_INT_DECL(uint64_t) TMVirtualGetFreq(PVM pVM)
 int tmVirtualPauseLocked(PVM pVM)
 {
     uint32_t c = ASMAtomicDecU32(&pVM->tm.s.cVirtualTicking);
-    AssertMsgReturn(c < pVM->cCPUs, ("%u vs %u\n", c, pVM->cCPUs), VERR_INTERNAL_ERROR);
+    AssertMsgReturn(c < pVM->cCpus, ("%u vs %u\n", c, pVM->cCpus), VERR_INTERNAL_ERROR);
     if (c == 0)
     {
         STAM_COUNTER_INC(&pVM->tm.s.StatVirtualPause);
@@ -847,7 +847,7 @@ int tmVirtualPauseLocked(PVM pVM)
 int tmVirtualResumeLocked(PVM pVM)
 {
     uint32_t c = ASMAtomicIncU32(&pVM->tm.s.cVirtualTicking);
-    AssertMsgReturn(c <= pVM->cCPUs, ("%u vs %u\n", c, pVM->cCPUs), VERR_INTERNAL_ERROR);
+    AssertMsgReturn(c <= pVM->cCpus, ("%u vs %u\n", c, pVM->cCpus), VERR_INTERNAL_ERROR);
     if (c == 1)
     {
         STAM_COUNTER_INC(&pVM->tm.s.StatVirtualResume);

@@ -483,7 +483,7 @@ PGM_GST_DECL(bool, HandlerVirtualUpdate)(PVM pVM, uint32_t cr4)
     pgmLock(pVM);
     STAM_PROFILE_START(&pVM->pgm.s.CTX_MID_Z(Stat,SyncCR3HandlerVirtualUpdate), a);
 
-    for (unsigned i=0;i<pVM->cCPUs;i++)
+    for (VMCPUID i = 0; i < pVM->cCpus; i++)
     {
         PGMHVUSTATE State;
         PVMCPU      pVCpu = &pVM->aCpus[i];
@@ -508,7 +508,7 @@ PGM_GST_DECL(bool, HandlerVirtualUpdate)(PVM pVM, uint32_t cr4)
         Log(("HandlerVirtualUpdate: resets bits\n"));
         RTAvlroGCPtrDoWithAll(&pVM->pgm.s.CTX_SUFF(pTrees)->VirtHandlers, true, pgmHandlerVirtualResetOne, pVM);
 
-        for (unsigned i=0;i<pVM->cCPUs;i++)
+        for (VMCPUID i = 0; i < pVM->cCpus; i++)
         {
             PVMCPU pVCpu = &pVM->aCpus[i];
             pVCpu->pgm.s.fSyncFlags &= ~PGM_SYNC_UPDATE_PAGE_BIT_VIRTUAL;

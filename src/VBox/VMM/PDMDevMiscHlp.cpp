@@ -150,7 +150,7 @@ static DECLCALLBACK(void) pdmR3ApicHlp_SetInterruptFF(PPDMDEVINS pDevIns, PDMAPI
     PVM pVM = pDevIns->Internal.s.pVMR3;
     PVMCPU pVCpu = &pVM->aCpus[idCpu];
 
-    AssertReturnVoid(idCpu < pVM->cCPUs);
+    AssertReturnVoid(idCpu < pVM->cCpus);
 
     LogFlow(("pdmR3ApicHlp_SetInterruptFF: caller='%s'/%d: VM_FF_INTERRUPT(%d) %d -> 1\n",
              pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, idCpu, VMCPU_FF_ISSET(pVCpu, VMCPU_FF_INTERRUPT_APIC)));
@@ -182,7 +182,7 @@ static DECLCALLBACK(void) pdmR3ApicHlp_ClearInterruptFF(PPDMDEVINS pDevIns, VMCP
     PVM pVM = pDevIns->Internal.s.pVMR3;
     PVMCPU pVCpu = &pVM->aCpus[idCpu];
 
-    AssertReturnVoid(idCpu < pVM->cCPUs);
+    AssertReturnVoid(idCpu < pVM->cCpus);
 
     LogFlow(("pdmR3ApicHlp_ClearInterruptFF: caller='%s'/%d: VM_FF_INTERRUPT(%d) %d -> 0\n",
              pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, idCpu, VMCPU_FF_ISSET(pVCpu, VMCPU_FF_INTERRUPT_APIC)));

@@ -136,7 +136,7 @@ VMMR3DECL(int) CPUMR3Init(PVM pVM)
     Assert((uintptr_t)&pVM->cpum + pVM->cpum.s.ulOffCPUMCPU == (uintptr_t)&pVM->aCpus[0].cpum);
 
     /* Calculate the offset from CPUMCPU to CPUM. */
-    for (unsigned i=0;i<pVM->cCPUs;i++)
+    for (VMCPUID i = 0; i < pVM->cCpus; i++)
     {
         PVMCPU pVCpu = &pVM->aCpus[i];
 
@@ -319,7 +319,7 @@ static int cpumR3CpuIdInit(PVM pVM)
     pCPUM->aGuestCpuIdStd[1].ecx      &= 0
                                        | X86_CPUID_FEATURE_ECX_SSE3
                                        /* Can't properly emulate monitor & mwait with guest SMP; force the guest to use hlt for idling VCPUs. */
-                                       | ((pVM->cCPUs == 1) ? X86_CPUID_FEATURE_ECX_MONITOR : 0)
+                                       | ((pVM->cCpus == 1) ? X86_CPUID_FEATURE_ECX_MONITOR : 0)
                                        //| X86_CPUID_FEATURE_ECX_CPLDS - no CPL qualified debug store.
                                        //| X86_CPUID_FEATURE_ECX_VMX   - not virtualized.
                                        //| X86_CPUID_FEATURE_ECX_EST   - no extended speed step.
@@ -387,10 +387,10 @@ static int cpumR3CpuIdInit(PVM pVM)
      */
     pCPUM->aGuestCpuIdStd[1].ebx &= 0x0000ffff;
 #ifdef VBOX_WITH_MULTI_CORE
-    if (pVM->cCPUs > 1)
+    if (pVM->cCpus > 1)
     {
         /* If CPUID Fn0000_0001_EDX[HTT] = 1 then LogicalProcessorCount is the number of threads per CPU core times the number of CPU cores per processor */
-        pCPUM->aGuestCpuIdStd[1].ebx |= (pVM->cCPUs << 16);
+        pCPUM->aGuestCpuIdStd[1].ebx |= (pVM->cCpus << 16);
         pCPUM->aGuestCpuIdStd[1].edx |= X86_CPUID_FEATURE_EDX_HTT;  /* necessary for hyper-threading *or* multi-core CPUs */
     }
 #endif
@@ -422,13 +422,13 @@ static int cpumR3CpuIdInit(PVM pVM)
     pCPUM->aGuestCpuIdStd[4].ecx = pCPUM->aGuestCpuIdStd[4].edx = 0;
     pCPUM->aGuestCpuIdStd[4].eax = pCPUM->aGuestCpuIdStd[4].ebx = 0;
 #ifdef VBOX_WITH_MULTI_CORE
-    if (    pVM->cCPUs > 1
+    if (    pVM->cCpus > 1
         &&  pVM->cpum.s.enmCPUVendor == CPUMCPUVENDOR_INTEL)
     {
-        AssertReturn(pVM->cCPUs <= 64, VERR_TOO_MANY_CPUS);
+        AssertReturn(pVM->cCpus <= 64, VERR_TOO_MANY_CPUS);
         /* One logical processor with possibly multiple cores. */
         /* See  http://www.intel.com/Assets/PDF/appnote/241618.pdf p. 29 */
-        pCPUM->aGuestCpuIdStd[4].eax |= ((pVM->cCPUs - 1) << 26);   /* 6 bits only -> 64 cores! */
+        pCPUM->aGuestCpuIdStd[4].eax |= ((pVM->cCpus - 1) << 26);   /* 6 bits only -> 64 cores! */
     }
 #endif
 
@@ -516,12 +516,12 @@ static int cpumR3CpuIdInit(PVM pVM)
          * NC (0-7) Number of cores; 0 equals 1 core */
         pCPUM->aGuestCpuIdExt[8].ecx = 0;
 #ifdef VBOX_WITH_MULTI_CORE
-        if (    pVM->cCPUs > 1
+        if (    pVM->cCpus > 1
             &&  pVM->cpum.s.enmCPUVendor == CPUMCPUVENDOR_AMD)
         {
             /* Legacy method to determine the number of cores. */
             pCPUM->aGuestCpuIdExt[1].ecx |= X86_CPUID_AMD_FEATURE_ECX_CMPL;
-            pCPUM->aGuestCpuIdExt[8].ecx |= (pVM->cCPUs - 1); /* NC: Number of CPU cores - 1; 8 bits */
+            pCPUM->aGuestCpuIdExt[8].ecx |= (pVM->cCpus - 1); /* NC: Number of CPU cores - 1; 8 bits */
 
         }
 #endif
@@ -564,7 +564,7 @@ static int cpumR3CpuIdInit(PVM pVM)
      * If we miss to patch a cpuid(0).eax then Linux tries to determine the number
      * of processors from (cpuid(4).eax >> 26) + 1.
      */
-    if (pVM->cCPUs == 1)
+    if (pVM->cCpus == 1)
         pCPUM->aGuestCpuIdStd[4].eax = 0;
 
     /*
@@ -685,12 +685,12 @@ static int cpumR3CpuIdInit(PVM pVM)
 VMMR3DECL(void) CPUMR3Relocate(PVM pVM)
 {
     LogFlow(("CPUMR3Relocate\n"));
-    for (unsigned i=0;i<pVM->cCPUs;i++)
+    for (VMCPUID i = 0; i < pVM->cCpus; i++)
     {
-        PVMCPU pVCpu  = &pVM->aCpus[i];
         /*
          * Switcher pointers.
          */
+        PVMCPU pVCpu = &pVM->aCpus[i];
         pVCpu->cpum.s.pHyperCoreRC = MMHyperCCToRC(pVM, pVCpu->cpum.s.pHyperCoreR3);
         Assert(pVCpu->cpum.s.pHyperCoreRC != NIL_RTRCPTR);
     }
@@ -725,10 +725,10 @@ VMMR3DECL(int) CPUMR3Term(PVM pVM)
 VMMR3DECL(int) CPUMR3TermCPU(PVM pVM)
 {
 #ifdef VBOX_WITH_CRASHDUMP_MAGIC
-    for (unsigned i=0;i<pVM->cCPUs;i++)
+    for (VMCPUID i = 0; i < pVM->cCpus; i++)
     {
-        PVMCPU pVCpu  = &pVM->aCpus[i];
-        PCPUMCTX pCtx = CPUMQueryGuestCtxPtr(pVCpu);
+        PVMCPU   pVCpu = &pVM->aCpus[i];
+        PCPUMCTX pCtx  = CPUMQueryGuestCtxPtr(pVCpu);
 
         memset(pVCpu->cpum.s.aMagic, 0, sizeof(pVCpu->cpum.s.aMagic));
         pVCpu->cpum.s.uMagic     = 0;
@@ -824,7 +824,7 @@ VMMR3DECL(void) CPUMR3ResetCpu(PVMCPU pVCpu)
  */
 VMMR3DECL(void) CPUMR3Reset(PVM pVM)
 {
-    for (unsigned i=0;i<pVM->cCPUs;i++)
+    for (VMCPUID i = 0; i < pVM->cCpus; i++)
     {
         CPUMR3ResetCpu(&pVM->aCpus[i]);
 
@@ -852,15 +852,15 @@ static DECLCALLBACK(int) cpumR3Save(PVM pVM, PSSMHANDLE pSSM)
     /*
      * Save.
      */
-    for (unsigned i=0;i<pVM->cCPUs;i++)
+    for (VMCPUID i = 0; i < pVM->cCpus; i++)
     {
         PVMCPU pVCpu = &pVM->aCpus[i];
 
         SSMR3PutMem(pSSM, &pVCpu->cpum.s.Hyper, sizeof(pVCpu->cpum.s.Hyper));
     }
 
-    SSMR3PutU32(pSSM, pVM->cCPUs);
-    for (unsigned i=0;i<pVM->cCPUs;i++)
+    SSMR3PutU32(pSSM, pVM->cCpus);
+    for (VMCPUID i = 0; i < pVM->cCpus; i++)
     {
         PVMCPU pVCpu = &pVM->aCpus[i];
 
@@ -1018,7 +1018,7 @@ static DECLCALLBACK(int) cpumR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion,
     /*
      * Restore.
      */
-    for (VMCPUID i = 0; i < pVM->cCPUs; i++)
+    for (VMCPUID i = 0; i < pVM->cCpus; i++)
     {
         PVMCPU   pVCpu = &pVM->aCpus[i];
         uint32_t uCR3  = pVCpu->cpum.s.Hyper.cr3;
@@ -1045,20 +1045,23 @@ static DECLCALLBACK(int) cpumR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion,
     {
         if (uVersion >= CPUM_SAVED_STATE_VERSION_VER2_1_NOMSR)
         {
-            int rc = SSMR3GetU32(pSSM, &pVM->cCPUs);
+            /** @todo r=bird: cCPUs: Why are we doing this?!? cCpus is a config value that
+             *        cannot be changed by a saved state. If the saved one differs we
+             *        fail. */
+            int rc = SSMR3GetU32(pSSM, &pVM->cCpus);
             AssertRCReturn(rc, rc);
         }
 
-        if (    !pVM->cCPUs
-            ||  pVM->cCPUs > VMM_MAX_CPU_COUNT
+        if (    !pVM->cCpus
+            ||  pVM->cCpus > VMM_MAX_CPU_COUNT
             ||  (   uVersion == CPUM_SAVED_STATE_VERSION_VER2_0
-                 && pVM->cCPUs != 1))
+                 && pVM->cCpus != 1))
         {
-            AssertMsgFailed(("Unexpected number of VMCPUs (%d)\n", pVM->cCPUs));
+            AssertMsgFailed(("Unexpected number of VMCPUs (%u)\n", pVM->cCpus));
             return VERR_SSM_UNEXPECTED_DATA;
         }
 
-        for (VMCPUID i = 0; i < pVM->cCPUs; i++)
+        for (VMCPUID i = 0; i < pVM->cCpus; i++)
         {
             SSMR3GetMem(pSSM, &pVM->aCpus[i].cpum.s.Guest, sizeof(pVM->aCpus[i].cpum.s.Guest));
             SSMR3GetU32(pSSM, &pVM->aCpus[i].cpum.s.fUseFlags);

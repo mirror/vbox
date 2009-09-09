@@ -354,7 +354,7 @@ VMMR0DECL(int) PGMR0DynMapInitVM(PVM pVM)
     /*
      * Initialize the auto sets.
      */
-    VMCPUID idCpu = pVM->cCPUs;
+    VMCPUID idCpu = pVM->cCpus;
     AssertReturn(idCpu > 0 && idCpu <= VMM_MAX_CPU_COUNT, VERR_INTERNAL_ERROR);
     while (idCpu-- > 0)
     {
@@ -442,7 +442,7 @@ VMMR0DECL(void) PGMR0DynMapTermVM(PVM pVM)
         /*
          * Clean up and check the auto sets.
          */
-        VMCPUID idCpu = pVM->cCPUs;
+        VMCPUID idCpu = pVM->cCpus;
         while (idCpu-- > 0)
         {
             PPGMMAPSET pSet = &pVM->aCpus[idCpu].pgm.s.AutoSet;

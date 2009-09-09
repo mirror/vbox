@@ -6004,7 +6004,7 @@ VMMR3DECL(int) PATMR3HandleTrap(PVM pVM, PCPUMCTX pCtx, RTRCPTR pEip, RTGCPTR *p
     PRECPATCHTOGUEST pPatchToGuestRec = 0;
     PVMCPU           pVCpu = VMMGetCpu0(pVM);
 
-    Assert(pVM->cCPUs == 1);
+    Assert(pVM->cCpus == 1);
 
     pNewEip   = 0;
     *ppNewEip = 0;
