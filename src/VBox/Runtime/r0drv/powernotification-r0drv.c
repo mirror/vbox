@@ -308,7 +308,7 @@ void rtR0PowerNotificationTerm(void)
         if (ASMAtomicDecU32(&g_cRTPowerUsers) == 0)
         {
             PRTPOWERNOTIFYREG pHead;
-            RTSPINLOCKTMP Tmp;
+            RTSPINLOCKTMP Tmp = RTSPINLOCKTMP_INITIALIZER;
 
             /** @todo OS specific term here */
 
