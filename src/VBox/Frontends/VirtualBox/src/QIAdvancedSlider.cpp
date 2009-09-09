@@ -59,7 +59,6 @@ public:
 
     virtual void paintEvent (QPaintEvent *aEvent)
     {
-#ifndef Q_WS_MAC
         QPainter p(this);
 
         QStyleOptionSlider opt;
@@ -70,11 +69,15 @@ public:
         QSize s = size();
 
         QRect ticks = style()->subControlRect (QStyle::CC_Slider, &opt, QStyle::SC_SliderTickmarks, this);
+#ifdef Q_WS_MAC
+        ticks.setRect ((s.width() - available) / 2, s.height() - ticks.y(), available, ticks.height());
+#else /* Q_WS_MAC */
         if (ticks.isNull() || ticks.isEmpty())
         {
             ticks = style()->subControlRect (QStyle::CC_Slider, &opt, QStyle::SC_SliderHandle, this) | style()->subControlRect (QStyle::CC_Slider, &opt, QStyle::SC_SliderGroove, this);
             ticks.setRect ((s.width() - available) / 2, ticks.bottom() + 1, available, s.height() - ticks.bottom() - 1);
         }
+#endif /* Q_WS_MAC */
         if (mMinOpt != -1 &&
             mMaxOpt != -1)
         {
@@ -97,7 +100,6 @@ public:
             p.fillRect (ticks.x() + posMinErr, ticks.y(), posMaxErr - posMinErr + 1, ticks.height(), mErrColor);
         }
         p.end();
-#endif /* !Q_WS_MAC */
 
         QSlider::paintEvent (aEvent);
     }
@@ -263,7 +265,6 @@ void QIAdvancedSlider::init (Qt::Orientation aOrientation /* = Qt::Horizontal */
 
 int QIAdvancedSlider::snapValue(int val)
 {
-#ifndef Q_WS_MAC
     if (mSnappingEnabled &&
         val > 2)
     {
@@ -280,7 +281,6 @@ int QIAdvancedSlider::snapValue(int val)
                 val = mSlider->minimum();
         }
     }
-#endif /* !Q_WS_MAC */
     return val;
 }
 
