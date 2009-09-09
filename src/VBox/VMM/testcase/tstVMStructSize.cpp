@@ -111,7 +111,7 @@ int main()
 #define PRINT_OFFSET(strct, member) \
     do \
     { \
-        printf("%s::%s offset %#x (%d) sizeof %d\n",  #strct, #member, (int)RT_OFFSETOF(strct, member), (int)RT_OFFSETOF(strct, member), (int)RT_SIZEOFMEMB(strct, member)); \
+        printf("info: %s::%s offset %#x (%d) sizeof %d\n",  #strct, #member, (int)RT_OFFSETOF(strct, member), (int)RT_OFFSETOF(strct, member), (int)RT_SIZEOFMEMB(strct, member)); \
     } while (0)
 
 
