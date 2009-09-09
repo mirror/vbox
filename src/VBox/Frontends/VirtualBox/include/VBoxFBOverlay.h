@@ -1202,10 +1202,10 @@ public:
      * to be called on RequestResize framebuffer call
      * @return true if the request was processed & should not be forwarded to the framebuffer
      * false - otherwise */
-    bool onRequestResize (ULONG aScreenId, ULONG aPixelFormat,
-                              BYTE *aVRAM, ULONG aBitsPerPixel, ULONG aBytesPerLine,
-                              ULONG aWidth, ULONG aHeight,
-                              BOOL *aFinished)
+    bool onRequestResize (ULONG /*aScreenId*/, ULONG /*aPixelFormat*/,
+                          BYTE * /*aVRAM*/, ULONG /*aBitsPerPixel*/, ULONG /*aBytesPerLine*/,
+                          ULONG /*aWidth*/, ULONG /*aHeight*/,
+                          BOOL * /*aFinished*/)
     {
         mCmdPipe.completeCurrentEvent();
         return false;
@@ -1216,13 +1216,13 @@ public:
     void onResizeEvent (const class VBoxResizeEvent *re);
     void onResizeEventPostprocess (const class VBoxResizeEvent *re);
 
-    void onViewportResized(QResizeEvent * re)
+    void onViewportResized(QResizeEvent * /*re*/)
     {
         vboxDoCheckUpdateViewport();
         mGlCurrent = false;
     }
 
-    void onViewportScrolled(int dx, int dy)
+    void onViewportScrolled(int /*dx*/, int /*dy*/)
     {
         vboxDoCheckUpdateViewport();
         mGlCurrent = false;
