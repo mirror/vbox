@@ -328,6 +328,7 @@ struct PCNetState_st
 # endif
 #endif /* VBOX_WITH_STATISTICS */
 };
+AssertCompileMemberAlignment(PCNetState, StatReceiveBytes, 8);
 
 #define PCNETSTATE_2_DEVINS(pPCNet)            ((pPCNet)->CTX_SUFF(pDevIns))
 #define PCIDEV_2_PCNETSTATE(pPciDev)           ((PCNetState *)(pPciDev))

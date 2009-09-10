@@ -166,6 +166,10 @@ typedef struct DRVNAT
     RTFILE                  PipeWrite;
     /** The read end of the control pipe. */
     RTFILE                  PipeRead;
+# if HC_ARCH_BITS == 32
+    /** Alignment padding. */
+    uint32_t                u32Alignment;
+# endif
 #else
     /** for external notification */
     HANDLE                  hWakeupEvent;
@@ -183,6 +187,7 @@ typedef struct DRVNAT
     PRTREQQUEUE             pRecvReqQueue;
 #endif
 } DRVNAT;
+AssertCompileMemberAlignment(DRVNAT, StatNATRecvWakeups, 8);
 /** Pointer the NAT driver instance data. */
 typedef DRVNAT *PDRVNAT;
 

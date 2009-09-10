@@ -240,6 +240,9 @@ typedef struct APICState {
     /** Timer description timer. */
     R3PTRTYPE(char *)       pszDesc;
 # ifdef VBOX_WITH_STATISTICS
+#  if HC_ARCH_BITS == 32
+    uint32_t                u32Alignment0;
+#  endif
     STAMCOUNTER             StatTimerSetInitialCount;
     STAMCOUNTER             StatTimerSetInitialCountArm;
     STAMCOUNTER             StatTimerSetInitialCountDisarm;
@@ -253,6 +256,12 @@ typedef struct APICState {
 # endif
 #endif /* VBOX */
 } APICState;
+#ifdef VBOX
+AssertCompileMemberAlignment(APICState, initial_count_load_time, 8);
+# ifdef VBOX_WITH_STATISTICS
+AssertCompileMemberAlignment(APICState, StatTimerSetInitialCount, 8);
+# endif
+#endif
 
 struct IOAPICState {
     uint8_t id;
@@ -319,7 +328,6 @@ typedef struct
     RCPTRTYPE(APICState *)  paLapicsRC;
     /** The critical section - R3 Ptr. */
     RCPTRTYPE(PPDMCRITSECT) pCritSectRC;
-    RTRCPTR                 Padding0;
 
     /** APIC specification version in this virtual hardware configuration. */
     PDMAPICVERSION          enmVersion;
@@ -331,6 +339,7 @@ typedef struct
     uint32_t                cCpus;
 
 # ifdef VBOX_WITH_STATISTICS
+    uint32_t                u32Alignment0;
     STAMCOUNTER             StatMMIOReadGC;
     STAMCOUNTER             StatMMIOReadHC;
     STAMCOUNTER             StatMMIOWriteGC;
@@ -338,6 +347,9 @@ typedef struct
     STAMCOUNTER             StatClearedActiveIrq;
 # endif
 } APICDeviceInfo;
+# ifdef VBOX_WITH_STATISTICS
+AssertCompileMemberAlignment(APICDeviceInfo, StatMMIOReadGC, 8);
+# endif
 #endif /* VBOX */
 
 #ifndef VBOX_DEVICE_STRUCT_TESTCASE

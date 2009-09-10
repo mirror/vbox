@@ -265,9 +265,7 @@ typedef struct ATADevState {
     PDMIMOUNTNOTIFY                 IMountNotify;
     /** The LUN #. */
     RTUINT                          iLUN;
-#if HC_ARCH_BITS == 64
     RTUINT                          Alignment2; /**< Align pDevInsR3 correctly. */
-#endif
     /** Pointer to device instance. */
     PPDMDEVINSR3                        pDevInsR3;
     /** Pointer to controller instance. */
@@ -288,10 +286,14 @@ typedef struct ATADevState {
     /** The model number to use for IDENTIFY DEVICE commands. */
     char                                szModelNumber[ATA_MODEL_NUMBER_LENGTH+1];
 
-#if HC_ARCH_BITS == 64
-    uint32_t                            Alignment3[2];
-#endif
+    uint8_t                             abAlignment3[HC_ARCH_BITS == 32 ? 7 : 7];
 } ATADevState;
+AssertCompileMemberAlignment(ATADevState, cTotalSectors, 8);
+AssertCompileMemberAlignment(ATADevState, StatATADMA, 8);
+AssertCompileMemberAlignment(ATADevState, u64CmdTS, 8);
+AssertCompileMemberAlignment(ATADevState, pDevInsR3, 8);
+AssertCompileMemberAlignment(ATADevState, szSerialNumber, 8);
+AssertCompileSizeAlignment(ATADevState, 8);
 
 
 typedef struct ATATransferRequest
@@ -421,6 +423,11 @@ typedef struct ATACONTROLLER
     STAMPROFILEADV  StatAsyncTime;
     STAMPROFILE     StatLockWait;
 } ATACONTROLLER, *PATACONTROLLER;
+AssertCompileMemberAlignment(ATACONTROLLER, lock, 8);
+AssertCompileMemberAlignment(ATACONTROLLER, aIfs, 8);
+AssertCompileMemberAlignment(ATACONTROLLER, aIfs[1], 8);
+AssertCompileMemberAlignment(ATACONTROLLER, u64ResetTime, 8);
+AssertCompileMemberAlignment(ATACONTROLLER, StatAsyncOps, 8);
 
 typedef enum CHIPSET
 {
