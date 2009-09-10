@@ -52,6 +52,7 @@ AssertCompileSize(RTHCPHYS, 8);
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
+#define IN_TSTVMSTRUCTGC 1
 #include <VBox/cfgm.h>
 #include <VBox/cpum.h>
 #include <VBox/mm.h>

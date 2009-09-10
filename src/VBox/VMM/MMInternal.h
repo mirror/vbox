@@ -87,7 +87,7 @@ typedef struct MMHEAPSTAT
     size_t                  cbCurAllocated;
 #endif
 } MMHEAPSTAT;
-#ifdef MMR3HEAP_WITH_STATISTICS
+#if defined(MMR3HEAP_WITH_STATISTICS) && !defined(IN_TSTVMSTRUCTGC)
 AssertCompileMemberAlignment(MMHEAPSTAT, cAllocations, 8);
 #endif
 /** Pointer to heap statistics record. */
