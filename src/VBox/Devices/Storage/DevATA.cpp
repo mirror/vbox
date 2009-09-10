@@ -425,7 +425,6 @@ typedef struct ATACONTROLLER
 } ATACONTROLLER, *PATACONTROLLER;
 AssertCompileMemberAlignment(ATACONTROLLER, lock, 8);
 AssertCompileMemberAlignment(ATACONTROLLER, aIfs, 8);
-AssertCompileMemberAlignment(ATACONTROLLER, aIfs[1], 8);
 AssertCompileMemberAlignment(ATACONTROLLER, u64ResetTime, 8);
 AssertCompileMemberAlignment(ATACONTROLLER, StatAsyncOps, 8);
 
