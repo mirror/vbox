@@ -29,22 +29,25 @@ include $(PATH_SUB_CURRENT)/sharedfolders/Makefile.kmk
 include $(PATH_SUB_CURRENT)/drm/Makefile.kmk
 
 #
+# Globals
+#
+VBOX_LNX_ADD_INS_OUT_DIR           := $(PATH_TARGET)/Additions/Installer/linux
+BLDDIRS                            += \
+		$(VBOX_LNX_ADD_INS_OUT_DIR) \
+		$(VBOX_LNX_ADD_INS_OUT_DIR)/module
+VBOX_PATH_LINUX_ADDITION_INSTALLER := $(PATH_SUB_CURRENT)/installer
+VBOX_PATH_X11_ADDITION_INSTALLER   := $(PATH_ROOT)/src/VBox/Additions/x11/Installer
+
+#
 # Targets
 #
 ifndef VBOX_OSE
+ BLDDIRS  += $(VBOX_LNX_ADD_INS_OUT_DIR)
  PACKING     += $(PATH_BIN)/additions/VBoxLinuxAdditions.run
  OTHER_CLEAN += $(PACKING)
  # OSE only contains the source code for this
  VBOX_SELINUX_CMPLD := $(PATH_SUB_CURRENT)/selinux-fedora/vbox_x11.pp
 endif
-
-#
-# Globals
-#
-VBOX_LNX_ADD_INS_OUT_DIR           := $(PATH_TARGET)/Additions/Installer/linux
-BLDDIRS                            += $(VBOX_LNX_ADD_INS_OUT_DIR)
-VBOX_PATH_LINUX_ADDITION_INSTALLER := $(PATH_SUB_CURRENT)/installer
-VBOX_PATH_X11_ADDITION_INSTALLER   := $(PATH_ROOT)/src/VBox/Additions/x11/Installer
 
 ifeq ($(KBUILD_TYPE),debug)
  VBOX_LNX_ADD_BIN_COPY              = $(CP) -f
@@ -89,18 +92,12 @@ $(PATH_BIN)/additions/VBoxLinuxAdditions.run: \
 		$(VBOX_PATH_X11_ADDITION_INSTALLER)/98vboxadd-xclient \
 		$(VBOX_PATH_X11_ADDITION_INSTALLER)/vboxclient.desktop \
 		$(VBOX_PATH_LINUX_ADDITION_INSTALLER)/vboxadd.sh \
-		$(VBOX_PATH_LINUX_ADDITION_INSTALLER)/install.sh \
+		$(VBOX_LNX_ADD_INS_OUT_DIR)/install_.sh \
 		$(PATH_ROOT)/src/VBox/Installer/linux/routines.sh \
 		$(VBOX_PATH_X11_ADDITION_INSTALLER)/vboxvideo.ids \
 		$(VBOX_PATH_X11_ADDITION_INSTALLER)/x11config.pl \
 		$(VBOX_PATH_X11_ADDITION_INSTALLER)/x11config15.pl \
 		$(VBOX_PATH_X11_ADDITION_INSTALLER)/linux_xorg_suse11.conf \
-		$(VBOX_PATH_LINUX_ADDITION_INSTALLER)/Makefile.include.header \
-		$(VBOX_PATH_LINUX_ADDITION_INSTALLER)/Makefile.include.footer \
-		$(VBOX_PATH_LINUX_ADDITION_INSTALLER)/Makefile.test \
-		$(VBOX_PATH_LINUX_ADDITION_INSTALLER)/test.c \
-		$(VBOX_PATH_LINUX_ADDITION_INSTALLER)/Makefile.test.drm \
-		$(VBOX_PATH_LINUX_ADDITION_INSTALLER)/test_drm.c \
 		$(PATH_BIN)/additions/vboxmouse_drv.o \
 		$(PATH_BIN)/additions/vboxmouse_drv_70.so \
 		$(PATH_BIN)/additions/vboxmouse_drv_71.so \
@@ -125,36 +122,23 @@ $(PATH_BIN)/additions/VBoxLinuxAdditions.run: \
 		$(PATH_BIN)/additions/VBoxOGLpassthroughspu.so \
 		$(PATH_BIN)/additions/VBoxOGL.so \
 		$(VBOX_SELINUX_CMPLD) \
+		$(VBOX_LNX_ADD_INS_OUT_DIR)/module \
 		$(wildcard $(PATH_BIN)/additions/src/*) \
 		$(wildcard $(PATH_BIN)/additions/src/*/*) \
 		$(wildcard $(PATH_BIN)/additions/src/*/*/*) \
 		$(wildcard $(PATH_BIN)/additions/src/*/*/*/*) \
 		$(VBOX_VERSION_STAMP)
-	$(call MSG_L1,Creating $@)
-	$(QUIET)$(MKDIR) -p $(VBOX_LNX_ADD_INS_OUT_DIR)
-# Remove target directory first, otherwise the behaviour of cp will not be
+# Remove target directories first, otherwise the behaviour of cp will not be
 # what we want if it already exists. See the cp manual page for more details.
-	$(QUIET)$(RM) -Rf -- $(VBOX_LNX_ADD_INS_OUT_DIR)/module
-	$(QUIET)cp -af $(PATH_BIN)/additions/src $(VBOX_LNX_ADD_INS_OUT_DIR)/module
-	$(QUIET)$(MKDIR) -p $(VBOX_LNX_ADD_INS_OUT_DIR)/module/test
-	$(QUIET)$(INSTALL) -m 0644 $(VBOX_PATH_LINUX_ADDITION_INSTALLER)/Makefile.test  $(VBOX_LNX_ADD_INS_OUT_DIR)/module/test/Makefile
-	$(QUIET)$(INSTALL) -m 0644 $(VBOX_PATH_LINUX_ADDITION_INSTALLER)/test.c         $(VBOX_LNX_ADD_INS_OUT_DIR)/module/test/
-	$(QUIET)$(MKDIR) -p $(VBOX_LNX_ADD_INS_OUT_DIR)/module/test_drm
-	$(QUIET)$(INSTALL) -m 0644 $(VBOX_PATH_LINUX_ADDITION_INSTALLER)/Makefile.include.header  $(VBOX_LNX_ADD_INS_OUT_DIR)/module/test_drm
-	$(QUIET)$(INSTALL) -m 0644 $(VBOX_PATH_LINUX_ADDITION_INSTALLER)/Makefile.include.footer  $(VBOX_LNX_ADD_INS_OUT_DIR)/module/test_drm
-	$(QUIET)$(INSTALL) -m 0644 $(VBOX_PATH_LINUX_ADDITION_INSTALLER)/Makefile.test.drm  $(VBOX_LNX_ADD_INS_OUT_DIR)/module/test_drm/Makefile
-	$(QUIET)$(INSTALL) -m 0644 $(VBOX_PATH_LINUX_ADDITION_INSTALLER)/test_drm.c     $(VBOX_LNX_ADD_INS_OUT_DIR)/module/test_drm/
+	$(QUIET)$(RM) -Rf -- $(VBOX_LNX_ADD_INS_OUT_DIR)/module/vboxguest
+	$(QUIET)cp -af $(PATH_BIN)/additions/src/vboxguest $(VBOX_LNX_ADD_INS_OUT_DIR)/module
+	$(QUIET)$(RM) -Rf -- $(VBOX_LNX_ADD_INS_OUT_DIR)/module/vboxvfs
+	$(QUIET)cp -af $(PATH_BIN)/additions/src/vboxvfs $(VBOX_LNX_ADD_INS_OUT_DIR)/module
+	$(QUIET)$(RM) -Rf -- $(VBOX_LNX_ADD_INS_OUT_DIR)/module/vboxvideo_drm
+	$(QUIET)cp -af $(PATH_BIN)/additions/src/vboxvideo_drm $(VBOX_LNX_ADD_INS_OUT_DIR)/module
 	$(QUIET)$(VBOX_LNX_ADD_BIN_COPY) $(PATH_BIN)/additions/VBoxService                $(VBOX_LNX_ADD_INS_OUT_DIR)/vboxadd-service
 	$(QUIET)$(VBOX_LNX_ADD_BIN_COPY) $(PATH_BIN)/additions/VBoxClient                 $(VBOX_LNX_ADD_INS_OUT_DIR)/VBoxClient
 	$(QUIET)$(VBOX_LNX_ADD_BIN_COPY) $(PATH_BIN)/additions/VBoxControl                $(VBOX_LNX_ADD_INS_OUT_DIR)/VBoxControl
-	$(QUIET)$(SED) \
-	    -e "s;_VERSION_;$(VBOX_VERSION_STRING);g" \
-	    -e "s;_BUILD_;$(shell date);g" \
-	    -e "s;_OSE_;$(VBOX_OSE);g" \
-	    -e "s;_BUILDTYPE_;$(KBUILD_TYPE);g" \
-	    -e "s;_ARCH_;$(KBUILD_TARGET_ARCH);g" \
-	    --output $(VBOX_LNX_ADD_INS_OUT_DIR)/install_.sh \
-	    $(VBOX_PATH_LINUX_ADDITION_INSTALLER)/install.sh
 	$(QUIET)$(INSTALL) -m 0755 $(VBOX_LNX_ADD_INS_OUT_DIR)/install_.sh $(VBOX_LNX_ADD_INS_OUT_DIR)/install.sh
 	$(QUIET)$(RM) $(VBOX_LNX_ADD_INS_OUT_DIR)/install_.sh
 	$(QUIET)$(INSTALL) -m 0755 $(VBOX_PATH_X11_ADDITION_INSTALLER)/VBoxRandR.sh          $(VBOX_LNX_ADD_INS_OUT_DIR)
@@ -197,3 +181,39 @@ endif
 	$(QUIET)$(VBOX_MAKESELF) $(VBOX_LNX_ADD_INS_OUT_DIR) $@ \
 		"VirtualBox $(VBOX_VERSION_STRING) Guest Additions for Linux installation" /bin/sh ./install.sh "> /dev/null"
 
+
+# files that need editing before they can be included in the generic installer.
+$(VBOX_LNX_ADD_INS_OUT_DIR)/install_.sh: \
+	$(VBOX_PATH_LINUX_ADDITION_INSTALLER)/install.sh | $$(dir $$@)
+	$(QUIET)$(SED) \
+	    -e "s;_VERSION_;$(VBOX_VERSION_STRING);g" \
+	    -e "s;_BUILD_;$(shell date);g" \
+	    -e "s;_OSE_;$(VBOX_OSE);g" \
+	    -e "s;_BUILDTYPE_;$(KBUILD_TYPE);g" \
+	    -e "s;_ARCH_;$(KBUILD_TARGET_ARCH);g" \
+	    --output $@ \
+	    $<
+
+
+#
+# Install the sources of our (sanity) test kernel module
+#
+INSTALLS += LnxAddTest-src
+LnxAddTest-src_INST    = obj/Additions/Installer/linux/module/test
+LnxAddTest-src_MODE    = a+r,u+w
+LnxAddTest-src_SOURCES = \
+		linux/installer/Makefile.test=>Makefile \
+		linux/installer/test.c
+
+
+#
+# Install the sources of our (sanity) test kernel rendering (DRM) module
+#
+INSTALLS += LnxAddDRM-src
+LnxAddDRM-src_INST    = obj/Additions/Installer/linux/module/test_drm
+LnxAddDRM-src_MODE    = a+r,u+w
+LnxAddDRM-src_SOURCES = \
+		linux/installer/Makefile.include.header \
+		linux/installer/Makefile.include.footer \
+		linux/installer/Makefile.test.drm=>Makefile \
+		linux/installer/test_drm.c
