@@ -782,7 +782,7 @@ static bool vboxVHWASupportedInternal()
         return false;
     }
 
-#ifndef DEBUG_misha
+#ifndef DEBUGVHWASTRICT
     /* in case we do not support shaders & multitexturing we can not supprt dst colorkey,
      * no sense to report Video Acceleration supported */
     if(!g_vboxVHWAGlShaderSupported)
@@ -1982,13 +1982,13 @@ void VBoxVHWASurfaceBase::init(VBoxVHWASurfaceBase * pPrimary, uchar *pvMem)
 
 }
 
-#ifdef DEBUG_misha
+#ifdef DEBUGVHWASTRICT
 bool g_DbgTest = false;
 #endif
 
 void VBoxVHWATexture::doUpdate(uchar * pAddress, const QRect * pRect)
 {
-#ifdef DEBUG_misha
+#ifdef DEBUGVHWASTRICT
     if(g_DbgTest)
     {
         pAddress = (uchar*)malloc(memSize());
@@ -2036,7 +2036,7 @@ void VBoxVHWATexture::doUpdate(uchar * pAddress, const QRect * pRect)
                 address);
             );
 
-#ifdef DEBUG_misha
+#ifdef DEBUGVHWASTRICT
     if(g_DbgTest)
     {
         free(pAddress);
@@ -2202,17 +2202,35 @@ void VBoxVHWATextureNP2RectPBO::doUpdate(uchar * pAddress, const QRect * pRect)
 
     vboxglBindBuffer(GL_PIXEL_UNPACK_BUFFER, mPBO);
 
-    GLvoid *buf = vboxglMapBuffer(GL_PIXEL_UNPACK_BUFFER, GL_WRITE_ONLY);
+    GLvoid *buf;
 
+    VBOXQGL_CHECKERR(
+            buf = vboxglMapBuffer(GL_PIXEL_UNPACK_BUFFER, GL_WRITE_ONLY);
+            );
+    Assert(buf);
+    if(buf)
+    {
 //    updateBuffer((uchar*)buf, pRect);
-    memcpy(buf, mAddress, memSize());
+        memcpy(buf, mAddress, memSize());
 
-    bool unmapped = vboxglUnmapBuffer(GL_PIXEL_UNPACK_BUFFER);
-    Assert(unmapped);
+        bool unmapped;
+        VBOXQGL_CHECKERR(
+                unmapped = vboxglUnmapBuffer(GL_PIXEL_UNPACK_BUFFER);
+                );
 
-    VBoxVHWATextureNP2Rect::doUpdate(0, &mRect);
+        Assert(unmapped);
 
-    vboxglBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
+        VBoxVHWATextureNP2Rect::doUpdate(0, &mRect);
+
+        vboxglBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
+    }
+    else
+    {
+        VBOXQGLLOGREL(("failed to map PBO, trying fallback to non-PBO approach\n"));
+        /* try fallback to non-PBO approach */
+        vboxglBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
+        VBoxVHWATextureNP2Rect::doUpdate(pAddress, pRect);
+    }
 }
 
 VBoxVHWATextureNP2RectPBO::~VBoxVHWATextureNP2RectPBO()
@@ -3176,7 +3194,16 @@ int VBoxGLWidget::vhwaSurfaceCanCreate(struct _VBOXVHWACMD_SURF_CANCREATE *pCmd)
     if(!(pCmd->SurfInfo.flags & VBOXVHWA_SD_CAPS))
     {
         Assert(0);
-        pCmd->u.out.ErrInfo = 1;
+        pCmd->u.out.ErrInfo = -1;
+        return VINF_SUCCESS;
+    }
+
+    if(pCmd->SurfInfo.surfCaps & VBOXVHWA_SCAPS_OFFSCREENPLAIN)
+    {
+#ifdef DEBUGVHWASTRICT
+        Assert(0);
+#endif
+        pCmd->u.out.ErrInfo = -1;
         return VINF_SUCCESS;
     }
 
@@ -3186,14 +3213,6 @@ int VBoxGLWidget::vhwaSurfaceCanCreate(struct _VBOXVHWACMD_SURF_CANCREATE *pCmd)
         return VINF_SUCCESS;
     }
 
-    if(pCmd->SurfInfo.surfCaps & VBOXVHWA_SCAPS_OFFSCREENPLAIN)
-    {
-#ifdef DEBUG_misha
-        Assert(0);
-#endif
-        pCmd->u.out.ErrInfo = 1;
-        return VINF_SUCCESS;
-    }
 
     Assert(/*pCmd->SurfInfo.surfCaps & VBOXVHWA_SCAPS_OFFSCREENPLAIN
             || */ pCmd->SurfInfo.surfCaps & VBOXVHWA_SCAPS_OVERLAY);
@@ -3203,7 +3222,7 @@ int VBoxGLWidget::vhwaSurfaceCanCreate(struct _VBOXVHWACMD_SURF_CANCREATE *pCmd)
         if(!(pCmd->SurfInfo.flags & VBOXVHWA_SD_PIXELFORMAT))
         {
             Assert(0);
-            pCmd->u.out.ErrInfo = 1;
+            pCmd->u.out.ErrInfo = -1;
             return VINF_SUCCESS;
         }
 
@@ -3213,7 +3232,7 @@ int VBoxGLWidget::vhwaSurfaceCanCreate(struct _VBOXVHWACMD_SURF_CANCREATE *pCmd)
                     || pCmd->SurfInfo.PixelFormat.c.rgbBitCount != 24)
             {
                 Assert(0);
-                pCmd->u.out.ErrInfo = 1;
+                pCmd->u.out.ErrInfo = -1;
                 return VINF_SUCCESS;
             }
         }
@@ -3233,14 +3252,14 @@ int VBoxGLWidget::vhwaSurfaceCanCreate(struct _VBOXVHWACMD_SURF_CANCREATE *pCmd)
             if(!bFound)
             {
                 Assert(0);
-                pCmd->u.out.ErrInfo = 1;
+                pCmd->u.out.ErrInfo = -1;
                 return VINF_SUCCESS;
             }
         }
         else
         {
             Assert(0);
-            pCmd->u.out.ErrInfo = 1;
+            pCmd->u.out.ErrInfo = -1;
             return VINF_SUCCESS;
         }
     }
@@ -3415,7 +3434,7 @@ int VBoxGLWidget::vhwaSurfaceCreate(struct _VBOXVHWACMD_SURF_CREATE *pCmd)
             Assert(pVga != surf);
 //            Assert(mbVGASurfCreated);
             mDisplay.getVGA()->getComplexList()->add(surf);
-#ifdef DEBUG_misha
+#ifdef DEBUGVHWASTRICT
             Assert(pCmd->SurfInfo.surfCaps & VBOXVHWA_SCAPS_VISIBLE);
 #endif
 //            if(pCmd->SurfInfo.surfCaps & VBOXVHWA_SCAPS_VISIBLE)
@@ -3765,7 +3784,7 @@ int VBoxGLWidget::vhwaSurfaceOverlayUpdate(struct _VBOXVHWACMD_SURF_OVERLAY_UPDA
         pDstSurf = handle2Surface(pCmd->u.in.hDstSurf);
         vboxCheckUpdateAddress (pDstSurf, pCmd->u.in.offDstSurface);
         VBOXQGLLOG(("pDstSurf (0x%x)\n",pDstSurf));
-#ifdef DEBUG_misha
+#ifdef DEBUGVHWASTRICT
         Assert(pDstSurf == mDisplay.getVGA());
         Assert(mDisplay.getVGA() == mDisplay.getPrimary());
 #endif
@@ -3821,7 +3840,7 @@ int VBoxGLWidget::vhwaSurfaceOverlaySetPosition(struct _VBOXVHWACMD_SURF_OVERLAY
 
     QPoint pos(pCmd->u.in.xPos, pCmd->u.in.yPos);
 
-#ifdef DEBUG_misha
+#ifdef DEBUGVHWASTRICT
     Assert(pDstSurf == mDisplay.getVGA());
     Assert(mDisplay.getVGA() == mDisplay.getPrimary());
 #endif

@@ -815,7 +815,9 @@ DWORD APIENTRY DdCanCreateSurface(PDD_CANCREATESURFACEDATA lpCanCreateSurface)
             Assert(pCmd->rc == VINF_SUCCESS);
             if(pCmd->rc == VINF_SUCCESS)
             {
+#ifdef DEBUGVHWASTRICT
                 Assert(!pBody->u.out.ErrInfo);
+#endif
                 if(pBody->u.out.ErrInfo)
                 {
                     lpCanCreateSurface->ddRVal = DDERR_GENERIC;
