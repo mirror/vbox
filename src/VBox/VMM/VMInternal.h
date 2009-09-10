@@ -454,9 +454,11 @@ typedef struct VMINTUSERPERVMCPU
     STAMPROFILE                     StatHaltPoll;
     /** @} */
 } VMINTUSERPERVMCPU;
+#ifdef IN_RING3
 AssertCompileMemberAlignment(VMINTUSERPERVMCPU, u64HaltsStartTS, 8);
 AssertCompileMemberAlignment(VMINTUSERPERVMCPU, Halt.Method12.cNSBlockedTooLongAvg, 8);
 AssertCompileMemberAlignment(VMINTUSERPERVMCPU, StatHaltYield, 8);
+#endif
 
 /** Pointer to the VM internal data kept in the UVM. */
 typedef VMINTUSERPERVMCPU *PVMINTUSERPERVMCPU;
