@@ -1040,8 +1040,8 @@ static int kbd_load(QEMUFile* f, void* opaque, int version_id)
     qemu_get_be32s(f, (uint32_t *)&s->mouse_dz);
     if (version_id > 2)
     {
-        qemu_get_be32s(f, (uint32_t *)&s->mouse_dw);
-        qemu_get_be32s(f, (uint32_t *)&s->mouse_flags);
+        SSMR3GetS32(f, &s->mouse_dw);
+        SSMR3GetS32(f, &s->mouse_flags);
     }
     qemu_get_8s(f, &s->mouse_buttons);
     s->queue.count = 0;
