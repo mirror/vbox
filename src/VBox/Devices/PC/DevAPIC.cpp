@@ -337,9 +337,10 @@ typedef struct
 
     /** Number of CPUs on the system (same as LAPIC count). */
     uint32_t                cCpus;
+    /** Struct size and statistics alignment padding. */
+    uint32_t                u32Alignment0;
 
 # ifdef VBOX_WITH_STATISTICS
-    uint32_t                u32Alignment0;
     STAMCOUNTER             StatMMIOReadGC;
     STAMCOUNTER             StatMMIOReadHC;
     STAMCOUNTER             StatMMIOWriteGC;
