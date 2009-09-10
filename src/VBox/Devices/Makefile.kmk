@@ -769,15 +769,17 @@ VBOX_SLIRP_SOURCES = \
 	Network/slirp/dnsproxy/dnsproxy.c
 
 ifdef VBOX_WITH_SLIRP_BSD_MBUF
-BSD_ARCH=$(if-expr $(KBUILD_TARGET_ARCH) == "amd64",amd64,i386)
-	VBOX_SLIRP_BSD_SOURCES += Network/slirp/bsd/kern/kern_mbuf.c
-	VBOX_SLIRP_BSD_SOURCES += Network/slirp/bsd/kern/uipc_mbuf.c
-	VBOX_SLIRP_BSD_SOURCES += Network/slirp/bsd/kern/uipc_mbuf2.c
-	VBOX_SLIRP_BSD_SOURCES += Network/slirp/bsd/$(BSD_ARCH)/in_cksum.c
+ VBOX_SLIRP_BSD_ARCH = $(subst x86,i386,$(KBUILD_TARGET_ARCH))
+ VBOX_SLIRP_BSD_SOURCES += \
+ 	Network/slirp/bsd/kern/kern_mbuf.c \
+ 	Network/slirp/bsd/kern/uipc_mbuf.c \
+ 	Network/slirp/bsd/kern/uipc_mbuf2.c \
+ 	Network/slirp/bsd/$(VBOX_SLIRP_BSD_ARCH)/in_cksum.c
 else
-	VBOX_SLIRP_SOURCES += Network/slirp/mbuf.c \
-	    Network/slirp/cksum.c \
-	    Network/slirp/tftp.c 
+ VBOX_SLIRP_SOURCES += \
+ 	Network/slirp/mbuf.c \
+	Network/slirp/cksum.c \
+	Network/slirp/tftp.c
 endif
 
 VBOX_SLIRP_ALIAS_SOURCES = \
