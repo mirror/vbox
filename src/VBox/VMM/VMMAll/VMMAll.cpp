@@ -30,7 +30,6 @@
 #include <VBox/vmm.h>
 #include <VBox/param.h>
 #include <VBox/hwaccm.h>
-#include <iprt/buildconfig.h>
 
 
 /**
@@ -139,7 +138,7 @@ VMMDECL(PVMCPU) VMMGetCpuById(PVM pVM, RTCPUID idCpu)
  */
 VMMDECL(uint32_t) VMMGetSvnRev(void)
 {
-    return RTBldCfgRevision();
+    return VBOX_SVN_REV;
 }
 
 
