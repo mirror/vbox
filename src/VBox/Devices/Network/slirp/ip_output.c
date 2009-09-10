@@ -84,11 +84,17 @@ ip_output(PNATState pData, struct socket *so, struct mbuf *m0)
     DEBUG_CALL("ip_output");
     DEBUG_ARG("so = %lx", (long)so);
     DEBUG_ARG("m0 = %lx", (long)m0);
+
+#ifndef VBOX_WITH_SLIRP_BSD_MBUF
     if(m->m_data != (MBUF_HEAD(m) + if_maxlinkhdr))
     {
         LogRel(("NAT: ethernet detects corruption of the packet"));
         AssertMsgFailed(("!!Ethernet frame corrupted!!"));
     }
+#else
+    M_ASSERTPKTHDR(m);
+    Assert(m->m_pkthdr.header);
+#endif
 
 #if 0 /* We do no options */
     if (opt)
@@ -97,7 +103,13 @@ ip_output(PNATState pData, struct socket *so, struct mbuf *m0)
         hlen = len;
     }
 #endif
+#ifdef VBOX_WITH_SLIRP_BSD_MBUF
+    M_ASSERTPKTHDR(m);
+    Assert(m->m_pkthdr.header);
+    ip = (struct ip *)m->m_pkthdr.header;
+#else
     ip = mtod(m, struct ip *);
+#endif
     /*
      * Fill in IP header.
      */
@@ -121,7 +133,15 @@ ip_output(PNATState pData, struct socket *so, struct mbuf *m0)
       /* Current TCP/IP stack hasn't routing information at
        * all so we need to calculate destination ethernet address
        */
+#ifndef VBOX_WITH_SLIRP_BSD_MBUF
      eh = (struct ethhdr *)MBUF_HEAD(m);
+#else
+    /*todo: make prepend */
+    m = m_prepend(pData, m, ETH_HLEN, M_DONTWAIT);
+    Assert(m);
+    eh = mtod(m, struct ethhdr *);
+    m_adj(m, ETH_HLEN); /*let the rest of code do it job*/
+#endif
      if (memcmp(eh->h_source, zerro_ethaddr, ETH_ALEN) == 0)
      {
         rc = rt_lookup_in_cache(pData, ip->ip_dst.s_addr, eth_dst);
@@ -149,9 +169,27 @@ ip_output(PNATState pData, struct socket *so, struct mbuf *m0)
     
         {
             STAM_PROFILE_START(&pData->StatALIAS_output, a);
+#ifndef VBOX_WITH_SLIRP_BSD_MBUF
             rc = LibAliasOut((m->m_la ? m->m_la : pData->proxy_alias), 
                 mtod(m, char *), m->m_len);
             Log2(("NAT: LibAlias return %d\n", rc));
+#else
+            struct m_tag *t;
+            if (t = m_tag_find(m, PACKET_TAG_ALIAS, NULL) != 0)
+            {
+                rc = LibAliasOut((struct libalias *)&t[1], mtod(m, char *), m_length(m, NULL));
+            }
+            else
+            {
+                rc = LibAliasOut(pData->proxy_alias, mtod(m, char *), 
+                                 m_length(m, NULL));
+            } 
+            if (rc == PKT_ALIAS_IGNORED)
+            {
+                Log(("NAT: packet was droppped\n"));
+                goto bad;
+            }
+#endif
             STAM_PROFILE_STOP(&pData->StatALIAS_output, a);
         }
 
@@ -180,6 +218,9 @@ ip_output(PNATState pData, struct socket *so, struct mbuf *m0)
     {
         int mhlen, firstlen = len;
         struct mbuf **mnext = &m->m_nextpkt;
+#ifdef VBOX_WITH_SLIRP_BSD_MBUF
+        uint8_t buf[len]; /* intermediate buffer we'll use for copy from orriginal packet*/
+#endif
 
         /*
          * Loop through length of segment after first fragment,
@@ -190,18 +231,36 @@ ip_output(PNATState pData, struct socket *so, struct mbuf *m0)
         for (off = hlen + len; off < (u_int16_t)ip->ip_len; off += len)
         {
             register struct ip *mhip;
+#ifndef VBOX_WITH_SLIRP_BSD_MBUF
             m = m_get(pData);
+#else
+            m = m_gethdr(pData, M_DONTWAIT, MT_HEADER);
+#endif
             if (m == 0)
             {
                 error = -1;
                 ipstat.ips_odropped++;
                 goto sendorfree;
             }
+#ifndef VBOX_WITH_SLIRP_BSD_MBUF
             m->m_data += if_maxlinkhdr;
             mhip = mtod(m, struct ip *);
             *mhip = *ip;
+#else
+            m_copyback(pData, m, 0, mhlen, ip);
+            m->m_pkthdr.header = mtod(m, void *);
+            mhip = mtod(m, struct ip *);
+            m_adj(m, mhlen);
+#endif
             /* we've calculated eth_dst for first packet */
+#ifndef VBOX_WITH_SLIRP_BSD_MBUF
             eh = (struct ethhdr *)MBUF_HEAD(m);
+#else
+            m = m_prepend(pData, m, ETH_HLEN, M_DONTWAIT);
+            Assert(m);
+            eh = mtod(m, struct ethhdr *);
+            m_adj(m, ETH_HLEN);
+#endif
             Assert((rc == 0));
 
             memcpy(eh->h_source, eth_dst, ETH_ALEN); 
@@ -213,7 +272,9 @@ ip_output(PNATState pData, struct socket *so, struct mbuf *m0)
                 mhip->ip_hl = mhlen >> 2;
             }
 #endif
+#ifndef VBOX_WITH_SLIRP_BSD_MBUF
             m->m_len = mhlen;
+#endif
             mhip->ip_off = ((off - hlen) >> 3) + (ip->ip_off & ~IP_MF);
             if (ip->ip_off & IP_MF)
                 mhip->ip_off |= IP_MF;
@@ -223,11 +284,16 @@ ip_output(PNATState pData, struct socket *so, struct mbuf *m0)
                 mhip->ip_off |= IP_MF;
             mhip->ip_len = htons((u_int16_t)(len + mhlen));
 
+#ifndef VBOX_WITH_SLIRP_BSD_MBUF
             if (m_copy(m, m0, off, len) < 0)
             {
                 error = -1;
                 goto sendorfree;
             }
+#else
+            m_copydata(m0, off, len, buf); /* copy to buffer */
+            m_append(pData, m, len, buf); /* copy from buffer */
+#endif
 
             mhip->ip_off = htons((u_int16_t)mhip->ip_off);
             mhip->ip_sum = 0;
@@ -249,8 +315,26 @@ ip_output(PNATState pData, struct socket *so, struct mbuf *m0)
 
         {
             STAM_PROFILE_START(&pData->StatALIAS_output, a);
+#ifndef VBOX_WITH_SLIRP_BSD_MBUF
             rc = LibAliasOut((m->m_la ? m->m_la : pData->proxy_alias), 
                 mtod(m, char *), m->m_len);
+#else
+            struct m_tag *t;
+            if (t = m_tag_find(m, PACKET_TAG_ALIAS, NULL) != 0)
+            {
+                rc = LibAliasOut((struct libalias *)&t[1], mtod(m, char *), m_length(m, NULL));
+            }
+            else
+            {
+                rc = LibAliasOut(pData->proxy_alias, mtod(m, char *), 
+                                 m_length(m, NULL));
+            } 
+            if (rc == PKT_ALIAS_IGNORED)
+            {
+                Log(("NAT: packet was droppped\n"));
+                goto bad;
+            }
+#endif
             Log2(("NAT: LibAlias return %d\n", rc));
             STAM_PROFILE_STOP(&pData->StatALIAS_output, a);
         }
@@ -263,8 +347,26 @@ sendorfree:
             if (error == 0)
             {
                 int rc;
+#ifndef VBOX_WITH_SLIRP_BSD_MBUF
                 rc = LibAliasOut((m->m_la ? m->m_la : pData->proxy_alias), 
                     mtod(m, char *), m->m_len);
+#else
+                struct m_tag *t;
+                if (t = m_tag_find(m, PACKET_TAG_ALIAS, NULL) != 0)
+                {
+                    rc = LibAliasOut((struct libalias *)&t[1], mtod(m, char *), m_length(m, NULL));
+                }
+                else
+                {
+                    rc = LibAliasOut(pData->proxy_alias, mtod(m, char *), 
+                                     m_length(m, NULL));
+                } 
+                if (rc == PKT_ALIAS_IGNORED)
+                {
+                    Log(("NAT: packet was droppped\n"));
+                    goto bad;
+                }
+#endif
                 Log2(("NAT: LibAlias return %d\n", rc));
                 if_output(pData, so, m);
             }
