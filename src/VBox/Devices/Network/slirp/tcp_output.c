@@ -75,7 +75,7 @@ tcp_output(PNATState pData, register struct tcpcb *tp)
     register struct socket *so = tp->t_socket;
     register long len, win;
     int off, flags, error;
-    register struct mbuf *m;
+    register struct mbuf *m = NULL;
     register struct tcpiphdr *ti;
     u_char opt[MAX_TCPOPTLEN];
     unsigned optlen, hdrlen;
@@ -370,15 +370,22 @@ send:
             tcpstat.tcps_sndbyte += len;
         }
 
+#ifndef VBOX_WITH_SLIRP_BSD_MBUF
         m = m_get(pData);
+#else
+        m = m_gethdr(pData, M_NOWAIT, MT_HEADER);
+        /* @todo (r=vvl) should we append other bufs here ???*/
+#endif
         if (m == NULL)
         {
 /*          error = ENOBUFS; */
             error = 1;
             goto out;
         }
+#ifndef VBOX_WITH_SLIRP_BSD_MBUF
         m->m_data += if_maxlinkhdr;
         m->m_len = hdrlen;
+#endif
 
         /*
          * This will always succeed, since we make sure our mbufs
@@ -388,8 +395,13 @@ send:
         if (len <= MHLEN - hdrlen - max_linkhdr)
         {
 #endif
+#ifndef VBOX_WITH_SLIRP_BSD_MBUF
             sbcopy(&so->so_snd, off, (int) len, mtod(m, caddr_t) + hdrlen);
             m->m_len += len;
+#else
+            sbcopy(pData, &so->so_snd, off, (int) len, m);
+            m = m_prepend(pData, m, sizeof (struct tcpiphdr), M_DONTWAIT);
+#endif
 #if 0
         }
         else
@@ -419,6 +431,7 @@ send:
         else
             tcpstat.tcps_sndwinup++;
 
+#ifndef VBOX_WITH_SLIRP_BSD_MBUF
         m = m_get(pData);
         if (m == NULL)
         {
@@ -428,11 +441,27 @@ send:
         }
         m->m_data += if_maxlinkhdr;
         m->m_len = hdrlen;
+#else
+        m = m_gethdr(pData, M_NOWAIT, MT_HEADER);
+        if (m == NULL)
+        {
+/*          error = ENOBUFS; */
+            error = 1;
+            goto out;
+        }
+#endif
     }
 
+#ifndef VBOX_WITH_SLIRP_BSD_MBUF
     ti = mtod(m, struct tcpiphdr *);
 
     memcpy((caddr_t)ti, &tp->t_template, sizeof (struct tcpiphdr));
+#else
+    /*already copied header from template */
+
+    m_copyback(pData, m, 0, sizeof (struct tcpiphdr), &tp->t_template);
+    ti = mtod(m, struct tcpiphdr *);
+#endif
 
     /*
      * Fill in fields, remembering maximum advertised
@@ -463,7 +492,11 @@ send:
     ti->ti_ack = htonl(tp->rcv_nxt);
     if (optlen)
     {
+#ifndef VBOX_WITH_SLIRP_BSD_MBUF
         memcpy((caddr_t)(ti + 1), (caddr_t)opt, optlen);
+#else
+        m_append(pData, m,  optlen, opt);
+#endif
         ti->ti_off = (sizeof (struct tcphdr) + optlen) >> 2;
     }
     ti->ti_flags = flags;
@@ -574,13 +607,22 @@ send:
      * to handle ttl and tos; we could keep them in
      * the template, but need a way to checksum without them.
      */
+#ifndef VBOX_WITH_SLIRP_BSD_MBUF
     Assert(m->m_len == (hdrlen + len));
     m->m_len = hdrlen + len; /* XXX Needed? m_len should be correct */
+#else
+    M_ASSERTPKTHDR(m);
+    m->m_pkthdr.header = mtod(m, void *);
+#endif
 
     {
+#ifndef VBOX_WITH_SLIRP_BSD_MBUF
         ((struct ip *)ti)->ip_len = m->m_len;
+#else
+       ((struct ip *)ti)->ip_len = m_length(m, NULL);
+#endif
         ((struct ip *)ti)->ip_ttl = ip_defttl;
-        ((struct ip *)ti)->ip_tos = so->so_iptos;
+       ((struct ip *)ti)->ip_tos = so->so_iptos;
 
         /* #if BSD >= 43 */
         /* Don't do IP options... */
@@ -588,8 +630,10 @@ send:
         error = ip_output(m, tp->t_inpcb->inp_options, &tp->t_inpcb->inp_route,
                          so->so_options & SO_DONTROUTE, 0);
 #endif
+#ifndef VBOX_WITH_SLIRP_BSD_MBUF
         if(so->so_la != NULL)
             m->m_la = so->so_la;
+#endif
         error = ip_output(pData, so, m);
 
 #if 0
