@@ -89,9 +89,6 @@ public:
     BOOL postEvent (Event *event);
     BOOL waitForEvent (Event **event);
     BOOL handleEvent (Event *event);
-    static int processThreadEventQueue(uint32_t cMsTimeout, bool (*pfnExitCheck)(void *pvUser) = 0,
-                                     void *pvUser = 0, uint32_t cMsPollInterval = 1000,
-                                     bool fReturnOnEvent = true);
     /**
      * Process events pending on this event queue, and wait 
      * up to given timeout, if nothing is available.
@@ -103,6 +100,11 @@ public:
      * Can be called on any thread.
      */
     int interruptEventQueueProcessing();
+    /**
+     * Get select()'able selector for this event queue, can be -1
+     * on platforms not supporting such functionality.
+     */
+    int getSelectFD();
     /** 
      * Initialize/deinitialize event queues.
      */

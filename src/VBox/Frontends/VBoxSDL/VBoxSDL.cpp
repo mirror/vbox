@@ -1011,16 +1011,7 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         break;
     }
 
-    // create the event queue
-    // (here it is necessary only to process remaining XPCOM/IPC events
-    // after the session is closed)
-    /// @todo
-//    EventQueue eventQ;
-
-#ifdef USE_XPCOM_QUEUE_THREAD
-    nsCOMPtr<nsIEventQueue> eventQ;
-    NS_GetMainEventQ(getter_AddRefs(eventQ));
-#endif /* USE_XPCOM_QUEUE_THREAD */
+    EventQueue* eventQ = com::EventQueue::getMainEventQueue();
 
     /* Get the number of network adapters */
     ULONG NetworkAdapterCount = 0;
@@ -2042,7 +2033,7 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
      * event storm might arrive. Stupid SDL has a ridiculously small
      * event queue buffer!
      */
-    startXPCOMEventQueueThread(eventQ->GetEventQueueSelectFD());
+    startXPCOMEventQueueThread(eventQ->getSelectFD());
 #endif /* USE_XPCOM_QUEUE_THREAD */
 
     /* termination flag */
@@ -2123,7 +2114,7 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
                     case SDL_USER_EVENT_XPCOM_EVENTQUEUE:
                     {
                         LogFlow(("SDL_USER_EVENT_XPCOM_EVENTQUEUE: processing XPCOM event queue...\n"));
-                        eventQ->ProcessPendingEvents();
+                        eventQ->processEventQueue(0);
                         signalXPCOMEventQueueThread();
                         break;
                     }
@@ -2155,6 +2146,7 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
 
             }
         }
+        eventQ->processEventQueue(0);
     } while (   rc == S_OK
              && (   machineState == MachineState_Starting
                  || machineState == MachineState_Restoring));
@@ -2590,7 +2582,7 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
             case SDL_USER_EVENT_XPCOM_EVENTQUEUE:
             {
                 LogFlow(("SDL_USER_EVENT_XPCOM_EVENTQUEUE: processing XPCOM event queue...\n"));
-                eventQ->ProcessPendingEvents();
+                eventQ->processEventQueue(0);
                 signalXPCOMEventQueueThread();
                 break;
             }

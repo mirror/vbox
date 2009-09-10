@@ -1824,20 +1824,7 @@ int main(int argc, char *argv[])
         break;
     }
 
-    /* create the event queue
-     * (here it is necessary only to process remaining XPCOM/IPC events
-     * after the session is closed) */
-
-#ifdef VBOX_WITH_XPCOM
-    nsCOMPtr<nsIEventQueue> eventQ;
-    NS_GetMainEventQ(getter_AddRefs(eventQ));
-#endif
-
-#ifdef VBOX_WITH_XPCOM
-    HandlerArg handlerArg = { 0, NULL, eventQ, virtualBox, session };
-#else
     HandlerArg handlerArg = { 0, NULL, virtualBox, session };
-#endif
 
     /*
      * All registered command handlers
@@ -1916,10 +1903,7 @@ int main(int argc, char *argv[])
      * state file (if the machine was in the Saved state before). */
     session->Close();
 
-#ifdef VBOX_WITH_XPCOM
-    eventQ->ProcessPendingEvents();
-#endif
-
+    EventQueue::getMainEventQueue()->processEventQueue(0);
     // end "all-stuff" scope
     ////////////////////////////////////////////////////////////////////////////
     }
