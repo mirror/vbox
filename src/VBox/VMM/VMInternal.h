@@ -24,6 +24,7 @@
 
 #include <VBox/cdefs.h>
 #include <VBox/vmapi.h>
+#include <iprt/assert.h>
 #include <setjmp.h>
 
 
@@ -360,6 +361,8 @@ typedef struct VMINTUSERPERVMCPU
     /** If set the EMT does the final VM cleanup when it exits.
      * If clear the VMR3Destroy() caller does so. */
     bool                            fEMTDoesTheCleanup;
+    /** Align the next bit. */
+    bool                            afAlignment[5];
 
     /** @name Generic Halt data
      * @{
@@ -392,6 +395,8 @@ typedef struct VMINTUSERPERVMCPU
         {
             /** How many times we've blocked while cBlockedNS and cBlockedTooLongNS has been accumulating. */
             uint32_t                cBlocks;
+            /** Align the next member. */
+            uint32_t                u32Alignment;
             /** Avg. time spend oversleeping when blocking. (Re-calculated every so often.) */
             uint64_t                cNSBlockedTooLongAvg;
             /** Total time spend oversleeping when blocking. */
@@ -449,6 +454,9 @@ typedef struct VMINTUSERPERVMCPU
     STAMPROFILE                     StatHaltPoll;
     /** @} */
 } VMINTUSERPERVMCPU;
+AssertCompileMemberAlignment(VMINTUSERPERVMCPU, u64HaltsStartTS, 8);
+AssertCompileMemberAlignment(VMINTUSERPERVMCPU, Halt.Method12.cNSBlockedTooLongAvg, 8);
+AssertCompileMemberAlignment(VMINTUSERPERVMCPU, StatHaltYield, 8);
 
 /** Pointer to the VM internal data kept in the UVM. */
 typedef VMINTUSERPERVMCPU *PVMINTUSERPERVMCPU;

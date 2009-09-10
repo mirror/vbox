@@ -29,6 +29,7 @@
 #include <VBox/stam.h>
 #include <VBox/vusb.h>
 #include <VBox/pdmasynccompletion.h>
+#include <iprt/assert.h>
 #include <iprt/critsect.h>
 #ifdef IN_RING3
 # include <iprt/thread.h>
@@ -214,10 +215,8 @@ typedef struct PDMCRITSECTINT
     PVMR0                           pVMR0;
     /** Pointer to the VM - GCPtr. */
     PVMRC                           pVMRC;
-#if HC_ARCH_BITS == 64
     /** Alignment padding. */
     uint32_t                        padding;
-#endif
     /** Event semaphore that is scheduled to be signaled upon leaving the
      * critical section. This is Ring-3 only of course. */
     RTSEMEVENT                      EventToSignal;
@@ -232,6 +231,8 @@ typedef struct PDMCRITSECTINT
     /** Profiling the time the section is locked. */
     STAMPROFILEADV                  StatLocked;
 } PDMCRITSECTINT;
+AssertCompileMemberAlignment(PDMCRITSECTINT, StatContentionRZLock, 8);
+/** Pointer to private critical section data. */
 typedef PDMCRITSECTINT *PPDMCRITSECTINT;
 
 /** Indicates that the critical section is queued for unlock.
@@ -911,8 +912,7 @@ typedef struct PDM
     R0PTRTYPE(PPDMQUEUE)            pDevHlpQueueR0;
     /** Queue in which devhlp tasks are queued for R3 execution - RC Ptr. */
     RCPTRTYPE(PPDMQUEUE)            pDevHlpQueueRC;
-
-    RTUINT                          uPadding1; /**< Alignment padding. */
+    RTRCPTR                         uPadding1; /**< Alignment padding. */
 
     /** Linked list of timer driven PDM queues. */
     R3PTRTYPE(struct PDMQUEUE *)    pQueuesTimer;
@@ -945,6 +945,10 @@ typedef struct PDM
      * @{ */
     /** Pointer to the heap base (MMIO2 ring-3 mapping). NULL if not registered. */
     RTR3PTR                         pvVMMDevHeap;
+#if HC_ARCH_BITS == 32
+    /** Alignment padding. */
+    uint32_t                        u32Padding2;
+#endif
     /** The heap size. */
     RTUINT                          cbVMMDevHeap;
     /** Free space. */
@@ -966,6 +970,9 @@ typedef struct PDM
     /** Number of times a critical section leave requesed needed to be queued for ring-3 execution. */
     STAMCOUNTER                     StatQueuedCritSectLeaves;
 } PDM;
+AssertCompileMemberAlignment(PDM, GCPhysVMMDevHeap, sizeof(RTGCPHYS));
+AssertCompileMemberAlignment(PDM, CritSect, 8);
+AssertCompileMemberAlignment(PDM, StatQueuedCritSectLeaves, 8);
 /** Pointer to PDM VM instance data. */
 typedef PDM *PPDM;
 
