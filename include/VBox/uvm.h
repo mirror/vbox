@@ -33,6 +33,7 @@
 #define ___VBox_uvm_h
 
 #include <VBox/types.h>
+#include <iprt/assert.h>
 
 
 /**
@@ -50,7 +51,7 @@ typedef struct UVMCPU
     RTCPUID                         idCpu;
 
     /** The VM internal data. */
-    struct
+    union
     {
 #ifdef ___VMInternal_h
         struct VMINTUSERPERVMCPU    s;
@@ -58,6 +59,7 @@ typedef struct UVMCPU
         uint8_t                     padding[768];
     } vm;
 } UVMCPU;
+AssertCompileMemberAlignment(UVMCPU, vm, 8);
 
 
 /**
@@ -84,7 +86,7 @@ typedef struct UVM
     struct UVM     *pNext;
 
     /** The VM internal data. */
-    struct
+    union
     {
 #ifdef ___VMInternal_h
         struct VMINTUSERPERVM   s;
@@ -93,7 +95,7 @@ typedef struct UVM
     } vm;
 
     /** The MM data. */
-    struct
+    union
     {
 #ifdef ___MMInternal_h
         struct MMUSERPERVM      s;
@@ -102,7 +104,7 @@ typedef struct UVM
     } mm;
 
     /** The PDM data. */
-    struct
+    union
     {
 #ifdef ___PDMInternal_h
         struct PDMUSERPERVM     s;
@@ -111,7 +113,7 @@ typedef struct UVM
     } pdm;
 
     /** The STAM data. */
-    struct
+    union
     {
 #ifdef ___STAMInternal_h
         struct STAMUSERPERVM    s;
@@ -122,6 +124,12 @@ typedef struct UVM
     /** Per virtual CPU data. */
     UVMCPU                      aCpus[1];
 } UVM;
+AssertCompileMemberAlignment(UVM, vm, 8);
+AssertCompileMemberAlignment(UVM, mm, 8);
+AssertCompileMemberAlignment(UVM, pdm, 8);
+AssertCompileMemberAlignment(UVM, stam, 8);
+AssertCompileMemberAlignment(UVM, aCpus[0], 8);
+AssertCompileMemberAlignment(UVM, aCpus[1], 8);
 
 /** The UVM::u32Magic value (Brad Mehldau). */
 #define UVM_MAGIC       0x19700823
