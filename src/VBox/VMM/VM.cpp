@@ -132,9 +132,10 @@ static int               vmR3InitGC(PVM pVM);
 static int               vmR3InitDoCompleted(PVM pVM, VMINITCOMPLETED enmWhat);
 static DECLCALLBACK(size_t) vmR3LogPrefixCallback(PRTLOGGER pLogger, char *pchBuf, size_t cchBuf, void *pvUser);
 static DECLCALLBACK(int) vmR3PowerOn(PVM pVM);
-static DECLCALLBACK(int) vmR3Suspend(PVM pVM);
+static int               vmR3SuspendCommon(PVM pVM, bool fFatal);
+static DECLCALLBACK(int) vmR3Suspend(PVM pVM, bool fFatal);
 static DECLCALLBACK(int) vmR3Resume(PVM pVM);
-static DECLCALLBACK(int) vmR3Save(PVM pVM, const char *pszFilename, SSMAFTER enmAfter, PFNVMPROGRESS pfnProgress, void *pvUser);
+static DECLCALLBACK(int) vmR3Save(PVM pVM, const char *pszFilename, SSMAFTER enmAfter, PFNVMPROGRESS pfnProgress, void *pvUser, PSSMHANDLE *ppSSM);
 static DECLCALLBACK(int) vmR3Load(PVM pVM, const char *pszFilename, PFNVMPROGRESS pfnProgress, void *pvUser);
 static DECLCALLBACK(int) vmR3PowerOff(PVM pVM);
 static void              vmR3DestroyUVM(PUVM pUVM, uint32_t cMilliesEMTWait);
@@ -1226,19 +1227,38 @@ VMMR3DECL(int) VMR3Suspend(PVM pVM)
     LogFlow(("VMR3Suspend: pVM=%p\n", pVM));
 
     /*
-     * Validate input.
+     * Validate input and pass it on to the internal worker.
      */
-    if (!pVM)
-    {
-        AssertMsgFailed(("Invalid VM pointer\n"));
-        return VERR_INVALID_PARAMETER;
-    }
+    VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
+    int rc = vmR3SuspendCommon(pVM, false /*fFatal*/);
 
+    LogFlow(("VMR3Suspend: returns %Rrc\n", rc));
+    return rc;
+}
+
+
+/**
+ * Common worker for VMR3Suspend and vmR3SetRuntimeErrorCommon.
+ *
+ * They both suspends the VM, but the latter ends up in the VMSTATE_FATAL_ERROR
+ * instead of VMSTATE_SUSPENDED.
+ *
+ * @returns VBox status code.
+ * @param   pVM                 The VM handle.
+ * @param   fFatal              Whether it's a fatal error or not.
+ *
+ * @thread      Any thread.
+ * @vmstate     Running
+ * @vmstateto   Suspended, FatalError
+ */
+static int vmR3SuspendCommon(PVM pVM, bool fFatal)
+{
     /*
      * Request the operation in EMT. (in reverse order as VCPU 0 does the actual work)
      */
     PVMREQ pReq = NULL;
-    int rc = VMR3ReqCall(pVM, VMCPUID_ALL_REVERSE, &pReq, RT_INDEFINITE_WAIT, (PFNRT)vmR3Suspend, 1, pVM);
+    int rc = VMR3ReqCall(pVM, VMCPUID_ALL_REVERSE, &pReq, RT_INDEFINITE_WAIT,
+                         (PFNRT)vmR3Suspend, 2, pVM, fFatal);
     if (RT_SUCCESS(rc))
     {
         rc = pReq->iStatus;
@@ -1247,25 +1267,7 @@ VMMR3DECL(int) VMR3Suspend(PVM pVM)
     else
         Assert(pReq == NULL);
 
-    LogFlow(("VMR3Suspend: returns %Rrc\n", rc));
     return rc;
-}
-
-
-/**
- * Suspends a running VM and prevent state saving until the VM is resumed or stopped.
- *
- * @returns 0 on success.
- * @returns VBox error code on failure.
- * @param   pVM     VM to suspend.
- * @thread      Any thread.
- * @vmstate     Running
- * @vmstateto   Suspended
- */
-VMMR3DECL(int) VMR3SuspendNoSave(PVM pVM)
-{
-    pVM->vm.s.fPreventSaveState = true;
-    return VMR3Suspend(pVM);
 }
 
 
@@ -1275,9 +1277,10 @@ VMMR3DECL(int) VMR3SuspendNoSave(PVM pVM)
  * @returns 0 on success.
  * @returns VBox error code on failure.
  * @param   pVM     VM to suspend.
+ * @param   fFatal  Whether it's a fatal error or normal suspend.
  * @thread  EMT
  */
-static DECLCALLBACK(int) vmR3Suspend(PVM pVM)
+static DECLCALLBACK(int) vmR3Suspend(PVM pVM, bool fFatal)
 {
     LogFlow(("vmR3Suspend: pVM=%p\n", pVM));
 
@@ -1298,7 +1301,7 @@ static DECLCALLBACK(int) vmR3Suspend(PVM pVM)
     /*
      * Change the state, notify the components and resume the execution.
      */
-    vmR3SetState(pVM, VMSTATE_SUSPENDED);
+    vmR3SetState(pVM, fFatal ? VMSTATE_FATAL_ERROR : VMSTATE_SUSPENDED);
     PDMR3Suspend(pVM);
 
     return VINF_EM_SUSPEND;
@@ -1398,7 +1401,7 @@ static DECLCALLBACK(int) vmR3Resume(PVM pVM)
  *
  * @param   pVM                 VM which state should be saved.
  * @param   pszFilename         Name of the save state file.
- * @param   fContinueAftewards  Continue execution afterwards. When in doubt,
+ * @param   fContinueAfterwards Continue execution afterwards. When in doubt,
  *                              set this to true.
  * @param   pfnProgress         Progress callback. Optional.
  * @param   pvUser              User argument for the progress callback.
@@ -1407,10 +1410,10 @@ static DECLCALLBACK(int) vmR3Resume(PVM pVM)
  * @vmstate     Suspended, Running
  * @vmstateto   Suspended.
  */
-VMMR3DECL(int) VMR3Save(PVM pVM, const char *pszFilename, bool fContinueAftewards, PFNVMPROGRESS pfnProgress, void *pvUser)
+VMMR3DECL(int) VMR3Save(PVM pVM, const char *pszFilename, bool fContinueAfterwards, PFNVMPROGRESS pfnProgress, void *pvUser)
 {
-    LogFlow(("VMR3Save: pVM=%p pszFilename=%p:{%s} fContinueAftewards=%RTbool pfnProgress=%p pvUser=%p\n",
-             pVM, pszFilename, pszFilename, fContinueAftewards, pfnProgress, pvUser));
+    LogFlow(("VMR3Save: pVM=%p pszFilename=%p:{%s} fContinueAfterwards=%RTbool pfnProgress=%p pvUser=%p\n",
+             pVM, pszFilename, pszFilename, fContinueAfterwards, pfnProgress, pvUser));
 
     /*
      * Validate input.
@@ -1423,14 +1426,37 @@ VMMR3DECL(int) VMR3Save(PVM pVM, const char *pszFilename, bool fContinueAfteward
     /*
      * Request the operation in EMT(0).
      */
-    SSMAFTER enmAfter = fContinueAftewards ? SSMAFTER_CONTINUE : SSMAFTER_DESTROY;
-    PVMREQ pReq;
+    SSMAFTER    enmAfter = fContinueAfterwards ? SSMAFTER_CONTINUE : SSMAFTER_DESTROY;
+    PSSMHANDLE  pSSM;
+    PVMREQ      pReq;
     int rc = VMR3ReqCall(pVM, 0 /* VCPU 0 */, &pReq, RT_INDEFINITE_WAIT,
-                         (PFNRT)vmR3Save, 5, pVM, pszFilename, enmAfter, pfnProgress, pvUser);
+                         (PFNRT)vmR3Save, 6, pVM, pszFilename, enmAfter, pfnProgress, pvUser, &pSSM);
     if (RT_SUCCESS(rc))
     {
         rc = pReq->iStatus;
         VMR3ReqFree(pReq);
+    }
+    if (    RT_SUCCESS(rc)
+        &&  pSSM)
+    {
+#if 1
+        /**@todo*/ rc = VERR_NOT_IMPLEMENTED;
+#else
+        /*
+         * Live snapshot.
+         */
+        rc = SSMR3LiveDoStep1(pSSM);
+        if (RT_SUCCESS(rc))
+        {
+            rc = VMR3ReqCall(pVM, 0 /* VCPU 0 */, &pReq, RT_INDEFINITE_WAIT,
+                             (PFNRT)vmR3SaveLive, 2, pVM, pSSM);
+            if (RT_SUCCESS(rc))
+            {
+                rc = pReq->iStatus;
+                VMR3ReqFree(pReq);
+            }
+        }
+#endif
     }
 
     LogFlow(("VMR3Save: returns %Rrc\n", rc));
@@ -1448,16 +1474,19 @@ VMMR3DECL(int) VMR3Save(PVM pVM, const char *pszFilename, bool fContinueAfteward
  * @param   enmAfter        What to do afterwards.
  * @param   pfnProgress     Progress callback. Optional.
  * @param   pvUser          User argument for the progress callback.
+ * @param   ppSSM           Where to return the saved state handle in case of a
+ *                          live snapshot scenario.
  * @thread  EMT
  */
-static DECLCALLBACK(int) vmR3Save(PVM pVM, const char *pszFilename, SSMAFTER enmAfter, PFNVMPROGRESS pfnProgress, void *pvUser)
+static DECLCALLBACK(int) vmR3Save(PVM pVM, const char *pszFilename, SSMAFTER enmAfter, PFNVMPROGRESS pfnProgress, void *pvUser, PSSMHANDLE *ppSSM)
 {
-    LogFlow(("vmR3Save: pVM=%p pszFilename=%p:{%s} enmAfter=%d pfnProgress=%p pvUser=%p\n", pVM, pszFilename, pszFilename, enmAfter, pfnProgress, pvUser));
+    LogFlow(("vmR3Save: pVM=%p pszFilename=%p:{%s} enmAfter=%d pfnProgress=%p pvUser=%p ppSSM=%p\n", pVM, pszFilename, pszFilename, enmAfter, pfnProgress, pvUser, ppSSM));
 
     /*
      * Validate input.
      */
     /** @todo SMP: Check that vmR3SetState always done by EMT(0). If not add a vmR3TrySetState(). */
+    *ppSSM = NULL;
     AssertMsgReturn(   pVM->enmVMState == VMSTATE_SUSPENDED
                     || pVM->enmVMState == VMSTATE_RUNNING,
                     ("%d\n", pVM->enmVMState),
@@ -1471,12 +1500,20 @@ static DECLCALLBACK(int) vmR3Save(PVM pVM, const char *pszFilename, SSMAFTER enm
     }
 
     /*
-     * Change the state and perform the save.
+     * Change the state and perform/start the saveing.
      */
-    bool fLive = pVM->enmVMState == VMSTATE_RUNNING;
-    vmR3SetState(pVM, VMSTATE_SAVING); /** @todo Should probably use a different state for live snapshots and/or live migration. Will fix the state machine later. */
-    int rc = SSMR3Save(pVM, pszFilename, enmAfter, pfnProgress, pvUser);
-    vmR3SetState(pVM, VMSTATE_SUSPENDED);
+    int rc;
+    if (pVM->enmVMState == VMSTATE_RUNNING)
+    {
+        /** @todo state mess. */
+        rc = SSMR3LiveToFile(pVM, pszFilename, enmAfter, pfnProgress, pvUser, ppSSM);
+    }
+    else
+    {
+        vmR3SetState(pVM, VMSTATE_SAVING); /** @todo Should probably use a different state for live snapshots and/or live migration. Will fix the state machine later. */
+        rc = SSMR3Save(pVM, pszFilename, enmAfter, pfnProgress, pvUser);
+        vmR3SetState(pVM, VMSTATE_SUSPENDED);
+    }
 
     return rc;
 }
@@ -1641,6 +1678,7 @@ static DECLCALLBACK(int) vmR3PowerOff(PVM pVM)
     if (    pVM->enmVMState != VMSTATE_RUNNING
         &&  pVM->enmVMState != VMSTATE_SUSPENDED
         &&  pVM->enmVMState != VMSTATE_LOAD_FAILURE
+        &&  pVM->enmVMState != VMSTATE_FATAL_ERROR
         &&  pVM->enmVMState != VMSTATE_GURU_MEDITATION)
     {
         AssertMsgFailed(("Invalid VM state %d\n", pVM->enmVMState));
@@ -2703,16 +2741,25 @@ VMMR3DECL(const char *) VMR3GetStateName(VMSTATE enmState)
     {
         case VMSTATE_CREATING:          return "CREATING";
         case VMSTATE_CREATED:           return "CREATED";
-        case VMSTATE_RUNNING:           return "RUNNING";
         case VMSTATE_LOADING:           return "LOADING";
-        case VMSTATE_LOAD_FAILURE:      return "LOAD_FAILURE";
-        case VMSTATE_SAVING:            return "SAVING";
-        case VMSTATE_SUSPENDED:         return "SUSPENDED";
+        case VMSTATE_RUNNING:           return "RUNNING";
+        case VMSTATE_LS_RUNNING:        return "LS_RUNNING";
         case VMSTATE_RESETTING:         return "RESETTING";
+        case VMSTATE_LS_RESETTING:      return "LS_RESETTING";
+        case VMSTATE_SUSPENDED:         return "SUSPENDED";
+        case VMSTATE_LS_SUSPENDING:     return "LS_SUSPENDING";
+        case VMSTATE_SAVING:            return "SAVING";
+        case VMSTATE_LS_SAVING:         return "LS_SAVING";
+        case VMSTATE_LS_POWERING_OFF:   return "LS_POWERING_OFF";
+        case VMSTATE_FATAL_ERROR:       return "FATAL_ERROR";
+        case VMSTATE_LS_FATAL_ERROR:    return "LS_FATAL_ERROR";
         case VMSTATE_GURU_MEDITATION:   return "GURU_MEDITATION";
+        case VMSTATE_LS_GURU_MEDIATION: return "LS_GURU_MEDIATION";
+        case VMSTATE_LOAD_FAILURE:      return "LOAD_FAILURE";
         case VMSTATE_OFF:               return "OFF";
         case VMSTATE_DESTROYING:        return "DESTROYING";
         case VMSTATE_TERMINATED:        return "TERMINATED";
+
         default:
             AssertMsgFailed(("Unknown state %d\n", enmState));
             return "Unknown!\n";
@@ -2729,6 +2776,10 @@ VMMR3DECL(const char *) VMR3GetStateName(VMSTATE enmState)
  */
 void vmR3SetState(PVM pVM, VMSTATE enmStateNew)
 {
+#ifdef DEBUG_bird /** @todo remove when sorted out. */
+    VM_ASSERT_EMT0(pVM);
+#endif
+
     /*
      * Validate state machine transitions before doing the actual change.
      */
@@ -3410,9 +3461,7 @@ static int vmR3SetRuntimeErrorCommon(PVM pVM, uint32_t fFlags, const char *pszEr
      */
     int rc = VINF_SUCCESS;
     if (fFlags & VMSETRTERR_FLAGS_FATAL)
-        /** @todo Add some special VM state for the FATAL variant that isn't resumable.
-         *        It's too risky for 2.2.0, do after branching. */
-        rc = VMR3SuspendNoSave(pVM);
+        rc = vmR3SuspendCommon(pVM, true /*fFatal*/);
     else if (fFlags & VMSETRTERR_FLAGS_SUSPEND)
         rc = VMR3Suspend(pVM);
 
@@ -3480,6 +3529,39 @@ VMMR3DECL(int) VMR3SetRuntimeErrorWorker(PVM pVM)
      * Join cause with vmR3SetRuntimeErrorV.
      */
     return vmR3SetRuntimeErrorCommonF(pVM, fFlags, pszErrorId, "%s", pszMessage);
+}
+
+
+/**
+ * Worker for VMSetRuntimeErrorV for doing the job on EMT in ring-3.
+ *
+ * @returns VBox status code with modifications, see VMSetRuntimeErrorV.
+ *
+ * @param   pVM             The VM handle.
+ * @param   fFlags          The error flags.
+ * @param   pszErrorId      Error ID string.
+ * @param   pszMessage      The error message residing the MM heap.
+ *
+ * @thread  EMT
+ */
+DECLCALLBACK(int) vmR3SetRuntimeError(PVM pVM, uint32_t fFlags, const char *pszErrorId, char *pszMessage)
+{
+#if 0 /** @todo make copy of the error msg. */
+    /*
+     * Make a copy of the message.
+     */
+    va_list va2;
+    va_copy(va2, *pVa);
+    vmSetRuntimeErrorCopy(pVM, fFlags, pszErrorId, pszFormat, va2);
+    va_end(va2);
+#endif
+
+    /*
+     * Join paths with VMR3SetRuntimeErrorWorker.
+     */
+    int rc = vmR3SetRuntimeErrorCommonF(pVM, fFlags, pszErrorId, "%s", pszMessage);
+    MMR3HeapFree(pszMessage);
+    return rc;
 }
 
 
