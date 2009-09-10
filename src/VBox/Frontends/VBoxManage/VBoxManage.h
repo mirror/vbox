@@ -26,15 +26,10 @@
 #include <VBox/com/com.h>
 #include <VBox/com/ptr.h>
 #include <VBox/com/VirtualBox.h>
-#include <VBox/com/EventQueue.h>
 #include <VBox/com/string.h>
 #endif /* !VBOX_ONLY_DOCS */
 
 #include <iprt/types.h>
-
-#if defined(VBOX_WITH_XPCOM) && !defined(RT_OS_DARWIN) && !defined(RT_OS_OS2)
-# define USE_XPCOM_QUEUE
-#endif
 
 ////////////////////////////////////////////////////////////////////////////////
 //
@@ -107,9 +102,6 @@ struct HandlerArg
     int argc;
     char **argv;
 
-#ifdef VBOX_WITH_XPCOM
-    nsCOMPtr<nsIEventQueue> eventQ;
-#endif
 #ifndef VBOX_ONLY_DOCS
     ComPtr<IVirtualBox> virtualBox;
     ComPtr<ISession> session;

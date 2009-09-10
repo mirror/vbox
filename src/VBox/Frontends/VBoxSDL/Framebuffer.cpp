@@ -51,9 +51,9 @@ using namespace com;
 #endif
 
 #if defined(VBOX_WITH_XPCOM)
-NS_IMPL_ISUPPORTS1_CI(VBoxSDLFB, IFramebuffer)
+NS_IMPL_THREADSAFE_ISUPPORTS1_CI(VBoxSDLFB, IFramebuffer)
 NS_DECL_CLASSINFO(VBoxSDLFB)
-NS_IMPL_ISUPPORTS1_CI(VBoxSDLFBOverlay, IFramebufferOverlay)
+NS_IMPL_THREADSAFE_ISUPPORTS1_CI(VBoxSDLFBOverlay, IFramebufferOverlay)
 NS_DECL_CLASSINFO(VBoxSDLFBOverlay)
 #endif
 

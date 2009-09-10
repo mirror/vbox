@@ -809,13 +809,10 @@ extern "C" DECLEXPORT (int) TrustedMain (int argc, char **argv, char **envp)
             machineDebugger->COMSETTER(CSAMEnabled)(fCSAM);
         }
 
-        /* create an event queue */
-        EventQueue eventQ;
-
         /* initialize global references */
         gSession = session;
         gConsole = console;
-        gEventQ = &eventQ;
+        gEventQ = com::EventQueue::getMainEventQueue();
 
         /* register a callback for machine events */
         {
@@ -918,9 +915,9 @@ extern "C" DECLEXPORT (int) TrustedMain (int argc, char **argv, char **envp)
         Log (("VBoxHeadless: Waiting for PowerDown...\n"));
 
         Event *e;
-
-        while (eventQ.waitForEvent (&e) && e)
-            eventQ.handleEvent (e);
+        
+        while (gEventQ->waitForEvent (&e) && e)
+          gEventQ->handleEvent (e);
 
         Log (("VBoxHeadless: event loop has terminated...\n"));
 

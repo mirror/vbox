@@ -178,8 +178,6 @@ EventQueue::~EventQueue()
 static int
 timedWaitForEventsOnDarwin(nsIEventQueue *pQueue, PRInt32 cMsTimeout)
 {
-  // This deals with the common case where the caller is the main
-  // application thread and the queue is a native one.
   OSStatus       orc       = -1;
   CFTimeInterval rdTimeout = (double)cMsTimeout / 1000;
   orc = CFRunLoopRunInMode(kCFRunLoopDefaultMode, rdTimeout, true /*returnAfterSourceHandled*/);
@@ -199,7 +197,7 @@ timedWaitForEventsOnDarwin(nsIEventQueue *pQueue, PRInt32 cMsTimeout)
 
 #ifdef RT_OS_WINDOWS
 static int
-processPendingEventsOnWindows()
+processPendingEvents()
 {
     MSG Msg;
     int rc = VERR_TIMEOUT;
@@ -210,7 +208,7 @@ processPendingEventsOnWindows()
         DispatchMessage(&Msg);
         if (rc == VERR_INTERRUPTED)
             break;
-        rc = VINF_SUCCESS; 
+        rc = VINF_SUCCESS;
     }    
     return rc;
 }
@@ -238,17 +236,25 @@ public:
     mh = INVALID_HANDLE_VALUE;
   }
 };
+#else
+static int
+processPendingEvents(nsIEventQueue* pQueue)
+{
+  /** @todo: rethink interruption events, current NULL event approach is bad */
+  pQueue->ProcessPendingEvents();
+  return VINF_SUCCESS; 
+}
 #endif
-#include <stdio.h>
 int EventQueue::processEventQueue(uint32_t cMsTimeout)
 {
     int rc = VINF_SUCCESS;
+    /** @todo: check that current thread == one we were created on */
 #if defined (VBOX_WITH_XPCOM)
     do {
       PRBool fHasEvents = PR_FALSE;
       nsresult rc;
       
-      rc = mEventQ->PendingEvents(&fHasEvents);
+      rc = mEventQ->PendingEvents(&fHasEvents);     
       if (NS_FAILED (rc))
           return VERR_INTERNAL_ERROR_3;
 
@@ -304,7 +310,7 @@ int EventQueue::processEventQueue(uint32_t cMsTimeout)
 #  endif      
     } while (0);
 
-    mEventQ->ProcessPendingEvents();
+    rc = processPendingEvents(mEventQ);
 #else /* Windows */
     do {
         int aCode = processPendingEventsOnWindows();
@@ -341,14 +347,14 @@ int EventQueue::processEventQueue(uint32_t cMsTimeout)
             rc = VERR_INTERNAL_ERROR_4;
     } while (0);
 
-    processPendingEventsOnWindows();
+    rc = processPendingEvents();
 #endif
     return rc;
-
 }
 
 int EventQueue::interruptEventQueueProcessing()
 {
+    /** @todo: rethink me! */
     postEvent(NULL);
     return VINF_SUCCESS;
 }
@@ -468,253 +474,13 @@ BOOL EventQueue::handleEvent (Event *event)
     return TRUE;
 }
 
-
+int  EventQueue::getSelectFD()
+{
 #ifdef VBOX_WITH_XPCOM
-
-/** Wrapper around nsIEventQueue::PendingEvents. */
-DECLINLINE(bool) hasEventQueuePendingEvents(nsIEventQueue *pQueue)
-{
-    PRBool fHasEvents = PR_FALSE;
-    nsresult rc = pQueue->PendingEvents(&fHasEvents);
-    return NS_SUCCEEDED(rc) && fHasEvents ? true : false;
-}
-
-/** Wrapper around nsIEventQueue::IsQueueNative. */
-DECLINLINE(bool) isEventQueueNative(nsIEventQueue *pQueue)
-{
-    PRBool fIsNative = PR_FALSE;
-    nsresult rc = pQueue->IsQueueNative(&fIsNative);
-    return NS_SUCCEEDED(rc) && fIsNative ? true : false;
-}
-
-/** Wrapper around nsIEventQueue::ProcessPendingEvents. */
-DECLINLINE(void) processPendingEvents(nsIEventQueue *pQueue)
-{
-    pQueue->ProcessPendingEvents();
-}
-
+    return mEventQ->GetEventQueueSelectFD();
 #else
-
-/** COM version of nsIEventQueue::PendingEvents. */
-DECLINLINE(bool) hasEventQueuePendingEvents(MyThreadHandle &Handle)
-{
-    DWORD rc = MsgWaitForMultipleObjects(1, &Handle.mh, TRUE /*fWaitAll*/, 0 /*ms*/, QS_ALLINPUT);
-    return rc == WAIT_OBJECT_0;
-}
-
-/** COM version of nsIEventQueue::IsQueueNative, the question doesn't make
- *  sense and we have to return false for the code below to work. */
-DECLINLINE(bool) isEventQueueNative(MyThreadHandle const &Handle)
-{
-    return false;
-}
-
-/** COM version of nsIEventQueue::ProcessPendingEvents. */
-static void processPendingEvents(MyThreadHandle const &Handle)
-{
-    /*
-     * Process pending thead messages.
-     */
-    MSG Msg;
-    while (PeekMessage(&Msg, NULL /*hWnd*/, 0 /*wMsgFilterMin*/, 0 /*wMsgFilterMax*/, PM_REMOVE))
-    {
-        if (Msg.message == WM_QUIT)
-            return /*VERR_INTERRUPTED*/;
-        DispatchMessage(&Msg);
-    }
-}
-
-#endif /* VBOX_WITH_XPCOM */
-
-/**
- *  Processes events for the current thread.
- *
- *  @param cMsTimeout       The timeout in milliseconds or RT_INDEFINITE_WAIT.
- *  @param pfnExitCheck     Optional callback for checking for some exit condition
- *                          while looping.  Note that this may be called
- *  @param pvUser           User argument for pfnExitCheck.
- *  @param cMsPollInterval  The interval cMsTimeout should be called at. 0 means
- *                          never default.
- *  @param fReturnOnEvent   If true, return immediately after some events has
- *                          been processed. If false, process events until we
- *                          time out, pfnExitCheck returns true, interrupted or
- *                          the queue receives some kind of quit message.
- *
- *  @returns VBox status code.
- *  @retval VINF_SUCCESS if events were processed.
- *  @retval VERR_TIMEOUT if no events before cMsTimeout elapsed.
- *  @retval VERR_INTERRUPTED if the wait was interrupted by a signal or other
- *          async event.
- *  @retval VERR_NOT_FOUND if the thread has no event queue.
- *  @retval VERR_CALLBACK_RETURN if the callback indicates return.
- *
- *  @todo This is just a quick approximation of what we need. Feel free to
- *        improve the interface and make it fit better in with the EventQueue
- *        class.
- */
-/*static*/ int
-EventQueue::processThreadEventQueue(uint32_t cMsTimeout, bool (*pfnExitCheck)(void *pvUser) /*= 0*/,
-                                    void *pvUser /*= 0*/, uint32_t cMsPollInterval /*= 1000*/,
-                                    bool fReturnOnEvent /*= true*/)
-{
-    uint64_t const StartMsTS = RTTimeMilliTS();
-
-    /* set default. */
-    if (cMsPollInterval == 0)
-        cMsPollInterval = 1000;
-
-    /*
-     * Get the event queue / thread.
-     */
-#ifdef VBOX_WITH_XPCOM
-    nsCOMPtr<nsIEventQueue> q;
-    nsresult rv = NS_GetCurrentEventQ(getter_AddRefs(q));
-    if (NS_FAILED(rv))
-        return VERR_NOT_FOUND;
-#else
-    MyThreadHandle q;
+    return -1;
 #endif
-
-    /*
-     * Check for pending before setting up the wait.
-     */
-    if (    !hasEventQueuePendingEvents(q)
-        ||  !fReturnOnEvent)
-    {
-        bool fIsNative = isEventQueueNative(q);
-        if (    fIsNative
-            ||  cMsTimeout != RT_INDEFINITE_WAIT
-            ||  pfnExitCheck
-            ||  !fReturnOnEvent /** @todo !fReturnOnEvent and cMsTimeout RT_INDEFINITE_WAIT can be handled in else */)
-        {
-#ifdef USE_XPCOM_QUEUE
-            int const fdQueue = fIsNative ? q->GetEventQueueSelectFD() : -1;
-            if (fIsNative && fdQueue == -1)
-                return VERR_INTERNAL_ERROR_4;
-#endif
-            for (;;)
-            {
-                /*
-                 * Check for events.
-                 */
-                if (hasEventQueuePendingEvents(q))
-                {
-                    if (fReturnOnEvent)
-                        break;
-                    processPendingEvents(q);
-                }
-
-                /*
-                 * Check the user exit.
-                 */
-                if (   pfnExitCheck
-                    && pfnExitCheck(pvUser))
-                    return VERR_CALLBACK_RETURN;
-
-                /*
-                 * Figure out how much we have left to wait and if we've timed out already.
-                 */
-                uint32_t cMsLeft;
-                if (cMsTimeout == RT_INDEFINITE_WAIT)
-                    cMsLeft = RT_INDEFINITE_WAIT;
-                else
-                {
-                    uint64_t cMsElapsed = RTTimeMilliTS() - StartMsTS;
-                    if (cMsElapsed >= cMsTimeout)
-                        break; /* timeout */
-                    cMsLeft = cMsTimeout - (uint32_t)cMsElapsed;
-                }
-
-                /*
-                 * Wait in a queue & platform specific manner.
-                 */
-#ifdef VBOX_WITH_XPCOM
-                if (!fIsNative)
-                    RTThreadSleep(250 /*ms*/);
-                else
-                {
-# ifdef USE_XPCOM_QUEUE
-                    fd_set fdset;
-                    FD_ZERO(&fdset);
-                    FD_SET(fdQueue, &fdset);
-                    struct timeval tv;
-                    if (    cMsLeft == RT_INDEFINITE_WAIT
-                        ||  cMsLeft >= cMsPollInterval)
-                    {
-                        tv.tv_sec = cMsPollInterval / 1000;
-                        tv.tv_usec = (cMsPollInterval % 1000) * 1000;
-                    }
-                    else
-                    {
-                        tv.tv_sec = cMsLeft / 1000;
-                        tv.tv_usec = (cMsLeft % 1000) * 1000;
-                    }
-                    int prc = select(fdQueue + 1, &fdset, NULL, NULL, &tv);
-                    if (prc == -1)
-                        return RTErrConvertFromErrno(errno);
-
-# elif defined(RT_OS_DARWIN)
-                    CFTimeInterval rdTimeout = (double)RT_MIN(cMsLeft, cMsPollInterval) / 1000;
-                    OSStatus orc = CFRunLoopRunInMode(kCFRunLoopDefaultMode, rdTimeout, true /*returnAfterSourceHandled*/);
-                    if (orc == kCFRunLoopRunHandledSource)
-                        orc = CFRunLoopRunInMode(kCFRunLoopDefaultMode, 0.0, false /*returnAfterSourceHandled*/);
-                    if (   orc != 0
-                        && orc != kCFRunLoopRunHandledSource
-                        && orc != kCFRunLoopRunTimedOut)
-                        return orc == kCFRunLoopRunStopped || orc == kCFRunLoopRunFinished
-                             ? VERR_INTERRUPTED
-                             : RTErrConvertFromDarwin(orc);
-# else
-#  warning "PORTME:"
-                    RTThreadSleep(250);
-# endif
-                }
-
-#else  /* !VBOX_WITH_XPCOM */
-                DWORD rc = MsgWaitForMultipleObjects(1, &q.mh, TRUE /*fWaitAll*/, RT_MIN(cMsLeft, cMsPollInterval), QS_ALLINPUT);
-                if (rc == WAIT_OBJECT_0)
-                {
-                    if (fReturnOnEvent)
-                        break;
-                    processPendingEvents(q);
-                }
-                else if (rc == WAIT_FAILED)
-                    return RTErrConvertFromWin32(GetLastError());
-                else if (rc != WAIT_TIMEOUT)
-                    return VERR_INTERNAL_ERROR_4;
-#endif /* !VBOX_WITH_XPCOM */
-            } /* for (;;) */
-        }
-        else
-        {
-            /*
-             * Indefinite wait without any complications.
-             */
-#ifdef VBOX_WITH_XPCOM
-            PLEvent *pEvent = NULL;
-            rv = q->WaitForEvent(&pEvent);
-            if (NS_FAILED(rv))
-                return VERR_INTERRUPTED;
-            q->HandleEvent(pEvent);
-#else
-            DWORD rc = MsgWaitForMultipleObjects(1, &q.mh, TRUE /*fWaitAll*/, INFINITE, QS_ALLINPUT);
-            if (rc != WAIT_OBJECT_0)
-            {
-                if (rc == WAIT_FAILED)
-                    return RTErrConvertFromWin32(GetLastError());
-                return VERR_INTERNAL_ERROR_3;
-            }
-#endif
-        }
-    }
-
-    /*
-     * We have/had events in the queue. Process pending events and
-     * return successfully.
-     */
-    processPendingEvents(q);
-
-    return VINF_SUCCESS;
 }
 }
 /* namespace com */

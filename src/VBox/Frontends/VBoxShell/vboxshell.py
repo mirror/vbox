@@ -217,8 +217,10 @@ def progressBar(ctx,p,wait=1000):
             print "%d %%\r" %(p.percent),
             sys.stdout.flush()
             p.waitForCompletion(wait)
+            ctx['global'].waitForEvents(0)
     except KeyboardInterrupt:
         print "Interrupted."
+
 
 def createVm(ctx,name,kind,base):
     mgr = ctx['mgr']
@@ -1078,7 +1080,7 @@ def interpret(ctx):
             print e
             if g_verbose:
                 traceback.print_exc()
-
+        ctx['global'].waitForEvents(0)
     try:
         # There is no need to disable metric collection. This is just an example.
         if ct['perf']:
