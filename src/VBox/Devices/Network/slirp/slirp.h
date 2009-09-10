@@ -263,7 +263,13 @@ void if_start (PNATState);
 int get_dns_addr(PNATState pData, struct in_addr *pdns_addr);
 
 /* cksum.c */
+#ifndef VBOX_WITH_SLIRP_BSD_MBUF
 int cksum(struct mbuf *m, int len);
+#else
+typedef uint16_t u_short;
+typedef unsigned int u_int;
+#include "in_cksum.h"
+#endif
 
 /* if.c */
 void if_init (PNATState);
@@ -357,7 +363,11 @@ int sscanf(const char *s, const char *format, ...);
 # define NO_FW_PUNCH
 
 # ifdef alias_addr
-#  error  alias_addr has already defined!!!
+#  ifndef VBOX_SLIRP_BSD
+#   error alias_addr has already defined!!!
+#  else
+#   undef alias_addr
+#  endif
 # endif
 
 # define arc4random() RTRandU32()
@@ -389,33 +399,37 @@ int sscanf(const char *s, const char *format, ...);
 # define fflush(x) do{} while(0)
 # define fprintf vbox_slirp_fprintf
 # define printf vbox_slirp_printf
-static void vbox_slirp_printV(char *format, va_list args)
-{
-    char buffer[1024];
-    memset(buffer, 0, 1024);
-    RTStrPrintfV(buffer, 1024, format, args);
-
-# if defined(DEBUG_vvl)
-    LogRel(("NAT:ALIAS: %s\n", buffer));
-# else
-    Log2(("NAT:ALIAS: %s\n", buffer));
-# endif
-}
-static void vbox_slirp_printf(char *format, ...)
-{
-    va_list args;
-    va_start(args, format);
-    vbox_slirp_printV(format, args);
-    va_end(args);
-}
-static void vbox_slirp_fprintf(void *ignored, char *format, ...)
-{
-    va_list args;
-    va_start(args, format);
-    vbox_slirp_printV(format, args);
-    va_end(args);
-}
+# include "ext.h"
 #endif /*VBOX_SLIRP_ALIAS*/
+
+#ifdef VBOX_WITH_SLIRP_BSD_MBUF
+/* @todo might be useful to make it configurable, 
+ * especially in terms of Intnet behind NAT
+ */
+# define maxusers 32 
+# define max_protohdr 0
+/* @todo (r=vvl) for now ignore value,
+ * latter here should be fetching of tuning parameters entered
+ */
+# define TUNABLE_INT_FETCH(name, pval) do { } while (0)
+# define SYSCTL_PROC(a0, a1, a2, a3, a4, a5, a6, a7, a8)
+# define SYSCTL_STRUCT(a0, a1, a2, a3, a4, a5, a6)
+# define SYSINIT(a0, a1, a2, a3, a4)
+# define sysctl_handle_int(a0, a1, a2, a3) 0
+# define EVENTHANDLER_INVOKE(a) do{}while(0)
+# define EVENTHANDLER_REGISTER(a0, a1, a2, a3) do{}while(0)
+# define KASSERT AssertMsg
+
+struct dummy_req
+{
+    void *newptr;
+};
+  
+#define SYSCTL_HANDLER_ARGS PNATState pData, void *oidp, struct dummy_req *req
+
+void	mbuf_init(void *);
+# define cksum(m, len) in_cksum_skip((m), (len), 0)
+#endif
 
 int ftp_alias_load(PNATState);
 int ftp_alias_unload(PNATState);
