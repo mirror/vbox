@@ -782,7 +782,7 @@ static bool vboxVHWASupportedInternal()
         return false;
     }
 
-#ifndef DEBUG
+#ifndef DEBUG_misha
     /* in case we do not support shaders & multitexturing we can not supprt dst colorkey,
      * no sense to report Video Acceleration supported */
     if(!g_vboxVHWAGlShaderSupported)
