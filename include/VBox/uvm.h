@@ -89,6 +89,9 @@ typedef struct UVM
      */
     struct UVM     *pNext;
 
+    /** Align the next member on a 32 byte boundrary. */
+    uint8_t         abAlignment0[HC_ARCH_BITS == 32 ? 16 : 0];
+
     /** The VM internal data. */
     union
     {
@@ -128,11 +131,15 @@ typedef struct UVM
     /** Per virtual CPU data. */
     UVMCPU                      aCpus[1];
 } UVM;
-AssertCompileMemberAlignment(UVM, vm, 8);
-AssertCompileMemberAlignment(UVM, mm, 8);
-AssertCompileMemberAlignment(UVM, pdm, 8);
-AssertCompileMemberAlignment(UVM, stam, 8);
+AssertCompileMemberAlignment(UVM, vm, 32);
+AssertCompileMemberAlignment(UVM, mm, 32);
+AssertCompileMemberAlignment(UVM, pdm, 32);
+AssertCompileMemberAlignment(UVM, stam, 32);
+AssertCompileMemberAlignment(UVM, aCpus[0], 4);
 AssertCompileMemberAlignment(UVM, aCpus[0], 8);
+AssertCompileMemberAlignment(UVM, aCpus[0], 16);
+AssertCompileMemberAlignment(UVM, aCpus[0], 32);
+AssertCompileMemberAlignment(UVM, aCpus[1], 4);
 AssertCompileMemberAlignment(UVM, aCpus[1], 8);
 
 /** The UVM::u32Magic value (Brad Mehldau). */
