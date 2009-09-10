@@ -29,6 +29,7 @@
 #include <VBox/pgm.h>
 #include <VBox/pdmcritsect.h>
 #include <VBox/param.h>
+#include <iprt/assert.h>
 #include <iprt/avl.h>
 
 
@@ -129,6 +130,7 @@ typedef struct IOMMMIOSTATS
     /** Number of writes to this address from R0/RC which was serviced in R3. */
     STAMCOUNTER                 WriteRZToR3;
 } IOMMMIOSTATS;
+AssertCompileMemberAlignment(IOMMMIOSTATS, ReadR3, 8);
 /** Pointer to I/O port statistics. */
 typedef IOMMMIOSTATS *PIOMMMIOSTATS;
 
@@ -240,7 +242,7 @@ typedef struct IOMIOPORTSTATS
 {
     /** Avl node core with the port as Key. */
     AVLOIOPORTNODECORE          Core;
-#if HC_ARCH_BITS == 64 && !defined(RT_OS_WINDOWS)
+#if HC_ARCH_BITS != 64 || !defined(RT_OS_WINDOWS)
     uint32_t                    u32Alignment; /**< The sizeof(Core) differs. */
 #endif
     /** Number of INs to this port from R3. */
@@ -266,6 +268,7 @@ typedef struct IOMIOPORTSTATS
     /** Number of OUTs to this port from R0/RC which was serviced in R3. */
     STAMCOUNTER                 OutRZToR3;
 } IOMIOPORTSTATS;
+AssertCompileMemberAlignment(IOMIOPORTSTATS, InR3, 8);
 /** Pointer to I/O port statistics. */
 typedef IOMIOPORTSTATS *PIOMIOPORTSTATS;
 

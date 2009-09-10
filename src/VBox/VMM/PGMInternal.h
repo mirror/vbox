@@ -36,9 +36,9 @@
 #include <VBox/log.h>
 #include <VBox/gmm.h>
 #include <VBox/hwaccm.h>
-#include <iprt/avl.h>
 #include <iprt/asm.h>
 #include <iprt/assert.h>
+#include <iprt/avl.h>
 #include <iprt/critsect.h>
 
 
@@ -1747,6 +1747,8 @@ typedef struct PGMPOOL
     uint16_t                    iAgeTail;
     /** Set if the cache is enabled. */
     bool                        fCacheEnabled;
+    /** Alignment padding. */
+    bool                        afPadding1[3];
 #endif /* PGMPOOL_WITH_CACHE */
 #ifdef PGMPOOL_WITH_MONITORING
     /** Head of the list of modified pages. */
@@ -1759,8 +1761,12 @@ typedef struct PGMPOOL
     R0PTRTYPE(PFNPGMR0PHYSHANDLER)  pfnAccessHandlerR0;
     /** Access handler, R3. */
     R3PTRTYPE(PFNPGMR3PHYSHANDLER)  pfnAccessHandlerR3;
-    /** The access handler description (HC ptr). */
+    /** The access handler description (R3 ptr). */
     R3PTRTYPE(const char *)         pszAccessHandler;
+# if HC_ARCH_BITS == 32
+    /** Alignment padding. */
+    uint32_t                    u32Padding2;
+# endif
     /* Next available slot. */
     uint32_t                    idxFreeDirtyPage;
     /* Number of active dirty pages. */
@@ -1895,6 +1901,14 @@ typedef struct PGMPOOL
      */
     PGMPOOLPAGE                 aPages[PGMPOOL_IDX_FIRST];
 } PGMPOOL, *PPGMPOOL, **PPPGMPOOL;
+#ifdef PGMPOOL_WITH_MONITORING
+AssertCompileMemberAlignment(PGMPOOL, iModifiedHead, 8);
+AssertCompileMemberAlignment(PGMPOOL, aDirtyPages, 8);
+#endif
+#ifdef VBOX_WITH_STATISTICS
+AssertCompileMemberAlignment(PGMPOOL, StatAlloc, 8);
+#endif
+AssertCompileMemberAlignment(PGMPOOL, aPages, 8);
 
 
 /** @def PGMPOOL_PAGE_2_PTR
@@ -2266,7 +2280,7 @@ typedef struct PGM
      */
     bool                            fRamPreAlloc;
     /** Alignment padding. */
-    bool                            afAlignment0[11];
+    bool                            afAlignment0[7];
 
     /*
      * This will be redefined at least two more times before we're done, I'm sure.
@@ -2336,7 +2350,7 @@ typedef struct PGM
      * are used of the PDs in PAE mode. */
     RTGCPTR                         GCPtrCR3Mapping;
 #if HC_ARCH_BITS == 64 && GC_ARCH_BITS == 32
-    uint32_t                        u32Alignment;
+    uint32_t                        u32Alignment1;
 #endif
 
     /** Indicates that PGMR3FinalizeMappings has been called and that further
@@ -2393,6 +2407,10 @@ typedef struct PGM
 
     /** The address of the ring-0 mapping cache if we're making use of it.  */
     RTR0PTR                         pvR0DynMapUsed;
+#if HC_ARCH_BITS == 32
+    /** Alignment padding that makes the next member start on a 8 byte boundrary. */
+    uint32_t                        u32Alignment2;
+#endif
 
     /** PGM critical section.
      * This protects the physical & virtual access handlers, ram ranges,
@@ -2414,6 +2432,8 @@ typedef struct PGM
     /** We're not in a state which permits writes to guest memory.
      * (Only used in strict builds.) */
     bool                            fNoMorePhysWrites;
+    /** Alignment padding that makes the next member start on a 8 byte boundrary. */
+    bool                            afAlignment3[HC_ARCH_BITS == 32 ? 7: 3];
 
     /**
      * Data associated with managing the ring-3 mappings of the allocation chunks.
@@ -2426,6 +2446,8 @@ typedef struct PGM
 #else
         R3R0PTRTYPE(PAVLU32NODECORE) pTree;
 #endif
+        /** The chunk age tree, ordered by ageing sequence number. */
+        R3PTRTYPE(PAVLLU32NODECORE) pAgeTree;
         /** The chunk mapping TLB. */
         PGMCHUNKR3MAPTLB            Tlb;
         /** The number of mapped chunks. */
@@ -2433,8 +2455,6 @@ typedef struct PGM
         /** The maximum number of mapped chunks.
          * @cfgm    PGM/MaxRing3Chunks */
         uint32_t                    cMax;
-        /** The chunk age tree, ordered by ageing sequence number. */
-        R3PTRTYPE(PAVLLU32NODECORE) pAgeTree;
         /** The current time. */
         uint32_t                    iNow;
         /** Number of pgmR3PhysChunkFindUnmapCandidate calls left to the next ageing. */
@@ -2565,6 +2585,15 @@ typedef struct PGM
 # endif
 #endif
 } PGM;
+AssertCompileMemberAlignment(PGM, paDynPageMap32BitPTEsGC, 8);
+AssertCompileMemberAlignment(PGM, HCPhysInterPD, 8);
+AssertCompileMemberAlignment(PGM, aHCPhysDynPageMapCache, 8);
+AssertCompileMemberAlignment(PGM, CritSect, 8);
+AssertCompileMemberAlignment(PGM, ChunkR3Map, 8);
+AssertCompileMemberAlignment(PGM, PhysTlbHC, 8);
+AssertCompileMemberAlignment(PGM, HCPhysZeroPg, 8);
+AssertCompileMemberAlignment(PGM, aHandyPages, 8);
+AssertCompileMemberAlignment(PGM, cRelocations, 8);
 /** Pointer to the PGM instance data. */
 typedef PGM *PPGM;
 

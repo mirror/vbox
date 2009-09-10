@@ -596,6 +596,55 @@ static int stamR3RegisterU(PUVM pUVM, void *pvSample, PFNSTAMR3CALLBACKRESET pfn
     if (pCur)
         Assert(stamR3SlashCompare(pCur->pszName, pszName) > 0);
 
+#ifdef VBOX_STRICT
+    /*
+     * Check alignment requirements.
+     */
+    switch (enmType)
+    {
+            /* 8 byte / 64-bit */
+        case STAMTYPE_U64:
+        case STAMTYPE_U64_RESET:
+        case STAMTYPE_X64:
+        case STAMTYPE_X64_RESET:
+        case STAMTYPE_COUNTER:
+        case STAMTYPE_PROFILE:
+        case STAMTYPE_PROFILE_ADV:
+            AssertMsg(!((uintptr_t)pvSample & 7), ("%p - %s\n", pvSample, pszName));
+            break;
+
+            /* 4 byte / 32-bit */
+        case STAMTYPE_RATIO_U32:
+        case STAMTYPE_RATIO_U32_RESET:
+        case STAMTYPE_U32:
+        case STAMTYPE_U32_RESET:
+        case STAMTYPE_X32:
+        case STAMTYPE_X32_RESET:
+            AssertMsg(!((uintptr_t)pvSample & 3), ("%p - %s\n", pvSample, pszName));
+            break;
+
+            /* 2 byte / 32-bit */
+        case STAMTYPE_U16:
+        case STAMTYPE_U16_RESET:
+        case STAMTYPE_X16:
+        case STAMTYPE_X16_RESET:
+            AssertMsg(!((uintptr_t)pvSample & 1), ("%p - %s\n", pvSample, pszName));
+            break;
+
+            /* 1 byte / 8-bit / unaligned */
+        case STAMTYPE_U8:
+        case STAMTYPE_U8_RESET:
+        case STAMTYPE_X8:
+        case STAMTYPE_X8_RESET:
+        case STAMTYPE_CALLBACK:
+            break;
+
+        default:
+            AssertMsgFailed(("%d\n", enmType));
+            break;
+    }
+#endif /* VBOX_STRICT */
+
     /*
      * Create a new node and insert it at the current location.
      */
