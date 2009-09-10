@@ -90,7 +90,7 @@ typedef struct UVM
     struct UVM     *pNext;
 
     /** Align the next member on a 32 byte boundrary. */
-    uint8_t         abAlignment0[HC_ARCH_BITS == 32 ? 16 : 0];
+    uint8_t         abAlignment0[HC_ARCH_BITS == 32 ? 16 : 8];
 
     /** The VM internal data. */
     union
