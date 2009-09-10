@@ -49,10 +49,8 @@ typedef struct UVMCPU
     PVMCPU                          pVCpu;
     /** The virtual CPU ID.  */
     RTCPUID                         idCpu;
-#if HC_ARCH_BITS == 64
     /** Alignment padding. */
-    uint32_t                        u32Alignment0;
-#endif
+    uint8_t                         abAlignment0[HC_ARCH_BITS == 32 ? 16 : 4];
 
     /** The VM internal data. */
     union
@@ -63,7 +61,7 @@ typedef struct UVMCPU
         uint8_t                     padding[768];
     } vm;
 } UVMCPU;
-AssertCompileMemberAlignment(UVMCPU, vm, 8);
+AssertCompileMemberAlignment(UVMCPU, vm, 32);
 
 
 /**
@@ -135,13 +133,7 @@ AssertCompileMemberAlignment(UVM, vm, 32);
 AssertCompileMemberAlignment(UVM, mm, 32);
 AssertCompileMemberAlignment(UVM, pdm, 32);
 AssertCompileMemberAlignment(UVM, stam, 32);
-AssertCompileMemberAlignment(UVM, aCpus, 2);
-AssertCompileMemberAlignment(UVM, aCpus, 4);
-AssertCompileMemberAlignment(UVM, aCpus, 8);
-AssertCompileMemberAlignment(UVM, aCpus, 16);
 AssertCompileMemberAlignment(UVM, aCpus, 32);
-AssertCompileMemberAlignment(UVM, aCpus[1], 4);
-AssertCompileMemberAlignment(UVM, aCpus[1], 8);
 
 /** The UVM::u32Magic value (Brad Mehldau). */
 #define UVM_MAGIC       0x19700823
