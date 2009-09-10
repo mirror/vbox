@@ -201,15 +201,8 @@ int main()
         rc++;
     }
     CHECK_MEMBER_ALIGNMENT(VM, trpm.s.aIdt, 16);
-    CHECK_MEMBER_ALIGNMENT(VM, cpum, 64);
-    CHECK_MEMBER_ALIGNMENT(VM, aCpus[0], 64);
-    CHECK_MEMBER_ALIGNMENT(VM, aCpus[1], 64);
-    CHECK_MEMBER_ALIGNMENT(VM, aCpus[0].cpum, 64);
-    CHECK_MEMBER_ALIGNMENT(VM, aCpus[0].hwaccm, 64);
-    CHECK_MEMBER_ALIGNMENT(VM, aCpus[0].pgm, 64);
-    CHECK_MEMBER_ALIGNMENT(VM, aCpus[0].em, 64);
-    CHECK_MEMBER_ALIGNMENT(VM, aCpus[0].tm, 64);
-    CHECK_MEMBER_ALIGNMENT(VM, aCpus[0].vmm, 64);
+    CHECK_MEMBER_ALIGNMENT(VM, aCpus[0], PAGE_SIZE);
+    CHECK_MEMBER_ALIGNMENT(VM, aCpus[1], PAGE_SIZE);
     CHECK_MEMBER_ALIGNMENT(VM, aCpus[0].cpum.s.Host, 64);
     CHECK_MEMBER_ALIGNMENT(VM, aCpus[0].cpum.s.Guest, 64);
     CHECK_MEMBER_ALIGNMENT(VM, aCpus[1].cpum.s.Host, 64);
@@ -290,6 +283,19 @@ int main()
     CHECK_MEMBER_ALIGNMENT(PDMDRVINS, achInstanceData, 16);
     CHECK_PADDING(PDMDRVINS, Internal, 1);
     CHECK_PADDING2(PDMCRITSECT);
+
+    /* pgm */
+#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
+    CHECK_MEMBER_ALIGNMENT(PGMCPU, AutoSet, 8);
+#endif
+    CHECK_MEMBER_ALIGNMENT(PGMCPU, GCPhysCR3, sizeof(RTGCPHYS));
+    CHECK_MEMBER_ALIGNMENT(PGMCPU, aGCPhysGstPaePDs, sizeof(RTGCPHYS));
+    CHECK_MEMBER_ALIGNMENT(PGMCPU, DisState, 8);
+    CHECK_MEMBER_ALIGNMENT(PGMCPU, cPoolAccessHandler, 8);
+#ifdef VBOX_WITH_STATISTICS
+    CHECK_MEMBER_ALIGNMENT(PGMCPU, StatSyncPtPD, 8);
+    CHECK_MEMBER_ALIGNMENT(PGMCPU, StatR3Prefetch, 8);
+#endif
     CHECK_MEMBER_ALIGNMENT(PGMPOOLPAGE, idx, sizeof(uint16_t));
     CHECK_MEMBER_ALIGNMENT(PGMPOOLPAGE, pvPageR3, sizeof(RTHCPTR));
     CHECK_MEMBER_ALIGNMENT(PGMPOOLPAGE, GCPhys, sizeof(RTGCPHYS));
@@ -305,6 +311,10 @@ int main()
     CHECK_SIZE_ALIGNMENT(REMHANDLERNOTIFICATION, 8);
     CHECK_MEMBER_ALIGNMENT(REMHANDLERNOTIFICATION, u.PhysicalDeregister.GCPhys, 8);
 
+    /* TM */
+    CHECK_MEMBER_ALIGNMENT(TM, TimerCritSect, sizeof(uintptr_t));
+    CHECK_MEMBER_ALIGNMENT(TM, VirtualSyncLock, sizeof(uintptr_t));
+
     /* misc */
     CHECK_PADDING3(EMCPU, u.FatalLongJump, u.achPaddingFatalLongJump);
     CHECK_SIZE_ALIGNMENT(VMMR0JMPBUF, 8);
@@ -314,10 +324,6 @@ int main()
     PRINT_OFFSET(VM, StatQemuToGC);
     PRINT_OFFSET(VM, StatGCToQemu);
 #endif
-
-    /* TM */
-    CHECK_MEMBER_ALIGNMENT(TM, TimerCritSect, sizeof(uintptr_t));
-    CHECK_MEMBER_ALIGNMENT(TM, VirtualSyncLock, sizeof(uintptr_t));
 
     CHECK_MEMBER_ALIGNMENT(IOM, EmtLock, sizeof(uintptr_t));
     CHECK_MEMBER_ALIGNMENT(EM, CritSectREM, sizeof(uintptr_t));
