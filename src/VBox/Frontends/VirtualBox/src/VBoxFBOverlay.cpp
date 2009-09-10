@@ -2736,12 +2736,13 @@ void VBoxVHWASurfaceBase::deleteDisplay(
 //        bool bInverted
         )
 {
+    if(mVisibleDisplayInitialized)
     {
-        if(mVisibleDisplayInitialized)
+        if(mVisibleDisplay)
         {
             glDeleteLists(mVisibleDisplay, 1);
-            mVisibleDisplayInitialized = false;
         }
+        mVisibleDisplayInitialized = false;
     }
 }
 
@@ -2825,7 +2826,7 @@ void VBoxVHWASurfaceBase::doDisplay(VBoxVHWASurfaceBase *pPrimary, VBoxVHWAGlPro
     }
 }
 
-GLuint VBoxVHWASurfaceBase::createDisplay(VBoxVHWASurfaceBase *pPrimary)
+int VBoxVHWASurfaceBase::createDisplay(VBoxVHWASurfaceBase *pPrimary, GLuint *pDisplay)
 {
     if(mVisibleTargRect.isEmpty())
     {
@@ -2836,7 +2837,8 @@ GLuint VBoxVHWASurfaceBase::createDisplay(VBoxVHWASurfaceBase *pPrimary)
     /* just for the fallback */
     if(mVisibleSrcRect.isEmpty())
     {
-        return 0;
+        *pDisplay = 0;
+        return VINF_SUCCESS;
     }
 
     VBoxVHWAGlProgramVHWA * pProgram = NULL;
@@ -2856,24 +2858,60 @@ GLuint VBoxVHWASurfaceBase::createDisplay(VBoxVHWASurfaceBase *pPrimary)
         pProgram = mWidget->vboxVHWAGetGlProgramMngr()->getProgram(pDstCKey != NULL, pSrcCKey != NULL, &colorFormat(), &pPrimary->colorFormat());
     }
 
+    glGetError(); /* clear the err flag */
     GLuint display = glGenLists(1);
-    VBOXQGL_ASSERTNOERR();
-    glNewList(display, GL_COMPILE);
+    GLenum err = glGetError();
+    if(err == GL_NO_ERROR)
+    {
+        Assert(display);
+        if(!display)
+        {
+            /* well, it seems it should not return 0 on success according to the spec,
+             * but just in case, pick another one */
+            display = glGenLists(1);
+            err = glGetError();
+            if(err == GL_NO_ERROR)
+            {
+                Assert(display);
+            }
+            else
+            {
+                /* we are failed */
+                Assert(!display);
+                display = 0;
+            }
+        }
 
-    doDisplay(pPrimary, pProgram, pDstCKey != NULL);
+        if(display)
+        {
+            glNewList(display, GL_COMPILE);
 
-    glEndList();
-    VBOXQGL_ASSERTNOERR();
+            doDisplay(pPrimary, pProgram, pDstCKey != NULL);
 
-    return display;
+            glEndList();
+            VBOXQGL_ASSERTNOERR();
+            *pDisplay = display;
+            return VINF_SUCCESS;
+        }
+    }
+    else
+    {
+        VBOXQGLLOG(("gl error ocured (0x%x)\n", err));
+        Assert(err == GL_NO_ERROR);
+    }
+
+    return VERR_GENERAL_FAILURE;
 }
 
 void VBoxVHWASurfaceBase::initDisplay(VBoxVHWASurfaceBase *pPrimary)
 {
     deleteDisplay();
 
-    mVisibleDisplay = createDisplay(pPrimary);
-    mVisibleDisplayInitialized = true;
+    int rc = createDisplay(pPrimary, &mVisibleDisplay);
+    if(RT_SUCCESS(rc))
+    {
+        mVisibleDisplayInitialized = true;
+    }
 }
 
 void VBoxVHWASurfaceBase::updatedMem(const QRect *rec)
@@ -2917,8 +2955,9 @@ bool VBoxVHWASurfaceBase::performDisplay(VBoxVHWASurfaceBase *pPrimary, bool bFo
     if(!bForce)
         return false;
 
-#ifdef DEBUG_misha
-    if(0)
+    Assert(mVisibleDisplay);
+
+    if(!mVisibleDisplayInitialized)
     {
         VBoxVHWAGlProgramVHWA * pProgram = NULL;
         const VBoxVHWAColorKey * pSrcCKey = NULL, *pDstCKey = NULL;
@@ -2942,7 +2981,6 @@ bool VBoxVHWASurfaceBase::performDisplay(VBoxVHWASurfaceBase *pPrimary, bool bFo
 //        doDisplay(pPrimary, NULL, false);
     }
     else
-#endif
     {
         VBOXQGL_CHECKERR(
                 glCallList(mVisibleDisplay);

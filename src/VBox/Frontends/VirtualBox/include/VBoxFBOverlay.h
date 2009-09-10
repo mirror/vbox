@@ -579,7 +579,7 @@ private:
     void initDisplay(VBoxVHWASurfaceBase *pPrimary);
     void deleteDisplay();
 
-    GLuint createDisplay(VBoxVHWASurfaceBase *pPrimary);
+    int createDisplay(VBoxVHWASurfaceBase *pPrimary, GLuint *pDisplay);
     void doDisplay(VBoxVHWASurfaceBase *pPrimary, VBoxVHWAGlProgramVHWA * pProgram, bool bBindDst);
     bool synchTexMem(const QRect * aRect);
 
