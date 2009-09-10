@@ -2281,7 +2281,7 @@ typedef struct PGM
      */
     bool                            fRamPreAlloc;
     /** Alignment padding. */
-    bool                            afAlignment0[7];
+    bool                            afAlignment0[3];
 
     /*
      * This will be redefined at least two more times before we're done, I'm sure.
@@ -2292,13 +2292,13 @@ typedef struct PGM
      *   - 2005-07-xx: 3rd time, bird.
      */
 
+    /** The host paging mode. (This is what SUPLib reports.) */
+    SUPPAGINGMODE                   enmHostMode;
+
     /** Pointer to the page table entries for the dynamic page mapping area - GCPtr. */
     RCPTRTYPE(PX86PTE)              paDynPageMap32BitPTEsGC;
     /** Pointer to the page table entries for the dynamic page mapping area - GCPtr. */
     RCPTRTYPE(PX86PTEPAE)           paDynPageMapPaePTEsGC;
-
-    /** The host paging mode. (This is what SUPLib reports.) */
-    SUPPAGINGMODE                   enmHostMode;
 
     /** 4 MB page mask; 32 or 36 bits depending on PSE-36 (identical for all VCPUs) */
     RTGCPHYS                        GCPhys4MBPSEMask;
@@ -2319,8 +2319,10 @@ typedef struct PGM
     R0PTRTYPE(PPGMROMRANGE)         pRomRangesR0;
     /** RC pointer corresponding to PGM::pRomRangesR3. */
     RCPTRTYPE(PPGMROMRANGE)         pRomRangesRC;
+#if HC_ARCH_BITS == 64
     /** Alignment padding. */
     RTRCPTR                         GCPtrPadding2;
+#endif
 
     /** Pointer to the list of MMIO2 ranges - for R3.
      * Registration order. */
@@ -2588,6 +2590,7 @@ typedef struct PGM
 } PGM;
 #ifndef IN_TSTVMSTRUCTGC /* HACK */
 AssertCompileMemberAlignment(PGM, paDynPageMap32BitPTEsGC, 8);
+AssertCompileMemberAlignment(PGM, GCPtrMappingFixed, sizeof(RTGCPTR));
 AssertCompileMemberAlignment(PGM, HCPhysInterPD, 8);
 AssertCompileMemberAlignment(PGM, aHCPhysDynPageMapCache, 8);
 AssertCompileMemberAlignment(PGM, CritSect, 8);
