@@ -373,7 +373,7 @@ void HGSMIHostWrite (HGSMIINSTANCE *pIns,
                 break;
             }
 
-#ifdef DEBUG_misha
+#ifdef DEBUGVHWASTRICT
             /* guest usually completes commands in the order it receives it
              * if we're here this would typically means there is some cmd loss */
             Assert(0);

@@ -584,7 +584,7 @@ typedef struct _VBOXVHWACMD_SURF_CANCREATE
 
         struct
         {
-            uint32_t ErrInfo;
+            int32_t ErrInfo;
         } out;
     } u;
 } VBOXVHWACMD_SURF_CANCREATE;

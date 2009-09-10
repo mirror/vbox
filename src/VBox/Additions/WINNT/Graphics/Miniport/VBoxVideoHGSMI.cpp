@@ -1257,7 +1257,9 @@ int vboxVBVAChannelDisplayEnable(PDEVICE_EXTENSION PrimaryExtension,
 	Assert(pDispContext);
 	if(pDispContext)
 	{
+#ifdef DEBUGVHWASTRICT
 	    Assert(!pDispContext->bValid);
+#endif
 	    Assert(!pDispContext->pFirstCmd);
 	    Assert(!pDispContext->pLastCmd);
 		if(!pDispContext->bValid)
