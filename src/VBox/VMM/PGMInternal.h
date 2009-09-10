@@ -2586,6 +2586,7 @@ typedef struct PGM
 # endif
 #endif
 } PGM;
+#ifndef IN_TSTVMSTRUCTGC /* HACK */
 AssertCompileMemberAlignment(PGM, paDynPageMap32BitPTEsGC, 8);
 AssertCompileMemberAlignment(PGM, HCPhysInterPD, 8);
 AssertCompileMemberAlignment(PGM, aHCPhysDynPageMapCache, 8);
@@ -2595,6 +2596,7 @@ AssertCompileMemberAlignment(PGM, PhysTlbHC, 8);
 AssertCompileMemberAlignment(PGM, HCPhysZeroPg, 8);
 AssertCompileMemberAlignment(PGM, aHandyPages, 8);
 AssertCompileMemberAlignment(PGM, cRelocations, 8);
+#endif /* !IN_TSTVMSTRUCTGC */
 /** Pointer to the PGM instance data. */
 typedef PGM *PPGM;
 
