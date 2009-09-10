@@ -1148,16 +1148,14 @@ static int pcbiosPlantDMITable(PPDMDEVINS pDevIns, uint8_t *pTable, unsigned cbM
     pOEMStrings->header.u16Handle = 0x0002;
     pOEMStrings->u8Count          = 2;
 
-    char* pszVBoxVer, *pszVBoxRev;
-    RTStrAPrintf(&pszVBoxVer, "vboxVer_%d.%d.%d",
-                  RTBldCfgVersionMajor(), RTBldCfgVersionMinor(), RTBldCfgVersionBuild());
-    RTStrAPrintf(&pszVBoxRev, "vboxRev_%ld", RTBldCfgRevision());
-    READCFGSTR("DmiOEMVBoxVer", pszDmiOEMVBoxVer, pszVBoxVer);
-    READCFGSTR("DmiOEMVBoxRev", pszDmiOEMVBoxRev, pszVBoxRev);
+    char szTmp[64];
+    RTStrPrintf(szTmp, sizeof(szTmp), "vboxVer_%u.%u.%u",
+                RTBldCfgVersionMajor(), RTBldCfgVersionMinor(), RTBldCfgVersionBuild());
+    READCFGSTR("DmiOEMVBoxVer", pszDmiOEMVBoxVer, szTmp);
+    RTStrPrintf(szTmp, sizeof(szTmp), "vboxRev_%u", RTBldCfgRevision());
+    READCFGSTR("DmiOEMVBoxRev", pszDmiOEMVBoxRev, szTmp);
     SETSTRING(pOEMStrings->u8VBoxVersion, pszDmiOEMVBoxVer);
     SETSTRING(pOEMStrings->u8VBoxRevision, pszDmiOEMVBoxRev);
-    RTStrFree(pszVBoxVer);
-    RTStrFree(pszVBoxRev);
     *pszStr++                    = '\0';
 
     /* End-of-table marker - includes padding to account for fixed table size. */
