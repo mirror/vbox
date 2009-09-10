@@ -1206,7 +1206,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
 #endif
 #ifdef VBOX_WITH_VIRTIO
     PCFGMNODE pDevVirtioNet = NULL;          /* Virtio network devices */
-    rc = CFGMR3InsertNode(pDevices, "virtio-net", &pDevVirtioNet);                           RC_CHECK();
+    rc = CFGMR3InsertNode(pDevices, "virtio-net", &pDevVirtioNet);                  RC_CHECK();
 #endif /* VBOX_WITH_VIRTIO */
     for (ULONG ulInstance = 0; ulInstance < SchemaDefs::NetworkAdapterCount; ulInstance++)
     {
