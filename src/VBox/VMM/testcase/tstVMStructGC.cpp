@@ -486,6 +486,8 @@ int main()
 #ifdef VBOX_WITH_STATISTICS
     GEN_CHECK_OFF(PGMCPU, pStatTrap0eAttributionR0);
     GEN_CHECK_OFF(PGMCPU, pStatTrap0eAttributionRC);
+    GEN_CHECK_OFF(PGMCPU, StatSyncPtPD);
+    GEN_CHECK_OFF(PGMCPU, StatR3Prefetch);
 #endif
     GEN_CHECK_OFF(PGM, offVM);
     GEN_CHECK_OFF(PGM, offVCpuPGM);

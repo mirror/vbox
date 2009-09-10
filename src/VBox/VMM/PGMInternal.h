@@ -2759,9 +2759,7 @@ typedef struct PGMCPU
     DECLRCCALLBACKMEMBER(unsigned,  pfnRCBthAssertCR3,(PVMCPU pVCpu, uint64_t cr3, uint64_t cr4, RTGCPTR GCPtr, RTGCPTR cb));
     DECLRCCALLBACKMEMBER(int,       pfnRCBthMapCR3,(PVMCPU pVCpu, RTGCPHYS GCPhysCR3));
     DECLRCCALLBACKMEMBER(int,       pfnRCBthUnmapCR3,(PVMCPU pVCpu));
-#if HC_ARCH_BITS == 64
     RTRCPTR                         alignment2; /**< structure size alignment. */
-#endif
     /** @} */
 
     /** For saving stack space, the disassembler state is allocated here instead of
