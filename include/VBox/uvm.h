@@ -135,10 +135,11 @@ AssertCompileMemberAlignment(UVM, vm, 32);
 AssertCompileMemberAlignment(UVM, mm, 32);
 AssertCompileMemberAlignment(UVM, pdm, 32);
 AssertCompileMemberAlignment(UVM, stam, 32);
-AssertCompileMemberAlignment(UVM, aCpus[0], 4);
-AssertCompileMemberAlignment(UVM, aCpus[0], 8);
-AssertCompileMemberAlignment(UVM, aCpus[0], 16);
-AssertCompileMemberAlignment(UVM, aCpus[0], 32);
+AssertCompileMemberAlignment(UVM, aCpus, 2);
+AssertCompileMemberAlignment(UVM, aCpus, 4);
+AssertCompileMemberAlignment(UVM, aCpus, 8);
+AssertCompileMemberAlignment(UVM, aCpus, 16);
+AssertCompileMemberAlignment(UVM, aCpus, 32);
 AssertCompileMemberAlignment(UVM, aCpus[1], 4);
 AssertCompileMemberAlignment(UVM, aCpus[1], 8);
 
