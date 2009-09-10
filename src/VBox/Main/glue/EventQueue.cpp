@@ -186,7 +186,7 @@ timedWaitForEventsOnDarwin(nsIEventQueue *pQueue, PRInt32 cMsTimeout)
   if (!orc || orc == kCFRunLoopRunHandledSource)
     return VINF_SUCCESS;
 
-  if (orc != kCFRunLoopRunTimedOut) 
+  if (orc != kCFRunLoopRunTimedOut)
   {
       NS_WARNING("Unexpected status code from CFRunLoopRunInMode");
   }
@@ -209,7 +209,7 @@ processPendingEvents()
         if (rc == VERR_INTERRUPTED)
             break;
         rc = VINF_SUCCESS;
-    }    
+    }
     return rc;
 }
 /** For automatic cleanup,   */
@@ -217,14 +217,14 @@ class MyThreadHandle
 {
 public:
   HANDLE mh;
-  
+
   MyThreadHandle()
   {
-    if (!DuplicateHandle(GetCurrentProcess(), 
-                         GetCurrentThread(), 
+    if (!DuplicateHandle(GetCurrentProcess(),
+                         GetCurrentThread(),
                          GetCurrentProcess(),
-                         &mh, 
-                         0 /*dwDesiredAccess*/, 
+                         &mh,
+                         0 /*dwDesiredAccess*/,
                          FALSE /*bInheritHandle*/,
                          DUPLICATE_SAME_ACCESS))
       mh = INVALID_HANDLE_VALUE;
@@ -242,7 +242,7 @@ processPendingEvents(nsIEventQueue* pQueue)
 {
   /** @todo: rethink interruption events, current NULL event approach is bad */
   pQueue->ProcessPendingEvents();
-  return VINF_SUCCESS; 
+  return VINF_SUCCESS;
 }
 #endif
 int EventQueue::processEventQueue(uint32_t cMsTimeout)
@@ -253,8 +253,8 @@ int EventQueue::processEventQueue(uint32_t cMsTimeout)
     do {
       PRBool fHasEvents = PR_FALSE;
       nsresult rc;
-      
-      rc = mEventQ->PendingEvents(&fHasEvents);     
+
+      rc = mEventQ->PendingEvents(&fHasEvents);
       if (NS_FAILED (rc))
           return VERR_INTERNAL_ERROR_3;
 
@@ -283,7 +283,7 @@ int EventQueue::processEventQueue(uint32_t cMsTimeout)
           cMsTimeout = 0xffff0000;
 #endif
       }
-      
+
       /* Bit tricky part - perform timed wait */
 #  ifdef RT_OS_DARWIN
       rc = timedWaitForEventsOnDarwin(mEventQ, cMsTimeout);
@@ -291,10 +291,10 @@ int EventQueue::processEventQueue(uint32_t cMsTimeout)
       int fd = mEventQ->GetEventQueueSelectFD();
       fd_set fdsetR, fdsetE;
       struct timeval tv;
-      
+
       FD_ZERO(&fdsetR);
       FD_SET(fd, &fdsetR);
-      
+
       fdsetE = fdsetR;
       tv.tv_sec = (PRInt64)cMsTimeout / 1000;
       tv.tv_usec = ((PRInt64)cMsTimeout % 1000) * 1000;
@@ -306,24 +306,24 @@ int EventQueue::processEventQueue(uint32_t cMsTimeout)
         rc = VERR_INTERRUPTED;
       else if (aCode < 0)
         rc = VERR_INTERNAL_ERROR_4;
-      
-#  endif      
+
+#  endif
     } while (0);
 
     rc = processPendingEvents(mEventQ);
 #else /* Windows */
     do {
-        int aCode = processPendingEventsOnWindows();
+        int aCode = processPendingEvents();
         if (aCode != VERR_TIMEOUT || cMsTimeout == 0)
         {
             rc = aCode;
             break;
         }
-        
+
         if (cMsTimeout == RT_INDEFINITE_WAIT)
         {
             Event* aEvent = NULL;
-          
+
             BOOL fHasEvent = waitForEvent(&aEvent);
             if (fHasEvent)
               handleEvent(aEvent);
@@ -335,9 +335,9 @@ int EventQueue::processEventQueue(uint32_t cMsTimeout)
         /* Perform timed wait */
         MyThreadHandle aHandle;
 
-        DWORD aCode2 = MsgWaitForMultipleObjects(1, &aHandle.mh, 
-                                                 TRUE /*fWaitAll*/, 
-                                                 0 /*ms*/, 
+        DWORD aCode2 = MsgWaitForMultipleObjects(1, &aHandle.mh,
+                                                 TRUE /*fWaitAll*/,
+                                                 0 /*ms*/,
                                                  QS_ALLINPUT);
         if (aCode2 == WAIT_TIMEOUT)
             rc = VERR_TIMEOUT;
@@ -484,4 +484,3 @@ int  EventQueue::getSelectFD()
 }
 }
 /* namespace com */
-
