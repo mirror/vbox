@@ -232,7 +232,7 @@ VirtualBox_LDFLAGS.darwin.x86 = -framework QuickTime
 ifdef VBOX_WITH_ICHAT_THEATER
  VirtualBox_LDFLAGS.darwin += -framework InstantMessage -framework QuartzCore
 endif
-if defined(VBOX_WITH_VIDEOHWACCEL) || defined(VBOX_GUI_USE_QGL) 
+if defined(VBOX_WITH_VIDEOHWACCEL) || defined(VBOX_GUI_USE_QGL)
  VirtualBox_LDFLAGS.darwin += -framework OpenGL
 endif
 
@@ -244,7 +244,7 @@ ifeq ($(filter-out freebsd linux netbsd openbsd solaris,$(KBUILD_TARGET)),) # X1
  VirtualBox_LIBS         += $(PATH_DLL)/VBoxKeyboard$(VBOX_SUFF_DLL)
 endif
 
-if defined(VBOX_WITH_VIDEOHWACCEL) || defined(VBOX_GUI_USE_QGL) 
+if defined(VBOX_WITH_VIDEOHWACCEL) || defined(VBOX_GUI_USE_QGL)
  VirtualBox_LIBS.win     += $(PATH_SDK_WINPSDK_LIB)/Opengl32.lib
  VirtualBox_LIBS.solaris += GL
 endif
@@ -464,18 +464,18 @@ endif
 
 ifdef VBOX_WITH_COCOA_QT
  VirtualBox_SOURCES.darwin += \
-	src/darwin/VBoxCocoaApplication.m \
-	src/darwin/VBoxUtils-darwin-cocoa.m \
-	src/darwin/VBoxDockIconPreview-cocoa.m
+ 	src/darwin/VBoxCocoaApplication.m \
+ 	src/darwin/VBoxUtils-darwin-cocoa.m \
+ 	src/darwin/VBoxDockIconPreview-cocoa.m
 else
  VirtualBox_SOURCES.darwin += \
-	src/darwin/VBoxUtils-darwin-carbon.cpp
+ 	src/darwin/VBoxUtils-darwin-carbon.cpp
 endif
 
 if defined(VBOX_WITH_VIDEOHWACCEL) || defined(VBOX_GUI_USE_QGL)
  VirtualBox_SOURCES += \
-	src/VBoxFBQGL.cpp \
-    src/VBoxFBOverlay.cpp
+ 	src/VBoxFBQGL.cpp \
+ 	src/VBoxFBOverlay.cpp
 endif
 # The Qt modules we're using.
 # (The include directory and lib/framework for each module will be added by the Qt4 unit.)
@@ -499,7 +499,7 @@ if defined(VBOX_WITH_VIDEOHWACCEL) || defined(VBOX_GUI_USE_QGL)
 VirtualBox_SOURCES += VirtualBoxShaders.qrc
 VirtualBoxShaders.qrc_RCCFLAGS = -name SHADERS
 endif
- 
+
 # Import the translation source from VBoxUI.pro and add the qt_xx_YY counterparts
 VirtualBox_QT_TRANSLATIONS := $(TRANSLATIONS) \
 	$(patsubst nls/VirtualBox_%.ts,nls/qt_%.ts, $(filter nls/VirtualBox_%.ts,$(TRANSLATIONS)))
