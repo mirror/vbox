@@ -87,7 +87,7 @@ typedef struct MMHEAPSTAT
     size_t                  cbCurAllocated;
 #endif
 } MMHEAPSTAT;
-#if defined(MMR3HEAP_WITH_STATISTICS) && !defined(IN_TSTVMSTRUCTGC)
+#if defined(MMR3HEAP_WITH_STATISTICS) && !defined(IN_RING3)
 AssertCompileMemberAlignment(MMHEAPSTAT, cAllocations, 8);
 #endif
 /** Pointer to heap statistics record. */
@@ -177,7 +177,9 @@ typedef struct MMUKHEAPSTAT
     /** Number of bytes currently allocated. */
     size_t                  cbCurAllocated;
 } MMUKHEAPSTAT;
+#ifdef IN_RING3
 AssertCompileMemberAlignment(MMUKHEAPSTAT, cAllocations, 8);
+#endif
 /** Pointer to heap statistics record. */
 typedef MMUKHEAPSTAT *PMMUKHEAPSTAT;
 
@@ -219,7 +221,9 @@ typedef struct MMUKHEAP
     /** Heap global statistics. */
     MMUKHEAPSTAT            Stat;
 } MMUKHEAP;
+#ifdef IN_RING3
 AssertCompileMemberAlignment(MMUKHEAP, Stat, 8);
+#endif
 /** Pointer to MM Heap structure. */
 typedef MMUKHEAP *PMMUKHEAP;
 
@@ -567,9 +571,11 @@ typedef struct MMPAGEPOOL
     STAMCOUNTER                         cErrors;
 #endif
 } MMPAGEPOOL;
+#ifndef IN_RC
 AssertCompileMemberAlignment(MMPAGEPOOL, cSubPools, 4);
-#ifdef VBOX_WITH_STATISTICS
+# ifdef VBOX_WITH_STATISTICS
 AssertCompileMemberAlignment(MMPAGEPOOL, cAllocCalls, 8);
+# endif
 #endif
 /** Pointer to page pool. */
 typedef MMPAGEPOOL *PMMPAGEPOOL;
