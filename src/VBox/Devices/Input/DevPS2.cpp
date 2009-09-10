@@ -1,4 +1,4 @@
-/* $Id: $ */
+/* $Id$ */
 /** @file
  * DevPS2 - PS/2 keyboard & mouse controller device.
  */
