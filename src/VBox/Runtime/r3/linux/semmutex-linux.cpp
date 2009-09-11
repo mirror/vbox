@@ -37,6 +37,7 @@
 #include <iprt/thread.h>
 #include <iprt/asm.h>
 #include <iprt/err.h>
+#include <iprt/time.h>
 #include "internal/magics.h"
 #include "internal/strict.h"
 
