@@ -76,8 +76,8 @@ RT_C_DECLS_END
                    (unsigned)RT_OFFSETOF(strct, member), \
                    (unsigned)RT_OFFSETOF(strct, member), \
                    (unsigned)(align), \
-                   (unsigned)((align) - RT_OFFSETOF(strct, member) & ((align) - 1)), \
-                   (unsigned)((align) - RT_OFFSETOF(strct, member) & ((align) - 1)) ); \
+                   (unsigned)(((align) - RT_OFFSETOF(strct, member)) & ((align) - 1)), \
+                   (unsigned)(((align) - RT_OFFSETOF(strct, member)) & ((align) - 1)) ); \
             rc++; \
         } \
     } while (0)
