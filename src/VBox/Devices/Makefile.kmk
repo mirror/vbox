@@ -76,6 +76,9 @@ ifdef VBOX_WITH_USB
 else
  VBoxDDU_SDKS.win        = WINPSDK
 endif
+ifdef VBOX_WITH_NEW_IO_CODE
+ VBoxDDU_DEFS           += VBOX_WITH_NEW_IO_CODE
+endif
 VBoxDDU_SOURCES          = \
 	Storage/VBoxHDD.cpp \
 	Storage/VDIHDDCore.cpp \
