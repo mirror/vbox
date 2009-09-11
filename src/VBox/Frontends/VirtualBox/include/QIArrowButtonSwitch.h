@@ -42,7 +42,9 @@ class QIArrowButtonSwitch : public QIRichToolButton
 
 public:
 
-    QIArrowButtonSwitch (const QString &aName = QString::null, QWidget *aParent = 0);
+    QIArrowButtonSwitch (QWidget *aParent = 0);
+    QIArrowButtonSwitch (const QString &aName, QWidget *aParent = 0);
+
     bool isExpanded() const { return mIsExpanded; }
 
 private slots:

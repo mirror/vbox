@@ -48,13 +48,9 @@ VBoxVMSettingsNetwork::VBoxVMSettingsNetwork (VBoxVMSettingsNetworkPage *aParent
                           "[0-9A-Fa-f][02468ACEace][0-9A-Fa-f]{10}"), this));
     mLeMAC->setMinimumWidthByText (QString().fill ('0', 12));
 
-    connect (mTbMAC, SIGNAL (clicked()), this, SLOT (generateMac()));
-
-    mNetworkChild2->hide();
-    mAbsAdvanced = new QIArrowButtonSwitch(tr("A&dvanced"));
-    mNetworkChildGridLayout->addWidget (mAbsAdvanced);
-
+    /* Setup connections */
     connect (mAbsAdvanced, SIGNAL (clicked()), this, SLOT (toggleAdvanced()));
+    connect (mTbMAC, SIGNAL (clicked()), this, SLOT (generateMac()));
 
 #ifdef Q_WS_MAC
     /* Prevent this widgets to go in the Small/Mini size state which is
@@ -68,6 +64,9 @@ VBoxVMSettingsNetwork::VBoxVMSettingsNetwork (VBoxVMSettingsNetworkPage *aParent
     /* Remove tool-button border at MAC */
     mTbMAC->setStyleSheet ("QToolButton {border: 0px none black;}");
 #endif /* Q_WS_MAC */
+
+    /* Hide advanced items initially */
+    toggleAdvanced();
 
     /* Applying language settings */
     retranslateUi();
@@ -409,7 +408,12 @@ void VBoxVMSettingsNetwork::updateAlternativeName()
 
 void VBoxVMSettingsNetwork::toggleAdvanced()
 {
-    mNetworkChild2->setVisible(!mNetworkChild2->isVisible());
+    mLbAType->setVisible (mAbsAdvanced->isExpanded());
+    mCbAdapterType->setVisible (mAbsAdvanced->isExpanded());
+    mLbMAC->setVisible (mAbsAdvanced->isExpanded());
+    mLeMAC->setVisible (mAbsAdvanced->isExpanded());
+    mTbMAC->setVisible (mAbsAdvanced->isExpanded());
+    mCbCable->setVisible (mAbsAdvanced->isExpanded());
 }
 
 void VBoxVMSettingsNetwork::generateMac()

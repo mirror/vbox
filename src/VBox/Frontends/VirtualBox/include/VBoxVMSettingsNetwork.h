@@ -26,12 +26,10 @@
 /* VBox Includes */
 #include "COMDefs.h"
 #include "VBoxSettingsPage.h"
-#include "QIArrowButtonSwitch.h"
 #include "VBoxVMSettingsNetwork.gen.h"
 
 /* VBox Forwardes */
 class VBoxVMSettingsNetworkPage;
-class QIArrowButtonSwitch;
 
 class VBoxVMSettingsNetwork : public QIWithRetranslateUI <QWidget>,
                               public Ui::VBoxVMSettingsNetwork
@@ -72,7 +70,6 @@ private:
     VBoxVMSettingsNetworkPage *mParent;
     CNetworkAdapter mAdapter;
     QIWidgetValidator *mValidator;
-    QIArrowButtonSwitch *mAbsAdvanced;
 
     QString mBrgName;
     QString mIntName;

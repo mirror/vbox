@@ -32,10 +32,23 @@
 #include <QStylePainter>
 #include <QStyleOptionFocusRect>
 
+QIRichToolButton::QIRichToolButton (QWidget *aParent)
+    : QWidget (aParent)
+    , mButton (new QToolButton())
+    , mLabel (new QLabel())
+{
+    init();
+}
+
 QIRichToolButton::QIRichToolButton (const QString &aName, QWidget *aParent)
-        : QWidget (aParent)
-        , mButton (new QToolButton())
-        , mLabel (new QLabel (aName))
+    : QWidget (aParent)
+    , mButton (new QToolButton())
+    , mLabel (new QLabel (aName))
+{
+    init();
+}
+
+void QIRichToolButton::init()
 {
     /* Setup itself */
     setFocusPolicy (Qt::StrongFocus);

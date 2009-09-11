@@ -40,8 +40,24 @@
      </property>
     </widget>
    </item>
+   <item row="1" column="0">
+    <spacer name="horizontalSpacer1">
+     <property name="orientation">
+      <enum>Qt::Horizontal</enum>
+     </property>
+     <property name="sizeType">
+      <enum>QSizePolicy::Fixed</enum>
+     </property>
+     <property name="sizeHint" stdset="0">
+      <size>
+       <width>20</width>
+       <height>0</height>
+      </size>
+     </property>
+    </spacer>
+   </item>
    <item row="1" column="1" >
-    <widget class="QWidget" name="mNetworkChild" native="true">
+    <widget class="QWidget" name="mNetworkChild" native="1">
      <layout class="QGridLayout" name="mNetworkChildGridLayout">
       <property name="margin">
        <number>0</number>
@@ -59,8 +75,14 @@
         </property>
        </widget>
       </item>
-      <item row="0" column="1" colspan="2" >
+      <item row="0" column="1">
        <widget class="QComboBox" name="mCbAttachmentType">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
         <property name="whatsThis" >
          <string>Controls how this virtual adapter is attached to the real network of the Host OS.</string>
         </property>
@@ -79,36 +101,30 @@
         </property>
        </widget>
       </item>
-      <item row="1" column="1" colspan="2">
+      <item row="1" column="1">
        <widget class="QComboBox" name="mCbName">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
         <property name="whatsThis" >
          <string>Selects the name of the network adapter if attachment type is equivalent to &lt;b&gt;Bridged Adapter&lt;/b&gt; or &lt;b&gt;Host-only Adapter&lt;/b&gt; and the name of the internal network if attachment type is equivalent to &lt;b&gt;Internal Network&lt;/b&gt;.</string>
         </property>
        </widget>
       </item>
-      <item row="0" column="3" rowspan="3">
-       <spacer name="horizontalSpacer6">
-        <property name="orientation">
-         <enum>Qt::Horizontal</enum>
+      <item row="2" column="0">
+       <widget class="QIArrowButtonSwitch" native="1" name="mAbsAdvanced">
+        <property name="text">
+         <string>A&amp;dvanced</string>
         </property>
-        <property name="sizeHint" stdset="0">
-         <size>
-          <width>40</width>
-          <height>20</height>
-         </size>
+        <property name="whatsThis" >
+         <string>Shows/hide additional network adapter options.</string>
         </property>
-       </spacer>
+       </widget>
       </item>
-     </layout>
-    </widget>
-   </item>
-   <item row="2" column="1">
-    <widget class="QWidget" name="mNetworkChild2" native="true">
-     <layout class="QGridLayout" name="mNetworkChild2GridLayout">
-      <property name="topMargin">
-       <number>0</number>
-      </property>
-      <item row="0" column="0">
+      <item row="3" column="0">
        <widget class="QLabel" name="mLbAType">
         <property name="text">
          <string>Adapter &amp;Type:</string>
@@ -121,34 +137,41 @@
         </property>
        </widget>
       </item>
-      <item row="1" column="0" colspan="2">
-       <widget class="QLabel" name="mLbMAC">
-        <property name="enabled">
-         <bool>true</bool>
+      <item row="3" column="1" colspan="3">
+       <widget class="QComboBox" name="mCbAdapterType">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
         </property>
+        <property name="whatsThis">
+         <string>Selects the type of the virtual network adapter. Depending on this value, VirtualBox will provide different network hardware to the virtual machine.</string>
+        </property>
+       </widget>
+      </item>
+      <item row="4" column="0">
+       <widget class="QLabel" name="mLbMAC">
         <property name="text">
          <string>&amp;Mac Address:</string>
+        </property>
+        <property name="alignment" >
+         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
         </property>
         <property name="buddy">
          <cstring>mLeMAC</cstring>
         </property>
        </widget>
       </item>
-      <item row="1" column="2">
+      <item row="4" column="1" colspan="2">
        <widget class="QILineEdit" name="mLeMAC">
         <property name="sizePolicy">
-         <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+         <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
           <horstretch>0</horstretch>
           <verstretch>0</verstretch>
          </sizepolicy>
         </property>
-        <property name="maximumSize">
-         <size>
-          <width>110</width>
-          <height>22</height>
-         </size>
-        </property>
-        <property name="toolTip">
+        <property name="whatsThis">
          <string>Displays the MAC address of this adapter. It contains exactly 12 characters chosen from {0-9,A-F}. Note that the second character must be an even digit.</string>
         </property>
         <property name="frame">
@@ -156,9 +179,9 @@
         </property>
        </widget>
       </item>
-      <item row="1" column="3">
+      <item row="4" column="3">
        <widget class="QToolButton" name="mTbMAC">
-        <property name="toolTip">
+        <property name="whatsThis">
          <string>Generates a new random MAC address.</string>
         </property>
         <property name="icon">
@@ -170,9 +193,9 @@
         </property>
        </widget>
       </item>
-      <item row="2" column="2" colspan="2">
+      <item row="5" column="1" colspan="3">
        <widget class="QCheckBox" name="mCbCable">
-        <property name="toolTip">
+        <property name="whatsThis">
          <string>Indicates whether the virtual network cable is plugged in on machine startup or not.</string>
         </property>
         <property name="text">
@@ -180,28 +203,8 @@
         </property>
        </widget>
       </item>
-      <item row="0" column="2" colspan="3">
-       <widget class="QComboBox" name="mCbAdapterType">
-        <property name="whatsThis">
-         <string>Selects the type of the virtual network adapter. Depending on this value, VirtualBox will provide different network hardware to the virtual machine.</string>
-        </property>
-       </widget>
-      </item>
-      <item row="0" column="5" rowspan="3">
-       <spacer name="horizontalSpacer_2">
-        <property name="orientation">
-         <enum>Qt::Horizontal</enum>
-        </property>
-        <property name="sizeHint" stdset="0">
-         <size>
-          <width>40</width>
-          <height>20</height>
-         </size>
-        </property>
-       </spacer>
-      </item>
-      <item row="1" column="4">
-       <spacer name="horizontalSpacer_3">
+      <item rowspan="2" row="0" column="2" colspan="2">
+       <spacer name="horizontalSpacer3">
         <property name="orientation">
          <enum>Qt::Horizontal</enum>
         </property>
@@ -216,24 +219,8 @@
      </layout>
     </widget>
    </item>
-   <item row="1" column="0" rowspan="2">
+   <item row="1" column="2">
     <spacer name="horizontalSpacer2">
-     <property name="orientation">
-      <enum>Qt::Horizontal</enum>
-     </property>
-     <property name="sizeType">
-      <enum>QSizePolicy::Fixed</enum>
-     </property>
-     <property name="sizeHint" stdset="0">
-      <size>
-       <width>20</width>
-       <height>20</height>
-      </size>
-     </property>
-    </spacer>
-   </item>
-   <item row="1" column="2" rowspan="2">
-    <spacer name="horizontalSpacer4">
      <property name="orientation">
       <enum>Qt::Horizontal</enum>
      </property>
@@ -245,8 +232,8 @@
      </property>
     </spacer>
    </item>
-   <item row="3" column="1">
-    <spacer name="verticalSpacer2">
+   <item row="4" column="0" colspan="3">
+    <spacer name="verticalSpacer">
      <property name="orientation">
       <enum>Qt::Vertical</enum>
      </property>
@@ -266,6 +253,12 @@
    <extends>QLineEdit</extends>
    <header>QILineEdit.h</header>
   </customwidget>
+  <customwidget>
+   <class>QIArrowButtonSwitch</class>
+   <extends>QWidget</extends>
+   <header>QIArrowButtonSwitch.h</header>
+   <container>1</container>
+  </customwidget>
  </customwidgets>
  <resources>
   <include location="../VirtualBox.qrc"/>
@@ -284,22 +277,6 @@
     <hint type="destinationlabel">
      <x>196</x>
      <y>111</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>mGbAdapter</sender>
-   <signal>toggled(bool)</signal>
-   <receiver>mNetworkChild2</receiver>
-   <slot>setEnabled(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>52</x>
-     <y>17</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>49</x>
-     <y>147</y>
     </hint>
    </hints>
   </connection>
