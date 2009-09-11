@@ -27,7 +27,6 @@
 
 
 BEGINCODE
-    align 16
 
 ;;
 ; Calls the interrupt gate as if we received an interrupt while in Ring-0.
@@ -36,6 +35,7 @@ BEGINCODE
 ; @param   SelCS   x86:[ebp+12]  msc:dx   gcc:si   The interrupt gate CS.
 ; @param   RSP                   msc:r8   gcc:rdx  The interrupt gate RSP. ~0 if no stack switch should take place. (only AMD64)
 ;DECLASM(void) trpmR0DispatchHostInterrupt(RTR0UINTPTR uIP, RTSEL SelCS, RTR0UINTPTR RSP);
+ALIGNCODE(16)
 BEGINPROC trpmR0DispatchHostInterrupt
     push    xBP
     mov     xBP, xSP
@@ -124,6 +124,7 @@ ENDPROC trpmR0DispatchHostInterrupt
 ; @param   uActiveVector   x86:[esp+4]   msc:rcx  gcc:rdi   The vector number.
 ;
 ;DECLASM(void) trpmR0DispatchHostInterruptSimple(RTUINT uActiveVector);
+ALIGNCODE(16)
 BEGINPROC trpmR0DispatchHostInterruptSimple
 %ifdef RT_ARCH_X86
     mov     eax, [esp + 4]
@@ -137,6 +138,7 @@ BEGINPROC trpmR0DispatchHostInterruptSimple
  %endif
 %endif
 
+ALIGNCODE(4)
 .jmp_table:
 %assign i 0
 %rep 256
