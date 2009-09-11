@@ -22,9 +22,9 @@
 
 /* VBox Includes */
 #include "QIWidgetValidator.h"
+#include "QIArrowButtonSwitch.h"
 #include "VBoxGlobal.h"
 #include "VBoxVMSettingsNetwork.h"
-#include "VBoxVMSettingsNetworkDetails.h"
 
 /* Qt Includes */
 #include <QTimer>
@@ -37,19 +37,24 @@ const char *emptyItemCode = "#empty#";
 VBoxVMSettingsNetwork::VBoxVMSettingsNetwork (VBoxVMSettingsNetworkPage *aParent)
     : QIWithRetranslateUI <QWidget> (0)
     , mParent (aParent)
-    , mDetails (new VBoxVMSettingsNetworkDetails (this))
     , mValidator (0)
 {
     /* Apply UI decorations */
     Ui::VBoxVMSettingsNetwork::setupUi (this);
 
     /* Setup widgets */
-    mTbDetails->setIcon (VBoxGlobal::iconSet (
-        ":/settings_16px.png", ":/settings_dis_16px.png"));
     mCbName->setInsertPolicy (QComboBox::NoInsert);
+    mLeMAC->setValidator (new QRegExpValidator (QRegExp (
+                          "[0-9A-Fa-f][02468ACEace][0-9A-Fa-f]{10}"), this));
+    mLeMAC->setMinimumWidthByText (QString().fill ('0', 12));
 
-    /* Applying language settings */
-    retranslateUi();
+    connect (mTbMAC, SIGNAL (clicked()), this, SLOT (generateMac()));
+
+    mNetworkChild2->hide();
+    mAbsAdvanced = new QIArrowButtonSwitch(tr("A&dvanced"));
+    mNetworkChildGridLayout->addWidget (mAbsAdvanced);
+
+    connect (mAbsAdvanced, SIGNAL (clicked()), this, SLOT (toggleAdvanced()));
 
 #ifdef Q_WS_MAC
     /* Prevent this widgets to go in the Small/Mini size state which is
@@ -61,8 +66,11 @@ VBoxVMSettingsNetwork::VBoxVMSettingsNetwork (VBoxVMSettingsNetworkPage *aParent
             w->setFixedHeight (w->sizeHint().height());
 
     /* Remove tool-button border at MAC */
-    mTbDetails->setStyleSheet ("QToolButton {border: 0px none black;}");
+    mTbMAC->setStyleSheet ("QToolButton {border: 0px none black;}");
 #endif /* Q_WS_MAC */
+
+    /* Applying language settings */
+    retranslateUi();
 }
 
 void VBoxVMSettingsNetwork::getFromAdapter (const CNetworkAdapter &aAdapter)
@@ -100,8 +108,8 @@ void VBoxVMSettingsNetwork::getFromAdapter (const CNetworkAdapter &aAdapter)
     }
     updateAttachmentAlternative();
 
-    /* Load details page */
-    mDetails->getFromAdapter (aAdapter);
+    mLeMAC->setText (mAdapter.GetMACAddress());
+    mCbCable->setChecked (mAdapter.GetCableConnected());
 }
 
 void VBoxVMSettingsNetwork::putBackToAdapter()
@@ -139,8 +147,8 @@ void VBoxVMSettingsNetwork::putBackToAdapter()
             break;
     }
 
-    /* Save details page */
-    mDetails->putBackToAdapter();
+    mAdapter.SetMACAddress (mLeMAC->text().isEmpty() ? QString::null : mLeMAC->text());
+    mAdapter.SetCableConnected (mCbCable->isChecked());
 }
 
 void VBoxVMSettingsNetwork::setValidator (QIWidgetValidator *aValidator)
@@ -151,8 +159,6 @@ void VBoxVMSettingsNetwork::setValidator (QIWidgetValidator *aValidator)
              mValidator, SLOT (revalidate()));
     connect (mCbAttachmentType, SIGNAL (activated (const QString&)),
              this, SLOT (updateAttachmentAlternative()));
-    connect (mTbDetails, SIGNAL (clicked (bool)),
-             this, SLOT (detailsClicked()));
     connect (mCbName, SIGNAL (activated (const QString&)),
              this, SLOT (updateAlternativeName()));
     connect (mCbName, SIGNAL (editTextChanged (const QString&)),
@@ -205,11 +211,14 @@ bool VBoxVMSettingsNetwork::revalidate (QString &aWarning, QString &aTitle)
 QWidget* VBoxVMSettingsNetwork::setOrderAfter (QWidget *aAfter)
 {
     setTabOrder (aAfter, mGbAdapter);
-    setTabOrder (mGbAdapter, mCbAdapterType);
-    setTabOrder (mCbAdapterType, mCbAttachmentType);
-    setTabOrder (mCbAttachmentType, mTbDetails);
-    setTabOrder (mTbDetails, mCbName);
-    return mCbName;
+    setTabOrder (mGbAdapter, mCbAttachmentType);
+    setTabOrder (mCbAttachmentType, mCbName);
+    setTabOrder (mCbName, mAbsAdvanced);
+    setTabOrder (mAbsAdvanced, mCbAdapterType);
+    setTabOrder (mCbAdapterType, mLeMAC);
+    setTabOrder (mLeMAC, mTbMAC);
+    setTabOrder (mTbMAC, mCbCable);
+    return mCbCable;
 }
 
 QString VBoxVMSettingsNetwork::pageTitle() const
@@ -398,18 +407,15 @@ void VBoxVMSettingsNetwork::updateAlternativeName()
         mValidator->revalidate();
 }
 
-void VBoxVMSettingsNetwork::detailsClicked()
+void VBoxVMSettingsNetwork::toggleAdvanced()
 {
-    /* Lock the button to avoid double-click bug */
-    mTbDetails->setEnabled (false);
+    mNetworkChild2->setVisible(!mNetworkChild2->isVisible());
+}
 
-    /* Show details sub-dialog */
-    mDetails->activateWindow();
-    mDetails->reload();
-    mDetails->exec();
-
-    /* Unlock the previously locked button */
-    mTbDetails->setEnabled (true);
+void VBoxVMSettingsNetwork::generateMac()
+{
+    mAdapter.SetMACAddress (QString::null);
+    mLeMAC->setText (mAdapter.GetMACAddress());
 }
 
 void VBoxVMSettingsNetwork::populateComboboxes()

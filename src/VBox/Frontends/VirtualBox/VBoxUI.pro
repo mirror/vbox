@@ -46,7 +46,6 @@ FORMS = \
     ui/VBoxVMSettingsFD.ui \
     ui/VBoxVMSettingsAudio.ui \
     ui/VBoxVMSettingsNetwork.ui \
-    ui/VBoxVMSettingsNetworkDetails.ui \
     ui/VBoxVMSettingsSerial.ui \
     ui/VBoxVMSettingsParallel.ui \
     ui/VBoxVMSettingsUSB.ui \
