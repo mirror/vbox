@@ -444,6 +444,7 @@ static int pdmacFileAioMgrNormalProcessTaskList(PPDMACTASKFILE pTaskHead,
                 if (cRequests == RT_ELEMENTS(apReqs))
                 {
                     pAioMgr->cRequestsActive += cRequests;
+                    pEndpoint->AioMgr.cRequestsActive += cRequests;
                     rc = RTFileAioCtxSubmit(pAioMgr->hAioCtx, apReqs, cRequests);
                     if (RT_FAILURE(rc))
                     {
@@ -463,6 +464,7 @@ static int pdmacFileAioMgrNormalProcessTaskList(PPDMACTASKFILE pTaskHead,
     if (cRequests)
     {
         pAioMgr->cRequestsActive += cRequests;
+        pEndpoint->AioMgr.cRequestsActive += cRequests;
         rc = RTFileAioCtxSubmit(pAioMgr->hAioCtx, apReqs, cRequests);
         AssertMsgReturn(RT_SUCCESS(rc), ("Could not submit %u requests %Rrc\n", cRequests, rc), rc);
     }
@@ -625,6 +627,7 @@ static int pdmacFileAioMgrNormalProcessBlockingEvent(PPDMACEPFILEMGR pAioMgr)
         pAioMgr->enmBlockingEvent = PDMACEPFILEAIOMGRBLOCKINGEVENT_INVALID;
 
         /* Release the waiting thread. */
+        LogFlow(("Signalling waiter\n"));
         rc = RTSemEventSignal(pAioMgr->EventSemBlock);
         AssertRC(rc);
     }
@@ -763,6 +766,7 @@ int pdmacFileAioMgrNormal(RTTHREAD ThreadSelf, void *pvUser)
                         pAioMgr->iFreeEntryNext = (pAioMgr->iFreeEntryNext + 1) %pAioMgr->cReqEntries;
 
                         pAioMgr->cRequestsActive--;
+                        pEndpoint->AioMgr.cRequestsActive--;
                         pEndpoint->AioMgr.cReqsProcessed++;
 
                         /* Call completion callback */
@@ -814,6 +818,7 @@ int pdmacFileAioMgrNormal(RTTHREAD ThreadSelf, void *pvUser)
                             ASMAtomicWriteBool(&pAioMgr->fBlockingEventPending, false);
 
                             /* Release the waiting thread. */
+                            LogFlow(("Signalling waiter\n"));
                             rc = RTSemEventSignal(pAioMgr->EventSemBlock);
                             AssertRC(rc);
                         }
