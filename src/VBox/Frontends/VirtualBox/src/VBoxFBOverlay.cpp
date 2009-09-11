@@ -3235,7 +3235,7 @@ int VBoxGLWidget::vhwaSurfaceCanCreate(struct _VBOXVHWACMD_SURF_CANCREATE *pCmd)
         pCmd->u.out.ErrInfo = -1;
         return VINF_SUCCESS;
     }
-
+#ifdef VBOXVHWA_ALLOW_PRIMARY_AND_OVERLAY_ONLY
     if(pCmd->SurfInfo.surfCaps & VBOXVHWA_SCAPS_OFFSCREENPLAIN)
     {
 #ifdef DEBUGVHWASTRICT
@@ -3244,16 +3244,34 @@ int VBoxGLWidget::vhwaSurfaceCanCreate(struct _VBOXVHWACMD_SURF_CANCREATE *pCmd)
         pCmd->u.out.ErrInfo = -1;
         return VINF_SUCCESS;
     }
+#endif
 
     if(pCmd->SurfInfo.surfCaps & VBOXVHWA_SCAPS_PRIMARYSURFACE)
     {
-        pCmd->u.out.ErrInfo = 0;
+        if(pCmd->SurfInfo.surfCaps & VBOXVHWA_SCAPS_COMPLEX)
+        {
+#ifdef DEBUG_misha
+            Assert(0);
+#endif
+            pCmd->u.out.ErrInfo = -1;
+        }
+        else
+        {
+            pCmd->u.out.ErrInfo = 0;
+        }
         return VINF_SUCCESS;
     }
 
-
-    Assert(/*pCmd->SurfInfo.surfCaps & VBOXVHWA_SCAPS_OFFSCREENPLAIN
-            || */ pCmd->SurfInfo.surfCaps & VBOXVHWA_SCAPS_OVERLAY);
+#ifdef VBOXVHWA_ALLOW_PRIMARY_AND_OVERLAY_ONLY
+    if((pCmd->SurfInfo.surfCaps & VBOXVHWA_SCAPS_OVERLAY) == 0)
+    {
+#ifdef DEBUGVHWASTRICT
+        Assert(0);
+#endif
+        pCmd->u.out.ErrInfo = -1;
+        return VINF_SUCCESS;
+    }
+#endif
 
     if(pCmd->u.in.bIsDifferentPixelFormat)
     {
@@ -3337,6 +3355,7 @@ int VBoxGLWidget::vhwaSurfaceCreate(struct _VBOXVHWACMD_SURF_CREATE *pCmd)
 
     VBoxVHWASurfaceBase *surf = NULL;
 //    VBoxVHWAColorFormat *pFormat = NULL, Format;
+    bool bNoPBO = false;
     bool bPrimary = false;
 
     VBoxVHWAColorKey *pDstBltCKey = NULL, DstBltCKey;
@@ -3366,10 +3385,13 @@ int VBoxGLWidget::vhwaSurfaceCreate(struct _VBOXVHWACMD_SURF_CREATE *pCmd)
 
     if(pCmd->SurfInfo.surfCaps & VBOXVHWA_SCAPS_PRIMARYSURFACE)
     {
+        bNoPBO = true;
         bPrimary = true;
         VBoxVHWASurfaceBase * pVga = vboxGetVGASurface();
 
-        if(pVga->handle() == VBOXVHWA_SURFHANDLE_INVALID)
+        Assert((pCmd->SurfInfo.surfCaps & VBOXVHWA_SCAPS_OFFSCREENPLAIN) == 0);
+        if(pVga->handle() == VBOXVHWA_SURFHANDLE_INVALID
+                && (pCmd->SurfInfo.surfCaps & VBOXVHWA_SCAPS_OFFSCREENPLAIN) == 0)
         {
             Assert(pCmd->SurfInfo.PixelFormat.flags & VBOXVHWA_PF_RGB);
 //            if(pCmd->SurfInfo.PixelFormat.flags & VBOXVHWA_PF_RGB)
@@ -3402,6 +3424,10 @@ int VBoxGLWidget::vhwaSurfaceCreate(struct _VBOXVHWACMD_SURF_CREATE *pCmd)
             }
         }
     }
+    else if(pCmd->SurfInfo.surfCaps & VBOXVHWA_SCAPS_OFFSCREENPLAIN)
+    {
+        bNoPBO = true;
+    }
 
     if(!surf)
     {
@@ -3420,7 +3446,7 @@ int VBoxGLWidget::vhwaSurfaceCreate(struct _VBOXVHWACMD_SURF_CREATE *pCmd)
                         mViewport,
                         format,
                         pSrcBltCKey, pDstBltCKey, pSrcOverlayCKey, pDstOverlayCKey,
-                        bPrimary);
+                        bNoPBO);
         }
         else if(pCmd->SurfInfo.PixelFormat.flags & VBOXVHWA_PF_FOURCC)
         {
@@ -3435,7 +3461,7 @@ int VBoxGLWidget::vhwaSurfaceCreate(struct _VBOXVHWACMD_SURF_CREATE *pCmd)
                                     mViewport,
                                     format,
                                     pSrcBltCKey, pDstBltCKey, pSrcOverlayCKey, pDstOverlayCKey,
-                                    bPrimary);
+                                    bNoPBO);
         }
         else
         {
@@ -3449,7 +3475,9 @@ int VBoxGLWidget::vhwaSurfaceCreate(struct _VBOXVHWACMD_SURF_CREATE *pCmd)
 
         if(pCmd->SurfInfo.surfCaps & VBOXVHWA_SCAPS_OVERLAY)
         {
-            Assert(!bPrimary);
+#ifdef DEBUG_misha
+            Assert(!bNoPBO);
+#endif
 
             if(!mConstructingList)
             {
@@ -3465,7 +3493,7 @@ int VBoxGLWidget::vhwaSurfaceCreate(struct _VBOXVHWACMD_SURF_CREATE *pCmd)
                 mConstructingList = NULL;
             }
         }
-        else if(bPrimary)
+        else
         {
             VBoxVHWASurfaceBase * pVga = vboxGetVGASurface();
             Assert(pVga->handle() != VBOXVHWA_SURFHANDLE_INVALID);
@@ -3475,21 +3503,12 @@ int VBoxGLWidget::vhwaSurfaceCreate(struct _VBOXVHWACMD_SURF_CREATE *pCmd)
 #ifdef DEBUGVHWASTRICT
             Assert(pCmd->SurfInfo.surfCaps & VBOXVHWA_SCAPS_VISIBLE);
 #endif
-//            if(pCmd->SurfInfo.surfCaps & VBOXVHWA_SCAPS_VISIBLE)
+            if(bPrimary)
             {
                 Assert(surf->getComplexList() == mDisplay.getVGA()->getComplexList());
                 surf->getComplexList()->setCurrentVisible(surf);
                 mDisplay.updateVGA(surf);
             }
-        }
-        else if(pCmd->SurfInfo.surfCaps & VBOXVHWA_SCAPS_COMPLEX)
-        {
-            //TODO: impl fullscreen mode support
-            Assert(0);
-        }
-        else
-        {
-            Assert(0);
         }
     }
 
@@ -3991,7 +4010,9 @@ int VBoxGLWidget::vhwaQueryInfo1(struct _VBOXVHWACMD_QUERYINFO1 *pCmd)
 
         pCmd->u.out.surfaceCaps =
                             VBOXVHWA_SCAPS_PRIMARYSURFACE
-                    //        | VBOXVHWA_SCAPS_OFFSCREENPLAIN
+#ifndef VBOXVHWA_ALLOW_PRIMARY_AND_OVERLAY_ONLY
+                            | VBOXVHWA_SCAPS_OFFSCREENPLAIN
+#endif
                             | VBOXVHWA_SCAPS_FLIP
                             | VBOXVHWA_SCAPS_LOCALVIDMEM
                             | VBOXVHWA_SCAPS_OVERLAY
