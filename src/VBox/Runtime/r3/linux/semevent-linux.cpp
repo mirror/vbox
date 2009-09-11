@@ -33,10 +33,9 @@
 
 /*
  * glibc 2.6 fixed a serious bug in the mutex implementation. We wrote this
- * linux specific event semaphores code in order to work around the bug. As it
- * turns out, this code seems to have an unresolved issue (#2599), so we'll
- * fall back on the pthread based implementation if glibc is known to contain
- * the bug fix.
+ * linux specific event semaphores code in order to work around the bug. We
+ * will fall back on the pthread-based implementation if glibc is known to
+ * contain the bug fix.
  *
  * The external refernce to epoll_pwait is a hack which prevents that we link
  * against glibc < 2.6.
@@ -81,10 +80,10 @@ struct RTSEMEVENTINTERNAL
     /** Magic value. */
     intptr_t volatile   iMagic;
     /** The futex state variable.
-     * <0 means signaled.
-     *  0 means not signaled, no waiters.
-     * >0 means not signaled, and the value gives the number of waiters.
-     */
+     * 0 means not signalled.
+     * 1 means signalled */
+    uint32_t volatile   fSignalled;
+    /** The number of waiting threads */
     int32_t volatile    cWaiters;
 };
 
@@ -92,7 +91,7 @@ struct RTSEMEVENTINTERNAL
 /**
  * Wrapper for the futex syscall.
  */
-static long sys_futex(int32_t volatile *uaddr, int op, int val, struct timespec *utime, int32_t *uaddr2, int val3)
+static long sys_futex(uint32_t volatile *uaddr, int op, int val, struct timespec *utime, int32_t *uaddr2, int val3)
 {
     errno = 0;
     long rc = syscall(__NR_futex, uaddr, op, val, utime, uaddr2, val3);
@@ -116,6 +115,7 @@ RTDECL(int)  RTSemEventCreate(PRTSEMEVENT pEventSem)
     {
         pThis->iMagic = RTSEMEVENT_MAGIC;
         pThis->cWaiters = 0;
+        pThis->fSignalled = 0;
         *pEventSem = pThis;
         return VINF_SUCCESS;
     }
@@ -140,7 +140,7 @@ RTDECL(int)  RTSemEventDestroy(RTSEMEVENT EventSem)
     ASMAtomicXchgSize(&pThis->iMagic, RTSEMEVENT_MAGIC | UINT32_C(0x80000000));
     if (ASMAtomicXchgS32(&pThis->cWaiters, INT32_MIN / 2) > 0)
     {
-        sys_futex(&pThis->cWaiters, FUTEX_WAKE, INT_MAX, NULL, NULL, 0);
+        sys_futex(&pThis->fSignalled, FUTEX_WAKE, INT_MAX, NULL, NULL, 0);
         usleep(1000);
     }
 
@@ -160,55 +160,20 @@ RTDECL(int)  RTSemEventSignal(RTSEMEVENT EventSem)
     struct RTSEMEVENTINTERNAL *pThis = EventSem;
     AssertReturn(VALID_PTR(pThis) && pThis->iMagic == RTSEMEVENT_MAGIC,
                  VERR_INVALID_HANDLE);
-    /*
-     * Try signal it.
-     */
-    for (unsigned i = 0;; i++)
-    {
-        int32_t iCur;
-        if (ASMAtomicCmpXchgExS32(&pThis->cWaiters, -1, 0, &iCur))
-            break; /* nobody is waiting */
-        else if (iCur < 0)
-            break; /* already signaled */
-        else
-        {
-            /* somebody is waiting, try wake up one of them. */
-            long cWoken = sys_futex(&pThis->cWaiters, FUTEX_WAKE, 1, NULL, NULL, 0);
-            if (RT_LIKELY(cWoken == 1))
-            {
-                ASMAtomicDecS32(&pThis->cWaiters);
-                break;
-            }
-            AssertMsg(cWoken == 0, ("%ld\n", cWoken));
 
-            /*
-             * This path is taken in two situations:
-             *      1) A waiting thread is returning from the sys_futex call with a
-             *         non-zero return value.
-             *      2) There are two threads signaling the event at the
-             *         same time and only one thread waiting.
-             *
-             * At this point we know that nobody is activly waiting on the event but
-             * at the same time, we are racing someone updating the state. The current
-             * strategy is to spin till the thread racing us is done, this is kind of
-             * brain dead and need fixing of course.
-             */
-            if (RT_UNLIKELY(i > 32))
-            {
-                if ((i % 128) == 127)
-                    usleep(1000);
-                else if (!(i % 4))
-                    pthread_yield();
-                else
-                    AssertReleaseMsg(i < 4096, ("iCur=%#x pThis=%p\n", iCur, pThis));
-            }
-        }
+    ASMAtomicWriteU32(&pThis->fSignalled, 1);
+    if (ASMAtomicReadS32(&pThis->cWaiters) < 1)
+        return VINF_SUCCESS;
 
-        /* Check the magic to fend off races with RTSemEventDestroy. */
-        if (RT_UNLIKELY(pThis->iMagic != RTSEMEVENT_MAGIC))
-            return VERR_SEM_DESTROYED;
-    }
-    return VINF_SUCCESS;
+    /* somebody is waiting, try wake up one of them. */
+    long cWoken = sys_futex(&pThis->fSignalled, FUTEX_WAKE, 1, NULL, NULL, 0);
+    if (RT_LIKELY(cWoken >= 0))
+        return VINF_SUCCESS;
+
+    if (RT_UNLIKELY(pThis->iMagic != RTSEMEVENT_MAGIC))
+        return VERR_SEM_DESTROYED;
+
+    return VERR_INVALID_PARAMETER;
 }
 
 
@@ -224,7 +189,7 @@ static int rtSemEventWait(RTSEMEVENT EventSem, unsigned cMillies, bool fAutoResu
     /*
      * Quickly check whether it's signaled.
      */
-    if (ASMAtomicCmpXchgS32(&pThis->cWaiters, 0, -1))
+    if (ASMAtomicCmpXchgU32(&pThis->fSignalled, 0, 1))
         return VINF_SUCCESS;
 
     /*
@@ -239,64 +204,51 @@ static int rtSemEventWait(RTSEMEVENT EventSem, unsigned cMillies, bool fAutoResu
         pTimeout = &ts;
     }
 
+    ASMAtomicIncS32(&pThis->cWaiters);
+
     /*
      * The wait loop.
      */
-    for (unsigned i = 0;; i++)
+    int rc = VINF_SUCCESS;
+    for (;;)
     {
-        /*
-         * Announce that we're among the waiters.
-         */
-        int32_t iNew = ASMAtomicIncS32(&pThis->cWaiters);
-        if (iNew == 0)
-            return VINF_SUCCESS;
-        if (RT_LIKELY(iNew > 0))
+        long lrc = sys_futex(&pThis->fSignalled, FUTEX_WAIT, 0, pTimeout, NULL, 0);
+        if (RT_UNLIKELY(pThis->iMagic != RTSEMEVENT_MAGIC))
         {
-            /*
-             * Go to sleep.
-             */
-            long rc = sys_futex(&pThis->cWaiters, FUTEX_WAIT, iNew, pTimeout, NULL, 0);
-            if (RT_UNLIKELY(pThis->iMagic != RTSEMEVENT_MAGIC))
-                return VERR_SEM_DESTROYED;
+            rc = VERR_SEM_DESTROYED;
+            break;
+        }
 
-            /* Did somebody wake us up from RTSemEventSignal()? */
-            if (rc == 0)
-                return VINF_SUCCESS;
-
-            /* No, then the kernel woke us up or we failed going to sleep. Adjust the accounting. */
-            iNew = ASMAtomicDecS32(&pThis->cWaiters);
-            Assert(iNew >= 0);
-
-            /*
-             * Act on the wakup code.
-             */
-            if (rc == -ETIMEDOUT)
+        if (RT_LIKELY(lrc == 0 || lrc == -EWOULDBLOCK))
+        {
+            /* successful wakeup or fSignalled > 0 in the meantime */
+            if (ASMAtomicCmpXchgU32(&pThis->fSignalled, 0, 1))
+                break;
+        }
+        else if (lrc == -ETIMEDOUT)
+        {
+            rc = VERR_TIMEOUT;
+            break;
+        }
+        else if (lrc == -EINTR)
+        {
+            if (!fAutoResume)
             {
-                Assert(pTimeout);
-                return VERR_TIMEOUT;
-            }
-            if (rc == -EWOULDBLOCK)
-                /* retry with new value. */;
-            else if (rc == -EINTR)
-            {
-                if (!fAutoResume)
-                    return VERR_INTERRUPTED;
-            }
-            else
-            {
-                /* this shouldn't happen! */
-                AssertMsgFailed(("rc=%ld errno=%d\n", rc, errno));
-                return RTErrConvertFromErrno(rc);
+                rc = VERR_INTERRUPTED;
+                break;
             }
         }
         else
         {
-            /* this can't happen. */
-            if (RT_UNLIKELY(pThis->iMagic != RTSEMEVENT_MAGIC))
-                return VERR_SEM_DESTROYED;
-            AssertReleaseMsgFailed(("iNew=%d\n", iNew));
+            /* this shouldn't happen! */
+            AssertMsgFailed(("rc=%ld errno=%d\n", lrc, errno));
+            rc = RTErrConvertFromErrno(lrc);
+            break;
         }
     }
+
+    ASMAtomicDecS32(&pThis->cWaiters);
+    return rc;
 }
 
 
