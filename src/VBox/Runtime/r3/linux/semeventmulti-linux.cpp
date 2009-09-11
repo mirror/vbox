@@ -30,7 +30,7 @@
 
 
 #include <features.h>
-#if __GLIBC_PREREQ(2,6) && 0
+#if __GLIBC_PREREQ(2,6)
 
 /*
  * glibc 2.6 fixed a serious bug in the mutex implementation. We wrote this
