@@ -527,8 +527,13 @@ typedef struct VDIIMAGEDESC
     /** Link to child image descriptor, if any. */
     struct VDIIMAGEDESC    *pNext;
 #endif /* !VBOX_VDICORE_VD */
+#ifndef VBOX_WITH_NEW_IO_CODE
     /** File handle. */
     RTFILE                  File;
+#else
+    /** Opaque storage handle. */
+    void                   *pvStorage;
+#endif
 #ifndef VBOX_VDICORE_VD
     /** True if the image is operating in readonly mode. */
     bool                    fReadOnly;
@@ -584,6 +589,12 @@ typedef struct VDIIMAGEDESC
     PVDINTERFACE            pInterfaceError;
     /** Error interface callback table. */
     PVDINTERFACEERROR       pInterfaceErrorCallbacks;
+# ifdef VBOX_WITH_NEW_IO_CODE
+    /** Async I/O interface. */
+    PVDINTERFACE        pInterfaceAsyncIO;
+    /** Async I/O interface callbacks. */
+    PVDINTERFACEASYNCIO pInterfaceAsyncIOCallbacks;
+# endif
 #endif /* VBOX_VDICORE_VD */
 } VDIIMAGEDESC, *PVDIIMAGEDESC;
 

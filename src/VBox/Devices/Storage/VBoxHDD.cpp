@@ -48,6 +48,19 @@
 #define VD_MERGE_BUFFER_SIZE    (16 * _1M)
 
 /**
+ * VD async I/O interface storage descriptor.
+ */
+typedef struct VDIASYNCIOSTORAGE
+{
+    /** File handle. */
+    RTFILE         File;
+    /** Completion callback. */
+    PFNVDCOMPLETED pfnCompleted;
+    /** Thread for async access. */
+    RTTHREAD       ThreadAsync;
+} VDIASYNCIOSTORAGE, *PVDIASYNCIOSTORAGE;
+
+/**
  * VBox HDD Container image descriptor.
  */
 typedef struct VDIMAGE
@@ -115,6 +128,11 @@ struct VBOXHDD
     PVDINTERFACE        pInterfaceError;
     /** Pointer to the error interface we use if available. */
     PVDINTERFACEERROR   pInterfaceErrorCallbacks;
+
+    /** Fallback async interface. */
+    VDINTERFACE         VDIAsyncIO;
+    /** Fallback async I/O interface callback table. */
+    VDINTERFACEASYNCIO  VDIAsyncIOCallbacks;
 };
 
 
@@ -707,6 +725,138 @@ out:
 }
 
 /**
+ * VD async I/O interface open callback.
+ */
+static int vdAsyncIOOpen(void *pvUser, const char *pszLocation, unsigned uOpenFlags,
+                         PFNVDCOMPLETED pfnCompleted, void **ppStorage)
+{
+    PVDIASYNCIOSTORAGE pStorage = (PVDIASYNCIOSTORAGE)RTMemAllocZ(sizeof(VDIASYNCIOSTORAGE));
+
+    if (!pStorage)
+        return VERR_NO_MEMORY;
+
+    pStorage->pfnCompleted = pfnCompleted;
+
+    unsigned uFlags = 0;
+
+    if (uOpenFlags & VD_INTERFACEASYNCIO_OPEN_FLAGS_READONLY)
+        uFlags |= RTFILE_O_READ | RTFILE_O_DENY_NONE;
+    else
+        uFlags |= RTFILE_O_READWRITE | RTFILE_O_DENY_WRITE;
+
+    if (uOpenFlags & VD_INTERFACEASYNCIO_OPEN_FLAGS_CREATE)
+        uFlags |= RTFILE_O_CREATE;
+    else
+        uFlags |= RTFILE_O_OPEN;
+
+    /* Open the file. */
+    int rc = RTFileOpen(&pStorage->File, pszLocation, uFlags);
+    if (RT_SUCCESS(rc))
+    {
+        *ppStorage = pStorage;
+        return VINF_SUCCESS;
+    }
+
+    RTMemFree(pStorage);
+    return rc;
+}
+
+/**
+ * VD async I/O interface close callback.
+ */
+static int vdAsyncIOClose(void *pvUser, void *pvStorage)
+{
+    PVDIASYNCIOSTORAGE pStorage = (PVDIASYNCIOSTORAGE)pvStorage;
+
+    RTFileClose(pStorage->File);
+    RTMemFree(pStorage);
+    return VINF_SUCCESS;
+}
+
+/**
+ * VD async I/O interface callback for retrieving the file size.
+ */
+static int vdAsyncIOGetSize(void *pvUser, void *pvStorage, uint64_t *pcbSize)
+{
+    PVDIASYNCIOSTORAGE pStorage = (PVDIASYNCIOSTORAGE)pvStorage;
+
+    return RTFileGetSize(pStorage->File, pcbSize);
+}
+
+/**
+ * VD async I/O interface callback for setting the file size.
+ */
+static int vdAsyncIOSetSize(void *pvUser, void *pvStorage, uint64_t cbSize)
+{
+    PVDIASYNCIOSTORAGE pStorage = (PVDIASYNCIOSTORAGE)pvStorage;
+
+    return RTFileSetSize(pStorage->File, cbSize);
+}
+
+/**
+ * VD async I/O interface callback for a synchronous write to the file.
+ */
+static int vdAsyncIOWriteSync(void *pvUser, void *pvStorage, uint64_t uOffset,
+                             size_t cbWrite, const void *pvBuf, size_t *pcbWritten)
+{
+    PVDIASYNCIOSTORAGE pStorage = (PVDIASYNCIOSTORAGE)pvStorage;
+
+    return RTFileWriteAt(pStorage->File, uOffset, pvBuf, cbWrite, pcbWritten);
+}
+
+/**
+ * VD async I/O interface callback for a synchronous read from the file.
+ */
+static int vdAsyncIOReadSync(void *pvUser, void *pvStorage, uint64_t uOffset,
+                             size_t cbRead, void *pvBuf, size_t *pcbRead)
+{
+    PVDIASYNCIOSTORAGE pStorage = (PVDIASYNCIOSTORAGE)pvStorage;
+
+    return RTFileReadAt(pStorage->File, uOffset, pvBuf, cbRead, pcbRead);
+}
+
+/**
+ * VD async I/O interface callback for a synchronous flush of the file data.
+ */
+static int vdAsyncIOFlushSync(void *pvUser, void *pvStorage)
+{
+    PVDIASYNCIOSTORAGE pStorage = (PVDIASYNCIOSTORAGE)pvStorage;
+
+    return RTFileFlush(pStorage->File);
+}
+
+/**
+ * VD async I/O interface callback for a asynchronous read from the file.
+ */
+static int vdAsyncIOReadAsync(void *pvUser, void *pStorage, uint64_t uOffset,
+                              PCPDMDATASEG paSegments, size_t cSegments,
+                              size_t cbRead, void *pvCompletion,
+                              void **ppTask)
+{
+    return VERR_NOT_IMPLEMENTED;
+}
+
+/**
+ * VD async I/O interface callback for a asynchronous write to the file.
+ */
+static int vdAsyncIOWriteAsync(void *pvUser, void *pStorage, uint64_t uOffset,
+                               PCPDMDATASEG paSegments, size_t cSegments,
+                               size_t cbWrite, void *pvCompletion,
+                               void **ppTask)
+{
+    return VERR_NOT_IMPLEMENTED;
+}
+
+/**
+ * VD async I/O interface callback for a asynchronous flush of the file data.
+ */
+static int vdAsyncIOFlushAsync(void *pvUser, void *pStorage,
+                               void *pvCompletion, void **ppTask)
+{
+    return VERR_NOT_IMPLEMENTED;
+}
+
+/**
  * internal: send output to the log (unconditionally).
  */
 int vdLogMessage(void *pvUser, const char *pszFormat, ...)
@@ -893,6 +1043,28 @@ VBOXDDU_DECL(int) VDCreate(PVDINTERFACE pVDIfsDisk, PVBOXHDD *ppDisk)
             pDisk->pInterfaceError = VDInterfaceGet(pVDIfsDisk, VDINTERFACETYPE_ERROR);
             if (pDisk->pInterfaceError)
                 pDisk->pInterfaceErrorCallbacks = VDGetInterfaceError(pDisk->pInterfaceError);
+
+            /* Use the fallback async I/O interface if the caller doesn't provide one. */
+            PVDINTERFACE pVDIfAsyncIO = VDInterfaceGet(pVDIfsDisk, VDINTERFACETYPE_ASYNCIO);
+            if (!pVDIfAsyncIO)
+            {
+                pDisk->VDIAsyncIOCallbacks.cbSize        = sizeof(VDINTERFACEASYNCIO);
+                pDisk->VDIAsyncIOCallbacks.enmInterface  = VDINTERFACETYPE_ASYNCIO;
+                pDisk->VDIAsyncIOCallbacks.pfnOpen       = vdAsyncIOOpen;
+                pDisk->VDIAsyncIOCallbacks.pfnClose      = vdAsyncIOClose;
+                pDisk->VDIAsyncIOCallbacks.pfnGetSize    = vdAsyncIOGetSize;
+                pDisk->VDIAsyncIOCallbacks.pfnSetSize    = vdAsyncIOSetSize;
+                pDisk->VDIAsyncIOCallbacks.pfnReadSync   = vdAsyncIOReadSync;
+                pDisk->VDIAsyncIOCallbacks.pfnWriteSync  = vdAsyncIOWriteSync;
+                pDisk->VDIAsyncIOCallbacks.pfnFlushSync  = vdAsyncIOFlushSync;
+                pDisk->VDIAsyncIOCallbacks.pfnReadAsync  = vdAsyncIOReadAsync;
+                pDisk->VDIAsyncIOCallbacks.pfnWriteAsync = vdAsyncIOWriteAsync;
+                pDisk->VDIAsyncIOCallbacks.pfnFlushAsync = vdAsyncIOFlushAsync;
+                rc = VDInterfaceAdd(&pDisk->VDIAsyncIO, "VD_AsyncIO", VDINTERFACETYPE_ASYNCIO,
+                                    &pDisk->VDIAsyncIOCallbacks, pDisk, &pDisk->pVDIfsDisk);
+                AssertRC(rc);
+            }
+
             *ppDisk = pDisk;
         }
         else

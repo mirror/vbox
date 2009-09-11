@@ -43,8 +43,13 @@ typedef struct RAWIMAGE
 {
     /** Base image name. */
     const char      *pszFilename;
+#ifndef VBOX_WITH_NEW_IO_CODE
     /** File descriptor. */
     RTFILE          File;
+#else
+    /** Opaque storage handle. */
+    void           *pvStorage;
+#endif
 
     /** Pointer to the per-disk VD interface list. */
     PVDINTERFACE      pVDIfsDisk;
@@ -53,6 +58,12 @@ typedef struct RAWIMAGE
     PVDINTERFACE      pInterfaceError;
     /** Opaque data for error callback. */
     PVDINTERFACEERROR pInterfaceErrorCallbacks;
+#ifdef VBOX_WITH_NEW_IO_CODE
+    /** Async I/O interface. */
+    PVDINTERFACE        pInterfaceAsyncIO;
+    /** Async I/O interface callbacks. */
+    PVDINTERFACEASYNCIO pInterfaceAsyncIOCallbacks;
+#endif
 
     /** Open flags passed by VBoxHD layer. */
     unsigned        uOpenFlags;
@@ -103,13 +114,156 @@ DECLINLINE(int) rawError(PRAWIMAGE pImage, int rc, RT_SRC_POS_DECL,
     return rc;
 }
 
+static int rawFileOpen(PRAWIMAGE pImage, bool fReadonly, bool fCreate)
+{
+    int rc = VINF_SUCCESS;
+
+    AssertMsg(!(fReadonly && fCreate), ("Image can't be opened readonly while being created\n"));
+
+#ifndef VBOX_WITH_NEW_IO_CODE
+    unsigned uFileFlags = fReadonly ? RTFILE_O_READ      | RTFILE_O_DENY_NONE
+                                    : RTFILE_O_READWRITE | RTFILE_O_DENY_WRITE;
+
+    if (fCreate)
+        uFileFlags |= RTFILE_O_CREATE;
+    else
+        uFileFlags |= RTFILE_O_OPEN;
+
+    rc = RTFileOpen(&pImage->File, pImage->pszFilename, uFileFlags);
+#else
+
+    unsigned uOpenFlags = fReadonly ? VD_INTERFACEASYNCIO_OPEN_FLAGS_READONLY : 0;
+
+    if (fCreate)
+        uOpenFlags |= VD_INTERFACEASYNCIO_OPEN_FLAGS_CREATE;
+
+    rc = pImage->pInterfaceAsyncIOCallbacks->pfnOpen(pImage->pInterfaceAsyncIO->pvUser,
+                                                     pImage->pszFilename,
+                                                     uOpenFlags,
+                                                     NULL, &pImage->pvStorage);
+#endif
+
+    return rc;
+}
+
+static int rawFileClose(PRAWIMAGE pImage)
+{
+    int rc = VINF_SUCCESS;
+
+#ifndef VBOX_WITH_NEW_IO_CODE
+    if (pImage->File != NIL_RTFILE)
+        rc = RTFileClose(pImage->File);
+
+    pImage->File = NIL_RTFILE;
+#else
+    if (pImage->pvStorage)
+        rc = pImage->pInterfaceAsyncIOCallbacks->pfnClose(pImage->pInterfaceAsyncIO->pvUser,
+                                                          pImage->pvStorage);
+
+    pImage->pvStorage = NULL;
+#endif
+
+    return rc;
+}
+
+static int rawFileFlushSync(PRAWIMAGE pImage)
+{
+    int rc = VINF_SUCCESS;
+
+#ifndef VBOX_WITH_NEW_IO_CODE
+    rc = RTFileFlush(pImage->File);
+#else
+    if (pImage->pvStorage)
+        rc = pImage->pInterfaceAsyncIOCallbacks->pfnFlushSync(pImage->pInterfaceAsyncIO->pvUser,
+                                                              pImage->pvStorage);
+#endif
+
+    return rc;
+}
+
+static int rawFileGetSize(PRAWIMAGE pImage, uint64_t *pcbSize)
+{
+    int rc = VINF_SUCCESS;
+
+#ifndef VBOX_WITH_NEW_IO_CODE
+    rc = RTFileGetSize(pImage->File, pcbSize);
+#else
+    if (pImage->pvStorage)
+        rc = pImage->pInterfaceAsyncIOCallbacks->pfnGetSize(pImage->pInterfaceAsyncIO->pvUser,
+                                                            pImage->pvStorage,
+                                                            pcbSize);
+#endif
+
+    return rc;
+
+}
+
+static int rawFileSetSize(PRAWIMAGE pImage, uint64_t cbSize)
+{
+    int rc = VINF_SUCCESS;
+
+#ifndef VBOX_WITH_NEW_IO_CODE
+    rc = RTFileSetSize(pImage->File, cbSize);
+#else
+    if (pImage->pvStorage)
+        rc = pImage->pInterfaceAsyncIOCallbacks->pfnSetSize(pImage->pInterfaceAsyncIO->pvUser,
+                                                            pImage->pvStorage,
+                                                            cbSize);
+#endif
+
+    return rc;
+}
+
+
+static int rawFileWriteSync(PRAWIMAGE pImage, uint64_t off, const void *pcvBuf, size_t cbWrite, size_t *pcbWritten)
+{
+    int rc = VINF_SUCCESS;
+
+#ifndef VBOX_WITH_NEW_IO_CODE
+    rc = RTFileWriteAt(pImage->File, off, pcvBuf, cbWrite, pcbWritten);
+#else
+    if (pImage->pvStorage)
+        rc = pImage->pInterfaceAsyncIOCallbacks->pfnWriteSync(pImage->pInterfaceAsyncIO->pvUser,
+                                                              pImage->pvStorage,
+                                                              off, cbWrite, pcvBuf,
+                                                              pcbWritten);
+#endif
+
+    return rc;
+}
+
+static int rawFileReadSync(PRAWIMAGE pImage, uint64_t off, void *pvBuf, size_t cbRead, size_t *pcbRead)
+{
+    int rc = VINF_SUCCESS;
+
+#ifndef VBOX_WITH_NEW_IO_CODE
+    rc = RTFileReadAt(pImage->File, off, pvBuf, cbRead, pcbRead);
+#else
+    if (pImage->pvStorage)
+        rc = pImage->pInterfaceAsyncIOCallbacks->pfnReadSync(pImage->pInterfaceAsyncIO->pvUser,
+                                                             pImage->pvStorage,
+                                                             off, cbRead, pvBuf,
+                                                             pcbRead);
+#endif
+
+    return rc;
+}
+
+static bool rawFileOpened(PRAWIMAGE pImage)
+{
+#ifndef VBOX_WITH_NEW_IO_CODE
+    return pImage->File != NIL_RTFILE;
+#else
+    return pImage->pvStorage != NULL;
+#endif
+}
+
 /**
  * Internal: Open an image, constructing all necessary data structures.
  */
 static int rawOpenImage(PRAWIMAGE pImage, unsigned uOpenFlags)
 {
     int rc;
-    RTFILE File;
 
     if (uOpenFlags & VD_OPEN_FLAGS_ASYNC_IO)
         return VERR_NOT_SUPPORTED;
@@ -120,22 +274,26 @@ static int rawOpenImage(PRAWIMAGE pImage, unsigned uOpenFlags)
     if (pImage->pInterfaceError)
         pImage->pInterfaceErrorCallbacks = VDGetInterfaceError(pImage->pInterfaceError);
 
+#ifdef VBOX_WITH_NEW_IO_CODE
+    /* Try to get async I/O interface. */
+    pImage->pInterfaceAsyncIO = VDInterfaceGet(pImage->pVDIfsDisk, VDINTERFACETYPE_ASYNCIO);
+    AssertPtr(pImage->pInterfaceAsyncIO);
+    pImage->pInterfaceAsyncIOCallbacks = VDGetInterfaceAsyncIO(pImage->pInterfaceAsyncIO);
+    AssertPtr(pImage->pInterfaceAsyncIOCallbacks);
+#endif
+
     /*
      * Open the image.
      */
-    rc = RTFileOpen(&File, pImage->pszFilename,
-                    uOpenFlags & VD_OPEN_FLAGS_READONLY
-                     ? RTFILE_O_READ      | RTFILE_O_OPEN | RTFILE_O_DENY_NONE
-                     : RTFILE_O_READWRITE | RTFILE_O_OPEN | RTFILE_O_DENY_WRITE);
+    rc = rawFileOpen(pImage, !!(uOpenFlags & VD_OPEN_FLAGS_READONLY), false);
     if (RT_FAILURE(rc))
     {
         /* Do NOT signal an appropriate error here, as the VD layer has the
          * choice of retrying the open if it failed. */
         goto out;
     }
-    pImage->File = File;
 
-    rc = RTFileGetSize(pImage->File, &pImage->cbSize);
+    rc = rawFileGetSize(pImage, &pImage->cbSize);
     if (RT_FAILURE(rc))
         goto out;
     if (pImage->cbSize % 512)
@@ -162,7 +320,6 @@ static int rawCreateImage(PRAWIMAGE pImage, uint64_t cbSize,
                           unsigned uPercentStart, unsigned uPercentSpan)
 {
     int rc;
-    RTFILE File;
     RTFOFF cbFree = 0;
     uint64_t uOff;
     size_t cbBuf = 128 * _1K;
@@ -183,15 +340,21 @@ static int rawCreateImage(PRAWIMAGE pImage, uint64_t cbSize,
     if (pImage->pInterfaceError)
         pImage->pInterfaceErrorCallbacks = VDGetInterfaceError(pImage->pInterfaceError);
 
+#ifdef VBOX_WITH_NEW_IO_CODE
+    /* Try to get async I/O interface. */
+    pImage->pInterfaceAsyncIO = VDInterfaceGet(pImage->pVDIfsDisk, VDINTERFACETYPE_ASYNCIO);
+    AssertPtr(pImage->pInterfaceAsyncIO);
+    pImage->pInterfaceAsyncIOCallbacks = VDGetInterfaceAsyncIO(pImage->pInterfaceAsyncIO);
+    AssertPtr(pImage->pInterfaceAsyncIOCallbacks);
+#endif
+
     /* Create image file. */
-    rc = RTFileOpen(&File, pImage->pszFilename,
-                    RTFILE_O_READWRITE | RTFILE_O_CREATE | RTFILE_O_DENY_ALL);
+    rc = rawFileOpen(pImage, false, true);
     if (RT_FAILURE(rc))
     {
         rc = rawError(pImage, rc, RT_SRC_POS, N_("Raw: cannot create image '%s'"), pImage->pszFilename);
         goto out;
     }
-    pImage->File = File;
 
     /* Check the free space on the disk and leave early if there is not
      * sufficient space available. */
@@ -204,7 +367,7 @@ static int rawCreateImage(PRAWIMAGE pImage, uint64_t cbSize,
 
     /* Allocate & commit whole file if fixed image, it must be more
      * effective than expanding file by write operations. */
-    rc = RTFileSetSize(File, cbSize);
+    rc = rawFileSetSize(pImage, cbSize);
     if (RT_FAILURE(rc))
     {
         rc = rawError(pImage, rc, RT_SRC_POS, N_("Raw: setting image size failed for '%s'"), pImage->pszFilename);
@@ -228,7 +391,7 @@ static int rawCreateImage(PRAWIMAGE pImage, uint64_t cbSize,
     {
         unsigned cbChunk = (unsigned)RT_MIN(cbSize, cbBuf);
 
-        rc = RTFileWriteAt(File, uOff, pvBuf, cbChunk, NULL);
+        rc = rawFileWriteSync(pImage, uOff, pvBuf, cbChunk, NULL);
         if (RT_FAILURE(rc))
         {
             rc = rawError(pImage, rc, RT_SRC_POS, N_("Raw: writing block failed for '%s'"), pImage->pszFilename);
@@ -274,12 +437,11 @@ static void rawFreeImage(PRAWIMAGE pImage, bool fDelete)
 {
     Assert(pImage);
 
-    if (pImage->File != NIL_RTFILE)
+    if (rawFileOpened(pImage))
     {
         if (!(pImage->uOpenFlags & VD_OPEN_FLAGS_READONLY))
             rawFlushImage(pImage);
-        RTFileClose(pImage->File);
-        pImage->File = NIL_RTFILE;
+        rawFileClose(pImage);
     }
     if (fDelete && pImage->pszFilename)
         RTFileDelete(pImage->pszFilename);
@@ -292,9 +454,9 @@ static int rawFlushImage(PRAWIMAGE pImage)
 {
     int rc = VINF_SUCCESS;
 
-    if (   pImage->File != NIL_RTFILE
+    if (   rawFileOpened(pImage)
         && !(pImage->uOpenFlags & VD_OPEN_FLAGS_READONLY))
-        rc = RTFileFlush(pImage->File);
+        rc = rawFileFlushSync(pImage);
 
     return rc;
 }
@@ -353,7 +515,11 @@ static int rawOpen(const char *pszFilename, unsigned uOpenFlags,
         goto out;
     }
     pImage->pszFilename = pszFilename;
+#ifndef VBOX_WITH_NEW_IO_CODE
     pImage->File = NIL_RTFILE;
+#else
+    pImage->pvStorage = NULL;
+#endif
     pImage->pVDIfsDisk = pVDIfsDisk;
 
     rc = rawOpenImage(pImage, uOpenFlags);
@@ -416,7 +582,11 @@ static int rawCreate(const char *pszFilename, uint64_t cbSize,
         goto out;
     }
     pImage->pszFilename = pszFilename;
+#ifndef VBOX_WITH_NEW_IO_CODE
     pImage->File = NIL_RTFILE;
+#else
+    pImage->pvStorage = NULL;
+#endif
     pImage->pVDIfsDisk = pVDIfsDisk;
 
     rc = rawCreateImage(pImage, cbSize, uImageFlags, pszComment,
@@ -486,7 +656,7 @@ static int rawRead(void *pBackendData, uint64_t uOffset, void *pvBuf,
         goto out;
     }
 
-    rc = RTFileReadAt(pImage->File, uOffset, pvBuf, cbToRead, NULL);
+    rc = rawFileReadSync(pImage, uOffset, pvBuf, cbToRead, NULL);
     *pcbActuallyRead = cbToRead;
 
 out:
@@ -520,7 +690,7 @@ static int rawWrite(void *pBackendData, uint64_t uOffset, const void *pvBuf,
         goto out;
     }
 
-    rc = RTFileWriteAt(pImage->File, uOffset, pvBuf, cbToWrite, NULL);
+    rc = rawFileWriteSync(pImage, uOffset, pvBuf, cbToWrite, NULL);
     if (pcbWriteProcess)
         *pcbWriteProcess = cbToWrite;
 
@@ -581,9 +751,9 @@ static uint64_t rawGetFileSize(void *pBackendData)
     if (pImage)
     {
         uint64_t cbFile;
-        if (pImage->File != NIL_RTFILE)
+        if (rawFileOpened(pImage))
         {
-            int rc = RTFileGetSize(pImage->File, &cbFile);
+            int rc = rawFileGetSize(pImage, &cbFile);
             if (RT_SUCCESS(rc))
                 cb += cbFile;
         }
