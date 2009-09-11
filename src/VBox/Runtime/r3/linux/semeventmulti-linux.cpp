@@ -245,11 +245,11 @@ static int rtSemEventMultiWait(RTSEMEVENTMULTI EventMultiSem, unsigned cMillies,
             /* adjust the relative timeout */
             if (pTimeout)
             {
-                int64_t u64Diff = u64End - RTTimeSystemNanoTS();
-                if (u64Diff < 1000)
+                int64_t i64Diff = u64End - RTTimeSystemNanoTS();
+                if (i64Diff < 1000)
                     return VERR_TIMEOUT;
-                ts.tv_sec  = u64Diff / 1000000000;
-                ts.tv_nsec = u64Diff % 1000000000;
+                ts.tv_sec  = i64Diff / 1000000000;
+                ts.tv_nsec = i64Diff % 1000000000;
             }
             long rc = sys_futex(&pThis->iState, FUTEX_WAIT, 1, pTimeout, NULL, 0);
             if (RT_UNLIKELY(pThis->iMagic != RTSEMEVENTMULTI_MAGIC))
