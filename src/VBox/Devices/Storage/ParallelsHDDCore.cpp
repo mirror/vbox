@@ -69,11 +69,22 @@ typedef struct PARALLELSIMAGE
     PVDINTERFACE        pInterfaceError;
     /** Error interface callbacks. */
     PVDINTERFACEERROR   pInterfaceErrorCallbacks;
+#ifdef VBOX_WITH_NEW_IO_CODE
+    /** Async I/O interface. */
+    PVDINTERFACE        pInterfaceAsyncIO;
+    /** Async I/O interface callbacks. */
+    PVDINTERFACEASYNCIO pInterfaceAsyncIOCallbacks;
+#endif
 
     /** Image file name. */
     const char         *pszFilename;
-    /** File handle. */
+#ifndef VBOX_WITH_NEW_IO_CODE
+    /** File descriptor. */
     RTFILE              File;
+#else
+    /** Opaque storage handle. */
+    void               *pvStorage;
+#endif
     /** Open flags passed by VBoxHD layer. */
     unsigned            uOpenFlags;
     /** Image flags defined during creation or determined during open. */
@@ -124,10 +135,153 @@ DECLINLINE(int) parallelsError(PPARALLELSIMAGE pImage, int rc, RT_SRC_POS_DECL,
     return rc;
 }
 
+static int parallelsFileOpen(PPARALLELSIMAGE pImage, bool fReadonly, bool fCreate)
+{
+    int rc = VINF_SUCCESS;
+
+    AssertMsg(!(fReadonly && fCreate), ("Image can't be opened readonly while being created\n"));
+
+#ifndef VBOX_WITH_NEW_IO_CODE
+    unsigned uFileFlags = fReadonly ? RTFILE_O_READ      | RTFILE_O_DENY_NONE
+                                    : RTFILE_O_READWRITE | RTFILE_O_DENY_WRITE;
+
+    if (fCreate)
+        uFileFlags |= RTFILE_O_CREATE;
+    else
+        uFileFlags |= RTFILE_O_OPEN;
+
+    rc = RTFileOpen(&pImage->File, pImage->pszFilename, uFileFlags);
+#else
+
+    unsigned uOpenFlags = fReadonly ? VD_INTERFACEASYNCIO_OPEN_FLAGS_READONLY : 0;
+
+    if (fCreate)
+        uOpenFlags |= VD_INTERFACEASYNCIO_OPEN_FLAGS_CREATE;
+
+    rc = pImage->pInterfaceAsyncIOCallbacks->pfnOpen(pImage->pInterfaceAsyncIO->pvUser,
+                                                     pImage->pszFilename,
+                                                     uOpenFlags,
+                                                     NULL, &pImage->pvStorage);
+#endif
+
+    return rc;
+}
+
+static int parallelsFileClose(PPARALLELSIMAGE pImage)
+{
+    int rc = VINF_SUCCESS;
+
+#ifndef VBOX_WITH_NEW_IO_CODE
+    if (pImage->File != NIL_RTFILE)
+        rc = RTFileClose(pImage->File);
+
+    pImage->File = NIL_RTFILE;
+#else
+    if (pImage->pvStorage)
+        rc = pImage->pInterfaceAsyncIOCallbacks->pfnClose(pImage->pInterfaceAsyncIO->pvUser,
+                                                          pImage->pvStorage);
+
+    pImage->pvStorage = NULL;
+#endif
+
+    return rc;
+}
+
+static int parallelsFileFlushSync(PPARALLELSIMAGE pImage)
+{
+    int rc = VINF_SUCCESS;
+
+#ifndef VBOX_WITH_NEW_IO_CODE
+    rc = RTFileFlush(pImage->File);
+#else
+    if (pImage->pvStorage)
+        rc = pImage->pInterfaceAsyncIOCallbacks->pfnFlushSync(pImage->pInterfaceAsyncIO->pvUser,
+                                                              pImage->pvStorage);
+#endif
+
+    return rc;
+}
+
+static int parallelsFileGetSize(PPARALLELSIMAGE pImage, uint64_t *pcbSize)
+{
+    int rc = VINF_SUCCESS;
+
+#ifndef VBOX_WITH_NEW_IO_CODE
+    rc = RTFileGetSize(pImage->File, pcbSize);
+#else
+    if (pImage->pvStorage)
+        rc = pImage->pInterfaceAsyncIOCallbacks->pfnGetSize(pImage->pInterfaceAsyncIO->pvUser,
+                                                            pImage->pvStorage,
+                                                            pcbSize);
+#endif
+
+    return rc;
+
+}
+
+static int parallelsFileSetSize(PPARALLELSIMAGE pImage, uint64_t cbSize)
+{
+    int rc = VINF_SUCCESS;
+
+#ifndef VBOX_WITH_NEW_IO_CODE
+    rc = RTFileSetSize(pImage->File, cbSize);
+#else
+    if (pImage->pvStorage)
+        rc = pImage->pInterfaceAsyncIOCallbacks->pfnSetSize(pImage->pInterfaceAsyncIO->pvUser,
+                                                            pImage->pvStorage,
+                                                            cbSize);
+#endif
+
+    return rc;
+}
+
+
+static int parallelsFileWriteSync(PPARALLELSIMAGE pImage, uint64_t off, const void *pcvBuf, size_t cbWrite, size_t *pcbWritten)
+{
+    int rc = VINF_SUCCESS;
+
+#ifndef VBOX_WITH_NEW_IO_CODE
+    rc = RTFileWriteAt(pImage->File, off, pcvBuf, cbWrite, pcbWritten);
+#else
+    if (pImage->pvStorage)
+        rc = pImage->pInterfaceAsyncIOCallbacks->pfnWriteSync(pImage->pInterfaceAsyncIO->pvUser,
+                                                              pImage->pvStorage,
+                                                              off, cbWrite, pcvBuf,
+                                                              pcbWritten);
+#endif
+
+    return rc;
+}
+
+static int parallelsFileReadSync(PPARALLELSIMAGE pImage, uint64_t off, void *pvBuf, size_t cbRead, size_t *pcbRead)
+{
+    int rc = VINF_SUCCESS;
+
+#ifndef VBOX_WITH_NEW_IO_CODE
+    rc = RTFileReadAt(pImage->File, off, pvBuf, cbRead, pcbRead);
+#else
+    if (pImage->pvStorage)
+        rc = pImage->pInterfaceAsyncIOCallbacks->pfnReadSync(pImage->pInterfaceAsyncIO->pvUser,
+                                                             pImage->pvStorage,
+                                                             off, cbRead, pvBuf,
+                                                             pcbRead);
+#endif
+
+    return rc;
+}
+
+static bool parallelsFileOpened(PPARALLELSIMAGE pImage)
+{
+#ifndef VBOX_WITH_NEW_IO_CODE
+    return pImage->File != NIL_RTFILE;
+#else
+    return pImage->pvStorage != NULL;
+#endif
+}
+
 static int parallelsOpenImage(PPARALLELSIMAGE pImage, unsigned uOpenFlags)
 {
     int rc = VINF_SUCCESS;
-    RTFILE File;
     ParallelsHeader parallelsHeader;
 
     /* Try to get error interface. */
@@ -135,21 +289,24 @@ static int parallelsOpenImage(PPARALLELSIMAGE pImage, unsigned uOpenFlags)
     if (pImage->pInterfaceError)
         pImage->pInterfaceErrorCallbacks = VDGetInterfaceError(pImage->pInterfaceError);
 
-    rc = RTFileOpen(&File, pImage->pszFilename,
-                    uOpenFlags & VD_OPEN_FLAGS_READONLY
-                     ? RTFILE_O_READ      | RTFILE_O_OPEN | RTFILE_O_DENY_NONE
-                     : RTFILE_O_READWRITE | RTFILE_O_OPEN | RTFILE_O_DENY_WRITE);
+#ifdef VBOX_WITH_NEW_IO_CODE
+    /* Try to get async I/O interface. */
+    pImage->pInterfaceAsyncIO = VDInterfaceGet(pImage->pVDIfsDisk, VDINTERFACETYPE_ASYNCIO);
+    AssertPtr(pImage->pInterfaceAsyncIO);
+    pImage->pInterfaceAsyncIOCallbacks = VDGetInterfaceAsyncIO(pImage->pInterfaceAsyncIO);
+    AssertPtr(pImage->pInterfaceAsyncIOCallbacks);
+#endif
+
+    rc = parallelsFileOpen(pImage, !!(uOpenFlags & VD_OPEN_FLAGS_READONLY), false);
     if (RT_FAILURE(rc))
         goto out;
 
-    pImage->File = File;
-
-    rc = RTFileGetSize(pImage->File, &pImage->cbFileCurrent);
+    rc = parallelsFileGetSize(pImage, &pImage->cbFileCurrent);
     if (RT_FAILURE(rc))
         goto out;
     AssertMsg(pImage->cbFileCurrent % 512 == 0, ("File size is not a multiple of 512\n"));
 
-    rc = RTFileReadAt(File, 0, &parallelsHeader, sizeof(ParallelsHeader), NULL);
+    rc = parallelsFileReadSync(pImage, 0, &parallelsHeader, sizeof(parallelsHeader), NULL);
     if (RT_FAILURE(rc))
         goto out;
 
@@ -197,8 +354,10 @@ static int parallelsOpenImage(PPARALLELSIMAGE pImage, unsigned uOpenFlags)
             goto out;
         }
 
-        rc = RTFileReadAt(File, sizeof(ParallelsHeader), pImage->pAllocationBitmap,
-                          pImage->cAllocationBitmapEntries * sizeof(uint32_t), NULL);
+        rc = parallelsFileReadSync(pImage, sizeof(ParallelsHeader),
+                                   pImage->pAllocationBitmap,
+                                   pImage->cAllocationBitmapEntries * sizeof(uint32_t),
+                                   NULL);
         if (RT_FAILURE(rc))
             goto out;
 
@@ -222,16 +381,16 @@ static int parallelsFlushImage(PPARALLELSIMAGE pImage)
     {
         pImage->fAllocationBitmapChanged = false;
         /* Write the allocation bitmap to the file. */
-        rc = RTFileWriteAt(pImage->File, sizeof(ParallelsHeader),
-                           pImage->pAllocationBitmap,
-                           pImage->cAllocationBitmapEntries * sizeof(uint32_t),
-                           NULL);
+        rc = parallelsFileWriteSync(pImage, sizeof(ParallelsHeader),
+                                    pImage->pAllocationBitmap,
+                                    pImage->cAllocationBitmapEntries * sizeof(uint32_t),
+                                    NULL);
         if (RT_FAILURE(rc))
             return rc;
     }
 
     /* Flush file. */
-    rc = RTFileFlush(pImage->File);
+    rc = parallelsFileFlushSync(pImage);
 
     LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
@@ -244,8 +403,8 @@ static void parallelsFreeImage(PPARALLELSIMAGE pImage, bool fDelete)
     if (pImage->pAllocationBitmap)
         RTMemFree(pImage->pAllocationBitmap);
 
-    if (pImage->File != NIL_RTFILE)
-        RTFileClose(pImage->File);
+    if (parallelsFileOpened(pImage))
+        parallelsFileClose(pImage);
 }
 
 /** @copydoc VBOXHDDBACKEND::pfnCheckIfValid */
@@ -339,7 +498,11 @@ static int parallelsOpen(const char *pszFilename, unsigned uOpenFlags,
         goto out;
     }
 
+#ifndef VBOX_WITH_NEW_IO_CODE
     pImage->File = NIL_RTFILE;
+#else
+    pImage->pvStorage = NULL;
+#endif
     pImage->fAllocationBitmapChanged = false;
     pImage->pszFilename = pszFilename;
     pImage->pVDIfsDisk = pVDIfsDisk;
@@ -407,7 +570,8 @@ static int parallelsRead(void *pBackendData, uint64_t uOffset, void *pvBuf,
 
     if (pImage->uImageFlags & VD_IMAGE_FLAGS_FIXED)
     {
-        rc = RTFileReadAt(pImage->File, uOffset, pvBuf, cbToRead, NULL);
+        rc = parallelsFileReadSync(pImage, uOffset,
+                                   pvBuf, cbToRead, NULL);
     }
     else
     {
@@ -426,7 +590,8 @@ static int parallelsRead(void *pBackendData, uint64_t uOffset, void *pvBuf,
         else
         {
             uOffsetInFile = (pImage->pAllocationBitmap[iIndexInAllocationTable] + uSector) * 512;
-            rc = RTFileReadAt(pImage->File, uOffsetInFile, pvBuf, cbToRead, NULL);
+            rc = parallelsFileReadSync(pImage, uOffsetInFile,
+                                       pvBuf, cbToRead, NULL);
         }
     }
 
@@ -454,7 +619,8 @@ static int parallelsWrite(void *pBackendData, uint64_t uOffset, const void *pvBu
 
     if (pImage->uImageFlags & VD_IMAGE_FLAGS_FIXED)
     {
-        rc = RTFileWriteAt(pImage->File, uOffset, pvBuf, cbToWrite, NULL);
+        rc = parallelsFileWriteSync(pImage, uOffset,
+                                    pvBuf, cbToWrite, NULL);
     }
     else
     {
@@ -473,13 +639,31 @@ static int parallelsWrite(void *pBackendData, uint64_t uOffset, const void *pvBu
             pImage->pAllocationBitmap[iIndexInAllocationTable] = (uint32_t)(pImage->cbFileCurrent / 512);
             pImage->cbFileCurrent += pImage->PCHSGeometry.cSectors * 512;
             pImage->fAllocationBitmapChanged = true;
-            rc = RTFileSetSize(pImage->File, pImage->cbFileCurrent);
-            if (RT_FAILURE(rc))
-                return rc;
-        }
 
-        uOffsetInFile = (pImage->pAllocationBitmap[iIndexInAllocationTable] + uSector) * 512;
-        rc = RTFileWriteAt(pImage->File, uOffsetInFile, pvBuf, cbToWrite, NULL);
+            uint8_t *pNewBlock = (uint8_t *)RTMemAllocZ(pImage->PCHSGeometry.cSectors * 512);
+
+            if (!pNewBlock)
+                return VERR_NO_MEMORY;
+
+            uOffsetInFile = (uint64_t)pImage->pAllocationBitmap[iIndexInAllocationTable] * 512;
+            memcpy(pNewBlock + (uOffset - ((uint64_t)iIndexInAllocationTable * pImage->PCHSGeometry.cSectors * 512)),
+                   pvBuf, cbToWrite);
+
+            /*
+             * Write the new block at the current end of the file.
+             */
+            rc = parallelsFileWriteSync(pImage, uOffsetInFile,
+                                        pNewBlock,
+                                        pImage->PCHSGeometry.cSectors * 512, NULL);
+
+            RTMemFree(pNewBlock);
+        }
+        else
+        {
+            uOffsetInFile = (pImage->pAllocationBitmap[iIndexInAllocationTable] + uSector) * 512;
+            rc = parallelsFileWriteSync(pImage, uOffsetInFile,
+                                        pvBuf, cbToWrite, NULL);
+        }
     }
 
     *pcbWriteProcess = cbToWrite;
@@ -542,10 +726,8 @@ static uint64_t parallelsGetFileSize(void *pBackendData)
 
     if (pImage)
     {
-        if (pImage->File != NIL_RTFILE)
-        {
-            RTFileGetSize(pImage->File, &cb);
-        }
+        if (parallelsFileOpened(pImage))
+            cb = pImage->cbFileCurrent;
     }
 
     LogFlowFunc(("returns %lld\n", cb));

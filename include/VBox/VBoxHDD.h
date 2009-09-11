@@ -414,6 +414,10 @@ typedef DECLCALLBACK(int) FNVDCOMPLETED(void *pvUser, void **ppvCaller);
 /** Pointer to FNVDCOMPLETED() */
 typedef FNVDCOMPLETED *PFNVDCOMPLETED;
 
+/** Open the storage readonly. */
+#define VD_INTERFACEASYNCIO_OPEN_FLAGS_READONLY RT_BIT(0)
+/** Create the storage backend if it doesn't exist. */
+#define VD_INTERFACEASYNCIO_OPEN_FLAGS_CREATE RT_BIT(1)
 
 /**
  * Support interface for asynchronous I/O
@@ -438,7 +442,8 @@ typedef struct VDINTERFACEASYNCIO
      * @return  VBox status code.
      * @param   pvUser          The opaque data passed on container creation.
      * @param   pszLocation     Name of the location to open.
-     * @param   fReadonly       Whether to open the storage medium read only.
+     * @param   uOpenFlags      Flags for opening the backend.
+     *                          See VD_INTERFACEASYNCIO_OPEN_FLAGS_* #defines
      * @param   pfnCompleted    The callabck which is called whenever a task
      *                          completed. The backend has to pass the user data
      *                          of the request initiator (ie the one who calls
@@ -446,7 +451,7 @@ typedef struct VDINTERFACEASYNCIO
      *                          if this is NULL.
      * @param   ppStorage       Where to store the opaque storage handle.
      */
-    DECLR3CALLBACKMEMBER(int, pfnOpen, (void *pvUser, const char *pszLocation, bool fReadonly,
+    DECLR3CALLBACKMEMBER(int, pfnOpen, (void *pvUser, const char *pszLocation, unsigned uOpenFlags,
                                         PFNVDCOMPLETED pfnCompleted, void **ppStorage));
 
     /**
@@ -467,6 +472,17 @@ typedef struct VDINTERFACEASYNCIO
      * @param   pcbSize         Where to store the size of the storage backend.
      */
     DECLR3CALLBACKMEMBER(int, pfnGetSize, (void *pvUser, void *pStorage, uint64_t *pcbSize));
+
+    /**
+     * Sets the size of the opened storage backend if possible.
+     *
+     * @return  VBox status code.
+     * @retval  VERR_NOT_SUPPORTED if the backend does not support this operation.
+     * @param   pvUser          The opaque data passed on container creation.
+     * @param   pStorage        The opaque storage handle to close.
+     * @param   cbSize          The new size of the image.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnSetSize, (void *pvUser, void *pStorage, uint64_t cbSize));
 
     /**
      * Synchronous write callback.

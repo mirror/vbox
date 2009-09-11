@@ -581,8 +581,8 @@ static int vmdkFileOpen(PVMDKIMAGE pImage, PVMDKFILE *ppVmdkFile,
         rc = pImage->pInterfaceAsyncIOCallbacks->pfnOpen(pImage->pInterfaceAsyncIO->pvUser,
                                                          pszFilename,
                                                          pImage->uOpenFlags & VD_OPEN_FLAGS_READONLY
-                                                           ? true
-                                                           : false,
+                                                           ? VD_INTERFACEASYNCIO_OPEN_FLAGS_READONLY
+                                                           : 0,
                                                          NULL,
                                                          &pVmdkFile->pStorage);
         pVmdkFile->fAsyncIO = true;
@@ -699,10 +699,13 @@ DECLINLINE(int) vmdkFileWriteAt(PVMDKFILE pVmdkFile,
  */
 DECLINLINE(int) vmdkFileGetSize(PVMDKFILE pVmdkFile, uint64_t *pcbSize)
 {
+    PVMDKIMAGE pImage = pVmdkFile->pImage;
+
     if (pVmdkFile->fAsyncIO)
     {
-        AssertMsgFailed(("TODO\n"));
-        return 0;
+        return pImage->pInterfaceAsyncIOCallbacks->pfnGetSize(pImage->pInterfaceAsyncIO->pvUser,
+                                                              pVmdkFile->pStorage,
+                                                              pcbSize);
     }
     else
         return RTFileGetSize(pVmdkFile->File, pcbSize);
@@ -713,10 +716,13 @@ DECLINLINE(int) vmdkFileGetSize(PVMDKFILE pVmdkFile, uint64_t *pcbSize)
  */
 DECLINLINE(int) vmdkFileSetSize(PVMDKFILE pVmdkFile, uint64_t cbSize)
 {
+    PVMDKIMAGE pImage = pVmdkFile->pImage;
+
     if (pVmdkFile->fAsyncIO)
     {
-        AssertMsgFailed(("TODO\n"));
-        return VERR_NOT_SUPPORTED;
+        return pImage->pInterfaceAsyncIOCallbacks->pfnSetSize(pImage->pInterfaceAsyncIO->pvUser,
+                                                              pVmdkFile->pStorage,
+                                                              cbSize);
     }
     else
         return RTFileSetSize(pVmdkFile->File, cbSize);
@@ -5813,7 +5819,7 @@ static int vmdkAsyncRead(void *pvBackendData, uint64_t uOffset, size_t cbRead,
             case VMDKETYPE_FLAT:
             {
                 /* Check for enough room first. */
-                if (RT_LIKELY(cSegments >= pImage->cSegments))
+                if (RT_UNLIKELY(cSegments >= pImage->cSegments))
                 {
                     /* We reached maximum, resize array. Try to realloc memory first. */
                     PPDMDATASEG paSegmentsNew = (PPDMDATASEG)RTMemRealloc(pImage->paSegments, (cSegments + 10)*sizeof(PDMDATASEG));
@@ -5941,7 +5947,7 @@ static int vmdkAsyncWrite(void *pvBackendData, uint64_t uOffset, size_t cbWrite,
             case VMDKETYPE_FLAT:
             {
                 /* Check for enough room first. */
-                if (RT_LIKELY(cSegments >= pImage->cSegments))
+                if (RT_UNLIKELY(cSegments >= pImage->cSegments))
                 {
                     /* We reached maximum, resize array. Try to realloc memory first. */
                     PPDMDATASEG paSegmentsNew = (PPDMDATASEG)RTMemRealloc(pImage->paSegments, (cSegments + 10)*sizeof(PDMDATASEG));
