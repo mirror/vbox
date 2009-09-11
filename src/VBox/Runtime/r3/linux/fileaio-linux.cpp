@@ -725,7 +725,7 @@ RTDECL(int) RTFileAioCtxWait(RTFILEAIOCTX hAioCtx, size_t cMinReqs, unsigned cMi
              *  purpose for it yet.
              */
             if (RT_UNLIKELY(aPortEvents[i].rc < 0))
-                pReqInt->Rc = RTErrConvertFromErrno(aPortEvents[i].rc);
+                pReqInt->Rc = RTErrConvertFromErrno(-aPortEvents[i].rc); /* Convert to positive value. */
             else
             {
                 pReqInt->Rc = VINF_SUCCESS;
