@@ -3112,7 +3112,7 @@ VMMR3DECL(int) PGMR3PhysAllocateHandyPages(PVM pVM)
         /* Report the failure. */
         LogRel(("PGM: Failed to procure handy pages; rc=%Rrc rcAlloc=%Rrc rcSeed=%Rrc cHandyPages=%#x\n"
                 "     cAllPages=%#x cPrivatePages=%#x cSharedPages=%#x cZeroPages=%#x\n",
-                rc, rcSeed, rcAlloc,
+                rc, rcAlloc, rcSeed,
                 pVM->pgm.s.cHandyPages,
                 pVM->pgm.s.cAllPages,
                 pVM->pgm.s.cPrivatePages,
