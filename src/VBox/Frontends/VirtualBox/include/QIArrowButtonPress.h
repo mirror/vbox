@@ -41,7 +41,10 @@ class QIArrowButtonPress : public QIRichToolButton
 
 public:
 
-    QIArrowButtonPress (bool aNext, const QString &aName = QString::null, QWidget *aParent = 0);
+    QIArrowButtonPress (QWidget *aParent = 0);
+    QIArrowButtonPress (bool aNext, const QString &aName, QWidget *aParent = 0);
+
+    void setNext (bool aNext) { mNext = aNext; }
 
 private:
 

@@ -39,10 +39,12 @@ class QIRichToolButton : public QWidget
 
 public:
 
-    QIRichToolButton (const QString &aName = QString::null, QWidget *aParent = 0);
+    QIRichToolButton (QWidget *aParent = 0);
+    QIRichToolButton (const QString &aName, QWidget *aParent = 0);
 
     void animateClick() { mButton->animateClick(); }
     void setText (const QString &aName) { mLabel->setText (aName); }
+    QString text() const { return mLabel->text(); }
 
 signals:
 
@@ -54,6 +56,7 @@ protected slots:
 
 protected:
 
+    void init();
     bool eventFilter (QObject *aObject, QEvent *aEvent);
     void paintEvent (QPaintEvent *aEvent);
 

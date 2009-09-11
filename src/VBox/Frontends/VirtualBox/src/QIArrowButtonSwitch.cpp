@@ -35,6 +35,13 @@
  *
  */
 
+QIArrowButtonSwitch::QIArrowButtonSwitch (QWidget *aParent)
+    : QIRichToolButton (aParent)
+    , mIsExpanded (false)
+{
+    updateIcon();
+}
+
 QIArrowButtonSwitch::QIArrowButtonSwitch (const QString &aName, QWidget *aParent)
     : QIRichToolButton (aName, aParent)
     , mIsExpanded (false)

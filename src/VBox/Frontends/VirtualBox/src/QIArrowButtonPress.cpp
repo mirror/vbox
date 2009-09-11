@@ -35,6 +35,13 @@
  *
  */
 
+QIArrowButtonPress::QIArrowButtonPress (QWidget *aParent)
+    : QIRichToolButton (aParent)
+    , mNext (true)
+{
+    updateIcon();
+}
+
 QIArrowButtonPress::QIArrowButtonPress (bool aNext, const QString &aName, QWidget *aParent)
     : QIRichToolButton (aName, aParent)
     , mNext (aNext)
