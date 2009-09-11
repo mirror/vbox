@@ -564,11 +564,15 @@ sorecvfrom(PNATState pData, struct socket *so)
         struct ethhdr *eh;
         size_t len;
         u_long n;
+#ifdef VBOX_WITH_SLIRP_BSD_MBUF
+        uint8_t *buffer;
+#endif
 
         QSOCKET_LOCK(udb);
         SOCKET_LOCK(so);
         QSOCKET_UNLOCK(udb);
 
+#ifndef VBOX_WITH_SLIRP_BSD_MBUF
         if (!(m = m_get(pData)))
         {
             SOCKET_UNLOCK(so);
@@ -593,12 +597,34 @@ sorecvfrom(PNATState pData, struct socket *so)
                 len = M_FREEROOM(m);
             }
         }
-
         m->m_len = recvfrom(so->s, m->m_data, len, 0,
                             (struct sockaddr *)&addr, &addrlen);
         Log2((" did recvfrom %d, errno = %d-%s\n",
                     m->m_len, errno, strerror(errno)));
-        if(m->m_len < 0)
+#else
+        if (!(m = m_gethdr(pData, M_NOWAIT, MT_HEADER)))
+        {
+            SOCKET_UNLOCK(so);
+            return;
+        }
+        /*How many data has been received ?*/
+        /*
+        * 1. calculate how much we can read
+        * 2. read as much as possible
+        * 3. attach buffer to allocated header mbuf
+        */
+        ioctlsocket(so->s, FIONREAD, &n);
+        Assert(n > 0);
+        buffer = RTMemAlloc(n);
+        Assert(buffer);
+        len = recvfrom(so->s, buffer, n, 0,
+                            (struct sockaddr *)&addr, &addrlen);
+        /* @todo (r=vvl) check which flags and type should be passed */
+        if (len > 0)
+            m_append(pData, m, len, buffer);
+        RTMemFree(buffer);
+#endif
+        if(len < 0)
         {
             u_char code = ICMP_UNREACH_PORT;
 
@@ -662,6 +688,10 @@ sosendto(PNATState pData, struct socket *so, struct mbuf *m)
 #if 0
     struct sockaddr_in host_addr;
 #endif
+#ifdef VBOX_WITH_SLIRP_BSD_MBUF
+    uint8_t *buf;
+    int mlen;
+#endif
 
     DEBUG_CALL("sosendto");
     DEBUG_ARG("so = %lx", (long)so);
@@ -713,7 +743,19 @@ sosendto(PNATState pData, struct socket *so, struct mbuf *m)
                 ntohs(paddr->sin_port), inet_ntoa(paddr->sin_addr)));
 
     /* Don't care what port we get */
+#ifndef VBOX_WITH_SLIRP_BSD_MBUF
     ret = sendto(so->s, m->m_data, m->m_len, 0, &addr, sizeof (struct sockaddr_in));
+#else
+    mlen = m_length(m, NULL);
+    buf = RTMemAlloc(mlen);
+    if (buf == NULL)
+    {
+        return -1;
+    }
+    m_copydata(m, 0, mlen, buf);
+    ret = sendto(so->s, buf, mlen, 0,
+                 (struct sockaddr *)&addr, sizeof (struct sockaddr));
+#endif
     if (ret < 0)
     {
         LogRel(("UDP: sendto fails (%s)\n", strerror(errno)));
@@ -1092,7 +1134,11 @@ sorecvfrom_icmp_win(PNATState pData, struct socket *so)
                 so->so_m = NULL;
                 break;
             case IP_SUCCESS: /* echo replied */
+#ifndef VBOX_WITH_SLIRP_BSD_MBUF
                 m = m_get(pData);
+#else
+                m = m_gethdr(pData, M_NOWAIT, MT_HEADER);
+#endif
                 m->m_data += if_maxlinkhdr;
                 ip = mtod(m, struct ip *);
                 ip->ip_src.s_addr = icr[i].Address;
@@ -1110,8 +1156,12 @@ sorecvfrom_icmp_win(PNATState pData, struct socket *so)
 
                 data_len += ICMP_MINLEN;
 
+#ifndef VBOX_WITH_SLIRP_BSD_MBUF
                 nbytes = (data_len + icr[i].DataSize > m->m_size? m->m_size - data_len: icr[i].DataSize);
                 memcpy(icp->icmp_data, icr[i].Data, nbytes);
+#else
+                AssertMsgFailed(("ICMP"));
+#endif
 
                 data_len += icr[i].DataSize;
 
@@ -1140,8 +1190,12 @@ sorecvfrom_icmp_win(PNATState pData, struct socket *so)
                 ip_broken->ip_src.s_addr = src; /*it packet sent from host not from guest*/
                 data_len = (ip_broken->ip_hl << 2) + 64;
 
+#ifndef VBOX_WITH_SLIRP_BSD_MBUF
                 nbytes =(hlen + ICMP_MINLEN + data_len > m->m_size? m->m_size - (hlen + ICMP_MINLEN): data_len);
                 memcpy(icp->icmp_data, ip_broken,  nbytes);
+#else
+                AssertMsgFailed(("ICMP"));
+#endif
                 icmp_reflect(pData, m);
                 break;
             default:
