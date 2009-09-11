@@ -121,7 +121,7 @@ void VBoxGLSettingsUpdate::toggleUpdater (bool aOn)
         mLastChosen->setChecked (aOn);
 }
 
-void VBoxGLSettingsUpdate::activatedPeriod (int aIndex)
+void VBoxGLSettingsUpdate::activatedPeriod (int /*aIndex*/)
 {
     VBoxUpdateData data (periodType(), branchType());
     mTxDate->setText (data.date());
