@@ -30,7 +30,7 @@
 
 
 #include <features.h>
-#if __GLIBC_PREREQ(2,6)
+#if __GLIBC_PREREQ(2,6) && !defined(IPRT_WITH_FUTEX_BASED_SEMS)
 
 /*
  * glibc 2.6 fixed a serious bug in the mutex implementation. We wrote this
@@ -85,7 +85,7 @@ struct RTSEMEVENTMULTIINTERNAL
     /** The futex state variable.
      * -1 means signaled.
      *  0 means not signaled, no waiters.
-     * >0 means not signaled, and the value gives the number of waiters.
+     *  1 means not signaled and that someone is waiting.
      */
     int32_t volatile    iState;
 };
@@ -211,17 +211,17 @@ static int rtSemEventMultiWait(RTSEMEVENTMULTI EventMultiSem, unsigned cMillies,
     Assert(iCur == 0 || iCur == -1 || iCur == 1);
     if (iCur == -1)
         return VINF_SUCCESS;
-    if (!cMillies)
-        return VERR_TIMEOUT;
 
     /*
-     * Convert timeout value.
+     * Convert the timeout value.
      */
     struct timespec ts;
     struct timespec *pTimeout = NULL;
     uint64_t u64End = 0; /* shut up gcc */
     if (cMillies != RT_INDEFINITE_WAIT)
     {
+        if (!cMillies)
+            return VERR_TIMEOUT;
         ts.tv_sec  = cMillies / 1000;
         ts.tv_nsec = (cMillies % 1000) * 1000000;
         u64End = RTTimeSystemNanoTS() + cMillies * 1000000;
@@ -299,4 +299,5 @@ RTDECL(int)  RTSemEventMultiWaitNoResume(RTSEMEVENTMULTI EventMultiSem, unsigned
     return rtSemEventMultiWait(EventMultiSem, cMillies, false);
 }
 
-#endif /* glibc < 2.6 */
+#endif /* glibc < 2.6 || IPRT_WITH_FUTEX_BASED_SEMS */
+
