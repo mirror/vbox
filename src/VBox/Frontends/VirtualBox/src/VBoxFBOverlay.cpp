@@ -2255,7 +2255,7 @@ void VBoxVHWATextureNP2RectPBO::load()
     memcpy(buf, mAddress, memSize());
 
     bool unmapped = vboxglUnmapBuffer(GL_PIXEL_UNPACK_BUFFER);
-    Assert(unmapped);
+    Assert(unmapped); NOREF(unmapped);
 
     vboxglBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
 }
@@ -3497,7 +3497,7 @@ int VBoxGLWidget::vhwaSurfaceCreate(struct _VBOXVHWACMD_SURF_CREATE *pCmd)
         {
             VBoxVHWASurfaceBase * pVga = vboxGetVGASurface();
             Assert(pVga->handle() != VBOXVHWA_SURFHANDLE_INVALID);
-            Assert(pVga != surf);
+            Assert(pVga != surf); NOREF(pVga);
 //            Assert(mbVGASurfCreated);
             mDisplay.getVGA()->getComplexList()->add(surf);
 #ifdef DEBUGVHWASTRICT
@@ -3608,7 +3608,7 @@ int VBoxGLWidget::vhwaSurfaceDestroy(struct _VBOXVHWACMD_SURF_DESTROY *pCmd)
     mRepaintNeeded = true;
 
     void * test = mSurfHandleTable.remove(pCmd->u.in.hSurf);
-    Assert(test);
+    Assert(test); NOREF(test);
 
     return VINF_SUCCESS;
 }
