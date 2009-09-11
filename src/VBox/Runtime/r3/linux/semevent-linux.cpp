@@ -53,6 +53,7 @@ asm volatile (".global epoll_pwait");
 #include <iprt/alloc.h>
 #include <iprt/asm.h>
 #include <iprt/err.h>
+#include <iprt/time.h>
 #include "internal/magics.h"
 
 #include <errno.h>
@@ -196,20 +197,13 @@ static int rtSemEventWait(RTSEMEVENT EventSem, unsigned cMillies, bool fAutoResu
      * Convert timeout value.
      */
     struct timespec ts;
-    struct timespec tsEnd;
     struct timespec *pTimeout = NULL;
+    uint64_t u64End = 0; /* shut up gcc */
     if (cMillies != RT_INDEFINITE_WAIT)
     {
         ts.tv_sec  = cMillies / 1000;
         ts.tv_nsec = (cMillies % 1000) * 1000000;
-        clock_gettime(CLOCK_REALTIME, &tsEnd);
-        tsEnd.tv_sec  += ts.tv_sec;
-        tsEnd.tv_nsec += ts.tv_nsec;
-        if (tsEnd.tv_nsec >= 1000000000)
-        {
-            tsEnd.tv_nsec -= 1000000000;
-            tsEnd.tv_sec++;
-        }
+        u64End = RTTimeSystemNanoTS() + cMillies * 1000000;
         pTimeout = &ts;
     }
 
@@ -257,22 +251,14 @@ static int rtSemEventWait(RTSEMEVENT EventSem, unsigned cMillies, bool fAutoResu
         /* adjust the relative timeout */
         if (pTimeout)
         {
-            clock_gettime(CLOCK_REALTIME, &ts);
-            ts.tv_nsec = tsEnd.tv_nsec - ts.tv_nsec;
-            ts.tv_sec  = tsEnd.tv_sec - ts.tv_sec;
-            if (ts.tv_nsec < 0)
-            {
-                ts.tv_nsec += 1000000000; /* not correct if ts.tv_sec is negative but we
-                                             leave on negative timeouts in any case */
-                ts.tv_sec--;
-            }
-            /* don't wait for less than 1 microsecond */
-            if (   ts.tv_sec < 0
-                || (ts.tv_sec == 0 && ts.tv_nsec < 1000))
+            int64_t u64Diff = u64End - RTTimeSystemNanoTS();
+            if (u64Diff < 1000)
             {
                 rc = VERR_TIMEOUT;
                 break;
             }
+            ts.tv_sec  = u64Diff / 1000000000;
+            ts.tv_nsec = u64Diff % 1000000000;
         }
     }
 
