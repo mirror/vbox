@@ -153,38 +153,45 @@ typedef enum VMSTATE
     VMSTATE_CREATED,
     /** The VM state is being loaded from file. */
     VMSTATE_LOADING,
+    /** The VM is being powered on */
+    VMSTATE_POWERING_ON,
     /** The VM is runnning. */
     VMSTATE_RUNNING,
     /** Live save: The VM is running and the state is being saved. */
-    VMSTATE_LS_RUNNING,
+    VMSTATE_RUNNING_LS,
     /** The VM is being reset. */
     VMSTATE_RESETTING,
     /** Live save: The VM is being reset, suspended, and awaiting cancellation
      * of the live save operation. */
-    VMSTATE_LS_RESETTING,
+    VMSTATE_RESETTING_LS,
+    /** The VM is being suspended. */
+    VMSTATE_SUSPENDING,
+    /** Live save: The VM has been suspended and is av
+     * the live save operation. */
+    VMSTATE_SUSPENDING_LS,
     /** The VM is suspended. */
     VMSTATE_SUSPENDED,
     /** Live save: The VM has been suspended and is av
      * the live save operation. */
-    VMSTATE_LS_SUSPENDING,
+    VMSTATE_SUSPENDED_LS,
     /** The VM is suspended and its state is being saved by EMT(0). */
     VMSTATE_SAVING,
-    /** Live save: The VM is suspended and its state is being saved by EMT(0). */
-    VMSTATE_LS_SAVING,
+    /** The VM is being powered off. */
+    VMSTATE_POWERING_OFF,
     /** Live save: The VM is being powered off and the save cancelled. */
-    VMSTATE_LS_POWERING_OFF,
-    /** The VM is suspended because of a fatal error. */
+    VMSTATE_POWERING_OFF_LS,
+    /** The VM is switched off, awaiting destruction. */
+    VMSTATE_OFF,
+    /** The VM is powered off because of a fatal error. */
     VMSTATE_FATAL_ERROR,
     /** Live save: Waiting for cancellation and transition to FatalError. */
-    VMSTATE_LS_FATAL_ERROR,
+    VMSTATE_FATAL_ERROR_LS,
     /** The VM is in guru meditation over a fatal failure. */
     VMSTATE_GURU_MEDITATION,
     /** Live save: Waiting for cancellation and transition to GuruMeditation. */
-    VMSTATE_LS_GURU_MEDIATION,
+    VMSTATE_GURU_MEDITATION_LS,
     /** The VM is screwed because of a failed state loading. */
     VMSTATE_LOAD_FAILURE,
-    /** The VM is switched off, awaiting destruction. */
-    VMSTATE_OFF,
     /** The VM is being destroyed. */
     VMSTATE_DESTROYING,
     /** Terminated. */
