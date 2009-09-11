@@ -130,30 +130,31 @@ ip_output(PNATState pData, struct socket *so, struct mbuf *m0)
         goto bad;
     }
 #endif
-      /* Current TCP/IP stack hasn't routing information at
-       * all so we need to calculate destination ethernet address
-       */
+    /* Current TCP/IP stack hasn't routing information at
+     * all so we need to calculate destination ethernet address
+     */
 #ifndef VBOX_WITH_SLIRP_BSD_MBUF
-     eh = (struct ethhdr *)MBUF_HEAD(m);
-#else
-    /*todo: make prepend */
-    m = m_prepend(pData, m, ETH_HLEN, M_DONTWAIT);
-    Assert(m);
-    eh = mtod(m, struct ethhdr *);
-    m_adj(m, ETH_HLEN); /*let the rest of code do it job*/
-#endif
-     if (memcmp(eh->h_source, zerro_ethaddr, ETH_ALEN) == 0)
-     {
-        rc = rt_lookup_in_cache(pData, ip->ip_dst.s_addr, eth_dst);
-        if (rc != 0)
-            goto bad;
-     }
-     else
+    eh = (struct ethhdr *)MBUF_HEAD(m);
+    if (memcmp(eh->h_source, zerro_ethaddr, ETH_ALEN) == 0)
     {
-        memcpy(eth_dst, eh->h_source, ETH_ALEN);
-        rc = 0; /*some times we've already know where to send packet*/
+       rc = rt_lookup_in_cache(pData, ip->ip_dst.s_addr, eth_dst);
+       if (rc != 0)
+           goto bad;
     }
-
+    else
+    {
+       memcpy(eth_dst, eh->h_source, ETH_ALEN);
+       rc = 0; /*some times we've already know where to send packet*/
+    }
+#else
+    /* 
+     * (vvl) Note: Here we should care about dhcp and other services
+     * aware of ethernet address 
+     */
+    rc = rt_lookup_in_cache(pData, ip->ip_dst.s_addr, eth_dst);
+    if (rc != 0)
+        goto bad;
+#endif
     /*
      * If small enough for interface, can just send directly.
      */
@@ -163,9 +164,6 @@ ip_output(PNATState pData, struct socket *so, struct mbuf *m0)
         ip->ip_off = htons((u_int16_t)ip->ip_off);
         ip->ip_sum = 0;
         ip->ip_sum = cksum(m, hlen);
-    
-        Assert((rc == 0));
-        memcpy(eh->h_source, eth_dst, ETH_ALEN); 
     
         {
             STAM_PROFILE_START(&pData->StatALIAS_output, a);
@@ -192,10 +190,17 @@ ip_output(PNATState pData, struct socket *so, struct mbuf *m0)
 #endif
             STAM_PROFILE_STOP(&pData->StatALIAS_output, a);
         }
+#ifdef VBOX_WITH_SLIRP_BSD_MBUF
+        /*todo: make prepend */
+        m = m_prepend(pData, m, ETH_HLEN, M_DONTWAIT);
+        Assert(m);
+        eh = mtod(m, struct ethhdr *);
+#endif
+        memcpy(eh->h_source, eth_dst, ETH_ALEN); 
 
         if_output(pData, so, m);
         goto done;
-    }
+     }
 
     /*
      * Too large for interface; fragment if possible.
@@ -253,18 +258,6 @@ ip_output(PNATState pData, struct socket *so, struct mbuf *m0)
             m_adj(m, mhlen);
 #endif
             /* we've calculated eth_dst for first packet */
-#ifndef VBOX_WITH_SLIRP_BSD_MBUF
-            eh = (struct ethhdr *)MBUF_HEAD(m);
-#else
-            m = m_prepend(pData, m, ETH_HLEN, M_DONTWAIT);
-            Assert(m);
-            eh = mtod(m, struct ethhdr *);
-            m_adj(m, ETH_HLEN);
-#endif
-            Assert((rc == 0));
-
-            memcpy(eh->h_source, eth_dst, ETH_ALEN); 
-
 #if 0 /* No options */
             if (hlen > sizeof (struct ip))
             {
@@ -313,32 +306,6 @@ ip_output(PNATState pData, struct socket *so, struct mbuf *m0)
         ip->ip_sum = 0;
         ip->ip_sum = cksum(m, hlen);
 
-        {
-            STAM_PROFILE_START(&pData->StatALIAS_output, a);
-#ifndef VBOX_WITH_SLIRP_BSD_MBUF
-            rc = LibAliasOut((m->m_la ? m->m_la : pData->proxy_alias), 
-                mtod(m, char *), m->m_len);
-#else
-            struct m_tag *t;
-            if (t = m_tag_find(m, PACKET_TAG_ALIAS, NULL) != 0)
-            {
-                rc = LibAliasOut((struct libalias *)&t[1], mtod(m, char *), m_length(m, NULL));
-            }
-            else
-            {
-                rc = LibAliasOut(pData->proxy_alias, mtod(m, char *), 
-                                 m_length(m, NULL));
-            } 
-            if (rc == PKT_ALIAS_IGNORED)
-            {
-                Log(("NAT: packet was droppped\n"));
-                goto bad;
-            }
-#endif
-            Log2(("NAT: LibAlias return %d\n", rc));
-            STAM_PROFILE_STOP(&pData->StatALIAS_output, a);
-        }
-
 sendorfree:
         for (m = m0; m; m = m0)
         {
@@ -368,6 +335,15 @@ sendorfree:
                 }
 #endif
                 Log2(("NAT: LibAlias return %d\n", rc));
+#ifndef VBOX_WITH_SLIRP_BSD_MBUF
+                eh = (struct ethhdr *)MBUF_HEAD(m);
+#else
+                m = m_prepend(pData, m, ETH_HLEN, M_DONTWAIT);
+                Assert(m);
+                eh = mtod(m, struct ethhdr *);
+#endif
+                memcpy(eh->h_source, eth_dst, ETH_ALEN); 
+
                 if_output(pData, so, m);
             }
             else 

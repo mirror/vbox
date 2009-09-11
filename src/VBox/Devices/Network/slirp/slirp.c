@@ -273,8 +273,10 @@ static int get_dns_addr_domain(PNATState pData, bool fVerbose,
                 RTMemFree(addresses);
                 return VERR_NO_MEMORY;
             }
-            LogRel(("NAT: adding %R[IP4] to DNS server list\n", &((struct sockaddr_in *)saddr)->sin_addr));
-            if ((((struct sockaddr_in *)saddr)->sin_addr.s_addr & htonl(IN_CLASSA_NET)) == ntohl(INADDR_LOOPBACK & IN_CLASSA_NET)) {
+            LogRel(("NAT: adding %R[IP4] to DNS server list\n", 
+                    &((struct sockaddr_in *)saddr)->sin_addr));
+            if ((((  struct sockaddr_in *)saddr)->sin_addr.s_addr & htonl(IN_CLASSA_NET)) == 
+                     ntohl(INADDR_LOOPBACK & IN_CLASSA_NET)) {
                 da->de_addr.s_addr = htonl(ntohl(special_addr.s_addr) | CTL_ALIAS);
             }
             else
@@ -553,7 +555,11 @@ int slirp_init(PNATState *ppData, uint32_t u32NetAddr, uint32_t u32Netmask,
     icmp_init(pData);
 
     /* Initialise mbufs *after* setting the MTU */
+#ifndef VBOX_WITH_SLIRP_BSD_MBUF
     m_init(pData);
+#else
+    mbuf_init(pData);
+#endif
 
 #ifndef VBOX_WITH_NAT_SERVICE
     inet_aton(pszNetAddr, &special_addr);
@@ -1360,6 +1366,7 @@ static void arp_input(PNATState pData, struct mbuf *m)
     switch(ar_op)
     {
         case ARPOP_REQUEST:
+#ifndef VBOX_WITH_SLIRP_BSD_MBUF
             mr = m_get(pData);
 
             reh = mtod(mr, struct ethhdr *);
@@ -1371,6 +1378,15 @@ static void arp_input(PNATState pData, struct mbuf *m)
             mr->m_data += if_maxlinkhdr;
             mr->m_len = sizeof(struct arphdr);
             rah = mtod(mr, struct arphdr *);
+#else
+            mr = m_gethdr(pData, M_NOWAIT, MT_HEADER);
+            rah = mtod(mr, struct arphdr *);
+            Assert(mr);
+            mr->m_pkthdr.len = mr->m_len = sizeof(* rah);
+            mr = m_prepend(pData, mr, ETH_HLEN, M_DONTWAIT);
+            reh = mtod(mr, struct ethhdr *);
+            memcpy(reh->h_source, eh->h_source, ETH_ALEN); /* XXX: if_encap will swap src and dst*/
+#endif
 #ifdef VBOX_WITH_NAT_SERVICE
             if (tip == special_addr.s_addr) goto arp_ok;
 #endif
@@ -1472,20 +1488,34 @@ void slirp_input(PNATState pData, const uint8_t *pkt, int pkt_len)
         return;
     }
 
+#ifndef VBOX_WITH_SLIRP_BSD_MBUF
     m = m_get(pData);
+#else
+    m = m_gethdr(pData, M_NOWAIT, MT_HEADER);
+#endif
     if (!m)
     {
         LogRel(("NAT: can't allocate new mbuf\n"));
+        RTMemFree((void *)pkt);
         return;
     }
 
     /* Note: we add to align the IP header */
 
+#ifndef VBOX_WITH_SLIRP_BSD_MBUF
     if (M_FREEROOM(m) < pkt_len)
        m_inc(m, pkt_len);
 
     m->m_len = pkt_len ;
     memcpy(m->m_data, pkt, pkt_len);
+#else
+    if (m_append(pData, m, pkt_len, pkt) != 1)
+    {
+        AssertMsgFailed(("Can't append incommin to mbuf"));
+        RTMemFree(pkt);
+        m_free(pData, m);
+    }
+#endif
 
 #if 1
     if (pData->port_forwarding_activated == 0)
@@ -1503,6 +1533,10 @@ void slirp_input(PNATState pData, const uint8_t *pkt, int pkt_len)
              * the first outgoing connection gets an incorrect timestamp. */
             updtime(pData);
             m_adj(m, ETH_HLEN);
+#ifdef VBOX_WITH_SLIRP_BSD_MBUF
+            M_ASSERTPKTHDR(m);
+            m->m_pkthdr.header = mtod(m, void *);
+#endif
             ip_input(pData, m);
             break;
         case ETH_P_IPV6:
@@ -1526,8 +1560,10 @@ void if_encap(PNATState pData, uint16_t eth_proto, struct mbuf *m)
 {
     struct ethhdr *eh;
     uint8_t *buf = NULL;
+    size_t mlen = 0;
     STAM_PROFILE_START(&pData->StatIF_encap, a);
 
+#ifndef VBOX_WITH_SLIRP_BSD_MBUF
     m->m_data -= if_maxlinkhdr;
     m->m_len += ETH_HLEN;
     eh = mtod(m, struct ethhdr *);
@@ -1537,6 +1573,10 @@ void if_encap(PNATState pData, uint16_t eth_proto, struct mbuf *m)
         LogRel(("NAT: ethernet detects corruption of the packet"));
         AssertMsgFailed(("!!Ethernet frame corrupted!!"));
     }
+#else
+    M_ASSERTPKTHDR(m);
+    eh = mtod(m, struct ethhdr *);
+#endif
 
     if (memcmp(eh->h_source, special_ethaddr, ETH_ALEN) != 0)
     {
@@ -1549,15 +1589,24 @@ void if_encap(PNATState pData, uint16_t eth_proto, struct mbuf *m)
             goto done;
         }
     }
-    buf = RTMemAlloc(1600);
+#ifndef VBOX_WITH_SLIRP_BSD_MBUF
+    mlen = m->m_len;
+#else
+    mlen = m_length(pData, m);
+#endif
+    buf = RTMemAlloc(mlen);
     if (buf == NULL)
     {
         LogRel(("NAT: Can't alloc memory for outgoing buffer\n"));
         goto done;
     }
     eh->h_proto = htons(eth_proto);
-    memcpy(buf, mtod(m, uint8_t *), m->m_len);
-    slirp_output(pData->pvUser, NULL, buf, m->m_len);
+#ifndef VBOX_WITH_SLIRP_BSD_MBUF
+    memcpy(buf, mtod(m, uint8_t *), mlen);
+#else
+    m_copydata(m, 0, mlen, (char *)buf);
+#endif
+    slirp_output(pData->pvUser, NULL, buf, mlen);
 done:
     STAM_PROFILE_STOP(&pData->StatIF_encap, a);
     m_free(pData, m);
