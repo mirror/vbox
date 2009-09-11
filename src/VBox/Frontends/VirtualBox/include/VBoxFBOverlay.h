@@ -27,6 +27,8 @@
 #include <iprt/assert.h>
 #include <iprt/critsect.h>
 
+#define VBOXVHWA_ALLOW_PRIMARY_AND_OVERLAY_ONLY 1
+
 #ifdef DEBUG
 #include "iprt/stream.h"
 #define VBOXQGLLOG(_m) RTPrintf _m
