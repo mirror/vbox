@@ -220,6 +220,7 @@ static int pdmacFileAioMgrWaitForBlockingEvent(PPDMACEPFILEMGR pAioMgr, PDMACEPF
     int rc = VINF_SUCCESS;
 
     ASMAtomicWriteU32((volatile uint32_t *)&pAioMgr->enmBlockingEvent, enmEvent);
+    Assert(!pAioMgr->fBlockingEventPending);
     ASMAtomicXchgBool(&pAioMgr->fBlockingEventPending, true);
 
     /* Wakeup the async I/O manager */
