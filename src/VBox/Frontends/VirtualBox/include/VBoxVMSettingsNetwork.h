@@ -26,11 +26,12 @@
 /* VBox Includes */
 #include "COMDefs.h"
 #include "VBoxSettingsPage.h"
+#include "QIArrowButtonSwitch.h"
 #include "VBoxVMSettingsNetwork.gen.h"
 
 /* VBox Forwardes */
 class VBoxVMSettingsNetworkPage;
-class VBoxVMSettingsNetworkDetails;
+class QIArrowButtonSwitch;
 
 class VBoxVMSettingsNetwork : public QIWithRetranslateUI <QWidget>,
                               public Ui::VBoxVMSettingsNetwork
@@ -61,16 +62,17 @@ private slots:
 
     void updateAttachmentAlternative();
     void updateAlternativeName();
-    void detailsClicked();
+    void toggleAdvanced();
+    void generateMac();
 
 private:
 
     void populateComboboxes();
 
     VBoxVMSettingsNetworkPage *mParent;
-    VBoxVMSettingsNetworkDetails *mDetails;
     CNetworkAdapter mAdapter;
     QIWidgetValidator *mValidator;
+    QIArrowButtonSwitch *mAbsAdvanced;
 
     QString mBrgName;
     QString mIntName;
