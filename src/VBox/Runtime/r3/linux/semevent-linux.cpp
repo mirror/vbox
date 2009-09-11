@@ -196,11 +196,20 @@ static int rtSemEventWait(RTSEMEVENT EventSem, unsigned cMillies, bool fAutoResu
      * Convert timeout value.
      */
     struct timespec ts;
+    struct timespec tsEnd;
     struct timespec *pTimeout = NULL;
-    if (cMillies != RT_INDEFINITE_WAIT)
+    if (RT_UNLIKELY(cMillies != RT_INDEFINITE_WAIT))
     {
         ts.tv_sec  = cMillies / 1000;
         ts.tv_nsec = (cMillies % 1000) * 1000000;
+        clock_gettime(CLOCK_REALTIME, &tsEnd);
+        tsEnd.tv_sec  += ts.tv_sec;
+        tsEnd.tv_nsec += ts.tv_nsec;
+        if (tsEnd.tv_nsec >= 1000000000)
+        {
+            tsEnd.tv_nsec -= 1000000000;
+            tsEnd.tv_sec++;
+        }
         pTimeout = &ts;
     }
 
@@ -244,6 +253,26 @@ static int rtSemEventWait(RTSEMEVENT EventSem, unsigned cMillies, bool fAutoResu
             AssertMsgFailed(("rc=%ld errno=%d\n", lrc, errno));
             rc = RTErrConvertFromErrno(lrc);
             break;
+        }
+        /* adjust the relative timeout */
+        if (RT_UNLIKELY(pTimeout))
+        {
+            clock_gettime(CLOCK_REALTIME, &ts);
+            ts.tv_nsec = tsEnd.tv_nsec - ts.tv_nsec;
+            ts.tv_sec  = tsEnd.tv_nsec - ts.tv_sec;
+            if (ts.tv_nsec < 0)
+            {
+                ts.tv_nsec += 1000000000; /* not correct if ts.tv_sec is negative but we
+                                             leave on negative timeouts in any case */
+                ts.tv_nsec--;
+            }
+            /* don't wait for less than 1 microsecond */
+            if (   ts.tv_sec < 0
+                || (ts.tv_sec == 0 && ts.tv_nsec < 1000))
+            {
+                rc = VERR_TIMEOUT;
+                break;
+            }
         }
     }
 
