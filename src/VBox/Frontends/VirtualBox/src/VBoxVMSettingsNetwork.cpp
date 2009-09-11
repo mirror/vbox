@@ -43,7 +43,7 @@ VBoxVMSettingsNetwork::VBoxVMSettingsNetwork (VBoxVMSettingsNetworkPage *aParent
     Ui::VBoxVMSettingsNetwork::setupUi (this);
 
     /* Setup widgets */
-    mCbName->setInsertPolicy (QComboBox::NoInsert);
+    mCbAdapterName->setInsertPolicy (QComboBox::NoInsert);
     mLeMAC->setValidator (new QRegExpValidator (QRegExp (
                           "[0-9A-Fa-f][02468ACEace][0-9A-Fa-f]{10}"), this));
     mLeMAC->setMinimumWidthByText (QString().fill ('0', 12));
@@ -77,7 +77,7 @@ void VBoxVMSettingsNetwork::getFromAdapter (const CNetworkAdapter &aAdapter)
     mAdapter = aAdapter;
 
     /* Load adapter activity state */
-    mGbAdapter->setChecked (aAdapter.GetEnabled());
+    mCbEnableAdapter->setChecked (aAdapter.GetEnabled());
 
     /* Load adapter type */
     int adapterPos = mCbAdapterType->findData (aAdapter.GetAdapterType());
@@ -108,13 +108,13 @@ void VBoxVMSettingsNetwork::getFromAdapter (const CNetworkAdapter &aAdapter)
     updateAttachmentAlternative();
 
     mLeMAC->setText (mAdapter.GetMACAddress());
-    mCbCable->setChecked (mAdapter.GetCableConnected());
+    mCbCableConnected->setChecked (mAdapter.GetCableConnected());
 }
 
 void VBoxVMSettingsNetwork::putBackToAdapter()
 {
     /* Save adapter activity state */
-    mAdapter.SetEnabled (mGbAdapter->isChecked());
+    mAdapter.SetEnabled (mCbEnableAdapter->isChecked());
 
     /* Save adapter type */
     KNetworkAdapterType type = (KNetworkAdapterType)
@@ -147,20 +147,20 @@ void VBoxVMSettingsNetwork::putBackToAdapter()
     }
 
     mAdapter.SetMACAddress (mLeMAC->text().isEmpty() ? QString::null : mLeMAC->text());
-    mAdapter.SetCableConnected (mCbCable->isChecked());
+    mAdapter.SetCableConnected (mCbCableConnected->isChecked());
 }
 
 void VBoxVMSettingsNetwork::setValidator (QIWidgetValidator *aValidator)
 {
     mValidator = aValidator;
 
-    connect (mGbAdapter, SIGNAL (toggled (bool)),
+    connect (mCbEnableAdapter, SIGNAL (toggled (bool)),
              mValidator, SLOT (revalidate()));
     connect (mCbAttachmentType, SIGNAL (activated (const QString&)),
              this, SLOT (updateAttachmentAlternative()));
-    connect (mCbName, SIGNAL (activated (const QString&)),
+    connect (mCbAdapterName, SIGNAL (activated (const QString&)),
              this, SLOT (updateAlternativeName()));
-    connect (mCbName, SIGNAL (editTextChanged (const QString&)),
+    connect (mCbAdapterName, SIGNAL (editTextChanged (const QString&)),
              this, SLOT (updateAlternativeName()));
 
     mValidator->revalidate();
@@ -169,7 +169,7 @@ void VBoxVMSettingsNetwork::setValidator (QIWidgetValidator *aValidator)
 bool VBoxVMSettingsNetwork::revalidate (QString &aWarning, QString &aTitle)
 {
     /* 'True' for disabled adapter */
-    if (!mGbAdapter->isChecked())
+    if (!mCbEnableAdapter->isChecked())
         return true;
 
     /* Validate alternatives */
@@ -209,15 +209,15 @@ bool VBoxVMSettingsNetwork::revalidate (QString &aWarning, QString &aTitle)
 
 QWidget* VBoxVMSettingsNetwork::setOrderAfter (QWidget *aAfter)
 {
-    setTabOrder (aAfter, mGbAdapter);
-    setTabOrder (mGbAdapter, mCbAttachmentType);
-    setTabOrder (mCbAttachmentType, mCbName);
-    setTabOrder (mCbName, mAbsAdvanced);
+    setTabOrder (aAfter, mCbEnableAdapter);
+    setTabOrder (mCbEnableAdapter, mCbAttachmentType);
+    setTabOrder (mCbAttachmentType, mCbAdapterName);
+    setTabOrder (mCbAdapterName, mAbsAdvanced);
     setTabOrder (mAbsAdvanced, mCbAdapterType);
     setTabOrder (mCbAdapterType, mLeMAC);
     setTabOrder (mLeMAC, mTbMAC);
-    setTabOrder (mTbMAC, mCbCable);
-    return mCbCable;
+    setTabOrder (mTbMAC, mCbCableConnected);
+    return mCbCableConnected;
 }
 
 QString VBoxVMSettingsNetwork::pageTitle() const
@@ -274,37 +274,37 @@ void VBoxVMSettingsNetwork::retranslateUi()
 void VBoxVMSettingsNetwork::updateAttachmentAlternative()
 {
     /* Blocking signals to change content manually */
-    mCbName->blockSignals (true);
+    mCbAdapterName->blockSignals (true);
 
     /* Update alternative-name combo-box availability */
-    mLbName->setEnabled (attachmentType() != KNetworkAttachmentType_Null &&
-                         attachmentType() != KNetworkAttachmentType_NAT);
-    mCbName->setEnabled (attachmentType() != KNetworkAttachmentType_Null &&
-                         attachmentType() != KNetworkAttachmentType_NAT);
+    mLbAdapterName->setEnabled (attachmentType() != KNetworkAttachmentType_Null &&
+                                attachmentType() != KNetworkAttachmentType_NAT);
+    mCbAdapterName->setEnabled (attachmentType() != KNetworkAttachmentType_Null &&
+                                attachmentType() != KNetworkAttachmentType_NAT);
 
     /* Refresh list */
-    mCbName->clear();
+    mCbAdapterName->clear();
     switch (attachmentType())
     {
         case KNetworkAttachmentType_Bridged:
-            mCbName->insertItems (0, mParent->brgList());
-            mCbName->setEditable (false);
+            mCbAdapterName->insertItems (0, mParent->brgList());
+            mCbAdapterName->setEditable (false);
             break;
         case KNetworkAttachmentType_Internal:
-            mCbName->insertItems (0, mParent->intList());
-            mCbName->setEditable (true);
-            mCbName->setCompleter (0);
+            mCbAdapterName->insertItems (0, mParent->intList());
+            mCbAdapterName->setEditable (true);
+            mCbAdapterName->setCompleter (0);
             break;
         case KNetworkAttachmentType_HostOnly:
-            mCbName->insertItems (0, mParent->hoiList());
-            mCbName->setEditable (false);
+            mCbAdapterName->insertItems (0, mParent->hoiList());
+            mCbAdapterName->setEditable (false);
             break;
         default:
             break;
     }
 
     /* Prepend 'empty' or 'default' item */
-    if (mCbName->count() == 0)
+    if (mCbAdapterName->count() == 0)
     {
         switch (attachmentType())
         {
@@ -312,18 +312,18 @@ void VBoxVMSettingsNetwork::updateAttachmentAlternative()
             case KNetworkAttachmentType_HostOnly:
             {
                 /* Adapters list 'empty' */
-                int pos = mCbName->findData (emptyItemCode);
+                int pos = mCbAdapterName->findData (emptyItemCode);
                 if (pos == -1)
-                    mCbName->insertItem (0, tr ("Not selected", "network adapter name"), emptyItemCode);
+                    mCbAdapterName->insertItem (0, tr ("Not selected", "network adapter name"), emptyItemCode);
                 else
-                    mCbName->setItemText (pos, tr ("Not selected", "network adapter name"));
+                    mCbAdapterName->setItemText (pos, tr ("Not selected", "network adapter name"));
                 break;
             }
             case KNetworkAttachmentType_Internal:
             {
                 /* Internal network 'default' name */
-                if (mCbName->findText ("intnet") == -1)
-                    mCbName->insertItem (0, "intnet");
+                if (mCbAdapterName->findText ("intnet") == -1)
+                    mCbAdapterName->insertItem (0, "intnet");
                 break;
             }
             default:
@@ -337,14 +337,14 @@ void VBoxVMSettingsNetwork::updateAttachmentAlternative()
         case KNetworkAttachmentType_Bridged:
         case KNetworkAttachmentType_HostOnly:
         {
-            int pos = mCbName->findText (alternativeName());
-            mCbName->setCurrentIndex (pos == -1 ? 0 : pos);
+            int pos = mCbAdapterName->findText (alternativeName());
+            mCbAdapterName->setCurrentIndex (pos == -1 ? 0 : pos);
             break;
         }
         case KNetworkAttachmentType_Internal:
         {
-            int pos = mCbName->findText (alternativeName());
-            mCbName->setCurrentIndex (pos == -1 ? 0 : pos);
+            int pos = mCbAdapterName->findText (alternativeName());
+            mCbAdapterName->setCurrentIndex (pos == -1 ? 0 : pos);
             break;
         }
         default:
@@ -355,7 +355,7 @@ void VBoxVMSettingsNetwork::updateAttachmentAlternative()
     updateAlternativeName();
 
     /* Unblocking signals as content is changed already */
-    mCbName->blockSignals (false);
+    mCbAdapterName->blockSignals (false);
 }
 
 void VBoxVMSettingsNetwork::updateAlternativeName()
@@ -364,22 +364,22 @@ void VBoxVMSettingsNetwork::updateAlternativeName()
     {
         case KNetworkAttachmentType_Bridged:
         {
-            QString newName (mCbName->itemData (mCbName->currentIndex()).toString() ==
+            QString newName (mCbAdapterName->itemData (mCbAdapterName->currentIndex()).toString() ==
                              QString (emptyItemCode) ||
-                             mCbName->currentText().isEmpty() ?
-                             QString::null : mCbName->currentText());
+                             mCbAdapterName->currentText().isEmpty() ?
+                             QString::null : mCbAdapterName->currentText());
             if (mBrgName != newName)
                 mBrgName = newName;
             break;
         }
         case KNetworkAttachmentType_Internal:
         {
-            QString newName ((mCbName->itemData (mCbName->currentIndex()).toString() ==
+            QString newName ((mCbAdapterName->itemData (mCbAdapterName->currentIndex()).toString() ==
                               QString (emptyItemCode) &&
-                              mCbName->currentText() ==
-                              mCbName->itemText (mCbName->currentIndex())) ||
-                              mCbName->currentText().isEmpty() ?
-                              QString::null : mCbName->currentText());
+                              mCbAdapterName->currentText() ==
+                              mCbAdapterName->itemText (mCbAdapterName->currentIndex())) ||
+                              mCbAdapterName->currentText().isEmpty() ?
+                              QString::null : mCbAdapterName->currentText());
             if (mIntName != newName)
             {
                 mIntName = newName;
@@ -390,10 +390,10 @@ void VBoxVMSettingsNetwork::updateAlternativeName()
         }
         case KNetworkAttachmentType_HostOnly:
         {
-            QString newName (mCbName->itemData (mCbName->currentIndex()).toString() ==
+            QString newName (mCbAdapterName->itemData (mCbAdapterName->currentIndex()).toString() ==
                              QString (emptyItemCode) ||
-                             mCbName->currentText().isEmpty() ?
-                             QString::null : mCbName->currentText());
+                             mCbAdapterName->currentText().isEmpty() ?
+                             QString::null : mCbAdapterName->currentText());
             if (mHoiName != newName)
                 mHoiName = newName;
             break;
@@ -408,12 +408,12 @@ void VBoxVMSettingsNetwork::updateAlternativeName()
 
 void VBoxVMSettingsNetwork::toggleAdvanced()
 {
-    mLbAType->setVisible (mAbsAdvanced->isExpanded());
+    mLbAdapterType->setVisible (mAbsAdvanced->isExpanded());
     mCbAdapterType->setVisible (mAbsAdvanced->isExpanded());
     mLbMAC->setVisible (mAbsAdvanced->isExpanded());
     mLeMAC->setVisible (mAbsAdvanced->isExpanded());
     mTbMAC->setVisible (mAbsAdvanced->isExpanded());
-    mCbCable->setVisible (mAbsAdvanced->isExpanded());
+    mCbCableConnected->setVisible (mAbsAdvanced->isExpanded());
 }
 
 void VBoxVMSettingsNetwork::generateMac()

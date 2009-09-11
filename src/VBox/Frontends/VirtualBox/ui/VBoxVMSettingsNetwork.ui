@@ -28,7 +28,7 @@
   </property>
   <layout class="QGridLayout" name="VBoxVMSettingsNetworkGridLayout">
    <item row="0" column="0" colspan="2">
-    <widget class="QCheckBox" name="mGbAdapter" >
+    <widget class="QCheckBox" name="mCbEnableAdapter" >
      <property name="whatsThis" >
       <string>When checked, plugs this virtual network adapter into the virtual machine.</string>
      </property>
@@ -63,7 +63,7 @@
        <number>0</number>
       </property>
       <item row="0" column="0" >
-       <widget class="QLabel" name="mLbNAType">
+       <widget class="QLabel" name="mLbAttachmentType">
         <property name="text" >
          <string>&amp;Attached to:</string>
         </property>
@@ -78,7 +78,7 @@
       <item row="0" column="1">
        <widget class="QComboBox" name="mCbAttachmentType">
         <property name="sizePolicy">
-         <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+         <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
           <horstretch>0</horstretch>
           <verstretch>0</verstretch>
          </sizepolicy>
@@ -89,7 +89,7 @@
        </widget>
       </item>
       <item row="1" column="0" >
-       <widget class="QLabel" name="mLbName">
+       <widget class="QLabel" name="mLbAdapterName">
         <property name="text" >
          <string>&amp;Name:</string>
         </property>
@@ -97,15 +97,15 @@
          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
         </property>
         <property name="buddy" >
-         <cstring>mCbName</cstring>
+         <cstring>mCbAdapterName</cstring>
         </property>
        </widget>
       </item>
-      <item row="1" column="1">
-       <widget class="QComboBox" name="mCbName">
+      <item row="1" column="1" colspan="3">
+       <widget class="QComboBox" name="mCbAdapterName">
         <property name="sizePolicy">
-         <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-          <horstretch>0</horstretch>
+         <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
+          <horstretch>1</horstretch>
           <verstretch>0</verstretch>
          </sizepolicy>
         </property>
@@ -115,17 +115,37 @@
        </widget>
       </item>
       <item row="2" column="0">
-       <widget class="QIArrowButtonSwitch" native="1" name="mAbsAdvanced">
-        <property name="text">
-         <string>A&amp;dvanced</string>
+       <layout class="QHBoxLayout" name="mLtAdvancedBtn">
+        <property name="margin">
+         <number>0</number>
         </property>
-        <property name="whatsThis" >
-         <string>Shows/hide additional network adapter options.</string>
-        </property>
-       </widget>
+        <item>
+         <spacer name="horizontalSpacer2">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>0</width>
+            <height>0</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+        <item>
+         <widget class="QIArrowButtonSwitch" native="1" name="mAbsAdvanced">
+          <property name="text">
+           <string>A&amp;dvanced</string>
+          </property>
+          <property name="whatsThis" >
+           <string>Shows/hide additional network adapter options.</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
       </item>
       <item row="3" column="0">
-       <widget class="QLabel" name="mLbAType">
+       <widget class="QLabel" name="mLbAdapterType">
         <property name="text">
          <string>Adapter &amp;Type:</string>
         </property>
@@ -140,8 +160,8 @@
       <item row="3" column="1" colspan="3">
        <widget class="QComboBox" name="mCbAdapterType">
         <property name="sizePolicy">
-         <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-          <horstretch>0</horstretch>
+         <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
+          <horstretch>1</horstretch>
           <verstretch>0</verstretch>
          </sizepolicy>
         </property>
@@ -167,15 +187,12 @@
        <widget class="QILineEdit" name="mLeMAC">
         <property name="sizePolicy">
          <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
-          <horstretch>0</horstretch>
+          <horstretch>1</horstretch>
           <verstretch>0</verstretch>
          </sizepolicy>
         </property>
         <property name="whatsThis">
          <string>Displays the MAC address of this adapter. It contains exactly 12 characters chosen from {0-9,A-F}. Note that the second character must be an even digit.</string>
-        </property>
-        <property name="frame">
-         <bool>true</bool>
         </property>
        </widget>
       </item>
@@ -194,7 +211,7 @@
        </widget>
       </item>
       <item row="5" column="1" colspan="3">
-       <widget class="QCheckBox" name="mCbCable">
+       <widget class="QCheckBox" name="mCbCableConnected">
         <property name="whatsThis">
          <string>Indicates whether the virtual network cable is plugged in on machine startup or not.</string>
         </property>
@@ -203,36 +220,10 @@
         </property>
        </widget>
       </item>
-      <item rowspan="2" row="0" column="2" colspan="2">
-       <spacer name="horizontalSpacer3">
-        <property name="orientation">
-         <enum>Qt::Horizontal</enum>
-        </property>
-        <property name="sizeHint" stdset="0">
-         <size>
-          <width>40</width>
-          <height>20</height>
-         </size>
-        </property>
-       </spacer>
-      </item>
      </layout>
     </widget>
    </item>
-   <item row="1" column="2">
-    <spacer name="horizontalSpacer2">
-     <property name="orientation">
-      <enum>Qt::Horizontal</enum>
-     </property>
-     <property name="sizeHint" stdset="0">
-      <size>
-       <width>0</width>
-       <height>0</height>
-      </size>
-     </property>
-    </spacer>
-   </item>
-   <item row="4" column="0" colspan="3">
+   <item row="4" column="0" colspan="2">
     <spacer name="verticalSpacer">
      <property name="orientation">
       <enum>Qt::Vertical</enum>
@@ -265,7 +256,7 @@
  </resources>
  <connections>
   <connection>
-   <sender>mGbAdapter</sender>
+   <sender>mCbEnableAdapter</sender>
    <signal>toggled(bool)</signal>
    <receiver>mNetworkChild</receiver>
    <slot>setEnabled(bool)</slot>
