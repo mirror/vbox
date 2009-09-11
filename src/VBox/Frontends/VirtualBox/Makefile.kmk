@@ -4,7 +4,7 @@
 #
 
 #
-# Copyright (C) 2006-2007 Sun Microsystems, Inc.
+# Copyright (C) 2006-2009 Sun Microsystems, Inc.
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -256,6 +256,10 @@ VirtualBox_QT_MOCHDRS = \
 	include/QIHotKeyEdit.h \
 	include/QIStatusBar.h \
 	include/QIStateIndicator.h \
+	include/QIRichToolButton.h \
+	include/QIArrowButtonPress.h \
+	include/QIArrowButtonSwitch.h \
+	include/QIArrowSplitter.h \
 	include/QIMessageBox.h \
 	include/QILabel.h \
 	include/QILabel_p.h \
@@ -331,7 +335,6 @@ VirtualBox_QT_MOCHDRS = \
 
 # Sources containing local definitions of classes that use the Q_OBJECT macro.
 VirtualBox_QT_MOCSRCS = \
-	src/QIMessageBox.cpp \
 	src/VBoxSelectorWnd.cpp \
 	src/VBoxConsoleWnd.cpp \
 	src/VBoxMediaManagerDlg.cpp
@@ -351,6 +354,10 @@ VirtualBox_SOURCES = \
 	src/QIHotKeyEdit.cpp \
 	src/QIStateIndicator.cpp \
 	src/QIStatusBar.cpp \
+	src/QIRichToolButton.cpp \
+	src/QIArrowButtonSwitch.cpp \
+	src/QIArrowButtonPress.cpp \
+	src/QIArrowSplitter.cpp \
 	src/QIMessageBox.cpp \
 	src/QILabel.cpp \
 	src/QILabelSeparator.cpp \
