@@ -255,7 +255,7 @@ udp_input(PNATState pData, register struct mbuf *m, int iphlen)
         && (ntohs(uh->uh_dport) == 53)) 
     {
         dnsproxy_query(pData, so, m, iphlen);
-        goto bad; /* it isn't bad, probably better to add additional label done for boot/tftf :)  */
+        goto done;
     }
 #endif
 
