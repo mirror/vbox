@@ -141,7 +141,7 @@ udp_input(PNATState pData, register struct mbuf *m, int iphlen)
         {
 
 #endif
-            if(cksum(m, len + sizeof(struct ip)))
+            if(cksum(m, len + iphlen))
             {
                 udpstat.udps_badsum++;
                 goto bad;
