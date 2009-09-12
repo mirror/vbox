@@ -157,7 +157,7 @@ udp_input(PNATState pData, register struct mbuf *m, int iphlen)
     if (ntohs(uh->uh_dport) == BOOTP_SERVER)
     {
         bootp_input(pData, m);
-        goto bad;
+        goto done;
     }
 
     if (   ntohs(uh->uh_dport) == 53
@@ -173,7 +173,7 @@ udp_input(PNATState pData, register struct mbuf *m, int iphlen)
         m->m_data += sizeof(struct udpiphdr);
         m->m_len -= sizeof(struct udpiphdr);
         udp_output2(pData, NULL, m, &src, &dst, IPTOS_LOWDELAY);
-        goto bad;
+        goto done;
     }
     /*
      *  handle TFTP
@@ -182,7 +182,7 @@ udp_input(PNATState pData, register struct mbuf *m, int iphlen)
         && CTL_CHECK(ntohl(ip->ip_dst.s_addr), CTL_TFTP))
     {
         tftp_input(pData, m);
-        goto bad;
+        goto done;
     }
 
     /*
@@ -300,6 +300,11 @@ udp_input(PNATState pData, register struct mbuf *m, int iphlen)
 bad:
     Log2(("NAT: UDP datagram to %R[IP4] with size(%d) claimed as bad\n", 
         &ip->ip_dst, ip->ip_len));
+done: 
+    /* some services like bootp(built-in), dns(buildt-in) and dhcp don't need sockets
+     * and create new m'buffers to send them to guest, so we'll free their incomming 
+     * buffers here. 
+     */
     m_freem(pData, m);
     return;
 }
