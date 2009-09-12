@@ -298,8 +298,8 @@ udp_input(PNATState pData, register struct mbuf *m, int iphlen)
     return;
 
 bad:
-    Log2(("NAT: UDP datagram to %R[IP4] with size(%d) claimed as bad\n", 
-        &ip->ip_dst, ip->ip_len));
+    Log2(("NAT: UDP(id: %hd) datagram to %R[IP4] with size(%d) claimed as bad\n", 
+        ip->ip_id, &ip->ip_dst, ip->ip_len));
 done: 
     /* some services like bootp(built-in), dns(buildt-in) and dhcp don't need sockets
      * and create new m'buffers to send them to guest, so we'll free their incomming 
