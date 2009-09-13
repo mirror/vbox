@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2008 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2009 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -20,7 +20,6 @@
  */
 
 
-
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
@@ -30,16 +29,17 @@
 #include <VBox/mm.h>
 #include <VBox/vm.h>
 #include <VBox/err.h>
-
 #include <VBox/log.h>
+
 #include <iprt/asm.h>
 #include <iprt/assert.h>
-#include <iprt/thread.h>
-#include <iprt/mem.h>
 #include <iprt/critsect.h>
+#include <iprt/env.h>
 #include <iprt/file.h>
+#include <iprt/mem.h>
 #include <iprt/semaphore.h>
 #include <iprt/string.h>
+#include <iprt/thread.h>
 
 #include "PDMAsyncCompletionFileInternal.h"
 
@@ -51,7 +51,7 @@
  * @param   pTask        The task to free.
  */
 void pdmacFileTaskFree(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint,
-                          PPDMACTASKFILE pTask)
+                       PPDMACTASKFILE pTask)
 {
     PPDMASYNCCOMPLETIONEPCLASSFILE pEpClass = (PPDMASYNCCOMPLETIONEPCLASSFILE)pEndpoint->Core.pEpClass;
 
@@ -502,6 +502,10 @@ static int pdmacFileInitialize(PPDMASYNCCOMPLETIONEPCLASS pClassGlobals, PCFGMNO
     PPDMASYNCCOMPLETIONEPCLASSFILE pEpClassFile = (PPDMASYNCCOMPLETIONEPCLASSFILE)pClassGlobals;
 
     rc = RTFileAioGetLimits(&AioLimits);
+#ifdef DEBUG
+    if (RT_SUCCESS(rc) && RTEnvExist("VBOX_ASYNC_IO_FAILBACK"))
+        rc = VERR_ENV_VAR_NOT_FOUND;
+#endif
     if (RT_FAILURE(rc))
     {
         LogRel(("AIO: Async I/O manager not supported (rc=%Rrc). Falling back to failsafe manager\n",
