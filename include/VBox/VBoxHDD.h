@@ -1242,11 +1242,12 @@ VBOXDDU_DECL(void) VDDestroy(PVBOXHDD pDisk);
  * Try to get the backend name which can use this image.
  *
  * @return  VBox status code.
+ * @param   pVDIfsDisk      Pointer to the per-disk VD interface list.
  * @param   pszFilename     Name of the image file for which the backend is queried.
  * @param   ppszFormat      Receives pointer of the UTF-8 string which contains the format name.
  *                          The returned pointer must be freed using RTStrFree().
  */
-VBOXDDU_DECL(int) VDGetFormat(const char *pszFilename, char **ppszFormat);
+VBOXDDU_DECL(int) VDGetFormat(PVDINTERFACE pVDIfsDisk, const char *pszFilename, char **ppszFormat);
 
 /**
  * Opens an image file.
