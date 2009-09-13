@@ -2750,6 +2750,8 @@ VMMR3DECL(const char *) VMR3GetStateName(VMSTATE enmState)
         case VMSTATE_SUSPENDED:         return "SUSPENDED";
         case VMSTATE_SUSPENDING_LS:     return "SUSPENDING_LS";
         case VMSTATE_SAVING:            return "SAVING";
+        case VMSTATE_DEBUGGING:         return "DEBUGGING";
+        case VMSTATE_DEBUGGING_LS:      return "DEBUGGING_LS";
         case VMSTATE_POWERING_OFF:      return "POWERING_OFF";
         case VMSTATE_POWERING_OFF_LS:   return "POWERING_OFF_LS";
         case VMSTATE_FATAL_ERROR:       return "FATAL_ERROR";
@@ -2765,6 +2767,147 @@ VMMR3DECL(const char *) VMR3GetStateName(VMSTATE enmState)
             AssertMsgFailed(("Unknown state %d\n", enmState));
             return "Unknown!\n";
     }
+}
+
+
+/**
+ * Validates the state tansition.
+ */
+static bool vmR3ValidateStateTransition(VMSTATE enmStateOld, VMSTATE enmStateNew)
+{
+#ifdef /*VBOX_STRICT*/ DEBUG_bird
+    switch (enmStateOld)
+    {
+        case VMSTATE_CREATING:
+            AssertMsgReturn(enmStateNew == VMSTATE_CREATED, ("%s -> %s\n", VMR3GetStateName(enmStateOld), VMR3GetStateName(enmStateNew)), false);
+            break;
+
+        case VMSTATE_CREATED:
+            AssertMsgReturn(   enmStateNew == VMSTATE_LOADING
+                            || enmStateNew == VMSTATE_POWERING_ON
+                            || enmStateNew == VMSTATE_POWERING_OFF
+                            , ("%s -> %s\n", VMR3GetStateName(enmStateOld), VMR3GetStateName(enmStateNew)), false);
+            break;
+
+        case VMSTATE_LOADING:
+            AssertMsgReturn(   enmStateNew == VMSTATE_SUSPENDED
+                            || enmStateNew == VMSTATE_LOAD_FAILURE
+                            , ("%s -> %s\n", VMR3GetStateName(enmStateOld), VMR3GetStateName(enmStateNew)), false);
+            break;
+
+        case VMSTATE_POWERING_ON:
+            AssertMsgReturn(   enmStateNew == VMSTATE_RUNNING
+                            || enmStateNew == VMSTATE_FATAL_ERROR /*?*/
+                            , ("%s -> %s\n", VMR3GetStateName(enmStateOld), VMR3GetStateName(enmStateNew)), false);
+            break;
+
+        case VMSTATE_RUNNING:
+            AssertMsgReturn(   enmStateNew == VMSTATE_POWERING_OFF
+                            || enmStateNew == VMSTATE_SUSPENDING
+                            || enmStateNew == VMSTATE_RESETTING
+                            || enmStateNew == VMSTATE_RUNNING_LS
+                            || enmStateNew == VMSTATE_DEBUGGING
+                            || enmStateNew == VMSTATE_FATAL_ERROR
+                            || enmStateNew == VMSTATE_GURU_MEDITATION
+                            , ("%s -> %s\n", VMR3GetStateName(enmStateOld), VMR3GetStateName(enmStateNew)), false);
+            break;
+
+        case VMSTATE_RUNNING_LS:
+            AssertMsgReturn(   enmStateNew == VMSTATE_POWERING_OFF_LS
+                            || enmStateNew == VMSTATE_SUSPENDING_LS
+                            || enmStateNew == VMSTATE_RESETTING_LS
+                            || enmStateNew == VMSTATE_RUNNING
+                            || enmStateNew == VMSTATE_DEBUGGING_LS
+                            || enmStateNew == VMSTATE_FATAL_ERROR_LS
+                            || enmStateNew == VMSTATE_GURU_MEDITATION_LS
+                            , ("%s -> %s\n", VMR3GetStateName(enmStateOld), VMR3GetStateName(enmStateNew)), false);
+            break;
+
+        case VMSTATE_RESETTING:
+            AssertMsgReturn(enmStateNew == VMSTATE_RUNNING, ("%s -> %s\n", VMR3GetStateName(enmStateOld), VMR3GetStateName(enmStateNew)), false);
+            break;
+
+        case VMSTATE_RESETTING_LS:
+            AssertMsgReturn(enmStateNew == VMSTATE_RUNNING, ("%s -> %s\n", VMR3GetStateName(enmStateOld), VMR3GetStateName(enmStateNew)), false);
+            break;
+
+        case VMSTATE_SUSPENDING:
+            AssertMsgReturn(enmStateNew == VMSTATE_SUSPENDED, ("%s -> %s\n", VMR3GetStateName(enmStateOld), VMR3GetStateName(enmStateNew)), false);
+            break;
+
+        case VMSTATE_SUSPENDING_LS:
+            AssertMsgReturn(enmStateNew == VMSTATE_SUSPENDED_LS, ("%s -> %s\n", VMR3GetStateName(enmStateOld), VMR3GetStateName(enmStateNew)), false);
+            break;
+
+        case VMSTATE_SUSPENDED:
+            AssertMsgReturn(   enmStateNew == VMSTATE_POWERING_OFF
+                            || enmStateNew == VMSTATE_SAVING
+                            || enmStateNew == VMSTATE_RESETTING
+                            || enmStateNew == VMSTATE_RUNNING
+                            , ("%s -> %s\n", VMR3GetStateName(enmStateOld), VMR3GetStateName(enmStateNew)), false);
+            break;
+
+        case VMSTATE_SUSPENDED_LS:
+            AssertMsgReturn(   enmStateNew == VMSTATE_SUSPENDED_LS
+                            || enmStateNew == VMSTATE_SUSPENDED
+                            , ("%s -> %s\n", VMR3GetStateName(enmStateOld), VMR3GetStateName(enmStateNew)), false);
+            break;
+
+        case VMSTATE_SAVING:
+            AssertMsgReturn(enmStateNew == VMSTATE_SUSPENDED, ("%s -> %s\n", VMR3GetStateName(enmStateOld), VMR3GetStateName(enmStateNew)), false);
+            break;
+
+        case VMSTATE_DEBUGGING:
+            AssertMsgReturn(   enmStateNew == VMSTATE_RUNNING_LS
+                            || enmStateNew == VMSTATE_POWERING_OFF_LS
+                            , ("%s -> %s\n", VMR3GetStateName(enmStateOld), VMR3GetStateName(enmStateNew)), false);
+            break;
+
+        case VMSTATE_POWERING_OFF:
+            AssertMsgReturn(enmStateNew == VMSTATE_OFF, ("%s -> %s\n", VMR3GetStateName(enmStateOld), VMR3GetStateName(enmStateNew)), false);
+            break;
+
+        case VMSTATE_POWERING_OFF_LS:
+            AssertMsgReturn(enmStateNew == VMSTATE_POWERING_OFF, ("%s -> %s\n", VMR3GetStateName(enmStateOld), VMR3GetStateName(enmStateNew)), false);
+            break;
+
+        case VMSTATE_OFF:
+            AssertMsgReturn(enmStateNew == VMSTATE_DESTROYING, ("%s -> %s\n", VMR3GetStateName(enmStateOld), VMR3GetStateName(enmStateNew)), false);
+            break;
+
+        case VMSTATE_FATAL_ERROR:
+            AssertMsgReturn(enmStateNew == VMSTATE_POWERING_OFF, ("%s -> %s\n", VMR3GetStateName(enmStateOld), VMR3GetStateName(enmStateNew)), false);
+            break;
+
+        case VMSTATE_FATAL_ERROR_LS:
+            AssertMsgReturn(enmStateNew == VMSTATE_FATAL_ERROR, ("%s -> %s\n", VMR3GetStateName(enmStateOld), VMR3GetStateName(enmStateNew)), false);
+            break;
+
+        case VMSTATE_GURU_MEDITATION:
+            AssertMsgReturn(   enmStateNew == VMSTATE_DEBUGGING
+                            || enmStateNew == VMSTATE_POWERING_OFF
+                            , ("%s -> %s\n", VMR3GetStateName(enmStateOld), VMR3GetStateName(enmStateNew)), false);
+            break;
+
+        case VMSTATE_GURU_MEDITATION_LS:
+            AssertMsgReturn(enmStateNew == VMSTATE_GURU_MEDITATION, ("%s -> %s\n", VMR3GetStateName(enmStateOld), VMR3GetStateName(enmStateNew)), false);
+            break;
+
+        case VMSTATE_LOAD_FAILURE:
+            AssertMsgReturn(enmStateNew == VMSTATE_POWERING_OFF, ("%s -> %s\n", VMR3GetStateName(enmStateOld), VMR3GetStateName(enmStateNew)), false);
+            break;
+
+        case VMSTATE_DESTROYING:
+            AssertMsgReturn(enmStateNew == VMSTATE_TERMINATED, ("%s -> %s\n", VMR3GetStateName(enmStateOld), VMR3GetStateName(enmStateNew)), false);
+            break;
+
+        case VMSTATE_TERMINATED:
+        default:
+            AssertMsgFailedReturn(("%s -> %s\n", VMR3GetStateName(enmStateOld), VMR3GetStateName(enmStateNew)), false);
+            break;
+    }
+#endif /* VBOX_STRICT */
+    return true;
 }
 
 
@@ -2785,17 +2928,7 @@ void vmR3SetState(PVM pVM, VMSTATE enmStateNew)
      * Validate state machine transitions before doing the actual change.
      */
     VMSTATE enmStateOld = pVM->enmVMState;
-    switch (enmStateOld)
-    {
-        case VMSTATE_OFF:
-            Assert(enmStateNew != VMSTATE_GURU_MEDITATION);
-            break;
-
-        default:
-            /** @todo full validation. */
-            break;
-    }
-
+    vmR3ValidateStateTransition(enmStateOld, enmStateNew);
     pVM->enmVMState = enmStateNew;
     LogRel(("Changing the VM state from '%s' to '%s'.\n", VMR3GetStateName(enmStateOld),  VMR3GetStateName(enmStateNew)));
 
