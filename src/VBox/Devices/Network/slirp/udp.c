@@ -114,7 +114,7 @@ udp_input(PNATState pData, register struct mbuf *m, int iphlen)
         if (len > ip->ip_len)
         {
             udpstat.udps_badlen++;
-            goto bad;
+            Log3(("NAT: IP(id: %hd) has bad size\n", ip->ip_id));
         }
         m_adj(m, len - ip->ip_len);
         ip->ip_len = len;
@@ -144,6 +144,7 @@ udp_input(PNATState pData, register struct mbuf *m, int iphlen)
             if(cksum(m, len + iphlen))
             {
                 udpstat.udps_badsum++;
+                Log3(("NAT: IP(id: %hd) has bad (udp) cksum\n", ip->ip_id));
                 goto bad;
             }
         }
@@ -219,11 +220,14 @@ udp_input(PNATState pData, register struct mbuf *m, int iphlen)
          * create one
          */
         if ((so = socreate()) == NULL)
+        {
+            Log3(("NAT: IP(id: %hd) failed to create socket\n", ip->ip_id));
             goto bad;
+        }
         if (udp_attach(pData, so, 0) == -1)
         {
-            DEBUG_MISC((dfd," udp_attach errno = %d-%s\n",
-                        errno, strerror(errno)));
+            Log3(("NAT: IP(id: %hd) udp_attach errno = %d-%s\n",
+                        ip->ip_id, errno, strerror(errno)));
             sofree(pData, so);
             goto bad;
         }
