@@ -510,7 +510,7 @@ static int pdmacFileInitialize(PPDMASYNCCOMPLETIONEPCLASS pClassGlobals, PCFGMNO
     }
     else
     {
-        pEpClassFile->uBitmaskAlignment   = ~((RTR3UINTPTR)AioLimits.cbBufferAlignment - 1);
+        pEpClassFile->uBitmaskAlignment   = AioLimits.cbBufferAlignment ? ~((RTR3UINTPTR)AioLimits.cbBufferAlignment - 1) : RTR3UINTPTR_MAX;
         pEpClassFile->cReqsOutstandingMax = AioLimits.cReqsOutstandingMax;
         pEpClassFile->fFailsafe = false;
     }

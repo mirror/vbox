@@ -418,7 +418,7 @@ static int pdmacFileAioMgrNormalProcessTaskList(PPDMACTASKFILE pTaskHead,
                     pCurr->fBounceBuffer = false;
 
                 AssertMsg((pEpClassFile->uBitmaskAlignment & (RTR3UINTPTR)pvBuf) == (RTR3UINTPTR)pvBuf,
-                            ("AIO: Alignment restrictions not met!\n"));
+                          ("AIO: Alignment restrictions not met! pvBuf=%p uBitmaskAlignment=%p\n", pvBuf, pEpClassFile->uBitmaskAlignment));
 
                 if (enmTransferType == PDMACTASKFILETRANSFER_WRITE)
                 {
