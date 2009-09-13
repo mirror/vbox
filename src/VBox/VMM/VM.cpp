@@ -453,62 +453,73 @@ static int vmR3CreateUVM(uint32_t cCpus, PUVM *ppUVM)
     {
         /* Allocate a halt method event semaphore for each VCPU. */
         for (i = 0; i < cCpus; i++)
+            pUVM->aCpus[i].vm.s.EventSemWait = NIL_RTSEMEVENT;
+        for (i = 0; i < cCpus; i++)
         {
             rc = RTSemEventCreate(&pUVM->aCpus[i].vm.s.EventSemWait);
             if (RT_FAILURE(rc))
                 break;
         }
-
         if (RT_SUCCESS(rc))
         {
-            /*
-             * Init fundamental (sub-)components - STAM, MMR3Heap and PDMLdr.
-             */
-            rc = STAMR3InitUVM(pUVM);
+            rc = RTCritSectInit(&pUVM->vm.s.AtStateCritSect);
             if (RT_SUCCESS(rc))
             {
-                rc = MMR3InitUVM(pUVM);
+                rc = RTCritSectInit(&pUVM->vm.s.AtErrorCritSect);
                 if (RT_SUCCESS(rc))
                 {
-                    rc = PDMR3InitUVM(pUVM);
+                    /*
+                     * Init fundamental (sub-)components - STAM, MMR3Heap and PDMLdr.
+                     */
+                    rc = STAMR3InitUVM(pUVM);
                     if (RT_SUCCESS(rc))
                     {
-                        /*
-                         * Start the emulation threads for all VMCPUs.
-                         */
-                        for (i = 0; i < cCpus; i++)
-                        {
-                            rc = RTThreadCreateF(&pUVM->aCpus[i].vm.s.ThreadEMT, vmR3EmulationThread, &pUVM->aCpus[i], _1M,
-                                                 RTTHREADTYPE_EMULATION, RTTHREADFLAGS_WAITABLE,
-                                                 cCpus > 1 ? "EMT-%u" : "EMT", i);
-                            if (RT_FAILURE(rc))
-                                break;
-
-                            pUVM->aCpus[i].vm.s.NativeThreadEMT = RTThreadGetNative(pUVM->aCpus[i].vm.s.ThreadEMT);
-                        }
-
+                        rc = MMR3InitUVM(pUVM);
                         if (RT_SUCCESS(rc))
                         {
-                            *ppUVM = pUVM;
-                            return VINF_SUCCESS;
-                        }
+                            rc = PDMR3InitUVM(pUVM);
+                            if (RT_SUCCESS(rc))
+                            {
+                                /*
+                                 * Start the emulation threads for all VMCPUs.
+                                 */
+                                for (i = 0; i < cCpus; i++)
+                                {
+                                    rc = RTThreadCreateF(&pUVM->aCpus[i].vm.s.ThreadEMT, vmR3EmulationThread, &pUVM->aCpus[i], _1M,
+                                                         RTTHREADTYPE_EMULATION, RTTHREADFLAGS_WAITABLE,
+                                                         cCpus > 1 ? "EMT-%u" : "EMT", i);
+                                    if (RT_FAILURE(rc))
+                                        break;
 
-                        /* bail out. */
-                        while (i-- > 0)
-                        {
-                            /** @todo rainy day: terminate the EMTs. */
+                                    pUVM->aCpus[i].vm.s.NativeThreadEMT = RTThreadGetNative(pUVM->aCpus[i].vm.s.ThreadEMT);
+                                }
+
+                                if (RT_SUCCESS(rc))
+                                {
+                                    *ppUVM = pUVM;
+                                    return VINF_SUCCESS;
+                                }
+
+                                /* bail out. */
+                                while (i-- > 0)
+                                {
+                                    /** @todo rainy day: terminate the EMTs. */
+                                }
+                                PDMR3TermUVM(pUVM);
+                            }
+                            MMR3TermUVM(pUVM);
                         }
-                        PDMR3TermUVM(pUVM);
+                        STAMR3TermUVM(pUVM);
                     }
-                    MMR3TermUVM(pUVM);
+                    RTCritSectDelete(&pUVM->vm.s.AtErrorCritSect);
                 }
-                STAMR3TermUVM(pUVM);
+                RTCritSectDelete(&pUVM->vm.s.AtStateCritSect);
             }
-            for (i = 0; i < cCpus; i++)
-            {
-                RTSemEventDestroy(pUVM->aCpus[i].vm.s.EventSemWait);
-                pUVM->aCpus[i].vm.s.EventSemWait = NIL_RTSEMEVENT;
-            }
+        }
+        for (i = 0; i < cCpus; i++)
+        {
+            RTSemEventDestroy(pUVM->aCpus[i].vm.s.EventSemWait);
+            pUVM->aCpus[i].vm.s.EventSemWait = NIL_RTSEMEVENT;
         }
         RTTlsFree(pUVM->vm.s.idxTLS);
     }
@@ -2404,13 +2415,15 @@ static DECLCALLBACK(int) vmR3Reset(PVM pVM)
  */
 static int vmR3AtResetU(PUVM pUVM)
 {
+    RTCritSectEnter(&pUVM->vm.s.AtStateCritSect);
+
     /*
      * Walk the list and call them all.
      */
-    int rc = VINF_SUCCESS;
     for (PVMATRESET pCur = pUVM->vm.s.pAtReset; pCur; pCur = pCur->pNext)
     {
         /* do the call */
+        int rc = VINF_SUCCESS;
         switch (pCur->enmType)
         {
             case VMATRESETTYPE_DEV:
@@ -2424,16 +2437,18 @@ static int vmR3AtResetU(PUVM pUVM)
                 break;
             default:
                 AssertMsgFailed(("Invalid at-reset type %d!\n", pCur->enmType));
+                RTCritSectLeave(&pUVM->vm.s.AtStateCritSect);
                 return VERR_INTERNAL_ERROR;
         }
-
         if (RT_FAILURE(rc))
         {
             AssertMsgFailed(("At-reset handler %s failed with rc=%d\n", pCur->pszDesc, rc));
+            RTCritSectLeave(&pUVM->vm.s.AtStateCritSect);
             return rc;
         }
     }
 
+    RTCritSectLeave(&pUVM->vm.s.AtStateCritSect);
     return VINF_SUCCESS;
 }
 
@@ -2454,9 +2469,11 @@ static int vmr3AtResetRegisterU(PUVM pUVM, void *pvUser, const char *pszDesc, PV
         pNew->pvUser    = pvUser;
 
         /* insert */
-        pNew->pNext     = *pUVM->vm.s.ppAtResetNext;
+        RTCritSectEnter(&pUVM->vm.s.AtStateCritSect);
+        pNew->pNext = *pUVM->vm.s.ppAtResetNext;
         *pUVM->vm.s.ppAtResetNext = pNew;
         pUVM->vm.s.ppAtResetNext = &pNew->pNext;
+        RTCritSectLeave(&pUVM->vm.s.AtStateCritSect);
 
         *ppNew = pNew;
         return VINF_SUCCESS;
@@ -2627,9 +2644,12 @@ static PVMATRESET vmr3AtResetFreeU(PUVM pUVM, PVMATRESET pCur, PVMATRESET pPrev)
  */
 VMMR3DECL(int)   VMR3AtResetDeregister(PVM pVM, PPDMDEVINS pDevIns, PFNVMATRESET pfnCallback)
 {
-    int         rc = VERR_VM_ATRESET_NOT_FOUND;
+    PUVM        pUVM  = pVM->pUVM;
+    RTCritSectEnter(&pUVM->vm.s.AtStateCritSect);
+
+    int         rc    = VERR_VM_ATRESET_NOT_FOUND;
     PVMATRESET  pPrev = NULL;
-    PVMATRESET  pCur = pVM->pUVM->vm.s.pAtReset;
+    PVMATRESET  pCur  = pUVM->vm.s.pAtReset;
     while (pCur)
     {
         if (    pCur->enmType == VMATRESETTYPE_DEV
@@ -2637,7 +2657,7 @@ VMMR3DECL(int)   VMR3AtResetDeregister(PVM pVM, PPDMDEVINS pDevIns, PFNVMATRESET
             &&  (   !pfnCallback
                  || pCur->u.Dev.pfnCallback == pfnCallback))
         {
-            pCur = vmr3AtResetFreeU(pVM->pUVM, pCur, pPrev);
+            pCur = vmr3AtResetFreeU(pUVM, pCur, pPrev);
             rc = VINF_SUCCESS;
         }
         else
@@ -2647,6 +2667,7 @@ VMMR3DECL(int)   VMR3AtResetDeregister(PVM pVM, PPDMDEVINS pDevIns, PFNVMATRESET
         }
     }
 
+    RTCritSectLeave(&pUVM->vm.s.AtStateCritSect);
     AssertRC(rc);
     return rc;
 }
@@ -2661,15 +2682,18 @@ VMMR3DECL(int)   VMR3AtResetDeregister(PVM pVM, PPDMDEVINS pDevIns, PFNVMATRESET
  */
 VMMR3DECL(int)   VMR3AtResetDeregisterInternal(PVM pVM, PFNVMATRESETINT pfnCallback)
 {
-    int         rc = VERR_VM_ATRESET_NOT_FOUND;
+    PUVM        pUVM  = pVM->pUVM;
+    RTCritSectEnter(&pUVM->vm.s.AtStateCritSect);
+
+    int         rc    = VERR_VM_ATRESET_NOT_FOUND;
     PVMATRESET  pPrev = NULL;
-    PVMATRESET  pCur = pVM->pUVM->vm.s.pAtReset;
+    PVMATRESET  pCur  = pUVM->vm.s.pAtReset;
     while (pCur)
     {
         if (    pCur->enmType == VMATRESETTYPE_INTERNAL
             &&  pCur->u.Internal.pfnCallback == pfnCallback)
         {
-            pCur = vmr3AtResetFreeU(pVM->pUVM, pCur, pPrev);
+            pCur = vmr3AtResetFreeU(pUVM, pCur, pPrev);
             rc = VINF_SUCCESS;
         }
         else
@@ -2679,6 +2703,7 @@ VMMR3DECL(int)   VMR3AtResetDeregisterInternal(PVM pVM, PFNVMATRESETINT pfnCallb
         }
     }
 
+    RTCritSectLeave(&pUVM->vm.s.AtStateCritSect);
     AssertRC(rc);
     return rc;
 }
@@ -2693,15 +2718,18 @@ VMMR3DECL(int)   VMR3AtResetDeregisterInternal(PVM pVM, PFNVMATRESETINT pfnCallb
  */
 VMMR3DECL(int)   VMR3AtResetDeregisterExternal(PVM pVM, PFNVMATRESETEXT pfnCallback)
 {
-    int         rc = VERR_VM_ATRESET_NOT_FOUND;
+    PUVM        pUVM  = pVM->pUVM;
+    RTCritSectEnter(&pUVM->vm.s.AtStateCritSect);
+
+    int         rc    = VERR_VM_ATRESET_NOT_FOUND;
     PVMATRESET  pPrev = NULL;
-    PVMATRESET  pCur = pVM->pUVM->vm.s.pAtReset;
+    PVMATRESET  pCur  = pUVM->vm.s.pAtReset;
     while (pCur)
     {
         if (    pCur->enmType == VMATRESETTYPE_INTERNAL
             &&  pCur->u.External.pfnCallback == pfnCallback)
         {
-            pCur = vmr3AtResetFreeU(pVM->pUVM, pCur, pPrev);
+            pCur = vmr3AtResetFreeU(pUVM, pCur, pPrev);
             rc = VINF_SUCCESS;
         }
         else
@@ -2711,6 +2739,7 @@ VMMR3DECL(int)   VMR3AtResetDeregisterExternal(PVM pVM, PFNVMATRESETEXT pfnCallb
         }
     }
 
+    RTCritSectLeave(&pUVM->vm.s.AtStateCritSect);
     AssertRC(rc);
     return rc;
 }
@@ -2920,6 +2949,7 @@ static bool vmR3ValidateStateTransition(VMSTATE enmStateOld, VMSTATE enmStateNew
  */
 void vmR3SetState(PVM pVM, VMSTATE enmStateNew)
 {
+    PUVM        pUVM  = pVM->pUVM;
 #ifdef DEBUG_bird /** @todo remove when sorted out. */
     VM_ASSERT_EMT0(pVM);
 #endif
@@ -2935,7 +2965,8 @@ void vmR3SetState(PVM pVM, VMSTATE enmStateNew)
     /*
      * Call the at state change callbacks.
      */
-    for (PVMATSTATE pCur = pVM->pUVM->vm.s.pAtState; pCur; pCur = pCur->pNext)
+    RTCritSectEnter(&pUVM->vm.s.AtStateCritSect);
+    for (PVMATSTATE pCur = pUVM->vm.s.pAtState; pCur; pCur = pCur->pNext)
     {
         pCur->pfnAtState(pVM, enmStateNew, enmStateOld, pCur->pvUser);
         if (    pVM->enmVMState != enmStateNew
@@ -2947,6 +2978,7 @@ void vmR3SetState(PVM pVM, VMSTATE enmStateNew)
                    "are propagated up to the EM execution loop and it makes the program flow very "
                    "difficult to follow.\n"));
     }
+    RTCritSectLeave(&pUVM->vm.s.AtStateCritSect);
 }
 
 
@@ -2976,7 +3008,7 @@ VMMR3DECL(int)   VMR3AtStateRegister(PVM pVM, PFNVMATSTATE pfnAtState, void *pvU
     }
 
     /*
-     * Make sure we're in EMT (to avoid the logging).
+     * Make sure we're in EMT (to avoid the locking).
      */
     PVMREQ pReq;
     int rc = VMR3ReqCall(pVM, VMCPUID_ANY, &pReq, RT_INDEFINITE_WAIT, (PFNRT)vmR3AtStateRegisterU, 3, pVM->pUVM, pfnAtState, pvUser);
@@ -3014,9 +3046,11 @@ static DECLCALLBACK(int) vmR3AtStateRegisterU(PUVM pUVM, PFNVMATSTATE pfnAtState
     pNew->pvUser     = pvUser;
 
     /* insert */
+    RTCritSectEnter(&pUVM->vm.s.AtStateCritSect);
     pNew->pNext      = *pUVM->vm.s.ppAtStateNext;
     *pUVM->vm.s.ppAtStateNext = pNew;
     pUVM->vm.s.ppAtStateNext = &pNew->pNext;
+    RTCritSectLeave(&pUVM->vm.s.AtStateCritSect);
 
     return VINF_SUCCESS;
 }
@@ -3071,6 +3105,7 @@ VMMR3DECL(int)   VMR3AtStateDeregister(PVM pVM, PFNVMATSTATE pfnAtState, void *p
 static DECLCALLBACK(int) vmR3AtStateDeregisterU(PUVM pUVM, PFNVMATSTATE pfnAtState, void *pvUser)
 {
     LogFlow(("vmR3AtStateDeregisterU: pfnAtState=%p pvUser=%p\n", pfnAtState, pvUser));
+    RTCritSectEnter(&pUVM->vm.s.AtStateCritSect);
 
     /*
      * Search the list for the entry.
@@ -3087,6 +3122,7 @@ static DECLCALLBACK(int) vmR3AtStateDeregisterU(PUVM pUVM, PFNVMATSTATE pfnAtSta
     if (!pCur)
     {
         AssertMsgFailed(("pfnAtState=%p was not found\n", pfnAtState));
+        RTCritSectLeave(&pUVM->vm.s.AtStateCritSect);
         return VERR_FILE_NOT_FOUND;
     }
 
@@ -3105,6 +3141,8 @@ static DECLCALLBACK(int) vmR3AtStateDeregisterU(PUVM pUVM, PFNVMATSTATE pfnAtSta
         if (!pCur->pNext)
             pUVM->vm.s.ppAtStateNext = &pUVM->vm.s.pAtState;
     }
+
+    RTCritSectLeave(&pUVM->vm.s.AtStateCritSect);
 
     /*
      * Free it.
@@ -3185,9 +3223,11 @@ static DECLCALLBACK(int) vmR3AtErrorRegisterU(PUVM pUVM, PFNVMATERROR pfnAtError
     pNew->pvUser     = pvUser;
 
     /* insert */
+    RTCritSectEnter(&pUVM->vm.s.AtErrorCritSect);
     pNew->pNext      = *pUVM->vm.s.ppAtErrorNext;
     *pUVM->vm.s.ppAtErrorNext = pNew;
     pUVM->vm.s.ppAtErrorNext = &pNew->pNext;
+    RTCritSectLeave(&pUVM->vm.s.AtErrorCritSect);
 
     return VINF_SUCCESS;
 }
@@ -3242,6 +3282,7 @@ VMMR3DECL(int)   VMR3AtErrorDeregister(PVM pVM, PFNVMATERROR pfnAtError, void *p
 static DECLCALLBACK(int)    vmR3AtErrorDeregisterU(PUVM pUVM, PFNVMATERROR pfnAtError, void *pvUser)
 {
     LogFlow(("vmR3AtErrorDeregisterU: pfnAtError=%p pvUser=%p\n", pfnAtError, pvUser));
+    RTCritSectEnter(&pUVM->vm.s.AtErrorCritSect);
 
     /*
      * Search the list for the entry.
@@ -3258,6 +3299,7 @@ static DECLCALLBACK(int)    vmR3AtErrorDeregisterU(PUVM pUVM, PFNVMATERROR pfnAt
     if (!pCur)
     {
         AssertMsgFailed(("pfnAtError=%p was not found\n", pfnAtError));
+        RTCritSectLeave(&pUVM->vm.s.AtErrorCritSect);
         return VERR_FILE_NOT_FOUND;
     }
 
@@ -3276,6 +3318,8 @@ static DECLCALLBACK(int)    vmR3AtErrorDeregisterU(PUVM pUVM, PFNVMATERROR pfnAt
         if (!pCur->pNext)
             pUVM->vm.s.ppAtErrorNext = &pUVM->vm.s.pAtError;
     }
+
+    RTCritSectLeave(&pUVM->vm.s.AtErrorCritSect);
 
     /*
      * Free it.
@@ -3340,8 +3384,11 @@ VMMR3DECL(void) VMR3SetErrorWorker(PVM pVM)
     /*
      * Call the at error callbacks.
      */
-    for (PVMATERROR pCur = pVM->pUVM->vm.s.pAtError; pCur; pCur = pCur->pNext)
+    PUVM pUVM = pVM->pUVM;
+    RTCritSectEnter(&pUVM->vm.s.AtErrorCritSect);
+    for (PVMATERROR pCur = pUVM->vm.s.pAtError; pCur; pCur = pCur->pNext)
         vmR3SetErrorWorkerDoCall(pVM, pCur, rc, RT_SRC_POS_ARGS, "%s", pszMessage);
+    RTCritSectLeave(&pUVM->vm.s.AtErrorCritSect);
 }
 
 
@@ -3399,6 +3446,7 @@ DECLCALLBACK(void) vmR3SetErrorUV(PUVM pUVM, int rc, RT_SRC_POS_DECL, const char
     /*
      * Call the at error callbacks.
      */
+    RTCritSectEnter(&pUVM->vm.s.AtErrorCritSect);
     for (PVMATERROR pCur = pUVM->vm.s.pAtError; pCur; pCur = pCur->pNext)
     {
         va_list va2;
@@ -3406,6 +3454,7 @@ DECLCALLBACK(void) vmR3SetErrorUV(PUVM pUVM, int rc, RT_SRC_POS_DECL, const char
         pCur->pfnAtError(pUVM->pVM, pCur->pvUser, rc, RT_SRC_POS_ARGS, pszFormat, va2);
         va_end(va2);
     }
+    RTCritSectLeave(&pUVM->vm.s.AtErrorCritSect);
 }
 
 
@@ -3470,9 +3519,11 @@ static DECLCALLBACK(int)    vmR3AtRuntimeErrorRegisterU(PUVM pUVM, PFNVMATRUNTIM
     pNew->pvUser            = pvUser;
 
     /* insert */
+    RTCritSectEnter(&pUVM->vm.s.AtErrorCritSect);
     pNew->pNext             = *pUVM->vm.s.ppAtRuntimeErrorNext;
     *pUVM->vm.s.ppAtRuntimeErrorNext = pNew;
     pUVM->vm.s.ppAtRuntimeErrorNext = &pNew->pNext;
+    RTCritSectLeave(&pUVM->vm.s.AtErrorCritSect);
 
     return VINF_SUCCESS;
 }
@@ -3527,6 +3578,7 @@ VMMR3DECL(int)   VMR3AtRuntimeErrorDeregister(PVM pVM, PFNVMATRUNTIMEERROR pfnAt
 static DECLCALLBACK(int)    vmR3AtRuntimeErrorDeregisterU(PUVM pUVM, PFNVMATRUNTIMEERROR pfnAtRuntimeError, void *pvUser)
 {
     LogFlow(("vmR3AtRuntimeErrorDeregisterU: pfnAtRuntimeError=%p pvUser=%p\n", pfnAtRuntimeError, pvUser));
+    RTCritSectEnter(&pUVM->vm.s.AtErrorCritSect);
 
     /*
      * Search the list for the entry.
@@ -3543,6 +3595,7 @@ static DECLCALLBACK(int)    vmR3AtRuntimeErrorDeregisterU(PUVM pUVM, PFNVMATRUNT
     if (!pCur)
     {
         AssertMsgFailed(("pfnAtRuntimeError=%p was not found\n", pfnAtRuntimeError));
+        RTCritSectLeave(&pUVM->vm.s.AtErrorCritSect);
         return VERR_FILE_NOT_FOUND;
     }
 
@@ -3561,6 +3614,8 @@ static DECLCALLBACK(int)    vmR3AtRuntimeErrorDeregisterU(PUVM pUVM, PFNVMATRUNT
         if (!pCur->pNext)
             pUVM->vm.s.ppAtRuntimeErrorNext = &pUVM->vm.s.pAtRuntimeError;
     }
+
+    RTCritSectLeave(&pUVM->vm.s.AtErrorCritSect);
 
     /*
      * Free it.
@@ -3602,13 +3657,16 @@ static int vmR3SetRuntimeErrorCommon(PVM pVM, uint32_t fFlags, const char *pszEr
     /*
      * Do the callback round.
      */
-    for (PVMATRUNTIMEERROR pCur = pVM->pUVM->vm.s.pAtRuntimeError; pCur; pCur = pCur->pNext)
+    PUVM pUVM = pVM->pUVM;
+    RTCritSectEnter(&pUVM->vm.s.AtErrorCritSect);
+    for (PVMATRUNTIMEERROR pCur = pUVM->vm.s.pAtRuntimeError; pCur; pCur = pCur->pNext)
     {
         va_list va;
         va_copy(va, *pVa);
         pCur->pfnAtRuntimeError(pVM, pCur->pvUser, fFlags, pszErrorId, pszFormat, va);
         va_end(va);
     }
+    RTCritSectLeave(&pUVM->vm.s.AtErrorCritSect);
 
     return rc;
 }

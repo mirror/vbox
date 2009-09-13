@@ -25,6 +25,7 @@
 #include <VBox/cdefs.h>
 #include <VBox/vmapi.h>
 #include <iprt/assert.h>
+#include <iprt/critsect.h>
 #include <setjmp.h>
 
 
@@ -259,7 +260,7 @@ typedef struct VMINTUSERPERVM
 #endif
 
     /** Pointer to the support library session.
-     * Mainly for creation and destruction.. */
+     * Mainly for creation and destruction. */
     PSUPDRVSESSION                  pSession;
 
     /** Force EMT to terminate. */
@@ -267,6 +268,9 @@ typedef struct VMINTUSERPERVM
     /** If set the EMT does the final VM cleanup when it exits.
      * If clear the VMR3Destroy() caller does so. */
     bool                            fEMTDoesTheCleanup;
+
+    /** Critical section for pAtReset and pAtState. */
+    RTCRITSECT                      AtStateCritSect;
 
     /** List of registered reset callbacks. */
     PVMATRESET                      pAtReset;
@@ -277,6 +281,9 @@ typedef struct VMINTUSERPERVM
     PVMATSTATE                      pAtState;
     /** List of registered state change callbacks. */
     PVMATSTATE                     *ppAtStateNext;
+
+    /** Critical section for pAtError and pAtRuntimeError. */
+    RTCRITSECT                      AtErrorCritSect;
 
     /** List of registered error callbacks. */
     PVMATERROR                      pAtError;
