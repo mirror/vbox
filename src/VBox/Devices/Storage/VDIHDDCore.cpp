@@ -913,7 +913,7 @@ static void vdiFreeImage(PVDIIMAGEDESC pImage, bool fDelete)
 
 
 /** @copydoc VBOXHDDBACKEND::pfnCheckIfValid */
-static int vdiCheckIfValid(const char *pszFilename)
+static int vdiCheckIfValid(const char *pszFilename, PVDINTERFACE pVDIfsDisk)
 {
     LogFlowFunc(("pszFilename=\"%s\"\n", pszFilename));
     int rc = VINF_SUCCESS;
@@ -939,7 +939,7 @@ static int vdiCheckIfValid(const char *pszFilename)
     pImage->pvStorage = NULL;
 #endif
     pImage->paBlocks = NULL;
-    pImage->pVDIfsDisk = NULL;
+    pImage->pVDIfsDisk = pVDIfsDisk;
 
     rc = vdiOpenImage(pImage, VD_OPEN_FLAGS_INFO | VD_OPEN_FLAGS_READONLY);
     vdiFreeImage(pImage, false);

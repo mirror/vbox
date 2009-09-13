@@ -80,8 +80,9 @@ typedef struct VBOXHDDBACKEND
      *
      * @returns VBox status code.
      * @param   pszFilename     Name of the image file.
+     * @param   pVDIfsDisk      Pointer to the per-disk VD interface list.
      */
-    DECLR3CALLBACKMEMBER(int, pfnCheckIfValid, (const char *pszFilename));
+    DECLR3CALLBACKMEMBER(int, pfnCheckIfValid, (const char *pszFilename, PVDINTERFACE pVDIfsDisk));
 
     /**
      * Open a disk image.

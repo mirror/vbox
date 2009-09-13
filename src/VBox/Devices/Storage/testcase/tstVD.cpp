@@ -538,7 +538,7 @@ static int tstVDOpenCreateWriteMerge(const char *pszBackend,
     if (RT_SUCCESS(rc))
     {
         RTFileClose(File);
-        rc = VDGetFormat(pszBaseFilename, &pszFormat);
+        rc = VDGetFormat(NULL, pszBaseFilename, &pszFormat);
         RTPrintf("VDGetFormat() pszFormat=%s rc=%Rrc\n", pszFormat, rc);
         if (RT_SUCCESS(rc) && strcmp(pszFormat, pszBackend))
         {
