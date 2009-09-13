@@ -509,7 +509,7 @@ static int CmdSetHDUUID(int argc, char **argv, ComPtr<IVirtualBox> aVirtualBox, 
 
     /* just try it */
     char *pszFormat = NULL;
-    int rc = VDGetFormat(argv[0], &pszFormat);
+    int rc = VDGetFormat(NULL, argv[0], &pszFormat);
     if (RT_FAILURE(rc))
     {
         RTPrintf("Format autodetect failed: %Rrc\n", rc);
@@ -577,7 +577,7 @@ static int CmdDumpHDInfo(int argc, char **argv, ComPtr<IVirtualBox> aVirtualBox,
 
     /* just try it */
     char *pszFormat = NULL;
-    int rc = VDGetFormat(argv[0], &pszFormat);
+    int rc = VDGetFormat(NULL, argv[0], &pszFormat);
     if (RT_FAILURE(rc))
     {
         RTPrintf("Format autodetect failed: %Rrc\n", rc);
@@ -1518,7 +1518,7 @@ static int CmdConvertToRaw(int argc, char **argv, ComPtr<IVirtualBox> aVirtualBo
     if (srcformat.isEmpty())
     {
         char *pszFormat = NULL;
-        vrc = VDGetFormat(Utf8Str(src).raw(), &pszFormat);
+        vrc = VDGetFormat(NULL, Utf8Str(src).raw(), &pszFormat);
         if (RT_FAILURE(vrc))
         {
             VDCloseAll(pDisk);
@@ -1665,7 +1665,7 @@ static int CmdConvertHardDisk(int argc, char **argv, ComPtr<IVirtualBox> aVirtua
         if (srcformat.isEmpty())
         {
             char *pszFormat = NULL;
-            vrc = VDGetFormat(Utf8Str(src).raw(), &pszFormat);
+            vrc = VDGetFormat(NULL, Utf8Str(src).raw(), &pszFormat);
             if (RT_FAILURE(vrc))
             {
                 RTPrintf("No file format specified and autodetect failed - please specify format: %Rrc\n", vrc);

@@ -3007,13 +3007,13 @@ HRESULT HardDisk::setLocation(const Utf8Str &aLocation)
             }
             if (RT_SUCCESS(vrc))
             {
-                vrc = VDGetFormat(locationFull.c_str(), &backendName);
+                vrc = VDGetFormat(NULL, locationFull.c_str(), &backendName);
             }
             else if (vrc != VERR_FILE_NOT_FOUND && vrc != VERR_PATH_NOT_FOUND)
             {
                 /* assume it's not a file, restore the original location */
                 location = locationFull = aLocation;
-                vrc = VDGetFormat(locationFull.c_str(), &backendName);
+                vrc = VDGetFormat(NULL, locationFull.c_str(), &backendName);
             }
 
             if (RT_FAILURE(vrc))

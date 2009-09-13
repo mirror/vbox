@@ -408,7 +408,7 @@ static void parallelsFreeImage(PPARALLELSIMAGE pImage, bool fDelete)
 }
 
 /** @copydoc VBOXHDDBACKEND::pfnCheckIfValid */
-static int parallelsCheckIfValid(const char *pszFilename)
+static int parallelsCheckIfValid(const char *pszFilename, PVDINTERFACE pVDIfsDisk)
 {
     RTFILE File;
     ParallelsHeader parallelsHeader;

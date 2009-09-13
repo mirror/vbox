@@ -766,7 +766,7 @@ static int vhdLoadDynamicDisk(PVHDIMAGE pImage, uint64_t uDynamicDiskHeaderOffse
     return rc;
 }
 
-static int vhdCheckIfValid(const char *pszFilename)
+static int vhdCheckIfValid(const char *pszFilename, PVDINTERFACE pVDIfsDisk)
 {
     int rc = VINF_SUCCESS;
     RTFILE File;

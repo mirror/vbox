@@ -463,7 +463,7 @@ static int rawFlushImage(PRAWIMAGE pImage)
 
 
 /** @copydoc VBOXHDDBACKEND::pfnCheckIfValid */
-static int rawCheckIfValid(const char *pszFilename)
+static int rawCheckIfValid(const char *pszFilename, PVDINTERFACE pVDIfsDisk)
 {
     LogFlowFunc(("pszFilename=\"%s\"\n", pszFilename));
     int rc = VINF_SUCCESS;

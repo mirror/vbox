@@ -1105,13 +1105,17 @@ VBOXDDU_DECL(void) VDDestroy(PVBOXHDD pDisk)
  *          VINF_SUCCESS if a plugin was found.
  *                       ppszFormat contains the string which can be used as backend name.
  *          VERR_NOT_SUPPORTED if no backend was found.
+ * @param   pVDIfsDisk      Pointer to the per-disk VD interface list.
  * @param   pszFilename     Name of the image file for which the backend is queried.
  * @param   ppszFormat      Receives pointer of the UTF-8 string which contains the format name.
  *                          The returned pointer must be freed using RTStrFree().
  */
-VBOXDDU_DECL(int) VDGetFormat(const char *pszFilename, char **ppszFormat)
+VBOXDDU_DECL(int) VDGetFormat(PVDINTERFACE pVDIfsDisk, const char *pszFilename, char **ppszFormat)
 {
     int rc = VERR_NOT_SUPPORTED;
+    PVDINTERFACE pVDIfAsyncIO;
+    VDINTERFACEASYNCIO VDIAsyncIOCallbacks;
+    VDINTERFACE        VDIAsyncIO;
 
     LogFlowFunc(("pszFilename=\"%s\"\n", pszFilename));
     /* Check arguments. */
@@ -1125,12 +1129,33 @@ VBOXDDU_DECL(int) VDGetFormat(const char *pszFilename, char **ppszFormat)
     if (!g_apBackends)
         VDInit();
 
+    /* Use the fallback async I/O interface if the caller doesn't provide one. */
+    pVDIfAsyncIO = VDInterfaceGet(pVDIfsDisk, VDINTERFACETYPE_ASYNCIO);
+    if (!pVDIfAsyncIO)
+    {
+        VDIAsyncIOCallbacks.cbSize        = sizeof(VDINTERFACEASYNCIO);
+        VDIAsyncIOCallbacks.enmInterface  = VDINTERFACETYPE_ASYNCIO;
+        VDIAsyncIOCallbacks.pfnOpen       = vdAsyncIOOpen;
+        VDIAsyncIOCallbacks.pfnClose      = vdAsyncIOClose;
+        VDIAsyncIOCallbacks.pfnGetSize    = vdAsyncIOGetSize;
+        VDIAsyncIOCallbacks.pfnSetSize    = vdAsyncIOSetSize;
+        VDIAsyncIOCallbacks.pfnReadSync   = vdAsyncIOReadSync;
+        VDIAsyncIOCallbacks.pfnWriteSync  = vdAsyncIOWriteSync;
+        VDIAsyncIOCallbacks.pfnFlushSync  = vdAsyncIOFlushSync;
+        VDIAsyncIOCallbacks.pfnReadAsync  = vdAsyncIOReadAsync;
+        VDIAsyncIOCallbacks.pfnWriteAsync = vdAsyncIOWriteAsync;
+        VDIAsyncIOCallbacks.pfnFlushAsync = vdAsyncIOFlushAsync;
+        rc = VDInterfaceAdd(&VDIAsyncIO, "VD_AsyncIO", VDINTERFACETYPE_ASYNCIO,
+                            &VDIAsyncIOCallbacks, NULL, &pVDIfsDisk);
+        AssertRC(rc);
+    }
+
     /* Find the backend supporting this file format. */
     for (unsigned i = 0; i < g_cBackends; i++)
     {
         if (g_apBackends[i]->pfnCheckIfValid)
         {
-            rc = g_apBackends[i]->pfnCheckIfValid(pszFilename);
+            rc = g_apBackends[i]->pfnCheckIfValid(pszFilename, pVDIfsDisk);
             if (    RT_SUCCESS(rc)
                 /* The correct backend has been found, but there is a small
                  * incompatibility so that the file cannot be used. Stop here
