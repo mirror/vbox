@@ -160,10 +160,16 @@ int pdmacFileAioMgrFailsafe(RTTHREAD ThreadSelf, void *pvUser)
                     /* Make sure all tasks finished. */
                     rc = pdmacFileAioMgrFailsafeProcessEndpoint(pEndpointClose);
                     AssertRC(rc);
+                    break;
                 }
                 case PDMACEPFILEAIOMGRBLOCKINGEVENT_SHUTDOWN:
+                    pAioMgr->enmState = PDMACEPFILEMGRSTATE_SHUTDOWN;
                     break;
                 case PDMACEPFILEAIOMGRBLOCKINGEVENT_SUSPEND:
+                    pAioMgr->enmState = PDMACEPFILEMGRSTATE_SUSPENDING;
+                    break;
+                case PDMACEPFILEAIOMGRBLOCKINGEVENT_RESUME:
+                    pAioMgr->enmState = PDMACEPFILEMGRSTATE_RUNNING;
                     break;
                 default:
                     AssertMsgFailed(("Invalid event type %d\n", pAioMgr->enmBlockingEvent));
