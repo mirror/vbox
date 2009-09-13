@@ -174,8 +174,12 @@ typedef enum VMSTATE
     /** Live save: The VM has been suspended and is av
      * the live save operation. */
     VMSTATE_SUSPENDED_LS,
-    /** The VM is suspended and its state is being saved by EMT(0). */
+    /** The VM is suspended and its state is being saved by EMT(0). (See SSM) */
     VMSTATE_SAVING,
+    /** The VM is being debugged. (See DBGF.) */
+    VMSTATE_DEBUGGING,
+    /** Live save: The VM is being debugged while the live phase is going on. */
+    VMSTATE_DEBUGGING_LS,
     /** The VM is being powered off. */
     VMSTATE_POWERING_OFF,
     /** Live save: The VM is being powered off and the save cancelled. */
