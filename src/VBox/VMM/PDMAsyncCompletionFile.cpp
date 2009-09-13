@@ -594,54 +594,58 @@ static int pdmacFileEpInitialize(PPDMASYNCCOMPLETIONENDPOINT pEndpoint,
     rc = RTFileOpen(&pEpFile->File, pszUri, fFileFlags);
     if (RT_SUCCESS(rc))
     {
-        /* Initialize the segment cache */
-        rc = MMR3HeapAllocZEx(pEpClassFile->Core.pVM, MM_TAG_PDM_ASYNC_COMPLETION,
-                              sizeof(PDMACTASKFILE),
-                              (void **)&pEpFile->pTasksFreeHead);
+        rc = RTFileGetSize(pEpFile->File, (uint64_t *)&pEpFile->cbFile);
         if (RT_SUCCESS(rc))
         {
-            PPDMACEPFILEMGR pAioMgr = NULL;
-
-            pEpFile->pTasksFreeTail = pEpFile->pTasksFreeHead;
-            pEpFile->cTasksCached = 0;
-
-            if (pEpClassFile->fFailsafe)
+            /* Initialize the segment cache */
+            rc = MMR3HeapAllocZEx(pEpClassFile->Core.pVM, MM_TAG_PDM_ASYNC_COMPLETION,
+                                  sizeof(PDMACTASKFILE),
+                                  (void **)&pEpFile->pTasksFreeHead);
+            if (RT_SUCCESS(rc))
             {
-                /* Safe mode. Every file has its own async I/O manager. */
-                rc = pdmacFileAioMgrCreate(pEpClassFile, &pAioMgr);
-                AssertRC(rc);
-            }
-            else
-            {
-                if (fFlags & PDMACEP_FILE_FLAGS_CACHING)
-                {
-                    pEpFile->fCaching = true;
-                    rc = pdmacFileEpCacheInit(pEpFile, pEpClassFile);
-                    if (RT_FAILURE(rc))
-                    {
-                        LogRel(("AIOMgr: Endpoint for \"%s\" was opened with caching but initializing cache failed. Disabled caching\n", pszUri));
-                        pEpFile->fCaching = false;
-                    }
-                }
+                PPDMACEPFILEMGR pAioMgr = NULL;
 
-                /* Check for an idling one or create new if not found */
-                if (!pEpClassFile->pAioMgrHead)
+                pEpFile->pTasksFreeTail = pEpFile->pTasksFreeHead;
+                pEpFile->cTasksCached = 0;
+
+                if (pEpClassFile->fFailsafe)
                 {
+                    /* Safe mode. Every file has its own async I/O manager. */
                     rc = pdmacFileAioMgrCreate(pEpClassFile, &pAioMgr);
                     AssertRC(rc);
                 }
                 else
                 {
-                    pAioMgr = pEpClassFile->pAioMgrHead;
+                    if (fFlags & PDMACEP_FILE_FLAGS_CACHING)
+                    {
+                        pEpFile->fCaching = true;
+                        rc = pdmacFileEpCacheInit(pEpFile, pEpClassFile);
+                        if (RT_FAILURE(rc))
+                        {
+                            LogRel(("AIOMgr: Endpoint for \"%s\" was opened with caching but initializing cache failed. Disabled caching\n", pszUri));
+                            pEpFile->fCaching = false;
+                        }
+                    }
+
+                    /* Check for an idling one or create new if not found */
+                    if (!pEpClassFile->pAioMgrHead)
+                    {
+                        rc = pdmacFileAioMgrCreate(pEpClassFile, &pAioMgr);
+                        AssertRC(rc);
+                    }
+                    else
+                    {
+                        pAioMgr = pEpClassFile->pAioMgrHead;
+                    }
                 }
+
+                pEpFile->enmState = PDMASYNCCOMPLETIONENDPOINTFILESTATE_ACTIVE;
+
+                /* Assign the endpoint to the thread. */
+                rc = pdmacFileAioMgrAddEndpoint(pAioMgr, pEpFile);
+                if (RT_FAILURE(rc))
+                    MMR3HeapFree(pEpFile->pTasksFreeHead);
             }
-
-            pEpFile->enmState = PDMASYNCCOMPLETIONENDPOINTFILESTATE_ACTIVE;
-
-            /* Assign the endpoint to the thread. */
-            rc = pdmacFileAioMgrAddEndpoint(pAioMgr, pEpFile);
-            if (RT_FAILURE(rc))
-                MMR3HeapFree(pEpFile->pTasksFreeHead);
         }
 
         if (RT_FAILURE(rc))
