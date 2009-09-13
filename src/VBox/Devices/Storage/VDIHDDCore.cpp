@@ -521,6 +521,14 @@ static int vdiCreateImage(PVDIIMAGEDESC pImage, uint64_t cbSize,
     if (pImage->pInterfaceError)
         pImage->pInterfaceErrorCallbacks = VDGetInterfaceError(pImage->pInterfaceError);
 
+#ifdef VBOX_WITH_NEW_IO_CODE
+    /* Try to get async I/O interface. */
+    pImage->pInterfaceAsyncIO = VDInterfaceGet(pImage->pVDIfsDisk, VDINTERFACETYPE_ASYNCIO);
+    AssertPtr(pImage->pInterfaceAsyncIO);
+    pImage->pInterfaceAsyncIOCallbacks = VDGetInterfaceAsyncIO(pImage->pInterfaceAsyncIO);
+    AssertPtr(pImage->pInterfaceAsyncIOCallbacks);
+#endif
+
     vdiInitPreHeader(&pImage->PreHeader);
     vdiInitHeader(&pImage->Header, uImageFlags, pszComment, cbSize, VDI_IMAGE_DEFAULT_BLOCK_SIZE, 0);
     /* Save PCHS geometry. Not much work, and makes the flow of information

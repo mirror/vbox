@@ -34,6 +34,8 @@ static int pdmacFileAioMgrFailsafeProcessEndpoint(PPDMASYNCCOMPLETIONENDPOINTFIL
     {
         PPDMACTASKFILE pCurr = pTasks;
 
+        pTasks = pTasks->pNext;
+
         switch (pCurr->enmTransferType)
         {
             case PDMACTASKFILETRANSFER_FLUSH:
@@ -46,12 +48,6 @@ static int pdmacFileAioMgrFailsafeProcessEndpoint(PPDMASYNCCOMPLETIONENDPOINTFIL
             {
                 if (pCurr->enmTransferType == PDMACTASKFILETRANSFER_READ)
                 {
-                    if (RT_UNLIKELY((pCurr->Off + pCurr->DataSeg.cbSeg) > pEndpoint->cbFile))
-                    {
-                        ASMAtomicWriteU64(&pEndpoint->cbFile, pCurr->Off + pCurr->DataSeg.cbSeg);
-                        RTFileSetSize(pEndpoint->File, pCurr->Off + pCurr->DataSeg.cbSeg);
-                    }
-
                     rc = RTFileReadAt(pEndpoint->File, pCurr->Off,
                                       pCurr->DataSeg.pvSeg,
                                       pCurr->DataSeg.cbSeg,
@@ -59,6 +55,12 @@ static int pdmacFileAioMgrFailsafeProcessEndpoint(PPDMASYNCCOMPLETIONENDPOINTFIL
                 }
                 else
                 {
+                    if (RT_UNLIKELY((pCurr->Off + pCurr->DataSeg.cbSeg) > pEndpoint->cbFile))
+                    {
+                        ASMAtomicWriteU64(&pEndpoint->cbFile, pCurr->Off + pCurr->DataSeg.cbSeg);
+                        RTFileSetSize(pEndpoint->File, pCurr->Off + pCurr->DataSeg.cbSeg);
+                    }
+
                     rc = RTFileWriteAt(pEndpoint->File, pCurr->Off,
                                        pCurr->DataSeg.pvSeg,
                                        pCurr->DataSeg.cbSeg,
@@ -75,8 +77,6 @@ static int pdmacFileAioMgrFailsafeProcessEndpoint(PPDMASYNCCOMPLETIONENDPOINTFIL
 
         pCurr->pfnCompleted(pCurr, pCurr->pvUser);
         pdmacFileTaskFree(pEndpoint, pCurr);
-
-        pTasks = pTasks->pNext;
     }
 
     return rc;
