@@ -34,6 +34,9 @@ typedef struct VMMDevState
     /** The PCI device structure. */
     PCIDevice dev;
 
+    /** The critical section for this device. */
+    PDMCRITSECT CritSect;
+
     /** hypervisor address space size */
     uint32_t hypervisorSize;
 
@@ -191,11 +194,6 @@ typedef struct VMMDevState
         /** Partner of ILeds. */
         R3PTRTYPE(PPDMILEDCONNECTORS)       pLedsConnector;
     } SharedFolders;
-#if HC_ARCH_BITS == 32
-    uint32_t    uAlignment;
-#endif
-    /** The critical section for this device. */
-    PDMCRITSECT CritSect;
 } VMMDevState;
 AssertCompileMemberAlignment(VMMDevState, CritSect, 8);
 
