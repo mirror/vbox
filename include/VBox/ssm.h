@@ -659,6 +659,7 @@ VMMR3DECL(int)          SSMR3HandleSetStatus(PSSMHANDLE pSSM, int iStatus);
 VMMR3DECL(SSMAFTER)     SSMR3HandleGetAfter(PSSMHANDLE pSSM);
 VMMR3DECL(uint64_t)     SSMR3HandleGetUnitOffset(PSSMHANDLE pSSM);
 VMMR3_INT_DECL(int)     SSMR3SetGCPtrSize(PSSMHANDLE pSSM, unsigned cbGCPtr);
+VMMR3DECL(int)          SSMR3Cancel(PVM pVM);
 
 
 /** Save operations.
