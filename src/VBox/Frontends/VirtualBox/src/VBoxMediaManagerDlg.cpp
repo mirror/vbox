@@ -441,6 +441,11 @@ VBoxMediaManagerDlg::VBoxMediaManagerDlg (QWidget *aParent /* = 0 */,
              &vboxProblem(), SLOT (showHelpHelpDialog()));
 }
 
+VBoxMediaManagerDlg::~VBoxMediaManagerDlg()
+{
+    delete mActionsToolBar;
+}
+
 /**
  * Sets up the dialog.
  *
