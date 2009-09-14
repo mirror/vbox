@@ -138,5 +138,16 @@ AssertCompileMemberAlignment(UVM, aCpus, 32);
 /** The UVM::u32Magic value (Brad Mehldau). */
 #define UVM_MAGIC       0x19700823
 
+/** @def UVM_ASSERT_VALID_EXT_RETURN
+ * Asserts a the VM handle is valid for external access, i.e. not being
+ * destroy or terminated.
+ */
+#define UVM_ASSERT_VALID_EXT_RETURN(pVM, rc) \
+        AssertMsgReturn(    RT_VALID_ALIGNED_PTR(pVM, PAGE_SIZE) \
+                        &&  (pUVM)->u32Magic == UVM_MAGIC, \
+                        ("pUVM=%p u32Magic=%#x\n", (pUVM), \
+                         RT_VALID_ALIGNED_PTR(pVM, PAGE_SIZE) ? (pUVM)->u32Magic : 0), \
+                        (rc))
+
 #endif
 
