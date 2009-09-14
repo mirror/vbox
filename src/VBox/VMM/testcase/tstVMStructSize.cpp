@@ -57,6 +57,7 @@
 #include "EMInternal.h"
 #include "REMInternal.h"
 #include <VBox/vm.h>
+#include <VBox/uvm.h>
 #include <VBox/param.h>
 #include <VBox/x86.h>
 
@@ -106,6 +107,32 @@ int main()
             printf("CPUMCTX/CORE:: %s!\n", #member); \
             rc++; \
         } \
+    } while (0)
+
+#define CHECK_PADDING_UVM(align, member) \
+    do \
+    { \
+        CHECK_PADDING(UVM, member, align); \
+        CHECK_MEMBER_ALIGNMENT(UVM, member, align); \
+        UVM *p; \
+        if (sizeof(p->member.padding) >= (ssize_t)sizeof(p->member.s) + 128 + sizeof(p->member.s) / 20) \
+            printf("warning: UVM::%-8s: padding=%-5d s=%-5d -> %-4d  suggest=%-5u\n", \
+                   #member, (int)sizeof(p->member.padding), (int)sizeof(p->member.s), \
+                   (int)sizeof(p->member.padding) - (int)sizeof(p->member.s), \
+                   (int)RT_ALIGN_Z(sizeof(p->member.s), (align))); \
+    } while (0)
+
+#define CHECK_PADDING_UVMCPU(align, member) \
+    do \
+    { \
+        CHECK_PADDING(UVMCPU, member, align); \
+        CHECK_MEMBER_ALIGNMENT(UVMCPU, member, align); \
+        UVMCPU *p; \
+        if (sizeof(p->member.padding) >= (ssize_t)sizeof(p->member.s) + 128 + sizeof(p->member.s) / 20) \
+            printf("warning: UVMCPU::%-8s: padding=%-5d s=%-5d -> %-4d  suggest=%-5u\n", \
+                   #member, (int)sizeof(p->member.padding), (int)sizeof(p->member.s), \
+                   (int)sizeof(p->member.padding) - (int)sizeof(p->member.s), \
+                   (int)RT_ALIGN_Z(sizeof(p->member.s), (align))); \
     } while (0)
 
 #define PRINT_OFFSET(strct, member) \
@@ -353,6 +380,14 @@ int main()
         printf("error: VMCPUSET is too small for VMM_MAX_CPU_COUNT=%u!\n", VMM_MAX_CPU_COUNT);
         rc++;
     }
+
+    printf("struct UVM: %d bytes\n", (int)sizeof(UVM));
+
+    CHECK_PADDING_UVM(32, vm);
+    CHECK_PADDING_UVM(32, mm);
+    CHECK_PADDING_UVM(32, pdm);
+    CHECK_PADDING_UVM(32, stam);
+    CHECK_PADDING_UVMCPU(32, vm);
 
     /*
      * Compare HC and GC.
