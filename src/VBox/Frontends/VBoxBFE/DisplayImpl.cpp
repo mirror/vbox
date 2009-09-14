@@ -348,12 +348,8 @@ STDMETHODIMP VMDisplay::InvalidateAndUpdate()
 
     Assert(pVM);
     /* pdm.h says that this has to be called from the EMT thread */
-    PVMREQ pReq;
-    int rcVBox = VMR3ReqCallVoid(pVM, VMCPUID_ANY, &pReq, RT_INDEFINITE_WAIT,
-                                 (PFNRT)VMDisplay::doInvalidateAndUpdate, 1, mpDrv);
-    if (RT_SUCCESS(rcVBox))
-        VMR3ReqFree(pReq);
-
+    int rcVBox = VMR3ReqCallVoidWait(pVM, VMCPUID_ANY,
+                                     (PFNRT)VMDisplay::doInvalidateAndUpdate, 1, mpDrv);
     if (RT_FAILURE(rcVBox))
         rc = E_FAIL;
 
@@ -1188,7 +1184,7 @@ DECLCALLBACK(int) VMDisplay::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHand
      */
     if (!CFGMR3AreValuesValid(pCfgHandle, "Object\0"))
         return VERR_PDM_DRVINS_UNKNOWN_CFG_VALUES;
-    AssertMsgReturn(PDMDrvHlpNoAttach(pDrvIns) == VERR_PDM_NO_ATTACHED_DRIVER, 
+    AssertMsgReturn(PDMDrvHlpNoAttach(pDrvIns) == VERR_PDM_NO_ATTACHED_DRIVER,
                     ("Configuration error: Not possible to attach anything to this driver!\n"),
                     VERR_PDM_DRVINS_NO_ATTACH);
 
@@ -1279,9 +1275,9 @@ const PDMDRVREG VMDisplay::DrvReg =
     /* pfnAttach */
     NULL,
     /* pfnDetach */
-    NULL, 
+    NULL,
     /* pfnPowerOff */
-    NULL, 
+    NULL,
     /* pfnSoftReset */
     NULL,
     /* u32EndVersion */
