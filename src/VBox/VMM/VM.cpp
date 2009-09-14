@@ -31,13 +31,14 @@
  *
  * In hindsight this component is a big design mistake, all this stuff really
  * belongs in the VMM component.  It just seemed like a kind of ok idea at a
- * time when the VMM bit was a bit vague.  'VM' also happend to be the name of
- * the per-VM instance structure (see vm.h), so it kind of made sense.  However
- * as it turned out, VMM(.cpp) is almost empty all it provides in ring-3 is some
- * minor functionally and some "routing" services.
+ * time when the VMM bit was a kind of vague.  'VM' also happend to be the name
+ * of the per-VM instance structure (see vm.h), so it kind of made sense.
+ * However as it turned out, VMM(.cpp) is almost empty all it provides in ring-3
+ * is some minor functionally and some "routing" services.
  *
  * Fixing this is just a matter of some more or less straight forward
- * refactoring, the question is just when someone will get to it.
+ * refactoring, the question is just when someone will get to it. Moving the EMT
+ * would be a good start.
  *
  */
 
@@ -140,9 +141,7 @@ static DECLCALLBACK(int) vmR3Load(PVM pVM, const char *pszFilename, PFNVMPROGRES
 static DECLCALLBACK(int) vmR3PowerOff(PVM pVM);
 static void              vmR3DestroyUVM(PUVM pUVM, uint32_t cMilliesEMTWait);
 static void              vmR3AtDtor(PVM pVM);
-static int               vmR3AtResetU(PUVM pUVM);
 static DECLCALLBACK(int) vmR3Reset(PVM pVM);
-static DECLCALLBACK(int) vmR3AtStateRegisterU(PUVM pUVM, PFNVMATSTATE pfnAtState, void *pvUser);
 static DECLCALLBACK(int) vmR3AtStateDeregisterU(PUVM pUVM, PFNVMATSTATE pfnAtState, void *pvUser);
 static DECLCALLBACK(int) vmR3AtErrorRegisterU(PUVM pUVM, PFNVMATERROR pfnAtError, void *pvUser);
 static DECLCALLBACK(int) vmR3AtErrorDeregisterU(PUVM pUVM, PFNVMATERROR pfnAtError, void *pvUser);
@@ -432,7 +431,6 @@ static int vmR3CreateUVM(uint32_t cCpus, PUVM *ppUVM)
 
     AssertCompile(sizeof(pUVM->vm.s) <= sizeof(pUVM->vm.padding));
 
-    pUVM->vm.s.ppAtResetNext = &pUVM->vm.s.pAtReset;
     pUVM->vm.s.ppAtStateNext = &pUVM->vm.s.pAtState;
     pUVM->vm.s.ppAtErrorNext = &pUVM->vm.s.pAtError;
     pUVM->vm.s.ppAtRuntimeErrorNext = &pUVM->vm.s.pAtRuntimeError;
@@ -2379,7 +2377,6 @@ static DECLCALLBACK(int) vmR3Reset(PVM pVM)
     PDMR3Reset(pVM);
     SELMR3Reset(pVM);
     TRPMR3Reset(pVM);
-    vmR3AtResetU(pVM->pUVM);
     REMR3Reset(pVM);
     IOMR3Reset(pVM);
     CPUMR3Reset(pVM);
@@ -2403,345 +2400,6 @@ static DECLCALLBACK(int) vmR3Reset(PVM pVM)
     vmR3SetState(pVM, enmVMState);
 
     return VINF_EM_RESET;
-}
-
-
-/**
- * Walks the list of at VM reset callbacks and calls them
- *
- * @returns VBox status code.
- *          Any failure is fatal.
- * @param   pUVM        Pointe to the user mode VM structure.
- */
-static int vmR3AtResetU(PUVM pUVM)
-{
-    RTCritSectEnter(&pUVM->vm.s.AtStateCritSect);
-
-    /*
-     * Walk the list and call them all.
-     */
-    for (PVMATRESET pCur = pUVM->vm.s.pAtReset; pCur; pCur = pCur->pNext)
-    {
-        /* do the call */
-        int rc = VINF_SUCCESS;
-        switch (pCur->enmType)
-        {
-            case VMATRESETTYPE_DEV:
-                rc = pCur->u.Dev.pfnCallback(pCur->u.Dev.pDevIns, pCur->pvUser);
-                break;
-            case VMATRESETTYPE_INTERNAL:
-                rc = pCur->u.Internal.pfnCallback(pUVM->pVM, pCur->pvUser);
-                break;
-            case VMATRESETTYPE_EXTERNAL:
-                pCur->u.External.pfnCallback(pCur->pvUser);
-                break;
-            default:
-                AssertMsgFailed(("Invalid at-reset type %d!\n", pCur->enmType));
-                RTCritSectLeave(&pUVM->vm.s.AtStateCritSect);
-                return VERR_INTERNAL_ERROR;
-        }
-        if (RT_FAILURE(rc))
-        {
-            AssertMsgFailed(("At-reset handler %s failed with rc=%d\n", pCur->pszDesc, rc));
-            RTCritSectLeave(&pUVM->vm.s.AtStateCritSect);
-            return rc;
-        }
-    }
-
-    RTCritSectLeave(&pUVM->vm.s.AtStateCritSect);
-    return VINF_SUCCESS;
-}
-
-
-/**
- * Internal registration function
- */
-static int vmr3AtResetRegisterU(PUVM pUVM, void *pvUser, const char *pszDesc, PVMATRESET *ppNew)
-{
-    /*
-     * Allocate restration structure.
-     */
-    PVMATRESET pNew = (PVMATRESET)MMR3HeapAllocU(pUVM, MM_TAG_VM,  sizeof(*pNew));
-    if (pNew)
-    {
-        /* fill data. */
-        pNew->pszDesc   = pszDesc;
-        pNew->pvUser    = pvUser;
-
-        /* insert */
-        RTCritSectEnter(&pUVM->vm.s.AtStateCritSect);
-        pNew->pNext = *pUVM->vm.s.ppAtResetNext;
-        *pUVM->vm.s.ppAtResetNext = pNew;
-        pUVM->vm.s.ppAtResetNext = &pNew->pNext;
-        RTCritSectLeave(&pUVM->vm.s.AtStateCritSect);
-
-        *ppNew = pNew;
-        return VINF_SUCCESS;
-    }
-    return VERR_NO_MEMORY;
-}
-
-
-/**
- * Registers an at VM reset callback.
- *
- * @returns VBox status code.
- * @param   pVM             The VM.
- * @param   pDevInst        Device instance.
- * @param   pfnCallback     Callback function.
- * @param   pvUser          User argument.
- * @param   pszDesc         Description (optional).
- */
-VMMR3DECL(int)   VMR3AtResetRegister(PVM pVM, PPDMDEVINS pDevInst, PFNVMATRESET pfnCallback, void *pvUser, const char *pszDesc)
-{
-    /*
-     * Validate.
-     */
-    if (!pDevInst)
-    {
-        AssertMsgFailed(("pDevIns is NULL!\n"));
-        return VERR_INVALID_PARAMETER;
-    }
-
-    /*
-     * Create the new entry.
-     */
-    PVMATRESET pNew;
-    int rc = vmr3AtResetRegisterU(pVM->pUVM, pvUser, pszDesc, &pNew);
-    if (RT_SUCCESS(rc))
-    {
-        /*
-         * Fill in type data.
-         */
-        pNew->enmType               = VMATRESETTYPE_DEV;
-        pNew->u.Dev.pfnCallback     = pfnCallback;
-        pNew->u.Dev.pDevIns         = pDevInst;
-    }
-
-    return rc;
-}
-
-
-/**
- * Registers an at VM reset internal callback.
- *
- * @returns VBox status code.
- * @param   pVM             The VM.
- * @param   pfnCallback     Callback function.
- * @param   pvUser          User argument.
- * @param   pszDesc         Description (optional).
- */
-VMMR3DECL(int)   VMR3AtResetRegisterInternal(PVM pVM, PFNVMATRESETINT pfnCallback, void *pvUser, const char *pszDesc)
-{
-    /*
-     * Validate.
-     */
-    if (!pfnCallback)
-    {
-        AssertMsgFailed(("pfnCallback is NULL!\n"));
-        return VERR_INVALID_PARAMETER;
-    }
-
-    /*
-     * Create the new entry.
-     */
-    PVMATRESET pNew;
-    int rc = vmr3AtResetRegisterU(pVM->pUVM, pvUser, pszDesc, &pNew);
-    if (RT_SUCCESS(rc))
-    {
-        /*
-         * Fill in type data.
-         */
-        pNew->enmType                   = VMATRESETTYPE_INTERNAL;
-        pNew->u.Internal.pfnCallback    = pfnCallback;
-    }
-
-    return rc;
-}
-
-
-/**
- * Registers an at VM reset external callback.
- *
- * @returns VBox status code.
- * @param   pVM             The VM.
- * @param   pfnCallback     Callback function.
- * @param   pvUser          User argument.
- * @param   pszDesc         Description (optional).
- */
-VMMR3DECL(int)   VMR3AtResetRegisterExternal(PVM pVM, PFNVMATRESETEXT pfnCallback, void *pvUser, const char *pszDesc)
-{
-    /*
-     * Validate.
-     */
-    if (!pfnCallback)
-    {
-        AssertMsgFailed(("pfnCallback is NULL!\n"));
-        return VERR_INVALID_PARAMETER;
-    }
-
-    /*
-     * Create the new entry.
-     */
-    PVMATRESET pNew;
-    int rc = vmr3AtResetRegisterU(pVM->pUVM, pvUser, pszDesc, &pNew);
-    if (RT_SUCCESS(rc))
-    {
-        /*
-         * Fill in type data.
-         */
-        pNew->enmType                   = VMATRESETTYPE_EXTERNAL;
-        pNew->u.External.pfnCallback    = pfnCallback;
-    }
-
-    return rc;
-}
-
-
-/**
- * Unlinks and frees a callback.
- *
- * @returns Pointer to the next callback structure.
- * @param   pUVM            Pointer to the user mode VM structure.
- * @param   pCur            The one to free.
- * @param   pPrev           The one before pCur.
- */
-static PVMATRESET vmr3AtResetFreeU(PUVM pUVM, PVMATRESET pCur, PVMATRESET pPrev)
-{
-    /*
-     * Unlink it.
-     */
-    PVMATRESET pNext = pCur->pNext;
-    if (pPrev)
-    {
-        pPrev->pNext = pNext;
-        if (!pNext)
-            pUVM->vm.s.ppAtResetNext = &pPrev->pNext;
-    }
-    else
-    {
-        pUVM->vm.s.pAtReset = pNext;
-        if (!pNext)
-            pUVM->vm.s.ppAtResetNext = &pUVM->vm.s.pAtReset;
-    }
-
-    /*
-     * Free it.
-     */
-    MMR3HeapFree(pCur);
-
-    return pNext;
-}
-
-
-/**
- * Deregisters an at VM reset callback.
- *
- * @returns VBox status code.
- * @param   pVM             The VM.
- * @param   pDevIns         Device instance.
- * @param   pfnCallback     Callback function.
- */
-VMMR3DECL(int)   VMR3AtResetDeregister(PVM pVM, PPDMDEVINS pDevIns, PFNVMATRESET pfnCallback)
-{
-    PUVM        pUVM  = pVM->pUVM;
-    RTCritSectEnter(&pUVM->vm.s.AtStateCritSect);
-
-    int         rc    = VERR_VM_ATRESET_NOT_FOUND;
-    PVMATRESET  pPrev = NULL;
-    PVMATRESET  pCur  = pUVM->vm.s.pAtReset;
-    while (pCur)
-    {
-        if (    pCur->enmType == VMATRESETTYPE_DEV
-            &&  pCur->u.Dev.pDevIns == pDevIns
-            &&  (   !pfnCallback
-                 || pCur->u.Dev.pfnCallback == pfnCallback))
-        {
-            pCur = vmr3AtResetFreeU(pUVM, pCur, pPrev);
-            rc = VINF_SUCCESS;
-        }
-        else
-        {
-            pPrev = pCur;
-            pCur = pCur->pNext;
-        }
-    }
-
-    RTCritSectLeave(&pUVM->vm.s.AtStateCritSect);
-    AssertRC(rc);
-    return rc;
-}
-
-
-/**
- * Deregisters an at VM reset internal callback.
- *
- * @returns VBox status code.
- * @param   pVM             The VM.
- * @param   pfnCallback     Callback function.
- */
-VMMR3DECL(int)   VMR3AtResetDeregisterInternal(PVM pVM, PFNVMATRESETINT pfnCallback)
-{
-    PUVM        pUVM  = pVM->pUVM;
-    RTCritSectEnter(&pUVM->vm.s.AtStateCritSect);
-
-    int         rc    = VERR_VM_ATRESET_NOT_FOUND;
-    PVMATRESET  pPrev = NULL;
-    PVMATRESET  pCur  = pUVM->vm.s.pAtReset;
-    while (pCur)
-    {
-        if (    pCur->enmType == VMATRESETTYPE_INTERNAL
-            &&  pCur->u.Internal.pfnCallback == pfnCallback)
-        {
-            pCur = vmr3AtResetFreeU(pUVM, pCur, pPrev);
-            rc = VINF_SUCCESS;
-        }
-        else
-        {
-            pPrev = pCur;
-            pCur = pCur->pNext;
-        }
-    }
-
-    RTCritSectLeave(&pUVM->vm.s.AtStateCritSect);
-    AssertRC(rc);
-    return rc;
-}
-
-
-/**
- * Deregisters an at VM reset external callback.
- *
- * @returns VBox status code.
- * @param   pVM             The VM.
- * @param   pfnCallback     Callback function.
- */
-VMMR3DECL(int)   VMR3AtResetDeregisterExternal(PVM pVM, PFNVMATRESETEXT pfnCallback)
-{
-    PUVM        pUVM  = pVM->pUVM;
-    RTCritSectEnter(&pUVM->vm.s.AtStateCritSect);
-
-    int         rc    = VERR_VM_ATRESET_NOT_FOUND;
-    PVMATRESET  pPrev = NULL;
-    PVMATRESET  pCur  = pUVM->vm.s.pAtReset;
-    while (pCur)
-    {
-        if (    pCur->enmType == VMATRESETTYPE_INTERNAL
-            &&  pCur->u.External.pfnCallback == pfnCallback)
-        {
-            pCur = vmr3AtResetFreeU(pUVM, pCur, pPrev);
-            rc = VINF_SUCCESS;
-        }
-        else
-        {
-            pPrev = pCur;
-            pCur = pCur->pNext;
-        }
-    }
-
-    RTCritSectLeave(&pUVM->vm.s.AtStateCritSect);
-    AssertRC(rc);
-    return rc;
 }
 
 
@@ -3001,42 +2659,13 @@ VMMR3DECL(int)   VMR3AtStateRegister(PVM pVM, PFNVMATSTATE pfnAtState, void *pvU
     /*
      * Validate input.
      */
-    if (!pfnAtState)
-    {
-        AssertMsgFailed(("callback is required\n"));
-        return VERR_INVALID_PARAMETER;
-    }
+    AssertPtrReturn(pfnAtState, VERR_INVALID_PARAMETER);
+    VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
 
-    /*
-     * Make sure we're in EMT (to avoid the locking).
-     */
-    PVMREQ pReq;
-    int rc = VMR3ReqCall(pVM, VMCPUID_ANY, &pReq, RT_INDEFINITE_WAIT, (PFNRT)vmR3AtStateRegisterU, 3, pVM->pUVM, pfnAtState, pvUser);
-    if (RT_FAILURE(rc))
-        return rc;
-    rc = pReq->iStatus;
-    VMR3ReqFree(pReq);
-
-    LogFlow(("VMR3AtStateRegister: returns %Rrc\n", rc));
-    return rc;
-}
-
-
-/**
- * Registers a VM state change callback.
- *
- * @returns VBox status code.
- * @param   pUVM            Pointer to the user mode VM structure.
- * @param   pfnAtState      Pointer to callback.
- * @param   pvUser          User argument.
- * @thread  EMT
- */
-static DECLCALLBACK(int) vmR3AtStateRegisterU(PUVM pUVM, PFNVMATSTATE pfnAtState, void *pvUser)
-{
     /*
      * Allocate a new record.
      */
-
+    PUVM pUVM = pVM->pUVM;
     PVMATSTATE pNew = (PVMATSTATE)MMR3HeapAllocU(pUVM, MM_TAG_VM, sizeof(*pNew));
     if (!pNew)
         return VERR_NO_MEMORY;
@@ -3065,46 +2694,17 @@ static DECLCALLBACK(int) vmR3AtStateRegisterU(PUVM pUVM, PFNVMATSTATE pfnAtState
  * @param   pvUser          User argument.
  * @thread  Any.
  */
-VMMR3DECL(int)   VMR3AtStateDeregister(PVM pVM, PFNVMATSTATE pfnAtState, void *pvUser)
+VMMR3DECL(int) VMR3AtStateDeregister(PVM pVM, PFNVMATSTATE pfnAtState, void *pvUser)
 {
     LogFlow(("VMR3AtStateDeregister: pfnAtState=%p pvUser=%p\n", pfnAtState, pvUser));
 
     /*
      * Validate input.
      */
-    if (!pfnAtState)
-    {
-        AssertMsgFailed(("callback is required\n"));
-        return VERR_INVALID_PARAMETER;
-    }
+    AssertPtrReturn(pfnAtState, VERR_INVALID_PARAMETER);
+    VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
 
-    /*
-     * Make sure we're in EMT (to avoid the logging).
-     */
-    PVMREQ pReq;
-    int rc = VMR3ReqCall(pVM, VMCPUID_ANY, &pReq, RT_INDEFINITE_WAIT, (PFNRT)vmR3AtStateDeregisterU, 3, pVM->pUVM, pfnAtState, pvUser);
-    if (RT_FAILURE(rc))
-        return rc;
-    rc = pReq->iStatus;
-    VMR3ReqFree(pReq);
-
-    LogFlow(("VMR3AtStateDeregister: returns %Rrc\n", rc));
-    return rc;
-}
-
-
-/**
- * Deregisters a VM state change callback.
- *
- * @returns VBox status code.
- * @param   pUVM            Pointer to the user mode VM structure.
- * @param   pfnAtState      Pointer to callback.
- * @param   pvUser          User argument.
- * @thread  EMT
- */
-static DECLCALLBACK(int) vmR3AtStateDeregisterU(PUVM pUVM, PFNVMATSTATE pfnAtState, void *pvUser)
-{
-    LogFlow(("vmR3AtStateDeregisterU: pfnAtState=%p pvUser=%p\n", pfnAtState, pvUser));
+    PUVM pUVM = pVM->pUVM;
     RTCritSectEnter(&pUVM->vm.s.AtStateCritSect);
 
     /*
