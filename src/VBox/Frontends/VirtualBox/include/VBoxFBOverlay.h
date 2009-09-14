@@ -29,36 +29,36 @@
 
 #define VBOXVHWA_ALLOW_PRIMARY_AND_OVERLAY_ONLY 1
 
-#ifdef DEBUG
-#include "iprt/stream.h"
-#define VBOXQGLLOG(_m) RTPrintf _m
-#define VBOXQGLLOGREL(_m) do { RTPrintf _m ; LogRel( _m ); } while(0)
+#if defined(DEBUG) && !defined(DEBUG_sandervl)
+# include "iprt/stream.h"
+# define VBOXQGLLOG(_m) RTPrintf _m
+# define VBOXQGLLOGREL(_m) do { RTPrintf _m ; LogRel( _m ); } while(0)
 #else
-#define VBOXQGLLOG(_m)
-#define VBOXQGLLOGREL(_m) LogRel( _m )
+# define VBOXQGLLOG(_m)    do {}while(0)
+# define VBOXQGLLOGREL(_m) LogRel( _m )
 #endif
 #define VBOXQGLLOG_ENTER(_m)
 //do{VBOXQGLLOG(("==>[%s]:", __FUNCTION__)); VBOXQGLLOG(_m);}while(0)
 #define VBOXQGLLOG_EXIT(_m)
 //do{VBOXQGLLOG(("<==[%s]:", __FUNCTION__)); VBOXQGLLOG(_m);}while(0)
 #ifdef DEBUG
-#define VBOXQGL_ASSERTNOERR() \
+ #define VBOXQGL_ASSERTNOERR() \
     do { GLenum err = glGetError(); \
         if(err != GL_NO_ERROR) VBOXQGLLOG(("gl error ocured (0x%x)\n", err)); \
         Assert(err == GL_NO_ERROR); \
     }while(0)
 
-#define VBOXQGL_CHECKERR(_op) \
+ #define VBOXQGL_CHECKERR(_op) \
     do { \
         glGetError(); \
         _op \
         VBOXQGL_ASSERTNOERR(); \
     }while(0)
 #else
-#define VBOXQGL_ASSERTNOERR() \
+ #define VBOXQGL_ASSERTNOERR() \
     do {}while(0)
 
-#define VBOXQGL_CHECKERR(_op) \
+ #define VBOXQGL_CHECKERR(_op) \
     do { \
         _op \
     }while(0)
