@@ -763,12 +763,7 @@ static int vmR3InitRing3(PVM pVM, PUVM pUVM)
      */
     for (VMCPUID idCpu = 1; idCpu < pVM->cCpus; idCpu++)
     {
-        PVMREQ pReq;
-        rc = VMR3ReqCallU(pUVM, idCpu, &pReq, RT_INDEFINITE_WAIT, VMREQFLAGS_VBOX_STATUS,
-                          (PFNRT)vmR3RegisterEMT, 2, pVM, idCpu);
-        if (RT_SUCCESS(rc))
-            rc = pReq->iStatus;
-        VMR3ReqFree(pReq);
+        rc = VMR3ReqCallWaitU(pUVM, idCpu, (PFNRT)vmR3RegisterEMT, 2, pVM, idCpu);
         if (RT_FAILURE(rc))
             return rc;
     }
@@ -1195,15 +1190,7 @@ VMMR3DECL(int) VMR3PowerOn(PVM pVM)
      * Forward the request to the EMTs (EMT(0) first as it does all the
      * work upfront).
      */
-    PVMREQ pReq;
-    int rc = VMR3ReqCallU(pVM->pUVM, VMCPUID_ALL, &pReq, RT_INDEFINITE_WAIT, VMREQFLAGS_VBOX_STATUS,
-                          (PFNRT)vmR3PowerOn, 1, pVM);
-    if (RT_SUCCESS(rc))
-    {
-        rc = pReq->iStatus;
-        VMR3ReqFree(pReq);
-    }
-
+    int rc = VMR3ReqCallWaitU(pVM->pUVM, VMCPUID_ALL, (PFNRT)vmR3PowerOn, 1, pVM);
     LogFlow(("VMR3PowerOn: returns %Rrc\n", rc));
     return rc;
 }
@@ -1288,16 +1275,7 @@ static int vmR3SuspendCommon(PVM pVM, bool fFatal)
      * Forward the operation to EMT in reverse order so EMT(0) can do the
      * actual suspending after the other ones have stopped running guest code.
      */
-    PVMREQ pReq;
-    int rc = VMR3ReqCallU(pVM->pUVM, VMCPUID_ALL_REVERSE, &pReq, RT_INDEFINITE_WAIT, VMREQFLAGS_VBOX_STATUS,
-                          (PFNRT)vmR3Suspend, 2, pVM, fFatal);
-    if (RT_SUCCESS(rc))
-    {
-        rc = pReq->iStatus;
-        VMR3ReqFree(pReq);
-    }
-
-    return rc;
+    return VMR3ReqCallWaitU(pVM->pUVM, VMCPUID_ALL_REVERSE, (PFNRT)vmR3Suspend, 2, pVM, fFatal);
 }
 
 
@@ -1386,15 +1364,7 @@ VMMR3DECL(int) VMR3Resume(PVM pVM)
      * Forward the request to the EMTs (EMT(0) first as it does all the
      * work upfront).
      */
-    PVMREQ pReq;
-    int rc = VMR3ReqCallU(pVM->pUVM, VMCPUID_ALL, &pReq, RT_INDEFINITE_WAIT, VMREQFLAGS_VBOX_STATUS,
-                          (PFNRT)vmR3Resume, 1, pVM);
-    if (RT_SUCCESS(rc))
-    {
-        rc = pReq->iStatus;
-        VMR3ReqFree(pReq);
-    }
-
+    int rc = VMR3ReqCallWaitU(pVM->pUVM, VMCPUID_ALL, (PFNRT)vmR3Resume, 1, pVM);
     LogFlow(("VMR3Resume: returns %Rrc\n", rc));
     return rc;
 }
@@ -1512,14 +1482,8 @@ VMMR3DECL(int) VMR3Save(PVM pVM, const char *pszFilename, bool fContinueAfterwar
      */
     SSMAFTER    enmAfter = fContinueAfterwards ? SSMAFTER_CONTINUE : SSMAFTER_DESTROY;
     PSSMHANDLE  pSSM;
-    PVMREQ      pReq;
-    int rc = VMR3ReqCallU(pVM->pUVM, 0 /*idDstCpu*/, &pReq, RT_INDEFINITE_WAIT, VMREQFLAGS_VBOX_STATUS,
-                          (PFNRT)vmR3Save, 6, pVM, pszFilename, enmAfter, pfnProgress, pvUser, &pSSM);
-    if (RT_SUCCESS(rc))
-    {
-        rc = pReq->iStatus;
-        VMR3ReqFree(pReq);
-    }
+    int rc = VMR3ReqCallWaitU(pVM->pUVM, 0 /*idDstCpu*/,
+                              (PFNRT)vmR3Save, 6, pVM, pszFilename, enmAfter, pfnProgress, pvUser, &pSSM);
     if (    RT_SUCCESS(rc)
         &&  pSSM)
     {
@@ -1532,15 +1496,7 @@ VMMR3DECL(int) VMR3Save(PVM pVM, const char *pszFilename, bool fContinueAfterwar
         {
             rc = vmR3SuspendCommon(pVM, false /*fFatal*/);
             if (RT_SUCCESS(rc))
-            {
-                rc = VMR3ReqCallU(pVM->pUVM, 0 /*idDstCpu*/, &pReq, RT_INDEFINITE_WAIT, VMREQFLAGS_VBOX_STATUS,
-                                  (PFNRT)vmR3SaveLiveStep2, 2, pVM, pSSM);
-                if (RT_SUCCESS(rc))
-                {
-                    rc = pReq->iStatus;
-                    VMR3ReqFree(pReq);
-                }
-            }
+                rc = VMR3ReqCallWaitU(pVM->pUVM, 0 /*idDstCpu*/, (PFNRT)vmR3SaveLiveStep2, 2, pVM, pSSM);
         }
         else
             AssertLogRelMsg(   pVM->enmVMState == VMSTATE_RUNNING_LS
@@ -1676,15 +1632,8 @@ VMMR3DECL(int) VMR3Load(PVM pVM, const char *pszFilename, PFNVMPROGRESS pfnProgr
     /*
      * Request the operation in EMT.
      */
-    PVMREQ pReq;
-    int rc = VMR3ReqCallU(pVM->pUVM, 0 /*idDstCpu*/, &pReq, RT_INDEFINITE_WAIT, VMREQFLAGS_VBOX_STATUS,
-                          (PFNRT)vmR3Load, 4, pVM, pszFilename, pfnProgress, pvUser);
-    if (RT_SUCCESS(rc))
-    {
-        rc = pReq->iStatus;
-        VMR3ReqFree(pReq);
-    }
-
+    int rc = VMR3ReqCallWaitU(pVM->pUVM, 0 /*idDstCpu*/,
+                              (PFNRT)vmR3Load, 4, pVM, pszFilename, pfnProgress, pvUser);
     LogFlow(("VMR3Load: returns %Rrc\n", rc));
     return rc;
 }
@@ -1858,17 +1807,7 @@ VMMR3DECL(int)   VMR3PowerOff(PVM pVM)
     /*
      * Request the operation in EMT. (in reverse order as VCPU 0 does the actual work)
      */
-    PVMREQ pReq = NULL;
-    int rc = VMR3ReqCallU(pVM->pUVM, VMCPUID_ALL_REVERSE, &pReq, RT_INDEFINITE_WAIT, VMREQFLAGS_VBOX_STATUS,
-                          (PFNRT)vmR3PowerOff, 1, pVM);
-    if (RT_SUCCESS(rc))
-    {
-        rc = pReq->iStatus;
-        VMR3ReqFree(pReq);
-    }
-    else
-        Assert(pReq == NULL);
-
+    int rc = VMR3ReqCallWaitU(pVM->pUVM, VMCPUID_ALL_REVERSE, (PFNRT)vmR3PowerOff, 1, pVM);
     LogFlow(("VMR3PowerOff: returns %Rrc\n", rc));
     return rc;
 }
@@ -1943,25 +1882,15 @@ VMMR3DECL(int) VMR3Destroy(PVM pVM)
         /* Terminate the other EMTs. */
         for (VMCPUID idCpu = 1; idCpu < pVM->cCpus; idCpu++)
         {
-            PVMREQ pReq = NULL;
-            int rc = VMR3ReqCallU(pUVM, idCpu, &pReq, RT_INDEFINITE_WAIT, VMREQFLAGS_VBOX_STATUS,
-                                  (PFNRT)vmR3Destroy, 1, pVM);
-            if (RT_SUCCESS(rc))
-                rc = pReq->iStatus;
+            int rc = VMR3ReqCallWaitU(pUVM, idCpu, (PFNRT)vmR3Destroy, 1, pVM);
             AssertLogRelRC(rc);
-            VMR3ReqFree(pReq);
         }
     }
     else
     {
         /* vmR3Destroy on all EMTs, ending with EMT(0). */
-        PVMREQ pReq = NULL;
-        int rc = VMR3ReqCallU(pUVM, VMCPUID_ALL_REVERSE, &pReq, RT_INDEFINITE_WAIT, VMREQFLAGS_VBOX_STATUS,
-                              (PFNRT)vmR3Destroy, 1, pVM);
-        if (RT_SUCCESS(rc))
-            rc = pReq->iStatus;
+        int rc = VMR3ReqCallWaitU(pUVM, VMCPUID_ALL_REVERSE, (PFNRT)vmR3Destroy, 1, pVM);
         AssertLogRelRC(rc);
-        VMR3ReqFree(pReq);
 
         /* Wait for EMTs and destroy the UVM. */
         vmR3DestroyUVM(pUVM, 30000);
@@ -2535,14 +2464,8 @@ VMMR3DECL(int) VMR3Reset(PVM pVM)
      * Queue reset request to the emulation thread
      * and wait for it to be processed. (in reverse order as VCPU 0 does the real cleanup)
      */
-    PVMREQ pReq = NULL;
-    int rc = VMR3ReqCallU(pVM->pUVM, VMCPUID_ALL_REVERSE, &pReq, RT_INDEFINITE_WAIT, VMREQFLAGS_VBOX_STATUS,
-                          (PFNRT)vmR3Reset, 1, pVM);
-    if (RT_SUCCESS(rc))
-        rc = pReq->iStatus;
+    int rc = VMR3ReqCallWaitU(pVM->pUVM, VMCPUID_ALL_REVERSE, (PFNRT)vmR3Reset, 1, pVM);
     AssertLogRelRC(rc);
-    VMR3ReqFree(pReq);
-
     return rc;
 }
 
