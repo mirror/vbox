@@ -268,8 +268,7 @@ void VMMDevNotifyGuest (VMMDevState *pVMMDevState, uint32_t u32EventMask)
     /* No need to wait for the completion of this request. It is a notification
      * about something, which has already happened.
      */
-    rc = VMR3ReqCallEx(pVM, VMCPUID_ANY, NULL /*ppReq*/, 0 /*cMillies*/, VMREQFLAGS_NO_WAIT | VMREQFLAGS_VOID,
-                       (PFNRT)vmmdevNotifyGuest_EMT, 2, pVMMDevState, u32EventMask);
+    rc = VMR3ReqCallVoidNoWait(pVM, VMCPUID_ANY, (PFNRT)vmmdevNotifyGuest_EMT, 2, pVMMDevState, u32EventMask);
     AssertRC(rc);
 }
 
