@@ -47,6 +47,7 @@ public:
 
     VBoxMediaManagerDlg (QWidget *aParent = NULL,
                          Qt::WindowFlags aFlags = Qt::Dialog);
+    ~VBoxMediaManagerDlg();
 
     void setup (VBoxDefs::MediaType aType, bool aDoSelect,
                 bool aRefresh = true,
