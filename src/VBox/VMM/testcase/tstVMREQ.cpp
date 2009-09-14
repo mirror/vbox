@@ -133,12 +133,8 @@ static void PassVA2(PVM pVM, const char *pszFormat, va_list va)
     void *pvVA = va2;
 #endif
 
-    PVMREQ pReq;
-    int rc = VMR3ReqCall(pVM, VMCPUID_ANY, &pReq, RT_INDEFINITE_WAIT, (PFNRT)PassVACallback, 5,
-                         pVM, _4K, _1G, pszFormat, pvVA);
-    if (RT_SUCCESS(rc))
-        rc = pReq->iStatus;
-    VMR3ReqFree(pReq);
+    int rc = VMR3ReqCallWait(pVM, VMCPUID_ANY, (PFNRT)PassVACallback, 5, pVM, _4K, _1G, pszFormat, pvVA);
+    NOREF(rc);
 
 #if 1
     va_end(va2);
@@ -155,13 +151,9 @@ static void PassVA(PVM pVM, const char *pszFormat, ...)
     /* 1st test */
     va_list va1;
     va_start(va1, pszFormat);
-    PVMREQ pReq;
-    int rc = VMR3ReqCall(pVM, VMCPUID_ANY, &pReq, RT_INDEFINITE_WAIT, (PFNRT)PassVACallback, 5,
-                         pVM, _4K, _1G, pszFormat, &va1);
-    if (RT_SUCCESS(rc))
-        rc = pReq->iStatus;
-    VMR3ReqFree(pReq);
+    int rc = VMR3ReqCallWait(pVM, VMCPUID_ANY, (PFNRT)PassVACallback, 5, pVM, _4K, _1G, pszFormat, &va1);
     va_end(va1);
+    NOREF(rc);
 
     /* 2nd test */
     va_list va2;

@@ -2927,15 +2927,11 @@ HRESULT Console::doDriveChange (const char *pszDevice, unsigned uInstance, unsig
                            (PFNRT) Console::changeDrive, 8,
                            this, pszDevice, uInstance, uLun, eState, peState,
                            pszPath, fPassthrough);
-    /// @todo (r=dmik) bird, it would be nice to have a special VMR3Req method
-    //  for that purpose, that doesn't return useless VERR_TIMEOUT
-    if (vrc == VERR_TIMEOUT)
-        vrc = VINF_SUCCESS;
 
     /* leave the lock before waiting for a result (EMT will call us back!) */
     alock.leave();
 
-    if (VBOX_SUCCESS (vrc))
+    if (vrc == VERR_TIMEOUT || VBOX_SUCCESS (vrc))
     {
         vrc = VMR3ReqWait (pReq, RT_INDEFINITE_WAIT);
         AssertRC (vrc);
@@ -5881,12 +5877,8 @@ HRESULT Console::attachUSBDevice (IUSBDevice *aHostDevice, ULONG aMaskedIfs)
     alock.leave();
 
 /** @todo just do everything here and only wrap the PDMR3Usb call. That'll offload some notification stuff from the EMT thread. */
-    PVMREQ pReq = NULL;
-    int vrc = VMR3ReqCall (mpVM, VMCPUID_ANY, &pReq, RT_INDEFINITE_WAIT,
-                           (PFNRT) usbAttachCallback, 6, this, aHostDevice, uuid.ptr(), fRemote, Address.raw(), aMaskedIfs);
-    if (VBOX_SUCCESS (vrc))
-        vrc = pReq->iStatus;
-    VMR3ReqFree (pReq);
+    int vrc = VMR3ReqCallWait (mpVM, VMCPUID_ANY,
+                               (PFNRT) usbAttachCallback, 6, this, aHostDevice, uuid.ptr(), fRemote, Address.raw(), aMaskedIfs);
 
     /* restore the lock */
     alock.enter();
@@ -6005,15 +5997,9 @@ HRESULT Console::detachUSBDevice (USBDeviceList::iterator &aIt)
     /* leave the lock before a VMR3* call (EMT will call us back)! */
     alock.leave();
 
-    PVMREQ pReq;
 /** @todo just do everything here and only wrap the PDMR3Usb call. That'll offload some notification stuff from the EMT thread. */
-    int vrc = VMR3ReqCall (mpVM, VMCPUID_ANY, &pReq, RT_INDEFINITE_WAIT,
-                           (PFNRT) usbDetachCallback, 4,
-                           this, &aIt, (*aIt)->id().raw());
-    if (VBOX_SUCCESS (vrc))
-        vrc = pReq->iStatus;
-    VMR3ReqFree (pReq);
-
+    int vrc = VMR3ReqCallWait (mpVM, VMCPUID_ANY,
+                               (PFNRT) usbDetachCallback, 4, this, &aIt, (*aIt)->id().raw());
     ComAssertRCRet (vrc, E_FAIL);
 
     return S_OK;
@@ -7386,11 +7372,8 @@ DECLCALLBACK (int) Console::saveStateThread (RTTHREAD Thread, void *pvUser)
                  *  don't leave the lock since reconfigureHardDisks isn't going
                  *  to access Console.
                  */
-                int vrc = VMR3ReqCall(that->mpVM, VMCPUID_ANY, &pReq, RT_INDEFINITE_WAIT,
-                                      (PFNRT)reconfigureHardDisks, 5, that->mpVM, lInstance, enmController, atts[i], &rc);
-                if (RT_SUCCESS(vrc))
-                    vrc = pReq->iStatus;
-                VMR3ReqFree(pReq);
+                int vrc = VMR3ReqCallWait(that->mpVM, VMCPUID_ANY,
+                                          (PFNRT)reconfigureHardDisks, 5, that->mpVM, lInstance, enmController, atts[i], &rc);
                 if (RT_FAILURE(vrc))
                 {
                     errMsg = Utf8StrFmt(Console::tr("%Rrc"), vrc);

@@ -2522,13 +2522,7 @@ VMMR3DECL(int) TMR3NotifyResume(PVM pVM, PVMCPU pVCpu)
  */
 VMMDECL(int) TMR3SetWarpDrive(PVM pVM, uint32_t u32Percent)
 {
-    PVMREQ pReq;
-    int rc = VMR3ReqCall(pVM, VMCPUID_ANY, &pReq, RT_INDEFINITE_WAIT,
-                         (PFNRT)tmR3SetWarpDrive, 2, pVM, u32Percent);
-    if (RT_SUCCESS(rc))
-        rc = pReq->iStatus;
-    VMR3ReqFree(pReq);
-    return rc;
+    return VMR3ReqCallWait(pVM, VMCPUID_ANY, (PFNRT)tmR3SetWarpDrive, 2, pVM, u32Percent);
 }
 
 

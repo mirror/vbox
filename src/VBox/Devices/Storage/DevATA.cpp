@@ -1409,14 +1409,12 @@ static void ataWarningISCSI(PPDMDEVINS pDevIns)
 static void ataSuspendRedo(PATACONTROLLER pCtl)
 {
     PPDMDEVINS  pDevIns = CONTROLLER_2_DEVINS(pCtl);
-    PVMREQ      pReq;
     int         rc;
 
     pCtl->fRedoIdle = true;
-    rc = VMR3ReqCall(PDMDevHlpGetVM(pDevIns), VMCPUID_ANY, &pReq, RT_INDEFINITE_WAIT,
-                     (PFNRT)PDMDevHlpVMSuspend, 1, pDevIns);
+    rc = VMR3ReqCallWait(PDMDevHlpGetVM(pDevIns), VMCPUID_ANY,
+                         (PFNRT)PDMDevHlpVMSuspend, 1, pDevIns);
     AssertReleaseRC(rc);
-    VMR3ReqFree(pReq);
 }
 
 bool ataIsRedoSetWarning(ATADevState *s, int rc)
@@ -2890,13 +2888,11 @@ static void atapiParseCmdVirtualATAPI(ATADevState *s)
                         {
                         PATACONTROLLER pCtl = ATADEVSTATE_2_CONTROLLER(s);
                         PPDMDEVINS pDevIns = ATADEVSTATE_2_DEVINS(s);
-                        PVMREQ pReq;
 
                         PDMCritSectLeave(&pCtl->lock);
-                        rc = VMR3ReqCall(PDMDevHlpGetVM(pDevIns), VMCPUID_ANY, &pReq, RT_INDEFINITE_WAIT,
-                                         (PFNRT)s->pDrvMount->pfnUnmount, 2, s->pDrvMount, false);
+                        rc = VMR3ReqCallWait(PDMDevHlpGetVM(pDevIns), VMCPUID_ANY,
+                                             (PFNRT)s->pDrvMount->pfnUnmount, 2, s->pDrvMount, false);
                         AssertReleaseRC(rc);
-                        VMR3ReqFree(pReq);
                         {
                             STAM_PROFILE_START(&pCtl->StatLockWait, a);
                             PDMCritSectEnter(&pCtl->lock, VINF_SUCCESS);

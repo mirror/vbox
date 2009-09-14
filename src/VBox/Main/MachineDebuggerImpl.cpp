@@ -197,16 +197,8 @@ STDMETHODIMP MachineDebugger::COMSETTER(RecompileUser) (BOOL aEnable)
     Console::SafeVMPtr pVM (mParent);
     CheckComRCReturnRC(pVM.rc());
 
-    PVMREQ pReq;
     EMRAWMODE rawModeFlag = aEnable ? EMRAW_RING3_DISABLE : EMRAW_RING3_ENABLE;
-    int rcVBox = VMR3ReqCall (pVM, VMCPUID_ANY, &pReq, RT_INDEFINITE_WAIT,
-                              (PFNRT)EMR3RawSetMode, 2, pVM.raw(), rawModeFlag);
-    if (RT_SUCCESS(rcVBox))
-    {
-        rcVBox = pReq->iStatus;
-        VMR3ReqFree (pReq);
-    }
-
+    int rcVBox = VMR3ReqCallWait(pVM, VMCPUID_ANY, (PFNRT)EMR3RawSetMode, 2, pVM.raw(), rawModeFlag);
     if (RT_SUCCESS(rcVBox))
         return S_OK;
 
@@ -265,16 +257,8 @@ STDMETHODIMP MachineDebugger::COMSETTER(RecompileSupervisor) (BOOL aEnable)
     Console::SafeVMPtr pVM (mParent);
     CheckComRCReturnRC(pVM.rc());
 
-    PVMREQ pReq;
     EMRAWMODE rawModeFlag = aEnable ? EMRAW_RING0_DISABLE : EMRAW_RING0_ENABLE;
-    int rcVBox = VMR3ReqCall (pVM, VMCPUID_ANY, &pReq, RT_INDEFINITE_WAIT,
-                              (PFNRT)EMR3RawSetMode, 2, pVM.raw(), rawModeFlag);
-    if (RT_SUCCESS(rcVBox))
-    {
-        rcVBox = pReq->iStatus;
-        VMR3ReqFree (pReq);
-    }
-
+    int rcVBox = VMR3ReqCallWait(pVM, VMCPUID_ANY, (PFNRT)EMR3RawSetMode, 2, pVM.raw(), rawModeFlag);
     if (RT_SUCCESS(rcVBox))
         return S_OK;
 

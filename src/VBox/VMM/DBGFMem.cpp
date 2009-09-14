@@ -122,15 +122,9 @@ static DECLCALLBACK(int) dbgfR3MemScan(PVM pVM, VMCPUID idCpu, PCDBGFADDRESS pAd
 VMMR3DECL(int) DBGFR3MemScan(PVM pVM, VMCPUID idCpu, PCDBGFADDRESS pAddress, RTGCUINTPTR cbRange, const uint8_t *pabNeedle, size_t cbNeedle, PDBGFADDRESS pHitAddress)
 {
     AssertReturn(idCpu < pVM->cCpus, VERR_INVALID_PARAMETER);
+    return VMR3ReqCallWait(pVM, idCpu, (PFNRT)dbgfR3MemScan, 7,
+                           pVM, idCpu, pAddress, &cbRange, pabNeedle, cbNeedle, pHitAddress);
 
-    PVMREQ pReq;
-    int rc = VMR3ReqCall(pVM, idCpu, &pReq, RT_INDEFINITE_WAIT,
-                         (PFNRT)dbgfR3MemScan, 7, pVM, idCpu, pAddress, &cbRange, pabNeedle, cbNeedle, pHitAddress);
-    if (RT_SUCCESS(rc))
-        rc = pReq->iStatus;
-    VMR3ReqFree(pReq);
-
-    return rc;
 }
 
 

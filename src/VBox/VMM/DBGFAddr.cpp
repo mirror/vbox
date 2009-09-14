@@ -276,16 +276,8 @@ VMMR3DECL(int)  DBGFR3AddrToPhys(PVM pVM, VMCPUID idCpu, PDBGFADDRESS pAddress, 
         if (VMCPU_IS_EMT(pVCpu))
             rc = dbgfR3AddrToPhysOnVCpu(pVCpu, pAddress, pGCPhys);
         else
-        {
-            PVMREQ pReq = NULL;
-            rc = VMR3ReqCall(pVCpu->pVMR3, pVCpu->idCpu, &pReq, RT_INDEFINITE_WAIT,
-                             (PFNRT)dbgfR3AddrToPhysOnVCpu, 3, pVCpu, pAddress, pGCPhys);
-            if (RT_SUCCESS(rc))
-            {
-                rc = pReq->iStatus;
-                VMR3ReqFree(pReq);
-            }
-        }
+            rc = VMR3ReqCallWait(pVCpu->pVMR3, pVCpu->idCpu,
+                                 (PFNRT)dbgfR3AddrToPhysOnVCpu, 3, pVCpu, pAddress, pGCPhys);
     }
     return rc;
 }
@@ -442,16 +434,7 @@ VMMR3DECL(int)  DBGFR3AddrToVolatileR3Ptr(PVM pVM, VMCPUID idCpu, PDBGFADDRESS p
     /*
      * Convert it.
      */
-    PVMREQ pReq = NULL;
-    int rc = VMR3ReqCall(pVM, idCpu, &pReq, RT_INDEFINITE_WAIT,
-                         (PFNRT)dbgfR3AddrToVolatileR3PtrOnVCpu, 5, pVM, idCpu, pAddress, fReadOnly, ppvR3Ptr);
-    if (RT_SUCCESS(rc))
-    {
-        rc = pReq->iStatus;
-        VMR3ReqFree(pReq);
-    }
-
-    return rc;
+    return VMR3ReqCallWait(pVM, idCpu, (PFNRT)dbgfR3AddrToVolatileR3PtrOnVCpu, 5, pVM, idCpu, pAddress, fReadOnly, ppvR3Ptr);
 }
 
 

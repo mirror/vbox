@@ -1421,12 +1421,8 @@ STDMETHODIMP Display::SetFramebuffer (ULONG aScreenId,
         alock.leave ();
 
         /* send request to the EMT thread */
-        PVMREQ pReq = NULL;
-        int vrc = VMR3ReqCall (pVM, VMCPUID_ANY, &pReq, RT_INDEFINITE_WAIT,
-            (PFNRT) changeFramebuffer, 3, this, aFramebuffer, aScreenId);
-        if (RT_SUCCESS(vrc))
-            vrc = pReq->iStatus;
-        VMR3ReqFree (pReq);
+        int vrc = VMR3ReqCallWait (pVM, VMCPUID_ANY,
+                                   (PFNRT) changeFramebuffer, 3, this, aFramebuffer, aScreenId);
 
         alock.enter ();
 
@@ -1576,16 +1572,9 @@ STDMETHODIMP Display::TakeScreenShot (BYTE *address, ULONG width, ULONG height)
     if (    mpDrv->Connector.cx == width
         &&  mpDrv->Connector.cy == height)
     {
-        PVMREQ pReq;
         size_t cbData = RT_ALIGN_Z(width, 4) * 4 * height;
-        rcVBox = VMR3ReqCall(pVM, VMCPUID_ANY, &pReq, RT_INDEFINITE_WAIT,
-            (PFNRT)mpDrv->pUpPort->pfnSnapshot, 6, mpDrv->pUpPort,
-            address, cbData, (uintptr_t)NULL, (uintptr_t)NULL, (uintptr_t)NULL);
-        if (RT_SUCCESS(rcVBox))
-        {
-            rcVBox = pReq->iStatus;
-            VMR3ReqFree(pReq);
-        }
+        rcVBox = VMR3ReqCallWait(pVM, VMCPUID_ANY,  (PFNRT)mpDrv->pUpPort->pfnSnapshot, 6, mpDrv->pUpPort,
+                                 address, cbData, (uintptr_t)NULL, (uintptr_t)NULL, (uintptr_t)NULL);
     }
 
     /*
@@ -1648,15 +1637,8 @@ STDMETHODIMP Display::DrawToScreen (BYTE *address, ULONG x, ULONG y,
      * Again we're lazy and make the graphics device do all the
      * dirty conversion work.
      */
-    PVMREQ pReq;
-    int rcVBox = VMR3ReqCall(pVM, VMCPUID_ANY, &pReq, RT_INDEFINITE_WAIT,
-        (PFNRT)mpDrv->pUpPort->pfnDisplayBlt, 6, mpDrv->pUpPort,
-        address, x, y, width, height);
-    if (RT_SUCCESS(rcVBox))
-    {
-        rcVBox = pReq->iStatus;
-        VMR3ReqFree(pReq);
-    }
+    int rcVBox = VMR3ReqCallWait(pVM, VMCPUID_ANY, (PFNRT)mpDrv->pUpPort->pfnDisplayBlt, 6,
+                                 mpDrv->pUpPort, address, x, y, width, height);
 
     /*
      * If the function returns not supported, we'll have to do all the

@@ -562,17 +562,8 @@ VMMR3DECL(int) DBGFR3DisasInstrEx(PVM pVM, VMCPUID idCpu, RTSEL Sel, RTGCPTR GCP
         &&  pVCpu->idCpu == idCpu)
         rc = dbgfR3DisasInstrExOnVCpu(pVM, pVCpu, Sel, &GCPtr, fFlags, pszOutput, cchOutput, pcbInstr);
     else
-    {
-        PVMREQ pReq = NULL;
-        rc = VMR3ReqCall(pVM, idCpu, &pReq, RT_INDEFINITE_WAIT,
-                         (PFNRT)dbgfR3DisasInstrExOnVCpu, 8,
-                         pVM, VMMGetCpuById(pVM, idCpu), Sel, &GCPtr, fFlags, pszOutput, cchOutput, pcbInstr);
-        if (RT_SUCCESS(rc))
-        {
-            rc = pReq->iStatus;
-            VMR3ReqFree(pReq);
-        }
-    }
+        rc = VMR3ReqCallWait(pVM, idCpu, (PFNRT)dbgfR3DisasInstrExOnVCpu, 8,
+                             pVM, VMMGetCpuById(pVM, idCpu), Sel, &GCPtr, fFlags, pszOutput, cchOutput, pcbInstr);
     return rc;
 }
 

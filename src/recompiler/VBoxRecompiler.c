@@ -3646,7 +3646,7 @@ REMR3DECL(int) REMR3DisasEnableStepping(PVM pVM, bool fEnable)
     if (VM_IS_EMT(pVM))
         return remR3DisasEnableStepping(pVM, fEnable);
 
-    rc = VMR3ReqCall(pVM, VMCPUID_ANY, &pReq, RT_INDEFINITE_WAIT, (PFNRT)remR3DisasEnableStepping, 2, pVM, fEnable);
+    rc = VMR3ReqCallWait(pVM, VMCPUID_ANY, (PFNRT)remR3DisasEnableStepping, 2, pVM, fEnable);
     AssertRC(rc);
     if (RT_SUCCESS(rc))
         rc = pReq->iStatus;
