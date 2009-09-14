@@ -261,13 +261,12 @@ winVersion_t vboxQueryWinVersion()
 
     dprintf(("VBoxVideo::vboxQueryWinVersion: running on Windows NT version %d.%d, build %d\n",
              majorVersion, minorVersion, buildNumber));
-    if(majorVersion == 7)
+    if(majorVersion == 6)
     {
-        winVersion = WIN7;
-    }
-    else if(majorVersion == 6)
-    {
-        winVersion = WINVISTA;
+        if (minorVersion == 1)
+            winVersion = WIN7;
+        else if (minorVersion == 0)
+            winVersion = WINVISTA; /* Or Windows Server 2008. */
     }
     else if (majorVersion == 5)
     {
