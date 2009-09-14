@@ -226,6 +226,30 @@ ip_output(PNATState pData, struct socket *so, struct mbuf *m0)
 #ifdef VBOX_WITH_SLIRP_BSD_MBUF
         uint8_t buf[len]; /* intermediate buffer we'll use for copy from orriginal packet*/
 #endif
+            {
+                int rc;
+#ifndef VBOX_WITH_SLIRP_BSD_MBUF
+                rc = LibAliasOut((m->m_la ? m->m_la : pData->proxy_alias), 
+                    mtod(m, char *), m->m_len);
+#else
+                struct m_tag *t;
+                if (t = m_tag_find(m, PACKET_TAG_ALIAS, NULL) != 0)
+                {
+                    rc = LibAliasOut((struct libalias *)&t[1], mtod(m, char *), m_length(m, NULL));
+                }
+                else
+                {
+                    rc = LibAliasOut(pData->proxy_alias, mtod(m, char *), 
+                                     m_length(m, NULL));
+                } 
+                if (rc == PKT_ALIAS_IGNORED)
+                {
+                    Log(("NAT: packet was droppped\n"));
+                    goto bad;
+                }
+#endif
+                Log2(("NAT: LibAlias return %d\n", rc));
+        }
 
         /*
          * Loop through length of segment after first fragment,
@@ -313,28 +337,6 @@ sendorfree:
             m->m_nextpkt = 0;
             if (error == 0)
             {
-                int rc;
-#ifndef VBOX_WITH_SLIRP_BSD_MBUF
-                rc = LibAliasOut((m->m_la ? m->m_la : pData->proxy_alias), 
-                    mtod(m, char *), m->m_len);
-#else
-                struct m_tag *t;
-                if (t = m_tag_find(m, PACKET_TAG_ALIAS, NULL) != 0)
-                {
-                    rc = LibAliasOut((struct libalias *)&t[1], mtod(m, char *), m_length(m, NULL));
-                }
-                else
-                {
-                    rc = LibAliasOut(pData->proxy_alias, mtod(m, char *), 
-                                     m_length(m, NULL));
-                } 
-                if (rc == PKT_ALIAS_IGNORED)
-                {
-                    Log(("NAT: packet was droppped\n"));
-                    goto bad;
-                }
-#endif
-                Log2(("NAT: LibAlias return %d\n", rc));
 #ifndef VBOX_WITH_SLIRP_BSD_MBUF
                 eh = (struct ethhdr *)MBUF_HEAD(m);
 #else
