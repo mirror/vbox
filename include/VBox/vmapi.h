@@ -167,39 +167,6 @@ VMMDECL(int) VMSetRuntimeErrorV(PVM pVM, uint32_t fFlags, const char *pszErrorId
 #define VMSETRTERR_FLAGS_NO_WAIT    RT_BIT_32(2)
 /** @} */
 
-
-/**
- * VM reset callback.
- *
- * @returns VBox status code.
- * @param   pDevInst    Device instance of the device which registered the callback.
- * @param   pvUser      User argument.
- */
-typedef DECLCALLBACK(int) FNVMATRESET(PPDMDEVINS pDevInst, void *pvUser);
-/** VM reset callback. */
-typedef FNVMATRESET *PFNVMATRESET;
-
-/**
- * VM reset internal callback.
- *
- * @returns VBox status code.
- * @param   pVM     The VM which is begin reset.
- * @param   pvUser  User argument.
- */
-typedef DECLCALLBACK(int) FNVMATRESETINT(PVM pVM, void *pvUser);
-/** VM reset internal callback. */
-typedef FNVMATRESETINT *PFNVMATRESETINT;
-
-/**
- * VM reset external callback.
- *
- * @param   pvUser  User argument.
- */
-typedef DECLCALLBACK(void) FNVMATRESETEXT(void *pvUser);
-/** VM reset external callback. */
-typedef FNVMATRESETEXT *PFNVMATRESETEXT;
-
-
 /**
  * VM state callback function.
  *
@@ -386,12 +353,6 @@ typedef FNVMATDTOR *PFNVMATDTOR;
 
 VMMR3DECL(int)  VMR3AtDtorRegister(PFNVMATDTOR pfnAtDtor, void *pvUser);
 VMMR3DECL(int)  VMR3AtDtorDeregister(PFNVMATDTOR pfnAtDtor);
-VMMR3DECL(int)  VMR3AtResetRegister(PVM pVM, PPDMDEVINS pDevInst, PFNVMATRESET pfnCallback, void *pvUser, const char *pszDesc);
-VMMR3DECL(int)  VMR3AtResetRegisterInternal(PVM pVM, PFNVMATRESETINT pfnCallback, void *pvUser, const char *pszDesc);
-VMMR3DECL(int)  VMR3AtResetRegisterExternal(PVM pVM, PFNVMATRESETEXT pfnCallback, void *pvUser, const char *pszDesc);
-VMMR3DECL(int)  VMR3AtResetDeregister(PVM pVM, PPDMDEVINS pDevInst, PFNVMATRESET pfnCallback);
-VMMR3DECL(int)  VMR3AtResetDeregisterInternal(PVM pVM, PFNVMATRESETINT pfnCallback);
-VMMR3DECL(int)  VMR3AtResetDeregisterExternal(PVM pVM, PFNVMATRESETEXT pfnCallback);
 VMMR3DECL(int)  VMR3AtStateRegister(PVM pVM, PFNVMATSTATE pfnAtState, void *pvUser);
 VMMR3DECL(int)  VMR3AtStateDeregister(PVM pVM, PFNVMATSTATE pfnAtState, void *pvUser);
 VMMR3DECL(VMSTATE) VMR3GetState(PVM pVM);
