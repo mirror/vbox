@@ -202,7 +202,7 @@ ip_input(PNATState pData, struct mbuf *m)
              return;
         }
         ip = mtod(m, struct ip *);
-        hlen = ip->ip_len;
+        hlen = ip->ip_hl << 2;
     }
     else
         ip->ip_len -= hlen;
@@ -489,6 +489,10 @@ found:
         nq = q->m_nextpkt;
         q->m_nextpkt = NULL;
         m_cat(pData, m, q);
+
+        m->m_len += (ip->ip_hl << 2);
+        m->m_data -= (ip->ip_hl << 2);
+        ip = mtod(m, struct ip *); /*update ip pointer */
     }
 
     /*
@@ -496,19 +500,15 @@ found:
      * packet;  dequeue and discard fragment reassembly header.
      * Make header visible.
      */
-#if 0
-    ip->ip_len = (ip->ip_hl << 2) + next;
-#else
+
     ip->ip_len = next;
-#endif
     ip->ip_src = fp->ipq_src;
     ip->ip_dst = fp->ipq_dst;
     TAILQ_REMOVE(head, fp, ipq_list);
     nipq--;
     RTMemFree(fp);
 
-    m->m_len += (ip->ip_hl << 2);
-    m->m_data -= (ip->ip_hl << 2);
+    Assert((ip->ip_len == next));
     /* some debugging cruft by sklower, below, will go away soon */
 #if 0
     if (m->m_flags & M_PKTHDR)    /* XXX this should be done elsewhere */
