@@ -2357,9 +2357,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_VMSuspend(PPDMDEVINS pDevIns)
     if (pVM->cCpus > 1)
     {
         /* We own the IOM lock here and could cause a deadlock by waiting for a VCPU that is blocking on the IOM lock. */
-        PVMREQ pReq;
-        rc = VMR3ReqCallU(pVM->pUVM, VMCPUID_ANY_QUEUE, &pReq, 0, VMREQFLAGS_NO_WAIT,
-                          (PFNRT)VMR3Suspend, 1, pVM);
+        rc = VMR3ReqCallNoWaitU(pVM->pUVM, VMCPUID_ANY_QUEUE, (PFNRT)VMR3Suspend, 1, pVM);
         AssertRC(rc);
         rc = VINF_EM_SUSPEND;
     }
@@ -2384,9 +2382,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_VMPowerOff(PPDMDEVINS pDevIns)
     if (pVM->cCpus > 1)
     {
         /* We own the IOM lock here and could cause a deadlock by waiting for a VCPU that is blocking on the IOM lock. */
-        PVMREQ pReq;
-        rc = VMR3ReqCallU(pVM->pUVM, VMCPUID_ANY_QUEUE, &pReq, 0, VMREQFLAGS_NO_WAIT,
-                          (PFNRT)VMR3PowerOff, 1, pVM);
+        rc = VMR3ReqCallNoWaitU(pVM->pUVM, VMCPUID_ANY_QUEUE, (PFNRT)VMR3PowerOff, 1, pVM);
         AssertRC(rc);
         /* Set the VCPU state to stopped here as well to make sure no
          * inconsistency with the EM state occurs.

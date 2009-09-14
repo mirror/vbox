@@ -157,15 +157,9 @@ VMMR3DECL(int) DBGFR3OSRegister(PVM pVM, PCDBGFOSREG pReg)
     AssertPtrReturn(pReg->pfnQueryInterface, VERR_INVALID_POINTER);
 
     /*
-     * Pass it on to the EMT.
+     * Pass it on to EMT(0).
      */
-    PVMREQ pReq;
-    int rc = VMR3ReqCallU(pVM->pUVM, 0, &pReq, RT_INDEFINITE_WAIT, 0, (PFNRT)dbgfR3OSRegister, 2, pVM, pReg);
-    if (RT_SUCCESS(rc))
-        rc = pReq->iStatus;
-    VMR3ReqFree(pReq);
-
-    return rc;
+    return VMR3ReqCallWaitU(pVM->pUVM, 0 /*idDstCpu*/, (PFNRT)dbgfR3OSRegister, 2, pVM, pReg);
 }
 
 
@@ -254,15 +248,9 @@ VMMR3DECL(int)  DBGFR3OSDeregister(PVM pVM, PCDBGFOSREG pReg)
     }
 
     /*
-     * Pass it on to the EMT.
+     * Pass it on to EMT(0).
      */
-    PVMREQ pReq;
-    int rc = VMR3ReqCallU(pVM->pUVM, 0, &pReq, RT_INDEFINITE_WAIT, 0, (PFNRT)dbgfR3OSDeregister, 2, pVM, pReg);
-    if (RT_SUCCESS(rc))
-        rc = pReq->iStatus;
-    VMR3ReqFree(pReq);
-
-    return rc;
+    return VMR3ReqCallWaitU(pVM->pUVM, 0 /*idDstCpu*/, (PFNRT)dbgfR3OSDeregister, 2, pVM, pReg);
 }
 
 
@@ -332,15 +320,9 @@ VMMR3DECL(int) DBGFR3OSDetect(PVM pVM, char *pszName, size_t cchName)
         *pszName = '\0';
 
     /*
-     * Pass it on to the EMT.
+     * Pass it on to EMT(0).
      */
-    PVMREQ pReq;
-    int rc = VMR3ReqCallU(pVM->pUVM, 0, &pReq, RT_INDEFINITE_WAIT, 0, (PFNRT)dbgfR3OSDetect, 3, pVM, pszName, cchName);
-    if (RT_SUCCESS(rc))
-        rc = pReq->iStatus;
-    VMR3ReqFree(pReq);
-
-    return rc;
+    return VMR3ReqCallWaitU(pVM->pUVM, 0 /*idDstCpu*/, (PFNRT)dbgfR3OSDetect, 3, pVM, pszName, cchName);
 }
 
 
@@ -416,16 +398,10 @@ VMMR3DECL(int) DBGFR3OSQueryNameAndVersion(PVM pVM, char *pszName, size_t cchNam
         *pszVersion = '\0';
 
     /*
-     * Pass it on to the EMT.
+     * Pass it on to EMT(0).
      */
-    PVMREQ pReq;
-    int rc = VMR3ReqCallU(pVM->pUVM, 0, &pReq, RT_INDEFINITE_WAIT, 0, (PFNRT)dbgfR3OSQueryNameAndVersion,
-                          5, pVM, pszName, cchName, pszVersion, cchVersion);
-    if (RT_SUCCESS(rc))
-        rc = pReq->iStatus;
-    VMR3ReqFree(pReq);
-
-    return rc;
+    return VMR3ReqCallWaitU(pVM->pUVM, 0 /*idDstCpu*/,
+                            (PFNRT)dbgfR3OSQueryNameAndVersion, 5, pVM, pszName, cchName, pszVersion, cchVersion);
 }
 
 
@@ -466,7 +442,7 @@ VMMR3DECL(void *) DBGFR3OSQueryInterface(PVM pVM, DBGFOSINTERFACE enmIf)
     AssertMsgReturn(enmIf > DBGFOSINTERFACE_INVALID && enmIf < DBGFOSINTERFACE_END, ("%d\n", enmIf), NULL);
 
     /*
-     * Pass it on to the EMT.
+     * Pass it on to an EMT.
      */
     void *pvIf = NULL;
     PVMREQ pReq;
