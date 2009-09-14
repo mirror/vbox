@@ -223,16 +223,15 @@ int vmR3EmulationThreadWithId(RTTHREAD ThreadSelf, PUVMCPU pUVCpu, VMCPUID idCpu
         if (    RT_SUCCESS(rc)
             &&  pUVM->pVM)
         {
-            PVM     pVM  = pUVM->pVM;
-            PVMCPU pVCpu = &pVM->aCpus[idCpu];
+            PVM     pVM   = pUVM->pVM;
+            PVMCPU  pVCpu = &pVM->aCpus[idCpu];
             if (    pVM->enmVMState == VMSTATE_RUNNING
                 &&  VMCPUSTATE_IS_STARTED(VMCPU_GET_STATE(pVCpu)))
             {
                 rc = EMR3ExecuteVM(pVM, pVCpu);
                 Log(("vmR3EmulationThread: EMR3ExecuteVM() -> rc=%Rrc, enmVMState=%d\n", rc, pVM->enmVMState));
-                if (   EMGetState(pVCpu) == EMSTATE_GURU_MEDITATION
-                    && pVM->enmVMState == VMSTATE_RUNNING)
-                    vmR3SetState(pVM, VMSTATE_GURU_MEDITATION);
+                if (EMGetState(pVCpu) == EMSTATE_GURU_MEDITATION)
+                    vmR3SetGuruMeditation(pVM);
             }
         }
 
@@ -240,21 +239,25 @@ int vmR3EmulationThreadWithId(RTTHREAD ThreadSelf, PUVMCPU pUVCpu, VMCPUID idCpu
 
 
     /*
-     * Exiting.
+     * Cleanup and exit.
+     * If EMT(0) called VMR3Destroy, EMT(0) will do all the terminating here.
      */
     Log(("vmR3EmulationThread: Terminating emulation thread! Thread=%#x pUVM=%p rc=%Rrc enmBefore=%d enmVMState=%d\n",
          ThreadSelf, pUVM, rc, enmBefore, pUVM->pVM ? pUVM->pVM->enmVMState : VMSTATE_TERMINATED));
-    if (pUVM->vm.s.fEMTDoesTheCleanup)
+    if (    pUVM->vm.s.fEMTDoesTheCleanup
+        &&  idCpu == 0)
     {
         Log(("vmR3EmulationThread: executing delayed Destroy\n"));
         Assert(pUVM->pVM);
         vmR3Destroy(pUVM->pVM);
-        vmR3DestroyFinalBitFromEMT(pUVM);
+        vmR3DestroyFinalBitFromEMT(pUVM, idCpu);
+        /* The pUVM structure is now invliad. */
+        pUVCpu = NULL;
+        pUVM = NULL;
     }
     else
     {
-        vmR3DestroyFinalBitFromEMT(pUVM);
-
+        vmR3DestroyFinalBitFromEMT(pUVM, idCpu);
         pUVCpu->vm.s.NativeThreadEMT = NIL_RTNATIVETHREAD;
     }
     Log(("vmR3EmulationThread: EMT is terminated.\n"));

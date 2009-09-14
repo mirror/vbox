@@ -677,7 +677,7 @@ typedef struct VM
 {
     /** The state of the VM.
      * This field is read only to everyone except the VM and EM. */
-    VMSTATE                     enmVMState;
+    VMSTATE volatile            enmVMState;
     /** Forced action flags.
      * See the VM_FF_* \#defines. Updated atomically.
      */
