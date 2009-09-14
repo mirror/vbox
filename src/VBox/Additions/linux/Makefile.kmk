@@ -92,18 +92,27 @@ VBOX_LNX_ADD_MODULES = \
 #
 # All the bin files that go into the archives.
 #
-VBOX_LNX_ADD_INS_FILES := $(addprefix $(VBOX_LNX_ADD_INS_OUT_DIR)/,$(VBOX_LNX_ADD_STRIP_BIN) $(VBOX_LNX_ADD_STRIP_OBJ))
+VBOX_LNX_ADD_DBG_SYM_FILES := $(addsuffix .dbgsym,$(VBOX_LNX_ADD_STRIP_BIN))
+VBOX_LNX_ADD_INS_FILES := $(addprefix $(VBOX_LNX_ADD_INS_OUT_DIR)/,$(VBOX_LNX_ADD_STRIP_BIN) $(VBOX_LNX_ADD_STRIP_OBJ) $(VBOX_LNX_ADD_DBG_SYM_FILES))
 VBOX_LNX_ADD_INS_MODULES := $(addprefix $(VBOX_LNX_ADD_INS_OUT_DIR)/module/,$(VBOX_LNX_ADD_MODULES))
 
 # Cleanup of the the installer directory files
 OTHER_CLEAN += $(VBOX_LNX_ADD_INS_FILES)) $(VBOX_LNX_ADD_INS_MODULES)
 
+# pattern rule for copying the debug info from the VBOX_LNX_ADD_STRIP_BIN files to the installation directory
+$(addprefix $(VBOX_LNX_ADD_INS_OUT_DIR)/,$(VBOX_LNX_ADD_DBG_SYM_FILES)): \
+		$(VBOX_LNX_ADD_INS_OUT_DIR)/%.dbgsym : $(PATH_BIN)/additions/% | $$(dir $$@)
+	$(call MSG_TOOL,copydbg,$<,$@)
+	$(QUIET)objcopy --only-keep-debug $< $@
+
 # pattern rule for stripping and copying the VBOX_LNX_ADD_STRIP_BIN files to the installation directory
 $(addprefix $(VBOX_LNX_ADD_INS_OUT_DIR)/,$(VBOX_LNX_ADD_STRIP_BIN)): \
 		$(VBOX_LNX_ADD_INS_OUT_DIR)/% : $(PATH_BIN)/additions/% \
+		$(VBOX_LNX_ADD_INS_OUT_DIR)/%.dbgsym \
 		| $$(dir $$@)
 	$(call MSG_INST_FILE,$<,$@)
 	$(QUIET)$(INSTALL) -m 0755 $(if $(VBOX_DO_STRIP),-s,) $< $@
+	$(QUIET)objcopy --add-gnu-debuglink=$(addsuffix .dbgsym,$@) $@
 
 # pattern rule for stripping and copying the VBOX_LNX_ADD_STRIP_OBJ files to the installation directory
 $(addprefix $(VBOX_LNX_ADD_INS_OUT_DIR)/,$(VBOX_LNX_ADD_STRIP_OBJ)): \
