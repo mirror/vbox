@@ -72,6 +72,8 @@ static int  vmR3ReqProcessOneU(PUVM pUVM, PVMREQ pReq);
  * @param   cArgs           Number of arguments following in the ellipsis.
  *                          Not possible to pass 64-bit arguments!
  * @param   ...             Function arguments.
+ *
+ * @todo    Add fFlags...
  */
 VMMR3DECL(int) VMR3ReqCall(PVM pVM, VMCPUID idDstCpu, PVMREQ *ppReq, unsigned cMillies, PFNRT pfnFunction, unsigned cArgs, ...)
 {
