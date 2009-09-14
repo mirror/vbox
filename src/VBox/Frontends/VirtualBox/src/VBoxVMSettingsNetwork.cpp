@@ -38,6 +38,7 @@ VBoxVMSettingsNetwork::VBoxVMSettingsNetwork (VBoxVMSettingsNetworkPage *aParent
     : QIWithRetranslateUI <QWidget> (0)
     , mParent (aParent)
     , mValidator (0)
+    , mPolished (false)
 {
     /* Apply UI decorations */
     Ui::VBoxVMSettingsNetwork::setupUi (this);
@@ -64,9 +65,6 @@ VBoxVMSettingsNetwork::VBoxVMSettingsNetwork (VBoxVMSettingsNetworkPage *aParent
     /* Remove tool-button border at MAC */
     mTbMAC->setStyleSheet ("QToolButton {border: 0px none black;}");
 #endif /* Q_WS_MAC */
-
-    /* Hide advanced items initially */
-    toggleAdvanced();
 
     /* Applying language settings */
     retranslateUi();
@@ -257,6 +255,21 @@ QString VBoxVMSettingsNetwork::alternativeName (int aType) const
     }
     Assert (result.isNull() || !result.isEmpty());
     return result;
+}
+
+void VBoxVMSettingsNetwork::showEvent (QShowEvent *aEvent)
+{
+    if (!mPolished)
+    {
+        mPolished = true;
+
+        /* Give the minimum size hint to the first layout column */
+        mNetworkChildGridLayout->setColumnMinimumWidth (0, mLbAttachmentType->width());
+
+        /* Hide advanced items initially */
+        toggleAdvanced();
+    }
+    QWidget::showEvent (aEvent);
 }
 
 void VBoxVMSettingsNetwork::retranslateUi()

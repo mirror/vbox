@@ -54,6 +54,8 @@ public:
 
 protected:
 
+    void showEvent (QShowEvent *aEvent);
+
     void retranslateUi();
 
 private slots:
@@ -74,6 +76,8 @@ private:
     QString mBrgName;
     QString mIntName;
     QString mHoiName;
+
+    bool mPolished;
 };
 
 class VBoxVMSettingsNetworkPage : public VBoxSettingsPage
