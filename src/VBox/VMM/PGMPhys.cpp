@@ -147,15 +147,8 @@ VMMR3DECL(int) PGMR3PhysReadExternal(PVM pVM, RTGCPHYS GCPhys, void *pvBuf, size
                 {
                     pgmUnlock(pVM);
 
-                    PVMREQ pReq = NULL;
-                    int rc = VMR3ReqCall(pVM, VMCPUID_ANY, &pReq, RT_INDEFINITE_WAIT,
-                                         (PFNRT)pgmR3PhysReadExternalEMT, 4, pVM, &GCPhys, pvBuf, cbRead);
-                    if (RT_SUCCESS(rc))
-                    {
-                        rc = pReq->iStatus;
-                        VMR3ReqFree(pReq);
-                    }
-                    return rc;
+                    return VMR3ReqCallWait(pVM, VMCPUID_ANY, (PFNRT)pgmR3PhysReadExternalEMT, 4,
+                                           pVM, &GCPhys, pvBuf, cbRead);
                 }
                 Assert(!PGM_PAGE_IS_MMIO(pPage));
 
@@ -283,15 +276,8 @@ VMMDECL(int) PGMR3PhysWriteExternal(PVM pVM, RTGCPHYS GCPhys, const void *pvBuf,
                 {
                     pgmUnlock(pVM);
 
-                    PVMREQ pReq = NULL;
-                    int rc = VMR3ReqCall(pVM, VMCPUID_ANY, &pReq, RT_INDEFINITE_WAIT,
-                                         (PFNRT)pgmR3PhysWriteExternalEMT, 4, pVM, &GCPhys, pvBuf, cbWrite);
-                    if (RT_SUCCESS(rc))
-                    {
-                        rc = pReq->iStatus;
-                        VMR3ReqFree(pReq);
-                    }
-                    return rc;
+                    return VMR3ReqCallWait(pVM, VMCPUID_ANY, (PFNRT)pgmR3PhysWriteExternalEMT, 4,
+                                           pVM, &GCPhys, pvBuf, cbWrite);
                 }
                 Assert(!PGM_PAGE_IS_MMIO(pPage));
 
@@ -457,15 +443,8 @@ VMMR3DECL(int) PGMR3PhysGCPhys2CCPtrExternal(PVM pVM, RTGCPHYS GCPhys, void **pp
             {
                 pgmUnlock(pVM);
 
-                PVMREQ pReq = NULL;
-                rc = VMR3ReqCall(pVM, VMCPUID_ANY, &pReq, RT_INDEFINITE_WAIT,
-                                 (PFNRT)pgmR3PhysGCPhys2CCPtrDelegated, 4, pVM, &GCPhys, ppv, pLock);
-                if (RT_SUCCESS(rc))
-                {
-                    rc = pReq->iStatus;
-                    VMR3ReqFree(pReq);
-                }
-                return rc;
+                return VMR3ReqCallWait(pVM, VMCPUID_ANY, (PFNRT)pgmR3PhysGCPhys2CCPtrDelegated, 4,
+                                       pVM, &GCPhys, ppv, pLock);
             }
 
             /*

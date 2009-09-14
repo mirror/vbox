@@ -92,10 +92,8 @@ int main(int argc, char **argv)
          * Do testing.
          */
         RTPrintf(TESTCASE ": Testing...\n");
-        PVMREQ pReq1 = NULL;
-        rc = VMR3ReqCall(pVM, VMCPUID_ANY, &pReq1, RT_INDEFINITE_WAIT, (PFNRT)VMMDoHwAccmTest, 1, pVM);
+        rc = VMR3ReqCallWait(pVM, VMCPUID_ANY, (PFNRT)VMMDoHwAccmTest, 1, pVM);
         AssertRC(rc);
-        VMR3ReqFree(pReq1);
 
         STAMR3Dump(pVM, "*");
 
@@ -103,7 +101,7 @@ int main(int argc, char **argv)
          * Cleanup.
          */
         rc = VMR3Destroy(pVM);
-        if (!RT_SUCCESS(rc))
+        if (RT_FAILURE(rc))
         {
             RTPrintf(TESTCASE ": error: failed to destroy vm! rc=%d\n", rc);
             rcRet++;

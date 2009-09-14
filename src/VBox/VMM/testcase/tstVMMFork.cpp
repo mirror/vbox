@@ -135,10 +135,7 @@ int main(int argc, char* argv[])
             {
                 RTPrintf(TESTCASE ": fork() returned fine.\n");
                 RTPrintf(TESTCASE ": testing VM after fork.\n");
-                PVMREQ pReq1 = NULL;
-                rc = VMR3ReqCall(pVM, VMCPUID_ANY, &pReq1, RT_INDEFINITE_WAIT, (PFNRT)VMMDoTest, 1, pVM);
-                AssertRC(rc);
-                VMR3ReqFree(pReq1);
+                VMR3ReqCallWait(pVM, VMCPUID_ANY, (PFNRT)VMMDoTest, 1, pVM);
 
                 STAMR3Dump(pVM, "*");
             }
