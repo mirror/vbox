@@ -142,12 +142,7 @@ static DECLCALLBACK(int) vmR3PowerOff(PVM pVM);
 static void              vmR3DestroyUVM(PUVM pUVM, uint32_t cMilliesEMTWait);
 static void              vmR3AtDtor(PVM pVM);
 static DECLCALLBACK(int) vmR3Reset(PVM pVM);
-static DECLCALLBACK(int) vmR3AtStateDeregisterU(PUVM pUVM, PFNVMATSTATE pfnAtState, void *pvUser);
-static DECLCALLBACK(int) vmR3AtErrorRegisterU(PUVM pUVM, PFNVMATERROR pfnAtError, void *pvUser);
-static DECLCALLBACK(int) vmR3AtErrorDeregisterU(PUVM pUVM, PFNVMATERROR pfnAtError, void *pvUser);
 static int               vmR3SetErrorU(PUVM pUVM, int rc, RT_SRC_POS_DECL, const char *pszFormat, ...);
-static DECLCALLBACK(int) vmR3AtRuntimeErrorRegisterU(PUVM pUVM, PFNVMATRUNTIMEERROR pfnAtRuntimeError, void *pvUser);
-static DECLCALLBACK(int) vmR3AtRuntimeErrorDeregisterU(PUVM pUVM, PFNVMATRUNTIMEERROR pfnAtRuntimeError, void *pvUser);
 
 
 /**
@@ -424,7 +419,7 @@ static int vmR3CreateUVM(uint32_t cCpus, PUVM *ppUVM)
     /*
      * Create and initialize the UVM.
      */
-    PUVM pUVM = (PUVM)RTMemAllocZ(RT_OFFSETOF(UVM, aCpus[cCpus]));
+    PUVM pUVM = (PUVM)RTMemPageAllocZ(RT_OFFSETOF(UVM, aCpus[cCpus]));
     AssertReturn(pUVM, VERR_NO_MEMORY);
     pUVM->u32Magic = UVM_MAGIC;
     pUVM->cCpus = cCpus;
@@ -2782,38 +2777,16 @@ VMMR3DECL(int)   VMR3AtErrorRegister(PVM pVM, PFNVMATERROR pfnAtError, void *pvU
 VMMR3DECL(int)   VMR3AtErrorRegisterU(PUVM pUVM, PFNVMATERROR pfnAtError, void *pvUser)
 {
     LogFlow(("VMR3AtErrorRegister: pfnAtError=%p pvUser=%p\n", pfnAtError, pvUser));
-    AssertPtrReturn(pfnAtError, VERR_INVALID_PARAMETER);
 
     /*
-     * Make sure we're in EMT (to avoid the logging).
+     * Validate input.
      */
-    PVMREQ pReq;
-    int rc = VMR3ReqCallU(pUVM, VMCPUID_ANY, &pReq, RT_INDEFINITE_WAIT, 0, (PFNRT)vmR3AtErrorRegisterU, 3, pUVM, pfnAtError, pvUser);
-    if (RT_FAILURE(rc))
-        return rc;
-    rc = pReq->iStatus;
-    VMR3ReqFree(pReq);
+    AssertPtrReturn(pfnAtError, VERR_INVALID_PARAMETER);
+    UVM_ASSERT_VALID_EXT_RETURN(pUVM, VERR_INVALID_VM_HANDLE);
 
-    LogFlow(("VMR3AtErrorRegister: returns %Rrc\n", rc));
-    return rc;
-}
-
-
-/**
- * Registers a VM error callback.
- *
- * @returns VBox status code.
- * @param   pUVM            Pointer to the user mode VM structure.
- * @param   pfnAtError      Pointer to callback.
- * @param   pvUser          User argument.
- * @thread  EMT
- */
-static DECLCALLBACK(int) vmR3AtErrorRegisterU(PUVM pUVM, PFNVMATERROR pfnAtError, void *pvUser)
-{
     /*
      * Allocate a new record.
      */
-
     PVMATERROR pNew = (PVMATERROR)MMR3HeapAllocU(pUVM, MM_TAG_VM, sizeof(*pNew));
     if (!pNew)
         return VERR_NO_MEMORY;
@@ -2842,46 +2815,17 @@ static DECLCALLBACK(int) vmR3AtErrorRegisterU(PUVM pUVM, PFNVMATERROR pfnAtError
  * @param   pvUser          User argument.
  * @thread  Any.
  */
-VMMR3DECL(int)   VMR3AtErrorDeregister(PVM pVM, PFNVMATERROR pfnAtError, void *pvUser)
+VMMR3DECL(int) VMR3AtErrorDeregister(PVM pVM, PFNVMATERROR pfnAtError, void *pvUser)
 {
     LogFlow(("VMR3AtErrorDeregister: pfnAtError=%p pvUser=%p\n", pfnAtError, pvUser));
 
     /*
      * Validate input.
      */
-    if (!pfnAtError)
-    {
-        AssertMsgFailed(("callback is required\n"));
-        return VERR_INVALID_PARAMETER;
-    }
+    AssertPtrReturn(pfnAtError, VERR_INVALID_PARAMETER);
+    VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
 
-    /*
-     * Make sure we're in EMT (to avoid the logging).
-     */
-    PVMREQ pReq;
-    int rc = VMR3ReqCall(pVM, VMCPUID_ANY, &pReq, RT_INDEFINITE_WAIT, (PFNRT)vmR3AtErrorDeregisterU, 3, pVM->pUVM, pfnAtError, pvUser);
-    if (RT_FAILURE(rc))
-        return rc;
-    rc = pReq->iStatus;
-    VMR3ReqFree(pReq);
-
-    LogFlow(("VMR3AtErrorDeregister: returns %Rrc\n", rc));
-    return rc;
-}
-
-
-/**
- * Deregisters a VM error callback.
- *
- * @returns VBox status code.
- * @param   pUVM            Pointer to the user mode VM structure.
- * @param   pfnAtError      Pointer to callback.
- * @param   pvUser          User argument.
- * @thread  EMT
- */
-static DECLCALLBACK(int)    vmR3AtErrorDeregisterU(PUVM pUVM, PFNVMATERROR pfnAtError, void *pvUser)
-{
-    LogFlow(("vmR3AtErrorDeregisterU: pfnAtError=%p pvUser=%p\n", pfnAtError, pvUser));
+    PUVM pUVM = pVM->pUVM;
     RTCritSectEnter(&pUVM->vm.s.AtErrorCritSect);
 
     /*
@@ -3074,42 +3018,13 @@ VMMR3DECL(int)   VMR3AtRuntimeErrorRegister(PVM pVM, PFNVMATRUNTIMEERROR pfnAtRu
     /*
      * Validate input.
      */
-    if (!pfnAtRuntimeError)
-    {
-        AssertMsgFailed(("callback is required\n"));
-        return VERR_INVALID_PARAMETER;
-    }
+    AssertPtrReturn(pfnAtRuntimeError, VERR_INVALID_PARAMETER);
+    VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
 
-    /*
-     * Make sure we're in EMT (to avoid the logging).
-     */
-    PVMREQ pReq;
-    int rc = VMR3ReqCall(pVM, VMCPUID_ANY, &pReq, RT_INDEFINITE_WAIT, (PFNRT)vmR3AtRuntimeErrorRegisterU, 3, pVM->pUVM, pfnAtRuntimeError, pvUser);
-    if (RT_FAILURE(rc))
-        return rc;
-    rc = pReq->iStatus;
-    VMR3ReqFree(pReq);
-
-    LogFlow(("VMR3AtRuntimeErrorRegister: returns %Rrc\n", rc));
-    return rc;
-}
-
-
-/**
- * Registers a VM runtime error callback.
- *
- * @returns VBox status code.
- * @param   pUVM            Pointer to the user mode VM structure.
- * @param   pfnAtRuntimeError   Pointer to callback.
- * @param   pvUser              User argument.
- * @thread  EMT
- */
-static DECLCALLBACK(int)    vmR3AtRuntimeErrorRegisterU(PUVM pUVM, PFNVMATRUNTIMEERROR pfnAtRuntimeError, void *pvUser)
-{
     /*
      * Allocate a new record.
      */
-
+    PUVM pUVM = pVM->pUVM;
     PVMATRUNTIMEERROR pNew = (PVMATRUNTIMEERROR)MMR3HeapAllocU(pUVM, MM_TAG_VM, sizeof(*pNew));
     if (!pNew)
         return VERR_NO_MEMORY;
@@ -3145,39 +3060,10 @@ VMMR3DECL(int)   VMR3AtRuntimeErrorDeregister(PVM pVM, PFNVMATRUNTIMEERROR pfnAt
     /*
      * Validate input.
      */
-    if (!pfnAtRuntimeError)
-    {
-        AssertMsgFailed(("callback is required\n"));
-        return VERR_INVALID_PARAMETER;
-    }
+    AssertPtrReturn(pfnAtRuntimeError, VERR_INVALID_PARAMETER);
+    VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
 
-    /*
-     * Make sure we're in EMT (to avoid the logging).
-     */
-    PVMREQ pReq;
-    int rc = VMR3ReqCall(pVM, VMCPUID_ANY, &pReq, RT_INDEFINITE_WAIT, (PFNRT)vmR3AtRuntimeErrorDeregisterU, 3, pVM->pUVM, pfnAtRuntimeError, pvUser);
-    if (RT_FAILURE(rc))
-        return rc;
-    rc = pReq->iStatus;
-    VMR3ReqFree(pReq);
-
-    LogFlow(("VMR3AtRuntimeErrorDeregister: returns %Rrc\n", rc));
-    return rc;
-}
-
-
-/**
- * Deregisters a VM runtime error callback.
- *
- * @returns VBox status code.
- * @param   pUVM            Pointer to the user mode VM structure.
- * @param   pfnAtRuntimeError   Pointer to callback.
- * @param   pvUser              User argument.
- * @thread  EMT
- */
-static DECLCALLBACK(int)    vmR3AtRuntimeErrorDeregisterU(PUVM pUVM, PFNVMATRUNTIMEERROR pfnAtRuntimeError, void *pvUser)
-{
-    LogFlow(("vmR3AtRuntimeErrorDeregisterU: pfnAtRuntimeError=%p pvUser=%p\n", pfnAtRuntimeError, pvUser));
+    PUVM pUVM = pVM->pUVM;
     RTCritSectEnter(&pUVM->vm.s.AtErrorCritSect);
 
     /*
