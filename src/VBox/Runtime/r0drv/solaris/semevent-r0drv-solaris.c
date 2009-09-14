@@ -154,8 +154,12 @@ RTDECL(int)  RTSemEventSignal(RTSEMEVENT EventSem)
     if (!fAcquired)
     {
         if (curthread->t_intr && getpil() < DISP_LEVEL)
-            swtch();
-
+        {
+            RTTHREADPREEMPTSTATE PreemptState = RTTHREADPREEMPTSTATE_INITIALIZER;
+            RTThreadPreemptDisable(&PreemptState);
+            preempt();
+            RTThreadPreemptRestore(&PreemptState);
+        }
         mutex_enter(&pEventInt->Mtx);
     }
 
