@@ -245,14 +245,9 @@ void VMMDevCtlSetGuestFilterMask (VMMDevState *pVMMDevState,
     }
     else
     {
-        int rc;
-        PVMREQ pReq;
-
-        rc = VMR3ReqCallVoid (pVM, VMCPUID_ANY, &pReq, RT_INDEFINITE_WAIT,
-                              (PFNRT) vmmdevCtlGuestFilterMask_EMT,
-                              3, pVMMDevState, u32OrMask, u32NotMask);
+        int rc = VMR3ReqCallVoidWait (pVM, VMCPUID_ANY, (PFNRT) vmmdevCtlGuestFilterMask_EMT,
+                                      3, pVMMDevState, u32OrMask, u32NotMask);
         AssertReleaseRC (rc);
-        VMR3ReqFree (pReq);
     }
 }
 

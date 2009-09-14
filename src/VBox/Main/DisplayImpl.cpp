@@ -1693,12 +1693,8 @@ STDMETHODIMP Display::InvalidateAndUpdate()
     alock.leave ();
 
     /* pdm.h says that this has to be called from the EMT thread */
-    PVMREQ pReq;
-    int rcVBox = VMR3ReqCallVoid(pVM, VMCPUID_ANY, &pReq, RT_INDEFINITE_WAIT,
-        (PFNRT)mpDrv->pUpPort->pfnUpdateDisplayAll, 1, mpDrv->pUpPort);
-    if (RT_SUCCESS(rcVBox))
-        VMR3ReqFree(pReq);
-
+    int rcVBox = VMR3ReqCallVoidWait(pVM, VMCPUID_ANY,
+                                     (PFNRT)mpDrv->pUpPort->pfnUpdateDisplayAll, 1, mpDrv->pUpPort);
     alock.enter ();
 
     if (RT_FAILURE(rcVBox))
