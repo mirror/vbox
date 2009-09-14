@@ -165,9 +165,6 @@ typedef struct VMINT
     R3PTRTYPE(PVMERROR)             pErrorR3;
     /** VM Runtime Error Message. */
     R3PTRTYPE(PVMRUNTIMEERROR)      pRuntimeErrorR3;
-    /** Set by VMR3SuspendNoSave; cleared by VMR3Resume; signals the VM is in an
-     * inconsistent state and saving is not allowed. */
-    bool                            fPreventSaveState;
 } VMINT;
 /** Pointer to the VM Internal Data (part of the VM structure). */
 typedef VMINT *PVMINT;
@@ -206,16 +203,20 @@ typedef struct VMINTUSERPERVM
 
     /** Force EMT to terminate. */
     bool volatile                   fTerminateEMT;
-    /** If set the EMT does the final VM cleanup when it exits.
+    /** If set the EMT(0) does the final VM cleanup when it exits.
      * If clear the VMR3Destroy() caller does so. */
     bool                            fEMTDoesTheCleanup;
 
-    /** Critical section for pAtState. */
+    /** Critical section for pAtState and enmPrevVMState. */
     RTCRITSECT                      AtStateCritSect;
     /** List of registered state change callbacks. */
     PVMATSTATE                      pAtState;
     /** List of registered state change callbacks. */
     PVMATSTATE                     *ppAtStateNext;
+    /** The previous VM state.
+     * This is mainly used for the 'Resetting' state, but may come in handy later
+     * and when debugging. */
+    VMSTATE                         enmPrevVMState;
 
     /** Critical section for pAtError and pAtRuntimeError. */
     RTCRITSECT                      AtErrorCritSect;
@@ -415,8 +416,8 @@ void                vmSetErrorCopy(PVM pVM, int rc, RT_SRC_POS_DECL, const char 
 DECLCALLBACK(int)   vmR3SetRuntimeError(PVM pVM, uint32_t fFlags, const char *pszErrorId, char *pszMessage);
 DECLCALLBACK(int)   vmR3SetRuntimeErrorV(PVM pVM, uint32_t fFlags, const char *pszErrorId, const char *pszFormat, va_list *pVa);
 void                vmSetRuntimeErrorCopy(PVM pVM, uint32_t fFlags, const char *pszErrorId, const char *pszFormat, va_list va);
-void                vmR3DestroyFinalBitFromEMT(PUVM pUVM);
-void                vmR3SetState(PVM pVM, VMSTATE enmStateNew);
+void                vmR3DestroyFinalBitFromEMT(PUVM pUVM, VMCPUID idCpu);
+void                vmR3SetGuruMeditation(PVM pVM);
 
 RT_C_DECLS_END
 

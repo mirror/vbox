@@ -5617,14 +5617,14 @@ HRESULT Console::removeSharedFolder (CBSTR aName)
  *  @note Locks the Console object for writing.
  */
 DECLCALLBACK(void)
-Console::vmstateChangeCallback (PVM aVM, VMSTATE aState, VMSTATE aOldState,
-                                void *aUser)
+Console::vmstateChangeCallback(PVM aVM, VMSTATE aState, VMSTATE aOldState,
+                               void *aUser)
 {
-    LogFlowFunc (("Changing state from %d to %d (aVM=%p)\n",
-                  aOldState, aState, aVM));
+    LogFlowFunc(("Changing state from %d to %d (aVM=%p)\n",
+                 aOldState, aState, aVM));
 
-    Console *that = static_cast <Console *> (aUser);
-    AssertReturnVoid (that);
+    Console *that = static_cast<Console *> (aUser);
+    AssertReturnVoid(that);
 
     AutoCaller autoCaller(that);
 
@@ -5632,8 +5632,8 @@ Console::vmstateChangeCallback (PVM aVM, VMSTATE aState, VMSTATE aOldState,
      * been already called. In such case this VMSTATE change is a result of:
      * 1) powerDown() called from uninit() itself, or
      * 2) VM-(guest-)initiated power off. */
-    AssertReturnVoid (autoCaller.isOk() ||
-                      autoCaller.state() == InUninit);
+    AssertReturnVoid(   autoCaller.isOk()
+                     || autoCaller.state() == InUninit);
 
     switch (aState)
     {
@@ -5650,28 +5650,26 @@ Console::vmstateChangeCallback (PVM aVM, VMSTATE aState, VMSTATE aOldState,
             /* Do we still think that it is running? It may happen if this is a
              * VM-(guest-)initiated shutdown/poweroff.
              */
-            if (that->mMachineState != MachineState_Stopping &&
-                that->mMachineState != MachineState_Saving &&
-                that->mMachineState != MachineState_Restoring)
+            if (   that->mMachineState != MachineState_Stopping
+                && that->mMachineState != MachineState_Saving
+                && that->mMachineState != MachineState_Restoring)
             {
-                LogFlowFunc (("VM has powered itself off but Console still "
-                              "thinks it is running. Notifying.\n"));
+                LogFlowFunc(("VM has powered itself off but Console still thinks it is running. Notifying.\n"));
 
                 /* prevent powerDown() from calling VMR3PowerOff() again */
-                Assert (that->mVMPoweredOff == false);
+                Assert(that->mVMPoweredOff == false);
                 that->mVMPoweredOff = true;
 
                 /* we are stopping now */
-                that->setMachineState (MachineState_Stopping);
+                that->setMachineState(MachineState_Stopping);
 
                 /* Setup task object and thread to carry out the operation
                  * asynchronously (if we call powerDown() right here but there
                  * is one or more mpVM callers (added with addVMCaller()) we'll
                  * deadlock).
                  */
-                std::auto_ptr <VMProgressTask> task (
-                    new VMProgressTask (that, NULL /* aProgress */,
-                                        true /* aUsesVMPtr */));
+                std::auto_ptr<VMProgressTask> task(new VMProgressTask(that, NULL /* aProgress */,
+                                                                      true /* aUsesVMPtr */));
 
                  /* If creating a task is falied, this can currently mean one of
                   * two: either Console::uninit() has been called just a ms
@@ -5681,17 +5679,15 @@ Console::vmstateChangeCallback (PVM aVM, VMSTATE aState, VMSTATE aOldState,
                   */
                 if (!task->isOk())
                 {
-                    LogFlowFunc (("Console is already being uninitialized.\n"));
+                    LogFlowFunc(("Console is already being uninitialized.\n"));
                     break;
                 }
 
-                int vrc = RTThreadCreate (NULL, Console::powerDownThread,
-                                          (void *) task.get(), 0,
-                                          RTTHREADTYPE_MAIN_WORKER, 0,
-                                          "VMPowerDown");
-
-                AssertMsgRCBreak (vrc,
-                    ("Could not create VMPowerDown thread (%Rrc)\n", vrc));
+                int vrc = RTThreadCreate(NULL, Console::powerDownThread,
+                                         (void *) task.get(), 0,
+                                         RTTHREADTYPE_MAIN_WORKER, 0,
+                                         "VMPowerDown");
+                AssertMsgRCBreak(vrc, ("Could not create VMPowerDown thread (%Rrc)\n", vrc));
 
                 /* task is now owned by powerDownThread(), so release it */
                 task.release();
@@ -5731,51 +5727,50 @@ Console::vmstateChangeCallback (PVM aVM, VMSTATE aState, VMSTATE aOldState,
                     /* fall through */
                 case MachineState_Stopping:
                     /* successfully powered down */
-                    that->setMachineState (MachineState_PoweredOff);
+                    that->setMachineState(MachineState_PoweredOff);
                     break;
                 case MachineState_Saving:
                     /* successfully saved (note that the machine is already in
                      * the Saved state on the server due to EndSavingState()
                      * called from saveStateThread(), so only change the local
                      * state) */
-                    that->setMachineStateLocally (MachineState_Saved);
+                    that->setMachineStateLocally(MachineState_Saved);
                     break;
                 case MachineState_Starting:
                     /* failed to start, but be patient: set back to PoweredOff
                      * (for similarity with the below) */
-                    that->setMachineState (MachineState_PoweredOff);
+                    that->setMachineState(MachineState_PoweredOff);
                     break;
                 case MachineState_Restoring:
                     /* failed to load the saved state file, but be patient: set
                      * back to Saved (to preserve the saved state file) */
-                    that->setMachineState (MachineState_Saved);
+                    that->setMachineState(MachineState_Saved);
                     break;
             }
-
             break;
         }
 
         case VMSTATE_SUSPENDED:
         {
-            if (aOldState == VMSTATE_RUNNING)
+            /** @todo state/live VMSTATE_SUSPENDING_LS. */
+            if ( aOldState == VMSTATE_SUSPENDING)
             {
                 AutoWriteLock alock(that);
 
                 if (that->mVMStateChangeCallbackDisabled)
                     break;
 
-                /* Change the machine state from Running to Paused */
-                Assert (that->mMachineState == MachineState_Running);
-                that->setMachineState (MachineState_Paused);
+                /* Change the machine state from Running to Paused. */
+                AssertBreak(that->mMachineState == MachineState_Running);
+                that->setMachineState(MachineState_Paused);
             }
-
             break;
         }
 
         case VMSTATE_RUNNING:
         {
-            if (aOldState == VMSTATE_CREATED ||
-                aOldState == VMSTATE_SUSPENDED)
+            if (   aOldState == VMSTATE_POWERING_ON
+                || aOldState == VMSTATE_RESUMING)
             {
                 AutoWriteLock alock(that);
 
@@ -5786,10 +5781,10 @@ Console::vmstateChangeCallback (PVM aVM, VMSTATE aState, VMSTATE aOldState,
                  * to Running */
                 Assert (   (   (   that->mMachineState == MachineState_Starting
                                 || that->mMachineState == MachineState_Paused)
-                            && aOldState == VMSTATE_CREATED)
+                            && aOldState == VMSTATE_POWERING_ON)
                         || (   (   that->mMachineState == MachineState_Restoring
                                 || that->mMachineState == MachineState_Paused)
-                            && aOldState == VMSTATE_SUSPENDED));
+                            && aOldState == VMSTATE_RESUMING));
 
                 that->setMachineState (MachineState_Running);
             }
@@ -5812,7 +5807,6 @@ Console::vmstateChangeCallback (PVM aVM, VMSTATE aState, VMSTATE aOldState,
              *       raised, so it is not worth adding a new externally
              *       visible state for this yet.  */
             that->setMachineState(MachineState_Paused);
-
             break;
         }
 
@@ -5824,10 +5818,9 @@ Console::vmstateChangeCallback (PVM aVM, VMSTATE aState, VMSTATE aOldState,
                 break;
 
             /* Guru are only for running VMs */
-            Assert (Global::IsOnline (that->mMachineState));
+            Assert(Global::IsOnline (that->mMachineState));
 
-            that->setMachineState (MachineState_Stuck);
-
+            that->setMachineState(MachineState_Stuck);
             break;
         }
 

@@ -155,6 +155,8 @@ typedef enum VMSTATE
     VMSTATE_LOADING,
     /** The VM is being powered on */
     VMSTATE_POWERING_ON,
+    /** The VM is being resumed. */
+    VMSTATE_RESUMING,
     /** The VM is runnning. */
     VMSTATE_RUNNING,
     /** Live save: The VM is running and the state is being saved. */
@@ -186,6 +188,8 @@ typedef enum VMSTATE
     VMSTATE_POWERING_OFF_LS,
     /** The VM is switched off, awaiting destruction. */
     VMSTATE_OFF,
+    /** Live save: Waiting for cancellation and transition to VMSTATE_OFF. */
+    VMSTATE_OFF_LS,
     /** The VM is powered off because of a fatal error. */
     VMSTATE_FATAL_ERROR,
     /** Live save: Waiting for cancellation and transition to FatalError. */
