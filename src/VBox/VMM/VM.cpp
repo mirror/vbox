@@ -137,8 +137,7 @@ static void              vmR3DestroyUVM(PUVM pUVM, uint32_t cMilliesEMTWait);
 static void              vmR3AtDtor(PVM pVM);
 static bool              vmR3ValidateStateTransition(VMSTATE enmStateOld, VMSTATE enmStateNew);
 static void              vmR3DoAtState(PVM pVM, PUVM pUVM, VMSTATE enmStateNew, VMSTATE enmStateOld);
-static bool              vmR3TrySetState(PVM pVM, VMSTATE enmStateNew, VMSTATE enmStateOld);
-static unsigned          vmR3TrySetState2(PVM pVM, VMSTATE enmStateNew1, VMSTATE enmStateOld1, VMSTATE enmStateNew2, VMSTATE enmStateOld2);
+static int               vmR3TrySetStateEx(PVM pVM, const char *pszWho, unsigned cTransitions, ...);
 static void              vmR3SetStateLocked(PVM pVM, PUVM pUVM, VMSTATE enmStateNew, VMSTATE enmStateOld);
 static void              vmR3SetState(PVM pVM, VMSTATE enmStateNew, VMSTATE enmStateOld);
 static unsigned          vmR3SetState2(PVM pVM, VMSTATE enmStateNew1, VMSTATE enmStateOld1, VMSTATE enmStateNew2, VMSTATE enmStateOld2);
@@ -1156,9 +1155,9 @@ static DECLCALLBACK(int) vmR3PowerOn(PVM pVM)
     /*
      * Try change the state.
      */
-    AssertMsgReturn(vmR3TrySetState(pVM, VMSTATE_POWERING_ON, VMSTATE_CREATED),
-                    ("%s\n", VMR3GetStateName(pVM->enmVMState)),
-                    VERR_VM_INVALID_VM_STATE);
+    int rc = vmR3TrySetStateEx(pVM, "VMR3PowerOff", 1, VMSTATE_POWERING_ON, VMSTATE_CREATED);
+    if (RT_FAILURE(rc))
+        return rc;
 
     /*
      * Change the state, notify the components and resume the execution.
@@ -1217,11 +1216,13 @@ static DECLCALLBACK(int) vmR3Suspend(PVM pVM, bool fFatal)
      */
     PVMCPU pVCpu = VMMGetCpu(pVM);
     if (pVCpu->idCpu == pVM->cCpus - 1)
-        AssertMsgReturn(vmR3TrySetState2(pVM,
-                                         VMSTATE_SUSPENDING, VMSTATE_RUNNING,
-                                         VMSTATE_SUSPENDING_LS, VMSTATE_RUNNING_LS),
-                        ("%s\n", VMR3GetStateName(pVM->enmVMState)),
-                        VERR_VM_INVALID_VM_STATE);
+    {
+        int rc = vmR3TrySetStateEx(pVM, "VMR3Suspend", 2,
+                                   VMSTATE_SUSPENDING, VMSTATE_RUNNING,
+                                   VMSTATE_SUSPENDING_LS, VMSTATE_RUNNING_LS);
+        if (RT_FAILURE(rc))
+            return rc;
+    }
 
     VMSTATE enmVMState = pVM->enmVMState;
     AssertMsgReturn(    enmVMState == VMSTATE_SUSPENDING
@@ -1319,9 +1320,9 @@ static DECLCALLBACK(int) vmR3Resume(PVM pVM)
     PVMCPU pVCpu = VMMGetCpu(pVM);
     if (pVCpu->idCpu == 0)
     {
-        AssertMsgReturn(vmR3TrySetState(pVM, VMSTATE_RESUMING, VMSTATE_SUSPENDED),
-                        ("%s\n", VMR3GetStateName(pVM->enmVMState)),
-                        VERR_VM_INVALID_VM_STATE);
+        int rc = vmR3TrySetStateEx(pVM, "VMR3Resume", 1, VMSTATE_RESUMING, VMSTATE_SUSPENDED);
+        if (RT_FAILURE(rc))
+            return rc;
 
         /* Perform resume notifications. */
         PDMR3Resume(pVM);
@@ -1400,18 +1401,21 @@ static DECLCALLBACK(int) vmR3Save(PVM pVM, const char *pszFilename, SSMAFTER enm
     /*
      * Change the state and perform/start the saving.
      */
-    int rc;
-    if (vmR3TrySetState(pVM, VMSTATE_SAVING, VMSTATE_SUSPENDED))
+    int rc = vmR3TrySetStateEx(pVM, "VMR3Save", 2,
+                               VMSTATE_SAVING, VMSTATE_SUSPENDED,
+                               VMSTATE_RUNNING, VMSTATE_RUNNING_LS);
+    if (rc == 1)
     {
         rc = SSMR3Save(pVM, pszFilename, enmAfter, pfnProgress, pvUser);
         vmR3SetState(pVM, VMSTATE_SUSPENDED, VMSTATE_SAVING);
     }
-    else if (vmR3TrySetState(pVM, VMSTATE_RUNNING, VMSTATE_RUNNING_LS))
+    else if (rc == 2)
     {
         rc = SSMR3LiveToFile(pVM, pszFilename, enmAfter, pfnProgress, pvUser, ppSSM);
         /* (We're not subject to cancellation just yet.) */
     }
-
+    else
+        Assert(RT_FAILURE(rc));
     return rc;
 }
 
@@ -1578,13 +1582,13 @@ static DECLCALLBACK(int) vmR3Load(PVM pVM, const char *pszFilename, PFNVMPROGRES
      * Always perform a relocation round afterwards to make sure hypervisor
      * selectors and such are correct.
      */
-    if (!vmR3TrySetState2(pVM,
-                          VMSTATE_LOADING, VMSTATE_CREATED,
-                          VMSTATE_LOADING, VMSTATE_SUSPENDED))
-        return VMSetError(pVM, VERR_VM_INVALID_VM_STATE, RT_SRC_POS, N_("Invalid VM state (%s) for restoring state from '%s'"),
-                          VMR3GetStateName(pVM->enmVMState), pszFilename);
+    int rc = vmR3TrySetStateEx(pVM, "VMR3Load", 2,
+                               VMSTATE_LOADING, VMSTATE_CREATED,
+                               VMSTATE_LOADING, VMSTATE_SUSPENDED);
+    if (RT_FAILURE(rc))
+        return rc;
 
-    int rc = SSMR3Load(pVM, pszFilename, SSMAFTER_RESUME, pfnProgress,  pvUser);
+    rc = SSMR3Load(pVM, pszFilename, SSMAFTER_RESUME, pfnProgress,  pvUser);
     if (RT_SUCCESS(rc))
     {
         VMR3Relocate(pVM, 0 /*offDelta*/);
@@ -1843,9 +1847,9 @@ VMMR3DECL(int) VMR3Destroy(PVM pVM)
     /*
      * Change VM state to destroying and unlink the VM.
      */
-    AssertLogRelMsgReturn(vmR3TrySetState(pVM, VMSTATE_DESTROYING, VMSTATE_OFF),
-                          ("%s\n", VMR3GetStateName(pVM->enmVMState)),
-                          VERR_VM_INVALID_VM_STATE);
+    int rc = vmR3TrySetStateEx(pVM, "VMR3Destroy", 1, VMSTATE_DESTROYING, VMSTATE_OFF);
+    if (RT_FAILURE(rc))
+        return rc;
 
     /** @todo lock this when we start having multiple machines in a process... */
     PUVM pUVM = pVM->pUVM; AssertPtr(pUVM);
@@ -2746,71 +2750,92 @@ static void vmR3SetStateLocked(PVM pVM, PUVM pUVM, VMSTATE enmStateNew, VMSTATE 
 
 
 /**
- * Tries to set the VM state.
+ * Tries to perform a state transition.
  *
- * @returns true on success, false on failure.
- * @param   pVM             VM handle.
- * @param   enmStateNew     The new state.
- */
-static bool vmR3TrySetState(PVM pVM, VMSTATE enmStateNew, VMSTATE enmStateOld)
-{
-    vmR3ValidateStateTransition(enmStateOld, enmStateNew);
-
-    bool fRc = true;
-    PUVM pUVM = pVM->pUVM;
-    RTCritSectEnter(&pUVM->vm.s.AtStateCritSect);
-    if (pVM->enmVMState == enmStateOld)
-    {
-        pVM->enmVMState = enmStateNew;
-        vmR3DoAtState(pVM, pUVM, enmStateNew, enmStateOld);
-    }
-    else
-    {
-        Log(("vmR3TrySetState: failed enmVMState=%s, enmStateOld=%s, enmStateNew=%s\n",
-             VMR3GetStateName(pVM->enmVMState), VMR3GetStateName(enmStateOld), VMR3GetStateName(enmStateNew)));
-        fRc = false;
-    }
-    RTCritSectLeave(&pUVM->vm.s.AtStateCritSect);
-    return fRc;
-}
-
-
-/**
- * Tries to set the VM state give two alternative transisions.
+ * @returns The 1-based ordinal of the succeeding transition.
+ *          VERR_VM_INVALID_VM_STATE and Assert+LogRel on failure.
  *
- * @returns 1 if the first alternative, 2 if the second, and 0 on failure.
- * @param  pVM              The VM handle.
- * @param  enmStateNew1     New state, alternative 1.
- * @param  enmStateOld1     Old state, alternative 1.
- * @param  enmStateNew2     New state, alternative 2.
- * @param  enmStateOld2     Old state, alternative 2.
+ * @param   pVM                 The VM handle.
+ * @param   pszWho              Who is trying to change it.
+ * @param   cTransitions        The number of transitions in the ellipsis.
+ * @param   ...                 Transition pairs; new, old.
  */
-static unsigned vmR3TrySetState2(PVM pVM, VMSTATE enmStateNew1, VMSTATE enmStateOld1, VMSTATE enmStateNew2, VMSTATE enmStateOld2)
+static int vmR3TrySetStateEx(PVM pVM, const char *pszWho, unsigned cTransitions, ...)
 {
-    vmR3ValidateStateTransition(enmStateOld1, enmStateNew1);
-    vmR3ValidateStateTransition(enmStateOld2, enmStateNew2);
+    va_list va;
+    VMSTATE enmStateNew = VMSTATE_CREATED;
+    VMSTATE enmStateOld = VMSTATE_CREATED;
 
-    PUVM pUVM = pVM->pUVM;
+#ifdef VBOX_STRICT
+    /*
+     * Validate the input first.
+     */
+    va_start(va, cTransitions);
+    for (unsigned i = 0; i < cTransitions; i++)
+    {
+        enmStateNew = (VMSTATE)va_arg(va, /*VMSTATE*/int);
+        enmStateOld = (VMSTATE)va_arg(va, /*VMSTATE*/int);
+        vmR3ValidateStateTransition(enmStateOld, enmStateNew);
+    }
+    va_end(va);
+#endif
+
+    /*
+     * Grab the lock and see if any of the proposed transisions works out.
+     */
+    va_start(va, cTransitions);
+    int     rc          = VERR_VM_INVALID_VM_STATE;
+    PUVM    pUVM        = pVM->pUVM;
     RTCritSectEnter(&pUVM->vm.s.AtStateCritSect);
 
-    unsigned rc;
-    VMSTATE  enmStateOld = pVM->enmVMState;
-    if (enmStateOld == enmStateOld1)
+    VMSTATE enmStateCur = pVM->enmVMState;
+
+    for (unsigned i = 0; i < cTransitions; i++)
     {
-        vmR3SetStateLocked(pVM, pUVM, enmStateNew1, enmStateOld1);
-        rc = 1;
+        enmStateNew = (VMSTATE)va_arg(va, /*VMSTATE*/int);
+        enmStateOld = (VMSTATE)va_arg(va, /*VMSTATE*/int);
+        if (enmStateCur == enmStateOld)
+        {
+            vmR3SetStateLocked(pVM, pUVM, enmStateNew, enmStateOld);
+            rc = i + 1;
+            break;
+        }
     }
-    else if (enmStateOld == enmStateOld2)
+
+    if (RT_FAILURE(rc))
     {
-        vmR3SetStateLocked(pVM, pUVM, enmStateNew2, enmStateOld2);
-        rc = 2;
+        /* bitch */
+        if (cTransitions == 1)
+            LogRel(("%s: %s -> %s failed, because the VM state is actually %s\n",
+                    pszWho, VMR3GetStateName(enmStateOld), VMR3GetStateName(enmStateNew), VMR3GetStateName(enmStateCur)));
+        else
+        {
+            va_end(va);
+            va_start(va, cTransitions);
+            LogRel(("%s:\n", pszWho));
+            for (unsigned i = 0; i < cTransitions; i++)
+            {
+                enmStateNew = (VMSTATE)va_arg(va, /*VMSTATE*/int);
+                enmStateOld = (VMSTATE)va_arg(va, /*VMSTATE*/int);
+                LogRel(("%s%s -> %s",
+                        i ? ", " : " ", VMR3GetStateName(enmStateOld), VMR3GetStateName(enmStateNew)));
+            }
+            LogRel((" failed, because the VM state is actually %s\n", VMR3GetStateName(enmStateCur)));
+        }
+
+        VMSetError(pVM, VERR_VM_INVALID_VM_STATE, RT_SRC_POS,
+                   N_("%s failed because the VM state is %s instead of %s"),
+                   VMR3GetStateName(enmStateCur), VMR3GetStateName(enmStateOld));
+        AssertMsgFailed(("%s: %s -> %s failed, state is actually %s\n",
+                         pszWho, VMR3GetStateName(enmStateOld), VMR3GetStateName(enmStateNew), VMR3GetStateName(enmStateCur)));
     }
-    else
-        rc = 0;
 
     RTCritSectLeave(&pUVM->vm.s.AtStateCritSect);
+    va_end(va);
+    Assert(rc > 0 || rc < 0);
     return rc;
 }
+
 
 
 /**
@@ -2886,10 +2911,19 @@ static unsigned vmR3SetState2(PVM pVM, VMSTATE enmStateNew1, VMSTATE enmStateOld
  */
 void vmR3SetGuruMeditation(PVM pVM)
 {
-    if (vmR3TrySetState(pVM, VMSTATE_GURU_MEDITATION, VMSTATE_RUNNING))
-        return;
-    if (vmR3TrySetState(pVM, VMSTATE_GURU_MEDITATION_LS, VMSTATE_RUNNING_LS))
+    PUVM pUVM = pVM->pUVM;
+    RTCritSectEnter(&pUVM->vm.s.AtStateCritSect);
+
+    VMSTATE enmStateCur = pVM->enmVMState;
+    if (enmStateCur == VMSTATE_RUNNING)
+        vmR3SetStateLocked(pVM, pUVM, VMSTATE_GURU_MEDITATION, VMSTATE_RUNNING);
+    else if (enmStateCur == VMSTATE_RUNNING_LS)
+    {
+        vmR3SetStateLocked(pVM, pUVM, VMSTATE_GURU_MEDITATION_LS, VMSTATE_RUNNING_LS);
         SSMR3Cancel(pVM);
+    }
+
+    RTCritSectLeave(&pUVM->vm.s.AtStateCritSect);
 }
 
 
