@@ -194,6 +194,258 @@ VMMR3DECL(int) VMR3ReqCallEx(PVM pVM, VMCPUID idDstCpu, PVMREQ *ppReq, unsigned 
 
 
 /**
+ * Convenience wrapper for VMR3ReqCallU.
+ *
+ * This assumes (1) you're calling a function that returns an VBox status code,
+ * (2) that you want it's return code on success, and (3) that you wish to wait
+ * for ever for it to return.
+ *
+ * @returns VBox status code.  In the unlikely event that VMR3ReqCallVU fails,
+ *          its status code is return.  Otherwise, the status of pfnFunction is
+ *          returned.
+ *
+ * @param   pVM             Pointer to the shared VM structure.
+ * @param   idDstCpu        The destination CPU(s). Either a specific CPU ID or
+ *                          one of the following special values:
+ *                              VMCPUID_ANY, VMCPUID_ANY_QUEUE, VMCPUID_ALL or VMCPUID_ALL_REVERSE.
+ * @param   pfnFunction     Pointer to the function to call.
+ * @param   cArgs           Number of arguments following in the ellipsis.
+ *                          Not possible to pass 64-bit arguments!
+ * @param   ...             Function arguments.
+ *
+ * @remarks Use VMR3ReqCallWaitU where possible.
+ */
+VMMR3DECL(int) VMR3ReqCallWait(PVM pVM, VMCPUID idDstCpu, PFNRT pfnFunction, unsigned cArgs, ...)
+{
+    PVMREQ pReq;
+    va_list va;
+    va_start(va, cArgs);
+    int rc = VMR3ReqCallVU(pVM->pUVM, idDstCpu, &pReq, RT_INDEFINITE_WAIT, VMREQFLAGS_VBOX_STATUS,
+                           pfnFunction, cArgs, va);
+    va_end(va);
+    if (RT_SUCCESS(rc))
+        rc = pReq->iStatus;
+    VMR3ReqFree(pReq);
+    return rc;
+}
+
+
+/**
+ * Convenience wrapper for VMR3ReqCallU.
+ *
+ * This assumes (1) you're calling a function that returns an VBox status code,
+ * (2) that you want it's return code on success, and (3) that you wish to wait
+ * for ever for it to return.
+ *
+ * @returns VBox status code.  In the unlikely event that VMR3ReqCallVU fails,
+ *          its status code is return.  Otherwise, the status of pfnFunction is
+ *          returned.
+ *
+ * @param   pUVM            Pointer to the user mode VM structure.
+ * @param   idDstCpu        The destination CPU(s). Either a specific CPU ID or
+ *                          one of the following special values:
+ *                              VMCPUID_ANY, VMCPUID_ANY_QUEUE, VMCPUID_ALL or VMCPUID_ALL_REVERSE.
+ * @param   pfnFunction     Pointer to the function to call.
+ * @param   cArgs           Number of arguments following in the ellipsis.
+ *                          Not possible to pass 64-bit arguments!
+ * @param   ...             Function arguments.
+ */
+VMMR3DECL(int) VMR3ReqCallWaitU(PUVM pUVM, VMCPUID idDstCpu, PFNRT pfnFunction, unsigned cArgs, ...)
+{
+    PVMREQ pReq;
+    va_list va;
+    va_start(va, cArgs);
+    int rc = VMR3ReqCallVU(pUVM, idDstCpu, &pReq, RT_INDEFINITE_WAIT, VMREQFLAGS_VBOX_STATUS,
+                           pfnFunction, cArgs, va);
+    va_end(va);
+    if (RT_SUCCESS(rc))
+        rc = pReq->iStatus;
+    VMR3ReqFree(pReq);
+    return rc;
+}
+
+
+/**
+ * Convenience wrapper for VMR3ReqCallU.
+ *
+ * This assumes (1) you're calling a function that returns an VBox status code
+ * and that you do not wish to wait for it to complete.
+ *
+ * @returns VBox status code returned by VMR3ReqCallVU.
+ *
+ * @param   pVM             Pointer to the shared VM structure.
+ * @param   idDstCpu        The destination CPU(s). Either a specific CPU ID or
+ *                          one of the following special values:
+ *                              VMCPUID_ANY, VMCPUID_ANY_QUEUE, VMCPUID_ALL or VMCPUID_ALL_REVERSE.
+ * @param   pfnFunction     Pointer to the function to call.
+ * @param   cArgs           Number of arguments following in the ellipsis.
+ *                          Not possible to pass 64-bit arguments!
+ * @param   ...             Function arguments.
+ *
+ * @remarks Use VMR3ReqCallNoWaitU where possible.
+ */
+VMMR3DECL(int) VMR3ReqCallNoWait(PVM pVM, VMCPUID idDstCpu, PFNRT pfnFunction, unsigned cArgs, ...)
+{
+    va_list va;
+    va_start(va, cArgs);
+    int rc = VMR3ReqCallVU(pVM->pUVM, idDstCpu, NULL, 0, VMREQFLAGS_VBOX_STATUS | VMREQFLAGS_NO_WAIT,
+                           pfnFunction, cArgs, va);
+    va_end(va);
+    return rc;
+}
+
+
+/**
+ * Convenience wrapper for VMR3ReqCallU.
+ *
+ * This assumes (1) you're calling a function that returns an VBox status code
+ * and that you do not wish to wait for it to complete.
+ *
+ * @returns VBox status code returned by VMR3ReqCallVU.
+ *
+ * @param   pUVM            Pointer to the user mode VM structure.
+ * @param   idDstCpu        The destination CPU(s). Either a specific CPU ID or
+ *                          one of the following special values:
+ *                              VMCPUID_ANY, VMCPUID_ANY_QUEUE, VMCPUID_ALL or VMCPUID_ALL_REVERSE.
+ * @param   pfnFunction     Pointer to the function to call.
+ * @param   cArgs           Number of arguments following in the ellipsis.
+ *                          Not possible to pass 64-bit arguments!
+ * @param   ...             Function arguments.
+ */
+VMMR3DECL(int) VMR3ReqCallNoWaitU(PUVM pUVM, VMCPUID idDstCpu, PFNRT pfnFunction, unsigned cArgs, ...)
+{
+    va_list va;
+    va_start(va, cArgs);
+    int rc = VMR3ReqCallVU(pUVM, idDstCpu, NULL, 0, VMREQFLAGS_VBOX_STATUS | VMREQFLAGS_NO_WAIT,
+                           pfnFunction, cArgs, va);
+    va_end(va);
+    return rc;
+}
+
+
+/**
+ * Convenience wrapper for VMR3ReqCallU.
+ *
+ * This assumes (1) you're calling a function that returns void, and (2) that
+ * you wish to wait for ever for it to return.
+ *
+ * @returns VBox status code of VMR3ReqCallVU.
+ *
+ * @param   pVM             Pointer to the shared VM structure.
+ * @param   idDstCpu        The destination CPU(s). Either a specific CPU ID or
+ *                          one of the following special values:
+ *                              VMCPUID_ANY, VMCPUID_ANY_QUEUE, VMCPUID_ALL or VMCPUID_ALL_REVERSE.
+ * @param   pfnFunction     Pointer to the function to call.
+ * @param   cArgs           Number of arguments following in the ellipsis.
+ *                          Not possible to pass 64-bit arguments!
+ * @param   ...             Function arguments.
+ *
+ * @remarks Use VMR3ReqCallVoidWaitU where possible.
+ */
+VMMR3DECL(int) VMR3ReqCallVoidWait(PVM pVM, VMCPUID idDstCpu, PFNRT pfnFunction, unsigned cArgs, ...)
+{
+    PVMREQ pReq;
+    va_list va;
+    va_start(va, cArgs);
+    int rc = VMR3ReqCallVU(pVM->pUVM, idDstCpu, &pReq, RT_INDEFINITE_WAIT, VMREQFLAGS_VOID,
+                           pfnFunction, cArgs, va);
+    va_end(va);
+    VMR3ReqFree(pReq);
+    return rc;
+}
+
+
+/**
+ * Convenience wrapper for VMR3ReqCallU.
+ *
+ * This assumes (1) you're calling a function that returns void, and (2) that
+ * you wish to wait for ever for it to return.
+ *
+ * @returns VBox status code of VMR3ReqCallVU.
+ *
+ * @param   pUVM            Pointer to the user mode VM structure.
+ * @param   idDstCpu        The destination CPU(s). Either a specific CPU ID or
+ *                          one of the following special values:
+ *                              VMCPUID_ANY, VMCPUID_ANY_QUEUE, VMCPUID_ALL or VMCPUID_ALL_REVERSE.
+ * @param   pfnFunction     Pointer to the function to call.
+ * @param   cArgs           Number of arguments following in the ellipsis.
+ *                          Not possible to pass 64-bit arguments!
+ * @param   ...             Function arguments.
+ */
+VMMR3DECL(int) VMR3ReqCallVoidWaitU(PUVM pUVM, VMCPUID idDstCpu, PFNRT pfnFunction, unsigned cArgs, ...)
+{
+    PVMREQ pReq;
+    va_list va;
+    va_start(va, cArgs);
+    int rc = VMR3ReqCallVU(pUVM, idDstCpu, &pReq, RT_INDEFINITE_WAIT, VMREQFLAGS_VOID,
+                           pfnFunction, cArgs, va);
+    va_end(va);
+    VMR3ReqFree(pReq);
+    return rc;
+}
+
+
+/**
+ * Convenience wrapper for VMR3ReqCallU.
+ *
+ * This assumes (1) you're calling a function that returns void, and (2) that
+ * you do not wish to wait for it to complete.
+ *
+ * @returns VBox status code of VMR3ReqCallVU.
+ *
+ * @param   pVM             Pointer to the shared VM structure.
+ * @param   idDstCpu        The destination CPU(s). Either a specific CPU ID or
+ *                          one of the following special values:
+ *                              VMCPUID_ANY, VMCPUID_ANY_QUEUE, VMCPUID_ALL or VMCPUID_ALL_REVERSE.
+ * @param   pfnFunction     Pointer to the function to call.
+ * @param   cArgs           Number of arguments following in the ellipsis.
+ *                          Not possible to pass 64-bit arguments!
+ * @param   ...             Function arguments.
+ */
+VMMR3DECL(int) VMR3ReqCallVoidNoWait(PVM pVM, VMCPUID idDstCpu, PFNRT pfnFunction, unsigned cArgs, ...)
+{
+    PVMREQ pReq;
+    va_list va;
+    va_start(va, cArgs);
+    int rc = VMR3ReqCallVU(pVM->pUVM, idDstCpu, &pReq, RT_INDEFINITE_WAIT, VMREQFLAGS_VOID | VMREQFLAGS_NO_WAIT,
+                           pfnFunction, cArgs, va);
+    va_end(va);
+    VMR3ReqFree(pReq);
+    return rc;
+}
+
+
+/**
+ * Convenience wrapper for VMR3ReqCallU.
+ *
+ * This assumes (1) you're calling a function that returns void, and (2) that
+ * you do not wish to wait for it to complete.
+ *
+ * @returns VBox status code of VMR3ReqCallVU.
+ *
+ * @param   pUVM            Pointer to the user mode VM structure.
+ * @param   idDstCpu        The destination CPU(s). Either a specific CPU ID or
+ *                          one of the following special values:
+ *                              VMCPUID_ANY, VMCPUID_ANY_QUEUE, VMCPUID_ALL or VMCPUID_ALL_REVERSE.
+ * @param   pfnFunction     Pointer to the function to call.
+ * @param   cArgs           Number of arguments following in the ellipsis.
+ *                          Not possible to pass 64-bit arguments!
+ * @param   ...             Function arguments.
+ */
+VMMR3DECL(int) VMR3ReqCallVoidNoWaitU(PUVM pUVM, VMCPUID idDstCpu, PFNRT pfnFunction, unsigned cArgs, ...)
+{
+    PVMREQ pReq;
+    va_list va;
+    va_start(va, cArgs);
+    int rc = VMR3ReqCallVU(pUVM, idDstCpu, &pReq, RT_INDEFINITE_WAIT, VMREQFLAGS_VOID | VMREQFLAGS_NO_WAIT,
+                           pfnFunction, cArgs, va);
+    va_end(va);
+    VMR3ReqFree(pReq);
+    return rc;
+}
+
+
+/**
  * Allocate and queue a call request to a void function.
  *
  * If it's desired to poll on the completion of the request set cMillies
@@ -675,7 +927,7 @@ VMMR3DECL(int) VMR3ReqQueue(PVMREQ pReq, unsigned cMillies)
         }
     }
     else if (   pReq->idDstCpu != VMCPUID_ANY   /* for a specific VMCPU? */
-             && pReq->idDstCpu != VMCPUID_ANY_QUEUE 
+             && pReq->idDstCpu != VMCPUID_ANY_QUEUE
              && (   !pUVCpu                     /* and it's not the current thread. */
                  || pUVCpu->idCpu != pReq->idDstCpu))
     {
