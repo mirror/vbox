@@ -192,7 +192,6 @@ ip_input(PNATState pData, struct mbuf *m)
      * if the packet was previously fragmented,
      * but it's not worth the time; just let them time out.)
      *
-     * XXX This should fail, don't fragment yet
      */
     if (ip->ip_off & (IP_MF | IP_OFFMASK))
     {
