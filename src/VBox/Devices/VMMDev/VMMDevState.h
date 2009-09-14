@@ -191,7 +191,7 @@ typedef struct VMMDevState
         /** Partner of ILeds. */
         R3PTRTYPE(PPDMILEDCONNECTORS)       pLedsConnector;
     } SharedFolders;
-#ifdef HC_ARCH_BITS == 32
+#if HC_ARCH_BITS == 32
     uint32_t    uAlignment;
 #endif
     /** The critical section for this device. */
