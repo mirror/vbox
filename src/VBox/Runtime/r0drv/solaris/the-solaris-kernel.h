@@ -48,6 +48,7 @@
 #include <sys/cyclic.h>
 #include <sys/class.h>
 #include <sys/cpuvar.h>
+#include <sys/archsystm.h>
 #include <sys/x_call.h> /* in platform dir */
 #include <sys/x86_archext.h>
 #include <vm/hat.h>

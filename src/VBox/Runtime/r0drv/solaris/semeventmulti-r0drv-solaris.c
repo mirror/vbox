@@ -147,8 +147,12 @@ RTDECL(int)  RTSemEventMultiSignal(RTSEMEVENTMULTI EventMultiSem)
     if (!fAcquired)
     {
         if (curthread->t_intr && getpil() < DISP_LEVEL)
-            swtch();
-
+        {
+            RTTHREADPREEMPTSTATE PreemptState = RTTHREADPREEMPTSTATE_INITIALIZER;
+            RTThreadPreemptDisable(&PreemptState);
+            preempt();
+            RTThreadPreemptRestore(&PreemptState);
+        }
         mutex_enter(&pThis->Mtx);
     }
 
@@ -188,8 +192,12 @@ RTDECL(int)  RTSemEventMultiReset(RTSEMEVENTMULTI EventMultiSem)
     if (!fAcquired)
     {
         if (curthread->t_intr && getpil() < DISP_LEVEL)
-            swtch();
-
+        {
+            RTTHREADPREEMPTSTATE PreemptState = RTTHREADPREEMPTSTATE_INITIALIZER;
+            RTThreadPreemptDisable(&PreemptState);
+            preempt();
+            RTThreadPreemptRestore(&PreemptState);
+        }
         mutex_enter(&pThis->Mtx);
     }
 
