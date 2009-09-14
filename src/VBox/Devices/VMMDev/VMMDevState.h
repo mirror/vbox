@@ -191,10 +191,13 @@ typedef struct VMMDevState
         /** Partner of ILeds. */
         R3PTRTYPE(PPDMILEDCONNECTORS)       pLedsConnector;
     } SharedFolders;
-
+#ifdef HC_ARCH_BITS == 32
+    uint32_t    uAlignment;
+#endif
     /** The critical section for this device. */
     PDMCRITSECT CritSect;
 } VMMDevState;
+AssertCompileMemberAlignment(VMMDevState, CritSect, 8);
 
 void VMMDevNotifyGuest (VMMDevState *pVMMDevState, uint32_t u32EventMask);
 void VMMDevCtlSetGuestFilterMask (VMMDevState *pVMMDevState,
