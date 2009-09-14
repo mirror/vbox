@@ -563,7 +563,7 @@ sorecvfrom(PNATState pData, struct socket *so)
         struct mbuf *m;
         struct ethhdr *eh;
         ssize_t len;
-        u_long n;
+        u_long n = 0;
 #ifdef VBOX_WITH_SLIRP_BSD_MBUF
         uint8_t *buffer;
 #endif
@@ -588,9 +588,16 @@ sorecvfrom(PNATState pData, struct socket *so)
         len = M_FREEROOM(m);
         /* if (so->so_fport != htons(53)) */
         {
-            ioctlsocket(so->s, FIONREAD, &n);
+            static int signaled = 0;
+            int rc = ioctlsocket(so->s, FIONREAD, &n);
+            
+            if (rc == -1 && signaled == 0)
+            {
+                LogRel(("NAT: can't fetch amount of bytes on socket %R[natsock], so message will be truncated.\n", so));
+                signaled = 1;
+            } 
 
-            if (n > len)
+            if (rc > 0 && n > len)
             {
                 n = (m->m_data - m->m_dat) + m->m_len + n + 1;
                 m_inc(m, n);
@@ -1209,9 +1216,19 @@ static void sorecvfrom_icmp_unix(PNATState pData, struct socket *so)
 {
     struct sockaddr_in addr;
     socklen_t addrlen = sizeof(struct sockaddr_in);
-    char buff[1500];
-    int len;
-    len = recvfrom(so->s, buff, 1500, 0,
+    char *buff;
+    int len = 0;
+    int rc = 0;
+    static int signalled = 0;
+    rc = ioctlsocket(so->s, FIONREAD, &len);
+    if (rc != -1 && signalled == 0)
+    {
+        signalled = 1;
+        LogRel(("NAT: fetching number of bits has been failed for ICMP socket \n"));
+    }
+    len = (len != 0 && rc != -1 ? len : 1500);
+    buff = RTMemAlloc(len);
+    len = recvfrom(so->s, buff, len, 0,
                    (struct sockaddr *)&addr, &addrlen);
     /* XXX Check if reply is "correct"? */
 
@@ -1233,5 +1250,6 @@ static void sorecvfrom_icmp_unix(PNATState pData, struct socket *so)
     {
         send_icmp_to_guest(pData, buff, len, so, &addr);
     }
+    RTMemFree(buff);
 }
 #endif /* !RT_OS_WINDOWS */
