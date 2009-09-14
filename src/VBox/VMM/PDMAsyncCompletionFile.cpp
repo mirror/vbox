@@ -592,12 +592,28 @@ static int pdmacFileEpInitialize(PPDMASYNCCOMPLETIONENDPOINT pEndpoint,
         }
     }
 
-    pEpFile->fFlags = fFileFlags;
-
     /* Open with final flags. */
     rc = RTFileOpen(&pEpFile->File, pszUri, fFileFlags);
+    if (rc == VERR_INVALID_FUNCTION)
+    {
+        /*
+         * Solaris doesn't support directio on ZFS so far. :-\
+         * Trying to enable it returns VERR_INVALID_FUNCTION
+         * (ENOTTY). Remove it and hope for the best.
+         * ZFS supports write throttling in case applications
+         * write more data than can be synced to the disk
+         * without blocking the whole application.
+         */
+        fFileFlags &= ~RTFILE_O_NO_CACHE;
+
+        /* Open again. */
+        rc = RTFileOpen(&pEpFile->File, pszUri, fFileFlags);
+    }
+
     if (RT_SUCCESS(rc))
     {
+        pEpFile->fFlags = fFileFlags;
+
         rc = RTFileGetSize(pEpFile->File, (uint64_t *)&pEpFile->cbFile);
         if (RT_SUCCESS(rc))
         {
