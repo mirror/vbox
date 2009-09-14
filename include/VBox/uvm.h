@@ -58,7 +58,7 @@ typedef struct UVMCPU
 #ifdef ___VMInternal_h
         struct VMINTUSERPERVMCPU    s;
 #endif
-        uint8_t                     padding[768];
+        uint8_t                     padding[256];
     } vm;
 } UVMCPU;
 AssertCompileMemberAlignment(UVMCPU, vm, 32);
@@ -96,7 +96,7 @@ typedef struct UVM
 #ifdef ___VMInternal_h
         struct VMINTUSERPERVM   s;
 #endif
-        uint8_t                 padding[768];
+        uint8_t                 padding[256];
     } vm;
 
     /** The MM data. */
