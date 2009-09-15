@@ -2780,6 +2780,7 @@ VMMR0DECL(int) SVMR0Execute64BitsHandler(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, R
     AssertReturn(pVM->cCpus == 1, VERR_TOO_MANY_CPUS);
     Assert(pfnHandler);
 
+    /* Disable interrupts. */
     uOldEFlags = ASMIntDisableFlags();
 
     CPUMSetHyperESP(pVCpu, VMMGetStackRC(pVM));

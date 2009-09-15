@@ -4444,6 +4444,7 @@ VMMR0DECL(int) VMXR0Execute64BitsHandler(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, R
     int             rc, rc2;
     PHWACCM_CPUINFO pCpu;
     RTHCPHYS        pPageCpuPhys;
+    RTHCUINTREG     uOldEFlags;
 
     /* @todo This code is not guest SMP safe (hyper stack and switchers) */
     AssertReturn(pVM->cCpus == 1, VERR_TOO_MANY_CPUS);
@@ -4458,6 +4459,9 @@ VMMR0DECL(int) VMXR0Execute64BitsHandler(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, R
     for (unsigned i=0;i<pVCpu->hwaccm.s.vmx.VMCSCache.Read.cValidEntries;i++)
         Assert(vmxR0IsValidReadField(pVCpu->hwaccm.s.vmx.VMCSCache.Read.aField[i]));
 #endif
+
+    /* Disable interrupts. */
+    uOldEFlags = ASMIntDisableFlags();
 
     pCpu = HWACCMR0GetCurrentCpu();
     pPageCpuPhys = RTR0MemObjGetPagePhysAddr(pCpu->pMemObj, 0);
@@ -4490,12 +4494,14 @@ VMMR0DECL(int) VMXR0Execute64BitsHandler(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, R
         if (pVM)
             VMXR0CheckError(pVM, pVCpu, rc2);
         ASMSetCR4(ASMGetCR4() & ~X86_CR4_VMXE);
+        ASMSetFlags(uOldEFlags);
         return VERR_VMX_VMXON_FAILED;
     }
 
     rc2 = VMXActivateVMCS(pVCpu->hwaccm.s.vmx.pVMCSPhys);
-    AssertRCReturn(rc2, rc2);
+    AssertRC(rc2);
     Assert(!(ASMGetFlags() & X86_EFL_IF));
+    ASMSetFlags(uOldEFlags);
     return rc;
 }
 
