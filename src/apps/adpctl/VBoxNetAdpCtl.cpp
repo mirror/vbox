@@ -108,47 +108,71 @@ static int executeIfconfig(const char *pcszAdapterName, const char *pcszArg1,
 #define MAX_ADDRESSES 128
 #define MAX_ADDRLEN   64
 
-static bool removeAddresses(const char *pszAdapterName)
+static bool removeAddresses(char *pszAdapterName)
 {
-    char szCmd[1024], szBuf[1024];
+    char szArgv[1024], szBuf[1024];
     char aszAddresses[MAX_ADDRESSES][MAX_ADDRLEN];
+    int rc;
+    int fds[2];
+    char * const argv[] = { pszAdapterName, NULL };
+    char * const envp[] = { (char*)"LC_ALL=C", NULL };
 
     memset(aszAddresses, 0, sizeof(aszAddresses));
-    snprintf(szCmd, sizeof(szCmd), VBOXADPCTL_IFCONFIG_PATH " %s", pszAdapterName);
-    FILE *fp = popen(szCmd, "r");
 
-    if (!fp)
+    rc = pipe(fds);
+    if (rc < 0)
         return false;
 
-    int cAddrs;
-    for (cAddrs = 0; cAddrs < MAX_ADDRESSES && fgets(szBuf, sizeof(szBuf), fp);)
-    {
-        int cbSkipWS = strspn(szBuf, " \t");
-#if 0 /* Don't use this! assert() breaks the mac build. Use IPRT or be a rectangular building thing. */
-        assert(cbSkipWS < 20);
-#endif
-        char *pszWord = strtok(szBuf + cbSkipWS, " ");
-        /* We are concerned with IPv6 address lines only. */
-        if (!pszWord || strcmp(pszWord, "inet6"))
-            continue;
-#ifdef RT_OS_LINUX
-        pszWord = strtok(NULL, " ");
-        /* Skip "addr:". */
-        if (!pszWord || strcmp(pszWord, "addr:"))
-            continue;
-#endif
-        pszWord = strtok(NULL, " ");
-        /* Skip link-local addresses. */
-        if (!pszWord || !strncmp(pszWord, "fe80", 4))
-            continue;
-        strncpy(aszAddresses[cAddrs++], pszWord, MAX_ADDRLEN-1);
-    }
-    pclose(fp);
+    pid_t pid = fork();
+    if (pid < 0)
+        return false;
 
-    for (int i = 0; i < cAddrs; i++)
+    if (pid == 0)
     {
-        if (executeIfconfig(pszAdapterName, "inet6", VBOXADPCTL_DEL_CMD, aszAddresses[i]) != EXIT_SUCCESS)
+        close(fds[0]);
+        close(STDOUT_FILENO);
+        rc = dup2(fds[1], STDOUT_FILENO);
+        if (rc >= 0)
+            execve(VBOXADPCTL_IFCONFIG_PATH, argv, envp);
+    }
+    else
+    {
+        close(fds[1]);
+        FILE *fp = fdopen(fds[0], "r");
+        if (!fp)
             return false;
+
+        int cAddrs;
+        for (cAddrs = 0; cAddrs < MAX_ADDRESSES && fgets(szBuf, sizeof(szBuf), fp);)
+        {
+            int cbSkipWS = strspn(szBuf, " \t");
+#if 0 /* Don't use this! assert() breaks the mac build. Use IPRT or be a rectangular building thing. */
+            assert(cbSkipWS < 20);
+#endif
+            char *pszWord = strtok(szBuf + cbSkipWS, " ");
+            /* We are concerned with IPv6 address lines only. */
+            if (!pszWord || strcmp(pszWord, "inet6"))
+                continue;
+#ifdef RT_OS_LINUX
+            pszWord = strtok(NULL, " ");
+            /* Skip "addr:". */
+            if (!pszWord || strcmp(pszWord, "addr:"))
+                continue;
+#endif
+            pszWord = strtok(NULL, " ");
+            /* Skip link-local addresses. */
+            if (!pszWord || !strncmp(pszWord, "fe80", 4))
+                continue;
+            strncpy(aszAddresses[cAddrs++], pszWord, MAX_ADDRLEN-1);
+        }
+        fclose(fp);
+
+        for (int i = 0; i < cAddrs; i++)
+        {
+            if (executeIfconfig(pszAdapterName, "inet6",
+                                VBOXADPCTL_DEL_CMD, aszAddresses[i]) != EXIT_SUCCESS)
+                return false;
+        }
     }
 
     return true;
@@ -178,7 +202,7 @@ int doIOCtl(unsigned long uCmd, void *pData)
 int main(int argc, char *argv[])
 
 {
-    const char *pszAdapterName;
+    char *pszAdapterName;
     const char *pszAddress;
     const char *pszNetworkMask = NULL;
     const char *pszOption = NULL;
