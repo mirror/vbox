@@ -154,6 +154,7 @@
  {"Germany, Eliminate dead keys, paragraph", &main_key_de_nodeadkeys_para},
  {"Germany, Eliminate dead keys, acute replaced by apostrophe, paragraph", &main_key_de_nodeadkeys_noacute_para},
  {"Germany, Dvorak, paragraph", &main_key_de_dvorak_para},
+ {"Germany, Sun dead keys", &main_key_de_sun},
  {"Greece", &main_key_gr},
  {"Greece, Eliminate dead keys", &main_key_gr_nodeadkeys},
  {"Greece, Polytonic", &main_key_gr_polytonic},
