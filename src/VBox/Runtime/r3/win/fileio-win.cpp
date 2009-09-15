@@ -301,7 +301,10 @@ RTR3DECL(int)  RTFileOpen(PRTFILE pFile, const char *pszFilename, unsigned fOpen
     if (fOpen & RTFILE_O_ASYNC_IO)
         dwFlagsAndAttributes |= FILE_FLAG_OVERLAPPED;
     if (fOpen & RTFILE_O_NO_CACHE)
+    {
         dwFlagsAndAttributes |= FILE_FLAG_NO_BUFFERING;
+        dwDesiredAccess &= ~FILE_APPEND_DATA;
+    }
 
     /*
      * Open/Create the file.

@@ -173,7 +173,13 @@ RTDECL(bool) RTFileExists(const char *pszPath);
  *          On Windows the FILE_FLAG_NO_BUFFERING is used (see
  *          http://msdn.microsoft.com/en-us/library/cc644950(VS.85).aspx ).
  *          The buffer address, the transfer size and offset needs to be
- *          aligned to the sector size of the volume.
+ *          aligned to the sector size of the volume. Furthermore FILE_APPEND_DATA
+ *          is disabled. To write beyond the size of file use RTFileSetSize prior
+ *          writing the data to the file.
+ *
+ *          This flag does not work on Solaris if the target filesystem is ZFS. RTFileOpen will return an
+ *          error with that configuration. When used with UFS the same alginment restrictions
+ *          apply like Linux and Windows.
  *
  * @remarks This might not be implemented on all platforms,
  *          and will be ignored on those.
