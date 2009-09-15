@@ -1059,6 +1059,15 @@ static const char main_key_de_dvorak_para[MAIN_LEN][2] =
 "\xf6\xd6","qQ","jJ","kK","xX","bB","mM","wW","vV","#'","\xe4\xc4","\x0\x0","\x0\x0"
 };
 
+/* Germany, Sun dead keys */
+static const char main_key_de_sun[MAIN_LEN][2] =
+{
+"^\xb0","1!","2\"","3\xa7","4$","5%","6&","7/","8(","9)","0=","\xdf?","\x3\x0",
+"qQ","wW","eE","rR","tT","zZ","uU","iI","oO","pP","\xfc\xdc","+*",
+"aA","sS","dD","fF","gG","hH","jJ","kK","lL","\xf6\xd6","\xe4\xc4","#'",
+"yY","xX","cC","vV","bB","nN","mM",",;",".:","-_","<>","\x0\x0","\x0\x0"
+};
+
 /* Greece */
 static const char main_key_gr[MAIN_LEN][2] =
 {
