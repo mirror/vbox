@@ -1223,7 +1223,7 @@ static DECLCALLBACK(int) vmR3Suspend(PVM pVM, bool fFatal)
             return rc;
     }
 
-    VMSTATE enmVMState = pVM->enmVMState;
+    VMSTATE enmVMState = VMR3GetState(pVM);
     AssertMsgReturn(    enmVMState == VMSTATE_SUSPENDING
                     ||  enmVMState == VMSTATE_SUSPENDING_LS,
                     ("%s\n", VMR3GetStateName(enmVMState)),
@@ -1238,16 +1238,23 @@ static DECLCALLBACK(int) vmR3Suspend(PVM pVM, bool fFatal)
         /* Perform suspend notification. */
         PDMR3Suspend(pVM);
 
-        /* Change to the final state. */
-        if (pVM->enmVMState != VMSTATE_SUSPENDING_LS)
-            vmR3SetState(pVM, fFatal ? VMSTATE_FATAL_ERROR : VMSTATE_SUSPENDED, VMSTATE_SUSPENDING);
+        /*
+         * Change to the final state. Live saving makes this a wee bit more
+         * complicated than one would like.
+         */
+        PUVM pUVM = pVM->pUVM;
+        RTCritSectEnter(&pUVM->vm.s.AtStateCritSect);
+        VMSTATE enmVMState = pVM->enmVMState;
+        if (enmVMState != VMSTATE_SUSPENDING_LS)
+            vmR3SetStateLocked(pVM, pUVM, fFatal ? VMSTATE_FATAL_ERROR : VMSTATE_SUSPENDED, VMSTATE_SUSPENDING);
         else if (!fFatal)
-            vmR3SetState(pVM, VMSTATE_SUSPENDED_LS, VMSTATE_SUSPENDING_LS);
+            vmR3SetStateLocked(pVM, pUVM, VMSTATE_SUSPENDED_LS, VMSTATE_SUSPENDING_LS);
         else
         {
-            vmR3SetState(pVM, VMSTATE_FATAL_ERROR_LS, VMSTATE_SUSPENDING_LS);
+            vmR3SetStateLocked(pVM, pUVM, VMSTATE_FATAL_ERROR_LS, VMSTATE_SUSPENDING_LS);
             SSMR3Cancel(pVM);
         }
+        RTCritSectLeave(&pUVM->vm.s.AtStateCritSect);
     }
 
     return VINF_EM_SUSPEND;
@@ -1336,7 +1343,7 @@ static DECLCALLBACK(int) vmR3Resume(PVM pVM)
      *        the last thread flip the state from Resuming to Running. While the
      *        latter seems easy and perhaps more attractive, the former might be
      *        better wrt TSC/TM... */
-    AssertMsgReturn(pVM->enmVMState == VMSTATE_RUNNING, ("%s\n", VMR3GetStateName(pVM->enmVMState)), VERR_VM_INVALID_VM_STATE);
+    AssertMsgReturn(VMR3GetState(pVM) == VMSTATE_RUNNING, ("%s\n", VMR3GetStateName(VMR3GetState(pVM))), VERR_VM_INVALID_VM_STATE);
     return VINF_EM_RESUME;
 }
 
@@ -1432,7 +1439,7 @@ static DECLCALLBACK(int) vmR3SaveLiveStep2(PVM pVM, PSSMHANDLE pSSM)
 {
     LogFlow(("vmR3SaveLiveStep2: pVM=%p pSSM=%p\n", pVM, pSSM));
     VM_ASSERT_EMT0(pVM);
-    Assert(pVM->enmVMState == VMSTATE_SUSPENDED_LS);
+    Assert(VMR3GetState(pVM) == VMSTATE_SUSPENDED_LS);
 
     int rc = SSMR3LiveDoStep2(pSSM);
     vmR3SetState(pVM, VMSTATE_SUSPENDED, VMSTATE_SUSPENDED_LS);
@@ -1633,7 +1640,7 @@ VMMR3DECL(int) VMR3Load(PVM pVM, const char *pszFilename, PFNVMPROGRESS pfnProgr
     AssertPtrReturn(pszFilename, VERR_INVALID_POINTER);
 
     /*
-     * Request the operation in EMT.
+     * Forward the request to EMT(0).
      */
     int rc = VMR3ReqCallWaitU(pVM->pUVM, 0 /*idDstCpu*/,
                               (PFNRT)vmR3Load, 4, pVM, pszFilename, pfnProgress, pvUser);
@@ -1646,7 +1653,7 @@ VMMR3DECL(int) VMR3Load(PVM pVM, const char *pszFilename, PFNVMPROGRESS pfnProgr
  * Worker for VMR3PowerOff that does the actually powering off on EMT(0) after
  * cycling thru the other EMTs first.
  *
- * @returns VBox status code.
+ * @returns VBox strict status code.
  *
  * @param   pVM     The VM handle.
  *
@@ -1662,43 +1669,25 @@ static DECLCALLBACK(int) vmR3PowerOff(PVM pVM)
     PVMCPU pVCpu = VMMGetCpu(pVM);
     if (pVCpu->idCpu == pVM->cCpus - 1)
     {
-        PUVM pUVM = pVM->pUVM;
-        RTCritSectEnter(&pUVM->vm.s.AtStateCritSect);
-
-        VMSTATE enmStateNew;
-        VMSTATE enmStateOld = pVM->enmVMState;
-        switch (enmStateOld)
-        {
-            case VMSTATE_RUNNING:
-            case VMSTATE_SUSPENDED:
-            case VMSTATE_DEBUGGING:
-            case VMSTATE_LOAD_FAILURE:
-            case VMSTATE_GURU_MEDITATION:
-            case VMSTATE_FATAL_ERROR:
-                enmStateNew = VMSTATE_POWERING_OFF;
-                break;
-
-            case VMSTATE_RUNNING_LS:
-            case VMSTATE_DEBUGGING_LS:
-            case VMSTATE_GURU_MEDITATION_LS:
-            case VMSTATE_FATAL_ERROR_LS:
-                enmStateNew = VMSTATE_POWERING_OFF_LS;
-                break;
-
-            default:
-                AssertLogRelMsgFailed(("%s\n", VMR3GetStateName(enmStateOld)));
-                RTCritSectLeave(&pUVM->vm.s.AtStateCritSect);
-                return VERR_VM_INVALID_VM_STATE;
-        }
-
-        vmR3SetStateLocked(pVM, pUVM, enmStateNew, enmStateOld);
-        RTCritSectLeave(&pUVM->vm.s.AtStateCritSect);
+        int rc = vmR3TrySetState(pVM, "VMR3PowerOff", 10,
+                                 VMSTATE_POWERING_OFF,    VMSTATE_RUNNING,
+                                 VMSTATE_POWERING_OFF,    VMSTATE_SUSPENDED,
+                                 VMSTATE_POWERING_OFF,    VMSTATE_DEBUGGING,
+                                 VMSTATE_POWERING_OFF,    VMSTATE_LOAD_FAILURE,
+                                 VMSTATE_POWERING_OFF,    VMSTATE_GURU_MEDITATION,
+                                 VMSTATE_POWERING_OFF,    VMSTATE_FATAL_ERROR,
+                                 VMSTATE_POWERING_OFF_LS, VMSTATE_RUNNING_LS,
+                                 VMSTATE_POWERING_OFF_LS, VMSTATE_DEBUGGING_LS,
+                                 VMSTATE_POWERING_OFF_LS, VMSTATE_GURU_MEDITATION_LS,
+                                 VMSTATE_POWERING_OFF_LS, VMSTATE_FATAL_ERROR_LS);
+        if (RT_FAILURE(rc))
+            return rc;
     }
 
     /*
      * Check the state.
      */
-    VMSTATE const enmVMState = pVM->enmVMState;
+    VMSTATE enmVMState = VMR3GetState(pVM);
     AssertMsgReturn(   enmVMState == VMSTATE_POWERING_OFF
                     || enmVMState == VMSTATE_POWERING_OFF_LS,
                     ("%s\n", VMR3GetStateName(enmVMState)),
@@ -1779,7 +1768,7 @@ static DECLCALLBACK(int) vmR3PowerOff(PVM pVM)
 
         PUVM pUVM = pVM->pUVM;
         RTCritSectEnter(&pUVM->vm.s.AtStateCritSect);
-        VMSTATE enmVMState = pVM->enmVMState;
+        enmVMState = pVM->enmVMState;
         if (enmVMState == VMSTATE_POWERING_OFF_LS)
             vmR3SetStateLocked(pVM, pUVM, VMSTATE_OFF_LS, VMSTATE_POWERING_OFF_LS);
         else
@@ -1791,30 +1780,25 @@ static DECLCALLBACK(int) vmR3PowerOff(PVM pVM)
 
 
 /**
- * Power Off the VM.
+ * Power off the VM.
  *
- * @returns 0 on success.
- * @returns VBox error code on failure.
- * @param   pVM     VM which should be destroyed.
+ * @returns VBox status code. When called on EMT, this will be a strict status
+ *          code that has to be propagated up the call stack.
+ *
+ * @param   pVM     The handle of the VM to be powered off.
+ *
  * @thread      Any thread.
  * @vmstate     Suspended, Running, Guru Meditation, Load Failure
- * @vmstateto   Off
+ * @vmstateto   Off or OffLS
  */
 VMMR3DECL(int)   VMR3PowerOff(PVM pVM)
 {
     LogFlow(("VMR3PowerOff: pVM=%p\n", pVM));
+    VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
 
     /*
-     * Validate input.
-     */
-    if (!pVM)
-    {
-        AssertMsgFailed(("Invalid VM pointer\n"));
-        return VERR_INVALID_PARAMETER;
-    }
-
-    /*
-     * Request the operation in EMT. (in reverse order as VCPU 0 does the actual work)
+     * Forward the request to the EMTs in reverse order, making all the other
+     * EMTs stop working before EMT(0) comes and does the actual powering off.
      */
     int rc = VMR3ReqCallWaitU(pVM->pUVM, VMCPUID_ALL_REVERSE, (PFNRT)vmR3PowerOff, 1, pVM);
     LogFlow(("VMR3PowerOff: returns %Rrc\n", rc));
@@ -2354,38 +2338,28 @@ static DECLCALLBACK(int) vmR3Reset(PVM pVM)
 
     /*
      * The first EMT will try change the state to resetting.
+     * We do the live save cancellation inside the state critsect because it
+     * is cleaner and safer.
      */
     if (pVCpu->idCpu == pVM->cCpus - 1)
     {
         PUVM pUVM = pVM->pUVM;
         RTCritSectEnter(&pUVM->vm.s.AtStateCritSect);
-        VMSTATE enmStateOld = pVM->enmVMState;
-        switch (enmStateOld)
-        {
-            case VMSTATE_RUNNING:
-            case VMSTATE_SUSPENDED:
-                vmR3SetStateLocked(pVM, pUVM, VMSTATE_RESETTING, enmStateOld);
-                RTCritSectLeave(&pUVM->vm.s.AtStateCritSect);
-                break;
-
-            case VMSTATE_RUNNING_LS:
-                vmR3SetStateLocked(pVM, pUVM, VMSTATE_RESETTING_LS, enmStateOld);
-                RTCritSectLeave(&pUVM->vm.s.AtStateCritSect);
-
-                SSMR3Cancel(pVM);
-                break;
-
-            default:
-                AssertLogRelMsgFailed(("%s\n", VMR3GetStateName(enmStateOld)));
-                RTCritSectLeave(&pUVM->vm.s.AtStateCritSect);
-                return VERR_VM_INVALID_VM_STATE;
-        }
+        int rc = vmR3TrySetState(pVM, "VMR3Reset", 3,
+                                 VMSTATE_RESETTING,     VMSTATE_RUNNING,
+                                 VMSTATE_RESETTING,     VMSTATE_SUSPENDED,
+                                 VMSTATE_RESETTING_LS,  VMSTATE_RUNNING_LS);
+        if (rc == 3)
+            SSMR3Cancel(pVM);
+        RTCritSectLeave(&pUVM->vm.s.AtStateCritSect);
+        if (RT_FAILURE(rc))
+            return rc;
     }
 
     /*
      * Check the state.
      */
-    VMSTATE enmVMState = pVM->enmVMState;
+    VMSTATE enmVMState = VMR3GetState(pVM);
     AssertLogRelMsgReturn(   enmVMState == VMSTATE_RESETTING
                           || enmVMState == VMSTATE_RESETTING_LS,
                           ("%s\n", VMR3GetStateName(enmVMState)),
@@ -2543,10 +2517,13 @@ VMMR3DECL(const char *) VMR3GetStateName(VMSTATE enmState)
  *
  * @param   enmStateOld         The old (current) state.
  * @param   enmStateNew         The proposed new state.
+ *
+ * @remarks The reference for this is found in doc/vp/VMM.vpp, the VMSTATE
+ *          diagram (under State Machine Diagram).
  */
 static bool vmR3ValidateStateTransition(VMSTATE enmStateOld, VMSTATE enmStateNew)
 {
-#ifdef /*VBOX_STRICT*/ DEBUG_bird
+#ifdef VBOX_STRICT
     switch (enmStateOld)
     {
         case VMSTATE_CREATING:
@@ -2729,7 +2706,9 @@ static void vmR3DoAtState(PVM pVM, PUVM pUVM, VMSTATE enmStateNew, VMSTATE enmSt
                   ("You are not allowed to change the state while in the change callback, except "
                    "from destroying the VM. There are restrictions in the way the state changes "
                    "are propagated up to the EM execution loop and it makes the program flow very "
-                   "difficult to follow.\n"));
+                   "difficult to follow. (%s, expected %s, old %s)\n",
+                   VMR3GetStateName(pVM->enmVMState), VMR3GetStateName(enmStateNew),
+                   VMR3GetStateName(enmStateOld)));
     }
 }
 
@@ -2746,11 +2725,32 @@ static void vmR3SetStateLocked(PVM pVM, PUVM pUVM, VMSTATE enmStateNew, VMSTATE 
 {
     vmR3ValidateStateTransition(enmStateOld, enmStateNew);
 
-    Assert(pVM->enmVMState == enmStateOld);
+    AssertMsg(pVM->enmVMState == enmStateOld,
+              ("%s != %s\n", VMR3GetStateName(pVM->enmVMState), VMR3GetStateName(enmStateOld)));
     pUVM->vm.s.enmPrevVMState = enmStateOld;
     pVM->enmVMState           = enmStateNew;
 
     vmR3DoAtState(pVM, pUVM, enmStateNew, enmStateOld);
+}
+
+
+/**
+ * Sets the current VM state.
+ *
+ * @param   pVM             VM handle.
+ * @param   enmStateNew     The new state.
+ * @param   enmStateOld     The old state (for asserting only).
+ */
+static void vmR3SetState(PVM pVM, VMSTATE enmStateNew, VMSTATE enmStateOld)
+{
+    PUVM pUVM = pVM->pUVM;
+    RTCritSectEnter(&pUVM->vm.s.AtStateCritSect);
+
+    AssertMsg(pVM->enmVMState == enmStateOld,
+              ("%s != %s\n", VMR3GetStateName(pVM->enmVMState), VMR3GetStateName(enmStateOld)));
+    vmR3SetStateLocked(pVM, pUVM, enmStateNew, pVM->enmVMState);
+
+    RTCritSectLeave(&pUVM->vm.s.AtStateCritSect);
 }
 
 
@@ -2809,7 +2809,9 @@ static int vmR3TrySetState(PVM pVM, const char *pszWho, unsigned cTransitions, .
 
     if (RT_FAILURE(rc))
     {
-        /* bitch */
+        /*
+         * Complain about it.
+         */
         if (cTransitions == 1)
             LogRel(("%s: %s -> %s failed, because the VM state is actually %s\n",
                     pszWho, VMR3GetStateName(enmStateOld), VMR3GetStateName(enmStateNew), VMR3GetStateName(enmStateCur)));
@@ -2839,26 +2841,6 @@ static int vmR3TrySetState(PVM pVM, const char *pszWho, unsigned cTransitions, .
     va_end(va);
     Assert(rc > 0 || rc < 0);
     return rc;
-}
-
-
-
-/**
- * Sets the current VM state.
- *
- * @param   pVM             VM handle.
- * @param   enmStateNew     The new state.
- * @param   enmStateOld     The old state (for asserting only).
- */
-static void vmR3SetState(PVM pVM, VMSTATE enmStateNew, VMSTATE enmStateOld)
-{
-    PUVM pUVM = pVM->pUVM;
-    RTCritSectEnter(&pUVM->vm.s.AtStateCritSect);
-
-    AssertMsg(enmStateOld == pVM->enmVMState, ("\n", VMR3GetStateName(enmStateOld), VMR3GetStateName(pVM->enmVMState)));
-    vmR3SetStateLocked(pVM, pUVM, enmStateNew, pVM->enmVMState);
-
-    RTCritSectLeave(&pUVM->vm.s.AtStateCritSect);
 }
 
 
@@ -3612,3 +3594,4 @@ VMMR3DECL(RTTHREAD) VMR3GetVMCPUThreadU(PUVM pUVM)
 
     return pUVCpu->vm.s.ThreadEMT;
 }
+
