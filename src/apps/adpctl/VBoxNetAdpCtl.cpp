@@ -110,7 +110,7 @@ static int executeIfconfig(const char *pcszAdapterName, const char *pcszArg1,
 
 static bool removeAddresses(char *pszAdapterName)
 {
-    char szArgv[1024], szBuf[1024];
+    char szBuf[1024];
     char aszAddresses[MAX_ADDRESSES][MAX_ADDRLEN];
     int rc;
     int fds[2];
