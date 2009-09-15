@@ -34,6 +34,9 @@ public:
 
     QIDialog (QWidget *aParent = 0, Qt::WindowFlags aFlags = 0);
 
+public slots:
+    int exec();
+
 protected:
 
     void showEvent (QShowEvent *aEvent);

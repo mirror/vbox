@@ -41,7 +41,7 @@ void QIDialog::showEvent (QShowEvent * /* aEvent */)
     QSizePolicy policy = sizePolicy();
     if ((policy.horizontalPolicy() == QSizePolicy::Fixed &&
          policy.verticalPolicy() == QSizePolicy::Fixed) ||
-        windowFlags() == Qt::Sheet)
+        (windowFlags() & Qt::Sheet) == Qt::Sheet)
     {
         adjustSize();
         setFixedSize (size());
@@ -60,3 +60,24 @@ void QIDialog::showEvent (QShowEvent * /* aEvent */)
     VBoxGlobal::centerWidget (this, parentWidget(), false);
 }
 
+int QIDialog::exec()
+{
+#if QT_VERSION >= 0x040500
+    /* After 4.5 exec ignores the Qt::Sheet flag. See "New Ways of Using
+     * Dialogs" in http://doc.trolltech.com/qq/QtQuarterly30.pdf why. Because
+     * we are lazy, we recreate the old behavior. */
+    if ((windowFlags() & Qt::Sheet) == Qt::Sheet)
+    {
+        QEventLoop eventLoop;
+        connect(this, SIGNAL(finished(int)),
+                &eventLoop, SLOT(quit()));
+        /* Use the new open call. */
+        open();
+        eventLoop.exec();
+
+        return result();
+    }
+    else
+#endif /* QT_VERSION >= 0x040500 */
+        return QDialog::exec();
+}
