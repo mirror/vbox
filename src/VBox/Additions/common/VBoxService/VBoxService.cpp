@@ -401,7 +401,7 @@ int main(int argc, char **argv)
      * Parse the arguments.
      */
     bool fDaemonize = true;
-    bool fDaemonzied = false;
+    bool fDaemonized = false;
     for (int i = 1; i < argc; i++)
     {
         const char *psz = argv[i];
@@ -432,7 +432,7 @@ int main(int argc, char **argv)
 #endif
             else if (MATCHES("daemonized"))
             {
-                fDaemonzied = true;
+                fDaemonized = true;
                 continue;
             }
             else
@@ -539,7 +539,7 @@ int main(int argc, char **argv)
     /*
      * Daemonize if requested.
      */
-    if (fDaemonize && !fDaemonzied)
+    if (fDaemonize && !fDaemonized)
     {
 #ifdef RT_OS_WINDOWS
         /** @todo Should do something like VBoxSVC here, OR automatically re-register
@@ -556,7 +556,8 @@ int main(int argc, char **argv)
          */
         VBoxServiceVerbose(2, "Starting service dispatcher ...\n");
         if (!StartServiceCtrlDispatcher(&g_aServiceTable[0]))
-            return VBoxServiceError("StartServiceCtrlDispatcher: %u\n", GetLastError());
+            return VBoxServiceError("StartServiceCtrlDispatcher: %u. Please start %s with option -f (foreground)!",
+                                    GetLastError(), g_pszProgName);
         /* Service now lives in the control dispatcher registered above. */
 #else
         VBoxServiceVerbose(1, "Daemonizing...\n");
