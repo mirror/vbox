@@ -7347,7 +7347,6 @@ DECLCALLBACK (int) Console::saveStateThread (RTTHREAD Thread, void *pvUser)
                 break;
             for (size_t i = 0; i < atts.size(); ++ i)
             {
-                PVMREQ pReq;
                 ComPtr<IStorageController> controller;
                 BSTR controllerName;
                 ULONG lInstance;

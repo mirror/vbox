@@ -2252,7 +2252,6 @@ static void atapiParseCmdVirtualATAPI(AHCIATADevState *s)
                         {
                         PAHCIATACONTROLLER pCtl = ATADEVSTATE_2_CONTROLLER(s);
                         PPDMDEVINS pDevIns = ATADEVSTATE_2_DEVINS(s);
-                        PVMREQ pReq;
 
                         PDMCritSectLeave(&pCtl->lock);
                         rc = VMR3ReqCallWait(PDMDevHlpGetVM(pDevIns), VMCPUID_ANY,
