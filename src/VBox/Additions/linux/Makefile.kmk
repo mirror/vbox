@@ -71,7 +71,7 @@ VBOX_LNX_ADD_STRIP_BIN = \
 	vboxvideo_drv_15.so \
 	vboxvideo_drv_16.so \
 	vboxvideo_drv_17.so \
-	mountvboxsf \
+	mount.vboxsf \
 	VBoxOGLarrayspu.so \
 	VBoxOGLcrutil.so \
 	VBoxOGLerrorspu.so \
