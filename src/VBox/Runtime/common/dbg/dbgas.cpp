@@ -1267,9 +1267,9 @@ RTDECL(int) RTDbgAsSymbolAdd(RTDBGAS hDbgAs, const char *pszSymbol, RTUINTPTR Ad
     PRTDBGASINT pDbgAs = hDbgAs;
     RTDBGAS_VALID_RETURN_RC(pDbgAs, VERR_INVALID_HANDLE);
 
-    RTDBGSEGIDX iSeg;
-    RTUINTPTR offSeg;
-    RTDBGMOD hMod = rtDbgAsModuleByAddr(pDbgAs, Addr, &iSeg, &offSeg, NULL);
+    RTDBGSEGIDX iSeg   = NIL_RTDBGSEGIDX; /* shut up gcc */
+    RTUINTPTR   offSeg = 0;
+    RTDBGMOD    hMod   = rtDbgAsModuleByAddr(pDbgAs, Addr, &iSeg, &offSeg, NULL);
     if (hMod == NIL_RTDBGMOD)
         return VERR_NOT_FOUND;
 
@@ -1305,10 +1305,10 @@ RTDECL(int) RTDbgAsSymbolByAddr(RTDBGAS hDbgAs, RTUINTPTR Addr, PRTINTPTR poffDi
     PRTDBGASINT pDbgAs = hDbgAs;
     RTDBGAS_VALID_RETURN_RC(pDbgAs, VERR_INVALID_HANDLE);
 
-    RTDBGSEGIDX iSeg;
-    RTUINTPTR   offSeg;
-    RTUINTPTR   MapAddr;
-    RTDBGMOD    hMod = rtDbgAsModuleByAddr(pDbgAs, Addr, &iSeg, &offSeg, &MapAddr);
+    RTDBGSEGIDX iSeg    = NIL_RTDBGSEGIDX; /* shut up gcc */
+    RTUINTPTR   offSeg  = 0;
+    RTUINTPTR   MapAddr = 0;
+    RTDBGMOD    hMod    = rtDbgAsModuleByAddr(pDbgAs, Addr, &iSeg, &offSeg, &MapAddr);
     if (hMod == NIL_RTDBGMOD)
     {
         if (phMod)
@@ -1354,10 +1354,10 @@ RTDECL(int) RTDbgAsSymbolByAddrA(RTDBGAS hDbgAs, RTUINTPTR Addr, PRTINTPTR poffD
     PRTDBGASINT pDbgAs = hDbgAs;
     RTDBGAS_VALID_RETURN_RC(pDbgAs, VERR_INVALID_HANDLE);
 
-    RTDBGSEGIDX iSeg;
-    RTUINTPTR   offSeg;
-    RTUINTPTR   MapAddr;
-    RTDBGMOD    hMod = rtDbgAsModuleByAddr(pDbgAs, Addr, &iSeg, &offSeg, &MapAddr);
+    RTDBGSEGIDX iSeg    = NIL_RTDBGSEGIDX;
+    RTUINTPTR   offSeg  = 0;
+    RTUINTPTR   MapAddr = 0;
+    RTDBGMOD    hMod    = rtDbgAsModuleByAddr(pDbgAs, Addr, &iSeg, &offSeg, &MapAddr);
     if (hMod == NIL_RTDBGMOD)
     {
         if (phMod)
@@ -1654,9 +1654,9 @@ RTDECL(int) RTDbgAsLineAdd(RTDBGAS hDbgAs, const char *pszFile, uint32_t uLineNo
     PRTDBGASINT pDbgAs = hDbgAs;
     RTDBGAS_VALID_RETURN_RC(pDbgAs, VERR_INVALID_HANDLE);
 
-    RTDBGSEGIDX iSeg;
-    RTUINTPTR offSeg;
-    RTDBGMOD hMod = rtDbgAsModuleByAddr(pDbgAs, Addr, &iSeg, &offSeg, NULL);
+    RTDBGSEGIDX iSeg   = NIL_RTDBGSEGIDX; /* shut up gcc */
+    RTUINTPTR   offSeg = 0;               /* ditto */
+    RTDBGMOD    hMod   = rtDbgAsModuleByAddr(pDbgAs, Addr, &iSeg, &offSeg, NULL);
     if (hMod == NIL_RTDBGMOD)
         return VERR_NOT_FOUND;
 
@@ -1691,10 +1691,10 @@ RTDECL(int) RTDbgAsLineByAddr(RTDBGAS hDbgAs, RTUINTPTR Addr, PRTINTPTR poffDisp
     PRTDBGASINT pDbgAs = hDbgAs;
     RTDBGAS_VALID_RETURN_RC(pDbgAs, VERR_INVALID_HANDLE);
 
-    RTDBGSEGIDX iSeg;
-    RTUINTPTR   offSeg;
-    RTUINTPTR   MapAddr;
-    RTDBGMOD    hMod = rtDbgAsModuleByAddr(pDbgAs, Addr, &iSeg, &offSeg, &MapAddr);
+    RTDBGSEGIDX iSeg    = NIL_RTDBGSEGIDX; /* shut up gcc */
+    RTUINTPTR   offSeg  = 0;
+    RTUINTPTR   MapAddr = 0;
+    RTDBGMOD    hMod    = rtDbgAsModuleByAddr(pDbgAs, Addr, &iSeg, &offSeg, &MapAddr);
     if (hMod == NIL_RTDBGMOD)
         return VERR_NOT_FOUND;
 
@@ -1732,10 +1732,10 @@ RTDECL(int) RTDbgAsLineByAddrA(RTDBGAS hDbgAs, RTUINTPTR Addr, PRTINTPTR poffDis
     PRTDBGASINT pDbgAs = hDbgAs;
     RTDBGAS_VALID_RETURN_RC(pDbgAs, VERR_INVALID_HANDLE);
 
-    RTDBGSEGIDX iSeg;
-    RTUINTPTR   offSeg;
-    RTUINTPTR   MapAddr;
-    RTDBGMOD    hMod = rtDbgAsModuleByAddr(pDbgAs, Addr, &iSeg, &offSeg, &MapAddr);
+    RTDBGSEGIDX iSeg    = NIL_RTDBGSEGIDX; /* shut up gcc */
+    RTUINTPTR   offSeg  = 0;
+    RTUINTPTR   MapAddr = 0;
+    RTDBGMOD    hMod    = rtDbgAsModuleByAddr(pDbgAs, Addr, &iSeg, &offSeg, &MapAddr);
     if (hMod == NIL_RTDBGMOD)
         return VERR_NOT_FOUND;
 
