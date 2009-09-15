@@ -3639,8 +3639,7 @@ static DECLCALLBACK(int) remR3DisasEnableStepping(PVM pVM, bool fEnable)
  */
 REMR3DECL(int) REMR3DisasEnableStepping(PVM pVM, bool fEnable)
 {
-    PVMREQ  pReq;
-    int     rc;
+    int rc;
 
     LogFlow(("REMR3DisasEnableStepping: fEnable=%d\n", fEnable));
     if (VM_IS_EMT(pVM))
@@ -3648,9 +3647,6 @@ REMR3DECL(int) REMR3DisasEnableStepping(PVM pVM, bool fEnable)
 
     rc = VMR3ReqCallWait(pVM, VMCPUID_ANY, (PFNRT)remR3DisasEnableStepping, 2, pVM, fEnable);
     AssertRC(rc);
-    if (RT_SUCCESS(rc))
-        rc = pReq->iStatus;
-    VMR3ReqFree(pReq);
     return rc;
 }
 

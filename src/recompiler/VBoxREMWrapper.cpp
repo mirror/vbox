@@ -974,12 +974,10 @@ static const REMPARMDESC g_aArgsTRPMSetFaultAddress[] =
     { REMPARMDESC_FLAGS_INT,        sizeof(PVMCPU), NULL },
     { REMPARMDESC_FLAGS_GCPTR,      sizeof(RTGCUINT), NULL }
 };
-static const REMPARMDESC g_aArgsVMR3ReqCall[] =
+static const REMPARMDESC g_aArgsVMR3ReqCallWait[] =
 {
     { REMPARMDESC_FLAGS_INT,        sizeof(PVM), NULL },
     { REMPARMDESC_FLAGS_INT,        sizeof(VMCPUID), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(PVMREQ *), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(unsigned), NULL },
     { REMPARMDESC_FLAGS_INT,        sizeof(void *), NULL },
     { REMPARMDESC_FLAGS_INT,        sizeof(unsigned), NULL },
     { REMPARMDESC_FLAGS_ELLIPSIS,   0 }
@@ -1228,7 +1226,7 @@ static REMFNDESC g_aVMMImports[] =
     { "TRPMSetErrorCode",                       (void *)(uintptr_t)&TRPMSetErrorCode,               &g_aArgsTRPMSetErrorCode[0],                RT_ELEMENTS(g_aArgsTRPMSetErrorCode),                  REMFNDESC_FLAGS_RET_VOID,   0,                  NULL },
     { "TRPMSetFaultAddress",                    (void *)(uintptr_t)&TRPMSetFaultAddress,            &g_aArgsTRPMSetFaultAddress[0],             RT_ELEMENTS(g_aArgsTRPMSetFaultAddress),               REMFNDESC_FLAGS_RET_VOID,   0,                  NULL },
     { "VMMGetCpu",                              (void *)(uintptr_t)&VMMGetCpu,                      &g_aArgsVM[0],                              RT_ELEMENTS(g_aArgsVM),                                REMFNDESC_FLAGS_RET_INT,    sizeof(PVMCPU),     NULL },
-    { "VMR3ReqCall",                            (void *)(uintptr_t)&VMR3ReqCall,                    &g_aArgsVMR3ReqCall[0],                     RT_ELEMENTS(g_aArgsVMR3ReqCall),                       REMFNDESC_FLAGS_RET_INT,    sizeof(int),        NULL },
+    { "VMR3ReqCallWait",                        (void *)(uintptr_t)&VMR3ReqCallWait,                &g_aArgsVMR3ReqCallWait[0],                 RT_ELEMENTS(g_aArgsVMR3ReqCallWait),                   REMFNDESC_FLAGS_RET_INT,    sizeof(int),        NULL },
     { "VMR3ReqFree",                            (void *)(uintptr_t)&VMR3ReqFree,                    &g_aArgsVMR3ReqFree[0],                     RT_ELEMENTS(g_aArgsVMR3ReqFree),                       REMFNDESC_FLAGS_RET_INT | REMFNDESC_FLAGS_ELLIPSIS, sizeof(int), NULL },
     { "VMR3GetVMCPUId",                         (void *)(uintptr_t)&VMR3GetVMCPUId,                 &g_aArgsVM[0],                              RT_ELEMENTS(g_aArgsVM),                                REMFNDESC_FLAGS_RET_INT,    sizeof(int),        NULL },
     { "VMR3GetVMCPUNativeThread",               (void *)(uintptr_t)&VMR3GetVMCPUNativeThread,       &g_aArgsVM[0],                              RT_ELEMENTS(g_aArgsVM),                                REMFNDESC_FLAGS_RET_INT,    sizeof(void *),     NULL },
