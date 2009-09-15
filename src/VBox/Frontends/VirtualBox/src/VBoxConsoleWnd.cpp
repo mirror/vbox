@@ -1650,7 +1650,7 @@ void VBoxConsoleWnd::retranslateUi()
     caption_prefix += QString(" EXPERIMENTAL build ")
                    + QString(RTBldCfgVersion())
                    + QString("r")
-                   + QString(RTBldCfgRevisionStr()) 
+                   + QString(RTBldCfgRevisionStr())
                    + QString(" - "VBOX_BLEEDING_EDGE);
 #endif
     /*
@@ -2549,8 +2549,16 @@ void VBoxConsoleWnd::switchToFullscreen (bool aOn, bool aSeamless)
             setGeometry (mNormalGeometry);
         }
     else
+    {
         /* Here we are going really fullscreen */
         setWindowState (windowState() ^ Qt::WindowFullScreen);
+# ifdef QT_MAC_USE_COCOA
+        /* Disable the auto show menubar feature of Qt in fullscreen. */
+        if (aOn)
+            SetSystemUIMode (kUIModeAllHidden, 0);
+# endif /* QT_MAC_USE_COCOA */
+    }
+
 # ifndef QT_MAC_USE_COCOA
     /* Reassign the correct window group. */
     SetWindowGroup (::darwinToNativeWindow (this), g);
