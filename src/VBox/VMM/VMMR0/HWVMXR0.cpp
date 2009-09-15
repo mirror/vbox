@@ -2596,7 +2596,7 @@ ResumeExecution:
     VMCPU_SET_STATE(pVCpu, VMCPUSTATE_STARTED);
     Assert(!(ASMGetFlags() & X86_EFL_IF));
     ASMSetFlags(uOldEFlags);
-#ifndef VBOX_WITH_VMMR0_DISABLE_PREEMPTION
+#ifdef VBOX_WITH_VMMR0_DISABLE_PREEMPTION
     uOldEFlags = ~(RTCCUINTREG)0;
 #endif
 
