@@ -964,8 +964,8 @@ leave:
         if (machineState != VMSTATE_OFF)
         {
             /* Power off VM */
-            PVMREQ pReq;
-            rc = VMR3ReqCall(pVM, VMCPUID_ANY, &pReq, RT_INDEFINITE_WAIT, (PFNRT)VMR3PowerOff, 1, pVM);
+            rc = VMR3ReqCallWait(pVM, VMCPUID_ANY, (PFNRT)VMR3PowerOff, 1, pVM);
+            AssertRC(rc);
         }
 
         /* And destroy it */
@@ -1269,27 +1269,19 @@ DECLCALLBACK(int) VMPowerUpThread(RTTHREAD Thread, void *pvUser)
      */
     if (RT_SUCCESS(rc))
     {
-        PVMREQ pReq;
-
         if (   g_fRestoreState
             && g_pszStateFile
             && *g_pszStateFile
             && RTPathExists(g_pszStateFile))
         {
             startProgressInfo("Restoring");
-            rc = VMR3ReqCall(pVM, VMCPUID_ANY, &pReq, RT_INDEFINITE_WAIT,
+            rc = VMR3ReqCallWait(pVM, VMCPUID_ANY,
                              (PFNRT)VMR3Load, 4, pVM, g_pszStateFile, &callProgressInfo, (uintptr_t)NULL);
             endProgressInfo();
             if (RT_SUCCESS(rc))
             {
-                VMR3ReqFree(pReq);
-                rc = VMR3ReqCall(pVM, VMCPUID_ANY, &pReq, RT_INDEFINITE_WAIT,
-                                 (PFNRT)VMR3Resume, 1, pVM);
-                if (RT_SUCCESS(rc))
-                {
-                    rc = pReq->iStatus;
-                    VMR3ReqFree(pReq);
-                }
+                rc = VMR3ReqCallWait(pVM, VMCPUID_ANY, (PFNRT)VMR3Resume, 1, pVM);
+                AssertRC(rc);
                 gDisplay->setRunning();
             }
             else
@@ -1297,14 +1289,8 @@ DECLCALLBACK(int) VMPowerUpThread(RTTHREAD Thread, void *pvUser)
         }
         else
         {
-            rc = VMR3ReqCall(pVM, VMCPUID_ANY, &pReq, RT_INDEFINITE_WAIT, (PFNRT)VMR3PowerOn, 1, pVM);
-            if (RT_SUCCESS(rc))
-            {
-                rc = pReq->iStatus;
-                AssertRC(rc);
-                VMR3ReqFree(pReq);
-            }
-            else
+            rc = VMR3ReqCallWait(pVM, VMCPUID_ANY, (PFNRT)VMR3PowerOn, 1, pVM);
+            if (RT_FAILURE(rc))
                 AssertMsgFailed(("VMR3PowerOn failed, rc=%Rrc\n", rc));
         }
     }

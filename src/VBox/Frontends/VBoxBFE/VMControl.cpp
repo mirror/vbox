@@ -61,15 +61,8 @@ VMCtrlPause(void)
     if (gConsole->inputGrabbed())
         gConsole->inputGrabEnd();
 
-    PVMREQ pReq;
-    int rcVBox = VMR3ReqCall(pVM, VMCPUID_ANY, &pReq, RT_INDEFINITE_WAIT,
-                             (PFNRT)VMR3Suspend, 1, pVM);
+    int rcVBox = VMR3ReqCallWait(pVM, VMCPUID_ANY, (PFNRT)VMR3Suspend, 1, pVM);
     AssertRC(rcVBox);
-    if (RT_SUCCESS(rcVBox))
-    {
-        rcVBox = pReq->iStatus;
-        VMR3ReqFree(pReq);
-    }
     return VINF_SUCCESS;
 }
 
@@ -82,15 +75,8 @@ VMCtrlResume(void)
     if (machineState != VMSTATE_SUSPENDED)
         return VERR_VM_INVALID_VM_STATE;
 
-    PVMREQ pReq;
-    int rcVBox = VMR3ReqCall(pVM, VMCPUID_ANY, &pReq, RT_INDEFINITE_WAIT,
-                             (PFNRT)VMR3Resume, 1, pVM);
+    int rcVBox = VMR3ReqCallWait(pVM, VMCPUID_ANY, (PFNRT)VMR3Resume, 1, pVM);
     AssertRC(rcVBox);
-    if (RT_SUCCESS(rcVBox))
-    {
-        rcVBox = pReq->iStatus;
-        VMR3ReqFree(pReq);
-    }
     return VINF_SUCCESS;
 }
 
@@ -100,16 +86,8 @@ VMCtrlResume(void)
 int
 VMCtrlReset(void)
 {
-    PVMREQ pReq;
-    int rcVBox = VMR3ReqCall(pVM, VMCPUID_ANY, &pReq, RT_INDEFINITE_WAIT,
-                             (PFNRT)VMR3Reset, 1, pVM);
+    int rcVBox = VMR3ReqCallWait(pVM, VMCPUID_ANY, (PFNRT)VMR3Reset, 1, pVM);
     AssertRC(rcVBox);
-    if (RT_SUCCESS(rcVBox))
-    {
-        rcVBox = pReq->iStatus;
-        VMR3ReqFree(pReq);
-    }
-
     return VINF_SUCCESS;
 }
 
@@ -154,22 +132,17 @@ VMCtrlACPISleepButton(void)
  */
 DECLCALLBACK(int) VMSaveThread(RTTHREAD Thread, void *pvUser)
 {
-    PVMREQ pReq;
     void (*pfnQuit)(void) = (void(*)(void))pvUser;
     int rc;
 
     startProgressInfo("Saving");
-    rc = VMR3ReqCall(pVM, VMCPUID_ANY, &pReq, RT_INDEFINITE_WAIT,
-                     (PFNRT)VMR3Save, 5, pVM, g_pszStateFile, false /*fContinueAftewards*/, &callProgressInfo, (uintptr_t)NULL);
+    rc = VMR3ReqCallWait(pVM, VMCPUID_ANY, 
+                         (PFNRT)VMR3Save, 5, pVM, g_pszStateFile, false /*fContinueAftewards*/, &callProgressInfo, (uintptr_t)NULL);
+    AssertRC(rc);
     endProgressInfo();
-    if (RT_SUCCESS(rc))
-    {
-        rc = pReq->iStatus;
-        VMR3ReqFree(pReq);
-    }
     pfnQuit();
 
-    return 0;
+    return VINF_SUCCESS;
 }
 
 /*
@@ -191,15 +164,8 @@ VMCtrlSave(void (*pfnQuit)(void))
 
     if (machineState == VMSTATE_RUNNING)
     {
-        PVMREQ pReq;
-        rc = VMR3ReqCall(pVM, VMCPUID_ANY, &pReq, RT_INDEFINITE_WAIT,
-                         (PFNRT)VMR3Suspend, 1, pVM);
+        rc = VMR3ReqCallWait(pVM, VMCPUID_ANY, (PFNRT)VMR3Suspend, 1, pVM);
         AssertRC(rc);
-        if (RT_SUCCESS(rc))
-        {
-            rc = pReq->iStatus;
-            VMR3ReqFree(pReq);
-        }
     }
 
     RTTHREAD thread;
