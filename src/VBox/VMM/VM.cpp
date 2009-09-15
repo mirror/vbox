@@ -1467,6 +1467,17 @@ static DECLCALLBACK(int) vmR3SaveLiveStep1Cleanup(PVM pVM, PSSMHANDLE pSSM)
         else
             rc = rc2;
     }
+/** @todo VMR3Reset during live save (ResetLS, ResettingLS) needs to be
+ *        redone. We should suspend the VM after resetting the state, not
+ *        cancelling the save operation. In the live migration scenario we
+ *        would already have transfered most of the state and the little that
+ *        remains after a reset isn't going to be very big and it's not worth
+ *        making special paths for this. In the live snapshot case, there
+ *        would be a gain in that we wouldn't require a potentially large saved
+ *        state file. But that could be handled on VMR3Save return and size
+ *        shouldn't matter much as already mentioned..
+ *
+ *        Will address this tomorrow. */
     return rc;
 }
 
