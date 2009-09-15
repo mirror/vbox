@@ -799,7 +799,7 @@ snapshot-puel:
 	    -x!$(ZIPROOT)/doc/manual/de_DE \
 	    -x!$(ZIPROOT)/doc/manual/fr_FR \
 	    -x!$(ZIPROOT)/src/tests \
-	    -x!$(ZIPROOT)/src/VBox/Artwork \
+	    -x!$(ZIPROOT)/src/VBox/Artwork/2008-\* \
 	    -x!$(ZIPROOT)/src/VBox/Installer/AMI \
 	    -x!$(ZIPROOT)/src/VBox/Installer/Avanquest \
 	    -x!$(ZIPROOT)/src/VBox/Installer/Encore \
