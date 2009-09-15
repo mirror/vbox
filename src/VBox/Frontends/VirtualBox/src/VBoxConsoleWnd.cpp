@@ -1647,11 +1647,7 @@ void VBoxConsoleWnd::retranslateUi()
 #endif
 
 #ifdef VBOX_BLEEDING_EDGE
-    caption_prefix += QString(" EXPERIMENTAL build ")
-                   + QString(RTBldCfgVersion())
-                   + QString("r")
-                   + QString(RTBldCfgRevisionStr())
-                   + QString(" - "VBOX_BLEEDING_EDGE);
+    caption_prefix += tr (" EXPERIMENTAL build %1r%2 - %3").arg (RTBldCfgVersion()).arg (RTBldCfgRevisionStr()).arg (VBOX_BLEEDING_EDGE);
 #endif
     /*
      *  Note: All action shortcuts should be added to the menu text in the
