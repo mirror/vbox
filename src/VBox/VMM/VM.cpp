@@ -1427,6 +1427,51 @@ static DECLCALLBACK(int) vmR3Save(PVM pVM, const char *pszFilename, SSMAFTER enm
 
 
 /**
+ * Worker for VMR3Save to clean up a SSMR3LiveDoStep1 failure.
+ *
+ * We failed after hitting the RunningLS state, but before trying to suspend the
+ * VM before vmR3SaveLiveStep2.  There are a number of state transisions in this
+ * state, some, like ResetLS, that requires some special handling.  (ResetLS is
+ * the excuse for doing this all on EMT(0).
+ *
+ * @returns VBox status code.
+ *
+ * @param   pVM             The VM handle.
+ * @param   pSSM            The handle of saved state operation. This will be
+ *                          closed.
+ * @thread  EMT(0)
+ */
+static DECLCALLBACK(int) vmR3SaveLiveStep1Cleanup(PVM pVM, PSSMHANDLE pSSM)
+{
+    LogFlow(("vmR3SaveLiveStep2: pVM=%p pSSM=%p\n", pVM, pSSM));
+    VM_ASSERT_EMT0(pVM);
+
+    /*
+     * Finish the SSM state first (or move the ssmR3SetCancellable call),
+     * then change the state out of the *LS variants.
+     */
+    int rc = SSMR3LiveDone(pSSM);
+    int rc2 = vmR3TrySetState(pVM, "vmR3SaveLiveStep1Cleanup", 8,
+                              VMSTATE_RUNNING,           VMSTATE_RUNNING_LS,
+                              VMSTATE_RUNNING,           VMSTATE_RESET_LS,
+                              VMSTATE_SUSPENDING,        VMSTATE_SUSPENDING_LS, /* external*/
+                              VMSTATE_GURU_MEDITATION,   VMSTATE_GURU_MEDITATION_LS,
+                              VMSTATE_FATAL_ERROR,       VMSTATE_FATAL_ERROR_LS,
+                              VMSTATE_POWERING_OFF,      VMSTATE_POWERING_OFF_LS,
+                              VMSTATE_OFF,               VMSTATE_OFF_LS,
+                              VMSTATE_DEBUGGING,         VMSTATE_DEBUGGING_LS);
+    if (RT_SUCCESS(rc))
+    {
+        if (RT_SUCCESS(rc2))
+            rc = rc2 == 2 /* ResetLS -> Running */ ? VINF_EM_RESUME : VINF_SUCCESS;
+        else
+            rc = rc2;
+    }
+    return rc;
+}
+
+
+/**
  * Worker for VMR3Save continues a live save on EMT(0).
  *
  * @returns VBox status code.
@@ -1439,13 +1484,19 @@ static DECLCALLBACK(int) vmR3SaveLiveStep2(PVM pVM, PSSMHANDLE pSSM)
 {
     LogFlow(("vmR3SaveLiveStep2: pVM=%p pSSM=%p\n", pVM, pSSM));
     VM_ASSERT_EMT0(pVM);
-    Assert(VMR3GetState(pVM) == VMSTATE_SUSPENDED_LS);
 
-    int rc = SSMR3LiveDoStep2(pSSM);
-    vmR3SetState(pVM, VMSTATE_SUSPENDED, VMSTATE_SUSPENDED_LS);
+    vmR3SetState(pVM, VMSTATE_SAVING, VMSTATE_SUSPENDED_LS);
+
+    int rc  = SSMR3LiveDoStep2(pSSM);
+    int rc2 = SSMR3LiveDone(pSSM);
+    if (RT_FAILURE(rc2) && RT_SUCCESS(rc))
+        rc = rc2;
+
+    vmR3SetState(pVM, VMSTATE_SUSPENDED, VMSTATE_SAVING);
 
     return rc;
 }
+
 
 
 /**
@@ -1497,61 +1548,23 @@ VMMR3DECL(int) VMR3Save(PVM pVM, const char *pszFilename, bool fContinueAfterwar
     if (    RT_SUCCESS(rc)
         &&  pSSM)
     {
-#if 0 /** @todo later*/
         /*
          * Live snapshot.
+         *
+         * The state handling here is kind of tricky, doing it on EMT(0)
+         * helps abit. See the VMSTATE diagram for details. The EMT(0) calls
+         * consumes the pSSM handle and calls SSMR3LiveDone.
          */
         rc = SSMR3LiveDoStep1(pSSM);
         if (RT_SUCCESS(rc))
-        {
-            rc = vmR3SuspendCommon(pVM, false /*fFatal*/);
-            if (RT_SUCCESS(rc))
-                rc = VMR3ReqCallWaitU(pVM->pUVM, 0 /*idDstCpu*/, (PFNRT)vmR3SaveLiveStep2, 2, pVM, pSSM);
-        }
-        else
-            AssertLogRelMsg(   pVM->enmVMState == VMSTATE_RUNNING_LS
-                            || pVM->enmVMState == VMSTATE_RESETTING_LS
-                            || pVM->enmVMState == VMSTATE_POWERING_OFF_LS
-                            || pVM->enmVMState == VMSTATE_FATAL_ERROR_LS
-                            || pVM->enmVMState == VMSTATE_GURU_MEDITATION_LS,
-                            ("%s rc=%Rrc\n", pVM->enmVMState, rc));
-
-        int rc2 = SSMR3LiveDone(pSSM);
-        if (RT_FAILURE(rc2) && RT_SUCCESS(rc))
-            rc = rc2;
-
-        /*
-         * Work the state.
-         */
-        if (pVM->enmVMState == VMSTATE_SUSPENDED)
-            Log(("VMR3Save: Suspended; rc=%Rrc\n", rc));
-        else if (vmR3TrySetState(pVM, VMSTATE_RUNNING, VMSTATE_RUNNING_LS))
-            Log(("VMR3Save: Cancelled while running; rc=%Rrc\n", rc));
-        else if (vmR3TrySetState(pVM, VMSTATE_SUSPEND, VMSTATE_SUSPEND_LS))
-            Log(("VMR3Save: Cancelled while suspended; rc=%Rrc\n", rc));
-        else if (vmR3TrySetState(pVM, VMSTATE_POWERING_OFF, VMSTATE_POWERING_OFF_LS))
-        {
-            /** @todo needs more work. */
-            Log(("VMR3Save: Powering off; rc=%Rrc\n", rc));
-        }
-        else if (vmR3TrySetState(pVM, VMSTATE_RESETTING, VMSTATE_RESETTING_LS))
-        {
-            /** @todo needs more work. */
-            Log(("VMR3Save: Resetting; rc=%Rrc\n", rc));
-        }
-        else if (vmR3TrySetState(pVM, VMSTATE_FATAL_ERROR, VMSTATE_FATAL_ERROR_LS))
-            Log(("VMR3Save: Fatal error; rc=%Rrc\n", rc));
-        else if (vmR3TrySetState(pVM, VMSTATE_GURU_MEDITATION, VMSTATE_GURU_MEDITATION_LS))
-            Log(("VMR3Save: Guru meditation; rc=%Rrc\n", rc));
+            rc = vmR3SuspendCommon(pVM, false /*fFatal*/); /** @todo this races external VMR3Suspend calls and may cause trouble (goes for any VMCPUID_ALL* calls messing with the state in the handler). */
+        if (RT_SUCCESS(rc))
+            rc = VMR3ReqCallWaitU(pVM->pUVM, 0 /*idDstCpu*/, (PFNRT)vmR3SaveLiveStep2, 2, pVM, pSSM);
         else
         {
-            AssertLogRelMsgFailed(("%s rc=%Rrc\n", pVM->enmVMState, rc));
-            rc = VERR_INTERNAL_ERROR_4;
+            int rc2 = VMR3ReqCallWait(pVM, 0 /*idDstCpu*/, (PFNRT)vmR3SaveLiveStep1Cleanup, 2, pVM, pSSM);
+            AssertLogRelRC(rc2);
         }
-#else
-        rc = VERR_NOT_IMPLEMENTED;
-        SSMR3LiveDone(pSSM);
-#endif
     }
 
     LogFlow(("VMR3Save: returns %Rrc\n", rc));
@@ -2334,6 +2347,7 @@ static void vmR3CheckIntegrity(PVM pVM)
  */
 static DECLCALLBACK(int) vmR3Reset(PVM pVM)
 {
+    int    rcRet = VINF_EM_RESET;
     PVMCPU pVCpu = VMMGetCpu(pVM);
 
     /*
@@ -2418,16 +2432,28 @@ static DECLCALLBACK(int) vmR3Reset(PVM pVM)
          */
         PUVM pUVM = pVM->pUVM;
         RTCritSectEnter(&pUVM->vm.s.AtStateCritSect);
-        if (pUVM->vm.s.enmPrevVMState == VMSTATE_SUSPENDED)
-            vmR3SetStateLocked(pVM, pUVM, VMSTATE_SUSPENDED, VMSTATE_RESETTING);
+        enmVMState = pVM->enmVMState;
+        if (enmVMState == VMSTATE_RESETTING)
+        {
+            if (pUVM->vm.s.enmPrevVMState == VMSTATE_SUSPENDED)
+                vmR3SetStateLocked(pVM, pUVM, VMSTATE_SUSPENDED, VMSTATE_RESETTING);
+            else
+                vmR3SetStateLocked(pVM, pUVM, VMSTATE_RUNNING,   VMSTATE_RESETTING);
+        }
         else
-            vmR3SetStateLocked(pVM, pUVM, VMSTATE_RUNNING, pVM->enmVMState);
+        {
+            /** @todo EMT(0) should not execute code if the state is
+             *        VMSTATE_RESETTING_LS... This requires adding
+             *        VINF_EM_RESET_AND_SUSPEND. Can be done later. */
+            vmR3SetStateLocked(pVM, pUVM, VMSTATE_RESET_LS, VMSTATE_RESETTING_LS);
+            rcRet = VINF_EM_RESET/*_AND_SUSPEND*/;
+        }
         RTCritSectLeave(&pUVM->vm.s.AtStateCritSect);
 
         vmR3CheckIntegrity(pVM);
     }
 
-    return VINF_EM_RESET;
+    return rcRet;
 }
 
 
@@ -2485,6 +2511,7 @@ VMMR3DECL(const char *) VMR3GetStateName(VMSTATE enmState)
         case VMSTATE_RUNNING_LS:        return "RUNNING_LS";
         case VMSTATE_RESETTING:         return "RESETTING";
         case VMSTATE_RESETTING_LS:      return "RESETTING_LS";
+        case VMSTATE_RESET_LS:          return "RESET_LS";
         case VMSTATE_SUSPENDED:         return "SUSPENDED";
         case VMSTATE_SUSPENDED_LS:      return "SUSPENDED_LS";
         case VMSTATE_SUSPENDING:        return "SUSPENDING";
@@ -2582,6 +2609,12 @@ static bool vmR3ValidateStateTransition(VMSTATE enmStateOld, VMSTATE enmStateNew
             break;
 
         case VMSTATE_RESETTING_LS:
+            AssertMsgReturn(   enmStateNew == VMSTATE_RUNNING
+                            || enmStateNew == VMSTATE_RESET_LS
+                            , ("%s -> %s\n", VMR3GetStateName(enmStateOld), VMR3GetStateName(enmStateNew)), false);
+            break;
+
+        case VMSTATE_RESET_LS:
             AssertMsgReturn(enmStateNew == VMSTATE_RUNNING, ("%s -> %s\n", VMR3GetStateName(enmStateOld), VMR3GetStateName(enmStateNew)), false);
             break;
 
@@ -2590,7 +2623,9 @@ static bool vmR3ValidateStateTransition(VMSTATE enmStateOld, VMSTATE enmStateNew
             break;
 
         case VMSTATE_SUSPENDING_LS:
-            AssertMsgReturn(enmStateNew == VMSTATE_SUSPENDED_LS, ("%s -> %s\n", VMR3GetStateName(enmStateOld), VMR3GetStateName(enmStateNew)), false);
+            AssertMsgReturn(   enmStateNew == VMSTATE_SUSPENDING
+                            || enmStateNew == VMSTATE_SUSPENDED_LS
+                            , ("%s -> %s\n", VMR3GetStateName(enmStateOld), VMR3GetStateName(enmStateNew)), false);
             break;
 
         case VMSTATE_SUSPENDED:
@@ -2619,7 +2654,8 @@ static bool vmR3ValidateStateTransition(VMSTATE enmStateOld, VMSTATE enmStateNew
             break;
 
         case VMSTATE_DEBUGGING_LS:
-            AssertMsgReturn(   enmStateNew == VMSTATE_RUNNING_LS
+            AssertMsgReturn(   enmStateNew == VMSTATE_DEBUGGING
+                            || enmStateNew == VMSTATE_RUNNING_LS
                             || enmStateNew == VMSTATE_POWERING_OFF_LS
                             , ("%s -> %s\n", VMR3GetStateName(enmStateOld), VMR3GetStateName(enmStateNew)), false);
             break;
