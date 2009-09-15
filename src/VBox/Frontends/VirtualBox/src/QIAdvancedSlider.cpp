@@ -78,22 +78,25 @@ public:
             ticks.setRect ((s.width() - available) / 2, ticks.bottom() + 1, available, s.height() - ticks.bottom() - 1);
         }
 #endif /* Q_WS_MAC */
-        if (mMinOpt != -1 &&
-            mMaxOpt != -1)
+        if ((mMinOpt != -1 &&
+             mMaxOpt != -1) &&
+            mMinOpt != mMaxOpt)
         {
             int posMinOpt = QStyle::sliderPositionFromValue (opt.minimum, opt.maximum, mMinOpt, available);
             int posMaxOpt = QStyle::sliderPositionFromValue (opt.minimum, opt.maximum, mMaxOpt, available);
             p.fillRect (ticks.x() + posMinOpt, ticks.y(), posMaxOpt - posMinOpt + 1, ticks.height(), mOptColor);
         }
-        if (mMinWrn != -1 &&
-            mMaxWrn != -1)
+        if ((mMinWrn != -1 &&
+             mMaxWrn != -1) &&
+            mMinWrn != mMaxWrn)
         {
             int posMinWrn = QStyle::sliderPositionFromValue (opt.minimum, opt.maximum, mMinWrn, available);
             int posMaxWrn = QStyle::sliderPositionFromValue (opt.minimum, opt.maximum, mMaxWrn, available);
             p.fillRect (ticks.x() + posMinWrn, ticks.y(), posMaxWrn - posMinWrn + 1, ticks.height(), mWrnColor);
         }
-        if (mMinErr != -1 &&
-            mMaxErr != -1)
+        if ((mMinErr != -1 &&
+             mMaxErr != -1) &&
+            mMinErr != mMaxErr)
         {
             int posMinErr = QStyle::sliderPositionFromValue (opt.minimum, opt.maximum, mMinErr, available);
             int posMaxErr = QStyle::sliderPositionFromValue (opt.minimum, opt.maximum, mMaxErr, available);

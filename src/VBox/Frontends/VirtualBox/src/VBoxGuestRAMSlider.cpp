@@ -141,6 +141,10 @@ void VBoxGuestRAMSlider::init()
         mMaxRAMAlw = (uint)(0.96 * fullSize);
         mMaxRAMOpt = (uint)(0.90 * fullSize);
     }
+    /* Now check the calculated maximums are out of the range for the guest
+     * RAM. If so change it accordingly. */
+    mMaxRAMAlw  = RT_MIN (mMaxRAMAlw, mMaxRAM);
+    mMaxRAMOpt  = RT_MIN (mMaxRAMOpt, mMaxRAM);
 
     setPageStep (calcPageStep (mMaxRAM));
     setSingleStep (pageStep() / 4);
