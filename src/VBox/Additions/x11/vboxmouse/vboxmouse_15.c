@@ -65,7 +65,7 @@ VBoxReadInput(InputInfoPtr pInfo)
 {
     uint32_t cx, cy, fFeatures;
 
-    /* The first test here is a workaround for an apparant bug in Xorg Server 1.5 */
+    /* The first test here is a workaround for an apparent bug in Xorg Server 1.5 */
     if (   miPointerGetScreen(pInfo->dev) != NULL
         && RT_SUCCESS(VbglR3GetMouseStatus(&fFeatures, &cx, &cy))
         && (fFeatures & VMMDEV_MOUSE_HOST_CAN_ABSOLUTE))
@@ -177,7 +177,6 @@ VBoxProc(DeviceIntPtr device, int what)
             rc = VbglR3SetMouseStatus(  fFeatures
                                       & ~VMMDEV_MOUSE_GUEST_CAN_ABSOLUTE
                                       & ~VMMDEV_MOUSE_GUEST_USES_VMMDEV);
-        VbglR3SetMouseStatus(0);
         xf86RemoveEnabledDevice(pInfo);
         device->public.on = FALSE;
         break;
