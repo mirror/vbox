@@ -216,7 +216,7 @@ int main(int argc, char *argv[])
             pszAddress = argv[2];
             if (strcmp("remove", pszAddress) == 0)
             {
-                strncpy(Req.szName, pszAdapterName, sizeof(Req.szName));
+                snprintf(Req.szName, sizeof(Req.szName), "%s", pszAdapterName);
                 return doIOCtl(VBOXNETADP_CTL_REMOVE, &Req);
             }
             break;
