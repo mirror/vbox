@@ -426,7 +426,7 @@ const OPCODE g_aTwoByteMapX86[256] =
     INVALID_OPCODE,
     INVALID_OPCODE,
     INVALID_OPCODE,
-    OP("nop %Ev",            IDX_ParseModRM,     0,             0,          OP_NOP,     OP_PARM_NONE,       OP_PARM_NONE,   OP_PARM_NONE,   OPTYPE_HARMLESS),
+    OP("nop %Ev",            IDX_ParseModRM,     0,             0,          OP_NOP,             OP_PARM_Ev,       OP_PARM_NONE,   OP_PARM_NONE,   OPTYPE_HARMLESS),
 
     /* 2 */
     OP("mov %Rd,%Cd",        IDX_ParseModRM,     IDX_UseModRM,   0,          OP_MOV_CR,  OP_PARM_Rd,         OP_PARM_Cd,     OP_PARM_NONE,   OPTYPE_DANGEROUS | OPTYPE_PRIVILEGED | OPTYPE_MOD_FIXED_11 | OPTYPE_FORCED_32_OP_SIZE_X86),
