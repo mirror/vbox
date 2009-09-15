@@ -261,7 +261,6 @@ test_compile()
       echo "  Check the file $LOG for detailed error information."
       fail
     else
-      echo "not found."
       echo >> $LOG
       echo >> $LOG
     fi
@@ -922,9 +921,7 @@ extern "C" int main(void)
 }
 EOF
   [ -n "$INCPNG" ] && I_INCPNG=`prefix_I "$INCPNG"`
-#  if test_compile "$LIBPNG $I_INCPNG" libpng libpng nofatal; then
   if test_compile "$LIBPNG $I_INCPNG" libpng libpng; then
-#    if test_execute nofatal; then
     if test_execute; then
       cnf_append "SDK_VBOX_LIBPNG_LIBS" "`strip_l "$LIBPNG"`"
       cnf_append "SDK_VBOX_LIBPNG_INCS" "$INCPNG"
@@ -997,6 +994,7 @@ EOF
       return 0;
     fi
   fi
+  echo "not found."
   test_header linux_pam
   cat > $ODIR.tmp_src.cc << EOF
 #include <cstdio>
@@ -1122,6 +1120,7 @@ EOF
       cnf_append "VBOX_WITH_SECURELABEL" ""
     fi
   else
+    echo "not found -- disabling VBoxSDL secure label."
     cnf_append "VBOX_WITH_SECURELABEL" ""
   fi
 }
@@ -1399,11 +1398,11 @@ check_qt4()
 extern "C" int main(void)
 {
   printf("found version %s", QT_VERSION_STR);
-#if QT_VERSION >= 0x040300
+#if QT_VERSION >= 0x040400
   printf(", OK.\n");
   return 0;
 #else
-  printf(", expected version 4.3.0 or higher\n");
+  printf(", expected version 4.4.0 or higher\n");
   return 1;
 #endif
 }
@@ -1432,11 +1431,11 @@ EOF
 extern "C" int main(void)
 {
   printf("found version %s", QT_VERSION_STR);
-#if QT_VERSION >= 0x040300
+#if QT_VERSION >= 0x040400
   printf(", OK.\n");
   return 0;
 #else
-  printf(", expected version 4.3.0 or higher\n");
+  printf(", expected version 4.4.0 or higher\n");
   return 1;
 #endif
 }
