@@ -414,11 +414,9 @@ STDMETHODIMP NetworkAdapter::COMGETTER(HostInterface)(BSTR *aHostInterface)
 
 STDMETHODIMP NetworkAdapter::COMSETTER(HostInterface)(IN_BSTR aHostInterface)
 {
-    /** @todo Validate input string length. r=dmik: do it in XML schema?*/
-
-    /* we don't allow null strings for the host interface (because the @name
-     * attribute of <HostInterface> must be always present but can be empty). */
-    CheckComArgNotNull (aHostInterface);
+    Bstr bstrEmpty("");
+    if (!aHostInterface)
+        aHostInterface = bstrEmpty;
 
     AutoCaller autoCaller(this);
     CheckComRCReturnRC(autoCaller.rc());
