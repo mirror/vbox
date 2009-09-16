@@ -40,6 +40,12 @@ VBoxTray_SOURCES  = \
 	VBoxMemBalloon.cpp \
 	helpers.cpp \
 	VBoxTray.rc
+ifdef VBOX_WITH_GUEST_PROPS
+ VBoxTray_DEFS     +=  _WIN32_IE=0x500 VBOX_WITH_GUEST_PROPS
+ VBoxTray_SOURCES  += \
+	VBoxHostVersion.cpp
+endif
+
 VBoxTray_LIBS     = \
 	$(VBOX_LIB_IPRT_GUEST_R3) \
 	$(VBOX_LIB_VBGL_R3)
