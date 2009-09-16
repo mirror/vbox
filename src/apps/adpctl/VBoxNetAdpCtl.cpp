@@ -200,9 +200,30 @@ int doIOCtl(unsigned long uCmd, void *pData)
     return rc;
 }
 
+int checkAdapterName(const char *pcszNameIn, char *pszNameOut)
+{
+    int iAdapterIndex = -1;
+
+    if (sscanf(pcszNameIn, "vboxnet%d", &iAdapterIndex) != 1
+        || iAdapterIndex < 0 || iAdapterIndex > 99 )
+    {
+        fprintf(stderr, "Setting configuration for %s is not supported.\n", pcszNameIn);
+        return 2;
+    }
+    sprintf(pszNameOut, "vboxnet%d", iAdapterIndex);
+    if (strcmp(pszNameOut, pcszNameIn))
+    {
+        fprintf(stderr, "Invalid adapter name %s.\n", pcszNameIn);
+        return 2;
+    }
+
+    return 0;
+}
+
 int main(int argc, char *argv[])
 
 {
+    char szAdapterName[VBOXNETADP_MAX_NAME_LEN];
     char *pszAdapterName;
     const char *pszAddress;
     const char *pszNetworkMask = NULL;
@@ -241,7 +262,10 @@ int main(int argc, char *argv[])
             pszAddress = argv[2];
             if (strcmp("remove", pszAddress) == 0)
             {
-                snprintf(Req.szName, sizeof(Req.szName), "%s", pszAdapterName);
+                rc = checkAdapterName(pszAdapterName, szAdapterName);
+                if (rc)
+                    return rc;
+                snprintf(Req.szName, sizeof(Req.szName), "%s", szAdapterName);
                 return doIOCtl(VBOXNETADP_CTL_REMOVE, &Req);
             }
             break;
@@ -262,11 +286,11 @@ int main(int argc, char *argv[])
             return 1;
     }
 
-    if (strncmp("vboxnet", pszAdapterName, 7))
-    {
-        fprintf(stderr, "Setting configuration for %s is not supported.\n", pszAdapterName);
-        return 2;
-    }
+    rc = checkAdapterName(pszAdapterName, szAdapterName);
+    if (rc)
+        return rc;
+
+    pszAdapterName = szAdapterName;
 
     if (fRemove)
     {
