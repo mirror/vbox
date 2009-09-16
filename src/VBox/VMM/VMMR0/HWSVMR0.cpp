@@ -908,7 +908,7 @@ VMMR0DECL(int) SVMR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         else
         {
             /* Fall back to rdtsc emulation as we would otherwise pass decreasing tsc values to the guest. */
-            Log(("TSC %RX64 offset %RX64 time=%RX64 last=%RX64 (diff=%RX64, virt_tsc=%RX64)\n", u64CurTSC, pVMCB->ctrl.u64TSCOffset, u64CurTSC + pVMCB->ctrl.u64TSCOffset, TMCpuTickGetLastSeen(pVCpu), TMCpuTickGetLastSeen(pVCpu) - u64CurTSC - pVMCB->ctrl.u64TSCOffset, TMCpuTickGet(pVCpu)));
+            LogFlow(("TSC %RX64 offset %RX64 time=%RX64 last=%RX64 (diff=%RX64, virt_tsc=%RX64)\n", u64CurTSC, pVMCB->ctrl.u64TSCOffset, u64CurTSC + pVMCB->ctrl.u64TSCOffset, TMCpuTickGetLastSeen(pVCpu), TMCpuTickGetLastSeen(pVCpu) - u64CurTSC - pVMCB->ctrl.u64TSCOffset, TMCpuTickGet(pVCpu)));
             pVMCB->ctrl.u32InterceptCtrl1 |= SVM_CTRL1_INTERCEPT_RDTSC;
             pVMCB->ctrl.u32InterceptCtrl2 |= SVM_CTRL2_INTERCEPT_RDTSCP;
             STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatTSCInterceptOverFlow);
