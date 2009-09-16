@@ -37,10 +37,12 @@
 #ifndef EDOOFUS
 # ifdef EBADMACHO
 #  define EDOOFUS EBADMACHO
+# elif defined(RT_OS_LINUX)
+#  define EDOOFUS   0x0fad8484d
 //# elif defined(EXYZ)
 //#  define EDOOFUS EXYZ
 # else
-#  define EDOOFUS 0xfad8484d
+#  error "Choose an unlikely and (if possible) fun error number for EDOOFUS."
 # endif
 #endif
 
@@ -1160,7 +1162,7 @@ static int vboxfuseOp_read(const char *pszPath, char *pbBuf, size_t cbBuf,
     AssertReturn((int)cbBuf >= 0, -EINVAL);
     AssertReturn((unsigned)cbBuf == cbBuf, -EINVAL);
     AssertReturn(offFile >= 0, -EINVAL);
-    AssertReturn(offFile + (ssize_t)cbBuf >= offFile, -EINVAL);
+    AssertReturn((off_t)(offFile + cbBuf) >= offFile, -EINVAL);
 
     PVBOXFUSENODE pNode = (PVBOXFUSENODE)(uintptr_t)pInfo->fh;
     AssertPtr(pNode);
@@ -1176,7 +1178,7 @@ static int vboxfuseOp_read(const char *pszPath, char *pbBuf, size_t cbBuf,
             vboxfuseNodeLock(&pFlatImage->Node);
 
             int rc;
-            if (offFile + (ssize_t)cbBuf < offFile)
+            if ((off_t)(offFile + cbBuf) < offFile)
                 rc = -EINVAL;
             else if (offFile >= pFlatImage->Node.cbPrimary)
                 rc = 0;
@@ -1185,7 +1187,7 @@ static int vboxfuseOp_read(const char *pszPath, char *pbBuf, size_t cbBuf,
             else
             {
                 /* Adjust for EOF. */
-                if (offFile + (ssize_t)cbBuf >= pFlatImage->Node.cbPrimary)
+                if ((off_t)(offFile + cbBuf) >= pFlatImage->Node.cbPrimary)
                     cbBuf = pFlatImage->Node.cbPrimary - offFile;
 
                 /*
