@@ -1412,6 +1412,10 @@ flushPage:
 DECLINLINE(void) pgmPoolTrackCheckPTPaePae(PPGMPOOL pPool, PPGMPOOLPAGE pPage, PX86PTPAE pShwPT, PCX86PTPAE pGstPT)
 {
     unsigned cErrors = 0;
+    int LastRc;
+    unsigned LastPTE;
+    RTHCPHYS LastHCPhys;
+
 #ifdef VBOX_STRICT
     for (unsigned i = 0; i < RT_MIN(RT_ELEMENTS(pShwPT->a), pPage->iFirstPresent); i++)
         AssertMsg(!pShwPT->a[i].n.u1Present, ("Unexpected PTE: idx=%d %RX64 (first=%d)\n", i, pShwPT->a[i].u,  pPage->iFirstPresent));
@@ -1427,6 +1431,9 @@ DECLINLINE(void) pgmPoolTrackCheckPTPaePae(PPGMPOOL pPool, PPGMPOOLPAGE pPage, P
             {
                 RTHCPHYS HCPhysPT = -1;
                 Log(("rc=%d idx=%d guest %RX64 shw=%RX64 vs %RHp\n", rc, i, pGstPT->a[i].u, pShwPT->a[i].u, HCPhys));
+                LastPTE     = i;
+                LastRc      = rc;
+                LastHCPhys  = HCPhys;
                 cErrors++;
 
                 int rc = PGMPhysGCPhys2HCPhys(pPool->CTX_SUFF(pVM), pPage->GCPhys, &HCPhysPT);
@@ -1454,7 +1461,7 @@ DECLINLINE(void) pgmPoolTrackCheckPTPaePae(PPGMPOOL pPool, PPGMPOOLPAGE pPage, P
             }
         }
     }
-    Assert(!cErrors);
+    AssertMsg(!cErrors, ("cErrors=%d: last rc=%d idx=%d guest %RX64 shw=%RX64 vs %RHp\n", cErrors, LastRc, LastPTE, pGstPT->a[LastPTE].u, pShwPT->a[LastPTE].u, LastHCPhys));
 }
 #  endif /* VBOX_STRICT */
 
