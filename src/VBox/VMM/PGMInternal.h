@@ -3101,7 +3101,7 @@ void            pgmPoolMonitorModifiedInsert(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
 #endif
 
 void            pgmPoolAddDirtyPage(PVM pVM, PPGMPOOL pPool, PPGMPOOLPAGE pPage);
-void            pgmPoolResetDirtyPages(PVM pVM, bool fForceRemoval = false);
+void            pgmPoolResetDirtyPages(PVM pVM);
 
 int             pgmR3ExitShadowModeBeforePoolFlush(PVM pVM, PVMCPU pVCpu);
 int             pgmR3ReEnterShadowModeAfterPoolFlush(PVM pVM, PVMCPU pVCpu);
@@ -3196,7 +3196,7 @@ DECLINLINE(PPGMPAGE) pgmPhysGetPage(PPGM pPGM, RTGCPHYS GCPhys)
  *
  * @param   pPGM        PGM handle.
  * @param   GCPhys      The GC physical address.
- * @param   ppPage      Where to store the page poitner on success.
+ * @param   ppPage      Where to store the page pointer on success.
  */
 DECLINLINE(int) pgmPhysGetPageEx(PPGM pPGM, RTGCPHYS GCPhys, PPPGMPAGE ppPage)
 {
@@ -3236,7 +3236,7 @@ DECLINLINE(int) pgmPhysGetPageEx(PPGM pPGM, RTGCPHYS GCPhys, PPPGMPAGE ppPage)
  *
  * @param   pPGM        PGM handle.
  * @param   GCPhys      The GC physical address.
- * @param   ppPage      Where to store the page poitner on success.
+ * @param   ppPage      Where to store the page pointer on success.
  * @param   ppRamHint   Where to read and store the ram list hint.
  *                      The caller initializes this to NULL before the call.
  */
