@@ -37,8 +37,8 @@
 #ifndef EDOOFUS
 # ifdef EBADMACHO
 #  define EDOOFUS EBADMACHO
-# elif defined(RT_OS_LINUX)
-#  define EDOOFUS   0x0fad8484d
+# elif
+#  define EDOOFUS EPROTO                /* What a boring lot. */
 //# elif defined(EXYZ)
 //#  define EDOOFUS EXYZ
 # else
