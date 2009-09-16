@@ -153,9 +153,6 @@ void VBoxVMSettingsSystem::getFrom (const CMachine &aMachine)
         adjustBootOrderTWSize();
     }
 
-    /* ACPI */
-    mCbAcpi->setChecked (biosSettings.GetACPIEnabled());
-
     /* IO APIC */
     mCbApic->setChecked (biosSettings.GetIOAPICEnabled());
 
@@ -215,9 +212,6 @@ void VBoxVMSettingsSystem::putBackTo()
                 mMachine.SetBootOrder (index ++, KDeviceType_Null);
         }
     }
-
-    /* ACPI */
-    biosSettings.SetACPIEnabled (mCbAcpi->isChecked());
 
     /* IO APIC */
     biosSettings.SetIOAPICEnabled (mCbApic->isChecked() ||
@@ -323,8 +317,7 @@ void VBoxVMSettingsSystem::setOrderAfter (QWidget *aWidget)
     setTabOrder (mLeMemory, mTwBootOrder);
     setTabOrder (mTwBootOrder, mTbBootItemUp);
     setTabOrder (mTbBootItemUp, mTbBootItemDown);
-    setTabOrder (mTbBootItemDown, mCbAcpi);
-    setTabOrder (mCbAcpi, mCbApic);
+    setTabOrder (mTbBootItemDown, mCbApic);
 
     setTabOrder (mCbApic, mSlCPU);
     setTabOrder (mSlCPU, mLeCPU);
