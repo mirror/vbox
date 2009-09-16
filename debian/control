@@ -1,5 +1,5 @@
 Source: virtualbox-ose
-Section: non-free/misc
+Section: misc
 Priority: optional
 Maintainer: Sun Microsystems, Inc. <info@virtualbox.org>
 Standards-Version: 3.2.1
