@@ -487,8 +487,12 @@ void WINAPI VBoxServiceStart(void)
 
     Log(("VBoxTray: Returned from main loop, exiting ...\n"));
 
-    /* remove the system tray icon */
+    /* remove the system tray icon and refresh system tray */
     Shell_NotifyIcon(NIM_DELETE, &ndata);
+    HWND hTrayWnd = FindWindow("Shell_TrayWnd", NULL); /* We assume we only have one tray atm */
+    HWND hTrayNotifyWnd = FindWindowEx(hTrayWnd, 0, "TrayNotifyWnd", NULL);
+    if (hTrayNotifyWnd)
+        SendMessage(hTrayNotifyWnd, WM_PAINT, 0, NULL);
 
     Log(("VBoxTray: waiting for display change thread ...\n"));
 
