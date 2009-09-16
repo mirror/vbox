@@ -34,11 +34,12 @@
 const char *emptyItemCode = "#empty#";
 
 /* VBoxVMSettingsNetwork Stuff */
-VBoxVMSettingsNetwork::VBoxVMSettingsNetwork (VBoxVMSettingsNetworkPage *aParent)
+VBoxVMSettingsNetwork::VBoxVMSettingsNetwork (VBoxVMSettingsNetworkPage *aParent, bool aDisableStaticControls)
     : QIWithRetranslateUI <QWidget> (0)
     , mParent (aParent)
     , mValidator (0)
     , mPolished (false)
+    , mDisableStaticControls (false)
 {
     /* Apply UI decorations */
     Ui::VBoxVMSettingsNetwork::setupUi (this);
@@ -68,6 +69,11 @@ VBoxVMSettingsNetwork::VBoxVMSettingsNetwork (VBoxVMSettingsNetworkPage *aParent
 
     /* Applying language settings */
     retranslateUi();
+
+    /* If some controls should be disabled or not when the
+     * same tab widgets are shown during runtime
+     */
+    mDisableStaticControls = aDisableStaticControls;
 }
 
 void VBoxVMSettingsNetwork::getFromAdapter (const CNetworkAdapter &aAdapter)
@@ -152,8 +158,9 @@ void VBoxVMSettingsNetwork::setValidator (QIWidgetValidator *aValidator)
 {
     mValidator = aValidator;
 
-    connect (mCbEnableAdapter, SIGNAL (toggled (bool)),
-             mValidator, SLOT (revalidate()));
+    if (!mDisableStaticControls)
+        connect (mCbEnableAdapter, SIGNAL (toggled (bool)),
+                 mValidator, SLOT (revalidate()));
     connect (mCbAttachmentType, SIGNAL (activated (const QString&)),
              this, SLOT (updateAttachmentAlternative()));
     connect (mCbAdapterName, SIGNAL (activated (const QString&)),
@@ -161,7 +168,8 @@ void VBoxVMSettingsNetwork::setValidator (QIWidgetValidator *aValidator)
     connect (mCbAdapterName, SIGNAL (editTextChanged (const QString&)),
              this, SLOT (updateAlternativeName()));
 
-    mValidator->revalidate();
+    if (!mDisableStaticControls)
+        mValidator->revalidate();
 }
 
 bool VBoxVMSettingsNetwork::revalidate (QString &aWarning, QString &aTitle)
@@ -266,8 +274,22 @@ void VBoxVMSettingsNetwork::showEvent (QShowEvent *aEvent)
         /* Give the minimum size hint to the first layout column */
         mNetworkChildGridLayout->setColumnMinimumWidth (0, mLbAttachmentType->width());
 
-        /* Hide advanced items initially */
-        toggleAdvanced();
+        if (mDisableStaticControls)
+        {
+            /* Disable controls for dynamically displayed page */
+            mCbEnableAdapter->setEnabled (false);
+            mCbAdapterType->setEnabled (false);
+            mLeMAC->setEnabled (false);
+            mTbMAC->setEnabled (false);
+            mLbAdapterType->setEnabled (false);
+            mLbMAC->setEnabled (false);
+            mAbsAdvanced->animateClick();
+        }
+        else
+        {
+            /* Hide advanced items initially */
+            toggleAdvanced();
+        }
     }
     QWidget::showEvent (aEvent);
 }
@@ -525,8 +547,9 @@ void VBoxVMSettingsNetwork::populateComboboxes()
 }
 
 /* VBoxVMSettingsNetworkPage Stuff */
-VBoxVMSettingsNetworkPage::VBoxVMSettingsNetworkPage()
+VBoxVMSettingsNetworkPage::VBoxVMSettingsNetworkPage(bool aDisableStaticControls)
     : mValidator (0)
+    , mDisableStaticControls (false)
 {
     /* Setup Main Layout */
     QVBoxLayout *mainLayout = new QVBoxLayout (this);
@@ -535,6 +558,11 @@ VBoxVMSettingsNetworkPage::VBoxVMSettingsNetworkPage()
     /* Creating Tab Widget */
     mTwAdapters = new QTabWidget (this);
     mainLayout->addWidget (mTwAdapters);
+
+    /* If some controls should be disabled or not when the
+     * same tab widgets are shown during runtime
+     */
+    mDisableStaticControls = aDisableStaticControls;
 }
 
 QStringList VBoxVMSettingsNetworkPage::brgList (bool aRefresh)
@@ -636,13 +664,17 @@ void VBoxVMSettingsNetworkPage::getFrom (const CMachine &aMachine)
         CNetworkAdapter adapter = aMachine.GetNetworkAdapter (slot);
 
         /* Creating Adapter's page */
-        VBoxVMSettingsNetwork *page = new VBoxVMSettingsNetwork (this);
+        VBoxVMSettingsNetwork *page = new VBoxVMSettingsNetwork (this, mDisableStaticControls);
 
         /* Loading Adapter's data into page */
         page->getFromAdapter (adapter);
 
         /* Attach Adapter's page to Tab Widget */
         mTwAdapters->addTab (page, page->pageTitle());
+
+        /* Disable tab page if adapter is being configured dynamically */
+        if (mDisableStaticControls && !adapter.GetEnabled())
+            mTwAdapters->setTabEnabled(slot, false);
 
         /* Setup validation */
         page->setValidator (mValidator);

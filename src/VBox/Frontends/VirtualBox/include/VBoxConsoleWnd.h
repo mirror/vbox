@@ -29,6 +29,7 @@
 
 #include "VBoxProblemReporter.h"
 #include "VBoxHelpActions.h"
+#include "VBoxVMSettingsNetwork.h"
 
 /* Qt includes */
 #include <QMainWindow>
@@ -62,6 +63,8 @@ class VBoxSwitchMenu;
 class VBoxChangeDockIconUpdateEvent;
 
 class VBoxMiniToolBar;
+
+class VBoxVMSettingsNetworkPage;
 
 /* We want to make the first action highlighted but not
  * selected, but Qt makes the both or neither one of this,
@@ -212,18 +215,15 @@ private slots:
     void devicesMountDVDImage();
     void devicesUnmountDVD();
     void devicesSwitchVrdp (bool);
+    void devicesOpenNetworkDialog();
     void devicesOpenSFDialog();
     void devicesInstallGuestAdditions();
 
     void prepareFloppyMenu();
     void prepareDVDMenu();
-    void prepareNetworkMenu();
-
-    void setDynamicMenuItemStatusTip (QAction *aAction);
 
     void captureFloppy (QAction *aAction);
     void captureDVD (QAction *aAction);
-    void activateNetworkMenu (QAction *aAction);
     void switchUSB (QAction *aAction);
 
     void statusTipChanged (const QString &);
@@ -235,7 +235,7 @@ private slots:
     void updateMachineState (KMachineState state);
     void updateMouseState (int state);
     void updateAdditionsState (const QString&, bool, bool, bool);
-    void updateNetworkAdarptersState();
+    void updateNetworkAdaptersState();
     void updateUsbState();
     void updateMediaDriveState (VBoxDefs::MediaType aType);
     void updateSharedFoldersState();
@@ -290,6 +290,7 @@ private:
     QAction *mDevicesMountDVDImageAction;
     QAction *mDevicesUnmountDVDAction;
     QAction *mDevicesSwitchVrdpAction;
+    QAction *mDevicesNetworkDialogAction;
     QAction *mDevicesSFDialogAction;
     QAction *mDevicesInstallGuestToolsAction;
 
@@ -322,7 +323,6 @@ private:
     QMenu *mDevicesMountDVDMenu;
     /* see showIndicatorContextMenu for a description of mDevicesSFMenu */
     /* QMenu *mDevicesSFMenu; */
-    QMenu *mDevicesNetworkMenu;
     VBoxUSBMenu *mDevicesUSBMenu;
     /* VBoxSwitchMenu *mDevicesVRDPMenu; */
 #ifdef VBOX_WITH_DEBUGGER_GUI
@@ -431,6 +431,46 @@ protected:
 private:
 
     VBoxVMSettingsSF *mSettings;
+    CSession &mSession;
+};
+
+
+class VBoxVMSettingsNetworkDialogPage : public VBoxVMSettingsNetworkPage
+{
+    Q_OBJECT;
+
+public:
+
+    VBoxVMSettingsNetworkDialogPage() : VBoxVMSettingsNetworkPage(true) {}
+
+    void getFrom (const CMachine &aMachine) { VBoxVMSettingsNetworkPage::getFrom(aMachine); }
+    void putBackTo() { VBoxVMSettingsNetworkPage::putBackTo(); }
+
+};
+
+class VBoxNetworkDialog : public QIWithRetranslateUI<QDialog>
+{
+    Q_OBJECT;
+
+public:
+
+    VBoxNetworkDialog (QWidget*, CSession&);
+
+protected:
+
+    void retranslateUi();
+
+protected slots:
+
+    virtual void accept();
+
+protected:
+
+    void showEvent (QShowEvent*);
+
+private:
+
+    VBoxVMSettingsNetworkDialogPage *mSettings;
     CSession &mSession;
 };
 

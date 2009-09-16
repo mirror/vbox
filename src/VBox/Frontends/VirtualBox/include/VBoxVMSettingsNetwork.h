@@ -38,7 +38,7 @@ class VBoxVMSettingsNetwork : public QIWithRetranslateUI <QWidget>,
 
 public:
 
-    VBoxVMSettingsNetwork (VBoxVMSettingsNetworkPage *aParent);
+    VBoxVMSettingsNetwork (VBoxVMSettingsNetworkPage *aParent, bool aDisableStaticControls = false);
 
     void getFromAdapter (const CNetworkAdapter &aAdapter);
     void putBackToAdapter();
@@ -78,6 +78,7 @@ private:
     QString mHoiName;
 
     bool mPolished;
+    bool mDisableStaticControls;
 };
 
 class VBoxVMSettingsNetworkPage : public VBoxSettingsPage
@@ -86,7 +87,7 @@ class VBoxVMSettingsNetworkPage : public VBoxSettingsPage
 
 public:
 
-    VBoxVMSettingsNetworkPage();
+    VBoxVMSettingsNetworkPage(bool aDisableStaticControls = false);
 
     QStringList brgList (bool aRefresh = false);
     QStringList intList (bool aRefresh = false);
@@ -114,6 +115,8 @@ private:
     QStringList mBrgList;
     QStringList mIntList;
     QStringList mHoiList;
+
+    bool mDisableStaticControls;
 };
 
 #endif // __VBoxVMSettingsNetwork_h__
