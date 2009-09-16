@@ -365,6 +365,11 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent,
         VBoxGlobal::iconSet (":/cd_unmount_16px.png",
                              ":/cd_unmount_dis_16px.png"));
 
+    mDevicesNetworkDialogAction = new QAction (mRunningOrPausedActions);
+    mDevicesNetworkDialogAction->setIcon (
+        VBoxGlobal::iconSet (":/nw_16px.png",
+                             ":/nw_disabled_16px.png"));
+
     mDevicesSFDialogAction = new QAction (mRunningOrPausedActions);
     mDevicesSFDialogAction->setIcon (
         VBoxGlobal::iconSet (":/shared_folder_16px.png",
@@ -460,7 +465,7 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent,
     mDevicesMenu->addAction (mDevicesUnmountFloppyAction);
     mDevicesMenu->addSeparator();
 
-    mDevicesNetworkMenu = mDevicesMenu->addMenu (VBoxGlobal::iconSet (":/nw_16px.png", ":/nw_disabled_16px.png"), QString::null);
+    mDevicesMenu->addAction (mDevicesNetworkDialogAction);
     mDevicesMenu->addSeparator();
 
     mDevicesUSBMenu = new VBoxUSBMenu (mDevicesMenu);
@@ -651,27 +656,19 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent,
     connect (mDevicesMountDVDImageAction, SIGNAL(triggered()), this, SLOT(devicesMountDVDImage()));
     connect (mDevicesUnmountDVDAction, SIGNAL(triggered()), this, SLOT(devicesUnmountDVD()));
     connect (mDevicesSwitchVrdpAction, SIGNAL(toggled (bool)), this, SLOT(devicesSwitchVrdp (bool)));
+    connect (mDevicesNetworkDialogAction, SIGNAL(triggered()), this, SLOT(devicesOpenNetworkDialog()));
     connect (mDevicesSFDialogAction, SIGNAL(triggered()), this, SLOT(devicesOpenSFDialog()));
     connect (mDevicesInstallGuestToolsAction, SIGNAL(triggered()), this, SLOT(devicesInstallGuestAdditions()));
 
 
     connect (mDevicesMountFloppyMenu, SIGNAL(aboutToShow()), this, SLOT(prepareFloppyMenu()));
     connect (mDevicesMountDVDMenu, SIGNAL(aboutToShow()), this, SLOT(prepareDVDMenu()));
-    connect (mDevicesNetworkMenu, SIGNAL(aboutToShow()), this, SLOT(prepareNetworkMenu()));
 
     connect (statusBar(), SIGNAL(messageChanged (const QString &)), this, SLOT(statusTipChanged (const QString &)));
 
     connect (mDevicesMountFloppyMenu, SIGNAL(triggered(QAction *)), this, SLOT(captureFloppy(QAction *)));
     connect (mDevicesMountDVDMenu, SIGNAL(triggered(QAction *)), this, SLOT(captureDVD(QAction *)));
     connect (mDevicesUSBMenu, SIGNAL(triggered(QAction *)), this, SLOT(switchUSB(QAction *)));
-    connect (mDevicesNetworkMenu, SIGNAL(triggered(QAction *)), this, SLOT(activateNetworkMenu(QAction *)));
-
-    connect (mDevicesMountFloppyMenu, SIGNAL (hovered (QAction *)),
-             this, SLOT (setDynamicMenuItemStatusTip (QAction *)));
-    connect (mDevicesMountDVDMenu, SIGNAL (hovered (QAction *)),
-             this, SLOT (setDynamicMenuItemStatusTip (QAction *)));
-    connect (mDevicesNetworkMenu, SIGNAL (hovered (QAction *)),
-             this, SLOT (setDynamicMenuItemStatusTip (QAction *)));
 
     /* Cleanup the status bar tip when a menu with dynamic items is
      * hidden. This is necessary for context menus in the first place but also
@@ -680,8 +677,6 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent,
     connect (mDevicesMountFloppyMenu, SIGNAL (aboutToHide()),
              statusBar(), SLOT (clearMessage()));
     connect (mDevicesMountDVDMenu, SIGNAL (aboutToHide()),
-             statusBar(), SLOT (clearMessage()));
-    connect (mDevicesNetworkMenu, SIGNAL (aboutToHide()),
              statusBar(), SLOT (clearMessage()));
 
     connect (fd_light, SIGNAL (contextMenuRequested (QIStateIndicator *, QContextMenuEvent *)),
@@ -969,7 +964,7 @@ bool VBoxConsoleWnd::openView (const CSession &session)
     connect (console, SIGNAL (usbStateChange()),
              this, SLOT (updateUsbState()));
     connect (console, SIGNAL (networkStateChange()),
-             this, SLOT (updateNetworkAdarptersState()));
+             this, SLOT (updateNetworkAdaptersState()));
     connect (console, SIGNAL (sharedFoldersChanged()),
              this, SLOT (updateSharedFoldersState()));
 
@@ -1748,6 +1743,10 @@ void VBoxConsoleWnd::retranslateUi()
     mDevicesSwitchVrdpAction->setStatusTip (
         tr ("Enable or disable remote desktop (RDP) connections to this machine"));
 
+    mDevicesNetworkDialogAction->setText (tr ("&Network Adapters..."));
+    mDevicesNetworkDialogAction->setStatusTip (
+        tr ("Open the dialog to change settings of the Network Adapters"));
+
     mDevicesSFDialogAction->setText (tr ("&Shared Folders..."));
     mDevicesSFDialogAction->setStatusTip (
         tr ("Open the dialog to operate on shared folders"));
@@ -1776,7 +1775,6 @@ void VBoxConsoleWnd::retranslateUi()
 
     mDevicesMountFloppyMenu->setTitle (tr ("Mount &Floppy"));
     mDevicesMountDVDMenu->setTitle (tr ("Mount &CD/DVD-ROM"));
-    mDevicesNetworkMenu->setTitle (tr ("&Network Adapters"));
     mDevicesUSBMenu->setTitle (tr ("&USB Devices"));
 
     /* main menu & seamless popup menu */
@@ -1983,7 +1981,7 @@ void VBoxConsoleWnd::updateAppearanceOf (int element)
         net_light->setState (count > 0 ? KDeviceActivity_Idle
                                        : KDeviceActivity_Null);
 
-        mDevicesNetworkMenu->setEnabled (isRunningOrPaused && count > 0);
+        mDevicesNetworkDialogAction->setEnabled (isRunningOrPaused && count > 0);
 
         /* update tooltip */
         QString ttip = tr ("<qt><nobr>Indicates the activity of the network "
@@ -2954,6 +2952,14 @@ void VBoxConsoleWnd::devicesSwitchVrdp (bool aOn)
     updateAppearanceOf (VRDPStuff);
 }
 
+void VBoxConsoleWnd::devicesOpenNetworkDialog()
+{
+    if (!console) return;
+
+    VBoxNetworkDialog dlg (console, csession);
+    dlg.exec();
+}
+
 void VBoxConsoleWnd::devicesOpenSFDialog()
 {
     if (!console) return;
@@ -3237,44 +3243,6 @@ void VBoxConsoleWnd::prepareDVDMenu()
     }
 }
 
-/**
- *  Prepares the "Network adapter" menu by populating the existent adapters.
- */
-void VBoxConsoleWnd::prepareNetworkMenu()
-{
-    mDevicesNetworkMenu->clear();
-    ulong count = qMin ((ULONG) 4,
-        vboxGlobal().virtualBox().GetSystemProperties().GetNetworkAdapterCount());
-    for (ulong slot = 0; slot < count; ++ slot)
-    {
-        CNetworkAdapter adapter = csession.GetMachine().GetNetworkAdapter (slot);
-        QAction *action = mDevicesNetworkMenu->addAction (tr ("Adapter %1", "network").arg (slot+1));
-        action->setEnabled (adapter.GetEnabled());
-        action->setCheckable (true);
-        action->setChecked (adapter.GetEnabled() && adapter.GetCableConnected());
-        action->setData (static_cast<qulonglong> (slot));
-    }
-}
-
-void VBoxConsoleWnd::setDynamicMenuItemStatusTip (QAction *aAction)
-{
-    QString tip;
-
-    if (sender() == mDevicesNetworkMenu)
-    {
-        tip = aAction->isChecked() ?
-            tr ("Disconnect the cable from the selected virtual network adapter") :
-            tr ("Connect the cable to the selected virtual network adapter");
-    }
-
-    if (!tip.isNull())
-    {
-        StatusTipEvent *ev = new StatusTipEvent (tip);
-        QApplication::postEvent (this, ev);
-        mWaitForStatusBarChange = true;
-    }
-}
-
 void VBoxConsoleWnd::statusTipChanged (const QString & /*aMes*/)
 {
     mStatusBarChangedInside = mWaitForStatusBarChange;
@@ -3339,18 +3307,6 @@ void VBoxConsoleWnd::captureDVD (QAction *aAction)
                 vboxProblem().cannotSaveMachineSettings (m);
         }
     }
-}
-
-/**
- *  Switch the cable connected/disconnected for the selected network adapter
- */
-void VBoxConsoleWnd::activateNetworkMenu (QAction *aAction)
-{
-    ulong slot = aAction->data().toULongLong();
-    CNetworkAdapter adapter = csession.GetMachine().GetNetworkAdapter (slot);
-    bool connected = adapter.GetCableConnected();
-    if (adapter.GetEnabled())
-        adapter.SetCableConnected (!connected);
 }
 
 /**
@@ -3449,13 +3405,8 @@ void VBoxConsoleWnd::showIndicatorContextMenu (QIStateIndicator *ind, QContextMe
     else
     if (ind == net_light)
     {
-        if (mDevicesNetworkMenu->isEnabled())
-        {
-            /* set "this is a context menu" flag */
-            mDevicesNetworkMenu->menuAction()->setData (true);
-            mDevicesNetworkMenu->exec (e->globalPos());
-            mDevicesNetworkMenu->menuAction()->setData (false);
-        }
+        if (mDevicesNetworkDialogAction->isEnabled())
+            mDevicesNetworkDialogAction->trigger();
     }
 }
 
@@ -3684,7 +3635,7 @@ void VBoxConsoleWnd::updateUsbState()
     updateAppearanceOf (USBStuff);
 }
 
-void VBoxConsoleWnd::updateNetworkAdarptersState()
+void VBoxConsoleWnd::updateNetworkAdaptersState()
 {
     updateAppearanceOf (NetworkStuff);
 }
@@ -3932,5 +3883,63 @@ void VBoxSFDialog::showEvent (QShowEvent *aEvent)
     setMinimumWidth (400);
     QDialog::showEvent (aEvent);
 }
+
+
+VBoxNetworkDialog::VBoxNetworkDialog (QWidget *aParent, CSession &aSession)
+    : QIWithRetranslateUI<QDialog> (aParent)
+    , mSettings (0)
+    , mSession (aSession)
+{
+    setModal (true);
+    /* Setup Dialog's options */
+    setWindowIcon (QIcon (":/nw_16px.png"));
+    setSizeGripEnabled (true);
+
+    /* Setup main dialog's layout */
+    QVBoxLayout *mainLayout = new QVBoxLayout (this);
+    VBoxGlobal::setLayoutMargin (mainLayout, 10);
+    mainLayout->setSpacing (10);
+
+    /* Setup settings layout */
+    mSettings = new VBoxVMSettingsNetworkDialogPage();
+    mSettings->setOrderAfter (this);
+    VBoxGlobal::setLayoutMargin (mSettings->layout(), 0);
+    mSettings->getFrom (aSession.GetMachine());
+    mainLayout->addWidget (mSettings);
+
+    /* Setup button's layout */
+    QIDialogButtonBox *buttonBox = new QIDialogButtonBox (QDialogButtonBox::Ok | QDialogButtonBox::Cancel | QDialogButtonBox::Help);
+
+    connect (buttonBox, SIGNAL (helpRequested()), &vboxProblem(), SLOT (showHelpHelpDialog()));
+    connect (buttonBox, SIGNAL (accepted()), this, SLOT (accept()));
+    connect (buttonBox, SIGNAL (rejected()), this, SLOT (reject()));
+    mainLayout->addWidget (buttonBox);
+
+    retranslateUi();
+}
+
+void VBoxNetworkDialog::retranslateUi()
+{
+    setWindowTitle (tr ("Network Adapter Settings"));
+}
+
+void VBoxNetworkDialog::accept()
+{
+    mSettings->putBackTo();
+    CMachine machine = mSession.GetMachine();
+    machine.SaveSettings();
+    if (!machine.isOk())
+        vboxProblem().cannotSaveMachineSettings (machine);
+    QDialog::accept();
+}
+
+void VBoxNetworkDialog::showEvent (QShowEvent *aEvent)
+{
+    resize (450, 300);
+    VBoxGlobal::centerWidget (this, parentWidget());
+    setMinimumWidth (400);
+    QDialog::showEvent (aEvent);
+}
+
 
 #include "VBoxConsoleWnd.moc"
