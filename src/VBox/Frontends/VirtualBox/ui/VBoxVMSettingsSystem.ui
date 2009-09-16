@@ -311,22 +311,6 @@
         </widget>
        </item>
        <item row="4" column="1" colspan="2">
-        <widget class="QCheckBox" name="mCbAcpi">
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
-           <horstretch>0</horstretch>
-           <verstretch>0</verstretch>
-          </sizepolicy>
-         </property>
-         <property name="whatsThis">
-          <string>When checked, the virtual machine will support the Advanced Configuration and Power Management Interface (ACPI). &lt;b&gt;Note:&lt;/b&gt; don't disable this feature after having installed a Windows guest operating system!</string>
-         </property>
-         <property name="text">
-          <string>Enable &amp;ACPI</string>
-         </property>
-        </widget>
-       </item>
-       <item row="5" column="1" colspan="2">
         <widget class="QCheckBox" name="mCbApic">
          <property name="sizePolicy">
           <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
