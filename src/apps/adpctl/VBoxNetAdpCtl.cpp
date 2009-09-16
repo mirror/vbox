@@ -24,7 +24,6 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
-#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -36,11 +35,12 @@
 # include <sys/ioccom.h>
 #endif
 
-/* @todo Error codes must be moved to some header file */
-#define ADPCTLERR_NO_CTL_DEV 3
-#define ADPCTLERR_IOCTL_FAILED 4
+/** @todo Error codes must be moved to some header file */
+#define ADPCTLERR_BAD_NAME         2
+#define ADPCTLERR_NO_CTL_DEV       3
+#define ADPCTLERR_IOCTL_FAILED     4
 
-/* @todo These are duplicates from src/VBox/HostDrivers/VBoxNetAdp/VBoxNetAdpInternal.h */
+/** @todo These are duplicates from src/VBox/HostDrivers/VBoxNetAdp/VBoxNetAdpInternal.h */
 #define VBOXNETADP_CTL_DEV_NAME    "/dev/vboxnetctl"
 #define VBOXNETADP_NAME            "vboxnet"
 #define VBOXNETADP_MAX_NAME_LEN    32
@@ -94,6 +94,7 @@ static int executeIfconfig(const char *pcszAdapterName, const char *pcszArg1,
             rc = EXIT_FAILURE;
             break;
         case 0: /* Child process. */
+            /** @todo use execve like below? */
             if (execv(VBOXADPCTL_IFCONFIG_PATH, (char * const*)argv) == -1)
                 rc = EXIT_FAILURE;
             break;
@@ -148,9 +149,6 @@ static bool removeAddresses(char *pszAdapterName)
     for (cAddrs = 0; cAddrs < MAX_ADDRESSES && fgets(szBuf, sizeof(szBuf), fp);)
     {
         int cbSkipWS = strspn(szBuf, " \t");
-#if 0 /* Don't use this! assert() breaks the mac build. Use IPRT or be a rectangular building thing. */
-        assert(cbSkipWS < 20);
-#endif
         char *pszWord = strtok(szBuf + cbSkipWS, " ");
         /* We are concerned with IPv6 address lines only. */
         if (!pszWord || strcmp(pszWord, "inet6"))
@@ -204,17 +202,18 @@ int checkAdapterName(const char *pcszNameIn, char *pszNameOut)
 {
     int iAdapterIndex = -1;
 
-    if (sscanf(pcszNameIn, "vboxnet%d", &iAdapterIndex) != 1
+    if (   strlen(pcszNameIn) >= VBOXNETADP_MAX_NAME_LEN
+        || sscanf(pcszNameIn, "vboxnet%d", &iAdapterIndex) != 1
         || iAdapterIndex < 0 || iAdapterIndex > 99 )
     {
         fprintf(stderr, "Setting configuration for %s is not supported.\n", pcszNameIn);
-        return 2;
+        return ADPCTLERR_BAD_NAME;
     }
     sprintf(pszNameOut, "vboxnet%d", iAdapterIndex);
     if (strcmp(pszNameOut, pcszNameIn))
     {
         fprintf(stderr, "Invalid adapter name %s.\n", pcszNameIn);
-        return 2;
+        return ADPCTLERR_BAD_NAME;
     }
 
     return 0;
@@ -265,6 +264,7 @@ int main(int argc, char *argv[])
                 rc = checkAdapterName(pszAdapterName, szAdapterName);
                 if (rc)
                     return rc;
+                memset(&Req, '\0', sizeof(Req));
                 snprintf(Req.szName, sizeof(Req.szName), "%s", szAdapterName);
                 return doIOCtl(VBOXNETADP_CTL_REMOVE, &Req);
             }
@@ -272,6 +272,7 @@ int main(int argc, char *argv[])
         case 2:
             if (strcmp("add", argv[1]) == 0)
             {
+                memset(&Req, '\0', sizeof(Req));
                 rc = doIOCtl(VBOXNETADP_CTL_ADD, &Req);
                 if (rc == 0)
                     puts(Req.szName);
@@ -325,3 +326,4 @@ int main(int argc, char *argv[])
     }
     return rc;
 }
+
