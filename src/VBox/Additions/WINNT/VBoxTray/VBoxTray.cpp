@@ -227,7 +227,7 @@ void VBoxServiceReloadCursor(void)
     POINT mousePos;
     HWND hWin;
     DWORD hThread, hCurrentThread;
-    
+
     GetCursorPos(&mousePos);
     hWin = WindowFromPoint(mousePos);
     if (hWin)
@@ -409,7 +409,7 @@ void WINAPI VBoxServiceStart(void)
     ndata.hWnd             = gToolWindow;
     ndata.uID              = ID_TRAYICON;
     ndata.uFlags           = NIF_ICON | NIF_MESSAGE | NIF_TIP;
-    ndata.uCallbackMessage = WM_USER;
+    ndata.uCallbackMessage = WM_VBOX_TRAY;
     ndata.hIcon            = LoadIcon(gInstance, MAKEINTRESOURCE(IDI_VIRTUALBOX));
     sprintf(ndata.szTip, "Sun VirtualBox Guest Additions %d.%d.%dr%d", VBOX_VERSION_MAJOR, VBOX_VERSION_MINOR, VBOX_VERSION_BUILD, VBOX_SVN_REV);
     Log(("VBoxTray: ndata.hWnd %08X, ndata.hIcon = %p\n", ndata.hWnd, ndata.hIcon));
@@ -476,8 +476,8 @@ void WINAPI VBoxServiceStart(void)
                 if (fTrayIconCreated && dwMajorVersion >= 5)
                 {
                     /* Check in 10 seconds (@todo make seconds configurable) ... */
-                    SetTimer(gToolWindow, 
-                             WM_VBOX_CHECK_HOSTVERSION, 
+                    SetTimer(gToolWindow,
+                             WM_VBOX_CHECK_HOSTVERSION,
                              10000, /* 10 seconds */
                              NULL   /* no timerproc */);
                 }
@@ -567,9 +567,8 @@ LRESULT CALLBACK VBoxToolWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPar
             break;
 
         case WM_TIMER:
-
-            switch (wParam) 
-            { 
+            switch (wParam)
+            {
                 case WM_VBOX_CHECK_HOSTVERSION:
                     if (RT_SUCCESS(VBoxCheckHostVersion()))
                     {
@@ -582,6 +581,17 @@ LRESULT CALLBACK VBoxToolWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPar
                     break;
             }
 
+            break;
+
+        case WM_VBOX_TRAY:
+            switch (lParam)
+            {
+                case WM_LBUTTONDBLCLK:
+                    break;
+
+                case WM_RBUTTONDOWN:
+                    break;
+            }
             break;
 
         case WM_VBOX_INSTALL_SEAMLESS_HOOK:

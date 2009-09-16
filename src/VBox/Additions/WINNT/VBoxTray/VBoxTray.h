@@ -39,6 +39,7 @@
 #define WM_VBOX_RESTORED                WM_APP + 1
 #define WM_VBOX_CHECK_VRDP              WM_APP + 2
 #define WM_VBOX_CHECK_HOSTVERSION       WM_APP + 3
+#define WM_VBOX_TRAY                    WM_APP + 4
 
 #define ID_TRAYICON                     2000
 
