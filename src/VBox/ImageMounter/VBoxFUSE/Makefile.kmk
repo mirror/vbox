@@ -53,6 +53,7 @@ VBoxFUSE_LIBS = \
 	$(LIB_DDU) \
 	$(LIB_RUNTIME)
 VBoxFUSE_LIBS.darwin = fuse
+VBoxFUSE_LIBS.linux = fuse
 VBoxFUSE_LIBPATHS.darwin = /usr/local/lib
 
 include $(KBUILD_PATH)/subfooter.kmk

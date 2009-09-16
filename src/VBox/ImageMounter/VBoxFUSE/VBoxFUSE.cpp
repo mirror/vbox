@@ -26,7 +26,7 @@
 #define LOG_GROUP LOG_GROUP_DEFAULT /** @todo log group */
 #include <iprt/types.h>
 
-#if defined(RT_OS_DARWIN) || defined(RT_OS_FREEBSD)
+#if defined(RT_OS_DARWIN) || defined(RT_OS_FREEBSD) || defined(RT_OS_LINUX)
 # include <sys/param.h>
 # undef PVM     /* Blasted old BSD mess still hanging around darwin. */
 #endif
@@ -40,7 +40,7 @@
 //# elif defined(EXYZ)
 //#  define EDOOFUS EXYZ
 # else
-#  error "Choose an unlikely and (if possible) fun error number for EDOOFUS."
+#  define EDOOFUS 0xfad8484d
 # endif
 #endif
 
@@ -337,8 +337,10 @@ static void vboxfuseNodeFillStat(PVBOXFUSENODE pNode, struct stat *pStat)
     pStat->st_size      = pNode->cbPrimary;
     pStat->st_blocks    = (pNode->cbPrimary + DEV_BSIZE - 1) / DEV_BSIZE;
     pStat->st_blksize   = 0x1000;           /* ignored */
+#ifndef RT_OS_LINUX
     pStat->st_flags     = 0;
     pStat->st_gen       = 0;
+#endif
 }
 
 
@@ -519,7 +521,7 @@ static int vboxfuseFlatImageCreate(const char *pszPath, const char *pszImage, PV
      * Try open the image file (without holding any locks).
      */
     char *pszFormat;
-    rc = VDGetFormat(pszImage, &pszFormat);
+    rc = VDGetFormat(NULL /* pVDIIfsDisk */, pszImage, &pszFormat);
     if (RT_FAILURE(rc))
     {
         LogRel(("VDGetFormat(%s,) failed, rc=%Rrc\n", pszImage, rc));
@@ -1005,6 +1007,13 @@ static int vboxfuseOp_open(const char *pszPath, struct fuse_file_info *pInfo)
         return -EINVAL;
     if ((pInfo->flags & O_ACCMODE) == O_ACCMODE)
         return -EINVAL;
+#elif defined(RT_OS_LINUX)
+    if (pInfo->flags & (  O_APPEND | O_ASYNC | O_DIRECT /* | O_LARGEFILE ? */
+                        | O_NOATIME | O_NOCTTY | O_NOFOLLOW | O_NONBLOCK
+                        /* | O_SYNC ? */))
+        return -EINVAL;
+    if ((pInfo->flags & O_ACCMODE) == O_ACCMODE)
+        return -EINVAL;
 #else
 # error "Port me"
 #endif
@@ -1151,7 +1160,7 @@ static int vboxfuseOp_read(const char *pszPath, char *pbBuf, size_t cbBuf,
     AssertReturn((int)cbBuf >= 0, -EINVAL);
     AssertReturn((unsigned)cbBuf == cbBuf, -EINVAL);
     AssertReturn(offFile >= 0, -EINVAL);
-    AssertReturn(offFile + cbBuf >= offFile, -EINVAL);
+    AssertReturn(offFile + (ssize_t)cbBuf >= offFile, -EINVAL);
 
     PVBOXFUSENODE pNode = (PVBOXFUSENODE)(uintptr_t)pInfo->fh;
     AssertPtr(pNode);
@@ -1167,7 +1176,7 @@ static int vboxfuseOp_read(const char *pszPath, char *pbBuf, size_t cbBuf,
             vboxfuseNodeLock(&pFlatImage->Node);
 
             int rc;
-            if (offFile + cbBuf < offFile)
+            if (offFile + (ssize_t)cbBuf < offFile)
                 rc = -EINVAL;
             else if (offFile >= pFlatImage->Node.cbPrimary)
                 rc = 0;
@@ -1176,7 +1185,7 @@ static int vboxfuseOp_read(const char *pszPath, char *pbBuf, size_t cbBuf,
             else
             {
                 /* Adjust for EOF. */
-                if (offFile + cbBuf >= pFlatImage->Node.cbPrimary)
+                if (offFile + (ssize_t)cbBuf >= pFlatImage->Node.cbPrimary)
                     cbBuf = pFlatImage->Node.cbPrimary - offFile;
 
                 /*
