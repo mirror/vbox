@@ -120,7 +120,7 @@ VBoxNetAdpFreeBSDModuleEvent(struct module *pMod, int enmEventType, void *pvArg)
                 Log(("vboxNetAdpInit failed %d\n", rc));
                 return RTErrConvertToErrno(rc);
             }
-            /* Create dev node */ 
+            /* Create dev node */
             VBoxNetAdpFreeBSDcdev = make_dev(&vboxnetadp_cdevsw, 0,
                 UID_ROOT, GID_WHEEL, 0600, VBOXNETADP_CTL_DEV_NAME);
 
@@ -148,7 +148,7 @@ VBoxNetAdpFreeBSDModuleEvent(struct module *pMod, int enmEventType, void *pvArg)
 static int
 VBoxNetAdpFreeBSDCtrlioctl(struct cdev *dev, u_long cmd, caddr_t data, int flags, struct thread *td)
 {
-    PVBOXNETADP pAdp = NULL;
+    PVBOXNETADP pAdp;
     PVBOXNETADPREQ pReq = (PVBOXNETADPREQ)data;
     struct ifnet *ifp;
     int rc;
@@ -156,28 +156,34 @@ VBoxNetAdpFreeBSDCtrlioctl(struct cdev *dev, u_long cmd, caddr_t data, int flags
     switch (cmd)
     {
         case VBOXNETADP_CTL_ADD:
-            if (!(cmd & IOC_OUT))
-                return (EINVAL);
+            if (   !(cmd & IOC_OUT)   /* paranoia*/
+                || IOCPARM_LEN(iCmd) < sizeof(*pReq))
+                return EINVAL;
 
             rc = vboxNetAdpCreate(&pAdp);
             if (RT_FAILURE(rc))
-                return (EINVAL);
+                return EINVAL;
 
-            strncpy(pReq->szName, pAdp->szName, sizeof(pReq->szName));
+            strncpy(pReq->szName, pAdp->szName, sizeof(pReq->szName) - 1);
+            pReq->szName[sizeof(pReq->szName) - 1] = '\0';
             break;
+
         case VBOXNETADP_CTL_REMOVE:
-            pAdp = vboxNetAdpFindByName(pReq->szName);
-            if (pAdp)
-                rc = vboxNetAdpDestroy(pAdp);
-            else
-                return (EINVAL);
+            if (!memchr(pReq->szName, '\0', RT_MIN(sizeof(pReq->szName), IOCPARM_LEN(iCmd))))
+                return EINVAL;
 
+            pAdp = vboxNetAdpFindByName(pReq->szName);
+            if (!pAdp)
+                return EINVAL;
+
+            rc = vboxNetAdpDestroy(pAdp);
             if (RT_FAILURE(rc))
-                return (EINVAL);
+                return EINVAL;
 
             break;
+
         default:
-            return (EINVAL);
+            return EINVAL;
     }
     return 0;
 }

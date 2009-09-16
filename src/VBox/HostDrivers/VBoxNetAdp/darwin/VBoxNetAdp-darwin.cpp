@@ -866,50 +866,53 @@ static int VBoxNetAdpDarwinClose(dev_t Dev, int fFlags, int fDevType, struct pro
  */
 static int VBoxNetAdpDarwinIOCtl(dev_t Dev, u_long iCmd, caddr_t pData, int fFlags, struct proc *pProcess)
 {
-    int rc = VINF_SUCCESS;
     uint32_t cbReq = IOCPARM_LEN(iCmd);
     PVBOXNETADPREQ pReq = (PVBOXNETADPREQ)pData;
+    int rc;
 
     Log(("VBoxNetAdpDarwinIOCtl: param len %#x; iCmd=%#lx\n", cbReq, iCmd));
     switch (IOCBASECMD(iCmd))
     {
         case IOCBASECMD(VBOXNETADP_CTL_ADD):
-            if ((IOC_DIRMASK & iCmd) == IOC_OUT)
-            {
-                PVBOXNETADP pNew;
-                rc = vboxNetAdpCreate(&pNew);
-                if (RT_SUCCESS(rc))
-                {
-                    if (cbReq < sizeof(VBOXNETADPREQ))
-                    {
-                        OSDBGPRINT(("VBoxNetAdpDarwinIOCtl: param len %#x < req size %#x; iCmd=%#lx\n", cbReq, sizeof(VBOXNETADPREQ), iCmd));
-                        return EINVAL;
-                    }
-                    strncpy(pReq->szName, pNew->szName, sizeof(pReq->szName));
-                }
-            }
+        {
+            if (   (IOC_DIRMASK & iCmd) != IOC_OUT
+                || cbReq < sizeof(VBOXNETADPREQ))
+                return EINVAL;
+
+            PVBOXNETADP pNew;
+            rc = vboxNetAdpCreate(&pNew);
+            if (RT_FAILURE(rc))
+                return EINVAL;
+
+            Assert(strlen(pReq->szName) < sizeof(pReq->szName));
+            strncpy(pReq->szName, pNew->szName, sizeof(pReq->szName) - 1);
+            pReq->szName[sizeof(pReq->szName) - 1] = '\0';
+            Log(("VBoxNetAdpDarwinIOCtl: Added '%s'\n", pReq->szName));
             break;
+        }
 
         case IOCBASECMD(VBOXNETADP_CTL_REMOVE):
-            for (unsigned i = 0; i < RT_ELEMENTS(g_aAdapters); i++)
-            {
-                PVBOXNETADP pThis = &g_aAdapters[i];
-                rc = VERR_NOT_FOUND;
-                if (strncmp(pThis->szName, pReq->szName, VBOXNETADP_MAX_NAME_LEN) == 0)
-                    if (ASMAtomicReadU32((uint32_t volatile *)&pThis->enmState) == kVBoxNetAdpState_Active)
-                    {
-                        rc = vboxNetAdpDestroy(pThis);
-                        break;
-                    }
-            }
+        {
+            if (!memchr(pReq->szName, '\0', RT_MIN(cbReq, sizeof(pReq->szName))))
+                return EINVAL;
+
+            PVBOXNETADP pAdp = vboxNetAdpFindByName(pReq->szName);
+            if (!pAdp)
+                return EINVAL;
+
+            rc = vboxNetAdpDestroy(pAdp);
+            if (RT_FAILURE(rc))
+                return EINVAL;
+            Log(("VBoxNetAdpDarwinIOCtl: Removed %s\n", pReq->szName));
             break;
+        }
+
         default:
             OSDBGPRINT(("VBoxNetAdpDarwinIOCtl: unknown command %x.\n", IOCBASECMD(iCmd)));
-            rc = VERR_INVALID_PARAMETER;
-            break;
+            return EINVAL;
     }
 
-    return RT_SUCCESS(rc) ? 0 : EINVAL;
+    return 0;
 }
 
 int  vboxNetAdpOsInit(PVBOXNETADP pThis)

@@ -1231,9 +1231,9 @@ PVBOXNETADP vboxNetAdpFindByName(const char *pszName)
     {
         PVBOXNETADP pThis = &g_aAdapters[i];
         Log2(("VBoxNetAdp: Scanning entry: state=%d name=%s\n", pThis->enmState, pThis->szName));
-        if (strncmp(pThis->szName, pszName, VBOXNETADP_MAX_NAME_LEN) == 0)
-            if (ASMAtomicReadU32((uint32_t volatile *)&pThis->enmState) == kVBoxNetAdpState_Active)
-                return pThis;
+        if (   strcmp(pThis->szName, pszName) == 0
+            && ASMAtomicReadU32((uint32_t volatile *)&pThis->enmState) == kVBoxNetAdpState_Active)
+            return pThis;
     }
     return NULL;
 }
