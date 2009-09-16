@@ -71,10 +71,18 @@ int rtR0InitNative(void)
     /*
      * Init the Nt cpu set.
      */
+#ifdef IPRT_TARGET_NT4
+    KAFFINITY ActiveProcessors = (UINT64_C(1) << KeNumberProcessors) - UINT64_C(1);
+#else
     KAFFINITY ActiveProcessors = KeQueryActiveProcessors();
+#endif
     RTCpuSetEmpty(&g_rtMpNtCpuSet);
     RTCpuSetFromU64(&g_rtMpNtCpuSet, ActiveProcessors);
 
+#ifdef IPRT_TARGET_NT4
+    g_pfnrtNtExSetTimerResolution = NULL;
+    g_pfnrtNtKeFlushQueuedDpcs = NULL;
+#else
     /*
      * Initialize the function pointers.
      */
@@ -84,6 +92,7 @@ int rtR0InitNative(void)
 
     RtlInitUnicodeString(&RoutineName, L"KeFlushQueuedDpcs");
     g_pfnrtNtKeFlushQueuedDpcs = (PFNMYKEFLUSHQUEUEDDPCS)MmGetSystemRoutineAddress(&RoutineName);
+#endif
 
     /*
      * Get some info that might come in handy below.

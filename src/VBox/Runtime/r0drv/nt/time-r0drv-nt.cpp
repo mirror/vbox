@@ -39,7 +39,7 @@
 
 DECLINLINE(uint64_t) rtTimeGetSystemNanoTS(void)
 {
-#if 1
+#ifndef IPRT_TARGET_NT4
     ULONGLONG InterruptTime = KeQueryInterruptTime();
     return (uint64_t)InterruptTime * 100; /* The value is in 100ns, convert to ns units. */
 #else
@@ -82,7 +82,7 @@ RTDECL(uint64_t) RTTimeSystemMilliTS(void)
 RTDECL(PRTTIMESPEC) RTTimeNow(PRTTIMESPEC pTime)
 {
     LARGE_INTEGER SystemTime;
-#if 1
+#ifndef IPRT_TARGET_NT4
     KeQuerySystemTime(&SystemTime);
 #else
     do

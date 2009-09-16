@@ -670,6 +670,12 @@ static int rtR0MemObjNtMap(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ pMemToMap, voi
         if (pMemNtToMap->cMdls != 1)
             return VERR_NOT_SUPPORTED;
 
+#ifdef IPRT_TARGET_NT4
+        /* NT SP0 can't map to a specific address. */
+        if (pvFixed != (void *)-1)
+            return VERR_NOT_SUPPORTED;
+#endif
+
         /* we can't map anything to the first page, sorry. */
         if (pvFixed == 0)
             return VERR_NOT_SUPPORTED;
@@ -683,12 +689,17 @@ static int rtR0MemObjNtMap(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ pMemToMap, voi
         {
             /** @todo uAlignment */
             /** @todo How to set the protection on the pages? */
+#ifdef IPRT_TARGET_NT4
+            void *pv = MmMapLockedPages(pMemNtToMap->apMdls[0],
+                                        R0Process == NIL_RTR0PROCESS ? KernelMode : UserMode);
+#else
             void *pv = MmMapLockedPagesSpecifyCache(pMemNtToMap->apMdls[0],
                                                     R0Process == NIL_RTR0PROCESS ? KernelMode : UserMode,
                                                     MmCached,
                                                     pvFixed != (void *)-1 ? pvFixed : NULL,
                                                     FALSE /* no bug check on failure */,
                                                     NormalPagePriority);
+#endif
             if (pv)
             {
                 NOREF(fProt);
