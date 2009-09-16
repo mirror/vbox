@@ -36,8 +36,11 @@
 #include <VBox/VBoxGuest.h> /** @todo use the VbglR3 interface! */
 #include <VBox/VBoxGuestLib.h>
 
-#define WM_VBOX_RESTORED                     0x2005
-#define WM_VBOX_CHECK_VRDP                   0x2006
+#define WM_VBOX_RESTORED                WM_APP + 1
+#define WM_VBOX_CHECK_VRDP              WM_APP + 2
+#define WM_VBOX_CHECK_HOSTVERSION       WM_APP + 3
+
+#define ID_TRAYICON                     2000
 
 
 /* The environment information for services. */
@@ -64,7 +67,8 @@ typedef struct _VBOXSERVICEINFO
 } VBOXSERVICEINFO;
 
 
-extern HWND  gToolWindow;
+extern HWND         gToolWindow;
+extern HINSTANCE    gInstance;
 
 extern void VBoxServiceReloadCursor(void);
 

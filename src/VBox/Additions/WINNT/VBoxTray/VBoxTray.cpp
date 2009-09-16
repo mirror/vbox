@@ -26,6 +26,7 @@
 #include "VBoxVRDP.h"
 #include "VBoxStatistics.h"
 #include "VBoxMemBalloon.h"
+#include "VBoxHostVersion.h"
 #include <VBoxHook.h>
 #include "resource.h"
 #include <malloc.h>
@@ -298,6 +299,15 @@ void WINAPI VBoxServiceStart(void)
 
     Log(("VBoxTray: Window Handle = %p, Status = %p\n", gToolWindow, status));
 
+    OSVERSIONINFO           info;
+    DWORD                   dwMajorVersion = 5; /* default XP */
+    info.dwOSVersionInfoSize = sizeof(info);
+    if (GetVersionEx(&info))
+    {
+        Log(("VBoxTray: Windows version major %d minor %d\n", info.dwMajorVersion, info.dwMinorVersion));
+        dwMajorVersion = info.dwMajorVersion;
+    }
+
     if (status == NO_ERROR)
     {
         gStopSem = CreateEvent(NULL, TRUE, FALSE, NULL);
@@ -309,9 +319,7 @@ void WINAPI VBoxServiceStart(void)
 
         /* We need to setup a security descriptor to allow other processes modify access to the seamless notification event semaphore */
         SECURITY_ATTRIBUTES     SecAttr;
-        OSVERSIONINFO           info;
         char                    secDesc[SECURITY_DESCRIPTOR_MIN_LENGTH];
-        DWORD                   dwMajorVersion = 5; /* default XP */
         BOOL                    ret;
 
         SecAttr.nLength              = sizeof(SecAttr);
@@ -321,13 +329,6 @@ void WINAPI VBoxServiceStart(void)
         ret = SetSecurityDescriptorDacl(SecAttr.lpSecurityDescriptor, TRUE, 0, FALSE);
         if (!ret)
             Log(("VBoxTray: SetSecurityDescriptorDacl failed with %d\n", GetLastError()));
-
-        info.dwOSVersionInfoSize = sizeof(info);
-        if (GetVersionEx(&info))
-        {
-            Log(("VBoxTray: Windows version major %d minor %d\n", info.dwMajorVersion, info.dwMinorVersion));
-            dwMajorVersion = info.dwMajorVersion;
-        }
 
         /* For Vista and up we need to change the integrity of the security descriptor too */
         if (dwMajorVersion >= 6)
@@ -406,12 +407,11 @@ void WINAPI VBoxServiceStart(void)
     memset (&ndata, 0, sizeof (ndata));
     ndata.cbSize           = NOTIFYICONDATA_V1_SIZE; // sizeof(NOTIFYICONDATA);
     ndata.hWnd             = gToolWindow;
-    ndata.uID              = 2000;
+    ndata.uID              = ID_TRAYICON;
     ndata.uFlags           = NIF_ICON | NIF_MESSAGE | NIF_TIP;
     ndata.uCallbackMessage = WM_USER;
     ndata.hIcon            = LoadIcon(gInstance, MAKEINTRESOURCE(IDI_VIRTUALBOX));
     sprintf(ndata.szTip, "Sun VirtualBox Guest Additions %d.%d.%dr%d", VBOX_VERSION_MAJOR, VBOX_VERSION_MINOR, VBOX_VERSION_BUILD, VBOX_SVN_REV);
-
     Log(("VBoxTray: ndata.hWnd %08X, ndata.hIcon = %p\n", ndata.hWnd, ndata.hIcon));
 
     /* Boost thread priority to make sure we wake up early for seamless window notifications (not sure if it actually makes any difference though) */
@@ -471,6 +471,16 @@ void WINAPI VBoxServiceStart(void)
             {
                 fTrayIconCreated = Shell_NotifyIcon(NIM_ADD, &ndata);
                 Log(("VBoxTray: fTrayIconCreated = %d, err %08X\n", fTrayIconCreated, GetLastError ()));
+
+                /* We're ready to create the tooltip balloon. */
+                if (fTrayIconCreated && dwMajorVersion >= 5)
+                {
+                    /* Check in 10 seconds (@todo make seconds configurable) ... */
+                    SetTimer(gToolWindow, 
+                             WM_VBOX_CHECK_HOSTVERSION, 
+                             10000, /* 10 seconds */
+                             NULL   /* no timerproc */);
+                }
             }
         }
     }
@@ -507,7 +517,7 @@ void WINAPI VBoxServiceStart(void)
 int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 {
     /* Do not use a global namespace ("Global\\") for mutex name here, will blow up NT4 compatibility! */
-    HANDLE hMutexAppRunning = CreateMutex (NULL, FALSE, "VBoxTray");
+    HANDLE hMutexAppRunning = CreateMutex(NULL, FALSE, "VBoxTray");
     if (   (hMutexAppRunning != NULL)
         && (GetLastError() == ERROR_ALREADY_EXISTS))
     {
@@ -534,7 +544,7 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
 
     /* Release instance mutex. */
     if (hMutexAppRunning != NULL) {
-        CloseHandle (hMutexAppRunning);
+        CloseHandle(hMutexAppRunning);
         hMutexAppRunning = NULL;
     }
 
@@ -553,6 +563,25 @@ LRESULT CALLBACK VBoxToolWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPar
             break;
 
         case WM_DESTROY:
+            KillTimer(gToolWindow, WM_VBOX_CHECK_HOSTVERSION);
+            break;
+
+        case WM_TIMER:
+
+            switch (wParam) 
+            { 
+                case WM_VBOX_CHECK_HOSTVERSION:
+                    if (RT_SUCCESS(VBoxCheckHostVersion()))
+                    {
+                        /* After successful run we don't need to check again. */
+                        KillTimer(gToolWindow, WM_VBOX_CHECK_HOSTVERSION);
+                    }
+                    return 0;
+
+                default:
+                    break;
+            }
+
             break;
 
         case WM_VBOX_INSTALL_SEAMLESS_HOOK:
