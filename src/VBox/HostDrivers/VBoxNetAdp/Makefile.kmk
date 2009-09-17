@@ -34,7 +34,7 @@ VBoxNetAdp_TEMPLATE         = VBOXR0DRV
 VBoxNetAdp_INST = $(INST_VBOXNETADP)$(if $(eq $(KBUILD_TARGET),darwin),Contents/MacOS/)
 VBoxNetAdp_NAME.solaris     = vboxnet
 VBoxNetAdp_NAME.linux       = vboxnetadp
-VBoxNetAdp_NAME.freebsd       = vboxnetadp
+VBoxNetAdp_NAME.freebsd     = vboxnetadp
 VBoxNetAdp_NOINST.linux     = true
 VBoxNetAdp_DEPS.solaris    += $(VBOX_SVN_REV_KMK)
 VBoxNetAdp_DEFS             = IN_RT_R0 VBOX_SVN_REV=$(VBOX_SVN_REV) IN_SUP_STATIC
