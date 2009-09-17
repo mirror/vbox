@@ -97,8 +97,7 @@ VBoxOGLhostcrutil_pixel.c_CFLAGS.win.x86 += -Od
 VBoxOGLhostcrutil_EXTENDS  = VBoxOGLcrutil
 VBoxOGLhostcrutil_TEMPLATE = VBOXCROGLR3HOSTDLL
 VBoxOGLhostcrutil_LDFLAGS.darwin = $(VBoxOGLcrutil_LDFLAGS.darwin) \
-	-install_name $(VBOX_DYLD_EXECUTABLE_PATH)/VBoxOGLhostcrutil.dylib \
-	-current_version $(VBOX_VERSION_MAJOR).$(VBOX_VERSION_MINOR).$(VBOX_VERSION_BUILD)
+	-install_name $(VBOX_DYLD_EXECUTABLE_PATH)/VBoxOGLhostcrutil.dylib
 ## @todo kBuild bug, possibly same as ticket #51: PATH_SDK_DXSDK_LIB is expanded too early.
 # Update. bug 51 was fixed.
 # Still fails as PATH_SDK_DXSDK_LIB is empty.
@@ -480,8 +479,7 @@ VBoxOGLerrorspu_LIBS = \
 VBoxOGLhosterrorspu_EXTENDS  = VBoxOGLerrorspu
 VBoxOGLhosterrorspu_TEMPLATE = VBOXCROGLR3HOSTDLL
 VBoxOGLhosterrorspu_LDFLAGS.darwin += $(VBoxOGLerrorspu_LDFLAGS.darwin) \
-	-install_name $(VBOX_DYLD_EXECUTABLE_PATH)/VBoxOGLhosterrorspu.dylib \
-	-current_version $(VBOX_VERSION_MAJOR).$(VBOX_VERSION_MINOR).$(VBOX_VERSION_BUILD)
+	-install_name $(VBOX_DYLD_EXECUTABLE_PATH)/VBoxOGLhosterrorspu.dylib
 VBoxOGLhosterrorspu_LIBS  = \
 	$(VBOX_LIB_OGL_HOSTCRUTIL) \
 	$(LIB_RUNTIME)
