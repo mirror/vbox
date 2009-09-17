@@ -78,10 +78,6 @@ enum VBoxNetAdpState
 {
     kVBoxNetAdpState_Invalid,
     kVBoxNetAdpState_Transitional,
-#ifdef VBOXANETADP_DO_NOT_USE_NETFLT
-    kVBoxNetAdpState_Available,
-    kVBoxNetAdpState_Connected,
-#endif /* VBOXANETADP_DO_NOT_USE_NETFLT */
     kVBoxNetAdpState_Active,
     kVBoxNetAdpState_U32Hack = 0xFFFFFFFF
 };
@@ -89,38 +85,8 @@ typedef enum VBoxNetAdpState VBOXNETADPSTATE;
 
 struct VBoxNetAdapter
 {
-#ifdef VBOXANETADP_DO_NOT_USE_NETFLT
-    /** The spinlock protecting the state variables and host interface handle. */
-    RTSPINLOCK        hSpinlock;
-
-    /* --- Protected with spinlock. --- */
-
-#endif /* !VBOXANETADP_DO_NOT_USE_NETFLT */
     /** Denotes availability of this slot in adapter array. */
     VBOXNETADPSTATE   enmState;
-#ifdef VBOXANETADP_DO_NOT_USE_NETFLT
-
-    /* --- Unprotected. Atomic access. --- */
-
-    /** Reference count. */
-    uint32_t volatile cRefs;
-    /** The busy count.
-     * This counts the number of current callers and pending packet. */
-    uint32_t volatile cBusy;
-
-    /* --- Unprotected. Do not modify when cBusy > 0. --- */
-
-    /** Our RJ-45 port.
-     * This is what the internal network plugs into. */
-    INTNETTRUNKIFPORT MyPort;
-    /** The RJ-45 port on the INTNET "switch".
-     * This is what we're connected to. */
-    PINTNETTRUNKSWPORT pSwitchPort;
-    /** Pointer to the globals. */
-    PVBOXNETADPGLOBALS pGlobals;
-    /** The event that is signaled when we go idle and that pfnWaitForIdle blocks on. */
-    RTSEMEVENT        hEventIdle;
-#endif /* !VBOXANETADP_DO_NOT_USE_NETFLT */
     /** Corresponds to the digit at the end of device name. */
     uint32_t          uUnit;
 
@@ -181,132 +147,8 @@ DECLHIDDEN(void) vboxNetAdpShutdown(void);
 DECLHIDDEN(int) vboxNetAdpCreate (PVBOXNETADP *ppNew);
 DECLHIDDEN(int) vboxNetAdpDestroy(PVBOXNETADP pThis);
 DECLHIDDEN(PVBOXNETADP) vboxNetAdpFindByName(const char *pszName);
-
-#ifdef VBOXANETADP_DO_NOT_USE_NETFLT
-/**
- * The global data of the VBox filter driver.
- *
- * This contains the bit required for communicating with support driver, VBoxDrv
- * (start out as SupDrv).
- */
-typedef struct VBOXNETADPGLOBALS
-{
-    /** Mutex protecting the list of instances and state changes. */
-    RTSEMFASTMUTEX hFastMtx;
-    /** Array of adapter instances. */
-    VBOXNETADP aAdapters[VBOXNETADP_MAX_INSTANCES];
-
-    /** The INTNET trunk network interface factory. */
-    INTNETTRUNKFACTORY TrunkFactory;
-    /** The SUPDRV component factory registration. */
-    SUPDRVFACTORY SupDrvFactory;
-    /** The number of current factory references. */
-    int32_t volatile cFactoryRefs;
-    /** The SUPDRV IDC handle (opaque struct). */
-    SUPDRVIDCHANDLE SupDrvIDC;
-} VBOXNETADPGLOBALS;
-
-
 DECLHIDDEN(void) vboxNetAdpComposeMACAddress(PVBOXNETADP pThis, PRTMAC pMac);
-DECLHIDDEN(void) vboxNetAdpReceive(PVBOXNETADP pThis, PINTNETSG pSG);
-DECLHIDDEN(bool) vboxNetAdpPrepareToReceive(PVBOXNETADP pThis);
-DECLHIDDEN(void) vboxNetAdpCancelReceive(PVBOXNETADP pThis);
 
-DECLHIDDEN(int) vboxNetAdpInitGlobals(PVBOXNETADPGLOBALS pGlobals);
-DECLHIDDEN(int) vboxNetAdpTryDeleteGlobals(PVBOXNETADPGLOBALS pGlobals);
-DECLHIDDEN(bool) vboxNetAdpCanUnload(PVBOXNETADPGLOBALS pGlobals);
-
-DECLHIDDEN(void) vboxNetAdpRetain(PVBOXNETADP pThis);
-DECLHIDDEN(void) vboxNetAdpRelease(PVBOXNETADP pThis);
-DECLHIDDEN(void) vboxNetAdpBusy(PVBOXNETADP pThis);
-DECLHIDDEN(void) vboxNetAdpIdle(PVBOXNETADP pThis);
-
-DECLHIDDEN(int) vboxNetAdpInitGlobalsBase(PVBOXNETADPGLOBALS pGlobals);
-DECLHIDDEN(int) vboxNetAdpInitIdc(PVBOXNETADPGLOBALS pGlobals);
-DECLHIDDEN(void) vboxNetAdpDeleteGlobalsBase(PVBOXNETADPGLOBALS pGlobals);
-DECLHIDDEN(int) vboxNetAdpTryDeleteIdc(PVBOXNETADPGLOBALS pGlobals);
-
-
-
-/** @name The OS specific interface.
- * @{ */
-/**
- * Transmits a frame.
- *
- * @return  IPRT status code.
- * @param   pThis           The new instance.
- * @param   pSG             The (scatter/)gather list.
- * @param   fDst            The destination mask. At least one bit will be set.
- *
- * @remarks Owns the out-bound trunk port semaphore.
- */
-DECLHIDDEN(int) vboxNetAdpPortOsXmit(PVBOXNETADP pThis, PINTNETSG pSG, uint32_t fDst);
-
-/**
- * Checks if the interface is in promiscuous mode from the host perspective.
- *
- * If it is, then the internal networking switch will send frames
- * heading for the wire to the host as well.
- *
- * @see INTNETTRUNKIFPORT::pfnIsPromiscuous for more details.
- *
- * @returns true / false accordingly.
- * @param   pThis           The instance.
- *
- * @remarks Owns the network lock and the out-bound trunk port semaphores.
- */
-DECLHIDDEN(bool) vboxNetAdpPortOsIsPromiscuous(PVBOXNETADP pThis);
-
-/**
- * Get the MAC address of the interface we're attached to.
- *
- * Used by the internal networking switch for implementing the
- * shared-MAC-on-the-wire mode.
- *
- * @param   pThis           The instance.
- * @param   pMac            Where to store the MAC address.
- *                          If you don't know, set all the bits except the first (the multicast one).
- *
- * @remarks Owns the network lock and the out-bound trunk port semaphores.
- */
-DECLHIDDEN(void) vboxNetAdpPortOsGetMacAddress(PVBOXNETADP pThis, PRTMAC pMac);
-
-/**
- * Checks if the specified MAC address is for any of the host interfaces.
- *
- * Used by the internal networking switch to decide the destination(s)
- * of a frame.
- *
- * @returns true / false accordingly.
- * @param   pThis           The instance.
- * @param   pMac            The MAC address.
- *
- * @remarks Owns the network lock and the out-bound trunk port semaphores.
- */
-DECLHIDDEN(bool) vboxNetAdpPortOsIsHostMac(PVBOXNETADP pThis, PCRTMAC pMac);
-
-/**
- * This is called to when disconnecting from a network.
- *
- * @return  IPRT status code.
- * @param   pThis           The new instance.
- *
- * @remarks May own the semaphores for the global list, the network lock and the out-bound trunk port.
- */
-DECLHIDDEN(int) vboxNetAdpOsDisconnectIt(PVBOXNETADP pThis);
-
-/**
- * This is called to when connecting to a network.
- *
- * @return  IPRT status code.
- * @param   pThis           The new instance.
- *
- * @remarks Owns the semaphores for the global list, the network lock and the out-bound trunk port.
- */
-DECLHIDDEN(int) vboxNetAdpOsConnectIt(PVBOXNETADP pThis);
-
-/** @} */
-#endif /* !VBOXANETADP_DO_NOT_USE_NETFLT */
 
 /**
  * This is called to perform OS-specific structure initializations.
