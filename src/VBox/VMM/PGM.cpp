@@ -1827,8 +1827,10 @@ static void pgmR3InitStats(PVM pVM)
         PGM_REG_COUNTER(&pPGM->StatRZInvalidatePagePDNPs,         "/PGM/CPU%d/RZ/InvalidatePage/PDNPs",       "The number of times PGMInvalidatePage() was called for a not present page directory.");
         PGM_REG_COUNTER(&pPGM->StatRZInvalidatePagePDOutOfSync,   "/PGM/CPU%d/RZ/InvalidatePage/PDOutOfSync", "The number of times PGMInvalidatePage() was called for an out of sync page directory.");
         PGM_REG_COUNTER(&pPGM->StatRZInvalidatePageSkipped,       "/PGM/CPU%d/RZ/InvalidatePage/Skipped",     "The number of times PGMInvalidatePage() was skipped due to not present shw or pending pending SyncCR3.");
-        PGM_REG_COUNTER(&pPGM->StatRZPageOutOfSyncSupervisor,     "/PGM/CPU%d/RZ/OutOfSync/SuperVisor",       "Number of traps due to pages out of sync and times VerifyAccessSyncPage calls SyncPage.");
-        PGM_REG_COUNTER(&pPGM->StatRZPageOutOfSyncUser,           "/PGM/CPU%d/RZ/OutOfSync/User",             "Number of traps due to pages out of sync and times VerifyAccessSyncPage calls SyncPage.");
+        PGM_REG_COUNTER(&pPGM->StatRZPageOutOfSyncSupervisor,     "/PGM/CPU%d/RZ/OutOfSync/SuperVisor",       "Number of traps due to pages out of sync (P) and times VerifyAccessSyncPage calls SyncPage.");
+        PGM_REG_COUNTER(&pPGM->StatRZPageOutOfSyncUser,           "/PGM/CPU%d/RZ/OutOfSync/User",             "Number of traps due to pages out of sync (P) and times VerifyAccessSyncPage calls SyncPage.");
+        PGM_REG_COUNTER(&pPGM->StatRZPageOutOfSyncSupervisorWrite,"/PGM/CPU%d/RZ/OutOfSync/SuperVisorWrite",  "Number of traps due to pages out of sync (RW) and times VerifyAccessSyncPage calls SyncPage.");
+        PGM_REG_COUNTER(&pPGM->StatRZPageOutOfSyncUserWrite,      "/PGM/CPU%d/RZ/OutOfSync/UserWrite",        "Number of traps due to pages out of sync (RW) and times VerifyAccessSyncPage calls SyncPage.");
         PGM_REG_PROFILE(&pPGM->StatRZPrefetch,                    "/PGM/CPU%d/RZ/Prefetch",                   "PGMPrefetchPage profiling.");
         PGM_REG_PROFILE(&pPGM->StatRZFlushTLB,                    "/PGM/CPU%d/RZ/FlushTLB",                   "Profiling of the PGMFlushTLB() body.");
         PGM_REG_COUNTER(&pPGM->StatRZFlushTLBNewCR3,              "/PGM/CPU%d/RZ/FlushTLB/NewCR3",            "The number of times PGMFlushTLB was called with a new CR3, non-global. (switch)");

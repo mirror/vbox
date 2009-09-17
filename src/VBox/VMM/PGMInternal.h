@@ -2961,6 +2961,8 @@ typedef struct PGMCPU
     STAMCOUNTER StatRZInvalidatePageSkipped;        /**< RC/R0: The number of times PGMInvalidatePage() was skipped due to not present shw or pending pending SyncCR3. */
     STAMCOUNTER StatRZPageOutOfSyncUser;            /**< RC/R0: The number of times user page is out of sync was detected in #PF or VerifyAccessSyncPage. */
     STAMCOUNTER StatRZPageOutOfSyncSupervisor;      /**< RC/R0: The number of times supervisor page is out of sync was detected in in #PF or VerifyAccessSyncPage. */
+    STAMCOUNTER StatRZPageOutOfSyncUserWrite;       /**< RC/R0: The number of times user page is out of sync was detected in #PF. */
+    STAMCOUNTER StatRZPageOutOfSyncSupervisorWrite; /**< RC/R0: The number of times supervisor page is out of sync was detected in in #PF. */
     STAMPROFILE StatRZPrefetch;                     /**< RC/R0: PGMPrefetchPage. */
     STAMPROFILE StatRZFlushTLB;                     /**< RC/R0: Profiling of the PGMFlushTLB() body. */
     STAMCOUNTER StatRZFlushTLBNewCR3;               /**< RC/R0: The number of times PGMFlushTLB was called with a new CR3, non-global. (switch) */
@@ -3005,6 +3007,8 @@ typedef struct PGMCPU
     STAMCOUNTER StatR3InvalidatePageSkipped;        /**< R3: The number of times PGMInvalidatePage() was skipped due to not present shw or pending pending SyncCR3. */
     STAMCOUNTER StatR3PageOutOfSyncUser;            /**< R3: The number of times user page is out of sync was detected in #PF or VerifyAccessSyncPage. */
     STAMCOUNTER StatR3PageOutOfSyncSupervisor;      /**< R3: The number of times supervisor page is out of sync was detected in in #PF or VerifyAccessSyncPage. */
+    STAMCOUNTER StatR3PageOutOfSyncUserWrite;       /**< R3: The number of times user page is out of sync was detected in #PF. */
+    STAMCOUNTER StatR3PageOutOfSyncSupervisorWrite; /**< R3: The number of times supervisor page is out of sync was detected in in #PF. */
     STAMPROFILE StatR3Prefetch;                     /**< R3: PGMPrefetchPage. */
     STAMPROFILE StatR3FlushTLB;                     /**< R3: Profiling of the PGMFlushTLB() body. */
     STAMCOUNTER StatR3FlushTLBNewCR3;               /**< R3: The number of times PGMFlushTLB was called with a new CR3, non-global. (switch) */
