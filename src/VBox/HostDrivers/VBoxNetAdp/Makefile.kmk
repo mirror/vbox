@@ -46,7 +46,8 @@ VBoxNetAdp_INCS.linux   := \
 VBoxNetAdp_INCS             = \
 	.
 VBoxNetAdp_SOURCES.darwin   = \
-	darwin/VBoxNetAdp-darwin.cpp
+	darwin/VBoxNetAdp-darwin.cpp \
+	VBoxNetAdp.c
 VBoxNetAdp_SOURCES.solaris  = \
 	solaris/VBoxNetAdp-solaris.c
 VBoxNetAdp_SOURCES.linux   = \
