@@ -996,7 +996,7 @@ VMMR3DECL(int) PDMR3DriverDetach(PVM pVM, const char *pszDevice, unsigned iDevIn
             rc = VINF_PDM_NO_DRIVER_ATTACHED_TO_LUN;
     }
 
-    LogFlow(("PDMR3DeviceDetach: returns %Rrc\n", rc));
+    LogFlow(("PDMR3DriverDetach: returns %Rrc\n", rc));
     return rc;
 }
 
