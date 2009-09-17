@@ -70,69 +70,59 @@ else
 endif
 endif
 
-debcfgs  := VBOX_PATH_PACKAGE_DOCS="\"/usr/share/doc/$(verpkg)\""
-
 # Locations of custom built Qt libraries (see below)
 qtstdc5  := /home/vbox/Qt-4.4.3-stdc++5-$(arch)
 qtstdc6  := /home/vbox/Qt-4.4.3-stdc++6-$(arch)
+
+cfg_flags := $(if $(NOQT),--disable-qt,) \
+	     $(if $(ose),--ose,) $(if $(LINUX),--with-linux=$(LINUX),) \
+	     $(if $(filter _Ubuntu_dapper,$(debrel)),--with-gcc=gcc-3.4 --with-g++=g++-3.4,) \
+	     $(if $(filter _Ubuntu_gutsy,$(debrel)),--with-gcc=gcc-4.2 --with-g++=g++-4.2,) \
+	     $(if $(filter _xandros4.1 _ucs1.3 _Debian_sarge _Ubuntu_dapper,$(debrel)),--build-libxml2,) \
+	     $(if $(filter _xandros4.1 _ucs1.3 _Debian_sarge _Ubuntu_dapper,$(debrel)),--build-libxslt,) \
+	     $(if $(filter _Debian_etch,$(debrel)),$(if $(ose),,--build-libcurl),) \
+	     $(if $(filter _Debian_sarge _xandros4.1 _ucs1.3,$(debrel)),--with-qt4-dir=$(qtstdc5)) \
+	     $(if $(filter _Debian_etch _Ubuntu_dapper _Ubuntu_edgy _Ubuntu_feisty,$(debrel)),--with-qt4-dir=$(qtstdc6)) \
+	     $(if $(filter _xandros4.1 _ucs1.3,$(debrel)),--disable-sdl-ttf,) \
+	     $(if $(filter _Debian_sarge _Ubuntu_dapper _Ubuntu_edgy _xandros4.1 _ucs1.3,$(debrel)),--disable-pulse,) \
+	     $(if $(HEADLESS),--build-headless,) \
+	     $(if $(DEBUG),--build-debug,) \
+	     $(if $(NOWINE),,--setup-wine) \
+	     $(if $(NOWEBSVC),,--enable-webservice)
+
+bld_flags := AUTOCFG=$(current)/debian/AutoConfig.kmk \
+	     LOCALCFG=$(current)/debian/LocalConfig.kmk \
+	     PATH_OUT=$(current)/debian/builddir \
+	     VBOX_DO_STRIP= \
+	     VBOX_DO_STRIP_MODULES= \
+	     VBOX_WITH_MULTIVERSION_PYTHON= \
+	     VBOX_PATH_PACKAGE_DOCS="\"/usr/share/doc/$(verpkg)\"" \
+	     $(if $(NODOCS),VBOX_WITH_DOCS= ,)\
+	     $(if $(VERBOSE),--print-directory KBUILD_VERBOSE=2,--no-print-directory) \
+	     $(if $(STAGEDISO),VBOX_WITHOUT_ADDITIONS=1,) \
+	     $(if $(BLEEDING_EDGE),VBOX_BLEEDING_EDGE=$(BLEEDING_EDGE),) \
+	     $(if $(filter _Debian_sarge _xandros4.1 _ucs1.3,$(debrel)),VBOX_LD_as_needed= ,)
 
 # Ubuntu dapper: gcc-4.0 does not work with recompiler, use gcc-3.4 instead
 # Ubuntu gutsy:  gcc-4.1 does not work for the webservices, use gcc-4.2 instead
 configure: debian/configure-stamp
 debian/configure-stamp:
 	dh_testdir
-	cd $(vboxroot) && ./configure --odir=$(current)/debian $(if \
-	    $(NOQT),--disable-qt,) $(if \
-	    $(ose),--ose,) $(if $(LINUX),--with-linux=$(LINUX),) $(if \
-	    $(filter _Ubuntu_dapper,$(debrel)),--with-gcc=gcc-3.4 --with-g++=g++-3.4,) $(if \
-	    $(filter _Ubuntu_gutsy,$(debrel)),--with-gcc=gcc-4.2 --with-g++=g++-4.2,) $(if \
-	    $(filter _xandros4.1 _ucs1.3 _Debian_sarge _Ubuntu_dapper,$(debrel)),--build-libxml2,) $(if \
-	    $(filter _xandros4.1 _ucs1.3 _Debian_sarge _Ubuntu_dapper,$(debrel)),--build-libxslt,) $(if \
-	    $(filter _Debian_etch,$(debrel)),$(if $(ose),,--build-libcurl),) $(if \
-	    $(filter _Debian_sarge _xandros4.1 _ucs1.3,$(debrel)),--with-qt4-dir=$(qtstdc5)) $(if \
-	    $(filter _Debian_etch _Ubuntu_dapper _Ubuntu_edgy _Ubuntu_feisty,$(debrel)),--with-qt4-dir=$(qtstdc6)) $(if \
-	    $(filter _xandros4.1 _ucs1.3,$(debrel)),--disable-sdl-ttf,) $(if \
-	    $(filter _Debian_sarge _Ubuntu_dapper _Ubuntu_edgy _xandros4.1 _ucs1.3,$(debrel)),--disable-pulse,) $(if \
-	    $(HEADLESS),--build-headless,) $(if $(DEBUG),--build-debug,) $(if \
-	    $(NOWINE),,--setup-wine) $(if $(NOWEBSVC),,--enable-webservice)
+	cd $(vboxroot) && ./configure --odir=$(current)/debian $(cfg_flags)
 	touch debian/configure-stamp
 
 build: debian/configure-stamp debian/build-stamp
 debian/build-stamp $(verfile):
 	dh_testdir
-	. debian/env.sh && kmk -C $(vboxroot) $(if \
-	    $(VERBOSE),--print-directory,--no-print-directory) $(if \
-	    $(NOPARALLEL),-j1,) $(if \
-	    $(VERBOSE),KBUILD_VERBOSE=2,) $(if \
-	    $(NODOCS),VBOX_WITH_DOCS= ,)\
-	    $(if $(STAGEDISO),VBOX_WITHOUT_ADDITIONS=1,) \
-	    AUTOCFG=$(current)/debian/AutoConfig.kmk \
-	    LOCALCFG=$(current)/debian/LocalConfig.kmk \
-	    PATH_OUT=$(current)/debian/builddir \
-	    VBOX_DO_STRIP= VBOX_DO_STRIP_MODULES= \
-	    $(if $(BLEEDING_EDGE),VBOX_BLEEDING_EDGE=$(BLEEDING_EDGE),) \
-	    VBOX_WITH_MULTIVERSION_PYTHON= \
-	    $(if $(filter _Debian_sarge _xandros4.1 _ucs1.3,$(debrel)),VBOX_LD_as_needed= ,) \
-	    $(debcfgs) \
-	    all
+	. debian/env.sh && kmk -C $(vboxroot) $(if $(NOPARALLEL),-j1,) $(bld_flags) all
 	$(if $(NODOCS),cp $(vboxroot)/prebuild/UserManual*.pdf $(builddir)/bin,)
 	$(if $(NODOCS),cp $(vboxroot)/prebuild/VirtualBox*.chm $(builddir)/bin,)
 	mkdir -p $(builddir)/bin/additions
 	$(if $(STAGEDISO),cp $(STAGEDISO)/VBoxGuestAdditions.iso $(builddir)/bin/additions,)
-	. debian/env.sh && kmk -C $(vboxroot) $(if \
-	    $(VERBOSE),--print-directory,--no-print-directory) $(if \
-	    $(VERBOSE),KBUILD_VERBOSE=2,) $(if \
-	    $(STAGEDISO),VBOX_WITHOUT_ADDITIONS=1,) \
-	    AUTOCFG=$(current)/debian/AutoConfig.kmk \
-	    LOCALCFG=$(current)/debian/LocalConfig.kmk \
-	    PATH_OUT=$(current)/debian/builddir \
-	    VBOX_DO_STRIP= VBOX_DO_STRIP_MODULES= \
-	    $(if $(BLEEDING_EDGE),VBOX_BLEEDING_EDGE=$(BLEEDING_EDGE),) \
-	    VBOX_WITH_MULTIVERSION_PYTHON= \
-	    $(if $(filter _Debian_sarge _xandros4.1 _ucs1.3,$(debrel)),VBOX_LD_as_needed= ,) \
-	    VBOX_NO_LINUX_RUN_INSTALLER=1 $(if $(NODOCS),VBOX_WITH_DOCS= ,) \
+	. debian/env.sh && kmk -C $(vboxroot) \
+	    $(bld_flags) \
+	    VBOX_NO_LINUX_RUN_INSTALLER=1 \
 	    VBOX_PATH_ADDITIONS.linux.x86=$(builddir)/bin/additions \
-	    $(debcfgs) \
 	    packing
 	touch debian/build-stamp
 
@@ -275,7 +265,7 @@ endif
 	dh_installchangelogs
 	dh_link
 ifeq ($(DEBUG),)
-	dh_strip --keep-debug --exclude=libQtCoreVBox.so.4 --exclude=libQtGuiVBox.so.4 --exclude=libQtNetworkVBox.so.4 --exclude=libqtaccessiblewidgets.so
+	dh_strip --keep-debug --exclude=libQtCoreVBox.so.4 --exclude=libQtGuiVBox.so.4 --exclude=libQtNetworkVBox.so.4 --exclude=libQtOpenGLVBox.so.4 --exclude=libqtaccessiblewidgets.so
 	# manually strip our R0/GC modules, dh_strip cannot handle them
 	for f in \
 	  $(prefix)/usr/lib/$(package)/*.r0 $(prefix)/usr/lib/$(package)/*.gc; do \
