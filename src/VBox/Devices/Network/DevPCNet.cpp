@@ -2608,8 +2608,16 @@ static DECLCALLBACK(int) pcnetAsyncSendThreadWakeUp(PPDMDEVINS pDevIns, PPDMTHRE
 static void pcnetPollRxTx(PCNetState *pThis)
 {
     if (CSR_RXON(pThis))
-        if (HOST_IS_OWNER(CSR_CRST(pThis)))     /* Only poll RDTEs if none available */
+    {
+        /*
+         * The second case is important for pcnetWaitReceiveAvail(): If CSR_CRST(pThis) was
+         * true but pcnetCanReceive() returned false for some other reason we need to check
+         * _now_ if we have to wakeup pcnetWaitReceiveAvail().
+         */
+        if (   HOST_IS_OWNER(CSR_CRST(pThis))  /* only poll RDTEs if none available or ... */
+            || pThis->fMaybeOutOfSpace)        /* ... for waking up pcnetWaitReceiveAvail() */
             pcnetRdtePoll(pThis);
+    }
 
     if (CSR_TDMD(pThis) || (CSR_TXON(pThis) && !CSR_DPOLL(pThis)))
         pcnetTransmit(pThis);
@@ -2663,7 +2671,7 @@ static void pcnetPollTimer(PCNetState *pThis)
 
     /* If the receive thread is waiting for new descriptors, poll TX/RX even if polling
      * disabled. We wouldn't need to poll for new TX descriptors in that case but it will
-     * not hurt as waiting for RX descriptors should occur very seldom */
+     * not hurt as waiting for RX descriptors should happen very seldom */
     if (RT_LIKELY(   !CSR_STOP(pThis)
                   && !CSR_SPND(pThis)
                   && (   !CSR_DPOLL(pThis)
