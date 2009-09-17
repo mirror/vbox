@@ -167,6 +167,7 @@ public:
         {
             RTPrintf("Name: %lS, value: %lS, flags: %lS\n", name, value, flags);
             ASMAtomicWriteBool(&mSignalled, true);
+            com::EventQueue::getMainEventQueue()->interruptEventQueueProcessing();
         }
         return S_OK;
     }
@@ -441,11 +442,10 @@ static int handleWaitGuestProperty(HandlerArg *a)
         return errorSyntax(USAGE_GUESTPROPERTY, "Incorrect parameters");
 
     /*
-     * Set up the callback and wait.
+     * Set up the callback and loop until signal or timeout.
      *
-     * The waiting is done is 1 sec at the time since there there are races
-     * between the callback and us going to sleep.  This also guards against
-     * neglecting XPCOM event queues as well as any select timeout restrictions.
+     * We do this in 1000 ms chunks to be on the safe side (there used to be
+     * better reasons for it).
      */
     Bstr uuid;
     machine->COMGETTER(Id)(uuid.asOutParam());
@@ -459,17 +459,26 @@ static int handleWaitGuestProperty(HandlerArg *a)
     }
     a->virtualBox->RegisterCallback(callback);
     uint64_t u64Started = RTTimeMilliTS();
-    do {
-      int vrc = com::EventQueue::getMainEventQueue()->processEventQueue(300);
-      if (RT_FAILURE(vrc) && vrc != VERR_TIMEOUT)
-      {
-          RTPrintf("Error waiting for event: %Rrc\n", vrc);
-          return 1;
-      }
-      if (cMsTimeout != RT_INDEFINITE_WAIT &&
-          RTTimeMilliTS() - u64Started >= cMsTimeout)
-            break;
-    } while  (!cbImpl->Signalled());
+    do
+    {
+        unsigned cMsWait;
+        if (cMsTimeout == RT_INDEFINITE_WAIT)
+            cMsWait = 1000;
+        else
+        {
+            uint64_t cMsElapsed = RTTimeMilliTS() - u64Started;
+            if (cMsElapsed >= cMsTimeout)
+                break; /* timed out */
+            cMsWait = RT_MIN(1000, (uint32_t)cMsTimeout - cMsElapsed);
+        }
+        int vrc = com::EventQueue::getMainEventQueue()->processEventQueue(cMsWait);
+        if (    RT_FAILURE(vrc)
+            &&  vrc != VERR_TIMEOUT)
+        {
+            RTPrintf("Error waiting for event: %Rrc\n", vrc);
+            return 1;
+        }
+    } while (!cbImpl->Signalled());
 
     a->virtualBox->UnregisterCallback(callback);
 
