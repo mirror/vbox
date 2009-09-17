@@ -349,7 +349,7 @@ int NetIfList(std::list <ComObjPtr<HostNetworkInterface> > &list)
         memcpy(pNew->MACAddress.au8, LLADDR(pSdl), sizeof(pNew->MACAddress.au8));
         pNew->enmMediumType = NETIF_T_ETHERNET;
         Assert(sizeof(pNew->szShortName) >= cbNameLen);
-        memcpy(pNew->szShortName, pSdl->sdl_data, cbNameLen);
+        memcpy(pNew->szShortName, pSdl->sdl_data, pSdl->sdl_nlen);
         /*
          * If we found the adapter in the list returned by
          * DarwinGetEthernetControllers() copy the name and UUID from there.
@@ -361,7 +361,7 @@ int NetIfList(std::list <ComObjPtr<HostNetworkInterface> > &list)
         }
         else
         {
-            memcpy(pNew->szName, pSdl->sdl_data, cbNameLen);
+            memcpy(pNew->szName, pSdl->sdl_data, pSdl->sdl_nlen);
             /* Generate UUID from name and MAC address. */
             RTUUID uuid;
             RTUuidClear(&uuid);
