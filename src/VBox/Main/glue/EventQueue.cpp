@@ -408,29 +408,19 @@ int EventQueue::processEventQueue(uint32_t cMsTimeout)
     }
     else
     {
-        uint64_t const StartTS = RTTimeMilliTS();
-        for (;;)
+        rc = processPendingEvents();
+        if (   rc == VERR_TIMEOUT
+            || cMsTimeout == 0)
         {
-            rc = processPendingEvents();
-            if (    rc != VERR_TIMEOUT
-                ||  cMsTimeout == 0)
-                break;
-
-            uint64_t cMsElapsed = RTTimeMilliTS() - StartTS;
-            if (cMsElapsed >= cMsTimeout)
-            {
-                rc = VERR_TIMEOUT;
-                break;
-            }
-            uint32_t cMsLeft = cMsTimeout - (unsigned)cMsElapsed;
             DWORD rcW = MsgWaitForMultipleObjects(1,
                                                   &mhThread,
                                                   TRUE /*fWaitAll*/,
-                                                  cMsLeft,
+                                                  cMsTimeout,
                                                   QS_ALLINPUT);
-            AssertMsgBreakStmt(rcW == WAIT_TIMEOUT || rcW == WAIT_OBJECT_0,
-                               ("%d\n", rcW),
-                               rc = VERR_INTERNAL_ERROR_4);
+            AssertMsgReturn(rcW == WAIT_TIMEOUT || rcW == WAIT_OBJECT_0,
+                            ("%d\n", rcW),
+                            VERR_INTERNAL_ERROR_4);
+            rc = processPendingEvents();
         }
     }
 #endif /* !VBOX_WITH_XPCOM */
