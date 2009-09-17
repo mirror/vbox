@@ -166,6 +166,11 @@ VMMR3DECL(int) PATMR3Init(PVM pVM)
         pVM->fPATMEnabled = true;
 # endif
 #endif
+    pVM->patm.s.uPATMFlags = 0;
+    bool fSearchBackward;
+    CFGMR3QueryBoolDef(CFGMR3GetChild(CFGMR3GetRoot(pVM), "PATM"), "SearchImmediatesBackward", &fSearchBackward, false);
+    if (fSearchBackward)
+        pVM->patm.s.uPATMFlags |= PATMGFL_SEARCH_IMM_BACKWARD;
 
     rc = patmReinit(pVM);
     AssertRC(rc);
@@ -1545,6 +1550,37 @@ static int patmAnalyseFunctionCallback(PVM pVM, DISCPUSTATE *pCpu, RCPTRTYPE(uin
 }
 
 /**
+ * Checks if few instructions before patch contain something
+ * which looks like immediate referring potential patch instruction
+ *
+ * @returns boolean
+ * @param   pVM         The VM to operate on.
+ * @param   pInstrGC    Guest context pointer to instruction
+ */
+static bool patmHasImmsReferringPatch(PVM pVM, RCPTRTYPE(uint8_t *) pInstrGC)
+{
+    int rc;
+    uint32_t value;
+
+    if (!(pVM->patm.s.uPATMFlags & PATMGFL_SEARCH_IMM_BACKWARD))
+        return false;
+
+    PVMCPU pCpu = VMMGetCpu0(pVM);
+    for (int i = 4; i < 12; i++)
+    {
+        rc = PGMPhysSimpleReadGCPtr(pCpu, &value, pInstrGC - i, 4);
+        if (rc == VINF_SUCCESS)
+        {
+            if ((uint32_t)(value-(uint32_t)pInstrGC) < 6)
+                return true;
+        }
+        else
+            break;
+    }
+    return false;
+}
+
+/**
  * Recompiles the instructions in a code block
  *
  * @returns VBox status code.
@@ -1572,6 +1608,12 @@ static int patmRecompileCallback(PVM pVM, DISCPUSTATE *pCpu, RCPTRTYPE(uint8_t *
          */
         Log(("patmRecompileCallback: jump to code we've recompiled before %RRv!\n", pCurInstrGC));
         return patmPatchGenRelJump(pVM, pPatch, pCurInstrGC, OP_JMP, !!(pCpu->prefix & PREFIX_OPSIZE));
+    }
+
+
+    if (patmHasImmsReferringPatch(pVM, pInstrGC))
+    {
+        pPatch->flags |= PATMFL_INT3_REPLACEMENT_BLOCK;
     }
 
     if (pPatch->flags & (PATMFL_DUPLICATE_FUNCTION))
