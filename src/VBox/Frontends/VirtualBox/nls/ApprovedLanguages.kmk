@@ -27,6 +27,7 @@ VBOX_APPROVED_GUI_LANGUAGES := \
 	it    \
 	ro    \
 	es    \
+	gl_ES \
 	ru    \
 	fr    \
 	ja    \
