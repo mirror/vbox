@@ -68,21 +68,19 @@
 #include <kernel/OS.h>
 #endif
 
-#if defined(XP_MAC) || defined(XP_MACOSX)
-#if !defined(MOZ_WIDGET_COCOA) && TARGET_CARBON
-#include <CarbonEvents.h>
-#define MAC_USE_CARBON_EVENT
-#else
-#include <Processes.h>
-#define MAC_USE_WAKEUPPROCESS
+#if defined(XP_MACOSX)
+#if defined(MOZ_WIDGET_COCOA)
+#include <CoreFoundation/CoreFoundation.h>
+#define MAC_USE_CFRUNLOOPSOURCE
+#elif defined(TARGET_CARBON)
+/* #include <CarbonEvents.h> */
+/* #define MAC_USE_CARBON_EVENT */
+#include <CoreFoundation/CoreFoundation.h>
+#define MAC_USE_CFRUNLOOPSOURCE
 #endif
 #endif
 
-#if defined(XP_MAC)
-#include "pprthred.h"
-#else
 #include "private/pprthred.h"
-#endif /* defined(XP_MAC) */
 
 #if defined(VMS)
 /*
@@ -151,7 +149,7 @@ struct PLEventQueue {
     EventQueueType      type;
     PRPackedBool        processingEvents;
     PRPackedBool        notified;
-#if defined(_WIN32) 
+#if defined(_WIN32)
     PRPackedBool        timerSet;
 #endif
 
@@ -168,12 +166,13 @@ struct PLEventQueue {
     PRBool              removeMsg;
 #elif defined(XP_BEOS)
     port_id             eventport;
-#elif defined(XP_MAC) || defined(XP_MACOSX)
-#if defined(MAC_USE_CARBON_EVENT)
+#elif defined(XP_MACOSX)
+#if defined(MAC_USE_CFRUNLOOPSOURCE)
+    CFRunLoopSourceRef  mRunLoopSource;
+    CFRunLoopRef        mMainRunLoop;
+#elif defined(MAC_USE_CARBON_EVENT)
     EventHandlerUPP     eventHandlerUPP;
     EventHandlerRef     eventHandlerRef;
-#elif defined(MAC_USE_WAKEUPPROCESS)
-    ProcessSerialNumber psn;
 #endif
 #endif
 };
@@ -258,9 +257,6 @@ static PLEventQueue * _pl_CreateEventQueue(const char *name,
 #if defined(_WIN32) || defined(XP_OS2)
     self->removeMsg = PR_TRUE;
 #endif
-#if defined(MAC_USE_WAKEUPPROCESS)
-    self->psn.lowLongOfPSN = kNoProcess;
-#endif
 
     self->notified = PR_FALSE;
 
@@ -285,13 +281,13 @@ PL_CreateEventQueue(const char* name, PRThread* handlerThread)
     return( _pl_CreateEventQueue( name, handlerThread, EventQueueIsNative ));
 }
 
-PR_EXTERN(PLEventQueue *) 
+PR_EXTERN(PLEventQueue *)
 PL_CreateNativeEventQueue(const char *name, PRThread *handlerThread)
 {
     return( _pl_CreateEventQueue( name, handlerThread, EventQueueIsNative ));
 }
 
-PR_EXTERN(PLEventQueue *) 
+PR_EXTERN(PLEventQueue *)
 PL_CreateMonitoredEventQueue(const char *name, PRThread *handlerThread)
 {
     return( _pl_CreateEventQueue( name, handlerThread, EventQueueIsMonitored ));
@@ -306,9 +302,6 @@ PL_GetEventQueueMonitor(PLEventQueue* self)
 static void PR_CALLBACK
 _pl_destroyEvent(PLEvent* event, void* data, PLEventQueue* queue)
 {
-#ifdef XP_MAC
-#pragma unused (data, queue)
-#endif
     PL_DequeueEvent(event, queue);
     PL_DestroyEvent(event);
 }
@@ -734,9 +727,6 @@ PL_DestroyEvent(PLEvent* self)
 PR_IMPLEMENT(void)
 PL_DequeueEvent(PLEvent* self, PLEventQueue* queue)
 {
-#ifdef XP_MAC
-#pragma unused (queue)
-#endif
     if (self == NULL)
         return;
 
@@ -850,10 +840,6 @@ PL_EventLoop(PLEventQueue* self)
 static PRStatus
 _pl_SetupNativeNotifier(PLEventQueue* self)
 {
-#if defined(XP_MAC)
-#pragma unused (self)
-#endif
-
 #if defined(VMS)
     unsigned int status;
     self->idFunc = 0;
@@ -906,9 +892,9 @@ failed:
      */
     char portname[64];
     char semname[64];
-    PR_snprintf(portname, sizeof(portname), "event%lx", 
+    PR_snprintf(portname, sizeof(portname), "event%lx",
                 (long unsigned) self->handlerThread);
-    PR_snprintf(semname, sizeof(semname), "sync%lx", 
+    PR_snprintf(semname, sizeof(semname), "sync%lx",
                 (long unsigned) self->handlerThread);
 
     if((self->eventport = find_port(portname)) < 0)
@@ -931,10 +917,6 @@ failed:
 static void
 _pl_CleanupNativeNotifier(PLEventQueue* self)
 {
-#if defined(XP_MAC)
-#pragma unused (self)
-#endif
-
 #if defined(VMS)
     {
         unsigned int status;
@@ -952,7 +934,7 @@ _pl_CleanupNativeNotifier(PLEventQueue* self)
     }
     RemoveProp(self->eventReceiverWindow, _md_GetEventQueuePropName());
 
-    /* DestroyWindow doesn't do anything when called from a non ui thread.  Since 
+    /* DestroyWindow doesn't do anything when called from a non ui thread.  Since
      * self->eventReceiverWindow was created on the ui thread, it must be destroyed
      * on the ui thread.
      */
@@ -960,6 +942,12 @@ _pl_CleanupNativeNotifier(PLEventQueue* self)
 
 #elif defined(XP_OS2)
     WinDestroyWindow(self->eventReceiverWindow);
+#elif defined(MAC_USE_CFRUNLOOPSOURCE)
+
+    CFRunLoopRemoveSource(self->mMainRunLoop, self->mRunLoopSource, kCFRunLoopCommonModes);
+    CFRelease(self->mRunLoopSource);
+    CFRelease(self->mMainRunLoop);
+
 #elif defined(MAC_USE_CARBON_EVENT)
     EventComparatorUPP comparator = NewEventComparatorUPP(_md_CarbonEventComparator);
     PR_ASSERT(comparator != NULL);
@@ -1258,11 +1246,14 @@ _pl_NativeNotify(PLEventQueue* self)
 }
 #endif /* XP_BEOS */
 
-#if defined(XP_MAC) || defined(XP_MACOSX)
+#if defined(XP_MACOSX)
 static PRStatus
 _pl_NativeNotify(PLEventQueue* self)
 {
-#if defined(MAC_USE_CARBON_EVENT)
+#if defined(MAC_USE_CFRUNLOOPSOURCE)
+  	CFRunLoopSourceSignal(self->mRunLoopSource);
+  	CFRunLoopWakeUp(self->mMainRunLoop);
+#elif defined(MAC_USE_CARBON_EVENT)
     OSErr err;
     EventRef newEvent;
     if (CreateEvent(NULL, kEventClassPL, kEventProcessPLEvents,
@@ -1276,12 +1267,10 @@ _pl_NativeNotify(PLEventQueue* self)
     }
     if (err != noErr)
         return PR_FAILURE;
-#elif defined(MAC_USE_WAKEUPPROCESS)
-    WakeUpProcess(&self->psn);
 #endif
     return PR_SUCCESS;
 }
-#endif /* defined(XP_MAC) || defined(XP_MACOSX) */
+#endif /* defined(XP_MACOSX) */
 
 static PRStatus
 _pl_AcknowledgeNativeNotify(PLEventQueue* self)
@@ -1339,10 +1328,6 @@ _pl_AcknowledgeNativeNotify(PLEventQueue* self)
         return PR_SUCCESS;
     return PR_FAILURE;
 #else
-
-#if defined(XP_MAC)
-#pragma unused (self)
-#endif
 
     /* nothing to do on the other platforms */
     return PR_SUCCESS;
@@ -1576,7 +1561,14 @@ static void _md_CreateEventQueue( PLEventQueue *eventQueue )
 } /* end _md_CreateEventQueue() */
 #endif /* (defined(XP_UNIX) && !defined(XP_MACOSX)) || defined(XP_BEOS) */
 
-#if defined(MAC_USE_CARBON_EVENT)
+#if defined(MAC_USE_CFRUNLOOPSOURCE)
+static void _md_EventReceiverProc(void *info)
+{
+  PLEventQueue *queue = (PLEventQueue*)info;
+  PL_ProcessPendingEvents(queue);
+}
+
+#elif defined(MAC_USE_CARBON_EVENT)
 /*
 ** _md_CreateEventQueue() -- ModelDependent initializer
 */
@@ -1618,10 +1610,26 @@ static pascal Boolean _md_CarbonEventComparator(EventRef inEvent,
 
 #endif /* defined(MAC_USE_CARBON_EVENT) */
 
-#if defined(XP_MAC) || defined(XP_MACOSX)
+#if defined(XP_MACOSX)
 static void _md_CreateEventQueue( PLEventQueue *eventQueue )
 {
-#if defined(MAC_USE_CARBON_EVENT)
+#if defined(MAC_USE_CFRUNLOOPSOURCE)
+    CFRunLoopSourceContext sourceContext = { 0 };
+    sourceContext.version = 0;
+    sourceContext.info = (void*)eventQueue;
+    sourceContext.perform = _md_EventReceiverProc;
+
+    /* make a run loop source */
+    eventQueue->mRunLoopSource = CFRunLoopSourceCreate(kCFAllocatorDefault, 0 /* order */, &sourceContext);
+    PR_ASSERT(eventQueue->mRunLoopSource);
+
+    eventQueue->mMainRunLoop = CFRunLoopGetCurrent();
+    CFRetain(eventQueue->mMainRunLoop);
+
+    /* and add it to the run loop */
+    CFRunLoopAddSource(eventQueue->mMainRunLoop, eventQueue->mRunLoopSource, kCFRunLoopCommonModes);
+
+#elif defined(MAC_USE_CARBON_EVENT)
     eventQueue->eventHandlerUPP = NewEventHandlerUPP(_md_EventReceiverProc);
     PR_ASSERT(eventQueue->eventHandlerUPP);
     if (eventQueue->eventHandlerUPP)
@@ -1635,12 +1643,9 @@ static void _md_CreateEventQueue( PLEventQueue *eventQueue )
                                      eventQueue, &eventQueue->eventHandlerRef);
       PR_ASSERT(eventQueue->eventHandlerRef);
     }
-#elif defined(MAC_USE_WAKEUPPROCESS)
-    OSErr err = GetCurrentProcess(&eventQueue->psn);
-    PR_ASSERT(err == noErr);
 #endif
 } /* end _md_CreateEventQueue() */
-#endif /* defined(XP_MAC) || defined(XP_MACOSX) */
+#endif /* defined(XP_MACOSX) */
 
 /* extra functions for unix */
 
