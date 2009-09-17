@@ -32,9 +32,9 @@
 #define ___VBox_com_EventQueue_h
 
 #if !defined (VBOX_WITH_XPCOM)
-#include <windows.h>
+# include <Windows.h>
 #else
-#include <nsEventQueueUtils.h>
+# include <nsEventQueueUtils.h>
 #endif
 
 #include <VBox/com/defs.h>
@@ -76,8 +76,13 @@ protected:
 /**
  *  Simple event queue.
  *
- *  On Linux, if this queue is created on the main thread, it automatically
- *  processes XPCOM/IPC events while waiting for its own (Event) events.
+ *  When using XPCOM, this will map onto the default XPCOM queue for the thread.
+ *  So, if a queue is created on the main thread, it automatically processes
+ *  XPCOM/IPC events while waiting for its own (Event) events.
+ *
+ *  When using Windows, Darwin and OS/2, this will map onto the native thread
+ *  queue/runloop.  So, windows messages and want not will be processed while
+ *  waiting for events.
  */
 class EventQueue
 {
@@ -89,41 +94,27 @@ public:
     BOOL postEvent (Event *event);
     BOOL waitForEvent (Event **event);
     BOOL handleEvent (Event *event);
-    /**
-     * Process events pending on this event queue, and wait 
-     * up to given timeout, if nothing is available.
-     * Must be called on same thread this event queue was created on.
-     */
     int processEventQueue(uint32_t cMsTimeout);
-    /**
-     * Interrupt thread waiting on event queue processing.
-     * Can be called on any thread.
-     */
     int interruptEventQueueProcessing();
-    /**
-     * Get select()'able selector for this event queue, can be -1
-     * on platforms not supporting such functionality.
-     */
     int getSelectFD();
-    /** 
-     * Initialize/deinitialize event queues.
-     */
     static int init();
-    static int deinit();
-    /**
-     * Get main event queue instance.
-     */
-    static EventQueue* getMainEventQueue();
+    static int uninit();
+    static EventQueue *getMainEventQueue();
 
 private:
-    static EventQueue* mMainQueue;
+    static EventQueue *mMainQueue;
 
 #if !defined (VBOX_WITH_XPCOM)
 
+    /** The thread which the queue belongs to. */
     DWORD mThreadId;
+    /** Duplicated thread handle for MsgWaitForMultipleObjects. */
+    HANDLE mhThread;
 
 #else
 
+    /** Whether it was created (and thus needs destroying) or if a queue already
+     *  associated with the thread was used. */
     BOOL mEQCreated;
 
     nsCOMPtr <nsIEventQueue> mEventQ;

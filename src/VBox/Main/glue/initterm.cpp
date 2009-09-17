@@ -497,7 +497,11 @@ HRESULT Initialize()
 
     AssertComRC (rc);
 
-    EventQueue::init();
+    /*
+     * Init the main event queue (ASSUMES it cannot fail).
+     */
+    if (SUCCEEDED(rc))
+        EventQueue::init();
 
     return rc;
 }
@@ -506,7 +510,7 @@ HRESULT Shutdown()
 {
     HRESULT rc = S_OK;
 
-    EventQueue::deinit();
+    EventQueue::uninit();
 
 #if !defined (VBOX_WITH_XPCOM)
 
