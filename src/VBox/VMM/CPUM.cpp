@@ -527,7 +527,6 @@ static int cpumR3CpuIdInit(PVM pVM)
 #endif
     }
 
-    PCFGMNODE pCpum = CFGMR3GetChild(CFGMR3GetRoot(pVM), "CPUM");
     /** @cfgm{/CPUM/NT4LeafLimit, boolean, false}
      * Limit the number of standard CPUID leafs to 0..2 to prevent NT4 from
      * bugchecking with MULTIPROCESSOR_CONFIGURATION_NOT_SUPPORTED (0x3e).
@@ -535,17 +534,9 @@ static int cpumR3CpuIdInit(PVM pVM)
      * @todo r=bird: The intel docs states that leafs 3 is included, why don't we?
      */
     bool fNt4LeafLimit;
-    CFGMR3QueryBoolDef(pCpum, "NT4LeafLimit", &fNt4LeafLimit, false);
+    CFGMR3QueryBoolDef(CFGMR3GetChild(CFGMR3GetRoot(pVM), "CPUM"), "NT4LeafLimit", &fNt4LeafLimit, false);
     if (fNt4LeafLimit)
         pCPUM->aGuestCpuIdStd[0].eax = 2;
-
-    /**
-     * @todo: very hacky, may need to change, once better understand real reason
-     */
-    bool fHideCX8;
-    CFGMR3QueryBoolDef(pCpum, "HideCX8", &fHideCX8, false);
-    if (fHideCX8)
-        pCPUM->aGuestCpuIdStd[1].edx &= ~X86_CPUID_FEATURE_EDX_CX8;
 
     /*
      * Limit it the number of entries and fill the remaining with the defaults.
