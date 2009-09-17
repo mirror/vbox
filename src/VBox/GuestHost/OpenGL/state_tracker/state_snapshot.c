@@ -465,6 +465,32 @@ static void crStateSaveProgramCB(unsigned long key, void *data1, void *data2)
     }
 }
 
+static void crStateSaveFramebuffersCB(unsigned long key, void *data1, void *data2)
+{
+    CRFramebufferObject *pFBO = (CRFramebufferObject*) data1;
+    PSSMHANDLE pSSM = (PSSMHANDLE) data2;
+    int32_t rc;
+
+    rc = SSMR3PutMem(pSSM, &key, sizeof(key));
+    CRASSERT(rc == VINF_SUCCESS);
+
+    rc = SSMR3PutMem(pSSM, pFBO, sizeof(*pFBO));
+    CRASSERT(rc == VINF_SUCCESS);
+}
+
+static void crStateSaveRenderbuffersCB(unsigned long key, void *data1, void *data2)
+{
+    CRRenderbufferObject *pRBO = (CRRenderbufferObject*) data1;
+    PSSMHANDLE pSSM = (PSSMHANDLE) data2;
+    int32_t rc;
+
+    rc = SSMR3PutMem(pSSM, &key, sizeof(key));
+    CRASSERT(rc == VINF_SUCCESS);
+
+    rc = SSMR3PutMem(pSSM, pRBO, sizeof(*pRBO));
+    CRASSERT(rc == VINF_SUCCESS);
+}
+
 static int32_t crStateLoadProgram(CRProgram **ppProgram, PSSMHANDLE pSSM)
 {
     CRProgramSymbol **ppSymbol;
@@ -712,6 +738,22 @@ int32_t crStateSaveContext(CRContext *pContext, PSSMHANDLE pSSM)
     /* This one is unused it seems*/
     CRASSERT(!pContext->program.errorString);
 
+#ifdef CR_EXT_framebuffer_object
+    /* Save FBOs */
+    ui32 = crHashtableNumElements(pContext->framebufferobject.framebuffers);
+    rc = SSMR3PutU32(pSSM, ui32);
+    AssertRCReturn(rc, rc);
+    crHashtableWalk(pContext->framebufferobject.framebuffers, crStateSaveFramebuffersCB, pSSM);
+    ui32 = crHashtableNumElements(pContext->framebufferobject.renderbuffers);
+    rc = SSMR3PutU32(pSSM, ui32);
+    AssertRCReturn(rc, rc);
+    crHashtableWalk(pContext->framebufferobject.renderbuffers, crStateSaveRenderbuffersCB, pSSM);
+    rc = SSMR3PutU32(pSSM, pContext->framebufferobject.framebuffer?pContext->framebufferobject.framebuffer->id:0);
+    AssertRCReturn(rc, rc);
+    rc = SSMR3PutU32(pSSM, pContext->framebufferobject.renderbuffer?pContext->framebufferobject.renderbuffer->id:0);
+    AssertRCReturn(rc, rc);
+#endif
+
     return VINF_SUCCESS;
 }
 
@@ -850,6 +892,9 @@ int32_t crStateLoadContext(CRContext *pContext, PSSMHANDLE pSSM)
     {
         SLC_COPYPTR(transform.programStack[i].stack);
     }
+
+    SLC_COPYPTR(framebufferobject.framebuffers);
+    SLC_COPYPTR(framebufferobject.renderbuffers);
 
     /* Have to preserve original context id */
     CRASSERT(pTmpContext->id == pContext->id);
@@ -1097,6 +1142,56 @@ int32_t crStateLoadContext(CRContext *pContext, PSSMHANDLE pSSM)
 
     /* Mark programs for resending to GPU */
     pContext->program.bResyncNeeded = GL_TRUE;
+
+#ifdef CR_EXT_framebuffer_object
+    /* Load FBOs */
+    rc = SSMR3GetU32(pSSM, &uiNumElems);
+    AssertRCReturn(rc, rc);
+    for (ui=0; ui<uiNumElems; ++ui)
+    {
+        CRFramebufferObject *pFBO;
+        pFBO = crAlloc(sizeof(*pFBO));
+        if (!pFBO) return VERR_NO_MEMORY;
+
+        rc = SSMR3GetMem(pSSM, &key, sizeof(key));
+        AssertRCReturn(rc, rc);
+
+        rc = SSMR3GetMem(pSSM, pFBO, sizeof(*pFBO));
+        AssertRCReturn(rc, rc);
+
+        crHashtableAdd(pContext->framebufferobject.framebuffers, key, pFBO);
+    }
+
+    rc = SSMR3GetU32(pSSM, &uiNumElems);
+    AssertRCReturn(rc, rc);
+    for (ui=0; ui<uiNumElems; ++ui)
+    {
+        CRRenderbufferObject *pRBO;
+        pRBO = crAlloc(sizeof(*pRBO));
+        if (!pRBO) return VERR_NO_MEMORY;
+
+        rc = SSMR3GetMem(pSSM, &key, sizeof(key));
+        AssertRCReturn(rc, rc);
+
+        rc = SSMR3GetMem(pSSM, pRBO, sizeof(*pRBO));
+        AssertRCReturn(rc, rc);
+
+        crHashtableAdd(pContext->framebufferobject.renderbuffers, key, pRBO);
+    }
+
+    rc = SSMR3GetU32(pSSM, &ui);
+    AssertRCReturn(rc, rc);
+    pContext->framebufferobject.framebuffer = ui==0 ? NULL 
+                                                    : crHashtableSearch(pContext->framebufferobject.framebuffers, ui);
+
+    rc = SSMR3GetU32(pSSM, &ui);
+    AssertRCReturn(rc, rc);
+    pContext->framebufferobject.renderbuffer = ui==0 ? NULL 
+                                                    : crHashtableSearch(pContext->framebufferobject.renderbuffers, ui);
+
+    /* Mark FBOs/RBOs for resending to GPU */
+    pContext->framebufferobject.bResyncNeeded = GL_TRUE;
+#endif
 
     return VINF_SUCCESS;
 }

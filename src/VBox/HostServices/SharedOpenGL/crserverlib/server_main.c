@@ -600,7 +600,15 @@ static void crVBoxServerSaveContextStateCB(unsigned long key, void *data1, void 
 #ifdef CR_STATE_NO_TEXTURE_IMAGE_STORE
     if (cr_server.curClient)
     {
-        crServerDispatchMakeCurrent(cr_server.curClient->currentWindow, 0, pContext->id);
+        unsigned long id;
+        if (!crHashtableGetDataKey(cr_server.contextTable, pContext, &id))
+        {
+            crWarning("No client id for server ctx %d", pContext->id);
+        }
+        else
+        {
+            crServerDispatchMakeCurrent(cr_server.curClient->currentWindow, 0, id);
+        }
     }
 #endif
 

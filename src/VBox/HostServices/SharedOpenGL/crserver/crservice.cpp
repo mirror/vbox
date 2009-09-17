@@ -70,7 +70,7 @@ static ULONG64 g_winId = 0;
 #define CR_USE_HGCM
 
 static const char* gszVBoxOGLSSMMagic = "***OpenGL state data***";
-#define SHCROGL_SSM_VERSION 6
+#define SHCROGL_SSM_VERSION 7
 
 typedef struct
 {

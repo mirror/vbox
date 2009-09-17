@@ -41,6 +41,7 @@ crStateFramebufferObjectInit(CRContext *ctx)
     fbo->renderbuffer = NULL;
     fbo->framebuffers = crAllocHashtable();
     fbo->renderbuffers = crAllocHashtable();
+    fbo->bResyncNeeded = GL_FALSE;
 }
 
 static void crStateFreeFBO(void *data)
@@ -50,7 +51,7 @@ static void crStateFreeFBO(void *data)
 #ifndef IN_GUEST
     if (diff_api.DeleteFramebuffersEXT)
     {
-        diff_api.DeleteFramebuffersEXT(1, &pObj->id);
+        diff_api.DeleteFramebuffersEXT(1, &pObj->hwid);
     }
 #endif
 
@@ -64,7 +65,7 @@ static void crStateFreeRBO(void *data)
 #ifndef IN_GUEST
     if (diff_api.DeleteRenderbuffersEXT)
     {
-        diff_api.DeleteRenderbuffersEXT(1, &pObj->id);
+        diff_api.DeleteRenderbuffersEXT(1, &pObj->hwid);
     }
 #endif
 
@@ -100,6 +101,7 @@ crStateBindRenderbufferEXT(GLenum target, GLuint renderbuffer)
             fbo->renderbuffer = (CRRenderbufferObject*) crCalloc(sizeof(CRRenderbufferObject));
             CRSTATE_FBO_CHECKERR(!fbo->renderbuffer, GL_OUT_OF_MEMORY, "glBindRenderbufferEXT");
             fbo->renderbuffer->id = renderbuffer;
+            fbo->renderbuffer->hwid = renderbuffer;
             fbo->renderbuffer->internalformat = GL_RGBA;
             crHashtableAdd(fbo->renderbuffers, renderbuffer, fbo->renderbuffer);
         }
@@ -157,7 +159,7 @@ crStateDeleteRenderbuffersEXT(GLsizei n, const GLuint *renderbuffers)
                     }
                 }
 
-                crHashtableDelete(fbo->renderbuffers, renderbuffers[i], crFree);
+                crHashtableDelete(fbo->renderbuffers, renderbuffers[i], crStateFreeRBO);
             }
         }
     }
@@ -172,7 +174,7 @@ crStateRenderbufferStorageEXT(GLenum target, GLenum internalformat, GLsizei widt
 
     CRSTATE_FBO_CHECKERR(g->current.inBeginEnd, GL_INVALID_OPERATION, "called in begin/end");
     CRSTATE_FBO_CHECKERR(target!=GL_RENDERBUFFER_EXT, GL_INVALID_ENUM, "invalid target");
-    CRSTATE_FBO_CHECKERR(rb, GL_INVALID_OPERATION, "no bound renderbuffer");
+    CRSTATE_FBO_CHECKERR(!rb, GL_INVALID_OPERATION, "no bound renderbuffer");
 
     rb->width = width;
     rb->height = height;
@@ -188,7 +190,7 @@ crStateGetRenderbufferParameterivEXT(GLenum target, GLenum pname, GLint *params)
 
     CRSTATE_FBO_CHECKERR(g->current.inBeginEnd, GL_INVALID_OPERATION, "called in begin/end");
     CRSTATE_FBO_CHECKERR(target!=GL_RENDERBUFFER_EXT, GL_INVALID_ENUM, "invalid target");
-    CRSTATE_FBO_CHECKERR(rb, GL_INVALID_OPERATION, "no bound renderbuffer");
+    CRSTATE_FBO_CHECKERR(!rb, GL_INVALID_OPERATION, "no bound renderbuffer");
 
     switch (pname)
     {
@@ -275,6 +277,7 @@ crStateBindFramebufferEXT(GLenum target, GLuint framebuffer)
             fbo->framebuffer = (CRFramebufferObject*) crCalloc(sizeof(CRFramebufferObject));
             CRSTATE_FBO_CHECKERR(!fbo->framebuffer, GL_OUT_OF_MEMORY, "glBindFramebufferEXT");
             fbo->framebuffer->id = framebuffer;
+            fbo->framebuffer->hwid = framebuffer;
             crStateInitFrameBuffer(fbo->framebuffer);
             crHashtableAdd(fbo->framebuffers, framebuffer, fbo->framebuffer);
         }
@@ -304,7 +307,7 @@ crStateDeleteFramebuffersEXT(GLsizei n, const GLuint *framebuffers)
                 {
                     fbo->framebuffer = NULL;
                 }
-                crHashtableDelete(fbo->framebuffers, framebuffers[i], crFree);
+                crHashtableDelete(fbo->framebuffers, framebuffers[i], crStateFreeFBO);
             }
         }
     }
@@ -543,12 +546,127 @@ crStateGenerateMipmapEXT(GLenum target)
     /*@todo*/
 }
 
+static void crStateSyncRenderbuffersCB(unsigned long key, void *data1, void *data2)
+{
+    CRRenderbufferObject *pRBO = (CRRenderbufferObject*) data1;
+
+    diff_api.GenRenderbuffersEXT(1, &pRBO->hwid);
+
+    diff_api.BindRenderbufferEXT(GL_RENDERBUFFER_EXT, pRBO->hwid);
+    diff_api.RenderbufferStorageEXT(GL_RENDERBUFFER_EXT, pRBO->internalformat, pRBO->width, pRBO->height);
+}
+
+static void crStateSyncAP(CRFBOAttachmentPoint *pAP, GLenum ap, CRContext *ctx)
+{
+    CRRenderbufferObject *pRBO;
+    CRTextureObj *tobj;
+
+    switch (pAP->type)
+    {
+        case GL_TEXTURE:
+            CRASSERT(pAP->name!=0);
+            
+            tobj = (CRTextureObj *) crHashtableSearch(ctx->shared->textureTable, pAP->name);
+            if (tobj)
+            {
+                switch (tobj->target)
+                {
+                    case GL_TEXTURE_1D:
+                        diff_api.FramebufferTexture1DEXT(GL_FRAMEBUFFER_EXT, ap, tobj->target, pAP->name, pAP->level);
+                        break;
+                    case GL_TEXTURE_2D:
+                    case GL_TEXTURE_RECTANGLE_ARB:
+                        diff_api.FramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, ap, tobj->target, pAP->name, pAP->level);
+                        break;
+                    case GL_TEXTURE_CUBE_MAP_ARB:
+                        diff_api.FramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, ap, pAP->face, pAP->name, pAP->level);
+                        break;
+                    case GL_TEXTURE_3D:
+                        diff_api.FramebufferTexture3DEXT(GL_FRAMEBUFFER_EXT, ap, tobj->target, pAP->name, pAP->level, pAP->zoffset);
+                        break;
+                    default:
+                        crWarning("Unexpected textarget %d", tobj->target);
+                }
+            }
+            else
+            {
+                crWarning("Unknown texture id %d", pAP->name);
+            }
+            break;
+        case GL_RENDERBUFFER_EXT:
+            pRBO = (CRRenderbufferObject*) crHashtableSearch(ctx->framebufferobject.renderbuffers, pAP->name);
+            diff_api.FramebufferRenderbufferEXT(GL_FRAMEBUFFER_EXT, ap, GL_RENDERBUFFER_EXT, pRBO->hwid);
+            break;
+        case GL_NONE:
+            /* Intentionally left blank */
+            break;
+        default: crWarning("Invalid attachment point type %d (ap: %i)", pAP->type, ap);
+    }
+}
+
+static void crStateSyncFramebuffersCB(unsigned long key, void *data1, void *data2)
+{
+    CRFramebufferObject *pFBO = (CRFramebufferObject*) data1;
+    CRContext *ctx = (CRContext*) data2;
+    GLint i;
+
+    diff_api.GenFramebuffersEXT(1, &pFBO->hwid);
+
+    diff_api.BindFramebufferEXT(GL_FRAMEBUFFER_EXT, pFBO->hwid);
+
+    for (i=0; i<CR_MAX_COLOR_ATTACHMENTS; ++i)
+    {
+        crStateSyncAP(&pFBO->color[i], GL_COLOR_ATTACHMENT0_EXT+i, ctx);
+    }
+
+    crStateSyncAP(&pFBO->depth, GL_DEPTH_ATTACHMENT_EXT, ctx);
+    crStateSyncAP(&pFBO->stencil, GL_STENCIL_ATTACHMENT_EXT, ctx);
+}
+
 DECLEXPORT(void) STATE_APIENTRY
 crStateFramebufferObjectSwitch(CRContext *from, CRContext *to)
 {
-    if (to->framebufferobject.framebuffer!=from->framebufferobject.framebuffer)
+    if (to->framebufferobject.bResyncNeeded)
     {
+        to->framebufferobject.bResyncNeeded = GL_FALSE;
+
+        crHashtableWalk(to->framebufferobject.renderbuffers, crStateSyncRenderbuffersCB, NULL);
+        crHashtableWalk(to->framebufferobject.framebuffers, crStateSyncFramebuffersCB, to);
+
         diff_api.BindFramebufferEXT(GL_FRAMEBUFFER_EXT, to->framebufferobject.framebuffer?
-            to->framebufferobject.framebuffer->id:0);
+            to->framebufferobject.framebuffer->hwid:0);
+
+        diff_api.BindRenderbufferEXT(GL_RENDERBUFFER_EXT, to->framebufferobject.renderbuffer?
+            to->framebufferobject.renderbuffer->hwid:0);
+    } 
+    else 
+    {
+        if (to->framebufferobject.framebuffer!=from->framebufferobject.framebuffer)
+        {
+            diff_api.BindFramebufferEXT(GL_FRAMEBUFFER_EXT, to->framebufferobject.framebuffer?
+                to->framebufferobject.framebuffer->hwid:0);
+        }
+
+        if (to->framebufferobject.renderbuffer!=from->framebufferobject.renderbuffer)
+        {
+            diff_api.BindRenderbufferEXT(GL_RENDERBUFFER_EXT, to->framebufferobject.renderbuffer?
+                to->framebufferobject.renderbuffer->hwid:0);
+        }
     }
+}
+
+DECLEXPORT(GLuint) STATE_APIENTRY crStateGetFramebufferHWID(GLuint id)
+{
+    CRContext *g = GetCurrentContext();
+    CRFramebufferObject *pFBO = (CRFramebufferObject*) crHashtableSearch(g->framebufferobject.framebuffers, id);
+
+    return pFBO ? pFBO->hwid : 0;
+}
+
+DECLEXPORT(GLuint) STATE_APIENTRY crStateGetRenderbufferHWID(GLuint id)
+{
+    CRContext *g = GetCurrentContext();
+    CRRenderbufferObject *pRBO = (CRRenderbufferObject*) crHashtableSearch(g->framebufferobject.renderbuffers, id);
+
+    return pRBO ? pRBO->hwid : 0;
 }
