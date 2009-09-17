@@ -1584,16 +1584,7 @@ static void pgmPoolFlushDirtyPage(PVM pVM, PPGMPOOL pPool, unsigned idxSlot, boo
     rc = PGM_GCPHYS_2_PTR(pPool->CTX_SUFF(pVM), pPage->GCPhys, &pvGst); AssertReleaseRC(rc);
     unsigned cChanges = pgmPoolTrackFlushPTPaePae(pPool, pPage, (PX86PTPAE)pvShw, (PCX86PTPAE)pvGst, (PCX86PTPAE)&pPool->aDirtyPages[idxSlot][0], fAllowRemoval, &fFlush);
     STAM_PROFILE_STOP(&pPool->StatTrackDeref,a);
-
     /** Note: we might want to consider keeping the dirty page active in case there were many changes. */
-    if (fFlush)
-    {
-        Assert(fAllowRemoval);
-        Log(("Flush reused page table!\n"));
-        pgmPoolFlushPage(pPool, pPage);
-        STAM_COUNTER_INC(&pPool->StatForceFlushReused);
-        return;
-    }
 
     /* This page is likely to be modified again, so reduce the nr of modifications just a bit here. */
     Assert(pPage->cModifications);
@@ -1609,7 +1600,15 @@ static void pgmPoolFlushDirtyPage(PVM pVM, PPGMPOOL pPool, unsigned idxSlot, boo
     pPool->cDirtyPages--;
     pPool->aIdxDirtyPages[idxSlot] = NIL_PGMPOOL_IDX;
     Assert(pPool->cDirtyPages <= RT_ELEMENTS(pPool->aIdxDirtyPages));
-    Log(("Removed dirty page %RGp cMods=%d\n", pPage->GCPhys, pPage->cModifications));
+    if (fFlush)
+    {
+        Assert(fAllowRemoval);
+        Log(("Flush reused page table!\n"));
+        pgmPoolFlushPage(pPool, pPage);
+        STAM_COUNTER_INC(&pPool->StatForceFlushReused);
+    }
+    else
+        Log(("Removed dirty page %RGp cMods=%d\n", pPage->GCPhys, pPage->cModifications));
 }
 
 # ifndef IN_RING3
