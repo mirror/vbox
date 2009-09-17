@@ -23,7 +23,7 @@
 #include <windows.h>
 #include "switcher.h"
 
-static char* gsBlackList[] = {"Dwm.exe"/*, "taskeng.exe"*/, NULL};
+static char* gsBlackList[] = {"Dwm.exe", "java.exe", "javaw.exe"/*, "taskeng.exe"*/, NULL};
 
 /* Checks if 3D is enabled for VM and it works on host machine */
 BOOL isVBox3DEnabled(void)
