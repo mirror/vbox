@@ -68,18 +68,18 @@ static int  vmR3ReqProcessOneU(PUVM pUVM, PVMREQ pReq);
  * @param   cMillies        Number of milliseconds to wait for the request to
  *                          be completed. Use RT_INDEFINITE_WAIT to only
  *                          wait till it's completed.
+ * @param   fFlags          A combination of the VMREQFLAGS values.
  * @param   pfnFunction     Pointer to the function to call.
  * @param   cArgs           Number of arguments following in the ellipsis.
  *                          Not possible to pass 64-bit arguments!
  * @param   ...             Function arguments.
- *
- * @todo    Add fFlags...
  */
-VMMR3DECL(int) VMR3ReqCall(PVM pVM, VMCPUID idDstCpu, PVMREQ *ppReq, unsigned cMillies, PFNRT pfnFunction, unsigned cArgs, ...)
+VMMR3DECL(int) VMR3ReqCall(PVM pVM, VMCPUID idDstCpu, PVMREQ *ppReq, unsigned cMillies, uint32_t fFlags,
+                           PFNRT pfnFunction, unsigned cArgs, ...)
 {
     va_list va;
     va_start(va, cArgs);
-    int rc = VMR3ReqCallVU(pVM->pUVM, idDstCpu, ppReq, cMillies, VMREQFLAGS_VBOX_STATUS, pfnFunction, cArgs, va);
+    int rc = VMR3ReqCallVU(pVM->pUVM, idDstCpu, ppReq, cMillies, fFlags, pfnFunction, cArgs, va);
     va_end(va);
     return rc;
 }

@@ -2923,10 +2923,9 @@ HRESULT Console::doDriveChange (const char *pszDevice, unsigned uInstance, unsig
      * here to make requests from under the lock in order to serialize them.
      */
     PVMREQ pReq;
-    int vrc = VMR3ReqCall (mpVM, VMCPUID_ANY, &pReq, 0 /* no wait! */,
+    int vrc = VMR3ReqCall (mpVM, VMCPUID_ANY, &pReq, 0 /* no wait! */, VMREQFLAGS_VBOX_STATUS,
                            (PFNRT) Console::changeDrive, 8,
-                           this, pszDevice, uInstance, uLun, eState, peState,
-                           pszPath, fPassthrough);
+                           this, pszDevice, uInstance, uLun, eState, peState, pszPath, fPassthrough);
 
     /* leave the lock before waiting for a result (EMT will call us back!) */
     alock.leave();
@@ -3445,7 +3444,7 @@ HRESULT Console::doNetworkAdapterChange (const char *pszDevice,
      * here to make requests from under the lock in order to serialize them.
      */
     PVMREQ pReq;
-    int vrc = VMR3ReqCall (mpVM, 0 /*idDstCpu*/, &pReq, 0 /* no wait! */,
+    int vrc = VMR3ReqCall (mpVM, 0 /*idDstCpu*/, &pReq, 0 /* no wait! */, VMREQFLAGS_VBOX_STATUS,
                            (PFNRT) Console::changeNetworkAttachment, 5,
                            this, pszDevice, uInstance, uLun, aNetworkAdapter);
 
