@@ -1,4 +1,3 @@
-
 /* $Id$ */
 /** @file
  * VBoxHostVersion - Checks the host's VirtualBox version and notifies
