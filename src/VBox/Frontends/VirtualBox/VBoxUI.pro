@@ -83,6 +83,7 @@ TRANSLATIONS = \
 	nls/VirtualBox_ar.ts \
 	nls/VirtualBox_de.ts \
 	nls/VirtualBox_es.ts \
+	nls/VirtualBox_gl_ES.ts \
 	nls/VirtualBox_fr.ts \
 	nls/VirtualBox_it.ts \
 	nls/VirtualBox_ro.ts \
