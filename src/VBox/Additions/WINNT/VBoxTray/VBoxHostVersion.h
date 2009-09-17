@@ -18,9 +18,10 @@
  * additional information or have any questions.
  */
 
-#ifndef __VBOXHOSTVERSION__H
-#define __VBOXHOSTVERSION__H
+#ifndef ___VBoxHostVersion_h
+#define ___VBoxHostVersion_h
 
 int VBoxCheckHostVersion();
 
-#endif /* __VBOXHOSTVERSION__H */
+#endif /* !___VBoxHostVersion_h */
+
