@@ -469,7 +469,7 @@ static int handleWaitGuestProperty(HandlerArg *a)
             uint64_t cMsElapsed = RTTimeMilliTS() - u64Started;
             if (cMsElapsed >= cMsTimeout)
                 break; /* timed out */
-            cMsWait = RT_MIN(1000, (uint32_t)cMsTimeout - cMsElapsed);
+            cMsWait = RT_MIN(1000, cMsTimeout - (uint32_t)cMsElapsed);
         }
         int vrc = com::EventQueue::getMainEventQueue()->processEventQueue(cMsWait);
         if (    RT_FAILURE(vrc)
