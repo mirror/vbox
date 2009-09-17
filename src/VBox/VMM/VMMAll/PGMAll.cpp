@@ -459,9 +459,11 @@ VMMDECL(int) PGMTrap0eHandler(PVMCPU pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegFram
 
 # ifdef IN_RING0
     /* Note: hack alert for difficult to reproduce problem. */
-    if (rc == VERR_PAGE_TABLE_NOT_PRESENT)
+    if (    rc == VERR_PAGE_TABLE_NOT_PRESENT           /* seen with UNI & SMP */
+        ||  rc == VERR_PAGE_DIRECTORY_PTR_NOT_PRESENT   /* seen with SMP */
+        ||  rc == VERR_PAGE_MAP_LEVEL4_NOT_PRESENT)     /* precaution */
     {
-        Log(("WARNING: Unexpected VERR_PAGE_TABLE_NOT_PRESENT for page fault at %RGv error code %x (rip=%RGv)\n", pvFault, uErr, pRegFrame->rip));
+        Log(("WARNING: Unexpected VERR_PAGE_TABLE_NOT_PRESENT (%d) for page fault at %RGv error code %x (rip=%RGv)\n", rc, pvFault, uErr, pRegFrame->rip));
         rc = VINF_SUCCESS;
     }
 # endif
