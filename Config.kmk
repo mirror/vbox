@@ -416,6 +416,8 @@ VBOX_WITH_LSILOGIC = 1
 VBOX_WITH_HPET = 1
 # Enable LPC device
 VBOX_WITH_LPC = 1
+# Enable EFI support
+VBOX_WITH_EFI = 1
 # Enable SCSI drivers
 VBOX_WITH_SCSI = 1
 # Enable changing network attachments dynamically.
