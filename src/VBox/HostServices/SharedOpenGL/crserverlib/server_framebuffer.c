@@ -79,3 +79,57 @@ void SERVER_DISPATCH_APIENTRY crServerDispatchFramebufferTexture3DEXT(GLenum tar
     crStateFramebufferTexture3DEXT(target, attachment, textarget, texture, level, zoffset);
     cr_server.head_spu->dispatch_table.FramebufferTexture3DEXT(target, attachment, textarget, texture, level, zoffset);
 }
+
+void SERVER_DISPATCH_APIENTRY crServerDispatchBindFramebufferEXT(GLenum target, GLuint framebuffer)
+{
+	crStateBindFramebufferEXT(target, framebuffer);
+	cr_server.head_spu->dispatch_table.BindFramebufferEXT(target, crStateGetFramebufferHWID(framebuffer));
+}
+
+void SERVER_DISPATCH_APIENTRY crServerDispatchBindRenderbufferEXT(GLenum target, GLuint renderbuffer)
+{
+	crStateBindRenderbufferEXT(target, renderbuffer);
+	cr_server.head_spu->dispatch_table.BindRenderbufferEXT(target, crStateGetRenderbufferHWID(renderbuffer));
+}
+
+void SERVER_DISPATCH_APIENTRY crServerDispatchDeleteFramebuffersEXT(GLsizei n, const GLuint * framebuffers)
+{
+	crStateDeleteFramebuffersEXT(n, framebuffers);
+}
+
+void SERVER_DISPATCH_APIENTRY crServerDispatchDeleteRenderbuffersEXT(GLsizei n, const GLuint * renderbuffers)
+{
+	crStateDeleteRenderbuffersEXT(n, renderbuffers);
+}
+
+void SERVER_DISPATCH_APIENTRY
+crServerDispatchFramebufferRenderbufferEXT(GLenum target, GLenum attachment, GLenum renderbuffertarget, GLuint renderbuffer)
+{
+	crStateFramebufferRenderbufferEXT(target, attachment, renderbuffertarget, renderbuffer);
+	cr_server.head_spu->dispatch_table.FramebufferRenderbufferEXT(target, attachment, renderbuffertarget, crStateGetRenderbufferHWID(renderbuffer));
+}
+
+void SERVER_DISPATCH_APIENTRY
+crServerDispatchGetFramebufferAttachmentParameterivEXT(GLenum target, GLenum attachment, GLenum pname, GLint * params)
+{
+	GLint local_params[1];
+	(void) params;
+	crStateGetFramebufferAttachmentParameterivEXT(target, attachment, pname, local_params);
+
+    if (GL_FRAMEBUFFER_ATTACHMENT_OBJECT_NAME_EXT==pname)
+    {
+        GLint type;
+        crStateGetFramebufferAttachmentParameterivEXT(target, attachment, GL_FRAMEBUFFER_ATTACHMENT_OBJECT_TYPE_EXT, &type);
+        if (GL_TEXTURE==type)
+        {
+            /*todo, add reverse of crServerTranslateTextureID*/
+            if (!cr_server.sharedTextureObjects && local_params[0])
+            {
+                int client = cr_server.curClient->number;
+                local_params[0] = local_params[0] - client * 100000;
+            }
+        }
+    }
+
+	crServerReturnValue(&(local_params[0]), 1*sizeof(GLint));
+}

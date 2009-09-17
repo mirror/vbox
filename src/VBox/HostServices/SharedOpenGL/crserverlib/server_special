@@ -197,3 +197,9 @@ FramebufferTexture1DEXT
 FramebufferTexture2DEXT
 FramebufferTexture3DEXT
 CopyTexImage2D
+BindFramebufferEXT
+BindRenderbufferEXT
+DeleteFramebuffersEXT
+DeleteRenderbuffersEXT
+FramebufferRenderbufferEXT
+GetFramebufferAttachmentParameterivEXT

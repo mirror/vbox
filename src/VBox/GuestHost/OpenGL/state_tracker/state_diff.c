@@ -235,6 +235,7 @@ void crStateSwitchContext( CRContext *from, CRContext *to )
 	}
 #endif
 #ifdef CR_EXT_framebuffer_object
+    /*Note, this should go after crStateTextureSwitch*/
     crStateFramebufferObjectSwitch(from, to);
 #endif
 	if (CHECKDIRTY(sb->current.dirty, bitID))
