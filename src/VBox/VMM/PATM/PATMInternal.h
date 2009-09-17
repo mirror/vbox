@@ -79,6 +79,9 @@
 #define PATMFL_EXTERNAL_JUMP_INSIDE         RT_BIT_64(33) /** A trampoline patch was created that jumps to an instruction in the patch block */
 #define PATMFL_CODE_REFERENCED              RT_BIT_64(34) /** patch block referenced (called, jumped to) by another patch. */
 
+/* Global flags, affect PATM behavior */
+#define PATMGFL_SEARCH_IMM_BACKWARD         RT_BIT_32(0)  /** search backward from priveledged insn for immediates referring inside patch */
+
 #define SIZEOF_NEARJUMP8                   2 //opcode byte + 1 byte relative offset
 #define SIZEOF_NEARJUMP16                  3 //opcode byte + 2 byte relative offset
 #define SIZEOF_NEARJUMP32                  5 //opcode byte + 4 byte relative offset
@@ -519,7 +522,7 @@ typedef struct PATM
     STAMCOUNTER             StatFunctionLookupReplace;
     STAMCOUNTER             StatFunctionLookupInsert;
     uint32_t                StatU32FunctionMaxSlotsUsed;
-    uint32_t                Alignment0; /**< Align the structure size on a 8-byte boundrary. */
+    uint32_t                uPATMFlags; 
 } PATM, *PPATM;
 
 

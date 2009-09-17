@@ -243,6 +243,9 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
     rc = CFGMR3InsertInteger(pRoot, "PATMEnabled",          1);     /* boolean */   RC_CHECK();
     rc = CFGMR3InsertInteger(pRoot, "CSAMEnabled",          1);     /* boolean */   RC_CHECK();
 
+    PCFGMNODE pCPUM;
+    rc = CFGMR3InsertNode(pRoot, "CPUM", &pCPUM);                                   RC_CHECK();
+
     if (osTypeId == "WindowsNT4")
     {
         /*
@@ -250,8 +253,6 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
          * with error 0x3e (MULTIPROCESSOR_CONFIGURATION_NOT_SUPPORTED).
          */
         LogRel(("Limiting CPUID leaf count for NT4 guests\n"));
-        PCFGMNODE pCPUM;
-        rc = CFGMR3InsertNode(pRoot, "CPUM", &pCPUM);                               RC_CHECK();
         rc = CFGMR3InsertInteger(pCPUM, "NT4LeafLimit", true);                      RC_CHECK();
     }
 
@@ -272,6 +273,19 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                              || cCpus > 1);
     rc = CFGMR3InsertInteger(pRoot, "HwVirtExtForced",      fHwVirtExtForced);      RC_CHECK();
 #endif
+
+    if (!fHWVirtExEnabled && osTypeId == "NetBSD")
+    {
+        /*
+         * Use additional NetBSD-specific raw mode heuristics in PATM and CPUM,
+         * see #4291.
+         */
+        PCFGMNODE pPATM;
+        rc = CFGMR3InsertNode(pRoot, "PATM", &pPATM);                               RC_CHECK();
+        rc = CFGMR3InsertInteger(pPATM, "SearchImmediatesBackward", 1);                      RC_CHECK();
+        rc = CFGMR3InsertInteger(pCPUM, "HideCX8", 1);                      RC_CHECK();
+    }
+
 
     PCFGMNODE pHWVirtExt;
     rc = CFGMR3InsertNode(pRoot, "HWVirtExt", &pHWVirtExt);                         RC_CHECK();
