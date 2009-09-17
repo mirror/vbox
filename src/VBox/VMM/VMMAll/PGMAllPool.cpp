@@ -1356,6 +1356,8 @@ DECLEXPORT(int) pgmPoolAccessHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE 
         if (    pPage->iMonitoredNext == NIL_PGMPOOL_IDX
             &&  pPage->iMonitoredPrev == NIL_PGMPOOL_IDX)
         {
+            pgmPoolAddDirtyPage(pVM, pPool, pPage);
+
             /* Temporarily allow write access to the page table again. */
             rc = PGMHandlerPhysicalPageTempOff(pVM, pPage->GCPhys, pPage->GCPhys);
             if (rc == VINF_SUCCESS)
@@ -1367,7 +1369,6 @@ DECLEXPORT(int) pgmPoolAccessHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE 
                         ||  rc == VERR_PAGE_NOT_PRESENT,
                         ("PGMShwModifyPage -> GCPtr=%RGv rc=%d\n", pvFault, rc));
 
-                pgmPoolAddDirtyPage(pVM, pPool, pPage);
                 pPage->pvDirtyFault = pvFault;
 
                 STAM_PROFILE_STOP(&pVM->pgm.s.CTX_SUFF(pPool)->CTX_SUFF_Z(StatMonitor), a);
@@ -1503,7 +1504,7 @@ DECLINLINE(unsigned) pgmPoolTrackFlushPTPaePae(PPGMPOOL pPool, PPGMPOOLPAGE pPag
         }
         if (pShwPT->a[i].n.u1Present)
         {
-            /* The the old cached PTE is identical, then there's no need to flush the shadow copy. */
+            /* If the old cached PTE is identical, then there's no need to flush the shadow copy. */
             if ((pGstPT->a[i].u & X86_PTE_PAE_PG_MASK) == (pOldGstPT->a[i].u & X86_PTE_PAE_PG_MASK))
             {
 #ifdef VBOX_STRICT
@@ -1558,27 +1559,8 @@ static void pgmPoolFlushDirtyPage(PVM pVM, PPGMPOOL pPool, unsigned idxSlot, boo
     AssertMsg(pPage->fDirty, ("Page %RGp (slot=%d) not marked dirty!", pPage->GCPhys, idxSlot));
     Log(("Flush dirty page %RGp cMods=%d\n", pPage->GCPhys, pPage->cModifications));
 
-    /* Flush those PTEs that have changed. */
-    STAM_PROFILE_START(&pPool->StatTrackDeref,a);
-    void *pvShw = PGMPOOL_PAGE_2_LOCKED_PTR(pPool->CTX_SUFF(pVM), pPage);
-    void *pvGst;
-    bool  fFlush;
-    int rc = PGM_GCPHYS_2_PTR(pPool->CTX_SUFF(pVM), pPage->GCPhys, &pvGst); AssertReleaseRC(rc);
-    unsigned cChanges = pgmPoolTrackFlushPTPaePae(pPool, pPage, (PX86PTPAE)pvShw, (PCX86PTPAE)pvGst, (PCX86PTPAE)&pPool->aDirtyPages[idxSlot][0], fAllowRemoval, &fFlush);
-    STAM_PROFILE_STOP(&pPool->StatTrackDeref,a);
-
-    /** Note: we might want to consider keeping the dirty page active in case there were many changes. */
-    if (fFlush)
-    {
-        Assert(fAllowRemoval);
-        Log(("Flush reused page table!\n"));
-        pgmPoolFlushPage(pPool, pPage);
-        STAM_COUNTER_INC(&pPool->StatForceFlushReused);
-        return;
-    }
-
-    /* Write protect the page again to catch all write accesses. */
-    rc = PGMHandlerPhysicalReset(pVM, pPage->GCPhys);
+    /* First write protect the page again to catch all write accesses. (before checking for changes -> SMP) */
+    int rc = PGMHandlerPhysicalReset(pVM, pPage->GCPhys);
     Assert(rc == VINF_SUCCESS);
     pPage->fDirty = false;
 
@@ -1593,6 +1575,25 @@ static void pgmPoolFlushDirtyPage(PVM pVM, PPGMPOOL pPool, unsigned idxSlot, boo
               ||    rc == VERR_PAGE_NOT_PRESENT,
               ("PGMShwGetPage -> GCPtr=%RGv rc=%d flags=%RX64\n", pPage->pvDirtyFault, rc, fFlags));
 #endif
+
+    /* Flush those PTEs that have changed. */
+    STAM_PROFILE_START(&pPool->StatTrackDeref,a);
+    void *pvShw = PGMPOOL_PAGE_2_LOCKED_PTR(pPool->CTX_SUFF(pVM), pPage);
+    void *pvGst;
+    bool  fFlush;
+    rc = PGM_GCPHYS_2_PTR(pPool->CTX_SUFF(pVM), pPage->GCPhys, &pvGst); AssertReleaseRC(rc);
+    unsigned cChanges = pgmPoolTrackFlushPTPaePae(pPool, pPage, (PX86PTPAE)pvShw, (PCX86PTPAE)pvGst, (PCX86PTPAE)&pPool->aDirtyPages[idxSlot][0], fAllowRemoval, &fFlush);
+    STAM_PROFILE_STOP(&pPool->StatTrackDeref,a);
+
+    /** Note: we might want to consider keeping the dirty page active in case there were many changes. */
+    if (fFlush)
+    {
+        Assert(fAllowRemoval);
+        Log(("Flush reused page table!\n"));
+        pgmPoolFlushPage(pPool, pPage);
+        STAM_COUNTER_INC(&pPool->StatForceFlushReused);
+        return;
+    }
 
     /* This page is likely to be modified again, so reduce the nr of modifications just a bit here. */
     Assert(pPage->cModifications);
