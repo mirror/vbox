@@ -1,0 +1,50 @@
+; $Id$
+;; @file
+; DevEFI Interface Definitions, Assembly (Yasm) Variant.
+;
+
+;
+; Copyright (C) 2009 Sun Microsystems, Inc.
+;
+; Sun Microsystems, Inc. confidential
+; All rights reserved
+;
+
+%ifndef ___EFI_DevEFI_mac
+%define ___EFI_DevEFI_mac
+
+%include "iprt/asmdefs.mac"
+
+%define EFI_PORT_BASE           0xEF10
+%define EFI_PORT_COUNT          0x0004
+%define EFI_INFO_PORT           (EFI_PORT_BASE+0x0)
+%define EFI_PANIC_PORT          (EFI_PORT_BASE+0x1)
+%define EFI_PANIC_CMD_BAD_ORG           1
+%define EFI_PANIC_CMD_THUNK_TRAP        2
+%define EFI_PANIC_CMD_START_MSG         3
+%define EFI_PANIC_CMD_END_MSG           4
+%define EFI_PANIC_CMD_MSG_FIRST         0x4201
+%define EFI_PANIC_CMD_MSG_LAST          0x427f
+%define EFI_PANIC_CMD_MSG_FROM_CHAR(ch) (0x4200 | ((ch) & 0x7f) )
+%define EFI_PANIC_CMD_MSG_GET_CHAR(u32) ((u32) & 0x7f)
+%define EFI_PORT_UNDEFINED      (EFI_PORT_BASE+0x2)
+%define EFI_DEBUG_PORT          (EFI_PORT_BASE+0x3)
+%define VBOX_EFI_TOP_OF_STACK   0x300000
+
+struc DEVEFIINFO
+    .pfnFirmwareEP      resd            1
+    .HighEPAddress      resd            1
+    .PhysFwVol          RTGCPHYS_RES    1
+    .cbFwVol            resd            1
+    .cbBelow4GB         resd            1
+    .cbAbove4GB         resq            1
+    .fFlags             resd            1
+    .cCpus              resd            1
+    .pfnPeiEP           resd            1
+    .u32Reserved2       resd            1
+endstruc
+
+%define DEVEFI_INFO_PHYS_ADDR   (0xfffff000)
+
+%endif
+
