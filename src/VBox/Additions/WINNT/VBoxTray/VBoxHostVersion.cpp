@@ -58,6 +58,25 @@ int VBoxCheckHostVersion ()
     else
         Log(("VBoxTray: Failed to connect to the guest property service! Error: %d\n", rc));
 
+    /* Do we need to do all this stuff? */
+    char *pszCheckHostVersion;
+    rc = VbglR3GuestPropReadValueAlloc(uGuestPropSvcClientID, "/VirtualBox/GuestAdd/CheckHostVersion", &pszCheckHostVersion);
+    if (RT_FAILURE(rc))    
+    {
+        if (rc == VERR_NOT_FOUND)
+            rc = VERR_NOT_SUPPORTED; /* If we don't find the value above this is not critical */
+        else
+            Log(("VBoxTray: Could not read check host version flag! rc = %d\n", rc));
+    }
+    else
+    {
+        if (pszCheckHostVersion && atoi(pszCheckHostVersion) <= 0)
+            rc = VERR_NOT_SUPPORTED;
+        VbglR3GuestPropReadValueFree(pszCheckHostVersion);
+    }
+    if (rc == VERR_NOT_SUPPORTED)            
+        Log(("VBoxTray: No host version check performed."));
+
     char szMsg[256] = "\0"; /* Sizes according to MSDN. */
     char szTitle[64] = "\0";
 
@@ -67,9 +86,10 @@ int VBoxCheckHostVersion ()
         char *pszVBoxHostVer;
         rc = VbglR3GuestPropReadValueAlloc(uGuestPropSvcClientID, "/VirtualBox/HostInfo/VBoxVer", &pszVBoxHostVer);
         if (RT_FAILURE(rc))
-            Log(("VBoxTray: Could not read VBox host version! rc = %d\n", rc));
-
-        if (RT_SUCCESS(rc))
+        {
+            Log(("VBoxTray: Could not read VBox host version! rc = %d\n", rc));    
+        }
+        else
         {
             Log(("VBoxTray: Host version: %s\n", pszVBoxHostVer));
 
@@ -101,8 +121,6 @@ int VBoxCheckHostVersion ()
                     rc = RTErrConvertFromWin32(lRet);
                 }
 
-                /** @todo implement a special value of last informed host version (or a new flag) to disable this service. */
-
                 /* Compare both versions and prepare message */
                 if (   RT_SUCCESS(rc)
                     && strcmp(pszVBoxHostVer, szVBoxHostVerLastChecked) != 0        /* Make sure we did not process this host version already */
@@ -128,7 +146,7 @@ int VBoxCheckHostVersion ()
                                                NULL);       /* lpdwDisposition [out, optional] */
                         if (lRet == ERROR_SUCCESS)
                         {
-                            lRet = RegSetValueEx(hKey, "HostVerLastChecked", 0, REG_SZ, (BYTE*)pszVBoxHostVer, strlen(pszVBoxHostVer)*sizeof(char));
+                            lRet = RegSetValueEx(hKey, "HostVerLastChecked", 0, REG_SZ, (BYTE*)pszVBoxHostVer, (DWORD)(strlen(pszVBoxHostVer)*sizeof(char)));
                             if (lRet != ERROR_SUCCESS)
                                 Log(("VBoxTray: Could not write HostVerLastChecked! Error = %ld\n", lRet));
                             RegCloseKey(hKey);
@@ -151,6 +169,10 @@ int VBoxCheckHostVersion ()
         if (RT_FAILURE(rc))
             Log(("VBoxTray: Could not show version notifier balloon tooltip! rc = %d\n", rc));
     }
+
+    /* If we didn't have to check for the host version then this is not an error */
+    if (rc == VERR_NOT_SUPPORTED)
+        rc = VINF_SUCCESS;
 
     VbglR3GuestPropDisconnect(uGuestPropSvcClientID);
     return rc;
