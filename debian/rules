@@ -101,7 +101,8 @@ bld_flags := AUTOCFG=$(current)/debian/AutoConfig.kmk \
 	     $(if $(VERBOSE),--print-directory KBUILD_VERBOSE=2,--no-print-directory) \
 	     $(if $(STAGEDISO),VBOX_WITHOUT_ADDITIONS=1,) \
 	     $(if $(BLEEDING_EDGE),VBOX_BLEEDING_EDGE=$(BLEEDING_EDGE),) \
-	     $(if $(filter _Debian_sarge _xandros4.1 _ucs1.3,$(debrel)),VBOX_LD_as_needed= ,)
+	     $(if $(filter _Debian_sarge _xandros4.1 _ucs1.3,$(debrel)),VBOX_LD_as_needed= ,) \
+	     $(if $(filter _Debian_etch _Ubuntu_hardy,$(debrel)),,VBOX_WITH_SYSFS_BY_DEFAULT=1)
 
 # Ubuntu dapper: gcc-4.0 does not work with recompiler, use gcc-3.4 instead
 # Ubuntu gutsy:  gcc-4.1 does not work for the webservices, use gcc-4.2 instead
@@ -114,13 +115,12 @@ debian/configure-stamp:
 build: debian/configure-stamp debian/build-stamp
 debian/build-stamp $(verfile):
 	dh_testdir
-	. debian/env.sh && kmk -C $(vboxroot) $(if $(NOPARALLEL),-j1,) $(bld_flags) all
+	. debian/env.sh && kmk -C $(vboxroot) $(bld_flags) $(if $(NOPARALLEL),-j1,) all
 	$(if $(NODOCS),cp $(vboxroot)/prebuild/UserManual*.pdf $(builddir)/bin,)
 	$(if $(NODOCS),cp $(vboxroot)/prebuild/VirtualBox*.chm $(builddir)/bin,)
 	mkdir -p $(builddir)/bin/additions
 	$(if $(STAGEDISO),cp $(STAGEDISO)/VBoxGuestAdditions.iso $(builddir)/bin/additions,)
-	. debian/env.sh && kmk -C $(vboxroot) \
-	    $(bld_flags) \
+	. debian/env.sh && kmk -C $(vboxroot) $(bld_flags) \
 	    VBOX_NO_LINUX_RUN_INSTALLER=1 \
 	    VBOX_PATH_ADDITIONS.linux.x86=$(builddir)/bin/additions \
 	    packing
