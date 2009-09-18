@@ -132,7 +132,7 @@ void crStateClientInit(CRClientState *c)
     c->array.v.stride = 0;
     c->array.v.enabled = 0;
 #ifdef CR_ARB_vertex_buffer_object
-    c->array.v.buffer = g->bufferobject.arrayBuffer;
+    c->array.v.buffer = g ? g->bufferobject.arrayBuffer : NULL;
 #endif
 #ifdef CR_EXT_compiled_vertex_array
     c->array.v.locked = GL_FALSE;
@@ -147,7 +147,7 @@ void crStateClientInit(CRClientState *c)
     c->array.c.stride = 0;
     c->array.c.enabled = 0;
 #ifdef CR_ARB_vertex_buffer_object
-    c->array.c.buffer = g->bufferobject.arrayBuffer;
+    c->array.c.buffer = g ? g->bufferobject.arrayBuffer : NULL;
 #endif
 #ifdef CR_EXT_compiled_vertex_array
     c->array.c.locked = GL_FALSE;
@@ -162,7 +162,7 @@ void crStateClientInit(CRClientState *c)
     c->array.f.stride = 0;
     c->array.f.enabled = 0;
 #ifdef CR_ARB_vertex_buffer_object
-    c->array.f.buffer = g->bufferobject.arrayBuffer;
+    c->array.f.buffer = g ? g->bufferobject.arrayBuffer : NULL;
 #endif
 #ifdef CR_EXT_compiled_vertex_array
     c->array.f.locked = GL_FALSE;
@@ -177,7 +177,7 @@ void crStateClientInit(CRClientState *c)
     c->array.s.stride = 0;
     c->array.s.enabled = 0;
 #ifdef CR_ARB_vertex_buffer_object
-    c->array.s.buffer = g->bufferobject.arrayBuffer;
+    c->array.s.buffer = g ? g->bufferobject.arrayBuffer : NULL;
 #endif
 #ifdef CR_EXT_compiled_vertex_array
     c->array.s.locked = GL_FALSE;
@@ -192,7 +192,7 @@ void crStateClientInit(CRClientState *c)
     c->array.e.stride = 0;
     c->array.e.enabled = 0;
 #ifdef CR_ARB_vertex_buffer_object
-    c->array.e.buffer = g->bufferobject.arrayBuffer;
+    c->array.e.buffer = g ? g->bufferobject.arrayBuffer : NULL;
 #endif
 #ifdef CR_EXT_compiled_vertex_array
     c->array.e.locked = GL_FALSE;
@@ -207,7 +207,7 @@ void crStateClientInit(CRClientState *c)
     c->array.i.stride = 0;
     c->array.i.enabled = 0;
 #ifdef CR_ARB_vertex_buffer_object
-    c->array.i.buffer = g->bufferobject.arrayBuffer;
+    c->array.i.buffer = g ? g->bufferobject.arrayBuffer : NULL;
 #endif
 #ifdef CR_EXT_compiled_vertex_array
     c->array.i.locked = GL_FALSE;
@@ -222,7 +222,7 @@ void crStateClientInit(CRClientState *c)
     c->array.n.stride = 0;
     c->array.n.enabled = 0;
 #ifdef CR_ARB_vertex_buffer_object
-    c->array.n.buffer = g->bufferobject.arrayBuffer;
+    c->array.n.buffer = g ? g->bufferobject.arrayBuffer : NULL;
 #endif
 #ifdef CR_EXT_compiled_vertex_array
     c->array.n.locked = GL_FALSE;
@@ -239,7 +239,7 @@ void crStateClientInit(CRClientState *c)
         c->array.t[i].stride = 0;
         c->array.t[i].enabled = 0;
 #ifdef CR_ARB_vertex_buffer_object
-        c->array.t[i].buffer = g->bufferobject.arrayBuffer;
+        c->array.t[i].buffer = g ? g->bufferobject.arrayBuffer : NULL;
 #endif
 #ifdef CR_EXT_compiled_vertex_array
         c->array.t[i].locked = GL_FALSE;
@@ -256,7 +256,7 @@ void crStateClientInit(CRClientState *c)
         c->array.a[i].size = 0;
         c->array.a[i].stride = 0;
 #ifdef CR_ARB_vertex_buffer_object
-        c->array.a[i].buffer = g->bufferobject.arrayBuffer;
+        c->array.a[i].buffer = g ? g->bufferobject.arrayBuffer : NULL;
 #endif
 #ifdef CR_EXT_compiled_vertex_array
         c->array.a[i].locked = GL_FALSE;

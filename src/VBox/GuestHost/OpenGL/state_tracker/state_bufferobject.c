@@ -47,6 +47,8 @@ void crStateBufferObjectInit (CRContext *ctx)
     b->nullBuffer->refCount = 3;
 
     b->buffers = crAllocHashtable();
+
+    b->bResyncNeeded = GL_FALSE;
 }
 
 
@@ -71,7 +73,6 @@ void crStateBufferObjectDestroy (CRContext *ctx)
     crFreeHashtable(b->buffers, crStateFreeBufferObject);
     crFree(b->nullBuffer);
 }
-
 
 void STATE_APIENTRY
 crStateBindBufferARB (GLenum target, GLuint buffer)
@@ -749,6 +750,23 @@ void crStateBufferObjectDiff(CRBufferObjectBits *bb, CRbitvalue *bitID,
     }
 }
 
+static void crStateBufferObjectSyncCB(unsigned long key, void *data1, void *data2)
+{
+    CRBufferObject *pBufferObj = (CRBufferObject *) data1;
+    CRBufferObjectState *pState = (CRBufferObjectState *) data2;
+
+    if (pBufferObj->data)
+    {
+        diff_api.BindBufferARB(GL_ARRAY_BUFFER_ARB, pBufferObj->name);
+        diff_api.BufferDataARB(GL_ARRAY_BUFFER_ARB, pBufferObj->size, pBufferObj->data, pBufferObj->usage);
+
+        if (!pState->retainBufferData)
+        {
+            crFree(pBufferObj->data);
+            pBufferObj->data = NULL;
+        }
+    }
+}
 
 /*
  * XXX this function might need some testing/fixing.
@@ -757,10 +775,99 @@ void crStateBufferObjectSwitch(CRBufferObjectBits *bb, CRbitvalue *bitID,
                                                              CRContext *fromCtx, CRContext *toCtx)
 {
     const CRBufferObjectState *from = &(fromCtx->bufferobject);
-    const CRBufferObjectState *to = &(toCtx->bufferobject);
+    CRBufferObjectState *to = &(toCtx->bufferobject);
+    int i;
 
     if (!HaveBufferObjectExtension())
         return;
+
+    if (to->bResyncNeeded)
+    {
+        CRClientPointer *cp;
+
+        crHashtableWalk(to->buffers, crStateBufferObjectSyncCB, to);
+        to->bResyncNeeded = GL_FALSE;
+
+        /*@todo, move to state_client.c*/
+
+        cp = &toCtx->client.array.v;
+        if (cp->buffer->name)
+        {
+            diff_api.BindBufferARB(GL_ARRAY_BUFFER_ARB, cp->buffer->name);
+            diff_api.VertexPointer(cp->size, cp->type, cp->stride, cp->p);
+        }
+
+        cp = &toCtx->client.array.c;
+        if (cp->buffer->name)
+        {
+            diff_api.BindBufferARB(GL_ARRAY_BUFFER_ARB, cp->buffer->name);
+            diff_api.ColorPointer(cp->size, cp->type, cp->stride, cp->p);
+        }
+
+        cp = &toCtx->client.array.f;
+        if (cp->buffer->name)
+        {
+            diff_api.BindBufferARB(GL_ARRAY_BUFFER_ARB, cp->buffer->name);
+            diff_api.FogCoordPointerEXT(cp->type, cp->stride, cp->p);
+        }
+
+        cp = &toCtx->client.array.s;
+        if (cp->buffer->name)
+        {
+            diff_api.BindBufferARB(GL_ARRAY_BUFFER_ARB, cp->buffer->name);
+            diff_api.SecondaryColorPointerEXT(cp->size, cp->type, cp->stride, cp->p);
+        }
+
+        cp = &toCtx->client.array.e;
+        if (cp->buffer->name)
+        {
+            diff_api.BindBufferARB(GL_ARRAY_BUFFER_ARB, cp->buffer->name);
+            diff_api.EdgeFlagPointer(cp->stride, cp->p);
+        }
+
+        cp = &toCtx->client.array.i;
+        if (cp->buffer->name)
+        {
+            diff_api.BindBufferARB(GL_ARRAY_BUFFER_ARB, cp->buffer->name);
+            diff_api.IndexPointer(cp->type, cp->stride, cp->p);
+        }
+
+        cp = &toCtx->client.array.n;
+        if (cp->buffer->name)
+        {
+            diff_api.BindBufferARB(GL_ARRAY_BUFFER_ARB, cp->buffer->name);
+            diff_api.NormalPointer(cp->type, cp->stride, cp->p);
+        }
+
+        for (i = 0; i < CR_MAX_TEXTURE_UNITS; i++)
+        {
+            cp = &toCtx->client.array.t[i];
+            if (cp->buffer->name)
+            {
+                if (diff_api.ActiveTextureARB)
+                    diff_api.ActiveTextureARB(i+GL_TEXTURE0_ARB);
+                diff_api.BindBufferARB(GL_ARRAY_BUFFER_ARB, cp->buffer->name);
+                diff_api.TexCoordPointer(cp->size, cp->type, cp->stride, cp->p);
+            }
+        }
+
+        if (diff_api.ActiveTextureARB)
+            diff_api.ActiveTextureARB(toCtx->client.curClientTextureUnit+GL_TEXTURE0_ARB);
+
+#ifdef CR_NV_vertex_program
+        for (i = 0; i < CR_MAX_VERTEX_ATTRIBS; i++)
+        {
+            cp = &toCtx->client.array.a[i];
+            if (cp->buffer->name)
+            {
+                diff_api.BindBufferARB(GL_ARRAY_BUFFER_ARB, cp->buffer->name);
+                diff_api.VertexAttribPointerARB(i, cp->size, cp->type, cp->normalized, cp->stride, cp->p);
+            }
+        }
+#endif
+        diff_api.BindBufferARB(GL_ARRAY_BUFFER_ARB, to->arrayBuffer->name);
+        diff_api.BindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, to->elementsBuffer->name);
+    }
 
     /* ARRAY_BUFFER binding */
     if (CHECKDIRTY(bb->arrayBinding, bitID)) {

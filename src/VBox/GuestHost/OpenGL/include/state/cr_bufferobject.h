@@ -45,6 +45,8 @@ typedef struct {
 	CRBufferObject *nullBuffer;  /* name = 0 */
 
 	CRHashTable *buffers;
+
+    GLboolean   bResyncNeeded;
 } CRBufferObjectState;
 
 
