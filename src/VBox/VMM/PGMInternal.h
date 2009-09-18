@@ -1821,6 +1821,10 @@ typedef struct PGMPOOL
     STAMPROFILE                 StatTrackFlushGCPhysPTsSlow;
     /** Number of times we've been out of user records. */
     STAMCOUNTER                 StatTrackFreeUpOneUser;
+    /** Nr of flushed entries. */
+    STAMCOUNTER                 StatTrackFlushEntry;
+    /** Nr of updated entries. */
+    STAMCOUNTER                 StatTrackFlushEntryKeep;
 # endif
 # ifdef PGMPOOL_WITH_GCPHYS_TRACKING
     /** Profiling deref activity related tracking GC physical pages. */
@@ -1853,6 +1857,14 @@ typedef struct PGMPOOL
     STAMCOUNTER                 StatMonitorRZRepPrefix;
     /** Profiling the REP STOSD cases we've handled. */
     STAMPROFILE                 StatMonitorRZRepStosd;
+    /** Nr of handled PT faults. */
+    STAMCOUNTER                 StatMonitorRZFaultPT;
+    /** Nr of handled PD faults. */
+    STAMCOUNTER                 StatMonitorRZFaultPD;
+    /** Nr of handled PDPT faults. */
+    STAMCOUNTER                 StatMonitorRZFaultPDPT;
+    /** Nr of handled PML4 faults. */
+    STAMCOUNTER                 StatMonitorRZFaultPML4;
 
     /** Profiling the R3 access handler. */
     STAMPROFILE                 StatMonitorR3;
@@ -1872,6 +1884,14 @@ typedef struct PGMPOOL
     STAMCOUNTER                 StatMonitorR3RepPrefix;
     /** Profiling the REP STOSD cases we've handled. */
     STAMPROFILE                 StatMonitorR3RepStosd;
+    /** Nr of handled PT faults. */
+    STAMCOUNTER                 StatMonitorR3FaultPT;
+    /** Nr of handled PD faults. */
+    STAMCOUNTER                 StatMonitorR3FaultPD;
+    /** Nr of handled PDPT faults. */
+    STAMCOUNTER                 StatMonitorR3FaultPDPT;
+    /** Nr of handled PML4 faults. */
+    STAMCOUNTER                 StatMonitorR3FaultPML4;
     /** The number of times we're called in an async thread an need to flush. */
     STAMCOUNTER                 StatMonitorR3Async;
     /** Times we've called pgmPoolResetDirtyPages (and there were dirty page). */
@@ -3105,7 +3125,12 @@ void            pgmPoolClearAll(PVM pVM);
 PPGMPOOLPAGE    pgmPoolGetPage(PPGMPOOL pPool, RTHCPHYS HCPhys);
 int             pgmPoolSyncCR3(PVMCPU pVCpu);
 bool            pgmPoolIsDirtyPage(PVM pVM, RTGCPHYS GCPhys);
-int             pgmPoolTrackFlushGCPhys(PVM pVM, PPGMPAGE pPhysPage, bool *pfFlushTLBs);
+int             pgmPoolTrackUpdateGCPhys(PVM pVM, PPGMPAGE pPhysPage, bool fFlushPTEs, bool *pfFlushTLBs);
+DECLINLINE(int) pgmPoolTrackFlushGCPhys(PVM pVM, PPGMPAGE pPhysPage, bool *pfFlushTLBs)
+{
+    return pgmPoolTrackUpdateGCPhys(pVM, pPhysPage, true /* flush PTEs */, pfFlushTLBs);
+}
+
 uint16_t        pgmPoolTrackPhysExtAddref(PVM pVM, uint16_t u16, uint16_t iShwPT);
 void            pgmPoolTrackPhysExtDerefGCPhys(PPGMPOOL pPool, PPGMPOOLPAGE pPoolPage, PPGMPAGE pPhysPage);
 void            pgmPoolTracDerefGCPhysHint(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTHCPHYS HCPhys, RTGCPHYS GCPhysHint);
