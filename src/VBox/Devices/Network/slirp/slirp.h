@@ -427,7 +427,7 @@ struct dummy_req
   
 #define SYSCTL_HANDLER_ARGS PNATState pData, void *oidp, struct dummy_req *req
 
-void	mbuf_init(void *);
+void mbuf_init(void *);
 # define cksum(m, len) in_cksum_skip((m), (len), 0)
 #endif
 

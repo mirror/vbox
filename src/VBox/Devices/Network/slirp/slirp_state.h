@@ -249,10 +249,10 @@ typedef struct NATState
     uma_zone_t zone_jumbo16;
 # ifdef zone_ext_refcnt
 #  undef zone_ext_refcnt
-    int nmbclusters;		/* limits number of mbuf clusters */
-    int nmbjumbop;			/* limits number of page size jumbo clusters */
-    int nmbjumbo9;			/* limits number of 9k jumbo clusters */
-    int nmbjumbo16;			/* limits number of 16k jumbo clusters */
+    int nmbclusters;                    /* limits number of mbuf clusters */
+    int nmbjumbop;                      /* limits number of page size jumbo clusters */
+    int nmbjumbo9;                      /* limits number of 9k jumbo clusters */
+    int nmbjumbo16;                     /* limits number of 16k jumbo clusters */
     struct mbstat mbstat;
 # endif
     uma_zone_t zone_ext_refcnt;
