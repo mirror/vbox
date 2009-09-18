@@ -424,11 +424,28 @@ static void crStateSaveBufferObjectCB(unsigned long key, void *data1, void *data
     CRASSERT(rc == VINF_SUCCESS);
     rc = SSMR3PutMem(pSSM, pBufferObj, sizeof(*pBufferObj));
     CRASSERT(rc == VINF_SUCCESS);
+
     if (pBufferObj->data)
     {
+        /*We could get here even though retainBufferData is false on host side, in case when we're taking snapshot
+          after state load and before this context was ever made current*/
         CRASSERT(pBufferObj->size>0);
         rc = SSMR3PutMem(pSSM, pBufferObj->data, pBufferObj->size);
         CRASSERT(rc == VINF_SUCCESS);
+    }
+    else if (pBufferObj->name!=0 && pBufferObj->size>0)
+    {
+        diff_api.BindBufferARB(GL_ARRAY_BUFFER_ARB, pBufferObj->name);
+        pBufferObj->pointer = diff_api.MapBufferARB(GL_ARRAY_BUFFER_ARB, GL_READ_ONLY_ARB);
+        rc = SSMR3PutMem(pSSM, &pBufferObj->pointer, sizeof(pBufferObj->pointer));
+        CRASSERT(rc == VINF_SUCCESS);
+        if (pBufferObj->pointer)
+        {
+            rc = SSMR3PutMem(pSSM, pBufferObj->pointer, pBufferObj->size);
+            CRASSERT(rc == VINF_SUCCESS);
+        }
+        diff_api.UnmapBufferARB(GL_ARRAY_BUFFER_ARB);
+        pBufferObj->pointer = NULL;
     }
 }
 
@@ -714,12 +731,41 @@ int32_t crStateSaveContext(CRContext *pContext, PSSMHANDLE pSSM)
     crStateSaveBufferObjectCB(0, pContext->bufferobject.nullBuffer, pSSM);
     /* Save all the rest */
     crHashtableWalk(pContext->bufferobject.buffers, crStateSaveBufferObjectCB, pSSM);
+    /* Restore binding */
+    diff_api.BindBufferARB(GL_ARRAY_BUFFER_ARB, pContext->bufferobject.arrayBuffer->name);
     /* Save pointers */
     rc = SSMR3PutU32(pSSM, pContext->bufferobject.arrayBuffer->name);
     AssertRCReturn(rc, rc);
     rc = SSMR3PutU32(pSSM, pContext->bufferobject.elementsBuffer->name);
     AssertRCReturn(rc, rc);
-#endif
+    /* Save bound array buffers*/ /*@todo vertexArrayStack*/
+    rc = SSMR3PutU32(pSSM, pContext->client.array.v.buffer->name);
+    AssertRCReturn(rc, rc);
+    rc = SSMR3PutU32(pSSM, pContext->client.array.c.buffer->name);
+    AssertRCReturn(rc, rc);
+    rc = SSMR3PutU32(pSSM, pContext->client.array.f.buffer->name);
+    AssertRCReturn(rc, rc);
+    rc = SSMR3PutU32(pSSM, pContext->client.array.s.buffer->name);
+    AssertRCReturn(rc, rc);
+    rc = SSMR3PutU32(pSSM, pContext->client.array.e.buffer->name);
+    AssertRCReturn(rc, rc);
+    rc = SSMR3PutU32(pSSM, pContext->client.array.i.buffer->name);
+    AssertRCReturn(rc, rc);
+    rc = SSMR3PutU32(pSSM, pContext->client.array.n.buffer->name);
+    AssertRCReturn(rc, rc);
+    for (i = 0; i < CR_MAX_TEXTURE_UNITS; i++)
+    {
+        rc = SSMR3PutU32(pSSM, pContext->client.array.t[i].buffer->name);
+        AssertRCReturn(rc, rc);
+    }
+# ifdef CR_NV_vertex_program
+    for (i = 0; i < CR_MAX_VERTEX_ATTRIBS; i++)
+    {
+        rc = SSMR3PutU32(pSSM, pContext->client.array.a[i].buffer->name);
+        AssertRCReturn(rc, rc);
+    }
+# endif
+#endif /*CR_ARB_vertex_buffer_object*/
 
     /* Save pixel/vertex programs */
     ui32 = crHashtableNumElements(pContext->program.programHash);
@@ -803,37 +849,51 @@ int32_t crStateLoadContext(CRContext *pContext, PSSMHANDLE pSSM)
     SLC_COPYPTR(bufferobject.nullBuffer);
 #endif
 
-    SLC_COPYPTR(client.array.v.p);            /*@todo*/
-    SLC_COPYPTR(client.array.c.p);            /*@todo*/
-    SLC_COPYPTR(client.array.f.p);            /*@todo*/
-    SLC_COPYPTR(client.array.s.p);            /*@todo*/
-    SLC_COPYPTR(client.array.e.p);            /*@todo*/
-    SLC_COPYPTR(client.array.i.p);            /*@todo*/
-    SLC_COPYPTR(client.array.n.p);            /*@todo*/
+/*@todo, that should be removed probably as those should hold the offset values, so loading should be fine
+  but better check*/
+#if 0
+#ifdef CR_EXT_compiled_vertex_array
+    SLC_COPYPTR(client.array.v.prevPtr);
+    SLC_COPYPTR(client.array.c.prevPtr);
+    SLC_COPYPTR(client.array.f.prevPtr);
+    SLC_COPYPTR(client.array.s.prevPtr);
+    SLC_COPYPTR(client.array.e.prevPtr);
+    SLC_COPYPTR(client.array.i.prevPtr);
+    SLC_COPYPTR(client.array.n.prevPtr);
     for (i = 0 ; i < CR_MAX_TEXTURE_UNITS ; i++)
     {
-        SLC_COPYPTR(client.array.t[i].p);     /*@todo*/
+        SLC_COPYPTR(client.array.t[i].prevPtr);
     }
 
-#ifdef CR_ARB_vertex_buffer_object2
-    SLC_COPYPTR(client.array.v.buffer);       /*@todo*/
-    SLC_COPYPTR(client.array.c.buffer);       /*@todo*/
-    SLC_COPYPTR(client.array.f.buffer);       /*@todo*/
-    SLC_COPYPTR(client.array.s.buffer);       /*@todo*/
-    SLC_COPYPTR(client.array.e.buffer);       /*@todo*/
-    SLC_COPYPTR(client.array.i.buffer);       /*@todo*/
-    SLC_COPYPTR(client.array.n.buffer);       /*@todo*/
+# ifdef CR_NV_vertex_program
+    for (i = 0; i < CR_MAX_VERTEX_ATTRIBS; i++)
+    {
+        SLC_COPYPTR(client.array.a[i].prevPtr);
+    }
+# endif
+#endif
+#endif
+
+#ifdef CR_ARB_vertex_buffer_object
+    /*That just sets those pointers to NULL*/
+    SLC_COPYPTR(client.array.v.buffer);
+    SLC_COPYPTR(client.array.c.buffer);
+    SLC_COPYPTR(client.array.f.buffer);
+    SLC_COPYPTR(client.array.s.buffer);
+    SLC_COPYPTR(client.array.e.buffer);
+    SLC_COPYPTR(client.array.i.buffer);
+    SLC_COPYPTR(client.array.n.buffer);
     for (i = 0 ; i < CR_MAX_TEXTURE_UNITS ; i++)
     {
-        SLC_COPYPTR(client.array.t[i].buffer); /*@todo*/
+        SLC_COPYPTR(client.array.t[i].buffer);
     }
-#ifdef CR_NV_vertex_program
-    for (i = 0; i < CR_MAX_VERTEX_ATTRIBS; i++) {
+# ifdef CR_NV_vertex_program
+    for (i = 0; i < CR_MAX_VERTEX_ATTRIBS; i++)
     {
-        SLC_COPYPTR(client.array.a[i].buffer); /*@todo*/
+        SLC_COPYPTR(client.array.a[i].buffer);
     }
-#endif
-#endif /*CR_ARB_vertex_buffer_object2*/
+# endif
+#endif /*CR_ARB_vertex_buffer_object*/
 
     /*@todo CR_NV_vertex_program*/
     crStateCopyEvalPtrs1D(pTmpContext->eval.eval1D, pContext->eval.eval1D);
@@ -1092,21 +1152,80 @@ int32_t crStateLoadContext(CRContext *pContext, PSSMHANDLE pSSM)
             //DIRTY(pBufferObj->dirty, pContext->neg_bitid);
             //pBufferObj->dirtyStart = 0;
             //pBufferObj->dirtyLength = pBufferObj->size;
+        } 
+        else if (pBufferObj->name!=0 && pBufferObj->size>0)
+        {
+            rc = SSMR3GetMem(pSSM, &pBufferObj->data, sizeof(pBufferObj->data));
+            AssertRCReturn(rc, rc);
+
+            if (pBufferObj->data)
+            {
+                pBufferObj->data = crAlloc(pBufferObj->size);
+                rc = SSMR3GetMem(pSSM, pBufferObj->data, pBufferObj->size);
+                AssertRCReturn(rc, rc);
+            }
         }
+
 
         if (key!=0)
             crHashtableAdd(pContext->bufferobject.buffers, key, pBufferObj);        
     }
     //FILLDIRTY(GetCurrentBits()->bufferobject.dirty);
     /* Load pointers */
+#define CRS_GET_BO(name) (((name)==0) ? (pContext->bufferobject.nullBuffer) : crHashtableSearch(pContext->bufferobject.buffers, name))
     rc = SSMR3GetU32(pSSM, &ui);
     AssertRCReturn(rc, rc);
-    pContext->bufferobject.arrayBuffer = ui==0 ? pContext->bufferobject.nullBuffer
-                                                 : crHashtableSearch(pContext->bufferobject.buffers, ui);
+    pContext->bufferobject.arrayBuffer = CRS_GET_BO(ui);
     rc = SSMR3GetU32(pSSM, &ui);
     AssertRCReturn(rc, rc);
-    pContext->bufferobject.elementsBuffer = ui==0 ? pContext->bufferobject.nullBuffer
-                                                    : crHashtableSearch(pContext->bufferobject.buffers, ui);
+    pContext->bufferobject.elementsBuffer = CRS_GET_BO(ui);
+
+    /* Load bound array buffers*/
+    rc = SSMR3GetU32(pSSM, &ui);
+    AssertRCReturn(rc, rc);
+    pContext->client.array.v.buffer = CRS_GET_BO(ui);
+
+    rc = SSMR3GetU32(pSSM, &ui);
+    AssertRCReturn(rc, rc);
+    pContext->client.array.c.buffer = CRS_GET_BO(ui);
+
+    rc = SSMR3GetU32(pSSM, &ui);
+    AssertRCReturn(rc, rc);
+    pContext->client.array.f.buffer = CRS_GET_BO(ui);
+
+    rc = SSMR3GetU32(pSSM, &ui);
+    AssertRCReturn(rc, rc);
+    pContext->client.array.s.buffer = CRS_GET_BO(ui);
+
+    rc = SSMR3GetU32(pSSM, &ui);
+    AssertRCReturn(rc, rc);
+    pContext->client.array.e.buffer = CRS_GET_BO(ui);
+
+    rc = SSMR3GetU32(pSSM, &ui);
+    AssertRCReturn(rc, rc);
+    pContext->client.array.i.buffer = CRS_GET_BO(ui);
+
+    rc = SSMR3GetU32(pSSM, &ui);
+    AssertRCReturn(rc, rc);
+    pContext->client.array.n.buffer = CRS_GET_BO(ui);
+
+    for (i = 0; i < CR_MAX_TEXTURE_UNITS; i++)
+    {
+        rc = SSMR3GetU32(pSSM, &ui);
+        AssertRCReturn(rc, rc);
+        pContext->client.array.t[i].buffer = CRS_GET_BO(ui);
+    }
+# ifdef CR_NV_vertex_program
+    for (i = 0; i < CR_MAX_VERTEX_ATTRIBS; i++)
+    {
+        rc = SSMR3GetU32(pSSM, &ui);
+        AssertRCReturn(rc, rc);
+        pContext->client.array.a[i].buffer = CRS_GET_BO(ui);
+    }
+# endif
+#undef CRS_GET_BO
+
+    pContext->bufferobject.bResyncNeeded = GL_TRUE;
 #endif
 
     /* Load pixel/vertex programs */
