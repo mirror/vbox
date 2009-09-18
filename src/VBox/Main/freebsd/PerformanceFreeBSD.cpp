@@ -65,6 +65,8 @@ int CollectorFreeBSD::getHostMemoryUsage(ULONG *total, ULONG *used, ULONG *avail
     int rc = VINF_SUCCESS;
     u_long cbMemPhys = 0;
     u_int cPagesMemFree = 0;
+    u_int cPagesMemInactive = 0;
+    u_int cPagesMemCached = 0;
     u_int cPagesMemUsed = 0;
     int cbPage = 0;
     size_t cbParameter = sizeof(cbMemPhys);
@@ -79,15 +81,21 @@ int CollectorFreeBSD::getHostMemoryUsage(ULONG *total, ULONG *used, ULONG *avail
     cbParameter = sizeof(cPagesMemUsed);
     if (!sysctlbyname("vm.stats.vm.v_active_count", &cPagesMemUsed, &cbParameter, NULL, 0))
         cProcessed++;
+    cbParameter = sizeof(cPagesMemInactive);
+    if (!sysctlbyname("vm.stats.vm.v_inactive_count", &cPagesMemInactive, &cbParameter, NULL, 0))
+        cProcessed++;
+    cbParameter = sizeof(cPagesMemCached);
+    if (!sysctlbyname("vm.stats.vm.v_cache_count", &cPagesMemCached, &cbParameter, NULL, 0))
+        cProcessed++;
     cbParameter = sizeof(cbPage);
     if (!sysctlbyname("hw.pagesize", &cbPage, &cbParameter, NULL, 0))
         cProcessed++;
 
-    if (cProcessed == 4)
+    if (cProcessed == 6)
     {
         *total     = cbMemPhys / _1K;
         *used      = cPagesMemUsed * (cbPage / _1K);
-        *available = cPagesMemFree * (cbPage / _1K);
+        *available = (cPagesMemFree + cPagesMemInactive + cPagesMemCached ) * (cbPage / _1K);
     }
     else
         rc = VERR_NOT_SUPPORTED;
