@@ -221,6 +221,8 @@ private slots:
 
     void prepareFloppyMenu();
     void prepareDVDMenu();
+    void prepareNetworkMenu();
+    void prepareSFMenu();
 
     void captureFloppy (QAction *aAction);
     void captureDVD (QAction *aAction);
@@ -321,8 +323,8 @@ private:
     QMenu *mDevicesMenu;
     QMenu *mDevicesMountFloppyMenu;
     QMenu *mDevicesMountDVDMenu;
-    /* see showIndicatorContextMenu for a description of mDevicesSFMenu */
-    /* QMenu *mDevicesSFMenu; */
+    QMenu *mDevicesSFMenu;
+    QMenu *mDevicesNetworkMenu;
     VBoxUSBMenu *mDevicesUSBMenu;
     /* VBoxSwitchMenu *mDevicesVRDPMenu; */
 #ifdef VBOX_WITH_DEBUGGER_GUI

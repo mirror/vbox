@@ -415,6 +415,8 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent,
     ///// Menubar ///////////////////////////////////////////////////////////
 
     mMainMenu = new QIMenu (this);
+    mDevicesNetworkMenu = new QMenu(this);
+    mDevicesSFMenu = new QMenu(this);
 
     /* Machine submenu */
 
@@ -473,8 +475,6 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent,
     mDevicesUSBMenu->setIcon (VBoxGlobal::iconSet (":/usb_16px.png", ":/usb_disabled_16px.png"));
     mDevicesUSBMenuSeparator = mDevicesMenu->addSeparator();
 
-    /* see showIndicatorContextMenu for a description of mDevicesSFMenu */
-    /* mDevicesSFMenu = mDevicesMenu->addMenu (QString::null); */
     mDevicesMenu->addAction (mDevicesSFDialogAction);
     mDevicesSFMenuSeparator = mDevicesMenu->addSeparator();
 
@@ -663,6 +663,8 @@ VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent,
 
     connect (mDevicesMountFloppyMenu, SIGNAL(aboutToShow()), this, SLOT(prepareFloppyMenu()));
     connect (mDevicesMountDVDMenu, SIGNAL(aboutToShow()), this, SLOT(prepareDVDMenu()));
+    connect (mDevicesNetworkMenu, SIGNAL(aboutToShow()), this, SLOT(prepareNetworkMenu()));
+    connect (mDevicesSFMenu, SIGNAL(aboutToShow()), this, SLOT(prepareSFMenu()));
 
     connect (statusBar(), SIGNAL(messageChanged (const QString &)), this, SLOT(statusTipChanged (const QString &)));
 
@@ -1982,6 +1984,7 @@ void VBoxConsoleWnd::updateAppearanceOf (int element)
                                        : KDeviceActivity_Null);
 
         mDevicesNetworkDialogAction->setEnabled (isRunningOrPaused && count > 0);
+        mDevicesNetworkMenu->setEnabled (isRunningOrPaused && count > 0);
 
         /* update tooltip */
         QString ttip = tr ("<qt><nobr>Indicates the activity of the network "
@@ -2078,6 +2081,8 @@ void VBoxConsoleWnd::updateAppearanceOf (int element)
 
         QString data;
         QMap <QString, QString> sfs;
+
+        mDevicesSFMenu->setEnabled (true);
 
         /// @todo later: add global folders
 
@@ -3243,6 +3248,18 @@ void VBoxConsoleWnd::prepareDVDMenu()
     }
 }
 
+void VBoxConsoleWnd::prepareNetworkMenu()
+{
+    mDevicesNetworkMenu->clear();
+    mDevicesNetworkMenu->addAction (mDevicesNetworkDialogAction);
+}
+
+void VBoxConsoleWnd::prepareSFMenu()
+{
+    mDevicesSFMenu->clear();
+    mDevicesSFMenu->addAction (mDevicesSFDialogAction);
+}
+
 void VBoxConsoleWnd::statusTipChanged (const QString & /*aMes*/)
 {
     mStatusBarChangedInside = mWaitForStatusBarChange;
@@ -3394,19 +3411,22 @@ void VBoxConsoleWnd::showIndicatorContextMenu (QIStateIndicator *ind, QContextMe
     else
     if (ind == sf_light)
     {
-        /* Showing the context menu that always contains a single item is a
-         * bit stupid; let's better execute this item's action directly. The
-         * menu itself is kept just in case if we need more than one item in
-         * the future. */
-        /* mDevicesSFMenu->exec (e->globalPos()); */
-        if (mDevicesSFDialogAction->isEnabled())
-            mDevicesSFDialogAction->trigger();
+        if (mDevicesSFMenu->isEnabled())
+        {
+            mDevicesSFMenu->menuAction()->setData (true);
+            mDevicesSFMenu->exec (e->globalPos());
+            mDevicesSFMenu->menuAction()->setData (false);
+        }
     }
     else
     if (ind == net_light)
     {
-        if (mDevicesNetworkDialogAction->isEnabled())
-            mDevicesNetworkDialogAction->trigger();
+        if (mDevicesNetworkMenu->isEnabled())
+        {
+            mDevicesNetworkMenu->menuAction()->setData (true);
+            mDevicesNetworkMenu->exec (e->globalPos());
+            mDevicesNetworkMenu->menuAction()->setData (false);
+        }
     }
 }
 
