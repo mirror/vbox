@@ -130,7 +130,7 @@ void crStateClientInit(CRClientState *c)
     c->array.v.type = GL_FLOAT;
     c->array.v.stride = 0;
     c->array.v.enabled = 0;
-#ifdef CR_ARB_vertex_buffer_object2
+#ifdef CR_ARB_vertex_buffer_object
     c->array.v.buffer = g->bufferobject.vertexBuffer;
 #endif
 #ifdef CR_EXT_compiled_vertex_array
@@ -145,7 +145,7 @@ void crStateClientInit(CRClientState *c)
     c->array.c.type = GL_FLOAT;
     c->array.c.stride = 0;
     c->array.c.enabled = 0;
-#ifdef CR_ARB_vertex_buffer_object2
+#ifdef CR_ARB_vertex_buffer_object
     c->array.c.buffer = g->bufferobject.vertexBuffer;
 #endif
 #ifdef CR_EXT_compiled_vertex_array
@@ -160,7 +160,7 @@ void crStateClientInit(CRClientState *c)
     c->array.f.type = GL_FLOAT;
     c->array.f.stride = 0;
     c->array.f.enabled = 0;
-#ifdef CR_ARB_vertex_buffer_object2
+#ifdef CR_ARB_vertex_buffer_object
     c->array.f.buffer = g->bufferobject.vertexBuffer;
 #endif
 #ifdef CR_EXT_compiled_vertex_array
@@ -175,7 +175,7 @@ void crStateClientInit(CRClientState *c)
     c->array.s.type = GL_FLOAT;
     c->array.s.stride = 0;
     c->array.s.enabled = 0;
-#ifdef CR_ARB_vertex_buffer_object2
+#ifdef CR_ARB_vertex_buffer_object
     c->array.s.buffer = g->bufferobject.vertexBuffer;
 #endif
 #ifdef CR_EXT_compiled_vertex_array
@@ -190,7 +190,7 @@ void crStateClientInit(CRClientState *c)
     c->array.e.type = GL_FLOAT;
     c->array.e.stride = 0;
     c->array.e.enabled = 0;
-#ifdef CR_ARB_vertex_buffer_object2
+#ifdef CR_ARB_vertex_buffer_object
     c->array.e.buffer = g->bufferobject.vertexBuffer;
 #endif
 #ifdef CR_EXT_compiled_vertex_array
@@ -205,7 +205,7 @@ void crStateClientInit(CRClientState *c)
     c->array.i.type = GL_FLOAT;
     c->array.i.stride = 0;
     c->array.i.enabled = 0;
-#ifdef CR_ARB_vertex_buffer_object2
+#ifdef CR_ARB_vertex_buffer_object
     c->array.i.buffer = g->bufferobject.vertexBuffer;
 #endif
 #ifdef CR_EXT_compiled_vertex_array
@@ -220,7 +220,7 @@ void crStateClientInit(CRClientState *c)
     c->array.n.type = GL_FLOAT;
     c->array.n.stride = 0;
     c->array.n.enabled = 0;
-#ifdef CR_ARB_vertex_buffer_object2
+#ifdef CR_ARB_vertex_buffer_object
     c->array.n.buffer = g->bufferobject.vertexBuffer;
 #endif
 #ifdef CR_EXT_compiled_vertex_array
@@ -237,7 +237,7 @@ void crStateClientInit(CRClientState *c)
         c->array.t[i].type = GL_FLOAT;
         c->array.t[i].stride = 0;
         c->array.t[i].enabled = 0;
-#ifdef CR_ARB_vertex_buffer_object2
+#ifdef CR_ARB_vertex_buffer_object
         c->array.t[i].buffer = g->bufferobject.vertexBuffer;
 #endif
 #ifdef CR_EXT_compiled_vertex_array
@@ -254,7 +254,7 @@ void crStateClientInit(CRClientState *c)
         c->array.a[i].type = 0;
         c->array.a[i].size = 0;
         c->array.a[i].stride = 0;
-#ifdef CR_ARB_vertex_buffer_object2
+#ifdef CR_ARB_vertex_buffer_object
         c->array.a[i].buffer = g->bufferobject.vertexBuffer;
 #endif
 #ifdef CR_EXT_compiled_vertex_array
