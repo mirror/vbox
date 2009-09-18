@@ -92,6 +92,7 @@ void crStateClientDestroy(CRClientState *c)
 
 void crStateClientInit(CRClientState *c) 
 {
+    CRContext *g = GetCurrentContext();
     unsigned int i;
 
     /* pixel pack/unpack */
