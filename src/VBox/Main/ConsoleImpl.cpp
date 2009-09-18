@@ -3729,7 +3729,7 @@ HRESULT Console::onVRDPServerChange()
             // we have to restart the server.
             mConsoleVRDPServer->Stop ();
 
-            if (VBOX_FAILURE(mConsoleVRDPServer->Launch ()))
+            if (RT_FAILURE(mConsoleVRDPServer->Launch ()))
             {
                 rc = E_FAIL;
             }
@@ -6732,19 +6732,21 @@ DECLCALLBACK (int) Console::powerUpThread (RTTHREAD Thread, void *pvUser)
         vrc = server->Launch();
         alock.enter();
 
-        if (VBOX_FAILURE (vrc))
+        if (vrc == VERR_NET_ADDRESS_IN_USE)
+        {
+            Utf8Str errMsg;
+            ULONG port = 0;
+            console->mVRDPServer->COMGETTER(Port) (&port);
+            errMsg = Utf8StrFmt (tr ("VRDP server port %d is already in use"),
+                                 port);
+            LogRel (("Warning: failed to launch VRDP server (%Rrc): '%s'\n",
+                     vrc, errMsg.raw()));
+        }
+        else if (RT_FAILURE (vrc))
         {
             Utf8Str errMsg;
             switch (vrc)
             {
-                case VERR_NET_ADDRESS_IN_USE:
-                {
-                    ULONG port = 0;
-                    console->mVRDPServer->COMGETTER(Port) (&port);
-                    errMsg = Utf8StrFmt (tr ("VRDP server port %d is already in use"),
-                                         port);
-                    break;
-                }
                 case VERR_FILE_NOT_FOUND:
                 {
                     errMsg = Utf8StrFmt (tr ("Could not load the VRDP library"));
