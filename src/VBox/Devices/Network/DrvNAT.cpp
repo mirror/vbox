@@ -58,8 +58,6 @@
 /*******************************************************************************
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
-#define SLIRP_SPLIT_CAN_OUTPUT 1
-
 #define GET_EXTRADATA(pthis, node, name, rc, type, type_name, var)                                  \
 do {                                                                                                \
     (rc) = CFGMR3Query ## type((node), name, &(var));                                               \
@@ -114,10 +112,6 @@ do                                                      \
         x.s_addr = def;                                 \
 } while (0)
 
-/** Queue depth (!SLIRP_SPLIT_CAN_OUTPUT). */
-#define QUEUE_SIZE 50
-
-
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
 *******************************************************************************/
@@ -148,10 +142,6 @@ typedef struct DRVNAT
     PPDMTHREAD              pSlirpThread;
     /** Queue for NAT-thread-external events. */
     PRTREQQUEUE             pSlirpReqQueue;
-#ifndef SLIRP_SPLIT_CAN_OUTPUT
-    /* Receive PDM queue (deliver packets to the guest) */
-    PPDMQUEUE               pRecvQueue;
-#endif
 
 #ifdef VBOX_WITH_SLIRP_MT
     PPDMTHREAD              pGuestThread;
@@ -173,14 +163,12 @@ typedef struct DRVNAT
 #define DRV_PROFILE_COUNTER(name, dsc)     STAMPROFILE Stat ## name
 #define DRV_COUNTING_COUNTER(name, dsc)    STAMCOUNTER Stat ## name
 #include "counters.h"
-#ifdef SLIRP_SPLIT_CAN_OUTPUT
     /** thread delivering packets for receiving by the guest */
     PPDMTHREAD              pRecvThread;
     /** event to wakeup the guest receive thread */
     RTSEMEVENT              EventRecv;
     /** Receive Req queue (deliver packets to the guest) */
     PRTREQQUEUE             pRecvReqQueue;
-#endif
 } DRVNAT;
 AssertCompileMemberAlignment(DRVNAT, StatNATRecvWakeups, 8);
 /** Pointer the NAT driver instance data. */
@@ -210,7 +198,6 @@ static void drvNATNotifyNATThread(PDRVNAT pThis);
 #define PDMINETWORKCONNECTOR_2_DRVNAT(pInterface)   ( (PDRVNAT)((uintptr_t)pInterface - RT_OFFSETOF(DRVNAT, INetworkConnector)) )
 
 
-#ifdef SLIRP_SPLIT_CAN_OUTPUT
 
 static DECLCALLBACK(int) drvNATRecv(PPDMDRVINS pDrvIns, PPDMTHREAD pThread)
  {
@@ -255,8 +242,6 @@ static DECLCALLBACK(void) drvNATRecvWorker(PDRVNAT pThis, uint8_t *pu8Buf, int c
 
     STAM_PROFILE_STOP(&pThis->StatNATRecv, a);
 }
-
-#endif /* SLIRP_SPLIT_CAN_OUTPUT */
 
 /**
  * Worker function for drvNATSend().
@@ -621,29 +606,6 @@ void slirp_output(void *pvUser, void *pvArg, const uint8_t *pu8Buf, int cb)
     LogFlow(("slirp_output BEGIN %x %d\n", pu8Buf, cb));
     Log2(("slirp_output: pu8Buf=%p cb=%#x (pThis=%p)\n%.*Rhxd\n", pu8Buf, cb, pThis, cb, pu8Buf));
 
-#ifndef SLIRP_SPLIT_CAN_OUTPUT
-    PDRVNATQUEUITEM pItem = (PDRVNATQUEUITEM)PDMQueueAlloc(pThis->pRecvQueue);
-    if (pItem)
-    {
-        pItem->pu8Buf = pu8Buf;
-        pItem->cb = cb;
-        pItem->mbuf = pvArg;
-        Log2(("pItem:%p %.Rhxd\n", pItem, pItem->pu8Buf));
-        PDMQueueInsert(pThis->pRecvQueue, &pItem->Core);
-        STAM_COUNTER_INC(&pThis->StatQueuePktSent);
-        return;
-    }
-    static unsigned s_cDroppedPackets;
-    if (s_cDroppedPackets < 64)
-        s_cDroppedPackets++;
-    else
-    {
-        LogRel(("NAT: %d messages suppressed about dropping packet (couldn't allocate queue item)\n", s_cDroppedPackets));
-        s_cDroppedPackets = 0;
-    }
-    STAM_COUNTER_INC(&pThis->StatQueuePktDropped);
-    RTMemFree((void *)pu8Buf);
-#else
     PRTREQ pReq = NULL;
 
     /* don't queue new requests when the NAT thread is about to stop */
@@ -662,40 +624,7 @@ void slirp_output(void *pvUser, void *pvArg, const uint8_t *pu8Buf, int cb)
     AssertReleaseRC(rc);
     drvNATRecvWakeup(pThis->pDrvIns, pThis->pRecvThread);
     STAM_COUNTER_INC(&pThis->StatQueuePktSent);
-#endif
 }
-
-
-#ifndef SLIRP_SPLIT_CAN_OUTPUT
-/**
- * Queue callback for processing a queued item.
- *
- * @returns Success indicator.
- *          If false the item will not be removed and the flushing will stop.
- * @param   pDrvIns         The driver instance.
- * @param   pItemCore       Pointer to the queue item to process.
- */
-static DECLCALLBACK(bool) drvNATQueueConsumer(PPDMDRVINS pDrvIns, PPDMQUEUEITEMCORE pItemCore)
-{
-    int rc;
-    PDRVNAT pThis = PDMINS_2_DATA(pDrvIns, PDRVNAT);
-    PDRVNATQUEUITEM pItem = (PDRVNATQUEUITEM)pItemCore;
-    PRTREQ pReq = NULL;
-    Log(("drvNATQueueConsumer(pItem:%p, pu8Buf:%p, cb:%d)\n", pItem, pItem->pu8Buf, pItem->cb));
-    Log2(("drvNATQueueConsumer: pu8Buf:\n%.Rhxd\n", pItem->pu8Buf));
-    if (RT_FAILURE(pThis->pPort->pfnWaitReceiveAvail(pThis->pPort, 0)))
-    {
-        STAM_COUNTER_INC(&pThis->StatConsumerFalse);
-        return false;
-    }
-    rc = pThis->pPort->pfnReceive(pThis->pPort, pItem->pu8Buf, pItem->cb);
-    RTMemFree((void *)pItem->pu8Buf);
-    return true;
-
-    AssertRelease(pItem->mbuf == NULL);
-    return RT_SUCCESS(rc);
-}
-#endif
 
 
 /**
@@ -1003,15 +932,6 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandl
             }
 
 
-#ifndef SLIRP_SPLIT_CAN_OUTPUT
-            rc = PDMDrvHlpPDMQueueCreate(pDrvIns, sizeof(DRVNATQUEUITEM), QUEUE_SIZE, 0,
-                                         drvNATQueueConsumer, "NAT", &pThis->pRecvQueue);
-            if (RT_FAILURE(rc))
-            {
-                LogRel(("NAT: Can't create send queue\n"));
-                return rc;
-            }
-#else
             rc = RTReqCreateQueue(&pThis->pRecvReqQueue);
             if (RT_FAILURE(rc))
             {
@@ -1022,7 +942,6 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandl
                                           drvNATRecvWakeup, 128 * _1K, RTTHREADTYPE_IO, "NATRX");
             AssertReleaseRC(rc);
             rc = RTSemEventCreate(&pThis->EventRecv);
-#endif
 
 #ifndef RT_OS_WINDOWS
             /*
