@@ -315,6 +315,10 @@ typedef struct VMM
     volatile uint32_t           u32RendezvousLock;
     /** @} */
 
+#if HC_ARCH_BITS == 32
+    uint32_t                    u32Alignment; /**< Alignment padding. */
+#endif
+
     /** Buffer for storing the standard assertion message for a ring-0 assertion.
      * Used for saving the assertion message text for the release log and guru
      * meditation dump. */
