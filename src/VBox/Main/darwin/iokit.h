@@ -50,7 +50,7 @@ typedef struct DARWINETHERNIC
     /** Pointer to the next NIC. */
     struct DARWINETHERNIC *pNext;
     /** The BSD name. (like en0)*/
-    char szBSDName[8];
+    char szBSDName[16];
     /** The fake unique identifier. */
     RTUUID Uuid;
     /** The MAC address. */

@@ -1780,7 +1780,7 @@ int main(int argc, char **argv)
         for (PDARWINETHERNIC pCur = pEtherNICs; pCur; pCur = pCur->pNext)
         {
             RTPrintf("%s\n", pCur->szName);
-            RTPrintf("    szBSDName=%d\n", pCur->szBSDName);
+            RTPrintf("    szBSDName=%s\n", pCur->szBSDName);
             RTPrintf("         UUID=%RTuuid\n", &pCur->Uuid);
             RTPrintf("          Mac=%.6Rhxs\n", &pCur->Mac);
             RTPrintf("    fWireless=%RTbool\n", pCur->fWireless);
