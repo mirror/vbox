@@ -167,10 +167,10 @@ void bt_sighandler (int sig, siginfo_t *info, void *secret) {
 static void ShutUpAppKit(void)
 {
     /* Check for Snow Leopard or higher */
-    char pszInfo[64];
-    int rc = RTSystemQueryOSInfo (RTSYSOSINFO_RELEASE, pszInfo, sizeof(pszInfo));
+    char szInfo[64];
+    int rc = RTSystemQueryOSInfo (RTSYSOSINFO_RELEASE, szInfo, sizeof(szInfo));
     if (RT_SUCCESS (rc) &&
-        pszInfo[0] == '1') /* higher than 1x.x.x */
+        szInfo[0] == '1') /* higher than 1x.x.x */
     {
         /*
          * Find issetguid() and make it always return 0 by modifying the code.
