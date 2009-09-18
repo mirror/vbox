@@ -28,6 +28,7 @@
 
 /* Returns 0 if equal, 1 if Ver1 is greater, 2 if Ver2 is greater
  * Requires strings in form of "majorVer.minorVer.build" */
+/** @todo should be common code in the guest lib / headers */
 int VBoxCompareVersion (const char* pszVer1, const char* pszVer2)
 {
     int rc = 0;
@@ -63,14 +64,10 @@ int VBoxCheckHostVersion ()
     if (RT_SUCCESS(rc))
     {
         /* Look up host version (revision) */
-        char *pszVBoxHostVer; // , *pszVBoxHostRev;
+        char *pszVBoxHostVer;
         rc = VbglR3GuestPropReadValueAlloc(uGuestPropSvcClientID, "/VirtualBox/HostInfo/VBoxVer", &pszVBoxHostVer);
-        if(RT_FAILURE(rc))
+        if (RT_FAILURE(rc))
             Log(("VBoxTray: Could not read VBox host version! rc = %d\n", rc));
-
-        /*rc = VbglR3GuestPropReadValueAlloc(uGuestPropSvcClientID, "/VirtualBox/HostInfo/VBoxRev", &pszVBoxHostRev);
-        if(RT_FAILURE(rc))
-            Log(("VBoxTray: Could not read VBox host revision! rc = %d\n", rc));*/
 
         if (RT_SUCCESS(rc))
         {
@@ -112,11 +109,10 @@ int VBoxCheckHostVersion ()
                     && VBoxCompareVersion(pszVBoxHostVer, szVBoxGuestVer) == 1)     /* Is host version greater than guest add version? */
                 {
                     /** @todo add some translation macros here */
-                    _snprintf(szTitle, sizeof(szTitle), "New VirtualBox Guest Additions %s available!", pszVBoxHostVer);
-                    _snprintf(szMsg, sizeof(szMsg), "A new version %s of VirtualBox has been installed on the host. "
-                                                    "To ensure that this guest can take advantage of the host's version, "
-                                                    "please also update the Guest Additions (current: %s) of this machine.",
-                                                    pszVBoxHostVer, szVBoxGuestVer);
+                    _snprintf(szTitle, sizeof(szTitle), "VirtualBox Guest Additions update available!");
+                    _snprintf(szMsg, sizeof(szMsg), "Your guest is currently running the Guest Additions version %s. "
+                                                    "We recommend updating to the latest version (%s) by choosing the "
+                                                    "install option from the Devices menu.", szVBoxGuestVer, pszVBoxHostStr);
 
                     /* Save the version to just do a balloon once per new version */
                     if (RT_SUCCESS(rc))
@@ -140,20 +136,19 @@ int VBoxCheckHostVersion ()
                         else
                             Log(("VBoxTray: Could not open VBoxTray registry key! Error = %ld\n", lRet));
 
-                        if(lRet != ERROR_SUCCESS)
+                        if (lRet != ERROR_SUCCESS)
                             rc = RTErrConvertFromWin32(lRet);
                     }
                 }
             }
         }
         VbglR3GuestPropReadValueFree(pszVBoxHostVer);
-        //VbglR3GuestPropReadValueFree(pszVBoxHostRev);
     }
 
-    if(RT_SUCCESS(rc) && strlen(szMsg))
+    if (RT_SUCCESS(rc) && strlen(szMsg))
     {
         rc = showBalloonTip(gInstance, gToolWindow, ID_TRAYICON, szMsg, szTitle, 5000, 0);
-        if(RT_FAILURE(rc))
+        if (RT_FAILURE(rc))
             Log(("VBoxTray: Could not show version notifier balloon tooltip! rc = %d\n", rc));
     }
 
