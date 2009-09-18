@@ -136,6 +136,7 @@ VMMR3DECL(int) VMMR3Init(PVM pVM)
      * Init basic VM VMM members.
      */
     pVM->vmm.s.offVM = RT_OFFSETOF(VM, vmm);
+    pVM->vmm.s.pahEvtRendezvousEnterOrdered     = NULL;
     pVM->vmm.s.hEvtRendezvousEnterOneByOne      = NIL_RTSEMEVENT;
     pVM->vmm.s.hEvtMulRendezvousEnterAllAtOnce  = NIL_RTSEMEVENTMULTI;
     pVM->vmm.s.hEvtMulRendezvousDone            = NIL_RTSEMEVENTMULTI;
@@ -152,6 +153,16 @@ VMMR3DECL(int) VMMR3Init(PVM pVM)
      */
     rc = RTCritSectInit(&pVM->vmm.s.CritSectSync);
     AssertRCReturn(rc, rc);
+    pVM->vmm.s.pahEvtRendezvousEnterOrdered = (PRTSEMEVENT)MMR3HeapAlloc(pVM, MM_TAG_VMM, sizeof(RTSEMEVENT) * pVM->cCpus);
+    if (!pVM->vmm.s.pahEvtRendezvousEnterOrdered)
+        return VERR_NO_MEMORY;
+    for (VMCPUID i = 0; i < pVM->cCpus; i++)
+        pVM->vmm.s.pahEvtRendezvousEnterOrdered[i] = NIL_RTSEMEVENT;
+    for (VMCPUID i = 0; i < pVM->cCpus; i++)
+    {
+        rc = RTSemEventCreate(&pVM->vmm.s.pahEvtRendezvousEnterOrdered[i]);
+        AssertRCReturn(rc, rc);
+    }
     rc = RTSemEventCreate(&pVM->vmm.s.hEvtRendezvousEnterOneByOne);
     AssertRCReturn(rc, rc);
     rc = RTSemEventMultiCreate(&pVM->vmm.s.hEvtMulRendezvousEnterAllAtOnce);
@@ -667,6 +678,11 @@ VMMR3DECL(int) VMMR3Term(PVM pVM)
     }
 
     RTCritSectDelete(&pVM->vmm.s.CritSectSync);
+    for (VMCPUID i = 0; i < pVM->cCpus; i++)
+    {
+        RTSemEventDestroy(pVM->vmm.s.pahEvtRendezvousEnterOrdered[i]);
+        pVM->vmm.s.pahEvtRendezvousEnterOrdered[i] = NIL_RTSEMEVENT;
+    }
     RTSemEventDestroy(pVM->vmm.s.hEvtRendezvousEnterOneByOne);
     pVM->vmm.s.hEvtRendezvousEnterOneByOne = NIL_RTSEMEVENT;
     RTSemEventMultiDestroy(pVM->vmm.s.hEvtMulRendezvousEnterAllAtOnce);
@@ -1399,21 +1415,35 @@ VMMR3DECL(int) VMMR3AtomicExecuteHandler(PVM pVM, PFNATOMICHANDLER pfnHandler, v
 /**
  * Count returns and have the last non-caller EMT wake up the caller.
  *
+ * @returns VBox strict informational status code for EM scheduling. No failures
+ *          will be returned here, those are for the caller only.
+ *
  * @param   pVM                 The VM handle.
  */
-DECL_FORCE_INLINE(void) vmmR3EmtRendezvousNonCallerReturn(PVM pVM)
+DECL_FORCE_INLINE(int) vmmR3EmtRendezvousNonCallerReturn(PVM pVM)
 {
+    int rcRet = ASMAtomicReadS32(&pVM->vmm.s.i32RendezvousStatus);
     uint32_t cReturned = ASMAtomicIncU32(&pVM->vmm.s.cRendezvousEmtsReturned);
     if (cReturned == pVM->cCpus - 1U)
     {
         int rc = RTSemEventSignal(pVM->vmm.s.hEvtRendezvousDoneCaller);
         AssertLogRelRC(rc);
     }
+
+    AssertLogRelMsgReturn(   rcRet <= VINF_SUCCESS
+                          || (rcRet >= VINF_EM_FIRST && rcRet <= VINF_EM_LAST),
+                          ("%Rrc\n", rcRet),
+                          VERR_IPE_UNEXPECTED_INFO_STATUS);
+    return RT_SUCCESS(rcRet) ? rcRet : VINF_SUCCESS;
 }
 
 
 /**
  * Common worker for VMMR3EmtRendezvous and VMMR3EmtRendezvousFF.
+ *
+ * @returns VBox strict informational status code for EM scheduling. No failures
+ *          will be returned here, those are for the caller only.  When
+ *          fIsCaller is set, VINF_SUCESS is always returned.
  *
  * @param   pVM                 The VM handle.
  * @param   pVCpu               The VMCPU structure for the calling EMT.
@@ -1423,8 +1453,8 @@ DECL_FORCE_INLINE(void) vmmR3EmtRendezvousNonCallerReturn(PVM pVM)
  * @param   pfnRendezvous       The callback.
  * @param   pvUser              The user argument for the callback.
  */
-static void vmmR3EmtRendezvousCommon(PVM pVM, PVMCPU pVCpu, bool fIsCaller,
-                                     uint32_t fFlags, PFNVMMEMTRENDEZVOUS pfnRendezvous, void *pvUser)
+static int vmmR3EmtRendezvousCommon(PVM pVM, PVMCPU pVCpu, bool fIsCaller,
+                                    uint32_t fFlags, PFNVMMEMTRENDEZVOUS pfnRendezvous, void *pvUser)
 {
     int rc;
 
@@ -1446,6 +1476,13 @@ static void vmmR3EmtRendezvousCommon(PVM pVM, PVMCPU pVCpu, bool fIsCaller,
             rc = RTSemEventMultiWait(pVM->vmm.s.hEvtMulRendezvousEnterAllAtOnce, RT_INDEFINITE_WAIT);
             AssertLogRelRC(rc);
         }
+        else if (   (fFlags & VMMEMTRENDEZVOUS_FLAGS_TYPE_MASK) == VMMEMTRENDEZVOUS_FLAGS_TYPE_ASCENDING
+                 || (fFlags & VMMEMTRENDEZVOUS_FLAGS_TYPE_MASK) == VMMEMTRENDEZVOUS_FLAGS_TYPE_DESCENDING)
+        {
+            /* Wait for our turn. */
+            rc = RTSemEventWait(pVM->vmm.s.pahEvtRendezvousEnterOrdered[pVCpu->idCpu], RT_INDEFINITE_WAIT);
+            AssertLogRelRC(rc);
+        }
         else
         {
             Assert((fFlags & VMMEMTRENDEZVOUS_FLAGS_TYPE_MASK) == VMMEMTRENDEZVOUS_FLAGS_TYPE_ONCE);
@@ -1463,9 +1500,9 @@ static void vmmR3EmtRendezvousCommon(PVM pVM, PVMCPU pVCpu, bool fIsCaller,
                 rc = RTSemEventMultiWait(pVM->vmm.s.hEvtMulRendezvousDone, RT_INDEFINITE_WAIT);
                 AssertLogRelRC(rc);
 
-                vmmR3EmtRendezvousNonCallerReturn(pVM);
+                return vmmR3EmtRendezvousNonCallerReturn(pVM);
             }
-            return;
+            return VINF_SUCCESS;
         }
     }
     else
@@ -1482,6 +1519,22 @@ static void vmmR3EmtRendezvousCommon(PVM pVM, PVMCPU pVCpu, bool fIsCaller,
             rc = RTSemEventMultiSignal(pVM->vmm.s.hEvtMulRendezvousEnterAllAtOnce);
             AssertLogRelRC(rc);
         }
+        else if (   (fFlags & VMMEMTRENDEZVOUS_FLAGS_TYPE_MASK) == VMMEMTRENDEZVOUS_FLAGS_TYPE_ASCENDING
+                 || (fFlags & VMMEMTRENDEZVOUS_FLAGS_TYPE_MASK) == VMMEMTRENDEZVOUS_FLAGS_TYPE_DESCENDING)
+        {
+            /* Figure out who to wake up and wake it up. If it's ourself, then
+               it's easy otherwise wait for our turn. */
+            VMCPUID iFirst = (fFlags & VMMEMTRENDEZVOUS_FLAGS_TYPE_MASK) == VMMEMTRENDEZVOUS_FLAGS_TYPE_ASCENDING
+                           ? 0
+                           : pVM->cCpus - 1U;
+            if (pVCpu->idCpu != iFirst)
+            {
+                rc = RTSemEventSignal(pVM->vmm.s.pahEvtRendezvousEnterOrdered[iFirst]);
+                AssertLogRelRC(rc);
+                rc = RTSemEventWait(pVM->vmm.s.pahEvtRendezvousEnterOrdered[pVCpu->idCpu], RT_INDEFINITE_WAIT);
+                AssertLogRelRC(rc);
+            }
+        }
         /* else: execute the handler on the current EMT and wake up one or more threads afterwards. */
     }
 
@@ -1489,18 +1542,26 @@ static void vmmR3EmtRendezvousCommon(PVM pVM, PVMCPU pVCpu, bool fIsCaller,
     /*
      * Do the callback and update the status if necessary.
      */
-    rc = pfnRendezvous(pVM, pVCpu, pvUser);
-    if (rc != VINF_SUCCESS)
+    if (    !(fFlags & VMMEMTRENDEZVOUS_FLAGS_STOP_ON_ERROR)
+        ||  RT_SUCCESS(ASMAtomicUoReadS32(&pVM->vmm.s.i32RendezvousStatus)) )
     {
-        int32_t i32RendezvousStatus;
-        do
+        VBOXSTRICTRC rcStrict = pfnRendezvous(pVM, pVCpu, pvUser);
+        if (rcStrict != VINF_SUCCESS)
         {
-            i32RendezvousStatus = ASMAtomicUoReadS32(&pVM->vmm.s.i32RendezvousStatus);
-            if (    RT_FAILURE(i32RendezvousStatus)
-                ||  (   i32RendezvousStatus != VINF_SUCCESS
-                     && RT_SUCCESS(rc)))
-                break;
-        } while (!ASMAtomicCmpXchgS32(&pVM->vmm.s.i32RendezvousStatus, rc, i32RendezvousStatus));
+            AssertLogRelMsg(   rcStrict <= VINF_SUCCESS
+                            || (rcStrict >= VINF_EM_FIRST && rcStrict <= VINF_EM_LAST),
+                            ("%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
+            int32_t i32RendezvousStatus;
+            do
+            {
+                i32RendezvousStatus = ASMAtomicUoReadS32(&pVM->vmm.s.i32RendezvousStatus);
+                if (    rcStrict == i32RendezvousStatus
+                    ||  RT_FAILURE(i32RendezvousStatus)
+                    ||  (   i32RendezvousStatus != VINF_SUCCESS
+                         && rcStrict > i32RendezvousStatus))
+                    break;
+            } while (!ASMAtomicCmpXchgS32(&pVM->vmm.s.i32RendezvousStatus, VBOXSTRICTRC_VAL(rcStrict), i32RendezvousStatus));
+        }
     }
 
     /*
@@ -1515,6 +1576,18 @@ static void vmmR3EmtRendezvousCommon(PVM pVM, PVMCPU pVCpu, bool fIsCaller,
         if ((fFlags & VMMEMTRENDEZVOUS_FLAGS_TYPE_MASK) == VMMEMTRENDEZVOUS_FLAGS_TYPE_ONE_BY_ONE)
         {
             rc = RTSemEventSignal(pVM->vmm.s.hEvtRendezvousEnterOneByOne);
+            AssertLogRelRC(rc);
+        }
+        else if ((fFlags & VMMEMTRENDEZVOUS_FLAGS_TYPE_MASK) == VMMEMTRENDEZVOUS_FLAGS_TYPE_ASCENDING)
+        {
+            Assert(cDone == pVCpu->idCpu + 1U);
+            rc = RTSemEventSignal(pVM->vmm.s.pahEvtRendezvousEnterOrdered[pVCpu->idCpu + 1U]);
+            AssertLogRelRC(rc);
+        }
+        else if ((fFlags & VMMEMTRENDEZVOUS_FLAGS_TYPE_MASK) == VMMEMTRENDEZVOUS_FLAGS_TYPE_DESCENDING)
+        {
+            Assert(pVM->cCpus - cDone == pVCpu->idCpu);
+            rc = RTSemEventSignal(pVM->vmm.s.pahEvtRendezvousEnterOrdered[pVM->cCpus - cDone - 1U]);
             AssertLogRelRC(rc);
         }
 
@@ -1533,22 +1606,26 @@ static void vmmR3EmtRendezvousCommon(PVM pVM, PVMCPU pVCpu, bool fIsCaller,
     }
 
     if (!fIsCaller)
-        vmmR3EmtRendezvousNonCallerReturn(pVM);
+        return vmmR3EmtRendezvousNonCallerReturn(pVM);
+    return VINF_SUCCESS;
 }
 
 
 /**
  * Called in response to VM_FF_EMT_RENDEZVOUS.
  *
+ * @returns VBox strict status code - EM scheduling.  No errors will be returned
+ *          here, nor will any non-EM scheduling status codes be returned.
+ *
  * @param   pVM         The VM handle
  * @param   pVCpu       The handle of the calling EMT.
  *
  * @thread  EMT
  */
-VMMR3DECL(void) VMMR3EmtRendezvousFF(PVM pVM, PVMCPU pVCpu)
+VMMR3DECL(int) VMMR3EmtRendezvousFF(PVM pVM, PVMCPU pVCpu)
 {
-    vmmR3EmtRendezvousCommon(pVM, pVCpu, false /* fIsCaller */, pVM->vmm.s.fRendezvousFlags,
-                             pVM->vmm.s.pfnRendezvous, pVM->vmm.s.pvRendezvousUser);
+    return vmmR3EmtRendezvousCommon(pVM, pVCpu, false /* fIsCaller */, pVM->vmm.s.fRendezvousFlags,
+                                    pVM->vmm.s.pfnRendezvous, pVM->vmm.s.pvRendezvousUser);
 }
 
 
@@ -1558,9 +1635,8 @@ VMMR3DECL(void) VMMR3EmtRendezvousFF(PVM pVM, PVMCPU pVCpu)
  * Gathers all the EMTs and execute some code on each of them, either in a one
  * by one fashion or all at once.
  *
- * @returns VBox status code. This will be the first error or, if all succeed,
- *          the first informational status code.
- * @retval  VERR_VM_THREAD_NOT_EMT if the caller is not an EMT.
+ * @returns VBox strict status code.  This will be the the first error,
+ *          VINF_SUCCESS, or an EM scheduling status code.
  *
  * @param   pVM             The VM handle.
  * @param   fFlags          Flags indicating execution methods. See
@@ -1568,40 +1644,68 @@ VMMR3DECL(void) VMMR3EmtRendezvousFF(PVM pVM, PVMCPU pVCpu)
  * @param   pfnRendezvous   The callback.
  * @param   pvUser          User argument for the callback.
  *
- * @thread  EMT
+ * @thread  Any.
  */
 VMMR3DECL(int) VMMR3EmtRendezvous(PVM pVM, uint32_t fFlags, PFNVMMEMTRENDEZVOUS pfnRendezvous, void *pvUser)
 {
     /*
      * Validate input.
      */
-    PVMCPU pVCpu = VMMGetCpu(pVM);
-    AssertReturn(pVCpu, VERR_VM_THREAD_NOT_EMT);
     AssertMsg(   (fFlags & VMMEMTRENDEZVOUS_FLAGS_TYPE_MASK) != VMMEMTRENDEZVOUS_FLAGS_TYPE_INVALID
+              && (fFlags & VMMEMTRENDEZVOUS_FLAGS_TYPE_MASK) <= VMMEMTRENDEZVOUS_FLAGS_TYPE_DESCENDING
               && !(fFlags & ~VMMEMTRENDEZVOUS_FLAGS_VALID_MASK), ("%#x\n", fFlags));
+    AssertMsg(   !(fFlags & VMMEMTRENDEZVOUS_FLAGS_STOP_ON_ERROR)
+              || (   (fFlags & VMMEMTRENDEZVOUS_FLAGS_TYPE_MASK) != VMMEMTRENDEZVOUS_FLAGS_TYPE_ALL_AT_ONCE
+                  && (fFlags & VMMEMTRENDEZVOUS_FLAGS_TYPE_MASK) != VMMEMTRENDEZVOUS_FLAGS_TYPE_ONCE),
+              ("type %u\n", fFlags & VMMEMTRENDEZVOUS_FLAGS_TYPE_MASK));
 
-    int rc;
-    if (pVM->cCpus == 1)
+    VBOXSTRICTRC rcStrict;
+    PVMCPU pVCpu = VMMGetCpu(pVM);
+    if (!pVCpu)
+        /*
+         * Forward the request to an EMT thread.
+         */
+        rcStrict = VMR3ReqCallWait(pVM, VMCPUID_ANY,
+                                   (PFNRT)VMMR3EmtRendezvous, 4, pVM, fFlags, pfnRendezvous, pvUser);
+    else if (pVM->cCpus == 1)
         /*
          * Shortcut for the single EMT case.
          */
-        rc = pfnRendezvous(pVM, pVCpu, pvUser);
+        rcStrict = pfnRendezvous(pVM, pVCpu, pvUser);
     else
     {
         /*
          * Spin lock. If busy, wait for the other EMT to finish while keeping a
          * lookout of the RENDEZVOUS FF.
          */
-        while (!ASMAtomicCmpXchgU32(&pVM->vmm.s.u32RendezvousLock, 0x77778888, 0))
+        int rc;
+        rcStrict = VINF_SUCCESS;
+        if (RT_UNLIKELY(!ASMAtomicCmpXchgU32(&pVM->vmm.s.u32RendezvousLock, 0x77778888, 0)))
         {
-            if (VM_FF_ISPENDING(pVM, VM_FF_EMT_RENDEZVOUS))
-                VMMR3EmtRendezvousFF(pVM, pVCpu);
+            while (!ASMAtomicCmpXchgU32(&pVM->vmm.s.u32RendezvousLock, 0x77778888, 0))
+            {
+                if (VM_FF_ISPENDING(pVM, VM_FF_EMT_RENDEZVOUS))
+                {
+                    rc = VMMR3EmtRendezvousFF(pVM, pVCpu);
+                    if (    rc != VINF_SUCCESS
+                        &&  (   rcStrict == VINF_SUCCESS
+                             || rcStrict > rc))
+                        rcStrict = rc;
+                    /** @todo Perhaps deal with termination here?  */
+                }
+                ASMNopPause();
+            }
         }
         Assert(!VM_FF_ISPENDING(pVM, VM_FF_EMT_RENDEZVOUS));
 
         /*
          * Clear the slate. This is a semaphore ping-pong orgy. :-)
          */
+        for (VMCPUID i = 0; i < pVM->cCpus; i++)
+        {
+            rc = RTSemEventWait(pVM->vmm.s.pahEvtRendezvousEnterOrdered[i], 0);
+            AssertLogRelMsg(rc == VERR_TIMEOUT || rc == VINF_SUCCESS, ("%Rrc\n", rc));
+        }
         rc = RTSemEventWait(pVM->vmm.s.hEvtRendezvousEnterOneByOne, 0);         AssertLogRelMsg(rc == VERR_TIMEOUT || rc == VINF_SUCCESS, ("%Rrc\n", rc));
         rc = RTSemEventMultiReset(pVM->vmm.s.hEvtMulRendezvousEnterAllAtOnce);  AssertLogRelRC(rc);
         rc = RTSemEventMultiReset(pVM->vmm.s.hEvtMulRendezvousDone);            AssertLogRelRC(rc);
@@ -1636,13 +1740,26 @@ VMMR3DECL(int) VMMR3EmtRendezvous(PVM pVM, uint32_t fFlags, PFNVMMEMTRENDEZVOUS 
         /*
          * Get the return code and clean up a little bit.
          */
-        rc = pVM->vmm.s.i32RendezvousStatus;
+        int rcMy = pVM->vmm.s.i32RendezvousStatus;
         ASMAtomicWritePtr((void * volatile *)&pVM->vmm.s.pfnRendezvous, NULL);
 
         ASMAtomicWriteU32(&pVM->vmm.s.u32RendezvousLock, 0);
+
+        /*
+         * Merge rcStrict and rcMy.
+         */
+        AssertRC(VBOXSTRICTRC_VAL(rcStrict));
+        if (    rcMy != VINF_SUCCESS
+            &&  (   rcStrict == VINF_SUCCESS
+                 || rcStrict > rcMy))
+            rcStrict = rcMy;
     }
 
-    return rc;
+    AssertLogRelMsgReturn(   rcStrict <= VINF_SUCCESS
+                          || (rcStrict >= VINF_EM_FIRST && rcStrict <= VINF_EM_LAST),
+                          ("%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)),
+                          VERR_IPE_UNEXPECTED_INFO_STATUS);
+    return VBOXSTRICTRC_VAL(rcStrict);
 }
 
 

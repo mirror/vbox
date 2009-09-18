@@ -157,9 +157,13 @@ int vmR3EmulationThreadWithId(RTTHREAD ThreadSelf, PUVMCPU pUVCpu, VMCPUID idCpu
                 rc = VINF_EM_TERMINATE;
                 break;
             }
+
             if (VM_FF_ISPENDING(pVM, VM_FF_EMT_RENDEZVOUS))
-                VMMR3EmtRendezvousFF(pVM, &pVM->aCpus[idCpu]);
-            if (pUVM->vm.s.pReqs)
+            {
+                rc = VMMR3EmtRendezvousFF(pVM, &pVM->aCpus[idCpu]);
+                Log(("vmR3EmulationThread: Rendezvous rc=%Rrc, VM state %d -> %d\n", rc, enmBefore, pVM->enmVMState));
+            }
+            else if (pUVM->vm.s.pReqs)
             {
                 /*
                  * Service execute in any EMT request.
@@ -1098,12 +1102,12 @@ VMMR3DECL(int) VMR3WaitU(PUVMCPU pUVCpu)
 /**
  * Rendezvous callback that will be called once.
  *
- * @returns VBox status code.
+ * @returns VBox strict status code.
  * @param   pVM                 VM handle.
  * @param   pVCpu               The VMCPU handle for the calling EMT.
  * @param   pvUser              The new g_aHaltMethods index.
  */
-static DECLCALLBACK(int) vmR3SetHaltMethodCallback(PVM pVM, PVMCPU pVCpu, void *pvUser)
+static DECLCALLBACK(VBOXSTRICTRC) vmR3SetHaltMethodCallback(PVM pVM, PVMCPU pVCpu, void *pvUser)
 {
     PUVM        pUVM = pVM->pUVM;
     uintptr_t   i    = (uintptr_t)pvUser;

@@ -915,6 +915,7 @@ int main()
     GEN_CHECK_OFF(VMM, cYieldResumeMillies);
     GEN_CHECK_OFF(VMM, cYieldEveryMillies);
     GEN_CHECK_OFF(VMM, CritSectSync);
+    GEN_CHECK_OFF(VMM, pahEvtRendezvousEnterOrdered);
     GEN_CHECK_OFF(VMM, hEvtRendezvousEnterOneByOne);
     GEN_CHECK_OFF(VMM, hEvtMulRendezvousEnterAllAtOnce);
     GEN_CHECK_OFF(VMM, hEvtMulRendezvousDone);

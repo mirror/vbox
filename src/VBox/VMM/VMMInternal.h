@@ -287,6 +287,8 @@ typedef struct VMM
 
     /** @name EMT Rendezvous
      * @{ */
+    /** Semaphore to wait on upon entering ordered execution. */
+    R3PTRTYPE(PRTSEMEVENT)      pahEvtRendezvousEnterOrdered;
     /** Semaphore to wait on upon entering for one-by-one execution. */
     RTSEMEVENT                  hEvtRendezvousEnterOneByOne;
     /** Semaphore to wait on upon entering for all-at-once execution. */

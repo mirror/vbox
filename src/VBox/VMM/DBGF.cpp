@@ -621,63 +621,70 @@ static int dbgfR3VMMWait(PVM pVM)
          */
         for (;;)
         {
-            int rc = RTSemPingWait(&pVM->dbgf.s.PingPong, 250);
-            if (RT_SUCCESS(rc))
-                break;
-            if (rc != VERR_TIMEOUT)
+            int rc;
+            if (    !VM_FF_ISPENDING(pVM, VM_FF_EMT_RENDEZVOUS | VM_FF_REQUEST)
+                &&  !VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_REQUEST))
             {
-                LogFlow(("dbgfR3VMMWait: returns %Rrc\n", rc));
-                return rc;
+                int rc = RTSemPingWait(&pVM->dbgf.s.PingPong, 250);
+                if (RT_SUCCESS(rc))
+                    break;
+                if (rc != VERR_TIMEOUT)
+                {
+                    LogFlow(("dbgfR3VMMWait: returns %Rrc\n", rc));
+                    return rc;
+                }
             }
 
             if (VM_FF_ISPENDING(pVM, VM_FF_EMT_RENDEZVOUS))
-                VMMR3EmtRendezvousFF(pVM, pVCpu);
-
-            if (    VM_FF_ISPENDING(pVM, VM_FF_REQUEST)
-                ||  VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_REQUEST))
+                rc = VMMR3EmtRendezvousFF(pVM, pVCpu);
+            else if (   VM_FF_ISPENDING(pVM, VM_FF_REQUEST)
+                     || VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_REQUEST))
             {
                 LogFlow(("dbgfR3VMMWait: Processes requests...\n"));
                 rc = VMR3ReqProcessU(pVM->pUVM, VMCPUID_ANY);
                 if (rc == VINF_SUCCESS)
                     rc = VMR3ReqProcessU(pVM->pUVM, pVCpu->idCpu);
                 LogFlow(("dbgfR3VMMWait: VMR3ReqProcess -> %Rrc rcRet=%Rrc\n", rc, rcRet));
-                if (rc >= VINF_EM_FIRST && rc <= VINF_EM_LAST)
-                {
-                    switch (rc)
-                    {
-                        case VINF_EM_DBG_BREAKPOINT:
-                        case VINF_EM_DBG_STEPPED:
-                        case VINF_EM_DBG_STEP:
-                        case VINF_EM_DBG_STOP:
-                            AssertMsgFailed(("rc=%Rrc\n", rc));
-                            break;
+            }
+            else
+                rc = VINF_SUCCESS;
 
-                        /* return straight away */
-                        case VINF_EM_TERMINATE:
-                        case VINF_EM_OFF:
-                            LogFlow(("dbgfR3VMMWait: returns %Rrc\n", rc));
-                            return rc;
-
-                        /* remember return code. */
-                        default:
-                            AssertReleaseMsgFailed(("rc=%Rrc is not in the switch!\n", rc));
-                        case VINF_EM_RESET:
-                        case VINF_EM_SUSPEND:
-                        case VINF_EM_HALT:
-                        case VINF_EM_RESUME:
-                        case VINF_EM_RESCHEDULE:
-                        case VINF_EM_RESCHEDULE_REM:
-                        case VINF_EM_RESCHEDULE_RAW:
-                            if (rc < rcRet || rcRet == VINF_SUCCESS)
-                                rcRet = rc;
-                            break;
-                    }
-                }
-                else if (RT_FAILURE(rc))
+            if (rc >= VINF_EM_FIRST && rc <= VINF_EM_LAST)
+            {
+                switch (rc)
                 {
-                    LogFlow(("dbgfR3VMMWait: returns %Rrc\n", rc));
-                    return rc;
+                    case VINF_EM_DBG_BREAKPOINT:
+                    case VINF_EM_DBG_STEPPED:
+                    case VINF_EM_DBG_STEP:
+                    case VINF_EM_DBG_STOP:
+                        AssertMsgFailed(("rc=%Rrc\n", rc));
+                        break;
+
+                    /* return straight away */
+                    case VINF_EM_TERMINATE:
+                    case VINF_EM_OFF:
+                        LogFlow(("dbgfR3VMMWait: returns %Rrc\n", rc));
+                        return rc;
+
+                    /* remember return code. */
+                    default:
+                        AssertReleaseMsgFailed(("rc=%Rrc is not in the switch!\n", rc));
+                    case VINF_EM_RESET:
+                    case VINF_EM_SUSPEND:
+                    case VINF_EM_HALT:
+                    case VINF_EM_RESUME:
+                    case VINF_EM_RESCHEDULE:
+                    case VINF_EM_RESCHEDULE_REM:
+                    case VINF_EM_RESCHEDULE_RAW:
+                        if (rc < rcRet || rcRet == VINF_SUCCESS)
+                            rcRet = rc;
+                        break;
                 }
+            }
+            else if (RT_FAILURE(rc))
+            {
+                LogFlow(("dbgfR3VMMWait: returns %Rrc\n", rc));
+                return rc;
             }
         }
 
