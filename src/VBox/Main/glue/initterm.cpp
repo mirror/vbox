@@ -56,11 +56,12 @@
 
 #include "../include/Logging.h"
 
+#include <iprt/asm.h>
+#include <iprt/env.h>
 #include <iprt/param.h>
 #include <iprt/path.h>
 #include <iprt/string.h>
-#include <iprt/env.h>
-#include <iprt/asm.h>
+#include <iprt/thread.h>
 
 #include <VBox/err.h>
 
@@ -184,14 +185,27 @@ DirectoryServiceProvider::GetFile (const char *aProp,
  *  Global XPCOM initialization flag (we maintain it ourselves since XPCOM
  *  doesn't provide such functionality)
  */
-static bool gIsXPCOMInitialized = false;
+static bool volatile gIsXPCOMInitialized = false;
 
 /**
  *  Number of Initialize() calls on the main thread.
  */
 static unsigned int gXPCOMInitCount = 0;
 
-#endif /* defined (VBOX_WITH_XPCOM) */
+#else /* !defined (VBOX_WITH_XPCOM) */
+
+/**
+ *  The COM main thread handle. (The first caller of com::Initialize().)
+ */
+static RTTHREAD volatile gCOMMainThread = NIL_RTTHREAD;
+
+/**
+ *  Number of Initialize() calls on the main thread.
+ */
+static uint32_t gCOMMainInitCount = 0;
+
+#endif /* !defined (VBOX_WITH_XPCOM) */
+
 
 /**
  * Initializes the COM runtime.
@@ -250,7 +264,7 @@ HRESULT Initialize()
     /// if you clear it. For this reason, we disable the code below and
     /// instead initialize COM in MTA as early as possible, before 3rd party
     /// libraries we use have done so (i.e. Qt).
-#if 0
+# if 0
     /* If we fail to set the necessary apartment model, it may mean that some
      * DLL that was indirectly loaded by the process calling this function has
      * already initialized COM on the given thread in an incompatible way
@@ -307,11 +321,34 @@ HRESULT Initialize()
         else
             AssertMsgFailed (("rc=%08X\n", rc));
     }
-#endif
+# endif
 
     /* the overall result must be either S_OK or S_FALSE (S_FALSE means
      * "already initialized using the same apartment model") */
     AssertMsg (rc == S_OK || rc == S_FALSE, ("rc=%08X\n", rc));
+
+    /* To be flow compatible with the XPCOM case, we return here if this isn't
+     * the main thread or if it isn't its first initialization call.
+     * Note! CoInitializeEx and CoUninitialize does it's own reference
+     *       counting, so this exercise is entirely for the EventQueue init. */
+    bool fRc;
+    RTTHREAD hSelf = RTThreadSelf (); Assert (hSelf != NIL_RTTHREAD);
+    ASMAtomicCmpXchgHandle (&gCOMMainThread, hSelf, NIL_RTTHREAD, fRc);
+    if (!fRc)
+    {
+        if (   gCOMMainThread == hSelf
+            && SUCCEEDED (rc))
+            gCOMMainInitCount++;
+
+        AssertComRC (rc);
+        return rc;
+    }
+    Assert (RTThreadIsMain (hSelf));
+
+    /* this is the first main thread initialization */
+    Assert (gCOMMainInitCount == 0);
+    if (SUCCEEDED (rc))
+        gCOMMainInitCount = 1;
 
 #else /* !defined (VBOX_WITH_XPCOM) */
 
@@ -337,9 +374,11 @@ HRESULT Initialize()
         AssertComRC (rc);
         return rc;
     }
+    Assert (RTThreadIsMain (RTThreadSelf()));
 
     /* this is the first initialization */
     gXPCOMInitCount = 1;
+    bool const fInitEventQueues = true;
 
     /* prepare paths for registry files */
     char userHomeDir [RTPATH_MAX];
@@ -349,6 +388,7 @@ HRESULT Initialize()
     char compReg [RTPATH_MAX];
     char xptiDat [RTPATH_MAX];
 
+    /** @todo use RTPathAppend */
     RTStrPrintf (compReg, sizeof (compReg), "%s%c%s",
                  userHomeDir, RTPATH_DELIMITER, "compreg.dat");
     RTStrPrintf (xptiDat, sizeof (xptiDat), "%s%c%s",
@@ -361,7 +401,7 @@ HRESULT Initialize()
     XPCOMGlueStartup (nsnull);
 #endif
 
-    const char *kAppPathsToProbe[] =
+    static const char *kAppPathsToProbe[] =
     {
         NULL, /* 0: will use VBOX_APP_HOME */
         NULL, /* 1: will try RTPathAppPrivateArch() */
@@ -388,7 +428,7 @@ HRESULT Initialize()
             if (!RTEnvExist ("VBOX_APP_HOME"))
                 continue;
 
-            strncpy (appHomeDir, RTEnvGet ("VBOX_APP_HOME"), RTPATH_MAX - 1);
+            strncpy (appHomeDir, RTEnvGet ("VBOX_APP_HOME"), RTPATH_MAX - 1); /** @todo r=bird: Use RTEnvGetEx. */
         }
         else if (i == 1)
         {
@@ -500,7 +540,7 @@ HRESULT Initialize()
     /*
      * Init the main event queue (ASSUMES it cannot fail).
      */
-    if (SUCCEEDED(rc))
+    if (SUCCEEDED (rc))
         EventQueue::init();
 
     return rc;
@@ -510,9 +550,19 @@ HRESULT Shutdown()
 {
     HRESULT rc = S_OK;
 
-    EventQueue::uninit();
-
 #if !defined (VBOX_WITH_XPCOM)
+
+    /* EventQueue::uninit reference counting fun. */
+    RTTHREAD hSelf = RTThreadSelf();
+    if (    hSelf == gCOMMainThread
+        &&  hSelf != NIL_RTTHREAD)
+    {
+        if (-- gCOMMainInitCount == 0)
+        {
+            EventQueue::uninit();
+            ASMAtomicWriteHandle (&gCOMMainThread, NIL_RTTHREAD);
+        }
+    }
 
     CoUninitialize();
 
@@ -548,6 +598,7 @@ HRESULT Shutdown()
              * init counter drops to zero */
             if (-- gXPCOMInitCount == 0)
             {
+                EventQueue::uninit();
                 rc = NS_ShutdownXPCOM (nsnull);
 
                 /* This is a thread initialized XPCOM and set gIsXPCOMInitialized to

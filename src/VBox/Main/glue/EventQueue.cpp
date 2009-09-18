@@ -175,6 +175,7 @@ EventQueue::~EventQueue()
 EventQueue::init()
 {
     Assert(mMainQueue == NULL);
+    Assert(RTThreadIsMain(RTThreadSelf()));
     mMainQueue = new EventQueue();
 
 #if defined (VBOX_WITH_XPCOM)
@@ -201,6 +202,7 @@ EventQueue::init()
 /* static */ int
 EventQueue::uninit()
 {
+    Assert(mMainQueue);
     delete mMainQueue;
     mMainQueue = NULL;
     return VINF_SUCCESS;
