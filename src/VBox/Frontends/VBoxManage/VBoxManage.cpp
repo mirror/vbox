@@ -897,6 +897,48 @@ static int handleControlVM(HandlerArg *a)
                 }
             }
         }
+        else if (!strcmp(a->argv[1], "vrdpport"))
+        {
+            if (a->argc <= 1 + 1)
+            {
+                errorArgument("Missing argument to '%s'", a->argv[1]);
+                rc = E_FAIL;
+                break;
+            }
+            /* get the corresponding VRDP server */
+            ComPtr<IVRDPServer> vrdpServer;
+            sessionMachine->COMGETTER(VRDPServer)(vrdpServer.asOutParam());
+            ASSERT(vrdpServer);
+            if (vrdpServer)
+            {
+                uint16_t vrdpport;
+
+                if (!strcmp(a->argv[2], "default"))
+                {
+                    vrdpport = 0;
+                }
+                else
+                {
+                    int vrc = RTStrToUInt16Full(a->argv[2], 0, &vrdpport);
+
+                    if (vrc != VINF_SUCCESS)
+                    {
+                        vrdpport = UINT16_MAX;
+                    }
+                }
+
+                if (vrdpport != UINT16_MAX)
+                {
+                    CHECK_ERROR_BREAK(vrdpServer, COMSETTER(Port)(vrdpport));
+                }
+                else
+                {
+                    errorArgument("Invalid vrdp server port '%s'", Utf8Str(a->argv[2]).raw());
+                    rc = E_FAIL;
+                    break;
+                }
+            }
+        }
 #endif /* VBOX_WITH_VRDP */
         else if (   !strcmp (a->argv[1], "usbattach")
                  || !strcmp (a->argv[1], "usbdetach"))
