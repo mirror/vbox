@@ -66,10 +66,14 @@ DWORD VBoxServiceWinAddAceToObjectsSecurityDescriptor (LPTSTR pszObjName,
 
     /* Get a pointer to the existing DACL. */
     dwRes = GetNamedSecurityInfo(pszObjName, ObjectType,
-          DACL_SECURITY_INFORMATION,
-          NULL, NULL, &pOldDACL, NULL, &pSD);
-    if (ERROR_SUCCESS != dwRes) {
-        VBoxServiceError("GetNamedSecurityInfo: Error %u\n", dwRes);
+                                 DACL_SECURITY_INFORMATION,
+                                 NULL, NULL, &pOldDACL, NULL, &pSD);
+    if (ERROR_SUCCESS != dwRes) 
+    {
+        if (dwRes == ERROR_FILE_NOT_FOUND)
+            VBoxServiceError("AddAceToObjectsSecurityDescriptor: Object not found/installed: %s\n", pszObjName);
+        else
+            VBoxServiceError("AddAceToObjectsSecurityDescriptor: GetNamedSecurityInfo: Error %u\n", dwRes);
         goto Cleanup;
     }
 
@@ -83,20 +87,23 @@ DWORD VBoxServiceWinAddAceToObjectsSecurityDescriptor (LPTSTR pszObjName,
 
     /* Create a new ACL that merges the new ACE into the existing DACL. */
     dwRes = SetEntriesInAcl(1, &ea, pOldDACL, &pNewDACL);
-    if (ERROR_SUCCESS != dwRes)  {
-        VBoxServiceError("SetEntriesInAcl: Error %u\n", dwRes);
+    if (ERROR_SUCCESS != dwRes)  
+    {
+        VBoxServiceError("AddAceToObjectsSecurityDescriptor: SetEntriesInAcl: Error %u\n", dwRes);
         goto Cleanup;
     }
 
     /* Attach the new ACL as the object's DACL. */
     dwRes = SetNamedSecurityInfo(pszObjName, ObjectType,
-          DACL_SECURITY_INFORMATION,
-          NULL, NULL, pNewDACL, NULL);
-    if (ERROR_SUCCESS != dwRes)  {
-        VBoxServiceError("SetNamedSecurityInfo: Error %u\n", dwRes);
+                                 DACL_SECURITY_INFORMATION,
+                                 NULL, NULL, pNewDACL, NULL);
+    if (ERROR_SUCCESS != dwRes)  
+    {
+        VBoxServiceError("AddAceToObjectsSecurityDescriptor: SetNamedSecurityInfo: Error %u\n", dwRes);
         goto Cleanup;
     }
 
+    /** @todo get rid of that spaghetti jump ... */
 Cleanup:
 
     if(pSD != NULL)
@@ -233,9 +240,16 @@ int VBoxServiceWinStart()
                                                                        FILE_GENERIC_READ | FILE_GENERIC_WRITE,
                                                                        SET_ACCESS,
                                                                        NO_INHERITANCE);
-        if (dwRes != 0)
+        if (dwRes != ERROR_SUCCESS)
         {
-            rc = VERR_ACCESS_DENIED; /* Need to add some better code later. */
+            if (dwRes == ERROR_FILE_NOT_FOUND)
+            {
+                /* If we don't find our "VBoxMiniRdrDN" (for Shared Folders) object above,
+                   don't report an error; it just might be not installed. Otherwise this
+                   would cause the SCM to hang on starting up the service. */
+                rc = VINF_SUCCESS;
+            }
+            else rc = RTErrConvertFromWin32(dwRes);
         }
     }
 #endif
