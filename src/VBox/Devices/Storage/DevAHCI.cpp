@@ -3661,7 +3661,7 @@ static int atapiParseCmdVirtualATAPI(PAHCIPort pAhciPort, PAHCIPORTTASKSTATE pAh
 
                             rc = VMR3ReqCallWait(PDMDevHlpGetVM(pDevIns), VMCPUID_ANY,
                                                  (PFNRT)pAhciPort->pDrvMount->pfnUnmount, 2, pAhciPort->pDrvMount, false);
-                            AssertReleaseRC(rc);
+                            Assert(RT_SUCCESS(rc) || (rc == VERR_PDM_MEDIA_LOCKED));
                         }
                         break;
                     case 3: /* 11 - Load media */
