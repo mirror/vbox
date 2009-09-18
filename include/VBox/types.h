@@ -163,21 +163,22 @@ typedef enum VMSTATE
     VMSTATE_RUNNING_LS,
     /** The VM is being reset. */
     VMSTATE_RESETTING,
-    /** Live save: The VM is being reset and the live save operation is being
-     * cancelled. */
+    /** Live save: The VM is being reset and immediately suspended. */
     VMSTATE_RESETTING_LS,
-    /** Live save: The VM has been reset and EMT(0) is awaiting cancellation. */
-    VMSTATE_RESET_LS,
     /** The VM is being suspended. */
     VMSTATE_SUSPENDING,
-    /** Live save: The VM has been suspended and is av
-     * the live save operation. */
+    /** Live save: The VM is being suspended during a live save operation, either as
+     * part of the normal flow or VMR3Reset. */
     VMSTATE_SUSPENDING_LS,
+    /** Live save: The VM is being suspended by VMR3Suspend during live save. */
+    VMSTATE_SUSPENDING_EXT_LS,
     /** The VM is suspended. */
     VMSTATE_SUSPENDED,
-    /** Live save: The VM has been suspended and is av
-     * the live save operation. */
+    /** Live save: The VM has been suspended and is waiting for the live save
+     * operation to move on. */
     VMSTATE_SUSPENDED_LS,
+    /** Live save: The VM has been suspended by VMR3Suspend during a live save. */
+    VMSTATE_SUSPENDED_EXT_LS,
     /** The VM is suspended and its state is being saved by EMT(0). (See SSM) */
     VMSTATE_SAVING,
     /** The VM is being debugged. (See DBGF.) */
