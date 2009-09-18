@@ -289,13 +289,8 @@ VBOX_WITH_VBOXBFE = 1
 # The Qt 4 GUI.
 VBOX_WITH_QTGUI = 1
 # Indicates the Qt is Cocoa based on the Mac.
-ifeq ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH),darwin.amd64)
+ifeq ($(KBUILD_TARGET),darwin)
  VBOX_WITH_COCOA_QT = 1
-endif
-if1of ($(USERNAME),poetzsch)
- ifeq ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH),darwin.x86)
-  VBOX_WITH_COCOA_QT = 1
- endif
 endif
 # The headless frontend.
 VBOX_WITH_HEADLESS = 1
@@ -1432,7 +1427,11 @@ VBOX_LIBPATH32_X11 ?= /usr/X11R6/lib32 /usr/X11R6/lib
 #
 ifeq ($(KBUILD_TARGET),darwin)
  ifeq ($(KBUILD_TARGET_ARCH),x86)
-  VBOX_DEF_MACOSX_VERSION_MIN ?= 10.4
+  ifdef VBOX_WITH_COCOA_QT
+   VBOX_DEF_MACOSX_VERSION_MIN ?= 10.5
+  else
+   VBOX_DEF_MACOSX_VERSION_MIN ?= 10.4
+  endif
   VBOX_MACOSX_GCC_INFIX ?= -4.0
  else
   VBOX_DEF_MACOSX_VERSION_MIN ?= 10.6
