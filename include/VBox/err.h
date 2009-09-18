@@ -577,21 +577,22 @@
 #define VERR_SSM_STATE_GREW_TOO_BIG             (-1854)
 /** Giving up a live snapshot attempt because we're low on disk space.  */
 #define VERR_SSM_LOW_ON_DISK_SPACE              (-1855)
+/** The operation was cancelled. */
+#define VERR_SSM_CANCELLED                      (-1856)
+/** Nothing that can be cancelled.  */
+#define VERR_SSM_NO_PENDING_OPERATION           (-1857)
+/** The operation has already been cancelled. */
+#define VERR_SSM_ALREADY_CANCELLED              (-1858)
 /** The machine was powered off while saving. */
-#define VERR_SSM_LIVE_POWERED_OFF               (-1856)
-/** The live snapshot/migration operation was cancelled. */
-#define VERR_SSM_LIVE_CANCELLED                 (-1857)
+#define VERR_SSM_LIVE_POWERED_OFF               (-1859)
 /** The live snapshot/migration operation was aborted because of a guru
  *  meditation. */
-#define VERR_SSM_LIVE_GURU_MEDITATION           (-1858)
-/** The VM was paused while saving, don't resume execution. */
-#define VINF_SSM_LIVE_PAUSED                    1859
-/** The operation was cancelled. */
-#define VERR_SSM_CANCELLED                      (-1860)
-/** Nothing that can be cancelled.  */
-#define VERR_SSM_NO_PENDING_OPERATION           (-1861)
-/** The operation has already been cancelled. */
-#define VERR_SSM_ALREADY_CANCELLED              (-1862)
+#define VERR_SSM_LIVE_GURU_MEDITATION           (-1860)
+/** The live snapshot/migration operation was aborted because of a fatal runtime
+ *  error. */
+#define VERR_SSM_LIVE_FATAL_ERROR               (-1861)
+/** The VM was suspended while saving, don't resume execution. */
+#define VINF_SSM_LIVE_SUSPENDED                  1862
 /** @} */
 
 
