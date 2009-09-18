@@ -170,7 +170,7 @@ void extractAddresses(int iAddrMask, caddr_t cp, caddr_t cplim, struct sockaddr 
         sa = (struct sockaddr *)cp;
 
         pAddresses[i] = sa;
-        
+
         ADVANCE(cp, sa);
     }
 }
@@ -179,7 +179,7 @@ void extractAddressesToNetInfo(int iAddrMask, caddr_t cp, caddr_t cplim, PNETIFI
 {
     struct sockaddr *addresses[RTAX_MAX];
 
-    extractAddresses(iAddrMask, cp, cplim, addresses); 
+    extractAddresses(iAddrMask, cp, cplim, addresses);
     switch (addresses[RTAX_IFA]->sa_family)
     {
         case AF_INET:
@@ -212,7 +212,7 @@ static int getDefaultIfaceIndex(unsigned short *pu16Index)
     char *pBuf, *pNext;
     int aiMib[6];
     struct sockaddr *addresses[RTAX_MAX];
-    
+
     aiMib[0] = CTL_NET;
     aiMib[1] = PF_ROUTE;
     aiMib[2] = 0;
@@ -334,8 +334,10 @@ int NetIfList(std::list <ComObjPtr<HostNetworkInterface> > &list)
         struct sockaddr_dl *pSdl = (struct sockaddr_dl *)(pIfMsg + 1);
 
         size_t cbNameLen = pSdl->sdl_nlen + 1;
+        Assert(pSdl->sdl_nlen < sizeof(pNIC->szBSDName));
         for (pNIC = pEtherNICs; pNIC; pNIC = pNIC->pNext)
-            if (!strncmp(pSdl->sdl_data, pNIC->szBSDName, pSdl->sdl_len))
+            if (   !strncmp(pSdl->sdl_data, pNIC->szBSDName, pSdl->sdl_nlen)
+                && pNIC->szBSDName[pSdl->sdl_nlen] == '\0')
             {
                 cbNameLen = strlen(pEtherNICs->szName) + 1;
                 break;
@@ -348,8 +350,9 @@ int NetIfList(std::list <ComObjPtr<HostNetworkInterface> > &list)
         }
         memcpy(pNew->MACAddress.au8, LLADDR(pSdl), sizeof(pNew->MACAddress.au8));
         pNew->enmMediumType = NETIF_T_ETHERNET;
-        Assert(sizeof(pNew->szShortName) >= cbNameLen);
-        memcpy(pNew->szShortName, pSdl->sdl_data, pSdl->sdl_nlen);
+        Assert(sizeof(pNew->szShortName) > pSdl->sdl_nlen);
+        memcpy(pNew->szShortName, pSdl->sdl_data, RT_MIN(pSdl->sdl_nlen, sizeof(pNew->szShortName) - 1));
+
         /*
          * If we found the adapter in the list returned by
          * DarwinGetEthernetControllers() copy the name and UUID from there.
@@ -432,7 +435,7 @@ int NetIfGetConfigByName(PNETIFINFO pInfo)
     size_t cbNeeded;
     char *pBuf, *pNext;
     int aiMib[6];
-    
+
     aiMib[0] = CTL_NET;
     aiMib[1] = PF_ROUTE;
     aiMib[2] = 0;
