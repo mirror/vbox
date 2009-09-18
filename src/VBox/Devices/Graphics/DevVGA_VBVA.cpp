@@ -1,4 +1,4 @@
-/*
+/** @file
  * VirtualBox Video Acceleration (VBVA).
  */
 
@@ -329,7 +329,7 @@ static int vbvaFlushProcess (unsigned uScreenId, PVGASTATE pVGAState, VBVAPARTIA
         int32_t yBottom;
     } dirtyRect;
     memset(&dirtyRect, 0, sizeof(dirtyRect));
-    
+
     bool fUpdate = false; /* Whether there were any updates. */
 
     for (;;)
@@ -455,9 +455,9 @@ static int vbvaResize (PVGASTATE pVGAState, VBVAVIEW *pView, const VBVAINFOSCREE
     uint8_t *pu8VRAM = pVGAState->vram_ptrR3 + pView->view.u32ViewOffset;
 
     int rc = pVGAState->pDrv->pfnVBVAResize (pVGAState->pDrv, &pView->view, &pView->screen, pu8VRAM);
-    
+
     /* @todo process VINF_VGA_RESIZE_IN_PROGRESS? */
-    
+
     return rc;
 }
 
@@ -531,7 +531,7 @@ static int vbvaMousePointerShape (PVGASTATE pVGAState, VBVACONTEXT *pCtx, const 
          cbPointerData = ((((pShape->u32Width + 7) / 8) * pShape->u32Height + 3) & ~3)
                          + pShape->u32Width * 4 * pShape->u32Height;
     }
-    
+
     if (cbPointerData > cbShape - RT_OFFSETOF(VBVAMOUSEPOINTERSHAPE, au8Data))
     {
         Log(("vbvaMousePointerShape: calculated pointer data size is too big (%d bytes, limit %d)\n",
@@ -617,7 +617,7 @@ static void dumpctx(const VBVACONTEXT *pCtx)
               pView->screen.u32LineSize,
               pView->screen.u32Width,
               pView->screen.u32Height,
-              pView->screen.u16BitsPerPixel, 
+              pView->screen.u16BitsPerPixel,
               pView->screen.u16Flags));
 
         Log(("                  VBVA o 0x%x p %p\n",
@@ -851,7 +851,7 @@ static VBOXVHWACMD* vbvaVHWAHHCommandCreate (PVGASTATE pVGAState, VBOXVHWACMD_TY
     Assert(pHdr);
     if (pHdr)
     {
-        memset(pHdr, 0, sizeof(VBOXVHWACMD));
+        memset(pHdr, 0, VBOXVHWACMD_HEADSIZE());
         pHdr->cRefs = 1;
         pHdr->rc = VERR_GENERAL_FAILURE;
         pHdr->enmCmd = enmCmd;
@@ -1164,7 +1164,7 @@ static DECLCALLBACK(int) vbvaChannelHandler (void *pvHandler, uint16_t u16Channe
 
             /* Guest submits an array of VBVAINFOVIEW structures. */
             VBVAINFOVIEW *pView = (VBVAINFOVIEW *)pvBuffer;
-            
+
             for (;
                  cbBuffer >= sizeof (VBVAINFOVIEW);
                  pView++, cbBuffer -= sizeof (VBVAINFOVIEW))
