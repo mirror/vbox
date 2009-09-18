@@ -1634,7 +1634,7 @@ DECLINLINE(void) PGM_BTH_NAME(SyncPageWorker)(PVMCPU pVCpu, PSHWPTE pPteDst, GST
         /*
          * Page not-present.
          */
-        LogFlow(("SyncPageWorker: page not present in Pte\n"));
+        Log2(("SyncPageWorker: page not present in Pte\n"));
 #ifdef PGMPOOL_WITH_USER_TRACKING
         /* Keep user track up to date. */
         if (pPteDst->n.u1Present)
