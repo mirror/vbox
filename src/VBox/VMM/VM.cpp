@@ -1464,7 +1464,7 @@ static DECLCALLBACK(VBOXSTRICTRC) vmR3LiveDoSuspend(PVM pVM, PVMCPU pVCpu, void 
     if (pVCpu->idCpu == 0)
     {
         vmR3SuspendDoWork(pVM);
-        int rc = vmR3TrySetState(pVM, "VMR3Suspend", 2,
+        int rc = vmR3TrySetState(pVM, "VMR3Suspend", 1,
                                  VMSTATE_SUSPENDED_LS, VMSTATE_SUSPENDING_LS);
         if (RT_FAILURE(rc))
             return VERR_INTERNAL_ERROR_3;
@@ -1591,8 +1591,8 @@ static DECLCALLBACK(int) vmR3Save(PVM pVM, const char *pszFilename, SSMAFTER enm
      * Change the state and perform/start the saving.
      */
     int rc = vmR3TrySetState(pVM, "VMR3Save", 2,
-                             VMSTATE_SAVING, VMSTATE_SUSPENDED,
-                             VMSTATE_RUNNING, VMSTATE_RUNNING_LS);
+                             VMSTATE_SAVING,     VMSTATE_SUSPENDED,
+                             VMSTATE_RUNNING_LS, VMSTATE_RUNNING);
     if (rc == 1)
     {
         rc = SSMR3Save(pVM, pszFilename, enmAfter, pfnProgress, pvUser);
@@ -1671,7 +1671,7 @@ VMMR3DECL(int) VMR3Save(PVM pVM, const char *pszFilename, bool fContinueAfterwar
             {
                 /* Try suspend the VM. */
                 rc = VMMR3EmtRendezvous(pVM, VMMEMTRENDEZVOUS_FLAGS_TYPE_DESCENDING | VMMEMTRENDEZVOUS_FLAGS_STOP_ON_ERROR,
-                                        vmR3LiveDoSuspend, pSSM);
+                                        vmR3LiveDoSuspend, NULL);
                 if (rc != VERR_TRY_AGAIN)
                     break;
 
