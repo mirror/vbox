@@ -1,0 +1,57 @@
+# $Id$
+## @file
+# Sub-Makefile for EFI thunking ROM image.
+#
+# The thunking ROM image is where the CPU starts in an EFI config. It is
+# responsible for setting up and switching to protected or long mode and
+# invoking the SEC CORE image in the Firmware Volume.
+#
+
+#
+# Copyright (C) 2009 Sun Microsystems, Inc.
+#
+# Sun Microsystems, Inc. confidential
+# All rights reserved
+#
+
+SUB_DEPTH = ../../../../..
+include $(KBUILD_PATH)/subheader.kmk
+
+
+#
+# The library containing the ROM binary.
+#
+LIBRARIES += EfiThunkBin
+EfiThunkBin_TEMPLATE  = VBOXR3
+EfiThunkBin_DEFS      = IN_VBOXDD2
+EfiThunkBin_SOURCES   = $(EfiThunkBin_0_OUTDIR)/EfiThunkBin.c
+EfiThunkBin_CLEAN     = \
+	$(EfiThunkBin_0_OUTDIR)/EfiThunkBin.c
+
+$$(EfiThunkBin_0_OUTDIR)/EfiThunkBin.c: $$(EfiThunk_1_TARGET) $(VBOX_BIN2C) | $$(dir $$@)
+	$(VBOX_BIN2C) -min 4 -max 4 -ascii -export EfiThunkBinary $< $@
+
+
+#
+# The ROM binary that gets turned into a library.
+#
+MISCBINS += EfiThunk
+EfiThunk_TEMPLATE     = DUMMY
+EfiThunk_LDTOOL       = VBoxDummyObjLdTool
+EfiThunk_ASTOOL       = YASM
+EfiThunk_ASFLAGS      = -f bin -a x86 --force-strict
+EfiThunk_INCS         = ../Firmware2/VBoxPkg/Include
+EfiThunk_SOURCES      = EfiThunk.asm
+
+
+#
+# Used by EfiThunk. Promote to Config.kmk if needed else where.
+#
+TOOL_VBoxDummyObjLdTool = Dummy Obj LD tool that just copies the object without linking.
+define TOOL_VBoxDummyObjLdTool_LINK_MISCBIN_CMDS
+	$(CP) -vf $(objs) $(out)
+endef
+
+
+include $(KBUILD_PATH)/subfooter.kmk
+
