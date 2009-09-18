@@ -1282,7 +1282,7 @@ VBOXDDU_DECL(int) VDOpen(PVBOXHDD pDisk, const char *pszBackend,
             if (RT_FAILURE(rc))
             {
                 rc = vdError(pDisk, rc, RT_SRC_POS,
-                             N_("VD: error opening image file '%s'"), pszFilename);
+                             N_("VD: error %d opening image file '%s'"), rc, pszFilename);
                 break;
             }
         }
