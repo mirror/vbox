@@ -112,7 +112,7 @@ int VBoxCheckHostVersion ()
                     _snprintf(szTitle, sizeof(szTitle), "VirtualBox Guest Additions update available!");
                     _snprintf(szMsg, sizeof(szMsg), "Your guest is currently running the Guest Additions version %s. "
                                                     "We recommend updating to the latest version (%s) by choosing the "
-                                                    "install option from the Devices menu.", szVBoxGuestVer, pszVBoxHostStr);
+                                                    "install option from the Devices menu.", szVBoxGuestVer, pszVBoxHostVer);
 
                     /* Save the version to just do a balloon once per new version */
                     if (RT_SUCCESS(rc))
