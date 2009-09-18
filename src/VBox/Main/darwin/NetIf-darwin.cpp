@@ -479,7 +479,8 @@ int NetIfGetConfigByName(PNETIFINFO pInfo)
         }
         struct sockaddr_dl *pSdl = (struct sockaddr_dl *)(pIfMsg + 1);
 
-        bool fSkip = !!strcmp(pInfo->szShortName, pSdl->sdl_data);
+        bool fSkip = !!strncmp(pInfo->szShortName, pSdl->sdl_data, pSdl->sdl_nlen)
+            || pInfo->szShortName[pSdl->sdl_nlen] != '\0';
 
         pNext += pIfMsg->ifm_msglen;
         while (pNext < pEnd)
