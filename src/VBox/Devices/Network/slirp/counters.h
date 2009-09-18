@@ -116,11 +116,9 @@ PROFILE_COUNTER(ALIAS_output, "ALIAS::output");
 
 # else
 /*DrvNAT.cpp*/
-#  ifdef SLIRP_SPLIT_CAN_OUTPUT
 DRV_COUNTING_COUNTER(NATRecvWakeups, "counting wakeups of NAT RX thread");
 DRV_PROFILE_COUNTER(NATRecv,"Time spent in NATRecv worker");
 DRV_PROFILE_COUNTER(NATRecvWait,"Time spent in NATRecv worker in waiting of free RX buffers");
-#  endif
 DRV_COUNTING_COUNTER(QueuePktSent, "counting packet sent via PDM Queue");
 DRV_COUNTING_COUNTER(QueuePktDropped, "counting packet drops by PDM Queue");
 DRV_COUNTING_COUNTER(ConsumerFalse, "counting consumer's reject number to process the queue's item");
