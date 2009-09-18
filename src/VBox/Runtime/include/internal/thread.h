@@ -130,6 +130,8 @@ typedef struct RTTHREADINT
 #define RTTHREADINT_FLAG_IN_TREE_BIT 2
 /** @copydoc RTTHREADINT_FLAG_IN_TREE_BIT */
 #define RTTHREADINT_FLAG_IN_TREE     RT_BIT(RTTHREADINT_FLAG_IN_TREE_BIT)
+/** Set if it's the main thread. */
+#define RTTHREADINT_FLAGS_MAIN       RT_BIT(3)
 /** @} */
 
 
