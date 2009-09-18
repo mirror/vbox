@@ -88,9 +88,9 @@ static RTSPINLOCK       g_ThreadSpinlock = NIL_RTSPINLOCK;
 *   Internal Functions                                                         *
 *******************************************************************************/
 static void rtThreadDestroy(PRTTHREADINT pThread);
-static int rtThreadAdopt(RTTHREADTYPE enmType, unsigned fFlags, const char *pszName);
+static int rtThreadAdopt(RTTHREADTYPE enmType, unsigned fFlags, uint32_t fIntFlags, const char *pszName);
 static void rtThreadRemoveLocked(PRTTHREADINT pThread);
-static PRTTHREADINT rtThreadAlloc(RTTHREADTYPE enmType, unsigned fFlags, unsigned fIntFlags, const char *pszName);
+static PRTTHREADINT rtThreadAlloc(RTTHREADTYPE enmType, unsigned fFlags, uint32_t fIntFlags, const char *pszName);
 
 
 /** @page pg_rt_thread  IPRT Thread Internals
@@ -140,7 +140,7 @@ int rtThreadInit(void)
         {
             rc = rtThreadNativeInit();
             if (RT_SUCCESS(rc))
-                rc = rtThreadAdopt(RTTHREADTYPE_DEFAULT, 0, "main");
+                rc = rtThreadAdopt(RTTHREADTYPE_DEFAULT, 0, RTTHREADINT_FLAGS_MAIN, "main");
             if (RT_SUCCESS(rc))
                 rc = rtSchedNativeCalcDefaultPriority(RTTHREADTYPE_DEFAULT);
             if (RT_SUCCESS(rc))
@@ -235,7 +235,7 @@ DECLINLINE(void) rtThreadUnLockRD(void)
  * Adopts the calling thread.
  * No locks are taken or released by this function.
  */
-static int rtThreadAdopt(RTTHREADTYPE enmType, unsigned fFlags, const char *pszName)
+static int rtThreadAdopt(RTTHREADTYPE enmType, unsigned fFlags, uint32_t fIntFlags, const char *pszName)
 {
     Assert(!(fFlags & RTTHREADFLAGS_WAITABLE));
     fFlags &= ~RTTHREADFLAGS_WAITABLE;
@@ -254,7 +254,7 @@ static int rtThreadAdopt(RTTHREADTYPE enmType, unsigned fFlags, const char *pszN
         if (RT_SUCCESS(rc))
         {
             rtThreadInsert(pThread, NativeThread);
-            ASMAtomicWriteSize(&pThread->enmState, RTTHREADSTATE_RUNNING);
+            ASMAtomicWriteSize(&pThread->enmState, RTTHREADSTATE_RUNNING | fIntFlags);
             rtThreadRelease(pThread);
         }
     }
@@ -292,7 +292,7 @@ RTDECL(int) RTThreadAdopt(RTTHREADTYPE enmType, unsigned fFlags, const char *psz
         }
 
         /* try adopt it */
-        rc = rtThreadAdopt(enmType, fFlags, pszName);
+        rc = rtThreadAdopt(enmType, fFlags, 0, pszName);
         Thread = RTThreadSelf();
         Log(("RTThreadAdopt: %RTthrd %RTnthrd '%s' enmType=%d fFlags=%#x rc=%Rrc\n",
              Thread, RTThreadNativeSelf(), pszName, enmType, fFlags, rc));
@@ -319,7 +319,7 @@ RT_EXPORT_SYMBOL(RTThreadAdopt);
  * @param   fIntFlags   The internal thread flags.
  * @param   pszName     Pointer to the thread name.
  */
-PRTTHREADINT rtThreadAlloc(RTTHREADTYPE enmType, unsigned fFlags, unsigned fIntFlags, const char *pszName)
+PRTTHREADINT rtThreadAlloc(RTTHREADTYPE enmType, unsigned fFlags, uint32_t fIntFlags, const char *pszName)
 {
     PRTTHREADINT pThread = (PRTTHREADINT)RTMemAllocZ(sizeof(RTTHREADINT));
     if (pThread)
@@ -899,6 +899,32 @@ RTDECL(int) RTThreadSetName(RTTHREAD Thread, const char *pszName)
     return VINF_SUCCESS;
 }
 RT_EXPORT_SYMBOL(RTThreadSetName);
+
+
+/**
+ * Checks if the specified thread is the main thread.
+ *
+ * @returns true if it is, false if it isn't.
+ *
+ * @param   hThread     The thread handle.
+ *
+ * @remarks This function may not return the correct value when RTR3Init was
+ *          called on a thread of the than the main one.  This could for
+ *          instance happen when the DLL/DYLIB/SO containing IPRT is dynamically
+ *          loaded at run time by a different thread.
+ */
+RTDECL(bool) RTThreadIsMain(RTTHREAD hThread)
+{
+    PRTTHREADINT pThread = rtThreadGet(hThread);
+    if (pThread)
+    {
+        bool fRc = !!(pThread->fIntFlags & RTTHREADINT_FLAGS_MAIN);
+        rtThreadRelease(pThread);
+        return fRc;
+    }
+    return false;
+}
+RT_EXPORT_SYMBOL(RTThreadIsMain);
 
 
 /**

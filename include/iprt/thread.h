@@ -378,6 +378,15 @@ RTDECL(RTTHREADTYPE) RTThreadGetType(RTTHREAD Thread);
 RTDECL(int) RTThreadSetName(RTTHREAD Thread, const char *pszName);
 
 /**
+ * Checks if the specified thread is the main thread.
+ *
+ * @returns true if it is, false if it isn't.
+ *
+ * @param   hThread     The thread handle.
+ */
+RTDECL(bool) RTThreadIsMain(RTTHREAD hThread);
+
+/**
  * Signal the user event.
  *
  * @returns     iprt status code.
@@ -486,7 +495,7 @@ typedef struct RTTHREADPREEMPTSTATE
 #elif defined(RT_OS_SOLARIS)
     /** The Old PIL. Don't touch! */
     uint32_t        uOldPil;
-# define RTTHREADPREEMPTSTATE_INITIALIZER { NIL_RTCPUID, UINT32_MAX } 
+# define RTTHREADPREEMPTSTATE_INITIALIZER { NIL_RTCPUID, UINT32_MAX }
 #else
     /** Reserved, MBZ. */
     uint32_t        u32Reserved;
