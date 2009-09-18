@@ -161,17 +161,25 @@ void bt_sighandler (int sig, siginfo_t *info, void *secret) {
 # include <dlfcn.h>
 # include <sys/mman.h>
 # include <iprt/asm.h>
+# include <iprt/system.h>
 
 /** Really ugly hack to shut up a silly check in AppKit. */
 static void ShutUpAppKit(void)
 {
-    /*
-     * Find issetguid() and make it always return 0 by modifying the code.
-     */
-    void *addr = dlsym(RTLD_DEFAULT, "issetugid");
-    int rc = mprotect((void *)((uintptr_t)addr & ~(uintptr_t)0xfff), 0x2000, PROT_WRITE|PROT_READ|PROT_EXEC);
-    if (!rc)
-        ASMAtomicWriteU32((volatile uint32_t *)addr, 0xccc3c031); /* xor eax, eax; ret; int3 */
+    /* Check for Snow Leopard or higher */
+    char pszInfo[64];
+    int rc = RTSystemQueryOSInfo (RTSYSOSINFO_RELEASE, pszInfo, sizeof(pszInfo));
+    if (RT_SUCCESS (rc) &&
+        pszInfo[0] == 1) /* higher than 1x.x.x */
+    {
+        /*
+         * Find issetguid() and make it always return 0 by modifying the code.
+         */
+        void *addr = dlsym(RTLD_DEFAULT, "issetugid");
+        int rc = mprotect((void *)((uintptr_t)addr & ~(uintptr_t)0xfff), 0x2000, PROT_WRITE|PROT_READ|PROT_EXEC);
+        if (!rc)
+            ASMAtomicWriteU32((volatile uint32_t *)addr, 0xccc3c031); /* xor eax, eax; ret; int3 */
+    }
 }
 #endif /* DARWIN */
 
