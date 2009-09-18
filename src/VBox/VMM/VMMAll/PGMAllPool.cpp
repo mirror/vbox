@@ -3301,7 +3301,7 @@ static void pgmPoolTrackFlushGCPhysPT(PVM pVM, PPGMPAGE pPhysPage, bool fFlushPT
 {
     PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool); NOREF(pPool);
 
-    LogFlow(("pgmPoolTrackFlushGCPhysPT: pPhysPage=%RHp iShw=%d cRefs=%d\n", PGM_PAGE_GET_HCPHYS(pPhysPage), iShw, cRefs));
+    Log2(("pgmPoolTrackFlushGCPhysPT: pPhysPage=%RHp iShw=%d cRefs=%d\n", PGM_PAGE_GET_HCPHYS(pPhysPage), iShw, cRefs));
     STAM_PROFILE_START(&pPool->StatTrackFlushGCPhysPT, f);
     bool fKeptPTEs = pgmPoolTrackFlushGCPhysPTInt(pVM, pPhysPage, fFlushPTEs, iShw, cRefs);
     if (!fKeptPTEs)
@@ -3325,7 +3325,7 @@ static void pgmPoolTrackFlushGCPhysPTs(PVM pVM, PPGMPAGE pPhysPage, bool fFlushP
     bool     fKeepList = false;
 
     STAM_PROFILE_START(&pPool->StatTrackFlushGCPhysPTs, f);
-    LogFlow(("pgmPoolTrackFlushGCPhysPTs: pPhysPage=%RHp iPhysExt\n", PGM_PAGE_GET_HCPHYS(pPhysPage), iPhysExt));
+    Log2(("pgmPoolTrackFlushGCPhysPTs: pPhysPage=%RHp iPhysExt\n", PGM_PAGE_GET_HCPHYS(pPhysPage), iPhysExt));
 
     const uint16_t iPhysExtStart = iPhysExt;
     PPGMPOOLPHYSEXT pPhysExt;
