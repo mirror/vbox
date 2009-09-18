@@ -2534,7 +2534,7 @@ static void pgmPoolMonitorModifiedClearAll(PVM pVM)
 /**
  * Callback to clear all shadow pages and clear all modification counters.
  *
- * @returns VBox status code.
+ * @returns VBox strict status code.
  * @param   pVM     The VM handle.
  * @param   pVCpu   The VMCPU for the EMT we're being called on. Unused.
  * @param   pvUser  Unused parameter.
@@ -2542,7 +2542,7 @@ static void pgmPoolMonitorModifiedClearAll(PVM pVM)
  * @remark  Should only be used when monitoring is available, thus placed in
  *          the PGMPOOL_WITH_MONITORING \#ifdef.
  */
-DECLCALLBACK(int) pgmPoolClearAll(PVM pVM, PVMCPU pVCpu, void *pvUser)
+DECLCALLBACK(VBOXSTRICTRC) pgmPoolClearAll(PVM pVM, PVMCPU pVCpu, void *pvUser)
 {
     PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool);
     STAM_PROFILE_START(&pPool->StatClearAll, c);

@@ -1436,13 +1436,13 @@ VMMR3DECL(void) HWACCMR3Reset(PVM pVM)
 /**
  * Callback to patch a TPR instruction (vmmcall or mov cr8)
  *
- * @returns VBox status code.
+ * @returns VBox strict status code.
  * @param   pVM     The VM handle.
  * @param   pVCpu   The VMCPU for the EMT we're being called on.
  * @param   pvUser  Unused
  *
  */
-DECLCALLBACK(int) hwaccmR3RemovePatches(PVM pVM, PVMCPU pVCpu, void *pvUser)
+DECLCALLBACK(VBOXSTRICTRC) hwaccmR3RemovePatches(PVM pVM, PVMCPU pVCpu, void *pvUser)
 {
     VMCPUID idCpu = (VMCPUID)(uintptr_t)pvUser;
 
@@ -1575,13 +1575,13 @@ VMMR3DECL(int)  HWACMMR3DisablePatching(PVM pVM, RTGCPTR pPatchMem, unsigned cbP
 /**
  * Callback to patch a TPR instruction (vmmcall or mov cr8)
  *
- * @returns VBox status code.
+ * @returns VBox strict status code.
  * @param   pVM     The VM handle.
  * @param   pVCpu   The VMCPU for the EMT we're being called on.
  * @param   pvUser  User specified CPU context
  *
  */
-DECLCALLBACK(int) hwaccmR3ReplaceTprInstr(PVM pVM, PVMCPU pVCpu, void *pvUser)
+DECLCALLBACK(VBOXSTRICTRC) hwaccmR3ReplaceTprInstr(PVM pVM, PVMCPU pVCpu, void *pvUser)
 {
     VMCPUID      idCpu  = (VMCPUID)(uintptr_t)pvUser;
     PCPUMCTX     pCtx   = CPUMQueryGuestCtxPtr(pVCpu);
@@ -1732,13 +1732,13 @@ DECLCALLBACK(int) hwaccmR3ReplaceTprInstr(PVM pVM, PVMCPU pVCpu, void *pvUser)
 /**
  * Callback to patch a TPR instruction (jump to generated code)
  *
- * @returns VBox status code.
+ * @returns VBox strict status code.
  * @param   pVM     The VM handle.
  * @param   pVCpu   The VMCPU for the EMT we're being called on.
  * @param   pvUser  User specified CPU context
  *
  */
-DECLCALLBACK(int) hwaccmR3PatchTprInstr(PVM pVM, PVMCPU pVCpu, void *pvUser)
+DECLCALLBACK(VBOXSTRICTRC) hwaccmR3PatchTprInstr(PVM pVM, PVMCPU pVCpu, void *pvUser)
 {
     VMCPUID      idCpu  = (VMCPUID)(uintptr_t)pvUser;
     PCPUMCTX     pCtx   = CPUMQueryGuestCtxPtr(pVCpu);

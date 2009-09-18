@@ -128,12 +128,15 @@ typedef FNATOMICHANDLER *PFNATOMICHANDLER;
 /**
  * Rendezvous callback.
  *
- * @returns VBox status code.
+ * @returns VBox strict status code - EM scheduling.  Do not return
+ *          informational status code other than the ones used by EM for
+ *          scheduling.
+ *
  * @param   pVM         The VM handle.
  * @param   pVCpu       The handle of the calling virtual CPU.
  * @param   pvUser      The user argument.
  */
-typedef DECLCALLBACK(int) FNVMMEMTRENDEZVOUS(PVM pVM, PVMCPU pVCpu, void *pvUser);
+typedef DECLCALLBACK(VBOXSTRICTRC) FNVMMEMTRENDEZVOUS(PVM pVM, PVMCPU pVCpu, void *pvUser);
 /** Pointer to a rendezvous callback function. */
 typedef FNVMMEMTRENDEZVOUS *PFNVMMEMTRENDEZVOUS;
 
@@ -198,19 +201,27 @@ VMMR3DECL(int)      VMMR3EmtRendezvous(PVM pVM, uint32_t fFlags, PFNVMMEMTRENDEZ
 /** @defgroup grp_VMMR3EmtRendezvous_fFlags     VMMR3EmtRendezvous flags
  *  @{ */
 /** Execution type mask. */
-#define VMMEMTRENDEZVOUS_FLAGS_TYPE_MASK        UINT32_C(0x00000003)
+#define VMMEMTRENDEZVOUS_FLAGS_TYPE_MASK            UINT32_C(0x00000007)
 /** Invalid execution type. */
-#define VMMEMTRENDEZVOUS_FLAGS_TYPE_INVALID     UINT32_C(0)
+#define VMMEMTRENDEZVOUS_FLAGS_TYPE_INVALID         UINT32_C(0)
 /** Let the EMTs execute the callback one by one (in no particular order). */
-#define VMMEMTRENDEZVOUS_FLAGS_TYPE_ONE_BY_ONE  UINT32_C(1)
+#define VMMEMTRENDEZVOUS_FLAGS_TYPE_ONE_BY_ONE      UINT32_C(1)
 /** Let all the EMTs execute the callback at the same time. */
-#define VMMEMTRENDEZVOUS_FLAGS_TYPE_ALL_AT_ONCE UINT32_C(2)
+#define VMMEMTRENDEZVOUS_FLAGS_TYPE_ALL_AT_ONCE     UINT32_C(2)
 /** Only execute the callback on one EMT (no particular one). */
-#define VMMEMTRENDEZVOUS_FLAGS_TYPE_ONCE        UINT32_C(3)
+#define VMMEMTRENDEZVOUS_FLAGS_TYPE_ONCE            UINT32_C(3)
+/** Let the EMTs execute the callback one by one in ascending order. */
+#define VMMEMTRENDEZVOUS_FLAGS_TYPE_ASCENDING       UINT32_C(4)
+/** Let the EMTs execute the callback one by one in descending order. */
+#define VMMEMTRENDEZVOUS_FLAGS_TYPE_DESCENDING      UINT32_C(5)
+/** Stop after the first error.
+ * This is not valid for any execution type where more than one EMT is active
+ * at a time. */
+#define VMMEMTRENDEZVOUS_FLAGS_STOP_ON_ERROR        UINT32_C(0x00000008)
 /** The valid flags. */
-#define VMMEMTRENDEZVOUS_FLAGS_VALID_MASK       VMMEMTRENDEZVOUS_FLAGS_TYPE_MASK
+#define VMMEMTRENDEZVOUS_FLAGS_VALID_MASK           UINT32_C(0x0000000f)
 /** @} */
-VMMR3DECL(void)     VMMR3EmtRendezvousFF(PVM pVM, PVMCPU pVCpu);
+VMMR3DECL(int)      VMMR3EmtRendezvousFF(PVM pVM, PVMCPU pVCpu);
 VMMR3DECL(int)      VMMR3ReadR0Stack(PVM pVM, VMCPUID idCpu, RTHCUINTPTR pAddress, void *pvBuf, size_t cbRead);
 /** @} */
 #endif /* IN_RING3 */

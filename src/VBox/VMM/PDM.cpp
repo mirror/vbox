@@ -1023,10 +1023,12 @@ VMMR3DECL(void) PDMR3Reset(PVM pVM)
  * attached drivers about the VM now being reset.
  *
  * @param   pVM     VM Handle.
+ * @thread  EMT(0)
  */
 VMMR3DECL(void) PDMR3Suspend(PVM pVM)
 {
     LogFlow(("PDMR3Suspend:\n"));
+    VM_ASSERT_EMT0(pVM);
 
     /*
      * Iterate the device instances.
