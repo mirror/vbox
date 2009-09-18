@@ -102,7 +102,7 @@ HRESULT COMBase::InitializeCOM()
 
 #if defined (VBOX_WITH_XPCOM)
 
-#if !defined (RT_OS_DARWIN) && !defined (RT_OS_OS2)
+# if !defined (RT_OS_DARWIN) && !defined (RT_OS_OS2)
 
     if (NS_SUCCEEDED (rc))
     {
@@ -110,11 +110,11 @@ HRESULT COMBase::InitializeCOM()
         rc = NS_GetMainEventQ (getter_AddRefs (eventQ));
         if (NS_SUCCEEDED (rc))
         {
-#ifdef DEBUG
+#  ifdef DEBUG
             BOOL isNative = FALSE;
             eventQ->IsQueueNative (&isNative);
             AssertMsg (isNative, ("The event queue must be native"));
-#endif
+#  endif
             BOOL isOnMainThread = FALSE;
             rc = eventQ->IsOnCurrentThread (&isOnMainThread);
             if (NS_SUCCEEDED (rc) && isOnMainThread)
@@ -124,7 +124,7 @@ HRESULT COMBase::InitializeCOM()
         }
     }
 
-#endif
+# endif /* !defined (RT_OS_DARWIN) && !defined (RT_OS_OS) */
 
 #endif /* defined (VBOX_WITH_XPCOM) */
 
