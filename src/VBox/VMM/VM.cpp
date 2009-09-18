@@ -1129,39 +1129,50 @@ VMMR3DECL(void)   VMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
 
 
 /**
- * Power on the virtual machine.
+ * EMT rendezvous worker for VMR3PowerOn.
  *
- * @returns 0 on success.
- * @returns VBox error code on failure.
- * @param   pVM         VM to power on.
- * @thread  EMT
+ * @returns VERR_VM_INVALID_VM_STATE or VINF_SUCCESS. (This is a strict return
+ *          code, see FNVMMEMTRENDEZVOUS.)
+ *
+ * @param   pVM             The VM handle.
+ * @param   pVCpu           The VMCPU handle of the EMT.
+ * @param   pvUser          Ignored.
  */
-static DECLCALLBACK(int) vmR3PowerOn(PVM pVM)
+static DECLCALLBACK(VBOXSTRICTRC) vmR3PowerOn(PVM pVM, PVMCPU pVCpu, void *pvUser)
 {
-    LogFlow(("vmR3PowerOn: pVM=%p\n", pVM));
+    LogFlow(("vmR3PowerOn: pVM=%p pVCpu=%p/#%u\n", pVM, pVCpu, pVCpu->idCpu));
+    Assert(!pvUser); NOREF(pvUser);
 
     /*
-     * EMT(0) does the actual power on work *before* the other EMTs
-     * get here, they just need to set their state to STARTED so they
-     * get out of the EMT loop and into EM.
+     * The first thread thru here tries to change the state.  We shouldn't be
+     * called again if this fails.
      */
-    PVMCPU pVCpu = VMMGetCpu(pVM);
+    if (pVCpu->idCpu == pVM->cCpus - 1)
+    {
+        int rc = vmR3TrySetState(pVM, "VMR3PowerOn", 1, VMSTATE_POWERING_ON, VMSTATE_CREATED);
+        if (RT_FAILURE(rc))
+            return rc;
+    }
+
+    VMSTATE enmVMState = VMR3GetState(pVM);
+    AssertMsgReturn(enmVMState == VMSTATE_POWERING_ON,
+                    ("%s\n", VMR3GetStateName(enmVMState)),
+                    VERR_INTERNAL_ERROR_4);
+
+    /*
+     * All EMTs changes their state to started.
+     */
     VMCPU_SET_STATE(pVCpu, VMCPUSTATE_STARTED);
-    if (pVCpu->idCpu != 0)
-        return VINF_SUCCESS;
 
     /*
-     * Try change the state.
+     * EMT(0) is last thru here and it will make the notification calls
+     * and advance the state.
      */
-    int rc = vmR3TrySetState(pVM, "VMR3PowerOff", 1, VMSTATE_POWERING_ON, VMSTATE_CREATED);
-    if (RT_FAILURE(rc))
-        return rc;
-
-    /*
-     * Change the state, notify the components and resume the execution.
-     */
-    PDMR3PowerOn(pVM);
-    vmR3SetState(pVM, VMSTATE_RUNNING, VMSTATE_POWERING_ON);
+    if (pVCpu->idCpu == 0)
+    {
+        PDMR3PowerOn(pVM);
+        vmR3SetState(pVM, VMSTATE_RUNNING, VMSTATE_POWERING_ON);
+    }
 
     return VINF_SUCCESS;
 }
@@ -1176,7 +1187,7 @@ static DECLCALLBACK(int) vmR3PowerOn(PVM pVM)
  *
  * @thread      Any thread.
  * @vmstate     Created
- * @vmstateto   PoweringOn, Running
+ * @vmstateto   PoweringOn+Running
  */
 VMMR3DECL(int) VMR3PowerOn(PVM pVM)
 {
@@ -1184,11 +1195,12 @@ VMMR3DECL(int) VMR3PowerOn(PVM pVM)
     VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
 
     /*
-     * Forward the request to the EMTs (EMT(0) first as it does all the
-     * work upfront).
+     * Gather all the EMTs to reduce the init TSC drift and keep                                      .
+     * the state changing APIs a bit uniform.
      */
-    int rc = VMR3ReqCallWaitU(pVM->pUVM, VMCPUID_ALL, (PFNRT)vmR3PowerOn, 1, pVM);
-    LogFlow(("VMR3PowerOn: returns %Rrc\n", rc));
+    int rc = VMMR3EmtRendezvous(pVM, VMMEMTRENDEZVOUS_FLAGS_TYPE_DESCENDING | VMMEMTRENDEZVOUS_FLAGS_STOP_ON_ERROR,
+                                vmR3PowerOn, NULL);
+    LogFlow(("VMR3Suspend: returns %Rrc\n", rc));
     return rc;
 }
 
@@ -1206,25 +1218,19 @@ static void vmR3SuspendDoWork(PVM pVM)
 
 
 /**
- * EMT worker for VMR3Suspend.
+ * EMT rendezvous worker for VMR3Suspend.
  *
- * @returns VBox strict status code.
- * @retval  VINF_EM_SUSPEND.
- * @retval  VERR_VM_INVALID_VM_STATE.
+ * @returns VERR_VM_INVALID_VM_STATE or VINF_EM_SUSPEND. (This is a strict
+ *          return code, see FNVMMEMTRENDEZVOUS.)
  *
- * @param   pVM             The VM to suspend.
- * @param   pvUser          Our fFatal flag.
- *
- * @thread  EMT
+ * @param   pVM             The VM handle.
+ * @param   pVCpu           The VMCPU handle of the EMT.
+ * @param   pvUser          Ignored.
  */
 static DECLCALLBACK(VBOXSTRICTRC) vmR3Suspend(PVM pVM, PVMCPU pVCpu, void *pvUser)
 {
-#if 0
-    if (!pVCpu) pVCpu = VMMGetCpu(pVM);
-#endif
     LogFlow(("vmR3Suspend: pVM=%p pVCpu=%p/#%u\n", pVM, pVCpu, pVCpu->idCpu));
-    Assert(!pvUser);
-    Assert(pVCpu);
+    Assert(!pvUser); NOREF(pvUser);
 
     /*
      * The first EMT switches the state to suspending.  If this fails because
@@ -1282,67 +1288,67 @@ VMMR3DECL(int) VMR3Suspend(PVM pVM)
     LogFlow(("VMR3Suspend: pVM=%p\n", pVM));
     VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
 
-#if 0 /* if the code below screws up, this should still work */
-    /*
-     * Forward the operation to EMT in reverse order so EMT(0) can do the
-     * actual suspending after the other ones have stopped running guest code.
-     */
-    int rc = VMR3ReqCallWaitU(pVM->pUVM, VMCPUID_ALL_REVERSE,
-                              (PFNRT)vmR3Suspend, 3, pVM, NULL, NULL);
-#else
     /*
      * Gather all the EMTs to make sure there are no races before
      * changing the VM state.
      */
     int rc = VMMR3EmtRendezvous(pVM, VMMEMTRENDEZVOUS_FLAGS_TYPE_DESCENDING | VMMEMTRENDEZVOUS_FLAGS_STOP_ON_ERROR,
                                 vmR3Suspend, NULL);
-#endif
-
     LogFlow(("VMR3Suspend: returns %Rrc\n", rc));
     return rc;
 }
 
 
 /**
- * Resume VM execution.
+ * EMT rendezvous worker for VMR3Resume.
  *
- * @returns 0 on success.
- * @returns VBox error code on failure.
- * @param   pVM         The VM to resume.
- * @thread  EMT
+ * @returns VERR_VM_INVALID_VM_STATE or VINF_EM_RESUME. (This is a strict
+ *          return code, see FNVMMEMTRENDEZVOUS.)
+ *
+ * @param   pVM             The VM handle.
+ * @param   pVCpu           The VMCPU handle of the EMT.
+ * @param   pvUser          Ignored.
  */
-static DECLCALLBACK(int) vmR3Resume(PVM pVM)
+static DECLCALLBACK(VBOXSTRICTRC) vmR3Resume(PVM pVM, PVMCPU pVCpu, void *pvUser)
 {
-    LogFlow(("vmR3Resume: pVM=%p\n", pVM));
+    LogFlow(("vmR3Resume: pVM=%p pVCpu=%p/#%u\n", pVM, pVCpu, pVCpu->idCpu));
+    Assert(!pvUser); NOREF(pvUser);
 
     /*
-     * EMT(0) does all the work *before* the others wake up.
+     * The first thread thru here tries to change the state.  We shouldn't be
+     * called again if this fails.
      */
-    PVMCPU pVCpu = VMMGetCpu(pVM);
-    if (pVCpu->idCpu == 0)
+    if (pVCpu->idCpu == pVM->cCpus - 1)
     {
         int rc = vmR3TrySetState(pVM, "VMR3Resume", 1, VMSTATE_RESUMING, VMSTATE_SUSPENDED);
         if (RT_FAILURE(rc))
             return rc;
+    }
 
-        /* Perform resume notifications. */
+    VMSTATE enmVMState = VMR3GetState(pVM);
+    AssertMsgReturn(enmVMState == VMSTATE_RESUMING,
+                    ("%s\n", VMR3GetStateName(enmVMState)),
+                    VERR_INTERNAL_ERROR_4);
+
+#if 0
+    /*
+     * All EMTs changes their state to started.
+     */
+    VMCPU_SET_STATE(pVCpu, VMCPUSTATE_STARTED);
+#endif
+
+    /*
+     * EMT(0) is last thru here and it will make the notification calls
+     * and advance the state.
+     */
+    if (pVCpu->idCpu == 0)
+    {
         PDMR3Resume(pVM);
-
-        /* Advance to the final state. */
         vmR3SetState(pVM, VMSTATE_RUNNING, VMSTATE_RESUMING);
     }
 
-    /** @todo there is a race here: Someone could suspend, power off, raise a fatal
-     *        error (both kinds), save the vm, or start a live save operation before
-     *        we get here on all CPUs. Only safe way is a cross call, or to make
-     *        the last thread flip the state from Resuming to Running. While the
-     *        latter seems easy and perhaps more attractive, the former might be
-     *        better wrt TSC/TM... */
-    AssertMsgReturn(VMR3GetState(pVM) == VMSTATE_RUNNING, ("%s\n", VMR3GetStateName(VMR3GetState(pVM))), VERR_VM_INVALID_VM_STATE);
     return VINF_EM_RESUME;
 }
-
-
 
 
 /**
@@ -1363,10 +1369,11 @@ VMMR3DECL(int) VMR3Resume(PVM pVM)
     VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
 
     /*
-     * Forward the request to the EMTs (EMT(0) first as it does all the
-     * work upfront).
+     * Gather all the EMTs to make sure there are no races before
+     * changing the VM state.
      */
-    int rc = VMR3ReqCallWaitU(pVM->pUVM, VMCPUID_ALL, (PFNRT)vmR3Resume, 1, pVM);
+    int rc = VMMR3EmtRendezvous(pVM, VMMEMTRENDEZVOUS_FLAGS_TYPE_DESCENDING | VMMEMTRENDEZVOUS_FLAGS_STOP_ON_ERROR,
+                                vmR3Resume, NULL);
     LogFlow(("VMR3Resume: returns %Rrc\n", rc));
     return rc;
 }
@@ -1691,7 +1698,8 @@ VMMR3DECL(int) VMR3Load(PVM pVM, const char *pszFilename, PFNVMPROGRESS pfnProgr
     AssertPtrReturn(pszFilename, VERR_INVALID_POINTER);
 
     /*
-     * Forward the request to EMT(0).
+     * Forward the request to EMT(0).  No need to setup a rendezvous here
+     * since there is no execution taking place when this call is allowed.
      */
     int rc = VMR3ReqCallWaitU(pVM->pUVM, 0 /*idDstCpu*/,
                               (PFNRT)vmR3Load, 4, pVM, pszFilename, pfnProgress, pvUser);
@@ -1701,24 +1709,19 @@ VMMR3DECL(int) VMR3Load(PVM pVM, const char *pszFilename, PFNVMPROGRESS pfnProgr
 
 
 /**
- * Worker for VMR3PowerOff that does the actually powering off on EMT(0) after
- * cycling thru the other EMTs first.
+ * EMT rendezvous worker for VMR3PowerOff.
  *
- * @returns VBox strict status code.
+ * @returns VERR_VM_INVALID_VM_STATE or VINF_EM_OFF. (This is a strict
+ *          return code, see FNVMMEMTRENDEZVOUS.)
  *
- * @param   pVM     The VM handle.
- * @param   pVCpu   The VMCPU of the EMT.
- * @param   pvUser  Unused user argument.
- *
- * @thread      EMT.
+ * @param   pVM             The VM handle.
+ * @param   pVCpu           The VMCPU handle of the EMT.
+ * @param   pvUser          Ignored.
  */
 static DECLCALLBACK(VBOXSTRICTRC) vmR3PowerOff(PVM pVM, PVMCPU pVCpu, void *pvUser)
 {
-#if 0
-    pVCpu = VMMGetCpu(pVM);
-#endif
     LogFlow(("vmR3PowerOff: pVM=%p pVCpu=%p/#%u\n", pVM, pVCpu, pVCpu->idCpu));
-    NOREF(pvUser);
+    Assert(!pvUser); NOREF(pvUser);
 
     /*
      * The first EMT thru here will change the state to PoweringOff.
@@ -1852,21 +1855,12 @@ VMMR3DECL(int)   VMR3PowerOff(PVM pVM)
     LogFlow(("VMR3PowerOff: pVM=%p\n", pVM));
     VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
 
-#if 0
-    /*
-     * Forward the request to the EMTs in reverse order, making all the other
-     * EMTs stop working before EMT(0) comes and does the actual powering off.
-     */
-    int rc = VMR3ReqCallWaitU(pVM->pUVM, VMCPUID_ALL_REVERSE, (PFNRT)vmR3PowerOff, 3, pVM, NULL, NULL);
-#else
     /*
      * Gather all the EMTs to make sure there are no races before
      * changing the VM state.
      */
     int rc = VMMR3EmtRendezvous(pVM, VMMEMTRENDEZVOUS_FLAGS_TYPE_DESCENDING | VMMEMTRENDEZVOUS_FLAGS_STOP_ON_ERROR,
                                 vmR3PowerOff, NULL);
-
-#endif
     LogFlow(("VMR3PowerOff: returns %Rrc\n", rc));
     return rc;
 }
@@ -2390,23 +2384,21 @@ static void vmR3CheckIntegrity(PVM pVM)
 
 
 /**
- * Reset request processor.
+ * EMT rendezvous worker for VMR3Reset.
  *
- * This is called by the emulation threads as a response to the
- * reset request issued by VMR3Reset().
+ * This is called by the emulation threads as a response to the reset request
+ * issued by VMR3Reset().
  *
- * @returns VBox strict status code.
- * @param   pVM     The VM to reset.
- * @param   pVCpu   The VMCPU of the EMT.
- * @param   pvUser  Unused argument.
+ * @returns VERR_VM_INVALID_VM_STATE, VINF_EM_RESET or VINF_EM_SUSPEND. (This
+ *          is a strict return code, see FNVMMEMTRENDEZVOUS.)
+ *
+ * @param   pVM             The VM handle.
+ * @param   pVCpu           The VMCPU handle of the EMT.
+ * @param   pvUser          Ignored.
  */
 static DECLCALLBACK(VBOXSTRICTRC) vmR3Reset(PVM pVM, PVMCPU pVCpu, void *pvUser)
 {
-#if 0
-    pVCpu = VMMGetCpu(pVM);
-#endif
-    Assert(!pvUser);
-    NOREF(pvUser);
+    Assert(!pvUser); NOREF(pvUser);
 
     /*
      * The first EMT will try change the state to resetting.  If this fails,
@@ -2528,20 +2520,12 @@ VMMR3DECL(int) VMR3Reset(PVM pVM)
     LogFlow(("VMR3Reset:\n"));
     VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
 
-#if 0
-    /*
-     * Forward the query to the EMTs in reverse order, so all the other EMT are
-     * dosile when EMT(0) does the actual resetting.
-     */
-    int rc = VMR3ReqCallWaitU(pVM->pUVM, VMCPUID_ALL_REVERSE, (PFNRT)vmR3Reset, 3, pVM, NULL, NULL);
-#else
     /*
      * Gather all the EMTs to make sure there are no races before
      * changing the VM state.
      */
     int rc = VMMR3EmtRendezvous(pVM, VMMEMTRENDEZVOUS_FLAGS_TYPE_DESCENDING | VMMEMTRENDEZVOUS_FLAGS_STOP_ON_ERROR,
                                 vmR3Reset, NULL);
-#endif
     LogFlow(("VMR3Reset: returns %Rrc\n", rc));
     return rc;
 }
@@ -2641,13 +2625,13 @@ static bool vmR3ValidateStateTransition(VMSTATE enmStateOld, VMSTATE enmStateNew
 
         case VMSTATE_POWERING_ON:
             AssertMsgReturn(   enmStateNew == VMSTATE_RUNNING
-                            || enmStateNew == VMSTATE_FATAL_ERROR /*?*/
+                            /*|| enmStateNew == VMSTATE_FATAL_ERROR ?*/
                             , ("%s -> %s\n", VMR3GetStateName(enmStateOld), VMR3GetStateName(enmStateNew)), false);
             break;
 
         case VMSTATE_RESUMING:
             AssertMsgReturn(   enmStateNew == VMSTATE_RUNNING
-                            || enmStateNew == VMSTATE_FATAL_ERROR /*?*/
+                            /*|| enmStateNew == VMSTATE_FATAL_ERROR ?*/
                             , ("%s -> %s\n", VMR3GetStateName(enmStateOld), VMR3GetStateName(enmStateNew)), false);
             break;
 
@@ -3470,14 +3454,15 @@ VMMR3DECL(int)   VMR3AtRuntimeErrorDeregister(PVM pVM, PFNVMATRUNTIMEERROR pfnAt
  * @returns VERR_VM_INVALID_VM_STATE or VINF_SUCCESS. (This is a strict return
  *          code, see FNVMMEMTRENDEZVOUS.)
  *
- * @param   pVM                 The VM handle.
- * @param   pVCpu               The VMCPU handle of the EMT.
- * @param   pvUser              Unused user argument.
+ * @param   pVM             The VM handle.
+ * @param   pVCpu           The VMCPU handle of the EMT.
+ * @param   pvUser          Ignored.
  */
 static DECLCALLBACK(VBOXSTRICTRC) vmR3SetRuntimeErrorChangeState(PVM pVM, PVMCPU pVCpu, void *pvUser)
 {
     NOREF(pVCpu);
-    NOREF(pvUser);
+    Assert(!pvUser); NOREF(pvUser);
+
     int rc = vmR3TrySetState(pVM, "VMSetRuntimeError", 2,
                              VMSTATE_FATAL_ERROR,    VMSTATE_RUNNING,
                              VMSTATE_FATAL_ERROR_LS, VMSTATE_RUNNING_LS);
