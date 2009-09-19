@@ -260,7 +260,7 @@ typedef struct NATState
 # endif
     uma_zone_t zone_ext_refcnt;
 #endif
-
+    int use_host_resolver; 
     /* from dnsproxy/dnsproxy.h*/
     unsigned int authoritative_port;
     unsigned int authoritative_timeout;

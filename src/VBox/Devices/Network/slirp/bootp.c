@@ -269,7 +269,7 @@ static int dhcp_do_ack_offer(PNATState pData, struct mbuf *m, BOOTPClient *bc, i
     FILL_BOOTP_EXT(q, RFC1533_NETMASK, 4, &netmask);
     FILL_BOOTP_EXT(q, RFC1533_GATEWAY, 4, &saddr);
     
-    if (pData->use_dns_proxy)
+    if (pData->use_dns_proxy || pData->use_host_resolver)
     {
         uint32_t addr = htonl(ntohl(special_addr.s_addr) | CTL_DNS);
         FILL_BOOTP_EXT(q, RFC1533_DNS, 4, &addr);
@@ -297,7 +297,7 @@ skip_dns_servers:
             /* dhcpcd client very sad if no domain name is passed */
             FILL_BOOTP_EXT(q, RFC1533_DOMAINNAME, 1, " "); 
     }
-    if (pData->fPassDomain)
+    if (pData->fPassDomain && !pData->use_host_resolver)
     {
         LIST_FOREACH(dd, &pData->dns_domain_list_head, dd_list)
         {

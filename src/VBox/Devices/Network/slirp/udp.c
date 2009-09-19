@@ -256,14 +256,13 @@ udp_input(PNATState pData, register struct mbuf *m, int iphlen)
     /*
      * DNS proxy
      */
-#if 0
-    if (   (ip->ip_dst.s_addr == htonl(ntohl(special_addr.s_addr) | CTL_DNS))
+    if (   pData->use_dns_proxy
+        && (ip->ip_dst.s_addr == htonl(ntohl(special_addr.s_addr) | CTL_DNS))
         && (ntohs(uh->uh_dport) == 53)) 
     {
         dnsproxy_query(pData, so, m, iphlen);
         goto done;
     }
-#endif
 
     iphlen += sizeof(struct udphdr);
     m->m_len -= iphlen;
