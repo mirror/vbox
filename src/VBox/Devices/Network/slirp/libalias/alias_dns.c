@@ -72,8 +72,6 @@ static void doanswer(struct libalias *la, union dnsmsg_header *hdr,char *qname, 
     } 
     else
     {
-        /*!!! We need to be sure that */
-        struct mbuf *m = NULL;
         char *query;
         char *answers;
         uint16_t off;
@@ -82,20 +80,12 @@ static void doanswer(struct libalias *la, union dnsmsg_header *hdr,char *qname, 
         uint16_t packet_len = 0;
         uint16_t addr_off = (uint16_t)~0;
         
-#ifndef VBOX_WITH_SLIRP_BSD_MBUF
-        m = dtom(la->pData, hdr); 
-#else
-        AssertMsgFailed(("Unimplemented"));
-#endif
-        Assert((m));
-        
 #if 0
         /*here is no compressed names+answers + new query*/
         m_inc(m, h->h_length * sizeof(struct dnsmsg_answer) + strlen(qname) + 2 * sizeof(uint16_t));
 #endif
         packet_len = (pip->ip_hl << 2) + sizeof(struct udphdr) + sizeof(union dnsmsg_header) 
             + strlen(qname) +  2 * sizeof(uint16_t); /* ip + udp + header + query */
-        fprintf(stderr,"got %d addresses for target:%s (m_len: %d)\n", h->h_length, h->h_name, m->m_len);
         query = (char *)&hdr[1];
 
         strcpy(query, qname);
@@ -155,8 +145,7 @@ static void doanswer(struct libalias *la, union dnsmsg_header *hdr,char *qname, 
         hdr->X.rcode = 0;
         HTONS(hdr->X.ancount);
         /*don't forget update m_len*/
-        m->m_len = packet_len;
-        pip->ip_len = htons(m->m_len);
+        pip->ip_len = htons(packet_len);
     }
 }
 static int 
