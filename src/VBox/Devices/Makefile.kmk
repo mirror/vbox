@@ -767,9 +767,7 @@ VBOX_SLIRP_SOURCES = \
 	Network/slirp/tcp_output.c \
 	Network/slirp/tcp_subr.c \
 	Network/slirp/tcp_timer.c \
-	Network/slirp/udp.c \
-	Network/slirp/dnsproxy/hash.c \
-	Network/slirp/dnsproxy/dnsproxy.c
+	Network/slirp/udp.c
 
 ifdef VBOX_WITH_SLIRP_BSD_MBUF
  VBOX_SLIRP_BSD_ARCH = $(subst x86,i386,$(KBUILD_TARGET_ARCH))
@@ -779,7 +777,11 @@ ifdef VBOX_WITH_SLIRP_BSD_MBUF
  	Network/slirp/bsd/kern/uipc_mbuf2.c \
  	Network/slirp/bsd/$(VBOX_SLIRP_BSD_ARCH)/in_cksum.c
 else
+# some notes dnsproxy will probably deprecate
+# tftp.c is temporally out of global slirp section
  VBOX_SLIRP_SOURCES += \
+	Network/slirp/dnsproxy/hash.c \
+	Network/slirp/dnsproxy/dnsproxy.c \
  	Network/slirp/mbuf.c \
 	Network/slirp/cksum.c \
 	Network/slirp/tftp.c
@@ -807,7 +809,7 @@ define def_vbox_slirp_cflags
  ifdef VBOX_WITH_SLIRP_BSD_MBUF
   $(file)_INCS += $(1)/slirp/bsd/sys
   $(file)_INCS += $(1)/slirp/bsd/sys/sys
-  $(file)_INCS += $(1)/slirp/bsd/$(BSD_ARCH)/include
+  $(file)_INCS += $(1)/slirp/bsd/$(VBOX_SLIRP_BSD_ARCH)/include
   $(file)_INCS += $(1)/slirp/bsd/netinet
  endif
  $(file)_INCS += $(1)/slirp
