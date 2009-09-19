@@ -199,6 +199,8 @@ static void serial_update_irq(SerialState *s)
         s->iir = UART_IIR_THRI;
     } else if (s->msr_changed && (s->ier & UART_IER_RLSI)) {
         s->iir = UART_IIR_RLSI;
+    } else if (s->lsr & UART_LSR_BI) {
+        s->iir = 0; /* No special status bit */
     } else {
         s->iir = UART_IIR_NO_INT;
     }
@@ -307,6 +309,12 @@ static int serial_ioport_write(void *opaque, uint32_t addr, uint32_t val)
             break_enable = (val >> 6) & 1;
             if (break_enable != s->last_break_enable) {
                 s->last_break_enable = break_enable;
+                if (RT_LIKELY(s->pDrvChar))
+                {
+                    Log(("serial_io_port_write: Set break %d\n", break_enable));
+                    int rc = s->pDrvChar->pfnSetBreak(s->pDrvChar, !!break_enable);
+                    AssertRC(rc);
+                }
             }
         }
         break;
@@ -486,6 +494,22 @@ static DECLCALLBACK(int) serialNotifyStatusLinesChanged(PPDMICHARPORT pInterface
 
     pThis->msr = newMsr;
     pThis->msr_changed = true;
+    serial_update_irq(pThis);
+
+    PDMCritSectLeave(&pThis->CritSect);
+
+    return VINF_SUCCESS;
+}
+
+static DECLCALLBACK(int) serialNotifyBreak(PPDMICHARPORT pInterface)
+{
+    SerialState *pThis = PDMICHARPORT_2_SERIALSTATE(pInterface);
+
+    Log(("%s: pInterface=%p\n", __FUNCTION__, pInterface));
+
+    PDMCritSectEnter(&pThis->CritSect, VERR_PERMISSION_DENIED);
+
+    pThis->lsr |= UART_LSR_BI;
     serial_update_irq(pThis);
 
     PDMCritSectLeave(&pThis->CritSect);
@@ -756,8 +780,9 @@ static DECLCALLBACK(int) serialConstruct(PPDMDEVINS pDevIns,
     pThis->IBase.pfnQueryInterface = serialQueryInterface;
 
     /* ICharPort */
-    pThis->ICharPort.pfnNotifyRead = serialNotifyRead;
+    pThis->ICharPort.pfnNotifyRead               = serialNotifyRead;
     pThis->ICharPort.pfnNotifyStatusLinesChanged = serialNotifyStatusLinesChanged;
+    pThis->ICharPort.pfnNotifyBreak              = serialNotifyBreak;
 
 #ifdef VBOX_SERIAL_PCI
     /* the PCI device */

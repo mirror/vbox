@@ -848,6 +848,11 @@ static DECLCALLBACK(int) drvHostSerialRecvThread(PPDMDRVINS pDrvIns, PPDMTHREAD 
                 }
                 cbRemaining = dwNumberOfBytesTransferred;
             }
+            else if (dwEventMask & EV_BREAK)
+            {
+                Log(("HostSerial#%d: Detected break\n"));
+                rc = pThis->pDrvCharPort->pfnNotifyBreak(pThis->pDrvCharPort);
+            }
             else
             {
                 /* The status lines have changed. Notify the device. */
@@ -1173,6 +1178,34 @@ static DECLCALLBACK(int) drvHostSerialSetModemLines(PPDMICHAR pInterface, bool R
     return VINF_SUCCESS;
 }
 
+/**
+ * Sets the TD line into break condition.
+ *
+ * @returns VBox status code.
+ * @param   pInterface  Pointer to the interface structure containing the called function pointer.
+ * @param   fBreak      Set to true to let the device send a break false to put into normal operation.
+ * @thread  Any thread.
+ */
+static DECLCALLBACK(int) drvHostSerialSetBreak(PPDMICHAR pInterface, bool fBreak)
+{
+    PDRVHOSTSERIAL pThis = PDMICHAR_2_DRVHOSTSERIAL(pInterface);
+
+#if defined(RT_OS_LINUX) || defined(RT_OS_DARWIN) || defined(RT_OS_SOLARIS) || defined(RT_OS_FREEBSD)
+    if (fBreak)
+        ioctl(pThis->DeviceFile, TIOCSBRK);
+    else
+        ioctl(pThis->DeviceFile, TIOCCBRK);
+
+#elif defined(RT_OS_WINDOWS)
+    if (fBreak)
+        SetCommBreak(pThis->hDeviceFile);
+    else
+        ClearCommBreak(pThis->hDeviceFile);
+#endif
+
+    return VINF_SUCCESS;
+}
+
 /* -=-=-=-=- driver interface -=-=-=-=- */
 
 /**
@@ -1197,11 +1230,12 @@ static DECLCALLBACK(int) drvHostSerialConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
     pThis->WakeupPipeW = NIL_RTFILE;
 #endif
     /* IBase. */
-    pDrvIns->IBase.pfnQueryInterface        = drvHostSerialQueryInterface;
+    pDrvIns->IBase.pfnQueryInterface = drvHostSerialQueryInterface;
     /* IChar. */
-    pThis->IChar.pfnWrite                   = drvHostSerialWrite;
-    pThis->IChar.pfnSetParameters           = drvHostSerialSetParameters;
-    pThis->IChar.pfnSetModemLines           = drvHostSerialSetModemLines;
+    pThis->IChar.pfnWrite            = drvHostSerialWrite;
+    pThis->IChar.pfnSetParameters    = drvHostSerialSetParameters;
+    pThis->IChar.pfnSetModemLines    = drvHostSerialSetModemLines;
+    pThis->IChar.pfnSetBreak         = drvHostSerialSetBreak;
 
 /** @todo Initialize all members with NIL values!! The destructor is ALWAYS called. */
 
