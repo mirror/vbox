@@ -354,7 +354,7 @@ AssertCompileSize(struct ethhdr, 14);
  */
 int sscanf(const char *s, const char *format, ...);
 
-#if defined(VBOX_SLIRP_ALIAS)
+#if defined(VBOX_SLIRP_ALIAS) || defined(VBOX_SLIRP_BSD)
 
 # define ip_next(ip) (void *)((uint8_t *)(ip) + ((ip)->ip_hl << 2))
 # define udp_next(udp) (void *)((uint8_t *)&((struct udphdr *)(udp))[1] )
@@ -384,21 +384,12 @@ int sscanf(const char *s, const char *format, ...);
 # define strncasecmp RTStrNICmp
 # define stderr NULL 
 # define stdout NULL 
+
 # ifdef DEBUG
 #  define LIBALIAS_DEBUG
 # endif
-# ifdef fprintf
-#  undef fprintf
-# endif
-# ifdef fflush
-#  undef fflush
-# endif
-# ifdef printf
-#  undef printf
-# endif
+
 # define fflush(x) do{} while(0)
-# define fprintf vbox_slirp_fprintf
-# define printf vbox_slirp_printf
 # include "ext.h"
 #endif /*VBOX_SLIRP_ALIAS*/
 

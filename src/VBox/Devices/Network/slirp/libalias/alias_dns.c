@@ -82,7 +82,11 @@ static void doanswer(struct libalias *la, union dnsmsg_header *hdr,char *qname, 
         uint16_t packet_len = 0;
         uint16_t addr_off = (uint16_t)~0;
         
+#ifndef VBOX_WITH_SLIRP_BSD_MBUF
         m = dtom(la->pData, hdr); 
+#else
+        AssertMsgFailed(("Unimplemented"));
+#endif
         Assert((m));
         
 #if 0

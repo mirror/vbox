@@ -99,6 +99,9 @@ struct proto_handler;
 /** Main state/configuration structure for slirp NAT. */
 typedef struct NATState
 {
+#define PROFILE_COUNTER(name, dsc)     STAMPROFILE Stat ## name
+#define COUNTING_COUNTER(name, dsc)    STAMCOUNTER Stat ## name
+#include "counters.h"
     /* Stuff from boot.c */
     void *pbootp_clients;
     const char *bootp_filename;
@@ -300,11 +303,6 @@ typedef struct NATState
     struct proto_handler *ftp_module;
     struct proto_handler *nbt_module;
     struct proto_handler *dns_module;
-
-#define PROFILE_COUNTER(name, dsc)     STAMPROFILE Stat ## name
-#define COUNTING_COUNTER(name, dsc)    STAMCOUNTER Stat ## name
-
-#include "counters.h"
 
 } NATState;
 

@@ -80,6 +80,7 @@ tcp_output(PNATState pData, register struct tcpcb *tp)
     u_char opt[MAX_TCPOPTLEN];
     unsigned optlen, hdrlen;
     int idle, sendalot;
+    int size;
 
     DEBUG_CALL("tcp_output");
     DEBUG_ARG("tp = %lx", (long )tp);
@@ -373,8 +374,27 @@ send:
 #ifndef VBOX_WITH_SLIRP_BSD_MBUF
         m = m_get(pData);
 #else
-        m = m_gethdr(pData, M_NOWAIT, MT_HEADER);
-        /* @todo (r=vvl) should we append other bufs here ???*/
+        if ((len + hdrlen + ETH_HLEN) < MSIZE)
+        {
+            size = MCLBYTES;
+        } 
+        else if ((len + hdrlen + ETH_HLEN) < MCLBYTES)
+        {
+            size = MCLBYTES;
+        }
+        else if((len + hdrlen + ETH_HLEN) < MJUM9BYTES)
+        {
+            size = MJUM9BYTES;
+        }
+        else if ((len + hdrlen + ETH_HLEN) < MJUM16BYTES)
+        {
+            size = MJUM16BYTES;
+        }
+        else
+        {
+            AssertMsgFailed(("Unsupported size"));
+        }
+        m = m_getjcl(pData, M_NOWAIT, MT_HEADER, M_PKTHDR, size);
 #endif
         if (m == NULL)
         {
@@ -382,10 +402,11 @@ send:
             error = 1;
             goto out;
         }
-#ifndef VBOX_WITH_SLIRP_BSD_MBUF
         m->m_data += if_maxlinkhdr;
-        m->m_len = hdrlen;
+#ifdef VBOX_WITH_SLIRP_BSD_MBUF
+        m->m_pkthdr.header = mtod(m, void *);
 #endif
+        m->m_len = hdrlen;
 
         /*
          * This will always succeed, since we make sure our mbufs
@@ -395,13 +416,8 @@ send:
         if (len <= MHLEN - hdrlen - max_linkhdr)
         {
 #endif
-#ifndef VBOX_WITH_SLIRP_BSD_MBUF
             sbcopy(&so->so_snd, off, (int) len, mtod(m, caddr_t) + hdrlen);
             m->m_len += len;
-#else
-            sbcopy(pData, &so->so_snd, off, (int) len, m);
-            m = m_prepend(pData, m, sizeof (struct tcpiphdr), M_DONTWAIT);
-#endif
 #if 0
         }
         else
@@ -439,29 +455,45 @@ send:
             error = 1;
             goto out;
         }
-        m->m_data += if_maxlinkhdr;
-        m->m_len = hdrlen;
 #else
-        m = m_gethdr(pData, M_NOWAIT, MT_HEADER);
+        if ((hdrlen + ETH_HLEN) < MSIZE)
+        {
+            size = MCLBYTES;
+        } 
+        else if ((hdrlen + ETH_HLEN) < MCLBYTES)
+        {
+            size = MCLBYTES;
+        }
+        else if((hdrlen + ETH_HLEN) < MJUM9BYTES)
+        {
+            size = MJUM9BYTES;
+        }
+        else if ((hdrlen + ETH_HLEN) < MJUM16BYTES)
+        {
+            size = MJUM16BYTES;
+        }
+        else
+        {
+            AssertMsgFailed(("Unsupported size"));
+        }
+        m = m_getjcl(pData, M_NOWAIT, MT_HEADER, M_PKTHDR, size);
+#endif
         if (m == NULL)
         {
 /*          error = ENOBUFS; */
             error = 1;
             goto out;
         }
+        m->m_data += if_maxlinkhdr;
+#ifdef VBOX_WITH_SLIRP_BSD_MBUF
+        m->m_pkthdr.header = mtod(m, void *);
 #endif
+        m->m_len = hdrlen;
     }
 
-#ifndef VBOX_WITH_SLIRP_BSD_MBUF
     ti = mtod(m, struct tcpiphdr *);
 
     memcpy((caddr_t)ti, &tp->t_template, sizeof (struct tcpiphdr));
-#else
-    /*already copied header from template */
-
-    m_copyback(pData, m, 0, sizeof (struct tcpiphdr), &tp->t_template);
-    ti = mtod(m, struct tcpiphdr *);
-#endif
 
     /*
      * Fill in fields, remembering maximum advertised
@@ -492,11 +524,7 @@ send:
     ti->ti_ack = htonl(tp->rcv_nxt);
     if (optlen)
     {
-#ifndef VBOX_WITH_SLIRP_BSD_MBUF
         memcpy((caddr_t)(ti + 1), (caddr_t)opt, optlen);
-#else
-        m_append(pData, m,  optlen, opt);
-#endif
         ti->ti_off = (sizeof (struct tcphdr) + optlen) >> 2;
     }
     ti->ti_flags = flags;
@@ -609,18 +637,14 @@ send:
      */
 #ifndef VBOX_WITH_SLIRP_BSD_MBUF
     Assert(m->m_len == (hdrlen + len));
-    m->m_len = hdrlen + len; /* XXX Needed? m_len should be correct */
 #else
     M_ASSERTPKTHDR(m);
     m->m_pkthdr.header = mtod(m, void *);
 #endif
+    m->m_len = hdrlen + len; /* XXX Needed? m_len should be correct */
 
     {
-#ifndef VBOX_WITH_SLIRP_BSD_MBUF
         ((struct ip *)ti)->ip_len = m->m_len;
-#else
-       ((struct ip *)ti)->ip_len = m_length(m, NULL);
-#endif
         ((struct ip *)ti)->ip_ttl = ip_defttl;
        ((struct ip *)ti)->ip_tos = so->so_iptos;
 

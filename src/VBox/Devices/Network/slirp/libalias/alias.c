@@ -1665,7 +1665,7 @@ LibAliasUnLoadAllModule(void)
 
 #endif
 
-#ifdef _KERNEL
+#if defined(_KERNEL) || (defined(VBOX) && defined(VBOX_WITH_SLIRP_BSD_MBUF))
 /*
  * m_megapullup() - this function is a big hack.
  * Thankfully, it's only used in ng_nat and ipfw+nat.
@@ -1679,7 +1679,12 @@ LibAliasUnLoadAllModule(void)
  * the input packet, on failure NULL. The input packet is always consumed.
  */
 struct mbuf *
-m_megapullup(struct mbuf *m, int len) {
+#ifndef VBOX
+m_megapullup(struct mbuf *m, int len) 
+#else
+m_megapullup(PNATState pData, struct mbuf *m, int len)
+#endif
+{
     struct mbuf *mcl;
     
     if (len > m->m_pkthdr.len)
@@ -1693,7 +1698,11 @@ m_megapullup(struct mbuf *m, int len) {
         return (m);
 
     if (len <= MCLBYTES - RESERVE) {
+#ifndef VBOX
         mcl = m_getcl(M_DONTWAIT, MT_DATA, M_PKTHDR);
+#else
+        mcl = m_getcl(pData, M_DONTWAIT, MT_DATA, M_PKTHDR);
+#endif
     } else if (len < MJUM16BYTES) {
         int size;
         if (len <= MJUMPAGESIZE - RESERVE) {
@@ -1703,7 +1712,11 @@ m_megapullup(struct mbuf *m, int len) {
         } else {
             size = MJUM16BYTES;
         };
+#ifndef VBOX
         mcl = m_getjcl(M_DONTWAIT, MT_DATA, M_PKTHDR, size);
+#else
+        mcl = m_getjcl(pData, M_DONTWAIT, MT_DATA, M_PKTHDR, size);
+#endif
     } else {
         goto bad;
     }
@@ -1713,11 +1726,19 @@ m_megapullup(struct mbuf *m, int len) {
     m_move_pkthdr(mcl, m);
     m_copydata(m, 0, len, mtod(mcl, caddr_t));
     mcl->m_len = mcl->m_pkthdr.len = len;
+#ifndef VBOX
     m_freem(m);
+#else
+    m_freem(pData, m);
+#endif
  
     return (mcl);
 bad:
+#ifndef VBOX
     m_freem(m);
+#else
+    m_freem(pData, m);
+#endif
     return (NULL);
 }
 #endif

@@ -36,6 +36,7 @@
 
 #ifndef _MBUF_H_
 #define _MBUF_H_
+#ifndef VBOX_WITH_SLIRP_BSD_MBUF
 
 #define m_freem m_free
 
@@ -149,4 +150,7 @@ struct mbuf * dtom (PNATState, void *);
 
 #define MBUF_IP_HEADER(m) (caddr_t)(MBUF_HEAD(m) + if_maxlinkhdr)
 
+#else
+# include "bsd/sys/mbuf.h"
+#endif
 #endif

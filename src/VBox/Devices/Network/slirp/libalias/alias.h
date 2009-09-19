@@ -204,7 +204,11 @@ int             LibAliasUnLoadAllModule(void);
 int             LibAliasRefreshModules(void);
 
 /* Mbuf helper function. */
+#ifndef VBOX
 struct mbuf    *m_megapullup(struct mbuf *, int);
+#else
+struct mbuf    *m_megapullup(PNATState, struct mbuf *, int);
+#endif
 
 /*
  * Mode flags and other constants.

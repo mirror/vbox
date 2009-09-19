@@ -45,9 +45,19 @@
 #include <slirp.h>
 #include "alias.h"
 
+static const uint8_t broadcast_ethaddr[6] =
+{
+    0xff, 0xff, 0xff, 0xff, 0xff, 0xff
+};
+
 static int rt_lookup_in_cache(PNATState pData, uint32_t dst, uint8_t *ether)
 {
     int rc = 1;
+    if (dst == INADDR_BROADCAST)
+    {
+        memcpy(ether, broadcast_ethaddr, ETH_ALEN);
+        return 0;
+    }
     rc = slirp_arp_lookup_ether_by_ip(pData, dst, ether);
     if (rc == 0)
         return rc;
@@ -103,13 +113,7 @@ ip_output(PNATState pData, struct socket *so, struct mbuf *m0)
         hlen = len;
     }
 #endif
-#ifdef VBOX_WITH_SLIRP_BSD_MBUF
-    M_ASSERTPKTHDR(m);
-    Assert(m->m_pkthdr.header);
-    ip = (struct ip *)m->m_pkthdr.header;
-#else
     ip = mtod(m, struct ip *);
-#endif
     /*
      * Fill in IP header.
      */
@@ -148,12 +152,13 @@ ip_output(PNATState pData, struct socket *so, struct mbuf *m0)
     }
 #else
     /* 
-     * (vvl) Note: Here we should care about dhcp and other services
-     * aware of ethernet address 
+     * (vvl) Assumption is that m_data points at the IP header and only
+     * in case of dhcp we know and have header before IP.
      */
     rc = rt_lookup_in_cache(pData, ip->ip_dst.s_addr, eth_dst);
     if (rc != 0)
         goto bad;
+    eh = (struct ethhdr *)(m->m_data - ETH_HLEN);
 #endif
     /*
      * If small enough for interface, can just send directly.
@@ -190,12 +195,7 @@ ip_output(PNATState pData, struct socket *so, struct mbuf *m0)
 #endif
             STAM_PROFILE_STOP(&pData->StatALIAS_output, a);
         }
-#ifdef VBOX_WITH_SLIRP_BSD_MBUF
-        /*todo: make prepend */
-        m = m_prepend(pData, m, ETH_HLEN, M_DONTWAIT);
-        Assert(m);
-        eh = mtod(m, struct ethhdr *);
-#endif
+
         memcpy(eh->h_source, eth_dst, ETH_ALEN); 
 
         if_output(pData, so, m);
@@ -224,30 +224,61 @@ ip_output(PNATState pData, struct socket *so, struct mbuf *m0)
         int mhlen, firstlen = len;
         struct mbuf **mnext = &m->m_nextpkt;
 #ifdef VBOX_WITH_SLIRP_BSD_MBUF
-        uint8_t buf[len]; /* intermediate buffer we'll use for copy from orriginal packet*/
+        uint8_t *buf; /* intermediate buffer we'll use for copy from orriginal packet*/
 #endif
             {
                 int rc;
+                HTONS(ip->ip_len);
+                HTONS(ip->ip_off);
+                ip->ip_sum = 0;
+                ip->ip_sum = cksum(m, hlen);
 #ifndef VBOX_WITH_SLIRP_BSD_MBUF
                 rc = LibAliasOut((m->m_la ? m->m_la : pData->proxy_alias), 
                     mtod(m, char *), m->m_len);
 #else
                 struct m_tag *t;
-                if (t = m_tag_find(m, PACKET_TAG_ALIAS, NULL) != 0)
+                char *tmpbuf = NULL;
+                int tmplen = 0;
+                if (m->m_next != NULL)
                 {
-                    rc = LibAliasOut((struct libalias *)&t[1], mtod(m, char *), m_length(m, NULL));
+                    /*we've receives packet in fragments*/
+                    tmplen = m_length(m, NULL);
+                    tmpbuf = RTMemAlloc(tmplen);
+                    Assert(tmpbuf);
+                    m_copydata(m, 0, tmplen, tmpbuf);
                 }
                 else
                 {
-                    rc = LibAliasOut(pData->proxy_alias, mtod(m, char *), 
-                                     m_length(m, NULL));
+                    tmpbuf = mtod(m, char *);
+                    tmplen = m_length(m, NULL);
+
+                }
+                if (t = m_tag_find(m, PACKET_TAG_ALIAS, NULL) != 0)
+                {
+                    rc = LibAliasOut((struct libalias *)&t[1], tmpbuf, tmplen);
+                }
+                else
+                {
+                    rc = LibAliasOut(pData->proxy_alias, tmpbuf, tmplen);
                 } 
+                if (m->m_next != NULL)
+                {
+                    if (rc != PKT_ALIAS_IGNORED)
+                    {
+                        struct ip *tmpip = (struct ip *)tmpbuf;
+                        m_copyback(pData, m, 0, ntohs(tmpip->ip_len) + (tmpip->ip_hl << 2), tmpbuf);
+                    }
+                    if (tmpbuf != NULL)
+                        RTMemFree(tmpbuf);
+                }
                 if (rc == PKT_ALIAS_IGNORED)
                 {
                     Log(("NAT: packet was droppped\n"));
                     goto bad;
                 }
 #endif
+                NTOHS(ip->ip_len);
+                NTOHS(ip->ip_off);
                 Log2(("NAT: LibAlias return %d\n", rc));
         }
 
@@ -263,7 +294,7 @@ ip_output(PNATState pData, struct socket *so, struct mbuf *m0)
 #ifndef VBOX_WITH_SLIRP_BSD_MBUF
             m = m_get(pData);
 #else
-            m = m_gethdr(pData, M_DONTWAIT, MT_HEADER);
+            m = m_getcl(pData, M_NOWAIT, MT_HEADER, M_PKTHDR);
 #endif
             if (m == 0)
             {
@@ -271,15 +302,11 @@ ip_output(PNATState pData, struct socket *so, struct mbuf *m0)
                 ipstat.ips_odropped++;
                 goto sendorfree;
             }
-#ifndef VBOX_WITH_SLIRP_BSD_MBUF
             m->m_data += if_maxlinkhdr;
             mhip = mtod(m, struct ip *);
             *mhip = *ip;
-#else
-            m_copyback(pData, m, 0, mhlen, ip);
+#ifdef VBOX_WITH_SLIRP_BSD_MBUF
             m->m_pkthdr.header = mtod(m, void *);
-            mhip = mtod(m, struct ip *);
-            m_adj(m, mhlen);
 #endif
             /* we've calculated eth_dst for first packet */
 #if 0 /* No options */
@@ -288,9 +315,6 @@ ip_output(PNATState pData, struct socket *so, struct mbuf *m0)
                 mhlen = ip_optcopy(ip, mhip) + sizeof (struct ip);
                 mhip->ip_hl = mhlen >> 2;
             }
-#endif
-#ifndef VBOX_WITH_SLIRP_BSD_MBUF
-            m->m_len = mhlen;
 #endif
             mhip->ip_off = ((off - hlen) >> 3) + (ip->ip_off & ~IP_MF);
             if (ip->ip_off & IP_MF)
@@ -308,8 +332,14 @@ ip_output(PNATState pData, struct socket *so, struct mbuf *m0)
                 goto sendorfree;
             }
 #else
+            buf = RTMemAlloc(len);
             m_copydata(m0, off, len, buf); /* copy to buffer */
-            m_append(pData, m, len, buf); /* copy from buffer */
+            m->m_data += mhlen;
+            m_copyback(pData, m, 0, len, buf); /* copy from buffer */
+            m->m_data -= mhlen;
+            m->m_len += mhlen;
+            RTMemFree(buf);
+            m->m_len = ntohs(mhip->ip_len);
 #endif
 
             mhip->ip_off = htons((u_int16_t)mhip->ip_off);
@@ -340,9 +370,9 @@ sendorfree:
 #ifndef VBOX_WITH_SLIRP_BSD_MBUF
                 eh = (struct ethhdr *)MBUF_HEAD(m);
 #else
-                m = m_prepend(pData, m, ETH_HLEN, M_DONTWAIT);
-                Assert(m);
+                m->m_data -= ETH_HLEN;
                 eh = mtod(m, struct ethhdr *);
+                m->m_data += ETH_HLEN;
 #endif
                 memcpy(eh->h_source, eth_dst, ETH_ALEN); 
 

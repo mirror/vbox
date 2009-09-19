@@ -175,12 +175,13 @@ static struct mbuf *dhcp_create_msg(PNATState pData, struct bootp_t *bp, struct 
     struct ethhdr *eh;
     uint8_t *q;
 
-    rbp = mtod(m, struct bootp_t *);
-    memset(rbp, 0, sizeof(struct bootp_t));
     eh = mtod(m, struct ethhdr *);
     memcpy(eh->h_source, bp->bp_hwaddr, ETH_ALEN); /* XXX: if_encap just swap source with dest*/
+
     m->m_data += if_maxlinkhdr; /*reserve ether header */
+
     rbp = mtod(m, struct bootp_t *);
+    memset(rbp, 0, sizeof(struct bootp_t));
     rbp->bp_op = BOOTP_REPLY;
     rbp->bp_xid = bp->bp_xid; /* see table 3 of rfc2131*/
     rbp->bp_flags = bp->bp_flags;
@@ -606,7 +607,11 @@ static void dhcp_decode(PNATState pData, struct bootp_t *bp, const uint8_t *buf,
     Assert(p);
     if (p == NULL)
         return;
+#ifndef VBOX_WITH_SLIRP_BSD_MBUF
     if ((m = m_get(pData)) == NULL)
+#else
+    if ((m = m_getcl(pData, M_DONTWAIT, MT_HEADER, M_PKTHDR)) == NULL)
+#endif
     {
         LogRel(("NAT: can't alocate memory for response!\n"));
         return;
@@ -672,6 +677,9 @@ static void bootp_reply(PNATState pData, struct mbuf *m, int off, uint16_t flags
     *q++ = RFC1533_END; /*end of message */
     
 
+#ifdef VBOX_WITH_SLIRP_BSD_MBUF
+    m->m_pkthdr.header = mtod(m, void *);
+#endif
     m->m_len = sizeof(struct bootp_t)
              - sizeof(struct ip)
              - sizeof(struct udphdr);

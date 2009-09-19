@@ -28,5 +28,4 @@ void sbreserve (PNATState, struct sbuf *, int);
 void sbappend (PNATState, struct socket *, struct mbuf *);
 void sbappendsb (PNATState, struct sbuf *, struct mbuf *);
 void sbcopy (struct sbuf *, int, int, char *);
-
 #endif
