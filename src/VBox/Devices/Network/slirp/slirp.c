@@ -502,7 +502,7 @@ int get_dns_addr(PNATState pData, struct in_addr *pdns_addr)
 
 #ifndef VBOX_WITH_NAT_SERVICE
 int slirp_init(PNATState *ppData, const char *pszNetAddr, uint32_t u32Netmask,
-               bool fPassDomain, void *pvUser)
+               bool fPassDomain, bool fUseHostResolver, void *pvUser)
 #else
 int slirp_init(PNATState *ppData, uint32_t u32NetAddr, uint32_t u32Netmask,
                bool fPassDomain, void *pvUser)
@@ -517,7 +517,8 @@ int slirp_init(PNATState *ppData, uint32_t u32NetAddr, uint32_t u32Netmask,
     if (u32Netmask & 0x1f)
         /* CTL is x.x.x.15, bootp passes up to 16 IPs (15..31) */
         return VERR_INVALID_PARAMETER;
-    pData->fPassDomain = fPassDomain;
+    pData->fPassDomain = !fUseHostResolver ? fPassDomain : false;
+    pData->use_host_resolver = fUseHostResolver;
     pData->pvUser = pvUser;
     pData->netmask = u32Netmask;
 
@@ -572,12 +573,13 @@ int slirp_init(PNATState *ppData, uint32_t u32NetAddr, uint32_t u32Netmask,
 
     /* set default addresses */
     inet_aton("127.0.0.1", &loopback_addr);
-    if (slirp_init_dns_list(pData) < 0)
-        fNATfailed = 1;
+    if (!pData->use_host_resolver)
+    {
+        if (slirp_init_dns_list(pData) < 0)
+            fNATfailed = 1;
 
-#ifndef VBOX_WITH_SLIRP_BSD_MBUF
-    dnsproxy_init(pData);
-#endif
+        dnsproxy_init(pData);
+    }
 
     getouraddr(pData);
     {
@@ -599,7 +601,8 @@ int slirp_init(PNATState *ppData, uint32_t u32NetAddr, uint32_t u32Netmask,
         LibAliasSetAddress(pData->proxy_alias, proxy_addr);
         ftp_alias_load(pData);
         nbt_alias_load(pData);
-        dns_alias_load(pData);
+        if (pData->use_host_resolver)
+            dns_alias_load(pData);
     }
     return fNATfailed ? VINF_NAT_DNS : VINF_SUCCESS;
 }
@@ -678,7 +681,8 @@ void slirp_term(PNATState pData)
     slirp_release_dns_list(pData);
     ftp_alias_unload(pData);
     nbt_alias_unload(pData);
-    dns_alias_unload(pData);
+    if (pData->use_host_resolver)
+        dns_alias_unload(pData);
     while(!LIST_EMPTY(&instancehead)) 
     {
         struct libalias *la = LIST_FIRST(&instancehead);
@@ -1889,8 +1893,15 @@ int slirp_set_binding_address(PNATState pData, char *addr)
 
 void slirp_set_dhcp_dns_proxy(PNATState pData, bool fDNSProxy)
 {
-    Log2(("NAT: DNS proxy switched %s\n", (fDNSProxy ? "on" : "off")));
-    pData->use_dns_proxy = fDNSProxy;
+    if (!pData->use_host_resolver)
+    {
+        Log2(("NAT: DNS proxy switched %s\n", (fDNSProxy ? "on" : "off")));
+        pData->use_dns_proxy = fDNSProxy;
+    } 
+    else
+    {
+        LogRel(("NAT: Host Resolver conflicts with DNS proxy, the last one was forcely ignored\n"));
+    }
 }
 
 #define CHECK_ARG(name, val, lim_min, lim_max)                                  \
