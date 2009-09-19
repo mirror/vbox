@@ -146,17 +146,17 @@ VBoxNetAdpFreeBSDModuleEvent(struct module *pMod, int enmEventType, void *pvArg)
  * Device I/O Control entry point.
  */
 static int
-VBoxNetAdpFreeBSDCtrlioctl(struct cdev *dev, u_long cmd, caddr_t data, int flags, struct thread *td)
+VBoxNetAdpFreeBSDCtrlioctl(struct cdev *dev, u_long iCmd, caddr_t data, int flags, struct thread *td)
 {
     PVBOXNETADP pAdp;
     PVBOXNETADPREQ pReq = (PVBOXNETADPREQ)data;
     struct ifnet *ifp;
     int rc;
 
-    switch (cmd)
+    switch (iCmd)
     {
         case VBOXNETADP_CTL_ADD:
-            if (   !(cmd & IOC_OUT)   /* paranoia*/
+            if (   !(iCmd & IOC_OUT)   /* paranoia*/
                 || IOCPARM_LEN(iCmd) < sizeof(*pReq))
                 return EINVAL;
 
