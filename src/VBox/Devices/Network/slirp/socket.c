@@ -565,7 +565,7 @@ sorecvfrom(PNATState pData, struct socket *so)
         ssize_t len;
         u_long n = 0;
 #ifdef VBOX_WITH_SLIRP_BSD_MBUF
-        uint8_t *buffer;
+        int size;
 #endif
 
         QSOCKET_LOCK(udb);
@@ -609,27 +609,52 @@ sorecvfrom(PNATState pData, struct socket *so)
         Log2((" did recvfrom %d, errno = %d-%s\n",
                     m->m_len, errno, strerror(errno)));
 #else
-        if (!(m = m_gethdr(pData, M_NOWAIT, MT_HEADER)))
-        {
-            SOCKET_UNLOCK(so);
-            return;
-        }
         /*How many data has been received ?*/
         /*
         * 1. calculate how much we can read
         * 2. read as much as possible
         * 3. attach buffer to allocated header mbuf
         */
-        ioctlsocket(so->s, FIONREAD, &n);
-        Assert(n > 0);
-        buffer = RTMemAlloc(n);
-        Assert(buffer);
-        len = recvfrom(so->s, buffer, n, 0,
+        static int signaled = 0;
+        int rc = ioctlsocket(so->s, FIONREAD, &n);
+        
+        if (rc == -1 && signaled == 0)
+        {
+            LogRel(("NAT: can't fetch amount of bytes on socket %R[natsock], so message will be truncated.\n", so));
+            signaled = 1;
+        } 
+
+        len = sizeof(struct udpiphdr) + ETH_HLEN;
+        len += n;
+        
+        if (len < MSIZE)
+        {
+            size = MCLBYTES;
+        } 
+        else if (len < MCLBYTES)
+        {
+            size = MCLBYTES;
+        }
+        else if(len < MJUM9BYTES)
+        {
+            size = MJUM9BYTES;
+        }
+        else if (len < MJUM16BYTES)
+        {
+            size = MJUM16BYTES;
+        }
+        else
+        {
+            AssertMsgFailed(("Unsupported size"));
+        }
+        m = m_getjcl(pData, M_NOWAIT, MT_HEADER, M_PKTHDR, size);
+        m->m_data += ETH_HLEN; 
+        m->m_pkthdr.header = mtod(m, void *);
+        m->m_data += sizeof(struct udpiphdr); 
+        len = recvfrom(so->s, mtod(m, char *), n, 0,
                             (struct sockaddr *)&addr, &addrlen);
+        m->m_len = len;
         /* @todo (r=vvl) check which flags and type should be passed */
-        if (len > 0)
-            m_append(pData, m, len, buffer);
-        RTMemFree(buffer);
 #endif
         if(len < 0)
         {
@@ -662,8 +687,10 @@ sorecvfrom(PNATState pData, struct socket *so)
              *  last argument should be changed if Slirp will inject IP attributes
              *  Note: Here we can't check if dnsproxy's sent initial request
              */
+#ifndef VBOX_WITH_SLIRP_BSD_MBUF
             if (so->so_fport == htons(53))
                 dnsproxy_answer(pData, so, m);
+#endif
 
 #if 0
             if (m->m_len == len)
@@ -1055,8 +1082,12 @@ send_icmp_to_guest(PNATState pData, char *buff, size_t len, struct socket *so, c
     original_hlen = ip->ip_hl << 2;
     /* saves original ip header and options */
     memcpy(m->m_data + original_hlen, buff + hlen, len - hlen);
+#ifndef VBOX_WITH_SLIRP_BSD_MBUF
     m->m_len = len - hlen + original_hlen;
     ip->ip_len = m->m_len;
+#else
+    ip->ip_len = m_length(m, NULL);
+#endif
     ip->ip_p = IPPROTO_ICMP; /* the original package could be whatever, but we're response via ICMP*/
 
     icp = (struct icmp *)((char *)ip + (ip->ip_hl << 2));

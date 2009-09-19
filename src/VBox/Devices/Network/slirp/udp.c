@@ -179,12 +179,14 @@ udp_input(PNATState pData, register struct mbuf *m, int iphlen)
     /*
      *  handle TFTP
      */
+#ifndef VBOX_WITH_SLIRP_BSD_MBUF
     if (   ntohs(uh->uh_dport) == TFTP_SERVER
         && CTL_CHECK(ntohl(ip->ip_dst.s_addr), CTL_TFTP))
     {
         tftp_input(pData, m);
         goto done;
     }
+#endif
 
     /*
      * Locate pcb for datagram.
@@ -291,7 +293,8 @@ udp_input(PNATState pData, register struct mbuf *m, int iphlen)
         so->so_m = NULL; 
     }
 
-    m_free(pData, so->so_m);   /* used for ICMP if error on sorecvfrom */
+    if (so->so_m)
+        m_free(pData, so->so_m);   /* used for ICMP if error on sorecvfrom */
 
     /* restore the orig mbuf packet */
     m->m_len += iphlen;
@@ -339,7 +342,7 @@ int udp_output2(PNATState pData, struct socket *so, struct mbuf *m,
     ui = mtod(m, struct udpiphdr *);
     memset(ui->ui_x1, 0, 9);
     ui->ui_pr = IPPROTO_UDP;
-    ui->ui_len = htons(m->m_len - sizeof(struct ip)); /* + sizeof (struct udphdr)); */
+    ui->ui_len = htons(m->m_len - sizeof(struct ip)); 
     /* XXXXX Check for from-one-location sockets, or from-any-location sockets */
     ui->ui_src = saddr->sin_addr;
     ui->ui_dst = daddr->sin_addr;

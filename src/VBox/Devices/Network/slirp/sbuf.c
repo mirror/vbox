@@ -76,6 +76,10 @@ void
 sbappend(PNATState pData, struct socket *so, struct mbuf *m)
 {
     int ret = 0;
+#ifdef VBOX_WITH_SLIRP_BSD_MBUF
+    int mlen = 0;
+    uint8_t *buf = NULL;
+#endif
 
     STAM_PROFILE_START(&pData->StatIOSBAppend_pf, a);
     DEBUG_CALL("sbappend");
@@ -85,7 +89,12 @@ sbappend(PNATState pData, struct socket *so, struct mbuf *m)
 
     STAM_COUNTER_INC(&pData->StatIOSBAppend);
     /* Shouldn't happen, but...  e.g. foreign host closes connection */
+#ifndef VBOX_WITH_SLIRP_BSD_MBUF
     if (m->m_len <= 0)
+#else 
+    mlen = m_length(m, NULL);
+    if (mlen <= 0)
+#endif
     {
         STAM_COUNTER_INC(&pData->StatIOSBAppend_zm);
         goto done;
@@ -108,8 +117,22 @@ sbappend(PNATState pData, struct socket *so, struct mbuf *m)
      * We only write if there's nothing in the buffer,
      * ottherwise it'll arrive out of order, and hence corrupt
      */
-    if (!so->so_rcv.sb_cc)
+#ifndef VBOX_WITH_SLIRP_BSD_MBUF
+    if(!so->so_rcv.sb_cc)
         ret = send(so->s, m->m_data, m->m_len, 0);
+#else
+    buf = RTMemAlloc(mlen);
+    if (buf == NULL)
+    {
+        ret = 0;
+        goto no_sent;
+    }    
+    m_copydata(m, 0, mlen, buf);
+    if(!so->so_rcv.sb_cc)
+        ret = send(so->s, buf, mlen, 0);
+    RTMemFree(buf);
+no_sent:
+#endif
 
     if (ret <= 0)
     {
@@ -124,15 +147,23 @@ sbappend(PNATState pData, struct socket *so, struct mbuf *m)
         STAM_PROFILE_STOP(&pData->StatIOSBAppend_pf_wf, a);
         goto done;
     }
+#ifndef VBOX_WITH_SLIRP_BSD_MBUF
     else if (ret != m->m_len)
+#else
+    else if (ret != mlen)
+#endif
     {
         STAM_COUNTER_INC(&pData->StatIOSBAppend_wp);
         /*
          * Something was written, but not everything..
          * sbappendsb the rest
          */
+#ifndef VBOX_WITH_SLIRP_BSD_MBUF
         m->m_len -= ret;
         m->m_data += ret;
+#else
+        m_adj(m, ret);
+#endif
         sbappendsb(pData, &so->so_rcv, m);
         STAM_PROFILE_STOP(&pData->StatIOSBAppend_pf_wp, a);
         goto done;
@@ -153,7 +184,11 @@ sbappendsb(PNATState pData, struct sbuf *sb, struct mbuf *m)
 {
     int len, n,  nn;
 
+#ifndef VBOX_WITH_SLIRP_BSD_MBUF
     len = m->m_len;
+#else
+    len = m_length(m, NULL);
+#endif
 
     STAM_COUNTER_INC(&pData->StatIOSBAppendSB);
     if (sb->sb_wptr < sb->sb_rptr)
@@ -162,7 +197,11 @@ sbappendsb(PNATState pData, struct sbuf *sb, struct mbuf *m)
         n = sb->sb_rptr - sb->sb_wptr;
         if (n > len)
             n = len;
+#ifndef VBOX_WITH_SLIRP_BSD_MBUF
         memcpy(sb->sb_wptr, m->m_data, n);
+#else
+        m_copydata(m, 0, n, sb->sb_wptr);
+#endif
     }
     else
     {
@@ -171,7 +210,11 @@ sbappendsb(PNATState pData, struct sbuf *sb, struct mbuf *m)
         n = sb->sb_data + sb->sb_datalen - sb->sb_wptr;
         if (n > len)
             n = len;
+#ifndef VBOX_WITH_SLIRP_BSD_MBUF
         memcpy(sb->sb_wptr, m->m_data, n);
+#else
+        m_copydata(m, 0, n, sb->sb_wptr);
+#endif
         len -= n;
         if (len)
         {
@@ -179,7 +222,11 @@ sbappendsb(PNATState pData, struct sbuf *sb, struct mbuf *m)
             nn = sb->sb_rptr - sb->sb_data;
             if (nn > len)
                 nn = len;
+#ifndef VBOX_WITH_SLIRP_BSD_MBUF
             memcpy(sb->sb_data, m->m_data+n, nn);
+#else
+            m_copydata(m, n, nn, sb->sb_wptr);
+#endif
             n += nn;
         }
     }

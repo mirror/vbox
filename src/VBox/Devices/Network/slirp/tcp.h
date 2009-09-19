@@ -115,7 +115,11 @@ AssertCompileSize(struct tcphdr, 20);
  *
  * We make this 1460 because we only care about Ethernet in the qemu context.
  */
+#ifndef VBOX_WITH_SLIRP_BSD_MBUF
 #define TCP_MSS 1460
+#else
+#define TCP_MSS (if_mtu - 80)
+#endif
 
 #define TCP_MAXWIN      65535   /* largest value for (unscaled) window */
 

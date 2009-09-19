@@ -174,10 +174,10 @@ __FBSDID("$FreeBSD: src/sys/netinet/libalias/alias_db.c,v 1.71.2.2.4.1 2009/04/1
 #endif
 #else /* !VBOX */
 # include <iprt/assert.h>
-# include <slirp.h>
 # include "alias.h"
 # include "alias_local.h"
 # include "alias_mod.h"
+# include <slirp.h>
 #endif /* VBOX */
 
 #ifndef VBOX

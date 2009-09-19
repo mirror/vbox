@@ -575,7 +575,9 @@ int slirp_init(PNATState *ppData, uint32_t u32NetAddr, uint32_t u32Netmask,
     if (slirp_init_dns_list(pData) < 0)
         fNATfailed = 1;
 
+#ifndef VBOX_WITH_SLIRP_BSD_MBUF
     dnsproxy_init(pData);
+#endif
 
     getouraddr(pData);
     {
@@ -1379,12 +1381,12 @@ static void arp_input(PNATState pData, struct mbuf *m)
             mr->m_len = sizeof(struct arphdr);
             rah = mtod(mr, struct arphdr *);
 #else
-            mr = m_gethdr(pData, M_NOWAIT, MT_HEADER);
-            rah = mtod(mr, struct arphdr *);
-            Assert(mr);
-            mr->m_pkthdr.len = mr->m_len = sizeof(* rah);
-            mr = m_prepend(pData, mr, ETH_HLEN, M_DONTWAIT);
+            mr = m_getcl(pData, M_NOWAIT, MT_HEADER, M_PKTHDR);
             reh = mtod(mr, struct ethhdr *);
+            mr->m_data += ETH_HLEN;
+            rah = mtod(mr, struct arphdr *);
+            mr->m_len = sizeof(struct arphdr);
+            Assert(mr);
             memcpy(reh->h_source, eh->h_source, ETH_ALEN); /* XXX: if_encap will swap src and dst*/
 #endif
 #ifdef VBOX_WITH_NAT_SERVICE
@@ -1471,6 +1473,9 @@ void slirp_input(PNATState pData, const uint8_t *pkt, int pkt_len)
     int proto;
     static bool fWarnedIpv6;
     struct ethhdr *eh = (struct ethhdr*)pkt;
+#ifdef VBOX_WITH_SLIRP_BSD_MBUF
+    int size = 0;
+#endif
 
     Log2(("NAT: slirp_input %d\n", pkt_len));
     if (pkt_len < ETH_HLEN)
@@ -1491,7 +1496,27 @@ void slirp_input(PNATState pData, const uint8_t *pkt, int pkt_len)
 #ifndef VBOX_WITH_SLIRP_BSD_MBUF
     m = m_get(pData);
 #else
-    m = m_gethdr(pData, M_NOWAIT, MT_HEADER);
+    if (pkt_len < MSIZE)
+    {
+        size = MCLBYTES;
+    } 
+    else if (pkt_len < MCLBYTES)
+    {
+        size = MCLBYTES;
+    }
+    else if(pkt_len < MJUM9BYTES)
+    {
+        size = MJUM9BYTES;
+    }
+    else if (pkt_len < MJUM16BYTES)
+    {
+        size = MJUM16BYTES;
+    }
+    else
+    {
+        AssertMsgFailed(("Unsupported size"));
+    }
+    m = m_getjcl(pData, M_NOWAIT, MT_HEADER, M_PKTHDR, size);
 #endif
     if (!m)
     {
@@ -1505,22 +1530,13 @@ void slirp_input(PNATState pData, const uint8_t *pkt, int pkt_len)
 #ifndef VBOX_WITH_SLIRP_BSD_MBUF
     if (M_FREEROOM(m) < pkt_len)
        m_inc(m, pkt_len);
+#endif
 
     m->m_len = pkt_len ;
     memcpy(m->m_data, pkt, pkt_len);
-#else
-    if (m_append(pData, m, pkt_len, pkt) != 1)
-    {
-        AssertMsgFailed(("Can't append incommin to mbuf"));
-        RTMemFree(pkt);
-        m_free(pData, m);
-    }
-#endif
 
-#if 1
     if (pData->port_forwarding_activated == 0)
         activate_port_forwarding(pData, mtod(m, struct ethhdr *));
-#endif
 
     proto = ntohs(*(uint16_t *)(pkt + 12));
     switch(proto)
@@ -1575,6 +1591,8 @@ void if_encap(PNATState pData, uint16_t eth_proto, struct mbuf *m)
     }
 #else
     M_ASSERTPKTHDR(m);
+    m->m_data -= ETH_HLEN;
+    m->m_len += ETH_HLEN;
     eh = mtod(m, struct ethhdr *);
 #endif
 
@@ -1592,7 +1610,7 @@ void if_encap(PNATState pData, uint16_t eth_proto, struct mbuf *m)
 #ifndef VBOX_WITH_SLIRP_BSD_MBUF
     mlen = m->m_len;
 #else
-    mlen = m_length(pData, m);
+    mlen = m_length(m, NULL);
 #endif
     buf = RTMemAlloc(mlen);
     if (buf == NULL)
@@ -1969,7 +1987,11 @@ void slirp_arp_who_has(PNATState pData, uint32_t dst)
     struct ethhdr *ehdr;
     struct arphdr *ahdr;
 
+#ifndef VBOX_WITH_SLIRP_BSD_MBUF
     m = m_get(pData);
+#else
+    m = m_getcl(pData, M_NOWAIT, MT_HEADER, M_PKTHDR);
+#endif
     if (m == NULL)
     {
         LogRel(("NAT: Can't alloc mbuf for ARP request\n"));
@@ -1987,8 +2009,13 @@ void slirp_arp_who_has(PNATState pData, uint32_t dst)
     *(uint32_t *)ahdr->ar_sip = htonl(ntohl(special_addr.s_addr) | CTL_ALIAS);
     memset(ahdr->ar_tha, 0xff, ETH_ALEN); /*broadcast*/
     *(uint32_t *)ahdr->ar_tip = dst;
+#ifndef VBOX_WITH_SLIRP_BSD_MBUF
     m->m_data += if_maxlinkhdr;
     m->m_len = sizeof(struct arphdr);
+#else
+    /* warn!!! should falls in mbuf minimal size */
+    m->m_len = sizeof(struct arphdr) + ETH_HLEN;
+#endif
     if_encap(pData, ETH_P_ARP, m);
     LogRel(("NAT: ARP request sent\n"));
 }

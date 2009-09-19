@@ -33,7 +33,7 @@
 #  define REGISTER_COUNTER(name, storage, type, units, dsc)         \
     do {                                                            \
         PDMDrvHlpSTAMRegisterF(pDrvIns,                             \
-                               &(storage)->Stat ## name,            \
+                               &(storage)->Stat ## name,   \
                                type,                                \
                                STAMVISIBILITY_ALWAYS,               \
                                units,                               \

@@ -325,7 +325,20 @@ freeit:
 
     m->m_len -= hlen;
     m->m_data += hlen;
+#ifndef VBOX_WITH_SLIRP_BSD_MBUF
     icp = mtod(m, struct icmp *);
+#else
+    if (m->m_next != NULL)
+    {
+        char *buf = RTMemAlloc(icmplen);
+        m_copydata(m, 0, icmplen, buf);
+        icp = (struct icmp *)buf;
+    }
+    else
+    {
+        icp = mtod(m, struct icmp *);
+    }
+#endif
     if (cksum(m, icmplen))
     {
         icmpstat.icps_checksum++;
@@ -387,7 +400,7 @@ freeit:
                     if (sendto(pData->icmp_socket.s, icp, icmplen, 0,
                               (struct sockaddr *)&addr, sizeof(addr)) == -1)
                     {
-                        Log((dfd,"icmp_input udp sendto tx errno = %d-%s\n",
+                        LogRel((dfd,"icmp_input udp sendto tx errno = %d-%s\n",
                                     errno, strerror(errno)));
                         icmp_error(pData, m, ICMP_UNREACH, ICMP_UNREACH_NET, 0, strerror(errno));
                     }
@@ -454,6 +467,10 @@ freeit:
             icmpstat.icps_badtype++;
             m_freem(pData, m);
     } /* switch */
+#ifdef VBOX_WITH_SLIRP_BSD_MBUF
+    if (m->m_next != NULL && icp != NULL)
+        RTMemFree(icp);
+#endif
 
 end_error:
     /* m is m_free()'d xor put in a socket xor or given to ip_send */
@@ -486,15 +503,15 @@ void icmp_error(PNATState pData, struct mbuf *msrc, u_char type, u_char code, in
     register struct ip *ip;
     register struct icmp *icp;
     register struct mbuf *m;
-#ifdef VBOX_WITH_SLIRP_BSD_MBUF
-    uint8_t *buf; /*(vvl) probably should be used mbuf of corresponded size instead*/
-#endif
+    int new_m_size = 0;
+    int size = 0;
 
     DEBUG_CALL("icmp_error");
     DEBUG_ARG("msrc = %lx", (long )msrc);
     DEBUG_ARG("msrc_len = %d", msrc ? msrc->m_len : 0);
 #ifdef VBOX_WITH_SLIRP_BSD_MBUF
-    M_ASSERTPKTHDR(msrc);
+    if (msrc != NULL)
+        M_ASSERTPKTHDR(msrc);
 #endif
 
     if (type!=ICMP_UNREACH && type!=ICMP_TIMXCEED)
@@ -531,40 +548,53 @@ void icmp_error(PNATState pData, struct mbuf *msrc, u_char type, u_char code, in
 
 #ifndef VBOX_WITH_SLIRP_BSD_MBUF
     /* make a copy */
-    if (!(m = m_get(pData)))
-        goto end_error;                    /* get mbuf */
+    m = m_get(pData);
+#else
+    new_m_size = sizeof(struct ip) + ICMP_MINLEN + msrc->m_len + ICMP_MAXDATALEN;
+    if (new_m_size < MSIZE)
     {
-        int new_m_size;
-        m->m_data += if_maxlinkhdr;
-        new_m_size = sizeof(struct ip) + ICMP_MINLEN + msrc->m_len + ICMP_MAXDATALEN;
-        if (new_m_size > m->m_size)
-            m_inc(m, new_m_size);
+        size = MCLBYTES;
+    } 
+    else if (new_m_size < MCLBYTES)
+    {
+        size = MCLBYTES;
     }
+    else if(new_m_size < MJUM9BYTES)
+    {
+        size = MJUM9BYTES;
+    }
+    else if (new_m_size < MJUM16BYTES)
+    {
+        size = MJUM16BYTES;
+    }
+    else
+    {
+        AssertMsgFailed(("Unsupported size"));
+    }
+    m = m_getjcl(pData, M_NOWAIT, MT_HEADER, M_PKTHDR, size);
+#endif
+    if (m == NULL)
+        goto end_error;                    /* get mbuf */
+
+    m->m_data += if_maxlinkhdr;
+#ifdef VBOX_WITH_SLIRP_BSD_MBUF
+    m->m_pkthdr.header = mtod(m, void *);
+#else
+    new_m_size = sizeof(struct ip) + ICMP_MINLEN + msrc->m_len + ICMP_MAXDATALEN;
+    if (new_m_size > m->m_size)
+        m_inc(m, new_m_size);
+#endif
 
     memcpy(m->m_data, msrc->m_data, msrc->m_len);
     m->m_len = msrc->m_len;                /* copy msrc to m */
-#else
-    if (!(m = m_gethdr(pData, M_DONTWAIT, MT_HEADER)))
-        goto end_error;                    /* get mbuf */
-    if (m_append(pData, m, m_length(msrc, NULL), mtod(msrc, const char *)) == 0)
-    {
-        m_freem(pData, m);
-        goto end_error;
-    }
-    m->m_pkthdr.header = mtod(m, void *);
-#endif
 
     /* make the header of the reply packet */
     ip   = mtod(m, struct ip *);
     hlen = sizeof(struct ip );             /* no options in reply */
 
     /* fill in icmp */
-#ifndef VBOX_WITH_SLIRP_BSD_MBUF
     m->m_data += hlen;
     m->m_len  -= hlen;
-#else
-    m_adj(m, hlen);
-#endif
 
     icp = mtod(m, struct icmp *);
 
@@ -573,11 +603,7 @@ void icmp_error(PNATState pData, struct mbuf *msrc, u_char type, u_char code, in
     else if (s_ip_len > ICMP_MAXDATALEN)   /* maximum size */
         s_ip_len = ICMP_MAXDATALEN;
 
-#ifndef VBOX_WITH_SLIRP_BSD_MBUF
     m->m_len = ICMP_MINLEN + s_ip_len;     /* 8 bytes ICMP header */
-#else
-    m_adj(m, ICMP_MINLEN);
-#endif
 
     /* min. size = 8+sizeof(struct ip)+8 */
 
@@ -586,19 +612,8 @@ void icmp_error(PNATState pData, struct mbuf *msrc, u_char type, u_char code, in
     icp->icmp_id = 0;
     icp->icmp_seq = 0;
 
-#ifndef VBOX_WITH_SLIRP_BSD_MBUF
     memcpy(&icp->icmp_ip, msrc->m_data, s_ip_len);   /* report the ip packet */
-#else
-    buf = RTMemAlloc(s_ip_len);
-    if (buf == NULL) 
-    {
-        m_free(pData, m);
-        LogRel(("NAT:ICMP: can't allocate intermediate buffer, icmp error wasn't sent\n"));
-        goto end_error;
-    }
-    m_copydata(msrc, 0, s_ip_len, buf);
-    m_append(pData, m, s_ip_len, buf); 
-#endif
+
     HTONS(icp->icmp_ip.ip_len);
     HTONS(icp->icmp_ip.ip_id);
     HTONS(icp->icmp_ip.ip_off);

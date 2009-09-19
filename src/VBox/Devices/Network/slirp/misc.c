@@ -237,6 +237,7 @@ uma_zone_t uma_zsecond_create(char *name, ctor_t ctor,
     zone->pfFini = fini;
     zone->pfAlloc = slirp_uma_alloc;
     zone->pfFree = slirp_uma_free;
+    zone->size = master->size;
     return zone;
 }
 void uma_zone_set_max(uma_zone_t zone, int max)

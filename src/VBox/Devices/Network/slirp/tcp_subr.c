@@ -121,7 +121,11 @@ tcp_respond(PNATState pData, struct tcpcb *tp, struct tcpiphdr *ti, struct mbuf 
         win = sbspace(&tp->t_socket->so_rcv);
     if (m == 0)
     {
+#ifndef VBOX_WITH_SLIRP_BSD_MBUF
         if ((m = m_get(pData)) == NULL)
+#else
+        if ((m = m_gethdr(pData, M_DONTWAIT, MT_HEADER)) == NULL)
+#endif
             return;
 #ifdef TCP_COMPAT_42
         tlen = 1;

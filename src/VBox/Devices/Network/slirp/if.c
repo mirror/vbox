@@ -8,7 +8,8 @@
 #include <slirp.h>
 
 
-#define ifs_init(ifm) ((ifm)->ifs_next = (ifm)->ifs_prev = (ifm))
+#ifndef VBOX_WITH_SLIRP_BSD_MBUF
+# define ifs_init(ifm) ((ifm)->ifs_next = (ifm)->ifs_prev = (ifm))
 
 static void ifs_insque(struct mbuf *ifm, struct mbuf *ifmhead)
 {
@@ -23,6 +24,8 @@ static void ifs_remque(struct mbuf *ifm)
     ifm->ifs_prev->ifs_next = ifm->ifs_next;
     ifm->ifs_next->ifs_prev = ifm->ifs_prev;
 }
+#else
+#endif
 
 void
 if_init(PNATState pData)
@@ -31,13 +34,21 @@ if_init(PNATState pData)
     if_maxlinkhdr = 14;
     if_queued = 0;
     if_thresh = 10;
+    if_comp = IF_AUTOCOMP;
+#ifndef VBOX_WITH_SLIRP_BSD_MBUF
     if_mtu = 1500;
     if_mru = 1500;
-    if_comp = IF_AUTOCOMP;
     if_fastq.ifq_next = if_fastq.ifq_prev = &if_fastq;
     if_batchq.ifq_next = if_batchq.ifq_prev = &if_batchq;
 /*  sl_compress_init(&comp_s); */
     next_m = &if_batchq;
+#else
+    if_mtu = 1500;
+    if_mru = 1500;
+    TAILQ_INIT(&if_fastq);
+    TAILQ_INIT(&if_batchq);
+    next_m = TAILQ_FIRST(&if_fastq);
+#endif
 }
 
 /*
@@ -63,6 +74,7 @@ if_output(PNATState pData, struct socket *so, struct mbuf *ifm)
     DEBUG_ARG("so = %lx", (long)so);
     DEBUG_ARG("ifm = %lx", (long)ifm);
 
+#ifndef VBOX_WITH_SLIRP_BSD_MBUF
     /*
      * First remove the mbuf from m_usedlist,
      * since we're gonna use m_next and m_prev ourselves
@@ -73,6 +85,7 @@ if_output(PNATState pData, struct socket *so, struct mbuf *ifm)
         remque(pData, ifm);
         ifm->m_flags &= ~M_USEDLIST;
     }
+#endif
 
     /*
      * See if there's already a batchq list for this session.
@@ -81,13 +94,19 @@ if_output(PNATState pData, struct socket *so, struct mbuf *ifm)
      * We mustn't put this packet back on the fastq (or we'll send it out of order)
      * XXX add cache here?
      */
+#ifndef VBOX_WITH_SLIRP_BSD_MBUF
     for (ifq = if_batchq.ifq_prev; ifq != &if_batchq; ifq = ifq->ifq_prev)
+#else
+    TAILQ_FOREACH_REVERSE(ifq, &if_batchq, if_queue, m_ifq)
+#endif
     {
         if (so == ifq->ifq_so)
         {
             /* A match! */
             ifm->ifq_so = so;
+#ifndef VBOX_WITH_SLIRP_BSD_MBUF
             ifs_insque(ifm, ifq->ifs_prev);
+#endif
             goto diddit;
         }
     }
@@ -95,7 +114,11 @@ if_output(PNATState pData, struct socket *so, struct mbuf *ifm)
     /* No match, check which queue to put it on */
     if (so && (so->so_iptos & IPTOS_LOWDELAY))
     {
+#ifndef VBOX_WITH_SLIRP_BSD_MBUF
         ifq = if_fastq.ifq_prev;
+#else
+        ifq = TAILQ_LAST(&if_fastq, if_queue);
+#endif
         on_fastq = 1;
         /*
          * Check if this packet is a part of the last
@@ -104,10 +127,13 @@ if_output(PNATState pData, struct socket *so, struct mbuf *ifm)
         if (ifq->ifq_so == so)
         {
             ifm->ifq_so = so;
+#ifndef VBOX_WITH_SLIRP_BSD_MBUF
             ifs_insque(ifm, ifq->ifs_prev);
+#endif
             goto diddit;
         }
     }
+#ifndef VBOX_WITH_SLIRP_BSD_MBUF
     else
         ifq = if_batchq.ifq_prev;
 
@@ -115,6 +141,15 @@ if_output(PNATState pData, struct socket *so, struct mbuf *ifm)
     ifm->ifq_so = so;
     ifs_init(ifm);
     insque(pData, ifm, ifq);
+#else
+    else
+    {
+        TAILQ_INSERT_TAIL(&if_batchq, ifm, m_ifq);
+        ifq = TAILQ_LAST(&if_batchq, if_queue);
+    }
+    
+    /* queue already created */
+#endif
 
 diddit:
     ++if_queued;
@@ -135,11 +170,13 @@ diddit:
             && so->so_nqueued >= 6
             && (so->so_nqueued - so->so_queued) >= 3)
         {
+#ifndef VBOX_WITH_SLIRP_BSD_MBUF
             /* Remove from current queue... */
             remque(pData, ifm->ifs_next);
 
             /* ...And insert in the new.  That'll teach ya! */
             insque(pData, ifm->ifs_next, &if_batchq);
+#endif
         }
     }
 
@@ -171,6 +208,11 @@ void
 if_start(PNATState pData)
 {
     struct mbuf *ifm, *ifqt;
+#ifdef VBOX_WITH_SLIRP_BSD_MBUF
+    struct if_queue *pqueue = NULL;
+    ifm = NULL;
+    ifqt = NULL;
+#endif
 
     DEBUG_CALL("if_start");
 
@@ -186,6 +228,7 @@ if_start(PNATState pData)
             return;
         }
 
+#ifndef VBOX_WITH_SLIRP_BSD_MBUF
         /*
          * See which queue to get next packet from
          * If there's something in the fastq, select it immediately
@@ -214,6 +257,21 @@ if_start(PNATState pData)
             insque(pData, ifm->ifs_next, ifqt);
             ifs_remque(ifm);
         }
+#else
+        if (!TAILQ_EMPTY(&if_fastq))
+        {
+            pqueue = &if_fastq;
+        }
+        else if (!TAILQ_EMPTY(&if_batchq))
+        {
+            pqueue = &if_batchq;
+        }
+        if (pqueue != NULL) {
+            ifm = TAILQ_FIRST(pqueue);
+            TAILQ_REMOVE(pqueue, ifm, m_ifq);
+            --if_queued;
+        }
+#endif
 
         /* Update so_queued */
         if (ifm->ifq_so)

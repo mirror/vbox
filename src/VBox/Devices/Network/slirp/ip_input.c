@@ -71,21 +71,17 @@ static struct libalias *select_alias(PNATState pData, struct mbuf* m)
     struct udphdr *udp = NULL;
     struct ip *pip = NULL;
 
+#ifndef VBOX_WITH_SLIRP_BSD_MBUF
     if (m->m_la)
         return m->m_la;
-
-#if 0
-    pip = mtod(m, struct ip *);
-    if (pip->ip_p == IPPROTO_UDP) {
-        udp = (struct udphdr *)((uint8_t *)pip + (pip->ip_hl << 2));
-        if (   pip->ip_dst.s_addr == htonl(ntohl(special_addr.s_addr) | CTL_DNS) 
-            && htons(udp->uh_dport) == 53)
-        {
-            return pData->dns_alias;
-        }
-        /* here we can add catch for dhcp and tftp servers */
+#else
+    struct m_tag *t;
+    if (t = m_tag_find(m, PACKET_TAG_ALIAS, NULL) != 0)
+    {
+        return (struct libalias *)&t[1]; 
     }
 #endif
+
     return la;
 }
 
@@ -98,6 +94,8 @@ ip_input(PNATState pData, struct mbuf *m)
 {
     register struct ip *ip;
     int hlen = 0;
+    int mlen = 0;
+
     STAM_PROFILE_START(&pData->StatIP_input, a);
 
     DEBUG_CALL("ip_input");
@@ -115,7 +113,9 @@ ip_input(PNATState pData, struct mbuf *m)
         Log2(("NAT: LibAlias return %d\n", rc));
     }
 
-    if (m->m_len < sizeof(struct ip))
+    mlen = m->m_len;
+
+    if (mlen < sizeof(struct ip))
     {
         ipstat.ips_toosmall++;
         STAM_PROFILE_STOP(&pData->StatIP_input, a);
@@ -167,14 +167,14 @@ ip_input(PNATState pData, struct mbuf *m)
      * Trim mbufs if longer than we expect.
      * Drop packet if shorter than we expect.
      */
-    if (m->m_len < ip->ip_len)
+    if (mlen < ip->ip_len)
     {
         ipstat.ips_tooshort++;
         goto bad;
     }
 
     /* Should drop packet if mbuf too long? hmmm... */
-    if (m->m_len > ip->ip_len)
+    if (mlen > ip->ip_len)
         m_adj(m, ip->ip_len - m->m_len);
 
     /* check ip_ttl for a correct ICMP reply */
@@ -370,7 +370,11 @@ found:
         fp->ipq_nfrags++;
     }
 
+#ifndef VBOX_WITH_SLIRP_BSD_MBUF
 #define GETIP(m)    ((struct ip*)(MBUF_IP_HEADER(m)))
+#else
+#define GETIP(m)    ((struct ip*)((m)->m_pkthdr.header))
+#endif
 
 
     /*
