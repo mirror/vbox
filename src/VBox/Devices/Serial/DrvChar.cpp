@@ -283,6 +283,20 @@ static DECLCALLBACK(int) drvCharSetModemLines(PPDMICHAR pInterface, bool Request
     return VINF_SUCCESS;
 }
 
+/**
+ * Sets the TD line into break condition.
+ *
+ * @returns VBox status code.
+ * @param   pInterface  Pointer to the interface structure containing the called function pointer.
+ * @param   fBreak      Set to true to let the device send a break false to put into normal operation.
+ * @thread  Any thread.
+ */
+static DECLCALLBACK(int) drvCharSetBreak(PPDMICHAR pInterface, bool fBreak)
+{
+    /* Nothing to do here. */
+    return VINF_SUCCESS;
+}
+
 /* -=-=-=-=- driver interface -=-=-=-=- */
 
 /**
@@ -306,6 +320,7 @@ static DECLCALLBACK(int) drvCharConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHand
     pThis->IChar.pfnWrite                   = drvCharWrite;
     pThis->IChar.pfnSetParameters           = drvCharSetParameters;
     pThis->IChar.pfnSetModemLines           = drvCharSetModemLines;
+    pThis->IChar.pfnSetBreak                = drvCharSetBreak;
 
     /*
      * Get the ICharPort interface of the above driver/device.

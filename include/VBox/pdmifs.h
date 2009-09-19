@@ -1445,6 +1445,15 @@ typedef struct PDMICHARPORT
      * @thread  Any thread.
      */
     DECLR3CALLBACKMEMBER(int, pfnNotifyStatusLinesChanged,(PPDMICHARPORT pInterface, uint32_t fNewStatusLines));
+
+    /**
+     * Notify the device/driver that a break occurred.
+     *
+     * @returns VBox statsus code.
+     * @param   pInterface      Pointer to the interface structure containing the called function pointer.
+     * @thread  Any thread.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnNotifyBreak,(PPDMICHARPORT pInterface));
 } PDMICHARPORT;
 
 
@@ -1491,6 +1500,15 @@ typedef struct PDMICHAR
      */
     DECLR3CALLBACKMEMBER(int, pfnSetModemLines,(PPDMICHAR pInterface, bool fRequestToSend, bool fDataTerminalReady));
 
+    /**
+     * Sets the TD line into break condition.
+     *
+     * @returns VBox status code.
+     * @param   pInterface  Pointer to the interface structure containing the called function pointer.
+     * @param   fBreak      Set to true to let the device send a break false to put into normal operation.
+     * @thread  Any thread.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnSetBreak,(PPDMICHAR pInterface, bool fBreak));
 } PDMICHAR;
 
 
