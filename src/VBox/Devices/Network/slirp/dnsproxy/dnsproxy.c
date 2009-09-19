@@ -132,7 +132,11 @@ timeout(PNATState pData, struct socket *so, void *arg)
             sofree(pData, so1);
             return;
         }
+#ifndef VBOX_WITH_SLIRP_BSD_MBUF
         m = m_get(pData);
+#else
+        m = m_getcl(pData, M_NOWAIT, MT_HEADER, M_PKTHDR);
+#endif
         if (m == NULL)
         {
             LogRel(("NAT: Can't allocate mbuf\n"));
