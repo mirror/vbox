@@ -71,6 +71,9 @@ void slirp_set_tcp_rcvspace(PNATState pData, int kilobytes);
 void slirp_set_tcp_sndspace(PNATState pData, int kilobytes);
 
 int slirp_set_binding_address(PNATState, char *addr);
+#ifdef VBOX_WITH_SLIRP_BSD_MBUF
+void slirp_set_mtu(PNATState, int);
+#endif
 
 #if defined(RT_OS_WINDOWS)
 
