@@ -161,7 +161,8 @@ udp_input(PNATState pData, register struct mbuf *m, int iphlen)
         goto done;
     }
 
-    if (   ntohs(uh->uh_dport) == 53
+    if (   pData->use_host_resolver 
+        && ntohs(uh->uh_dport) == 53
         && CTL_CHECK(ntohl(ip->ip_dst.s_addr), CTL_DNS))
     {
         struct sockaddr_in dst, src;
