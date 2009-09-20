@@ -2062,3 +2062,17 @@ void slirp_arp_cache_add(PNATState pData, uint32_t ip, const uint8_t *ether)
     memcpy(ac->ether, ether, ETH_ALEN);
     LIST_INSERT_HEAD(&pData->arp_cache, ac, list);
 }
+
+#ifdef VBOX_WITH_SLIRP_BSD_MBUF
+void slirp_set_mtu(PNATState pData, int mtu)
+{
+    if (mtu < 20 || mtu >= 16000)
+    {
+        LogRel(("NAT: mtu(%d) is out of range (20;16000] mtu forcely assigned to 1500\n", mtu));
+        mtu = 1500;
+    }
+    if_mtu = 
+    if_mru = mtu;
+}
+#endif
+void slirp_set_dhcp_mtu(PNATState, int);

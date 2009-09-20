@@ -805,6 +805,9 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandl
     if (!CFGMR3AreValuesValid(pCfgHandle,
                               "PassDomain\0TFTPPrefix\0BootFile\0Network"
                               "\0NextServer\0DNSProxy\0BindIP\0UseHostResolver\0"
+#ifdef VBOX_WITH_SLIRP_BSD_MBUF
+                              "SlirpMTU\0"
+#endif
                               "SocketRcvBuf\0SocketSndBuf\0TcpRcvSpace\0TcpSndSpace\0"))
         return PDMDRV_SET_ERROR(pDrvIns, VERR_PDM_DRVINS_UNKNOWN_CFG_VALUES,
                                 N_("Unknown NAT configuration option, only supports PassDomain,"
@@ -840,6 +843,10 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandl
     GET_S32(rc, pThis, pCfgHandle, "DNSProxy", fDNSProxy);
     int fUseHostResolver = 0;
     GET_S32(rc, pThis, pCfgHandle, "UseHostResolver", fUseHostResolver);
+#ifdef VBOX_WITH_SLIRP_BSD_MBUF
+    int MTU = 1500;
+    GET_S32(rc, pThis, pCfgHandle, "SlirpMTU", MTU);
+#endif
 
     /*
      * Query the network port interface.
@@ -888,6 +895,9 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandl
         slirp_set_dhcp_TFTP_bootfile(pThis->pNATState, pThis->pszBootFile);
         slirp_set_dhcp_next_server(pThis->pNATState, pThis->pszNextServer);
         slirp_set_dhcp_dns_proxy(pThis->pNATState, !!fDNSProxy);
+#ifdef VBOX_WITH_SLIRP_BSD_MBUF
+        slirp_set_mtu(pThis->pNATState, MTU);
+#endif
         char *pszBindIP = NULL;
         GET_STRING_ALLOC(rc, pThis, pCfgHandle, "BindIP", pszBindIP);
         rc = slirp_set_binding_address(pThis->pNATState, pszBindIP);

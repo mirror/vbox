@@ -35,16 +35,14 @@ if_init(PNATState pData)
     if_queued = 0;
     if_thresh = 10;
     if_comp = IF_AUTOCOMP;
-#ifndef VBOX_WITH_SLIRP_BSD_MBUF
     if_mtu = 1500;
     if_mru = 1500;
+#ifndef VBOX_WITH_SLIRP_BSD_MBUF
     if_fastq.ifq_next = if_fastq.ifq_prev = &if_fastq;
     if_batchq.ifq_next = if_batchq.ifq_prev = &if_batchq;
 /*  sl_compress_init(&comp_s); */
     next_m = &if_batchq;
 #else
-    if_mtu = 1500;
-    if_mru = 1500;
     TAILQ_INIT(&if_fastq);
     TAILQ_INIT(&if_batchq);
     next_m = TAILQ_FIRST(&if_fastq);
