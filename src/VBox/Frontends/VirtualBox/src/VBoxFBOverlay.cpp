@@ -932,29 +932,32 @@ static VBoxVHWATexture* vboxVHWATextureCreate(const QRect & aRect, const VBoxVHW
     return new VBoxVHWATexture(aRect, aFormat);
 }
 
-class VBoxVHWAGlShader
+class VBoxVHWAGlShaderComponent
 {
 public:
-    VBoxVHWAGlShader(const char *aRcName, GLenum aType) :
-        mShader(0),
+    VBoxVHWAGlShaderComponent(const char *aRcName, GLenum aType) :
         mRcName(aRcName),
-        mType(aType)
+        mType(aType),
+        mInitialized(false)
     {}
 
-//    virtual ~VBoxVHWAGlShader();
+//    virtual ~VBoxVHWAGlShaderComponent();
+
 
     int init();
 //    virtual int initUniforms(class VBoxVHWAGlProgram * pProgram){}
-    void uninit();
-    bool isInitialized() { return mShader; }
-    GLuint shader() {return mShader;}
+//    void uninit();
+
+    const char * contents() { return mSource.constData(); }
+    bool isInitialized() { return mInitialized; }
 private:
-    GLuint mShader;
     const char *mRcName;
     GLenum mType;
+    QByteArray mSource;
+    bool mInitialized;
 };
 
-int VBoxVHWAGlShader::init()
+int VBoxVHWAGlShaderComponent::init()
 {
 //    Assert(!isInitialized());
     if(isInitialized())
@@ -970,18 +973,91 @@ int VBoxVHWAGlShader::init()
     QTextStream is(&fi);
     QString program = is.readAll();
 
-    mShader = vboxglCreateShader(mType);
-    Assert(mShader);
-    if(!mShader)
-        return VERR_GENERAL_FAILURE;
+    mSource = program.toAscii();
 
- //   int length = program.length();
-    QByteArray asciiStr = program.toAscii();
-    const char * contents = asciiStr.constData();
-    GLint length = -1;
+    mInitialized = true;
+    return VINF_SUCCESS;
+}
+
+class VBoxVHWAGlShader
+{
+public:
+    VBoxVHWAGlShader() :
+        mType(GL_FRAGMENT_SHADER),
+        mcComponents(0)
+    {}
+
+    VBoxVHWAGlShader & operator= (const VBoxVHWAGlShader & other)
+    {
+        mcComponents = other.mcComponents;
+        mType = other.mType;
+        if(mcComponents)
+        {
+            maComponents = new VBoxVHWAGlShaderComponent*[mcComponents];
+            memcpy(maComponents, other.maComponents, mcComponents * sizeof(maComponents[0]));
+        }
+        return *this;
+    }
+
+    VBoxVHWAGlShader(const VBoxVHWAGlShader & other)
+    {
+        mcComponents = other.mcComponents;
+        mType = other.mType;
+        if(mcComponents)
+        {
+            maComponents = new VBoxVHWAGlShaderComponent*[mcComponents];
+            memcpy(maComponents, other.maComponents, mcComponents * sizeof(maComponents[0]));
+        }
+    }
+
+    VBoxVHWAGlShader(GLenum aType, VBoxVHWAGlShaderComponent ** aComponents, int cComponents)
+        : mType(aType)
+    {
+        maComponents = new VBoxVHWAGlShaderComponent*[cComponents];
+        mcComponents = cComponents;
+        memcpy(maComponents, aComponents, cComponents * sizeof(maComponents[0]));
+    }
+
+    ~VBoxVHWAGlShader() {delete[] maComponents;}
+    int init();
+    GLenum type() { return mType; }
+    GLuint shader() { return mShader; }
+private:
+    GLenum mType;
+    GLuint mShader;
+    VBoxVHWAGlShaderComponent ** maComponents;
+    int mcComponents;
+};
+
+int VBoxVHWAGlShader::init()
+{
+    int rc;
+    int *length;
+    const char **sources;
+    length = new int[mcComponents];
+    sources = new const char*[mcComponents];
+    for(int i = 0; i < mcComponents; i++)
+    {
+        length[i] = -1;
+        rc = maComponents[i]->init();
+        Assert(RT_SUCCESS(rc));
+        if(RT_FAILURE(rc))
+            return rc;
+        sources[i] = maComponents[i]->contents();
+    }
+
+#ifdef DEBUG
+    VBOXQGLLOG(("\ncompiling shaders:\n------------\n"));
+    for(int i = 0; i < mcComponents; i++)
+    {
+        VBOXQGLLOG(("**********\n%s\n***********\n", sources[i]));
+    }
+    VBOXQGLLOG(("------------\n"));
+#endif
+    mShader = vboxglCreateShader(mType);
 
     VBOXQGL_CHECKERR(
-            vboxglShaderSource(mShader, 1, &contents, &length);
+            vboxglShaderSource(mShader, mcComponents, sources, length);
             );
 
     VBOXQGL_CHECKERR(
@@ -996,8 +1072,7 @@ int VBoxVHWAGlShader::init()
 #ifdef DEBUG
     GLchar * pBuf = new GLchar[16300];
     vboxglGetShaderInfoLog(mShader, 16300, NULL, pBuf);
-    VBOXQGLLOG(("compile log for shader:\n-----------\n%s\n---------\n", contents));
-    VBOXQGLLOG(("%s\n**********\n", pBuf));
+    VBOXQGLLOG(("\ncompile log:\n-----------\n%s\n---------\n", pBuf));
     delete pBuf;
 #endif
 
@@ -1008,23 +1083,14 @@ int VBoxVHWAGlShader::init()
     }
 
 
-
     VBOXQGL_CHECKERR(
             vboxglDeleteShader(mShader);
             );
     mShader = 0;
+
+    delete[] length;
+    delete[] sources;
     return VERR_GENERAL_FAILURE;
-}
-
-void VBoxVHWAGlShader::uninit()
-{
-    if(!isInitialized())
-        return;
-
-    VBOXQGL_CHECKERR(
-            vboxglDeleteShader(mShader);
-            );
-    mShader = 0;
 }
 
 class VBoxVHWAGlProgram
@@ -1042,20 +1108,22 @@ public:
     GLuint program() {return mProgram;}
 private:
     GLuint mProgram;
-    VBoxVHWAGlShader ** mpShaders;
+    VBoxVHWAGlShader *mShaders;
     int mcShaders;
 };
 
 VBoxVHWAGlProgram::VBoxVHWAGlProgram(VBoxVHWAGlShader ** apShaders, int acShaders) :
        mProgram(0),
-       mpShaders(NULL),
        mcShaders(0)
 {
     Assert(acShaders);
     if(acShaders)
     {
-        mpShaders = (VBoxVHWAGlShader **)malloc(sizeof(VBoxVHWAGlShader *) * acShaders);
-        memcpy(mpShaders, apShaders, sizeof(VBoxVHWAGlShader *) * acShaders);
+        mShaders = new VBoxVHWAGlShader[acShaders];
+        for(int i = 0; i < acShaders; i++)
+        {
+            mShaders[i] = *apShaders[i];
+        }
         mcShaders = acShaders;
     }
 }
@@ -1064,9 +1132,9 @@ VBoxVHWAGlProgram::~VBoxVHWAGlProgram()
 {
     uninit();
 
-    if(mpShaders)
+    if(mShaders)
     {
-        free(mpShaders);
+        delete[] mShaders;
     }
 }
 
@@ -1083,7 +1151,7 @@ int VBoxVHWAGlProgram::init()
     int rc = VINF_SUCCESS;
     for(int i = 0; i < mcShaders; i++)
     {
-        int rc = mpShaders[i]->init();
+        int rc = mShaders[i].init();
         Assert(RT_SUCCESS(rc));
         if(RT_FAILURE(rc))
         {
@@ -1102,7 +1170,7 @@ int VBoxVHWAGlProgram::init()
         for(int i = 0; i < mcShaders; i++)
         {
             VBOXQGL_CHECKERR(
-                    vboxglAttachShader(mProgram, mpShaders[i]->shader());
+                    vboxglAttachShader(mProgram, mShaders[i].shader());
                     );
         }
 
@@ -1475,37 +1543,37 @@ private:
 //    VBoxVHWAGlProgramVHWA * mCurrentProgram;
     ProgramList mPrograms;
 
-    VBoxVHWAGlShader mShaderCConvApplyAYUV;
+    VBoxVHWAGlShaderComponent mShaderCConvApplyAYUV;
 
-    VBoxVHWAGlShader mShaderCConvAYUV;
-//    VBoxVHWAGlShader mShaderCConvAYUVVoid;
-    VBoxVHWAGlShader mShaderCConvBGR;
-//    VBoxVHWAGlShader mShaderCConvBGRVoid;
-    VBoxVHWAGlShader mShaderCConvUYVY;
-//    VBoxVHWAGlShader mShaderCConvUYVYVoid;
-    VBoxVHWAGlShader mShaderCConvYUY2;
-//    VBoxVHWAGlShader mShaderCConvYUY2Void;
-    VBoxVHWAGlShader mShaderCConvYV12;
-//    VBoxVHWAGlShader mShaderCConvYV12Void;
-    VBoxVHWAGlShader mShaderSplitBGRA;
+    VBoxVHWAGlShaderComponent mShaderCConvAYUV;
+//    VBoxVHWAGlShaderComponent mShaderCConvAYUVVoid;
+    VBoxVHWAGlShaderComponent mShaderCConvBGR;
+//    VBoxVHWAGlShaderComponent mShaderCConvBGRVoid;
+    VBoxVHWAGlShaderComponent mShaderCConvUYVY;
+//    VBoxVHWAGlShaderComponent mShaderCConvUYVYVoid;
+    VBoxVHWAGlShaderComponent mShaderCConvYUY2;
+//    VBoxVHWAGlShaderComponent mShaderCConvYUY2Void;
+    VBoxVHWAGlShaderComponent mShaderCConvYV12;
+//    VBoxVHWAGlShaderComponent mShaderCConvYV12Void;
+    VBoxVHWAGlShaderComponent mShaderSplitBGRA;
 
     /* expected the dst surface texture to be bound to the 1-st tex unit */
-    VBoxVHWAGlShader mShaderCKeyDst;
+    VBoxVHWAGlShaderComponent mShaderCKeyDst;
     /* expected the dst surface texture to be bound to the 2-nd tex unit */
-    VBoxVHWAGlShader mShaderCKeyDst2;
-//    VBoxVHWAGlShader mShaderCKeyDstVoid;
-//    VBoxVHWAGlShader mShaderCKeySrc;
-//    VBoxVHWAGlShader mShaderCKeySrcVoid;
+    VBoxVHWAGlShaderComponent mShaderCKeyDst2;
+//    VBoxVHWAGlShaderComponent mShaderCKeyDstVoid;
+//    VBoxVHWAGlShaderComponent mShaderCKeySrc;
+//    VBoxVHWAGlShaderComponent mShaderCKeySrcVoid;
 
-    VBoxVHWAGlShader mShaderMainOverlay;
-    VBoxVHWAGlShader mShaderMainOverlayNoCKey;
+    VBoxVHWAGlShaderComponent mShaderMainOverlay;
+    VBoxVHWAGlShaderComponent mShaderMainOverlayNoCKey;
 
     friend class VBoxVHWAGlProgramVHWA;
 };
 
 VBoxVHWAGlProgramVHWA * VBoxVHWAGlProgramMngr::createProgram(uint32_t type, uint32_t fourcc)
 {
-    VBoxVHWAGlShader * apShaders[16];
+    VBoxVHWAGlShaderComponent * apShaders[16];
     uint32_t cShaders = 0;
 
     /* workaround for NVIDIA driver bug: ensure we attach the shader before those it is used in */
@@ -1586,7 +1654,10 @@ VBoxVHWAGlProgramVHWA * VBoxVHWAGlProgramMngr::createProgram(uint32_t type, uint
 
     Assert(cShaders <= RT_ELEMENTS(apShaders));
 
-    VBoxVHWAGlProgramVHWA *pProgram =  new VBoxVHWAGlProgramVHWA(/*this, */type, fourcc, apShaders, cShaders);
+    VBoxVHWAGlShader shader(GL_FRAGMENT_SHADER, apShaders, cShaders);
+    VBoxVHWAGlShader *pShader = &shader;
+
+    VBoxVHWAGlProgramVHWA *pProgram =  new VBoxVHWAGlProgramVHWA(/*this, */type, fourcc, &pShader, 1);
     pProgram->init();
 
     return pProgram;
