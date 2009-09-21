@@ -375,10 +375,10 @@ RTDECL(int) RTMpPokeCpu(RTCPUID idCpu)
     /* Assuming here that high importance DPCs will be delivered immediately; or at least an IPI will be sent immediately.
      * Todo: verify!
      */
-    KeInsertQueueDpc(&aPokeDpcs[idCpu], 0, 0);
+    BOOLEAN bRet = KeInsertQueueDpc(&aPokeDpcs[idCpu], 0, 0);
 
     KeLowerIrql(oldIrql);
-    return VINF_SUCCESS;
+    return (bRet == TRUE) ? VINF_SUCCESS : VERR_ACCESS_DENIED /* already queued */;
 }
 
 void rtMpPokeCpuClear()
