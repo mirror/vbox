@@ -2730,7 +2730,7 @@ leave:
     if (gpDefaultCursor)
     {
 # ifdef VBOXSDL_WITH_X11
-        Cursor pDefaultTempX11Cursor = NULL;
+        Cursor pDefaultTempX11Cursor = 0;
         if (gfXCursorEnabled)
         {
             pDefaultTempX11Cursor = *(Cursor*)gpDefaultCursor->wm_cursor;
