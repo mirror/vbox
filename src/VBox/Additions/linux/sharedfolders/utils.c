@@ -298,6 +298,10 @@ sf_setattr (struct dentry *dentry, struct iattr *iattr)
                            | SHFL_CF_ACT_FAIL_IF_NEW
                            | SHFL_CF_ACCESS_ATTR_WRITE;
 
+        /* this is at least required for Posix hosts */
+        if (iattr->ia_valid & ATTR_SIZE)
+            params.CreateFlags |= SHFL_CF_ACCESS_WRITE;
+
         rc = vboxCallCreate (&client_handle, &sf_g->map, sf_i->path, &params);
         if (VBOX_FAILURE (rc)) {
                 LogFunc(("vboxCallCreate(%s) failed rc=%Rrc\n",
