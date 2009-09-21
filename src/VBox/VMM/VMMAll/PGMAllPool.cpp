@@ -64,6 +64,9 @@ DECLEXPORT(int) pgmPoolAccessHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE 
 #ifdef LOG_ENABLED
 static const char *pgmPoolPoolKindToStr(uint8_t enmKind);
 #endif
+#if defined(VBOX_STRICT) && defined(PGMPOOL_WITH_OPTIMIZED_DIRTY_PT)
+static void pgmPoolTrackCheckPTPaePae(PPGMPOOL pPool, PPGMPOOLPAGE pPage, PX86PTPAE pShwPT, PCX86PTPAE pGstPT);
+#endif
 
 int             pgmPoolTrackFlushGCPhysPTsSlow(PVM pVM, PPGMPAGE pPhysPage);
 PPGMPOOLPHYSEXT pgmPoolTrackPhysExtAlloc(PVM pVM, uint16_t *piPhysExt);
@@ -1165,6 +1168,23 @@ DECLEXPORT(int) pgmPoolAccessHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE 
         pgmUnlock(pVM);
         return VINF_SUCCESS;
     }
+#ifdef PGMPOOL_WITH_OPTIMIZED_DIRTY_PT
+    if (pPage->fDirty)
+    {
+        Assert(VMCPU_FF_ISSET(pVCpu, VMCPU_FF_TLB_FLUSH));
+        return VINF_SUCCESS;    /* SMP guest case where we were blocking on the pgm lock while the same page was being marked dirty. */
+    }
+#endif
+
+#if defined(VBOX_STRICT) && defined(PGMPOOL_WITH_OPTIMIZED_DIRTY_PT)
+    if (pPage->enmKind == PGMPOOLKIND_PAE_PT_FOR_PAE_PT)
+    {
+        void *pvShw = PGMPOOL_PAGE_2_LOCKED_PTR(pPool->CTX_SUFF(pVM), pPage);
+        void *pvGst;
+        int rc = PGM_GCPHYS_2_PTR(pPool->CTX_SUFF(pVM), pPage->GCPhys, &pvGst); AssertReleaseRC(rc);
+        pgmPoolTrackCheckPTPaePae(pPool, pPage, (PX86PTPAE)pvShw, (PCX86PTPAE)pvGst);
+    }
+#endif
 
     /*
      * Disassemble the faulting instruction.
@@ -1180,7 +1200,6 @@ DECLEXPORT(int) pgmPoolAccessHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE 
      * is because we use that page to record the changes.
      */
     Assert(pPage->iMonitoredPrev == NIL_PGMPOOL_IDX);
-    Assert(!pPage->fDirty);
 
 #ifdef IN_RING0
     /* Maximum nr of modifications depends on the page type. */
@@ -1420,7 +1439,7 @@ flushPage:
  * @param   pShwPT      The shadow page table (mapping of the page).
  * @param   pGstPT      The guest page table.
  */
-DECLINLINE(void) pgmPoolTrackCheckPTPaePae(PPGMPOOL pPool, PPGMPOOLPAGE pPage, PX86PTPAE pShwPT, PCX86PTPAE pGstPT)
+static void pgmPoolTrackCheckPTPaePae(PPGMPOOL pPool, PPGMPOOLPAGE pPage, PX86PTPAE pShwPT, PCX86PTPAE pGstPT)
 {
     unsigned cErrors = 0;
     int LastRc;
