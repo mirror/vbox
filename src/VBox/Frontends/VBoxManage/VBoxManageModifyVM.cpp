@@ -89,6 +89,7 @@ int handleModifyVM(HandlerArg *a)
     char *audio = NULL;
     char *audiocontroller = NULL;
     char *clipboard = NULL;
+    char *firmware = NULL;
 #ifdef VBOX_WITH_VRDP
     char *vrdp = NULL;
     uint16_t vrdpport = UINT16_MAX;
@@ -259,6 +260,14 @@ int handleModifyVM(HandlerArg *a)
             accelerate2dvideo = a->argv[i];
         }
 #endif
+        else if (   !strcmp(a->argv[i], "--firmware")
+                 || !strcmp(a->argv[i], "-firmware"))
+        {
+            if (a->argc <= i + 1)
+                return errorArgument("Missing argument to '%s'", a->argv[i]);
+            i++;
+            firmware = a->argv[i];
+        }
         else if (   !strcmp(a->argv[i], "--bioslogofadein")
                  || !strcmp(a->argv[i], "-bioslogofadein"))
         {
@@ -1058,6 +1067,23 @@ int handleModifyVM(HandlerArg *a)
             }
         }
 #endif
+        if (firmware)
+        {
+            if (!strcmp(firmware, "efi"))
+            {
+                CHECK_ERROR(machine, COMSETTER(FirmwareType)(FirmwareType_Efi));
+            }
+            else if (!strcmp(accelerate3d, "bios"))
+            {
+                CHECK_ERROR(machine, COMSETTER(FirmwareType)(FirmwareType_Bios));
+            }
+            else
+            {
+                errorArgument("Invalid --firmware argument '%s'", firmware);
+                rc = E_FAIL;
+                break;
+            }
+        }
         if (bioslogofadein)
         {
             if (!strcmp(bioslogofadein, "on"))

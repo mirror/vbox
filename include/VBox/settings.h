@@ -434,6 +434,7 @@ struct Hardware
     uint32_t            cMonitors;
     bool                fAccelerate3D,
                         fAccelerate2DVideo;     // requires settings version 1.8 (VirtualBox 3.1)
+    uint32_t            cFirmwareType;          // ditto
 
     VRDPSettings        vrdpSettings;
 
