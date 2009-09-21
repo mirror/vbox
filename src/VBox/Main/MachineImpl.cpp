@@ -195,7 +195,7 @@ Machine::HWData::HWData()
 
     mClipboardMode = ClipboardMode_Bidirectional;
     mGuestPropertyNotificationPatterns = "";
-    
+
     mFirmwareType = FirmwareType_Bios;
 }
 
@@ -5654,7 +5654,7 @@ HRESULT Machine::saveSettings(int aFlags /*= 0*/)
         mData->m_pMachineConfigFile->fNameSync = !!mUserData->mNameSync;
         mData->m_pMachineConfigFile->strDescription = mUserData->mDescription;
         mData->m_pMachineConfigFile->strOsType = mUserData->mOSTypeId;
-        
+
         if (    mData->mMachineState == MachineState_Saved
              || mData->mMachineState == MachineState_Restoring
            )
@@ -8146,7 +8146,8 @@ STDMETHODIMP SessionMachine::EndTakingSnapshot(BOOL aSuccess)
     /* set the state to the state we had when BeginTakingSnapshot() was called
      * (this is expected by Console::TakeSnapshot() and
      * Console::saveStateThread()) */
-    setMachineState(mSnapshotData.mLastState);
+    if (mSnapshotData.mLastState != Running) /** @todo Live Save: Quick hack. */
+        setMachineState(mSnapshotData.mLastState);
 
     return endTakingSnapshot(aSuccess);
 }
