@@ -207,6 +207,8 @@ HRESULT Display::init (Console *aParent)
         memset (&maFramebuffers[ul].pendingResize, 0 , sizeof (maFramebuffers[ul].pendingResize));
 #ifdef VBOX_WITH_HGSMI
         maFramebuffers[ul].fVBVAEnabled = false;
+        maFramebuffers[ul].cVBVASkipUpdate = 0;
+        memset (&maFramebuffers[ul].vbvaSkippedRect, 0, sizeof (maFramebuffers[ul].vbvaSkippedRect));
 #endif /* VBOX_WITH_HGSMI */
     }
 
@@ -2402,8 +2404,27 @@ DECLCALLBACK(void) Display::displayVBVAUpdateBegin(PPDMIDISPLAYCONNECTOR pInterf
 
     PDRVMAINDISPLAY pDrv = PDMIDISPLAYCONNECTOR_2_MAINDISPLAY(pInterface);
     Display *pThis = pDrv->pDisplay;
+    DISPLAYFBINFO *pFBInfo = &pThis->maFramebuffers[uScreenId];
 
-    NOREF(uScreenId);
+    if (RT_LIKELY(pFBInfo->u32ResizeStatus == ResizeStatus_Void))
+    {
+        if (RT_UNLIKELY(pFBInfo->cVBVASkipUpdate != 0))
+        {
+            /* Some updates were skipped. Note: displayVBVAUpdate* callbacks are called
+             * under display device lock, so thread safe.
+             */
+            pFBInfo->cVBVASkipUpdate = 0;
+            pThis->handleDisplayUpdate(pFBInfo->vbvaSkippedRect.xLeft,
+                                       pFBInfo->vbvaSkippedRect.yTop,
+                                       pFBInfo->vbvaSkippedRect.xRight - pFBInfo->vbvaSkippedRect.xLeft,
+                                       pFBInfo->vbvaSkippedRect.yBottom - pFBInfo->vbvaSkippedRect.yTop);
+        }
+    }
+    else
+    {
+        /* The framebuffer is being resized. */
+        pFBInfo->cVBVASkipUpdate++;
+    }
 }
 
 DECLCALLBACK(void) Display::displayVBVAUpdateProcess(PPDMIDISPLAYCONNECTOR pInterface, unsigned uScreenId, const PVBVACMDHDR pCmd, size_t cbCmd)
@@ -2412,23 +2433,64 @@ DECLCALLBACK(void) Display::displayVBVAUpdateProcess(PPDMIDISPLAYCONNECTOR pInte
 
     PDRVMAINDISPLAY pDrv = PDMIDISPLAYCONNECTOR_2_MAINDISPLAY(pInterface);
     Display *pThis = pDrv->pDisplay;
+    DISPLAYFBINFO *pFBInfo = &pThis->maFramebuffers[uScreenId];
 
-    pThis->mParent->consoleVRDPServer()->SendUpdate (uScreenId, pCmd, cbCmd);
+    if (RT_LIKELY(pFBInfo->cVBVASkipUpdate == 0))
+    {
+         pThis->mParent->consoleVRDPServer()->SendUpdate (uScreenId, pCmd, cbCmd);
+    }
 }
 
-DECLCALLBACK(void) Display::displayVBVAUpdateEnd(PPDMIDISPLAYCONNECTOR pInterface, unsigned uScreenId, uint32_t x, uint32_t y, uint32_t cx, uint32_t cy)
+DECLCALLBACK(void) Display::displayVBVAUpdateEnd(PPDMIDISPLAYCONNECTOR pInterface, unsigned uScreenId, int32_t x, int32_t y, uint32_t cx, uint32_t cy)
 {
     LogFlowFunc(("uScreenId %d %d,%d %dx%d\n", uScreenId, x, y, cx, cy));
 
     PDRVMAINDISPLAY pDrv = PDMIDISPLAYCONNECTOR_2_MAINDISPLAY(pInterface);
     Display *pThis = pDrv->pDisplay;
+    DISPLAYFBINFO *pFBInfo = &pThis->maFramebuffers[uScreenId];
 
     /* @todo handleFramebufferUpdate (uScreenId,
      *                                x - pThis->maFramebuffers[uScreenId].xOrigin,
      *                                y - pThis->maFramebuffers[uScreenId].yOrigin,
      *                                cx, cy);
      */
-    pThis->handleDisplayUpdate(x, y, cx, cy);
+    if (RT_LIKELY(pFBInfo->cVBVASkipUpdate == 0))
+    {
+        pThis->handleDisplayUpdate(x, y, cx, cy);
+    }
+    else
+    {
+        /* Save the updated rectangle. */
+        int32_t xRight = x + cx;
+        int32_t yBottom = y + cy;
+
+        if (pFBInfo->cVBVASkipUpdate == 1)
+        {
+            pFBInfo->vbvaSkippedRect.xLeft = x;
+            pFBInfo->vbvaSkippedRect.yTop = y;
+            pFBInfo->vbvaSkippedRect.xRight = xRight;
+            pFBInfo->vbvaSkippedRect.yBottom = yBottom;
+        }
+        else
+        {
+            if (pFBInfo->vbvaSkippedRect.xLeft > x)
+            {
+                pFBInfo->vbvaSkippedRect.xLeft = x;
+            }
+            if (pFBInfo->vbvaSkippedRect.yTop > y)
+            {
+                pFBInfo->vbvaSkippedRect.yTop = y;
+            }
+            if (pFBInfo->vbvaSkippedRect.xRight < xRight)
+            {
+                pFBInfo->vbvaSkippedRect.xRight = xRight;
+            }
+            if (pFBInfo->vbvaSkippedRect.yBottom < yBottom)
+            {
+                pFBInfo->vbvaSkippedRect.yBottom = yBottom;
+            }
+        }
+    }
 }
 
 DECLCALLBACK(int) Display::displayVBVAResize(PPDMIDISPLAYCONNECTOR pInterface, const PVBVAINFOVIEW pView, const PVBVAINFOSCREEN pScreen, void *pvVRAM)

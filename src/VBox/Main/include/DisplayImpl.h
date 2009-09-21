@@ -81,6 +81,13 @@ typedef struct _DISPLAYFBINFO
 
 #ifdef VBOX_WITH_HGSMI
     bool fVBVAEnabled;
+    uint32_t cVBVASkipUpdate;
+    struct {
+       int32_t xLeft;
+       int32_t yTop;
+       int32_t xRight;
+       int32_t yBottom;
+    } vbvaSkippedRect;
 #endif /* VBOX_WITH_HGSMI */
 } DISPLAYFBINFO;
 
@@ -284,7 +291,7 @@ private:
     static DECLCALLBACK(void) displayVBVADisable(PPDMIDISPLAYCONNECTOR pInterface, unsigned uScreenId);
     static DECLCALLBACK(void) displayVBVAUpdateBegin(PPDMIDISPLAYCONNECTOR pInterface, unsigned uScreenId);
     static DECLCALLBACK(void) displayVBVAUpdateProcess(PPDMIDISPLAYCONNECTOR pInterface, unsigned uScreenId, const PVBVACMDHDR pCmd, size_t cbCmd);
-    static DECLCALLBACK(void) displayVBVAUpdateEnd(PPDMIDISPLAYCONNECTOR pInterface, unsigned uScreenId, uint32_t x, uint32_t y, uint32_t cx, uint32_t cy);
+    static DECLCALLBACK(void) displayVBVAUpdateEnd(PPDMIDISPLAYCONNECTOR pInterface, unsigned uScreenId, int32_t x, int32_t y, uint32_t cx, uint32_t cy);
     static DECLCALLBACK(int)  displayVBVAResize(PPDMIDISPLAYCONNECTOR pInterface, const PVBVAINFOVIEW pView, const PVBVAINFOSCREEN pScreen, void *pvVRAM);
     static DECLCALLBACK(int)  displayVBVAMousePointerShape(PPDMIDISPLAYCONNECTOR pInterface, bool fVisible, bool fAlpha, uint32_t xHot, uint32_t yHot, uint32_t cx, uint32_t cy, const void *pvShape);
 #endif

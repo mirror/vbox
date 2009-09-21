@@ -584,7 +584,7 @@ typedef struct PDMIDISPLAYCONNECTOR
      * @param   cy                  The height of the rectangle.
      * @thread  The emulation thread.
      */
-    DECLR3CALLBACKMEMBER(void, pfnVBVAUpdateEnd,(PPDMIDISPLAYCONNECTOR pInterface, unsigned uScreenId, uint32_t x, uint32_t y, uint32_t cx, uint32_t cy));
+    DECLR3CALLBACKMEMBER(void, pfnVBVAUpdateEnd,(PPDMIDISPLAYCONNECTOR pInterface, unsigned uScreenId, int32_t x, int32_t y, uint32_t cx, uint32_t cy));
 
     /**
      * Resize the display.
