@@ -118,7 +118,7 @@ int vmR3EmulationThreadWithId(RTTHREAD ThreadSelf, PUVMCPU pUVCpu, VMCPUID idCpu
                  * Service execute in any EMT request.
                  */
                 rc = VMR3ReqProcessU(pUVM, VMCPUID_ANY);
-                Log(("vmR3EmulationThread: Req rc=%Rrc, VM state %d -> %d\n", rc, enmBefore, pUVM->pVM ? pUVM->pVM->enmVMState : VMSTATE_CREATING));
+                Log(("vmR3EmulationThread: Req rc=%Rrc, VM state %s -> %s\n", rc, VMR3GetStateName(enmBefore), pUVM->pVM ? VMR3GetStateName(pUVM->pVM->enmVMState) : "CREATING"));
             }
             else if (pUVCpu->vm.s.pReqs)
             {
@@ -126,7 +126,7 @@ int vmR3EmulationThreadWithId(RTTHREAD ThreadSelf, PUVMCPU pUVCpu, VMCPUID idCpu
                  * Service execute in specific EMT request.
                  */
                 rc = VMR3ReqProcessU(pUVM, pUVCpu->idCpu);
-                Log(("vmR3EmulationThread: Req (cpu=%u) rc=%Rrc, VM state %d -> %d\n", pUVCpu->idCpu, rc, enmBefore, pUVM->pVM ? pUVM->pVM->enmVMState : VMSTATE_CREATING));
+                Log(("vmR3EmulationThread: Req (cpu=%u) rc=%Rrc, VM state %s -> %s\n", pUVCpu->idCpu, rc, VMR3GetStateName(enmBefore), pUVM->pVM ? VMR3GetStateName(pUVM->pVM->enmVMState) : "CREATING"));
             }
             else
             {
@@ -161,7 +161,7 @@ int vmR3EmulationThreadWithId(RTTHREAD ThreadSelf, PUVMCPU pUVCpu, VMCPUID idCpu
             if (VM_FF_ISPENDING(pVM, VM_FF_EMT_RENDEZVOUS))
             {
                 rc = VMMR3EmtRendezvousFF(pVM, &pVM->aCpus[idCpu]);
-                Log(("vmR3EmulationThread: Rendezvous rc=%Rrc, VM state %d -> %d\n", rc, enmBefore, pVM->enmVMState));
+                Log(("vmR3EmulationThread: Rendezvous rc=%Rrc, VM state %s -> %s\n", rc, VMR3GetStateName(enmBefore), VMR3GetStateName(pVM->enmVMState)));
             }
             else if (pUVM->vm.s.pReqs)
             {
@@ -169,7 +169,7 @@ int vmR3EmulationThreadWithId(RTTHREAD ThreadSelf, PUVMCPU pUVCpu, VMCPUID idCpu
                  * Service execute in any EMT request.
                  */
                 rc = VMR3ReqProcessU(pUVM, VMCPUID_ANY);
-                Log(("vmR3EmulationThread: Req rc=%Rrc, VM state %d -> %d\n", rc, enmBefore, pVM->enmVMState));
+                Log(("vmR3EmulationThread: Req rc=%Rrc, VM state %s -> %s\n", rc, VMR3GetStateName(enmBefore), VMR3GetStateName(pVM->enmVMState)));
             }
             else if (pUVCpu->vm.s.pReqs)
             {
@@ -177,7 +177,7 @@ int vmR3EmulationThreadWithId(RTTHREAD ThreadSelf, PUVMCPU pUVCpu, VMCPUID idCpu
                  * Service execute in specific EMT request.
                  */
                 rc = VMR3ReqProcessU(pUVM, pUVCpu->idCpu);
-                Log(("vmR3EmulationThread: Req (cpu=%u) rc=%Rrc, VM state %d -> %d\n", pUVCpu->idCpu, rc, enmBefore, pVM->enmVMState));
+                Log(("vmR3EmulationThread: Req (cpu=%u) rc=%Rrc, VM state %s -> %s\n", pUVCpu->idCpu, rc, VMR3GetStateName(enmBefore), VMR3GetStateName(pVM->enmVMState)));
             }
             else if (VM_FF_ISSET(pVM, VM_FF_DBGF))
             {
@@ -185,7 +185,7 @@ int vmR3EmulationThreadWithId(RTTHREAD ThreadSelf, PUVMCPU pUVCpu, VMCPUID idCpu
                  * Service the debugger request.
                  */
                 rc = DBGFR3VMMForcedAction(pVM);
-                Log(("vmR3EmulationThread: Dbg rc=%Rrc, VM state %d -> %d\n", rc, enmBefore, pVM->enmVMState));
+                Log(("vmR3EmulationThread: Dbg rc=%Rrc, VM state %s -> %s\n", rc, VMR3GetStateName(enmBefore), VMR3GetStateName(pVM->enmVMState)));
             }
             else if (VM_FF_TESTANDCLEAR(pVM, VM_FF_RESET))
             {
@@ -194,7 +194,7 @@ int vmR3EmulationThreadWithId(RTTHREAD ThreadSelf, PUVMCPU pUVCpu, VMCPUID idCpu
                  */
                 rc = VMR3Reset(pVM);
                 VM_FF_CLEAR(pVM, VM_FF_RESET);
-                Log(("vmR3EmulationThread: Reset rc=%Rrc, VM state %d -> %d\n", rc, enmBefore, pVM->enmVMState));
+                Log(("vmR3EmulationThread: Reset rc=%Rrc, VM state %s -> %s\n", rc, VMR3GetStateName(enmBefore), VMR3GetStateName(pVM->enmVMState)));
             }
             else
             {
