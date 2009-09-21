@@ -162,6 +162,10 @@ VMMDECL(int) HWACCMFlushTLBOnAllVCpus(PVM pVM)
     {
         PVMCPU pVCpu = &pVM->aCpus[idCpu];
 
+        /* Nothing to do if a TLB flush is already pending; the VCPU should have already been poked if it were active */
+        if (VMCPU_FF_ISSET(pVCpu, VMCPU_FF_TLB_FLUSH))
+            continue;
+
         VMCPU_FF_SET(pVCpu, VMCPU_FF_TLB_FLUSH);
         if (idThisCpu == idCpu)
             continue;
