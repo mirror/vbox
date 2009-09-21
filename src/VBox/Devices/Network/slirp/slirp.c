@@ -2028,7 +2028,7 @@ void slirp_arp_who_has(PNATState pData, uint32_t dst)
     m->m_len = sizeof(struct arphdr) + ETH_HLEN;
 #endif
     if_encap(pData, ETH_P_ARP, m);
-    LogRel(("NAT: ARP request sent\n"));
+    Log(("NAT: ARP request sent\n"));
 }
 
 /* updates the arp cache 
