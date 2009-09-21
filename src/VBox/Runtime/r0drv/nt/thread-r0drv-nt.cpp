@@ -94,6 +94,11 @@ RTDECL(bool) RTThreadPreemptIsPending(RTTHREAD hThread)
 {
     Assert(hThread == NIL_RTTHREAD);
 
+    /* Remove any pending poke DPC from the queue, so another call to RTMpPokeCpu will send an IPI 
+     * Also do this so we don't exit from ring 0 for the poke DPC (which does nothing).
+     */
+    rtMpPokeCpuClear();
+
     /*
      * Read the globals and check if they are useful.
      */
@@ -101,11 +106,7 @@ RTDECL(bool) RTThreadPreemptIsPending(RTTHREAD hThread)
     uint32_t const cbQuantumEnd      = g_cbrtNtPbQuantumEnd;
     uint32_t const offDpcQueueDepth  = g_offrtNtPbDpcQueueDepth;
     if (!offQuantumEnd && !cbQuantumEnd && !offDpcQueueDepth)
-    {
-        /* Remove any pending poke DPC from the queue, so another call to RTMpPokeCpu will send an IPI */
-        rtMpPokeCpuClear();
         return false;
-    }
     Assert((offQuantumEnd && cbQuantumEnd) || (!offQuantumEnd && !cbQuantumEnd));
 
     /*
