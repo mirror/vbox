@@ -9920,7 +9920,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <enum
     name="MouseButtonState"
-    uuid="03131722-2EC5-4173-9794-0DACA46673EF"
+    uuid="9ee094b8-b28a-4d56-a166-973cb588d7f8"
   >
     <desc>
       Mouse button state.
@@ -9938,7 +9938,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
      name="IMouse" extends="$unknown"
-     uuid="FD443EC1-0006-4F5B-9282-D72760A66916"
+     uuid="7c0f2eae-f92d-498c-b802-e1a3763774dc"
      wsmap="managed"
      >
     <desc>
@@ -10726,7 +10726,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <enum
     name="NetworkAdapterType"
-    uuid="50c3dfd8-07ac-4a31-baac-519c828fbf97"
+    uuid="3c2281e4-d952-4e87-8c7d-24379cb6a81c"
   >
     <desc>
       Network adapter type.
