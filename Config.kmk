@@ -1467,7 +1467,7 @@ ifeq ($(KBUILD_TARGET),darwin)
  VBOX_DARWIN_DEF_SDK_CFLAGS    := -mmacosx-version-min=$(VBOX_DEF_MACOSX_VERSION_MIN) -isysroot $(VBOX_PATH_MACOSX_SDK)
  VBOX_DARWIN_DEF_SDK_CXXFLAGS  := -mmacosx-version-min=$(VBOX_DEF_MACOSX_VERSION_MIN) -isysroot $(VBOX_PATH_MACOSX_SDK)
  VBOX_DARWIN_DEF_SDK_OBJCFLAGS := -mmacosx-version-min=$(VBOX_DEF_MACOSX_VERSION_MIN) -isysroot $(VBOX_PATH_MACOSX_SDK)
- VBOX_DARWIN_DEF_SDK_LDFLAGS   := -mmacosx-version-min=$(VBOX_DEF_MACOSX_VERSION_MIN) -Wl,-syslibroot,$(VBOX_PATH_MACOSX_SDK) $(VBOX_DARWIN_CLASSIC_LINKER)
+ VBOX_DARWIN_DEF_SDK_LDFLAGS   := -mmacosx-version-min=$(VBOX_DEF_MACOSX_VERSION_MIN) -Wl,-no_compact_linkedit -Wl,-syslibroot,$(VBOX_PATH_MACOSX_SDK) $(VBOX_DARWIN_CLASSIC_LINKER)
 
  # specific versions.
  VBOX_PATH_MACOSX_SDK_10_4          ?= /Developer/SDKs/MacOSX10.4u.sdk
@@ -2256,7 +2256,7 @@ TEMPLATE_VBOXR0DRV_CFLAGS              = $(VBOX_DARWIN_DEF_SDK_CFLAGS) \
 	$(VBOX_GCC_R0_OPT) $(VBOX_GCC_R0_FP) -fno-strict-aliasing -fasm-blocks
 TEMPLATE_VBOXR0DRV_CFLAGS.amd64        = -m64 -mkernel -mno-red-zone -gdwarf-2
 TEMPLATE_VBOXR0DRV_CFLAGS.x86          = -m32 -static
-TEMPLATE_VBOXR0DRV_LDFLAGS             = $(VBOX_DARWIN_DEF_SDK_LDFLAGS) -static -nostdlib -r -Wl,-Y,1455 -keep_private_extern
+TEMPLATE_VBOXR0DRV_LDFLAGS             =  $(filter-out -Wl$(COMMA)-no_compact_linkedit,$(VBOX_DARWIN_DEF_SDK_LDFLAGS)) -static -nostdlib -r -Wl,-Y,1455 -keep_private_extern
 TEMPLATE_VBOXR0DRV_LDFLAGS.amd64       = -m64 -Xlinker -kext
 TEMPLATE_VBOXR0DRV_LDFLAGS.x86         = -m32
 TEMPLATE_VBOXR0DRV_LIBS                = kmodc++ kmod cc_kext cpp_kext $(VBOX_GCC_LIBGCC)
