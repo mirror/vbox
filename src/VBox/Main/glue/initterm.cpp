@@ -332,8 +332,11 @@ HRESULT Initialize()
      * Note! CoInitializeEx and CoUninitialize does it's own reference
      *       counting, so this exercise is entirely for the EventQueue init. */
     bool fRc;
-    RTTHREAD hSelf = RTThreadSelf (); Assert (hSelf != NIL_RTTHREAD);
-    ASMAtomicCmpXchgHandle (&gCOMMainThread, hSelf, NIL_RTTHREAD, fRc);
+    RTTHREAD hSelf = RTThreadSelf ();
+    if (hSelf != NIL_RTTHREAD)
+        ASMAtomicCmpXchgHandle (&gCOMMainThread, hSelf, NIL_RTTHREAD, fRc);
+    else
+        fRc = false;
     if (!fRc)
     {
         if (   gCOMMainThread == hSelf
