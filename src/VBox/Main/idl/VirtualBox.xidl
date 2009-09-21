@@ -3990,7 +3990,7 @@
    
   <interface
      name="IMachine" extends="$unknown"
-     uuid="5293aa45-5ab5-4f70-852e-bb43f5a46491"
+     uuid="34d37008-87b5-4430-86ba-f05ca4957ae8"
      wsmap="managed"
      >
     <desc>
