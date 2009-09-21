@@ -126,6 +126,7 @@ EXPORTS
     RTThreadYield
     RTThreadPreemptIsEnabled
     RTThreadPreemptIsPending
+    RTThreadPreemptIsPendingTrusty
     RTThreadPreemptDisable
     RTThreadPreemptRestore
     RTThreadPreemptPossible
