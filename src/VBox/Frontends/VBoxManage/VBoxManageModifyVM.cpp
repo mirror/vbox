@@ -1073,7 +1073,7 @@ int handleModifyVM(HandlerArg *a)
             {
                 CHECK_ERROR(machine, COMSETTER(FirmwareType)(FirmwareType_Efi));
             }
-            else if (!strcmp(accelerate3d, "bios"))
+            else if (!strcmp(firmware, "bios"))
             {
                 CHECK_ERROR(machine, COMSETTER(FirmwareType)(FirmwareType_Bios));
             }
