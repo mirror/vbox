@@ -55,7 +55,7 @@ public:
               uint32_t u32FixedHeight = ~(uint32_t)0, uint32_t u32FixedBPP = ~(uint32_t)0);
     virtual ~VBoxSDLFB();
 
-    static void init(bool fShowSDLConfig);
+    static bool init(bool fShowSDLConfig);
     static void uninit();
 
 #ifdef RT_OS_WINDOWS

@@ -162,7 +162,7 @@ VBoxSDLFB::~VBoxSDLFB()
     RTCritSectDelete(&mUpdateLock);
 }
 
-void VBoxSDLFB::init(bool fShowSDLConfig)
+bool VBoxSDLFB::init(bool fShowSDLConfig)
 {
     LogFlow(("VBoxSDLFB::init\n"));
 
@@ -186,7 +186,7 @@ void VBoxSDLFB::init(bool fShowSDLConfig)
     if (rc != 0)
     {
         RTPrintf("SDL Error: '%s'\n", SDL_GetError());
-        return;
+        return false;
     }
 
     const SDL_VideoInfo *videoInfo = SDL_GetVideoInfo();
@@ -232,6 +232,8 @@ void VBoxSDLFB::init(bool fShowSDLConfig)
             SDL_WM_SetIcon(gWMIcon, NULL);
         }
     }
+
+    return true;
 }
 
 /**
