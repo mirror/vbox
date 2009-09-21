@@ -133,6 +133,9 @@ tcp_respond(PNATState pData, struct tcpcb *tp, struct tcpiphdr *ti, struct mbuf 
         tlen = 0;
 #endif
         m->m_data += if_maxlinkhdr;
+#ifndef VBOX_WITH_SLIRP_BSD_MBUF
+        m->m_pkthdr.header = mtod(m, void *);
+#endif
         *mtod(m, struct tcpiphdr *) = *ti;
         ti = mtod(m, struct tcpiphdr *);
         flags = TH_ACK;
