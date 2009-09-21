@@ -120,9 +120,7 @@ static DECLCALLBACK(void) hwaccmFlushHandler(RTCPUID idCpu, void *pvUser1, void 
 void hwaccmMpPokeCpu(RTCPUID idHostCpu)
 {
     int rc = RTMpPokeCpu(idHostCpu);
-# ifdef RT_OS_WINDOWS
-    AssertRC(rc);
-# else
+# ifndef RT_OS_WINDOWS
     /* Not implemented on some platforms (Darwin, Linux kernel < 2.6.19); fall back to a less efficient implementation (broadcast). */
     if (rc == VERR_NOT_SUPPORTED)
         RTMpOnSpecific(idHostCpu, hwaccmFlushHandler, 0, 0);
