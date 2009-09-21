@@ -516,7 +516,7 @@ endif
 ## For experimenting with disabling preemption instead of interrupts
 # when working VT-x/AMD-V in VMMR0.
 ## @todo os2? Reconsider perhaps windows? (see defect) This should be made the default.
-if1of ($(KBUILD_TARGET), darwin freebsd linux windows solaris)
+if1of ($(KBUILD_TARGET), darwin freebsd linux win solaris)
  VBOX_WITH_VMMR0_DISABLE_PREEMPTION = 1
 endif
 
