@@ -4960,7 +4960,8 @@ HRESULT Machine::loadHardware(const settings::Hardware &data)
         mHWData->mMonitorCount  = data.cMonitors;
         mHWData->mAccelerate3DEnabled = data.fAccelerate3D;
         mHWData->mAccelerate2DVideoEnabled = data.fAccelerate2DVideo;
-        mHWData->mFirmwareType = data.cFirmwareType;
+        /** @todo: maybe use string sto store enum value? */
+        mHWData->mFirmwareType = (FirmwareType_T)data.cFirmwareType;
 
 #ifdef VBOX_WITH_VRDP
         /* RemoteDisplay */
