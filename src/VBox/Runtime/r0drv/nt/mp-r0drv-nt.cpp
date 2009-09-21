@@ -379,3 +379,12 @@ RTDECL(int) RTMpPokeCpu(RTCPUID idCpu)
     KeLowerIrql(oldIrql);
     return VINF_SUCCESS;
 }
+
+void rtMpPokeCpuClear()
+{
+    RTCPUID idCpu = RTMpCpuId();
+
+    /* Remove any pending poke DPC from the queue, so another call to RTMpPokeCpu will send an IPI */
+    /* Note: assuming this is a cheap operation. */
+    KeRemoveQueueDpc(&aPokeDpcs[idCpu]);
+}

@@ -33,6 +33,7 @@
 *******************************************************************************/
 #include "the-nt-kernel.h"
 #include "internal/iprt.h"
+#include "internal/mp.h"
 #include <iprt/thread.h>
 
 #include <iprt/asm.h>
@@ -100,7 +101,10 @@ RTDECL(bool) RTThreadPreemptIsPending(RTTHREAD hThread)
     uint32_t const cbQuantumEnd      = g_cbrtNtPbQuantumEnd;
     uint32_t const offDpcQueueDepth  = g_offrtNtPbDpcQueueDepth;
     if (!offQuantumEnd && !cbQuantumEnd && !offDpcQueueDepth)
+    {
+        rtMpPokeCpuClear();
         return false;
+    }
     Assert((offQuantumEnd && cbQuantumEnd) || (!offQuantumEnd && !cbQuantumEnd));
 
     /*
