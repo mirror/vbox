@@ -40,6 +40,7 @@
 #include <iprt/asm.h>
 #include "r0drv/mp-r0drv.h"
 #include "internal-r0drv-nt.h"
+#include "internal/mp.h"
 
 
 /*******************************************************************************
