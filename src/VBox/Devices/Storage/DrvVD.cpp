@@ -1112,24 +1112,19 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
 
     if (RT_FAILURE(rc))
     {
-        if (VALID_PTR(pThis->pDisk))
-        {
-            VDDestroy(pThis->pDisk);
-            pThis->pDisk = NULL;
-        }
-        drvvdFreeImages(pThis);
         if (VALID_PTR(pszName))
             MMR3HeapFree(pszName);
         if (VALID_PTR(pszFormat))
             MMR3HeapFree(pszFormat);
-
-        return rc;
+        /* drvvdDestruct does the rest. */
     }
     else
     {
         /* Switch to runtime error facility. */
         pThis->fErrorUseRuntime = true;
     }
+
+    /* else: drvvdDestruct cleans up. */
 
     LogFlow(("%s: returns %Rrc\n", __FUNCTION__, rc));
     return rc;
@@ -1148,6 +1143,11 @@ static DECLCALLBACK(void) drvvdDestruct(PPDMDRVINS pDrvIns)
     PVBOXDISK pThis = PDMINS_2_DATA(pDrvIns, PVBOXDISK);
     LogFlow(("%s:\n", __FUNCTION__));
 
+    if (VALID_PTR(pThis->pDisk))
+    {
+        VDDestroy(pThis->pDisk);
+        pThis->pDisk = NULL;
+    }
     drvvdFreeImages(pThis);
 }
 
