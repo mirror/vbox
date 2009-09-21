@@ -293,7 +293,6 @@ sf_setattr (struct dentry *dentry, struct iattr *iattr)
         err  = 0;
 
         memset(&params, 0, sizeof(params));
-        memset(&info, 0, sizeof(info));
 
         params.CreateFlags = SHFL_CF_ACT_OPEN_IF_EXISTS
                            | SHFL_CF_ACT_FAIL_IF_NEW
@@ -312,48 +311,71 @@ sf_setattr (struct dentry *dentry, struct iattr *iattr)
                 goto fail1;
         }
 
-        cbBuffer = sizeof(info);
-
+        /* Setting the file size and setting the other attributes has to be
+         * handled separately, see implementation of vbsfSetFSInfo() in
+         * vbsf.cpp */
+        if (iattr->ia_valid & (ATTR_MODE | ATTR_ATIME | ATTR_MTIME))
+        {
 #define mode_set(r) ((iattr->ia_mode & (S_##r)) ? RTFS_UNIX_##r : 0)
 
-        if (iattr->ia_valid & ATTR_MODE)
-        {
-            info.Attr.fMode  = mode_set (ISUID);
-            info.Attr.fMode |= mode_set (ISGID);
-            info.Attr.fMode |= mode_set (IRUSR);
-            info.Attr.fMode |= mode_set (IWUSR);
-            info.Attr.fMode |= mode_set (IXUSR);
-            info.Attr.fMode |= mode_set (IRGRP);
-            info.Attr.fMode |= mode_set (IWGRP);
-            info.Attr.fMode |= mode_set (IXGRP);
-            info.Attr.fMode |= mode_set (IROTH);
-            info.Attr.fMode |= mode_set (IWOTH);
-            info.Attr.fMode |= mode_set (IXOTH);
+            memset(&info, 0, sizeof(info));
+            if (iattr->ia_valid & ATTR_MODE)
+            {
+                info.Attr.fMode  = mode_set (ISUID);
+                info.Attr.fMode |= mode_set (ISGID);
+                info.Attr.fMode |= mode_set (IRUSR);
+                info.Attr.fMode |= mode_set (IWUSR);
+                info.Attr.fMode |= mode_set (IXUSR);
+                info.Attr.fMode |= mode_set (IRGRP);
+                info.Attr.fMode |= mode_set (IWGRP);
+                info.Attr.fMode |= mode_set (IXGRP);
+                info.Attr.fMode |= mode_set (IROTH);
+                info.Attr.fMode |= mode_set (IWOTH);
+                info.Attr.fMode |= mode_set (IXOTH);
 
-            if (iattr->ia_mode & S_IFDIR)
-                info.Attr.fMode |= RTFS_TYPE_DIRECTORY;
-            else
-                info.Attr.fMode |= RTFS_TYPE_FILE;
-        }
+                if (iattr->ia_mode & S_IFDIR)
+                    info.Attr.fMode |= RTFS_TYPE_DIRECTORY;
+                else
+                    info.Attr.fMode |= RTFS_TYPE_FILE;
+            }
 
-        if (iattr->ia_valid & ATTR_ATIME)
-            sf_timespec_from_ftime (&info.AccessTime, &iattr->ia_atime);
-        if (iattr->ia_valid & ATTR_MTIME)
-            sf_timespec_from_ftime (&info.ModificationTime, &iattr->ia_mtime);
-        /* ignore ctime (inode change time) as it can't be set from userland anyway */
+            if (iattr->ia_valid & ATTR_ATIME)
+                sf_timespec_from_ftime (&info.AccessTime, &iattr->ia_atime);
+            if (iattr->ia_valid & ATTR_MTIME)
+                sf_timespec_from_ftime (&info.ModificationTime, &iattr->ia_mtime);
+            /* ignore ctime (inode change time) as it can't be set from userland anyway */
 
-        rc = vboxCallFSInfo(&client_handle, &sf_g->map, params.Handle,
-                            SHFL_INFO_SET | SHFL_INFO_FILE, &cbBuffer,
-                            (PSHFLDIRINFO)&info);
-        if (VBOX_FAILURE (rc)) {
-                LogFunc(("vboxCallFSInfo(%s) failed rc=%Rrc\n",
+            cbBuffer = sizeof(info);
+            rc = vboxCallFSInfo(&client_handle, &sf_g->map, params.Handle,
+                                SHFL_INFO_SET | SHFL_INFO_FILE, &cbBuffer,
+                                (PSHFLDIRINFO)&info);
+            if (VBOX_FAILURE (rc)) {
+                LogFunc(("vboxCallFSInfo(%s, FILE) failed rc=%Rrc\n",
                         sf_i->path->String.utf8, rc));
                 err = -RTErrConvertToErrno(rc);
                 goto fail1;
+            }
         }
-        
+
+        if (iattr->ia_valid & ATTR_SIZE)
+        {
+            memset(&info, 0, sizeof(info));
+            info.cbObject = iattr->ia_size;
+            cbBuffer = sizeof(info);
+            rc = vboxCallFSInfo(&client_handle, &sf_g->map, params.Handle,
+                                SHFL_INFO_SET | SHFL_INFO_SIZE, &cbBuffer,
+                                (PSHFLDIRINFO)&info);
+            if (VBOX_FAILURE (rc)) {
+                LogFunc(("vboxCallFSInfo(%s, SIZE) failed rc=%Rrc\n",
+                        sf_i->path->String.utf8, rc));
+                err = -RTErrConvertToErrno(rc);
+                goto fail1;
+            }
+        }
+
         rc = vboxCallClose (&client_handle, &sf_g->map, params.Handle);
-        if (VBOX_FAILURE (rc)) {
+        if (VBOX_FAILURE (rc))
+        {
                 LogFunc(("vboxCallClose(%s) failed rc=%Rrc\n",
                       sf_i->path->String.utf8, rc));
         }
@@ -362,7 +384,8 @@ sf_setattr (struct dentry *dentry, struct iattr *iattr)
 
 fail1:
         rc = vboxCallClose (&client_handle, &sf_g->map, params.Handle);
-        if (VBOX_FAILURE (rc)) {
+        if (VBOX_FAILURE (rc))
+        {
                 LogFunc(("vboxCallClose(%s) failed rc=%Rrc\n",
                       sf_i->path->String.utf8, rc));
         }
