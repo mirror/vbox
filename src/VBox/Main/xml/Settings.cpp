@@ -953,6 +953,7 @@ Hardware::Hardware()
           cMonitors(1),
           fAccelerate3D(false),
           fAccelerate2DVideo(false),
+          cFirmwareType(FirmwareType_Bios),
           clipboardMode(ClipboardMode_Bidirectional),
           ulMemoryBalloonSize(0),
           ulStatisticsUpdateInterval(0)
@@ -1202,6 +1203,8 @@ void MachineConfigFile::readHardware(const xml::ElementNode &elmHardware,
         }
         else if (pelmHwChild->nameEquals("Memory"))
             pelmHwChild->getAttributeValue("RAMSize", hw.ulMemorySizeMB);
+        else if (pelmHwChild->nameEquals("Firmware"))
+            pelmHwChild->getAttributeValue("type", hw.cFirmwareType);
         else if (pelmHwChild->nameEquals("Boot"))
         {
             hw.mapBootOrder.clear();
@@ -1831,6 +1834,12 @@ void MachineConfigFile::writeHardware(xml::ElementNode &elmParent,
 
     xml::ElementNode *pelmMemory = pelmHardware->createChild("Memory");
     pelmMemory->setAttribute("RAMSize", hw.ulMemorySizeMB);
+
+    if (m->sv >= SettingsVersion_v1_8)
+    {
+         xml::ElementNode *pelmFirmware = pelmHardware->createChild("Firmware");
+         pelmFirmware->setAttribute("type", hw.cFirmwareType);
+    }
 
     xml::ElementNode *pelmBoot = pelmHardware->createChild("Boot");
     for (BootOrderMap::const_iterator it = hw.mapBootOrder.begin();

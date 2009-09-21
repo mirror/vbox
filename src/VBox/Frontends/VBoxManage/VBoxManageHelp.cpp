@@ -127,6 +127,7 @@ void printUsage(USAGECATEGORY u64Cmd)
                  "                            [--ostype <ostype>]\n"
                  "                            [--memory <memorysize in MB>]\n"
                  "                            [--vram <vramsize in MB>]\n"
+                 "                            [--firmware bios|efi]\n"
                  "                            [--acpi on|off]\n"
                  "                            [--ioapic on|off]\n"
                  "                            [--pae on|off]\n"

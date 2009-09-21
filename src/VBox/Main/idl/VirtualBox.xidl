@@ -973,6 +973,20 @@
     <const name="LongMode"        value="2"/>
   </enum>
 
+   <enum
+    name="FirmwareType"
+    uuid="7ceea938-8b49-41e2-bb47-667219c0d586"
+  >
+    <desc>
+      Firmware type.
+    </desc>
+    <const name="Bios"            value="1">
+      <desc>BIOS Firmware.</desc>
+    </const>
+    <const name="Efi"             value="2">
+      <desc>Efi firmware.</desc>
+    </const>
+  </enum>
 
   <!--
   // IVirtualBoxErrorInfo
@@ -3972,6 +3986,8 @@
 
   </interface>
 
+
+   
   <interface
      name="IMachine" extends="$unknown"
      uuid="5293aa45-5ab5-4f70-852e-bb43f5a46491"
@@ -4195,6 +4211,11 @@
 
     <attribute name="BIOSSettings" type="IBIOSSettings" readonly="yes">
       <desc>Object containing all BIOS settings.</desc>
+    </attribute>
+
+     <attribute name="firmwareType" type="FirmwareType">
+      <desc>Type of firmware (such as legacy BIOS or EFI), used for initial 
+       bootstrap in this VM.</desc>
     </attribute>
 
     <attribute name="HWVirtExEnabled" type="boolean">

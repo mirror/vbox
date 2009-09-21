@@ -195,6 +195,8 @@ Machine::HWData::HWData()
 
     mClipboardMode = ClipboardMode_Bidirectional;
     mGuestPropertyNotificationPatterns = "";
+    
+    mFirmwareType = FirmwareType_Bios;
 }
 
 Machine::HWData::~HWData()
@@ -211,6 +213,7 @@ bool Machine::HWData::operator== (const HWData &that) const
         mMemoryBalloonSize != that.mMemoryBalloonSize ||
         mStatisticsUpdateInterval != that.mStatisticsUpdateInterval ||
         mVRAMSize != that.mVRAMSize ||
+        mFirmwareType != that.mFirmwareType ||
         mAccelerate3DEnabled != that.mAccelerate3DEnabled ||
         mAccelerate2DVideoEnabled != that.mAccelerate2DVideoEnabled ||
         mMonitorCount != that.mMonitorCount ||
@@ -1124,6 +1127,36 @@ STDMETHODIMP Machine::COMSETTER(OSTypeId) (IN_BSTR aOSTypeId)
 
     mUserData.backup();
     mUserData->mOSTypeId = osTypeId;
+
+    return S_OK;
+}
+
+
+STDMETHODIMP Machine::COMGETTER(FirmwareType) (FirmwareType_T *aFirmwareType)
+{
+    CheckComArgOutPointerValid(aFirmwareType);
+
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
+
+    AutoReadLock alock(this);
+
+    *aFirmwareType = mHWData->mFirmwareType;
+
+    return S_OK;
+}
+
+STDMETHODIMP Machine::COMSETTER(FirmwareType) (FirmwareType_T aFirmwareType)
+{
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
+    AutoWriteLock alock(this);
+
+    int rc = checkStateDependency(MutableStateDep);
+    CheckComRCReturnRC(rc);
+
+    mHWData.backup();
+    mHWData->mFirmwareType = aFirmwareType;
 
     return S_OK;
 }
@@ -4927,6 +4960,7 @@ HRESULT Machine::loadHardware(const settings::Hardware &data)
         mHWData->mMonitorCount  = data.cMonitors;
         mHWData->mAccelerate3DEnabled = data.fAccelerate3D;
         mHWData->mAccelerate2DVideoEnabled = data.fAccelerate2DVideo;
+        mHWData->mFirmwareType = data.cFirmwareType;
 
 #ifdef VBOX_WITH_VRDP
         /* RemoteDisplay */
@@ -5619,7 +5653,7 @@ HRESULT Machine::saveSettings(int aFlags /*= 0*/)
         mData->m_pMachineConfigFile->fNameSync = !!mUserData->mNameSync;
         mData->m_pMachineConfigFile->strDescription = mUserData->mDescription;
         mData->m_pMachineConfigFile->strOsType = mUserData->mOSTypeId;
-
+        
         if (    mData->mMachineState == MachineState_Saved
              || mData->mMachineState == MachineState_Restoring
            )
@@ -5765,6 +5799,9 @@ HRESULT Machine::saveHardware(settings::Hardware &data)
 
         // memory
         data.ulMemorySizeMB = mHWData->mMemorySize;
+
+        // firmware
+        data.cFirmwareType = mHWData->mFirmwareType;
 
         // boot order
         data.mapBootOrder.clear();
