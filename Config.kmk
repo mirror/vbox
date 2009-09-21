@@ -1429,16 +1429,16 @@ ifeq ($(KBUILD_TARGET),darwin)
  ifeq ($(KBUILD_TARGET_ARCH),x86)
   ifdef VBOX_WITH_COCOA_QT
    VBOX_DEF_MACOSX_VERSION_MIN ?= 10.5
-   VBOX_DARWIN_NO_COMPACT_LINKEDIT := -Wl,-no_compact_linkedit
+   VBOX_DARWIN_NO_COMPACT_LINKEDIT ?= -Wl,-no_compact_linkedit
   else
    VBOX_DEF_MACOSX_VERSION_MIN ?= 10.4
-   VBOX_DARWIN_NO_COMPACT_LINKEDIT :=
+   VBOX_DARWIN_NO_COMPACT_LINKEDIT ?=
   endif
   VBOX_MACOSX_GCC_INFIX ?= -4.0
  else
   VBOX_DEF_MACOSX_VERSION_MIN ?= 10.6
   VBOX_MACOSX_GCC_INFIX ?= -4.2
-   VBOX_DARWIN_NO_COMPACT_LINKEDIT :=
+  VBOX_DARWIN_NO_COMPACT_LINKEDIT ?=
  endif
  TOOL_GCC4MACHO_CC  = gcc$(VBOX_MACOSX_GCC_INFIX)$(HOSTSUFF_EXE)
  TOOL_GCC4MACHO_CXX = g++$(VBOX_MACOSX_GCC_INFIX)$(HOSTSUFF_EXE)
@@ -2259,7 +2259,7 @@ TEMPLATE_VBOXR0DRV_CFLAGS              = $(VBOX_DARWIN_DEF_SDK_CFLAGS) \
 	$(VBOX_GCC_R0_OPT) $(VBOX_GCC_R0_FP) -fno-strict-aliasing -fasm-blocks
 TEMPLATE_VBOXR0DRV_CFLAGS.amd64        = -m64 -mkernel -mno-red-zone -gdwarf-2
 TEMPLATE_VBOXR0DRV_CFLAGS.x86          = -m32 -static
-TEMPLATE_VBOXR0DRV_LDFLAGS             =  $(filter-out -Wl$(COMMA)-no_compact_linkedit,$(VBOX_DARWIN_DEF_SDK_LDFLAGS)) -static -nostdlib -r -Wl,-Y,1455 -keep_private_extern
+TEMPLATE_VBOXR0DRV_LDFLAGS             =  $(filter-out $(VBOX_DARWIN_NO_COMPACT_LINKEDIT),$(VBOX_DARWIN_DEF_SDK_LDFLAGS)) -static -nostdlib -r -Wl,-Y,1455 -keep_private_extern
 TEMPLATE_VBOXR0DRV_LDFLAGS.amd64       = -m64 -Xlinker -kext
 TEMPLATE_VBOXR0DRV_LDFLAGS.x86         = -m32
 TEMPLATE_VBOXR0DRV_LIBS                = kmodc++ kmod cc_kext cpp_kext $(VBOX_GCC_LIBGCC)
