@@ -1055,6 +1055,9 @@ VMMR3DECL(int) VMR3ReqProcessU(PUVM pUVM, VMCPUID idDstCpu)
                 &&  (   rc == VINF_SUCCESS
                      || rc2 < rc) )
                 rc = rc2;
+            /** @todo may have to abort processing to propagate EM scheduling status codes
+             *        up to the caller... See the ugly hacks after VMMR3EmtRendezvousFF
+             *        and VMR3ReqProcessU in EM.cpp. */
         }
     }
 

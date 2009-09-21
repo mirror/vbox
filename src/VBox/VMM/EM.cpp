@@ -1260,6 +1260,16 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
         {
             rc2 = VMMR3EmtRendezvousFF(pVM, pVCpu);
             UPDATE_RC();
+            /** @todo HACK ALERT! The following test is to make sure EM+TM things the VM is
+             * stopped/reset before the next VM state change is made. We need a better
+             * solution for this, or at least make it possible to do: (rc >= VINF_EM_FIRST
+             * && rc >= VINF_EM_SUSPEND). */
+            if (RT_UNLIKELY(rc == VINF_EM_SUSPEND || rc == VINF_EM_RESET || rc == VINF_EM_OFF))
+            {
+                Log2(("emR3ForcedActions: returns %Rrc\n", rc));
+                STAM_REL_PROFILE_STOP(&pVCpu->em.s.StatForcedActions, a);
+                return rc;
+            }
         }
 
         /*
@@ -1346,6 +1356,16 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
         {
             rc2 = VMMR3EmtRendezvousFF(pVM, pVCpu);
             UPDATE_RC();
+            /** @todo HACK ALERT! The following test is to make sure EM+TM things the VM is
+             * stopped/reset before the next VM state change is made. We need a better
+             * solution for this, or at least make it possible to do: (rc >= VINF_EM_FIRST
+             * && rc >= VINF_EM_SUSPEND). */
+            if (RT_UNLIKELY(rc == VINF_EM_SUSPEND || rc == VINF_EM_RESET || rc == VINF_EM_OFF))
+            {
+                Log2(("emR3ForcedActions: returns %Rrc\n", rc));
+                STAM_REL_PROFILE_STOP(&pVCpu->em.s.StatForcedActions, a);
+                return rc;
+            }
         }
 
         /*
@@ -1361,6 +1381,16 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
                 return rc2;
             }
             UPDATE_RC();
+            /** @todo HACK ALERT! The following test is to make sure EM+TM things the VM is
+             * stopped/reset before the next VM state change is made. We need a better
+             * solution for this, or at least make it possible to do: (rc >= VINF_EM_FIRST
+             * && rc >= VINF_EM_SUSPEND). */
+            if (RT_UNLIKELY(rc == VINF_EM_SUSPEND || rc == VINF_EM_RESET || rc == VINF_EM_OFF))
+            {
+                Log2(("emR3ForcedActions: returns %Rrc\n", rc));
+                STAM_REL_PROFILE_STOP(&pVCpu->em.s.StatForcedActions, a);
+                return rc;
+            }
         }
 
         /* Replay the handler notification changes. */
@@ -1402,6 +1432,16 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
                 return rc2;
             }
             UPDATE_RC();
+            /** @todo HACK ALERT! The following test is to make sure EM+TM things the VM is
+             * stopped/reset before the next VM state change is made. We need a better
+             * solution for this, or at least make it possible to do: (rc >= VINF_EM_FIRST
+             * && rc >= VINF_EM_SUSPEND). */
+            if (RT_UNLIKELY(rc == VINF_EM_SUSPEND || rc == VINF_EM_RESET || rc == VINF_EM_OFF))
+            {
+                Log2(("emR3ForcedActions: returns %Rrc\n", rc));
+                STAM_REL_PROFILE_STOP(&pVCpu->em.s.StatForcedActions, a);
+                return rc;
+            }
         }
 
         /* check that we got them all  */
@@ -1500,6 +1540,16 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
         {
             rc2 = VMMR3EmtRendezvousFF(pVM, pVCpu);
             UPDATE_RC();
+            /** @todo HACK ALERT! The following test is to make sure EM+TM things the VM is
+             * stopped/reset before the next VM state change is made. We need a better
+             * solution for this, or at least make it possible to do: (rc >= VINF_EM_FIRST
+             * && rc >= VINF_EM_SUSPEND). */
+            if (RT_UNLIKELY(rc == VINF_EM_SUSPEND || rc == VINF_EM_RESET || rc == VINF_EM_OFF))
+            {
+                Log2(("emR3ForcedActions: returns %Rrc\n", rc));
+                STAM_REL_PROFILE_STOP(&pVCpu->em.s.StatForcedActions, a);
+                return rc;
+            }
         }
 
         /*
