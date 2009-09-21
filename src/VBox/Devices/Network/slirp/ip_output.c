@@ -171,13 +171,14 @@ ip_output(PNATState pData, struct socket *so, struct mbuf *m0)
         ip->ip_sum = cksum(m, hlen);
     
         {
-            STAM_PROFILE_START(&pData->StatALIAS_output, a);
 #ifndef VBOX_WITH_SLIRP_BSD_MBUF
+            STAM_PROFILE_START(&pData->StatALIAS_output, a);
             rc = LibAliasOut((m->m_la ? m->m_la : pData->proxy_alias), 
                 mtod(m, char *), m->m_len);
             Log2(("NAT: LibAlias return %d\n", rc));
 #else
             struct m_tag *t;
+            STAM_PROFILE_START(&pData->StatALIAS_output, a);
             if (t = m_tag_find(m, PACKET_TAG_ALIAS, NULL) != 0)
             {
                 rc = LibAliasOut((struct libalias *)&t[1], mtod(m, char *), m_length(m, NULL));
@@ -227,6 +228,11 @@ ip_output(PNATState pData, struct socket *so, struct mbuf *m0)
         uint8_t *buf; /* intermediate buffer we'll use for copy from orriginal packet*/
 #endif
             {
+#ifdef VBOX_WITH_SLIRP_BSD_MBUF
+                struct m_tag *t;
+                char *tmpbuf = NULL;
+                int tmplen = 0;
+#endif
                 int rc;
                 HTONS(ip->ip_len);
                 HTONS(ip->ip_off);
@@ -236,9 +242,6 @@ ip_output(PNATState pData, struct socket *so, struct mbuf *m0)
                 rc = LibAliasOut((m->m_la ? m->m_la : pData->proxy_alias), 
                     mtod(m, char *), m->m_len);
 #else
-                struct m_tag *t;
-                char *tmpbuf = NULL;
-                int tmplen = 0;
                 if (m->m_next != NULL)
                 {
                     /*we've receives packet in fragments*/
