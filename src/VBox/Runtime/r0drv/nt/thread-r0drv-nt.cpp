@@ -102,6 +102,7 @@ RTDECL(bool) RTThreadPreemptIsPending(RTTHREAD hThread)
     uint32_t const offDpcQueueDepth  = g_offrtNtPbDpcQueueDepth;
     if (!offQuantumEnd && !cbQuantumEnd && !offDpcQueueDepth)
     {
+        /* Remove any pending poke DPC from the queue, so another call to RTMpPokeCpu will send an IPI */
         rtMpPokeCpuClear();
         return false;
     }
