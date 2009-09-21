@@ -567,6 +567,8 @@ sorecvfrom(PNATState pData, struct socket *so)
 #ifdef VBOX_WITH_SLIRP_BSD_MBUF
         int size;
 #endif
+	int rc = 0;
+        static int signaled = 0;
 
         QSOCKET_LOCK(udb);
         SOCKET_LOCK(so);
@@ -588,8 +590,7 @@ sorecvfrom(PNATState pData, struct socket *so)
         len = M_FREEROOM(m);
         /* if (so->so_fport != htons(53)) */
         {
-            static int signaled = 0;
-            int rc = ioctlsocket(so->s, FIONREAD, &n);
+            rc = ioctlsocket(so->s, FIONREAD, &n);
             
             if (rc == -1 && signaled == 0)
             {
@@ -615,8 +616,7 @@ sorecvfrom(PNATState pData, struct socket *so)
         * 2. read as much as possible
         * 3. attach buffer to allocated header mbuf
         */
-        static int signaled = 0;
-        int rc = ioctlsocket(so->s, FIONREAD, &n);
+        rc = ioctlsocket(so->s, FIONREAD, &n);
         
         if (rc == -1 && signaled == 0)
         {
