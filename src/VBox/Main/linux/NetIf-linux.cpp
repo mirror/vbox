@@ -52,20 +52,23 @@ static int getDefaultIfaceName(char *pszName)
     int  iTmp;
     int  iFlags;
 
-    while (fgets(szBuf, sizeof(szBuf)-1, fp))
+    if (fp)
     {
-        int n = sscanf(szBuf, "%16s %128s %128s %X %d %d %d %128s %d %d %d\n",
-                   szIfName, szAddr, szGateway, &iFlags, &iTmp, &iTmp, &iTmp,
-                   szMask, &iTmp, &iTmp, &iTmp);
-        if (n < 10 || !(iFlags & RTF_UP))
-            continue;
-
-        if (strcmp(szAddr, "00000000") == 0 && strcmp(szMask, "00000000") == 0)
+        while (fgets(szBuf, sizeof(szBuf)-1, fp))
         {
-            fclose(fp);
-            strncpy(pszName, szIfName, 16);
-            pszName[16] = 0;
-            return VINF_SUCCESS;
+            int n = sscanf(szBuf, "%16s %128s %128s %X %d %d %d %128s %d %d %d\n",
+                           szIfName, szAddr, szGateway, &iFlags, &iTmp, &iTmp, &iTmp,
+                           szMask, &iTmp, &iTmp, &iTmp);
+            if (n < 10 || !(iFlags & RTF_UP))
+                continue;
+
+            if (strcmp(szAddr, "00000000") == 0 && strcmp(szMask, "00000000") == 0)
+            {
+                fclose(fp);
+                strncpy(pszName, szIfName, 16);
+                pszName[16] = 0;
+                return VINF_SUCCESS;
+            }
         }
     }
     return VERR_INTERNAL_ERROR;
