@@ -32,10 +32,9 @@ msize_init(PNATState pData)
 {
     /*
      * Find a nice value for msize
-     * XXX if_maxlinkhdr already in mtu
      */
     msize = (if_mtu>if_mru ? if_mtu : if_mru) 
-          + if_maxlinkhdr + sizeof(struct m_hdr ) + 6;
+          + sizeof(struct m_hdr );
 }
 
 /*

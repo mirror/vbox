@@ -308,6 +308,7 @@ ip_output(PNATState pData, struct socket *so, struct mbuf *m0)
             m->m_data += if_maxlinkhdr;
             mhip = mtod(m, struct ip *);
             *mhip = *ip;
+            m->m_len += ip->ip_hl << 2;
 #ifdef VBOX_WITH_SLIRP_BSD_MBUF
             m->m_pkthdr.header = mtod(m, void *);
 #endif
@@ -342,7 +343,7 @@ ip_output(PNATState pData, struct socket *so, struct mbuf *m0)
             m->m_data -= mhlen;
             m->m_len += mhlen;
             RTMemFree(buf);
-            m->m_len = ntohs(mhip->ip_len);
+            m->m_len += ntohs(mhip->ip_len);
 #endif
 
             mhip->ip_off = htons((u_int16_t)mhip->ip_off);
