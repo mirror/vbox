@@ -1563,6 +1563,8 @@ void MachineConfigFile::readHardDiskAttachments_pre1_7(const xml::ElementNode &e
         if (!pelmAttachment->getAttributeValue("device", att.lDevice))
             throw ConfigFileError(this, pelmAttachment, N_("Required HardDiskAttachment/@device attribute is missing"));
 
+        att.deviceType = DeviceType_HardDisk;
+
         if (strBus == "IDE")
         {
             if (!pIDEController)
