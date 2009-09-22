@@ -2500,6 +2500,9 @@ static DECLCALLBACK(int) hwaccmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersio
         rc = SSMR3GetU32(pSSM, &pVM->hwaccm.s.svm.cPatches);
         AssertRCReturn(rc, rc);
 
+        if (pVM->hwaccm.s.svm.cPatches)
+            pVM->hwaccm.s.svm.fTPRPatchingActive = true;
+
         for (unsigned i = 0; i < pVM->hwaccm.s.svm.cPatches; i++)
         {
             PHWACCMTPRPATCH pPatch = &pVM->hwaccm.s.svm.aPatches[i];
