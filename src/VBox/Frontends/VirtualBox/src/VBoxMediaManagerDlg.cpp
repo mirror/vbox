@@ -774,6 +774,14 @@ void VBoxMediaManagerDlg::mediumAdded (const VBoxMedium &aMedium)
             AssertReturnVoid (item);
 
             item->setMedium (aMedium);
+
+            /* Check if swapped diff disk is required one */
+            if (item->id() == mHDSelectedId)
+            {
+                setCurrentItem (mHardDiskView, item);
+                mHDSelectedId = QString::null;
+            }
+
             updateTabIcons (item, ItemAction_Updated);
             return;
         }
