@@ -535,6 +535,8 @@ private:
 
     void updateAdditionalObjects (KDeviceType aType);
 
+    QString generateUniqueName (const QString &aTemplate) const;
+
     CMachine mMachine;
     QIWidgetValidator *mValidator;
 
