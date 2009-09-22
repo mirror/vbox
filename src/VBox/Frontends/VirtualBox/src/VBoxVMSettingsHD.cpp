@@ -578,6 +578,8 @@ AttachmentItem::AttachmentItem (AbstractItem *aParent, KDeviceType aDeviceType)
         case KDeviceType_Floppy:
             if (freeMediumIds.size() > 1)
                 setAttMediumId (freeMediumIds [1]);
+            else if (freeMediumIds.size() > 0)
+                setAttMediumId (freeMediumIds [0]);
             break;
         default:
             break;
