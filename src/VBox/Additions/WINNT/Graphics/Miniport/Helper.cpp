@@ -62,7 +62,7 @@ BOOLEAN vboxQueryDisplayRequest(uint32_t *xres, uint32_t *yres, uint32_t *bpp)
 {
     BOOLEAN bRC = FALSE;
 
-    dprintf(("VBoxVideo::vboxQueryDisplayRequest: xres = %p, yres = %p bpp = %p\n", xres, yres, bpp));
+    dprintf(("VBoxVideo::vboxQueryDisplayRequest: xres = 0x%p, yres = 0x%p bpp = 0x%p\n", xres, yres, bpp));
 
     VMMDevDisplayChangeRequest *req = NULL;
 
