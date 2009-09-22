@@ -371,26 +371,26 @@ static int pdmacFileAioMgrNormalProcessTaskList(PPDMACTASKFILE pTaskHead,
                  * Offset, transfer size and buffer address
                  * need to be on a 512 boundary. */
                 size_t cbToTransfer = RT_ALIGN_Z(pCurr->DataSeg.cbSeg, 512);
-                RTFOFF OffStart = pCurr->Off & ~(RTFOFF)(512-1);
+                RTFOFF offStart = pCurr->Off & ~(RTFOFF)(512-1);
                 PDMACTASKFILETRANSFER enmTransferType = pCurr->enmTransferType;
 
                 AssertMsg(   pCurr->enmTransferType == PDMACTASKFILETRANSFER_WRITE
-                          || (uint64_t)(OffStart + cbToTransfer) <= pEndpoint->cbFile,
-                          ("Read exceeds file size OffStart=%RTfoff cbToTransfer=%d cbFile=%llu\n",
-                          OffStart, cbToTransfer, pEndpoint->cbFile));
+                          || (uint64_t)(offStart + cbToTransfer) <= pEndpoint->cbFile,
+                          ("Read exceeds file size offStart=%RTfoff cbToTransfer=%d cbFile=%llu\n",
+                          offStart, cbToTransfer, pEndpoint->cbFile));
 
                 pCurr->fPrefetch = false;
 
                 if (   RT_UNLIKELY(cbToTransfer != pCurr->DataSeg.cbSeg)
-                    || RT_UNLIKELY(OffStart != pCurr->Off)
+                    || RT_UNLIKELY(offStart != pCurr->Off)
                     || ((pEpClassFile->uBitmaskAlignment & (RTR3UINTPTR)pvBuf) != (RTR3UINTPTR)pvBuf))
                 {
                     /* Create bounce buffer. */
                     pCurr->fBounceBuffer = true;
 
-                    AssertMsg(pCurr->Off >= OffStart, ("Overflow in calculation Off=%llu OffStart=%llu\n",
-                              pCurr->Off, OffStart));
-                    pCurr->uBounceBufOffset = pCurr->Off - OffStart;
+                    AssertMsg(pCurr->Off >= offStart, ("Overflow in calculation Off=%llu offStart=%llu\n",
+                              pCurr->Off, offStart));
+                    pCurr->uBounceBufOffset = pCurr->Off - offStart;
 
                     /** @todo: I think we need something like a RTMemAllocAligned method here.
                      * Current assumption is that the maximum alignment is 4096byte
@@ -404,7 +404,7 @@ static int pdmacFileAioMgrNormalProcessTaskList(PPDMACTASKFILE pTaskHead,
                     if (pCurr->enmTransferType == PDMACTASKFILETRANSFER_WRITE)
                     {
                         if (   RT_UNLIKELY(cbToTransfer != pCurr->DataSeg.cbSeg)
-                            || RT_UNLIKELY(OffStart != pCurr->Off))
+                            || RT_UNLIKELY(offStart != pCurr->Off))
                         {
                             /* We have to fill the buffer first before we can update the data. */
                             pCurr->fPrefetch = true;
@@ -430,11 +430,11 @@ static int pdmacFileAioMgrNormalProcessTaskList(PPDMACTASKFILE pTaskHead,
                     }
 
                     rc = RTFileAioReqPrepareWrite(hReq, pEndpoint->File,
-                                                  OffStart, pvBuf, cbToTransfer, pCurr);
+                                                  offStart, pvBuf, cbToTransfer, pCurr);
                 }
                 else
                     rc = RTFileAioReqPrepareRead(hReq, pEndpoint->File,
-                                                 OffStart, pvBuf, cbToTransfer, pCurr);
+                                                 offStart, pvBuf, cbToTransfer, pCurr);
                 AssertRC(rc);
 
                 apReqs[cRequests] = hReq;
@@ -734,7 +734,7 @@ int pdmacFileAioMgrNormal(RTTHREAD ThreadSelf, void *pvUser)
                         /* Write it now. */
                         pTask->fPrefetch = false;
                         size_t cbToTransfer = RT_ALIGN_Z(pTask->DataSeg.cbSeg, 512);
-                        RTFOFF OffStart = pTask->Off & ~(RTFOFF)(512-1);
+                        RTFOFF offStart = pTask->Off & ~(RTFOFF)(512-1);
 
                         /* Grow the file if needed. */
                         if (RT_UNLIKELY((uint64_t)(pTask->Off + pTask->DataSeg.cbSeg) > pEndpoint->cbFile))
@@ -744,7 +744,7 @@ int pdmacFileAioMgrNormal(RTTHREAD ThreadSelf, void *pvUser)
                         }
 
                         rc = RTFileAioReqPrepareWrite(apReqs[i], pEndpoint->File,
-                                                      OffStart, pTask->pvBounceBuffer, cbToTransfer, pTask);
+                                                      offStart, pTask->pvBounceBuffer, cbToTransfer, pTask);
                         AssertRC(rc);
                         rc = RTFileAioCtxSubmit(pAioMgr->hAioCtx, &apReqs[i], 1);
                         AssertRC(rc);
