@@ -1557,7 +1557,7 @@ bool Host::getDVDInfoFromHal(std::list <ComObjPtr<Medium> > &list)
                                         ComObjPtr<Medium> hostDVDDriveObj;
                                         hostDVDDriveObj.createObject();
                                         hostDVDDriveObj->init(mParent, DeviceType_DVD,
-                                                              Bstr(devNode), description);
+                                                              Bstr(devNode), Bstr(description));
                                         list.push_back (hostDVDDriveObj);
                                     }
                                     else
@@ -1719,8 +1719,8 @@ bool Host::getFloppyInfoFromHal(std::list <ComObjPtr<Medium> > &list)
                                         }
                                         ComObjPtr<Medium> hostFloppyDrive;
                                         hostFloppyDrive.createObject();
-                                        hostDVDDriveObj->init(mParent, DeviceType_DVD,
-                                                              Bstr(devNode), description);
+                                        hostFloppyDrive->init(mParent, DeviceType_DVD,
+                                                              Bstr(devNode), Bstr(description));
                                         list.push_back (hostFloppyDrive);
                                     }
                                     else
@@ -1733,7 +1733,7 @@ bool Host::getFloppyInfoFromHal(std::list <ComObjPtr<Medium> > &list)
                                         }
                                         ComObjPtr<Medium> hostFloppyDrive;
                                         hostFloppyDrive.createObject();
-                                        hostDVDDriveObj->init(mParent, DeviceType_DVD,
+                                        hostFloppyDrive->init(mParent, DeviceType_DVD,
                                                               Bstr(devNode));
                                         list.push_back (hostFloppyDrive);
                                     }
@@ -1799,6 +1799,7 @@ bool Host::getFloppyInfoFromHal(std::list <ComObjPtr<Medium> > &list)
 }
 #endif  /* RT_OS_SOLARIS and VBOX_USE_HAL */
 
+/** @todo get rid of dead code below - RT_OS_SOLARIS and RT_OS_LINUX are never both set
 #if defined(RT_OS_SOLARIS)
 
 /**
@@ -1856,7 +1857,7 @@ void Host::parseMountTable(char *mountTable, std::list <ComObjPtr<Medium> > &lis
                 {
                     ComObjPtr<Medium> hostDVDDriveObj;
                     hostDVDDriveObj.createObject();
-                    hostDVDDriveObj->init (Bstr (mnt_dev));
+                    hostDVDDriveObj->init(mParent, DeviceType_DVD, Bstr(mnt_dev));
                     list.push_back (hostDVDDriveObj);
                 }
             }
@@ -1888,7 +1889,7 @@ void Host::parseMountTable(char *mountTable, std::list <ComObjPtr<Medium> > &lis
                 {
                     ComObjPtr<Medium> hostDVDDriveObj;
                     hostDVDDriveObj.createObject();
-                    hostDVDDriveObj->init (Bstr (rawDevName));
+                    hostDVDDriveObj->init(mParent, DeviceType_DVD, Bstr(rawDevName));
                     list.push_back (hostDVDDriveObj);
                 }
                 free(rawDevName);
