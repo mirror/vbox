@@ -257,13 +257,13 @@
  * @{
  */
 /** Set to 1 if the task switch was caused by an IRET; else cleared to 0. */
-#define SVM_EXIT2_TASK_SWITCH_IRET                  RT_BIT64(36)
+#define SVM_EXIT2_TASK_SWITCH_IRET                  RT_BIT_64(36)
 /** Set to 1 if the task switch was caused by a far jump; else cleared to 0. */
-#define SVM_EXIT2_TASK_SWITCH_JMP                   RT_BIT64(38)
+#define SVM_EXIT2_TASK_SWITCH_JMP                   RT_BIT_64(38)
 /** Set to 1 if the task switch has an error code; else cleared to 0. */
-#define SVM_EXIT2_TASK_SWITCH_HAS_ERROR_CODE        RT_BIT64(44)
+#define SVM_EXIT2_TASK_SWITCH_HAS_ERROR_CODE        RT_BIT_64(44)
 /** The value of EFLAGS.RF that would be saved in the outgoing TSS if the task switch were not intercepted. */
-#define SVM_EXIT2_TASK_SWITCH_EFLAGS_RF             RT_BIT64(48)
+#define SVM_EXIT2_TASK_SWITCH_EFLAGS_RF             RT_BIT_64(48)
 /** @} */
 
 /** @name SVM_VMCB.ctrl.u32InterceptCtrl1
