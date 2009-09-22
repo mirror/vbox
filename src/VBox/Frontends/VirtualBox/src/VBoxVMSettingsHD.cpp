@@ -306,14 +306,24 @@ AbstractItem::~AbstractItem()
     if (mParent) mParent->delChild (this);
 }
 
-AbstractItem* AbstractItem::parent()
+AbstractItem* AbstractItem::parent() const
 {
     return mParent;
 }
 
-QUuid AbstractItem::id()
+QUuid AbstractItem::id() const
 {
     return mId;
+}
+
+QString AbstractItem::machineId() const
+{
+    return mMachineId;
+}
+
+void AbstractItem::setMachineId (const QString &aMchineId)
+{
+    mMachineId = aMchineId;
 }
 
 /* Root Item */
@@ -515,7 +525,7 @@ DeviceTypeList ControllerItem::ctrDeviceTypeList() const
      return mCtrType->deviceTypeList();
 }
 
-QStringList ControllerItem::ctrAllMediumIds() const
+QStringList ControllerItem::ctrAllMediumIds (bool aShowDiffs) const
 {
     QStringList allImages;
     for (VBoxMediaList::const_iterator it = vboxGlobal().currentMediaList().begin();
@@ -525,6 +535,12 @@ QStringList ControllerItem::ctrAllMediumIds() const
          {
              if ((*it).isNull() || typeToGlobal ((*it).type()) == deviceType)
              {
+                 /* We should filter out the base hard-disk of diff-disks,
+                  * as we want to insert here a diff-disks and want
+                  * to avoid duplicates in !aShowDiffs mode. */
+                 if (!aShowDiffs && (*it).parent() && !parent()->machineId().isNull() &&
+                     (*it).isAttachedInCurStateTo (parent()->machineId()))
+                     allImages.removeAll ((*it).root().id());
                  allImages << (*it).id();
                  break;
              }
@@ -683,7 +699,7 @@ QStringList AttachmentItem::attMediumIds (bool aFilter) const
     QStringList allMediumIds;
 
     /* Populate list of suitable medium ids */
-    foreach (QString mediumId, ctr->ctrAllMediumIds())
+    foreach (QString mediumId, ctr->ctrAllMediumIds (mAttIsShowDiffs))
     {
         VBoxMedium medium = vboxGlobal().findMedium (mediumId);
         if ((medium.isNull() && mAttDeviceType != KDeviceType_HardDisk) ||
@@ -793,8 +809,9 @@ void AttachmentItem::cache()
     mAttSize = medium.size (!mAttIsShowDiffs);
     mAttLogicalSize = medium.logicalSize (!mAttIsShowDiffs);
     mAttLocation = medium.location (!mAttIsShowDiffs);
-    mAttFormat = QString ("%1 (%2)").arg (medium.hardDiskType (!mAttIsShowDiffs))
-                                    .arg (medium.hardDiskFormat (!mAttIsShowDiffs));
+    mAttFormat = medium.isNull() ? QString ("--") :
+        QString ("%1 (%2)").arg (medium.hardDiskType (!mAttIsShowDiffs))
+                           .arg (medium.hardDiskFormat (!mAttIsShowDiffs));
     mAttUsage = medium.usage (!mAttIsShowDiffs);
 
     /* Fill empty attributes */
@@ -1323,6 +1340,11 @@ void StorageModel::delAttachment (const QUuid &aCtrId, const QUuid &aAttId)
     }
 }
 
+void StorageModel::setMachineId (const QString &aMachineId)
+{
+    mRootItem->setMachineId (aMachineId);
+}
+
 Qt::ItemFlags StorageModel::flags (const QModelIndex &aIndex) const
 {
     return !aIndex.isValid() ? QAbstractItemModel::flags (aIndex) :
@@ -1511,6 +1533,7 @@ VBoxVMSettingsHD::VBoxVMSettingsHD()
 
     /* Vdi Combo */
     mCbVdi->setNullItemPresent (true);
+    mCbVdi->refresh();
 
     /* Vmm Button */
     mTbVmm->setIcon (VBoxGlobal::iconSet (PixmapPool::pool()->pixmap (PixmapPool::VMMEn),
@@ -1573,6 +1596,7 @@ void VBoxVMSettingsHD::getFrom (const CMachine &aMachine)
 
     /* Set the machine id for the media-combo */
     mCbVdi->setMachineId (mMachine.GetId());
+    mStorageModel->setMachineId (mMachine.GetId());
 
     /* Load currently present controllers & attachments */
     CStorageControllerVector controllers = mMachine.GetStorageControllers();
@@ -1636,12 +1660,39 @@ void VBoxVMSettingsHD::putBackTo()
 void VBoxVMSettingsHD::setValidator (QIWidgetValidator *aVal)
 {
     mValidator = aVal;
-    // TODO Setup Validation!
 }
 
 bool VBoxVMSettingsHD::revalidate (QString &aWarning, QString &)
 {
-    // TODO Perform Validation!
+    QModelIndex rootIndex = mStorageModel->root();
+    QMap <QString, QString> config;
+    for (int i = 0; i < mStorageModel->rowCount (rootIndex); ++ i)
+    {
+        QModelIndex ctrIndex = rootIndex.child (i, 0);
+        QString ctrName = mStorageModel->data (ctrIndex, StorageModel::R_CtrName).toString();
+        for (int j = 0; j < mStorageModel->rowCount (ctrIndex); ++ j)
+        {
+            QModelIndex attIndex = ctrIndex.child (j, 0);
+            StorageSlot attSlot = mStorageModel->data (attIndex, StorageModel::R_AttSlot).value <StorageSlot>();
+            KDeviceType attDevice = mStorageModel->data (attIndex, StorageModel::R_AttDevice).value <KDeviceType>();
+            QString key (mStorageModel->data (attIndex, StorageModel::R_AttMediumId).toString());
+            QString value (QString ("%1 (%2)").arg (ctrName, vboxGlobal().toFullString (attSlot)));
+            /* Check for emptiness */
+            if (vboxGlobal().findMedium (key).isNull() && attDevice == KDeviceType_HardDisk)
+            {
+                aWarning = tr ("No hard disk is selected for <i>%1</i>.").arg (value);
+                return aWarning.isNull();
+            }
+            /* Check for coincidence */
+            if (!vboxGlobal().findMedium (key).isNull() && config.contains (key))
+            {
+                aWarning = tr ("<i>%1</i> uses the medium that is already attached to <i>%2</i>.")
+                              .arg (value).arg (config [key]);
+                return aWarning.isNull();
+            }
+            else config.insert (key, value);
+        }
+    }
     return aWarning.isNull();
 }
 
@@ -1721,25 +1772,29 @@ void VBoxVMSettingsHD::addController()
 void VBoxVMSettingsHD::addIDEController()
 {
     mStorageModel->addController (generateUniqueName (tr ("IDE Controller")),
-                                  KStorageBus_IDE, KStorageControllerType_PIIX3);
+                                  KStorageBus_IDE, KStorageControllerType_PIIX4);
+    emit storageChanged();
 }
 
 void VBoxVMSettingsHD::addSATAController()
 {
     mStorageModel->addController (generateUniqueName (tr ("SATA Controller")),
                                   KStorageBus_SATA, KStorageControllerType_IntelAhci);
+    emit storageChanged();
 }
 
 void VBoxVMSettingsHD::addSCSIController()
 {
     mStorageModel->addController (generateUniqueName (tr ("SCSI Controller")),
                                   KStorageBus_SCSI, KStorageControllerType_LsiLogic);
+    emit storageChanged();
 }
 
 void VBoxVMSettingsHD::addFloppyController()
 {
     mStorageModel->addController (generateUniqueName (tr ("Floppy Controller")),
                                   KStorageBus_Floppy, KStorageControllerType_I82078);
+    emit storageChanged();
 }
 
 void VBoxVMSettingsHD::delController()
@@ -1748,6 +1803,8 @@ void VBoxVMSettingsHD::delController()
     if (!mStorageModel->data (index, StorageModel::R_IsController).toBool()) return;
 
     mStorageModel->delController (QUuid (mStorageModel->data (index, StorageModel::R_ItemId).toString()));
+    emit storageChanged();
+    mValidator->revalidate();
 }
 
 void VBoxVMSettingsHD::addAttachment (KDeviceType aDeviceType)
@@ -1759,6 +1816,8 @@ void VBoxVMSettingsHD::addAttachment (KDeviceType aDeviceType)
         aDeviceType = mStorageModel->data (index, StorageModel::R_CtrDevices).value <DeviceTypeList>() [0];
 
     mStorageModel->addAttachment (QUuid (mStorageModel->data (index, StorageModel::R_ItemId).toString()), aDeviceType);
+    emit storageChanged();
+    mValidator->revalidate();
 }
 
 void VBoxVMSettingsHD::delAttachment()
@@ -1772,6 +1831,8 @@ void VBoxVMSettingsHD::delAttachment()
 
     mStorageModel->delAttachment (QUuid (mStorageModel->data (parent, StorageModel::R_ItemId).toString()),
                                   QUuid (mStorageModel->data (index, StorageModel::R_ItemId).toString()));
+    emit storageChanged();
+    mValidator->revalidate();
 }
 
 void VBoxVMSettingsHD::getInformation()
@@ -1861,6 +1922,8 @@ void VBoxVMSettingsHD::getInformation()
         }
     }
 
+    mValidator->revalidate();
+
     mIsLoadingInProgress = false;
 }
 
@@ -1914,6 +1977,7 @@ void VBoxVMSettingsHD::setInformation()
             break;
     }
 
+    emit storageChanged();
     getInformation();
 }
 

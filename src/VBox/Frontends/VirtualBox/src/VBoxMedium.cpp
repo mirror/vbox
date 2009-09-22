@@ -196,9 +196,8 @@ void VBoxMedium::refresh()
     /* Compose the tooltip */
     if (mMedium.isNull())
     {
-        mToolTip = VBoxGlobal::tr ("<nobr><b>Null&nbsp;Medium</b></nobr><br>"
-                                   "This medium corresponds to empty device "
-                                   "which could be mounted at runtime.");
+        mToolTip = VBoxGlobal::tr ("<nobr><b>No&nbsp;Medium&nbsp;Available</b></nobr><br>"
+                                   "Use the Virtual Media Manager to add medium of the corresponding type.");
     }
     else
     {

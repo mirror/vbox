@@ -208,8 +208,11 @@ public:
     AbstractItem (AbstractItem *aParent = 0);
     virtual ~AbstractItem();
 
-    AbstractItem* parent();
-    QUuid id();
+    AbstractItem* parent() const;
+    QUuid id() const;
+    QString machineId() const;
+
+    void setMachineId (const QString &aMchineId);
 
     virtual ItemType rtti() const = 0;
     virtual AbstractItem* childByPos (int aIndex) = 0;
@@ -227,6 +230,7 @@ protected:
 
     AbstractItem *mParent;
     QUuid         mId;
+    QString       mMachineId;
 };
 Q_DECLARE_METATYPE (AbstractItem::ItemType);
 
@@ -284,7 +288,7 @@ public:
     SlotsList ctrAllSlots() const;
     SlotsList ctrUsedSlots() const;
     DeviceTypeList ctrDeviceTypeList() const;
-    QStringList ctrAllMediumIds() const;
+    QStringList ctrAllMediumIds (bool aShowDiffs) const;
     QStringList ctrUsedMediumIds() const;
 
 private:
@@ -442,6 +446,8 @@ public:
     QModelIndex addAttachment (const QUuid &aCtrId, KDeviceType aDeviceType);
     void delAttachment (const QUuid &aCtrId, const QUuid &aAttId);
 
+    void setMachineId (const QString &aMachineId);
+
 private:
 
     Qt::ItemFlags flags (const QModelIndex &aIndex) const;
@@ -484,7 +490,7 @@ public:
 
 signals:
 
-    void mediumChanged();
+    void storageChanged();
 
 protected:
 
