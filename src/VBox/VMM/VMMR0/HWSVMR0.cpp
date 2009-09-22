@@ -2407,10 +2407,39 @@ ResumeExecution:
         break;
     }
 
+    case SVM_EXIT_TASK_SWITCH:          /* too complicated to emulate, so fall back to the recompiler*/
+        Log(("SVM_EXIT_TASK_SWITCH: exit2=%RX64\n", pVMCB->ctrl.u64ExitInfo2));
+        if (    !(pVMCB->ctrl.u64ExitInfo2 & (SVM_EXIT2_TASK_SWITCH_IRET | SVM_EXIT2_TASK_SWITCH_JMP))
+            &&  pVCpu->hwaccm.s.Event.fPending)
+        {
+            SVM_EVENT Event;
+
+            Event.au64[0] = pVCpu->hwaccm.s.Event.intInfo;
+
+            /* Caused by an injected interrupt. */
+            pVCpu->hwaccm.s.Event.fPending = false;
+
+            switch (Event.n.u3Type)
+            {
+            case SVM_EVENT_EXTERNAL_IRQ:
+            case SVM_EVENT_NMI:
+                Log(("SVM_EXIT_TASK_SWITCH: reassert trap %d\n", Event.n.u8Vector));
+                Assert(!Event.n.u1ErrorCodeValid);
+                rc = TRPMAssertTrap(pVCpu, Event.n.u8Vector, TRPM_HARDWARE_INT);
+                AssertRC(rc);
+                break;
+
+            default:
+                /* Exceptions and software interrupts can just be restarted. */
+                break;
+            }
+        }
+        rc = VERR_EM_INTERPRETER;
+        break;
+
     case SVM_EXIT_MONITOR:
     case SVM_EXIT_PAUSE:
     case SVM_EXIT_MWAIT_ARMED:
-    case SVM_EXIT_TASK_SWITCH:          /* can change CR3; emulate */
         rc = VERR_EM_INTERPRETER;
         break;
 

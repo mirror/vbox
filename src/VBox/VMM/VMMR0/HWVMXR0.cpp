@@ -3828,7 +3828,21 @@ ResumeExecution:
         AssertFailed();                 /* Can't happen afaik. */
         break;
 
-    case VMX_EXIT_TASK_SWITCH:          /* 9 Task switch. */
+    case VMX_EXIT_TASK_SWITCH:          /* 9 Task switch: too complicated to emulate, so fall back to the recompiler */
+        Log(("VMX_EXIT_TASK_SWITCH: exit=%RX64\n", exitQualification));
+        if (    (VMX_EXIT_QUALIFICATION_TASK_SWITCH_TYPE(exitQualification) == VMX_EXIT_QUALIFICATION_TASK_SWITCH_TYPE_IDT)
+            &&  pVCpu->hwaccm.s.Event.fPending)
+        {
+            /* Caused by an injected interrupt. */
+            pVCpu->hwaccm.s.Event.fPending = false;
+
+            Log(("VMX_EXIT_TASK_SWITCH: reassert trap %d\n", VMX_EXIT_INTERRUPTION_INFO_VECTOR(pVCpu->hwaccm.s.Event.intInfo)));
+            Assert(!VMX_EXIT_INTERRUPTION_INFO_ERROR_CODE_IS_VALID(pVCpu->hwaccm.s.Event.intInfo));
+            rc = TRPMAssertTrap(pVCpu, VMX_EXIT_INTERRUPTION_INFO_VECTOR(pVCpu->hwaccm.s.Event.intInfo), TRPM_HARDWARE_INT);
+            AssertRC(rc);
+        }
+        else
+            /* Exceptions and software interrupts can just be restarted. */
         rc = VERR_EM_INTERPRETER;
         break;
 
