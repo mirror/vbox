@@ -407,7 +407,7 @@ STDMETHODIMP Host::COMGETTER(DVDDrives)(ComSafeArrayOut(IMedium *, aDrives))
         {
             ComObjPtr<Medium> hostDVDDriveObj;
             hostDVDDriveObj.createObject();
-            hostDVDDriveObj->init(Bstr(cur->szName));
+            hostDVDDriveObj->init(mParent, DeviceType_DVD, Bstr(cur->szName));
             list.push_back(hostDVDDriveObj);
 
             /* next */
