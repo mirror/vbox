@@ -555,6 +555,7 @@ void ControllerItem::delChild (AbstractItem *aItem)
 AttachmentItem::AttachmentItem (AbstractItem *aParent, KDeviceType aDeviceType)
     : AbstractItem (aParent)
     , mAttDeviceType (aDeviceType)
+    , mAttIsShowDiffs (false)
     , mAttIsHostDrive (false)
     , mAttIsPassthrough (false)
 {
@@ -700,6 +701,11 @@ QStringList AttachmentItem::attMediumIds (bool aFilter) const
     return allMediumIds;
 }
 
+bool AttachmentItem::attIsShowDiffs() const
+{
+    return mAttIsShowDiffs;
+}
+
 bool AttachmentItem::attIsHostDrive() const
 {
     return mAttIsHostDrive;
@@ -731,7 +737,14 @@ void AttachmentItem::setAttMediumId (const QString &aAttMediumId)
     else if (!aAttMediumId.isEmpty())
         medium = vboxGlobal().findMedium (aAttMediumId);
 
-    cache (medium);
+    mAttMediumId = medium.id();
+    cache();
+}
+
+void AttachmentItem::setAttIsShowDiffs (bool aAttIsShowDiffs)
+{
+    mAttIsShowDiffs = aAttIsShowDiffs;
+    cache();
 }
 
 void AttachmentItem::setAttIsPassthrough (bool aIsAttPassthrough)
@@ -764,22 +777,23 @@ QString AttachmentItem::attUsage() const
     return mAttUsage;
 }
 
-void AttachmentItem::cache (const VBoxMedium &aMedium)
+void AttachmentItem::cache()
 {
-    mAttMediumId = aMedium.id();
+    VBoxMedium medium = vboxGlobal().findMedium (mAttMediumId);
 
     /* Cache medium information */
-    mAttName = aMedium.name (true);
-    mAttTip = aMedium.toolTipCheckRO (true);
-    mAttPixmap = aMedium.iconCheckRO (true);
-    mAttIsHostDrive = aMedium.isHostDrive();
+    mAttName = medium.name (!mAttIsShowDiffs);
+    mAttTip = medium.toolTipCheckRO (!mAttIsShowDiffs);
+    mAttPixmap = medium.iconCheckRO (!mAttIsShowDiffs);
+    mAttIsHostDrive = medium.isHostDrive();
 
     /* Cache additional information */
-    mAttSize = aMedium.size();
-    mAttLogicalSize = aMedium.logicalSize();
-    mAttLocation = aMedium.location();
-    mAttFormat = QString ("%1 (%2)").arg (aMedium.hardDiskType()).arg (aMedium.hardDiskFormat());
-    mAttUsage = aMedium.usage();
+    mAttSize = medium.size (!mAttIsShowDiffs);
+    mAttLogicalSize = medium.logicalSize (!mAttIsShowDiffs);
+    mAttLocation = medium.location (!mAttIsShowDiffs);
+    mAttFormat = QString ("%1 (%2)").arg (medium.hardDiskType (!mAttIsShowDiffs))
+                                    .arg (medium.hardDiskFormat (!mAttIsShowDiffs));
+    mAttUsage = medium.usage (!mAttIsShowDiffs);
 
     /* Fill empty attributes */
     if (mAttUsage.isEmpty())
@@ -1028,6 +1042,13 @@ QVariant StorageModel::data (const QModelIndex &aIndex, int aRole) const
                     return static_cast <AttachmentItem*> (item)->attMediumId();
             return QString();
         }
+        case R_AttIsShowDiffs:
+        {
+            if (AbstractItem *item = static_cast <AbstractItem*> (aIndex.internalPointer()))
+                if (item->rtti() == AbstractItem::Type_AttachmentItem)
+                    return static_cast <AttachmentItem*> (item)->attIsShowDiffs();
+            return false;
+        }
         case R_AttIsHostDrive:
         {
             if (AbstractItem *item = static_cast <AbstractItem*> (aIndex.internalPointer()))
@@ -1218,6 +1239,17 @@ bool StorageModel::setData (const QModelIndex &aIndex, const QVariant &aValue, i
                 if (item->rtti() == AbstractItem::Type_AttachmentItem)
                 {
                     static_cast <AttachmentItem*> (item)->setAttMediumId (aValue.toString());
+                    emit dataChanged (aIndex, aIndex);
+                    return true;
+                }
+            return false;
+        }
+        case R_AttIsShowDiffs:
+        {
+            if (AbstractItem *item = static_cast <AbstractItem*> (aIndex.internalPointer()))
+                if (item->rtti() == AbstractItem::Type_AttachmentItem)
+                {
+                    static_cast <AttachmentItem*> (item)->setAttIsShowDiffs (aValue.toBool());
                     emit dataChanged (aIndex, aIndex);
                     return true;
                 }
@@ -1519,6 +1551,7 @@ VBoxVMSettingsHD::VBoxVMSettingsHD()
     connect (mCbDevice, SIGNAL (activated (int)), this, SLOT (setInformation()));
     connect (mCbVdi, SIGNAL (activated (int)), this, SLOT (setInformation()));
     connect (mTbVmm, SIGNAL (clicked (bool)), this, SLOT (onVmmInvoked()));
+    connect (mCbShowDiffs, SIGNAL (stateChanged (int)), this, SLOT (setInformation()));
     connect (mCbPassthrough, SIGNAL (stateChanged (int)), this, SLOT (setInformation()));
 
     /* Update actions */
@@ -1535,6 +1568,9 @@ VBoxVMSettingsHD::VBoxVMSettingsHD()
 void VBoxVMSettingsHD::getFrom (const CMachine &aMachine)
 {
     mMachine = aMachine;
+
+    /* Set the machine id for the media-combo */
+    mCbVdi->setMachineId (mMachine.GetId());
 
     /* Load currently present controllers & attachments */
     CStorageControllerVector controllers = mMachine.GetStorageControllers();
@@ -1788,8 +1824,13 @@ void VBoxVMSettingsHD::getInformation()
                 int attDevicePos = mCbDevice->findText (vboxGlobal().toString (device));
                 mCbDevice->setCurrentIndex (attDevicePos == -1 ? 0 : attDevicePos);
 
+                /* Getting Show Diffs state */
+                bool isShowDiffs = mStorageModel->data (index, StorageModel::R_AttIsShowDiffs).toBool();
+                mCbShowDiffs->setChecked (isShowDiffs);
+
                 /* Getting Attachment Medium */
                 mCbVdi->setType (typeToLocal (device));
+                mCbVdi->setShowDiffs (isShowDiffs);
                 mCbVdi->setCurrentItem (mStorageModel->data (index, StorageModel::R_AttMediumId).toString());
                 mCbVdi->refresh();
 
@@ -1836,31 +1877,30 @@ void VBoxVMSettingsHD::setInformation()
                 mStorageModel->setData (index, mLeName->text(), StorageModel::R_CtrName);
             /* Setting Controller Sub-Type */
             else if (sdr == mCbType)
-            {
-                KStorageControllerType type = vboxGlobal().toControllerType (mCbType->currentText());
-                mStorageModel->setData (index, QVariant::fromValue (type), StorageModel::R_CtrType);
-            }
+                mStorageModel->setData (index, QVariant::fromValue (vboxGlobal().toControllerType (mCbType->currentText())),
+                                        StorageModel::R_CtrType);
             break;
         }
         case AbstractItem::Type_AttachmentItem:
         {
             /* Setting Attachment Slot */
             if (sdr == mCbSlot)
-            {
-                StorageSlot slt = vboxGlobal().toStorageSlot (mCbSlot->currentText());
-                mStorageModel->setData (index, QVariant::fromValue (slt), StorageModel::R_AttSlot);
-            }
+                mStorageModel->setData (index, QVariant::fromValue (vboxGlobal().toStorageSlot (mCbSlot->currentText())),
+                                        StorageModel::R_AttSlot);
             /* Setting Attachment Device-Type */
             else if (sdr == mCbDevice)
             {
                 KDeviceType device = vboxGlobal().toDeviceType (mCbDevice->currentText());
                 mStorageModel->setData (index, QVariant::fromValue (device), StorageModel::R_AttDevice);
                 mCbVdi->setType (typeToLocal (device));
+                mCbVdi->setShowDiffs (mCbShowDiffs->isChecked());
                 mCbVdi->refresh();
             }
             /* Setting Attachment Medium */
             else if (sdr == mCbVdi)
                 mStorageModel->setData (index, mCbVdi->id(), StorageModel::R_AttMediumId);
+            else if (sdr == mCbShowDiffs)
+                mStorageModel->setData (index, mCbShowDiffs->isChecked(), StorageModel::R_AttIsShowDiffs);
             else if (sdr == mCbPassthrough)
             {
                 if (mStorageModel->data (index, StorageModel::R_AttIsHostDrive).toBool())
@@ -2077,8 +2117,8 @@ QString VBoxVMSettingsHD::getWithMediaManager (VBoxDefs::MediumType aMediumType)
                true /* do select? */,
                false /* do refresh? */,
                mMachine,
-               QString(),
-               false);
+               mCbVdi->id(),
+               mCbShowDiffs->isChecked());
 
     return dlg.exec() == QDialog::Accepted ? dlg.selectedId() : QString();
 }

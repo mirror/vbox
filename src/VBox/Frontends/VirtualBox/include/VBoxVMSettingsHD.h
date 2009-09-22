@@ -319,12 +319,14 @@ public:
     DeviceTypeList attDeviceTypes() const;
     QString attMediumId() const;
     QStringList attMediumIds (bool aFilter = true) const;
+    bool attIsShowDiffs() const;
     bool attIsHostDrive() const;
     bool attIsPassthrough() const;
 
     void setAttSlot (const StorageSlot &aAttSlot);
     void setAttDevice (KDeviceType aAttDeviceType);
     void setAttMediumId (const QString &aAttMediumId);
+    void setAttIsShowDiffs (bool aAttIsShowDiffs);
     void setAttIsPassthrough (bool aPassthrough);
 
     QString attSize() const;
@@ -335,7 +337,7 @@ public:
 
 private:
 
-    void cache (const VBoxMedium &aMedium);
+    void cache();
 
     void addChild (AbstractItem *aItem);
     void delChild (AbstractItem *aItem);
@@ -344,6 +346,7 @@ private:
 
     StorageSlot mAttSlot;
     QString mAttMediumId;
+    bool mAttIsShowDiffs;
     bool mAttIsHostDrive;
     bool mAttIsPassthrough;
 
@@ -390,6 +393,7 @@ public:
         R_AttDevice,
         R_AttDevices,
         R_AttMediumId,
+        R_AttIsShowDiffs,
         R_AttIsHostDrive,
         R_AttIsPassthrough,
         R_AttSize,
