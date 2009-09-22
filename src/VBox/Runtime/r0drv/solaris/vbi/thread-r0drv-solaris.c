@@ -119,7 +119,7 @@ RTDECL(void) RTThreadPreemptDisable(PRTTHREADPREEMPTSTATE pState)
 
     vbi_preempt_disable();
 
-    pState->uOldPil = splr(ipltospl(0));
+    pState->uOldPil = getpil();
     Assert(pState->uOldPil != UINT32_MAX);
     RT_ASSERT_PREEMPT_CPUID_DISABLE(pState);
 }
