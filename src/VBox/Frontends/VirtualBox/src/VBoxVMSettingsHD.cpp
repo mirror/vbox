@@ -39,7 +39,7 @@
 #include "VBoxNewHDWzd.h"
 
 /* String Tags */
-const char *firstAvailable = "first available";
+const char *firstAvailableId = "first available";
 
 /* Type converters */
 VBoxDefs::MediumType typeToLocal (KDeviceType aType)
@@ -749,7 +749,7 @@ void AttachmentItem::setAttMediumId (const QString &aAttMediumId)
     VBoxMedium medium;
 
     /* Caching first available medium */
-    if (aAttMediumId == firstAvailable && !attMediumIds (false).isEmpty())
+    if (aAttMediumId == firstAvailableId && !attMediumIds (false).isEmpty())
         medium = vboxGlobal().findMedium (attMediumIds (false) [0]);
     /* Caching passed medium */
     else if (!aAttMediumId.isEmpty())
@@ -1548,6 +1548,12 @@ VBoxVMSettingsHD::VBoxVMSettingsHD()
     mLbUsageValue->setFullSizeSelection (true);
 
     /* Setup connections */
+    connect (&vboxGlobal(), SIGNAL (mediumEnumerated (const VBoxMedium &)),
+             this, SLOT (mediumUpdated (const VBoxMedium &)));
+    connect (&vboxGlobal(), SIGNAL (mediumUpdated (const VBoxMedium &)),
+             this, SLOT (mediumUpdated (const VBoxMedium &)));
+    connect (&vboxGlobal(), SIGNAL (mediumRemoved (VBoxDefs::MediumType, const QString &)),
+             this, SLOT (mediumRemoved (VBoxDefs::MediumType, const QString &)));
     connect (mAddCtrAction, SIGNAL (triggered (bool)), this, SLOT (addController()));
     connect (mAddIDECtrAction, SIGNAL (triggered (bool)), this, SLOT (addIDEController()));
     connect (mAddSATACtrAction, SIGNAL (triggered (bool)), this, SLOT (addSATAController()));
@@ -1757,6 +1763,44 @@ void VBoxVMSettingsHD::showEvent (QShowEvent *aEvent)
         mLtAttachment->setColumnMinimumWidth (1, maxWidth);
     }
     VBoxSettingsPage::showEvent (aEvent);
+}
+
+void VBoxVMSettingsHD::mediumUpdated (const VBoxMedium &aMedium)
+{
+    QModelIndex rootIndex = mStorageModel->root();
+    for (int i = 0; i < mStorageModel->rowCount (rootIndex); ++ i)
+    {
+        QModelIndex ctrIndex = rootIndex.child (i, 0);
+        for (int j = 0; j < mStorageModel->rowCount (ctrIndex); ++ j)
+        {
+            QModelIndex attIndex = ctrIndex.child (j, 0);
+            QString attMediumId = mStorageModel->data (attIndex, StorageModel::R_AttMediumId).toString();
+            if (attMediumId == aMedium.id())
+            {
+                mStorageModel->setData (attIndex, attMediumId, StorageModel::R_AttMediumId);
+                mValidator->revalidate();
+            }
+        }
+    }
+}
+
+void VBoxVMSettingsHD::mediumRemoved (VBoxDefs::MediumType /* aType */, const QString &aMediumId)
+{
+    QModelIndex rootIndex = mStorageModel->root();
+    for (int i = 0; i < mStorageModel->rowCount (rootIndex); ++ i)
+    {
+        QModelIndex ctrIndex = rootIndex.child (i, 0);
+        for (int j = 0; j < mStorageModel->rowCount (ctrIndex); ++ j)
+        {
+            QModelIndex attIndex = ctrIndex.child (j, 0);
+            QString attMediumId = mStorageModel->data (attIndex, StorageModel::R_AttMediumId).toString();
+            if (attMediumId == aMediumId)
+            {
+                mStorageModel->setData (attIndex, firstAvailableId, StorageModel::R_AttMediumId);
+                mValidator->revalidate();
+            }
+        }
+    }
 }
 
 void VBoxVMSettingsHD::addController()
@@ -2031,7 +2075,7 @@ void VBoxVMSettingsHD::onRowInserted (const QModelIndex &aParent, int aPosition)
                 QString mediumId = askResult == QIMessageBox::Yes ? getWithNewHDWizard() :
                                    askResult == QIMessageBox::No ? getWithMediaManager (typeToLocal (deviceType)) : QString();
                 if (mediumId.isNull())
-                    mediumId = firstAvailable;
+                    mediumId = firstAvailableId;
                 mStorageModel->setData (index, mediumId, StorageModel::R_AttMediumId);
             }
             break;
