@@ -552,6 +552,11 @@ VOID VBoxBuildModesTable(PDEVICE_EXTENSION DeviceExtension)
      * this will be appended as a special mode so that it can be used by
      * the Additions service process. The mode table is guaranteed to have
      * two spare entries for this mode (alternating index thus 2).
+     * 
+     * ... or ...
+     *
+     * Also we check if we got an user-stored custom resolution in the adapter
+     * registry key add it to the modes table.
      */
     uint32_t xres, yres, bpp = 0;
     if (   (   vboxQueryDisplayRequest(&xres, &yres, &bpp)
@@ -579,9 +584,7 @@ VOID VBoxBuildModesTable(PDEVICE_EXTENSION DeviceExtension)
             if (!yres)
                 yres = DeviceExtension->CurrentModeHeight;
             if (!bpp)
-            {
                 bpp  = DeviceExtension->CurrentModeBPP;
-            }
         }
 
         /* does the host like that mode? */
@@ -1339,7 +1342,6 @@ BOOLEAN VBoxVideoInitialize(PVOID HwDeviceExtension)
         gCustomBPP = 0;
 
    dprintf(("VBoxVideo: got stored custom resolution %dx%dx%d\n", gCustomXRes, gCustomYRes, gCustomBPP));
-
    return TRUE;
 }
 
