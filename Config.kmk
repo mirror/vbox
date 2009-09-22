@@ -1429,7 +1429,7 @@ ifeq ($(KBUILD_TARGET),darwin)
  ifeq ($(KBUILD_TARGET_ARCH),x86)
   ifdef VBOX_WITH_COCOA_QT
    VBOX_DEF_MACOSX_VERSION_MIN ?= 10.5
-   VBOX_DARWIN_NO_COMPACT_LINKEDIT ?= -Wl,-no_compact_linkedit
+   VBOX_DARWIN_NO_COMPACT_LINKEDIT ?= $(VBOX_LD_no_compact_linkedit)
   else
    VBOX_DEF_MACOSX_VERSION_MIN ?= 10.4
    VBOX_DARWIN_NO_COMPACT_LINKEDIT ?=
@@ -1625,7 +1625,7 @@ VBOX_GCC_CHECK_CXX = $(shell \
    else echo "$(2)"; fi; )
 
 VBOX_GCC_CHECK_LD = $(shell \
-   if $(TOOL_$(VBOX_GCC_TOOL)_LD) -Wl,$(1) -nostdlib -o /dev/null -xc /dev/null > /dev/null 2>&1 ;\
+   if $(TOOL_$(VBOX_GCC_TOOL)_LD) -Wl,$(1) $(if $(eq $(KBUILD_HOST),darwin),-Wl$(COMMA)-u$(COMMA)start -Wl$(COMMA)-undefined$(COMMA)dynamic_lookup,) -nostdlib -o /dev/null -xc /dev/null > /dev/null 2>&1 ;\
    then echo "-Wl,$(1)"; \
    else echo "$(2)"; fi; )
 
@@ -1702,6 +1702,10 @@ endif
 	$(APPEND) '$@' 'VBOX_GCC32_VERSION_CXX         ?= $(call VBOX_GCC_VERSION,$(TOOL_$(VBOX_GCC32_TOOL)_CXX))'
 	$(APPEND) '$@' 'VBOX_GCC32_LIBGCC              ?= $(shell $(TOOL_$(VBOX_GCC32_TOOL)_CC) -print-libgcc-file-name)'
 	$(APPEND) '$@' 'VBOX_GCC32_Wno-variadic-macros ?= $(call VBOX_GCC32_CHECK_CXX,-Wno-variadic-macros,)'
+# darwin no_compact_linkedit starting at Xcode 3.2
+ifeq ($(KBUILD_HOST),darwin)
+	$(APPEND) '$@' 'VBOX_LD_no_compact_linkedit    ?= $(call VBOX_GCC_CHECK_LD,-no_compact_linkedit,)'
+endif
 
 include $(PATH_OUT)/GCCConfig.kmk
 endif # !VBOX_NOINC_GCC_CONFIG_KMK
