@@ -342,12 +342,12 @@ private:
 class MediaDriveChangeEvent : public QEvent
 {
 public:
-    MediaDriveChangeEvent (VBoxDefs::MediaType aType)
+    MediaDriveChangeEvent (VBoxDefs::MediumType aType)
         : QEvent ((QEvent::Type) VBoxDefs::MediaDriveChangeEventType)
         , mType (aType) {}
-    VBoxDefs::MediaType type() const { return mType; }
+    VBoxDefs::MediumType type() const { return mType; }
 private:
-    VBoxDefs::MediaType mType;
+    VBoxDefs::MediumType mType;
 };
 
 /** Menu activation event */
@@ -515,22 +515,6 @@ public:
         return S_OK;
     }
 
-    STDMETHOD(OnDVDDriveChange)()
-    {
-        LogFlowFunc (("DVD Drive changed\n"));
-        QApplication::postEvent (mView,
-            new MediaDriveChangeEvent (VBoxDefs::MediaType_DVD));
-        return S_OK;
-    }
-
-    STDMETHOD(OnFloppyDriveChange)()
-    {
-        LogFlowFunc (("Floppy Drive changed\n"));
-        QApplication::postEvent (mView,
-            new MediaDriveChangeEvent (VBoxDefs::MediaType_Floppy));
-        return S_OK;
-    }
-
     STDMETHOD(OnNetworkAdapterChange) (INetworkAdapter *aNetworkAdapter)
     {
         QApplication::postEvent (mView,
@@ -543,6 +527,26 @@ public:
         /* @todo */
         //QApplication::postEvent (mView,
         //    new StorageControllerChangeEvent ());
+        return S_OK;
+    }
+
+    STDMETHOD(OnMediumChange)(IMediumAttachment *aMediumAttachment)
+    {
+        CMediumAttachment att(aMediumAttachment);
+        switch (att.GetType())
+        {
+            case KDeviceType_Floppy:
+                QApplication::postEvent(mView,
+                    new MediaDriveChangeEvent(VBoxDefs::MediumType_Floppy));
+                break;
+            case KDeviceType_DVD:
+                QApplication::postEvent(mView,
+                    new MediaDriveChangeEvent(VBoxDefs::MediumType_DVD));
+                break;
+            default:
+                /* @todo later add hard disk change as well */
+                break;
+        }
         return S_OK;
     }
 

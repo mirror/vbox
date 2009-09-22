@@ -238,16 +238,16 @@ public:
                                             const QString &aLocation);
     int confirmDeleteHardDiskStorage (QWidget *aParent,
                                       const QString &aLocation);
-    void cannotDeleteHardDiskStorage (QWidget *aParent, const CHardDisk &aHD,
+    void cannotDeleteHardDiskStorage (QWidget *aParent, const CMedium &aHD,
                                       const CProgress &aProgress);
 
     int confirmDetachAddControllerSlots (QWidget *aParent) const;
     int confirmChangeAddControllerSlots (QWidget *aParent) const;
-    int confirmRunNewHDWzdOrVDM (QWidget* aParent);
+    int confirmRunNewHDWzdOrVDM (KDeviceType aDeviceType);
 
     void cannotCreateHardDiskStorage (QWidget *aParent, const CVirtualBox &aVBox,
                                       const QString &aLocaiton,
-                                      const CHardDisk &aHD,
+                                      const CMedium &aHD,
                                       const CProgress &aProgress);
     void cannotAttachHardDisk (QWidget *aParent, const CMachine &aMachine,
                                const QString &aLocation, KStorageBus aBus,
@@ -261,7 +261,7 @@ public:
     void cannotUnmountMedium (QWidget *aParent, const CMachine &aMachine,
                             const VBoxMedium &aMedium, const COMResult &aResult);
     void cannotOpenMedium (QWidget *aParent, const CVirtualBox &aVBox,
-                           VBoxDefs::MediaType aType, const QString &aLocation);
+                           VBoxDefs::MediumType aType, const QString &aLocation);
     void cannotCloseMedium (QWidget *aParent, const VBoxMedium &aMedium,
                             const COMResult &aResult);
     void cannotEjectDrive();
@@ -357,7 +357,7 @@ public:
                            const QString &errorID,
                            const QString &errorMsg) const;
 
-    static QString toAccusative (VBoxDefs::MediaType aType);
+    static QString toAccusative (VBoxDefs::MediumType aType);
 
     static QString formatRC (HRESULT aRC);
 

@@ -294,7 +294,7 @@ void createVM(IVirtualBox *virtualBox)
     /*
      * Create a virtual harddisk
      */
-    nsCOMPtr<IHardDisk> hardDisk = 0;
+    nsCOMPtr<IMedium> hardDisk = 0;
     rc = virtualBox->CreateHardDisk(NS_LITERAL_STRING("VDI").get(),
                                     NS_LITERAL_STRING("TestHardDisk.vdi").get(),
                                     getter_AddRefs(hardDisk));
@@ -311,7 +311,7 @@ void createVM(IVirtualBox *virtualBox)
          */
         nsCOMPtr <IProgress> progress;
         rc = hardDisk->CreateBaseStorage(100,                                // size in megabytes
-                                         HardDiskVariant_Standard,
+                                         MediumVariant_Standard,
                                          getter_AddRefs(progress));          // optional progress object
         if (NS_FAILED(rc))
         {
@@ -341,10 +341,11 @@ void createVM(IVirtualBox *virtualBox)
                  */
                 nsXPIDLString vdiUUID;
                 hardDisk->GetId(getter_Copies(vdiUUID));
-                rc = machine->AttachHardDisk(vdiUUID,
-                                             NS_LITERAL_STRING("IDE").get(), // controler identifier
-                                             0,                              // channel number on the controller
-                                             0);                             // device number on the controller
+                rc = machine->AttachDevice(NS_LITERAL_STRING("IDE").get(), // controler identifier
+                                           0,                              // channel number on the controller
+                                           0,                              // device number on the controller
+                                           DeviceType_HardDisk,
+                                           vdiUUID);
                 if (NS_FAILED(rc))
                 {
                     printf("Error: could not attach hard disk! rc=%08X\n", rc);
@@ -359,9 +360,9 @@ void createVM(IVirtualBox *virtualBox)
      * has to be registered and then mounted to the VM's DVD drive and selected
      * as the boot device.
      */
-    nsCOMPtr<IDVDImage> dvdImage;
+    nsCOMPtr<IMedium> dvdImage;
 
-    rc = virtualBox->OpenDVDImage(NS_LITERAL_STRING("/home/achimha/isoimages/winnt4ger.iso").get(),
+    rc = virtualBox->OpenDVDImage(NS_LITERAL_STRING("/home/vbox/isos/winnt4ger.iso").get(),
                                   nsnull, /* NULL UUID, i.e. a new one will be created */
                                   getter_AddRefs(dvdImage));
     if (NS_FAILED(rc))
@@ -375,9 +376,10 @@ void createVM(IVirtualBox *virtualBox)
          */
         nsXPIDLString isoUUID;
         dvdImage->GetId(getter_Copies(isoUUID));
-        nsCOMPtr<IDVDDrive> dvdDrive;
-        machine->GetDVDDrive(getter_AddRefs(dvdDrive));
-        rc = dvdDrive->MountImage(isoUUID);
+        rc = machine->MountMedium(NS_LITERAL_STRING("IDE").get(), // controler identifier
+                                  2,                              // channel number on the controller
+                                  0,                              // device number on the controller
+                                  isoUUID);
         if (NS_FAILED(rc))
         {
             printf("Error: could not mount ISO image! rc=%08X\n", rc);

@@ -117,8 +117,8 @@ public:
         return S_OK;
     }
 
-    STDMETHOD(OnMediaRegistered)(IN_BSTR mediaId,
-                                 DeviceType_T mediaType, BOOL registered)
+    STDMETHOD(OnMediumRegistered)(IN_BSTR mediaId,
+                                  DeviceType_T mediaType, BOOL registered)
     {
         NOREF(mediaId);
         NOREF(mediaType);

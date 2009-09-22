@@ -1071,11 +1071,11 @@ int handleModifyVM(HandlerArg *a)
         {
             if (!strcmp(firmware, "efi"))
             {
-                CHECK_ERROR(machine, COMSETTER(FirmwareType)(FirmwareType_Efi));
+                CHECK_ERROR(machine, COMSETTER(FirmwareType)(FirmwareType_EFI));
             }
             else if (!strcmp(firmware, "bios"))
             {
-                CHECK_ERROR(machine, COMSETTER(FirmwareType)(FirmwareType_Bios));
+                CHECK_ERROR(machine, COMSETTER(FirmwareType)(FirmwareType_BIOS));
             }
             else
             {
@@ -1173,13 +1173,13 @@ int handleModifyVM(HandlerArg *a)
         {
             if (!strcmp(hdds[0], "none"))
             {
-                machine->DetachHardDisk(Bstr("IDE"), 0, 0);
+                machine->DetachDevice(Bstr("IDE"), 0, 0);
             }
             else
             {
                 /* first guess is that it's a UUID */
                 Bstr uuid(hdds[0]);
-                ComPtr<IHardDisk> hardDisk;
+                ComPtr<IMedium> hardDisk;
                 rc = a->virtualBox->GetHardDisk(uuid, hardDisk.asOutParam());
                 /* not successful? Then it must be a filename */
                 if (!hardDisk)
@@ -1194,7 +1194,7 @@ int handleModifyVM(HandlerArg *a)
                 if (hardDisk)
                 {
                     hardDisk->COMGETTER(Id)(uuid.asOutParam());
-                    CHECK_ERROR(machine, AttachHardDisk(uuid, Bstr("IDE"), 0, 0));
+                    CHECK_ERROR(machine, AttachDevice(Bstr("IDE"), 0, 0, DeviceType_HardDisk, uuid));
                 }
                 else
                     rc = E_FAIL;
@@ -1206,13 +1206,13 @@ int handleModifyVM(HandlerArg *a)
         {
             if (!strcmp(hdds[1], "none"))
             {
-                machine->DetachHardDisk(Bstr("IDE"), 0, 1);
+                machine->DetachDevice(Bstr("IDE"), 0, 1);
             }
             else
             {
                 /* first guess is that it's a UUID */
                 Bstr uuid(hdds[1]);
-                ComPtr<IHardDisk> hardDisk;
+                ComPtr<IMedium> hardDisk;
                 rc = a->virtualBox->GetHardDisk(uuid, hardDisk.asOutParam());
                 /* not successful? Then it must be a filename */
                 if (!hardDisk)
@@ -1227,7 +1227,7 @@ int handleModifyVM(HandlerArg *a)
                 if (hardDisk)
                 {
                     hardDisk->COMGETTER(Id)(uuid.asOutParam());
-                    CHECK_ERROR(machine, AttachHardDisk(uuid, Bstr("IDE"), 0, 1));
+                    CHECK_ERROR(machine, AttachDevice(Bstr("IDE"), 0, 1, DeviceType_HardDisk, uuid));
                 }
                 else
                     rc = E_FAIL;
@@ -1239,13 +1239,13 @@ int handleModifyVM(HandlerArg *a)
         {
             if (!strcmp(hdds[2], "none"))
             {
-                machine->DetachHardDisk(Bstr("IDE"), 1, 1);
+                machine->DetachDevice(Bstr("IDE"), 1, 1);
             }
             else
             {
                 /* first guess is that it's a UUID */
                 Bstr uuid(hdds[2]);
-                ComPtr<IHardDisk> hardDisk;
+                ComPtr<IMedium> hardDisk;
                 rc = a->virtualBox->GetHardDisk(uuid, hardDisk.asOutParam());
                 /* not successful? Then it must be a filename */
                 if (!hardDisk)
@@ -1260,7 +1260,7 @@ int handleModifyVM(HandlerArg *a)
                 if (hardDisk)
                 {
                     hardDisk->COMGETTER(Id)(uuid.asOutParam());
-                    CHECK_ERROR(machine, AttachHardDisk(uuid, Bstr("IDE"), 1, 1));
+                    CHECK_ERROR(machine, AttachDevice(Bstr("IDE"), 1, 1, DeviceType_HardDisk, uuid));
                 }
                 else
                     rc = E_FAIL;
@@ -1270,79 +1270,74 @@ int handleModifyVM(HandlerArg *a)
         }
         if (dvd)
         {
-            ComPtr<IDVDDrive> dvdDrive;
-            machine->COMGETTER(DVDDrive)(dvdDrive.asOutParam());
-            ASSERT(dvdDrive);
+            ComPtr<IMedium> dvdMedium;
 
             /* unmount? */
             if (!strcmp(dvd, "none"))
             {
-                CHECK_ERROR(dvdDrive, Unmount());
+                /* nothing to do, NULL object will cause unmount */
             }
             /* host drive? */
             else if (!strncmp(dvd, "host:", 5))
             {
                 ComPtr<IHost> host;
                 CHECK_ERROR(a->virtualBox, COMGETTER(Host)(host.asOutParam()));
-                com::SafeIfaceArray <IHostDVDDrive> hostDVDs;
-                rc = host->COMGETTER(DVDDrives)(ComSafeArrayAsOutParam(hostDVDs));
-
-                ComPtr<IHostDVDDrive> hostDVDDrive;
-                rc = host->FindHostDVDDrive(Bstr(dvd + 5), hostDVDDrive.asOutParam());
-                if (!hostDVDDrive)
+                rc = host->FindHostDVDDrive(Bstr(dvd + 5), dvdMedium.asOutParam());
+                if (!dvdMedium)
                 {
                     /* 2nd try: try with the real name, important on Linux+libhal */
                     char szPathReal[RTPATH_MAX];
                     if (RT_FAILURE(RTPathReal(dvd + 5, szPathReal, sizeof(szPathReal))))
                     {
-                        errorArgument("Invalid host DVD drive name");
+                        errorArgument("Invalid host DVD drive name \"%s\"", dvd + 5);
                         rc = E_FAIL;
                         break;
                     }
-                    rc = host->FindHostDVDDrive(Bstr(szPathReal), hostDVDDrive.asOutParam());
-                    if (!hostDVDDrive)
+                    rc = host->FindHostDVDDrive(Bstr(szPathReal), dvdMedium.asOutParam());
+                    if (!dvdMedium)
                     {
-                        errorArgument("Invalid host DVD drive name");
+                        errorArgument("Invalid host DVD drive name \"%s\"", dvd + 5);
                         rc = E_FAIL;
                         break;
                     }
                 }
-                CHECK_ERROR(dvdDrive, CaptureHostDrive(hostDVDDrive));
             }
             else
             {
                 /* first assume it's a UUID */
                 Bstr uuid(dvd);
-                ComPtr<IDVDImage> dvdImage;
-                rc = a->virtualBox->GetDVDImage(uuid, dvdImage.asOutParam());
-                if (FAILED(rc) || !dvdImage)
+                rc = a->virtualBox->GetDVDImage(uuid, dvdMedium.asOutParam());
+                if (FAILED(rc) || !dvdMedium)
                 {
                     /* must be a filename, check if it's in the collection */
-                    rc = a->virtualBox->FindDVDImage(Bstr(dvd), dvdImage.asOutParam());
+                    rc = a->virtualBox->FindDVDImage(Bstr(dvd), dvdMedium.asOutParam());
                     /* not registered, do that on the fly */
-                    if (!dvdImage)
+                    if (!dvdMedium)
                     {
                         Bstr emptyUUID;
-                        CHECK_ERROR(a->virtualBox, OpenDVDImage(Bstr(dvd), emptyUUID, dvdImage.asOutParam()));
+                        CHECK_ERROR(a->virtualBox, OpenDVDImage(Bstr(dvd), emptyUUID, dvdMedium.asOutParam()));
                     }
                 }
-                if (!dvdImage)
+                if (!dvdMedium)
                 {
                     rc = E_FAIL;
                     break;
                 }
-
-                dvdImage->COMGETTER(Id)(uuid.asOutParam());
-                CHECK_ERROR(dvdDrive, MountImage(uuid));
             }
+
+            /** @todo generalize this, allow arbitrary number of DVD drives
+             * and as a consequence multiple attachments and different
+             * storage controllers. */
+            dvdMedium->COMGETTER(Id)(uuid.asOutParam());
+            CHECK_ERROR(machine, MountMedium(Bstr("IDE"), 1, 0, uuid));
         }
         if (dvdpassthrough)
         {
-            ComPtr<IDVDDrive> dvdDrive;
-            machine->COMGETTER(DVDDrive)(dvdDrive.asOutParam());
-            ASSERT(dvdDrive);
+            ComPtr<IMediumAttachment> dvdAttachment;
+            machine->GetMediumAttachment(Bstr("IDE"), 1, 0, dvdAttachment.asOutParam());
+            ASSERT(dvdAttachment);
 
-            CHECK_ERROR(dvdDrive, COMSETTER(Passthrough)(!strcmp(dvdpassthrough, "on")));
+            CHECK_ERROR(dvdAttachment, COMSETTER(Passthrough)(!strcmp(dvdpassthrough, "on")));
         }
         if (idecontroller)
         {
@@ -1370,69 +1365,66 @@ int handleModifyVM(HandlerArg *a)
         }
         if (floppy)
         {
-            ComPtr<IFloppyDrive> floppyDrive;
-            machine->COMGETTER(FloppyDrive)(floppyDrive.asOutParam());
-            ASSERT(floppyDrive);
+            ComPtr<IMedium> floppyMedium;
+            ComPtr<IMediumAttachment> floppyAttachment;
+            machine->GetMediumAttachment(Bstr("FD"), 0, 0, floppyAttachment.asOutParam());
 
             /* disable? */
             if (!strcmp(floppy, "disabled"))
             {
                 /* disable the controller */
-                CHECK_ERROR(floppyDrive, COMSETTER(Enabled)(false));
+                if (floppyAttachment)
+                    CHECK_ERROR(machine, DetachDevice(Bstr("FD"), 0, 0));
             }
             else
             {
                 /* enable the controller */
-                CHECK_ERROR(floppyDrive, COMSETTER(Enabled)(true));
+                if (!floppyAttachment)
+                    CHECK_ERROR(machine, AttachDevice(Bstr("FD"), 0, 0, DeviceType_Floppy, NULL));
 
                 /* unmount? */
-                if (!strcmp(floppy, "empty"))
+                if (    !strcmp(floppy, "none")
+                    ||  !strcmp(floppy, "empty"))   // deprecated
                 {
-                    CHECK_ERROR(floppyDrive, Unmount());
+                    /* nothing to do, NULL object will cause unmount */
                 }
                 /* host drive? */
                 else if (!strncmp(floppy, "host:", 5))
                 {
                     ComPtr<IHost> host;
                     CHECK_ERROR(a->virtualBox, COMGETTER(Host)(host.asOutParam()));
-                    com::SafeIfaceArray <IHostFloppyDrive> hostFloppies;
-                    CHECK_ERROR(host, COMGETTER(FloppyDrives)(ComSafeArrayAsOutParam(hostFloppies)));
-                    ComPtr<IHostFloppyDrive> hostFloppyDrive;
-                    rc = host->FindHostFloppyDrive(Bstr(floppy + 5), hostFloppyDrive.asOutParam());
-                    if (!hostFloppyDrive)
+                    rc = host->FindHostFloppyDrive(Bstr(floppy + 5), floppyMedium.asOutParam());
+                    if (!floppyMedium)
                     {
-                        errorArgument("Invalid host floppy drive name");
+                        errorArgument("Invalid host floppy drive name \"%s\"", floppy + 5);
                         rc = E_FAIL;
                         break;
                     }
-                    CHECK_ERROR(floppyDrive, CaptureHostDrive(hostFloppyDrive));
                 }
                 else
                 {
                     /* first assume it's a UUID */
                     Bstr uuid(floppy);
-                    ComPtr<IFloppyImage> floppyImage;
-                    rc = a->virtualBox->GetFloppyImage(uuid, floppyImage.asOutParam());
-                    if (FAILED(rc) || !floppyImage)
+                    rc = a->virtualBox->GetFloppyImage(uuid, floppyMedium.asOutParam());
+                    if (FAILED(rc) || !floppyMedium)
                     {
                         /* must be a filename, check if it's in the collection */
-                        rc = a->virtualBox->FindFloppyImage(Bstr(floppy), floppyImage.asOutParam());
+                        rc = a->virtualBox->FindFloppyImage(Bstr(floppy), floppyMedium.asOutParam());
                         /* not registered, do that on the fly */
-                        if (!floppyImage)
+                        if (!floppyMedium)
                         {
                             Bstr emptyUUID;
-                            CHECK_ERROR(a->virtualBox, OpenFloppyImage(Bstr(floppy), emptyUUID, floppyImage.asOutParam()));
+                            CHECK_ERROR(a->virtualBox, OpenFloppyImage(Bstr(floppy), emptyUUID, floppyMedium.asOutParam()));
                         }
                     }
-                    if (!floppyImage)
+                    if (!floppyMedium)
                     {
                         rc = E_FAIL;
                         break;
                     }
-
-                    floppyImage->COMGETTER(Id)(uuid.asOutParam());
-                    CHECK_ERROR(floppyDrive, MountImage(uuid));
                 }
+                floppyMedium->COMGETTER(Id)(uuid.asOutParam());
+                CHECK_ERROR(machine, MountMedium(Bstr("FD"), 0, 0, uuid));
             }
         }
         if (audio || audiocontroller)
@@ -1974,13 +1966,13 @@ int handleModifyVM(HandlerArg *a)
             {
                 if (!strcmp(hdds[i], "none"))
                 {
-                    machine->DetachHardDisk(Bstr("SATA"), i-4, 0);
+                    machine->DetachDevice(Bstr("SATA"), i-4, 0);
                 }
                 else
                 {
                     /* first guess is that it's a UUID */
                     Bstr uuid(hdds[i]);
-                    ComPtr<IHardDisk> hardDisk;
+                    ComPtr<IMedium> hardDisk;
                     rc = a->virtualBox->GetHardDisk(uuid, hardDisk.asOutParam());
                     /* not successful? Then it must be a filename */
                     if (!hardDisk)
@@ -1995,7 +1987,7 @@ int handleModifyVM(HandlerArg *a)
                     if (hardDisk)
                     {
                         hardDisk->COMGETTER(Id)(uuid.asOutParam());
-                        CHECK_ERROR(machine, AttachHardDisk(uuid, Bstr("SATA"), i-4, 0));
+                        CHECK_ERROR(machine, AttachDevice(Bstr("SATA"), i-4, 0, DeviceType_HardDisk, uuid));
                     }
                     else
                         rc = E_FAIL;
@@ -2061,15 +2053,15 @@ int handleModifyVM(HandlerArg *a)
             {
                 if (!strcmp(hdds[i], "none"))
                 {
-                    rc = machine->DetachHardDisk(Bstr("LsiLogic"), i-34, 0);
+                    rc = machine->DetachDevice(Bstr("LsiLogic"), i-34, 0);
                     if (!SUCCEEDED(rc))
-                        CHECK_ERROR(machine, DetachHardDisk(Bstr("BusLogic"), i-34, 0));
+                        CHECK_ERROR(machine, DetachDevice(Bstr("BusLogic"), i-34, 0));
                 }
                 else
                 {
                     /* first guess is that it's a UUID */
                     Bstr uuid(hdds[i]);
-                    ComPtr<IHardDisk> hardDisk;
+                    ComPtr<IMedium> hardDisk;
                     rc = a->virtualBox->GetHardDisk(uuid, hardDisk.asOutParam());
                     /* not successful? Then it must be a filename */
                     if (!hardDisk)
@@ -2084,9 +2076,9 @@ int handleModifyVM(HandlerArg *a)
                     if (hardDisk)
                     {
                         hardDisk->COMGETTER(Id)(uuid.asOutParam());
-                        rc = machine->AttachHardDisk(uuid, Bstr("LsiLogic"), i-34, 0);
+                        rc = machine->AttachDevice(Bstr("LsiLogic"), i-34, 0, DeviceType_HardDisk, uuid);
                         if (!SUCCEEDED(rc))
-                            CHECK_ERROR(machine, AttachHardDisk(uuid, Bstr("BusLogic"), i-34, 0));
+                            CHECK_ERROR(machine, AttachDevice(Bstr("BusLogic"), i-34, 0, DeviceType_HardDisk, uuid));
                     }
                     else
                         rc = E_FAIL;

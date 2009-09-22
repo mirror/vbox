@@ -21,7 +21,7 @@
  */
 
 #define LOG_GROUP LOG_GROUP_VD_VMDK /** @todo: Logging group */
-#include "VBoxHDD-Internal.h"
+#include <VBox/VBoxHDD-Plugin.h>
 #include <VBox/err.h>
 
 #include <VBox/log.h>

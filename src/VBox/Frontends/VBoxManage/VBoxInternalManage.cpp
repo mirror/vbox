@@ -1351,7 +1351,7 @@ static int CmdCreateRawVMDK(int argc, char **argv, ComPtr<IVirtualBox> aVirtualB
 
     if (fRegister)
     {
-        ComPtr<IHardDisk> hardDisk;
+        ComPtr<IMedium> hardDisk;
         CHECK_ERROR(aVirtualBox, OpenHardDisk(filename, AccessMode_ReadWrite, false, Bstr(""), false, Bstr(""), hardDisk.asOutParam()));
     }
 

@@ -23,11 +23,12 @@
 #ifndef __VBoxMedium_h__
 #define __VBoxMedium_h__
 
-#include "COMDefs.h"
-
-/* Qt includes */
+/* Global includes */
 #include <QPixmap>
 #include <QLinkedList>
+
+/* Local includes */
+#include "COMDefs.h"
 
 /**
  * Media descriptor for the GUI.
@@ -44,11 +45,11 @@
  * this argument is irrelevant because the root object for such medium is
  * the medium itself.
  *
- * Note that this class "abuses" the KMediaState_NotCreated state value to
+ * Note that this class "abuses" the KMediumState_NotCreated state value to
  * indicate that the accessibility check of the given medium (see
  * #blockAndQueryState()) has not been done yet and therefore some parameters
  * such as #size() are meaningless because they can be read only from the
- * accessible medium. The real KMediaState_NotCreated state is not necessary
+ * accessible medium. The real KMediumState_NotCreated state is not necessary
  * because this class is only used with created (existing) media.
  */
 class VBoxMedium
@@ -57,18 +58,19 @@ public:
 
     /**
      * Creates a null medium descriptor which is not associated with any medium.
-     * The state field is set to KMediaState_NotCreated.
+     * The state field is set to KMediumState_NotCreated.
      */
     VBoxMedium()
-        : mType (VBoxDefs::MediaType_Invalid)
-        , mState (KMediaState_NotCreated)
-        , mIsReadOnly (false), mIsUsedInSnapshots (false)
-        , mParent (NULL) {}
+        : mType (VBoxDefs::MediumType_Invalid)
+        , mState (KMediumState_NotCreated)
+        , mIsReadOnly (false)
+        , mIsUsedInSnapshots (false)
+        , mParent (0) { refresh(); }
 
     /**
      * Creates a media descriptor associated with the given medium.
      *
-     * The state field remain KMediaState_NotCreated until #blockAndQueryState()
+     * The state field remain KMediumState_NotCreated until #blockAndQueryState()
      * is called. All precomposed strings are filled up by implicitly calling
      * #refresh(), see the #refresh() details for more info.
      *
@@ -76,31 +78,33 @@ public:
      * aMedium according to aType. @a aParent must be always NULL for non-hard
      * disk media.
      */
-    VBoxMedium (const CMedium &aMedium, VBoxDefs::MediaType aType,
-                VBoxMedium *aParent = NULL)
-        : mMedium (aMedium), mType (aType)
-        , mState (KMediaState_NotCreated)
-        , mIsReadOnly (false), mIsUsedInSnapshots (false)
-        , mParent (aParent) { init(); }
+    VBoxMedium (const CMedium &aMedium, VBoxDefs::MediumType aType, VBoxMedium *aParent = 0)
+        : mMedium (aMedium)
+        , mType (aType)
+        , mState (KMediumState_NotCreated)
+        , mIsReadOnly (false)
+        , mIsUsedInSnapshots (false)
+        , mParent (aParent) { refresh(); }
 
     /**
      * Similar to the other non-null constructor but sets the media state to
      * @a aState. Suitable when the media state is known such as right after
      * creation.
      */
-    VBoxMedium (const CMedium &aMedium, VBoxDefs::MediaType aType,
-                KMediaState aState)
-        : mMedium (aMedium), mType (aType)
+    VBoxMedium (const CMedium &aMedium, VBoxDefs::MediumType aType, KMediumState aState)
+        : mMedium (aMedium)
+        , mType (aType)
         , mState (aState)
-        , mIsReadOnly (false), mIsUsedInSnapshots (false)
-        , mParent (NULL) { init(); }
+        , mIsReadOnly (false)
+        , mIsUsedInSnapshots (false)
+        , mParent (0) { refresh(); }
 
     void blockAndQueryState();
     void refresh();
 
-    const CMedium &medium() const { return mMedium; };
+    const CMedium &medium() const { return mMedium; }
 
-    VBoxDefs::MediaType type() const { return mType; }
+    VBoxDefs::MediumType type() const { return mType; }
 
     /**
      * Media state. In "don't show diffs" mode, this is the worst state (in
@@ -108,7 +112,7 @@ public:
      *
      * @param aNoDiffs  @c true to enable user-friendly "don't show diffs" mode.
      */
-    KMediaState state (bool aNoDiffs = false) const
+    KMediumState state (bool aNoDiffs = false) const
     {
         unconst (this)->checkNoDiffs (aNoDiffs);
         return aNoDiffs ? mNoDiffs.state : mState;
@@ -130,29 +134,14 @@ public:
         return aNoDiffs ? mNoDiffs.result : mResult;
     }
 
-    const CHardDisk &hardDisk() const { return mHardDisk; }
-    const CDVDImage &dvdImage() const { return mDVDImage; }
-    const CFloppyImage &floppyImage() const { return mFloppyImage; }
-
     QString id() const { return mId; }
-
-    QString location (bool aNoDiffs = false) const
-        { return aNoDiffs ? root().mLocation : mLocation; }
-    QString name (bool aNoDiffs = false) const
-        { return aNoDiffs ? root().mName : mName; }
-
-    QString size (bool aNoDiffs = false) const
-        { return aNoDiffs ? root().mSize : mSize; }
-
-    QString hardDiskFormat (bool aNoDiffs = false) const
-        { return aNoDiffs ? root().mHardDiskFormat : mHardDiskFormat; }
-    QString hardDiskType (bool aNoDiffs = false) const
-        { return aNoDiffs ? root().mHardDiskType : mHardDiskType; }
-    QString logicalSize (bool aNoDiffs = false) const
-        { return aNoDiffs ? root().mLogicalSize : mLogicalSize; }
-
-    QString usage (bool aNoDiffs = false) const
-    { return aNoDiffs ? root().mUsage : mUsage; }
+    QString name (bool aNoDiffs = false) const { return aNoDiffs ? root().mName : mName; }
+    QString location (bool aNoDiffs = false) const { return aNoDiffs ? root().mLocation : mLocation; }
+    QString size (bool aNoDiffs = false) const { return aNoDiffs ? root().mSize : mSize; }
+    QString logicalSize (bool aNoDiffs = false) const { return aNoDiffs ? root().mLogicalSize : mLogicalSize; }
+    QString hardDiskFormat (bool aNoDiffs = false) const { return aNoDiffs ? root().mHardDiskFormat : mHardDiskFormat; }
+    QString hardDiskType (bool aNoDiffs = false) const { return aNoDiffs ? root().mHardDiskType : mHardDiskType; }
+    QString usage (bool aNoDiffs = false) const { return aNoDiffs ? root().mUsage : mUsage; }
 
     /**
      * Returns @c true if this medium is read-only (either because it is
@@ -170,23 +159,24 @@ public:
 
     /**
      * Returns @c true if this medium is attached to any VM in any snapshot.
-     * which case #usage() will contain a string with comma-sparated VM names.
      */
     bool isUsedInSnapshots() const { return mIsUsedInSnapshots; }
 
     /**
-     * Returns @c true if this medium is attached to the given machine in the
-     * current state.
+     * Returns @c true if this medium corresponds to real host drive.
      */
-    bool isAttachedInCurStateTo (const QString &aMachineId) const
-        { return mCurStateMachineIds.indexOf (aMachineId) >= 0; }
+    bool isHostDrive() const { return mIsHostDrive; }
+
+    /**
+     * Returns @c true if this medium is attached to the given machine in the current state.
+     */
+    bool isAttachedInCurStateTo (const QString &aMachineId) const { return mCurStateMachineIds.indexOf (aMachineId) >= 0; }
 
     /**
      * Returns a vector of IDs of all machines this medium is attached
      * to in their current state (i.e. excluding snapshots).
      */
-    const QList <QString> &curStateMachineIds() const
-        { return mCurStateMachineIds; }
+    const QList <QString> &curStateMachineIds() const { return mCurStateMachineIds; }
 
     /**
      * Returns a parent medium. For non-hard disk media, this is always NULL.
@@ -195,44 +185,34 @@ public:
 
     VBoxMedium &root() const;
 
-    QString toolTip(bool aNoDiffs = false, bool aCheckRO = false) const;
+    QString toolTip (bool aNoDiffs = false, bool aCheckRO = false) const;
     QPixmap icon (bool aNoDiffs = false, bool aCheckRO = false) const;
 
     /** Shortcut to <tt>#toolTip (aNoDiffs, true)</tt>. */
-    QString toolTipCheckRO (bool aNoDiffs = false) const
-        { return toolTip (aNoDiffs, true); }
+    QString toolTipCheckRO (bool aNoDiffs = false) const { return toolTip (aNoDiffs, true); }
 
     /** Shortcut to <tt>#icon (aNoDiffs, true)</tt>. */
-    QPixmap iconCheckRO (bool aNoDiffs = false) const
-        { return icon (aNoDiffs, true); }
+    QPixmap iconCheckRO (bool aNoDiffs = false) const { return icon (aNoDiffs, true); }
 
-    QString details (bool aNoDiffs = false, bool aPredictDiff = false,
-                     bool aUseHTML = false) const;
+    QString details (bool aNoDiffs = false, bool aPredictDiff = false, bool aUseHTML = false) const;
 
     /** Shortcut to <tt>#details (aNoDiffs, aPredictDiff, true)</tt>. */
-    QString detailsHTML (bool aNoDiffs = false, bool aPredictDiff = false) const
-        { return details (aNoDiffs, aPredictDiff, true); }
+    QString detailsHTML (bool aNoDiffs = false, bool aPredictDiff = false) const { return details (aNoDiffs, aPredictDiff, true); }
 
     /** Returns @c true if this media descriptor is a null object. */
     bool isNull() const { return mMedium.isNull(); }
 
 private:
 
-    void init();
-
     void checkNoDiffs (bool aNoDiffs);
 
     CMedium mMedium;
 
-    VBoxDefs::MediaType mType;
+    VBoxDefs::MediumType mType;
 
-    KMediaState mState;
+    KMediumState mState;
     QString mLastAccessError;
     COMResult mResult;
-
-    CHardDisk mHardDisk;
-    CDVDImage mDVDImage;
-    CFloppyImage mFloppyImage;
 
     QString mId;
     QString mLocation;
@@ -248,6 +228,7 @@ private:
 
     bool mIsReadOnly        : 1;
     bool mIsUsedInSnapshots : 1;
+    bool mIsHostDrive       : 1;
 
     QList <QString> mCurStateMachineIds;
 
@@ -259,11 +240,11 @@ private:
      */
     struct NoDiffs
     {
-        NoDiffs() : isSet (false), state (KMediaState_NotCreated) {}
+        NoDiffs() : isSet (false), state (KMediumState_NotCreated) {}
 
         bool isSet : 1;
 
-        KMediaState state;
+        KMediumState state;
         COMResult result;
         QString toolTip;
     }

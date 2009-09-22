@@ -154,7 +154,7 @@ signals:
     void mouseStateChanged (int state);
     void machineStateChanged (KMachineState state);
     void additionsStateChanged (const QString &, bool, bool, bool);
-    void mediaDriveChanged (VBoxDefs::MediaType aType);
+    void mediaDriveChanged (VBoxDefs::MediumType aType);
     void networkStateChange();
     void usbStateChange();
     void sharedFoldersChanged();

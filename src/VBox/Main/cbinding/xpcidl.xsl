@@ -1132,10 +1132,10 @@ typedef PCVBOXXPCOM (*PFNVBOXGETXPCOMCFUNCTIONS)(unsigned uVersion);
   </xsl:for-each>
   <xsl:text>&#x0A;&#x0A;</xsl:text>
   <!-- forward declarations -->
-  <xsl:apply-templates select="if | interface | collection | enumerator" mode="forward"/>
+  <xsl:apply-templates select="if | interface" mode="forward"/>
   <xsl:text>&#x0A;</xsl:text>
   <!-- typedef'ing the struct declarations -->
-  <xsl:apply-templates select="if | interface | collection | enumerator" mode="typedef"/>
+  <xsl:apply-templates select="if | interface" mode="typedef"/>
   <xsl:text>&#x0A;</xsl:text>
   <!-- all enums go first -->
   <xsl:apply-templates select="enum | if/enum"/>
@@ -1158,7 +1158,7 @@ typedef PCVBOXXPCOM (*PFNVBOXGETXPCOMCFUNCTIONS)(unsigned uVersion);
 <!--
  *  forward declarations
 -->
-<xsl:template match="interface | collection | enumerator" mode="forward">
+<xsl:template match="interface" mode="forward">
   <xsl:text>struct </xsl:text>
   <xsl:value-of select="@name"/>
   <xsl:text>;&#x0A;</xsl:text>
@@ -1168,7 +1168,7 @@ typedef PCVBOXXPCOM (*PFNVBOXGETXPCOMCFUNCTIONS)(unsigned uVersion);
 <!--
  *  typedef'ing the struct declarations
 -->
-<xsl:template match="interface | collection | enumerator" mode="typedef">
+<xsl:template match="interface" mode="typedef">
   <xsl:text>typedef struct </xsl:text>
   <xsl:value-of select="@name"/>
   <xsl:text> </xsl:text>
@@ -1250,13 +1250,7 @@ typedef PCVBOXXPCOM (*PFNVBOXGETXPCOMCFUNCTIONS)(unsigned uVersion);
 <!--
  *  attributes
 -->
-<xsl:template match="interface//attribute | collection//attribute">
-  <xsl:if test="@array">
-    <xsl:message terminate="yes">
-      <xsl:value-of select="concat(../../@name,'::',../@name,'::',@name,': ')"/>
-      <xsl:text>'array' attributes are not supported, use 'safearray="yes"' instead.</xsl:text>
-    </xsl:message>
-  </xsl:if>
+<xsl:template match="interface//attribute">
   <xsl:apply-templates select="@if" mode="begin"/>
   <xsl:if test="@mod='ptr'">
     <!-- attributes using native types must be non-scriptable
@@ -1353,9 +1347,9 @@ typedef PCVBOXXPCOM (*PFNVBOXGETXPCOMCFUNCTIONS)(unsigned uVersion);
   <xsl:text>&#x0A;</xsl:text>
 </xsl:template>
 
-<xsl:template match="interface//attribute | collection//attribute" mode="forwarder">
+<xsl:template match="interface//attribute" mode="forwarder">
 
-  <xsl:variable name="parent" select="ancestor::interface | ancestor::collection"/>
+  <xsl:variable name="parent" select="ancestor::interface"/>
 
   <xsl:apply-templates select="@if" mode="begin"/>
 
@@ -1510,7 +1504,7 @@ typedef PCVBOXXPCOM (*PFNVBOXGETXPCOMCFUNCTIONS)(unsigned uVersion);
 <!--
  *  methods
 -->
-<xsl:template match="interface//method | collection//method">
+<xsl:template match="interface//method">
   <xsl:apply-templates select="@if" mode="begin"/>
   <xsl:if test="param/@mod='ptr'">
     <!-- methods using native types must be non-scriptable
@@ -1543,9 +1537,9 @@ typedef PCVBOXXPCOM (*PFNVBOXGETXPCOMCFUNCTIONS)(unsigned uVersion);
   <xsl:text>&#x0A;</xsl:text>
 </xsl:template>
 
-<xsl:template match="interface//method | collection//method" mode="forwarder">
+<xsl:template match="interface//method" mode="forwarder">
 
-  <xsl:variable name="parent" select="ancestor::interface | ancestor::collection"/>
+  <xsl:variable name="parent" select="ancestor::interface"/>
 
   <xsl:apply-templates select="@if" mode="begin"/>
 
@@ -1698,140 +1692,6 @@ typedef PCVBOXXPCOM (*PFNVBOXGETXPCOMCFUNCTIONS)(unsigned uVersion);
 
 
 <!--
- *  enumerators
--->
-<xsl:template match="enumerator">
-  <xsl:text>/* Start of struct </xsl:text>
-  <xsl:value-of select="@name"/>
-  <xsl:text> Declaration */&#x0A;</xsl:text>
-  <xsl:text>#define </xsl:text>
-  <xsl:call-template name="uppercase">
-    <xsl:with-param name="str" select="@name"/>
-  </xsl:call-template>
-  <xsl:value-of select="concat('_IID_STR &quot;',@uuid,'&quot;')"/>
-  <xsl:text>&#x0A;</xsl:text>
-  <xsl:text>#define </xsl:text>
-  <xsl:call-template name="uppercase">
-    <xsl:with-param name="str" select="@name"/>
-  </xsl:call-template>
-  <xsl:text>_IID { \&#x0A;</xsl:text>
-  <xsl:text>    0x</xsl:text><xsl:value-of select="substring(@uuid,1,8)"/>
-  <xsl:text>, 0x</xsl:text><xsl:value-of select="substring(@uuid,10,4)"/>
-  <xsl:text>, 0x</xsl:text><xsl:value-of select="substring(@uuid,15,4)"/>
-  <xsl:text>, \&#x0A;    </xsl:text>
-  <xsl:text>{ 0x</xsl:text><xsl:value-of select="substring(@uuid,20,2)"/>
-  <xsl:text>, 0x</xsl:text><xsl:value-of select="substring(@uuid,22,2)"/>
-  <xsl:text>, 0x</xsl:text><xsl:value-of select="substring(@uuid,25,2)"/>
-  <xsl:text>, 0x</xsl:text><xsl:value-of select="substring(@uuid,27,2)"/>
-  <xsl:text>, 0x</xsl:text><xsl:value-of select="substring(@uuid,29,2)"/>
-  <xsl:text>, 0x</xsl:text><xsl:value-of select="substring(@uuid,31,2)"/>
-  <xsl:text>, 0x</xsl:text><xsl:value-of select="substring(@uuid,33,2)"/>
-  <xsl:text>, 0x</xsl:text><xsl:value-of select="substring(@uuid,35,2)"/>
-  <xsl:text> } \&#x0A;}&#x0A;</xsl:text>
-  <xsl:text>struct </xsl:text>
-  <xsl:value-of select="@name"/>
-  <xsl:text>_vtbl&#x0A;{&#x0A;</xsl:text>
-  <xsl:text>    struct nsISupports_vtbl nsisupports;&#x0A;&#x0A;</xsl:text>
-  <!-- attributes (properties) -->
-  <xsl:text>    nsresult (*HasMore)(</xsl:text>
-  <xsl:value-of select="@name" />
-  <xsl:text> *pThis, PRBool *more);&#x0A;&#x0A;</xsl:text>
-  <!-- GetNext -->
-  <xsl:text>    nsresult (*GetNext)(</xsl:text>
-  <xsl:value-of select="@name" />
-  <xsl:text> *pThis, </xsl:text>
-  <xsl:apply-templates select="@type" mode="forwarder"/>
-  <xsl:text> *next);&#x0A;&#x0A;</xsl:text>
-  <xsl:text>};</xsl:text>
-  <xsl:text>&#x0A;&#x0A;</xsl:text>
-  <xsl:text>struct </xsl:text>
-  <xsl:value-of select="@name"/>
-  <xsl:text>&#x0A;{&#x0A;    struct </xsl:text>
-  <xsl:value-of select="@name"/>
-  <xsl:text>_vtbl *vtbl;&#x0A;};&#x0A;</xsl:text>
-  <xsl:text>/* End of struct </xsl:text>
-  <xsl:value-of select="@name"/>
-  <xsl:text> Declaration */&#x0A;&#x0A;&#x0A;</xsl:text>
-</xsl:template>
-
-
-<!--
- *  collections
--->
-<xsl:template match="collection">
-  <xsl:if test="not(@readonly='yes')">
-    <xsl:message terminate="yes">
-      <xsl:value-of select="concat(@name,': ')"/>
-      <xsl:text>non-readonly collections are not currently supported</xsl:text>
-    </xsl:message>
-  </xsl:if>
-  <xsl:text>/* Start of struct </xsl:text>
-  <xsl:value-of select="@name"/>
-  <xsl:text> Declaration */&#x0A;</xsl:text>
-  <xsl:text>#define </xsl:text>
-  <xsl:call-template name="uppercase">
-    <xsl:with-param name="str" select="@name"/>
-  </xsl:call-template>
-  <xsl:value-of select="concat('_IID_STR &quot;',@uuid,'&quot;')"/>
-  <xsl:text>&#x0A;</xsl:text>
-  <xsl:text>#define </xsl:text>
-  <xsl:call-template name="uppercase">
-    <xsl:with-param name="str" select="@name"/>
-  </xsl:call-template>
-  <xsl:text>_IID { \&#x0A;</xsl:text>
-  <xsl:text>    0x</xsl:text><xsl:value-of select="substring(@uuid,1,8)"/>
-  <xsl:text>, 0x</xsl:text><xsl:value-of select="substring(@uuid,10,4)"/>
-  <xsl:text>, 0x</xsl:text><xsl:value-of select="substring(@uuid,15,4)"/>
-  <xsl:text>, \&#x0A;    </xsl:text>
-  <xsl:text>{ 0x</xsl:text><xsl:value-of select="substring(@uuid,20,2)"/>
-  <xsl:text>, 0x</xsl:text><xsl:value-of select="substring(@uuid,22,2)"/>
-  <xsl:text>, 0x</xsl:text><xsl:value-of select="substring(@uuid,25,2)"/>
-  <xsl:text>, 0x</xsl:text><xsl:value-of select="substring(@uuid,27,2)"/>
-  <xsl:text>, 0x</xsl:text><xsl:value-of select="substring(@uuid,29,2)"/>
-  <xsl:text>, 0x</xsl:text><xsl:value-of select="substring(@uuid,31,2)"/>
-  <xsl:text>, 0x</xsl:text><xsl:value-of select="substring(@uuid,33,2)"/>
-  <xsl:text>, 0x</xsl:text><xsl:value-of select="substring(@uuid,35,2)"/>
-  <xsl:text> } \&#x0A;}&#x0A;</xsl:text>
-  <xsl:text>struct </xsl:text>
-  <xsl:value-of select="@name"/>
-  <xsl:text>_vtbl&#x0A;{&#x0A;</xsl:text>
-  <xsl:text>    struct nsISupports_vtbl nsisupports;&#x0A;&#x0A;</xsl:text>
-  <!-- Count -->
-  <xsl:text>    nsresult (*GetCount)(</xsl:text>
-  <xsl:value-of select="@name" />
-  <xsl:text> *pThis, PRUint32 *aCount);&#x0A;&#x0A;</xsl:text>
-  <!-- GetItemAt -->
-  <xsl:text>    nsresult (*GetItemAt)(</xsl:text>
-  <xsl:value-of select="@name" />
-  <xsl:text> *pThis, PRUint32 index, </xsl:text>
-  <xsl:apply-templates select="@type" mode="forwarder"/>
-  <xsl:text> **item);&#x0A;&#x0A;</xsl:text>
-  <!-- Enumerate -->
-  <xsl:text>    nsresult (*Enumerate)(</xsl:text>
-  <xsl:value-of select="@name" />
-  <xsl:text> *pThis, </xsl:text>
-  <xsl:apply-templates select="@enumerator"/>
-  <xsl:text> **enumerator);&#x0A;&#x0A;</xsl:text>
-  <!-- other extra attributes (properties) -->
-  <xsl:apply-templates select="attribute"/>
-  <!-- other extra methods -->
-  <xsl:apply-templates select="method"/>
-  <!-- 'if' enclosed elements, unsorted -->
-  <xsl:apply-templates select="if"/>
-  <xsl:text>};</xsl:text>
-  <xsl:text>&#x0A;&#x0A;</xsl:text>
-  <xsl:text>struct </xsl:text>
-  <xsl:value-of select="@name"/>
-  <xsl:text>&#x0A;{&#x0A;    struct </xsl:text>
-  <xsl:value-of select="@name"/>
-  <xsl:text>_vtbl *vtbl;&#x0A;};&#x0A;</xsl:text>
-  <xsl:text>/* End of struct </xsl:text>
-  <xsl:value-of select="@name"/>
-  <xsl:text> Declaration */&#x0A;&#x0A;&#x0A;</xsl:text>
-</xsl:template>
-
-
-<!--
  *  enums
 -->
 <xsl:template match="enum">
@@ -1941,37 +1801,6 @@ typedef PCVBOXXPCOM (*PFNVBOXGETXPCOMCFUNCTIONS)(unsigned uVersion);
     </xsl:when>
     <!-- normal and array parameters -->
     <xsl:otherwise>
-      <xsl:if test="@array">
-        <xsl:if test="@dir='return'">
-          <xsl:message terminate="yes">
-            <xsl:value-of select="concat(../../@name,'::',../@name,'::',@name,': ')"/>
-            <xsl:text>return 'array' parameters are not supported, use 'safearray="yes"' instead.</xsl:text>
-          </xsl:message>
-        </xsl:if>
-        <xsl:text>[array, </xsl:text>
-        <xsl:choose>
-          <xsl:when test="../param[@name=current()/@array]">
-            <xsl:if test="../param[@name=current()/@array]/@dir != @dir">
-              <xsl:message terminate="yes">
-                <xsl:value-of select="concat(../../@name,'::',../@name,': ')"/>
-                <xsl:value-of select="concat(@name,' and ',../param[@name=current()/@array]/@name)"/>
-                <xsl:text> must have the same direction</xsl:text>
-              </xsl:message>
-            </xsl:if>
-            <xsl:text>size_is(</xsl:text>
-            <xsl:value-of select="@array"/>
-            <xsl:text>)</xsl:text>
-          </xsl:when>
-          <xsl:otherwise>
-            <xsl:message terminate="yes">
-              <xsl:value-of select="concat(../../@name,'::',../@name,'::',@name,': ')"/>
-              <xsl:text>array attribute refers to non-existent param: </xsl:text>
-              <xsl:value-of select="@array"/>
-            </xsl:message>
-          </xsl:otherwise>
-        </xsl:choose>
-        <xsl:text>] </xsl:text>
-      </xsl:if>
       <xsl:choose>
         <xsl:when test="@dir='in'">
           <xsl:apply-templates select="@type" mode="forwarder"/>
@@ -2025,18 +1854,8 @@ typedef PCVBOXXPCOM (*PFNVBOXGETXPCOMCFUNCTIONS)(unsigned uVersion);
 <!--
  *  attribute/parameter type conversion
 -->
-<xsl:template match="
-  attribute/@type | param/@type |
-  enumerator/@type | collection/@type | collection/@enumerator
-">
+<xsl:template match="attribute/@type | param/@type">
   <xsl:variable name="self_target" select="current()/ancestor::if/@target"/>
-
-  <xsl:if test="../@array and ../@safearray='yes'">
-    <xsl:message terminate="yes">
-      <xsl:value-of select="concat(../../../@name,'::',../../@name,'::',../@name,': ')"/>
-      <xsl:text>either 'array' or 'safearray="yes"' attribute is allowed, but not both!</xsl:text>
-    </xsl:message>
-  </xsl:if>
 
   <xsl:choose>
     <!-- modifiers (ignored for 'enumeration' attributes)-->
@@ -2054,10 +1873,22 @@ typedef PCVBOXXPCOM (*PFNVBOXGETXPCOMCFUNCTIONS)(unsigned uVersion);
             <xsl:when test=".='long long'">llongPtr</xsl:when>
             <xsl:when test=".='unsigned long'">ulongPtr</xsl:when>
             <xsl:when test=".='unsigned long long'">ullongPtr</xsl:when>
-            <xsl:when test=".='char'">charPtr</xsl:when>
-            <!--xsl:when test=".='string'">??</xsl:when-->
-            <xsl:when test=".='wchar'">wcharPtr</xsl:when>
-            <!--xsl:when test=".='wstring'">??</xsl:when-->
+            <xsl:otherwise>
+              <xsl:message terminate="yes">
+                <xsl:value-of select="concat(../../../@name,'::',../../@name,'::',../@name,': ')"/>
+                <xsl:text>attribute 'mod=</xsl:text>
+                <xsl:value-of select="concat('&quot;',../@mod,'&quot;')"/>
+                <xsl:text>' cannot be used with type </xsl:text>
+                <xsl:value-of select="concat('&quot;',current(),'&quot;!')"/>
+              </xsl:message>
+            </xsl:otherwise>
+          </xsl:choose>
+        </xsl:when>
+        <xsl:when test="../@mod='string'">
+          <xsl:choose>
+            <!-- standard types -->
+            <!--xsl:when test=".='result'">??</xsl:when-->
+            <xsl:when test=".='uuid'">wstring</xsl:when>
             <xsl:otherwise>
               <xsl:message terminate="yes">
                 <xsl:value-of select="concat(../../../@name,'::',../../@name,'::',../@name,': ')"/>
@@ -2142,9 +1973,6 @@ typedef PCVBOXXPCOM (*PFNVBOXGETXPCOMCFUNCTIONS)(unsigned uVersion);
               ) or
               ((ancestor::library/interface[@name=current()]) or
                (ancestor::library/if[@target=$self_target]/interface[@name=current()])
-              ) or
-              ((ancestor::library/collection[@name=current()]) or
-               (ancestor::library/if[@target=$self_target]/collection[@name=current()])
               )
             ">
               <xsl:value-of select="."/>
@@ -2163,10 +1991,7 @@ typedef PCVBOXXPCOM (*PFNVBOXGETXPCOMCFUNCTIONS)(unsigned uVersion);
   </xsl:choose>
 </xsl:template>
 
-<xsl:template match="
-  attribute/@type | param/@type |
-  enumerator/@type | collection/@type | collection/@enumerator
-" mode="forwarder">
+<xsl:template match="attribute/@type | param/@type" mode="forwarder">
 
   <xsl:variable name="self_target" select="current()/ancestor::if/@target"/>
 
@@ -2186,10 +2011,31 @@ typedef PCVBOXXPCOM (*PFNVBOXGETXPCOMCFUNCTIONS)(unsigned uVersion);
             <xsl:when test=".='long long'">PRInt64 *</xsl:when>
             <xsl:when test=".='unsigned long'">PRUint32 *</xsl:when>
             <xsl:when test=".='unsigned long long'">PRUint64 *</xsl:when>
-            <xsl:when test=".='char'">char *</xsl:when>
-            <!--xsl:when test=".='string'">??</xsl:when-->
-            <xsl:when test=".='wchar'">PRUnichar *</xsl:when>
-            <!--xsl:when test=".='wstring'">??</xsl:when-->
+            <xsl:otherwise>
+              <xsl:message terminate="yes">
+                <xsl:value-of select="concat(../../../@name,'::',../../@name,'::',../@name,': ')"/>
+                <xsl:text>attribute 'mod=</xsl:text>
+                <xsl:value-of select="concat('&quot;',../@mod,'&quot;')"/>
+                <xsl:text>' cannot be used with type </xsl:text>
+                <xsl:value-of select="concat('&quot;',current(),'&quot;!')"/>
+              </xsl:message>
+            </xsl:otherwise>
+          </xsl:choose>
+        </xsl:when>
+        <xsl:when test="../@mod='string'">
+          <xsl:choose>
+            <!-- standard types -->
+            <!--xsl:when test=".='result'">??</xsl:when-->
+            <xsl:when test=".='uuid'">PRUnichar *</xsl:when>
+            <xsl:otherwise>
+              <xsl:message terminate="yes">
+                <xsl:value-of select="concat(../../../@name,'::',../../@name,'::',../@name,': ')"/>
+                <xsl:text>attribute 'mod=</xsl:text>
+                <xsl:value-of select="concat('&quot;',../@mod,'&quot;')"/>
+                <xsl:text>' cannot be used with type </xsl:text>
+                <xsl:value-of select="concat('&quot;',current(),'&quot;!')"/>
+              </xsl:message>
+            </xsl:otherwise>
           </xsl:choose>
         </xsl:when>
       </xsl:choose>
@@ -2253,9 +2099,6 @@ typedef PCVBOXXPCOM (*PFNVBOXGETXPCOMCFUNCTIONS)(unsigned uVersion);
               ) or
               ((ancestor::library/interface[@name=current()]) or
                (ancestor::library/if[@target=$self_target]/interface[@name=current()])
-              ) or
-              ((ancestor::library/collection[@name=current()]) or
-               (ancestor::library/if[@target=$self_target]/collection[@name=current()])
               )
             ">
               <xsl:value-of select="."/>

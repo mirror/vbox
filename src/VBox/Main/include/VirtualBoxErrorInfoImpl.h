@@ -27,11 +27,7 @@
 using namespace com;
 
 class ATL_NO_VTABLE VirtualBoxErrorInfo
-#if defined (RT_OS_WINDOWS)
     : public CComObjectRootEx <CComMultiThreadModel>
-#else
-    : public CComObjectRootEx
-#endif
     , public IVirtualBoxErrorInfo
 {
 public:
@@ -44,8 +40,6 @@ public:
         COM_INTERFACE_ENTRY(IErrorInfo)
         COM_INTERFACE_ENTRY(IVirtualBoxErrorInfo)
     END_COM_MAP()
-
-    NS_DECL_ISUPPORTS
 
 #if defined (RT_OS_WINDOWS)
 

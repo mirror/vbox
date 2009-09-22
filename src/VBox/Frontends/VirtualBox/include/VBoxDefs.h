@@ -68,14 +68,14 @@ extern const QUuid QUuid_null;
 /** Common namespace for all enums */
 struct VBoxDefs
 {
-    /** Media type. */
-    enum MediaType
+    /** Medium type. */
+    enum MediumType
     {
-        MediaType_Invalid,
-        MediaType_HardDisk,
-        MediaType_DVD,
-        MediaType_Floppy,
-        MediaType_All
+        MediumType_Invalid,
+        MediumType_HardDisk,
+        MediumType_DVD,
+        MediumType_Floppy,
+        MediumType_All
     };
 
     /** VM display rendering mode. */

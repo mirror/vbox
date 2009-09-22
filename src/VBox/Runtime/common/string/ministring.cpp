@@ -37,6 +37,49 @@ using namespace iprt;
 
 const size_t MiniString::npos = (size_t)-1;
 
+/**
+ * Appends a copy of @a that to "this".
+ * @param that
+ */
+MiniString& MiniString::append(const MiniString &that)
+{
+    size_t lenThat = that.length();
+    if (lenThat)
+    {
+        size_t lenThis = length();
+        size_t cbBoth = lenThis + lenThat + 1;
+
+        reserve(cbBoth);
+            // calls realloc(cbBoth) and sets m_cbAllocated
+
+        memcpy(m_psz + lenThis, that.m_psz, lenThat);
+        m_psz[lenThis + lenThat] = '\0';
+        m_cbLength = cbBoth - 1;
+    }
+    return *this;
+}
+
+/**
+ * Appends the given character to "this".
+ * @param c
+ * @return
+ */
+MiniString& MiniString::append(char c)
+{
+    if (c)
+    {
+        // allocate in chunks of 20 in case this gets called several times
+        if (m_cbLength + 1 >= m_cbAllocated)
+            reserve(m_cbLength + 10);
+            // calls realloc() and sets m_cbAllocated
+
+        m_psz[m_cbLength] = c;
+        m_psz[m_cbLength + 1] = '\0';
+        ++m_cbLength;
+    }
+    return *this;
+}
+
 size_t MiniString::find(const char *pcszFind,
                         size_t pos /*= 0*/)
     const

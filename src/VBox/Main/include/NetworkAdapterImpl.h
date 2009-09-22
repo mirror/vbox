@@ -92,8 +92,6 @@ public:
         COM_INTERFACE_ENTRY2 (IDispatch, INetworkAdapter)
     END_COM_MAP()
 
-    NS_DECL_ISUPPORTS
-
     DECLARE_EMPTY_CTOR_DTOR (NetworkAdapter)
 
     HRESULT FinalConstruct();

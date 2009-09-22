@@ -170,6 +170,7 @@
   <type idlname="double"             xmlname="double"        cname="double"           gluename=""        javaname="Double" />
   <type idlname="float"              xmlname="float"         cname="float"            gluename=""        javaname="Float" />
   <type idlname="wstring"            xmlname="string"        cname="std::string"      gluename=""        javaname="String" />
+  <type idlname="uuid"               xmlname="string"        cname="std::string"      gluename=""        javaname="String" />
   <type idlname="result"             xmlname="unsignedInt"   cname="unsigned int"     gluename="HRESULT" javaname="Long" />
 </xsl:variable>
 

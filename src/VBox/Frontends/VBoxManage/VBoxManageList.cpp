@@ -96,10 +96,10 @@ static const RTGETOPTDEF g_aListOptions[]
         { "ostypes",            LISTOSTYPES, RTGETOPT_REQ_NOTHING },
         { "hostdvds",           LISTHOSTDVDS, RTGETOPT_REQ_NOTHING },
         { "hostfloppies",       LISTHOSTFLOPPIES, RTGETOPT_REQ_NOTHING },
-        { "hostifs",             LISTBRIDGEDIFS, RTGETOPT_REQ_NOTHING }, /* backward compatibility */
-        { "bridgedifs",          LISTBRIDGEDIFS, RTGETOPT_REQ_NOTHING },
+        { "hostifs",            LISTBRIDGEDIFS, RTGETOPT_REQ_NOTHING }, /* backward compatibility */
+        { "bridgedifs",         LISTBRIDGEDIFS, RTGETOPT_REQ_NOTHING },
 #if defined(VBOX_WITH_NETFLT)
-        { "hostonlyifs",          LISTHOSTONLYIFS, RTGETOPT_REQ_NOTHING },
+        { "hostonlyifs",        LISTHOSTONLYIFS, RTGETOPT_REQ_NOTHING },
 #endif
         { "hostinfo",           LISTHOSTINFO, RTGETOPT_REQ_NOTHING },
         { "hddbackends",        LISTHDDBACKENDS, RTGETOPT_REQ_NOTHING },
@@ -269,16 +269,19 @@ int handleList(HandlerArg *a)
         {
             ComPtr<IHost> host;
             CHECK_ERROR(a->virtualBox, COMGETTER(Host)(host.asOutParam()));
-            com::SafeIfaceArray <IHostDVDDrive> coll;
+            com::SafeIfaceArray <IMedium> coll;
             CHECK_ERROR(host, COMGETTER(DVDDrives)(ComSafeArrayAsOutParam(coll)));
             if (SUCCEEDED(rc))
             {
                 for (size_t i = 0; i < coll.size(); ++ i)
                 {
-                    ComPtr<IHostDVDDrive> dvdDrive = coll[i];
+                    ComPtr<IMedium> dvdDrive = coll[i];
+                    Bstr uuid;
+                    dvdDrive->COMGETTER(Id)(uuid.asOutParam());
+                    RTPrintf("UUID:         %s\n", Utf8Str(uuid).raw());
                     Bstr name;
                     dvdDrive->COMGETTER(Name)(name.asOutParam());
-                    RTPrintf("Name:        %lS\n\n", name.raw());
+                    RTPrintf("Name:         %lS\n\n", name.raw());
                 }
             }
         }
@@ -288,16 +291,19 @@ int handleList(HandlerArg *a)
         {
             ComPtr<IHost> host;
             CHECK_ERROR(a->virtualBox, COMGETTER(Host)(host.asOutParam()));
-            com::SafeIfaceArray <IHostFloppyDrive> coll;
+            com::SafeIfaceArray <IMedium> coll;
             CHECK_ERROR(host, COMGETTER(FloppyDrives)(ComSafeArrayAsOutParam(coll)));
             if (SUCCEEDED(rc))
             {
                 for (size_t i = 0; i < coll.size(); ++i)
                 {
-                    ComPtr<IHostFloppyDrive> floppyDrive = coll[i];
+                    ComPtr<IMedium> floppyDrive = coll[i];
+                    Bstr uuid;
+                    floppyDrive->COMGETTER(Id)(uuid.asOutParam());
+                    RTPrintf("UUID:         %s\n", Utf8Str(uuid).raw());
                     Bstr name;
                     floppyDrive->COMGETTER(Name)(name.asOutParam());
-                    RTPrintf("Name:        %lS\n\n", name.raw());
+                    RTPrintf("Name:         %lS\n\n", name.raw());
                 }
             }
         }
@@ -429,24 +435,24 @@ int handleList(HandlerArg *a)
             ComPtr<ISystemProperties> systemProperties;
             CHECK_ERROR(a->virtualBox,
                         COMGETTER(SystemProperties) (systemProperties.asOutParam()));
-            com::SafeIfaceArray <IHardDiskFormat> hardDiskFormats;
+            com::SafeIfaceArray <IMediumFormat> mediumFormats;
             CHECK_ERROR(systemProperties,
-                        COMGETTER(HardDiskFormats) (ComSafeArrayAsOutParam (hardDiskFormats)));
+                        COMGETTER(MediumFormats) (ComSafeArrayAsOutParam (mediumFormats)));
 
             RTPrintf("Supported hard disk backends:\n\n");
-            for (size_t i = 0; i < hardDiskFormats.size(); ++ i)
+            for (size_t i = 0; i < mediumFormats.size(); ++ i)
             {
                 /* General information */
                 Bstr id;
-                CHECK_ERROR(hardDiskFormats [i],
+                CHECK_ERROR(mediumFormats [i],
                             COMGETTER(Id) (id.asOutParam()));
 
                 Bstr description;
-                CHECK_ERROR(hardDiskFormats [i],
+                CHECK_ERROR(mediumFormats [i],
                             COMGETTER(Id) (description.asOutParam()));
 
                 ULONG caps;
-                CHECK_ERROR(hardDiskFormats [i],
+                CHECK_ERROR(mediumFormats [i],
                             COMGETTER(Capabilities) (&caps));
 
                 RTPrintf("Backend %u: id='%ls' description='%ls' capabilities=%#06x extensions='",
@@ -454,7 +460,7 @@ int handleList(HandlerArg *a)
 
                 /* File extensions */
                 com::SafeArray <BSTR> fileExtensions;
-                CHECK_ERROR(hardDiskFormats [i],
+                CHECK_ERROR(mediumFormats [i],
                             COMGETTER(FileExtensions) (ComSafeArrayAsOutParam (fileExtensions)));
                 for (size_t a = 0; a < fileExtensions.size(); ++ a)
                 {
@@ -470,7 +476,7 @@ int handleList(HandlerArg *a)
                 com::SafeArray <DataType_T> propertyTypes;
                 com::SafeArray <ULONG> propertyFlags;
                 com::SafeArray <BSTR> propertyDefaults;
-                CHECK_ERROR(hardDiskFormats [i],
+                CHECK_ERROR(mediumFormats [i],
                             DescribeProperties (ComSafeArrayAsOutParam (propertyNames),
                                                 ComSafeArrayAsOutParam (propertyDescriptions),
                                                 ComSafeArrayAsOutParam (propertyTypes),
@@ -503,11 +509,11 @@ int handleList(HandlerArg *a)
 
         case LISTHDDS:
         {
-            com::SafeIfaceArray<IHardDisk> hdds;
+            com::SafeIfaceArray<IMedium> hdds;
             CHECK_ERROR(a->virtualBox, COMGETTER(HardDisks)(ComSafeArrayAsOutParam (hdds)));
             for (size_t i = 0; i < hdds.size(); ++ i)
             {
-                ComPtr<IHardDisk> hdd = hdds[i];
+                ComPtr<IMedium> hdd = hdds[i];
                 Bstr uuid;
                 hdd->COMGETTER(Id)(uuid.asOutParam());
                 RTPrintf("UUID:         %s\n", Utf8Str(uuid).raw());
@@ -517,11 +523,29 @@ int handleList(HandlerArg *a)
                 Bstr filepath;
                 hdd->COMGETTER(Location)(filepath.asOutParam());
                 RTPrintf("Location:     %lS\n", filepath.raw());
-                MediaState_T enmState;
+                MediumState_T enmState;
                 /// @todo NEWMEDIA check accessibility of all parents
                 /// @todo NEWMEDIA print the full state value
                 hdd->COMGETTER(State)(&enmState);
-                RTPrintf("Accessible:   %s\n", enmState != MediaState_Inaccessible ? "yes" : "no");
+                RTPrintf("Accessible:   %s\n", enmState != MediumState_Inaccessible ? "yes" : "no");
+
+                MediumType_T type;
+                hdd->COMGETTER(Type)(&type);
+                const char *typeStr = "unknown";
+                switch (type)
+                {
+                    case MediumType_Normal:
+                        typeStr = "normal";
+                        break;
+                    case MediumType_Immutable:
+                        typeStr = "immutable";
+                        break;
+                    case MediumType_Writethrough:
+                        typeStr = "writethrough";
+                        break;
+                }
+                RTPrintf("Type:         %s\n", typeStr);
+
                 com::SafeArray<BSTR> machineIds;
                 hdd->COMGETTER(MachineIds)(ComSafeArrayAsOutParam(machineIds));
                 for (size_t j = 0; j < machineIds.size(); ++ j)
@@ -546,20 +570,20 @@ int handleList(HandlerArg *a)
 
         case LISTDVDS:
         {
-            com::SafeIfaceArray<IDVDImage> dvds;
+            com::SafeIfaceArray<IMedium> dvds;
             CHECK_ERROR(a->virtualBox, COMGETTER(DVDImages)(ComSafeArrayAsOutParam(dvds)));
             for (size_t i = 0; i < dvds.size(); ++ i)
             {
-                ComPtr<IDVDImage> dvdImage = dvds[i];
+                ComPtr<IMedium> dvdImage = dvds[i];
                 Bstr uuid;
                 dvdImage->COMGETTER(Id)(uuid.asOutParam());
                 RTPrintf("UUID:       %s\n", Utf8Str(uuid).raw());
                 Bstr filePath;
                 dvdImage->COMGETTER(Location)(filePath.asOutParam());
                 RTPrintf("Path:       %lS\n", filePath.raw());
-                MediaState_T enmState;
+                MediumState_T enmState;
                 dvdImage->COMGETTER(State)(&enmState);
-                RTPrintf("Accessible: %s\n", enmState != MediaState_Inaccessible ? "yes" : "no");
+                RTPrintf("Accessible: %s\n", enmState != MediumState_Inaccessible ? "yes" : "no");
                 /** @todo usage */
                 RTPrintf("\n");
             }
@@ -568,20 +592,20 @@ int handleList(HandlerArg *a)
 
         case LISTFLOPPIES:
         {
-            com::SafeIfaceArray<IFloppyImage> floppies;
+            com::SafeIfaceArray<IMedium> floppies;
             CHECK_ERROR(a->virtualBox, COMGETTER(FloppyImages)(ComSafeArrayAsOutParam(floppies)));
             for (size_t i = 0; i < floppies.size(); ++ i)
             {
-                ComPtr<IFloppyImage> floppyImage = floppies[i];
+                ComPtr<IMedium> floppyImage = floppies[i];
                 Bstr uuid;
                 floppyImage->COMGETTER(Id)(uuid.asOutParam());
                 RTPrintf("UUID:       %s\n", Utf8Str(uuid).raw());
                 Bstr filePath;
                 floppyImage->COMGETTER(Location)(filePath.asOutParam());
                 RTPrintf("Path:       %lS\n", filePath.raw());
-                MediaState_T enmState;
+                MediumState_T enmState;
                 floppyImage->COMGETTER(State)(&enmState);
-                RTPrintf("Accessible: %s\n", enmState != MediaState_Inaccessible ? "yes" : "no");
+                RTPrintf("Accessible: %s\n", enmState != MediumState_Inaccessible ? "yes" : "no");
                 /** @todo usage */
                 RTPrintf("\n");
             }

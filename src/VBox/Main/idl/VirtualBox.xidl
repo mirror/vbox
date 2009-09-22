@@ -379,7 +379,7 @@
   -->
 
   <enum name="SettingsVersion"
-        uuid="6e151282-c338-428a-989d-5f2402d87e6f"
+        uuid="52bd6f5f-1adb-4493-975d-581a9c4b803f"
     >
     <desc>Settings version of VirtualBox settings files. This is written to
           the "version" attribute of the root "VirtualBox" element in the settings
@@ -431,9 +431,19 @@
       -->
     </const>
     <const name="v1_8"     value="10">
-      <desc>Settings version "1.8", written by VirtualBox 3.1.x.</desc>
+      <desc>Intermediate settings version "1.8", understood by VirtualBox 3.1.x.</desc>
       <!-- Machine additions: Display/@accelerate2DVideo
       -->
+    </const>
+    <const name="v1_9"     value="11">
+      <desc>Settings version "1.9", written by VirtualBox 3.1.x.</desc>
+      <!-- The big storage controller / DVD / Floppy rework
+           -->
+    </const>
+    <const name="Future"     value="12">
+      <desc>Settings version greater than "1.9", written by a future VirtualBox version.</desc>
+      <!-- The big storage controller / DVD / Floppy rework
+           -->
     </const>
   </enum>
 
@@ -527,7 +537,7 @@
       PoweredOff, Aborted and Saved too).
 
       The first diagram shows what happens when a lengthy setup operation is
-      being executed (such as <link to="IMachine::attachHardDisk"/>).
+      being executed (such as <link to="IMachine::attachDevice"/>).
 
       <pre>
     +----------------------------------(same state as before the call)------+
@@ -949,18 +959,6 @@
   </enum>
 
   <enum
-    name="DriveState"
-    uuid="cb7233b7-c519-42a5-8310-1830953cacbc"
-  >
-    <const name="Null"              value="0">
-      <desc>Null value (never used by the API).</desc>
-    </const>
-    <const name="NotMounted"        value="1"/>
-    <const name="ImageMounted"      value="2"/>
-    <const name="HostDriveCaptured" value="3"/>
-  </enum>
-
-  <enum
     name="ProcessorFeature"
     uuid="b8353b35-705d-4796-9967-ebfb7ba54af4"
   >
@@ -980,10 +978,10 @@
     <desc>
       Firmware type.
     </desc>
-    <const name="Bios"            value="1">
+    <const name="BIOS"            value="1">
       <desc>BIOS Firmware.</desc>
     </const>
-    <const name="Efi"             value="2">
+    <const name="EFI"             value="2">
       <desc>Efi firmware.</desc>
     </const>
   </enum>
@@ -1045,7 +1043,7 @@
       </desc>
     </attribute>
 
-    <attribute name="interfaceID" type="wstring" readonly="yes">
+    <attribute name="interfaceID" type="uuid" mod="string" readonly="yes">
       <desc>
         UUID of the interface that defined the error.
         <note>
@@ -1094,8 +1092,8 @@
      >
     <desc>
       The ILocalOwner interface allows to register local objects
-      (created without COM calls, but with new()). 
-      Once registered, calls to methods of such objects can be made 
+      (created without COM calls, but with new()).
+      Once registered, calls to methods of such objects can be made
       from remote COM processes.
       The main usecase is the event callback implementation where
       API clients provide callback objects.
@@ -1105,7 +1103,7 @@
         Set local object.
       </desc>
       <param name="object" type="$unknown" dir="in">
-        <desc>Local object to forward requests to. 
+        <desc>Local object to forward requests to.
           If null, clears currently set local object.</desc>
       </param>
     </method>
@@ -1118,7 +1116,7 @@
 
   <interface
      name="IVirtualBoxCallback" extends="$unknown"
-     uuid="2990059f-5bc8-4635-8415-658917cd3186"
+     uuid="9a65adf2-3ee6-406b-bca2-2b1fa05f0d0b"
      wsmap="suppress"
      >
 
@@ -1127,7 +1125,7 @@
         The execution state of the given machine has changed.
         <see>IMachine::state</see>
       </desc>
-      <param name="machineId" type="wstring" dir="in">
+      <param name="machineId" type="uuid" mod="string" dir="in">
         <desc>ID of the machine this event relates to.</desc>
       </param>
       <param name="state" type="MachineState" dir="in">
@@ -1139,7 +1137,7 @@
       <desc>
         Any of the settings of the given machine has changed.
       </desc>
-      <param name="machineId" type="wstring" dir="in">
+      <param name="machineId" type="uuid" mod="string" dir="in">
         <desc>ID of the machine this event relates to.</desc>
       </param>
     </method>
@@ -1150,7 +1148,7 @@
         either the given machine or (if @c null) global extra data.
         This gives the chance to veto against changes.
       </desc>
-      <param name="machineId" type="wstring" dir="in">
+      <param name="machineId" type="uuid" mod="string" dir="in">
         <desc>
           ID of the machine this event relates to
           (@c null ID for global extra data change requests).
@@ -1185,7 +1183,7 @@
         Notification when machine specific or global extra data
         has changed.
       </desc>
-      <param name="machineId" type="wstring" dir="in">
+      <param name="machineId" type="uuid" mod="string" dir="in">
         <desc>
           ID of the machine this event relates to.
           Null for global extra data changes.
@@ -1203,42 +1201,42 @@
       </param>
     </method>
 
-    <method name="onMediaRegistered">
+    <method name="onMediumRegistered">
       <desc>
-        The given media was registered or unregistered
+        The given medium was registered or unregistered
         within this VirtualBox installation.
 
-        The @a mediaType parameter describes what type of
-        media the specified @a mediaId refers to. Possible
+        The @a mediumType parameter describes what type of
+        medium the specified @a mediumId refers to. Possible
         values are:
 
         <ul>
-        <li><link to="DeviceType_HardDisk"/>: the media is a hard disk
+        <li><link to="DeviceType_HardDisk"/>: the medium is a hard disk
         that, if registered, can be obtained using the
         <link to="IVirtualBox::getHardDisk"/> call.</li>
-        <li><link to="DeviceType_DVD"/>: the media is a CD/DVD image
+        <li><link to="DeviceType_DVD"/>: the medium is a CD/DVD image
         that, if registered, can be obtained using the
         <link to="IVirtualBox::getDVDImage"/> call.</li>
-        <li><link to="DeviceType_Floppy"/>: the media is a Floppy image
+        <li><link to="DeviceType_Floppy"/>: the medium is a Floppy image
         that, if registered, can be obtained using the
         <link to="IVirtualBox::getFloppyImage"/> call.</li>
         </ul>
 
         Note that if this is a deregistration notification,
         there is no way to access the object representing the
-        unregistered media. It is supposed that the
+        unregistered medium. It is supposed that the
         application will do required cleanup based on the
-        @a mediaId value.
+        @a mediumId value.
       </desc>
-      <param name="mediaId" type="wstring" dir="in">
-        <desc>ID of the media this event relates to.</desc>
+      <param name="mediumId" type="uuid" mod="string" dir="in">
+        <desc>ID of the medium this event relates to.</desc>
       </param>
-      <param name="mediaType" type="DeviceType" dir="in">
-        <desc>Type of the media this event relates to.</desc>
+      <param name="mediumType" type="DeviceType" dir="in">
+        <desc>Type of the medium this event relates to.</desc>
       </param>
       <param name="registered" type="boolean" dir="in">
         <desc>
-          If @c true, the media was registered, otherwise it was
+          If @c true, the medium was registered, otherwise it was
           unregistered.
         </desc>
       </param>
@@ -1249,7 +1247,7 @@
         The given machine was registered or unregistered
         within this VirtualBox installation.
       </desc>
-      <param name="machineId" type="wstring" dir="in">
+      <param name="machineId" type="uuid" mod="string" dir="in">
         <desc>ID of the machine this event relates to.</desc>
       </param>
       <param name="registered" type="boolean" dir="in">
@@ -1265,7 +1263,7 @@
         The state of the session for the given machine was changed.
         <see>IMachine::sessionState</see>
       </desc>
-      <param name="machineId" type="wstring" dir="in">
+      <param name="machineId" type="uuid" mod="string" dir="in">
         <desc>ID of the machine this event relates to.</desc>
       </param>
       <param name="state" type="SessionState" dir="in">
@@ -1278,10 +1276,10 @@
         A new snapshot of the machine has been taken.
         <see>ISnapshot</see>
       </desc>
-      <param name="machineId" type="wstring" dir="in">
+      <param name="machineId" type="uuid" mod="string" dir="in">
         <desc>ID of the machine this event relates to.</desc>
       </param>
-      <param name="snapshotId" type="wstring" dir="in">
+      <param name="snapshotId" type="uuid" mod="string" dir="in">
         <desc>ID of the new snapshot.</desc>
       </param>
     </method>
@@ -1298,10 +1296,10 @@
 
         <see>ISnapshot</see>
       </desc>
-      <param name="machineId" type="wstring" dir="in">
+      <param name="machineId" type="uuid" mod="string" dir="in">
         <desc>ID of the machine this event relates to.</desc>
       </param>
-      <param name="snapshotId" type="wstring" dir="in">
+      <param name="snapshotId" type="uuid" mod="string" dir="in">
         <desc>
           ID of the discarded snapshot. @c null means the current machine
           state has been discarded (restored from the current snapshot).
@@ -1314,10 +1312,10 @@
         Snapshot properties (name and/or description) have been changed.
         <see>ISnapshot</see>
       </desc>
-      <param name="machineId" type="wstring" dir="in">
+      <param name="machineId" type="uuid" mod="string" dir="in">
         <desc>ID of the machine this event relates to.</desc>
       </param>
-      <param name="snapshotId" type="wstring" dir="in">
+      <param name="snapshotId" type="uuid" mod="string" dir="in">
         <desc>ID of the changed snapshot.</desc>
       </param>
     </method>
@@ -1326,7 +1324,7 @@
       <desc>
         Notification when a guest property has changed.
       </desc>
-      <param name="machineId" type="wstring" dir="in">
+      <param name="machineId" type="uuid" mod="string" dir="in">
         <desc>
           ID of the machine this event relates to.
         </desc>
@@ -1463,7 +1461,7 @@
 
   <interface
     name="IVirtualBox" extends="$dispatched"
-    uuid="3f4ab53a-199b-4526-a91a-93ff62e456b8"
+    uuid="c1b8d85d-8f44-4314-94fc-072332bdf852"
     wsmap="managed"
   >
     <desc>
@@ -1543,23 +1541,23 @@
       </desc>
     </attribute>
 
-    <attribute name="hardDisks" type="IHardDisk" readonly="yes" safearray="yes">
+    <attribute name="hardDisks" type="IMedium" readonly="yes" safearray="yes">
       <desc>
-        Array of hard disk objects known to this VirtualBox installation.
+        Array of medium objects known to this VirtualBox installation.
 
-        This array contains only base (root) hard disks. All differencing
-        hard disks of the given base hard disk can be enumerated using
-        <link to="IHardDisk::children"/>.
+        This array contains only base media. All differencing
+        media of the given base medium can be enumerated using
+        <link to="IMedium::children"/>.
       </desc>
     </attribute>
 
-    <attribute name="DVDImages" type="IDVDImage" readonly="yes" safearray="yes">
+    <attribute name="DVDImages" type="IMedium" readonly="yes" safearray="yes">
       <desc>
         Array of CD/DVD image objects registered with this VirtualBox instance.
       </desc>
     </attribute>
 
-    <attribute name="floppyImages" type="IFloppyImage" readonly="yes" safearray="yes">
+    <attribute name="floppyImages" type="IMedium" readonly="yes" safearray="yes">
       <desc>
         Array of floppy image objects registered with this VirtualBox instance.
       </desc>
@@ -1690,7 +1688,7 @@
       <param name="baseFolder" type="wstring" dir="in">
         <desc>Base machine folder (optional).</desc>
       </param>
-      <param name="id" type="wstring" dir="in">
+      <param name="id" type="uuid" mod="string" dir="in">
         <desc>Machine UUID (optional).</desc>
       </param>
       <param name="machine" type="IMachine" dir="return">
@@ -1750,7 +1748,7 @@
       <param name="settingsFile" type="wstring" dir="in">
         <desc>Name of the machine settings file.</desc>
       </param>
-      <param name="id" type="wstring" dir="in">
+      <param name="id" type="uuid" mod="string" dir="in">
         <desc>Machine UUID (optional).</desc>
       </param>
       <param name="machine" type="IMachine" dir="return">
@@ -1827,7 +1825,7 @@
         </result>
 
       </desc>
-      <param name="id" type="wstring" dir="in"/>
+      <param name="id" type="uuid" mod="string" dir="in"/>
       <param name="machine" type="IMachine" dir="return"/>
     </method>
 
@@ -1884,7 +1882,7 @@
         </result>
 
       </desc>
-      <param name="id" type="wstring" dir="in">
+      <param name="id" type="uuid" mod="string" dir="in">
         <desc>UUID of the machine to unregister.</desc>
       </param>
       <param name="machine" type="IMachine" dir="return">
@@ -1905,42 +1903,42 @@
 
     <method name="createHardDisk">
       <desc>
-        Creates a new base hard disk object that will use the given storage
-        format and location for hard disk data.
+        Creates a new base medium object that will use the given storage
+        format and location for medium data.
 
         Note that the actual storage unit is not created by this method. In
-        order to do it, and before you are able to attach the created hard disk
+        order to do it, and before you are able to attach the created medium
         to virtual machines, you must call one of the following methods to
         allocate a format-specific storage unit at the specified location:
         <ul>
-          <li><link to="IHardDisk::createBaseStorage"/></li>
-          <li><link to="IHardDisk::createDiffStorage"/></li>
+          <li><link to="IMedium::createBaseStorage"/></li>
+          <li><link to="IMedium::createDiffStorage"/></li>
         </ul>
 
-        Some hard disk attributes, such as <link to="IHardDisk::id"/>, may
-        remain uninitialized until the hard disk storage unit is successfully
+        Some medium attributes, such as <link to="IMedium::id"/>, may
+        remain uninitialized until the medium storage unit is successfully
         created by one of the above methods.
 
-        After the storage unit is successfully created, the hard disk gets
+        After the storage unit is successfully created, the medium gets
         remembered by this VirtualBox installation and will be accessible
         through <link to="#getHardDisk"/> and <link to="#findHardDisk"/>
-        methods. Remembered root (base) hard disks are also returned as part of
-        the <link to="#hardDisks"/> array. See IHardDisk for more details.
+        methods. Remembered base medium are also returned as part of
+        the <link to="#hardDisks"/> array. See IMedium for more details.
 
         The list of all storage formats supported by this VirtualBox
         installation can be obtained using
-        <link to="ISystemProperties::hardDiskFormats"/>. If the @a format
+        <link to="ISystemProperties::mediumFormats"/>. If the @a format
         attribute is empty or @c null then the default storage format
         specified by <link to="ISystemProperties::defaultHardDiskFormat"/> will
-        be used for creating a storage unit of the hard disk.
+        be used for creating a storage unit of the medium.
 
         Note that the format of the location string is storage format specific.
-        See <link to="IMedium::location"/>, IHardDisk and
+        See <link to="IMedium::location"/>, IMedium and
         <link to="ISystemProperties::defaultHardDiskFolder"/> for more details.
 
         <result name="VBOX_E_OBJECT_NOT_FOUND">
           @a format identifier is invalid. See
-          <link to="ISystemProperties::hardDiskFormats"/>.
+          <link to="ISystemProperties::mediumFormats"/>.
         </result>
         <result name="VBOX_E_FILE_ERROR">
           @a location is a not valid file name (for file-based formats only).
@@ -1948,38 +1946,38 @@
       </desc>
       <param name="format" type="wstring" dir="in">
         <desc>
-          Identifier of the storage format to use for the new hard disk.
+          Identifier of the storage format to use for the new medium.
         </desc>
       </param>
       <param name="location" type="wstring" dir="in">
         <desc>
-          Location of the storage unit for the new hard disk.
+          Location of the storage unit for the new medium.
         </desc>
       </param>
-      <param name="hardDisk" type="IHardDisk" dir="return">
-        <desc>Created hard disk object.</desc>
+      <param name="medium" type="IMedium" dir="return">
+        <desc>Created medium object.</desc>
       </param>
     </method>
 
     <method name="openHardDisk">
       <desc>
-        Opens a hard disk from an existing location, optionally replacing
+        Opens a medium from an existing location, optionally replacing
         the image UUID and/or parent UUID.
 
-        After the hard disk is successfully opened by this method, it gets
+        After the medium is successfully opened by this method, it gets
         remembered by (known to) this VirtualBox installation and will be
         accessible through <link to="#getHardDisk"/> and
-        <link to="#findHardDisk"/> methods. Remembered root (base) hard disks
+        <link to="#findHardDisk"/> methods. Remembered base media
         are also returned as part of the <link to="#hardDisks"/> array and can
-        be attached to virtual machines. See IHardDisk for more details.
+        be attached to virtual machines. See IMedium for more details.
 
-        If a differencing hard disk is to be opened by this method, the
-        operation will succeed only if its parent hard disk and all ancestors,
+        If a differencing medium is to be opened by this method, the
+        operation will succeed only if its parent medium and all ancestors,
         if any, are already known to this VirtualBox installation (for example,
         were opened by this method before).
 
-        This method tries to guess the storage format of the specified hard disk
-        by reading hard disk data at the specified location.
+        This method tries to guess the storage format of the specified medium
+        by reading medium data at the specified location.
 
         If @a write is ReadWrite (which it should be), the image is opened for
         read/write access and must have according permissions, as VirtualBox
@@ -1991,24 +1989,24 @@
         cloning when the image will quickly be closed again.
 
         Note that the format of the location string is storage format specific.
-        See <link to="IMedium::location"/>, IHardDisk and
+        See <link to="IMedium::location"/>, IMedium and
         <link to="ISystemProperties::defaultHardDiskFolder"/> for more details.
 
         <result name="VBOX_E_FILE_ERROR">
-          Invalid hard disk storage file location or could not find the hard
-          disk at the specified location.
+          Invalid medium storage file location or could not find the medium
+          at the specified location.
         </result>
         <result name="VBOX_E_IPRT_ERROR">
-          Could not get hard disk storage format.
+          Could not get medium storage format.
         </result>
         <result name="E_INVALIDARG">
-          Invalid hard disk storage format.
+          Invalid medium storage format.
         </result>
 
       </desc>
       <param name="location" type="wstring" dir="in">
         <desc>
-          Location of the storage unit that contains hard disk data in one of
+          Location of the storage unit that contains medium data in one of
           the supported storage formats.
         </desc>
       </param>
@@ -2022,7 +2020,7 @@
               Select whether a new image UUID is set or not.
           </desc>
       </param>
-      <param name="imageId" type="wstring" dir="in">
+      <param name="imageId" type="uuid" mod="string" dir="in">
           <desc>
               New UUID for the image. If an empty string is passed, then a new
               UUID is automatically created. Specifying a zero UUIDs is not valid.
@@ -2033,73 +2031,71 @@
               Select whether a new parent UUID is set or not.
           </desc>
       </param>
-      <param name="parentId" type="wstring" dir="in">
+      <param name="parentId" type="uuid" mod="string" dir="in">
           <desc>
               New parent UUID for the image. If an empty string is passed, then a
               new UUID is automatically created, provided @a setParentId is
               @c true. A zero UUID is valid.
           </desc>
       </param>
-      <param name="hardDisk" type="IHardDisk" dir="return">
-        <desc>Opened hard disk object.</desc>
+      <param name="medium" type="IMedium" dir="return">
+        <desc>Opened medium object.</desc>
       </param>
     </method>
 
     <method name="getHardDisk" const="yes">
       <desc>
-        Returns a hard disk with the given UUID.
+        Returns a medium with the given UUID.
 
-        The hard disk with the given UUID must be known to this VirtualBox
+        The medium with the given UUID must be known to this VirtualBox
         installation, i.e. it must be previously created by
         <link to="#createHardDisk"/> or opened by <link
         to="#openHardDisk"/>, or attached to some known virtual machine.
 
         <result name="VBOX_E_OBJECT_NOT_FOUND">
-          No hard disk object matching @a id found.
+          No medium object matching @a id found.
         </result>
 
       </desc>
-      <param name="id" type="wstring" dir="in">
-        <desc>UUID of the hard disk to look for.</desc>
+      <param name="id" type="uuid" mod="string" dir="in">
+        <desc>UUID of the medium to look for.</desc>
       </param>
-      <param name="hardDisk" type="IHardDisk" dir="return">
-        <desc>Found hard disk object.</desc>
+      <param name="medium" type="IMedium" dir="return">
+        <desc>Found medium object.</desc>
       </param>
     </method>
 
     <method name="findHardDisk">
       <desc>
-        Returns a hard disk that uses the given location to store hard
-        disk data.
+        Returns a medium that uses the given location to store medium data.
 
-        The given hard disk must be known to this VirtualBox installation, i.e.
+        The given medium must be known to this VirtualBox installation, i.e.
         it must be previously created by
         <link to="#createHardDisk"/> or opened by <link
         to="#openHardDisk"/>, or attached to some known virtual machine.
 
         The search is done by comparing the value of the @a location argument to
-        the <link to="IHardDisk::location"/> attribute of each known hard
-        disk.
+        the <link to="IMedium::location"/> attribute of each known medium.
 
         For locations represented by file names in the host's file system, the
         requested location can be a path relative to the
         <link to="IVirtualBox::homeFolder">VirtualBox home folder</link>. If
         only a file name without any path is given, the
-        <link to="ISystemProperties::defaultHardDiskFolder"> default hard disk
+        <link to="ISystemProperties::defaultHardDiskFolder"> default medium
         folder</link> will be prepended to the file name before searching. Note
         that on case sensitive file systems, a case sensitive comparison is
         performed, otherwise the case of symbols in the file path is ignored.
 
         <result name="VBOX_E_OBJECT_NOT_FOUND">
-          No hard disk object matching @a location found.
+          No medium object matching @a location found.
         </result>
 
       </desc>
       <param name="location" type="wstring" dir="in">
         <desc>Location string to search for.</desc>
       </param>
-      <param name="hardDisk" type="IHardDisk" dir="return">
-        <desc>Found hard disk object.</desc>
+      <param name="medium" type="IMedium" dir="return">
+        <desc>Found medium object.</desc>
       </param>
     </method>
 
@@ -2136,14 +2132,14 @@
           Full path to the file that contains a valid CD/DVD image.
         </desc>
       </param>
-      <param name="id" type="wstring" dir="in">
+      <param name="id" type="uuid" mod="string" dir="in">
         <desc>
           UUID to assign to the given image within this VirtualBox installation.
           If an empty (@c null) UUID is specified, the system will randomly
           generate a new UUID.
         </desc>
       </param>
-      <param name="image" type="IDVDImage" dir="return">
+      <param name="image" type="IMedium" dir="return">
         <desc>Opened CD/DVD image object.</desc>
       </param>
     </method>
@@ -2161,10 +2157,10 @@
         </result>
 
       </desc>
-      <param name="id" type="wstring" dir="in">
+      <param name="id" type="uuid" mod="string" dir="in">
         <desc>UUID of the image to look for.</desc>
       </param>
-      <param name="image" type="IDVDImage" dir="return">
+      <param name="image" type="IMedium" dir="return">
         <desc>Found CD/DVD image object.</desc>
       </param>
     </method>
@@ -2199,7 +2195,7 @@
       <param name="location" type="wstring" dir="in">
         <desc>CD/DVD image file path to look for.</desc>
       </param>
-      <param name="image" type="IDVDImage" dir="return">
+      <param name="image" type="IMedium" dir="return">
         <desc>Found CD/DVD image object.</desc>
       </param>
     </method>
@@ -2236,14 +2232,14 @@
           Full path to the file that contains a valid floppy image.
         </desc>
       </param>
-      <param name="id" type="wstring" dir="in">
+      <param name="id" type="uuid" mod="string" dir="in">
         <desc>
           UUID to assign to the given image file within this VirtualBox
           installation. If an empty (@c null) UUID is specified, the system will
           randomly generate a new UUID.
         </desc>
       </param>
-      <param name="image" type="IFloppyImage" dir="return">
+      <param name="image" type="IMedium" dir="return">
         <desc>Opened floppy image object.</desc>
       </param>
     </method>
@@ -2261,10 +2257,10 @@
         </result>
 
       </desc>
-      <param name="id" type="wstring" dir="in">
+      <param name="id" type="uuid" mod="string" dir="in">
         <desc>UUID of the image to look for.</desc>
       </param>
-      <param name="image" type="IFloppyImage" dir="return">
+      <param name="image" type="IMedium" dir="return">
         <desc>Found floppy image object.</desc>
       </param>
     </method>
@@ -2299,7 +2295,7 @@
       <param name="location" type="wstring" dir="in">
         <desc>Floppy image file path to look for.</desc>
       </param>
-      <param name="image" type="IFloppyImage" dir="return">
+      <param name="image" type="IMedium" dir="return">
         <desc>Found floppy image object.</desc>
       </param>
     </method>
@@ -2324,7 +2320,7 @@
         </result>
 
       </desc>
-      <param name="id" type="wstring" dir="in">
+      <param name="id" type="uuid" mod="string" dir="in">
         <desc>Guest OS type ID string.</desc>
       </param>
       <param name="type" type="IGuestOSType" dir="return">
@@ -2522,7 +2518,7 @@
           </note>
         </desc>
       </param>
-      <param name="machineId" type="wstring" dir="in">
+      <param name="machineId" type="uuid" mod="string" dir="in">
         <desc>ID of the virtual machine to open a session with.</desc>
       </param>
     </method>
@@ -2615,7 +2611,7 @@
           represent an already open session).
         </desc>
       </param>
-      <param name="machineId" type="wstring" dir="in">
+      <param name="machineId" type="uuid" mod="string" dir="in">
         <desc>ID of the virtual machine to open a session with.</desc>
       </param>
       <param name="type" type="wstring" dir="in">
@@ -2681,7 +2677,7 @@
           </note>
         </desc>
       </param>
-      <param name="machineId" type="wstring" dir="in">
+      <param name="machineId" type="uuid" mod="string" dir="in">
         <desc>ID of the virtual machine to open a session with.</desc>
       </param>
     </method>
@@ -3398,9 +3394,8 @@
         the image to. That number must be the index of an array item with one of the hard disk controller
         types (HarddiskControllerSCSI, HarddiskControllerSATA, HarddiskControllerIDE).
         In addition, &lt;c&gt; must specify the channel to use on that controller. For IDE controllers,
-        this can range from 0-2 (which VirtualBox will interpret as primary master, primary slave,
-        secondary slave; VirtualBox reserves the secondary master for the CD-ROM drive). For SATA and
-        SCSI conrollers, the channel can range from 0-29.
+        this can range from 0-3 (which VirtualBox will interpret as primary master, primary slave, secondary master and
+        secondary slave. For SATA and SCSI controllers, the channel can range from 0-29.
       </li>
       <li>
         "NetworkAdapter": a network adapter. The array item in aVBoxValues[] will specify the hardware
@@ -3554,7 +3549,7 @@
 
   <interface
      name="IInternalMachineControl" extends="$unknown"
-     uuid="ce8087d7-de92-4bbb-8140-a22fb07f37ba"
+     uuid="6c08103e-b8e6-44fb-bc6c-36067153d4bd"
      internal="yes"
      wsmap="suppress"
      >
@@ -3605,7 +3600,7 @@
         get a <link to="IInternalSessionControl::onUSBDeviceAttach"/>
         notification.
       </desc>
-      <param name="id" type="wstring" dir="in"/>
+      <param name="id" type="uuid" mod="string" dir="in"/>
     </method>
 
     <method name="detachUSBDevice">
@@ -3621,7 +3616,7 @@
           as if it were just attached to the host computer.
         </note>
       </desc>
-      <param name="id" type="wstring" dir="in"/>
+      <param name="id" type="uuid" mod="string" dir="in"/>
       <param name="done" type="boolean" dir="in"/>
     </method>
 
@@ -3720,8 +3715,9 @@
 
     <method name="beginTakingSnapshot">
       <desc>
-        Called by the VM process to inform the server it wants to
-        take a snapshot.
+        Called from the VM process to request from the server to perform the
+        server-side actions of creating a snapshot (creating differencing images
+        and the snapshot object).
 
         <result name="VBOX_E_FILE_ERROR">
           Settings file not accessible.
@@ -3739,21 +3735,27 @@
       <param name="description" type="wstring" dir="in">
         <desc>Snapshot description.</desc>
       </param>
-      <param name="progress" type="IProgress" dir="in">
+      <param name="consoleProgress" type="IProgress" dir="in">
         <desc>
-          Progress object created by the VM process to wait until
-          the state is saved (only for online snapshots).
+          Progress object created by the VM process tracking the
+          snapshot's progress. This has the following sub-operations:
+          <ul>
+            <li>setting up (weight 1);</li>
+            <li>one for each hard disk attachment that needs a differencing image (weight 1 each);</li>
+            <li>another one to copy the VM state (if offline with saved state, weight is VM memory size in MB);</li>
+            <li>another one to save the VM state (if online, weight is VM memory size in MB);</li>
+            <li>finishing up (weight 1)</li>
+          </ul>
+        </desc>
+      </param>
+      <param name="fTakingSnapshotOnline" type="boolean" dir="in">
+        <desc>
+          Whether this is an online snapshot (i.e. the machine is running).
         </desc>
       </param>
       <param name="stateFilePath" type="wstring" dir="out">
         <desc>
           File path the VM process must save the execution state to.
-        </desc>
-      </param>
-      <param name="serverProgress" type="IProgress" dir="out">
-        <desc>
-          Progress object created by the server process to wait until
-          the snapshot is taken (VDI diff creation, etc.).
         </desc>
       </param>
     </method>
@@ -3780,7 +3782,7 @@
       <param name="initiator" type="IConsole" dir="in">
         <desc>The console object that initiated this call.</desc>
       </param>
-      <param name="id" type="wstring" dir="in">
+      <param name="id" type="uuid" mod="string" dir="in">
         <desc>UUID of the snapshot to discard.</desc>
       </param>
       <param name="machineState" type="MachineState" dir="out">
@@ -3917,7 +3919,7 @@
     <method name="lockMedia">
       <desc>
         Locks all media attached to the machine for writing and parents of
-        attahced different hard disks (if any) for reading. This operation is
+        attached differencing media (if any) for reading. This operation is
         atomic so that if it fails no media is actually locked.
 
         This method is intended to be called when the machine is in Starting or
@@ -3986,11 +3988,9 @@
 
   </interface>
 
-
-   
   <interface
      name="IMachine" extends="$unknown"
-     uuid="34d37008-87b5-4430-86ba-f05ca4957ae8"
+     uuid="445ecfcc-8ebd-a2a5-459c-4d21ae0b206b"
      wsmap="managed"
      >
     <desc>
@@ -4145,7 +4145,7 @@
       </desc>
     </attribute>
 
-    <attribute name="id" type="wstring" readonly="yes">
+    <attribute name="id" type="uuid" mod="string" readonly="yes">
       <desc>UUID of the virtual machine.</desc>
     </attribute>
 
@@ -4214,7 +4214,7 @@
     </attribute>
 
      <attribute name="firmwareType" type="FirmwareType">
-      <desc>Type of firmware (such as legacy BIOS or EFI), used for initial 
+      <desc>Type of firmware (such as legacy BIOS or EFI), used for initial
        bootstrap in this VM.</desc>
     </attribute>
 
@@ -4254,7 +4254,7 @@
     <attribute name="snapshotFolder" type="wstring">
       <desc>
         Full path to the directory used to store snapshot data
-        (differencing hard disks and saved state files) of this machine.
+        (differencing media and saved state files) of this machine.
 
         The initial value of this property is
         <tt>&lt;</tt><link to="#settingsFilePath">
@@ -4289,16 +4289,8 @@
       <desc>VRDP server object.</desc>
     </attribute>
 
-    <attribute name="hardDiskAttachments" type="IHardDiskAttachment" readonly="yes" safearray="yes">
-      <desc>Array of hard disks attached to this machine.</desc>
-    </attribute>
-
-    <attribute name="DVDDrive" type="IDVDDrive" readonly="yes">
-      <desc>Associated DVD drive object.</desc>
-    </attribute>
-
-    <attribute name="floppyDrive" type="IFloppyDrive" readonly="yes">
-      <desc>Associated floppy drive object.</desc>
+    <attribute name="mediumAttachments" type="IMediumAttachment" readonly="yes" safearray="yes">
+      <desc>Array of media attached to this machine.</desc>
     </attribute>
 
     <attribute name="USBController" type="IUSBController" readonly="yes">
@@ -4553,20 +4545,23 @@
       </param>
     </method>
 
-    <method name="attachHardDisk">
+    <method name="attachDevice">
       <desc>
-        Attaches a virtual hard disk (<link to="IHardDisk" />, identified
-        by the given UUID @a id) to the given hard disk controller
-        (<link to="IStorageController" />, identified by @a name),
+        Attaches a device and optionally mounts a medium to the given storage
+        controller (<link to="IStorageController" />, identified by @a name),
         at the indicated port and device.
+
+        This method is intended for managing storage devices in general (it works
+        for both fixed and removable media). For storage devices supporting removable
+        media (such as DVDs and floppies), you can also use <link to="IMedium::mountMedium"/>
+        for changing the media while the machine is running.
 
         For the IDE bus, the @a controllerPort parameter can be either
         @c 0 or @c 1, to specify the primary or secondary IDE controller,
-        respectively. For the primary controller of the IDE bus,
-        @a device can be either @c 0 or @c 1, to specify the master or the
-        slave device, respectively. For the secondary IDE controller, the
-        device number must be @c 1 because VirtualBox reserves the
-        secondary master for the CD-ROM drive.
+        respectively. For each of these, @a device can then be either @c 0 or @c 1,
+        to specify the master or the slave device, respectively. (In the
+        default configuration of virtual machines, the secondary master is
+        used for a CD/DVD drive.)
 
         For an SATA controller, @a controllerPort must be a number ranging
         from @c 0 to @c 29. For a SCSI controller, @a controllerPort must
@@ -4575,11 +4570,18 @@
         For both SCSI and SATA, the @a device parameter is unused and must
         be @c 0.
 
+        For fixed media such as hard disks, the given medium cannot be NULL. It may
+        be NULL for removable media such as DVDs and floppies.
+
+        After calling this returns successfully, a new instance of
+        <link to="IMediumAttachment"/> will appear in the machine's list of medium
+        attachments (<link to="IMachine::mediumAttachments"/>).
+
         The specified device slot must not have another disk attached to it, or
         this method will fail.
 
-        See <link to="IHardDisk"/> for more detailed information about
-        attaching hard disks.
+        See <link to="IMedium"/> and <link to="IMediumAttachment"/> for more
+        information about attaching media.
 
         <note>
           You cannot attach a hard disk to a running machine. Also, you cannot
@@ -4587,11 +4589,11 @@
           settings are saved to disk using <link to="#saveSettings"/>.
         </note>
         <note>
-          If the hard disk is being attached indirectly, a new differencing hard
-          disk will implicitly be created for it and attached instead. If the
+          If the medium is being attached indirectly, a new differencing medium
+          will implicitly be created for it and attached instead. If the
           changes made to the machine settings (including this indirect
           attachment) are later cancelled using <link to="#discardSettings"/>,
-          this implicitly created differencing hard disk will implicitly
+          this implicitly created differencing medium will implicitly
           be deleted.
         </note>
 
@@ -4599,7 +4601,7 @@
           SATA device, SATA port, IDE port or IDE slot out of range.
         </result>
         <result name="VBOX_E_INVALID_OBJECT_STATE">
-          Attempt to attach hard disk to an unregistered virtual machine.
+          Attempt to attach medium to an unregistered virtual machine.
         </result>
         <result name="VBOX_E_INVALID_VM_STATE">
           Invalid machine state.
@@ -4609,81 +4611,52 @@
         </result>
 
       </desc>
-      <param name="id" type="wstring" dir="in">
-        <desc>UUID of the hard disk to attach.</desc>
-      </param>
       <param name="name" type="wstring" dir="in">
-        <desc>Name of the storage controller to attach the hard disk to.</desc>
+        <desc>Name of the storage controller to attach the device to.</desc>
       </param>
       <param name="controllerPort" type="long" dir="in">
-        <desc>Port to attach the hard disk to.</desc>
+        <desc>Port to attach the device to.</desc>
       </param>
       <param name="device" type="long" dir="in">
-        <desc>
-          Device slot in the given port to attach the hard disk to.
-        </desc>
+        <desc>Device slot in the given port to attach the device to.</desc>
+      </param>
+      <param name="type" type="DeviceType" dir="in">
+        <desc>Device type of the attached device.</desc>
+      </param>
+      <param name="id" type="uuid" mod="string" dir="in">
+        <desc>UUID of the medium to mount. NULL UUID means do not mount any
+        medium.</desc>
       </param>
     </method>
 
-    <method name="getHardDisk" const="yes">
+    <method name="detachDevice">
       <desc>
-        Returns the virtual hard disk attached to a device slot of the specified
-        bus.
+        Detaches the device attached to a device slot of the specified bus.
 
-        Note that if the hard disk was indirectly attached by
-        <link to="#attachHardDisk"/> to the given device slot then this
-        method will return not the same object as passed to the
-        <link to="#attachHardDisk"/> call. See <link to="IHardDisk"/> for
-        more detailed information about attaching hard disks.
-
-        <result name="VBOX_E_OBJECT_NOT_FOUND">
-          No hard disk attached to given slot/bus.
-        </result>
-
-      </desc>
-      <param name="name" type="wstring" dir="in">
-        <desc>Name of the storage controller the hard disk is attached to.</desc>
-      </param>
-      <param name="controllerPort" type="long" dir="in">
-        <desc>Port to query.</desc>
-      </param>
-      <param name="device" type="long" dir="in">
-        <desc>Device slot in the given port to query.</desc>
-      </param>
-      <param name="hardDisk" type="IHardDisk" dir="return">
-        <desc>Attached hard disk object.</desc>
-      </param>
-    </method>
-
-    <method name="detachHardDisk">
-      <desc>
-        Detaches the virtual hard disk attached to a device slot of the
-        specified bus.
-
-        Detaching the hard disk from the virtual machine is deferred. This means
-        that the hard disk remains associated with the machine when this method
+        Detaching the device from the virtual machine is deferred. This means
+        that the medium remains associated with the machine when this method
         returns and gets actually de-associated only after a successful
-        <link to="#saveSettings"/> call. See <link to="IHardDisk"/>
-        for more detailed information about attaching hard disks.
+        <link to="#saveSettings"/> call. See <link to="IMedium"/>
+        for more detailed information about attaching media.
 
         <note>
           You cannot detach the hard disk from a running machine.
         </note>
         <note>
-          Detaching differencing hard disks implicitly created by <link
-          to="#attachHardDisk"/> for the indirect attachment using this
+          Detaching differencing media implicitly created by <link
+          to="#attachDevice"/> for the indirect attachment using this
           method will <b>not</b> implicitly delete them. The
-          <link to="IHardDisk::deleteStorage"/> operation should be
-          explicitly performed by the caller after the hard disk is successfully
+          <link to="IMedium::deleteStorage"/> operation should be
+          explicitly performed by the caller after the medium is successfully
           detached and the settings are saved with
           <link to="#saveSettings"/>, if it is the desired action.
         </note>
 
         <result name="VBOX_E_INVALID_VM_STATE">
-          Attempt to detach hard disk from a running virtual machine.
+          Attempt to detach medium from a running virtual machine.
         </result>
         <result name="VBOX_E_OBJECT_NOT_FOUND">
-          No hard disk attached to given slot/bus.
+          No medium attached to given slot/bus.
         </result>
         <result name="VBOX_E_NOT_SUPPORTED">
           Hard disk format does not support storage deletion.
@@ -4691,19 +4664,98 @@
 
       </desc>
       <param name="name" type="wstring" dir="in">
-        <desc>name of the storage controller to detach the hard disk from.</desc>
+        <desc>Name of the storage controller to detach the medium from.</desc>
       </param>
       <param name="controllerPort" type="long" dir="in">
-        <desc>Port number to detach the hard disk from.</desc>
+        <desc>Port number to detach the medium from.</desc>
       </param>
       <param name="device" type="long" dir="in">
-        <desc>Device slot number to detach the hard disk from.</desc>
+        <desc>Device slot number to detach the medium from.</desc>
       </param>
     </method>
 
-    <method name="getHardDiskAttachmentsOfController" const="yes">
+    <method name="mountMedium">
       <desc>
-        Returns an array of hard disk attachments which are attached to the
+        Mounts a medium (<link to="IMedium" />, identified
+        by the given UUID @a id) to the given storage controller
+        (<link to="IStorageController" />, identified by @a name),
+        at the indicated port and device. The device must already exist;
+        see <link to="IMachine::attachDevice"/> for how to attach a new device.
+
+        This method is intended only for managing removable media, where the
+        device is fixed but media is changeable at runtime (such as DVDs
+        and floppies). It cannot be used for fixed media such as hard disks.
+
+        The @a controllerPort and @a device parameters specify the device slot and
+        have have the same meaning as with <link to="IMachine::attachDevice" />.
+
+        The specified device slot can have a medium mounted, which will be
+        unmounted first. Specifying a NULL medium does just an unmount.
+
+        See <link to="IMedium"/> for more detailed information about
+        attaching media.
+
+        <result name="E_INVALIDARG">
+          SATA device, SATA port, IDE port or IDE slot out of range.
+        </result>
+        <result name="VBOX_E_INVALID_OBJECT_STATE">
+          Attempt to attach medium to an unregistered virtual machine.
+        </result>
+        <result name="VBOX_E_INVALID_VM_STATE">
+          Invalid machine state.
+        </result>
+        <result name="VBOX_E_OBJECT_IN_USE">
+          Medium already attached to this or another virtual machine.
+        </result>
+
+      </desc>
+      <param name="name" type="wstring" dir="in">
+        <desc>Name of the storage controller to attach the medium to.</desc>
+      </param>
+      <param name="controllerPort" type="long" dir="in">
+        <desc>Port to attach the medium to.</desc>
+      </param>
+      <param name="device" type="long" dir="in">
+        <desc>Device slot in the given port to attach the medium to.</desc>
+      </param>
+      <param name="id" type="uuid" mod="string" dir="in">
+        <desc>UUID of the medium to attach.</desc>
+      </param>
+    </method>
+
+    <method name="getMedium" const="yes">
+      <desc>
+        Returns the virtual medium attached to a device slot of the specified
+        bus.
+
+        Note that if the medium was indirectly attached by
+        <link to="#mountMedium"/> to the given device slot then this
+        method will return not the same object as passed to the
+        <link to="#mountMedium"/> call. See <link to="IMedium"/> for
+        more detailed information about mounting a medium.
+
+        <result name="VBOX_E_OBJECT_NOT_FOUND">
+          No medium attached to given slot/bus.
+        </result>
+
+      </desc>
+      <param name="name" type="wstring" dir="in">
+        <desc>Name of the storage controller the medium is attached to.</desc>
+      </param>
+      <param name="controllerPort" type="long" dir="in">
+        <desc>Port to query.</desc>
+      </param>
+      <param name="device" type="long" dir="in">
+        <desc>Device slot in the given port to query.</desc>
+      </param>
+      <param name="medium" type="IMedium" dir="return">
+        <desc>Attached medium object.</desc>
+      </param>
+    </method>
+
+    <method name="getMediumAttachmentsOfController" const="yes">
+      <desc>
+        Returns an array of medium attachments which are attached to the
         the controller with the given name.
 
         <result name="VBOX_E_OBJECT_NOT_FOUND">
@@ -4711,7 +4763,22 @@
         </result>
       </desc>
       <param name="name" type="wstring" dir="in"/>
-      <param name="hardDiskAttachments" type="IHardDiskAttachment" safearray="yes" dir="return"/>
+      <param name="mediumAttachments" type="IMediumAttachment" safearray="yes" dir="return"/>
+    </method>
+
+    <method name="getMediumAttachment" const="yes">
+      <desc>
+        Returns a medium attachment which corresponds to the controller with
+        the given name, on the given port and device slot.
+
+        <result name="VBOX_E_OBJECT_NOT_FOUND">
+          No attachment exists for the given controller/port/device combination.
+        </result>
+      </desc>
+      <param name="name" type="wstring" dir="in"/>
+      <param name="controllerPort" type="long" dir="in"/>
+      <param name="device" type="long" dir="in"/>
+      <param name="attachment" type="IMediumAttachment" dir="return"/>
     </method>
 
     <method name="getNetworkAdapter" const="yes">
@@ -4738,9 +4805,9 @@
         <link to="IStorageController" />.
 
         @a name identifies the controller for subsequent calls such as
-        <link to="#getStorageControllerByName" /> or
-        <link to="#removeStorageController" /> or
-        <link to="#attachHardDisk" />.
+        <link to="#getStorageControllerByName" />,
+        <link to="#removeStorageController" />,
+        <link to="#attachDevice" /> or <link to="#mountMedium" />.
 
         After the controller has been added, you can set its exact
         type by setting the <link to="IStorageController::controllerType" />.
@@ -5002,7 +5069,7 @@
         </result>
 
       </desc>
-      <param name="id" type="wstring" dir="in">
+      <param name="id" type="uuid" mod="string" dir="in">
         <desc>UUID of the snapshot to get</desc>
       </param>
       <param name="snapshot" type="ISnapshot" dir="return">
@@ -5035,7 +5102,7 @@
           implemented.
         </note>
       </desc>
-      <param name="id" type="wstring" dir="in">
+      <param name="id" type="uuid" mod="string" dir="in">
         <desc>UUID of the snapshot to set as the current snapshot.</desc>
       </param>
     </method>
@@ -5334,7 +5401,7 @@
 
   <interface
      name="IConsoleCallback" extends="$unknown"
-     uuid="13dfbef3-b74d-487d-bada-2304529aefa6"
+     uuid="db67f6e5-799d-474c-8452-b10d7736a412"
      wsmap="suppress"
      >
 
@@ -5456,24 +5523,6 @@
       </desc>
     </method>
 
-    <method name="onDVDDriveChange">
-      <desc>
-        Notification when a property of the
-        virtual <link to="IMachine::DVDDrive">DVD drive</link> changes.
-        Interested callees should use IDVDDrive methods to find out what has
-        changed.
-      </desc>
-    </method>
-
-    <method name="onFloppyDriveChange">
-      <desc>
-        Notification when a property of the
-        virtual <link to="IMachine::floppyDrive">floppy drive</link> changes.
-        Interested callees should use IFloppyDrive methods to find out what
-        has changed.
-      </desc>
-    </method>
-
     <method name="onNetworkAdapterChange">
       <desc>
         Notification when a property of one of the
@@ -5517,6 +5566,17 @@
         changes. Interested callees should query the corresponding collections
         to find out what has changed.
       </desc>
+    </method>
+
+    <method name="onMediumChange">
+      <desc>
+        Notification when a
+        <link to="IMachine::mediumAttachments">medium attachment</link>
+        changes.
+      </desc>
+      <param name="mediumAttachment" type="IMediumAttachment" dir="in">
+        <desc>Medium attachment that is subject to change.</desc>
+      </param>
     </method>
 
     <method name="onVRDPServerChange">
@@ -6130,7 +6190,7 @@
         the place where it was saved.
 
         This operation differs from taking a snapshot to the effect
-        that it doesn't create new differencing hard disks. Also, once
+        that it doesn't create new differencing media. Also, once
         the machine is powered up from the state saved using this method,
         the saved state is deleted, so it will be impossible to return
         to this state later.
@@ -6138,7 +6198,7 @@
         <note>
           On success, this method implicitly calls
           <link to="IMachine::saveSettings"/> to save all current machine
-          settings (including runtime changes to the DVD drive, etc.).
+          settings (including runtime changes to the DVD medium, etc.).
           Together with the impossibility to change any VM settings when it is
           in the Saved state, this guarantees adequate hardware
           configuration of the machine when it is restored from the saved
@@ -6245,7 +6305,7 @@
           Virtual machine does not have a USB controller.
         </result>
       </desc>
-      <param name="id" type="wstring" dir="in">
+      <param name="id" type="uuid" mod="string" dir="in">
         <desc>UUID of the host USB device to attach.</desc>
       </param>
     </method>
@@ -6269,7 +6329,7 @@
           USB device not attached to this virtual machine.
         </result>
       </desc>
-      <param name="id" type="wstring" dir="in">
+      <param name="id" type="uuid" mod="string" dir="in">
         <desc>UUID of the USB device to detach.</desc>
       </param>
       <param name="device" type="IUSBDevice" dir="return">
@@ -6308,7 +6368,7 @@
 
         <see>IUSBDevice::id</see>
       </desc>
-      <param name="id" type="wstring" dir="in">
+      <param name="id" type="uuid" mod="string" dir="in">
         <desc>UUID of the USB device to search for.</desc>
       </param>
       <param name="device" type="IUSBDevice" dir="return">
@@ -6362,7 +6422,7 @@
       <desc>
         Saves the current execution state
         and all settings of the machine and creates differencing images
-        for all normal (non-independent) hard disks.
+        for all normal (non-independent) media.
         See <link to="ISnapshot" /> for an introduction to snapshots.
 
         This method can be called for a PoweredOff, Saved (see
@@ -6401,19 +6461,19 @@
 
         The execution state
         and settings of the associated machine stored in the snapshot
-        will be deleted. The contents of all differencing hard disks of
+        will be deleted. The contents of all differencing media of
         this snapshot will be merged with the contents of their
-        dependent child hard disks to keep the disks valid (in other
-        words, all changes represented by hard disks being discarded
-        will be propagated to their child hard disks). After that, this
-        snapshot's differencing hard disks will be deleted. The parent
+        dependent child media to keep the disks valid (in other
+        words, all changes represented by media being discarded
+        will be propagated to their child medium). After that, this
+        snapshot's differencing medium will be deleted. The parent
         of this snapshot will become a new parent for all its child
         snapshots.
 
         If the discarded snapshot is the current one, its parent
         snapshot will become a new current snapshot. The current machine
         state is not directly affected in this case, except that
-        currently attached differencing hard disks based on hard disks
+        currently attached differencing media based on media
         of the discarded snapshot will be also merged as described
         above.
 
@@ -6426,28 +6486,28 @@
         snapshot cannot be discarded.
 
         You cannot discard the snapshot if it
-        stores <link to="HardDiskType_Normal">normal</link> (non-differencing)
-        hard disks that have differencing hard disks based on them. Snapshots of
-        such kind can be discarded only when every normal hard disk has either
+        stores <link to="MediumType_Normal">normal</link> (non-differencing)
+        media that have differencing media based on them. Snapshots of
+        such kind can be discarded only when every normal medium has either
         no children at all or exactly one child. In the former case, the normal
-        hard disk simply becomes unused (i.e. not attached to any VM). In the
-        latter case, it receives all the changes stored in the child hard disk,
-        and then it replaces the child hard disk in the configuration of the
+        medium simply becomes unused (i.e. not attached to any VM). In the
+        latter case, it receives all the changes stored in the child medium,
+        and then it replaces the child medium in the configuration of the
         corresponding snapshot or machine.
 
-        Also, you cannot discard the snapshot if it stores hard disks
-        (of any type) having differencing child hard disks that belong
+        Also, you cannot discard the snapshot if it stores media
+        (of any type) having differencing child media that belong
         to other machines. Such snapshots can be only discarded after
         you discard all snapshots of other machines containing "foreign"
         child disks, or detach these "foreign" child disks from machines
         they are attached to.
 
-        One particular example of the snapshot storing normal hard disks
-        is the first snapshot of a virtual machine that had normal hard
-        disks attached when taking the snapshot. Be careful when
+        One particular example of the snapshot storing normal media
+        is the first snapshot of a virtual machine that had normal media
+        attached when taking the snapshot. Be careful when
         discarding such snapshots because this implicitly commits
         changes (made since the snapshot being discarded has been taken)
-        to normal hard disks (as described above), which may be not what
+        to normal media (as described above), which may be not what
         you want.
 
         The virtual machine is put to
@@ -6460,14 +6520,14 @@
         </note>
 
         <note>
-          Child hard disks of all normal hard disks of the discarded snapshot
+          Child media of all normal media of the discarded snapshot
           must be accessible (see <link to="IMedium::state"/>) for this
           operation to succeed.  In particular, this means that all virtual
-          machines, whose hard disks are directly or indirectly based on the
-          hard disks of discarded snapshot, must be powered off.
+          machines, whose media are directly or indirectly based on the
+          media of discarded snapshot, must be powered off.
         </note>
         <note>
-          Merging hard disk contents can be very time and disk space
+          Merging medium contents can be very time and disk space
           consuming, if these disks are big in size and have many
           children. However, if the snapshot being discarded is the last
           (head) snapshot on the branch, the operation will be rather
@@ -6482,7 +6542,7 @@
           Virtual machine is running.
         </result>
       </desc>
-      <param name="id" type="wstring" dir="in">
+      <param name="id" type="uuid" mod="string" dir="in">
         <desc>UUID of the snapshot to discard.</desc>
       </param>
       <param name="progress" type="IProgress" dir="return">
@@ -6494,12 +6554,12 @@
       <desc>
         Starts resetting the machine's current state to the state contained
         in the current snapshot, asynchronously. All current settings of the
-        machine will be reset and changes stored in differencing hard disks
+        machine will be reset and changes stored in differencing media
         will be lost.
         See <link to="ISnapshot" /> for an introduction to snapshots.
 
         After this operation is successfully completed, new empty differencing
-        hard disks are created for all normal hard disks of the machine.
+        media are created for all normal media of the machine.
 
         If the current snapshot of the machine is an online snapshot, the
         machine will go to the <link to="MachineState_Saved"> saved
@@ -6604,74 +6664,6 @@
   /////////////////////////////////////////////////////////////////////////
   -->
 
-  <interface
-     name="IHostDVDDrive" extends="$unknown"
-     uuid="21f86694-202d-4ce4-8b05-a63ff82dbf4c"
-     wsmap="managed"
-     >
-    <desc>
-      The IHostDVDDrive interface represents the physical CD/DVD drive
-      hardware on the host. Used indirectly in <link to="IHost::DVDDrives"/>.
-    </desc>
-
-    <attribute name="name" type="wstring" readonly="yes">
-      <desc>
-        Returns the platform-specific device identifier.
-        On DOS-like platforms, it is a drive name (e.g. R:).
-        On Unix-like platforms, it is a device name (e.g. /dev/hdc).
-      </desc>
-    </attribute>
-    <attribute name="description" type="wstring" readonly="yes">
-      <desc>
-        Returns a human readable description for the drive.  This
-        description usually contains the product and vendor name.  An
-        empty string is returned if the description is not available.
-      </desc>
-    </attribute>
-    <attribute name="udi" type="wstring" readonly="yes">
-      <desc>
-        Returns the unique device identifier for the drive.  This
-        attribute is reserved for future use instead of
-        <link to="#name"/>. Currently it is not used and may return
-        an empty string on some platforms.
-      </desc>
-    </attribute>
-
-  </interface>
-
-  <interface
-     name="IHostFloppyDrive" extends="$unknown"
-     uuid="3f02d604-e908-4919-9fd1-8a4afd68fc63"
-     wsmap="managed"
-     >
-    <desc>
-      The IHostFloppyDrive interface represents the physical floppy drive
-      hardware on the host. Used indirectly in <link to="IHost::floppyDrives"/>.
-    </desc>
-    <attribute name="name" type="wstring" readonly="yes">
-      <desc>
-        Returns the platform-specific device identifier.
-        On DOS-like platforms, it is a drive name (e.g. A:).
-        On Unix-like platforms, it is a device name (e.g. /dev/fd0).
-      </desc>
-    </attribute>
-    <attribute name="description" type="wstring" readonly="yes">
-      <desc>
-        Returns a human readable description for the drive.  This
-        description usually contains the product and vendor name.  An
-        empty string is returned if the description is not available.
-      </desc>
-    </attribute>
-    <attribute name="udi" type="wstring" readonly="yes">
-      <desc>
-        Returns the unique device identifier for the drive.  This
-        attribute is reserved for future use instead of
-        <link to="#name"/>. Currently it is not used and may return
-        an empty string on some platforms.
-      </desc>
-    </attribute>
-  </interface>
-
   <enum
     name="HostNetworkInterfaceMediumType"
     uuid="1aa54aaf-2497-45a2-bfb1-8eb225e93d5b"
@@ -6756,7 +6748,7 @@
       <desc>Returns the host network interface name.</desc>
     </attribute>
 
-    <attribute name="id" type="wstring" readonly="yes">
+    <attribute name="id" type="uuid" mod="string" readonly="yes">
       <desc>Returns the interface UUID.</desc>
     </attribute>
 
@@ -6844,7 +6836,7 @@
 
   <interface
      name="IHost" extends="$unknown"
-     uuid="4129f721-30cc-4f5a-bbed-0614ce4c2cb4"
+     uuid="95522f11-1ecc-443b-9242-3af6b24d430c"
      wsmap="managed"
      >
     <desc>
@@ -6859,11 +6851,11 @@
       such as global USB device filters and host interface networking.
 
     </desc>
-    <attribute name="DVDDrives" type="IHostDVDDrive" readonly="yes" safearray="yes">
+    <attribute name="DVDDrives" type="IMedium" readonly="yes" safearray="yes">
       <desc>List of DVD drives available on the host.</desc>
     </attribute>
 
-    <attribute name="floppyDrives" type="IHostFloppyDrive" readonly="yes" safearray="yes">
+    <attribute name="floppyDrives" type="IMedium" readonly="yes" safearray="yes">
       <desc>List of floppy drives available on the host.</desc>
     </attribute>
 
@@ -7011,7 +7003,7 @@
           No host network interface matching @a id found.
         </result>
       </desc>
-      <param name="id" type="wstring" dir="in">
+      <param name="id" type="uuid" mod="string" dir="in">
         <desc>
           Adapter GUID.
         </desc>
@@ -7119,7 +7111,7 @@
       <param name="name" type="wstring" dir="in">
         <desc>Name of the host drive to search for</desc>
       </param>
-      <param name="drive" type="IHostDVDDrive" dir="return">
+      <param name="drive" type="IMedium" dir="return">
         <desc>Found host drive object</desc>
       </param>
     </method>
@@ -7136,7 +7128,7 @@
       <param name="name" type="wstring" dir="in">
         <desc>Name of the host floppy drive to search for</desc>
       </param>
-      <param name="drive" type="IHostFloppyDrive" dir="return">
+      <param name="drive" type="IMedium" dir="return">
         <desc>Found host floppy drive object</desc>
       </param>
     </method>
@@ -7166,7 +7158,7 @@
           correspond to any host network interface.
         </note>
       </desc>
-      <param name="id" type="wstring" dir="in">
+      <param name="id" type="uuid" mod="string" dir="in">
         <desc>GUID of the host network interface to search for.</desc>
       </param>
       <param name="networkInterface" type="IHostNetworkInterface" dir="return">
@@ -7195,7 +7187,7 @@
 
         <see>IHostUSBDevice::id</see>
       </desc>
-      <param name="id" type="wstring" dir="in">
+      <param name="id" type="uuid" mod="string" dir="in">
         <desc>UUID of the USB device to search for.</desc>
       </param>
       <param name="device" type="IHostUSBDevice" dir="return">
@@ -7234,7 +7226,7 @@
   <interface
      name="ISystemProperties"
      extends="$unknown"
-     uuid="9ca0f712-83f3-4631-b143-b75ef6568332"
+     uuid="79a8bc4d-24a5-4258-a0a6-8c36f8a68a4b"
      wsmap="managed"
      >
     <desc>
@@ -7369,7 +7361,7 @@
         </note>
 
         <see>
-          IHardDisk,
+          IMedium,
           <link to="IVirtualBox::createHardDisk"/>,
           <link to="IVirtualBox::openHardDisk"/>,
           <link to="IMedium::location"/>
@@ -7377,49 +7369,49 @@
       </desc>
     </attribute>
 
-    <attribute name="hardDiskFormats" type="IHardDiskFormat" safearray="yes" readonly="yes">
+    <attribute name="mediumFormats" type="IMediumFormat" safearray="yes" readonly="yes">
       <desc>
-        List of all hard disk storage formats supported by this VirtualBox
+        List of all medium storage formats supported by this VirtualBox
         installation.
 
-        Keep in mind that the hard disk format identifier
-        (<link to="IHardDiskFormat::id"/>) used in other API calls like
+        Keep in mind that the medium format identifier
+        (<link to="IMediumFormat::id"/>) used in other API calls like
         <link to="IVirtualBox::createHardDisk"/> to refer to a particular
-        hard disk format is a case-insensitive string. This means that, for
+        medium format is a case-insensitive string. This means that, for
         example, all of the following strings:
         <pre>
           "VDI"
           "vdi"
           "VdI"</pre>
-        refer to the same hard disk format.
+        refer to the same medium format.
 
-        Note that the virtual hard disk framework is backend-based, therefore
+        Note that the virtual medium framework is backend-based, therefore
         the list of supported formats depends on what backends are currently
         installed.
 
         <see>
-          <link to="IHardDiskFormat"/>,
+          <link to="IMediumFormat"/>,
         </see>
       </desc>
     </attribute>
 
     <attribute name="defaultHardDiskFormat" type="wstring">
       <desc>
-        Identifier of the default hard disk format used by VirtualBox.
+        Identifier of the default medium format used by VirtualBox.
 
-        The hard disk format set by this attribute is used by VirtualBox
-        when the hard disk format was not specified explicitly. One example is
+        The medium format set by this attribute is used by VirtualBox
+        when the medium format was not specified explicitly. One example is
         <link to="IVirtualBox::createHardDisk"/> with the empty
         format argument. A more complex example is implicit creation of
-        differencing hard disks when taking a snapshot of a virtual machine:
-        this operation will try to use a format of the parent hard disk first
-        and if this format does not support differencing hard disks the default
+        differencing media when taking a snapshot of a virtual machine:
+        this operation will try to use a format of the parent medium first
+        and if this format does not support differencing media the default
         format specified by this argument will be used.
 
-        The list of supported hard disk formats may be obtained by the
-        <link  to="#hardDiskFormats"/> call. Note that the default hard disk
-        format must have a capability to create differencing hard disks;
-        otherwise opeartions that create hard disks implicitly may fail
+        The list of supported medium formats may be obtained by the
+        <link  to="#mediaFormats"/> call. Note that the default medium
+        format must have a capability to create differencing media;
+        otherwise operations that create media implicitly may fail
         unexpectedly.
 
         The initial value of this property is <tt>"VDI"</tt> in the current
@@ -7431,8 +7423,8 @@
         </note>
 
         <see>
-          <link to="#hardDiskFormats"/>,
-          <link to="IHardDiskFormat::id"/>,
+          <link to="#mediaFormats"/>,
+          <link to="IMediumFormat::id"/>,
           <link to="IVirtualBox::createHardDisk"/>
         </see>
       </desc>
@@ -7499,6 +7491,44 @@
       <desc>This value hold the default audio driver for the current
       system.</desc>
     </attribute>
+
+    <method name="getMaxDevicesPerPortForStorageBus">
+      <desc>Returns the maximum number of devices which can be attached to a port
+      for the given storage bus.</desc>
+
+      <param name="bus" type="StorageBus" dir="in">
+        <desc>The storage bus type to get the value for.</desc>
+      </param>
+
+      <param name="maxDevicesPerPort" type="unsigned long" dir="return">
+        <desc>The maximum number of devices which can eb attached to the port for the given
+        storage bus.</desc>
+      </param>
+    </method>
+
+    <method name="getMinPortCountForStorageBus">
+      <desc>Returns the minimum number of ports the given storage bus supports.</desc>
+
+      <param name="bus" type="StorageBus" dir="in">
+        <desc>The storage bus type to get the value for.</desc>
+      </param>
+
+      <param name="minPortCount" type="unsigned long" dir="return">
+        <desc>The minimum number of ports for the given storage bus.</desc>
+      </param>
+    </method>
+
+    <method name="getMaxPortCountForStorageBus">
+      <desc>Returns the maximum number of ports the given storage bus supports.</desc>
+
+      <param name="bus" type="StorageBus" dir="in">
+        <desc>The storage bus type to get the value for.</desc>
+      </param>
+
+      <param name="maxPortCount" type="unsigned long" dir="return">
+        <desc>The maximum number of ports for the given storage bus.</desc>
+      </param>
+    </method>
   </interface>
 
   <!--
@@ -7686,7 +7716,7 @@
 
   <interface
      name="IProgress" extends="$unknown"
-     uuid="6fcd0198-7fc5-4c53-8c37-653ac76854b5"
+     uuid="62827ef1-c098-40eb-be96-36d0508489a6"
      wsmap="managed"
      >
     <desc>
@@ -7726,7 +7756,7 @@
         <link to="#waitForCompletion" />.
     </desc>
 
-    <attribute name="id" type="wstring" readonly="yes">
+    <attribute name="id" type="uuid" mod="string" readonly="yes">
       <desc>ID of the task.</desc>
     </attribute>
 
@@ -7810,6 +7840,16 @@
         <desc>Progress value of the current sub-operation only, in percent.</desc>
     </attribute>
 
+    <method name="setCurrentOperationProgress">
+      <desc>Internal method, not to be called externally.</desc>
+      <param name="percent" type="unsigned long" dir="in" />
+    </method>
+    <method name="setNextOperation">
+      <desc>Internal method, not to be called externally.</desc>
+      <param name="nextOperationDescription" type="wstring" dir="in" />
+      <param name="nextOperationsWeight" type="unsigned long" dir="in" />
+    </method>
+
     <method name="waitForCompletion">
       <desc>
           Waits until the task is done (including all sub-operations)
@@ -7881,25 +7921,25 @@
       The ISnapshot interface represents a snapshot of the virtual
       machine.
 
-      Together with the differencing hard disks that are created
+      Together with the differencing media that are created
       when a snapshot is taken, a machine can be brought back to
       the exact state it was in when the snapshot was taken.
 
       The ISnapshot interface has no methods, only attributes; snapshots
       are controlled through methods of the <link to="IConsole" /> interface
-      which also manage the hard disk images associated with the snapshot.
+      which also manage the media associated with the snapshot.
       The following operations exist:
 
       <ul>
           <li><link to="IConsole::takeSnapshot"/>: creates a new snapshot
               by creating new, empty differencing images for the machine's
-              hard disks and saving the VM settings and (if the VM is running)
+              media and saving the VM settings and (if the VM is running)
               the current VM state in the snapshot.
 
               The differencing images will then receive all data written to
-              the machine's hard disks, while their parent (base) images
+              the machine's media, while their parent (base) images
               remain unmodified after the snapshot has been taken (see
-              <link to="IHardDisk" /> for details about differencing images).
+              <link to="IMedium" /> for details about differencing images).
               This simplifies restoring a machine to the state of a snapshot:
               only the differencing images need to be deleted.
 
@@ -7911,7 +7951,7 @@
           <li><link to="IConsole::discardCurrentState"/>: this goes back to
               a previous snapshot. This resets the machine's state to that of
               the previous snapshot by deleting the differencing image of each
-              of the machine's hard disks and setting the machine's settings
+              of the machine's media and setting the machine's settings
               and state to the state that was saved in the snapshot (if any).
 
               This destroys the machine's current state.
@@ -7923,7 +7963,7 @@
               This does not change the machine, but instead frees the resources
               allocated when the snapshot was taken: the settings and machine state
               is deleted (if any), and the snapshot's differencing image for each
-              of the machine's hard disks gets merged with its parent image.
+              of the machine's media gets merged with its parent image.
 
               Neither the current machine state nor other snapshots are affected
               by this operation, except that parent disk images will be modified
@@ -7958,10 +7998,10 @@
       <h3>Snapshot branches and the "current" snapshot</h3>
 
       Snapshots can be chained, whereby every next snapshot is based on the
-      previous one. This chaining is related to hard disk branching
-      (see the <link to="IHardDisk"/> description) in that every time
-      a new snapshot is created, a new differencing hard disk is implicitly
-      created for all normal hard disks attached to the machine.
+      previous one. This chaining is related to medium branching
+      (see the <link to="IMedium"/> description) in that every time
+      a new snapshot is created, a new differencing medium is implicitly
+      created for all normal media attached to the machine.
 
       Each virtual machine has a "current snapshot", identified by
       <link to="IMachine::currentSnapshot"/>. Presently, this is always set
@@ -7976,7 +8016,7 @@
       snapshot to the top of that branch.
     </desc>
 
-    <attribute name="id" type="wstring" readonly="yes">
+    <attribute name="id" type="uuid" mod="string" readonly="yes">
       <desc>UUID of the snapshot.</desc>
     </attribute>
 
@@ -8039,22 +8079,22 @@
 
 
   <!--
-  // IMedia
+  // IMedium
   /////////////////////////////////////////////////////////////////////////
   -->
 
   <enum
-    name="MediaState"
-    uuid="8b86e03c-2f1c-412a-8fbd-326f62701200"
+    name="MediumState"
+    uuid="ef41e980-e012-43cd-9dea-479d4ef14d13"
   >
     <desc>
-      Virtual media state.
-      <see>IMedia</see>
+      Virtual medium state.
+      <see>IMedium</see>
     </desc>
 
     <const name="NotCreated" value="0">
       <desc>
-        Associated media storage does not exist (either was not created yet or
+        Associated medium storage does not exist (either was not created yet or
         was deleted).
       </desc>
     </const>
@@ -8065,518 +8105,68 @@
     </const>
     <const name="LockedRead" value="2">
       <desc>
-        Media is locked for reading, no data modification is possible.
+        Medium is locked for reading, no data modification is possible.
       </desc>
     </const>
     <const name="LockedWrite" value="3">
       <desc>
-        Media is locked for writing, no concurrent data reading or modification
+        Medium is locked for writing, no concurrent data reading or modification
         is possible.
       </desc>
     </const>
     <const name="Inaccessible" value="4">
       <desc>
-        Associated media storage is not accessible.
+        Associated medium storage is not accessible.
       </desc>
     </const>
     <const name="Creating" value="5">
       <desc>
-        Associated media storage is being created.
+        Associated medium storage is being created.
       </desc>
     </const>
     <const name="Deleting" value="6">
       <desc>
-        Associated media storage is being deleted.
+        Associated medium storage is being deleted.
       </desc>
     </const>
   </enum>
 
-  <interface
-    name="IMedium" extends="$unknown"
-    uuid="f585787c-7728-40f6-853a-13705426e936"
-    wsmap="managed"
-  >
-    <desc>
-      The IMedium interface is a common interface for all objects representing
-      virtual media such as hard disks, CD/DVD images and floppy images.
-
-      Each medium is associated with a storage unit (such as a file on the host
-      computer or a network resource) that holds actual data. The location of
-      the storage unit is represented by the #location attribute. The value of
-      this attribute is media type dependent.
-
-      The exact media type may be determined by querying the appropriate
-      interface such as:
-      <ul>
-        <li><link to="IHardDisk" /> (virtual hard disks)</li>
-        <li><link to="IDVDImage" /> (standard CD/DVD ISO image files)</li>
-        <li><link to="IFloppyImage" /> (raw floppy image files)</li>
-      </ul>
-
-      Existing media are opened using the following methods, depending on the
-      media type:
-      <ul>
-        <li><link to="IVirtualBox::openHardDisk"/></li>
-        <li><link to="IVirtualBox::openDVDImage"/></li>
-        <li><link to="IVirtualBox::openFloppyImage"/></li>
-      </ul>
-
-      New hard disk media are created using the
-      <link to="IVirtualBox::createHardDisk"/> method. CD/DVD and floppy
-      images are created outside VirtualBox, usually by storing a copy
-      of the real medium of the corresponding type in a regular file.
-
-      <h3>Known Media</h3>
-
-      When an existing medium gets opened for the first time, it gets
-      automatically remembered by the given VirtualBox installation or, in other
-      words, becomes a <i>known medium</i>. Known media are stored in the media
-      registry transparently maintained by VirtualBox and stored in settings
-      files so that this registry is preserved when VirtualBox is not running.
-
-      Newly created virtual hard disks get remembered only when the associated
-      storage unit is actually created (see IHardDisk for more details).
-
-      All known media can be enumerated using
-      <link to="IVirtualBox::hardDisks"/>,
-      <link to="IVirtualBox::DVDImages"/> and
-      <link to="IVirtualBox::floppyImages"/> attributes. Individual media can be
-      quickly found by UUID using <link to="IVirtualBox::getHardDisk"/>
-      and similar methods or by location using
-      <link to="IVirtualBox::findHardDisk"/> and similar methods.
-
-      Only known media can be attached to virtual machines.
-
-      Removing known media from the media registry is performed when the given
-      medium is closed using the <link to="#close"/> method or when its
-      associated storage unit is deleted (only for hard disks).
-
-      <h3>Accessibility Checks</h3>
-
-      The given medium (with the created storage unit) is considered to be
-      <i>accessible</i> when its storage unit can be read.
-      Accessible media are indicated by the <link to="MediaState_Created"/>
-      value of the <link to="#state"/> attribute. When the storage unit cannot
-      be read (for example, because it is located on a disconnected network
-      resource, or was accidentally deleted outside VirtualBox), the medium is
-      considered to be <i>inaccessible</i> which is indicated by the
-      <link to="MediaState_Inaccessible"/> state. The details about the reason
-      of being inaccessible can be obtained using the
-      <link to="#lastAccessError"/> attribute.
-
-      A new accessibility check is performed each time the <link to="#state"/>
-      attribute is read. Please note that this check may take long time (several
-      seconds or even minutes, depending on the storage unit location and
-      format), and will block the calling thread until finished. For this
-      reason, it is recommended to never read this attribute on the main UI
-      thread to avoid making the UI unresponsive.
-
-      Note that when VirtualBox starts up (e.g. the VirtualBox object gets
-      created for the first time), all known media are in the
-      <link to="MediaState_Inaccessible"/> state but the value of the <link
-      to="#lastAccessError"/> attribute is an empty string because no actual
-      accessibility check is made on startup. This is done to make the
-      VirtualBox object ready for serving requests as
-      fast as possible and let the end-user application decide if it needs to
-      check media accessibility right away or not.
-    </desc>
-
-    <attribute name="id" type="wstring" readonly="yes">
-      <desc>
-        UUID of the medium. For a newly created medium, this value is a randomly
-        generated UUID.
-
-        <note>
-          For media in one of MediaState_NotCreated, MediaState_Creating or
-          MediaState_Deleting states, the value of this property is undefined
-          and will most likely be an empty UUID.
-        </note>
-      </desc>
-    </attribute>
-
-    <attribute name="description" type="wstring">
-      <desc>
-        Optional description of the medium. For newly created media, the value
-        of this attribute value is an empty string.
-
-        Media types that don't support this attribute will return E_NOTIMPL in
-        attempt to get or set this attribute's value.
-
-        <note>
-          For some storage types, reading this attribute may return an outdated
-          (last known) value when <link to="#state"/> is <link
-          to="MediaState_Inaccessible"/> or <link
-          to="MediaState_LockedWrite"/> because the value of this attribute is
-          stored within the storage unit itself. Also note that changing the
-          attribute value is not possible in such case, as well as when the
-          medium is the <link to="MediaState_LockedRead"/> state.
-        </note>
-      </desc>
-    </attribute>
-
-    <attribute name="state" type="MediaState" readonly="yes">
-      <desc>
-        Current media state. Inspect <link to="MediaState"/> values for details.
-
-        Reading this attribute may take a long time because an accessibility
-        check of the storage unit is performed each time the attribute is read.
-        This check may cause a significant delay if the storage unit of the
-        given medium is, for example, a file located on a network share which is
-        not currently accessible due to connectivity problems -- the call will
-        not return until a timeout interval defined by the host OS for this
-        operation expires.
-
-        If the last known state of the medium is <link to="MediaState_Created"/>
-        and the accessibility check fails then the state would be set to
-        <link to="MediaState_Inaccessible"/> and <link to="#lastAccessError"/>
-        may be used to get more details about the failure. If the state of the
-        medium is <link to="MediaState_LockedRead"/> or
-        <link to="MediaState_LockedWrite"/> then it remains the same, and a
-        non-empty value of <link to="#lastAccessError"/> will indicate a failed
-        accessibility check in this case.
-
-        Note that not all media states are applicable to all media types.
-        For example, states <link to="MediaState_NotCreated"/>,
-        <link to="MediaState_LockedWrite"/>, <link to="MediaState_Creating"/>,
-        <link to="MediaState_Deleting"/> are meaningless for IDVDImage and
-        IFloppyImage media.
-      </desc>
-    </attribute>
-
-    <attribute name="location" type="wstring">
-      <desc>
-        Location of the storage unit holding media data.
-
-        The format of the location string is media type specific. For media
-        types using regular files in a host's file system, the location
-        string is the full file name.
-
-        Some media types may support changing the storage unit location by
-        simply changing the value of this property. If this operation is not
-        supported, the implementation will return E_NOTIMPL in attempt to set
-        this attribute's value.
-
-        When setting a value of the location attribute which is a regular file
-        in the host's file system, the given file name may be either relative to
-        the <link to="IVirtualBox::homeFolder">VirtualBox home folder</link> or
-        absolute. Note that if the given location specification does not contain
-        the file extension part then a proper default extension will be
-        automatically appended by the implementation depending on the media type.
-      </desc>
-    </attribute>
-
-    <attribute name="name" type="wstring" readonly="yes">
-      <desc>
-        Name of the storage unit holding media data.
-
-        The returned string is a short version of the <link to="#location"/>
-        attribute that is suitable for representing the medium in situations
-        where the full location specification is too long (such as lists
-        and comboboxes in GUI frontends). This string is also used by frontends
-        to sort the media list alphabetically when needed.
-
-        For example, for locations that are regular files in the host's file
-        system, the value of this attribute is just the file name (+ extension),
-        without the path specification.
-
-        Note that as opposed to the <link to="#location"/> attribute, the name
-        attribute will not necessary be unique for a list of media of the
-        given type and format.
-      </desc>
-    </attribute>
-
-    <attribute name="size" type="unsigned long long" readonly="yes">
-      <desc>
-        Physical size of the storage unit used to hold media data (in bytes).
-
-        <note>
-          For media whose <link to="#state"/> is <link
-          to="MediaState_Inaccessible"/>, the value of this property is the
-          last known size. For <link to="MediaState_NotCreated"/> media,
-          the returned value is zero.
-        </note>
-      </desc>
-    </attribute>
-
-    <attribute name="lastAccessError" type="wstring" readonly="yes">
-      <desc>
-        Text message that represents the result of the last accessibility
-        check.
-
-        Accessibility checks are performed each time the <link to="#state"/>
-        attribute is read. An empty string is returned if the last
-        accessibility check was successful. A non-empty string indicates a
-        failure and should normally describe a reason of the failure (for
-        example, a file read error).
-      </desc>
-    </attribute>
-
-    <attribute name="machineIds" type="wstring" safearray="yes" readonly="yes">
-      <desc>
-        Array of UUIDs of all machines this medium is attached to.
-
-        A @c null array is returned if this medium is not attached to any
-        machine or to any machine's snapshot.
-
-        <note>
-          The returned array will include a machine even if this medium is not
-          attached to that machine in the current state but attached to it in
-          one of the machine's snapshots. See <link to="#getSnapshotIds"/> for
-          details.
-        </note>
-      </desc>
-    </attribute>
-
-    <method name="getSnapshotIds">
-      <desc>
-        Returns an array of UUIDs of all snapshots of the given machine where
-        this medium is attached to.
-
-        If the medium is attached to the machine in the current state, then the
-        first element in the array will always be the ID of the queried machine
-        (i.e. the value equal to the @c machineId argument), followed by
-        snapshot IDs (if any).
-
-        If the medium is not attached to the machine in the current state, then
-        the array will contain only snapshot IDs.
-
-        The returned array may be @c null if this medium is not attached
-        to the given machine at all, neither in the current state nor in one of
-        the snapshots.
-      </desc>
-      <param name="machineId" type="wstring" dir="in">
-        <desc>
-          UUID of the machine to query.
-        </desc>
-      </param>
-      <param name="snapshotIds" type="wstring" safearray="yes" dir="return">
-        <desc>
-          Array of snapshot UUIDs of the given machine using this medium.
-        </desc>
-      </param>
-    </method>
-
-    <method name="lockRead">
-      <desc>
-        Locks this medium for reading.
-
-        The read lock is shared: many clients can simultaneously lock the
-        same media for reading unless it is already locked for writing (see
-        <link to="#lockWrite"/>) in which case an error is returned.
-
-        When the medium is locked for reading, it cannot be modified
-        from within VirtualBox. This means that any method that changes
-        the properties of this medium or contents of the storage unit
-        will return an error (unless explicitly stated otherwise) and
-        that an attempt to start a virtual machine that wants to modify
-        the medium will also fail.
-
-        When the virtual machine is started up, it locks for reading all
-        media it uses in read-only mode. If some media cannot be locked
-        for reading, the startup procedure will fail.
-
-        The medium locked for reading must be unlocked using the <link
-        to="#unlockRead"/> method. Calls to <link to="#lockRead"/>
-        can be nested and must be followed by the same number of paired
-        <link to="#unlockRead"/> calls.
-
-        This method sets the media state to <link
-        to="MediaState_LockedRead" /> on success. The state prior to
-        this call must be <link to="MediaState_Created" />,
-        <link to="MediaState_Inaccessible" /> or
-        <link to="MediaState_LockedRead" />.
-        As you can see, inaccessible media can be locked too. This is
-        not an error; this method performs a logical lock that prevents
-        modifications of this media through the VirtualBox API, not a
-        physical lock of the underlying storage unit.
-
-        This method returns the current state of the medium
-        <b>before</b> the operation.
-
-        <result name="VBOX_E_INVALID_OBJECT_STATE">
-          Invalid media state (e.g. not created, locked, inaccessible,
-          creating, deleting).
-        </result>
-
-      </desc>
-      <param name="state" type="MediaState" dir="return">
-        <desc>
-          State of the medium after the operation.
-        </desc>
-      </param>
-    </method>
-
-    <method name="unlockRead">
-      <desc>
-        Cancels the read lock previously set by <link to="#lockRead"/>.
-
-        For both, success and failure, this method returns the current state
-        of the medium <b>after</b> the operation.
-
-        See <link to="#lockRead"/> for more details.
-
-        <result name="VBOX_E_INVALID_OBJECT_STATE">
-          Medium not locked for reading.
-        </result>
-
-      </desc>
-      <param name="state" type="MediaState" dir="return">
-        <desc>
-          State of the medium after the operation.
-        </desc>
-      </param>
-    </method>
-
-    <method name="lockWrite">
-      <desc>
-        Locks this medium for writing.
-
-        The write lock, as opposed to <link to="#lockRead"/>, is
-        exclusive: there may be only one client holding a write lock
-        and there may be no read locks while the write lock is held.
-
-        When the medium is locked for writing, it cannot be modified
-        from within VirtualBox and it is not guaranteed that the values
-        of its properties are up-to-date. Any method that changes the
-        properties of this medium or contents of the storage unit will
-        return an error (unless explicitly stated otherwise) and an
-        attempt to start a virtual machine wanting to modify or to
-        read the medium will fail.
-
-        When the virtual machine is started up, it locks for writing all
-        media it uses to write data to. If any medium could not be locked
-        for writing, the startup procedure will fail.
-
-        The medium locked for writing must be unlocked using the <link
-        to="#unlockWrite"/> method. Calls to <link to="#lockWrite"/>
-        can <b>not</b> be nested and must be followed by a<link
-        to="#unlockWrite"/> call before the next lockWrite call.
-
-        This method sets the media state to <link to="MediaState_LockedWrite" />
-        on success. The state prior to this call must be <link to="MediaState_Created"/>
-        or <link to="MediaState_Inaccessible"/>. As you can see, inaccessible
-        media can be locked too. This is not an error; this method
-        performs a logical lock preventing modifications of this
-        media through the VirtualBox API, not a physical lock of the
-        underlying storage unit.
-
-        For both, success and failure, this method returns the current
-        state of the medium <b>before</b> the operation.
-
-        <result name="VBOX_E_INVALID_OBJECT_STATE">
-          Invalid media state (e.g. not created, locked, inaccessible,
-          creating, deleting).
-        </result>
-
-      </desc>
-      <param name="state" type="MediaState" dir="return">
-        <desc>
-          State of the medium after the operation.
-        </desc>
-      </param>
-    </method>
-
-    <method name="unlockWrite">
-      <desc>
-        Cancels the write lock previously set by <link to="#lockWrite"/>.
-
-        For both, success and failure, this method returns the current
-        state of the medium <b>after</b> the operation.
-
-        See <link to="#lockWrite"/> for more details.
-
-        <result name="VBOX_E_INVALID_OBJECT_STATE">
-          Medium not locked for writing.
-        </result>
-
-      </desc>
-      <param name="state" type="MediaState" dir="return">
-        <desc>
-          State of the medium after the operation.
-        </desc>
-      </param>
-    </method>
-
-    <method name="close">
-      <desc>
-        Closes this medium.
-
-        The hard disk must not be attached to any known virtual machine
-        and must not have any known child hard disks, otherwise the
-        operation will fail.
-
-        When the hard disk is successfully closed, it gets removed from
-        the list of remembered hard disks, but its storage unit is not
-        deleted. In particular, this means that this hard disk can be
-        later opened again using the <link
-        to="IVirtualBox::openHardDisk"/> call.
-
-        Note that after this method successfully returns, the given hard
-        disk object becomes uninitialized. This means that any attempt
-        to call any of its methods or attributes will fail with the
-        <tt>"Object not ready" (E_ACCESSDENIED)</tt> error.
-
-        <result name="VBOX_E_INVALID_OBJECT_STATE">
-          Invalid media state (other than not created, created or
-          inaccessible).
-        </result>
-        <result name="VBOX_E_OBJECT_IN_USE">
-          Medium attached to virtual machine.
-        </result>
-        <result name="VBOX_E_FILE_ERROR">
-          Settings file not accessible.
-        </result>
-        <result name="VBOX_E_XML_ERROR">
-          Could not parse the settings file.
-        </result>
-
-      </desc>
-    </method>
-
-  </interface>
-
-
-  <!--
-  // IHardDisk
-  /////////////////////////////////////////////////////////////////////////
-  -->
-
   <enum
-    name="HardDiskType"
-    uuid="a348fafd-a64e-4643-ba65-eb3896bd7e0a"
+    name="MediumType"
+    uuid="11f6f7a5-0327-409a-9d42-7db6a0cec578"
    >
     <desc>
-      Virtual hard disk type.
-      <see>IHardDisk</see>
+      Virtual medium type.
+      <see>IMedium</see>
     </desc>
 
     <const name="Normal"            value="0">
       <desc>
-        Normal hard disk (attached directly or indirectly, preserved
+        Normal medium (attached directly or indirectly, preserved
         when taking snapshots).
       </desc>
     </const>
     <const name="Immutable"         value="1">
       <desc>
-        Immutable hard disk (attached indirectly, changes are wiped out
+        Immutable medium (attached indirectly, changes are wiped out
         after powering off the virtual machine).
       </desc>
     </const>
     <const name="Writethrough"      value="2">
       <desc>
-        Write through hard disk (attached directly, ignored when
+        Write through medium (attached directly, ignored when
         taking snapshots).
       </desc>
     </const>
   </enum>
 
   <enum
-    name="HardDiskVariant"
-    uuid="eb7fc6b3-ae23-4c5d-a1f6-e3522dd1efb0"
+    name="MediumVariant"
+    uuid="584ea502-143b-4ab0-ad14-d1028fdf0316"
    >
     <desc>
-      Virtual hard disk image variant. More than one flag may be set.
-      <see>IHardDisk</see>
+      Virtual medium image variant. More than one flag may be set.
+      <see>IMedium</see>
     </desc>
 
     <const name="Standard"          value="0">
@@ -8613,27 +8203,32 @@
   </enum>
 
   <interface
-    name="IHardDiskAttachment" extends="$unknown"
-    uuid="b1dd04bb-93c0-4ad3-a9cf-82316e595836"
+    name="IMediumAttachment" extends="$unknown"
+    uuid="0dcf987b-a024-453f-bace-7eb9f885a413"
     wsmap="struct"
   >
     <desc>
-      The IHardDiskAttachment interface represents a hard disk attachment of a
-      virtual machine.
+      The IMediumAttachment interface represents the attachment
+      of a storage medium to a virtual machine. Each machine contains
+      an array of its medium attachments in <link to="IMachine::mediumAttachments"/>.
 
-      Every hard disk attachment specifies a slot of the virtual hard disk
-      controller and a virtual hard disk attached to this slot.
-
-      The array of hard disk attachments is returned by
-      <link to="IMachine::hardDiskAttachments"/>.
+      Each medium attachment specifies a storage controller as well as a port
+      and device number. Fixed media (hard disks) will always also specify
+      an instance of IMedium in <link to="#medium" />, referring to the hard disk
+      image or images that represent the virtual hard disk. For removeable media,
+      the IMedia instance is optional; it can be NULL if no media is mounted (see
+      <link to="IMachine::mountMedium" />).
     </desc>
 
-    <attribute name="hardDisk" type="IHardDisk" readonly="yes">
-      <desc>Hard disk object associated with this attachment.</desc>
+    <attribute name="medium" type="IMedium" readonly="yes">
+      <desc>Medium object associated with this attachment; it
+        can be NULL for removable devices.</desc>
     </attribute>
 
     <attribute name="controller" type="wstring" readonly="yes">
-      <desc>Interface bus of this attachment.</desc>
+      <desc>Name of the storage controller of this attachment; this
+        refers to one of the controllers in <link to="IMachine::storageControllers" />
+        by name.</desc>
     </attribute>
 
     <attribute name="port" type="long" readonly="yes">
@@ -8644,27 +8239,134 @@
       <desc>Device slot number of this attachment.</desc>
     </attribute>
 
+    <attribute name="type" type="DeviceType" readonly="yes">
+      <desc>Device type of this attachment.</desc>
+    </attribute>
+
+    <attribute name="passthrough" type="boolean" readonly="no">
+      <desc>Pass I/O requests through to a device on the host.</desc>
+    </attribute>
+
   </interface>
 
   <interface
-    name="IHardDisk" extends="IMedium"
+    name="IMedium" extends="$unknown"
     uuid="62551115-83b8-4d20-925f-79e9d3c00f96"
     wsmap="managed"
   >
     <desc>
-      The IHardDisk interface represents a virtual hard disk drive
-      used by a virtual machine. This is a subclass of <link to="IMedium" />; see remarks there.
+      The IMedium interface represents virtual storage for a machine's
+      hard disks, CD/DVD or floppy drives. It will typically represent
+      a disk image on the host, for example a VDI or VMDK file representing
+      a virtual hard disk, or an ISO or RAW file representing virtual
+      removable media, but can also point to a network location (e.g.
+      for iSCSI targets).
 
-      <h3>Hard Disk Types</h3>
+      Instances of IMedium are connected to virtual machines by way of
+      medium attachments (see <link to="IMediumAttachment" />), which link
+      the storage medium to a particular device slot of a storage controller
+      of the virtual machine.
+      In the VirtualBox API, virtual storage is therefore always represented
+      by the following chain of object links:
 
-      There are three types of hard disks:
-      <link to="HardDiskType_Normal">Normal</link>,
-      <link to="HardDiskType_Immutable">Immutable</link> and
-      <link to="HardDiskType_Writethrough">Writethrough</link>. The type of the
-      hard disk defines how the hard disk is attached to a virtual machine and
-      what happens when a <link to="ISnapshot">snapshot</link> of the virtual
-      machine with the attached hard disk is taken. The type of the hard disk is
-      defined by the <link to="#type"/> attribute.
+      <ul>
+        <li><link to="IMachine::storageControllers"/> contains an array of
+          storage controllers (IDE, SATA, SCSI or a floppy controller;
+          these are instances of <link to="IStorageController"/>).</li>
+        <li><link to="IMachine::mediumAttachments"/> contains an array of
+          medium attachments (instances of <link to="IMediumAttachment"/>),
+          each containing the name of a storage controller from the above
+          array, a port/device specification, and an instance of
+          IMedium representing the medium storage (image file). For removable
+          media, the storage medium is optional; a medium attachment with no
+          medium represents a CD/DVD or floppy drive with no medium inserted.
+          By contrast, hard disk attachments will always have an IMedium
+          object attached.</li>
+        <li>Each IMedium in turn points to a storage unit (such as a file on the host
+          computer or a network resource) that holds actual data. The location of
+          the storage unit is represented by the <link to="#location"/> attribute.
+          The value of this attribute is medium type dependent.</li>
+      </ul>
+
+      Existing media are opened using the following methods, depending on the
+      media type:
+      <ul>
+        <li><link to="IVirtualBox::openHardDisk"/></li>
+        <li><link to="IVirtualBox::openDVDImage"/></li>
+        <li><link to="IVirtualBox::openFloppyImage"/></li>
+      </ul>
+
+      New hard disk media can be created with the VirtualBox API using the
+      <link to="IVirtualBox::createHardDisk"/> method.
+
+      CD/DVD and floppy images (ISO and RAW files) are usually created outside
+      VirtualBox, e.g. by storing a copy of the real medium of the corresponding
+      type in a regular file.
+
+      Only for CD/DVDs and floppies, an IMedium instance can also represent a host
+      drive; in that case the <link to="#id" /> attribute contains the UUID of
+      one of the drives in <link to="IHost::DVDDrives" /> or <link to="IHost::floppyDrives" />.
+
+      <h3>Known media</h3>
+
+      When an existing medium is opened for the first time, it is automatically
+      remembered by the given VirtualBox installation or, in other words, becomes
+      a <i>known medium</i>. Known media are stored in the media
+      registry transparently maintained by VirtualBox and stored in settings
+      files so that this registry is preserved when VirtualBox is not running.
+
+      Newly created virtual media are remembered only when the associated
+      storage unit is actually created.
+
+      All known media can be enumerated using
+      <link to="IVirtualBox::hardDisks"/>,
+      <link to="IVirtualBox::DVDImages"/> and
+      <link to="IVirtualBox::floppyImages"/> attributes. Individual media can be
+      quickly found by UUID using <link to="IVirtualBox::getHardDisk"/>
+      and similar methods or by location using
+      <link to="IVirtualBox::findHardDisk"/> and similar methods.
+
+      Only known media can be attached to virtual machines.
+
+      Removing known media from the media registry is performed when the given
+      medium is closed using the <link to="#close"/> method or when its
+      associated storage unit is deleted.
+
+      <h3>Accessibility checks</h3>
+
+      The given medium (with the created storage unit) is considered to be
+      <i>accessible</i> when its storage unit can be read. In that case, the
+      <link to="#state"/> attribute has a value of "Created".
+      When the storage unit cannot be read (for example, because it is located on
+      a disconnected network resource, or was accidentally deleted outside VirtualBox),
+      the medium is considered to be <i>inaccessible</i>, which is indicated by the
+      "Inaccessible" state. The exact reason why the medium is inaccessible can be
+      obtained by reading the <link to="#lastAccessError"/> attribute.
+
+      A new accessibility check is performed each time the <link to="#state"/>
+      attribute is read. This check may take long time (several seconds or even
+      minutes, depending on the storage unit location and format), and will
+      block the calling thread until finished. For this reason, it is recommended
+      to never read this attribute on the main UI thread to avoid making the UI
+      unresponsive.
+
+      Note that when VirtualBox starts up (e.g. the VirtualBox object gets
+      created for the first time), all known media are in the
+      <link to="MediumState_Inaccessible"/> state but the value of the <link
+      to="#lastAccessError"/> attribute is an empty string because no actual
+      accessibility check is made on startup. This is done to make the
+      VirtualBox object ready for serving requests as
+      fast as possible and let the end-user application decide if it needs to
+      check media accessibility right away or not.
+
+      <h3>Hard disk types</h3>
+
+      There are three types of hard disk images (see <link to="MediumType" />):
+      "normal", "immutable" and "writethrough", represented by the
+      <link to="#type"/> attribute. The type of the hard disk defines how the
+      hard disk is attached to a virtual machine and what happens when a
+      <link to="ISnapshot">snapshot</link> of the virtual machine with the
+      attached hard disk is taken.
 
       All hard disks can be also divided in two groups: <i>base</i> hard
       disks and <i>differencing</i> hard disks. A base hard disk contains all
@@ -8674,8 +8376,8 @@
       from that other disk, which is then called a <i>parent</i>. The differencing
       hard disk is said to be <i>linked to</i> that parent.
       The parent may be itself a differencing image, thus forming a chain of
-      linked hard disks. The last element in that chain (sometimes referred to as
-      the root hard disk) must always be a base. Note that several differencing
+      linked hard disks. The last element in that chain
+      must always be a base medium. Note that several differencing
       hard disks may be linked to the same parent hard disk.
 
       Differencing hard disks can be distinguished from base hard disks by
@@ -8687,10 +8389,10 @@
       attribute.
 
       Note that the type of all differencing hard disks is
-      <link to="HardDiskType_Normal" />; all other values are
+      <link to="MediumType_Normal" />; all other values are
       meaningless for them. Base hard disks may be of any type.
 
-      <h3>Creating Hard Disks</h3>
+      <h3>Creating hard disks</h3>
 
       New base hard disks are created using
       <link to="IVirtualBox::createHardDisk"/>. Existing hard disks are
@@ -8724,7 +8426,7 @@
       Another extension to the <link to="IMedium::location"/> attribute is that
       there is a possibility to cause VirtualBox to compose a unique value for
       the file name part of the location using the UUID of the hard disk. This
-      applies only to hard disks in <link to="MediaState_NotCreated"/> state,
+      applies only to hard disks in <link to="MediumState_NotCreated"/> state,
       e.g. before the storage unit is created, and works as follows. You set the
       value of the <link to="IMedium::location"/> attribute to a location
       specification which only contains the path specification but not the file
@@ -8743,8 +8445,8 @@
       <h3>Attaching Hard Disks</h3>
 
       Hard disks are attached to virtual machines using the
-      <link to="IMachine::attachHardDisk"/> method and detached using the
-      <link to="IMachine::detachHardDisk"/> method. Depending on their
+      <link to="IMachine::attachDevice"/> method and detached using the
+      <link to="IMachine::detachDevice"/> method. Depending on their
       <link to="#type"/>, hard disks are attached either
       <i>directly</i> or <i>indirectly</i>.
 
@@ -8753,26 +8455,18 @@
       running. When a hard disk is being attached indirectly, a new differencing
       hard disk linked to it is implicitly created and this differencing hard
       disk is associated with the machine and used for hard disk operations.
-      This also means that if <link to="IMachine::attachHardDisk"/> performs
+      This also means that if <link to="IMachine::attachDevice"/> performs
       a direct attachment then the same hard disk will be returned in response
-      to the subsequent  <link to="IMachine::getHardDisk"/> call; however if
+      to the subsequent  <link to="IMachine::getMedium"/> call; however if
       an indirect attachment is performed then
-      <link to="IMachine::getHardDisk"/> will return the implicitly created
+      <link to="IMachine::getMedium"/> will return the implicitly created
       differencing hard disk, not the original one passed to <link
-      to="IMachine::attachHardDisk"/>. The following table shows the
-      dependency of the attachment type on the hard disk type:
+      to="IMachine::attachDevice"/>. In detail:
 
-      <table>
-        <tr>
-          <th>Hard Disk Type</th>
-          <th>Direct or Indirect?</th>
-        </tr>
-        <tr>
-          <td>Normal (Base)</td>
-          <td>
-            Normal base hard disks that do not have children (i.e. differencing
-            hard disks linked to them) and that are not already attached to
-            virtual machines in snapshots are attached <b>directly</b>.
+      <ul>
+        <li><b>Normal base</b> hard disks that do not have children (i.e.
+            differencing hard disks linked to them) and that are not already
+            attached to virtual machines in snapshots are attached <b>directly</b>.
             Otherwise, they are attached <b>indirectly</b> because having
             dependent children or being part of the snapshot makes it impossible
             to modify hard disk contents without breaking the integrity of the
@@ -8780,37 +8474,20 @@
             quickly determine the kind of the attachment for the given hard
             disk. Note that if a normal base hard disk is to be indirectly
             attached to a virtual machine with snapshots then a special
-            procedure called <i>smart attachment</i> is performed (see below).
-          </td>
-        </tr>
-        <tr>
-          <td>Normal (Differencing)</td>
-          <td>
-            Differencing hard disks are like normal base hard disks: attached
-            <b>directly</b> if they do not have children and are not attached to
-            virtual machines in snapshots, and <b>indirectly</b> otherwise. Note
-            that the smart attachment procedure is never performed for
-            differencing hard disks.
-          </td>
-        </tr>
-        <tr>
-          <td>Immutable</td>
-          <td>
-            Immutable hard disks are always attached <b>indirectly</b> because
+            procedure called <i>smart attachment</i> is performed (see below).</li>
+        <li><b>Normal differencing</b> hard disks are like normal base hard disks:
+            they are attached <b>directly</b> if they do not have children and are
+            not attached to virtual machines in snapshots, and <b>indirectly</b>
+            otherwise. Note that the smart attachment procedure is never performed
+            for differencing hard disks.</li>
+        <li><b>Immutable</b> hard disks are always attached <b>indirectly</b> because
             they are designed to be non-writable. If an immutable hard disk is
             attached to a virtual machine with snapshots then a special
-            procedure called smart attachment is performed (see below).
-          </td>
-        </tr>
-        <tr>
-          <td>Writethrough</td>
-          <td>
-            Writethrough hard disks are always attached <b>directly</b>, also as
-            designed. This also means that writethrough hard disks cannot have
-            other hard disks linked to them at all.
-          </td>
-        </tr>
-      </table>
+            procedure called smart attachment is performed (see below).</li>
+        <li><b>Writethrough</b> hard disks are always attached <b>directly</b>,
+            also as designed. This also means that writethrough hard disks cannot
+            have other hard disks linked to them at all.</li>
+      </ul>
 
       Note that the same hard disk, regardless of its type, may be attached to
       more than one virtual machine at a time. In this case, the machine that is
@@ -8820,7 +8497,7 @@
 
       Detaching hard disks is performed in a <i>deferred</i> fashion. This means
       that the given hard disk remains associated with the given machine after a
-      successful <link to="IMachine::detachHardDisk"/> call until
+      successful <link to="IMachine::detachDevice"/> call until
       <link to="IMachine::saveSettings"/> is called to save all changes to
       machine settings to disk. This deferring is necessary to guarantee that
       the hard disk configuration may be restored at any time by a call to
@@ -8831,15 +8508,15 @@
       indirectly attaching some hard disks to the machine but before a call to
       <link to="IMachine::saveSettings"/> is made, it will implicitly delete
       all differencing hard disks implicitly created by
-      <link to="IMachine::attachHardDisk"/> for these indirect attachments.
+      <link to="IMachine::attachDevice"/> for these indirect attachments.
       Such implicitly created hard disks will also be immediately deleted when
-      detached explicitly using the <link to="IMachine::detachHardDisk"/>
+      detached explicitly using the <link to="IMachine::detachDevice"/>
       call if it is made before <link to="IMachine::saveSettings"/>. This
       implicit deletion is safe because newly created differencing hard
       disks do not contain any user data.
 
       However, keep in mind that detaching differencing hard disks that were
-      implicitly created by <link to="IMachine::attachHardDisk"/>
+      implicitly created by <link to="IMachine::attachDevice"/>
       before the last <link to="IMachine::saveSettings"/> call will
       <b>not</b> implicitly delete them as they may already contain some data
       (for example, as a result of virtual machine execution). If these hard
@@ -8918,9 +8595,126 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       attached to the machine in place of it.
     </desc>
 
+    <attribute name="id" type="uuid" mod="string" readonly="yes">
+      <desc>
+        UUID of the medium. For a newly created medium, this value is a randomly
+        generated UUID.
+
+        <note>
+          For media in one of MediumState_NotCreated, MediumState_Creating or
+          MediumState_Deleting states, the value of this property is undefined
+          and will most likely be an empty UUID.
+        </note>
+      </desc>
+    </attribute>
+
+    <attribute name="description" type="wstring">
+      <desc>
+        Optional description of the medium. For a newly created medium the value
+        of this attribute is an empty string.
+
+        Medium types that don't support this attribute will return E_NOTIMPL in
+        attempt to get or set this attribute's value.
+
+        <note>
+          For some storage types, reading this attribute may return an outdated
+          (last known) value when <link to="#state"/> is <link
+          to="MediumState_Inaccessible"/> or <link
+          to="MediumState_LockedWrite"/> because the value of this attribute is
+          stored within the storage unit itself. Also note that changing the
+          attribute value is not possible in such case, as well as when the
+          medium is the <link to="MediumState_LockedRead"/> state.
+        </note>
+      </desc>
+    </attribute>
+
+    <attribute name="state" type="MediumState" readonly="yes">
+      <desc>
+        Current medium state. Inspect <link to="MediumState"/> values for details.
+
+        Reading this attribute may take a long time because an accessibility
+        check of the storage unit is performed each time the attribute is read.
+        This check may cause a significant delay if the storage unit of the
+        given medium is, for example, a file located on a network share which is
+        not currently accessible due to connectivity problems -- the call will
+        not return until a timeout interval defined by the host OS for this
+        operation expires.
+
+        If the last known state of the medium is <link to="MediumState_Created"/>
+        and the accessibility check fails then the state would be set to
+        <link to="MediumState_Inaccessible"/> and <link to="#lastAccessError"/>
+        may be used to get more details about the failure. If the state of the
+        medium is <link to="MediumState_LockedRead"/> or
+        <link to="MediumState_LockedWrite"/> then it remains the same, and a
+        non-empty value of <link to="#lastAccessError"/> will indicate a failed
+        accessibility check in this case.
+
+        Note that not all medium states are applicable to all medium types.
+      </desc>
+    </attribute>
+
+    <attribute name="location" type="wstring">
+      <desc>
+        Location of the storage unit holding medium data.
+
+        The format of the location string is medium type specific. For medium
+        types using regular files in a host's file system, the location
+        string is the full file name.
+
+        Some medium types may support changing the storage unit location by
+        simply changing the value of this property. If this operation is not
+        supported, the implementation will return E_NOTIMPL in attempt to set
+        this attribute's value.
+
+        When setting a value of the location attribute which is a regular file
+        in the host's file system, the given file name may be either relative to
+        the <link to="IVirtualBox::homeFolder">VirtualBox home folder</link> or
+        absolute. Note that if the given location specification does not contain
+        the file extension part then a proper default extension will be
+        automatically appended by the implementation depending on the medium type.
+      </desc>
+    </attribute>
+
+    <attribute name="name" type="wstring" readonly="yes">
+      <desc>
+        Name of the storage unit holding medium data.
+
+        The returned string is a short version of the <link to="#location"/>
+        attribute that is suitable for representing the medium in situations
+        where the full location specification is too long (such as lists
+        and comboboxes in GUI frontends). This string is also used by frontends
+        to sort the media list alphabetically when needed.
+
+        For example, for locations that are regular files in the host's file
+        system, the value of this attribute is just the file name (+ extension),
+        without the path specification.
+
+        Note that as opposed to the <link to="#location"/> attribute, the name
+        attribute will not necessary be unique for a list of media of the
+        given type and format.
+      </desc>
+    </attribute>
+
+    <attribute name="hostDrive" type="boolean" readonly="yes">
+      <desc>True if this corresponds to a drive on the host.</desc>
+    </attribute>
+
+    <attribute name="size" type="unsigned long long" readonly="yes">
+      <desc>
+        Physical size of the storage unit used to hold medium data (in bytes).
+
+        <note>
+          For media whose <link to="#state"/> is <link
+          to="MediumState_Inaccessible"/>, the value of this property is the
+          last known size. For <link to="MediumState_NotCreated"/> media,
+          the returned value is zero.
+        </note>
+      </desc>
+    </attribute>
+
     <attribute name="format" type="wstring" readonly="yes">
       <desc>
-        Storage format of this hard disk.
+        Storage format of this medium.
 
         The value of this attribute is a string that specifies a backend used to
         store hard disk data. The storage format is defined when you create a
@@ -8929,11 +8723,11 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
         The list of all storage formats supported by this VirtualBox
         installation can be obtained using
-        <link to="ISystemProperties::hardDiskFormats"/>.
+        <link to="ISystemProperties::mediumFormats"/>.
       </desc>
     </attribute>
 
-    <attribute name="type" type="HardDiskType">
+    <attribute name="type" type="MediumType">
       <desc>
         Type (role) of this hard disk.
 
@@ -8945,19 +8739,19 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
               changed.
           </li>
           <li>As long as the hard disk has children, its type cannot be set
-              to <link to="HardDiskType_Writethrough"/>.
+              to <link to="MediumType_Writethrough"/>.
           </li>
           <li>The type of all differencing hard disks is
-              <link to="HardDiskType_Normal"/> and cannot be changed.
+              <link to="MediumType_Normal"/> and cannot be changed.
           </li>
         </ul>
 
         The type of a newly created or opened hard disk is set to
-        <link to="HardDiskType_Normal"/>.
+        <link to="MediumType_Normal"/>.
       </desc>
     </attribute>
 
-    <attribute name="parent" type="IHardDisk" readonly="yes">
+    <attribute name="parent" type="IMedium" readonly="yes">
       <desc>
         Parent of this hard disk (a hard disk this hard disk is directly based
         on).
@@ -8967,7 +8761,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </desc>
     </attribute>
 
-    <attribute name="children" type="IHardDisk" safearray="yes" readonly="yes">
+    <attribute name="children" type="IMedium" safearray="yes" readonly="yes">
       <desc>
         Children of this hard disk (all differencing hard disks directly based
         on this hard disk). A @c null array is returned if this hard disk
@@ -8975,12 +8769,12 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </desc>
     </attribute>
 
-    <attribute name="root" type="IHardDisk" readonly="yes">
+    <attribute name="base" type="IMedium" readonly="yes">
       <desc>
-        Root hard disk of this hard disk.
+        Base medium of this medium.
 
-        If this is a differencing hard disk, its root hard disk is the base hard
-        disk the given hard disk branch starts from. For all other types of hard
+        If this is a differencing medium, its base hard disk is the medium
+        the given hard disk branch starts from. For all other types of hard
         disks, this property returns the hard disk object itself (i.e. the same
         object this property is read on).
       </desc>
@@ -9004,15 +8798,15 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         will be attached indirectly by creating a new differencing child hard
         disk for that. See the interface description for more information.
 
-        Note that all <link to="HardDiskType_Immutable">Immutable</link> hard
+        Note that all <link to="MediumType_Immutable">Immutable</link> hard
         disks are always read-only while all
-        <link to="HardDiskType_Writethrough">Writethrough</link> hard disks are
+        <link to="MediumType_Writethrough">Writethrough</link> hard disks are
         always not.
 
         <note>
           The read-only condition represented by this attribute is related to
           the hard disk type and usage, not to the current
-          <link to="IMedium::state">media state</link> and not to the read-only
+          <link to="IMedium::state">medium state</link> and not to the read-only
           state of the storage unit.
         </note>
       </desc>
@@ -9027,12 +8821,12 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
         <note>
           Reading this property on a differencing hard disk will return the size
-          of its <link to="#root"/> hard disk.
+          of its <link to="#base"/> medium.
         </note>
         <note>
           For hard disks whose state is <link to="#state"/> is <link
-          to="MediaState_Inaccessible"/>, the value of this property is the
-          last known logical size. For <link to="MediaState_NotCreated"/> hard
+          to="MediumState_Inaccessible"/>, the value of this property is the
+          last known logical size. For <link to="MediumaState_NotCreated"/> hard
           disks, the returned value is zero.
         </note>
       </desc>
@@ -9059,6 +8853,241 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </desc>
     </attribute>
 
+    <attribute name="lastAccessError" type="wstring" readonly="yes">
+      <desc>
+        Text message that represents the result of the last accessibility
+        check.
+
+        Accessibility checks are performed each time the <link to="#state"/>
+        attribute is read. An empty string is returned if the last
+        accessibility check was successful. A non-empty string indicates a
+        failure and should normally describe a reason of the failure (for
+        example, a file read error).
+      </desc>
+    </attribute>
+
+    <attribute name="machineIds" type="uuid" mod="string" safearray="yes" readonly="yes">
+      <desc>
+        Array of UUIDs of all machines this medium is attached to.
+
+        A @c null array is returned if this medium is not attached to any
+        machine or to any machine's snapshot.
+
+        <note>
+          The returned array will include a machine even if this medium is not
+          attached to that machine in the current state but attached to it in
+          one of the machine's snapshots. See <link to="#getSnapshotIds"/> for
+          details.
+        </note>
+      </desc>
+    </attribute>
+
+    <method name="getSnapshotIds">
+      <desc>
+        Returns an array of UUIDs of all snapshots of the given machine where
+        this medium is attached to.
+
+        If the medium is attached to the machine in the current state, then the
+        first element in the array will always be the ID of the queried machine
+        (i.e. the value equal to the @c machineId argument), followed by
+        snapshot IDs (if any).
+
+        If the medium is not attached to the machine in the current state, then
+        the array will contain only snapshot IDs.
+
+        The returned array may be @c null if this medium is not attached
+        to the given machine at all, neither in the current state nor in one of
+        the snapshots.
+      </desc>
+      <param name="machineId" type="uuid" mod="string" dir="in">
+        <desc>
+          UUID of the machine to query.
+        </desc>
+      </param>
+      <param name="snapshotIds" type="uuid" mod="string" safearray="yes" dir="return">
+        <desc>
+          Array of snapshot UUIDs of the given machine using this medium.
+        </desc>
+      </param>
+    </method>
+
+    <method name="lockRead">
+      <desc>
+        Locks this medium for reading.
+
+        The read lock is shared: many clients can simultaneously lock the
+        same medium for reading unless it is already locked for writing (see
+        <link to="#lockWrite"/>) in which case an error is returned.
+
+        When the medium is locked for reading, it cannot be modified
+        from within VirtualBox. This means that any method that changes
+        the properties of this medium or contents of the storage unit
+        will return an error (unless explicitly stated otherwise) and
+        that an attempt to start a virtual machine that wants to modify
+        the medium will also fail.
+
+        When the virtual machine is started up, it locks for reading all
+        media it uses in read-only mode. If some medium cannot be locked
+        for reading, the startup procedure will fail.
+
+        The medium locked for reading must be unlocked using the <link
+        to="#unlockRead"/> method. Calls to <link to="#lockRead"/>
+        can be nested and must be followed by the same number of paired
+        <link to="#unlockRead"/> calls.
+
+        This method sets the medium state to <link
+        to="MediumState_LockedRead" /> on success. The state prior to
+        this call must be <link to="MediumState_Created" />,
+        <link to="MediumState_Inaccessible" /> or
+        <link to="MediumState_LockedRead" />.
+        As you can see, an inaccessible medium can be locked too. This is
+        not an error; this method performs a logical lock that prevents
+        modifications of this medium through the VirtualBox API, not a
+        physical lock of the underlying storage unit.
+
+        This method returns the current state of the medium
+        <b>before</b> the operation.
+
+        <result name="VBOX_E_INVALID_OBJECT_STATE">
+          Invalid medium state (e.g. not created, locked, inaccessible,
+          creating, deleting).
+        </result>
+
+      </desc>
+      <param name="state" type="MediumState" dir="return">
+        <desc>
+          State of the medium after the operation.
+        </desc>
+      </param>
+    </method>
+
+    <method name="unlockRead">
+      <desc>
+        Cancels the read lock previously set by <link to="#lockRead"/>.
+
+        For both, success and failure, this method returns the current state
+        of the medium <b>after</b> the operation.
+
+        See <link to="#lockRead"/> for more details.
+
+        <result name="VBOX_E_INVALID_OBJECT_STATE">
+          Medium not locked for reading.
+        </result>
+
+      </desc>
+      <param name="state" type="MediumState" dir="return">
+        <desc>
+          State of the medium after the operation.
+        </desc>
+      </param>
+    </method>
+
+    <method name="lockWrite">
+      <desc>
+        Locks this medium for writing.
+
+        The write lock, as opposed to <link to="#lockRead"/>, is
+        exclusive: there may be only one client holding a write lock
+        and there may be no read locks while the write lock is held.
+
+        When the medium is locked for writing, it cannot be modified
+        from within VirtualBox and it is not guaranteed that the values
+        of its properties are up-to-date. Any method that changes the
+        properties of this medium or contents of the storage unit will
+        return an error (unless explicitly stated otherwise) and an
+        attempt to start a virtual machine wanting to modify or to
+        read the medium will fail.
+
+        When the virtual machine is started up, it locks for writing all
+        media it uses to write data to. If any medium could not be locked
+        for writing, the startup procedure will fail.
+
+        The medium locked for writing must be unlocked using the <link
+        to="#unlockWrite"/> method. Calls to <link to="#lockWrite"/>
+        can <b>not</b> be nested and must be followed by a<link
+        to="#unlockWrite"/> call before the next lockWrite call.
+
+        This method sets the medium state to <link to="MediumState_LockedWrite" />
+        on success. The state prior to this call must be <link to="MediumState_Created"/>
+        or <link to="MediumState_Inaccessible"/>. As you can see, an inaccessible
+        medium can be locked too. This is not an error; this method
+        performs a logical lock preventing modifications of this
+        medium through the VirtualBox API, not a physical lock of the
+        underlying storage unit.
+
+        For both, success and failure, this method returns the current
+        state of the medium <b>before</b> the operation.
+
+        <result name="VBOX_E_INVALID_OBJECT_STATE">
+          Invalid medium state (e.g. not created, locked, inaccessible,
+          creating, deleting).
+        </result>
+
+      </desc>
+      <param name="state" type="MediumState" dir="return">
+        <desc>
+          State of the medium after the operation.
+        </desc>
+      </param>
+    </method>
+
+    <method name="unlockWrite">
+      <desc>
+        Cancels the write lock previously set by <link to="#lockWrite"/>.
+
+        For both, success and failure, this method returns the current
+        state of the medium <b>after</b> the operation.
+
+        See <link to="#lockWrite"/> for more details.
+
+        <result name="VBOX_E_INVALID_OBJECT_STATE">
+          Medium not locked for writing.
+        </result>
+
+      </desc>
+      <param name="state" type="MediumState" dir="return">
+        <desc>
+          State of the medium after the operation.
+        </desc>
+      </param>
+    </method>
+
+    <method name="close">
+      <desc>
+        Closes this medium.
+
+        The medium must not be attached to any known virtual machine
+        and must not have any known child media, otherwise the
+        operation will fail.
+
+        When the medium is successfully closed, it gets removed from
+        the list of remembered media, but its storage unit is not
+        deleted. In particular, this means that this medium can be
+        later opened again using the <link
+        to="IVirtualBox::openHardDisk"/> call.
+
+        Note that after this method successfully returns, the given medium
+        object becomes uninitialized. This means that any attempt
+        to call any of its methods or attributes will fail with the
+        <tt>"Object not ready" (E_ACCESSDENIED)</tt> error.
+
+        <result name="VBOX_E_INVALID_OBJECT_STATE">
+          Invalid medium state (other than not created, created or
+          inaccessible).
+        </result>
+        <result name="VBOX_E_OBJECT_IN_USE">
+          Medium attached to virtual machine.
+        </result>
+        <result name="VBOX_E_FILE_ERROR">
+          Settings file not accessible.
+        </result>
+        <result name="VBOX_E_XML_ERROR">
+          Could not parse the settings file.
+        </result>
+
+      </desc>
+    </method>
+
     <!-- storage methods -->
 
     <method name="getProperty">
@@ -9066,7 +9095,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         Returns the value of the custom hard disk property with the given name.
 
         The list of all properties supported by the given hard disk format can
-        be obtained with <link to="IHardDiskFormat::describeProperties"/>.
+        be obtained with <link to="IMediumFormat::describeProperties"/>.
 
         Note that if this method returns an empty string in @a value, the
         requested property is supported but currently not assigned any value.
@@ -9089,7 +9118,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         Sets the value of the custom hard disk property with the given name.
 
         The list of all properties supported by the given hard disk format can
-        be obtained with <link to="IHardDiskFormat::describeProperties"/>.
+        be obtained with <link to="IMediumFormat::describeProperties"/>.
 
         Note that setting the property value to @c null or an empty string is
         equivalent to deleting the existing value. A default value (if it is
@@ -9120,7 +9149,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         existing properties.
 
         The list of all properties supported by the given hard disk format can
-        be obtained with <link to="IHardDiskFormat::describeProperties"/>.
+        be obtained with <link to="IMediumFormat::describeProperties"/>.
 
         The method returns two arrays, the array of property names corresponding
         to the @a names argument and the current values of these properties.
@@ -9165,7 +9194,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         IPC calls.
 
         The list of all properties supported by the given hard disk format can
-        be obtained with <link to="IHardDiskFormat::describeProperties"/>.
+        be obtained with <link to="IMediumFormat::describeProperties"/>.
 
         Note that setting the property value to @c null or an empty string is
         equivalent to deleting the existing value. A default value (if it is
@@ -9190,24 +9219,24 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         <link to="#deleteStorage"/>, otherwise the operation will fail.
 
         Before the operation starts, the hard disk is placed in
-        <link to="MediaState_Creating"/> state. If the create operation
-        fails, the media will be placed back in <link to="MediaState_NotCreated"/>
+        <link to="MediumState_Creating"/> state. If the create operation
+        fails, the medium will be placed back in <link to="MediumState_NotCreated"/>
         state.
 
         After the returned progress object reports that the operation has
-        successfully completed, the media state will be set to <link
-        to="MediaState_Created"/>, the hard disk will be remembered by this
+        successfully completed, the medium state will be set to <link
+        to="MediumState_Created"/>, the hard disk will be remembered by this
         VirtualBox installation and may be attached to virtual machines.
 
         <result name="VBOX_E_NOT_SUPPORTED">
           The variant of storage creation operation is not supported. See <link
-          to="IHardDiskFormat::capabilities"/>.
+          to="IMediumFormat::capabilities"/>.
         </result>
       </desc>
       <param name="logicalSize" type="unsigned long long" dir="in">
         <desc>Maximum logical size of the hard disk in megabytes.</desc>
       </param>
-      <param name="variant" type="HardDiskVariant" dir="in">
+      <param name="variant" type="MediumVariant" dir="in">
         <desc>Exact image variant which should be created.</desc>
       </param>
       <param name="progress" type="IProgress" dir="return">
@@ -9224,17 +9253,17 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         It will also fail if there is no storage unit to delete or if deletion
         is already in progress, or if the hard disk is being in use (locked for
         read or for write) or inaccessible. Therefore, the only valid state for
-        this operation to succeed is <link to="MediaState_Created"/>.
+        this operation to succeed is <link to="MediumState_Created"/>.
 
         Before the operation starts, the hard disk is placed to
-        <link to="MediaState_Deleting"/> state and gets removed from the list
+        <link to="MediumState_Deleting"/> state and gets removed from the list
         of remembered hard disks (media registry). If the delete operation
-        fails, the media will be remembered again and placed back to
-        <link to="MediaState_Created"/> state.
+        fails, the medium will be remembered again and placed back to
+        <link to="MediumState_Created"/> state.
 
         After the returned progress object reports that the operation is
-        complete, the media state will be set to
-        <link to="MediaState_NotCreated"/> and you will be able to use one of
+        complete, the medium state will be set to
+        <link to="MediumState_NotCreated"/> and you will be able to use one of
         the storage creation methods to create it again.
 
         <see>#close()</see>
@@ -9245,7 +9274,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         <result name="VBOX_E_NOT_SUPPORTED">
           Storage deletion is not allowed because neither of storage creation
           operations are supported. See
-          <link to="IHardDiskFormat::capabilities"/>.
+          <link to="IMediumFormat::capabilities"/>.
         </result>
 
         <note>
@@ -9267,10 +9296,10 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         disk in the format and at the location defined by the @a target
         argument.
 
-        The target hard disk must be in <link to="MediaState_NotCreated"/>
+        The target hard disk must be in <link to="MediumState_NotCreated"/>
         state (i.e. must not have an existing storage unit). Upon successful
         completion, this operation will set the type of the target hard disk to
-        <link to="HardDiskType_Normal"/> and create a storage unit necessary to
+        <link to="MediumType_Normal"/> and create a storage unit necessary to
         represent the differencing hard disk data in the given format (according
         to the storage format of the target object).
 
@@ -9279,17 +9308,17 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         VirtualBox installation and may be attached to virtual machines.
 
         <note>
-          The hard disk will be set to <link to="MediaState_LockedRead"/>
+          The hard disk will be set to <link to="MediumState_LockedRead"/>
           state for the duration of this operation.
         </note>
         <result name="VBOX_E_OBJECT_IN_USE">
           Hard disk not in @c NotCreated state.
         </result>
       </desc>
-      <param name="target" type="IHardDisk" dir="in">
+      <param name="target" type="IMedium" dir="in">
         <desc>Target hard disk.</desc>
       </param>
-      <param name="variant" type="HardDiskVariant" dir="in">
+      <param name="variant" type="MediumVariant" dir="in">
         <desc>Exact image variant which should be created.</desc>
       </param>
       <param name="progress" type="IProgress" dir="return">
@@ -9344,7 +9373,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
           </li>
           <li>
             Neither the source hard disk nor the target hard disk is an
-            <link to="HardDiskType_Immutable"/> hard disk.
+            <link to="MediumType_Immutable"/> hard disk.
           </li>
           <li>
             The part of the hard disk tree from the source hard disk to the
@@ -9357,19 +9386,19 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
           </li>
           <li>
             None of the involved hard disks are in
-            <link to="MediaState_LockedRead"/> or
-            <link to="MediaState_LockedWrite"/> state.
+            <link to="MediumState_LockedRead"/> or
+            <link to="MediumState_LockedWrite"/> state.
           </li>
         </ul>
 
         <note>
           This (source) hard disk and all intermediates will be placed to <link
-          to="MediaState_Deleting"/> state and the target hard disk will be
-          placed to <link to="MediaState_LockedWrite"/> state and for the
+          to="MediumState_Deleting"/> state and the target hard disk will be
+          placed to <link to="MediumState_LockedWrite"/> state and for the
           duration of this operation.
         </note>
       </desc>
-      <param name="targetId" type="wstring" dir="in">
+      <param name="targetId" type="uuid" mod="string" dir="in">
         <desc>UUID of the target ancestor or descendant hard disk.</desc>
       </param>
       <param name="progress" type="IProgress" dir="return">
@@ -9384,9 +9413,9 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         Starts creating a clone of this hard disk in the format and at the
         location defined by the @a target argument.
 
-        The target hard disk must be either in <link to="MediaState_NotCreated"/>
+        The target hard disk must be either in <link to="MediumState_NotCreated"/>
         state (i.e. must not have an existing storage unit) or in
-        <link to="MediaState_Created"/> state (i.e. created and not locked, and
+        <link to="MediumState_Created"/> state (i.e. created and not locked, and
         big enough to hold the data or else the copy will be partial). Upon
         successful completion, the cloned hard disk will contain exactly the
         same sector data as the hard disk being cloned, except that in the
@@ -9406,20 +9435,20 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         VirtualBox installation and may be attached to virtual machines.
 
         <note>
-          This hard disk will be placed to <link to="MediaState_LockedRead"/>
+          This hard disk will be placed to <link to="MediumState_LockedRead"/>
           state for the duration of this operation.
         </note>
         <result name="E_NOTIMPL">
           The specified cloning variant is not supported at the moment.
         </result>
       </desc>
-      <param name="target" type="IHardDisk" dir="in">
+      <param name="target" type="IMedium" dir="in">
         <desc>Target hard disk.</desc>
       </param>
-      <param name="variant" type="HardDiskVariant" dir="in">
+      <param name="variant" type="MediumVariant" dir="in">
         <desc>Exact image variant which should be created.</desc>
       </param>
-      <param name="parent" type="IHardDisk" dir="in">
+      <param name="parent" type="IMedium" dir="in">
         <desc>Parent of the cloned hard disk.</desc>
       </param>
       <param name="progress" type="IProgress" dir="return">
@@ -9436,9 +9465,9 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         This potentially creates temporary images, which can require a
         substantial amount of additional disk space.
 
-        This hard disk will be placed to <link to="MediaState_LockedWrite"/>
+        This hard disk will be placed to <link to="MediumState_LockedWrite"/>
         state and all its parent hard disks (if any) will be placed to
-        <link to="MediaState_LockedRead"/> state for the duration of this
+        <link to="MediumState_LockedRead"/> state for the duration of this
         operation.
 
         Please note that the results can be either returned straight away,
@@ -9463,15 +9492,15 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         state when it does not contain any sector data and any read operation is
         redirected to its parent hard disk.
 
-        This hard disk will be placed to <link to="MediaState_LockedWrite"/>
+        This hard disk will be placed to <link to="MediumState_LockedWrite"/>
         for the duration of this operation.
 
         <result name="VBOX_E_NOT_SUPPORTED">
           This is not a differencing hard disk.
         </result>
         <result name="VBOX_E_INVALID_OBJECT_STATE">
-          Hard disk is not in <link to="MediaState_Created"/> or
-          <link to="MediaState_Inaccessible"/> state.
+          Hard disk is not in <link to="MediumState_Created"/> or
+          <link to="MediumState_Inaccessible"/> state.
         </result>
       </desc>
       <param name="progress" type="IProgress" dir="return">
@@ -9483,7 +9512,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
 
   <!--
-  // IHardDiskFormat
+  // IMediumFormat
   /////////////////////////////////////////////////////////////////////////
   -->
 
@@ -9508,8 +9537,8 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   </enum>
 
   <enum
-    name="HardDiskFormatCapabilities"
-    uuid="1df1e4aa-d25a-4ba6-b2a2-02f60eb5903b"
+    name="MediumFormatCapabilities"
+    uuid="70fcf810-99e8-4edc-aee4-7f51d489e657"
   >
     <desc>
        Hard disk format capability flags.
@@ -9542,8 +9571,8 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
     <const name="Differencing" value="0x10">
       <desc>
-        Supports being used as a format for differencing hard disks (see <link
-        to="IHardDisk::createDiffStorage"/>).
+        Supports being used as a format for differencing media (see <link
+        to="IMedium::createDiffStorage"/>).
       </desc>
     </const>
 
@@ -9556,18 +9585,17 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <const name="File" value="0x40">
       <desc>
         The format backend operates on files (the <link to="IMedium::location"/>
-        attribute of the hard disk specifies a file used to store hard disk
+        attribute of the medium specifies a file used to store medium
         data; for a list of supported file extensions see
-        <link to="IHardDiskFormat::fileExtensions"/>).
+        <link to="IMediumFormat::fileExtensions"/>).
       </desc>
     </const>
 
     <const name="Properties" value="0x80">
       <desc>
         The format backend uses the property interface to configure the storage
-        location and properties (the <link to="IHardDiskFormat::describeProperties"/>
-        method is used to get access to properties supported by the given hard
-        disk format).
+        location and properties (the <link to="IMediumFormat::describeProperties"/>
+        method is used to get access to properties supported by the given medium format).
       </desc>
     </const>
 
@@ -9575,26 +9603,26 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   </enum>
 
   <interface
-     name="IHardDiskFormat" extends="$unknown"
-     uuid="7f3ba790-3a0b-4a8a-bac2-bb50150123c5"
+     name="IMediumFormat" extends="$unknown"
+     uuid="89f52554-d469-4799-9fad-1705e86a08b1"
      wsmap="managed"
      >
     <desc>
-        The IHardDiskFormat interface represents a virtual hard disk format.
+        The IMediumFormat interface represents a medium format.
 
-        Each hard disk format has an associated backend which is used to handle
-        hard disks stored in this format. This interface provides information
+        Each medium format has an associated backend which is used to handle
+        media stored in this format. This interface provides information
         about the properties of the associated backend.
 
-        Each hard disk format is identified by a string represented by the
+        Each medium format is identified by a string represented by the
         <link to="#id"/> attribute. This string is used in calls like
         <link to="IVirtualBox::createHardDisk"/> to specify the desired
         format.
 
-        The list of all supported hard disk formats can be obtained using
-        <link to="ISystemProperties::hardDiskFormats"/>.
+        The list of all supported medium formats can be obtained using
+        <link to="ISystemProperties::mediaFormats"/>.
 
-        <see>IHardDisk</see>
+        <see>IMedium</see>
     </desc>
 
     <attribute name="id" type="wstring" readonly="yes">
@@ -9608,10 +9636,10 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
           "VDI"
           "vdi"
           "VdI"</pre>
-        refer to the same hard disk format.
+        refer to the same medium format.
 
         This string is used in methods of other interfaces where it is necessary
-        to specify a hard disk format, such as
+        to specify a medium format, such as
         <link to="IVirtualBox::createHardDisk"/>.
       </desc>
     </attribute>
@@ -9630,12 +9658,12 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
         The first extension in the array is the extension preferred by the
         backend. It is recommended to use this extension when specifying a
-        location of the storage unit for a new hard disk.
+        location of the storage unit for a new medium.
 
         Note that some backends do not work on files, so this array may be
         empty.
 
-        <see>IHardDiskFormat::capabilities</see>
+        <see>IMediumFormat::capabilities</see>
       </desc>
     </attribute>
 
@@ -9644,7 +9672,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         Capabilities of the format as a set of bit flags.
 
         For the meaning of individual capability flags see
-        <link to="HardDiskFormatCapabilities"/>.
+        <link to="MediumFormatCapabilities"/>.
       </desc>
     </attribute>
 
@@ -9658,7 +9686,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         same and corresponds to the number of supported properties.
 
         The returned arrays are filled in only if the
-        <link to="HardDiskFormatCapabilities_Properties"/> flag is set.
+        <link to="MediumFormatCapabilities_Properties"/> flag is set.
         All arguments must be non-@c null.
 
         <see>DataType</see>
@@ -9680,178 +9708,6 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <param name="defaults" type="wstring" safearray="yes" dir="out">
         <desc>Array of default property values.</desc>
       </param>
-    </method>
-
-  </interface>
-
-
-  <!--
-  // IFloppyImage
-  /////////////////////////////////////////////////////////////////////////
-  -->
-
-  <interface
-    name="IFloppyImage" extends="IMedium"
-    uuid="faa6101f-078c-4b3a-ab75-75670c8170b3"
-    wsmap="managed"
-  >
-    <desc>
-      The IFloppyImage interface represents a medium containing the image
-      of a floppy disk. This is a subclass of <link to="IMedium" />; see remarks there.
-    </desc>
-
-  </interface>
-
-
-  <!--
-  // IDVDImage
-  /////////////////////////////////////////////////////////////////////////
-  -->
-
-  <interface
-    name="IDVDImage" extends="IMedium"
-    uuid="b1f90bbb-e8a9-4484-9af1-3638e943f763"
-    wsmap="managed"
-  >
-    <desc>
-      The IDVDImage interface represents a medium containing the image
-      of a CD or DVD disk in the ISO format.
-
-      This is a subclass of <link to="IMedium" />; see remarks there.
-    </desc>
-
-  </interface>
-
-
-  <!--
-  // IDVDDrive
-  /////////////////////////////////////////////////////////////////////////
-  -->
-
-  <interface
-    name="IDVDDrive" extends="$unknown"
-    uuid="156944d1-4c6d-4812-8f12-ab3890767ab4"
-    wsmap="managed"
-  >
-    <desc>
-      The IDVDDrive interface represents the virtual CD/DVD drive of the
-      virtual machine. An object of this type is returned by
-      <link to="IMachine::DVDDrive"/>.
-    </desc>
-
-    <attribute name="state" type="DriveState" readonly="yes">
-      <desc>Current drive state.</desc>
-    </attribute>
-
-    <attribute name="passthrough" type="boolean">
-      <desc>
-        When a host drive is mounted and passthrough is enabled
-        the guest OS will be able to directly send SCSI commands to
-        the host drive. This enables the guest OS to use CD/DVD writers
-        but is potentially dangerous.
-      </desc>
-    </attribute>
-
-    <method name="mountImage">
-      <desc>Mounts a CD/DVD image with the specified UUID.
-
-        <result name="VBOX_E_FILE_ERROR">
-          Invalid image file location.
-        </result>
-        <result name="VBOX_E_OBJECT_NOT_FOUND">
-          Could not find a CD/DVD image matching @a imageId.
-        </result>
-        <result name="VBOX_E_INVALID_OBJECT_STATE">
-          Invalid media state.
-        </result>
-
-      </desc>
-      <param name="imageId" type="wstring" dir="in"/>
-    </method>
-
-    <method name="captureHostDrive">
-      <desc>Captures the specified host CD/DVD drive.</desc>
-      <param name="drive" type="IHostDVDDrive" dir="in"/>
-    </method>
-
-    <method name="unmount">
-      <desc>Unmounts the currently mounted image or host drive.</desc>
-    </method>
-
-    <method name="getImage">
-      <desc>Returns the currently mounted CD/DVD image.</desc>
-      <param name="image" type="IDVDImage" dir="return"/>
-    </method>
-
-    <method name="getHostDrive">
-      <desc>Returns the currently mounted host CD/DVD drive.</desc>
-      <param name="drive" type="IHostDVDDrive" dir="return"/>
-    </method>
-
-  </interface>
-
-
-  <!--
-  // IFloppyDrive
-  /////////////////////////////////////////////////////////////////////////
-  -->
-
-  <interface
-     name="IFloppyDrive" extends="$unknown"
-     uuid="a8676d38-5cf0-4b53-85b1-aa693611ab86"
-     wsmap="managed"
-  >
-    <desc>
-      The IFloppyDrive interface represents the virtual floppy drive of the
-      virtual machine. An object of this type is returned by
-      <link to="IMachine::floppyDrive" />.
-    </desc>
-
-    <attribute name="enabled" type="boolean">
-      <desc>
-        Flag whether the floppy drive is enabled. If it is disabled,
-        the floppy drive will not be reported to the guest OS.
-      </desc>
-    </attribute>
-
-    <attribute name="state" type="DriveState" readonly="yes">
-      <desc>Current drive state.</desc>
-    </attribute>
-
-    <method name="mountImage">
-      <desc>Mounts a floppy image with the specified UUID.
-
-        <result name="VBOX_E_FILE_ERROR">
-          Invalid image file location.
-        </result>
-        <result name="VBOX_E_OBJECT_NOT_FOUND">
-          Could not find a floppy image matching @a imageID.
-        </result>
-        <result name="VBOX_E_INVALID_OBJECT_STATE">
-          Invalid media state.
-        </result>
-
-      </desc>
-      <param name="imageId" type="wstring" dir="in"/>
-    </method>
-
-    <method name="captureHostDrive">
-      <desc>Captures the specified host floppy drive.</desc>
-      <param name="drive" type="IHostFloppyDrive" dir="in"/>
-    </method>
-
-    <method name="unmount">
-      <desc>Unmounts the currently mounted image or host drive.</desc>
-    </method>
-
-    <method name="getImage">
-      <desc>Returns the currently mounted floppy image.</desc>
-      <param name="image" type="IFloppyImage" dir="return"/>
-    </method>
-
-    <method name="getHostDrive">
-      <desc>Returns the currently mounted host floppy drive.</desc>
-      <param name="drive" type="IHostFloppyDrive" dir="return"/>
     </method>
 
   </interface>
@@ -11344,7 +11200,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       attached to a running virtual machine's USB controller.
     </desc>
 
-    <attribute name="id" type="wstring" readonly="yes">
+    <attribute name="id" type="uuid" mod="string" readonly="yes">
       <desc>
         Unique USB device ID. This ID is built from #vendorId,
         #productId, #revision and #serialNumber.
@@ -12011,7 +11867,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
      name="IInternalSessionControl" extends="$unknown"
-     uuid="e28e19fb-23c2-4d1a-b6bf-ce147fa37b24"
+     uuid="989e2c33-8dfa-437a-9a15-5ad441d50dbf"
      internal="yes"
      wsmap="suppress"
      >
@@ -12097,36 +11953,6 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </desc>
     </method>
 
-    <method name="onDVDDriveChange">
-      <desc>
-        Triggered when settings of the DVD drive object of the
-        associated virtual machine have changed.
-
-        <result name="VBOX_E_INVALID_VM_STATE">
-          Session state prevents operation.
-        </result>
-        <result name="VBOX_E_INVALID_OBJECT_STATE">
-          Session type prevents operation.
-        </result>
-
-      </desc>
-    </method>
-
-    <method name="onFloppyDriveChange">
-      <desc>
-        Triggered when settings of the floppy drive object of the
-        associated virtual machine have changed.
-
-        <result name="VBOX_E_INVALID_VM_STATE">
-          Session state prevents operation.
-        </result>
-        <result name="VBOX_E_INVALID_OBJECT_STATE">
-          Session type prevents operation.
-        </result>
-
-      </desc>
-    </method>
-
     <method name="onNetworkAdapterChange">
       <desc>
         Triggered when settings of a network adapter of the
@@ -12189,6 +12015,23 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         </result>
 
       </desc>
+    </method>
+
+    <method name="onMediumChange">
+      <desc>
+        Triggered when attached media of the
+        associated virtual machine have changed.
+
+        <result name="VBOX_E_INVALID_VM_STATE">
+          Session state prevents operation.
+        </result>
+        <result name="VBOX_E_INVALID_OBJECT_STATE">
+          Session type prevents operation.
+        </result>
+
+      </desc>
+
+      <param name="mediumAttachment" type="IMediumAttachment" dir="in"/>
     </method>
 
     <method name="onVRDPServerChange">
@@ -12280,7 +12123,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         </result>
 
       </desc>
-      <param name="id" type="wstring" dir="in"/>
+      <param name="id" type="uuid" mod="string" dir="in"/>
       <param name="error" type="IVirtualBoxErrorInfo" dir="in"/>
     </method>
 
@@ -12518,10 +12361,11 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <enum
     name="StorageBus"
-    uuid="f381fdca-5953-41d0-b2bd-0542b012698d"
+    uuid="eee67ab3-668d-4ef5-91e0-7025fe4a0d7a"
   >
     <desc>
-      The connection type of the storage controller.
+      The bus type of the storage controller (IDE, SATA, SCSI or Floppy);
+      see <link to="IStorageController::bus" />.
     </desc>
     <const name="Null"         value="0">
       <desc>@c null value. Never used by the API.</desc>
@@ -12529,25 +12373,42 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <const name="IDE"       value="1"/>
     <const name="SATA"      value="2"/>
     <const name="SCSI"      value="3"/>
+    <const name="Floppy"    value="4"/>
   </enum>
 
   <enum
     name="StorageControllerType"
-    uuid="685387db-a837-4320-a258-08f46a22f62a"
+    uuid="8a412b8a-f43e-4456-bd37-b474f0879a58"
   >
     <desc>
-      Storage controller type.
+      The exact variant of storage controller hardware presented
+      to the guest; see <link to="IStorageController::controllerType" />.
     </desc>
 
     <const name="Null"         value="0">
       <desc>@c null value. Never used by the API.</desc>
     </const>
-    <const name="LsiLogic"  value="1"/>
-    <const name="BusLogic"  value="2"/>
-    <const name="IntelAhci" value="3"/>
-    <const name="PIIX3"     value="4"/>
-    <const name="PIIX4"     value="5"/>
-    <const name="ICH6"      value="6"/>
+    <const name="LsiLogic"  value="1">
+      <desc>A SCSI controller of the LsiLogic variant.</desc>
+    </const>
+    <const name="BusLogic"  value="2">
+      <desc>A SCSI controller of the BusLogic variant.</desc>
+    </const>
+    <const name="IntelAhci" value="3">
+      <desc>An Intel AHCI SATA controller; this is the only variant for SATA.</desc>
+    </const>
+    <const name="PIIX3"     value="4">
+      <desc>An IDE controller of the PIIX3 variant.</desc>
+    </const>
+    <const name="PIIX4"     value="5">
+      <desc>An IDE controller of the PIIX4 variant.</desc>
+    </const>
+    <const name="ICH6"      value="6">
+      <desc>An IDE controller of the ICH6 variant.</desc>
+    </const>
+    <const name="I82078"    value="7">
+      <desc>A floppy disk controller; this is the only variant for floppy drives.</desc>
+    </const>
   </enum>
 
   <interface
@@ -12557,15 +12418,21 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   >
     <desc>
         Represents a storage controller that is attached to a virtual machine
-        (<link to="IMachine" />). Just as hard disks are attached to storage
-        controllers in a real computer, virtual hard disks (represented by
-        <link to="IHardDisk" />) are attached to virtual storage controllers,
-        represented by this interface.
+        (<link to="IMachine" />). Just as disks (hard disks, DVDs, FDs) are
+        attached to storage controllers in a real computer, virtual media
+        (represented by <link to="IMedium" />) are attached to virtual
+        storage controllers, represented by this interface.
 
-        VirtualBox supports three types of virtual storage controller hardware:
-        IDE, SCSI, and SATA (see <link to="#bus" />). Depending on which of
-        these three is used, certain sub-types are available and can be
-        selected in <link to="#controllerType" />.
+        As opposed to physical hardware, VirtualBox has a very generic concept
+        of a storage controller, and for purposes of the Main API, all virtual
+        storage is attached to virtual machines via instances of this interface.
+        There are four types of such virtual storage controllers: IDE, SCSI, SATA
+        and Floppy (see <link to="#bus" />). Depending on which of these four is
+        used, certain sub-types may be available and can be selected in
+        <link to="#controllerType" />.
+
+        Depending on these settings, the guest operating system might see
+        significantly different virtual hardware.
     </desc>
 
     <attribute name="name" type="wstring" readonly="yes">
@@ -12573,7 +12440,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         Name of the storage controller, as originally specified with
         <link to="IMachine::addStorageController" />. This then uniquely
         identifies this controller with other method calls such as
-        <link to="IMachine::attachHardDisk" />.
+        <link to="IMachine::attachDevice" /> and  <link to="IMachine::mountMedium" />.
       </desc>
     </attribute>
 
@@ -12612,15 +12479,18 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
     <attribute name="bus" type="StorageBus" readonly="yes">
       <desc>
-        The connection type of the storage controller.
+        The bus type of the storage controller (IDE, SATA, SCSI or Floppy).
       </desc>
     </attribute>
 
     <attribute name="controllerType" type="StorageControllerType">
       <desc>
-        Type of the virtual storage controller. Depending on this value,
-        VirtualBox will provide a different virtual storage controller hardware
+        The exact variant of storage controller hardware presented
         to the guest.
+        Depending on this value, VirtualBox will provide a different
+        virtual storage controller hardware to the guest.
+        For SATA and floppy controllers, only one variant is available,
+        but for IDE and SCSI, there are several.
 
         For SCSI controllers, the default type is LsiLogic.
       </desc>
@@ -12629,6 +12499,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <method name="GetIDEEmulationPort">
       <desc>
         Gets the corresponding port number which is emulated as an IDE device.
+        Works only with SATA controllers.
 
         <result name="E_INVALIDARG">
           The @a devicePosition is not in the range 0 to 3.
@@ -12645,6 +12516,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <method name="SetIDEEmulationPort">
       <desc>
         Sets the port number which is emulated as an IDE device.
+        Works only with SATA controllers.
 
         <result name="E_INVALIDARG">
           The @a devicePosition is not in the range 0 to 3 or the

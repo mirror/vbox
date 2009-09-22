@@ -56,8 +56,8 @@ private:
 
     QIWidgetValidator         *mWvalType;
     CMachine                   mMachine;
-    QVector <CHostDVDDrive>    mHostDVDs;
-    QVector <CHostFloppyDrive> mHostFloppys;
+    QVector <CMedium>          mHostDVDs;
+    QVector <CMedium>          mHostFloppys;
 };
 
 #endif // __VBoxVMFirstRunWzd_h__

@@ -42,8 +42,6 @@ FORMS = \
     ui/VBoxVMSettingsSystem.ui \
     ui/VBoxVMSettingsDisplay.ui \
     ui/VBoxVMSettingsHD.ui \
-    ui/VBoxVMSettingsCD.ui \
-    ui/VBoxVMSettingsFD.ui \
     ui/VBoxVMSettingsAudio.ui \
     ui/VBoxVMSettingsNetwork.ui \
     ui/VBoxVMSettingsSerial.ui \

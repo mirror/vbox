@@ -51,12 +51,6 @@ class GuestMonitor:
     def onAdditionsStateChange(self):
         print  "%s: onAdditionsStateChange" %(self.mach.name)
 
-    def onDVDDriveChange(self):
-        print  "%s: onDVDDriveChange" %(self.mach.name)
-
-    def onFloppyDriveChange(self):
-        print  "%s: onFloppyDriveChange" %(self.mach.name)
-
     def onNetworkAdapterChange(self, adapter):
         print  "%s: onNetworkAdapterChange" %(self.mach.name)
 
@@ -68,6 +62,9 @@ class GuestMonitor:
 
     def onStorageControllerChange(self):
         print  "%s: onStorageControllerChange" %(self.mach.name)
+
+    def onMediumChange(self, attachment):
+        print  "%s: onMediumChange" %(self.mach.name)
 
     def onVRDPServerChange(self):
         print  "%s: onVRDPServerChange" %(self.mach.name)

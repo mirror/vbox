@@ -6,7 +6,7 @@
 #
 
 #
-# Copyright (C) 2006-2007 Sun Microsystems, Inc.
+# Copyright (C) 2006-2009 Sun Microsystems, Inc.
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -195,6 +195,10 @@ ifdef VBOX_GSOAP_INSTALLED
   vboxsoap_SOURCES = \
 	$(VBOXWEB_OUT_DIR)/soapC.cpp
  else
+  BLDPROGS += split-soapC
+  split-soapC_TEMPLATE = VBOXBLDPROG
+  split-soapC_SOURCES = split-soapC.cpp
+
   vboxsoap_SOURCES = \
   	$(VBOXWEB_OUT_DIR)/soapC-1.cpp \
   	$(VBOXWEB_OUT_DIR)/soapC-2.cpp \
@@ -395,7 +399,7 @@ ifdef VBOX_ONLY_SDK
  #
  BLDPROGS += filesplitter
  filesplitter_TEMPLATE = VBOXBLDPROG
- filesplitter_SOURCES = filesplitter.c
+ filesplitter_SOURCES = filesplitter.cpp
 
 endif # VBOX_ONLY_SDK
 
@@ -556,10 +560,9 @@ $(VBOXWEB_OUT_DIR)/soapC-1.cpp \
 + $(VBOXWEB_OUT_DIR)/soapC-18.cpp \
 + $(VBOXWEB_OUT_DIR)/soapC-19.cpp \
 + $(VBOXWEB_OUT_DIR)/soapC-20.cpp \
-: $(VBOXWEB_OUT_DIR)/soapC.cpp $(VBOX_PATH_WEBSERVICE)/split-soapC.sed | $$(dir $$@)
+: $(VBOXWEB_OUT_DIR)/soapC.cpp $$(TARGET_split-soapC) | $$(dir $$@)
 	$(RM) -f $(wildcard $(VBOXWEB_OUT_DIR)/soapC-?.cpp $(VBOXWEB_OUT_DIR)/soapC-??.cpp)
-	$(REDIRECT) -C $(VBOXWEB_OUT_DIR) -- \
-		$(SED) -f $(VBOX_PATH_WEBSERVICE)/split-soapC.sed soapC.cpp
+	$(TARGET_split-soapC) $(VBOXWEB_OUT_DIR)/soapC.cpp $(VBOXWEB_OUT_DIR) 20
 endif # !VBOX_WITHOUT_SPLIT_SOAPC
 
 endif # VBOX_GSOAP_INSTALLED

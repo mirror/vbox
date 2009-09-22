@@ -242,7 +242,7 @@ int VFSExplorer::TaskVFSExplorer::uploadProgress(unsigned uPercent, void *pvUser
         pTask->progress->COMGETTER(Canceled)(&fCanceled);
         if (fCanceled)
             return -1;
-        pTask->progress->setCurrentOperationProgress(uPercent);
+        pTask->progress->SetCurrentOperationProgress(uPercent);
     }
     return VINF_SUCCESS;
 }
@@ -289,7 +289,7 @@ HRESULT VFSExplorer::updateFS(TaskVFSExplorer *aTask)
             throw setError(VBOX_E_FILE_ERROR, tr ("Can't open directory '%s' (%Rrc)"), pszPath, vrc);
 
         if(aTask->progress)
-            aTask->progress->setCurrentOperationProgress(33);
+            aTask->progress->SetCurrentOperationProgress(33);
         RTDIRENTRY entry;
         while (RT_SUCCESS(vrc))
         {
@@ -303,7 +303,7 @@ HRESULT VFSExplorer::updateFS(TaskVFSExplorer *aTask)
             }
         }
         if(aTask->progress)
-            aTask->progress->setCurrentOperationProgress(66);
+            aTask->progress->SetCurrentOperationProgress(66);
     }
     catch(HRESULT aRC)
     {
@@ -317,7 +317,7 @@ HRESULT VFSExplorer::updateFS(TaskVFSExplorer *aTask)
         RTDirClose(pDir);
 
     if(aTask->progress)
-        aTask->progress->setCurrentOperationProgress(99);
+        aTask->progress->SetCurrentOperationProgress(99);
 
     /* Assign the result on success (this clears the old list) */
     if (rc == S_OK)
@@ -362,7 +362,7 @@ HRESULT VFSExplorer::deleteFS(TaskVFSExplorer *aTask)
             if (RT_FAILURE(vrc))
                 throw setError(VBOX_E_FILE_ERROR, tr ("Can't delete file '%s' (%Rrc)"), szPath, vrc);
             if(aTask->progress)
-                aTask->progress->setCurrentOperationProgress((ULONG)(fPercentStep * i));
+                aTask->progress->SetCurrentOperationProgress((ULONG)(fPercentStep * i));
         }
     }
     catch(HRESULT aRC)
@@ -488,7 +488,7 @@ HRESULT VFSExplorer::deleteS3(TaskVFSExplorer *aTask)
             if (RT_FAILURE(vrc))
                 throw setError(VBOX_E_FILE_ERROR, tr ("Can't delete file '%s' (%Rrc)"), (*it).c_str(), vrc);
             if(aTask->progress)
-                aTask->progress->setCurrentOperationProgress((ULONG)(fPercentStep * i));
+                aTask->progress->SetCurrentOperationProgress((ULONG)(fPercentStep * i));
         }
     }
     catch(HRESULT aRC)

@@ -931,7 +931,7 @@ static void testStrStr(RTTEST hTest)
 
 void testMinistring(RTTEST hTest)
 {
-    RTTestSub(hTest, "class ministring");
+    RTTestSub(hTest, "class iprt::MiniString");
 
 #define CHECK(expr) \
     do { \
@@ -1005,6 +1005,16 @@ void testMinistring(RTTEST hTest)
     {
         copy2.reserve(50);      // should be ignored after 50 loops
         copy2.append("1");
+    }
+    CHECK( (copy2.length() == 100) );
+
+    copy2.setNull();
+    for (int i = 0;
+         i < 100;
+         ++i)
+    {
+        copy2.reserve(50);      // should be ignored after 50 loops
+        copy2.append('1');
     }
     CHECK( (copy2.length() == 100) );
 

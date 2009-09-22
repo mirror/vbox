@@ -906,18 +906,18 @@ void VBoxSelectorWnd::vmDelete (const QString &aUuid /*= QUuid_null*/)
                 return;
             CMachine machine = session.GetMachine();
             /* Detach all attached Hard Disks */
-            CHardDiskAttachmentVector vec = machine.GetHardDiskAttachments();
+            CMediumAttachmentVector vec = machine.GetMediumAttachments();
             for (int i = 0; i < vec.size(); ++ i)
             {
-                CHardDiskAttachment hda = vec [i];
+                CMediumAttachment hda = vec [i];
                 const QString ctlName = hda.GetController();
 
-                machine.DetachHardDisk(ctlName, hda.GetPort(), hda.GetDevice());
+                machine.DetachDevice(ctlName, hda.GetPort(), hda.GetDevice());
                 if (!machine.isOk())
                 {
                     CStorageController ctl = machine.GetStorageControllerByName(ctlName);
                     vboxProblem().cannotDetachHardDisk (this, machine,
-                        vboxGlobal().getMedium (CMedium (hda.GetHardDisk())).location(),
+                        vboxGlobal().getMedium (CMedium (hda.GetMedium())).location(),
                         ctl.GetBus(), hda.GetPort(), hda.GetDevice());
                 }
             }
@@ -1603,7 +1603,7 @@ void VBoxSelectorWnd::mediumEnumFinished (const VBoxMediaList &list)
         /* look for at least one inaccessible media */
         VBoxMediaList::const_iterator it;
         for (it = list.begin(); it != list.end(); ++ it)
-            if ((*it).state() == KMediaState_Inaccessible)
+            if ((*it).state() == KMediumState_Inaccessible)
                 break;
 
         if (it != list.end() && vboxProblem().remindAboutInaccessibleMedia())

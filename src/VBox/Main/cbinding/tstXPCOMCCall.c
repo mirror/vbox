@@ -139,18 +139,6 @@ static nsresult OnAdditionsStateChange(IConsoleCallback *pThis )
     return 0;
 }
 
-static nsresult OnDVDDriveChange(IConsoleCallback *pThis )
-{
-    printf("OnDVDDriveChange \n");
-    return 0;
-}
-
-static nsresult OnFloppyDriveChange(IConsoleCallback *pThis )
-{
-    printf("OnFloppyDriveChange \n");
-    return 0;
-}
-
 static nsresult OnNetworkAdapterChange(
     IConsoleCallback *pThis,
     INetworkAdapter * networkAdapter
@@ -175,9 +163,16 @@ static nsresult OnParallelPortChange(
     return 0;
 }
 
-static nsresult OnStorageControllerChange(IConsoleCallback *pThis )
+static nsresult OnStorageControllerChange(IConsoleCallback *pThis)
 {
     printf("OnStorageControllerChange\n");
+    return 0;
+}
+
+static nsresult OnMediumChange(IConsoleCallback *pThis,
+                               IMediumAttachment *mediumAttachment)
+{
+    printf("OnMediumChange\n");
     return 0;
 }
 
@@ -327,11 +322,10 @@ static void registerCallBack(IVirtualBox *virtualBox, ISession *session, PRUnich
             consoleCallback->vtbl->OnStateChange = &OnStateChange;
             consoleCallback->vtbl->OnAdditionsStateChange = &OnAdditionsStateChange;
             consoleCallback->vtbl->OnDVDDriveChange = &OnDVDDriveChange;
-            consoleCallback->vtbl->OnFloppyDriveChange = &OnFloppyDriveChange;
-            consoleCallback->vtbl->OnNetworkAdapterChange = &OnNetworkAdapterChange;
             consoleCallback->vtbl->OnSerialPortChange = &OnSerialPortChange;
             consoleCallback->vtbl->OnParallelPortChange = &OnParallelPortChange;
             consoleCallback->vtbl->OnStorageControllerChange = &OnStorageControllerChange;
+            consoleCallback->vtbl->OnMediumChange = &OnMediumChange;
             consoleCallback->vtbl->OnVRDPServerChange = &OnVRDPServerChange;
             consoleCallback->vtbl->OnUSBControllerChange = &OnUSBControllerChange;
             consoleCallback->vtbl->OnUSBDeviceStateChange = &OnUSBDeviceStateChange;

@@ -77,16 +77,11 @@
 #include <ApplianceImpl.h>
 #include <SnapshotImpl.h>
 #include <MediumImpl.h>
-#include <HardDiskImpl.h>
-#include <HardDiskFormatImpl.h>
+#include <MediumFormatImpl.h>
 #include <ProgressImpl.h>
-#include <DVDDriveImpl.h>
-#include <FloppyDriveImpl.h>
 #include <VRDPServerImpl.h>
 #include <SharedFolderImpl.h>
 #include <HostImpl.h>
-#include <HostDVDDriveImpl.h>
-#include <HostFloppyDriveImpl.h>
 #include <HostNetworkInterfaceImpl.h>
 #include <GuestOSTypeImpl.h>
 #include <NetworkAdapterImpl.h>
@@ -129,37 +124,20 @@ NS_IMPL_THREADSAFE_ISUPPORTS1_CI(SnapshotMachine, IMachine)
 NS_DECL_CLASSINFO(Snapshot)
 NS_IMPL_THREADSAFE_ISUPPORTS1_CI(Snapshot, ISnapshot)
 
-NS_DECL_CLASSINFO(DVDImage)
-NS_IMPL_THREADSAFE_ISUPPORTS2_AMBIGUOUS_CI(DVDImage,
-                                           IMedium, ImageMediumBase,
-                                           IDVDImage, DVDImage)
-NS_DECL_CLASSINFO(FloppyImage)
-NS_IMPL_THREADSAFE_ISUPPORTS2_AMBIGUOUS_CI(FloppyImage,
-                                           IMedium, ImageMediumBase,
-                                           IFloppyImage, FloppyImage)
+NS_DECL_CLASSINFO(Medium)
+NS_IMPL_THREADSAFE_ISUPPORTS1_CI(Medium, IMedium)
 
-NS_DECL_CLASSINFO(HardDisk)
-NS_IMPL_THREADSAFE_ISUPPORTS2_AMBIGUOUS_CI(HardDisk,
-                                           IMedium, MediumBase,
-                                           IHardDisk, HardDisk)
+NS_DECL_CLASSINFO(MediumFormat)
+NS_IMPL_THREADSAFE_ISUPPORTS1_CI(MediumFormat, IMediumFormat)
 
-NS_DECL_CLASSINFO(HardDiskFormat)
-NS_IMPL_THREADSAFE_ISUPPORTS1_CI(HardDiskFormat, IHardDiskFormat)
-
-NS_DECL_CLASSINFO(HardDiskAttachment)
-NS_IMPL_THREADSAFE_ISUPPORTS1_CI(HardDiskAttachment, IHardDiskAttachment)
+NS_DECL_CLASSINFO(MediumAttachment)
+NS_IMPL_THREADSAFE_ISUPPORTS1_CI(MediumAttachment, IMediumAttachment)
 
 NS_DECL_CLASSINFO(Progress)
 NS_IMPL_THREADSAFE_ISUPPORTS1_CI(Progress, IProgress)
 
 NS_DECL_CLASSINFO(CombinedProgress)
 NS_IMPL_THREADSAFE_ISUPPORTS1_CI(CombinedProgress, IProgress)
-
-NS_DECL_CLASSINFO(DVDDrive)
-NS_IMPL_THREADSAFE_ISUPPORTS1_CI(DVDDrive, IDVDDrive)
-
-NS_DECL_CLASSINFO(FloppyDrive)
-NS_IMPL_THREADSAFE_ISUPPORTS1_CI(FloppyDrive, IFloppyDrive)
 
 NS_DECL_CLASSINFO(SharedFolder)
 NS_IMPL_THREADSAFE_ISUPPORTS1_CI(SharedFolder, ISharedFolder)
@@ -171,12 +149,6 @@ NS_IMPL_THREADSAFE_ISUPPORTS1_CI(VRDPServer, IVRDPServer)
 
 NS_DECL_CLASSINFO(Host)
 NS_IMPL_THREADSAFE_ISUPPORTS1_CI(Host, IHost)
-
-NS_DECL_CLASSINFO(HostDVDDrive)
-NS_IMPL_THREADSAFE_ISUPPORTS1_CI(HostDVDDrive, IHostDVDDrive)
-
-NS_DECL_CLASSINFO(HostFloppyDrive)
-NS_IMPL_THREADSAFE_ISUPPORTS1_CI(HostFloppyDrive, IHostFloppyDrive)
 
 NS_DECL_CLASSINFO(HostNetworkInterface)
 NS_IMPL_THREADSAFE_ISUPPORTS1_CI(HostNetworkInterface, IHostNetworkInterface)

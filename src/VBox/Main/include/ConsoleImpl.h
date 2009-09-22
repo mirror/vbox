@@ -96,8 +96,6 @@ public:
         COM_INTERFACE_ENTRY(IDispatch)
     END_COM_MAP()
 
-    NS_DECL_ISUPPORTS
-
     Console();
     ~Console();
 
@@ -174,12 +172,11 @@ public:
     HRESULT updateMachineState (MachineState_T aMachineState);
 
     // events from IInternalSessionControl
-    HRESULT onDVDDriveChange();
-    HRESULT onFloppyDriveChange();
     HRESULT onNetworkAdapterChange (INetworkAdapter *aNetworkAdapter, BOOL changeAdapter);
     HRESULT onSerialPortChange (ISerialPort *aSerialPort);
     HRESULT onParallelPortChange (IParallelPort *aParallelPort);
     HRESULT onStorageControllerChange ();
+    HRESULT onMediumChange(IMediumAttachment *aMediumAttachment);
     HRESULT onVRDPServerChange();
     HRESULT onUSBControllerChange();
     HRESULT onSharedFolderChange (BOOL aGlobal);
@@ -412,8 +409,8 @@ private:
 #endif
     HRESULT powerDownHostInterfaces();
 
-    HRESULT setMachineState (MachineState_T aMachineState, bool aUpdateServer = true);
-    HRESULT setMachineStateLocally (MachineState_T aMachineState)
+    HRESULT setMachineState(MachineState_T aMachineState, bool aUpdateServer = true);
+    HRESULT setMachineStateLocally(MachineState_T aMachineState)
     {
         return setMachineState (aMachineState, false /* aUpdateServer */);
     }
@@ -438,14 +435,13 @@ private:
                              PCFGMNODE pInst, bool fAttachDetach);
     static DECLCALLBACK(void) vmstateChangeCallback(PVM aVM, VMSTATE aState,
                                                     VMSTATE aOldState, void *aUser);
-    HRESULT doDriveChange (const char *pszDevice, unsigned uInstance,
-                           unsigned uLun, DriveState_T eState,
-                           DriveState_T *peState, const char *pszPath,
-                           bool fPassthrough);
     static DECLCALLBACK(int) changeDrive (Console *pThis, const char *pszDevice,
                                           unsigned uInstance, unsigned uLun,
-                                          DriveState_T eState, DriveState_T *peState,
                                           const char *pszPath, bool fPassthrough);
+    const char *controllerTypeToDev(StorageControllerType_T enmCtrlType);
+    HRESULT convertBusPortDeviceToLun(StorageBus_T enmBus, LONG port, LONG device, unsigned &uLun);
+    HRESULT doMediumChange(IMediumAttachment *aMediumAttachment);
+
 #ifdef VBOX_DYNAMIC_NET_ATTACH
     HRESULT doNetworkAdapterChange (const char *pszDevice, unsigned uInstance,
                                     unsigned uLun, INetworkAdapter *aNetworkAdapter);
@@ -458,22 +454,19 @@ private:
     HRESULT attachUSBDevice (IUSBDevice *aHostDevice, ULONG aMaskedIfs);
     HRESULT detachUSBDevice (USBDeviceList::iterator &aIt);
 
-    static DECLCALLBACK(int)
-    usbAttachCallback (Console *that, IUSBDevice *aHostDevice, PCRTUUID aUuid,
+    static DECLCALLBACK(int) usbAttachCallback (Console *that, IUSBDevice *aHostDevice, PCRTUUID aUuid,
                        bool aRemote, const char *aAddress, ULONG aMaskedIfs);
-    static DECLCALLBACK(int)
-    usbDetachCallback (Console *that, USBDeviceList::iterator *aIt, PCRTUUID aUuid);
+    static DECLCALLBACK(int) usbDetachCallback (Console *that, USBDeviceList::iterator *aIt, PCRTUUID aUuid);
 #endif
 
-    static DECLCALLBACK (int)
-    stateProgressCallback (PVM pVM, unsigned uPercent, void *pvUser);
+    static DECLCALLBACK(int)    fntTakeSnapshotWorker(RTTHREAD Thread, void *pvUser);
 
-    static DECLCALLBACK(void)
-    setVMErrorCallback (PVM pVM, void *pvUser, int rc, RT_SRC_POS_DECL,
-                        const char *pszFormat, va_list args);
+    static DECLCALLBACK(int)    stateProgressCallback(PVM pVM, unsigned uPercent, void *pvUser);
 
-    static DECLCALLBACK(void)
-    setVMRuntimeErrorCallback (PVM pVM, void *pvUser, uint32_t fFatal,
+    static DECLCALLBACK(void)   setVMErrorCallback(PVM pVM, void *pvUser, int rc, RT_SRC_POS_DECL,
+                                                   const char *pszFormat, va_list args);
+
+    static DECLCALLBACK(void) setVMRuntimeErrorCallback (PVM pVM, void *pvUser, uint32_t fFatal,
                                const char *pszErrorId,
                                const char *pszFormat, va_list va);
 
@@ -521,9 +514,7 @@ private:
     const ComPtr<IMachine> mMachine;
     const ComPtr<IInternalMachineControl> mControl;
 
-    const ComPtr<IVRDPServer> mVRDPServer;
-    const ComPtr<IDVDDrive> mDVDDrive;
-    const ComPtr<IFloppyDrive> mFloppyDrive;
+    const ComPtr <IVRDPServer> mVRDPServer;
 
     ConsoleVRDPServer * const mConsoleVRDPServer;
 
@@ -551,13 +542,6 @@ private:
     bool mVMDestroying : 1;
     /** true when power down is initiated by vmstateChangeCallback (EMT) */
     bool mVMPoweredOff : 1;
-
-    /** The current DVD drive state in the VM.
-     * This does not have to match the state maintained in the DVD. */
-    DriveState_T meDVDState;
-    /** The current Floppy drive state in the VM.
-     * This does not have to match the state maintained in the Floppy. */
-    DriveState_T meFloppyState;
 
     /** The current network attachment type in the VM.
      * This doesn't have to match the network attachment type

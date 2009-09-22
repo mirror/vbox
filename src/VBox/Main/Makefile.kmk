@@ -292,15 +292,10 @@ VBoxSVC_SOURCES = \
 	MachineImpl.cpp \
 	SnapshotImpl.cpp \
 	MediumImpl.cpp \
-	HardDiskImpl.cpp \
-	HardDiskAttachmentImpl.cpp \
-	HardDiskFormatImpl.cpp \
+	MediumAttachmentImpl.cpp \
+	MediumFormatImpl.cpp \
 	ProgressImpl.cpp \
-	DVDDriveImpl.cpp \
-	FloppyDriveImpl.cpp \
 	HostImpl.cpp \
-	HostDVDDriveImpl.cpp \
-	HostFloppyDriveImpl.cpp \
 	HostNetworkInterfaceImpl.cpp \
 	DHCPServerImpl.cpp \
 	DHCPServerRunner.cpp \
@@ -786,9 +781,7 @@ $(PATH_VBoxCOM)/VirtualBox_i.c \
 #
 VBoxSVC_VBOX_HEADERS = \
 	include/collection.h \
-	include/MachineImpl.h \
-	include/HostDVDDriveImpl.h \
-	include/HostFloppyDriveImpl.h
+	include/MachineImpl.h
 VBoxSVC_VBOX_TRANSLATIONS = \
 	nls/VBoxSVC_de.ts
 

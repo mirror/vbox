@@ -35,7 +35,7 @@ VBoxVMFirstRunWzd::VBoxVMFirstRunWzd (const CMachine &aMachine, QWidget *aParent
     initializeWizardHdr();
 
     /* Hide unnecessary text labels */
-    CHardDiskAttachmentVector vec = mMachine.GetHardDiskAttachments();
+    CMediumAttachmentVector vec = mMachine.GetMediumAttachments();
     if (vec.size() != 0)
     {
         mTextWelcome2->setHidden (true);
@@ -118,36 +118,24 @@ void VBoxVMFirstRunWzd::accept()
     {
         if (mRbHost->isChecked())
         {
-            CHostDVDDrive hostDrive = mHostDVDs [mCbHost->currentIndex()];
+            CMedium hostDrive = mHostDVDs [mCbHost->currentIndex()];
             if (!hostDrive.isNull())
-            {
-                CDVDDrive virtualDrive = mMachine.GetDVDDrive();
-                virtualDrive.CaptureHostDrive (hostDrive);
-            }
+                mMachine.MountMedium ("IDE", 1, 0, hostDrive.GetId());
         }
         else if (mRbImage->isChecked())
-        {
-            CDVDDrive virtualDrive = mMachine.GetDVDDrive();
-            virtualDrive.MountImage (mCbImage->id());
-        }
+            mMachine.MountMedium ("IDE", 1, 0, mCbImage->id());
     }
     /* Floppy Media selected */
     else if (mRbFdType->isChecked())
     {
         if (mRbHost->isChecked())
         {
-            CHostFloppyDrive hostDrive = mHostFloppys [mCbHost->currentIndex()];
+            CMedium hostDrive = mHostFloppys [mCbHost->currentIndex()];
             if (!hostDrive.isNull())
-            {
-                CFloppyDrive virtualDrive = mMachine.GetFloppyDrive();
-                virtualDrive.CaptureHostDrive (hostDrive);
-            }
+                mMachine.MountMedium ("IDE", 1, 0, hostDrive.GetId());
         }
         else if (mRbImage->isChecked())
-        {
-            CFloppyDrive virtualDrive = mMachine.GetFloppyDrive();
-            virtualDrive.MountImage (mCbImage->id());
-        }
+            mMachine.MountMedium ("IDE", 1, 0, mCbImage->id());
     }
 
     QIAbstractWizard::accept();
@@ -175,13 +163,13 @@ void VBoxVMFirstRunWzd::mediaTypeChanged()
     if (sender() == mRbCdType)
     {
         /* Search for the host dvd-drives */
-        CHostDVDDriveVector coll =
+        CMediumVector coll =
             vboxGlobal().virtualBox().GetHost().GetDVDDrives();
         mHostDVDs.resize (coll.size());
 
         for (int id = 0; id < coll.size(); ++id)
         {
-            CHostDVDDrive hostDVD = coll[id];
+            CMedium hostDVD = coll[id];
             QString name = hostDVD.GetName();
             QString description = hostDVD.GetDescription();
             QString fullName = description.isEmpty() ?
@@ -191,19 +179,19 @@ void VBoxVMFirstRunWzd::mediaTypeChanged()
         }
 
         /* Switch media images type to DVD */
-        mCbImage->setType (VBoxDefs::MediaType_DVD);
+        mCbImage->setType (VBoxDefs::MediumType_DVD);
     }
     /* Floppy media type selected */
     else if (sender() == mRbFdType)
     {
         /* Search for the host floppy-drives */
-        CHostFloppyDriveVector coll =
+        CMediumVector coll =
             vboxGlobal().virtualBox().GetHost().GetFloppyDrives();
         mHostFloppys.resize (coll.size());
 
         for (int id = 0; id < coll.size(); ++id)
         {
-            CHostFloppyDrive hostFloppy = coll[id];
+            CMedium hostFloppy = coll[id];
             QString name = hostFloppy.GetName();
             QString description = hostFloppy.GetDescription();
             QString fullName = description.isEmpty() ?
@@ -213,7 +201,7 @@ void VBoxVMFirstRunWzd::mediaTypeChanged()
         }
 
         /* Switch media images type to FD */
-        mCbImage->setType (VBoxDefs::MediaType_Floppy);
+        mCbImage->setType (VBoxDefs::MediumType_Floppy);
     }
 
     /* Repopulate the media list */
@@ -235,12 +223,12 @@ void VBoxVMFirstRunWzd::mediaSourceChanged()
 
 void VBoxVMFirstRunWzd::openMediaManager()
 {
-    VBoxDefs::MediaType type =
-        mRbCdType->isChecked() ? VBoxDefs::MediaType_DVD :
-        mRbFdType->isChecked() ? VBoxDefs::MediaType_Floppy :
-        VBoxDefs::MediaType_Invalid;
+    VBoxDefs::MediumType type =
+        mRbCdType->isChecked() ? VBoxDefs::MediumType_DVD :
+        mRbFdType->isChecked() ? VBoxDefs::MediumType_Floppy :
+        VBoxDefs::MediumType_Invalid;
 
-    AssertReturnVoid (type != VBoxDefs::MediaType_Invalid);
+    AssertReturnVoid (type != VBoxDefs::MediumType_Invalid);
 
     VBoxMediaManagerDlg dlg (this);
     dlg.setup (type, true /* aDoSelect */);

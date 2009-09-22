@@ -442,71 +442,52 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
         RTPrintf("2D Video Acceleration: %s\n", accelerate2dVideo ? "on" : "off");
 #endif
 
-    ComPtr<IFloppyDrive> floppyDrive;
-    rc = machine->COMGETTER(FloppyDrive)(floppyDrive.asOutParam());
-    if (SUCCEEDED(rc) && floppyDrive)
+    /*
+     * Floppy.
+     */
+    ComPtr<IStorageController> FloppyCtl;
+    bool                       fFloppyEnabled = false;
+
+    rc = machine->GetStorageControllerByName(Bstr("FD"), FloppyCtl.asOutParam());
+    if (SUCCEEDED(rc))
+        fFloppyEnabled = true;
+
+    if (details == VMINFO_MACHINEREADABLE)
+        RTPrintf("floppy=\"%s\"\n", fFloppyEnabled ? "on" : "off");
+    else
+        RTPrintf("Floppy:          %s\n", fFloppyEnabled ? "enabled" : "disabled");
+
+    /*
+     * Floppy drives and media
+     */
+    if (fFloppyEnabled)
     {
-        BOOL fFloppyEnabled;
-        floppyDrive->COMGETTER(Enabled)(&fFloppyEnabled);
-        Utf8Str pszFloppy = "invalid";
-        if (fFloppyEnabled)
+        ComPtr<IMedium> floppyMedium;
+        Bstr  filePath;
+        ULONG cFloppyPorts;
+
+        FloppyCtl->COMGETTER(PortCount)(&cFloppyPorts);
+        for (ULONG i = 0; i < cFloppyPorts; ++ i)
         {
-            DriveState_T floppyState;
-            floppyDrive->COMGETTER(State)(&floppyState);
-            switch (floppyState)
+            rc = machine->GetMedium(Bstr("FD"), 0, i, floppyMedium.asOutParam());
+            if (SUCCEEDED(rc) && floppyMedium)
             {
-                case DriveState_ImageMounted:
+                floppyMedium->COMGETTER(Location)(filePath.asOutParam());
+                floppyMedium->COMGETTER(Id)(uuid.asOutParam());
+                if (details == VMINFO_MACHINEREADABLE)
                 {
-                    ComPtr<IFloppyImage> floppyImage;
-                    rc = floppyDrive->GetImage(floppyImage.asOutParam());
-                    if (SUCCEEDED(rc) && floppyImage)
-                    {
-                        Bstr imagePath;
-                        floppyImage->COMGETTER(Location)(imagePath.asOutParam());
-                        Bstr imageGuid;
-                        floppyImage->COMGETTER(Id)(imageGuid.asOutParam());
-                        if (details == VMINFO_MACHINEREADABLE)
-                        {
-                            RTPrintf("FloppyImageUUID=\"%s\"\n", Utf8Str(imageGuid).raw());
-                            pszFloppy = Utf8StrFmt("%lS", imagePath.raw());
-                        }
-                        else
-                            pszFloppy = Utf8StrFmt("%lS (UUID: %s)", imagePath.raw(), Utf8Str(imageGuid).raw());
-                    }
-                    break;
+                    RTPrintf("floppy%d=\"%lS\"\n", i, filePath.raw());
+                    RTPrintf("FloppyImageUUID%d=\"%s\"\n", i, Utf8Str(uuid).raw());
                 }
-
-                case DriveState_HostDriveCaptured:
-                {
-                    ComPtr<IHostFloppyDrive> hostFloppyDrive;
-                    rc = floppyDrive->GetHostDrive(hostFloppyDrive.asOutParam());
-                    if (SUCCEEDED(rc) && floppyDrive)
-                    {
-                        Bstr driveName;
-                        hostFloppyDrive->COMGETTER(Name)(driveName.asOutParam());
-                        if (details == VMINFO_MACHINEREADABLE)
-                            pszFloppy = Utf8StrFmt("host:%lS", driveName.raw());
-                        else
-                            pszFloppy = Utf8StrFmt("Host drive %lS", driveName.raw());
-                    }
-                    break;
-                }
-
-                case DriveState_NotMounted:
-                {
-                    pszFloppy = "empty";
-                    break;
-                }
+                else
+                    RTPrintf("Floppy %d:        %lS (UUID: %s)\n", i, filePath.raw(), Utf8Str(uuid).raw());
+            }
+            else
+            {
+                if (details == VMINFO_MACHINEREADABLE)
+                    RTPrintf("floppy%d=\"none\"\n",i);
             }
         }
-        else
-        {
-            pszFloppy = "disabled";
-        }
-        if (details == VMINFO_MACHINEREADABLE)
-            RTPrintf("floppy=\"%s\"\n", pszFloppy.raw());
-        else
-            RTPrintf("Floppy:          %s\n", pszFloppy.raw());
     }
 
     /*
@@ -532,14 +513,14 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
      */
     if (fSataEnabled)
     {
-        ComPtr<IHardDisk> hardDisk;
+        ComPtr<IMedium> hardDisk;
         Bstr  filePath;
         ULONG cSataPorts;
 
         SataCtl->COMGETTER(PortCount)(&cSataPorts);
         for (ULONG i = 0; i < cSataPorts; ++ i)
         {
-            rc = machine->GetHardDisk(Bstr("SATA"), i, 0, hardDisk.asOutParam());
+            rc = machine->GetMedium(Bstr("SATA"), i, 0, hardDisk.asOutParam());
             if (SUCCEEDED(rc) && hardDisk)
             {
                 hardDisk->COMGETTER(Location)(filePath.asOutParam());
@@ -594,9 +575,9 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
             RTPrintf("IDE Controller:  %s\n", pszIdeController);
     }
 
-    ComPtr<IHardDisk> hardDisk;
+    ComPtr<IMedium> hardDisk;
     Bstr filePath;
-    rc = machine->GetHardDisk(Bstr("IDE"), 0, 0, hardDisk.asOutParam());
+    rc = machine->GetMedium(Bstr("IDE"), 0, 0, hardDisk.asOutParam());
     if (SUCCEEDED(rc) && hardDisk)
     {
         hardDisk->COMGETTER(Location)(filePath.asOutParam());
@@ -614,7 +595,7 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
         if (details == VMINFO_MACHINEREADABLE)
             RTPrintf("hda=\"none\"\n");
     }
-    rc = machine->GetHardDisk(Bstr("IDE"), 0, 1, hardDisk.asOutParam());
+    rc = machine->GetMedium(Bstr("IDE"), 0, 1, hardDisk.asOutParam());
     if (SUCCEEDED(rc) && hardDisk)
     {
         hardDisk->COMGETTER(Location)(filePath.asOutParam());
@@ -632,7 +613,7 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
         if (details == VMINFO_MACHINEREADABLE)
             RTPrintf("hdb=\"none\"\n");
     }
-    rc = machine->GetHardDisk(Bstr("IDE"), 1, 1, hardDisk.asOutParam());
+    rc = machine->GetMedium(Bstr("IDE"), 1, 1, hardDisk.asOutParam());
     if (SUCCEEDED(rc) && hardDisk)
     {
         hardDisk->COMGETTER(Location)(filePath.asOutParam());
@@ -650,60 +631,41 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
         if (details == VMINFO_MACHINEREADABLE)
             RTPrintf("hdd=\"none\"\n");
     }
-    ComPtr<IDVDDrive> dvdDrive;
-    rc = machine->COMGETTER(DVDDrive)(dvdDrive.asOutParam());
-    if (SUCCEEDED(rc) && dvdDrive)
+    ComPtr<IMedium> dvdMedium;
+    rc = machine->GetMedium(Bstr("IDE"), 1, 0, dvdMedium.asOutParam());
+    if (SUCCEEDED(rc) && dvdMedium)
     {
-        ComPtr<IDVDImage> dvdImage;
-        rc = dvdDrive->GetImage(dvdImage.asOutParam());
-        if (SUCCEEDED(rc) && dvdImage)
+        dvdMedium->COMGETTER(Location)(filePath.asOutParam());
+        dvdMedium->COMGETTER(Id)(uuid.asOutParam());
+        if (details == VMINFO_MACHINEREADABLE)
         {
-            rc = dvdImage->COMGETTER(Location)(filePath.asOutParam());
-            if (SUCCEEDED(rc) && filePath)
-            {
-                rc = dvdImage->COMGETTER(Id)(uuid.asOutParam());
-                if (details == VMINFO_MACHINEREADABLE)
-                {
-                    RTPrintf("dvd=\"%lS\"\n", filePath.raw());
-                    RTPrintf("DvdImageUUID=\"%s\"\n", Utf8Str(uuid).raw());
-                }
-                else
-                    RTPrintf("DVD:             %lS (UUID: %s)\n", filePath.raw(), Utf8Str(uuid).raw());
-            }
+            RTPrintf("dvd=\"%lS\"\n", filePath.raw());
+            RTPrintf("DvdImageUUID=\"%s\"\n", Utf8Str(uuid).raw());
+        }
+        else
+            RTPrintf("DVD:             %lS (UUID: %s)\n", filePath.raw(), Utf8Str(uuid).raw());
+
+        BOOL fPassthrough;
+        ComPtr<IMediumAttachment> dvdAttachment;
+        machine->GetMediumAttachment(Bstr("IDE"), 1, 0, dvdAttachment.asOutParam());
+        dvdAttachment->COMGETTER(Passthrough)(&fPassthrough);
+        if (details == VMINFO_MACHINEREADABLE)
+        {
+            RTPrintf("dvdpassthrough=\"%s\"\n", fPassthrough ? "on" : "off");
         }
         else
         {
-            ComPtr<IHostDVDDrive> hostDVDDrive;
-            rc = dvdDrive->GetHostDrive(hostDVDDrive.asOutParam());
-            if (SUCCEEDED(rc) && hostDVDDrive)
-            {
-                Bstr name;
-                hostDVDDrive->COMGETTER(Name)(name.asOutParam());
-                if (details == VMINFO_MACHINEREADABLE)
-                    RTPrintf("dvd=\"host:%lS\"\n", name.raw());
-                else
-                    RTPrintf("DVD:             Host drive %lS", name.raw());
-            }
-            else
-            {
-                if (details == VMINFO_MACHINEREADABLE)
-                    RTPrintf("dvd=\"none\"\n");
-                else
-                    RTPrintf("DVD:             empty");
-            }
-            BOOL fPassthrough;
-            dvdDrive->COMGETTER(Passthrough)(&fPassthrough);
-            if (details == VMINFO_MACHINEREADABLE)
-            {
-                RTPrintf("dvdpassthrough=\"%s\"\n", fPassthrough ? "on" : "off");
-            }
-            else
-            {
-                if (fPassthrough)
-                    RTPrintf(" (passthrough enabled)");
-                RTPrintf("\n");
-            }
+            if (fPassthrough)
+                RTPrintf(" (passthrough enabled)");
+            RTPrintf("\n");
         }
+    }
+    else
+    {
+        if (details == VMINFO_MACHINEREADABLE)
+            RTPrintf("dvd=\"none\"\n");
+        else
+            RTPrintf("DVD:             empty");
     }
 
     /* get the maximum amount of NICS */

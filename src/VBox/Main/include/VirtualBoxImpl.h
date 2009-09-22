@@ -42,15 +42,10 @@
 
 class Machine;
 class SessionMachine;
-class HardDisk;
-class DVDImage;
-class FloppyImage;
-class MachineCollection;
+class Medium;
 class GuestOSType;
-class GuestOSTypeCollection;
 class SharedFolder;
 class Progress;
-class ProgressCollection;
 class Host;
 class SystemProperties;
 class DHCPServer;
@@ -104,8 +99,6 @@ public:
         COM_INTERFACE_ENTRY(IVirtualBox)
     END_COM_MAP()
 
-    NS_DECL_ISUPPORTS
-
     // to postpone generation of the default ctor/dtor
     VirtualBox();
     ~VirtualBox();
@@ -128,9 +121,9 @@ public:
     STDMETHOD(COMGETTER(Host)) (IHost **aHost);
     STDMETHOD(COMGETTER(SystemProperties)) (ISystemProperties **aSystemProperties);
     STDMETHOD(COMGETTER(Machines)) (ComSafeArrayOut (IMachine *, aMachines));
-    STDMETHOD(COMGETTER(HardDisks)) (ComSafeArrayOut (IHardDisk *, aHardDisks));
-    STDMETHOD(COMGETTER(DVDImages)) (ComSafeArrayOut (IDVDImage *, aDVDImages));
-    STDMETHOD(COMGETTER(FloppyImages)) (ComSafeArrayOut (IFloppyImage *, aFloppyImages));
+    STDMETHOD(COMGETTER(HardDisks)) (ComSafeArrayOut (IMedium *, aHardDisks));
+    STDMETHOD(COMGETTER(DVDImages)) (ComSafeArrayOut (IMedium *, aDVDImages));
+    STDMETHOD(COMGETTER(FloppyImages)) (ComSafeArrayOut (IMedium *, aFloppyImages));
     STDMETHOD(COMGETTER(ProgressOperations)) (ComSafeArrayOut (IProgress *, aOperations));
     STDMETHOD(COMGETTER(GuestOSTypes)) (ComSafeArrayOut (IGuestOSType *, aGuestOSTypes));
     STDMETHOD(COMGETTER(SharedFolders)) (ComSafeArrayOut (ISharedFolder *, aSharedFolders));
@@ -151,23 +144,23 @@ public:
     STDMETHOD(CreateAppliance) (IAppliance **anAppliance);
 
     STDMETHOD(CreateHardDisk)(IN_BSTR aFormat, IN_BSTR aLocation,
-                               IHardDisk **aHardDisk);
+                               IMedium **aHardDisk);
     STDMETHOD(OpenHardDisk) (IN_BSTR aLocation, AccessMode_T accessMode,
                              BOOL aSetImageId, IN_BSTR aImageId,
                              BOOL aSetParentId, IN_BSTR aParentId,
-                             IHardDisk **aHardDisk);
-    STDMETHOD(GetHardDisk) (IN_BSTR aId, IHardDisk **aHardDisk);
-    STDMETHOD(FindHardDisk) (IN_BSTR aLocation, IHardDisk **aHardDisk);
+                             IMedium **aHardDisk);
+    STDMETHOD(GetHardDisk) (IN_BSTR aId, IMedium **aHardDisk);
+    STDMETHOD(FindHardDisk) (IN_BSTR aLocation, IMedium **aHardDisk);
 
     STDMETHOD(OpenDVDImage) (IN_BSTR aLocation, IN_BSTR aId,
-                             IDVDImage **aDVDImage);
-    STDMETHOD(GetDVDImage) (IN_BSTR aId, IDVDImage **aDVDImage);
-    STDMETHOD(FindDVDImage) (IN_BSTR aLocation, IDVDImage **aDVDImage);
+                             IMedium **aDVDImage);
+    STDMETHOD(GetDVDImage) (IN_BSTR aId, IMedium **aDVDImage);
+    STDMETHOD(FindDVDImage) (IN_BSTR aLocation, IMedium **aDVDImage);
 
     STDMETHOD(OpenFloppyImage) (IN_BSTR aLocation, IN_BSTR aId,
-                                IFloppyImage **aFloppyImage);
-    STDMETHOD(GetFloppyImage) (IN_BSTR aId, IFloppyImage **aFloppyImage);
-    STDMETHOD(FindFloppyImage) (IN_BSTR aLocation, IFloppyImage **aFloppyImage);
+                                IMedium **aFloppyImage);
+    STDMETHOD(GetFloppyImage) (IN_BSTR aId, IMedium **aFloppyImage);
+    STDMETHOD(FindFloppyImage) (IN_BSTR aLocation, IMedium **aFloppyImage);
 
     STDMETHOD(GetGuestOSType) (IN_BSTR aId, IGuestOSType **aType);
     STDMETHOD(CreateSharedFolder) (IN_BSTR aName, IN_BSTR aHostPath, BOOL aWritable);
@@ -244,11 +237,11 @@ public:
                          ComObjPtr<Machine> *machine = NULL);
 
     HRESULT findHardDisk(const Guid *aId, CBSTR aLocation,
-                          bool aSetError, ComObjPtr<HardDisk> *aHardDisk = NULL);
+                          bool aSetError, ComObjPtr<Medium> *aHardDisk = NULL);
     HRESULT findDVDImage(const Guid *aId, CBSTR aLocation,
-                         bool aSetError, ComObjPtr<DVDImage> *aImage = NULL);
+                         bool aSetError, ComObjPtr<Medium> *aImage = NULL);
     HRESULT findFloppyImage(const Guid *aId, CBSTR aLocation,
-                            bool aSetError, ComObjPtr<FloppyImage> *aImage = NULL);
+                            bool aSetError, ComObjPtr<Medium> *aImage = NULL);
 
     const ComObjPtr<Host> &host() { return mData.mHost; }
     const ComObjPtr<SystemProperties> &systemProperties()
@@ -268,16 +261,16 @@ public:
     int calculateFullPath(const Utf8Str &strPath, Utf8Str &aResult);
     void calculateRelativePath(const Utf8Str &strPath, Utf8Str &aResult);
 
-    HRESULT registerHardDisk(HardDisk *aHardDisk, bool aSaveRegistry = true);
-    HRESULT unregisterHardDisk(HardDisk *aHardDisk, bool aSaveRegistry = true);
+    HRESULT registerHardDisk(Medium *aHardDisk, bool aSaveRegistry = true);
+    HRESULT unregisterHardDisk(Medium *aHardDisk, bool aSaveRegistry = true);
 
-    HRESULT registerDVDImage(DVDImage *aImage, bool aSaveRegistry = true);
-    HRESULT unregisterDVDImage(DVDImage *aImage, bool aSaveRegistry = true);
+    HRESULT registerDVDImage(Medium *aImage, bool aSaveRegistry = true);
+    HRESULT unregisterDVDImage(Medium *aImage, bool aSaveRegistry = true);
 
-    HRESULT registerFloppyImage (FloppyImage *aImage, bool aSaveRegistry = true);
-    HRESULT unregisterFloppyImage (FloppyImage *aImage, bool aSaveRegistry = true);
+    HRESULT registerFloppyImage (Medium *aImage, bool aSaveRegistry = true);
+    HRESULT unregisterFloppyImage (Medium *aImage, bool aSaveRegistry = true);
 
-    HRESULT cast (IHardDisk *aFrom, ComObjPtr<HardDisk> &aTo);
+    HRESULT cast (IMedium *aFrom, ComObjPtr<Medium> &aTo);
 
     HRESULT saveSettings();
     HRESULT updateSettings(const char *aOldPath, const char *aNewPath);
@@ -293,7 +286,7 @@ public:
 
     /**
      * Returns a lock handle used to protect changes to the hard disk hierarchy
-     * (e.g. serialize access to the HardDisk::mParent fields and methods
+     * (e.g. serialize access to the Medium::mParent fields and methods
      * adding/removing children). When using this lock, the following rules must
      * be obeyed:
      *
@@ -317,13 +310,13 @@ private:
 
     typedef std::map<Guid, ComPtr<IProgress> > ProgressMap;
 
-    typedef std::list< ComObjPtr<HardDisk> > HardDiskList;
-    typedef std::list< ComObjPtr<DVDImage> > DVDImageList;
-    typedef std::list< ComObjPtr<FloppyImage> > FloppyImageList;
-    typedef std::list< ComObjPtr<SharedFolder> > SharedFolderList;
-    typedef std::list< ComObjPtr<DHCPServer> > DHCPServerList;
+    typedef std::list <ComObjPtr<Medium> > HardDiskList;
+    typedef std::list <ComObjPtr<Medium> > DVDImageList;
+    typedef std::list <ComObjPtr<Medium> > FloppyImageList;
+    typedef std::list <ComObjPtr<SharedFolder> > SharedFolderList;
+    typedef std::list <ComObjPtr<DHCPServer> > DHCPServerList;
 
-    typedef std::map<Guid, ComObjPtr<HardDisk> > HardDiskMap;
+    typedef std::map<Guid, ComObjPtr<Medium> > HardDiskMap;
 
     /**
      * Reimplements VirtualBoxWithTypedChildren::childrenLock() to return a

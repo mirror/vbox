@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2008 Sun Microsystems, Inc.
+ * Copyright (C) 2008-2009 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -55,11 +55,7 @@ namespace com
  *       let adding this class to custom type libraries.
  */
 class ATL_NO_VTABLE VirtualBoxErrorInfo
-#if !defined (VBOX_WITH_XPCOM)
     : public CComObjectRootEx <CComMultiThreadModel>
-#else
-    : public CComObjectRootEx
-#endif
     , public IVirtualBoxErrorInfo
 {
 public:
@@ -72,8 +68,6 @@ public:
         COM_INTERFACE_ENTRY (IErrorInfo)
         COM_INTERFACE_ENTRY (IVirtualBoxErrorInfo)
     END_COM_MAP()
-
-    NS_DECL_ISUPPORTS
 
     VirtualBoxErrorInfo() : mResultCode (S_OK) {}
 
@@ -126,11 +120,7 @@ private:
  * substituting the next attribute implementation.
  */
 class ATL_NO_VTABLE VirtualBoxErrorInfoGlue
-#if !defined (VBOX_WITH_XPCOM)
     : public CComObjectRootEx <CComMultiThreadModel>
-#else
-    : public CComObjectRootEx
-#endif
     , public IVirtualBoxErrorInfo
 {
 public:
@@ -143,8 +133,6 @@ public:
         COM_INTERFACE_ENTRY (IErrorInfo)
         COM_INTERFACE_ENTRY (IVirtualBoxErrorInfo)
     END_COM_MAP()
-
-    NS_DECL_ISUPPORTS
 
     VirtualBoxErrorInfoGlue() {}
 

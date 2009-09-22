@@ -86,8 +86,6 @@ public:
         COM_INTERFACE_ENTRY2 (IDispatch, ISerialPort)
     END_COM_MAP()
 
-    NS_DECL_ISUPPORTS
-
     DECLARE_EMPTY_CTOR_DTOR (SerialPort)
 
     HRESULT FinalConstruct();

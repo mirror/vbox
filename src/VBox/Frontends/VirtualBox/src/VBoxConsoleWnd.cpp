@@ -961,8 +961,8 @@ bool VBoxConsoleWnd::openView (const CSession &session)
              this, SLOT (updateMachineState (KMachineState)));
     connect (console, SIGNAL (additionsStateChanged (const QString&, bool, bool, bool)),
              this, SLOT (updateAdditionsState (const QString &, bool, bool, bool)));
-    connect (console, SIGNAL (mediaDriveChanged (VBoxDefs::MediaType)),
-             this, SLOT (updateMediaDriveState (VBoxDefs::MediaType)));
+    connect (console, SIGNAL (mediaDriveChanged (VBoxDefs::MediumType)),
+             this, SLOT (updateMediaDriveState (VBoxDefs::MediumType)));
     connect (console, SIGNAL (usbStateChange()),
              this, SLOT (updateUsbState()));
     connect (console, SIGNAL (networkStateChange()),
@@ -1859,89 +1859,47 @@ void VBoxConsoleWnd::updateAppearanceOf (int element)
     if (element & FloppyStuff)
     {
         mDevicesMountFloppyMenu->setEnabled (isRunningOrPaused);
-        CFloppyDrive floppy = cmachine.GetFloppyDrive();
-        KDriveState state = floppy.GetState();
-        bool mounted = state != KDriveState_NotMounted;
+        CMedium floppy = cmachine.GetMedium("FD", 0, 0);
+        bool mounted = !floppy.isNull();
         mDevicesUnmountFloppyAction->setEnabled (isRunningOrPaused && mounted);
         fd_light->setState (mounted ? KDeviceActivity_Idle : KDeviceActivity_Null);
         QString tip = tr ("<qt><nobr>Indicates the activity of the floppy media:</nobr>"
                           "%1</qt>",
                           "Floppy tooltip");
+#if 0
+        /// @todo MEDIUM resurrect host dvd/floppy stuff deleted in r51247
+#endif
         QString name;
-        switch (state)
-        {
-            case KDriveState_HostDriveCaptured:
-            {
-                CHostFloppyDrive drv = floppy.GetHostDrive();
-                QString drvName = drv.GetName();
-                QString description = drv.GetDescription();
-                QString fullName = description.isEmpty() ?
-                    drvName :
-                    QString ("%1 (%2)").arg (description, drvName);
-                name = tr ("<br><nobr><b>Host Drive</b>: %1</nobr>",
-                           "Floppy tooltip").arg (fullName);
-                break;
-            }
-            case KDriveState_ImageMounted:
-            {
-                name = tr ("<br><nobr><b>Image</b>: %1</nobr>",
-                           "Floppy tooltip")
-                    .arg (QDir::toNativeSeparators (floppy.GetImage().GetLocation()));
-                break;
-            }
-            case KDriveState_NotMounted:
-            {
-                name = tr ("<br><nobr><b>No media mounted</b></nobr>",
-                           "Floppy tooltip");
-                break;
-            }
-            default:
-                AssertMsgFailed (("Invalid floppy drive state: %d\n", state));
-        }
+        if (mounted)
+            name = tr ("<br><nobr><b>Image</b>: %1</nobr>",
+                       "Floppy tooltip")
+                .arg (QDir::toNativeSeparators (floppy.GetLocation()));
+        else
+            name = tr ("<br><nobr><b>No media mounted</b></nobr>",
+                       "Floppy tooltip");
         fd_light->setToolTip (tip.arg (name));
     }
     if (element & DVDStuff)
     {
         mDevicesMountDVDMenu->setEnabled (isRunningOrPaused);
-        CDVDDrive dvd = cmachine.GetDVDDrive();
-        KDriveState state = dvd.GetState();
-        bool mounted = state != KDriveState_NotMounted;
+        CMedium dvd = cmachine.GetMedium("IDE", 1, 0);
+        bool mounted = !dvd.isNull();
         mDevicesUnmountDVDAction->setEnabled (isRunningOrPaused && mounted);
         cd_light->setState (mounted ? KDeviceActivity_Idle : KDeviceActivity_Null);
         QString tip = tr ("<qt><nobr>Indicates the activity of the CD/DVD-ROM media:</nobr>"
                           "%1</qt>",
                           "DVD-ROM tooltip");
+#if 0
+        /// @todo MEDIUM resurrect host dvd/floppy stuff deleted in r51247
+#endif
         QString name;
-        switch (state)
-        {
-            case KDriveState_HostDriveCaptured:
-            {
-                CHostDVDDrive drv = dvd.GetHostDrive();
-                QString drvName = drv.GetName();
-                QString description = drv.GetDescription();
-                QString fullName = description.isEmpty() ?
-                    drvName :
-                    QString ("%1 (%2)").arg (description, drvName);
-                name = tr ("<br><nobr><b>Host Drive</b>: %1</nobr>",
-                           "DVD-ROM tooltip").arg (fullName);
-                break;
-            }
-            case KDriveState_ImageMounted:
-            {
-                name = tr ("<br><nobr><b>Image</b>: %1</nobr>",
-                           "DVD-ROM tooltip")
-                    .arg (QDir::toNativeSeparators (dvd.GetImage().GetLocation()));
-                break;
-            }
-            case KDriveState_NotMounted:
-            {
-                name = tr ("<br><nobr><b>No media mounted</b></nobr>",
-                           "DVD-ROM tooltip");
-                break;
-            }
-            default:
-                AssertMsgFailed (("Invalid DVD drive state: %d\n", state));
-        }
+        if (mounted)
+            name = tr ("<br><nobr><b>Image</b>: %1</nobr>",
+                       "DVD-ROM tooltip")
+                .arg (QDir::toNativeSeparators (dvd.GetLocation()));
+        else
+            name = tr ("<br><nobr><b>No media mounted</b></nobr>",
+                       "DVD-ROM tooltip");
         cd_light->setToolTip (tip.arg (name));
     }
     if (element & HardDiskStuff)
@@ -1951,11 +1909,14 @@ void VBoxConsoleWnd::updateAppearanceOf (int element)
                           "HDD tooltip");
         QString data;
         bool hasDisks = false;
-        CHardDiskAttachmentVector vec = cmachine.GetHardDiskAttachments();
-        for (CHardDiskAttachmentVector::ConstIterator hda = vec.begin();
+        CMediumAttachmentVector vec = cmachine.GetMediumAttachments();
+        for (CMediumAttachmentVector::ConstIterator hda = vec.begin();
              hda != vec.end(); ++ hda)
         {
-            CHardDisk hd = hda->GetHardDisk();
+            if (hda->GetType() != KDeviceType_HardDisk)
+                continue;
+
+            CMedium hd = hda->GetMedium();
             const QString ctlName = hda->GetController();
             CStorageController ctl = cmachine.GetStorageControllerByName(ctlName);
 
@@ -2829,21 +2790,20 @@ void VBoxConsoleWnd::devicesMountFloppyImage()
 
     VBoxMediaManagerDlg dlg (this);
 
-    dlg.setup (VBoxDefs::MediaType_Floppy, true /* aDoSelect */,
+    dlg.setup (VBoxDefs::MediumType_Floppy, true /* aDoSelect */,
                true /* aRefresh */, csession.GetMachine());
 
     if (dlg.exec() == QDialog::Accepted)
     {
-        CFloppyDrive drv = csession.GetMachine().GetFloppyDrive();
+        CMachine m = csession.GetMachine();
 
-        drv.MountImage (dlg.selectedId());
+        m.MountMedium ("FD", 0, 0, dlg.selectedId());
 
-        AssertWrapperOk (drv);
-        if (drv.isOk())
+        AssertWrapperOk (m);
+        if (m.isOk())
         {
             if (mIsAutoSaveMedia)
             {
-                CMachine m = csession.GetMachine();
                 m.SaveSettings();
                 if (!m.isOk())
                     vboxProblem().cannotSaveMachineSettings (m);
@@ -2856,20 +2816,19 @@ void VBoxConsoleWnd::devicesUnmountFloppy()
 {
     if (!console) return;
 
-    CFloppyDrive drv = csession.GetMachine().GetFloppyDrive();
-    drv.Unmount();
-    if (drv.isOk())
+    CMachine m = csession.GetMachine();
+    m.MountMedium ("FD", 0, 0, NULL);
+    if (m.isOk())
     {
         if (mIsAutoSaveMedia)
         {
-            CMachine m = csession.GetMachine();
             m.SaveSettings();
             if (!m.isOk())
                 vboxProblem().cannotSaveMachineSettings (m);
         }
     }
 
-    if (drv.GetState() != KDriveState_NotMounted)
+    if (!m.GetMedium ("FD", 0, 0).isNull())
     {
         /* Looks like Main make no force unmounting here
          * but IFloppyDrive::Unmount() is called synchronously.
@@ -2889,21 +2848,20 @@ void VBoxConsoleWnd::devicesMountDVDImage()
 
     VBoxMediaManagerDlg dlg (this);
 
-    dlg.setup (VBoxDefs::MediaType_DVD, true /* aDoSelect */,
+    dlg.setup (VBoxDefs::MediumType_DVD, true /* aDoSelect */,
                true /* aRefresh */, csession.GetMachine());
 
     if (dlg.exec() == QDialog::Accepted)
     {
-        CDVDDrive drv = csession.GetMachine().GetDVDDrive();
+        CMachine m = csession.GetMachine();
 
-        drv.MountImage (dlg.selectedId());
+        m.MountMedium ("IDE", 1, 0, dlg.selectedId());
 
-        AssertWrapperOk (drv);
-        if (drv.isOk())
+        AssertWrapperOk (m);
+        if (m.isOk())
         {
             if (mIsAutoSaveMedia)
             {
-                CMachine m = csession.GetMachine();
                 m.SaveSettings();
                 if (!m.isOk())
                     vboxProblem().cannotSaveMachineSettings (m);
@@ -2917,21 +2875,20 @@ void VBoxConsoleWnd::devicesUnmountDVD()
 {
     if (!console) return;
 
-    CDVDDrive drv = csession.GetMachine().GetDVDDrive();
-    drv.Unmount();
-    AssertWrapperOk (drv);
-    if (drv.isOk())
+    CMachine m = csession.GetMachine();
+    m.MountMedium ("IDE", 1, 0, NULL);
+    AssertWrapperOk (m);
+    if (m.isOk())
     {
         if (mIsAutoSaveMedia)
         {
-            CMachine m = csession.GetMachine();
             m.SaveSettings();
             if (!m.isOk())
                 vboxProblem().cannotSaveMachineSettings (m);
         }
     }
 
-    if (drv.GetState() != KDriveState_NotMounted)
+    if (!m.GetMedium("IDE", 1, 0).isNull())
     {
         /* Looks like Main make no force unmounting here
          * but IDVDDrive::Unmount() is called synchronously.
@@ -2998,8 +2955,8 @@ void VBoxConsoleWnd::devicesInstallGuestAdditions()
     QString name = QString ("VBoxGuestAdditions_%1.iso")
                             .arg (vbox.GetVersion().remove ("_OSE"));
 
-    CDVDImageVector vec = vbox.GetDVDImages();
-    for (CDVDImageVector::ConstIterator it = vec.begin();
+    CMediumVector vec = vbox.GetDVDImages();
+    for (CMediumVector::ConstIterator it = vec.begin();
          it != vec.end(); ++ it)
     {
         QString path = it->GetLocation();
@@ -3031,7 +2988,7 @@ void VBoxConsoleWnd::installGuestAdditionsFrom (const QString &aSource)
     CVirtualBox vbox = vboxGlobal().virtualBox();
     QString uuid;
 
-    CDVDImage image = vbox.FindDVDImage (aSource);
+    CMedium image = vbox.FindDVDImage (aSource);
     if (image.isNull())
     {
         image = vbox.OpenDVDImage (aSource, uuid);
@@ -3043,17 +3000,16 @@ void VBoxConsoleWnd::installGuestAdditionsFrom (const QString &aSource)
 
     if (!vbox.isOk())
         return vboxProblem().cannotOpenMedium (this, vbox,
-                                               VBoxDefs::MediaType_DVD, aSource);
+                                               VBoxDefs::MediumType_DVD, aSource);
 
     Assert (!uuid.isNull());
-    CDVDDrive drv = csession.GetMachine().GetDVDDrive();
-    drv.MountImage (uuid);
-    AssertWrapperOk (drv);
-    if (drv.isOk())
+    CMachine m = csession.GetMachine();
+    m.MountMedium ("IDE", 1, 0, uuid);
+    AssertWrapperOk (m);
+    if (m.isOk())
     {
         if (mIsAutoSaveMedia)
         {
-            CMachine m = csession.GetMachine();
             m.SaveSettings();
             if (!m.isOk())
                 vboxProblem().cannotSaveMachineSettings (m);
@@ -3163,14 +3119,14 @@ void VBoxConsoleWnd::prepareFloppyMenu()
 
     mDevicesMountFloppyMenu->clear();
 
-    CHostFloppyDrive selected = csession.GetMachine().GetFloppyDrive().GetHostDrive();
+    CMedium selected = csession.GetMachine().GetMedium("FD", 0, 0);
 
     hostFloppyMap.clear();
-    CHostFloppyDriveVector drvvec =
+    CMediumVector drvvec =
         vboxGlobal().virtualBox().GetHost().GetFloppyDrives();
     for (int i = 0; i < drvvec.size(); ++i)
     {
-        CHostFloppyDrive hostFloppy = drvvec[i];
+        CMedium hostFloppy = drvvec[i];
         /** @todo set icon */
         QString drvName = hostFloppy.GetName();
         QString description = hostFloppy.GetDescription();
@@ -3210,14 +3166,14 @@ void VBoxConsoleWnd::prepareDVDMenu()
 
     mDevicesMountDVDMenu->clear();
 
-    CHostDVDDrive selected = csession.GetMachine().GetDVDDrive().GetHostDrive();
+    CMedium selected = csession.GetMachine().GetMedium("IDE", 2, 0);
 
     hostDVDMap.clear();
-    CHostDVDDriveVector drvvec =
+    CMediumVector drvvec =
         vboxGlobal().virtualBox().GetHost().GetDVDDrives();
     for (int i = 0; i < drvvec.size(); ++i)
     {
-        CHostDVDDrive hostDVD = drvvec[i];
+        CMedium hostDVD = drvvec[i];
         /** @todo set icon */
         QString drvName = hostDVD.GetName();
         QString description = hostDVD.GetDescription();
@@ -3279,19 +3235,18 @@ void VBoxConsoleWnd::captureFloppy (QAction *aAction)
 {
     if (!console) return;
 
-    CHostFloppyDrive d = hostFloppyMap [aAction];
+    CMedium d = hostFloppyMap [aAction];
     /* if null then some other item but host drive is selected */
     if (d.isNull()) return;
 
-    CFloppyDrive drv = csession.GetMachine().GetFloppyDrive();
-    drv.CaptureHostDrive (d);
-    AssertWrapperOk (drv);
+    CMachine m = csession.GetMachine();
+    m.MountMedium ("FD", 0, 0, d.GetId());
+    AssertWrapperOk (m);
 
-    if (drv.isOk())
+    if (m.isOk())
     {
         if (mIsAutoSaveMedia)
         {
-            CMachine m = csession.GetMachine();
             m.SaveSettings();
             if (!m.isOk())
                 vboxProblem().cannotSaveMachineSettings (m);
@@ -3306,19 +3261,18 @@ void VBoxConsoleWnd::captureDVD (QAction *aAction)
 {
     if (!console) return;
 
-    CHostDVDDrive d = hostDVDMap [aAction];
+    CMedium d = hostDVDMap [aAction];
     /* if null then some other item but host drive is selected */
     if (d.isNull()) return;
 
-    CDVDDrive drv = csession.GetMachine().GetDVDDrive();
-    drv.CaptureHostDrive (d);
-    AssertWrapperOk (drv);
+    CMachine m = csession.GetMachine();
+    m.MountMedium ("IDE", 1, 0, d.GetId());
+    AssertWrapperOk (m);
 
-    if (drv.isOk())
+    if (m.isOk())
     {
         if (mIsAutoSaveMedia)
         {
-            CMachine m = csession.GetMachine();
             m.SaveSettings();
             if (!m.isOk())
                 vboxProblem().cannotSaveMachineSettings (m);
@@ -3637,11 +3591,11 @@ void VBoxConsoleWnd::updateAdditionsState (const QString &aVersion,
     }
 }
 
-void VBoxConsoleWnd::updateMediaDriveState (VBoxDefs::MediaType aType)
+void VBoxConsoleWnd::updateMediaDriveState (VBoxDefs::MediumType aType)
 {
-    Assert (aType == VBoxDefs::MediaType_DVD || aType == VBoxDefs::MediaType_Floppy);
-    updateAppearanceOf (aType == VBoxDefs::MediaType_DVD ? DVDStuff :
-                        aType == VBoxDefs::MediaType_Floppy ? FloppyStuff :
+    Assert (aType == VBoxDefs::MediumType_DVD || aType == VBoxDefs::MediumType_Floppy);
+    updateAppearanceOf (aType == VBoxDefs::MediumType_DVD ? DVDStuff :
+                        aType == VBoxDefs::MediumType_Floppy ? FloppyStuff :
                         AllStuff);
 }
 

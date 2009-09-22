@@ -38,8 +38,6 @@
 #include "VBoxVMSettingsSystem.h"
 #include "VBoxVMSettingsDisplay.h"
 #include "VBoxVMSettingsHD.h"
-#include "VBoxVMSettingsCD.h"
-#include "VBoxVMSettingsFD.h"
 #include "VBoxVMSettingsAudio.h"
 #include "VBoxVMSettingsNetwork.h"
 #include "VBoxVMSettingsSerial.h"
@@ -270,39 +268,11 @@ VBoxVMSettingsDlg::VBoxVMSettingsDlg (QWidget *aParent,
     /* Storage page */
     if (isAvailable (StorageId))
     {
+        prefPage = new VBoxVMSettingsHD();
+        connect (prefPage, SIGNAL (storageChanged()), this, SLOT (resetFirstRunFlag()));
         addItem (":/hd_32px.png", ":/hd_disabled_32px.png",
                  ":/hd_16px.png", ":/hd_disabled_16px.png",
-                 StorageId, "#storage");
-
-        /* HD page */
-        if (isAvailable (HDId))
-        {
-            prefPage = new VBoxVMSettingsHD();
-            connect (prefPage, SIGNAL (hdChanged()), this, SLOT (resetFirstRunFlag()));
-            addItem (":/hd_32px.png", ":/hd_disabled_32px.png",
-                     ":/hd_16px.png", ":/hd_disabled_16px.png",
-                     HDId, "#hdds", prefPage, StorageId);
-        }
-
-        /* CD page */
-        if (isAvailable (CDId))
-        {
-            prefPage = new VBoxVMSettingsCD();
-            connect (prefPage, SIGNAL (cdChanged()), this, SLOT (resetFirstRunFlag()));
-            addItem (":/cd_32px.png", ":/cd_disabled_32px.png",
-                     ":/cd_16px.png", ":/cd_disabled_16px.png",
-                     CDId, "#dvd", prefPage, StorageId);
-        }
-
-        /* FD page */
-        if (isAvailable (FDId))
-        {
-            prefPage = new VBoxVMSettingsFD();
-            connect (prefPage, SIGNAL (fdChanged()), this, SLOT (resetFirstRunFlag()));
-            addItem (":/fd_32px.png", ":/fd_disabled_32px.png",
-                     ":/fd_16px.png", ":/fd_disabled_16px.png",
-                     FDId, "#floppy", prefPage, StorageId);
-        }
+                 StorageId, "#storage", prefPage, StorageId);
     }
 
     /* Audio page */

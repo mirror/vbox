@@ -499,34 +499,6 @@ STDMETHODIMP Session::Uninitialize()
     return rc;
 }
 
-STDMETHODIMP Session::OnDVDDriveChange()
-{
-    LogFlowThisFunc(("\n"));
-
-    AutoCaller autoCaller(this);
-    AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
-
-    AutoReadLock alock(this);
-    AssertReturn(mState == SessionState_Open, VBOX_E_INVALID_VM_STATE);
-    AssertReturn(mType == SessionType_Direct, VBOX_E_INVALID_OBJECT_STATE);
-
-    return mConsole->onDVDDriveChange();
-}
-
-STDMETHODIMP Session::OnFloppyDriveChange()
-{
-    LogFlowThisFunc(("\n"));
-
-    AutoCaller autoCaller(this);
-    AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
-
-    AutoReadLock alock(this);
-    AssertReturn(mState == SessionState_Open, VBOX_E_INVALID_VM_STATE);
-    AssertReturn(mType == SessionType_Direct, VBOX_E_INVALID_OBJECT_STATE);
-
-    return mConsole->onFloppyDriveChange();
-}
-
 STDMETHODIMP Session::OnNetworkAdapterChange(INetworkAdapter *networkAdapter, BOOL changeAdapter)
 {
     LogFlowThisFunc(("\n"));
@@ -581,6 +553,20 @@ STDMETHODIMP Session::OnStorageControllerChange()
     AssertReturn(mType == SessionType_Direct, VBOX_E_INVALID_OBJECT_STATE);
 
     return mConsole->onStorageControllerChange();
+}
+
+STDMETHODIMP Session::OnMediumChange(IMediumAttachment *aMediumAttachment)
+{
+    LogFlowThisFunc(("\n"));
+
+    AutoCaller autoCaller(this);
+    AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
+
+    AutoReadLock alock(this);
+    AssertReturn(mState == SessionState_Open, VBOX_E_INVALID_VM_STATE);
+    AssertReturn(mType == SessionType_Direct, VBOX_E_INVALID_OBJECT_STATE);
+
+    return mConsole->onMediumChange(aMediumAttachment);
 }
 
 STDMETHODIMP Session::OnVRDPServerChange()

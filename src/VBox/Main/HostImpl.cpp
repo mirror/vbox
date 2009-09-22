@@ -93,8 +93,6 @@ extern "C" char *getfullrawname(char *);
 #endif
 
 #include "HostImpl.h"
-#include "HostDVDDriveImpl.h"
-#include "HostFloppyDriveImpl.h"
 #include "HostNetworkInterfaceImpl.h"
 #ifdef VBOX_WITH_USB
 # include "HostUSBDeviceImpl.h"
@@ -313,7 +311,7 @@ void Host::uninit()
  * @returns COM status code
  * @param drives address of result pointer
  */
-STDMETHODIMP Host::COMGETTER(DVDDrives) (ComSafeArrayOut(IHostDVDDrive *, aDrives))
+STDMETHODIMP Host::COMGETTER(DVDDrives)(ComSafeArrayOut(IMedium *, aDrives))
 {
     CheckComArgOutSafeArrayPointerValid(aDrives);
 
@@ -322,7 +320,7 @@ STDMETHODIMP Host::COMGETTER(DVDDrives) (ComSafeArrayOut(IHostDVDDrive *, aDrive
 
     AutoWriteLock alock(this);
 
-    std::list< ComObjPtr<HostDVDDrive> > list;
+    std::list< ComObjPtr<Medium> > list;
     HRESULT rc = S_OK;
     try
     {
@@ -337,10 +335,10 @@ STDMETHODIMP Host::COMGETTER(DVDDrives) (ComSafeArrayOut(IHostDVDDrive *, aDrive
             if (GetDriveType(p) == DRIVE_CDROM)
             {
                 driveName[0] = *p;
-                ComObjPtr<HostDVDDrive> hostDVDDriveObj;
+                ComObjPtr<Medium> hostDVDDriveObj;
                 hostDVDDriveObj.createObject();
-                hostDVDDriveObj->init (Bstr (driveName));
-                list.push_back (hostDVDDriveObj);
+                hostDVDDriveObj->init(mParent, DeviceType_DVD, Bstr(driveName));
+                list.push_back(hostDVDDriveObj);
             }
             p += _tcslen(p) + 1;
         }
@@ -363,10 +361,10 @@ STDMETHODIMP Host::COMGETTER(DVDDrives) (ComSafeArrayOut(IHostDVDDrive *, aDrive
                 {
                     if (validateDevice(cdromDrive, true))
                     {
-                        ComObjPtr<HostDVDDrive> hostDVDDriveObj;
+                        ComObjPtr<Medium> hostDVDDriveObj;
                         hostDVDDriveObj.createObject();
-                        hostDVDDriveObj->init (Bstr (cdromDrive));
-                        list.push_back (hostDVDDriveObj);
+                        hostDVDDriveObj->init(mParent, DeviceType_DVD, Bstr(cdromDrive));
+                        list.push_back(hostDVDDriveObj);
                     }
                     cdromDrive = strtok(NULL, ":");
                 }
@@ -377,10 +375,10 @@ STDMETHODIMP Host::COMGETTER(DVDDrives) (ComSafeArrayOut(IHostDVDDrive *, aDrive
                 // this might work on Solaris version older than Nevada.
                 if (validateDevice("/cdrom/cdrom0", true))
                 {
-                    ComObjPtr<HostDVDDrive> hostDVDDriveObj;
+                    ComObjPtr<Medium> hostDVDDriveObj;
                     hostDVDDriveObj.createObject();
-                    hostDVDDriveObj->init (Bstr ("cdrom/cdrom0"));
-                    list.push_back (hostDVDDriveObj);
+                    hostDVDDriveObj->init(mParent, DeviceType_DVD, Bstr("cdrom/cdrom0"));
+                    list.push_back(hostDVDDriveObj);
                 }
 
                 // check the mounted drives
@@ -393,14 +391,13 @@ STDMETHODIMP Host::COMGETTER(DVDDrives) (ComSafeArrayOut(IHostDVDDrive *, aDrive
             for (DriveInfoList::const_iterator it = mHostDrives.DVDBegin();
                 SUCCEEDED(rc) && it != mHostDrives.DVDEnd(); ++it)
             {
-                ComObjPtr<HostDVDDrive> hostDVDDriveObj;
-                Bstr device(it->mDevice);
-                Bstr udi(it->mUdi);
+                ComObjPtr<Medium> hostDVDDriveObj;
+                Bstr location(it->mDevice);
                 Bstr description(it->mDescription);
                 if (SUCCEEDED(rc))
                     rc = hostDVDDriveObj.createObject();
                 if (SUCCEEDED(rc))
-                    rc = hostDVDDriveObj->init (device, udi, description);
+                    rc = hostDVDDriveObj->init(mParent, DeviceType_DVD, location, description);
                 if (SUCCEEDED(rc))
                     list.push_back(hostDVDDriveObj);
             }
@@ -408,7 +405,7 @@ STDMETHODIMP Host::COMGETTER(DVDDrives) (ComSafeArrayOut(IHostDVDDrive *, aDrive
         PDARWINDVD cur = DarwinGetDVDDrives();
         while (cur)
         {
-            ComObjPtr<HostDVDDrive> hostDVDDriveObj;
+            ComObjPtr<Medium> hostDVDDriveObj;
             hostDVDDriveObj.createObject();
             hostDVDDriveObj->init(Bstr(cur->szName));
             list.push_back(hostDVDDriveObj);
@@ -429,7 +426,7 @@ STDMETHODIMP Host::COMGETTER(DVDDrives) (ComSafeArrayOut(IHostDVDDrive *, aDrive
     /* PORTME */
 #endif
 
-        SafeIfaceArray<IHostDVDDrive> array (list);
+        SafeIfaceArray<IMedium> array(list);
         array.detachTo(ComSafeArrayOutArg(aDrives));
     }
     catch(std::bad_alloc &)
@@ -445,7 +442,7 @@ STDMETHODIMP Host::COMGETTER(DVDDrives) (ComSafeArrayOut(IHostDVDDrive *, aDrive
  * @returns COM status code
  * @param drives address of result pointer
  */
-STDMETHODIMP Host::COMGETTER(FloppyDrives) (ComSafeArrayOut(IHostFloppyDrive *, aDrives))
+STDMETHODIMP Host::COMGETTER(FloppyDrives)(ComSafeArrayOut(IMedium *, aDrives))
 {
     CheckComArgOutPointerValid(aDrives);
 
@@ -454,7 +451,7 @@ STDMETHODIMP Host::COMGETTER(FloppyDrives) (ComSafeArrayOut(IHostFloppyDrive *, 
 
     AutoWriteLock alock(this);
 
-    std::list<ComObjPtr<HostFloppyDrive> > list;
+    std::list<ComObjPtr<Medium> > list;
     HRESULT rc = S_OK;
 
     try
@@ -470,10 +467,10 @@ STDMETHODIMP Host::COMGETTER(FloppyDrives) (ComSafeArrayOut(IHostFloppyDrive *, 
             if (GetDriveType(p) == DRIVE_REMOVABLE)
             {
                 driveName[0] = *p;
-                ComObjPtr<HostFloppyDrive> hostFloppyDriveObj;
+                ComObjPtr<Medium> hostFloppyDriveObj;
                 hostFloppyDriveObj.createObject();
-                hostFloppyDriveObj->init (Bstr (driveName));
-                list.push_back (hostFloppyDriveObj);
+                hostFloppyDriveObj->init(mParent, DeviceType_Floppy, Bstr(driveName));
+                list.push_back(hostFloppyDriveObj);
             }
             p += _tcslen(p) + 1;
         }
@@ -484,14 +481,13 @@ STDMETHODIMP Host::COMGETTER(FloppyDrives) (ComSafeArrayOut(IHostFloppyDrive *, 
             for (DriveInfoList::const_iterator it = mHostDrives.FloppyBegin();
                 SUCCEEDED(rc) && it != mHostDrives.FloppyEnd(); ++it)
             {
-                ComObjPtr<HostFloppyDrive> hostFloppyDriveObj;
-                Bstr device(it->mDevice);
-                Bstr udi(it->mUdi);
+                ComObjPtr<Medium> hostFloppyDriveObj;
+                Bstr location(it->mDevice);
                 Bstr description(it->mDescription);
                 if (SUCCEEDED(rc))
                     rc = hostFloppyDriveObj.createObject();
                 if (SUCCEEDED(rc))
-                    rc = hostFloppyDriveObj->init (device, udi, description);
+                    rc = hostFloppyDriveObj->init(mParent, DeviceType_Floppy, location, description);
                 if (SUCCEEDED(rc))
                     list.push_back(hostFloppyDriveObj);
             }
@@ -499,7 +495,7 @@ STDMETHODIMP Host::COMGETTER(FloppyDrives) (ComSafeArrayOut(IHostFloppyDrive *, 
     /* PORTME */
 #endif
 
-        SafeIfaceArray<IHostFloppyDrive> collection (list);
+        SafeIfaceArray<IMedium> collection(list);
         collection.detachTo(ComSafeArrayOutArg(aDrives));
     }
     catch(std::bad_alloc &)
@@ -1480,7 +1476,7 @@ void Host::getUSBFilters(Host::USBDeviceFilterList *aGlobalFilters, VirtualBox::
  * @returns true if information was successfully obtained, false otherwise
  * @retval  list drives found will be attached to this list
  */
-bool Host::getDVDInfoFromHal(std::list <ComObjPtr<HostDVDDrive> > &list)
+bool Host::getDVDInfoFromHal(std::list <ComObjPtr<Medium> > &list)
 {
     bool halSuccess = false;
     DBusError dbusError;
@@ -1558,7 +1554,7 @@ bool Host::getDVDInfoFromHal(std::list <ComObjPtr<HostDVDDrive> > &list)
                                         {
                                             description = product;
                                         }
-                                        ComObjPtr<HostDVDDrive> hostDVDDriveObj;
+                                        ComObjPtr<Medium> hostDVDDriveObj;
                                         hostDVDDriveObj.createObject();
                                         hostDVDDriveObj->init (Bstr (devNode),
                                                                Bstr (halDevices[i]),
@@ -1573,7 +1569,7 @@ bool Host::getDVDInfoFromHal(std::list <ComObjPtr<HostDVDDrive> > &list)
                                                     halDevices[i], dbusError.name, dbusError.message));
                                             gDBusErrorFree(&dbusError);
                                         }
-                                        ComObjPtr<HostDVDDrive> hostDVDDriveObj;
+                                        ComObjPtr<Medium> hostDVDDriveObj;
                                         hostDVDDriveObj.createObject();
                                         hostDVDDriveObj->init (Bstr (devNode),
                                                                Bstr (halDevices[i]));
@@ -1652,7 +1648,7 @@ bool Host::getDVDInfoFromHal(std::list <ComObjPtr<HostDVDDrive> > &list)
  * @returns true if information was successfully obtained, false otherwise
  * @retval  list drives found will be attached to this list
  */
-bool Host::getFloppyInfoFromHal(std::list <ComObjPtr<HostFloppyDrive> > &list)
+bool Host::getFloppyInfoFromHal(std::list <ComObjPtr<Medium> > &list)
 {
     bool halSuccess = false;
     DBusError dbusError;
@@ -1722,7 +1718,7 @@ bool Host::getFloppyInfoFromHal(std::list <ComObjPtr<HostFloppyDrive> > &list)
                                         {
                                             description = product;
                                         }
-                                        ComObjPtr<HostFloppyDrive> hostFloppyDrive;
+                                        ComObjPtr<Medium> hostFloppyDrive;
                                         hostFloppyDrive.createObject();
                                         hostFloppyDrive->init (Bstr (devNode),
                                                                Bstr (halDevices[i]),
@@ -1737,7 +1733,7 @@ bool Host::getFloppyInfoFromHal(std::list <ComObjPtr<HostFloppyDrive> > &list)
                                                     halDevices[i], dbusError.name, dbusError.message));
                                             gDBusErrorFree(&dbusError);
                                         }
-                                        ComObjPtr<HostFloppyDrive> hostFloppyDrive;
+                                        ComObjPtr<Medium> hostFloppyDrive;
                                         hostFloppyDrive.createObject();
                                         hostFloppyDrive->init (Bstr (devNode),
                                                                Bstr (halDevices[i]));
@@ -1810,7 +1806,7 @@ bool Host::getFloppyInfoFromHal(std::list <ComObjPtr<HostFloppyDrive> > &list)
 /**
  * Helper function to parse the given mount file and add found entries
  */
-void Host::parseMountTable(char *mountTable, std::list <ComObjPtr<HostDVDDrive> > &list)
+void Host::parseMountTable(char *mountTable, std::list <ComObjPtr<Medium> > &list)
 {
 #ifdef RT_OS_LINUX
     FILE *mtab = setmntent(mountTable, "r");
@@ -1860,7 +1856,7 @@ void Host::parseMountTable(char *mountTable, std::list <ComObjPtr<HostDVDDrive> 
                 /** @todo check whether we've already got the drive in our list! */
                 if (validateDevice(mnt_dev, true))
                 {
-                    ComObjPtr<HostDVDDrive> hostDVDDriveObj;
+                    ComObjPtr<Medium> hostDVDDriveObj;
                     hostDVDDriveObj.createObject();
                     hostDVDDriveObj->init (Bstr (mnt_dev));
                     list.push_back (hostDVDDriveObj);
@@ -1892,7 +1888,7 @@ void Host::parseMountTable(char *mountTable, std::list <ComObjPtr<HostDVDDrive> 
                 char *rawDevName = getfullrawname(mountName);
                 if (validateDevice(rawDevName, true))
                 {
-                    ComObjPtr<HostDVDDrive> hostDVDDriveObj;
+                    ComObjPtr<Medium> hostDVDDriveObj;
                     hostDVDDriveObj.createObject();
                     hostDVDDriveObj->init (Bstr (rawDevName));
                     list.push_back (hostDVDDriveObj);
@@ -2122,72 +2118,56 @@ void Host::unregisterMetrics (PerformanceCollector *aCollector)
 };
 #endif /* VBOX_WITH_RESOURCE_USAGE_API */
 
-STDMETHODIMP Host::FindHostDVDDrive(IN_BSTR aName, IHostDVDDrive **aDrive)
+STDMETHODIMP Host::FindHostDVDDrive(IN_BSTR aName, IMedium **aDrive)
 {
     CheckComArgNotNull(aName);
     CheckComArgOutPointerValid(aDrive);
 
     *aDrive = NULL;
 
-    SafeIfaceArray<IHostDVDDrive> drivevec;
-    HRESULT rc = COMGETTER(DVDDrives) (ComSafeArrayAsOutParam(drivevec));
+    SafeIfaceArray<IMedium> drivevec;
+    HRESULT rc = COMGETTER(DVDDrives)(ComSafeArrayAsOutParam(drivevec));
     CheckComRCReturnRC(rc);
 
     for (size_t i = 0; i < drivevec.size(); ++i)
     {
-        Bstr name;
-        rc = drivevec[i]->COMGETTER(Name) (name.asOutParam());
+        ComPtr<IMedium> drive = drivevec[i];
+        Bstr name, location;
+        rc = drive->COMGETTER(Name)(name.asOutParam());
         CheckComRCReturnRC(rc);
-        if (name == aName)
-        {
-            ComObjPtr<HostDVDDrive> found;
-            found.createObject();
-            Bstr udi, description;
-            rc = drivevec[i]->COMGETTER(Udi) (udi.asOutParam());
-            CheckComRCReturnRC(rc);
-            rc = drivevec[i]->COMGETTER(Description) (description.asOutParam());
-            CheckComRCReturnRC(rc);
-            found->init(name, udi, description);
-            return found.queryInterfaceTo(aDrive);
-        }
+        rc = drive->COMGETTER(Location)(location.asOutParam());
+        CheckComRCReturnRC(rc);
+        if (name == aName || location == aName)
+            return drive.queryInterfaceTo(aDrive);
     }
 
-    return setError (VBOX_E_OBJECT_NOT_FOUND, HostDVDDrive::tr (
-        "The host DVD drive named '%ls' could not be found"), aName);
+    return setError(VBOX_E_OBJECT_NOT_FOUND,
+                    Medium::tr("The host DVD drive named '%ls' could not be found"), aName);
 }
 
-STDMETHODIMP Host::FindHostFloppyDrive(IN_BSTR aName, IHostFloppyDrive **aDrive)
+STDMETHODIMP Host::FindHostFloppyDrive(IN_BSTR aName, IMedium **aDrive)
 {
     CheckComArgNotNull(aName);
     CheckComArgOutPointerValid(aDrive);
 
     *aDrive = NULL;
 
-    SafeIfaceArray<IHostFloppyDrive> drivevec;
-    HRESULT rc = COMGETTER(FloppyDrives) (ComSafeArrayAsOutParam(drivevec));
+    SafeIfaceArray<IMedium> drivevec;
+    HRESULT rc = COMGETTER(FloppyDrives)(ComSafeArrayAsOutParam(drivevec));
     CheckComRCReturnRC(rc);
 
     for (size_t i = 0; i < drivevec.size(); ++i)
     {
+        ComPtr<IMedium> drive = drivevec[i];
         Bstr name;
-        rc = drivevec[i]->COMGETTER(Name) (name.asOutParam());
+        rc = drive->COMGETTER(Name)(name.asOutParam());
         CheckComRCReturnRC(rc);
         if (name == aName)
-        {
-            ComObjPtr<HostFloppyDrive> found;
-            found.createObject();
-            Bstr udi, description;
-            rc = drivevec[i]->COMGETTER(Udi) (udi.asOutParam());
-            CheckComRCReturnRC(rc);
-            rc = drivevec[i]->COMGETTER(Description) (description.asOutParam());
-            CheckComRCReturnRC(rc);
-            found->init(name, udi, description);
-            return found.queryInterfaceTo(aDrive);
-        }
+            return drive.queryInterfaceTo(aDrive);
     }
 
-    return setError (VBOX_E_OBJECT_NOT_FOUND, HostFloppyDrive::tr (
-        "The host floppy drive named '%ls' could not be found"), aName);
+    return setError(VBOX_E_OBJECT_NOT_FOUND,
+                    Medium::tr("The host floppy drive named '%ls' could not be found"), aName);
 }
 
 STDMETHODIMP Host::FindHostNetworkInterfaceByName(IN_BSTR name, IHostNetworkInterface **networkInterface)

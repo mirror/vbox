@@ -67,8 +67,6 @@ public:
         COM_INTERFACE_ENTRY(ISession)
     END_COM_MAP()
 
-    NS_DECL_ISUPPORTS
-
     HRESULT FinalConstruct();
     void FinalRelease();
 
@@ -92,12 +90,11 @@ public:
     STDMETHOD(AssignRemoteMachine) (IMachine *aMachine, IConsole *aConsole);
     STDMETHOD(UpdateMachineState) (MachineState_T aMachineState);
     STDMETHOD(Uninitialize)();
-    STDMETHOD(OnDVDDriveChange)();
-    STDMETHOD(OnFloppyDriveChange)();
     STDMETHOD(OnNetworkAdapterChange)(INetworkAdapter *networkAdapter, BOOL changeAdapter);
     STDMETHOD(OnSerialPortChange)(ISerialPort *serialPort);
     STDMETHOD(OnParallelPortChange)(IParallelPort *parallelPort);
     STDMETHOD(OnStorageControllerChange)();
+    STDMETHOD(OnMediumChange)(IMediumAttachment *aMediumAttachment);
     STDMETHOD(OnVRDPServerChange)();
     STDMETHOD(OnUSBControllerChange)();
     STDMETHOD(OnSharedFolderChange) (BOOL aGlobal);

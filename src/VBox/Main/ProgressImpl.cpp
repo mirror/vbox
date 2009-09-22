@@ -586,12 +586,20 @@ HRESULT Progress::init (
                         VirtualBox *aParent,
 #endif
                         IUnknown *aInitiator,
-                        CBSTR aDescription, BOOL aCancelable,
-                        ULONG cOperations, ULONG ulTotalOperationsWeight,
-                        CBSTR bstrFirstOperationDescription, ULONG ulFirstOperationWeight,
+                        CBSTR aDescription,
+                        BOOL aCancelable,
+                        ULONG cOperations,
+                        ULONG ulTotalOperationsWeight,
+                        CBSTR bstrFirstOperationDescription,
+                        ULONG ulFirstOperationWeight,
                         OUT_GUID aId /* = NULL */)
 {
-    LogFlowThisFunc(("aDescription=\"%ls\"\n", aDescription));
+    LogFlowThisFunc(("aDescription=\"%ls\", cOperations=%d, ulTotalOperationsWeight=%d, bstrFirstOperationDescription=\"%ls\", ulFirstOperationWeight=%d\n",
+                     aDescription,
+                     cOperations,
+                     ulTotalOperationsWeight,
+                     bstrFirstOperationDescription,
+                     ulFirstOperationWeight));
 
     AssertReturn(bstrFirstOperationDescription, E_INVALIDARG);
     AssertReturn(ulTotalOperationsWeight >= 1, E_INVALIDARG);
@@ -741,37 +749,38 @@ STDMETHODIMP Progress::WaitForCompletion (LONG aTimeout)
         RTTimeNow (&time);
 
         int vrc = VINF_SUCCESS;
-        bool forever = aTimeout < 0;
+        bool fForever = aTimeout < 0;
         int64_t timeLeft = aTimeout;
         int64_t lastTime = RTTimeSpecGetMilli (&time);
 
-        while (!mCompleted && (forever || timeLeft > 0))
+        while (!mCompleted && (fForever || timeLeft > 0))
         {
-            mWaitersCount ++;
+            mWaitersCount++;
             alock.leave();
-            int vrc = RTSemEventMultiWait (mCompletedSem,
-                forever ? RT_INDEFINITE_WAIT : (unsigned) timeLeft);
+            int vrc = RTSemEventMultiWait(mCompletedSem,
+                                          fForever ? RT_INDEFINITE_WAIT : (unsigned)timeLeft);
             alock.enter();
-            mWaitersCount --;
+            mWaitersCount--;
 
             /* the last waiter resets the semaphore */
             if (mWaitersCount == 0)
-                RTSemEventMultiReset (mCompletedSem);
+                RTSemEventMultiReset(mCompletedSem);
 
             if (RT_FAILURE(vrc) && vrc != VERR_TIMEOUT)
                 break;
 
-            if (!forever)
+            if (!fForever)
             {
                 RTTimeNow (&time);
-                timeLeft -= RTTimeSpecGetMilli (&time) - lastTime;
-                lastTime = RTTimeSpecGetMilli (&time);
+                timeLeft -= RTTimeSpecGetMilli(&time) - lastTime;
+                lastTime = RTTimeSpecGetMilli(&time);
             }
         }
 
         if (RT_FAILURE(vrc) && vrc != VERR_TIMEOUT)
-            return setError (VBOX_E_IPRT_ERROR,
-                tr ("Failed to wait for the task completion (%Rrc)"), vrc);
+            return setError(VBOX_E_IPRT_ERROR,
+                            tr("Failed to wait for the task completion (%Rrc)"),
+                            vrc);
     }
 
     LogFlowThisFuncLeave();
@@ -806,39 +815,39 @@ STDMETHODIMP Progress::WaitForOperationCompletion(ULONG aOperation, LONG aTimeou
         RTTimeNow (&time);
 
         int vrc = VINF_SUCCESS;
-        bool forever = aTimeout < 0;
+        bool fForever = aTimeout < 0;
         int64_t timeLeft = aTimeout;
         int64_t lastTime = RTTimeSpecGetMilli (&time);
 
-        while (!mCompleted && aOperation >= m_ulCurrentOperation &&
-               (forever || timeLeft > 0))
+        while (    !mCompleted && aOperation >= m_ulCurrentOperation
+                && (fForever || timeLeft > 0))
         {
             mWaitersCount ++;
             alock.leave();
-            int vrc = RTSemEventMultiWait (mCompletedSem,
-                                           forever ? RT_INDEFINITE_WAIT
-                                                   : (unsigned) timeLeft);
+            int vrc = RTSemEventMultiWait(mCompletedSem,
+                                          fForever ? RT_INDEFINITE_WAIT : (unsigned) timeLeft);
             alock.enter();
-            mWaitersCount --;
+            mWaitersCount--;
 
             /* the last waiter resets the semaphore */
             if (mWaitersCount == 0)
-                RTSemEventMultiReset (mCompletedSem);
+                RTSemEventMultiReset(mCompletedSem);
 
             if (RT_FAILURE(vrc) && vrc != VERR_TIMEOUT)
                 break;
 
-            if (!forever)
+            if (!fForever)
             {
-                RTTimeNow (&time);
-                timeLeft -= RTTimeSpecGetMilli (&time) - lastTime;
-                lastTime = RTTimeSpecGetMilli (&time);
+                RTTimeNow(&time);
+                timeLeft -= RTTimeSpecGetMilli(&time) - lastTime;
+                lastTime = RTTimeSpecGetMilli(&time);
             }
         }
 
         if (RT_FAILURE(vrc) && vrc != VERR_TIMEOUT)
-            return setError (E_FAIL,
-                tr ("Failed to wait for the operation completion (%Rrc)"), vrc);
+            return setError(E_FAIL,
+                            tr("Failed to wait for the operation completion (%Rrc)"),
+                            vrc);
     }
 
     LogFlowThisFuncLeave();
@@ -854,15 +863,12 @@ STDMETHODIMP Progress::Cancel()
     AutoWriteLock alock(this);
 
     if (!mCancelable)
-        return setError (VBOX_E_INVALID_OBJECT_STATE,
-            tr ("Operation cannot be canceled"));
+        return setError(VBOX_E_INVALID_OBJECT_STATE,
+                        tr("Operation cannot be canceled"));
 
     mCanceled = TRUE;
     return S_OK;
 }
-
-// public methods only for internal purposes
-/////////////////////////////////////////////////////////////////////////////
 
 /**
  * Updates the percentage value of the current operation.
@@ -870,7 +876,7 @@ STDMETHODIMP Progress::Cancel()
  * @param aPercent  New percentage value of the operation in progress
  *                  (in range [0, 100]).
  */
-HRESULT Progress::setCurrentOperationProgress(ULONG aPercent)
+STDMETHODIMP Progress::SetCurrentOperationProgress(ULONG aPercent)
 {
     AutoCaller autoCaller(this);
     AssertComRCReturnRC(autoCaller.rc());
@@ -900,7 +906,7 @@ HRESULT Progress::setCurrentOperationProgress(ULONG aPercent)
  *
  * @note The current operation must not be the last one.
  */
-HRESULT Progress::setNextOperation(CBSTR bstrNextOperationDescription, ULONG ulNextOperationsWeight)
+STDMETHODIMP Progress::SetNextOperation(IN_BSTR bstrNextOperationDescription, ULONG ulNextOperationsWeight)
 {
     AssertReturn(bstrNextOperationDescription, E_INVALIDARG);
 
@@ -924,9 +930,75 @@ HRESULT Progress::setNextOperation(CBSTR bstrNextOperationDescription, ULONG ulN
 
     /* wake up all waiting threads */
     if (mWaitersCount > 0)
-        RTSemEventMultiSignal (mCompletedSem);
+        RTSemEventMultiSignal(mCompletedSem);
 
     return S_OK;
+}
+
+// public methods only for internal purposes
+/////////////////////////////////////////////////////////////////////////////
+
+/**
+ * Sets the internal result code and attempts to retrieve additional error
+ * info from the current thread. Gets called from Progress::notifyComplete(),
+ * but can be called again to override a previous result set with
+ * notifyComplete().
+ *
+ * @param aResultCode
+ */
+HRESULT Progress::setResultCode(HRESULT aResultCode)
+{
+    AutoCaller autoCaller(this);
+    AssertComRCReturnRC(autoCaller.rc());
+
+    AutoWriteLock alock(this);
+
+    mResultCode = aResultCode;
+
+    HRESULT rc = S_OK;
+
+    if (FAILED(aResultCode))
+    {
+        /* try to import error info from the current thread */
+
+#if !defined (VBOX_WITH_XPCOM)
+
+        ComPtr<IErrorInfo> err;
+        rc = ::GetErrorInfo(0, err.asOutParam());
+        if (rc == S_OK && err)
+        {
+            rc = err.queryInterfaceTo(mErrorInfo.asOutParam());
+            if (SUCCEEDED(rc) && !mErrorInfo)
+                rc = E_FAIL;
+        }
+
+#else /* !defined (VBOX_WITH_XPCOM) */
+
+        nsCOMPtr<nsIExceptionService> es;
+        es = do_GetService(NS_EXCEPTIONSERVICE_CONTRACTID, &rc);
+        if (NS_SUCCEEDED(rc))
+        {
+            nsCOMPtr <nsIExceptionManager> em;
+            rc = es->GetCurrentExceptionManager(getter_AddRefs(em));
+            if (NS_SUCCEEDED(rc))
+            {
+                ComPtr<nsIException> ex;
+                rc = em->GetCurrentException(ex.asOutParam());
+                if (NS_SUCCEEDED(rc) && ex)
+                {
+                    rc = ex.queryInterfaceTo(mErrorInfo.asOutParam());
+                    if (NS_SUCCEEDED(rc) && !mErrorInfo)
+                        rc = E_FAIL;
+                }
+            }
+        }
+#endif /* !defined (VBOX_WITH_XPCOM) */
+
+        AssertMsg (rc == S_OK, ("Couldn't get error info (rc=%08X) while trying "
+                                "to set a failed result (%08X)!\n", rc, aResultCode));
+    }
+
+    return rc;
 }
 
 /**
@@ -945,7 +1017,7 @@ HRESULT Progress::setNextOperation(CBSTR bstrNextOperationDescription, ULONG ulN
  *
  * @param aResultCode   Operation result code.
  */
-HRESULT Progress::notifyComplete (HRESULT aResultCode)
+HRESULT Progress::notifyComplete(HRESULT aResultCode)
 {
     AutoCaller autoCaller(this);
     AssertComRCReturnRC(autoCaller.rc());
@@ -957,52 +1029,11 @@ HRESULT Progress::notifyComplete (HRESULT aResultCode)
     if (mCanceled && SUCCEEDED(aResultCode))
         aResultCode = E_FAIL;
 
+    HRESULT rc = setResultCode(aResultCode);
+
     mCompleted = TRUE;
-    mResultCode = aResultCode;
 
-    HRESULT rc = S_OK;
-
-    if (FAILED (aResultCode))
-    {
-        /* try to import error info from the current thread */
-
-#if !defined (VBOX_WITH_XPCOM)
-
-        ComPtr<IErrorInfo> err;
-        rc = ::GetErrorInfo (0, err.asOutParam());
-        if (rc == S_OK && err)
-        {
-            rc = err.queryInterfaceTo(mErrorInfo.asOutParam());
-            if (SUCCEEDED(rc) && !mErrorInfo)
-                rc = E_FAIL;
-        }
-
-#else /* !defined (VBOX_WITH_XPCOM) */
-
-        nsCOMPtr <nsIExceptionService> es;
-        es = do_GetService (NS_EXCEPTIONSERVICE_CONTRACTID, &rc);
-        if (NS_SUCCEEDED(rc))
-        {
-            nsCOMPtr <nsIExceptionManager> em;
-            rc = es->GetCurrentExceptionManager (getter_AddRefs (em));
-            if (NS_SUCCEEDED(rc))
-            {
-                ComPtr<nsIException> ex;
-                rc = em->GetCurrentException (ex.asOutParam());
-                if (NS_SUCCEEDED(rc) && ex)
-                {
-                    rc = ex.queryInterfaceTo(mErrorInfo.asOutParam());
-                    if (NS_SUCCEEDED(rc) && !mErrorInfo)
-                        rc = E_FAIL;
-                }
-            }
-        }
-#endif /* !defined (VBOX_WITH_XPCOM) */
-
-        AssertMsg (rc == S_OK, ("Couldn't get error info (rc=%08X) while trying "
-                                "to set a failed result (%08X)!\n", rc, aResultCode));
-    }
-    else
+    if (!FAILED(aResultCode))
     {
         m_ulCurrentOperation = m_cOperations - 1; /* last operation */
         m_ulOperationPercent = 100;
@@ -1034,35 +1065,17 @@ HRESULT Progress::notifyComplete (HRESULT aResultCode)
  *                      format string in UTF-8 encoding.
  * @param  ...          List of arguments for the format string.
  */
-HRESULT Progress::notifyComplete (HRESULT aResultCode, const GUID &aIID,
-                                  const Bstr &aComponent,
-                                  const char *aText, ...)
+HRESULT Progress::notifyComplete(HRESULT aResultCode,
+                                 const GUID &aIID,
+                                 const Bstr &aComponent,
+                                 const char *aText,
+                                 ...)
 {
     va_list args;
-    va_start (args, aText);
-    Bstr text = Utf8StrFmtVA (aText, args);
+    va_start(args, aText);
+    Utf8Str text = Utf8StrFmtVA(aText, args);
     va_end (args);
 
-    return notifyCompleteBstr (aResultCode, aIID, aComponent, text);
-}
-
-/**
- * Marks the operation as complete and attaches full error info.
- *
- * See com::SupportErrorInfoImpl::setError(HRESULT, const GUID &, const wchar_t
- * *, const char *, ...) for more info.
- *
- * This method is preferred if you have a ready (translated and formatted) Bstr
- * string, because it omits an extra conversion Utf8Str -> Bstr.
- *
- * @param aResultCode   Operation result (error) code, must not be S_OK.
- * @param aIID          IID of the interface that defines the error.
- * @param aComponent    Name of the component that generates the error.
- * @param aText         Error message (must not be null).
- */
-HRESULT Progress::notifyCompleteBstr (HRESULT aResultCode, const GUID &aIID,
-                                      const Bstr &aComponent, const Bstr &aText)
-{
     AutoCaller autoCaller(this);
     AssertComRCReturnRC(autoCaller.rc());
 
@@ -1083,7 +1096,7 @@ HRESULT Progress::notifyCompleteBstr (HRESULT aResultCode, const GUID &aIID,
     AssertComRC (rc);
     if (SUCCEEDED(rc))
     {
-        errorInfo->init (aResultCode, aIID, aComponent, aText);
+        errorInfo->init(aResultCode, aIID, aComponent, Bstr(text));
         errorInfo.queryInterfaceTo(mErrorInfo.asOutParam());
     }
 
@@ -1095,7 +1108,7 @@ HRESULT Progress::notifyCompleteBstr (HRESULT aResultCode, const GUID &aIID,
 
     /* wake up all waiting threads */
     if (mWaitersCount > 0)
-        RTSemEventMultiSignal (mCompletedSem);
+        RTSemEventMultiSignal(mCompletedSem);
 
     return rc;
 }

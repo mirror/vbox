@@ -22,7 +22,7 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_VD_VHD
-#include "VBoxHDD-Internal.h"
+#include <VBox/VBoxHDD-Plugin.h>
 #include <VBox/err.h>
 
 #include <VBox/log.h>

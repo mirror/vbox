@@ -59,8 +59,6 @@ public:
         COM_INTERFACE_ENTRY2 (IDispatch, ISharedFolder)
     END_COM_MAP()
 
-    NS_DECL_ISUPPORTS
-
     DECLARE_EMPTY_CTOR_DTOR (SharedFolder)
 
     HRESULT FinalConstruct();

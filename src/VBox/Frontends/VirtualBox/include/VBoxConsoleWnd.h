@@ -239,7 +239,7 @@ private slots:
     void updateAdditionsState (const QString&, bool, bool, bool);
     void updateNetworkAdaptersState();
     void updateUsbState();
-    void updateMediaDriveState (VBoxDefs::MediaType aType);
+    void updateMediaDriveState (VBoxDefs::MediumType aType);
     void updateSharedFoldersState();
 
     void tryClose();
@@ -357,8 +357,8 @@ private:
 
     bool no_auto_close : 1;
 
-    QMap <QAction *, CHostDVDDrive> hostDVDMap;
-    QMap <QAction *, CHostFloppyDrive> hostFloppyMap;
+    QMap <QAction *, CMedium> hostDVDMap;
+    QMap <QAction *, CMedium> hostFloppyMap;
 
     QRect mNormalGeo;
     QSize prev_min_size;
