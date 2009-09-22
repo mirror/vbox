@@ -506,6 +506,9 @@ protected:
 
 private slots:
 
+    void mediumUpdated (const VBoxMedium &aMedium);
+    void mediumRemoved (VBoxDefs::MediumType aType, const QString &aMediumId);
+
     void addController();
     void addIDEController();
     void addSATAController();
