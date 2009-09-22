@@ -68,8 +68,6 @@ protected slots:
 
 protected:
 
-    void addNoMediaItem();
-
     void updateToolTip (int);
 
     void appendItem (const VBoxMedium &);
@@ -98,7 +96,7 @@ protected:
     QString mLastId;
 
     bool mShowDiffs : 1;
-    bool mNullItemPresent : 1;
+    bool mShowNullItem : 1;
 
     QString mMachineId;
 };

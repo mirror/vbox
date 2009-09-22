@@ -223,7 +223,7 @@ void VBoxNewVMWzd::revalidate (QIWidgetValidator *aWval)
     {
         valid = true;
         if (    (mGbHDA->isChecked())
-            &&  (mHDCombo->id().isNull())
+            &&  (vboxGlobal().findMedium (mHDCombo->id()).isNull())
             &&  (mExistRadio->isChecked()))
         {
             valid = false;
