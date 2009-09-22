@@ -1720,26 +1720,26 @@ void VBoxVMSettingsHD::addController()
 
 void VBoxVMSettingsHD::addIDEController()
 {
-    // TODO Generate Unique Name!
-    mStorageModel->addController (tr ("IDE Controller"), KStorageBus_IDE, KStorageControllerType_PIIX3);
+    mStorageModel->addController (generateUniqueName (tr ("IDE Controller")),
+                                  KStorageBus_IDE, KStorageControllerType_PIIX3);
 }
 
 void VBoxVMSettingsHD::addSATAController()
 {
-    // TODO Generate Unique Name!
-    mStorageModel->addController (tr ("SATA Controller"), KStorageBus_SATA, KStorageControllerType_IntelAhci);
+    mStorageModel->addController (generateUniqueName (tr ("SATA Controller")),
+                                  KStorageBus_SATA, KStorageControllerType_IntelAhci);
 }
 
 void VBoxVMSettingsHD::addSCSIController()
 {
-    // TODO Generate Unique Name!
-    mStorageModel->addController (tr ("SCSI Controller"), KStorageBus_SCSI, KStorageControllerType_LsiLogic);
+    mStorageModel->addController (generateUniqueName (tr ("SCSI Controller")),
+                                  KStorageBus_SCSI, KStorageControllerType_LsiLogic);
 }
 
 void VBoxVMSettingsHD::addFloppyController()
 {
-    // TODO Generate Unique Name!
-    mStorageModel->addController (tr ("Floppy Controller"), KStorageBus_Floppy, KStorageControllerType_I82078);
+    mStorageModel->addController (generateUniqueName (tr ("Floppy Controller")),
+                                  KStorageBus_Floppy, KStorageControllerType_I82078);
 }
 
 void VBoxVMSettingsHD::delController()
@@ -2141,5 +2141,25 @@ void VBoxVMSettingsHD::updateAdditionalObjects (KDeviceType aType)
 
     mLbHDFormat->setVisible (aType == KDeviceType_HardDisk);
     mLbHDFormatValue->setVisible (aType == KDeviceType_HardDisk);
+}
+
+QString VBoxVMSettingsHD::generateUniqueName (const QString &aTemplate) const
+{
+    int maxNumber = 0;
+    QModelIndex rootIndex = mStorageModel->root();
+    for (int i = 0; i < mStorageModel->rowCount (rootIndex); ++ i)
+    {
+        QModelIndex ctrIndex = rootIndex.child (i, 0);
+        QString ctrName = mStorageModel->data (ctrIndex, StorageModel::R_CtrName).toString();
+        if (ctrName.startsWith (aTemplate))
+        {
+            QString stringNumber (ctrName.right (ctrName.size() - aTemplate.size()));
+            bool isConverted = false;
+            int number = stringNumber.toInt (&isConverted);
+            if (isConverted && number > maxNumber)
+                maxNumber = number;
+        }
+    }
+    return QString ("%1 %2").arg (aTemplate).arg (++ maxNumber);
 }
 
