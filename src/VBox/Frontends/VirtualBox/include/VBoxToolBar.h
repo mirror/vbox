@@ -25,7 +25,7 @@
 
 #include <QGlobalStatic> /* for Q_WS_MAC */
 #ifdef Q_WS_MAC
-# include "VBoxUtils.h"
+#include "VBoxUtils.h"
 #endif
 
 /* Qt includes */
@@ -48,37 +48,30 @@ public:
 
     VBoxToolBar (QWidget *aParent)
         : QToolBar (aParent)
-        , mMainWindow (qobject_cast<QMainWindow*> (aParent))
+        , mMainWindow (qobject_cast <QMainWindow*> (aParent))
     {
         setFloatable (false);
         setMovable (false);
+
+        /* Remove that ugly frame panel around the toolbar.
+         * Doing that currently for Cleanlooks & Windows styles. */
+        if (qobject_cast <QCleanlooksStyle*> (QToolBar::style()) ||
+            qobject_cast <QWindowsStyle*> (QToolBar::style()))
+            setStyleSheet ("QToolBar { border: 0px none black; }");
+
         if (layout())
             layout()->setContentsMargins (0, 0, 0, 0);;
 
         setContextMenuPolicy (Qt::NoContextMenu);
-
-        /* Remove that ugly frame panel around the toolbar. */
-        /* I'm not sure if we should do this generally on linux for that mass
-         * of KDE styles. But maybe some of them are based on CleanLooks so
-         * they are looking ok also. */
-        QStyle *style = NULL;
-        if (!style)
-            /* Check for cleanlooks style */
-            style = qobject_cast<QCleanlooksStyle*> (QToolBar::style());
-        if (!style)
-            /* Check for windows style */
-            style = qobject_cast<QWindowsStyle*> (QToolBar::style());
-        if (style)
-            setStyleSheet ("QToolBar { border: 0px none black; }");
     }
 
-    void setMacToolbar ()
-    {
 #ifdef Q_WS_MAC
+    void setMacToolbar()
+    {
         if (mMainWindow)
         {
             mMainWindow->setUnifiedTitleAndToolBarOnMac (true);
-# ifndef QT_MAC_USE_COCOA
+#ifndef QT_MAC_USE_COCOA
             WindowRef window = ::darwinToNativeWindow (this);
             EventHandlerUPP eventHandler = ::NewEventHandlerUPP (VBoxToolBar::macEventFilter);
             EventTypeSpec eventTypes[2];
@@ -89,12 +82,11 @@ public:
             InstallWindowEventHandler (window, eventHandler,
                                        RT_ELEMENTS (eventTypes), eventTypes,
                                        NULL, NULL);
-# endif /* !QT_MAC_USE_COCOA */
+#endif /* !QT_MAC_USE_COCOA */
         }
-#endif /* Q_WS_MAC */
     }
 
-#if defined(Q_WS_MAC) && !defined(QT_MAC_USE_COCOA)
+#ifndef QT_MAC_USE_COCOA
     static pascal OSStatus macEventFilter (EventHandlerCallRef aNextHandler,
                                            EventRef aEvent, void * /* aUserData */)
     {
@@ -116,21 +108,18 @@ public:
         }
         return CallNextEventHandler (aNextHandler, aEvent);
     }
-#endif /* Q_WS_MAC && !QT_MAC_USE_COCOA */
+#endif /* !QT_MAC_USE_COCOA */
 
     void setShowToolBarButton (bool aShow)
     {
-#ifdef Q_WS_MAC
         ::darwinSetShowsToolbarButton (this, aShow);
-#else  /* Q_WS_MAC */
-        Q_UNUSED (aShow);
-#endif /* !Q_WS_MAC */
     }
+#endif /* Q_WS_MAC */
 
-    void setUsesTextLabel (bool enable)
+    void setUsesTextLabel (bool aEnable)
     {
         Qt::ToolButtonStyle tbs = Qt::ToolButtonTextUnderIcon;
-        if (!enable)
+        if (!aEnable)
             tbs = Qt::ToolButtonIconOnly;
 
         if (mMainWindow)

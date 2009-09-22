@@ -223,7 +223,7 @@
 <xsl:template match="library">
   <!-- forward declarations -->
   <xsl:text>// forward declarations&#x0A;&#x0A;</xsl:text>
-  <xsl:for-each select="interface | collection | enumerator">
+  <xsl:for-each select="interface">
     <xsl:text>class C</xsl:text>
     <xsl:value-of select="substring(@name,2)"/>
     <xsl:text>;&#x0A;</xsl:text>
@@ -249,9 +249,7 @@
   <xsl:text>// wrapper declarations&#x0A;&#x0A;</xsl:text>
   <xsl:apply-templates select="
       if |
-      interface[not(@internal='yes')] |
-      collection[not(@internal='yes')] |
-      enumerator[not(@internal='yes')]
+      interface[not(@internal='yes')]
     "
     mode="declare"
   />
@@ -259,9 +257,7 @@
   <xsl:text>// wrapper definitions&#x0A;&#x0A;</xsl:text>
   <xsl:apply-templates select="
       if |
-      interface[not(@internal='yes')] |
-      collection[not(@internal='yes')] |
-      enumerator[not(@internal='yes')]
+      interface[not(@internal='yes')]
     "
     mode="define"
   />
@@ -271,7 +267,7 @@
 <!--
  *  interface declarations
 -->
-<xsl:template match="interface | collection | enumerator" mode="declare">
+<xsl:template match="interface" mode="declare">
 
   <xsl:text>// </xsl:text>
   <xsl:value-of select="@name"/>
@@ -294,56 +290,7 @@
   </xsl:call-template>
   <xsl:text>&gt; Base;&#x0A;&#x0A;</xsl:text>
 
-  <xsl:if test="name()='collection'">
-    <xsl:text>    // collection stuff&#x0A;&#x0A;</xsl:text>
-    <xsl:text>    ULONG GetCount () const;&#x0A;</xsl:text>
-    <xsl:text>    </xsl:text>
-    <xsl:apply-templates select="@type"/>
-    <xsl:text> GetItemAt (ULONG index) const;&#x0A;</xsl:text>
-    <xsl:text>    </xsl:text>
-    <xsl:apply-templates select="@enumerator"/>
-    <xsl:text> Enumerate () const;&#x0A;&#x0A;</xsl:text>
-  </xsl:if>
-
-  <xsl:if test="name()='enumerator'">
-    <xsl:text>    // enumerator stuff&#x0A;&#x0A;</xsl:text>
-    <xsl:text>    BOOL HasMore () const;&#x0A;</xsl:text>
-    <xsl:text>    </xsl:text>
-    <xsl:apply-templates select="@type"/>
-    <xsl:text> GetNext () const;&#x0A;&#x0A;</xsl:text>
-    <xsl:text>    // friend wrappers&#x0A;&#x0A;</xsl:text>
-    <xsl:text>    friend class CUnknown;&#x0A;</xsl:text>
-    <xsl:variable name="name" select="@name"/>
-    <xsl:variable name="parent" select=".."/>
-    <!-- for definitions inside <if> -->
-    <xsl:if test="name(..)='if'">
-      <xsl:for-each select="
-        preceding-sibling::collection | following-sibling::collection |
-        ../preceding-sibling::if[@target=$parent/@target]/collection |
-        ../following-sibling::if[@target=$parent/@target]/collection
-      ">
-        <xsl:if test="@enumerator=$name">
-          <xsl:text>    friend class C</xsl:text>
-          <xsl:value-of select="substring(@name,2)"/>
-          <xsl:text>;&#x0A;</xsl:text>
-        </xsl:if>
-      </xsl:for-each>
-    </xsl:if>
-    <!-- for definitions outside <if> (i.e. inside <library>) -->
-    <xsl:if test="name(..)!='if'">
-      <xsl:for-each select="
-        preceding-sibling::collection | following-sibling::collection
-      ">
-        <xsl:if test="@enumerator=$name">
-          <xsl:text>    friend class C</xsl:text>
-          <xsl:value-of select="substring(@name,2)"/>
-          <xsl:text>;&#x0A;</xsl:text>
-        </xsl:if>
-      </xsl:for-each>
-    </xsl:if>
-  </xsl:if>
-
-  <xsl:if test="name()='interface' or name()='collection'">
+  <xsl:if test="name()='interface'">
     <xsl:call-template name="declareMembers"/>
   </xsl:if>
 
@@ -367,13 +314,13 @@
         <xsl:call-template name="declareAttributes">
           <xsl:with-param name="iface" select="
             preceding-sibling::
-              *[(self::interface or self::collection) and @name=$iface/@extends] |
+              *[self::interface and @name=$iface/@extends] |
             following-sibling::
-              *[(self::interface or self::collection) and @name=$iface/@extends] |
+              *[self::interface and @name=$iface/@extends] |
             ../preceding-sibling::if[@target=../@target]/
-              *[(self::interface or self::collection) and @name=$iface/@extends] |
+              *[self::interface and @name=$iface/@extends] |
             ../following-sibling::if[@target=../@target]/
-              *[(self::interface or self::collection) and @name=$iface/@extends]
+              *[self::interface and @name=$iface/@extends]
           "/>
         </xsl:call-template>
       </xsl:when>
@@ -382,9 +329,9 @@
         <xsl:call-template name="declareAttributes">
           <xsl:with-param name="iface" select="
             preceding-sibling::
-              *[(self::interface or self::collection) and @name=$iface/@extends] |
+              *[self::interface and @name=$iface/@extends] |
             following-sibling::
-              *[(self::interface or self::collection) and @name=$iface/@extends]
+              *[self::interface and @name=$iface/@extends]
           "/>
         </xsl:call-template>
       </xsl:otherwise>
@@ -409,13 +356,13 @@
         <xsl:call-template name="declareMethods">
           <xsl:with-param name="iface" select="
             preceding-sibling::
-              *[(self::interface or self::collection) and @name=$iface/@extends] |
+              *[self::interface and @name=$iface/@extends] |
             following-sibling::
-              *[(self::interface or self::collection) and @name=$iface/@extends] |
+              *[self::interface and @name=$iface/@extends] |
             ../preceding-sibling::if[@target=../@target]/
-              *[(self::interface or self::collection) and @name=$iface/@extends] |
+              *[self::interface and @name=$iface/@extends] |
             ../following-sibling::if[@target=../@target]/
-              *[(self::interface or self::collection) and @name=$iface/@extends]
+              *[self::interface and @name=$iface/@extends]
           "/>
         </xsl:call-template>
       </xsl:when>
@@ -424,9 +371,9 @@
         <xsl:call-template name="declareMethods">
           <xsl:with-param name="iface" select="
             preceding-sibling::
-              *[(self::interface or self::collection) and @name=$iface/@extends] |
+              *[self::interface and @name=$iface/@extends] |
             following-sibling::
-              *[(self::interface or self::collection) and @name=$iface/@extends]
+              *[self::interface and @name=$iface/@extends]
           "/>
         </xsl:call-template>
       </xsl:otherwise>
@@ -540,23 +487,21 @@
   <!-- for definitions inside <if> -->
   <xsl:if test="name(..)='if'">
     <xsl:for-each select="
-      preceding-sibling::*[self::interface or self::collection or self::enumerator] |
-      following-sibling::*[self::interface or self::collection or self::enumerator] |
-      ../preceding-sibling::*[self::interface or self::collection or self::enumerator] |
-      ../following-sibling::*[self::interface or self::collection or self::enumerator] |
-      ../preceding-sibling::if[@target=$parent/@target]/*[self::interface or self::collection or self::enumerator] |
-      ../following-sibling::if[@target=$parent/@target]/*[self::interface or self::collection or self::enumerator]
+      preceding-sibling::*[self::interface] |
+      following-sibling::*[self::interface] |
+      ../preceding-sibling::*[self::interface] |
+      ../following-sibling::*[self::interface] |
+      ../preceding-sibling::if[@target=$parent/@target]/*[self::interface] |
+      ../following-sibling::if[@target=$parent/@target]/*[self::interface]
     ">
       <xsl:if test="
-        ((name()='interface' or name()='collection')
+        ((name()='interface')
          and
          ((name(..)!='if' and (if[@target=$parent/@target]/method/param[@type=$name]
                                or
                                if[@target=$parent/@target]/attribute[@type=$name]))
           or
           (.//method/param[@type=$name] or attribute[@type=$name])))
-        or
-        (name(..)='if' and (name()='collection' or name()='enumerator') and @type=$name)
       ">
         <xsl:text>    friend class C</xsl:text>
         <xsl:value-of select="substring(@name,2)"/>
@@ -567,17 +512,13 @@
   <!-- for definitions outside <if> (i.e. inside <library>) -->
   <xsl:if test="name(..)!='if'">
     <xsl:for-each select="
-      preceding-sibling::*[self::interface or self::collection or self::enumerator] |
-      following-sibling::*[self::interface or self::collection or self::enumerator] |
-      preceding-sibling::if/*[self::interface or self::collection or self::enumerator] |
-      following-sibling::if/*[self::interface or self::collection or self::enumerator]
+      preceding-sibling::*[self::interface] |
+      following-sibling::*[self::interface] |
+      preceding-sibling::if/*[self::interface] |
+      following-sibling::if/*[self::interface]
     ">
       <xsl:if test="
-        ((name()='interface' or name()='collection')
-         and
-         (.//method/param[@type=$name] or attribute[@type=$name]))
-        or
-        ((name()='collection' or name()='enumerator') and @type=$name)
+        name()='interface' and (.//method/param[@type=$name] or attribute[@type=$name])
       ">
         <xsl:text>    friend class C</xsl:text>
         <xsl:value-of select="substring(@name,2)"/>
@@ -589,13 +530,7 @@
 </xsl:template>
 
 <!-- attribute declarations -->
-<xsl:template match="interface//attribute | collection//attribute" mode="declare">
-  <xsl:if test="@array">
-    <xsl:message terminate="yes">
-      <xsl:value-of select="concat(../../@name,'::',../@name,'::',@name,': ')"/>
-      <xsl:text>'array' attributes are not supported, use 'safearray="yes"' instead.</xsl:text>
-    </xsl:message>
-  </xsl:if>
+<xsl:template match="interface//attribute" mode="declare">
   <xsl:apply-templates select="parent::node()" mode="begin"/>
   <xsl:apply-templates select="@if" mode="begin"/>
   <xsl:call-template name="composeMethod">
@@ -611,7 +546,7 @@
 </xsl:template>
 
 <!-- method declarations -->
-<xsl:template match="interface//method | collection//method" mode="declare">
+<xsl:template match="interface//method" mode="declare">
   <xsl:apply-templates select="parent::node()" mode="begin"/>
   <xsl:apply-templates select="@if" mode="begin"/>
   <xsl:call-template name="composeMethod"/>
@@ -623,83 +558,13 @@
 <!--
  *  interface definitions
 -->
-<xsl:template match="interface | collection | enumerator" mode="define">
+<xsl:template match="interface" mode="define">
 
   <xsl:text>// </xsl:text>
   <xsl:value-of select="@name"/>
   <xsl:text> wrapper&#x0A;&#x0A;</xsl:text>
 
-  <xsl:if test="name()='collection'">
-    <!-- GetCount -->
-    <xsl:text>inline ULONG C</xsl:text>
-    <xsl:value-of select="substring(@name,2)"/>
-    <xsl:text>::GetCount () const&#x0A;{&#x0A;</xsl:text>
-    <xsl:text>    ULONG count = 0;&#x0A;</xsl:text>
-    <xsl:text>    Assert (mIface);&#x0A;</xsl:text>
-    <xsl:text>    if (!mIface)&#x0A;        return count;&#x0A;</xsl:text>
-    <xsl:text>    mRC = mIface->COMGETTER(Count) (&amp;count);&#x0A;</xsl:text>
-    <xsl:call-template name="tryComposeFetchErrorInfo"/>
-    <xsl:text>    return count;&#x0A;</xsl:text>
-    <xsl:text>}&#x0A;&#x0A;</xsl:text>
-    <!-- GetItemAt -->
-    <xsl:text>inline </xsl:text>
-    <xsl:apply-templates select="@type"/>
-    <xsl:text> C</xsl:text>
-    <xsl:value-of select="substring(@name,2)"/>
-    <xsl:text>::GetItemAt (ULONG index) const&#x0A;{&#x0A;</xsl:text>
-    <xsl:text>    </xsl:text><xsl:apply-templates select="@type"/>
-    <xsl:text> item;&#x0A;</xsl:text>
-    <xsl:text>    Assert (mIface);&#x0A;</xsl:text>
-    <xsl:text>    if (!mIface)&#x0A;        return item;&#x0A;</xsl:text>
-    <xsl:text>    mRC = mIface->GetItemAt (index, &amp;item.mIface);&#x0A;</xsl:text>
-    <xsl:call-template name="tryComposeFetchErrorInfo"/>
-    <xsl:text>    return item;&#x0A;</xsl:text>
-    <xsl:text>}&#x0A;&#x0A;</xsl:text>
-    <!-- Enumerate -->
-    <xsl:text>inline </xsl:text>
-    <xsl:apply-templates select="@enumerator"/>
-    <xsl:text> C</xsl:text>
-    <xsl:value-of select="substring(@name,2)"/>
-    <xsl:text>::Enumerate () const&#x0A;{&#x0A;</xsl:text>
-    <xsl:text>    </xsl:text><xsl:apply-templates select="@enumerator"/>
-    <xsl:text> enumerator;&#x0A;</xsl:text>
-    <xsl:text>    Assert (mIface);&#x0A;</xsl:text>
-    <xsl:text>    if (!mIface)&#x0A;        return enumerator;&#x0A;</xsl:text>
-    <xsl:text>    mRC = mIface->Enumerate (&amp;enumerator.mIface);&#x0A;</xsl:text>
-    <xsl:call-template name="tryComposeFetchErrorInfo"/>
-    <xsl:text>    return enumerator;&#x0A;</xsl:text>
-    <xsl:text>}&#x0A;&#x0A;</xsl:text>
-  </xsl:if>
-
-  <xsl:if test="name()='enumerator'">
-    <!-- HasMore -->
-    <xsl:text>inline BOOL C</xsl:text>
-    <xsl:value-of select="substring(@name,2)"/>
-    <xsl:text>::HasMore () const&#x0A;{&#x0A;</xsl:text>
-    <xsl:text>    BOOL more = FALSE;&#x0A;</xsl:text>
-    <xsl:text>    Assert (mIface);&#x0A;</xsl:text>
-    <xsl:text>    if (!mIface)&#x0A;        return more;&#x0A;</xsl:text>
-    <xsl:text>    mRC = mIface->HasMore (&amp;more);&#x0A;</xsl:text>
-    <xsl:call-template name="tryComposeFetchErrorInfo"/>
-    <xsl:text>    return more;&#x0A;</xsl:text>
-    <xsl:text>}&#x0A;&#x0A;</xsl:text>
-    <!-- GetNext -->
-    <xsl:text>inline </xsl:text>
-    <xsl:apply-templates select="@type"/>
-    <xsl:text> C</xsl:text>
-    <xsl:value-of select="substring(@name,2)"/>
-    <xsl:text>::GetNext () const&#x0A;{&#x0A;</xsl:text>
-    <xsl:text>    </xsl:text><xsl:apply-templates select="@type"/>
-    <xsl:text> next;&#x0A;</xsl:text>
-    <xsl:text>    Assert (mIface);&#x0A;</xsl:text>
-    <xsl:text>    if (!mIface)&#x0A;        return next;&#x0A;</xsl:text>
-    <xsl:text>    mRC = mIface->GetNext (&amp;next.mIface);&#x0A;</xsl:text>
-    <xsl:call-template name="tryComposeFetchErrorInfo"/>
-    <xsl:text>    return next;&#x0A;</xsl:text>
-    <xsl:text>}&#x0A;&#x0A;</xsl:text>
-  </xsl:if>
-
-  <xsl:if test="name()='interface' or name()='collection'">
+  <xsl:if test="name()='interface'">
     <xsl:call-template name="defineMembers"/>
   </xsl:if>
 
@@ -721,13 +586,13 @@
         <xsl:call-template name="defineAttributes">
           <xsl:with-param name="iface" select="
             preceding-sibling::
-              *[(self::interface or self::collection) and @name=$iface/@extends] |
+              *[self::interface and @name=$iface/@extends] |
             following-sibling::
-              *[(self::interface or self::collection) and @name=$iface/@extends] |
+              *[self::interface and @name=$iface/@extends] |
             ../preceding-sibling::if[@target=../@target]/
-              *[(self::interface or self::collection) and @name=$iface/@extends] |
+              *[self::interface and @name=$iface/@extends] |
             ../following-sibling::if[@target=../@target]/
-              *[(self::interface or self::collection) and @name=$iface/@extends]
+              *[self::interface and @name=$iface/@extends]
           "/>
         </xsl:call-template>
       </xsl:when>
@@ -736,9 +601,9 @@
         <xsl:call-template name="defineAttributes">
           <xsl:with-param name="iface" select="
             preceding-sibling::
-              *[(self::interface or self::collection) and @name=$iface/@extends] |
+              *[self::interface and @name=$iface/@extends] |
             following-sibling::
-              *[(self::interface or self::collection) and @name=$iface/@extends]
+              *[self::interface and @name=$iface/@extends]
           "/>
         </xsl:call-template>
       </xsl:otherwise>
@@ -763,13 +628,13 @@
         <xsl:call-template name="defineMethods">
           <xsl:with-param name="iface" select="
             preceding-sibling::
-              *[(self::interface or self::collection) and @name=$iface/@extends] |
+              *[self::interface and @name=$iface/@extends] |
             following-sibling::
-              *[(self::interface or self::collection) and @name=$iface/@extends] |
+              *[self::interface and @name=$iface/@extends] |
             ../preceding-sibling::if[@target=../@target]/
-              *[(self::interface or self::collection) and @name=$iface/@extends] |
+              *[self::interface and @name=$iface/@extends] |
             ../following-sibling::if[@target=../@target]/
-              *[(self::interface or self::collection) and @name=$iface/@extends]
+              *[self::interface and @name=$iface/@extends]
           "/>
         </xsl:call-template>
       </xsl:when>
@@ -778,9 +643,9 @@
         <xsl:call-template name="defineMethods">
           <xsl:with-param name="iface" select="
             preceding-sibling::
-              *[(self::interface or self::collection) and @name=$iface/@extends] |
+              *[self::interface and @name=$iface/@extends] |
             following-sibling::
-              *[(self::interface or self::collection) and @name=$iface/@extends]
+              *[self::interface and @name=$iface/@extends]
           "/>
         </xsl:call-template>
       </xsl:otherwise>
@@ -799,9 +664,9 @@
 </xsl:template>
 
 <!-- attribute definitions -->
-<xsl:template match="interface//attribute | collection//attribute" mode="define">
+<xsl:template match="interface//attribute" mode="define">
 
-  <xsl:param name="namespace" select="(ancestor::interface | ancestor::collection)[1]"/>
+  <xsl:param name="namespace" select="ancestor::interface[1]"/>
 
   <xsl:apply-templates select="parent::node()" mode="begin"/>
   <xsl:apply-templates select="@if" mode="begin"/>
@@ -824,9 +689,9 @@
 </xsl:template>
 
 <!-- method definitions -->
-<xsl:template match="interface//method | collection//method" mode="define">
+<xsl:template match="interface//method" mode="define">
 
-  <xsl:param name="namespace" select="(ancestor::interface | ancestor::collection)[1]"/>
+  <xsl:param name="namespace" select="ancestor::interface[1]"/>
 
   <xsl:apply-templates select="parent::node()" mode="begin"/>
   <xsl:apply-templates select="@if" mode="begin"/>
@@ -868,13 +733,13 @@
  *  @param namespace
  *      actual interface node for which this method is being defined
  *      (necessary to properly set a class name for inherited methods).
- *      If not specified, will default to the parent interface/collection
+ *      If not specified, will default to the parent interface
  *      node of the method being defined.
 -->
 <xsl:template name="composeMethod">
   <xsl:param name="return" select="param[@dir='return']"/>
   <xsl:param name="define" select="''"/>
-  <xsl:param name="namespace" select="(ancestor::interface | ancestor::collection)[1]"/>
+  <xsl:param name="namespace" select="ancestor::interface[1]"/>
   <xsl:choose>
     <!-- no return value -->
     <xsl:when test="not($return)">
@@ -1110,7 +975,7 @@
  *  Composes a 'fetch error info' call or returns the name of the
  *  appropriate base class name that provides error info functionality
  *  (depending on the mode parameter). Does nothing if the current
- *  entity (interface, collection or enumerator) does not support error info.
+ *  interface does not support error info.
  *
  *  @param mode
  *      - 'getBaseClassName': expands to the base class name
@@ -1119,9 +984,7 @@
 <xsl:template name="tryComposeFetchErrorInfo">
   <xsl:param name="mode" select="''"/>
   <xsl:variable name="ifaceSupportsErrorInfo" select="
-    (ancestor-or-self::interface |
-     ancestor-or-self::collection |
-     ancestor-or-self::enumerator)[1]/@supportsErrorInfo
+    ancestor-or-self::interface[1]/@supportsErrorInfo
   "/>
   <xsl:variable name="librarySupportsErrorInfo" select="ancestor::library/@supportsErrorInfo"/>
   <xsl:choose>
@@ -1187,7 +1050,7 @@
       </xsl:choose>
     </xsl:when>
     <!-- string types -->
-    <xsl:when test="@type = 'wstring'">
+    <xsl:when test="@type = 'wstring' or @type = 'uuid'">
       <xsl:choose>
         <xsl:when test="$isIn">
           <xsl:text>BSTRIn (a</xsl:text>
@@ -1198,25 +1061,6 @@
         </xsl:when>
         <xsl:when test="$isOut">
           <xsl:text>BSTROut (a</xsl:text>
-          <xsl:call-template name="capitalize">
-            <xsl:with-param name="str" select="@name"/>
-          </xsl:call-template>
-          <xsl:text>)</xsl:text>
-        </xsl:when>
-      </xsl:choose>
-    </xsl:when>
-    <!-- uuid type -->
-    <xsl:when test="@type = 'uuid'">
-      <xsl:choose>
-        <xsl:when test="$isIn">
-          <xsl:text>GUIDIn (a</xsl:text>
-          <xsl:call-template name="capitalize">
-            <xsl:with-param name="str" select="@name"/>
-          </xsl:call-template>
-          <xsl:text>)</xsl:text>
-        </xsl:when>
-        <xsl:when test="$isOut">
-          <xsl:text>GUIDOut (a</xsl:text>
           <xsl:call-template name="capitalize">
             <xsl:with-param name="str" select="@name"/>
           </xsl:call-template>
@@ -1254,14 +1098,8 @@
     <!-- interface types -->
     <xsl:when test="
       @type='$unknown' or
-      ((ancestor::library/enumerator[@name=current()/@type]) or
-       (ancestor::library/if[@target=$self_target]/enumerator[@name=current()/@type])
-      ) or
       ((ancestor::library/interface[@name=current()/@type]) or
        (ancestor::library/if[@target=$self_target]/interface[@name=current()/@type])
-      ) or
-      ((ancestor::library/collection[@name=current()/@type]) or
-       (ancestor::library/if[@target=$self_target]/collection[@name=current()/@type])
       )
     ">
       <xsl:choose>
@@ -1327,39 +1165,16 @@
 <!--
  *  attribute/parameter type conversion (returns plain Qt type name)
 -->
-<xsl:template match="
-  attribute/@type | param/@type |
-  enumerator/@type | collection/@type | collection/@enumerator
-">
+<xsl:template match="attribute/@type | param/@type">
   <xsl:variable name="self_target" select="current()/ancestor::if/@target"/>
 
-  <xsl:if test="../@array and ../@safearray='yes'">
-    <xsl:message terminate="yes">
-      <xsl:value-of select="concat(../../../@name,'::',../../@name,'::',../@name,': ')"/>
-      <xsl:text>either 'array' or 'safearray="yes"' attribute is allowed, but not both!</xsl:text>
-    </xsl:message>
-  </xsl:if>
-
-  <xsl:if test="../@array and ((name(..)='param' and ../@dir='return') or (name(..)='attribute'))">
-    <xsl:message terminate="yes">
-      <xsl:value-of select="concat(../../../@name,'::',../../@name,'::',../@name,': ')"/>
-      <xsl:text>return 'array' parameters and 'array' attributes are not supported, use 'safearray="yes"' instead.</xsl:text>
-    </xsl:message>
-  </xsl:if>
-
   <xsl:choose>
-    <!-- modifiers (ignored for 'enumeration' attributes)-->
+    <!-- modifiers -->
     <xsl:when test="name(current())='type' and ../@mod">
-      <xsl:if test="../@safearray">
+      <xsl:if test="../@safearray and ../@mod='ptr'">
         <xsl:message terminate="yes">
           <xsl:value-of select="concat(../../../@name,'::',../../@name,'::',../@name,': ')"/>
           <xsl:text>either 'safearray' or 'mod' attribute is allowed, but not both!</xsl:text>
-        </xsl:message>
-      </xsl:if>
-      <xsl:if test="../@array">
-        <xsl:message terminate="yes">
-          <xsl:value-of select="concat(../../../@name,'::',../../@name,'::',../@name,': ')"/>
-          <xsl:text>either 'array' or 'mod' attribute is allowed, but not both!</xsl:text>
         </xsl:message>
       </xsl:if>
       <xsl:choose>
@@ -1375,10 +1190,6 @@
             <xsl:when test=".='long long'">LONG64 *</xsl:when>
             <xsl:when test=".='unsigned long'">ULONG *</xsl:when>
             <xsl:when test=".='unsigned long long'">ULONG64 *</xsl:when>
-            <xsl:when test=".='char'">CHAR *</xsl:when>
-            <!--<xsl:when test=".='string'">??</xsl:when-->
-            <xsl:when test=".='wchar'">OLECHAR *</xsl:when>
-            <!--<xsl:when test=".='wstring'">??</xsl:when-->
             <xsl:otherwise>
               <xsl:message terminate="yes">
                 <xsl:value-of select="concat(../../../@name,'::',../../@name,'::',../@name,': ')"/>
@@ -1389,6 +1200,28 @@
               </xsl:message>
             </xsl:otherwise>
           </xsl:choose>
+        </xsl:when>
+        <xsl:when test="../@mod='string'">
+          <xsl:if test="../@safearray">
+            <xsl:text>QVector &lt;</xsl:text>
+          </xsl:if>
+          <xsl:choose>
+            <!-- standard types -->
+            <!--xsl:when test=".='result'">??</xsl:when-->
+            <xsl:when test=".='uuid'">QString</xsl:when>
+            <xsl:otherwise>
+              <xsl:message terminate="yes">
+                <xsl:value-of select="concat(../../../@name,'::',../../@name,'::',../@name,': ')"/>
+                <xsl:text>attribute 'mod=</xsl:text>
+                <xsl:value-of select="concat('&quot;',../@mod,'&quot;')"/>
+                <xsl:text>' cannot be used with type </xsl:text>
+                <xsl:value-of select="concat('&quot;',current(),'&quot;!')"/>
+              </xsl:message>
+            </xsl:otherwise>
+          </xsl:choose>
+          <xsl:if test="../@safearray">
+            <xsl:text>&gt;</xsl:text>
+          </xsl:if>
         </xsl:when>
         <xsl:otherwise>
           <xsl:message terminate="yes">
@@ -1434,15 +1267,8 @@
             </xsl:when>
             <!-- custom interface types -->
             <xsl:when test="
-              (name(current())='enumerator' and
-               ((ancestor::library/enumerator[@name=current()]) or
-                (ancestor::library/if[@target=$self_target]/enumerator[@name=current()]))
-              ) or
               ((ancestor::library/interface[@name=current()]) or
                (ancestor::library/if[@target=$self_target]/interface[@name=current()])
-              ) or
-              ((ancestor::library/collection[@name=current()]) or
-               (ancestor::library/if[@target=$self_target]/collection[@name=current()])
               )
             ">
               <xsl:value-of select="concat('C',substring(.,2))"/>
@@ -1470,10 +1296,7 @@
  *  and enum types in the form of ' = <null_initializer>', or nothing for other
  *  types.
 -->
-<xsl:template match="
-  attribute/@type | param/@type |
-  enumerator/@type | collection/@type | collection/@enumerator
-" mode="initializer">
+<xsl:template match="attribute/@type | param/@type" mode="initializer">
 
   <xsl:variable name="self_target" select="current()/ancestor::if/@target"/>
 
@@ -1481,7 +1304,7 @@
     <!-- safearrays don't need initializers -->
     <xsl:when test="../@safearray">
     </xsl:when>
-    <!-- modifiers (ignored for 'enumeration' attributes)-->
+    <!-- modifiers -->
     <xsl:when test="name(current())='type' and ../@mod">
       <xsl:choose>
         <xsl:when test="../@mod='ptr'">
@@ -1496,10 +1319,22 @@
             <xsl:when test=".='long long'"> = NULL</xsl:when>
             <xsl:when test=".='unsigned long'"> = NULL</xsl:when>
             <xsl:when test=".='unsigned long long'"> = NULL</xsl:when>
-            <xsl:when test=".='char'"> = NULL</xsl:when>
-            <!--<xsl:when test=".='string'">??</xsl:when-->
-            <xsl:when test=".='wchar'"> = NULL</xsl:when>
-            <!--<xsl:when test=".='wstring'">??</xsl:when-->
+            <xsl:otherwise>
+              <xsl:message terminate="yes">
+                <xsl:value-of select="concat(../../../@name,'::',../../@name,'::',../@name,': ')"/>
+                <xsl:text>attribute 'mod=</xsl:text>
+                <xsl:value-of select="concat('&quot;',../@mod,'&quot;')"/>
+                <xsl:text>' cannot be used with type </xsl:text>
+                <xsl:value-of select="concat('&quot;',current(),'&quot;!')"/>
+              </xsl:message>
+            </xsl:otherwise>
+          </xsl:choose>
+        </xsl:when>
+        <xsl:when test="../@mod='string'">
+          <xsl:choose>
+            <!-- standard types -->
+            <!--xsl:when test=".='result'">??</xsl:when-->
+            <xsl:when test=".='uuid'"></xsl:when>
             <xsl:otherwise>
               <xsl:message terminate="yes">
                 <xsl:value-of select="concat(../../../@name,'::',../../@name,'::',../@name,': ')"/>
@@ -1570,14 +1405,8 @@
        (ancestor::library/if[@target=$self_target]/enum[@name=current()])
       ) or
       .='$unknown' or
-      ((ancestor::library/enumerator[@name=current()]) or
-       (ancestor::library/if[@target=$self_target]/enumerator[@name=current()])
-      ) or
       ((ancestor::library/interface[@name=current()]) or
        (ancestor::library/if[@target=$self_target]/interface[@name=current()])
-      ) or
-      ((ancestor::library/collection[@name=current()]) or
-       (ancestor::library/if[@target=$self_target]/collection[@name=current()])
       )
     ">
       <xsl:choose>
@@ -1615,21 +1444,10 @@
         </xsl:when>
         <!-- <param> context -->
         <xsl:when test="name(..)='param'">
-          <xsl:choose>
-            <xsl:when test="../@array">
-              <xsl:apply-templates select="."/>
-              <xsl:text> *</xsl:text>
-              <xsl:if test="../@dir='out'">
-                <xsl:text> &amp;</xsl:text>
-              </xsl:if>
-            </xsl:when>
-            <xsl:otherwise>
-              <xsl:apply-templates select="."/>
-              <xsl:if test="../@dir='out'">
-                <xsl:text> &amp;</xsl:text>
-              </xsl:if>
-            </xsl:otherwise>
-          </xsl:choose>
+          <xsl:apply-templates select="."/>
+          <xsl:if test="../@dir='out'">
+            <xsl:text> &amp;</xsl:text>
+          </xsl:if>
         </xsl:when>
       </xsl:choose>
     </xsl:otherwise>
@@ -1641,15 +1459,12 @@
  *  attribute/parameter type conversion (returns plain COM type name)
  *  (basically, copied from midl.xsl)
 -->
-<xsl:template match="
-  attribute/@type | param/@type |
-  enumerator/@type | collection/@type | collection/@enumerator
-" mode="com">
+<xsl:template match="attribute/@type | param/@type" mode="com">
 
   <xsl:variable name="self_target" select="current()/ancestor::if/@target"/>
 
   <xsl:choose>
-    <!-- modifiers (ignored for 'enumeration' attributes)-->
+    <!-- modifiers -->
     <xsl:when test="name(current())='type' and ../@mod">
       <xsl:choose>
         <xsl:when test="../@mod='ptr'">
@@ -1664,10 +1479,22 @@
             <xsl:when test=".='long long'">LONG64 *</xsl:when>
             <xsl:when test=".='unsigned long'">ULONG *</xsl:when>
             <xsl:when test=".='unsigned long long'">ULONG64 *</xsl:when>
-            <xsl:when test=".='char'">CHAR *</xsl:when>
-            <!--xsl:when test=".='string'">??</xsl:when-->
-            <xsl:when test=".='wchar'">OLECHAR *</xsl:when>
-            <!--xsl:when test=".='wstring'">??</xsl:when-->
+            <xsl:otherwise>
+              <xsl:message terminate="yes">
+                <xsl:value-of select="concat(../../../@name,'::',../../@name,'::',../@name,': ')"/>
+                <xsl:text>attribute 'mod=</xsl:text>
+                <xsl:value-of select="concat('&quot;',../@mod,'&quot;')"/>
+                <xsl:text>' cannot be used with type </xsl:text>
+                <xsl:value-of select="concat('&quot;',current(),'&quot;!')"/>
+              </xsl:message>
+            </xsl:otherwise>
+          </xsl:choose>
+        </xsl:when>
+        <xsl:when test="../@mod='string'">
+          <xsl:choose>
+            <!-- standard types -->
+            <!--xsl:when test=".='result'">??</xsl:when-->
+            <xsl:when test=".='uuid'">BSTR</xsl:when>
             <xsl:otherwise>
               <xsl:message terminate="yes">
                 <xsl:value-of select="concat(../../../@name,'::',../../@name,'::',../@name,': ')"/>
@@ -1720,15 +1547,8 @@
             </xsl:when>
             <!-- custom interface types -->
             <xsl:when test="
-              (name(current())='enumerator' and
-               ((ancestor::library/enumerator[@name=current()]) or
-                (ancestor::library/if[@target=$self_target]/enumerator[@name=current()]))
-              ) or
               ((ancestor::library/interface[@name=current()]) or
                (ancestor::library/if[@target=$self_target]/interface[@name=current()])
-              ) or
-              ((ancestor::library/collection[@name=current()]) or
-               (ancestor::library/if[@target=$self_target]/collection[@name=current()])
               )
             ">
               <xsl:value-of select="."/><xsl:text> *</xsl:text>
@@ -1767,14 +1587,8 @@
   <xsl:variable name="self_target" select="current()/ancestor::if/@target"/>
 
   <xsl:variable name="is_iface" select="(
-    ((ancestor::library/enumerator[@name=current()/@type]) or
-     (ancestor::library/if[@target=$self_target]/enumerator[@name=current()/@type])
-    ) or
     ((ancestor::library/interface[@name=current()/@type]) or
      (ancestor::library/if[@target=$self_target]/interface[@name=current()/@type])
-    ) or
-    ((ancestor::library/collection[@name=current()/@type]) or
-     (ancestor::library/if[@target=$self_target]/collection[@name=current()/@type])
     )
   )"/>
 
@@ -1805,7 +1619,7 @@
               <xsl:text>_T&gt; </xsl:text>
             </xsl:when>
             <!-- GUID is special too -->
-            <xsl:when test="@type='uuid'">
+            <xsl:when test="@type='uuid' and @mod!='string'">
               <xsl:text>    com::SafeGUIDArray </xsl:text>
             </xsl:when>
             <!-- everything else is not -->

@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2008 Sun Microsystems, Inc.
+ * Copyright (C) 2008-2009 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -70,7 +70,7 @@ HRESULT StorageController::init(Machine *aParent,
 
     ComAssertRet(aParent && !aName.isEmpty(), E_INVALIDARG);
     if (   (aStorageBus <= StorageBus_Null)
-        || (aStorageBus >  StorageBus_SCSI))
+        || (aStorageBus >  StorageBus_Floppy))
         return setError (E_INVALIDARG,
             tr ("Invalid storage connection type"));
 
@@ -103,6 +103,11 @@ HRESULT StorageController::init(Machine *aParent,
         case StorageBus_SCSI:
             mData->mPortCount = 16;
             mData->mStorageControllerType = StorageControllerType_LsiLogic;
+            break;
+        case StorageBus_Floppy:
+            /** @todo allow 2 floppies later */
+            mData->mPortCount = 1;
+            mData->mStorageControllerType = StorageControllerType_I82078;
             break;
     }
 
@@ -302,6 +307,12 @@ STDMETHODIMP StorageController::COMSETTER(ControllerType) (StorageControllerType
                 rc = E_INVALIDARG;
             break;
         }
+        case StorageBus_Floppy:
+        {
+            if (aControllerType != StorageControllerType_I82078)
+                rc = E_INVALIDARG;
+            break;
+        }
         default:
             AssertMsgFailed(("Invalid controller type %d\n", mData->mStorageBus));
     }
@@ -325,26 +336,18 @@ STDMETHODIMP StorageController::COMGETTER(MaxDevicesPerPortCount) (ULONG *aMaxDe
 
     AutoReadLock alock(this);
 
-    switch (mData->mStorageBus)
-    {
-        case StorageBus_SATA:
-        case StorageBus_SCSI:
-        {
-            /* SATA and both SCSI controllers only support one device per port. */
-            *aMaxDevices = 1;
-            break;
-        }
-        case StorageBus_IDE:
-        {
-            /* The IDE controllers support 2 devices. One as master and one as slave. */
-            *aMaxDevices = 2;
-            break;
-        }
-        default:
-            AssertMsgFailed(("Invalid controller type %d\n", mData->mStorageBus));
-    }
+    ComPtr<IVirtualBox> VBox;
+    HRESULT rc = mParent->COMGETTER(Parent)(VBox.asOutParam());
+    if (FAILED(rc))
+        return rc;
 
-    return S_OK;
+    ComPtr<ISystemProperties> sysProps;
+    rc = VBox->COMGETTER(SystemProperties)(sysProps.asOutParam());
+    if (FAILED(rc))
+        return rc;
+
+    rc = sysProps->GetMaxDevicesPerPortForStorageBus(mData->mStorageBus, aMaxDevices);
+    return rc;
 }
 
 STDMETHODIMP StorageController::COMGETTER(MinPortCount) (ULONG *aMinPortCount)
@@ -356,28 +359,18 @@ STDMETHODIMP StorageController::COMGETTER(MinPortCount) (ULONG *aMinPortCount)
 
     AutoReadLock alock(this);
 
-    switch (mData->mStorageBus)
-    {
-        case StorageBus_SATA:
-        {
-            *aMinPortCount = 1;
-            break;
-        }
-        case StorageBus_SCSI:
-        {
-            *aMinPortCount = 16;
-            break;
-        }
-        case StorageBus_IDE:
-        {
-            *aMinPortCount = 2;
-            break;
-        }
-        default:
-            AssertMsgFailed(("Invalid controller type %d\n", mData->mStorageBus));
-    }
+    ComPtr<IVirtualBox> VBox;
+    HRESULT rc = mParent->COMGETTER(Parent)(VBox.asOutParam());
+    if (FAILED(rc))
+        return rc;
 
-    return S_OK;
+    ComPtr<ISystemProperties> sysProps;
+    rc = VBox->COMGETTER(SystemProperties)(sysProps.asOutParam());
+    if (FAILED(rc))
+        return rc;
+
+    rc = sysProps->GetMinPortCountForStorageBus(mData->mStorageBus, aMinPortCount);
+    return rc;
 }
 
 STDMETHODIMP StorageController::COMGETTER(MaxPortCount) (ULONG *aMaxPortCount)
@@ -389,28 +382,18 @@ STDMETHODIMP StorageController::COMGETTER(MaxPortCount) (ULONG *aMaxPortCount)
 
     AutoReadLock alock(this);
 
-    switch (mData->mStorageBus)
-    {
-        case StorageBus_SATA:
-        {
-            *aMaxPortCount = 30;
-            break;
-        }
-        case StorageBus_SCSI:
-        {
-            *aMaxPortCount = 16;
-            break;
-        }
-        case StorageBus_IDE:
-        {
-            *aMaxPortCount = 2;
-            break;
-        }
-        default:
-            AssertMsgFailed(("Invalid controller type %d\n", mData->mStorageBus));
-    }
+    ComPtr<IVirtualBox> VBox;
+    HRESULT rc = mParent->COMGETTER(Parent)(VBox.asOutParam());
+    if (FAILED(rc))
+        return rc;
 
-    return S_OK;
+    ComPtr<ISystemProperties> sysProps;
+    rc = VBox->COMGETTER(SystemProperties)(sysProps.asOutParam());
+    if (FAILED(rc))
+        return rc;
+
+    rc = sysProps->GetMaxPortCountForStorageBus(mData->mStorageBus, aMaxPortCount);
+    return rc;
 }
 
 
@@ -467,6 +450,18 @@ STDMETHODIMP StorageController::COMSETTER(PortCount) (ULONG aPortCount)
                 return setError (E_INVALIDARG,
                     tr ("Invalid port count: %lu (must be in range [%lu, %lu])"),
                         aPortCount, 2, 2);
+            break;
+        }
+        case StorageBus_Floppy:
+        {
+            /** @todo allow 2 floppies later */
+            /*
+             * The port count is fixed to 1.
+             */
+            if (aPortCount != 1)
+                return setError (E_INVALIDARG,
+                    tr ("Invalid port count: %lu (must be in range [%lu, %lu])"),
+                        aPortCount, 1, 1);
             break;
         }
         default:

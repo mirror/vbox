@@ -178,16 +178,6 @@ public:
         return S_OK;
     }
 
-    STDMETHOD(OnDVDDriveChange)()
-    {
-        return S_OK;
-    }
-
-    STDMETHOD(OnFloppyDriveChange)()
-    {
-        return S_OK;
-    }
-
     STDMETHOD(OnNetworkAdapterChange) (INetworkAdapter *aNetworkAdapter)
     {
         return S_OK;
@@ -214,6 +204,11 @@ public:
     }
 
     STDMETHOD(OnStorageControllerChange)()
+    {
+        return S_OK;
+    }
+
+    STDMETHOD(OnMediumChange)(IMediumAttachment * /* aMediumAttachment */)
     {
         return S_OK;
     }
@@ -915,7 +910,7 @@ extern "C" DECLEXPORT (int) TrustedMain (int argc, char **argv, char **envp)
         Log (("VBoxHeadless: Waiting for PowerDown...\n"));
 
         Event *e;
-        
+
         while (gEventQ->waitForEvent (&e) && e)
           gEventQ->handleEvent (e);
 

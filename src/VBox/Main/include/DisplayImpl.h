@@ -113,8 +113,6 @@ public:
         COM_INTERFACE_ENTRY2(IDispatch,IDisplay)
     END_COM_MAP()
 
-    NS_DECL_ISUPPORTS
-
     DECLARE_EMPTY_CTOR_DTOR (Display)
 
     HRESULT FinalConstruct();
@@ -169,16 +167,6 @@ public:
         return S_OK;
     }
 
-    STDMETHOD(OnDVDDriveChange)()
-    {
-        return S_OK;
-    }
-
-    STDMETHOD(OnFloppyDriveChange)()
-    {
-        return S_OK;
-    }
-
     STDMETHOD(OnNetworkAdapterChange) (INetworkAdapter *aNetworkAdapter)
     {
         return S_OK;
@@ -195,6 +183,11 @@ public:
     }
 
     STDMETHOD(OnStorageControllerChange) ()
+    {
+        return S_OK;
+    }
+
+    STDMETHOD(OnMediumChange)(IMediumAttachment *aMediumAttachment)
     {
         return S_OK;
     }

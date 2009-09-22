@@ -326,7 +326,7 @@ public:
         return S_OK;
     }
 
-    STDMETHOD(OnMediaRegistered) (IN_BSTR mediaId, DeviceType_T mediaType,
+    STDMETHOD(OnMediumRegistered)(IN_BSTR mediaId, DeviceType_T mediaType,
                                   BOOL registered)
     {
         NOREF (mediaId);
@@ -492,16 +492,6 @@ public:
         return S_OK;
     }
 
-    STDMETHOD(OnDVDDriveChange)()
-    {
-        return S_OK;
-    }
-
-    STDMETHOD(OnFloppyDriveChange)()
-    {
-        return S_OK;
-    }
-
     STDMETHOD(OnNetworkAdapterChange) (INetworkAdapter *aNetworkAdapter)
     {
         return S_OK;
@@ -539,6 +529,11 @@ public:
     }
 
     STDMETHOD(OnStorageControllerChange) ()
+    {
+        return S_OK;
+    }
+
+    STDMETHOD(OnMediumChange)(IMediumAttachment * /*aMediumAttachment*/)
     {
         return S_OK;
     }
@@ -1446,7 +1441,7 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
             return 1;
         }
     }
-    if (FAILED (rc))
+    if (FAILED(rc))
         break;
 
     /*
@@ -1526,7 +1521,7 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
          * it to the VM.
          */
         Bstr hdaFileBstr = hdaFile;
-        ComPtr<IHardDisk> hardDisk;
+        ComPtr<IMedium> hardDisk;
         virtualBox->FindHardDisk(hdaFileBstr, hardDisk.asOutParam());
         if (!hardDisk)
         {
@@ -1542,8 +1537,8 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
              */
             Bstr uuid;
             hardDisk->COMGETTER(Id)(uuid.asOutParam());
-            gMachine->DetachHardDisk(Bstr("IDE"), 0, 0);
-            gMachine->AttachHardDisk(uuid, Bstr("IDE"), 0, 0);
+            gMachine->DetachDevice(Bstr("IDE"), 0, 0);
+            gMachine->AttachDevice(Bstr("IDE"), 0, 0, DeviceType_HardDisk, uuid);
             /// @todo why is this attachment saved?
         }
         else
@@ -1559,58 +1554,40 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
     if (fdaFile)
     do
     {
-        ComPtr<IFloppyDrive> drive;
-        CHECK_ERROR_BREAK (gMachine, COMGETTER(FloppyDrive)(drive.asOutParam()));
+        ComPtr<IMedium> floppyMedium;
 
-        /*
-         * First special case 'none' to unmount
-         */
-        if (!strcmp (fdaFile, "none"))
+        /* unmount? */
+        if (!strcmp(fdaFile, "none"))
         {
-            CHECK_ERROR_BREAK (drive, Unmount());
-            break;
+            /* nothing to do, NULL object will cause unmount */
         }
-
-        Bstr medium = fdaFile;
-        bool done = false;
-
-        /* Assume it's a host drive name */
+        else
         {
+            Bstr medium = fdaFile;
+
+            /* Assume it's a host drive name */
             ComPtr <IHost> host;
-            CHECK_ERROR_BREAK (virtualBox, COMGETTER(Host)(host.asOutParam()));
-            com::SafeIfaceArray <IHostFloppyDrive> coll;
-            CHECK_ERROR_BREAK (host, COMGETTER(FloppyDrives)(ComSafeArrayAsOutParam(coll)));
-            ComPtr <IHostFloppyDrive> hostDrive;
-            rc = host->FindHostFloppyDrive (medium, hostDrive.asOutParam());
-            if (SUCCEEDED (rc))
+            CHECK_ERROR_BREAK(virtualBox, COMGETTER(Host)(host.asOutParam()));
+            rc = host->FindHostFloppyDrive(medium, floppyMedium.asOutParam());
+            if (FAILED(rc))
             {
-                done = true;
-                CHECK_ERROR_BREAK (drive, CaptureHostDrive (hostDrive));
+                /* try to find an existing one */
+                rc = virtualBox->FindFloppyImage(medium, floppyMedium.asOutParam());
+                if (FAILED(rc))
+                {
+                    /* try to add to the list */
+                    RTPrintf("Adding floppy image '%S'...\n", fdaFile);
+                    CHECK_ERROR_BREAK(virtualBox, OpenFloppyImage(medium, Bstr(),
+                                                                  floppyMedium.asOutParam()));
+                }
             }
         }
-
-        /* Must be an image */
-        if (!done)
-        {
-            /* try to find an existing one */
-            ComPtr<IFloppyImage> image;
-            rc = virtualBox->FindFloppyImage (medium, image.asOutParam());
-            if (FAILED (rc))
-            {
-                /* try to add to the list */
-                RTPrintf ("Adding floppy image '%S'...\n", fdaFile);
-                CHECK_ERROR_BREAK (virtualBox, OpenFloppyImage (medium, Bstr(),
-                                                                image.asOutParam()));
-            }
-
-            /* attach */
-            Bstr uuid;
-            image->COMGETTER(Id)(uuid.asOutParam());
-            CHECK_ERROR_BREAK (drive, MountImage (uuid));
-        }
+        Bstr id;
+        floppyMedium->COMGETTER(Id)(id.asOutParam());
+        CHECK_ERROR(gMachine, MountMedium(Bstr("FD"), 0, 0, id));
     }
     while (0);
-    if (FAILED (rc))
+    if (FAILED(rc))
         goto leave;
 
     /*
@@ -1619,58 +1596,40 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
     if (cdromFile)
     do
     {
-        ComPtr<IDVDDrive> drive;
-        CHECK_ERROR_BREAK (gMachine, COMGETTER(DVDDrive)(drive.asOutParam()));
+        ComPtr<IMedium> dvdMedium;
 
-        /*
-         * First special case 'none' to unmount
-         */
-        if (!strcmp (cdromFile, "none"))
+        /* unmount? */
+        if (!strcmp(cdromFile, "none"))
         {
-            CHECK_ERROR_BREAK (drive, Unmount());
-            break;
+            /* nothing to do, NULL object will cause unmount */
         }
-
-        Bstr medium = cdromFile;
-        bool done = false;
-
-        /* Assume it's a host drive name */
+        else
         {
+            Bstr medium = cdromFile;
+
+            /* Assume it's a host drive name */
             ComPtr <IHost> host;
-            CHECK_ERROR_BREAK (virtualBox, COMGETTER(Host)(host.asOutParam()));
-            SafeIfaceArray <IHostDVDDrive> coll;
-            CHECK_ERROR_BREAK (host, COMGETTER(DVDDrives)(ComSafeArrayAsOutParam(coll)));
-            ComPtr <IHostDVDDrive> hostDrive;
-            rc = host->FindHostDVDDrive (medium, hostDrive.asOutParam());
-            if (SUCCEEDED (rc))
+            CHECK_ERROR_BREAK(virtualBox, COMGETTER(Host)(host.asOutParam()));
+            rc = host->FindHostDVDDrive(medium,dvdMedium.asOutParam());
+            if (FAILED(rc))
             {
-                done = true;
-                CHECK_ERROR_BREAK (drive, CaptureHostDrive (hostDrive));
+                /* try to find an existing one */
+                rc = virtualBox->FindDVDImage(medium, dvdMedium.asOutParam());
+                if (FAILED(rc))
+                {
+                    /* try to add to the list */
+                    RTPrintf("Adding ISO image '%S'...\n", cdromFile);
+                    CHECK_ERROR_BREAK(virtualBox, OpenDVDImage(medium, Bstr(),
+                                                               dvdMedium.asOutParam()));
+                }
             }
         }
-
-        /* Must be an image */
-        if (!done)
-        {
-            /* try to find an existing one */
-            ComPtr <IDVDImage> image;
-            rc = virtualBox->FindDVDImage (medium, image.asOutParam());
-            if (FAILED (rc))
-            {
-                /* try to add to the list */
-                RTPrintf ("Adding ISO image '%S'...\n", cdromFile);
-                CHECK_ERROR_BREAK (virtualBox, OpenDVDImage (medium, Bstr(),
-                                                             image.asOutParam()));
-            }
-
-            /* attach */
-            Bstr uuid;
-            image->COMGETTER(Id)(uuid.asOutParam());
-            CHECK_ERROR_BREAK (drive, MountImage (uuid));
-        }
+        Bstr id;
+        dvdMedium->COMGETTER(Id)(id.asOutParam());
+        CHECK_ERROR(gMachine, MountMedium(Bstr("IDE"), 1, 0, id));
     }
     while (0);
-    if (FAILED (rc))
+    if (FAILED(rc))
         goto leave;
 
     if (fDiscardState)

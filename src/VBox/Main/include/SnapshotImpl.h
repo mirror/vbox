@@ -51,8 +51,6 @@ public:
         COM_INTERFACE_ENTRY2 (IDispatch, ISnapshot)
     END_COM_MAP()
 
-    NS_DECL_ISUPPORTS
-
     Snapshot()
         : m(NULL)
     { };

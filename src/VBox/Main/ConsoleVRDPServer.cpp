@@ -40,7 +40,7 @@
 #include <VBox/VRDPOrders.h>
 #endif /* VBOX_WITH_VRDP */
 
-class VRDPConsoleCallback : 
+class VRDPConsoleCallback :
     VBOX_SCRIPTABLE_IMPL(IConsoleCallback)
 {
 public:
@@ -116,12 +116,7 @@ public:
         return S_OK;
     }
 
-    STDMETHOD(OnDVDDriveChange)()
-    {
-        return S_OK;
-    }
-
-    STDMETHOD(OnFloppyDriveChange)()
+    STDMETHOD(OnMediumChange)(IMediumAttachment *aAttachment)
     {
         return S_OK;
     }

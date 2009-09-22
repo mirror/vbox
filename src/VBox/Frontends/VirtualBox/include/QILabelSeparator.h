@@ -23,9 +23,10 @@
 #ifndef __QILabelSeparator_h__
 #define __QILabelSeparator_h__
 
-/* Qt includes */
+/* Global includes */
 #include <QWidget>
 
+/* Global forwards */
 class QLabel;
 
 class QILabelSeparator: public QWidget
@@ -34,22 +35,21 @@ class QILabelSeparator: public QWidget
 
 public:
 
-    QILabelSeparator (QWidget *aParent = NULL, Qt::WindowFlags aFlags = 0);
-    QILabelSeparator (const QString &aText, QWidget *aParent = NULL, Qt::WindowFlags aFlags = 0);
+    QILabelSeparator (QWidget *aParent = 0, Qt::WindowFlags aFlags = 0);
+    QILabelSeparator (const QString &aText, QWidget *aParent = 0, Qt::WindowFlags aFlags = 0);
 
+    QString text() const;
     void setBuddy (QWidget *aBuddy);
 
 public slots:
 
     void clear();
     void setText (const QString &aText);
-    QString text() const;
 
 protected:
 
     virtual void init();
 
-    /* Protected member vars */
     QLabel *mLabel;
 };
 

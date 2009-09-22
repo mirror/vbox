@@ -272,6 +272,8 @@ VirtualBox_QT_MOCHDRS = \
 	include/QIDialog.h \
 	include/QIFileDialog.h \
 	include/QIAdvancedSlider.h \
+	include/QISplitter.h \
+	include/QITreeView.h \
 	include/VBoxFilePathSelectorWidget.h \
 	include/VBoxOSTypeSelectorButton.h \
 	include/VBoxOSTypeSelectorWidget.h \
@@ -306,8 +308,6 @@ VirtualBox_QT_MOCHDRS = \
 	include/VBoxVMSettingsSystem.h \
 	include/VBoxVMSettingsDisplay.h \
 	include/VBoxVMSettingsHD.h \
-	include/VBoxVMSettingsCD.h \
-	include/VBoxVMSettingsFD.h \
 	include/VBoxVMSettingsAudio.h \
 	include/VBoxVMSettingsNetwork.h \
 	include/VBoxVMSettingsSerial.h \
@@ -370,6 +370,8 @@ VirtualBox_SOURCES = \
 	src/QIMainDialog.cpp \
 	src/QILineEdit.cpp \
 	src/QIHelpButton.cpp \
+	src/QISplitter.cpp \
+	src/QITreeView.cpp \
 	src/VBoxGuestRAMSlider.cpp \
 	src/VBoxFilePathSelectorWidget.cpp \
 	src/VBoxOSTypeSelectorButton.cpp \
@@ -405,8 +407,6 @@ VirtualBox_SOURCES = \
 	src/VBoxVMSettingsSystem.cpp \
 	src/VBoxVMSettingsDisplay.cpp \
 	src/VBoxVMSettingsHD.cpp \
-	src/VBoxVMSettingsCD.cpp \
-	src/VBoxVMSettingsFD.cpp \
 	src/VBoxVMSettingsAudio.cpp \
 	src/VBoxVMSettingsNetwork.cpp \
 	src/VBoxVMSettingsSerial.cpp \

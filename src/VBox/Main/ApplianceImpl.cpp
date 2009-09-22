@@ -39,6 +39,8 @@
 #include "GuestOSTypeImpl.h"
 #include "ProgressImpl.h"
 #include "MachineImpl.h"
+#include "MediumImpl.h"
+
 #include "HostNetworkInterfaceImpl.h"
 
 #include "Logging.h"
@@ -382,7 +384,7 @@ HRESULT Appliance::searchUniqueVMName(Utf8Str& aName) const
 
 HRESULT Appliance::searchUniqueDiskImageFilePath(Utf8Str& aName) const
 {
-    IHardDisk *harddisk = NULL;
+    IMedium *harddisk = NULL;
     char *tmpName = RTStrDup(aName.c_str());
     int i = 1;
     /* Check if the file exists or if a file with this path is registered
@@ -438,7 +440,7 @@ void Appliance::waitForAsyncProgress(ComObjPtr<Progress> &pProgressThis,
         rc = pProgressAsync->COMGETTER(Percent(&currentPercent));
         if (FAILED(rc)) throw rc;
         if (!pProgressThis.isNull())
-            pProgressThis->setCurrentOperationProgress(currentPercent);
+            pProgressThis->SetCurrentOperationProgress(currentPercent);
         if (fCompleted)
             break;
 
@@ -775,7 +777,7 @@ int Appliance::TaskOVF::updateProgress(unsigned uPercent, void *pvUser)
         pTask->progress->COMGETTER(Canceled)(&fCanceled);
         if (fCanceled)
             return -1;
-        pTask->progress->setCurrentOperationProgress(uPercent);
+        pTask->progress->SetCurrentOperationProgress(uPercent);
     }
     return VINF_SUCCESS;
 }
@@ -1025,7 +1027,7 @@ int Appliance::readS3(TaskImportOVF *pTask)
         hS3 = NIL_RTS3;
 
         if (!pTask->progress.isNull())
-            pTask->progress->setNextOperation(Bstr(tr("Reading")), 1);
+            pTask->progress->SetNextOperation(Bstr(tr("Reading")), 1);
 
         /* Prepare the temporary reading of the OVF */
         ComObjPtr<Progress> progress;
@@ -1096,7 +1098,7 @@ int Appliance::importFS(TaskImportOVF *pTask)
     // rollback for errors:
     // a list of images that we created/imported
     list<MyHardDiskAttachment> llHardDiskAttachments;
-    list< ComPtr<IHardDisk> > llHardDisksCreated;
+    list< ComPtr<IMedium> > llHardDisksCreated;
     list<Guid> llMachinesRegistered;
 
     ComPtr<ISession> session;
@@ -1423,12 +1425,14 @@ int Appliance::importFS(TaskImportOVF *pTask)
                 }
             }
 
+/// @todo FIXME
+#if 0
             /* Floppy drive */
             std::list<VirtualSystemDescriptionEntry*> vsdeFloppy = vsdescThis->findByType(VirtualSystemDescriptionType_Floppy);
             // Floppy support is enabled if there's at least one such entry; to disable floppy support,
             // the type of the floppy item would have been changed to "ignore"
             bool fFloppyEnabled = vsdeFloppy.size() > 0;
-            ComPtr<IFloppyDrive> floppyDrive;
+            ComPtr<IMedium> floppyDrive;
             rc = pNewMachine->COMGETTER(FloppyDrive)(floppyDrive.asOutParam());
             if (FAILED(rc)) throw rc;
             rc = floppyDrive->COMSETTER(Enabled)(fFloppyEnabled);
@@ -1437,6 +1441,7 @@ int Appliance::importFS(TaskImportOVF *pTask)
             /* CDROM drive */
             /* @todo: I can't disable the CDROM. So nothing to do for now */
             // std::list<VirtualSystemDescriptionEntry*> vsdeFloppy = vsd->findByType(VirtualSystemDescriptionType_CDROM);
+#endif
 
             /* Hard disk controller IDE */
             std::list<VirtualSystemDescriptionEntry*> vsdeHDCIDE = vsdescThis->findByType(VirtualSystemDescriptionType_HardDiskControllerIDE);
@@ -1529,7 +1534,7 @@ int Appliance::importFS(TaskImportOVF *pTask)
             {
                 /* If in the next block an error occur we have to deregister
                    the machine, so make an extra try/catch block. */
-                ComPtr<IHardDisk> srcHdVBox;
+                ComPtr<IMedium> srcHdVBox;
                 bool fSourceHdNeedsClosing = false;
 
                 try
@@ -1586,7 +1591,7 @@ int Appliance::importFS(TaskImportOVF *pTask)
                         // subprogress object for hard disk
                         ComPtr<IProgress> pProgress2;
 
-                        ComPtr<IHardDisk> dstHdVBox;
+                        ComPtr<IMedium> dstHdVBox;
                         /* If strHref is empty we have to create a new file */
                         if (di.strHref.isEmpty())
                         {
@@ -1600,12 +1605,12 @@ int Appliance::importFS(TaskImportOVF *pTask)
                             if (FAILED(rc)) throw rc;
 
                             /* Create a dynamic growing disk image with the given capacity */
-                            rc = dstHdVBox->CreateBaseStorage(di.iCapacity / _1M, HardDiskVariant_Standard, pProgress2.asOutParam());
+                            rc = dstHdVBox->CreateBaseStorage(di.iCapacity / _1M, MediumVariant_Standard, pProgress2.asOutParam());
                             if (FAILED(rc)) throw rc;
 
                             /* Advance to the next operation */
                             if (!pTask->progress.isNull())
-                                pTask->progress->setNextOperation(BstrFmt(tr("Creating virtual disk image '%s'"), vsdeHD->strVbox.c_str()),
+                                pTask->progress->SetNextOperation(BstrFmt(tr("Creating virtual disk image '%s'"), vsdeHD->strVbox.c_str()),
                                                                  vsdeHD->ulSizeMB);     // operation's weight, as set up with the IProgress originally
                         }
                         else
@@ -1639,12 +1644,12 @@ int Appliance::importFS(TaskImportOVF *pTask)
                             rc = mVirtualBox->CreateHardDisk(srcFormat, Bstr(vsdeHD->strVbox), dstHdVBox.asOutParam());
                             if (FAILED(rc)) throw rc;
                             /* Clone the source disk image */
-                            rc = srcHdVBox->CloneTo(dstHdVBox, HardDiskVariant_Standard, NULL, pProgress2.asOutParam());
+                            rc = srcHdVBox->CloneTo(dstHdVBox, MediumVariant_Standard, NULL, pProgress2.asOutParam());
                             if (FAILED(rc)) throw rc;
 
                             /* Advance to the next operation */
                             if (!pTask->progress.isNull())
-                                pTask->progress->setNextOperation(BstrFmt(tr("Importing virtual disk image '%s'"), strSrcFilePath.c_str()),
+                                pTask->progress->SetNextOperation(BstrFmt(tr("Importing virtual disk image '%s'"), strSrcFilePath.c_str()),
                                                                  vsdeHD->ulSizeMB);     // operation's weight, as set up with the IProgress originally);
                         }
 
@@ -1725,10 +1730,11 @@ int Appliance::importFS(TaskImportOVF *pTask)
 
                         Log(("Attaching disk %s to channel %d on device %d\n", vsdeHD->strVbox.c_str(), mhda.lChannel, mhda.lDevice));
 
-                        rc = sMachine->AttachHardDisk(hdId,
-                                                      mhda.controllerType,
-                                                      mhda.lChannel,
-                                                      mhda.lDevice);
+                        rc = sMachine->AttachDevice(mhda.controllerType,
+                                                    mhda.lChannel,
+                                                    mhda.lDevice,
+                                                    DeviceType_HardDisk,
+                                                    hdId);
                         if (FAILED(rc)) throw rc;
 
                         llHardDiskAttachments.push_back(mhda);
@@ -1785,7 +1791,7 @@ int Appliance::importFS(TaskImportOVF *pTask)
                 rc2 = session->COMGETTER(Machine)(sMachine.asOutParam());
                 if (SUCCEEDED(rc2))
                 {
-                    rc2 = sMachine->DetachHardDisk(Bstr(mhda.controllerType), mhda.lChannel, mhda.lDevice);
+                    rc2 = sMachine->DetachDevice(Bstr(mhda.controllerType), mhda.lChannel, mhda.lDevice);
                     rc2 = sMachine->SaveSettings();
                 }
                 session->Close();
@@ -1793,12 +1799,12 @@ int Appliance::importFS(TaskImportOVF *pTask)
         }
 
         // now clean up all hard disks we created
-        list< ComPtr<IHardDisk> >::iterator itHD;
+        list< ComPtr<IMedium> >::iterator itHD;
         for (itHD = llHardDisksCreated.begin();
              itHD != llHardDisksCreated.end();
              ++itHD)
         {
-            ComPtr<IHardDisk> pDisk = *itHD;
+            ComPtr<IMedium> pDisk = *itHD;
             ComPtr<IProgress> pProgress;
             rc2 = pDisk->DeleteStorage(pProgress.asOutParam());
             rc2 = pProgress->WaitForCompletion(-1);
@@ -1902,7 +1908,7 @@ int Appliance::importS3(TaskImportOVF *pTask)
             char *pszFilename = RTPathFilename(strSrcFile.c_str());
             /* Advance to the next operation */
             if (!pTask->progress.isNull())
-                pTask->progress->setNextOperation(BstrFmt(tr("Downloading file '%s'"), pszFilename), s.second);
+                pTask->progress->SetNextOperation(BstrFmt(tr("Downloading file '%s'"), pszFilename), s.second);
 
             vrc = RTS3GetKey(hS3, bucket.c_str(), pszFilename, strSrcFile.c_str());
             if (RT_FAILURE(vrc))
@@ -1928,7 +1934,7 @@ int Appliance::importS3(TaskImportOVF *pTask)
         Utf8Str strManifestFile = manifestFileName(strTmpOvf);
         char *pszFilename = RTPathFilename(strManifestFile.c_str());
         if (!pTask->progress.isNull())
-            pTask->progress->setNextOperation(BstrFmt(tr("Downloading file '%s'"), pszFilename), 1);
+            pTask->progress->SetNextOperation(BstrFmt(tr("Downloading file '%s'"), pszFilename), 1);
 
         /* Try to download it. If the error is VERR_S3_NOT_FOUND, it isn't fatal. */
         vrc = RTS3GetKey(hS3, bucket.c_str(), pszFilename, strManifestFile.c_str());
@@ -1953,7 +1959,7 @@ int Appliance::importS3(TaskImportOVF *pTask)
         hS3 = NIL_RTS3;
 
         if (!pTask->progress.isNull())
-            pTask->progress->setNextOperation(BstrFmt(tr("Importing appliance")), m->ulWeightPerOperation);
+            pTask->progress->SetNextOperation(BstrFmt(tr("Importing appliance")), m->ulWeightPerOperation);
 
         ComObjPtr<Progress> progress;
         /* Import the whole temporary OVF & the disk images */
@@ -2820,8 +2826,8 @@ int Appliance::writeFS(TaskExportOVF *pTask)
             strTargetFilePath.append(strTargetFileNameOnly);
 
             // clone the disk:
-            ComPtr<IHardDisk> pSourceDisk;
-            ComPtr<IHardDisk> pTargetDisk;
+            ComPtr<IMedium> pSourceDisk;
+            ComPtr<IMedium> pTargetDisk;
             ComPtr<IProgress> pProgress2;
 
             Log(("Finding source disk \"%ls\"\n", bstrSrcFilePath.raw()));
@@ -2841,12 +2847,12 @@ int Appliance::writeFS(TaskExportOVF *pTask)
             try
             {
                 // create a flat copy of the source disk image
-                rc = pSourceDisk->CloneTo(pTargetDisk, HardDiskVariant_VmdkStreamOptimized, NULL, pProgress2.asOutParam());
+                rc = pSourceDisk->CloneTo(pTargetDisk, MediumVariant_VmdkStreamOptimized, NULL, pProgress2.asOutParam());
                 if (FAILED(rc)) throw rc;
 
                 // advance to the next operation
                 if (!pTask->progress.isNull())
-                    pTask->progress->setNextOperation(BstrFmt(tr("Exporting virtual disk image '%s'"), strSrcFilePath.c_str()),
+                    pTask->progress->SetNextOperation(BstrFmt(tr("Exporting virtual disk image '%s'"), strSrcFilePath.c_str()),
                                                      pDiskEntry->ulSizeMB);     // operation's weight, as set up with the IProgress originally);
 
                 // now wait for the background disk operation to complete; this throws HRESULTs on error
@@ -3043,7 +3049,7 @@ int Appliance::writeS3(TaskExportOVF *pTask)
             char *pszFilename = RTPathFilename(s.first.c_str());
             /* Advance to the next operation */
             if (!pTask->progress.isNull())
-                pTask->progress->setNextOperation(BstrFmt(tr("Uploading file '%s'"), pszFilename), s.second);
+                pTask->progress->SetNextOperation(BstrFmt(tr("Uploading file '%s'"), pszFilename), s.second);
             vrc = RTS3PutKey(hS3, bucket.c_str(), pszFilename, s.first.c_str());
             if (RT_FAILURE(vrc))
             {
@@ -4266,8 +4272,8 @@ STDMETHODIMP Machine::Export(IAppliance *aAppliance, IVirtualSystemDescription *
         Bstr bstrGuestOSType;
         uint32_t cCPUs;
         uint32_t ulMemSizeMB;
-        BOOL fDVDEnabled;
-        BOOL fFloppyEnabled;
+        BOOL fDVDEnabled = FALSE;
+        BOOL fFloppyEnabled = FALSE;
         BOOL fUSBEnabled;
         BOOL fAudioEnabled;
         AudioControllerType_T audioController;
@@ -4295,6 +4301,8 @@ STDMETHODIMP Machine::Export(IAppliance *aAppliance, IVirtualSystemDescription *
         // snapshotFolder?
         // VRDPServer?
 
+/// @todo FIXME // @todo mediumbranch
+#if 0
         // floppy
         rc = mFloppyDrive->COMGETTER(Enabled)(&fFloppyEnabled);
         if (FAILED(rc)) throw rc;
@@ -4302,6 +4310,7 @@ STDMETHODIMP Machine::Export(IAppliance *aAppliance, IVirtualSystemDescription *
         // CD-ROM ?!?
         // ComPtr<IDVDDrive> pDVDDrive;
         fDVDEnabled = 1;
+#endif
 
         // this is more tricky so use the COM method
         rc = COMGETTER(USBController)(pUsbController.asOutParam());
@@ -4426,15 +4435,15 @@ STDMETHODIMP Machine::Export(IAppliance *aAppliance, IVirtualSystemDescription *
 #endif // VBOX_WITH_LSILOGIC
 
 //     <const name="HardDiskImage" value="9" />
-        HDData::AttachmentList::iterator itA;
-        for (itA = mHDData->mAttachments.begin();
-             itA != mHDData->mAttachments.end();
+        MediaData::AttachmentList::iterator itA;
+        for (itA = mMediaData->mAttachments.begin();
+             itA != mMediaData->mAttachments.end();
              ++itA)
         {
-            ComObjPtr<HardDiskAttachment> pHDA = *itA;
+            ComObjPtr<MediumAttachment> pHDA = *itA;
 
             // the attachment's data
-            ComPtr<IHardDisk> pHardDisk;
+            ComPtr<IMedium> pMedium;
             ComPtr<IStorageController> ctl;
             Bstr controllerName;
 
@@ -4451,7 +4460,7 @@ STDMETHODIMP Machine::Export(IAppliance *aAppliance, IVirtualSystemDescription *
             rc = ctl->COMGETTER(Bus)(&storageBus);
             if (FAILED(rc)) throw rc;
 
-            rc = pHDA->COMGETTER(HardDisk)(pHardDisk.asOutParam());
+            rc = pHDA->COMGETTER(Medium)(pMedium.asOutParam());
             if (FAILED(rc)) throw rc;
 
             rc = pHDA->COMGETTER(Port)(&lChannel);
@@ -4461,78 +4470,81 @@ STDMETHODIMP Machine::Export(IAppliance *aAppliance, IVirtualSystemDescription *
             if (FAILED(rc)) throw rc;
 
             Bstr bstrLocation;
-            rc = pHardDisk->COMGETTER(Location)(bstrLocation.asOutParam());
-            if (FAILED(rc)) throw rc;
             Bstr bstrName;
-            rc = pHardDisk->COMGETTER(Name)(bstrName.asOutParam());
-            if (FAILED(rc)) throw rc;
-
-            // force reading state, or else size will be returned as 0
-            MediaState_T ms;
-            rc = pHardDisk->COMGETTER(State)(&ms);
-            if (FAILED(rc)) throw rc;
-
-            ULONG64 ullSize;
-            rc = pHardDisk->COMGETTER(Size)(&ullSize);
-            if (FAILED(rc)) throw rc;
-
-            // and how this translates to the virtual system
-            int32_t lControllerVsys = 0;
-            LONG lChannelVsys;
-
-            switch (storageBus)
+            if (pMedium) // @todo mediumbranch only for hard disks
             {
-                case StorageBus_IDE:
-                    // this is the exact reverse to what we're doing in Appliance::taskThreadImportMachines,
-                    // and it must be updated when that is changed!
+                rc = pMedium->COMGETTER(Location)(bstrLocation.asOutParam());
+                if (FAILED(rc)) throw rc;
+                rc = pMedium->COMGETTER(Name)(bstrName.asOutParam());
+                if (FAILED(rc)) throw rc;
 
-                    if (lChannel == 0 && lDevice == 0)      // primary master
-                        lChannelVsys = 0;
-                    else if (lChannel == 0 && lDevice == 1) // primary slave
-                        lChannelVsys = 1;
-                    else if (lChannel == 1 && lDevice == 1) // secondary slave; secondary master is always CDROM
-                        lChannelVsys = 2;
-                    else
+                // force reading state, or else size will be returned as 0
+                MediumState_T ms;
+                rc = pMedium->COMGETTER(State)(&ms);
+                if (FAILED(rc)) throw rc;
+
+                ULONG64 ullSize;
+                rc = pMedium->COMGETTER(Size)(&ullSize);
+                if (FAILED(rc)) throw rc;
+
+                // and how this translates to the virtual system
+                int32_t lControllerVsys = 0;
+                LONG lChannelVsys;
+
+                switch (storageBus)
+                {
+                    case StorageBus_IDE:
+                        // this is the exact reverse to what we're doing in Appliance::taskThreadImportMachines,
+                        // and it must be updated when that is changed!
+
+                        if (lChannel == 0 && lDevice == 0)      // primary master
+                            lChannelVsys = 0;
+                        else if (lChannel == 0 && lDevice == 1) // primary slave
+                            lChannelVsys = 1;
+                        else if (lChannel == 1 && lDevice == 1) // secondary slave; secondary master is always CDROM
+                            lChannelVsys = 2;
+                        else
+                            throw setError(VBOX_E_NOT_SUPPORTED,
+                                        tr("Cannot handle hard disk attachment: channel is %d, device is %d"), lChannel, lDevice);
+
+                        lControllerVsys = lIDEControllerIndex;
+                    break;
+
+                    case StorageBus_SATA:
+                        lChannelVsys = lChannel;        // should be between 0 and 29
+                        lControllerVsys = lSATAControllerIndex;
+                    break;
+
+                    case StorageBus_SCSI:
+                        lChannelVsys = lChannel;        // should be between 0 and 15
+                        lControllerVsys = lSCSIControllerIndex;
+                    break;
+
+                    default:
                         throw setError(VBOX_E_NOT_SUPPORTED,
-                                       tr("Cannot handle hard disk attachment: channel is %d, device is %d"), lChannel, lDevice);
+                                    tr("Cannot handle hard disk attachment: storageBus is %d, channel is %d, device is %d"), storageBus, lChannel, lDevice);
+                    break;
+                }
 
-                    lControllerVsys = lIDEControllerIndex;
-                break;
+                Utf8Str strTargetVmdkName(bstrName);
+                strTargetVmdkName.stripExt();
+                strTargetVmdkName.append(".vmdk");
 
-                case StorageBus_SATA:
-                    lChannelVsys = lChannel;        // should be between 0 and 29
-                    lControllerVsys = lSATAControllerIndex;
-                break;
-
-                case StorageBus_SCSI:
-                    lChannelVsys = lChannel;        // should be between 0 and 15
-                    lControllerVsys = lSCSIControllerIndex;
-                break;
-
-                default:
-                    throw setError(VBOX_E_NOT_SUPPORTED,
-                                   tr("Cannot handle hard disk attachment: storageBus is %d, channel is %d, device is %d"), storageBus, lChannel, lDevice);
-                break;
+                pNewDesc->addEntry(VirtualSystemDescriptionType_HardDiskImage,
+                                strTargetVmdkName,   // disk ID: let's use the name
+                                strTargetVmdkName,   // OVF value:
+                                Utf8Str(bstrLocation), // vbox value: media path
+                                (uint32_t)(ullSize / _1M),
+                                Utf8StrFmt("controller=%RI32;channel=%RI32", lControllerVsys, lChannelVsys));
             }
-
-            Utf8Str strTargetVmdkName(bstrName);
-            strTargetVmdkName.stripExt();
-            strTargetVmdkName.append(".vmdk");
-
-            pNewDesc->addEntry(VirtualSystemDescriptionType_HardDiskImage,
-                               strTargetVmdkName,   // disk ID: let's use the name
-                               strTargetVmdkName,   // OVF value:
-                               Utf8Str(bstrLocation), // vbox value: media path
-                               (uint32_t)(ullSize / _1M),
-                               Utf8StrFmt("controller=%RI32;channel=%RI32", lControllerVsys, lChannelVsys));
         }
 
         /* Floppy Drive */
-        if (fFloppyEnabled)
+        if (fFloppyEnabled)  // @todo mediumbranch
             pNewDesc->addEntry(VirtualSystemDescriptionType_Floppy, "", "", "");
 
         /* CD Drive */
-        if (fDVDEnabled)
+        if (fDVDEnabled) // @todo mediumbranch
             pNewDesc->addEntry(VirtualSystemDescriptionType_CDROM, "", "", "");
 
 //     <const name="NetworkAdapter" />

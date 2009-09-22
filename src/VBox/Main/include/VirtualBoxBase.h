@@ -1212,11 +1212,7 @@ private:
 
 class ATL_NO_VTABLE VirtualBoxBase
     : virtual public VirtualBoxBaseProto
-#if !defined (VBOX_WITH_XPCOM)
     , public CComObjectRootEx <CComMultiThreadModel>
-#else
-    , public CComObjectRootEx
-#endif
 {
 
 public:

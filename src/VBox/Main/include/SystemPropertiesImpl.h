@@ -25,7 +25,7 @@
 #define ____H_SYSTEMPROPERTIESIMPL
 
 #include "VirtualBoxBase.h"
-#include "HardDiskFormatImpl.h"
+#include "MediumFormatImpl.h"
 
 #include <VBox/com/array.h>
 
@@ -57,8 +57,6 @@ public:
         COM_INTERFACE_ENTRY2 (IDispatch, ISystemProperties)
     END_COM_MAP()
 
-    NS_DECL_ISUPPORTS
-
     DECLARE_EMPTY_CTOR_DTOR (SystemProperties)
 
     HRESULT FinalConstruct();
@@ -85,9 +83,9 @@ public:
     STDMETHOD(COMSETTER(DefaultMachineFolder)) (IN_BSTR aDefaultMachineFolder);
     STDMETHOD(COMGETTER(DefaultHardDiskFolder)) (BSTR *aDefaultHardDiskFolder);
     STDMETHOD(COMSETTER(DefaultHardDiskFolder)) (IN_BSTR aDefaultHardDiskFolder);
-    STDMETHOD(COMGETTER(HardDiskFormats)) (ComSafeArrayOut (IHardDiskFormat *, aHardDiskFormats));
-    STDMETHOD(COMGETTER(DefaultHardDiskFormat)) (BSTR *aDefaultHardDiskFolder);
-    STDMETHOD(COMSETTER(DefaultHardDiskFormat)) (IN_BSTR aDefaultHardDiskFolder);
+    STDMETHOD(COMGETTER(MediumFormats)) (ComSafeArrayOut (IMediumFormat *, aMediumFormats));
+    STDMETHOD(COMGETTER(DefaultHardDiskFormat)) (BSTR *aDefaultHardDiskFormat);
+    STDMETHOD(COMSETTER(DefaultHardDiskFormat)) (IN_BSTR aDefaultHardDiskFormat);
     STDMETHOD(COMGETTER(RemoteDisplayAuthLibrary)) (BSTR *aRemoteDisplayAuthLibrary);
     STDMETHOD(COMSETTER(RemoteDisplayAuthLibrary)) (IN_BSTR aRemoteDisplayAuthLibrary);
     STDMETHOD(COMGETTER(WebServiceAuthLibrary)) (BSTR *aWebServiceAuthLibrary);
@@ -96,12 +94,16 @@ public:
     STDMETHOD(COMSETTER(LogHistoryCount)) (ULONG count);
     STDMETHOD(COMGETTER(DefaultAudioDriver)) (AudioDriverType_T *aAudioDriver);
 
+    STDMETHOD(GetMaxDevicesPerPortForStorageBus) (StorageBus_T aBus, ULONG *aMaxDevicesPerPort);
+    STDMETHOD(GetMinPortCountForStorageBus) (StorageBus_T aBus, ULONG *aMinPortCount);
+    STDMETHOD(GetMaxPortCountForStorageBus) (StorageBus_T aBus, ULONG *aMaxPortCount);
+
     // public methods only for internal purposes
 
     HRESULT loadSettings(const settings::SystemProperties &data);
     HRESULT saveSettings(settings::SystemProperties &data);
 
-    ComObjPtr<HardDiskFormat> hardDiskFormat(CBSTR aFormat);
+    ComObjPtr<MediumFormat> mediumFormat(CBSTR aFormat);
 
     // public methods for internal purposes only
     // (ensure there is a caller and a read lock before calling them!)
@@ -111,7 +113,7 @@ public:
 
 private:
 
-    typedef std::list< ComObjPtr<HardDiskFormat> > HardDiskFormatList;
+    typedef std::list<ComObjPtr<MediumFormat> > MediumFormatList;
 
     HRESULT setDefaultMachineFolder(const Utf8Str &aPath);
     HRESULT setDefaultHardDiskFolder(const Utf8Str &aPath);
@@ -128,7 +130,7 @@ private:
     Utf8Str m_strDefaultHardDiskFolderFull;
     Utf8Str m_strDefaultHardDiskFormat;
 
-    HardDiskFormatList mHardDiskFormats;
+    MediumFormatList mMediumFormats;
 
     Utf8Str m_strRemoteDisplayAuthLibrary;
     Utf8Str m_strWebServiceAuthLibrary;

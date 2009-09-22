@@ -147,7 +147,7 @@ VBoxNewHDWzd::VBoxNewHDWzd (QWidget *aParent)
     /* Image type page */
 
     /* Name and Size page */
-    /// @todo NEWMEDIA use extension as reported by CHardDiskFormat
+    /// @todo NEWMEDIA use extension as reported by CMediumFormat
     static ulong HDNumber = 0;
     mLeName->setText (QString ("NewHardDisk%1.vdi").arg (++ HDNumber));
     mSlSize->setFocusPolicy (Qt::StrongFocus);
@@ -374,7 +374,7 @@ void VBoxNewHDWzd::updateSizeToolTip (quint64 aSizeB)
  */
 bool VBoxNewHDWzd::createHardDisk()
 {
-    KHardDiskVariant variant = KHardDiskVariant_Standard;
+    KMediumVariant variant = KMediumVariant_Standard;
     QString loc = location();
 
     AssertReturn (!loc.isEmpty(), false);
@@ -384,7 +384,7 @@ bool VBoxNewHDWzd::createHardDisk()
 
     CProgress progress;
 
-    CHardDisk hd = vbox.CreateHardDisk(QString ("VDI"), loc);
+    CMedium hd = vbox.CreateHardDisk(QString ("VDI"), loc);
 
     if (!vbox.isOk())
     {
@@ -394,7 +394,7 @@ bool VBoxNewHDWzd::createHardDisk()
     }
 
     if (!isDynamicStorage())
-        variant = (KHardDiskVariant)(KHardDiskVariant_Standard | KHardDiskVariant_Fixed);
+        variant = (KMediumVariant)(KMediumVariant_Standard | KMediumVariant_Fixed);
 
     progress = hd.CreateBaseStorage (mCurrentSize, variant);
 
@@ -416,8 +416,8 @@ bool VBoxNewHDWzd::createHardDisk()
 
     /* Inform everybody there is a new medium */
     vboxGlobal().addMedium (VBoxMedium (CMedium (hd),
-                                        VBoxDefs::MediaType_HardDisk,
-                                        KMediaState_Created));
+                                        VBoxDefs::MediumType_HardDisk,
+                                        KMediumState_Created));
 
     mHD = hd;
     return true;

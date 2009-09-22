@@ -39,7 +39,7 @@
 #include <iprt/path.h>
 #include <iprt/param.h>
 
-#include "VBoxHDD-Internal.h"
+#include <VBox/VBoxHDD-Plugin.h>
 
 
 #define VBOXHDDDISK_SIGNATURE 0x6f0e2a7d

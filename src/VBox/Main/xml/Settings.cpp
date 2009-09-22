@@ -29,6 +29,8 @@
 // generated header
 #include "SchemaDefs.h"
 
+#include "Logging.h"
+
 using namespace com;
 using namespace settings;
 
@@ -98,9 +100,10 @@ public:
         if (pNode)
             strLine = Utf8StrFmt(" (line %RU32)", pNode->getLineNumber());
 
-        Utf8StrFmt str("Error reading %s%s -- %s",
+        const char *pcsz = strLine.c_str();
+        Utf8StrFmt str(N_("Error in %s%s -- %s"),
                        file->m->strFilename.c_str(),
-                       strLine.c_str(),
+                       (pcsz) ? pcsz : "",
                        what.c_str());
 
         setWhat(str.c_str());
@@ -114,6 +117,9 @@ public:
 ConfigFileBase::ConfigFileBase(const com::Utf8Str *pstrFilename)
     : m(new Data)
 {
+    Utf8Str strMajor;
+    Utf8Str strMinor;
+
     m->fFileExists = false;
 
     if (pstrFilename)
@@ -134,22 +140,54 @@ ConfigFileBase::ConfigFileBase(const com::Utf8Str *pstrFilename)
         if (!(m->pelmRoot->getAttributeValue("version", m->strSettingsVersionFull)))
             throw ConfigFileError(this, m->pelmRoot, N_("Required VirtualBox/@version attribute is missing"));
 
+        LogRel(("Loading settings file \"%s\" with version \"%s\"\n", m->strFilename.c_str(), m->strSettingsVersionFull.c_str()));
+
+        // parse settings version; allow future versions but fail if file is older than 1.6
         m->sv = SettingsVersion_Null;
         if (m->strSettingsVersionFull.length() > 3)
         {
             const char *pcsz = m->strSettingsVersionFull.c_str();
-            if (    (pcsz[0] == '1')
-                 && (pcsz[1] == '.')
-                 && (pcsz[3] == '-')
-            )
+            char c;
+
+            while (    (c = *pcsz)
+                    && RT_C_IS_DIGIT(c)
+                  )
             {
-                if (pcsz[2] == '6')
-                    m->sv = SettingsVersion_v1_6;
-                else if (pcsz[2] == '7')
-                    m->sv = SettingsVersion_v1_7;
-                else if (pcsz[2] == '8')
-                    m->sv = SettingsVersion_v1_8;
+                strMajor.append(c);
+                ++pcsz;
             }
+
+            if (*pcsz++ == '.')
+            {
+                while (    (c = *pcsz)
+                        && RT_C_IS_DIGIT(c)
+                      )
+                {
+                    strMinor.append(c);
+                    ++pcsz;
+                }
+            }
+
+            uint32_t ulMajor = RTStrToUInt32(strMajor.c_str());
+            uint32_t ulMinor = RTStrToUInt32(strMinor.c_str());
+
+            if (ulMajor == 1)
+            {
+                if (ulMinor == 6)
+                    m->sv = SettingsVersion_v1_6;
+                else if (ulMinor == 7)
+                    m->sv = SettingsVersion_v1_7;
+                else if (ulMinor == 8)
+                    m->sv = SettingsVersion_v1_8;
+                else if (ulMinor == 9)
+                    m->sv = SettingsVersion_v1_9;
+                else if (ulMinor > 9)
+                    m->sv = SettingsVersion_Future;
+            }
+            else if (ulMajor > 1)
+                m->sv = SettingsVersion_Future;
+
+            LogRel(("Parsed settings version %d.%d to enum value %d\n", ulMajor, ulMinor, m->sv));
         }
 
         if (m->sv == SettingsVersion_Null)
@@ -158,7 +196,7 @@ ConfigFileBase::ConfigFileBase(const com::Utf8Str *pstrFilename)
     else
     {
         m->strSettingsVersionFull = VBOX_XML_VERSION_FULL;
-        m->sv = SettingsVersion_v1_8;
+        m->sv = SettingsVersion_v1_9;
     }
 }
 
@@ -382,7 +420,7 @@ void ConfigFileBase::readUSBDeviceFilters(const xml::ElementNode &elmDeviceFilte
  * Before calling this, it is the responsibility of the caller to
  * set the "sv" member to the required settings version that is to
  * be written. For newly created files, the settings version will be
- * the latest (1.8); for files read in from disk earlier, it will be
+ * the latest (1.9); for files read in from disk earlier, it will be
  * the settings version indicated in the file. However, this method
  * will silently make sure that the settings version is always
  * at least 1.7 and change it if necessary, since there is no write
@@ -401,6 +439,13 @@ void ConfigFileBase::createStubDocument()
     {
         case SettingsVersion_v1_8:
             pcszVersion = "1.8";
+        break;
+
+        case SettingsVersion_v1_9:
+        case SettingsVersion_Future:                // can be set if this code runs on XML files that were created by a future version of VBox;
+                                                    // in that case, downgrade to current version when writing since we can't write future versions...
+            pcszVersion = "1.9";
+            m->sv = SettingsVersion_v1_9;
         break;
 
         default:
@@ -581,11 +626,11 @@ void MainConfigFile::readMedium(MediaType t,
             if ((elmMedium.getAttributeValue("type", strType)))
             {
                 if (strType == "Normal")
-                    med.hdType = HardDiskType_Normal;
+                    med.hdType = MediumType_Normal;
                 else if (strType == "Immutable")
-                    med.hdType = HardDiskType_Immutable;
+                    med.hdType = MediumType_Immutable;
                 else if (strType == "Writethrough")
-                    med.hdType = HardDiskType_Writethrough;
+                    med.hdType = MediumType_Writethrough;
                 else
                     throw ConfigFileError(this, &elmMedium, N_("HardDisk/@type attribute must be one of Normal, Immutable or Writethrough"));
             }
@@ -818,9 +863,9 @@ void MainConfigFile::writeHardDisk(xml::ElementNode &elmMedium,
     if (level == 0)
     {
         const char *pcszType =
-            m.hdType == HardDiskType_Normal ? "Normal" :
-            m.hdType == HardDiskType_Immutable ? "Immutable" :
-            /*m.hdType == HardDiskType_Writethrough ?*/ "Writethrough";
+            m.hdType == MediumType_Normal ? "Normal" :
+            m.hdType == MediumType_Immutable ? "Immutable" :
+            /*m.hdType == MediumType_Writethrough ?*/ "Writethrough";
         pelmHardDisk->setAttribute("type", pcszType);
     }
 
@@ -953,7 +998,7 @@ Hardware::Hardware()
           cMonitors(1),
           fAccelerate3D(false),
           fAccelerate2DVideo(false),
-          cFirmwareType(FirmwareType_Bios),
+          firmwareType(FirmwareType_BIOS),
           clipboardMode(ClipboardMode_Bidirectional),
           ulMemoryBalloonSize(0),
           ulStatisticsUpdateInterval(0)
@@ -1204,7 +1249,25 @@ void MachineConfigFile::readHardware(const xml::ElementNode &elmHardware,
         else if (pelmHwChild->nameEquals("Memory"))
             pelmHwChild->getAttributeValue("RAMSize", hw.ulMemorySizeMB);
         else if (pelmHwChild->nameEquals("Firmware"))
-            pelmHwChild->getAttributeValue("type", hw.cFirmwareType);
+        {
+            Utf8Str strFirmwareType;
+            if (pelmHwChild->getAttributeValue("type", strFirmwareType))
+            {
+                if (    (strFirmwareType == "BIOS")
+                     || (strFirmwareType == "1")                // some trunk builds used the number here
+                   )
+                    hw.firmwareType = FirmwareType_BIOS;
+                else if (    (strFirmwareType == "EFI")
+                          || (strFirmwareType == "2")           // some trunk builds used the number here
+                        )
+                    hw.firmwareType = FirmwareType_EFI;
+                else
+                    throw ConfigFileError(this,
+                                          pelmHwChild,
+                                          N_("Invalid value '%s' in Boot/Firmware/@type"),
+                                          strFirmwareType.c_str());
+            }
+        }
         else if (pelmHwChild->nameEquals("Boot"))
         {
             hw.mapBootOrder.clear();
@@ -1340,30 +1403,6 @@ void MachineConfigFile::readHardware(const xml::ElementNode &elmHardware,
                 strg.llStorageControllers.push_back(sctl);
             }
         }
-        else if (pelmHwChild->nameEquals("DVDDrive"))
-        {
-            const xml::ElementNode *pDriveChild;
-            pelmHwChild->getAttributeValue("passthrough", hw.dvdDrive.fPassThrough);
-            Utf8Str strTmp;
-            if (    ((pDriveChild = pelmHwChild->findChildElement("Image")))
-                 && (pDriveChild->getAttributeValue("uuid", strTmp))
-               )
-                parseUUID(hw.dvdDrive.uuid, strTmp);
-            else if ((pDriveChild = pelmHwChild->findChildElement("HostDrive")))
-                pDriveChild->getAttributeValue("src", hw.dvdDrive.strHostDriveSrc);
-        }
-        else if (pelmHwChild->nameEquals("FloppyDrive"))
-        {
-            const xml::ElementNode *pDriveChild;
-            pelmHwChild->getAttributeValue("enabled", hw.floppyDrive.fEnabled);
-            Utf8Str strTmp;
-            if (    ((pDriveChild = pelmHwChild->findChildElement("Image")))
-                 && (pDriveChild->getAttributeValue("uuid", strTmp))
-               )
-                parseUUID(hw.floppyDrive.uuid, strTmp);
-            else if ((pDriveChild = pelmHwChild->findChildElement("HostDrive")))
-                pDriveChild->getAttributeValue("src", hw.floppyDrive.strHostDriveSrc);
-        }
         else if (pelmHwChild->nameEquals("USBController"))
         {
             pelmHwChild->getAttributeValue("enabled", hw.usbController.fEnabled);
@@ -1472,8 +1511,6 @@ void MachineConfigFile::readHardware(const xml::ElementNode &elmHardware,
         }
         else if (pelmHwChild->nameEquals("GuestProperties"))
             readGuestProperties(*pelmHwChild, hw);
-        else
-            throw ConfigFileError(this, pelmHwChild, N_("Invalid element '%s' in Hardware section"), pelmHwChild->getName());
     }
 
     if (hw.ulMemorySizeMB == (uint32_t)-1)
@@ -1598,6 +1635,13 @@ void MachineConfigFile::readStorageControllers(const xml::ElementNode &elmStorag
             sctl.storageBus = StorageBus_IDE;
             sctl.controllerType = StorageControllerType_ICH6;
         }
+        else if (   (m->sv >= SettingsVersion_v1_9)
+                 && (strType == "I82078")
+                )
+        {
+            sctl.storageBus = StorageBus_Floppy;
+            sctl.controllerType = StorageControllerType_I82078;
+        }
         else
             throw ConfigFileError(this, pelmController, N_("Invalid value '%s' for StorageController/@type attribute"), strType.c_str());
 
@@ -1608,19 +1652,46 @@ void MachineConfigFile::readStorageControllers(const xml::ElementNode &elmStorag
         while ((pelmAttached = nlAttached.forAllNodes()))
         {
             AttachedDevice att;
-
             Utf8Str strTemp;
             pelmAttached->getAttributeValue("type", strTemp);
-            // ignore everything but HardDisk entries for forward compatibility
+
             if (strTemp == "HardDisk")
+                att.deviceType = DeviceType_HardDisk;
+            else if (m->sv >= SettingsVersion_v1_9)
+            {
+                // starting with 1.9 we list DVD and floppy drive info + attachments under <StorageControllers>
+                if (strTemp == "DVD")
+                {
+                    att.deviceType = DeviceType_DVD;
+                    pelmAttached->getAttributeValue("passthrough", att.fPassThrough);
+                }
+                else if (strTemp == "Floppy")
+                    att.deviceType = DeviceType_Floppy;
+            }
+
+            if (att.deviceType != DeviceType_Null)
             {
                 const xml::ElementNode *pelmImage;
+                // all types can have images attached, but for HardDisk it's required
                 if (!(pelmImage = pelmAttached->findChildElement("Image")))
-                    throw ConfigFileError(this, pelmImage, N_("Required AttachedDevice/Image element is missing"));
-
-                if (!pelmImage->getAttributeValue("uuid", strTemp))
-                    throw ConfigFileError(this, pelmImage, N_("Required AttachedDevice/Image/@uuid attribute is missing"));
-                parseUUID(att.uuid, strTemp);
+                {
+                    if (att.deviceType == DeviceType_HardDisk)
+                        throw ConfigFileError(this, pelmImage, N_("Required AttachedDevice/Image element is missing"));
+                    else
+                    {
+                        // DVDs and floppies can also have <HostDrive> instead of <Image>
+                        const xml::ElementNode *pelmHostDrive;
+                        if ((pelmHostDrive = pelmAttached->findChildElement("HostDrive")))
+                            if (!pelmHostDrive->getAttributeValue("src", att.strHostDriveSrc))
+                                throw ConfigFileError(this, pelmHostDrive, N_("Required AttachedDevice/HostDrive/@src attribute is missing"));
+                    }
+                }
+                else
+                {
+                    if (!pelmImage->getAttributeValue("uuid", strTemp))
+                        throw ConfigFileError(this, pelmImage, N_("Required AttachedDevice/Image/@uuid attribute is missing"));
+                    parseUUID(att.uuid, strTemp);
+                }
 
                 if (!pelmAttached->getAttributeValue("port", att.lPort))
                     throw ConfigFileError(this, pelmImage, N_("Required AttachedDevice/@port attribute is missing"));
@@ -1632,6 +1703,101 @@ void MachineConfigFile::readStorageControllers(const xml::ElementNode &elmStorag
         }
 
         strg.llStorageControllers.push_back(sctl);
+    }
+}
+
+/**
+ * This gets called for legacy pre-1.9 settings files after having parsed the
+ * <Hardware> and <StorageControllers> sections to parse <Hardware> once more
+ * for the <DVDDrive> and <FloppyDrive> sections.
+ *
+ * Before settings version 1.9, DVD and floppy drives were specified separately
+ * under <Hardware>; we then need this extra loop to make sure the storage
+ * controller structs are already set up so we can add stuff to them.
+ *
+ * @param elmHardware
+ * @param strg
+ */
+void MachineConfigFile::readDVDAndFloppies_pre1_9(const xml::ElementNode &elmHardware,
+                                                  Storage &strg)
+{
+    xml::NodesLoop nl1(elmHardware);
+    const xml::ElementNode *pelmHwChild;
+    while ((pelmHwChild = nl1.forAllNodes()))
+    {
+        if (pelmHwChild->nameEquals("DVDDrive"))
+        {
+            // create a DVD "attached device" and attach it to the existing IDE controller
+            AttachedDevice att;
+            att.deviceType = DeviceType_DVD;
+            // legacy DVD drive is always secondary master (port 1, device 0)
+            att.lPort = 1;
+            att.lDevice = 0;
+            pelmHwChild->getAttributeValue("passthrough", att.fPassThrough);
+
+            const xml::ElementNode *pDriveChild;
+            Utf8Str strTmp;
+            if (    ((pDriveChild = pelmHwChild->findChildElement("Image")))
+                 && (pDriveChild->getAttributeValue("uuid", strTmp))
+               )
+                parseUUID(att.uuid, strTmp);
+            else if ((pDriveChild = pelmHwChild->findChildElement("HostDrive")))
+                pDriveChild->getAttributeValue("src", att.strHostDriveSrc);
+
+            // find the IDE controller and attach the DVD drive
+            bool fFound = false;
+            for (StorageControllersList::iterator it = strg.llStorageControllers.begin();
+                 it != strg.llStorageControllers.end();
+                 ++it)
+            {
+                StorageController &sctl = *it;
+                if (sctl.storageBus == StorageBus_IDE)
+                {
+                    sctl.llAttachedDevices.push_back(att);
+                    fFound = true;
+                    break;
+                }
+            }
+
+            if (!fFound)
+                throw ConfigFileError(this, pelmHwChild, N_("Internal error: found DVD drive but IDE controller does not exist"));
+                        // shouldn't happen because pre-1.9 settings files always had at least one IDE controller in the settings
+                        // which should have gotten parsed in <StorageControllers> before this got called
+        }
+        else if (pelmHwChild->nameEquals("FloppyDrive"))
+        {
+            bool fEnabled;
+            if (    (pelmHwChild->getAttributeValue("enabled", fEnabled))
+                 && (fEnabled)
+               )
+            {
+                // create a new floppy controller and attach a floppy "attached device"
+                StorageController sctl;
+                sctl.strName = "FD";
+                sctl.storageBus = StorageBus_Floppy;
+                sctl.controllerType = StorageControllerType_I82078;
+                sctl.ulPortCount = 1;
+
+                AttachedDevice att;
+                att.deviceType = DeviceType_Floppy;
+                att.lPort = 0;
+                att.lDevice = 0;
+
+                const xml::ElementNode *pDriveChild;
+                Utf8Str strTmp;
+                if (    ((pDriveChild = pelmHwChild->findChildElement("Image")))
+                     && (pDriveChild->getAttributeValue("uuid", strTmp))
+                   )
+                    parseUUID(att.uuid, strTmp);
+                else if ((pDriveChild = pelmHwChild->findChildElement("HostDrive")))
+                    pDriveChild->getAttributeValue("src", att.strHostDriveSrc);
+
+                // store attachment with controller
+                sctl.llAttachedDevices.push_back(att);
+                // store controller with storage
+                strg.llStorageControllers.push_back(sctl);
+            }
+        }
     }
 }
 
@@ -1702,6 +1868,11 @@ void MachineConfigFile::readSnapshot(const xml::ElementNode &elmSnapshot,
             }
         }
     }
+
+    if (m->sv < SettingsVersion_v1_9)
+        // go through Hardware once more to repair the settings controller structures
+        // with data from old DVDDrive and FloppyDrive elements
+        readDVDAndFloppies_pre1_9(*pelmHardware, snap.storage);
 }
 
 /**
@@ -1765,6 +1936,11 @@ void MachineConfigFile::readMachine(const xml::ElementNode &elmMachine)
             else if (pelmMachineChild->nameEquals("Description"))
                 strDescription = pelmMachineChild->getValue();
         }
+
+        if (m->sv < SettingsVersion_v1_9)
+            // go through Hardware once more to repair the settings controller structures
+            // with data from old DVDDrive and FloppyDrive elements
+            readDVDAndFloppies_pre1_9(*pelmHardware, storageMachine);
     }
     else
         throw ConfigFileError(this, &elmMachine, N_("Required Machine/@uuid or @name attributes is missing"));
@@ -1815,7 +1991,8 @@ MachineConfigFile::MachineConfigFile(const Utf8Str *pstrFilename)
  * @param st
  */
 void MachineConfigFile::writeHardware(xml::ElementNode &elmParent,
-                                      const Hardware &hw)
+                                      const Hardware &hw,
+                                      const Storage &strg)
 {
     xml::ElementNode *pelmHardware = elmParent.createChild("Hardware");
 
@@ -1835,10 +2012,12 @@ void MachineConfigFile::writeHardware(xml::ElementNode &elmParent,
     xml::ElementNode *pelmMemory = pelmHardware->createChild("Memory");
     pelmMemory->setAttribute("RAMSize", hw.ulMemorySizeMB);
 
-    if (m->sv >= SettingsVersion_v1_8)
+    if (    (m->sv >= SettingsVersion_v1_9)
+         && (hw.firmwareType == FirmwareType_EFI)
+       )
     {
          xml::ElementNode *pelmFirmware = pelmHardware->createChild("Firmware");
-         pelmFirmware->setAttribute("type", hw.cFirmwareType);
+         pelmFirmware->setAttribute("type", "EFI");
     }
 
     xml::ElementNode *pelmBoot = pelmHardware->createChild("Boot");
@@ -1916,19 +2095,68 @@ void MachineConfigFile::writeHardware(xml::ElementNode &elmParent,
     pelmBIOS->createChild("TimeOffset")->setAttribute("value", hw.biosSettings.llTimeOffset);
     pelmBIOS->createChild("PXEDebug")->setAttribute("enabled", hw.biosSettings.fPXEDebugEnabled);
 
-    xml::ElementNode *pelmDVD = pelmHardware->createChild("DVDDrive");
-    pelmDVD->setAttribute("passthrough", hw.dvdDrive.fPassThrough);
-    if (!hw.dvdDrive.uuid.isEmpty())
-        pelmDVD->createChild("Image")->setAttribute("uuid", makeString(hw.dvdDrive.uuid));
-    else if (hw.dvdDrive.strHostDriveSrc.length())
-        pelmDVD->createChild("HostDrive")->setAttribute("src", hw.dvdDrive.strHostDriveSrc);
+    if (m->sv < SettingsVersion_v1_9)
+    {
+        // settings formats before 1.9 had separate DVDDrive and FloppyDrive items under Hardware;
+        // run thru the storage controllers to see if we have a DVD or floppy drives
+        size_t cDVDs = 0;
+        size_t cFloppies = 0;
 
-    xml::ElementNode *pelmFloppy = pelmHardware->createChild("FloppyDrive");
-    pelmFloppy->setAttribute("enabled", hw.floppyDrive.fEnabled);
-    if (!hw.floppyDrive.uuid.isEmpty())
-        pelmFloppy->createChild("Image")->setAttribute("uuid", makeString(hw.floppyDrive.uuid));
-    else if (hw.floppyDrive.strHostDriveSrc.length())
-        pelmFloppy->createChild("HostDrive")->setAttribute("src", hw.floppyDrive.strHostDriveSrc);
+        xml::ElementNode *pelmDVD = pelmHardware->createChild("DVDDrive");
+        xml::ElementNode *pelmFloppy = pelmHardware->createChild("FloppyDrive");
+
+        for (StorageControllersList::const_iterator it = strg.llStorageControllers.begin();
+             it != strg.llStorageControllers.end();
+             ++it)
+        {
+            const StorageController &sctl = *it;
+            // in old settings format, the DVD drive could only have been under the IDE controller
+            if (sctl.storageBus == StorageBus_IDE)
+            {
+                for (AttachedDevicesList::const_iterator it2 = sctl.llAttachedDevices.begin();
+                     it2 != sctl.llAttachedDevices.end();
+                     ++it2)
+                {
+                    const AttachedDevice &att = *it2;
+                    if (att.deviceType == DeviceType_DVD)
+                    {
+                        if (cDVDs > 0)
+                            throw ConfigFileError(this, NULL, N_("Internal error: cannot save more than one DVD drive with old settings format"));
+
+                        ++cDVDs;
+
+                        pelmDVD->setAttribute("passthrough", att.fPassThrough);
+                        if (!att.uuid.isEmpty())
+                            pelmDVD->createChild("Image")->setAttribute("uuid", makeString(att.uuid));
+                        else if (att.strHostDriveSrc.length())
+                            pelmDVD->createChild("HostDrive")->setAttribute("src", att.strHostDriveSrc);
+                    }
+                }
+            }
+            else if (sctl.storageBus == StorageBus_Floppy)
+            {
+                size_t cFloppiesHere = sctl.llAttachedDevices.size();
+                if (cFloppiesHere > 1)
+                    throw ConfigFileError(this, NULL, N_("Internal error: floppy controller cannot have more than one device attachment"));
+                if (cFloppiesHere)
+                {
+                    const AttachedDevice &att = sctl.llAttachedDevices.front();
+                    pelmFloppy->setAttribute("enabled", true);
+                    if (!att.uuid.isEmpty())
+                        pelmFloppy->createChild("Image")->setAttribute("uuid", makeString(att.uuid));
+                    else if (att.strHostDriveSrc.length())
+                        pelmFloppy->createChild("HostDrive")->setAttribute("src", att.strHostDriveSrc);
+                }
+
+                cFloppies += cFloppiesHere;
+            }
+        }
+
+        if (cFloppies == 0)
+            pelmFloppy->setAttribute("enabled", false);
+        else if (cFloppies > 1)
+            throw ConfigFileError(this, NULL, N_("Internal error: cannot save more than one floppy drive with old settings format"));
+    }
 
     xml::ElementNode *pelmUSB = pelmHardware->createChild("USBController");
     pelmUSB->setAttribute("enabled", hw.usbController.fEnabled);
@@ -2127,6 +2355,13 @@ void MachineConfigFile::writeStorageControllers(xml::ElementNode &elmParent,
     {
         const StorageController &sc = *it;
 
+        if (    (m->sv < SettingsVersion_v1_9)
+             && (sc.controllerType == StorageControllerType_I82078)
+           )
+            // floppy controller already got written into <Hardware>/<FloppyController> in writeHardware()
+            // for pre-1.9 settings
+            continue;
+
         xml::ElementNode *pelmController = pelmStorageControllers->createChild("StorageController");
         pelmController->setAttribute("name", sc.strName);
 
@@ -2138,6 +2373,7 @@ void MachineConfigFile::writeStorageControllers(xml::ElementNode &elmParent,
             case StorageControllerType_BusLogic: pcszType = "BusLogic"; break;
             case StorageControllerType_PIIX4: pcszType = "PIIX4"; break;
             case StorageControllerType_ICH6: pcszType = "ICH6"; break;
+            case StorageControllerType_I82078: pcszType = "I82078"; break;
             default: /*case StorageControllerType_PIIX3:*/ pcszType = "PIIX3"; break;
         }
         pelmController->setAttribute("type", pcszType);
@@ -2156,14 +2392,47 @@ void MachineConfigFile::writeStorageControllers(xml::ElementNode &elmParent,
              it2 != sc.llAttachedDevices.end();
              ++it2)
         {
-            const AttachedDevice &dev = *it2;
+            const AttachedDevice &att = *it2;
 
             xml::ElementNode *pelmDevice = pelmController->createChild("AttachedDevice");
-            pelmDevice->setAttribute("type", "HardDisk");
 
-            pelmDevice->setAttribute("port", dev.lPort);
-            pelmDevice->setAttribute("device", dev.lDevice);
-            pelmDevice->createChild("Image")->setAttribute("uuid", makeString(dev.uuid));
+            pcszType = NULL;
+
+            switch (att.deviceType)
+            {
+                case DeviceType_HardDisk:
+                    pcszType = "HardDisk";
+                break;
+
+                case DeviceType_DVD:            // settings format 1.9
+                    if (m->sv >= SettingsVersion_v1_9)
+                    {
+                        pcszType = "DVD";
+                        if (att.fPassThrough)
+                            pelmDevice->setAttribute("passthrough", att.fPassThrough);
+                    }
+                break;
+
+                case DeviceType_Floppy:
+                    if (m->sv >= SettingsVersion_v1_9)
+                        pcszType = "Floppy";
+                break;
+            }
+
+            if (pcszType)       // can be NULL for pre-1.9 settings that shouldn't be written here
+            {
+                pelmDevice->setAttribute("type", pcszType);
+
+                pelmDevice->setAttribute("port", att.lPort);
+                pelmDevice->setAttribute("device", att.lDevice);
+
+                if (!att.uuid.isEmpty())
+                    pelmDevice->createChild("Image")->setAttribute("uuid", makeString(att.uuid));
+                else if (    (m->sv >= SettingsVersion_v1_9)
+                          && (att.strHostDriveSrc.length())
+                        )
+                    pelmDevice->createChild("HostDrive")->setAttribute("src", att.strHostDriveSrc);
+            }
         }
     }
 }
@@ -2190,7 +2459,7 @@ void MachineConfigFile::writeSnapshot(xml::ElementNode &elmParent,
     if (snap.strDescription.length())
         pelmSnapshot->createChild("Description")->addContent(snap.strDescription);
 
-    writeHardware(*pelmSnapshot, snap.hardware);
+    writeHardware(*pelmSnapshot, snap.hardware, snap.storage);
     writeStorageControllers(*pelmSnapshot, snap.storage);
 
     if (snap.llChildSnapshots.size())
@@ -2218,48 +2487,107 @@ void MachineConfigFile::write(const com::Utf8Str &strFilename)
     // are present:
     if (m->sv < SettingsVersion_v1_8)
     {
+        // "accelerate 2d video" requires settings version 1.8
         if (hardwareMachine.fAccelerate2DVideo)
             m->sv = SettingsVersion_v1_8;
     }
 
-    m->strFilename = strFilename;
-    createStubDocument();
+    if (m->sv < SettingsVersion_v1_9)
+    {
+        size_t cDVDs = 0;
+        size_t cFloppies = 0;
 
-    xml::ElementNode *pelmMachine = m->pelmRoot->createChild("Machine");
+        // if there is more than one DVD or floppy or the DVD attachment is not
+        // at the old IDE default, then we need 1.9
+        for (StorageControllersList::const_iterator it = storageMachine.llStorageControllers.begin();
+             it != storageMachine.llStorageControllers.end()
+                && m->sv < SettingsVersion_v1_9;
+             ++it)
+        {
+            const StorageController &sctl = *it;
+            for (AttachedDevicesList::const_iterator it2 = sctl.llAttachedDevices.begin();
+                    it2 != sctl.llAttachedDevices.end()
+                        && m->sv < SettingsVersion_v1_9;
+                    ++it2)
+            {
+                const AttachedDevice &att = *it2;
+                if (att.deviceType == DeviceType_DVD)
+                {
+                    if (    (cDVDs)                             // more than one DVD?
+                         || (sctl.storageBus != StorageBus_IDE) // DVD at bus other than DVD?
+                         || (att.lPort != 1)                    // DVDs not at primary master?
+                         || (att.lDevice != 0)
+                       )
+                    {
+                        m->sv = SettingsVersion_v1_9;
+                        break;
+                    }
 
-    pelmMachine->setAttribute("uuid", makeString(uuid));
-    pelmMachine->setAttribute("name", strName);
-    if (!fNameSync)
-        pelmMachine->setAttribute("nameSync", fNameSync);
-    if (strDescription.length())
-        pelmMachine->createChild("Description")->addContent(strDescription);
-    pelmMachine->setAttribute("OSType", strOsType);
-    if (strStateFile.length())
-        pelmMachine->setAttribute("stateFile", strStateFile);
-    if (!uuidCurrentSnapshot.isEmpty())
-        pelmMachine->setAttribute("currentSnapshot", makeString(uuidCurrentSnapshot));
-    if (strSnapshotFolder.length())
-        pelmMachine->setAttribute("snapshotFolder", strSnapshotFolder);
-    if (!fCurrentStateModified)
-        pelmMachine->setAttribute("currentStateModified", fCurrentStateModified);
-    pelmMachine->setAttribute("lastStateChange", makeString(timeLastStateChange));
-    if (fAborted)
-        pelmMachine->setAttribute("aborted", fAborted);
+                    ++cDVDs;
+                }
+                else if (att.deviceType == DeviceType_Floppy)
+                {
+                    if (cFloppies)
+                        // more than one floppy: new settings format
+                        m->sv = SettingsVersion_v1_9;
 
-    writeExtraData(*pelmMachine, mapExtraDataItems);
+                    ++cFloppies;
+                }
+            }
+        }
+    }
 
-    if (llFirstSnapshot.size())
-        writeSnapshot(*pelmMachine, llFirstSnapshot.front());
+    if (    (m->sv < SettingsVersion_v1_9)
+         && (hardwareMachine.firmwareType == FirmwareType_EFI)
+       )
+    {
+        m->sv = SettingsVersion_v1_9;
+    }
 
-    writeHardware(*pelmMachine, hardwareMachine);
+    try
+    {
+        m->strFilename = strFilename;
+        createStubDocument();
 
-    writeStorageControllers(*pelmMachine, storageMachine);
+        xml::ElementNode *pelmMachine = m->pelmRoot->createChild("Machine");
 
-    // now go write the XML
-    xml::XmlFileWriter writer(*m->pDoc);
-    writer.write(m->strFilename.c_str());
+        pelmMachine->setAttribute("uuid", makeString(uuid));
+        pelmMachine->setAttribute("name", strName);
+        if (!fNameSync)
+            pelmMachine->setAttribute("nameSync", fNameSync);
+        if (strDescription.length())
+            pelmMachine->createChild("Description")->addContent(strDescription);
+        pelmMachine->setAttribute("OSType", strOsType);
+        if (strStateFile.length())
+            pelmMachine->setAttribute("stateFile", strStateFile);
+        if (!uuidCurrentSnapshot.isEmpty())
+            pelmMachine->setAttribute("currentSnapshot", makeString(uuidCurrentSnapshot));
+        if (strSnapshotFolder.length())
+            pelmMachine->setAttribute("snapshotFolder", strSnapshotFolder);
+        if (!fCurrentStateModified)
+            pelmMachine->setAttribute("currentStateModified", fCurrentStateModified);
+        pelmMachine->setAttribute("lastStateChange", makeString(timeLastStateChange));
+        if (fAborted)
+            pelmMachine->setAttribute("aborted", fAborted);
 
-    m->fFileExists = true;
+        writeExtraData(*pelmMachine, mapExtraDataItems);
 
-    clearDocument();
+        if (llFirstSnapshot.size())
+            writeSnapshot(*pelmMachine, llFirstSnapshot.front());
+
+        writeHardware(*pelmMachine, hardwareMachine, storageMachine);
+        writeStorageControllers(*pelmMachine, storageMachine);
+
+        // now go write the XML
+        xml::XmlFileWriter writer(*m->pDoc);
+        writer.write(m->strFilename.c_str());
+
+        m->fFileExists = true;
+        clearDocument();
+    }
+    catch (...)
+    {
+        clearDocument();
+        throw;
+    }
 }

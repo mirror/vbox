@@ -1141,58 +1141,60 @@ static int handleControlVM(HandlerArg *a)
                 rc = E_FAIL;
                 break;
             }
-            ComPtr<IDVDDrive> dvdDrive;
-            sessionMachine->COMGETTER(DVDDrive)(dvdDrive.asOutParam());
-            ASSERT(dvdDrive);
+
+            ComPtr<IMedium> dvdMedium;
 
             /* unmount? */
             if (!strcmp(a->argv[2], "none"))
             {
-                CHECK_ERROR(dvdDrive, Unmount());
+                /* nothing to do, NULL object will cause unmount */
             }
             /* host drive? */
             else if (!strncmp(a->argv[2], "host:", 5))
             {
                 ComPtr<IHost> host;
                 CHECK_ERROR(a->virtualBox, COMGETTER(Host)(host.asOutParam()));
-                com::SafeIfaceArray <IHostDVDDrive> hostDVDs;
-                rc = host->COMGETTER(DVDDrives)(ComSafeArrayAsOutParam(hostDVDs));
 
-                ComPtr<IHostDVDDrive> hostDVDDrive;
-                rc = host->FindHostDVDDrive(Bstr(a->argv[2] + 5), hostDVDDrive.asOutParam());
-                if (!hostDVDDrive)
+                rc = host->FindHostDVDDrive(Bstr(a->argv[2] + 5), dvdMedium.asOutParam());
+                if (!dvdMedium)
                 {
-                    errorArgument("Invalid host DVD drive name");
+                    errorArgument("Invalid host DVD drive name \"%s\"",
+                                  a->argv[2] + 5);
                     rc = E_FAIL;
                     break;
                 }
-                CHECK_ERROR(dvdDrive, CaptureHostDrive(hostDVDDrive));
             }
             else
             {
                 /* first assume it's a UUID */
                 Bstr uuid(a->argv[2]);
-                ComPtr<IDVDImage> dvdImage;
-                rc = a->virtualBox->GetDVDImage(uuid, dvdImage.asOutParam());
-                if (FAILED(rc) || !dvdImage)
+                rc = a->virtualBox->GetDVDImage(uuid, dvdMedium.asOutParam());
+                if (FAILED(rc) || !dvdMedium)
                 {
                     /* must be a filename, check if it's in the collection */
-                    rc = a->virtualBox->FindDVDImage(Bstr(a->argv[2]), dvdImage.asOutParam());
+                    rc = a->virtualBox->FindDVDImage(Bstr(a->argv[2]), dvdMedium.asOutParam());
                     /* not registered, do that on the fly */
-                    if (!dvdImage)
+                    if (!dvdMedium)
                     {
                         Bstr emptyUUID;
-                        CHECK_ERROR(a->virtualBox, OpenDVDImage(Bstr(a->argv[2]), emptyUUID, dvdImage.asOutParam()));
+                        CHECK_ERROR(a->virtualBox, OpenDVDImage(Bstr(a->argv[2]), emptyUUID, dvdMedium.asOutParam()));
                     }
                 }
-                if (!dvdImage)
+                if (!dvdMedium)
                 {
                     rc = E_FAIL;
                     break;
                 }
-                dvdImage->COMGETTER(Id)(uuid.asOutParam());
-                CHECK_ERROR(dvdDrive, MountImage(uuid));
             }
+
+            /** @todo generalize this, allow arbitrary number of DVD drives
+             * and as a consequence multiple attachments and different
+             * storage controllers. */
+            if (dvdMedium)
+                dvdMedium->COMGETTER(Id)(uuid.asOutParam());
+            else
+                uuid = Guid().toString();
+            CHECK_ERROR(machine, MountMedium(Bstr("IDE"), 1, 0, uuid));
         }
         else if (!strcmp(a->argv[1], "floppyattach"))
         {
@@ -1203,58 +1205,51 @@ static int handleControlVM(HandlerArg *a)
                 break;
             }
 
-            ComPtr<IFloppyDrive> floppyDrive;
-            sessionMachine->COMGETTER(FloppyDrive)(floppyDrive.asOutParam());
-            ASSERT(floppyDrive);
+            ComPtr<IMedium> floppyMedium;
 
             /* unmount? */
             if (!strcmp(a->argv[2], "none"))
             {
-                CHECK_ERROR(floppyDrive, Unmount());
+                /* nothing to do, NULL object will cause unmount */
             }
             /* host drive? */
             else if (!strncmp(a->argv[2], "host:", 5))
             {
                 ComPtr<IHost> host;
                 CHECK_ERROR(a->virtualBox, COMGETTER(Host)(host.asOutParam()));
-                com::SafeIfaceArray <IHostFloppyDrive> hostFloppies;
-                rc = host->COMGETTER(FloppyDrives)(ComSafeArrayAsOutParam(hostFloppies));
-                CheckComRCReturnRC (rc);
-                ComPtr<IHostFloppyDrive> hostFloppyDrive;
-                host->FindHostFloppyDrive(Bstr(a->argv[2] + 5), hostFloppyDrive.asOutParam());
-                if (!hostFloppyDrive)
+                host->FindHostFloppyDrive(Bstr(a->argv[2] + 5), floppyMedium.asOutParam());
+                if (!floppyMedium)
                 {
-                    errorArgument("Invalid host floppy drive name");
+                    errorArgument("Invalid host floppy drive name \"%s\"",
+                                  a->argv[2] + 5);
                     rc = E_FAIL;
                     break;
                 }
-                CHECK_ERROR(floppyDrive, CaptureHostDrive(hostFloppyDrive));
             }
             else
             {
                 /* first assume it's a UUID */
                 Bstr uuid(a->argv[2]);
-                ComPtr<IFloppyImage> floppyImage;
-                rc = a->virtualBox->GetFloppyImage(uuid, floppyImage.asOutParam());
-                if (FAILED(rc) || !floppyImage)
+                rc = a->virtualBox->GetFloppyImage(uuid, floppyMedium.asOutParam());
+                if (FAILED(rc) || !floppyMedium)
                 {
                     /* must be a filename, check if it's in the collection */
-                    rc = a->virtualBox->FindFloppyImage(Bstr(a->argv[2]), floppyImage.asOutParam());
+                    rc = a->virtualBox->FindFloppyImage(Bstr(a->argv[2]), floppyMedium.asOutParam());
                     /* not registered, do that on the fly */
-                    if (!floppyImage)
+                    if (!floppyMedium)
                     {
                         Bstr emptyUUID;
-                        CHECK_ERROR(a->virtualBox, OpenFloppyImage(Bstr(a->argv[2]), emptyUUID, floppyImage.asOutParam()));
+                        CHECK_ERROR(a->virtualBox, OpenFloppyImage(Bstr(a->argv[2]), emptyUUID, floppyMedium.asOutParam()));
                     }
                 }
-                if (!floppyImage)
+                if (!floppyMedium)
                 {
                     rc = E_FAIL;
                     break;
                 }
-                floppyImage->COMGETTER(Id)(uuid.asOutParam());
-                CHECK_ERROR(floppyDrive, MountImage(uuid));
             }
+            floppyMedium->COMGETTER(Id)(uuid.asOutParam());
+            CHECK_ERROR(machine, MountMedium(Bstr("FD"), 0, 0, uuid));
         }
 #ifdef VBOX_WITH_MEM_BALLOONING
         else if (   !strcmp(a->argv[1], "--guestmemoryballoon")

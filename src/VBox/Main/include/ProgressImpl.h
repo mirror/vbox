@@ -150,8 +150,6 @@ public:
         COM_INTERFACE_ENTRY2 (IDispatch, IProgress)
     END_COM_MAP()
 
-    NS_DECL_ISUPPORTS
-
     HRESULT FinalConstruct();
     void FinalRelease();
 
@@ -172,7 +170,8 @@ public:
                   VirtualBox *aParent,
 #endif
                   IUnknown *aInitiator,
-                  CBSTR aDescription, BOOL aCancelable,
+                  CBSTR aDescription,
+                  BOOL aCancelable,
                   OUT_GUID aId = NULL)
     {
         return init(
@@ -230,13 +229,17 @@ public:
                   VirtualBox *aParent,
 #endif
                   IUnknown *aInitiator,
-                  CBSTR aDescription, BOOL aCancelable,
-                  ULONG cOperations, ULONG ulTotalOperationsWeight,
-                  CBSTR bstrFirstOperationDescription, ULONG ulFirstOperationWeight,
+                  CBSTR aDescription,
+                  BOOL aCancelable,
+                  ULONG cOperations,
+                  ULONG ulTotalOperationsWeight,
+                  CBSTR bstrFirstOperationDescription,
+                  ULONG ulFirstOperationWeight,
                   OUT_GUID aId = NULL);
 
-    HRESULT init (BOOL aCancelable, ULONG aOperationCount,
-                  CBSTR aOperationDescription);
+    HRESULT init(BOOL aCancelable,
+                 ULONG aOperationCount,
+                 CBSTR aOperationDescription);
 
     void uninit();
 
@@ -245,17 +248,18 @@ public:
     STDMETHOD(WaitForOperationCompletion)(ULONG aOperation, LONG aTimeout);
     STDMETHOD(Cancel)();
 
+    STDMETHOD(SetCurrentOperationProgress)(ULONG aPercent);
+    STDMETHOD(SetNextOperation)(IN_BSTR bstrNextOperationDescription, ULONG ulNextOperationsWeight);
+
     // public methods only for internal purposes
 
-    HRESULT setCurrentOperationProgress(ULONG aPercent);
-    HRESULT setNextOperation(CBSTR bstrNextOperationDescription, ULONG ulNextOperationsWeight);
+    HRESULT setResultCode(HRESULT aResultCode);
 
     HRESULT notifyComplete(HRESULT aResultCode);
-    HRESULT notifyComplete(HRESULT aResultCode, const GUID &aIID,
+    HRESULT notifyComplete(HRESULT aResultCode,
+                           const GUID &aIID,
                            const Bstr &aComponent,
                            const char *aText, ...);
-    HRESULT notifyCompleteBstr(HRESULT aResultCode, const GUID &aIID,
-                               const Bstr &aComponent, const Bstr &aText);
 
     /** For com::SupportErrorInfoImpl. */
     static const char *ComponentName() { return "Progress"; }
@@ -321,8 +325,6 @@ public:
         COM_INTERFACE_ENTRY  (IProgress)
         COM_INTERFACE_ENTRY2 (IDispatch, IProgress)
     END_COM_MAP()
-
-    NS_DECL_ISUPPORTS
 
     HRESULT FinalConstruct();
     void FinalRelease();
@@ -405,6 +407,18 @@ public:
     STDMETHOD(WaitForCompletion) (LONG aTimeout);
     STDMETHOD(WaitForOperationCompletion) (ULONG aOperation, LONG aTimeout);
     STDMETHOD(Cancel)();
+
+    STDMETHOD(SetCurrentOperationProgress)(ULONG aPercent)
+    {
+        NOREF(aPercent);
+        return E_NOTIMPL;
+    }
+
+    STDMETHOD(SetNextOperation)(IN_BSTR bstrNextOperationDescription, ULONG ulNextOperationsWeight)
+    {
+        NOREF(bstrNextOperationDescription); NOREF(ulNextOperationsWeight);
+        return E_NOTIMPL;
+    }
 
     // public methods only for internal purposes
 

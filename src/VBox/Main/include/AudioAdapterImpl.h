@@ -70,8 +70,6 @@ public:
         COM_INTERFACE_ENTRY(IDispatch)
     END_COM_MAP()
 
-    NS_DECL_ISUPPORTS
-
     DECLARE_EMPTY_CTOR_DTOR (AudioAdapter)
 
     HRESULT FinalConstruct();

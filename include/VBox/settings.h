@@ -174,7 +174,7 @@ struct Medium
     com::Utf8Str    strFormat;
     bool            fAutoReset;         // optional, only for diffs, default is false
     PropertiesMap   properties;
-    HardDiskType_T  hdType;
+    MediumType_T    hdType;
 
     MediaList       llChildren;         // only used with hard disks
 };
@@ -271,28 +271,6 @@ struct BIOSSettings
     BIOSBootMenuMode_T  biosBootMenuMode;
     bool            fPXEDebugEnabled;
     int64_t         llTimeOffset;
-};
-
-struct DVDDrive
-{
-    DVDDrive()
-        : fPassThrough(false)
-    {}
-
-    bool            fPassThrough;
-    com::Guid       uuid;               // if != NULL, UUID of mounted ISO image
-    com::Utf8Str    strHostDriveSrc;    // if != NULL, value of <HostDrive>/@src
-};
-
-struct FloppyDrive
-{
-    FloppyDrive()
-        : fEnabled(true)
-    {}
-
-    bool            fEnabled;           // optional, defaults to true
-    com::Guid       uuid;               // if != NULL, UUID of mounted ISO image
-    com::Utf8Str    strHostDriveSrc;    // if != NULL, value of <HostDrive>/@src
 };
 
 struct USBController
@@ -434,13 +412,11 @@ struct Hardware
     uint32_t            cMonitors;
     bool                fAccelerate3D,
                         fAccelerate2DVideo;     // requires settings version 1.8 (VirtualBox 3.1)
-    uint32_t            cFirmwareType;          // ditto
+    FirmwareType_T      firmwareType;           // requires settings version 1.9 (VirtualBox 3.1)
 
     VRDPSettings        vrdpSettings;
 
     BIOSSettings        biosSettings;
-    DVDDrive            dvdDrive;
-    FloppyDrive         floppyDrive;
     USBController       usbController;
     NetworkAdaptersList llNetworkAdapters;
     SerialPortsList     llSerialPorts;
@@ -459,18 +435,36 @@ struct Hardware
     com::Utf8Str        strNotificationPatterns;
 };
 
+/**
+ * A device attached to a storage controller. This can either be a
+ * hard disk or a DVD drive or a floppy drive and also specifies
+ * which medium is "in" the drive; as a result, this is a combination
+ * of the Main IMedium and IMediumAttachment interfaces.
+ */
 struct AttachedDevice
 {
     AttachedDevice()
-        : type(HardDisk),
+        : deviceType(DeviceType_Null),
+          fPassThrough(false),
           lPort(0),
           lDevice(0)
     {}
 
-    enum { HardDisk }   type;           // @todo: implement DVD attachments here
+    DeviceType_T        deviceType;         // only HardDisk, DVD or Floppy are allowed
+
+    // DVDs can be in pass-through mode:
+    bool                fPassThrough;
+
     int32_t             lPort;
     int32_t             lDevice;
+
+    // if an image file is attached to the device (ISO, RAW, or hard disk image such as VDI),
+    // this is its UUID; it depends on deviceType which media registry this then needs to
+    // be looked up in. If no image file (only permitted for DVDs and floppies), then the UUID is NULL
     com::Guid           uuid;
+
+    // for DVDs and floppies, the attachment can also be a host device:
+    com::Utf8Str        strHostDriveSrc;        // if != NULL, value of <HostDrive>/@src
 };
 typedef std::list<AttachedDevice> AttachedDevicesList;
 
@@ -540,10 +534,11 @@ public:
     void readHardware(const xml::ElementNode &elmHardware, Hardware &hw, Storage &strg);
     void readHardDiskAttachments_pre1_7(const xml::ElementNode &elmHardDiskAttachments, Storage &strg);
     void readStorageControllers(const xml::ElementNode &elmStorageControllers, Storage &strg);
+    void readDVDAndFloppies_pre1_9(const xml::ElementNode &elmHardware, Storage &strg);
     void readSnapshot(const xml::ElementNode &elmSnapshot, Snapshot &snap);
     void readMachine(const xml::ElementNode &elmMachine);
 
-    void writeHardware(xml::ElementNode &elmParent, const Hardware &hw);
+    void writeHardware(xml::ElementNode &elmParent, const Hardware &hw, const Storage &strg);
     void writeStorageControllers(xml::ElementNode &elmParent, const Storage &st);
     void writeSnapshot(xml::ElementNode &elmParent, const Snapshot &snap);
     void write(const com::Utf8Str &strFilename);

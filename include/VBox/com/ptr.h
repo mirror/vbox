@@ -83,13 +83,11 @@ protected:
 
     static void addref(C *p)
     {
-        int cRefs = p->AddRef();
-        LOGREF("ADDREF ", p, cRefs);
+        p->AddRef();
     }
     static void release(C *p)
     {
-        int cRefs = p->Release();
-        LOGREF("RELEASE", p, cRefs);
+        p->Release();
     }
 };
 

@@ -46,8 +46,6 @@ class ATL_NO_VTABLE VFSExplorer :
         COM_INTERFACE_ENTRY(IDispatch)
     END_COM_MAP()
 
-    NS_DECL_ISUPPORTS
-
     DECLARE_EMPTY_CTOR_DTOR(VFSExplorer)
 
     // public initializer/uninitializer for internal purposes only

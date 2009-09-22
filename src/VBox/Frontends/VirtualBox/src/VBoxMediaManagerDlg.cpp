@@ -87,9 +87,9 @@ public:
 
     void refreshAll();
 
-    VBoxDefs::MediaType type() const { return mMedium.type(); }
+    VBoxDefs::MediumType type() const { return mMedium.type(); }
 
-    KMediaState state() const { return mMedium.state (!mManager->showDiffs()); }
+    KMediumState state() const { return mMedium.state (!mManager->showDiffs()); }
 
     QString id() const { return mMedium.id(); }
     QString location() const { return mMedium.location (!mManager->showDiffs()); }
@@ -125,7 +125,7 @@ public:
 //                    int aColumn, int aWidth, int aSlign)
 //    {
 //        QColorGroup cGroup (aColorGroup);
-//        if (mStatus == KMediaState_NotCreated)
+//        if (mStatus == KMediumState_NotCreated)
 //            cGroup.setColor (QColorGroup::Text, cGroup.mid());
 //        Q3ListViewItem::paintCell (aPainter, cGroup, aColumn, aWidth, aSlign);
 //    }
@@ -233,7 +233,7 @@ VBoxMediaManagerDlg* VBoxMediaManagerDlg::mModelessDialog = 0;
 VBoxMediaManagerDlg::VBoxMediaManagerDlg (QWidget *aParent /* = 0 */,
                                           Qt::WindowFlags aFlags /* = Qt::Dialog */)
     : QIWithRetranslateUI2 <QIMainDialog> (aParent, aFlags)
-    , mType (VBoxDefs::MediaType_Invalid)
+    , mType (VBoxDefs::MediumType_Invalid)
     , mShowDiffs (true)
     , mSetupMode (false)
 {
@@ -455,12 +455,12 @@ VBoxMediaManagerDlg::~VBoxMediaManagerDlg()
  * @param aSessionMachine   Session machine object if this dialog is opened for
  *                          a machine from its settings dialog.
  * @param aSelectId         Which medium to make selected? (ignored when @a
- *                          aType is VBoxDefs::MediaType_All)
+ *                          aType is VBoxDefs::MediumType_All)
  * @param aShowDiffs        @c true to show differencing hard disks initially
  *                          (ignored if @a aSessionMachine is null assuming
  *                          @c true).
  */
-void VBoxMediaManagerDlg::setup (VBoxDefs::MediaType aType, bool aDoSelect,
+void VBoxMediaManagerDlg::setup (VBoxDefs::MediumType aType, bool aDoSelect,
                                  bool aRefresh /* = true */,
                                  const CMachine &aSessionMachine /* = CMachine() */,
                                  const QString &aSelectId /* = QString() */,
@@ -478,23 +478,23 @@ void VBoxMediaManagerDlg::setup (VBoxDefs::MediaType aType, bool aDoSelect,
 
     switch (aType)
     {
-        case VBoxDefs::MediaType_HardDisk: mHDSelectedId = aSelectId; break;
-        case VBoxDefs::MediaType_DVD:      mDVDSelectedId = aSelectId; break;
-        case VBoxDefs::MediaType_Floppy:   mFloppySelectedId = aSelectId; break;
-        case VBoxDefs::MediaType_All: break;
+        case VBoxDefs::MediumType_HardDisk: mHDSelectedId = aSelectId; break;
+        case VBoxDefs::MediumType_DVD:      mDVDSelectedId = aSelectId; break;
+        case VBoxDefs::MediumType_Floppy:   mFloppySelectedId = aSelectId; break;
+        case VBoxDefs::MediumType_All: break;
         default:
             AssertFailedReturnVoid();
     }
 
     mTwImages->setTabEnabled (HDTab,
-                              aType == VBoxDefs::MediaType_All ||
-                              aType == VBoxDefs::MediaType_HardDisk);
+                              aType == VBoxDefs::MediumType_All ||
+                              aType == VBoxDefs::MediumType_HardDisk);
     mTwImages->setTabEnabled (CDTab,
-                              aType == VBoxDefs::MediaType_All ||
-                              aType == VBoxDefs::MediaType_DVD);
+                              aType == VBoxDefs::MediumType_All ||
+                              aType == VBoxDefs::MediumType_DVD);
     mTwImages->setTabEnabled (FDTab,
-                              aType == VBoxDefs::MediaType_All ||
-                              aType == VBoxDefs::MediaType_Floppy);
+                              aType == VBoxDefs::MediumType_All ||
+                              aType == VBoxDefs::MediumType_Floppy);
 
     mDoSelect = aDoSelect;
 
@@ -517,8 +517,8 @@ void VBoxMediaManagerDlg::setup (VBoxDefs::MediaType aType, bool aDoSelect,
     connect (&vboxGlobal(), SIGNAL (mediumUpdated (const VBoxMedium &)),
              this, SLOT (mediumUpdated (const VBoxMedium &)));
     /* Listen to "media remove" signals */
-    connect (&vboxGlobal(), SIGNAL (mediumRemoved (VBoxDefs::MediaType, const QString &)),
-             this, SLOT (mediumRemoved (VBoxDefs::MediaType, const QString &)));
+    connect (&vboxGlobal(), SIGNAL (mediumRemoved (VBoxDefs::MediumType, const QString &)),
+             this, SLOT (mediumRemoved (VBoxDefs::MediumType, const QString &)));
 
     if (aRefresh && !vboxGlobal().isMediaEnumerationStarted())
         vboxGlobal().startEnumeratingMedia();
@@ -532,7 +532,7 @@ void VBoxMediaManagerDlg::setup (VBoxDefs::MediaType aType, bool aDoSelect,
         for (it = list.begin(); it != list.end(); ++ it)
         {
             mediumAdded (*it);
-            if ((*it).state() != KMediaState_NotCreated)
+            if ((*it).state() != KMediumState_NotCreated)
                 mProgressBar->setValue (++ index);
         }
 
@@ -568,7 +568,7 @@ void VBoxMediaManagerDlg::showModeless (QWidget *aCenterWidget /* = 0 */,
         mModelessDialog->centerAccording (aCenterWidget);
         connect (vboxGlobal().mainWindow(), SIGNAL (closing()), mModelessDialog, SLOT (close()));
         mModelessDialog->setAttribute (Qt::WA_DeleteOnClose);
-        mModelessDialog->setup (VBoxDefs::MediaType_All,
+        mModelessDialog->setup (VBoxDefs::MediumType_All,
                                 false /* aDoSelect */, aRefresh);
 
         /* listen to events that may change the media status and refresh
@@ -753,10 +753,12 @@ bool VBoxMediaManagerDlg::eventFilter (QObject *aObject, QEvent *aEvent)
 void VBoxMediaManagerDlg::mediumAdded (const VBoxMedium &aMedium)
 {
     /* Ignore non-interesting aMedium */
-    if (mType != VBoxDefs::MediaType_All && mType != aMedium.type())
+    if ((aMedium.isNull()) ||
+        (mType != VBoxDefs::MediumType_All && mType != aMedium.type()) ||
+        (aMedium.isHostDrive()))
         return;
 
-    if (!mShowDiffs && aMedium.type() == VBoxDefs::MediaType_HardDisk)
+    if (!mShowDiffs && aMedium.type() == VBoxDefs::MediumType_HardDisk)
     {
         if (aMedium.parent() && !mSessionMachineId.isNull())
         {
@@ -781,7 +783,7 @@ void VBoxMediaManagerDlg::mediumAdded (const VBoxMedium &aMedium)
 
     switch (aMedium.type())
     {
-        case VBoxDefs::MediaType_HardDisk:
+        case VBoxDefs::MediumType_HardDisk:
         {
             item = createHardDiskItem (mHardDiskView, aMedium);
             AssertReturnVoid (item);
@@ -798,7 +800,7 @@ void VBoxMediaManagerDlg::mediumAdded (const VBoxMedium &aMedium)
             }
             break;
         }
-        case VBoxDefs::MediaType_DVD:
+        case VBoxDefs::MediumType_DVD:
         {
             item = new MediaItem (mDVDView, aMedium, this);
             AssertReturnVoid (item);
@@ -815,7 +817,7 @@ void VBoxMediaManagerDlg::mediumAdded (const VBoxMedium &aMedium)
             }
             break;
         }
-        case VBoxDefs::MediaType_Floppy:
+        case VBoxDefs::MediumType_Floppy:
         {
             item = new MediaItem (mFloppyView, aMedium, this);
             AssertReturnVoid (item);
@@ -854,24 +856,26 @@ void VBoxMediaManagerDlg::mediumAdded (const VBoxMedium &aMedium)
 void VBoxMediaManagerDlg::mediumUpdated (const VBoxMedium &aMedium)
 {
     /* Ignore non-interesting aMedium */
-    if (mType != VBoxDefs::MediaType_All && mType != aMedium.type())
+    if ((aMedium.isNull()) ||
+        (mType != VBoxDefs::MediumType_All && mType != aMedium.type()) ||
+        (aMedium.isHostDrive()))
         return;
 
     MediaItem *item = 0;
 
     switch (aMedium.type())
     {
-        case VBoxDefs::MediaType_HardDisk:
+        case VBoxDefs::MediumType_HardDisk:
         {
             item = searchItem (mHardDiskView, aMedium.id());
             break;
         }
-        case VBoxDefs::MediaType_DVD:
+        case VBoxDefs::MediumType_DVD:
         {
             item = searchItem (mDVDView, aMedium.id());
             break;
         }
-        case VBoxDefs::MediaType_Floppy:
+        case VBoxDefs::MediumType_Floppy:
         {
             item = searchItem (mFloppyView, aMedium.id());
             break;
@@ -895,11 +899,11 @@ void VBoxMediaManagerDlg::mediumUpdated (const VBoxMedium &aMedium)
         processCurrentChanged (item);
 }
 
-void VBoxMediaManagerDlg::mediumRemoved (VBoxDefs::MediaType aType,
+void VBoxMediaManagerDlg::mediumRemoved (VBoxDefs::MediumType aType,
                                          const QString &aId)
 {
     /* Ignore non-interesting aMedium */
-    if (mType != VBoxDefs::MediaType_All && mType != aType)
+    if (mType != VBoxDefs::MediumType_All && mType != aType)
         return;
 
     QTreeWidget *tree = currentTreeWidget();
@@ -962,8 +966,6 @@ void VBoxMediaManagerDlg::mediumEnumStarted()
 
 void VBoxMediaManagerDlg::mediumEnumerated (const VBoxMedium &aMedium)
 {
-    AssertReturnVoid (aMedium.state() != KMediaState_NotCreated);
-
     mediumUpdated (aMedium);
 
     mProgressBar->setValue (mProgressBar->value() + 1);
@@ -981,13 +983,13 @@ void VBoxMediaManagerDlg::mediumEnumFinished (const VBoxMediaList &/* aList */)
 
 void VBoxMediaManagerDlg::doNewMedium()
 {
-    AssertReturnVoid (currentTreeWidgetType() == VBoxDefs::MediaType_HardDisk);
+    AssertReturnVoid (currentTreeWidgetType() == VBoxDefs::MediumType_HardDisk);
 
     VBoxNewHDWzd dlg (this);
 
     if (dlg.exec() == QDialog::Accepted)
     {
-        CHardDisk hd = dlg.hardDisk();
+        CMedium hd = dlg.hardDisk();
         /* Select the newly created hard disk */
         MediaItem *item = searchItem (mHardDiskView, hd.GetId());
         AssertReturnVoid (item);
@@ -1002,15 +1004,15 @@ void VBoxMediaManagerDlg::doAddMedium()
 
     QString title;
     QString filter;
-    VBoxDefs::MediaType type = currentTreeWidgetType();
+    VBoxDefs::MediumType type = currentTreeWidgetType();
 
     QString dir;
-    if (item && item->state() != KMediaState_Inaccessible
-             && item->state() != KMediaState_NotCreated)
+    if (item && item->state() != KMediumState_Inaccessible
+             && item->state() != KMediumState_NotCreated)
         dir = QFileInfo (item->location().trimmed()).absolutePath();
 
     if (dir.isEmpty())
-        if (type == VBoxDefs::MediaType_HardDisk)
+        if (type == VBoxDefs::MediumType_HardDisk)
             dir = mVBox.GetSystemProperties().GetDefaultHardDiskFolder();
 
     if (dir.isEmpty() || !QFileInfo (dir).exists())
@@ -1018,7 +1020,7 @@ void VBoxMediaManagerDlg::doAddMedium()
 
     switch (type)
     {
-        case VBoxDefs::MediaType_HardDisk:
+        case VBoxDefs::MediumType_HardDisk:
         {
             /// @todo NEWMEDIA use CSystemProperties::GetHardDIskFormats to detect
             /// possible hard disk extensions
@@ -1041,14 +1043,14 @@ void VBoxMediaManagerDlg::doAddMedium()
             title = tr ("Select a hard disk image file");
             break;
         }
-        case VBoxDefs::MediaType_DVD:
+        case VBoxDefs::MediumType_DVD:
         {
             filter = tr ("CD/DVD-ROM images (*.iso);;"
                          "All files (*)");
             title = tr ("Select a CD/DVD-ROM disk image file");
             break;
         }
-        case VBoxDefs::MediaType_Floppy:
+        case VBoxDefs::MediumType_Floppy:
         {
             filter = tr ("Floppy images (*.img);;"
                          "All files (*)");
@@ -1056,7 +1058,7 @@ void VBoxMediaManagerDlg::doAddMedium()
             break;
         }
         default:
-            AssertMsgFailed (("Selected tree should be equal to one item in VBoxDefs::MediaType.\n"));
+            AssertMsgFailed (("Selected tree should be equal to one item in VBoxDefs::MediumType.\n"));
             break;
     }
 
@@ -1079,7 +1081,7 @@ void VBoxMediaManagerDlg::doRemoveMedium()
     /* Remember ID/type as they may get lost after the closure/deletion */
     QString id = item->id();
     AssertReturnVoid (!id.isNull());
-    VBoxDefs::MediaType type = item->type();
+    VBoxDefs::MediumType type = item->type();
 
     if (!vboxProblem().confirmRemoveMedium (this, item->medium()))
         return;
@@ -1088,7 +1090,7 @@ void VBoxMediaManagerDlg::doRemoveMedium()
 
     switch (type)
     {
-        case VBoxDefs::MediaType_HardDisk:
+        case VBoxDefs::MediumType_HardDisk:
         {
             bool deleteStorage = false;
 
@@ -1100,7 +1102,7 @@ void VBoxMediaManagerDlg::doRemoveMedium()
              * VBoxProblemReporter::confirmRemoveMedium() is aware of that and
              * will give a corresponding hint. Therefore, once the code is
              * changed below, the hint should be re-checked for validity. */
-            if (item->state() != KMediaState_Inaccessible)
+            if (item->state() != KMediumState_Inaccessible)
             {
                 int rc = vboxProblem().
                     confirmDeleteHardDiskStorage (this, item->location());
@@ -1109,7 +1111,7 @@ void VBoxMediaManagerDlg::doRemoveMedium()
                 deleteStorage = rc == QIMessageBox::Yes;
             }
 
-            CHardDisk hardDisk = item->medium().hardDisk();
+            CMedium hardDisk = item->medium().medium();
 
             if (deleteStorage)
             {
@@ -1125,7 +1127,7 @@ void VBoxMediaManagerDlg::doRemoveMedium()
                 }
 
                 if (success)
-                    vboxGlobal().removeMedium (VBoxDefs::MediaType_HardDisk, id);
+                    vboxGlobal().removeMedium (VBoxDefs::MediumType_HardDisk, id);
                 else
                     vboxProblem().cannotDeleteHardDiskStorage (this, hardDisk,
                                                                progress);
@@ -1140,16 +1142,16 @@ void VBoxMediaManagerDlg::doRemoveMedium()
             result = hardDisk;
             break;
         }
-        case VBoxDefs::MediaType_DVD:
+        case VBoxDefs::MediumType_DVD:
         {
-            CDVDImage image = item->medium().dvdImage();
+            CMedium image = item->medium().medium();
             image.Close();
             result = image;
             break;
         }
-        case VBoxDefs::MediaType_Floppy:
+        case VBoxDefs::MediumType_Floppy:
         {
-            CFloppyImage image = item->medium().floppyImage();
+            CMedium image = item->medium().medium();
             image.Close();
             result = image;
             break;
@@ -1245,17 +1247,17 @@ bool VBoxMediaManagerDlg::releaseMediumFrom (const VBoxMedium &aMedium,
 
     switch (aMedium.type())
     {
-        case VBoxDefs::MediaType_HardDisk:
+        case VBoxDefs::MediumType_HardDisk:
         {
-            CHardDiskAttachmentVector vec =machine.GetHardDiskAttachments();
+            CMediumAttachmentVector vec = machine.GetMediumAttachments();
             for (int i = 0; i < vec.size(); ++ i)
             {
-                CHardDiskAttachment hda = vec [i];
-                if (hda.GetHardDisk().GetId() == aMedium.id())
+                CMediumAttachment hda = vec [i];
+                if (hda.GetMedium().GetId() == aMedium.id())
                 {
-                    machine.DetachHardDisk(hda.GetController(),
-                                           hda.GetPort(),
-                                           hda.GetDevice());
+                    machine.DetachDevice(hda.GetController(),
+                                         hda.GetPort(),
+                                         hda.GetDevice());
                     if (!machine.isOk())
                     {
                         CStorageController ctl = machine.GetStorageControllerByName(hda.GetController());
@@ -1270,26 +1272,24 @@ bool VBoxMediaManagerDlg::releaseMediumFrom (const VBoxMedium &aMedium,
             }
             break;
         }
-        case VBoxDefs::MediaType_DVD:
+        case VBoxDefs::MediumType_DVD:
         {
-            CDVDDrive drive = machine.GetDVDDrive();
-            drive.Unmount();
-            if (!drive.isOk())
+            machine.MountMedium ("IDE", 1, 0, NULL);
+            if (!machine.isOk())
             {
                 vboxProblem().cannotUnmountMedium (this, machine, aMedium,
-                                                   COMResult (drive));
+                                                   COMResult (machine));
                 success = false;
             }
             break;
         }
-        case VBoxDefs::MediaType_Floppy:
+        case VBoxDefs::MediumType_Floppy:
         {
-            CFloppyDrive drive = machine.GetFloppyDrive();
-            drive.Unmount();
-            if (!drive.isOk())
+            machine.MountMedium ("FD", 0, 0, NULL);
+            if (!machine.isOk())
             {
                 vboxProblem().cannotUnmountMedium (this, machine, aMedium,
-                                                   COMResult (drive));
+                                                   COMResult (machine));
                 success = false;
             }
             break;
@@ -1315,18 +1315,18 @@ bool VBoxMediaManagerDlg::releaseMediumFrom (const VBoxMedium &aMedium,
     return success;
 }
 
-QTreeWidget* VBoxMediaManagerDlg::treeWidget (VBoxDefs::MediaType aType) const
+QTreeWidget* VBoxMediaManagerDlg::treeWidget (VBoxDefs::MediumType aType) const
 {
     QTreeWidget* tree = 0;
     switch (aType)
     {
-        case VBoxDefs::MediaType_HardDisk:
+        case VBoxDefs::MediumType_HardDisk:
             tree = mHardDiskView;
             break;
-        case VBoxDefs::MediaType_DVD:
+        case VBoxDefs::MediumType_DVD:
             tree = mDVDView;
             break;
-        case VBoxDefs::MediaType_Floppy:
+        case VBoxDefs::MediumType_Floppy:
             tree = mFloppyView;
             break;
         default:
@@ -1336,19 +1336,19 @@ QTreeWidget* VBoxMediaManagerDlg::treeWidget (VBoxDefs::MediaType aType) const
     return tree;
 }
 
-VBoxDefs::MediaType VBoxMediaManagerDlg::currentTreeWidgetType() const
+VBoxDefs::MediumType VBoxMediaManagerDlg::currentTreeWidgetType() const
 {
-    VBoxDefs::MediaType type = VBoxDefs::MediaType_Invalid;
+    VBoxDefs::MediumType type = VBoxDefs::MediumType_Invalid;
     switch (mTwImages->currentIndex ())
     {
         case HDTab:
-            type = VBoxDefs::MediaType_HardDisk;
+            type = VBoxDefs::MediumType_HardDisk;
             break;
         case CDTab:
-            type = VBoxDefs::MediaType_DVD;
+            type = VBoxDefs::MediumType_DVD;
             break;
         case FDTab:
-            type = VBoxDefs::MediaType_Floppy;
+            type = VBoxDefs::MediumType_Floppy;
             break;
         default:
             AssertMsgFailed (("Page type %d unknown!\n", mTwImages->currentIndex ()));
@@ -1423,7 +1423,7 @@ void VBoxMediaManagerDlg::processCurrentChanged (QTreeWidgetItem *aItem,
     bool notInEnum = !vboxGlobal().isMediaEnumerationStarted();
 
     /* New and Add are now enabled even when enumerating since it should be safe */
-    bool newEnabled     = currentTreeWidgetType() == VBoxDefs::MediaType_HardDisk;
+    bool newEnabled     = currentTreeWidgetType() == VBoxDefs::MediumType_HardDisk;
     bool addEnabled     = true;
 //  bool editEnabled    = notInEnum && item && checkMediumFor (item, Action_Edit);
     bool removeEnabled  = notInEnum && item && checkMediumFor (item, Action_Remove);
@@ -1550,7 +1550,7 @@ void VBoxMediaManagerDlg::performTablesAdjustment()
 }
 
 void VBoxMediaManagerDlg::addMediumToList (const QString &aLocation,
-                                           VBoxDefs::MediaType aType)
+                                           VBoxDefs::MediumType aType)
 {
     AssertReturnVoid (!aLocation.isEmpty());
 
@@ -1559,36 +1559,36 @@ void VBoxMediaManagerDlg::addMediumToList (const QString &aLocation,
 
     switch (aType)
     {
-        case VBoxDefs::MediaType_HardDisk:
+        case VBoxDefs::MediumType_HardDisk:
         {
-            CHardDisk hd = mVBox.OpenHardDisk(aLocation, KAccessMode_ReadWrite, false, "", false, "");
+            CMedium hd = mVBox.OpenHardDisk(aLocation, KAccessMode_ReadWrite, false, "", false, "");
             if (mVBox.isOk())
             {
                 medium = VBoxMedium (CMedium (hd),
-                                     VBoxDefs::MediaType_HardDisk,
-                                     KMediaState_Created);
+                                     VBoxDefs::MediumType_HardDisk,
+                                     KMediumState_Created);
             }
             break;
         }
-        case VBoxDefs::MediaType_DVD:
+        case VBoxDefs::MediumType_DVD:
         {
-            CDVDImage image = mVBox.OpenDVDImage (aLocation, uuid);
+            CMedium image = mVBox.OpenDVDImage (aLocation, uuid);
             if (mVBox.isOk())
             {
                 medium = VBoxMedium (CMedium (image),
-                                     VBoxDefs::MediaType_DVD,
-                                     KMediaState_Created);
+                                     VBoxDefs::MediumType_DVD,
+                                     KMediumState_Created);
             }
             break;
         }
-        case VBoxDefs::MediaType_Floppy:
+        case VBoxDefs::MediumType_Floppy:
         {
-            CFloppyImage image = mVBox.OpenFloppyImage (aLocation, uuid);
+            CMedium image = mVBox.OpenFloppyImage (aLocation, uuid);
             if (mVBox.isOk())
             {
                 medium = VBoxMedium (CMedium (image),
-                                     VBoxDefs::MediaType_Floppy,
-                                     KMediaState_Created);
+                                     VBoxDefs::MediumType_Floppy,
+                                     KMediumState_Created);
             }
             break;
         }
@@ -1605,11 +1605,11 @@ void VBoxMediaManagerDlg::addMediumToList (const QString &aLocation,
 MediaItem* VBoxMediaManagerDlg::createHardDiskItem (QTreeWidget *aTree,
                                                     const VBoxMedium &aMedium) const
 {
-    AssertReturn (!aMedium.hardDisk().isNull(), 0);
+    AssertReturn (!aMedium.medium().isNull(), 0);
 
     MediaItem *item = 0;
 
-    CHardDisk parent = aMedium.hardDisk().GetParent();
+    CMedium parent = aMedium.medium().GetParent();
     if (parent.isNull())
     {
         item = new MediaItem (aTree, aMedium, this);
@@ -1634,17 +1634,17 @@ void VBoxMediaManagerDlg::updateTabIcons (MediaItem *aItem, ItemAction aAction)
 
     switch (aItem->type())
     {
-        case VBoxDefs::MediaType_HardDisk:
+        case VBoxDefs::MediumType_HardDisk:
             tab = HDTab;
             icon = &mHardDiskIcon;
             inaccessible = &mHardDisksInaccessible;
             break;
-        case VBoxDefs::MediaType_DVD:
+        case VBoxDefs::MediumType_DVD:
             tab = CDTab;
             icon = &mDVDImageIcon;
             inaccessible = &mDVDImagesInaccessible;
             break;
-        case VBoxDefs::MediaType_Floppy:
+        case VBoxDefs::MediumType_Floppy:
             tab = FDTab;
             icon = &mFloppyImageIcon;
             inaccessible = &mFloppyImagesInaccessible;
@@ -1661,7 +1661,7 @@ void VBoxMediaManagerDlg::updateTabIcons (MediaItem *aItem, ItemAction aAction)
         {
             /* Does it change the overall state? */
             if (*inaccessible ||
-                aItem->state() != KMediaState_Inaccessible)
+                aItem->state() != KMediumState_Inaccessible)
                 break; /* no */
 
             *inaccessible = true;
@@ -1678,12 +1678,12 @@ void VBoxMediaManagerDlg::updateTabIcons (MediaItem *aItem, ItemAction aAction)
             if (aAction == ItemAction_Updated)
             {
                 /* Does it change the overall state? */
-                if ((*inaccessible && aItem->state() == KMediaState_Inaccessible) ||
-                    (!*inaccessible && aItem->state() != KMediaState_Inaccessible))
+                if ((*inaccessible && aItem->state() == KMediumState_Inaccessible) ||
+                    (!*inaccessible && aItem->state() != KMediumState_Inaccessible))
                     break; /* no */
 
                 /* Is the given item in charge? */
-                if (!*inaccessible && aItem->state() == KMediaState_Inaccessible)
+                if (!*inaccessible && aItem->state() == KMediumState_Inaccessible)
                     *inaccessible = true; /* yes */
                 else
                     checkRest = true; /* no */
@@ -1702,7 +1702,7 @@ void VBoxMediaManagerDlg::updateTabIcons (MediaItem *aItem, ItemAction aAction)
                 for (; *it; ++ it)
                 {
                     if (*it != aItem &&
-                        (*it)->state() == KMediaState_Inaccessible)
+                        (*it)->state() == KMediumState_Inaccessible)
                     {
                         *inaccessible = true;
                         break;
@@ -1764,10 +1764,10 @@ bool VBoxMediaManagerDlg::checkMediumFor (MediaItem *aItem, Action aAction)
              * terms */
             switch (aItem->state())
             {
-                case KMediaState_NotCreated:
-                case KMediaState_Inaccessible:
-                case KMediaState_LockedRead:
-                case KMediaState_LockedWrite:
+                case KMediumState_NotCreated:
+                case KMediumState_Inaccessible:
+                case KMediumState_LockedRead:
+                case KMediumState_LockedWrite:
                     return false;
                 default:
                     break;
@@ -1803,7 +1803,7 @@ bool VBoxMediaManagerDlg::checkDndUrls (const QList <QUrl> &aUrls) const
         QString suffix = fi.suffix().toLower();
         switch (currentTreeWidgetType())
         {
-            case VBoxDefs::MediaType_HardDisk:
+            case VBoxDefs::MediumType_HardDisk:
             {
                 QList < QPair <QString, QString> > filterList = vboxGlobal().HDDBackends();
                 bool match = false;
@@ -1819,14 +1819,14 @@ bool VBoxMediaManagerDlg::checkDndUrls (const QList <QUrl> &aUrls) const
                 err |= !match;
                 break;
             }
-            case VBoxDefs::MediaType_DVD:
+            case VBoxDefs::MediumType_DVD:
                 err |= (suffix != "iso");
                 break;
-            case VBoxDefs::MediaType_Floppy:
+            case VBoxDefs::MediumType_Floppy:
                 err |= (suffix != "img");
                 break;
             default:
-                AssertMsgFailed (("Selected tree should be equal to one item in VBoxDefs::MediaType.\n"));
+                AssertMsgFailed (("Selected tree should be equal to one item in VBoxDefs::MediumType.\n"));
                 break;
         }
     }
@@ -1838,7 +1838,7 @@ void VBoxMediaManagerDlg::addDndUrls (const QList <QUrl> &aUrls)
     foreach (QUrl u, aUrls)
     {
         QString file = u.toLocalFile();
-        VBoxDefs::MediaType type = currentTreeWidgetType();
+        VBoxDefs::MediumType type = currentTreeWidgetType();
         addMediumToList (file, type);
     }
 }

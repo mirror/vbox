@@ -1010,9 +1010,9 @@ bool VBoxProblemReporter::confirmRemoveMedium (QWidget *aParent,
             .arg (toAccusative (aMedium.type()))
             .arg (aMedium.location());
 
-    if (aMedium.type() == VBoxDefs::MediaType_HardDisk)
+    if (aMedium.type() == VBoxDefs::MediumType_HardDisk)
     {
-        if (aMedium.state() == KMediaState_Inaccessible)
+        if (aMedium.state() == KMediumState_Inaccessible)
             msg +=
                 tr ("Note that this hard disk is inaccessible so that its "
                     "storage unit cannot be deleted right now.");
@@ -1068,15 +1068,15 @@ int VBoxProblemReporter::confirmDeleteHardDiskStorage (
 }
 
 void VBoxProblemReporter::cannotDeleteHardDiskStorage (QWidget *aParent,
-                                                       const CHardDisk &aHD,
+                                                       const CMedium &aHD,
                                                        const CProgress &aProgress)
 {
-    /* below, we use CHardDisk (aHD) to preserve current error info
+    /* below, we use CMedium (aHD) to preserve current error info
      * for formatErrorInfo() */
 
     message (aParent, Error,
         tr ("Failed to delete the storage unit of the hard disk <b>%1</b>.")
-            .arg (CHardDisk (aHD).GetLocation()),
+            .arg (CMedium (aHD).GetLocation()),
         !aHD.isOk() ? formatErrorInfo (aHD) :
         !aProgress.isOk() ? formatErrorInfo (aProgress) :
         formatErrorInfo (aProgress.GetErrorInfo()));
@@ -1106,26 +1106,42 @@ int VBoxProblemReporter::confirmChangeAddControllerSlots (QWidget *aParent) cons
         tr ("Change", "hard disk"));
 }
 
-int VBoxProblemReporter::confirmRunNewHDWzdOrVDM (QWidget* aParent)
+int VBoxProblemReporter::confirmRunNewHDWzdOrVDM (KDeviceType aDeviceType)
 {
-    return message (aParent, Info,
-        tr ("<p>There are no unused hard disks available for the newly created "
-            "attachment.</p>"
-            "<p>Press the <b>Create</b> button to start the <i>New Virtual "
-            "Disk</i> wizard and create a new hard disk, or press the "
-            "<b>Select</b> button to open the <i>Virtual Media Manager</i> "
-            "and select what to do.</p>"),
-        0, /* aAutoConfirmId */
-        QIMessageBox::Yes,
-        QIMessageBox::No | QIMessageBox::Default,
-        QIMessageBox::Cancel | QIMessageBox::Escape,
-        tr ("&Create", "hard disk"),
-        tr ("Select", "hard disk"));
+    switch (aDeviceType)
+    {
+        case KDeviceType_HardDisk:
+            return message (QApplication::activeWindow(), Info,
+                            tr ("<p>There are no unused mediums available for the newly "
+                                "created attachment.</p>"
+                                "<p>Press the <b>Create</b> button to start the <i>New "
+                                "Virtual Disk</i> wizard and create a new medium, "
+                                "or press the <b>Select</b> button to open the <i>Virtual "
+                                "Media Manager</i> and select what to do.</p>"),
+                            0, /* aAutoConfirmId */
+                            QIMessageBox::Yes,
+                            QIMessageBox::No | QIMessageBox::Default,
+                            QIMessageBox::Cancel | QIMessageBox::Escape,
+                            tr ("&Create", "medium"),
+                            tr ("&Select", "medium"));
+        default:
+            return message (QApplication::activeWindow(), Info,
+                            tr ("<p>There are no unused mediums available for the newly "
+                                "created attachment.</p>"
+                                "<p>Press the <b>Select</b> button to open the <i>Virtual "
+                                "Media Manager</i> and select what to do.</p>"),
+                            0, /* aAutoConfirmId */
+                            QIMessageBox::No | QIMessageBox::Default,
+                            QIMessageBox::Cancel | QIMessageBox::Escape,
+                            0,
+                            tr ("&Select", "medium"));
+    }
+    return QIMessageBox::Cancel;
 }
 
 void VBoxProblemReporter::cannotCreateHardDiskStorage (
     QWidget *aParent, const CVirtualBox &aVBox, const QString &aLocation,
-    const CHardDisk &aHD, const CProgress &aProgress)
+    const CMedium &aHD, const CProgress &aProgress)
 {
     message (aParent, Error,
         tr ("Failed to create the hard disk storage <nobr><b>%1</b>.</nobr>")
@@ -1144,7 +1160,7 @@ void VBoxProblemReporter::cannotAttachHardDisk (
         tr ("Failed to attach the hard disk <nobr><b>%1</b></nobr> "
             "to the slot <i>%2</i> of the machine <b>%3</b>.")
             .arg (aLocation)
-            .arg (vboxGlobal().toFullString (aBus, aChannel, aDevice))
+            .arg (vboxGlobal().toFullString (StorageSlot (aBus, aChannel, aDevice)))
             .arg (CMachine (aMachine).GetName()),
         formatErrorInfo (aMachine));
 }
@@ -1157,7 +1173,7 @@ void VBoxProblemReporter::cannotDetachHardDisk (
         tr ("Failed to detach the hard disk <nobr><b>%1</b></nobr> "
             "from the slot <i>%2</i> of the machine <b>%3</b>.")
             .arg (aLocation)
-            .arg (vboxGlobal().toFullString (aBus, aChannel, aDevice))
+            .arg (vboxGlobal().toFullString (StorageSlot (aBus, aChannel, aDevice)))
             .arg (CMachine (aMachine).GetName()),
          formatErrorInfo (aMachine));
 }
@@ -1194,7 +1210,7 @@ cannotUnmountMedium (QWidget *aParent, const CMachine &aMachine,
 
 void VBoxProblemReporter::cannotOpenMedium (
     QWidget *aParent, const CVirtualBox &aVBox,
-    VBoxDefs::MediaType aType, const QString &aLocation)
+    VBoxDefs::MediumType aType, const QString &aLocation)
 {
     /** @todo (translation-related): the gender of "the" in translations
      * will depend on the gender of aMedium.type(). */
@@ -2170,14 +2186,14 @@ void VBoxProblemReporter::showRuntimeError (const CConsole &aConsole, bool fatal
 }
 
 /* static */
-QString VBoxProblemReporter::toAccusative (VBoxDefs::MediaType aType)
+QString VBoxProblemReporter::toAccusative (VBoxDefs::MediumType aType)
 {
     QString type =
-        aType == VBoxDefs::MediaType_HardDisk ?
+        aType == VBoxDefs::MediumType_HardDisk ?
             tr ("hard disk", "failed to close ...") :
-        aType == VBoxDefs::MediaType_DVD ?
+        aType == VBoxDefs::MediumType_DVD ?
             tr ("CD/DVD image", "failed to close ...") :
-        aType == VBoxDefs::MediaType_Floppy ?
+        aType == VBoxDefs::MediumType_Floppy ?
             tr ("floppy image", "failed to close ...") :
         QString::null;
 

@@ -342,5 +342,9 @@
     <file alias="pin_16px.png">images/pin_16px.png</file>
     <file alias="restore_16px.png">images/restore_16px.png</file>
     <file alias="close_16px.png">images/close_16px.png</file>
+    <file alias="plus_10px.png">images/plus_10px.png</file>
+    <file alias="plus_disabled_10px.png">images/plus_disabled_10px.png</file>
+    <file alias="minus_10px.png">images/minus_10px.png</file>
+    <file alias="minus_disabled_10px.png">images/minus_disabled_10px.png</file>
  </qresource>
  </RCC>

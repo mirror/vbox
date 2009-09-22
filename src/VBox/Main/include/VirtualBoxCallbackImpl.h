@@ -50,8 +50,6 @@ public:
         COM_INTERFACE_ENTRY(IConsoleCallback)
     END_COM_MAP()
 
-    NS_DECL_ISUPPORTS
-
     HRESULT FinalConstruct();
     void FinalRelease();
 
@@ -68,8 +66,8 @@ public:
     STDMETHOD(OnExtraDataCanChange)(IN_BSTR machineId, IN_BSTR key, IN_BSTR value,
                                     BSTR *error, BOOL *changeAllowed);
     STDMETHOD(OnExtraDataChange)(IN_BSTR machineId, IN_BSTR key, IN_BSTR value);
-    STDMETHOD(OnMediaRegistered) (IN_BSTR mediaId, DeviceType_T mediaType,
-                                  BOOL registered);
+    STDMETHOD(OnMediumRegistered) (IN_BSTR mediaId, DeviceType_T mediaType,
+                                   BOOL registered);
     STDMETHOD(OnMachineRegistered)(IN_BSTR machineId, BOOL registered);
     STDMETHOD(OnSessionStateChange)(IN_BSTR machineId, SessionState_T state);
     STDMETHOD(OnSnapshotTaken) (IN_BSTR aMachineId, IN_BSTR aSnapshotId);
@@ -84,8 +82,6 @@ public:
     STDMETHOD(OnKeyboardLedsChange)(BOOL fNumLock, BOOL fCapsLock, BOOL fScrollLock);
     STDMETHOD(OnStateChange)(MachineState_T machineState);
     STDMETHOD(OnAdditionsStateChange)();
-    STDMETHOD(OnDVDDriveChange)();
-    STDMETHOD(OnFloppyDriveChange)();
     STDMETHOD(OnNetworkAdapterChange) (INetworkAdapter *aNetworkAdapter);
     STDMETHOD(OnSerialPortChange) (ISerialPort *aSerialPort);
     STDMETHOD(OnParallelPortChange) (IParallelPort *aParallelPort);
@@ -95,6 +91,7 @@ public:
                                        IVirtualBoxErrorInfo *aError);
     STDMETHOD(OnSharedFolderChange) (Scope_T aScope);
     STDMETHOD(OnStorageControllerChange) ();
+    STDMETHOD(OnMediumChange)(IMediumAttachment *iMediumAttachment);
     STDMETHOD(OnRuntimeError)(BOOL fFatal, IN_BSTR id, IN_BSTR message);
     STDMETHOD(OnCanShowWindow)(BOOL *canShow);
     STDMETHOD(OnShowWindow) (ULONG64 *winId);

@@ -247,32 +247,15 @@ int main(int argc, char* argv[])
                                                            NULL,
                                                            &req,
                                                            &resp)))
-        {
-            size_t c = resp.returnval.size();
-            for (size_t i = 0;
-                 i < c;
-                 ++i)
             {
-                std::cout << "DVD drive " << i << ": objref " << resp.returnval[i] << "\n";
+                size_t c = resp.returnval.size();
+                for (size_t i = 0;
+                    i < c;
+                    ++i)
+                {
+                    std::cout << "DVD drive " << i << ": objref " << resp.returnval[i] << "\n";
+                }
             }
-        }
-        }
-    }
-    else if (!strcmp(pcszMode, "getdvdname"))
-    {
-        if (argc < 3)
-            std::cout << "Not enough arguments for \"" << pcszMode << "\" mode.\n";
-        else
-        {
-            _vbox__IHostDVDDrive_USCOREgetName req;
-            req._USCOREthis = argv[2];
-            _vbox__IHostDVDDrive_USCOREgetNameResponse resp;
-            if (!(soaprc = soap_call___vbox__IHostDVDDrive_USCOREgetName(&soap,
-                                                              pcszArgEndpoint,
-                                                              NULL,
-                                                              &req,
-                                                              &resp)))
-                std::cout << "Name is: \"" << resp.returnval << "\"\n";
         }
     }
     else if (!strcmp(pcszMode, "getname"))

@@ -67,7 +67,7 @@ VBoxNewVMWzd::VBoxNewVMWzd (QWidget *aParent)
               hdLayout->spacing() - 1;
     QSpacerItem *spacer = new QSpacerItem (wid, 0, QSizePolicy::Fixed, QSizePolicy::Fixed);
     hdLayout->addItem (spacer, 2, 0);
-    mHDCombo->setType (VBoxDefs::MediaType_HardDisk);
+    mHDCombo->setType (VBoxDefs::MediumType_HardDisk);
     mHDCombo->repopulate();
     mTbVmm->setIcon (VBoxGlobal::iconSet (":/select_file_16px.png",
                                           ":/select_file_dis_16px.png"));
@@ -167,7 +167,7 @@ void VBoxNewVMWzd::accept()
 void VBoxNewVMWzd::showMediaManager()
 {
     VBoxMediaManagerDlg dlg (this);
-    dlg.setup (VBoxDefs::MediaType_HardDisk, true);
+    dlg.setup (VBoxDefs::MediumType_HardDisk, true);
 
     if (dlg.exec() == QDialog::Accepted)
     {
@@ -368,7 +368,7 @@ bool VBoxNewVMWzd::constructMachine()
         if (!session.isNull())
         {
             CMachine m = session.GetMachine();
-            m.AttachHardDisk (mHDCombo->id(), QString("IDE"), 0, 0);
+            m.AttachDevice ("IDE", 0, 0, KDeviceType_HardDisk, mHDCombo->id());
             if (m.isOk())
             {
                 m.SaveSettings();
@@ -418,7 +418,7 @@ void VBoxNewVMWzd::ensureNewHardDiskDeleted()
         }
 
         if (success)
-            vboxGlobal().removeMedium (VBoxDefs::MediaType_HardDisk, id);
+            vboxGlobal().removeMedium (VBoxDefs::MediumType_HardDisk, id);
         else
             vboxProblem().cannotDeleteHardDiskStorage (this, mHardDisk,
                                                        progress);

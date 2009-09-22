@@ -83,9 +83,6 @@
 
 /* these are XPCOM only, one for every interface implemented */
 #define NS_DECL_ISUPPORTS
-#define NS_DECL_IVIRTUALBOX
-#define NS_DECL_IMACHINECOLLECTION
-#define NS_DECL_IMACHINE
 
 /** Returns @c true if @a rc represents a warning result code */
 #define SUCCEEDED_WARNING(rc)   (SUCCEEDED (rc) && (rc) != S_OK)
@@ -244,11 +241,11 @@ typedef const OLECHAR *CBSTR;
 #define DECLARE_CLASSFACTORY_SINGLETON(a)
 #define DECLARE_REGISTRY_RESOURCEID(a)
 #define DECLARE_NOT_AGGREGATABLE(a)
-#define DECLARE_PROTECT_FINAL_CONSTRUCT(a)
+#define DECLARE_PROTECT_FINAL_CONSTRUCT()
 #define BEGIN_COM_MAP(a)
 #define COM_INTERFACE_ENTRY(a)
 #define COM_INTERFACE_ENTRY2(a,b)
-#define END_COM_MAP(a)
+#define END_COM_MAP() NS_DECL_ISUPPORTS
 
 #define HRESULT     nsresult
 #define SUCCEEDED   NS_SUCCEEDED
@@ -338,10 +335,14 @@ typedef nsIID   IID;
 
 #define COM_IIDOF(I) NS_GET_IID (I)
 
-/* Two very simple ATL emulator classes to provide
+/* A few very simple ATL emulator classes to provide
  * FinalConstruct()/FinalRelease() functionality on Linux. */
 
-class CComObjectRootEx
+class CComMultiThreadModel
+{
+};
+
+template <class Base> class CComObjectRootEx : public Base
 {
 public:
     HRESULT FinalConstruct() { return S_OK; }

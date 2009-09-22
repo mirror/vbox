@@ -163,7 +163,7 @@ void printUsage(USAGECATEGORY u64Cmd)
 #endif
                  "                            [--dvd none|<uuid>|<filename>|host:<drive>]\n"
                  "                            [--dvdpassthrough on|off]\n"
-                 "                            [--floppy disabled|empty|<uuid>|\n"
+                 "                            [--floppy disabled|none|<uuid>|\n"
                  "                                      <filename>|host:<drive>]\n"
 #if defined(VBOX_WITH_NETFLT)
                  "                            [--nic<1-N> none|null|nat|bridged|intnet|hostonly]\n"

@@ -211,28 +211,8 @@ public:
         return *this;
     }
 
-    /**
-     * Appends a copy of @a that to "this".
-     * @param that
-     */
-    MiniString& append(const MiniString &that)
-    {
-        size_t cbThis = length();
-        size_t cbThat = that.length();
-
-        if (cbThat)
-        {
-            size_t cbBoth = cbThis + cbThat + 1;
-
-            reserve(cbBoth);
-                // calls realloc(cbBoth) and sets m_cbAllocated
-
-            memcpy(m_psz + cbThis, that.m_psz, cbThat);
-            m_psz[cbThis + cbThat] = '\0';
-            m_cbLength = cbBoth - 1;
-        }
-        return *this;
-    }
+    MiniString& append(const MiniString &that);
+    MiniString& append(char c);
 
     /**
      * Returns the byte at the given index, or a null byte if

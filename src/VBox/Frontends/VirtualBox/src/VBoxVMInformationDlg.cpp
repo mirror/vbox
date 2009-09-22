@@ -487,21 +487,21 @@ void VBoxVMInformationDlg::refreshStatistics()
         result += hdrRow.arg (":/hd_16px.png").arg (tr ("Hard Disk Statistics"));
 
         /* IDE Hard Disk (Primary Master) */
-        if (!m.GetHardDisk(ideCtl, 0, 0).isNull())
+        if (!m.GetMedium(ideCtl, 0, 0).isNull())
         {
             hdStat += formatHardDisk (ideCtl, 0, 0, "IDE00");
             hdStat += paragraph;
         }
 
         /* IDE Hard Disk (Primary Slave) */
-        if (!m.GetHardDisk(ideCtl, 0, 1).isNull())
+        if (!m.GetMedium(ideCtl, 0, 1).isNull())
         {
             hdStat += formatHardDisk (ideCtl, 0, 1, "IDE01");
             hdStat += paragraph;
         }
 
         /* IDE Hard Disk (Secondary Slave) */
-        if (!m.GetHardDisk(ideCtl, 1, 1).isNull())
+        if (!m.GetMedium(ideCtl, 1, 1).isNull())
         {
             hdStat += formatHardDisk (ideCtl, 1, 1, "IDE11");
             hdStat += paragraph;
@@ -510,7 +510,7 @@ void VBoxVMInformationDlg::refreshStatistics()
         /* SATA Hard Disks */
         for (int i = 0; i < 30; ++ i)
         {
-            if (!m.GetHardDisk(sataCtl, i, 0).isNull())
+            if (!m.GetMedium(sataCtl, i, 0).isNull())
             {
                 hdStat += formatHardDisk (sataCtl, i, 0,
                                           QString ("SATA%1").arg (i));
@@ -528,7 +528,7 @@ void VBoxVMInformationDlg::refreshStatistics()
             /* SCSI Hard Disks */
             for (int i = 0; i < 16; ++ i)
             {
-                if (!m.GetHardDisk(scsiCtl, i, 0).isNull())
+                if (!m.GetMedium(scsiCtl, i, 0).isNull())
                 {
                     hdStat += formatHardDisk (scsiCtl, i, 0,
                                               QString ("SCSI%1").arg (i));
@@ -613,11 +613,11 @@ QString VBoxVMInformationDlg::formatHardDisk (const QString &ctlName,
     if (mSession.isNull())
         return QString::null;
 
-    CStorageController ctl = mSession.GetMachine().GetStorageControllerByName(ctlName);
+    CStorageController ctl = mSession.GetMachine().GetStorageControllerByName (ctlName);
 
-    CHardDisk hd = mSession.GetMachine().GetHardDisk(ctlName, aChannel, aDevice);
+    CMedium hd = mSession.GetMachine().GetMedium (ctlName, aChannel, aDevice);
     QString header = "<tr><td></td><td colspan=2><nobr><u>%1</u></nobr></td></tr>";
-    QString name = vboxGlobal().toFullString (ctl.GetBus(), aChannel, aDevice);
+    QString name = vboxGlobal().toFullString (StorageSlot (ctl.GetBus(), aChannel, aDevice));
     QString result = hd.isNull() ? QString::null : header.arg (name);
     result += composeArticle (aBelongsTo);
     return result;

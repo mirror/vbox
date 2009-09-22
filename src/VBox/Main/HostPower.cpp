@@ -29,6 +29,8 @@
 
 #include <VBox/com/ptr.h>
 
+#include "VirtualBoxImpl.h"
+
 #include <iprt/mem.h>
 
 HostPowerService::HostPowerService (VirtualBox *aVirtualBox)

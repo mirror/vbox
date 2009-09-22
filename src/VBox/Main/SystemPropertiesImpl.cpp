@@ -102,14 +102,14 @@ HRESULT SystemProperties::init (VirtualBox *aParent)
     {
         for (unsigned i = 0; i < cEntries; ++ i)
         {
-            ComObjPtr<HardDiskFormat> hdf;
+            ComObjPtr<MediumFormat> hdf;
             rc = hdf.createObject();
             CheckComRCBreakRC (rc);
 
             rc = hdf->init (&aVDInfo [i]);
             CheckComRCBreakRC (rc);
 
-            mHardDiskFormats.push_back (hdf);
+            mMediumFormats.push_back (hdf);
         }
     }
 
@@ -361,6 +361,112 @@ STDMETHODIMP SystemProperties::COMGETTER(MaxBootPosition)(ULONG *aMaxBootPositio
     return S_OK;
 }
 
+STDMETHODIMP SystemProperties::GetMaxDevicesPerPortForStorageBus (StorageBus_T aBus, ULONG *aMaxDevicesPerPort)
+{
+    CheckComArgOutPointerValid(aMaxDevicesPerPort);
+
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
+
+    /* no need to lock, this is const */
+    switch (aBus)
+    {
+        case StorageBus_SATA:
+        case StorageBus_SCSI:
+        {
+            /* SATA and both SCSI controllers only support one device per port. */
+            *aMaxDevicesPerPort = 1;
+            break;
+        }
+        case StorageBus_IDE:
+        case StorageBus_Floppy:
+        {
+            /* The IDE and Floppy controllers support 2 devices. One as master
+             * and one as slave (or floppy drive 0 and 1). */
+            *aMaxDevicesPerPort = 2;
+            break;
+        }
+        default:
+            AssertMsgFailed(("Invalid bus type %d\n", aBus));
+    }
+
+    return S_OK;
+}
+
+STDMETHODIMP SystemProperties::GetMinPortCountForStorageBus (StorageBus_T aBus, ULONG *aMinPortCount)
+{
+    CheckComArgOutPointerValid(aMinPortCount);
+
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
+
+    /* no need to lock, this is const */
+    switch (aBus)
+    {
+        case StorageBus_SATA:
+        {
+            *aMinPortCount = 1;
+            break;
+        }
+        case StorageBus_SCSI:
+        {
+            *aMinPortCount = 16;
+            break;
+        }
+        case StorageBus_IDE:
+        {
+            *aMinPortCount = 2;
+            break;
+        }
+        case StorageBus_Floppy:
+        {
+            *aMinPortCount = 1;
+            break;
+        }
+        default:
+            AssertMsgFailed(("Invalid bus type %d\n", aBus));
+    }
+
+    return S_OK;
+}
+
+STDMETHODIMP SystemProperties::GetMaxPortCountForStorageBus (StorageBus_T aBus, ULONG *aMaxPortCount)
+{
+    CheckComArgOutPointerValid(aMaxPortCount);
+
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
+
+    /* no need to lock, this is const */
+    switch (aBus)
+    {
+        case StorageBus_SATA:
+        {
+            *aMaxPortCount = 30;
+            break;
+        }
+        case StorageBus_SCSI:
+        {
+            *aMaxPortCount = 16;
+            break;
+        }
+        case StorageBus_IDE:
+        {
+            *aMaxPortCount = 2;
+            break;
+        }
+        case StorageBus_Floppy:
+        {
+            *aMaxPortCount = 1;
+            break;
+        }
+        default:
+            AssertMsgFailed(("Invalid bus type %d\n", aBus));
+    }
+
+    return S_OK;
+}
+
 STDMETHODIMP SystemProperties::COMGETTER(DefaultMachineFolder) (BSTR *aDefaultMachineFolder)
 {
     CheckComArgOutPointerValid(aDefaultMachineFolder);
@@ -420,9 +526,9 @@ STDMETHODIMP SystemProperties::COMSETTER(DefaultHardDiskFolder) (IN_BSTR aDefaul
 }
 
 STDMETHODIMP SystemProperties::
-COMGETTER(HardDiskFormats) (ComSafeArrayOut(IHardDiskFormat *, aHardDiskFormats))
+COMGETTER(MediumFormats) (ComSafeArrayOut(IMediumFormat *, aMediumFormats))
 {
-    if (ComSafeArrayOutIsNull(aHardDiskFormats))
+    if (ComSafeArrayOutIsNull(aMediumFormats))
         return E_POINTER;
 
     AutoCaller autoCaller(this);
@@ -430,8 +536,8 @@ COMGETTER(HardDiskFormats) (ComSafeArrayOut(IHardDiskFormat *, aHardDiskFormats)
 
     AutoReadLock alock(this);
 
-    SafeIfaceArray<IHardDiskFormat> hardDiskFormats (mHardDiskFormats);
-    hardDiskFormats.detachTo(ComSafeArrayOutArg(aHardDiskFormats));
+    SafeIfaceArray<IMediumFormat> mediumFormats (mMediumFormats);
+    mediumFormats.detachTo(ComSafeArrayOutArg(aMediumFormats));
 
     return S_OK;
 }
@@ -618,26 +724,26 @@ HRESULT SystemProperties::saveSettings(settings::SystemProperties &data)
 }
 
 /**
- * Rerurns a hard disk format object corresponding to the given format
+ * Returns a medium format object corresponding to the given format
  * identifier or null if no such format.
  *
  * @param aFormat   Format identifier.
  *
- * @return ComObjPtr<HardDiskFormat>
+ * @return ComObjPtr<MediumFormat>
  */
-ComObjPtr<HardDiskFormat> SystemProperties::hardDiskFormat (CBSTR aFormat)
+ComObjPtr<MediumFormat> SystemProperties::mediumFormat (CBSTR aFormat)
 {
-    ComObjPtr<HardDiskFormat> format;
+    ComObjPtr<MediumFormat> format;
 
     AutoCaller autoCaller(this);
     AssertComRCReturn (autoCaller.rc(), format);
 
     AutoReadLock alock(this);
 
-    for (HardDiskFormatList::const_iterator it = mHardDiskFormats.begin();
-         it != mHardDiskFormats.end(); ++ it)
+    for (MediumFormatList::const_iterator it = mMediumFormats.begin();
+         it != mMediumFormats.end(); ++ it)
     {
-        /* HardDiskFormat is all const, no need to lock */
+        /* MediumFormat is all const, no need to lock */
 
         if ((*it)->id().compareIgnoreCase (aFormat) == 0)
         {

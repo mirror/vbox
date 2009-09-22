@@ -49,7 +49,7 @@ public:
                          Qt::WindowFlags aFlags = Qt::Dialog);
     ~VBoxMediaManagerDlg();
 
-    void setup (VBoxDefs::MediaType aType, bool aDoSelect,
+    void setup (VBoxDefs::MediumType aType, bool aDoSelect,
                 bool aRefresh = true,
                 const CMachine &aSessionMachine = CMachine(),
                 const QString &aSelectId = QString::null,
@@ -77,7 +77,7 @@ private slots:
 
     void mediumAdded (const VBoxMedium &aMedium);
     void mediumUpdated (const VBoxMedium &aMedium);
-    void mediumRemoved (VBoxDefs::MediaType aType, const QString &aId);
+    void mediumRemoved (VBoxDefs::MediumType aType, const QString &aId);
 
     void mediumEnumStarted();
     void mediumEnumerated (const VBoxMedium &aMedium);
@@ -102,8 +102,8 @@ private slots:
 
 private:
 
-    QTreeWidget* treeWidget (VBoxDefs::MediaType aType) const;
-    VBoxDefs::MediaType currentTreeWidgetType() const;
+    QTreeWidget* treeWidget (VBoxDefs::MediumType aType) const;
+    VBoxDefs::MediumType currentTreeWidgetType() const;
     QTreeWidget* currentTreeWidget() const;
 
     QTreeWidgetItem* selectedItem (const QTreeWidget *aTree) const;
@@ -111,7 +111,7 @@ private:
 
     void setCurrentItem (QTreeWidget *aTree, QTreeWidgetItem *aItem);
 
-    void addMediumToList (const QString &aLocation, VBoxDefs::MediaType aType);
+    void addMediumToList (const QString &aLocation, VBoxDefs::MediumType aType);
 
     MediaItem* createHardDiskItem (QTreeWidget *aTree, const VBoxMedium &aMedium) const;
 

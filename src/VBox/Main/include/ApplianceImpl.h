@@ -50,8 +50,6 @@ public:
         COM_INTERFACE_ENTRY(IDispatch)
     END_COM_MAP()
 
-    NS_DECL_ISUPPORTS
-
     DECLARE_EMPTY_CTOR_DTOR (Appliance)
 
     // public initializer/uninitializer for internal purposes only
@@ -161,8 +159,6 @@ public:
         COM_INTERFACE_ENTRY(IVirtualSystemDescription)
         COM_INTERFACE_ENTRY(IDispatch)
     END_COM_MAP()
-
-    NS_DECL_ISUPPORTS
 
     DECLARE_EMPTY_CTOR_DTOR (VirtualSystemDescription)
 

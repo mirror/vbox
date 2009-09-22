@@ -51,8 +51,6 @@ public:
         COM_INTERFACE_ENTRY2 (IDispatch, IUSBDevice)
     END_COM_MAP()
 
-    NS_DECL_ISUPPORTS
-
     DECLARE_EMPTY_CTOR_DTOR (OUSBDevice)
 
     HRESULT FinalConstruct();

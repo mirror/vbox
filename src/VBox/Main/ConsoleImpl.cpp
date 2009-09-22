@@ -130,8 +130,10 @@
  */
 struct VMTask
 {
-    VMTask (Console *aConsole, bool aUsesVMPtr)
-        : mConsole (aConsole), mCallerAdded (false), mVMCallerAdded (false)
+    VMTask(Console *aConsole, bool aUsesVMPtr)
+        : mConsole(aConsole),
+          mCallerAdded (false),
+          mVMCallerAdded(false)
     {
         AssertReturnVoid (aConsole);
         mRC = aConsole->addCaller();
@@ -161,7 +163,7 @@ struct VMTask
     /** Releases the Console caller before destruction. Not normally necessary. */
     void releaseCaller()
     {
-        AssertReturnVoid (mCallerAdded);
+        AssertReturnVoid(mCallerAdded);
         mConsole->releaseCaller();
         mCallerAdded = false;
     }
@@ -169,7 +171,7 @@ struct VMTask
     /** Releases the VM caller before destruction. Not normally necessary. */
     void releaseVMCaller()
     {
-        AssertReturnVoid (mVMCallerAdded);
+        AssertReturnVoid(mVMCallerAdded);
         mConsole->releaseVMCaller();
         mVMCallerAdded = false;
     }
@@ -185,19 +187,47 @@ private:
 
 struct VMProgressTask : public VMTask
 {
-    VMProgressTask (Console *aConsole, Progress *aProgress, bool aUsesVMPtr)
-        : VMTask (aConsole, aUsesVMPtr), mProgress (aProgress) {}
+    VMProgressTask(Console *aConsole,
+                   Progress *aProgress,
+                   bool aUsesVMPtr)
+        : VMTask(aConsole, aUsesVMPtr),
+          mProgress(aProgress)
+    {}
 
     const ComObjPtr<Progress> mProgress;
 
     Utf8Str mErrorMsg;
 };
 
+struct VMTakeSnapshotTask : public VMProgressTask
+{
+    VMTakeSnapshotTask(Console *aConsole,
+                       Progress *aProgress,
+                       IN_BSTR aName,
+                       IN_BSTR aDescription)
+        : VMProgressTask(aConsole, aProgress, false /* aUsesVMPtr */),
+          bstrName(aName),
+          bstrDescription(aDescription),
+          lastMachineState(MachineState_Null)
+    {}
+
+    Bstr                    bstrName,
+                            bstrDescription;
+    Bstr                    bstrSavedStateFile;         // received from BeginTakeSnapshot()
+    MachineState_T          lastMachineState;
+    bool                    fTakingSnapshotOnline;
+    ULONG                   ulMemSize;
+};
+
 struct VMPowerUpTask : public VMProgressTask
 {
-    VMPowerUpTask (Console *aConsole, Progress *aProgress)
-        : VMProgressTask (aConsole, aProgress, false /* aUsesVMPtr */)
-        , mSetVMErrorCallback (NULL), mConfigConstructor (NULL), mStartPaused (false) {}
+    VMPowerUpTask(Console *aConsole,
+                  Progress *aProgress)
+        : VMProgressTask(aConsole, aProgress, false /* aUsesVMPtr */),
+          mSetVMErrorCallback(NULL),
+          mConfigConstructor(NULL),
+          mStartPaused(false)
+    {}
 
     PFNVMATERROR mSetVMErrorCallback;
     PFNCFGMCONSTRUCTOR mConfigConstructor;
@@ -205,22 +235,21 @@ struct VMPowerUpTask : public VMProgressTask
     Console::SharedFolderDataMap mSharedFolders;
     bool mStartPaused;
 
-    typedef std::list <ComPtr<IHardDisk> > HardDiskList;
+    typedef std::list< ComPtr<IMedium> > HardDiskList;
     HardDiskList hardDisks;
 
     /* array of progress objects for hard disk reset operations */
-    typedef std::list <ComPtr<IProgress> > ProgressList;
+    typedef std::list< ComPtr<IProgress> > ProgressList;
     ProgressList hardDiskProgresses;
 };
 
 struct VMSaveTask : public VMProgressTask
 {
-    VMSaveTask (Console *aConsole, Progress *aProgress)
-        : VMProgressTask (aConsole, aProgress, true /* aUsesVMPtr */)
-        , mIsSnapshot (false)
-        , mLastMachineState (MachineState_Null) {}
+    VMSaveTask(Console *aConsole, Progress *aProgress)
+        : VMProgressTask(aConsole, aProgress, true /* aUsesVMPtr */),
+          mLastMachineState(MachineState_Null)
+    {}
 
-    bool mIsSnapshot;
     Utf8Str mSavedStateFile;
     MachineState_T mLastMachineState;
     ComPtr<IProgress> mServerProgress;
@@ -237,8 +266,6 @@ Console::Console()
     , mVMZeroCallersSem (NIL_RTSEMEVENT)
     , mVMDestroying (false)
     , mVMPoweredOff (false)
-    , meDVDState (DriveState_NotMounted)
-    , meFloppyState (DriveState_NotMounted)
     , mVMMDev (NULL)
     , mAudioSniffer (NULL)
     , mVMStateChangeCallbackDisabled (false)
@@ -303,12 +330,6 @@ HRESULT Console::init (IMachine *aMachine, IInternalMachineControl *aControl)
     rc = mMachine->COMGETTER(VRDPServer) (unconst(mVRDPServer).asOutParam());
     AssertComRCReturnRC(rc);
 #endif
-
-    rc = mMachine->COMGETTER(DVDDrive) (unconst(mDVDDrive).asOutParam());
-    AssertComRCReturnRC(rc);
-
-    rc = mMachine->COMGETTER(FloppyDrive) (unconst(mFloppyDrive).asOutParam());
-    AssertComRCReturnRC(rc);
 
     /* Create associated child COM objects */
 
@@ -460,8 +481,6 @@ void Console::uninit()
         unconst(mConsoleVRDPServer) = NULL;
     }
 
-    unconst(mFloppyDrive).setNull();
-    unconst(mDVDDrive).setNull();
 #ifdef VBOX_WITH_VRDP
     unconst(mVRDPServer).setNull();
 #endif
@@ -1148,7 +1167,7 @@ Console::doGuestPropNotification (void *pvExtension, uint32_t,
 {
     using namespace guestProp;
 
-    LogFlowFunc (("pvExtension=%p, pvParms=%p, cbParms=%u\n", pvExtension, pvParms, cbParms));
+//     LogFlowFunc (("pvExtension=%p, pvParms=%p, cbParms=%u\n", pvExtension, pvParms, cbParms));
     int rc = VINF_SUCCESS;
     /* No locking, as this is purely a notification which does not make any
      * changes to the object state. */
@@ -1156,7 +1175,7 @@ Console::doGuestPropNotification (void *pvExtension, uint32_t,
     AssertReturn(sizeof(HOSTCALLBACKDATA) == cbParms, VERR_INVALID_PARAMETER);
     AssertReturn(HOSTCALLBACKMAGIC == pCBData->u32Magic, VERR_INVALID_PARAMETER);
     ComObjPtr<Console> pConsole = reinterpret_cast <Console *> (pvExtension);
-    LogFlowFunc (("pCBData->pcszName=%s, pCBData->pcszValue=%s, pCBData->pcszFlags=%s\n", pCBData->pcszName, pCBData->pcszValue, pCBData->pcszFlags));
+//     LogFlowFunc (("pCBData->pcszName=%s, pCBData->pcszValue=%s, pCBData->pcszFlags=%s\n", pCBData->pcszName, pCBData->pcszValue, pCBData->pcszFlags));
     Bstr name(pCBData->pcszName);
     Bstr value(pCBData->pcszValue);
     Bstr flags(pCBData->pcszFlags);
@@ -1172,14 +1191,14 @@ Console::doGuestPropNotification (void *pvExtension, uint32_t,
                                                             flags);
         if (FAILED (hrc))
         {
-            LogFunc (("pConsole->mControl->PushGuestProperty failed, hrc=0x%x\n", hrc));
-            LogFunc (("pCBData->pcszName=%s\n", pCBData->pcszName));
-            LogFunc (("pCBData->pcszValue=%s\n", pCBData->pcszValue));
-            LogFunc (("pCBData->pcszFlags=%s\n", pCBData->pcszFlags));
+//             LogFunc (("pConsole->mControl->PushGuestProperty failed, hrc=0x%x\n", hrc));
+//             LogFunc (("pCBData->pcszName=%s\n", pCBData->pcszName));
+//             LogFunc (("pCBData->pcszValue=%s\n", pCBData->pcszValue));
+//             LogFunc (("pCBData->pcszFlags=%s\n", pCBData->pcszFlags));
             rc = VERR_UNRESOLVED_ERROR;  /** @todo translate error code */
         }
     }
-    LogFlowFunc (("rc=%Rrc\n", rc));
+//     LogFlowFunc (("rc=%Rrc\n", rc));
     return rc;
 }
 
@@ -1875,7 +1894,6 @@ STDMETHODIMP Console::SaveState (IProgress **aProgress)
         }
 
         /* setup task object and thread to carry out the operation asynchronously */
-        task->mIsSnapshot = false;
         task->mSavedStateFile = stateFilePath;
         /* set the state the operation thread will restore when it is finished */
         task->mLastMachineState = lastMachineState;
@@ -2395,147 +2413,112 @@ STDMETHODIMP Console::TakeSnapshot(IN_BSTR aName,
 
     HRESULT rc = S_OK;
 
-    bool const fTakingSnapshotOnline = (   mMachineState == MachineState_Running
-                                        || mMachineState == MachineState_Paused);
+    /* prepare the progress object:
+       a) count the no. of hard disk attachments to get a matching no. of progress sub-operations */
+    ULONG cOperations = 2;              // always at least setting up + finishing up
+    ULONG ulTotalOperationsWeight = 2;  // one each for setting up + finishing up
+    SafeIfaceArray<IMediumAttachment> aMediumAttachments;
+    rc = mMachine->COMGETTER(MediumAttachments)(ComSafeArrayAsOutParam(aMediumAttachments));
+    if (FAILED(rc))
+        return setError(VBOX_E_INVALID_VM_STATE,
+                        tr("Cannot get medium attachments of the machine"),
+                        mMachineState);
 
-    /*
-     *  create a descriptionless VM-side progress object
-     *  (only when creating a snapshot online)
-     */
-    ComObjPtr<Progress> saveProgress;
-    if (fTakingSnapshotOnline)
+    ULONG ulMemSize;
+    rc = mMachine->COMGETTER(MemorySize)(&ulMemSize);
+    if (FAILED(rc)) return rc;
+
+    for (size_t i = 0;
+         i < aMediumAttachments.size();
+         ++i)
     {
-        saveProgress.createObject();
-        rc = saveProgress->init(FALSE, 1, Bstr(tr("Saving the execution state")));
-        AssertComRCReturn (rc, rc);
+        DeviceType_T type;
+        rc = aMediumAttachments[i]->COMGETTER(Type)(&type);
+        if (FAILED(rc)) return rc;
+
+        if (type == DeviceType_HardDisk)
+        {
+            ++cOperations;
+
+            // assume that creating a diff image takes as long as saving a 1 MB state
+            // (note, the same value must be used in SessionMachine::BeginTakingSnapshot() on the server!)
+            ulTotalOperationsWeight += 1;
+        }
     }
 
-    bool fBeganTakingSnapshot = false;
-    bool fTaskCreationFailed = false;
+    // b) one extra sub-operations for online snapshots OR offline snapshots that have a saved state (needs to be copied)
+    bool fTakingSnapshotOnline = ((mMachineState == MachineState_Running) || (mMachineState == MachineState_Paused));
 
-    do
+    LogFlowFunc(("fTakingSnapshotOnline = %d, mMachineState = %d\n", fTakingSnapshotOnline, mMachineState));
+
+    if (    fTakingSnapshotOnline
+         || (mMachineState == MachineState_Saved)
+       )
     {
-        /* create a task object early to ensure mpVM protection is successful */
-        std::auto_ptr<VMSaveTask> task;
-        if (fTakingSnapshotOnline)
-        {
-            task.reset(new VMSaveTask(this, saveProgress));
-            rc = task->rc();
-            /*
-             *  If we fail here it means a PowerDown() call happened on another
-             *  thread while we were doing Pause() (which leaves the Console lock).
-             *  We assign PowerDown() a higher precedence than TakeSnapshot(),
-             *  therefore just return the error to the caller.
-             */
-            if (FAILED (rc))
-            {
-                fTaskCreationFailed = true;
-                break;
-            }
-        }
+        ++cOperations;
 
-        Bstr stateFilePath;
-        ComPtr<IProgress> serverProgress;
+        ulTotalOperationsWeight += ulMemSize;
+    }
 
-        /*
-         *  request taking a new snapshot object on the server
-         *  (this will set the machine state to Saving on the server to block
-         *  others from accessing this machine)
-         */
-        rc = mControl->BeginTakingSnapshot(this,
-                                           aName,
-                                           aDescription,
-                                           saveProgress,
-                                           stateFilePath.asOutParam(),
-                                           serverProgress.asOutParam());
-        if (FAILED (rc))
-            break;
+    // finally, create the progress object
+    ComObjPtr<Progress> pProgress;
+    pProgress.createObject();
+    rc = pProgress->init(static_cast<IConsole*>(this),
+                         Bstr(tr("Taking a snapshot of the virtual machine")),
+                         FALSE /* aCancelable */,
+                         cOperations,
+                         ulTotalOperationsWeight,
+                         Bstr(tr("Setting up snapshot operation")),      // first sub-op description
+                         1);        // ulFirstOperationWeight
 
-        /*
-         *  The state file is non-null only when creating a online or live snapshot.
-         */
-        ComAssertBreak(    (!stateFilePath.isNull() && fTakingSnapshotOnline)
-                        || (stateFilePath.isNull() && !fTakingSnapshotOnline),
-                       rc = E_FAIL);
+    if (FAILED(rc)) return rc;
 
-        fBeganTakingSnapshot = true;
+    VMTakeSnapshotTask *pTask;
+    if (!(pTask = new VMTakeSnapshotTask(this, pProgress, aName, aDescription)))
+        return VERR_NO_MEMORY;
 
-        /* sync the state with the server */
-        setMachineStateLocally(MachineState_Saving);
+    Assert(pTask->mProgress);
 
-        /*
-         *  create a combined VM-side progress object and start the save task
-         *  (only when creating a snapshot online)
-         */
-        ComObjPtr<CombinedProgress> combinedProgress;
-        if (fTakingSnapshotOnline)
-        {
-            combinedProgress.createObject();
-            rc = combinedProgress->init(static_cast<IConsole*>(this),
-                                        Bstr(tr("Taking snapshot of virtual machine")),
-                                        serverProgress,
-                                        saveProgress);
-            AssertComRCBreakRC (rc);
-
-            /* setup task object and thread to carry out the operation asynchronously */
-            task->mIsSnapshot = true;
-            task->mSavedStateFile = stateFilePath;
-            task->mServerProgress = serverProgress;
-            /* set the state the operation thread will restore when it is finished */
-            task->mLastMachineState = lastMachineState;
-
-            /* create a thread to wait until the VM state is saved */
-            int vrc = RTThreadCreate(NULL,
-                                     Console::saveStateThread,
-                                     (void*)task.get(),
-                                     0,
-                                     RTTHREADTYPE_MAIN_WORKER,
-                                     0,
-                                     "VMTakeSnap");
-
-            ComAssertMsgRCBreak(vrc,
-                                ("Could not create VMTakeSnap thread (%Rrc)", vrc),
-                                rc = E_FAIL);
-
-            /* task is now owned by saveStateThread(), so release it */
-            task.release();
-        }
-
-        if (SUCCEEDED(rc))
-        {
-            /* return the correct progress to the caller */
-            if (combinedProgress)
-                combinedProgress.queryInterfaceTo(aProgress);
-            else
-                serverProgress.queryInterfaceTo(aProgress);
-        }
-    } while (0);
-
-    if (FAILED(rc) && !fTaskCreationFailed)
+    try
     {
-        /* preserve existing error info */
-        ErrorInfoKeeper eik;
+        /*
+         *  If we fail here it means a PowerDown() call happened on another
+         *  thread while we were doing Pause() (which leaves the Console lock).
+         *  We assign PowerDown() a higher precedence than TakeSnapshot(),
+         *  therefore just return the error to the caller.
+         */
+        rc = pTask->rc();
+        if (FAILED(rc)) throw rc;
 
-        if (fBeganTakingSnapshot && fTakingSnapshotOnline)
+        pTask->ulMemSize = ulMemSize;
+
+        /* memorize the current machine state */
+        pTask->lastMachineState = mMachineState;
+        pTask->fTakingSnapshotOnline = fTakingSnapshotOnline;
+
+        if (mMachineState == MachineState_Running)
         {
-            /*
-             *  cancel the requested snapshot (only when creating a snapshot
-             *  online, otherwise the server will cancel the snapshot itself).
-             *  This will reset the machine state to the state it had right
-             *  before calling mControl->BeginTakingSnapshot().
-             */
-            mControl->EndTakingSnapshot(FALSE);
+            rc = Pause();
+            if (FAILED(rc)) throw rc;
         }
 
-        if (lastMachineState == MachineState_Running)
-        {
-            /* restore the paused state if appropriate */
-            setMachineStateLocally(MachineState_Paused);
-            /* restore the running state if appropriate */
-            Resume();
-        }
-        else
-            setMachineStateLocally(lastMachineState);
+        int vrc = RTThreadCreate(NULL,
+                                 Console::fntTakeSnapshotWorker,
+                                 (void*)pTask,
+                                 0,
+                                 RTTHREADTYPE_MAIN_WORKER,
+                                 0,
+                                 "ConsoleTakeSnap");
+        if (FAILED(vrc))
+            throw setError(E_FAIL,
+                           tr("Could not create VMTakeSnap thread (%Rrc)"),
+                           vrc);
+
+        pTask->mProgress.queryInterfaceTo(aProgress);
+    }
+    catch (HRESULT rc)
+    {
+        delete pTask;
     }
 
     LogFlowThisFunc(("rc=%08X\n", rc));
@@ -2683,279 +2666,171 @@ STDMETHODIMP Console::UnregisterCallback (IConsoleCallback *aCallback)
 // Non-interface public methods
 /////////////////////////////////////////////////////////////////////////////
 
-/**
- * Called by IInternalSessionControl::OnDVDDriveChange().
- *
- * @note Locks this object for writing.
- */
-HRESULT Console::onDVDDriveChange()
+
+const char *Console::controllerTypeToDev(StorageControllerType_T enmCtrlType)
 {
-    LogFlowThisFuncEnter();
-
-    AutoCaller autoCaller(this);
-    AssertComRCReturnRC(autoCaller.rc());
-
-    /* doDriveChange() needs a write lock */
-    AutoWriteLock alock(this);
-
-    /* Ignore callbacks when there's no VM around */
-    if (!mpVM)
-        return S_OK;
-
-    /* protect mpVM */
-    AutoVMCaller autoVMCaller (this);
-    CheckComRCReturnRC(autoVMCaller.rc());
-
-    /* Get the current DVD state */
-    HRESULT rc;
-    DriveState_T eState;
-
-    rc = mDVDDrive->COMGETTER (State) (&eState);
-    ComAssertComRCRetRC (rc);
-
-    /* Paranoia */
-    if (    eState     == DriveState_NotMounted
-        &&  meDVDState == DriveState_NotMounted)
+    switch (enmCtrlType)
     {
-        LogFlowThisFunc(("Returns (NotMounted -> NotMounted)\n"));
-        return S_OK;
-    }
-
-    /* Get the path string and other relevant properties */
-    Bstr Path;
-    bool fPassthrough = false;
-    switch (eState)
-    {
-        case DriveState_ImageMounted:
-        {
-            ComPtr<IDVDImage> ImagePtr;
-            rc = mDVDDrive->GetImage (ImagePtr.asOutParam());
-            if (SUCCEEDED(rc))
-                rc = ImagePtr->COMGETTER(Location) (Path.asOutParam());
-            break;
-        }
-
-        case DriveState_HostDriveCaptured:
-        {
-            ComPtr<IHostDVDDrive> DrivePtr;
-            BOOL enabled;
-            rc = mDVDDrive->GetHostDrive (DrivePtr.asOutParam());
-            if (SUCCEEDED(rc))
-                rc = DrivePtr->COMGETTER (Name) (Path.asOutParam());
-            if (SUCCEEDED(rc))
-                rc = mDVDDrive->COMGETTER (Passthrough) (&enabled);
-            if (SUCCEEDED(rc))
-                fPassthrough = !!enabled;
-            break;
-        }
-
-        case DriveState_NotMounted:
-            break;
-
+        case StorageControllerType_LsiLogic:
+            return "lsilogicscsi";
+        case StorageControllerType_BusLogic:
+            return "buslogic";
+        case StorageControllerType_IntelAhci:
+            return "ahci";
+        case StorageControllerType_PIIX3:
+        case StorageControllerType_PIIX4:
+        case StorageControllerType_ICH6:
+            return "piix3ide";
+        case StorageControllerType_I82078:
+            return "i82078";
         default:
-            AssertMsgFailed (("Invalid DriveState: %d\n", eState));
-            rc = E_FAIL;
-            break;
+            return NULL;
     }
-
-    AssertComRC (rc);
-    if (SUCCEEDED(rc))
-    {
-        rc = doDriveChange ("piix3ide", 0, 2, eState, &meDVDState,
-                            Utf8Str (Path).raw(), fPassthrough);
-
-        /* notify console callbacks on success */
-        if (SUCCEEDED(rc))
-        {
-            CallbackList::iterator it = mCallbacks.begin();
-            while (it != mCallbacks.end())
-                (*it++)->OnDVDDriveChange();
-        }
-    }
-
-    LogFlowThisFunc(("Returns %Rhrc (%#x)\n", rc, rc));
-    LogFlowThisFuncLeave();
-    return rc;
 }
 
-
-/**
- * Called by IInternalSessionControl::OnFloppyDriveChange().
- *
- * @note Locks this object for writing.
- */
-HRESULT Console::onFloppyDriveChange()
+HRESULT Console::convertBusPortDeviceToLun(StorageBus_T enmBus, LONG port, LONG device, unsigned &uLun)
 {
-    LogFlowThisFuncEnter();
-
-    AutoCaller autoCaller(this);
-    AssertComRCReturnRC(autoCaller.rc());
-
-    /* doDriveChange() needs a write lock */
-    AutoWriteLock alock(this);
-
-    /* Ignore callbacks when there's no VM around */
-    if (!mpVM)
-        return S_OK;
-
-    /* protect mpVM */
-    AutoVMCaller autoVMCaller (this);
-    CheckComRCReturnRC(autoVMCaller.rc());
-
-    /* Get the current floppy state */
-    HRESULT rc;
-    DriveState_T eState;
-
-    /* If the floppy drive is disabled, we're not interested */
-    BOOL fEnabled;
-    rc = mFloppyDrive->COMGETTER (Enabled) (&fEnabled);
-    ComAssertComRCRetRC (rc);
-
-    if (!fEnabled)
-        return S_OK;
-
-    rc = mFloppyDrive->COMGETTER (State) (&eState);
-    ComAssertComRCRetRC (rc);
-
-    Log2 (("onFloppyDriveChange: eState=%d meFloppyState=%d\n", eState, meFloppyState));
-
-
-    /* Paranoia */
-    if (    eState     == DriveState_NotMounted
-        &&  meFloppyState == DriveState_NotMounted)
+    switch (enmBus)
     {
-        LogFlowThisFunc(("Returns (NotMounted -> NotMounted)\n"));
-        return S_OK;
-    }
-
-    /* Get the path string and other relevant properties */
-    Bstr Path;
-    switch (eState)
-    {
-        case DriveState_ImageMounted:
+        case StorageBus_IDE:
+        case StorageBus_Floppy:
         {
-            ComPtr<IFloppyImage> ImagePtr;
-            rc = mFloppyDrive->GetImage (ImagePtr.asOutParam());
-            if (SUCCEEDED(rc))
-                rc = ImagePtr->COMGETTER(Location) (Path.asOutParam());
-            break;
+            AssertMsgReturn(port < 2 && port >= 0, ("%d\n", port), E_INVALIDARG);
+            AssertMsgReturn(device < 2 && device >= 0, ("%d\n", device),  E_INVALIDARG);
+            uLun = 2 * port + device;
+            return S_OK;
         }
-
-        case DriveState_HostDriveCaptured:
+        case StorageBus_SATA:
+        case StorageBus_SCSI:
         {
-            ComPtr<IHostFloppyDrive> DrivePtr;
-            rc = mFloppyDrive->GetHostDrive (DrivePtr.asOutParam());
-            if (SUCCEEDED(rc))
-                rc = DrivePtr->COMGETTER (Name) (Path.asOutParam());
-            break;
+            uLun = port;
+            return S_OK;
         }
-
-        case DriveState_NotMounted:
-            break;
-
         default:
-            AssertMsgFailed (("Invalid DriveState: %d\n", eState));
-            rc = E_FAIL;
-            break;
+            uLun = 0;
+            AssertMsgFailedReturn(("%d\n", enmBus), E_INVALIDARG);
     }
-
-    AssertComRC (rc);
-    if (SUCCEEDED(rc))
-    {
-        rc = doDriveChange ("i82078", 0, 0, eState, &meFloppyState,
-                            Utf8Str (Path).raw(), false);
-
-        /* notify console callbacks on success */
-        if (SUCCEEDED(rc))
-        {
-            CallbackList::iterator it = mCallbacks.begin();
-            while (it != mCallbacks.end())
-                (*it++)->OnFloppyDriveChange();
-        }
-    }
-
-    LogFlowThisFunc(("Returns %Rhrc (%#x)\n", rc, rc));
-    LogFlowThisFuncLeave();
-    return rc;
 }
 
-
 /**
- * Process a floppy or dvd change.
+ * Process a medium change.
  *
- * @returns COM status code.
- *
- * @param   pszDevice       The PDM device name.
- * @param   uInstance       The PDM device instance.
- * @param   uLun            The PDM LUN number of the drive.
- * @param   eState          The new state.
- * @param   peState         Pointer to the variable keeping the actual state of the drive.
- *                          This will be both read and updated to eState or other appropriate state.
- * @param   pszPath         The path to the media / drive which is now being mounted / captured.
- *                          If NULL no media or drive is attached and the LUN will be configured with
- *                          the default block driver with no media. This will also be the state if
- *                          mounting / capturing the specified media / drive fails.
- * @param   fPassthrough    Enables using passthrough mode of the host DVD drive if applicable.
+ * @param aMediumAttachment The medium attachment with the new medium state.
  *
  * @note Locks this object for writing.
  */
-HRESULT Console::doDriveChange (const char *pszDevice, unsigned uInstance, unsigned uLun, DriveState_T eState,
-                                DriveState_T *peState, const char *pszPath, bool fPassthrough)
+HRESULT Console::doMediumChange(IMediumAttachment *aMediumAttachment)
 {
-    LogFlowThisFunc(("pszDevice=%p:{%s} uInstance=%u uLun=%u eState=%d "
-                      "peState=%p:{%d} pszPath=%p:{%s} fPassthrough=%d\n",
-                      pszDevice, pszDevice, uInstance, uLun, eState,
-                      peState, *peState, pszPath, pszPath, fPassthrough));
-
     AutoCaller autoCaller(this);
     AssertComRCReturnRC(autoCaller.rc());
 
     /* We will need to release the write lock before calling EMT */
     AutoWriteLock alock(this);
 
+    HRESULT rc = S_OK;
+    const char *pszDevice = NULL;
+    unsigned uInstance = 0;
+    unsigned uLun = 0;
+    Utf8Str location;
+    BOOL fPassthrough = FALSE;
+
+    SafeIfaceArray<IStorageController> ctrls;
+    rc = mMachine->COMGETTER(StorageControllers)(ComSafeArrayAsOutParam(ctrls));
+    AssertComRC(rc);
+    Bstr attCtrlName;
+    rc = aMediumAttachment->COMGETTER(Controller)(attCtrlName.asOutParam());
+    AssertComRC(rc);
+    ComPtr<IStorageController> ctrl;
+    for (size_t i = 0; i < ctrls.size(); i++)
+    {
+        Bstr ctrlName;
+        rc = ctrls[i]->COMGETTER(Name)(ctrlName.asOutParam());
+        AssertComRC(rc);
+        if (attCtrlName == ctrlName)
+        {
+            ctrl = ctrls[i];
+            break;
+        }
+    }
+    if (ctrl.isNull())
+    {
+        return setError(E_FAIL,
+                        tr("Could not find storage controller '%ls'"), attCtrlName.raw());
+    }
+    StorageControllerType_T enmCtrlType;
+    rc = ctrl->COMGETTER(ControllerType)(&enmCtrlType);
+    AssertComRC(rc);
+    pszDevice = controllerTypeToDev(enmCtrlType);
+
+    /** @todo support multiple instances of a controller */
+    uInstance = 0;
+
+    LONG device;
+    rc = aMediumAttachment->COMGETTER(Device)(&device);
+    AssertComRC(rc);
+    LONG port;
+    rc = aMediumAttachment->COMGETTER(Port)(&port);
+    AssertComRC(rc);
+    StorageBus_T enmBus;
+    rc = ctrl->COMGETTER(Bus)(&enmBus);
+    AssertComRC(rc);
+    rc = convertBusPortDeviceToLun(enmBus, port, device, uLun);
+    AssertComRCReturnRC(rc);
+
+    ComPtr<IMedium> medium;
+    rc = aMediumAttachment->COMGETTER(Medium)(medium.asOutParam());
+    if (SUCCEEDED(rc) && !medium.isNull())
+    {
+        Bstr loc;
+        rc = medium->COMGETTER(Location)(loc.asOutParam());
+        AssertComRC(rc);
+        location = loc;
+    }
+    rc = aMediumAttachment->COMGETTER(Passthrough)(&fPassthrough);
+    AssertComRC(rc);
+
     /* protect mpVM */
-    AutoVMCaller autoVMCaller (this);
-    CheckComRCReturnRC(autoVMCaller.rc());
+    AutoVMCaller autoVMCaller(this);
+    AssertComRCReturnRC(autoVMCaller.rc());
 
     /*
      * Call worker in EMT, that's faster and safer than doing everything
-     * using VM3ReqCall. Note that we separate VMR3ReqCall from VMR3ReqWait
+     * using VMR3ReqCall. Note that we separate VMR3ReqCall from VMR3ReqWait
      * here to make requests from under the lock in order to serialize them.
      */
     PVMREQ pReq;
-    int vrc = VMR3ReqCall (mpVM, VMCPUID_ANY, &pReq, 0 /* no wait! */, VMREQFLAGS_VBOX_STATUS,
-                           (PFNRT) Console::changeDrive, 8,
-                           this, pszDevice, uInstance, uLun, eState, peState, pszPath, fPassthrough);
+    int vrc = VMR3ReqCall(mpVM, VMCPUID_ANY, &pReq, 0 /* no wait! */, VMREQFLAGS_VBOX_STATUS,
+                          (PFNRT)Console::changeDrive, 6,
+                          this, pszDevice, uInstance, uLun, location.raw(), fPassthrough);
 
     /* leave the lock before waiting for a result (EMT will call us back!) */
     alock.leave();
 
-    if (vrc == VERR_TIMEOUT || VBOX_SUCCESS (vrc))
+    if (vrc == VERR_TIMEOUT || RT_SUCCESS(vrc))
     {
-        vrc = VMR3ReqWait (pReq, RT_INDEFINITE_WAIT);
-        AssertRC (vrc);
-        if (VBOX_SUCCESS (vrc))
+        vrc = VMR3ReqWait(pReq, RT_INDEFINITE_WAIT);
+        AssertRC(vrc);
+        if (RT_SUCCESS(vrc))
             vrc = pReq->iStatus;
     }
-    VMR3ReqFree (pReq);
+    VMR3ReqFree(pReq);
 
-    if (VBOX_SUCCESS (vrc))
+    if (RT_SUCCESS(vrc))
     {
         LogFlowThisFunc(("Returns S_OK\n"));
         return S_OK;
     }
 
-    if (pszPath)
-        return setError (E_FAIL,
-            tr ("Could not mount the media/drive '%s' (%Rrc)"), pszPath, vrc);
+    if (!location.isEmpty())
+        return setError(E_FAIL,
+                        tr("Could not mount the media/drive '%s' (%Rrc)"), location.raw(), vrc);
 
-    return setError (E_FAIL,
-        tr ("Could not unmount the currently mounted media/drive (%Rrc)"), vrc);
+    return setError(E_FAIL,
+                    tr("Could not unmount the currently mounted media/drive (%Rrc)"), vrc);
 }
 
-
 /**
- * Performs the Floppy/DVD change in EMT.
+ * Performs the medium change in EMT.
  *
  * @returns VBox status code.
  *
@@ -2974,21 +2849,16 @@ HRESULT Console::doDriveChange (const char *pszDevice, unsigned uInstance, unsig
  *
  * @thread  EMT
  * @note Locks the Console object for writing.
+ * @todo the error handling in this method needs to be improved seriously - what if mounting fails...
  */
 DECLCALLBACK(int) Console::changeDrive (Console *pThis, const char *pszDevice, unsigned uInstance, unsigned uLun,
-                                        DriveState_T eState, DriveState_T *peState,
                                         const char *pszPath, bool fPassthrough)
 {
-    LogFlowFunc (("pThis=%p pszDevice=%p:{%s} uInstance=%u uLun=%u eState=%d "
-                  "peState=%p:{%d} pszPath=%p:{%s} fPassthrough=%d\n",
-                  pThis, pszDevice, pszDevice, uInstance, uLun, eState,
-                  peState, *peState, pszPath, pszPath, fPassthrough));
+/// @todo FIXME - this isn't called right now
+    LogFlowFunc (("pThis=%p pszDevice=%p:{%s} uInstance=%u uLun=%u pszPath=%p:{%s} fPassthrough=%d\n",
+                  pThis, pszDevice, pszDevice, uInstance, uLun, pszPath, pszPath, fPassthrough));
 
     AssertReturn(pThis, VERR_INVALID_PARAMETER);
-
-    AssertMsg (    (!strcmp (pszDevice, "i82078")  && uLun == 0 && uInstance == 0)
-               ||  (!strcmp (pszDevice, "piix3ide") && uLun == 2 && uInstance == 0),
-               ("pszDevice=%s uLun=%d uInstance=%d\n", pszDevice, uLun, uInstance));
 
     AutoCaller autoCaller(pThis);
     AssertComRCReturn (autoCaller.rc(), VERR_ACCESS_DENIED);
@@ -3052,51 +2922,25 @@ DECLCALLBACK(int) Console::changeDrive (Console *pThis, const char *pszDevice, u
          * Unmount existing media / detach host drive.
          */
         PPDMIMOUNT  pIMount = NULL;
-        switch (*peState)
+        PPDMIBASE   pBase;
+        rc = PDMR3QueryLun (pVM, pszDevice, uInstance, uLun, &pBase);
+        if (VBOX_FAILURE (rc))
         {
+            if (rc == VERR_PDM_LUN_NOT_FOUND)
+                rc = VINF_SUCCESS;
+            AssertRC (rc);
+        }
+        else
+        {
+            pIMount = (PPDMIMOUNT) pBase->pfnQueryInterface (pBase, PDMINTERFACE_MOUNT);
+            AssertBreakStmt (pIMount, rc = VERR_INVALID_POINTER);
 
-            case DriveState_ImageMounted:
-            {
-                /*
-                 * Resolve the interface.
-                 */
-                PPDMIBASE   pBase;
-                rc = PDMR3QueryLun (pVM, pszDevice, uInstance, uLun, &pBase);
-                if (VBOX_FAILURE (rc))
-                {
-                    if (rc == VERR_PDM_LUN_NOT_FOUND)
-                        rc = VINF_SUCCESS;
-                    AssertRC (rc);
-                    break;
-                }
-
-                pIMount = (PPDMIMOUNT) pBase->pfnQueryInterface (pBase, PDMINTERFACE_MOUNT);
-                AssertBreakStmt (pIMount, rc = VERR_INVALID_POINTER);
-
-                /*
-                 * Unmount the media.
-                 */
-                rc = pIMount->pfnUnmount (pIMount, false);
-                if (rc == VERR_PDM_MEDIA_NOT_MOUNTED)
-                    rc = VINF_SUCCESS;
-                break;
-            }
-
-            case DriveState_HostDriveCaptured:
-            {
-                rc = PDMR3DeviceDetach (pVM, pszDevice, uInstance, uLun, PDM_TACH_FLAGS_NOT_HOT_PLUG);
-                if (rc == VINF_PDM_NO_DRIVER_ATTACHED_TO_LUN)
-                    rc = VINF_SUCCESS;
-                AssertRC (rc);
-                break;
-            }
-
-            case DriveState_NotMounted:
-                break;
-
-            default:
-                AssertMsgFailed (("Invalid *peState: %d\n", peState));
-                break;
+            /*
+             * Unmount the media.
+             */
+            rc = pIMount->pfnUnmount (pIMount, false);
+            if (rc == VERR_PDM_MEDIA_NOT_MOUNTED)
+                rc = VINF_SUCCESS;
         }
 
         if (VBOX_FAILURE (rc))
@@ -3106,146 +2950,48 @@ DECLCALLBACK(int) Console::changeDrive (Console *pThis, const char *pszDevice, u
         }
 
         /*
-         * Nothing is currently mounted.
+         * Construct a new driver configuration.
          */
-        *peState = DriveState_NotMounted;
+        PCFGMNODE pInst = CFGMR3GetChildF (CFGMR3GetRoot (pVM), "Devices/%s/%d/", pszDevice, uInstance);
+        AssertRelease (pInst);
+        /* nuke anything which might have been left behind. */
+        CFGMR3RemoveNode (CFGMR3GetChildF (pInst, "LUN#%d", uLun));
 
-
-        /*
-         * Process the HostDriveCaptured state first, as the fallback path
-         * means mounting the normal block driver without media.
-         */
-        if (eState == DriveState_HostDriveCaptured)
-        {
-            /*
-             * Detach existing driver chain (block).
-             */
-            int rc = PDMR3DeviceDetach (pVM, pszDevice, uInstance, uLun, PDM_TACH_FLAGS_NOT_HOT_PLUG);
-            if (VBOX_FAILURE (rc))
-            {
-                if (rc == VERR_PDM_LUN_NOT_FOUND)
-                    rc = VINF_SUCCESS;
-                AssertReleaseRC (rc);
-                break; /* we're toast */
-            }
-            pIMount = NULL;
-
-            /*
-             * Construct a new driver configuration.
-             */
-            PCFGMNODE pInst = CFGMR3GetChildF (CFGMR3GetRoot (pVM), "Devices/%s/%d/", pszDevice, uInstance);
-            AssertRelease (pInst);
-            /* nuke anything which might have been left behind. */
-            CFGMR3RemoveNode (CFGMR3GetChildF (pInst, "LUN#%d", uLun));
-
-            /* create a new block driver config */
-            PCFGMNODE pLunL0;
-            PCFGMNODE pCfg;
-            if (    VBOX_SUCCESS (rc = CFGMR3InsertNodeF (pInst, &pLunL0, "LUN#%u", uLun))
-                &&  VBOX_SUCCESS (rc = CFGMR3InsertString (pLunL0, "Driver", !strcmp (pszDevice, "i82078") ? "HostFloppy" : "HostDVD"))
-                &&  VBOX_SUCCESS (rc = CFGMR3InsertNode (pLunL0,   "Config", &pCfg))
-                &&  VBOX_SUCCESS (rc = CFGMR3InsertString (pCfg,   "Path", pszPath))
-                &&  VBOX_SUCCESS (rc = !strcmp (pszDevice, "i82078") ? VINF_SUCCESS : CFGMR3InsertInteger(pCfg, "Passthrough", fPassthrough)))
-            {
-                /*
-                 * Attempt to attach the driver.
-                 */
-                rc = PDMR3DeviceAttach(pVM, pszDevice, uInstance, uLun, PDM_TACH_FLAGS_NOT_HOT_PLUG, NULL /*ppBase*/);
-                AssertRC (rc);
-            }
-            if (VBOX_FAILURE (rc))
-                rcRet = rc;
-        }
-
-        /*
-         * Process the ImageMounted, NotMounted and failed HostDriveCapture cases.
-         */
-        rc = VINF_SUCCESS;
-        switch (eState)
-        {
 #define RC_CHECK()  do { if (VBOX_FAILURE (rc)) { AssertReleaseRC (rc); break; } } while (0)
 
-            case DriveState_HostDriveCaptured:
-                if (VBOX_SUCCESS (rcRet))
-                    break;
-                /* fallback: umounted block driver. */
-                pszPath = NULL;
-                eState = DriveState_NotMounted;
-                /* fallthru */
-            case DriveState_ImageMounted:
-            case DriveState_NotMounted:
-            {
-                /*
-                 * Resolve the drive interface / create the driver.
-                 */
-                if (!pIMount)
-                {
-                    PPDMIBASE   pBase;
-                    rc = PDMR3QueryLun (pVM, pszDevice, uInstance, uLun, &pBase);
-                    if (rc == VERR_PDM_NO_DRIVER_ATTACHED_TO_LUN)
-                    {
-                        /*
-                         * We have to create it, so we'll do the full config setup and everything.
-                         */
-                        PCFGMNODE pIdeInst = CFGMR3GetChildF (CFGMR3GetRoot (pVM), "Devices/%s/%d/", pszDevice, uInstance);
-                        AssertRelease (pIdeInst);
+        /* create a new block driver config */
+        PCFGMNODE pLunL0;
+        rc = CFGMR3InsertNodeF (pInst, &pLunL0, "LUN#%d", uLun);    RC_CHECK();
+        rc = CFGMR3InsertString (pLunL0, "Driver",      "Block");   RC_CHECK();
+        PCFGMNODE pCfg;
+        rc = CFGMR3InsertNode (pLunL0,   "Config",      &pCfg);     RC_CHECK();
+        rc = CFGMR3InsertString (pCfg,   "Type",        !strcmp (pszDevice, "i82078") ? "Floppy 1.44" : "DVD"); RC_CHECK();
+        rc = CFGMR3InsertInteger (pCfg,  "Mountable",   1);         RC_CHECK();
 
-                        /* nuke anything which might have been left behind. */
-                        CFGMR3RemoveNode (CFGMR3GetChildF (pIdeInst, "LUN#%d", uLun));
+        /*
+         * Attach the driver.
+         */
+        rc = PDMR3DeviceAttach (pVM, pszDevice, uInstance, uLun, PDM_TACH_FLAGS_NOT_HOT_PLUG, &pBase); RC_CHECK();
+        pIMount = (PPDMIMOUNT) pBase->pfnQueryInterface (pBase, PDMINTERFACE_MOUNT);
+        if (!pIMount)
+        {
+            AssertFailed();
+            return rc;
+        }
 
-                        /* create a new block driver config */
-                        PCFGMNODE pLunL0;
-                        rc = CFGMR3InsertNodeF (pIdeInst, &pLunL0, "LUN#%d", uLun); RC_CHECK();
-                        rc = CFGMR3InsertString (pLunL0, "Driver",      "Block");   RC_CHECK();
-                        PCFGMNODE pCfg;
-                        rc = CFGMR3InsertNode (pLunL0,   "Config",      &pCfg);     RC_CHECK();
-                        rc = CFGMR3InsertString (pCfg,   "Type",        !strcmp (pszDevice, "i82078") ? "Floppy 1.44" : "DVD");
-                                                                                    RC_CHECK();
-                        rc = CFGMR3InsertInteger (pCfg,  "Mountable",   1);         RC_CHECK();
-
-                        /*
-                         * Attach the driver.
-                         */
-                        rc = PDMR3DeviceAttach(pVM, pszDevice, uInstance, uLun, PDM_TACH_FLAGS_NOT_HOT_PLUG, &pBase);
-                        RC_CHECK();
-                    }
-                    else if (VBOX_FAILURE(rc))
-                    {
-                        AssertRC (rc);
-                        return rc;
-                    }
-
-                    pIMount = (PPDMIMOUNT) pBase->pfnQueryInterface (pBase, PDMINTERFACE_MOUNT);
-                    if (!pIMount)
-                    {
-                        AssertFailed();
-                        return rc;
-                    }
-                }
-
-                /*
-                 * If we've got an image, let's mount it.
-                 */
-                if (pszPath && *pszPath)
-                {
-                    rc = pIMount->pfnMount (pIMount, pszPath, strcmp (pszDevice, "i82078") ? "MediaISO" : "RawImage");
-                    if (VBOX_FAILURE (rc))
-                        eState = DriveState_NotMounted;
-                }
-                break;
-            }
-
-            default:
-                AssertMsgFailed (("Invalid eState: %d\n", eState));
-                break;
+        /*
+         * If we've got an image, let's mount it.
+         */
+        if (pszPath && *pszPath)
+        {
+            rc = pIMount->pfnMount (pIMount, pszPath, strcmp (pszDevice, "i82078") ? "MediaISO" : "RawImage");
+        }
 
 #undef RC_CHECK
-        }
 
         if (VBOX_FAILURE (rc) && VBOX_SUCCESS (rcRet))
             rcRet = rc;
 
-        *peState = eState;
     }
     while (0);
 
@@ -3274,7 +3020,7 @@ DECLCALLBACK(int) Console::changeDrive (Console *pThis, const char *pszDevice, u
         /// @todo (r=dmik) if we failed with drive mount, then the VMR3Resume
         //  error (if any) will be hidden from the caller. For proper reporting
         //  of such multiple errors to the caller we need to enhance the
-        //  IVurtualBoxError interface. For now, give the first error the higher
+        //  IVirtualBoxError interface. For now, give the first error the higher
         //  priority.
         if (VBOX_SUCCESS (rcRet))
             rcRet = rc;
@@ -3692,6 +3438,44 @@ HRESULT Console::onStorageControllerChange ()
         CallbackList::iterator it = mCallbacks.begin();
         while (it != mCallbacks.end())
             (*it++)->OnStorageControllerChange ();
+    }
+
+    LogFlowThisFunc(("Leaving rc=%#x\n", rc));
+    return rc;
+}
+
+/**
+ *  Called by IInternalSessionControl::OnMediumChange().
+ *
+ *  @note Locks this object for writing.
+ */
+HRESULT Console::onMediumChange (IMediumAttachment *aMediumAttachment)
+{
+    LogFlowThisFunc(("\n"));
+
+    AutoCaller autoCaller(this);
+    AssertComRCReturnRC(autoCaller.rc());
+
+    AutoWriteLock alock(this);
+
+    /* Don't do anything if the VM isn't running */
+    if (!mpVM)
+        return S_OK;
+
+    HRESULT rc = S_OK;
+
+    /* protect mpVM */
+    AutoVMCaller autoVMCaller (this);
+    CheckComRCReturnRC(autoVMCaller.rc());
+
+    rc = doMediumChange(aMediumAttachment);
+
+    /* notify console callbacks on success */
+    if (SUCCEEDED(rc))
+    {
+        CallbackList::iterator it = mCallbacks.begin();
+        while (it != mCallbacks.end())
+            (*it++)->OnMediumChange (aMediumAttachment);
     }
 
     LogFlowThisFunc(("Leaving rc=%#x\n", rc));
@@ -4800,38 +4584,43 @@ HRESULT Console::powerUp (IProgress **aProgress, bool aPaused)
 
     /* Reset differencing hard disks for which autoReset is true */
     {
-        com::SafeIfaceArray<IHardDiskAttachment> atts;
-        rc = mMachine->
-            COMGETTER(HardDiskAttachments) (ComSafeArrayAsOutParam (atts));
+        com::SafeIfaceArray<IMediumAttachment> atts;
+        rc = mMachine->COMGETTER(MediumAttachments) (ComSafeArrayAsOutParam(atts));
         CheckComRCReturnRC(rc);
 
         for (size_t i = 0; i < atts.size(); ++ i)
         {
-            ComPtr<IHardDisk> hardDisk;
-            rc = atts [i]->COMGETTER(HardDisk) (hardDisk.asOutParam());
-            CheckComRCReturnRC(rc);
-
-            /* save for later use on the powerup thread */
-            task->hardDisks.push_back (hardDisk);
-
-            /* needs autoreset? */
-            BOOL autoReset = FALSE;
-            rc = hardDisk->COMGETTER(AutoReset)(&autoReset);
-            CheckComRCReturnRC(rc);
-
-            if (autoReset)
+            DeviceType_T devType;
+            rc = atts[i]->COMGETTER(Type)(&devType);
+            /** @todo later applies to floppies as well */
+            if (devType == DeviceType_HardDisk)
             {
-                ComPtr<IProgress> resetProgress;
-                rc = hardDisk->Reset (resetProgress.asOutParam());
+                ComPtr<IMedium> medium;
+                rc = atts[i]->COMGETTER(Medium)(medium.asOutParam());
                 CheckComRCReturnRC(rc);
 
                 /* save for later use on the powerup thread */
-                task->hardDiskProgresses.push_back (resetProgress);
+                task->hardDisks.push_back(medium);
+
+                /* needs autoreset? */
+                BOOL autoReset = FALSE;
+                rc = medium->COMGETTER(AutoReset)(&autoReset);
+                CheckComRCReturnRC(rc);
+
+                if (autoReset)
+                {
+                    ComPtr<IProgress> resetProgress;
+                    rc = medium->Reset(resetProgress.asOutParam());
+                    CheckComRCReturnRC(rc);
+
+                    /* save for later use on the powerup thread */
+                    task->hardDiskProgresses.push_back(resetProgress);
+                }
             }
         }
     }
 
-    rc = consoleInitReleaseLog (mMachine);
+    rc = consoleInitReleaseLog(mMachine);
     CheckComRCReturnRC(rc);
 
     /* pass the progress object to the caller if requested */
@@ -4987,7 +4776,7 @@ HRESULT Console::powerDown (Progress *aProgress /*= NULL*/)
 
     /* advance percent count */
     if (aProgress)
-        aProgress->setCurrentOperationProgress(99 * (++ step) / StepCount );
+        aProgress->SetCurrentOperationProgress(99 * (++ step) / StepCount );
 
 #ifdef VBOX_WITH_HGCM
 
@@ -5054,7 +4843,7 @@ HRESULT Console::powerDown (Progress *aProgress /*= NULL*/)
 
     /* advance percent count */
     if (aProgress)
-        aProgress->setCurrentOperationProgress(99 * (++ step) / StepCount );
+        aProgress->SetCurrentOperationProgress(99 * (++ step) / StepCount );
 
 # endif /* VBOX_WITH_GUEST_PROPS defined */
 
@@ -5074,7 +4863,7 @@ HRESULT Console::powerDown (Progress *aProgress /*= NULL*/)
 
     /* advance percent count */
     if (aProgress)
-        aProgress->setCurrentOperationProgress(99 * (++ step) / StepCount );
+        aProgress->SetCurrentOperationProgress(99 * (++ step) / StepCount );
 
 #endif /* VBOX_WITH_HGCM */
 
@@ -5105,7 +4894,7 @@ HRESULT Console::powerDown (Progress *aProgress /*= NULL*/)
 
     /* advance percent count */
     if (aProgress)
-        aProgress->setCurrentOperationProgress(99 * (++ step) / StepCount );
+        aProgress->SetCurrentOperationProgress(99 * (++ step) / StepCount );
 
     vrc = VINF_SUCCESS;
 
@@ -5134,7 +4923,7 @@ HRESULT Console::powerDown (Progress *aProgress /*= NULL*/)
 
     /* advance percent count */
     if (aProgress)
-        aProgress->setCurrentOperationProgress(99 * (++ step) / StepCount );
+        aProgress->SetCurrentOperationProgress(99 * (++ step) / StepCount );
 
     LogFlowThisFunc(("Ready for VM destruction.\n"));
 
@@ -5178,7 +4967,7 @@ HRESULT Console::powerDown (Progress *aProgress /*= NULL*/)
 
         /* advance percent count */
         if (aProgress)
-            aProgress->setCurrentOperationProgress(99 * (++ step) / StepCount );
+            aProgress->SetCurrentOperationProgress(99 * (++ step) / StepCount );
 
         if (VBOX_SUCCESS (vrc))
         {
@@ -5206,7 +4995,7 @@ HRESULT Console::powerDown (Progress *aProgress /*= NULL*/)
 
         /* advance percent count */
         if (aProgress)
-            aProgress->setCurrentOperationProgress(99 * (++ step) / StepCount );
+            aProgress->SetCurrentOperationProgress(99 * (++ step) / StepCount );
     }
     else
     {
@@ -5606,9 +5395,10 @@ HRESULT Console::removeSharedFolder (CBSTR aName)
  *
  *  @note Locks the Console object for writing.
  */
-DECLCALLBACK(void)
-Console::vmstateChangeCallback(PVM aVM, VMSTATE aState, VMSTATE aOldState,
-                               void *aUser)
+DECLCALLBACK(void) Console::vmstateChangeCallback(PVM aVM,
+                                                  VMSTATE aState,
+                                                  VMSTATE aOldState,
+                                                  void *aUser)
 {
     LogFlowFunc(("Changing state from %d to %d (aVM=%p)\n",
                  aOldState, aState, aVM));
@@ -6336,15 +6126,15 @@ HRESULT Console::powerDownHostInterfaces()
  *  @param   pvUser      Pointer to the VMProgressTask structure.
  *  @return  VINF_SUCCESS.
  */
-/*static*/ DECLCALLBACK (int)
-Console::stateProgressCallback (PVM pVM, unsigned uPercent, void *pvUser)
+/*static*/
+DECLCALLBACK(int) Console::stateProgressCallback(PVM pVM, unsigned uPercent, void *pvUser)
 {
-    VMProgressTask *task = static_cast <VMProgressTask *> (pvUser);
+    VMProgressTask *task = static_cast<VMProgressTask *> (pvUser);
     AssertReturn(task, VERR_INVALID_PARAMETER);
 
     /* update the progress object */
     if (task->mProgress)
-        task->mProgress->setCurrentOperationProgress(uPercent);
+        task->mProgress->SetCurrentOperationProgress(uPercent);
 
     return VINF_SUCCESS;
 }
@@ -7020,7 +6810,7 @@ DECLCALLBACK (int) Console::powerUpThread (RTTHREAD Thread, void *pvUser)
  */
 static DECLCALLBACK(int) reconfigureHardDisks(PVM pVM, ULONG lInstance,
                                               StorageControllerType_T enmController,
-                                              IHardDiskAttachment *hda,
+                                              IMediumAttachment *hda,
                                               HRESULT *phrc)
 {
     LogFlowFunc (("pVM=%p hda=%p phrc=%p\n", pVM, hda, phrc));
@@ -7035,8 +6825,8 @@ static DECLCALLBACK(int) reconfigureHardDisks(PVM pVM, ULONG lInstance,
     /*
      * Figure out which IDE device this is.
      */
-    ComPtr<IHardDisk> hardDisk;
-    hrc = hda->COMGETTER(HardDisk)(hardDisk.asOutParam());                      H();
+    ComPtr<IMedium> hardDisk;
+    hrc = hda->COMGETTER(Medium)(hardDisk.asOutParam());                      H();
     LONG lDev;
     hrc = hda->COMGETTER(Device)(&lDev);                                        H();
     LONG lPort;
@@ -7198,7 +6988,7 @@ static DECLCALLBACK(int) reconfigureHardDisks(PVM pVM, ULONG lInstance,
     }
 
     /* Create an inversed tree of parents. */
-    ComPtr<IHardDisk> parentHardDisk = hardDisk;
+    ComPtr<IMedium> parentHardDisk = hardDisk;
     for (PCFGMNODE pParent = pCfg;;)
     {
         hrc = parentHardDisk->COMGETTER(Parent)(hardDisk.asOutParam());     H();
@@ -7263,6 +7053,177 @@ static DECLCALLBACK(int) reconfigureHardDisks(PVM pVM, ULONG lInstance,
     return rc;
 }
 
+/**
+ * Worker thread created by Console::TakeSnapshot.
+ * @param Thread
+ * @param pvUser
+ * @return
+ */
+/*static*/
+DECLCALLBACK(int) Console::fntTakeSnapshotWorker(RTTHREAD Thread, void *pvUser)
+{
+    VMTakeSnapshotTask *pTask = (VMTakeSnapshotTask*)pvUser;
+
+    // taking a snapshot consists of the following:
+
+    // 1) creating a diff image for each virtual hard disk, into which write operations go after
+    //    the snapshot has been created (done in VBoxSVC, in SessionMachine::BeginTakingSnapshot)
+    // 2) creating a Snapshot object with the state of the machine (hardware + storage,
+    //    done in VBoxSVC, also in SessionMachine::BeginTakingSnapshot)
+    // 3) saving the state of the virtual machine (here, in the VM process, if the machine is online)
+
+    bool fBeganTakingSnapshot = false;
+
+    AutoCaller autoCaller(pTask->mConsole);
+    CheckComRCReturnRC(autoCaller.rc());
+
+    AutoWriteLock alock(pTask->mConsole);
+
+    HRESULT rc = S_OK;
+
+    Console *that = pTask->mConsole;
+
+    try
+    {
+        /*  STEP 1 + 2:
+         *  request creating the diff images on the server and create the snapshot object
+         *  (this will set the machine state to Saving on the server to block
+         *  others from accessing this machine)
+         */
+        rc = pTask->mConsole->mControl->BeginTakingSnapshot(that,
+                                                            pTask->bstrName,
+                                                            pTask->bstrDescription,
+                                                            pTask->mProgress,
+                                                            pTask->fTakingSnapshotOnline,
+                                                            pTask->bstrSavedStateFile.asOutParam());
+        if (FAILED(rc)) throw rc;
+
+        fBeganTakingSnapshot = true;
+
+        /*
+         *  state file is non-null only when the VM is paused
+         *  (i.e. creating a snapshot online)
+         */
+        ComAssertThrow(    (!pTask->bstrSavedStateFile.isNull() && pTask->fTakingSnapshotOnline)
+                        || (pTask->bstrSavedStateFile.isNull() && !pTask->fTakingSnapshotOnline),
+                       rc = E_FAIL);
+
+        /* sync the state with the server */
+        that->setMachineStateLocally(MachineState_Saving);
+
+        // STEP 3: save the VM state (if online)
+        if (pTask->fTakingSnapshotOnline)
+        {
+            Utf8Str strSavedStateFile(pTask->bstrSavedStateFile);
+
+            pTask->mProgress->SetNextOperation(Bstr(tr("Saving the machine state")),
+                                               pTask->ulMemSize);       // operation weight, same as computed when setting up progress object
+
+            alock.leave();
+
+            int vrc = VMR3Save(that->mpVM,
+                               strSavedStateFile.c_str(),
+                               false,       // bool fContinueAfterwards; @todo r=dj Knut, what needs to be put here now?
+                               Console::stateProgressCallback,
+                               (void*)pTask);
+            if (VBOX_FAILURE(vrc))
+                throw setError(E_FAIL,
+                            tr("Failed to save the machine state to '%s' (%Rrc)"),
+                            strSavedStateFile.c_str(),
+                            vrc);
+
+            alock.enter();
+
+            // STEP 4: reattach hard disks
+            LogFlowFunc(("Reattaching new differencing hard disks...\n"));
+
+            pTask->mProgress->SetNextOperation(Bstr(tr("Reconfiguring hard disks")),
+                                               1);       // operation weight, same as computed when setting up progress object
+
+            com::SafeIfaceArray<IMediumAttachment> atts;
+            rc = that->mMachine->COMGETTER(MediumAttachments)(ComSafeArrayAsOutParam(atts));
+            if (FAILED(rc)) throw rc;
+
+            for (size_t i = 0;
+                i < atts.size();
+                ++i)
+            {
+                ComPtr<IStorageController> controller;
+                BSTR controllerName;
+                ULONG lInstance;
+                StorageControllerType_T enmController;
+
+                /*
+                * We can't pass a storage controller object directly
+                * (g++ complains about not being able to pass non POD types through '...')
+                * so we have to query needed values here and pass them.
+                */
+                rc = atts[i]->COMGETTER(Controller)(&controllerName);
+                if (FAILED(rc))
+                    break;
+
+                rc = that->mMachine->GetStorageControllerByName(controllerName, controller.asOutParam());
+                if (FAILED (rc)) throw rc;
+
+                rc = controller->COMGETTER(ControllerType)(&enmController);
+                rc = controller->COMGETTER(Instance)(&lInstance);
+
+                /*
+                *  don't leave the lock since reconfigureHardDisks isn't going
+                *  to access Console.
+                */
+                int vrc = VMR3ReqCallWait(that->mpVM,
+                                          VMCPUID_ANY,
+                                          (PFNRT)reconfigureHardDisks,
+                                          5,
+                                          that->mpVM,
+                                          lInstance,
+                                          enmController,
+                                          atts[i],
+                                          &rc);
+                if (RT_FAILURE(vrc))
+                    throw setError(E_FAIL, Console::tr("%Rrc"), vrc);
+                if (FAILED(rc)) throw rc;
+                    break;
+                if (FAILED(rc))
+                    break;
+            }
+        }
+
+        /*
+         *  finalize the requested snapshot object.
+         *  This will reset the machine state to the state it had right
+         *  before calling mControl->BeginTakingSnapshot().
+         */
+        rc = that->mControl->EndTakingSnapshot(TRUE);        // success
+        // do not throw rc here because we can't call EndTakingSnapshot() twice
+    }
+    catch (HRESULT rc)
+    {
+        /* preserve existing error info */
+        ErrorInfoKeeper eik;
+
+        if (fBeganTakingSnapshot)
+            that->mControl->EndTakingSnapshot(FALSE);             // failure
+    }
+
+    pTask->mProgress->notifyComplete(rc);
+
+    delete pTask;
+
+    if (pTask->lastMachineState == MachineState_Running)
+    {
+        /* restore the paused state if appropriate */
+        that->setMachineStateLocally(MachineState_Paused);
+        /* restore the running state if appropriate */
+        that->Resume();
+    }
+    else
+        that->setMachineStateLocally(pTask->lastMachineState);
+
+    LogFlowFuncLeave();
+    return VINF_SUCCESS;
+}
 
 /**
  *  Thread for executing the saved state operation.
@@ -7274,149 +7235,47 @@ static DECLCALLBACK(int) reconfigureHardDisks(PVM pVM, ULONG lInstance,
  *  @note Locks the Console object for writing.
  */
 /*static*/
-DECLCALLBACK (int) Console::saveStateThread (RTTHREAD Thread, void *pvUser)
+DECLCALLBACK (int) Console::saveStateThread(RTTHREAD Thread, void *pvUser)
 {
     LogFlowFuncEnter();
 
-    std::auto_ptr <VMSaveTask> task (static_cast <VMSaveTask *> (pvUser));
+    std::auto_ptr<VMSaveTask> task (static_cast<VMSaveTask*>(pvUser));
     AssertReturn(task.get(), VERR_INVALID_PARAMETER);
 
     Assert(task->mSavedStateFile.length());
     Assert(!task->mProgress.isNull());
 
     const ComObjPtr<Console> &that = task->mConsole;
-
-    /*
-     *  Note: no need to use addCaller() to protect Console or addVMCaller() to
-     *  protect mpVM because VMSaveTask does that
-     */
-
     Utf8Str errMsg;
     HRESULT rc = S_OK;
 
-    if (task->mIsSnapshot)
+    LogFlowFunc (("Saving the state to '%s'...\n", task->mSavedStateFile.raw()));
+
+    int vrc = VMR3Save(that->mpVM,
+                       task->mSavedStateFile.c_str(),
+                       false, /*fContinueAfterwards*/
+                       Console::stateProgressCallback,
+                       static_cast<VMProgressTask*>(task.get()));
+    if (VBOX_FAILURE(vrc))
     {
-        Assert (!task->mServerProgress.isNull());
-        LogFlowFunc (("Waiting until the server creates differencing VDIs...\n"));
-
-        rc = task->mServerProgress->WaitForCompletion (-1);
-        if (SUCCEEDED(rc))
-        {
-            LONG iRc = S_OK;
-            rc = task->mServerProgress->COMGETTER(ResultCode) (&iRc);
-            if (SUCCEEDED(rc))
-                rc = iRc;
-        }
-    }
-
-    if (SUCCEEDED(rc))
-    {
-        LogFlowFunc (("Saving the state to '%s'...\n", task->mSavedStateFile.raw()));
-
-        int vrc = VMR3Save(that->mpVM,
-                           task->mSavedStateFile.c_str(),
-                           task->mIsSnapshot /*fContinueAfterwards*/,
-                           Console::stateProgressCallback,
-                           static_cast<VMProgressTask*>(task.get()));
-        if (VBOX_FAILURE (vrc))
-        {
-            errMsg = Utf8StrFmt (
-                Console::tr ("Failed to save the machine state to '%s' (%Rrc)"),
-                task->mSavedStateFile.raw(), vrc);
-            rc = E_FAIL;
-        }
+        errMsg = Utf8StrFmt(Console::tr("Failed to save the machine state to '%s' (%Rrc)"),
+                            task->mSavedStateFile.raw(), vrc);
+        rc = E_FAIL;
     }
 
     /* lock the console once we're going to access it */
     AutoWriteLock thatLock (that);
 
-    if (SUCCEEDED(rc))
-    {
-        if (task->mIsSnapshot)
-        do
-        {
-            LogFlowFunc(("Reattaching new differencing hard disks...\n"));
-
-            com::SafeIfaceArray<IHardDiskAttachment> atts;
-            rc = that->mMachine->COMGETTER(HardDiskAttachments)(ComSafeArrayAsOutParam(atts));
-            if (FAILED (rc))
-                break;
-            for (size_t i = 0; i < atts.size(); ++ i)
-            {
-                ComPtr<IStorageController> controller;
-                BSTR controllerName;
-                ULONG lInstance;
-                StorageControllerType_T enmController;
-
-                /*
-                 * We can't pass a storage controller object directly
-                 * (g++ complains about not being able to pass non POD types through '...')
-                 * so we have to query needed values here and pass them.
-                 */
-                rc = atts[i]->COMGETTER(Controller)(&controllerName);
-                if (FAILED(rc))
-                    break;
-
-                rc = that->mMachine->GetStorageControllerByName(controllerName, controller.asOutParam());
-                if (FAILED(rc))
-                    break;
-
-                rc = controller->COMGETTER(ControllerType)(&enmController);
-                rc = controller->COMGETTER(Instance)(&lInstance);
-                /*
-                 *  don't leave the lock since reconfigureHardDisks isn't going
-                 *  to access Console.
-                 */
-                int vrc = VMR3ReqCallWait(that->mpVM, VMCPUID_ANY,
-                                          (PFNRT)reconfigureHardDisks, 5, that->mpVM, lInstance, enmController, atts[i], &rc);
-                if (RT_FAILURE(vrc))
-                {
-                    errMsg = Utf8StrFmt(Console::tr("%Rrc"), vrc);
-                    rc = E_FAIL;
-                    break;
-                }
-                if (FAILED(rc))
-                    break;
-            }
-        }
-        while (0);
-    }
-
-    /* finalize the procedure regardless of the result */
-    if (task->mIsSnapshot)
-    {
-        /*
-         *  finalize the requested snapshot object.
-         *  This will reset the machine state to the state it had right
-         *  before calling mControl->BeginTakingSnapshot().
-         */
-        that->mControl->EndTakingSnapshot (SUCCEEDED(rc));
-    }
-    else
-    {
-        /*
-         *  finalize the requested save state procedure.
-         *  In case of success, the server will set the machine state to Saved;
-         *  in case of failure it will reset the it to the state it had right
-         *  before calling mControl->BeginSavingState().
-         */
-        that->mControl->EndSavingState (SUCCEEDED(rc));
-    }
+    /*
+     *  finalize the requested save state procedure.
+     *  In case of success, the server will set the machine state to Saved;
+     *  in case of failure it will reset the it to the state it had right
+     *  before calling mControl->BeginSavingState().
+     */
+    that->mControl->EndSavingState (SUCCEEDED(rc));
 
     /* synchronize the state with the server */
-    if (task->mIsSnapshot || FAILED (rc))
-    {
-        if (task->mLastMachineState == MachineState_Running)
-        {
-            /* restore the paused state if appropriate */
-            that->setMachineStateLocally (MachineState_Paused);
-            /* restore the running state if appropriate */
-            that->Resume();
-        }
-        else
-            that->setMachineStateLocally (task->mLastMachineState);
-    }
-    else
+    if (!FAILED(rc))
     {
         /*
          *  The machine has been successfully saved, so power it down
@@ -7457,7 +7316,7 @@ DECLCALLBACK (int) Console::saveStateThread (RTTHREAD Thread, void *pvUser)
  *  @note Locks the Console object for writing.
  */
 /*static*/
-DECLCALLBACK (int) Console::powerDownThread (RTTHREAD Thread, void *pvUser)
+DECLCALLBACK (int) Console::powerDownThread(RTTHREAD Thread, void *pvUser)
 {
     LogFlowFuncEnter();
 
