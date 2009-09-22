@@ -967,6 +967,7 @@ HRESULT Medium::init(VirtualBox *aVirtualBox,
 HRESULT Medium::init(VirtualBox *aVirtualBox,
                      CBSTR aLocation,
                      HDDOpenMode enOpenMode,
+                     DeviceType_T aDeviceType,
                      BOOL aSetImageId,
                      const Guid &aImageId,
                      BOOL aSetParentId,
@@ -997,7 +998,10 @@ HRESULT Medium::init(VirtualBox *aVirtualBox,
     /* remember the open mode (defaults to ReadWrite) */
     m->hddOpenMode = enOpenMode;
 
-    rc = setLocation(aLocation);
+    if (aDeviceType == DeviceType_HardDisk)
+        rc = setLocation(aLocation);
+    else
+        rc = setLocation(aLocation, "RAW");
     CheckComRCReturnRC(rc);
 
     /* save the new uuid values, will be used by queryInfo() */
@@ -3333,12 +3337,14 @@ Utf8Str Medium::name()
  * medium's storage format. Note that this procedure requires the media state to
  * be NotCreated and will return a faiulre otherwise.
  *
- * @param aLocation Location of the storage unit. If the locaiton is a FS-path,
+ * @param aLocation Location of the storage unit. If the location is a FS-path,
  *                  then it can be relative to the VirtualBox home directory.
+ * @param aFormat   Optional fallback format if it is an import and the format
+ *                  cannot be determined.
  *
  * @note Must be called from under this object's write lock.
  */
-HRESULT Medium::setLocation(const Utf8Str &aLocation)
+HRESULT Medium::setLocation(const Utf8Str &aLocation, const Utf8Str &aFormat)
 {
     AssertReturn(!aLocation.isEmpty(), E_FAIL);
 
@@ -3435,20 +3441,29 @@ HRESULT Medium::setLocation(const Utf8Str &aLocation)
                     return setError(VBOX_E_FILE_ERROR,
                                     tr("Could not find file for the hard disk '%s' (%Rrc)"),
                                     locationFull.raw(), vrc);
-                else
+                else if (aFormat.isEmpty())
                     return setError(VBOX_E_IPRT_ERROR,
                                     tr("Could not get the storage format of the hard disk '%s' (%Rrc)"),
                                     locationFull.raw(), vrc);
+                else
+                {
+                    HRESULT rc = setFormat(Bstr(aFormat));
+                    /* setFormat() must not fail since we've just used the backend so
+                     * the format object must be there */
+                    AssertComRCReturnRC(rc);
+                }
             }
+            else
+            {
+                ComAssertRet(backendName != NULL && *backendName != '\0', E_FAIL);
 
-            ComAssertRet(backendName != NULL && *backendName != '\0', E_FAIL);
+                HRESULT rc = setFormat(Bstr(backendName));
+                RTStrFree(backendName);
 
-            HRESULT rc = setFormat(Bstr(backendName));
-            RTStrFree(backendName);
-
-            /* setFormat() must not fail since we've just used the backend so
-             * the format object must be there */
-            AssertComRCReturnRC(rc);
+                /* setFormat() must not fail since we've just used the backend so
+                 * the format object must be there */
+                AssertComRCReturnRC(rc);
+            }
         }
 
         /* is it still a file? */

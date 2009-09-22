@@ -1173,6 +1173,7 @@ STDMETHODIMP VirtualBox::OpenHardDisk(IN_BSTR aLocation,
     rc = hardDisk->init(this,
                         aLocation,
                         (accessMode == AccessMode_ReadWrite) ? Medium::OpenReadWrite : Medium::OpenReadOnly,
+                        DeviceType_HardDisk,
                         aSetImageId, imageId,
                         aSetParentId, parentId);
 
@@ -1248,7 +1249,7 @@ STDMETHODIMP VirtualBox::OpenDVDImage (IN_BSTR aLocation, IN_BSTR aId,
 
     ComObjPtr<Medium> image;
     image.createObject();
-    rc = image->init (this, aLocation, Medium::OpenReadOnly, true, id, false, Guid());
+    rc = image->init (this, aLocation, Medium::OpenReadOnly, DeviceType_DVD, true, id, false, Guid());
     if (SUCCEEDED(rc))
     {
         rc = registerDVDImage (image);
@@ -1315,7 +1316,7 @@ STDMETHODIMP VirtualBox::OpenFloppyImage (IN_BSTR aLocation, IN_BSTR aId,
 
     ComObjPtr<Medium> image;
     image.createObject();
-    rc = image->init (this, aLocation, Medium::OpenReadWrite, true, id, false, Guid());
+    rc = image->init (this, aLocation, Medium::OpenReadWrite, DeviceType_Floppy, true, id, false, Guid());
     if (SUCCEEDED(rc))
     {
         rc = registerFloppyImage (image);
