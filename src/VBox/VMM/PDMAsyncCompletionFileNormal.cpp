@@ -375,7 +375,7 @@ static int pdmacFileAioMgrNormalProcessTaskList(PPDMACTASKFILE pTaskHead,
                 PDMACTASKFILETRANSFER enmTransferType = pCurr->enmTransferType;
 
                 AssertMsg((  (pCurr->enmTransferType == PDMACTASKFILETRANSFER_WRITE)
-                           || (OffStart + cbToTransfer <= pEndpoint->cbFile)),
+                           || ((size_t)(OffStart + cbToTransfer) <= pEndpoint->cbFile)),
                           ("Read exceeds file size OffStart=%RTfoff cbToTransfer=%d cbFile=%llu\n",
                           OffStart, cbToTransfer, pEndpoint->cbFile));
 
@@ -423,7 +423,7 @@ static int pdmacFileAioMgrNormalProcessTaskList(PPDMACTASKFILE pTaskHead,
                 if (enmTransferType == PDMACTASKFILETRANSFER_WRITE)
                 {
                     /* Grow the file if needed. */
-                    if (RT_UNLIKELY((pCurr->Off + pCurr->DataSeg.cbSeg) > pEndpoint->cbFile))
+                    if (RT_UNLIKELY((size_t)(pCurr->Off + pCurr->DataSeg.cbSeg) > pEndpoint->cbFile))
                     {
                         ASMAtomicWriteU64(&pEndpoint->cbFile, pCurr->Off + pCurr->DataSeg.cbSeg);
                         RTFileSetSize(pEndpoint->File, pCurr->Off + pCurr->DataSeg.cbSeg);
@@ -737,7 +737,7 @@ int pdmacFileAioMgrNormal(RTTHREAD ThreadSelf, void *pvUser)
                         RTFOFF OffStart = pTask->Off & ~(RTFOFF)(512-1);
 
                         /* Grow the file if needed. */
-                        if (RT_UNLIKELY((pTask->Off + pTask->DataSeg.cbSeg) > pEndpoint->cbFile))
+                        if (RT_UNLIKELY((size_t)(pTask->Off + pTask->DataSeg.cbSeg) > pEndpoint->cbFile))
                         {
                             ASMAtomicWriteU64(&pEndpoint->cbFile, pTask->Off + pTask->DataSeg.cbSeg);
                             RTFileSetSize(pEndpoint->File, pTask->Off + pTask->DataSeg.cbSeg);
