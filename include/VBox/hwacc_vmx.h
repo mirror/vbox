@@ -1091,6 +1091,22 @@ typedef const VMXMSR *PCVMXMSR;
 #define VMX_EXIT_QUALIFICATION_CRX_ACCESS_LMSW         3
 /** @} */
 
+/** @name VMX_EXIT_QUALIFICATION_TASK_SWITCH
+ * @{
+ */
+#define VMX_EXIT_QUALIFICATION_TASK_SWITCH_SELECTOR(a)  (a & 0xffff)
+#define VMX_EXIT_QUALIFICATION_TASK_SWITCH_TYPE(a)      ((a >> 30)& 0x3)
+/** Task switch caused by a call instruction. */
+#define VMX_EXIT_QUALIFICATION_TASK_SWITCH_TYPE_CALL    0
+/** Task switch caused by an iret instruction. */
+#define VMX_EXIT_QUALIFICATION_TASK_SWITCH_TYPE_IRET    1
+/** Task switch caused by a jmp instruction. */
+#define VMX_EXIT_QUALIFICATION_TASK_SWITCH_TYPE_JMP     2
+/** Task switch caused by an interrupt gate. */
+#define VMX_EXIT_QUALIFICATION_TASK_SWITCH_TYPE_IDT     3
+
+/** @} */
+
 
 /** @name VMX_EXIT_EPT_VIOLATION
  * @{
