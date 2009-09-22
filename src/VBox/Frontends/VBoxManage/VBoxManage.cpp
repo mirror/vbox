@@ -771,6 +771,109 @@ static int handleControlVM(HandlerArg *a)
             }
         }
 #ifdef VBOX_DYNAMIC_NET_ATTACH
+        /* here the order in which strncmp is called is important
+         * cause nictracefile can be very well compared with
+         * nictrace and nic and thus everything will always fail
+         * if the order is changed
+         */
+        else if (!strncmp(a->argv[1], "nictracefile", 12))
+        {
+            /* Get the number of network adapters */
+            ULONG NetworkAdapterCount = 0;
+            ComPtr <ISystemProperties> info;
+            CHECK_ERROR_BREAK (a->virtualBox, COMGETTER(SystemProperties) (info.asOutParam()));
+            CHECK_ERROR_BREAK (info, COMGETTER(NetworkAdapterCount) (&NetworkAdapterCount));
+
+            unsigned n = parseNum(&a->argv[1][12], NetworkAdapterCount, "NIC");
+            if (!n)
+            {
+                rc = E_FAIL;
+                break;
+            }
+            if (a->argc <= 2)
+            {
+                errorArgument("Missing argument to '%s'", a->argv[1]);
+                rc = E_FAIL;
+                break;
+            }
+
+            /* get the corresponding network adapter */
+            ComPtr<INetworkAdapter> adapter;
+            CHECK_ERROR_BREAK (sessionMachine, GetNetworkAdapter(n - 1, adapter.asOutParam()));
+            if (adapter)
+            {
+                BOOL fEnabled;
+                adapter->COMGETTER(Enabled)(&fEnabled);
+                if (fEnabled)
+                {
+                    if (a->argv[2])
+                    {
+                        CHECK_ERROR_RET(adapter, COMSETTER(TraceFile) (Bstr(a->argv[2])), 1);
+                    }
+                    else
+                    {
+                        errorArgument("Invalid filename or filename not specified for NIC %lu", n);
+                        rc = E_FAIL;
+                        break;
+                    }
+                }
+                else
+                {
+                    RTPrintf("The NIC %d is currently disabled and thus can't change its tracefile\n", n);
+                }
+            }
+        }
+        else if (!strncmp(a->argv[1], "nictrace", 8))
+        {
+            /* Get the number of network adapters */
+            ULONG NetworkAdapterCount = 0;
+            ComPtr <ISystemProperties> info;
+            CHECK_ERROR_BREAK (a->virtualBox, COMGETTER(SystemProperties) (info.asOutParam()));
+            CHECK_ERROR_BREAK (info, COMGETTER(NetworkAdapterCount) (&NetworkAdapterCount));
+
+            unsigned n = parseNum(&a->argv[1][8], NetworkAdapterCount, "NIC");
+            if (!n)
+            {
+                rc = E_FAIL;
+                break;
+            }
+            if (a->argc <= 2)
+            {
+                errorArgument("Missing argument to '%s'", a->argv[1]);
+                rc = E_FAIL;
+                break;
+            }
+
+            /* get the corresponding network adapter */
+            ComPtr<INetworkAdapter> adapter;
+            CHECK_ERROR_BREAK (sessionMachine, GetNetworkAdapter(n - 1, adapter.asOutParam()));
+            if (adapter)
+            {
+                BOOL fEnabled;
+                adapter->COMGETTER(Enabled)(&fEnabled);
+                if (fEnabled)
+                {
+                    if (!strcmp(a->argv[2], "on"))
+                    {
+                        CHECK_ERROR_RET(adapter, COMSETTER(TraceEnabled)(TRUE), 1);
+                    }
+                    else if (!strcmp(a->argv[2], "off"))
+                    {
+                        CHECK_ERROR_RET(adapter, COMSETTER(TraceEnabled)(FALSE), 1);
+                    }
+                    else
+                    {
+                        errorArgument("Invalid nictrace%lu argument '%s'", n, Utf8Str(a->argv[2]).raw());
+                        rc = E_FAIL;
+                        break;
+                    }
+                }
+                else
+                {
+                    RTPrintf("The NIC %d is currently disabled and thus can't change its tracefile\n", n);
+                }
+            }
+        }
         else if (!strncmp(a->argv[1], "nic", 3))
         {
             /* Get the number of network adapters */
