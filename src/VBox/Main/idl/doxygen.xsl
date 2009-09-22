@@ -465,13 +465,7 @@ owns the object will most likely fail or crash your application.
 <!--
  *  attributes
 -->
-<xsl:template match="interface//attribute | collection//attribute">
-  <xsl:if test="@array">
-    <xsl:message terminate="yes">
-      <xsl:value-of select="concat(../../@name,'::',../@name,'::',@name,': ')"/>
-      <xsl:text>'array' attributes are not supported, use 'safearray="yes"' instead.</xsl:text>
-    </xsl:message>
-  </xsl:if>
+<xsl:template match="interface//attribute">
   <xsl:apply-templates select="@if" mode="begin"/>
   <xsl:apply-templates select="desc"/>
   <xsl:text>    </xsl:text>
@@ -490,7 +484,7 @@ owns the object will most likely fail or crash your application.
 <!--
  *  methods
 -->
-<xsl:template match="interface//method | collection//method">
+<xsl:template match="interface//method">
   <xsl:apply-templates select="@if" mode="begin"/>
   <xsl:apply-templates select="desc"/>
   <xsl:text>    void </xsl:text>
@@ -524,62 +518,6 @@ owns the object will most likely fail or crash your application.
 
 
 <!--
- *  enumerators
--->
-<xsl:template match="enumerator">
-  <xsl:text>interface </xsl:text>
-  <xsl:value-of select="@name"/>
-  <xsl:text> : $unknown&#x0A;{&#x0A;</xsl:text>
-  <!-- HasMore -->
-  <xsl:text>    void hasMore ([retval] out boolean more);&#x0A;&#x0A;</xsl:text>
-  <!-- GetNext -->
-  <xsl:text>    void getNext ([retval] out </xsl:text>
-  <xsl:apply-templates select="@type"/>
-  <xsl:text> next);&#x0A;&#x0A;</xsl:text>
-  <!-- -->
-  <xsl:text>}; /* interface </xsl:text>
-  <xsl:value-of select="@name"/>
-  <xsl:text> */&#x0A;&#x0A;</xsl:text>
-</xsl:template>
-
-
-<!--
- *  collections
--->
-<xsl:template match="collection">
-  <xsl:if test="not(@readonly='yes')">
-    <xsl:message terminate="yes">
-      <xsl:value-of select="concat(@name,': ')"/>
-      <xsl:text>non-readonly collections are not currently supported</xsl:text>
-    </xsl:message>
-  </xsl:if>
-  <xsl:text>interface </xsl:text>
-  <xsl:value-of select="@name"/>
-  <xsl:text> : $unknown&#x0A;{&#x0A;</xsl:text>
-  <!-- Count -->
-  <xsl:text>    readonly attribute unsigned long count;&#x0A;&#x0A;</xsl:text>
-  <!-- GetItemAt -->
-  <xsl:text>    void getItemAt (in unsigned long index, [retval] out </xsl:text>
-  <xsl:apply-templates select="@type"/>
-  <xsl:text> item);&#x0A;&#x0A;</xsl:text>
-  <!-- Enumerate -->
-  <xsl:text>    void enumerate ([retval] out </xsl:text>
-  <xsl:apply-templates select="@enumerator"/>
-  <xsl:text> enumerator);&#x0A;&#x0A;</xsl:text>
-  <!-- other extra attributes (properties) -->
-  <xsl:apply-templates select="attribute"/>
-  <!-- other extra methods -->
-  <xsl:apply-templates select="method"/>
-  <!-- 'if' enclosed elements, unsorted -->
-  <xsl:apply-templates select="if"/>
-  <!-- -->
-  <xsl:text>}; /* interface </xsl:text>
-  <xsl:value-of select="@name"/>
-  <xsl:text> */&#x0A;&#x0A;</xsl:text>
-</xsl:template>
-
-
-<!--
  *  enums
 -->
 <xsl:template match="enum">
@@ -603,43 +541,6 @@ owns the object will most likely fail or crash your application.
  *  method parameters
 -->
 <xsl:template match="method/param">
-  <xsl:if test="@array">
-    <xsl:if test="@dir='return'">
-      <xsl:message terminate="yes">
-        <xsl:value-of select="concat(../../@name,'::',../@name,'::',@name,': ')"/>
-        <xsl:text>return 'array' parameters are not supported, use 'safearray="yes"' instead.</xsl:text>
-      </xsl:message>
-    </xsl:if>
-    <xsl:text>[array, </xsl:text>
-    <xsl:choose>
-      <xsl:when test="../param[@name=current()/@array]">
-        <xsl:if test="../param[@name=current()/@array]/@dir != @dir">
-          <xsl:message terminate="yes">
-            <xsl:value-of select="concat(../../@name,'::',../@name,': ')"/>
-            <xsl:value-of select="concat(@name,' and ',../param[@name=current()/@array]/@name)"/>
-            <xsl:text> must have the same direction</xsl:text>
-          </xsl:message>
-        </xsl:if>
-        <xsl:text>size_is(</xsl:text>
-        <xsl:if test="@dir='out'">
-          <xsl:text>, </xsl:text>
-        </xsl:if>
-        <xsl:if test="../param[@name=current()/@array]/@dir='out'">
-          <xsl:text>*</xsl:text>
-        </xsl:if>
-        <xsl:value-of select="@array"/>
-        <xsl:text>)</xsl:text>
-      </xsl:when>
-      <xsl:otherwise>
-        <xsl:message terminate="yes">
-          <xsl:value-of select="concat(../../@name,'::',../@name,'::',@name,': ')"/>
-          <xsl:text>array attribute refers to non-existent param: </xsl:text>
-          <xsl:value-of select="@array"/>
-        </xsl:message>
-      </xsl:otherwise>
-    </xsl:choose>
-    <xsl:text>] </xsl:text>
-  </xsl:if>
   <xsl:choose>
     <xsl:when test="@dir='in'">in </xsl:when>
     <xsl:when test="@dir='out'">out </xsl:when>
@@ -655,18 +556,8 @@ owns the object will most likely fail or crash your application.
 <!--
  *  attribute/parameter type conversion
 -->
-<xsl:template match="
-  attribute/@type | param/@type |
-  enumerator/@type | collection/@type | collection/@enumerator
-">
+<xsl:template match="attribute/@type | param/@type">
   <xsl:variable name="self_target" select="current()/ancestor::if/@target"/>
-
-  <xsl:if test="../@array and ../@safearray='yes'">
-    <xsl:message terminate="yes">
-      <xsl:value-of select="concat(../../../@name,'::',../../@name,'::',../@name,': ')"/>
-      <xsl:text>either 'array' or 'safearray="yes"' attribute is allowed, but not both!</xsl:text>
-    </xsl:message>
-  </xsl:if>
 
   <xsl:choose>
     <!-- modifiers (ignored for 'enumeration' attributes)-->
@@ -684,10 +575,22 @@ owns the object will most likely fail or crash your application.
             <xsl:when test=".='long long'">llongPtr</xsl:when>
             <xsl:when test=".='unsigned long'">ulongPtr</xsl:when>
             <xsl:when test=".='unsigned long long'">ullongPtr</xsl:when>
-            <xsl:when test=".='char'">charPtr</xsl:when>
-            <!--xsl:when test=".='string'">??</xsl:when-->
-            <xsl:when test=".='wchar'">wcharPtr</xsl:when>
-            <!--xsl:when test=".='wstring'">??</xsl:when-->
+            <xsl:otherwise>
+              <xsl:message terminate="yes">
+                <xsl:value-of select="concat(../../../@name,'::',../../@name,'::',../@name,': ')"/>
+                <xsl:text>attribute 'mod=</xsl:text>
+                <xsl:value-of select="concat('&quot;',../@mod,'&quot;')"/>
+                <xsl:text>' cannot be used with type </xsl:text>
+                <xsl:value-of select="concat('&quot;',current(),'&quot;!')"/>
+              </xsl:message>
+            </xsl:otherwise>
+          </xsl:choose>
+        </xsl:when>
+        <xsl:when test="../@mod='string'">
+          <xsl:choose>
+            <!-- standard types -->
+            <!--xsl:when test=".='result'">??</xsl:when-->
+            <xsl:when test=".='uuid'">wstringUUID</xsl:when>
             <xsl:otherwise>
               <xsl:message terminate="yes">
                 <xsl:value-of select="concat(../../../@name,'::',../../@name,'::',../@name,': ')"/>
@@ -740,15 +643,8 @@ owns the object will most likely fail or crash your application.
             </xsl:when>
             <!-- custom interface types -->
             <xsl:when test="
-              (name(current())='enumerator' and
-               ((ancestor::library/enumerator[@name=current()]) or
-                (ancestor::library/if[@target=$self_target]/enumerator[@name=current()]))
-              ) or
               ((ancestor::library/interface[@name=current()]) or
                (ancestor::library/if[@target=$self_target]/interface[@name=current()])
-              ) or
-              ((ancestor::library/collection[@name=current()]) or
-               (ancestor::library/if[@target=$self_target]/collection[@name=current()])
               )
             ">
               <xsl:value-of select="."/>
