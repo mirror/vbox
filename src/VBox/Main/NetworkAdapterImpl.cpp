@@ -638,7 +638,7 @@ STDMETHODIMP NetworkAdapter::COMSETTER(TraceEnabled) (BOOL aEnabled)
         /* leave the lock before informing callbacks */
         alock.unlock();
 
-        mParent->onNetworkAdapterChange (this, FALSE);
+        mParent->onNetworkAdapterChange (this, TRUE);
     }
 
     return S_OK;

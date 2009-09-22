@@ -2054,7 +2054,24 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
         AssertLogRelRCReturn(rc, rc);
 
         pLunL0 = CFGMR3GetChildF(pInst, "LUN#%u", uLun);
-        CFGMR3RemoveNode(CFGMR3GetChildF(pLunL0, "AttachedDriver"));
+        PCFGMNODE pLunAD = CFGMR3GetChildF(pLunL0, "AttachedDriver");
+        if (pLunAD)
+        {
+            CFGMR3RemoveNode(pLunAD);
+        }
+        else
+        {
+            CFGMR3RemoveNode(pLunL0);
+            rc = CFGMR3InsertNode(pInst, "LUN#0", &pLunL0);                 RC_CHECK();
+            rc = CFGMR3InsertString(pLunL0, "Driver", "NetSniffer");        RC_CHECK();
+            rc = CFGMR3InsertNode(pLunL0, "Config", &pCfg);                 RC_CHECK();
+            hrc = aNetworkAdapter->COMGETTER(TraceFile)(&str);              H();
+            if (str) /* check convention for indicating default file. */
+            {
+                rc = CFGMR3InsertStringW(pCfg, "File", str);                RC_CHECK();
+            }
+            STR_FREE();
+        }
     }
     else if (fAttachDetach && !fSniffer)
     {
