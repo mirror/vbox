@@ -274,6 +274,7 @@ VirtualBox_QT_MOCHDRS = \
 	include/QIAdvancedSlider.h \
 	include/QISplitter.h \
 	include/QITreeView.h \
+	include/QIToolButton.h \
 	include/VBoxFilePathSelectorWidget.h \
 	include/VBoxOSTypeSelectorButton.h \
 	include/VBoxOSTypeSelectorWidget.h \
