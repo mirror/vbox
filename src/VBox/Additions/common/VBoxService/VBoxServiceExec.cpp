@@ -440,14 +440,14 @@ DECLCALLBACK(int) VBoxServiceExecWorker(bool volatile *pfShutdown)
                     VBoxServiceVerbose(1, "Exec: Stopping sysprep processing (rc=%Rrc)\n", rc);
                     fSysprepDone = true;
                 }
+            }
 
-                /* Let the host know what went wrong (but only if we got a value) */
-                if (rc != VERR_NOT_FOUND)
-                {
-                    rc = VbglR3GuestPropWriteValueF(g_uExecGuestPropSvcClientID, "/VirtualBox/HostGuest/SysprepVBoxRC", "%d", rc);
-                    if (RT_FAILURE(rc))
-                        VBoxServiceError("Exec: Failed to write SysprepVBoxRC: rc=%Rrc\n", rc);
-                }
+            /* Let the host know what happend (but only if we got a guest property value) */
+            if (rc != VERR_NOT_FOUND)
+            {
+                rc = VbglR3GuestPropWriteValueF(g_uExecGuestPropSvcClientID, "/VirtualBox/HostGuest/SysprepVBoxRC", "%d", rc);
+                if (RT_FAILURE(rc))
+                    VBoxServiceError("Exec: Failed to write SysprepVBoxRC: rc=%Rrc\n", rc);
             }
         }
 
