@@ -23,6 +23,7 @@
 #include <VBoxVMLogViewer.h>
 #include <VBoxGlobal.h>
 #include <VBoxProblemReporter.h>
+#include "QIToolButton.h"
 
 /* Qt includes */
 #include <QStyle>
@@ -30,7 +31,6 @@
 #include <QTextEdit>
 #include <QLineEdit>
 #include <QLabel>
-#include <QToolButton>
 #include <QCheckBox>
 #include <QDir>
 #include <QScrollBar>
@@ -342,7 +342,7 @@ VBoxLogSearchPanel::VBoxLogSearchPanel (QWidget *aParent,
     , mCaseSensitive (0)
     , mWarningSpacer (0), mWarningIcon (0), mWarningString (0)
 {
-    mButtonClose = new QToolButton (this);
+    mButtonClose = new QIToolButton (this);
     mButtonClose->setAutoRaise (true);
     mButtonClose->setFocusPolicy (Qt::TabFocus);
     mButtonClose->setShortcut (QKeySequence (Qt::Key_Escape));
@@ -357,7 +357,7 @@ VBoxLogSearchPanel::VBoxLogSearchPanel (QWidget *aParent,
     connect (mSearchString, SIGNAL (textChanged (const QString &)),
              this, SLOT (findCurrent (const QString &)));
 
-    mButtonNext = new QToolButton (this);
+    mButtonNext = new QIToolButton (this);
     mButtonNext->setEnabled (false);
     mButtonNext->setAutoRaise (true);
     mButtonNext->setFocusPolicy (Qt::TabFocus);
@@ -366,7 +366,7 @@ VBoxLogSearchPanel::VBoxLogSearchPanel (QWidget *aParent,
     mButtonNext->setIcon (VBoxGlobal::iconSet (":/list_movedown_16px.png",
                                                ":/list_movedown_disabled_16px.png"));
 
-    mButtonPrev = new QToolButton (this);
+    mButtonPrev = new QIToolButton (this);
     mButtonPrev->setEnabled (false);
     mButtonPrev->setAutoRaise (true);
     mButtonPrev->setFocusPolicy (Qt::TabFocus);

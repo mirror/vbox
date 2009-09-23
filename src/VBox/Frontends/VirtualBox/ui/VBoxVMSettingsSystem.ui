@@ -213,7 +213,7 @@
             <number>0</number>
            </property>
            <item>
-            <widget class="QToolButton" name="mTbBootItemUp">
+            <widget class="QIToolButton" name="mTbBootItemUp">
              <property name="enabled">
               <bool>false</bool>
              </property>
@@ -239,7 +239,7 @@
             </widget>
            </item>
            <item>
-            <widget class="QToolButton" name="mTbBootItemDown">
+            <widget class="QIToolButton" name="mTbBootItemDown">
              <property name="enabled">
               <bool>false</bool>
              </property>
@@ -580,6 +580,11 @@
    <class>VBoxGuestRAMSlider</class>
    <extends>QIAdvancedSlider</extends>
    <header>VBoxGuestRAMSlider.h</header>
+  </customwidget>
+  <customwidget>
+   <class>QIToolButton</class>
+   <extends>QToolButton</extends>
+   <header>QIToolButton.h</header>
   </customwidget>
  </customwidgets>
  <resources/>

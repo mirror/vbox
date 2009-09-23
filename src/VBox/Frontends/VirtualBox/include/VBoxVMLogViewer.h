@@ -33,7 +33,7 @@ class QTabWidget;
 class QTextEdit;
 class QLineEdit;
 class QLabel;
-class QToolButton;
+class QIToolButton;
 class QCheckBox;
 
 class VBoxVMLogViewer : public QIWithRetranslateUI2<QIMainDialog>,
@@ -120,11 +120,11 @@ private:
     void toggleWarning (bool aHide);
 
     VBoxVMLogViewer *mViewer;
-    QToolButton     *mButtonClose;
+    QIToolButton    *mButtonClose;
     QLabel          *mSearchName;
     QLineEdit       *mSearchString;
-    QToolButton     *mButtonPrev;
-    QToolButton     *mButtonNext;
+    QIToolButton    *mButtonPrev;
+    QIToolButton    *mButtonNext;
     QCheckBox       *mCaseSensitive;
     QSpacerItem     *mWarningSpacer;
     QLabel          *mWarningIcon;

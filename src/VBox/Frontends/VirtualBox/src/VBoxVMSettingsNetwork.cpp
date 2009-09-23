@@ -62,9 +62,6 @@ VBoxVMSettingsNetwork::VBoxVMSettingsNetwork (VBoxVMSettingsNetworkPage *aParent
     foreach (QWidget *w, list)
         if (w->parent() == this)
             w->setFixedHeight (w->sizeHint().height());
-
-    /* Remove tool-button border at MAC */
-    mTbMAC->setStyleSheet ("QToolButton {border: 0px none black;}");
 #endif /* Q_WS_MAC */
 
     /* Applying language settings */
