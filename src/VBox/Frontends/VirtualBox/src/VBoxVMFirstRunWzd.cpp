@@ -120,10 +120,10 @@ void VBoxVMFirstRunWzd::accept()
         {
             CMedium hostDrive = mHostDVDs [mCbHost->currentIndex()];
             if (!hostDrive.isNull())
-                mMachine.MountMedium ("IDE", 1, 0, hostDrive.GetId());
+                mMachine.MountMedium ("IDE Controller", 1, 0, hostDrive.GetId());
         }
         else if (mRbImage->isChecked())
-            mMachine.MountMedium ("IDE", 1, 0, mCbImage->id());
+            mMachine.MountMedium ("IDE Controller", 1, 0, mCbImage->id());
     }
     /* Floppy Media selected */
     else if (mRbFdType->isChecked())
@@ -132,10 +132,10 @@ void VBoxVMFirstRunWzd::accept()
         {
             CMedium hostDrive = mHostFloppys [mCbHost->currentIndex()];
             if (!hostDrive.isNull())
-                mMachine.MountMedium ("IDE", 1, 0, hostDrive.GetId());
+                mMachine.MountMedium ("IDE Controller", 1, 0, hostDrive.GetId());
         }
         else if (mRbImage->isChecked())
-            mMachine.MountMedium ("IDE", 1, 0, mCbImage->id());
+            mMachine.MountMedium ("IDE Controller", 1, 0, mCbImage->id());
     }
 
     QIAbstractWizard::accept();

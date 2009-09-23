@@ -516,15 +516,13 @@ HRESULT Machine::init(VirtualBox *aParent,
                         mSerialPorts [slot]->applyDefaults (aOsType);
                 }
 
-                /* The default is that the VM has at least one IDE controller
-                 * which can't be disabled (because of the DVD stuff which is
-                 * not in the StorageDevice implementation at the moment)
-                 */
+                /* The default is that the VM has at least one IDE controller. */
+                /** @todo does this forced IDE controller make sense any more? */
                 ComPtr<IStorageController> pController;
-                rc = AddStorageController(Bstr("IDE"), StorageBus_IDE, pController.asOutParam());
+                rc = AddStorageController(Bstr("IDE Controller"), StorageBus_IDE, pController.asOutParam());
                 CheckComRCReturnRC(rc);
                 ComObjPtr<StorageController> ctl;
-                rc = getStorageControllerByName(Bstr("IDE"), ctl, true);
+                rc = getStorageControllerByName(Bstr("IDE Controller"), ctl, true);
                 CheckComRCReturnRC(rc);
                 ctl->COMSETTER(ControllerType)(StorageControllerType_PIIX4);
             }

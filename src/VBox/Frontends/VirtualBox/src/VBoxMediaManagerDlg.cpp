@@ -1282,7 +1282,7 @@ bool VBoxMediaManagerDlg::releaseMediumFrom (const VBoxMedium &aMedium,
         }
         case VBoxDefs::MediumType_DVD:
         {
-            machine.MountMedium ("IDE", 1, 0, NULL);
+            machine.MountMedium ("IDE Controller", 1, 0, NULL);
             if (!machine.isOk())
             {
                 vboxProblem().cannotUnmountMedium (this, machine, aMedium,
@@ -1293,7 +1293,7 @@ bool VBoxMediaManagerDlg::releaseMediumFrom (const VBoxMedium &aMedium,
         }
         case VBoxDefs::MediumType_Floppy:
         {
-            machine.MountMedium ("FD", 0, 0, NULL);
+            machine.MountMedium ("Floppy Controller", 0, 0, NULL);
             if (!machine.isOk())
             {
                 vboxProblem().cannotUnmountMedium (this, machine, aMedium,

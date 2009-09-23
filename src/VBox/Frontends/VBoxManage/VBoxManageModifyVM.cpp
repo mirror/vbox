@@ -1173,7 +1173,7 @@ int handleModifyVM(HandlerArg *a)
         {
             if (!strcmp(hdds[0], "none"))
             {
-                machine->DetachDevice(Bstr("IDE"), 0, 0);
+                machine->DetachDevice(Bstr("IDE Controller"), 0, 0);
             }
             else
             {
@@ -1194,7 +1194,7 @@ int handleModifyVM(HandlerArg *a)
                 if (hardDisk)
                 {
                     hardDisk->COMGETTER(Id)(uuid.asOutParam());
-                    CHECK_ERROR(machine, AttachDevice(Bstr("IDE"), 0, 0, DeviceType_HardDisk, uuid));
+                    CHECK_ERROR(machine, AttachDevice(Bstr("IDE Controller"), 0, 0, DeviceType_HardDisk, uuid));
                 }
                 else
                     rc = E_FAIL;
@@ -1206,7 +1206,7 @@ int handleModifyVM(HandlerArg *a)
         {
             if (!strcmp(hdds[1], "none"))
             {
-                machine->DetachDevice(Bstr("IDE"), 0, 1);
+                machine->DetachDevice(Bstr("IDE Controller"), 0, 1);
             }
             else
             {
@@ -1227,7 +1227,7 @@ int handleModifyVM(HandlerArg *a)
                 if (hardDisk)
                 {
                     hardDisk->COMGETTER(Id)(uuid.asOutParam());
-                    CHECK_ERROR(machine, AttachDevice(Bstr("IDE"), 0, 1, DeviceType_HardDisk, uuid));
+                    CHECK_ERROR(machine, AttachDevice(Bstr("IDE Controller"), 0, 1, DeviceType_HardDisk, uuid));
                 }
                 else
                     rc = E_FAIL;
@@ -1239,7 +1239,7 @@ int handleModifyVM(HandlerArg *a)
         {
             if (!strcmp(hdds[2], "none"))
             {
-                machine->DetachDevice(Bstr("IDE"), 1, 1);
+                machine->DetachDevice(Bstr("IDE Controller"), 1, 1);
             }
             else
             {
@@ -1260,7 +1260,7 @@ int handleModifyVM(HandlerArg *a)
                 if (hardDisk)
                 {
                     hardDisk->COMGETTER(Id)(uuid.asOutParam());
-                    CHECK_ERROR(machine, AttachDevice(Bstr("IDE"), 1, 1, DeviceType_HardDisk, uuid));
+                    CHECK_ERROR(machine, AttachDevice(Bstr("IDE Controller"), 1, 1, DeviceType_HardDisk, uuid));
                 }
                 else
                     rc = E_FAIL;
@@ -1329,12 +1329,12 @@ int handleModifyVM(HandlerArg *a)
              * and as a consequence multiple attachments and different
              * storage controllers. */
             dvdMedium->COMGETTER(Id)(uuid.asOutParam());
-            CHECK_ERROR(machine, MountMedium(Bstr("IDE"), 1, 0, uuid));
+            CHECK_ERROR(machine, MountMedium(Bstr("IDE Controller"), 1, 0, uuid));
         }
         if (dvdpassthrough)
         {
             ComPtr<IMediumAttachment> dvdAttachment;
-            machine->GetMediumAttachment(Bstr("IDE"), 1, 0, dvdAttachment.asOutParam());
+            machine->GetMediumAttachment(Bstr("IDE Controller"), 1, 0, dvdAttachment.asOutParam());
             ASSERT(dvdAttachment);
 
             CHECK_ERROR(dvdAttachment, COMSETTER(Passthrough)(!strcmp(dvdpassthrough, "on")));
@@ -1342,7 +1342,7 @@ int handleModifyVM(HandlerArg *a)
         if (idecontroller)
         {
             ComPtr<IStorageController> storageController;
-            CHECK_ERROR(machine, GetStorageControllerByName(Bstr("IDE"), storageController.asOutParam()));
+            CHECK_ERROR(machine, GetStorageControllerByName(Bstr("IDE Controller"), storageController.asOutParam()));
 
             if (!RTStrICmp(idecontroller, "PIIX3"))
             {
@@ -1367,20 +1367,20 @@ int handleModifyVM(HandlerArg *a)
         {
             ComPtr<IMedium> floppyMedium;
             ComPtr<IMediumAttachment> floppyAttachment;
-            machine->GetMediumAttachment(Bstr("FD"), 0, 0, floppyAttachment.asOutParam());
+            machine->GetMediumAttachment(Bstr("Floppy Controller"), 0, 0, floppyAttachment.asOutParam());
 
             /* disable? */
             if (!strcmp(floppy, "disabled"))
             {
                 /* disable the controller */
                 if (floppyAttachment)
-                    CHECK_ERROR(machine, DetachDevice(Bstr("FD"), 0, 0));
+                    CHECK_ERROR(machine, DetachDevice(Bstr("Floppy Controller"), 0, 0));
             }
             else
             {
                 /* enable the controller */
                 if (!floppyAttachment)
-                    CHECK_ERROR(machine, AttachDevice(Bstr("FD"), 0, 0, DeviceType_Floppy, NULL));
+                    CHECK_ERROR(machine, AttachDevice(Bstr("Floppy Controller"), 0, 0, DeviceType_Floppy, NULL));
 
                 /* unmount? */
                 if (    !strcmp(floppy, "none")
@@ -1424,7 +1424,7 @@ int handleModifyVM(HandlerArg *a)
                     }
                 }
                 floppyMedium->COMGETTER(Id)(uuid.asOutParam());
-                CHECK_ERROR(machine, MountMedium(Bstr("FD"), 0, 0, uuid));
+                CHECK_ERROR(machine, MountMedium(Bstr("Floppy Controller"), 0, 0, uuid));
             }
         }
         if (audio || audiocontroller)

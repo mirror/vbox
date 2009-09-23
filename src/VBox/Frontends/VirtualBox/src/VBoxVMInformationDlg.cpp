@@ -481,7 +481,7 @@ void VBoxVMInformationDlg::refreshStatistics()
     /* Hard Disk Statistics */
     {
         QString hdStat;
-        const QString ideCtl = QString("IDE");
+        const QString ideCtl = QString("IDE Controller");
         const QString sataCtl = QString("SATA");
 
         result += hdrRow.arg (":/hd_16px.png").arg (tr ("Hard Disk Statistics"));

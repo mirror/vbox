@@ -448,7 +448,7 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
     ComPtr<IStorageController> FloppyCtl;
     bool                       fFloppyEnabled = false;
 
-    rc = machine->GetStorageControllerByName(Bstr("FD"), FloppyCtl.asOutParam());
+    rc = machine->GetStorageControllerByName(Bstr("Floppy Controller"), FloppyCtl.asOutParam());
     if (SUCCEEDED(rc))
         fFloppyEnabled = true;
 
@@ -469,7 +469,7 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
         FloppyCtl->COMGETTER(PortCount)(&cFloppyPorts);
         for (ULONG i = 0; i < cFloppyPorts; ++ i)
         {
-            rc = machine->GetMedium(Bstr("FD"), 0, i, floppyMedium.asOutParam());
+            rc = machine->GetMedium(Bstr("Floppy Controller"), 0, i, floppyMedium.asOutParam());
             if (SUCCEEDED(rc) && floppyMedium)
             {
                 floppyMedium->COMGETTER(Location)(filePath.asOutParam());
@@ -547,7 +547,7 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
      */
     ComPtr<IStorageController> ideController;
 
-    rc = machine->GetStorageControllerByName(Bstr("IDE"), ideController.asOutParam());
+    rc = machine->GetStorageControllerByName(Bstr("IDE Controller"), ideController.asOutParam());
     if (SUCCEEDED(rc) && ideController)
     {
         StorageControllerType_T enmIdeController;
@@ -577,7 +577,7 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
 
     ComPtr<IMedium> hardDisk;
     Bstr filePath;
-    rc = machine->GetMedium(Bstr("IDE"), 0, 0, hardDisk.asOutParam());
+    rc = machine->GetMedium(Bstr("IDE Controller"), 0, 0, hardDisk.asOutParam());
     if (SUCCEEDED(rc) && hardDisk)
     {
         hardDisk->COMGETTER(Location)(filePath.asOutParam());
@@ -595,7 +595,7 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
         if (details == VMINFO_MACHINEREADABLE)
             RTPrintf("hda=\"none\"\n");
     }
-    rc = machine->GetMedium(Bstr("IDE"), 0, 1, hardDisk.asOutParam());
+    rc = machine->GetMedium(Bstr("IDE Controller"), 0, 1, hardDisk.asOutParam());
     if (SUCCEEDED(rc) && hardDisk)
     {
         hardDisk->COMGETTER(Location)(filePath.asOutParam());
@@ -613,7 +613,7 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
         if (details == VMINFO_MACHINEREADABLE)
             RTPrintf("hdb=\"none\"\n");
     }
-    rc = machine->GetMedium(Bstr("IDE"), 1, 1, hardDisk.asOutParam());
+    rc = machine->GetMedium(Bstr("IDE Controller"), 1, 1, hardDisk.asOutParam());
     if (SUCCEEDED(rc) && hardDisk)
     {
         hardDisk->COMGETTER(Location)(filePath.asOutParam());
@@ -632,7 +632,7 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
             RTPrintf("hdd=\"none\"\n");
     }
     ComPtr<IMedium> dvdMedium;
-    rc = machine->GetMedium(Bstr("IDE"), 1, 0, dvdMedium.asOutParam());
+    rc = machine->GetMedium(Bstr("IDE Controller"), 1, 0, dvdMedium.asOutParam());
     if (SUCCEEDED(rc) && dvdMedium)
     {
         dvdMedium->COMGETTER(Location)(filePath.asOutParam());
@@ -647,7 +647,7 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
 
         BOOL fPassthrough;
         ComPtr<IMediumAttachment> dvdAttachment;
-        machine->GetMediumAttachment(Bstr("IDE"), 1, 0, dvdAttachment.asOutParam());
+        machine->GetMediumAttachment(Bstr("IDE Controller"), 1, 0, dvdAttachment.asOutParam());
         dvdAttachment->COMGETTER(Passthrough)(&fPassthrough);
         if (details == VMINFO_MACHINEREADABLE)
         {

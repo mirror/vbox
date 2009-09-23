@@ -341,7 +341,7 @@ void createVM(IVirtualBox *virtualBox)
                  */
                 nsXPIDLString vdiUUID;
                 hardDisk->GetId(getter_Copies(vdiUUID));
-                rc = machine->AttachDevice(NS_LITERAL_STRING("IDE").get(), // controler identifier
+                rc = machine->AttachDevice(NS_LITERAL_STRING("IDE Controller").get(), // controller identifier
                                            0,                              // channel number on the controller
                                            0,                              // device number on the controller
                                            DeviceType_HardDisk,
@@ -376,7 +376,7 @@ void createVM(IVirtualBox *virtualBox)
          */
         nsXPIDLString isoUUID;
         dvdImage->GetId(getter_Copies(isoUUID));
-        rc = machine->MountMedium(NS_LITERAL_STRING("IDE").get(), // controler identifier
+        rc = machine->MountMedium(NS_LITERAL_STRING("IDE Controller").get(), // controller identifier
                                   2,                              // channel number on the controller
                                   0,                              // device number on the controller
                                   isoUUID);

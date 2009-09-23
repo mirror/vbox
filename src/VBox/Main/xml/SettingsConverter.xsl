@@ -903,7 +903,7 @@ Value '<xsl:value-of select="@type"/>' of 'HardDisk::type' attribute is invalid.
                      vb:Machine/vb:Snapshot/vb:Snapshots//vb:Snapshot/vb:HardDiskAttachments"
               mode="v1.7">
   <StorageControllers>
-    <StorageController name="IDE">
+    <StorageController name="IDE Controller">
       <xsl:choose>
         <xsl:when test="not(../vb:Hardware/vb:BIOS/vb:IDEController)">
           <xsl:attribute name="type">PIIX3</xsl:attribute>
