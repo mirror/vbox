@@ -479,7 +479,8 @@ found:
      */
     q = fp->ipq_frags;
     ip = GETIP(q);
-    if (next + (ip->ip_hl << 2) > IP_MAXPACKET)
+    hlen = ip->ip_hl << 2;
+    if (next + hlen > IP_MAXPACKET)
     {
         ipstat.ips_fragdropped += fp->ipq_nfrags;
         ip_freef(pData, head, fp);
@@ -498,10 +499,15 @@ found:
         q->m_nextpkt = NULL;
         m_cat(pData, m, q);
 
-        m->m_len += (ip->ip_hl << 2);
-        m->m_data -= (ip->ip_hl << 2);
+        m->m_len += hlen;
+        m->m_data -= hlen;
         ip = mtod(m, struct ip *); /*update ip pointer */
+        hlen = ip->ip_hl << 2;
+        m->m_len -= hlen;
+        m->m_data += hlen;
     }
+    m->m_len += hlen;
+    m->m_data -= hlen;
 
     /*
      * Create header for new ip packet by modifying header of first
