@@ -1064,9 +1064,9 @@ VMMR0DECL(int) HWACCMR0Leave(PVM pVM, PVMCPU pVCpu)
 VMMR0DECL(int) HWACCMR0RunGuestCode(PVM pVM, PVMCPU pVCpu)
 {
     CPUMCTX *pCtx;
-    RTCPUID  idCpu = RTMpCpuId(); NOREF(idCpu);
     int      rc;
 #ifdef VBOX_STRICT
+    RTCPUID  idCpu = RTMpCpuId(); NOREF(idCpu);
     PHWACCM_CPUINFO pCpu = &HWACCMR0Globals.aCpuInfo[idCpu];
 #endif
 
