@@ -21,10 +21,6 @@
  */
 
 // #define ENABLE_GLOBAL_USB
-/* @todo: poetzsch: This includes somehow AssertMacros.h on Mac OS X, which
- * defines a macro "check". This name is also used in a Qt class. Have to look
- * at this in detail later */
-#include "VBoxVMSettingsHD.h"
 
 #include "VBoxSettingsDialogSpecific.h"
 #include "VBoxGlobal.h"
@@ -41,6 +37,7 @@
 #include "VBoxVMSettingsGeneral.h"
 #include "VBoxVMSettingsSystem.h"
 #include "VBoxVMSettingsDisplay.h"
+#include "VBoxVMSettingsHD.h"
 #include "VBoxVMSettingsAudio.h"
 #include "VBoxVMSettingsNetwork.h"
 #include "VBoxVMSettingsSerial.h"

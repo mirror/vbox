@@ -29,6 +29,10 @@
 #endif
 #if defined (Q_WS_MAC)
 # include <Carbon/Carbon.h>
+/* Carbon.h includes AssertMacros.h which defines the macro "check". In
+ * QItemDelegate a class method is called check also. As we not used the macro
+ * undefine it here. */
+# undef check
 #endif
 
 #if defined (Q_WS_PM)
