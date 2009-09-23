@@ -2249,7 +2249,7 @@ PGM_BTH_DECL(int, CheckPageFault)(PVMCPU pVCpu, uint32_t uErr, PSHWPDE pPdeDst, 
                     pPdeDst->au32[0]       &= ~PGM_PDFLAGS_TRACK_DIRTY;
                     PGM_INVL_BIG_PG(pVCpu, GCPtrPage);
                     STAM_PROFILE_STOP(&pVCpu->pgm.s.CTX_MID_Z(Stat,DirtyBitTracking), a);
-                    return VINF_PGM_HANDLED_DIRTY_BIT_FAULT;
+                    return VINF_PGM_HANDLED_DIRTY_BIT_FAULT;    /* restarts the instruction. */
                 }
 # ifdef IN_RING0
                 else
@@ -2271,7 +2271,7 @@ PGM_BTH_DECL(int, CheckPageFault)(PVMCPU pVCpu, uint32_t uErr, PSHWPDE pPdeDst, 
                             PGM_INVL_PG(pVCpu, GCPtrPage);
 
                             STAM_PROFILE_STOP(&pVCpu->pgm.s.CTX_MID_Z(Stat,DirtyBitTracking), a);
-                            return VINF_PGM_HANDLED_DIRTY_BIT_FAULT;
+                            return VINF_PGM_HANDLED_DIRTY_BIT_FAULT;    /* restarts the instruction. */
                         }
                     }
                 }
@@ -2368,13 +2368,10 @@ PGM_BTH_DECL(int, CheckPageFault)(PVMCPU pVCpu, uint32_t uErr, PSHWPDE pPdeDst, 
                     {
                         if (pPteDst->u & PGM_PTFLAGS_TRACK_DIRTY)
                         {
-                            LogFlow(("DIRTY page trap addr=%RGv\n", GCPtrPage));
-#  ifdef VBOX_STRICT
                             PPGMPAGE pPage = pgmPhysGetPage(&pVM->pgm.s, pPteSrc->u & GST_PTE_PG_MASK);
-                            if (pPage)
-                                AssertMsg(!PGM_PAGE_HAS_ACTIVE_HANDLERS(pPage),
-                                        ("Unexpected dirty bit tracking on monitored page %RGv (phys %RGp)!!!!!!\n", GCPtrPage, pPteSrc->u & X86_PTE_PAE_PG_MASK));
-#  endif
+
+                            LogFlow(("DIRTY page trap addr=%RGv\n", GCPtrPage));
+
                             STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_MID_Z(Stat,DirtyPageTrap));
 
                             Assert(pPteSrc->n.u1Write);
@@ -2382,14 +2379,22 @@ PGM_BTH_DECL(int, CheckPageFault)(PVMCPU pVCpu, uint32_t uErr, PSHWPDE pPdeDst, 
                             /* Note: No need to invalidate this entry on other VCPUs as a stale TLB entry will not harm; write access will simply
                              *       fault again and take this path to only invalidate the entry.
                              */
-                            pPteDst->n.u1Write    = 1;
+                            if (    pPage
+                                &&  PGM_PAGE_HAS_ACTIVE_HANDLERS(pPage))
+                            {
+                                /* Assuming write handlers here as the PTE is present (otherwise it wouldn't be). */
+                                pPteDst->n.u1Write    = 0;
+                            }
+                            else
+                                pPteDst->n.u1Write    = 1;
+
                             pPteDst->n.u1Dirty    = 1;
                             pPteDst->n.u1Accessed = 1;
                             pPteDst->au32[0]     &= ~PGM_PTFLAGS_TRACK_DIRTY;
                             PGM_INVL_PG(pVCpu, GCPtrPage);
 
                             STAM_PROFILE_STOP(&pVCpu->pgm.s.CTX_MID_Z(Stat,DirtyBitTracking), a);
-                            return VINF_PGM_HANDLED_DIRTY_BIT_FAULT;
+                            return VINF_PGM_HANDLED_DIRTY_BIT_FAULT;    /* restarts the instruction. */
                         }
 # ifdef IN_RING0
                         else
@@ -2403,7 +2408,7 @@ PGM_BTH_DECL(int, CheckPageFault)(PVMCPU pVCpu, uint32_t uErr, PSHWPDE pPdeDst, 
                             PGM_INVL_PG(pVCpu, GCPtrPage);
 
                             STAM_PROFILE_STOP(&pVCpu->pgm.s.CTX_MID_Z(Stat,DirtyBitTracking), a);
-                            return VINF_PGM_HANDLED_DIRTY_BIT_FAULT;
+                            return VINF_PGM_HANDLED_DIRTY_BIT_FAULT;    /* restarts the instruction. */
                         }
 # endif
                     }
