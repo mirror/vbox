@@ -39,6 +39,8 @@
 #include <iprt/file.h>
 #include <iprt/tcp.h>
 
+#include <VBox/VBoxHDD.h>
+
 #include <algorithm>
 
 ////////////////////////////////////////////////////////////////////////////////

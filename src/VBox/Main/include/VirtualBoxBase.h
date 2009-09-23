@@ -483,36 +483,6 @@ public:
 
 ////////////////////////////////////////////////////////////////////////////////
 
-namespace stdx
-{
-    /**
-     *  A wrapper around the container that owns pointers it stores.
-     *
-     *  @note
-     *      Ownership is recognized only when destructing the container!
-     *      Pointers are not deleted when erased using erase() etc.
-     *
-     *  @param container
-     *      class that meets Container requirements (for example, an instance of
-     *      std::list<>, std::vector<> etc.). The given class must store
-     *      pointers (for example, std::list <MyType *>).
-     */
-    template <typename container>
-    class ptr_container : public container
-    {
-    public:
-        ~ptr_container()
-        {
-            for (typename container::iterator it = container::begin();
-                it != container::end();
-                ++ it)
-                delete (*it);
-        }
-    };
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
 /**
  * Abstract base class for all component classes implementing COM
  * interfaces of the VirtualBox COM library.
@@ -2604,4 +2574,4 @@ protected:
 };
 
 #endif // ____H_VIRTUALBOXBASEIMPL
-/* vi: set tabstop=4 shiftwidth=4 expandtab: */
+

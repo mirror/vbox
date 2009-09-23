@@ -74,7 +74,7 @@ HRESULT SharedFolder::init (Machine *aMachine,
 
     unconst(mMachine) = aMachine;
 
-    HRESULT rc = protectedInit (aMachine, aName, aHostPath, aWritable);
+    HRESULT rc = protectedInit(aMachine, aName, aHostPath, aWritable);
 
     /* Confirm a successful initialization when it's the case */
     if (SUCCEEDED(rc))
@@ -123,7 +123,7 @@ HRESULT SharedFolder::initCopy (Machine *aMachine, SharedFolder *aThat)
  *
  *  @return          COM result indicator
  */
-HRESULT SharedFolder::init (Console *aConsole,
+HRESULT SharedFolder::init(Console *aConsole,
                             CBSTR aName, CBSTR aHostPath, BOOL aWritable)
 {
     /* Enclose the state transition NotReady->InInit->Ready */
@@ -132,7 +132,7 @@ HRESULT SharedFolder::init (Console *aConsole,
 
     unconst(mConsole) = aConsole;
 
-    HRESULT rc = protectedInit (aConsole, aName, aHostPath, aWritable);
+    HRESULT rc = protectedInit(aConsole, aName, aHostPath, aWritable);
 
     /* Confirm a successful initialization when it's the case */
     if (SUCCEEDED(rc))

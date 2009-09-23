@@ -456,14 +456,14 @@ class VirtualBox::CallbackEvent : public Event
 {
 public:
 
-    CallbackEvent (VirtualBox *aVirtualBox) : mVirtualBox (aVirtualBox)
+    CallbackEvent(VirtualBox *aVirtualBox) : mVirtualBox(aVirtualBox)
     {
-        Assert (aVirtualBox);
+        Assert(aVirtualBox);
     }
 
     void *handler();
 
-    virtual void handleCallback (const ComPtr<IVirtualBoxCallback> &aCallback) = 0;
+    virtual void handleCallback(const ComPtr<IVirtualBoxCallback> &aCallback) = 0;
 
 private:
 
@@ -474,4 +474,4 @@ private:
     ComObjPtr<VirtualBox, ComWeakRef> mVirtualBox;
 };
 #endif // ____H_VIRTUALBOXIMPL
-/* vi: set tabstop=4 shiftwidth=4 expandtab: */
+
