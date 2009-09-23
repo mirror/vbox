@@ -85,9 +85,11 @@ ULONG DriverEntry(IN PVOID Context1, IN PVOID Context2)
     switch (vboxQueryWinVersion())
     {
         case WINNT4:
+            dprintf(("VBoxVideo::DriverEntry: WINNT4\n"));
             InitData.HwInitDataSize = SIZE_OF_NT4_VIDEO_HW_INITIALIZATION_DATA;
             break;
         case WIN2K:
+            dprintf(("VBoxVideo::DriverEntry: WIN2K\n"));
             InitData.HwInitDataSize = SIZE_OF_W2K_VIDEO_HW_INITIALIZATION_DATA;
             break;
     }
@@ -1210,19 +1212,40 @@ VP_STATUS VBoxVideoFindAdapter(IN PVOID HwDeviceExtension,
           ((PDEVICE_EXTENSION)HwDeviceExtension)->u.primary.IOPortGuest = 0;
 
           VIDEO_ACCESS_RANGE tmpRanges[4];
-          ULONG slot;
+          ULONG slot = 0;
 
           VideoPortZeroMemory(tmpRanges, sizeof(tmpRanges));
 
           /* need to call VideoPortGetAccessRanges to ensure interrupt info in ConfigInfo gets set up */
-          VP_STATUS status = VideoPortGetAccessRanges(HwDeviceExtension,
-                                            0,
-                                            NULL,
-                                            sizeof (tmpRanges)/sizeof (tmpRanges[0]),
-                                            tmpRanges,
-                                            NULL,
-                                            NULL,
-                                            (PULONG) &slot);
+          VP_STATUS status; 
+          if (vboxQueryWinVersion() == WINNT4)
+          {
+              /* NT crashes if either of 'vendorId, 'deviceId' or 'slot' parameters is NULL,
+               * and needs PCI ids for a successful VideoPortGetAccessRanges call.
+               */
+              ULONG vendorId = 0x80EE;
+              ULONG deviceId = 0xBEEF;
+              status = VideoPortGetAccessRanges(HwDeviceExtension,
+                                                0,
+                                                NULL,
+                                                sizeof (tmpRanges)/sizeof (tmpRanges[0]),
+                                                tmpRanges,
+                                                &vendorId,
+                                                &deviceId,
+                                                &slot);
+          }
+          else
+          {
+              status = VideoPortGetAccessRanges(HwDeviceExtension,
+                                                0,
+                                                NULL,
+                                                sizeof (tmpRanges)/sizeof (tmpRanges[0]),
+                                                tmpRanges,
+                                                NULL,
+                                                NULL,
+                                                &slot);
+          }
+          dprintf(("VBoxVideo::VBoxVideoFindAdapter: VideoPortGetAccessRanges status 0x%x\n", status));
           if (status == NO_ERROR)
           {
               ULONG iRange = 0;
@@ -1357,7 +1380,7 @@ BOOLEAN VBoxVideoInterrupt(PVOID  HwDeviceExtension)
         if((flags & HGSMIHOSTFLAGS_COMMANDS_PENDING) != 0)
         {
             /* schedule a DPC*/
-            BOOLEAN bResult = VideoPortQueueDpc(PrimaryExtension, VBoxVideoHGSMIDpc, (PVOID)1);
+            BOOLEAN bResult = PrimaryExtension->u.primary.VideoPortProcs.pfnQueueDpc(PrimaryExtension, VBoxVideoHGSMIDpc, (PVOID)1);
             Assert(bResult);
         }
         /* clear the IRQ */
