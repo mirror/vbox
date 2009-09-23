@@ -27,10 +27,9 @@
 
 #include <VBox/com/SupportErrorInfo.h>
 
-#include <VBox/VBoxHDD.h>
-
 class VirtualBox;
 class Progress;
+struct VM;
 
 namespace settings
 {
@@ -324,7 +323,7 @@ private:
     static DECLCALLBACK(void) vdErrorCall(void *pvUser, int rc, RT_SRC_POS_DECL,
                                           const char *pszFormat, va_list va);
 
-    static DECLCALLBACK(int) vdProgressCall(PVM /* pVM */, unsigned uPercent,
+    static DECLCALLBACK(int) vdProgressCall(VM* /* pVM */, unsigned uPercent,
                                             void *pvUser);
 
     static DECLCALLBACK(bool) vdConfigAreKeysValid(void *pvUser,
