@@ -328,8 +328,6 @@ public:
         COM_INTERFACE_ENTRY(IUSBDeviceFilter)
     END_COM_MAP()
 
-    NS_DECL_ISUPPORTS
-
     DECLARE_EMPTY_CTOR_DTOR (USBDeviceFilter)
 
     // IUSBDeviceFilter properties
