@@ -932,7 +932,7 @@ static void pci_bios_init_device(PPCIGLOBALS pGlobals, uint8_t uBus, uint8_t uDe
                     goto default_map;
                 /* VGA: map frame buffer to default Bochs VBE address */
                 pci_set_io_region_addr(pGlobals, uBus, uDevFn, 0, 0xE0000000);
-                /* 
+                /*
                  * Legacy VGA I/O ports are implicitly decoded by a VGA class device. But
                  * only the framebuffer (i.e., a memory region) is explicitly registered via
                  * pci_set_io_region_addr, so I/O decoding must be enabled manually.
@@ -1257,6 +1257,35 @@ static DECLCALLBACK(int) pciGenericLoadExec(PPDMDEVINS pDevIns, PPCIDEVICE pPciD
 
 
 /**
+ * Common worker for pciR3SaveExec and pcibridgeR3SaveExec.
+ *
+ * @returns VBox status code.
+ * @param   pBus            The bus to save.
+ * @param   pSSM            The saved state handle.
+ */
+static int pciR3CommonSaveExec(PPCIBUS pBus, PSSMHANDLE pSSM)
+{
+    /*
+     * Iterate thru all the devices.
+     */
+    for (uint32_t i = 0; i < RT_ELEMENTS(pBus->devices); i++)
+    {
+        PPCIDEVICE pDev = pBus->devices[i];
+        if (pDev)
+        {
+            SSMR3PutU32(pSSM, i);
+            SSMR3PutMem(pSSM, pDev->config, sizeof(pDev->config));
+
+            int rc = SSMR3PutS32(pSSM, pDev->Int.s.uIrqPinState);
+            if (RT_FAILURE(rc))
+                return rc;
+        }
+    }
+    return SSMR3PutU32(pSSM, UINT32_MAX); /* terminator */
+}
+
+
+/**
  * Saves a state of the PCI device.
  *
  * @returns VBox status code.
@@ -1268,7 +1297,6 @@ static DECLCALLBACK(int) pciR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle
 {
     uint32_t    i;
     PPCIGLOBALS pThis = PDMINS_2_DATA(pDevIns, PPCIGLOBALS);
-    PPCIBUS     pBus =  &pThis->PciBus;
 
     /*
      * Bus state data.
@@ -1290,23 +1318,9 @@ static DECLCALLBACK(int) pciR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle
     SSMR3PutU32(pSSMHandle, ~0);        /* separator */
 
     /*
-     * Iterate thru all the devices.
+     * Join paths with pcibridgeR3SaveExec.
      */
-    for (i = 0; i < RT_ELEMENTS(pBus->devices); i++)
-    {
-        PPCIDEVICE pDev = pBus->devices[i];
-        if (pDev)
-        {
-            int rc;
-            SSMR3PutU32(pSSMHandle, i);
-            SSMR3PutMem(pSSMHandle, pDev->config, sizeof(pDev->config));
-
-            rc = SSMR3PutS32(pSSMHandle, pDev->Int.s.uIrqPinState);
-            if (RT_FAILURE(rc))
-                return rc;
-        }
-    }
-    return SSMR3PutU32(pSSMHandle, ~0); /* terminator */
+    return pciR3CommonSaveExec(&pThis->PciBus, pSSMHandle);
 }
 
 
@@ -1521,6 +1535,104 @@ static void pciR3CommonRestoreConfig(PPCIDEVICE pDev, uint8_t const *pbSrcConfig
 
 
 /**
+ * Common worker for pciR3LoadExec and pcibridgeR3LoadExec.
+ *
+ * @returns VBox status code.
+ * @param   pBus                The bus which data is being loaded.
+ * @param   pSSMHandle          The saved state handle.
+ * @param   uVersion            The data version.
+ * @param   uPass               The pass.
+ */
+static DECLCALLBACK(int) pciR3CommonLoadExec(PPCIBUS pBus, PSSMHANDLE pSSMHandle, uint32_t uVersion, uint32_t uPass)
+{
+    uint32_t    u32;
+    uint32_t    i;
+    int         rc;
+
+    Assert(uPass == SSM_PASS_FINAL); NOREF(uPass);
+
+    /*
+     * Iterate all the devices.
+     */
+    for (i = 0;; i++)
+    {
+        PCIDEVICE   DevTmp;
+        PPCIDEVICE  pDev;
+
+        /* index / terminator */
+        rc = SSMR3GetU32(pSSMHandle, &u32);
+        if (RT_FAILURE(rc))
+            return rc;
+        if (u32 == (uint32_t)~0)
+            break;
+        if (    u32 >= RT_ELEMENTS(pBus->devices)
+            ||  u32 < i)
+        {
+            AssertMsgFailed(("u32=%#x i=%#x\n", u32, i));
+            return rc;
+        }
+
+        /* skip forward to the device checking that no new devices are present. */
+        for (; i < u32; i++)
+        {
+            if (pBus->devices[i])
+            {
+                LogRel(("New device in slot %#x, %s (vendor=%#06x device=%#06x)\n", i, pBus->devices[i]->name,
+                        PCIDevGetVendorId(pBus->devices[i]), PCIDevGetDeviceId(pBus->devices[i])));
+                if (SSMR3HandleGetAfter(pSSMHandle) != SSMAFTER_DEBUG_IT)
+                    AssertFailedReturn(VERR_SSM_LOAD_CONFIG_MISMATCH);
+            }
+        }
+
+        /* get the data */
+        DevTmp.Int.s.uIrqPinState = ~0; /* Invalid value in case we have an older saved state to force a state change in pciSetIrq. */
+        SSMR3GetMem(pSSMHandle, DevTmp.config, sizeof(DevTmp.config));
+        if (uVersion < 3)
+        {
+            int32_t i32Temp;
+            /* Irq value not needed anymore. */
+            rc = SSMR3GetS32(pSSMHandle, &i32Temp);
+            if (RT_FAILURE(rc))
+                return rc;
+        }
+        else
+        {
+            rc = SSMR3GetS32(pSSMHandle, &DevTmp.Int.s.uIrqPinState);
+            if (RT_FAILURE(rc))
+                return rc;
+        }
+
+        /* check that it's still around. */
+        pDev = pBus->devices[i];
+        if (!pDev)
+        {
+            LogRel(("Device in slot %#x has been removed! vendor=%#06x device=%#06x\n", i,
+                    PCIDevGetVendorId(&DevTmp), PCIDevGetDeviceId(&DevTmp)));
+            if (SSMR3HandleGetAfter(pSSMHandle) != SSMAFTER_DEBUG_IT)
+                AssertFailedReturn(VERR_SSM_LOAD_CONFIG_MISMATCH);
+            continue;
+        }
+
+        /* match the vendor id assuming that this will never be changed. */
+        if (    DevTmp.config[0] != pDev->config[0]
+            ||  DevTmp.config[1] != pDev->config[1])
+        {
+            LogRel(("Device in slot %#x (%s) vendor id mismatch! saved=%.4Rhxs current=%.4Rhxs\n",
+                    i, pDev->name, DevTmp.config, pDev->config));
+            AssertFailedReturn(VERR_SSM_LOAD_CONFIG_MISMATCH);
+        }
+
+        /* commit the loaded device config. */
+        pciR3CommonRestoreConfig(pDev, &DevTmp.config[0], false ); /** @todo fix bridge fun! */
+
+        pDev->Int.s.uIrqPinState = DevTmp.Int.s.uIrqPinState;
+    }
+
+    return VINF_SUCCESS;
+}
+
+
+/**
  * Loads a saved PCI device state.
  *
  * @returns VBox status code.
@@ -1571,83 +1683,9 @@ static DECLCALLBACK(int) pciR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle
         AssertMsgFailedReturn(("u32=%#x\n", u32), rc);
 
     /*
-     * Iterate all the devices.
+     * The devices.
      */
-    for (i = 0;; i++)
-    {
-        PCIDEVICE   DevTmp;
-        PPCIDEVICE  pDev;
-
-        /* index / terminator */
-        rc = SSMR3GetU32(pSSMHandle, &u32);
-        if (RT_FAILURE(rc))
-            return rc;
-        if (u32 == (uint32_t)~0)
-            break;
-        if (    u32 >= RT_ELEMENTS(pBus->devices)
-            ||  u32 < i)
-        {
-            AssertMsgFailed(("u32=%#x i=%#x\n", u32, i));
-            return rc;
-        }
-
-        /* skip forward to the device checking that no new devices are present. */
-        for (; i < u32; i++)
-        {
-            if (pBus->devices[i])
-            {
-                LogRel(("New device in slot %#x, %s (vendor=%#06x device=%#06x)\n", i, pBus->devices[i]->name,
-                        PCIDevGetVendorId(pBus->devices[i]), PCIDevGetDeviceId(pBus->devices[i])));
-                if (SSMR3HandleGetAfter(pSSMHandle) != SSMAFTER_DEBUG_IT)
-                    AssertFailedReturn(VERR_SSM_LOAD_CONFIG_MISMATCH);
-            }
-        }
-
-        /* Get the data */
-        DevTmp.Int.s.uIrqPinState = ~0; /* Invalid value in case we have an older saved state to force a state change in pciSetIrq. */
-        SSMR3GetMem(pSSMHandle, DevTmp.config, sizeof(DevTmp.config));
-        if (uVersion < 3)
-        {
-            int32_t i32Temp;
-            /* Irq value not needed anymore. */
-            rc = SSMR3GetS32(pSSMHandle, &i32Temp);
-            if (RT_FAILURE(rc))
-                return rc;
-        }
-        else
-        {
-            rc = SSMR3GetS32(pSSMHandle, &DevTmp.Int.s.uIrqPinState);
-            if (RT_FAILURE(rc))
-                return rc;
-        }
-
-        /* check that it's still around. */
-        pDev = pBus->devices[i];
-        if (!pDev)
-        {
-            LogRel(("Device in slot %#x has been removed! vendor=%#06x device=%#06x\n", i,
-                    PCIDevGetVendorId(&DevTmp), PCIDevGetDeviceId(&DevTmp)));
-            if (SSMR3HandleGetAfter(pSSMHandle) != SSMAFTER_DEBUG_IT)
-                AssertFailedReturn(VERR_SSM_LOAD_CONFIG_MISMATCH);
-            continue;
-        }
-
-        /* match the vendor id assuming that this will never be changed. */
-        if (    DevTmp.config[0] != pDev->config[0]
-            ||  DevTmp.config[1] != pDev->config[1])
-        {
-            LogRel(("Device in slot %#x (%s) vendor id mismatch! saved=%.4Rhxs current=%.4Rhxs\n",
-                    i, pDev->name, DevTmp.config, pDev->config));
-            AssertFailedReturn(VERR_SSM_LOAD_CONFIG_MISMATCH);
-        }
-
-        /* commit the loaded device config. */
-        pciR3CommonRestoreConfig(pDev, &DevTmp.config[0], false ); /** @todo fix bridge fun! */
-
-        pDev->Int.s.uIrqPinState = DevTmp.Int.s.uIrqPinState;
-    }
-
-    return VINF_SUCCESS;
+    return pciR3CommonLoadExec(pBus, pSSMHandle, uVersion, uPass);
 }
 
 
@@ -2283,28 +2321,8 @@ static uint32_t pcibridgeConfigRead(PPDMDEVINSR3 pDevIns, uint8_t iBus, uint8_t 
  */
 static DECLCALLBACK(int) pcibridgeR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle)
 {
-/** @todo make common with pciR3SaveExec! */
-    uint32_t    i;
     PPCIBUS pThis = PDMINS_2_DATA(pDevIns, PPCIBUS);
-
-    /*
-     * Iterate all the devices.
-     */
-    for (i = 0; i < RT_ELEMENTS(pThis->devices); i++)
-    {
-        PPCIDEVICE pDev = pThis->devices[i];
-        if (pDev)
-        {
-            int rc;
-            SSMR3PutU32(pSSMHandle, i);
-            SSMR3PutMem(pSSMHandle, pDev->config, sizeof(pDev->config));
-
-            rc = SSMR3PutS32(pSSMHandle, pDev->Int.s.uIrqPinState);
-            if (RT_FAILURE(rc))
-                return rc;
-        }
-    }
-    return SSMR3PutU32(pSSMHandle, ~0); /* terminator */
+    return pciR3CommonSaveExec(pThis, pSSMHandle);
 }
 
 
@@ -2335,87 +2353,10 @@ static DECLCALLBACK(int) pcibridgeR3LoadPrep(PPDMDEVINS pDevIns, PSSMHANDLE pSSM
  */
 static DECLCALLBACK(int) pcibridgeR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle, uint32_t uVersion, uint32_t uPass)
 {
-    PPCIBUS     pBus  = PDMINS_2_DATA(pDevIns, PPCIBUS);
-    uint32_t    u32;
-    uint32_t    i;
-    int         rc;
-
-/** @todo r=bird: this is a copy of pciR3LoadExec. combine the two!  */
-
-    /*
-     * Check the version.
-     */
+    PPCIBUS pThis = PDMINS_2_DATA(pDevIns, PPCIBUS);
     if (uVersion > VBOX_PCI_SAVED_STATE_VERSION)
         return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
-    Assert(uPass == SSM_PASS_FINAL); NOREF(uPass);
-
-    /*
-     * Iterate all the devices.
-     */
-    for (i = 0;; i++)
-    {
-        PCIDEVICE   DevTmp;
-        PPCIDEVICE  pDev;
-
-        /* index / terminator */
-        rc = SSMR3GetU32(pSSMHandle, &u32);
-        if (RT_FAILURE(rc))
-            return rc;
-        if (u32 == (uint32_t)~0)
-            break;
-        if (    u32 >= RT_ELEMENTS(pBus->devices)
-            ||  u32 < i)
-        {
-            AssertMsgFailed(("u32=%#x i=%#x\n", u32, i));
-            return rc;
-        }
-
-        /* skip forward to the device checking that no new devices are present. */
-        for (; i < u32; i++)
-        {
-            if (pBus->devices[i])
-            {
-                LogRel(("New device in slot %#x, %s (vendor=%#06x device=%#06x)\n", i, pBus->devices[i]->name,
-                        PCIDevGetVendorId(pBus->devices[i]), PCIDevGetDeviceId(pBus->devices[i])));
-                if (SSMR3HandleGetAfter(pSSMHandle) != SSMAFTER_DEBUG_IT)
-                    AssertFailedReturn(VERR_SSM_LOAD_CONFIG_MISMATCH);
-            }
-        }
-
-        /* get the data */
-        DevTmp.Int.s.uIrqPinState = 0;
-        SSMR3GetMem(pSSMHandle, DevTmp.config, sizeof(DevTmp.config));
-        rc = SSMR3GetS32(pSSMHandle, &DevTmp.Int.s.uIrqPinState);
-        if (RT_FAILURE(rc))
-            return rc;
-
-        /* check that it's still around. */
-        pDev = pBus->devices[i];
-        if (!pDev)
-        {
-            LogRel(("Device in slot %#x has been removed! vendor=%#06x device=%#06x\n", i,
-                    PCIDevGetVendorId(&DevTmp), PCIDevGetDeviceId(&DevTmp)));
-            if (SSMR3HandleGetAfter(pSSMHandle) != SSMAFTER_DEBUG_IT)
-                AssertFailedReturn(VERR_SSM_LOAD_CONFIG_MISMATCH);
-            continue;
-        }
-
-        /* match the vendor id assuming that this will never be changed. */
-        if (    DevTmp.config[0] != pDev->config[0]
-            ||  DevTmp.config[1] != pDev->config[1])
-        {
-            LogRel(("Device in slot %#x (%s) vendor id mismatch! saved=%.4Rhxs current=%.4Rhxs\n",
-                    i, pDev->name, DevTmp.config, pDev->config));
-            AssertFailedReturn(VERR_SSM_LOAD_CONFIG_MISMATCH);
-        }
-
-        /* commit the loaded device config. */
-        pciR3CommonRestoreConfig(pDev, &DevTmp.config[0], false ); /** @todo fix bridge fun! */
-
-        pDev->Int.s.uIrqPinState = DevTmp.Int.s.uIrqPinState;
-    }
-
-    return VINF_SUCCESS;
+    return pciR3CommonLoadExec(pThis, pSSMHandle, uVersion, uPass);
 }
 
 /**

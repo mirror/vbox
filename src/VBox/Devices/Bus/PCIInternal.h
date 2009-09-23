@@ -97,7 +97,8 @@ typedef struct PCIDEVICEINT
     /** Set if the specific device fun was requested by PDM.
      * If clear the device and it's functions can be relocated to satisfy the slot request of another device. */
     bool                            fRequestedDevFn;
-    /** Flag whether the device is a pci-to-pci bridge. */
+    /** Flag whether the device is a pci-to-pci bridge.
+     * This is set prior to device registration.  */
     bool                            fPciToPciBridge;
     /** Current state of the IRQ pin of the device. */
     int32_t                         uIrqPinState;
@@ -114,6 +115,6 @@ typedef struct PCIDEVICEINT
 } PCIDEVICEINT;
 
 /* Indicate that PCIDEVICE::Int.s can be declared. */
-#define __PCIDEVICEINT_DECLARED__
+#define PCIDEVICEINT_DECLARED
 
 #endif
