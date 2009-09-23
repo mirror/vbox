@@ -328,7 +328,7 @@
          </widget>
         </item>
         <item row="3" column="3" >
-         <widget class="QToolButton" name="mTbVmm" >
+         <widget class="QIToolButton" name="mTbVmm" >
           <property name="whatsThis" >
            <string>Invokes the Virtual Media Manager to select a medium to mount.</string>
           </property>
@@ -557,6 +557,12 @@
    <class>QILabel</class>
    <extends>QLabel</extends>
    <header>QILabel.h</header>
+  </customwidget>
+  <customwidget>
+   <class>QIToolButton</class>
+   <extends>QToolButton</extends>
+   <header>QIToolButton.h</header>
+   <container>1</container>
   </customwidget>
  </customwidgets>
  <resources/>
