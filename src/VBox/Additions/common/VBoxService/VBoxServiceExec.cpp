@@ -428,21 +428,21 @@ DECLCALLBACK(int) VBoxServiceExecWorker(bool volatile *pfShutdown)
 #endif
             }
 
-            if (RT_FAILURE(rc))
+            /*
+             * Only continue polling if the guest property value is empty/missing
+             * or if the sysprep command is missing.
+             */
+            if (    rc != VERR_NOT_FOUND
+                &&  rc != VERR_FILE_NOT_FOUND)
             {
-                /*
-                 * Only continue polling if the guest property value is empty/missing
-                 * or if the sysprep command is missing.
-                 */
-                if (    rc != VERR_NOT_FOUND
-                    &&  rc != VERR_FILE_NOT_FOUND)
-                {
-                    VBoxServiceVerbose(1, "Exec: Stopping sysprep processing (rc=%Rrc)\n", rc);
-                    fSysprepDone = true;
-                }
+                VBoxServiceVerbose(1, "Exec: Stopping sysprep processing (rc=%Rrc)\n", rc);
+                fSysprepDone = true;
             }
 
-            /* Let the host know what happend (but only if we got a guest property value) */
+            /*
+             * Always let the host know what happend, except when the guest property
+             * value is empty/missing.
+             */
             if (rc != VERR_NOT_FOUND)
             {
                 rc = VbglR3GuestPropWriteValueF(g_uExecGuestPropSvcClientID, "/VirtualBox/HostGuest/SysprepVBoxRC", "%d", rc);
