@@ -1644,6 +1644,7 @@ HRESULT Host::saveSettings(settings::Host &data)
     return S_OK;
 }
 
+#ifdef VBOX_WITH_USB
 USBProxyService* Host::usbProxyService()
 {
     return m->pUSBProxyService;
@@ -1654,7 +1655,6 @@ VirtualBox* Host::parent()
     return m->pParent;
 }
 
-#ifdef VBOX_WITH_USB
 /**
  *  Called by setter methods of all USB device filters.
  */
@@ -2223,6 +2223,7 @@ bool Host::validateDevice(const char *deviceNode, bool isCDROM)
 }
 #endif // RT_OS_SOLARIS
 
+#ifdef VBOX_WITH_USB
 ComObjPtr<HostUSBDeviceFilter> Host::getDependentChild (IHostUSBDeviceFilter *aFilter)
 {
     VirtualBoxBase *child = VirtualBoxBaseWithChildren::getDependentChild(ComPtr<IUnknown>(aFilter));
@@ -2232,7 +2233,6 @@ ComObjPtr<HostUSBDeviceFilter> Host::getDependentChild (IHostUSBDeviceFilter *aF
 }
 
 
-#ifdef VBOX_WITH_USB
 /**
  *  Checks for the presense and status of the USB Proxy Service.
  *  Returns S_OK when the Proxy is present and OK, VBOX_E_HOST_ERROR (as a
