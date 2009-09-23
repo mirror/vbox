@@ -2371,7 +2371,6 @@ PGM_BTH_DECL(int, CheckPageFault)(PVMCPU pVCpu, uint32_t uErr, PSHWPDE pPdeDst, 
                             PPGMPAGE pPage = pgmPhysGetPage(&pVM->pgm.s, pPteSrc->u & GST_PTE_PG_MASK);
 
                             LogFlow(("DIRTY page trap addr=%RGv\n", GCPtrPage));
-
                             STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_MID_Z(Stat,DirtyPageTrap));
 
                             Assert(pPteSrc->n.u1Write);
