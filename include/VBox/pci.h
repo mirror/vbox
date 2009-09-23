@@ -198,7 +198,7 @@ typedef struct PCIDevice
     /** Internal data. */
     union
     {
-#ifdef __PCIDEVICEINT_DECLARED__
+#ifdef PCIDEVICEINT_DECLARED
         PCIDEVICEINT        s;
 #endif
         char                padding[256];
