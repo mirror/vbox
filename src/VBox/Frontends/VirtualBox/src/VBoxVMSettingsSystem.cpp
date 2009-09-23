@@ -74,6 +74,12 @@ VBoxVMSettingsSystem::VBoxVMSettingsSystem()
     mTbBootItemDown->setIcon (VBoxGlobal::iconSet (":/list_movedown_16px.png",
                                                    ":/list_movedown_disabled_16px.png"));
 
+#ifdef Q_WS_MAC
+    /* We need a little space for the focus rect. */
+    mLtBootOrder->setContentsMargins (3, 3, 3, 3);
+    mLtBootOrder->setSpacing (3);
+#endif /* Q_WS_MAC */
+
     /* Limit min/max. size of QLineEdit */
     mLeMemory->setFixedWidthByText (QString().fill ('8', 5));
     /* Ensure mLeMemory value and validation is updated */
@@ -424,7 +430,7 @@ void VBoxVMSettingsSystem::adjustBootOrderTWSize()
 
     mTwBootOrder->setFixedSize (
         iv->sizeHintForColumn (0) + 2 * mTwBootOrder->frameWidth() + 4,
-        iv->sizeHintForRow (0) * mTwBootOrder->topLevelItemCount() + 2 * mTwBootOrder->frameWidth());
+        iv->sizeHintForRow (0) * mTwBootOrder->topLevelItemCount() + 2 * mTwBootOrder->frameWidth() + 4);
 
     /* Update the layout system */
     if (mTabMotherboard->layout())
