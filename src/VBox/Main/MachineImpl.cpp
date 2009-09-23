@@ -1976,10 +1976,17 @@ STDMETHODIMP Machine::AttachDevice(IN_BSTR aControllerName,
                                       aDevice)))
     {
         Medium *pMedium = pAttachTemp->medium();
-        AutoReadLock mediumLock(pMedium);
-        return setError(VBOX_E_OBJECT_IN_USE,
-                        tr("Medium '%ls' is already attached to device slot %d on port %d of controller '%ls' of this virtual machine"),
-                        pMedium->locationFull().raw(), aDevice, aControllerPort, aControllerName);
+        if (pMedium)
+        {
+            AutoReadLock mediumLock(pMedium);
+            return setError(VBOX_E_OBJECT_IN_USE,
+                            tr("Medium '%ls' is already attached to device slot %d on port %d of controller '%ls' of this virtual machine"),
+                            pMedium->locationFull().raw(), aDevice, aControllerPort, aControllerName);
+        }
+        else
+            return setError(VBOX_E_OBJECT_IN_USE,
+                            tr("Device is already attached to slot %d on port %d of controller '%ls' of this virtual machine"),
+                            aDevice, aControllerPort, aControllerName);
     }
 
     Guid id(aId);
@@ -2070,8 +2077,8 @@ STDMETHODIMP Machine::AttachDevice(IN_BSTR aControllerName,
 
     AutoWriteLock mediumLock(medium);
 
-    if ((pAttachTemp = findAttachment(mMediaData->mAttachments,
-                                      medium)))
+    if (   (pAttachTemp = findAttachment(mMediaData->mAttachments, medium))
+        && !medium.isNull())
     {
         return setError(VBOX_E_OBJECT_IN_USE,
                         tr("Hard disk '%ls' is already attached to this virtual machine"),
