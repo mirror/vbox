@@ -469,6 +469,11 @@ VOID vboxFreePoolVoid(IN PVOID  HwDeviceExtension, IN PVOID  Ptr)
 {
 }
 
+BOOLEAN vboxQueueDpcVoid(IN PVOID  HwDeviceExtension, IN PMINIPORT_DPC_ROUTINE  CallbackRoutine, IN PVOID  Context)
+{
+    return FALSE;
+}
+
 void VBoxSetupVideoPortFunctions(PDEVICE_EXTENSION PrimaryExtension, VBOXVIDEOPORTPROCS *pCallbacks, PVIDEO_PORT_CONFIG_INFO pConfigInfo)
 {
     memset(pCallbacks, 0, sizeof(VBOXVIDEOPORTPROCS));
@@ -476,6 +481,20 @@ void VBoxSetupVideoPortFunctions(PDEVICE_EXTENSION PrimaryExtension, VBOXVIDEOPO
     if (vboxQueryWinVersion() <= WINNT4)
     {
         /* VideoPortGetProcAddress is available for >= win2k */
+        pCallbacks->pfnWaitForSingleObject = vboxWaitForSingleObjectVoid;
+        pCallbacks->pfnSetEvent = vboxSetEventVoid;
+        pCallbacks->pfnClearEvent = vboxClearEventVoid;
+        pCallbacks->pfnCreateEvent = vboxCreateEventVoid;
+        pCallbacks->pfnDeleteEvent = vboxDeleteEventVoid;
+        pCallbacks->pfnCreateSpinLock = vboxCreateSpinLockVoid;
+        pCallbacks->pfnDeleteSpinLock = vboxDeleteSpinLockVoid;
+        pCallbacks->pfnAcquireSpinLock = vboxAcquireSpinLockVoid;
+        pCallbacks->pfnReleaseSpinLock = vboxReleaseSpinLockVoid;
+        pCallbacks->pfnAcquireSpinLockAtDpcLevel = vboxAcquireSpinLockAtDpcLevelVoid;
+        pCallbacks->pfnReleaseSpinLockFromDpcLevel = vboxReleaseSpinLockFromDpcLevelVoid;
+        pCallbacks->pfnAllocatePool = vboxAllocatePoolVoid;
+        pCallbacks->pfnFreePool = vboxFreePoolVoid;
+        pCallbacks->pfnQueueDpc = vboxQueueDpcVoid;
         return;
     }
 
@@ -589,6 +608,20 @@ void VBoxSetupVideoPortFunctions(PDEVICE_EXTENSION PrimaryExtension, VBOXVIDEOPO
     {
         pCallbacks->pfnAllocatePool = vboxAllocatePoolVoid;
         pCallbacks->pfnFreePool = vboxFreePoolVoid;
+    }
+
+    pCallbacks->pfnQueueDpc = (PFNQUEUEDPC)(pConfigInfo->VideoPortGetProcAddress)
+            (PrimaryExtension,
+             (PUCHAR)"VideoPortQueueDpc");
+    Assert(pCallbacks->pfnQueueDpc);
+
+    if(pCallbacks->pfnQueueDpc)
+    {
+        pCallbacks->fSupportedTypes |= VBOXVIDEOPORTPROCS_DPC;
+    }
+    else
+    {
+        pCallbacks->pfnQueueDpc = vboxQueueDpcVoid;
     }
 
 #ifdef DEBUG_misha

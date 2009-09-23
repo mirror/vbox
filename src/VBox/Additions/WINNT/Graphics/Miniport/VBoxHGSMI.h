@@ -89,12 +89,16 @@ typedef void (*PFNRELEASESPINLOCKFROMDPCLEVEL) (void*  HwDeviceExtension, VBOXPS
 typedef void* (*PFNALLOCATEPOOL) (void*  HwDeviceExtension, VBOXVP_POOL_TYPE PoolType, size_t NumberOfBytes, unsigned long Tag);
 typedef void (*PFNFREEPOOL) (void*  HwDeviceExtension, void*  Ptr);
 
+typedef unsigned char (*PFNQUEUEDPC) (void* HwDeviceExtension, void (*CallbackRoutine)(void* HwDeviceExtension, void *Context), void *Context);
+
 /* pfn*SpinLock* functions are available */
 #define VBOXVIDEOPORTPROCS_SPINLOCK 0x00000001
 /* pfn*Event and pfnWaitForSingleObject functions are available */
 #define VBOXVIDEOPORTPROCS_EVENT    0x00000002
 /* pfn*Pool functions are available */
 #define VBOXVIDEOPORTPROCS_POOL     0x00000004
+/* pfnQueueDpc function is available */
+#define VBOXVIDEOPORTPROCS_DPC      0x00000008
 
 typedef struct VBOXVIDEOPORTPROCS
 {
@@ -117,6 +121,8 @@ typedef struct VBOXVIDEOPORTPROCS
 
     PFNALLOCATEPOOL pfnAllocatePool;
     PFNFREEPOOL pfnFreePool;
+
+    PFNQUEUEDPC pfnQueueDpc;
 } VBOXVIDEOPORTPROCS;
 
 #endif /* #ifndef ___VBoxHGSMI_h_ */
