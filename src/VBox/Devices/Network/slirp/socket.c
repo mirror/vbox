@@ -541,6 +541,7 @@ sowrite(PNATState pData, struct socket *so)
 void
 sorecvfrom(PNATState pData, struct socket *so)
 {
+    ssize_t ret = 0;
     struct sockaddr_in addr;
     socklen_t addrlen = sizeof(struct sockaddr_in);
 
@@ -567,7 +568,7 @@ sorecvfrom(PNATState pData, struct socket *so)
 #ifdef VBOX_WITH_SLIRP_BSD_MBUF
         int size;
 #endif
-	int rc = 0;
+	    int rc = 0;
         static int signaled = 0;
 
         QSOCKET_LOCK(udb);
@@ -591,11 +592,21 @@ sorecvfrom(PNATState pData, struct socket *so)
         /* if (so->so_fport != htons(53)) */
         {
             rc = ioctlsocket(so->s, FIONREAD, &n);
-            
+            if (   (rc == -1)
+                && (errno == EAGAIN
+                   || errno == EWOULDBLOCK
+                   || errno == EINPROGRESS
+                   || errno == ENOTCONN))
+            {
+                m_free(pData, m);
+                return;
+            }
             if (rc == -1 && signaled == 0)
             {
                 LogRel(("NAT: can't fetch amount of bytes on socket %R[natsock], so message will be truncated.\n", so));
                 signaled = 1;
+                m_free(pData, m);
+                return;
             } 
 
             if (rc > 0 && n > len)
@@ -605,7 +616,7 @@ sorecvfrom(PNATState pData, struct socket *so)
                 len = M_FREEROOM(m);
             }
         }
-        m->m_len = recvfrom(so->s, m->m_data, len, 0,
+        ret = recvfrom(so->s, m->m_data, len, 0,
                             (struct sockaddr *)&addr, &addrlen);
         Log2((" did recvfrom %d, errno = %d-%s\n",
                     m->m_len, errno, strerror(errno)));
@@ -651,12 +662,12 @@ sorecvfrom(PNATState pData, struct socket *so)
         m->m_data += ETH_HLEN; 
         m->m_pkthdr.header = mtod(m, void *);
         m->m_data += sizeof(struct udpiphdr); 
-        len = recvfrom(so->s, mtod(m, char *), n, 0,
+        ret = recvfrom(so->s, mtod(m, char *), n, 0,
                             (struct sockaddr *)&addr, &addrlen);
-        m->m_len = len;
         /* @todo (r=vvl) check which flags and type should be passed */
 #endif
-        if(len < 0)
+        m->m_len = ret;
+        if(ret < 0)
         {
             u_char code = ICMP_UNREACH_PORT;
 
@@ -665,10 +676,18 @@ sorecvfrom(PNATState pData, struct socket *so)
             else if(errno == ENETUNREACH)
                 code = ICMP_UNREACH_NET;
 
-            Log2((dfd," rx error, tx icmp ICMP_UNREACH:%i\n", code));
+            m_free(pData, m);
+            if (   errno == EAGAIN
+                || errno == EWOULDBLOCK
+                || errno == EINPROGRESS
+                || errno == ENOTCONN)
+            {
+                return;
+            }
+
+            Log2((" rx error, tx icmp ICMP_UNREACH:%i\n", code));
             icmp_error(pData, so->so_m, ICMP_UNREACH, code, 0, strerror(errno));
             so->so_m = NULL;
-            m_free(pData, m);
         }
         else
         {
@@ -1252,10 +1271,20 @@ static void sorecvfrom_icmp_unix(PNATState pData, struct socket *so)
     int rc = 0;
     static int signalled = 0;
     rc = ioctlsocket(so->s, FIONREAD, &len);
-    if (rc != -1 && signalled == 0)
+    if (   rc == -1 
+        && (errno == EAGAIN
+        || errno == EWOULDBLOCK
+        || errno == EINPROGRESS
+        || errno == ENOTCONN))
+    {
+        return;
+    }
+    if (rc == -1 && signalled == 0)
     {
         signalled = 1;
-        LogRel(("NAT: fetching number of bits has been failed for ICMP socket \n"));
+        LogRel(("NAT: fetching number of bits has been failed for ICMP socket (%d: %s)\n",
+            errno, strerror(errno)));
+        return;
     }
     len = (len != 0 && rc != -1 ? len : 1500);
     buff = RTMemAlloc(len);
@@ -1265,14 +1294,23 @@ static void sorecvfrom_icmp_unix(PNATState pData, struct socket *so)
 
     if (len == -1 || len == 0)
     {
-        u_char code = ICMP_UNREACH_PORT;
+        u_char code;
+        if (   len == -1 
+            && (errno == EAGAIN
+            || errno == EWOULDBLOCK
+            || errno == EINPROGRESS
+            || errno == ENOTCONN))
+        {
+            return;
+        }
+        code = ICMP_UNREACH_PORT;
 
         if (errno == EHOSTUNREACH)
             code = ICMP_UNREACH_HOST;
         else if(errno == ENETUNREACH)
             code = ICMP_UNREACH_NET;
 
-        DEBUG_MISC((dfd," udp icmp rx errno = %d-%s\n",
+        LogRel((" udp icmp rx errno = %d-%s\n",
                     errno, strerror(errno)));
         icmp_error(pData, so->so_m, ICMP_UNREACH, code, 0, strerror(errno));
         so->so_m = NULL;
