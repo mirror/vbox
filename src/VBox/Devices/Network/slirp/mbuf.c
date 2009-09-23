@@ -34,7 +34,8 @@ msize_init(PNATState pData)
      * Find a nice value for msize
      */
     msize = (if_mtu>if_mru ? if_mtu : if_mru) 
-          + sizeof(struct m_hdr );
+          + sizeof(struct m_hdr) + sizeof(void *)   /*pointer to the backstore*/
+          + if_maxlinkhdr ;
 }
 
 /*
