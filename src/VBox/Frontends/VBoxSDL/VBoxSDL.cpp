@@ -1537,8 +1537,8 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
              */
             Bstr uuid;
             hardDisk->COMGETTER(Id)(uuid.asOutParam());
-            gMachine->DetachDevice(Bstr("IDE"), 0, 0);
-            gMachine->AttachDevice(Bstr("IDE"), 0, 0, DeviceType_HardDisk, uuid);
+            gMachine->DetachDevice(Bstr("IDE Controller"), 0, 0);
+            gMachine->AttachDevice(Bstr("IDE Controller"), 0, 0, DeviceType_HardDisk, uuid);
             /// @todo why is this attachment saved?
         }
         else
@@ -1584,7 +1584,7 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         }
         Bstr id;
         floppyMedium->COMGETTER(Id)(id.asOutParam());
-        CHECK_ERROR(gMachine, MountMedium(Bstr("FD"), 0, 0, id));
+        CHECK_ERROR(gMachine, MountMedium(Bstr("Floppy Controller"), 0, 0, id));
     }
     while (0);
     if (FAILED(rc))
@@ -1626,7 +1626,7 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         }
         Bstr id;
         dvdMedium->COMGETTER(Id)(id.asOutParam());
-        CHECK_ERROR(gMachine, MountMedium(Bstr("IDE"), 1, 0, id));
+        CHECK_ERROR(gMachine, MountMedium(Bstr("IDE Controller"), 1, 0, id));
     }
     while (0);
     if (FAILED(rc))

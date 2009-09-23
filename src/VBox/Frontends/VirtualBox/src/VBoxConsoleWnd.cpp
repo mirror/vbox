@@ -1859,7 +1859,7 @@ void VBoxConsoleWnd::updateAppearanceOf (int element)
     if (element & FloppyStuff)
     {
         mDevicesMountFloppyMenu->setEnabled (isRunningOrPaused);
-        CMedium floppy = cmachine.GetMedium("FD", 0, 0);
+        CMedium floppy = cmachine.GetMedium("Floppy Controller", 0, 0);
         bool mounted = !floppy.isNull();
         mDevicesUnmountFloppyAction->setEnabled (isRunningOrPaused && mounted);
         fd_light->setState (mounted ? KDeviceActivity_Idle : KDeviceActivity_Null);
@@ -1882,7 +1882,7 @@ void VBoxConsoleWnd::updateAppearanceOf (int element)
     if (element & DVDStuff)
     {
         mDevicesMountDVDMenu->setEnabled (isRunningOrPaused);
-        CMedium dvd = cmachine.GetMedium("IDE", 1, 0);
+        CMedium dvd = cmachine.GetMedium("IDE Controller", 1, 0);
         bool mounted = !dvd.isNull();
         mDevicesUnmountDVDAction->setEnabled (isRunningOrPaused && mounted);
         cd_light->setState (mounted ? KDeviceActivity_Idle : KDeviceActivity_Null);
@@ -2797,7 +2797,7 @@ void VBoxConsoleWnd::devicesMountFloppyImage()
     {
         CMachine m = csession.GetMachine();
 
-        m.MountMedium ("FD", 0, 0, dlg.selectedId());
+        m.MountMedium ("Floppy Controller", 0, 0, dlg.selectedId());
 
         AssertWrapperOk (m);
         if (m.isOk())
@@ -2817,7 +2817,7 @@ void VBoxConsoleWnd::devicesUnmountFloppy()
     if (!console) return;
 
     CMachine m = csession.GetMachine();
-    m.MountMedium ("FD", 0, 0, NULL);
+    m.MountMedium ("Floppy Controller", 0, 0, NULL);
     if (m.isOk())
     {
         if (mIsAutoSaveMedia)
@@ -2828,7 +2828,7 @@ void VBoxConsoleWnd::devicesUnmountFloppy()
         }
     }
 
-    if (!m.GetMedium ("FD", 0, 0).isNull())
+    if (!m.GetMedium ("Floppy Controller", 0, 0).isNull())
     {
         /* Looks like Main make no force unmounting here
          * but IFloppyDrive::Unmount() is called synchronously.
@@ -2855,7 +2855,7 @@ void VBoxConsoleWnd::devicesMountDVDImage()
     {
         CMachine m = csession.GetMachine();
 
-        m.MountMedium ("IDE", 1, 0, dlg.selectedId());
+        m.MountMedium ("IDE Controller", 1, 0, dlg.selectedId());
 
         AssertWrapperOk (m);
         if (m.isOk())
@@ -2876,7 +2876,7 @@ void VBoxConsoleWnd::devicesUnmountDVD()
     if (!console) return;
 
     CMachine m = csession.GetMachine();
-    m.MountMedium ("IDE", 1, 0, NULL);
+    m.MountMedium ("IDE Controller", 1, 0, NULL);
     AssertWrapperOk (m);
     if (m.isOk())
     {
@@ -2888,7 +2888,7 @@ void VBoxConsoleWnd::devicesUnmountDVD()
         }
     }
 
-    if (!m.GetMedium("IDE", 1, 0).isNull())
+    if (!m.GetMedium("IDE Controller", 1, 0).isNull())
     {
         /* Looks like Main make no force unmounting here
          * but IDVDDrive::Unmount() is called synchronously.
@@ -3004,7 +3004,7 @@ void VBoxConsoleWnd::installGuestAdditionsFrom (const QString &aSource)
 
     Assert (!uuid.isNull());
     CMachine m = csession.GetMachine();
-    m.MountMedium ("IDE", 1, 0, uuid);
+    m.MountMedium ("IDE Controller", 1, 0, uuid);
     AssertWrapperOk (m);
     if (m.isOk())
     {
@@ -3119,7 +3119,7 @@ void VBoxConsoleWnd::prepareFloppyMenu()
 
     mDevicesMountFloppyMenu->clear();
 
-    CMedium selected = csession.GetMachine().GetMedium("FD", 0, 0);
+    CMedium selected = csession.GetMachine().GetMedium("Floppy Controller", 0, 0);
 
     hostFloppyMap.clear();
     CMediumVector drvvec =
@@ -3166,7 +3166,7 @@ void VBoxConsoleWnd::prepareDVDMenu()
 
     mDevicesMountDVDMenu->clear();
 
-    CMedium selected = csession.GetMachine().GetMedium("IDE", 2, 0);
+    CMedium selected = csession.GetMachine().GetMedium("IDE Controller", 1, 0);
 
     hostDVDMap.clear();
     CMediumVector drvvec =
@@ -3240,7 +3240,7 @@ void VBoxConsoleWnd::captureFloppy (QAction *aAction)
     if (d.isNull()) return;
 
     CMachine m = csession.GetMachine();
-    m.MountMedium ("FD", 0, 0, d.GetId());
+    m.MountMedium ("Floppy Controller", 0, 0, d.GetId());
     AssertWrapperOk (m);
 
     if (m.isOk())
@@ -3266,7 +3266,7 @@ void VBoxConsoleWnd::captureDVD (QAction *aAction)
     if (d.isNull()) return;
 
     CMachine m = csession.GetMachine();
-    m.MountMedium ("IDE", 1, 0, d.GetId());
+    m.MountMedium ("IDE Controller", 1, 0, d.GetId());
     AssertWrapperOk (m);
 
     if (m.isOk())

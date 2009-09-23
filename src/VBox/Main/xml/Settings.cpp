@@ -1384,7 +1384,7 @@ void MachineConfigFile::readHardware(const xml::ElementNode &elmHardware,
                )
             {
                 StorageController sctl;
-                sctl.strName = "IDE";
+                sctl.strName = "IDE Controller";
                 sctl.storageBus = StorageBus_IDE;
 
                 Utf8Str strType;
@@ -1775,7 +1775,7 @@ void MachineConfigFile::readDVDAndFloppies_pre1_9(const xml::ElementNode &elmHar
             {
                 // create a new floppy controller and attach a floppy "attached device"
                 StorageController sctl;
-                sctl.strName = "FD";
+                sctl.strName = "Floppy Controller";
                 sctl.storageBus = StorageBus_Floppy;
                 sctl.controllerType = StorageControllerType_I82078;
                 sctl.ulPortCount = 1;

@@ -1451,7 +1451,7 @@ int Appliance::importFS(TaskImportOVF *pTask)
             if (vsdeHDCIDE.size() == 1)
             {
                 ComPtr<IStorageController> pController;
-                rc = pNewMachine->GetStorageControllerByName(Bstr("IDE"), pController.asOutParam());
+                rc = pNewMachine->GetStorageControllerByName(Bstr("IDE Controller"), pController.asOutParam());
                 if (FAILED(rc)) throw rc;
 
                 const char *pcszIDEType = vsdeHDCIDE.front()->strVbox.c_str();
@@ -1688,7 +1688,7 @@ int Appliance::importFS(TaskImportOVF *pTask)
                                 // the device number can be either 0 or 1, to specify the master or the slave device,
                                 // respectively. For the secondary IDE controller, the device number is always 1 because
                                 // the master device is reserved for the CD-ROM drive.
-                                mhda.controllerType = Bstr("IDE");
+                                mhda.controllerType = Bstr("IDE Controller");
                                 switch (vd.ulAddressOnParent)
                                 {
                                     case 0:     // interpret this as primary master
@@ -4373,7 +4373,7 @@ STDMETHODIMP Machine::Export(IAppliance *aAppliance, IVirtualSystemDescription *
 
 //     <const name="HardDiskControllerIDE" value="6" />
         ComPtr<IStorageController> pController;
-        rc = GetStorageControllerByName(Bstr("IDE"), pController.asOutParam());
+        rc = GetStorageControllerByName(Bstr("IDE Controller"), pController.asOutParam());
         if (FAILED(rc)) throw rc;
         Utf8Str strVbox;
         StorageControllerType_T ctlr;
