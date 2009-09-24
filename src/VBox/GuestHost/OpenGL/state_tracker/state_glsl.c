@@ -798,7 +798,6 @@ static void crStateGLSLCreateProgramCB(unsigned long key, void *data1, void *dat
 
 DECLEXPORT(void) STATE_APIENTRY crStateGLSLSwitch(CRContext *from, CRContext *to)
 {
-    /*@todo*/
     if (to->glsl.bResyncNeeded)
     {
         to->glsl.bResyncNeeded = GL_FALSE;
