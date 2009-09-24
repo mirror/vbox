@@ -351,7 +351,7 @@ RTR3DECL(int) RTPathSetTimesEx(const char *pszPath, PCRTTIMESPEC pAccessTime, PC
     if (RT_SUCCESS(rc))
     {
         HANDLE hFile;
-        if (fOpen & RTPATH_F_FOLLOW_LINK)
+        if (fFlags & RTPATH_F_FOLLOW_LINK)
             hFile = CreateFileW(pwszPath,
                                 FILE_WRITE_ATTRIBUTES,   /* dwDesiredAccess */
                                 FILE_SHARE_WRITE | FILE_SHARE_READ | FILE_SHARE_DELETE, /* dwShareMode */
