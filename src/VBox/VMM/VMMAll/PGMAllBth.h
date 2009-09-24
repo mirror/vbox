@@ -2241,7 +2241,7 @@ PGM_BTH_DECL(int, CheckPageFault)(PVMCPU pVCpu, uint32_t uErr, PSHWPDE pPdeDst, 
                     SHWPDE PdeDst = *pPdeDst;
 
                     STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_MID_Z(Stat,DirtyPageTrap));
-                    Assert(PdeDst.b.u1Write);
+                    Assert(pPdeSrc->b.u1Write);
 
                     /* Note: No need to invalidate this entry on other VCPUs as a stale TLB entry will not harm; write access will simply
                      *       fault again and take this path to only invalidate the entry.
@@ -2377,7 +2377,7 @@ PGM_BTH_DECL(int, CheckPageFault)(PVMCPU pVCpu, uint32_t uErr, PSHWPDE pPdeDst, 
                             LogFlow(("DIRTY page trap addr=%RGv\n", GCPtrPage));
                             STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_MID_Z(Stat,DirtyPageTrap));
 
-                            Assert(PteDst.n.u1Write);
+                            Assert(pPteSrc->n.u1Write);
 
                             /* Note: No need to invalidate this entry on other VCPUs as a stale TLB entry will not harm; write access will simply
                              *       fault again and take this path to only invalidate the entry.
