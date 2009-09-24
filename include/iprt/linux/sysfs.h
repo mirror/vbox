@@ -35,6 +35,7 @@
 #include <iprt/types.h>
 #include <iprt/stdarg.h>
 
+#include <sys/types.h>
 
 RT_C_DECLS_BEGIN
 
@@ -118,6 +119,24 @@ RTDECL(int64_t) RTLinuxSysFsReadIntFileV(unsigned uBase, const char *pszFormat, 
 RTDECL(int64_t) RTLinuxSysFsReadIntFile(unsigned uBase, const char *pszFormat, ...);
 
 /**
+ * Reads a device number from a sysfs file.
+ *
+ * @returns device number on success, 0 and errno on failure.
+ * @param   pszFormat   The filename format, either absolute or relative to "/sys/".
+ * @param   va          Format args.
+ */
+RTDECL(dev_t) RTLinuxSysFsReadDevNumFileV(const char *pszFormat, va_list va);
+
+/**
+ * Reads a device number from a sysfs file.
+ *
+ * @returns device number on success, 0 and errno on failure.
+ * @param   pszFormat   The filename format, either absolute or relative to "/sys/".
+ * @param   ...         Format args.
+ */
+RTDECL(dev_t) RTLinuxSysFsReadDevNumFile(const char *pszFormat, ...);
+
+/**
  * Reads a string from a sysfs file.  If the file contains a newline, we only
  * return the text up until there.
  *
@@ -176,6 +195,50 @@ RTDECL(ssize_t) RTLinuxSysFsGetLinkDestV(char *pszBuf, size_t cchBuf, const char
  * @param   ...         Format args.
  */
 RTDECL(ssize_t) RTLinuxSysFsGetLinkDest(char *pszBuf, size_t cchBuf, const char *pszFormat, ...);
+
+/**
+ * Find the path of a device node under /dev, given then device number.  This
+ * function will recursively search under /dev until it finds a device node
+ * matching @a devnum, and store the path into @a pszBuf.  The caller may
+ * provide an expected path in pszSuggestion, which will be tried before
+ * searching, but due to the variance in Linux systems it can be hard to always
+ * correctly predict the path.
+ * 
+ * @returns the number of characters written on success, -1 and errno on
+ *          failure
+ * @returns -1 and ENOENT if no matching device node could be found
+ * @param  devNum         the device number to search for
+ * @param  fMode          the type of device - only RTFS_TYPE_DEV_CHAR
+ *                        and RTFS_TYPE_DEV_BLOCK are valid values
+ * @param  pszBuf         where to store the path
+ * @param  cchBuf         the size of the buffer
+ * @param  pszSuggestion  the expected path format of the device node, either
+ *                        absolute or relative to "/dev" (optional)
+ * @param  va             Format args.
+ */
+RTDECL(ssize_t) RTLinuxFindDevicePathV(dev_t devNum, RTFMODE fMode, char *pszBuf, size_t cchBuf, const char *pszSuggestion, va_list va);
+
+/**
+ * Find the path of a device node under /dev, given then device number.  This
+ * function will recursively search under /dev until it finds a device node
+ * matching @a devnum, and store the path into @a pszBuf.  The caller may
+ * provide an expected path in pszSuggestion, which will be tried before
+ * searching, but due to the variance in Linux systems it can be hard to always
+ * correctly predict the path.
+ * 
+ * @returns the number of characters written on success, -1 and errno on
+ *          failure
+ * @returns -1 and ENOENT if no matching device node could be found
+ * @param  devNum         the device number to search for
+ * @param  fMode          the type of device - only RTFS_TYPE_DEV_CHAR
+ *                        and RTFS_TYPE_DEV_BLOCK are valid values
+ * @param  pszBuf         where to store the path
+ * @param  cchBuf         the size of the buffer
+ * @param  pszSuggestion  the expected path format of the device node, either
+ *                        absolute or relative to "/dev" (optional)
+ * @param  ...            Format args.
+ */
+RTDECL(ssize_t) RTLinuxFindDevicePath(dev_t devNum, RTFMODE fMode, char *pszBuf, size_t cchBuf, const char *pszSuggestion, ...);
 
 /** @} */
 
