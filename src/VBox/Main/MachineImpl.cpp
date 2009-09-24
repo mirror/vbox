@@ -53,8 +53,6 @@
 # include "USBProxyService.h"
 #endif
 
-#include "VirtualBoxXMLUtil.h"
-
 #include "Logging.h"
 #include "Performance.h"
 

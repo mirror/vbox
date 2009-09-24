@@ -23,8 +23,7 @@
 #include <iprt/xml_cpp.h>
 #include <iprt/stream.h>
 #include <iprt/ctype.h>
-
-#include "VirtualBoxXMLUtil.h"
+#include <iprt/file.h>
 
 // generated header
 #include "SchemaDefs.h"
@@ -33,6 +32,48 @@
 
 using namespace com;
 using namespace settings;
+
+////////////////////////////////////////////////////////////////////////////////
+//
+// Defines
+//
+////////////////////////////////////////////////////////////////////////////////
+
+/** VirtualBox XML settings namespace */
+#define VBOX_XML_NAMESPACE      "http://www.innotek.de/VirtualBox-settings"
+
+/** VirtualBox XML settings version number substring ("x.y")  */
+#define VBOX_XML_VERSION        "1.9"
+
+/** VirtualBox XML settings version platform substring */
+#if defined (RT_OS_DARWIN)
+#   define VBOX_XML_PLATFORM     "macosx"
+#elif defined (RT_OS_FREEBSD)
+#   define VBOX_XML_PLATFORM     "freebsd"
+#elif defined (RT_OS_LINUX)
+#   define VBOX_XML_PLATFORM     "linux"
+#elif defined (RT_OS_NETBSD)
+#   define VBOX_XML_PLATFORM     "netbsd"
+#elif defined (RT_OS_OPENBSD)
+#   define VBOX_XML_PLATFORM     "openbsd"
+#elif defined (RT_OS_OS2)
+#   define VBOX_XML_PLATFORM     "os2"
+#elif defined (RT_OS_SOLARIS)
+#   define VBOX_XML_PLATFORM     "solaris"
+#elif defined (RT_OS_WINDOWS)
+#   define VBOX_XML_PLATFORM     "windows"
+#else
+#   error Unsupported platform!
+#endif
+
+/** VirtualBox XML settings full version string ("x.y-platform") */
+#define VBOX_XML_VERSION_FULL   VBOX_XML_VERSION "-" VBOX_XML_PLATFORM
+
+////////////////////////////////////////////////////////////////////////////////
+//
+// Internal data
+//
+////////////////////////////////////////////////////////////////////////////////
 
 /**
  * Opaque data structore for ConfigFileBase (only declared
@@ -44,7 +85,9 @@ struct ConfigFileBase::Data
     Data()
         : pParser(NULL),
           pDoc(NULL),
-          pelmRoot(NULL)
+          pelmRoot(NULL),
+          sv(SettingsVersion_Null),
+          svRead(SettingsVersion_Null)
     {}
 
     ~Data()
@@ -58,8 +101,12 @@ struct ConfigFileBase::Data
     xml::XmlFileParser      *pParser;
     xml::Document           *pDoc;
     xml::ElementNode        *pelmRoot;
+
     com::Utf8Str            strSettingsVersionFull;     // e.g. "1.7-linux"
-    SettingsVersion_T       sv;                         // e.g. SETTINGS_VERSION_1_7
+    SettingsVersion_T       sv;                         // e.g. SettingsVersion_v1_7
+
+    SettingsVersion_T       svRead;                     // settings version that the original file had when it was read,
+                                                        // or SettingsVersion_Null if none
 
     void cleanup()
     {
@@ -109,6 +156,12 @@ public:
         setWhat(str.c_str());
     }
 };
+
+////////////////////////////////////////////////////////////////////////////////
+//
+// ConfigFileBase
+//
+////////////////////////////////////////////////////////////////////////////////
 
 /**
  * Constructor. Allocates the XML internals.
@@ -198,6 +251,10 @@ ConfigFileBase::ConfigFileBase(const com::Utf8Str *pstrFilename)
 
         if (m->sv == SettingsVersion_Null)
             throw ConfigFileError(this, m->pelmRoot, N_("Cannot handle settings version '%s'"), m->strSettingsVersionFull.c_str());
+
+        // remember the settings version we read in case it gets upgraded later,
+        // so we know when to make backups
+        m->svRead = m->sv;
     }
     else
     {
@@ -424,7 +481,8 @@ void ConfigFileBase::readUSBDeviceFilters(const xml::ElementNode &elmDeviceFilte
 /**
  * Creates a new stub xml::Document in the m->pDoc member with the
  * root "VirtualBox" element set up. This is used by both
- * MainConfigFile and MachineConfigFile when writing out their XML.
+ * MainConfigFile and MachineConfigFile at the beginning of writing
+ * out their XML.
  *
  * Before calling this, it is the responsibility of the caller to
  * set the "sv" member to the required settings version that is to
@@ -458,14 +516,38 @@ void ConfigFileBase::createStubDocument()
         break;
 
         default:
-            // silently upgrade if necessary
+            // silently upgrade if this is less than 1.7 because that's the oldest we can write
             pcszVersion = "1.7";
             m->sv = SettingsVersion_v1_7;
         break;
     }
+
     m->pelmRoot->setAttribute("version", Utf8StrFmt("%s-%s",
                                                     pcszVersion,
                                                     VBOX_XML_PLATFORM));       // e.g. "linux"
+
+    // since this gets called before the XML document is actually written out
+    // do this, this is where we must check whether we're upgrading the settings
+    // version and need to make a backup, so the user can go back to an earlier
+    // VirtualBox version and recover his old settings files.
+    if (    (m->svRead != SettingsVersion_Null)     // old file exists?
+         && (m->svRead < m->sv)                     // we're upgrading?
+       )
+    {
+        // compose new filename: strip off trailing ".xml"
+        Utf8Str strFilenameNew = m->strFilename.substr(0, m->strFilename.length() - 4);
+        // and append something likd "-1.3-linux.xml"
+        strFilenameNew.append("-");
+        strFilenameNew.append(m->strSettingsVersionFull);       // e.g. "1.3-linux"
+        strFilenameNew.append(".xml");
+
+        RTFileMove(m->strFilename.c_str(),
+                   strFilenameNew.c_str(),
+                   0);      // no RTFILEMOVE_FLAGS_REPLACE
+
+        // do this only once
+        m->svRead = SettingsVersion_Null;
+    }
 }
 
 /**
@@ -574,6 +656,13 @@ bool ConfigFileBase::fileExists()
 {
     return m->fFileExists;
 }
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+// MainConfigFile
+//
+////////////////////////////////////////////////////////////////////////////////
 
 /**
  * Reads one <MachineEntry> from the main VirtualBox.xml file.
@@ -2134,6 +2223,12 @@ void MachineConfigFile::readMachine(const xml::ElementNode &elmMachine)
         throw ConfigFileError(this, &elmMachine, N_("Required Machine/@uuid or @name attributes is missing"));
 }
 
+////////////////////////////////////////////////////////////////////////////////
+//
+// MachineConfigFile
+//
+////////////////////////////////////////////////////////////////////////////////
+
 /**
  * Constructor.
  *
@@ -2168,6 +2263,7 @@ MachineConfigFile::MachineConfigFile(const Utf8Str *pstrFilename)
                 readMachine(*pelmRootChild);
         }
 
+        // clean up memory allocated by XML engine
         clearDocument();
     }
 }

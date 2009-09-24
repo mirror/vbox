@@ -64,16 +64,11 @@
 #include "DHCPServerRunner.h"
 #include "DHCPServerImpl.h"
 
-#include "VirtualBoxXMLUtil.h"
-
 #include "Logging.h"
 
 #ifdef RT_OS_WINDOWS
 # include "win/svchlp.h"
 #endif
-
-// #include <stdio.h>
-// #include <stdlib.h>
 
 // defines
 /////////////////////////////////////////////////////////////////////////////
