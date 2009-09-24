@@ -630,7 +630,11 @@ static DECLCALLBACK(int)  pgmR3RelocateHyperVirtHandler(PAVLROGCPTRNODECORE pNod
 #ifdef VBOX_STRICT
 static DECLCALLBACK(void) pgmR3ResetNoMorePhysWritesFlag(PVM pVM, VMSTATE enmState, VMSTATE enmOldState, void *pvUser);
 #endif
-static DECLCALLBACK(int)  pgmR3Save(PVM pVM, PSSMHANDLE pSSM);
+static DECLCALLBACK(int)  pgmR3LivePrep(PVM pVM, PSSMHANDLE pSSM);
+static DECLCALLBACK(int)  pgmR3LiveExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uPass);
+static DECLCALLBACK(int)  pgmR3LiveVote(PVM pVM, PSSMHANDLE pSSM);
+static DECLCALLBACK(int)  pgmR3SaveExec(PVM pVM, PSSMHANDLE pSSM);
+static DECLCALLBACK(int)  pgmR3SaveDone(PVM pVM, PSSMHANDLE pSSM);
 static DECLCALLBACK(int)  pgmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass);
 static int                pgmR3ModeDataInit(PVM pVM, bool fResolveGCAndR0);
 static void               pgmR3ModeDataSwitch(PVM pVM, PVMCPU pVCpu, PGMMODE enmShw, PGMMODE enmGst);
@@ -1280,8 +1284,8 @@ VMMR3DECL(int) PGMR3Init(PVM pVM)
     PGMRegisterStringFormatTypes();
 
     rc = SSMR3RegisterInternal(pVM, "pgm", 1, PGM_SAVED_STATE_VERSION, (size_t)cbRam + sizeof(PGM),
-                               NULL, NULL, NULL,
-                               NULL, pgmR3Save, NULL,
+                               pgmR3LivePrep, pgmR3LiveExec, pgmR3LiveVote,
+                               NULL, pgmR3SaveExec, pgmR3SaveDone,
                                NULL, pgmR3Load, NULL);
     if (RT_FAILURE(rc))
         return rc;
@@ -2365,6 +2369,159 @@ static int pgmR3SaveShadowedRomPage(PVM pVM, PSSMHANDLE pSSM, PPGMPAGE pPage, RT
     return rc;
 }
 
+
+/**
+ * Prepare for a live save operation.
+ *
+ * This will attempt to allocate and initialize the tracking structures.  It
+ * will also prepare for write monitoring of pages and initialize PGM::LiveSave.
+ * pgmR3SaveDone will do the cleanups.
+ *
+ * @returns VBox status code.
+ *
+ * @param   pVM         The VM handle.
+ * @param   pSSM        The SSM handle.
+ */
+static DECLCALLBACK(int) pgmR3LivePrep(PVM pVM, PSSMHANDLE pSSM)
+{
+    /*
+     * Indicate that we will be using the write monitoring.
+     */
+    pgmLock(pVM);
+    /** @todo find a way of mediating this when more users are added. */
+    if (pVM->pgm.s.fPhysWriteMonitoringEngaged)
+    {
+        pgmUnlock(pVM);
+        AssertLogRelFailedReturn(VERR_INTERNAL_ERROR_2);
+    }
+    pVM->pgm.s.fPhysWriteMonitoringEngaged = true;
+    pgmUnlock(pVM);
+
+    /*
+     * Initialize the statistics.
+     */
+    pVM->pgm.s.LiveSave.cReadyPages = 0;
+    pVM->pgm.s.LiveSave.cDirtyPages = 0;
+    pVM->pgm.s.LiveSave.cMmioPages  = 0;
+
+    /*
+     * Try allocating tracking structures for the ram ranges.
+     *
+     * To avoid lock contention, we leave the lock every time we're allocating
+     * a new array.  This means we'll have to ditch the allocation and start
+     * all over again if the RAM range list changes in-between.
+     *
+     * Note! pgmR3SaveDone will always be called and it is therefore responsible
+     *       for cleaning up.
+     */
+    PPGMRAMRANGE pCur;
+    pgmLock(pVM);
+    do
+    {
+        for (pCur = pVM->pgm.s.pRamRangesR3; pCur; pCur = pCur->pNextR3)
+        {
+            if (   !pCur->paLSPages
+                && !PGM_RAM_RANGE_IS_AD_HOC(pCur))
+            {
+                uint32_t const  idRamRangeGen = pVM->pgm.s.idRamRangesGen;
+                uint32_t const  cPages = pCur->cb >> PAGE_SHIFT;
+                pgmUnlock(pVM);
+                PPGMLIVESAVEPAGE paLSPages = (PPGMLIVESAVEPAGE)MMR3HeapAllocZ(pVM, MM_TAG_PGM, cPages * sizeof(PGMLIVESAVEPAGE));
+                if (!paLSPages)
+                    return VERR_NO_MEMORY;
+                pgmLock(pVM);
+                if (pVM->pgm.s.idRamRangesGen != idRamRangeGen)
+                {
+                    pgmUnlock(pVM);
+                    MMR3HeapFree(paLSPages);
+                    pgmLock(pVM);
+                    break;              /* try again */
+                }
+                pCur->paLSPages = paLSPages;
+
+                /*
+                 * Initialize the array.
+                 */
+                uint32_t iPage = cPages;
+                while (iPage-- > 0)
+                {
+                    PCPGMPAGE pPage = &pCur->aPages[iPage];
+                    paLSPages[iPage].uPassSaved = UINT32_MAX;
+                    paLSPages[iPage].cDirtied   = 0;
+                    paLSPages[iPage].u5Reserved = 0;
+                    switch (PGM_PAGE_GET_TYPE(pPage))
+                    {
+                        case PGMPAGETYPE_RAM:
+                        case PGMPAGETYPE_ROM_SHADOW:
+                        case PGMPAGETYPE_ROM:
+                            if (PGM_PAGE_IS_ZERO(pPage))
+                            {
+                                paLSPages[iPage].fZero  = 1;
+                                paLSPages[iPage].fDirty = 0;
+                                pVM->pgm.s.LiveSave.cReadyPages++;
+                            }
+                            else
+                            {
+                                paLSPages[iPage].fZero  = 0;
+                                paLSPages[iPage].fDirty = 1;
+                                pVM->pgm.s.LiveSave.cDirtyPages++;
+                            }
+                            paLSPages[iPage].fMmio  = 0;
+                            break;
+                        default:
+                            AssertMsgFailed(("%R[pgmpage]", pPage));
+                        case PGMPAGETYPE_MMIO2:
+                        case PGMPAGETYPE_MMIO2_ALIAS_MMIO:
+                            paLSPages[iPage].fZero  = 0;
+                            paLSPages[iPage].fDirty = 1;
+                            paLSPages[iPage].fMmio  = 1;
+                            pVM->pgm.s.LiveSave.cMmioPages++;
+                            break;
+                        case PGMPAGETYPE_MMIO:
+                            paLSPages[iPage].fZero  = 1;
+                            paLSPages[iPage].fDirty = 1;
+                            paLSPages[iPage].fMmio  = 1;
+                            pVM->pgm.s.LiveSave.cMmioPages++;
+                            break;
+                    }
+                }
+            }
+        }
+    } while (pCur);
+    pgmUnlock(pVM);
+
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Execute a live save pass.
+ *
+ * @returns VBox status code.
+ *
+ * @param   pVM         The VM handle.
+ * @param   pSSM        The SSM handle.
+ */
+static DECLCALLBACK(int)  pgmR3LiveExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uPass)
+{
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Votes on whether the live save phase is done or not.
+ *
+ * @returns VBox status code.
+ *
+ * @param   pVM         The VM handle.
+ * @param   pSSM        The SSM handle.
+ */
+static DECLCALLBACK(int)  pgmR3LiveVote(PVM pVM, PSSMHANDLE pSSM)
+{
+    return VINF_SUCCESS;
+}
+
+
 /** PGM fields to save/load. */
 static const SSMFIELD s_aPGMFields[] =
 {
@@ -2421,7 +2578,7 @@ static const SSMFIELD s_aPGMFields_Old[] =
  * @param   pVM             VM Handle.
  * @param   pSSM            SSM operation handle.
  */
-static DECLCALLBACK(int) pgmR3Save(PVM pVM, PSSMHANDLE pSSM)
+static DECLCALLBACK(int) pgmR3SaveExec(PVM pVM, PSSMHANDLE pSSM)
 {
     int         rc;
     unsigned    i;
@@ -2505,6 +2662,74 @@ static DECLCALLBACK(int) pgmR3Save(PVM pVM, PSSMHANDLE pSSM)
 
     pgmUnlock(pVM);
     return SSMR3PutU32(pSSM, ~0); /* terminator. */
+}
+
+
+/**
+ * Cleans up after an save state operation.
+ *
+ * @returns VBox status code.
+ * @param   pVM             VM Handle.
+ * @param   pSSM            SSM operation handle.
+ */
+static DECLCALLBACK(int) pgmR3SaveDone(PVM pVM, PSSMHANDLE pSSM)
+{
+    /*
+     * Free the tracking arrays and disable write monitoring.
+     *
+     * Play nice with the PGM lock in case we're called while the VM is still
+     * running.  This means we have to delay the freeing since we wish to use
+     * paLSPages as an indicator of which RAM ranges which we need to scan for
+     * write monitored pages.
+     */
+    void *pvToFree = NULL;
+    PPGMRAMRANGE pCur;
+    uint32_t cMonitoredPages = 0;
+    pgmLock(pVM);
+    do
+    {
+        for (pCur = pVM->pgm.s.pRamRangesR3; pCur; pCur = pCur->pNextR3)
+        {
+            if (pCur->paLSPages)
+            {
+                if (pvToFree)
+                {
+                    uint32_t idRamRangesGen = pVM->pgm.s.idRamRangesGen;
+                    pgmUnlock(pVM);
+                    MMR3HeapFree(pvToFree);
+                    pvToFree = NULL;
+                    pgmLock(pVM);
+                    if (idRamRangesGen != pVM->pgm.s.idRamRangesGen)
+                        break;          /* start over again. */
+                }
+
+                pvToFree = pCur->paLSPages;
+                pCur->paLSPages = NULL;
+
+                uint32_t iPage = pCur->cb >> PAGE_SHIFT;
+                while (iPage--)
+                {
+                    PPGMPAGE pPage = &pCur->aPages[iPage];
+                    PGM_PAGE_CLEAR_WRITTEN_TO(pPage);
+                    if (PGM_PAGE_GET_STATE(pPage) == PGM_PAGE_STATE_WRITE_MONITORED)
+                    {
+                        PGM_PAGE_SET_STATE(pPage, PGM_PAGE_STATE_ALLOCATED);
+                        cMonitoredPages++;
+                    }
+                }
+            }
+        }
+    } while (pCur);
+
+    /** @todo this is blindly assuming that we're the only user of write
+     *        monitoring. Fix this when more users are added. */
+    pVM->pgm.s.fPhysWriteMonitoringEngaged = false;
+    pgmUnlock(pVM);
+
+    MMR3HeapFree(pvToFree);
+    pvToFree = NULL;
+
+    return VINF_SUCCESS;
 }
 
 
