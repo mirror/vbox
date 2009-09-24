@@ -3194,11 +3194,14 @@ static bool pgmPoolTrackFlushGCPhysPTInt(PVM pVM, PCPGMPAGE pPhysPage, bool fFlu
             for (unsigned i = pPage->iFirstPresent; i < RT_ELEMENTS(pPT->a); i++)
                 if ((pPT->a[i].u & (X86_PTE_PG_MASK | X86_PTE_P)) == u32)
                 {
-                    Log4(("pgmPoolTrackFlushGCPhysPTs: i=%d pte=%RX32 cRefs=%#x\n", i, pPT->a[i], cRefs));
-                    pPT->a[i].u = (pPT->a[i].u & u32AndMask) | u32OrMask;
-                    if (pPT->a[i].u & PGM_PTFLAGS_TRACK_DIRTY)
-                        pPT->a[i].n.u1Write = 0;    /* need to disallow writes when dirty bit tracking is still active. */
+                    X86PTE Pte;
 
+                    Log4(("pgmPoolTrackFlushGCPhysPTs: i=%d pte=%RX32 cRefs=%#x\n", i, pPT->a[i], cRefs));
+                    Pte.u = (pPT->a[i].u & u32AndMask) | u32OrMask;
+                    if (Pte.u & PGM_PTFLAGS_TRACK_DIRTY)
+                        Pte.n.u1Write = 0;    /* need to disallow writes when dirty bit tracking is still active. */
+
+                    ASMAtomicWriteSize(&pPT->a[i].u, Pte.u);
                     cRefs--;
                     if (!cRefs)
                         return bRet;
@@ -3257,11 +3260,14 @@ static bool pgmPoolTrackFlushGCPhysPTInt(PVM pVM, PCPGMPAGE pPhysPage, bool fFlu
             for (unsigned i = pPage->iFirstPresent; i < RT_ELEMENTS(pPT->a); i++)
                 if ((pPT->a[i].u & (X86_PTE_PAE_PG_MASK | X86_PTE_P)) == u64)
                 {
-                    Log4(("pgmPoolTrackFlushGCPhysPTs: i=%d pte=%RX64 cRefs=%#x\n", i, pPT->a[i], cRefs));
-                    pPT->a[i].u = (pPT->a[i].u & u64AndMask) | u64OrMask;
-                    if (pPT->a[i].u & PGM_PTFLAGS_TRACK_DIRTY)
-                        pPT->a[i].n.u1Write = 0;    /* need to disallow writes when dirty bit tracking is still active. */
+                    X86PTEPAE Pte;
 
+                    Log4(("pgmPoolTrackFlushGCPhysPTs: i=%d pte=%RX64 cRefs=%#x\n", i, pPT->a[i], cRefs));
+                    Pte.u = (pPT->a[i].u & u64AndMask) | u64OrMask;
+                    if (Pte.u & PGM_PTFLAGS_TRACK_DIRTY)
+                        Pte.n.u1Write = 0;    /* need to disallow writes when dirty bit tracking is still active. */
+
+                    ASMAtomicWriteSize(&pPT->a[i].u, Pte.u);
                     cRefs--;
                     if (!cRefs)
                         return bRet;
