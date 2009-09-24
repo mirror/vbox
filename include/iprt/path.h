@@ -148,7 +148,7 @@ RTDECL(bool) RTPathExists(const char *pszPath);
  *
  * @returns true if it exists and false if it doesn't.
  * @param   pszPath     The path to check.
- * @param   fFlags      RTPATH_F_ON_LINK or RPATH_F_FOLLOW_LINK.
+ * @param   fFlags      RTPATH_F_ON_LINK or RTPATH_F_FOLLOW_LINK.
  */
 RTDECL(bool) RTPathExistsEx(const char *pszPath, uint32_t fFlags);
 
@@ -557,7 +557,7 @@ RTR3DECL(int) RTPathQueryInfo(const char *pszPath, PRTFSOBJINFO pObjInfo, RTFSOB
  * @param   enmAdditionalAttribs
  *                      Which set of additional attributes to request.
  *                      Use RTFSOBJATTRADD_NOTHING if this doesn't matter.
- * @param   fFlags      RTPATH_F_ON_LINK or RPATH_F_FOLLOW_LINK.
+ * @param   fFlags      RTPATH_F_ON_LINK or RTPATH_F_FOLLOW_LINK.
  */
 RTR3DECL(int) RTPathQueryInfoEx(const char *pszPath, PRTFSOBJINFO pObjInfo, RTFSOBJATTRADD enmAdditionalAttribs, uint32_t fFlags);
 
@@ -624,7 +624,7 @@ RTR3DECL(int) RTPathSetTimes(const char *pszPath, PCRTTIMESPEC pAccessTime, PCRT
  * @param   pModificationTime   Pointer to the new modification time.
  * @param   pChangeTime         Pointer to the new change time. NULL if not to be changed.
  * @param   pBirthTime          Pointer to the new time of birth. NULL if not to be changed.
- * @param   fFlags              RTPATH_F_ON_LINK or RPATH_F_FOLLOW_LINK.
+ * @param   fFlags              RTPATH_F_ON_LINK or RTPATH_F_FOLLOW_LINK.
  *
  * @remark  The file system might not implement all these time attributes,
  *          the API will ignore the ones which aren't supported.
@@ -677,7 +677,7 @@ RTR3DECL(int) RTPathSetOwner(const char *pszPath, uint32_t uid, uint32_t gid);
  * @param   pszPath     Path to the file system object.
  * @param   uid         The new file owner user id. Use -1 (or ~0) to leave this unchanged.
  * @param   gid         The new group id. Use -1 (or ~0) to leave this unchanged.
- * @param   fFlags      RTPATH_F_ON_LINK or RPATH_F_FOLLOW_LINK.
+ * @param   fFlags      RTPATH_F_ON_LINK or RTPATH_F_FOLLOW_LINK.
  */
 RTR3DECL(int) RTPathSetOwnerEx(const char *pszPath, uint32_t uid, uint32_t gid, uint32_t fFlags);
 
