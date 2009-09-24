@@ -115,10 +115,6 @@ sf_dir_read_all (struct sf_glob_info *sf_g, struct sf_inode_info *sf_i,
 #endif
 int sf_get_volume_info(struct super_block *sb,STRUCT_STATFS *stat);
 
-#ifdef ALIGN
-#undef ALIGN
-#endif
-
 #ifdef __cplusplus
 # define CMC_API __attribute__ ((cdecl, regparm (0)))
 #else
