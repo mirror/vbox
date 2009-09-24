@@ -344,21 +344,21 @@ VBoxMediaManagerDlg::VBoxMediaManagerDlg (QWidget *aParent /* = 0 */,
 
     mNewAction->setIcon (VBoxGlobal::iconSetFull (
         QSize (22, 22), QSize (16, 16),
-        ":/vdm_new_22px.png", ":/vdm_new_16px.png",
-        ":/vdm_new_disabled_22px.png", ":/vdm_new_disabled_16px.png"));
+        ":/hd_new_22px.png", ":/hd_new_16px.png",
+        ":/hd_new_disabled_22px.png", ":/hd_new_disabled_16px.png"));
     mAddAction->setIcon (VBoxGlobal::iconSetFull (
         QSize (22, 22), QSize (16, 16),
-        ":/vdm_add_22px.png", ":/vdm_add_16px.png",
-        ":/vdm_add_disabled_22px.png", ":/vdm_add_disabled_16px.png"));
+        ":/hd_add_22px.png", ":/hd_add_16px.png",
+        ":/hd_add_disabled_22px.png", ":/hd_add_disabled_16px.png"));
 //  mEditAction->setIcon (VBoxGlobal::iconSet (":/guesttools_16px.png", ":/guesttools_disabled_16px.png"));
     mRemoveAction->setIcon (VBoxGlobal::iconSetFull (
         QSize (22, 22), QSize (16, 16),
-        ":/vdm_remove_22px.png", ":/vdm_remove_16px.png",
-        ":/vdm_remove_disabled_22px.png", ":/vdm_remove_disabled_16px.png"));
+        ":/hd_remove_22px.png", ":/hd_remove_16px.png",
+        ":/hd_remove_disabled_22px.png", ":/hd_remove_disabled_16px.png"));
     mReleaseAction->setIcon (VBoxGlobal::iconSetFull (
         QSize (22, 22), QSize (16, 16),
-        ":/vdm_release_22px.png", ":/vdm_release_16px.png",
-        ":/vdm_release_disabled_22px.png", ":/vdm_release_disabled_16px.png"));
+        ":/hd_release_22px.png", ":/hd_release_16px.png",
+        ":/hd_release_disabled_22px.png", ":/hd_release_disabled_16px.png"));
     mRefreshAction->setIcon (VBoxGlobal::iconSetFull (
         QSize (22, 22), QSize (16, 16),
         ":/refresh_22px.png", ":/refresh_16px.png",
