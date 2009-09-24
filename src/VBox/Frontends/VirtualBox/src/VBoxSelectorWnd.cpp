@@ -1003,11 +1003,12 @@ void VBoxSelectorWnd::vmStart (const QString &aUuid /*= QUuid_null*/)
     QString env;
 #if defined (Q_WS_X11)
     /* make sure the VM process will start on the same display as the Selector */
-    {
-        const char *display = RTEnvGet ("DISPLAY");
-        if (display)
-            env.sprintf ("DISPLAY=%s", display);
-    }
+    const char *display = RTEnvGet ("DISPLAY");
+    if (display)
+        env.append(QString("DISPLAY=%1\n").arg(display));
+    const char *xauth = RTEnvGet ("XAUTHORITY");
+    if (xauth)
+        env.append(QString("XAUTHORITY=%1\n").arg(xauth));
 #endif
 
     CProgress progress = vbox.OpenRemoteSession (session, id, "GUI/Qt", env);
