@@ -2542,7 +2542,14 @@ static int iscsiOpenImage(PISCSIIMAGE pImage, unsigned uOpenFlags)
     sr.cbSense = sizeof(sense);
     sr.pvSense = sense;
 
-    rc = iscsiCommand(pImage, &sr);
+    for (unsigned i = 0; i < 10; i++)
+    {
+        rc = iscsiCommand(pImage, &sr);
+        if (    (RT_SUCCESS(rc) && !sr.cbSense)
+            ||  RT_FAILURE(rc))
+            break;
+        rc = VERR_INVALID_STATE;
+    }
     if (RT_SUCCESS(rc))
     {
         if (!(uOpenFlags & VD_OPEN_FLAGS_READONLY) && data4[2] & 0x80)
