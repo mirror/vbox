@@ -113,23 +113,23 @@ PixmapPool::PixmapPool (QObject *aParent)
 {
     mPool.resize (MaxIndex);
 
-    mPool [AddControllerEn]  = QPixmap (":/add_host_iface_16px.png"); // TODO Update Icon!!!
-    mPool [AddControllerDis] = QPixmap (":/add_host_iface_disabled_16px.png"); // TODO Update Icon!!!
-    mPool [DelControllerEn]  = QPixmap (":/remove_host_iface_16px.png"); // TODO Update Icon!!!
-    mPool [DelControllerDis] = QPixmap (":/remove_host_iface_disabled_16px.png"); // TODO Update Icon!!!
+    mPool [AddControllerEn]  = QPixmap (":/add_host_iface_16px.png"); // TODO (":/controller_add_16px.png");
+    mPool [AddControllerDis] = QPixmap (":/add_host_iface_disabled_16px.png"); // TODO (":/controller_add_disabled_16px.png");
+    mPool [DelControllerEn]  = QPixmap (":/remove_host_iface_16px.png"); // TODO (":/controller_remove_16px.png");
+    mPool [DelControllerDis] = QPixmap (":/remove_host_iface_disabled_16px.png"); // TODO (":/controller_remove_disabled_16px.png");
 
-    mPool [AddAttachmentEn]  = QPixmap (":/vdm_add_16px.png"); // TODO Update Icon!!!
-    mPool [AddAttachmentDis] = QPixmap (":/vdm_add_disabled_16px.png"); // TODO Update Icon!!!
-    mPool [DelAttachmentEn]  = QPixmap (":/vdm_remove_16px.png"); // TODO Update Icon!!!
-    mPool [DelAttachmentDis] = QPixmap (":/vdm_remove_disabled_16px.png"); // TODO Update Icon!!!
+    mPool [AddAttachmentEn]  = QPixmap (":/attachment_add_16px.png");
+    mPool [AddAttachmentDis] = QPixmap (":/attachment_add_disabled_16px.png");
+    mPool [DelAttachmentEn]  = QPixmap (":/attachment_remove_16px.png");
+    mPool [DelAttachmentDis] = QPixmap (":/attachment_remove_disabled_16px.png");
 
     mPool [IDEController]    = QPixmap (":/ide_16px.png");
     mPool [SATAController]   = QPixmap (":/sata_16px.png");
     mPool [SCSIController]   = QPixmap (":/scsi_16px.png");
-    mPool [FloppyController] = QPixmap (":/fd_16px.png"); // TODO Update Icon!!!
+    mPool [FloppyController] = QPixmap (":/floppy_16px.png");
 
-    mPool [HDAttachmentEn]   = QPixmap (":/hd_16px.png"); // TODO Update Icon!!!
-    mPool [HDAttachmentDis]  = QPixmap (":/hd_disabled_16px.png"); // TODO Update Icon!!!
+    mPool [HDAttachmentEn]   = QPixmap (":/hd_16px.png");
+    mPool [HDAttachmentDis]  = QPixmap (":/hd_disabled_16px.png");
     mPool [CDAttachmentEn]   = QPixmap (":/cd_16px.png");
     mPool [CDAttachmentDis]  = QPixmap (":/cd_disabled_16px.png");
     mPool [FDAttachmentEn]   = QPixmap (":/fd_16px.png");
