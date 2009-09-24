@@ -659,8 +659,12 @@ static int VBoxNetFltSolarisModOpen(queue_t *pQueue, dev_t *pDev, int fOpenMode,
     }
 
     /*
-     * Check kernel credentials.
-     * Protects us to a minor degree, is someone uses kcred besides us, this check is not sufficient.
+     * Check that the request was initiated by our code.
+     *
+     * This ASSUMES that crdup() will return a copy with a unique address and
+     * not do any kind of clever pooling.  This check will when combined with
+     * g_VBoxNetFltSolarisMtx prevent races and that the instance gets
+     * associated with the wrong streams.
      */
     if (pCred != g_pVBoxNetFltSolarisCred)
     {
@@ -2072,7 +2076,7 @@ static int vboxNetFltSolarisAttachIp4(PVBOXNETFLTINS pThis, bool fAttach)
                                  */
                                 rc = RTSemFastMutexRequest(g_VBoxNetFltSolarisMtx);
                                 AssertRCReturn(rc, rc);
-                                
+
                                 if (fAttach)
                                 {
                                     g_VBoxNetFltSolarisInstance = pThis;
