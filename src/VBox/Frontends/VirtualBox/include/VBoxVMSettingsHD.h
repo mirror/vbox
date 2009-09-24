@@ -383,6 +383,7 @@ public:
         R_IsController,
         R_IsAttachment,
 
+        R_ToolTipType,
         R_IsMoreControllersPossible,
         R_IsMoreAttachmentsPossible,
 
@@ -427,6 +428,15 @@ public:
         R_AdderPoint
     };
 
+    enum ToolTipType
+    {
+        DefaultToolTip  = 0,
+        ExpanderToolTip = 1,
+        HDAdderToolTip  = 2,
+        CDAdderToolTip  = 3,
+        FDAdderToolTip  = 4
+    };
+
     StorageModel (QObject *aParent);
    ~StorageModel();
 
@@ -459,7 +469,10 @@ private:
 
     QPixmap mMinusPixmapEn;
     QPixmap mMinusPixmapDis;
+
+    ToolTipType mToolTipType;
 };
+Q_DECLARE_METATYPE (StorageModel::ToolTipType);
 
 /* Storage Delegate */
 class StorageDelegate : public QItemDelegate
@@ -535,6 +548,7 @@ private slots:
 
     void onDrawItemBranches (QPainter *aPainter, const QRect &aRect, const QModelIndex &aIndex);
 
+    void onMouseMoved (QMouseEvent *aEvent);
     void onMouseClicked (QMouseEvent *aEvent);
 
 private:

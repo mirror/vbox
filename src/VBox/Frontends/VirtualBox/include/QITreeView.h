@@ -41,6 +41,7 @@ signals:
 
     void currentItemChanged (const QModelIndex &aCurrent, const QModelIndex &aPrevious);
     void drawItemBranches (QPainter *aPainter, const QRect &aRect, const QModelIndex &aIndex) const;
+    void mouseMoved (QMouseEvent *aEvent);
     void mousePressed (QMouseEvent *aEvent);
     void mouseDoubleClicked (QMouseEvent *aEvent);
 
@@ -51,6 +52,7 @@ protected slots:
 protected:
 
     void drawBranches (QPainter *aPainter, const QRect &aRect, const QModelIndex &aIndex) const;
+    void mouseMoveEvent (QMouseEvent *aEvent);
     void mousePressEvent (QMouseEvent *aEvent);
     void mouseDoubleClickEvent (QMouseEvent *aEvent);
 };

@@ -464,7 +464,12 @@ QString ControllerItem::text() const
 
 QString ControllerItem::tip() const
 {
-    return QString();
+    return VBoxVMSettingsHD::tr ("<nobr><b>%1</b></nobr><br>"
+                                 "<nobr>Bus:&nbsp;&nbsp;%2</nobr><br>"
+                                 "<nobr>Type:&nbsp;&nbsp;%3</nobr>")
+                                 .arg (mCtrName)
+                                 .arg (vboxGlobal().toString (mCtrType->busType()))
+                                 .arg (vboxGlobal().toString (mCtrType->ctrType()));
 }
 
 QPixmap ControllerItem::pixmap()
@@ -831,6 +836,7 @@ void AttachmentItem::delChild (AbstractItem* /* aItem */)
 StorageModel::StorageModel (QObject *aParent)
     : QAbstractItemModel (aParent)
     , mRootItem (new RootItem)
+    , mToolTipType (DefaultToolTip)
 {
 }
 
@@ -904,7 +910,32 @@ QVariant StorageModel::data (const QModelIndex &aIndex, int aRole) const
         case Qt::ToolTipRole:
         {
             if (AbstractItem *item = static_cast <AbstractItem*> (aIndex.internalPointer()))
+            {
+                if (item->rtti() == AbstractItem::Type_ControllerItem)
+                {
+                    QString tip (item->tip());
+                    switch (mToolTipType)
+                    {
+                        case ExpanderToolTip:
+                            if (aIndex.child (0, 0).isValid())
+                                tip = VBoxVMSettingsHD::tr ("<nobr>Expand/Collapse&nbsp;Item</nobr>");
+                            break;
+                        case HDAdderToolTip:
+                            tip = VBoxVMSettingsHD::tr ("<nobr>Add&nbsp;Hard&nbsp;Disk</nobr>");
+                            break;
+                        case CDAdderToolTip:
+                            tip = VBoxVMSettingsHD::tr ("<nobr>Add&nbsp;CD/DVD&nbsp;Device</nobr>");
+                            break;
+                        case FDAdderToolTip:
+                            tip = VBoxVMSettingsHD::tr ("<nobr>Add&nbsp;Floppy&nbsp;Device</nobr>");
+                            break;
+                        default:
+                            break;
+                    }
+                    return tip;
+                }
                 return item->tip();
+            }
             return QString();
         }
 
@@ -963,6 +994,10 @@ QVariant StorageModel::data (const QModelIndex &aIndex, int aRole) const
             return false;
         }
 
+        case R_ToolTipType:
+        {
+            return QVariant::fromValue (mToolTipType);
+        }
         case R_IsMoreControllersPossible:
         {
             return rowCount (root()) < 16;
@@ -1208,6 +1243,12 @@ bool StorageModel::setData (const QModelIndex &aIndex, const QVariant &aValue, i
 
     switch (aRole)
     {
+        case R_ToolTipType:
+        {
+            mToolTipType = aValue.value <ToolTipType>();
+            emit dataChanged (aIndex, aIndex);
+            return true;
+        }
         case R_CtrName:
         {
             if (AbstractItem *item = static_cast <AbstractItem*> (aIndex.internalPointer()))
@@ -1518,6 +1559,7 @@ VBoxVMSettingsHD::VBoxVMSettingsHD()
     /* Storage Model/View */
     mStorageModel = new StorageModel (mTwStorageTree);
     StorageDelegate *storageDelegate = new StorageDelegate (mTwStorageTree);
+    mTwStorageTree->setMouseTracking (true);
     mTwStorageTree->setContextMenuPolicy (Qt::CustomContextMenu);
     mTwStorageTree->setModel (mStorageModel);
     mTwStorageTree->setItemDelegate (storageDelegate);
@@ -1578,6 +1620,8 @@ VBoxVMSettingsHD::VBoxVMSettingsHD()
              this, SLOT (onContextMenuRequested (const QPoint&)));
     connect (mTwStorageTree, SIGNAL (drawItemBranches (QPainter*, const QRect&, const QModelIndex&)),
              this, SLOT (onDrawItemBranches (QPainter *, const QRect &, const QModelIndex &)));
+    connect (mTwStorageTree, SIGNAL (mouseMoved (QMouseEvent*)),
+             this, SLOT (onMouseMoved (QMouseEvent*)));
     connect (mTwStorageTree, SIGNAL (mousePressed (QMouseEvent*)),
              this, SLOT (onMouseClicked (QMouseEvent*)));
     connect (mTwStorageTree, SIGNAL (mouseDoubleClicked (QMouseEvent*)),
@@ -1733,14 +1777,18 @@ void VBoxVMSettingsHD::retranslateUi()
                                      "currently selected controller as parent."));
     mDelAttAction->setWhatsThis (tr ("Removes attachment highlighted in Storage Tree."));
 
-    mAddCtrAction->setToolTip (mAddCtrAction->text().remove ('&') +
-        QString (" (%1)").arg (mAddCtrAction->shortcut().toString()));
-    mDelCtrAction->setToolTip (mDelCtrAction->text().remove ('&') +
-        QString (" (%1)").arg (mDelCtrAction->shortcut().toString()));
-    mAddAttAction->setToolTip (mAddAttAction->text().remove ('&') +
-        QString (" (%1)").arg (mAddAttAction->shortcut().toString()));
-    mDelAttAction->setToolTip (mDelAttAction->text().remove ('&') +
-        QString (" (%1)").arg (mDelAttAction->shortcut().toString()));
+    mAddCtrAction->setToolTip (QString ("<nobr>%1&nbsp;(%2)")
+                               .arg (mAddCtrAction->text().remove ('&'))
+                               .arg (mAddCtrAction->shortcut().toString()));
+    mDelCtrAction->setToolTip (QString ("<nobr>%1&nbsp;(%2)")
+                               .arg (mDelCtrAction->text().remove ('&'))
+                               .arg (mDelCtrAction->shortcut().toString()));
+    mAddAttAction->setToolTip (QString ("<nobr>%1&nbsp;(%2)")
+                               .arg (mAddAttAction->text().remove ('&'))
+                               .arg (mAddAttAction->shortcut().toString()));
+    mDelAttAction->setToolTip (QString ("<nobr>%1&nbsp;(%2)")
+                               .arg (mDelAttAction->text().remove ('&'))
+                               .arg (mDelAttAction->shortcut().toString()));
 }
 
 void VBoxVMSettingsHD::showEvent (QShowEvent *aEvent)
@@ -2156,12 +2204,99 @@ void VBoxVMSettingsHD::onDrawItemBranches (QPainter *aPainter, const QRect &aRec
     aPainter->restore();
 }
 
+void VBoxVMSettingsHD::onMouseMoved (QMouseEvent *aEvent)
+{
+    QModelIndex index = mTwStorageTree->indexAt (aEvent->pos());
+    QRect indexRect = mTwStorageTree->visualRect (index);
+
+    /* Expander tool-tip */
+    if (mStorageModel->data (index, StorageModel::R_IsController).toBool())
+    {
+        QRect expanderRect = mStorageModel->data (index, StorageModel::R_ItemPixmapRect).toRect();
+        expanderRect.translate (indexRect.x(), indexRect.y());
+        if (expanderRect.contains (aEvent->pos()))
+        {
+            aEvent->setAccepted (true);
+            if (mStorageModel->data (index, StorageModel::R_ToolTipType).value <StorageModel::ToolTipType>() != StorageModel::ExpanderToolTip)
+                mStorageModel->setData (index, QVariant::fromValue (StorageModel::ExpanderToolTip), StorageModel::R_ToolTipType);
+            return;
+        }
+    }
+
+    /* Adder tool-tip */
+    if (mStorageModel->data (index, StorageModel::R_IsController).toBool() &&
+        mTwStorageTree->currentIndex() == index)
+    {
+        DeviceTypeList devicesList (mStorageModel->data (index, StorageModel::R_CtrDevices).value <DeviceTypeList>());
+        for (int i = 0; i < devicesList.size(); ++ i)
+        {
+            KDeviceType deviceType = devicesList [i];
+
+            QRect deviceRect;
+            switch (deviceType)
+            {
+                case KDeviceType_HardDisk:
+                {
+                    deviceRect = mStorageModel->data (index, StorageModel::R_HDPixmapRect).toRect();
+                    break;
+                }
+                case KDeviceType_DVD:
+                {
+                    deviceRect = mStorageModel->data (index, StorageModel::R_CDPixmapRect).toRect();
+                    break;
+                }
+                case KDeviceType_Floppy:
+                {
+                    deviceRect = mStorageModel->data (index, StorageModel::R_FDPixmapRect).toRect();
+                    break;
+                }
+                default:
+                    break;
+            }
+            deviceRect.translate (indexRect.x() + indexRect.width(), indexRect.y());
+
+            if (deviceRect.contains (aEvent->pos()))
+            {
+                aEvent->setAccepted (true);
+                switch (deviceType)
+                {
+                    case KDeviceType_HardDisk:
+                    {
+                        if (mStorageModel->data (index, StorageModel::R_ToolTipType).value <StorageModel::ToolTipType>() != StorageModel::HDAdderToolTip)
+                            mStorageModel->setData (index, QVariant::fromValue (StorageModel::HDAdderToolTip), StorageModel::R_ToolTipType);
+                        break;
+                    }
+                    case KDeviceType_DVD:
+                    {
+                        if (mStorageModel->data (index, StorageModel::R_ToolTipType).value <StorageModel::ToolTipType>() != StorageModel::CDAdderToolTip)
+                            mStorageModel->setData (index, QVariant::fromValue (StorageModel::CDAdderToolTip), StorageModel::R_ToolTipType);
+                        break;
+                    }
+                    case KDeviceType_Floppy:
+                    {
+                        if (mStorageModel->data (index, StorageModel::R_ToolTipType).value <StorageModel::ToolTipType>() != StorageModel::FDAdderToolTip)
+                            mStorageModel->setData (index, QVariant::fromValue (StorageModel::FDAdderToolTip), StorageModel::R_ToolTipType);
+                        break;
+                    }
+                    default:
+                        break;
+                }
+                return;
+            }
+        }
+    }
+
+    /* Default tool-tip */
+    if (mStorageModel->data (index, StorageModel::R_ToolTipType).value <StorageModel::ToolTipType>() != StorageModel::DefaultToolTip)
+        mStorageModel->setData (index, StorageModel::DefaultToolTip, StorageModel::R_ToolTipType);
+}
+
 void VBoxVMSettingsHD::onMouseClicked (QMouseEvent *aEvent)
 {
     QModelIndex index = mTwStorageTree->indexAt (aEvent->pos());
     QRect indexRect = mTwStorageTree->visualRect (index);
 
-    /* Process expander icon */
+    /* Expander icon */
     if (mStorageModel->data (index, StorageModel::R_IsController).toBool())
     {
         QRect expanderRect = mStorageModel->data (index, StorageModel::R_ItemPixmapRect).toRect();
@@ -2174,7 +2309,7 @@ void VBoxVMSettingsHD::onMouseClicked (QMouseEvent *aEvent)
         }
     }
 
-    /* Process add-attachment icons */
+    /* Adder icons */
     if (mStorageModel->data (index, StorageModel::R_IsController).toBool() &&
         mTwStorageTree->currentIndex() == index)
     {
