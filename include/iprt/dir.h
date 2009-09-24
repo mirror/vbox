@@ -49,6 +49,9 @@ RT_C_DECLS_BEGIN
 /**
  * Check for the existence of a directory.
  *
+ * All symbolic links will be attemped resolved.  If that is undesirable, please
+ * use RTPathQueryInfo instead.
+ *
  * @returns true if exist and is a directory.
  * @returns false if not exists or isn't a directory.
  * @param   pszPath     Path to the directory.
