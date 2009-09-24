@@ -522,11 +522,14 @@ static int handleStartVM(HandlerArg *a)
         Bstr env;
 #if defined(RT_OS_LINUX) || defined(RT_OS_SOLARIS)
         /* make sure the VM process will start on the same display as VBoxManage */
-        {
-            const char *display = RTEnvGet ("DISPLAY");
-            if (display)
-                env = Utf8StrFmt ("DISPLAY=%s", display);
-        }
+        Utf8Str str;
+        const char *pszDisplay = RTEnvGet("DISPLAY");
+        if (pszDisplay)
+            str.append(Utf8StrFmt("DISPLAY=%s\n", pszDisplay));
+        const char *pszXAuth = RTEnvGet("XAUTHORITY");
+        if (pszXAuth)
+            str.append(Utf8StrFmt("XAUTHORITY=%s\n", pszXAuth));
+        env = Bstr(str);
 #endif
         ComPtr<IProgress> progress;
         CHECK_ERROR_RET(a->virtualBox, OpenRemoteSession(a->session, uuid, sessionType,
