@@ -40,7 +40,7 @@ namespace settings
 #include <list>
 
 class ATL_NO_VTABLE Host :
-    public VirtualBoxBaseWithChildren,
+    public VirtualBoxBase,
     public VirtualBoxSupportErrorInfoImpl<Host, IHost>,
     public VirtualBoxSupportTranslation<Host>,
     VBOX_SCRIPTABLE_IMPL(IHost)
@@ -108,9 +108,11 @@ public:
     /** Must be called from under this object's lock. */
     USBProxyService* usbProxyService();
 
+    HRESULT addChild(HostUSBDeviceFilter *pChild);
+    HRESULT removeChild(HostUSBDeviceFilter *pChild);
     VirtualBox* parent();
 
-    HRESULT onUSBDeviceFilterChange (HostUSBDeviceFilter *aFilter, BOOL aActiveChanged = FALSE);
+    HRESULT onUSBDeviceFilterChange(HostUSBDeviceFilter *aFilter, BOOL aActiveChanged = FALSE);
     void getUSBFilters(USBDeviceFilterList *aGlobalFiltes);
     HRESULT checkUSBProxyService();
 #endif /* !VBOX_WITH_USB */
@@ -132,7 +134,7 @@ private:
 
 #ifdef VBOX_WITH_USB
     /** specialization for IHostUSBDeviceFilter */
-    ComObjPtr<HostUSBDeviceFilter> getDependentChild(IHostUSBDeviceFilter *aFilter);
+//     ComObjPtr<HostUSBDeviceFilter> getDependentChild(IHostUSBDeviceFilter *aFilter);
 #endif /* VBOX_WITH_USB */
 
 #ifdef VBOX_WITH_RESOURCE_USAGE_API
