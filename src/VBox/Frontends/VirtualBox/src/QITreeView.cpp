@@ -46,6 +46,14 @@ void QITreeView::drawBranches (QPainter *aPainter, const QRect &aRect, const QMo
     QTreeView::drawBranches (aPainter, aRect, aIndex);
 }
 
+void QITreeView::mouseMoveEvent (QMouseEvent *aEvent)
+{
+    aEvent->setAccepted (false);
+    emit mouseMoved (aEvent);
+    if (!aEvent->isAccepted())
+        QTreeView::mouseMoveEvent (aEvent);
+}
+
 void QITreeView::mousePressEvent (QMouseEvent *aEvent)
 {
     aEvent->setAccepted (false);
