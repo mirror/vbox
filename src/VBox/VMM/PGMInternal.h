@@ -3143,7 +3143,7 @@ void            pgmHandlerVirtualDumpPhysPages(PVM pVM);
 # define pgmHandlerVirtualDumpPhysPages(a) do { } while (0)
 #endif
 DECLCALLBACK(void) pgmR3InfoHandlers(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs);
-
+int             pgmR3InitSavedState(PVM pVM, uint64_t cbRam);
 
 int             pgmPhysAllocPage(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys);
 int             pgmPhysPageLoadIntoTlb(PPGM pPGM, RTGCPHYS GCPhys);
