@@ -748,7 +748,7 @@ bool ElementNode::getAttributeValue(const char *pcszMatch, const char *&ppcsz) c
  * name and returns its value as a string.
  *
  * @param pcszMatch name of attribute to find.
- * @param str out: attribute value
+ * @param str out: attribute value; overwritten only if attribute was found
  * @return TRUE if attribute was found and str was thus updated.
  */
 bool ElementNode::getAttributeValue(const char *pcszMatch, iprt::MiniString &str) const
@@ -770,7 +770,7 @@ bool ElementNode::getAttributeValue(const char *pcszMatch, iprt::MiniString &str
  * function returns no error.
  *
  * @param pcszMatch name of attribute to find.
- * @param i out: attribute value
+ * @param i out: attribute value; overwritten only if attribute was found
  * @return TRUE if attribute was found and str was thus updated.
  */
 bool ElementNode::getAttributeValue(const char *pcszMatch, int32_t &i) const
@@ -791,7 +791,7 @@ bool ElementNode::getAttributeValue(const char *pcszMatch, int32_t &i) const
  * function returns no error.
  *
  * @param pcszMatch name of attribute to find.
- * @param i out: attribute value
+ * @param i out: attribute value; overwritten only if attribute was found
  * @return TRUE if attribute was found and str was thus updated.
  */
 bool ElementNode::getAttributeValue(const char *pcszMatch, uint32_t &i) const
@@ -833,7 +833,7 @@ bool ElementNode::getAttributeValue(const char *pcszMatch, int64_t &i) const
  * function returns no error.
  *
  * @param pcszMatch name of attribute to find.
- * @param i out: attribute value
+ * @param i out: attribute value; overwritten only if attribute was found
  * @return TRUE if attribute was found and str was thus updated.
  */
 bool ElementNode::getAttributeValue(const char *pcszMatch, uint64_t &i) const
@@ -853,7 +853,7 @@ bool ElementNode::getAttributeValue(const char *pcszMatch, uint64_t &i) const
  * "yes", "no", "1" or "0" as valid values.
  *
  * @param pcszMatch name of attribute to find.
- * @param i out: attribute value
+ * @param i out: attribute value; overwritten only if attribute was found
  * @return TRUE if attribute was found and str was thus updated.
  */
 bool ElementNode::getAttributeValue(const char *pcszMatch, bool &f) const
