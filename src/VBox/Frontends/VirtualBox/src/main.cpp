@@ -581,6 +581,13 @@ int main (int argc, char **argv, char **envp)
     if (RT_FAILURE(rc))
     {
         QApplication a (argc, &argv[0]);
+#ifdef Q_OS_SOLARIS
+        /* Solaris have some issue with cleanlooks style which leads to application
+         * crash in case of using it on Qt4.4 version, lets make the same substitute */
+        if (VBoxGlobal::qtRTVersionString().startsWith ("4.4") &&
+            qobject_cast <QCleanlooksStyle*> (QApplication::style()))
+            QApplication::setStyle (new QPlastiqueStyle);
+#endif
         QString msgTitle = QApplication::tr ("VirtualBox - Runtime Error");
         QString msgText = "<html>";
 
