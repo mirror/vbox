@@ -35,9 +35,10 @@
 #define LOG_GROUP RTLOGGROUP_DIR
 #include "internal/iprt.h"
 
-#include <iprt/path.h>
-#include <iprt/log.h>
+#include <iprt/dir.h>
 #include <iprt/err.h>
+#include <iprt/log.h>
+#include <iprt/path.h>
 
 
 RTDECL(bool) RTDirExists(const char *pszPath)
