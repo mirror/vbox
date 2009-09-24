@@ -364,3 +364,12 @@ GetFramebufferAttachmentParameterivEXT
 GenerateMipmapEXT
 LockArraysEXT
 UnlockArraysEXT
+CompileShader
+DeleteShader
+AttachShader
+DetachShader
+LinkProgram
+UseProgram
+DeleteProgram
+ValidateProgram
+BindAttribLocation

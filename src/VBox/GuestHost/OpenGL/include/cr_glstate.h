@@ -36,9 +36,9 @@ typedef struct CRContext CRContext;
 #include "state/cr_texture.h"
 #include "state/cr_transform.h"
 #include "state/cr_viewport.h"
-
 #include "state/cr_attrib.h"
 #include "state/cr_framebuffer.h"
+#include "state/cr_glsl.h"
 
 #include "state/cr_statefuncs.h"
 #include "state/cr_stateerror.h"
@@ -151,6 +151,10 @@ struct CRContext {
 
 #ifdef CR_EXT_framebuffer_object
     CRFramebufferObjectState    framebufferobject;
+#endif
+
+#ifdef CR_OPENGL_VERSION_2_0
+    CRGLSLState        glsl;
 #endif
 
     /** For buffering vertices for selection/feedback */

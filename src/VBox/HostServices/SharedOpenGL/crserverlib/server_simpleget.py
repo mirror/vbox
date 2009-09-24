@@ -60,9 +60,16 @@ for index in range(len(funcs)):
         GLuint texid;
         CRASSERT(tablesize/sizeof(%s)==1);
         texid = (GLuint) *get_values;
-        *get_values = (%s) crServerTranslateTextureID(texid);
+        *get_values = (%s) (texid - cr_server.curClient->number * 100000);
     }
-    """ % (types[index], types[index])
+    else if (GL_CURRENT_PROGRAM==pname)
+    {
+        GLuint programid;
+        CRASSERT(tablesize/sizeof(%s)==1);
+        programid = (GLuint) *get_values;
+        *get_values = (%s) crStateGLSLProgramHWIDtoID(programid);
+    }
+    """ % (types[index], types[index], types[index], types[index])
     print '\tcrServerReturnValue( get_values, tablesize );'
     print '\tcrFree(get_values);'
     print '}\n'

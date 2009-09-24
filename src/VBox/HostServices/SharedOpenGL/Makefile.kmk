@@ -128,6 +128,7 @@ VBoxOGLcrserverlib_SOURCES := \
 	crserverlib/server_writeback.c \
 	crserverlib/server_getshaders.c \
 	crserverlib/server_framebuffer.c \
+	crserverlib/server_glsl.c \
 	$(VBOX_PATH_CROGL_GENFILES)/server_dispatch.c \
 	$(VBOX_PATH_CROGL_GENFILES)/server_retval.c \
 	$(VBOX_PATH_CROGL_GENFILES)/server_get.c \

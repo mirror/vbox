@@ -24,6 +24,7 @@
 #include "state/cr_statetypes.h"
 #include "state/cr_texture.h"
 #include "cr_mem.h"
+#include "cr_string.h"
 
 #include <iprt/assert.h>
 #include <iprt/types.h>
@@ -563,6 +564,212 @@ static int32_t crStateLoadProgram(CRProgram **ppProgram, PSSMHANDLE pSSM)
     return VINF_SUCCESS;
 }
 
+static void crStateSaveString(const char *pStr, PSSMHANDLE pSSM)
+{
+    int32_t len;
+    int32_t rc;
+
+    if (pStr)
+    {
+        len = crStrlen(pStr)+1;
+
+        rc = SSMR3PutS32(pSSM, len);
+        CRASSERT(rc == VINF_SUCCESS);
+
+        rc = SSMR3PutMem(pSSM, pStr, len*sizeof(*pStr));
+        CRASSERT(rc == VINF_SUCCESS);
+    }
+    else
+    {
+        rc = SSMR3PutS32(pSSM, 0);
+        CRASSERT(rc == VINF_SUCCESS);
+    }
+}
+
+static char* crStateLoadString(PSSMHANDLE pSSM)
+{
+    int32_t len, rc;
+    char* pStr = NULL;
+
+    rc = SSMR3GetS32(pSSM, &len);
+    CRASSERT(rc == VINF_SUCCESS);
+
+    if (len!=0)
+    {
+        pStr = crAlloc(len*sizeof(*pStr));
+
+        rc = SSMR3GetMem(pSSM, pStr, len*sizeof(*pStr));
+        CRASSERT(rc == VINF_SUCCESS);
+    }
+
+    return pStr;
+}
+
+static void crStateSaveGLSLShaderCB(unsigned long key, void *data1, void *data2)
+{
+    CRGLSLShader *pShader = (CRGLSLShader*) data1;
+    PSSMHANDLE pSSM = (PSSMHANDLE) data2;
+    int32_t rc;
+
+    rc = SSMR3PutMem(pSSM, &key, sizeof(key));
+    CRASSERT(rc == VINF_SUCCESS);
+
+    rc = SSMR3PutMem(pSSM, pShader, sizeof(*pShader));
+    CRASSERT(rc == VINF_SUCCESS);
+
+    if (pShader->source)
+    {
+        crStateSaveString(pShader->source, pSSM);
+    }
+    else
+    {
+        GLint sLen=0;
+        GLchar *source=NULL;
+
+        diff_api.GetShaderiv(pShader->hwid, GL_SHADER_SOURCE_LENGTH, &sLen);
+        if (sLen>0)
+        {
+            source = (GLchar*) crAlloc(sLen);
+            diff_api.GetShaderSource(pShader->hwid, sLen, NULL, source);
+        }
+
+        crStateSaveString(source, pSSM);
+        if (source) crFree(source);
+    }
+}
+
+static CRGLSLShader* crStateLoadGLSLShader(PSSMHANDLE pSSM)
+{
+    CRGLSLShader *pShader;
+    int32_t rc;
+    unsigned long key;
+
+    pShader = crAlloc(sizeof(*pShader));
+    if (!pShader) return NULL;
+
+    rc = SSMR3GetMem(pSSM, &key, sizeof(key));
+    CRASSERT(rc == VINF_SUCCESS);
+
+    rc = SSMR3GetMem(pSSM, pShader, sizeof(*pShader));
+    CRASSERT(rc == VINF_SUCCESS);
+
+    pShader->source = crStateLoadString(pSSM);
+
+    return pShader;
+}
+
+
+static void crStateSaveGLSLShaderKeyCB(unsigned long key, void *data1, void *data2)
+{
+    CRGLSLShader *pShader = (CRGLSLShader*) data1;
+    PSSMHANDLE pSSM = (PSSMHANDLE) data2;
+    int32_t rc;
+
+    rc = SSMR3PutMem(pSSM, &key, sizeof(key));
+    CRASSERT(rc == VINF_SUCCESS);
+}
+
+static void crStateSaveGLSLProgramAttribs(CRGLSLProgramState *pState, PSSMHANDLE pSSM)
+{
+    GLuint i;
+    int32_t rc;
+
+    for (i=0; i<pState->cAttribs; ++i)
+    {
+        rc = SSMR3PutMem(pSSM, &pState->pAttribs[i].index, sizeof(pState->pAttribs[i].index));
+        CRASSERT(rc == VINF_SUCCESS);
+        crStateSaveString(pState->pAttribs[i].name, pSSM);
+    }
+}
+
+static void crStateSaveGLSLProgramCB(unsigned long key, void *data1, void *data2)
+{
+    CRGLSLProgram *pProgram = (CRGLSLProgram*) data1;
+    PSSMHANDLE pSSM = (PSSMHANDLE) data2;
+    int32_t rc;
+    uint32_t ui32;
+    GLint maxUniformLen, activeUniforms=0, i;
+
+    rc = SSMR3PutMem(pSSM, &key, sizeof(key));
+    CRASSERT(rc == VINF_SUCCESS);
+
+    rc = SSMR3PutMem(pSSM, pProgram, sizeof(*pProgram));
+    CRASSERT(rc == VINF_SUCCESS);
+
+    ui32 = crHashtableNumElements(pProgram->currentState.attachedShaders);
+    rc = SSMR3PutU32(pSSM, ui32);
+    CRASSERT(rc == VINF_SUCCESS);
+
+    crHashtableWalk(pProgram->currentState.attachedShaders, crStateSaveGLSLShaderKeyCB, pSSM);
+
+    if (pProgram->activeState.attachedShaders)
+    {
+        ui32 = crHashtableNumElements(pProgram->activeState.attachedShaders);
+        rc = SSMR3PutU32(pSSM, ui32);
+        CRASSERT(rc == VINF_SUCCESS);
+        crHashtableWalk(pProgram->currentState.attachedShaders, crStateSaveGLSLShaderCB, pSSM);
+    }
+
+    crStateSaveGLSLProgramAttribs(&pProgram->currentState, pSSM);
+    crStateSaveGLSLProgramAttribs(&pProgram->activeState, pSSM);
+
+    diff_api.GetProgramiv(pProgram->hwid, GL_ACTIVE_UNIFORM_MAX_LENGTH, &maxUniformLen);
+    diff_api.GetProgramiv(pProgram->hwid, GL_ACTIVE_UNIFORMS, &activeUniforms);
+
+    rc = SSMR3PutS32(pSSM, activeUniforms);
+    CRASSERT(rc == VINF_SUCCESS);
+
+    if (activeUniforms>0)
+    {
+        GLchar *name = (GLchar *) crAlloc(maxUniformLen*sizeof(GLchar));
+        GLfloat fdata[16];
+        GLint idata[16];
+        GLenum type;
+        GLint size;
+
+        for (i=0; i<activeUniforms; ++i)
+        {
+            diff_api.GetActiveUniform(pProgram->hwid, i, maxUniformLen, NULL, &size, &type, name);
+
+            /*@todo check if we'd reference all array elements or not*/
+            if (size!=1) crWarning("@todo");
+
+            rc = SSMR3PutMem(pSSM, &type, sizeof(type));
+            CRASSERT(rc == VINF_SUCCESS);
+
+            crStateSaveString(name, pSSM);
+            
+            if (GL_INT==type
+                || GL_INT_VEC2==type
+                || GL_INT_VEC3==type
+                || GL_INT_VEC4==type
+                || GL_BOOL==type
+                || GL_BOOL_VEC2==type
+                || GL_BOOL_VEC3==type
+                || GL_BOOL_VEC4==type
+                || GL_SAMPLER_1D==type
+                || GL_SAMPLER_2D==type
+                || GL_SAMPLER_3D==type
+                || GL_SAMPLER_CUBE==type
+                || GL_SAMPLER_1D_SHADOW==type
+                || GL_SAMPLER_2D_SHADOW==type)
+            {
+                diff_api.GetUniformiv(pProgram->hwid, i, &idata[0]);
+                rc = SSMR3PutMem(pSSM, &idata[0], crStateGetUniformSize(type)*sizeof(idata[0]));
+                CRASSERT(rc == VINF_SUCCESS);
+            }
+            else
+            {
+                diff_api.GetUniformfv(pProgram->hwid, i, &fdata[0]);
+                rc = SSMR3PutMem(pSSM, &fdata[0], crStateGetUniformSize(type)*sizeof(fdata[0]));
+                CRASSERT(rc == VINF_SUCCESS);
+            }
+        }
+
+        crFree(name);
+    }
+}
+
 int32_t crStateSaveContext(CRContext *pContext, PSSMHANDLE pSSM)
 {
     int32_t rc, i;
@@ -800,6 +1007,20 @@ int32_t crStateSaveContext(CRContext *pContext, PSSMHANDLE pSSM)
     AssertRCReturn(rc, rc);
 #endif
 
+#ifdef CR_OPENGL_VERSION_2_0
+    /* Save GLSL related info */
+    ui32 = crHashtableNumElements(pContext->glsl.shaders);
+    rc = SSMR3PutU32(pSSM, ui32);
+    AssertRCReturn(rc, rc);
+    crHashtableWalk(pContext->glsl.shaders, crStateSaveGLSLShaderCB, pSSM);
+    ui32 = crHashtableNumElements(pContext->glsl.programs);
+    rc = SSMR3PutU32(pSSM, ui32);
+    AssertRCReturn(rc, rc);
+    crHashtableWalk(pContext->glsl.programs, crStateSaveGLSLProgramCB, pSSM);
+    rc = SSMR3PutU32(pSSM, pContext->glsl.activeProgram?pContext->glsl.activeProgram->id:0);
+    AssertRCReturn(rc, rc);
+#endif
+
     return VINF_SUCCESS;
 }
 
@@ -953,8 +1174,15 @@ int32_t crStateLoadContext(CRContext *pContext, PSSMHANDLE pSSM)
         SLC_COPYPTR(transform.programStack[i].stack);
     }
 
+#ifdef CR_EXT_framebuffer_object
     SLC_COPYPTR(framebufferobject.framebuffers);
     SLC_COPYPTR(framebufferobject.renderbuffers);
+#endif
+
+#ifdef CR_OPENGL_VERSION_2_0
+    SLC_COPYPTR(glsl.shaders);
+    SLC_COPYPTR(glsl.programs);
+#endif
 
     /* Have to preserve original context id */
     CRASSERT(pTmpContext->id == pContext->id);
@@ -1306,10 +1534,137 @@ int32_t crStateLoadContext(CRContext *pContext, PSSMHANDLE pSSM)
     rc = SSMR3GetU32(pSSM, &ui);
     AssertRCReturn(rc, rc);
     pContext->framebufferobject.renderbuffer = ui==0 ? NULL 
-                                                    : crHashtableSearch(pContext->framebufferobject.renderbuffers, ui);
+                                                     : crHashtableSearch(pContext->framebufferobject.renderbuffers, ui);
 
     /* Mark FBOs/RBOs for resending to GPU */
     pContext->framebufferobject.bResyncNeeded = GL_TRUE;
+#endif
+
+#ifdef CR_OPENGL_VERSION_2_0
+    /* Load GLSL related info */
+    rc = SSMR3GetU32(pSSM, &uiNumElems);
+    AssertRCReturn(rc, rc);
+
+    for (ui=0; ui<uiNumElems; ++ui)
+    {
+        CRGLSLShader *pShader = crStateLoadGLSLShader(pSSM);
+        if (!pShader) return VERR_SSM_UNEXPECTED_DATA;
+        crHashtableAdd(pContext->glsl.shaders, pShader->id, pShader);
+    }
+
+    rc = SSMR3GetU32(pSSM, &uiNumElems);
+    AssertRCReturn(rc, rc);
+
+    for (ui=0; ui<uiNumElems; ++ui)
+    {
+        CRGLSLProgram *pProgram;
+        uint32_t numShaders;
+
+        pProgram = crAlloc(sizeof(*pProgram));
+        if (!pProgram) return VERR_NO_MEMORY;
+
+        rc = SSMR3GetMem(pSSM, &key, sizeof(key));
+        AssertRCReturn(rc, rc);
+
+        rc = SSMR3GetMem(pSSM, pProgram, sizeof(*pProgram));
+        AssertRCReturn(rc, rc);
+
+        crHashtableAdd(pContext->glsl.programs, key, pProgram);
+
+        pProgram->currentState.attachedShaders = crAllocHashtable();
+
+        rc = SSMR3GetU32(pSSM, &numShaders);
+        AssertRCReturn(rc, rc);
+
+        for (k=0; k<numShaders; ++k)
+        {
+            rc = SSMR3GetMem(pSSM, &key, sizeof(key));
+            AssertRCReturn(rc, rc);
+            crHashtableAdd(pProgram->currentState.attachedShaders, key, crHashtableSearch(pContext->glsl.shaders, key));
+        }
+
+        if (pProgram->activeState.attachedShaders)  
+        {
+            pProgram->activeState.attachedShaders = crAllocHashtable();
+
+            rc = SSMR3GetU32(pSSM, &numShaders);
+            AssertRCReturn(rc, rc);
+
+            for (k=0; k<numShaders; ++k)
+            {
+                CRGLSLShader *pShader = crStateLoadGLSLShader(pSSM);
+                if (!pShader) return VERR_SSM_UNEXPECTED_DATA;
+                crHashtableAdd(pProgram->activeState.attachedShaders, pShader->id, pShader);
+            }
+        }
+
+        if (pProgram->currentState.cAttribs) 
+            pProgram->currentState.pAttribs = (CRGLSLAttrib*) crAlloc(pProgram->currentState.cAttribs*sizeof(CRGLSLAttrib));
+        for (k=0; k<pProgram->currentState.cAttribs; ++k)
+        {
+            rc = SSMR3GetMem(pSSM, &pProgram->currentState.pAttribs[k].index, sizeof(pProgram->currentState.pAttribs[k].index));
+            AssertRCReturn(rc, rc);
+            pProgram->currentState.pAttribs[k].name = crStateLoadString(pSSM);
+        }
+
+        if (pProgram->activeState.cAttribs) 
+            pProgram->activeState.pAttribs = (CRGLSLAttrib*) crAlloc(pProgram->activeState.cAttribs*sizeof(CRGLSLAttrib));
+        for (k=0; k<pProgram->activeState.cAttribs; ++k)
+        {
+            rc = SSMR3GetMem(pSSM, &pProgram->activeState.pAttribs[k].index, sizeof(pProgram->activeState.pAttribs[k].index));
+            AssertRCReturn(rc, rc);
+            pProgram->activeState.pAttribs[k].name = crStateLoadString(pSSM);
+        }
+
+        rc = SSMR3GetS32(pSSM, &pProgram->cUniforms);
+        AssertRCReturn(rc, rc);
+
+        if (pProgram->cUniforms)
+        {
+            pProgram->pUniforms = crAlloc(pProgram->cUniforms*sizeof(CRGLSLUniform));
+            if (!pProgram) return VERR_NO_MEMORY;
+
+            for (k=0; k<pProgram->cUniforms; ++k)
+            {
+                size_t itemsize, datasize;
+
+                rc = SSMR3GetMem(pSSM, &pProgram->pUniforms[k].type, sizeof(GLenum));
+                pProgram->pUniforms[k].name = crStateLoadString(pSSM);
+
+                if (GL_INT==pProgram->pUniforms[k].type
+                    || GL_INT_VEC2==pProgram->pUniforms[k].type
+                    || GL_INT_VEC3==pProgram->pUniforms[k].type
+                    || GL_INT_VEC4==pProgram->pUniforms[k].type
+                    || GL_BOOL==pProgram->pUniforms[k].type
+                    || GL_BOOL_VEC2==pProgram->pUniforms[k].type
+                    || GL_BOOL_VEC3==pProgram->pUniforms[k].type
+                    || GL_BOOL_VEC4==pProgram->pUniforms[k].type
+                    || GL_SAMPLER_1D==pProgram->pUniforms[k].type
+                    || GL_SAMPLER_2D==pProgram->pUniforms[k].type
+                    || GL_SAMPLER_3D==pProgram->pUniforms[k].type
+                    || GL_SAMPLER_CUBE==pProgram->pUniforms[k].type
+                    || GL_SAMPLER_1D_SHADOW==pProgram->pUniforms[k].type
+                    || GL_SAMPLER_2D_SHADOW==pProgram->pUniforms[k].type)
+                {
+                    itemsize = sizeof(GLint);
+                } else itemsize = sizeof(GLfloat);
+
+                datasize = crStateGetUniformSize(pProgram->pUniforms[k].type)*itemsize;
+                pProgram->pUniforms[k].data = crAlloc(datasize);
+                if (!pProgram->pUniforms[k].data) return VERR_NO_MEMORY;
+
+                rc = SSMR3GetMem(pSSM, pProgram->pUniforms[k].data, datasize);
+            }
+        }
+    }
+
+    rc = SSMR3GetU32(pSSM, &ui);
+    AssertRCReturn(rc, rc);
+    pContext->glsl.activeProgram = ui==0 ? NULL
+                                         : crHashtableSearch(pContext->glsl.programs, ui);
+
+    /*Mark for resending to GPU*/
+    pContext->glsl.bResyncNeeded = GL_TRUE;
 #endif
 
     return VINF_SUCCESS;
