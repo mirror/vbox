@@ -590,7 +590,10 @@ RTR3DECL(int) RTPathSetTimesEx(const char *pszPath, PCRTTIMESPEC pAccessTime, PC
                     if (utimes(pszNativePath, aTimevals))
                         rc = RTErrConvertFromErrno(errno);
                 }
-#if defined(RT_OS_DARWIN) || defined(RT_OS_FREEBSD) || defined(RT_OS_LINUX) || defined(RT_OS_OS2) /** @todo who really has lutimes? */
+#if (defined(RT_OS_DARWIN) && MAC_OS_X_VERSION_MIN_REQUIRED >= 1050) \
+ || defined(RT_OS_FREEBSD) \
+ || defined(RT_OS_LINUX) \
+ || defined(RT_OS_OS2) /** @todo who really has lutimes? */
                 else
                 {
                     if (lutimes(pszNativePath, aTimevals))
