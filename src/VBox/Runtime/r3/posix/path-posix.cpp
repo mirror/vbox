@@ -462,16 +462,23 @@ RTDECL(int) RTPathUserHome(char *pszPath, size_t cchPath)
 
 RTR3DECL(int) RTPathQueryInfo(const char *pszPath, PRTFSOBJINFO pObjInfo, RTFSOBJATTRADD enmAdditionalAttribs)
 {
+    return RTPathQueryInfoEx(pszPath, pObjInfo, enmAdditionalAttribs, RTPATH_F_ON_LINK);
+}
+
+
+RTR3DECL(int) RTPathQueryInfoEx(const char *pszPath, PRTFSOBJINFO pObjInfo, RTFSOBJATTRADD enmAdditionalAttribs, uint32_t fFlags)
+{
     /*
      * Validate input.
      */
-    AssertMsgReturn(VALID_PTR(pszPath), ("%p\n", pszPath), VERR_INVALID_POINTER);
+    AssertPtrReturn(pszPath, VERR_INVALID_POINTER);
     AssertReturn(*pszPath, VERR_INVALID_PARAMETER);
-    AssertMsgReturn(VALID_PTR(pObjInfo), ("%p\n", pszPath), VERR_INVALID_POINTER);
+    AssertPtrReturn(pObjInfo, VERR_INVALID_POINTER);
     AssertMsgReturn(    enmAdditionalAttribs >= RTFSOBJATTRADD_NOTHING
                     &&  enmAdditionalAttribs <= RTFSOBJATTRADD_LAST,
                     ("Invalid enmAdditionalAttribs=%p\n", enmAdditionalAttribs),
                     VERR_INVALID_PARAMETER);
+    AssertMsgReturn(RTPATH_F_IS_VALID(fFlags, 0), ("%#x\n", fFlags), VERR_INVALID_PARAMETER);
 
     /*
      * Convert the filename.
@@ -481,7 +488,11 @@ RTR3DECL(int) RTPathQueryInfo(const char *pszPath, PRTFSOBJINFO pObjInfo, RTFSOB
     if (RT_SUCCESS(rc))
     {
         struct stat Stat;
-        if (!stat(pszNativePath, &Stat))
+        if (fFlags & RTPATH_F_FOLLOW_LINK)
+            rc = stat(pszNativePath, &Stat);
+        else
+            rc = lstat(pszNativePath, &Stat); /** @todo how doesn't have lstat again? */
+        if (!rc)
         {
             rtFsConvertStatToObjInfo(pObjInfo, &Stat, pszPath, 0);
             switch (enmAdditionalAttribs)
@@ -516,15 +527,23 @@ RTR3DECL(int) RTPathQueryInfo(const char *pszPath, PRTFSOBJINFO pObjInfo, RTFSOB
 RTR3DECL(int) RTPathSetTimes(const char *pszPath, PCRTTIMESPEC pAccessTime, PCRTTIMESPEC pModificationTime,
                              PCRTTIMESPEC pChangeTime, PCRTTIMESPEC pBirthTime)
 {
+    return RTPathSetTimesEx(pszPath, pAccessTime, pModificationTime, pChangeTime, pBirthTime, RTPATH_F_ON_LINK);
+}
+
+
+RTR3DECL(int) RTPathSetTimesEx(const char *pszPath, PCRTTIMESPEC pAccessTime, PCRTTIMESPEC pModificationTime,
+                               PCRTTIMESPEC pChangeTime, PCRTTIMESPEC pBirthTime, uint32_t fFlags)
+{
     /*
      * Validate input.
      */
-    AssertMsgReturn(VALID_PTR(pszPath), ("%p\n", pszPath), VERR_INVALID_POINTER);
-    AssertMsgReturn(*pszPath, ("%p\n", pszPath), VERR_INVALID_PARAMETER);
-    AssertMsgReturn(!pAccessTime || VALID_PTR(pAccessTime), ("%p\n", pAccessTime), VERR_INVALID_POINTER);
-    AssertMsgReturn(!pModificationTime || VALID_PTR(pModificationTime), ("%p\n", pModificationTime), VERR_INVALID_POINTER);
-    AssertMsgReturn(!pChangeTime || VALID_PTR(pChangeTime), ("%p\n", pChangeTime), VERR_INVALID_POINTER);
-    AssertMsgReturn(!pBirthTime || VALID_PTR(pBirthTime), ("%p\n", pBirthTime), VERR_INVALID_POINTER);
+    AssertPtrReturn(pszPath, VERR_INVALID_POINTER);
+    AssertReturn(*pszPath, VERR_INVALID_PARAMETER);
+    AssertPtrNullReturn(pAccessTime, VERR_INVALID_POINTER);
+    AssertPtrNullReturn(pModificationTime, VERR_INVALID_POINTER);
+    AssertPtrNullReturn(pChangeTime, VERR_INVALID_POINTER);
+    AssertPtrNullReturn(pBirthTime, VERR_INVALID_POINTER);
+    AssertMsgReturn(RTPATH_F_IS_VALID(fFlags, 0), ("%#x\n", fFlags), VERR_INVALID_PARAMETER);
 
     /*
      * Convert the paths.
@@ -533,20 +552,13 @@ RTR3DECL(int) RTPathSetTimes(const char *pszPath, PCRTTIMESPEC pAccessTime, PCRT
     int rc = rtPathToNative(&pszNativePath, pszPath);
     if (RT_SUCCESS(rc))
     {
+        RTFSOBJINFO ObjInfo;
+
         /*
          * If it's a no-op, we'll only verify the existance of the file.
          */
         if (!pAccessTime && !pModificationTime)
-        {
-            struct stat Stat;
-            if (!stat(pszNativePath, &Stat))
-                rc = VINF_SUCCESS;
-            else
-            {
-                rc = RTErrConvertFromErrno(errno);
-                Log(("RTPathSetTimes('%s',,,,): failed with %Rrc and errno=%d\n", pszPath, rc, errno));
-            }
-        }
+            rc = RTPathQueryInfoEx(pszPath, &ObjInfo, RTFSOBJATTRADD_NOTHING, fFlags);
         else
         {
             /*
@@ -561,8 +573,7 @@ RTR3DECL(int) RTPathSetTimes(const char *pszPath, PCRTTIMESPEC pAccessTime, PCRT
             }
             else
             {
-                RTFSOBJINFO ObjInfo;
-                int rc = RTPathQueryInfo(pszPath, &ObjInfo, RTFSOBJATTRADD_UNIX);
+                rc = RTPathQueryInfoEx(pszPath, &ObjInfo, RTFSOBJATTRADD_UNIX, fFlags);
                 if (RT_SUCCESS(rc))
                 {
                     RTTimeSpecGetTimeval(pAccessTime        ? pAccessTime       : &ObjInfo.AccessTime,       &aTimevals[0]);
@@ -574,12 +585,34 @@ RTR3DECL(int) RTPathSetTimes(const char *pszPath, PCRTTIMESPEC pAccessTime, PCRT
             }
             if (RT_SUCCESS(rc))
             {
-                if (utimes(pszNativePath, aTimevals))
+                if (fFlags & RTPATH_F_FOLLOW_LINK)
                 {
-                    rc = RTErrConvertFromErrno(errno);
+                    if (utimes(pszNativePath, aTimevals))
+                        rc = RTErrConvertFromErrno(errno);
+                }
+#if defined(RT_OS_DARWIN) || defined(RT_OS_FREEBSD) || defined(RT_OS_LINUX) || defined(RT_OS_OS2) /** @todo who really has lutimes? */
+                else
+                {
+                    if (lutimes(pszNativePath, aTimevals))
+                        rc = RTErrConvertFromErrno(errno);
+                }
+#else
+                else
+                {
+                    if (pAccessTime && pModificationTime)
+                        rc = RTPathQueryInfoEx(pszPath, &ObjInfo, RTFSOBJATTRADD_UNIX, fFlags);
+                    if (RT_SUCCESS(rc) && RTFS_IS_SYMLINK(ObjInfo.Attr.fMode))
+                        rc = VERR_NS_SYMLINK_SET_TIME;
+                    else if (RT_SUCCESS(rc))
+                    {
+                        if (utimes(pszNativePath, aTimevals))
+                            rc = RTErrConvertFromErrno(errno);
+                    }
+                }
+#endif
+                if (RT_FAILURE(rc))
                     Log(("RTPathSetTimes('%s',%p,%p,,): failed with %Rrc and errno=%d\n",
                          pszPath, pAccessTime, pModificationTime, rc, errno));
-                }
             }
         }
         rtPathFreeNative(pszNativePath);
@@ -787,11 +820,18 @@ RTR3DECL(int) RTPathRename(const char *pszSrc, const char *pszDst, unsigned fRen
 
 RTDECL(bool) RTPathExists(const char *pszPath)
 {
+    return RTPathExistsEx(pszPath, RTPATH_F_FOLLOW_LINK);
+}
+
+
+RTDECL(bool) RTPathExistsEx(const char *pszPath, uint32_t fFlags)
+{
     /*
      * Validate input.
      */
     AssertPtrReturn(pszPath, false);
     AssertReturn(*pszPath, false);
+    Assert(RTPATH_F_IS_VALID(fFlags, 0));
 
     /*
      * Convert the path and check if it exists using stat().
@@ -801,7 +841,11 @@ RTDECL(bool) RTPathExists(const char *pszPath)
     if (RT_SUCCESS(rc))
     {
         struct stat Stat;
-        if (!stat(pszNativePath, &Stat))
+        if (fFlags & RTPATH_F_FOLLOW_LINK)
+            rc = stat(pszNativePath, &Stat);
+        else
+            rc = lstat(pszNativePath, &Stat);
+        if (!rc)
             rc = VINF_SUCCESS;
         else
             rc = VERR_GENERAL_FAILURE;

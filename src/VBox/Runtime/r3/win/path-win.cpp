@@ -187,25 +187,23 @@ RTDECL(int) RTPathUserHome(char *pszPath, size_t cchPath)
 
 RTR3DECL(int) RTPathQueryInfo(const char *pszPath, PRTFSOBJINFO pObjInfo, RTFSOBJATTRADD enmAdditionalAttribs)
 {
+    return RTPathQueryInfoEx(pszPath, pObjInfo, enmAdditionalAttribs, RTPATH_F_ON_LINK);
+}
+
+
+RTR3DECL(int) RTPathQueryInfoEx(const char *pszPath, PRTFSOBJINFO pObjInfo, RTFSOBJATTRADD enmAdditionalAttribs, uint32_t fFlags)
+{
     /*
      * Validate input.
      */
-    if (!pszPath)
-    {
-        AssertMsgFailed(("Invalid pszPath=%p\n", pszPath));
-        return VERR_INVALID_PARAMETER;
-    }
-    if (!pObjInfo)
-    {
-        AssertMsgFailed(("Invalid pObjInfo=%p\n", pObjInfo));
-        return VERR_INVALID_PARAMETER;
-    }
-    if (    enmAdditionalAttribs < RTFSOBJATTRADD_NOTHING
-        ||  enmAdditionalAttribs > RTFSOBJATTRADD_LAST)
-    {
-        AssertMsgFailed(("Invalid enmAdditionalAttribs=%p\n", enmAdditionalAttribs));
-        return VERR_INVALID_PARAMETER;
-    }
+    AssertPtrReturn(pszPath, VERR_INVALID_POINTER);
+    AssertReturn(*pszPath, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pObjInfo, VERR_INVALID_POINTER);
+    AssertMsgReturn(    enmAdditionalAttribs >= RTFSOBJATTRADD_NOTHING
+                    &&  enmAdditionalAttribs <= RTFSOBJATTRADD_LAST,
+                    ("Invalid enmAdditionalAttribs=%p\n", enmAdditionalAttribs),
+                    VERR_INVALID_PARAMETER);
+    AssertMsgReturn(RTPATH_F_IS_VALID(fFlags, 0), ("%#x\n", fFlags), VERR_INVALID_PARAMETER);
 
     /*
      * Query file info.
@@ -249,24 +247,29 @@ RTR3DECL(int) RTPathQueryInfo(const char *pszPath, PRTFSOBJINFO pObjInfo, RTFSOB
     if (!GetFileAttributesExA(pszPath, GetFileExInfoStandard, &Data))
     {
         /* Fallback to FindFileFirst in case of sharing violation. */
-        if (GetLastError() == ERROR_SHARING_VIOLATION)
-        {
-            WIN32_FIND_DATAA FindData;
-            HANDLE hDir = FindFirstFileA(pszPath, &FindData);
-            if (hDir == INVALID_HANDLE_VALUE)
-                return RTErrConvertFromWin32(GetLastError());
-            FindClose(hDir);
-            Data.dwFileAttributes = FindData.dwFileAttributes;
-            Data.ftCreationTime = FindData.ftCreationTime;
-            Data.ftLastAccessTime = FindData.ftLastAccessTime;
-            Data.ftLastWriteTime = FindData.ftLastWriteTime;
-            Data.nFileSizeHigh = FindData.nFileSizeHigh;
-            Data.nFileSizeLow = FindData.nFileSizeLow;
-        }
-        else
+        if (GetLastError() != ERROR_SHARING_VIOLATION)
             return RTErrConvertFromWin32(GetLastError());
+        WIN32_FIND_DATAA FindData;
+        HANDLE hDir = FindFirstFileA(pszPath, &FindData);
+        if (hDir == INVALID_HANDLE_VALUE)
+            return RTErrConvertFromWin32(GetLastError());
+        FindClose(hDir);
+        Data.dwFileAttributes = FindData.dwFileAttributes;
+        Data.ftCreationTime = FindData.ftCreationTime;
+        Data.ftLastAccessTime = FindData.ftLastAccessTime;
+        Data.ftLastWriteTime = FindData.ftLastWriteTime;
+        Data.nFileSizeHigh = FindData.nFileSizeHigh;
+        Data.nFileSizeLow = FindData.nFileSizeLow;
     }
 #endif
+    if (   (fFlags & RTPATH_F_FOLLOW_LINK)
+        && (Data.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT))
+    {
+        AssertFailed();
+        /** @todo Symlinks: RTPathQueryInfoEx is not handling symbolic links
+         *        correctly on Windows.  (Both GetFileAttributesEx and FileFindFirst
+         *        will return info about the symlink.) */
+    }
 
     /*
      * Setup the returned data.
@@ -322,15 +325,23 @@ RTR3DECL(int) RTPathQueryInfo(const char *pszPath, PRTFSOBJINFO pObjInfo, RTFSOB
 RTR3DECL(int) RTPathSetTimes(const char *pszPath, PCRTTIMESPEC pAccessTime, PCRTTIMESPEC pModificationTime,
                              PCRTTIMESPEC pChangeTime, PCRTTIMESPEC pBirthTime)
 {
+    return RTPathSetTimesEx(pszPath, pAccessTime, pModificationTime, pChangeTime, pBirthTime, RTPATH_F_ON_LINK);
+}
+
+
+RTR3DECL(int) RTPathSetTimesEx(const char *pszPath, PCRTTIMESPEC pAccessTime, PCRTTIMESPEC pModificationTime,
+                               PCRTTIMESPEC pChangeTime, PCRTTIMESPEC pBirthTime, uint32_t fFlags)
+{
     /*
      * Validate input.
      */
-    AssertMsgReturn(VALID_PTR(pszPath), ("%p\n", pszPath), VERR_INVALID_POINTER);
-    AssertMsgReturn(*pszPath, ("%p\n", pszPath), VERR_INVALID_PARAMETER);
-    AssertMsgReturn(!pAccessTime || VALID_PTR(pAccessTime), ("%p\n", pAccessTime), VERR_INVALID_POINTER);
-    AssertMsgReturn(!pModificationTime || VALID_PTR(pModificationTime), ("%p\n", pModificationTime), VERR_INVALID_POINTER);
-    AssertMsgReturn(!pChangeTime || VALID_PTR(pChangeTime), ("%p\n", pChangeTime), VERR_INVALID_POINTER);
-    AssertMsgReturn(!pBirthTime || VALID_PTR(pBirthTime), ("%p\n", pBirthTime), VERR_INVALID_POINTER);
+    AssertPtrReturn(pszPath, VERR_INVALID_POINTER);
+    AssertReturn(*pszPath, VERR_INVALID_PARAMETER);
+    AssertPtrNullReturn(pAccessTime, VERR_INVALID_POINTER);
+    AssertPtrNullReturn(pModificationTime, VERR_INVALID_POINTER);
+    AssertPtrNullReturn(pChangeTime, VERR_INVALID_POINTER);
+    AssertPtrNullReturn(pBirthTime, VERR_INVALID_POINTER);
+    AssertMsgReturn(RTPATH_F_IS_VALID(fFlags, 0), ("%#x\n", fFlags), VERR_INVALID_PARAMETER);
 
     /*
      * Convert the path.
@@ -339,13 +350,38 @@ RTR3DECL(int) RTPathSetTimes(const char *pszPath, PCRTTIMESPEC pAccessTime, PCRT
     int rc = RTStrToUtf16(pszPath, &pwszPath);
     if (RT_SUCCESS(rc))
     {
-        HANDLE hFile = CreateFileW(pwszPath,
-                                   FILE_WRITE_ATTRIBUTES,   /* dwDesiredAccess */
-                                   FILE_SHARE_WRITE | FILE_SHARE_READ | FILE_SHARE_DELETE, /* dwShareMode */
-                                   NULL,                    /* security attribs */
-                                   OPEN_EXISTING,           /* dwCreationDisposition */
-                                   FILE_FLAG_BACKUP_SEMANTICS | FILE_ATTRIBUTE_NORMAL,
-                                   NULL);
+        HANDLE hFile;
+        if (fOpen & RTPATH_F_FOLLOW_LINK)
+            hFile = CreateFileW(pwszPath,
+                                FILE_WRITE_ATTRIBUTES,   /* dwDesiredAccess */
+                                FILE_SHARE_WRITE | FILE_SHARE_READ | FILE_SHARE_DELETE, /* dwShareMode */
+                                NULL,                    /* security attribs */
+                                OPEN_EXISTING,           /* dwCreationDisposition */
+                                FILE_FLAG_BACKUP_SEMANTICS | FILE_ATTRIBUTE_NORMAL,
+                                NULL);
+        else
+        {
+/** @todo Symlink: Test RTPathSetTimesEx on Windows. (The code is disabled
+ *        because it's not tested yet.) */
+#if 0 //def FILE_FLAG_OPEN_REPARSE_POINT
+            hFile = CreateFileW(pwszPath,
+                                FILE_WRITE_ATTRIBUTES,   /* dwDesiredAccess */
+                                FILE_SHARE_WRITE | FILE_SHARE_READ | FILE_SHARE_DELETE, /* dwShareMode */
+                                NULL,                    /* security attribs */
+                                OPEN_EXISTING,           /* dwCreationDisposition */
+                                FILE_FLAG_BACKUP_SEMANTICS | FILE_ATTRIBUTE_NORMAL | FILE_FLAG_OPEN_REPARSE_POINT,
+                                NULL);
+
+            if (hFile == INVALID_HANDLE_VALUE && GetLastError() == ERROR_INVALID_PARAMETER)
+#endif
+                hFile = CreateFileW(pwszPath,
+                                    FILE_WRITE_ATTRIBUTES,   /* dwDesiredAccess */
+                                    FILE_SHARE_WRITE | FILE_SHARE_READ | FILE_SHARE_DELETE, /* dwShareMode */
+                                    NULL,                    /* security attribs */
+                                    OPEN_EXISTING,           /* dwCreationDisposition */
+                                    FILE_FLAG_BACKUP_SEMANTICS | FILE_ATTRIBUTE_NORMAL,
+                                    NULL);
+        }
         if (hFile != INVALID_HANDLE_VALUE)
         {
             /*
@@ -484,41 +520,53 @@ RTR3DECL(int) RTPathRename(const char *pszSrc, const char *pszDst, unsigned fRen
 }
 
 
-/**
- * Checks if the path exists.
- *
- * Symbolic links will all be attempted resolved.
- *
- * @returns true if it exists and false if it doesn't
- * @param   pszPath     The path to check.
- */
 RTDECL(bool) RTPathExists(const char *pszPath)
+{
+    return RTPathExistsEx(pszPath, RTPATH_F_FOLLOW_LINK);
+}
+
+
+RTDECL(bool) RTPathExistsEx(const char *pszPath, uint32_t fFlags)
 {
     /*
      * Validate input.
      */
     AssertPtrReturn(pszPath, false);
     AssertReturn(*pszPath, false);
+    Assert(RTPATH_F_IS_VALID(fFlags, 0));
 
     /*
      * Try query file info.
      */
+    DWORD dwAttr;
 #ifndef RT_DONT_CONVERT_FILENAMES
     PRTUTF16 pwszPath;
     int rc = RTStrToUtf16(pszPath, &pwszPath);
     if (RT_SUCCESS(rc))
     {
-        if (GetFileAttributesW(pwszPath) == INVALID_FILE_ATTRIBUTES)
-            rc = VERR_GENERAL_FAILURE;
+        dwAttr = GetFileAttributesW(pwszPath);
         RTUtf16Free(pwszPath);
     }
+    else
+        dwAttr = INVALID_FILE_ATTRIBUTES;
 #else
-    int rc = VINF_SUCCESS;
-    if (GetFileAttributesExA(pszPath) == INVALID_FILE_ATTRIBUTES)
-        rc = VERR_GENERAL_FAILURE;
+    dwAttr = GetFileAttributesA(pszPath);
 #endif
 
-    return RT_SUCCESS(rc);
+    if (dwAttr == INVALID_FILE_ATTRIBUTES)
+        return false;
+
+#ifdef FILE_ATTRIBUTE_REPARSE_POINT
+    if (   (fFlags & RTPATH_F_FOLLOW_LINK)
+        && (dwAttr & FILE_ATTRIBUTE_REPARSE_POINT))
+    {
+        AssertFailed();
+        /** @todo Symlinks: RTPathExists+RTPathExistsEx is misbehaving on symbolic
+         *        links on Windows. */
+    }
+#endif
+
+    return true;
 }
 
 
