@@ -51,33 +51,6 @@
 
 
 
-RTDECL(bool) RTDirExists(const char *pszPath)
-{
-    bool fRc = false;
-
-    /*
-     * Convert to UTF-16.
-     */
-    PRTUTF16 pwszString;
-    int rc = RTStrToUtf16(pszPath, &pwszString);
-    AssertRC(rc);
-    if (RT_SUCCESS(rc))
-    {
-        /*
-         * Query and check attributes.
-         */
-        DWORD dwAttr = GetFileAttributesW((LPCWSTR)pwszString);
-        fRc = dwAttr != INVALID_FILE_ATTRIBUTES
-            && (dwAttr & FILE_ATTRIBUTE_DIRECTORY);
-
-        RTUtf16Free(pwszString);
-    }
-
-    LogFlow(("RTDirExists(%p:{%s}): returns %RTbool\n", pszPath, pszPath, fRc));
-    return fRc;
-}
-
-
 RTDECL(int) RTDirCreate(const char *pszPath, RTFMODE fMode)
 {
     /*

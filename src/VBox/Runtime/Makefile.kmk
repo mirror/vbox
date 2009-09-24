@@ -370,6 +370,7 @@ RuntimeR3_SOURCES += \
 endif
 
 RuntimeR3_SOURCES.win = \
+	generic/RTDirExists-generic.cpp \
 	generic/RTDirQueryInfo-generic.cpp \
 	generic/RTDirSetTimes-generic.cpp \
 	generic/RTMpGetCurFrequency-generic.cpp \
