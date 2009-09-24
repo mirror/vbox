@@ -412,6 +412,7 @@
       <!-- 2008-09-04: 2.0.0 released
            2008-11-20: settings version 1.5 introduced
            2008-12-17: 2.1.0 released
+           (todo)
       -->
     </const>
     <const name="v1_6"     value="8">
@@ -419,6 +420,7 @@
       <!-- 2008-12-17: 2.1.0 released
            2008-12-19: settings version 1.6 introduced (is in 2.1 branch)
            2009-04-08: 2.2.0 released
+           Machine changes: remove all Machine/Hardware/Network/Adapter/HostInterface[@TAPSetup or @TAPTerminate]/ attributes (done)
       -->
     </const>
     <const name="v1_7"     value="9">
@@ -426,24 +428,22 @@
       <!-- 2008-12-17: 2.1.0 released
            2009-03-11: settings version 1.7 introduced (is in 2.2 branch)
            2009-04-08: 2.2.0 released
-           VirtualBox.xml additions: NetserviceRegistry with DHCPServers
-           Machine changes: HardDiskAttachments is now StorageControllers
+           VirtualBox.xml additions: NetserviceRegistry with DHCPServers (done)
+           Machine changes: HardDiskAttachments is now StorageControllers (done)
       -->
     </const>
     <const name="v1_8"     value="10">
       <desc>Intermediate settings version "1.8", understood by VirtualBox 3.1.x.</desc>
-      <!-- Machine additions: Display/@accelerate2DVideo
+      <!-- Machine additions: Display/@accelerate2DVideo (done)
       -->
     </const>
     <const name="v1_9"     value="11">
       <desc>Settings version "1.9", written by VirtualBox 3.1.x.</desc>
-      <!-- The big storage controller / DVD / Floppy rework
+      <!-- The big storage controller / DVD / Floppy rework (done)
            -->
     </const>
     <const name="Future"     value="12">
       <desc>Settings version greater than "1.9", written by a future VirtualBox version.</desc>
-      <!-- The big storage controller / DVD / Floppy rework
-           -->
     </const>
   </enum>
 

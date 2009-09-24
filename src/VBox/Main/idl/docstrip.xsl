@@ -37,5 +37,8 @@
 <!-- swallow desc -->
 <xsl:template match="desc" />
 
+<!-- swallow all comments -->
+<xsl:template match="comment()" />
+
 </xsl:stylesheet>
 
