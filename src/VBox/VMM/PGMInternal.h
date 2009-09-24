@@ -89,7 +89,7 @@
  * world switch overhead, so let's sync more.
  */
 # ifdef IN_RING0
-/* Chose 32 based on the compile test in #4219; 64 shows worse stats. 
+/* Chose 32 based on the compile test in #4219; 64 shows worse stats.
  * 32 again shows better results than 16; slightly more overhead in the \#PF handler,
  * but ~5% fewer faults.
  */
@@ -1017,6 +1017,29 @@ typedef PPGMPAGE *PPPGMPAGE;
     ((PGM_PAGE_GET_TRACKING(pPage) >> PGMPOOL_TD_IDX_SHIFT)   & PGMPOOL_TD_IDX_MASK)
 
 /**
+ * Per page live save tracking data.
+ */
+typedef struct PGMLIVESAVEPAGE
+{
+    /** The pass number where this page was last saved.  */
+    uint32_t    uPassSaved;
+    /** Number of times it has been dirtied. */
+    uint32_t    cDirtied : 24;
+    /** Whether it is currently dirty. */
+    uint32_t    fDirty : 1;
+    /** Is or has been a MMIO/MMIO2 and is not worth saving. */
+    uint32_t    fMmio : 1;
+    /** Was a ZERO page last time around. */
+    uint32_t    fZero : 1;
+    /** Bits reserved for future use.  */
+    uint32_t    u5Reserved : 5;
+} PGMLIVESAVEPAGE;
+AssertCompileSize(PGMLIVESAVEPAGE, 8);
+/** Pointer to the per page live save tracking data. */
+typedef PGMLIVESAVEPAGE *PPGMLIVESAVEPAGE;
+
+
+/**
  * Ram range for GC Phys to HC Phys conversion.
  *
  * Can be used for HC Virt to GC Phys and HC Virt to HC Phys
@@ -1042,6 +1065,8 @@ typedef struct PGMRAMRANGE
     RTGCPHYS                            GCPhysLast;
     /** Start of the HC mapping of the range. This is only used for MMIO2. */
     R3PTRTYPE(void *)                   pvR3;
+    /** Live save per page tracking data. */
+    R3PTRTYPE(PPGMLIVESAVEPAGE)         paLSPages;
     /** The range description. */
     R3PTRTYPE(const char *)             pszDesc;
     /** Pointer to self - R0 pointer. */
@@ -1049,7 +1074,7 @@ typedef struct PGMRAMRANGE
     /** Pointer to self - RC pointer. */
     RCPTRTYPE(struct PGMRAMRANGE *)     pSelfRC;
     /** Padding to make aPage aligned on sizeof(PGMPAGE). */
-    uint32_t                            au32Alignment2[HC_ARCH_BITS == 32 ? 2 : 1];
+    uint32_t                            au32Alignment2[HC_ARCH_BITS == 32 ? 1 : 3];
     /** Array of physical guest page tracking structures. */
     PGMPAGE                             aPages[1];
 } PGMRAMRANGE;
@@ -1060,7 +1085,20 @@ typedef PGMRAMRANGE *PPGMRAMRANGE;
  * @{ */
 /** The RAM range is floating around as an independent guest mapping. */
 #define PGM_RAM_RANGE_FLAGS_FLOATING        RT_BIT(20)
+/** Ad hoc RAM range for an ROM mapping. */
+#define PGM_RAM_RANGE_FLAGS_AD_HOC_ROM      RT_BIT(21)
+/** Ad hoc RAM range for an MMIO mapping. */
+#define PGM_RAM_RANGE_FLAGS_AD_HOC_MMIO     RT_BIT(22)
+/** Ad hoc RAM range for an MMIO2 mapping. */
+#define PGM_RAM_RANGE_FLAGS_AD_HOC_MMIO2    RT_BIT(23)
 /** @} */
+
+/** Tests if a RAM range is an ad hoc one or not.
+ * @returns true/false.
+ * @param   pRam    The RAM range.
+ */
+#define PGM_RAM_RANGE_IS_AD_HOC(pRam) \
+    (!!( (pRam)->fFlags & (PGM_RAM_RANGE_FLAGS_AD_HOC_ROM | PGM_RAM_RANGE_FLAGS_AD_HOC_MMIO | PGM_RAM_RANGE_FLAGS_AD_HOC_MMIO2) ) )
 
 
 /**
@@ -2313,8 +2351,12 @@ typedef struct PGM
      * the VM (default), or if it should be allocated when first written to.
      */
     bool                            fRamPreAlloc;
+    /** Indicates whether write monitoring is currently in use.
+     * This is used to prevent conflicts between live saving and page sharing
+     * detection. */
+    bool                            fPhysWriteMonitoringEngaged;
     /** Alignment padding. */
-    bool                            afAlignment0[3];
+    bool                            afAlignment0[2];
 
     /*
      * This will be redefined at least two more times before we're done, I'm sure.
@@ -2343,7 +2385,9 @@ typedef struct PGM
     R0PTRTYPE(PPGMRAMRANGE)         pRamRangesR0;
     /** RC pointer corresponding to PGM::pRamRangesR3. */
     RCPTRTYPE(PPGMRAMRANGE)         pRamRangesRC;
-    RTRCPTR                         alignment4; /**< structure alignment. */
+    /** Generation ID for the RAM ranges. This member is incremented everytime a RAM
+     * range is linked or unlinked. */
+    uint32_t volatile               idRamRangesGen;
 
     /** Pointer to the list of ROM ranges - for R3.
      * This is sorted by physical address and contains no overlapping ranges. */
@@ -2530,6 +2574,20 @@ typedef struct PGM
      * (The current size of 32 pages, means 128 KB of handy memory.)
      */
     GMMPAGEDESC                     aHandyPages[PGM_HANDY_PAGES];
+
+    /**
+     * Live save data.
+     */
+    struct
+    {
+        /** The number of ready pages.  */
+        uint32_t                    cReadyPages;
+        /** The number of dirty pages.  */
+        uint32_t                    cDirtyPages;
+        /** The number of MMIO and MMIO2 pages. */
+        uint32_t                    cMmioPages;
+        uint32_t                    u32;
+    } LiveSave;
 
     /** @name   Error injection.
      * @{ */

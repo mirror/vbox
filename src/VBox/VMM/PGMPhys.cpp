@@ -586,6 +586,7 @@ void pgmR3PhysRelinkRamRanges(PVM pVM)
         Assert(pVM->pgm.s.pRamRangesR0 == NIL_RTR0PTR);
         Assert(pVM->pgm.s.pRamRangesRC == NIL_RTRCPTR);
     }
+    ASMAtomicIncU32(&pVM->pgm.s.idRamRangesGen);
 }
 
 
@@ -621,6 +622,7 @@ static void pgmR3PhysLinkRamRange(PVM pVM, PPGMRAMRANGE pNew, PPGMRAMRANGE pPrev
         pVM->pgm.s.pRamRangesR0 = pNew->pSelfR0;
         pVM->pgm.s.pRamRangesRC = pNew->pSelfRC;
     }
+    ASMAtomicIncU32(&pVM->pgm.s.idRamRangesGen);
 
     pgmUnlock(pVM);
 }
@@ -655,6 +657,7 @@ static void pgmR3PhysUnlinkRamRange2(PVM pVM, PPGMRAMRANGE pRam, PPGMRAMRANGE pP
         pVM->pgm.s.pRamRangesR0 = pNext ? pNext->pSelfR0 : NIL_RTR0PTR;
         pVM->pgm.s.pRamRangesRC = pNext ? pNext->pSelfRC : NIL_RTRCPTR;
     }
+    ASMAtomicIncU32(&pVM->pgm.s.idRamRangesGen);
 
     pgmUnlock(pVM);
 }
@@ -755,6 +758,7 @@ static void pgmR3PhysInitAndLinkRamRange(PVM pVM, PPGMRAMRANGE pNew, RTGCPHYS GC
     pNew->pszDesc       = pszDesc;
     pNew->fFlags        = RCPtrNew != NIL_RTRCPTR ? PGM_RAM_RANGE_FLAGS_FLOATING : 0;
     pNew->pvR3          = NULL;
+    pNew->paLSPages     = NULL;
 
     uint32_t const cPages = pNew->cb >> PAGE_SHIFT;
     RTGCPHYS iPage = cPages;
@@ -1306,12 +1310,12 @@ VMMR3DECL(int) PGMR3PhysMMIORegister(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb,
         pgmLock(pVM);
 
         /*
-         * No RAM range, insert an ad-hoc one.
+         * No RAM range, insert an ad hoc one.
          *
          * Note that we don't have to tell REM about this range because
          * PGMHandlerPhysicalRegisterEx will do that for us.
          */
-        Log(("PGMR3PhysMMIORegister: Adding ad-hoc MMIO range for %RGp-%RGp %s\n", GCPhys, GCPhysLast, pszDesc));
+        Log(("PGMR3PhysMMIORegister: Adding ad hoc MMIO range for %RGp-%RGp %s\n", GCPhys, GCPhysLast, pszDesc));
 
         const uint32_t cPages = cb >> PAGE_SHIFT;
         const size_t cbRamRange = RT_OFFSETOF(PGMRAMRANGE, aPages[cPages]);
@@ -1325,9 +1329,9 @@ VMMR3DECL(int) PGMR3PhysMMIORegister(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb,
         pNew->GCPhysLast    = GCPhysLast;
         pNew->cb            = cb;
         pNew->pszDesc       = pszDesc;
-        pNew->fFlags        = 0; /** @todo add some kind of ad-hoc flag? */
-
+        pNew->fFlags        = PGM_RAM_RANGE_FLAGS_AD_HOC_MMIO;
         pNew->pvR3          = NULL;
+        pNew->paLSPages     = NULL;
 
         uint32_t iPage = cPages;
         while (iPage-- > 0)
@@ -1357,7 +1361,7 @@ VMMR3DECL(int) PGMR3PhysMMIORegister(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb,
         pVM->pgm.s.cZeroPages -= cb >> PAGE_SHIFT;
         pVM->pgm.s.cAllPages  -= cb >> PAGE_SHIFT;
 
-        /* remove the ad-hoc range. */
+        /* remove the ad hoc range. */
         pgmR3PhysUnlinkRamRange2(pVM, pNew, pRamPrev);
         pNew->cb = pNew->GCPhys = pNew->GCPhysLast = NIL_RTGCPHYS;
         MMHyperFree(pVM, pRam);
@@ -1371,7 +1375,7 @@ VMMR3DECL(int) PGMR3PhysMMIORegister(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb,
  * This is the interface IOM is using to register an MMIO region.
  *
  * It will take care of calling PGMHandlerPhysicalDeregister and clean up
- * any ad-hoc PGMRAMRANGE left behind.
+ * any ad hoc PGMRAMRANGE left behind.
  *
  * @returns VBox status code.
  * @param   pVM             Pointer to the shared VM structure.
@@ -1425,7 +1429,7 @@ VMMR3DECL(int) PGMR3PhysMMIODeregister(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb)
                     /*
                      * Ad-hoc range, unlink and free it.
                      */
-                    Log(("PGMR3PhysMMIODeregister: Freeing ad-hoc MMIO range for %RGp-%RGp %s\n",
+                    Log(("PGMR3PhysMMIODeregister: Freeing ad hoc MMIO range for %RGp-%RGp %s\n",
                          GCPhys, GCPhysLast, pRam->pszDesc));
 
                     pVM->pgm.s.cAllPages  -= cPages;
@@ -1588,9 +1592,9 @@ VMMR3DECL(int) PGMR3PhysMMIO2Register(PVM pVM, PPDMDEVINS pDevIns, uint32_t iReg
                 pNew->RamRange.GCPhysLast   = NIL_RTGCPHYS;
                 pNew->RamRange.pszDesc      = pszDesc;
                 pNew->RamRange.cb           = cb;
-                //pNew->RamRange.fFlags     = 0; /// @todo MMIO2 flag?
-
+                pNew->RamRange.fFlags       = PGM_RAM_RANGE_FLAGS_AD_HOC_MMIO2;
                 pNew->RamRange.pvR3         = pvPages;
+                //pNew->RamRange.paLSPages    = NULL;
 
                 uint32_t iPage = cPages;
                 while (iPage-- > 0)
@@ -2238,8 +2242,9 @@ VMMR3DECL(int) PGMR3PhysRomRegister(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys
                 pRamNew->GCPhysLast    = GCPhysLast;
                 pRamNew->cb            = cb;
                 pRamNew->pszDesc       = pszDesc;
-                pRamNew->fFlags        = 0;
+                pRamNew->fFlags        = PGM_RAM_RANGE_FLAGS_AD_HOC_ROM;
                 pRamNew->pvR3          = NULL;
+                pRamNew->paLSPages     = NULL;
 
                 PPGMPAGE pPage = &pRamNew->aPages[0];
                 for (uint32_t iPage = 0; iPage < cPages; iPage++, pPage++, pRomPage++)
