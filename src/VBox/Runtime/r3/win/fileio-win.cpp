@@ -128,34 +128,6 @@ DECLINLINE(bool) IsBeyondLimit(RTFILE File, uint64_t offSeek, unsigned uMethod)
 }
 
 
-RTDECL(bool) RTFileExists(const char *pszPath)
-{
-    bool fRc = false;
-
-    /*
-     * Convert to UTF-16.
-     */
-    PRTUTF16 pwszString;
-    int rc = RTStrToUtf16(pszPath, &pwszString);
-    AssertRC(rc);
-    if (RT_SUCCESS(rc))
-    {
-        /*
-         * Query and check attributes.
-         */
-        DWORD dwAttr = GetFileAttributesW((LPCWSTR)pwszString);
-        fRc = dwAttr != INVALID_FILE_ATTRIBUTES
-            && !(dwAttr & (  FILE_ATTRIBUTE_DIRECTORY
-                           | FILE_ATTRIBUTE_DEVICE
-                           | FILE_ATTRIBUTE_REPARSE_POINT));
-        RTUtf16Free(pwszString);
-    }
-
-    LogFlow(("RTFileExists(%p:{%s}): returns %RTbool\n", pszPath, pszPath, fRc));
-    return fRc;
-}
-
-
 RTR3DECL(int) RTFileFromNative(PRTFILE pFile, RTHCINTPTR uNative)
 {
     HANDLE h = (HANDLE)uNative;
