@@ -383,7 +383,7 @@ static RTSEMFASTMUTEX g_VBoxNetFltSolarisMtx = NIL_RTSEMFASTMUTEX;
 PVBOXNETFLTINS volatile g_VBoxNetFltSolarisInstance;
 
 /** Goes along with the instance to determine type of stream being opened/created. */
-VBOXNETFLTSTREAMTYPE volatile g_VBoxNetFltSolarisStreamType;
+VBOXNETFLTSTREAMTYPE volatile g_VBoxNetFltSolarisStreamType = kUndefined;
 
 #ifdef VBOXNETFLT_SOLARIS_IPV6_POLLING
 /** Global IPv6 polling interval */
@@ -663,9 +663,12 @@ static int VBoxNetFltSolarisModOpen(queue_t *pQueue, dev_t *pDev, int fOpenMode,
     /*
      * Check VirtualBox stream type.
      */
-    if (g_VBoxNetFltSolarisStreamType == kUndefined)
+    if (   g_VBoxNetFltSolarisStreamType != kPromiscStream
+        && g_VBoxNetFltSolarisStreamType != kArpStream
+        && g_VBoxNetFltSolarisStreamType != kIp6Stream
+        && g_VBoxNetFltSolarisStreamType != kIp4Stream)
     {
-        LogRel((DEVICE_NAME ":VBoxNetFltSolarisModOpen failed due to undefined VirtualBox open mode.\n"));
+        LogRel((DEVICE_NAME ":VBoxNetFltSolarisModOpen failed due to undefined VirtualBox open mode. Type=%d\n", g_VBoxNetFltSolarisStreamType));
         RTSemFastMutexRelease(g_VBoxNetFltSolarisMtx);
         return ENOENT;
     }
@@ -740,8 +743,10 @@ static int VBoxNetFltSolarisModOpen(queue_t *pQueue, dev_t *pDev, int fOpenMode,
         case kPromiscStream:    ASMAtomicUoWritePtr((void * volatile *)&pThis->u.s.pvPromiscStream, pStream);    break;
         default:    /* Heh. */
         {
-            AssertRelease(pStream->Type);
-            break;
+            LogRel((DEVICE_NAME ":VBoxNetFltSolarisModOpen huh!? Invalid stream type %d\n", pStream->Type));
+            RTMemFree(pStream);
+            RTSemFastMutexRelease(g_VBoxNetFltSolarisMtx);
+            return EINVAL;
         }
     }
 
@@ -753,6 +758,11 @@ static int VBoxNetFltSolarisModOpen(queue_t *pQueue, dev_t *pDev, int fOpenMode,
      */
     pStream->pNext = *ppPrevStream;
     *ppPrevStream = pStream;
+
+    /*
+     * Increment IntNet reference count for this stream.
+     */
+    vboxNetFltRetain(pThis, false /* fBusy */);
 
     /*
      * Release global lock, & do not hold locks across putnext calls.
@@ -840,7 +850,6 @@ static int VBoxNetFltSolarisModClose(queue_t *pQueue, int fOpenMode, cred_t *pCr
     if (RT_UNLIKELY(!pStream))
     {
         LogRel((DEVICE_NAME ":VBoxNetFltSolarisModClose failed to get stream.\n"));
-        vboxNetFltRelease(pStream->pThis, false /* fBusy */);
         RTSemFastMutexRelease(g_VBoxNetFltSolarisMtx);
         return ENXIO;
     }
@@ -913,7 +922,11 @@ static int VBoxNetFltSolarisModClose(queue_t *pQueue, int fOpenMode, cred_t *pCr
         }
     }
 
+    /*
+     * Decrement IntNet reference count for this stream.
+     */
     vboxNetFltRelease(pStream->pThis, false /* fBusy */);
+
     RTMemFree(pStream);
     pQueue->q_ptr = NULL;
     WR(pQueue)->q_ptr = NULL;
@@ -1752,7 +1765,7 @@ static int vboxNetFltSolarisDetermineModPos(bool fAttach, vnode_t *pVNode, int *
                 }
             }
 
-            LogRel((DEVICE_NAME ":vboxNetFltSolarisDetermineModPos: failed to find %s in the host stack.\n"));
+            LogRel((DEVICE_NAME ":vboxNetFltSolarisDetermineModPos: failed to find %s in the host stack.\n", DEVICE_NAME));
         }
         else
             LogRel((DEVICE_NAME ":vboxNetFltSolarisDetermineModPos: failed to get module information. rc=%d\n"));
@@ -1916,8 +1929,6 @@ static void vboxNetFltSolarisCloseStream(PVBOXNETFLTINS pThis)
 {
     LogFlow((DEVICE_NAME ":vboxNetFltSolarisCloseStream pThis=%p\n"));
 
-    vboxNetFltRetain(pThis, false /* fBusy */);
-
     ldi_close(pThis->u.s.hIface, FREAD | FWRITE, kcred);
 }
 
@@ -2046,8 +2057,6 @@ static int vboxNetFltSolarisAttachIp4(PVBOXNETFLTINS pThis, bool fAttach)
                                 /*
                                  * Inject/Eject from the host IP stack.
                                  */
-                                if (!fAttach)
-                                    vboxNetFltRetain(pThis, false /* fBusy */);
 
                                 /*
                                  * Set global data which will be grabbed by ModOpen.
@@ -2065,9 +2074,6 @@ static int vboxNetFltSolarisAttachIp4(PVBOXNETFLTINS pThis, bool fAttach)
 
                                 if (!rc)
                                 {
-                                    if (!fAttach)
-                                        vboxNetFltRetain(pThis, false /* fBusy */);
-
                                     /*
                                      * Inject/Eject from the host ARP stack.
                                      */
@@ -2126,9 +2132,6 @@ static int vboxNetFltSolarisAttachIp4(PVBOXNETFLTINS pThis, bool fAttach)
                                         strioctl(pIp4VNode, _I_REMOVE, (intptr_t)&StrMod, 0, K_TO_K, kcred, &ret);
 
                                     vboxNetFltSolarisRelinkIp4(pUdp4VNode, &Ip4Interface, Ip4MuxFd, ArpMuxFd);
-
-                                    if (!fAttach)
-                                        vboxNetFltRelease(pThis, false /* fBusy */);
                                 }
                                 else
                                 {
@@ -2138,9 +2141,6 @@ static int vboxNetFltSolarisAttachIp4(PVBOXNETFLTINS pThis, bool fAttach)
 
                                 g_VBoxNetFltSolarisInstance = NULL;
                                 g_VBoxNetFltSolarisStreamType = kUndefined;
-
-                                if (!fAttach)
-                                    vboxNetFltRelease(pThis, false /* fBusy */);
                             }
                             else
                                 LogRel((DEVICE_NAME ":vboxNetFltSolarisAttachIp4: failed to find position. rc=%d rc2=%d\n", rc, rc2));
@@ -2278,9 +2278,6 @@ static int vboxNetFltSolarisAttachIp6(PVBOXNETFLTINS pThis, bool fAttach)
                             rc = vboxNetFltSolarisDetermineModPos(fAttach, pIp6VNode, &StrMod.pos);
                             if (RT_SUCCESS(rc))
                             {
-                                if (!fAttach)
-                                    vboxNetFltRetain(pThis, false /* fBusy */);
-
                                 /*
                                  * Set global data which will be grabbed by ModOpen.
                                  * There is a known (though very unlikely) race here because
@@ -2334,8 +2331,6 @@ static int vboxNetFltSolarisAttachIp6(PVBOXNETFLTINS pThis, bool fAttach)
                                 {
                                     LogRel((DEVICE_NAME ":vboxNetFltSolarisAttachIp6: failed to %s the IP stack. rc=%d\n",
                                             fAttach ? "inject into" : "eject from", rc));
-                                    if (!fAttach)
-                                        vboxNetFltRelease(pThis, false /* fBusy */);
                                 }
                             }
                             else
@@ -2476,7 +2471,9 @@ static int vboxNetFltSolarisDetachFromInterface(PVBOXNETFLTINS pThis)
 
     ASMAtomicWriteBool(&pThis->fDisconnectedFromHost, true);
     vboxNetFltSolarisCloseStream(pThis);
-    int rc = vboxNetFltSolarisAttachIp4(pThis, false /* fAttach */);
+    int rc = VINF_SUCCESS;
+    if (pThis->u.s.pvIp4Stream)
+        rc = vboxNetFltSolarisAttachIp4(pThis, false /* fAttach */);
     if (pThis->u.s.pvIp6Stream)
         rc = vboxNetFltSolarisAttachIp6(pThis, false /* fAttach */);
 
