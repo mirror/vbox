@@ -117,15 +117,40 @@ RT_C_DECLS_BEGIN
 #define RTPATH_IS_SEP(ch)       ( RTPATH_IS_SLASH(ch) || RTPATH_IS_VOLSEP(ch) )
 
 
+/** @name Generic RTPath flags
+ * @{ */
+/** Last component: Work on the link. */
+#define RTPATH_F_ON_LINK          RT_BIT_32(0)
+/** Last component: Follow if link. */
+#define RTPATH_F_FOLLOW_LINK      RT_BIT_32(1)
+/** @} */
+
+
+/** Validates a flags parameter containing RTPATH_F_*.
+ * @remarks The parameters will be referneced multiple times. */
+#define RTPATH_F_IS_VALID(fFlags, fIgnore) \
+    (    ((fFlags) & ~(uint32_t)(fIgnore)) == RTPATH_F_ON_LINK \
+      || ((fFlags) & ~(uint32_t)(fIgnore)) == RTPATH_F_FOLLOW_LINK )
+
+
 /**
  * Checks if the path exists.
  *
- * Symbolic links will all be attempted resolved.
+ * Symbolic links will all be attempted resolved and broken links means false.
  *
  * @returns true if it exists and false if it doesn't.
  * @param   pszPath     The path to check.
  */
 RTDECL(bool) RTPathExists(const char *pszPath);
+
+/**
+ * Checks if the path exists.
+ *
+ * @returns true if it exists and false if it doesn't.
+ * @param   pszPath     The path to check.
+ * @param   fFlags      RTPATH_F_ON_LINK or RPATH_F_FOLLOW_LINK.
+ */
+RTDECL(bool) RTPathExistsEx(const char *pszPath, uint32_t fFlags);
 
 /**
  * Sets the current working directory of the process.
@@ -499,15 +524,15 @@ RTDECL(int) RTPathTemp(char *pszPath, size_t cchPath);
 /**
  * Query information about a file system object.
  *
- * This API will not resolve symbolic links in the last component (just
- * like unix lstat()).
+ * This API will resolve NOT symbolic links in the last component (just like
+ * unix lstat()).
  *
- * @returns VINF_SUCCESS if the object exists, information returned.
- * @returns VERR_PATH_NOT_FOUND if any but the last component in the specified
+ * @returns IPRT status code.
+ * @retval  VINF_SUCCESS if the object exists, information returned.
+ * @retval  VERR_PATH_NOT_FOUND if any but the last component in the specified
  *          path was not found or was not a directory.
- * @returns VERR_FILE_NOT_FOUND if the object does not exist (but path to the
+ * @retval  VERR_FILE_NOT_FOUND if the object does not exist (but path to the
  *          parent directory exists).
- * @returns some other iprt status code.
  *
  * @param   pszPath     Path to the file system object.
  * @param   pObjInfo    Object information structure to be filled on successful return.
@@ -516,6 +541,25 @@ RTDECL(int) RTPathTemp(char *pszPath, size_t cchPath);
  *                      Use RTFSOBJATTRADD_NOTHING if this doesn't matter.
  */
 RTR3DECL(int) RTPathQueryInfo(const char *pszPath, PRTFSOBJINFO pObjInfo, RTFSOBJATTRADD enmAdditionalAttribs);
+
+/**
+ * Query information about a file system object.
+ *
+ * @returns IPRT status code.
+ * @retval  VINF_SUCCESS if the object exists, information returned.
+ * @retval  VERR_PATH_NOT_FOUND if any but the last component in the specified
+ *          path was not found or was not a directory.
+ * @retval  VERR_FILE_NOT_FOUND if the object does not exist (but path to the
+ *          parent directory exists).
+ *
+ * @param   pszPath     Path to the file system object.
+ * @param   pObjInfo    Object information structure to be filled on successful return.
+ * @param   enmAdditionalAttribs
+ *                      Which set of additional attributes to request.
+ *                      Use RTFSOBJATTRADD_NOTHING if this doesn't matter.
+ * @param   fFlags      RTPATH_F_ON_LINK or RPATH_F_FOLLOW_LINK.
+ */
+RTR3DECL(int) RTPathQueryInfoEx(const char *pszPath, PRTFSOBJINFO pObjInfo, RTFSOBJATTRADD enmAdditionalAttribs, uint32_t fFlags);
 
 /**
  * Changes the mode flags of a file system object.
@@ -572,6 +616,31 @@ RTR3DECL(int) RTPathSetTimes(const char *pszPath, PCRTTIMESPEC pAccessTime, PCRT
                              PCRTTIMESPEC pChangeTime, PCRTTIMESPEC pBirthTime);
 
 /**
+ * Changes one or more of the timestamps associated of file system object.
+ *
+ * @returns iprt status code.
+ * @param   pszPath             Path to the file system object.
+ * @param   pAccessTime         Pointer to the new access time.
+ * @param   pModificationTime   Pointer to the new modification time.
+ * @param   pChangeTime         Pointer to the new change time. NULL if not to be changed.
+ * @param   pBirthTime          Pointer to the new time of birth. NULL if not to be changed.
+ * @param   fFlags              RTPATH_F_ON_LINK or RPATH_F_FOLLOW_LINK.
+ *
+ * @remark  The file system might not implement all these time attributes,
+ *          the API will ignore the ones which aren't supported.
+ *
+ * @remark  The file system might not implement the time resolution
+ *          employed by this interface, the time will be chopped to fit.
+ *
+ * @remark  The file system may update the change time even if it's
+ *          not specified.
+ *
+ * @remark  POSIX can only set Access & Modification and will always set both.
+ */
+RTR3DECL(int) RTPathSetTimesEx(const char *pszPath, PCRTTIMESPEC pAccessTime, PCRTTIMESPEC pModificationTime,
+                               PCRTTIMESPEC pChangeTime, PCRTTIMESPEC pBirthTime, uint32_t fFlags);
+
+/**
  * Gets one or more of the timestamps associated of file system object.
  *
  * @returns iprt status code.
@@ -581,7 +650,9 @@ RTR3DECL(int) RTPathSetTimes(const char *pszPath, PCRTTIMESPEC pAccessTime, PCRT
  * @param   pChangeTime         Where to store the change time. NULL is ok.
  * @param   pBirthTime          Where to store the creation time. NULL is ok.
  *
- * @remark  This is wrapper around RTPathQueryInfo() and exists to complement RTPathSetTimes().
+ * @remark  This is wrapper around RTPathQueryInfo() and exists to complement
+ *          RTPathSetTimes().  If the last component is a symbolic link, it will
+ *          not be resolved.
  */
 RTR3DECL(int) RTPathGetTimes(const char *pszPath, PRTTIMESPEC pAccessTime, PRTTIMESPEC pModificationTime,
                              PRTTIMESPEC pChangeTime, PRTTIMESPEC pBirthTime);
@@ -600,6 +671,17 @@ RTR3DECL(int) RTPathGetTimes(const char *pszPath, PRTTIMESPEC pAccessTime, PRTTI
 RTR3DECL(int) RTPathSetOwner(const char *pszPath, uint32_t uid, uint32_t gid);
 
 /**
+ * Changes the owner and/or group of a file system object.
+ *
+ * @returns iprt status code.
+ * @param   pszPath     Path to the file system object.
+ * @param   uid         The new file owner user id. Use -1 (or ~0) to leave this unchanged.
+ * @param   gid         The new group id. Use -1 (or ~0) to leave this unchanged.
+ * @param   fFlags      RTPATH_F_ON_LINK or RPATH_F_FOLLOW_LINK.
+ */
+RTR3DECL(int) RTPathSetOwnerEx(const char *pszPath, uint32_t uid, uint32_t gid, uint32_t fFlags);
+
+/**
  * Gets the owner and/or group of a file system object.
  *
  * @returns iprt status code.
@@ -607,7 +689,9 @@ RTR3DECL(int) RTPathSetOwner(const char *pszPath, uint32_t uid, uint32_t gid);
  * @param   pUid        Where to store the owner user id. NULL is ok.
  * @param   pGid        Where to store the group id. NULL is ok.
  *
- * @remark  This is wrapper around RTPathQueryInfo() and exists to complement RTPathGetOwner().
+ * @remark  This is wrapper around RTPathQueryInfo() and exists to complement
+ *          RTPathGetOwner().  If the last component is a symbolic link, it will
+ *          not be resolved.
  */
 RTR3DECL(int) RTPathGetOwner(const char *pszPath, uint32_t *pUid, uint32_t *pGid);
 
@@ -620,6 +704,9 @@ RTR3DECL(int) RTPathGetOwner(const char *pszPath, uint32_t *pUid, uint32_t *pGid
 
 /**
  * Renames a path within a filesystem.
+ *
+ * This will rename symbolic links.  If RTPATHRENAME_FLAGS_REPLACE is used and
+ * pszDst is a symbolic link, it will be replaced and not its target.
  *
  * @returns IPRT status code.
  * @param   pszSrc      The source path.

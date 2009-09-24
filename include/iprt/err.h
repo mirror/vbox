@@ -709,6 +709,8 @@ RTDECL(PCRTCOMERRMSG) RTErrCOMGet(uint32_t rc);
 #define VERR_DISK_INVALID_FORMAT            (-155)
 /** Too many symbolic links. */
 #define VERR_TOO_MANY_SYMLINKS              (-156)
+/** The OS does not support setting the time stamps on a symbolic link. */
+#define VERR_NS_SYMLINK_SET_TIME            (-157)
 /** @} */
 
 
