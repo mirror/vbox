@@ -536,6 +536,7 @@ public:
     void readStorageControllers(const xml::ElementNode &elmStorageControllers, Storage &strg);
     void readDVDAndFloppies_pre1_9(const xml::ElementNode &elmHardware, Storage &strg);
     void readSnapshot(const xml::ElementNode &elmSnapshot, Snapshot &snap);
+    void convertOldOSType_pre1_5(com::Utf8Str &str);
     void readMachine(const xml::ElementNode &elmMachine);
 
     void writeHardware(xml::ElementNode &elmParent, const Hardware &hw, const Storage &strg);

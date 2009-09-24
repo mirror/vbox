@@ -402,17 +402,28 @@
       <desc>Legacy settings version, not currently supported.</desc>
     </const>
     <const name="v1_3"     value="5">
-      <desc>Legacy settings version, not currently supported.</desc>
+      <desc>Settings version "1.3", written by VirtualBox 2.0.12.</desc>
+      <!--
+            Machine XML: Capitalization of Uart, Lpt elements and many attributes changed.
+      -->
     </const>
     <const name="v1_4"     value="6">
-      <desc>Legacy settings version, not currently supported.</desc>
+      <desc>Intermediate settings version, understood by VirtualBox 2.1.x.</desc>
+      <!--
+          VirtualBox.xml: big DiskRegistry -> MediaRegistry revamp, various HardDisk types merged
+          (was VirtualDiskImage, VMDKImage, VHDImage, ISCSIHardDisk, CustomHardDisk, DiffHardDisk)
+      -->
     </const>
     <const name="v1_5"     value="7">
-      <desc>Legacy settings version, not currently supported.</desc>
+      <desc>Intermediate settings version, understood by VirtualBox 2.1.x.</desc>
       <!-- 2008-09-04: 2.0.0 released
            2008-11-20: settings version 1.5 introduced
            2008-12-17: 2.1.0 released
-           (todo)
+           Machine changes:
+              guest OS identifiers changed;
+              Machine/Hardware/Display/MonitorCount renamed to monitorCount;
+              Machine/Hardware/Display/Accelerate3D renamed to accelerate3D;
+              Machine/Hardware/CPU/CPUCount/@count changed to CPU/@count
       -->
     </const>
     <const name="v1_6"     value="8">

@@ -173,7 +173,13 @@ ConfigFileBase::ConfigFileBase(const com::Utf8Str *pstrFilename)
 
             if (ulMajor == 1)
             {
-                if (ulMinor == 6)
+                if (ulMinor == 3)
+                    m->sv = SettingsVersion_v1_3;
+                else if (ulMinor == 4)
+                    m->sv = SettingsVersion_v1_4;
+                else if (ulMinor == 5)
+                    m->sv = SettingsVersion_v1_5;
+                else if (ulMinor == 6)
                     m->sv = SettingsVersion_v1_6;
                 else if (ulMinor == 7)
                     m->sv = SettingsVersion_v1_7;
@@ -384,12 +390,15 @@ void ConfigFileBase::readUSBDeviceFilters(const xml::ElementNode &elmDeviceFilte
              && (pelmLevel4Child->getAttributeValue("active", flt.fActive))
            )
         {
-            pelmLevel4Child->getAttributeValue("vendorId", flt.strVendorId);
-            pelmLevel4Child->getAttributeValue("productId", flt.strProductId);
+            if (!pelmLevel4Child->getAttributeValue("vendorId", flt.strVendorId))
+                pelmLevel4Child->getAttributeValue("vendorid", flt.strVendorId);            // used before 1.3
+            if (!pelmLevel4Child->getAttributeValue("productId", flt.strProductId))
+                pelmLevel4Child->getAttributeValue("productid", flt.strProductId)           // used before 1.3
             pelmLevel4Child->getAttributeValue("revision", flt.strRevision);
             pelmLevel4Child->getAttributeValue("manufacturer", flt.strManufacturer);
             pelmLevel4Child->getAttributeValue("product", flt.strProduct);
-            pelmLevel4Child->getAttributeValue("serialNumber", flt.strSerialNumber);
+            if (!pelmLevel4Child->getAttributeValue("serialNumber", flt.strSerialNumber))
+                pelmLevel4Child->getAttributeValue("serialnumber", flt.strSerialNumber);    // used before 1.3
             pelmLevel4Child->getAttributeValue("port", flt.strPort);
 
             // the next 2 are irrelevant for host USB objects
@@ -596,78 +605,186 @@ void MainConfigFile::readMachineRegistry(const xml::ElementNode &elmMachineRegis
 
 /**
  * Reads a media registry entry from the main VirtualBox.xml file.
+ *
+ * Whereas the current media registry code is fairly straightforward, it was quite a mess
+ * with settings format before 1.4 (VirtualBox 2.0 used settings format 1.3). The elements
+ * in the media registry were much more inconsistent, and different elements were used
+ * depending on the type of device and image.
+ *
  * @param t
  * @param elmMedium
  * @param llMedia
  */
 void MainConfigFile::readMedium(MediaType t,
-                                const xml::ElementNode &elmMedium,  // MediaRegistry/HardDisks or a single HardDisk node if recursing
-                                MediaList &llMedia)
+                                const xml::ElementNode &elmMedium,  // HardDisk node if root; if recursing,
+                                                                    // child HardDisk node or DiffHardDisk node for pre-1.4
+                                MediaList &llMedia)     // list to append medium to (root disk or child list)
 {
     // <HardDisk uuid="{5471ecdb-1ddb-4012-a801-6d98e226868b}" location="/mnt/innotek-unix/vdis/Windows XP.vdi" format="VDI" type="Normal">
     settings::Medium med;
     Utf8Str strUUID;
-    if (    (elmMedium.getAttributeValue("uuid", strUUID))
-         && (elmMedium.getAttributeValue("location", med.strLocation))
-       )
+    if (!(elmMedium.getAttributeValue("uuid", strUUID)))
+        throw ConfigFileError(this, &elmMedium, N_("Required %s/@uuid attribute is missing"), elmMedium.getName());
+
+    parseUUID(med.uuid, strUUID);
+
+    bool fNeedsLocation = true;
+
+    if (t == HardDisk)
     {
-        parseUUID(med.uuid, strUUID);
-        elmMedium.getAttributeValue("Description", med.strDescription);       // optional
-
-        if (t == HardDisk)
+        if (m->sv < SettingsVersion_v1_4)
         {
+            // here the system is:
+            //         <HardDisk uuid="{....}" type="normal">
+            //           <VirtualDiskImage filePath="/path/to/xxx.vdi"/>
+            //         </HardDisk>
+
+            fNeedsLocation = false;
+            bool fNeedsFilePath = true;
+            const xml::ElementNode *pelmImage;
+            if ((pelmImage = elmMedium.findChildElement("VirtualDiskImage")))
+                med.strFormat = "VDI";
+            else if ((pelmImage = elmMedium.findChildElement("VMDKImage")))
+                med.strFormat = "VMDK";
+            else if ((pelmImage = elmMedium.findChildElement("VHDImage")))
+                med.strFormat = "VHD";
+            else if ((pelmImage = elmMedium.findChildElement("ISCSIHardDisk")))
+            {
+                med.strFormat = "iSCSI";
+
+                fNeedsFilePath = false;
+                // location is special here: current settings specify an "iscsi://user@server:port/target/lun"
+                // string for the location and also have several disk properties for these, whereas this used
+                // to be hidden in several sub-elements before 1.4, so compose a location string and set up
+                // the properties:
+                med.strLocation = "iscsi://";
+                Utf8Str strUser, strServer, strPort, strTarget, strLun;
+                if (pelmImage->getAttributeValue("userName", strUser))
+                {
+                    med.strLocation.append(strUser);
+                    med.strLocation.append("@");
+                }
+                Utf8Str strServerAndPort;
+                if (pelmImage->getAttributeValue("server", strServer))
+                {
+                    strServerAndPort = strServer;
+                }
+                if (pelmImage->getAttributeValue("port", strPort))
+                {
+                    if (strServerAndPort.length())
+                        strServerAndPort.append(":");
+                    strServerAndPort.append(strPort);
+                }
+                med.strLocation.append(strServerAndPort);
+                if (pelmImage->getAttributeValue("target", strTarget))
+                {
+                    med.strLocation.append("/");
+                    med.strLocation.append(strTarget);
+                }
+                if (pelmImage->getAttributeValue("lun", strLun))
+                {
+                    med.strLocation.append("/");
+                    med.strLocation.append(strLun);
+                }
+
+                if (strServer.length() && strPort.length())
+                    med.properties["TargetAddress"] = strServerAndPort;
+                if (strTarget.length())
+                    med.properties["TargetName"] = strTarget;
+                if (strUser.length())
+                    med.properties["InitiatorUsername"] = strUser;
+                Utf8Str strPassword;
+                if (pelmImage->getAttributeValue("password", strPassword))
+                    med.properties["InitiatorSecret"] = strPassword;
+                if (strLun.length())
+                    med.properties["LUN"] = strLun;
+            }
+            else if ((pelmImage = elmMedium.findChildElement("CustomHardDisk")))
+            {
+                fNeedsFilePath = false;
+                fNeedsLocation = true;
+                    // also requires @format attribute, which will be queried below
+            }
+            else
+                throw ConfigFileError(this, &elmMedium, N_("Required %s/VirtualDiskImage element is missing"), elmMedium.getName());
+
+            if (fNeedsFilePath)
+                if (!(pelmImage->getAttributeValue("filePath", med.strLocation)))
+                    throw ConfigFileError(this, &elmMedium, N_("Required %s/@filePath attribute is missing"), elmMedium.getName());
+        }
+
+        if (med.strFormat.isEmpty())        // not set with 1.4 format above, or 1.4 Custom format?
             if (!(elmMedium.getAttributeValue("format", med.strFormat)))
-                throw ConfigFileError(this, &elmMedium, N_("Required HardDisk/@format attribute is missing"));
+                throw ConfigFileError(this, &elmMedium, N_("Required %s/@format attribute is missing"), elmMedium.getName());
 
-            if (!(elmMedium.getAttributeValue("autoReset", med.fAutoReset)))
-                med.fAutoReset = false;
+        if (!(elmMedium.getAttributeValue("autoReset", med.fAutoReset)))
+            med.fAutoReset = false;
 
-            Utf8Str strType;
-            if ((elmMedium.getAttributeValue("type", strType)))
-            {
-                if (strType == "Normal")
-                    med.hdType = MediumType_Normal;
-                else if (strType == "Immutable")
-                    med.hdType = MediumType_Immutable;
-                else if (strType == "Writethrough")
-                    med.hdType = MediumType_Writethrough;
-                else
-                    throw ConfigFileError(this, &elmMedium, N_("HardDisk/@type attribute must be one of Normal, Immutable or Writethrough"));
-            }
-        }
-
-        // recurse to handle children
-        xml::NodesLoop nl2(elmMedium);
-        const xml::ElementNode *pelmHDChild;
-        while ((pelmHDChild = nl2.forAllNodes()))
+        Utf8Str strType;
+        if ((elmMedium.getAttributeValue("type", strType)))
         {
-            if (    t == HardDisk
-                 && (pelmHDChild->nameEquals("HardDisk"))
-               )
-                // recurse with this element and push the child onto our current children list
-                readMedium(t,
-                           *pelmHDChild,
-                           med.llChildren);
-            else if (pelmHDChild->nameEquals("Property"))
-            {
-                Utf8Str strPropName, strPropValue;
-                if (    (pelmHDChild->getAttributeValue("name", strPropName))
-                     && (pelmHDChild->getAttributeValue("value", strPropValue))
-                   )
-                    med.properties[strPropName] = strPropValue;
-                else
-                    throw ConfigFileError(this, pelmHDChild, N_("Required HardDisk/Property/@name or @value attribute is missing"));
-            }
+            // pre-1.4 used lower case, so make this case-insensitive
+            strType.toUpper();
+            if (strType == "NORMAL")
+                med.hdType = MediumType_Normal;
+            else if (strType == "IMMUTABLE")
+                med.hdType = MediumType_Immutable;
+            else if (strType == "WRITETHROUGH")
+                med.hdType = MediumType_Writethrough;
+            else
+                throw ConfigFileError(this, &elmMedium, N_("HardDisk/@type attribute must be one of Normal, Immutable or Writethrough"));
         }
-
-        llMedia.push_back(med);
     }
-    else
-        throw ConfigFileError(this, &elmMedium, N_("Required %s/@uuid or @location attribute is missing"), elmMedium.getName());
+    else if (m->sv < SettingsVersion_v1_4)
+    {
+        // DVD and floppy images before 1.4 had "src" attribute instead of "location"
+        if (!(elmMedium.getAttributeValue("src", med.strLocation)))
+            throw ConfigFileError(this, &elmMedium, N_("Required %s/@src attribute is missing"), elmMedium.getName());
+
+        fNeedsLocation = false;
+    }
+
+    if (fNeedsLocation)
+        // current files and 1.4 CustomHardDisk elements must have a location attribute
+        if (!(elmMedium.getAttributeValue("location", med.strLocation)))
+            throw ConfigFileError(this, &elmMedium, N_("Required %s/@location attribute is missing"), elmMedium.getName());
+
+    elmMedium.getAttributeValue("Description", med.strDescription);       // optional
+
+    // recurse to handle children
+    xml::NodesLoop nl2(elmMedium);
+    const xml::ElementNode *pelmHDChild;
+    while ((pelmHDChild = nl2.forAllNodes()))
+    {
+        if (    t == HardDisk
+             && (    pelmHDChild->nameEquals("HardDisk")
+                  || (    (m->sv < SettingsVersion_v1_4)
+                       && (pelmHDChild->nameEquals("DiffHardDisk"))
+                     )
+                )
+           )
+            // recurse with this element and push the child onto our current children list
+            readMedium(t,
+                        *pelmHDChild,
+                        med.llChildren);
+        else if (pelmHDChild->nameEquals("Property"))
+        {
+            Utf8Str strPropName, strPropValue;
+            if (    (pelmHDChild->getAttributeValue("name", strPropName))
+                 && (pelmHDChild->getAttributeValue("value", strPropValue))
+               )
+                med.properties[strPropName] = strPropValue;
+            else
+                throw ConfigFileError(this, pelmHDChild, N_("Required HardDisk/Property/@name or @value attribute is missing"));
+        }
+    }
+
+    llMedia.push_back(med);
 }
 
 /**
- * Reads in the entire <MediaRegistry> chunk.
+ * Reads in the entire <MediaRegistry> chunk. For pre-1.4 files, this gets called
+ * with the <DiskRegistry> chunk instead.
  * @param elmMediaRegistry
  */
 void MainConfigFile::readMediaRegistry(const xml::ElementNode &elmMediaRegistry)
@@ -686,9 +803,9 @@ void MainConfigFile::readMediaRegistry(const xml::ElementNode &elmMediaRegistry)
         else
             continue;
 
-        xml::NodesLoop nl1(*pelmChild1);
+        xml::NodesLoop nl2(*pelmChild1);
         const xml::ElementNode *pelmMedium;
-        while ((pelmMedium = nl1.forAllNodes()))
+        while ((pelmMedium = nl2.forAllNodes()))
         {
             if (    t == HardDisk
                  && (pelmMedium->nameEquals("HardDisk"))
@@ -772,7 +889,9 @@ MainConfigFile::MainConfigFile(const Utf8Str *pstrFilename)
                     if (pelmGlobalChild->nameEquals("SystemProperties"))
                     {
                         pelmGlobalChild->getAttributeValue("defaultMachineFolder", systemProperties.strDefaultMachineFolder);
-                        pelmGlobalChild->getAttributeValue("defaultHardDiskFolder", systemProperties.strDefaultHardDiskFolder);
+                        if (!pelmGlobalChild->getAttributeValue("defaultHardDiskFolder", systemProperties.strDefaultHardDiskFolder))
+                            // pre-1.4 used @defaultVDIFolder instead
+                            pelmGlobalChild->getAttributeValue("defaultVDIFolder", systemProperties.strDefaultHardDiskFolder);
                         pelmGlobalChild->getAttributeValue("defaultHardDiskFormat", systemProperties.strDefaultHardDiskFormat);
                         pelmGlobalChild->getAttributeValue("remoteDisplayAuthLibrary", systemProperties.strRemoteDisplayAuthLibrary);
                         pelmGlobalChild->getAttributeValue("webServiceAuthLibrary", systemProperties.strWebServiceAuthLibrary);
@@ -782,7 +901,11 @@ MainConfigFile::MainConfigFile(const Utf8Str *pstrFilename)
                         readExtraData(*pelmGlobalChild, mapExtraDataItems);
                     else if (pelmGlobalChild->nameEquals("MachineRegistry"))
                         readMachineRegistry(*pelmGlobalChild);
-                    else if (pelmGlobalChild->nameEquals("MediaRegistry"))
+                    else if (    (pelmGlobalChild->nameEquals("MediaRegistry"))
+                              || (    (m->sv < SettingsVersion_v1_4)
+                                   && (pelmGlobalChild->nameEquals("DiskRegistry"))
+                                 )
+                            )
                         readMediaRegistry(*pelmGlobalChild);
                     else if (pelmGlobalChild->nameEquals("NetserviceRegistry"))
                     {
@@ -1234,7 +1357,13 @@ void MachineConfigFile::readHardware(const xml::ElementNode &elmHardware,
     {
         if (pelmHwChild->nameEquals("CPU"))
         {
-            pelmHwChild->getAttributeValue("count", hw.cCPUs);
+            if (!pelmHwChild->getAttributeValue("count", hw.cCPUs))
+            {
+                // pre-1.5 variant; not sure if this actually exists in the wild anywhere
+                const xml::ElementNode *pelmCPUChild;
+                if ((pelmCPUChild = pelmHwChild->findChildElement("CPUCount")))
+                    pelmCPUChild->getAttributeValue("count", hw.cCPUs);
+            }
 
             const xml::ElementNode *pelmCPUChild;
             if ((pelmCPUChild = pelmHwChild->findChildElement("HardwareVirtEx")))
@@ -1317,8 +1446,10 @@ void MachineConfigFile::readHardware(const xml::ElementNode &elmHardware,
         else if (pelmHwChild->nameEquals("Display"))
         {
             pelmHwChild->getAttributeValue("VRAMSize", hw.ulVRAMSizeMB);
-            pelmHwChild->getAttributeValue("monitorCount", hw.cMonitors);
-            pelmHwChild->getAttributeValue("accelerate3D", hw.fAccelerate3D);
+            if (!pelmHwChild->getAttributeValue("monitorCount", hw.cMonitors))
+                pelmHwChild->getAttributeValue("MonitorCount", hw.cMonitors);       // pre-v1.5 variant
+            if (!pelmHwChild->getAttributeValue("accelerate3D", hw.fAccelerate3D))
+                pelmHwChild->getAttributeValue("Accelerate3D", hw.fAccelerate3D);   // pre-v1.5 variant
             pelmHwChild->getAttributeValue("accelerate2DVideo", hw.fAccelerate2DVideo);
         }
         else if (pelmHwChild->nameEquals("RemoteDisplay"))
@@ -1330,11 +1461,13 @@ void MachineConfigFile::readHardware(const xml::ElementNode &elmHardware,
             Utf8Str strAuthType;
             if (pelmHwChild->getAttributeValue("authType", strAuthType))
             {
-                if (strAuthType == "Null")
+                // settings before 1.3 used lower case so make sure this is case-insensitive
+                strAuthType.toUpper();
+                if (strAuthType == "NULL")
                     hw.vrdpSettings.authType = VRDPAuthType_Null;
-                else if (strAuthType == "Guest")
+                else if (strAuthType == "GUEST")
                     hw.vrdpSettings.authType = VRDPAuthType_Guest;
-                else if (strAuthType == "External")
+                else if (strAuthType == "EXTERNAL")
                     hw.vrdpSettings.authType = VRDPAuthType_External;
                 else
                     throw ConfigFileError(this, pelmHwChild, N_("Invalid value '%s' in RemoteDisplay/@authType attribute"), strAuthType.c_str());
@@ -1363,11 +1496,13 @@ void MachineConfigFile::readHardware(const xml::ElementNode &elmHardware,
                 Utf8Str strBootMenuMode;
                 if (pelmBIOSChild->getAttributeValue("mode", strBootMenuMode))
                 {
-                    if (strBootMenuMode == "Disabled")
+                    // settings before 1.3 used lower case so make sure this is case-insensitive
+                    strBootMenuMode.toUpper();
+                    if (strBootMenuMode == "DISABLED")
                         hw.biosSettings.biosBootMenuMode = BIOSBootMenuMode_Disabled;
-                    else if (strBootMenuMode == "MenuOnly")
+                    else if (strBootMenuMode == "MENUONLY")
                         hw.biosSettings.biosBootMenuMode = BIOSBootMenuMode_MenuOnly;
-                    else if (strBootMenuMode == "MessageAndMenu")
+                    else if (strBootMenuMode == "MESSAGEANDMENU")
                         hw.biosSettings.biosBootMenuMode = BIOSBootMenuMode_MessageAndMenu;
                     else
                         throw ConfigFileError(this, pelmBIOSChild, N_("Invalid value '%s' in BootMenu/@mode attribute"), strBootMenuMode.c_str());
@@ -1432,9 +1567,13 @@ void MachineConfigFile::readHardware(const xml::ElementNode &elmHardware,
         }
         else if (pelmHwChild->nameEquals("Network"))
             readNetworkAdapters(*pelmHwChild, hw.llNetworkAdapters);
-        else if (pelmHwChild->nameEquals("UART"))
+        else if (    (pelmHwChild->nameEquals("UART"))
+                  || (pelmHwChild->nameEquals("Uart"))      // used before 1.3
+                )
             readSerialPorts(*pelmHwChild, hw.llSerialPorts);
-        else if (pelmHwChild->nameEquals("LPT"))
+        else if (    (pelmHwChild->nameEquals("LPT"))
+                  ||  (pelmHwChild->nameEquals("Lpt"))      // used before 1.3
+                )
             readParallelPorts(*pelmHwChild, hw.llParallelPorts);
         else if (pelmHwChild->nameEquals("AudioAdapter"))
         {
@@ -1452,21 +1591,23 @@ void MachineConfigFile::readHardware(const xml::ElementNode &elmHardware,
             }
             if (pelmHwChild->getAttributeValue("driver", strTemp))
             {
-                if (strTemp == "Null")
+                // settings before 1.3 used lower case so make sure this is case-insensitive
+                strTemp.toUpper();
+                if (strTemp == "NULL")
                     hw.audioAdapter.driverType = AudioDriverType_Null;
-                else if (strTemp == "WinMM")
+                else if (strTemp == "WINMM")
                     hw.audioAdapter.driverType = AudioDriverType_WinMM;
-                else if (strTemp == "DirectSound")
+                else if ( (strTemp == "DIRECTSOUND") || (strTemp == "DSOUND") )
                     hw.audioAdapter.driverType = AudioDriverType_DirectSound;
-                else if (strTemp == "SolAudio")
+                else if (strTemp == "SOLAUDIO")
                     hw.audioAdapter.driverType = AudioDriverType_SolAudio;
                 else if (strTemp == "ALSA")
                     hw.audioAdapter.driverType = AudioDriverType_ALSA;
-                else if (strTemp == "Pulse")
+                else if (strTemp == "PULSE")
                     hw.audioAdapter.driverType = AudioDriverType_Pulse;
                 else if (strTemp == "OSS")
                     hw.audioAdapter.driverType = AudioDriverType_OSS;
-                else if (strTemp == "CoreAudio")
+                else if (strTemp == "COREAUDIO")
                     hw.audioAdapter.driverType = AudioDriverType_CoreAudio;
                 else if (strTemp == "MMPM")
                     hw.audioAdapter.driverType = AudioDriverType_MMPM;
@@ -1506,8 +1647,10 @@ void MachineConfigFile::readHardware(const xml::ElementNode &elmHardware,
         }
         else if (pelmHwChild->nameEquals("Guest"))
         {
-            pelmHwChild->getAttributeValue("memoryBalloonSize", hw.ulMemoryBalloonSize);
-            pelmHwChild->getAttributeValue("statisticsUpdateInterval", hw.ulStatisticsUpdateInterval);
+            if (!pelmHwChild->getAttributeValue("memoryBalloonSize", hw.ulMemoryBalloonSize))
+                pelmHwChild->getAttributeValue("MemoryBalloonSize", hw.ulMemoryBalloonSize);            // used before 1.3
+            if (!pelmHwChild->getAttributeValue("statisticsUpdateInterval", hw.ulStatisticsUpdateInterval))
+                pelmHwChild->getAttributeValue("StatisticsUpdateInterval", hw.ulStatisticsUpdateInterval);
         }
         else if (pelmHwChild->nameEquals("GuestProperties"))
             readGuestProperties(*pelmHwChild, hw);
@@ -1877,6 +2020,45 @@ void MachineConfigFile::readSnapshot(const xml::ElementNode &elmSnapshot,
         readDVDAndFloppies_pre1_9(*pelmHardware, snap.storage);
 }
 
+void MachineConfigFile::convertOldOSType_pre1_5(Utf8Str &str)
+{
+    if (str == "unknown") str = "Other";
+    else if (str == "dos") str = "DOS";
+    else if (str == "win31") str = "Windows31";
+    else if (str == "win95") str = "Windows95";
+    else if (str == "win98") str = "Windows98";
+    else if (str == "winme") str = "WindowsMe";
+    else if (str == "winnt4") str = "WindowsNT4";
+    else if (str == "win2k") str = "Windows2000";
+    else if (str == "winxp") str = "WindowsXP";
+    else if (str == "win2k3") str = "Windows2003";
+    else if (str == "winvista") str = "WindowsVista";
+    else if (str == "win2k8") str = "Windows2008";
+    else if (str == "os2warp3") str = "OS2Warp3";
+    else if (str == "os2warp4") str = "OS2Warp4";
+    else if (str == "os2warp45") str = "OS2Warp45";
+    else if (str == "ecs") str = "OS2eCS";
+    else if (str == "linux22") str = "Linux22";
+    else if (str == "linux24") str = "Linux24";
+    else if (str == "linux26") str = "Linux26";
+    else if (str == "archlinux") str = "ArchLinux";
+    else if (str == "debian") str = "Debian";
+    else if (str == "opensuse") str = "OpenSUSE";
+    else if (str == "fedoracore") str = "Fedora";
+    else if (str == "gentoo") str = "Gentoo";
+    else if (str == "mandriva") str = "Mandriva";
+    else if (str == "redhat") str = "RedHat";
+    else if (str == "ubuntu") str = "Ubuntu";
+    else if (str == "xandros") str = "Xandros";
+    else if (str == "freebsd") str = "FreeBSD";
+    else if (str == "openbsd") str = "OpenBSD";
+    else if (str == "netbsd") str = "NetBSD";
+    else if (str == "netware") str = "Netware";
+    else if (str == "solaris") str = "Solaris";
+    else if (str == "opensolaris") str = "OpenSolaris";
+    else if (str == "l4") str = "L4";
+}
+
 /**
  * Called from the constructor to actually read in the <Machine> element
  * of a machine config file.
@@ -1896,7 +2078,11 @@ void MachineConfigFile::readMachine(const xml::ElementNode &elmMachine)
 
         Utf8Str str;
         elmMachine.getAttributeValue("Description", strDescription);
+
         elmMachine.getAttributeValue("OSType", strOsType);
+        if (m->sv < SettingsVersion_v1_5)
+            convertOldOSType_pre1_5(strOsType);
+
         elmMachine.getAttributeValue("stateFile", strStateFile);
         if (elmMachine.getAttributeValue("currentSnapshot", str))
             parseUUID(uuidCurrentSnapshot, str);
