@@ -2238,15 +2238,18 @@ PGM_BTH_DECL(int, CheckPageFault)(PVMCPU pVCpu, uint32_t uErr, PSHWPDE pPdeDst, 
             {
                 if (pPdeDst->u & PGM_PDFLAGS_TRACK_DIRTY)
                 {
+                    SHWPDE PdeDst = *pPdeDst;
+
                     STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_MID_Z(Stat,DirtyPageTrap));
-                    Assert(pPdeSrc->b.u1Write);
+                    Assert(PdeDst.b.u1Write);
 
                     /* Note: No need to invalidate this entry on other VCPUs as a stale TLB entry will not harm; write access will simply
                      *       fault again and take this path to only invalidate the entry.
                      */
-                    pPdeDst->n.u1Write      = 1;
-                    pPdeDst->n.u1Accessed   = 1;
-                    pPdeDst->au32[0]       &= ~PGM_PDFLAGS_TRACK_DIRTY;
+                    PdeDst.n.u1Write      = 1;
+                    PdeDst.n.u1Accessed   = 1;
+                    PdeDst.au32[0]       &= ~PGM_PDFLAGS_TRACK_DIRTY;
+                    ASMAtomicWriteSize(pPdeDst, PdeDst.u);
                     PGM_INVL_BIG_PG(pVCpu, GCPtrPage);
                     STAM_PROFILE_STOP(&pVCpu->pgm.s.CTX_MID_Z(Stat,DirtyBitTracking), a);
                     return VINF_PGM_HANDLED_DIRTY_BIT_FAULT;    /* restarts the instruction. */
@@ -2368,12 +2371,13 @@ PGM_BTH_DECL(int, CheckPageFault)(PVMCPU pVCpu, uint32_t uErr, PSHWPDE pPdeDst, 
                     {
                         if (pPteDst->u & PGM_PTFLAGS_TRACK_DIRTY)
                         {
-                            PPGMPAGE pPage = pgmPhysGetPage(&pVM->pgm.s, pPteSrc->u & GST_PTE_PG_MASK);
+                            PPGMPAGE pPage  = pgmPhysGetPage(&pVM->pgm.s, pPteSrc->u & GST_PTE_PG_MASK);
+                            SHWPTE   PteDst = *pPteDst;
 
                             LogFlow(("DIRTY page trap addr=%RGv\n", GCPtrPage));
                             STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_MID_Z(Stat,DirtyPageTrap));
 
-                            Assert(pPteSrc->n.u1Write);
+                            Assert(PteDst.n.u1Write);
 
                             /* Note: No need to invalidate this entry on other VCPUs as a stale TLB entry will not harm; write access will simply
                              *       fault again and take this path to only invalidate the entry.
@@ -2382,14 +2386,15 @@ PGM_BTH_DECL(int, CheckPageFault)(PVMCPU pVCpu, uint32_t uErr, PSHWPDE pPdeDst, 
                                 &&  PGM_PAGE_HAS_ACTIVE_HANDLERS(pPage))
                             {
                                 /* Assuming write handlers here as the PTE is present (otherwise we wouldn't be here). */
-                                pPteDst->n.u1Write    = 0;
+                                PteDst.n.u1Write    = 0;
                             }
                             else
-                                pPteDst->n.u1Write    = 1;
+                                PteDst.n.u1Write    = 1;
 
-                            pPteDst->n.u1Dirty    = 1;
-                            pPteDst->n.u1Accessed = 1;
-                            pPteDst->au32[0]     &= ~PGM_PTFLAGS_TRACK_DIRTY;
+                            PteDst.n.u1Dirty    = 1;
+                            PteDst.n.u1Accessed = 1;
+                            PteDst.au32[0]     &= ~PGM_PTFLAGS_TRACK_DIRTY;
+                            ASMAtomicWriteSize(pPteDst, PteDst.u);
                             PGM_INVL_PG(pVCpu, GCPtrPage);
 
                             STAM_PROFILE_STOP(&pVCpu->pgm.s.CTX_MID_Z(Stat,DirtyBitTracking), a);
