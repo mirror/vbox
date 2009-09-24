@@ -68,7 +68,7 @@ VMMDECL(RTGCPTR) SELMToFlatBySel(PVM pVM, RTSEL Sel, RTGCPTR Addr)
         Desc = paLDT[Sel >> X86_SEL_SHIFT];
     }
 
-    return (RTGCPTR)((RTGCUINTPTR)Addr + X86DESC_BASE(Desc));
+    return (RTGCPTR)(((RTGCUINTPTR)Addr + X86DESC_BASE(Desc)) & 0xffffffff);
 }
 #endif /* !IN_RING0 */
 
@@ -331,6 +331,10 @@ VMMDECL(int) SELMToFlatEx(PVM pVM, DIS_SELREG SelReg, PCCPUMCTXCORE pCtxCore, RT
         /* calc address assuming straight stuff. */
         pvFlat = (RTGCPTR)((RTGCUINTPTR)Addr + X86DESC_BASE(Desc));
 
+        /* Cut the address to 32 bits. */
+        Assert(!CPUMIsGuestInLongMode(pVCpu))
+        pvFlat &= 0xffffffff;
+
         u1Present     = Desc.Gen.u1Present;
         u1Granularity = Desc.Gen.u1Granularity;
         u1DescType    = Desc.Gen.u1DescType;
@@ -538,6 +542,10 @@ VMMDECL(int) SELMToFlatBySelEx(PVM pVM, X86EFLAGS eflags, RTSEL Sel, RTGCPTR Add
         /* calc address assuming straight stuff. */
         pvFlat = (RTGCPTR)((RTGCUINTPTR)Addr + X86DESC_BASE(Desc));
 
+        /* Cut the address to 32 bits. */
+        Assert(!CPUMIsGuestInLongMode(pVCpu))
+        pvFlat &= 0xffffffff;
+
         u1Present     = Desc.Gen.u1Present;
         u1Granularity = Desc.Gen.u1Granularity;
         u1DescType    = Desc.Gen.u1DescType;
@@ -736,6 +744,10 @@ DECLINLINE(int) selmValidateAndConvertCSAddrStd(PVM pVM, RTSEL SelCPL, RTSEL Sel
                 if ((RTGCUINTPTR)Addr <= u32Limit)
                 {
                     *ppvFlat = (RTGCPTR)((RTGCUINTPTR)Addr + X86DESC_BASE(Desc));
+                    /* Cut the address to 32 bits. */
+                    Assert(!CPUMIsGuestInLongMode(pVCpu))
+                    *ppvFlat &= 0xffffffff;
+
                     if (pcBits)
                         *pcBits = Desc.Gen.u1DefBig ? 32 : 16; /** @todo GUEST64 */
                     return VINF_SUCCESS;
