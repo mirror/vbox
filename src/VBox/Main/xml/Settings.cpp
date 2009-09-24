@@ -393,7 +393,7 @@ void ConfigFileBase::readUSBDeviceFilters(const xml::ElementNode &elmDeviceFilte
             if (!pelmLevel4Child->getAttributeValue("vendorId", flt.strVendorId))
                 pelmLevel4Child->getAttributeValue("vendorid", flt.strVendorId);            // used before 1.3
             if (!pelmLevel4Child->getAttributeValue("productId", flt.strProductId))
-                pelmLevel4Child->getAttributeValue("productid", flt.strProductId)           // used before 1.3
+                pelmLevel4Child->getAttributeValue("productid", flt.strProductId);          // used before 1.3
             pelmLevel4Child->getAttributeValue("revision", flt.strRevision);
             pelmLevel4Child->getAttributeValue("manufacturer", flt.strManufacturer);
             pelmLevel4Child->getAttributeValue("product", flt.strProduct);
