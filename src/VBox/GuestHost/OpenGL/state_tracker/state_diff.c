@@ -238,6 +238,9 @@ void crStateSwitchContext( CRContext *from, CRContext *to )
     /*Note, this should go after crStateTextureSwitch*/
     crStateFramebufferObjectSwitch(from, to);
 #endif
+#ifdef CR_OPENGL_VERSION_2_0
+    crStateGLSLSwitch(from, to);
+#endif
 	if (CHECKDIRTY(sb->current.dirty, bitID))
 	{
 		crStateCurrentSwitch( &(sb->current), bitID, from, to );

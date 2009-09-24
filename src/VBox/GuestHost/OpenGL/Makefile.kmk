@@ -340,6 +340,7 @@ VBoxOGLcrstate_SOURCES = \
 	state_tracker/state_transform.c \
 	state_tracker/state_viewport.c \
 	state_tracker/state_framebuffer.c \
+	state_tracker/state_glsl.c \
 	$(VBOX_PATH_CROGL_GENFILES)/state_buffer_gen.c \
 	$(VBOX_PATH_CROGL_GENFILES)/state_current_gen.c \
 	$(VBOX_PATH_CROGL_GENFILES)/state_fog_gen.c \

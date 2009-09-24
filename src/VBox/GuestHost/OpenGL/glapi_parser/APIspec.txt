@@ -9669,6 +9669,7 @@ props       nolist
 chromium    extpack
 
 name        DetachObjectARB
+alias       DetachShader
 return      void
 param       containerObj    GLhandleARB
 param       attachedObj     GLhandleARB
@@ -9709,6 +9710,7 @@ props       get
 chromium    nopack
 
 name        AttachObjectARB
+alias       AttachShader
 return      void
 param       containerObj    GLhandleARB
 param       obj             GLhandleARB

@@ -124,6 +124,7 @@ crStateCreateContextId(int i, const CRLimitsState *limits,
     crStateTransformInit( ctx );
     crStateViewportInit ( ctx );
     crStateFramebufferObjectInit(ctx);
+    crStateGLSLInit(ctx);
 
     /* This has to come last. */
     crStateAttribInit( &(ctx->attrib) );
@@ -191,6 +192,7 @@ crStateFreeContext(CRContext *ctx)
     crStateTransformDestroy( ctx );
     crStateFreeShared(ctx->shared);
     crStateFramebufferObjectDestroy(ctx);
+    crStateGLSLDestroy(ctx);
     crFree( ctx );
 }
 
