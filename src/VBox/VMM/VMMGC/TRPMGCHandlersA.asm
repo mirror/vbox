@@ -264,10 +264,6 @@ GenericTrapErrCode:
 
     mov     eax, [esp + 14h + ESPOFF]           ; esp
     mov     [esp + CPUMCTXCORE.esp], eax
-%if GC_ARCH_BITS == 64
-    ; zero out the high dword
-    mov     dword [esp + CPUMCTXCORE.esp + 4], 0
-%endif
     mov     eax, [esp + 18h + ESPOFF]           ; ss
     mov     dword [esp + CPUMCTXCORE.ss], eax
 
@@ -275,12 +271,21 @@ GenericTrapErrCode:
     mov     dword [esp + CPUMCTXCORE.cs], eax
     mov     eax, [esp + 08h + ESPOFF]           ; eip
     mov     [esp + CPUMCTXCORE.eip], eax
-%if GC_ARCH_BITS == 64
-    ; zero out the high dword
-    mov     dword [esp + CPUMCTXCORE.eip + 4], 0
-%endif
     mov     eax, [esp + 10h + ESPOFF]           ; eflags
     mov     [esp + CPUMCTXCORE.eflags], eax
+
+%if GC_ARCH_BITS == 64    
+    ; zero out the high dwords
+    mov     dword [esp + CPUMCTXCORE.eax + 4], 0
+    mov     dword [esp + CPUMCTXCORE.ecx + 4], 0
+    mov     dword [esp + CPUMCTXCORE.edx + 4], 0
+    mov     dword [esp + CPUMCTXCORE.ebx + 4], 0
+    mov     dword [esp + CPUMCTXCORE.esi + 4], 0
+    mov     dword [esp + CPUMCTXCORE.edi + 4], 0
+    mov     dword [esp + CPUMCTXCORE.ebp + 4], 0
+    mov     dword [esp + CPUMCTXCORE.esp + 4], 0
+    mov     dword [esp + CPUMCTXCORE.eip + 4], 0
+%endif
 
     mov     eax, es
     mov     dword [esp + CPUMCTXCORE.es], eax
@@ -763,10 +768,6 @@ ti_GenericInterrupt:
 
     mov     eax, [esp + 04h + ESPOFF]           ; eip
     mov     [esp + CPUMCTXCORE.eip], eax
-%if GC_ARCH_BITS == 64
-    ; zero out the high dword
-    mov     dword [esp + CPUMCTXCORE.eip + 4], 0
-%endif
     mov     eax, dword [esp + 08h + ESPOFF]     ; cs
     mov     [esp + CPUMCTXCORE.cs], eax
     mov     eax, [esp + 0ch + ESPOFF]           ; eflags
@@ -774,12 +775,21 @@ ti_GenericInterrupt:
 
     mov     eax, [esp + 10h + ESPOFF]           ; esp
     mov     [esp + CPUMCTXCORE.esp], eax
-%if GC_ARCH_BITS == 64
-    ; zero out the high dword
-    mov     dword [esp + CPUMCTXCORE.esp + 4], 0
-%endif
     mov     eax, dword [esp + 14h + ESPOFF]     ; ss
     mov     [esp + CPUMCTXCORE.ss], eax
+
+%if GC_ARCH_BITS == 64    
+    ; zero out the high dwords
+    mov     dword [esp + CPUMCTXCORE.eax + 4], 0
+    mov     dword [esp + CPUMCTXCORE.ecx + 4], 0
+    mov     dword [esp + CPUMCTXCORE.edx + 4], 0
+    mov     dword [esp + CPUMCTXCORE.ebx + 4], 0
+    mov     dword [esp + CPUMCTXCORE.esi + 4], 0
+    mov     dword [esp + CPUMCTXCORE.edi + 4], 0
+    mov     dword [esp + CPUMCTXCORE.ebp + 4], 0
+    mov     dword [esp + CPUMCTXCORE.esp + 4], 0
+    mov     dword [esp + CPUMCTXCORE.eip + 4], 0
+%endif
 
     mov     eax, es
     mov     dword [esp + CPUMCTXCORE.es], eax
