@@ -158,7 +158,10 @@ struct Host::Data
                             pParent;
 
 #ifdef VBOX_WITH_USB
-    USBDeviceFilterList     llUSBDeviceFilters;
+    WriteLockHandle         treeLock;                   // protects the below two lists
+
+    USBDeviceFilterList     llChildren;                 // all USB device filters
+    USBDeviceFilterList     llUSBDeviceFilters;         // USB device filters in use by the USB proxy service
 
     /** Pointer to the USBProxyService object. */
     USBProxyService         *pUSBProxyService;
@@ -336,10 +339,18 @@ void Host::uninit()
 
     delete m->pHostPowerService;
 
-    /* uninit all USB device filters still referenced by clients */
-    uninitDependentChildren();
-
 #ifdef VBOX_WITH_USB
+    /* uninit all USB device filters still referenced by clients */
+    for (USBDeviceFilterList::iterator it = m->llChildren.begin();
+         it != m->llChildren.end();
+         ++it)
+    {
+        ComObjPtr<HostUSBDeviceFilter> &pChild = *it;
+        pChild->uninit();
+    }
+
+    m->llChildren.clear();
+
     m->llUSBDeviceFilters.clear();
 #endif
 
@@ -901,7 +912,7 @@ STDMETHODIMP Host::COMGETTER(USBDevices)(ComSafeArrayOut(IHostUSBDevice*, aUSBDe
     MultiResult rc = checkUSBProxyService();
     CheckComRCReturnRC(rc);
 
-    return m->pUSBProxyService->getDeviceCollection (ComSafeArrayOutArg(aUSBDevices));
+    return m->pUSBProxyService->getDeviceCollection(ComSafeArrayOutArg(aUSBDevices));
 
 #else
     /* Note: The GUI depends on this method returning E_NOTIMPL with no
@@ -923,12 +934,12 @@ STDMETHODIMP Host::COMGETTER(USBDeviceFilters)(ComSafeArrayOut(IHostUSBDeviceFil
     AutoCaller autoCaller(this);
     CheckComRCReturnRC(autoCaller.rc());
 
-    AutoWriteLock alock(this);
+    AutoMultiWriteLock2 alock(this->lockHandle(), &m->treeLock);
 
     MultiResult rc = checkUSBProxyService();
     CheckComRCReturnRC(rc);
 
-    SafeIfaceArray<IHostUSBDeviceFilter> collection (m->llUSBDeviceFilters);
+    SafeIfaceArray<IHostUSBDeviceFilter> collection(m->llUSBDeviceFilters);
     collection.detachTo(ComSafeArrayOutArg(aUSBDeviceFilters));
 
     return rc;
@@ -1257,18 +1268,27 @@ STDMETHODIMP Host::InsertUSBDeviceFilter(ULONG aPosition,
     AutoCaller autoCaller(this);
     CheckComRCReturnRC(autoCaller.rc());
 
-    AutoWriteLock alock(this);
+    AutoMultiWriteLock2 alock(this->lockHandle(), &m->treeLock);
 
     MultiResult rc = checkUSBProxyService();
     CheckComRCReturnRC(rc);
 
-    ComObjPtr<HostUSBDeviceFilter> filter = getDependentChild (aFilter);
-    if (!filter)
-        return setError (VBOX_E_INVALID_OBJECT_STATE,
-            tr ("The given USB device filter is not created within "
-                "this VirtualBox instance"));
+    ComObjPtr<HostUSBDeviceFilter> pFilter;
+    for (USBDeviceFilterList::iterator it = m->llChildren.begin();
+         it != m->llChildren.end();
+         ++it)
+    {
+        if (*it == aFilter)
+        {
+            pFilter = *it;
+            break;
+        }
+    }
+    if (pFilter.isNull())
+        return setError(VBOX_E_INVALID_OBJECT_STATE,
+                        tr("The given USB device filter is not created within this VirtualBox instance"));
 
-    if (filter->mInList)
+    if (pFilter->mInList)
         return setError (E_INVALIDARG,
             tr ("The given USB device filter is already in the list"));
 
@@ -1276,14 +1296,15 @@ STDMETHODIMP Host::InsertUSBDeviceFilter(ULONG aPosition,
     USBDeviceFilterList::iterator it = m->llUSBDeviceFilters.begin();
     std::advance (it, aPosition);
     /* ...and insert */
-    m->llUSBDeviceFilters.insert (it, filter);
-    filter->mInList = true;
+    m->llUSBDeviceFilters.insert(it, pFilter);
+    pFilter->mInList = true;
 
     /* notify the proxy (only when the filter is active) */
-    if (m->pUSBProxyService->isActive() && filter->data().mActive)
+    if (    m->pUSBProxyService->isActive()
+         && pFilter->data().mActive)
     {
-        ComAssertRet (filter->id() == NULL, E_FAIL);
-        filter->id() = m->pUSBProxyService->insertFilter (&filter->data().mUSBFilter);
+        ComAssertRet(pFilter->id() == NULL, E_FAIL);
+        pFilter->id() = m->pUSBProxyService->insertFilter(&pFilter->data().mUSBFilter);
     }
 
     /* save the global settings */
@@ -1307,7 +1328,7 @@ STDMETHODIMP Host::RemoveUSBDeviceFilter(ULONG aPosition)
     AutoCaller autoCaller(this);
     CheckComRCReturnRC(autoCaller.rc());
 
-    AutoWriteLock alock(this);
+    AutoMultiWriteLock2 alock(this->lockHandle(), &m->treeLock);
 
     MultiResult rc = checkUSBProxyService();
     CheckComRCReturnRC(rc);
@@ -1330,7 +1351,7 @@ STDMETHODIMP Host::RemoveUSBDeviceFilter(ULONG aPosition)
         filter = *it;
         /* ...and remove */
         filter->mInList = false;
-        m->llUSBDeviceFilters.erase (it);
+        m->llUSBDeviceFilters.erase(it);
     }
 
     /* notify the proxy (only when the filter is active) */
@@ -1590,7 +1611,7 @@ HRESULT Host::loadSettings(const settings::Host &data)
     AutoCaller autoCaller(this);
     CheckComRCReturnRC(autoCaller.rc());
 
-    AutoWriteLock alock(this);
+    AutoMultiWriteLock2 alock(this->lockHandle(), &m->treeLock);
 
     HRESULT rc = S_OK;
 
@@ -1627,7 +1648,7 @@ HRESULT Host::saveSettings(settings::Host &data)
     AutoCaller autoCaller(this);
     CheckComRCReturnRC(autoCaller.rc());
 
-    AutoWriteLock alock(this);
+    AutoReadLock alock(&m->treeLock);
 
 #ifdef VBOX_WITH_USB
     data.llUSBDeviceFilters.clear();
@@ -1652,6 +1673,39 @@ HRESULT Host::saveSettings(settings::Host &data)
 USBProxyService* Host::usbProxyService()
 {
     return m->pUSBProxyService;
+}
+
+HRESULT Host::addChild(HostUSBDeviceFilter *pChild)
+{
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
+
+    AutoWriteLock alock(&m->treeLock);
+
+    m->llChildren.push_back(pChild);
+
+    return S_OK;
+}
+
+HRESULT Host::removeChild(HostUSBDeviceFilter *pChild)
+{
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
+
+    AutoWriteLock alock(&m->treeLock);
+
+    for (USBDeviceFilterList::iterator it = m->llChildren.begin();
+         it != m->llChildren.end();
+         ++it)
+    {
+        if (*it == pChild)
+        {
+            m->llChildren.erase(it);
+            break;
+        }
+    }
+
+    return S_OK;
 }
 
 VirtualBox* Host::parent()
@@ -1716,7 +1770,7 @@ HRESULT Host::onUSBDeviceFilterChange(HostUSBDeviceFilter *aFilter,
  */
 void Host::getUSBFilters(Host::USBDeviceFilterList *aGlobalFilters)
 {
-    AutoWriteLock alock(this);
+    AutoReadLock alock(&m->treeLock);
 
     *aGlobalFilters = m->llUSBDeviceFilters;
 }
@@ -2228,15 +2282,6 @@ bool Host::validateDevice(const char *deviceNode, bool isCDROM)
 #endif // RT_OS_SOLARIS
 
 #ifdef VBOX_WITH_USB
-ComObjPtr<HostUSBDeviceFilter> Host::getDependentChild (IHostUSBDeviceFilter *aFilter)
-{
-    VirtualBoxBase *child = VirtualBoxBaseWithChildren::getDependentChild(ComPtr<IUnknown>(aFilter));
-    return child
-            ? dynamic_cast<HostUSBDeviceFilter*>(child)
-            : NULL;
-}
-
-
 /**
  *  Checks for the presense and status of the USB Proxy Service.
  *  Returns S_OK when the Proxy is present and OK, VBOX_E_HOST_ERROR (as a
