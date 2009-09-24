@@ -524,12 +524,11 @@ static int handleStartVM(HandlerArg *a)
         /* make sure the VM process will start on the same display as VBoxManage */
         Utf8Str str;
         const char *pszDisplay = RTEnvGet("DISPLAY");
-        if (pszDisplay)
-            str.append(Utf8StrFmt("DISPLAY=%s\n", pszDisplay));
+        str = Utf8StrFmt("DISPLAY=%s\n", pszDisplay);
         const char *pszXAuth = RTEnvGet("XAUTHORITY");
         if (pszXAuth)
             str.append(Utf8StrFmt("XAUTHORITY=%s\n", pszXAuth));
-        env = Bstr(str);
+        env = str;
 #endif
         ComPtr<IProgress> progress;
         CHECK_ERROR_RET(a->virtualBox, OpenRemoteSession(a->session, uuid, sessionType,
