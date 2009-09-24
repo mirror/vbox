@@ -55,6 +55,6 @@ RTR3DECL(int) RTDirQueryInfo(PRTDIR pDir, PRTFSOBJINFO pObjInfo, RTFSOBJATTRADD 
      */
     if (!rtDirValidHandle(pDir))
         return VERR_INVALID_PARAMETER;
-    return RTPathQueryInfo(pDir->pszPath, pObjInfo, enmAdditionalAttribs);
+    return RTPathQueryInfoEx(pDir->pszPath, pObjInfo, enmAdditionalAttribs, RTPATH_F_FOLLOW_LINK);
 }
 
