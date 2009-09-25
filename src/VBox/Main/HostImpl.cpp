@@ -341,15 +341,12 @@ void Host::uninit()
 
 #ifdef VBOX_WITH_USB
     /* uninit all USB device filters still referenced by clients */
-    for (USBDeviceFilterList::iterator it = m->llChildren.begin();
-         it != m->llChildren.end();
-         ++it)
+    while (!m->llChildren.empty())
     {
-        ComObjPtr<HostUSBDeviceFilter> &pChild = *it;
+        ComObjPtr<HostUSBDeviceFilter> pChild = m->llChildren.front();
+        m->llChildren.pop_front();
         pChild->uninit();
     }
-
-    m->llChildren.clear();
 
     m->llUSBDeviceFilters.clear();
 #endif
