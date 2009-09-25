@@ -1899,14 +1899,16 @@ check_darwinversion()
   case "$darwin_ver" in
     10\.*)
       darwin_ver="10.6"
-      [ "$TARGET_MACHINE" = "amd64" ] && cnf_append "VBOX_WITH_COCOA_QT" "1"
       ;;
     9\.*)
       darwin_ver="10.5"
       #cnf_append "VBOX_TARGET_MAC_OS_X_VERSION_10_5" "1"
+      cnf_append "VBOX_WITHOUT_VBOXPYTHON_FOR_OSX_10_6" "1"
       ;;
     8\.*)
       darwin_ver="10.4"
+      cnf_append "VBOX_WITH_COCOA_QT" ""
+      cnf_append "VBOX_WITHOUT_VBOXPYTHON_FOR_OSX_10_6" "1"
       ;;
     *)
       echo "  failed to determine Darwin version. (uname -r: $darwin_ver)"
