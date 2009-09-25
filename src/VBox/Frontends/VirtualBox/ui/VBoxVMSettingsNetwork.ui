@@ -202,7 +202,7 @@
          <string>Generates a new random MAC address.</string>
         </property>
         <property name="icon">
-         <iconset resource="../VirtualBox.qrc">
+         <iconset resource="../VirtualBox1.qrc">
           <normaloff>:/refresh_16px.png</normaloff>:/refresh_16px.png</iconset>
         </property>
         <property name="autoRaise">
@@ -257,7 +257,7 @@
   </customwidget>
  </customwidgets>
  <resources>
-  <include location="../VirtualBox.qrc"/>
+  <include location="../VirtualBox1.qrc"/>
  </resources>
  <connections>
   <connection>

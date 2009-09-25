@@ -167,8 +167,6 @@
    <header>QILabel.h</header>
   </customwidget>
  </customwidgets>
- <resources>
-  <include location="../VirtualBox.qrc" />
- </resources>
+ <resources/>
  <connections/>
 </ui>

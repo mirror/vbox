@@ -80,7 +80,7 @@
             <string/>
            </property>
            <property name="pixmap">
-            <pixmap resource="../VirtualBox.qrc">:/vmw_ovf_import.png</pixmap>
+            <pixmap resource="../VirtualBox1.qrc">:/vmw_ovf_import.png</pixmap>
            </property>
            <property name="alignment">
             <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
@@ -227,7 +227,7 @@ p, li { white-space: pre-wrap; }
             <string/>
            </property>
            <property name="pixmap">
-            <pixmap resource="../VirtualBox.qrc">:/vmw_ovf_import.png</pixmap>
+            <pixmap resource="../VirtualBox1.qrc">:/vmw_ovf_import.png</pixmap>
            </property>
            <property name="alignment">
             <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
@@ -394,7 +394,7 @@ p, li { white-space: pre-wrap; }
             <string/>
            </property>
            <property name="pixmap">
-            <pixmap resource="../VirtualBox.qrc">:/vmw_ovf_import.png</pixmap>
+            <pixmap resource="../VirtualBox1.qrc">:/vmw_ovf_import.png</pixmap>
            </property>
            <property name="alignment">
             <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
@@ -570,7 +570,7 @@ p, li { white-space: pre-wrap; }
             <string/>
            </property>
            <property name="pixmap">
-            <pixmap resource="../VirtualBox.qrc">:/vmw_ovf_import.png</pixmap>
+            <pixmap resource="../VirtualBox1.qrc">:/vmw_ovf_import.png</pixmap>
            </property>
            <property name="alignment">
             <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
@@ -800,8 +800,7 @@ p, li { white-space: pre-wrap; }
   <tabstop>mBtnCancel4</tabstop>
  </tabstops>
  <resources>
-  <include location="../VirtualBox.qrc"/>
-  <include location="../VirtualBox.qrc"/>
+  <include location="../VirtualBox1.qrc"/>
  </resources>
  <connections/>
 </ui>

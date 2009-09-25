@@ -91,7 +91,7 @@
             <string/>
            </property>
            <property name="pixmap" >
-            <pixmap resource="../VirtualBox.qrc" >:/vmw_new_harddisk.png</pixmap>
+            <pixmap resource="../VirtualBox1.qrc" >:/vmw_new_harddisk.png</pixmap>
            </property>
            <property name="alignment" >
             <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
@@ -277,7 +277,7 @@
             <string/>
            </property>
            <property name="pixmap" >
-            <pixmap resource="../VirtualBox.qrc" >:/vmw_new_harddisk.png</pixmap>
+            <pixmap resource="../VirtualBox1.qrc" >:/vmw_new_harddisk.png</pixmap>
            </property>
            <property name="alignment" >
             <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
@@ -488,7 +488,7 @@
                 <item>
                  <widget class="QToolButton" name="mTbVmm" >
                   <property name="icon" >
-                   <iconset resource="../VirtualBox.qrc" >:/select_file_16px.png</iconset>
+                   <iconset resource="../VirtualBox1.qrc" >:/select_file_16px.png</iconset>
                   </property>
                  </widget>
                 </item>
@@ -621,7 +621,7 @@
             <string/>
            </property>
            <property name="pixmap" >
-            <pixmap resource="../VirtualBox.qrc" >:/vmw_new_harddisk.png</pixmap>
+            <pixmap resource="../VirtualBox1.qrc" >:/vmw_new_harddisk.png</pixmap>
            </property>
            <property name="alignment" >
             <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
@@ -872,7 +872,7 @@ p, li { white-space: pre-wrap; }
   <tabstop>mBtnCancel4</tabstop>
  </tabstops>
  <resources>
-  <include location="../VirtualBox.qrc" />
+  <include location="../VirtualBox1.qrc" />
  </resources>
  <connections/>
 </ui>

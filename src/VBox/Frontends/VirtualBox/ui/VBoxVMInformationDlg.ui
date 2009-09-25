@@ -41,7 +41,7 @@
         <string>&amp;Details</string>
        </attribute>
        <attribute name="icon" >
-        <iconset resource="../VirtualBox.qrc" >:/settings_16px.png</iconset>
+        <iconset resource="../VirtualBox1.qrc" >:/settings_16px.png</iconset>
        </attribute>
        <layout class="QVBoxLayout" >
         <property name="leftMargin" >
@@ -76,7 +76,7 @@
         <string>&amp;Runtime</string>
        </attribute>
        <attribute name="icon" >
-        <iconset resource="../VirtualBox.qrc" >:/start_16px.png</iconset>
+        <iconset resource="../VirtualBox1.qrc" >:/start_16px.png</iconset>
        </attribute>
        <layout class="QVBoxLayout" >
         <property name="leftMargin" >
@@ -131,7 +131,7 @@
   </customwidget>
  </customwidgets>
  <resources>
-  <include location="../VirtualBox.qrc" />
+  <include location="../VirtualBox1.qrc" />
  </resources>
  <connections>
   <connection>

@@ -30,7 +30,7 @@
    <string>VBoxSnapshotDetailsDlg</string>
   </property>
   <property name="windowIcon" >
-   <iconset resource="../VirtualBox.qrc" >:/settings_16px.png</iconset>
+   <iconset resource="../VirtualBox1.qrc" >:/settings_16px.png</iconset>
   </property>
   <layout class="QVBoxLayout" >
    <item>
@@ -140,7 +140,7 @@
   </customwidget>
  </customwidgets>
  <resources>
-  <include location="../VirtualBox.qrc" />
+  <include location="../VirtualBox1.qrc" />
  </resources>
  <connections>
   <connection>

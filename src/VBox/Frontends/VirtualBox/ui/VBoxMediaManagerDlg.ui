@@ -35,10 +35,6 @@
   <property name="windowTitle" >
    <string>Virtual Media Manager</string>
   </property>
-  <property name="windowIcon" >
-   <iconset resource="../VirtualBox.qrc" >
-    <normaloff>:/diskim_16px.png</normaloff>:/diskim_16px.png</iconset>
-  </property>
   <widget class="QWidget" name="mCentralWidget" >
    <layout class="QHBoxLayout" >
     <item>
@@ -375,8 +371,6 @@
    <header>QILabel.h</header>
   </customwidget>
  </customwidgets>
- <resources>
-  <include location="../VirtualBox.qrc" />
- </resources>
+ <resources/>
  <connections/>
 </ui>
