@@ -2213,12 +2213,12 @@ VBoxVHWATexture::~VBoxVHWATexture()
 
 void VBoxVHWATextureNP2Rect::texCoord(int x, int y)
 {
-    glTexCoord2f(((float)x)/mColorFormat.widthCompression(), ((float)y)/mColorFormat.heightCompression());
+    glTexCoord2i(x/mColorFormat.widthCompression(), y/mColorFormat.heightCompression());
 }
 
 void VBoxVHWATextureNP2Rect::multiTexCoord(GLenum texUnit, int x, int y)
 {
-    vboxglMultiTexCoord2f(texUnit, x/mColorFormat.widthCompression(), y/mColorFormat.heightCompression());
+    vboxglMultiTexCoord2i(texUnit, x/mColorFormat.widthCompression(), y/mColorFormat.heightCompression());
 }
 
 GLenum VBoxVHWATextureNP2Rect::texTarget() {return GL_TEXTURE_RECTANGLE; }
@@ -4992,23 +4992,14 @@ void VBoxGLWidget::vboxDoResize(void *resize)
 
         for(int i = 0; i < RT_ELEMENTS(g_apSurf); i++)
         {
-
-    //        pSurf1 = new VBoxVHWASurfaceBase(this, width, height,
-    //                        VBoxVHWAColorFormat(rgbBitCount,
-    //                                r,
-    //                                g,
-    //                                b),
-    //                        NULL, NULL, NULL, NULL);
-            VBoxVHWASurfaceBase *pSurf1 = new VBoxVHWASurfaceBase(this, &QSize(width, height),
-    //                        ((pCmd->SurfInfo.surfCaps & VBOXVHWA_SCAPS_OVERLAY) ? mDisplay.getPrimary()->rect().size() : &QSize(pCmd->SurfInfo.width, pCmd->SurfInfo.height)),
-                            &mDisplay.getPrimary()->rect().size(),
-//                            VBoxVHWAColorFormat(rgbBitCount,
-//                                    r,
-//                                    g,
-//                                    b),
-                            VBoxVHWAColorFormat(FOURCC_YV12),
-    //                        pSrcBltCKey, pDstBltCKey, pSrcOverlayCKey, pDstOverlayCKey);
-                            NULL, NULL, NULL, &VBoxVHWAColorKey(0,0), false);
+            VBoxVHWAColorFormat tmpFormat(FOURCC_YV12);
+            QSize tmpSize(width, height) ;
+            VBoxVHWASurfaceBase *pSurf1 = new VBoxVHWASurfaceBase(this, tmpSize,
+                             mDisplay.getPrimary()->rect(),
+                             QRect(0, 0, width, height),
+                             mViewport,
+                             tmpFormat,
+                             NULL, NULL, NULL, &VBoxVHWAColorKey(0,0), false);
 
             Assert(mDisplay.getVGA());
             pSurf1->init(mDisplay.getVGA(), NULL);
@@ -5066,8 +5057,8 @@ void VBoxGLWidget::vboxDoResize(void *resize)
         updateCmd.u.in.srcRect.top = 0;
         updateCmd.u.in.srcRect.bottom = height;
 
-        updateCmd.u.in.offDstSurface = 0xffffffffffffffffL; /* just a magic to avoid surf mem buffer change  */
-        updateCmd.u.in.offSrcSurface = 0xffffffffffffffffL; /* just a magic to avoid surf mem buffer change  */
+        updateCmd.u.in.offDstSurface = VBOXVHWA_OFFSET64_VOID; /* just a magic to avoid surf mem buffer change  */
+        updateCmd.u.in.offSrcSurface = VBOXVHWA_OFFSET64_VOID; /* just a magic to avoid surf mem buffer change  */
 
         vhwaSurfaceOverlayUpdate(&updateCmd);
     }
@@ -5535,6 +5526,7 @@ void VBoxQGLOverlay::vboxShowOverlay(bool show)
     {
         mpOverlayWidget->setVisible(show);
         mOverlayWidgetVisible = show;
+        mGlCurrent = false;
     }
 }
 
@@ -5556,11 +5548,13 @@ void VBoxQGLOverlay::vboxCheckUpdateOverlay(const QRect & rect)
     if(overRect.x() != rect.x() || overRect.y() != rect.y())
     {
         mpOverlayWidget->move(rect.x(), rect.y());
+        mGlCurrent = false;
     }
 
     if(overRect.width() != rect.width() || overRect.height() != rect.height())
     {
         mpOverlayWidget->resize(rect.width(), rect.height());
+        mGlCurrent = false;
     }
 
 //    mpOverlayWidget->vboxDoUpdateViewport(rect);
