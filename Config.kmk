@@ -386,7 +386,9 @@ VBOX_WITH_PDM_ASYNC_COMPLETION = 1
 # Temporary switch for enabling / disabling the new USB code on Darwin.
 VBOX_WITH_NEW_USB_CODE_ON_DARWIN=1
 # Enable USB code that relies on USBA driver election callback & our own USB client driver on Solaris.
-#VBOX_WITH_NEW_USB_CODE_ON_SOLARIS=1
+ifdef VBOX_WITH_USB
+ VBOX_WITH_NEW_USB_CODE_ON_SOLARIS=1
+endif
 # Enable the hal/sysfs USB code on Linux.  This depends on VBOX_WITH_DBUS.
 ifdef VBOX_WITH_DBUS
  VBOX_USB_WITH_SYSFS=1
