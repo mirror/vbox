@@ -2760,15 +2760,13 @@ void MachineConfigFile::writeSnapshot(xml::ElementNode &elmParent,
 }
 
 /**
- * Called from Main code to write a machine config file to disk. This builds a DOM tree from
- * the member variables and then writes the XML file; it throws xml::Error instances on errors,
- * in particular if the file cannot be written.
+ * Called from write() before calling ConfigFileBase::createStubDocument().
+ * This adjusts the settings version in m->sv if incompatible settings require
+ * a settings bump, whereas otherwise we try to preserve the settings version
+ * to avoid breaking compatibility with older versions.
  */
-void MachineConfigFile::write(const com::Utf8Str &strFilename)
+void MachineConfigFile::bumpSettingsVersionIfNeeded()
 {
-    // createStubDocument() sets the settings version to at least 1.7; however,
-    // we might need to enfore a later settings version if incompatible settings
-    // are present:
     if (m->sv < SettingsVersion_v1_8)
     {
         // "accelerate 2d video" requires settings version 1.8
@@ -2797,9 +2795,8 @@ void MachineConfigFile::write(const com::Utf8Str &strFilename)
                 const AttachedDevice &att = *it2;
                 if (att.deviceType == DeviceType_DVD)
                 {
-                    if (    (cDVDs)                             // more than one DVD?
-                         || (sctl.storageBus != StorageBus_IDE) // DVD at bus other than DVD?
-                         || (att.lPort != 1)                    // DVDs not at primary master?
+                    if (    (sctl.storageBus != StorageBus_IDE) // DVD at bus other than DVD?
+                         || (att.lPort != 1)                    // DVDs not at secondary master?
                          || (att.lDevice != 0)
                        )
                     {
@@ -2810,15 +2807,18 @@ void MachineConfigFile::write(const com::Utf8Str &strFilename)
                     ++cDVDs;
                 }
                 else if (att.deviceType == DeviceType_Floppy)
-                {
-                    if (cFloppies)
-                        // more than one floppy: new settings format
-                        m->sv = SettingsVersion_v1_9;
-
                     ++cFloppies;
-                }
             }
         }
+
+        // VirtualBox before 3.1 had exactly one floppy and exactly one DVD,
+        // so any deviation from that will require settings version 1.9
+        if (    (m->sv < SettingsVersion_v1_9)
+             && (    (cDVDs != 1)
+                  || (cFloppies > 1)
+                )
+           )
+            m->sv = SettingsVersion_v1_9;
     }
 
     if (    (m->sv < SettingsVersion_v1_9)
@@ -2827,9 +2827,22 @@ void MachineConfigFile::write(const com::Utf8Str &strFilename)
     {
         m->sv = SettingsVersion_v1_9;
     }
+}
 
+/**
+ * Called from Main code to write a machine config file to disk. This builds a DOM tree from
+ * the member variables and then writes the XML file; it throws xml::Error instances on errors,
+ * in particular if the file cannot be written.
+ */
+void MachineConfigFile::write(const com::Utf8Str &strFilename)
+{
     try
     {
+        // createStubDocument() sets the settings version to at least 1.7; however,
+        // we might need to enfore a later settings version if incompatible settings
+        // are present:
+        bumpSettingsVersionIfNeeded();
+
         m->strFilename = strFilename;
         createStubDocument();
 
