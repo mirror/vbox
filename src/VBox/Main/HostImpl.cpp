@@ -344,8 +344,7 @@ void Host::uninit()
      * Note! HostUSBDeviceFilter::uninit() will modify llChildren. */
     while (!m->llChildren.empty())
     {
-        ComObjPtr<HostUSBDeviceFilter> pChild = m->llChildren.front();
-        m->llChildren.pop_front();
+        ComObjPtr<HostUSBDeviceFilter> &pChild = m->llChildren.front();
         pChild->uninit();
     }
 

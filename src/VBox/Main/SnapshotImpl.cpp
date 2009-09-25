@@ -156,7 +156,7 @@ void Snapshot::uninit()
         SnapshotsList &llParent = mParent->m->llChildren;
         for (it = llParent.begin();
             it != llParent.end();
-            ++ it)
+            ++it)
         {
             Snapshot *pParentsChild = *it;
             if (this == pParentsChild)
