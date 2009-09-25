@@ -1425,10 +1425,9 @@ else
  # Python Client Module - the C++/XPCOM bits.
  VBoxPython_TEMPLATE = XPCOM
  VBoxPython_DEFS = _IMPL_NS_COM _IMPL_NS_BASE EXPORT_XPTI_API EXPORT_XPT_API \
-                   VBOX_PYXPCOM VBOX_WITH_XPCOM
+ 	VBOX_PYXPCOM VBOX_WITH_XPCOM
  VBoxPython_DEFS.darwin = VBOX_PYXPCOM_VERSIONED
- VBoxPython_NAME.darwin = VBoxPython2_3
- VBoxPython_NAME.darwin.amd64 = VBoxPython2_6
+ VBoxPython_NAME.darwin = VBoxPython2_$(translate $(substr $(VBOX_DEF_MACOSX_VERSION_MIN),4),456,356)
  ifeq ($(KBUILD_TARGET),darwin)
   ## @todo kBuild - this ain't working: VBoxPython_DLLSUFF.darwin = .so
   VBoxPython_DLLSUFF = .so
@@ -1467,7 +1466,9 @@ else
  	$(PATH_BIN)/VBoxXPCOM$(VBOX_SUFF_DLL) \
  	$(VBOX_LIB_PYTHON)
 
- if !defined(VBOX_WITHOUT_VBOXPYTHON_FOR_OSX_10_5) && "$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)" == "darwin.x86"
+ if  !defined(VBOX_WITHOUT_VBOXPYTHON_FOR_OSX_10_5) \
+  && "$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)" == "darwin.x86" \
+  && "$(VBOX_DEF_MACOSX_VERSION_MIN)" != "10.5"
   # Same as VBoxPython except built against the Mac OS X 10.5 SDK.
   DLLS += VBoxPython2_5
   VBoxPython2_5_EXTENDS = VBoxPython
@@ -1493,7 +1494,9 @@ else
   	/usr/lib/$(VBOX_TMP)libpython2.5$(SUFF_DLL)
  endif
 
- if !defined(VBOX_WITHOUT_VBOXPYTHON_FOR_OSX_10_6) && "$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)" == "darwin.x86"
+ if !defined(VBOX_WITHOUT_VBOXPYTHON_FOR_OSX_10_6) \
+  && "$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)" == "darwin" \
+  && "$(VBOX_DEF_MACOSX_VERSION_MIN)" != "10.6"
   # Same as VBoxPython except built against the Mac OS X 10.6 SDK.
   DLLS += VBoxPython2_6
   VBoxPython2_6_EXTENDS = VBoxPython
