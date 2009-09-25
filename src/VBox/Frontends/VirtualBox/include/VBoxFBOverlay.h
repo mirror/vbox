@@ -22,6 +22,10 @@
 #ifndef __VBoxFBOverlay_h__
 #define __VBoxFBOverlay_h__
 #if defined (VBOX_GUI_USE_QGL)
+
+//#define VBOXQGL_PROF_BASE 1
+//#define VBOXQGL_DBG_SURF 1
+
 #include "COMDefs.h"
 #include <QGLWidget>
 #include <iprt/assert.h>
