@@ -525,6 +525,7 @@ static int VBoxNetFltSolarisAttach(dev_info_t *pDip, ddi_attach_cmd_t enmCmd)
                 g_pVBoxNetFltSolarisCred = crdup(kcred);
                 if (RT_LIKELY(g_pVBoxNetFltSolarisCred))
                 {
+#ifdef VBOXNETFLT_SOLARIS_IPV6_POLLING
                     /*
                      * Get the user prop. for polling interval.
                      */
@@ -539,6 +540,7 @@ static int VBoxNetFltSolarisAttach(dev_info_t *pDip, ddi_attach_cmd_t enmCmd)
                     }
 
                     g_VBoxNetFltSolarisPollInterval = Interval;
+#endif
                     ddi_report_dev(pDip);
                     return DDI_SUCCESS;
                 }
