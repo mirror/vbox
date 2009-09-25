@@ -43,10 +43,10 @@ HostPowerService::~HostPowerService()
 {
 }
 
-void HostPowerService::notify (HostPowerEvent aEvent)
+void HostPowerService::notify(HostPowerEvent aEvent)
 {
-    VirtualBox::SessionMachineVector machines;
-    VirtualBox::InternalControlVector controls;
+    VirtualBox::SessionMachineList machines;
+    VirtualBox::InternalControlList controls;
 
     HRESULT rc = S_OK;
 
@@ -63,14 +63,18 @@ void HostPowerService::notify (HostPowerEvent aEvent)
             if (perfcollector)
                 perfcollector->suspendSampling();
 #endif
-            mVirtualBox->getOpenedMachinesAndControls (machines, controls);
+            mVirtualBox->getOpenedMachines(machines, &controls);
 
             /* pause running VMs */
-            for (size_t i = 0; i < controls.size(); ++ i)
+            for (VirtualBox::InternalControlList::const_iterator it = controls.begin();
+                 it != controls.end();
+                 ++it)
             {
+                ComPtr<IInternalSessionControl> pControl = *it;
+
                 /* get the remote console */
                 ComPtr<IConsole> console;
-                rc = controls [i]->GetRemoteConsole (console.asOutParam());
+                rc = pControl->GetRemoteConsole (console.asOutParam());
                 /* the VM could have been powered down and closed or whatever */
                 if (FAILED (rc))
                     continue;
@@ -82,7 +86,7 @@ void HostPowerService::notify (HostPowerEvent aEvent)
                     continue;
 
                 /* save the control to un-pause the VM later */
-                mConsoles.push_back (console);
+                mConsoles.push_back(console);
             }
 
             LogFunc (("Suspended %d VMs\n", mConsoles.size()));
@@ -129,16 +133,19 @@ void HostPowerService::notify (HostPowerEvent aEvent)
         {
             LogFunc (("BATTERY LOW\n"));
 
-            mVirtualBox->getOpenedMachinesAndControls (machines, controls);
+            mVirtualBox->getOpenedMachines(machines, &controls);
 
             size_t saved = 0;
 
             /* save running VMs */
-            for (size_t i = 0; i < controls.size(); ++ i)
+            for (VirtualBox::InternalControlList::const_iterator it = controls.begin();
+                 it != controls.end();
+                 ++it)
             {
+                ComPtr<IInternalSessionControl> pControl = *it;
                 /* get the remote console */
                 ComPtr<IConsole> console;
-                rc = controls [i]->GetRemoteConsole (console.asOutParam());
+                rc = pControl->GetRemoteConsole (console.asOutParam());
                 /* the VM could have been powered down and closed or whatever */
                 if (FAILED (rc))
                     continue;

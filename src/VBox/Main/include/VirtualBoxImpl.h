@@ -26,15 +26,9 @@
 
 #include "VirtualBoxBase.h"
 
-#include <vector>
-
 #ifdef RT_OS_WINDOWS
 # include "win/resource.h"
 #endif
-
-#ifdef VBOX_WITH_RESOURCE_USAGE_API
-#include "PerformanceImpl.h"
-#endif /* VBOX_WITH_RESOURCE_USAGE_API */
 
 namespace com
 {
@@ -51,6 +45,7 @@ class Progress;
 class Host;
 class SystemProperties;
 class DHCPServer;
+class PerformanceCollector;
 
 #ifdef RT_OS_WINDOWS
 class SVCHlpClient;
@@ -76,8 +71,8 @@ class ATL_NO_VTABLE VirtualBox :
 public:
 
     typedef std::list< ComPtr<IVirtualBoxCallback> > CallbackList;
-    typedef std::vector< ComObjPtr<SessionMachine> > SessionMachineVector;
-    typedef std::vector< ComPtr<IInternalSessionControl> > InternalControlVector;
+    typedef std::list< ComObjPtr<SessionMachine> > SessionMachineList;
+    typedef std::list< ComPtr<IInternalSessionControl> > InternalControlList;
 
     class CallbackEvent;
     friend class CallbackEvent;
@@ -178,25 +173,23 @@ public:
     STDMETHOD(WaitForPropertyChange) (IN_BSTR aWhat, ULONG aTimeout,
                                       BSTR *aChanged, BSTR *aValues);
 
-//    STDMETHOD(CreateDHCPServerForInterface) (/*IHostNetworkInterface * aIinterface, */IDHCPServer ** aServer);
     STDMETHOD(CreateDHCPServer) (IN_BSTR aName, IDHCPServer ** aServer);
-//    STDMETHOD(FindDHCPServerForInterface) (IHostNetworkInterface * aIinterface, IDHCPServer ** aServer);
     STDMETHOD(FindDHCPServerByNetworkName) (IN_BSTR aName, IDHCPServer ** aServer);
     STDMETHOD(RemoveDHCPServer) (IDHCPServer * aServer);
 
     /* public methods only for internal purposes */
 
-    HRESULT postEvent (Event *event);
+    HRESULT postEvent(Event *event);
 
-    HRESULT addProgress (IProgress *aProgress);
-    HRESULT removeProgress (IN_GUID aId);
+    HRESULT addProgress(IProgress *aProgress);
+    HRESULT removeProgress(IN_GUID aId);
 
 #ifdef RT_OS_WINDOWS
     typedef DECLCALLBACKPTR (HRESULT, SVCHelperClientFunc)
         (SVCHlpClient *aClient, Progress *aProgress, void *aUser, int *aVrc);
-    HRESULT startSVCHelperClient (bool aPrivileged,
-                                  SVCHelperClientFunc aFunc,
-                                  void *aUser, Progress *aProgress);
+    HRESULT startSVCHelperClient(bool aPrivileged,
+                                 SVCHelperClientFunc aFunc,
+                                 void *aUser, Progress *aProgress);
 #endif
 
     void addProcessToReap (RTPROCESS pid);
@@ -218,17 +211,12 @@ public:
 
     ComObjPtr<GuestOSType> getUnknownOSType();
 
-    void getOpenedMachines (SessionMachineVector &aMachines,
-                            InternalControlVector *aControls = NULL);
+    void getOpenedMachines(SessionMachineList &aMachines,
+                           InternalControlList *aControls = NULL);
 
-    /** Shortcut to #getOpenedMachines (aMachines, &aControls). */
-    void getOpenedMachinesAndControls (SessionMachineVector &aMachines,
-                                       InternalControlVector &aControls)
-    { getOpenedMachines (aMachines, &aControls); }
-
-    bool isMachineIdValid (const Guid &aId)
+    bool isMachineIdValid(const Guid &aId)
     {
-        return SUCCEEDED (findMachine (aId, false /* aSetError */, NULL));
+        return SUCCEEDED(findMachine(aId, false /* aSetError */, NULL));
     }
 
     HRESULT findMachine (const Guid &aId, bool aSetError,
@@ -241,12 +229,13 @@ public:
     HRESULT findFloppyImage(const Guid *aId, CBSTR aLocation,
                             bool aSetError, ComObjPtr<Medium> *aImage = NULL);
 
-    const ComObjPtr<Host> &host() { return mData.mHost; }
-    const ComObjPtr<SystemProperties> &systemProperties()
-        { return mData.mSystemProperties; }
+    HRESULT findGuestOSType(CBSTR bstrOSType,
+                            GuestOSType*& pGuestOSType);
+
+    const ComObjPtr<Host>& host() const;
+    const ComObjPtr<SystemProperties>& systemProperties() const;
 #ifdef VBOX_WITH_RESOURCE_USAGE_API
-    const ComObjPtr<PerformanceCollector> &performanceCollector()
-        { return mData.mPerformanceCollector; }
+    const ComObjPtr<PerformanceCollector>& performanceCollector() const;
 #endif /* VBOX_WITH_RESOURCE_USAGE_API */
 
     const Utf8Str& getDefaultMachineFolder() const;
@@ -254,7 +243,7 @@ public:
     const Utf8Str& getDefaultHardDiskFormat() const;
 
     /** Returns the VirtualBox home directory */
-    const Utf8Str &homeDir() { return mData.mHomeDir; }
+    const Utf8Str& homeDir() const;
 
     int calculateFullPath(const Utf8Str &strPath, Utf8Str &aResult);
     void calculateRelativePath(const Utf8Str &strPath, Utf8Str &aResult);
@@ -277,57 +266,18 @@ public:
 
     static HRESULT handleUnexpectedExceptions (RT_SRC_POS_DECL);
 
-    const Utf8Str& settingsFilePath()
-    {
-        return m_strSettingsFilePath;
-    }
+    const Utf8Str& settingsFilePath();
 
-    /**
-     * Returns a lock handle used to protect changes to the hard disk hierarchy
-     * (e.g. serialize access to the Medium::mParent fields and methods
-     * adding/removing children). When using this lock, the following rules must
-     * be obeyed:
-     *
-     * 1. The write lock on this handle must be either held alone on the thread
-     *    or requested *after* the VirtualBox object lock. Mixing with other
-     *    locks is prohibited.
-     *
-     * 2. The read lock on this handle may be intermixed with any other lock
-     *    with the exception that it must be requested *after* the VirtualBox
-     *    object lock.
-     */
-    RWLockHandle *hardDiskTreeLockHandle() { return &mHardDiskTreeLockHandle; }
+    RWLockHandle& hardDiskTreeLockHandle();
+    RWLockHandle* childrenLock();
 
     /* for VirtualBoxSupportErrorInfoImpl */
     static const wchar_t *getComponentName() { return L"VirtualBox"; }
 
 private:
 
-    typedef std::list< ComObjPtr<Machine> > MachineList;
-    typedef std::list< ComObjPtr<GuestOSType> > GuestOSTypeList;
-
-    typedef std::map<Guid, ComPtr<IProgress> > ProgressMap;
-
-    typedef std::list <ComObjPtr<Medium> > HardDiskList;
-    typedef std::list <ComObjPtr<Medium> > DVDImageList;
-    typedef std::list <ComObjPtr<Medium> > FloppyImageList;
-    typedef std::list <ComObjPtr<SharedFolder> > SharedFolderList;
-    typedef std::list <ComObjPtr<DHCPServer> > DHCPServerList;
-
-    typedef std::map<Guid, ComObjPtr<Medium> > HardDiskMap;
-
-    /**
-     * Reimplements VirtualBoxWithTypedChildren::childrenLock() to return a
-     * dedicated lock instead of the main object lock. The dedicated lock for
-     * child map operations frees callers of init() methods of these children
-     * from acquiring a write parent (VirtualBox) lock (which would be mandatory
-     * otherwise). Since VirtualBox has a lot of heterogenous children which
-     * init() methods are called here and there, it definitely makes sense.
-     */
-    RWLockHandle *childrenLock() { return &mChildrenMapLockHandle; }
-
-    HRESULT checkMediaForConflicts2 (const Guid &aId, const Bstr &aLocation,
-                                     Utf8Str &aConflictType);
+    HRESULT checkMediaForConflicts2(const Guid &aId, const Bstr &aLocation,
+                                    Utf8Str &aConflictType);
 
     HRESULT registerMachine (Machine *aMachine);
 
@@ -336,94 +286,8 @@ private:
     HRESULT unregisterDHCPServer(DHCPServer *aDHCPServer,
                                  bool aSaveRegistry = true);
 
-    // VirtualBox main settings file
-    const Utf8Str m_strSettingsFilePath;
-    settings::MainConfigFile *m_pMainConfigFile;
-
-    /**
-     *  Main VirtualBox data structure.
-     *  @note |const| members are persistent during lifetime so can be accessed
-     *  without locking.
-     */
-    struct Data
-    {
-        Data();
-
-        // const data members not requiring locking
-        const Utf8Str                       mHomeDir;
-
-        // const objects not requiring locking
-        const ComObjPtr<Host>               mHost;
-        const ComObjPtr<SystemProperties>   mSystemProperties;
-#ifdef VBOX_WITH_RESOURCE_USAGE_API
-        const ComObjPtr<PerformanceCollector> mPerformanceCollector;
-#endif /* VBOX_WITH_RESOURCE_USAGE_API */
-
-        MachineList                         mMachines;
-        GuestOSTypeList                     mGuestOSTypes;
-
-        ProgressMap                         mProgressOperations;
-
-        HardDiskList                        mHardDisks;
-        DVDImageList                        mDVDImages;
-        FloppyImageList                     mFloppyImages;
-        SharedFolderList                    mSharedFolders;
-        DHCPServerList                      mDHCPServers;
-
-        /// @todo NEWMEDIA do we really need this map? Used only in
-        /// find() it seems
-        HardDiskMap                         mHardDiskMap;
-
-        CallbackList                        mCallbacks;
-    };
-
-    Data mData;
-
-#if defined(RT_OS_WINDOWS)
-    #define UPDATEREQARG NULL
-    #define UPDATEREQTYPE HANDLE
-#elif defined(RT_OS_OS2)
-    #define UPDATEREQARG NIL_RTSEMEVENT
-    #define UPDATEREQTYPE RTSEMEVENT
-#elif defined(VBOX_WITH_SYS_V_IPC_SESSION_WATCHER)
-    #define UPDATEREQARG
-    #define UPDATEREQTYPE RTSEMEVENT
-#else
-# error "Port me!"
-#endif
-
-    /** Client watcher thread data structure */
-    struct ClientWatcherData
-    {
-        ClientWatcherData()
-            : mUpdateReq(UPDATEREQARG),
-              mThread(NIL_RTTHREAD)
-        {}
-
-        // const objects not requiring locking
-        const UPDATEREQTYPE mUpdateReq;
-        const RTTHREAD mThread;
-
-        typedef std::list <RTPROCESS> ProcessList;
-        ProcessList mProcesses;
-    };
-
-    ClientWatcherData mWatcherData;
-
-    const RTTHREAD mAsyncEventThread;
-    EventQueue * const mAsyncEventQ;
-
-    /**
-     * "Safe" lock. May only be used if guaranteed that no other locks are
-     * requested while holding it and no functions that may do so are called.
-     * Currently, protects the following:
-     *
-     * - mProgressOperations
-     */
-    RWLockHandle mSafeLock;
-
-    RWLockHandle mHardDiskTreeLockHandle;
-    RWLockHandle mChildrenMapLockHandle;
+    struct Data;            // opaque data structure, defined in VirtualBoxImpl.cpp
+    Data *m;
 
     /* static variables (defined in VirtualBoxImpl.cpp) */
     static Bstr sVersion;

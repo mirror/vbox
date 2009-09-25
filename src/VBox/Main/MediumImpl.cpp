@@ -3306,7 +3306,7 @@ MediumType_T Medium::type() const
  */
 RWLockHandle* Medium::treeLock()
 {
-    return mVirtualBox->hardDiskTreeLockHandle();
+    return &mVirtualBox->hardDiskTreeLockHandle();
 }
 
 // protected methods
