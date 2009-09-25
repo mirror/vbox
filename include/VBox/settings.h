@@ -542,6 +542,7 @@ public:
     void writeHardware(xml::ElementNode &elmParent, const Hardware &hw, const Storage &strg);
     void writeStorageControllers(xml::ElementNode &elmParent, const Storage &st);
     void writeSnapshot(xml::ElementNode &elmParent, const Snapshot &snap);
+    void bumpSettingsVersionIfNeeded();
     void write(const com::Utf8Str &strFilename);
 
     com::Guid               uuid;
