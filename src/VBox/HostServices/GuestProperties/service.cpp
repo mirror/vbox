@@ -508,7 +508,7 @@ int Service::setPropertyBlock(uint32_t cParms, VBOXHGCMSVCPARM paParms[])
 int Service::getProperty(uint32_t cParms, VBOXHGCMSVCPARM paParms[])
 {
     int rc = VINF_SUCCESS;
-    const char *pcszName;
+    const char *pcszName = NULL;        /* shut up gcc */
     char *pchBuf;
     uint32_t cchName, cchBuf;
     char szFlags[MAX_FLAGS_LEN];
@@ -584,7 +584,9 @@ int Service::getProperty(uint32_t cParms, VBOXHGCMSVCPARM paParms[])
 int Service::setProperty(uint32_t cParms, VBOXHGCMSVCPARM paParms[], bool isGuest)
 {
     int rc = VINF_SUCCESS;
-    const char *pcszName, *pcszValue, *pcszFlags = NULL;
+    const char *pcszName = NULL;        /* shut up gcc */
+    const char *pcszValue = NULL;       /* ditto */
+    const char *pcszFlags = NULL;
     uint32_t cchName, cchValue, cchFlags = 0;
     uint32_t fFlags = NILFLAG;
     RTTIMESPEC time;
@@ -686,7 +688,7 @@ int Service::setProperty(uint32_t cParms, VBOXHGCMSVCPARM paParms[], bool isGues
 int Service::delProperty(uint32_t cParms, VBOXHGCMSVCPARM paParms[], bool isGuest)
 {
     int rc = VINF_SUCCESS;
-    const char *pcszName;
+    const char *pcszName = NULL;        /* shut up gcc */
     uint32_t cbName;
 
     LogFlowThisFunc(("\n"));
@@ -694,12 +696,12 @@ int Service::delProperty(uint32_t cParms, VBOXHGCMSVCPARM paParms[], bool isGues
     /*
      * Check the user-supplied parameters.
      */
-    if (   (cParms != 1)  /* Hardcoded value as the next lines depend on it. */
-        || RT_FAILURE(paParms[0].getString(&pcszName, &cbName))  /* name */
+    if (   (cParms == 1)  /* Hardcoded value as the next lines depend on it. */
+        && RT_SUCCESS(paParms[0].getString(&pcszName, &cbName))  /* name */
        )
-        rc = VERR_INVALID_PARAMETER;
-    if (RT_SUCCESS(rc))
         rc = validateName(pcszName, cbName);
+    else
+        rc = VERR_INVALID_PARAMETER;
 
     /*
      * If the property exists, check its flags to see if we are allowed
@@ -900,8 +902,10 @@ int Service::getNotification(VBOXHGCMCALLHANDLE callHandle, uint32_t cParms,
                              VBOXHGCMSVCPARM paParms[])
 {
     int rc = VINF_SUCCESS;
-    char *pszPatterns, *pchBuf;
-    uint32_t cchPatterns = 0, cchBuf = 0;
+    char *pszPatterns = NULL;           /* shut up gcc */
+    char *pchBuf;
+    uint32_t cchPatterns = 0;
+    uint32_t cchBuf = 0;
     uint64_t u64Timestamp;
 
     /*

@@ -201,7 +201,11 @@ typedef struct VBOXHGCMSVCPARM
         char *pch = NULL;
         int rc = getBuffer((void **)&pch, &cb);
         if (RT_FAILURE(rc))
+        {
+            *ppch = NULL;
+            *pcb = 0;
             return rc;
+        }
         rc = RTStrValidateEncodingEx(pch, cb,
                                      RTSTR_VALIDATE_ENCODING_ZERO_TERMINATED);
         *ppch = pch;
