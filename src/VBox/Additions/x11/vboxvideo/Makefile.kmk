@@ -197,7 +197,7 @@ DLLS += vboxvideo_drv_15
 vboxvideo_drv_15_TEMPLATE = VBOXGUESTR3XORGMOD
 vboxvideo_drv_15_CFLAGS := $(vboxvideo_drv_70_CFLAGS)
 vboxvideo_drv_15_DEFS := $(vboxvideo_drv_70_DEFS) NO_ANSIC PCIACCESS \
-                         VBOX_NO_LOW_COLOUR VBOX_DRI
+                         VBOX_NO_LOW_COLOUR $(if $(VBOX_OPENGL) VBOX_DRI,)
 vboxvideo_drv_15_INCS = \
 	$(VBOX_PATH_X11_XORG_1_5) \
 	$(VBOX_PATH_X11_XORG_1_5)/X11 \
@@ -208,7 +208,7 @@ vboxvideo_drv_15_INCS = \
 vboxvideo_drv_15_SOURCES  = \
 	vboxvideo_13.c \
 	vboxutils.c \
-	vboxvideo_dri.c
+	$(if $(VBOX_OPENGL) vboxvideo_dri.c,)
 
 
 #
@@ -226,10 +226,7 @@ vboxvideo_drv_16_INCS = \
 	$(VBOX_PATH_X11_ROOT)/xf86driproto-2.1.0 \
 	$(VBOX_PATH_X11_ROOT)/xorg-server-1.6.0 \
 	$(VBOX_PATH_X11_ROOT)/xorg-server-1.6.0-local
-vboxvideo_drv_16_SOURCES  = \
-	vboxvideo_13.c \
-	vboxutils.c \
-	vboxvideo_dri.c
+vboxvideo_drv_16_SOURCES := $(vboxvideo_drv_15_SOURCES)
 
 
 #
@@ -254,10 +251,7 @@ vboxvideo_drv_17_INCS = \
 	$(VBOX_PATH_X11_ROOT)/xorg-server-1.6.99-20090831 \
 	$(VBOX_PATH_X11_ROOT)/xorg-server-1.6.0-local \
 	$(VBOX_PATH_X11_ROOT)/xproto-7.0.15
-vboxvideo_drv_17_SOURCES  = \
-	vboxvideo_13.c \
-	vboxutils.c \
-	vboxvideo_dri.c
+vboxvideo_drv_17_SOURCES := $(vboxvideo_drv_15_SOURCES)
 
 
 # Check the undefined symbols in the X.Org modules against lists of allowed
