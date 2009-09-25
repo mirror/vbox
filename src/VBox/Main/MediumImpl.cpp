@@ -897,7 +897,7 @@ HRESULT Medium::init(VirtualBox *aVirtualBox,
     m->state = MediumState_NotCreated;
 
     /* cannot be a host drive */
-    m->hostDrive = false;
+    m->hostDrive = FALSE;
 
     /* No storage unit is created yet, no need to queryInfo() */
 
@@ -995,7 +995,7 @@ HRESULT Medium::init(VirtualBox *aVirtualBox,
     m->state = MediumState_Created;
 
     /* cannot be a host drive */
-    m->hostDrive = false;
+    m->hostDrive = FALSE;
 
     /* remember the open mode (defaults to ReadWrite) */
     m->hddOpenMode = enOpenMode;
@@ -1091,7 +1091,7 @@ HRESULT Medium::init(VirtualBox *aVirtualBox,
     unconst(m->id) = data.uuid;
 
     /* assume not a host drive */
-    m->hostDrive = false;
+    m->hostDrive = FALSE;
 
     /* optional */
     m->description = data.strDescription;
@@ -3365,8 +3365,9 @@ HRESULT Medium::setLocation(const Utf8Str &aLocation, const Utf8Str &aFormat)
      * location? */
     bool isImport = m->format.isNull();
 
-    if (isImport ||
-        (m->formatObj->capabilities() & MediumFormatCapabilities_File))
+    if (   isImport
+        || (   (m->formatObj->capabilities() & MediumFormatCapabilities_File)
+            && !m->hostDrive))
     {
         Guid id;
 
