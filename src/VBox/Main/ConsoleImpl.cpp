@@ -2400,17 +2400,6 @@ STDMETHODIMP Console::TakeSnapshot(IN_BSTR aName,
                         tr("Cannot take a snapshot of the machine while it is changing the state (machine state: %d)"),
                         mMachineState);
 
-    /* memorize the current machine state */
-    MachineState_T lastMachineState = mMachineState;
-
-#ifndef VBOX_WITH_LIVE_MIGRATION /** @todo update the API docs. */
-    if (mMachineState == MachineState_Running)
-    {
-        HRESULT rc = Pause();
-        CheckComRCReturnRC(rc);
-    }
-#endif
-
     HRESULT rc = S_OK;
 
     /* prepare the progress object:
@@ -2496,11 +2485,13 @@ STDMETHODIMP Console::TakeSnapshot(IN_BSTR aName,
         pTask->lastMachineState = mMachineState;
         pTask->fTakingSnapshotOnline = fTakingSnapshotOnline;
 
+#ifndef VBOX_WITH_LIVE_MIGRATION /** @todo update the API docs. */
         if (mMachineState == MachineState_Running)
         {
             rc = Pause();
             if (FAILED(rc)) throw rc;
         }
+#endif
 
         int vrc = RTThreadCreate(NULL,
                                  Console::fntTakeSnapshotWorker,
@@ -7055,9 +7046,9 @@ static DECLCALLBACK(int) reconfigureHardDisks(PVM pVM, ULONG lInstance,
 
 /**
  * Worker thread created by Console::TakeSnapshot.
- * @param Thread
- * @param pvUser
- * @return
+ * @param Thread The current thread (ignored).
+ * @param pvUser The task.
+ * @return VINF_SUCCESS (ignored).
  */
 /*static*/
 DECLCALLBACK(int) Console::fntTakeSnapshotWorker(RTTHREAD Thread, void *pvUser)
@@ -7123,7 +7114,7 @@ DECLCALLBACK(int) Console::fntTakeSnapshotWorker(RTTHREAD Thread, void *pvUser)
 
             int vrc = VMR3Save(that->mpVM,
                                strSavedStateFile.c_str(),
-                               false,       // bool fContinueAfterwards; @todo r=dj Knut, what needs to be put here now?
+                               true /*fContinueAfterwards*/,
                                Console::stateProgressCallback,
                                (void*)pTask);
             if (VBOX_FAILURE(vrc))
