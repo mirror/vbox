@@ -83,7 +83,7 @@
             <string/>
            </property>
            <property name="pixmap">
-            <pixmap resource="../VirtualBox.qrc">:/vmw_new_welcome.png</pixmap>
+            <pixmap resource="../VirtualBox1.qrc">:/vmw_new_welcome.png</pixmap>
            </property>
            <property name="alignment">
             <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
@@ -244,7 +244,7 @@
             <string/>
            </property>
            <property name="pixmap">
-            <pixmap resource="../VirtualBox.qrc">:/vmw_new_welcome.png</pixmap>
+            <pixmap resource="../VirtualBox1.qrc">:/vmw_new_welcome.png</pixmap>
            </property>
            <property name="alignment">
             <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
@@ -456,7 +456,7 @@
             <string/>
            </property>
            <property name="pixmap">
-            <pixmap resource="../VirtualBox.qrc">:/vmw_new_welcome.png</pixmap>
+            <pixmap resource="../VirtualBox1.qrc">:/vmw_new_welcome.png</pixmap>
            </property>
            <property name="alignment">
             <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
@@ -744,7 +744,7 @@
             <string/>
            </property>
            <property name="pixmap">
-            <pixmap resource="../VirtualBox.qrc">:/vmw_new_welcome.png</pixmap>
+            <pixmap resource="../VirtualBox1.qrc">:/vmw_new_welcome.png</pixmap>
            </property>
            <property name="alignment">
             <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
@@ -976,7 +976,7 @@
             <string/>
            </property>
            <property name="pixmap">
-            <pixmap resource="../VirtualBox.qrc">:/vmw_new_welcome.png</pixmap>
+            <pixmap resource="../VirtualBox1.qrc">:/vmw_new_welcome.png</pixmap>
            </property>
            <property name="alignment">
             <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
@@ -1206,7 +1206,7 @@
   <tabstop>mBtnCancel5</tabstop>
  </tabstops>
  <resources>
-  <include location="../VirtualBox.qrc"/>
+  <include location="../VirtualBox1.qrc"/>
  </resources>
  <connections/>
 </ui>

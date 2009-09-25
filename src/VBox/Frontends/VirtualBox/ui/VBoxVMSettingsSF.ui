@@ -94,8 +94,6 @@
  <includes>
   <include location="local" >VBoxGlobal.h</include>
  </includes>
- <resources>
-  <include location="../VirtualBox.qrc" />
- </resources>
+ <resources/>
  <connections/>
 </ui>

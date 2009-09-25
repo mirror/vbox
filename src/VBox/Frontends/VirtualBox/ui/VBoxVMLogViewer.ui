@@ -58,9 +58,7 @@
    <header>QIDialogButtonBox.h</header>
   </customwidget>
  </customwidgets>
- <resources>
-  <include location="../VirtualBox.qrc" />
- </resources>
+ <resources/>
  <connections>
   <connection>
    <sender>mButtonBox</sender>

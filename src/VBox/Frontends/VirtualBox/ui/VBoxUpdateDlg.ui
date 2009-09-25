@@ -79,7 +79,7 @@
             <bool>true</bool>
            </property>
            <property name="pixmap" >
-            <pixmap resource="../VirtualBox.qrc" >:/vmw_new_user.png</pixmap>
+            <pixmap resource="../VirtualBox1.qrc" >:/vmw_new_user.png</pixmap>
            </property>
            <property name="alignment" >
             <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
@@ -236,7 +236,7 @@
             <bool>true</bool>
            </property>
            <property name="pixmap" >
-            <pixmap resource="../VirtualBox.qrc" >:/vmw_new_user.png</pixmap>
+            <pixmap resource="../VirtualBox1.qrc" >:/vmw_new_user.png</pixmap>
            </property>
            <property name="alignment" >
             <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
@@ -377,7 +377,7 @@
   <tabstop>mBtnCheck</tabstop>
  </tabstops>
  <resources>
-  <include location="../VirtualBox.qrc" />
+  <include location="../VirtualBox1.qrc" />
  </resources>
  <connections/>
 </ui>
