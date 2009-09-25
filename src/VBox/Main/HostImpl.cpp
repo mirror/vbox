@@ -340,7 +340,8 @@ void Host::uninit()
     delete m->pHostPowerService;
 
 #ifdef VBOX_WITH_USB
-    /* uninit all USB device filters still referenced by clients */
+    /* uninit all USB device filters still referenced by clients
+     * Note! HostUSBDeviceFilter::uninit() will modify llChildren. */
     while (!m->llChildren.empty())
     {
         ComObjPtr<HostUSBDeviceFilter> pChild = m->llChildren.front();
