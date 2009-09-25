@@ -56,7 +56,11 @@ DESC_VBI="Kernel Interface"
 MOD_VBOXUSBMON=vboxusbmon
 DESC_VBOXUSBMON="USBMonitor"
 
+MOD_VBOXUSB=vboxusb
+DESC_VBOXUSB="USB"
+
 FATALOP=fatal
+NULLOP=nulloutput
 SILENTOP=silent
 IPSOP=ips
 ISSILENT=
@@ -214,8 +218,8 @@ module_loaded()
     return 0
 }
 
-# add_driver(modname, moddesc, [driverperm], [fatal])
-# failure: depends on [fatal]
+# add_driver(modname, moddesc, fatal, nulloutput, [driverperm])
+# failure: depends on "fatal"
 add_driver()
 {
     if test -z "$1" || test -z "$2"; then
@@ -225,19 +229,22 @@ add_driver()
 
     modname="$1"
     moddesc="$2"
-    modperm="$3"
-    if test "$3" = "$FATALOP"; then
-        fatal="$FATALOP"
-        modperm=""
-    fi
-    if test "$4" = "$FATALOP"; then
-        fatal="$FATALOP"
-    fi
+    fatal="$3"
+    nullop="$4"
+    modperm="$5"
 
     if test -n "$modperm"; then
-        $BIN_ADDDRV -m"$modperm" $modname
+        if test "$nullop" = "$NULLOP"; then
+            $BIN_ADDDRV -m"$modperm" $modname  >/dev/null 2>&1
+        else
+            $BIN_ADDDRV -m"$modperm" $modname
+        fi    
     else
-        $BIN_ADDDRV $modname
+        if test "$nullop" = "$NULLOP"; then        
+            $BIN_ADDDRV $modname >/dev/null 2>&1
+        else
+            $BIN_ADDDRV $modname
+        fi        
     fi
 
     if test $? -ne 0; then
@@ -341,9 +348,9 @@ load_module()
 install_drivers()
 {
     if test -n "_HARDENED_"; then
-        add_driver "$MOD_VBOXDRV" "$DESC_VBOXDRV" "'* 0600 root sys'" "$FATALOP"
+        add_driver "$MOD_VBOXDRV" "$DESC_VBOXDRV" "$FATALOP" "not-$NULLOP" "'* 0600 root sys'"
     else
-        add_driver "$MOD_VBOXDRV" "$DESC_VBOXDRV" "'* 0666 root sys'" "$FATALOP"
+        add_driver "$MOD_VBOXDRV" "$DESC_VBOXDRV" "$FATALOP" "not-$NULLOP" "'* 0666 root sys'"
     fi
     load_module "drv/$MOD_VBOXDRV" "$DESC_VBOXDRV" "$FATALOP"
 
@@ -382,6 +389,14 @@ install_drivers()
                 errorprint "Failed to create device link for $MOD_VBOXUSBMON."
                 exit 1
             fi
+            
+            # Add vboxusb if present
+            # This driver is special, we need it in the boot-archive but since there is no
+            # USB device to attach to now (it's done at runtime) it will fail to attach so
+            # redirect attaching failure output to /dev/null
+            if test -f /platform/i86pc/kernel/drv/vboxusb.conf; then
+                add_driver "$MOD_VBOXUSB" "$DESC_VBOXUSB" "$FATALOP" "$NULLOP"
+            fi
         fi
     else
         errorprint "Failed to create device link for $MOD_VBOXDRV."
@@ -410,6 +425,9 @@ remove_drivers()
         sed -e '/name=vboxusbmon/d' /etc/devlink.tab > /etc/devlink.vbox
         mv -f /etc/devlink.vbox /etc/devlink.tab
     fi
+
+    unload_module "$MOD_VBOXUSB" "$DESC_VBOXUSB" "$fatal"
+    rem_driver "$MOD_VBOXUSB" "$DESC_VBOXUSB" "$fatal"
 
     unload_module "$MOD_VBOXUSBMON" "$DESC_VBOXUSBMON" "$fatal"
     rem_driver "$MOD_VBOXUSBMON" "$DESC_VBOXUSBMON" "$fatal"
