@@ -25,6 +25,8 @@
 #include <iprt/file.h>
 #include <iprt/s3.h>
 
+#include <VBox/com/array.h>
+
 #include <VBox/param.h>
 #include <VBox/version.h>
 
