@@ -246,17 +246,19 @@ endif # End of ugly stuff.
 TEMPLATE_XPCOMBLDPROG_ORDERDEPS         = $(foreach hdrinst, $(filter %-HEADERS, $(INSTALLS)), $(TARGET_$(hdrinst)))
 
 
-#
-# Template for building VBoxPhython against the Mac OS X 10.5 SDK.
-# ASSUMES that the SDK bits are in the .darwin properties we're overriding below.
-#
-TEMPLATE_XPCOMOSX104                    = XPCOM libraries (shared) built against the Mac OS X 10.4 SDK
-TEMPLATE_XPCOMOSX104_EXTENDS            = XPCOM
-TEMPLATE_XPCOMOSX104_CXXFLAGS.darwin    = $(filter-out $(VBOX_DARWIN_DEF_SDK_CXXFLAGS),$(TEMPLATE_XPCOM_CXXFLAGS.darwin)) $(VBOX_DARWIN_DEF_SDK_10_4_CXXFLAGS)
-TEMPLATE_XPCOMOSX104_CFLAGS.darwin      = $(filter-out $(VBOX_DARWIN_DEF_SDK_CFLAGS),$(TEMPLATE_XPCOM_CFLAGS.darwin)) $(VBOX_DARWIN_DEF_SDK_10_4_CFLAGS)
-TEMPLATE_XPCOMOSX104_LDFLAGS.darwin     = $(filter-out $(VBOX_DARWIN_DEF_SDK_LDFLAGS),$(TEMPLATE_XPCOM_LDFLAGS.darwin)) $(VBOX_DARWIN_DEF_SDK_10_4_LDFLAGS)
-TEMPLATE_XPCOMOSX104_DEFS.darwin        = $(filter-out $(VBOX_DARWIN_DEF_SDK_DEFS),$(TEMPLATE_XPCOM_DEFS.darwin)) $(VBOX_DARWIN_DEF_SDK_10_4_DEFS)
-TEMPLATE_XPCOMOSX104_INCS.darwin        = $(VBOX_PATH_MACOSX_SDK_10_4)/Developer/Headers/FlatCarbon
+ifeq ($(VBOX_DEF_MACOSX_VERSION_MIN),10.4)
+ #
+ # Template for building VBoxPhython against the Mac OS X 10.4 SDK.
+ # ASSUMES that the SDK bits are in the .darwin properties we're overriding below.
+ #
+ TEMPLATE_XPCOMOSX104                    = XPCOM libraries (shared) built against the Mac OS X 10.4 SDK
+ TEMPLATE_XPCOMOSX104_EXTENDS            = XPCOM
+ TEMPLATE_XPCOMOSX104_CXXFLAGS.darwin    = $(filter-out $(VBOX_DARWIN_DEF_SDK_CXXFLAGS),$(TEMPLATE_XPCOM_CXXFLAGS.darwin)) $(VBOX_DARWIN_DEF_SDK_10_4_CXXFLAGS)
+ TEMPLATE_XPCOMOSX104_CFLAGS.darwin      = $(filter-out $(VBOX_DARWIN_DEF_SDK_CFLAGS),$(TEMPLATE_XPCOM_CFLAGS.darwin)) $(VBOX_DARWIN_DEF_SDK_10_4_CFLAGS)
+ TEMPLATE_XPCOMOSX104_LDFLAGS.darwin     = $(filter-out $(VBOX_DARWIN_DEF_SDK_LDFLAGS),$(TEMPLATE_XPCOM_LDFLAGS.darwin)) $(VBOX_DARWIN_DEF_SDK_10_4_LDFLAGS)
+ TEMPLATE_XPCOMOSX104_DEFS.darwin        = $(filter-out $(VBOX_DARWIN_DEF_SDK_DEFS),$(TEMPLATE_XPCOM_DEFS.darwin)) $(VBOX_DARWIN_DEF_SDK_10_4_DEFS)
+ TEMPLATE_XPCOMOSX104_INCS.darwin        = $(VBOX_PATH_MACOSX_SDK_10_4)/Developer/Headers/FlatCarbon
+endif
 
 #
 # Template for building VBoxPhython against the Mac OS X 10.5 SDK.
