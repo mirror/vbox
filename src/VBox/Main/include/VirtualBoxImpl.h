@@ -26,11 +26,7 @@
 
 #include "VirtualBoxBase.h"
 
-#include "VBox/com/EventQueue.h"
-
-#include <list>
 #include <vector>
-#include <map>
 
 #ifdef RT_OS_WINDOWS
 # include "win/resource.h"
@@ -39,6 +35,12 @@
 #ifdef VBOX_WITH_RESOURCE_USAGE_API
 #include "PerformanceImpl.h"
 #endif /* VBOX_WITH_RESOURCE_USAGE_API */
+
+namespace com
+{
+    class Event;
+    class EventQueue;
+}
 
 class Machine;
 class SessionMachine;
@@ -74,11 +76,7 @@ class ATL_NO_VTABLE VirtualBox :
 public:
 
     typedef std::list< ComPtr<IVirtualBoxCallback> > CallbackList;
-    typedef std::vector< ComPtr<IVirtualBoxCallback> > CallbackVector;
-
     typedef std::vector< ComObjPtr<SessionMachine> > SessionMachineVector;
-    typedef std::vector< ComObjPtr<Machine> > MachineVector;
-
     typedef std::vector< ComPtr<IInternalSessionControl> > InternalControlVector;
 
     class CallbackEvent;
@@ -442,36 +440,5 @@ private:
 
 ////////////////////////////////////////////////////////////////////////////////
 
-/**
- *  Abstract callback event class to asynchronously call VirtualBox callbacks
- *  on a dedicated event thread. Subclasses reimplement #handleCallback()
- *  to call appropriate IVirtualBoxCallback methods depending on the event
- *  to be dispatched.
- *
- *  @note The VirtualBox instance passed to the constructor is strongly
- *  referenced, so that the VirtualBox singleton won't be released until the
- *  event gets handled by the event thread.
- */
-class VirtualBox::CallbackEvent : public Event
-{
-public:
-
-    CallbackEvent(VirtualBox *aVirtualBox) : mVirtualBox(aVirtualBox)
-    {
-        Assert(aVirtualBox);
-    }
-
-    void *handler();
-
-    virtual void handleCallback(const ComPtr<IVirtualBoxCallback> &aCallback) = 0;
-
-private:
-
-    /*
-     *  Note that this is a weak ref -- the CallbackEvent handler thread
-     *  is bound to the lifetime of the VirtualBox instance, so it's safe.
-     */
-    ComObjPtr<VirtualBox, ComWeakRef> mVirtualBox;
-};
 #endif // ____H_VIRTUALBOXIMPL
 

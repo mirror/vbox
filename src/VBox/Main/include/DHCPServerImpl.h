@@ -25,7 +25,8 @@
 #define ____H_H_DHCPSERVERIMPL
 
 #include "VirtualBoxBase.h"
-#include "VirtualBoxImpl.h"
+
+class VirtualBox;
 
 #ifdef VBOX_WITH_HOSTNETIF_API
 struct NETIFINFO;

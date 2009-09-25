@@ -35,6 +35,7 @@
 
 #include <VBox/com/com.h>
 #include <VBox/com/array.h>
+#include "VBox/com/EventQueue.h"
 
 #include <VBox/err.h>
 #include <VBox/param.h>
@@ -75,6 +76,8 @@
 
 #define VBOX_GLOBAL_SETTINGS_FILE "VirtualBox.xml"
 
+typedef std::vector< ComObjPtr<Machine> > MachineVector;
+
 // globals
 /////////////////////////////////////////////////////////////////////////////
 
@@ -86,6 +89,44 @@ ULONG VirtualBox::sRevision;
 
 // static
 Bstr VirtualBox::sPackageType;
+
+////////////////////////////////////////////////////////////////////////////////
+//
+// Callback event
+//
+////////////////////////////////////////////////////////////////////////////////
+
+/**
+ *  Abstract callback event class to asynchronously call VirtualBox callbacks
+ *  on a dedicated event thread. Subclasses reimplement #handleCallback()
+ *  to call appropriate IVirtualBoxCallback methods depending on the event
+ *  to be dispatched.
+ *
+ *  @note The VirtualBox instance passed to the constructor is strongly
+ *  referenced, so that the VirtualBox singleton won't be released until the
+ *  event gets handled by the event thread.
+ */
+class VirtualBox::CallbackEvent : public Event
+{
+public:
+
+    CallbackEvent(VirtualBox *aVirtualBox) : mVirtualBox(aVirtualBox)
+    {
+        Assert(aVirtualBox);
+    }
+
+    void *handler();
+
+    virtual void handleCallback(const ComPtr<IVirtualBoxCallback> &aCallback) = 0;
+
+private:
+
+    /*
+     *  Note that this is a weak ref -- the CallbackEvent handler thread
+     *  is bound to the lifetime of the VirtualBox instance, so it's safe.
+     */
+    ComObjPtr<VirtualBox, ComWeakRef> mVirtualBox;
+};
 
 // constructor / destructor
 /////////////////////////////////////////////////////////////////////////////
@@ -4114,19 +4155,19 @@ void *VirtualBox::CallbackEvent::handler()
         return NULL;
     }
 
-    CallbackVector callbacks;
+    CallbackList callbacks;
     {
         /* Make a copy to release the lock before iterating */
         AutoReadLock alock(mVirtualBox);
-        callbacks = CallbackVector (mVirtualBox->mData.mCallbacks.begin(),
-                                    mVirtualBox->mData.mCallbacks.end());
+        callbacks = mVirtualBox->mData.mCallbacks;
         /* We don't need mVirtualBox any more, so release it */
         mVirtualBox.setNull();
     }
 
-    for (VirtualBox::CallbackVector::const_iterator it = callbacks.begin();
-         it != callbacks.end(); ++ it)
-        handleCallback (*it);
+    for (CallbackList::const_iterator it = callbacks.begin();
+         it != callbacks.end();
+         ++it)
+        handleCallback(*it);
 
     return NULL;
 }
