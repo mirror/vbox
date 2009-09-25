@@ -8280,20 +8280,15 @@ STDMETHODIMP SessionMachine::BeginTakingSnapshot(IConsole *aInitiator,
     AutoMultiWriteLock2 alock(mParent, this);
 
 #ifdef VBOX_WITH_LIVE_MIGRATION
-    AssertReturn(    (    !Global::IsOnlineOrTransient (mData->mMachineState)
-                       || mData->mMachineState == MachineState_Paused
-                       || mData->mMachineState == MachineState_Running
-                     )
-                  && mSnapshotData.mLastState == MachineState_Null
-                  && mSnapshotData.mSnapshot.isNull()
-                  && mSnapshotData.mServerProgress.isNull()
-                  && mSnapshotData.mCombinedProgress.isNull(), E_FAIL);
+    AssertReturn(    !Global::IsOnlineOrTransient(mData->mMachineState)
+                  || mData->mMachineState == MachineState_Running
+                  || mData->mMachineState == MachineState_Paused, E_FAIL);
 #else
     AssertReturn(    !Global::IsOnlineOrTransient(mData->mMachineState)
                   || mData->mMachineState == MachineState_Paused, E_FAIL);
+#endif
     AssertReturn(mSnapshotData.mLastState == MachineState_Null, E_FAIL);
     AssertReturn(mSnapshotData.mSnapshot.isNull(), E_FAIL);
-#endif
 
     if (    !fTakingSnapshotOnline
          && mData->mMachineState != MachineState_Saved
@@ -8428,10 +8423,14 @@ STDMETHODIMP SessionMachine::EndTakingSnapshot(BOOL aSuccess)
                    !mSnapshotData.mSnapshot.isNull()),
                   E_FAIL);
 
-    /* set the state to the state we had when BeginTakingSnapshot() was called
-     * (this is expected by Console::TakeSnapshot() and
-     * Console::saveStateThread()) */
-    if (mData->mMachineState != mSnapshotData.mLastState)
+    /*
+     * Restore the state we had when BeginTakingSnapshot() was called,
+     * Console::fntTakeSnapshotWorker restores its local copy when we return.
+     * If the state was Running, then let Console::fntTakeSnapshotWorker it
+     * all via Console::Resume().
+     */
+    if (   mData->mMachineState != mSnapshotData.mLastState
+        && mSnapshotData.mLastState != MachineState_Running)
         setMachineState(mSnapshotData.mLastState);
 
     return endTakingSnapshot(aSuccess);
