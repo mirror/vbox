@@ -132,11 +132,6 @@ private:
     bool validateDevice(const char *deviceNode, bool isCDROM);
 #endif
 
-#ifdef VBOX_WITH_USB
-    /** specialization for IHostUSBDeviceFilter */
-//     ComObjPtr<HostUSBDeviceFilter> getDependentChild(IHostUSBDeviceFilter *aFilter);
-#endif /* VBOX_WITH_USB */
-
 #ifdef VBOX_WITH_RESOURCE_USAGE_API
     void registerMetrics (PerformanceCollector *aCollector);
     void unregisterMetrics (PerformanceCollector *aCollector);
