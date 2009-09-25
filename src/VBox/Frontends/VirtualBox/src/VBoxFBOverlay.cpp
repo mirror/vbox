@@ -687,6 +687,11 @@ static void vboxVHWAGlInit(const QGLContext * pContext)
     if(g_vboxVHWAGlSupportInitialized)
         return;
 
+    g_vboxVHWAGlSupportInitialized = true;
+
+    if(!QGLFormat::hasOpenGL())
+    	return;
+
     static QGLWidget *pTmpContextHolder = NULL;
     const bool bHasGlContext = (pContext != NULL);
 
@@ -770,8 +775,6 @@ static void vboxVHWAGlInit(const QGLContext * pContext)
     {
         pTmpContextHolder->doneCurrent();
     }
-
-    g_vboxVHWAGlSupportInitialized = true;
 }
 
 static bool vboxVHWASupportedInternal()
