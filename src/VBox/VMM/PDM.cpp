@@ -674,18 +674,16 @@ static DECLCALLBACK(int) pdmR3Save(PVM pVM, PSSMHANDLE pSSM)
  */
 static DECLCALLBACK(int) pdmR3LoadPrep(PVM pVM, PSSMHANDLE pSSM)
 {
-    LogFlow(("pdmR3LoadPrep: %s%s%s%s\n",
+    LogFlow(("pdmR3LoadPrep: %s%s\n",
              VM_FF_ISSET(pVM, VM_FF_PDM_QUEUES)     ? " VM_FF_PDM_QUEUES" : "",
-             VM_FF_ISSET(pVM, VM_FF_PDM_DMA)        ? " VM_FF_PDM_DMA" : ""
-             ));
+             VM_FF_ISSET(pVM, VM_FF_PDM_DMA)        ? " VM_FF_PDM_DMA" : ""));
 #ifdef LOG_ENABLED
     for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
     {
         PVMCPU pVCpu = &pVM->aCpus[idCpu];
-        LogFlow(("pdmR3LoadPrep: VCPU %d %s%s%s%s\n", idCpu,
+        LogFlow(("pdmR3LoadPrep: VCPU %u %s%s\n", idCpu,
                 VMCPU_FF_ISSET(pVCpu, VMCPU_FF_INTERRUPT_APIC) ? " VMCPU_FF_INTERRUPT_APIC" : "",
-                VMCPU_FF_ISSET(pVCpu, VMCPU_FF_INTERRUPT_PIC)  ? " VMCPU_FF_INTERRUPT_PIC" : ""
-                ));
+                VMCPU_FF_ISSET(pVCpu, VMCPU_FF_INTERRUPT_PIC)  ? " VMCPU_FF_INTERRUPT_PIC" : ""));
     }
 #endif
 
@@ -814,9 +812,9 @@ static DECLCALLBACK(int) pdmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, 
         AssertMsgFailed(("fDMAPending=%#x\n", fDMAPending));
         return VERR_SSM_DATA_UNIT_FORMAT_CHANGED;
     }
-    AssertRelease(!VM_FF_ISSET(pVM, VM_FF_PDM_DMA));
     if (fDMAPending)
         VM_FF_SET(pVM, VM_FF_PDM_DMA);
+    Log(("pdmR3Load: VM_FF_PDM_DMA=%RTbool\n", VM_FF_ISSET(pVM, VM_FF_PDM_DMA)));
 
     /*
      * Load the list of devices and verify that they are all there.
