@@ -321,7 +321,7 @@ static void registerCallBack(IVirtualBox *virtualBox, ISession *session, PRUnich
             consoleCallback->vtbl->OnKeyboardLedsChange =&OnKeyboardLedsChange;
             consoleCallback->vtbl->OnStateChange = &OnStateChange;
             consoleCallback->vtbl->OnAdditionsStateChange = &OnAdditionsStateChange;
-            consoleCallback->vtbl->OnDVDDriveChange = &OnDVDDriveChange;
+            consoleCallback->vtbl->OnNetworkAdapterChange = &OnNetworkAdapterChange;
             consoleCallback->vtbl->OnSerialPortChange = &OnSerialPortChange;
             consoleCallback->vtbl->OnParallelPortChange = &OnParallelPortChange;
             consoleCallback->vtbl->OnStorageControllerChange = &OnStorageControllerChange;
