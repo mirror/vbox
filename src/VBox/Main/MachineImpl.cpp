@@ -5279,11 +5279,11 @@ HRESULT Machine::loadStorageControllers(const settings::Storage &data,
 /**
  * @param aNode        <HardDiskAttachments> node.
  * @param aRegistered  true when the machine is being loaded on VirtualBox
- *                      startup, or when a snapshot is being loaded (wchich
- *                      currently can happen on startup only)
+ *                     startup, or when a snapshot is being loaded (wchich
+ *                     currently can happen on startup only)
  * @param aSnapshotId  pointer to the snapshot ID if this is a snapshot machine
  *
- * @note Lock mParent for reading and hard disks for writing before calling.
+ * @note Lock mParent  for reading and hard disks for writing before calling.
  */
 HRESULT Machine::loadStorageDevices(StorageController *aStorageController,
                                     const settings::StorageController &data,
@@ -5304,6 +5304,28 @@ HRESULT Machine::loadStorageDevices(StorageController *aStorageController,
                         tr("Unregistered machine '%ls' cannot have storage devices attached (found %d attachments)"),
                         mUserData->mName.raw(),
                         data.llAttachedDevices.size());
+
+    /* paranoia: detect duplicate attachments */
+    for (settings::AttachedDevicesList::const_iterator it = data.llAttachedDevices.begin();
+         it != data.llAttachedDevices.end();
+         ++it)
+    {
+        for (settings::AttachedDevicesList::const_iterator it2 = it;
+             it2 != data.llAttachedDevices.end();
+             ++it2)
+        {
+            if (it == it2)
+                continue;
+
+            if (   (*it).lPort == (*it2).lPort
+                && (*it).lDevice == (*it2).lDevice)
+            {
+                return setError(E_FAIL,
+                                tr("Duplicate attachments for storage controller '%s', port %d, device %d of the virtual machine '%ls'"),
+                                aStorageController->name().raw(), (*it).lPort, (*it).lDevice, mUserData->mName.raw());
+            }
+        }
+    }
 
     for (settings::AttachedDevicesList::const_iterator it = data.llAttachedDevices.begin();
          it != data.llAttachedDevices.end();
