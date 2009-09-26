@@ -1346,7 +1346,7 @@ check_qt4()
           return
         fi
     done
-    # Now try the user provided directory and some of the standard directories. 
+    # Now try the user provided directory and some of the standard directories.
     QT_TRIES="$QT4DIR /System/Library /Library"
     for t in $QT_TRIES; do
         if [ -f "$t/Frameworks/QtCore.framework/QtCore" ]; then
@@ -1446,9 +1446,9 @@ EOF
         if [ "$OS" = "darwin" ]; then
           # Successful build & run the test application so add the necessary
           # params to AutoConfig.kmk
-          cnf_append "PATH_SDK_QT4_INC" "$PATH_SDK_QT4/Frameworks" 
-          cnf_append "PATH_SDK_QT4_LIB" "$PATH_SDK_QT4/Frameworks" 
-          cnf_append "PATH_SDK_QT4" "$PATH_SDK_QT4/Frameworks" 
+          cnf_append "PATH_SDK_QT4_INC" "$PATH_SDK_QT4/Frameworks"
+          cnf_append "PATH_SDK_QT4_LIB" "$PATH_SDK_QT4/Frameworks"
+          cnf_append "PATH_SDK_QT4" "$PATH_SDK_QT4/Frameworks"
           # Check for the moc tool in the Qt directory found & some standard
           # directories.
           for q in $PATH_SDK_QT4 /usr /Developer/Tools/Qt; do
@@ -1902,7 +1902,6 @@ check_darwinversion()
       ;;
     9\.*)
       darwin_ver="10.5"
-      #cnf_append "VBOX_TARGET_MAC_OS_X_VERSION_10_5" "1"
       cnf_append "VBOX_WITHOUT_VBOXPYTHON_FOR_OSX_10_6" "1"
       ;;
     8\.*)
