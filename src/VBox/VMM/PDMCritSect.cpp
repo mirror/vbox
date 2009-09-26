@@ -366,6 +366,57 @@ VMMR3DECL(const char *) PDMR3CritSectName(PCPDMCRITSECT pCritSect)
 
 
 /**
+ * Yield the critical section if someone is waiting on it.
+ *
+ * When yielding, we'll leave the critical section and try to make sure the
+ * other waiting threads get a chance of entering before we reclaim it.
+ *
+ * @retval  true if yielded.
+ * @retval  false if not yielded.
+ * @param   pCritSect           The critical section.
+ */
+VMMR3DECL(bool) PDMR3CritSectYield(PPDMCRITSECT pCritSect)
+{
+    AssertPtrReturn(pCritSect, false);
+    AssertReturn(pCritSect->s.Core.u32Magic == RTCRITSECT_MAGIC, false);
+    Assert(pCritSect->s.Core.NativeThreadOwner == RTThreadNativeSelf());
+
+    /* No recursion allowed here. */
+    int32_t const cNestings = pCritSect->s.Core.cNestings;
+    AssertReturn(cNestings == 1, false);
+
+    int32_t const cLockers  = ASMAtomicReadS32(&pCritSect->s.Core.cLockers);
+    if (cLockers < cNestings)
+        return false;
+
+    PDMCritSectLeave(pCritSect);
+
+    /*
+     * If we're lucky, then one of the waiters has entered the lock already.
+     * We spin a little bit in hope for this to happen so we can avoid the
+     * yield deatour.
+     */
+    if (ASMAtomicUoReadS32(&pCritSect->s.Core.cNestings) == 0)
+    {
+        int cLoops = 20;
+        while (   cLoops > 0
+               && ASMAtomicUoReadS32(&pCritSect->s.Core.cNestings) == 0
+               && ASMAtomicUoReadS32(&pCritSect->s.Core.cLockers)  >= 0)
+        {
+            ASMNopPause();
+            cLoops--;
+        }
+        if (cLoops == 0)
+            RTThreadYield();
+    }
+
+    int rc = PDMCritSectEnter(pCritSect, VERR_INTERNAL_ERROR);
+    AssertLogRelRC(rc);
+    return true;
+}
+
+
+/**
  * Schedule a event semaphore for signalling upon critsect exit.
  *
  * @returns VINF_SUCCESS on success.

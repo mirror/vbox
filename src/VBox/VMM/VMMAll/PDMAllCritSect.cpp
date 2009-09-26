@@ -63,7 +63,7 @@
  * @returns native thread handle (ring-3).
  * @param   pCritSect           The critical section. This is used in R0 and RC.
  */
-DECL_FORCE_INLINE(RTNATIVETHREAD) pdmCritSectGetNativeSelf(PPDMCRITSECT pCritSect)
+DECL_FORCE_INLINE(RTNATIVETHREAD) pdmCritSectGetNativeSelf(PCPDMCRITSECT pCritSect)
 {
 #ifdef IN_RING3
     NOREF(pCritSect);
@@ -514,6 +514,21 @@ VMMDECL(bool) PDMCritSectIsOwned(PCPDMCRITSECT pCritSect)
 {
     return pCritSect->s.Core.NativeThreadOwner != NIL_RTNATIVETHREAD
         && (pCritSect->s.Core.fFlags & PDMCRITSECT_FLAGS_PENDING_UNLOCK) == 0;
+}
+
+
+/**
+ * Checks if anyone is waiting on the critical section we own.
+ *
+ * @returns true if someone is waitings.
+ * @returns false if no one is waiting.
+ * @param   pCritSect   The critical section.
+ */
+VMMDECL(bool) PDMCritSectHasWaiters(PCPDMCRITSECT pCritSect)
+{
+    AssertReturn(pCritSect->s.Core.u32Magic == RTCRITSECT_MAGIC, false);
+    Assert(pCritSect->s.Core.NativeThreadOwner == pdmCritSectGetNativeSelf(pCritSect));
+    return pCritSect->s.Core.cLockers >= pCritSect->s.Core.cNestings;
 }
 
 
