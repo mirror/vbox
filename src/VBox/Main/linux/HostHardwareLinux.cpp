@@ -52,6 +52,7 @@
 // # define _LINUX_BYTEORDER_GENERIC_H
 # define _LINUX_BYTEORDER_SWABB_H
 # include <linux/cdrom.h>
+# include <linux/fd.h>
 # ifdef VBOX_WITH_DBUS
 #  include <vbox-dbus.h>
 # endif
@@ -1303,19 +1304,22 @@ private:
      * entry name and the bus type ("platform"). */
     void validateAndInitForFloppy()
     {
-        char szBus[128];
+        floppy_drive_name szName;
+        int rcIoCtl;
         if (   mpcszName[0] != 'f'
             || mpcszName[1] != 'd'
             || mpcszName[2] < '0'
             || mpcszName[2] > '3'
             || mpcszName[3] != '\0')
             return;
-        ssize_t cchBus = RTLinuxSysFsGetLinkDest(szBus, sizeof(szBus),
-                                                 "block/%s/device/bus",
-                                                 mpcszName);
-        if (cchBus < 0)
-            return;
-        if (strcmp(szBus, "platform") != 0)
+        RTFILE file;
+        int rc = RTFileOpen(&file, mszNode, RTFILE_O_READ);
+        /** @note the next line can produce a warning, as the ioctl request
+         * field is defined as signed, but the Linux ioctl definition macros
+         * produce unsigned constants. */
+        rc = RTFileIoCtl(file, FDGETDRVTYP, szName, 0, &rcIoCtl);
+        RTFileClose(file);
+        if (rcIoCtl < 0)
             return;
         misValid = true;
         strcpy(mszDesc,   (mpcszName[2] == '0') ? "PC Floppy drive"
