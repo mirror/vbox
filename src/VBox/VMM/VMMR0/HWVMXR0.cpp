@@ -2550,13 +2550,15 @@ ResumeExecution:
     VMCPU_SET_STATE(pVCpu, VMCPUSTATE_STARTED_EXEC);
 #endif
 
-    /* Deal with tagged TLB setup and invalidation. */
-    pVM->hwaccm.s.vmx.pfnSetupTaggedTLB(pVM, pVCpu);
-
     /* Non-register state Guest Context */
     /** @todo change me according to cpu state */
     rc = VMXWriteVMCS(VMX_VMCS32_GUEST_ACTIVITY_STATE,           VMX_CMS_GUEST_ACTIVITY_ACTIVE);
     AssertRC(rc);
+
+    /** Set TLB flush state as checked until we return from the world switch. */
+    ASMAtomicWriteU8(&pVCpu->hwaccm.s.fCheckedTLBFlush, true);
+    /* Deal with tagged TLB setup and invalidation. */
+    pVM->hwaccm.s.vmx.pfnSetupTaggedTLB(pVM, pVCpu);
 
     STAM_STATS({ STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatEntry, x); fStatEntryStarted = false; });
 
@@ -2571,7 +2573,6 @@ ResumeExecution:
      * - EFLAGS (reset to RT_BIT(1); not relevant)
      *
      */
-
 
     /* All done! Let's start VM execution. */
     STAM_PROFILE_ADV_START(&pVCpu->hwaccm.s.StatInGC, z);
@@ -2588,6 +2589,8 @@ ResumeExecution:
 #else
     rc = pVCpu->hwaccm.s.vmx.pfnStartVM(pVCpu->hwaccm.s.fResumeVM, pCtx, &pVCpu->hwaccm.s.vmx.VMCSCache, pVM, pVCpu);
 #endif
+    ASMAtomicWriteU8(&pVCpu->hwaccm.s.fCheckedTLBFlush, false);
+    ASMAtomicIncU32(&pVCpu->hwaccm.s.cWorldSwitchExit);
     /* Possibly the last TSC value seen by the guest (too high) (only when we're in tsc offset mode). */
     if (!(pVCpu->hwaccm.s.vmx.proc_ctls & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_RDTSC_EXIT))
         TMCpuTickSetLastSeen(pVCpu, ASMReadTSC() + pVCpu->hwaccm.s.vmx.u64TSCOffset - 0x400 /* guestimate of world switch overhead in clock ticks */);
