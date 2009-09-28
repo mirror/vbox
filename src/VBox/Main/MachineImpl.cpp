@@ -101,7 +101,7 @@
  *  @param uPercentage  Completetion precentage (0-100).
  *  @param pvUser       Pointer to the Progress instance.
  */
-static DECLCALLBACK(int) progressCallback (unsigned uPercentage, void *pvUser)
+static DECLCALLBACK(int) progressCallback(unsigned uPercentage, void *pvUser)
 {
     Progress *progress = static_cast<Progress*>(pvUser);
 
@@ -123,7 +123,7 @@ Machine::Data::Data()
     /* mUuid is initialized in Machine::init() */
 
     mMachineState = MachineState_PoweredOff;
-    RTTimeNow (&mLastStateChange);
+    RTTimeNow(&mLastStateChange);
 
     mMachineStateDeps = 0;
     mMachineStateDepsSem = NIL_RTSEMEVENTMULTI;
@@ -140,7 +140,7 @@ Machine::Data::~Data()
 {
     if (mMachineStateDepsSem != NIL_RTSEMEVENTMULTI)
     {
-        RTSemEventMultiDestroy (mMachineStateDepsSem);
+        RTSemEventMultiDestroy(mMachineStateDepsSem);
         mMachineStateDepsSem = NIL_RTSEMEVENTMULTI;
     }
 }
@@ -189,7 +189,7 @@ Machine::HWData::HWData()
     mBootOrder [0] = DeviceType_Floppy;
     mBootOrder [1] = DeviceType_DVD;
     mBootOrder [2] = DeviceType_HardDisk;
-    for (size_t i = 3; i < RT_ELEMENTS (mBootOrder); i++)
+    for (size_t i = 3; i < RT_ELEMENTS (mBootOrder); ++i)
         mBootOrder [i] = DeviceType_Null;
 
     mClipboardMode = ClipboardMode_Bidirectional;
@@ -202,7 +202,7 @@ Machine::HWData::~HWData()
 {
 }
 
-bool Machine::HWData::operator== (const HWData &that) const
+bool Machine::HWData::operator==(const HWData &that) const
 {
     if (this == &that)
         return true;
@@ -224,7 +224,7 @@ bool Machine::HWData::operator== (const HWData &that) const
         mClipboardMode != that.mClipboardMode)
         return false;
 
-    for (size_t i = 0; i < RT_ELEMENTS (mBootOrder); ++ i)
+    for (size_t i = 0; i < RT_ELEMENTS (mBootOrder); ++i)
         if (mBootOrder [i] != that.mBootOrder [i])
             return false;
 
@@ -255,7 +255,7 @@ bool Machine::HWData::operator== (const HWData &that) const
                 break;
             }
             else
-                ++ thatIt;
+                ++thatIt;
         }
         if (found)
             it = folders.erase (it);
@@ -305,6 +305,7 @@ bool Machine::MediaData::operator== (const MediaData &that) const
             if ((*it)->controller() == (*thatIt)->controller() &&
                 (*it)->port() == (*thatIt)->port() &&
                 (*it)->device() == (*thatIt)->device() &&
+                (*it)->passthrough() == (*thatIt)->passthrough() &&
                 (*it)->medium().equalsTo ((*thatIt)->medium()))
             {
                 thatAtts.erase (thatIt);
@@ -312,7 +313,7 @@ bool Machine::MediaData::operator== (const MediaData &that) const
                 break;
             }
             else
-                ++ thatIt;
+                ++thatIt;
         }
         if (found)
             it = atts.erase (it);
@@ -506,11 +507,11 @@ HRESULT Machine::init(VirtualBox *aParent,
                     mBIOSSettings->applyDefaults (aOsType);
 
                     /* Apply network adapters defaults */
-                    for (ULONG slot = 0; slot < RT_ELEMENTS (mNetworkAdapters); ++ slot)
+                    for (ULONG slot = 0; slot < RT_ELEMENTS (mNetworkAdapters); ++slot)
                         mNetworkAdapters [slot]->applyDefaults (aOsType);
 
                     /* Apply serial port defaults */
-                    for (ULONG slot = 0; slot < RT_ELEMENTS (mSerialPorts); ++ slot)
+                    for (ULONG slot = 0; slot < RT_ELEMENTS (mSerialPorts); ++slot)
                         mSerialPorts [slot]->applyDefaults (aOsType);
                 }
 
@@ -1914,7 +1915,7 @@ STDMETHODIMP Machine::AttachDevice(IN_BSTR aControllerName,
                                    DeviceType_T aType,
                                    IN_BSTR aId)
 {
-    LogFlowThisFunc(("aControllerName=\"%ls\" aControllerPort=%ld aDevice=%ld\n",
+    LogFlowThisFunc(("aControllerName=\"%ls\" aControllerPort=%d aDevice=%d\n",
                      aControllerName, aControllerPort, aDevice));
 
     AutoCaller autoCaller(this);
@@ -3303,7 +3304,7 @@ STDMETHODIMP Machine::GetMediumAttachment(IN_BSTR aControllerName,
                                           LONG aDevice,
                                           IMediumAttachment **aAttachment)
 {
-    LogFlowThisFunc(("aControllerName=\"%ls\" aControllerPort=%ld aDevice=%ld\n",
+    LogFlowThisFunc(("aControllerName=\"%ls\" aControllerPort=%d aDevice=%d\n",
                      aControllerName, aControllerPort, aDevice));
 
     CheckComArgNotNull(aControllerName);
@@ -3829,7 +3830,7 @@ HRESULT Machine::openRemoteSession(IInternalSessionControl *aControl,
              * (ignore empty variable names here since RTEnv API
              * intentionally doesn't do that) */
             char *var = newEnvStr;
-            for (char *p = newEnvStr; *p; ++ p)
+            for (char *p = newEnvStr; *p; ++p)
             {
                 if (*p == '\n' && (p == newEnvStr || *(p - 1) != '\\'))
                 {
@@ -4354,7 +4355,7 @@ HRESULT Machine::trySetRegistered (BOOL aRegistered)
 
         if (mMediaData->mAttachments.size() != 0)
             return setError(VBOX_E_INVALID_OBJECT_STATE,
-                            tr("Cannot unregister the machine '%ls' because it has %d storage devices attached"),
+                            tr("Cannot unregister the machine '%ls' because it has %d medium attachments"),
                             mUserData->mName.raw(),
                             mMediaData->mAttachments.size());
 
@@ -4441,7 +4442,7 @@ HRESULT Machine::addStateDependency (StateDependency aDepType /* = AnyStateDep *
                             tr("Machine state change is in progress. Please retry the operation later."));
         }
 
-        ++ mData->mMachineStateDeps;
+        ++mData->mMachineStateDeps;
         Assert (mData->mMachineStateDeps != 0 /* overflow */);
     }
 
@@ -4702,7 +4703,7 @@ void Machine::uninitDataAndChildObjects()
     {
         for (MediaData::AttachmentList::const_iterator it = mMediaData->mAttachments.begin();
              it != mMediaData->mAttachments.end();
-             ++ it)
+             ++it)
         {
             ComObjPtr<Medium> hd = (*it)->medium();
             if (hd.isNull() || (*it)->type() != DeviceType_HardDisk)
@@ -4757,7 +4758,7 @@ void Machine::ensureNoStateDependencies()
         LogFlowThisFunc(("Waiting for state deps (%d) to drop to zero...\n",
                           mData->mMachineStateDeps));
 
-        ++ mData->mMachineStateChangePending;
+        ++mData->mMachineStateChangePending;
 
         /* reset the semaphore before waiting, the last dependant will signal
          * it */
@@ -4828,7 +4829,7 @@ HRESULT Machine::findSharedFolder (CBSTR aName,
     bool found = false;
     for (HWData::SharedFolderList::const_iterator it = mHWData->mSharedFolders.begin();
         !found && it != mHWData->mSharedFolders.end();
-        ++ it)
+        ++it)
     {
         AutoWriteLock alock(*it);
         found = (*it)->name() == aName;
@@ -6383,7 +6384,7 @@ HRESULT Machine::createImplicitDiffs(const Bstr &aFolder,
              * situations before creating actual diffs */
             for (MediaData::AttachmentList::const_iterator it = mMediaData->mAttachments.begin();
                  it != mMediaData->mAttachments.end();
-                 ++ it)
+                 ++it)
             {
                 MediumAttachment* pAtt = *it;
                 if (pAtt->type() == DeviceType_HardDisk)
@@ -6905,7 +6906,7 @@ bool Machine::isModified()
         for (StorageControllerList::const_iterator it =
                     mStorageControllers->begin();
                 it != mStorageControllers->end();
-                ++ it)
+                ++it)
         {
             if ((*it)->isModified())
                 return true;
@@ -6958,7 +6959,7 @@ bool Machine::isReallyModified (bool aIgnoreUserData /* = false */)
         for (StorageControllerList::const_iterator
              it = mStorageControllers->begin();
              it != mStorageControllers->end();
-             ++ it)
+             ++it)
         {
             if ((*it)->isReallyModified())
                 return true;
@@ -7011,12 +7012,12 @@ void Machine::rollback (bool aNotify)
             for (HWData::SharedFolderList::iterator rit =
                      mHWData->mSharedFolders.begin();
                  rit != mHWData->mSharedFolders.end() && !sharedFoldersChanged;
-                 ++ rit)
+                 ++rit)
             {
                 for (HWData::SharedFolderList::iterator cit =
                          mHWData.backedUpData()->mSharedFolders.begin();
                      cit != mHWData.backedUpData()->mSharedFolders.end();
-                     ++ cit)
+                     ++cit)
                 {
                     if ((*cit)->name() != (*rit)->name() ||
                         (*cit)->hostPath() != (*rit)->hostPath())
@@ -7043,7 +7044,7 @@ void Machine::rollback (bool aNotify)
                 {
                     (*it)->uninit();
                 }
-                ++ it;
+                ++it;
             }
 
             /* restore the list */
@@ -7057,7 +7058,7 @@ void Machine::rollback (bool aNotify)
             if ((*it)->isModified())
                 (*it)->rollback();
 
-            ++ it;
+            ++it;
         }
     }
 
@@ -7212,7 +7213,7 @@ void Machine::commit()
                 /* and add it to the new list */
                 newList->push_back(peer);
 
-                ++ it;
+                ++it;
             }
 
             /* uninit old peer's controllers that are left */
@@ -7220,7 +7221,7 @@ void Machine::commit()
             while (it != mPeer->mStorageControllers->end())
             {
                 (*it)->uninit();
-                ++ it;
+                ++it;
             }
 
             /* attach new list of controllers to our peer */
@@ -7246,7 +7247,7 @@ void Machine::commit()
         while (it != mStorageControllers->end())
         {
             (*it)->commit();
-            ++ it;
+            ++it;
         }
     }
 
@@ -7286,7 +7287,7 @@ void Machine::copyFrom (Machine *aThat)
     // contains just references to original objects)
     for (HWData::SharedFolderList::iterator it = mHWData->mSharedFolders.begin();
          it != mHWData->mSharedFolders.end();
-         ++ it)
+         ++it)
     {
         ComObjPtr<SharedFolder> folder;
         folder.createObject();
@@ -7307,7 +7308,7 @@ void Machine::copyFrom (Machine *aThat)
     mStorageControllers->clear();
     for (StorageControllerList::iterator it = aThat->mStorageControllers->begin();
          it != aThat->mStorageControllers->end();
-         ++ it)
+         ++it)
     {
         ComObjPtr<StorageController> ctrl;
         ctrl.createObject();
@@ -7573,14 +7574,14 @@ HRESULT SessionMachine::init (Machine *aMachine)
     mMediaData.share(aMachine->mMediaData);
 
     mStorageControllers.allocate();
-    StorageControllerList::const_iterator it = aMachine->mStorageControllers->begin();
-    while (it != aMachine->mStorageControllers->end())
+    for (StorageControllerList::const_iterator it = aMachine->mStorageControllers->begin();
+         it != aMachine->mStorageControllers->end();
+         ++it)
     {
         ComObjPtr<StorageController> ctl;
         ctl.createObject();
         ctl->init(this, *it);
         mStorageControllers->push_back (ctl);
-        ++ it;
     }
 
     unconst(mBIOSSettings).createObject();
@@ -7787,7 +7788,7 @@ void SessionMachine::uninit (Uninit::Reason aReason)
             LogFlowThisFunc(("  remoteControl->Uninitialize() returned %08X\n", rc));
             if (FAILED (rc))
                 LogWarningThisFunc(("Forgot to close the remote session?\n"));
-            ++ it;
+            ++it;
         }
         mData->mSession.mRemoteControls.clear();
     }
@@ -8551,7 +8552,7 @@ STDMETHODIMP SessionMachine::DiscardCurrentState (
     {
         ULONG opCount = 1 + (ULONG)mData->mCurrentSnapshot->getSnapshotMachine()->mMediaData->mAttachments.size();
         if (mData->mCurrentSnapshot->stateFilePath())
-            ++ opCount;
+            ++opCount;
         progress->init (mParent, aInitiator,
                         Bstr (tr ("Discarding current machine state")),
                         FALSE /* aCancelable */, opCount,
@@ -9619,7 +9620,7 @@ void SessionMachine::discardSnapshotHandler(DiscardSnapshotTask &aTask)
 
         /* un-prepare the remaining hard disks */
         for (MediumDiscardRecList::const_iterator it = toDiscard.begin();
-             it != toDiscard.end(); ++ it)
+             it != toDiscard.end(); ++it)
         {
             it->hd->cancelDiscard (it->chain);
 
@@ -9874,7 +9875,7 @@ void SessionMachine::discardCurrentStateHandler (DiscardCurrentStateTask &aTask)
              * may fail otherwise (too many children of the hard disk to be
              * discarded) */
             for (std::list< ComObjPtr<Medium> >::const_iterator
-                 it = diffs.begin(); it != diffs.end(); ++ it)
+                 it = diffs.begin(); it != diffs.end(); ++it)
             {
                 /// @todo for now, we ignore errors since we've already
                 /// and therefore cannot fail. Later, we may want to report a
@@ -9951,7 +9952,7 @@ void SessionMachine::discardCurrentStateHandler (DiscardCurrentStateTask &aTask)
         {
             /* now, delete the unused diffs (only on success!) and uninit them*/
             for (std::list< ComObjPtr<Medium> >::const_iterator
-                 it = diffs.begin(); it != diffs.end(); ++ it)
+                 it = diffs.begin(); it != diffs.end(); ++it)
             {
                 /// @todo for now, we ignore errors since we've already
                 /// discarded and therefore cannot fail. Later, we may want to
@@ -10087,7 +10088,7 @@ HRESULT SessionMachine::lockMedia()
         /* perform a check of inaccessible media deferred above */
         for (MediaList::const_iterator
              it = mediaToCheck.begin();
-             it != mediaToCheck.end(); ++ it)
+             it != mediaToCheck.end(); ++it)
         {
             MediumState_T mediaState;
             rc = (*it)->COMGETTER(State) (&mediaState);
@@ -10154,7 +10155,7 @@ void SessionMachine::unlockMedia()
 
     for (Data::Session::LockedMedia::const_iterator
          it = mData->mSession.mLockedMedia.begin();
-         it != mData->mSession.mLockedMedia.end(); ++ it)
+         it != mData->mSession.mLockedMedia.end(); ++it)
     {
         MediumState_T state;
         if (it->second)
@@ -10454,7 +10455,7 @@ HRESULT SnapshotMachine::init(SessionMachine *aSessionMachine,
     for (HWData::SharedFolderList::iterator
          it = mHWData->mSharedFolders.begin();
          it != mHWData->mSharedFolders.end();
-         ++ it)
+         ++it)
     {
         ComObjPtr<SharedFolder> folder;
         folder.createObject();
@@ -10484,7 +10485,7 @@ HRESULT SnapshotMachine::init(SessionMachine *aSessionMachine,
     for (StorageControllerList::const_iterator
          it = aSessionMachine->mStorageControllers->begin();
          it != aSessionMachine->mStorageControllers->end();
-         ++ it)
+         ++it)
     {
         ComObjPtr<StorageController> ctrl;
         ctrl.createObject();
