@@ -575,7 +575,7 @@ sorecvfrom(PNATState pData, struct socket *so)
         int size;
 #endif
         int rc = 0;
-        static int signaled = 0;
+        static int signalled = 0;
 
         QSOCKET_LOCK(udb);
         SOCKET_LOCK(so);
@@ -607,10 +607,10 @@ sorecvfrom(PNATState pData, struct socket *so)
                 m_free(pData, m);
                 return;
             }
-            if (rc == -1 && signaled == 0)
+            if (rc == -1 && signalled == 0)
             {
                 LogRel(("NAT: can't fetch amount of bytes on socket %R[natsock], so message will be truncated.\n", so));
-                signaled = 1;
+                signalled = 1;
                 m_free(pData, m);
                 return;
             }
@@ -634,10 +634,10 @@ sorecvfrom(PNATState pData, struct socket *so)
         * 3. attach buffer to allocated header mbuf
         */
         rc = ioctlsocket(so->s, FIONREAD, &n);
-        if (rc == -1 && signaled == 0)
+        if (rc == -1 && signalled == 0)
         {
             LogRel(("NAT: can't fetch amount of bytes on socket %R[natsock], so message will be truncated.\n", so));
-            signaled = 1;
+            signalled = 1;
         }
 
         len = sizeof(struct udpiphdr) + ETH_HLEN;
