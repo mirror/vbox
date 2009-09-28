@@ -1300,8 +1300,8 @@ private:
 
     /** Check whether the sysfs block entry is valid for a floppy device and
      * initialise the string data members for the object.  Since we only
-     * support floppies using the basic "floppy" driver, we just check the
-     * entry name and the bus type ("platform"). */
+     * support floppies using the basic "floppy" driver, we check the driver
+     * using the entry name and a driver-specific ioctl. */
     void validateAndInitForFloppy()
     {
         floppy_drive_name szName;
