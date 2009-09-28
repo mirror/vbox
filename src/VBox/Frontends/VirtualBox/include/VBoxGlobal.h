@@ -905,6 +905,7 @@ private:
     CVirtualBoxCallback callback;
 
     QString mVerString;
+    QString mBrandingConfig;
 
     QList <QString> mFamilyIDs;
     QList <QList <CGuestOSType> > mTypes;
