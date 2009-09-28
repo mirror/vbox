@@ -44,9 +44,12 @@
 #include <iprt/semaphore.h>
 #include "internal/fileaio.h"
 
-#if defined(RT_OS_DARWIN)
+#if defined(RT_OS_DARWIN) || defined(RT_OS_FREEBSD)
 # include <sys/types.h>
 # include <sys/sysctl.h> /* for sysctlbyname */
+#endif
+#if defined(RT_OS_FREEBSD)
+# include <fcntl.h> /* O_SYNC */
 #endif
 #include <aio.h>
 #include <errno.h>
@@ -234,6 +237,31 @@ RTR3DECL(int) RTFileAioGetLimits(PRTFILEAIOLIMITS pAioLimits)
                          NULL);                 /* Where the size of the new value is stored. */
     if (rcBSD == -1)
         return RTErrConvertFromErrno(errno);
+
+    pAioLimits->cReqsOutstandingMax = cReqsOutstandingMax;
+    pAioLimits->cbBufferAlignment   = 0;
+#elif defined(RT_OS_FREEBSD)
+    /*
+     * The AIO API is implemented in a kernel module which is not
+     * loaded by default.
+     * If it is loaded there are additional sysctl parameters.
+     */
+    int cReqsOutstandingMax = 0;
+    size_t cbParameter = sizeof(int);
+
+    rcBSD = sysctlbyname("vfs.aio.max_aio_per_proc", /* name */
+                         &cReqsOutstandingMax,       /* Where to store the old value. */
+                         &cbParameter,               /* Size of the memory pointed to. */
+                         NULL,                       /* Where the new value is located. */
+                         NULL);                      /* Where the size of the new value is stored. */
+    if (rcBSD == -1)
+    {
+        /* ENOENT means the value is unknown thus the module is not loaded. */
+        if (errno == ENOENT)
+            return VERR_NOT_SUPPORTED;
+        else
+            return RTErrConvertFromErrno(errno);
+    }
 
     pAioLimits->cReqsOutstandingMax = cReqsOutstandingMax;
     pAioLimits->cbBufferAlignment   = 0;
@@ -548,7 +576,7 @@ RTDECL(int) RTFileAioCtxSubmit(RTFILEAIOCTX hAioCtx, PRTFILEAIOREQ pahReqs, size
             rcPosix = lio_listio(LIO_NOWAIT, (struct aiocb **)pahReqs, cReqsSubmit, NULL);
             if (RT_UNLIKELY(rcPosix < 0))
             {
-                if (rcPosix == EAGAIN)
+                if (errno == EAGAIN)
                     rc = VERR_FILE_AIO_INSUFFICIENT_RESSOURCES;
                 else
                     rc = RTErrConvertFromErrno(errno);
@@ -580,7 +608,7 @@ RTDECL(int) RTFileAioCtxSubmit(RTFILEAIOCTX hAioCtx, PRTFILEAIOREQ pahReqs, size
                              * glibc returns the error code which would be in errno but Apple returns
                              * -1 and sets errno to the appropriate value
                              */
-#if defined(RT_OS_DARWIN)
+#if defined(RT_OS_DARWIN) || defined(RT_OS_FREEBSD)
                             Assert(rcPosix == -1);
                             pReqInt->Rc = RTErrConvertFromErrno(errno);
 #elif defined(RT_OS_LINUX)
