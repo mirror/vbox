@@ -1567,6 +1567,8 @@ static void pgmR3InitStats(PVM pVM)
     STAM_REL_REG(pVM, &pPGM->cPrivatePages,                 STAMTYPE_U32,     "/PGM/Page/cPrivatePages",            STAMUNIT_OCCURENCES,     "The number of private pages.");
     STAM_REL_REG(pVM, &pPGM->cSharedPages,                  STAMTYPE_U32,     "/PGM/Page/cSharedPages",             STAMUNIT_OCCURENCES,     "The number of shared pages.");
     STAM_REL_REG(pVM, &pPGM->cZeroPages,                    STAMTYPE_U32,     "/PGM/Page/cZeroPages",               STAMUNIT_OCCURENCES,     "The number of zero backed pages.");
+    STAM_REL_REG(pVM, &pPGM->cMonitoredPages,               STAMTYPE_U32,     "/PGM/Page/cMonitoredPages",          STAMUNIT_OCCURENCES,     "The number of write monitored pages.");
+    STAM_REL_REG(pVM, &pPGM->cWrittenToPages,               STAMTYPE_U32,     "/PGM/Page/cWrittenToPages",          STAMUNIT_OCCURENCES,     "The number of previously write monitored pages that have been written to.");
     STAM_REL_REG(pVM, &pPGM->cHandyPages,                   STAMTYPE_U32,     "/PGM/Page/cHandyPages",              STAMUNIT_OCCURENCES,     "The number of handy pages (not included in cAllPages).");
     STAM_REL_REG(pVM, &pPGM->cRelocations,                  STAMTYPE_COUNTER, "/PGM/cRelocations",                  STAMUNIT_OCCURENCES,     "Number of hypervisor relocations.");
     STAM_REL_REG(pVM, &pPGM->ChunkR3Map.c,                  STAMTYPE_U32,     "/PGM/ChunkR3Map/c",                  STAMUNIT_OCCURENCES,     "Number of mapped chunks.");

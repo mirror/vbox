@@ -1031,12 +1031,21 @@ typedef struct PGMLIVESAVEPAGE
     uint32_t    fMmio : 1;
     /** Was a ZERO page last time around. */
     uint32_t    fZero : 1;
+    /** Was a SHARED page last time around. */
+    uint32_t    fShared : 1;
+    /** Whether the page is/was write monitored in a previous pass. */
+    uint32_t    fWriteMonitored : 1;
+    /** Whether the page is/was write monitored earlier in this pass. */
+    uint32_t    fWriteMonitoredJustNow : 1;
     /** Bits reserved for future use.  */
-    uint32_t    u5Reserved : 5;
+    uint32_t    u2Reserved : 2;
 } PGMLIVESAVEPAGE;
 AssertCompileSize(PGMLIVESAVEPAGE, 8);
 /** Pointer to the per page live save tracking data. */
 typedef PGMLIVESAVEPAGE *PPGMLIVESAVEPAGE;
+
+/** The max value of PGMLIVESAVEPAGE::cDirtied. */
+#define PGMLIVSAVEPAGE_MAX_DIRTIED 0x00fffff0
 
 
 /**
@@ -2582,11 +2591,12 @@ typedef struct PGM
     {
         /** The number of ready pages.  */
         uint32_t                    cReadyPages;
-        /** The number of dirty pages.  */
+        /** The number of dirty pages. (Not counting MMIO and MMIO2 pages.) */
         uint32_t                    cDirtyPages;
         /** The number of MMIO and MMIO2 pages. */
         uint32_t                    cMmioPages;
-        uint32_t                    u32;
+        /** The number of monitored pages. */
+        uint32_t                    cMonitoredPages;
     } LiveSave;
 
     /** @name   Error injection.
@@ -2604,6 +2614,8 @@ typedef struct PGM
     uint32_t                        cPrivatePages;      /**< The number of private pages. */
     uint32_t                        cSharedPages;       /**< The number of shared pages. */
     uint32_t                        cZeroPages;         /**< The number of zero backed pages. */
+    uint32_t                        cMonitoredPages;    /**< The number of write monitored pages. */
+    uint32_t                        cWrittenToPages;    /**< The number of previously write monitored pages. */
 
     /** The number of times we were forced to change the hypervisor region location. */
     STAMCOUNTER                     cRelocations;
