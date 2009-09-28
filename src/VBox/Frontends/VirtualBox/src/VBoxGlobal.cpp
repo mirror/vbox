@@ -760,17 +760,22 @@ bool VBoxGlobal::brandingIsActive (bool aForce /* = false*/)
 {
     if (aForce)
         return true;
-    return !VBoxGlobal::brandingGetKey("VerSuffix").isEmpty();
+
+    if (mBrandingConfig.isEmpty())
+    {
+        mBrandingConfig = QDir(QApplication::applicationDirPath()).absolutePath();
+        mBrandingConfig += "/custom/custom.ini";
+    }
+    return QFile::exists (mBrandingConfig);
 }
 
 /**
-  * Gets a value from the global (platform-specific) application settings
-  * (e.g. on Windows using the registry) for branding stuff 
+  * Gets a value from the custom .ini file
   */
 QString VBoxGlobal::brandingGetKey (QString aKey)
 {
-    QSettings settings("Sun", "VirtualBox");
-    return settings.value(QString("Branding/%1").arg(aKey)).toString();
+    QSettings settings(mBrandingConfig, QSettings::IniFormat);
+    return settings.value(QString("%1").arg(aKey)).toString();
 }
 
 #ifdef VBOX_GUI_WITH_SYSTRAY
