@@ -405,10 +405,10 @@ VMMR3DECL(int) HWACCMR3InitCPU(PVM pVM)
     }
 
 #ifdef VBOX_WITH_STATISTICS
-    STAM_REG(pVM, &pVM->hwaccm.s.StatTPRPatchSuccess, STAMTYPE_COUNTER,   "/HWACCM/TPR/Patch/Success", STAMUNIT_OCCURENCES, "Number of times an instruction was successfully patched.");
-    STAM_REG(pVM, &pVM->hwaccm.s.StatTPRPatchFailure, STAMTYPE_COUNTER,   "/HWACCM/TPR/Patch/Failed",  STAMUNIT_OCCURENCES, "Number of unsuccessful patch attempts.");
-    STAM_REG(pVM, &pVM->hwaccm.s.StatTPRReplaceSuccess, STAMTYPE_COUNTER, "/HWACCM/TPR/Replace/Success", STAMUNIT_OCCURENCES, "Number of times an instruction was successfully patched.");
-    STAM_REG(pVM, &pVM->hwaccm.s.StatTPRReplaceFailure, STAMTYPE_COUNTER, "/HWACCM/TPR/Replace/Failed",  STAMUNIT_OCCURENCES, "Number of unsuccessful patch attempts.");
+    STAM_REG(pVM, &pVM->hwaccm.s.StatTPRPatchSuccess,   STAMTYPE_COUNTER, "/HWACCM/TPR/Patch/Success",  STAMUNIT_OCCURENCES,    "Number of times an instruction was successfully patched.");
+    STAM_REG(pVM, &pVM->hwaccm.s.StatTPRPatchFailure,   STAMTYPE_COUNTER, "/HWACCM/TPR/Patch/Failed",   STAMUNIT_OCCURENCES,    "Number of unsuccessful patch attempts.");
+    STAM_REG(pVM, &pVM->hwaccm.s.StatTPRReplaceSuccess, STAMTYPE_COUNTER, "/HWACCM/TPR/Replace/Success",STAMUNIT_OCCURENCES,    "Number of times an instruction was successfully patched.");
+    STAM_REG(pVM, &pVM->hwaccm.s.StatTPRReplaceFailure, STAMTYPE_COUNTER, "/HWACCM/TPR/Replace/Failed", STAMUNIT_OCCURENCES,    "Number of unsuccessful patch attempts.");
 
     /*
      * Statistics.
@@ -418,6 +418,12 @@ VMMR3DECL(int) HWACCMR3InitCPU(PVM pVM)
         PVMCPU pVCpu = &pVM->aCpus[i];
         int    rc;
 
+        rc = STAMR3RegisterF(pVM, &pVCpu->hwaccm.s.StatSpinPoke, STAMTYPE_PROFILE, STAMVISIBILITY_USED, STAMUNIT_TICKS_PER_CALL, "Profiling of VMXR0RunGuestCode entry",
+                             "/PROF/HWACCM/CPU%d/PokeWait", i);
+        AssertRC(rc);
+        rc = STAMR3RegisterF(pVM, &pVCpu->hwaccm.s.StatSpinPokeFailed, STAMTYPE_PROFILE, STAMVISIBILITY_USED, STAMUNIT_TICKS_PER_CALL, "Profiling of VMXR0RunGuestCode entry",
+                             "/PROF/HWACCM/CPU%d/PokeWaitFailed", i);
+        AssertRC(rc);
         rc = STAMR3RegisterF(pVM, &pVCpu->hwaccm.s.StatEntry, STAMTYPE_PROFILE, STAMVISIBILITY_USED, STAMUNIT_TICKS_PER_CALL, "Profiling of VMXR0RunGuestCode entry",
                              "/PROF/HWACCM/CPU%d/SwitchToGC", i);
         AssertRC(rc);
