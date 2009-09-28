@@ -357,7 +357,7 @@ RTDECL(int) RTMpPokeCpu(RTCPUID idCpu)
               ? VERR_CPU_NOT_FOUND
               : VERR_CPU_OFFLINE;
 
-#if 1 /* experiment!! */
+#if 0 /* experiment!! */
     HalRequestIpi(1 << idCpu);
     return VINF_SUCCESS;
 #else
