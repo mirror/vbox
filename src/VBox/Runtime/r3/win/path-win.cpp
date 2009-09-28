@@ -265,7 +265,9 @@ RTR3DECL(int) RTPathQueryInfoEx(const char *pszPath, PRTFSOBJINFO pObjInfo, RTFS
     if (   (fFlags & RTPATH_F_FOLLOW_LINK)
         && (Data.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT))
     {
+#ifndef DEBUG_sandervl
         AssertFailed();
+#endif
         /** @todo Symlinks: RTPathQueryInfoEx is not handling symbolic links
          *        correctly on Windows.  (Both GetFileAttributesEx and FileFindFirst
          *        will return info about the symlink.) */
