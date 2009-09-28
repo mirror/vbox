@@ -579,6 +579,10 @@ typedef struct HWACCMCPU
         /** Ring 0 handlers for VT-x. */
         PFNHWACCMVMXSTARTVM         pfnStartVM;
 
+#if HC_ARCH_BITS == 32
+        uint32_t                    u32Alignment;
+#endif
+
         /** Current VMX_VMCS_CTRL_PROC_EXEC_CONTROLS. */
         uint64_t                    proc_ctls;
 
