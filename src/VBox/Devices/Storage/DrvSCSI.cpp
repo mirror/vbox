@@ -260,6 +260,17 @@ DECLINLINE(void) drvscsiH2BE_U32(uint8_t *pbBuf, uint32_t val)
     pbBuf[3] = val;
 }
 
+DECLINLINE(void) drvscsiH2BE_U64(uint8_t *pbBuf, uint64_t val)
+{
+    pbBuf[0] = val >> 56;
+    pbBuf[1] = val >> 48;
+    pbBuf[2] = val >> 40;
+    pbBuf[3] = val >> 32;
+    pbBuf[4] = val >> 24;
+    pbBuf[5] = val >> 16;
+    pbBuf[6] = val >> 8;
+    pbBuf[7] = val;
+}
 
 DECLINLINE(uint16_t) drvscsiBE2H_U16(const uint8_t *pbBuf)
 {
@@ -446,7 +457,7 @@ static int drvscsiProcessCDB(PDRVSCSI pThis, PPDMSCSIREQUEST pRequest, uint64_t 
                     {
                         iTxDir = PDMBLOCKTXDIR_FROM_DEVICE;
                         *puOffset = drvscsiBE2H_U64(&pRequest->pbCDB[2]) * 512;
-                        *pcbToTransfer = ((uint32_t)drvscsiBE2H_U32(&pRequest->pbCDB[6])) * 512;
+                        *pcbToTransfer = ((uint32_t)drvscsiBE2H_U32(&pRequest->pbCDB[10])) * 512;
                         break;
                     }
                     case SCSI_WRITE_6:
@@ -476,7 +487,7 @@ static int drvscsiProcessCDB(PDRVSCSI pThis, PPDMSCSIREQUEST pRequest, uint64_t 
                     {
                         iTxDir = PDMBLOCKTXDIR_TO_DEVICE;
                         *puOffset = drvscsiBE2H_U64(&pRequest->pbCDB[2]) * 512;
-                        *pcbToTransfer = ((uint32_t)drvscsiBE2H_U32(&pRequest->pbCDB[6])) * 512;
+                        *pcbToTransfer = ((uint32_t)drvscsiBE2H_U32(&pRequest->pbCDB[10])) * 512;
                         break;
                     }
                     case SCSI_SYNCHRONIZE_CACHE:
@@ -547,6 +558,28 @@ static int drvscsiProcessCDB(PDRVSCSI pThis, PPDMSCSIREQUEST pRequest, uint64_t 
                             }
                             default:
                                 rc = drvscsiCmdError(pRequest, SCSI_SENSE_ILLEGAL_REQUEST, SCSI_ASC_INV_FIELD_IN_CMD_PACKET);
+                        }
+                        break;
+                    }
+                    case SCSI_SERVICE_ACTION_IN_16:
+                    {
+                        switch (pRequest->pbCDB[1] & 0x1f)
+                        {
+                            case SCSI_SVC_ACTION_IN_READ_CAPACITY_16:
+                            {
+                                uint8_t aReply[32];
+
+                                memset(aReply, 0, sizeof(aReply));
+                                drvscsiH2BE_U64(aReply, pThis->cSectors - 1);
+                                drvscsiH2BE_U32(&aReply[8], 512);
+                                /* Leave the rest 0 */
+
+                                drvscsiScatterGatherListCopyFromBuffer(pRequest, aReply, sizeof(aReply));
+                                rc =  drvscsiCmdOk(pRequest);
+                                break;
+                            }
+                            default:
+                                rc = drvscsiCmdError(pRequest, SCSI_SENSE_ILLEGAL_REQUEST, SCSI_ASC_INV_FIELD_IN_CMD_PACKET); /* Don't know if this is correct */
                         }
                         break;
                     }
@@ -625,7 +658,7 @@ static int drvscsiProcessRequestOne(PDRVSCSI pThis, PPDMSCSIREQUEST pRequest)
             cSegmentsLeft--;
         }
         AssertMsg(!cbToTransfer && !cSegmentsLeft,
-                  ("Transfer incomplete cbToTransfer=%u cSegmentsLeft=%u", cbToTransfer, cSegmentsLeft));
+                  ("Transfer incomplete cbToTransfer=%u cSegmentsLeft=%u\n", cbToTransfer, cSegmentsLeft));
         drvscsiCmdOk(pRequest);
     }
 
