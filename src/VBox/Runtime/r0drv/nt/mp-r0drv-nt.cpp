@@ -348,6 +348,8 @@ static VOID rtMpNtPokeCpuDummy(IN PKDPC Dpc, IN PVOID DeferredContext, IN PVOID 
 }
 
 
+extern "C" HalRequestIpi(KAFFINITY TargetSet);
+
 RTDECL(int) RTMpPokeCpu(RTCPUID idCpu)
 {
     if (!RTMpIsCpuOnline(idCpu))
@@ -355,6 +357,10 @@ RTDECL(int) RTMpPokeCpu(RTCPUID idCpu)
               ? VERR_CPU_NOT_FOUND
               : VERR_CPU_OFFLINE;
 
+#if 1 /* experiment!! */
+    HalRequestIpi(1 << idCpu);
+    return VINF_SUCCESS;
+#else
     if (!fPokeDPCsInitialized)
     {
         for (unsigned i = 0; i < RT_ELEMENTS(aPokeDpcs); i++)
@@ -372,6 +378,9 @@ RTDECL(int) RTMpPokeCpu(RTCPUID idCpu)
     KIRQL oldIrql;
     KeRaiseIrql(DISPATCH_LEVEL, &oldIrql);
 
+    KeSetImportanceDpc(&aPokeDpcs[idCpu], HighImportance);
+    KeSetTargetProcessorDpc(&aPokeDpcs[idCpu], (int)idCpu);
+
     /* Assuming here that high importance DPCs will be delivered immediately; or at least an IPI will be sent immediately.
      * Todo: verify!
      */
@@ -379,6 +388,7 @@ RTDECL(int) RTMpPokeCpu(RTCPUID idCpu)
 
     KeLowerIrql(oldIrql);
     return (bRet == TRUE) ? VINF_SUCCESS : VERR_ACCESS_DENIED /* already queued */;
+#endif
 }
 
 void rtMpPokeCpuClear()
