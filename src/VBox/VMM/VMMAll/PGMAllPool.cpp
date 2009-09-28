@@ -2548,25 +2548,30 @@ static void pgmPoolMonitorModifiedClearAll(PVM pVM)
     pgmUnlock(pVM);
 }
 
-
 #ifdef IN_RING3
+
 /**
- * Callback to clear all shadow pages and clear all modification counters.
+ * Rendezvous callback used by pgmR3PoolClearAll that clears all shadow pages
+ * and all modification counters.
  *
- * @returns VBox strict status code.
+ * This is only called on one of the EMTs while the other ones are waiting for
+ * it to complete this function.
+ *
+ * @returns VINF_SUCCESS (VBox strict status code).
  * @param   pVM     The VM handle.
  * @param   pVCpu   The VMCPU for the EMT we're being called on. Unused.
  * @param   pvUser  Unused parameter.
  *
  * @remark  Should only be used when monitoring is available, thus placed in
  *          the PGMPOOL_WITH_MONITORING \#ifdef.
+ * @remark  Too expensive for use in R0/RC, but it remains here because of
+ *          dependencies?
  */
-DECLCALLBACK(VBOXSTRICTRC) pgmPoolClearAll(PVM pVM, PVMCPU pVCpu, void *pvUser)
+static DECLCALLBACK(VBOXSTRICTRC) pgmR3PoolClearAllRendezvous(PVM pVM, PVMCPU pVCpu, void *pvUser)
 {
     PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool);
     STAM_PROFILE_START(&pPool->StatClearAll, c);
-    LogFlow(("pgmPoolClearAll: cUsedPages=%d\n", pPool->cUsedPages));
-    NOREF(pvUser); NOREF(pVCpu);
+    LogFlow(("pgmPoolClearAllDoIt: cUsedPages=%d\n", pPool->cUsedPages));
 
     pgmLock(pVM);
 
@@ -2575,7 +2580,7 @@ DECLCALLBACK(VBOXSTRICTRC) pgmPoolClearAll(PVM pVM, PVMCPU pVCpu, void *pvUser)
 #endif
 
     /*
-     * Iterate all the pages until we've encountered all that in use.
+     * Iterate all the pages until we've encountered all that are in use.
      * This is simple but not quite optimal solution.
      */
     unsigned cModifiedPages = 0; NOREF(cModifiedPages);
@@ -2706,8 +2711,20 @@ DECLCALLBACK(VBOXSTRICTRC) pgmPoolClearAll(PVM pVM, PVMCPU pVCpu, void *pvUser)
     STAM_PROFILE_STOP(&pPool->StatClearAll, c);
     return VINF_SUCCESS;
 }
-#endif /* IN_RING3 */
 
+
+/**
+ * Clears the shadow page pool.
+ *
+ * @param   pVM         The VM handle.
+ */
+void pgmR3PoolClearAll(PVM pVM)
+{
+    int rc = VMMR3EmtRendezvous(pVM, VMMEMTRENDEZVOUS_FLAGS_TYPE_ONCE, pgmR3PoolClearAllRendezvous, NULL);
+    AssertRC(rc);
+}
+
+#endif /* IN_RING3 */
 
 /**
  * Handle SyncCR3 pool tasks
@@ -2731,11 +2748,8 @@ int pgmPoolSyncCR3(PVMCPU pVCpu)
      * sometimes refered to as a 'lightweight flush'.
      */
 # ifdef IN_RING3 /* Don't flush in ring-0 or raw mode, it's taking too long. */
-    if (ASMBitTestAndClear(&pVCpu->pgm.s.fSyncFlags, PGM_SYNC_CLEAR_PGM_POOL_BIT))
-    {
-        int rc = VMMR3EmtRendezvous(pVM, VMMEMTRENDEZVOUS_FLAGS_TYPE_ONCE, pgmPoolClearAll, NULL);
-        AssertRC(rc);
-    }
+    if (pVCpu->pgm.s.fSyncFlags & PGM_SYNC_CLEAR_PGM_POOL)
+        pgmR3PoolClearAll(pVM);
 # else  /* !IN_RING3 */
     if (pVCpu->pgm.s.fSyncFlags & PGM_SYNC_CLEAR_PGM_POOL)
     {
@@ -5038,8 +5052,8 @@ void pgmPoolFlushPageByGCPhys(PVM pVM, RTGCPHYS GCPhys)
 /**
  * Flushes the entire cache.
  *
- * It will assert a global CR3 flush (FF) and assumes the caller is aware of this
- * and execute this CR3 flush.
+ * It will assert a global CR3 flush (FF) and assumes the caller is aware of
+ * this and execute this CR3 flush.
  *
  * @param   pPool       The pool.
  */
@@ -5048,15 +5062,15 @@ void pgmR3PoolReset(PVM pVM)
     PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool);
 
     Assert(PGMIsLockOwner(pVM));
-    STAM_PROFILE_START(&pPool->StatFlushAllInt, a);
-    LogFlow(("pgmPoolFlushAllInt:\n"));
+    STAM_PROFILE_START(&pPool->StatR3Reset, a);
+    LogFlow(("pgmR3PoolReset:\n"));
 
     /*
      * If there are no pages in the pool, there is nothing to do.
      */
     if (pPool->cCurPages <= PGMPOOL_IDX_FIRST)
     {
-        STAM_PROFILE_STOP(&pPool->StatFlushAllInt, a);
+        STAM_PROFILE_STOP(&pPool->StatR3Reset, a);
         return;
     }
 
@@ -5230,7 +5244,7 @@ void pgmR3PoolReset(PVM pVM)
         VMCPU_FF_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3);
     }
 
-    STAM_PROFILE_STOP(&pPool->StatFlushAllInt, a);
+    STAM_PROFILE_STOP(&pPool->StatR3Reset, a);
 }
 #endif /* IN_RING3 */
 
