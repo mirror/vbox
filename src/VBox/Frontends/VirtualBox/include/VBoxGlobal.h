@@ -297,6 +297,10 @@ public:
     void setMainWindow (QWidget *aMainWindow) { mMainWindow = aMainWindow; }
     QWidget *mainWindow() const { return mMainWindow; }
 
+    /* branding */
+    bool brandingIsActive (bool aForce = false);
+    QString VBoxGlobal::brandingGetKey (QString aKey);
+
     bool isVMConsoleProcess() const { return !vmUuid.isNull(); }
 #ifdef VBOX_GUI_WITH_SYSTRAY
     bool isTrayMenu() const;

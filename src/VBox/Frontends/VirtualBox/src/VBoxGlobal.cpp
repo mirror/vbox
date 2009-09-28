@@ -53,6 +53,7 @@
 #include <QProcess>
 #include <QThread>
 #include <QPainter>
+#include <QSettings>
 #include <QTimer>
 #include <QDir>
 #include <QHelpEvent>
@@ -753,6 +754,23 @@ VBoxConsoleWnd &VBoxGlobal::consoleWnd()
     }
 
     return *mConsoleWnd;
+}
+
+bool VBoxGlobal::brandingIsActive (bool aForce /* = false*/)
+{
+    if (aForce)
+        return true;
+    return !VBoxGlobal::brandingGetKey("VerSuffix").isEmpty();
+}
+
+/**
+  * Gets a value from the global (platform-specific) application settings
+  * (e.g. on Windows using the registry) for branding stuff 
+  */
+QString VBoxGlobal::brandingGetKey (QString aKey)
+{
+    QSettings settings("Sun", "VirtualBox");
+    return settings.value(QString("Branding/%1").arg(aKey)).toString();
 }
 
 #ifdef VBOX_GUI_WITH_SYSTRAY
