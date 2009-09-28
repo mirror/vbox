@@ -2066,14 +2066,14 @@ typedef struct LSILOGICSCSI
     /** Number entries allocated for the outstanding request queue. */
     uint32_t              cRequestQueueEntries;
 
+#if HC_ARCH_BITS == 64
+    uint32_t              Alignment2;
+#endif
+
     /** Critical section protecting the reply post queue. */
     PDMCRITSECT           ReplyPostQueueCritSect;
     /** Critical section protecting the reply free queue. */
     PDMCRITSECT           ReplyFreeQueueCritSect;
-
-#if HC_ARCH_BITS == 64
-    uint32_t              Alignment2;
-#endif
 
     /** Pointer to the start of the reply free queue - R3. */
     R3PTRTYPE(volatile uint32_t *) pReplyFreeQueueBaseR3;
