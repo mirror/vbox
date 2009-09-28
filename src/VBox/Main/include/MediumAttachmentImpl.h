@@ -50,7 +50,7 @@ public:
     DECLARE_EMPTY_CTOR_DTOR(MediumAttachment)
 
     // public initializer/uninitializer for internal purposes only
-    HRESULT init(Machine *aMachine,
+    HRESULT init(Machine *aParent,
                  Medium *aMedium,
                  CBSTR aController,
                  LONG aPort,
@@ -108,7 +108,8 @@ public:
 private:
 
     /** Reference to Machine object, for checking mutable state. */
-    const ComObjPtr<Machine, ComWeakRef> mMachine;
+    const ComObjPtr<Machine, ComWeakRef> mParent;
+    /* later: const ComObjPtr<MediumAttachment> mPeer; */
 
     struct Data
     {
