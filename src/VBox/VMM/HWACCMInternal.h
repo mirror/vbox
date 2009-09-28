@@ -565,6 +565,7 @@ typedef struct HWACCMCPU
 
     /** World switch exit counter. */ 
     volatile uint32_t           cWorldSwitchExit;
+    uint32_t                    u32Alignment;
 
     struct
     {
