@@ -161,7 +161,7 @@ udp_input(PNATState pData, register struct mbuf *m, int iphlen)
         goto done;
     }
 
-    if (   pData->use_host_resolver 
+    if (   pData->use_host_resolver
         && ntohs(uh->uh_dport) == 53
         && CTL_CHECK(ntohl(ip->ip_dst.s_addr), CTL_DNS))
     {
@@ -171,7 +171,7 @@ udp_input(PNATState pData, register struct mbuf *m, int iphlen)
         dst.sin_addr.s_addr = ip->ip_src.s_addr;
         dst.sin_port = uh->uh_sport;
         /* udp_output2 will do opposite operations on mbuf*/
-        
+
         m->m_data += sizeof(struct udpiphdr);
         m->m_len -= sizeof(struct udpiphdr);
         udp_output2(pData, NULL, m, &src, &dst, IPTOS_LOWDELAY);
@@ -259,7 +259,7 @@ udp_input(PNATState pData, register struct mbuf *m, int iphlen)
      */
     if (   pData->use_dns_proxy
         && (ip->ip_dst.s_addr == htonl(ntohl(special_addr.s_addr) | CTL_DNS))
-        && (ntohs(uh->uh_dport) == 53)) 
+        && (ntohs(uh->uh_dport) == 53))
     {
         dnsproxy_query(pData, so, m, iphlen);
         goto done;
@@ -286,11 +286,11 @@ udp_input(PNATState pData, register struct mbuf *m, int iphlen)
         m->m_len += iphlen;
         m->m_data -= iphlen;
         *ip = save_ip;
-        DEBUG_MISC((dfd,"NAT: UDP tx errno = %d-%s (on sent to %R[IP4])\n", errno, 
+        DEBUG_MISC((dfd,"NAT: UDP tx errno = %d-%s (on sent to %R[IP4])\n", errno,
                 strerror(errno), &ip->ip_dst));
         icmp_error(pData, m, ICMP_UNREACH, ICMP_UNREACH_NET, 0, strerror(errno));
         /* in case we receive ICMP on this socket we'll aware that ICMP has been already sent to host*/
-        so->so_m = NULL; 
+        so->so_m = NULL;
     }
 
     if (so->so_m)
@@ -305,12 +305,12 @@ udp_input(PNATState pData, register struct mbuf *m, int iphlen)
     return;
 
 bad:
-    Log2(("NAT: UDP(id: %hd) datagram to %R[IP4] with size(%d) claimed as bad\n", 
+    Log2(("NAT: UDP(id: %hd) datagram to %R[IP4] with size(%d) claimed as bad\n",
         ip->ip_id, &ip->ip_dst, ip->ip_len));
-done: 
+done:
     /* some services like bootp(built-in), dns(buildt-in) and dhcp don't need sockets
-     * and create new m'buffers to send them to guest, so we'll free their incomming 
-     * buffers here. 
+     * and create new m'buffers to send them to guest, so we'll free their incomming
+     * buffers here.
      */
     m_freem(pData, m);
     return;
@@ -342,7 +342,7 @@ int udp_output2(PNATState pData, struct socket *so, struct mbuf *m,
     ui = mtod(m, struct udpiphdr *);
     memset(ui->ui_x1, 0, 9);
     ui->ui_pr = IPPROTO_UDP;
-    ui->ui_len = htons(m->m_len - sizeof(struct ip)); 
+    ui->ui_len = htons(m->m_len - sizeof(struct ip));
     /* XXXXX Check for from-one-location sockets, or from-any-location sockets */
     ui->ui_src = saddr->sin_addr;
     ui->ui_dst = daddr->sin_addr;

@@ -116,7 +116,7 @@ fd_block(int fd)
 
 #ifdef VBOX_WITH_SLIRP_BSD_MBUF
 #define ITEM_MAGIC 0xdead0001
-struct item 
+struct item
 {
     uint32_t magic;
     uma_zone_t zone;
@@ -145,7 +145,7 @@ struct uma_zone
 };
 
 
-static void *slirp_uma_alloc(uma_zone_t zone, 
+static void *slirp_uma_alloc(uma_zone_t zone,
     int size, uint8_t *pflags, int wait)
 {
     struct item *it;
@@ -154,14 +154,14 @@ static void *slirp_uma_alloc(uma_zone_t zone,
     )
     {
         /*
-         * @todo (r=vvl) here should be some 
-         * accounting of extra items in case 
+         * @todo (r=vvl) here should be some
+         * accounting of extra items in case
          * breakthrough barrier
          */
         if (LIST_EMPTY(&zone->free_items))
-            return NULL; 
+            return NULL;
         it = LIST_FIRST(&zone->free_items);
-        LIST_REMOVE(it, list); 
+        LIST_REMOVE(it, list);
         LIST_INSERT_HEAD(&zone->used_items, it, list);
         goto allocated;
     }
@@ -187,16 +187,16 @@ static void slirp_uma_free(void *item, int size, uint8_t flags)
 {
     struct item *it;
     uma_zone_t zone;
-    Assert(item); 
+    Assert(item);
     it = &((struct item *)item)[-1];
     Assert(it->magic == ITEM_MAGIC);
     zone = it->zone;
     Assert(zone->magic == ZONE_MAGIC);
-    LIST_REMOVE(it, list); 
+    LIST_REMOVE(it, list);
     LIST_INSERT_HEAD(&zone->free_items, it, list);
 }
 
-uma_zone_t uma_zcreate(PNATState pData, char *name, size_t size, 
+uma_zone_t uma_zcreate(PNATState pData, char *name, size_t size,
     ctor_t ctor, dtor_t dtor, zinit_t init, zfini_t fini, int flags1, int flags2)
 {
     uma_zone_t zone = RTMemAllocZ(sizeof(struct uma_zone) + size);
@@ -212,18 +212,18 @@ uma_zone_t uma_zcreate(PNATState pData, char *name, size_t size,
     zone->pfAlloc = slirp_uma_alloc;
     zone->pfFree = slirp_uma_free;
     return zone;
-    
+
 }
-uma_zone_t uma_zsecond_create(char *name, ctor_t ctor, 
+uma_zone_t uma_zsecond_create(char *name, ctor_t ctor,
     dtor_t dtor, zinit_t init, zfini_t fini, uma_zone_t master)
 {
     uma_zone_t zone;
 #if 0
-    if (master->pfAlloc != NULL) 
+    if (master->pfAlloc != NULL)
         zone = (uma_zone_t)master->pfAlloc(master, sizeof(struct uma_zone), NULL, 0);
-#endif        
+#endif
     zone = RTMemAllocZ(sizeof(struct uma_zone));
-    if (zone == NULL) 
+    if (zone == NULL)
     {
         return NULL;
     }
@@ -246,17 +246,17 @@ void uma_zone_set_max(uma_zone_t zone, int max)
 }
 void uma_zone_set_allocf(uma_zone_t zone, uma_alloc_t pfAlloc)
 {
-   zone->pfAlloc = pfAlloc; 
+   zone->pfAlloc = pfAlloc;
 }
 void uma_zone_set_freef(uma_zone_t zone, uma_free_t pfFree)
 {
-   zone->pfFree = pfFree; 
+   zone->pfFree = pfFree;
 }
 
 uint32_t *uma_find_refcnt(uma_zone_t zone, void *mem)
 {
-    /*@todo (r-vvl) this function supposed to work with special zone storing 
-    reference counters */ 
+    /*@todo (r-vvl) this function supposed to work with special zone storing
+    reference counters */
     struct item *it = (struct item *)mem; /* 1st element */
     Assert(zone->magic == ZONE_MAGIC);
     /* for returning pointer to counter we need get 0 elemnt */
@@ -287,7 +287,7 @@ void uma_zfree_arg(uma_zone_t zone, void *mem, void *flags)
     if (zone->pfFree == NULL)
         return;
     Assert((mem));
-    it = &((struct item *)mem)[-1]; 
+    it = &((struct item *)mem)[-1];
     if (it->magic != ITEM_MAGIC)
     {
         Log(("NAT:UMA: %p seems to be allocated on heap ... freeing\n", mem));
@@ -295,7 +295,7 @@ void uma_zfree_arg(uma_zone_t zone, void *mem, void *flags)
         return;
     }
     Assert((zone->magic == ZONE_MAGIC && zone == it->zone));
-     
+
     if (zone->pfDtor)
         zone->pfDtor(zone->pData, mem, zone->size, flags);
     zone->pfFree(mem,  0, 0);
@@ -306,7 +306,6 @@ int uma_zone_exhausted_nolock(uma_zone_t zone)
 }
 void zone_drain(uma_zone_t zone)
 {
-    
 }
 
 void slirp_null_arg_free(void *mem, void *arg)

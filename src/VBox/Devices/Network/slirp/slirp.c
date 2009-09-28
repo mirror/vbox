@@ -273,9 +273,9 @@ static int get_dns_addr_domain(PNATState pData, bool fVerbose,
                 RTMemFree(addresses);
                 return VERR_NO_MEMORY;
             }
-            LogRel(("NAT: adding %R[IP4] to DNS server list\n", 
+            LogRel(("NAT: adding %R[IP4] to DNS server list\n",
                     &((struct sockaddr_in *)saddr)->sin_addr));
-            if ((((  struct sockaddr_in *)saddr)->sin_addr.s_addr & htonl(IN_CLASSA_NET)) == 
+            if ((((  struct sockaddr_in *)saddr)->sin_addr.s_addr & htonl(IN_CLASSA_NET)) ==
                      ntohl(INADDR_LOOPBACK & IN_CLASSA_NET)) {
                 da->de_addr.s_addr = htonl(ntohl(special_addr.s_addr) | CTL_ALIAS);
             }
@@ -340,7 +340,7 @@ static int RTFileGets(RTFILE File, void *pvBuf, size_t cbBufSize, size_t *pcbRea
     int rc = VERR_NO_MEMORY;
     char *pu8Buf = (char *)pvBuf;
     *pcbRead = 0;
-    while(   RT_SUCCESS(rc = RTFileRead(File, &bTest, 1, &cbRead)) 
+    while(   RT_SUCCESS(rc = RTFileRead(File, &bTest, 1, &cbRead))
           && (pu8Buf - (char *)pvBuf) < cbBufSize)
     {
         if (cbRead == 0)
@@ -548,7 +548,7 @@ int slirp_init(PNATState *ppData, uint32_t u32NetAddr, uint32_t u32Netmask,
     if (rc != 0)
     {
         LogRel(("NAT: DHCP server initialization was failed\n"));
-        return VINF_NAT_DNS; 
+        return VINF_NAT_DNS;
     }
     debug_init();
     if_init(pData);
@@ -683,13 +683,13 @@ void slirp_term(PNATState pData)
     nbt_alias_unload(pData);
     if (pData->use_host_resolver)
         dns_alias_unload(pData);
-    while(!LIST_EMPTY(&instancehead)) 
+    while(!LIST_EMPTY(&instancehead))
     {
         struct libalias *la = LIST_FIRST(&instancehead);
         /* libalias do all clean up */
         LibAliasUninit(la);
     }
-    while(!LIST_EMPTY(&pData->arp_cache)) 
+    while(!LIST_EMPTY(&pData->arp_cache))
     {
         struct arp_cache_entry *ac = LIST_FIRST(&pData->arp_cache);
         LIST_REMOVE(ac, list);
@@ -1438,16 +1438,16 @@ static void arp_input(PNATState pData, struct mbuf *m)
                 && memcmp(ah->ar_tha, broadcast_ethaddr, ETH_ALEN) == 0
                 &&  memcmp(eh->h_dest, broadcast_ethaddr, ETH_ALEN) == 0)
             {
-                /* we've received anounce about address asignment 
+                /* we've received anounce about address asignment
                  * Let's do ARP cache update
                  */
-                if (slirp_arp_cache_update(pData, *(uint32_t *)ah->ar_tip, &eh->h_dest[0]) == 0) 
+                if (slirp_arp_cache_update(pData, *(uint32_t *)ah->ar_tip, &eh->h_dest[0]) == 0)
                 {
                     m_free(pData, mr);
                     m_free(pData, m);
                     break;
                 }
-                slirp_arp_cache_add(pData, *(uint32_t *)ah->ar_tip, &eh->h_dest[0]);     
+                slirp_arp_cache_add(pData, *(uint32_t *)ah->ar_tip, &eh->h_dest[0]);
                 /* good opportunity to activate port-forwarding on address (self)asignment*/
                 activate_port_forwarding(pData, eh);
             }
@@ -1462,7 +1462,7 @@ static void arp_input(PNATState pData, struct mbuf *m)
             slirp_arp_cache_add(pData, *(uint32_t *)ah->ar_sip, ah->ar_sha);
             /*after/save restore we need up port forwarding again*/
             if (pData->port_forwarding_activated == 0)
-                activate_port_forwarding(pData, eh); 
+                activate_port_forwarding(pData, eh);
             m_free(pData, m);
         }
         break;
@@ -1503,7 +1503,7 @@ void slirp_input(PNATState pData, const uint8_t *pkt, int pkt_len)
     if (pkt_len < MSIZE)
     {
         size = MCLBYTES;
-    } 
+    }
     else if (pkt_len < MCLBYTES)
     {
         size = MCLBYTES;
@@ -1897,7 +1897,7 @@ void slirp_set_dhcp_dns_proxy(PNATState pData, bool fDNSProxy)
     {
         Log2(("NAT: DNS proxy switched %s\n", (fDNSProxy ? "on" : "off")));
         pData->use_dns_proxy = fDNSProxy;
-    } 
+    }
     else
     {
         LogRel(("NAT: Host Resolver conflicts with DNS proxy, the last one was forcely ignored\n"));
@@ -2031,7 +2031,7 @@ void slirp_arp_who_has(PNATState pData, uint32_t dst)
     Log(("NAT: ARP request sent\n"));
 }
 
-/* updates the arp cache 
+/* updates the arp cache
  * @returns 0 - if has found and updated
  *          1 - if hasn't found.
  */
@@ -2071,7 +2071,7 @@ void slirp_set_mtu(PNATState pData, int mtu)
         LogRel(("NAT: mtu(%d) is out of range (20;16000] mtu forcely assigned to 1500\n", mtu));
         mtu = 1500;
     }
-    if_mtu = 
+    if_mtu =
     if_mru = mtu;
 }
 #endif

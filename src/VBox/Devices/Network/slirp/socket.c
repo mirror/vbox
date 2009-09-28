@@ -61,7 +61,7 @@ socreate()
     struct socket *so;
 
     so = (struct socket *)RTMemAllocZ(sizeof(struct socket));
-    if(so)
+    if (so)
     {
         so->so_state = SS_NOFDREF;
         so->s = -1;
@@ -90,7 +90,7 @@ sofree(PNATState pData, struct socket *so)
     if (so->so_m != NULL)
         m_free(pData, so->so_m);
 #ifndef VBOX_WITH_SLIRP_MT
-    if(so->so_next && so->so_prev)
+    if (so->so_next && so->so_prev)
     {
         remque(pData, so);  /* crashes if so is not in a queue */
         NSOCK_DEC();
@@ -166,7 +166,7 @@ soread(PNATState pData, struct socket *so)
         {
             iov[1].iov_base = sb->sb_data;
             iov[1].iov_len = sb->sb_rptr - sb->sb_data;
-            if(iov[1].iov_len > len)
+            if (iov[1].iov_len > len)
                 iov[1].iov_len = len;
             total = iov[0].iov_len + iov[1].iov_len;
             if (total > mss)
@@ -223,7 +223,10 @@ soread(PNATState pData, struct socket *so)
             return 0;
         }
 #endif
-        if (nn < 0 && (errno == EINTR || errno == EAGAIN || errno == EWOULDBLOCK))
+        if (   nn < 0
+            && (   errno == EINTR
+                || errno == EAGAIN
+                || errno == EWOULDBLOCK))
         {
             SOCKET_UNLOCK(so);
             STAM_PROFILE_STOP(&pData->StatIOread, a);
@@ -271,7 +274,7 @@ soread(PNATState pData, struct socket *so)
         if (ret > 0)
             nn += ret;
         STAM_STATS(
-            if(ret > 0)
+            if (ret > 0)
             {
                 STAM_COUNTER_INC(&pData->StatIORead_in_2);
                 STAM_COUNTER_ADD(&pData->StatIORead_in_2_2nd_bytes, ret);
@@ -481,7 +484,10 @@ sowrite(PNATState pData, struct socket *so)
     nn = send(so->s, iov[0].iov_base, iov[0].iov_len, 0);
 #endif
     /* This should never happen, but people tell me it does *shrug* */
-    if (nn < 0 && (errno == EAGAIN || errno == EINTR || errno == EWOULDBLOCK))
+    if (   nn < 0
+        && (   errno == EAGAIN
+            || errno == EINTR
+            || errno == EWOULDBLOCK))
     {
         SOCKET_UNLOCK(so);
         STAM_PROFILE_STOP(&pData->StatIOwrite, a);
@@ -568,7 +574,7 @@ sorecvfrom(PNATState pData, struct socket *so)
 #ifdef VBOX_WITH_SLIRP_BSD_MBUF
         int size;
 #endif
-	    int rc = 0;
+        int rc = 0;
         static int signaled = 0;
 
         QSOCKET_LOCK(udb);
@@ -592,8 +598,8 @@ sorecvfrom(PNATState pData, struct socket *so)
         /* if (so->so_fport != htons(53)) */
         {
             rc = ioctlsocket(so->s, FIONREAD, &n);
-            if (   (rc == -1)
-                && (errno == EAGAIN
+            if (   rc == -1
+                && (  errno == EAGAIN
                    || errno == EWOULDBLOCK
                    || errno == EINPROGRESS
                    || errno == ENOTCONN))
@@ -607,7 +613,7 @@ sorecvfrom(PNATState pData, struct socket *so)
                 signaled = 1;
                 m_free(pData, m);
                 return;
-            } 
+            }
 
             if (rc > 0 && n > len)
             {
@@ -628,25 +634,24 @@ sorecvfrom(PNATState pData, struct socket *so)
         * 3. attach buffer to allocated header mbuf
         */
         rc = ioctlsocket(so->s, FIONREAD, &n);
-        
         if (rc == -1 && signaled == 0)
         {
             LogRel(("NAT: can't fetch amount of bytes on socket %R[natsock], so message will be truncated.\n", so));
             signaled = 1;
-        } 
+        }
 
         len = sizeof(struct udpiphdr) + ETH_HLEN;
         len += n;
-        
+
         if (len < MSIZE)
         {
             size = MCLBYTES;
-        } 
+        }
         else if (len < MCLBYTES)
         {
             size = MCLBYTES;
         }
-        else if(len < MJUM9BYTES)
+        else if (len < MJUM9BYTES)
         {
             size = MJUM9BYTES;
         }
@@ -659,21 +664,21 @@ sorecvfrom(PNATState pData, struct socket *so)
             AssertMsgFailed(("Unsupported size"));
         }
         m = m_getjcl(pData, M_NOWAIT, MT_HEADER, M_PKTHDR, size);
-        m->m_data += ETH_HLEN; 
+        m->m_data += ETH_HLEN;
         m->m_pkthdr.header = mtod(m, void *);
-        m->m_data += sizeof(struct udpiphdr); 
+        m->m_data += sizeof(struct udpiphdr);
         ret = recvfrom(so->s, mtod(m, char *), n, 0,
                             (struct sockaddr *)&addr, &addrlen);
         /* @todo (r=vvl) check which flags and type should be passed */
 #endif
         m->m_len = ret;
-        if(ret < 0)
+        if (ret < 0)
         {
             u_char code = ICMP_UNREACH_PORT;
 
             if (errno == EHOSTUNREACH)
                 code = ICMP_UNREACH_HOST;
-            else if(errno == ENETUNREACH)
+            else if (errno == ENETUNREACH)
                 code = ICMP_UNREACH_NET;
 
             m_free(pData, m);
@@ -749,7 +754,7 @@ sosendto(PNATState pData, struct socket *so, struct mbuf *m)
     DEBUG_CALL("sosendto");
     DEBUG_ARG("so = %lx", (long)so);
     DEBUG_ARG("m = %lx", (long)m);
-    
+
     memset(&addr, 0, sizeof(struct sockaddr));
 #ifdef RT_OS_DARWIN
     addr.sa_len = sizeof(struct sockaddr_in);
@@ -1270,12 +1275,13 @@ static void sorecvfrom_icmp_unix(PNATState pData, struct socket *so)
     int len = 0;
     int rc = 0;
     static int signalled = 0;
+
     rc = ioctlsocket(so->s, FIONREAD, &len);
-    if (   rc == -1 
-        && (errno == EAGAIN
-        || errno == EWOULDBLOCK
-        || errno == EINPROGRESS
-        || errno == ENOTCONN))
+    if (   rc == -1
+        && (   errno == EAGAIN
+            || errno == EWOULDBLOCK
+            || errno == EINPROGRESS
+            || errno == ENOTCONN))
     {
         return;
     }
@@ -1295,7 +1301,7 @@ static void sorecvfrom_icmp_unix(PNATState pData, struct socket *so)
     if (len == -1 || len == 0)
     {
         u_char code;
-        if (   len == -1 
+        if (   len == -1
             && (errno == EAGAIN
             || errno == EWOULDBLOCK
             || errno == EINPROGRESS
@@ -1307,7 +1313,7 @@ static void sorecvfrom_icmp_unix(PNATState pData, struct socket *so)
 
         if (errno == EHOSTUNREACH)
             code = ICMP_UNREACH_HOST;
-        else if(errno == ENETUNREACH)
+        else if (errno == ENETUNREACH)
             code = ICMP_UNREACH_NET;
 
         LogRel((" udp icmp rx errno = %d-%s\n",

@@ -145,7 +145,7 @@ if_output(PNATState pData, struct socket *so, struct mbuf *ifm)
         TAILQ_INSERT_TAIL(&if_batchq, ifm, m_ifq);
         ifq = TAILQ_LAST(&if_batchq, if_queue);
     }
-    
+
     /* queue already created */
 #endif
 
@@ -281,7 +281,7 @@ if_start(PNATState pData)
 
         if_encap(pData, ETH_P_IP, ifm);
 
-        if (!if_queued) 
+        if (!if_queued)
         {
             return;
         }

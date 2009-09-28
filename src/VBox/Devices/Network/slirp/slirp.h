@@ -382,8 +382,8 @@ int sscanf(const char *s, const char *format, ...);
 # endif
 
 # define strncasecmp RTStrNICmp
-# define stderr NULL 
-# define stdout NULL 
+# define stderr NULL
+# define stdout NULL
 
 # ifdef DEBUG
 #  define LIBALIAS_DEBUG
@@ -394,10 +394,10 @@ int sscanf(const char *s, const char *format, ...);
 #endif /*VBOX_SLIRP_ALIAS*/
 
 #ifdef VBOX_WITH_SLIRP_BSD_MBUF
-/* @todo might be useful to make it configurable, 
+/* @todo might be useful to make it configurable,
  * especially in terms of Intnet behind NAT
  */
-# define maxusers 32 
+# define maxusers 32
 # define max_protohdr 0
 /* @todo (r=vvl) for now ignore value,
  * latter here should be fetching of tuning parameters entered
@@ -415,7 +415,7 @@ struct dummy_req
 {
     void *newptr;
 };
-  
+
 #define SYSCTL_HANDLER_ARGS PNATState pData, void *oidp, struct dummy_req *req
 
 void mbuf_init(void *);

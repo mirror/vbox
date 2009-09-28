@@ -85,7 +85,7 @@ tcp_slowtimo(PNATState pData)
     if (ip == 0)
         return;
     QSOCKET_FOREACH(ip, ipnxt, tcp)
-    /* { */ 
+    /* { */
         ipnxt = ip->so_next;
         tp = sototcpcb(ip);
         if (tp == 0)

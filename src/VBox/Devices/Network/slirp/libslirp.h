@@ -56,7 +56,7 @@ void slirp_output(void * pvUser, void *pvArg, const uint8_t *pkt, int pkt_len);
 void slirp_post_sent(PNATState pData, void *pvArg);
 
 int slirp_redir(PNATState pData, int is_udp, struct in_addr host_addr,
-                int host_port, struct in_addr guest_addr, 
+                int host_port, struct in_addr guest_addr,
                 int guest_port, const uint8_t *);
 int slirp_add_exec(PNATState pData, int do_pty, const char *args, int addr_low_byte,
                    int guest_port);
