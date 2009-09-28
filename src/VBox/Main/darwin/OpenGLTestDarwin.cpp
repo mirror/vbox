@@ -24,6 +24,10 @@
 #include <OpenGL/OpenGL.h>
 #include <ApplicationServices/ApplicationServices.h>
 #include <OpenGL/gl.h>
+#ifdef VBOX_WITH_COCOA_QT
+# include <OpenGL/glu.h>
+# include <iprt/log.h>
+#endif /* VBOX_WITH_COCOA_QT */
 
 bool is3DAccelerationSupported()
 {
@@ -52,8 +56,26 @@ bool is3DAccelerationSupported()
         CGLDestroyPixelFormat(pixelFormat);
         if (cglContext)
         {
+            GLboolean isSupported = GL_TRUE;
+#ifdef VBOX_WITH_COCOA_QT
+            /* On the Cocoa port we depend on the GL_EXT_framebuffer_object &
+             * the GL_EXT_texture_rectangle extension. If they are not
+             * available, disable 3D support. */
+            CGLSetCurrentContext(cglContext);
+            const GLubyte* strExt;
+            strExt = glGetString(GL_EXTENSIONS);
+            isSupported = gluCheckExtension((const GLubyte*)"GL_EXT_framebuffer_object", strExt);
+            if (isSupported)
+            {
+                isSupported = gluCheckExtension((const GLubyte*)"GL_EXT_texture_rectangle", strExt);
+                if (!isSupported)
+                    LogRel(("OpenGL Info: GL_EXT_texture_rectangle extension not supported\n"));
+            }
+            else
+                LogRel(("OpenGL Info: GL_EXT_framebuffer_object extension not supported\n"));
+#endif /* VBOX_WITH_COCOA_QT */
             CGLDestroyContext(cglContext);
-            return true;
+            return isSupported == GL_TRUE ? true : false;
         }
     }
 
