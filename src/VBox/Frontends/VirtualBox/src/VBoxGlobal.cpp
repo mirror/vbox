@@ -2664,6 +2664,10 @@ void VBoxGlobal::retranslateUi()
         tr ("Intel PRO/1000 T Server (82543GC)", "NetworkAdapterType");
     mNetworkAdapterTypes [KNetworkAdapterType_I82545EM] =
         tr ("Intel PRO/1000 MT Server (82545EM)", "NetworkAdapterType");
+#ifdef VBOX_WITH_VIRTIO
+    mNetworkAdapterTypes [KNetworkAdapterType_Virtio] =
+        tr ("Virtio Network Adapter", "NetworkAdapterType");
+#endif /* VBOX_WITH_VIRTIO */
 
     mNetworkAttachmentTypes [KNetworkAttachmentType_Null] =
         tr ("Not attached", "NetworkAttachmentType");

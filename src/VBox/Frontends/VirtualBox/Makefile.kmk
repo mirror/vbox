@@ -191,6 +191,9 @@ ifdef VBOX_WITH_VIDEOHWACCEL
 else ifdef VBOX_GUI_USE_QGL
  VirtualBox_DEFS        += VBOX_GUI_USE_QGL
 endif
+ifdef VBOX_WITH_VIRTIO
+ VirtualBox_DEFS        += VBOX_WITH_VIRTIO
+endif
 
 ifdef VBOX_BLEEDING_EDGE
 VirtualBox_src/VBoxConsoleWnd.cpp_DEFS += \
