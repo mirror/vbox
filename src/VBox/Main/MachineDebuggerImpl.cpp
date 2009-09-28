@@ -718,7 +718,7 @@ STDMETHODIMP MachineDebugger::GetStats (IN_BSTR aPattern, BOOL aWithDescriptions
  */
 STDMETHODIMP MachineDebugger::InjectNMI()
 {
-    LogFlowThisFunc((""));
+    LogFlowThisFunc(("\n"));
 
     AutoCaller autoCaller(this);
     CheckComRCReturnRC(autoCaller.rc());
