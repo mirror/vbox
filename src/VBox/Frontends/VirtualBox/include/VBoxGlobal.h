@@ -299,7 +299,7 @@ public:
 
     /* branding */
     bool brandingIsActive (bool aForce = false);
-    QString VBoxGlobal::brandingGetKey (QString aKey);
+    QString brandingGetKey (QString aKey);
 
     bool isVMConsoleProcess() const { return !vmUuid.isNull(); }
 #ifdef VBOX_GUI_WITH_SYSTRAY
