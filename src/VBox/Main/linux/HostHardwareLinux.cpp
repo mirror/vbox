@@ -1314,7 +1314,7 @@ private:
             return;
         RTFILE file;
         int rc = RTFileOpen(&file, mszNode, RTFILE_O_READ);
-        /** @note the next line can produce a warning, as the ioctl request
+        /** @todo The next line can produce a warning, as the ioctl request
          * field is defined as signed, but the Linux ioctl definition macros
          * produce unsigned constants. */
         rc = RTFileIoCtl(file, FDGETDRVTYP, szName, 0, &rcIoCtl);
