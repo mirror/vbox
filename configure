@@ -942,11 +942,11 @@ check_curl()
 extern "C" int main(void)
 {
   printf("found version %s", LIBCURL_VERSION);
-#if 10000*LIBCURL_VERSION_MAJOR + 100*LIBCURL_VERSION_MINOR >= 71700
+#if 10000*LIBCURL_VERSION_MAJOR + 100*LIBCURL_VERSION_MINOR + LIBCURL_VERSION_PATCH >= 71601
   printf(", OK.\n");
   return 0;
 #else
-  printf(", expected version 7.17.0 or higher\n");
+  printf(", expected version 7.16.1 or higher\n");
   return 1;
 #endif
 }
