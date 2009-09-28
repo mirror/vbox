@@ -31,12 +31,15 @@ DEFINE_EMPTY_CTOR_DTOR(MediumAttachment)
 
 HRESULT MediumAttachment::FinalConstruct()
 {
+    LogFlowThisFunc(("\n"));
     return S_OK;
 }
 
 void MediumAttachment::FinalRelease()
 {
+    LogFlowThisFuncEnter();
     uninit();
+    LogFlowThisFuncLeave();
 }
 
 // public initializer/uninitializer for internal purposes only
@@ -45,14 +48,14 @@ void MediumAttachment::FinalRelease()
 /**
  * Initializes the medium attachment object.
  *
- * @param aMachine    Machine object.
+ * @param aParent     Machine object.
  * @param aMedium     Medium object.
  * @param aController Controller the hard disk is attached to.
  * @param aPort       Port number.
  * @param aDevice     Device number on the port.
  * @param aImplicit   Wether the attachment contains an implicitly created diff.
  */
-HRESULT MediumAttachment::init(Machine *aMachine,
+HRESULT MediumAttachment::init(Machine *aParent,
                                Medium *aMedium,
                                CBSTR aController,
                                LONG aPort,
@@ -60,6 +63,9 @@ HRESULT MediumAttachment::init(Machine *aMachine,
                                DeviceType_T aType,
                                bool aImplicit /*= false*/)
 {
+    LogFlowThisFuncEnter();
+    LogFlowThisFunc(("aParent=%p aMedium=%p aController=%ls aPort=%d aDevice=%d aType=%d aImplicit=%d\n", aParent, aMedium, aController, aPort, aDevice, aType, aImplicit));
+
     if (aType == DeviceType_HardDisk)
         AssertReturn(aMedium, E_INVALIDARG);
 
@@ -67,7 +73,8 @@ HRESULT MediumAttachment::init(Machine *aMachine,
     AutoInitSpan autoInitSpan(this);
     AssertReturn(autoInitSpan.isOk(), E_FAIL);
 
-    unconst(mMachine) = aMachine;
+    unconst(mParent) = aParent;
+
     m.allocate();
     m->medium = aMedium;
     unconst(m->controller) = aController;
@@ -81,6 +88,7 @@ HRESULT MediumAttachment::init(Machine *aMachine,
     /* Confirm a successful initialization when it's the case */
     autoInitSpan.setSucceeded();
 
+    LogFlowThisFuncLeave();
     return S_OK;
 }
 
@@ -90,10 +98,18 @@ HRESULT MediumAttachment::init(Machine *aMachine,
  */
 void MediumAttachment::uninit()
 {
+    LogFlowThisFuncEnter();
+
     /* Enclose the state transition Ready->InUninit->NotReady */
     AutoUninitSpan autoUninitSpan(this);
     if (autoUninitSpan.uninitDone())
         return;
+
+    m.free();
+
+    unconst(mParent).setNull();
+
+    LogFlowThisFuncLeave();
 }
 
 /**
@@ -101,6 +117,8 @@ void MediumAttachment::uninit()
  */
 bool MediumAttachment::rollback()
 {
+    LogFlowThisFuncEnter();
+
     /* sanity */
     AutoCaller autoCaller(this);
     AssertComRCReturn (autoCaller.rc(), false);
@@ -117,6 +135,7 @@ bool MediumAttachment::rollback()
         m.rollback();
     }
 
+    LogFlowThisFuncLeave();
     return changed;
 }
 
@@ -125,6 +144,8 @@ bool MediumAttachment::rollback()
  */
 void MediumAttachment::commit()
 {
+    LogFlowThisFuncEnter();
+
     /* sanity */
     AutoCaller autoCaller(this);
     AssertComRCReturnVoid (autoCaller.rc());
@@ -133,6 +154,8 @@ void MediumAttachment::commit()
 
     if (m.isBackedUp())
         m.commit();
+
+    LogFlowThisFuncLeave();
 }
 
 
@@ -141,6 +164,8 @@ void MediumAttachment::commit()
 
 STDMETHODIMP MediumAttachment::COMGETTER(Medium)(IMedium **aHardDisk)
 {
+    LogFlowThisFuncEnter();
+
     CheckComArgOutPointerValid(aHardDisk);
 
     AutoCaller autoCaller(this);
@@ -150,11 +175,14 @@ STDMETHODIMP MediumAttachment::COMGETTER(Medium)(IMedium **aHardDisk)
 
     m->medium.queryInterfaceTo(aHardDisk);
 
+    LogFlowThisFuncLeave();
     return S_OK;
 }
 
 STDMETHODIMP MediumAttachment::COMGETTER(Controller)(BSTR *aController)
 {
+    LogFlowThisFuncEnter();
+
     CheckComArgOutPointerValid(aController);
 
     AutoCaller autoCaller(this);
@@ -163,11 +191,14 @@ STDMETHODIMP MediumAttachment::COMGETTER(Controller)(BSTR *aController)
     /* m->controller is constant during life time, no need to lock */
     m->controller.cloneTo(aController);
 
+    LogFlowThisFuncLeave();
     return S_OK;
 }
 
 STDMETHODIMP MediumAttachment::COMGETTER(Port)(LONG *aPort)
 {
+    LogFlowThisFuncEnter();
+
     CheckComArgOutPointerValid(aPort);
 
     AutoCaller autoCaller(this);
@@ -176,11 +207,14 @@ STDMETHODIMP MediumAttachment::COMGETTER(Port)(LONG *aPort)
     /* m->port is constant during life time, no need to lock */
     *aPort = m->port;
 
+    LogFlowThisFuncLeave();
     return S_OK;
 }
 
 STDMETHODIMP MediumAttachment::COMGETTER(Device)(LONG *aDevice)
 {
+    LogFlowThisFuncEnter();
+
     CheckComArgOutPointerValid(aDevice);
 
     AutoCaller autoCaller(this);
@@ -189,11 +223,14 @@ STDMETHODIMP MediumAttachment::COMGETTER(Device)(LONG *aDevice)
     /* m->device is constant during life time, no need to lock */
     *aDevice = m->device;
 
+    LogFlowThisFuncLeave();
     return S_OK;
 }
 
 STDMETHODIMP MediumAttachment::COMGETTER(Type)(DeviceType_T *aType)
 {
+    LogFlowThisFuncEnter();
+
     CheckComArgOutPointerValid(aType);
 
     AutoCaller autoCaller(this);
@@ -202,16 +239,19 @@ STDMETHODIMP MediumAttachment::COMGETTER(Type)(DeviceType_T *aType)
     /* m->type is constant during life time, no need to lock */
     *aType = m->type;
 
+    LogFlowThisFuncLeave();
     return S_OK;
 }
 
 STDMETHODIMP MediumAttachment::COMSETTER(Passthrough)(BOOL aPassthrough)
 {
+    LogFlowThisFuncEnter();
+
     AutoCaller autoCaller(this);
     CheckComRCReturnRC(autoCaller.rc());
 
     /* the machine need to be mutable */
-    Machine::AutoMutableStateDependency adep(mMachine);
+    Machine::AutoMutableStateDependency adep(mParent);
     CheckComRCReturnRC(adep.rc());
 
     AutoWriteLock lock(this);
@@ -222,11 +262,14 @@ STDMETHODIMP MediumAttachment::COMSETTER(Passthrough)(BOOL aPassthrough)
         m->passthrough = !!aPassthrough;
     }
 
+    LogFlowThisFuncLeave();
     return S_OK;
 }
 
 STDMETHODIMP MediumAttachment::COMGETTER(Passthrough)(BOOL *aPassthrough)
 {
+    LogFlowThisFuncEnter();
+
     CheckComArgOutPointerValid(aPassthrough);
 
     AutoCaller autoCaller(this);
@@ -235,6 +278,8 @@ STDMETHODIMP MediumAttachment::COMGETTER(Passthrough)(BOOL *aPassthrough)
     AutoReadLock lock(this);
 
     *aPassthrough = m->passthrough;
+
+    LogFlowThisFuncLeave();
     return S_OK;
 }
 
