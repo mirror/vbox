@@ -41,7 +41,7 @@
  *
  * This routine is very heavily used in the network
  * code and should be modified for each CPU to be as fast as possible.
- * 
+ *
  * XXX Since we will never span more than 1 mbuf, we can optimise this
  */
 
@@ -65,13 +65,13 @@ int cksum(struct mbuf *m, int len)
         u_int16_t s[2];
         u_int32_t l;
     } l_util;
-        
+
     if (m->m_len == 0)
         goto cont;
     w = mtod(m, u_int16_t *);
 
     mlen = m->m_len;
-        
+
     if (len < mlen)
         mlen = len;
     len -= mlen;
@@ -113,7 +113,7 @@ int cksum(struct mbuf *m, int len)
     {
         sum += *w++;
     }
-        
+
     if (byte_swapped)
     {
         REDUCE;
@@ -130,7 +130,7 @@ int cksum(struct mbuf *m, int len)
     }
     else if (mlen == -1)
         s_util.c[0] = *(u_int8_t *)w;
-        
+
 cont:
 #ifdef DEBUG
     if (len)

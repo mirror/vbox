@@ -37,8 +37,8 @@
 #define LEASE_TIME (24 * 3600)
 
 /*
- * ARP cache this is naive implementaion of ARP 
- * cache of mapping 4 byte IPv4 address to 6 byte 
+ * ARP cache this is naive implementaion of ARP
+ * cache of mapping 4 byte IPv4 address to 6 byte
  * ethernet one.
  */
 struct arp_cache_entry
@@ -227,7 +227,7 @@ typedef struct NATState
 #endif
 #ifdef VBOX_WITH_SLIRP_BSD_MBUF
 # ifdef zone_mbuf
-#  undef zone_mbuf 
+#  undef zone_mbuf
 # endif
     uma_zone_t zone_mbuf;
 # ifdef zone_clust
@@ -260,7 +260,7 @@ typedef struct NATState
 # endif
     uma_zone_t zone_ext_refcnt;
 #endif
-    int use_host_resolver; 
+    int use_host_resolver;
     /* from dnsproxy/dnsproxy.h*/
     unsigned int authoritative_port;
     unsigned int authoritative_timeout;

@@ -74,9 +74,9 @@ struct socket
     int so_poll_index;
 #else /* !RT_OS_WINDOWS */
     /*
-     * FD_CLOSE event has been occurred on socket 
+     * FD_CLOSE event has been occurred on socket
      */
-    int so_close; 
+    int so_close;
 #endif /* RT_OS_WINDOWS */
 
     void (* so_timeout)(PNATState pData, struct socket *so, void *arg);
@@ -84,7 +84,7 @@ struct socket
 
 #ifdef VBOX_WITH_NAT_SERVICE
     /* storage of source ether address */
-    unsigned char so_ethaddr[6]; 
+    unsigned char so_ethaddr[6];
 #endif
     /* required for port-forwarding */
     struct libalias *so_la;

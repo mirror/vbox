@@ -186,11 +186,11 @@ static int tftp_send_error(PNATState pData,
 
     nobytes = 2;
 
-    m->m_len = sizeof(struct tftp_t) 
+    m->m_len = sizeof(struct tftp_t)
              - 514
-             + 3 
+             + 3
              + strlen(msg)
-             - sizeof(struct ip) 
+             - sizeof(struct ip)
              - sizeof(struct udphdr);
 
     udp_output2(pData, NULL, m, &saddr, &daddr, IPTOS_LOWDELAY);
@@ -241,9 +241,9 @@ static int tftp_send_data(PNATState pData,
         return -1;
     }
 
-    m->m_len = sizeof(struct tftp_t) 
-             - (512 - nobytes) 
-             - sizeof(struct ip) 
+    m->m_len = sizeof(struct tftp_t)
+             - (512 - nobytes)
+             - sizeof(struct ip)
              - sizeof(struct udphdr);
 
     udp_output2(pData, NULL, m, &saddr, &daddr, IPTOS_LOWDELAY);

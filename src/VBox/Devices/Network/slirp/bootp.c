@@ -46,7 +46,7 @@ static uint8_t *dhcp_find_option(uint8_t *vend, uint8_t tag)
     uint8_t *q = vend;
     uint8_t len;
     /*@todo magic validation */
-    q += 4; /*magic*/ 
+    q += 4; /*magic*/
     while(*q != RFC1533_END)
     {
         if (*q == RFC1533_PAD)
@@ -55,9 +55,9 @@ static uint8_t *dhcp_find_option(uint8_t *vend, uint8_t tag)
             return q;
         q++;
         len = *q;
-        q += 1 + len; 
+        q += 1 + len;
     }
-    return NULL; 
+    return NULL;
 }
 static BOOTPClient *bc_alloc_client(PNATState pData)
 {
@@ -134,7 +134,7 @@ static int release_addr(PNATState pData, struct in_addr *paddr)
  * 'file'     Client boot file     Client boot file    (unused)
  *            name or options      name or options
  * 'options'  options              options
- * 
+ *
  * Option                    DHCPOFFER    DHCPACK            DHCPNAK
  * ------                    ---------    -------            -------
  * Requested IP address      MUST NOT     MUST NOT           MUST NOT
@@ -264,25 +264,24 @@ static int dhcp_do_ack_offer(PNATState pData, struct mbuf *m, BOOTPClient *bc, i
         be->bpe_len += (len);                                   \
     }while(0)
 
-    
-    
+
     FILL_BOOTP_EXT(q, RFC1533_NETMASK, 4, &netmask);
     FILL_BOOTP_EXT(q, RFC1533_GATEWAY, 4, &saddr);
-    
+
     if (pData->use_dns_proxy || pData->use_host_resolver)
     {
         uint32_t addr = htonl(ntohl(special_addr.s_addr) | CTL_DNS);
         FILL_BOOTP_EXT(q, RFC1533_DNS, 4, &addr);
         goto skip_dns_servers;
     }
-    
-    if (!TAILQ_EMPTY(&pData->dns_list_head)) 
+
+    if (!TAILQ_EMPTY(&pData->dns_list_head))
     {
         de = TAILQ_LAST(&pData->dns_list_head, dns_list_head);
         q_dns_header = q;
         FILL_BOOTP_EXT(q, RFC1533_DNS, 4, &de->de_addr.s_addr);
     }
-    
+
     TAILQ_FOREACH_REVERSE(de, &pData->dns_list_head, dns_list_head, de_list)
     {
         if (TAILQ_LAST(&pData->dns_list_head, dns_list_head) == de)
@@ -295,27 +294,27 @@ skip_dns_servers:
     {
             /* Microsoft dhcp client doen't like domain-less dhcp and trimmed packets*/
             /* dhcpcd client very sad if no domain name is passed */
-            FILL_BOOTP_EXT(q, RFC1533_DOMAINNAME, 1, " "); 
+            FILL_BOOTP_EXT(q, RFC1533_DOMAINNAME, 1, " ");
     }
     if (pData->fPassDomain && !pData->use_host_resolver)
     {
         LIST_FOREACH(dd, &pData->dns_domain_list_head, dd_list)
         {
-            
+
             if (dd->dd_pszDomain == NULL)
                 continue;
             /* never meet valid separator here in RFC1533*/
-            if (added != 0) 
-                FILL_BOOTP_EXT(q, RFC1533_DOMAINNAME, 1, ","); 
+            if (added != 0)
+                FILL_BOOTP_EXT(q, RFC1533_DOMAINNAME, 1, ",");
             else
                 added = 1;
             val = (int)strlen(dd->dd_pszDomain);
             FILL_BOOTP_EXT(q, RFC1533_DOMAINNAME, val, dd->dd_pszDomain);
         }
     }
-    
+
     FILL_BOOTP_EXT(q, RFC2132_LEASE_TIME, 4, &lease_time);
-    
+
     if (*slirp_hostname)
     {
         val = (int)strlen(slirp_hostname);
@@ -331,7 +330,7 @@ static int dhcp_send_nack(PNATState pData, struct bootp_t *bp, BOOTPClient *bc, 
     rbp = mtod(m, struct bootp_t *);
 
     dhcp_create_msg(pData, bp, m, DHCPNAK);
-    
+
     return 7;
 }
 static int dhcp_send_ack(PNATState pData, struct bootp_t *bp, BOOTPClient *bc, struct mbuf *m, int is_from_request)
@@ -407,17 +406,17 @@ static int dhcp_decode_request(PNATState pData, struct bootp_t *bp, const uint8_
         {
             /*see table 4 rfc2131*/
             if (bp->bp_flags & DHCP_FLAGS_B)
-                dhcp_stat = REBINDING; 
-            else 
-                dhcp_stat = RENEWING; 
+                dhcp_stat = REBINDING;
+            else
+                dhcp_stat = RENEWING;
         }
     }
         /*?? renewing ??*/
     switch (dhcp_stat)
     {
-        case RENEWING: 
+        case RENEWING:
         {
-            Assert((   server_ip == NULL 
+            Assert((   server_ip == NULL
                 && req_ip == NULL
                 && bp->bp_ciaddr.s_addr != INADDR_ANY));
             if (bc != NULL)
@@ -427,7 +426,7 @@ static int dhcp_decode_request(PNATState pData, struct bootp_t *bp, const uint8_
             }
             else
             {
-               if ((bp->bp_ciaddr.s_addr & htonl(pData->netmask)) != special_addr.s_addr) 
+               if ((bp->bp_ciaddr.s_addr & htonl(pData->netmask)) != special_addr.s_addr)
                {
                     off = dhcp_send_nack(pData, bp, bc, m);
                     return off;
@@ -440,7 +439,7 @@ static int dhcp_decode_request(PNATState pData, struct bootp_t *bp, const uint8_
                }
                Assert((bp->bp_hlen == ETH_ALEN));
                memcpy(bc->macaddr, bp->bp_hwaddr, bp->bp_hlen);
-               bc->addr.s_addr = bp->bp_ciaddr.s_addr; 
+               bc->addr.s_addr = bp->bp_ciaddr.s_addr;
                slirp_arp_cache_update(pData, bp->bp_ciaddr.s_addr, bp->bp_hwaddr);
             }
         }
@@ -449,7 +448,7 @@ static int dhcp_decode_request(PNATState pData, struct bootp_t *bp, const uint8_
             Assert(server_ip == NULL);
             Assert(req_ip != NULL);
             ui32 = *(uint32_t *)(req_ip + 2);
-            if ((ui32 & htonl(pData->netmask)) != special_addr.s_addr) 
+            if ((ui32 & htonl(pData->netmask)) != special_addr.s_addr)
             {
                 LogRel(("NAT: address %R[IP4] has been req.\n", &ui32));
                  off = dhcp_send_nack(pData, bp, bc, m);
@@ -463,7 +462,7 @@ static int dhcp_decode_request(PNATState pData, struct bootp_t *bp, const uint8_
             }
             Assert((bp->bp_hlen == ETH_ALEN));
             memcpy(bc->macaddr, bp->bp_hwaddr, bp->bp_hlen);
-            bc->addr.s_addr = ui32; 
+            bc->addr.s_addr = ui32;
             slirp_arp_cache_update(pData, bp->bp_ciaddr.s_addr, bp->bp_hwaddr);
         break;
         case NONE:
@@ -498,9 +497,9 @@ static int dhcp_decode_discover(PNATState pData, struct bootp_t *bp, const uint8
         }
         bc->xid = bp->bp_xid;
         /*bc isn't NULL */
-        off = dhcp_send_offer(pData, bp, bc, m); 
+        off = dhcp_send_offer(pData, bp, bc, m);
         return off;
-    } 
+    }
     else
     {
         /* flag == 0 inform */
@@ -510,7 +509,7 @@ static int dhcp_decode_discover(PNATState pData, struct bootp_t *bp, const uint8
             LogRel(("NAT: DHCP Inform was ignored no boot client was found\n"));
             return -1;
         }
-        off = dhcp_send_ack(pData, bp, bc, m, 0); 
+        off = dhcp_send_ack(pData, bp, bc, m, 0);
         return off;
     }
     return -1;
@@ -583,13 +582,13 @@ static int dhcp_decode_release(PNATState pData, struct bootp_t *bp, const uint8_
  * Message                    SHOULD NOT    SHOULD NOT       SHOULD
  * Site-specific              MAY           MAY              MUST NOT
  * All others                 MAY           MAY              MUST NOT
- * 
+ *
  */
 static void dhcp_decode(PNATState pData, struct bootp_t *bp, const uint8_t *buf, int size)
 {
     const uint8_t *p, *p_end;
     int rc;
-    int pmsg_type; 
+    int pmsg_type;
     struct in_addr req_ip;
     int flag = 0;
     int len, tag;
@@ -654,7 +653,7 @@ reply:
 
 static void bootp_reply(PNATState pData, struct mbuf *m, int off, uint16_t flags)
 {
-    struct sockaddr_in saddr, daddr; 
+    struct sockaddr_in saddr, daddr;
     struct bootp_t *rbp = NULL;
     uint8_t *q = NULL;
     int nack;
@@ -673,9 +672,9 @@ static void bootp_reply(PNATState pData, struct mbuf *m, int off, uint16_t flags
 
     FILL_BOOTP_EXT(q, RFC2132_SRV_ID, 4, &saddr.sin_addr);
 
-    
+
     *q++ = RFC1533_END; /*end of message */
-    
+
 
 #ifdef VBOX_WITH_SLIRP_BSD_MBUF
     m->m_pkthdr.header = mtod(m, void *);
@@ -707,7 +706,7 @@ void bootp_input(PNATState pData, struct mbuf *m)
 int bootp_cache_lookup_ip_by_ether(PNATState pData,const uint8_t* ether, uint32_t *pip)
 {
     int rc = 1;
-    uint32_t ip = INADDR_ANY; 
+    uint32_t ip = INADDR_ANY;
     int i;
     if (ether == NULL || pip == NULL)
         return rc;
@@ -745,7 +744,7 @@ int bootp_cache_lookup_ether_by_ip(PNATState pData, uint32_t ip, uint8_t *ether)
 }
 
 /*
- * Initialize dhcp server 
+ * Initialize dhcp server
  * @returns 0 - if initialization is ok, non-zero otherwise
  */
 int bootp_dhcp_init(PNATState pData)

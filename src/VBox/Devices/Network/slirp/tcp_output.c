@@ -215,8 +215,8 @@ again:
          * taking into account that we are limited by
          * TCP_MAXWIN << tp->rcv_scale.
          */
-        long adv = min(win, 
-                       (long)TCP_MAXWIN << tp->rcv_scale) - 
+        long adv = min(win,
+                       (long)TCP_MAXWIN << tp->rcv_scale) -
                        (tp->rcv_adv - tp->rcv_nxt);
 
         if (adv >= (long) (2 * tp->t_maxseg))
@@ -377,7 +377,7 @@ send:
         if ((len + hdrlen + ETH_HLEN) < MSIZE)
         {
             size = MCLBYTES;
-        } 
+        }
         else if ((len + hdrlen + ETH_HLEN) < MCLBYTES)
         {
             size = MCLBYTES;
@@ -459,7 +459,7 @@ send:
         if ((hdrlen + ETH_HLEN) < MSIZE)
         {
             size = MCLBYTES;
-        } 
+        }
         else if ((hdrlen + ETH_HLEN) < MCLBYTES)
         {
             size = MCLBYTES;
@@ -573,7 +573,7 @@ send:
      * In transmit state, time the transmission and arrange for
      * the retransmit.  In persist state, just set snd_max.
      */
-    if (tp->t_force == 0 || tp->t_timer[TCPT_PERSIST] == 0) 
+    if (tp->t_force == 0 || tp->t_timer[TCPT_PERSIST] == 0)
     {
         tcp_seq startseq = tp->snd_nxt;
 

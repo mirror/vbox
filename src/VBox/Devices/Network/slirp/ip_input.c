@@ -78,7 +78,7 @@ static struct libalias *select_alias(PNATState pData, struct mbuf* m)
     struct m_tag *t;
     if (t = m_tag_find(m, PACKET_TAG_ALIAS, NULL) != 0)
     {
-        return (struct libalias *)&t[1]; 
+        return (struct libalias *)&t[1];
     }
 #endif
 
@@ -233,7 +233,7 @@ ip_input(PNATState pData, struct mbuf *m)
     STAM_PROFILE_STOP(&pData->StatIP_input, a);
     return;
 bad:
-    Log2(("NAT: IP datagram to %R[IP4] with size(%d) claimed as bad\n", 
+    Log2(("NAT: IP datagram to %R[IP4] with size(%d) claimed as bad\n",
         &ip->ip_dst, ip->ip_len));
     m_freem(pData, m);
     STAM_PROFILE_STOP(&pData->StatIP_input, a);

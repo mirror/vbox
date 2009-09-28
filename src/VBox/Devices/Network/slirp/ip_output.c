@@ -64,11 +64,11 @@ static int rt_lookup_in_cache(PNATState pData, uint32_t dst, uint8_t *ether)
     rc = bootp_cache_lookup_ether_by_ip(pData, dst, ether);
     if (rc == 0)
         return rc;
-    /* 
-     * no chance to send this packet, sorry, we will request ether address via ARP 
+    /*
+     * no chance to send this packet, sorry, we will request ether address via ARP
      */
-    slirp_arp_who_has(pData, dst); 
-    return rc; 
+    slirp_arp_who_has(pData, dst);
+    return rc;
 }
 
 /*
@@ -151,7 +151,7 @@ ip_output(PNATState pData, struct socket *so, struct mbuf *m0)
        rc = 0; /*some times we've already know where to send packet*/
     }
 #else
-    /* 
+    /*
      * (vvl) Assumption is that m_data points at the IP header and only
      * in case of dhcp we know and have header before IP.
      */
@@ -169,11 +169,11 @@ ip_output(PNATState pData, struct socket *so, struct mbuf *m0)
         ip->ip_off = htons((u_int16_t)ip->ip_off);
         ip->ip_sum = 0;
         ip->ip_sum = cksum(m, hlen);
-    
+
         {
 #ifndef VBOX_WITH_SLIRP_BSD_MBUF
             STAM_PROFILE_START(&pData->StatALIAS_output, a);
-            rc = LibAliasOut((m->m_la ? m->m_la : pData->proxy_alias), 
+            rc = LibAliasOut((m->m_la ? m->m_la : pData->proxy_alias),
                 mtod(m, char *), m->m_len);
             Log2(("NAT: LibAlias return %d\n", rc));
 #else
@@ -185,9 +185,9 @@ ip_output(PNATState pData, struct socket *so, struct mbuf *m0)
             }
             else
             {
-                rc = LibAliasOut(pData->proxy_alias, mtod(m, char *), 
+                rc = LibAliasOut(pData->proxy_alias, mtod(m, char *),
                                  m_length(m, NULL));
-            } 
+            }
             if (rc == PKT_ALIAS_IGNORED)
             {
                 Log(("NAT: packet was droppped\n"));
@@ -197,7 +197,7 @@ ip_output(PNATState pData, struct socket *so, struct mbuf *m0)
             STAM_PROFILE_STOP(&pData->StatALIAS_output, a);
         }
 
-        memcpy(eh->h_source, eth_dst, ETH_ALEN); 
+        memcpy(eh->h_source, eth_dst, ETH_ALEN);
 
         if_output(pData, so, m);
         goto done;
@@ -239,7 +239,7 @@ ip_output(PNATState pData, struct socket *so, struct mbuf *m0)
                 ip->ip_sum = 0;
                 ip->ip_sum = cksum(m, hlen);
 #ifndef VBOX_WITH_SLIRP_BSD_MBUF
-                rc = LibAliasOut((m->m_la ? m->m_la : pData->proxy_alias), 
+                rc = LibAliasOut((m->m_la ? m->m_la : pData->proxy_alias),
                     mtod(m, char *), m->m_len);
 #else
                 if (m->m_next != NULL)
@@ -263,7 +263,7 @@ ip_output(PNATState pData, struct socket *so, struct mbuf *m0)
                 else
                 {
                     rc = LibAliasOut(pData->proxy_alias, tmpbuf, tmplen);
-                } 
+                }
                 if (m->m_next != NULL)
                 {
                     if (rc != PKT_ALIAS_IGNORED)
@@ -378,11 +378,11 @@ sendorfree:
                 eh = mtod(m, struct ethhdr *);
                 m->m_data += ETH_HLEN;
 #endif
-                memcpy(eh->h_source, eth_dst, ETH_ALEN); 
+                memcpy(eh->h_source, eth_dst, ETH_ALEN);
 
                 if_output(pData, so, m);
             }
-            else 
+            else
             {
                 m_freem(pData, m);
             }

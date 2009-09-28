@@ -91,7 +91,7 @@ sbappend(PNATState pData, struct socket *so, struct mbuf *m)
     /* Shouldn't happen, but...  e.g. foreign host closes connection */
 #ifndef VBOX_WITH_SLIRP_BSD_MBUF
     if (m->m_len <= 0)
-#else 
+#else
     mlen = m_length(m, NULL);
     if (mlen <= 0)
 #endif
@@ -126,7 +126,7 @@ sbappend(PNATState pData, struct socket *so, struct mbuf *m)
     {
         ret = 0;
         goto no_sent;
-    }    
+    }
     m_copydata(m, 0, mlen, buf);
     if(!so->so_rcv.sb_cc)
         ret = send(so->s, buf, mlen, 0);

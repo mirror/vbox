@@ -554,7 +554,7 @@ void icmp_error(PNATState pData, struct mbuf *msrc, u_char type, u_char code, in
     if (new_m_size < MSIZE)
     {
         size = MCLBYTES;
-    } 
+    }
     else if (new_m_size < MCLBYTES)
     {
         size = MCLBYTES;

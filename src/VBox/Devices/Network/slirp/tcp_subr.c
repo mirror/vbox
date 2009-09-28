@@ -446,7 +446,7 @@ tcp_connect(PNATState pData, struct socket *inso)
     struct sockaddr_in addr;
     socklen_t addrlen = sizeof(struct sockaddr_in);
     struct tcpcb *tp;
-    int s, opt; 
+    int s, opt;
     int status;
     socklen_t optlen;
     static int cVerbose = 1;

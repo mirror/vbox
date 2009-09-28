@@ -33,7 +33,7 @@ msize_init(PNATState pData)
     /*
      * Find a nice value for msize
      */
-    msize = (if_mtu>if_mru ? if_mtu : if_mru) 
+    msize = (if_mtu>if_mru ? if_mtu : if_mru)
           + sizeof(struct m_hdr) + sizeof(void *)   /*pointer to the backstore*/
           + if_maxlinkhdr ;
 }
@@ -243,7 +243,7 @@ dtom(PNATState pData, void *dat)
         }
         else
         {
-            if (   (char *)dat >=  m->m_dat 
+            if (   (char *)dat >=  m->m_dat
                 && (char *)dat <  (m->m_dat + m->m_size))
                 return m;
         }
