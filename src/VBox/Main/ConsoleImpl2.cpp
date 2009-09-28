@@ -623,7 +623,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
 
     /* Custom VESA mode list */
     unsigned cModes = 0;
-    for (unsigned iMode = 1; iMode <= 16; iMode++)
+    for (unsigned iMode = 1; iMode <= 16; ++iMode)
     {
         char szExtraDataKey[sizeof("CustomVideoModeXX")];
         RTStrPrintf(szExtraDataKey, sizeof(szExtraDataKey), "CustomVideoMode%u", iMode);
@@ -632,7 +632,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
             break;
         rc = CFGMR3InsertStringW(pCfg, szExtraDataKey, str);                        RC_CHECK();
         STR_FREE();
-        cModes++;
+        ++cModes;
     }
     STR_FREE();
     rc = CFGMR3InsertInteger(pCfg,  "CustomVideoModes", cModes);
@@ -743,7 +743,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                     rc = CFGMR3InsertString(pBiosCfg, "SataHardDiskDevice", "ahci");        RC_CHECK();
                 }
 
-                for (uint32_t j = 0; j < 4; j++)
+                for (uint32_t j = 0; j < 4; ++j)
                 {
                     static const char *s_apszConfig[4] =
                     { "PrimaryMaster", "PrimarySlave", "SecondaryMaster", "SecondarySlave" };
@@ -1023,7 +1023,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
     PCFGMNODE pDevVirtioNet = NULL;          /* Virtio network devices */
     rc = CFGMR3InsertNode(pDevices, "virtio-net", &pDevVirtioNet);                  RC_CHECK();
 #endif /* VBOX_WITH_VIRTIO */
-    for (ULONG ulInstance = 0; ulInstance < SchemaDefs::NetworkAdapterCount; ulInstance++)
+    for (ULONG ulInstance = 0; ulInstance < SchemaDefs::NetworkAdapterCount; ++ulInstance)
     {
         ComPtr<INetworkAdapter> networkAdapter;
         hrc = pMachine->GetNetworkAdapter(ulInstance, networkAdapter.asOutParam()); H();
@@ -1137,7 +1137,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
         RTMAC Mac;
         memset(&Mac, 0, sizeof(Mac));
         char *pMac = (char*)&Mac;
-        for (uint32_t i = 0; i < 6; i++)
+        for (uint32_t i = 0; i < 6; ++i)
         {
             char c1 = *macStr++ - '0';
             if (c1 > 9)
@@ -1182,7 +1182,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
      * Serial (UART) Ports
      */
     rc = CFGMR3InsertNode(pDevices, "serial", &pDev);                               RC_CHECK();
-    for (ULONG ulInstance = 0; ulInstance < SchemaDefs::SerialPortCount; ulInstance++)
+    for (ULONG ulInstance = 0; ulInstance < SchemaDefs::SerialPortCount; ++ulInstance)
     {
         ComPtr<ISerialPort> serialPort;
         hrc = pMachine->GetSerialPort (ulInstance, serialPort.asOutParam());        H();
@@ -1240,7 +1240,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
      * Parallel (LPT) Ports
      */
     rc = CFGMR3InsertNode(pDevices, "parallel", &pDev);                             RC_CHECK();
-    for (ULONG ulInstance = 0; ulInstance < SchemaDefs::ParallelPortCount; ulInstance++)
+    for (ULONG ulInstance = 0; ulInstance < SchemaDefs::ParallelPortCount; ++ulInstance)
     {
         ComPtr<IParallelPort> parallelPort;
         hrc = pMachine->GetParallelPort(ulInstance, parallelPort.asOutParam());     H();
@@ -1701,7 +1701,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
             /* terminate the node and advance to the value (Utf8Str might not
                offically like this but wtf) */
             *(char*)pszCFGMValueName = '\0';
-            pszCFGMValueName++;
+            ++pszCFGMValueName;
 
             /* does the node already exist? */
             pNode = CFGMR3GetChild(pRoot, pszExtraDataKey);
@@ -1851,7 +1851,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
             return VERR_INVALID_PARAMETER;
         }
 
-        for (ULONG pos = 1; pos <= SchemaDefs::MaxBootPosition; pos ++)
+        for (ULONG pos = 1; pos <= SchemaDefs::MaxBootPosition; ++pos)
         {
             hrc = pMachine->GetBootOrder(pos, &bootDevice);                             H();
 
