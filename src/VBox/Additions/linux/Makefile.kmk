@@ -32,9 +32,6 @@ include $(PATH_SUB_CURRENT)/drm/Makefile.kmk
 # Globals
 #
 VBOX_LNX_ADD_INS_OUT_DIR           := $(PATH_TARGET)/Additions/Installer/linux
-BLDDIRS                            += \
-		$(VBOX_LNX_ADD_INS_OUT_DIR) \
-		$(VBOX_LNX_ADD_INS_OUT_DIR)/module
 VBOX_PATH_LINUX_ADDITION_INSTALLER := $(PATH_SUB_CURRENT)/installer
 VBOX_PATH_X11_ADDITION_INSTALLER   := $(PATH_ROOT)/src/VBox/Additions/x11/Installer
 
@@ -54,10 +51,19 @@ endif
 #
 # Files to install
 #
-VBOX_LNX_ADD_STRIP_BIN = \
+VBOX_ADD_STRIP_BIN += \
 	VBoxService \
 	VBoxClient \
 	VBoxControl \
+	VBoxOGLarrayspu.so \
+	VBoxOGLcrutil.so \
+	VBoxOGLerrorspu.so \
+	VBoxOGLfeedbackspu.so \
+	VBoxOGLpackspu.so \
+	VBoxOGLpassthroughspu.so \
+	VBoxOGL.so
+
+VBOX_ADD_STRIP_BIN.linux = \
 	vboxmouse_drv_70.so \
 	vboxmouse_drv_71.so \
 	vboxmouse_drv_14.so \
@@ -71,30 +77,25 @@ VBOX_LNX_ADD_STRIP_BIN = \
 	vboxvideo_drv_15.so \
 	vboxvideo_drv_16.so \
 	vboxvideo_drv_17.so \
-	mount.vboxsf \
-	VBoxOGLarrayspu.so \
-	VBoxOGLcrutil.so \
-	VBoxOGLerrorspu.so \
-	VBoxOGLfeedbackspu.so \
-	VBoxOGLpackspu.so \
-	VBoxOGLpassthroughspu.so \
-	VBoxOGL.so
+	mount.vboxsf
 
-VBOX_LNX_ADD_STRIP_OBJ = \
+VBOX_ADD_STRIP_OBJ.linux = \
 	vboxmouse_drv.o \
 	vboxvideo_drv.o
 
-VBOX_LNX_ADD_MODULES = \
+VBOX_ADD_STRIP_MODULES.linux = \
 	vboxguest \
 	vboxvfs \
 	vboxvideo_drm
+
+VBOX_LNX_ADD_STRIP_BIN = $(VBOX_ADD_STRIP_BIN) $(VBOX_ADD_STRIP_BIN.linux)
 
 #
 # All the bin files that go into the archives.
 #
 VBOX_LNX_ADD_DBG_SYM_FILES := $(addsuffix .dbgsym,$(VBOX_LNX_ADD_STRIP_BIN))
-VBOX_LNX_ADD_INS_FILES := $(addprefix $(VBOX_LNX_ADD_INS_OUT_DIR)/,$(VBOX_LNX_ADD_STRIP_BIN) $(VBOX_LNX_ADD_STRIP_OBJ) $(VBOX_LNX_ADD_DBG_SYM_FILES))
-VBOX_LNX_ADD_INS_MODULES := $(addprefix $(VBOX_LNX_ADD_INS_OUT_DIR)/module/,$(VBOX_LNX_ADD_MODULES))
+VBOX_LNX_ADD_INS_FILES := $(addprefix $(VBOX_LNX_ADD_INS_OUT_DIR)/,$(VBOX_LNX_ADD_STRIP_BIN) $(VBOX_ADD_STRIP_OBJ.linux) $(VBOX_LNX_ADD_DBG_SYM_FILES))
+VBOX_LNX_ADD_INS_MODULES := $(addprefix $(VBOX_LNX_ADD_INS_OUT_DIR)/module/,$(VBOX_ADD_STRIP_MODULES.linux))
 
 # Cleanup of the the installer directory files
 OTHER_CLEAN += $(VBOX_LNX_ADD_INS_FILES)) $(VBOX_LNX_ADD_INS_MODULES)
@@ -105,8 +106,8 @@ $(addprefix $(VBOX_LNX_ADD_INS_OUT_DIR)/,$(VBOX_LNX_ADD_DBG_SYM_FILES)): \
 	$(call MSG_TOOL,copydbg,$<,$@)
 	$(QUIET)objcopy --only-keep-debug $< $@
 
-# pattern rule for stripping and copying the VBOX_LNX_ADD_STRIP_BIN files to the installation directory
-$(addprefix $(VBOX_LNX_ADD_INS_OUT_DIR)/,$(VBOX_LNX_ADD_STRIP_BIN)): \
+# pattern rule for stripping and copying the VBOX_ADD_STRIP_BIN.linux files to the installation directory
+$(addprefix $(VBOX_LNX_ADD_INS_OUT_DIR)/,$(VBOX_ADD_STRIP_BIN.linux)): \
 		$(VBOX_LNX_ADD_INS_OUT_DIR)/% : $(PATH_BIN)/additions/% \
 		$(VBOX_LNX_ADD_INS_OUT_DIR)/%.dbgsym \
 		| $$(dir $$@)
@@ -114,8 +115,8 @@ $(addprefix $(VBOX_LNX_ADD_INS_OUT_DIR)/,$(VBOX_LNX_ADD_STRIP_BIN)): \
 	$(QUIET)$(INSTALL) -m 0755 $(if $(VBOX_DO_STRIP),-s,) $< $@
 	$(QUIET)objcopy --add-gnu-debuglink=$(addsuffix .dbgsym,$@) $@
 
-# pattern rule for stripping and copying the VBOX_LNX_ADD_STRIP_OBJ files to the installation directory
-$(addprefix $(VBOX_LNX_ADD_INS_OUT_DIR)/,$(VBOX_LNX_ADD_STRIP_OBJ)): \
+# pattern rule for stripping and copying the VBOX_ADD_STRIP_OBJ.linux files to the installation directory
+$(addprefix $(VBOX_LNX_ADD_INS_OUT_DIR)/,$(VBOX_ADD_STRIP_OBJ.linux)): \
 		$(VBOX_LNX_ADD_INS_OUT_DIR)/% : $(PATH_BIN)/additions/% | $$(dir $$@)
 	$(call MSG_INST_FILE,$<,$@)
 ifeq ($(VBOX_DO_STRIP),)
@@ -126,7 +127,7 @@ else # strip to temp file because of umask.
 	$(QUIET)$(RM) -f -- $@.tmp
 endif
 
-# pattern rule for copying the VBOX_LNX_ADD_MODULES files to the installation directory
+# pattern rule for copying the VBOX_ADD_STRIP_MODULES.linux files to the installation directory
 $(VBOX_LNX_ADD_INS_MODULES): \
 		$(VBOX_LNX_ADD_INS_OUT_DIR)/module/% : $(PATH_BIN)/additions/src/% | $(VBOX_LNX_ADD_INS_OUT_DIR)/module/
 	$(call MSG_INST_FILE,$<,$@)
