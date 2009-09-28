@@ -352,9 +352,21 @@ void VBoxUpdateDlg::search()
 
     /* Compose query */
     QUrl url (mUrl);
-    url.addQueryItem ("platform", vboxGlobal().virtualBox().GetPackageType());
-    url.addQueryItem ("version", QString ("%1_%2").arg (vboxGlobal().virtualBox().GetVersion())
-                                                  .arg (vboxGlobal().virtualBox().GetRevision()));
+    url.addQueryItem ("platform", vboxGlobal().virtualBox().GetPackageType());   
+    /* Branding: Check whether we have a local branding file which tells us our version suffix "FOO"
+                     (e.g. 3.06.54321_FOO) to identify this installation */
+    if (vboxGlobal().brandingIsActive())
+    {        
+        url.addQueryItem ("version", QString ("%1_%2_%3").arg (vboxGlobal().virtualBox().GetVersion())
+                                                         .arg (vboxGlobal().virtualBox().GetRevision())
+                                                         .arg (vboxGlobal().brandingGetKey("VerSuffix")));
+    }
+    else
+    {
+        /* Use hard coded version set by VBOX_VERSION_STRING */
+        url.addQueryItem ("version", QString ("%1_%2").arg (vboxGlobal().virtualBox().GetVersion())
+                                                      .arg (vboxGlobal().virtualBox().GetRevision()));
+    }
     url.addQueryItem ("count", QString::number (count));
     url.addQueryItem ("branch", VBoxUpdateData (vboxGlobal().virtualBox().
                                                 GetExtraData (VBoxDefs::GUI_UpdateDate)).branchName());

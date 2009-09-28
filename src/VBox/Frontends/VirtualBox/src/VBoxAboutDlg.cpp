@@ -21,18 +21,27 @@
  */
 
 #include "VBoxAboutDlg.h"
+#include "VBoxGlobal.h"
 
 /* Qt includes */
-#include <QPainter>
+#include <QDir>
 #include <QEvent>
+#include <QPainter>
 
 VBoxAboutDlg::VBoxAboutDlg (QWidget* aParent, const QString &aVersion)
     : QIWithRetranslateUI2 <QIDialog> (aParent, Qt::CustomizeWindowHint |
                                        Qt::WindowTitleHint | Qt::WindowSystemMenuHint),
-    mVersion (aVersion),
-    mBgImage (":/about.png")
+    mVersion (aVersion)
 {
     retranslateUi();
+
+    /* Branding: Use a custom about splash picture if set */
+    QString sSplash = vboxGlobal().brandingGetKey("UI/AboutSplash");
+    QDir pathImage(sSplash);
+    if (vboxGlobal().brandingIsActive() && !sSplash.isEmpty())
+        mBgImage.load(pathImage.absolutePath());
+    else /* ... or load the built-in picture */
+        mBgImage.load(":/about.png");
 }
 
 bool VBoxAboutDlg::event (QEvent *aEvent)
@@ -65,7 +74,14 @@ void VBoxAboutDlg::paintEvent (QPaintEvent * /* aEvent */)
     QPainter painter (this);
     painter.drawPixmap (0, 0, mBgImage);
     painter.setFont (font());
-    painter.setPen (Qt::white);
+
+    /* Branding: Set a different text color (because splash also could be white), 
+                 otherwise use white as default color */
+    QColor colorText(vboxGlobal().brandingGetKey("UI/AboutTextColor"));
+    if (!colorText.name().isEmpty())
+        painter.setPen (colorText.name());
+    else
+        painter.setPen (Qt::white);
 #if VBOX_OSE
     painter.drawText (QRect (0, 400, 600, 32),
                       Qt::AlignCenter | Qt::AlignVCenter | Qt::TextWordWrap,

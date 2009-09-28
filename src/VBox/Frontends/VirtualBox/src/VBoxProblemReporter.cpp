@@ -2345,8 +2345,18 @@ void VBoxProblemReporter::showHelpWebDialog()
 void VBoxProblemReporter::showHelpAboutDialog()
 {
     CVirtualBox vbox = vboxGlobal().virtualBox();
-    QString fullVersion (QString ("%1 r%2").arg (vbox.GetVersion())
-                                          .arg (vbox.GetRevision()));
+    QString fullVersion ;
+    if (vboxGlobal().brandingIsActive())
+    {
+        fullVersion = (QString ("%1 r%2 - %3").arg (vbox.GetVersion())
+                                              .arg (vbox.GetRevision())
+                                              .arg (vboxGlobal().brandingGetKey("Name")));
+    }
+    else
+    {
+        fullVersion = (QString ("%1 r%2").arg (vbox.GetVersion())
+                                         .arg (vbox.GetRevision()));
+    }
     AssertWrapperOk (vbox);
 
     // this (QWidget*) cast is necessary to work around a gcc-3.2 bug */
