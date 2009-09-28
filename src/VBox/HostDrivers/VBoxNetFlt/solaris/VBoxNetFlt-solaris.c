@@ -371,7 +371,7 @@ static dev_info_t *g_pVBoxNetFltSolarisDip = NULL;
 static VBOXNETFLTGLOBALS g_VBoxNetFltSolarisGlobals;
 
 /** The list of all opened streams. */
-vboxnetflt_stream_t *g_VBoxNetFltSolarisStreams;
+vboxnetflt_stream_t *g_VBoxNetFltSolarisStreams = NULL;
 
 /** Global mutex protecting open/close. */
 static RTSEMFASTMUTEX g_VBoxNetFltSolarisMtx = NIL_RTSEMFASTMUTEX;
@@ -383,14 +383,14 @@ static cred_t *g_pVBoxNetFltSolarisCred = NULL;
  * g_VBoxNetFltInstance is the current PVBOXNETFLTINS to be associated with the stream being created
  * in ModOpen. This is just shared global data between the dynamic attach and the ModOpen procedure.
  */
-PVBOXNETFLTINS volatile g_VBoxNetFltSolarisInstance;
+PVBOXNETFLTINS volatile g_VBoxNetFltSolarisInstance = NULL;
 
 /** Goes along with the instance to determine type of stream being opened/created. */
 VBOXNETFLTSTREAMTYPE volatile g_VBoxNetFltSolarisStreamType = kUndefined;
 
 #ifdef VBOXNETFLT_SOLARIS_IPV6_POLLING
 /** Global IPv6 polling interval */
-static int g_VBoxNetFltSolarisPollInterval = 0;
+static int g_VBoxNetFltSolarisPollInterval = -1;
 #endif
 
 
@@ -421,32 +421,40 @@ int _init(void)
          */
         g_VBoxNetFltSolarisStreams = NULL;
         g_VBoxNetFltSolarisInstance = NULL;
-
-        int rc = RTSemFastMutexCreate(&g_VBoxNetFltSolarisMtx);
-        if (RT_SUCCESS(rc))
+        g_pVBoxNetFltSolarisCred = crdup(kcred);
+        if (RT_LIKELY(g_pVBoxNetFltSolarisCred))
         {
-            /*
-             * Initialize the globals and connect to the support driver.
-             *
-             * This will call back vboxNetFltOsOpenSupDrv (and maybe vboxNetFltOsCloseSupDrv)
-             * for establishing the connect to the support driver.
-             */
-            memset(&g_VBoxNetFltSolarisGlobals, 0, sizeof(g_VBoxNetFltSolarisGlobals));
-            rc = vboxNetFltInitGlobalsAndIdc(&g_VBoxNetFltSolarisGlobals);
+            rc = RTSemFastMutexCreate(&g_VBoxNetFltSolarisMtx);
             if (RT_SUCCESS(rc))
             {
-                rc = mod_install(&g_VBoxNetFltSolarisModLinkage);
-                if (!rc)
-                    return rc;
+                /*
+                 * Initialize the globals and connect to the support driver.
+                 *
+                 * This will call back vboxNetFltOsOpenSupDrv (and maybe vboxNetFltOsCloseSupDrv)
+                 * for establishing the connect to the support driver.
+                 */
+                memset(&g_VBoxNetFltSolarisGlobals, 0, sizeof(g_VBoxNetFltSolarisGlobals));
+                rc = vboxNetFltInitGlobalsAndIdc(&g_VBoxNetFltSolarisGlobals);
+                if (RT_SUCCESS(rc))
+                {
+                    rc = mod_install(&g_VBoxNetFltSolarisModLinkage);
+                    if (!rc)
+                        return rc;
 
-                LogRel((DEVICE_NAME ":mod_install failed. rc=%d\n", rc));
-                vboxNetFltTryDeleteIdcAndGlobals(&g_VBoxNetFltSolarisGlobals);
+                    LogRel((DEVICE_NAME ":mod_install failed. rc=%d\n", rc));
+                    vboxNetFltTryDeleteIdcAndGlobals(&g_VBoxNetFltSolarisGlobals);
+                }
+                else
+                    LogRel((DEVICE_NAME ":failed to initialize globals.\n"));
+
+                RTSemFastMutexDestroy(g_VBoxNetFltSolarisMtx);
+                g_VBoxNetFltSolarisMtx = NIL_RTSEMFASTMUTEX;
             }
-            else
-                LogRel((DEVICE_NAME ":failed to initialize globals.\n"));
-
-            RTSemFastMutexDestroy(g_VBoxNetFltSolarisMtx);
-            g_VBoxNetFltSolarisMtx = NIL_RTSEMFASTMUTEX;
+        }
+        else
+        {
+            LogRel((DEVICE_NAME ":failed to allocate credentials.\n"));
+            rc = VERR_NO_MEMORY;
         }
 
         RTR0Term();
@@ -477,6 +485,12 @@ int _fini(void)
     rc = mod_remove(&g_VBoxNetFltSolarisModLinkage);
     if (!rc)
     {
+        if (g_pVBoxNetFltSolarisCred)
+        {
+            crfree(g_pVBoxNetFltSolarisCred);
+            g_pVBoxNetFltSolarisCred = NULL;
+        }
+
         if (g_VBoxNetFltSolarisMtx != NIL_RTSEMFASTMUTEX)
         {
             RTSemFastMutexDestroy(g_VBoxNetFltSolarisMtx);
@@ -522,30 +536,24 @@ static int VBoxNetFltSolarisAttach(dev_info_t *pDip, ddi_attach_cmd_t enmCmd)
             if (rc == DDI_SUCCESS)
             {
                 g_pVBoxNetFltSolarisDip = pDip;
-                g_pVBoxNetFltSolarisCred = crdup(kcred);
-                if (RT_LIKELY(g_pVBoxNetFltSolarisCred))
-                {
 #ifdef VBOXNETFLT_SOLARIS_IPV6_POLLING
-                    /*
-                     * Get the user prop. for polling interval.
-                     */
-                    int Interval = ddi_getprop(DDI_DEV_T_ANY, pDip, DDI_PROP_DONTPASS, VBOXNETFLT_IP6POLLINTERVAL, -1 /* default */);
-                    if (Interval == -1)
-                        LogFlow((DEVICE_NAME ":vboxNetFltSolarisSetupIp6Polling: no poll interval property specified. Skipping Ipv6 polling.\n"));
-                    else if (Interval < 1 || Interval > 120)
-                    {
-                        LogRel((DEVICE_NAME ":vboxNetFltSolarisSetupIp6Polling: Invalid polling interval %d. Expected between 1 and 120 secs.\n",
-                                            Interval));
-                        Interval = -1;
-                    }
-
-                    g_VBoxNetFltSolarisPollInterval = Interval;
-#endif
-                    ddi_report_dev(pDip);
-                    return DDI_SUCCESS;
+                /*
+                 * Get the user prop. for polling interval.
+                 */
+                int Interval = ddi_getprop(DDI_DEV_T_ANY, pDip, DDI_PROP_DONTPASS, VBOXNETFLT_IP6POLLINTERVAL, -1 /* default */);
+                if (Interval == -1)
+                    LogFlow((DEVICE_NAME ":vboxNetFltSolarisSetupIp6Polling: no poll interval property specified. Skipping Ipv6 polling.\n"));
+                else if (Interval < 1 || Interval > 120)
+                {
+                    LogRel((DEVICE_NAME ":vboxNetFltSolarisSetupIp6Polling: Invalid polling interval %d. Expected between 1 and 120 secs.\n",
+                                        Interval));
+                    Interval = -1;
                 }
-                else
-                    LogRel((DEVICE_NAME ":failed to alloc credentials.\n"));
+
+                g_VBoxNetFltSolarisPollInterval = Interval;
+#endif
+                ddi_report_dev(pDip);
+                return DDI_SUCCESS;
             }
             else
                 LogRel((DEVICE_NAME ":VBoxNetFltSolarisAttach failed to create minor node. rc%d\n", rc));
@@ -579,11 +587,6 @@ static int VBoxNetFltSolarisDetach(dev_info_t *pDip, ddi_detach_cmd_t enmCmd)
         case DDI_DETACH:
         {
             int instance = ddi_get_instance(pDip);
-            if (g_pVBoxNetFltSolarisCred)
-            {
-                crfree(g_pVBoxNetFltSolarisCred);
-                g_pVBoxNetFltSolarisCred = NULL;
-            }
             ddi_remove_minor_node(pDip, NULL);
             return DDI_SUCCESS;
         }
@@ -1905,18 +1908,26 @@ static int vboxNetFltSolarisOpenStream(PVBOXNETFLTINS pThis)
     {
         if (!ret)
         {
-            rc = RTSemFastMutexRequest(g_VBoxNetFltSolarisMtx);
-            AssertRCReturn(rc, rc);
+            if (RT_LIKELY(g_pVBoxNetFltSolarisCred))        /* Paranoia */
+            {
+                rc = RTSemFastMutexRequest(g_VBoxNetFltSolarisMtx);
+                AssertRCReturn(rc, rc);
 
-            g_VBoxNetFltSolarisInstance = pThis;
-            g_VBoxNetFltSolarisStreamType = kPromiscStream;
+                g_VBoxNetFltSolarisInstance = pThis;
+                g_VBoxNetFltSolarisStreamType = kPromiscStream;
 
-            rc = ldi_ioctl(pThis->u.s.hIface, I_PUSH, (intptr_t)DEVICE_NAME, FKIOCTL, g_pVBoxNetFltSolarisCred, &ret);
+                rc = ldi_ioctl(pThis->u.s.hIface, I_PUSH, (intptr_t)DEVICE_NAME, FKIOCTL, g_pVBoxNetFltSolarisCred, &ret);
 
-            g_VBoxNetFltSolarisInstance = NULL;
-            g_VBoxNetFltSolarisStreamType = kUndefined;
+                g_VBoxNetFltSolarisInstance = NULL;
+                g_VBoxNetFltSolarisStreamType = kUndefined;
 
-            RTSemFastMutexRelease(g_VBoxNetFltSolarisMtx);
+                RTSemFastMutexRelease(g_VBoxNetFltSolarisMtx);
+            }
+            else
+            {
+                LogRel((DEVICE_NAME ":vboxNetFltSolarisOpenStream huh!? Missing credentials.\n"));
+                rc = VERR_INVALID_POINTER;
+            }
 
             if (!rc)
                 return VINF_SUCCESS;
@@ -1928,6 +1939,8 @@ static int vboxNetFltSolarisOpenStream(PVBOXNETFLTINS pThis)
     }
     else
         LogRel((DEVICE_NAME ":vboxNetFltSolarisOpenStream Failed to search for filter in interface '%s'.\n", pThis->szName));
+
+    ldi_close(pThis->u.s.hIface, FREAD | FWRITE, kcred);
 
     return VERR_INTNET_FLT_IF_FAILED;
 }
@@ -2173,9 +2186,6 @@ static int vboxNetFltSolarisAttachIp4(PVBOXNETFLTINS pThis, bool fAttach)
                                     LogRel((DEVICE_NAME ":vboxNetFltSolarisAttachIp4: failed to %s the IP stack. rc=%d\n",
                                             fAttach ? "inject into" : "eject from", rc));
                                 }
-
-                                g_VBoxNetFltSolarisInstance = NULL;
-                                g_VBoxNetFltSolarisStreamType = kUndefined;
                             }
                             else
                                 LogRel((DEVICE_NAME ":vboxNetFltSolarisAttachIp4: failed to find position. rc=%d rc2=%d\n", rc, rc2));
