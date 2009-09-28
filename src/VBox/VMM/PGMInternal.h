@@ -1834,10 +1834,10 @@ typedef struct PGMPOOL
     uint32_t                    Alignment1;         /**< Align the next member on a 64-bit boundrary. */
     /** Profiling pgmPoolAlloc(). */
     STAMPROFILEADV              StatAlloc;
-    /** Profiling pgmPoolClearAll(). */
+    /** Profiling pgmR3PoolClearDoIt(). */
     STAMPROFILE                 StatClearAll;
-    /** Profiling pgmPoolFlushAllInt(). */
-    STAMPROFILE                 StatFlushAllInt;
+    /** Profiling pgmR3PoolReset(). */
+    STAMPROFILE                 StatR3Reset;
     /** Profiling pgmPoolFlushPage(). */
     STAMPROFILE                 StatFlushPage;
     /** Profiling pgmPoolFree(). */
@@ -3165,6 +3165,7 @@ int             pgmR3PhysChunkMap(PVM pVM, uint32_t idChunk, PPPGMCHUNKR3MAP ppC
 int             pgmR3PoolInit(PVM pVM);
 void            pgmR3PoolRelocate(PVM pVM);
 void            pgmR3PoolReset(PVM pVM);
+void            pgmR3PoolClearAll(PVM pVM);
 
 #endif /* IN_RING3 */
 #ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
@@ -3181,7 +3182,6 @@ void            pgmPoolFree(PVM pVM, RTHCPHYS HCPhys, uint16_t iUser, uint32_t i
 void            pgmPoolFreeByPage(PPGMPOOL pPool, PPGMPOOLPAGE pPage, uint16_t iUser, uint32_t iUserTable);
 int             pgmPoolFlushPage(PPGMPOOL pPool, PPGMPOOLPAGE pPage);
 void            pgmPoolFlushPageByGCPhys(PVM pVM, RTGCPHYS GCPhys);
-void            pgmPoolClearAll(PVM pVM);
 PPGMPOOLPAGE    pgmPoolGetPage(PPGMPOOL pPool, RTHCPHYS HCPhys);
 int             pgmPoolSyncCR3(PVMCPU pVCpu);
 bool            pgmPoolIsDirtyPage(PVM pVM, RTGCPHYS GCPhys);

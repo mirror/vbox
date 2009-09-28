@@ -1331,7 +1331,7 @@ static int emR3RawForcedActions(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
      *
      * The CSAMR3CheckGates call in TRPMR3SyncIDT may call PGMPrefetchPage
      * and PGMShwModifyPage, so we're in for trouble if for instance a
-     * PGMSyncCR3+pgmPoolClearAll is pending.
+     * PGMSyncCR3+pgmR3PoolClearAll is pending.
      */
     if (VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_TRPM_SYNC_IDT))
     {
