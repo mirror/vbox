@@ -447,6 +447,9 @@ int pgmPhysPageMakeWritable(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys)
         case PGM_PAGE_STATE_WRITE_MONITORED:
             PGM_PAGE_SET_WRITTEN_TO(pPage);
             PGM_PAGE_SET_STATE(pPage, PGM_PAGE_STATE_ALLOCATED);
+            Assert(pVM->pgm.s.cMonitoredPages > 0);
+            pVM->pgm.s.cMonitoredPages--;
+            pVM->pgm.s.cWrittenToPages++;
             /* fall thru */
         default: /* to shut up GCC */
         case PGM_PAGE_STATE_ALLOCATED:

@@ -55,14 +55,39 @@
 /*******************************************************************************
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
-/** Saved state data unit version for 2.5.x and later. */
-#define PGM_SAVED_STATE_VERSION                 9
+/** Saved state data unit version. */
+#ifdef VBOX_WITH_LIVE_MIGRATION
+# define PGM_SAVED_STATE_VERSION                10
+#else
+# define PGM_SAVED_STATE_VERSION                9
+#endif
+/** Saved state data unit version for 3.0. (pre live migration) */
+#define PGM_SAVED_STATE_VERSION_3_0_0           9
 /** Saved state data unit version for 2.2.2 and later. */
 #define PGM_SAVED_STATE_VERSION_2_2_2           8
 /** Saved state data unit version for 2.2.0. */
 #define PGM_SAVED_STATE_VERSION_RR_DESC         7
 /** Saved state data unit version. */
 #define PGM_SAVED_STATE_VERSION_OLD_PHYS_CODE   6
+
+
+/** @name Sparse state record types
+ * @{  */
+/** Zero page. No data. */
+#define PGM_STATE_REC_ZERO              UINT8_C(0x00)
+/** Raw page. */
+#define PGM_STATE_REC_RAW               UINT8_C(0x01)
+/** Shadowed ROM page. */
+#define PGM_STATE_REC_SHADOWED_ROM      UINT8_C(0x02)
+/** The last record type. */
+#define PGM_STATE_REC_LAST              PGM_STATE_REC_SHADOWED_ROM
+/** End marker. */
+#define PGM_STATE_REC_END               UINT8_C(0xff)
+/** Flag indicating that the data is preceeded by an RTGCPHYS containing the
+ *  page address.  If not set, the page follows the immediately after the
+ *  previous one. */
+#define PGM_STATE_REC_FLAG_ADDR         UINT8_C(0x80)
+/** @} */
 
 
 /*******************************************************************************
@@ -255,14 +280,14 @@ static DECLCALLBACK(int) pgmR3LivePrep(PVM pVM, PSSMHANDLE pSSM)
             if (   !pCur->paLSPages
                 && !PGM_RAM_RANGE_IS_AD_HOC(pCur))
             {
-                uint32_t const  idRamRangeGen = pVM->pgm.s.idRamRangesGen;
+                uint32_t const  idRamRangesGen = pVM->pgm.s.idRamRangesGen;
                 uint32_t const  cPages = pCur->cb >> PAGE_SHIFT;
                 pgmUnlock(pVM);
                 PPGMLIVESAVEPAGE paLSPages = (PPGMLIVESAVEPAGE)MMR3HeapAllocZ(pVM, MM_TAG_PGM, cPages * sizeof(PGMLIVESAVEPAGE));
                 if (!paLSPages)
                     return VERR_NO_MEMORY;
                 pgmLock(pVM);
-                if (pVM->pgm.s.idRamRangesGen != idRamRangeGen)
+                if (pVM->pgm.s.idRamRangesGen != idRamRangesGen)
                 {
                     pgmUnlock(pVM);
                     MMR3HeapFree(paLSPages);
@@ -278,9 +303,12 @@ static DECLCALLBACK(int) pgmR3LivePrep(PVM pVM, PSSMHANDLE pSSM)
                 while (iPage-- > 0)
                 {
                     PCPGMPAGE pPage = &pCur->aPages[iPage];
-                    paLSPages[iPage].uPassSaved = UINT32_MAX;
-                    paLSPages[iPage].cDirtied   = 0;
-                    paLSPages[iPage].u5Reserved = 0;
+                    paLSPages[iPage].uPassSaved             = UINT32_MAX;
+                    paLSPages[iPage].cDirtied               = 0;
+                    paLSPages[iPage].fDirty                 = 1; /* everything is dirty at this time */
+                    paLSPages[iPage].fWriteMonitored        = 0;
+                    paLSPages[iPage].fWriteMonitoredJustNow = 0;
+                    paLSPages[iPage].u2Reserved             = 0;
                     switch (PGM_PAGE_GET_TYPE(pPage))
                     {
                         case PGMPAGETYPE_RAM:
@@ -288,18 +316,23 @@ static DECLCALLBACK(int) pgmR3LivePrep(PVM pVM, PSSMHANDLE pSSM)
                         case PGMPAGETYPE_ROM:
                             if (PGM_PAGE_IS_ZERO(pPage))
                             {
-                                paLSPages[iPage].fZero  = 1;
-                                paLSPages[iPage].fDirty = 0;
-                                pVM->pgm.s.LiveSave.cReadyPages++;
+                                paLSPages[iPage].fZero   = 1;
+                                paLSPages[iPage].fShared = 0;
+                            }
+                            else if (PGM_PAGE_IS_SHARED(pPage))
+                            {
+                                paLSPages[iPage].fZero   = 0;
+                                paLSPages[iPage].fShared = 1;
                             }
                             else
                             {
-                                paLSPages[iPage].fZero  = 0;
-                                paLSPages[iPage].fDirty = 1;
-                                pVM->pgm.s.LiveSave.cDirtyPages++;
+                                paLSPages[iPage].fZero   = 0;
+                                paLSPages[iPage].fShared = 0;
                             }
                             paLSPages[iPage].fMmio  = 0;
+                            pVM->pgm.s.LiveSave.cDirtyPages++;
                             break;
+
                         default:
                             AssertMsgFailed(("%R[pgmpage]", pPage));
                         case PGMPAGETYPE_MMIO2:
@@ -327,6 +360,310 @@ static DECLCALLBACK(int) pgmR3LivePrep(PVM pVM, PSSMHANDLE pSSM)
 
 
 /**
+ * pgmR3LiveExec part 1: Scan for page modifications and reprotect them.
+ *
+ * Note! Since we don't care about MMIO or MMIO2 pages and since we don't
+ *       have any movable ROMs yet, we can safely yield the PGM when we
+ *       detect contention.
+ *
+ *       This holds true for part 2 as well.
+ *
+ * @param   pVM     The VM handle.
+ */
+static void pgmR3LiveExecPart1(PVM pVM)
+{
+    RTGCPHYS GCPhysCur = 0;
+    PPGMRAMRANGE pCur;
+    pgmLock(pVM);
+    do
+    {
+        uint32_t const  idRamRangesGen = pVM->pgm.s.idRamRangesGen;
+        uint32_t        cSinceYield    = 0;
+        for (pCur = pVM->pgm.s.pRamRangesR3; pCur; pCur = pCur->pNextR3)
+        {
+            if (pCur->GCPhysLast > GCPhysCur)
+            {
+                PPGMLIVESAVEPAGE paLSPages = pCur->paLSPages;
+                uint32_t         cPages    = pCur->cb >> PAGE_SHIFT;
+                uint32_t         iPage     = GCPhysCur <= pCur->GCPhys ? 0 : (GCPhysCur - pCur->GCPhys) >> PAGE_SHIFT;
+                GCPhysCur = 0;
+                for (; iPage < cPages; iPage++, cSinceYield++)
+                {
+                    /* Do yield first. */
+                    if (    (cSinceYield & 0x7ff) == 0x7ff
+                        &&  PDMR3CritSectYield(&pVM->pgm.s.CritSect)
+                        &&  pVM->pgm.s.idRamRangesGen != idRamRangesGen)
+                    {
+                        GCPhysCur = pCur->GCPhys + ((RTGCPHYS)iPage << PAGE_SHIFT);
+                        break; /* restart */
+                    }
+
+                    /* Process the page. */
+                    if (!paLSPages[iPage].fMmio)
+                    {
+                        switch (PGM_PAGE_GET_TYPE(&pCur->aPages[iPage]))
+                        {
+                            case PGMPAGETYPE_RAM:
+                            case PGMPAGETYPE_ROM_SHADOW: /** @todo ROM shadowing needs checking out later. (ignoring it for now) */
+                            case PGMPAGETYPE_ROM:
+                            {
+                                switch (PGM_PAGE_GET_STATE(&pCur->aPages[iPage]))
+                                {
+                                    case PGM_PAGE_STATE_ALLOCATED:
+                                        /** @todo Optimize this: Don't always re-enable write
+                                         * monitoring if the page is known to be very busy. */
+                                        if (PGM_PAGE_IS_WRITTEN_TO(&pCur->aPages[iPage]))
+                                        {
+                                            Assert(paLSPages[iPage].fWriteMonitored);
+                                            PGM_PAGE_CLEAR_WRITTEN_TO(&pCur->aPages[iPage]);
+                                            Assert(pVM->pgm.s.cWrittenToPages > 0);
+                                            pVM->pgm.s.cWrittenToPages--;
+                                        }
+                                        else
+                                        {
+                                            Assert(!paLSPages[iPage].fWriteMonitored);
+                                            pVM->pgm.s.LiveSave.cMonitoredPages++;
+                                        }
+
+                                        if (!paLSPages[iPage].fDirty)
+                                        {
+                                            pVM->pgm.s.LiveSave.cDirtyPages++;
+                                            pVM->pgm.s.LiveSave.cReadyPages--;
+                                            if (++paLSPages[iPage].cDirtied > PGMLIVSAVEPAGE_MAX_DIRTIED)
+                                                paLSPages[iPage].cDirtied = PGMLIVSAVEPAGE_MAX_DIRTIED;
+                                        }
+
+                                        PGM_PAGE_SET_STATE(&pCur->aPages[iPage], PGM_PAGE_STATE_WRITE_MONITORED);
+                                        pVM->pgm.s.cMonitoredPages++;
+                                        paLSPages[iPage].fWriteMonitored        = 1;
+                                        paLSPages[iPage].fWriteMonitoredJustNow = 1;
+                                        paLSPages[iPage].fDirty                 = 1;
+                                        paLSPages[iPage].fZero                  = 0;
+                                        paLSPages[iPage].fShared                = 0;
+                                        break;
+
+                                    case PGM_PAGE_STATE_WRITE_MONITORED:
+                                        Assert(paLSPages[iPage].fWriteMonitored);
+                                        paLSPages[iPage].fWriteMonitoredJustNow = 0;
+                                        break;
+
+                                    case PGM_PAGE_STATE_ZERO:
+                                        if (!paLSPages[iPage].fZero)
+                                        {
+                                            paLSPages[iPage].fZero = 1;
+                                            paLSPages[iPage].fShared = 0;
+                                            if (!paLSPages[iPage].fDirty)
+                                            {
+                                                paLSPages[iPage].fDirty = 1;
+                                                pVM->pgm.s.LiveSave.cReadyPages--;
+                                                pVM->pgm.s.LiveSave.cDirtyPages++;
+                                            }
+                                        }
+                                        break;
+
+                                    case PGM_PAGE_STATE_SHARED:
+                                        if (!paLSPages[iPage].fShared)
+                                        {
+                                            paLSPages[iPage].fZero = 0;
+                                            paLSPages[iPage].fShared = 1;
+                                            if (!paLSPages[iPage].fDirty)
+                                            {
+                                                paLSPages[iPage].fDirty = 1;
+                                                pVM->pgm.s.LiveSave.cReadyPages--;
+                                                pVM->pgm.s.LiveSave.cDirtyPages++;
+                                            }
+                                        }
+                                        break;
+                                }
+                                break;
+                            }
+
+                            default:
+                                AssertMsgFailed(("%R[pgmpage]", &pCur->aPages[iPage]));
+                            case PGMPAGETYPE_MMIO2:
+                            case PGMPAGETYPE_MMIO2_ALIAS_MMIO:
+                            case PGMPAGETYPE_MMIO:
+                                if (PGM_PAGE_GET_TYPE(&pCur->aPages[iPage]) == PGMPAGETYPE_MMIO)
+                                {
+                                    paLSPages[iPage].fZero  = 0;
+                                    paLSPages[iPage].fDirty = 1;
+                                    paLSPages[iPage].fMmio  = 1;
+                                }
+                                else
+                                {
+                                    paLSPages[iPage].fZero  = 1;
+                                    paLSPages[iPage].fDirty = 1;
+                                    paLSPages[iPage].fMmio  = 1;
+                                }
+                                if (paLSPages[iPage].fWriteMonitored)
+                                {
+                                    if (RT_UNLIKELY(PGM_PAGE_GET_STATE(&pCur->aPages[iPage]) == PGM_PAGE_STATE_WRITE_MONITORED))
+                                    {
+                                        AssertMsgFailed(("%R[pgmpage]", &pCur->aPages[iPage])); /* shouldn't happen. */
+                                        PGM_PAGE_SET_STATE(&pCur->aPages[iPage], PGM_PAGE_STATE_ALLOCATED);
+                                        Assert(pVM->pgm.s.cMonitoredPages > 0);
+                                        pVM->pgm.s.cMonitoredPages--;
+                                    }
+                                    if (PGM_PAGE_IS_WRITTEN_TO(&pCur->aPages[iPage]))
+                                    {
+                                        PGM_PAGE_CLEAR_WRITTEN_TO(&pCur->aPages[iPage]);
+                                        Assert(pVM->pgm.s.cWrittenToPages > 0);
+                                        pVM->pgm.s.cWrittenToPages--;
+                                    }
+                                    pVM->pgm.s.LiveSave.cMonitoredPages--;
+                                }
+                                pVM->pgm.s.LiveSave.cMmioPages++;
+                                break;
+                        }
+                    }
+                } /* for each page in range */
+
+                if (GCPhysCur != 0)
+                    break; /* Yield + ramrange change */
+                GCPhysCur = pCur->GCPhysLast;
+            }
+        } /* for each range */
+    } while (pCur);
+    pgmUnlock(pVM);
+}
+
+
+/**
+ * pgmR3LiveExec part 2: Save quiescent pages.
+ *
+ * @returns VBox status code.
+ * @param   pVM     The VM handle.
+ * @param   pSSM    The SSM handle.
+ * @param   uPass   The pass.
+ */
+static int pgmR3LiveExecPart2(PVM pVM, PSSMHANDLE pSSM, uint32_t uPass)
+{
+    RTGCPHYS GCPhysLast = NIL_RTGCPHYS;
+    RTGCPHYS GCPhysCur = 0;
+    PPGMRAMRANGE pCur;
+    pgmLock(pVM);
+    do
+    {
+        uint32_t const  idRamRangesGen = pVM->pgm.s.idRamRangesGen;
+        uint32_t        cSinceYield    = 0;
+        for (pCur = pVM->pgm.s.pRamRangesR3; pCur; pCur = pCur->pNextR3)
+        {
+            if (pCur->GCPhysLast > GCPhysCur)
+            {
+                PPGMLIVESAVEPAGE paLSPages = pCur->paLSPages;
+                uint32_t         cPages    = pCur->cb >> PAGE_SHIFT;
+                uint32_t         iPage     = GCPhysCur <= pCur->GCPhys ? 0 : (GCPhysCur - pCur->GCPhys) >> PAGE_SHIFT;
+                GCPhysCur = 0;
+                for (; iPage < cPages; iPage++, cSinceYield++)
+                {
+                    /* Do yield first. */
+                    if (    (cSinceYield & 0x7ff) == 0x7ff
+                        &&  PDMR3CritSectYield(&pVM->pgm.s.CritSect)
+                        &&  pVM->pgm.s.idRamRangesGen != idRamRangesGen)
+                    {
+                        GCPhysCur = pCur->GCPhys + ((RTGCPHYS)iPage << PAGE_SHIFT);
+                        break; /* restart */
+                    }
+
+                    /*
+                     * Save dirty pages that hasn't changed since part 1.
+                     * (Use if instead of switch here so we can easily break out of the loop.)
+                     */
+                    int rc;
+                    if (   paLSPages[iPage].fDirty
+                        && !paLSPages[iPage].fMmio
+                        && PGM_PAGE_GET_STATE(&pCur->aPages[iPage]) != PGM_PAGE_STATE_ALLOCATED)
+                    {
+                        if (   !paLSPages[iPage].fZero
+                            && PGM_PAGE_GET_STATE(&pCur->aPages[iPage]) != PGM_PAGE_STATE_ZERO)
+                        {
+                            AssertMsg(   PGM_PAGE_GET_TYPE(&pCur->aPages[iPage]) == PGMPAGETYPE_RAM
+                                      || PGM_PAGE_GET_TYPE(&pCur->aPages[iPage]) == PGMPAGETYPE_ROM_SHADOW
+                                      || PGM_PAGE_GET_TYPE(&pCur->aPages[iPage]) == PGMPAGETYPE_ROM,
+                                      ("%R[pgmpage]", &pCur->aPages[iPage]));
+                            Assert(!paLSPages[iPage].fZero);
+                            if (!paLSPages[iPage].fWriteMonitoredJustNow)
+                            {
+                                /*
+                                 * Copy the page and then save it outside the lock (since any
+                                 * SSM call may block).
+                                 */
+                                char        abPage[PAGE_SIZE];
+                                RTGCPHYS    GCPhys = pCur->GCPhys + ((RTGCPHYS)iPage << PAGE_SHIFT);
+                                void const *pvPage;
+                                rc = pgmPhysGCPhys2CCPtrInternalReadOnly(pVM, &pCur->aPages[iPage], GCPhys, &pvPage);
+                                if (RT_SUCCESS(rc))
+                                    memcpy(abPage, pvPage, PAGE_SIZE);
+                                pgmUnlock(pVM);
+                                AssertLogRelMsgRCReturn(rc, ("rc=%Rrc GCPhys=%RGp\n", rc, GCPhys), rc);
+
+                                if (GCPhys == GCPhysLast + PAGE_SIZE)
+                                    SSMR3PutU8(pSSM, PGM_STATE_REC_RAW);
+                                else
+                                {
+                                    SSMR3PutU8(pSSM, PGM_STATE_REC_RAW | PGM_STATE_REC_FLAG_ADDR);
+                                    SSMR3PutGCPhys(pSSM, GCPhys);
+                                }
+                                rc = SSMR3PutMem(pSSM, abPage, PAGE_SIZE);
+                                if (RT_FAILURE(rc))
+                                    return rc;
+
+                                pgmLock(pVM);
+                                GCPhysLast = GCPhys;
+                                paLSPages[iPage].fDirty = 0;
+                                if (idRamRangesGen != pVM->pgm.s.idRamRangesGen)
+                                {
+                                    GCPhysCur = GCPhys | PAGE_OFFSET_MASK;
+                                    break; /* restart */
+                                }
+                            }
+                        }
+                        else if (   paLSPages[iPage].fZero
+                                 && (   PGM_PAGE_GET_TYPE(&pCur->aPages[iPage]) == PGMPAGETYPE_RAM
+                                     || PGM_PAGE_GET_TYPE(&pCur->aPages[iPage]) == PGMPAGETYPE_ROM_SHADOW
+                                     || PGM_PAGE_GET_TYPE(&pCur->aPages[iPage]) == PGMPAGETYPE_ROM))
+                        {
+                            /*
+                             * Dirty zero page.
+                             */
+                            RTGCPHYS GCPhys = pCur->GCPhys + ((RTGCPHYS)iPage << PAGE_SHIFT);
+                            pgmUnlock(pVM);
+
+                            if (GCPhys == GCPhysLast + PAGE_SIZE)
+                                rc = SSMR3PutU8(pSSM, PGM_STATE_REC_RAW);
+                            else
+                            {
+                                SSMR3PutU8(pSSM, PGM_STATE_REC_RAW | PGM_STATE_REC_FLAG_ADDR);
+                                rc = SSMR3PutGCPhys(pSSM, GCPhys);
+                            }
+                            if (RT_FAILURE(rc))
+                                return rc;
+
+                            pgmLock(pVM);
+                            GCPhysLast = GCPhys;
+                            paLSPages[iPage].fDirty = 0;
+                            if (idRamRangesGen != pVM->pgm.s.idRamRangesGen)
+                            {
+                                GCPhysCur = GCPhys | PAGE_OFFSET_MASK;
+                                break; /* restart */
+                            }
+                        }
+                    }
+                } /* for each page in range */
+
+                if (GCPhysCur != 0)
+                    break; /* Yield + ramrange change */
+                GCPhysCur = pCur->GCPhysLast;
+            }
+        } /* for each range */
+    } while (pCur);
+    pgmUnlock(pVM);
+
+    return VINF_SUCCESS;
+}
+
+
+/**
  * Execute a live save pass.
  *
  * @returns VBox status code.
@@ -336,7 +673,9 @@ static DECLCALLBACK(int) pgmR3LivePrep(PVM pVM, PSSMHANDLE pSSM)
  */
 static DECLCALLBACK(int)  pgmR3LiveExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uPass)
 {
-    return VINF_SUCCESS;
+    pgmR3LiveExecPart1(pVM);
+    pgmR3PoolClearAll(pVM); /** @todo this could perhaps be optimized a bit. */
+    return pgmR3LiveExecPart2(pVM, pSSM, uPass);
 }
 
 
@@ -517,6 +856,83 @@ static DECLCALLBACK(int) pgmR3SaveDone(PVM pVM, PSSMHANDLE pSSM)
 
 
 /**
+ * Worker for pgmR3Load and pgmR3LoadLocked.
+ *
+ * @returns VBox status code.
+ *
+ * @param   pVM                 The VM handle.
+ * @param   pSSM                The SSM handle.
+ * @param   uVersion            The saved state version.
+ */
+static int pgmR3LoadLockedMemory(PVM pVM, PSSMHANDLE pSSM, uint32_t uPass)
+{
+    /*
+     * Process page records until we hit the terminator.
+     */
+    PPGMRAMRANGE    pRamHint   = NULL;
+    RTGCPHYS        GCPhysLast = NIL_RTGCPHYS;
+    for (;;)
+    {
+        /* Get the record type and flags. */
+        uint8_t u8;
+        int rc = SSMR3GetU8(pSSM, &u8);
+        if (RT_FAILURE(rc))
+            return rc;
+        if (u8 == PGM_STATE_REC_END)
+            return VINF_SUCCESS;
+        AssertLogRelMsgReturn((u8 & ~PGM_STATE_REC_FLAG_ADDR) <= PGM_STATE_REC_LAST, ("%#x\n", u8), VERR_SSM_DATA_UNIT_FORMAT_CHANGED);
+
+        /* Get the address. */
+        RTGCPHYS GCPhys;
+        if (!(u8 & PGM_STATE_REC_FLAG_ADDR))
+        {
+            AssertLogRelReturn(GCPhysLast != NIL_RTGCPHYS, VERR_SSM_DATA_UNIT_FORMAT_CHANGED);
+            GCPhys = GCPhysLast + PAGE_SIZE;
+        }
+        else
+        {
+            rc = SSMR3GetGCPhys(pSSM, &GCPhys);
+            if (RT_FAILURE(rc))
+                return rc;
+            AssertLogRelMsgReturn(GCPhys & PAGE_OFFSET_MASK, ("%RGp\n", GCPhys), VERR_SSM_DATA_UNIT_FORMAT_CHANGED);
+        }
+
+        /* Get the ram range and page. */
+        PPGMPAGE pPage;
+        rc = pgmPhysGetPageWithHintEx(&pVM->pgm.s, GCPhys, &pPage, &pRamHint);
+        AssertLogRelMsgRCReturn(rc, ("rc=%Rrc %RGp\n", rc, GCPhys), rc);
+
+        /*
+         * Take action according to the record type.
+         */
+        switch (u8 & ~PGM_STATE_REC_FLAG_ADDR)
+        {
+            case PGM_STATE_REC_ZERO:
+                if (!PGM_PAGE_IS_ZERO(pPage))
+                {
+                    /* dispose of the page if possible */
+                }
+                break;
+
+            case PGM_STATE_REC_RAW:
+                /* map the page for writing and load the bits onto it. */
+                break;
+
+            case PGM_STATE_REC_SHADOWED_ROM:
+            {
+                /* map the page for writing and load the bits onto it. */
+
+                break;
+            }
+
+            default:
+                AssertMsgFailedReturn(("%#x\n", u8), VERR_INTERNAL_ERROR);
+        }
+    }
+}
+
+
+/**
  * Load an ignored page.
  *
  * @returns VBox status code.
@@ -672,144 +1088,28 @@ static int pgmR3LoadShadowedRomPage(PVM pVM, PSSMHANDLE pSSM, PPGMPAGE pPage, RT
     return rc;
 }
 
-
 /**
- * Worker for pgmR3Load.
+ * Ram range flags and bits for older versions of the saved state.
  *
  * @returns VBox status code.
  *
- * @param   pVM                 The VM handle.
- * @param   pSSM                The SSM handle.
- * @param   uVersion            The saved state version.
+ * @param   pVM         The VM handle
+ * @param   pSSM        The SSM handle.
+ * @param   uVersion    The saved state version.
  */
-static int pgmR3LoadLocked(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion)
+static int pgmR3LoadLockedMemoryOld(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion)
 {
-    PPGM        pPGM = &pVM->pgm.s;
-    int         rc;
-    uint32_t    u32Sep;
-
-    /*
-     * Load basic data (required / unaffected by relocation).
-     */
-    if (uVersion >= PGM_SAVED_STATE_VERSION)
-    {
-        rc = SSMR3GetStruct(pSSM, pPGM, &s_aPGMFields[0]);
-        AssertLogRelRCReturn(rc, rc);
-
-        for (VMCPUID i = 0; i < pVM->cCpus; i++)
-        {
-            rc = SSMR3GetStruct(pSSM, &pVM->aCpus[i].pgm.s, &s_aPGMCpuFields[0]);
-            AssertLogRelRCReturn(rc, rc);
-        }
-    }
-    else if (uVersion >= PGM_SAVED_STATE_VERSION_RR_DESC)
-    {
-        AssertRelease(pVM->cCpus == 1);
-
-        PGMOLD pgmOld;
-        rc = SSMR3GetStruct(pSSM, &pgmOld, &s_aPGMFields_Old[0]);
-        AssertLogRelRCReturn(rc, rc);
-
-        pPGM->fMappingsFixed    = pgmOld.fMappingsFixed;
-        pPGM->GCPtrMappingFixed = pgmOld.GCPtrMappingFixed;
-        pPGM->cbMappingFixed    = pgmOld.cbMappingFixed;
-
-        pVM->aCpus[0].pgm.s.fA20Enabled   = pgmOld.fA20Enabled;
-        pVM->aCpus[0].pgm.s.GCPhysA20Mask = pgmOld.GCPhysA20Mask;
-        pVM->aCpus[0].pgm.s.enmGuestMode  = pgmOld.enmGuestMode;
-    }
-    else
-    {
-        AssertRelease(pVM->cCpus == 1);
-
-        SSMR3GetBool(pSSM,      &pPGM->fMappingsFixed);
-        SSMR3GetGCPtr(pSSM,     &pPGM->GCPtrMappingFixed);
-        SSMR3GetU32(pSSM,       &pPGM->cbMappingFixed);
-
-        uint32_t cbRamSizeIgnored;
-        rc = SSMR3GetU32(pSSM, &cbRamSizeIgnored);
-        if (RT_FAILURE(rc))
-            return rc;
-        SSMR3GetGCPhys(pSSM,    &pVM->aCpus[0].pgm.s.GCPhysA20Mask);
-
-        uint32_t u32 = 0;
-        SSMR3GetUInt(pSSM,      &u32);
-        pVM->aCpus[0].pgm.s.fA20Enabled = !!u32;
-        SSMR3GetUInt(pSSM,      &pVM->aCpus[0].pgm.s.fSyncFlags);
-        RTUINT uGuestMode;
-        SSMR3GetUInt(pSSM,      &uGuestMode);
-        pVM->aCpus[0].pgm.s.enmGuestMode = (PGMMODE)uGuestMode;
-
-        /* check separator. */
-        SSMR3GetU32(pSSM, &u32Sep);
-        if (RT_FAILURE(rc))
-            return rc;
-        if (u32Sep != (uint32_t)~0)
-        {
-            AssertMsgFailed(("u32Sep=%#x (first)\n", u32Sep));
-            return VERR_SSM_DATA_UNIT_FORMAT_CHANGED;
-        }
-    }
-
-    /*
-     * The guest mappings.
-     */
-    uint32_t i = 0;
-    for (;; i++)
-    {
-        /* Check the seqence number / separator. */
-        rc = SSMR3GetU32(pSSM, &u32Sep);
-        if (RT_FAILURE(rc))
-            return rc;
-        if (u32Sep == ~0U)
-            break;
-        if (u32Sep != i)
-        {
-            AssertMsgFailed(("u32Sep=%#x (last)\n", u32Sep));
-            return VERR_SSM_DATA_UNIT_FORMAT_CHANGED;
-        }
-
-        /* get the mapping details. */
-        char szDesc[256];
-        szDesc[0] = '\0';
-        rc = SSMR3GetStrZ(pSSM, szDesc, sizeof(szDesc));
-        if (RT_FAILURE(rc))
-            return rc;
-        RTGCPTR GCPtr;
-        SSMR3GetGCPtr(pSSM, &GCPtr);
-        RTGCPTR cPTs;
-        rc = SSMR3GetGCUIntPtr(pSSM, &cPTs);
-        if (RT_FAILURE(rc))
-            return rc;
-
-        /* find matching range. */
-        PPGMMAPPING pMapping;
-        for (pMapping = pPGM->pMappingsR3; pMapping; pMapping = pMapping->pNextR3)
-            if (    pMapping->cPTs == cPTs
-                &&  !strcmp(pMapping->pszDesc, szDesc))
-                break;
-        AssertLogRelMsgReturn(pMapping, ("Couldn't find mapping: cPTs=%#x szDesc=%s (GCPtr=%RGv)\n",
-                                         cPTs, szDesc, GCPtr),
-                              VERR_SSM_LOAD_CONFIG_MISMATCH);
-
-        /* relocate it. */
-        if (pMapping->GCPtr != GCPtr)
-        {
-            AssertMsg((GCPtr >> X86_PD_SHIFT << X86_PD_SHIFT) == GCPtr, ("GCPtr=%RGv\n", GCPtr));
-            pgmR3MapRelocate(pVM, pMapping, pMapping->GCPtr, GCPtr);
-        }
-        else
-            Log(("pgmR3Load: '%s' needed no relocation (%RGv)\n", szDesc, GCPtr));
-    }
+    PPGM pPGM = &pVM->pgm.s;
 
     /*
      * Ram range flags and bits.
      */
-    i = 0;
+    uint32_t i = 0;
     for (PPGMRAMRANGE pRam = pPGM->pRamRangesR3; ; pRam = pRam->pNextR3, i++)
     {
         /* Check the seqence number / separator. */
-        rc = SSMR3GetU32(pSSM, &u32Sep);
+        uint32_t u32Sep;
+        int rc = SSMR3GetU32(pSSM, &u32Sep);
         if (RT_FAILURE(rc))
             return rc;
         if (u32Sep == ~0U)
@@ -1024,7 +1324,163 @@ static int pgmR3LoadLocked(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion)
         }
     }
 
-    return rc;
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Worker for pgmR3Load.
+ *
+ * @returns VBox status code.
+ *
+ * @param   pVM                 The VM handle.
+ * @param   pSSM                The SSM handle.
+ * @param   uVersion            The saved state version.
+ */
+static int pgmR3LoadFinalLocked(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion)
+{
+    PPGM        pPGM = &pVM->pgm.s;
+    int         rc;
+    uint32_t    u32Sep;
+
+    /*
+     * Load basic data (required / unaffected by relocation).
+     */
+    if (uVersion >= PGM_SAVED_STATE_VERSION_3_0_0)
+    {
+        rc = SSMR3GetStruct(pSSM, pPGM, &s_aPGMFields[0]);
+        AssertLogRelRCReturn(rc, rc);
+
+        for (VMCPUID i = 0; i < pVM->cCpus; i++)
+        {
+            rc = SSMR3GetStruct(pSSM, &pVM->aCpus[i].pgm.s, &s_aPGMCpuFields[0]);
+            AssertLogRelRCReturn(rc, rc);
+        }
+    }
+    else if (uVersion >= PGM_SAVED_STATE_VERSION_RR_DESC)
+    {
+        AssertRelease(pVM->cCpus == 1);
+
+        PGMOLD pgmOld;
+        rc = SSMR3GetStruct(pSSM, &pgmOld, &s_aPGMFields_Old[0]);
+        AssertLogRelRCReturn(rc, rc);
+
+        pPGM->fMappingsFixed    = pgmOld.fMappingsFixed;
+        pPGM->GCPtrMappingFixed = pgmOld.GCPtrMappingFixed;
+        pPGM->cbMappingFixed    = pgmOld.cbMappingFixed;
+
+        pVM->aCpus[0].pgm.s.fA20Enabled   = pgmOld.fA20Enabled;
+        pVM->aCpus[0].pgm.s.GCPhysA20Mask = pgmOld.GCPhysA20Mask;
+        pVM->aCpus[0].pgm.s.enmGuestMode  = pgmOld.enmGuestMode;
+    }
+    else
+    {
+        AssertRelease(pVM->cCpus == 1);
+
+        SSMR3GetBool(pSSM,      &pPGM->fMappingsFixed);
+        SSMR3GetGCPtr(pSSM,     &pPGM->GCPtrMappingFixed);
+        SSMR3GetU32(pSSM,       &pPGM->cbMappingFixed);
+
+        uint32_t cbRamSizeIgnored;
+        rc = SSMR3GetU32(pSSM, &cbRamSizeIgnored);
+        if (RT_FAILURE(rc))
+            return rc;
+        SSMR3GetGCPhys(pSSM,    &pVM->aCpus[0].pgm.s.GCPhysA20Mask);
+
+        uint32_t u32 = 0;
+        SSMR3GetUInt(pSSM,      &u32);
+        pVM->aCpus[0].pgm.s.fA20Enabled = !!u32;
+        SSMR3GetUInt(pSSM,      &pVM->aCpus[0].pgm.s.fSyncFlags);
+        RTUINT uGuestMode;
+        SSMR3GetUInt(pSSM,      &uGuestMode);
+        pVM->aCpus[0].pgm.s.enmGuestMode = (PGMMODE)uGuestMode;
+
+        /* check separator. */
+        SSMR3GetU32(pSSM, &u32Sep);
+        if (RT_FAILURE(rc))
+            return rc;
+        if (u32Sep != (uint32_t)~0)
+        {
+            AssertMsgFailed(("u32Sep=%#x (first)\n", u32Sep));
+            return VERR_SSM_DATA_UNIT_FORMAT_CHANGED;
+        }
+    }
+
+    /*
+     * The guest mappings.
+     */
+    uint32_t i = 0;
+    for (;; i++)
+    {
+        /* Check the seqence number / separator. */
+        rc = SSMR3GetU32(pSSM, &u32Sep);
+        if (RT_FAILURE(rc))
+            return rc;
+        if (u32Sep == ~0U)
+            break;
+        if (u32Sep != i)
+        {
+            AssertMsgFailed(("u32Sep=%#x (last)\n", u32Sep));
+            return VERR_SSM_DATA_UNIT_FORMAT_CHANGED;
+        }
+
+        /* get the mapping details. */
+        char szDesc[256];
+        szDesc[0] = '\0';
+        rc = SSMR3GetStrZ(pSSM, szDesc, sizeof(szDesc));
+        if (RT_FAILURE(rc))
+            return rc;
+        RTGCPTR GCPtr;
+        SSMR3GetGCPtr(pSSM, &GCPtr);
+        RTGCPTR cPTs;
+        rc = SSMR3GetGCUIntPtr(pSSM, &cPTs);
+        if (RT_FAILURE(rc))
+            return rc;
+
+        /* find matching range. */
+        PPGMMAPPING pMapping;
+        for (pMapping = pPGM->pMappingsR3; pMapping; pMapping = pMapping->pNextR3)
+            if (    pMapping->cPTs == cPTs
+                &&  !strcmp(pMapping->pszDesc, szDesc))
+                break;
+        AssertLogRelMsgReturn(pMapping, ("Couldn't find mapping: cPTs=%#x szDesc=%s (GCPtr=%RGv)\n",
+                                         cPTs, szDesc, GCPtr),
+                              VERR_SSM_LOAD_CONFIG_MISMATCH);
+
+        /* relocate it. */
+        if (pMapping->GCPtr != GCPtr)
+        {
+            AssertMsg((GCPtr >> X86_PD_SHIFT << X86_PD_SHIFT) == GCPtr, ("GCPtr=%RGv\n", GCPtr));
+            pgmR3MapRelocate(pVM, pMapping, pMapping->GCPtr, GCPtr);
+        }
+        else
+            Log(("pgmR3Load: '%s' needed no relocation (%RGv)\n", szDesc, GCPtr));
+    }
+
+    /*
+     * Load the RAM contents.
+     */
+    if (uVersion > PGM_SAVED_STATE_VERSION_3_0_0)
+        return pgmR3LoadLockedMemory(pVM, pSSM, SSM_PASS_FINAL);
+    return pgmR3LoadLockedMemoryOld(pVM, pSSM, uVersion);
+}
+
+
+/**
+ * Prepare state load operation.
+ *
+ * @returns VBox status code.
+ * @param   pVM             VM Handle.
+ * @param   pSSM            SSM operation handle.
+ */
+static DECLCALLBACK(int) pgmR3LoadPrep(PVM pVM, PSSMHANDLE pSSM)
+{
+    /*
+     * Call the reset function to make sure all the memory is cleared.
+     */
+    PGMR3Reset(pVM);
+    NOREF(pSSM);
+    return VINF_SUCCESS;
 }
 
 
@@ -1046,63 +1502,74 @@ static DECLCALLBACK(int) pgmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, 
     /*
      * Validate version.
      */
-    if (    uVersion != PGM_SAVED_STATE_VERSION
-        &&  uVersion != PGM_SAVED_STATE_VERSION_2_2_2
-        &&  uVersion != PGM_SAVED_STATE_VERSION_RR_DESC
-        &&  uVersion != PGM_SAVED_STATE_VERSION_OLD_PHYS_CODE)
+    if (   (   uPass != SSM_PASS_FINAL
+            && uVersion != PGM_SAVED_STATE_VERSION)
+        || (   uVersion != PGM_SAVED_STATE_VERSION
+            && uVersion != PGM_SAVED_STATE_VERSION_3_0_0
+            && uVersion != PGM_SAVED_STATE_VERSION_2_2_2
+            && uVersion != PGM_SAVED_STATE_VERSION_RR_DESC
+            && uVersion != PGM_SAVED_STATE_VERSION_OLD_PHYS_CODE)
+       )
     {
         AssertMsgFailed(("pgmR3Load: Invalid version uVersion=%d (current %d)!\n", uVersion, PGM_SAVED_STATE_VERSION));
         return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
     }
 
-    /*
-     * Call the reset function to make sure all the memory is cleared.
-     */
-    PGMR3Reset(pVM);
-
-    /*
-     * Do the loading while owning the lock because a bunch of the functions
-     * we're using requires this.
-     */
-    pgmLock(pVM);
-    rc = pgmR3LoadLocked(pVM, pSSM, uVersion);
-    pgmUnlock(pVM);
-    if (RT_SUCCESS(rc))
+    if (uPass != SSM_PASS_FINAL)
     {
         /*
-         * We require a full resync now.
+         * The non-final passes contains only memory.
          */
-        for (VMCPUID i = 0; i < pVM->cCpus; i++)
+        pgmLock(pVM);
+        rc = pgmR3LoadLockedMemory(pVM, pSSM, uPass);
+        pgmUnlock(pVM);
+    }
+    else
+    {
+        /*
+         * Do the loading while owning the lock because a bunch of the functions
+         * we're using requires this.
+         */
+        pgmLock(pVM);
+        rc = pgmR3LoadFinalLocked(pVM, pSSM, uVersion);
+        pgmUnlock(pVM);
+        if (RT_SUCCESS(rc))
         {
-            PVMCPU pVCpu = &pVM->aCpus[i];
-            VMCPU_FF_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL);
-            VMCPU_FF_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3);
-
-            pVCpu->pgm.s.fSyncFlags |= PGM_SYNC_UPDATE_PAGE_BIT_VIRTUAL;
-        }
-
-        pgmR3HandlerPhysicalUpdateAll(pVM);
-
-        for (VMCPUID i = 0; i < pVM->cCpus; i++)
-        {
-            PVMCPU pVCpu = &pVM->aCpus[i];
-
             /*
-             * Change the paging mode.
+             * We require a full resync now.
              */
-            rc = PGMR3ChangeMode(pVM, pVCpu, pVCpu->pgm.s.enmGuestMode);
+            for (VMCPUID i = 0; i < pVM->cCpus; i++)
+            {
+                PVMCPU pVCpu = &pVM->aCpus[i];
+                VMCPU_FF_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL);
+                VMCPU_FF_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3);
 
-            /* Restore pVM->pgm.s.GCPhysCR3. */
-            Assert(pVCpu->pgm.s.GCPhysCR3 == NIL_RTGCPHYS);
-            RTGCPHYS GCPhysCR3 = CPUMGetGuestCR3(pVCpu);
-            if (    pVCpu->pgm.s.enmGuestMode == PGMMODE_PAE
-                ||  pVCpu->pgm.s.enmGuestMode == PGMMODE_PAE_NX
-                ||  pVCpu->pgm.s.enmGuestMode == PGMMODE_AMD64
-                ||  pVCpu->pgm.s.enmGuestMode == PGMMODE_AMD64_NX)
-                GCPhysCR3 = (GCPhysCR3 & X86_CR3_PAE_PAGE_MASK);
-            else
-                GCPhysCR3 = (GCPhysCR3 & X86_CR3_PAGE_MASK);
-            pVCpu->pgm.s.GCPhysCR3 = GCPhysCR3;
+                pVCpu->pgm.s.fSyncFlags |= PGM_SYNC_UPDATE_PAGE_BIT_VIRTUAL;
+            }
+
+            pgmR3HandlerPhysicalUpdateAll(pVM);
+
+            for (VMCPUID i = 0; i < pVM->cCpus; i++)
+            {
+                PVMCPU pVCpu = &pVM->aCpus[i];
+
+                /*
+                 * Change the paging mode.
+                 */
+                rc = PGMR3ChangeMode(pVM, pVCpu, pVCpu->pgm.s.enmGuestMode);
+
+                /* Restore pVM->pgm.s.GCPhysCR3. */
+                Assert(pVCpu->pgm.s.GCPhysCR3 == NIL_RTGCPHYS);
+                RTGCPHYS GCPhysCR3 = CPUMGetGuestCR3(pVCpu);
+                if (    pVCpu->pgm.s.enmGuestMode == PGMMODE_PAE
+                    ||  pVCpu->pgm.s.enmGuestMode == PGMMODE_PAE_NX
+                    ||  pVCpu->pgm.s.enmGuestMode == PGMMODE_AMD64
+                    ||  pVCpu->pgm.s.enmGuestMode == PGMMODE_AMD64_NX)
+                    GCPhysCR3 = (GCPhysCR3 & X86_CR3_PAE_PAGE_MASK);
+                else
+                    GCPhysCR3 = (GCPhysCR3 & X86_CR3_PAGE_MASK);
+                pVCpu->pgm.s.GCPhysCR3 = GCPhysCR3;
+            }
         }
     }
 
@@ -1122,8 +1589,6 @@ int pgmR3InitSavedState(PVM pVM, uint64_t cbRam)
     return SSMR3RegisterInternal(pVM, "pgm", 1, PGM_SAVED_STATE_VERSION, (size_t)cbRam + sizeof(PGM),
                                  pgmR3LivePrep, pgmR3LiveExec, pgmR3LiveVote,
                                  NULL, pgmR3SaveExec, pgmR3SaveDone,
-                                 NULL, pgmR3Load, NULL);
+                                 pgmR3LoadPrep, pgmR3Load, NULL);
 }
-
-
 
