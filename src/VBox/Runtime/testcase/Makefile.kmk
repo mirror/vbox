@@ -60,6 +60,7 @@ PROGRAMS += \
 	tstEnv \
 	tstErrUnique \
 	tstFile \
+	tstFileAio \
 	tstFileAppend-1 \
 	tstFileLock \
 	tstFork \
@@ -132,10 +133,6 @@ SYSMODS += \
 if1of ($(VBOX_LDR_FMT)), lx pe)
 LIBRARIES += \
 	tstLdr-4Imp
-endif
-ifdef RT_ASYNC_IO_CODE
-PROGRAMS += \
-	tstFileAio
 endif
 
 
