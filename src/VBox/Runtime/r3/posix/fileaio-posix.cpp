@@ -64,6 +64,14 @@
 # define AIO_LISTIO_MAX UINT32_MAX
 #endif
 
+#if 0 /* Only used for debugging */
+# undef AIO_LISTIO_MAX
+# define AIO_LISTIO_MAX 16
+#endif
+
+/** Invalid entry in the waiting array. */
+#define RTFILEAIOCTX_WAIT_ENTRY_INVALID (~0U)
+
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
 *******************************************************************************/
@@ -127,12 +135,16 @@ typedef struct RTFILEAIOCTXINTERNAL
     /** Event semaphore the canceling thread is waiting for completion of
      * the operation. */
     RTSEMEVENT            SemEventCancel;
-    /** Number of elements in the waiting list. */
-    unsigned              cReqsWait;
+    /** Head of submitted elements waiting to get into the array. */
+    PRTFILEAIOREQINTERNAL pReqsWaitHead;
+    /** Tail of submitted elements waiting to get into the array. */
+    PRTFILEAIOREQINTERNAL pReqsWaitTail;
+    /** Maximum number of elements in the waiting array. */
+    unsigned              cReqsWaitMax;
     /** First free slot in the waiting list. */
     unsigned              iFirstFree;
     /** List of requests we are currently waiting on.
-     * Size depends on cMaxRequests. */
+     * Size depends on cMaxRequests and AIO_LISTIO_MAX. */
     volatile PRTFILEAIOREQINTERNAL apReqs[1];
 } RTFILEAIOCTXINTERNAL, *PRTFILEAIOCTXINTERNAL;
 
@@ -187,7 +199,8 @@ static int rtFileAioCtxProcessEvents(PRTFILEAIOCTXINTERNAL pCtxInt)
             PRTFILEAIOREQINTERNAL pReqHead = (PRTFILEAIOREQINTERNAL)ASMAtomicXchgPtr((void* volatile*)&pCtxInt->apReqsNewHead[iSlot],
                                                                                      NULL);
 
-            while (pReqHead)
+            while (  (pCtxInt->iFirstFree < pCtxInt->cReqsWaitMax)
+                   && pReqHead)
             {
                 pCtxInt->apReqs[pCtxInt->iFirstFree] = pReqHead;
                 pReqHead->iWaitingList = pCtxInt->iFirstFree;
@@ -197,7 +210,34 @@ static int rtFileAioCtxProcessEvents(PRTFILEAIOCTXINTERNAL pCtxInt)
                 pCtxInt->apReqs[pCtxInt->iFirstFree]->pNext = NULL;
                 pCtxInt->apReqs[pCtxInt->iFirstFree]->pPrev = NULL;
                 pCtxInt->iFirstFree++;
-                Assert(pCtxInt->iFirstFree <= pCtxInt->cMaxRequests);
+
+                Assert(   (pCtxInt->iFirstFree <= pCtxInt->cMaxRequests)
+                       && (pCtxInt->iFirstFree <= pCtxInt->cReqsWaitMax));
+            }
+
+            /* Append the rest to the wait list. */
+            if (pReqHead)
+            {
+                if (!pCtxInt->pReqsWaitHead)
+                {
+                    Assert(!pCtxInt->pReqsWaitTail);
+                    pCtxInt->pReqsWaitHead = pReqHead;
+                    pReqHead->pPrev = NULL;
+                }
+                else
+                {
+                    AssertPtr(pCtxInt->pReqsWaitTail);
+
+                    pCtxInt->pReqsWaitTail->pNext = pReqHead;
+                    pReqHead->pPrev = pCtxInt->pReqsWaitTail;
+                }
+
+                /* Update tail. */
+                while (pReqHead->pNext)
+                    pReqHead = pReqHead->pNext;
+
+                pCtxInt->pReqsWaitTail = pReqHead;
+                pCtxInt->pReqsWaitTail->pNext = NULL;
             }
         }
 
@@ -205,9 +245,36 @@ static int rtFileAioCtxProcessEvents(PRTFILEAIOCTXINTERNAL pCtxInt)
         PRTFILEAIOREQINTERNAL pReqToCancel = (PRTFILEAIOREQINTERNAL)ASMAtomicReadPtr((void* volatile*)&pCtxInt->pReqToCancel);
         if (pReqToCancel)
         {
-            /* Put it out of the waiting list. */
-            pCtxInt->apReqs[pReqToCancel->iWaitingList] = pCtxInt->apReqs[--pCtxInt->iFirstFree];
-            pCtxInt->apReqs[pReqToCancel->iWaitingList]->iWaitingList = pReqToCancel->iWaitingList;
+            /* The request can be in the array waiting for completion or still in the list because it is full. */
+            if (pReqToCancel->iWaitingList != RTFILEAIOCTX_WAIT_ENTRY_INVALID)
+            {
+                /* Put it out of the waiting list. */
+                pCtxInt->apReqs[pReqToCancel->iWaitingList] = pCtxInt->apReqs[--pCtxInt->iFirstFree];
+                pCtxInt->apReqs[pReqToCancel->iWaitingList]->iWaitingList = pReqToCancel->iWaitingList;
+            }
+            else
+            {
+                /* Unlink from the waiting list. */
+                PRTFILEAIOREQINTERNAL pPrev = pReqToCancel->pPrev;
+                PRTFILEAIOREQINTERNAL pNext = pReqToCancel->pNext;
+
+                if (pNext)
+                    pNext->pPrev = pPrev;
+                else
+                {
+                    /* We canceled the tail. */
+                    pCtxInt->pReqsWaitTail = pPrev;
+                }
+
+                if (pPrev)
+                    pPrev->pNext = pNext;
+                else
+                {
+                    /* We canceled the head. */
+                    pCtxInt->pReqsWaitHead = pNext;
+                }
+            }
+
             ASMAtomicDecS32(&pCtxInt->cRequests);
             RTSemEventSignal(pCtxInt->SemEventCancel);
         }
@@ -281,8 +348,9 @@ RTR3DECL(int) RTFileAioReqCreate(PRTFILEAIOREQ phReq)
     if (RT_UNLIKELY(!pReqInt))
         return VERR_NO_MEMORY;
 
-    pReqInt->pCtxInt  = NULL;
-    pReqInt->u32Magic = RTFILEAIOREQ_MAGIC;
+    pReqInt->pCtxInt      = NULL;
+    pReqInt->u32Magic     = RTFILEAIOREQ_MAGIC;
+    pReqInt->iWaitingList = RTFILEAIOCTX_WAIT_ENTRY_INVALID;
     RTFILEAIOREQ_SET_STATE(pReqInt, COMPLETED);
 
     *phReq = (RTFILEAIOREQ)pReqInt;
@@ -446,13 +514,17 @@ RTDECL(int) RTFileAioReqGetRC(RTFILEAIOREQ hReq, size_t *pcbTransfered)
 RTDECL(int) RTFileAioCtxCreate(PRTFILEAIOCTX phAioCtx, uint32_t cAioReqsMax)
 {
     PRTFILEAIOCTXINTERNAL pCtxInt;
+    unsigned cReqsWaitMax;
+
     AssertPtrReturn(phAioCtx, VERR_INVALID_POINTER);
 
     if (cAioReqsMax == RTFILEAIO_UNLIMITED_REQS)
         return VERR_OUT_OF_RANGE;
 
+    cReqsWaitMax = RT_MIN(cAioReqsMax, AIO_LISTIO_MAX);
+
     pCtxInt = (PRTFILEAIOCTXINTERNAL)RTMemAllocZ(  sizeof(RTFILEAIOCTXINTERNAL)
-                                                 + cAioReqsMax * sizeof(PRTFILEAIOREQINTERNAL));
+                                                 + cReqsWaitMax * sizeof(PRTFILEAIOREQINTERNAL));
     if (RT_UNLIKELY(!pCtxInt))
         return VERR_NO_MEMORY;
 
@@ -466,6 +538,7 @@ RTDECL(int) RTFileAioCtxCreate(PRTFILEAIOCTX phAioCtx, uint32_t cAioReqsMax)
 
     pCtxInt->u32Magic     = RTFILEAIOCTX_MAGIC;
     pCtxInt->cMaxRequests = cAioReqsMax;
+    pCtxInt->cReqsWaitMax = cReqsWaitMax;
     *phAioCtx = (RTFILEAIOCTX)pCtxInt;
 
     return VINF_SUCCESS;
@@ -779,10 +852,11 @@ RTDECL(int) RTFileAioCtxWait(RTFILEAIOCTX hAioCtx, size_t cMinReqs, unsigned cMi
         {
             /* Requests finished. */
             unsigned iReqCurr = 0;
-            int cDone = 0;
+            unsigned cDone = 0;
 
             /* Remove completed requests from the waiting list. */
-            while (iReqCurr < pCtxInt->iFirstFree)
+            while (   (iReqCurr < pCtxInt->iFirstFree)
+                   && (cDone < cReqs))
             {
                 PRTFILEAIOREQINTERNAL pReq = pCtxInt->apReqs[iReqCurr];
                 int rcReq = aio_error(&pReq->AioCB);
@@ -797,32 +871,61 @@ RTDECL(int) RTFileAioCtxWait(RTFILEAIOCTX hAioCtx, size_t cMinReqs, unsigned cMi
                         pReq->cbTransfered = aio_return(&pReq->AioCB);
                     }
                     else
+                    {
+#if defined(RT_OS_DARWIN) || defined(RT_OS_FREEBSD)
+                        pReq->Rc = RTErrConvertFromErrno(errno);
+#else
                         pReq->Rc = RTErrConvertFromErrno(rcReq);
+#endif
+                    }
 
                     /* Mark the request as finished. */
                     RTFILEAIOREQ_SET_STATE(pReq, COMPLETED);
                     cDone++;
 
-                    /*
-                     * Move the last entry into the current position to avoid holes
-                     * but only if it is not the last element already.
-                     */
-                    if (pReq->iWaitingList < pCtxInt->iFirstFree - 1)
+                    /* If there are other entries waiting put the head into the now free entry. */
+                    if (pCtxInt->pReqsWaitHead)
                     {
-                        pCtxInt->apReqs[pReq->iWaitingList] = pCtxInt->apReqs[--pCtxInt->iFirstFree];
-                        pCtxInt->apReqs[pReq->iWaitingList]->iWaitingList = pReq->iWaitingList;
-                        pCtxInt->apReqs[pCtxInt->iFirstFree] = NULL;
+                        PRTFILEAIOREQINTERNAL pReqInsert = pCtxInt->pReqsWaitHead;
+
+                        pCtxInt->pReqsWaitHead = pReqInsert->pNext;
+                        if (!pCtxInt->pReqsWaitHead)
+                        {
+                            /* List is empty now. Clear tail too. */
+                            pCtxInt->pReqsWaitTail = NULL;
+                        }
+
+                        pReqInsert->iWaitingList = pReq->iWaitingList;
+                        pCtxInt->apReqs[pReqInsert->iWaitingList] = pReqInsert;
+                        iReqCurr++;
                     }
                     else
-                        pCtxInt->iFirstFree--;
+                    {
+                        /*
+                         * Move the last entry into the current position to avoid holes
+                         * but only if it is not the last element already.
+                         */
+                        if (pReq->iWaitingList < pCtxInt->iFirstFree - 1)
+                        {
+                            pCtxInt->apReqs[pReq->iWaitingList] = pCtxInt->apReqs[--pCtxInt->iFirstFree];
+                            pCtxInt->apReqs[pReq->iWaitingList]->iWaitingList = pReq->iWaitingList;
+                            pCtxInt->apReqs[pCtxInt->iFirstFree] = NULL;
+                        }
+                        else
+                            pCtxInt->iFirstFree--;
+                    }
 
                     /* Put the request into the completed list. */
                     pahReqs[cRequestsCompleted++] = pReq;
+                    pReq->iWaitingList = RTFILEAIOCTX_WAIT_ENTRY_INVALID;
                 }
                 else
                     iReqCurr++;
             }
 
+            AssertMsg(   (cDone <= cMinReqs)
+                      && (cDone <= cReqs), ("Overflow cReqs=%u cMinReqs=%u cDone=%u\n",
+                                            cReqs, cMinReqs, cDone));
             cReqs    -= cDone;
             cMinReqs -= cDone;
             ASMAtomicSubS32(&pCtxInt->cRequests, cDone);
