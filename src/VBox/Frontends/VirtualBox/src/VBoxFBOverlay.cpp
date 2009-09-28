@@ -689,8 +689,8 @@ static void vboxVHWAGlInit(const QGLContext * pContext)
 
     g_vboxVHWAGlSupportInitialized = true;
 
-    if(!QGLFormat::hasOpenGL())
-    	return;
+    if (!QGLContext(QGLFormat::defaultFormat()).isValid())
+        return;
 
     static QGLWidget *pTmpContextHolder = NULL;
     const bool bHasGlContext = (pContext != NULL);
