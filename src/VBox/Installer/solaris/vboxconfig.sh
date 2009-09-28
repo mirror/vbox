@@ -335,7 +335,7 @@ load_module()
         subprint "Loaded: $moddesc module"
         return 0
     else
-        subprint "Loading: $modesc  ...FAILED!"
+        subprint "Loading: $moddesc  ...FAILED!"
         if test "$fatal" = "$FATALOP"; then
             exit 1
         fi
