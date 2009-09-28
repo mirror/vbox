@@ -122,6 +122,14 @@ typedef enum SCSICMD
     SCSI_LOG_SENSE                      = 0x4d
 } SCSICMD;
 
+/**
+ * Service action in opcoe identifiers
+ */
+typedef enum SCSISVCACTIONIN
+{
+    SCSI_SVC_ACTION_IN_READ_CAPACITY_16 = 0x10
+} SCSISVCACTIONIN;
+
 /* Mode page codes for mode sense/select commands. */
 #define SCSI_MODEPAGE_ERROR_RECOVERY   0x01
 #define SCSI_MODEPAGE_WRITE_PARAMETER  0x05
