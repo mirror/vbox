@@ -665,7 +665,7 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
         if (details == VMINFO_MACHINEREADABLE)
             RTPrintf("dvd=\"none\"\n");
         else
-            RTPrintf("DVD:             empty");
+            RTPrintf("DVD:             empty\n");
     }
 
     /* get the maximum amount of NICS */
