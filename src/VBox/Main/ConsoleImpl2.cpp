@@ -829,11 +829,10 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
 
         for (size_t j = 0; j < atts.size(); ++ j)
         {
+            BOOL fHostDrive = FALSE;
+
             ComPtr<IMedium> medium;
             hrc = atts [j]->COMGETTER(Medium)(medium.asOutParam());             H();
-            if (medium.isNull())
-                continue;
-
             LONG lDev;
             hrc = atts[j]->COMGETTER(Device)(&lDev);                            H();
             LONG lPort;
@@ -854,10 +853,14 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                 rc = CFGMR3InsertNode(pLunL0, "AttachedDriver", &pLunL0);       RC_CHECK();
             }
 
-            BOOL fHostDrive = false;
-            hrc = medium->COMGETTER(HostDrive)(&fHostDrive);                    H();
+            if (!medium.isNull())
+            {
+                hrc = medium->COMGETTER(HostDrive)(&fHostDrive);                H();
+            }
+
             if (fHostDrive)
             {
+                Assert(!medium.isNull());
                 if (lType == DeviceType_DVD)
                 {
                     rc = CFGMR3InsertString(pLunL0, "Driver", "HostDVD");           RC_CHECK();
@@ -901,82 +904,41 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                         rc = CFGMR3InsertInteger(pCfg, "Mountable", 0);             RC_CHECK();
                 }
 
-                rc = CFGMR3InsertNode(pLunL0, "AttachedDriver", &pLunL1);           RC_CHECK();
-                rc = CFGMR3InsertString(pLunL1, "Driver", "VD");                    RC_CHECK();
-                rc = CFGMR3InsertNode(pLunL1, "Config", &pCfg);                     RC_CHECK();
-
-                hrc = medium->COMGETTER(Location)(&str);                            H();
-                rc = CFGMR3InsertStringW(pCfg, "Path", str);                        RC_CHECK();
-                STR_FREE();
-
-                hrc = medium->COMGETTER(Format)(&str);                              H();
-                rc = CFGMR3InsertStringW(pCfg, "Format", str);                      RC_CHECK();
-                STR_FREE();
-
-                /* DVDs are always readonly */
-                if (lType == DeviceType_DVD)
+                if (!medium.isNull())
                 {
-                    rc = CFGMR3InsertInteger(pCfg, "ReadOnly", 1);                  RC_CHECK();
-                }
+                    rc = CFGMR3InsertNode(pLunL0, "AttachedDriver", &pLunL1);           RC_CHECK();
+                    rc = CFGMR3InsertString(pLunL1, "Driver", "VD");                    RC_CHECK();
+                    rc = CFGMR3InsertNode(pLunL1, "Config", &pCfg);                     RC_CHECK();
 
-                /* Pass all custom parameters. */
-                bool fHostIP = true;
-                SafeArray<BSTR> names;
-                SafeArray<BSTR> values;
-                hrc = medium->GetProperties(NULL,
-                                            ComSafeArrayAsOutParam(names),
-                                            ComSafeArrayAsOutParam(values));        H();
+                    hrc = medium->COMGETTER(Location)(&str);                            H();
+                    rc = CFGMR3InsertStringW(pCfg, "Path", str);                        RC_CHECK();
+                    STR_FREE();
 
-                if (names.size() != 0)
-                {
-                    PCFGMNODE pVDC;
-                    rc = CFGMR3InsertNode(pCfg, "VDConfig", &pVDC);                 RC_CHECK();
-                    for (size_t ii = 0; ii < names.size(); ++ii)
+                    hrc = medium->COMGETTER(Format)(&str);                              H();
+                    rc = CFGMR3InsertStringW(pCfg, "Format", str);                      RC_CHECK();
+                    STR_FREE();
+
+                    /* DVDs are always readonly */
+                    if (lType == DeviceType_DVD)
                     {
-                        if (values[ii] && *values[ii])
-                        {
-                            Utf8Str name = names[ii];
-                            Utf8Str value = values[ii];
-                            rc = CFGMR3InsertString(pVDC, name.c_str(), value.c_str());
-                            if (    name.compare("HostIPStack") == 0
-                                &&  value.compare("0") == 0)
-                                fHostIP = false;
-                        }
+                        rc = CFGMR3InsertInteger(pCfg, "ReadOnly", 1);                  RC_CHECK();
                     }
-                }
-
-                /* Create an inversed tree of parents. */
-                ComPtr<IMedium> parentMedium = medium;
-                for (PCFGMNODE pParent = pCfg;;)
-                {
-                    hrc = parentMedium->COMGETTER(Parent)(medium.asOutParam());     H();
-                    if (medium.isNull())
-                        break;
-
-                    PCFGMNODE pCur;
-                    rc = CFGMR3InsertNode(pParent, "Parent", &pCur);                RC_CHECK();
-                    hrc = medium->COMGETTER(Location)(&str);                        H();
-                    rc = CFGMR3InsertStringW(pCur, "Path", str);                    RC_CHECK();
-                    STR_FREE();
-
-                    hrc = medium->COMGETTER(Format)(&str);                          H();
-                    rc = CFGMR3InsertStringW(pCur, "Format", str);                  RC_CHECK();
-                    STR_FREE();
 
                     /* Pass all custom parameters. */
+                    bool fHostIP = true;
                     SafeArray<BSTR> names;
                     SafeArray<BSTR> values;
                     hrc = medium->GetProperties(NULL,
                                                 ComSafeArrayAsOutParam(names),
-                                                ComSafeArrayAsOutParam(values));    H();
+                                                ComSafeArrayAsOutParam(values));        H();
 
                     if (names.size() != 0)
                     {
                         PCFGMNODE pVDC;
-                        rc = CFGMR3InsertNode(pCur, "VDConfig", &pVDC);             RC_CHECK();
+                        rc = CFGMR3InsertNode(pCfg, "VDConfig", &pVDC);                 RC_CHECK();
                         for (size_t ii = 0; ii < names.size(); ++ii)
                         {
-                            if (values[ii])
+                            if (values[ii] && *values[ii])
                             {
                                 Utf8Str name = names[ii];
                                 Utf8Str value = values[ii];
@@ -988,16 +950,60 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                         }
                     }
 
-                    /* Custom code: put marker to not use host IP stack to driver
-                     * configuration node. Simplifies life of DrvVD a bit. */
-                    if (!fHostIP)
+                    /* Create an inversed tree of parents. */
+                    ComPtr<IMedium> parentMedium = medium;
+                    for (PCFGMNODE pParent = pCfg;;)
                     {
-                        rc = CFGMR3InsertInteger(pCfg, "HostIPStack", 0);           RC_CHECK();
-                    }
+                        hrc = parentMedium->COMGETTER(Parent)(medium.asOutParam());     H();
+                        if (medium.isNull())
+                            break;
 
-                    /* next */
-                    pParent = pCur;
-                    parentMedium = medium;
+                        PCFGMNODE pCur;
+                        rc = CFGMR3InsertNode(pParent, "Parent", &pCur);                RC_CHECK();
+                        hrc = medium->COMGETTER(Location)(&str);                        H();
+                        rc = CFGMR3InsertStringW(pCur, "Path", str);                    RC_CHECK();
+                        STR_FREE();
+
+                        hrc = medium->COMGETTER(Format)(&str);                          H();
+                        rc = CFGMR3InsertStringW(pCur, "Format", str);                  RC_CHECK();
+                        STR_FREE();
+
+                        /* Pass all custom parameters. */
+                        SafeArray<BSTR> names;
+                        SafeArray<BSTR> values;
+                        hrc = medium->GetProperties(NULL,
+                                                    ComSafeArrayAsOutParam(names),
+                                                    ComSafeArrayAsOutParam(values));    H();
+
+                        if (names.size() != 0)
+                        {
+                            PCFGMNODE pVDC;
+                            rc = CFGMR3InsertNode(pCur, "VDConfig", &pVDC);             RC_CHECK();
+                            for (size_t ii = 0; ii < names.size(); ++ii)
+                            {
+                                if (values[ii])
+                                {
+                                    Utf8Str name = names[ii];
+                                    Utf8Str value = values[ii];
+                                    rc = CFGMR3InsertString(pVDC, name.c_str(), value.c_str());
+                                    if (    name.compare("HostIPStack") == 0
+                                        &&  value.compare("0") == 0)
+                                        fHostIP = false;
+                                }
+                            }
+                        }
+
+                        /* Custom code: put marker to not use host IP stack to driver
+                         * configuration node. Simplifies life of DrvVD a bit. */
+                        if (!fHostIP)
+                        {
+                            rc = CFGMR3InsertInteger(pCfg, "HostIPStack", 0);           RC_CHECK();
+                        }
+
+                        /* next */
+                        pParent = pCur;
+                        parentMedium = medium;
+                    }
                 }
             }
         }
