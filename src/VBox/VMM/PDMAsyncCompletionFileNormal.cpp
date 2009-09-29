@@ -286,6 +286,109 @@ static int pdmacFileAioMgrNormalErrorHandler(PPDMACEPFILEMGR pAioMgr, int rc, RT
     return VINF_SUCCESS;
 }
 
+/**
+ * Put a list of tasks in the pending request list of an endpoint.
+ */
+DECLINLINE(void) pdmacFileAioMgrEpAddTaskList(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint, PPDMACTASKFILE pTaskHead)
+{
+    /* Add the rest of the tasks to the pending list */
+    if (!pEndpoint->AioMgr.pReqsPendingHead)
+    {
+        Assert(!pEndpoint->AioMgr.pReqsPendingTail);
+        pEndpoint->AioMgr.pReqsPendingHead = pTaskHead;
+    }
+    else
+    {
+        Assert(pEndpoint->AioMgr.pReqsPendingTail);
+        pEndpoint->AioMgr.pReqsPendingTail->pNext = pTaskHead;
+    }
+
+    /* Update the tail. */
+    while (pTaskHead->pNext)
+        pTaskHead = pTaskHead->pNext;
+
+    pEndpoint->AioMgr.pReqsPendingTail = pTaskHead;
+}
+
+/**
+ * Put one task in the pending request list of an endpoint.
+ */
+DECLINLINE(void) pdmacFileAioMgrEpAddTask(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint, PPDMACTASKFILE pTask)
+{
+    /* Add the rest of the tasks to the pending list */
+    if (!pEndpoint->AioMgr.pReqsPendingHead)
+    {
+        Assert(!pEndpoint->AioMgr.pReqsPendingTail);
+        pEndpoint->AioMgr.pReqsPendingHead = pTask;
+    }
+    else
+    {
+        Assert(pEndpoint->AioMgr.pReqsPendingTail);
+        pEndpoint->AioMgr.pReqsPendingTail->pNext = pTask;
+    }
+
+    pEndpoint->AioMgr.pReqsPendingTail = pTask;
+}
+
+/**
+ * Wrapper around RTFIleAioCtxSubmit() which is also doing error handling.
+ */
+static int pdmacFileAioMgrNormalReqsEnqueue(PPDMACEPFILEMGR pAioMgr,
+                                            PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint,
+                                            PRTFILEAIOREQ pahReqs, size_t cReqs)
+{
+    int rc;
+
+    pAioMgr->cRequestsActive += cReqs;
+    pEndpoint->AioMgr.cRequestsActive += cReqs;
+
+    rc = RTFileAioCtxSubmit(pAioMgr->hAioCtx, pahReqs, cReqs);
+    if (RT_FAILURE(rc))
+    {
+        if (rc == VERR_FILE_AIO_INSUFFICIENT_RESSOURCES)
+        {
+            PPDMASYNCCOMPLETIONEPCLASSFILE pEpClass = (PPDMASYNCCOMPLETIONEPCLASSFILE)pEndpoint->Core.pEpClass;
+
+            /*
+             * We run out of resources.
+             * Need to check which requests got queued
+             * and put the rest on the pending list again.
+             */
+            if (RT_UNLIKELY(!pEpClass->fOutOfResourcesWarningPrinted))
+            {
+                pEpClass->fOutOfResourcesWarningPrinted = true;
+                LogRel(("AIOMgr: The operating system doesn't have enough resources "
+                        "to handle the I/O load of the VM. Expect reduced I/O performance\n"));
+            }
+
+            for (size_t i = 0; i < cReqs; i++)
+            {
+                int rcReq = RTFileAioReqGetRC(pahReqs[i], NULL);
+
+                if (rcReq != VERR_FILE_AIO_IN_PROGRESS)
+                {
+                    AssertMsg(rcReq == VERR_FILE_AIO_NOT_SUBMITTED,
+                              ("Request returned unexpected return code: rc=%Rrc\n", rcReq));
+
+                    PPDMACTASKFILE pTask = (PPDMACTASKFILE)RTFileAioReqGetUser(pahReqs[i]);
+
+                    /* Put the entry on the free array */
+                    pAioMgr->pahReqsFree[pAioMgr->iFreeEntryNext] = pahReqs[i];
+                    pAioMgr->iFreeEntryNext = (pAioMgr->iFreeEntryNext + 1) % pAioMgr->cReqEntries;
+
+                    pdmacFileAioMgrEpAddTask(pEndpoint, pTask);
+                    pAioMgr->cRequestsActive--;
+                    pEndpoint->AioMgr.cRequestsActive--;
+                }
+            }
+        }
+        else
+            AssertMsgFailed(("Unexpected return code rc=%Rrc\n", rc));
+    }
+
+    return rc;
+}
+
 static int pdmacFileAioMgrNormalProcessTaskList(PPDMACTASKFILE pTaskHead,
                                                 PPDMACEPFILEMGR pAioMgr,
                                                 PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint)
@@ -306,6 +409,8 @@ static int pdmacFileAioMgrNormalProcessTaskList(PPDMACTASKFILE pTaskHead,
 
         pTaskHead = pTaskHead->pNext;
 
+        pCurr->pNext = NULL;
+
         AssertMsg(VALID_PTR(pCurr->pEndpoint) && (pCurr->pEndpoint == pEndpoint),
                   ("Endpoints do not match\n"));
 
@@ -323,26 +428,8 @@ static int pdmacFileAioMgrNormalProcessTaskList(PPDMACTASKFILE pTaskHead,
                 {
                     pEndpoint->pFlushReq = pCurr;
 
-                    if (pTaskHead)
-                    {
-                        /* Add the rest of the tasks to the pending list */
-                        if (!pEndpoint->AioMgr.pReqsPendingHead)
-                        {
-                            Assert(!pEndpoint->AioMgr.pReqsPendingTail);
-                            pEndpoint->AioMgr.pReqsPendingHead = pTaskHead;
-                        }
-                        else
-                        {
-                            Assert(pEndpoint->AioMgr.pReqsPendingTail);
-                            pEndpoint->AioMgr.pReqsPendingTail->pNext = pTaskHead;
-                        }
-
-                        /* Update the tail. */
-                        while (pTaskHead->pNext)
-                            pTaskHead = pTaskHead->pNext;
-
-                        pEndpoint->AioMgr.pReqsPendingTail = pTaskHead;
-                    }
+                    /* Do not process the task list further until the flush finished. */
+                    pdmacFileAioMgrEpAddTaskList(pEndpoint, pTaskHead);
                 }
                 break;
             }
@@ -443,16 +530,13 @@ static int pdmacFileAioMgrNormalProcessTaskList(PPDMACTASKFILE pTaskHead,
                 cRequests++;
                 if (cRequests == RT_ELEMENTS(apReqs))
                 {
-                    pAioMgr->cRequestsActive += cRequests;
-                    pEndpoint->AioMgr.cRequestsActive += cRequests;
-                    rc = RTFileAioCtxSubmit(pAioMgr->hAioCtx, apReqs, cRequests);
+                    rc = pdmacFileAioMgrNormalReqsEnqueue(pAioMgr, pEndpoint, apReqs, cRequests);
+                    cRequests = 0;
                     if (RT_FAILURE(rc))
                     {
-                        /* @todo implement */
-                        AssertMsgFailed(("Implement\n"));
+                        AssertMsg(rc == VERR_FILE_AIO_INSUFFICIENT_RESSOURCES, ("Unexpected return code\n"));
+                        break;
                     }
-
-                    cRequests = 0;
                 }
                 break;
             }
@@ -463,40 +547,31 @@ static int pdmacFileAioMgrNormalProcessTaskList(PPDMACTASKFILE pTaskHead,
 
     if (cRequests)
     {
-        pAioMgr->cRequestsActive += cRequests;
-        pEndpoint->AioMgr.cRequestsActive += cRequests;
-        rc = RTFileAioCtxSubmit(pAioMgr->hAioCtx, apReqs, cRequests);
-        AssertMsgReturn(RT_SUCCESS(rc), ("Could not submit %u requests %Rrc\n", cRequests, rc), rc);
+        rc = pdmacFileAioMgrNormalReqsEnqueue(pAioMgr, pEndpoint, apReqs, cRequests);
+        AssertMsg(RT_SUCCESS(rc) || (rc == VERR_FILE_AIO_INSUFFICIENT_RESSOURCES),
+                  ("Unexpected return code rc=%Rrc\n", rc));
     }
 
-    if (RT_UNLIKELY(!cMaxRequests && pTaskHead && !pEndpoint->pFlushReq))
+    if (pTaskHead)
     {
-        /*
-         * The I/O manager has no room left for more requests
-         * but there are still requests to process.
-         * Create a new I/O manager and let it handle some endpoints.
-         */
+        /* Add the rest of the tasks to the pending list */
+        pdmacFileAioMgrEpAddTaskList(pEndpoint, pTaskHead);
 
-        /* Add the rest of the tasks to the pending list first */
-        if (!pEndpoint->AioMgr.pReqsPendingHead)
+
+        if (RT_UNLIKELY(!cMaxRequests && !pEndpoint->pFlushReq))
         {
-            Assert(!pEndpoint->AioMgr.pReqsPendingTail);
-            pEndpoint->AioMgr.pReqsPendingHead = pTaskHead;
+            /*
+             * The I/O manager has no room left for more requests
+             * but there are still requests to process.
+             * Create a new I/O manager and let it handle some endpoints.
+             */
+            pdmacFileAioMgrNormalBalanceLoad(pAioMgr);
         }
-        else
-        {
-            Assert(pEndpoint->AioMgr.pReqsPendingTail);
-            pEndpoint->AioMgr.pReqsPendingTail->pNext = pTaskHead;
-        }
-
-        /* Update the tail. */
-        while (pTaskHead->pNext)
-            pTaskHead = pTaskHead->pNext;
-
-        pEndpoint->AioMgr.pReqsPendingTail = pTaskHead;
-
-        pdmacFileAioMgrNormalBalanceLoad(pAioMgr);
     }
+
+    /* Insufficient resources are not fatal. */
+    if (rc == VERR_FILE_AIO_INSUFFICIENT_RESSOURCES)
+        rc = VINF_SUCCESS;
 
     return rc;
 }
@@ -535,7 +610,7 @@ static int pdmacFileAioMgrNormalQueueReqs(PPDMACEPFILEMGR pAioMgr,
         AssertRC(rc);
     }
 
-    if (!pEndpoint->pFlushReq)
+    if (!pEndpoint->pFlushReq && !pEndpoint->AioMgr.pReqsPendingHead)
     {
         /* Now the request queue. */
         pTasksHead = pdmacFileEpGetNewTasks(pEndpoint);
@@ -763,7 +838,7 @@ int pdmacFileAioMgrNormal(RTTHREAD ThreadSelf, void *pvUser)
 
                         /* Put the entry on the free array */
                         pAioMgr->pahReqsFree[pAioMgr->iFreeEntryNext] = apReqs[i];
-                        pAioMgr->iFreeEntryNext = (pAioMgr->iFreeEntryNext + 1) %pAioMgr->cReqEntries;
+                        pAioMgr->iFreeEntryNext = (pAioMgr->iFreeEntryNext + 1) % pAioMgr->cReqEntries;
 
                         pAioMgr->cRequestsActive--;
                         pEndpoint->AioMgr.cRequestsActive--;
