@@ -516,7 +516,7 @@ static DECLCALLBACK(int) drvblockMount(PPDMIMOUNT pInterface, const char *pszFil
      */
     uint32_t fTachFlags = 0; /** @todo figure attachment flags for mount. */
     PPDMIBASE pBase;
-    int rc = PDMDrvHlpAttach(pThis->pDrvIns, fTachFlags, &pBase); 
+    int rc = PDMDrvHlpAttach(pThis->pDrvIns, fTachFlags, &pBase);
     if (RT_FAILURE(rc))
     {
         Log(("drvblockMount: Attach failed rc=%Rrc\n", rc));
@@ -526,6 +526,10 @@ static DECLCALLBACK(int) drvblockMount(PPDMIMOUNT pInterface, const char *pszFil
     pThis->pDrvMedia = (PPDMIMEDIA)pBase->pfnQueryInterface(pBase, PDMINTERFACE_MEDIA);
     if (pThis->pDrvMedia)
     {
+        /** @todo r=klaus missing async handling, this is just a band aid to
+         * avoid using stale information */
+        pThis->pDrvMediaAsync = NULL;
+
         /*
          * Initialize state.
          */
@@ -927,7 +931,7 @@ const PDMDRVREG g_DrvBlock =
     /* pfnDetach */
     drvblockDetach,
     /* pfnPowerOff */
-    NULL, 
+    NULL,
     /* pfnSoftReset */
     NULL,
     /* u32EndVersion */
