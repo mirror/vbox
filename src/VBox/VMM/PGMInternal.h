@@ -1113,11 +1113,10 @@ typedef PGMRAMRANGE *PPGMRAMRANGE;
 /**
  * Per page tracking structure for ROM image.
  *
- * A ROM image may have a shadow page, in which case we may have
- * two pages backing it. This structure contains the PGMPAGE for
- * both while PGMRAMRANGE have a copy of the active one. It is
- * important that these aren't out of sync in any regard other
- * than page pool tracking data.
+ * A ROM image may have a shadow page, in which case we may have two pages
+ * backing it.  This structure contains the PGMPAGE for both while
+ * PGMRAMRANGE have a copy of the active one.  It is important that these
+ * aren't out of sync in any regard other than page pool tracking data.
  */
 typedef struct PGMROMPAGE
 {
@@ -1127,9 +1126,20 @@ typedef struct PGMROMPAGE
     PGMPAGE     Shadow;
     /** The current protection setting. */
     PGMROMPROT  enmProt;
-    /** Pad the structure size to a multiple of 8. */
-    uint32_t    u32Padding;
+    /** Live save status information. Makes use of unused alignment space. */
+    struct
+    {
+        /** The previous protection value. */
+        uint8_t u8Prot;
+        /** Whether we've saved the virgin page already. */
+        bool    fSavedVirgin;
+        /** Written to flag set by the handler. */
+        bool    fWrittenTo;
+        /** Whether we're positively done, i.e. the ROM cannot be shadowed. */
+        bool    fDone;
+    } LiveSave;
 } PGMROMPAGE;
+AssertCompileSizeAlignment(PGMROMPAGE, 8);
 /** Pointer to a ROM page tracking structure. */
 typedef PGMROMPAGE *PPGMROMPAGE;
 
@@ -1137,10 +1147,10 @@ typedef PGMROMPAGE *PPGMROMPAGE;
 /**
  * A registered ROM image.
  *
- * This is needed to keep track of ROM image since they generally
- * intrude into a PGMRAMRANGE. It also keeps track of additional
- * info like the two page sets (read-only virgin and read-write shadow),
- * the current state of each page.
+ * This is needed to keep track of ROM image since they generally intrude
+ * into a PGMRAMRANGE.  It also keeps track of additional info like the
+ * two page sets (read-only virgin and read-write shadow), the current
+ * state of each page.
  *
  * Because access handlers cannot easily be executed in a different
  * context, the ROM ranges needs to be accessible and in all contexts.
