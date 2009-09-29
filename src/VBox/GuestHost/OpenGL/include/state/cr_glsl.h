@@ -64,7 +64,7 @@ typedef struct{
     GLenum  type;
     GLvoid *data;
 #ifdef IN_GUEST
-    GLuint  location;
+    GLint  location;
 #endif
 } CRGLSLUniform;
 

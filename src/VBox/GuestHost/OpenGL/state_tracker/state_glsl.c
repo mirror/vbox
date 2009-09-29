@@ -737,8 +737,8 @@ crStateGLSLProgramCacheUniforms(GLuint program, GLsizei cbData, GLvoid *pData)
             return;
         }
         pProgram->pUniforms[i].data = NULL;
-        pProgram->pUniforms[i].location = ((GLuint*)pCurrent)[0];
-        pCurrent += sizeof(GLuint);
+        pProgram->pUniforms[i].location = ((GLint*)pCurrent)[0];
+        pCurrent += sizeof(GLint);
         cbName = ((GLsizei*)pCurrent)[0];
         pCurrent += sizeof(GLsizei);
 
@@ -761,6 +761,29 @@ crStateGLSLProgramCacheUniforms(GLuint program, GLsizei cbData, GLvoid *pData)
     CRASSERT(cbRead==cbData);
 }
 #else
+static GLboolean crStateGLSLProgramCacheOneUniform(GLuint location, GLsizei cbName, GLchar *pName, 
+                                                   char **pCurrent, GLsizei *pcbWritten, GLsizei maxcbData)
+{
+    *pcbWritten += sizeof(GLint)+sizeof(GLsizei)+cbName;
+    if (*pcbWritten>maxcbData)
+    {
+        crWarning("crStateGLSLProgramCacheUniforms: buffer too small");
+        crFree(pName);
+        return GL_FALSE;
+    }
+
+    crDebug("crStateGLSLProgramCacheUniforms: uniform[%i]=%s.", location, pName);
+
+    ((GLint*)*pCurrent)[0] = location;
+    *pCurrent += sizeof(GLint);
+    ((GLsizei*)*pCurrent)[0] = cbName;
+    *pCurrent += sizeof(GLsizei);
+    crMemcpy(*pCurrent, pName, cbName);
+    *pCurrent += cbName;
+
+    return GL_TRUE;
+}
+
 DECLEXPORT(void) STATE_APIENTRY 
 crStateGLSLProgramCacheUniforms(GLuint program, GLsizei maxcbData, GLsizei *cbData, GLvoid *pData)
 {
@@ -794,12 +817,12 @@ crStateGLSLProgramCacheUniforms(GLuint program, GLsizei maxcbData, GLsizei *cbDa
 
     if (activeUniforms>0)
     {
-        /*+8 to make sure our array uniforms with higher indices will fit in as well*/
+        /*+8 to make sure our array uniforms with higher indices and [] will fit in as well*/
         GLchar *name = (GLchar *) crAlloc(maxUniformLen+8);
         GLenum type;
         GLint size;
         GLsizei cbName;
-        GLuint location;
+        GLint location;
 
         if (!name)
         {
@@ -812,22 +835,8 @@ crStateGLSLProgramCacheUniforms(GLuint program, GLsizei maxcbData, GLsizei *cbDa
             diff_api.GetActiveUniform(pProgram->hwid, i, maxUniformLen, &cbName, &size, &type, name);
             location = diff_api.GetUniformLocation(pProgram->hwid, name);
 
-            cbWritten += sizeof(GLuint)+sizeof(GLsizei)+cbName;
-            if (cbWritten>maxcbData)
-            {
-                crWarning("crStateGLSLProgramCacheUniforms: buffer too small");
-                crFree(name);
+            if (!crStateGLSLProgramCacheOneUniform(location, cbName, name, &pCurrent, &cbWritten, maxcbData))
                 return;
-            }
-
-            crDebug("crStateGLSLProgramCacheUniforms: uniform[%i]=%d, %s. size=%i", i, location, name, size);
-
-            ((GLuint*)pCurrent)[0] = location;
-            pCurrent += sizeof(GLuint);
-            ((GLsizei*)pCurrent)[0] = cbName;
-            pCurrent += sizeof(GLsizei);
-            crMemcpy(pCurrent, name, cbName);
-            pCurrent += cbName;
 
             /* Only one active uniform variable will be reported for a uniform array by glGetActiveUniform,
              * so we insert fake elements for other array elements.
@@ -835,38 +844,36 @@ crStateGLSLProgramCacheUniforms(GLuint program, GLsizei maxcbData, GLsizei *cbDa
             if (size!=1)
             {
                 char *pIndexStr = crStrchr(name, '[');
-                fakeUniformsCount += size-1;
-                
+                GLint firstIndex=1;
+                fakeUniformsCount += size;
 
+                crDebug("crStateGLSLProgramCacheUniforms: expanding array uniform, size=%i", size);
+
+                /*For array uniforms it's valid to query location of 1st element as both uniform and uniform[0].
+                 *The name returned by glGetActiveUniform is driver dependant,
+                 *atleast it's with [0] on win/ati and without [0] on linux/nvidia.
+                 */                
                 if (!pIndexStr)
                 {
-                    crWarning("Array uniform name %s doesn't contain [!?", name);
+                    pIndexStr = name+cbName;
+                    firstIndex=0;
                 }
                 else
                 {
-                    for (j=1; j<size; ++j)
-                    {
-                        sprintf(pIndexStr, "[%i]", j);
-                        cbName = crStrlen(name);
+                    cbName = pIndexStr-name;
+                    if (!crStateGLSLProgramCacheOneUniform(location, cbName, name, &pCurrent, &cbWritten, maxcbData))
+                        return;
+                }
 
-                        location = diff_api.GetUniformLocation(pProgram->hwid, name);
-                        crDebug("crStateGLSLProgramCacheUniforms: uniform[%i].[%i]=%d, %s", i, j, location, name);
+                for (j=firstIndex; j<size; ++j)
+                {
+                    sprintf(pIndexStr, "[%i]", j);
+                    cbName = crStrlen(name);
 
-                        cbWritten += sizeof(GLuint)+sizeof(GLsizei)+cbName;
-                        if (cbWritten>maxcbData)
-                        {
-                            crWarning("crStateGLSLProgramCacheUniforms: buffer too small");
-                            crFree(name);
-                            return;
-                        }
+                    location = diff_api.GetUniformLocation(pProgram->hwid, name);
 
-                        ((GLuint*)pCurrent)[0] = location;
-                        pCurrent += sizeof(GLuint);
-                        ((GLsizei*)pCurrent)[0] = cbName;
-                        pCurrent += sizeof(GLsizei);
-                        crMemcpy(pCurrent, name, cbName);
-                        pCurrent += cbName;
-                    }
+                    if (!crStateGLSLProgramCacheOneUniform(location, cbName, name, &pCurrent, &cbWritten, maxcbData))
+                        return;
                 }
             }
         }
