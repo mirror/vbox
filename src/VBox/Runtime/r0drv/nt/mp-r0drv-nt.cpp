@@ -356,6 +356,8 @@ int rtMpSendIpiVista(RTCPUID idCpu)
 
 int rtMpSendIpiWin7(RTCPUID idCpu)
 {
+    return VERR_NOT_IMPLEMENTED;
+    /* bsod */
     VOID (__stdcall *pfRequestIpi)(KAFFINITY Zero, KAFFINITY TargetSet) = (VOID (__stdcall *)(KAFFINITY, KAFFINITY))g_pfnrtNtHalRequestIpi;
 
     pfRequestIpi(0, 1 << idCpu);
