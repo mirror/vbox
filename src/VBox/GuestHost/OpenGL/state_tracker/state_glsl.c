@@ -840,7 +840,7 @@ crStateGLSLProgramCacheUniforms(GLuint program, GLsizei maxcbData, GLsizei *cbDa
 
                 if (!pIndexStr)
                 {
-                    crWarning("Array uniform name %s doesn't contain [!?");
+                    crWarning("Array uniform name %s doesn't contain [!?", name);
                 }
                 else
                 {
