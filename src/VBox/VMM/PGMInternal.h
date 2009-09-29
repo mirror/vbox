@@ -686,8 +686,7 @@ typedef PPGMPAGE *PPPGMPAGE;
         (pPage)->fWrittenToX    = 0; \
         (pPage)->fSomethingElse = 0; \
         (pPage)->idPageX        = (_idPage); \
-        /*(pPage)->u3Type         = (_uType); - later */ \
-        PGM_PAGE_SET_TYPE(pPage, _uType); \
+        (pPage)->u3Type         = (_uType); \
         (pPage)->u29B           = 0; \
     } while (0)
 
@@ -696,9 +695,6 @@ typedef PPGMPAGE *PPPGMPAGE;
  * @param   pPage       Pointer to the physical guest page tracking structure.
  */
 #define PGM_PAGE_INIT_ZERO(pPage, pVM, _uType)  \
-    PGM_PAGE_INIT(pPage, (pVM)->pgm.s.HCPhysZeroPg, NIL_GMM_PAGEID, (_uType), PGM_PAGE_STATE_ZERO)
-/** Temporary hack. Replaced by PGM_PAGE_INIT_ZERO once the old code is kicked out. */
-# define PGM_PAGE_INIT_ZERO_REAL(pPage, pVM, _uType)  \
     PGM_PAGE_INIT(pPage, (pVM)->pgm.s.HCPhysZeroPg, NIL_GMM_PAGEID, (_uType), PGM_PAGE_STATE_ZERO)
 
 
@@ -1191,15 +1187,15 @@ typedef PGMROMRANGE *PPGMROMRANGE;
  * A registered MMIO2 (= Device RAM) range.
  *
  * There are a few reason why we need to keep track of these
- * registrations. One of them is the deregistration & cleanup
- * stuff, while another is that the PGMRAMRANGE associated with
- * such a region may have to be removed from the ram range list.
+ * registrations.  One of them is the deregistration & cleanup stuff,
+ * while another is that the PGMRAMRANGE associated with such a region may
+ * have to be removed from the ram range list.
  *
- * Overlapping with a RAM range has to be 100% or none at all. The
- * pages in the existing RAM range must not be ROM nor MMIO. A guru
- * meditation will be raised if a partial overlap or an overlap of
- * ROM pages is encountered. On an overlap we will free all the
- * existing RAM pages and put in the ram range pages instead.
+ * Overlapping with a RAM range has to be 100% or none at all.  The pages
+ * in the existing RAM range must not be ROM nor MMIO.  A guru meditation
+ * will be raised if a partial overlap or an overlap of ROM pages is
+ * encountered.  On an overlap we will free all the existing RAM pages and
+ * put in the ram range pages instead.
  */
 typedef struct PGMMMIO2RANGE
 {
@@ -2607,6 +2603,10 @@ typedef struct PGM
         uint32_t                    cMmioPages;
         /** The number of monitored pages. */
         uint32_t                    cMonitoredPages;
+        /** Indicates that a live save operation is active.  */
+        bool                        fActive;
+        /** Padding. */
+        bool                        afReserved[7];
     } LiveSave;
 
     /** @name   Error injection.
