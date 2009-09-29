@@ -5,7 +5,6 @@
 
 /*
  * Copyright (C) 2008 Sun Microsystems, Inc.
- * Copyright (C) 2009 Fredrik Lindberg <fli@shapeshifter.se>
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -20,7 +19,10 @@
  * additional information or have any questions.
  */
 
-
+/*
+ * Original (C) 2009 Fredrik Lindberg <fli@shapeshifter.se>. Contributed
+ * to VirtualBox under the MIT license by the author.
+ */
 
 /*******************************************************************************
 *   Header Files                                                               *
@@ -70,7 +72,7 @@ void extractAddresses(int iAddrMask, caddr_t cp, caddr_t cplim, struct sockaddr 
         sa = (struct sockaddr *)cp;
 
         pAddresses[i] = sa;
-        
+
         ADVANCE(cp, sa);
     }
 }
@@ -147,7 +149,7 @@ void extractAddressesToNetInfo(int iAddrMask, caddr_t cp, caddr_t cplim, PNETIFI
 {
     struct sockaddr *addresses[RTAX_MAX];
 
-    extractAddresses(iAddrMask, cp, cplim, addresses); 
+    extractAddresses(iAddrMask, cp, cplim, addresses);
     switch (addresses[RTAX_IFA]->sa_family)
     {
         case AF_INET:
@@ -300,7 +302,7 @@ int NetIfList(std::list <ComObjPtr<HostNetworkInterface> > &list)
     free(pBuf);
     return rc;
 
- 
+
 }
 
 int NetIfGetConfigByName(PNETIFINFO pInfo)
@@ -309,7 +311,7 @@ int NetIfGetConfigByName(PNETIFINFO pInfo)
     size_t cbNeeded;
     char *pBuf, *pNext;
     int aiMib[6];
-    
+
     aiMib[0] = CTL_NET;
     aiMib[1] = PF_ROUTE;
     aiMib[2] = 0;
