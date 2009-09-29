@@ -437,7 +437,8 @@ private:
                                                     VMSTATE aOldState, void *aUser);
     static DECLCALLBACK(int) changeDrive (Console *pThis, const char *pszDevice,
                                           unsigned uInstance, unsigned uLun,
-                                          const char *pszPath, bool fPassthrough);
+                                          bool fHostDrive, const char *pszPath,
+                                          const char *pszFormat, bool fPassthrough);
     const char *controllerTypeToDev(StorageControllerType_T enmCtrlType);
     HRESULT convertBusPortDeviceToLun(StorageBus_T enmBus, LONG port, LONG device, unsigned &uLun);
     HRESULT doMediumChange(IMediumAttachment *aMediumAttachment);

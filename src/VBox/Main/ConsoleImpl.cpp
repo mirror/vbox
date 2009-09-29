@@ -2725,7 +2725,9 @@ HRESULT Console::doMediumChange(IMediumAttachment *aMediumAttachment)
     const char *pszDevice = NULL;
     unsigned uInstance = 0;
     unsigned uLun = 0;
+    BOOL fHostDrive = FALSE;
     Utf8Str location;
+    Utf8Str format;
     BOOL fPassthrough = FALSE;
 
     SafeIfaceArray<IStorageController> ctrls;
@@ -2779,6 +2781,12 @@ HRESULT Console::doMediumChange(IMediumAttachment *aMediumAttachment)
         rc = medium->COMGETTER(Location)(loc.asOutParam());
         AssertComRC(rc);
         location = loc;
+        Bstr fmt;
+        rc = medium->COMGETTER(Format)(fmt.asOutParam());
+        AssertComRC(rc);
+        format = fmt;
+        rc = medium->COMGETTER(HostDrive)(&fHostDrive);
+        AssertComRC(rc);
     }
     rc = aMediumAttachment->COMGETTER(Passthrough)(&fPassthrough);
     AssertComRC(rc);
@@ -2794,8 +2802,8 @@ HRESULT Console::doMediumChange(IMediumAttachment *aMediumAttachment)
      */
     PVMREQ pReq;
     int vrc = VMR3ReqCall(mpVM, VMCPUID_ANY, &pReq, 0 /* no wait! */, VMREQFLAGS_VBOX_STATUS,
-                          (PFNRT)Console::changeDrive, 6,
-                          this, pszDevice, uInstance, uLun, location.raw(), fPassthrough);
+                          (PFNRT)Console::changeDrive, 8,
+                          this, pszDevice, uInstance, uLun, !!fHostDrive, location.raw(), format.raw(), !!fPassthrough);
 
     /* leave the lock before waiting for a result (EMT will call us back!) */
     alock.leave();
@@ -2834,13 +2842,12 @@ HRESULT Console::doMediumChange(IMediumAttachment *aMediumAttachment)
  * @param   pszDevice       The PDM device name.
  * @param   uInstance       The PDM device instance.
  * @param   uLun            The PDM LUN number of the drive.
- * @param   eState          The new state.
- * @param   peState         Pointer to the variable keeping the actual state of the drive.
- *                          This will be both read and updated to eState or other appropriate state.
+ * @param   fHostDrive      True if this is a host drive attachment.
  * @param   pszPath         The path to the media / drive which is now being mounted / captured.
  *                          If NULL no media or drive is attached and the LUN will be configured with
  *                          the default block driver with no media. This will also be the state if
  *                          mounting / capturing the specified media / drive fails.
+ * @param   pszFormat       Medium format string, usually "RAW".
  * @param   fPassthrough    Enables using passthrough mode of the host DVD drive if applicable.
  *
  * @thread  EMT
@@ -2848,11 +2855,11 @@ HRESULT Console::doMediumChange(IMediumAttachment *aMediumAttachment)
  * @todo the error handling in this method needs to be improved seriously - what if mounting fails...
  */
 DECLCALLBACK(int) Console::changeDrive(Console *pThis, const char *pszDevice, unsigned uInstance, unsigned uLun,
-                                       const char *pszPath, bool fPassthrough)
+                                       bool fHostDrive, const char *pszPath, const char *pszFormat, bool fPassthrough)
 {
 /// @todo change this to use the same code as in ConsoleImpl2.cpp
-    LogFlowFunc(("pThis=%p pszDevice=%p:{%s} uInstance=%u uLun=%u pszPath=%p:{%s} fPassthrough=%d\n",
-                 pThis, pszDevice, pszDevice, uInstance, uLun, pszPath, pszPath, fPassthrough));
+    LogFlowFunc(("pThis=%p pszDevice=%p:{%s} uInstance=%u uLun=%u fHostDrive=%d pszPath=%p:{%s} pszFormat=%p:{%s} fPassthrough=%d\n",
+                 pThis, pszDevice, pszDevice, uInstance, uLun, fHostDrive, pszPath, pszPath, pszFormat, pszFormat, fPassthrough));
 
     AssertReturn(pThis, VERR_INVALID_PARAMETER);
 
@@ -2917,17 +2924,17 @@ DECLCALLBACK(int) Console::changeDrive(Console *pThis, const char *pszDevice, un
         /*
          * Unmount existing media / detach host drive.
          */
-        PPDMIMOUNT pIMount = NULL;
         PPDMIBASE pBase;
         rc = PDMR3QueryLun(pVM, pszDevice, uInstance, uLun, &pBase);
         if (RT_FAILURE(rc))
         {
-            if (rc == VERR_PDM_LUN_NOT_FOUND)
+            if (rc == VERR_PDM_LUN_NOT_FOUND || rc == VERR_PDM_NO_DRIVER_ATTACHED_TO_LUN)
                 rc = VINF_SUCCESS;
             AssertRC(rc);
         }
         else
         {
+            PPDMIMOUNT pIMount = NULL;
             pIMount = (PPDMIMOUNT) pBase->pfnQueryInterface(pBase, PDMINTERFACE_MOUNT);
             AssertBreakStmt(pIMount, rc = VERR_INVALID_POINTER);
 
@@ -2937,6 +2944,13 @@ DECLCALLBACK(int) Console::changeDrive(Console *pThis, const char *pszDevice, un
             rc = pIMount->pfnUnmount(pIMount, false);
             if (rc == VERR_PDM_MEDIA_NOT_MOUNTED)
                 rc = VINF_SUCCESS;
+
+            if (RT_SUCCESS(rc))
+            {
+                rc = PDMR3DeviceDetach(pVM, pszDevice, uInstance, uLun, PDM_TACH_FLAGS_NOT_HOT_PLUG);
+                if (rc == VERR_PDM_NO_DRIVER_ATTACHED_TO_LUN)
+                    rc = VINF_SUCCESS;
+            }
         }
 
         if (RT_FAILURE(rc))
@@ -2944,6 +2958,11 @@ DECLCALLBACK(int) Console::changeDrive(Console *pThis, const char *pszDevice, un
             rcRet = rc;
             break;
         }
+
+        /** @todo this does a very thorough job. usually it's too much,
+         * as a simple medium change (without changing between host attachment
+         * and image) could be done with a lot less effort, by just using the
+         * pfnUnmount and pfnMount interfaces. Later. */
 
         /*
          * Construct a new driver configuration.
@@ -2955,33 +2974,61 @@ DECLCALLBACK(int) Console::changeDrive(Console *pThis, const char *pszDevice, un
 
 #define RC_CHECK() do { if (RT_FAILURE(rc)) { AssertReleaseRC(rc); break; } } while (0)
 
-        /* create a new block driver config */
         PCFGMNODE pLunL0;
-        rc = CFGMR3InsertNodeF(pInst, &pLunL0, "LUN#%d", uLun);     RC_CHECK();
-        rc = CFGMR3InsertString(pLunL0, "Driver",       "Block");   RC_CHECK();
         PCFGMNODE pCfg;
-        rc = CFGMR3InsertNode(pLunL0,   "Config",       &pCfg);     RC_CHECK();
-        rc = CFGMR3InsertString(pCfg,   "Type",         !strcmp(pszDevice, "i82078") ? "Floppy 1.44" : "DVD"); RC_CHECK();
-        rc = CFGMR3InsertInteger(pCfg,  "Mountable",    1);         RC_CHECK();
+        rc = CFGMR3InsertNodeF(pInst, &pLunL0, "LUN#%d", uLun);     RC_CHECK();
+
+        if (fHostDrive)
+        {
+            rc = CFGMR3InsertString(pLunL0, "Driver",       !strcmp(pszDevice, "i82078") ? "HostFloppy" : "HostDVD");   RC_CHECK();
+            rc = CFGMR3InsertNode(pLunL0,   "Config",       &pCfg);     RC_CHECK();
+            Assert(!pszPath && !*pszPath);
+            rc = CFGMR3InsertString(pCfg,   "Path",         pszPath);   RC_CHECK();
+            if (strcmp(pszDevice, "i82078"))
+            {
+                rc = CFGMR3InsertInteger(pCfg, "Passthrough", fPassthrough); RC_CHECK();
+            }
+        }
+        else
+        {
+            /* create a new block driver config */
+            rc = CFGMR3InsertString(pLunL0, "Driver",       "Block");   RC_CHECK();
+            rc = CFGMR3InsertNode(pLunL0,   "Config",       &pCfg);     RC_CHECK();
+            rc = CFGMR3InsertString(pCfg,   "Type",         !strcmp(pszDevice, "i82078") ? "Floppy 1.44" : "DVD"); RC_CHECK();
+            rc = CFGMR3InsertInteger(pCfg,  "Mountable",    1);         RC_CHECK();
+        }
 
         /*
          * Attach the driver.
          */
         rc = PDMR3DeviceAttach(pVM, pszDevice, uInstance, uLun, PDM_TACH_FLAGS_NOT_HOT_PLUG, &pBase); RC_CHECK();
-        pIMount = (PPDMIMOUNT) pBase->pfnQueryInterface(pBase, PDMINTERFACE_MOUNT);
-        if (!pIMount)
-        {
-            AssertFailed();
-            return rc;
-        }
 
-        /*
-         * If we've got an image, let's mount it.
-         */
-        if (pszPath && *pszPath)
+        if (!fHostDrive && pszPath && *pszPath)
         {
-            rc = pIMount->pfnMount(pIMount, pszPath, strcmp(pszDevice, "i82078") ? "MediaISO" : "RawImage");
+            PCFGMNODE pLunL1;
+            rc = CFGMR3InsertNode(pLunL0,   "AttachedDriver", &pLunL1); RC_CHECK();
+            rc = CFGMR3InsertString(pLunL1, "Driver",       "VD");      RC_CHECK();
+            rc = CFGMR3InsertNode(pLunL1,   "Config",       &pCfg);     RC_CHECK();
+            rc = CFGMR3InsertString(pCfg,   "Path",         pszPath);   RC_CHECK();
+            rc = CFGMR3InsertString(pCfg,   "Format",       pszFormat); RC_CHECK();
+            if (strcmp(pszDevice, "i82078"))
+            {
+                rc = CFGMR3InsertInteger(pCfg, "ReadOnly",  1);         RC_CHECK();
+            }
+            /** @todo later pass full VDConfig information and parent images */
+
+            PPDMIMOUNT pIMount = NULL;
+            pIMount = (PPDMIMOUNT) pBase->pfnQueryInterface(pBase, PDMINTERFACE_MOUNT);
+            if (!pIMount)
+            {
+                AssertFailed();
+                return rc;
+            }
+
+LogRelFunc(("mounting new medium\n"));
+            rc = pIMount->pfnMount(pIMount, NULL , NULL);
         }
+CFGMR3Dump(pInst);
 
 #undef RC_CHECK
 
