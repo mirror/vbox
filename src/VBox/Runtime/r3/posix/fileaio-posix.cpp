@@ -927,14 +927,16 @@ RTDECL(int) RTFileAioCtxWait(RTFILEAIOCTX hAioCtx, size_t cMinReqs, unsigned cMi
                     iReqCurr++;
             }
 
-            AssertMsg(   (cDone <= cMinReqs)
-                      && (cDone <= cReqs), ("Overflow cReqs=%u cMinReqs=%u cDone=%u\n",
-                                            cReqs, cMinReqs, cDone));
+            AssertMsg((cDone <= cReqs), ("Overflow cReqs=%u cMinReqs=%u cDone=%u\n",
+                                         cReqs, cDone));
             cReqs    -= cDone;
-            cMinReqs -= cDone;
+            cMinReqs  = RT_MAX(cMinReqs, cDone) - cDone;
             ASMAtomicSubS32(&pCtxInt->cRequests, cDone);
 
-            if ((cMillisTimeout != RT_INDEFINITE_WAIT) && (cMinReqs > 0))
+            if (!cMinReqs)
+                break;
+
+            if (cMillisTimeout != RT_INDEFINITE_WAIT)
             {
                 uint64_t TimeDiff;
 
