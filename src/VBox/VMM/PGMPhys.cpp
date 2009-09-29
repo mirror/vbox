@@ -1334,7 +1334,7 @@ VMMR3DECL(int) PGMR3PhysMMIORegister(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb,
 
         uint32_t iPage = cPages;
         while (iPage-- > 0)
-            PGM_PAGE_INIT_ZERO_REAL(&pNew->aPages[iPage], pVM, PGMPAGETYPE_MMIO);
+            PGM_PAGE_INIT_ZERO(&pNew->aPages[iPage], pVM, PGMPAGETYPE_MMIO);
         Assert(PGM_PAGE_GET_TYPE(&pNew->aPages[0]) == PGMPAGETYPE_MMIO);
 
         /* update the page count stats. */
@@ -2353,7 +2353,7 @@ VMMR3DECL(int) PGMR3PhysRomRegister(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys
                     {
                         PPGMROMPAGE pPage = &pRomNew->aPages[iPage];
                         pPage->enmProt = PGMROMPROT_READ_ROM_WRITE_IGNORE;
-                        PGM_PAGE_INIT_ZERO_REAL(&pPage->Shadow, pVM, PGMPAGETYPE_ROM_SHADOW);
+                        PGM_PAGE_INIT_ZERO(&pPage->Shadow, pVM, PGMPAGETYPE_ROM_SHADOW);
                     }
 
                     /* update the page count stats */
