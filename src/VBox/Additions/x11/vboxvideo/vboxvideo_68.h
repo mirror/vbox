@@ -153,6 +153,7 @@ typedef struct _VBOXRec
     Bool pointerOffscreen;
     Bool useVbva;
     int viewportX, viewportY;
+    Bool forceSWCursor;
     VMMDevVideoAccelFlush *reqf;
     VMMDevVideoAccelEnable *reqe;
     VMMDevMemory *pVMMDevMemory;

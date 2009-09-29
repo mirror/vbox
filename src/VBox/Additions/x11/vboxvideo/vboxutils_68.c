@@ -139,26 +139,34 @@ vbox_host_uses_hwcursor(ScrnInfoPtr pScrn)
     VBOXPtr pVBox = pScrn->driverPrivate;
     VMMDevReqMouseStatus req;
 
-    int vrc = vmmdevInitRequest ((VMMDevRequestHeader*)&req, VMMDevReq_GetMouseStatus);
-    if (RT_FAILURE (vrc))
-        xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
-            "Unable to determine whether the virtual machine supports mouse pointer integration - request initialization failed with return code %d\n", rc);
-#ifdef RT_OS_LINUX
-    if (   RT_SUCCESS(vrc)
-        && (ioctl(pVBox->vbox_fd, VBOXGUEST_IOCTL_VMMREQUEST(sizeof(req)), (void*)&req) < 0))
-#else
-# error port me!
-#endif
+    /* We may want to force the use of a software cursor.  Currently this is
+     * needed if the guest uses a large virtual resolution, as in this case
+     * the host and guest tend to disagree about the pointer location. */
+    if (pVBox->forceSWCursor)
+        rc = FALSE;
+    else
     {
-        vrc = VERR_FILE_IO_ERROR;
-        xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
-            "Unable to determine whether the virtual machine supports mouse pointer integration - request system call failed: %s.\n",
-            strerror(errno));
+        int vrc = vmmdevInitRequest ((VMMDevRequestHeader*)&req, VMMDevReq_GetMouseStatus);
+        if (RT_FAILURE (vrc))
+            xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
+                "Unable to determine whether the virtual machine supports mouse pointer integration - request initialization failed with return code %d\n", rc);
+    #ifdef RT_OS_LINUX
+        if (   RT_SUCCESS(vrc)
+            && (ioctl(pVBox->vbox_fd, VBOXGUEST_IOCTL_VMMREQUEST(sizeof(req)), (void*)&req) < 0))
+    #else
+    # error port me!
+    #endif
+        {
+            vrc = VERR_FILE_IO_ERROR;
+            xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
+                "Unable to determine whether the virtual machine supports mouse pointer integration - request system call failed: %s.\n",
+                strerror(errno));
+        }
+        if (   RT_SUCCESS(rc)
+            && !(req.mouseFeatures & VMMDEV_MOUSE_HOST_CANNOT_HWPOINTER)
+            && (req.mouseFeatures & VMMDEV_MOUSE_GUEST_CAN_ABSOLUTE))
+                rc = TRUE;
     }
-    if (   RT_SUCCESS(rc)
-        && !(req.mouseFeatures & VMMDEV_MOUSE_HOST_CANNOT_HWPOINTER)
-        && (req.mouseFeatures & VMMDEV_MOUSE_GUEST_CAN_ABSOLUTE))
-            rc = TRUE;
     return rc;
 }
 
@@ -860,6 +868,10 @@ Bool vbox_cursor_init (ScreenPtr pScreen)
     pCurs->LoadCursorARGB    = vbox_load_cursor_argb;
 #endif
 
+    /* Hide the host cursor before we initialise if we wish to use a
+     * software cursor. */
+    if (pVBox->forceSWCursor)
+        vbox_vmm_hide_cursor(pScrn, pVBox);
     rc = xf86InitCursor (pScreen, pCurs);
     if (rc == TRUE)
         return TRUE;
