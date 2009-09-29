@@ -373,3 +373,4 @@ UseProgram
 DeleteProgram
 ValidateProgram
 BindAttribLocation
+GetUniformLocation

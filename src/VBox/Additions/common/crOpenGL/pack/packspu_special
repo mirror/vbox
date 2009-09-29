@@ -79,3 +79,9 @@ GetBufferSubDataARB
 IsEnabled
 LockArraysEXT
 UnlockArraysEXT
+CreateProgram
+LinkProgram
+DeleteProgram
+GetUniformLocation
+GetUniformsLocations
+BindFramebufferEXT

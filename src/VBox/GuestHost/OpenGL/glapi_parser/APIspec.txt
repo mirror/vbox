@@ -10219,6 +10219,17 @@ return      void
 category    GL_EXT_compiled_vertex_array
 chromium    extpack
 
+# custom
+name        GetUniformsLocations
+return      void
+param       program     GLuint
+param       maxcbData   GLsizei
+param       cbData      GLsizei *
+param       pData       GLvoid *
+category    Chromium
+props       get
+chromium    extpack
+
 # end of file sentinel
 
 name        dummy
