@@ -347,8 +347,26 @@ static VOID rtMpNtPokeCpuDummy(IN PKDPC Dpc, IN PVOID DeferredContext, IN PVOID 
     NOREF(SystemArgument2);
 }
 
+#ifndef IPRT_TARGET_NT4
+int rtMpSendIpiVista(RTCPUID idCpu)
+{
+    g_pfnrtNtHalRequestIpi(1 << idCpu);
+    return VINF_SUCCESS;
+}
 
-extern "C" void HalRequestIpi(KAFFINITY TargetSet);
+int rtMpSendIpiWin7(RTCPUID idCpu)
+{
+    VOID (__stdcall *pfRequestIpi)(KAFFINITY Zero, KAFFINITY TargetSet) = (VOID (__stdcall *)(KAFFINITY, KAFFINITY))g_pfnrtNtHalRequestIpi;
+
+    pfRequestIpi(0, 1 << idCpu);
+    return VINF_SUCCESS;
+}
+#endif /* IPRT_TARGET_NT4 */
+
+int rtMpSendIpiDummy(RTCPUID idCpu)
+{
+    return VERR_NOT_IMPLEMENTED;
+}
 
 RTDECL(int) RTMpPokeCpu(RTCPUID idCpu)
 {
@@ -357,10 +375,11 @@ RTDECL(int) RTMpPokeCpu(RTCPUID idCpu)
               ? VERR_CPU_NOT_FOUND
               : VERR_CPU_OFFLINE;
 
-#if 0 /* experiment!! */
-    HalRequestIpi(1 << idCpu);
-    return VINF_SUCCESS;
-#else
+    int rc = g_pfnrtSendIpi(idCpu);
+    if (rc == VINF_SUCCESS)
+        return rc;
+
+    /* Fallback. */
     if (!fPokeDPCsInitialized)
     {
         for (unsigned i = 0; i < RT_ELEMENTS(aPokeDpcs); i++)
@@ -382,13 +401,12 @@ RTDECL(int) RTMpPokeCpu(RTCPUID idCpu)
     KeSetTargetProcessorDpc(&aPokeDpcs[idCpu], (int)idCpu);
 
     /* Assuming here that high importance DPCs will be delivered immediately; or at least an IPI will be sent immediately.
-     * Todo: verify!
+     * @note: not true on at least Vista & Windows 7
      */
     BOOLEAN bRet = KeInsertQueueDpc(&aPokeDpcs[idCpu], 0, 0);
 
     KeLowerIrql(oldIrql);
     return (bRet == TRUE) ? VINF_SUCCESS : VERR_ACCESS_DENIED /* already queued */;
-#endif
 }
 
 void rtMpPokeCpuClear()

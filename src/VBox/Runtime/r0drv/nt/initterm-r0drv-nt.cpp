@@ -56,6 +56,10 @@ RTCPUSET                    g_rtMpNtCpuSet;
 PFNMYEXSETTIMERRESOLUTION   g_pfnrtNtExSetTimerResolution;
 /** KeFlushQueuedDpcs, introduced in XP. */
 PFNMYKEFLUSHQUEUEDDPCS      g_pfnrtNtKeFlushQueuedDpcs;
+/** HalRequestIpi, introduced in ??. */
+PFNHALREQUESTIPI            g_pfnrtNtHalRequestIpi;
+/** SendIpi handler based on Windows version */
+PFNRTSENDIPI                g_pfnrtSendIpi;
 
 /** Offset of the _KPRCB::QuantumEnd field. 0 if not found. */
 uint32_t                    g_offrtNtPbQuantumEnd;
@@ -82,6 +86,7 @@ int rtR0InitNative(void)
 #ifdef IPRT_TARGET_NT4
     g_pfnrtNtExSetTimerResolution = NULL;
     g_pfnrtNtKeFlushQueuedDpcs = NULL;
+    g_pfnrtNtHalRequestIpi = NULL;
 #else
     /*
      * Initialize the function pointers.
@@ -92,6 +97,9 @@ int rtR0InitNative(void)
 
     RtlInitUnicodeString(&RoutineName, L"KeFlushQueuedDpcs");
     g_pfnrtNtKeFlushQueuedDpcs = (PFNMYKEFLUSHQUEUEDDPCS)MmGetSystemRoutineAddress(&RoutineName);
+
+    RtlInitUnicodeString(&RoutineName, L"HalRequestIpi");
+    g_pfnrtNtHalRequestIpi = (PFNHALREQUESTIPI)MmGetSystemRoutineAddress(&RoutineName);
 #endif
 
     /*
@@ -102,6 +110,25 @@ int rtR0InitNative(void)
     ULONG BuildNumber  = 0;
     BOOLEAN fChecked = PsGetVersion(&MajorVersion, &MinorVersion, &BuildNumber, NULL);
 
+    g_pfnrtSendIpi = rtMpSendIpiDummy;
+#ifndef IPRT_TARGET_NT4
+    if (g_pfnrtNtHalRequestIpi)
+    {
+        if (    MajorVersion == 6
+            &&  MinorVersion == 0)
+        {
+            /* Vista or Windows Server 2008 */
+            g_pfnrtSendIpi = rtMpSendIpiVista;
+        }
+        else
+        if (    MajorVersion == 6
+            &&  MinorVersion == 1)
+        {
+            /* Windows 7 or Windows Server 2008 R2 */
+            g_pfnrtSendIpi = rtMpSendIpiWin7;
+        }
+    }
+#endif
     KIRQL OldIrql;
     KeRaiseIrql(DISPATCH_LEVEL, &OldIrql); /* make sure we stay on the same cpu */
 
