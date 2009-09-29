@@ -660,9 +660,8 @@ RTDECL(int) RTFileAioCtxSubmit(RTFILEAIOCTX hAioCtx, PRTFILEAIOREQ pahReqs, size
                     pReqInt = pahReqs[i];
 
                     rcPosix = aio_error(&pReqInt->AioCB);
-                    Assert(rcPosix != 0);
 
-                    if (rcPosix != EINPROGRESS)
+                    if ((rcPosix != EINPROGRESS) && (rcPosix != 0))
                     {
                         cReqsSubmit--;
 
@@ -840,6 +839,17 @@ RTDECL(int) RTFileAioCtxWait(RTFILEAIOCTX hAioCtx, size_t cMinReqs, unsigned cMi
     while (   cMinReqs
            && RT_SUCCESS_NP(rc))
     {
+#ifdef RT_STRICT
+        if (RT_UNLIKELY(!pCtxInt->iFirstFree))
+        {
+            for (unsigned i = 0; i < pCtxInt->cReqsWaitMax; i++)
+                AssertMsg2("wait[%d] = %#p\n", i, pCtxInt->apReqs[i]);
+
+            AssertMsgFailed(("No request to wait for. pReqsWaitHead=%#p pReqsWaitTail=%#p\n",
+                            pCtxInt->pReqsWaitHead, pCtxInt->pReqsWaitTail));
+        }
+#endif
+
         ASMAtomicXchgBool(&pCtxInt->fWaiting, true);
         int rcPosix = aio_suspend((const struct aiocb * const *)pCtxInt->apReqs,
                                   pCtxInt->iFirstFree, pTimeout);
@@ -913,10 +923,11 @@ RTDECL(int) RTFileAioCtxWait(RTFILEAIOCTX hAioCtx, size_t cMinReqs, unsigned cMi
                         {
                             pCtxInt->apReqs[pReq->iWaitingList] = pCtxInt->apReqs[--pCtxInt->iFirstFree];
                             pCtxInt->apReqs[pReq->iWaitingList]->iWaitingList = pReq->iWaitingList;
-                            pCtxInt->apReqs[pCtxInt->iFirstFree] = NULL;
                         }
                         else
                             pCtxInt->iFirstFree--;
+
+                        pCtxInt->apReqs[pCtxInt->iFirstFree] = NULL;
                     }
 
                     /* Put the request into the completed list. */
