@@ -330,6 +330,8 @@ typedef struct PDMASYNCCOMPLETIONEPCLASSFILE
     RTR3UINTPTR                         uBitmaskAlignment;
     /** Global cache data. */
     PDMACFILECACHEGLOBAL                Cache;
+    /** Flag whether the out of resources warning was printed already. */
+    bool                                fOutOfResourcesWarningPrinted;
 } PDMASYNCCOMPLETIONEPCLASSFILE;
 /** Pointer to the endpoint class data. */
 typedef PDMASYNCCOMPLETIONEPCLASSFILE *PPDMASYNCCOMPLETIONEPCLASSFILE;
