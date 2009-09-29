@@ -3401,6 +3401,8 @@ static DECLCALLBACK(void) ataMountNotify(PPDMIMOUNTNOTIFY pInterface)
     else
         pIf->cTotalSectors = pIf->pDrvBlock->pfnGetSize(pIf->pDrvBlock) / 512;
 
+    LogRel(("PIIX3 ATA: LUN#%d: CD/DVD, total number of sectors %Ld, passthrough unchanged\n", pIf->iLUN, pIf->cTotalSectors));
+
     /* Report media changed in TEST UNIT and other (probably incorrect) places. */
     if (pIf->cNotifiedMediaChange < 2)
         pIf->cNotifiedMediaChange = 2;
