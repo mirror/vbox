@@ -3016,7 +3016,13 @@ DECLCALLBACK(int) Console::changeDrive(Console *pThis, const char *pszDevice, un
                 rc = CFGMR3InsertInteger(pCfg, "ReadOnly",  1);         RC_CHECK();
             }
             /** @todo later pass full VDConfig information and parent images */
+        }
 
+        /* Dump the new controller configuration. */
+        CFGMR3Dump(pInst);
+
+        if (!fHostDrive && pszPath && *pszPath)
+        {
             PPDMIMOUNT pIMount = NULL;
             pIMount = (PPDMIMOUNT) pBase->pfnQueryInterface(pBase, PDMINTERFACE_MOUNT);
             if (!pIMount)
@@ -3025,10 +3031,8 @@ DECLCALLBACK(int) Console::changeDrive(Console *pThis, const char *pszDevice, un
                 return rc;
             }
 
-LogRelFunc(("mounting new medium\n"));
             rc = pIMount->pfnMount(pIMount, NULL , NULL);
         }
-CFGMR3Dump(pInst);
 
 #undef RC_CHECK
 
