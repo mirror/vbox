@@ -77,10 +77,16 @@
 #define PGM_STATE_REC_ZERO              UINT8_C(0x00)
 /** Raw page. */
 #define PGM_STATE_REC_RAW               UINT8_C(0x01)
-/** Shadowed ROM page. */
-#define PGM_STATE_REC_SHADOWED_ROM      UINT8_C(0x02)
+/** Virgin ROM page. Followed by protection (8-bit) and the raw bits. */
+#define PGM_STATE_REC_ROM_VIRGIN        UINT8_C(0x02)
+/** Raw shadowed ROM page. The protection (8-bit) preceeds the raw bits. */
+#define PGM_STATE_REC_ROM_SHADOW        UINT8_C(0x03)
+/** Zero shadowed ROM page. The protection (8-bit) is the only payload. */
+#define PGM_STATE_REC_ROM_SHADOW_ZERO   UINT8_C(0x04)
+/** ROM protection (8-bit). */
+#define PGM_STATE_REC_ROM_PROT          UINT8_C(0x05)
 /** The last record type. */
-#define PGM_STATE_REC_LAST              PGM_STATE_REC_SHADOWED_ROM
+#define PGM_STATE_REC_LAST              PGM_STATE_REC_ROM_PROT
 /** End marker. */
 #define PGM_STATE_REC_END               UINT8_C(0xff)
 /** Flag indicating that the data is preceeded by an RTGCPHYS containing the
@@ -154,7 +160,7 @@ static const SSMFIELD s_aPGMFields_Old[] =
  * @param   pVM         The VM handle.
  * @param   GCPhys      The address of the ROM page.
  */
-static PPGMROMPAGE pgmR3GetRomPage(PVM pVM, RTGCPHYS GCPhys)
+static PPGMROMPAGE pgmR3GetRomPage(PVM pVM, RTGCPHYS GCPhys) /** @todo change this to take a hint. */
 {
     for (PPGMROMRANGE pRomRange = pVM->pgm.s.CTX_SUFF(pRomRanges);
          pRomRange;
@@ -302,6 +308,7 @@ static DECLCALLBACK(int) pgmR3LivePrep(PVM pVM, PSSMHANDLE pSSM)
                 uint32_t iPage = cPages;
                 while (iPage-- > 0)
                 {
+                    /** @todo yield critsect! (after moving this away from EMT0) */
                     PCPGMPAGE pPage = &pCur->aPages[iPage];
                     paLSPages[iPage].uPassSaved             = UINT32_MAX;
                     paLSPages[iPage].cDirtied               = 0;
@@ -312,8 +319,6 @@ static DECLCALLBACK(int) pgmR3LivePrep(PVM pVM, PSSMHANDLE pSSM)
                     switch (PGM_PAGE_GET_TYPE(pPage))
                     {
                         case PGMPAGETYPE_RAM:
-                        case PGMPAGETYPE_ROM_SHADOW:
-                        case PGMPAGETYPE_ROM:
                             if (PGM_PAGE_IS_ZERO(pPage))
                             {
                                 paLSPages[iPage].fZero   = 1;
@@ -329,23 +334,44 @@ static DECLCALLBACK(int) pgmR3LivePrep(PVM pVM, PSSMHANDLE pSSM)
                                 paLSPages[iPage].fZero   = 0;
                                 paLSPages[iPage].fShared = 0;
                             }
-                            paLSPages[iPage].fMmio  = 0;
+                            paLSPages[iPage].fMmio   = 0;
                             pVM->pgm.s.LiveSave.cDirtyPages++;
                             break;
+
+                        case PGMPAGETYPE_ROM_SHADOW:
+                        case PGMPAGETYPE_ROM:
+                        {
+                            PPGMROMPAGE pRomPage = pgmR3GetRomPage(pVM, pCur->GCPhys + ((RTGCPHYS)iPage << PAGE_SHIFT));
+                            pRomPage->LiveSave.u8Prot       = (uint8_t)pRomPage->enmProt;
+                            pRomPage->LiveSave.fSavedVirgin = false;
+                            pRomPage->LiveSave.fDone        = false;
+                            pRomPage->LiveSave.fWrittenTo   = PGMROMPROT_IS_ROM(pRomPage->enmProt)
+                                                            ? !PGM_PAGE_IS_ZERO(&pRomPage->Shadow)
+                                                            : !PGM_PAGE_IS_ZERO(pPage);
+                            paLSPages[iPage].fZero   = !pRomPage->LiveSave.fWrittenTo;
+                            paLSPages[iPage].fShared = 0;
+                            paLSPages[iPage].fDirty  = 1;
+                            paLSPages[iPage].fMmio   = 0;
+                            pVM->pgm.s.LiveSave.cDirtyPages += 2;
+                            break;
+                        }
 
                         default:
                             AssertMsgFailed(("%R[pgmpage]", pPage));
                         case PGMPAGETYPE_MMIO2:
                         case PGMPAGETYPE_MMIO2_ALIAS_MMIO:
-                            paLSPages[iPage].fZero  = 0;
-                            paLSPages[iPage].fDirty = 1;
-                            paLSPages[iPage].fMmio  = 1;
+                            paLSPages[iPage].fZero   = 0;
+                            paLSPages[iPage].fShared = 0;
+                            paLSPages[iPage].fDirty  = 1;
+                            paLSPages[iPage].fMmio   = 1;
                             pVM->pgm.s.LiveSave.cMmioPages++;
                             break;
+
                         case PGMPAGETYPE_MMIO:
-                            paLSPages[iPage].fZero  = 1;
-                            paLSPages[iPage].fDirty = 1;
-                            paLSPages[iPage].fMmio  = 1;
+                            paLSPages[iPage].fZero   = 1;
+                            paLSPages[iPage].fShared = 0;
+                            paLSPages[iPage].fDirty  = 1;
+                            paLSPages[iPage].fMmio   = 1;
                             pVM->pgm.s.LiveSave.cMmioPages++;
                             break;
                     }
@@ -355,6 +381,91 @@ static DECLCALLBACK(int) pgmR3LivePrep(PVM pVM, PSSMHANDLE pSSM)
     } while (pCur);
     pgmUnlock(pVM);
 
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Takes care of the virgin ROM pages in the first pass.
+ *
+ * This is an attempt at simplifying the handling of ROM pages a little bit.
+ * This ASSUMES that no new ROM ranges will be added and that they won't be
+ * relinked in any way.
+ *
+ * @param   pVM     The VM handle.
+ * @param   pSSM    The SSM handle.
+ */
+static int pgmR3LiveExecSaveVirginRomPages(PVM pVM, PSSMHANDLE pSSM)
+{
+    RTGCPHYS GCPhysLast = NIL_RTGCPHYS;
+    pgmLock(pVM);
+    for (PPGMROMRANGE pRom = pVM->pgm.s.pRomRangesR3; pRom; pRom = pRom->pNextR3)
+    {
+        uint32_t const cPages = pRom->cb >> PAGE_SHIFT;
+        for (uint32_t iPage = 0; iPage < cPages; iPage++)
+        {
+            RTGCPHYS   GCPhys  = pRom->GCPhys + ((RTGCPHYS)iPage << PAGE_SHIFT);
+            PGMROMPROT enmProt = pRom->aPages[iPage].enmProt;
+
+            /* Get the virgin page descriptor. */
+            PPGMPAGE pPage;
+            if (PGMROMPROT_IS_ROM(enmProt))
+                pPage = pgmPhysGetPage(&pVM->pgm.s, GCPhys);
+            else
+                pPage = &pRom->aPages[iPage].Virgin;
+
+            /* Get the page bits. (Cannot use pgmPhysGCPhys2CCPtrInternalReadOnly here!) */
+            int rc = VINF_SUCCESS;
+            char abPage[PAGE_SIZE];
+            if (!PGM_PAGE_IS_ZERO(pPage))
+            {
+                void *pvPage;
+                PPGMPAGEMAP pMapIgnored;
+                rc = pgmPhysPageMap(pVM, pPage, GCPhys, &pMapIgnored, &pvPage);
+                if (RT_SUCCESS(rc))
+                    memcpy(abPage, pvPage, PAGE_SIZE);
+            }
+            else
+                ASMMemZeroPage(abPage);
+            pgmUnlock(pVM);
+            AssertLogRelMsgRCReturn(rc, ("rc=%Rrc GCPhys=%RGp\n", rc, GCPhys), rc);
+
+            /* Save it. */
+            if (GCPhys == GCPhysLast + PAGE_SIZE)
+                SSMR3PutU8(pSSM, PGM_STATE_REC_ROM_VIRGIN);
+            else
+            {
+                SSMR3PutU8(pSSM, PGM_STATE_REC_ROM_VIRGIN | PGM_STATE_REC_FLAG_ADDR);
+                SSMR3PutGCPhys(pSSM, GCPhys);
+            }
+            SSMR3PutU8(pSSM, (uint8_t)enmProt);
+            rc = SSMR3PutMem(pSSM, abPage, PAGE_SIZE);
+            if (RT_FAILURE(rc))
+                return rc;
+
+            /* Update state. */
+            pgmLock(pVM);
+            GCPhysLast = GCPhys;
+            pRom->aPages[iPage].LiveSave.fSavedVirgin = true;
+            pRom->aPages[iPage].LiveSave.u8Prot = (uint8_t)enmProt;
+            pVM->pgm.s.LiveSave.cDirtyPages--;
+            pVM->pgm.s.LiveSave.cReadyPages++;
+
+            /* If the page cannot be shadowed, mark it as done. */
+            PPGMRAMRANGE pRam;
+            pPage = pgmPhysGetPageAndRange(&pVM->pgm.s, GCPhys, &pRam);
+            PPGMLIVESAVEPAGE pLSPage = &pRam->paLSPages[(GCPhys - pRam->GCPhys) >> PAGE_SHIFT];
+            if (!(pRom->fFlags & PGMPHYS_ROM_FLAGS_SHADOWED))
+            {
+                pLSPage->fDirty = 0;
+                pRom->aPages[iPage].LiveSave.fWrittenTo = false;
+                pRom->aPages[iPage].LiveSave.fDone = true;
+                pVM->pgm.s.LiveSave.cDirtyPages--;
+                pVM->pgm.s.LiveSave.cReadyPages++;
+            }
+        }
+    }
+    pgmUnlock(pVM);
     return VINF_SUCCESS;
 }
 
@@ -399,13 +510,11 @@ static void pgmR3LiveExecPart1(PVM pVM)
                     }
 
                     /* Process the page. */
-                    if (!paLSPages[iPage].fMmio)
+                    if (paLSPages[iPage].fMmio)
                     {
                         switch (PGM_PAGE_GET_TYPE(&pCur->aPages[iPage]))
                         {
                             case PGMPAGETYPE_RAM:
-                            case PGMPAGETYPE_ROM_SHADOW: /** @todo ROM shadowing needs checking out later. (ignoring it for now) */
-                            case PGMPAGETYPE_ROM:
                             {
                                 switch (PGM_PAGE_GET_STATE(&pCur->aPages[iPage]))
                                 {
@@ -474,6 +583,36 @@ static void pgmR3LiveExecPart1(PVM pVM)
                                             }
                                         }
                                         break;
+                                }
+                                break;
+                            }
+
+                            /* All writes to the shadow page are intercepted. */
+                            case PGMPAGETYPE_ROM_SHADOW: /* (The shadow page is active.) */
+                            case PGMPAGETYPE_ROM:        /* (The virgin page is active.) */
+                            {
+                                PPGMROMPAGE pRomPage = pgmR3GetRomPage(pVM, pCur->GCPhys + ((RTGCPHYS)iPage << PAGE_SHIFT));
+                                if (!pRomPage->LiveSave.fDone)
+                                {
+                                    if (pRomPage->LiveSave.fWrittenTo)
+                                    {
+                                        pRomPage->LiveSave.fWrittenTo = false;
+                                        if (!paLSPages[iPage].fDirty)
+                                        {
+                                            paLSPages[iPage].fDirty = 1;
+                                            pVM->pgm.s.LiveSave.cReadyPages--;
+                                            pVM->pgm.s.LiveSave.cDirtyPages++;
+                                        }
+                                        paLSPages[iPage].fWriteMonitoredJustNow = 1;
+                                    }
+                                    else
+                                        paLSPages[iPage].fWriteMonitoredJustNow = 0;
+                                    paLSPages[iPage].fWriteMonitored = 1;
+                                }
+                                else
+                                {
+                                    Assert(PGM_PAGE_GET_TYPE(&pCur->aPages[iPage]) == PGMPAGETYPE_ROM);
+                                    Assert(!paLSPages[iPage].fDirty);
                                 }
                                 break;
                             }
@@ -569,64 +708,55 @@ static int pgmR3LiveExecPart2(PVM pVM, PSSMHANDLE pSSM, uint32_t uPass)
                      * Save dirty pages that hasn't changed since part 1.
                      * (Use if instead of switch here so we can easily break out of the loop.)
                      */
-                    int rc;
                     if (   paLSPages[iPage].fDirty
                         && !paLSPages[iPage].fMmio
-                        && PGM_PAGE_GET_STATE(&pCur->aPages[iPage]) != PGM_PAGE_STATE_ALLOCATED)
+                        && !paLSPages[iPage].fWriteMonitoredJustNow
+                        && (   (   PGM_PAGE_GET_TYPE(&pCur->aPages[iPage]) == PGMPAGETYPE_RAM
+                                && PGM_PAGE_GET_STATE(&pCur->aPages[iPage])
+                                   == (  paLSPages[iPage].fZero
+                                       ? PGM_PAGE_STATE_ZERO
+                                       : paLSPages[iPage].fShared
+                                       ? PGM_PAGE_STATE_SHARED
+                                       : PGM_PAGE_STATE_WRITE_MONITORED)
+                               )
+                            || PGM_PAGE_GET_TYPE(&pCur->aPages[iPage]) == PGMPAGETYPE_ROM
+                            || PGM_PAGE_GET_TYPE(&pCur->aPages[iPage]) == PGMPAGETYPE_ROM_SHADOW
+                           )
+                       )
                     {
-                        if (   !paLSPages[iPage].fZero
+                        int         rc;
+                        char        abPage[PAGE_SIZE];
+                        RTGCPHYS    GCPhys = pCur->GCPhys + ((RTGCPHYS)iPage << PAGE_SHIFT);
+
+                        if (   PGM_PAGE_GET_TYPE(&pCur->aPages[iPage]) == PGMPAGETYPE_RAM
                             && PGM_PAGE_GET_STATE(&pCur->aPages[iPage]) != PGM_PAGE_STATE_ZERO)
                         {
-                            AssertMsg(   PGM_PAGE_GET_TYPE(&pCur->aPages[iPage]) == PGMPAGETYPE_RAM
-                                      || PGM_PAGE_GET_TYPE(&pCur->aPages[iPage]) == PGMPAGETYPE_ROM_SHADOW
-                                      || PGM_PAGE_GET_TYPE(&pCur->aPages[iPage]) == PGMPAGETYPE_ROM,
-                                      ("%R[pgmpage]", &pCur->aPages[iPage]));
-                            Assert(!paLSPages[iPage].fZero);
-                            if (!paLSPages[iPage].fWriteMonitoredJustNow)
+                            /*
+                             * Copy the page and then save it outside the lock (since any
+                             * SSM call may block).
+                             */
+                            void const *pvPage;
+                            rc = pgmPhysGCPhys2CCPtrInternalReadOnly(pVM, &pCur->aPages[iPage], GCPhys, &pvPage);
+                            if (RT_SUCCESS(rc))
+                                memcpy(abPage, pvPage, PAGE_SIZE);
+                            pgmUnlock(pVM);
+                            AssertLogRelMsgRCReturn(rc, ("rc=%Rrc GCPhys=%RGp\n", rc, GCPhys), rc);
+
+                            if (GCPhys == GCPhysLast + PAGE_SIZE)
+                                SSMR3PutU8(pSSM, PGM_STATE_REC_RAW);
+                            else
                             {
-                                /*
-                                 * Copy the page and then save it outside the lock (since any
-                                 * SSM call may block).
-                                 */
-                                char        abPage[PAGE_SIZE];
-                                RTGCPHYS    GCPhys = pCur->GCPhys + ((RTGCPHYS)iPage << PAGE_SHIFT);
-                                void const *pvPage;
-                                rc = pgmPhysGCPhys2CCPtrInternalReadOnly(pVM, &pCur->aPages[iPage], GCPhys, &pvPage);
-                                if (RT_SUCCESS(rc))
-                                    memcpy(abPage, pvPage, PAGE_SIZE);
-                                pgmUnlock(pVM);
-                                AssertLogRelMsgRCReturn(rc, ("rc=%Rrc GCPhys=%RGp\n", rc, GCPhys), rc);
-
-                                if (GCPhys == GCPhysLast + PAGE_SIZE)
-                                    SSMR3PutU8(pSSM, PGM_STATE_REC_RAW);
-                                else
-                                {
-                                    SSMR3PutU8(pSSM, PGM_STATE_REC_RAW | PGM_STATE_REC_FLAG_ADDR);
-                                    SSMR3PutGCPhys(pSSM, GCPhys);
-                                }
-                                rc = SSMR3PutMem(pSSM, abPage, PAGE_SIZE);
-                                if (RT_FAILURE(rc))
-                                    return rc;
-
-                                pgmLock(pVM);
-                                GCPhysLast = GCPhys;
-                                paLSPages[iPage].fDirty = 0;
-                                if (idRamRangesGen != pVM->pgm.s.idRamRangesGen)
-                                {
-                                    GCPhysCur = GCPhys | PAGE_OFFSET_MASK;
-                                    break; /* restart */
-                                }
+                                SSMR3PutU8(pSSM, PGM_STATE_REC_RAW | PGM_STATE_REC_FLAG_ADDR);
+                                SSMR3PutGCPhys(pSSM, GCPhys);
                             }
+                            rc = SSMR3PutMem(pSSM, abPage, PAGE_SIZE);
                         }
-                        else if (   paLSPages[iPage].fZero
-                                 && (   PGM_PAGE_GET_TYPE(&pCur->aPages[iPage]) == PGMPAGETYPE_RAM
-                                     || PGM_PAGE_GET_TYPE(&pCur->aPages[iPage]) == PGMPAGETYPE_ROM_SHADOW
-                                     || PGM_PAGE_GET_TYPE(&pCur->aPages[iPage]) == PGMPAGETYPE_ROM))
+                        else if (   PGM_PAGE_GET_TYPE(&pCur->aPages[iPage]) == PGMPAGETYPE_RAM
+                                 && PGM_PAGE_GET_STATE(&pCur->aPages[iPage]) == PGM_PAGE_STATE_ZERO)
                         {
                             /*
                              * Dirty zero page.
                              */
-                            RTGCPHYS GCPhys = pCur->GCPhys + ((RTGCPHYS)iPage << PAGE_SHIFT);
                             pgmUnlock(pVM);
 
                             if (GCPhys == GCPhysLast + PAGE_SIZE)
@@ -636,17 +766,56 @@ static int pgmR3LiveExecPart2(PVM pVM, PSSMHANDLE pSSM, uint32_t uPass)
                                 SSMR3PutU8(pSSM, PGM_STATE_REC_RAW | PGM_STATE_REC_FLAG_ADDR);
                                 rc = SSMR3PutGCPhys(pSSM, GCPhys);
                             }
-                            if (RT_FAILURE(rc))
-                                return rc;
+                        }
+                        else
+                        {
+                            /*
+                             * Dirty shadow ROM page.
+                             */
+                            Assert(   PGM_PAGE_GET_TYPE(&pCur->aPages[iPage]) == PGMPAGETYPE_RAM
+                                   || PGM_PAGE_GET_TYPE(&pCur->aPages[iPage]) == PGMPAGETYPE_ROM_SHADOW);
+                            PPGMROMPAGE pRomPage = pgmR3GetRomPage(pVM, pCur->GCPhys + ((RTGCPHYS)iPage << PAGE_SHIFT));
+                            if (pRomPage->LiveSave.fWrittenTo)
+                                continue; /* modified already, skip it. */
 
-                            pgmLock(pVM);
-                            GCPhysLast = GCPhys;
-                            paLSPages[iPage].fDirty = 0;
-                            if (idRamRangesGen != pVM->pgm.s.idRamRangesGen)
+                            PGMROMPROT  enmProt = pRomPage->enmProt;
+                            PPGMPAGE    pPage = PGMROMPROT_IS_ROM(enmProt) ? &pRomPage->Shadow : &pCur->aPages[iPage];
+                            bool        fZero = PGM_PAGE_IS_ZERO(pPage);
+                            if (!fZero)
                             {
-                                GCPhysCur = GCPhys | PAGE_OFFSET_MASK;
-                                break; /* restart */
+                                void *pvPage;
+                                PPGMPAGEMAP pMapIgnored;
+                                rc = pgmPhysPageMap(pVM, pPage, GCPhys, &pMapIgnored, &pvPage);
+                                if (RT_SUCCESS(rc))
+                                    memcpy(abPage, pvPage, PAGE_SIZE);
                             }
+                            pRomPage->LiveSave.u8Prot = (uint8_t)enmProt;
+                            pgmUnlock(pVM);
+                            AssertLogRelMsgRCReturn(rc, ("rc=%Rrc GCPhys=%RGp\n", rc, GCPhys), rc);
+
+                            if (GCPhys == GCPhysLast + PAGE_SIZE)
+                                SSMR3PutU8(pSSM, (fZero ? PGM_STATE_REC_ROM_SHADOW_ZERO : PGM_STATE_REC_ROM_SHADOW));
+                            else
+                            {
+                                SSMR3PutU8(pSSM, (fZero ? PGM_STATE_REC_ROM_SHADOW_ZERO : PGM_STATE_REC_ROM_SHADOW) | PGM_STATE_REC_FLAG_ADDR);
+                                SSMR3PutGCPhys(pSSM, GCPhys);
+                            }
+                            rc = SSMR3PutU8(pSSM, (uint8_t)enmProt);
+                            if (!fZero)
+                                rc = SSMR3PutMem(pSSM, abPage, PAGE_SIZE);
+                        }
+
+                        /* common tail */
+                        if (RT_FAILURE(rc))
+                            return rc;
+
+                        pgmLock(pVM);
+                        GCPhysLast = GCPhys;
+                        paLSPages[iPage].fDirty = 0;
+                        if (idRamRangesGen != pVM->pgm.s.idRamRangesGen)
+                        {
+                            GCPhysCur = GCPhys | PAGE_OFFSET_MASK;
+                            break; /* restart */
                         }
                     }
                 } /* for each page in range */
@@ -673,6 +842,12 @@ static int pgmR3LiveExecPart2(PVM pVM, PSSMHANDLE pSSM, uint32_t uPass)
  */
 static DECLCALLBACK(int)  pgmR3LiveExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uPass)
 {
+    if (uPass == 0)
+    {
+        int rc = pgmR3LiveExecSaveVirginRomPages(pVM, pSSM);
+        if (RT_FAILURE(rc))
+            return rc;
+    }
     pgmR3LiveExecPart1(pVM);
     pgmR3PoolClearAll(pVM); /** @todo this could perhaps be optimized a bit. */
     return pgmR3LiveExecPart2(pVM, pSSM, uPass);
@@ -908,20 +1083,126 @@ static int pgmR3LoadLockedMemory(PVM pVM, PSSMHANDLE pSSM, uint32_t uPass)
         switch (u8 & ~PGM_STATE_REC_FLAG_ADDR)
         {
             case PGM_STATE_REC_ZERO:
-                if (!PGM_PAGE_IS_ZERO(pPage))
-                {
-                    /* dispose of the page if possible */
-                }
+            {
+                if (PGM_PAGE_IS_ZERO(pPage))
+                    break;
+                /** @todo implement zero page replacing. */
+                AssertLogRelMsgReturn(PGM_PAGE_GET_STATE(pPage) == PGM_PAGE_STATE_ALLOCATED, ("GCPhys=%RGp %R[pgmpage]\n", GCPhys, pPage), VERR_INTERNAL_ERROR_5);
+                void *pvDstPage;
+                rc = pgmPhysGCPhys2CCPtrInternal(pVM, pPage, GCPhys, &pvDstPage);
+                AssertLogRelMsgRCReturn(rc, ("GCPhys=%RGp %R[pgmpage] rc=%Rrc\n", GCPhys, pPage, rc), rc);
+                ASMMemZeroPage(pvDstPage);
                 break;
+            }
 
             case PGM_STATE_REC_RAW:
-                /* map the page for writing and load the bits onto it. */
-                break;
-
-            case PGM_STATE_REC_SHADOWED_ROM:
             {
-                /* map the page for writing and load the bits onto it. */
+                void *pvDstPage;
+                rc = pgmPhysGCPhys2CCPtrInternal(pVM, pPage, GCPhys, &pvDstPage);
+                AssertLogRelMsgRCReturn(rc, ("GCPhys=%RGp %R[pgmpage] rc=%Rrc\n", GCPhys, pPage, rc), rc);
+                rc = SSMR3GetMem(pSSM, pvDstPage, PAGE_SIZE);
+                if (RT_FAILURE(rc))
+                    return rc;
+                break;
+            }
 
+            case PGM_STATE_REC_ROM_VIRGIN:
+            case PGM_STATE_REC_ROM_SHADOW:
+            case PGM_STATE_REC_ROM_SHADOW_ZERO:
+            case PGM_STATE_REC_ROM_PROT:
+            {
+                PPGMROMPAGE pRomPage = pgmR3GetRomPage(pVM, GCPhys);
+                AssertLogRelMsgReturn(pRomPage, ("GCPhys=%RGp\n", GCPhys), VERR_INTERNAL_ERROR);
+
+                uint8_t u8Prot;
+                rc = SSMR3GetU8(pSSM, &u8Prot);
+                if (RT_FAILURE(rc))
+                    return rc;
+                PGMROMPROT enmProt = (PGMROMPROT)u8Prot;
+                AssertLogRelMsgReturn(enmProt > PGMROMPROT_INVALID && enmProt < PGMROMPROT_END, ("GCPhys=%RGp enmProt=%d\n", GCPhys, enmProt), VERR_INTERNAL_ERROR);
+
+                /* Make the protection change. */
+                if (enmProt != pRomPage->enmProt)
+                {
+                    rc = PGMR3PhysRomProtect(pVM, GCPhys, PAGE_SIZE, enmProt);
+                    AssertLogRelMsgRCReturn(rc, ("GCPhys=%RGp rc=%Rrc\n", GCPhys, rc), rc);
+                    AssertLogRelReturn(pRomPage->enmProt == enmProt, VERR_INTERNAL_ERROR);
+                }
+
+                /* Get the right page descriptor. */
+                PPGMPAGE pRealPage;
+                switch (u8 & ~PGM_STATE_REC_FLAG_ADDR)
+                {
+                    case PGM_STATE_REC_ROM_VIRGIN:
+                        if (!PGMROMPROT_IS_ROM(enmProt))
+                            pRealPage = &pRomPage->Virgin;
+                        else
+                            pRealPage = pPage;
+                        break;
+
+                    case PGM_STATE_REC_ROM_SHADOW:
+                    case PGM_STATE_REC_ROM_SHADOW_ZERO:
+                        if (PGMROMPROT_IS_ROM(enmProt))
+                            pRealPage = &pRomPage->Shadow;
+                        else
+                            pRealPage = pPage;
+                        break;
+
+                    case PGM_STATE_REC_ROM_PROT:
+                        pRealPage = NULL;
+                        break;
+
+                    default:
+                        AssertMsgFailedReturn(("%#x\n", u8), VERR_INTERNAL_ERROR);
+                }
+
+                /* Map it if necessary. */
+                void *pvDstPage = NULL;
+                switch (u8 & ~PGM_STATE_REC_FLAG_ADDR)
+                {
+                    case PGM_STATE_REC_ROM_SHADOW_ZERO:
+                        if (PGM_PAGE_IS_ZERO(pRealPage))
+                            break;
+                        /** @todo implement zero page replacing. */
+                        /* fall thru */
+                    case PGM_STATE_REC_ROM_VIRGIN:
+                    case PGM_STATE_REC_ROM_SHADOW:
+                    {
+                        if (RT_UNLIKELY(PGM_PAGE_GET_STATE(pRealPage) != PGM_PAGE_STATE_ALLOCATED))
+                        {
+                            rc = pgmPhysPageMakeWritable(pVM, pRealPage, GCPhys);
+                            AssertLogRelMsgRCReturn(rc, ("GCPhys=%RGp rc=%Rrc\n", GCPhys, rc), rc);
+                        }
+                        PPGMPAGEMAP pMapIgnored;
+                        rc = pgmPhysPageMap(pVM, pRealPage, GCPhys, &pMapIgnored, &pvDstPage);
+                        AssertLogRelMsgRCReturn(rc, ("GCPhys=%RGp rc=%Rrc\n", GCPhys, rc), rc);
+                        break;
+                    }
+
+                    case PGM_STATE_REC_ROM_PROT:
+                        break;
+                }
+
+                /* Load the bits. */
+                switch (u8 & ~PGM_STATE_REC_FLAG_ADDR)
+                {
+                    case PGM_STATE_REC_ROM_SHADOW_ZERO:
+                        if (pvDstPage)
+                            ASMMemZeroPage(pvDstPage);
+                        break;
+
+                    case PGM_STATE_REC_ROM_VIRGIN:
+                    case PGM_STATE_REC_ROM_SHADOW:
+                    {
+                        rc = SSMR3GetMem(pSSM, pvDstPage, PAGE_SIZE);
+                        if (RT_FAILURE(rc))
+                            return rc;
+                        break;
+                    }
+
+                    case PGM_STATE_REC_ROM_PROT:
+                        break;
+                }
                 break;
             }
 

@@ -2487,6 +2487,7 @@ static DECLCALLBACK(int) pgmR3PhysRomWriteHandler(PVM pVM, RTGCPHYS GCPhys, void
                     AssertLogRelReturn(pShadowPage, VERR_INTERNAL_ERROR);
                 }
 
+                pRomPage->LiveSave.fWrittenTo = true;
                 if (RT_UNLIKELY(PGM_PAGE_GET_STATE(pShadowPage) != PGM_PAGE_STATE_ALLOCATED))
                 {
                     rc = pgmPhysPageMakeWritable(pVM, pShadowPage, GCPhys);
