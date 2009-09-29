@@ -127,6 +127,7 @@ int rtR0InitNative(void)
             /* Windows 7 or Windows Server 2008 R2 */
             g_pfnrtSendIpi = rtMpSendIpiWin7;
         }
+        /* Windows XP should send always send an IPI -> VERIFY */
     }
 #endif
     KIRQL OldIrql;
