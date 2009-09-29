@@ -21,13 +21,21 @@
 /*
  * Copyright (C) 2008-2009 Sun Microsystems, Inc.
  *
- * This file is part of VirtualBox Open Source Edition (OSE), as
- * available from http://www.virtualbox.org. This file is free software;
- * you can redistribute it and/or modify it under the terms of the GNU
- * General Public License (GPL) as published by the Free Software
- * Foundation, in version 2 as it comes in the "COPYING" file of the
- * VirtualBox OSE distribution. VirtualBox OSE is distributed in the
- * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+ * This file is part of a free software library; you can redistribute
+ * it and/or modify it under the terms of the GNU Lesser General
+ * Public License version 2.1 as published by the Free Software
+ * Foundation and shipped in the "COPYING" file with this library.
+ * The library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY of any kind.
+ *
+ * Sun LGPL Disclaimer: For the avoidance of doubt, except that if
+ * any license choice other than GPL or LGPL is available it will
+ * apply instead, Sun elects to use only the Lesser General Public
+ * License version 2.1 (LGPLv2) at this time for any software where
+ * a choice of LGPL license versions is made available with the
+ * language indicating that LGPLv2 or any later version may be used,
+ * or where a choice of which version of the LGPL is applied is
+ * otherwise unspecified.
  *
  * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa
  * Clara, CA 95054 USA or visit http://www.sun.com if you need
