@@ -1057,7 +1057,7 @@ static int drvHostBaseOpen(PDRVHOSTBASE pThis, PRTFILE pFileBlockDevice, PRTFILE
         RTFileClose(*pFileBlockDevice);
     }
     else
-        LogRel(("DVD: failed to open device %s rc=%Rrc\n", pThis->pszRawDeviceOpen, rc));
+        LogRel(("DVD: failed to open device %s rc=%Rrc\n", pThis->pszDeviceOpen, rc));
     return rc;
 }
 #endif  /* RT_OS_SOLARIS */
