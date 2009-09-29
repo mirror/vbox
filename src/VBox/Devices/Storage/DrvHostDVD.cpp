@@ -362,7 +362,7 @@ DECLCALLBACK(int) drvHostDvdPoll(PDRVHOSTBASE pThis)
             fMediaChanged = true;
     }
     else
-        fMediaChanged = true;
+        fMediaPresent = false;
 
 #else
 # error "Unsupported platform."

@@ -1050,14 +1050,14 @@ static int drvHostBaseOpen(PDRVHOSTBASE pThis, PRTFILE pFileBlockDevice, PRTFILE
     if (RT_SUCCESS(rc))
     {
         rc = RTFileOpen(pFileRawDevice, pThis->pszRawDeviceOpen, fFlags);
-        if (RT_FAILURE(rc))
-        {
-            LogRel(("DVD: failed to open device %s\n", pThis->pszRawDeviceOpen));
-            RTFileClose(*pFileBlockDevice);
-        }
+        if (RT_SUCCESS(rc))
+            return rc;
+
+        LogRel(("DVD: failed to open device %s rc=%Rrc\n", pThis->pszRawDeviceOpen, rc));
+        RTFileClose(*pFileBlockDevice);
     }
     else
-        LogRel(("DVD: failed to open device %s\n", pThis->pszRawDeviceOpen));
+        LogRel(("DVD: failed to open device %s rc=%Rrc\n", pThis->pszRawDeviceOpen, rc));
     return rc;
 }
 #endif  /* RT_OS_SOLARIS */
@@ -1080,6 +1080,16 @@ static int drvHostBaseReopen(PDRVHOSTBASE pThis)
 
     RTFILE FileDevice;
 #ifdef RT_OS_SOLARIS
+    if (pThis->FileRawDevice != NIL_RTFILE)
+    {
+        RTFileClose(pThis->FileRawDevice);
+        pThis->FileDevice = NIL_RTFILE;
+    }
+    if (pThis->FileDevice != NIL_RTFILE)
+    {
+        RTFileClose(pThis->FileDevice);
+        pThis->FileRawDevice = NIL_RTFILE;
+    }
     RTFILE FileRawDevice;
     int rc = drvHostBaseOpen(pThis, &FileDevice, &FileRawDevice, pThis->fReadOnlyConfig);
 #else
