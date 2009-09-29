@@ -160,6 +160,8 @@ lnx_add_inst-bin_INST = obj/Additions/Installer/linux
 lnx_add_inst-bin_MODE = a+rx,u+w
 lnx_add_inst-bin_SOURCES = \
 	../../Installer/linux/routines.sh \
+	../x11/Installer/x11config.pl \
+	../x11/Installer/x11config15.pl \
 	selinux-fedora/vbox_x11.pp
 
 
