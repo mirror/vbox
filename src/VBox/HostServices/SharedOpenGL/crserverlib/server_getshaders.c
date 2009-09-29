@@ -176,8 +176,29 @@ void SERVER_DISPATCH_APIENTRY crServerDispatchGetShaderSource(GLuint shader, GLs
         GLsizei zero=0;
         crServerReturnValue(&zero, sizeof(zero));
     }
-    cr_server.head_spu->dispatch_table.GetShaderSource(crStateGetShaderHWID(shader), bufSize, pLocal, (char*)pLocal+1);
+    cr_server.head_spu->dispatch_table.GetShaderSource(crStateGetShaderHWID(shader), bufSize, pLocal, (char*)&pLocal[1]);
     crServerReturnValue(pLocal, (*pLocal)+1+sizeof(GLsizei));
+    crFree(pLocal);
+}
+
+void SERVER_DISPATCH_APIENTRY 
+crServerDispatchGetUniformsLocations(GLuint program, GLsizei maxcbData, GLsizei * cbData, GLvoid * pData)
+{
+    GLsizei *pLocal;
+
+    (void) cbData;
+    (void) pData;
+
+    pLocal = (GLsizei*) crAlloc(maxcbData+sizeof(GLsizei));
+    if (!pLocal)
+    {
+        GLsizei zero=0;
+        crServerReturnValue(&zero, sizeof(zero));
+    }
+    
+    crStateGLSLProgramCacheUniforms(program, maxcbData, pLocal, (char*)&pLocal[1]);
+
+    crServerReturnValue(pLocal, (*pLocal)+sizeof(GLsizei));
     crFree(pLocal);
 }
 

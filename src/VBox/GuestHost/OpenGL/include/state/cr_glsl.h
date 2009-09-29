@@ -63,6 +63,9 @@ typedef struct{
     GLchar *name;
     GLenum  type;
     GLvoid *data;
+#ifdef IN_GUEST
+    GLuint  location;
+#endif
 } CRGLSLUniform;
 
 typedef struct {
@@ -71,6 +74,9 @@ typedef struct {
     CRGLSLProgramState  activeState, currentState;
     CRGLSLUniform      *pUniforms;
     GLuint              cUniforms;
+#ifdef IN_GUEST
+    GLboolean           bUniformsSynced; /*uniforms info is updated since last link program call.*/
+#endif
 } CRGLSLProgram;
 
 typedef struct {
@@ -96,6 +102,14 @@ DECLEXPORT(GLint) STATE_APIENTRY crStateGetUniformSize(GLenum type);
 
 DECLEXPORT(void) STATE_APIENTRY crStateCreateShader(GLuint id, GLenum type);
 DECLEXPORT(void) STATE_APIENTRY crStateCreateProgram(GLuint id);
+
+DECLEXPORT(GLboolean) STATE_APIENTRY crStateIsProgramUniformsCached(GLuint program);
+
+#ifdef IN_GUEST
+DECLEXPORT(void) STATE_APIENTRY crStateGLSLProgramCacheUniforms(GLuint program, GLsizei cbData, GLvoid *pData);
+#else
+DECLEXPORT(void) STATE_APIENTRY crStateGLSLProgramCacheUniforms(GLuint program, GLsizei maxcbData, GLsizei *cbData, GLvoid *pData);
+#endif
 
 #ifdef __cplusplus
 }

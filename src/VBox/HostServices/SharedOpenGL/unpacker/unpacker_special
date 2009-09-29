@@ -167,3 +167,4 @@ DeleteFramebuffersEXT
 DeleteRenderbuffersEXT
 LockArraysEXT
 UnlockArraysEXT
+GetUniformsLocations

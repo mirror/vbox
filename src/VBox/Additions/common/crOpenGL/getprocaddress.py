@@ -55,7 +55,8 @@ print "\t/* Chromium binding/glue functions */"
 
 for func_name in keys:
 	if (func_name == "Writeback" or
-		func_name == "BoundsInfoCR"):
+		func_name == "BoundsInfoCR" or
+		func_name == "GetUniformsLocations"):
 		continue
 	if apiutil.Category(func_name) == "Chromium":
 		print '\t{ "cr%s", (CR_PROC) cr%s },' % (func_name, func_name)

@@ -271,7 +271,7 @@ void PACK_APIENTRY crPackDrawBuffers(GLsizei n, const GLenum *bufs)
     WRITE_OPCODE(pc, CR_EXTEND_OPCODE);
 }
 
-/*@todo next 7 functions are bit hacky, 
+/*@todo next 8 functions are bit hacky, 
  * we expect packspu to pass a single structure with all output parameters via first output pointer.
  * it'd be better to add CRMessageMultiReadback one day.
  */
@@ -403,6 +403,21 @@ void PACK_APIENTRY crPackGetShaderSource(GLuint shader, GLsizei bufSize, GLsizei
     WRITE_DATA(8, GLuint, shader);
     WRITE_DATA(12, GLsizei, bufSize);
     WRITE_NETWORK_POINTER(16, (void *) length);
+    WRITE_NETWORK_POINTER(24, (void *) writeback);
+    WRITE_OPCODE(pc, CR_EXTEND_OPCODE);
+}
+
+void PACK_APIENTRY crPackGetUniformsLocations(GLuint program, GLsizei maxcbData, GLsizei * cbData, GLvoid * pData, int * writeback)
+{
+	GET_PACKER_CONTEXT(pc);
+    unsigned char *data_ptr;
+    (void) pData;
+    GET_BUFFERED_POINTER(pc, 32);
+    WRITE_DATA(0, GLint, 32);
+    WRITE_DATA(4, GLenum, CR_GETUNIFORMSLOCATIONS_EXTEND_OPCODE);
+    WRITE_DATA(8, GLuint, program);
+    WRITE_DATA(12, GLsizei, maxcbData);
+    WRITE_NETWORK_POINTER(16, (void *) cbData);
     WRITE_NETWORK_POINTER(24, (void *) writeback);
     WRITE_OPCODE(pc, CR_EXTEND_OPCODE);
 }
