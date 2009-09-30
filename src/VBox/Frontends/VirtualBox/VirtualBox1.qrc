@@ -205,9 +205,17 @@
     <file alias="cpu_16px.png">images/cpu_16px.png</file>
     <file alias="ram_16px.png">images/ram_16px.png</file>
     <file alias="ide_16px.png">images/ide_16px.png</file>
+    <file alias="ide_expand_16px.png">images/ide_expand_16px.png</file>
+    <file alias="ide_collapse_16px.png">images/ide_collapse_16px.png</file>
     <file alias="sata_16px.png">images/sata_16px.png</file>
+    <file alias="sata_expand_16px.png">images/sata_expand_16px.png</file>
+    <file alias="sata_collapse_16px.png">images/sata_collapse_16px.png</file>
     <file alias="scsi_16px.png">images/scsi_16px.png</file>
+    <file alias="scsi_expand_16px.png">images/scsi_expand_16px.png</file>
+    <file alias="scsi_collapse_16px.png">images/scsi_collapse_16px.png</file>
     <file alias="floppy_16px.png">images/floppy_16px.png</file>
+    <file alias="floppy_expand_16px.png">images/floppy_expand_16px.png</file>
+    <file alias="floppy_collapse_16px.png">images/floppy_collapse_16px.png</file>
     <file alias="import_16px.png">images/import_16px.png</file>
     <file alias="export_16px.png">images/export_16px.png</file>
     <file alias="vmw_ovf_import.png">images/vmw_ovf_import.png</file>
@@ -220,9 +228,5 @@
     <file alias="pin_16px.png">images/pin_16px.png</file>
     <file alias="restore_16px.png">images/restore_16px.png</file>
     <file alias="close_16px.png">images/close_16px.png</file>
-    <file alias="plus_10px.png">images/plus_10px.png</file>
-    <file alias="plus_disabled_10px.png">images/plus_disabled_10px.png</file>
-    <file alias="minus_10px.png">images/minus_10px.png</file>
-    <file alias="minus_disabled_10px.png">images/minus_disabled_10px.png</file>
  </qresource>
  </RCC>
