@@ -3538,7 +3538,7 @@ static int ssmR3SaveDoDoneRun(PVM pVM, PSSMHANDLE pSSM)
             if (RT_FAILURE(rc))
             {
                 LogRel(("SSM: Done save failed with rc=%Rrc for data unit '%s.\n", rc, pUnit->szName));
-                if (RT_SUCCESS(pSSM->rc))
+                if (RT_SUCCESS_NP(pSSM->rc))
                     pSSM->rc = rc;
             }
         }
@@ -3755,13 +3755,13 @@ static int ssmR3SaveDoExecRun(PVM pVM, PSSMHANDLE pSSM)
                 break;
         }
         pUnit->fCalled = true;
-        if (RT_SUCCESS(rc))
+        if (RT_FAILURE(rc) && RT_SUCCESS_NP(pSSM->rc))
+            pSSM->rc = rc;
+        else
             rc = ssmR3DataFlushBuffer(pSSM); /* will return SSMHANDLE::rc if it is set */
         if (RT_FAILURE(rc))
         {
             LogRel(("SSM: Execute save failed with rc=%Rrc for data unit '%s'/#%u.\n", rc, pUnit->szName, pUnit->u32Instance));
-            if (RT_SUCCESS(pSSM->rc))
-                pSSM->rc = rc;
             return rc;
         }
 
@@ -3840,13 +3840,13 @@ static int ssmR3SaveDoPrepRun(PVM pVM, PSSMHANDLE pSSM)
                     break;
             }
             pUnit->fCalled = true;
-            if (RT_SUCCESS(rc))
+            if (RT_FAILURE(rc) && RT_SUCCESS_NP(pSSM->rc))
+                pSSM->rc = rc;
+            else
                 rc = pSSM->rc;
             if (RT_FAILURE(rc))
             {
                 LogRel(("SSM: Prepare save failed with rc=%Rrc for data unit '%s.\n", rc, pUnit->szName));
-                if (RT_SUCCESS(pSSM->rc))
-                    pSSM->rc = rc;
                 return rc;
             }
         }
@@ -4123,9 +4123,8 @@ static int ssmR3LiveDoVoteRun(PVM pVM, PSSMHANDLE pSSM, uint32_t uPass)
                     rc = VERR_INTERNAL_ERROR;
                     break;
             }
-            Assert(pSSM->rc == VINF_SUCCESS);
-
             pUnit->fCalled = true;
+            Assert(pSSM->rc == VINF_SUCCESS);
             if (rc != VINF_SUCCESS)
             {
                 if (rc == VINF_SSM_VOTE_FOR_ANOTHER_PASS)
@@ -4233,7 +4232,9 @@ static int ssmR3LiveDoExecRun(PVM pVM, PSSMHANDLE pSSM, uint32_t uPass)
                 break;
         }
         pUnit->fCalled = true;
-        if (RT_SUCCESS(rc))
+        if (RT_FAILURE(rc) && RT_SUCCESS_NP(pSSM->rc))
+            pSSM->rc = rc;
+        else
             rc = ssmR3DataFlushBuffer(pSSM); /* will return SSMHANDLE::rc if it is set */
         if (RT_FAILURE(rc))
         {
@@ -4439,13 +4440,13 @@ static int ssmR3DoLivePrepRun(PVM pVM, PSSMHANDLE pSSM)
                     break;
             }
             pUnit->fCalled = true;
-            if (RT_SUCCESS(rc))
+            if (RT_FAILURE(rc) && RT_SUCCESS_NP(pSSM->rc))
+                pSSM->rc = rc;
+            else
                 rc = pSSM->rc;
             if (RT_FAILURE(rc))
             {
                 LogRel(("SSM: Prepare save failed with rc=%Rrc for data unit '%s.\n", rc, pUnit->szName));
-                if (RT_SUCCESS(pSSM->rc))
-                    pSSM->rc = rc;
                 return rc;
             }
         }
@@ -4570,9 +4571,10 @@ VMMR3DECL(int) SSMR3LiveToRemote(PVM pVM, PFNVMPROGRESS pfnProgress, void *pvUse
 /**
  * Closes the decompressor of a data unit.
  *
+ * @returns pSSM->rc.
  * @param   pSSM            SSM operation handle.
  */
-static void ssmR3DataReadFinishV1(PSSMHANDLE pSSM)
+static int ssmR3DataReadFinishV1(PSSMHANDLE pSSM)
 {
     if (pSSM->u.Read.pZipDecompV1)
     {
@@ -4580,6 +4582,7 @@ static void ssmR3DataReadFinishV1(PSSMHANDLE pSSM)
         AssertRC(rc);
         pSSM->u.Read.pZipDecompV1 = NULL;
     }
+    return pSSM->rc;
 }
 
 
@@ -4680,17 +4683,19 @@ static void ssmR3DataReadBeginV2(PSSMHANDLE pSSM)
  *
  * pSSM->rc will be set on error.
  *
+ * @returns pSSM->rc.
  * @param   pSSM            SSM operation handle.
  */
-static void ssmR3DataReadFinishV2(PSSMHANDLE pSSM)
+static int ssmR3DataReadFinishV2(PSSMHANDLE pSSM)
 {
     /*
      * If we haven't encountered the end of the record, it must be the next one.
      */
+    int rc = pSSM->rc;
     if (    !pSSM->u.Read.fEndOfData
-        &&  RT_SUCCESS(pSSM->rc))
+        &&  RT_SUCCESS(rc))
     {
-        int rc = ssmR3DataReadRecHdrV2(pSSM);
+        rc = ssmR3DataReadRecHdrV2(pSSM);
         if (    RT_SUCCESS(rc)
             &&  !pSSM->u.Read.fEndOfData)
         {
@@ -4699,6 +4704,7 @@ static void ssmR3DataReadFinishV2(PSSMHANDLE pSSM)
         }
         pSSM->rc = rc;
     }
+    return rc;
 }
 
 
@@ -6478,7 +6484,7 @@ static int ssmR3LoadExecV1(PVM pVM, PSSMHANDLE pSSM)
                         if (!pUnit->u.Common.pfnLoadExec)
                         {
                             LogRel(("SSM: No load exec callback for unit '%s'!\n", pszName));
-                            rc = VERR_SSM_NO_LOAD_EXEC;
+                            pSSM->rc = rc = VERR_SSM_NO_LOAD_EXEC;
                             break;
                         }
                         switch (pUnit->enmType)
@@ -6499,15 +6505,14 @@ static int ssmR3LoadExecV1(PVM pVM, PSSMHANDLE pSSM)
                                 rc = VERR_INTERNAL_ERROR;
                                 break;
                         }
+                        pUnit->fCalled = true;
+                        if (RT_FAILURE(rc) && RT_SUCCESS_NP(pSSM->rc))
+                            pSSM->rc = rc;
 
                         /*
                          * Close the reader stream.
                          */
-                        ssmR3DataReadFinishV1(pSSM);
-
-                        pUnit->fCalled = true;
-                        if (RT_SUCCESS(rc))
-                            rc = pSSM->rc;
+                        rc = ssmR3DataReadFinishV1(pSSM);
                         if (RT_SUCCESS(rc))
                         {
                             /*
@@ -6693,10 +6698,10 @@ static int ssmR3LoadExecV2(PVM pVM, PSSMHANDLE pSSM)
                     rc = VERR_INTERNAL_ERROR;
                     break;
             }
-            ssmR3DataReadFinishV2(pSSM);
             pUnit->fCalled = true;
-            if (RT_SUCCESS(rc))
-                rc = pSSM->rc;
+            if (RT_FAILURE(rc) && RT_SUCCESS_NP(pSSM->rc))
+                pSSM->rc = rc;
+            rc = ssmR3DataReadFinishV2(pSSM);
             if (RT_SUCCESS(rc))
                 pSSM->offUnit = UINT64_MAX;
             else
@@ -6826,6 +6831,10 @@ VMMR3DECL(int) SSMR3Load(PVM pVM, const char *pszFilename, SSMAFTER enmAfter, PF
                         rc = VERR_INTERNAL_ERROR;
                         break;
                 }
+                if (RT_FAILURE(rc) && RT_SUCCESS_NP(Handle.rc))
+                    Handle.rc = rc;
+                else
+                    rc = Handle.rc;
                 if (RT_FAILURE(rc))
                 {
                     LogRel(("SSM: Prepare load failed with rc=%Rrc for data unit '%s.\n", rc, pUnit->szName));
@@ -6865,6 +6874,7 @@ VMMR3DECL(int) SSMR3Load(PVM pVM, const char *pszFilename, SSMAFTER enmAfter, PF
                 && (   pUnit->fCalled
                     || (!pUnit->u.Common.pfnLoadPrep && !pUnit->u.Common.pfnLoadExec)))
             {
+                int const rcOld = Handle.rc;
                 rc = VINF_SUCCESS;
                 switch (pUnit->enmType)
                 {
@@ -6884,13 +6894,14 @@ VMMR3DECL(int) SSMR3Load(PVM pVM, const char *pszFilename, SSMAFTER enmAfter, PF
                         rc = VERR_INTERNAL_ERROR;
                         break;
                 }
+                if (RT_SUCCESS(rc) && Handle.rc != rcOld)
+                    rc = Handle.rc;
                 if (RT_FAILURE(rc))
                 {
                     LogRel(("SSM: LoadDone failed with rc=%Rrc for data unit '%s' instance #%u.\n",
                             rc, pUnit->szName, pUnit->u32Instance));
-                    if (RT_SUCCESS(Handle.rc))
+                    if (RT_SUCCESS_NP(Handle.rc))
                         Handle.rc = rc;
-                    break;
                 }
             }
         }
