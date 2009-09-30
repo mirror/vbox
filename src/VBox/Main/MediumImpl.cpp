@@ -360,7 +360,7 @@ HRESULT Medium::Task::runNow()
  *       Medium::treeLock() is held in read mode.
  */
 class Medium::MergeChain : public Medium::List,
-                             public com::SupportErrorInfoBase
+                           public com::SupportErrorInfoBase
 {
 public:
 
