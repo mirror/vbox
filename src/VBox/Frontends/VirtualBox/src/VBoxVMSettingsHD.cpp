@@ -1419,13 +1419,12 @@ void StorageDelegate::paint (QPainter *aPainter, const QStyleOptionViewItem &aOp
     QItemDelegate::drawBackground (aPainter, aOption, aIndex);
 
     /* Setup foregroung settings */
-    bool isEnabled = state & QStyle::State_Enabled;
-    bool isActive = state & QStyle::State_Active;
+    QPalette::ColorGroup cg = state & QStyle::State_Active ? QPalette::Active : QPalette::Inactive;
+    bool isSelected = state & QStyle::State_Selected;
     bool isFocused = state & QStyle::State_HasFocus;
-    bool isGrayOnLoosingFocus = QApplication::style()->styleHint (QStyle::SH_ItemView_ChangeHighlightOnFocus, &aOption) == 0;
-    QPalette::ColorGroup cg = isEnabled && (isActive || !isGrayOnLoosingFocus) ? QPalette::Active :
-                              isEnabled ? QPalette::Inactive : QPalette::Disabled;
-    aPainter->setPen (aOption.palette.color (cg, isFocused ? QPalette::HighlightedText : QPalette::Text));
+    bool isGrayOnLoosingFocus = QApplication::style()->styleHint (QStyle::SH_ItemView_ChangeHighlightOnFocus, &aOption) != 0;
+    aPainter->setPen (aOption.palette.color (cg, isSelected && (isFocused || !isGrayOnLoosingFocus) ?
+                                             QPalette::HighlightedText : QPalette::Text));
 
     aPainter->translate (rect.x(), rect.y());
 
