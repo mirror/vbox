@@ -273,7 +273,13 @@ DECLEXPORT(void) STATE_APIENTRY crStateCreateProgram(GLuint id)
     CRGLSLProgram *pProgram;
     CRContext *g = GetCurrentContext();
 
-    CRASSERT(!crStateGetProgramObj(id));
+    pProgram = crStateGetProgramObj(id);
+    if (!pProgram)
+    {
+        crWarning("Program object %d already exists!", id);
+        crStateDeleteProgram(id);
+        CRASSERT(!crStateGetProgramObj(id));
+    }
 
     pProgram = (CRGLSLProgram *) crAlloc(sizeof(*pProgram));
     if (!pProgram)

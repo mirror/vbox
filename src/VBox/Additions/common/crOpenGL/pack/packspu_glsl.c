@@ -123,6 +123,18 @@ void PACKSPU_APIENTRY packspu_DeleteProgram(GLuint program)
     crPackDeleteProgram(program);
 }
 
+void PACK_APIENTRY packspu_DeleteObjectARB(GLhandleARB obj)
+{
+    GLuint hwid = crStateGetProgramHWID(obj);
+
+    if (hwid)
+    {
+        crStateDeleteProgram(obj);
+    }
+
+    crPackDeleteObjectARB(obj);
+}
+
 void PACKSPU_APIENTRY packspu_LinkProgram(GLuint program)
 {
     crStateLinkProgram(program);
