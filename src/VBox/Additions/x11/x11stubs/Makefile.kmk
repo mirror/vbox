@@ -1,4 +1,4 @@
-# $Id: Makefile.kmk 43187 2009-02-23 09:24:17Z michael $
+# $Id$
 ## @file
 # Sub-Makefile for the X11 linker stub (import) libraries.
 #

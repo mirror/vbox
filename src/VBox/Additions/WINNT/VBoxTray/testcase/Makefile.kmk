@@ -1,4 +1,4 @@
-# $Id: Makefile.kmk 23798 2007-08-22 14:12:20Z sandervl $
+# $Id$
 ## @file
 # Sub-Makefile for test cases.
 #
