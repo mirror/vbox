@@ -1160,7 +1160,7 @@ void VBoxProblemReporter::cannotAttachHardDisk (
         tr ("Failed to attach the hard disk <nobr><b>%1</b></nobr> "
             "to the slot <i>%2</i> of the machine <b>%3</b>.")
             .arg (aLocation)
-            .arg (vboxGlobal().toFullString (StorageSlot (aBus, aChannel, aDevice)))
+            .arg (vboxGlobal().toString (StorageSlot (aBus, aChannel, aDevice)))
             .arg (CMachine (aMachine).GetName()),
         formatErrorInfo (aMachine));
 }
@@ -1173,7 +1173,7 @@ void VBoxProblemReporter::cannotDetachHardDisk (
         tr ("Failed to detach the hard disk <nobr><b>%1</b></nobr> "
             "from the slot <i>%2</i> of the machine <b>%3</b>.")
             .arg (aLocation)
-            .arg (vboxGlobal().toFullString (StorageSlot (aBus, aChannel, aDevice)))
+            .arg (vboxGlobal().toString (StorageSlot (aBus, aChannel, aDevice)))
             .arg (CMachine (aMachine).GetName()),
          formatErrorInfo (aMachine));
 }

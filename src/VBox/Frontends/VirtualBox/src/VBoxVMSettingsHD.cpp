@@ -1728,7 +1728,7 @@ bool VBoxVMSettingsHD::revalidate (QString &aWarning, QString &)
             StorageSlot attSlot = mStorageModel->data (attIndex, StorageModel::R_AttSlot).value <StorageSlot>();
             KDeviceType attDevice = mStorageModel->data (attIndex, StorageModel::R_AttDevice).value <KDeviceType>();
             QString key (mStorageModel->data (attIndex, StorageModel::R_AttMediumId).toString());
-            QString value (QString ("%1 (%2)").arg (ctrName, vboxGlobal().toFullString (attSlot)));
+            QString value (QString ("%1 (%2)").arg (ctrName, vboxGlobal().toString (attSlot)));
             /* Check for emptiness */
             if (vboxGlobal().findMedium (key).isNull() && attDevice == KDeviceType_HardDisk)
             {
@@ -1967,9 +1967,9 @@ void VBoxVMSettingsHD::getInformation()
                 mCbSlot->clear();
                 SlotsList slotsList (mStorageModel->data (index, StorageModel::R_AttSlots).value <SlotsList>());
                 for (int i = 0; i < slotsList.size(); ++ i)
-                    mCbSlot->insertItem (mCbSlot->count(), vboxGlobal().toFullString (slotsList [i]));
+                    mCbSlot->insertItem (mCbSlot->count(), vboxGlobal().toString (slotsList [i]));
                 StorageSlot slt = mStorageModel->data (index, StorageModel::R_AttSlot).value <StorageSlot>();
-                int attSlotPos = mCbSlot->findText (vboxGlobal().toFullString (slt));
+                int attSlotPos = mCbSlot->findText (vboxGlobal().toString (slt));
                 mCbSlot->setCurrentIndex (attSlotPos == -1 ? 0 : attSlotPos);
 
                 /* Getting Attachment Device */

@@ -617,7 +617,7 @@ QString VBoxVMInformationDlg::formatHardDisk (const QString &ctlName,
 
     CMedium hd = mSession.GetMachine().GetMedium (ctlName, aChannel, aDevice);
     QString header = "<tr><td></td><td colspan=2><nobr><u>%1</u></nobr></td></tr>";
-    QString name = vboxGlobal().toFullString (StorageSlot (ctl.GetBus(), aChannel, aDevice));
+    QString name = vboxGlobal().toString (StorageSlot (ctl.GetBus(), aChannel, aDevice));
     QString result = hd.isNull() ? QString::null : header.arg (name);
     result += composeArticle (aBelongsTo);
     return result;
