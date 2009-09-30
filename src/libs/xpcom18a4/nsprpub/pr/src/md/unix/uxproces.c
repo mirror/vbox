@@ -159,6 +159,7 @@ _MD_unix_terminate_waitpid_daemon(void)
 static PRStatus _MD_InitProcesses(void);
 #if !defined(_PR_NATIVE_THREADS)
 static void pr_InstallSigchldHandler(void);
+static void (*old_sig_handler)(int) = NULL;
 #endif
 
 static PRProcess *
@@ -796,6 +797,8 @@ static void pr_SigchldHandler(int sig)
 #endif
 
     errno = errnoCopy;
+    if(old_sig_handler && old_sig_handler != SIG_IGN)
+        old_sig_handler(sig);
 }
 
 static void pr_InstallSigchldHandler()
@@ -812,6 +815,7 @@ static void pr_InstallSigchldHandler()
     act.sa_flags = SA_NOCLDSTOP | SA_RESTART;
     rv = sigaction(SIGCHLD, &act, &oact);
     PR_ASSERT(0 == rv);
+    old_sig_handler = oact.sa_handler;
     /* Make sure we are not overriding someone else's SIGCHLD handler */
 #ifndef _PR_SHARE_CLONES
     PR_ASSERT(oact.sa_handler == SIG_DFL);
