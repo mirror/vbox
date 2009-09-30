@@ -376,8 +376,7 @@ static DECLCALLBACK(int) pgmR3LivePrep(PVM pVM, PSSMHANDLE pSSM)
  */
 static int pgmR3SaveRomRanges(PVM pVM, PSSMHANDLE pSSM)
 {
-    Assert(PGMIsLockOwner(pVM));
-
+    pgmLock(pVM);
     uint8_t id = 1;
     for (PPGMROMRANGE pRom = pVM->pgm.s.pRomRangesR3; pRom; pRom = pRom->pNextR3, id++)
     {
@@ -390,8 +389,9 @@ static int pgmR3SaveRomRanges(PVM pVM, PSSMHANDLE pSSM)
         SSMR3PutGCPhys(pSSM, pRom->GCPhys);
         int rc = SSMR3PutGCPhys(pSSM, pRom->cb);
         if (RT_FAILURE(rc))
-            return rc;
+            break;
     }
+    pgmUnlock(pVM);
     return SSMR3PutU8(pSSM, UINT8_MAX);
 }
 
@@ -668,8 +668,7 @@ static int pgmR3SaveShadowedRomPages(PVM pVM, PSSMHANDLE pSSM, bool fLiveSave, b
  */
 static int pgmR3SaveMmio2Ranges(PVM pVM, PSSMHANDLE pSSM)
 {
-    Assert(PGMIsLockOwner(pVM));
-
+    pgmLock(pVM);
     uint8_t id = 1;
     for (PPGMMMIO2RANGE pMmio2 = pVM->pgm.s.pMmio2RangesR3; pMmio2; pMmio2 = pMmio2->pNextR3, id++)
     {
@@ -681,8 +680,9 @@ static int pgmR3SaveMmio2Ranges(PVM pVM, PSSMHANDLE pSSM)
         SSMR3PutStrZ(pSSM, pMmio2->RamRange.pszDesc);
         int rc = SSMR3PutGCPhys(pSSM, pMmio2->RamRange.cb);
         if (RT_FAILURE(rc))
-            return rc;
+            break;
     }
+    pgmUnlock(pVM);
     return SSMR3PutU8(pSSM, UINT8_MAX);
 }
 
@@ -1014,7 +1014,8 @@ static void pgmR3LiveExecScanPages(PVM pVM, bool fFinalPass)
         uint32_t        cSinceYield    = 0;
         for (pCur = pVM->pgm.s.pRamRangesR3; pCur; pCur = pCur->pNextR3)
         {
-            if (pCur->GCPhysLast > GCPhysCur)
+            if (    pCur->GCPhysLast > GCPhysCur
+                && !PGM_RAM_RANGE_IS_AD_HOC(pCur))
             {
                 PPGMLIVESAVEPAGE paLSPages = pCur->paLSPages;
                 uint32_t         cPages    = pCur->cb >> PAGE_SHIFT;
@@ -2345,7 +2346,6 @@ static DECLCALLBACK(int) pgmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, 
 {
     int     rc;
     PPGM    pPGM = &pVM->pgm.s;
-    Assert(uPass == SSM_PASS_FINAL); NOREF(uPass);
 
     /*
      * Validate version.
@@ -2387,6 +2387,7 @@ static DECLCALLBACK(int) pgmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, 
     {
         pgmLock(pVM);
         rc = pgmR3LoadFinalLocked(pVM, pSSM, uVersion);
+        pVM->pgm.s.LiveSave.fActive = false;
         pgmUnlock(pVM);
         if (RT_SUCCESS(rc))
         {
