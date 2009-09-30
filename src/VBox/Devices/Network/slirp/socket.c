@@ -615,7 +615,7 @@ sorecvfrom(PNATState pData, struct socket *so)
                 return;
             }
 
-            if (rc > 0 && n > len)
+            if (rc != -1 && n > len)
             {
                 n = (m->m_data - m->m_dat) + m->m_len + n + 1;
                 m_inc(m, n);
