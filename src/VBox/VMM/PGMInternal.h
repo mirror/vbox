@@ -641,8 +641,8 @@ typedef struct PGMPAGE
     /** For later. */
     uint32_t    fSomethingElse0 : 1;
     /** The Page ID.
-     * @todo  Merge with HCPhysY once we've liberated HCPhysY of its stuff.
-     *        The HCPhysY will then be 100% static. */
+     * @todo  Merge with HCPhysY once we've liberated HCPhysY of its stuff? The
+     *        HCPhysY will then be 100% static. */
     uint32_t    idPageY : 28;
     /** The page type (PGMPAGETYPE). */
     uint32_t    u3TypeY : 3;
@@ -694,7 +694,9 @@ typedef PPGMPAGE *PPPGMPAGE;
  */
 #define PGM_PAGE_INIT(pPage, _HCPhys, _idPage, _uType, _uState) \
     do { \
-        (pPage)->HCPhysY             = (_HCPhys); \
+        RTHCPHYS SetHCPhysTmp = (_HCPhys); \
+        AssertFatal(!(SetHCPhysTmp & ~UINT64_C(0x0000fffffffff000))); \
+        (pPage)->HCPhysY             = (SetHCPhysTmp); \
         (pPage)->u2StateY            = (_uState); \
         (pPage)->fWrittenToY         = 0; \
         (pPage)->fSomethingElse0     = 0; \
@@ -759,71 +761,98 @@ typedef PPGMPAGE *PPPGMPAGE;
  * @returns host physical address (RTHCPHYS).
  * @param   pPage       Pointer to the physical guest page tracking structure.
  */
-#define PGM_PAGE_GET_HCPHYS(pPage)          ( (pPage)->HCPhysY & UINT64_C(0x0000fffffffff000) )
+#ifdef PGM_PAGE_WITH_PAGEID_IN_HCPHYS
+# define PGM_PAGE_GET_HCPHYS(pPage)         ( (pPage)->HCPhysY & UINT64_C(0x0000fffffffff000) )
+#else
+# define PGM_PAGE_GET_HCPHYS(pPage)         ( (pPage)->HCPhysY )
+#endif
 
 /**
  * Sets the host physical address of the guest page.
  * @param   pPage       Pointer to the physical guest page tracking structure.
  * @param   _HCPhys     The new host physical address.
  */
+#ifdef PGM_PAGE_WITH_PAGEID_IN_HCPHYS
 #define PGM_PAGE_SET_HCPHYS(pPage, _HCPhys) \
-    do { (pPage)->HCPhysY = (((pPage)->HCPhysY) & UINT64_C(0xffff000000000fff)) \
-                          | ((_HCPhys) & UINT64_C(0x0000fffffffff000)); } while (0)
+    do { \
+        RTHCPHYS SetHCPhysTmp = (_HCPhys); \
+        AssertFatal(!(SetHCPhysTmp & ~UINT64_C(0x0000fffffffff000))); \
+        (pPage)->HCPhysY = (((pPage)->HCPhysY) & UINT64_C(0xffff000000000fff)) \
+                         | SetHCPhysTmp; \
+    } while (0)
+#else
+# define PGM_PAGE_SET_HCPHYS(pPage, _HCPhys) \
+    do { \
+        RTHCPHYS SetHCPhysTmp = (_HCPhys); \
+        AssertFatal(!(SetHCPhysTmp & ~UINT64_C(0x0000fffffffff000))); \
+        (pPage)->HCPhysY = SetHCPhysTmp; \
+    } while (0)
+#endif
 
 /**
  * Get the Page ID.
  * @returns The Page ID; NIL_GMM_PAGEID if it's a ZERO page.
  * @param   pPage       Pointer to the physical guest page tracking structure.
  */
-#define PGM_PAGE_GET_PAGEID(pPage)          ( (pPage)->idPageY )
-/* later:
-#define PGM_PAGE_GET_PAGEID(pPage)          (  ((uint32_t)(pPage)->HCPhysY >> (48 - 12))
+#ifdef PGM_PAGE_WITH_PAGEID_IN_HCPHYS
+# define PGM_PAGE_GET_PAGEID(pPage)         (  ((uint32_t)(pPage)->HCPhysY >> (48 - 12))
                                              | ((uint32_t)(pPage)->HCPhysY & 0xfff) )
-*/
+#else
+# define PGM_PAGE_GET_PAGEID(pPage)         ( (pPage)->idPageY )
+#endif
+
 /**
  * Sets the Page ID.
  * @param   pPage       Pointer to the physical guest page tracking structure.
  */
-#define PGM_PAGE_SET_PAGEID(pPage, _idPage) do { (pPage)->idPageY = (_idPage); } while (0)
-/* later:
-#define PGM_PAGE_SET_PAGEID(pPage, _idPage) do { (pPage)->HCPhysY = (((pPage)->HCPhysY) & UINT64_C(0x0000fffffffff000)) \
-                                                                  | ((_idPage) & 0xfff) \
-                                                                  | (((_idPage) & 0x0ffff000) << (48-12)); } while (0)
-*/
+#ifdef PGM_PAGE_WITH_PAGEID_IN_HCPHYS
+# define PGM_PAGE_SET_PAGEID(pPage, _idPage) \
+    do { \
+        (pPage)->HCPhysY = (((pPage)->HCPhysY) & UINT64_C(0x0000fffffffff000)) \
+                         | ((_idPage) & 0xfff) \
+                         | (((_idPage) & 0x0ffff000) << (48-12)); \
+    } while (0)
+#else
+# define PGM_PAGE_SET_PAGEID(pPage, _idPage) \
+    do { \
+        (pPage)->idPageY = (_idPage); \
+    } while (0)
+#endif
 
 /**
  * Get the Chunk ID.
  * @returns The Chunk ID; NIL_GMM_CHUNKID if it's a ZERO page.
  * @param   pPage       Pointer to the physical guest page tracking structure.
  */
-#define PGM_PAGE_GET_CHUNKID(pPage)         ( (pPage)->idPageY >> GMM_CHUNKID_SHIFT )
-/* later:
-#if GMM_CHUNKID_SHIFT == 12
-# define PGM_PAGE_GET_CHUNKID(pPage)        ( (uint32_t)((pPage)->HCPhysY >> 48) )
-#elif GMM_CHUNKID_SHIFT > 12
-# define PGM_PAGE_GET_CHUNKID(pPage)        ( (uint32_t)((pPage)->HCPhysY >> (48 + (GMM_CHUNKID_SHIFT - 12)) )
-#elif GMM_CHUNKID_SHIFT < 12
-# define PGM_PAGE_GET_CHUNKID(pPage)        (   ( (uint32_t)((pPage)->HCPhysY >> 48)   << (12 - GMM_CHUNKID_SHIFT) ) \
-                                             |  ( (uint32_t)((pPage)->HCPhysY & 0xfff) >> GMM_CHUNKID_SHIFT ) )
+#ifdef PGM_PAGE_WITH_PAGEID_IN_HCPHYS
+# if GMM_CHUNKID_SHIFT == 12
+#  define PGM_PAGE_GET_CHUNKID(pPage)       ( (uint32_t)((pPage)->HCPhysY >> 48) )
+# elif GMM_CHUNKID_SHIFT > 12
+#  define PGM_PAGE_GET_CHUNKID(pPage)       ( (uint32_t)((pPage)->HCPhysY >> (48 + (GMM_CHUNKID_SHIFT - 12)) )
+# elif GMM_CHUNKID_SHIFT < 12
+#  define PGM_PAGE_GET_CHUNKID(pPage)       (   ( (uint32_t)((pPage)->HCPhysY >> 48)   << (12 - GMM_CHUNKID_SHIFT) ) \
+# else
+#  error "GMM_CHUNKID_SHIFT isn't defined or something."
+# endif
 #else
-# error "GMM_CHUNKID_SHIFT isn't defined or something."
+# define PGM_PAGE_GET_CHUNKID(pPage)        ( (pPage)->idPageY >> GMM_CHUNKID_SHIFT )
 #endif
-*/
 
 /**
  * Get the index of the page within the allocaiton chunk.
  * @returns The page index.
  * @param   pPage       Pointer to the physical guest page tracking structure.
  */
-#define PGM_PAGE_GET_PAGE_IN_CHUNK(pPage)   ( (pPage)->idPageY & GMM_PAGEID_IDX_MASK )
-/* later:
-#if GMM_CHUNKID_SHIFT <= 12
-# define PGM_PAGE_GET_PAGE_IN_CHUNK(pPage)  ( (uint32_t)((pPage)->HCPhysY & GMM_PAGEID_IDX_MASK) )
-#else
-# define PGM_PAGE_GET_PAGE_IN_CHUNK(pPage)  (   (uint32_t)((pPage)->HCPhysY & 0xfff) \
+#ifdef PGM_PAGE_WITH_PAGEID_IN_HCPHYS
+# if GMM_CHUNKID_SHIFT <= 12
+#  define PGM_PAGE_GET_PAGE_IN_CHUNK(pPage) ( (uint32_t)((pPage)->HCPhysY & GMM_PAGEID_IDX_MASK) )
+# else
+#  define PGM_PAGE_GET_PAGE_IN_CHUNK(pPage) (   (uint32_t)((pPage)->HCPhysY & 0xfff) \
                                              |  ( (uint32_t)((pPage)->HCPhysY >> 48) & (RT_BIT_32(GMM_CHUNKID_SHIFT - 12) - 1) ) )
+# endif
+#else
+# define PGM_PAGE_GET_PAGE_IN_CHUNK(pPage)  ( (pPage)->idPageY & GMM_PAGEID_IDX_MASK )
 #endif
-*/
 
 
 /**

@@ -1599,7 +1599,7 @@ VMMR3DECL(int) PGMR3PhysMMIO2Register(PVM pVM, PPDMDEVINS pDevIns, uint32_t iReg
                 while (iPage-- > 0)
                 {
                     PGM_PAGE_INIT(&pNew->RamRange.aPages[iPage],
-                                  paPages[iPage].Phys & X86_PTE_PAE_PG_MASK, NIL_GMM_PAGEID,
+                                  paPages[iPage].Phys, NIL_GMM_PAGEID,
                                   PGMPAGETYPE_MMIO2, PGM_PAGE_STATE_ALLOCATED);
                 }
 
@@ -1880,10 +1880,6 @@ VMMR3DECL(int) PGMR3PhysMMIO2Map(PVM pVM, PPDMDEVINS pDevIns, uint32_t iRegion, 
  */
 VMMR3DECL(int) PGMR3PhysMMIO2Unmap(PVM pVM, PPDMDEVINS pDevIns, uint32_t iRegion, RTGCPHYS GCPhys)
 {
-    bool        fInformREM = false;
-    RTGCPHYS    GCPhysRangeREM;
-    RTGCPHYS    cbRangeREM;
-
     /*
      * Validate input
      */
@@ -1908,6 +1904,9 @@ VMMR3DECL(int) PGMR3PhysMMIO2Unmap(PVM pVM, PPDMDEVINS pDevIns, uint32_t iRegion
      */
     pgmLock(pVM);
 
+    RTGCPHYS    GCPhysRangeREM;
+    RTGCPHYS    cbRangeREM;
+    bool        fInformREM;
     if (pCur->fOverlapping)
     {
         /* Restore the RAM pages we've replaced. */
@@ -1929,6 +1928,10 @@ VMMR3DECL(int) PGMR3PhysMMIO2Unmap(PVM pVM, PPDMDEVINS pDevIns, uint32_t iRegion
             pVM->pgm.s.cZeroPages++;
             pPageDst++;
         }
+
+        GCPhysRangeREM = NIL_RTGCPHYS;  /* shuts up gcc */
+        cbRangeREM     = RTGCPHYS_MAX;  /* ditto */
+        fInformREM     = false;
     }
     else
     {
