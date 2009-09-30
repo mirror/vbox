@@ -607,6 +607,10 @@ sorecvfrom(PNATState pData, struct socket *so)
                 m_free(pData, m);
                 return;
             }
+
+            Log2(("NAT: %R[natsock] ioctlsocket before read "
+                "(rc:%d errno:%d, n:%d)\n", so, rc, errno, n));
+
             if (rc == -1 && signalled == 0)
             {
                 LogRel(("NAT: can't fetch amount of bytes on socket %R[natsock], so message will be truncated.\n", so));
@@ -624,8 +628,9 @@ sorecvfrom(PNATState pData, struct socket *so)
         }
         ret = recvfrom(so->s, m->m_data, len, 0,
                             (struct sockaddr *)&addr, &addrlen);
-        Log2((" did recvfrom %d, errno = %d-%s\n",
-                    m->m_len, errno, strerror(errno)));
+        Log2(("NAT: %R[natsock] ioctlsocket after read "
+            "(rc:%d errno:%d, n:%d) ret:%d, len:%d\n", so, 
+             rc, errno, n, ret, len));
 #else
         /*How many data has been received ?*/
         /*
