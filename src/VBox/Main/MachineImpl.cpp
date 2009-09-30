@@ -2078,7 +2078,7 @@ STDMETHODIMP Machine::AttachDevice(IN_BSTR aControllerName,
         && !medium.isNull())
     {
         return setError(VBOX_E_OBJECT_IN_USE,
-                        tr("Hard disk '%ls' is already attached to this virtual machine"),
+                        tr("Medium '%ls' is already attached to this virtual machine"),
                         medium->locationFull().raw());
     }
 
@@ -2307,7 +2307,7 @@ STDMETHODIMP Machine::AttachDevice(IN_BSTR aControllerName,
 
     if (associate && !medium.isNull())
     {
-        /* as the last step, associate the hard disk to the VM */
+        /* as the last step, associate the medium to the VM */
         rc = medium->attachTo(mData->mUuid);
         /* here we can fail because of Deleting, or being in process of
          * creating a Diff */
@@ -5475,7 +5475,7 @@ HRESULT Machine::loadStorageDevices(StorageController *aStorageController,
             AssertComRCBreakRC (rc);
         }
 
-        /* backup mHDData to let registeredInit() properly rollback on failure
+        /* backup mMediaData to let registeredInit() properly rollback on failure
          * (= limited accessibility) */
 
         mMediaData.backup();
@@ -6328,10 +6328,10 @@ HRESULT Machine::saveStateSettings(int aFlags)
  *
  * Used when taking a snapshot or when discarding the current state.
  *
- * This method assumes that mHDData contains the original hard disk attachments
+ * This method assumes that mMediaData contains the original hard disk attachments
  * it needs to create diffs for. On success, these attachments will be replaced
  * with the created diffs. On failure, #deleteImplicitDiffs() is implicitly
- * called to delete created diffs which will also rollback mHDData and restore
+ * called to delete created diffs which will also rollback mMediaData and restore
  * whatever was backed up before calling this method.
  *
  * Attachments with non-normal hard disks are left as is.
@@ -6368,8 +6368,8 @@ HRESULT Machine::createImplicitDiffs(const Bstr &aFolder,
     AutoWriteLock alock(this);
 
     /* must be in a protective state because we leave the lock below */
-    AssertReturn(mData->mMachineState == MachineState_Saving ||
-                  mData->mMachineState == MachineState_Discarding, E_FAIL);
+    AssertReturn(   mData->mMachineState == MachineState_Saving
+                 || mData->mMachineState == MachineState_Discarding, E_FAIL);
 
     HRESULT rc = S_OK;
 
@@ -6399,7 +6399,7 @@ HRESULT Machine::createImplicitDiffs(const Bstr &aFolder,
         }
 
         /* remember the current list (note that we don't use backup() since
-         * mHDData may be already backed up) */
+         * mMediaData may be already backed up) */
         MediaData::AttachmentList atts = mMediaData->mAttachments;
 
         /* start from scratch */
@@ -6412,19 +6412,29 @@ HRESULT Machine::createImplicitDiffs(const Bstr &aFolder,
              ++it)
         {
             MediumAttachment* pAtt = *it;
-            if (pAtt->type() != DeviceType_HardDisk)
-                continue;
 
-            Medium* pHD = pAtt->medium();
-            Assert(pHD);
-            /* type cannot be changed while attached => no need to lock */
-            if (pHD->type() != MediumType_Normal)
+            DeviceType_T devType = pAtt->type();
+            Medium* medium = pAtt->medium();
+
+            if (   devType != DeviceType_HardDisk
+                || medium == NULL
+                || medium->type() != MediumType_Normal)
             {
                 /* copy the attachment as is */
-                Assert(pHD->type() == MediumType_Writethrough);
-                aProgress->SetNextOperation(BstrFmt(tr("Skipping medium '%s'"),
-                                                    pHD->base()->name().raw()),
-                                            aWeight);        // weight
+
+                /** @todo the progress object created in Console::TakeSnaphot
+                 * only expects operations for hard disks. Later other
+                 * device types need to show up in the progress as well. */
+                if (devType == DeviceType_HardDisk)
+                {
+                    if (medium == NULL)
+                        aProgress->SetNextOperation(Bstr(tr("Skipping attachment without medium")),
+                                                    aWeight);        // weight
+                    else
+                        aProgress->SetNextOperation(BstrFmt(tr("Skipping medium '%s'"),
+                                                            medium->base()->name().raw()),
+                                                    aWeight);        // weight
+                }
 
                 mMediaData->mAttachments.push_back(pAtt);
                 continue;
@@ -6432,13 +6442,13 @@ HRESULT Machine::createImplicitDiffs(const Bstr &aFolder,
 
             /* need a diff */
             aProgress->SetNextOperation(BstrFmt(tr("Creating differencing hard disk for '%s'"),
-                                                pHD->base()->name().raw()),
+                                                medium->base()->name().raw()),
                                         aWeight);        // weight
 
             ComObjPtr<Medium> diff;
             diff.createObject();
             rc = diff->init(mParent,
-                            pHD->preferredDiffFormat().raw(),
+                            medium->preferredDiffFormat().raw(),
                             BstrFmt("%ls"RTPATH_SLASH_STR,
                                     mUserData->mSnapshotFolderFull.raw()).raw());
             CheckComRCThrowRC(rc);
@@ -6446,9 +6456,9 @@ HRESULT Machine::createImplicitDiffs(const Bstr &aFolder,
             /* leave the lock before the potentially lengthy operation */
             alock.leave();
 
-            rc = pHD->createDiffStorageAndWait(diff,
-                                               MediumVariant_Standard,
-                                               NULL);
+            rc = medium->createDiffStorageAndWait(diff,
+                                                  MediumVariant_Standard,
+                                                  NULL);
 
             // at this point, the old image is still locked for writing, but instead
             // we need the new diff image locked for writing and lock the previously
@@ -6457,9 +6467,9 @@ HRESULT Machine::createImplicitDiffs(const Bstr &aFolder,
             {
                 diff->LockWrite(NULL);
                 mData->mSession.mLockedMedia.push_back(Data::Session::LockedMedia::value_type(ComPtr<IMedium>(diff), true));
-                pHD->UnlockWrite(NULL);
-                pHD->LockRead(NULL);
-                mData->mSession.mLockedMedia.push_back(Data::Session::LockedMedia::value_type(ComPtr<IMedium>(pHD), false));
+                medium->UnlockWrite(NULL);
+                medium->LockRead(NULL);
+                mData->mSession.mLockedMedia.push_back(Data::Session::LockedMedia::value_type(ComPtr<IMedium>(medium), false));
             }
 
             alock.enter();
@@ -6512,7 +6522,7 @@ HRESULT Machine::createImplicitDiffs(const Bstr &aFolder,
 
 /**
  * Deletes implicit differencing hard disks created either by
- * #createImplicitDiffs() or by #AttachMedium() and rolls back mHDData.
+ * #createImplicitDiffs() or by #AttachMedium() and rolls back mMediaData.
  *
  * Note that to delete hard disks created by #AttachMedium() this method is
  * called from #fixupMedia() when the changes are rolled back.
@@ -6687,10 +6697,10 @@ MediumAttachment* Machine::findAttachment(const MediaData::AttachmentList &ll,
  * Perform deferred hard disk detachments on success and deletion of implicitly
  * created diffs on failure.
  *
- * Does nothing if the hard disk attachment data (mHDData) is not changed (not
+ * Does nothing if the hard disk attachment data (mMediaData) is not changed (not
  * backed up).
  *
- * When the data is backed up, this method will commit mHDData if @a aCommit is
+ * When the data is backed up, this method will commit mMediaData if @a aCommit is
  * @c true and rollback it otherwise before returning.
  *
  * If @a aOnline is @c true then this method called with @a aCommit = @c true
@@ -7256,8 +7266,8 @@ void Machine::commit()
         /* attach new data to the primary machine and reshare it */
         mPeer->mUserData.attach (mUserData);
         mPeer->mHWData.attach (mHWData);
-        /* mHDData is reshared by fixupMedia */
-        // mPeer->mHDData.attach (mHDData);
+        /* mMediaData is reshared by fixupMedia */
+        // mPeer->mMediaData.attach(mMediaData);
         Assert(mPeer->mMediaData.data() == mMediaData.data());
     }
 }
@@ -9339,7 +9349,7 @@ HRESULT SessionMachine::endTakingSnapshot(BOOL aSuccess)
     else
     {
         /* delete all differencing hard disks created (this will also attach
-         * their parents back by rolling back mHDData) */
+         * their parents back by rolling back mMediaData) */
         fixupMedia(false /* aCommit */);
 
         mData->mFirstSnapshot = pOldFirstSnap;      // might have been changed above
@@ -10036,11 +10046,12 @@ HRESULT SessionMachine::lockMedia()
     {
         HRESULT rc = S_OK;
 
-        /* lock hard disks */
+        /* lock all medium objects attached to the VM */
         for (MediaData::AttachmentList::const_iterator it = mMediaData->mAttachments.begin();
              it != mMediaData->mAttachments.end();
              ++it)
         {
+            DeviceType_T devType = (*it)->type();
             ComObjPtr<Medium> hd = (*it)->medium();
 
             bool first = true;
@@ -10051,8 +10062,18 @@ HRESULT SessionMachine::lockMedia()
             {
                 if (first)
                 {
-                    rc = hd->LockWrite (&mediaState);
-                    CheckComRCThrowRC(rc);
+                    if (devType != DeviceType_DVD)
+                    {
+                        /* HardDisk and Floppy medium must be locked for writing */
+                        rc = hd->LockWrite(&mediaState);
+                        CheckComRCThrowRC(rc);
+                    }
+                    else
+                    {
+                        /* DVD medium must be locked for reading */
+                        rc = hd->LockRead(&mediaState);
+                        CheckComRCThrowRC(rc);
+                    }
 
                     mData->mSession.mLockedMedia.push_back (
                         Data::Session::LockedMedia::value_type (
