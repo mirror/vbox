@@ -596,35 +596,33 @@ sorecvfrom(PNATState pData, struct socket *so)
          */
         len = M_FREEROOM(m);
         /* if (so->so_fport != htons(53)) */
+        rc = ioctlsocket(so->s, FIONREAD, &n);
+        if (   rc == -1
+            && (  errno == EAGAIN
+               || errno == EWOULDBLOCK
+               || errno == EINPROGRESS
+               || errno == ENOTCONN))
         {
-            rc = ioctlsocket(so->s, FIONREAD, &n);
-            if (   rc == -1
-                && (  errno == EAGAIN
-                   || errno == EWOULDBLOCK
-                   || errno == EINPROGRESS
-                   || errno == ENOTCONN))
-            {
-                m_free(pData, m);
-                return;
-            }
+            m_free(pData, m);
+            return;
+        }
 
-            Log2(("NAT: %R[natsock] ioctlsocket before read "
-                "(rc:%d errno:%d, n:%d)\n", so, rc, errno, n));
+        Log2(("NAT: %R[natsock] ioctlsocket before read "
+            "(rc:%d errno:%d, n:%d)\n", so, rc, errno, n));
 
-            if (rc == -1 && signalled == 0)
-            {
-                LogRel(("NAT: can't fetch amount of bytes on socket %R[natsock], so message will be truncated.\n", so));
-                signalled = 1;
-                m_free(pData, m);
-                return;
-            }
+        if (rc == -1 && signalled == 0)
+        {
+            LogRel(("NAT: can't fetch amount of bytes on socket %R[natsock], so message will be truncated.\n", so));
+            signalled = 1;
+            m_free(pData, m);
+            return;
+        }
 
-            if (rc != -1 && n > len)
-            {
-                n = (m->m_data - m->m_dat) + m->m_len + n + 1;
-                m_inc(m, n);
-                len = M_FREEROOM(m);
-            }
+        if (rc != -1 && n > len)
+        {
+            n = (m->m_data - m->m_dat) + m->m_len + n + 1;
+            m_inc(m, n);
+            len = M_FREEROOM(m);
         }
         ret = recvfrom(so->s, m->m_data, len, 0,
                             (struct sockaddr *)&addr, &addrlen);
