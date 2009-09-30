@@ -25,6 +25,7 @@
 #include "state/cr_texture.h"
 #include "cr_mem.h"
 #include "cr_string.h"
+#include <stdio.h>
 
 #include <iprt/assert.h>
 #include <iprt/types.h>
@@ -688,7 +689,10 @@ static void crStateSaveGLSLProgramCB(unsigned long key, void *data1, void *data2
     PSSMHANDLE pSSM = (PSSMHANDLE) data2;
     int32_t rc;
     uint32_t ui32;
-    GLint maxUniformLen, activeUniforms=0, i;
+    GLint maxUniformLen, activeUniforms=0, uniformsCount=0, i, j;
+    GLchar *name;
+    GLenum type;
+    GLint size, location;
 
     rc = SSMR3PutMem(pSSM, &key, sizeof(key));
     CRASSERT(rc == VINF_SUCCESS);
@@ -716,54 +720,75 @@ static void crStateSaveGLSLProgramCB(unsigned long key, void *data1, void *data2
     diff_api.GetProgramiv(pProgram->hwid, GL_ACTIVE_UNIFORM_MAX_LENGTH, &maxUniformLen);
     diff_api.GetProgramiv(pProgram->hwid, GL_ACTIVE_UNIFORMS, &activeUniforms);
 
-    rc = SSMR3PutS32(pSSM, activeUniforms);
+    if (activeUniforms>0)
+    {
+        name = (GLchar *) crAlloc((maxUniformLen+8)*sizeof(GLchar));
+
+        if (!name)
+        {
+            crWarning("crStateSaveGLSLProgramCB: out of memory");
+            return;
+        }
+    }
+
+    for (i=0; i<activeUniforms; ++i)
+    {
+        diff_api.GetActiveUniform(pProgram->hwid, i, maxUniformLen, NULL, &size, &type, name);
+        uniformsCount += size;
+    }
+    CRASSERT(uniformsCount>=activeUniforms);
+
+    rc = SSMR3PutS32(pSSM, uniformsCount);
     CRASSERT(rc == VINF_SUCCESS);
 
     if (activeUniforms>0)
     {
-        GLchar *name = (GLchar *) crAlloc(maxUniformLen*sizeof(GLchar));
         GLfloat fdata[16];
         GLint idata[16];
-        GLenum type;
-        GLint size;
+        char *pIndexStr=NULL;
 
         for (i=0; i<activeUniforms; ++i)
         {
             diff_api.GetActiveUniform(pProgram->hwid, i, maxUniformLen, NULL, &size, &type, name);
 
-            /*@todo check if we'd reference all array elements or not*/
-            /*crap it fails as expected*/
-            if (size!=1) crWarning("@todo");
-
-            rc = SSMR3PutMem(pSSM, &type, sizeof(type));
-            CRASSERT(rc == VINF_SUCCESS);
-
-            crStateSaveString(name, pSSM);
-            
-            if (GL_INT==type
-                || GL_INT_VEC2==type
-                || GL_INT_VEC3==type
-                || GL_INT_VEC4==type
-                || GL_BOOL==type
-                || GL_BOOL_VEC2==type
-                || GL_BOOL_VEC3==type
-                || GL_BOOL_VEC4==type
-                || GL_SAMPLER_1D==type
-                || GL_SAMPLER_2D==type
-                || GL_SAMPLER_3D==type
-                || GL_SAMPLER_CUBE==type
-                || GL_SAMPLER_1D_SHADOW==type
-                || GL_SAMPLER_2D_SHADOW==type)
+            if (size>1)
             {
-                diff_api.GetUniformiv(pProgram->hwid, i, &idata[0]);
-                rc = SSMR3PutMem(pSSM, &idata[0], crStateGetUniformSize(type)*sizeof(idata[0]));
-                CRASSERT(rc == VINF_SUCCESS);
+                pIndexStr = crStrchr(name, '[');
+                if (!pIndexStr)
+                {
+                    pIndexStr = name+crStrlen(name);
+                }
             }
-            else
+
+            for (j=0; j<size; ++j)
             {
-                diff_api.GetUniformfv(pProgram->hwid, i, &fdata[0]);
-                rc = SSMR3PutMem(pSSM, &fdata[0], crStateGetUniformSize(type)*sizeof(fdata[0]));
+                if (size>1)
+                {
+                    sprintf(pIndexStr, "[%i]", j);
+                    location = diff_api.GetUniformLocation(pProgram->hwid, name);
+                }
+                else
+                {
+                    location = i;
+                }
+
+                rc = SSMR3PutMem(pSSM, &type, sizeof(type));
                 CRASSERT(rc == VINF_SUCCESS);
+
+                crStateSaveString(name, pSSM);
+            
+                if (crStateIsIntUniform(type))
+                {
+                    diff_api.GetUniformiv(pProgram->hwid, location, &idata[0]);
+                    rc = SSMR3PutMem(pSSM, &idata[0], crStateGetUniformSize(type)*sizeof(idata[0]));
+                    CRASSERT(rc == VINF_SUCCESS);
+                }
+                else
+                {
+                    diff_api.GetUniformfv(pProgram->hwid, location, &fdata[0]);
+                    rc = SSMR3PutMem(pSSM, &fdata[0], crStateGetUniformSize(type)*sizeof(fdata[0]));
+                    CRASSERT(rc == VINF_SUCCESS);
+                }
             }
         }
 
@@ -1632,20 +1657,7 @@ int32_t crStateLoadContext(CRContext *pContext, PSSMHANDLE pSSM)
                 rc = SSMR3GetMem(pSSM, &pProgram->pUniforms[k].type, sizeof(GLenum));
                 pProgram->pUniforms[k].name = crStateLoadString(pSSM);
 
-                if (GL_INT==pProgram->pUniforms[k].type
-                    || GL_INT_VEC2==pProgram->pUniforms[k].type
-                    || GL_INT_VEC3==pProgram->pUniforms[k].type
-                    || GL_INT_VEC4==pProgram->pUniforms[k].type
-                    || GL_BOOL==pProgram->pUniforms[k].type
-                    || GL_BOOL_VEC2==pProgram->pUniforms[k].type
-                    || GL_BOOL_VEC3==pProgram->pUniforms[k].type
-                    || GL_BOOL_VEC4==pProgram->pUniforms[k].type
-                    || GL_SAMPLER_1D==pProgram->pUniforms[k].type
-                    || GL_SAMPLER_2D==pProgram->pUniforms[k].type
-                    || GL_SAMPLER_3D==pProgram->pUniforms[k].type
-                    || GL_SAMPLER_CUBE==pProgram->pUniforms[k].type
-                    || GL_SAMPLER_1D_SHADOW==pProgram->pUniforms[k].type
-                    || GL_SAMPLER_2D_SHADOW==pProgram->pUniforms[k].type)
+                if (crStateIsIntUniform(pProgram->pUniforms[k].type))
                 {
                     itemsize = sizeof(GLint);
                 } else itemsize = sizeof(GLfloat);
