@@ -797,6 +797,7 @@ static void pr_SigchldHandler(int sig)
 #endif
 
     errno = errnoCopy;
+    /** @todo: check if the sig handler fix is proper here */
     if(old_sig_handler && old_sig_handler != SIG_IGN)
         old_sig_handler(sig);
 }
