@@ -198,10 +198,11 @@ static DECLCALLBACK(int) pgmR3LivePrep(PVM pVM, PSSMHANDLE pSSM)
     /*
      * Initialize the statistics.
      */
-    pVM->pgm.s.LiveSave.cReadyPages = 0;
-    pVM->pgm.s.LiveSave.cDirtyPages = 0;
-    pVM->pgm.s.LiveSave.cMmioPages  = 0;
-    pVM->pgm.s.LiveSave.fActive     = true;
+    pVM->pgm.s.LiveSave.cReadyPages    = 0;
+    pVM->pgm.s.LiveSave.cDirtyPages    = 0;
+    pVM->pgm.s.LiveSave.cIgnoredPages  = 0;
+    pVM->pgm.s.LiveSave.cMmio2Pages    = 0;
+    pVM->pgm.s.LiveSave.fActive        = true;
 
     /*
      * Initialize the live save tracking in the MMIO2 ranges.
@@ -216,8 +217,7 @@ static DECLCALLBACK(int) pgmR3LivePrep(PVM pVM, PSSMHANDLE pSSM)
         {
         }
 #endif
-
-        pVM->pgm.s.LiveSave.cMmioPages += cPages;
+        pVM->pgm.s.LiveSave.cMmio2Pages += cPages;
     }
     pgmUnlock(pVM);
 
@@ -254,7 +254,9 @@ static DECLCALLBACK(int) pgmR3LivePrep(PVM pVM, PSSMHANDLE pSSM)
             }
         }
 
-        pVM->pgm.s.LiveSave.cDirtyPages += cPages * 2;
+        pVM->pgm.s.LiveSave.cDirtyPages += cPages;
+        if (pRom->fFlags & PGMPHYS_ROM_FLAGS_SHADOWED)
+            pVM->pgm.s.LiveSave.cDirtyPages += cPages;
     }
     pgmUnlock(pVM);
 
@@ -336,6 +338,7 @@ static DECLCALLBACK(int) pgmR3LivePrep(PVM pVM, PSSMHANDLE pSSM)
                             paLSPages[iPage].fShared = 0;
                             paLSPages[iPage].fDirty  = 0;
                             paLSPages[iPage].fIgnore = 1;
+                            pVM->pgm.s.LiveSave.cIgnoredPages++;
                             break;
                         }
 
@@ -347,6 +350,7 @@ static DECLCALLBACK(int) pgmR3LivePrep(PVM pVM, PSSMHANDLE pSSM)
                             paLSPages[iPage].fShared = 0;
                             paLSPages[iPage].fDirty  = 0;
                             paLSPages[iPage].fIgnore = 1;
+                            pVM->pgm.s.LiveSave.cIgnoredPages++;
                             break;
 
                         case PGMPAGETYPE_MMIO:
@@ -354,7 +358,7 @@ static DECLCALLBACK(int) pgmR3LivePrep(PVM pVM, PSSMHANDLE pSSM)
                             paLSPages[iPage].fShared = 0;
                             paLSPages[iPage].fDirty  = 0;
                             paLSPages[iPage].fIgnore = 1;
-                            pVM->pgm.s.LiveSave.cMmioPages++;
+                            pVM->pgm.s.LiveSave.cIgnoredPages++;
                             break;
                     }
                 }
@@ -862,7 +866,7 @@ static int pgmR3SaveRamPages(PVM pVM, PSSMHANDLE pSSM, bool fLiveSave, uint32_t 
                         if (PGM_PAGE_GET_TYPE(&pCur->aPages[iPage]) != PGMPAGETYPE_RAM) /* in case of recent ramppings */
                             continue;
                         if (    PGM_PAGE_GET_STATE(&pCur->aPages[iPage])
-                            ==  (  paLSPages[iPage].fZero
+                            !=  (  paLSPages[iPage].fZero
                                  ? PGM_PAGE_STATE_ZERO
                                  : paLSPages[iPage].fShared
                                  ? PGM_PAGE_STATE_SHARED
@@ -932,6 +936,8 @@ static int pgmR3SaveRamPages(PVM pVM, PSSMHANDLE pSSM, bool fLiveSave, uint32_t 
                     {
                         paLSPages[iPage].fDirty = 0;
                         paLSPages[iPage].uPassSaved = uPass;
+                        pVM->pgm.s.LiveSave.cReadyPages++;
+                        pVM->pgm.s.LiveSave.cDirtyPages--;
                     }
                     if (idRamRangesGen != pVM->pgm.s.idRamRangesGen)
                     {
@@ -1066,8 +1072,8 @@ static void pgmR3LiveExecScanPages(PVM pVM, bool fFinalPass)
 
                                 if (!paLSPages[iPage].fDirty)
                                 {
-                                    pVM->pgm.s.LiveSave.cDirtyPages++;
                                     pVM->pgm.s.LiveSave.cReadyPages--;
+                                    pVM->pgm.s.LiveSave.cDirtyPages++;
                                     if (++paLSPages[iPage].cDirtied > PGMLIVSAVEPAGE_MAX_DIRTIED)
                                         paLSPages[iPage].cDirtied = PGMLIVSAVEPAGE_MAX_DIRTIED;
                                 }
@@ -1147,8 +1153,7 @@ static void pgmR3LiveExecScanPages(PVM pVM, bool fFinalPass)
                             pVM->pgm.s.LiveSave.cDirtyPages--;
                         else
                             pVM->pgm.s.LiveSave.cReadyPages--;
-                        if (PGM_PAGE_GET_TYPE(&pCur->aPages[iPage]) == PGMPAGETYPE_MMIO)
-                            pVM->pgm.s.LiveSave.cMmioPages++;
+                        pVM->pgm.s.LiveSave.cIgnoredPages++;
                     }
                 } /* for each page in range */
 
@@ -1209,6 +1214,7 @@ static DECLCALLBACK(int) pgmR3LiveExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uPass)
     return rc;
 }
 
+//#include <iprt/stream.h>
 
 /**
  * Votes on whether the live save phase is done or not.
@@ -1220,7 +1226,20 @@ static DECLCALLBACK(int) pgmR3LiveExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uPass)
  */
 static DECLCALLBACK(int)  pgmR3LiveVote(PVM pVM, PSSMHANDLE pSSM)
 {
-    return VINF_SUCCESS;
+//    RTPrintf("# Ready=%08x Dirty=%#08x Ignored=%#08x Monitored=%#08x MMIO2=%#08x\n",
+//             pVM->pgm.s.LiveSave.cReadyPages,
+//             pVM->pgm.s.LiveSave.cDirtyPages,
+//             pVM->pgm.s.LiveSave.cIgnoredPages,
+//             pVM->pgm.s.LiveSave.cMonitoredPages,
+//             pVM->pgm.s.LiveSave.cMmio2Pages
+//             );
+//    static int s_iHack = 0;
+//    if ((++s_iHack % 25) == 0)
+//        return VINF_SUCCESS;
+
+    if (pVM->pgm.s.LiveSave.cDirtyPages < 256) /* semi random number. */
+        return VINF_SUCCESS;
+    return VINF_SSM_VOTE_FOR_ANOTHER_PASS;
 }
 
 #ifndef VBOX_WITH_LIVE_MIGRATION
