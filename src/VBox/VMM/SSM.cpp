@@ -925,22 +925,27 @@ static DECLCALLBACK(int) ssmR3SelfLoadExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uV
     AssertLogRelMsgReturn(uVersion == 1, ("%d", uVersion), VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION);
 
     /*
-     * String table containg pairs of variable and value string.
-     * Terminated by two empty strings.
+     * The first and last passes contains a {name, value} string table that is
+     * terminated by two emptry strings.  It contains useful informal build
+     * info and can be very handy when something goes wrong after restore.
      */
-    for (unsigned i = 0; ; i++)
+    if (    uPass == 0
+        ||  uPass == SSM_PASS_FINAL)
     {
-        char szVar[128];
-        char szValue[1024];
-        int rc = SSMR3GetStrZ(pSSM, szVar, sizeof(szVar));
-        AssertRCReturn(rc, rc);
-        rc = SSMR3GetStrZ(pSSM, szValue, sizeof(szValue));
-        AssertRCReturn(rc, rc);
-        if (!szVar[0] && !szValue[0])
-            break;
-        if (i == 0)
-            LogRel(("SSM: Saved state info:\n"));
-        LogRel(("SSM:   %s: %s\n", szVar, szValue));
+        for (unsigned i = 0; ; i++)
+        {
+            char szVar[128];
+            char szValue[1024];
+            int rc = SSMR3GetStrZ(pSSM, szVar, sizeof(szVar));
+            AssertRCReturn(rc, rc);
+            rc = SSMR3GetStrZ(pSSM, szValue, sizeof(szValue));
+            AssertRCReturn(rc, rc);
+            if (!szVar[0] && !szValue[0])
+                break;
+            if (i == 0)
+                LogRel(("SSM: Saved state info:\n"));
+            LogRel(("SSM:   %s: %s\n", szVar, szValue));
+        }
     }
     return VINF_SUCCESS;
 }
