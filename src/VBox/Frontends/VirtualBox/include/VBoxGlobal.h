@@ -412,7 +412,7 @@ public:
     QString toString (KStorageBus aBus, LONG aChannel, LONG aDevice) const;
     LONG toStorageDevice (KStorageBus aBus, LONG aChannel, const QString &aDevice) const;
 
-    QString toFullString (StorageSlot aSlot) const;
+    QString toString (StorageSlot aSlot) const;
     StorageSlot toStorageSlot (const QString &aSlot) const;
 
     QString toString (KMediumType t) const
@@ -923,6 +923,7 @@ private:
     QULongStringHash mStorageBuses;
     QLongStringHash mStorageBusChannels;
     QLongStringHash mStorageBusDevices;
+    QULongStringHash mSlotTemplates;
 
     QULongStringHash mDiskTypes;
     QString mDiskTypes_Differencing;

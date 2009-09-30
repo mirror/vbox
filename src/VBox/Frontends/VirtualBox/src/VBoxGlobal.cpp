@@ -1154,29 +1154,41 @@ LONG VBoxGlobal::toStorageDevice (KStorageBus aBus, LONG aChannel, const QString
 
 /**
  * Returns a full string representation of the given device of the given channel on the given storage bus.
+ * This method does not uses any separate string tags related to bus, channel, device, it has own
+ * separately translated string tags allowing to translate a full slot name into human readable format
+ * to be consistent with i18n.
  * Complementary to #toStorageSlot (const QString &) const.
  */
-QString VBoxGlobal::toFullString (StorageSlot aSlot) const
+QString VBoxGlobal::toString (StorageSlot aSlot) const
 {
-    QString device (vboxGlobal().toString (aSlot.bus) + ' ');
+    int maxPort = virtualBox().GetSystemProperties().GetMaxPortCountForStorageBus (aSlot.bus);
+    int maxDevice = virtualBox().GetSystemProperties().GetMaxDevicesPerPortForStorageBus (aSlot.bus);
+    if (aSlot.port < 0 || aSlot.port > maxPort)
+        AssertMsgFailed (("Invalid port %d\n", aSlot.port));
+    if (aSlot.device < 0 || aSlot.device > maxDevice)
+        AssertMsgFailed (("Invalid device %d\n", aSlot.device));
 
+    QString result;
     switch (aSlot.bus)
     {
         case KStorageBus_IDE:
         {
-            device += vboxGlobal().toString (aSlot.bus, aSlot.port) + ' ' +
-                      vboxGlobal().toString (aSlot.bus, aSlot.port, aSlot.device);
+            result = mSlotTemplates [aSlot.port * maxDevice + aSlot.device];
             break;
         }
         case KStorageBus_SATA:
+        {
+            result = mSlotTemplates [4].arg (aSlot.port);
+            break;
+        }
         case KStorageBus_SCSI:
         {
-            device += vboxGlobal().toString (aSlot.bus, aSlot.port);
+            result = mSlotTemplates [5].arg (aSlot.port);
             break;
         }
         case KStorageBus_Floppy:
         {
-            device += vboxGlobal().toString (aSlot.bus, aSlot.port, aSlot.device);
+            result = mSlotTemplates [6].arg (aSlot.device);
             break;
         }
         default:
@@ -1185,8 +1197,7 @@ QString VBoxGlobal::toFullString (StorageSlot aSlot) const
             break;
         }
     }
-
-    return device;
+    return result;
 }
 
 /**
@@ -1195,39 +1206,62 @@ QString VBoxGlobal::toFullString (StorageSlot aSlot) const
  */
 StorageSlot VBoxGlobal::toStorageSlot (const QString &aSlot) const
 {
-    StorageSlot result;
-
-    result.bus = toStorageBusType (aSlot.section (' ', 0, 0));
-    QString other (aSlot.section (' ', 1));
-
-    switch (result.bus)
+    int index = -1;
+    QRegExp regExp;
+    for (int i = 0; i < mSlotTemplates.size(); ++ i)
     {
-        case KStorageBus_IDE:
+        regExp = QRegExp (mSlotTemplates [i].arg ("(\\d+)"));
+        if (regExp.indexIn (aSlot) != -1)
         {
-            result.port = toStorageChannel (result.bus, other.section (' ', 0, 0));
-            result.device = toStorageDevice (result.bus, result.port, other.section (' ', 1));
-            break;
-        }
-        case KStorageBus_SATA:
-        case KStorageBus_SCSI:
-        {
-            result.port = toStorageChannel (result.bus, other);
-            result.device = toStorageDevice (result.bus, result.port, QString::null);
-            break;
-        }
-        case KStorageBus_Floppy:
-        {
-            result.port = toStorageChannel (result.bus, QString::null);
-            result.device = toStorageDevice (result.bus, result.port, other);
-            break;
-        }
-        default:
-        {
-            AssertMsgFailed (("Invalid bus type %d\n", result.bus));
+            index = i;
             break;
         }
     }
 
+    StorageSlot result;
+    switch (index)
+    {
+        case 0:
+        case 1:
+        case 2:
+        case 3:
+        {
+            result.bus = KStorageBus_IDE;
+            int maxPort = virtualBox().GetSystemProperties().GetMaxPortCountForStorageBus (result.bus);
+            result.port = index / maxPort;
+            result.device = index % maxPort;
+            break;
+        }
+        case 4:
+        {
+            result.bus = KStorageBus_SATA;
+            int maxPort = virtualBox().GetSystemProperties().GetMaxPortCountForStorageBus (result.bus);
+            result.port = regExp.cap (1).toInt();
+            if (result.port < 0 || result.port > maxPort)
+                AssertMsgFailed (("Invalid port %d\n", result.port));
+            break;
+        }
+        case 5:
+        {
+            result.bus = KStorageBus_SCSI;
+            int maxPort = virtualBox().GetSystemProperties().GetMaxPortCountForStorageBus (result.bus);
+            result.port = regExp.cap (1).toInt();
+            if (result.port < 0 || result.port > maxPort)
+                AssertMsgFailed (("Invalid port %d\n", result.port));
+            break;
+        }
+        case 6:
+        {
+            result.bus = KStorageBus_Floppy;
+            int maxDevice = virtualBox().GetSystemProperties().GetMaxDevicesPerPortForStorageBus (result.bus);
+            result.device = regExp.cap (1).toInt();
+            if (result.device < 0 || result.device > maxDevice)
+                AssertMsgFailed (("Invalid device %d\n", result.device));
+            break;
+        }
+        default:
+            break;
+    }
     return result;
 }
 
@@ -1703,7 +1737,7 @@ QString VBoxGlobal::detailsReport (const CMachine &aMachine, bool aWithLinks)
                 LONG port   = ma.GetPort();
                 LONG device = ma.GetDevice();
                 item += QString (sSectionItemTpl2)
-                        .arg (toFullString (StorageSlot (bus, port, device)))
+                        .arg (toString (StorageSlot (bus, port, device)))
                         .arg (details (medium, false));
                 ++ rows;
             }
@@ -2628,13 +2662,21 @@ void VBoxGlobal::retranslateUi()
     mStorageBuses [KStorageBus_SCSI] =      tr ("SCSI", "StorageBus");
     mStorageBuses [KStorageBus_Floppy] =    tr ("Floppy", "StorageBus");
 
-    mStorageBusChannels [0] =   tr ("Primary", "StorageBusChannel");
-    mStorageBusChannels [1] =   tr ("Secondary", "StorageBusChannel");
-    mStorageBusChannels [2] =   tr ("Port %1", "StorageBusChannel");
+    mStorageBusChannels [0] = tr ("Primary", "StorageBusChannel");
+    mStorageBusChannels [1] = tr ("Secondary", "StorageBusChannel");
+    mStorageBusChannels [2] = tr ("Port %1", "StorageBusChannel");
 
-    mStorageBusDevices [0] =    tr ("Master", "StorageBusDevice");
-    mStorageBusDevices [1] =    tr ("Slave", "StorageBusDevice");
-    mStorageBusDevices [2] =    tr ("Device %1", "StorageBusDevice");
+    mStorageBusDevices [0] = tr ("Master", "StorageBusDevice");
+    mStorageBusDevices [1] = tr ("Slave", "StorageBusDevice");
+    mStorageBusDevices [2] = tr ("Device %1", "StorageBusDevice");
+
+    mSlotTemplates [0] = tr ("IDE Primary Master", "New Storage UI : Slot Name");
+    mSlotTemplates [1] = tr ("IDE Primary Slave", "New Storage UI : Slot Name");
+    mSlotTemplates [2] = tr ("IDE Secondary Master", "New Storage UI : Slot Name");
+    mSlotTemplates [3] = tr ("IDE Secondary Slave", "New Storage UI : Slot Name");
+    mSlotTemplates [4] = tr ("SATA Port %1", "New Storage UI : Slot Name");
+    mSlotTemplates [5] = tr ("SCSI Port %1", "New Storage UI : Slot Name");
+    mSlotTemplates [6] = tr ("Floppy Device %1", "New Storage UI : Slot Name");
 
     mDiskTypes [KMediumType_Normal] =           tr ("Normal", "DiskType");
     mDiskTypes [KMediumType_Immutable] =        tr ("Immutable", "DiskType");
