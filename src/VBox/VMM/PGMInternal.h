@@ -1023,8 +1023,11 @@ typedef struct PGMLIVESAVEPAGE
     uint32_t    cDirtied : 24;
     /** Whether it is currently dirty. */
     uint32_t    fDirty : 1;
-    /** Is or has been a MMIO/MMIO2 and is not worth saving. */
-    uint32_t    fMmio : 1;
+    /** Ignore the page.
+     *  This is used for pages that has been MMIO, MMIO2 or ROM pages once.  We will
+     *  deal with these after pausing the VM and DevPCI have said it bit about
+     *  remappings. */
+    uint32_t    fIgnore : 1;
     /** Was a ZERO page last time around. */
     uint32_t    fZero : 1;
     /** Was a SHARED page last time around. */
@@ -1127,12 +1130,12 @@ typedef struct PGMROMPAGE
     {
         /** The previous protection value. */
         uint8_t u8Prot;
-        /** Whether we've saved the virgin page already. */
-        bool    fSavedVirgin;
         /** Written to flag set by the handler. */
         bool    fWrittenTo;
-        /** Whether we're positively done, i.e. the ROM cannot be shadowed. */
-        bool    fDone;
+        /** Whether the shadow page is dirty or not. */
+        bool    fDirty;
+        /** Whether it was dirtied in the recently. */
+        bool    fDirtiedRecently;
     } LiveSave;
 } PGMROMPAGE;
 AssertCompileSizeAlignment(PGMROMPAGE, 8);
@@ -1160,7 +1163,7 @@ typedef struct PGMROMRANGE
     /** Pointer to the next range - RC. */
     RCPTRTYPE(struct PGMROMRANGE *)     pNextRC;
     /** Pointer alignment */
-    RTRCPTR                             GCPtrAlignment;
+    RTRCPTR                             RCPtrAlignment;
     /** Address of the range. */
     RTGCPHYS                            GCPhys;
     /** Address of the last byte in the range. */
@@ -1169,8 +1172,12 @@ typedef struct PGMROMRANGE
     RTGCPHYS                            cb;
     /** The flags (PGMPHYS_ROM_FLAG_*). */
     uint32_t                            fFlags;
+    /** The saved state range ID. */
+    uint8_t                             idSavedState;
+    /** Alignment padding. */
+    uint8_t                             au8Alignment[3];
     /** Alignment padding ensuring that aPages is sizeof(PGMROMPAGE) aligned. */
-    uint32_t                            au32Alignemnt[HC_ARCH_BITS == 32 ? 7 : 3];
+    uint32_t                            au32Alignemnt[HC_ARCH_BITS == 32 ? 6 : 2];
     /** Pointer to the original bits when PGMPHYS_ROM_FLAGS_PERMANENT_BINARY was specified.
      * This is used for strictness checks. */
     R3PTRTYPE(const void *)             pvOriginal;
@@ -1213,8 +1220,12 @@ typedef struct PGMMMIO2RANGE
      * @remarks This ASSUMES that nobody will ever really need to have multiple
      *          PCI devices with matching MMIO region numbers on a single device. */
     uint8_t                             iRegion;
+    /** The saved state range ID. */
+    uint8_t                             idSavedState;
+#if HC_ARCH_BITS != 32
     /** Alignment padding for putting the ram range on a PGMPAGE alignment boundrary. */
-    uint8_t                             abAlignemnt[HC_ARCH_BITS == 32 ? 1 : 5];
+    uint8_t                             abAlignemnt[HC_ARCH_BITS == 32 ? 0 : 4];
+#endif
     /** The associated RAM range. */
     PGMRAMRANGE                         RamRange;
 } PGMMMIO2RANGE;
