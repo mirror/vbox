@@ -1269,7 +1269,7 @@ unsigned int crImageSize( GLenum format, GLenum type, GLsizei width, GLsizei hei
     }
     else if (GL_DEPTH_COMPONENT==format && type!=GL_FLOAT)
     {
-        /*GL_DEPTH_COMPONENT with GL_UNSIGNED_BYTE seems is more that 1 byte per pixel*/
+        /*GL_DEPTH_COMPONENT with GL_UNSIGNED_BYTE seems to be more than 1 byte per pixel*/
         bytes = 4 * width * height * crPixelSize( format, type );
     }
     else
