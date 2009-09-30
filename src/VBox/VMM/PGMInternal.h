@@ -631,7 +631,8 @@ AssertCompile(PGMPAGETYPE_END <= 7);
  */
 typedef struct PGMPAGE
 {
-    /** The physical address and a whole lot of other stuff. All bits are used! */
+    /** The physical address.
+     *  This will later contain the page id in the unused bits. */
     RTHCPHYS    HCPhysY;
     /** The page state. */
     uint32_t    u2StateY : 2;
@@ -655,10 +656,8 @@ typedef struct PGMPAGE
     uint32_t    cReadLocksY : 4;
     /** The number of write locks on this page. */
     uint32_t    cWriteLocksY : 4;
-    /** Intended for the usage tracking that currently occupies the upper 16-bit
-     *  of HCPhysY.
-     * @todo Start using this field.  */
-    uint32_t    u16LaterUseThisForTrackingY : 16;
+    /** Usage tracking (page pool). */
+    uint32_t    u16TrackingY : 16;
 } PGMPAGE;
 AssertCompileSize(PGMPAGE, 16);
 /** Pointer to a physical guest page. */
@@ -686,7 +685,7 @@ typedef PPGMPAGE *PPPGMPAGE;
         (pPage)->fSomethingElse1     = 0; \
         (pPage)->cReadLocksY         = 0; \
         (pPage)->cWriteLocksY        = 0; \
-        (pPage)->u16LaterUseThisForTrackingY = 0; \
+        (pPage)->u16TrackingY        = 0; \
     } while (0)
 
 /**
@@ -706,7 +705,7 @@ typedef PPGMPAGE *PPPGMPAGE;
         (pPage)->fSomethingElse1     = 0; \
         (pPage)->cReadLocksY         = 0; \
         (pPage)->cWriteLocksY        = 0; \
-        (pPage)->u16LaterUseThisForTrackingY = 0; \
+        (pPage)->u16TrackingY        = 0; \
     } while (0)
 
 /**
@@ -745,15 +744,14 @@ typedef PPGMPAGE *PPPGMPAGE;
  * @returns page state (PGM_PAGE_STATE_*).
  * @param   pPage       Pointer to the physical guest page tracking structure.
  */
-#define PGM_PAGE_GET_STATE(pPage)       ( (pPage)->u2StateY )
+#define PGM_PAGE_GET_STATE(pPage)           ( (pPage)->u2StateY )
 
 /**
  * Sets the page state.
  * @param   pPage       Pointer to the physical guest page tracking structure.
  * @param   _uState     The new page state.
  */
-#define PGM_PAGE_SET_STATE(pPage, _uState) \
-                                        do { (pPage)->u2StateY = (_uState); } while (0)
+#define PGM_PAGE_SET_STATE(pPage, _uState)  do { (pPage)->u2StateY = (_uState); } while (0)
 
 
 /**
@@ -761,7 +759,7 @@ typedef PPGMPAGE *PPPGMPAGE;
  * @returns host physical address (RTHCPHYS).
  * @param   pPage       Pointer to the physical guest page tracking structure.
  */
-#define PGM_PAGE_GET_HCPHYS(pPage)      ( (pPage)->HCPhysY & UINT64_C(0x0000fffffffff000) )
+#define PGM_PAGE_GET_HCPHYS(pPage)          ( (pPage)->HCPhysY & UINT64_C(0x0000fffffffff000) )
 
 /**
  * Sets the host physical address of the guest page.
@@ -769,28 +767,28 @@ typedef PPGMPAGE *PPPGMPAGE;
  * @param   _HCPhys     The new host physical address.
  */
 #define PGM_PAGE_SET_HCPHYS(pPage, _HCPhys) \
-                                        do { (pPage)->HCPhysY = (((pPage)->HCPhysY) & UINT64_C(0xffff000000000fff)) \
-                                                              | ((_HCPhys) & UINT64_C(0x0000fffffffff000)); } while (0)
+    do { (pPage)->HCPhysY = (((pPage)->HCPhysY) & UINT64_C(0xffff000000000fff)) \
+                          | ((_HCPhys) & UINT64_C(0x0000fffffffff000)); } while (0)
 
 /**
  * Get the Page ID.
  * @returns The Page ID; NIL_GMM_PAGEID if it's a ZERO page.
  * @param   pPage       Pointer to the physical guest page tracking structure.
  */
-#define PGM_PAGE_GET_PAGEID(pPage)      ( (pPage)->idPageY )
+#define PGM_PAGE_GET_PAGEID(pPage)          ( (pPage)->idPageY )
 /* later:
-#define PGM_PAGE_GET_PAGEID(pPage)      (   ((uint32_t)(pPage)->HCPhysY >> (48 - 12))
-                                         |  ((uint32_t)(pPage)->HCPhysY & 0xfff) )
+#define PGM_PAGE_GET_PAGEID(pPage)          (  ((uint32_t)(pPage)->HCPhysY >> (48 - 12))
+                                             | ((uint32_t)(pPage)->HCPhysY & 0xfff) )
 */
 /**
  * Sets the Page ID.
  * @param   pPage       Pointer to the physical guest page tracking structure.
  */
-#define PGM_PAGE_SET_PAGEID(pPage, _idPage)  do { (pPage)->idPageY = (_idPage); } while (0)
+#define PGM_PAGE_SET_PAGEID(pPage, _idPage) do { (pPage)->idPageY = (_idPage); } while (0)
 /* later:
-#define PGM_PAGE_SET_PAGEID(pPage, _idPage)  do { (pPage)->HCPhysY = (((pPage)->HCPhysY) & UINT64_C(0x0000fffffffff000)) \
-                                                                   | ((_idPage) & 0xfff) \
-                                                                   | (((_idPage) & 0x0ffff000) << (48-12)); } while (0)
+#define PGM_PAGE_SET_PAGEID(pPage, _idPage) do { (pPage)->HCPhysY = (((pPage)->HCPhysY) & UINT64_C(0x0000fffffffff000)) \
+                                                                  | ((_idPage) & 0xfff) \
+                                                                  | (((_idPage) & 0x0ffff000) << (48-12)); } while (0)
 */
 
 /**
@@ -798,15 +796,15 @@ typedef PPGMPAGE *PPPGMPAGE;
  * @returns The Chunk ID; NIL_GMM_CHUNKID if it's a ZERO page.
  * @param   pPage       Pointer to the physical guest page tracking structure.
  */
-#define PGM_PAGE_GET_CHUNKID(pPage)     ( (pPage)->idPageY >> GMM_CHUNKID_SHIFT )
+#define PGM_PAGE_GET_CHUNKID(pPage)         ( (pPage)->idPageY >> GMM_CHUNKID_SHIFT )
 /* later:
 #if GMM_CHUNKID_SHIFT == 12
-# define PGM_PAGE_GET_CHUNKID(pPage)    ( (uint32_t)((pPage)->HCPhysY >> 48) )
+# define PGM_PAGE_GET_CHUNKID(pPage)        ( (uint32_t)((pPage)->HCPhysY >> 48) )
 #elif GMM_CHUNKID_SHIFT > 12
-# define PGM_PAGE_GET_CHUNKID(pPage)    ( (uint32_t)((pPage)->HCPhysY >> (48 + (GMM_CHUNKID_SHIFT - 12)) )
+# define PGM_PAGE_GET_CHUNKID(pPage)        ( (uint32_t)((pPage)->HCPhysY >> (48 + (GMM_CHUNKID_SHIFT - 12)) )
 #elif GMM_CHUNKID_SHIFT < 12
-# define PGM_PAGE_GET_CHUNKID(pPage)    (   ( (uint32_t)((pPage)->HCPhysY >> 48)   << (12 - GMM_CHUNKID_SHIFT) ) \
-                                         |  ( (uint32_t)((pPage)->HCPhysY & 0xfff) >> GMM_CHUNKID_SHIFT ) )
+# define PGM_PAGE_GET_CHUNKID(pPage)        (   ( (uint32_t)((pPage)->HCPhysY >> 48)   << (12 - GMM_CHUNKID_SHIFT) ) \
+                                             |  ( (uint32_t)((pPage)->HCPhysY & 0xfff) >> GMM_CHUNKID_SHIFT ) )
 #else
 # error "GMM_CHUNKID_SHIFT isn't defined or something."
 #endif
@@ -833,36 +831,35 @@ typedef PPGMPAGE *PPPGMPAGE;
  * @returns The page type.
  * @param   pPage       Pointer to the physical guest page tracking structure.
  */
-#define PGM_PAGE_GET_TYPE(pPage)        (pPage)->u3TypeY
+#define PGM_PAGE_GET_TYPE(pPage)            (pPage)->u3TypeY
 
 /**
  * Sets the page type.
  * @param   pPage       Pointer to the physical guest page tracking structure.
  * @param   _enmType    The new page type (PGMPAGETYPE).
  */
-#define PGM_PAGE_SET_TYPE(pPage, _enmType) \
-    do { (pPage)->u3TypeY = (_enmType); } while (0)
+#define PGM_PAGE_SET_TYPE(pPage, _enmType)  do { (pPage)->u3TypeY = (_enmType); } while (0)
 
 /**
  * Checks if the page is marked for MMIO.
  * @returns true/false.
  * @param   pPage       Pointer to the physical guest page tracking structure.
  */
-#define PGM_PAGE_IS_MMIO(pPage)         ( (pPage)->u3TypeY == PGMPAGETYPE_MMIO )
+#define PGM_PAGE_IS_MMIO(pPage)             ( (pPage)->u3TypeY == PGMPAGETYPE_MMIO )
 
 /**
  * Checks if the page is backed by the ZERO page.
  * @returns true/false.
  * @param   pPage       Pointer to the physical guest page tracking structure.
  */
-#define PGM_PAGE_IS_ZERO(pPage)         ( (pPage)->u2StateY == PGM_PAGE_STATE_ZERO )
+#define PGM_PAGE_IS_ZERO(pPage)             ( (pPage)->u2StateY == PGM_PAGE_STATE_ZERO )
 
 /**
  * Checks if the page is backed by a SHARED page.
  * @returns true/false.
  * @param   pPage       Pointer to the physical guest page tracking structure.
  */
-#define PGM_PAGE_IS_SHARED(pPage)       ( (pPage)->u2StateY == PGM_PAGE_STATE_SHARED )
+#define PGM_PAGE_IS_SHARED(pPage)           ( (pPage)->u2StateY == PGM_PAGE_STATE_SHARED )
 
 
 /**
@@ -905,7 +902,8 @@ typedef PPGMPAGE *PPPGMPAGE;
  * @returns PGM_PAGE_HNDL_PHYS_STATE_* value.
  * @param   pPage       Pointer to the physical guest page tracking structure.
  */
-#define PGM_PAGE_GET_HNDL_PHYS_STATE(pPage)     ( (pPage)->u2HandlerPhysStateY )
+#define PGM_PAGE_GET_HNDL_PHYS_STATE(pPage)  \
+    ( (pPage)->u2HandlerPhysStateY )
 
 /**
  * Sets the physical access handler state of a page.
@@ -920,14 +918,16 @@ typedef PPGMPAGE *PPPGMPAGE;
  * @returns true/false
  * @param   pPage       Pointer to the physical guest page tracking structure.
  */
-#define PGM_PAGE_HAS_ANY_PHYSICAL_HANDLERS(pPage)      ( (pPage)->u2HandlerPhysStateY != PGM_PAGE_HNDL_PHYS_STATE_NONE )
+#define PGM_PAGE_HAS_ANY_PHYSICAL_HANDLERS(pPage) \
+    ( (pPage)->u2HandlerPhysStateY != PGM_PAGE_HNDL_PHYS_STATE_NONE )
 
 /**
  * Checks if the page has any active physical access handlers.
  * @returns true/false
  * @param   pPage       Pointer to the physical guest page tracking structure.
  */
-#define PGM_PAGE_HAS_ACTIVE_PHYSICAL_HANDLERS(pPage)   ( (pPage)->u2HandlerPhysStateY >= PGM_PAGE_HNDL_PHYS_STATE_WRITE )
+#define PGM_PAGE_HAS_ACTIVE_PHYSICAL_HANDLERS(pPage) \
+    ( (pPage)->u2HandlerPhysStateY >= PGM_PAGE_HNDL_PHYS_STATE_WRITE )
 
 
 /** @name Virtual Access Handler State values (PGMPAGE::u2HandlerVirtStateY).
@@ -949,7 +949,8 @@ typedef PPGMPAGE *PPPGMPAGE;
  * @returns PGM_PAGE_HNDL_VIRT_STATE_* value.
  * @param   pPage       Pointer to the physical guest page tracking structure.
  */
-#define PGM_PAGE_GET_HNDL_VIRT_STATE(pPage) ( (pPage)->u2HandlerVirtStateY )
+#define PGM_PAGE_GET_HNDL_VIRT_STATE(pPage) \
+    ( (pPage)->u2HandlerVirtStateY )
 
 /**
  * Sets the virtual access handler state of a page.
@@ -964,7 +965,8 @@ typedef PPGMPAGE *PPPGMPAGE;
  * @returns true/false
  * @param   pPage       Pointer to the physical guest page tracking structure.
  */
-#define PGM_PAGE_HAS_ANY_VIRTUAL_HANDLERS(pPage)    ( (pPage)->u2HandlerVirtStateY != PGM_PAGE_HNDL_VIRT_STATE_NONE )
+#define PGM_PAGE_HAS_ANY_VIRTUAL_HANDLERS(pPage) \
+    ( (pPage)->u2HandlerVirtStateY != PGM_PAGE_HNDL_VIRT_STATE_NONE )
 
 /**
  * Same as PGM_PAGE_HAS_ANY_VIRTUAL_HANDLERS - can't disable pages in
@@ -972,7 +974,8 @@ typedef PPGMPAGE *PPPGMPAGE;
  * @returns true/false
  * @param   pPage       Pointer to the physical guest page tracking structure.
  */
-#define PGM_PAGE_HAS_ACTIVE_VIRTUAL_HANDLERS(pPage) PGM_PAGE_HAS_ANY_VIRTUAL_HANDLERS(pPage)
+#define PGM_PAGE_HAS_ACTIVE_VIRTUAL_HANDLERS(pPage) \
+    PGM_PAGE_HAS_ANY_VIRTUAL_HANDLERS(pPage)
 
 
 
@@ -1004,15 +1007,12 @@ typedef PPGMPAGE *PPPGMPAGE;
      || (pPage)->u2HandlerVirtStateY == PGM_PAGE_HNDL_VIRT_STATE_ALL )
 
 
-
-
 /** @def PGM_PAGE_GET_TRACKING
  * Gets the packed shadow page pool tracking data associated with a guest page.
  * @returns uint16_t containing the data.
  * @param   pPage       Pointer to the physical guest page tracking structure.
  */
-#define PGM_PAGE_GET_TRACKING(pPage) \
-    ( *((uint16_t *)&(pPage)->HCPhysY + 3) )
+#define PGM_PAGE_GET_TRACKING(pPage)        ( (pPage)->u16TrackingY )
 
 /** @def PGM_PAGE_SET_TRACKING
  * Sets the packed shadow page pool tracking data associated with a guest page.
@@ -1020,7 +1020,7 @@ typedef PPGMPAGE *PPPGMPAGE;
  * @param   u16TrackingData     The tracking data to store.
  */
 #define PGM_PAGE_SET_TRACKING(pPage, u16TrackingData) \
-    do { *((uint16_t *)&(pPage)->HCPhysY + 3) = (u16TrackingData); } while (0)
+    do { (pPage)->u16TrackingY = (u16TrackingData); } while (0)
 
 /** @def PGM_PAGE_GET_TD_CREFS
  * Gets the @a cRefs tracking data member.
@@ -1030,8 +1030,15 @@ typedef PPGMPAGE *PPPGMPAGE;
 #define PGM_PAGE_GET_TD_CREFS(pPage) \
     ((PGM_PAGE_GET_TRACKING(pPage) >> PGMPOOL_TD_CREFS_SHIFT) & PGMPOOL_TD_CREFS_MASK)
 
+/** @def PGM_PAGE_GET_TD_IDX
+ * Gets the @a idx tracking data member.
+ * @returns idx.
+ * @param   pPage               Pointer to the physical guest page tracking structure.
+ */
 #define PGM_PAGE_GET_TD_IDX(pPage) \
     ((PGM_PAGE_GET_TRACKING(pPage) >> PGMPOOL_TD_IDX_SHIFT)   & PGMPOOL_TD_IDX_MASK)
+
+
 
 /**
  * Per page live save tracking data.
