@@ -1170,7 +1170,7 @@ typedef struct PGMROMRANGE
     RTGCPHYS                            GCPhysLast;
     /** Size of the range. */
     RTGCPHYS                            cb;
-    /** The flags (PGMPHYS_ROM_FLAG_*). */
+    /** The flags (PGMPHYS_ROM_FLAGS_*). */
     uint32_t                            fFlags;
     /** The saved state range ID. */
     uint8_t                             idSavedState;
@@ -2608,16 +2608,18 @@ typedef struct PGM
     {
         /** The number of ready pages.  */
         uint32_t                    cReadyPages;
-        /** The number of dirty pages. (Not counting MMIO and MMIO2 pages.) */
+        /** The number of dirty pages. */
         uint32_t                    cDirtyPages;
-        /** The number of MMIO and MMIO2 pages. */
-        uint32_t                    cMmioPages;
         /** The number of monitored pages. */
         uint32_t                    cMonitoredPages;
+        /** The number of ignored pages.  */
+        uint32_t                    cIgnoredPages;
+        /** The number of MMIO2 pages. */
+        uint32_t                    cMmio2Pages;
         /** Indicates that a live save operation is active.  */
         bool                        fActive;
         /** Padding. */
-        bool                        afReserved[7];
+        bool                        afReserved[3];
     } LiveSave;
 
     /** @name   Error injection.
