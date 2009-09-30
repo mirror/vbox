@@ -42,8 +42,8 @@ VBoxAboutDlg::VBoxAboutDlg (QWidget* aParent, const QString &aVersion)
     QString sSplash = vboxGlobal().brandingGetKey ("UI/AboutSplash");
     if (vboxGlobal().brandingIsActive() && !sSplash.isEmpty())
     {
-        char szExecPath[PATH_MAX];
-        RTPathExecDir (szExecPath, PATH_MAX);
+        char szExecPath[1024];
+        RTPathExecDir (szExecPath, 1024);
         QString tmpPath = QString ("%1/%2").arg (szExecPath).arg (sSplash);
         if (QFile::exists (tmpPath))
             sPath = tmpPath;
