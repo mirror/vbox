@@ -77,9 +77,9 @@ void VBoxAboutDlg::paintEvent (QPaintEvent * /* aEvent */)
 
     /* Branding: Set a different text color (because splash also could be white), 
                  otherwise use white as default color */
-    QColor colorText(vboxGlobal().brandingGetKey("UI/AboutTextColor"));
-    if (!colorText.name().isEmpty())
-        painter.setPen (colorText.name());
+    QString sColor = vboxGlobal().brandingGetKey("UI/AboutTextColor");
+    if (!sColor.isEmpty())
+        painter.setPen (QColor(sColor).name());
     else
         painter.setPen (Qt::white);
 #if VBOX_OSE
