@@ -1,4 +1,4 @@
-# $Id: Makefile.kmk 21700 2007-06-01 16:01:28Z umoeller $
+# $Id$
 ## @file
 # Sub-Makefile for the Shared OpenGL Host Service testcases.
 #

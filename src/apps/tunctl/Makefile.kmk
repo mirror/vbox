@@ -1,4 +1,4 @@
-# $Id: Makefile.kmk 31342 2008-05-28 08:44:35Z frank $
+# $Id$
 ## @file
 # Sub-Makefile for VBoxTunctl
 #
