@@ -1747,7 +1747,6 @@ static int iscsiRecvPDU(PISCSIIMAGE pImage, uint32_t itt, PISCSIRES paRes, uint3
             else if (   cmd == ISCSIOP_NOP_IN
                      && RT_N2H_U32(pcvResSeg[5]) != ISCSI_TASK_TAG_RSVD)
             {
-                const uint32_t *pcvResSeg = (const uint32_t *)aResBuf.pvSeg;
                 uint32_t cnISCSIReq;
                 ISCSIREQ aISCSIReq[4];
                 uint32_t aReqBHS[12];
