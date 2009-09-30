@@ -85,3 +85,4 @@ DeleteProgram
 GetUniformLocation
 GetUniformsLocations
 BindFramebufferEXT
+DeleteObjectARB
