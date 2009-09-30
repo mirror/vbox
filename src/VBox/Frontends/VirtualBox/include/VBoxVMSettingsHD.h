@@ -44,6 +44,14 @@ Q_DECLARE_METATYPE (SlotsList);
 Q_DECLARE_METATYPE (DeviceTypeList);
 Q_DECLARE_METATYPE (ControllerTypeList);
 
+enum ItemState
+{
+    State_DefaultItem   = 0,
+    State_CollapsedItem = 1,
+    State_ExpandedItem  = 2,
+    State_MAX
+};
+
 /* Pixmap Storage Pool */
 class PixmapPool : public QObject
 {
@@ -53,39 +61,44 @@ public:
 
     enum PixmapType
     {
-        InvalidPixmap     = -1,
+        InvalidPixmap      = -1,
 
-        AddControllerEn   =  0,
-        AddControllerDis  =  1,
-        DelControllerEn   =  2,
-        DelControllerDis  =  3,
+        AddControllerEn    =  0,
+        AddControllerDis   =  1,
+        DelControllerEn    =  2,
+        DelControllerDis   =  3,
 
-        AddAttachmentEn   =  4,
-        AddAttachmentDis  =  5,
-        DelAttachmentEn   =  6,
-        DelAttachmentDis  =  7,
+        AddAttachmentEn    =  4,
+        AddAttachmentDis   =  5,
+        DelAttachmentEn    =  6,
+        DelAttachmentDis   =  7,
 
-        IDEController     =  8,
-        SATAController    =  9,
-        SCSIController    = 10,
-        FloppyController  = 11,
+        IDEController      =  8,
+        IDEExpand          =  9,
+        IDECollapse        = 10,
+        SATAController     = 11,
+        SATAExpand         = 12,
+        SATACollapse       = 13,
+        SCSIController     = 14,
+        SCSIExpand         = 15,
+        SCSICollapse       = 16,
+        FloppyController   = 17,
+        FloppyExpand       = 18,
+        FloppyCollapse     = 19,
 
-        HDAttachmentEn    = 12,
-        HDAttachmentDis   = 13,
-        CDAttachmentEn    = 14,
-        CDAttachmentDis   = 15,
-        FDAttachmentEn    = 16,
-        FDAttachmentDis   = 17,
+        HDAttachmentEn     = 20,
+        CDAttachmentEn     = 21,
+        FDAttachmentEn     = 22,
 
-        PlusEn            = 18,
-        PlusDis           = 19,
-        MinusEn           = 20,
-        MinusDis          = 21,
+        HDAttachmentAddEn  = 23,
+        HDAttachmentAddDis = 24,
+        CDAttachmentAddEn  = 25,
+        CDAttachmentAddDis = 26,
+        FDAttachmentAddEn  = 27,
+        FDAttachmentAddDis = 28,
 
-        UnknownEn         = 22,
-
-        VMMEn             = 23,
-        VMMDis            = 24,
+        VMMEn              = 29,
+        VMMDis             = 30,
 
         MaxIndex
     };
@@ -116,7 +129,7 @@ public:
     KStorageBus busType() const;
     KStorageControllerType ctrType() const;
     ControllerTypeList ctrTypes() const;
-    PixmapPool::PixmapType pixmap() const;
+    PixmapPool::PixmapType pixmap (ItemState aState) const;
 
     void setCtrType (KStorageControllerType aCtrType);
 
@@ -129,7 +142,7 @@ protected:
 
     KStorageBus mBusType;
     KStorageControllerType mCtrType;
-    PixmapPool::PixmapType mPixmap;
+    QList <PixmapPool::PixmapType> mPixmaps;
 };
 
 /* IDE Controller Type */
@@ -221,7 +234,7 @@ public:
     virtual int childCount() const = 0;
     virtual QString text() const = 0;
     virtual QString tip() const = 0;
-    virtual QPixmap pixmap() = 0;
+    virtual QPixmap pixmap (ItemState aState = State_DefaultItem) = 0;
 
 protected:
 
@@ -242,6 +255,8 @@ public:
     RootItem();
    ~RootItem();
 
+private:
+
     ItemType rtti() const;
     AbstractItem* childByPos (int aIndex);
     AbstractItem* childById (const QUuid &aId);
@@ -249,10 +264,7 @@ public:
     int childCount() const;
     QString text() const;
     QString tip() const;
-    QPixmap pixmap();
-
-private:
-
+    QPixmap pixmap (ItemState aState);
     void addChild (AbstractItem *aItem);
     void delChild (AbstractItem *aItem);
 
@@ -267,15 +279,6 @@ public:
     ControllerItem (AbstractItem *aParent, const QString &aName, KStorageBus aBusType,
                     KStorageControllerType aControllerType);
    ~ControllerItem();
-
-    ItemType rtti() const;
-    AbstractItem* childByPos (int aIndex);
-    AbstractItem* childById (const QUuid &aId);
-    int posOfChild (AbstractItem *aItem) const;
-    int childCount() const;
-    QString text() const;
-    QString tip() const;
-    QPixmap pixmap();
 
     KStorageBus ctrBusType() const;
     QString ctrName() const;
@@ -293,6 +296,14 @@ public:
 
 private:
 
+    ItemType rtti() const;
+    AbstractItem* childByPos (int aIndex);
+    AbstractItem* childById (const QUuid &aId);
+    int posOfChild (AbstractItem *aItem) const;
+    int childCount() const;
+    QString text() const;
+    QString tip() const;
+    QPixmap pixmap (ItemState aState);
     void addChild (AbstractItem *aItem);
     void delChild (AbstractItem *aItem);
 
@@ -307,15 +318,6 @@ class AttachmentItem : public AbstractItem
 public:
 
     AttachmentItem (AbstractItem *aParent, KDeviceType aDeviceType);
-
-    ItemType rtti() const;
-    AbstractItem* childByPos (int aIndex);
-    AbstractItem* childById (const QUuid &aId);
-    int posOfChild (AbstractItem *aItem) const;
-    int childCount() const;
-    QString text() const;
-    QString tip() const;
-    QPixmap pixmap();
 
     StorageSlot attSlot() const;
     SlotsList attSlots() const;
@@ -343,6 +345,14 @@ private:
 
     void cache();
 
+    ItemType rtti() const;
+    AbstractItem* childByPos (int aIndex);
+    AbstractItem* childById (const QUuid &aId);
+    int posOfChild (AbstractItem *aItem) const;
+    int childCount() const;
+    QString text() const;
+    QString tip() const;
+    QPixmap pixmap (ItemState aState);
     void addChild (AbstractItem *aItem);
     void delChild (AbstractItem *aItem);
 
@@ -412,20 +422,18 @@ public:
         R_IconSize,
 
         R_HDPixmapEn,
-        R_HDPixmapDis,
         R_CDPixmapEn,
-        R_CDPixmapDis,
         R_FDPixmapEn,
-        R_FDPixmapDis,
+
+        R_HDPixmapAddEn,
+        R_HDPixmapAddDis,
+        R_CDPixmapAddEn,
+        R_CDPixmapAddDis,
+        R_FDPixmapAddEn,
+        R_FDPixmapAddDis,
         R_HDPixmapRect,
         R_CDPixmapRect,
-        R_FDPixmapRect,
-
-        R_PlusPixmapEn,
-        R_PlusPixmapDis,
-        R_MinusPixmapEn,
-        R_MinusPixmapDis,
-        R_AdderPoint
+        R_FDPixmapRect
     };
 
     enum ToolTipType

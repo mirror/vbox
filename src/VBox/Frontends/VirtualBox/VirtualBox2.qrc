@@ -92,6 +92,8 @@
     <file alias="cd_write_16px.png">images/cd_write_16px.png</file>
     <file alias="cd_unmount_16px.png">images/cd_unmount_16px.png</file>
     <file alias="cd_unmount_dis_16px.png">images/cd_unmount_dis_16px.png</file>
+    <file alias="cd_add_16px.png">images/cd_add_16px.png</file>
+    <file alias="cd_add_disabled_16px.png">images/cd_add_disabled_16px.png</file>
     <file alias="fd_16px.png">images/fd_16px.png</file>
     <file alias="fd_disabled_16px.png">images/fd_disabled_16px.png</file>
     <file alias="fd_32px.png">images/fd_32px.png</file>
@@ -100,6 +102,8 @@
     <file alias="fd_write_16px.png">images/fd_write_16px.png</file>
     <file alias="fd_unmount_16px.png">images/fd_unmount_16px.png</file>
     <file alias="fd_unmount_dis_16px.png">images/fd_unmount_dis_16px.png</file>
+    <file alias="fd_add_16px.png">images/fd_add_16px.png</file>
+    <file alias="fd_add_disabled_16px.png">images/fd_add_disabled_16px.png</file>
     <file alias="mouse_16px.png">images/mouse_16px.png</file>
     <file alias="mouse_disabled_16px.png">images/mouse_disabled_16px.png</file>
     <file alias="mouse_seamless_16px.png">images/mouse_seamless_16px.png</file>

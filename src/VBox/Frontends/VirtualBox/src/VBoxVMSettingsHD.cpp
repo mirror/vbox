@@ -113,37 +113,42 @@ PixmapPool::PixmapPool (QObject *aParent)
 {
     mPool.resize (MaxIndex);
 
-    mPool [AddControllerEn]  = QPixmap (":/add_host_iface_16px.png"); // TODO (":/controller_add_16px.png");
-    mPool [AddControllerDis] = QPixmap (":/add_host_iface_disabled_16px.png"); // TODO (":/controller_add_disabled_16px.png");
-    mPool [DelControllerEn]  = QPixmap (":/remove_host_iface_16px.png"); // TODO (":/controller_remove_16px.png");
-    mPool [DelControllerDis] = QPixmap (":/remove_host_iface_disabled_16px.png"); // TODO (":/controller_remove_disabled_16px.png");
+    mPool [AddControllerEn]    = QPixmap (":/controller_add_16px.png");
+    mPool [AddControllerDis]   = QPixmap (":/controller_add_disabled_16px.png");
+    mPool [DelControllerEn]    = QPixmap (":/controller_remove_16px.png");
+    mPool [DelControllerDis]   = QPixmap (":/controller_remove_disabled_16px.png");
 
-    mPool [AddAttachmentEn]  = QPixmap (":/attachment_add_16px.png");
-    mPool [AddAttachmentDis] = QPixmap (":/attachment_add_disabled_16px.png");
-    mPool [DelAttachmentEn]  = QPixmap (":/attachment_remove_16px.png");
-    mPool [DelAttachmentDis] = QPixmap (":/attachment_remove_disabled_16px.png");
+    mPool [AddAttachmentEn]    = QPixmap (":/attachment_add_16px.png");
+    mPool [AddAttachmentDis]   = QPixmap (":/attachment_add_disabled_16px.png");
+    mPool [DelAttachmentEn]    = QPixmap (":/attachment_remove_16px.png");
+    mPool [DelAttachmentDis]   = QPixmap (":/attachment_remove_disabled_16px.png");
 
-    mPool [IDEController]    = QPixmap (":/ide_16px.png");
-    mPool [SATAController]   = QPixmap (":/sata_16px.png");
-    mPool [SCSIController]   = QPixmap (":/scsi_16px.png");
-    mPool [FloppyController] = QPixmap (":/floppy_16px.png");
+    mPool [IDEController]      = QPixmap (":/ide_16px.png");
+    mPool [IDEExpand]          = QPixmap (":/ide_expand_16px.png");
+    mPool [IDECollapse]        = QPixmap (":/ide_collapse_16px.png");
+    mPool [SATAController]     = QPixmap (":/sata_16px.png");
+    mPool [SATAExpand]         = QPixmap (":/sata_expand_16px.png");
+    mPool [SATACollapse]       = QPixmap (":/sata_collapse_16px.png");
+    mPool [SCSIController]     = QPixmap (":/scsi_16px.png");
+    mPool [SCSIExpand]         = QPixmap (":/scsi_expand_16px.png");
+    mPool [SCSICollapse]       = QPixmap (":/scsi_collapse_16px.png");
+    mPool [FloppyController]   = QPixmap (":/floppy_16px.png");
+    mPool [FloppyExpand]       = QPixmap (":/floppy_expand_16px.png");
+    mPool [FloppyCollapse]     = QPixmap (":/floppy_collapse_16px.png");
 
-    mPool [HDAttachmentEn]   = QPixmap (":/hd_16px.png");
-    mPool [HDAttachmentDis]  = QPixmap (":/hd_disabled_16px.png");
-    mPool [CDAttachmentEn]   = QPixmap (":/cd_16px.png");
-    mPool [CDAttachmentDis]  = QPixmap (":/cd_disabled_16px.png");
-    mPool [FDAttachmentEn]   = QPixmap (":/fd_16px.png");
-    mPool [FDAttachmentDis]  = QPixmap (":/fd_disabled_16px.png");
+    mPool [HDAttachmentEn]     = QPixmap (":/hd_16px.png");
+    mPool [CDAttachmentEn]     = QPixmap (":/cd_16px.png");
+    mPool [FDAttachmentEn]     = QPixmap (":/fd_16px.png");
 
-    mPool [PlusEn]           = QPixmap (":/plus_10px.png");
-    mPool [PlusDis]          = QPixmap (":/plus_disabled_10px.png");
-    mPool [MinusEn]          = QPixmap (":/minus_10px.png");
-    mPool [MinusDis]         = QPixmap (":/minus_disabled_10px.png");
+    mPool [HDAttachmentAddEn]  = QPixmap (":/hd_add_16px.png");
+    mPool [HDAttachmentAddDis] = QPixmap (":/hd_add_disabled_16px.png");
+    mPool [CDAttachmentAddEn]  = QPixmap (":/cd_add_16px.png");
+    mPool [CDAttachmentAddDis] = QPixmap (":/cd_add_disabled_16px.png");
+    mPool [FDAttachmentAddEn]  = QPixmap (":/fd_add_16px.png");
+    mPool [FDAttachmentAddDis] = QPixmap (":/fd_add_disabled_16px.png");
 
-    mPool [UnknownEn]        = QPixmap (":/help_16px.png");
-
-    mPool [VMMEn]            = QPixmap (":/select_file_16px.png");
-    mPool [VMMDis]           = QPixmap (":/select_file_dis_16px.png");
+    mPool [VMMEn]              = QPixmap (":/select_file_16px.png");
+    mPool [VMMDis]             = QPixmap (":/select_file_dis_16px.png");
 }
 
 QPixmap PixmapPool::pixmap (PixmapType aType) const
@@ -155,30 +160,32 @@ QPixmap PixmapPool::pixmap (PixmapType aType) const
 AbstractControllerType::AbstractControllerType (KStorageBus aBusType, KStorageControllerType aCtrType)
     : mBusType (aBusType)
     , mCtrType (aCtrType)
-    , mPixmap (PixmapPool::InvalidPixmap)
 {
     AssertMsg (mBusType != KStorageBus_Null, ("Wrong Bus Type {%d}!\n", mBusType));
     AssertMsg (mCtrType != KStorageControllerType_Null, ("Wrong Controller Type {%d}!\n", mCtrType));
 
-    switch (mBusType)
+    for (int i = 0; i < State_MAX; ++ i)
     {
-        case KStorageBus_IDE:
-            mPixmap = PixmapPool::IDEController;
-            break;
-        case KStorageBus_SATA:
-            mPixmap = PixmapPool::SATAController;
-            break;
-        case KStorageBus_SCSI:
-            mPixmap = PixmapPool::SCSIController;
-            break;
-        case KStorageBus_Floppy:
-            mPixmap = PixmapPool::FloppyController;
-            break;
-        default:
-            break;
+        mPixmaps << PixmapPool::InvalidPixmap;
+        switch (mBusType)
+        {
+            case KStorageBus_IDE:
+                mPixmaps [i] = (PixmapPool::PixmapType) (PixmapPool::IDEController + i);
+                break;
+            case KStorageBus_SATA:
+                mPixmaps [i] = (PixmapPool::PixmapType) (PixmapPool::SATAController + i);
+                break;
+            case KStorageBus_SCSI:
+                mPixmaps [i] = (PixmapPool::PixmapType) (PixmapPool::SCSIController + i);
+                break;
+            case KStorageBus_Floppy:
+                mPixmaps [i] = (PixmapPool::PixmapType) (PixmapPool::FloppyController + i);
+                break;
+            default:
+                break;
+        }
+        AssertMsg (mPixmaps [i] != PixmapPool::InvalidPixmap, ("Item state pixmap was not set!\n"));
     }
-
-    AssertMsg (mPixmap != PixmapPool::InvalidPixmap, ("Bus pixmap was not set!\n"));
 }
 
 KStorageBus AbstractControllerType::busType() const
@@ -199,9 +206,9 @@ ControllerTypeList AbstractControllerType::ctrTypes() const
     return result;
 }
 
-PixmapPool::PixmapType AbstractControllerType::pixmap() const
+PixmapPool::PixmapType AbstractControllerType::pixmap (ItemState aState) const
 {
-    return mPixmap;
+    return mPixmaps [aState];
 }
 
 void AbstractControllerType::setCtrType (KStorageControllerType aCtrType)
@@ -376,7 +383,7 @@ QString RootItem::tip() const
     return QString();
 }
 
-QPixmap RootItem::pixmap()
+QPixmap RootItem::pixmap (ItemState /* aState */)
 {
     return QPixmap();
 }
@@ -427,54 +434,6 @@ ControllerItem::~ControllerItem()
     delete mCtrType;
     while (!mAttachments.isEmpty())
         delete mAttachments.first();
-}
-
-AbstractItem::ItemType ControllerItem::rtti() const
-{
-    return Type_ControllerItem;
-}
-
-AbstractItem* ControllerItem::childByPos (int aIndex)
-{
-    return mAttachments [aIndex];
-}
-
-AbstractItem* ControllerItem::childById (const QUuid &aId)
-{
-    for (int i = 0; i < childCount(); ++ i)
-        if (mAttachments [i]->id() == aId)
-            return mAttachments [i];
-    return 0;
-}
-
-int ControllerItem::posOfChild (AbstractItem *aItem) const
-{
-    return mAttachments.indexOf (aItem);
-}
-
-int ControllerItem::childCount() const
-{
-    return mAttachments.size();
-}
-
-QString ControllerItem::text() const
-{
-    return ctrName();
-}
-
-QString ControllerItem::tip() const
-{
-    return VBoxVMSettingsHD::tr ("<nobr><b>%1</b></nobr><br>"
-                                 "<nobr>Bus:&nbsp;&nbsp;%2</nobr><br>"
-                                 "<nobr>Type:&nbsp;&nbsp;%3</nobr>")
-                                 .arg (mCtrName)
-                                 .arg (vboxGlobal().toString (mCtrType->busType()))
-                                 .arg (vboxGlobal().toString (mCtrType->ctrType()));
-}
-
-QPixmap ControllerItem::pixmap()
-{
-    return PixmapPool::pool()->pixmap (mCtrType->pixmap());
 }
 
 KStorageBus ControllerItem::ctrBusType() const
@@ -562,6 +521,54 @@ QStringList ControllerItem::ctrUsedMediumIds() const
     return usedImages;
 }
 
+AbstractItem::ItemType ControllerItem::rtti() const
+{
+    return Type_ControllerItem;
+}
+
+AbstractItem* ControllerItem::childByPos (int aIndex)
+{
+    return mAttachments [aIndex];
+}
+
+AbstractItem* ControllerItem::childById (const QUuid &aId)
+{
+    for (int i = 0; i < childCount(); ++ i)
+        if (mAttachments [i]->id() == aId)
+            return mAttachments [i];
+    return 0;
+}
+
+int ControllerItem::posOfChild (AbstractItem *aItem) const
+{
+    return mAttachments.indexOf (aItem);
+}
+
+int ControllerItem::childCount() const
+{
+    return mAttachments.size();
+}
+
+QString ControllerItem::text() const
+{
+    return ctrName();
+}
+
+QString ControllerItem::tip() const
+{
+    return VBoxVMSettingsHD::tr ("<nobr><b>%1</b></nobr><br>"
+                                 "<nobr>Bus:&nbsp;&nbsp;%2</nobr><br>"
+                                 "<nobr>Type:&nbsp;&nbsp;%3</nobr>")
+                                 .arg (mCtrName)
+                                 .arg (vboxGlobal().toString (mCtrType->busType()))
+                                 .arg (vboxGlobal().toString (mCtrType->ctrType()));
+}
+
+QPixmap ControllerItem::pixmap (ItemState aState)
+{
+    return PixmapPool::pool()->pixmap (mCtrType->pixmap (aState));
+}
+
 void ControllerItem::addChild (AbstractItem *aItem)
 {
     mAttachments << aItem;
@@ -605,63 +612,6 @@ AttachmentItem::AttachmentItem (AbstractItem *aParent, KDeviceType aDeviceType)
         default:
             break;
     }
-}
-
-AbstractItem::ItemType AttachmentItem::rtti() const
-{
-    return Type_AttachmentItem;
-}
-
-AbstractItem* AttachmentItem::childByPos (int /* aIndex */)
-{
-    return 0;
-}
-
-AbstractItem* AttachmentItem::childById (const QUuid& /* aId */)
-{
-    return 0;
-}
-
-int AttachmentItem::posOfChild (AbstractItem* /* aItem */) const
-{
-    return 0;
-}
-
-int AttachmentItem::childCount() const
-{
-    return 0;
-}
-
-QString AttachmentItem::text() const
-{
-    return mAttName;
-}
-
-QString AttachmentItem::tip() const
-{
-    return mAttTip;
-}
-
-QPixmap AttachmentItem::pixmap()
-{
-    if (mAttPixmap.isNull())
-    {
-        switch (mAttDeviceType)
-        {
-            case KDeviceType_HardDisk:
-                mAttPixmap = PixmapPool::pool()->pixmap (PixmapPool::HDAttachmentEn);
-                break;
-            case KDeviceType_DVD:
-                mAttPixmap = PixmapPool::pool()->pixmap (PixmapPool::CDAttachmentEn);
-                break;
-            case KDeviceType_Floppy:
-                mAttPixmap = PixmapPool::pool()->pixmap (PixmapPool::FDAttachmentEn);
-                break;
-            default:
-                break;
-        }
-    }
-    return mAttPixmap;
 }
 
 StorageSlot AttachmentItem::attSlot() const
@@ -824,6 +774,63 @@ void AttachmentItem::cache()
         mAttUsage = QString ("--");
 }
 
+AbstractItem::ItemType AttachmentItem::rtti() const
+{
+    return Type_AttachmentItem;
+}
+
+AbstractItem* AttachmentItem::childByPos (int /* aIndex */)
+{
+    return 0;
+}
+
+AbstractItem* AttachmentItem::childById (const QUuid& /* aId */)
+{
+    return 0;
+}
+
+int AttachmentItem::posOfChild (AbstractItem* /* aItem */) const
+{
+    return 0;
+}
+
+int AttachmentItem::childCount() const
+{
+    return 0;
+}
+
+QString AttachmentItem::text() const
+{
+    return mAttName;
+}
+
+QString AttachmentItem::tip() const
+{
+    return mAttTip;
+}
+
+QPixmap AttachmentItem::pixmap (ItemState /* aState */)
+{
+    if (mAttPixmap.isNull())
+    {
+        switch (mAttDeviceType)
+        {
+            case KDeviceType_HardDisk:
+                mAttPixmap = PixmapPool::pool()->pixmap (PixmapPool::HDAttachmentEn);
+                break;
+            case KDeviceType_DVD:
+                mAttPixmap = PixmapPool::pool()->pixmap (PixmapPool::CDAttachmentEn);
+                break;
+            case KDeviceType_Floppy:
+                mAttPixmap = PixmapPool::pool()->pixmap (PixmapPool::FDAttachmentEn);
+                break;
+            default:
+                break;
+        }
+    }
+    return mAttPixmap;
+}
+
 void AttachmentItem::addChild (AbstractItem* /* aItem */)
 {
 }
@@ -949,7 +956,13 @@ QVariant StorageModel::data (const QModelIndex &aIndex, int aRole) const
         case R_ItemPixmap:
         {
             if (AbstractItem *item = static_cast <AbstractItem*> (aIndex.internalPointer()))
-                return item->pixmap();
+            {
+                ItemState state = State_DefaultItem;
+                if (hasChildren (aIndex))
+                    if (QTreeView *view = qobject_cast <QTreeView*> (QObject::parent()))
+                        state = view->isExpanded (aIndex) ? State_ExpandedItem : State_CollapsedItem;
+                return item->pixmap (state);
+            }
             return QPixmap();
         }
         case R_ItemPixmapRect:
@@ -1169,25 +1182,38 @@ QVariant StorageModel::data (const QModelIndex &aIndex, int aRole) const
         {
             return PixmapPool::pool()->pixmap (PixmapPool::HDAttachmentEn);
         }
-        case R_HDPixmapDis:
-        {
-            return PixmapPool::pool()->pixmap (PixmapPool::HDAttachmentDis);
-        }
         case R_CDPixmapEn:
         {
             return PixmapPool::pool()->pixmap (PixmapPool::CDAttachmentEn);
-        }
-        case R_CDPixmapDis:
-        {
-            return PixmapPool::pool()->pixmap (PixmapPool::CDAttachmentDis);
         }
         case R_FDPixmapEn:
         {
             return PixmapPool::pool()->pixmap (PixmapPool::FDAttachmentEn);
         }
-        case R_FDPixmapDis:
+
+        case R_HDPixmapAddEn:
         {
-            return PixmapPool::pool()->pixmap (PixmapPool::FDAttachmentDis);
+            return PixmapPool::pool()->pixmap (PixmapPool::HDAttachmentAddEn);
+        }
+        case R_HDPixmapAddDis:
+        {
+            return PixmapPool::pool()->pixmap (PixmapPool::HDAttachmentAddDis);
+        }
+        case R_CDPixmapAddEn:
+        {
+            return PixmapPool::pool()->pixmap (PixmapPool::CDAttachmentAddEn);
+        }
+        case R_CDPixmapAddDis:
+        {
+            return PixmapPool::pool()->pixmap (PixmapPool::CDAttachmentAddDis);
+        }
+        case R_FDPixmapAddEn:
+        {
+            return PixmapPool::pool()->pixmap (PixmapPool::FDAttachmentAddEn);
+        }
+        case R_FDPixmapAddDis:
+        {
+            return PixmapPool::pool()->pixmap (PixmapPool::FDAttachmentAddDis);
         }
         case R_HDPixmapRect:
         {
@@ -1209,27 +1235,6 @@ QVariant StorageModel::data (const QModelIndex &aIndex, int aRole) const
             return QRect (0 - width - margin, margin, width, width);
         }
 
-        case R_PlusPixmapEn:
-        {
-            return PixmapPool::pool()->pixmap (PixmapPool::PlusEn);
-        }
-        case R_PlusPixmapDis:
-        {
-            return PixmapPool::pool()->pixmap (PixmapPool::PlusDis);
-        }
-        case R_MinusPixmapEn:
-        {
-            return PixmapPool::pool()->pixmap (PixmapPool::MinusEn);
-        }
-        case R_MinusPixmapDis:
-        {
-            return PixmapPool::pool()->pixmap (PixmapPool::MinusDis);
-        }
-        case R_AdderPoint:
-        {
-            int margin = data (aIndex, R_Margin).toInt();
-            return QPoint (margin + 6, margin + 6);
-        }
         default:
             break;
     }
@@ -1410,28 +1415,23 @@ void StorageDelegate::paint (QPainter *aPainter, const QStyleOptionViewItem &aOp
 
     aPainter->save();
 
-    /* Draw selection backgroung */
-    if (state & QStyle::State_Selected)
-    {
-        QPalette::ColorGroup cg = (state & QStyle::State_Enabled && state & QStyle::State_Active) ? QPalette::Normal :
-                                  (state & QStyle::State_Enabled) ? QPalette::Inactive : QPalette::Disabled;
-        aPainter->fillRect (rect, aOption.palette.brush (cg, QPalette::Highlight));
-    }
+    /* Draw item background */
+    QItemDelegate::drawBackground (aPainter, aOption, aIndex);
+
+    /* Setup foregroung settings */
+    bool isEnabled = state & QStyle::State_Enabled;
+    bool isActive = state & QStyle::State_Active;
+    bool isFocused = state & QStyle::State_HasFocus;
+    bool isGrayOnLoosingFocus = QApplication::style()->styleHint (QStyle::SH_ItemView_ChangeHighlightOnFocus, &aOption) == 0;
+    QPalette::ColorGroup cg = isEnabled && (isActive || !isGrayOnLoosingFocus) ? QPalette::Active :
+                              isEnabled ? QPalette::Inactive : QPalette::Disabled;
+    aPainter->setPen (aOption.palette.color (cg, isFocused ? QPalette::HighlightedText : QPalette::Text));
 
     aPainter->translate (rect.x(), rect.y());
 
     /* Draw Item Pixmap */
     aPainter->drawPixmap (model->data (aIndex, StorageModel::R_ItemPixmapRect).toRect().topLeft(),
                           model->data (aIndex, StorageModel::R_ItemPixmap).value <QPixmap>());
-
-    /* Draw expand/collapse Pixmap */
-    if (model->hasChildren (aIndex))
-    {
-        QPixmap expander = state & QStyle::State_Open ?
-                           model->data (aIndex, StorageModel::R_MinusPixmapEn).value <QPixmap>() :
-                           model->data (aIndex, StorageModel::R_PlusPixmapEn).value <QPixmap>();
-        aPainter->drawPixmap (model->data (aIndex, StorageModel::R_AdderPoint).toPoint(), expander);
-    }
 
     /* Draw compressed item name */
     int margin = model->data (aIndex, StorageModel::R_Margin).toInt();
@@ -1472,35 +1472,31 @@ void StorageDelegate::paint (QPainter *aPainter, const QStyleOptionViewItem &aOp
                 {
                     deviceRect = model->data (aIndex, StorageModel::R_HDPixmapRect).value <QRect>();
                     devicePixmap = model->data (aIndex, StorageModel::R_IsMoreAttachmentsPossible).toBool() ?
-                                   model->data (aIndex, StorageModel::R_HDPixmapEn).value <QPixmap>() :
-                                   model->data (aIndex, StorageModel::R_HDPixmapDis).value <QPixmap>();
+                                   model->data (aIndex, StorageModel::R_HDPixmapAddEn).value <QPixmap>() :
+                                   model->data (aIndex, StorageModel::R_HDPixmapAddDis).value <QPixmap>();
                     break;
                 }
                 case KDeviceType_DVD:
                 {
                     deviceRect = model->data (aIndex, StorageModel::R_CDPixmapRect).value <QRect>();
                     devicePixmap = model->data (aIndex, StorageModel::R_IsMoreAttachmentsPossible).toBool() ?
-                                   model->data (aIndex, StorageModel::R_CDPixmapEn).value <QPixmap>() :
-                                   model->data (aIndex, StorageModel::R_CDPixmapDis).value <QPixmap>();
+                                   model->data (aIndex, StorageModel::R_CDPixmapAddEn).value <QPixmap>() :
+                                   model->data (aIndex, StorageModel::R_CDPixmapAddDis).value <QPixmap>();
                     break;
                 }
                 case KDeviceType_Floppy:
                 {
                     deviceRect = model->data (aIndex, StorageModel::R_FDPixmapRect).value <QRect>();
                     devicePixmap = model->data (aIndex, StorageModel::R_IsMoreAttachmentsPossible).toBool() ?
-                                   model->data (aIndex, StorageModel::R_FDPixmapEn).value <QPixmap>() :
-                                   model->data (aIndex, StorageModel::R_FDPixmapDis).value <QPixmap>();
+                                   model->data (aIndex, StorageModel::R_FDPixmapAddEn).value <QPixmap>() :
+                                   model->data (aIndex, StorageModel::R_FDPixmapAddDis).value <QPixmap>();
                     break;
                 }
                 default:
                     break;
             }
-            QPixmap adderPixmap = model->data (aIndex, StorageModel::R_IsMoreAttachmentsPossible).toBool() ?
-                                  model->data (aIndex, StorageModel::R_PlusPixmapEn).value <QPixmap>() :
-                                  model->data (aIndex, StorageModel::R_PlusPixmapDis).value <QPixmap>();
 
             aPainter->drawPixmap (QPoint (rect.width() + deviceRect.x(), deviceRect.y()), devicePixmap);
-            aPainter->drawPixmap (QPoint (rect.width() + deviceRect.x() + 6, deviceRect.y() + 6), adderPixmap);
         }
     }
 
