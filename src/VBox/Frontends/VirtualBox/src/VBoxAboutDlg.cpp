@@ -23,6 +23,8 @@
 #include "VBoxAboutDlg.h"
 #include "VBoxGlobal.h"
 
+#include <iprt/path.h>
+
 /* Qt includes */
 #include <QDir>
 #include <QEvent>
@@ -35,13 +37,19 @@ VBoxAboutDlg::VBoxAboutDlg (QWidget* aParent, const QString &aVersion)
 {
     retranslateUi();
 
+    QString sPath (":/about.png");
     /* Branding: Use a custom about splash picture if set */
-    QString sSplash = vboxGlobal().brandingGetKey("UI/AboutSplash");
-    QDir pathImage(sSplash);
+    QString sSplash = vboxGlobal().brandingGetKey ("UI/AboutSplash");
     if (vboxGlobal().brandingIsActive() && !sSplash.isEmpty())
-        mBgImage.load(pathImage.absolutePath());
-    else /* ... or load the built-in picture */
-        mBgImage.load(":/about.png");
+    {
+        char szExecPath[PATH_MAX];
+        RTPathExecDir (szExecPath, PATH_MAX);
+        QString tmpPath = QString ("%1/%2").arg (szExecPath).arg (sSplash);
+        if (QFile::exists (tmpPath))
+            sPath = tmpPath;
+    }
+
+    mBgImage.load (sPath);
 }
 
 bool VBoxAboutDlg::event (QEvent *aEvent)
@@ -75,7 +83,7 @@ void VBoxAboutDlg::paintEvent (QPaintEvent * /* aEvent */)
     painter.drawPixmap (0, 0, mBgImage);
     painter.setFont (font());
 
-    /* Branding: Set a different text color (because splash also could be white), 
+    /* Branding: Set a different text color (because splash also could be white),
                  otherwise use white as default color */
     QString sColor = vboxGlobal().brandingGetKey("UI/AboutTextColor");
     if (!sColor.isEmpty())
