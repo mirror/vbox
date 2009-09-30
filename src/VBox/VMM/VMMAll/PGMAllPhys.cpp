@@ -431,7 +431,7 @@ int pgmPhysAllocPage(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys)
 /**
  * Deal with pages that are not writable, i.e. not in the ALLOCATED state.
  *
- * @returns VBox status code.
+ * @returns VBox strict status code.
  * @retval  VINF_SUCCESS on success.
  * @retval  VINF_PGM_SYNC_CR3 on success and a page pool flush is pending.
  * @retval  VERR_PGM_PHYS_PAGE_RESERVED it it's a valid page but has no physical backing.
@@ -475,7 +475,7 @@ int pgmPhysPageMakeWritable(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys)
 /**
  * Wrapper for pgmPhysPageMakeWritable which enters the critsect.
  *
- * @returns VBox status code.
+ * @returns VBox strict status code.
  * @retval  VINF_SUCCESS on success.
  * @retval  VINF_PGM_SYNC_CR3 on success and a page pool flush is pending.
  * @retval  VERR_PGM_PHYS_PAGE_RESERVED it it's a valid page but has no physical backing.
@@ -508,7 +508,8 @@ int pgmPhysPageMakeWritableUnlocked(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys)
  * @param   HCPhys      The physical address (for RC).
  * @param   ppv         Where to store the mapping address.
  *
- * @remarks Called from within the PGM critical section.
+ * @remarks Called from within the PGM critical section.  The mapping is only
+ *          valid while your inside this section.
  */
 int pgmPhysPageMapByPageID(PVM pVM, uint32_t idPage, RTHCPHYS HCPhys, void **ppv)
 {
@@ -595,7 +596,7 @@ int pgmPhysPageMapByPageID(PVM pVM, uint32_t idPage, RTHCPHYS HCPhys, void **ppv
  *
  * @remarks Called from within the PGM critical section.
  */
-int pgmPhysPageMap(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, PPPGMPAGEMAP ppMap, void **ppv)
+static int pgmPhysPageMapCommon(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, PPPGMPAGEMAP ppMap, void **ppv)
 {
     Assert(PGMIsLocked(pVM));
 
@@ -698,6 +699,97 @@ int pgmPhysPageMap(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, PPPGMPAGEMAP ppMap,
 }
 
 
+/**
+ * Combination of pgmPhysPageMakeWritable and pgmPhysPageMapWritable.
+ *
+ * This is typically used is paths where we cannot use the TLB methods (like ROM
+ * pages) or where there is no point in using them since we won't get many hits.
+ *
+ * @returns VBox strict status code.
+ * @retval  VINF_SUCCESS on success.
+ * @retval  VINF_PGM_SYNC_CR3 on success and a page pool flush is pending.
+ * @retval  VERR_PGM_PHYS_PAGE_RESERVED it it's a valid page but has no physical backing.
+ *
+ * @param   pVM         The VM address.
+ * @param   pPage       The physical page tracking structure.
+ * @param   GCPhys      The address of the page.
+ * @param   ppv         Where to store the mapping address of the page. The page
+ *                      offset is masked off!
+ *
+ * @remarks Called from within the PGM critical section.  The mapping is only
+ *          valid while your inside this section.
+ */
+int pgmPhysPageMakeWritableAndMap(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, void **ppv)
+{
+    int rc = pgmPhysPageMakeWritable(pVM, pPage, GCPhys);
+    if (RT_SUCCESS(rc))
+    {
+        AssertMsg(rc == VINF_SUCCESS || rc == VINF_PGM_SYNC_CR3 /* returned */, ("%Rrc\n", rc));
+        PPGMPAGEMAP pMapIgnore;
+        int rc2 = pgmPhysPageMapCommon(pVM, pPage, GCPhys, &pMapIgnore, ppv);
+        if (RT_FAILURE(rc2)) /* preserve rc */
+            rc = rc2;
+    }
+    return rc;
+}
+
+
+/**
+ * Maps a page into the current virtual address space so it can be accessed for
+ * both writing and reading.
+ *
+ * This is typically used is paths where we cannot use the TLB methods (like ROM
+ * pages) or where there is no point in using them since we won't get many hits.
+ *
+ * @returns VBox status code.
+ * @retval  VINF_SUCCESS on success.
+ * @retval  VERR_PGM_PHYS_PAGE_RESERVED it it's a valid page but has no physical backing.
+ *
+ * @param   pVM         The VM address.
+ * @param   pPage       The physical page tracking structure. Must be in the
+ *                      allocated state.
+ * @param   GCPhys      The address of the page.
+ * @param   ppv         Where to store the mapping address of the page. The page
+ *                      offset is masked off!
+ *
+ * @remarks Called from within the PGM critical section.  The mapping is only
+ *          valid while your inside this section.
+ */
+int pgmPhysPageMap(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, void **ppv)
+{
+    Assert(PGM_PAGE_GET_STATE(pPage) == PGM_PAGE_STATE_ALLOCATED);
+    PPGMPAGEMAP pMapIgnore;
+    return pgmPhysPageMapCommon(pVM, pPage, GCPhys, &pMapIgnore, ppv);
+}
+
+
+/**
+ * Maps a page into the current virtual address space so it can be accessed for
+ * reading.
+ *
+ * This is typically used is paths where we cannot use the TLB methods (like ROM
+ * pages) or where there is no point in using them since we won't get many hits.
+ *
+ * @returns VBox status code.
+ * @retval  VINF_SUCCESS on success.
+ * @retval  VERR_PGM_PHYS_PAGE_RESERVED it it's a valid page but has no physical backing.
+ *
+ * @param   pVM         The VM address.
+ * @param   pPage       The physical page tracking structure.
+ * @param   GCPhys      The address of the page.
+ * @param   ppv         Where to store the mapping address of the page. The page
+ *                      offset is masked off!
+ *
+ * @remarks Called from within the PGM critical section.  The mapping is only
+ *          valid while your inside this section.
+ */
+int pgmPhysPageMapReadOnly(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, void const **ppv)
+{
+    PPGMPAGEMAP pMapIgnore;
+    return pgmPhysPageMapCommon(pVM, pPage, GCPhys, &pMapIgnore, (void **)ppv);
+}
+
+
 #if !defined(IN_RC) && !defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
 /**
  * Load a guest page into the ring-3 physical TLB.
@@ -739,7 +831,7 @@ int pgmPhysPageLoadIntoTlb(PPGM pPGM, RTGCPHYS GCPhys)
     {
         void *pv;
         PPGMPAGEMAP pMap;
-        int rc = pgmPhysPageMap(PGM2VM(pPGM), pPage, GCPhys, &pMap, &pv);
+        int rc = pgmPhysPageMapCommon(PGM2VM(pPGM), pPage, GCPhys, &pMap, &pv);
         if (RT_FAILURE(rc))
             return rc;
         pTlbe->pMap = pMap;
@@ -781,7 +873,7 @@ int pgmPhysPageLoadIntoTlbWithPage(PPGM pPGM, PPGMPAGE pPage, RTGCPHYS GCPhys)
     {
         void *pv;
         PPGMPAGEMAP pMap;
-        int rc = pgmPhysPageMap(PGM2VM(pPGM), pPage, GCPhys, &pMap, &pv);
+        int rc = pgmPhysPageMapCommon(PGM2VM(pPGM), pPage, GCPhys, &pMap, &pv);
         if (RT_FAILURE(rc))
             return rc;
         pTlbe->pMap = pMap;

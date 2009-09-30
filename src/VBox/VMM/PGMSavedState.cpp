@@ -511,9 +511,8 @@ static int pgmR3SaveRomVirginPages(PVM pVM, PSSMHANDLE pSSM, bool fLiveSave)
             char abPage[PAGE_SIZE];
             if (!PGM_PAGE_IS_ZERO(pPage))
             {
-                void *pvPage;
-                PPGMPAGEMAP pMapIgnored;
-                rc = pgmPhysPageMap(pVM, pPage, GCPhys, &pMapIgnored, &pvPage);
+                void const *pvPage;
+                rc = pgmPhysPageMapReadOnly(pVM, pPage, GCPhys, &pvPage);
                 if (RT_SUCCESS(rc))
                     memcpy(abPage, pvPage, PAGE_SIZE);
             }
@@ -597,9 +596,8 @@ static int pgmR3SaveShadowedRomPages(PVM pVM, PSSMHANDLE pSSM, bool fLiveSave, b
                     int         rc      = VINF_SUCCESS;
                     if (!fZero)
                     {
-                        void       *pvPage;
-                        PPGMPAGEMAP pMapIgnored;
-                        rc = pgmPhysPageMap(pVM, pPage, GCPhys, &pMapIgnored, &pvPage);
+                        void const *pvPage;
+                        rc = pgmPhysPageMapReadOnly(pVM, pPage, GCPhys, &pvPage);
                         if (RT_SUCCESS(rc))
                             memcpy(abPage, pvPage, PAGE_SIZE);
                     }
@@ -2159,13 +2157,7 @@ static int pgmR3LoadMemory(PVM pVM, PSSMHANDLE pSSM, uint32_t uPass)
                     case PGM_STATE_REC_ROM_VIRGIN:
                     case PGM_STATE_REC_ROM_SHW_RAW:
                     {
-                        if (RT_UNLIKELY(PGM_PAGE_GET_STATE(pRealPage) != PGM_PAGE_STATE_ALLOCATED))
-                        {
-                            rc = pgmPhysPageMakeWritable(pVM, pRealPage, GCPhys);
-                            AssertLogRelMsgRCReturn(rc, ("GCPhys=%RGp rc=%Rrc\n", GCPhys, rc), rc);
-                        }
-                        PPGMPAGEMAP pMapIgnored;
-                        rc = pgmPhysPageMap(pVM, pRealPage, GCPhys, &pMapIgnored, &pvDstPage);
+                        rc = pgmPhysPageMakeWritableAndMap(pVM, pRealPage, GCPhys, &pvDstPage);
                         AssertLogRelMsgRCReturn(rc, ("GCPhys=%RGp rc=%Rrc\n", GCPhys, rc), rc);
                         break;
                     }

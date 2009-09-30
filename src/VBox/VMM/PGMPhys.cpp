@@ -1167,8 +1167,7 @@ int pgmR3PhysRamReset(PVM pVM)
                             case PGM_PAGE_STATE_ALLOCATED:
                             {
                                 void *pvPage;
-                                PPGMPAGEMAP pMapIgnored;
-                                rc = pgmPhysPageMap(pVM, pPage, pRam->GCPhys + ((RTGCPHYS)iPage << PAGE_SHIFT), &pMapIgnored, &pvPage);
+                                rc = pgmPhysPageMap(pVM, pPage, pRam->GCPhys + ((RTGCPHYS)iPage << PAGE_SHIFT), &pvPage);
                                 AssertLogRelRCReturn(rc, rc);
                                 ASMMemZeroPage(pvPage);
                                 break;
@@ -2328,8 +2327,7 @@ VMMR3DECL(int) PGMR3PhysRomRegister(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys
                 for (uint32_t iPage = 0; iPage < cPages; iPage++, pRamPage++)
                 {
                     void *pvDstPage;
-                    PPGMPAGEMAP pMapIgnored;
-                    rc = pgmPhysPageMap(pVM, pRamPage, GCPhys + (iPage << PAGE_SHIFT), &pMapIgnored, &pvDstPage);
+                    rc = pgmPhysPageMap(pVM, pRamPage, GCPhys + (iPage << PAGE_SHIFT), &pvDstPage);
                     if (RT_FAILURE(rc))
                     {
                         VMSetError(pVM, rc, RT_SRC_POS, "Failed to map virgin ROM page at %RGp", GCPhys);
@@ -2482,6 +2480,7 @@ static DECLCALLBACK(int) pgmR3PhysRomWriteHandler(PVM pVM, RTGCPHYS GCPhys, void
                  */
                 int rc = pgmLock(pVM);
                 AssertRC(rc);
+
                 PPGMPAGE pShadowPage = &pRomPage->Shadow;
                 if (!PGMROMPROT_IS_ROM(pRomPage->enmProt))
                 {
@@ -2489,25 +2488,13 @@ static DECLCALLBACK(int) pgmR3PhysRomWriteHandler(PVM pVM, RTGCPHYS GCPhys, void
                     AssertLogRelReturn(pShadowPage, VERR_INTERNAL_ERROR);
                 }
 
-                pRomPage->LiveSave.fWrittenTo = true;
-                if (RT_UNLIKELY(PGM_PAGE_GET_STATE(pShadowPage) != PGM_PAGE_STATE_ALLOCATED))
+                void *pvDstPage;
+                rc = pgmPhysPageMakeWritableAndMap(pVM, pShadowPage, GCPhys & X86_PTE_PG_MASK, &pvDstPage);
+                if (RT_SUCCESS(rc))
                 {
-                    rc = pgmPhysPageMakeWritable(pVM, pShadowPage, GCPhys);
-                    if (RT_FAILURE(rc))
-                    {
-                        pgmUnlock(pVM);
-                        return rc;
-                    }
-                    AssertMsg(rc == VINF_SUCCESS || rc == VINF_PGM_SYNC_CR3 /* returned */, ("%Rrc\n", rc));
-                }
-
-                void       *pvDstPage;
-                PPGMPAGEMAP pMapIgnored;
-                int rc2 = pgmPhysPageMap(pVM, pShadowPage, GCPhys & X86_PTE_PG_MASK, &pMapIgnored, &pvDstPage);
-                if (RT_SUCCESS(rc2))
                     memcpy((uint8_t *)pvDstPage + (GCPhys & PAGE_OFFSET_MASK), pvBuf, cbBuf);
-                else
-                    rc = rc2;
+                    pRomPage->LiveSave.fWrittenTo = true;
+                }
 
                 pgmUnlock(pVM);
                 return rc;
@@ -2581,15 +2568,9 @@ int pgmR3PhysRomReset(PVM pVM)
                 for (uint32_t iPage = 0; iPage < cPages; iPage++)
                 {
                     Assert(PGM_PAGE_GET_STATE(&pRom->aPages[iPage].Shadow) != PGM_PAGE_STATE_ZERO);
-
-                    const RTGCPHYS GCPhys = pRom->GCPhys + (iPage << PAGE_SHIFT);
-                    rc = pgmPhysPageMakeWritable(pVM, &pRom->aPages[iPage].Shadow, GCPhys);
-                    if (RT_FAILURE(rc))
-                        break;
-
                     void *pvDstPage;
-                    PPGMPAGEMAP pMapIgnored;
-                    rc = pgmPhysPageMap(pVM, &pRom->aPages[iPage].Shadow, GCPhys, &pMapIgnored, &pvDstPage);
+                    const RTGCPHYS GCPhys = pRom->GCPhys + (iPage << PAGE_SHIFT);
+                    rc = pgmPhysPageMakeWritableAndMap(pVM, &pRom->aPages[iPage].Shadow, GCPhys, &pvDstPage);
                     if (RT_FAILURE(rc))
                         break;
                     ASMMemZeroPage(pvDstPage);
@@ -2608,9 +2589,8 @@ int pgmR3PhysRomReset(PVM pVM)
             for (uint32_t iPage = 0; iPage < cPages; iPage++, pbSrcPage += PAGE_SIZE)
             {
                 const RTGCPHYS GCPhys = pRom->GCPhys + (iPage << PAGE_SHIFT);
-                PPGMPAGEMAP pMapIgnored;
-                void *pvDstPage;
-                int rc = pgmPhysPageMap(pVM, &pRom->aPages[iPage].Virgin, GCPhys, &pMapIgnored, &pvDstPage);
+                void const *pvDstPage;
+                int rc = pgmPhysPageMapReadOnly(pVM, &pRom->aPages[iPage].Virgin, GCPhys, &pvDstPage);
                 if (RT_FAILURE(rc))
                     break;
                 if (memcmp(pvDstPage, pbSrcPage, PAGE_SIZE))
