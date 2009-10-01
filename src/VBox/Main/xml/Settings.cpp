@@ -1645,7 +1645,7 @@ void MachineConfigFile::readHardware(const xml::ElementNode &elmHardware,
                )
             {
                 StorageController sctl;
-                sctl.strName = "SATA";
+                sctl.strName = "SATA Controller";
                 sctl.storageBus = StorageBus_SATA;
                 sctl.controllerType = StorageControllerType_IntelAhci;
 
@@ -1835,6 +1835,15 @@ void MachineConfigFile::readStorageControllers(const xml::ElementNode &elmStorag
 
         if (!pelmController->getAttributeValue("name", sctl.strName))
             throw ConfigFileError(this, pelmController, N_("Required StorageController/@name attribute is missing"));
+        //  canonicalize storage controller names for configs in the switchover
+        //  period.
+        if (m->sv <= SettingsVersion_v1_9)
+        {
+            if (sctl.strName == "IDE")
+                sctl.strName = "IDE Controller";
+            else if (sctl.strName == "SATA")
+                sctl.strName = "SATA Controller";
+        }
         Utf8Str strType;
         if (!pelmController->getAttributeValue("type", strType))
             throw ConfigFileError(this, pelmController, N_("Required StorageController/@type attribute is missing"));
@@ -2647,6 +2656,17 @@ void MachineConfigFile::writeStorageControllers(xml::ElementNode &elmParent,
             continue;
 
         xml::ElementNode *pelmController = pelmStorageControllers->createChild("StorageController");
+        com::Utf8Str name = sc.strName.raw();
+        //
+        if (m->sv < SettingsVersion_v1_8)
+        {
+            // pre-1.8 settings use shorter controller names, they are
+            // expanded when reading the settings
+            if (name == "IDE Controller")
+                name = "IDE";
+            else if (name == "SATA Controller")
+                name = "SATA";
+        }
         pelmController->setAttribute("name", sc.strName);
 
         const char *pcszType;
