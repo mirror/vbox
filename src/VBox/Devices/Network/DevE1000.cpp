@@ -927,7 +927,6 @@ struct E1kState_st
     E1kEEPROM   eeprom;
     /** EMT: Physical interface emulation. */
     PHY         phy;
-    uint32_t ui32Pad; /*make 32-bit host happy with alignment*/
 
     STAMCOUNTER                         StatReceiveBytes;
     STAMCOUNTER                         StatTransmitBytes;
@@ -993,7 +992,6 @@ struct E1kState_st
 #endif /* E1K_INT_STATS */
 };
 typedef struct E1kState_st E1KSTATE;
-AssertCompileMemberAlignment(E1KSTATE, StatReceiveBytes, 8);
 
 #ifndef VBOX_DEVICE_STRUCT_TESTCASE
 
