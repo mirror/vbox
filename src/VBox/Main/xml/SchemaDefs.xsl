@@ -8,7 +8,7 @@
  *  This template depends on XML Schema structure (type names and constraints)
  *  and should be reviewed on every Schema change.
 
-     Copyright (C) 2006-2007 Sun Microsystems, Inc.
+     Copyright (C) 2006-2008 Sun Microsystems, Inc.
 
      This file is part of VirtualBox Open Source Edition (OSE), as
      available from http://www.virtualbox.org. This file is free software;
