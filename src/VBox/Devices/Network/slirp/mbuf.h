@@ -37,6 +37,7 @@
 #ifndef _MBUF_H_
 #define _MBUF_H_
 #ifndef VBOX_WITH_SLIRP_BSD_MBUF
+/* #define M_BUF_DEBUG */
 
 #define m_freem m_free
 
@@ -75,6 +76,11 @@ struct m_hdr
     caddr_t mh_data;           /* Location of data */
     int     mh_len;            /* Amount of data in this mbuf */
     struct libalias *mh_la;     /*Real freebsd store hocksin similar way*/
+#ifdef M_BUF_DEBUG
+    int mh_id;
+    char *mh_allocation_at_file;
+    int mh_allocation_at_line;
+#endif
 };
 
 /*
@@ -134,6 +140,7 @@ extern struct mbuf m_freelist, m_usedlist;
 extern int mbuf_max;
 
 void m_init (PNATState);
+void m_fini(PNATState pData);
 void msize_init (PNATState);
 struct mbuf * m_get (PNATState);
 void m_free (PNATState, struct mbuf *);
@@ -149,8 +156,29 @@ struct mbuf * dtom (PNATState, void *);
 #define MBUF_HEAD(m) ((caddr_t)(((m)->m_flags & M_EXT) ? (m)->m_ext : (m)->m_dat))
 
 #define MBUF_IP_HEADER(m) (caddr_t)(MBUF_HEAD(m) + if_maxlinkhdr)
-
 #else
 # include "bsd/sys/mbuf.h"
 #endif
+#endif
+
+#if defined(M_BUF_DEBUG) && !defined(RT_OS_WINDOWS)
+# define m_get(x)                                                                                               \
+({                                                                                                              \
+    struct mbuf *mdb = m_get((x));                                                                              \
+    if(mdb)                                                                                                     \
+    {                                                                                                           \
+        mdb->m_hdr.mh_allocation_at_file = __FILE__;                                                            \
+        mdb->m_hdr.mh_allocation_at_line = __LINE__;                                                            \
+    }                                                                                                           \
+    LogRel(("NAT:m(id:%d, ptr: %p) allocated at: %s:%d\n", (mdb?mdb->m_hdr.mh_id:-1), mdb, __FILE__, __LINE__));\
+    mdb;                                                                                                        \
+})
+
+# define m_free(x, m)                                                                               \
+({                                                                                                  \
+    (m)->m_hdr.mh_allocation_at_file = NULL;                                                        \
+    (m)->m_hdr.mh_allocation_at_line = 0;                                                           \
+    LogRel(("NAT:m(id:%d, ptr: %p) freed at: %s:%d\n", (m)->m_hdr.mh_id, (m), __FILE__, __LINE__)); \
+    m_free((x),(m));                                                                                \
+})
 #endif

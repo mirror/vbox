@@ -685,6 +685,8 @@ out:
             return (0);
         }
 #endif
+        if (m != NULL)
+            m_free(pData, m);
         return (error);
     }
     tcpstat.tcps_sndtotal++;

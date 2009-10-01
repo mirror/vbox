@@ -285,6 +285,7 @@ void ip_stripoptions (register struct mbuf *, struct mbuf *);
 
 /* ip_output.c */
 int ip_output (PNATState, struct socket *, struct mbuf *);
+int ip_output0 (PNATState, struct socket *, struct mbuf *, int urg);
 
 /* tcp_input.c */
 int tcp_reass (PNATState, struct tcpcb *, struct tcphdr *, int *, struct mbuf *);

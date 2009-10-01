@@ -514,7 +514,7 @@ void icmp_error(PNATState pData, struct mbuf *msrc, u_char type, u_char code, in
         M_ASSERTPKTHDR(msrc);
 #endif
 
-    if (type!=ICMP_UNREACH && type!=ICMP_TIMXCEED)
+    if (type!=ICMP_UNREACH && type!=ICMP_TIMXCEED && type != ICMP_SOURCEQUENCH)
         goto end_error;
 
     /* check msrc */
@@ -530,7 +530,7 @@ void icmp_error(PNATState pData, struct mbuf *msrc, u_char type, u_char code, in
         DEBUG_MISC((dfd, " %.16s to %.16s\n", bufa, bufb));
     }
 #endif
-    if (ip->ip_off & IP_OFFMASK)
+    if (ip->ip_off & IP_OFFMASK && type != ICMP_SOURCEQUENCH)
         goto end_error;    /* Only reply to fragment 0 */
 
     shlen = ip->ip_hl << 2;
@@ -656,7 +656,7 @@ void icmp_error(PNATState pData, struct mbuf *msrc, u_char type, u_char code, in
     ip->ip_dst = ip->ip_src;    /* ip adresses */
     ip->ip_src = alias_addr;
 
-    (void ) ip_output(pData, (struct socket *)NULL, m);
+    (void ) ip_output0(pData, (struct socket *)NULL, m, 1);
 
     icmpstat.icps_reflect++;
 
