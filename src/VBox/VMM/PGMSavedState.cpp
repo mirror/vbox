@@ -870,6 +870,8 @@ static int pgmR3SaveRamPages(PVM pVM, PSSMHANDLE pSSM, bool fLiveSave, uint32_t 
                                  ? PGM_PAGE_STATE_SHARED
                                  : PGM_PAGE_STATE_WRITE_MONITORED))
                             continue;
+                        if (PGM_PAGE_GET_WRITE_LOCKS(&pCur->aPages[iPage]) > 0)
+                            continue;
                     }
                     else
                     {
@@ -1083,7 +1085,19 @@ static void pgmR3LiveExecScanPages(PVM pVM, bool fFinalPass)
 
                             case PGM_PAGE_STATE_WRITE_MONITORED:
                                 Assert(paLSPages[iPage].fWriteMonitored);
-                                paLSPages[iPage].fWriteMonitoredJustNow = PGM_PAGE_GET_WRITE_LOCKS(&pCur->aPages[iPage]) > 0;
+                                if (PGM_PAGE_GET_WRITE_LOCKS(&pCur->aPages[iPage]) == 0)
+                                    paLSPages[iPage].fWriteMonitoredJustNow = 0;
+                                else
+                                {
+                                    paLSPages[iPage].fWriteMonitoredJustNow = 1;
+                                    if (!paLSPages[iPage].fDirty)
+                                    {
+                                        pVM->pgm.s.LiveSave.cReadyPages--;
+                                        pVM->pgm.s.LiveSave.cDirtyPages++;
+                                        if (++paLSPages[iPage].cDirtied > PGMLIVSAVEPAGE_MAX_DIRTIED)
+                                            paLSPages[iPage].cDirtied = PGMLIVSAVEPAGE_MAX_DIRTIED;
+                                    }
+                                }
                                 break;
 
                             case PGM_PAGE_STATE_ZERO:
@@ -1487,6 +1501,12 @@ static DECLCALLBACK(int) pgmR3SaveDone(PVM pVM, PSSMHANDLE pSSM)
     } while (pCur);
 
     pVM->pgm.s.LiveSave.fActive = false;
+
+    Assert(pVM->pgm.s.cMonitoredPages >= cMonitoredPages);
+    if (pVM->pgm.s.cMonitoredPages < cMonitoredPages)
+        pVM->pgm.s.cMonitoredPages = 0;
+    else
+        pVM->pgm.s.cMonitoredPages -= cMonitoredPages;
 
     /** @todo this is blindly assuming that we're the only user of write
      *        monitoring. Fix this when more users are added. */
