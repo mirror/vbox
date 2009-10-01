@@ -6513,33 +6513,49 @@ static DECLCALLBACK(int)   ataConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
         for (uint32_t j = 0; j < RT_ELEMENTS(pThis->aCts[i].aIfs); j++)
         {
             ATADevState *pIf = &pThis->aCts[i].aIfs[j];
-            PDMDevHlpSTAMRegisterF(pDevIns, &pIf->StatATADMA,       STAMTYPE_COUNTER,    STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,       "Number of ATA DMA transfers.", "/Devices/ATA%d/Unit%d/DMA", i, j);
-            PDMDevHlpSTAMRegisterF(pDevIns, &pIf->StatATAPIO,       STAMTYPE_COUNTER,    STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,       "Number of ATA PIO transfers.", "/Devices/ATA%d/Unit%d/PIO", i, j);
-            PDMDevHlpSTAMRegisterF(pDevIns, &pIf->StatATAPIDMA,     STAMTYPE_COUNTER,    STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,       "Number of ATAPI DMA transfers.", "/Devices/ATA%d/Unit%d/AtapiDMA", i, j);
-            PDMDevHlpSTAMRegisterF(pDevIns, &pIf->StatATAPIPIO,     STAMTYPE_COUNTER,    STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,       "Number of ATAPI PIO transfers.", "/Devices/ATA%d/Unit%d/AtapiPIO", i, j);
+            PDMDevHlpSTAMRegisterF(pDevIns, &pIf->StatATADMA,       STAMTYPE_COUNTER,    STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,
+                                   "Number of ATA DMA transfers.",              "/Devices/IDE%d/ATA%d/Unit%d/DMA", iInstance, i, j);
+            PDMDevHlpSTAMRegisterF(pDevIns, &pIf->StatATAPIO,       STAMTYPE_COUNTER,    STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,
+                                   "Number of ATA PIO transfers.",              "/Devices/IDE%d/ATA%d/Unit%d/PIO", iInstance, i, j);
+            PDMDevHlpSTAMRegisterF(pDevIns, &pIf->StatATAPIDMA,     STAMTYPE_COUNTER,    STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,
+                                   "Number of ATAPI DMA transfers.",            "/Devices/IDE%d/ATA%d/Unit%d/AtapiDMA", iInstance, i, j);
+            PDMDevHlpSTAMRegisterF(pDevIns, &pIf->StatATAPIPIO,     STAMTYPE_COUNTER,    STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,
+                                   "Number of ATAPI PIO transfers.",            "/Devices/IDE%d/ATA%d/Unit%d/AtapiPIO", iInstance, i, j);
 #ifdef VBOX_WITH_STATISTICS /** @todo release too. */
-            PDMDevHlpSTAMRegisterF(pDevIns, &pIf->StatReads,        STAMTYPE_PROFILE_ADV, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL,  "Profiling of the read operations.", "/Devices/ATA%d/Unit%d/Reads", i, j);
+            PDMDevHlpSTAMRegisterF(pDevIns, &pIf->StatReads,        STAMTYPE_PROFILE_ADV, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL,
+                                   "Profiling of the read operations.",         "/Devices/IDE%d/ATA%d/Unit%d/Reads", iInstance, i, j);
 #endif
-            PDMDevHlpSTAMRegisterF(pDevIns, &pIf->StatBytesRead,    STAMTYPE_COUNTER,     STAMVISIBILITY_ALWAYS, STAMUNIT_BYTES,           "Amount of data read.",              "/Devices/ATA%d/Unit%d/ReadBytes", i, j);
+            PDMDevHlpSTAMRegisterF(pDevIns, &pIf->StatBytesRead,    STAMTYPE_COUNTER,     STAMVISIBILITY_ALWAYS, STAMUNIT_BYTES,
+                                   "Amount of data read.",                      "/Devices/IDE%d/ATA%d/Unit%d/ReadBytes", iInstance, i, j);
 #ifdef VBOX_INSTRUMENT_DMA_WRITES
-            PDMDevHlpSTAMRegisterF(pDevIns, &pIf->StatInstrVDWrites,STAMTYPE_PROFILE_ADV, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL,  "Profiling of the VD DMA write operations.","/Devices/ATA%d/Unit%d/InstrVDWrites", i, j);
+            PDMDevHlpSTAMRegisterF(pDevIns, &pIf->StatInstrVDWrites,STAMTYPE_PROFILE_ADV, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL,
+                                   "Profiling of the VD DMA write operations.", "/Devices/IDE%d/ATA%d/Unit%d/InstrVDWrites", iInstance, i, j);
 #endif
 #ifdef VBOX_WITH_STATISTICS
-            PDMDevHlpSTAMRegisterF(pDevIns, &pIf->StatWrites,       STAMTYPE_PROFILE_ADV, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL,  "Profiling of the write operations.","/Devices/ATA%d/Unit%d/Writes", i, j);
+            PDMDevHlpSTAMRegisterF(pDevIns, &pIf->StatWrites,       STAMTYPE_PROFILE_ADV, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL,
+                                   "Profiling of the write operations.",        "/Devices/IDE%d/ATA%d/Unit%d/Writes", iInstance, i, j);
 #endif
-            PDMDevHlpSTAMRegisterF(pDevIns, &pIf->StatBytesWritten, STAMTYPE_COUNTER,     STAMVISIBILITY_ALWAYS, STAMUNIT_BYTES,           "Amount of data written.",           "/Devices/ATA%d/Unit%d/WrittenBytes", i, j);
+            PDMDevHlpSTAMRegisterF(pDevIns, &pIf->StatBytesWritten, STAMTYPE_COUNTER,     STAMVISIBILITY_ALWAYS, STAMUNIT_BYTES,
+                                   "Amount of data written.",                   "/Devices/IDE%d/ATA%d/Unit%d/WrittenBytes", iInstance, i, j);
 #ifdef VBOX_WITH_STATISTICS
-            PDMDevHlpSTAMRegisterF(pDevIns, &pIf->StatFlushes,      STAMTYPE_PROFILE,     STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL,  "Profiling of the flush operations.","/Devices/ATA%d/Unit%d/Flushes", i, j);
+            PDMDevHlpSTAMRegisterF(pDevIns, &pIf->StatFlushes,      STAMTYPE_PROFILE,     STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL,
+                                   "Profiling of the flush operations.",        "/Devices/IDE%d/ATA%d/Unit%d/Flushes", iInstance, i, j);
 #endif
         }
 #ifdef VBOX_WITH_STATISTICS /** @todo release too. */
-        PDMDevHlpSTAMRegisterF(pDevIns, &pThis->aCts[i].StatAsyncOps,       STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,   "The number of async operations.",  "/Devices/ATA%d/Async/Operations", i);
+        PDMDevHlpSTAMRegisterF(pDevIns, &pThis->aCts[i].StatAsyncOps,     STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,
+                                   "The number of async operations.",   "/Devices/IDE%d/ATA%d/Async/Operations", iInstance, i);
         /** @todo STAMUNIT_MICROSECS */
-        PDMDevHlpSTAMRegisterF(pDevIns, &pThis->aCts[i].StatAsyncMinWait, STAMTYPE_U64_RESET, STAMVISIBILITY_ALWAYS, STAMUNIT_NONE,         "Minimum wait in microseconds.",    "/Devices/ATA%d/Async/MinWait", i);
-        PDMDevHlpSTAMRegisterF(pDevIns, &pThis->aCts[i].StatAsyncMaxWait, STAMTYPE_U64_RESET, STAMVISIBILITY_ALWAYS, STAMUNIT_NONE,         "Maximum wait in microseconds.",    "/Devices/ATA%d/Async/MaxWait", i);
-        PDMDevHlpSTAMRegisterF(pDevIns, &pThis->aCts[i].StatAsyncTimeUS,    STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_NONE,         "Total time spent in microseconds.","/Devices/ATA%d/Async/TotalTimeUS", i);
-        PDMDevHlpSTAMRegisterF(pDevIns, &pThis->aCts[i].StatAsyncTime,  STAMTYPE_PROFILE_ADV, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling of async operations.", "/Devices/ATA%d/Async/Time", i);
-        PDMDevHlpSTAMRegisterF(pDevIns, &pThis->aCts[i].StatLockWait,       STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling of locks.",            "/Devices/ATA%d/Async/LockWait", i);
+        PDMDevHlpSTAMRegisterF(pDevIns, &pThis->aCts[i].StatAsyncMinWait, STAMTYPE_U64_RESET, STAMVISIBILITY_ALWAYS, STAMUNIT_NONE,
+                                   "Minimum wait in microseconds.",     "/Devices/IDE%d/ATA%d/Async/MinWait", iInstance, i);
+        PDMDevHlpSTAMRegisterF(pDevIns, &pThis->aCts[i].StatAsyncMaxWait, STAMTYPE_U64_RESET, STAMVISIBILITY_ALWAYS, STAMUNIT_NONE,
+                                   "Maximum wait in microseconds.",     "/Devices/IDE%d/ATA%d/Async/MaxWait", iInstance, i);
+        PDMDevHlpSTAMRegisterF(pDevIns, &pThis->aCts[i].StatAsyncTimeUS,  STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_NONE,
+                                   "Total time spent in microseconds.", "/Devices/IDE%d/ATA%d/Async/TotalTimeUS", iInstance, i);
+        PDMDevHlpSTAMRegisterF(pDevIns, &pThis->aCts[i].StatAsyncTime,    STAMTYPE_PROFILE_ADV, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL,
+                                   "Profiling of async operations.",    "/Devices/IDE%d/ATA%d/Async/Time", iInstance, i);
+        PDMDevHlpSTAMRegisterF(pDevIns, &pThis->aCts[i].StatLockWait,     STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL,
+                                   "Profiling of locks.",               "/Devices/IDE%d/ATA%d/Async/LockWait", iInstance, i);
 #endif /* VBOX_WITH_STATISTICS */
 
         /* Initialize per-controller critical section */
