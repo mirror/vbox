@@ -453,7 +453,6 @@ VMMR3DECL(int) PGMR3PhysGCPhys2CCPtrExternal(PVM pVM, RTGCPHYS GCPhys, void **pp
             if (pMap)
                 pMap->cRefs++;
 
-# ifdef PGM_PAGE_WITH_LOCKS
             unsigned cLocks = PGM_PAGE_GET_WRITE_LOCKS(pPage);
             if (RT_LIKELY(cLocks < PGM_PAGE_MAX_LOCKS - 1))
                 PGM_PAGE_INC_WRITE_LOCKS(pPage);
@@ -464,7 +463,6 @@ VMMR3DECL(int) PGMR3PhysGCPhys2CCPtrExternal(PVM pVM, RTGCPHYS GCPhys, void **pp
                 if (pMap)
                     pMap->cRefs++; /* Extra ref to prevent it from going away. */
             }
-# endif
 
             *ppv = (void *)((uintptr_t)pTlbe->pv | (GCPhys & PAGE_OFFSET_MASK));
             pLock->uPageAndType = (uintptr_t)pPage | PGMPAGEMAPLOCK_TYPE_WRITE;
@@ -529,7 +527,6 @@ VMMR3DECL(int) PGMR3PhysGCPhys2CCPtrReadOnlyExternal(PVM pVM, RTGCPHYS GCPhys, v
             if (pMap)
                 pMap->cRefs++;
 
-# ifdef PGM_PAGE_WITH_LOCKS
             unsigned cLocks = PGM_PAGE_GET_READ_LOCKS(pPage);
             if (RT_LIKELY(cLocks < PGM_PAGE_MAX_LOCKS - 1))
                 PGM_PAGE_INC_READ_LOCKS(pPage);
@@ -540,7 +537,6 @@ VMMR3DECL(int) PGMR3PhysGCPhys2CCPtrReadOnlyExternal(PVM pVM, RTGCPHYS GCPhys, v
                 if (pMap)
                     pMap->cRefs++; /* Extra ref to prevent it from going away. */
             }
-# endif
 
             *ppv = (void *)((uintptr_t)pTlbe->pv | (GCPhys & PAGE_OFFSET_MASK));
             pLock->uPageAndType = (uintptr_t)pPage | PGMPAGEMAPLOCK_TYPE_READ;
