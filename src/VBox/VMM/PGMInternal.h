@@ -1115,8 +1115,8 @@ typedef PPGMPAGE *PPPGMPAGE;
     ((PGM_PAGE_GET_TRACKING(pPage) >> PGMPOOL_TD_IDX_SHIFT)   & PGMPOOL_TD_IDX_MASK)
 
 
-// /** Enables page lock accounting. */
-// #define PGM_PAGE_WITH_LOCKS
+/** Enables page lock accounting. */
+#define PGM_PAGE_WITH_LOCKS
 
 #ifdef PGM_PAGE_WITH_LOCKS
 /** Max number of locks on a page. */
