@@ -138,7 +138,7 @@ typedef struct VMMR0JMPBUF
     uint32_t                    ebp;
     uint32_t                    esp;
     uint32_t                    eip;
-    uint32_t                    u32Padding;
+    uint32_t                    eflags;
 #endif
 #if HC_ARCH_BITS == 64
     uint64_t                    rbx;
@@ -165,6 +165,7 @@ typedef struct VMMR0JMPBUF
     uint128_t                   xmm14;
     uint128_t                   xmm15;
 # endif
+    uint64_t                    rflags;
 #endif
     /** @} */
 

@@ -42,7 +42,7 @@ struc VMMR0JMPBUF
     .ebp            resd 1
     .esp            resd 1
     .eip            resd 1
-    .u32Padding     resd 1
+    .eflags         resd 1
 
     ; additional state and stack info.
     .fInRing3Call   resd 1
@@ -79,6 +79,7 @@ struc VMMR0JMPBUF
     .xmm14          resq 2
     .xmm15          resq 2
  %endif
+    .rflags         resq 1
 
     ; additional state and stack info.
     .fInRing3Call   resd 1

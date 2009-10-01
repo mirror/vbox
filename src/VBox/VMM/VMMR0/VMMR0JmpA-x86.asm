@@ -69,6 +69,9 @@ GLOBALNAME vmmR0CallRing3SetJmpEx
     mov     [xDX + VMMR0JMPBUF.eip], xAX
     lea     ecx, [esp + 4]              ; (used in resume)
     mov     [xDX + VMMR0JMPBUF.esp], ecx
+    pushf
+    pop     xAX
+    mov     [xDX + VMMR0JMPBUF.eflags], xAX
 
     ;
     ; If we're not in a ring-3 call, call pfn and return.
@@ -174,6 +177,8 @@ GLOBALNAME vmmR0CallRing3SetJmpEx
     mov     xCX, [xDX + VMMR0JMPBUF.eip]
     and     dword [xDX + VMMR0JMPBUF.eip], byte 0 ; used for valid check.
     mov     esp, [xDX + VMMR0JMPBUF.esp]
+    push    dword [xDX + VMMR0JMPBUF.eflags]
+    popf
     jmp     xCX
 
 .entry_error:
@@ -351,6 +356,8 @@ BEGINPROC vmmR0CallRing3LongJmp
     mov     ebp, [xDX + VMMR0JMPBUF.ebp]
     mov     ecx, [xDX + VMMR0JMPBUF.eip]
     mov     esp, [xDX + VMMR0JMPBUF.esp]
+    push    dword [xDX + VMMR0JMPBUF.eflags]
+    popf
     jmp     ecx
 
     ;
