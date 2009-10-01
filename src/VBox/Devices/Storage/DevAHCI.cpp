@@ -6526,22 +6526,22 @@ static DECLCALLBACK(int) ahciConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
 
         /* Register statistics counter. */
         PDMDevHlpSTAMRegisterF(pDevIns, &pAhciPort->StatDMA, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,
-                               "Number of DMA transfers.", "/Devices/SATA/Port%d/DMA", i);
+                               "Number of DMA transfers.", "/Devices/SATA%d/Port%d/DMA", iInstance, i);
         PDMDevHlpSTAMRegisterF(pDevIns, &pAhciPort->StatBytesRead, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_BYTES,
-                               "Amount of data read.", "/Devices/SATA/Port%d/ReadBytes", i);
+                               "Amount of data read.", "/Devices/SATA%d/Port%d/ReadBytes", iInstance, i);
         PDMDevHlpSTAMRegisterF(pDevIns, &pAhciPort->StatBytesWritten, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_BYTES,
-                               "Amount of data written.", "/Devices/SATA/Port%d/WrittenBytes", i);
+                               "Amount of data written.", "/Devices/SATA%d/Port%d/WrittenBytes", iInstance, i);
         PDMDevHlpSTAMRegisterF(pDevIns, &pAhciPort->StatIORequestsPerSecond, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,
-                               "Number of processed I/O requests per second.", "/Devices/SATA/Port%d/IORequestsPerSecond", i);
+                               "Number of processed I/O requests per second.", "/Devices/SATA%d/Port%d/IORequestsPerSecond", iInstance, i);
 #ifdef VBOX_WITH_STATISTICS
         PDMDevHlpSTAMRegisterF(pDevIns, &pAhciPort->StatProfileProcessTime, STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_NS_PER_CALL,
-                               "Amount of time to process one request.", "/Devices/SATA/Port%d/ProfileProcessTime", i);
+                               "Amount of time to process one request.", "/Devices/SATA%d/Port%d/ProfileProcessTime", iInstance, i);
         PDMDevHlpSTAMRegisterF(pDevIns, &pAhciPort->StatProfileMapIntoR3, STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_NS_PER_CALL,
-                               "Amount of time to map the guest buffers into R3.", "/Devices/SATA/Port%d/ProfileMapIntoR3", i);
+                               "Amount of time to map the guest buffers into R3.", "/Devices/SATA%d/Port%d/ProfileMapIntoR3", iInstance, i);
         PDMDevHlpSTAMRegisterF(pDevIns, &pAhciPort->StatProfileReadWrite, STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_NS_PER_CALL,
-                               "Amount of time for the read/write operation to complete.", "/Devices/SATA/Port%d/ProfileReadWrite", i);
+                               "Amount of time for the read/write operation to complete.", "/Devices/SATA%d/Port%d/ProfileReadWrite", iInstance, i);
         PDMDevHlpSTAMRegisterF(pDevIns, &pAhciPort->StatProfileDestroyScatterGatherList, STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_NS_PER_CALL,
-                               "Amount of time to destroy the scatter gather list and free associated ressources.", "/Devices/SATA/Port%d/ProfileDestroyScatterGatherList", i);
+                               "Amount of time to destroy the scatter gather list and free associated ressources.", "/Devices/SATA%d/Port%d/ProfileDestroyScatterGatherList", iInstance, i);
 #endif
 
         ahciPortHwReset(pAhciPort);
