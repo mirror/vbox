@@ -100,6 +100,9 @@ GLOBALNAME vmmR0CallRing3SetJmpEx
     movdqa  [xDX + VMMR0JMPBUF.xmm14], xmm14
     movdqa  [xDX + VMMR0JMPBUF.xmm15], xmm15
  %endif
+    pushf
+    pop     xAX
+    mov     [xDX + VMMR0JMPBUF.rflags], xAX
 
     ;
     ; If we're not in a ring-3 call, call pfn and return.
@@ -171,6 +174,8 @@ GLOBALNAME vmmR0CallRing3SetJmpEx
     mov     xCX, [xDX + VMMR0JMPBUF.rip]
     and     qword [xDX + VMMR0JMPBUF.rip], byte 0 ; used for valid check.
     mov     rsp, [xDX + VMMR0JMPBUF.rsp]
+    push    qword [xDX + VMMR0JMPBUF.rflags]
+    popf
     jmp     xCX
 
 .entry_error:
@@ -398,7 +403,8 @@ BEGINPROC vmmR0CallRing3LongJmp
     mov     rbp, [xDX + VMMR0JMPBUF.rbp]
     mov     rcx, [xDX + VMMR0JMPBUF.rip]
     mov     rsp, [xDX + VMMR0JMPBUF.rsp]
-    ;; @todo flags????
+    push    qword [xDX + VMMR0JMPBUF.rflags]
+    popf
     jmp     rcx
 
     ;
