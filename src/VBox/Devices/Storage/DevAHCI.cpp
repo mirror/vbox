@@ -206,6 +206,18 @@ typedef struct AHCIPORTTASKSTATESGENTRY
 
 /** Pointer to a pointer of a scatter gather list entry. */
 typedef PAHCIPORTTASKSTATESGENTRY *PPAHCIPORTTASKSTATESGENTRY;
+/** Pointer to a task state. */
+typedef struct AHCIPORTTASKSTATE *PAHCIPORTTASKSTATE;
+
+/**
+ * Data processing callback
+ *
+ * @returns VBox status.
+ * @param   pAhciPortTaskState    The task state.
+ */
+typedef DECLCALLBACK(int)   FNAHCIPOSTPROCESS(PAHCIPORTTASKSTATE pAhciPortTaskState);
+/** Pointer to a FNAHCIPOSTPROCESS() function. */
+typedef FNAHCIPOSTPROCESS *PFNAHCIPOSTPROCESS;
 
 /**
  * A task state.
@@ -234,12 +246,17 @@ typedef struct AHCIPORTTASKSTATE
     uint8_t                    uATARegError;
     /** ATA status register */
     uint8_t                    uATARegStatus;
-    /** Number of scatter gather list entries. */
-    uint32_t                   cSGEntries;
     /** How many entries would fit into the sg list. */
     uint32_t                   cSGListSize;
+    /** Number of used SG list entries. */
+    uint32_t                   cSGListUsed;
     /** Pointer to the first entry of the scatter gather list. */
     PPDMDATASEG                pSGListHead;
+    /** Number of scatter gather list entries. */
+    uint32_t                   cSGEntries;
+    /** Total number of bytes the guest reserved for this request.
+     * Sum of all SG entries. */
+    uint32_t                   cbSGBuffers;
     /** Pointer to the first mapping information entry. */
     PAHCIPORTTASKSTATESGENTRY  paSGEntries;
     /** Size of the temporary buffer for unaligned guest segments. */
@@ -248,7 +265,11 @@ typedef struct AHCIPORTTASKSTATE
     void                      *pvBufferUnaligned;
     /** Number of times in a row the scatter gather list was too big. */
     uint32_t                   cSGListTooBig;
-} AHCIPORTTASKSTATE, *PAHCIPORTTASKSTATE;
+    /** Post processing callback.
+     * If this is set we will use a buffer for the data
+     * and the callback copies the data to the destination. */
+    PFNAHCIPOSTPROCESS         pfnPostProcess;
+} AHCIPORTTASKSTATE;
 
 /**
  * Notifier queue item.
@@ -809,6 +830,9 @@ static int ahciScatterGatherListCreate(PAHCIPort pAhciPort, PAHCIPORTTASKSTATE p
 static int ahciScatterGatherListDestroy(PAHCIPort pAhciPort, PAHCIPORTTASKSTATE pAhciPortTaskState);
 static void ahciCopyFromBufferIntoSGList(PPDMDEVINS pDevIns, PAHCIPORTTASKSTATESGENTRY pSGInfo);
 static void ahciCopyFromSGListIntoBuffer(PPDMDEVINS pDevIns, PAHCIPORTTASKSTATESGENTRY pSGInfo);
+static void ahciScatterGatherListGetTotalBufferSize(PAHCIPort pAhciPort, PAHCIPORTTASKSTATE pAhciPortTaskState);
+static int ahciScatterGatherListCreateSafe(PAHCIPort pAhciPort, PAHCIPORTTASKSTATE pAhciPortTaskState,
+                                           bool fReadonly, unsigned cSGEntriesProcessed);
 #endif
 RT_C_DECLS_END
 
@@ -2909,8 +2933,7 @@ static int atapiIdentifySS(PAHCIPORTTASKSTATE pAhciPortTaskState, PAHCIPort pAhc
     p[76] = RT_H2LE_U16((1 << 8) | (1 << 2)); /* Native command queuing and Serial ATA Gen2 (3.0 Gbps) speed supported */
 
     /* Copy the buffer in to the scatter gather list. */
-    ahciScatterGatherListCopyFromBuffer(pAhciPortTaskState, (void *)&p[0], sizeof(p));
-    *pcbData = sizeof(p);
+    *pcbData =  ahciScatterGatherListCopyFromBuffer(pAhciPortTaskState, (void *)&p[0], sizeof(p));
 
     atapiCmdOK(pAhciPort, pAhciPortTaskState);
     return VINF_SUCCESS;
@@ -2924,8 +2947,7 @@ static int atapiReadCapacitySS(PAHCIPORTTASKSTATE pAhciPortTaskState, PAHCIPort 
     ataH2BE_U32(aBuf + 4, 2048);
 
     /* Copy the buffer in to the scatter gather list. */
-    ahciScatterGatherListCopyFromBuffer(pAhciPortTaskState, (void *)&aBuf[0], sizeof(aBuf));
-    *pcbData = sizeof(aBuf);
+    *pcbData = ahciScatterGatherListCopyFromBuffer(pAhciPortTaskState, (void *)&aBuf[0], sizeof(aBuf));
 
     atapiCmdOK(pAhciPort, pAhciPortTaskState);
     return VINF_SUCCESS;
@@ -2952,8 +2974,7 @@ static int atapiReadDiscInformationSS(PAHCIPORTTASKSTATE pAhciPortTaskState, PAH
     ataH2BE_U32(aBuf + 20, 0x00ffffff); /* last possible start time for lead-out is not available */
 
     /* Copy the buffer in to the scatter gather list. */
-    ahciScatterGatherListCopyFromBuffer(pAhciPortTaskState, (void *)&aBuf[0], sizeof(aBuf));
-    *pcbData = sizeof(aBuf);
+    *pcbData = ahciScatterGatherListCopyFromBuffer(pAhciPortTaskState, (void *)&aBuf[0], sizeof(aBuf));
 
     atapiCmdOK(pAhciPort, pAhciPortTaskState);
     return VINF_SUCCESS;
@@ -2983,8 +3004,7 @@ static int atapiReadTrackInformationSS(PAHCIPORTTASKSTATE pAhciPortTaskState, PA
     aBuf[33] = 0; /* session number (MSB) */
 
     /* Copy the buffer in to the scatter gather list. */
-    ahciScatterGatherListCopyFromBuffer(pAhciPortTaskState, (void *)&aBuf[0], sizeof(aBuf));
-    *pcbData = sizeof(aBuf);
+    *pcbData = ahciScatterGatherListCopyFromBuffer(pAhciPortTaskState, (void *)&aBuf[0], sizeof(aBuf));
 
     atapiCmdOK(pAhciPort, pAhciPortTaskState);
     return VINF_SUCCESS;
@@ -3019,8 +3039,7 @@ static int atapiGetConfigurationSS(PAHCIPORTTASKSTATE pAhciPortTaskState, PAHCIP
     aBuf[18] = (1 << 0); /* current profile */
 
     /* Copy the buffer in to the scatter gather list. */
-    ahciScatterGatherListCopyFromBuffer(pAhciPortTaskState, (void *)&aBuf[0], sizeof(aBuf));
-    *pcbData = sizeof(aBuf);
+    *pcbData = ahciScatterGatherListCopyFromBuffer(pAhciPortTaskState, (void *)&aBuf[0], sizeof(aBuf));
 
     atapiCmdOK(pAhciPort, pAhciPortTaskState);
     return VINF_SUCCESS;
@@ -3044,8 +3063,7 @@ static int atapiInquirySS(PAHCIPORTTASKSTATE pAhciPortTaskState, PAHCIPort pAhci
     ataSCSIPadStr(aBuf + 32, "1.0", 4);
 
     /* Copy the buffer in to the scatter gather list. */
-    ahciScatterGatherListCopyFromBuffer(pAhciPortTaskState, (void *)&aBuf[0], sizeof(aBuf));
-    *pcbData = sizeof(aBuf);
+    *pcbData = ahciScatterGatherListCopyFromBuffer(pAhciPortTaskState, (void *)&aBuf[0], sizeof(aBuf));
 
     atapiCmdOK(pAhciPort, pAhciPortTaskState);
     return VINF_SUCCESS;
@@ -3074,8 +3092,7 @@ static int atapiModeSenseErrorRecoverySS(PAHCIPORTTASKSTATE pAhciPortTaskState, 
     aBuf[15] = 0x00;
 
     /* Copy the buffer in to the scatter gather list. */
-    ahciScatterGatherListCopyFromBuffer(pAhciPortTaskState, (void *)&aBuf[0], sizeof(aBuf));
-    *pcbData = sizeof(aBuf);
+    *pcbData = ahciScatterGatherListCopyFromBuffer(pAhciPortTaskState, (void *)&aBuf[0], sizeof(aBuf));
 
     atapiCmdOK(pAhciPort, pAhciPortTaskState);
     return VINF_SUCCESS;
@@ -3125,8 +3142,7 @@ static int atapiModeSenseCDStatusSS(PAHCIPORTTASKSTATE pAhciPortTaskState, PAHCI
     ataH2BE_U16(&aBuf[38], 0); /* number of write speed performance descriptors */
 
     /* Copy the buffer in to the scatter gather list. */
-    ahciScatterGatherListCopyFromBuffer(pAhciPortTaskState, (void *)&aBuf[0], sizeof(aBuf));
-    *pcbData = sizeof(aBuf);
+    *pcbData = ahciScatterGatherListCopyFromBuffer(pAhciPortTaskState, (void *)&aBuf[0], sizeof(aBuf));
 
     atapiCmdOK(pAhciPort, pAhciPortTaskState);
     return VINF_SUCCESS;
@@ -3144,8 +3160,7 @@ static int atapiRequestSenseSS(PAHCIPORTTASKSTATE pAhciPortTaskState, PAHCIPort 
     aBuf[12] = pAhciPort->uATAPIASC;
 
     /* Copy the buffer in to the scatter gather list. */
-    ahciScatterGatherListCopyFromBuffer(pAhciPortTaskState, (void *)&aBuf[0], sizeof(aBuf));
-    *pcbData = sizeof(aBuf);
+    *pcbData = ahciScatterGatherListCopyFromBuffer(pAhciPortTaskState, (void *)&aBuf[0], sizeof(aBuf));
 
     atapiCmdOK(pAhciPort, pAhciPortTaskState);
     return VINF_SUCCESS;
@@ -3165,8 +3180,7 @@ static int atapiMechanismStatusSS(PAHCIPORTTASKSTATE pAhciPortTaskState, PAHCIPo
     ataH2BE_U16(aBuf + 6, 0);
 
     /* Copy the buffer in to the scatter gather list. */
-    ahciScatterGatherListCopyFromBuffer(pAhciPortTaskState, (void *)&aBuf[0], sizeof(aBuf));
-    *pcbData = sizeof(aBuf);
+    *pcbData = ahciScatterGatherListCopyFromBuffer(pAhciPortTaskState, (void *)&aBuf[0], sizeof(aBuf));
 
     atapiCmdOK(pAhciPort, pAhciPortTaskState);
     return VINF_SUCCESS;
@@ -3228,8 +3242,7 @@ static int atapiReadTOCNormalSS(PAHCIPORTTASKSTATE pAhciPortTaskState, PAHCIPort
     ataH2BE_U16(aBuf, cbSize - 2);
 
     /* Copy the buffer in to the scatter gather list. */
-    ahciScatterGatherListCopyFromBuffer(pAhciPortTaskState, (void *)&aBuf[0], cbSize);
-    *pcbData = cbSize;
+    *pcbData = ahciScatterGatherListCopyFromBuffer(pAhciPortTaskState, (void *)&aBuf[0], cbSize);
 
     atapiCmdOK(pAhciPort, pAhciPortTaskState);
     return VINF_SUCCESS;
@@ -3262,8 +3275,7 @@ static int atapiReadTOCMultiSS(PAHCIPORTTASKSTATE pAhciPortTaskState, PAHCIPort 
     }
 
     /* Copy the buffer in to the scatter gather list. */
-    ahciScatterGatherListCopyFromBuffer(pAhciPortTaskState, (void *)&aBuf[0], sizeof(aBuf));
-    *pcbData = sizeof(aBuf);
+    *pcbData = ahciScatterGatherListCopyFromBuffer(pAhciPortTaskState, (void *)&aBuf[0], sizeof(aBuf));
 
     atapiCmdOK(pAhciPort, pAhciPortTaskState);
     return VINF_SUCCESS;
@@ -3351,8 +3363,7 @@ static int atapiReadTOCRawSS(PAHCIPORTTASKSTATE pAhciPortTaskState, PAHCIPort pA
     ataH2BE_U16(aBuf, cbSize - 2);
 
     /* Copy the buffer in to the scatter gather list. */
-    ahciScatterGatherListCopyFromBuffer(pAhciPortTaskState, (void *)&aBuf[0], cbSize);
-    *pcbData = cbSize;
+    *pcbData = ahciScatterGatherListCopyFromBuffer(pAhciPortTaskState, (void *)&aBuf[0], cbSize);
 
     atapiCmdOK(pAhciPort, pAhciPortTaskState);
     return VINF_SUCCESS;
@@ -3363,23 +3374,55 @@ static int atapiDoTransfer(PAHCIPort pAhciPort, PAHCIPORTTASKSTATE pAhciPortTask
     int cbTransfered;
     int rc, rcSourceSink;
 
-    /* Create scatter gather list. */
-    rc = ahciScatterGatherListCreate(pAhciPort, pAhciPortTaskState, false);
-    if (RT_FAILURE(rc))
-        AssertMsgFailed(("Getting number of list elements failed rc=%Rrc\n", rc));
+    /*
+     * Create scatter gather list. We use a safe mapping here because it is
+     * possible that the buffer is not a multiple of 512. The normal
+     * creator would assert later here.
+     */
+    ahciScatterGatherListGetTotalBufferSize(pAhciPort, pAhciPortTaskState);
+    rc = ahciScatterGatherListCreateSafe(pAhciPort, pAhciPortTaskState, false, 0);
+    AssertRC(rc);
 
     rcSourceSink = g_apfnAtapiFuncs[iSourceSink](pAhciPortTaskState, pAhciPort, &cbTransfered);
 
     pAhciPortTaskState->cmdHdr.u32PRDBC = cbTransfered;
 
     rc = ahciScatterGatherListDestroy(pAhciPort, pAhciPortTaskState);
-    if (RT_FAILURE(rc))
-        AssertMsgFailed(("Destroying list failed rc=%Rrc\n", rc));
+    AssertRC(rc);
 
     /* Write updated command header into memory of the guest. */
     PDMDevHlpPhysWrite(pAhciPort->CTX_SUFF(pDevIns), pAhciPortTaskState->GCPhysCmdHdrAddr, &pAhciPortTaskState->cmdHdr, sizeof(CmdHdr));
 
     return rcSourceSink;
+}
+
+static int atapiReadSectors2352PostProcess(PAHCIPORTTASKSTATE pAhciPortTaskState)
+{
+    uint32_t cSectors  = pAhciPortTaskState->cbTransfer / 2048;
+    uint32_t iATAPILBA = pAhciPortTaskState->uOffset / 2048;
+    uint8_t *pbBufDst  = (uint8_t *)pAhciPortTaskState->pvBufferUnaligned;
+    uint8_t *pbBufSrc  = (uint8_t *)pAhciPortTaskState->pSGListHead[0].pvSeg;
+
+    for (uint32_t i = iATAPILBA; i < iATAPILBA + cSectors; i++)
+    {
+        /* sync bytes */
+        *pbBufDst++ = 0x00;
+        memset(pbBufDst, 0xff, 11);
+        pbBufDst += 11;
+        /* MSF */
+        ataLBA2MSF(pbBufDst, i);
+        pbBufDst += 3;
+        *pbBufDst++ = 0x01; /* mode 1 data */
+        /* data */
+        memcpy(pbBufDst, pbBufSrc, 2048);
+        pbBufDst += 2048;
+        pbBufSrc += 2048;
+        /* ECC */
+        memset(pbBufDst, 0, 288);
+        pbBufDst += 288;
+    }
+
+    return VINF_SUCCESS;
 }
 
 static int atapiReadSectors(PAHCIPort pAhciPort, PAHCIPORTTASKSTATE pAhciPortTaskState, uint32_t iATAPILBA, uint32_t cSectors, uint32_t cbSector)
@@ -3393,38 +3436,12 @@ static int atapiReadSectors(PAHCIPort pAhciPort, PAHCIPORTTASKSTATE pAhciPortTas
             pAhciPortTaskState->cbTransfer = cSectors * cbSector;
             break;
         case 2352:
-            {
-                AssertMsgFailed(("2352 read\n"));
-                /* @todo: This is quite difficult as the data transfer is not handled here
-                          We need to add the sync bytes etc. here and modify the pointers
-                          and size of the sg entries.  */
-#if 0
-                uint8_t *pbBuf = s->CTXSUFF(pbIOBuffer);
-
-                for (uint32_t i = s->iATAPILBA; i < s->iATAPILBA + cSectors; i++)
-                {
-                    /* sync bytes */
-                    *pbBuf++ = 0x00;
-                    memset(pbBuf, 0xff, 11);
-                    pbBuf += 11;
-                    /* MSF */
-                    ataLBA2MSF(pbBuf, i);
-                    pbBuf += 3;
-                    *pbBuf++ = 0x01; /* mode 1 data */
-                    /* data */
-                    rc = s->pDrvBlock->pfnRead(s->pDrvBlock, (uint64_t)i * 2048, pbBuf, 2048);
-                    if (RT_FAILURE(rc))
-                        break;
-                    pbBuf += 2048;
-                    /* ECC */
-                    memset(pbBuf, 0, 288);
-                    pbBuf += 288;
-                }
-#endif
-                pAhciPortTaskState->uOffset = iATAPILBA * 2048;
-                pAhciPortTaskState->cbTransfer = cSectors * 2048;
-            }
+        {
+            pAhciPortTaskState->pfnPostProcess = atapiReadSectors2352PostProcess;
+            pAhciPortTaskState->uOffset = iATAPILBA * 2048;
+            pAhciPortTaskState->cbTransfer = cSectors * 2048;
             break;
+        }
         default:
             AssertMsgFailed(("Unsupported sectors size\n"));
             break;
@@ -3995,6 +4012,43 @@ DECLINLINE(uint8_t) ahciGetTagQueued(uint8_t *pCmdFis)
     return pCmdFis[AHCI_CMDFIS_SECTC] >> 3;
 }
 
+static void ahciScatterGatherListGetTotalBufferSize(PAHCIPort pAhciPort, PAHCIPORTTASKSTATE pAhciPortTaskState)
+{
+    CmdHdr    *pCmdHdr = &pAhciPortTaskState->cmdHdr;
+    PPDMDEVINS pDevIns = pAhciPort->CTX_SUFF(pDevIns);
+    unsigned   cActualSGEntry;
+    SGLEntry   aSGLEntry[32];                  /* Holds read sg entries from guest. Biggest seen number of entries a guest set up. */
+    unsigned   cSGLEntriesGCRead;
+    unsigned   cSGLEntriesGCLeft;              /* Available scatter gather list entries in GC */
+    RTGCPHYS   GCPhysAddrPRDTLEntryStart;      /* Start address to read the entries from. */
+    uint32_t   cbSGBuffers = 0;                /* Total number of bytes reserved for this request. */
+
+    /* Retrieve the total number of bytes reserved for this request. */
+    cSGLEntriesGCLeft = AHCI_CMDHDR_PRDTL_ENTRIES(pCmdHdr->u32DescInf);
+    ahciLog(("%s: cSGEntriesGC=%u\n", __FUNCTION__, cSGLEntriesGCLeft));
+
+    /* Set start address of the entries. */
+    GCPhysAddrPRDTLEntryStart = AHCI_RTGCPHYS_FROM_U32(pCmdHdr->u32CmdTblAddrUp, pCmdHdr->u32CmdTblAddr) + AHCI_CMDHDR_PRDT_OFFSET;
+
+    do
+    {
+        cSGLEntriesGCRead = (cSGLEntriesGCLeft < RT_ELEMENTS(aSGLEntry)) ? cSGLEntriesGCLeft : RT_ELEMENTS(aSGLEntry);
+        cSGLEntriesGCLeft -= cSGLEntriesGCRead;
+
+        /* Read the SG entries. */
+        PDMDevHlpPhysRead(pDevIns, GCPhysAddrPRDTLEntryStart, &aSGLEntry[0], cSGLEntriesGCRead * sizeof(SGLEntry));
+
+        for (cActualSGEntry = 0; cActualSGEntry < cSGLEntriesGCRead; cActualSGEntry++)
+            cbSGBuffers += (aSGLEntry[cActualSGEntry].u32DescInf & SGLENTRY_DESCINF_DBC) + 1;
+
+        /* Set address to the next entries to read. */
+        GCPhysAddrPRDTLEntryStart += cSGLEntriesGCRead * sizeof(SGLEntry);
+
+    } while (cSGLEntriesGCLeft);
+
+    pAhciPortTaskState->cbSGBuffers = cbSGBuffers;
+}
+
 static int ahciScatterGatherListAllocate(PAHCIPORTTASKSTATE pAhciPortTaskState, uint32_t cSGList, uint32_t cbUnaligned)
 {
     if (pAhciPortTaskState->cSGListSize < cSGList)
@@ -4068,7 +4122,8 @@ static int ahciScatterGatherListAllocate(PAHCIPORTTASKSTATE pAhciPortTaskState, 
 /**
  * Fallback scatter gather list creator.
  * Used if the normal one fails in PDMDevHlpPhysGCPhys2CCPtr() or
- * PDMDevHlpPhysGCPhys2CCPtrReadonly()
+ * PDMDevHlpPhysGCPhys2CCPtrReadonly() or post processing
+ * is used.
  *
  * returns VBox status code.
  * @param   pAhciPort              The ahci port.
@@ -4086,8 +4141,8 @@ static int ahciScatterGatherListCreateSafe(PAHCIPort pAhciPort, PAHCIPORTTASKSTA
     PPDMDEVINS                 pDevIns = pAhciPort->CTX_SUFF(pDevIns);
     PAHCIPORTTASKSTATESGENTRY  pSGInfoCurr  = pAhciPortTaskState->paSGEntries;
 
-    AssertPtr(pAhciPortTaskState->pSGListHead);
-    AssertPtr(pAhciPortTaskState->paSGEntries);
+    Assert(VALID_PTR(pAhciPortTaskState->pSGListHead) || !cSGEntriesProcessed);
+    Assert(VALID_PTR(pAhciPortTaskState->paSGEntries) || !cSGEntriesProcessed);
 
     for (unsigned cSGEntryCurr = 0; cSGEntryCurr < cSGEntriesProcessed; cSGEntryCurr++)
     {
@@ -4102,18 +4157,28 @@ static int ahciScatterGatherListCreateSafe(PAHCIPort pAhciPort, PAHCIPORTTASKSTA
     }
 
     if (pAhciPortTaskState->pvBufferUnaligned)
+    {
         RTMemFree(pAhciPortTaskState->pvBufferUnaligned);
-
-    pAhciPortTaskState->cSGListTooBig     = 0;
-
-    RTMemFree(pAhciPortTaskState->pSGListHead);
-    RTMemFree(pAhciPortTaskState->paSGEntries);
-    pAhciPortTaskState->cSGEntries = 1;
-    pAhciPortTaskState->cSGListSize = 1;
-    pAhciPortTaskState->cbBufferUnaligned = pAhciPortTaskState->cbTransfer;
+        pAhciPortTaskState->pvBufferUnaligned = NULL;
+    }
+    if (pAhciPortTaskState->pSGListHead)
+    {
+        RTMemFree(pAhciPortTaskState->pSGListHead);
+        pAhciPortTaskState->pSGListHead = NULL;
+    }
+    if (pAhciPortTaskState->paSGEntries)
+    {
+        RTMemFree(pAhciPortTaskState->paSGEntries);
+        pAhciPortTaskState->paSGEntries = NULL;
+    }
+    pAhciPortTaskState->cSGListTooBig = 0;
+    pAhciPortTaskState->cSGEntries    = 1;
+    pAhciPortTaskState->cSGListUsed   = 1;
+    pAhciPortTaskState->cSGListSize   = 1;
+    pAhciPortTaskState->cbBufferUnaligned = pAhciPortTaskState->cbSGBuffers;
 
     /* Allocate new buffers and SG lists. */
-    pAhciPortTaskState->pvBufferUnaligned = RTMemAlloc(pAhciPortTaskState->cbTransfer);
+    pAhciPortTaskState->pvBufferUnaligned = RTMemAlloc(pAhciPortTaskState->cbSGBuffers);
     if (!pAhciPortTaskState->pvBufferUnaligned)
         return VERR_NO_MEMORY;
 
@@ -4133,8 +4198,30 @@ static int ahciScatterGatherListCreateSafe(PAHCIPort pAhciPort, PAHCIPORTTASKSTA
     }
 
     /* Set pointers. */
-    pAhciPortTaskState->pSGListHead[0].cbSeg = pAhciPortTaskState->cbTransfer;
-    pAhciPortTaskState->pSGListHead[0].pvSeg = pAhciPortTaskState->pvBufferUnaligned;
+    if (pAhciPortTaskState->cbTransfer)
+    {
+        pAhciPortTaskState->pSGListHead[0].cbSeg = pAhciPortTaskState->cbTransfer;
+
+        /* Allocate a separate buffer if we have to do post processing . */
+        if (pAhciPortTaskState->pfnPostProcess)
+        {
+            pAhciPortTaskState->pSGListHead[0].pvSeg = RTMemAlloc(pAhciPortTaskState->cbTransfer);
+            if (!pAhciPortTaskState->pSGListHead[0].pvSeg)
+            {
+                RTMemFree(pAhciPortTaskState->paSGEntries);
+                RTMemFree(pAhciPortTaskState->pvBufferUnaligned);
+                RTMemFree(pAhciPortTaskState->pSGListHead);
+                return VERR_NO_MEMORY;
+            }
+        }
+        else
+            pAhciPortTaskState->pSGListHead[0].pvSeg = pAhciPortTaskState->pvBufferUnaligned;
+    }
+    else
+    {
+        pAhciPortTaskState->pSGListHead[0].cbSeg = pAhciPortTaskState->cbBufferUnaligned;
+        pAhciPortTaskState->pSGListHead[0].pvSeg = pAhciPortTaskState->pvBufferUnaligned;
+    }
 
     pAhciPortTaskState->paSGEntries[0].fGuestMemory = false;
     pAhciPortTaskState->paSGEntries[0].u.temp.cUnaligned   = AHCI_CMDHDR_PRDTL_ENTRIES(pCmdHdr->u32DescInf);
@@ -4173,6 +4260,7 @@ static int ahciScatterGatherListCreate(PAHCIPort pAhciPort, PAHCIPORTTASKSTATE p
     uint32_t   cbUnaligned;                    /* Size of the unaligned buffers. */
     uint32_t   cUnaligned;
     bool       fDoMapping = false;
+    uint32_t   cbSGBuffers = 0;                /* Total number of bytes reserved for this request. */
     RTGCPHYS   GCPhysAddrPRDTLUnalignedStart = NIL_RTGCPHYS;
     PAHCIPORTTASKSTATESGENTRY  pSGInfoCurr  = NULL;
     PAHCIPORTTASKSTATESGENTRY  pSGInfoPrev  = NULL;
@@ -4183,6 +4271,21 @@ static int ahciScatterGatherListCreate(PAHCIPort pAhciPort, PAHCIPORTTASKSTATE p
     uint32_t                   cbUnalignedComplete = 0;
 
     STAM_PROFILE_START(&pAhciPort->StatProfileMapIntoR3, a);
+
+    pAhciPortTaskState->cbSGBuffers = 0;
+
+    /*
+     * Create a safe mapping when doing post processing because the size of the
+     * data to transfer and the amount of guest memory reserved can differ
+     */
+    if (pAhciPortTaskState->pfnPostProcess)
+    {
+        ahciLog(("%s: Request with post processing.\n"));
+
+        ahciScatterGatherListGetTotalBufferSize(pAhciPort, pAhciPortTaskState);
+
+        return ahciScatterGatherListCreateSafe(pAhciPort, pAhciPortTaskState, fReadonly, 0);
+    }
 
     /*
      * We need to calculate the number of SG list entries in R3 first because the data buffers in the guest don't need to be
@@ -4219,6 +4322,8 @@ static int ahciScatterGatherListCreate(PAHCIPort pAhciPort, PAHCIPORTTASKSTATE p
             pSGEntryCurr->cbSeg = 0;
             pSGInfoCurr->fGuestMemory= false;
             pu8BufferUnalignedPos = (uint8_t *)pAhciPortTaskState->pvBufferUnaligned;
+            pAhciPortTaskState->cSGListUsed = 0;
+            pAhciPortTaskState->cbSGBuffers = cbSGBuffers;
         }
 
         do
@@ -4238,6 +4343,7 @@ static int ahciScatterGatherListCreate(PAHCIPort pAhciPort, PAHCIPORTTASKSTATE p
 
                 cbDataToTransfer = (aSGLEntry[cActualSGEntry].u32DescInf & SGLENTRY_DESCINF_DBC) + 1;
                 ahciLog(("%s: cbDataToTransfer=%u\n", __FUNCTION__, cbDataToTransfer));
+                cbSGBuffers += cbDataToTransfer;
 
                 /* Check if the buffer is sector aligned. */
                 if (cbDataToTransfer % 512 != 0)
@@ -4300,6 +4406,7 @@ static int ahciScatterGatherListCreate(PAHCIPort pAhciPort, PAHCIPORTTASKSTATE p
                                 pSGInfoPrev  = pSGInfoCurr;
                                 pSGInfoCurr++;
                                 pSGEntryCurr++;
+                                pAhciPortTaskState->cSGListUsed++;
                                 cSGEntriesProcessed++;
                             }
                         }
@@ -4414,6 +4521,7 @@ static int ahciScatterGatherListCreate(PAHCIPort pAhciPort, PAHCIPORTTASKSTATE p
 
                                             pSGEntryPrev = pSGEntryCurr;
                                             pSGEntryCurr++;
+                                            pAhciPortTaskState->cSGListUsed++;
                                         }
 
                                         pSGInfoPrev  = pSGInfoCurr;
@@ -4489,6 +4597,7 @@ static int ahciScatterGatherListCreate(PAHCIPort pAhciPort, PAHCIPORTTASKSTATE p
                                                  (uint8_t *)pSGEntryCurr->pvSeg + pSGEntryCurr->cbSeg));
                                         pSGEntryPrev = pSGEntryCurr;
                                         pSGEntryCurr++;
+                                        pAhciPortTaskState->cSGListUsed++;
                                     }
 
                                     pSGInfoPrev = pSGInfoCurr;
@@ -4529,6 +4638,7 @@ static int ahciScatterGatherListCreate(PAHCIPort pAhciPort, PAHCIPORTTASKSTATE p
 
         pSGEntryCurr->pvSeg    = pu8BufferUnalignedPos;
         pSGEntryCurr->cbSeg    = cbUnaligned;
+        pAhciPortTaskState->cSGListUsed++;
 
         /*
          * If the transfer is to the device we need to copy the content of the not mapped guest
@@ -4556,6 +4666,18 @@ static int ahciScatterGatherListDestroy(PAHCIPort pAhciPort, PAHCIPORTTASKSTATE 
     PPDMDEVINS                 pDevIns      = pAhciPort->CTX_SUFF(pDevIns);
 
     STAM_PROFILE_START(&pAhciPort->StatProfileDestroyScatterGatherList, a);
+
+    if (pAhciPortTaskState->pfnPostProcess)
+    {
+        int rc;
+        rc = pAhciPortTaskState->pfnPostProcess(pAhciPortTaskState);
+        AssertRC(rc);
+
+        pAhciPortTaskState->pfnPostProcess = NULL;
+
+        /* Free the buffer holding the unprocessed data. They are not needed anymore. */
+        RTMemFree(pAhciPortTaskState->pSGListHead[0].pvSeg);
+    }
 
     for (unsigned cActualSGEntry = 0; cActualSGEntry < pAhciPortTaskState->cSGEntries; cActualSGEntry++)
     {
@@ -4681,7 +4803,7 @@ static void ahciCopyFromSGListIntoBuffer(PPDMDEVINS pDevIns, PAHCIPORTTASKSTATES
 /**
  * Copy the content of a buffer to a scatter gather list.
  *
- * @returns VBox status code.
+ * @returns Number of bytes transfered.
  * @param   pAhciPortTaskState    The task state which contains the S/G list entries.
  * @param   pvBuf                 Pointer to the buffer which should be copied.
  * @param   cbBuf                 Size of the buffer.
@@ -4689,16 +4811,19 @@ static void ahciCopyFromSGListIntoBuffer(PPDMDEVINS pDevIns, PAHCIPORTTASKSTATES
 static int ahciScatterGatherListCopyFromBuffer(PAHCIPORTTASKSTATE pAhciPortTaskState, void *pvBuf, size_t cbBuf)
 {
     unsigned cSGEntry = 0;
+    int cbCopied = 0;
     PPDMDATASEG pSGEntry = &pAhciPortTaskState->pSGListHead[cSGEntry];
     uint8_t *pu8Buf = (uint8_t *)pvBuf;
 
     while (cSGEntry < pAhciPortTaskState->cSGEntries)
     {
-        size_t cbToCopy = (cbBuf < pSGEntry->cbSeg) ? cbBuf : pSGEntry->cbSeg;
+        size_t cbToCopy = RT_MIN(cbBuf, pSGEntry->cbSeg);
 
         memcpy(pSGEntry->pvSeg, pu8Buf, cbToCopy);
 
         cbBuf -= cbToCopy;
+        cbCopied += cbToCopy;
+
         /* We finished. */
         if (!cbBuf)
             break;
@@ -4711,11 +4836,8 @@ static int ahciScatterGatherListCopyFromBuffer(PAHCIPORTTASKSTATE pAhciPortTaskS
         cSGEntry++;
     }
 
-#if 0
-    if (!pAhciPort->fATAPI)
-        AssertMsg(!cbBuf, ("There is still data in the buffer\n"));
-#endif
-    return VINF_SUCCESS;
+    LogFlow(("%s: Copied %d bytes\n", __FUNCTION__, cbCopied));
+    return cbCopied;
 }
 
 /* -=-=-=-=- IBlockAsyncPort -=-=-=-=- */
@@ -4809,6 +4931,8 @@ static int ahciProcessCmd(PAHCIPort pAhciPort, PAHCIPORTTASKSTATE pAhciPortTaskS
 
     AssertMsg(pCmdFis[AHCI_CMDFIS_TYPE] == AHCI_CMDFIS_TYPE_H2D, ("FIS is not a host to device Fis!!\n"));
 
+    pAhciPortTaskState->cbTransfer = 0;
+
     switch (pCmdFis[AHCI_CMDFIS_CMD])
     {
         case ATA_IDENTIFY_DEVICE:
@@ -4826,9 +4950,7 @@ static int ahciProcessCmd(PAHCIPort pAhciPort, PAHCIPORTTASKSTATE pAhciPortTaskS
                         AssertMsgFailed(("Creating list failed rc=%Rrc\n", rc));
 
                     /* Copy the buffer. */
-                    rc = ahciScatterGatherListCopyFromBuffer(pAhciPortTaskState, &u16Temp[0], sizeof(u16Temp));
-                    if (RT_FAILURE(rc))
-                        AssertMsgFailed(("Copying failed rc=%Rrc\n", rc));
+                    pCmdHdr->u32PRDBC = ahciScatterGatherListCopyFromBuffer(pAhciPortTaskState, &u16Temp[0], sizeof(u16Temp));
 
                     /* Destroy list. */
                     rc = ahciScatterGatherListDestroy(pAhciPort, pAhciPortTaskState);
@@ -4837,7 +4959,6 @@ static int ahciProcessCmd(PAHCIPort pAhciPort, PAHCIPORTTASKSTATE pAhciPortTaskS
 
                     pAhciPortTaskState->uATARegError = 0;
                     pAhciPortTaskState->uATARegStatus = ATA_STAT_READY | ATA_STAT_SEEK;
-                    pCmdHdr->u32PRDBC = sizeof(u16Temp);
 
                     /* Write updated command header into memory of the guest. */
                     PDMDevHlpPhysWrite(pAhciPort->CTX_SUFF(pDevIns), pAhciPortTaskState->GCPhysCmdHdrAddr, pCmdHdr, sizeof(CmdHdr));
@@ -5186,7 +5307,7 @@ static DECLCALLBACK(bool) ahciNotifyQueueConsumer(PPDMDEVINS pDevIns, PPDMQUEUEI
             {
                 pAhciPort->Led.Asserted.s.fReading = pAhciPort->Led.Actual.s.fReading = 1;
                 rc = pAhciPort->pDrvBlockAsync->pfnStartRead(pAhciPort->pDrvBlockAsync, pAhciPortTaskState->uOffset,
-                                                             pAhciPortTaskState->pSGListHead, pAhciPortTaskState->cSGEntries,
+                                                             pAhciPortTaskState->pSGListHead, pAhciPortTaskState->cSGListUsed,
                                                              pAhciPortTaskState->cbTransfer,
                                                              pAhciPortTaskState);
             }
@@ -5194,7 +5315,7 @@ static DECLCALLBACK(bool) ahciNotifyQueueConsumer(PPDMDEVINS pDevIns, PPDMQUEUEI
             {
                 pAhciPort->Led.Asserted.s.fWriting = pAhciPort->Led.Actual.s.fWriting = 1;
                 rc = pAhciPort->pDrvBlockAsync->pfnStartWrite(pAhciPort->pDrvBlockAsync, pAhciPortTaskState->uOffset,
-                                                              pAhciPortTaskState->pSGListHead, pAhciPortTaskState->cSGEntries,
+                                                              pAhciPortTaskState->pSGListHead, pAhciPortTaskState->cSGListUsed,
                                                               pAhciPortTaskState->cbTransfer,
                                                               pAhciPortTaskState);
             }
@@ -5401,7 +5522,7 @@ static DECLCALLBACK(int) ahciAsyncIOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
 
                     STAM_PROFILE_START(&pAhciPort->StatProfileReadWrite, a);
 
-                    while(cbTransfer)
+                    while (cbTransfer)
                     {
                         size_t cbProcess = (cbTransfer < pSegCurr->cbSeg) ? cbTransfer : pSegCurr->cbSeg;
 
