@@ -633,13 +633,6 @@ typedef struct PGMPAGE
 {
     /** The physical address and the Page ID. */
     RTHCPHYS    HCPhysAndPageID;
-    /** The page state.
-     * Only 2 bits are really needed for this. */
-    uint8_t     uStateY;
-    /** The page type (PGMPAGETYPE).
-     * Only 3 bits are really needed for this. */
-    uint8_t     uTypeY;
-
     /** Combination of:
      *  - [0-7]: u2HandlerPhysStateY - the physical handler state
      *    (PGM_PAGE_HNDL_PHYS_STATE_*).
@@ -649,9 +642,21 @@ typedef struct PGMPAGE
      *    written to when set.
      *  - [10-14]: 5 unused bits.
      * @remarks Warning! All accesses to the bits are hardcoded.
+     *
+     * @todo    Change this to a union with both bitfields, u8 and u accessors.
+     *          That'll help deal with some of the hardcoded accesses.
+     *
+     * @todo    Include uStateY and uTypeY as well so it becomes 32-bit.  This
+     *          will make it possible to turn some of the 16-bit accesses into
+     *          32-bit ones, which may be efficient (stalls).
      */
     RTUINT16U   u16MiscY;
-
+    /** The page state.
+     * Only 2 bits are really needed for this. */
+    uint8_t     uStateY;
+    /** The page type (PGMPAGETYPE).
+     * Only 3 bits are really needed for this. */
+    uint8_t     uTypeY;
     /** Usage tracking (page pool). */
     uint16_t    u16TrackingY;
     /** The number of read locks on this page. */
