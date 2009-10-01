@@ -1068,17 +1068,22 @@ VMMDECL(int) PGMPhysGCPhys2CCPtr(PVM pVM, RTGCPHYS GCPhys, void **ppv, PPGMPAGEM
             PPGMPAGEMAP pMap = pTlbe->pMap;
             if (pMap)
                 pMap->cRefs++;
-# if 0 /** @todo implement locking properly */
-            if (RT_LIKELY(pPage->cLocks != PGM_PAGE_MAX_LOCKS))
-                if (RT_UNLIKELY(++pPage->cLocks == PGM_PAGE_MAX_LOCKS))
-                {
-                    AssertMsgFailed(("%RGp is entering permanent locked state!\n", GCPhys));
-                    if (pMap)
-                        pMap->cRefs++; /* Extra ref to prevent it from going away. */
-                }
+
+# ifdef PGM_PAGE_WITH_LOCKS
+            unsigned cLocks = PGM_PAGE_GET_WRITE_LOCKS(pPage);
+            if (RT_LIKELY(cLocks < PGM_PAGE_MAX_LOCKS - 1))
+                PGM_PAGE_INC_WRITE_LOCKS(pPage);
+            else if (cLocks != PGM_PAGE_GET_WRITE_LOCKS(pPage))
+            {
+                PGM_PAGE_INC_WRITE_LOCKS(pPage);
+                AssertMsgFailed(("%RGp / %R[pgmpage] is entering permanent write locked state!\n", GCPhys, pPage));
+                if (pMap)
+                    pMap->cRefs++; /* Extra ref to prevent it from going away. */
+            }
 # endif
+
             *ppv = (void *)((uintptr_t)pTlbe->pv | (GCPhys & PAGE_OFFSET_MASK));
-            pLock->pvPage = pPage;
+            pLock->uPageAndType = (uintptr_t)pPage | PGMPAGEMAPLOCK_TYPE_WRITE;
             pLock->pvMap = pMap;
         }
     }
@@ -1163,17 +1168,22 @@ VMMDECL(int) PGMPhysGCPhys2CCPtrReadOnly(PVM pVM, RTGCPHYS GCPhys, void const **
             PPGMPAGEMAP pMap = pTlbe->pMap;
             if (pMap)
                 pMap->cRefs++;
-# if 0 /** @todo implement locking properly */
-            if (RT_LIKELY(pPage->cLocks != PGM_PAGE_MAX_LOCKS))
-                if (RT_UNLIKELY(++pPage->cLocks == PGM_PAGE_MAX_LOCKS))
-                {
-                    AssertMsgFailed(("%RGp is entering permanent locked state!\n", GCPhys));
-                    if (pMap)
-                        pMap->cRefs++; /* Extra ref to prevent it from going away. */
-                }
+
+# ifdef PGM_PAGE_WITH_LOCKS
+            unsigned cLocks = PGM_PAGE_GET_READ_LOCKS(pPage);
+            if (RT_LIKELY(cLocks < PGM_PAGE_MAX_LOCKS - 1))
+                PGM_PAGE_INC_READ_LOCKS(pPage);
+            else if (cLocks != PGM_PAGE_GET_READ_LOCKS(pPage))
+            {
+                PGM_PAGE_INC_READ_LOCKS(pPage);
+                AssertMsgFailed(("%RGp / %R[pgmpage] is entering permanent readonly locked state!\n", GCPhys, pPage));
+                if (pMap)
+                    pMap->cRefs++; /* Extra ref to prevent it from going away. */
+            }
 # endif
+
             *ppv = (void *)((uintptr_t)pTlbe->pv | (GCPhys & PAGE_OFFSET_MASK));
-            pLock->pvPage = pPage;
+            pLock->uPageAndType = (uintptr_t)pPage | PGMPAGEMAPLOCK_TYPE_READ;
             pLock->pvMap = pMap;
         }
     }
@@ -1273,30 +1283,47 @@ VMMDECL(void) PGMPhysReleasePageMappingLock(PVM pVM, PPGMPAGEMAPLOCK pLock)
     pLock->u32Dummy = 0;
 
 #else   /* IN_RING3 */
-    PPGMPAGEMAP pMap = (PPGMPAGEMAP)pLock->pvMap;
-    if (!pMap)
+    PPGMPAGEMAP pMap       = (PPGMPAGEMAP)pLock->pvMap;
+    PPGMPAGE    pPage      = (PPGMPAGE)(pLock->uPageAndType & ~PGMPAGEMAPLOCK_TYPE_MASK);
+    bool        fWriteLock = (pLock->uPageAndType & PGMPAGEMAPLOCK_TYPE_MASK) == PGMPAGEMAPLOCK_TYPE_WRITE;
+
+    pLock->uPageAndType = 0;
+    pLock->pvMap = NULL;
+
+    pgmLock(pVM);
+# ifdef PGM_PAGE_WITH_LOCKS
+    if (fWriteLock)
     {
-        /* The ZERO page and MMIO2 ends up here. */
-        Assert(pLock->pvPage);
-        pLock->pvPage = NULL;
+        unsigned cLocks = PGM_PAGE_GET_WRITE_LOCKS(pPage);
+        Assert(cLocks > 0);
+        if (RT_LIKELY(cLocks > 0 && cLocks < PGM_PAGE_MAX_LOCKS))
+            PGM_PAGE_DEC_WRITE_LOCKS(pPage);
+
+        if (PGM_PAGE_GET_STATE(pPage) == PGM_PAGE_STATE_WRITE_MONITORED)
+        {
+            PGM_PAGE_SET_WRITTEN_TO(pPage);
+            PGM_PAGE_SET_STATE(pPage, PGM_PAGE_STATE_ALLOCATED);
+            Assert(pVM->pgm.s.cMonitoredPages > 0);
+            pVM->pgm.s.cMonitoredPages--;
+            pVM->pgm.s.cWrittenToPages++;
+        }
     }
     else
     {
-        pgmLock(pVM);
+        unsigned cLocks = PGM_PAGE_GET_READ_LOCKS(pPage);
+        Assert(cLocks > 0);
+        if (RT_LIKELY(cLocks > 0 && cLocks < PGM_PAGE_MAX_LOCKS))
+            PGM_PAGE_DEC_READ_LOCKS(pPage);
+    }
+#endif
 
-# if 0 /** @todo implement page locking */
-        PPGMPAGE pPage = (PPGMPAGE)pLock->pvPage;
-        Assert(pPage->cLocks >= 1);
-        if (pPage->cLocks != PGM_PAGE_MAX_LOCKS)
-            pPage->cLocks--;
-# endif
-
+    if (pMap)
+    {
         Assert(pMap->cRefs >= 1);
         pMap->cRefs--;
         pMap->iAge = 0;
-
-        pgmUnlock(pVM);
     }
+    pgmUnlock(pVM);
 #endif /* IN_RING3 */
 }
 

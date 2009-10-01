@@ -1115,6 +1115,45 @@ typedef PPGMPAGE *PPPGMPAGE;
     ((PGM_PAGE_GET_TRACKING(pPage) >> PGMPOOL_TD_IDX_SHIFT)   & PGMPOOL_TD_IDX_MASK)
 
 
+// /** Enables page lock accounting. */
+// #define PGM_PAGE_WITH_LOCKS
+
+#ifdef PGM_PAGE_WITH_LOCKS
+/** Max number of locks on a page. */
+# ifdef PGM_PAGE_WITH_PAGEID_IN_HCPHYS
+#  define PGM_PAGE_MAX_LOCKS    256
+# else
+#  define PGM_PAGE_MAX_LOCKS    16
+# endif
+/** Get the read lock count.
+ * @returns count.
+ * @param   pPage               Pointer to the physical guest page tracking structure.
+ */
+# define PGM_PAGE_GET_READ_LOCKS(pPage)     ( (pPage)->cReadLocksY )
+/** Get the write lock count.
+ * @returns count.
+ * @param   pPage               Pointer to the physical guest page tracking structure.
+ */
+# define PGM_PAGE_GET_WRITE_LOCKS(pPage)    ( (pPage)->cWriteLocksY )
+/** Decrement the read lock counter.
+ * @param   pPage               Pointer to the physical guest page tracking structure.
+ */
+# define PGM_PAGE_DEC_READ_LOCKS(pPage)     do { --(pPage)->cReadLocksY; } while (0)
+/** Decrement the write lock counter.
+ * @param   pPage               Pointer to the physical guest page tracking structure.
+ */
+# define PGM_PAGE_DEC_WRITE_LOCKS(pPage)    do { --(pPage)->cWriteLocksY; } while (0)
+/** Increment the read lock counter.
+ * @param   pPage               Pointer to the physical guest page tracking structure.
+ */
+# define PGM_PAGE_INC_READ_LOCKS(pPage)     do { ++(pPage)->cReadLocksY; } while (0)
+/** Increment the write lock counter.
+ * @param   pPage               Pointer to the physical guest page tracking structure.
+ */
+# define PGM_PAGE_INC_WRITE_LOCKS(pPage)    do { ++(pPage)->cWriteLocksY; } while (0)
+#endif
+
+
 
 /**
  * Per page live save tracking data.

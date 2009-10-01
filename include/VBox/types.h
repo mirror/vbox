@@ -769,8 +769,15 @@ typedef struct PGMPAGEMAPLOCK
     /** Just a dummy for the time being. */
     uint32_t    u32Dummy;
 #else
-    /** Pointer to the PGMPAGE. */
-    void       *pvPage;
+    /** Pointer to the PGMPAGE and lock type.
+     * bit-0 abuse: set=write, clear=read. */
+    uintptr_t   uPageAndType;
+/** Read lock type value. */
+# define PGMPAGEMAPLOCK_TYPE_READ    ((uintptr_t)0)
+/** Write lock type value. */
+# define PGMPAGEMAPLOCK_TYPE_WRITE   ((uintptr_t)1)
+/** Lock type mask. */
+# define PGMPAGEMAPLOCK_TYPE_MASK    ((uintptr_t)1)
     /** Pointer to the PGMCHUNKR3MAP. */
     void       *pvMap;
 #endif

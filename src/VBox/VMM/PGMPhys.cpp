@@ -450,17 +450,24 @@ VMMR3DECL(int) PGMR3PhysGCPhys2CCPtrExternal(PVM pVM, RTGCPHYS GCPhys, void **pp
              * Now, just perform the locking and calculate the return address.
              */
             PPGMPAGEMAP pMap = pTlbe->pMap;
-            pMap->cRefs++;
-#if 0 /** @todo implement locking properly */
-            if (RT_LIKELY(pPage->cLocks != PGM_PAGE_MAX_LOCKS))
-                if (RT_UNLIKELY(++pPage->cLocks == PGM_PAGE_MAX_LOCKS))
-                {
-                    AssertMsgFailed(("%RGp is entering permanent locked state!\n", GCPhys));
+            if (pMap)
+                pMap->cRefs++;
+
+# ifdef PGM_PAGE_WITH_LOCKS
+            unsigned cLocks = PGM_PAGE_GET_WRITE_LOCKS(pPage);
+            if (RT_LIKELY(cLocks < PGM_PAGE_MAX_LOCKS - 1))
+                PGM_PAGE_INC_WRITE_LOCKS(pPage);
+            else if (cLocks != PGM_PAGE_GET_WRITE_LOCKS(pPage))
+            {
+                PGM_PAGE_INC_WRITE_LOCKS(pPage);
+                AssertMsgFailed(("%RGp / %R[pgmpage] is entering permanent write locked state!\n", GCPhys, pPage));
+                if (pMap)
                     pMap->cRefs++; /* Extra ref to prevent it from going away. */
-                }
-#endif
+            }
+# endif
+
             *ppv = (void *)((uintptr_t)pTlbe->pv | (GCPhys & PAGE_OFFSET_MASK));
-            pLock->pvPage = pPage;
+            pLock->uPageAndType = (uintptr_t)pPage | PGMPAGEMAPLOCK_TYPE_WRITE;
             pLock->pvMap = pMap;
         }
     }
@@ -519,17 +526,24 @@ VMMR3DECL(int) PGMR3PhysGCPhys2CCPtrReadOnlyExternal(PVM pVM, RTGCPHYS GCPhys, v
              * Now, just perform the locking and calculate the return address.
              */
             PPGMPAGEMAP pMap = pTlbe->pMap;
-            pMap->cRefs++;
-#if 0 /** @todo implement locking properly */
-            if (RT_LIKELY(pPage->cLocks != PGM_PAGE_MAX_LOCKS))
-                if (RT_UNLIKELY(++pPage->cLocks == PGM_PAGE_MAX_LOCKS))
-                {
-                    AssertMsgFailed(("%RGp is entering permanent locked state!\n", GCPhys));
+            if (pMap)
+                pMap->cRefs++;
+
+# ifdef PGM_PAGE_WITH_LOCKS
+            unsigned cLocks = PGM_PAGE_GET_READ_LOCKS(pPage);
+            if (RT_LIKELY(cLocks < PGM_PAGE_MAX_LOCKS - 1))
+                PGM_PAGE_INC_READ_LOCKS(pPage);
+            else if (cLocks != PGM_PAGE_GET_READ_LOCKS(pPage))
+            {
+                PGM_PAGE_INC_READ_LOCKS(pPage);
+                AssertMsgFailed(("%RGp / %R[pgmpage] is entering permanent readonly locked state!\n", GCPhys, pPage));
+                if (pMap)
                     pMap->cRefs++; /* Extra ref to prevent it from going away. */
-                }
-#endif
+            }
+# endif
+
             *ppv = (void *)((uintptr_t)pTlbe->pv | (GCPhys & PAGE_OFFSET_MASK));
-            pLock->pvPage = pPage;
+            pLock->uPageAndType = (uintptr_t)pPage | PGMPAGEMAPLOCK_TYPE_READ;
             pLock->pvMap = pMap;
         }
     }
