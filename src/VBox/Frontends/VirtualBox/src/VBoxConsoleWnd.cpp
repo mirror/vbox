@@ -1920,10 +1920,8 @@ void VBoxConsoleWnd::updateAppearanceOf (int element)
             const QString ctlName = hda->GetController();
             CStorageController ctl = cmachine.GetStorageControllerByName(ctlName);
 
-            data += QString ("<br><nobr><b>%1 %2</b>: %3</nobr>")
-                .arg (vboxGlobal().toString (ctl.GetBus(), hda->GetPort()))
-                .arg (vboxGlobal().toString (ctl.GetBus(), hda->GetPort(),
-                                             hda->GetDevice()))
+            data += QString ("<br><nobr><b>%1</b>:&nbsp;%2</nobr>")
+                .arg (vboxGlobal().toString (StorageSlot (ctl.GetBus(), hda->GetPort(), hda->GetDevice())))
                 .arg (QDir::convertSeparators (hd.GetLocation()));
             hasDisks = true;
         }
