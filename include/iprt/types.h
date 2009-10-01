@@ -200,12 +200,12 @@ typedef union RTUINT16U
     /** 16-bit view. */
     uint16_t    au16[1];
     /** 8-bit view. */
-    uint8_t     au8[4];
+    uint8_t     au8[2];
     /** 16-bit hi/lo view. */
     struct
     {
-        uint16_t    Lo;
-        uint16_t    Hi;
+        uint8_t    Lo;
+        uint8_t    Hi;
     } s;
 } RTUINT16U;
 /** Pointer to a 16-bit unsigned integer union. */
