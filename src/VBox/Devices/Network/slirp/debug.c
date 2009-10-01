@@ -159,6 +159,11 @@ void
 mbufstats(PNATState pData)
 {
 #ifndef VBOX_WITH_SLIRP_BSD_MBUF
+    /*
+     * (vvl) this static code can't work with mbuf zone anymore 
+     * @todo: make statistic correct
+     */
+#if 0
     struct mbuf *m;
     int i;
 
@@ -178,6 +183,7 @@ mbufstats(PNATState pData)
         i++;
     lprint("  %6d mbufs on used list\n",  i);
     lprint("  %6d mbufs queued as packets\n\n", if_queued);
+#endif
 #endif
 }
 
