@@ -40,6 +40,7 @@ static int mbuf_zone_init(PNATState pData)
     for(i = 0; i < MBUF_ZONE_SIZE; ++i)
     {
         m = (struct mbuf *)((char *)zone + i*msize);
+        memset(m, 0, sizeof(struct mbuf));
 #ifdef M_BUF_DEBUG
         m->m_hdr.mh_id = pData->mbuf_zone_count * MBUF_ZONE_SIZE + i;
 #endif
