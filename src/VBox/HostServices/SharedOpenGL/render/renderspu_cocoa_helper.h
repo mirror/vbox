@@ -32,7 +32,7 @@ typedef void *NativeGLCtxRef;
 #endif /* __OBJC__ */
 
 #include <iprt/cdefs.h>
-#include <OpenGl/OpenGl.h>
+#include <OpenGL/OpenGL.h>
 
 RT_C_DECLS_BEGIN
 

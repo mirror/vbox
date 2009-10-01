@@ -64,7 +64,7 @@
 #include <sys/proc.h>
 #include <sys/kauth.h>
 #include <IOKit/IOService.h>
-#include <IOKit/IOUserclient.h>
+#include <IOKit/IOUserClient.h>
 #include <IOKit/pwr_mgt/RootDomain.h>
 
 #ifdef VBOX_WITH_HOST_VMX
