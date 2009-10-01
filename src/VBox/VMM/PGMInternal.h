@@ -693,11 +693,9 @@ typedef PPGMPAGE *PPPGMPAGE;
         AssertFatal(!(SetHCPhysTmp & ~UINT64_C(0x0000fffffffff000))); \
         (pPage)->HCPhysAndPageID     = (SetHCPhysTmp << (28-12)) | ((_idPage) & UINT32_C(0x0fffffff)); \
         (pPage)->uStateY             = (_uState); \
-        (pPage)->fWrittenToY         = 0; \
-        (pPage)->afSomethingElse0    = 0; \
         (pPage)->uTypeY              = (_uType); \
         (pPage)->uHandlerPhysStateY  = 0; \
-        (pPage)->u2HandlerVirtStateY = 0; \
+        (pPage)->f8MiscY             = 0; \
         (pPage)->u16TrackingY        = 0; \
         (pPage)->cReadLocksY         = 0; \
         (pPage)->cWriteLocksY        = 0; \
