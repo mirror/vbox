@@ -392,8 +392,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVMCPU pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegF
             rc = pgmPhysGetPageEx(&pVM->pgm.s, GCPhys, &pPage);
             if (RT_SUCCESS(rc)) /** just handle the failure immediate (it returns) and make things easier to read. */
             {
-                if (   PGM_PAGE_HAS_ACTIVE_PHYSICAL_HANDLERS(pPage)
-                    || PGM_PAGE_HAS_ACTIVE_VIRTUAL_HANDLERS(pPage))
+                if (PGM_PAGE_HAS_ACTIVE_HANDLERS(pPage))
                 {
                     if (PGM_PAGE_HAS_ANY_PHYSICAL_HANDLERS(pPage))
                     {

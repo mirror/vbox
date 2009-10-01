@@ -853,7 +853,14 @@ typedef PPGMPAGE *PPPGMPAGE;
 #define PGM_PAGE_IS_WRITTEN_TO(pPage)       ( !!((pPage)->u16MiscY.au8[1] & UINT8_C(0x80)) )
 
 
-/** @name Physical Access Handler State values (PGMPAGE::uHandlerPhysStateY).
+/** Enabled optimized access handler tests.
+ * These optimizations makes ASSUMPTIONS about the state values and the u16MiscY
+ * layout.  When enabled, the compiler should normally generate more compact
+ * code.
+ */
+#define PGM_PAGE_WITH_OPTIMIZED_HANDLER_ACCESS 1
+
+/** @name Physical Access Handler State values (PGMPAGE::u2HandlerPhysStateY).
  *
  * @remarks The values are assigned in order of priority, so we can calculate
  *          the correct state for a page with different handlers installed.
@@ -951,33 +958,48 @@ typedef PPGMPAGE *PPPGMPAGE;
     PGM_PAGE_HAS_ANY_VIRTUAL_HANDLERS(pPage)
 
 
-
 /**
  * Checks if the page has any access handlers, including temporarily disabled ones.
  * @returns true/false
  * @param   pPage       Pointer to the physical guest page tracking structure.
  */
-#define PGM_PAGE_HAS_ANY_HANDLERS(pPage) \
+#ifdef PGM_PAGE_WITH_OPTIMIZED_HANDLER_ACCESS
+# define PGM_PAGE_HAS_ANY_HANDLERS(pPage) \
+    ( ((pPage)->u16MiscY.u & UINT16_C(0x0303)) != 0 )
+#else
+# define PGM_PAGE_HAS_ANY_HANDLERS(pPage) \
     (   PGM_PAGE_GET_HNDL_PHYS_STATE(pPage) != PGM_PAGE_HNDL_PHYS_STATE_NONE \
      || PGM_PAGE_GET_HNDL_VIRT_STATE(pPage) != PGM_PAGE_HNDL_VIRT_STATE_NONE )
+#endif
 
 /**
  * Checks if the page has any active access handlers.
  * @returns true/false
  * @param   pPage       Pointer to the physical guest page tracking structure.
  */
-#define PGM_PAGE_HAS_ACTIVE_HANDLERS(pPage) \
+#ifdef PGM_PAGE_WITH_OPTIMIZED_HANDLER_ACCESS
+# define PGM_PAGE_HAS_ACTIVE_HANDLERS(pPage) \
+    ( ((pPage)->u16MiscY.u & UINT16_C(0x0202)) != 0 )
+#else
+# define PGM_PAGE_HAS_ACTIVE_HANDLERS(pPage) \
     (   PGM_PAGE_GET_HNDL_PHYS_STATE(pPage) >= PGM_PAGE_HNDL_PHYS_STATE_WRITE \
      || PGM_PAGE_GET_HNDL_VIRT_STATE(pPage) >= PGM_PAGE_HNDL_VIRT_STATE_WRITE )
+#endif
 
 /**
  * Checks if the page has any active access handlers catching all accesses.
  * @returns true/false
  * @param   pPage       Pointer to the physical guest page tracking structure.
  */
-#define PGM_PAGE_HAS_ACTIVE_ALL_HANDLERS(pPage) \
+#ifdef PGM_PAGE_WITH_OPTIMIZED_HANDLER_ACCESS
+# define PGM_PAGE_HAS_ACTIVE_ALL_HANDLERS(pPage) \
+    (   ( ((pPage)->u16MiscY.au8[0] | (pPage)->u16MiscY.au8[1]) & UINT8_C(0x3) ) \
+     == PGM_PAGE_HNDL_PHYS_STATE_ALL )
+#else
+# define PGM_PAGE_HAS_ACTIVE_ALL_HANDLERS(pPage) \
     (   PGM_PAGE_GET_HNDL_PHYS_STATE(pPage) == PGM_PAGE_HNDL_PHYS_STATE_ALL \
      || PGM_PAGE_GET_HNDL_VIRT_STATE(pPage) == PGM_PAGE_HNDL_VIRT_STATE_ALL )
+#endif
 
 
 /** @def PGM_PAGE_GET_TRACKING
