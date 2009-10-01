@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2006-2008 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2009 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -31,26 +31,23 @@
 class VBoxConsoleView;
 class QTimer;
 
-class VBoxVMInformationDlg : public QIWithRetranslateUI2<QIMainDialog>,
-                             public Ui::VBoxVMInformationDlg
+class VBoxVMInformationDlg : public QIWithRetranslateUI2 <QIMainDialog>, public Ui::VBoxVMInformationDlg
 {
     Q_OBJECT;
 
 public:
 
-    typedef QMap<QString, QString> DataMapType;
-    typedef QMap<QString, QStringList> LinksMapType;
-    struct CounterElementType {QString type; DataMapType list;};
+    typedef QMap <QString, QString> DataMapType;
+    typedef QMap <QString, QStringList> LinksMapType;
+    struct CounterElementType { QString type; DataMapType list; };
     typedef QMap <QString, VBoxVMInformationDlg*> InfoDlgMap;
 
-    static void createInformationDlg (const CSession &aSession,
-                                      VBoxConsoleView *aConsole);
-
-    VBoxVMInformationDlg (VBoxConsoleView *aConsole, const CSession &aSession,
-                          Qt::WindowFlags aFlags);
-    ~VBoxVMInformationDlg();
+    static void createInformationDlg (const CSession &aSession, VBoxConsoleView *aConsole);
 
 protected:
+
+    VBoxVMInformationDlg (VBoxConsoleView *aConsole, const CSession &aSession, Qt::WindowFlags aFlags);
+   ~VBoxVMInformationDlg();
 
     void retranslateUi();
 
@@ -63,7 +60,6 @@ private slots:
     void updateDetails();
     void processStatistics();
     void onPageChanged (int aIndex);
-    void suicide();
 
 private:
 
@@ -71,10 +67,10 @@ private:
     void refreshStatistics();
 
     QString formatValue (const QString &aValueName, const QString &aValue, int aMaxSize);
-    QString formatHardDisk (const QString &ctlName, LONG aChannel, LONG aDevice, const QString &aBelongsTo);
+    QString formatMedium (const QString &aCtrName, LONG aPort, LONG aDevice, const QString &aBelongsTo);
     QString formatAdapter (ULONG aSlot, const QString &aBelongsTo);
 
-    QString composeArticle (const QString &aBelongsTo);
+    QString composeArticle (const QString &aBelongsTo, int aSpacesCount = 0);
 
     static InfoDlgMap  mSelfArray;
 

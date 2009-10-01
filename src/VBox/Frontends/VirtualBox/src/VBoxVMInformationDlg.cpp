@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2006-2008 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2009 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -20,24 +20,23 @@
  * additional information or have any questions.
  */
 
+/* Global Includes */
+#include <QTimer>
+
+/* Local Includes */
 #include <VBoxVMInformationDlg.h>
 #include <VBoxGlobal.h>
 #include <VBoxConsoleView.h>
 
-/* Qt includes */
-#include <QTimer>
-
 VBoxVMInformationDlg::InfoDlgMap VBoxVMInformationDlg::mSelfArray = InfoDlgMap();
 
-void VBoxVMInformationDlg::createInformationDlg (const CSession &aSession,
-                                                 VBoxConsoleView *aConsole)
+void VBoxVMInformationDlg::createInformationDlg (const CSession &aSession, VBoxConsoleView *aConsole)
 {
     CMachine machine = aSession.GetMachine();
     if (mSelfArray.find (machine.GetName()) == mSelfArray.end())
     {
         /* Creating new information dialog if there is no one existing */
-        VBoxVMInformationDlg *id = new VBoxVMInformationDlg (aConsole,
-                                                             aSession, Qt::Window);
+        VBoxVMInformationDlg *id = new VBoxVMInformationDlg (aConsole, aSession, Qt::Window);
         id->centerAccording (aConsole);
         connect (vboxGlobal().mainWindow(), SIGNAL (closing()), id, SLOT (close()));
         id->setAttribute (Qt::WA_DeleteOnClose);
@@ -51,14 +50,11 @@ void VBoxVMInformationDlg::createInformationDlg (const CSession &aSession,
     info->activateWindow();
 }
 
-
-VBoxVMInformationDlg::VBoxVMInformationDlg (VBoxConsoleView *aConsole,
-                                            const CSession &aSession,
-                                            Qt::WindowFlags aFlags)
+VBoxVMInformationDlg::VBoxVMInformationDlg (VBoxConsoleView *aConsole, const CSession &aSession, Qt::WindowFlags aFlags)
 #ifdef Q_WS_MAC
-    : QIWithRetranslateUI2<QIMainDialog> (aConsole, aFlags)
+    : QIWithRetranslateUI2 <QIMainDialog> (aConsole, aFlags)
 #else /* Q_WS_MAC */
-    : QIWithRetranslateUI2<QIMainDialog> (NULL, aFlags)
+    : QIWithRetranslateUI2 <QIMainDialog> (0, aFlags)
 #endif /* Q_WS_MAC */
     , mIsPolished (false)
     , mConsole (aConsole)
@@ -69,8 +65,7 @@ VBoxVMInformationDlg::VBoxVMInformationDlg (VBoxConsoleView *aConsole,
     Ui::VBoxVMInformationDlg::setupUi (this);
 
 #ifdef Q_WS_MAC
-    /* No icon for this window on the mac, cause this would act as proxy icon
-     * which isn't necessary here. */
+    /* No icon for this window on the mac, cause this would act as proxy icon which isn't necessary here. */
     setWindowIcon (QIcon());
 #else
     /* Apply window icons */
@@ -89,26 +84,17 @@ VBoxVMInformationDlg::VBoxVMInformationDlg (VBoxConsoleView *aConsole,
     mDetailsText->viewport()->setAutoFillBackground (false);
     mStatisticText->viewport()->setAutoFillBackground (false);
 
-    /* For further tuning can be used setViewportMargins method of
-     * QRichTextEdit extended class: */
-#if 0
+    /* Setup margins */
     mDetailsText->setViewportMargins (5, 5, 5, 5);
-#endif
-    mStatisticText->setViewportMargins (0, 0, 5, 0);
+    mStatisticText->setViewportMargins (5, 5, 5, 5);
 
     /* Setup handlers */
-    connect (mInfoStack, SIGNAL (currentChanged (int)),
-             this, SLOT (onPageChanged (int)));
-    connect (&vboxGlobal(), SIGNAL (mediumEnumFinished (const VBoxMediaList &)),
-             this, SLOT (updateDetails()));
-    connect (mConsole, SIGNAL (mediaDriveChanged (VBoxDefs::MediaType)),
-             this, SLOT (updateDetails()));
-    connect (mConsole, SIGNAL (sharedFoldersChanged()),
-             this, SLOT (updateDetails()));
-    connect (mStatTimer, SIGNAL (timeout()),
-             this, SLOT (processStatistics()));
-    connect (mConsole, SIGNAL (resizeHintDone()),
-             this, SLOT (processStatistics()));
+    connect (mInfoStack, SIGNAL (currentChanged (int)), this, SLOT (onPageChanged (int)));
+    connect (&vboxGlobal(), SIGNAL (mediumEnumFinished (const VBoxMediaList &)), this, SLOT (updateDetails()));
+    connect (mConsole, SIGNAL (mediaDriveChanged (VBoxDefs::MediaType)), this, SLOT (updateDetails()));
+    connect (mConsole, SIGNAL (sharedFoldersChanged()), this, SLOT (updateDetails()));
+    connect (mStatTimer, SIGNAL (timeout()), this, SLOT (processStatistics()));
+    connect (mConsole, SIGNAL (resizeHintDone()), this, SLOT (processStatistics()));
 
     /* Loading language constants */
     retranslateUi();
@@ -121,8 +107,7 @@ VBoxVMInformationDlg::VBoxVMInformationDlg (VBoxConsoleView *aConsole,
     mStatTimer->start (5000);
 
     /* Preload dialog attributes for this vm */
-    QString dlgsize =
-        mSession.GetMachine().GetExtraData (VBoxDefs::GUI_InfoDlgState);
+    QString dlgsize = mSession.GetMachine().GetExtraData (VBoxDefs::GUI_InfoDlgState);
     if (dlgsize.isEmpty())
     {
         mWidth = 400;
@@ -131,7 +116,7 @@ VBoxVMInformationDlg::VBoxVMInformationDlg (VBoxConsoleView *aConsole,
     }
     else
     {
-        QStringList list = dlgsize.split(',');
+        QStringList list = dlgsize.split (',');
         mWidth = list [0].toInt(), mHeight = list [1].toInt();
         mMax = list [2] == "max";
     }
@@ -174,83 +159,112 @@ void VBoxVMInformationDlg::retranslateUi()
     mUnitsMap.clear();
     mLinksMap.clear();
 
-    /* IDE HD statistics: */
-    for (int i = 0; i < 2; ++ i)
-        for (int j = 0; j < 2; ++ j)
+    /* Storage statistics */
+    CSystemProperties sp = vboxGlobal().virtualBox().GetSystemProperties();
+    CStorageControllerVector controllers = mSession.GetMachine().GetStorageControllers();
+    int ideCount = 0, sataCount = 0, scsiCount = 0;
+    foreach (const CStorageController &controller, controllers)
+    {
+        switch (controller.GetBus())
         {
-            /* Names */
-            mNamesMap [QString ("/Devices/ATA%1/Unit%2/*DMA")
-                .arg (i).arg (j)] = tr ("DMA Transfers");
-            mNamesMap [QString ("/Devices/ATA%1/Unit%2/*PIO")
-                .arg (i).arg (j)] = tr ("PIO Transfers");
-            mNamesMap [QString ("/Devices/ATA%1/Unit%2/ReadBytes")
-                .arg (i).arg (j)] = tr ("Data Read");
-            mNamesMap [QString ("/Devices/ATA%1/Unit%2/WrittenBytes")
-                .arg (i).arg (j)] = tr ("Data Written");
+            case KStorageBus_IDE:
+            {
+                for (ULONG i = 0; i < sp.GetMaxPortCountForStorageBus (KStorageBus_IDE); ++ i)
+                {
+                    for (ULONG j = 0; j < sp.GetMaxDevicesPerPortForStorageBus (KStorageBus_IDE); ++ j)
+                    {
+                        /* Names */
+                        mNamesMap [QString ("/Devices/IDE%1/ATA%2/Unit%3/*DMA")
+                            .arg (ideCount).arg (i).arg (j)] = tr ("DMA Transfers");
+                        mNamesMap [QString ("/Devices/IDE%1/ATA%2/Unit%3/*PIO")
+                            .arg (ideCount).arg (i).arg (j)] = tr ("PIO Transfers");
+                        mNamesMap [QString ("/Devices/IDE%1/ATA%2/Unit%3/ReadBytes")
+                            .arg (ideCount).arg (i).arg (j)] = tr ("Data Read");
+                        mNamesMap [QString ("/Devices/IDE%1/ATA%2/Unit%3/WrittenBytes")
+                            .arg (ideCount).arg (i).arg (j)] = tr ("Data Written");
 
-            /* Units */
-            mUnitsMap [QString ("/Devices/ATA%1/Unit%2/*DMA")
-                .arg (i).arg (j)] = "[B]";
-            mUnitsMap [QString ("/Devices/ATA%1/Unit%2/*PIO")
-                .arg (i).arg (j)] = "[B]";
-            mUnitsMap [QString ("/Devices/ATA%1/Unit%2/ReadBytes")
-                .arg (i).arg (j)] = "B";
-            mUnitsMap [QString ("/Devices/ATA%1/Unit%2/WrittenBytes")
-                .arg (i).arg (j)] = "B";
+                        /* Units */
+                        mUnitsMap [QString ("/Devices/IDE%1/ATA%2/Unit%3/*DMA")
+                            .arg (ideCount).arg (i).arg (j)] = "[B]";
+                        mUnitsMap [QString ("/Devices/IDE%1/ATA%2/Unit%3/*PIO")
+                            .arg (ideCount).arg (i).arg (j)] = "[B]";
+                        mUnitsMap [QString ("/Devices/IDE%1/ATA%2/Unit%3/ReadBytes")
+                            .arg (ideCount).arg (i).arg (j)] = "B";
+                        mUnitsMap [QString ("/Devices/IDE%1/ATA%2/Unit%3/WrittenBytes")
+                            .arg (ideCount).arg (i).arg (j)] = "B";
 
-            /* Belongs to */
-            mLinksMap [QString ("IDE%1%2").arg (i).arg (j)] = QStringList()
-                << QString ("/Devices/ATA%1/Unit%2/*DMA").arg (i).arg (j)
-                << QString ("/Devices/ATA%1/Unit%2/*PIO").arg (i).arg (j)
-                << QString ("/Devices/ATA%1/Unit%2/ReadBytes").arg (i).arg (j)
-                << QString ("/Devices/ATA%1/Unit%2/WrittenBytes").arg (i).arg (j);
+                        /* Belongs to */
+                        mLinksMap [QString ("/Devices/IDE%1/ATA%2/Unit%3").arg (ideCount).arg (i).arg (j)] = QStringList()
+                                << QString ("/Devices/IDE%1/ATA%2/Unit%3/*DMA").arg (ideCount).arg (i).arg (j)
+                                << QString ("/Devices/IDE%1/ATA%2/Unit%3/*PIO").arg (ideCount).arg (i).arg (j)
+                                << QString ("/Devices/IDE%1/ATA%2/Unit%3/ReadBytes").arg (ideCount).arg (i).arg (j)
+                                << QString ("/Devices/IDE%1/ATA%2/Unit%3/WrittenBytes").arg (ideCount).arg (i).arg (j);
+                    }
+                }
+                ++ ideCount;
+                break;
+            }
+            case KStorageBus_SATA:
+            {
+                for (ULONG i = 0; i < sp.GetMaxPortCountForStorageBus (KStorageBus_SATA); ++ i)
+                {
+                    for (ULONG j = 0; j < sp.GetMaxDevicesPerPortForStorageBus (KStorageBus_SATA); ++ j)
+                    {
+                        /* Names */
+                        mNamesMap [QString ("/Devices/SATA%1/Port%2/DMA").arg (sataCount).arg (i)]
+                            = tr ("DMA Transfers");
+                        mNamesMap [QString ("/Devices/SATA%1/Port%2/ReadBytes").arg (sataCount).arg (i)]
+                            = tr ("Data Read");
+                        mNamesMap [QString ("/Devices/SATA%1/Port%2/WrittenBytes").arg (sataCount).arg (i)]
+                            = tr ("Data Written");
+
+                        /* Units */
+                        mUnitsMap [QString ("/Devices/SATA%1/Port%2/DMA").arg (sataCount).arg (i)] = "[B]";
+                        mUnitsMap [QString ("/Devices/SATA%1/Port%2/ReadBytes").arg (sataCount).arg (i)] = "B";
+                        mUnitsMap [QString ("/Devices/SATA%1/Port%2/WrittenBytes").arg (sataCount).arg (i)] = "B";
+
+                        /* Belongs to */
+                        mLinksMap [QString ("/Devices/SATA%1/Port%2").arg (sataCount).arg (i)] = QStringList()
+                                << QString ("/Devices/SATA%1/Port%2/DMA").arg (sataCount).arg (i)
+                                << QString ("/Devices/SATA%1/Port%2/ReadBytes").arg (sataCount).arg (i)
+                                << QString ("/Devices/SATA%1/Port%2/WrittenBytes").arg (sataCount).arg (i);
+                    }
+                }
+                ++ sataCount;
+                break;
+            }
+            case KStorageBus_SCSI:
+            {
+                for (ULONG i = 0; i < sp.GetMaxPortCountForStorageBus (KStorageBus_SCSI); ++ i)
+                {
+                    for (ULONG j = 0; j < sp.GetMaxDevicesPerPortForStorageBus (KStorageBus_SCSI); ++ j)
+                    {
+                        /* Names */
+                        mNamesMap [QString ("/Devices/SCSI%1/%2/ReadBytes").arg (scsiCount).arg (i)]
+                            = tr ("Data Read");
+                        mNamesMap [QString ("/Devices/SCSI%1/%2/WrittenBytes").arg (scsiCount).arg (i)]
+                            = tr ("Data Written");
+
+                        /* Units */
+                        mUnitsMap [QString ("/Devices/SCSI%1/%2/ReadBytes").arg (scsiCount).arg (i)] = "B";
+                        mUnitsMap [QString ("/Devices/SCSI%1/%2/WrittenBytes").arg (scsiCount).arg (i)] = "B";
+
+                        /* Belongs to */
+                        mLinksMap [QString ("/Devices/SCSI%1/%2").arg (scsiCount).arg (i)] = QStringList()
+                                << QString ("/Devices/SCSI%1/%2/ReadBytes").arg (scsiCount).arg (i)
+                                << QString ("/Devices/SCSI%1/%2/WrittenBytes").arg (scsiCount).arg (i);
+                    }
+                }
+                ++ scsiCount;
+                break;
+            }
+            default:
+                break;
         }
-
-    /* SATA HD statistics: */
-    for (int i = 0; i < 30; ++ i)
-    {
-        /* Names */
-        mNamesMap [QString ("/Devices/SATA/Port%1/DMA").arg (i)]
-            = tr ("DMA Transfers");
-        mNamesMap [QString ("/Devices/SATA/Port%1/ReadBytes").arg (i)]
-            = tr ("Data Read");
-        mNamesMap [QString ("/Devices/SATA/Port%1/WrittenBytes").arg (i)]
-            = tr ("Data Written");
-
-        /* Units */
-        mUnitsMap [QString ("/Devices/SATA/Port%1/DMA").arg (i)] = "[B]";
-        mUnitsMap [QString ("/Devices/SATA/Port%1/ReadBytes").arg (i)] = "B";
-        mUnitsMap [QString ("/Devices/SATA/Port%1/WrittenBytes").arg (i)] = "B";
-
-        /* Belongs to */
-        mLinksMap [QString ("SATA%1").arg (i)] = QStringList()
-            << QString ("/Devices/SATA/Port%1/DMA").arg (i)
-            << QString ("/Devices/SATA/Port%1/ReadBytes").arg (i)
-            << QString ("/Devices/SATA/Port%1/WrittenBytes").arg (i);
     }
 
-    /* SCSI HD statistics: */
-    for (int i = 0; i < 16; ++ i)
-    {
-        /* Names */
-        mNamesMap [QString ("/Devices/SCSI/%1/ReadBytes").arg (i)]
-            = tr ("Data Read");
-        mNamesMap [QString ("/Devices/SCSI/%1/WrittenBytes").arg (i)]
-            = tr ("Data Written");
-
-        /* Units */
-        mUnitsMap [QString ("/Devices/SCSI/%1/ReadBytes").arg (i)] = "B";
-        mUnitsMap [QString ("/Devices/SCSI/%1/WrittenBytes").arg (i)] = "B";
-
-        /* Belongs to */
-        mLinksMap [QString ("SCSI%1").arg (i)] = QStringList()
-            << QString ("/Devices/SCSI/%1/ReadBytes").arg (i)
-            << QString ("/Devices/SCSI/%1/WrittenBytes").arg (i);
-    }
-
-    /* Network Adapters statistics: */
-    ulong count = vboxGlobal().virtualBox()
-        .GetSystemProperties().GetNetworkAdapterCount();
+    /* Network statistics: */
+    ulong count = vboxGlobal().virtualBox().GetSystemProperties().GetNetworkAdapterCount();
     for (ulong i = 0; i < count; ++ i)
     {
         CNetworkAdapter na = machine.GetNetworkAdapter (i);
@@ -346,8 +360,7 @@ void VBoxVMInformationDlg::showEvent (QShowEvent *aEvent)
 void VBoxVMInformationDlg::updateDetails()
 {
     /* Details page update */
-    mDetailsText->setText (
-        vboxGlobal().detailsReport (mSession.GetMachine(), false /* aWithLinks */));
+    mDetailsText->setText (vboxGlobal().detailsReport (mSession.GetMachine(), false /* aWithLinks */));
 }
 
 void VBoxVMInformationDlg::processStatistics()
@@ -356,8 +369,7 @@ void VBoxVMInformationDlg::processStatistics()
     QString info;
 
     /* Process selected statistics: */
-    for (DataMapType::const_iterator it = mNamesMap.begin();
-         it != mNamesMap.end(); ++ it)
+    for (DataMapType::const_iterator it = mNamesMap.begin(); it != mNamesMap.end(); ++ it)
     {
         dbg.GetStats (it.key(), true, info);
         mValuesMap [it.key()] = parseStatistics (info);
@@ -373,15 +385,6 @@ void VBoxVMInformationDlg::onPageChanged (int aIndex)
     mInfoStack->widget (aIndex)->setFocus();
 }
 
-/**
- * Opposing to deleteLater() slot this one makes it immediately.
- */
-void VBoxVMInformationDlg::suicide()
-{
-    delete this;
-}
-
-
 QString VBoxVMInformationDlg::parseStatistics (const QString &aText)
 {
     /* Filters the statistic counters body */
@@ -392,8 +395,7 @@ QString VBoxVMInformationDlg::parseStatistics (const QString &aText)
     QStringList wholeList = query.cap (1).split ("\n");
 
     ULONG64 summa = 0;
-    for (QStringList::Iterator lineIt = wholeList.begin();
-         lineIt != wholeList.end(); ++ lineIt)
+    for (QStringList::Iterator lineIt = wholeList.begin(); lineIt != wholeList.end(); ++ lineIt)
     {
         QString text = *lineIt;
         text.remove (1, 1);
@@ -434,7 +436,7 @@ void VBoxVMInformationDlg::refreshStatistics()
 
     CMachine m = mSession.GetMachine();
 
-    /* Screen & VT-X Runtime Parameters */
+    /* Runtime Information */
     {
         CConsole console = mSession.GetConsole();
         ULONG bpp = console.GetDisplay().GetBitsPerPixel();
@@ -465,7 +467,7 @@ void VBoxVMInformationDlg::refreshStatistics()
         QStringList valuesList;
         valuesList << resolution << virtualization << nested << addVerisonStr << osType;
         int maxLength = 0;
-        foreach (QString value, valuesList)
+        foreach (const QString &value, valuesList)
             maxLength = maxLength < fontMetrics().width (value) ?
                         fontMetrics().width (value) : maxLength;
 
@@ -478,107 +480,113 @@ void VBoxVMInformationDlg::refreshStatistics()
         result += paragraph;
     }
 
-    /* Hard Disk Statistics */
+    /* Storage statistics */
     {
-        QString hdStat;
-        const QString ideCtl = QString("IDE Controller");
-        const QString sataCtl = QString("SATA");
+        QString storageStat;
 
-        result += hdrRow.arg (":/hd_16px.png").arg (tr ("Hard Disk Statistics"));
+        result += hdrRow.arg (":/attachment_16px.png").arg (tr ("Storage Statistics"));
 
-        /* IDE Hard Disk (Primary Master) */
-        if (!m.GetMedium(ideCtl, 0, 0).isNull())
+        CStorageControllerVector controllers = mSession.GetMachine().GetStorageControllers();
+        int ideCount = 0, sataCount = 0, scsiCount = 0;
+        foreach (const CStorageController &controller, controllers)
         {
-            hdStat += formatHardDisk (ideCtl, 0, 0, "IDE00");
-            hdStat += paragraph;
-        }
-
-        /* IDE Hard Disk (Primary Slave) */
-        if (!m.GetMedium(ideCtl, 0, 1).isNull())
-        {
-            hdStat += formatHardDisk (ideCtl, 0, 1, "IDE01");
-            hdStat += paragraph;
-        }
-
-        /* IDE Hard Disk (Secondary Slave) */
-        if (!m.GetMedium(ideCtl, 1, 1).isNull())
-        {
-            hdStat += formatHardDisk (ideCtl, 1, 1, "IDE11");
-            hdStat += paragraph;
-        }
-
-        /* SATA Hard Disks */
-        for (int i = 0; i < 30; ++ i)
-        {
-            if (!m.GetMedium(sataCtl, i, 0).isNull())
+            QString ctrName = controller.GetName();
+            KStorageBus busType = controller.GetBus();
+            CMediumAttachmentVector attachments = mSession.GetMachine().GetMediumAttachmentsOfController (ctrName);
+            if (!attachments.isEmpty() && busType != KStorageBus_Floppy)
             {
-                hdStat += formatHardDisk (sataCtl, i, 0,
-                                          QString ("SATA%1").arg (i));
-                hdStat += paragraph;
-            }
-        }
-
-        /* @todo Rework if more than one additional
-         * controller is allowed.
-         */
-        const QString scsiCtl = QString("SCSI");
-
-        if (!m.GetStorageControllerByName(scsiCtl).isNull())
-        {
-            /* SCSI Hard Disks */
-            for (int i = 0; i < 16; ++ i)
-            {
-                if (!m.GetMedium(scsiCtl, i, 0).isNull())
+                QString header = "<tr><td></td><td colspan=2><nobr><u>%1</u></nobr></td></tr>";
+                storageStat += header.arg (ctrName);
+                int scsiIndex = 0;
+                foreach (const CMediumAttachment &attachment, attachments)
                 {
-                    hdStat += formatHardDisk (scsiCtl, i, 0,
-                                              QString ("SCSI%1").arg (i));
-                    hdStat += paragraph;
+                    LONG attPort = attachment.GetPort();
+                    LONG attDevice = attachment.GetDevice();
+                    switch (busType)
+                    {
+                        case KStorageBus_IDE:
+                        {
+                            storageStat += formatMedium (ctrName, attPort, attDevice,
+                                                         QString ("/Devices/IDE%1/ATA%2/Unit%3").arg (ideCount).arg (attPort).arg (attDevice));
+                            break;
+                        }
+                        case KStorageBus_SATA:
+                        {
+                            storageStat += formatMedium (ctrName, attPort, attDevice,
+                                                         QString ("/Devices/SATA%1/Port%2").arg (sataCount).arg (attPort));
+                            break;
+                        }
+                        case KStorageBus_SCSI:
+                        {
+                            storageStat += formatMedium (ctrName, attPort, attDevice,
+                                                         QString ("/Devices/SCSI%1/%2").arg (scsiCount).arg (scsiIndex));
+                            ++ scsiIndex;
+                            break;
+                        }
+                        default:
+                            break;
+                    }
+                    storageStat += paragraph;
                 }
+            }
+
+            switch (busType)
+            {
+                case KStorageBus_IDE:
+                {
+                    ++ ideCount;
+                    break;
+                }
+                case KStorageBus_SATA:
+                {
+                    ++ sataCount;
+                    break;
+                }
+                case KStorageBus_SCSI:
+                {
+                    ++ scsiCount;
+                    break;
+                }
+                default:
+                    break;
             }
         }
 
         /* If there are no Hard Disks */
-        if (hdStat.isNull())
+        if (storageStat.isNull())
         {
-            hdStat = composeArticle (tr ("No Hard Disks"));
-            hdStat += paragraph;
+            storageStat = composeArticle (tr ("No Storage Devices"));
+            storageStat += paragraph;
         }
 
-        result += hdStat;
-
-        /* CD/DVD-ROM (Secondary Master) */
-        result += hdrRow.arg (":/cd_16px.png").arg (tr ("CD/DVD-ROM Statistics"));
-        result += formatHardDisk (ideCtl, 1, 0, "IDE10");
-        result += paragraph;
+        result += storageStat;
     }
 
     /* Network Adapters Statistics */
     {
-        QString naStat;
+        QString networkStat;
 
-        result += hdrRow.arg (":/nw_16px.png")
-            .arg (tr ("Network Adapter Statistics"));
+        result += hdrRow.arg (":/nw_16px.png").arg (tr ("Network Statistics"));
 
         /* Network Adapters list */
-        ulong count = vboxGlobal().virtualBox()
-            .GetSystemProperties().GetNetworkAdapterCount();
+        ulong count = vboxGlobal().virtualBox().GetSystemProperties().GetNetworkAdapterCount();
         for (ulong slot = 0; slot < count; ++ slot)
         {
             if (m.GetNetworkAdapter (slot).GetEnabled())
             {
-                naStat += formatAdapter (slot, QString ("NA%1").arg (slot));
-                naStat += paragraph;
+                networkStat += formatAdapter (slot, QString ("NA%1").arg (slot));
+                networkStat += paragraph;
             }
         }
 
         /* If there are no Network Adapters */
-        if (naStat.isNull())
+        if (networkStat.isNull())
         {
-            naStat = composeArticle (tr ("No Network Adapters"));
-            naStat += paragraph;
+            networkStat = composeArticle (tr ("No Network Adapters"));
+            networkStat += paragraph;
         }
 
-        result += naStat;
+        result += networkStat;
     }
 
     /* Show full composed page & save/restore scroll-bar position */
@@ -605,22 +613,17 @@ QString VBoxVMInformationDlg::formatValue (const QString &aValueName,
     return bdyRow.arg (aValueName).arg (aValue).arg (size);
 }
 
-QString VBoxVMInformationDlg::formatHardDisk (const QString &ctlName,
-                                              LONG aChannel,
-                                              LONG aDevice,
-                                              const QString &aBelongsTo)
+QString VBoxVMInformationDlg::formatMedium (const QString &aCtrName,
+                                            LONG aPort, LONG aDevice,
+                                            const QString &aBelongsTo)
 {
     if (mSession.isNull())
         return QString::null;
 
-    CStorageController ctl = mSession.GetMachine().GetStorageControllerByName (ctlName);
-
-    CMedium hd = mSession.GetMachine().GetMedium (ctlName, aChannel, aDevice);
-    QString header = "<tr><td></td><td colspan=2><nobr><u>%1</u></nobr></td></tr>";
-    QString name = vboxGlobal().toString (StorageSlot (ctl.GetBus(), aChannel, aDevice));
-    QString result = hd.isNull() ? QString::null : header.arg (name);
-    result += composeArticle (aBelongsTo);
-    return result;
+    QString header = "<tr><td></td><td colspan=2><nobr>&nbsp;%1:</nobr></td></tr>";
+    CStorageController ctr = mSession.GetMachine().GetStorageControllerByName (aCtrName);
+    QString name = vboxGlobal().toString (StorageSlot (ctr.GetBus(), aPort, aDevice));
+    return header.arg (name) + composeArticle (aBelongsTo, 2);
 }
 
 QString VBoxVMInformationDlg::formatAdapter (ULONG aSlot,
@@ -631,31 +634,29 @@ QString VBoxVMInformationDlg::formatAdapter (ULONG aSlot,
 
     QString header = "<tr><td></td><td colspan=2><nobr><u>%1</u></nobr></td></tr>";
     QString name = VBoxGlobal::tr ("Adapter %1", "details report (network)").arg (aSlot + 1);
-    QString result = header.arg (name);
-    result += composeArticle (aBelongsTo);
-    return result;
+    return header.arg (name) + composeArticle (aBelongsTo, 1);
 }
 
-QString VBoxVMInformationDlg::composeArticle (const QString &aBelongsTo)
+QString VBoxVMInformationDlg::composeArticle (const QString &aBelongsTo, int aSpacesCount)
 {
-    QString body = "<tr><td></td><td width=50%><nobr>%1</nobr></td>"
-                   "<td align=right><nobr>%2%3</nobr></td></tr>";
+    QString body = "<tr><td></td><td width=50%><nobr>%1%2</nobr></td>"
+                   "<td align=right><nobr>%3%4</nobr></td></tr>";
+    QString indent;
+    for (int i = 0; i < aSpacesCount; ++ i)
+        indent += "&nbsp;";
+    body = body.arg (indent);
+
     QString result;
 
     if (mLinksMap.contains (aBelongsTo))
     {
-        QStringList keyList = mLinksMap [aBelongsTo];
-        for (QStringList::Iterator it = keyList.begin(); it != keyList.end(); ++ it)
+        QStringList keys = mLinksMap [aBelongsTo];
+        foreach (const QString &key, keys)
         {
             QString line (body);
-            QString key = *it;
-            if (mNamesMap.contains (key) &&
-                mValuesMap.contains (key) &&
-                mUnitsMap.contains (key))
+            if (mNamesMap.contains (key) && mValuesMap.contains (key) && mUnitsMap.contains (key))
             {
-                line = line.arg (mNamesMap [key])
-                           .arg (QString ("%L1")
-                           .arg (mValuesMap [key].toULongLong()));
+                line = line.arg (mNamesMap [key]).arg (QString ("%L1").arg (mValuesMap [key].toULongLong()));
                 line = mUnitsMap [key].contains (QRegExp ("\\[\\S+\\]")) ?
                     line.arg (QString ("<img src=:/tpixel.png width=%1 height=1>")
                               .arg (QApplication::fontMetrics().width (
