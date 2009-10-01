@@ -50,8 +50,8 @@
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
-static DECLCALLBACK(void) hwaccmR0EnableCPU(RTCPUID idCpu, void *pvUser1, void *pvUser2);
-static DECLCALLBACK(void) hwaccmR0DisableCPU(RTCPUID idCpu, void *pvUser1, void *pvUser2);
+static DECLCALLBACK(void) hwaccmR0EnableCpuCallback(RTCPUID idCpu, void *pvUser1, void *pvUser2);
+static DECLCALLBACK(void) hwaccmR0DisableCpuCallback(RTCPUID idCpu, void *pvUser1, void *pvUser2);
 static DECLCALLBACK(void) HWACCMR0InitCPU(RTCPUID idCpu, void *pvUser1, void *pvUser2);
 static              int   hwaccmR0CheckCpuRcArray(int *paRc, unsigned cErrorCodes, RTCPUID *pidCpu);
 static DECLCALLBACK(void) hwaccmR0PowerCallback(RTPOWEREVENT enmEvent, void *pvUser);
@@ -132,6 +132,7 @@ static struct
 
     HWACCMSTATE                     enmHwAccmState;
 
+    bool                            fGlobalInit;
     volatile        bool            fSuspended;
 } HWACCMR0Globals;
 
@@ -162,6 +163,9 @@ VMMR0DECL(int) HWACCMR0Init(void)
     HWACCMR0Globals.pfnInitVM           = HWACCMR0DummyInitVM;
     HWACCMR0Globals.pfnTermVM           = HWACCMR0DummyTermVM;
     HWACCMR0Globals.pfnSetupVM          = HWACCMR0DummySetupVM;
+
+    /* Default is global VT-x/AMD-V init */
+    HWACCMR0Globals.fGlobalInit         = true;
 
     /*
      * Check for VT-x and AMD-V capabilities
@@ -454,6 +458,7 @@ VMMR0DECL(int) HWACCMR0Term(void)
     if (   HWACCMR0Globals.vmx.fSupported
         && HWACCMR0Globals.vmx.fUsingSUPR0EnableVTx)
     {
+        Assert(HWACCMR0Globals.fGlobalInit);
         rc = SUPR0EnableVTx(false /* fEnable */);
         for (unsigned iCpu = 0; iCpu < RT_ELEMENTS(HWACCMR0Globals.aCpuInfo); iCpu++)
         {
@@ -463,8 +468,6 @@ VMMR0DECL(int) HWACCMR0Term(void)
     }
     else
     {
-        int aRc[RTCPUSET_MAX_CPUS];
-
         Assert(!HWACCMR0Globals.vmx.fUsingSUPR0EnableVTx);
         if (!HWACCMR0Globals.vmx.fUsingSUPR0EnableVTx)
         {
@@ -472,14 +475,23 @@ VMMR0DECL(int) HWACCMR0Term(void)
             Assert(RT_SUCCESS(rc));
         }
 
-        memset(aRc, 0, sizeof(aRc));
-        rc = RTMpOnAll(hwaccmR0DisableCPU, aRc, NULL);
-        Assert(RT_SUCCESS(rc) || rc == VERR_NOT_SUPPORTED);
+        /* Only disable VT-x/AMD-V on all CPUs if we enabled it before. */
+        if (HWACCMR0Globals.fGlobalInit)
+        {
+            int aRc[RTCPUSET_MAX_CPUS];
+
+            memset(aRc, 0, sizeof(aRc));
+            rc = RTMpOnAll(hwaccmR0DisableCpuCallback, aRc, NULL);
+            Assert(RT_SUCCESS(rc) || rc == VERR_NOT_SUPPORTED);
+#ifdef VBOX_STRICT
+            for (unsigned i=0;i<RT_ELEMENTS(HWACCMR0Globals.aCpuInfo);i++)
+                AssertMsgRC(aRc[i], ("hwaccmR0DisableCpuCallback failed for cpu %d with rc=%d\n", i, aRc[i]));
+#endif
+        }
 
         /* Free the per-cpu pages used for VT-x and AMD-V */
         for (unsigned i=0;i<RT_ELEMENTS(HWACCMR0Globals.aCpuInfo);i++)
         {
-            AssertMsgRC(aRc[i], ("hwaccmR0DisableCPU failed for cpu %d with rc=%d\n", i, aRc[i]));
             if (HWACCMR0Globals.aCpuInfo[i].pMemObj != NIL_RTR0MEMOBJ)
             {
                 RTR0MemObjFree(HWACCMR0Globals.aCpuInfo[i].pMemObj, false);
@@ -583,6 +595,8 @@ VMMR0DECL(int) HWACCMR0EnableAllCpus(PVM pVM)
     {
         int rc;
 
+        HWACCMR0Globals.fGlobalInit = pVM->hwaccm.s.fGlobalInit;
+
         if (   HWACCMR0Globals.vmx.fSupported
             && HWACCMR0Globals.vmx.fUsingSUPR0EnableVTx)
         {
@@ -594,6 +608,8 @@ VMMR0DECL(int) HWACCMR0EnableAllCpus(PVM pVM)
                     HWACCMR0Globals.aCpuInfo[iCpu].fConfigured = true;
                     Assert(HWACCMR0Globals.aCpuInfo[iCpu].pMemObj == NIL_RTR0MEMOBJ);
                 }
+                /* If the host provides a VT-x init API, then we'll rely on that for global init. */
+                HWACCMR0Globals.fGlobalInit = pVM->hwaccm.s.fGlobalInit = true;
             }
             else
                 AssertMsgFailed(("HWACCMR0EnableAllCpus/SUPR0EnableVTx: rc=%Rrc\n", rc));
@@ -627,13 +643,18 @@ VMMR0DECL(int) HWACCMR0EnableAllCpus(PVM pVM)
 #endif
                 }
             }
-            /* First time, so initialize each cpu/core */
-            rc = RTMpOnAll(hwaccmR0EnableCPU, (void *)pVM, aRc);
+            if (HWACCMR0Globals.fGlobalInit)
+            {
+                /* First time, so initialize each cpu/core */
+                rc = RTMpOnAll(hwaccmR0EnableCpuCallback, (void *)pVM, aRc);
 
-            /* Check the return code of all invocations. */
-            if (RT_SUCCESS(rc))
-                rc = hwaccmR0CheckCpuRcArray(aRc, RT_ELEMENTS(aRc), &idCpu);
-            AssertMsgRC(rc, ("HWACCMR0EnableAllCpus failed for cpu %d with rc=%d\n", idCpu, rc));
+                /* Check the return code of all invocations. */
+                if (RT_SUCCESS(rc))
+                    rc = hwaccmR0CheckCpuRcArray(aRc, RT_ELEMENTS(aRc), &idCpu);
+                AssertMsgRC(rc, ("HWACCMR0EnableAllCpus failed for cpu %d with rc=%d\n", idCpu, rc));
+            }
+            else
+                rc = VINF_SUCCESS;
         }
 
         return rc;
@@ -642,17 +663,14 @@ VMMR0DECL(int) HWACCMR0EnableAllCpus(PVM pVM)
 }
 
 /**
- * Worker function passed to RTMpOnAll, RTMpOnOthers and RTMpOnSpecific that
- * is to be called on the target cpus.
+ * Disable VT-x or AMD-V on the current CPU
  *
+ * @returns VBox status code.
+ * @param   pVM         VM handle (can be 0!)
  * @param   idCpu       The identifier for the CPU the function is called on.
- * @param   pvUser1     The 1st user argument.
- * @param   pvUser2     The 2nd user argument.
  */
-static DECLCALLBACK(void) hwaccmR0EnableCPU(RTCPUID idCpu, void *pvUser1, void *pvUser2)
+static int hwaccmR0EnableCpu(PVM pVM, RTCPUID idCpu)
 {
-    PVM             pVM = (PVM)pvUser1;     /* can be NULL! */
-    int            *paRc = (int *)pvUser2;
     void           *pvPageCpu;
     RTHCPHYS        pPageCpuPhys;
     PHWACCM_CPUINFO pCpu = &HWACCMR0Globals.aCpuInfo[idCpu];
@@ -661,7 +679,7 @@ static DECLCALLBACK(void) hwaccmR0EnableCPU(RTCPUID idCpu, void *pvUser1, void *
     Assert(idCpu == (RTCPUID)RTMpCpuIdToSetIndex(idCpu)); /// @todo fix idCpu == index assumption (rainy day)
     Assert(idCpu < RT_ELEMENTS(HWACCMR0Globals.aCpuInfo));
     Assert(!pCpu->fConfigured);
-    Assert(ASMAtomicReadBool(&pCpu->fInUse) == false);
+    Assert(!HWACCMR0Globals.fGlobalInit || ASMAtomicReadBool(&pCpu->fInUse) == false);
 
     pCpu->idCpu     = idCpu;
 
@@ -675,19 +693,74 @@ static DECLCALLBACK(void) hwaccmR0EnableCPU(RTCPUID idCpu, void *pvUser1, void *
     if (!pCpu->pMemObj)
     {
         AssertFailed();
-        paRc[idCpu] = VERR_INTERNAL_ERROR;
-        return;
+        return VERR_INTERNAL_ERROR;
     }
 
     pvPageCpu    = RTR0MemObjAddress(pCpu->pMemObj);
     pPageCpuPhys = RTR0MemObjGetPagePhysAddr(pCpu->pMemObj, 0);
 
-    paRc[idCpu]  = HWACCMR0Globals.pfnEnableCpu(pCpu, pVM, pvPageCpu, pPageCpuPhys);
-    AssertRC(paRc[idCpu]);
-    if (RT_SUCCESS(paRc[idCpu]))
+    int rc  = HWACCMR0Globals.pfnEnableCpu(pCpu, pVM, pvPageCpu, pPageCpuPhys);
+    AssertRC(rc);
+    if (RT_SUCCESS(rc))
         pCpu->fConfigured = true;
 
-    return;
+    return rc;
+}
+
+
+/**
+ * Worker function passed to RTMpOnAll, RTMpOnOthers and RTMpOnSpecific that
+ * is to be called on the target cpus.
+ *
+ * @param   idCpu       The identifier for the CPU the function is called on.
+ * @param   pvUser1     The 1st user argument.
+ * @param   pvUser2     The 2nd user argument.
+ */
+static DECLCALLBACK(void) hwaccmR0EnableCpuCallback(RTCPUID idCpu, void *pvUser1, void *pvUser2)
+{
+    PVM             pVM = (PVM)pvUser1;     /* can be NULL! */
+    int            *paRc = (int *)pvUser2;
+
+    paRc[idCpu] = hwaccmR0EnableCpu(pVM, idCpu);
+}
+
+
+/**
+ * Disable VT-x or AMD-V on the current CPU
+ *
+ * @returns VBox status code.
+ * @param   idCpu       The identifier for the CPU the function is called on.
+ */
+static int hwaccmR0DisableCpu(RTCPUID idCpu)
+{
+    void           *pvPageCpu;
+    RTHCPHYS        pPageCpuPhys;
+    int             rc;
+    PHWACCM_CPUINFO pCpu = &HWACCMR0Globals.aCpuInfo[idCpu];
+
+    Assert(!HWACCMR0Globals.vmx.fSupported || !HWACCMR0Globals.vmx.fUsingSUPR0EnableVTx);
+    Assert(idCpu == (RTCPUID)RTMpCpuIdToSetIndex(idCpu)); /// @todo fix idCpu == index assumption (rainy day)
+    Assert(idCpu < RT_ELEMENTS(HWACCMR0Globals.aCpuInfo));
+    Assert(!HWACCMR0Globals.fGlobalInit || ASMAtomicReadBool(&pCpu->fInUse) == false);
+    Assert(!pCpu->fConfigured || pCpu->pMemObj);
+
+    if (!pCpu->pMemObj)
+        return VERR_NO_MEMORY;
+
+    pvPageCpu    = RTR0MemObjAddress(pCpu->pMemObj);
+    pPageCpuPhys = RTR0MemObjGetPagePhysAddr(pCpu->pMemObj, 0);
+
+    if (pCpu->fConfigured)
+    {
+        rc = HWACCMR0Globals.pfnDisableCpu(pCpu, pvPageCpu, pPageCpuPhys);
+        AssertRC(rc);
+        pCpu->fConfigured = false;
+    }
+    else
+        rc = VINF_SUCCESS; /* nothing to do */
+
+    pCpu->uCurrentASID = 0;
+    return rc;
 }
 
 /**
@@ -698,36 +771,11 @@ static DECLCALLBACK(void) hwaccmR0EnableCPU(RTCPUID idCpu, void *pvUser1, void *
  * @param   pvUser1     The 1st user argument.
  * @param   pvUser2     The 2nd user argument.
  */
-static DECLCALLBACK(void) hwaccmR0DisableCPU(RTCPUID idCpu, void *pvUser1, void *pvUser2)
+static DECLCALLBACK(void) hwaccmR0DisableCpuCallback(RTCPUID idCpu, void *pvUser1, void *pvUser2)
 {
-    void           *pvPageCpu;
-    RTHCPHYS        pPageCpuPhys;
     int            *paRc = (int *)pvUser1;
-    PHWACCM_CPUINFO pCpu = &HWACCMR0Globals.aCpuInfo[idCpu];
 
-    Assert(!HWACCMR0Globals.vmx.fSupported || !HWACCMR0Globals.vmx.fUsingSUPR0EnableVTx);
-    Assert(idCpu == (RTCPUID)RTMpCpuIdToSetIndex(idCpu)); /// @todo fix idCpu == index assumption (rainy day)
-    Assert(idCpu < RT_ELEMENTS(HWACCMR0Globals.aCpuInfo));
-    Assert(ASMAtomicReadBool(&pCpu->fInUse) == false);
-    Assert(!pCpu->fConfigured || pCpu->pMemObj);
-
-    if (!pCpu->pMemObj)
-        return;
-
-    pvPageCpu    = RTR0MemObjAddress(pCpu->pMemObj);
-    pPageCpuPhys = RTR0MemObjGetPagePhysAddr(pCpu->pMemObj, 0);
-
-    if (pCpu->fConfigured)
-    {
-        paRc[idCpu] = HWACCMR0Globals.pfnDisableCpu(pCpu, pvPageCpu, pPageCpuPhys);
-        AssertRC(paRc[idCpu]);
-        pCpu->fConfigured = false;
-    }
-    else
-        paRc[idCpu] = VINF_SUCCESS; /* nothing to do */
-
-    pCpu->uCurrentASID = 0;
-    return;
+    paRc[idCpu] = hwaccmR0DisableCpu(idCpu);
 }
 
 /**
@@ -751,7 +799,8 @@ static DECLCALLBACK(void) hwaccmR0PowerCallback(RTPOWEREVENT enmEvent, void *pvU
     if (enmEvent == RTPOWEREVENT_SUSPEND)
         ASMAtomicWriteBool(&HWACCMR0Globals.fSuspended, true);
 
-    if (HWACCMR0Globals.enmHwAccmState == HWACCMSTATE_ENABLED)
+    if (    HWACCMR0Globals.enmHwAccmState == HWACCMSTATE_ENABLED
+        &&  HWACCMR0Globals.fGlobalInit)
     {
         int     aRc[RTCPUSET_MAX_CPUS];
         int     rc;
@@ -761,7 +810,7 @@ static DECLCALLBACK(void) hwaccmR0PowerCallback(RTPOWEREVENT enmEvent, void *pvU
         if (enmEvent == RTPOWEREVENT_SUSPEND)
         {
             /* Turn off VT-x or AMD-V on all CPUs. */
-            rc = RTMpOnAll(hwaccmR0DisableCPU, aRc, NULL);
+            rc = RTMpOnAll(hwaccmR0DisableCpuCallback, aRc, NULL);
             Assert(RT_SUCCESS(rc) || rc == VERR_NOT_SUPPORTED);
         }
         else
@@ -778,7 +827,7 @@ static DECLCALLBACK(void) hwaccmR0PowerCallback(RTPOWEREVENT enmEvent, void *pvU
 #endif
 
             /* Turn VT-x or AMD-V back on on all CPUs. */
-            rc = RTMpOnAll(hwaccmR0EnableCPU, NULL, aRc);
+            rc = RTMpOnAll(hwaccmR0EnableCpuCallback, NULL, aRc);
             Assert(RT_SUCCESS(rc) || rc == VERR_NOT_SUPPORTED);
         }
     }
@@ -937,8 +986,22 @@ VMMR0DECL(int) HWACCMR0SetupVM(PVM pVM)
         pVM->aCpus[i].hwaccm.s.fContextUseFlags = HWACCM_CHANGED_ALL;
     }
 
+    /* Enable VT-x or AMD-V if local init is required. */
+    if (!HWACCMR0Globals.fGlobalInit)
+    {
+        rc = hwaccmR0EnableCpu(pVM, idCpu);
+        AssertRC(rc);
+    }
+
     /* Setup VT-x or AMD-V. */
     rc = HWACCMR0Globals.pfnSetupVM(pVM);
+
+    /* Disable VT-x or AMD-V if local init was done before. */
+    if (!HWACCMR0Globals.fGlobalInit)
+    {
+        rc = hwaccmR0DisableCpu(idCpu);
+        AssertRC(rc);
+    }
 
     ASMAtomicWriteBool(&pCpu->fInUse, false);
 
@@ -983,6 +1046,13 @@ VMMR0DECL(int) HWACCMR0Enter(PVM pVM, PVMCPU pVCpu)
         pVM->hwaccm.s.u64RegisterMask = UINT64_C(0xFFFFFFFFFFFFFFFF);
     else
         pVM->hwaccm.s.u64RegisterMask = UINT64_C(0xFFFFFFFF);
+
+    /* Enable VT-x or AMD-V if local init is required. */
+    if (!HWACCMR0Globals.fGlobalInit)
+    {
+        rc = hwaccmR0EnableCpu(pVM, idCpu);
+        AssertRC(rc);
+    }
 
     rc  = HWACCMR0Globals.pfnEnterSession(pVM, pVCpu, pCpu);
     AssertRC(rc);
@@ -1049,6 +1119,13 @@ VMMR0DECL(int) HWACCMR0Leave(PVM pVM, PVMCPU pVCpu)
     }
 #endif
     pVCpu->hwaccm.s.idEnteredCpu = NIL_RTCPUID;
+
+    /* Disable VT-x or AMD-V if local init was done before. */
+    if (!HWACCMR0Globals.fGlobalInit)
+    {
+        rc = hwaccmR0DisableCpu(idCpu);
+        AssertRC(rc);
+    }
 
     ASMAtomicWriteBool(&pCpu->fInUse, false);
     return rc;
@@ -1274,7 +1351,8 @@ VMMR0DECL(int) HWACCMR0EnterSwitcher(PVM pVM, bool *pfVTxDisabled)
     *pfVTxDisabled = false;
 
     if (    HWACCMR0Globals.enmHwAccmState != HWACCMSTATE_ENABLED
-        ||  !HWACCMR0Globals.vmx.fSupported /* no such issues with AMD-V */)
+        ||  !HWACCMR0Globals.vmx.fSupported /* no such issues with AMD-V */
+        ||  !pVM->hwaccm.s.fGlobalInit      /* Local init implies the CPU is currently not in VMX root mode. */)
         return VINF_SUCCESS;    /* nothing to do */
 
     switch(VMMGetSwitcher(pVM))
@@ -1321,7 +1399,8 @@ VMMR0DECL(int) HWACCMR0LeaveSwitcher(PVM pVM, bool fVTxDisabled)
         return VINF_SUCCESS;    /* nothing to do */
 
     Assert(   HWACCMR0Globals.enmHwAccmState == HWACCMSTATE_ENABLED
-           && HWACCMR0Globals.vmx.fSupported);
+           && HWACCMR0Globals.vmx.fSupported
+           && pVM->hwaccm.s.fGlobalInit);
 
     PHWACCM_CPUINFO pCpu = HWACCMR0GetCurrentCpu();
     void           *pvPageCpu;

@@ -276,9 +276,8 @@ typedef struct HWACCM
     /** Set when TPR patching is allowed. */
     bool                        fTRPPatchingAllowed;
 
-    /** Explicit alignment padding to make 32-bit gcc align u64RegisterMask
-     *  naturally. */
-    bool                        padding[1];
+    /** Set when we initialize VT-x or AMD-V once for all CPUs. */
+    bool                        fGlobalInit;
 
     /** And mask for copying register contents. */
     uint64_t                    u64RegisterMask;
