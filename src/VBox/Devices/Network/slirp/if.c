@@ -279,7 +279,7 @@ if_start(PNATState pData)
                 ifm->ifq_so->so_nqueued = 0;
         }
 
-        if_encap(pData, ETH_P_IP, ifm);
+        if_encap(pData, ETH_P_IP, ifm, 0);
 
         if (!if_queued)
         {

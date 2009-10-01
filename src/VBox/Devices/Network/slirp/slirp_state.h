@@ -22,6 +22,7 @@
 #define ___slirp_state_h
 
 #include <iprt/req.h>
+#include <iprt/critsect.h>
 
 #define COUNTERS_INIT
 #include "counters.h"
@@ -93,6 +94,16 @@ struct port_forward_rule
 };
 LIST_HEAD(port_forward_rule_list, port_forward_rule);
 
+#ifndef VBOX_WITH_SLIRP_BSD_MBUF
+struct mbuf_zone
+{
+    LIST_ENTRY(mbuf_zone) list;
+    uint8_t *mbuf_zone_base_addr;
+};
+LIST_HEAD(mbuf_zone_list, mbuf_zone);
+#endif
+
+
 /* forward declaration */
 struct proto_handler;
 
@@ -132,6 +143,15 @@ typedef struct NATState
     int mbuf_alloced, mbuf_max;
     int msize;
     struct mbuf m_freelist, m_usedlist;
+#ifndef VBOX_WITH_SLIRP_BSD_MBUF
+    struct mbuf_zone_list mbuf_zone_head;
+    RTCRITSECT cs_mbuf_zone;
+    int fmbuf_water_line;
+    int mbuf_water_line_limit;
+    int mbuf_zone_count;
+    int fmbuf_water_warn_sent; 
+    uint32_t tsmbuf_water_warn_sent;
+#endif
     /* Stuff from slirp.c */
     void *pvUser;
     uint32_t curtime;

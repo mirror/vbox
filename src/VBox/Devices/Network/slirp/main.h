@@ -8,5 +8,5 @@
 #ifdef HAVE_SYS_SELECT_H
 #include <sys/select.h>
 #endif
-
-void if_encap(PNATState pData, uint16_t eth_proto, struct mbuf *m);
+#define ETH_ENCAP_URG 1
+void if_encap(PNATState pData, uint16_t eth_proto, struct mbuf *m, int flags);

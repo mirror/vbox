@@ -80,6 +80,12 @@ static int rt_lookup_in_cache(PNATState pData, uint32_t dst, uint8_t *ether)
 int
 ip_output(PNATState pData, struct socket *so, struct mbuf *m0)
 {
+    return ip_output0(pData, so, m0, 0);
+}
+
+int
+ip_output0(PNATState pData, struct socket *so, struct mbuf *m0, int urg)
+{
     register struct ip *ip;
     register struct mbuf *m = m0;
     register int hlen = sizeof(struct ip );
@@ -199,7 +205,11 @@ ip_output(PNATState pData, struct socket *so, struct mbuf *m0)
 
         memcpy(eh->h_source, eth_dst, ETH_ALEN);
 
+#ifdef VBOX_WITH_SLIRP_BSD_MBUF
         if_output(pData, so, m);
+#else
+        if_encap(pData, ETH_P_IP, m, urg? ETH_ENCAP_URG : 0);
+#endif
         goto done;
      }
 
@@ -380,7 +390,11 @@ sendorfree:
 #endif
                 memcpy(eh->h_source, eth_dst, ETH_ALEN);
 
+#ifdef VBOX_WITH_SLIRP_BSD_MBUF
                 if_output(pData, so, m);
+#else
+                if_encap(pData, ETH_P_IP, m, 0);
+#endif
             }
             else
             {

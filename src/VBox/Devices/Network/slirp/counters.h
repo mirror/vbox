@@ -103,6 +103,7 @@ COUNTING_COUNTER(IOSBAppendSB, "SB: AppendSB total");
 COUNTING_COUNTER(IOSBAppendSB_w_l_r, "SB: AppendSB (sb_wptr < sb_rptr)");
 COUNTING_COUNTER(IOSBAppendSB_w_ge_r, "SB: AppendSB (sb_wptr >= sb_rptr)");
 COUNTING_COUNTER(IOSBAppendSB_w_alter, "SB: AppendSB (altering of sb_wptr)");
+COUNTING_COUNTER(MBufAllocation,"MBUF::shows number of mbufs in used list");
 
 COUNTING_COUNTER(TCP_retransmit, "TCP::retransmit");
 

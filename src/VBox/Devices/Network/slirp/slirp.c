@@ -696,6 +696,7 @@ void slirp_term(PNATState pData)
         RTMemFree(ac);
     }
     bootp_dhcp_fini(pData);
+    m_fini(pData);
 #ifdef RT_OS_WINDOWS
     WSACleanup();
 #endif
@@ -769,6 +770,7 @@ void slirp_select_fill(PNATState pData, int *pnfds, struct pollfd *polls)
     do_slowtimo = 0;
     if (!link_up)
         goto done;
+    
     /*
      * *_slowtimo needs calling if there are IP fragments
      * in the fragment queue, or there are TCP connections active
@@ -784,6 +786,7 @@ void slirp_select_fill(PNATState pData, int *pnfds, struct pollfd *polls)
             if (!TAILQ_EMPTY(&ipq[i]))
             {
                 do_slowtimo = 1;
+                slirp_arm_slow_timer(pData->pvUser);
                 break;
             }
         }
@@ -798,6 +801,18 @@ void slirp_select_fill(PNATState pData, int *pnfds, struct pollfd *polls)
 #if !defined(RT_OS_WINDOWS)
         so->so_poll_index = -1;
 #endif
+        if (pData->fmbuf_water_line == 1)
+        {
+            if (mbuf_alloced < pData->mbuf_water_line_limit/2) 
+            {
+                pData->fmbuf_water_warn_sent = 0;
+                pData->fmbuf_water_line = 0;
+            }
+#ifndef RT_OS_WINDOWS
+            poll_index = 0;
+#endif
+            goto done;
+        }
         STAM_COUNTER_INC(&pData->StatTCP);
 
         /*
@@ -806,7 +821,10 @@ void slirp_select_fill(PNATState pData, int *pnfds, struct pollfd *polls)
         if (    time_fasttimo == 0
                 && so->so_tcpcb != NULL
                 && so->so_tcpcb->t_flags & TF_DELACK)
+        {
             time_fasttimo = curtime; /* Flag when we want a fasttimo */
+            slirp_arm_fast_timer(pData->pvUser);
+        }
 
         /*
          * NOFDREF can include still connecting to local-host,
@@ -866,6 +884,18 @@ void slirp_select_fill(PNATState pData, int *pnfds, struct pollfd *polls)
     QSOCKET_FOREACH(so, so_next, udp)
     /* { */
 
+        if (pData->fmbuf_water_line == 1)
+        {
+            if (mbuf_alloced < pData->mbuf_water_line_limit/2) 
+            {
+                pData->fmbuf_water_line = 0;
+                pData->fmbuf_water_warn_sent = 0;
+            }
+#ifndef RT_OS_WINDOWS
+            poll_index = 0;
+#endif
+            goto done;
+        }
         STAM_COUNTER_INC(&pData->StatUDP);
 #if !defined(RT_OS_WINDOWS)
         so->so_poll_index = -1;
@@ -891,7 +921,10 @@ void slirp_select_fill(PNATState pData, int *pnfds, struct pollfd *polls)
                 CONTINUE_NO_UNLOCK(udp);
             }
             else
+            {
                 do_slowtimo = 1; /* Let socket expire */
+                slirp_arm_slow_timer(pData->pvUser);
+            }
         }
 
         /*
@@ -991,6 +1024,15 @@ void slirp_select_poll(PNATState pData, struct pollfd *polls, int ndfs)
      */
     QSOCKET_FOREACH(so, so_next, tcp)
     /* { */
+        if (pData->fmbuf_water_line == 1)
+        {
+            if (mbuf_alloced < pData->mbuf_water_line_limit/2) 
+            {
+                pData->fmbuf_water_line = 0;
+                pData->fmbuf_water_warn_sent = 0;
+            }
+            goto done;
+        }
 
 #ifdef VBOX_WITH_SLIRP_MT
         if (   so->so_state & SS_NOFDREF
@@ -1279,6 +1321,15 @@ tcp_input_close:
      */
      QSOCKET_FOREACH(so, so_next, udp)
      /* { */
+        if (pData->fmbuf_water_line == 1)
+        {
+            if (mbuf_alloced < pData->mbuf_water_line_limit/2) 
+            {
+                pData->fmbuf_water_line = 0;
+                pData->fmbuf_water_warn_sent = 0;
+            }
+            goto done;
+        }
 #ifdef VBOX_WITH_SLIRP_MT
         if (   so->so_state & SS_NOFDREF
             && so->so_deleted == 1)
@@ -1321,7 +1372,7 @@ tcp_input_close:
     }
 
 done:
-#ifndef VBOX_WITH_SLIRP_MT
+#if 0
     /*
      * See if we can start outputting
      */
@@ -1409,6 +1460,8 @@ static void arp_input(PNATState pData, struct mbuf *m)
                         goto arp_ok;
                     }
                 }
+                m_free(pData, m);
+                m_free(pData, mr);
                 return;
         arp_ok:
                 rah->ar_hrd = htons(1);
@@ -1430,7 +1483,7 @@ static void arp_input(PNATState pData, struct mbuf *m)
                 memcpy(rah->ar_sip, ah->ar_tip, 4);
                 memcpy(rah->ar_tha, ah->ar_sha, ETH_ALEN);
                 memcpy(rah->ar_tip, ah->ar_sip, 4);
-                if_encap(pData, ETH_P_ARP, mr);
+                if_encap(pData, ETH_P_ARP, mr, ETH_ENCAP_URG);
                 m_free(pData, m);
             }
             /*Gratuitous ARP*/
@@ -1471,16 +1524,33 @@ static void arp_input(PNATState pData, struct mbuf *m)
     }
 }
 
+#ifdef VBOX_WITH_SLIRP_BSD_MBUF
 void slirp_input(PNATState pData, const uint8_t *pkt, int pkt_len)
+#else
+void slirp_input(PNATState pData, void *pvArg)
+#endif
 {
     struct mbuf *m;
     int proto;
     static bool fWarnedIpv6;
-    struct ethhdr *eh = (struct ethhdr*)pkt;
 #ifdef VBOX_WITH_SLIRP_BSD_MBUF
+    struct ethhdr *eh = (struct ethhdr*)pkt;
     int size = 0;
+#else
+    struct ethhdr *eh;
 #endif
 
+#ifndef VBOX_WITH_SLIRP_BSD_MBUF
+    m = (struct mbuf *)pvArg;
+    if (m->m_len < ETH_HLEN)
+    {
+        LogRel(("NAT: packet having size %d has been ingnored\n", m->m_len));
+        m_free(pData, m);
+        return;
+    }
+    eh = mtod(m, struct ethhdr *); 
+    proto = ntohs(eh->h_proto);
+#else
     Log2(("NAT: slirp_input %d\n", pkt_len));
     if (pkt_len < ETH_HLEN)
     {
@@ -1497,9 +1567,6 @@ void slirp_input(PNATState pData, const uint8_t *pkt, int pkt_len)
         return;
     }
 
-#ifndef VBOX_WITH_SLIRP_BSD_MBUF
-    m = m_get(pData);
-#else
     if (pkt_len < MSIZE)
     {
         size = MCLBYTES;
@@ -1521,7 +1588,6 @@ void slirp_input(PNATState pData, const uint8_t *pkt, int pkt_len)
         AssertMsgFailed(("Unsupported size"));
     }
     m = m_getjcl(pData, M_NOWAIT, MT_HEADER, M_PKTHDR, size);
-#endif
     if (!m)
     {
         LogRel(("NAT: can't allocate new mbuf\n"));
@@ -1529,20 +1595,16 @@ void slirp_input(PNATState pData, const uint8_t *pkt, int pkt_len)
         return;
     }
 
-    /* Note: we add to align the IP header */
-
-#ifndef VBOX_WITH_SLIRP_BSD_MBUF
-    if (M_FREEROOM(m) < pkt_len)
-       m_inc(m, pkt_len);
-#endif
-
     m->m_len = pkt_len ;
     memcpy(m->m_data, pkt, pkt_len);
+    proto = ntohs(*(uint16_t *)(pkt + 12));
+#endif
+    /* Note: we add to align the IP header */
+
 
     if (pData->port_forwarding_activated == 0)
         activate_port_forwarding(pData, mtod(m, struct ethhdr *));
 
-    proto = ntohs(*(uint16_t *)(pkt + 12));
     switch(proto)
     {
         case ETH_P_ARP:
@@ -1556,6 +1618,16 @@ void slirp_input(PNATState pData, const uint8_t *pkt, int pkt_len)
 #ifdef VBOX_WITH_SLIRP_BSD_MBUF
             M_ASSERTPKTHDR(m);
             m->m_pkthdr.header = mtod(m, void *);
+#endif
+#if 1
+            if (   pData->fmbuf_water_line 
+                && pData->fmbuf_water_warn_sent == 0
+                && (curtime - pData->tsmbuf_water_warn_sent) > 500)
+            {
+                icmp_error(pData, m, ICMP_SOURCEQUENCH, 0, 0, "Out of resources!!!"); 
+                pData->fmbuf_water_warn_sent = 1;
+                pData->tsmbuf_water_warn_sent = curtime;
+            }
 #endif
             ip_input(pData, m);
             break;
@@ -1572,11 +1644,13 @@ void slirp_input(PNATState pData, const uint8_t *pkt, int pkt_len)
             m_free(pData, m);
             break;
     }
+#ifdef VBOX_WITH_SLIRP_BSD_MBUF
     RTMemFree((void *)pkt);
+#endif
 }
 
 /* output the IP packet to the ethernet device */
-void if_encap(PNATState pData, uint16_t eth_proto, struct mbuf *m)
+void if_encap(PNATState pData, uint16_t eth_proto, struct mbuf *m, int flags)
 {
     struct ethhdr *eh;
     uint8_t *buf = NULL;
@@ -1615,23 +1689,27 @@ void if_encap(PNATState pData, uint16_t eth_proto, struct mbuf *m)
     mlen = m->m_len;
 #else
     mlen = m_length(m, NULL);
-#endif
     buf = RTMemAlloc(mlen);
     if (buf == NULL)
     {
         LogRel(("NAT: Can't alloc memory for outgoing buffer\n"));
         goto done;
     }
-    eh->h_proto = htons(eth_proto);
-#ifndef VBOX_WITH_SLIRP_BSD_MBUF
-    memcpy(buf, mtod(m, uint8_t *), mlen);
-#else
-    m_copydata(m, 0, mlen, (char *)buf);
 #endif
-    slirp_output(pData->pvUser, NULL, buf, mlen);
+    eh->h_proto = htons(eth_proto);
+#ifdef VBOX_WITH_SLIRP_BSD_MBUF
+    m_copydata(m, 0, mlen, (char *)buf);
+#else
+    if (flags & ETH_ENCAP_URG)
+        slirp_urg_output(pData->pvUser, m, mtod(m, char *), mlen);
+    else
+        slirp_output(pData->pvUser, m, mtod(m, char *), mlen);
+#endif
 done:
     STAM_PROFILE_STOP(&pData->StatIF_encap, a);
+#ifdef VBOX_WITH_SLIRP_BSD_MBUF
     m_free(pData, m);
+#endif
 }
 
 /**
@@ -2027,7 +2105,7 @@ void slirp_arp_who_has(PNATState pData, uint32_t dst)
     /* warn!!! should falls in mbuf minimal size */
     m->m_len = sizeof(struct arphdr) + ETH_HLEN;
 #endif
-    if_encap(pData, ETH_P_ARP, m);
+    if_encap(pData, ETH_P_ARP, m, ETH_ENCAP_URG);
     Log(("NAT: ARP request sent\n"));
 }
 
