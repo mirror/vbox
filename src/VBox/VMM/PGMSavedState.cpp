@@ -1046,10 +1046,6 @@ static void pgmR3LiveExecScanPages(PVM pVM, bool fFinalPass)
                         /*
                          * A RAM page.
                          */
-/** @todo Check for page locks (write) since these indicates that someone might
- * be changing the page without owning the PGM lock.  This breaks assumptions
- * elsewhere.
- * (A quick fix is to mark the page written-to when releasing a write lock.) */
                         switch (PGM_PAGE_GET_STATE(&pCur->aPages[iPage]))
                         {
                             case PGM_PAGE_STATE_ALLOCATED:
@@ -1087,7 +1083,7 @@ static void pgmR3LiveExecScanPages(PVM pVM, bool fFinalPass)
 
                             case PGM_PAGE_STATE_WRITE_MONITORED:
                                 Assert(paLSPages[iPage].fWriteMonitored);
-                                paLSPages[iPage].fWriteMonitoredJustNow = 0;
+                                paLSPages[iPage].fWriteMonitoredJustNow = PGM_PAGE_GET_WRITE_LOCKS(&pCur->aPages[iPage]) > 0;
                                 break;
 
                             case PGM_PAGE_STATE_ZERO:
