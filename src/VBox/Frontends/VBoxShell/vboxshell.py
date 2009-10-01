@@ -14,7 +14,6 @@
 # Clara, CA 95054 USA or visit http://www.sun.com if you need
 # additional information or have any questions.
 #
-#
 #################################################################################
 # This program is a simple interactive shell for VirtualBox. You can query      #
 # information and issue commands from a simple command line.                    #
