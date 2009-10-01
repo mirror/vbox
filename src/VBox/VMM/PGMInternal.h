@@ -619,7 +619,6 @@ AssertCompile(PGMPAGETYPE_END <= 7);
 #define PGMPAGETYPE_IS_NP(type)         ( (type) == PGMPAGETYPE_MMIO )
 /** @} */
 
-#if 0 /* disabled temporarily */
 /** Enables the new structure layout.
  * Some bits are better others are not.  */
 #define PGM_PAGE_WITH_PAGEID_IN_HCPHYS
@@ -627,8 +626,6 @@ AssertCompile(PGMPAGETYPE_END <= 7);
 /** When non-zero, PGMPAGE is packed. When zero some of the important fields
  *  are expaned to 8-bit size to allow the compiler to use byte access. */
 #define PGM_PAGE_PACKED     0
-#endif
-
 
 /**
  * A Physical Guest Page tracking structure.
