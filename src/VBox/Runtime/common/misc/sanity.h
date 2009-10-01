@@ -204,3 +204,12 @@ TEST_CONST_MACRO(INT32_C(-1), int32_t);
 TEST_CONST_MACRO(INT64_C(1),  int64_t);
 TEST_CONST_MACRO(INT64_C(-1), int64_t);
 
+
+/*
+ * Our union types.
+ */
+AssertCompileSize(RTUINT16U,  2);
+AssertCompileSize(RTUINT32U,  4);
+AssertCompileSize(RTUINT64U,  8);
+AssertCompileSize(RTUINT128U, 16);
+
