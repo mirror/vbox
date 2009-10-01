@@ -817,7 +817,7 @@ static int vmmR0EntryExWorker(PVM pVM, VMCPUID idCpu, VMMR0OPERATION enmOperatio
             return HWACCMR0EnableAllCpus(pVM);
 
         /*
-         * Setup the hardware accelerated raw-mode session.
+         * Setup the hardware accelerated session.
          */
         case VMMR0_DO_HWACC_SETUP_VM:
         {
