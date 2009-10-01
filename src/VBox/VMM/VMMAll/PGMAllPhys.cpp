@@ -1071,7 +1071,11 @@ VMMDECL(int) PGMPhysGCPhys2CCPtr(PVM pVM, RTGCPHYS GCPhys, void **ppv, PPGMPAGEM
 
             unsigned cLocks = PGM_PAGE_GET_WRITE_LOCKS(pPage);
             if (RT_LIKELY(cLocks < PGM_PAGE_MAX_LOCKS - 1))
+            {
+                if (cLocks == 0)
+                    pVM->pgm.s.cWriteLockedPages++;
                 PGM_PAGE_INC_WRITE_LOCKS(pPage);
+            }
             else if (cLocks != PGM_PAGE_GET_WRITE_LOCKS(pPage))
             {
                 PGM_PAGE_INC_WRITE_LOCKS(pPage);
@@ -1169,7 +1173,11 @@ VMMDECL(int) PGMPhysGCPhys2CCPtrReadOnly(PVM pVM, RTGCPHYS GCPhys, void const **
 
             unsigned cLocks = PGM_PAGE_GET_READ_LOCKS(pPage);
             if (RT_LIKELY(cLocks < PGM_PAGE_MAX_LOCKS - 1))
+            {
+                if (cLocks == 0)
+                    pVM->pgm.s.cReadLockedPages++;
                 PGM_PAGE_INC_READ_LOCKS(pPage);
+            }
             else if (cLocks != PGM_PAGE_GET_READ_LOCKS(pPage))
             {
                 PGM_PAGE_INC_READ_LOCKS(pPage);
@@ -1292,7 +1300,14 @@ VMMDECL(void) PGMPhysReleasePageMappingLock(PVM pVM, PPGMPAGEMAPLOCK pLock)
         unsigned cLocks = PGM_PAGE_GET_WRITE_LOCKS(pPage);
         Assert(cLocks > 0);
         if (RT_LIKELY(cLocks > 0 && cLocks < PGM_PAGE_MAX_LOCKS))
+        {
+            if (cLocks == 1)
+            {
+                Assert(pVM->pgm.s.cWriteLockedPages > 0);
+                pVM->pgm.s.cWriteLockedPages--;
+            }
             PGM_PAGE_DEC_WRITE_LOCKS(pPage);
+        }
 
         if (PGM_PAGE_GET_STATE(pPage) == PGM_PAGE_STATE_WRITE_MONITORED)
         {
@@ -1308,7 +1323,14 @@ VMMDECL(void) PGMPhysReleasePageMappingLock(PVM pVM, PPGMPAGEMAPLOCK pLock)
         unsigned cLocks = PGM_PAGE_GET_READ_LOCKS(pPage);
         Assert(cLocks > 0);
         if (RT_LIKELY(cLocks > 0 && cLocks < PGM_PAGE_MAX_LOCKS))
+        {
+            if (cLocks == 1)
+            {
+                Assert(pVM->pgm.s.cReadLockedPages > 0);
+                pVM->pgm.s.cReadLockedPages--;
+            }
             PGM_PAGE_DEC_READ_LOCKS(pPage);
+        }
     }
 
     if (pMap)

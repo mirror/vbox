@@ -2703,6 +2703,8 @@ typedef struct PGM
     uint32_t                        cZeroPages;         /**< The number of zero backed pages. */
     uint32_t                        cMonitoredPages;    /**< The number of write monitored pages. */
     uint32_t                        cWrittenToPages;    /**< The number of previously write monitored pages. */
+    uint32_t                        cWriteLockedPages;  /**< The number of write locked pages. */
+    uint32_t                        cReadLockedPages;   /**< The number of read locked pages. */
 
     /** The number of times we were forced to change the hypervisor region location. */
     STAMCOUNTER                     cRelocations;

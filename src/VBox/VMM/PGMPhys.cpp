@@ -455,7 +455,11 @@ VMMR3DECL(int) PGMR3PhysGCPhys2CCPtrExternal(PVM pVM, RTGCPHYS GCPhys, void **pp
 
             unsigned cLocks = PGM_PAGE_GET_WRITE_LOCKS(pPage);
             if (RT_LIKELY(cLocks < PGM_PAGE_MAX_LOCKS - 1))
+            {
+                if (cLocks == 0)
+                    pVM->pgm.s.cWriteLockedPages++;
                 PGM_PAGE_INC_WRITE_LOCKS(pPage);
+            }
             else if (cLocks != PGM_PAGE_GET_WRITE_LOCKS(pPage))
             {
                 PGM_PAGE_INC_WRITE_LOCKS(pPage);
@@ -529,7 +533,11 @@ VMMR3DECL(int) PGMR3PhysGCPhys2CCPtrReadOnlyExternal(PVM pVM, RTGCPHYS GCPhys, v
 
             unsigned cLocks = PGM_PAGE_GET_READ_LOCKS(pPage);
             if (RT_LIKELY(cLocks < PGM_PAGE_MAX_LOCKS - 1))
+            {
+                if (cLocks == 0)
+                    pVM->pgm.s.cReadLockedPages++;
                 PGM_PAGE_INC_READ_LOCKS(pPage);
+            }
             else if (cLocks != PGM_PAGE_GET_READ_LOCKS(pPage))
             {
                 PGM_PAGE_INC_READ_LOCKS(pPage);
