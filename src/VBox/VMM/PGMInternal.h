@@ -1016,7 +1016,7 @@ typedef PPGMPAGE *PPPGMPAGE;
 
 
 /** Max number of locks on a page. */
-#define PGM_PAGE_MAX_LOCKS                  256
+#define PGM_PAGE_MAX_LOCKS                  254
 
 /** Get the read lock count.
  * @returns count.
