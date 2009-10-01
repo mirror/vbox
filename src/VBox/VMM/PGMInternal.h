@@ -619,6 +619,16 @@ AssertCompile(PGMPAGETYPE_END <= 7);
 #define PGMPAGETYPE_IS_NP(type)         ( (type) == PGMPAGETYPE_MMIO )
 /** @} */
 
+#if 0 /* disabled temporarily */
+/** Enables the new structure layout.
+ * Some bits are better others are not.  */
+#define PGM_PAGE_WITH_PAGEID_IN_HCPHYS
+
+/** When non-zero, PGMPAGE is packed. When zero some of the important fields
+ *  are expaned to 8-bit size to allow the compiler to use byte access. */
+#define PGM_PAGE_PACKED     0
+#endif
+
 
 /**
  * A Physical Guest Page tracking structure.
@@ -627,10 +637,32 @@ AssertCompile(PGMPAGETYPE_END <= 7);
  * of information into as few bits as possible. The format is also subject
  * to change (there is one comming up soon). Which means that for we'll be
  * using PGM_PAGE_GET_*, PGM_PAGE_IS_ and PGM_PAGE_SET_* macros for *all*
- * accessess to the structure.
+ * accesses to the structure.
  */
 typedef struct PGMPAGE
 {
+#ifdef PGM_PAGE_WITH_PAGEID_IN_HCPHYS
+    /** The physical address and the Page ID. */
+    RTHCPHYS    HCPhysAndPageID;
+    /** The page state. */
+    uint32_t    u2StateY : (PGM_PAGE_PACKED ? 2 : 8);
+    /** The page type (PGMPAGETYPE). */
+    uint32_t    u3TypeY : (PGM_PAGE_PACKED ? 3 : 8);
+    /** The physical handler state (PGM_PAGE_HNDL_PHYS_STATE*) */
+    uint32_t    u2HandlerPhysStateY : (PGM_PAGE_PACKED ? 2 : 8);
+    /** The virtual handler state (PGM_PAGE_HNDL_VIRT_STATE*) */
+    uint32_t    u2HandlerVirtStateY : 2;
+    /** Flag indicating that a write monitored page was written to when set. */
+    uint32_t    fWrittenToY : 1;
+    /** For later. */
+    uint32_t    afSomethingElse0 : (PGM_PAGE_PACKED ? 17+5 : 5);
+    /** Usage tracking (page pool). */
+    uint16_t    u16TrackingY;
+    /** The number of read locks on this page. */
+    uint8_t     cReadLocksY;
+    /** The number of write locks on this page. */
+    uint8_t     cWriteLocksY;
+#else
     /** The physical address.
      *  This will later contain the page id in the unused bits. */
     RTHCPHYS    HCPhysY;
@@ -640,9 +672,7 @@ typedef struct PGMPAGE
     uint32_t    fWrittenToY : 1;
     /** For later. */
     uint32_t    fSomethingElse0 : 1;
-    /** The Page ID.
-     * @todo  Merge with HCPhysY once we've liberated HCPhysY of its stuff? The
-     *        HCPhysY will then be 100% static. */
+    /** The Page ID. */
     uint32_t    idPageY : 28;
     /** The page type (PGMPAGETYPE). */
     uint32_t    u3TypeY : 3;
@@ -658,6 +688,7 @@ typedef struct PGMPAGE
     uint32_t    cWriteLocksY : 4;
     /** Usage tracking (page pool). */
     uint32_t    u16TrackingY : 16;
+#endif
 } PGMPAGE;
 AssertCompileSize(PGMPAGE, 16);
 /** Pointer to a physical guest page. */
@@ -672,7 +703,22 @@ typedef PPGMPAGE *PPPGMPAGE;
  * Clears the page structure.
  * @param   pPage       Pointer to the physical guest page tracking structure.
  */
-#define PGM_PAGE_CLEAR(pPage) \
+#ifdef PGM_PAGE_WITH_PAGEID_IN_HCPHYS
+# define PGM_PAGE_CLEAR(pPage) \
+    do { \
+        (pPage)->HCPhysAndPageID     = 0; \
+        (pPage)->u2StateY            = 0; \
+        (pPage)->fWrittenToY         = 0; \
+        (pPage)->afSomethingElse0    = 0; \
+        (pPage)->u3TypeY             = 0; \
+        (pPage)->u2HandlerPhysStateY = 0; \
+        (pPage)->u2HandlerVirtStateY = 0; \
+        (pPage)->u16TrackingY        = 0; \
+        (pPage)->cReadLocksY         = 0; \
+        (pPage)->cWriteLocksY        = 0; \
+    } while (0)
+#else
+# define PGM_PAGE_CLEAR(pPage) \
     do { \
         (pPage)->HCPhysY             = 0; \
         (pPage)->u2StateY            = 0; \
@@ -680,23 +726,41 @@ typedef PPGMPAGE *PPPGMPAGE;
         (pPage)->fSomethingElse0     = 0; \
         (pPage)->idPageY             = 0; \
         (pPage)->u3TypeY             = 0; \
-        (pPage)->u2HandlerPhysStateX = 0; \
+        (pPage)->u2HandlerPhysStateY = 0; \
         (pPage)->u2HandlerVirtStateY = 0; \
         (pPage)->fSomethingElse1     = 0; \
         (pPage)->cReadLocksY         = 0; \
         (pPage)->cWriteLocksY        = 0; \
         (pPage)->u16TrackingY        = 0; \
     } while (0)
+#endif
 
 /**
  * Initializes the page structure.
  * @param   pPage       Pointer to the physical guest page tracking structure.
  */
-#define PGM_PAGE_INIT(pPage, _HCPhys, _idPage, _uType, _uState) \
+#ifdef PGM_PAGE_WITH_PAGEID_IN_HCPHYS
+# define PGM_PAGE_INIT(pPage, _HCPhys, _idPage, _uType, _uState) \
     do { \
         RTHCPHYS SetHCPhysTmp = (_HCPhys); \
         AssertFatal(!(SetHCPhysTmp & ~UINT64_C(0x0000fffffffff000))); \
-        (pPage)->HCPhysY             = (SetHCPhysTmp); \
+        (pPage)->HCPhysAndPageID     = (SetHCPhysTmp << (28-12)) | ((_idPage) & UINT32_C(0x0fffffff)); \
+        (pPage)->u2StateY            = (_uState); \
+        (pPage)->fWrittenToY         = 0; \
+        (pPage)->afSomethingElse0    = 0; \
+        (pPage)->u3TypeY             = (_uType); \
+        (pPage)->u2HandlerPhysStateY = 0; \
+        (pPage)->u2HandlerVirtStateY = 0; \
+        (pPage)->u16TrackingY        = 0; \
+        (pPage)->cReadLocksY         = 0; \
+        (pPage)->cWriteLocksY        = 0; \
+    } while (0)
+#else
+# define PGM_PAGE_INIT(pPage, _HCPhys, _idPage, _uType, _uState) \
+    do { \
+        RTHCPHYS SetHCPhysTmp = (_HCPhys); \
+        AssertFatal(!(SetHCPhysTmp & ~UINT64_C(0x0000fffffffff000))); \
+        (pPage)->HCPhysY             = SetHCPhysTmp; \
         (pPage)->u2StateY            = (_uState); \
         (pPage)->fWrittenToY         = 0; \
         (pPage)->fSomethingElse0     = 0; \
@@ -709,6 +773,7 @@ typedef PPGMPAGE *PPPGMPAGE;
         (pPage)->cWriteLocksY        = 0; \
         (pPage)->u16TrackingY        = 0; \
     } while (0)
+#endif
 
 /**
  * Initializes the page structure of a ZERO page.
@@ -762,7 +827,7 @@ typedef PPGMPAGE *PPPGMPAGE;
  * @param   pPage       Pointer to the physical guest page tracking structure.
  */
 #ifdef PGM_PAGE_WITH_PAGEID_IN_HCPHYS
-# define PGM_PAGE_GET_HCPHYS(pPage)         ( (pPage)->HCPhysY & UINT64_C(0x0000fffffffff000) )
+# define PGM_PAGE_GET_HCPHYS(pPage)         ( ((pPage)->HCPhysAndPageID >> 28) << 12 )
 #else
 # define PGM_PAGE_GET_HCPHYS(pPage)         ( (pPage)->HCPhysY )
 #endif
@@ -777,8 +842,8 @@ typedef PPGMPAGE *PPPGMPAGE;
     do { \
         RTHCPHYS SetHCPhysTmp = (_HCPhys); \
         AssertFatal(!(SetHCPhysTmp & ~UINT64_C(0x0000fffffffff000))); \
-        (pPage)->HCPhysY = (((pPage)->HCPhysY) & UINT64_C(0xffff000000000fff)) \
-                         | SetHCPhysTmp; \
+        (pPage)->HCPhysAndPageID = ((pPage)->HCPhysAndPageID & UINT32_C(0x0fffffff)) \
+                                 | (SetHCPhysTmp << (28-12)); \
     } while (0)
 #else
 # define PGM_PAGE_SET_HCPHYS(pPage, _HCPhys) \
@@ -795,8 +860,7 @@ typedef PPGMPAGE *PPPGMPAGE;
  * @param   pPage       Pointer to the physical guest page tracking structure.
  */
 #ifdef PGM_PAGE_WITH_PAGEID_IN_HCPHYS
-# define PGM_PAGE_GET_PAGEID(pPage)         (  ((uint32_t)(pPage)->HCPhysY >> (48 - 12))
-                                             | ((uint32_t)(pPage)->HCPhysY & 0xfff) )
+# define PGM_PAGE_GET_PAGEID(pPage)         (  (uint32_t)((pPage)->HCPhysAndPageID & UINT32_C(0x0fffffff)) )
 #else
 # define PGM_PAGE_GET_PAGEID(pPage)         ( (pPage)->idPageY )
 #endif
@@ -808,9 +872,8 @@ typedef PPGMPAGE *PPPGMPAGE;
 #ifdef PGM_PAGE_WITH_PAGEID_IN_HCPHYS
 # define PGM_PAGE_SET_PAGEID(pPage, _idPage) \
     do { \
-        (pPage)->HCPhysY = (((pPage)->HCPhysY) & UINT64_C(0x0000fffffffff000)) \
-                         | ((_idPage) & 0xfff) \
-                         | (((_idPage) & 0x0ffff000) << (48-12)); \
+        (pPage)->HCPhysAndPageID = (((pPage)->HCPhysAndPageID) & UINT64_C(0xfffffffff0000000)) \
+                                 | ((_idPage) & UINT32_C(0x0fffffff)); \
     } while (0)
 #else
 # define PGM_PAGE_SET_PAGEID(pPage, _idPage) \
@@ -825,31 +888,18 @@ typedef PPGMPAGE *PPPGMPAGE;
  * @param   pPage       Pointer to the physical guest page tracking structure.
  */
 #ifdef PGM_PAGE_WITH_PAGEID_IN_HCPHYS
-# if GMM_CHUNKID_SHIFT == 12
-#  define PGM_PAGE_GET_CHUNKID(pPage)       ( (uint32_t)((pPage)->HCPhysY >> 48) )
-# elif GMM_CHUNKID_SHIFT > 12
-#  define PGM_PAGE_GET_CHUNKID(pPage)       ( (uint32_t)((pPage)->HCPhysY >> (48 + (GMM_CHUNKID_SHIFT - 12)) )
-# elif GMM_CHUNKID_SHIFT < 12
-#  define PGM_PAGE_GET_CHUNKID(pPage)       (   ( (uint32_t)((pPage)->HCPhysY >> 48)   << (12 - GMM_CHUNKID_SHIFT) ) \
-# else
-#  error "GMM_CHUNKID_SHIFT isn't defined or something."
-# endif
+# define PGM_PAGE_GET_CHUNKID(pPage)        ( (uint32_t)((pPage)->HCPhysAndPageID & UINT32_C(0x0fffffff)) >> GMM_CHUNKID_SHIFT )
 #else
 # define PGM_PAGE_GET_CHUNKID(pPage)        ( (pPage)->idPageY >> GMM_CHUNKID_SHIFT )
 #endif
 
 /**
- * Get the index of the page within the allocaiton chunk.
+ * Get the index of the page within the allocation chunk.
  * @returns The page index.
  * @param   pPage       Pointer to the physical guest page tracking structure.
  */
 #ifdef PGM_PAGE_WITH_PAGEID_IN_HCPHYS
-# if GMM_CHUNKID_SHIFT <= 12
-#  define PGM_PAGE_GET_PAGE_IN_CHUNK(pPage) ( (uint32_t)((pPage)->HCPhysY & GMM_PAGEID_IDX_MASK) )
-# else
-#  define PGM_PAGE_GET_PAGE_IN_CHUNK(pPage) (   (uint32_t)((pPage)->HCPhysY & 0xfff) \
-                                             |  ( (uint32_t)((pPage)->HCPhysY >> 48) & (RT_BIT_32(GMM_CHUNKID_SHIFT - 12) - 1) ) )
-# endif
+# define PGM_PAGE_GET_PAGE_IN_CHUNK(pPage)  ( (uint32_t)((pPage)->HCPhysAndPageID & GMM_PAGEID_IDX_MASK) )
 #else
 # define PGM_PAGE_GET_PAGE_IN_CHUNK(pPage)  ( (pPage)->idPageY & GMM_PAGEID_IDX_MASK )
 #endif
