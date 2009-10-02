@@ -40,10 +40,8 @@
 int main()
 {
     RTR3Init();
-    g_testHostHardwareLinux = true;
     int rc = VINF_SUCCESS;
     VBoxMainDriveInfo driveInfo;
-    g_testHostHardwareLinux = true;
     rc = driveInfo.updateFloppies();
     if (RT_SUCCESS(rc))
         rc = driveInfo.updateDVDs();
