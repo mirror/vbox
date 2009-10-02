@@ -515,9 +515,10 @@ static int dhcp_decode_discover(PNATState pData, struct bootp_t *bp, const uint8
     return -1;
 }
 
-static int dhcp_decode_release(PNATState pData, struct bootp_t *bp, const uint8_t *buf, int size, int flag)
+static int dhcp_decode_release(PNATState pData, struct bootp_t *bp, const uint8_t *buf, int size)
 {
-    return -1;
+    release_addr(pData, &bp->bp_ciaddr);
+    return 0;
 }
 /**
  * fields for discovering t
@@ -631,10 +632,8 @@ static void dhcp_decode(PNATState pData, struct bootp_t *bp, const uint8_t *buf,
                 goto reply;
         break;
         case DHCPRELEASE:
-            flag = 1;
-            rc = dhcp_decode_release(pData, bp, buf, size, flag);
-            if (rc > 0)
-                goto reply;
+            rc = dhcp_decode_release(pData, bp, buf, size); 
+            /* no reply required */
         break;
         case DHCPDECLINE:
             p = dhcp_find_option(&bp->bp_vend[0], RFC2132_REQ_ADDR);
