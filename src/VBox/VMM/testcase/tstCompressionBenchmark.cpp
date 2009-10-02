@@ -151,6 +151,7 @@ static void tstBenchmarkCRCsAllInOne(uint8_t const *pabSrc, size_t cbSrc)
     RTPrintf("SHA-512   %'9u KB/s  %'15llu ns - %s\n", uSpeed, NanoTS, szDigest);
 }
 
+
 /**
  * Benchmark RTCrc routines potentially relevant for SSM or PGM - Page by page.
  *
@@ -630,12 +631,22 @@ int main(int argc, char **argv)
      * A little extension to the test, benchmark relevant CRCs.
      */
     RTPrintf("\n"
-             "tstCompressionBenchmark: Checksum/CRC - All In One\n");
+             "tstCompressionBenchmark: Hash/CRC - All In One\n");
     tstBenchmarkCRCsAllInOne(g_pabSrc, g_cbPages);
 
     RTPrintf("\n"
-             "tstCompressionBenchmark: Checksum/CRC - Page by Page\n");
+             "tstCompressionBenchmark: Hash/CRC - Page by Page\n");
     tstBenchmarkCRCsPageByPage(g_pabSrc, g_cbPages);
+
+    RTPrintf("\n"
+             "tstCompressionBenchmark: Hash/CRC - Zero Page Digest\n");
+    static uint8_t s_abZeroPg[PAGE_SIZE];
+    RT_ZERO(s_abZeroPg);
+    tstBenchmarkCRCsAllInOne(s_abZeroPg, PAGE_SIZE);
+
+    RTPrintf("\n"
+             "tstCompressionBenchmark: Hash/CRC - Zero Half Page Digest\n");
+    tstBenchmarkCRCsAllInOne(s_abZeroPg, PAGE_SIZE / 2);
 
     RTPrintf("tstCompressionBenchmark: END RESULTS\n");
 
