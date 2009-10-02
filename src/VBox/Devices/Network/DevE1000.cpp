@@ -928,6 +928,9 @@ struct E1kState_st
     /** EMT: Physical interface emulation. */
     PHY         phy;
 
+    /** Alignment padding. */
+    uint8_t                             Alignment[HC_ARCH_BITS == 64 ? 8 : 4];
+
     STAMCOUNTER                         StatReceiveBytes;
     STAMCOUNTER                         StatTransmitBytes;
 #if defined(VBOX_WITH_STATISTICS) || defined(E1K_REL_STATS)
