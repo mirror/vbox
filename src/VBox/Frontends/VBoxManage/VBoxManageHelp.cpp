@@ -254,7 +254,8 @@ void printUsage(USAGECATEGORY u64Cmd)
     if (u64Cmd & USAGE_IMPORTAPPLIANCE)
     {
         RTPrintf("VBoxManage import           <ovf> [--dry-run|-n] [more options]\n"
-                 "    (run with -n to have options displayed for a particular OVF)\n\n");
+                 "                            (run with -n to have options displayed\n"
+                 "                             for a particular OVF)\n\n");
     }
 
     if (u64Cmd & USAGE_EXPORTAPPLIANCE)
@@ -300,8 +301,8 @@ void printUsage(USAGECATEGORY u64Cmd)
                  "                            nic<1-N> null|nat|bridged|intnet\n"
                  "                                     [<devicename>] |\n"
 #endif /* !RT_OS_LINUX && !RT_OS_DARWIN  */
-                 "                            [nictrace<1-N> on|off]\n"
-                 "                            [nictracefile<1-N> <filename>]\n"
+                 "                            nictrace<1-N> on|off\n"
+                 "                            nictracefile<1-N> <filename>\n"
 #endif /* VBOX_DYNAMIC_NET_ATTACH */
                  "                            usbattach <uuid>|<address> |\n"
                  "                            usbdetach <uuid>|<address> |\n"
