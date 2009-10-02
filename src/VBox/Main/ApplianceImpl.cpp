@@ -25,7 +25,7 @@
 #include <iprt/dir.h>
 #include <iprt/file.h>
 #include <iprt/s3.h>
-#include <iprt/sha1.h>
+#include <iprt/sha.h>
 #include <iprt/manifest.h>
 
 #include "ovfreader.h"
