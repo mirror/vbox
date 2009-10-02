@@ -36,7 +36,9 @@
 
 #include <iprt/asm.h>
 #include <iprt/assert.h>
+#include <iprt/crc32.h>
 #include <iprt/mem.h>
+#include <iprt/sha.h>
 #include <iprt/string.h>
 #include <iprt/thread.h>
 
@@ -201,11 +203,11 @@ static DECLCALLBACK(int) pgmR3LivePrep(PVM pVM, PSSMHANDLE pSSM)
     /*
      * Initialize the statistics.
      */
-    pVM->pgm.s.LiveSave.cReadyPages    = 0;
-    pVM->pgm.s.LiveSave.cDirtyPages    = 0;
-    pVM->pgm.s.LiveSave.cIgnoredPages  = 0;
-    pVM->pgm.s.LiveSave.cMmio2Pages    = 0;
-    pVM->pgm.s.LiveSave.fActive        = true;
+    pVM->pgm.s.LiveSave.cReadyPages      = 0;
+    pVM->pgm.s.LiveSave.cDirtyPages      = 0;
+    pVM->pgm.s.LiveSave.cIgnoredPages    = 0;
+    pVM->pgm.s.LiveSave.cDirtyMmio2Pages = 0;
+    pVM->pgm.s.LiveSave.fActive          = true;
 
     /*
      * Initialize the live save tracking in the MMIO2 ranges.
@@ -222,16 +224,17 @@ static DECLCALLBACK(int) pgmR3LivePrep(PVM pVM, PSSMHANDLE pSSM)
             return VERR_NO_MEMORY;
         for (uint32_t iPage = 0; iPage < cPages; iPage++)
         {
+            /* Initialize it as a dirty zero page. */
             paLSPages[iPage].fDirty          = true;
             paLSPages[iPage].cUnchangedScans = 0;
-            paLSPages[iPage].fZero           = false;
+            paLSPages[iPage].fZero           = true;
             paLSPages[iPage].u32CrcH1        = PGM_STATE_CRC32_ZERO_HALF_PAGE;
             paLSPages[iPage].u32CrcH2        = PGM_STATE_CRC32_ZERO_HALF_PAGE;
         }
 
         pgmLock(pVM);
         pMmio2->paLSPages = paLSPages;
-        pVM->pgm.s.LiveSave.cMmio2Pages += cPages;
+        pVM->pgm.s.LiveSave.cDirtyMmio2Pages += cPages;
     }
     pgmUnlock(pVM);
 
@@ -488,6 +491,45 @@ static int pgmR3LoadRomRanges(PVM pVM, PSSMHANDLE pSSM)
         }
         AssertLogRelMsgReturn(pRom, ("GCPhys=%RGp %s\n", GCPhys, szDesc), VERR_SSM_LOAD_CONFIG_MISMATCH);
     } /* forever */
+}
+
+
+/**
+ * Scan ROM pages.
+ *
+ * @param   pVM                 The VM handle.
+ */
+static void pgmR3ScanRomPages(PVM pVM)
+{
+    /*
+     * The shadow ROMs.
+     */
+    pgmLock(pVM);
+    for (PPGMROMRANGE pRom = pVM->pgm.s.pRomRangesR3; pRom; pRom = pRom->pNextR3)
+    {
+        if (pRom->fFlags & PGMPHYS_ROM_FLAGS_SHADOWED)
+        {
+            uint32_t const cPages = pRom->cb >> PAGE_SHIFT;
+            for (uint32_t iPage = 0; iPage < cPages; iPage++)
+            {
+                PPGMROMPAGE pRomPage = &pRom->aPages[iPage];
+                if (pRomPage->LiveSave.fWrittenTo)
+                {
+                    pRomPage->LiveSave.fWrittenTo = false;
+                    if (!pRomPage->LiveSave.fDirty)
+                    {
+                        pRomPage->LiveSave.fDirty = true;
+                        pVM->pgm.s.LiveSave.cReadyPages--;
+                        pVM->pgm.s.LiveSave.cDirtyPages++;
+                    }
+                    pRomPage->LiveSave.fDirtiedRecently = true;
+                }
+                else
+                    pRomPage->LiveSave.fDirtiedRecently = false;
+            }
+        }
+    }
+    pgmUnlock(pVM);
 }
 
 
@@ -772,6 +814,113 @@ static int pgmR3LoadMmio2Ranges(PVM pVM, PSSMHANDLE pSSM)
 }
 
 
+/**
+ * Scans one MMIO2 page.
+ *
+ * @returns True if changed, false if unchanged.
+ *
+ * @param   pVM                 The VM handle
+ * @param   pbPage              The page bits.
+ * @param   pLSPage             The live save tracking structure for the page.
+ *
+ */
+DECLINLINE(bool) pgmR3ScanMmio2Page(PVM pVM, uint8_t const *pbPage, PPGMLIVESAVEMMIO2PAGE pLSPage)
+{
+    /*
+     * Special handling of zero pages.
+     */
+    if (pLSPage->fZero)
+    {
+        if (ASMMemIsZeroPage(pbPage))
+        {
+            /* Not modified. */
+            if (pLSPage->fDirty)
+                pLSPage->cUnchangedScans++;
+            return false;
+        }
+
+        pLSPage->fZero    = false;
+        pLSPage->u32CrcH1 = RTCrc32(pbPage, PAGE_SIZE / 2);
+    }
+    else
+    {
+        /*
+         * CRC the first half, if it doesn't match the page is dirty and
+         * we won't check the 2nd half (we'll do that next time).
+         */
+        uint32_t u32CrcH1 = RTCrc32(pbPage, PAGE_SIZE / 2);
+        if (u32CrcH1 == pLSPage->u32CrcH1)
+        {
+            uint32_t u32CrcH2 = RTCrc32(pbPage + PAGE_SIZE / 2, PAGE_SIZE / 2);
+            if (u32CrcH2 == pLSPage->u32CrcH2)
+            {
+                /* Probably not modified. */
+                if (pLSPage->fDirty)
+                    pLSPage->cUnchangedScans++;
+                return false;
+            }
+
+            pLSPage->u32CrcH2 = u32CrcH2;
+        }
+        else
+        {
+            pLSPage->u32CrcH1 = u32CrcH1;
+            if (    u32CrcH1 == PGM_STATE_CRC32_ZERO_HALF_PAGE
+                &&  ASMMemIsZeroPage(pbPage))
+            {
+                pLSPage->u32CrcH2 = PGM_STATE_CRC32_ZERO_HALF_PAGE;
+                pLSPage->fZero    = true;
+            }
+        }
+    }
+
+    /* dirty page path */
+    pLSPage->cUnchangedScans = 0;
+    if (!pLSPage->fDirty)
+    {
+        pLSPage->fDirty = true;
+        pVM->pgm.s.LiveSave.cReadyPages--;
+        pVM->pgm.s.LiveSave.cDirtyMmio2Pages++;
+    }
+    return true;
+}
+
+
+/**
+ * Scan for MMIO2 page modifications.
+ *
+ * @param   pVM                 The VM handle.
+ * @param   uPass               The pass number.
+ */
+static void pgmR3ScanMmio2Pages(PVM pVM, uint32_t uPass)
+{
+    /*
+     * Only do this every 4th time as it's a little bit expensive.
+     */
+    if (    (uPass & 3) != 0
+        ||  uPass == SSM_PASS_FINAL)
+        return;
+
+    pgmLock(pVM);                       /* paranoia */
+    for (PPGMMMIO2RANGE pMmio2 = pVM->pgm.s.pMmio2RangesR3; pMmio2; pMmio2 = pMmio2->pNextR3)
+    {
+        PPGMLIVESAVEMMIO2PAGE paLSPages = pMmio2->paLSPages;
+        uint8_t const  *pbPage = (uint8_t const *)pMmio2->RamRange.pvR3;
+        uint32_t        cPages = pMmio2->RamRange.cb >> PAGE_SHIFT;
+        pgmUnlock(pVM);
+
+        for (uint32_t iPage = 0; iPage < cPages; iPage++, pbPage += PAGE_SIZE)
+        {
+            uint8_t const *pbPage = (uint8_t const *)pMmio2->pvR3 + iPage * PAGE_SIZE;
+            pgmR3ScanMmio2Page(pVM,pbPage, &paLSPages[iPage]);
+        }
+
+        pgmLock(pVM);
+    }
+    pgmUnlock(pVM);
+
+}
+
 
 /**
  * Save quiescent MMIO2 pages.
@@ -819,213 +968,26 @@ static int pgmR3SaveMmio2Pages(PVM pVM, PSSMHANDLE pSSM, bool fLiveSave, uint32_
         }
         pgmUnlock(pVM);
     }
+    /*
+     * Only do this every 4rd time, two passes after the scan.
+     */
+    else if ((uPass & 3) == 2)
+    {
+        /** @todo  */
+    }
 
     return rc;
 }
 
 
 /**
- * Save quiescent RAM pages.
- *
- * @returns VBox status code.
- * @param   pVM                 The VM handle.
- * @param   pSSM                The SSM handle.
- * @param   fLiveSave           Whether it's a live save or not.
- * @param   uPass               The pass number.
- */
-static int pgmR3SaveRamPages(PVM pVM, PSSMHANDLE pSSM, bool fLiveSave, uint32_t uPass)
-{
-    /*
-     * The RAM.
-     */
-    RTGCPHYS GCPhysLast = NIL_RTGCPHYS;
-    RTGCPHYS GCPhysCur = 0;
-    PPGMRAMRANGE pCur;
-    pgmLock(pVM);
-    do
-    {
-        uint32_t const  idRamRangesGen = pVM->pgm.s.idRamRangesGen;
-        uint32_t        cSinceYield    = 0;
-        for (pCur = pVM->pgm.s.pRamRangesR3; pCur; pCur = pCur->pNextR3)
-        {
-            if (   pCur->GCPhysLast > GCPhysCur
-                && !PGM_RAM_RANGE_IS_AD_HOC(pCur))
-            {
-                PPGMLIVESAVEPAGE paLSPages = pCur->paLSPages;
-                uint32_t         cPages    = pCur->cb >> PAGE_SHIFT;
-                uint32_t         iPage     = GCPhysCur <= pCur->GCPhys ? 0 : (GCPhysCur - pCur->GCPhys) >> PAGE_SHIFT;
-                GCPhysCur = 0;
-                for (; iPage < cPages; iPage++, cSinceYield++)
-                {
-                    /* Do yield first. */
-                    if (    uPass != SSM_PASS_FINAL
-                        &&  (cSinceYield & 0x7ff) == 0x7ff
-                        &&  PDMR3CritSectYield(&pVM->pgm.s.CritSect)
-                        &&  pVM->pgm.s.idRamRangesGen != idRamRangesGen)
-                    {
-                        GCPhysCur = pCur->GCPhys + ((RTGCPHYS)iPage << PAGE_SHIFT);
-                        break; /* restart */
-                    }
-
-                    /*
-                     * Only save pages that hasn't changed since last scan and are dirty.
-                     */
-                    if (    uPass != SSM_PASS_FINAL
-                        &&  paLSPages)
-                    {
-                        if (!paLSPages[iPage].fDirty)
-                            continue;
-                        if (paLSPages[iPage].fWriteMonitoredJustNow)
-                            continue;
-                        if (paLSPages[iPage].fIgnore)
-                            continue;
-                        if (PGM_PAGE_GET_TYPE(&pCur->aPages[iPage]) != PGMPAGETYPE_RAM) /* in case of recent ramppings */
-                            continue;
-                        if (    PGM_PAGE_GET_STATE(&pCur->aPages[iPage])
-                            !=  (  paLSPages[iPage].fZero
-                                 ? PGM_PAGE_STATE_ZERO
-                                 : paLSPages[iPage].fShared
-                                 ? PGM_PAGE_STATE_SHARED
-                                 : PGM_PAGE_STATE_WRITE_MONITORED))
-                            continue;
-                        if (PGM_PAGE_GET_WRITE_LOCKS(&pCur->aPages[iPage]) > 0)
-                            continue;
-                    }
-                    else
-                    {
-                        if (   paLSPages
-                            && !paLSPages[iPage].fDirty
-                            && !paLSPages[iPage].fIgnore)
-                            continue;
-                        if (PGM_PAGE_GET_TYPE(&pCur->aPages[iPage]) != PGMPAGETYPE_RAM)
-                            continue;
-                    }
-
-                    /*
-                     * Do the saving outside the PGM critsect since SSM may block on I/O.
-                     */
-                    int         rc;
-                    RTGCPHYS    GCPhys = pCur->GCPhys + ((RTGCPHYS)iPage << PAGE_SHIFT);
-
-                    if (!PGM_PAGE_IS_ZERO(&pCur->aPages[iPage]))
-                    {
-                        /*
-                         * Copy the page and then save it outside the lock (since any
-                         * SSM call may block).
-                         */
-                        char        abPage[PAGE_SIZE];
-                        void const *pvPage;
-                        rc = pgmPhysGCPhys2CCPtrInternalReadOnly(pVM, &pCur->aPages[iPage], GCPhys, &pvPage);
-                        if (RT_SUCCESS(rc))
-                            memcpy(abPage, pvPage, PAGE_SIZE);
-                        pgmUnlock(pVM);
-                        AssertLogRelMsgRCReturn(rc, ("rc=%Rrc GCPhys=%RGp\n", rc, GCPhys), rc);
-
-                        if (GCPhys == GCPhysLast + PAGE_SIZE)
-                            SSMR3PutU8(pSSM, PGM_STATE_REC_RAM_RAW);
-                        else
-                        {
-                            SSMR3PutU8(pSSM, PGM_STATE_REC_RAM_RAW | PGM_STATE_REC_FLAG_ADDR);
-                            SSMR3PutGCPhys(pSSM, GCPhys);
-                        }
-                        rc = SSMR3PutMem(pSSM, abPage, PAGE_SIZE);
-                    }
-                    else
-                    {
-                        /*
-                         * Dirty zero page.
-                         */
-                        pgmUnlock(pVM);
-
-                        if (GCPhys == GCPhysLast + PAGE_SIZE)
-                            rc = SSMR3PutU8(pSSM, PGM_STATE_REC_RAM_ZERO);
-                        else
-                        {
-                            SSMR3PutU8(pSSM, PGM_STATE_REC_RAM_ZERO | PGM_STATE_REC_FLAG_ADDR);
-                            rc = SSMR3PutGCPhys(pSSM, GCPhys);
-                        }
-                    }
-                    if (RT_FAILURE(rc))
-                        return rc;
-
-                    pgmLock(pVM);
-                    GCPhysLast = GCPhys;
-                    if (paLSPages)
-                    {
-                        paLSPages[iPage].fDirty = 0;
-                        paLSPages[iPage].uPassSaved = uPass;
-                        pVM->pgm.s.LiveSave.cReadyPages++;
-                        pVM->pgm.s.LiveSave.cDirtyPages--;
-                    }
-                    if (idRamRangesGen != pVM->pgm.s.idRamRangesGen)
-                    {
-                        GCPhysCur = GCPhys | PAGE_OFFSET_MASK;
-                        break; /* restart */
-                    }
-
-                } /* for each page in range */
-
-                if (GCPhysCur != 0)
-                    break; /* Yield + ramrange change */
-                GCPhysCur = pCur->GCPhysLast;
-            }
-        } /* for each range */
-    } while (pCur);
-    pgmUnlock(pVM);
-
-    return VINF_SUCCESS;
-}
-
-
-/**
- * Scan for page modifications and reprotect them.
- *
- * Note! Since we don't care about MMIO or MMIO2 pages and since we don't
- *       have any movable ROMs yet, we can safely yield the PGM when we
- *       detect contention.
- *
- *       This holds true for part 2 as well.
+ * Scan for RAM page modifications and reprotect them.
  *
  * @param   pVM                 The VM handle.
  * @param   fFinalPass          Whether this is the final pass or not.
  */
-static void pgmR3LiveExecScanPages(PVM pVM, bool fFinalPass)
+static void pgmR3ScanRamPages(PVM pVM, bool fFinalPass)
 {
-    /*
-     * The shadow ROMs.
-     */
-    pgmLock(pVM);
-    for (PPGMROMRANGE pRom = pVM->pgm.s.pRomRangesR3; pRom; pRom = pRom->pNextR3)
-    {
-        if (pRom->fFlags & PGMPHYS_ROM_FLAGS_SHADOWED)
-        {
-            uint32_t const cPages = pRom->cb >> PAGE_SHIFT;
-            for (uint32_t iPage = 0; iPage < cPages; iPage++)
-            {
-                PPGMROMPAGE pRomPage = &pRom->aPages[iPage];
-                if (pRomPage->LiveSave.fWrittenTo)
-                {
-                    pRomPage->LiveSave.fWrittenTo = false;
-                    if (!pRomPage->LiveSave.fDirty)
-                    {
-                        pRomPage->LiveSave.fDirty = true;
-                        pVM->pgm.s.LiveSave.cReadyPages--;
-                        pVM->pgm.s.LiveSave.cDirtyPages++;
-                    }
-                    pRomPage->LiveSave.fDirtiedRecently = true;
-                }
-                else
-                    pRomPage->LiveSave.fDirtiedRecently = false;
-            }
-        }
-    }
-    pgmUnlock(pVM);
-
-    /*
-     * The MMIO2 ranges.
-     */
-    /* later */
-
     /*
      * The RAM.
      */
@@ -1194,6 +1156,159 @@ static void pgmR3LiveExecScanPages(PVM pVM, bool fFinalPass)
 
 
 /**
+ * Save quiescent RAM pages.
+ *
+ * @returns VBox status code.
+ * @param   pVM                 The VM handle.
+ * @param   pSSM                The SSM handle.
+ * @param   fLiveSave           Whether it's a live save or not.
+ * @param   uPass               The pass number.
+ */
+static int pgmR3SaveRamPages(PVM pVM, PSSMHANDLE pSSM, bool fLiveSave, uint32_t uPass)
+{
+    /*
+     * The RAM.
+     */
+    RTGCPHYS GCPhysLast = NIL_RTGCPHYS;
+    RTGCPHYS GCPhysCur = 0;
+    PPGMRAMRANGE pCur;
+    pgmLock(pVM);
+    do
+    {
+        uint32_t const  idRamRangesGen = pVM->pgm.s.idRamRangesGen;
+        uint32_t        cSinceYield    = 0;
+        for (pCur = pVM->pgm.s.pRamRangesR3; pCur; pCur = pCur->pNextR3)
+        {
+            if (   pCur->GCPhysLast > GCPhysCur
+                && !PGM_RAM_RANGE_IS_AD_HOC(pCur))
+            {
+                PPGMLIVESAVEPAGE paLSPages = pCur->paLSPages;
+                uint32_t         cPages    = pCur->cb >> PAGE_SHIFT;
+                uint32_t         iPage     = GCPhysCur <= pCur->GCPhys ? 0 : (GCPhysCur - pCur->GCPhys) >> PAGE_SHIFT;
+                GCPhysCur = 0;
+                for (; iPage < cPages; iPage++, cSinceYield++)
+                {
+                    /* Do yield first. */
+                    if (    uPass != SSM_PASS_FINAL
+                        &&  (cSinceYield & 0x7ff) == 0x7ff
+                        &&  PDMR3CritSectYield(&pVM->pgm.s.CritSect)
+                        &&  pVM->pgm.s.idRamRangesGen != idRamRangesGen)
+                    {
+                        GCPhysCur = pCur->GCPhys + ((RTGCPHYS)iPage << PAGE_SHIFT);
+                        break; /* restart */
+                    }
+
+                    /*
+                     * Only save pages that hasn't changed since last scan and are dirty.
+                     */
+                    if (    uPass != SSM_PASS_FINAL
+                        &&  paLSPages)
+                    {
+                        if (!paLSPages[iPage].fDirty)
+                            continue;
+                        if (paLSPages[iPage].fWriteMonitoredJustNow)
+                            continue;
+                        if (paLSPages[iPage].fIgnore)
+                            continue;
+                        if (PGM_PAGE_GET_TYPE(&pCur->aPages[iPage]) != PGMPAGETYPE_RAM) /* in case of recent ramppings */
+                            continue;
+                        if (    PGM_PAGE_GET_STATE(&pCur->aPages[iPage])
+                            !=  (  paLSPages[iPage].fZero
+                                 ? PGM_PAGE_STATE_ZERO
+                                 : paLSPages[iPage].fShared
+                                 ? PGM_PAGE_STATE_SHARED
+                                 : PGM_PAGE_STATE_WRITE_MONITORED))
+                            continue;
+                        if (PGM_PAGE_GET_WRITE_LOCKS(&pCur->aPages[iPage]) > 0)
+                            continue;
+                    }
+                    else
+                    {
+                        if (   paLSPages
+                            && !paLSPages[iPage].fDirty
+                            && !paLSPages[iPage].fIgnore)
+                            continue;
+                        if (PGM_PAGE_GET_TYPE(&pCur->aPages[iPage]) != PGMPAGETYPE_RAM)
+                            continue;
+                    }
+
+                    /*
+                     * Do the saving outside the PGM critsect since SSM may block on I/O.
+                     */
+                    int         rc;
+                    RTGCPHYS    GCPhys = pCur->GCPhys + ((RTGCPHYS)iPage << PAGE_SHIFT);
+
+                    if (!PGM_PAGE_IS_ZERO(&pCur->aPages[iPage]))
+                    {
+                        /*
+                         * Copy the page and then save it outside the lock (since any
+                         * SSM call may block).
+                         */
+                        char        abPage[PAGE_SIZE];
+                        void const *pvPage;
+                        rc = pgmPhysGCPhys2CCPtrInternalReadOnly(pVM, &pCur->aPages[iPage], GCPhys, &pvPage);
+                        if (RT_SUCCESS(rc))
+                            memcpy(abPage, pvPage, PAGE_SIZE);
+                        pgmUnlock(pVM);
+                        AssertLogRelMsgRCReturn(rc, ("rc=%Rrc GCPhys=%RGp\n", rc, GCPhys), rc);
+
+                        if (GCPhys == GCPhysLast + PAGE_SIZE)
+                            SSMR3PutU8(pSSM, PGM_STATE_REC_RAM_RAW);
+                        else
+                        {
+                            SSMR3PutU8(pSSM, PGM_STATE_REC_RAM_RAW | PGM_STATE_REC_FLAG_ADDR);
+                            SSMR3PutGCPhys(pSSM, GCPhys);
+                        }
+                        rc = SSMR3PutMem(pSSM, abPage, PAGE_SIZE);
+                    }
+                    else
+                    {
+                        /*
+                         * Dirty zero page.
+                         */
+                        pgmUnlock(pVM);
+
+                        if (GCPhys == GCPhysLast + PAGE_SIZE)
+                            rc = SSMR3PutU8(pSSM, PGM_STATE_REC_RAM_ZERO);
+                        else
+                        {
+                            SSMR3PutU8(pSSM, PGM_STATE_REC_RAM_ZERO | PGM_STATE_REC_FLAG_ADDR);
+                            rc = SSMR3PutGCPhys(pSSM, GCPhys);
+                        }
+                    }
+                    if (RT_FAILURE(rc))
+                        return rc;
+
+                    pgmLock(pVM);
+                    GCPhysLast = GCPhys;
+                    if (paLSPages)
+                    {
+                        paLSPages[iPage].fDirty = 0;
+                        paLSPages[iPage].uPassSaved = uPass;
+                        pVM->pgm.s.LiveSave.cReadyPages++;
+                        pVM->pgm.s.LiveSave.cDirtyPages--;
+                    }
+                    if (idRamRangesGen != pVM->pgm.s.idRamRangesGen)
+                    {
+                        GCPhysCur = GCPhys | PAGE_OFFSET_MASK;
+                        break; /* restart */
+                    }
+
+                } /* for each page in range */
+
+                if (GCPhysCur != 0)
+                    break; /* Yield + ramrange change */
+                GCPhysCur = pCur->GCPhysLast;
+            }
+        } /* for each range */
+    } while (pCur);
+    pgmUnlock(pVM);
+
+    return VINF_SUCCESS;
+}
+
+
+/**
  * Execute a live save pass.
  *
  * @returns VBox status code.
@@ -1221,7 +1336,9 @@ static DECLCALLBACK(int) pgmR3LiveExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uPass)
     /*
      * Do the scanning.
      */
-    pgmR3LiveExecScanPages(pVM, false /*fFinalPass*/);
+    pgmR3ScanRomPages(pVM);
+    pgmR3ScanMmio2Pages(pVM, uPass);
+    pgmR3ScanRamPages(pVM, false /*fFinalPass*/);
     pgmR3PoolClearAll(pVM); /** @todo this could perhaps be optimized a bit. */
 
     /*
@@ -1383,7 +1500,10 @@ static DECLCALLBACK(int) pgmR3SaveExec(PVM pVM, PSSMHANDLE pSSM)
     {
         if (pVM->pgm.s.LiveSave.fActive)
         {
-            pgmR3LiveExecScanPages(pVM, true /*fFinalPass*/);
+            pgmR3ScanRomPages(pVM);
+            pgmR3ScanMmio2Pages(pVM, SSM_PASS_FINAL);
+            pgmR3ScanRamPages(pVM, true /*fFinalPass*/);
+
             rc = pgmR3SaveShadowedRomPages(    pVM, pSSM, true /*fLiveSave*/, true /*fFinalPass*/);
             if (RT_SUCCESS(rc))
                 rc = pgmR3SaveMmio2Pages(      pVM, pSSM, true /*fLiveSave*/, SSM_PASS_FINAL);

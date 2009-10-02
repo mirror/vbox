@@ -1278,10 +1278,10 @@ typedef struct PGMLIVESAVEMMIO2PAGE
     /** The number of scans this page has remained unchanged for.
      * Only updated for dirty pages. */
     uint8_t     cUnchangedScans;
-   /** Whether this page was zero at the last scan. */
+    /** Whether this page was zero at the last scan. */
     bool        fZero;
-     /** Alignment padding. */
-    uint8_t     u8Padding;
+    /** Alignment padding. */
+    bool        fReserved;
     /** CRC-32 for the first half of the page.
      * This is used together with u32CrcH2 to quickly detect changes in the page
      * during the non-final passes.  */
@@ -2719,8 +2719,8 @@ typedef struct PGM
         uint32_t                    cMonitoredPages;
         /** The number of ignored pages.  */
         uint32_t                    cIgnoredPages;
-        /** The number of MMIO2 pages. */
-        uint32_t                    cMmio2Pages;
+        /** The number of dirty MMIO2 pages. */
+        uint32_t                    cDirtyMmio2Pages;
         /** Indicates that a live save operation is active.  */
         bool                        fActive;
         /** Padding. */
