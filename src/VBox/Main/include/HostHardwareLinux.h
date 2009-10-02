@@ -28,12 +28,6 @@
 #include <iprt/ministring_cpp.h>
 #include <vector>
 
-/** This should only be enabled when testing.  It causes all methods to be used
- * when probing for drives instead of stopping as soon as one method is
- * successful.  This is a global instead of a define in order to keep the test
- * code closer to the real code. */
-extern bool g_testHostHardwareLinux;
-
 /**
  * Class for probing and returning information about host DVD and floppy
  * drives.  To use this class, create an instance, call one of the update

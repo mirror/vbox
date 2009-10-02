@@ -36,6 +36,7 @@
 #include <iprt/file.h>
 #include <iprt/mem.h>
 #include <iprt/param.h>
+#include <iprt/path.h>
 #include <iprt/thread.h>  /* for RTThreadSleep() */
 #include <iprt/string.h>
 
@@ -53,41 +54,46 @@
 # define _LINUX_BYTEORDER_SWABB_H
 # include <linux/cdrom.h>
 # include <linux/fd.h>
+# include <linux/major.h>
 # ifdef VBOX_WITH_DBUS
 #  include <vbox-dbus.h>
 # endif
 # include <errno.h>
 # include <scsi/scsi.h>
-# include <scsi/sg.h>
 
 # include <iprt/linux/sysfs.h>
 #endif /* RT_OS_LINUX */
 #include <vector>
 
-/*******************************************************************************
-*   Global Variables                                                           *
-*******************************************************************************/
+/******************************************************************************
+*   Global Variables                                                          *
+******************************************************************************/
 
-bool g_testHostHardwareLinux = false;
-static bool testing () { return g_testHostHardwareLinux; }
+#ifdef TESTCASE
+static bool testing() { return true; }
+static bool fNoProbe = false;
+static bool noProbe() { return fNoProbe; }
+static void setNoProbe(bool val) { fNoProbe = val; }
+#else
+static bool testing() { return false; }
+static bool noProbe() { return false; }
+static void setNoProbe(bool val) { (void)val; }
+#endif
 
-/*******************************************************************************
-*   Typedefs and Defines                                                       *
-*******************************************************************************/
+/******************************************************************************
+*   Typedefs and Defines                                                      *
+******************************************************************************/
 
 /** When waiting for hotplug events, we currently restart the wait after at
  * most this many milliseconds. */
 enum { DBUS_POLL_TIMEOUT = 2000 /* ms */ };
 
-
-static bool validateDevice(const char *deviceNode, bool isDVD);
-static int getDriveInfoFromEnv(const char *pszVar, DriveInfoList *pList,
+static int getDriveInfoFromEnv(const char *pcszVar, DriveInfoList *pList,
                                bool isDVD, bool *pfSuccess);
+static int getDriveInfoFromDev(DriveInfoList *pList, bool isDVD,
+                               bool *pfSuccess);
 static int getDriveInfoFromSysfs(DriveInfoList *pList, bool isDVD,
                                  bool *pfSuccess);
-int scsiDoInquiry(const char *pszNode, uint8_t *pu8Type, char *pchVendor,
-                  size_t cchVendor, char *pchModel, size_t cchModel);
-static int getDVDInfoFromMTab(char *mountTable, DriveInfoList *pList);
 #ifdef VBOX_WITH_DBUS
 /* These must be extern to be usable in the RTMemAutoPtr template */
 extern void VBoxHalShutdown (DBusConnection *pConnection);
@@ -118,8 +124,6 @@ static int halGetPropertyStringsVector (DBusConnection *pConnection,
                                         std::vector<iprt::MiniString> *pMatches,
                                         bool *pfMatches, bool *pfSuccess);
 */
-static int getDriveInfoFromHal(DriveInfoList *pList, bool isDVD,
-                               bool *pfSuccess);
 static int getUSBDeviceInfoFromHal(USBDeviceInfoList *pList, bool *pfSuccess);
 static int getOldUSBDeviceInfoFromHal(USBDeviceInfoList *pList, bool *pfSuccess);
 static int getUSBInterfacesFromHal(std::vector <iprt::MiniString> *pList,
@@ -128,16 +132,350 @@ static DBusHandlerResult dbusFilterFunction (DBusConnection *pConnection,
                                              DBusMessage *pMessage, void *pvUser);
 #endif  /* VBOX_WITH_DBUS */
 
+
 /** Find the length of a string, ignoring trailing non-ascii or control
  * characters */
-static size_t strLenStripped(const char *psz)
+static size_t strLenStripped(const char *pcsz)
 {
     size_t cch = 0;
-    for (size_t i = 0; psz[i] != '\0'; ++i)
-        if (psz[i] > 32 && psz[i] < 127)
+    for (size_t i = 0; pcsz[i] != '\0'; ++i)
+        if (pcsz[i] > 32 && pcsz[i] < 127)
             cch = i;
     return cch + 1;
 }
+
+
+static bool floppyGetName(const char *pcszNode, unsigned Number,
+                          floppy_drive_name pszName)
+{
+    AssertPtrReturn(pcszNode, false);
+    AssertPtrReturn(pszName, false);
+    AssertReturn(Number <= 7, false);
+    RTFILE File;
+    int rc = RTFileOpen(&File, pcszNode, RTFILE_O_READ | RTFILE_O_NON_BLOCK);
+    if (RT_SUCCESS(rc))
+    {
+        int rcIoCtl;
+        /** @todo The next line can produce a warning, as the ioctl request
+         * field is defined as signed, but the Linux ioctl definition macros
+         * produce unsigned constants. */
+        rc = RTFileIoCtl(File, FDGETDRVTYP, pszName, 0, &rcIoCtl);
+        RTFileClose(File);
+        if (RT_SUCCESS(rc) && rcIoCtl >= 0)
+            return true;
+    }
+    return false;
+}
+
+
+/**
+ * Create a UDI and a description for a floppy drive based on a number and the
+ * driver's name for it.  We deliberately return an ugly sequence of
+ * characters as the description rather than an English language string to
+ * avoid translation issues.
+ *
+ * @returns true if we know the device to be valid, false otherwise
+ * @param   pcszName     the floppy driver name for the device (optional)
+ * @param   Number       the number of the floppy (0 to 3 on FDC 0, 4 to 7 on
+ *                       FDC 1)
+ * @param   pszDesc      where to store the device description (optional)
+ * @param   cchDesc      the size of the buffer in @a pszDesc
+ * @param   pszUdi       where to store the device UDI (optional)
+ * @param   cchUdi       the size of the buffer in @a pszUdi
+ */
+static void floppyCreateDeviceStrings(const floppy_drive_name pcszName,
+                                      unsigned Number, char *pszDesc,
+                                      size_t cchDesc, char *pszUdi,
+                                      size_t cchUdi)
+{
+    AssertPtrNullReturnVoid(pcszName);
+    AssertPtrNullReturnVoid(pszDesc);
+    AssertReturnVoid(!pszDesc || cchDesc > 0);
+    AssertPtrNullReturnVoid(pszUdi);
+    AssertReturnVoid(!pszUdi || cchUdi > 0);
+    AssertReturnVoid(Number <= 7);
+    if (pcszName)
+    {
+        const char *pcszSize;
+        switch(pcszName[0])
+        {
+            case 'd': case 'q': case 'h':
+                pcszSize = "5.25\"";
+                break;
+            case 'D': case 'H': case 'E': case 'u':
+                pcszSize = "3.5\"";
+                break;
+            default:
+                pcszSize = "(unknown)";
+        }
+        if (pszDesc)
+            RTStrPrintf(pszDesc, cchDesc, "%s %s K%s", pcszSize, &pcszName[1],
+                        Number > 3 ? ", FDC 2" : "");
+    }
+    else
+    {
+        if (pszDesc)
+            RTStrPrintf(pszDesc, cchDesc, "FDD %d%s", (Number & 4) + 1,
+                        Number > 3 ? ", FDC 2" : "");
+    }
+    if (pszUdi)
+        RTStrPrintf(pszUdi, cchUdi,
+                    "/org/freedesktop/Hal/devices/platform_floppy_%u_storage",
+                    Number);
+}
+
+
+static bool isCdromDevNum(dev_t Number)
+{
+    int major = major(Number);
+    int minor = minor(Number);
+    if ((major == IDE0_MAJOR) && !(minor & 0x3f))
+        return true;
+    if (major == SCSI_CDROM_MAJOR)
+        return true;
+    if (major == CDU31A_CDROM_MAJOR)
+        return true;
+    if (major == GOLDSTAR_CDROM_MAJOR)
+        return true;
+    if (major == OPTICS_CDROM_MAJOR)
+        return true;
+    if (major == SANYO_CDROM_MAJOR)
+        return true;
+    if (major == MITSUMI_X_CDROM_MAJOR)
+        return true;
+    if ((major == IDE1_MAJOR) && !(minor & 0x3f))
+        return true;
+    if (major == MITSUMI_CDROM_MAJOR)
+        return true;
+    if (major == CDU535_CDROM_MAJOR)
+        return true;
+    if (major == MATSUSHITA_CDROM_MAJOR)
+        return true;
+    if (major == MATSUSHITA_CDROM2_MAJOR)
+        return true;
+    if (major == MATSUSHITA_CDROM3_MAJOR)
+        return true;
+    if (major == MATSUSHITA_CDROM4_MAJOR)
+        return true;
+    if (major == AZTECH_CDROM_MAJOR)
+        return true;
+    if (major == 30 /* CM205_CDROM_MAJOR */)  /* no #define for some reason */
+        return true;
+    if (major == CM206_CDROM_MAJOR)
+        return true;
+    if ((major == IDE3_MAJOR) && !(minor & 0x3f))
+        return true;
+    if (major == 46 /* Parallel port ATAPI CD-ROM */)  /* no #define */
+        return true;
+    if ((major == IDE4_MAJOR) && !(minor & 0x3f))
+        return true;
+    if ((major == IDE5_MAJOR) && !(minor & 0x3f))
+        return true;
+    if ((major == IDE6_MAJOR) && !(minor & 0x3f))
+        return true;
+    if ((major == IDE7_MAJOR) && !(minor & 0x3f))
+        return true;
+    if ((major == IDE8_MAJOR) && !(minor & 0x3f))
+        return true;
+    if ((major == IDE9_MAJOR) && !(minor & 0x3f))
+        return true;
+    if (major == 113 /* VIOCD_MAJOR */)
+        return true;
+    return false;
+}
+
+
+/**
+ * Send an SCSI INQUIRY command to a device and return selected information.
+ * @returns  iprt status code
+ * @returns  VERR_TRY_AGAIN if the query failed but might succeed next time
+ * @param pcszNode    the full path to the device node
+ * @param pu8Type    where to store the SCSI device type on success (optional)
+ * @param pchVendor  where to store the vendor id string on success (optional)
+ * @param cchVendor  the size of the @a pchVendor buffer
+ * @param pchModel   where to store the product id string on success (optional)
+ * @param cchModel   the size of the @a pchModel buffer
+ * @note check documentation on the SCSI INQUIRY command and the Linux kernel
+ *       SCSI headers included above if you want to understand what is going
+ *       on in this method.
+ */
+static int cdromDoInquiry(const char *pcszNode, uint8_t *pu8Type,
+                          char *pchVendor, size_t cchVendor, char *pchModel,
+                          size_t cchModel)
+{
+    LogRelFlowFunc(("pcszNode=%s, pu8Type=%p, pchVendor=%p, cchVendor=%llu, pchModel=%p, cchModel=%llu\n",
+                    pcszNode, pu8Type, pchVendor, cchVendor, pchModel,
+                    cchModel));
+    AssertPtrReturn(pcszNode, VERR_INVALID_POINTER);
+    AssertPtrNullReturn(pu8Type, VERR_INVALID_POINTER);
+    AssertPtrNullReturn(pchVendor, VERR_INVALID_POINTER);
+    AssertPtrNullReturn(pchModel, VERR_INVALID_POINTER);
+
+    unsigned char u8Response[96] = { 0 };
+    struct cdrom_generic_command CdromCommandReq =
+    { { INQUIRY, 0, 0, 0, sizeof(u8Response), 0 }  /* INQUIRY */ };
+    int rc, rcIoCtl = 0;
+    RTFILE file;
+    rc = RTFileOpen(&file, pcszNode, RTFILE_O_READ | RTFILE_O_NON_BLOCK);
+    if (RT_SUCCESS(rc))
+    {
+        CdromCommandReq.buffer = u8Response;
+        CdromCommandReq.buflen = sizeof(u8Response);
+        CdromCommandReq.data_direction = CGC_DATA_READ;
+        CdromCommandReq.timeout = 5000;  /* ms */
+        rc = RTFileIoCtl(file, CDROM_SEND_PACKET, &CdromCommandReq, 0,
+                         &rcIoCtl);
+        if (RT_SUCCESS(rc) && rcIoCtl < 0)
+            rc = RTErrConvertFromErrno(-CdromCommandReq.stat);
+        RTFileClose(file);
+    }
+    if (RT_SUCCESS(rc))
+    {
+        if (pu8Type)
+            *pu8Type = u8Response[0] & 0x1f;
+        if (pchVendor)
+            RTStrPrintf(pchVendor, cchVendor, "%.8s",
+                        (char *) &u8Response[8] /* vendor id string */);
+        if (pchModel)
+            RTStrPrintf(pchModel, cchModel, "%.16s",
+                        (char *) &u8Response[16] /* product id string */);
+    }
+    LogRelFlowFunc(("returning %Rrc\n", rc));
+    if (RT_SUCCESS(rc))
+        LogRelFlowFunc(("    type=%u, vendor=%.8s, product=%.16s\n",
+                        u8Response[0] & 0x1f, (char *) &u8Response[8],
+                        (char *) &u8Response[16]));
+    return rc;
+}
+
+
+/**
+ * Initialise the device strings (description and UDI) for a DVD drive based on
+ * vendor and model name strings.
+ * @param pcszVendor  the vendor ID string
+ * @param pcszModel   the product ID string
+ * @param pszDesc    where to store the description string (optional)
+ * @param cchDesc    the size of the buffer in @pszDesc
+ * @param pszUdi     where to store the UDI string (optional)
+ * @param cchUdi     the size of the buffer in @pszUdi
+ */
+/* static */
+void dvdCreateDeviceStrings(const char *pcszVendor, const char *pcszModel,
+                            char *pszDesc, size_t cchDesc, char *pszUdi,
+                            size_t cchUdi)
+{
+    AssertPtrReturnVoid(pcszVendor);
+    AssertPtrReturnVoid(pcszModel);
+    AssertPtrNullReturnVoid(pszDesc);
+    AssertReturnVoid(!pszDesc || cchDesc > 0);
+    AssertPtrNullReturnVoid(pszUdi);
+    AssertReturnVoid(!pszUdi || cchUdi > 0);
+    char szCleaned[128];
+    size_t cchVendor = strLenStripped(pcszVendor);
+    size_t cchModel = strLenStripped(pcszModel);
+
+    /* Create a cleaned version of the model string for the UDI string. */
+    for (unsigned i = 0; pcszModel[i] != '\0' && i < sizeof(szCleaned); ++i)
+        if (   (pcszModel[i] >= '0' && pcszModel[i] <= '9')
+            || (pcszModel[i] >= 'A' && pcszModel[i] <= 'z'))
+            szCleaned[i] = pcszModel[i];
+        else
+            szCleaned[i] = '_';
+    szCleaned[RT_MIN(cchModel, sizeof(szCleaned) - 1)] = '\0';
+
+    /* Construct the description string as "Vendor Product" */
+    if (pszDesc)
+    {
+        if (cchVendor > 0)
+            RTStrPrintf(pszDesc, cchDesc, "%.*s %s", cchVendor, pcszVendor,
+                        cchModel > 0 ? pcszModel : "(unknown drive model)");
+        else
+            RTStrPrintf(pszDesc, cchDesc, "%s", pcszModel);
+    }
+    /* Construct the UDI string */
+    if (pszUdi)
+    {
+        if (cchModel > 0)
+            RTStrPrintf(pszUdi, cchUdi,
+                        "/org/freedesktop/Hal/devices/storage_model_%s",
+                        szCleaned);
+        else
+            pszUdi[0] = '\0';
+    }
+}
+
+
+/**
+ * Check whether a device node points to a valid device and create a UDI and
+ * a description for it, and store the device number, if it does.
+ * @returns true if the device is valid, false otherwise
+ * @param   pcszNode   the path to the device node
+ * @param   isDVD     are we looking for a DVD device (or a floppy device)?
+ * @param   pDevice   where to store the device node (optional)
+ * @param   pszDesc   where to store the device description (optional)
+ * @param   cchDesc   the size of the buffer in @a pszDesc
+ * @param   pszUdi    where to store the device UDI (optional)
+ * @param   cchUdi    the size of the buffer in @a pszUdi
+ */
+static bool devValidateDevice(const char *pcszNode, bool isDVD, dev_t *pDevice,
+                              char *pszDesc, size_t cchDesc, char *pszUdi,
+                              size_t cchUdi)
+{
+    AssertPtrReturn(pcszNode, false);
+    AssertPtrNullReturn(pDevice, false);
+    AssertPtrNullReturn(pszDesc, false);
+    AssertReturn(!pszDesc || cchDesc > 0, false);
+    AssertPtrNullReturn(pszUdi, false);
+    AssertReturn(!pszUdi || cchUdi > 0, false);
+    RTFSOBJINFO ObjInfo;
+    if (RT_FAILURE(RTPathQueryInfo(pcszNode, &ObjInfo, RTFSOBJATTRADD_UNIX)))
+        return false;
+    if (!RTFS_IS_DEV_BLOCK(ObjInfo.Attr.fMode))
+        return false;
+    if (pDevice)
+        *pDevice = ObjInfo.Attr.u.Unix.Device;
+    if (isDVD)
+    {
+        char szVendor[128], szModel[128];
+        uint8_t u8Type;
+        if (!isCdromDevNum(ObjInfo.Attr.u.Unix.Device))
+            return false;
+        if (RT_FAILURE(cdromDoInquiry(pcszNode, &u8Type,
+                                      szVendor, sizeof(szVendor),
+                                      szModel, sizeof(szModel))))
+            return false;
+        if (u8Type != TYPE_ROM)
+            return false;
+        dvdCreateDeviceStrings(szVendor, szModel, pszDesc, cchDesc,
+                               pszUdi, cchUdi);
+    }
+    else
+    {
+        /* Floppies on Linux are legacy devices with hardcoded majors and
+         * minors */
+        unsigned Number;
+        floppy_drive_name szName;
+        if (major(ObjInfo.Attr.u.Unix.Device) != FLOPPY_MAJOR)
+            return false;
+        switch (minor(ObjInfo.Attr.u.Unix.Device))
+        {
+            case 0: case 1: case 2: case 3:
+                Number = minor(ObjInfo.Attr.u.Unix.Device);
+                break;
+            case 128: case 129: case 130: case 131:
+                Number = minor(ObjInfo.Attr.u.Unix.Device) - 128 + 4;
+                break;
+            default:
+                return false;
+        }
+        if (!floppyGetName(pcszNode, Number, szName))
+            return false;
+        floppyCreateDeviceStrings(szName, Number, pszDesc, cchDesc, pszUdi,
+                                  cchUdi);
+    }
+    return true;
+}
+
 
 int VBoxMainDriveInfo::updateDVDs ()
 {
@@ -147,37 +485,22 @@ int VBoxMainDriveInfo::updateDVDs ()
     try
     {
         mDVDList.clear ();
-#if defined(RT_OS_LINUX)
         /* Always allow the user to override our auto-detection using an
          * environment variable. */
         if (RT_SUCCESS(rc) && (!success || testing()))
             rc = getDriveInfoFromEnv ("VBOX_CDROM", &mDVDList, true /* isDVD */,
                                       &success);
-#ifdef VBOX_WITH_DBUS
-        if (RT_SUCCESS(rc) && RT_SUCCESS(VBoxLoadDBusLib()) && (!success || testing()))
-            rc = getDriveInfoFromHal(&mDVDList, true /* isDVD */, &success);
-#endif /* VBOX_WITH_DBUS defined */
+        setNoProbe(false);
         if (RT_SUCCESS(rc) && (!success | testing()))
             rc = getDriveInfoFromSysfs(&mDVDList, true /* isDVD */, &success);
-        /* On Linux without hal, the situation is much more complex. We will
-         * take a heuristical approach.  The general strategy is to try some
-         * known device names and see of they exist.  Failing that, we
-         * enumerate the /etc/fstab file (luckily there's an API to parse it)
-         * for CDROM devices. Ok, let's start! */
-        if (RT_SUCCESS(rc) && (!success || testing()))
+        if (RT_SUCCESS(rc) && testing())
         {
-            // this is a good guess usually
-            if (validateDevice("/dev/cdrom", true))
-                mDVDList.push_back(DriveInfo ("/dev/cdrom"));
-
-            // check the mounted drives
-            rc = getDVDInfoFromMTab((char*)"/etc/mtab", &mDVDList);
-
-            // check the drives that can be mounted
-            if (RT_SUCCESS(rc))
-                rc = getDVDInfoFromMTab((char*)"/etc/fstab", &mDVDList);
+            setNoProbe(true);
+            rc = getDriveInfoFromSysfs(&mDVDList, true /* isDVD */, &success);
         }
-#endif
+        /* Walk through the /dev subtree if nothing else has helped. */
+        if (RT_SUCCESS(rc) && (!success | testing()))
+            rc = getDriveInfoFromDev(&mDVDList, true /* isDVD */, &success);
     }
     catch(std::bad_alloc &e)
     {
@@ -195,37 +518,22 @@ int VBoxMainDriveInfo::updateFloppies ()
     try
     {
         mFloppyList.clear ();
-#if defined(RT_OS_LINUX)
         if (RT_SUCCESS(rc) && (!success || testing()))
-            rc = getDriveInfoFromEnv ("VBOX_FLOPPY", &mFloppyList, false /* isDVD */,
-                                      &success);
-#ifdef VBOX_WITH_DBUS
-        if (   RT_SUCCESS(rc)
-            && RT_SUCCESS(VBoxLoadDBusLib())
-            && (!success || testing()))
-            rc = getDriveInfoFromHal(&mFloppyList, false /* isDVD */, &success);
-#endif /* VBOX_WITH_DBUS defined */
-        if (   RT_SUCCESS(rc)
-            && RT_SUCCESS(VBoxLoadDBusLib())
-            && (!success || testing()))
-            rc = getDriveInfoFromHal(&mFloppyList, false /* isDVD */, &success);
-        /* As with the CDROMs, on Linux we have to take a multi-level approach
-         * involving parsing the mount tables. As this is not bulletproof, we
-         * give the user the chance to override the detection using an
-         * environment variable, skiping the detection. */
-
-        if (RT_SUCCESS(rc) && (!success || testing()))
+            rc = getDriveInfoFromEnv("VBOX_FLOPPY", &mFloppyList,
+                                     false /* isDVD */, &success);
+        setNoProbe(false);
+        if (   RT_SUCCESS(rc) && (!success || testing()))
+            rc = getDriveInfoFromSysfs(&mFloppyList, false /* isDVD */,
+                                       &success);
+        if (RT_SUCCESS(rc) && testing())
         {
-            // we assume that a floppy is always /dev/fd[x] with x from 0 to 7
-            char devName[10];
-            for (int i = 0; i <= 7; i++)
-            {
-                RTStrPrintf(devName, sizeof(devName), "/dev/fd%d", i);
-                if (validateDevice(devName, false))
-                    mFloppyList.push_back (DriveInfo (devName));
-            }
+            setNoProbe(true);
+            rc = getDriveInfoFromSysfs(&mFloppyList, false /* isDVD */, &success);
         }
-#endif
+        /* Walk through the /dev subtree if nothing else has helped. */
+        if (   RT_SUCCESS(rc) && (!success || testing()))
+            rc = getDriveInfoFromDev(&mFloppyList, false /* isDVD */,
+                                     &success);
     }
     catch(std::bad_alloc &e)
     {
@@ -234,6 +542,451 @@ int VBoxMainDriveInfo::updateFloppies ()
     LogFlowThisFunc(("rc=%Rrc\n", rc));
     return rc;
 }
+
+
+/**
+ * Extract the names of drives from an environment variable and add them to a
+ * list if they are valid.
+ * @returns iprt status code
+ * @param   pcszVar     the name of the environment variable.  The variable
+ *                     value should be a list of device node names, separated
+ *                     by ':' characters.
+ * @param   pList      the list to append the drives found to
+ * @param   isDVD      are we looking for DVD drives or for floppies?
+ * @param   pfSuccess  this will be set to true if we found at least one drive
+ *                     and to false otherwise.  Optional.
+ */
+/* static */
+int getDriveInfoFromEnv(const char *pcszVar, DriveInfoList *pList,
+                        bool isDVD, bool *pfSuccess)
+{
+    AssertPtrReturn(pcszVar, VERR_INVALID_POINTER);
+    AssertPtrReturn(pList, VERR_INVALID_POINTER);
+    AssertPtrNullReturn(pfSuccess, VERR_INVALID_POINTER);
+    LogFlowFunc(("pcszVar=%s, pList=%p, isDVD=%d, pfSuccess=%p\n", pcszVar,
+                 pList, isDVD, pfSuccess));
+    int rc = VINF_SUCCESS;
+    bool success = false;
+
+    try
+    {
+        const char *pcszCurrent = RTEnvGet (pcszVar);
+        while (pcszCurrent && *pcszCurrent != '\0')
+        {
+            const char *pcszNext = strchr(pcszCurrent, ':');
+            char szPath[RTPATH_MAX], szReal[RTPATH_MAX];
+            char szDesc[256], szUdi[256];
+            if (pcszNext)
+                RTStrPrintf(szPath, sizeof(szPath), "%.*s",
+                            pcszNext - pcszCurrent - 1, pcszCurrent);
+            else
+                RTStrPrintf(szPath, sizeof(szPath), "%s", pcszCurrent);
+            if (   RT_SUCCESS(RTPathReal(szPath, szReal, sizeof(szReal)))
+                && devValidateDevice(szReal, isDVD, NULL, szDesc,
+                                     sizeof(szDesc), szUdi, sizeof(szUdi)))
+            {
+                pList->push_back(DriveInfo(szReal, szUdi, szDesc));
+                success = true;
+            }
+            pcszCurrent = pcszNext ? pcszNext + 1 : NULL;
+        }
+        if (pfSuccess != NULL)
+            *pfSuccess = success;
+    }
+    catch(std::bad_alloc &e)
+    {
+        rc = VERR_NO_MEMORY;
+    }
+    LogFlowFunc (("rc=%Rrc, success=%d\n", rc, success));
+    return rc;
+}
+
+
+class sysfsBlockDev
+{
+public:
+    sysfsBlockDev(const char *pcszName, bool wantDVD)
+            : mpcszName(pcszName), mwantDVD(wantDVD), misConsistent(true),
+              misValid(false)
+    {
+        if (findDeviceNode())
+        {
+            if (mwantDVD)
+                validateAndInitForDVD();
+            else
+                validateAndInitForFloppy();
+        }
+    }
+private:
+    /** The name of the subdirectory of /sys/block for this device */
+    const char *mpcszName;
+    /** Are we looking for a floppy or a DVD device? */
+    bool mwantDVD;
+    /** The device node for the device */
+    char mszNode[RTPATH_MAX];
+    /** Does the sysfs entry look like we expect it too?  This is a canary
+     * for future sysfs ABI changes. */
+    bool misConsistent;
+    /** Is this entry a valid specimen of what we are looking for? */
+    bool misValid;
+    /** Human readible drive description string */
+    char mszDesc[256];
+    /** Unique identifier for the drive.  Should be identical to hal's UDI for
+     * the device.  May not be unique for two identical drives. */
+    char mszUdi[256];
+private:
+    /* Private methods */
+
+    /**
+     * Fill in the device node member based on the /sys/block subdirectory.
+     * @returns boolean success value
+     */
+    bool findDeviceNode()
+    {
+        dev_t dev = RTLinuxSysFsReadDevNumFile("block/%s/dev", mpcszName);
+        if (dev == 0)
+        {
+            misConsistent = false;
+            return false;
+        }
+        if (RTLinuxFindDevicePath(dev, RTFS_TYPE_DEV_BLOCK, mszNode,
+                                  sizeof(mszNode), "%s", mpcszName) < 0)
+            return false;
+        return true;
+    }
+
+    /** Check whether the sysfs block entry is valid for a DVD device and
+     * initialise the string data members for the object.  We try to get all
+     * the information we need from sysfs if possible, to avoid unnecessarily
+     * poking the device, and if that fails we fall back to an SCSI INQUIRY
+     * command. */
+    void validateAndInitForDVD()
+    {
+        char szVendor[128], szModel[128];
+        ssize_t cchVendor, cchModel;
+        int64_t type = RTLinuxSysFsReadIntFile(10, "block/%s/device/type",
+                                               mpcszName);
+        if (type >= 0 && type != TYPE_ROM)
+            return;
+        if (type == TYPE_ROM)
+        {
+            cchVendor = RTLinuxSysFsReadStrFile(szVendor, sizeof(szVendor),
+                                                "block/%s/device/vendor",
+                                                mpcszName);
+            if (cchVendor >= 0)
+            {
+                cchModel = RTLinuxSysFsReadStrFile(szModel, sizeof(szModel),
+                                                   "block/%s/device/model",
+                                                   mpcszName);
+                if (cchModel >= 0)
+                {
+                    misValid = true;
+                    dvdCreateDeviceStrings(szVendor, szModel,
+                                           mszDesc, sizeof(mszDesc),
+                                           mszUdi, sizeof(mszUdi));
+                    return;
+                }
+            }
+        }
+        if (!noProbe())
+            probeAndInitForDVD();
+    }
+
+    /** Try to find out whether a device is a DVD drive by sending it an
+     * SCSI INQUIRY command.  If it is, initialise the string and validity
+     * data members for the object based on the returned data.
+     */
+    void probeAndInitForDVD()
+    {
+        AssertReturnVoid(mszNode[0] != '\0');
+        uint8_t u8Type = 0;
+        char szVendor[128] = "";
+        char szModel[128] = "";
+        int rc = cdromDoInquiry(mszNode, &u8Type, szVendor,
+                                sizeof(szVendor), szModel,
+                                sizeof(szModel));
+        if (RT_SUCCESS(rc) && (u8Type == TYPE_ROM))
+        {
+            misValid = true;
+            dvdCreateDeviceStrings(szVendor, szModel, mszDesc, sizeof(mszDesc),
+                                   mszUdi, sizeof(mszUdi));
+        }
+    }
+
+    /** Check whether the sysfs block entry is valid for a floppy device and
+     * initialise the string data members for the object.  Since we only
+     * support floppies using the basic "floppy" driver, we check the driver
+     * using the entry name and a driver-specific ioctl. */
+    void validateAndInitForFloppy()
+    {
+        bool haveName = false;
+        floppy_drive_name szName;
+        char szDriver[8];
+        if (   mpcszName[0] != 'f'
+            || mpcszName[1] != 'd'
+            || mpcszName[2] < '0'
+            || mpcszName[2] > '7'
+            || mpcszName[3] != '\0')
+            return;
+        if (!noProbe())
+            haveName = floppyGetName(mszNode, mpcszName[2] - '0', szName);
+        if (RTLinuxSysFsGetLinkDest(szDriver, sizeof(szDriver), "block/%s/%s",
+                                    mpcszName, "device/driver") >= 0)
+        {
+            if (RTStrCmp(szDriver, "floppy"))
+                return;
+        }
+        else if (!haveName)
+            return;
+        floppyCreateDeviceStrings(haveName ? szName : NULL,
+                                  mpcszName[2] - '0', mszDesc,
+                                  sizeof(mszDesc), mszUdi, sizeof(mszUdi));
+        misValid = true;
+    }
+
+public:
+    bool isConsistent()
+    {
+        return misConsistent;
+    }
+    bool isValid()
+    {
+        return misValid;
+    }
+    const char *getDesc()
+    {
+        return mszDesc;
+    }
+    const char *getUdi()
+    {
+        return mszUdi;
+    }
+    const char *getNode()
+    {
+        return mszNode;
+    }
+};
+
+/**
+ * Helper function to query the sysfs subsystem for information about DVD
+ * drives attached to the system.
+ * @returns iprt status code
+ * @param   pList      where to add information about the drives detected
+ * @param   isDVD      are we looking for DVDs or floppies?
+ * @param   pfSuccess  Did we find anything?
+ *
+ * @returns IPRT status code
+ */
+/* static */
+int getDriveInfoFromSysfs(DriveInfoList *pList, bool isDVD, bool *pfSuccess)
+{
+    AssertPtrReturn(pList, VERR_INVALID_POINTER);
+    AssertPtrNullReturn(pfSuccess, VERR_INVALID_POINTER); /* Valid or Null */
+    LogFlowFunc (("pList=%p, isDVD=%u, pfSuccess=%p\n",
+                  pList, (unsigned) isDVD, pfSuccess));
+    PRTDIR pDir = NULL;
+    RTDIRENTRY entry = {0};
+    int rc;
+    bool fSuccess = false;
+    unsigned cFound = 0;
+
+    if (!RTPathExists("/sys"))
+        return VINF_SUCCESS;
+    rc = RTDirOpen(&pDir, "/sys/block");
+    /* This might mean that sysfs semantics have changed */
+    AssertReturn(rc != VERR_FILE_NOT_FOUND, VINF_SUCCESS);
+    fSuccess = true;
+    if (RT_SUCCESS(rc))
+        while (true)
+        {
+            rc = RTDirRead(pDir, &entry, NULL);
+            Assert(rc != VERR_BUFFER_OVERFLOW);  /* Should never happen... */
+            if (RT_FAILURE(rc))  /* Including overflow and no more files */
+                break;
+            if (entry.szName[0] == '.')
+                continue;
+            sysfsBlockDev dev(entry.szName, isDVD);
+            /* This might mean that sysfs semantics have changed */
+            AssertBreakStmt(dev.isConsistent(), fSuccess = false);
+            if (!dev.isValid())
+                continue;
+            try
+            {
+                pList->push_back(DriveInfo(dev.getNode(), dev.getUdi(),
+                                           dev.getDesc()));
+            }
+            catch(std::bad_alloc &e)
+            {
+                rc = VERR_NO_MEMORY;
+                break;
+            }
+            ++cFound;
+        }
+    RTDirClose(pDir);
+    if (rc == VERR_NO_MORE_FILES)
+        rc = VINF_SUCCESS;
+    if (RT_FAILURE(rc))
+        /* Clean up again */
+        for (unsigned i = 0; i < cFound; ++i)
+            pList->pop_back();
+    if (pfSuccess)
+        *pfSuccess = fSuccess;
+    LogFlow (("rc=%Rrc, fSuccess=%u\n", rc, (unsigned) fSuccess));
+    return rc;
+}
+
+
+/** Structure for holding information about a drive we have found */
+struct deviceNodeInfo
+{
+    /** The device number */
+    dev_t Device;
+    /** The device node path */
+    char szPath[RTPATH_MAX];
+    /** The device description */
+    char szDesc[256];
+    /** The device UDI */
+    char szUdi[256];
+};
+
+/** The maximum number of devices we will search for. */
+enum { MAX_DEVICE_NODES = 8 };
+/** An array of MAX_DEVICE_NODES devices */
+typedef struct deviceNodeInfo deviceNodeArray[MAX_DEVICE_NODES];
+
+/**
+ * Recursive worker function to walk the /dev tree looking for DVD or floppy
+ * devices.
+ * @returns true if we have already found MAX_DEVICE_NODES devices, false
+ *          otherwise
+ * @param   pszPath   the path to start recursing.  The function can modify
+ *                    this string at and after the terminating zero
+ * @param   cchPath   the size of the buffer (not the string!) in @a pszPath
+ * @param   aDevices  where to fill in information about devices that we have
+ *                    found
+ * @param   wantDVD   are we looking for DVD devices (or floppies)?
+ */
+static bool devFindDeviceRecursive(char *pszPath, size_t cchPath,
+                                   deviceNodeArray aDevices, bool wantDVD)
+{
+    /*
+     * Check assumptions made by the code below.
+     */
+    size_t const cchBasePath = strlen(pszPath);
+    AssertReturn(cchBasePath < RTPATH_MAX - 10U, false);
+    AssertReturn(pszPath[cchBasePath - 1] != '/', false);
+
+    PRTDIR  pDir;
+    if (RT_FAILURE(RTDirOpen(&pDir, pszPath)))
+        return false;
+    for (;;)
+    {
+        RTDIRENTRY Entry;
+        RTFSOBJINFO ObjInfo;
+        int rc = RTDirRead(pDir, &Entry, NULL);
+        if (RT_FAILURE(rc))
+            break;
+        if (Entry.enmType == RTDIRENTRYTYPE_UNKNOWN)
+        {
+            if (RT_FAILURE(RTPathQueryInfo(pszPath, &ObjInfo,
+                           RTFSOBJATTRADD_UNIX)))
+                continue;
+            if (RTFS_IS_SYMLINK(ObjInfo.Attr.fMode))
+                continue;
+        }
+
+        if (Entry.enmType == RTDIRENTRYTYPE_SYMLINK)
+            continue;
+        pszPath[cchBasePath] = '\0';
+        if (RT_FAILURE(RTPathAppend(pszPath, cchPath, Entry.szName)))
+            break;
+
+        /* Do the matching. */
+        dev_t DevNode;
+        char szDesc[256], szUdi[256];
+        if (!devValidateDevice(pszPath, wantDVD, &DevNode, szDesc,
+                               sizeof(szDesc), szUdi, sizeof(szUdi)))
+            continue;
+        unsigned i;
+        for (i = 0; i < MAX_DEVICE_NODES; ++i)
+            if (!aDevices[i].Device || (aDevices[i].Device == DevNode))
+                break;
+        AssertBreak(i < MAX_DEVICE_NODES);
+        if (aDevices[i].Device)
+            continue;
+        aDevices[i].Device = DevNode;
+        RTStrPrintf(aDevices[i].szPath, sizeof(aDevices[i].szPath),
+                    "%s", pszPath);
+        AssertCompile(sizeof(aDevices[i].szDesc) == sizeof(szDesc));
+        strcpy(aDevices[i].szDesc, szDesc);
+        AssertCompile(sizeof(aDevices[i].szUdi) == sizeof(szUdi));
+        strcpy(aDevices[i].szUdi, szUdi);
+        if (i == MAX_DEVICE_NODES - 1)
+            break;
+        continue;
+
+        /* Recurse into subdirectories. */
+        if (   (Entry.enmType == RTDIRENTRYTYPE_UNKNOWN)
+            && !RTFS_IS_DIRECTORY(ObjInfo.Attr.fMode))
+            continue;
+        if (Entry.enmType != RTDIRENTRYTYPE_DIRECTORY)
+            continue;
+        if (Entry.szName[0] == '.')
+            continue;
+
+        if (devFindDeviceRecursive(pszPath, cchPath, aDevices, wantDVD))
+            break;
+    }
+    RTDirClose(pDir);
+    return aDevices[MAX_DEVICE_NODES - 1].Device ? true : false;
+}
+
+
+/**
+ * Recursively walk through the /dev tree and add any DVD or floppy drives we
+ * find and can access to our list.  (If we can't access them we can't check
+ * whether or not they are really DVD or floppy drives).
+ * @returns iprt status code
+ * @param   pList      the list to append the drives found to
+ * @param   isDVD      are we looking for DVD drives or for floppies?
+ * @param   pfSuccess  this will be set to true if we found at least one drive
+ *                     and to false otherwise.  Optional.
+ */
+/* static */
+int getDriveInfoFromDev(DriveInfoList *pList, bool isDVD, bool *pfSuccess)
+{
+    AssertPtrReturn(pList, VERR_INVALID_POINTER);
+    AssertPtrNullReturn(pfSuccess, VERR_INVALID_POINTER);
+    LogFlowFunc(("pList=%p, isDVD=%d, pfSuccess=%p\n", pList, isDVD,
+                 pfSuccess));
+    int rc = VINF_SUCCESS;
+    bool success = false;
+
+    deviceNodeArray aDevices = { { 0 } };
+    char szPath[RTPATH_MAX] = "/dev";
+    devFindDeviceRecursive(szPath, sizeof(szPath), aDevices, isDVD);
+    try
+    {
+        for (unsigned i = 0; i < MAX_DEVICE_NODES; ++i)
+        {
+            if (aDevices[i].Device)
+            {
+                pList->push_back(DriveInfo(aDevices[i].szPath,
+                                 aDevices[i].szUdi, aDevices[i].szDesc));
+                success = true;
+            }
+        }
+        if (pfSuccess != NULL)
+            *pfSuccess = success;
+    }
+    catch(std::bad_alloc &e)
+    {
+        rc = VERR_NO_MEMORY;
+    }
+    LogFlowFunc (("rc=%Rrc, success=%d\n", rc, success));
+    return rc;
+}
+
 
 int VBoxMainUSBDeviceInfo::UpdateDevices ()
 {
@@ -370,227 +1123,6 @@ void VBoxMainHotplugWaiter::Interrupt()
 #endif  /* defined RT_OS_LINUX && defined VBOX_WITH_DBUS */
 }
 
-#ifdef RT_OS_LINUX
-/**
- * Helper function to check whether the given device node is a valid drive
- */
-/* static */
-bool validateDevice(const char *deviceNode, bool isDVD)
-{
-    AssertReturn(VALID_PTR (deviceNode), VERR_INVALID_POINTER);
-    LogFlowFunc (("deviceNode=%s, isDVD=%d\n", deviceNode, isDVD));
-    struct stat statInfo;
-    bool retValue = false;
-
-    // sanity check
-    if (!deviceNode)
-    {
-        return false;
-    }
-
-    // first a simple stat() call
-    if (stat(deviceNode, &statInfo) < 0)
-    {
-        return false;
-    } else
-    {
-        if (isDVD)
-        {
-            if (S_ISCHR(statInfo.st_mode) || S_ISBLK(statInfo.st_mode))
-            {
-                int fileHandle;
-                // now try to open the device
-                fileHandle = open(deviceNode, O_RDONLY | O_NONBLOCK, 0);
-                if (fileHandle >= 0)
-                {
-                    cdrom_subchnl cdChannelInfo;
-                    cdChannelInfo.cdsc_format = CDROM_MSF;
-                    // this call will finally reveal the whole truth
-#ifdef RT_OS_LINUX
-                    if ((ioctl(fileHandle, CDROMSUBCHNL, &cdChannelInfo) == 0) ||
-                        (errno == EIO) || (errno == ENOENT) ||
-                        (errno == EINVAL) || (errno == ENOMEDIUM))
-#endif
-                    {
-                        retValue = true;
-                    }
-                    close(fileHandle);
-                }
-            }
-        } else
-        {
-            // floppy case
-            if (S_ISCHR(statInfo.st_mode) || S_ISBLK(statInfo.st_mode))
-            {
-                /// @todo do some more testing, maybe a nice IOCTL!
-                retValue = true;
-            }
-        }
-    }
-    LogFlowFunc (("retValue=%d\n", retValue));
-    return retValue;
-}
-#else  /* !RT_OS_LINUX */
-# error Port me!  Copying code over from HostImpl.cpp should be most of the job though.
-#endif  /* !RT_OS_LINUX */
-
-/**
- * Extract the names of drives from an environment variable and add them to a
- * list if they are valid.
- * @returns iprt status code
- * @param   pszVar     the name of the environment variable.  The variable
- *                     value should be a list of device node names, separated
- *                     by ':' characters.
- * @param   pList      the list to append the drives found to
- * @param   isDVD      are we looking for DVD drives or for floppies?
- * @param   pfSuccess  this will be set to true if we found at least one drive
- *                     and to false otherwise.  Optional.
- */
-/* static */
-int getDriveInfoFromEnv(const char *pszVar, DriveInfoList *pList,
-                               bool isDVD, bool *pfSuccess)
-{
-    AssertReturn(   VALID_PTR (pszVar) && VALID_PTR (pList)
-                 && (pfSuccess == NULL || VALID_PTR (pfSuccess)),
-                 VERR_INVALID_POINTER);
-    LogFlowFunc (("pszVar=%s, pList=%p, isDVD=%d, pfSuccess=%p\n", pszVar,
-                  pList, isDVD, pfSuccess));
-    int rc = VINF_SUCCESS;
-    bool success = false;
-
-    try
-    {
-        RTMemAutoPtr<char, RTStrFree> drive;
-        const char *pszValue = RTEnvGet (pszVar);
-        if (pszValue != NULL)
-        {
-            drive = RTStrDup (pszValue);
-            if (!drive)
-                rc = VERR_NO_MEMORY;
-        }
-        if (pszValue != NULL && RT_SUCCESS(rc))
-        {
-            char *pDrive = drive.get();
-            char *pDriveNext = strchr (pDrive, ':');
-            while (pDrive != NULL && *pDrive != '\0')
-            {
-                if (pDriveNext != NULL)
-                    *pDriveNext = '\0';
-                if (validateDevice(pDrive, isDVD))
-                {
-                    pList->push_back (DriveInfo (pDrive));
-                    success = true;
-                }
-                if (pDriveNext != NULL)
-                {
-                    pDrive = pDriveNext + 1;
-                    pDriveNext = strchr (pDrive, ':');
-                }
-                else
-                    pDrive = NULL;
-            }
-        }
-        if (pfSuccess != NULL)
-            *pfSuccess = success;
-    }
-    catch(std::bad_alloc &e)
-    {
-        rc = VERR_NO_MEMORY;
-    }
-    LogFlowFunc (("rc=%Rrc, success=%d\n", rc, success));
-    return rc;
-}
-
-#ifdef RT_OS_LINUX
-/**
- * Helper function to parse the given mount file and add found entries
- */
-/* static */
-int getDVDInfoFromMTab(char *mountTable, DriveInfoList *pList)
-{
-    AssertReturn(VALID_PTR (mountTable) && VALID_PTR (pList),
-                 VERR_INVALID_POINTER);
-#ifdef RT_OS_LINUX
-    LogFlowFunc (("mountTable=%s, pList=%p\n", mountTable, pList));
-    int rc = VINF_SUCCESS;
-    FILE *mtab = setmntent(mountTable, "r");
-    if (mtab)
-    {
-        try
-        {
-            struct mntent *mntent;
-            RTMemAutoPtr <char, RTStrFree> mnt_type, mnt_dev;
-            char *tmp;
-            while (RT_SUCCESS(rc) && (mntent = getmntent(mtab)))
-            {
-                mnt_type = RTStrDup (mntent->mnt_type);
-                mnt_dev = RTStrDup (mntent->mnt_fsname);
-                if (!mnt_type || !mnt_dev)
-                    rc = VERR_NO_MEMORY;
-                // supermount fs case
-                if (RT_SUCCESS(rc) && strcmp(mnt_type.get(), "supermount") == 0)
-                {
-                    tmp = strstr(mntent->mnt_opts, "fs=");
-                    if (tmp)
-                    {
-                        mnt_type = RTStrDup(tmp + strlen("fs="));
-                        if (!mnt_type)
-                            rc = VERR_NO_MEMORY;
-                        else
-                        {
-                            tmp = strchr(mnt_type.get(), ',');
-                            if (tmp)
-                                *tmp = '\0';
-                        }
-                    }
-                    tmp = strstr(mntent->mnt_opts, "dev=");
-                    if (tmp)
-                    {
-                        mnt_dev = RTStrDup(tmp + strlen("dev="));
-                        if (!mnt_dev)
-                            rc = VERR_NO_MEMORY;
-                        else
-                        {
-                            tmp = strchr(mnt_dev.get(), ',');
-                            if (tmp)
-                                *tmp = '\0';
-                        }
-                    }
-                }
-                // use strstr here to cover things fs types like "udf,iso9660"
-                if (RT_SUCCESS(rc) && strstr(mnt_type.get(), "iso9660") == 0)
-                {
-                    if (validateDevice(mnt_dev.get(), true))
-                    {
-                        bool insert = true;
-                        struct stat srcInfo;
-                        if (stat (mnt_dev.get(), &srcInfo) < 0)
-                            insert = false;
-                        for (DriveInfoList::const_iterator it = pList->begin();
-                            insert && it != pList->end(); ++it)
-                        {
-                            struct stat destInfo;
-                            if (   (stat (it->mDevice.c_str(), &destInfo) == 0)
-                                && (srcInfo.st_rdev == destInfo.st_rdev))
-                                insert = false;
-                        }
-                        if (insert)
-                            pList->push_back (DriveInfo (mnt_dev.get()));
-                    }
-                }
-            }
-        }
-        catch(std::bad_alloc &e)
-        {
-            rc = VERR_NO_MEMORY;
-        }
-        endmntent(mtab);
-    }
-    return rc;
-#endif
-}
-
-#endif  /* RT_OS_LINUX */
 
 #if defined(RT_OS_LINUX) && defined(VBOX_WITH_DBUS)
 /** Wrapper class around DBusError for automatic cleanup */
@@ -610,10 +1142,10 @@ public:
         Assert ((mError.name == NULL) == (mError.message == NULL));
         return (mError.name != NULL);
     }
-    bool HasName (const char *pszName)
+    bool HasName (const char *pcszName)
     {
         Assert ((mError.name == NULL) == (mError.message == NULL));
-        return (RTStrCmp (mError.name, pszName) == 0);
+        return (RTStrCmp (mError.name, pcszName) == 0);
     }
     void FlowLog ()
     {
@@ -1074,435 +1606,6 @@ int halGetPropertyStringsVector (DBusConnection *pConnection,
     return rc;
 }
 
-/**
- * Send an SCSI INQUIRY command to a device and return selected information.
- * @returns  iprt status code
- * @returns  VERR_TRY_AGAIN if the query failed but might succeed next time
- * @param pszNode    the full path to the device node
- * @param pu8Type    where to store the SCSI device type on success (optional)
- * @param pchVendor  where to store the vendor id string on success (optional)
- * @param cchVendor  the size of the @a pchVendor buffer
- * @param pchModel   where to store the product id string on success (optional)
- * @param cchModel   the size of the @a pchModel buffer
- * @note check documentation on the SCSI INQUIRY command and the Linux kernel
- *       SCSI headers included above if you want to understand what is going
- *       on in this method.
- */
-/* static */
-int scsiDoInquiry(const char *pszNode, uint8_t *pu8Type, char *pchVendor,
-                  size_t cchVendor, char *pchModel, size_t cchModel)
-{
-    LogRelFlowFunc(("pszNode=%s, pu8Type=%p, pchVendor=%p, cchVendor=%llu, pchModel=%p, cchModel=%llu\n",
-                    pszNode, pu8Type, pchVendor, cchVendor, pchModel,
-                    cchModel));
-    AssertPtrReturn(pszNode, VERR_INVALID_POINTER);
-    AssertPtrNullReturn(pu8Type, VERR_INVALID_POINTER);
-    AssertPtrNullReturn(pchVendor, VERR_INVALID_POINTER);
-    AssertPtrNullReturn(pchModel, VERR_INVALID_POINTER);
-
-    sg_io_hdr_t ScsiIoReq = {0};
-    unsigned char u8Response[96] = { 0 };
-    unsigned char u8Command[6] =
-        { INQUIRY, 0, 0, 0, sizeof(u8Response), 0 };  /* INQUIRY */
-    int rc, rcIoCtl = 0;
-    RTFILE file;
-    rc = RTFileOpen(&file, pszNode, RTFILE_O_READ);
-    if (RT_SUCCESS(rc))
-    {
-        ScsiIoReq.interface_id = 'S';
-        ScsiIoReq.dxfer_direction = SG_DXFER_FROM_DEV;
-        ScsiIoReq.cmd_len = sizeof(u8Command);
-        ScsiIoReq.dxfer_len = sizeof(u8Response);
-        ScsiIoReq.dxferp = u8Response;
-        ScsiIoReq.cmdp = u8Command;
-        ScsiIoReq.timeout = 5000 /* ms */;
-        rc = RTFileIoCtl(file, SG_IO, &ScsiIoReq, 0, &rcIoCtl);
-        if (RT_SUCCESS(rc) && rcIoCtl < 0)
-            rc = VERR_NOT_SUPPORTED;
-        RTFileClose(file);
-    }
-    if (RT_SUCCESS(rc))
-    {
-        if (   (ScsiIoReq.status >> 1 == GOOD)
-            || (ScsiIoReq.status >> 1 == INTERMEDIATE_GOOD)
-            || (ScsiIoReq.status >> 1 == INTERMEDIATE_C_GOOD)
-            || (ScsiIoReq.status >> 1 == COMMAND_TERMINATED))
-        {
-            if (pu8Type)
-                *pu8Type = u8Response[0] & 0x1f;
-            if (pchVendor)
-                RTStrPrintf(pchVendor, cchVendor, "%.8s",
-                            (char *) &u8Response[8] /* vendor id string */);
-            if (pchModel)
-                RTStrPrintf(pchModel, cchModel, "%.16s",
-                            (char *) &u8Response[16] /* product id string */);
-        }
-        else if (   ScsiIoReq.status >> 1 != BUSY
-                 && ScsiIoReq.status >> 1 != QUEUE_FULL
-                 && ScsiIoReq.status >> 1 != CHECK_CONDITION)
-            rc = VERR_DEV_IO_ERROR;  /* Actually, these should never happen */
-        else
-            rc = VERR_TRY_AGAIN;
-    }
-    LogRelFlowFunc(("returning %Rrc\n", rc));
-    if (RT_SUCCESS(rc))
-        LogRelFlowFunc(("    type=%u, vendor=%.8s, product=%.16s\n",
-                        u8Response[0] & 0x1f, (char *) &u8Response[8],
-                        (char *) &u8Response[16]));
-    return rc;
-}
-
-class sysfsBlockDev
-{
-public:
-    sysfsBlockDev(const char *pcszName, bool wantDVD)
-            : mpcszName(pcszName), mwantDVD(wantDVD), misValid(false)
-    {
-        if (findDeviceNode())
-        {
-            if (mwantDVD)
-                validateAndInitForDVD();
-            else
-                validateAndInitForFloppy();
-        }
-    }
-private:
-    /** The name of the subdirectory of /sys/block for this device */
-    const char *mpcszName;
-    /** Are we looking for a floppy or a DVD device? */
-    bool mwantDVD;
-    /** The device node for the device */
-    char mszNode[RTPATH_MAX];
-    /** Is this entry a valid specimen of what we are looking for? */
-    bool misValid;
-    /** Human readible drive description string */
-    char mszDesc[256];
-    /** Unique identifier for the drive.  Should be identical to hal's UDI for
-     * the device.  May not be unique for two identical drives. */
-    char mszUdi[256];
-private:
-    /* Private methods */
-
-    /**
-     * Fill in the device node member based on the /sys/block subdirectory.
-     * @returns boolean success value
-     */
-    bool findDeviceNode()
-    {
-        dev_t dev = RTLinuxSysFsReadDevNumFile("block/%s/dev", mpcszName);
-        if (dev == 0)
-            return false;
-        if (RTLinuxFindDevicePath(dev, RTFS_TYPE_DEV_BLOCK, mszNode,
-                                  sizeof(mszNode), "%s", mpcszName) < 0)
-            return false;
-        return true;
-    }
-
-    /** Check whether the sysfs block entry is valid for a DVD device and
-     * initialise the string data members for the object.  We try to get all
-     * the information we need from sysfs if possible, to avoid unnecessarily
-     * poking the device, and if that fails we fall back to an SCSI INQUIRY
-     * command. */
-    void validateAndInitForDVD()
-    {
-        char szVendor[128], szModel[128];
-        ssize_t cchVendor, cchModel;
-        int64_t type = RTLinuxSysFsReadIntFile(10, "block/%s/device/type",
-                                               mpcszName);
-        if (type >= 0 && type != TYPE_ROM)
-            return;
-        if (type == 5)
-        {
-            cchVendor = RTLinuxSysFsReadStrFile(szVendor, sizeof(szVendor),
-                                                "block/%s/device/vendor",
-                                                mpcszName);
-            if (cchVendor >= 0)
-            {
-                cchModel = RTLinuxSysFsReadStrFile(szModel, sizeof(szModel),
-                                                   "block/%s/device/model",
-                                                   mpcszName);
-                if (cchModel >= 0)
-                {
-                    misValid = true;
-                    setDeviceStrings(szVendor, szModel);
-                    return;
-                }
-            }
-        }
-        probeAndInitForDVD();
-    }
-
-    /** Try to find out whether a device is a DVD drive by sending it an
-     * SCSI INQUIRY command.  If it is, initialise the string and validity
-     * data members for the object based on the returned data.
-     */
-    void probeAndInitForDVD()
-    {
-        AssertReturnVoid(mszNode[0] != '\0');
-        uint8_t u8Type = 0;
-        char szVendor[128] = "";
-        char szModel[128] = "";
-        for (unsigned i = 0; i < 5; ++i)  /* Give the device five chances */
-        {
-            int rc = scsiDoInquiry(mszNode, &u8Type, szVendor,
-                                   sizeof(szVendor), szModel,
-                                   sizeof(szModel));
-            if (RT_SUCCESS(rc))
-            {
-                if (u8Type != TYPE_ROM)
-                    return;
-                misValid = true;
-                setDeviceStrings(szVendor, szModel);
-                return;
-            }
-            if (rc != VERR_TRY_AGAIN)
-                return;
-            RTThreadSleep(100);  /* wait a little before retrying */
-        }
-    }
-
-    /**
-     * Initialise the object device strings (description and UDI) based on
-     * vendor and model name strings.
-     * @param pszVendor  the vendor ID string
-     * @param pszModel   the product ID string
-     */
-    void setDeviceStrings(const char *pszVendor, const char *pszModel)
-    {
-        char szCleaned[128];
-        size_t cchVendor = strLenStripped(pszVendor);
-        size_t cchModel = strLenStripped(pszModel);
-
-        /* Create a cleaned version of the model string for the UDI string. */
-        for (unsigned i = 0; pszModel[i] != '\0' && i < sizeof(szCleaned); ++i)
-            if (   (pszModel[i] >= '0' && pszModel[i] <= '9')
-                || (pszModel[i] >= 'A' && pszModel[i] <= 'z'))
-                szCleaned[i] = pszModel[i];
-            else
-                szCleaned[i] = '_';
-        szCleaned[RT_MIN(cchModel, sizeof(szCleaned) - 1)] = '\0';
-
-        /* Construct the description string as "Vendor Product" */
-        if (cchVendor > 0)
-            RTStrPrintf(mszDesc, sizeof(mszDesc), "%.*s %s", cchVendor,
-                        pszVendor,
-                        cchModel > 0 ? pszModel : "(unknown drive model)");
-        else
-            RTStrPrintf(mszDesc, sizeof(mszDesc), "%s", pszModel);
-        /* Construct the UDI string */
-        if (cchModel)
-            RTStrPrintf(mszUdi, sizeof(mszUdi),
-                        "/org/freedesktop/Hal/devices/storage_model_%s",
-                        szCleaned);
-        else
-            mszUdi[0] = '\0';
-    }
-
-    /** Check whether the sysfs block entry is valid for a floppy device and
-     * initialise the string data members for the object.  Since we only
-     * support floppies using the basic "floppy" driver, we check the driver
-     * using the entry name and a driver-specific ioctl. */
-    void validateAndInitForFloppy()
-    {
-        floppy_drive_name szName;
-        int rcIoCtl;
-        if (   mpcszName[0] != 'f'
-            || mpcszName[1] != 'd'
-            || mpcszName[2] < '0'
-            || mpcszName[2] > '3'
-            || mpcszName[3] != '\0')
-            return;
-        RTFILE file;
-        int rc = RTFileOpen(&file, mszNode, RTFILE_O_READ);
-        /** @todo The next line can produce a warning, as the ioctl request
-         * field is defined as signed, but the Linux ioctl definition macros
-         * produce unsigned constants. */
-        rc = RTFileIoCtl(file, FDGETDRVTYP, szName, 0, &rcIoCtl);
-        RTFileClose(file);
-        if (rcIoCtl < 0)
-            return;
-        misValid = true;
-        strcpy(mszDesc,   (mpcszName[2] == '0') ? "PC Floppy drive"
-                        : (mpcszName[2] == '1') ? "Second PC Floppy drive"
-                        : (mpcszName[2] == '2') ? "Third PC Floppy drive"
-                        : "Fourth PC Floppy drive");
-        RTStrPrintf(mszUdi, sizeof(mszUdi),
-                    "/org/freedesktop/Hal/devices/platform_floppy_%u_storage",
-                    mpcszName[2]);
-    }
-
-public:
-    bool isValid()
-    {
-        return misValid;
-    }
-    const char *getDesc()
-    {
-        return mszDesc;
-    }
-    const char *getUdi()
-    {
-        return mszUdi;
-    }
-    const char *getNode()
-    {
-        return mszNode;
-    }
-};
-
-/**
- * Helper function to query the sysfs subsystem for information about DVD
- * drives attached to the system.
- * @returns iprt status code
- * @param   pList      where to add information about the drives detected
- * @param   isDVD      are we looking for DVDs or floppies?
- * @param   pfSuccess  Did we find anything?
- *
- * @returns IPRT status code
- */
-/* static */
-int getDriveInfoFromSysfs(DriveInfoList *pList, bool isDVD, bool *pfSuccess)
-{
-    AssertPtrReturn(pList, VERR_INVALID_POINTER);
-    AssertPtrNullReturn(pfSuccess, VERR_INVALID_POINTER); /* Valid or Null */
-    LogFlowFunc (("pList=%p, isDVD=%u, pfSuccess=%p\n",
-                  pList, (unsigned) isDVD, pfSuccess));
-    PRTDIR pDir = NULL;
-    RTDIRENTRY entry = {0};
-    int rc;
-    bool fSuccess;
-    unsigned cFound = 0;
-
-    rc = RTDirOpen(&pDir, "/sys/block");
-    if (RT_SUCCESS(rc))
-        while (true)
-        {
-            rc = RTDirRead(pDir, &entry, NULL);
-            Assert(rc != VERR_BUFFER_OVERFLOW);  /* Should never happen... */
-            if (RT_FAILURE(rc))  /* Including overflow and no more files */
-                break;
-            if (entry.szName[0] == '.')
-                continue;
-            sysfsBlockDev dev(entry.szName, isDVD);
-            if (!dev.isValid())
-                continue;
-            try
-            {
-                pList->push_back(DriveInfo(dev.getNode(), dev.getUdi(),
-                                           dev.getDesc()));
-            }
-            catch(std::bad_alloc &e)
-            {
-                rc = VERR_NO_MEMORY;
-                break;
-            }
-            ++cFound;
-        }
-    RTDirClose(pDir);
-    if (rc == VERR_NO_MORE_FILES)
-        rc = VINF_SUCCESS;
-    fSuccess = (RT_SUCCESS(rc) && cFound > 0);
-    if (!fSuccess)
-        /* Clean up again */
-        for (unsigned i = 0; i < cFound; ++i)
-            pList->pop_back();
-    if (pfSuccess)
-        *pfSuccess = fSuccess;
-    LogFlow (("rc=%Rrc, fSuccess=%u\n", rc, (unsigned) fSuccess));
-    return rc;
-}
-
-/**
- * Helper function to query the hal subsystem for information about drives
- * attached to the system.
- * @returns iprt status code
- * @param   pList      where to add information about the drives detected
- * @param   isDVD      are we looking for DVDs or floppies?
- * @param   pfSuccess  will be set to true if all interactions with hal
- *                     succeeded and to false otherwise.  Optional.
- *
- * @returns IPRT status code
- */
-/* static */
-int getDriveInfoFromHal(DriveInfoList *pList, bool isDVD, bool *pfSuccess)
-{
-    AssertReturn(VALID_PTR (pList) && (pfSuccess == NULL || VALID_PTR (pfSuccess)),
-                 VERR_INVALID_POINTER);
-    LogFlowFunc (("pList=%p, isDVD=%d, pfSuccess=%p\n", pList, isDVD, pfSuccess));
-    int rc = VINF_SUCCESS;  /* We set this to failure on fatal errors. */
-    bool halSuccess = true;  /* We set this to false to abort the operation. */
-    autoDBusError dbusError;
-
-    RTMemAutoPtr <DBusMessage, VBoxDBusMessageUnref> message, replyFind, replyGet;
-    RTMemAutoPtr <DBusConnection, VBoxHalShutdown> dbusConnection;
-    DBusMessageIter iterFind, iterUdis;
-
-    try
-    {
-        rc = halInit (&dbusConnection);
-        if (!dbusConnection)
-            halSuccess = false;
-        if (halSuccess && RT_SUCCESS(rc))
-        {
-            rc = halFindDeviceStringMatch (dbusConnection.get(), "storage.drive_type",
-                                        isDVD ? "cdrom" : "floppy", &replyFind);
-            if (!replyFind)
-                halSuccess = false;
-        }
-        if (halSuccess && RT_SUCCESS(rc))
-        {
-            dbus_message_iter_init (replyFind.get(), &iterFind);
-            if (dbus_message_iter_get_arg_type (&iterFind) != DBUS_TYPE_ARRAY)
-                halSuccess = false;
-        }
-        if (halSuccess && RT_SUCCESS(rc))
-            dbus_message_iter_recurse (&iterFind, &iterUdis);
-        for (;    halSuccess && RT_SUCCESS(rc)
-            && dbus_message_iter_get_arg_type (&iterUdis) == DBUS_TYPE_STRING;
-            dbus_message_iter_next(&iterUdis))
-        {
-            /* Now get all properties from the iterator */
-            const char *pszUdi;
-            dbus_message_iter_get_basic (&iterUdis, &pszUdi);
-            static const char *papszKeys[] =
-                    { "block.device", "info.product", "info.vendor" };
-            char *papszValues[RT_ELEMENTS (papszKeys)];
-            rc = halGetPropertyStrings (dbusConnection.get(), pszUdi, RT_ELEMENTS (papszKeys),
-                                        papszKeys, papszValues, &replyGet);
-            iprt::MiniString description;
-            const char *pszDevice = papszValues[0], *pszProduct = papszValues[1],
-                    *pszVendor = papszValues[2];
-            if (!!replyGet && pszDevice == NULL)
-                halSuccess = false;
-            if (!!replyGet && pszDevice != NULL)
-            {
-                if ((pszVendor != NULL) && (pszVendor[0] != '\0'))
-                {
-                    description.append(pszVendor);
-                    description.append(" ");
-                }
-                if ((pszProduct != NULL && pszProduct[0] != '\0'))
-                    description.append(pszProduct);
-                pList->push_back (DriveInfo (pszDevice, pszUdi, description));
-            }
-        }
-        if (dbusError.HasName (DBUS_ERROR_NO_MEMORY))
-            rc = VERR_NO_MEMORY;
-        /* If we found nothing something may have gone wrong with hal, so
-         * report failure to fall back to other methods. */
-        if (pList->size() == 0)
-            halSuccess = false;
-        if (pfSuccess != NULL)
-            *pfSuccess = halSuccess;
-    }
-    catch(std::bad_alloc &e)
-    {
-        rc = VERR_NO_MEMORY;
-    }
-    LogFlow (("rc=%Rrc, halSuccess=%d\n", rc, halSuccess));
-    dbusError.FlowLog();
-    return rc;
-}
 
 /**
  * Helper function to query the hal subsystem for information about USB devices
