@@ -940,40 +940,105 @@ static int pgmR3SaveMmio2Pages(PVM pVM, PSSMHANDLE pSSM, bool fLiveSave, uint32_
     if (uPass == SSM_PASS_FINAL)
     {
         /*
-         * Save all non-zero pages.
+         * The mop up round.
          */
         pgmLock(pVM);
         for (PPGMMMIO2RANGE pMmio2 = pVM->pgm.s.pMmio2RangesR3;
              pMmio2 && RT_SUCCESS(rc);
              pMmio2 = pMmio2->pNextR3)
         {
-            uint8_t const  *pbPage = (uint8_t const *)pMmio2->RamRange.pvR3;
-            uint32_t        cPages = pMmio2->RamRange.cb >> PAGE_SHIFT;
+            PPGMLIVESAVEMMIO2PAGE paLSPages = pMmio2->paLSPages;
+            uint8_t const        *pbPage    = (uint8_t const *)pMmio2->RamRange.pvR3;
+            uint32_t              cPages    = pMmio2->RamRange.cb >> PAGE_SHIFT;
+            uint32_t              iPageLast = cPages;
             for (uint32_t iPage = 0; iPage < cPages; iPage++, pbPage += PAGE_SIZE)
             {
-                uint8_t u8Type = ASMMemIsZeroPage(pbPage) ? PGM_STATE_REC_MMIO2_ZERO : PGM_STATE_REC_MMIO2_RAW;
-                if (iPage != 0)
+                uint8_t u8Type;
+                if (!fLiveSave)
+                    u8Type = ASMMemIsZeroPage(pbPage) ? PGM_STATE_REC_MMIO2_ZERO : PGM_STATE_REC_MMIO2_RAW;
+                else
+                {
+                    if (   !paLSPages[iPage].fDirty
+                        && !pgmR3ScanMmio2Page(pVM, pbPage, &paLSPages[iPage]))
+                    {
+                        if (paLSPages[iPage].fZero)
+                            continue;
+
+                        /* We have to be sure here before put it down as successfully written. */
+                        uint8_t abSha1Hash[RTSHA1_HASH_SIZE];
+                        RTSha1(pbPage, PAGE_SIZE, abSha1Hash);
+                        if (!memcmp(abSha1Hash, paLSPages[iPage].abSha1Saved, sizeof(abSha1Hash)))
+                            continue;
+                    }
+                    u8Type = paLSPages[iPage].fZero ? PGM_STATE_REC_MMIO2_ZERO : PGM_STATE_REC_MMIO2_RAW;
+                }
+
+                if (iPage != 0 && iPage == iPageLast + 1)
                     rc = SSMR3PutU8(pSSM, u8Type);
                 else
                 {
                     SSMR3PutU8(pSSM, u8Type | PGM_STATE_REC_FLAG_ADDR);
                     SSMR3PutU8(pSSM, pMmio2->idSavedState);
-                    rc = SSMR3PutU32(pSSM, 0);
+                    rc = SSMR3PutU32(pSSM, iPage);
                 }
                 if (u8Type == PGM_STATE_REC_MMIO2_RAW)
                     rc = SSMR3PutMem(pSSM, pbPage, PAGE_SIZE);
                 if (RT_FAILURE(rc))
                     break;
+                iPageLast = iPage;
             }
         }
         pgmUnlock(pVM);
     }
     /*
-     * Only do this every 4rd time, two passes after the scan.
+     * Only do this every 4rd time since it's kind of expense.
+     * We position it two passes after the scan pass to avoid saving busy pages.
      */
     else if ((uPass & 3) == 2)
     {
-        /** @todo  */
+        pgmLock(pVM);
+        for (PPGMMMIO2RANGE pMmio2 = pVM->pgm.s.pMmio2RangesR3;
+             pMmio2 && RT_SUCCESS(rc);
+             pMmio2 = pMmio2->pNextR3)
+        {
+            PPGMLIVESAVEMMIO2PAGE paLSPages = pMmio2->paLSPages;
+            uint8_t const        *pbPage    = (uint8_t const *)pMmio2->RamRange.pvR3;
+            uint32_t              cPages    = pMmio2->RamRange.cb >> PAGE_SHIFT;
+            uint32_t              iPageLast = cPages;
+            pgmUnlock(pVM);
+
+            for (uint32_t iPage = 0; iPage < cPages; iPage++, pbPage += PAGE_SIZE)
+            {
+                if (!paLSPages[iPage].fDirty)
+                    continue;
+                if (paLSPages[iPage].cUnchangedScans < 3)
+                    continue;
+                if (!pgmR3ScanMmio2Page(pVM, pbPage, &paLSPages[iPage]))
+                    continue;
+
+                if (!paLSPages[iPage].fZero)
+                    RTSha1(pbPage, PAGE_SIZE, paLSPages[iPage].abSha1Saved);
+                uint8_t u8Type = paLSPages[iPage].fZero ? PGM_STATE_REC_MMIO2_ZERO : PGM_STATE_REC_MMIO2_RAW;
+
+                if (iPage != 0 && iPage == iPageLast + 1)
+                    rc = SSMR3PutU8(pSSM, u8Type);
+                else
+                {
+                    SSMR3PutU8(pSSM, u8Type | PGM_STATE_REC_FLAG_ADDR);
+                    SSMR3PutU8(pSSM, pMmio2->idSavedState);
+                    rc = SSMR3PutU32(pSSM, iPage);
+                }
+                if (u8Type == PGM_STATE_REC_MMIO2_RAW)
+                    rc = SSMR3PutMem(pSSM, pbPage, PAGE_SIZE);
+
+                if (RT_FAILURE(rc))
+                    break;
+                iPageLast = iPage;
+            }
+
+            pgmLock(pVM);
+        }
+        pgmUnlock(pVM);
     }
 
     return rc;
