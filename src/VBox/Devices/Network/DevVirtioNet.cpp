@@ -45,17 +45,13 @@
 
 #define VIRTIO_RELOCATE(p, o) *(RTHCUINTPTR *)&p += o
 
-/*****************************************************************************/
-RT_C_DECLS_BEGIN
-PDMBOTHCBDECL(uint32_t) vnetGetHostFeatures(void *pState);
-PDMBOTHCBDECL(int)      vnetGetConfig(void *pState, uint32_t port, uint32_t cb, void *data);
-PDMBOTHCBDECL(int)      vnetSetConfig(void *pState, uint32_t port, uint32_t cb, void *data);
-PDMBOTHCBDECL(void)     vnetReset(void *pState);
-RT_C_DECLS_END
-
-/*****************************************************************************/
+#ifdef DEBUG
+#define QUEUENAME(s, q) g_VPCIDevices[s->enmDevType].pfnGetQueueName(s, q)
+#endif /* DEBUG */
 
 //- TODO: Move to Virtio.h ----------------------------------------------------
+
+#define VPCI_F_NOTIFY_ON_EMPTY 0x1000000
 
 #define VRINGDESC_MAX_SIZE (2 * 1024 * 1024)
 #define VRINGDESC_F_NEXT   0x01
@@ -191,6 +187,19 @@ typedef VPCISTATE *PVPCISTATE;
 
 //- TODO: Move to VirtioPCI.cpp -----------------------------------------------
 
+/*****************************************************************************/
+RT_C_DECLS_BEGIN
+PDMBOTHCBDECL(uint32_t) vnetGetHostFeatures(void *pState);
+PDMBOTHCBDECL(int)      vnetGetConfig(void *pState, uint32_t port, uint32_t cb, void *data);
+PDMBOTHCBDECL(int)      vnetSetConfig(void *pState, uint32_t port, uint32_t cb, void *data);
+PDMBOTHCBDECL(void)     vnetReset(void *pState);
+#ifdef DEBUG
+static const char *vnetGetQueueName(void *pvState, PVQUEUE pQueue);
+#endif /* DEBUG */
+RT_C_DECLS_END
+
+/*****************************************************************************/
+
 struct VirtioPCIDevices
 {
     uint16_t    uPCIVendorId;
@@ -205,13 +214,26 @@ struct VirtioPCIDevices
     int       (*pfnGetConfig)(void *pvState, uint32_t port, uint32_t cb, void *data);
     int       (*pfnSetConfig)(void *pvState, uint32_t port, uint32_t cb, void *data);
     void      (*pfnReset)(void *pvState);
+#ifdef DEBUG
+    const char *(*pfnGetQueueName)(void *pvState, PVQUEUE pQueue);
+#endif /* DEBUG */
 } g_VPCIDevices[] =
 {
-    /* Vendor Device SSVendor SubSys             Class   Name */
-    { 0x1AF4, 0x1000, 0x1AF4, 1 + VIRTIO_NET_ID, 0x0200, 3, "virtio-net", "vnet%d",
-      vnetGetHostFeatures, vnetGetConfig, vnetSetConfig, vnetReset }, /* Virtio Network Device */
-    { 0x1AF4, 0x1001, 0x1AF4, 1 + VIRTIO_BLK_ID, 0x0180, 2, "virtio-blk", "vblk%d",
-      NULL, NULL, NULL, NULL }, /* Virtio Block Device */
+    /*  Vendor  Device SSVendor SubSys             Class   NQ Name          Instance */
+    { /* Virtio Network Device */
+        0x1AF4, 0x1000, 0x1AF4, 1 + VIRTIO_NET_ID, 0x0200, 3, "virtio-net", "vnet%d",
+        vnetGetHostFeatures, vnetGetConfig, vnetSetConfig, vnetReset
+#ifdef DEBUG
+        , vnetGetQueueName
+#endif /* DEBUG */
+    }, 
+    { /* Virtio Block Device */
+        0x1AF4, 0x1001, 0x1AF4, 1 + VIRTIO_BLK_ID, 0x0180, 2, "virtio-blk", "vblk%d",
+        NULL, NULL, NULL, NULL
+#ifdef DEBUG
+        , NULL
+#endif /* DEBUG */
+    }, 
 };
 
 
@@ -247,6 +269,15 @@ PDMBOTHCBDECL(int) vpciIOPortOut(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT port
 PDMBOTHCBDECL(int) vpciRaiseInterrupt(VPCISTATE *pState, int rcBusy, uint8_t u8IntCause);
 RT_C_DECLS_END
 
+
+static void vqueueReset(PVQUEUE pQueue)
+{
+    pQueue->VRing.addrDescriptors = 0;
+    pQueue->VRing.addrAvail       = 0;
+    pQueue->VRing.addrUsed        = 0;
+    pQueue->uNextAvailIndex       = 0;
+    pQueue->uNextUsedIndex        = 0;
+}
 
 static void vqueueInit(PVQUEUE pQueue, uint32_t uPageNumber)
 {
@@ -286,7 +317,7 @@ void vqueueElemFree(PVQUEUEELEM pElem)
 
 void vringReadDesc(PVPCISTATE pState, PVRING pVRing, uint32_t uIndex, PVRINGDESC pDesc)
 {
-    Log(("%s vringReadDesc: ring=%p idx=%u\n", INSTANCE(pState), pVRing, uIndex));
+    //Log(("%s vringReadDesc: ring=%p idx=%u\n", INSTANCE(pState), pVRing, uIndex));
     PDMDevHlpPhysRead(pState->CTX_SUFF(pDevIns),
                       pVRing->addrDescriptors + sizeof(VRINGDESC) * (uIndex % pVRing->uSize),
                       pDesc, sizeof(VRINGDESC));
@@ -297,7 +328,7 @@ static uint16_t vringReadAvail(PVPCISTATE pState, PVRING pVRing, uint32_t uIndex
     uint16_t tmp;
     
     PDMDevHlpPhysRead(pState->CTX_SUFF(pDevIns),
-                      pVRing->addrAvail + RT_OFFSETOF(VRINGAVAIL, auRing[uIndex]),
+                      pVRing->addrAvail + RT_OFFSETOF(VRINGAVAIL, auRing[uIndex % pVRing->uSize]),
                       &tmp, sizeof(tmp));
     return tmp;
 }
@@ -309,7 +340,8 @@ bool vqueueGet(PVPCISTATE pState, PVQUEUE pQueue, PVQUEUEELEM pElem)
     
     pElem->nIn = pElem->nOut = 0;
 
-    Log2(("%s vqueueGet: avail_idx=%u\n", INSTANCE(pState), pQueue->uNextAvailIndex));
+    Log2(("%s vqueueGet: %s avail_idx=%u\n", INSTANCE(pState), 
+          QUEUENAME(pState, pQueue), pQueue->uNextAvailIndex));
 
     VRINGDESC desc;
     uint16_t  idx = vringReadAvail(pState, &pQueue->VRing, pQueue->uNextAvailIndex++);
@@ -321,14 +353,14 @@ bool vqueueGet(PVPCISTATE pState, PVQUEUE pQueue, PVQUEUEELEM pElem)
         vringReadDesc(pState, &pQueue->VRing, idx, &desc);
         if (desc.u16Flags & VRINGDESC_F_WRITE)
         {
-            Log2(("%s vqueueGet: IN  idx=%u seg=%u addr=%p cb=%u\n", INSTANCE(pState), idx,
-                  idx, desc.u64Addr, desc.uLen));
+            Log2(("%s vqueueGet: %s IN  seg=%u desc_idx=%u addr=%p cb=%u\n", INSTANCE(pState),
+                  QUEUENAME(pState, pQueue), pElem->nIn, idx, desc.u64Addr, desc.uLen));
             pSeg = &pElem->aSegsIn[pElem->nIn++];
         }
         else
         {
-            Log2(("%s vqueueGet: OUT idx=%u seg=%u addr=%p cb=%u\n", INSTANCE(pState), idx,
-                  idx, desc.u64Addr, desc.uLen));
+            Log2(("%s vqueueGet: %s OUT seg=%u desc_idx=%u addr=%p cb=%u\n", INSTANCE(pState),
+                  QUEUENAME(pState, pQueue), pElem->nOut, idx, desc.u64Addr, desc.uLen));
             pSeg = &pElem->aSegsOut[pElem->nOut++];
         }
 
@@ -339,8 +371,8 @@ bool vqueueGet(PVPCISTATE pState, PVQUEUE pQueue, PVQUEUEELEM pElem)
         idx = desc.u16Next;
     } while (desc.u16Flags & VRINGDESC_F_NEXT);
 
-    Log2(("%s vqueueGet: idx=%u nIn=%u nOut=%u\n", INSTANCE(pState),
-          pElem->uIndex, pElem->nIn, pElem->nOut));
+    Log2(("%s vqueueGet: %s head_desc_idx=%u nIn=%u nOut=%u\n", INSTANCE(pState),
+          QUEUENAME(pState, pQueue), pElem->uIndex, pElem->nIn, pElem->nOut));
     return true;
 }
 
@@ -367,7 +399,7 @@ void vringWriteUsedElem(PVPCISTATE pState, PVRING pVRing, uint32_t uIndex, uint3
     elem.uId = uId;
     elem.uLen = uLen;
     PDMDevHlpPhysWrite(pState->CTX_SUFF(pDevIns),
-                       pVRing->addrUsed + RT_OFFSETOF(VRINGUSED, aRing[uIndex]),
+                       pVRing->addrUsed + RT_OFFSETOF(VRINGUSED, aRing[uIndex % pVRing->uSize]),
                        &elem, sizeof(elem));
 }
 
@@ -375,22 +407,24 @@ void vqueuePut(PVPCISTATE pState, PVQUEUE pQueue, PVQUEUEELEM pElem, uint32_t uL
 {
     unsigned int i, uOffset;
 
-    Log2(("%s vqueuePut: idx=%u acb=%u\n", INSTANCE(pState), pElem->uIndex, uLen));
+    Log2(("%s vqueuePut: %s desc_idx=%u acb=%u\n", INSTANCE(pState),
+          QUEUENAME(pState, pQueue), pElem->uIndex, uLen));
     for (i = uOffset = 0; i < pElem->nIn && uOffset < uLen; i++)
     {
         uint32_t cbSegLen = RT_MIN(uLen - uOffset, pElem->aSegsIn[i].cb);
         if (pElem->aSegsIn[i].pv)
         {
-            Log2(("%s vqueuePut: used_idx=%u idx=%u seg=%u addr=%p pv=%p cb=%u acb=%u\n", INSTANCE(pState),
-                  pQueue->uNextUsedIndex, pElem->uIndex, i, pElem->aSegsIn[i].addr, pElem->aSegsIn[i].pv, pElem->aSegsIn[i].cb, cbSegLen));
+            Log2(("%s vqueuePut: %s used_idx=%u seg=%u addr=%p pv=%p cb=%u acb=%u\n", INSTANCE(pState),
+                  QUEUENAME(pState, pQueue), pQueue->uNextUsedIndex, i, pElem->aSegsIn[i].addr, pElem->aSegsIn[i].pv, pElem->aSegsIn[i].cb, cbSegLen));
             PDMDevHlpPhysWrite(pState->CTX_SUFF(pDevIns), pElem->aSegsIn[i].addr,
                                pElem->aSegsIn[i].pv, cbSegLen);
         }
         uOffset += cbSegLen;
     }
 
-    vringWriteUsedElem(pState, &pQueue->VRing, pQueue->uNextUsedIndex, pElem->uIndex, uLen);
-    pQueue->uNextUsedIndex = (pQueue->uNextUsedIndex + 1) % pQueue->VRing.uSize;
+    Log2(("%s vqueuePut: %s used_idx=%u guest_used_idx=%u id=%u len=%u\n", INSTANCE(pState),
+          QUEUENAME(pState, pQueue), pQueue->uNextUsedIndex, vringReadUsedIndex(pState, &pQueue->VRing), pElem->uIndex, uLen));
+    vringWriteUsedElem(pState, &pQueue->VRing, pQueue->uNextUsedIndex++, pElem->uIndex, uLen);
 }
 
 void vqueueNotify(PVPCISTATE pState, PVQUEUE pQueue)
@@ -402,9 +436,21 @@ void vqueueNotify(PVPCISTATE pState, PVQUEUE pQueue)
 
 void vqueueSync(PVPCISTATE pState, PVQUEUE pQueue)
 {
-    Log2(("%s vqueueSync: used_idx=%u\n", INSTANCE(pState), pQueue->uNextUsedIndex));
+    Log2(("%s vqueueSync: %s old_used_idx=%u new_used_idx=%u\n", INSTANCE(pState),
+          QUEUENAME(pState, pQueue), vringReadUsedIndex(pState, &pQueue->VRing), pQueue->uNextUsedIndex));
     vringWriteUsedIndex(pState, &pQueue->VRing, pQueue->uNextUsedIndex);
     vqueueNotify(pState, pQueue);
+}
+
+void vpciReset(PVPCISTATE pState)
+{
+    pState->uGuestFeatures = 0;
+    pState->uQueueSelector = 0;
+    pState->uStatus        = 0;
+    pState->uISR           = 0;
+
+    for (unsigned i = 0; i < g_VPCIDevices[pState->enmDevType].nQueues; i++)
+        vqueueReset(&pState->pQueues[i]);
 }
 
 /**
@@ -564,6 +610,7 @@ PDMBOTHCBDECL(int) vpciIOPortOut(PPDMDEVINS pDevIns, void *pvUser,
         case VPCI_GUEST_FEATURES:
             // TODO: Feature negotiation code goes here.
             // The guest may potentially desire features we don't support!
+            pState->uGuestFeatures = u32;
             break;
 
         case VPCI_QUEUE_PFN:
@@ -987,10 +1034,6 @@ struct VNetState_st
     /** EMT: Gets signalled when more RX descriptors become available. */
     RTSEMEVENT  hEventMoreRxDescAvail;
 
-    R3PTRTYPE(PPDMQUEUE)    pCanRxQueueR3;           /**< Rx wakeup signaller - R3. */
-    R0PTRTYPE(PPDMQUEUE)    pCanRxQueueR0;           /**< Rx wakeup signaller - R0. */
-    RCPTRTYPE(PPDMQUEUE)    pCanRxQueueRC;           /**< Rx wakeup signaller - RC. */
-
     /* Statistic fields ******************************************************/
 
     STAMCOUNTER                         StatReceiveBytes;
@@ -1031,6 +1074,20 @@ AssertCompileMemberOffset(VNETSTATE, VPCI, 0);
 #define IFACE_TO_STATE(pIface, ifaceName) ((VNETSTATE *)((char*)pIface - RT_OFFSETOF(VNETSTATE, ifaceName)))
 #define STATUS pState->config.uStatus
 
+#ifdef DEBUG
+static const char *vnetGetQueueName(void *pvState, PVQUEUE pQueue)
+{
+    VNETSTATE *pState = (VNETSTATE *)pvState;
+    if (pQueue == pState->pRxQueue)
+        return "RX ";
+    else if (pQueue == pState->pTxQueue)
+        return "TX ";
+    else if (pQueue == pState->pCtlQueue)
+        return "CTL";
+    return "Invalid";
+}
+#endif /* DEBUG */
+
 PDMBOTHCBDECL(uint32_t) vnetGetHostFeatures(void *pvState)
 {
     // TODO: implement
@@ -1070,6 +1127,7 @@ PDMBOTHCBDECL(void) vnetReset(void *pvState)
 {
     VNETSTATE *pState = (VNETSTATE*)pvState;
     Log(("%s Reset triggered\n", INSTANCE(pState)));
+    vpciReset(&pState->VPCI);
     // TODO: Implement reset
 }
 
@@ -1132,14 +1190,18 @@ static DECLCALLBACK(bool) vnetCanRxQueueConsumer(PPDMDEVINS pDevIns, PPDMQUEUEIT
  */
 static int vnetCanReceive(VNETSTATE *pState)
 {
-    return (vqueueIsReady(&pState->VPCI, pState->pRxQueue)
+    LogFlow(("%s vnetCanReceive\n", INSTANCE(pState)));
+    int rc = (vqueueIsReady(&pState->VPCI, pState->pRxQueue)
             && !vqueueIsEmpty(&pState->VPCI, pState->pRxQueue))
         ? VINF_SUCCESS : VERR_NET_NO_BUFFER_SPACE;
+    LogFlow(("%s vnetCanReceive -> %d\n", INSTANCE(pState), rc));
+    return rc;
 }
 
 static DECLCALLBACK(int) vnetWaitReceiveAvail(PPDMINETWORKPORT pInterface, unsigned cMillies)
 {
     VNETSTATE *pState = IFACE_TO_STATE(pInterface, INetworkPort);
+    LogFlow(("%s vnetWaitReceiveAvail(cMillies=%u)\n", INSTANCE(pState), cMillies));
     int rc = vnetCanReceive(pState);
 
     if (RT_SUCCESS(rc))
@@ -1165,6 +1227,7 @@ static DECLCALLBACK(int) vnetWaitReceiveAvail(PPDMINETWORKPORT pInterface, unsig
     STAM_PROFILE_STOP(&pState->StatRxOverflow, a);
     ASMAtomicXchgBool(&pState->fMaybeOutOfSpace, false);
 
+    LogFlow(("%s vnetWaitReceiveAvail -> %d\n", INSTANCE(pState), rc));
     return rc;
 }
 
@@ -1224,9 +1287,9 @@ static bool vnetAddressFilter(PVNETSTATE pState, const void *pvBuf, size_t cb)
 static int vnetHandleRxPacket(PVNETSTATE pState, const void *pvBuf, size_t cb)
 {
     VNETHDR hdr;
-    memset(&hdr, 0, sizeof(hdr));
-    /*hdr.u8Flags   = 0;
-      hdr.u8GSOType = VNETHDR_GSO_NONE;*/
+
+    hdr.u8Flags   = 0;
+    hdr.u8GSOType = VNETHDR_GSO_NONE;
 
     unsigned int uOffset = 0;
     for (unsigned int nElem = 0; uOffset < cb; nElem++)
@@ -1266,7 +1329,6 @@ static int vnetHandleRxPacket(PVNETSTATE pState, const void *pvBuf, size_t cb)
             uOffset += uSize;
             uElemSize += uSize;
         }
-        elem.uIndex = nElem;
         vqueuePut(&pState->VPCI, pState->pRxQueue, &elem, uElemSize);
     }
     vqueueSync(&pState->VPCI, pState->pRxQueue);
@@ -1366,7 +1428,8 @@ static DECLCALLBACK(int) vnetSetLinkState(PPDMINETWORKCONFIG pInterface, PDMNETW
 static DECLCALLBACK(void) vnetQueueReceive(void *pvState, PVQUEUE pQueue)
 {
     VNETSTATE *pState = (VNETSTATE*)pvState;
-    Log(("%s Receive buffers has been added.\n", INSTANCE(pState)));
+    Log(("%s Receive buffers has been added, waking up receive thread.\n", INSTANCE(pState)));
+    vnetWakeupReceive(pState->VPCI.CTX_SUFF(pDevIns));
 }
 
 static DECLCALLBACK(void) vnetQueueTransmit(void *pvState, PVQUEUE pQueue)
@@ -1419,7 +1482,7 @@ static DECLCALLBACK(void) vnetQueueTransmit(void *pvState, PVQUEUE pQueue)
             STAM_PROFILE_ADV_STOP(&pState->StatTransmitSend, a);
             RTMemFree(pFrame);
         }
-        vqueuePut(&pState->VPCI, pQueue, &elem, uOffset);
+        vqueuePut(&pState->VPCI, pQueue, &elem, sizeof(VNETHDR) + uOffset);
         vqueueSync(&pState->VPCI, pQueue);
     }
 }
@@ -1500,14 +1563,6 @@ static DECLCALLBACK(int) vnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     if (RT_FAILURE(rc))
     return rc;*/
 
-
-    /* Create the RX notifier signaller. */
-    rc = PDMDevHlpPDMQueueCreate(pDevIns, sizeof(PDMQUEUEITEMCORE), 1, 0,
-                                 vnetCanRxQueueConsumer, true, "VNet-rcv", &pState->pCanRxQueueR3);
-    if (RT_FAILURE(rc))
-        return rc;
-    pState->pCanRxQueueR0 = PDMQueueR0Ptr(pState->pCanRxQueueR3);
-    pState->pCanRxQueueRC = PDMQueueRCPtr(pState->pCanRxQueueR3);
 
     /* Create Link Up Timer */
     rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL, vnetLinkUpTimer, pState,
