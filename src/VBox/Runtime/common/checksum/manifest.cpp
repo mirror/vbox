@@ -39,7 +39,7 @@
 #include <iprt/file.h>
 #include <iprt/mem.h>
 #include <iprt/path.h>
-#include <iprt/sha1.h>
+#include <iprt/sha.h>
 #include <iprt/stream.h>
 #include <iprt/string.h>
 

@@ -28,26 +28,27 @@
  * additional information or have any questions.
  */
 
-#include <iprt/sha1.h>
-#include <iprt/stream.h>
-#include <iprt/string.h>
+
+/*******************************************************************************
+*   Header Files                                                               *
+*******************************************************************************/
+#include "internal/iprt.h"
+#include <iprt/sha.h>
+
 #include <iprt/assert.h>
 #include <iprt/err.h>
+#include <iprt/stream.h>
+#include <iprt/string.h>
 
 #include <openssl/sha.h>
 
-/*******************************************************************************
-*   Public RTSha1Digest interface                                              *
-*******************************************************************************/
+
 
 RTR3DECL(int) RTSha1Digest(const char *pszFile, char **ppszDigest)
 {
     /* Validate input */
-    if (!pszFile || !ppszDigest)
-    {
-        AssertMsgFailed(("Must supply pszFile and ppszDigest!\n"));
-        return VERR_INVALID_PARAMETER;
-    }
+    AssertPtrReturn(pszFile, VERR_INVALID_POINTER);
+    AssertPtrReturn(ppszDigest, VERR_INVALID_POINTER);
 
     *ppszDigest = NULL;
 
@@ -55,6 +56,10 @@ RTR3DECL(int) RTSha1Digest(const char *pszFile, char **ppszDigest)
     SHA_CTX ctx;
     if (!SHA1_Init(&ctx))
         return VERR_INTERNAL_ERROR;
+
+    /** @todo r=bird: Using a stream here doesn't really serve much purpose as
+     *        few stream implementations uses a buffer much larger than 4KB. (The
+     *        only I'm aware of is libc on OS/2, which uses 8KB.) */
 
     /* Open the file to calculate a SHA1 sum of */
     PRTSTREAM pStream;
@@ -76,24 +81,23 @@ RTR3DECL(int) RTSha1Digest(const char *pszFile, char **ppszDigest)
             rc = VERR_INTERNAL_ERROR;
             break;
         }
-    }
-    while (cbRead > 0);
+    } while (cbRead > 0);
     RTStrmClose(pStream);
 
     if (RT_FAILURE(rc))
         return rc;
 
     /* Finally calculate & format the SHA1 sum */
-    unsigned char pucDig[20];
-    if (!SHA1_Final(pucDig, &ctx))
+    unsigned char auchDig[20];
+    if (!SHA1_Final(auchDig, &ctx))
         return VERR_INTERNAL_ERROR;
 
-    int cbRet = RTStrAPrintf(ppszDigest, "%.2x%.2x%.2x%.2x%.2x%.2x%.2x%.2x%.2x%.2x%.2x%.2x%.2x%.2x%.2x%.2x%.2x%.2x%.2x%.2x",
-                             pucDig[0] , pucDig[1] , pucDig[2] , pucDig[3] , pucDig[4],
-                             pucDig[5] , pucDig[6] , pucDig[7] , pucDig[8] , pucDig[9],
-                             pucDig[10], pucDig[11], pucDig[12], pucDig[13], pucDig[14],
-                             pucDig[15], pucDig[16], pucDig[17], pucDig[18], pucDig[19]);
-    if (RT_UNLIKELY(cbRet == -1))
+    int cch = RTStrAPrintf(ppszDigest, "%.2x%.2x%.2x%.2x%.2x%.2x%.2x%.2x%.2x%.2x%.2x%.2x%.2x%.2x%.2x%.2x%.2x%.2x%.2x%.2x",
+                           auchDig[0] , auchDig[1] , auchDig[2] , auchDig[3] , auchDig[4],
+                           auchDig[5] , auchDig[6] , auchDig[7] , auchDig[8] , auchDig[9],
+                           auchDig[10], auchDig[11], auchDig[12], auchDig[13], auchDig[14],
+                           auchDig[15], auchDig[16], auchDig[17], auchDig[18], auchDig[19]);
+    if (RT_UNLIKELY(cch == -1))
         rc = VERR_INTERNAL_ERROR;
 
     return rc;

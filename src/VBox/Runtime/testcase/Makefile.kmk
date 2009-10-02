@@ -54,6 +54,7 @@ PROGRAMS += \
 	tstRTCidr \
 	tstRTCritSect \
 	tstDeadlock \
+	tstRTDigest \
 	tstDir \
 	tstDir-2 \
 	tstDir-3 \
@@ -165,6 +166,8 @@ tstRTCritSectW32_SOURCES = tstRTCritSect.cpp
 tstRTCritSectW32_DEFS = TRY_WIN32_CRIT
 
 tstDeadlock_SOURCES = tstDeadlock.cpp
+
+tstRTDigest_SOURCES = tstRTDigest.cpp
 
 tstDir_SOURCES = tstDir.cpp
 

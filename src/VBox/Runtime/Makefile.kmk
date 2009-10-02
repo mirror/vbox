@@ -847,8 +847,11 @@ VBoxRT_SOURCES                 = \
 VBoxRT_SOURCES                += \
 	common/misc/s3.cpp \
 	r3/xml.cpp \
+	common/checksum/RTSha1Digest.cpp \
+	common/checksum/manifest.cpp \
 	common/checksum/sha1.cpp \
-	common/checksum/manifest.cpp
+	common/checksum/sha256.cpp \
+	common/checksum/sha512.cpp
 VBoxRT_SOURCES.$(KBUILD_TARGET) = $(RuntimeR3_SOURCES.$(KBUILD_TARGET))
 VBoxRT_SOURCES.$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH) = $(RuntimeR3_SOURCES.$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH))
 VBoxRT_SOURCES.$(KBUILD_TARGET_ARCH) = $(RuntimeR3_SOURCES.$(KBUILD_TARGET_ARCH))
