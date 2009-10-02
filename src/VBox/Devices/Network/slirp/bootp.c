@@ -632,12 +632,25 @@ static void dhcp_decode(PNATState pData, struct bootp_t *bp, const uint8_t *buf,
         break;
         case DHCPRELEASE:
             flag = 1;
-#if 0
-        case DHCPDECLINE:
-#endif
             rc = dhcp_decode_release(pData, bp, buf, size, flag);
             if (rc > 0)
                 goto reply;
+        break;
+        case DHCPDECLINE:
+            p = dhcp_find_option(&bp->bp_vend[0], RFC2132_REQ_ADDR);
+            req_ip.s_addr = *(uint32_t *)(p + 2);
+            rc = bootp_cache_lookup_ether_by_ip(pData, req_ip.s_addr, NULL);
+            if (rc != 0)
+            {
+                /* Not registered */
+                BOOTPClient *bc;
+                bc = bc_alloc_client(pData);
+                Assert(bc);
+                bc->addr.s_addr = req_ip.s_addr;
+                slirp_arp_who_has(pData, bc->addr.s_addr);
+                LogRel(("NAT: %R[IP4] has been already registered\n", &req_ip));
+            }
+            /* no response required */
         break;
         default:
             AssertMsgFailed(("unsupported DHCP message type"));
@@ -728,14 +741,12 @@ int bootp_cache_lookup_ether_by_ip(PNATState pData, uint32_t ip, uint8_t *ether)
 {
     int rc = 1;
     int i;
-    if (ether == NULL)
-        return rc;
     for (i = 0; i < NB_ADDR; i++)
     {
         if (   bootp_clients[i].allocated
             && ip == bootp_clients[i].addr.s_addr)
         {
-            memcpy(ether, bootp_clients[i].macaddr, ETH_ALEN);
+            if(ether != NULL) memcpy(ether, bootp_clients[i].macaddr, ETH_ALEN);
             rc = 0;
             break;
         }

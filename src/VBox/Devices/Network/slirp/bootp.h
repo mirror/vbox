@@ -70,6 +70,7 @@
 #define DHCPDISCOVER            1
 #define DHCPOFFER               2
 #define DHCPREQUEST             3
+#define DHCPDECLINE             4
 #define DHCPACK                 5
 #define DHCPNAK                 6
 #define DHCPRELEASE             7
