@@ -1431,6 +1431,43 @@ RTDECL(int) RTStrToInt8Full(const char *pszValue, unsigned uBase, int8_t *pi8);
  */
 RTDECL(int8_t) RTStrToInt8(const char *pszValue);
 
+/**
+ * Formats a buffer stream as hex bytes.
+ *
+ * The default is no separating spaces or line breaks or anything.
+ *
+ * @returns IPRT status code.
+ * @retval  VERR_INVALID_POINTER if any of the pointers are wrong.
+ * @retval  VERR_BUFFER_OVERFLOW if the buffer is insufficent to hold the bytes.
+ *
+ * @param   pszBuf      Output string buffer.
+ * @param   cchBuf      The size of the output buffer.
+ * @param   pv          Pointer to the bytes to stringify.
+ * @param   cb          The number of bytes to stringify.
+ * @param   fFlags      Must be zero, reserved for future use.
+ */
+RTDECL(int) RTStrPrintHexBytes(char *pszBuf, size_t cchBuf, void const *pv, size_t cb, uint32_t fFlags);
+
+/**
+ * Converts a string of hex bytes back into binary data.
+ *
+ * @returns IPRT status code.
+ * @retval  VERR_INVALID_POINTER if any of the pointers are wrong.
+ * @retval  VERR_BUFFER_OVERFLOW if the string contains too many hex bytes.
+ * @retval  VERR_BUFFER_UNDERFLOW if there aren't enough hex bytes to fill up
+ *          the output buffer.
+ * @retval  VERR_UNEVEN_INPUT if the input contains a half byte.
+ * @retval  VERR_NO_DIGITS
+ * @retval  VWRN_TRAILING_CHARS
+ * @retval  VWRN_TRAILING_SPACES
+ *
+ * @param   pszHex      The string containing the hex bytes.
+ * @param   pv          Output buffer.
+ * @param   cb          The size of the output buffer.
+ * @param   fFlags      Must be zero, reserved for future use.
+ */
+RTDECL(int) RTStrConvertHexBytes(char const *pszHex, void *pv, size_t cb, uint32_t fFlags);
+
 /** @} */
 
 

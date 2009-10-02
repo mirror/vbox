@@ -224,12 +224,7 @@ int main(int argc, char **argv)
                                  }
                                  uint8_t abDigest[RTMD5HASHSIZE];
                                  RTMd5Final(abDigest, &Ctx);
-                                 RTStrPrintf(pszDigest, sizeof(abBuf),
-                                             "%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x",
-                                             abDigest[0], abDigest[1], abDigest[2], abDigest[3],
-                                             abDigest[4], abDigest[5], abDigest[6], abDigest[7],
-                                             abDigest[8], abDigest[9], abDigest[10], abDigest[11],
-                                             abDigest[12], abDigest[13], abDigest[14], abDigest[15]);
+                                 RTMd5ToString(abDigest, pszDigest, sizeof(abBuf));
                                  break;
                              }
 
@@ -246,13 +241,7 @@ int main(int argc, char **argv)
                                  }
                                  uint8_t abDigest[RTSHA1_HASH_SIZE];
                                  RTSha1Final(&Ctx, abDigest);
-                                 RTStrPrintf(pszDigest, sizeof(abBuf),
-                                             "%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x",
-                                             abDigest[0],  abDigest[1],  abDigest[2],  abDigest[3],
-                                             abDigest[4],  abDigest[5],  abDigest[6],  abDigest[7],
-                                             abDigest[8],  abDigest[9],  abDigest[10], abDigest[11],
-                                             abDigest[12], abDigest[13], abDigest[14], abDigest[15],
-                                             abDigest[16], abDigest[17], abDigest[18], abDigest[19]);
+                                 RTSha1ToString(abDigest, pszDigest, sizeof(abBuf));
                                  break;
                              }
 
@@ -269,17 +258,7 @@ int main(int argc, char **argv)
                                  }
                                  uint8_t abDigest[RTSHA256_HASH_SIZE];
                                  RTSha256Final(&Ctx, abDigest);
-                                 RTStrPrintf(pszDigest, sizeof(abBuf),
-                                             "%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
-                                             "%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x",
-                                             abDigest[0],  abDigest[1],  abDigest[2],  abDigest[3],
-                                             abDigest[4],  abDigest[5],  abDigest[6],  abDigest[7],
-                                             abDigest[8],  abDigest[9],  abDigest[10], abDigest[11],
-                                             abDigest[12], abDigest[13], abDigest[14], abDigest[15],
-                                             abDigest[16], abDigest[17], abDigest[18], abDigest[19],
-                                             abDigest[20], abDigest[21], abDigest[22], abDigest[23],
-                                             abDigest[24], abDigest[25], abDigest[26], abDigest[27],
-                                             abDigest[28], abDigest[29], abDigest[30], abDigest[31]);
+                                 RTSha256ToString(abDigest, pszDigest, sizeof(abBuf));
                                  break;
                              }
 
@@ -296,27 +275,7 @@ int main(int argc, char **argv)
                                  }
                                  uint8_t abDigest[RTSHA512_HASH_SIZE];
                                  RTSha512Final(&Ctx, abDigest);
-                                 RTStrPrintf(pszDigest, sizeof(abBuf),
-                                             "%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
-                                             "%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
-                                             "%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
-                                             "%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x",
-                                             abDigest[0],  abDigest[1],  abDigest[2],  abDigest[3],
-                                             abDigest[4],  abDigest[5],  abDigest[6],  abDigest[7],
-                                             abDigest[8],  abDigest[9],  abDigest[10], abDigest[11],
-                                             abDigest[12], abDigest[13], abDigest[14], abDigest[15],
-                                             abDigest[16], abDigest[17], abDigest[18], abDigest[19],
-                                             abDigest[20], abDigest[21], abDigest[22], abDigest[23],
-                                             abDigest[24], abDigest[25], abDigest[26], abDigest[27],
-                                             abDigest[28], abDigest[29], abDigest[30], abDigest[31],
-                                             abDigest[32], abDigest[33], abDigest[34], abDigest[35],
-                                             abDigest[36], abDigest[37], abDigest[38], abDigest[39],
-                                             abDigest[40], abDigest[41], abDigest[42], abDigest[43],
-                                             abDigest[44], abDigest[45], abDigest[46], abDigest[47],
-                                             abDigest[48], abDigest[49], abDigest[50], abDigest[51],
-                                             abDigest[52], abDigest[53], abDigest[54], abDigest[55],
-                                             abDigest[56], abDigest[57], abDigest[58], abDigest[59],
-                                             abDigest[60], abDigest[61], abDigest[62], abDigest[63]);
+                                 RTSha512ToString(abDigest, pszDigest, sizeof(abBuf));
                                  break;
                              }
 
