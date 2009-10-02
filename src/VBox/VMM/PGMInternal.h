@@ -40,6 +40,7 @@
 #include <iprt/assert.h>
 #include <iprt/avl.h>
 #include <iprt/critsect.h>
+#include <iprt/sha.h>
 
 
 
@@ -1255,6 +1256,46 @@ typedef PGMROMRANGE *PPGMROMRANGE;
 
 
 /**
+ * Live save per page data for an MMIO2 page.
+ *
+ * Not using PGMLIVESAVEPAGE here because we cannot use normal write monitoring
+ * of MMIO2 pages.  The current approach is using some optimisitic SHA-1 +
+ * CRC-32 for detecting changes as well as special handling of zero pages.  This
+ * is a TEMPORARY measure which isn't perfect, but hopefully it is good enough
+ * for speeding things up.  (We're using SHA-1 and not SHA-256 or SHA-512
+ * because of speed (2.5x and 6x slower).)
+ *
+ * @todo Implement dirty MMIO2 page reporting that can be enabled during live
+ *       save but normally is disabled.  Since we can write monitore guest
+ *       accesses on our own, we only need this for host accesses.  Shouldn't be
+ *       too difficult for DevVGA, VMMDev might be doable, the planned
+ *       networking fun will be fun since it involves ring-0.
+ */
+typedef struct PGMLIVESAVEMMIO2PAGE
+{
+    /** Set if the page is considered dirty. */
+    bool        fDirty;
+    /** The number of scans this page has remained unchanged for.
+     * Only updated for dirty pages. */
+    uint8_t     cUnchangedScans;
+   /** Whether this page was zero at the last scan. */
+    bool        fZero;
+     /** Alignment padding. */
+    uint8_t     u8Padding;
+    /** CRC-32 for the first half of the page.
+     * This is used together with u32CrcH2 to quickly detect changes in the page
+     * during the non-final passes.  */
+    uint32_t    u32CrcH1;
+    /** CRC-32 for the second half of the page. */
+    uint32_t    u32CrcH2;
+    /** SHA-1 for the saved page.
+     * This is used in the final pass to skip pages without changes. */
+    uint8_t     abSha1Saved[RTSHA1_HASH_SIZE];
+} PGMLIVESAVEMMIO2PAGE;
+/** Pointer to a live save status data for an MMIO2 page. */
+typedef PGMLIVESAVEMMIO2PAGE *PPGMLIVESAVEMMIO2PAGE;
+
+/**
  * A registered MMIO2 (= Device RAM) range.
  *
  * There are a few reason why we need to keep track of these
@@ -1286,10 +1327,10 @@ typedef struct PGMMMIO2RANGE
     uint8_t                             iRegion;
     /** The saved state range ID. */
     uint8_t                             idSavedState;
-#if HC_ARCH_BITS != 32
     /** Alignment padding for putting the ram range on a PGMPAGE alignment boundrary. */
-    uint8_t                             abAlignemnt[HC_ARCH_BITS == 32 ? 0 : 4];
-#endif
+    uint8_t                             abAlignemnt[HC_ARCH_BITS == 32 ? 12 : 12];
+    /** Live save per page tracking data. */
+    PPGMLIVESAVEMMIO2PAGE               paLSPages;
     /** The associated RAM range. */
     PGMRAMRANGE                         RamRange;
 } PGMMMIO2RANGE;

@@ -89,6 +89,9 @@
 #define PGM_STATE_REC_FLAG_ADDR         UINT8_C(0x80)
 /** @} */
 
+/** The CRC-32 for a zero half page. */
+#define PGM_STATE_CRC32_ZERO_HALF_PAGE  UINT32_C(0xf1e8ba9e)
+
 
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
@@ -206,17 +209,28 @@ static DECLCALLBACK(int) pgmR3LivePrep(PVM pVM, PSSMHANDLE pSSM)
 
     /*
      * Initialize the live save tracking in the MMIO2 ranges.
+     * ASSUME nothing changes here.
      */
     pgmLock(pVM);
     for (PPGMMMIO2RANGE pMmio2 = pVM->pgm.s.pMmio2RangesR3; pMmio2; pMmio2 = pMmio2->pNextR3)
     {
-        uint32_t const  cPages   = pMmio2->RamRange.cb >> PAGE_SHIFT;
+        uint32_t const  cPages = pMmio2->RamRange.cb >> PAGE_SHIFT;
+        pgmUnlock(pVM);
 
-#if 0 /** @todo MMIO2 dirty page tracking for live save. */
+        PPGMLIVESAVEMMIO2PAGE paLSPages = (PPGMLIVESAVEMMIO2PAGE)MMR3HeapAllocZ(pVM, MM_TAG_PGM, sizeof(PGMLIVESAVEMMIO2PAGE) * cPages);
+        if (!paLSPages)
+            return VERR_NO_MEMORY;
         for (uint32_t iPage = 0; iPage < cPages; iPage++)
         {
+            paLSPages[iPage].fDirty          = true;
+            paLSPages[iPage].cUnchangedScans = 0;
+            paLSPages[iPage].fZero           = false;
+            paLSPages[iPage].u32CrcH1        = PGM_STATE_CRC32_ZERO_HALF_PAGE;
+            paLSPages[iPage].u32CrcH2        = PGM_STATE_CRC32_ZERO_HALF_PAGE;
         }
-#endif
+
+        pgmLock(pVM);
+        pMmio2->paLSPages = paLSPages;
         pVM->pgm.s.LiveSave.cMmio2Pages += cPages;
     }
     pgmUnlock(pVM);
@@ -766,15 +780,19 @@ static int pgmR3LoadMmio2Ranges(PVM pVM, PSSMHANDLE pSSM)
  * @param   pVM                 The VM handle.
  * @param   pSSM                The SSM handle.
  * @param   fLiveSave           Whether it's a live save or not.
- * @param   fFinalPass          Whether this is the final pass or not.
+ * @param   uPass               The pass number.
  */
-static int pgmR3SaveMmio2Pages(PVM pVM, PSSMHANDLE pSSM, bool fLiveSave, bool fFinalPass)
+static int pgmR3SaveMmio2Pages(PVM pVM, PSSMHANDLE pSSM, bool fLiveSave, uint32_t uPass)
 {
     int rc = VINF_SUCCESS;
     /** @todo implement live saving of MMIO2 pages. (Need some way of telling the
      *        device that we wish to know about changes.) */
-    if (fFinalPass)
+
+    if (uPass == SSM_PASS_FINAL)
     {
+        /*
+         * Save all non-zero pages.
+         */
         pgmLock(pVM);
         for (PPGMMMIO2RANGE pMmio2 = pVM->pgm.s.pMmio2RangesR3;
              pMmio2 && RT_SUCCESS(rc);
@@ -813,7 +831,7 @@ static int pgmR3SaveMmio2Pages(PVM pVM, PSSMHANDLE pSSM, bool fLiveSave, bool fF
  * @param   pVM                 The VM handle.
  * @param   pSSM                The SSM handle.
  * @param   fLiveSave           Whether it's a live save or not.
- * @param   fFinalPass          Whether this is the final pass or not.
+ * @param   uPass               The pass number.
  */
 static int pgmR3SaveRamPages(PVM pVM, PSSMHANDLE pSSM, bool fLiveSave, uint32_t uPass)
 {
@@ -1216,7 +1234,7 @@ static DECLCALLBACK(int) pgmR3LiveExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uPass)
     if (RT_SUCCESS(rc))
         rc = pgmR3SaveShadowedRomPages(pVM, pSSM, true /*fLiveSave*/, false /*fFinalPass*/);
     if (RT_SUCCESS(rc))
-        rc = pgmR3SaveMmio2Pages(      pVM, pSSM, true /*fLiveSave*/, false /*fFinalPass*/);
+        rc = pgmR3SaveMmio2Pages(      pVM, pSSM, true /*fLiveSave*/, uPass);
     if (RT_SUCCESS(rc))
         rc = pgmR3SaveRamPages(        pVM, pSSM, true /*fLiveSave*/, uPass);
     SSMR3PutU8(pSSM, PGM_STATE_REC_END);    /* (Ignore the rc, SSM takes of it.) */
@@ -1368,7 +1386,7 @@ static DECLCALLBACK(int) pgmR3SaveExec(PVM pVM, PSSMHANDLE pSSM)
             pgmR3LiveExecScanPages(pVM, true /*fFinalPass*/);
             rc = pgmR3SaveShadowedRomPages(    pVM, pSSM, true /*fLiveSave*/, true /*fFinalPass*/);
             if (RT_SUCCESS(rc))
-                rc = pgmR3SaveMmio2Pages(      pVM, pSSM, true /*fLiveSave*/, true /*fFinalPass*/);
+                rc = pgmR3SaveMmio2Pages(      pVM, pSSM, true /*fLiveSave*/, SSM_PASS_FINAL);
             if (RT_SUCCESS(rc))
                 rc = pgmR3SaveRamPages(        pVM, pSSM, true /*fLiveSave*/, SSM_PASS_FINAL);
         }
@@ -1382,7 +1400,7 @@ static DECLCALLBACK(int) pgmR3SaveExec(PVM pVM, PSSMHANDLE pSSM)
             if (RT_SUCCESS(rc))
                 rc = pgmR3SaveShadowedRomPages(pVM, pSSM, false /*fLiveSave*/, true /*fFinalPass*/);
             if (RT_SUCCESS(rc))
-                rc = pgmR3SaveMmio2Pages(      pVM, pSSM, false /*fLiveSave*/, true /*fFinalPass*/);
+                rc = pgmR3SaveMmio2Pages(      pVM, pSSM, false /*fLiveSave*/, SSM_PASS_FINAL);
             if (RT_SUCCESS(rc))
                 rc = pgmR3SaveRamPages(        pVM, pSSM, false /*fLiveSave*/, SSM_PASS_FINAL);
         }
@@ -1500,6 +1518,20 @@ static DECLCALLBACK(int) pgmR3SaveDone(PVM pVM, PSSMHANDLE pSSM)
         }
     } while (pCur);
 
+    /* Ditto for MMIO2 (ASSUME no runtime MMIO2 changes). */
+    for (PPGMMMIO2RANGE pMmio2 = pVM->pgm.s.pMmio2RangesR3; pMmio2; pMmio2 = pMmio2->pNextR3)
+    {
+        void *pvMmio2ToFree = pMmio2->paLSPages;
+        if (pvMmio2ToFree)
+        {
+            pMmio2->paLSPages = NULL;
+            pgmUnlock(pVM);
+            MMR3HeapFree(pvMmio2ToFree);
+            pgmLock(pVM);
+        }
+    }
+
+    /* Update PGM state. */
     pVM->pgm.s.LiveSave.fActive = false;
 
     Assert(pVM->pgm.s.cMonitoredPages >= cMonitoredPages);
