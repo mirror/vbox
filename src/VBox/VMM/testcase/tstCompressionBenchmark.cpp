@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Compression Benchmark for SSM.
+ * Compression Benchmark for SSM and PGM.
  */
 
 /*
@@ -86,13 +86,14 @@ static DECLCALLBACK(int) DecomprInCallback(void *pvUser, void *pvBuf, size_t cbB
     return VINF_SUCCESS;
 }
 
+
 /**
- * Benchmark RTCrc routines potentially relevant for SSM.
+ * Benchmark RTCrc routines potentially relevant for SSM or PGM - All in one go.
  *
  * @param  pabSrc   Pointer to the test data.
  * @param  cbSrc    The size of the test data.
  */
-static void tstBenchmarkCRCs(uint8_t const *pabSrc, size_t cbSrc)
+static void tstBenchmarkCRCsAllInOne(uint8_t const *pabSrc, size_t cbSrc)
 {
     RTPrintf("Algorithm     Speed                  Time      Digest\n"
              "------------------------------------------------------------------------------\n");
@@ -101,20 +102,20 @@ static void tstBenchmarkCRCs(uint8_t const *pabSrc, size_t cbSrc)
     uint32_t u32Crc = RTCrc32(pabSrc, cbSrc);
     NanoTS = RTTimeNanoTS() - NanoTS;
     unsigned uSpeed = (unsigned)(cbSrc / (long double)NanoTS * 1000000000.0 / 1024);
-    RTPrintf("CRC-32    %'9u KB/s  %'14llu ns - %08x\n", uSpeed, NanoTS, u32Crc);
+    RTPrintf("CRC-32    %'9u KB/s  %'15llu ns - %08x\n", uSpeed, NanoTS, u32Crc);
 
 
     NanoTS = RTTimeNanoTS();
     uint64_t u64Crc = RTCrc64(pabSrc, cbSrc);
     NanoTS = RTTimeNanoTS() - NanoTS;
     uSpeed = (unsigned)(cbSrc / (long double)NanoTS * 1000000000.0 / 1024);
-    RTPrintf("CRC-64    %'9u KB/s  %'14llu ns - %016llx\n", uSpeed, NanoTS, u64Crc);
+    RTPrintf("CRC-64    %'9u KB/s  %'15llu ns - %016llx\n", uSpeed, NanoTS, u64Crc);
 
     NanoTS = RTTimeNanoTS();
     u32Crc = RTCrcAdler32(pabSrc, cbSrc);
     NanoTS = RTTimeNanoTS() - NanoTS;
     uSpeed = (unsigned)(cbSrc / (long double)NanoTS * 1000000000.0 / 1024);
-    RTPrintf("Adler-32  %'9u KB/s  %'14llu ns - %08x\n", uSpeed, NanoTS, u32Crc);
+    RTPrintf("Adler-32  %'9u KB/s  %'15llu ns - %08x\n", uSpeed, NanoTS, u32Crc);
 
     NanoTS = RTTimeNanoTS();
     uint8_t abMd5Hash[RTMD5HASHSIZE];
@@ -123,7 +124,7 @@ static void tstBenchmarkCRCs(uint8_t const *pabSrc, size_t cbSrc)
     uSpeed = (unsigned)(cbSrc / (long double)NanoTS * 1000000000.0 / 1024);
     char szDigest[257];
     RTMd5ToString(abMd5Hash, szDigest, sizeof(szDigest));
-    RTPrintf("MD5       %'9u KB/s  %'14llu ns - %s\n", uSpeed, NanoTS, szDigest);
+    RTPrintf("MD5       %'9u KB/s  %'15llu ns - %s\n", uSpeed, NanoTS, szDigest);
 
     NanoTS = RTTimeNanoTS();
     uint8_t abSha1Hash[RTSHA1_HASH_SIZE];
@@ -131,7 +132,7 @@ static void tstBenchmarkCRCs(uint8_t const *pabSrc, size_t cbSrc)
     NanoTS = RTTimeNanoTS() - NanoTS;
     uSpeed = (unsigned)(cbSrc / (long double)NanoTS * 1000000000.0 / 1024);
     RTSha1ToString(abSha1Hash, szDigest, sizeof(szDigest));
-    RTPrintf("SHA-1     %'9u KB/s  %'14llu ns - %s\n", uSpeed, NanoTS, szDigest);
+    RTPrintf("SHA-1     %'9u KB/s  %'15llu ns - %s\n", uSpeed, NanoTS, szDigest);
 
     NanoTS = RTTimeNanoTS();
     uint8_t abSha256Hash[RTSHA256_HASH_SIZE];
@@ -139,7 +140,7 @@ static void tstBenchmarkCRCs(uint8_t const *pabSrc, size_t cbSrc)
     NanoTS = RTTimeNanoTS() - NanoTS;
     uSpeed = (unsigned)(cbSrc / (long double)NanoTS * 1000000000.0 / 1024);
     RTSha256ToString(abSha256Hash, szDigest, sizeof(szDigest));
-    RTPrintf("SHA-256   %'9u KB/s  %'14llu ns - %s\n", uSpeed, NanoTS, szDigest);
+    RTPrintf("SHA-256   %'9u KB/s  %'15llu ns - %s\n", uSpeed, NanoTS, szDigest);
 
     NanoTS = RTTimeNanoTS();
     uint8_t abSha512Hash[RTSHA512_HASH_SIZE];
@@ -147,7 +148,75 @@ static void tstBenchmarkCRCs(uint8_t const *pabSrc, size_t cbSrc)
     NanoTS = RTTimeNanoTS() - NanoTS;
     uSpeed = (unsigned)(cbSrc / (long double)NanoTS * 1000000000.0 / 1024);
     RTSha512ToString(abSha512Hash, szDigest, sizeof(szDigest));
-    RTPrintf("SHA-512   %'9u KB/s  %'14llu ns - %s\n", uSpeed, NanoTS, szDigest);
+    RTPrintf("SHA-512   %'9u KB/s  %'15llu ns - %s\n", uSpeed, NanoTS, szDigest);
+}
+
+/**
+ * Benchmark RTCrc routines potentially relevant for SSM or PGM - Page by page.
+ *
+ * @param  pabSrc   Pointer to the test data.
+ * @param  cbSrc    The size of the test data.
+ */
+static void tstBenchmarkCRCsPageByPage(uint8_t const *pabSrc, size_t cbSrc)
+{
+    RTPrintf("Algorithm     Speed                  Time     \n"
+             "----------------------------------------------\n");
+
+    size_t const cPages = cbSrc / PAGE_SIZE;
+
+    uint64_t NanoTS = RTTimeNanoTS();
+    for (uint32_t iPage = 0; iPage < cPages; iPage++)
+        RTCrc32(&pabSrc[iPage * PAGE_SIZE], PAGE_SIZE);
+    NanoTS = RTTimeNanoTS() - NanoTS;
+    unsigned uSpeed = (unsigned)(cbSrc / (long double)NanoTS * 1000000000.0 / 1024);
+    RTPrintf("CRC-32    %'9u KB/s  %'15llu ns\n", uSpeed, NanoTS);
+
+
+    NanoTS = RTTimeNanoTS();
+    for (uint32_t iPage = 0; iPage < cPages; iPage++)
+        RTCrc64(&pabSrc[iPage * PAGE_SIZE], PAGE_SIZE);
+    NanoTS = RTTimeNanoTS() - NanoTS;
+    uSpeed = (unsigned)(cbSrc / (long double)NanoTS * 1000000000.0 / 1024);
+    RTPrintf("CRC-64    %'9u KB/s  %'15llu ns\n", uSpeed, NanoTS);
+
+    NanoTS = RTTimeNanoTS();
+    for (uint32_t iPage = 0; iPage < cPages; iPage++)
+        RTCrcAdler32(&pabSrc[iPage * PAGE_SIZE], PAGE_SIZE);
+    NanoTS = RTTimeNanoTS() - NanoTS;
+    uSpeed = (unsigned)(cbSrc / (long double)NanoTS * 1000000000.0 / 1024);
+    RTPrintf("Adler-32  %'9u KB/s  %'15llu ns\n", uSpeed, NanoTS);
+
+    NanoTS = RTTimeNanoTS();
+    uint8_t abMd5Hash[RTMD5HASHSIZE];
+    for (uint32_t iPage = 0; iPage < cPages; iPage++)
+        RTMd5(&pabSrc[iPage * PAGE_SIZE], PAGE_SIZE, abMd5Hash);
+    NanoTS = RTTimeNanoTS() - NanoTS;
+    uSpeed = (unsigned)(cbSrc / (long double)NanoTS * 1000000000.0 / 1024);
+    RTPrintf("MD5       %'9u KB/s  %'15llu ns\n", uSpeed, NanoTS);
+
+    NanoTS = RTTimeNanoTS();
+    uint8_t abSha1Hash[RTSHA1_HASH_SIZE];
+    for (uint32_t iPage = 0; iPage < cPages; iPage++)
+        RTSha1(&pabSrc[iPage * PAGE_SIZE], PAGE_SIZE, abSha1Hash);
+    NanoTS = RTTimeNanoTS() - NanoTS;
+    uSpeed = (unsigned)(cbSrc / (long double)NanoTS * 1000000000.0 / 1024);
+    RTPrintf("SHA-1     %'9u KB/s  %'15llu ns\n", uSpeed, NanoTS);
+
+    NanoTS = RTTimeNanoTS();
+    uint8_t abSha256Hash[RTSHA256_HASH_SIZE];
+    for (uint32_t iPage = 0; iPage < cPages; iPage++)
+        RTSha256(&pabSrc[iPage * PAGE_SIZE], PAGE_SIZE, abSha256Hash);
+    NanoTS = RTTimeNanoTS() - NanoTS;
+    uSpeed = (unsigned)(cbSrc / (long double)NanoTS * 1000000000.0 / 1024);
+    RTPrintf("SHA-256   %'9u KB/s  %'15llu ns\n", uSpeed, NanoTS);
+
+    NanoTS = RTTimeNanoTS();
+    uint8_t abSha512Hash[RTSHA512_HASH_SIZE];
+    for (uint32_t iPage = 0; iPage < cPages; iPage++)
+        RTSha512(&pabSrc[iPage * PAGE_SIZE], PAGE_SIZE, abSha512Hash);
+    NanoTS = RTTimeNanoTS() - NanoTS;
+    uSpeed = (unsigned)(cbSrc / (long double)NanoTS * 1000000000.0 / 1024);
+    RTPrintf("SHA-512   %'9u KB/s  %'15llu ns\n", uSpeed, NanoTS);
 }
 
 
@@ -177,7 +246,7 @@ int main(int argc, char **argv)
         { "--page-at-a-time", 'c', RTGETOPT_REQ_UINT32 },
         { "--page-file",      'f', RTGETOPT_REQ_STRING },
         { "--offset",         'o', RTGETOPT_REQ_UINT64 },
-        { "--page-offset",    'O', RTGETOPT_REQ_UINT64 },
+        { "--help",           'h', RTGETOPT_REQ_NOTHING },
     };
 
     const char     *pszPageFile = NULL;
@@ -224,6 +293,25 @@ int main(int argc, char **argv)
             case 'O':
                 offPageFile = Val.u64 * PAGE_SIZE;
                 break;
+
+            case 'h':
+                RTPrintf("syntax: tstCompressionBenchmark [options]\n"
+                         "\n"
+                         "Options:\n"
+                         "  -h, --help\n"
+                         "    Show this help page\n"
+                         "  -i, --interations <num>\n"
+                         "    The number of iterations.\n"
+                         "  -n, --num-pages <pages>\n"
+                         "    The number of pages.\n"
+                         "  -c, --pages-at-a-time <pages>\n"
+                         "    Number of pages at a time.\n"
+                         "  -f, --page-file <filename>\n"
+                         "    File or device to read the page from. The default\n"
+                         "    is to generate some garbage.\n"
+                         "  -o, --offset <file-offset>\n"
+                         "    Offset into the page file to start reading at.\n");
+                return 0;
 
             default:
                 if (rc == VINF_GETOPT_NOT_OPTION)
@@ -542,11 +630,14 @@ int main(int argc, char **argv)
      * A little extension to the test, benchmark relevant CRCs.
      */
     RTPrintf("\n"
-             "tstCompressionBenchmark: Checksum/CRC\n");
-    tstBenchmarkCRCs(g_pabSrc, g_cbPages);
+             "tstCompressionBenchmark: Checksum/CRC - All In One\n");
+    tstBenchmarkCRCsAllInOne(g_pabSrc, g_cbPages);
+
+    RTPrintf("\n"
+             "tstCompressionBenchmark: Checksum/CRC - Page by Page\n");
+    tstBenchmarkCRCsPageByPage(g_pabSrc, g_cbPages);
 
     RTPrintf("tstCompressionBenchmark: END RESULTS\n");
-
 
     return rc;
 }
