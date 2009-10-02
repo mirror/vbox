@@ -41,6 +41,7 @@ RT_C_DECLS_BEGIN
 typedef ULONG (__stdcall *PFNMYEXSETTIMERRESOLUTION)(ULONG, BOOLEAN);
 typedef VOID (__stdcall *PFNMYKEFLUSHQUEUEDDPCS)(VOID);
 typedef VOID (__stdcall *PFNHALREQUESTIPI)(KAFFINITY TargetSet);
+typedef VOID (__stdcall *PFNHALSENDSOFTWAREINTERRUPT)(ULONG ProcessorNumber, KIRQL Irql);
 typedef int (__stdcall *PFNRTSENDIPI)(RTCPUID idCpu);
 
 
@@ -51,6 +52,7 @@ extern RTCPUSET                     g_rtMpNtCpuSet;
 extern PFNMYEXSETTIMERRESOLUTION    g_pfnrtNtExSetTimerResolution;
 extern PFNMYKEFLUSHQUEUEDDPCS       g_pfnrtNtKeFlushQueuedDpcs;
 extern PFNHALREQUESTIPI             g_pfnrtNtHalRequestIpi;
+extern PFNHALSENDSOFTWAREINTERRUPT  g_pfnrtNtHalSendSoftwareInterrupt;
 extern PFNRTSENDIPI                 g_pfnrtSendIpi;
 extern uint32_t                     g_offrtNtPbQuantumEnd;
 extern uint32_t                     g_cbrtNtPbQuantumEnd;

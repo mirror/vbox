@@ -58,6 +58,8 @@ PFNMYEXSETTIMERRESOLUTION   g_pfnrtNtExSetTimerResolution;
 PFNMYKEFLUSHQUEUEDDPCS      g_pfnrtNtKeFlushQueuedDpcs;
 /** HalRequestIpi, introduced in ??. */
 PFNHALREQUESTIPI            g_pfnrtNtHalRequestIpi;
+/** HalSendSoftwareInterrupt */
+PFNHALSENDSOFTWAREINTERRUPT g_pfnrtNtHalSendSoftwareInterrupt;
 /** SendIpi handler based on Windows version */
 PFNRTSENDIPI                g_pfnrtSendIpi;
 
@@ -87,6 +89,7 @@ int rtR0InitNative(void)
     g_pfnrtNtExSetTimerResolution = NULL;
     g_pfnrtNtKeFlushQueuedDpcs = NULL;
     g_pfnrtNtHalRequestIpi = NULL;
+    g_pfnrtNtHalSendSoftwareInterrupt = NULL;
 #else
     /*
      * Initialize the function pointers.
@@ -100,6 +103,9 @@ int rtR0InitNative(void)
 
     RtlInitUnicodeString(&RoutineName, L"HalRequestIpi");
     g_pfnrtNtHalRequestIpi = (PFNHALREQUESTIPI)MmGetSystemRoutineAddress(&RoutineName);
+
+    RtlInitUnicodeString(&RoutineName, L"HalSendSoftwareInterrupt");
+    g_pfnrtNtHalSendSoftwareInterrupt = (PFNHALSENDSOFTWAREINTERRUPT)MmGetSystemRoutineAddress(&RoutineName);
 #endif
 
     /*
@@ -112,23 +118,22 @@ int rtR0InitNative(void)
 
     g_pfnrtSendIpi = rtMpSendIpiDummy;
 #ifndef IPRT_TARGET_NT4
-    if (g_pfnrtNtHalRequestIpi)
+    if (    g_pfnrtNtHalRequestIpi
+        &&  MajorVersion == 6
+        &&  MinorVersion == 0)
     {
-        if (    MajorVersion == 6
-            &&  MinorVersion == 0)
-        {
-            /* Vista or Windows Server 2008 */
-            g_pfnrtSendIpi = rtMpSendIpiVista;
-        }
-        else
-        if (    MajorVersion == 6
-            &&  MinorVersion == 1)
-        {
-            /* Windows 7 or Windows Server 2008 R2 */
-            g_pfnrtSendIpi = rtMpSendIpiWin7;
-        }
-        /* Windows XP should send always send an IPI -> VERIFY */
+        /* Vista or Windows Server 2008 */
+        g_pfnrtSendIpi = rtMpSendIpiVista;
     }
+    else
+    if (    g_pfnrtNtHalSendSoftwareInterrupt
+        &&  MajorVersion == 6
+        &&  MinorVersion == 1)
+    {
+        /* Windows 7 or Windows Server 2008 R2 */
+        g_pfnrtSendIpi = rtMpSendIpiWin7;
+    }
+    /* Windows XP should send always send an IPI -> VERIFY */
 #endif
     KIRQL OldIrql;
     KeRaiseIrql(DISPATCH_LEVEL, &OldIrql); /* make sure we stay on the same cpu */
