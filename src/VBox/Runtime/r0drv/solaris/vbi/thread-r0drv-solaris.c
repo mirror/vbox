@@ -115,12 +115,9 @@ RTDECL(bool) RTThreadPreemptIsPossible(void)
 RTDECL(void) RTThreadPreemptDisable(PRTTHREADPREEMPTSTATE pState)
 {
     AssertPtr(pState);
-    Assert(pState->uOldPil == UINT32_MAX);
 
     vbi_preempt_disable();
 
-    pState->uOldPil = getpil();
-    Assert(pState->uOldPil != UINT32_MAX);
     RT_ASSERT_PREEMPT_CPUID_DISABLE(pState);
 }
 
@@ -129,12 +126,8 @@ RTDECL(void) RTThreadPreemptRestore(PRTTHREADPREEMPTSTATE pState)
 {
     AssertPtr(pState);
     RT_ASSERT_PREEMPT_CPUID_RESTORE(pState);
-    Assert(pState->uOldPil != UINT32_MAX);
-    splx(pState->uOldPil);
 
     vbi_preempt_enable();
-
-    pState->uOldPil = UINT32_MAX;
 }
 
 
