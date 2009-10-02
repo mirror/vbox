@@ -208,6 +208,7 @@ RuntimeR3_SOURCES       = \
 	common/checksum/crc32-zlib.cpp \
 	common/checksum/crc64.cpp \
 	common/checksum/md5.cpp \
+	common/checksum/md5str.cpp \
 	common/checksum/ipv4.cpp \
 	common/dbg/dbg.cpp \
 	common/dbg/dbgas.cpp \
@@ -265,8 +266,10 @@ RuntimeR3_SOURCES       = \
 	common/rand/rand.cpp \
 	common/rand/randadv.cpp \
 	common/rand/randparkmiller.cpp \
+	common/string/RTStrConvertHexBytes.cpp \
 	common/string/RTStrNLen.cpp \
 	common/string/RTStrNLenEx.cpp \
+	common/string/RTStrPrintHexBytes.cpp \
 	common/string/base64.cpp \
 	common/string/simplepattern.cpp \
 	common/string/straprintf.cpp \
@@ -850,8 +853,11 @@ VBoxRT_SOURCES                += \
 	common/checksum/RTSha1Digest.cpp \
 	common/checksum/manifest.cpp \
 	common/checksum/sha1.cpp \
+	common/checksum/sha1str.cpp \
 	common/checksum/sha256.cpp \
-	common/checksum/sha512.cpp
+	common/checksum/sha256str.cpp \
+	common/checksum/sha512.cpp \
+	common/checksum/sha512str.cpp
 VBoxRT_SOURCES.$(KBUILD_TARGET) = $(RuntimeR3_SOURCES.$(KBUILD_TARGET))
 VBoxRT_SOURCES.$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH) = $(RuntimeR3_SOURCES.$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH))
 VBoxRT_SOURCES.$(KBUILD_TARGET_ARCH) = $(RuntimeR3_SOURCES.$(KBUILD_TARGET_ARCH))
