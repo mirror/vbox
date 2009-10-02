@@ -32,6 +32,7 @@
 #include <iprt/getopt.h>
 #include <iprt/initterm.h>
 #include <iprt/md5.h>
+#include <iprt/sha.h>
 #include <iprt/mem.h>
 #include <iprt/param.h>
 #include <iprt/stream.h>
@@ -110,7 +111,7 @@ static void tstBenchmarkCRCs(uint8_t const *pabSrc, size_t cbSrc)
     RTPrintf("CRC-64    %'9u KB/s  %'14llu ns - %016llx\n", uSpeed, NanoTS, u64Crc);
 
     NanoTS = RTTimeNanoTS();
-    u32Crc   = RTCrcAdler32(pabSrc, cbSrc);
+    u32Crc = RTCrcAdler32(pabSrc, cbSrc);
     NanoTS = RTTimeNanoTS() - NanoTS;
     uSpeed = (unsigned)(cbSrc / (long double)NanoTS * 1000000000.0 / 1024);
     RTPrintf("Adler-32  %'9u KB/s  %'14llu ns - %08x\n", uSpeed, NanoTS, u32Crc);
@@ -120,12 +121,33 @@ static void tstBenchmarkCRCs(uint8_t const *pabSrc, size_t cbSrc)
     RTMd5(pabSrc, cbSrc, abMd5Hash);
     NanoTS = RTTimeNanoTS() - NanoTS;
     uSpeed = (unsigned)(cbSrc / (long double)NanoTS * 1000000000.0 / 1024);
-    RTPrintf("MD5       %'9u KB/s  %'14llu ns - %02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x\n",
-             uSpeed, NanoTS,
-             abMd5Hash[0],  abMd5Hash[1],  abMd5Hash[2],  abMd5Hash[3],
-             abMd5Hash[4],  abMd5Hash[5],  abMd5Hash[6],  abMd5Hash[7],
-             abMd5Hash[8],  abMd5Hash[9],  abMd5Hash[10], abMd5Hash[11],
-             abMd5Hash[12], abMd5Hash[13], abMd5Hash[14], abMd5Hash[15]);
+    char szDigest[257];
+    RTMd5ToString(abMd5Hash, szDigest, sizeof(szDigest));
+    RTPrintf("MD5       %'9u KB/s  %'14llu ns - %s\n", uSpeed, NanoTS, szDigest);
+
+    NanoTS = RTTimeNanoTS();
+    uint8_t abSha1Hash[RTSHA1_HASH_SIZE];
+    RTSha1(pabSrc, cbSrc, abSha1Hash);
+    NanoTS = RTTimeNanoTS() - NanoTS;
+    uSpeed = (unsigned)(cbSrc / (long double)NanoTS * 1000000000.0 / 1024);
+    RTSha1ToString(abSha1Hash, szDigest, sizeof(szDigest));
+    RTPrintf("SHA1      %'9u KB/s  %'14llu ns - %s\n", uSpeed, NanoTS, szDigest);
+
+    NanoTS = RTTimeNanoTS();
+    uint8_t abSha256Hash[RTSHA256_HASH_SIZE];
+    RTSha256(pabSrc, cbSrc, abSha256Hash);
+    NanoTS = RTTimeNanoTS() - NanoTS;
+    uSpeed = (unsigned)(cbSrc / (long double)NanoTS * 1000000000.0 / 1024);
+    RTSha1ToString(abSha1Hash, szDigest, sizeof(szDigest));
+    RTPrintf("SHA256    %'9u KB/s  %'14llu ns - %s\n", uSpeed, NanoTS, szDigest);
+
+    NanoTS = RTTimeNanoTS();
+    uint8_t abSha512Hash[RTSHA512_HASH_SIZE];
+    RTSha512(pabSrc, cbSrc, abSha512Hash);
+    NanoTS = RTTimeNanoTS() - NanoTS;
+    uSpeed = (unsigned)(cbSrc / (long double)NanoTS * 1000000000.0 / 1024);
+    RTSha1ToString(abSha1Hash, szDigest, sizeof(szDigest));
+    RTPrintf("SHA512    %'9u KB/s  %'14llu ns - %s\n", uSpeed, NanoTS, szDigest);
 }
 
 
