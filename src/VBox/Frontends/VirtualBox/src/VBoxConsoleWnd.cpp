@@ -3892,7 +3892,7 @@ VBoxNetworkDialog::VBoxNetworkDialog (QWidget *aParent, CSession &aSession)
 
 void VBoxNetworkDialog::retranslateUi()
 {
-    setWindowTitle (tr ("Network Adapter Settings"));
+    setWindowTitle (tr ("Network Adapters"));
 }
 
 void VBoxNetworkDialog::accept()
