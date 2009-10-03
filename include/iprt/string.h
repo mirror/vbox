@@ -37,15 +37,7 @@
 #if defined(RT_OS_LINUX) && defined(__KERNEL__)
 # include <linux/string.h>
 #elif defined(RT_OS_FREEBSD) && defined(_KERNEL)
-  /*
-   * Kludge for the FreeBSD kernel:
-   *  Some of the string.h stuff clashes with sys/libkern.h, so just wrap
-   *  it up while including string.h to keep things quiet. It's nothing
-   *  important that's clashing, after all.
-   */
-# define strdup strdup_string_h
-# include <string.h>
-# undef strdup
+# include <sys/libkern.h>
 #elif defined(RT_OS_SOLARIS) && defined(_KERNEL)
   /*
    * Same case as with FreeBSD kernel:
@@ -64,7 +56,8 @@
  * Supply prototypes for standard string functions provided by
  * IPRT instead of the operating environment.
  */
-#if defined(RT_OS_DARWIN) && defined(KERNEL)
+#if    (defined(RT_OS_DARWIN) && defined(KERNEL)) \
+    || (defined(RT_OS_FREEBSD) && defined(_KERNEL))
 RT_C_DECLS_BEGIN
 void *memchr(const void *pv, int ch, size_t cb);
 char *strpbrk(const char *pszStr, const char *pszChars);
