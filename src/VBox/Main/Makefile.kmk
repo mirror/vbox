@@ -359,6 +359,7 @@ ifdef VBOX_WITH_USB
  VBoxSVC_SOURCES.os2     +=     os2/USBProxyServiceOs2.cpp
  VBoxSVC_SOURCES.solaris += solaris/USBProxyServiceSolaris.cpp
  VBoxSVC_SOURCES.win     +=     win/USBProxyServiceWindows.cpp
+ VBoxSVC_SOURCES.freebsd += freebsd/USBProxyServiceFreeBSD.cpp
 endif
 
 ifdef VBOX_WITH_NETFLT
