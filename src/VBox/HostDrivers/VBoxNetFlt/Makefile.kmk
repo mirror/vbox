@@ -400,6 +400,30 @@ ifeq ($(KBUILD_TARGET),freebsd)
 vboxnetflt_DEPS.freebsd += $(PATH_OUT)/opt_netgraph.h
 $(PATH_OUT)/opt_netgraph.h:
 	echo > $(PATH_OUT)/opt_netgraph.h
+
+ #
+ # Install source files for compliation on FreeBSD.
+ # files_vboxnetflt defines VBOX_VBOXNETFLT_SOURCES.
+ #
+ include $(PATH_SUB_CURRENT)/freebsd/files_vboxnetflt
+ INSTALLS += VBoxNetFlt-src
+ VBoxNetFlt-src_INST    = bin/src/vboxnetflt/
+ VBoxNetFlt-src_MODE    = a+r,u+w
+ VBoxNetFlt-src_SOURCES = $(subst ",,$(VBOX_VBOXNETFLT_SOURCES)) #"
+ VBoxNetFlt-src_SOURCES+= \
+	$(PATH_VBoxNetFlt-src)/Makefile
+ VBoxNetFlt-src_CLEAN   = \
+	$(PATH_VBoxNetFlt-src)/Makefile	\
+
+ $$(PATH_VBoxNetFlt-src)/Makefile: \
+		$(PATH_SUB_CURRENT)/freebsd/Makefile \
+		$$(if $$(eq $$(VBoxNetFlt/freebsd/Makefile_VBOX_HARDENED),$$(VBOX_WITH_HARDENING)),,FORCE) \
+		| $$(dir $$@)
+ ifndef VBOX_WITH_HARDENING
+	$(QUIET)$(SED) -e "s;-DVBOX_WITH_HARDENING;;g" --output $@ $<
+ else
+	$(QUIET)$(CP) -f $< $@
+ endif
 endif # freebsd
 
 include	$(KBUILD_PATH)/subfooter.kmk

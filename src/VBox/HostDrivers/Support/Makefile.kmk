@@ -51,6 +51,7 @@ ifndef VBOX_ONLY_DOCS
   SYSMODS.solaris += vboxdrv
  endif
  INSTALLS.linux   += vboxdrv-mod vboxdrv-sh
+ INSTALLS.freebsd += vboxdrv-mod vboxdrv-sh
 
  #
  # Include sub-makefile(s).
@@ -60,7 +61,12 @@ ifndef VBOX_ONLY_DOCS
  #
  # Populate FILES_VBOXDRV_NOBIN and FILES_VBOXDRV_BIN
  #
- include $(PATH_SUB_CURRENT)/linux/files_vboxdrv
+ ifeq ($(KBUILD_TARGET),linux)
+  include $(PATH_SUB_CURRENT)/linux/files_vboxdrv
+ endif
+ ifeq ($(KBUILD_TARGET),freebsd)
+  include $(PATH_SUB_CURRENT)/freebsd/files_vboxdrv
+ endif
 endif # !VBOX_ONLY_DOCS
 
 
@@ -408,8 +414,29 @@ vboxdrv_SOURCES      := \
 	$(PATH_SUB_CURRENT)/$(KBUILD_TARGET)/SUPDrv-$(KBUILD_TARGET).def \
 	SUPDrv.c
 ## @todo the SUPDrv-freebsd.def is most probably gonna break it and require build system hacking...
+
+#
+# Targets for installing the freebsd sources.
+#
+vboxdrv-mod_INST    = bin/src/vboxdrv/
+vboxdrv-mod_MODE    = a+r,u+w
+vboxdrv-mod_SOURCES = $(subst ",,$(FILES_VBOXDRV_NOBIN)) #"
+vboxdrv-mod_SOURCES += \
+	$(PATH_vboxdrv-mod)/Makefile
+vboxdrv-mod_CLEAN   = \
+	$(PATH_vboxdrv-mod)/Makefile
 endif # freebsd
 
+$$(PATH_vboxdrv-mod)/Makefile: \
+		$(PATH_SUB_CURRENT)/freebsd/Makefile \
+		$$(if $$(eq $$(Support/freebsd/Makefile_VBOX_HARDENED),$$(VBOX_WITH_HARDENING)),,FORCE) \
+		| $$(dir $$@)
+	$(call MSG_TOOL,Creating,,$@)
+ ifndef VBOX_WITH_HARDENING
+	$(QUIET)$(SED) -e "s;-DVBOX_WITH_HARDENING;;g" --output $@ $<
+ else
+	$(QUIET)$(CP) -f $< $@
+ endif
 
 #
 # vboxdrv.o - The Solaris Kernel Module.

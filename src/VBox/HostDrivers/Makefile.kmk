@@ -40,16 +40,26 @@ ifndef VBOX_ONLY_DOCS
   endif
  endif
 
- ifeq ($(KBUILD_TARGET),linux)
+ if1of ($(KBUILD_TARGET),linux freebsd)
   #
-  # Install the Makefile for module compliation on Linux hosts
+  # Install the Makefile for module compliation on Linux and FreeBSD hosts
   #
   INSTALLS += HostDrivers-src
   HostDrivers-src_INST    = bin/src/
   HostDrivers-src_MODE    = a+r,u+w
-  HostDrivers-src_SOURCES = linux/Makefile
+  HostDrivers-src_SOURCES.linux = linux/Makefile
+  HostDrivers-src_SOURCES.freebsd = freebsd/Makefile
  endif
 
+ if1of ($(KBUILD_TARGET),freebsd)
+  #
+  # Install the export_modules script for tar'ing the module sources on FreeBSD hosts
+  #
+  INSTALLS += HostDrivers-sh
+  HostDrivers-sh_INST    = bin/
+  HostDrivers-sh_MODE    = a+rx,u+w
+  HostDrivers-sh_SOURCES.freebsd = freebsd/export_modules
+ endif
 endif # !VBOX_ONLY_DOCS
 
 # Let kBuild generate the rules.
