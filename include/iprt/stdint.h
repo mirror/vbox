@@ -37,6 +37,7 @@
  * Use the stdint.h on systems that have one.
  */
 #if !(defined(RT_OS_LINUX) && defined(__KERNEL__))  \
+  && !(defined(RT_OS_FREEBSD) && defined(_KERNEL)) \
   && !defined(_MSC_VER) \
   && !defined(__IBMC__) \
   && !defined(__IBMCPP__) \
@@ -64,6 +65,16 @@
 #  undef  UINT32_C
 #  define UINT32_C(Value)   (Value ## U)
 # endif /* 64-bit darwin kludge. */
+
+#elif defined(RT_OS_FREEBSD) && defined(_KERNEL) \
+
+# ifndef __STDC_CONSTANT_MACROS
+#  define __STDC_CONSTANT_MACROS
+# endif
+# ifndef __STDC_LIMIT_MACROS
+#  define __STDC_LIMIT_MACROS
+# endif
+# include <sys/stdint.h>
 
 #else /* No system stdint.h */
 

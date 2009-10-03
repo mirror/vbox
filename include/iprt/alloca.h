@@ -38,7 +38,7 @@
  * interesting of course...
  */
 #if defined(IN_RING0) \
- && (defined(RT_OS_DARWIN) || defined(RT_OS_LINUX) || defined(RT_OS_SOLARIS))
+ && (defined(RT_OS_DARWIN) || defined(RT_OS_LINUX) || defined(RT_OS_SOLARIS) || defined(RT_OS_FREEBSD))
 /* ASSUMES GNU C */
 # define alloca(cb) __builtin_alloca(cb)
 #else

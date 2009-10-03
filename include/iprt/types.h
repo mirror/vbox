@@ -58,7 +58,7 @@
 #  ifndef _STDDEF_H_
 #   undef offsetof
 #  endif
-#  include <stddef.h>
+#  include <sys/stddef.h>
 #  ifndef _SYS_TYPES_H_
 #   undef offsetof
 #  endif

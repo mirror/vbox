@@ -30,8 +30,12 @@
 #ifndef ___iprt_stdarg_h
 #define ___iprt_stdarg_h
 
-#ifndef IPRT_NO_CRT
+#if    !defined(IPRT_NO_CRT) \
+    && !(defined(RT_OS_FREEBSD) && defined(_KERNEL))
+
 # include <stdarg.h>
+#elif defined(RT_OS_FREEBSD) && defined(_KERNEL)
+# include <machine/stdarg.h>
 #else
 # include <iprt/types.h>
 # include <iprt/nocrt/compiler/compiler.h>
