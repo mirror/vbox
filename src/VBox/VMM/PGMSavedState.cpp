@@ -933,10 +933,10 @@ static void pgmR3ScanMmio2Pages(PVM pVM, uint32_t uPass)
  */
 static int pgmR3SaveMmio2Pages(PVM pVM, PSSMHANDLE pSSM, bool fLiveSave, uint32_t uPass)
 {
-    int rc = VINF_SUCCESS;
     /** @todo implement live saving of MMIO2 pages. (Need some way of telling the
      *        device that we wish to know about changes.) */
 
+    int rc = VINF_SUCCESS;
     if (uPass == SSM_PASS_FINAL)
     {
         /*
@@ -958,13 +958,13 @@ static int pgmR3SaveMmio2Pages(PVM pVM, PSSMHANDLE pSSM, bool fLiveSave, uint32_
                     u8Type = ASMMemIsZeroPage(pbPage) ? PGM_STATE_REC_MMIO2_ZERO : PGM_STATE_REC_MMIO2_RAW;
                 else
                 {
+                    /* Try figure if it's a clean page, compare the SHA-1 to be really sure. */
                     if (   !paLSPages[iPage].fDirty
                         && !pgmR3ScanMmio2Page(pVM, pbPage, &paLSPages[iPage]))
                     {
                         if (paLSPages[iPage].fZero)
                             continue;
 
-                        /* We have to be sure here before put it down as successfully written. */
                         uint8_t abSha1Hash[RTSHA1_HASH_SIZE];
                         RTSha1(pbPage, PAGE_SIZE, abSha1Hash);
                         if (!memcmp(abSha1Hash, paLSPages[iPage].abSha1Saved, sizeof(abSha1Hash)))
@@ -1009,17 +1009,18 @@ static int pgmR3SaveMmio2Pages(PVM pVM, PSSMHANDLE pSSM, bool fLiveSave, uint32_
 
             for (uint32_t iPage = 0; iPage < cPages; iPage++, pbPage += PAGE_SIZE)
             {
+                /* Skip clean pages and pages which hasn't quiesced. */
                 if (!paLSPages[iPage].fDirty)
                     continue;
                 if (paLSPages[iPage].cUnchangedScans < 3)
                     continue;
-                if (!pgmR3ScanMmio2Page(pVM, pbPage, &paLSPages[iPage]))
+                if (pgmR3ScanMmio2Page(pVM, pbPage, &paLSPages[iPage]))
                     continue;
 
+                /* Save it. */
                 if (!paLSPages[iPage].fZero)
                     RTSha1(pbPage, PAGE_SIZE, paLSPages[iPage].abSha1Saved);
                 uint8_t u8Type = paLSPages[iPage].fZero ? PGM_STATE_REC_MMIO2_ZERO : PGM_STATE_REC_MMIO2_RAW;
-
                 if (iPage != 0 && iPage == iPageLast + 1)
                     rc = SSMR3PutU8(pSSM, u8Type);
                 else
@@ -1030,7 +1031,6 @@ static int pgmR3SaveMmio2Pages(PVM pVM, PSSMHANDLE pSSM, bool fLiveSave, uint32_
                 }
                 if (u8Type == PGM_STATE_REC_MMIO2_RAW)
                     rc = SSMR3PutMem(pSSM, pbPage, PAGE_SIZE);
-
                 if (RT_FAILURE(rc))
                     break;
                 iPageLast = iPage;
