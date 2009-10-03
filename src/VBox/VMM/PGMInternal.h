@@ -2711,20 +2711,24 @@ typedef struct PGM
      */
     struct
     {
-        /** The number of ready pages.  */
-        uint32_t                    cReadyPages;
-        /** The number of dirty pages. */
-        uint32_t                    cDirtyPages;
+        /** Per type statistics. */
+        struct
+        {
+            /** The number of ready pages.  */
+            uint32_t                cReadyPages;
+            /** The number of dirty pages. */
+            uint32_t                cDirtyPages;
+        }                           Rom,
+                                    Mmio2,
+                                    Ram;
         /** The number of monitored pages. */
         uint32_t                    cMonitoredPages;
         /** The number of ignored pages.  */
         uint32_t                    cIgnoredPages;
-        /** The number of dirty MMIO2 pages. */
-        uint32_t                    cDirtyMmio2Pages;
         /** Indicates that a live save operation is active.  */
         bool                        fActive;
         /** Padding. */
-        bool                        afReserved[3];
+        bool                        afReserved[4+3];
     } LiveSave;
 
     /** @name   Error injection.

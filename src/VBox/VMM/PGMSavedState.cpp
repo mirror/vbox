@@ -214,9 +214,9 @@ static int pgmR3PrepRomPages(PVM pVM)
             }
         }
 
-        pVM->pgm.s.LiveSave.cDirtyPages += cPages;
+        pVM->pgm.s.LiveSave.Rom.cDirtyPages += cPages;
         if (pRom->fFlags & PGMPHYS_ROM_FLAGS_SHADOWED)
-            pVM->pgm.s.LiveSave.cDirtyPages += cPages;
+            pVM->pgm.s.LiveSave.Rom.cDirtyPages += cPages;
     }
     pgmUnlock(pVM);
 
@@ -355,8 +355,8 @@ static void pgmR3ScanRomPages(PVM pVM)
                     if (!pRomPage->LiveSave.fDirty)
                     {
                         pRomPage->LiveSave.fDirty = true;
-                        pVM->pgm.s.LiveSave.cReadyPages--;
-                        pVM->pgm.s.LiveSave.cDirtyPages++;
+                        pVM->pgm.s.LiveSave.Rom.cReadyPages--;
+                        pVM->pgm.s.LiveSave.Rom.cDirtyPages++;
                     }
                     pRomPage->LiveSave.fDirtiedRecently = true;
                 }
@@ -432,8 +432,8 @@ static int pgmR3SaveRomVirginPages(PVM pVM, PSSMHANDLE pSSM, bool fLiveSave)
             pRom->aPages[iPage].LiveSave.u8Prot = (uint8_t)enmProt;
             if (fLiveSave)
             {
-                pVM->pgm.s.LiveSave.cDirtyPages--;
-                pVM->pgm.s.LiveSave.cReadyPages++;
+                pVM->pgm.s.LiveSave.Rom.cDirtyPages--;
+                pVM->pgm.s.LiveSave.Rom.cReadyPages++;
             }
         }
     }
@@ -497,8 +497,8 @@ static int pgmR3SaveShadowedRomPages(PVM pVM, PSSMHANDLE pSSM, bool fLiveSave, b
                     {
                         pRomPage->LiveSave.u8Prot = (uint8_t)enmProt;
                         pRomPage->LiveSave.fDirty = false;
-                        pVM->pgm.s.LiveSave.cReadyPages++;
-                        pVM->pgm.s.LiveSave.cDirtyPages--;
+                        pVM->pgm.s.LiveSave.Rom.cReadyPages++;
+                        pVM->pgm.s.LiveSave.Rom.cDirtyPages--;
                     }
                     pgmUnlock(pVM);
                     AssertLogRelMsgRCReturn(rc, ("rc=%Rrc GCPhys=%RGp\n", rc, GCPhys), rc);
@@ -597,7 +597,7 @@ static int pgmR3PrepMmio2Pages(PVM pVM)
 
         pgmLock(pVM);
         pMmio2->paLSPages = paLSPages;
-        pVM->pgm.s.LiveSave.cDirtyMmio2Pages += cPages;
+        pVM->pgm.s.LiveSave.Mmio2.cDirtyPages += cPages;
     }
     pgmUnlock(pVM);
     return VINF_SUCCESS;
@@ -766,8 +766,8 @@ DECLINLINE(bool) pgmR3ScanMmio2Page(PVM pVM, uint8_t const *pbPage, PPGMLIVESAVE
     if (!pLSPage->fDirty)
     {
         pLSPage->fDirty = true;
-        pVM->pgm.s.LiveSave.cReadyPages--;
-        pVM->pgm.s.LiveSave.cDirtyMmio2Pages++;
+        pVM->pgm.s.LiveSave.Mmio2.cReadyPages--;
+        pVM->pgm.s.LiveSave.Mmio2.cDirtyPages++;
     }
     return true;
 }
@@ -782,9 +782,10 @@ DECLINLINE(bool) pgmR3ScanMmio2Page(PVM pVM, uint8_t const *pbPage, PPGMLIVESAVE
 static void pgmR3ScanMmio2Pages(PVM pVM, uint32_t uPass)
 {
     /*
-     * Only do this every 4th time as it's a little bit expensive.
+     * Since this is a bit expensive we lower the scan rate after a little while.
      */
-    if (    (uPass & 3) != 0
+    if (    (    (uPass & 3) != 0
+             &&  uPass > 10)
         ||  uPass == SSM_PASS_FINAL)
         return;
 
@@ -878,10 +879,12 @@ static int pgmR3SaveMmio2Pages(PVM pVM, PSSMHANDLE pSSM, bool fLiveSave, uint32_
         pgmUnlock(pVM);
     }
     /*
-     * Only do this every 4rd time since it's kind of expense.
+     * Reduce the rate after a little while since the current MMIO2 approach is
+     * a bit expensive.
      * We position it two passes after the scan pass to avoid saving busy pages.
      */
-    else if ((uPass & 3) == 2)
+    else if (   uPass <= 10
+             || (uPass & 3) == 2)
     {
         pgmLock(pVM);
         for (PPGMMMIO2RANGE pMmio2 = pVM->pgm.s.pMmio2RangesR3;
@@ -905,8 +908,14 @@ static int pgmR3SaveMmio2Pages(PVM pVM, PSSMHANDLE pSSM, bool fLiveSave, uint32_
                     continue;
 
                 /* Save it. */
-                if (!paLSPages[iPage].fZero)
-                    RTSha1(pbPage, PAGE_SIZE, paLSPages[iPage].abSha1Saved);
+                bool const fZero = paLSPages[iPage].fZero;
+                uint8_t abPage[PAGE_SIZE];
+                if (!fZero)
+                {
+                    memcpy(abPage, pbPage, PAGE_SIZE);
+                    RTSha1(abPage, PAGE_SIZE, paLSPages[iPage].abSha1Saved);
+                }
+
                 uint8_t u8Type = paLSPages[iPage].fZero ? PGM_STATE_REC_MMIO2_ZERO : PGM_STATE_REC_MMIO2_RAW;
                 if (iPage != 0 && iPage == iPageLast + 1)
                     rc = SSMR3PutU8(pSSM, u8Type);
@@ -917,9 +926,14 @@ static int pgmR3SaveMmio2Pages(PVM pVM, PSSMHANDLE pSSM, bool fLiveSave, uint32_
                     rc = SSMR3PutU32(pSSM, iPage);
                 }
                 if (u8Type == PGM_STATE_REC_MMIO2_RAW)
-                    rc = SSMR3PutMem(pSSM, pbPage, PAGE_SIZE);
+                    rc = SSMR3PutMem(pSSM, abPage, PAGE_SIZE);
                 if (RT_FAILURE(rc))
                     break;
+
+                /* Housekeeping. */
+                paLSPages[iPage].fDirty = false;
+                pVM->pgm.s.LiveSave.Mmio2.cDirtyPages--;
+                pVM->pgm.s.LiveSave.Mmio2.cReadyPages++;
                 iPageLast = iPage;
             }
 
@@ -1036,7 +1050,7 @@ static int pgmR3PrepRamPages(PVM pVM)
                                 paLSPages[iPage].fShared = 0;
                             }
                             paLSPages[iPage].fIgnore     = 0;
-                            pVM->pgm.s.LiveSave.cDirtyPages++;
+                            pVM->pgm.s.LiveSave.Ram.cDirtyPages++;
                             break;
 
                         case PGMPAGETYPE_ROM_SHADOW:
@@ -1146,8 +1160,8 @@ static void pgmR3ScanRamPages(PVM pVM, bool fFinalPass)
 
                                 if (!paLSPages[iPage].fDirty)
                                 {
-                                    pVM->pgm.s.LiveSave.cReadyPages--;
-                                    pVM->pgm.s.LiveSave.cDirtyPages++;
+                                    pVM->pgm.s.LiveSave.Ram.cReadyPages--;
+                                    pVM->pgm.s.LiveSave.Ram.cDirtyPages++;
                                     if (++paLSPages[iPage].cDirtied > PGMLIVSAVEPAGE_MAX_DIRTIED)
                                         paLSPages[iPage].cDirtied = PGMLIVSAVEPAGE_MAX_DIRTIED;
                                 }
@@ -1170,8 +1184,8 @@ static void pgmR3ScanRamPages(PVM pVM, bool fFinalPass)
                                     paLSPages[iPage].fWriteMonitoredJustNow = 1;
                                     if (!paLSPages[iPage].fDirty)
                                     {
-                                        pVM->pgm.s.LiveSave.cReadyPages--;
-                                        pVM->pgm.s.LiveSave.cDirtyPages++;
+                                        pVM->pgm.s.LiveSave.Ram.cReadyPages--;
+                                        pVM->pgm.s.LiveSave.Ram.cDirtyPages++;
                                         if (++paLSPages[iPage].cDirtied > PGMLIVSAVEPAGE_MAX_DIRTIED)
                                             paLSPages[iPage].cDirtied = PGMLIVSAVEPAGE_MAX_DIRTIED;
                                     }
@@ -1186,8 +1200,8 @@ static void pgmR3ScanRamPages(PVM pVM, bool fFinalPass)
                                     if (!paLSPages[iPage].fDirty)
                                     {
                                         paLSPages[iPage].fDirty = 1;
-                                        pVM->pgm.s.LiveSave.cReadyPages--;
-                                        pVM->pgm.s.LiveSave.cDirtyPages++;
+                                        pVM->pgm.s.LiveSave.Ram.cReadyPages--;
+                                        pVM->pgm.s.LiveSave.Ram.cDirtyPages++;
                                     }
                                 }
                                 break;
@@ -1200,8 +1214,8 @@ static void pgmR3ScanRamPages(PVM pVM, bool fFinalPass)
                                     if (!paLSPages[iPage].fDirty)
                                     {
                                         paLSPages[iPage].fDirty = 1;
-                                        pVM->pgm.s.LiveSave.cReadyPages--;
-                                        pVM->pgm.s.LiveSave.cDirtyPages++;
+                                        pVM->pgm.s.LiveSave.Ram.cReadyPages--;
+                                        pVM->pgm.s.LiveSave.Ram.cDirtyPages++;
                                     }
                                 }
                                 break;
@@ -1236,9 +1250,9 @@ static void pgmR3ScanRamPages(PVM pVM, bool fFinalPass)
 
                         /** @todo the counting doesn't quite work out here. fix later? */
                         if (paLSPages[iPage].fDirty)
-                            pVM->pgm.s.LiveSave.cDirtyPages--;
+                            pVM->pgm.s.LiveSave.Ram.cDirtyPages--;
                         else
-                            pVM->pgm.s.LiveSave.cReadyPages--;
+                            pVM->pgm.s.LiveSave.Ram.cReadyPages--;
                         pVM->pgm.s.LiveSave.cIgnoredPages++;
                     }
                 } /* for each page in range */
@@ -1382,8 +1396,8 @@ static int pgmR3SaveRamPages(PVM pVM, PSSMHANDLE pSSM, bool fLiveSave, uint32_t 
                     {
                         paLSPages[iPage].fDirty = 0;
                         paLSPages[iPage].uPassSaved = uPass;
-                        pVM->pgm.s.LiveSave.cReadyPages++;
-                        pVM->pgm.s.LiveSave.cDirtyPages--;
+                        pVM->pgm.s.LiveSave.Ram.cReadyPages++;
+                        pVM->pgm.s.LiveSave.Ram.cDirtyPages--;
                     }
                     if (idRamRangesGen != pVM->pgm.s.idRamRangesGen)
                     {
@@ -1535,19 +1549,27 @@ static DECLCALLBACK(int) pgmR3LiveExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uPass)
  */
 static DECLCALLBACK(int)  pgmR3LiveVote(PVM pVM, PSSMHANDLE pSSM)
 {
-//    RTPrintf("# Ready=%08x Dirty=%#08x Ignored=%#08x Monitored=%#08x MMIO2=%#08x\n",
-//             pVM->pgm.s.LiveSave.cReadyPages,
-//             pVM->pgm.s.LiveSave.cDirtyPages,
-//             pVM->pgm.s.LiveSave.cIgnoredPages,
-//             pVM->pgm.s.LiveSave.cMonitoredPages,
-//             pVM->pgm.s.LiveSave.cMmio2Pages
-//             );
-//    static int s_iHack = 0;
-//    if ((++s_iHack % 25) == 0)
-//        return VINF_SUCCESS;
-
-    if (pVM->pgm.s.LiveSave.cDirtyPages < 256) /* semi random number. */
+#if 0
+    RTPrintf("# Ram R/D=%08x/%08x Ignored=%#08x Monitored=%#08x  Rom R/D=%08x/%08x  Mmio2 R/D=%08x/%08x\n",
+             pVM->pgm.s.LiveSave.Ram.cReadyPages,
+             pVM->pgm.s.LiveSave.Ram.cDirtyPages,
+             pVM->pgm.s.LiveSave.cIgnoredPages,
+             pVM->pgm.s.LiveSave.cMonitoredPages,
+             pVM->pgm.s.LiveSave.Rom.cReadyPages,
+             pVM->pgm.s.LiveSave.Rom.cDirtyPages,
+             pVM->pgm.s.LiveSave.Mmio2.cReadyPages,
+             pVM->pgm.s.LiveSave.Mmio2.cDirtyPages
+             );
+    static int s_iHack = 0;
+    if ((++s_iHack % 42) == 0)
         return VINF_SUCCESS;
+#else
+    if (      pVM->pgm.s.LiveSave.Rom.cDirtyPages
+           +  pVM->pgm.s.LiveSave.Mmio2.cDirtyPages
+           +  pVM->pgm.s.LiveSave.Ram.cDirtyPages
+        <  256)                         /* semi random numbers. */
+        return VINF_SUCCESS;
+#endif
     return VINF_SSM_VOTE_FOR_ANOTHER_PASS;
 }
 
@@ -1644,11 +1666,14 @@ static DECLCALLBACK(int) pgmR3LivePrep(PVM pVM, PSSMHANDLE pSSM)
     /*
      * Initialize the statistics.
      */
-    pVM->pgm.s.LiveSave.cReadyPages      = 0;
-    pVM->pgm.s.LiveSave.cDirtyPages      = 0;
-    pVM->pgm.s.LiveSave.cIgnoredPages    = 0;
-    pVM->pgm.s.LiveSave.cDirtyMmio2Pages = 0;
-    pVM->pgm.s.LiveSave.fActive          = true;
+    pVM->pgm.s.LiveSave.Rom.cReadyPages   = 0;
+    pVM->pgm.s.LiveSave.Rom.cDirtyPages   = 0;
+    pVM->pgm.s.LiveSave.Mmio2.cReadyPages = 0;
+    pVM->pgm.s.LiveSave.Mmio2.cDirtyPages = 0;
+    pVM->pgm.s.LiveSave.Ram.cReadyPages   = 0;
+    pVM->pgm.s.LiveSave.Ram.cDirtyPages   = 0;
+    pVM->pgm.s.LiveSave.cIgnoredPages     = 0;
+    pVM->pgm.s.LiveSave.fActive           = true;
 
     /*
      * Per page type.
