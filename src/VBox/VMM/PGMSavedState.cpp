@@ -1096,7 +1096,6 @@ static void pgmR3ScanRamPages(PVM pVM, bool fFinalPass)
     do
     {
         uint32_t const  idRamRangesGen = pVM->pgm.s.idRamRangesGen;
-        uint32_t        cSinceYield    = 0;
         for (pCur = pVM->pgm.s.pRamRangesR3; pCur; pCur = pCur->pNextR3)
         {
             if (    pCur->GCPhysLast > GCPhysCur
@@ -1106,13 +1105,13 @@ static void pgmR3ScanRamPages(PVM pVM, bool fFinalPass)
                 uint32_t         cPages    = pCur->cb >> PAGE_SHIFT;
                 uint32_t         iPage     = GCPhysCur <= pCur->GCPhys ? 0 : (GCPhysCur - pCur->GCPhys) >> PAGE_SHIFT;
                 GCPhysCur = 0;
-                for (; iPage < cPages; iPage++, cSinceYield++)
+                for (; iPage < cPages; iPage++)
                 {
                     /* Do yield first. */
                     if (   !fFinalPass
-                        && (cSinceYield & 0x7ff) == 0x7ff
-                        &&  PDMR3CritSectYield(&pVM->pgm.s.CritSect)
-                        &&  pVM->pgm.s.idRamRangesGen != idRamRangesGen)
+                        && (iPage & 0x7ff) == 0x100
+                        && PDMR3CritSectYield(&pVM->pgm.s.CritSect)
+                        && pVM->pgm.s.idRamRangesGen != idRamRangesGen)
                     {
                         GCPhysCur = pCur->GCPhys + ((RTGCPHYS)iPage << PAGE_SHIFT);
                         break; /* restart */
@@ -1275,7 +1274,6 @@ static int pgmR3SaveRamPages(PVM pVM, PSSMHANDLE pSSM, bool fLiveSave, uint32_t 
     do
     {
         uint32_t const  idRamRangesGen = pVM->pgm.s.idRamRangesGen;
-        uint32_t        cSinceYield    = 0;
         for (pCur = pVM->pgm.s.pRamRangesR3; pCur; pCur = pCur->pNextR3)
         {
             if (   pCur->GCPhysLast > GCPhysCur
@@ -1285,13 +1283,13 @@ static int pgmR3SaveRamPages(PVM pVM, PSSMHANDLE pSSM, bool fLiveSave, uint32_t 
                 uint32_t         cPages    = pCur->cb >> PAGE_SHIFT;
                 uint32_t         iPage     = GCPhysCur <= pCur->GCPhys ? 0 : (GCPhysCur - pCur->GCPhys) >> PAGE_SHIFT;
                 GCPhysCur = 0;
-                for (; iPage < cPages; iPage++, cSinceYield++)
+                for (; iPage < cPages; iPage++)
                 {
                     /* Do yield first. */
-                    if (    uPass != SSM_PASS_FINAL
-                        &&  (cSinceYield & 0x7ff) == 0x7ff
-                        &&  PDMR3CritSectYield(&pVM->pgm.s.CritSect)
-                        &&  pVM->pgm.s.idRamRangesGen != idRamRangesGen)
+                    if (   uPass != SSM_PASS_FINAL
+                        && (iPage & 0x7ff) == 0x100
+                        && PDMR3CritSectYield(&pVM->pgm.s.CritSect)
+                        && pVM->pgm.s.idRamRangesGen != idRamRangesGen)
                     {
                         GCPhysCur = pCur->GCPhys + ((RTGCPHYS)iPage << PAGE_SHIFT);
                         break; /* restart */
@@ -1905,8 +1903,6 @@ static int pgmR3LoadPageZeroOld(PVM pVM, uint8_t uType, PPGMPAGE pPage, RTGCPHYS
  */
 static int pgmR3LoadPageBitsOld(PVM pVM, PSSMHANDLE pSSM, uint8_t uType, PPGMPAGE pPage, RTGCPHYS GCPhys, PPGMRAMRANGE pRam)
 {
-    int rc;
-
     /*
      * Match up the type, dealing with MMIO2 aliases (dropped).
      */
@@ -1919,7 +1915,7 @@ static int pgmR3LoadPageBitsOld(PVM pVM, PSSMHANDLE pSSM, uint8_t uType, PPGMPAG
      * Load the page.
      */
     void *pvPage;
-    rc = pgmPhysGCPhys2CCPtrInternal(pVM, pPage, GCPhys, &pvPage);
+    int rc = pgmPhysGCPhys2CCPtrInternal(pVM, pPage, GCPhys, &pvPage);
     if (RT_SUCCESS(rc))
         rc = SSMR3GetMem(pSSM, pvPage, PAGE_SIZE);
 
@@ -1940,7 +1936,7 @@ static int pgmR3LoadPageBitsOld(PVM pVM, PSSMHANDLE pSSM, uint8_t uType, PPGMPAG
  */
 static int pgmR3LoadPageOld(PVM pVM, PSSMHANDLE pSSM, uint8_t uType, PPGMPAGE pPage, RTGCPHYS GCPhys, PPGMRAMRANGE pRam)
 {
-    uint8_t         uState;
+    uint8_t uState;
     int rc = SSMR3GetU8(pSSM, &uState);
     AssertLogRelMsgRCReturn(rc, ("pPage=%R[pgmpage] GCPhys=%#x %s rc=%Rrc\n", pPage, GCPhys, pRam->pszDesc, rc), rc);
     if (uState == 0 /* zero */)
@@ -1975,7 +1971,7 @@ static int pgmR3LoadShadowedRomPageOld(PVM pVM, PSSMHANDLE pSSM, PPGMPAGE pPage,
     PPGMROMPAGE pRomPage = pgmR3GetRomPage(pVM, GCPhys);
     AssertLogRelMsgReturn(pRomPage, ("GCPhys=%RGp %s\n", GCPhys, pRam->pszDesc), VERR_INTERNAL_ERROR);
 
-    uint8_t     uProt;
+    uint8_t uProt;
     int rc = SSMR3GetU8(pSSM, &uProt);
     AssertLogRelMsgRCReturn(rc, ("pPage=%R[pgmpage] GCPhys=%#x %s\n", pPage, GCPhys, pRam->pszDesc), rc);
     PGMROMPROT  enmProt = (PGMROMPROT)uProt;
@@ -2257,18 +2253,21 @@ static int pgmR3LoadMemoryOld(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion)
  * @param   pVM                 The VM handle.
  * @param   pSSM                The SSM handle.
  * @param   uVersion            The saved state version.
+ *
+ * @todo    This needs splitting up if more record types or code twists are
+ *          added...
  */
 static int pgmR3LoadMemory(PVM pVM, PSSMHANDLE pSSM, uint32_t uPass)
 {
     /*
      * Process page records until we hit the terminator.
      */
-    RTGCPHYS        GCPhys     = NIL_RTGCPHYS;
-    PPGMRAMRANGE    pRamHint   = NULL;
-    uint8_t         id         = UINT8_MAX;
-    uint32_t        iPage      = UINT32_MAX - 10;
-    PPGMROMRANGE    pRom       = NULL;
-    PPGMMMIO2RANGE  pMmio2     = NULL;
+    RTGCPHYS        GCPhys   = NIL_RTGCPHYS;
+    PPGMRAMRANGE    pRamHint = NULL;
+    uint8_t         id       = UINT8_MAX;
+    uint32_t        iPage    = UINT32_MAX - 10;
+    PPGMROMRANGE    pRom     = NULL;
+    PPGMMMIO2RANGE  pMmio2   = NULL;
     for (;;)
     {
         /*
@@ -2339,7 +2338,6 @@ static int pgmR3LoadMemory(PVM pVM, PSSMHANDLE pSSM, uint32_t uPass)
                         AssertMsgFailedReturn(("%#x\n", u8), VERR_INTERNAL_ERROR);
                 }
                 id = UINT8_MAX;
-                iPage = UINT32_MAX - 10;
                 break;
             }
 
