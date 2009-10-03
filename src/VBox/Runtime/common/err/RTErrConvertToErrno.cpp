@@ -42,6 +42,8 @@
 # include <sys/errno.h>
 #elif defined(RT_OS_LINUX) && defined(__KERNEL__)
 # include <linux/errno.h>
+#elif defined(RT_OS_FREEBSD) && defined(_KERNEL)
+# include <sys/errno.h>
 #else
 # include <errno.h>
 #endif
