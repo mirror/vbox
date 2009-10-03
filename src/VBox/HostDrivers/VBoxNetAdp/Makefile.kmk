@@ -152,5 +152,32 @@ $$(PATH_VBoxNetAdp-src)/dkms.conf: \
 
 endif # linux
 
+ifeq ($(KBUILD_TARGET),freebsd)
+ #
+ # Install source files for compliation on FreeBSD.
+ # files_vboxnetadp defines VBOX_VBOXNETADP_SOURCES.
+ #
+ include $(PATH_SUB_CURRENT)/freebsd/files_vboxnetadp
+ INSTALLS += VBoxNetAdp-src
+ VBoxNetAdp-src_INST    = bin/src/vboxnetadp/
+ VBoxNetAdp-src_MODE    = a+r,u+w
+ VBoxNetAdp-src_SOURCES = $(subst ",,$(VBOX_VBOXNETADP_SOURCES)) #"
+ VBoxNetAdp-src_SOURCES+= \
+	$(PATH_VBoxNetAdp-src)/Makefile
+ VBoxNetAdp-src_CLEAN   = \
+	$(PATH_VBoxNetAdp-src)/Makefile	\
+
+$$(PATH_VBoxNetAdp-src)/Makefile: \
+		$(PATH_SUB_CURRENT)/freebsd/Makefile \
+		$$(if $$(eq $$(VBoxNetAdp/freebsd/Makefile_VBOX_HARDENED),$$(VBOX_WITH_HARDENING)),,FORCE) \
+		| $$(dir $$@)
+ifndef VBOX_WITH_HARDENING
+	$(QUIET)$(SED) -e "s;-DVBOX_WITH_HARDENING;;g" --output $@ $<
+else
+	$(QUIET)$(CP) -f $< $@
+endif
+
+endif # freebsd
+
 include	$(KBUILD_PATH)/subfooter.kmk
 

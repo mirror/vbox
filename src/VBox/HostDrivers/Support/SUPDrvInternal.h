@@ -122,7 +122,6 @@
 #   define memcmp  libkern_memcmp
 #   define strchr  libkern_strchr
 #   define strrchr libkern_strrchr
-#   define ffs     libkern_ffs
 #   define ffsl    libkern_ffsl
 #   define fls     libkern_fls
 #   define flsl    libkern_flsl
