@@ -39,14 +39,14 @@ rdesktop-vrdp_DEFS = \
 	HAVE_STRINGS_H=1 HAVE_INTTYPES_H=1 HAVE_STDINT_H=1 HAVE_UNISTD_H=1 HAVE_SYS_SELECT_H=1 \
 	HAVE_LOCALE_H=1 HAVE_LANGINFO_H=1 HAVE_ICONV_H=1 \
 	EGD_SOCKET=\"/var/run/egd-pool\" WITH_RDPSND=1 HAVE_DIRENT_H=1 \
-	HAVE_ICONV=1 HAVE_SYS_VFS_H=1 HAVE_SYS_STATVFS_H=1 HAVE_SYS_STATFS_H=1 \
+	HAVE_ICONV=1 HAVE_SYS_STATVFS_H=1 \
 	HAVE_SYS_PARAM_H=1 HAVE_SYS_MOUNT_H=1 HAVE_STRUCT_STATVFS_F_NAMEMAX=1 \
 	KEYMAP_PATH=$(if $(findstring RTPATH_APP_PRIVATE,$(DEFS)),RTPATH_APP_PRIVATE,\"/opt/VirtualBox\")\"/rdesktop-vrdp-keymaps\" \
 	RDESKTOP=1
 
 rdesktop-vrdp_DEFS.linux = \
-	HAVE_MNTENT_H=1 HAVE_SETMNTENT=1 STAT_STATVFS=1 HAVE_STRUCT_STATFS_F_NAMELEN=1 \
-	ICONV_CONST= RDPSND_OSS=1 WITH_RDPUSB=1
+	HAVE_MNTENT_H=1 HAVE_SETMNTENT=1 STAT_STATVFS=1 HAVE_SYS_VFS_H=1 HAVE_STRUCT_STATFS_F_NAMELEN=1 \
+	ICONV_CONST= RDPSND_OSS=1 WITH_RDPUSB=1 HAVE_SYS_STATFS_H=1
 # Solaris 10 doesn't have dirfd(), and as thus we go for the low tech solution.
 rdesktop-vrdp_DEFS.linux += \
 	HAVE_DIRFD=1 HAVE_DECL_DIRFD=1
@@ -56,7 +56,9 @@ endif
 # @todo once rdp proxy is available on Solaris, add WITH_RDPUSB=1
 rdesktop-vrdp_DEFS.solaris = \
 	HAVE_SYS_FILIO_H=1 RDPSND_SUN=1 HAVE_ICONV_H=1 ICONV_CONST=const STAT_STATVFS64=1 _FILE_OFFSET_BITS=64 \
-	DIR_FD_MEMBER_NAME=dd_fd
+	DIR_FD_MEMBER_NAME=dd_fd HAVE_SYS_VFS_H=1 HAVE_SYS_STATFS_H=1
+rdesktop-vrdp_DEFS.freebsd = \
+	RDPSND_OSS=1 HAVE_ICONV_H=1 ICONV_CONST=const HAVE_SYS_STATVFS_H=1 _FILE_OFFSET_BITS=64 HAVE_DIRFD=1
 
 rdesktop-vrdp_SOURCES = \
 	tcp.c \
@@ -96,6 +98,8 @@ rdesktop-vrdp_SOURCES.linux = \
 # @todo implement usb proxy for Solaris
 rdesktop-vrdp_SOURCES.solaris = \
 	rdpsnd_sun.c
+rdesktop-vrdp_SOURCES.freebsd = \
+	rdpsnd_oss.c
 rdesktop-vrdp_LIBPATH = \
 	/usr/lib \
 	$(VBOX_LIBPATH_X11)
