@@ -230,6 +230,8 @@ HRESULT Host::init(VirtualBox *aParent)
     m->pUSBProxyService = new USBProxyServiceSolaris (this);
 # elif defined (RT_OS_WINDOWS)
     m->pUSBProxyService = new USBProxyServiceWindows (this);
+# elif defined (RT_OS_FREEBSD)
+    m->pUSBProxyService = new USBProxyServiceFreeBSD (this);
 # else
     m->pUSBProxyService = new USBProxyService (this);
 # endif
