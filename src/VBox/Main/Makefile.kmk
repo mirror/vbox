@@ -344,7 +344,7 @@ VBoxSVC_SOURCES.solaris = \
 	solaris/DynLoadLibSolaris.cpp
 
 VBoxSVC_SOURCES.freebsd = \
-	linux/vbox-libhal.cpp
+	freebsd/HostHardwareFreeBSD.cpp
 
 ifdef VBOX_WITH_USB
  ifdef VBOX_WITH_SYSFS_BY_DEFAULT
