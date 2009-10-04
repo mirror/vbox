@@ -190,6 +190,8 @@
  * @{ */
 /** The stream is checkesummed up to the footer using CRC-32. */
 #define SSMFILEHDR_FLAGS_STREAM_CRC32           RT_BIT_32(0)
+/** Indicates that the file was produced by a live save. */
+#define SSMFILEHDR_FLAGS_STREAM_LIVE_SAVE       RT_BIT_32(1)
 /** @} */
 
 /** The directory magic. */
@@ -317,6 +319,13 @@ AssertCompile(SSM_ZIP_BLOCK_SIZE / _1K * _1K == SSM_ZIP_BLOCK_SIZE);
         } \
     } while (0)
 
+#define SSM_ASSERT_VALID_HANDLE(pSSM) \
+    do \
+    { \
+        AssertPtr(pSSM); \
+        Assert(pSSM->enmOp > SSMSTATE_INVALID && pSSM->enmOp < SSMSTATE_OPEN_END); \
+    } while (0)
+
 
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
@@ -336,7 +345,8 @@ typedef enum SSMSTATE
     SSMSTATE_LOAD_PREP,
     SSMSTATE_LOAD_EXEC,
     SSMSTATE_LOAD_DONE,
-    SSMSTATE_OPEN_READ
+    SSMSTATE_OPEN_READ,
+    SSMSTATE_OPEN_END
 } SSMSTATE;
 
 /** Pointer to a SSM stream buffer. */
@@ -439,6 +449,8 @@ typedef struct SSMHANDLE
     uint64_t                cbUnitLeftV1;
     /** The current uncompressed offset into the data unit. */
     uint64_t                offUnit;
+    /** Indicates that this is a live save or restore operation. */
+    bool                    fLiveSave;
 
     /** Pointer to the progress callback function. */
     PFNVMPROGRESS           pfnProgress;
@@ -3804,7 +3816,8 @@ static int ssmR3SaveDoExecRun(PVM pVM, PSSMHANDLE pSSM)
 
 
     /* (progress should be pending 99% now) */
-    AssertMsg(pSSM->uPercent == (101 - pSSM->uPercentDone), ("%d\n", pSSM->uPercent));
+    AssertMsg(   pSSM->uPercent == (101 - pSSM->uPercentDone)
+              || pSSM->fLiveSave, ("%d\n", pSSM->uPercent));
     return VINF_SUCCESS;
 }
 
@@ -3961,6 +3974,8 @@ static int ssmR3WriteHeaderAndClearPerUnitData(PVM pVM, PSSMHANDLE pSSM)
     FileHdr.u8Reserved   = 0;
     FileHdr.cUnits       = pVM->ssm.s.cUnits;
     FileHdr.fFlags       = SSMFILEHDR_FLAGS_STREAM_CRC32;
+    if (pSSM->fLiveSave)
+        FileHdr.fFlags  |= SSMFILEHDR_FLAGS_STREAM_LIVE_SAVE;
     FileHdr.cbMaxDecompr = RT_SIZEOFMEMB(SSMHANDLE, u.Read.abDataBuffer);
     FileHdr.u32CRC       = 0;
     FileHdr.u32CRC       = RTCrc32(&FileHdr, sizeof(FileHdr));
@@ -4008,6 +4023,7 @@ static int ssmR3SaveDoCreateFile(PVM pVM, const char *pszFilename, SSMAFTER enmA
     pSSM->rc                    = VINF_SUCCESS;
     pSSM->cbUnitLeftV1          = 0;
     pSSM->offUnit               = UINT64_MAX;
+    pSSM->fLiveSave             = false;
     pSSM->pfnProgress           = pfnProgress;
     pSSM->pvUser                = pvUser;
     pSSM->uPercent              = 0;
@@ -4376,7 +4392,7 @@ VMMR3_INT_DECL(int) SSMR3LiveDoStep1(PSSMHANDLE pSSM)
                 return pSSM->rc = VERR_SSM_LOW_ON_DISK_SPACE;
             }
         }
-#if 0
+#if 0 /** @todo check this out... */
         /*
          * Check the VM state to see if it has changed.
          */
@@ -4514,6 +4530,7 @@ VMMR3_INT_DECL(int) SSMR3LiveToFile(PVM pVM, const char *pszFilename, SSMAFTER e
         return rc;
     pSSM->uPercentPrepare = 20; /** @todo fix these. */
     pSSM->uPercentDone    = 2;
+    pSSM->fLiveSave       = true;
 
     /*
      * Write the saved state stream header and do the prep run for live saving.
@@ -4524,7 +4541,8 @@ VMMR3_INT_DECL(int) SSMR3LiveToFile(PVM pVM, const char *pszFilename, SSMAFTER e
     if (RT_SUCCESS(rc))
     {
 /** @todo If it turns out we don't need to do ssmR3DoLivePrepRun on EMT0,
- *        simply move the code to SSMR3LiveDoStep1. */
+ *        simply move the code to SSMR3LiveDoStep1.
+ *  Update: This is certinaly the case, move it. */
         rc = ssmR3DoLivePrepRun(pVM, pSSM);
         if (RT_SUCCESS(rc))
         {
@@ -6026,8 +6044,9 @@ static int ssmR3ValidateHeaderInfo(PSSMHANDLE pSSM, bool fHaveHostBits, bool fHa
  * validations.
  *
  * @returns VBox status.
- * @param   File                File to validate.
- *                              The file position is undefined on return.
+ * @param   pSSM                The saved state handle.  A number of field will
+ *                              be updated, mostly header related information.
+ *                              fLiveSave is also set if appropriate.
  * @param   fChecksumIt         Whether to checksum the file or not.  This will
  *                              be ignored if it the stream isn't a file.
  * @param   fChecksumOnRead     Whether to validate the checksum while reading
@@ -6111,7 +6130,7 @@ static int ssmR3HeaderAndValidate(PSSMHANDLE pSSM, bool fChecksumIt, bool fCheck
                 LogRel(("SSM: Reserved header field isn't zero: %02x\n", uHdr.v2_0.u8Reserved));
                 return VERR_SSM_INTEGRITY;
             }
-            if ((uHdr.v2_0.fFlags & ~SSMFILEHDR_FLAGS_STREAM_CRC32))
+            if (uHdr.v2_0.fFlags & ~(SSMFILEHDR_FLAGS_STREAM_CRC32 | SSMFILEHDR_FLAGS_STREAM_LIVE_SAVE))
             {
                 LogRel(("SSM: Unknown header flags: %08x\n", uHdr.v2_0.fFlags));
                 return VERR_SSM_INTEGRITY;
@@ -6132,8 +6151,9 @@ static int ssmR3HeaderAndValidate(PSSMHANDLE pSSM, bool fChecksumIt, bool fCheck
             pSSM->u.Read.u32SvnRev      = uHdr.v2_0.u32SvnRev;
             pSSM->u.Read.cbGCPhys       = uHdr.v2_0.cbGCPhys;
             pSSM->u.Read.cbGCPtr        = uHdr.v2_0.cbGCPtr;
-            pSSM->u.Read.fFixedGCPtrSize = true;
+            pSSM->u.Read.fFixedGCPtrSize= true;
             fChecksummed = !!(uHdr.v2_0.fFlags & SSMFILEHDR_FLAGS_STREAM_CRC32);
+            pSSM->fLiveSave             = !!(uHdr.v2_0.fFlags & SSMFILEHDR_FLAGS_STREAM_LIVE_SAVE);
         }
         else
             AssertFailedReturn(VERR_INTERNAL_ERROR);
@@ -6337,6 +6357,7 @@ static int ssmR3OpenFile(PVM pVM, const char *pszFilename, bool fChecksumIt, boo
     pSSM->rc                = VINF_SUCCESS;
     pSSM->cbUnitLeftV1      = 0;
     pSSM->offUnit           = UINT64_MAX;
+    pSSM->fLiveSave         = false;
     pSSM->pfnProgress       = NULL;
     pSSM->pvUser            = NULL;
     pSSM->uPercent          = 0;
@@ -7320,6 +7341,7 @@ VMMR3DECL(int) SSMR3Seek(PSSMHANDLE pSSM, const char *pszUnit, uint32_t iInstanc
  */
 VMMR3DECL(int) SSMR3HandleGetStatus(PSSMHANDLE pSSM)
 {
+    SSM_ASSERT_VALID_HANDLE(pSSM);
     return pSSM->rc;
 }
 
@@ -7337,6 +7359,7 @@ VMMR3DECL(int) SSMR3HandleGetStatus(PSSMHANDLE pSSM)
  */
 VMMR3DECL(int) SSMR3HandleSetStatus(PSSMHANDLE pSSM, int iStatus)
 {
+    SSM_ASSERT_VALID_HANDLE(pSSM);
     Assert(pSSM->enmOp != SSMSTATE_LIVE_VOTE);
     if (RT_FAILURE(iStatus))
     {
@@ -7358,20 +7381,21 @@ VMMR3DECL(int) SSMR3HandleSetStatus(PSSMHANDLE pSSM, int iStatus)
  */
 VMMR3DECL(SSMAFTER) SSMR3HandleGetAfter(PSSMHANDLE pSSM)
 {
+    SSM_ASSERT_VALID_HANDLE(pSSM);
     return pSSM->enmAfter;
 }
 
 
 /**
- * Get the current unit byte offset (uncompressed).
+ * Checks if it is a live save operation or not.
  *
- * @returns The offset. UINT64_MAX if called at a wrong time.
+ * @returns True if it is, false if it isn't.
  * @param   pSSM            SSM operation handle.
  */
-VMMR3DECL(uint64_t) SSMR3HandleGetUnitOffset(PSSMHANDLE pSSM)
+VMMR3DECL(bool) SSMR3HandleIsLiveSave(PSSMHANDLE pSSM)
 {
-    AssertMsgFailed(("/** @todo this isn't correct any longer. */"));
-    return pSSM->offUnit;
+    SSM_ASSERT_VALID_HANDLE(pSSM);
+    return pSSM->fLiveSave;
 }
 
 
