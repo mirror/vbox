@@ -368,12 +368,11 @@ Scripts_SOURCES  = \
 	darwin/load.sh
 
 endif # darwin
-
+ifeq ($(KBUILD_TARGET),os2)
 
 #
 # VBoxDrv.sys - The OS/2 driver.
 #
-ifeq ($(KBUILD_TARGET),os2)
 VBoxDrv_TEMPLATE      = VBOXR0DRV
 VBoxDrv_DEFS          = IN_RT_R0 IN_SUP_R0
 VBoxDrv_INCS         := $(PATH_SUB_CURRENT)
@@ -398,13 +397,13 @@ VBoxDrvLib_INCS      := \
 VBoxDrvLib_SOURCES    = \
 	os2/SUPDrv-os2.cpp \
 	SUPDrv.c
-endif
 
+endif # os2
+ifeq ($(KBUILD_TARGET),freebsd)
 
 #
 # vboxdrv.ko - The FreeBSD Kernel Module.
 #
-ifeq ($(KBUILD_TARGET),freebsd)
 vboxdrv_TEMPLATE      = VBOXR0DRV
 vboxdrv_DEFS          = IN_RT_R0 IN_SUP_R0 SUPDRV_WITH_RELEASE_LOGGER VBOX_SVN_REV=$(VBOX_SVN_REV)
 vboxdrv_INCS         := $(PATH_SUB_CURRENT)
@@ -425,7 +424,6 @@ vboxdrv-mod_SOURCES += \
 	$(PATH_vboxdrv-mod)/Makefile
 vboxdrv-mod_CLEAN   = \
 	$(PATH_vboxdrv-mod)/Makefile
-endif # freebsd
 
 $$(PATH_vboxdrv-mod)/Makefile: \
 		$(PATH_SUB_CURRENT)/freebsd/Makefile \
@@ -438,10 +436,12 @@ $$(PATH_vboxdrv-mod)/Makefile: \
 	$(QUIET)$(CP) -f $< $@
  endif
 
+endif # freebsd
+ifeq ($(KBUILD_TARGET),solaris)
+
 #
 # vboxdrv.o - The Solaris Kernel Module.
 #
-ifeq ($(KBUILD_TARGET),solaris)
 vboxdrv_TEMPLATE      = VBOXR0DRV
 vboxdrv_DEFS          = IN_RT_R0 IN_SUP_R0 SUPDRV_WITH_RELEASE_LOGGER
 ifdef VBOX_WITH_NETFLT
@@ -454,8 +454,8 @@ vboxdrv_LIBS          = $(PATH_LIB)/RuntimeR0Drv$(VBOX_SUFF_LIB)
 vboxdrv_SOURCES       = \
 	$(KBUILD_TARGET)/SUPDrv-$(KBUILD_TARGET).c \
 	SUPDrv.c
-endif # solaris
 
+endif # solaris
 
 #
 # SUPDrv.c needs the VBOX_SVN_REV.
