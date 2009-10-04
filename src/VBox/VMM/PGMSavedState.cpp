@@ -1543,7 +1543,7 @@ static DECLCALLBACK(int) pgmR3LiveExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uPass)
     return rc;
 }
 
-#include <iprt/stream.h>
+//#include <iprt/stream.h>
 
 /**
  * Votes on whether the live save phase is done or not.
@@ -1555,7 +1555,7 @@ static DECLCALLBACK(int) pgmR3LiveExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uPass)
  */
 static DECLCALLBACK(int)  pgmR3LiveVote(PVM pVM, PSSMHANDLE pSSM)
 {
-#if 1
+#if 0
     RTPrintf("# Rom[R/D/Z/M]=%03x/%03x/%03x/%03x  Mmio2=%04x/%04x/%04x/%04x  Ram=%06x/%06x/%06x/%06x Ignored=%03x\n",
              pVM->pgm.s.LiveSave.Rom.cReadyPages,
              pVM->pgm.s.LiveSave.Rom.cDirtyPages,
