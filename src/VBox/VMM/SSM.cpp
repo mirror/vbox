@@ -323,7 +323,7 @@ AssertCompile(SSM_ZIP_BLOCK_SIZE / _1K * _1K == SSM_ZIP_BLOCK_SIZE);
     do \
     { \
         AssertPtr(pSSM); \
-        Assert(pSSM->enmOp > SSMSTATE_INVALID && pSSM->enmOp < SSMSTATE_OPEN_END); \
+        Assert(pSSM->enmOp > SSMSTATE_INVALID && pSSM->enmOp < SSMSTATE_END); \
     } while (0)
 
 
@@ -346,7 +346,7 @@ typedef enum SSMSTATE
     SSMSTATE_LOAD_EXEC,
     SSMSTATE_LOAD_DONE,
     SSMSTATE_OPEN_READ,
-    SSMSTATE_OPEN_END
+    SSMSTATE_END
 } SSMSTATE;
 
 /** Pointer to a SSM stream buffer. */
