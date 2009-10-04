@@ -91,6 +91,8 @@
 #define PGM_STATE_REC_FLAG_ADDR         UINT8_C(0x80)
 /** @} */
 
+/** The CRC-32 for a zero page. */
+#define PGM_STATE_CRC32_ZERO_PAGE       UINT32_C(0xc71c0011)
 /** The CRC-32 for a zero half page. */
 #define PGM_STATE_CRC32_ZERO_HALF_PAGE  UINT32_C(0xf1e8ba9e)
 
@@ -1004,7 +1006,7 @@ static int pgmR3PrepRamPages(PVM pVM)
                 uint32_t const  idRamRangesGen = pVM->pgm.s.idRamRangesGen;
                 uint32_t const  cPages = pCur->cb >> PAGE_SHIFT;
                 pgmUnlock(pVM);
-                PPGMLIVESAVEPAGE paLSPages = (PPGMLIVESAVEPAGE)MMR3HeapAllocZ(pVM, MM_TAG_PGM, cPages * sizeof(PGMLIVESAVEPAGE));
+                PPGMLIVESAVERAMPAGE paLSPages = (PPGMLIVESAVERAMPAGE)MMR3HeapAllocZ(pVM, MM_TAG_PGM, cPages * sizeof(PGMLIVESAVERAMPAGE));
                 if (!paLSPages)
                     return VERR_NO_MEMORY;
                 pgmLock(pVM);
@@ -1025,7 +1027,6 @@ static int pgmR3PrepRamPages(PVM pVM)
                 {
                     /** @todo yield critsect! (after moving this away from EMT0) */
                     PCPGMPAGE pPage = &pCur->aPages[iPage];
-                    paLSPages[iPage].uPassSaved             = UINT32_MAX;
                     paLSPages[iPage].cDirtied               = 0;
                     paLSPages[iPage].fDirty                 = 1; /* everything is dirty at this time */
                     paLSPages[iPage].fWriteMonitored        = 0;
@@ -1038,16 +1039,25 @@ static int pgmR3PrepRamPages(PVM pVM)
                             {
                                 paLSPages[iPage].fZero   = 1;
                                 paLSPages[iPage].fShared = 0;
+#ifdef PGMLIVESAVERAMPAGE_WITH_CRC32
+                                paLSPages[iPage].u32Crc  = PGM_STATE_CRC32_ZERO_PAGE;
+#endif
                             }
                             else if (PGM_PAGE_IS_SHARED(pPage))
                             {
                                 paLSPages[iPage].fZero   = 0;
                                 paLSPages[iPage].fShared = 1;
+#ifdef PGMLIVESAVERAMPAGE_WITH_CRC32
+                                paLSPages[iPage].u32Crc  = UINT32_MAX;
+#endif
                             }
                             else
                             {
                                 paLSPages[iPage].fZero   = 0;
                                 paLSPages[iPage].fShared = 0;
+#ifdef PGMLIVESAVERAMPAGE_WITH_CRC32
+                                paLSPages[iPage].u32Crc  = UINT32_MAX;
+#endif
                             }
                             paLSPages[iPage].fIgnore     = 0;
                             pVM->pgm.s.LiveSave.Ram.cDirtyPages++;
@@ -1060,6 +1070,9 @@ static int pgmR3PrepRamPages(PVM pVM)
                             paLSPages[iPage].fShared = 0;
                             paLSPages[iPage].fDirty  = 0;
                             paLSPages[iPage].fIgnore = 1;
+#ifdef PGMLIVESAVERAMPAGE_WITH_CRC32
+                            paLSPages[iPage].u32Crc  = UINT32_MAX;
+#endif
                             pVM->pgm.s.LiveSave.cIgnoredPages++;
                             break;
                         }
@@ -1072,6 +1085,9 @@ static int pgmR3PrepRamPages(PVM pVM)
                             paLSPages[iPage].fShared = 0;
                             paLSPages[iPage].fDirty  = 0;
                             paLSPages[iPage].fIgnore = 1;
+#ifdef PGMLIVESAVERAMPAGE_WITH_CRC32
+                            paLSPages[iPage].u32Crc  = UINT32_MAX;
+#endif
                             pVM->pgm.s.LiveSave.cIgnoredPages++;
                             break;
 
@@ -1080,6 +1096,9 @@ static int pgmR3PrepRamPages(PVM pVM)
                             paLSPages[iPage].fShared = 0;
                             paLSPages[iPage].fDirty  = 0;
                             paLSPages[iPage].fIgnore = 1;
+#ifdef PGMLIVESAVERAMPAGE_WITH_CRC32
+                            paLSPages[iPage].u32Crc  = UINT32_MAX;
+#endif
                             pVM->pgm.s.LiveSave.cIgnoredPages++;
                             break;
                     }
@@ -1092,6 +1111,74 @@ static int pgmR3PrepRamPages(PVM pVM)
     return VINF_SUCCESS;
 }
 
+#ifdef PGMLIVESAVERAMPAGE_WITH_CRC32
+
+/**
+ * Calculates the CRC-32 for a RAM page and updates the live save page tracking
+ * info with it.
+ *
+ * @param   pVM                 The VM handle.
+ * @param   pCur                The current RAM range.
+ * @param   paLSPages           The current array of live save page tracking
+ *                              structures.
+ * @param   iPage               The page index.
+ */
+static void pgmR3StateCalcCrc32ForRamPage(PVM pVM, PPGMRAMRANGE pCur, PPGMLIVESAVERAMPAGE paLSPages, uint32_t iPage)
+{
+    RTGCPHYS    GCPhys = pCur->GCPhys + ((RTGCPHYS)iPage << PAGE_SHIFT);
+    void const *pvPage;
+    int rc = pgmPhysGCPhys2CCPtrInternalReadOnly(pVM, &pCur->aPages[iPage], GCPhys, &pvPage);
+    if (RT_SUCCESS(rc))
+        paLSPages[iPage].u32Crc = RTCrc32(pvPage, PAGE_SIZE);
+    else
+        paLSPages[iPage].u32Crc = UINT32_MAX; /* Invalid */
+}
+
+
+/**
+ * Verifies the CRC-32 for a page given it's raw bits.
+ *
+ * @param   pvPage              The page bits.
+ * @param   pCur                The current RAM range.
+ * @param   paLSPages           The current array of live save page tracking
+ *                              structures.
+ * @param   iPage               The page index.
+ */
+static void pgmR3StateVerifyCrc32ForPage(void const *pvPage, PPGMRAMRANGE pCur, PPGMLIVESAVERAMPAGE paLSPages, uint32_t iPage)
+{
+    if (paLSPages[iPage].u32Crc != UINT32_MAX)
+    {
+        uint32_t u32Crc = RTCrc32(pvPage, PAGE_SIZE);
+        Assert(!PGM_PAGE_IS_ZERO(&pCur->aPages[iPage]) || u32Crc == PGM_STATE_CRC32_ZERO_PAGE);
+        AssertMsg(paLSPages[iPage].u32Crc == u32Crc,
+                  ("%08x != %08x for %RGp %R[pgmpage]\n", paLSPages[iPage].u32Crc, u32Crc,
+                   pCur->GCPhys + ((RTGCPHYS)iPage << PAGE_SHIFT), &pCur->aPages[iPage]));
+    }
+}
+
+
+/**
+ * Verfies the CRC-32 for a RAM page.
+ *
+ * @param   pVM                 The VM handle.
+ * @param   pCur                The current RAM range.
+ * @param   paLSPages           The current array of live save page tracking
+ *                              structures.
+ * @param   iPage               The page index.
+ */
+static void pgmR3StateVerifyCrc32ForRamPage(PVM pVM, PPGMRAMRANGE pCur, PPGMLIVESAVERAMPAGE paLSPages, uint32_t iPage)
+{
+    if (paLSPages[iPage].u32Crc != UINT32_MAX)
+    {
+        RTGCPHYS    GCPhys = pCur->GCPhys + ((RTGCPHYS)iPage << PAGE_SHIFT);
+        void const *pvPage;
+        int rc = pgmPhysGCPhys2CCPtrInternalReadOnly(pVM, &pCur->aPages[iPage], GCPhys, &pvPage);
+        if (RT_SUCCESS(rc))
+            pgmR3StateVerifyCrc32ForPage(pvPage, pCur, paLSPages, iPage);
+    }
+}
+
+#endif /* PGMLIVESAVERAMPAGE_WITH_CRC32 */
 
 /**
  * Scan for RAM page modifications and reprotect them.
@@ -1115,7 +1202,7 @@ static void pgmR3ScanRamPages(PVM pVM, bool fFinalPass)
             if (    pCur->GCPhysLast > GCPhysCur
                 && !PGM_RAM_RANGE_IS_AD_HOC(pCur))
             {
-                PPGMLIVESAVEPAGE paLSPages = pCur->paLSPages;
+                PPGMLIVESAVERAMPAGE paLSPages = pCur->paLSPages;
                 uint32_t         cPages    = pCur->cb >> PAGE_SHIFT;
                 uint32_t         iPage     = GCPhysCur <= pCur->GCPhys ? 0 : (GCPhysCur - pCur->GCPhys) >> PAGE_SHIFT;
                 GCPhysCur = 0;
@@ -1123,7 +1210,9 @@ static void pgmR3ScanRamPages(PVM pVM, bool fFinalPass)
                 {
                     /* Do yield first. */
                     if (   !fFinalPass
+#ifndef PGMLIVESAVERAMPAGE_WITH_CRC32
                         && (iPage & 0x7ff) == 0x100
+#endif
                         && PDMR3CritSectYield(&pVM->pgm.s.CritSect)
                         && pVM->pgm.s.idRamRangesGen != idRamRangesGen)
                     {
@@ -1175,15 +1264,29 @@ static void pgmR3ScanRamPages(PVM pVM, bool fFinalPass)
                                 paLSPages[iPage].fDirty                 = 1;
                                 paLSPages[iPage].fZero                  = 0;
                                 paLSPages[iPage].fShared                = 0;
+#ifdef PGMLIVESAVERAMPAGE_WITH_CRC32
+                                paLSPages[iPage].u32Crc                 = UINT32_MAX; /* invalid */
+#endif
                                 break;
 
                             case PGM_PAGE_STATE_WRITE_MONITORED:
                                 Assert(paLSPages[iPage].fWriteMonitored);
                                 if (PGM_PAGE_GET_WRITE_LOCKS(&pCur->aPages[iPage]) == 0)
+                                {
+#ifdef PGMLIVESAVERAMPAGE_WITH_CRC32
+                                    if (paLSPages[iPage].fWriteMonitoredJustNow)
+                                        pgmR3StateCalcCrc32ForRamPage(pVM, pCur, paLSPages, iPage);
+                                    else
+                                        pgmR3StateVerifyCrc32ForRamPage(pVM, pCur, paLSPages, iPage);
+#endif
                                     paLSPages[iPage].fWriteMonitoredJustNow = 0;
+                                }
                                 else
                                 {
                                     paLSPages[iPage].fWriteMonitoredJustNow = 1;
+#ifdef PGMLIVESAVERAMPAGE_WITH_CRC32
+                                    paLSPages[iPage].u32Crc                 = UINT32_MAX; /* invalid */
+#endif
                                     if (!paLSPages[iPage].fDirty)
                                     {
                                         pVM->pgm.s.LiveSave.Ram.cReadyPages--;
@@ -1199,6 +1302,9 @@ static void pgmR3ScanRamPages(PVM pVM, bool fFinalPass)
                                 {
                                     paLSPages[iPage].fZero = 1;
                                     paLSPages[iPage].fShared = 0;
+#ifdef PGMLIVESAVERAMPAGE_WITH_CRC32
+                                    paLSPages[iPage].u32Crc = PGM_STATE_CRC32_ZERO_PAGE;
+#endif
                                     if (!paLSPages[iPage].fDirty)
                                     {
                                         paLSPages[iPage].fDirty = 1;
@@ -1214,6 +1320,9 @@ static void pgmR3ScanRamPages(PVM pVM, bool fFinalPass)
                                 {
                                     paLSPages[iPage].fZero = 0;
                                     paLSPages[iPage].fShared = 1;
+#ifdef PGMLIVESAVERAMPAGE_WITH_CRC32
+                                    pgmR3StateCalcCrc32ForRamPage(pVM, pCur, paLSPages, iPage);
+#endif
                                     if (!paLSPages[iPage].fDirty)
                                     {
                                         paLSPages[iPage].fDirty = 1;
@@ -1296,7 +1405,7 @@ static int pgmR3SaveRamPages(PVM pVM, PSSMHANDLE pSSM, bool fLiveSave, uint32_t 
             if (   pCur->GCPhysLast > GCPhysCur
                 && !PGM_RAM_RANGE_IS_AD_HOC(pCur))
             {
-                PPGMLIVESAVEPAGE paLSPages = pCur->paLSPages;
+                PPGMLIVESAVERAMPAGE paLSPages = pCur->paLSPages;
                 uint32_t         cPages    = pCur->cb >> PAGE_SHIFT;
                 uint32_t         iPage     = GCPhysCur <= pCur->GCPhys ? 0 : (GCPhysCur - pCur->GCPhys) >> PAGE_SHIFT;
                 GCPhysCur = 0;
@@ -1341,7 +1450,13 @@ static int pgmR3SaveRamPages(PVM pVM, PSSMHANDLE pSSM, bool fLiveSave, uint32_t 
                         if (   paLSPages
                             && !paLSPages[iPage].fDirty
                             && !paLSPages[iPage].fIgnore)
+                        {
+#ifdef PGMLIVESAVERAMPAGE_WITH_CRC32
+                            if (PGM_PAGE_GET_TYPE(&pCur->aPages[iPage]) != PGMPAGETYPE_RAM)
+                                pgmR3StateVerifyCrc32ForRamPage(pVM, pCur, paLSPages, iPage);
+#endif
                             continue;
+                        }
                         if (PGM_PAGE_GET_TYPE(&pCur->aPages[iPage]) != PGMPAGETYPE_RAM)
                             continue;
                     }
@@ -1359,11 +1474,17 @@ static int pgmR3SaveRamPages(PVM pVM, PSSMHANDLE pSSM, bool fLiveSave, uint32_t 
                          * Copy the page and then save it outside the lock (since any
                          * SSM call may block).
                          */
-                        char        abPage[PAGE_SIZE];
+                        uint8_t     abPage[PAGE_SIZE];
                         void const *pvPage;
                         rc = pgmPhysGCPhys2CCPtrInternalReadOnly(pVM, &pCur->aPages[iPage], GCPhys, &pvPage);
                         if (RT_SUCCESS(rc))
+                        {
                             memcpy(abPage, pvPage, PAGE_SIZE);
+#ifdef PGMLIVESAVERAMPAGE_WITH_CRC32
+                            if (paLSPages)
+                                pgmR3StateVerifyCrc32ForPage(abPage, pCur, paLSPages, iPage);
+#endif
+                        }
                         pgmUnlock(pVM);
                         AssertLogRelMsgRCReturn(rc, ("rc=%Rrc GCPhys=%RGp\n", rc, GCPhys), rc);
 
@@ -1381,6 +1502,10 @@ static int pgmR3SaveRamPages(PVM pVM, PSSMHANDLE pSSM, bool fLiveSave, uint32_t 
                         /*
                          * Dirty zero page.
                          */
+#ifdef PGMLIVESAVERAMPAGE_WITH_CRC32
+                        if (paLSPages)
+                            pgmR3StateVerifyCrc32ForRamPage(pVM, pCur, paLSPages, iPage);
+#endif
                         pgmUnlock(pVM);
 
                         if (GCPhys == GCPhysLast + PAGE_SIZE)
@@ -1399,7 +1524,6 @@ static int pgmR3SaveRamPages(PVM pVM, PSSMHANDLE pSSM, bool fLiveSave, uint32_t 
                     if (paLSPages)
                     {
                         paLSPages[iPage].fDirty = 0;
-                        paLSPages[iPage].uPassSaved = uPass;
                         pVM->pgm.s.LiveSave.Ram.cReadyPages++;
                         pVM->pgm.s.LiveSave.Ram.cDirtyPages--;
                         if (fZero)
@@ -1543,7 +1667,7 @@ static DECLCALLBACK(int) pgmR3LiveExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uPass)
     return rc;
 }
 
-//#include <iprt/stream.h>
+#include <iprt/stream.h>
 
 /**
  * Votes on whether the live save phase is done or not.
@@ -1555,7 +1679,7 @@ static DECLCALLBACK(int) pgmR3LiveExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uPass)
  */
 static DECLCALLBACK(int)  pgmR3LiveVote(PVM pVM, PSSMHANDLE pSSM)
 {
-#if 0
+#if 1
     RTPrintf("# Rom[R/D/Z/M]=%03x/%03x/%03x/%03x  Mmio2=%04x/%04x/%04x/%04x  Ram=%06x/%06x/%06x/%06x Ignored=%03x\n",
              pVM->pgm.s.LiveSave.Rom.cReadyPages,
              pVM->pgm.s.LiveSave.Rom.cDirtyPages,
@@ -1574,6 +1698,8 @@ static DECLCALLBACK(int)  pgmR3LiveVote(PVM pVM, PSSMHANDLE pSSM)
     static int s_iHack = 0;
     if ((++s_iHack % 42) == 0)
         return VINF_SUCCESS;
+    RTThreadSleep(1000);
+
 #else
     if (      pVM->pgm.s.LiveSave.Rom.cDirtyPages
            +  pVM->pgm.s.LiveSave.Mmio2.cDirtyPages

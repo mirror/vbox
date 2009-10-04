@@ -1041,7 +1041,7 @@ typedef PPGMPAGE *PPPGMPAGE;
 
 
 /** Max number of locks on a page. */
-#define PGM_PAGE_MAX_LOCKS                  254
+#define PGM_PAGE_MAX_LOCKS                  UINT8_C(254)
 
 /** Get the read lock count.
  * @returns count.
@@ -1076,14 +1076,16 @@ typedef PPGMPAGE *PPPGMPAGE;
 #define PGM_PAGE_INC_WRITE_LOCKS(pPage)     do { ++(pPage)->cWriteLocksY; } while (0)
 
 
+#if 0
+/** Enables sanity checking of write monitoring using CRC-32.  */
+#define PGMLIVESAVERAMPAGE_WITH_CRC32
+#endif
 
 /**
  * Per page live save tracking data.
  */
-typedef struct PGMLIVESAVEPAGE
+typedef struct PGMLIVESAVERAMPAGE
 {
-    /** The pass number where this page was last saved.  */
-    uint32_t    uPassSaved;
     /** Number of times it has been dirtied. */
     uint32_t    cDirtied : 24;
     /** Whether it is currently dirty. */
@@ -1103,12 +1105,20 @@ typedef struct PGMLIVESAVEPAGE
     uint32_t    fWriteMonitoredJustNow : 1;
     /** Bits reserved for future use.  */
     uint32_t    u2Reserved : 2;
-} PGMLIVESAVEPAGE;
-AssertCompileSize(PGMLIVESAVEPAGE, 8);
+#ifdef PGMLIVESAVERAMPAGE_WITH_CRC32
+    /** CRC-32 for the page. This is for internal consistency checks.  */
+    uint32_t    u32Crc;
+#endif
+} PGMLIVESAVERAMPAGE;
+#ifdef PGMLIVESAVERAMPAGE_WITH_CRC32
+AssertCompileSize(PGMLIVESAVERAMPAGE, 8);
+#else
+AssertCompileSize(PGMLIVESAVERAMPAGE, 4);
+#endif
 /** Pointer to the per page live save tracking data. */
-typedef PGMLIVESAVEPAGE *PPGMLIVESAVEPAGE;
+typedef PGMLIVESAVERAMPAGE *PPGMLIVESAVERAMPAGE;
 
-/** The max value of PGMLIVESAVEPAGE::cDirtied. */
+/** The max value of PGMLIVESAVERAMPAGE::cDirtied. */
 #define PGMLIVSAVEPAGE_MAX_DIRTIED 0x00fffff0
 
 
@@ -1139,7 +1149,7 @@ typedef struct PGMRAMRANGE
     /** Start of the HC mapping of the range. This is only used for MMIO2. */
     R3PTRTYPE(void *)                   pvR3;
     /** Live save per page tracking data. */
-    R3PTRTYPE(PPGMLIVESAVEPAGE)         paLSPages;
+    R3PTRTYPE(PPGMLIVESAVERAMPAGE)         paLSPages;
     /** The range description. */
     R3PTRTYPE(const char *)             pszDesc;
     /** Pointer to self - R0 pointer. */
@@ -1258,7 +1268,7 @@ typedef PGMROMRANGE *PPGMROMRANGE;
 /**
  * Live save per page data for an MMIO2 page.
  *
- * Not using PGMLIVESAVEPAGE here because we cannot use normal write monitoring
+ * Not using PGMLIVESAVERAMPAGE here because we cannot use normal write monitoring
  * of MMIO2 pages.  The current approach is using some optimisitic SHA-1 +
  * CRC-32 for detecting changes as well as special handling of zero pages.  This
  * is a TEMPORARY measure which isn't perfect, but hopefully it is good enough
