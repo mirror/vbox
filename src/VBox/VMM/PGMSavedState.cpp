@@ -1155,7 +1155,9 @@ static void pgmR3ScanRamPages(PVM pVM, bool fFinalPass)
                                 else
                                 {
                                     Assert(!paLSPages[iPage].fWriteMonitored);
-                                    pVM->pgm.s.LiveSave.cMonitoredPages++;
+                                    pVM->pgm.s.LiveSave.Ram.cMonitoredPages++;
+                                    if (paLSPages[iPage].fZero)
+                                        pVM->pgm.s.LiveSave.Ram.cZeroPages--;
                                 }
 
                                 if (!paLSPages[iPage].fDirty)
@@ -1203,6 +1205,7 @@ static void pgmR3ScanRamPages(PVM pVM, bool fFinalPass)
                                         pVM->pgm.s.LiveSave.Ram.cReadyPages--;
                                         pVM->pgm.s.LiveSave.Ram.cDirtyPages++;
                                     }
+                                    pVM->pgm.s.LiveSave.Ram.cZeroPages++;
                                 }
                                 break;
 
@@ -1245,7 +1248,7 @@ static void pgmR3ScanRamPages(PVM pVM, bool fFinalPass)
                                 Assert(pVM->pgm.s.cWrittenToPages > 0);
                                 pVM->pgm.s.cWrittenToPages--;
                             }
-                            pVM->pgm.s.LiveSave.cMonitoredPages--;
+                            pVM->pgm.s.LiveSave.Ram.cMonitoredPages--;
                         }
 
                         /** @todo the counting doesn't quite work out here. fix later? */
@@ -1348,8 +1351,9 @@ static int pgmR3SaveRamPages(PVM pVM, PSSMHANDLE pSSM, bool fLiveSave, uint32_t 
                      */
                     int         rc;
                     RTGCPHYS    GCPhys = pCur->GCPhys + ((RTGCPHYS)iPage << PAGE_SHIFT);
+                    bool        fZero  = PGM_PAGE_IS_ZERO(&pCur->aPages[iPage]);
 
-                    if (!PGM_PAGE_IS_ZERO(&pCur->aPages[iPage]))
+                    if (!fZero)
                     {
                         /*
                          * Copy the page and then save it outside the lock (since any
@@ -1398,6 +1402,8 @@ static int pgmR3SaveRamPages(PVM pVM, PSSMHANDLE pSSM, bool fLiveSave, uint32_t 
                         paLSPages[iPage].uPassSaved = uPass;
                         pVM->pgm.s.LiveSave.Ram.cReadyPages++;
                         pVM->pgm.s.LiveSave.Ram.cDirtyPages--;
+                        if (fZero)
+                            pVM->pgm.s.LiveSave.Ram.cZeroPages++;
                     }
                     if (idRamRangesGen != pVM->pgm.s.idRamRangesGen)
                     {
@@ -1537,7 +1543,7 @@ static DECLCALLBACK(int) pgmR3LiveExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uPass)
     return rc;
 }
 
-//#include <iprt/stream.h>
+#include <iprt/stream.h>
 
 /**
  * Votes on whether the live save phase is done or not.
@@ -1549,16 +1555,21 @@ static DECLCALLBACK(int) pgmR3LiveExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uPass)
  */
 static DECLCALLBACK(int)  pgmR3LiveVote(PVM pVM, PSSMHANDLE pSSM)
 {
-#if 0
-    RTPrintf("# Ram R/D=%08x/%08x Ignored=%#08x Monitored=%#08x  Rom R/D=%08x/%08x  Mmio2 R/D=%08x/%08x\n",
-             pVM->pgm.s.LiveSave.Ram.cReadyPages,
-             pVM->pgm.s.LiveSave.Ram.cDirtyPages,
-             pVM->pgm.s.LiveSave.cIgnoredPages,
-             pVM->pgm.s.LiveSave.cMonitoredPages,
+#if 1
+    RTPrintf("# Rom[R/D/Z/M]=%03x/%03x/%03x/%03x  Mmio2=%04x/%04x/%04x/%04x  Ram=%06x/%06x/%06x/%06x Ignored=%03x\n",
              pVM->pgm.s.LiveSave.Rom.cReadyPages,
              pVM->pgm.s.LiveSave.Rom.cDirtyPages,
+             pVM->pgm.s.LiveSave.Rom.cZeroPages,
+             pVM->pgm.s.LiveSave.Rom.cMonitoredPages,
              pVM->pgm.s.LiveSave.Mmio2.cReadyPages,
-             pVM->pgm.s.LiveSave.Mmio2.cDirtyPages
+             pVM->pgm.s.LiveSave.Mmio2.cDirtyPages,
+             pVM->pgm.s.LiveSave.Mmio2.cZeroPages,
+             pVM->pgm.s.LiveSave.Mmio2.cMonitoredPages,
+             pVM->pgm.s.LiveSave.Ram.cReadyPages,
+             pVM->pgm.s.LiveSave.Ram.cDirtyPages,
+             pVM->pgm.s.LiveSave.Ram.cZeroPages,
+             pVM->pgm.s.LiveSave.Ram.cMonitoredPages,
+             pVM->pgm.s.LiveSave.cIgnoredPages
              );
     static int s_iHack = 0;
     if ((++s_iHack % 42) == 0)

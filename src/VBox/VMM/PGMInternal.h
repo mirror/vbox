@@ -2718,17 +2718,19 @@ typedef struct PGM
             uint32_t                cReadyPages;
             /** The number of dirty pages. */
             uint32_t                cDirtyPages;
+            /** The number of ready zero pages.  */
+            uint32_t                cZeroPages;
+            /** The number of write monitored pages. */
+            uint32_t                cMonitoredPages;
         }                           Rom,
                                     Mmio2,
                                     Ram;
-        /** The number of monitored pages. */
-        uint32_t                    cMonitoredPages;
-        /** The number of ignored pages.  */
+        /** The number of ignored pages in the RAM ranges (i.e. MMIO, MMIO2 and ROM). */
         uint32_t                    cIgnoredPages;
         /** Indicates that a live save operation is active.  */
         bool                        fActive;
         /** Padding. */
-        bool                        afReserved[4+3];
+        bool                        afReserved[3];
     } LiveSave;
 
     /** @name   Error injection.
