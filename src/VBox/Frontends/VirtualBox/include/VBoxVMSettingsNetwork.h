@@ -87,7 +87,7 @@ class VBoxVMSettingsNetworkPage : public VBoxSettingsPage
 
 public:
 
-    VBoxVMSettingsNetworkPage(bool aDisableStaticControls = false);
+    VBoxVMSettingsNetworkPage (bool aDisableStaticControls = false);
 
     QStringList brgList (bool aRefresh = false);
     QStringList intList (bool aRefresh = false);
