@@ -31,6 +31,7 @@
 #include "VBoxProblemReporter.h"
 #include "VBoxTakeSnapshotDlg.h"
 #include "VBoxVMFirstRunWzd.h"
+#include "VBoxVMSettingsNetwork.h"
 #include "VBoxVMSettingsSF.h"
 #include "VBoxVMInformationDlg.h"
 #include "QIFileDialog.h"
@@ -3799,8 +3800,64 @@ void VBoxConsoleWnd::dbgAdjustRelativePos()
 
 #endif /* VBOX_WITH_DEBUGGER_GUI */
 
+VBoxNetworkDialog::VBoxNetworkDialog (QWidget *aParent, CSession &aSession)
+    : QIWithRetranslateUI <QDialog> (aParent)
+    , mSettings (0)
+    , mSession (aSession)
+{
+    setModal (true);
+    /* Setup Dialog's options */
+    setWindowIcon (QIcon (":/nw_16px.png"));
+    setSizeGripEnabled (true);
+
+    /* Setup main dialog's layout */
+    QVBoxLayout *mainLayout = new QVBoxLayout (this);
+    VBoxGlobal::setLayoutMargin (mainLayout, 10);
+    mainLayout->setSpacing (10);
+
+    /* Setup settings layout */
+    mSettings = new VBoxVMSettingsNetworkPage (true);
+    mSettings->setOrderAfter (this);
+    VBoxGlobal::setLayoutMargin (mSettings->layout(), 0);
+    mSettings->getFrom (aSession.GetMachine());
+    mainLayout->addWidget (mSettings);
+
+    /* Setup button's layout */
+    QIDialogButtonBox *buttonBox = new QIDialogButtonBox (QDialogButtonBox::Ok | QDialogButtonBox::Cancel | QDialogButtonBox::Help);
+
+    connect (buttonBox, SIGNAL (helpRequested()), &vboxProblem(), SLOT (showHelpHelpDialog()));
+    connect (buttonBox, SIGNAL (accepted()), this, SLOT (accept()));
+    connect (buttonBox, SIGNAL (rejected()), this, SLOT (reject()));
+    mainLayout->addWidget (buttonBox);
+
+    retranslateUi();
+}
+
+void VBoxNetworkDialog::retranslateUi()
+{
+    setWindowTitle (tr ("Network Adapters"));
+}
+
+void VBoxNetworkDialog::accept()
+{
+    mSettings->putBackTo();
+    CMachine machine = mSession.GetMachine();
+    machine.SaveSettings();
+    if (!machine.isOk())
+        vboxProblem().cannotSaveMachineSettings (machine);
+    QDialog::accept();
+}
+
+void VBoxNetworkDialog::showEvent (QShowEvent *aEvent)
+{
+    resize (450, 300);
+    VBoxGlobal::centerWidget (this, parentWidget());
+    setMinimumWidth (400);
+    QDialog::showEvent (aEvent);
+}
+
 VBoxSFDialog::VBoxSFDialog (QWidget *aParent, CSession &aSession)
-    : QIWithRetranslateUI<QDialog> (aParent)
+    : QIWithRetranslateUI <QDialog> (aParent)
     , mSettings (0)
     , mSession (aSession)
 {
@@ -3855,63 +3912,5 @@ void VBoxSFDialog::showEvent (QShowEvent *aEvent)
     setMinimumWidth (400);
     QDialog::showEvent (aEvent);
 }
-
-
-VBoxNetworkDialog::VBoxNetworkDialog (QWidget *aParent, CSession &aSession)
-    : QIWithRetranslateUI<QDialog> (aParent)
-    , mSettings (0)
-    , mSession (aSession)
-{
-    setModal (true);
-    /* Setup Dialog's options */
-    setWindowIcon (QIcon (":/nw_16px.png"));
-    setSizeGripEnabled (true);
-
-    /* Setup main dialog's layout */
-    QVBoxLayout *mainLayout = new QVBoxLayout (this);
-    VBoxGlobal::setLayoutMargin (mainLayout, 10);
-    mainLayout->setSpacing (10);
-
-    /* Setup settings layout */
-    mSettings = new VBoxVMSettingsNetworkDialogPage();
-    mSettings->setOrderAfter (this);
-    VBoxGlobal::setLayoutMargin (mSettings->layout(), 0);
-    mSettings->getFrom (aSession.GetMachine());
-    mainLayout->addWidget (mSettings);
-
-    /* Setup button's layout */
-    QIDialogButtonBox *buttonBox = new QIDialogButtonBox (QDialogButtonBox::Ok | QDialogButtonBox::Cancel | QDialogButtonBox::Help);
-
-    connect (buttonBox, SIGNAL (helpRequested()), &vboxProblem(), SLOT (showHelpHelpDialog()));
-    connect (buttonBox, SIGNAL (accepted()), this, SLOT (accept()));
-    connect (buttonBox, SIGNAL (rejected()), this, SLOT (reject()));
-    mainLayout->addWidget (buttonBox);
-
-    retranslateUi();
-}
-
-void VBoxNetworkDialog::retranslateUi()
-{
-    setWindowTitle (tr ("Network Adapters"));
-}
-
-void VBoxNetworkDialog::accept()
-{
-    mSettings->putBackTo();
-    CMachine machine = mSession.GetMachine();
-    machine.SaveSettings();
-    if (!machine.isOk())
-        vboxProblem().cannotSaveMachineSettings (machine);
-    QDialog::accept();
-}
-
-void VBoxNetworkDialog::showEvent (QShowEvent *aEvent)
-{
-    resize (450, 300);
-    VBoxGlobal::centerWidget (this, parentWidget());
-    setMinimumWidth (400);
-    QDialog::showEvent (aEvent);
-}
-
 
 #include "VBoxConsoleWnd.moc"
