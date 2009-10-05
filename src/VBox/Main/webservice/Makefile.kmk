@@ -342,6 +342,10 @@ ifdef VBOX_ONLY_SDK
  VBOXWEB_JAVA15_JAR            = $(VBOXWEB_JAVALIB)/vboxws_java15.jar
  VBOXWEB_JAVA16_JAR            = $(VBOXWEB_JAVALIB)/vboxws_java16.jar
 
+define find_java_files
+ $(shell find $(1) -name \*.java)
+endef # def_vbox_disas_binary
+
 
  VBOX_JAXWS_LIBDIR             = $(VBOX_PATH_WEBSERVICE)/jaxlibs
  # well, not really good
@@ -609,10 +613,10 @@ $(VBOXWEB_JAVA15_JAR): $(VBOXWEB_GLUE_JAVA_TMP).done $(VBOXWEB_WSDL) $(VBOXWEBSE
 	$(call MSG_L1,Compiling bridge code)
 	$(QUIET)$(VBOX_JAVAC15) -cp \
 		$(VBOXWEB_JAVALIB)/gen15:$(VBOX_JAXWS_LIBDIR)/jaxws-api.jar:$(VBOX_JAXWS_LIBDIR)/lib/jaxb-api.jar:$(VBOX_JAXWS_LIBDIR)/jsr181-api.jar \
-		$(VBOXWEB_PATH_SDK_GLUE_JAVA)/*.java  -d  $(VBOXWEB_JAVALIB)/gen15
+		$(call find_java_files,$(VBOXWEB_PATH_SDK_GLUE_JAVA))  -d  $(VBOXWEB_JAVALIB)/gen15
 	$(QUIET)$(SED) -e "s/vboxweb.wsdl/vboxweb$(VBOX_API_SUFFIX).wsdl/" <  $(VBOXWEBSERVICE_WSDL) > $(VBOXWEB_JAVALIB)/gen15/vboxwebService$(VBOX_API_SUFFIX).wsdl
 	$(QUIET)$(CP) -f $(VBOXWEB_WSDL) $(VBOXWEB_JAVALIB)/gen15/vboxweb$(VBOX_API_SUFFIX).wsdl
-	$(QUIET)$(RM) -f  $(VBOXWEB_JAVALIB)/gen15/*.java
+	$(QUIET)$(RM) -f  $(call find_java_files,$(VBOXWEB_JAVALIB))
 	$(QUIET)$(VBOX_JAR) cf $@ -C $(VBOXWEB_JAVALIB)/gen15 .
 
 $(VBOXWEB_JAVA16_JAR): $(VBOXWEB_GLUE_JAVA_TMP).done $(VBOXWEB_WSDL) $(VBOXWEBSERVICE_WSDL)
@@ -625,7 +629,7 @@ $(VBOXWEB_JAVA16_JAR): $(VBOXWEB_GLUE_JAVA_TMP).done $(VBOXWEB_WSDL) $(VBOXWEBSE
 		$(VBOXWEB_PATH_SDK_GLUE_JAVA)/*.java  -d  $(VBOXWEB_JAVALIB)/gen16
 	$(QUIET)$(SED) -e "s/vboxweb.wsdl/vboxweb$(VBOX_API_SUFFIX).wsdl/" <  $(VBOXWEBSERVICE_WSDL) > $(VBOXWEB_JAVALIB)/gen16/vboxwebService$(VBOX_API_SUFFIX).wsdl
 	$(QUIET)$(CP) -f $(VBOXWEB_WSDL) $(VBOXWEB_JAVALIB)/gen16/vboxweb$(VBOX_API_SUFFIX).wsdl
-	$(QUIET)$(RM) -f  $(VBOXWEB_JAVALIB)/gen16/*.java
+	$(QUIET)$(RM) -f  $(call find_java_files,$(VBOXWEB_JAVALIB)/gen16)
 	$(QUIET)$(VBOX_JAR) cf $@ -C $(VBOXWEB_JAVALIB)/gen16 .
 
 endif # VBOX_ONLY_SDK

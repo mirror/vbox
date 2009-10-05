@@ -42,6 +42,7 @@
   <xsl:param name="type" />
   <xsl:choose>
     <xsl:when test="$type='wstring'">String</xsl:when>
+    <xsl:when test="$type='uuid'">String</xsl:when>
     <xsl:when test="$type='boolean'">Boolean</xsl:when>
     <xsl:when test="$type='unsigned long'">UnsignedInt</xsl:when>
     <xsl:when test="$type='double'">Double</xsl:when>
