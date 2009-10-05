@@ -1048,13 +1048,13 @@ public:
     int vboxFbHeight() {return mDisplay.getVGA()->height(); }
     bool vboxIsInitialized() {return mDisplay.getVGA() != NULL; }
 
+    void vboxDoResize(void *re);
+
 //    void vboxPaintEvent (QPaintEvent *pe) {vboxPerformGLOp(&VBoxGLWidget::vboxDoPaint, pe); }
     void vboxResizeEvent (class VBoxResizeEvent *re) {vboxPerformGLOp(&VBoxGLWidget::vboxDoResize, re); }
 
     void vboxProcessVHWACommands(class VBoxVHWACommandElementProcessor * pPipe) {vboxPerformGLOp(&VBoxGLWidget::vboxDoProcessVHWACommands, pPipe);}
-#ifdef VBOX_WITH_VIDEOHWACCEL
-    void vboxVHWACmd (struct _VBOXVHWACMD * pCmd) {vboxPerformGLOp(&VBoxGLWidget::vboxDoVHWACmd, pCmd);}
-#endif
+
     class VBoxVHWAGlProgramMngr * vboxVHWAGetGlProgramMngr() { return mpMngr; }
 
     VBoxVHWASurfaceBase * vboxGetVGASurface() { return mDisplay.getVGA(); }
@@ -1095,7 +1095,6 @@ protected:
 private:
     static void setupMatricies(const QSize &display);
     static void adjustViewport(const QSize &display, const QRect &viewport);
-    void vboxDoResize(void *re);
 //    void vboxDoPaint(void *rec);
 
 
