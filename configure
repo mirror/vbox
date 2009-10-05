@@ -2000,6 +2000,7 @@ EOF
 [ $WITH_GSOAP  -eq 1 ] && echo "                           (soapcpp2 and wsdl2h, soapstd2.h, libgsoap++.a/so)"
 [ $WITH_GSOAP  -eq 1 ] && echo "  --with-gsoap-import=PATH directory for gSOAP import files (stlvector.h)"
 cat << EOF
+  --with-openssl-dir=DIR   directory for OpenSSL headers/libraries
   --out-path=PATH          the folder to which configuration and build output
                            should go
 
