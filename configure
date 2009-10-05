@@ -1907,23 +1907,23 @@ check_darwinversion()
       darwin_ver="10.6"
       sdk=/Developer/SDKs/MacOSX10.5.sdk
       CXX_FLAGS="-mmacosx-version-min=10.5 -isysroot $sdk -Wl,-syslibroot,$sdk"
-      test "$CC" = "gcc" && CC="gcc-4.0"
-      test "$CXX" = "g++" && CXX="g++-4.0"
+#      test "$CC" = "gcc" && CC="gcc-4.0"
+#      test "$CXX" = "g++" && CXX="g++-4.0"
       ;;
     9\.*)
       darwin_ver="10.5"
       sdk=/Developer/SDKs/MacOSX10.5.sdk
       CXX_FLAGS="-mmacosx-version-min=10.5 -isysroot $sdk -Wl,-syslibroot,$sdk"
-      test "$CC" = "gcc" && CC="gcc-4.0"
-      test "$CXX" = "g++" && CXX="g++-4.0"
+#      test "$CC" = "gcc" && CC="gcc-4.0"
+#      test "$CXX" = "g++" && CXX="g++-4.0"
       cnf_append "VBOX_WITHOUT_VBOXPYTHON_FOR_OSX_10_6" "1"
       ;;
     8\.*)
       darwin_ver="10.4"
       sdk=/Developer/SDKs/MacOSX10.4u.sdk 
       CXX_FLAGS="-mmacosx-version-min=10.4 -isysroot $sdk -Wl,-syslibroot,$sdk"
-      test "$CC" = "gcc" && CC="gcc-4.0"
-      test "$CXX" = "g++" && CXX="g++-4.0"
+#      test "$CC" = "gcc" && CC="gcc-4.0"
+#      test "$CXX" = "g++" && CXX="g++-4.0"
       cnf_append "VBOX_WITH_COCOA_QT" ""
       cnf_append "VBOX_WITHOUT_VBOXPYTHON_FOR_OSX_10_6" "1"
       ;;
