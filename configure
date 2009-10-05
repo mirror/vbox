@@ -120,6 +120,7 @@ INCZ=""
 LIBZ="-lz"
 INCPNG=""
 LIBPNG="-lpng"
+CXX_FLAGS=""
 if [ "$OS" = "freebsd" ]; then
   INCCURL="-I/usr/local/include"
   LIBCURL="-L/usr/local/lib -lcurl"
@@ -256,8 +257,8 @@ test_compile()
   echo "compiling the following source file:" >> $LOG
   cat $ODIR.tmp_src.cc >> $LOG
   echo "using the following command line:" >> $LOG
-  echo "$CXX -O -Wall -o $ODIR.tmp_out $ODIR.tmp_src.cc \"$1\"" >> $LOG
-  $CXX -g -O -Wall -o $ODIR.tmp_out $ODIR.tmp_src.cc $1 >> $LOG 2>&1
+  echo "$CXX $CXX_FLAGS -g -O -Wall -o $ODIR.tmp_out $ODIR.tmp_src.cc \"$1\"" >> $LOG
+  $CXX $CXX_FLAGS -g -O -Wall -o $ODIR.tmp_out $ODIR.tmp_src.cc $1 >> $LOG 2>&1
   if [ $? -ne 0 ]; then
     if [ -z "$4" ]; then
       echo
@@ -1903,13 +1904,25 @@ check_darwinversion()
   case "$darwin_ver" in
     10\.*)
       darwin_ver="10.6"
+      sdk=/Developer/SDKs/MacOSX10.5.sdk
+      CXX_FLAGS="-mmacosx-version-min=10.5 -isysroot $sdk -Wl,-syslibroot,$sdk"
+      test "$CC" = "gcc" && CC="gcc-4.0"
+      test "$CXX" = "g++" && CXX="g++-4.0"
       ;;
     9\.*)
       darwin_ver="10.5"
+      sdk=/Developer/SDKs/MacOSX10.5.sdk
+      CXX_FLAGS="-mmacosx-version-min=10.5 -isysroot $sdk -Wl,-syslibroot,$sdk"
+      test "$CC" = "gcc" && CC="gcc-4.0"
+      test "$CXX" = "g++" && CXX="g++-4.0"
       cnf_append "VBOX_WITHOUT_VBOXPYTHON_FOR_OSX_10_6" "1"
       ;;
     8\.*)
       darwin_ver="10.4"
+      sdk=/Developer/SDKs/MacOSX10.4u.sdk 
+      CXX_FLAGS="-mmacosx-version-min=10.4 -isysroot $sdk -Wl,-syslibroot,$sdk"
+      test "$CC" = "gcc" && CC="gcc-4.0"
+      test "$CXX" = "g++" && CXX="g++-4.0"
       cnf_append "VBOX_WITH_COCOA_QT" ""
       cnf_append "VBOX_WITHOUT_VBOXPYTHON_FOR_OSX_10_6" "1"
       ;;
@@ -1919,7 +1932,7 @@ check_darwinversion()
       darwin_ver="unknown"
       ;;
   esac
-  log_success "found version $darwin_ver"
+  log_success "found version $darwin_ver (SDK: $sdk)"
 }
 
 
@@ -2257,6 +2270,10 @@ fi
 [ $WITH_HARDENING -eq 0 ] && cnf_append "VBOX_WITHOUT_HARDENING" "1"
 [ $WITH_HARDENING -eq 2 ] && cnf_append "VBOX_WITH_HARDENING" "2"
 
+# Darwin-specific
+if [ "$OS" = "darwin" ]; then
+  check_darwinversion
+fi
 # the tools
 check_gcc
 [ "$OS" != "darwin"  ] && check_as86
@@ -2325,11 +2342,6 @@ if [ $OSE -ge 1 ]; then
   else
     cnf_append "VBOX_WITH_WEBSERVICES" ""
   fi
-fi
-
-# Darwin-specific
-if [ "$OS" = "darwin" ]; then
-  check_darwinversion
 fi
 
 # success!
