@@ -1291,8 +1291,6 @@ static void pcnetSoftReset(PCNetState *pThis)
     pThis->GCTDRA   = 0;
     pThis->u32RAP   = 0;
 
-    pThis->aBCR[BCR_BSBC] &= ~0x0080;
-
     pThis->aCSR[0]   = 0x0004;
     pThis->aCSR[3]   = 0x0000;
     pThis->aCSR[4]   = 0x0115;
