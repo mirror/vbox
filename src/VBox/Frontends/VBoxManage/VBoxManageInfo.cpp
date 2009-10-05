@@ -445,227 +445,114 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
     /*
      * Floppy.
      */
-    ComPtr<IStorageController> FloppyCtl;
-    bool                       fFloppyEnabled = false;
-
-    rc = machine->GetStorageControllerByName(Bstr("Floppy Controller"), FloppyCtl.asOutParam());
-    if (SUCCEEDED(rc))
-        fFloppyEnabled = true;
-
-    if (details == VMINFO_MACHINEREADABLE)
-        RTPrintf("floppy=\"%s\"\n", fFloppyEnabled ? "on" : "off");
-    else
-        RTPrintf("Floppy:          %s\n", fFloppyEnabled ? "enabled" : "disabled");
-
-    /*
-     * Floppy drives and media
-     */
-    if (fFloppyEnabled)
+    com::SafeIfaceArray<IStorageController> storageCtls;
+    CHECK_ERROR(machine, COMGETTER(StorageControllers)(ComSafeArrayAsOutParam (storageCtls)));
+    for (size_t i = 0; i < storageCtls.size(); ++ i)
     {
-        ComPtr<IMedium> floppyMedium;
-        Bstr  filePath;
-        ULONG cFloppyPorts;
+        ComPtr<IStorageController> storageCtl = storageCtls[i];
+        StorageControllerType_T    enmCtlType = StorageControllerType_Null;
+        const char *pszCtl = NULL;
+        Bstr storageCtlName;
 
-        FloppyCtl->COMGETTER(PortCount)(&cFloppyPorts);
-        for (ULONG i = 0; i < cFloppyPorts; ++ i)
+        storageCtl->COMGETTER(Name)(storageCtlName.asOutParam());
+
+        if (details == VMINFO_MACHINEREADABLE)
+            RTPrintf("storagecontroller%u:\"%lS\"\n", i, storageCtlName.raw());
+        else
+            RTPrintf("Storage Controller      (%u): %lS\n", i, storageCtlName.raw());
+
+        storageCtl->COMGETTER(ControllerType)(&enmCtlType);
+
+        switch (enmCtlType)
         {
-            rc = machine->GetMedium(Bstr("Floppy Controller"), 0, i, floppyMedium.asOutParam());
-            if (SUCCEEDED(rc) && floppyMedium)
-            {
-                floppyMedium->COMGETTER(Location)(filePath.asOutParam());
-                floppyMedium->COMGETTER(Id)(uuid.asOutParam());
-                if (details == VMINFO_MACHINEREADABLE)
-                {
-                    RTPrintf("floppy%d=\"%lS\"\n", i, filePath.raw());
-                    RTPrintf("FloppyImageUUID%d=\"%s\"\n", i, Utf8Str(uuid).raw());
-                }
-                else
-                    RTPrintf("Floppy %d:        %lS (UUID: %s)\n", i, filePath.raw(), Utf8Str(uuid).raw());
-            }
-            else
-            {
-                if (details == VMINFO_MACHINEREADABLE)
-                    RTPrintf("floppy%d=\"none\"\n",i);
-            }
-        }
-    }
-
-    /*
-     * SATA.
-     *
-     * Contributed by: James Lucas
-     */
-#ifdef VBOX_WITH_AHCI
-    ComPtr<IStorageController> SataCtl;
-    bool                       fSataEnabled = false;
-
-    rc = machine->GetStorageControllerByName(Bstr("SATA"), SataCtl.asOutParam());
-    if (SUCCEEDED(rc))
-        fSataEnabled = true;
-
-    if (details == VMINFO_MACHINEREADABLE)
-        RTPrintf("sata=\"%s\"\n", fSataEnabled ? "on" : "off");
-    else
-        RTPrintf("SATA:            %s\n", fSataEnabled ? "enabled" : "disabled");
-
-    /*
-     * SATA Hard disks
-     */
-    if (fSataEnabled)
-    {
-        ComPtr<IMedium> hardDisk;
-        Bstr  filePath;
-        ULONG cSataPorts;
-
-        SataCtl->COMGETTER(PortCount)(&cSataPorts);
-        for (ULONG i = 0; i < cSataPorts; ++ i)
-        {
-            rc = machine->GetMedium(Bstr("SATA"), i, 0, hardDisk.asOutParam());
-            if (SUCCEEDED(rc) && hardDisk)
-            {
-                hardDisk->COMGETTER(Location)(filePath.asOutParam());
-                hardDisk->COMGETTER(Id)(uuid.asOutParam());
-                if (details == VMINFO_MACHINEREADABLE)
-                {
-                    RTPrintf("sataport%d=\"%lS\"\n", i, filePath.raw());
-                    RTPrintf("SataPortImageUUID%d=\"%s\"\n", i, Utf8Str(uuid).raw());
-                }
-                else
-                    RTPrintf("SATA %d:          %lS (UUID: %s)\n", i, filePath.raw(), Utf8Str(uuid).raw());
-            }
-            else
-            {
-                if (details == VMINFO_MACHINEREADABLE)
-                    RTPrintf("sata%d=\"none\"\n",i);
-            }
-        }
-    }
-#endif
-
-    /*
-     * IDE Hard disks
-     */
-    ComPtr<IStorageController> ideController;
-
-    rc = machine->GetStorageControllerByName(Bstr("IDE Controller"), ideController.asOutParam());
-    if (SUCCEEDED(rc) && ideController)
-    {
-        StorageControllerType_T enmIdeController;
-        const char *pszIdeController = NULL;
-
-        rc = ideController->COMGETTER(ControllerType)(&enmIdeController);
-
-        switch (enmIdeController)
-        {
+            case StorageControllerType_LsiLogic:
+                pszCtl = "LsiLogic";
+                break;
+            case StorageControllerType_BusLogic:
+                pszCtl = "BusLogic";
+                break;
+            case StorageControllerType_IntelAhci:
+                pszCtl = "IntelAhci";
+                break;
             case StorageControllerType_PIIX3:
-                pszIdeController = "PIIX3";
+                pszCtl = "PIIX3";
                 break;
             case StorageControllerType_PIIX4:
-                pszIdeController = "PIIX4";
+                pszCtl = "PIIX4";
                 break;
             case StorageControllerType_ICH6:
-                pszIdeController = "ICH6";
+                pszCtl = "ICH6";
                 break;
+            case StorageControllerType_I82078:
+                pszCtl = "I82078";
+                break;
+
             default:
-                pszIdeController = "unknown";
+                pszCtl = "unknown";
         }
         if (details == VMINFO_MACHINEREADABLE)
-            RTPrintf("idecontroller=\"%s\"\n", pszIdeController);
+            RTPrintf("storagecontrollertype%u:=\"%s\"\n", i, pszCtl);
         else
-            RTPrintf("IDE Controller:  %s\n", pszIdeController);
+            RTPrintf("Storage Controller Type (%u): %s\n", i, pszCtl);
     }
 
-    ComPtr<IMedium> hardDisk;
-    Bstr filePath;
-    rc = machine->GetMedium(Bstr("IDE Controller"), 0, 0, hardDisk.asOutParam());
-    if (SUCCEEDED(rc) && hardDisk)
+    for (size_t j = 0; j < storageCtls.size(); ++ j)
     {
-        hardDisk->COMGETTER(Location)(filePath.asOutParam());
-        hardDisk->COMGETTER(Id)(uuid.asOutParam());
-        if (details == VMINFO_MACHINEREADABLE)
-        {
-            RTPrintf("hda=\"%lS\"\n", filePath.raw());
-            RTPrintf("HdaImageUUID=\"%s\"\n", Utf8Str(uuid).raw());
-        }
-        else
-            RTPrintf("Primary master:  %lS (UUID: %s)\n", filePath.raw(), Utf8Str(uuid).raw());
-    }
-    else
-    {
-        if (details == VMINFO_MACHINEREADABLE)
-            RTPrintf("hda=\"none\"\n");
-    }
-    rc = machine->GetMedium(Bstr("IDE Controller"), 0, 1, hardDisk.asOutParam());
-    if (SUCCEEDED(rc) && hardDisk)
-    {
-        hardDisk->COMGETTER(Location)(filePath.asOutParam());
-        hardDisk->COMGETTER(Id)(uuid.asOutParam());
-        if (details == VMINFO_MACHINEREADABLE)
-        {
-            RTPrintf("hdb=\"%lS\"\n", filePath.raw());
-            RTPrintf("HdbImageUUID=\"%s\"\n", Utf8Str(uuid).raw());
-        }
-        else
-            RTPrintf("Primary slave:   %lS (UUID: %s)\n", filePath.raw(), Utf8Str(uuid).raw());
-    }
-    else
-    {
-        if (details == VMINFO_MACHINEREADABLE)
-            RTPrintf("hdb=\"none\"\n");
-    }
-    rc = machine->GetMedium(Bstr("IDE Controller"), 1, 1, hardDisk.asOutParam());
-    if (SUCCEEDED(rc) && hardDisk)
-    {
-        hardDisk->COMGETTER(Location)(filePath.asOutParam());
-        hardDisk->COMGETTER(Id)(uuid.asOutParam());
-        if (details == VMINFO_MACHINEREADABLE)
-        {
-            RTPrintf("hdd=\"%lS\"\n", filePath.raw());
-            RTPrintf("HddImageUUID=\"%s\"\n", Utf8Str(uuid).raw());
-        }
-        else
-            RTPrintf("Secondary slave: %lS (UUID: %s)\n", filePath.raw(), Utf8Str(uuid).raw());
-    }
-    else
-    {
-        if (details == VMINFO_MACHINEREADABLE)
-            RTPrintf("hdd=\"none\"\n");
-    }
-    ComPtr<IMedium> dvdMedium;
-    rc = machine->GetMedium(Bstr("IDE Controller"), 1, 0, dvdMedium.asOutParam());
-    if (SUCCEEDED(rc) && dvdMedium)
-    {
-        dvdMedium->COMGETTER(Location)(filePath.asOutParam());
-        dvdMedium->COMGETTER(Id)(uuid.asOutParam());
-        if (details == VMINFO_MACHINEREADABLE)
-        {
-            RTPrintf("dvd=\"%lS\"\n", filePath.raw());
-            RTPrintf("DvdImageUUID=\"%s\"\n", Utf8Str(uuid).raw());
-        }
-        else
-            RTPrintf("DVD:             %lS (UUID: %s)\n", filePath.raw(), Utf8Str(uuid).raw());
+        ComPtr<IStorageController> storageCtl = storageCtls[j];
+        ComPtr<IMedium> medium;
+        Bstr storageCtlName;
+        Bstr filePath;
+        ULONG cDevices;
+        ULONG cPorts;
 
-        BOOL fPassthrough;
-        ComPtr<IMediumAttachment> dvdAttachment;
-        machine->GetMediumAttachment(Bstr("IDE Controller"), 1, 0, dvdAttachment.asOutParam());
-        dvdAttachment->COMGETTER(Passthrough)(&fPassthrough);
-        if (details == VMINFO_MACHINEREADABLE)
+        storageCtl->COMGETTER(Name)(storageCtlName.asOutParam());
+        storageCtl->COMGETTER(MaxDevicesPerPortCount)(&cDevices);
+        storageCtl->COMGETTER(PortCount)(&cPorts);
+
+        for (ULONG i = 0; i < cPorts; ++ i)
         {
-            RTPrintf("dvdpassthrough=\"%s\"\n", fPassthrough ? "on" : "off");
+            for (ULONG k = 0; k < cDevices; ++ k)
+            {
+                rc = machine->GetMedium(storageCtlName, i, k, medium.asOutParam());
+                if (SUCCEEDED(rc) && medium)
+                {
+                    BOOL fPassthrough;
+                    ComPtr<IMediumAttachment> mediumAttach;
+
+                    rc = machine->GetMediumAttachment(storageCtlName, i, k, mediumAttach.asOutParam());
+                    if (SUCCEEDED(rc) && mediumAttach)
+                        mediumAttach->COMGETTER(Passthrough)(&fPassthrough);
+
+                    medium->COMGETTER(Location)(filePath.asOutParam());
+                    medium->COMGETTER(Id)(uuid.asOutParam());
+
+                    if (details == VMINFO_MACHINEREADABLE)
+                    {
+                        RTPrintf("\"%lS\"-%d-%d=\"%lS\"\n", storageCtlName.raw(),
+                                 i, k, filePath.raw());
+                        RTPrintf("\"%lS\"-ImageUUID-%d-%d=\"%s\"\n",
+                                 storageCtlName.raw(), i, k, Utf8Str(uuid).raw());
+                        if (fPassthrough)
+                            RTPrintf("\"%lS\"-dvdpassthrough=\"%s\"\n", storageCtlName.raw(),
+                                     fPassthrough ? "on" : "off");
+                    }
+                    else
+                    {
+                        RTPrintf("%lS (%d, %d): %lS (UUID: %s)",
+                                 storageCtlName.raw(), i, k, filePath.raw(),
+                                 Utf8Str(uuid).raw());
+                        if (fPassthrough)
+                            RTPrintf(" (passthrough enabled)");
+                        RTPrintf("\n");
+                    }
+                }
+                else
+                {
+                    if (details == VMINFO_MACHINEREADABLE)
+                        RTPrintf("\"%lS\"-%d-%d=\"none\"\n", storageCtlName.raw(), i, k);
+                }
+            }
         }
-        else
-        {
-            if (fPassthrough)
-                RTPrintf(" (passthrough enabled)");
-            RTPrintf("\n");
-        }
-    }
-    else
-    {
-        if (details == VMINFO_MACHINEREADABLE)
-            RTPrintf("dvd=\"none\"\n");
-        else
-            RTPrintf("DVD:             empty\n");
     }
 
     /* get the maximum amount of NICS */
