@@ -344,7 +344,7 @@ ifdef VBOX_ONLY_SDK
 
 define find_java_files
  $(shell find $(1) -name \*.java)
-endef # def_vbox_disas_binary
+endef
 
 
  VBOX_JAXWS_LIBDIR             = $(VBOX_PATH_WEBSERVICE)/jaxlibs
