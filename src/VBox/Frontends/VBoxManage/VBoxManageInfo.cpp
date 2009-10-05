@@ -443,7 +443,7 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
 #endif
 
     /*
-     * Floppy.
+     * Storage Controllers and their attached Mediums.
      */
     com::SafeIfaceArray<IStorageController> storageCtls;
     CHECK_ERROR(machine, COMGETTER(StorageControllers)(ComSafeArrayAsOutParam (storageCtls)));
