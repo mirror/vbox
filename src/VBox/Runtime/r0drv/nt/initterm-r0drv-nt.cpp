@@ -62,6 +62,8 @@ PFNHALREQUESTIPI            g_pfnrtNtHalRequestIpi;
 PFNHALSENDSOFTWAREINTERRUPT g_pfnrtNtHalSendSoftwareInterrupt;
 /** SendIpi handler based on Windows version */
 PFNRTSENDIPI                g_pfnrtSendIpi;
+/** KeIpiGenericCall - Windows Server 2003+ only */
+PFNRTKEIPIGENERICCALL       g_pfnrtKeIpiGenericCall;
 
 /** Offset of the _KPRCB::QuantumEnd field. 0 if not found. */
 uint32_t                    g_offrtNtPbQuantumEnd;
@@ -90,6 +92,7 @@ int rtR0InitNative(void)
     g_pfnrtNtKeFlushQueuedDpcs = NULL;
     g_pfnrtNtHalRequestIpi = NULL;
     g_pfnrtNtHalSendSoftwareInterrupt = NULL;
+    g_pfnrtKeIpiGenericCall = NULL;
 #else
     /*
      * Initialize the function pointers.
@@ -106,6 +109,9 @@ int rtR0InitNative(void)
 
     RtlInitUnicodeString(&RoutineName, L"HalSendSoftwareInterrupt");
     g_pfnrtNtHalSendSoftwareInterrupt = (PFNHALSENDSOFTWAREINTERRUPT)MmGetSystemRoutineAddress(&RoutineName);
+
+    RtlInitUnicodeString(&RoutineName, L"KeIpiGenericCall");
+    g_pfnrtKeIpiGenericCall = (PFNRTKEIPIGENERICCALL)MmGetSystemRoutineAddress(&RoutineName);
 #endif
 
     /*

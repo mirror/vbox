@@ -354,9 +354,15 @@ int rtMpSendIpiVista(RTCPUID idCpu)
     return VINF_SUCCESS;
 }
 
+ULONG_PTR rtMpIpiGenericCall(ULONG_PTR  Argument)
+{
+    return 0;
+}
+
 int rtMpSendIpiWin7(RTCPUID idCpu)
 {
-    g_pfnrtNtHalSendSoftwareInterrupt(idCpu, DISPATCH_LEVEL);
+    g_pfnrtKeIpiGenericCall(rtMpIpiGenericCall, 0);
+////    g_pfnrtNtHalSendSoftwareInterrupt(idCpu, DISPATCH_LEVEL);
     return VINF_SUCCESS;
 }
 #endif /* IPRT_TARGET_NT4 */
