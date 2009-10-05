@@ -44,9 +44,7 @@
 # include <sys/types.h>
 # include <sys/stat.h>
 # include <unistd.h>
-# include <sys/ioctl.h>
 # include <fcntl.h>
-# include <mntent.h>
 /* bird: This is a hack to work around conflicts between these linux kernel headers
  *       and the GLIBC tcpip headers. They have different declarations of the 4
  *       standard byte order functions. */
@@ -145,6 +143,15 @@ static size_t strLenStripped(const char *pcsz)
 }
 
 
+/**
+ * Get the name of a floppy drive according to the Linux floppy driver.
+ * @returns true on success, false if the name was not available (i.e. the
+ *          device was not readible, or the file name wasn't a PC floppy
+ *          device)
+ * @param  pcszNode  the path to the device node for the device
+ * @param  Number    the Linux floppy driver number for the drive.  Required.
+ * @param  pszName   where to store the name retreived
+ */
 static bool floppyGetName(const char *pcszNode, unsigned Number,
                           floppy_drive_name pszName)
 {
@@ -225,6 +232,12 @@ static void floppyCreateDeviceStrings(const floppy_drive_name pcszName,
 }
 
 
+/**
+ * Check whether a device number might correspond to a CD-ROM device according
+ * to Documentation/devices.txt in the Linux kernel source.
+ * @returns true if it might, false otherwise
+ * @param   Number  the device number (major and minor combination)
+ */
 static bool isCdromDevNum(dev_t Number)
 {
     int major = major(Number);
@@ -946,6 +959,17 @@ static bool devFindDeviceRecursive(char *pszPath, size_t cchPath,
  * Recursively walk through the /dev tree and add any DVD or floppy drives we
  * find and can access to our list.  (If we can't access them we can't check
  * whether or not they are really DVD or floppy drives).
+ * @note  this is rather slow (a couple of seconds) for DVD probing on
+ *        systems with a static /dev tree, as the current code tries to open
+ *        any device node with a major/minor combination that could belong to
+ *        a CD-ROM device, and opening a non-existent device can take a non.
+ *        negligeable time on Linux.  If it is ever necessary to improve this
+ *        (static /dev trees are no longer very fashionable these days, and
+ *        sysfs looks like it will be with us for a while), we could further
+ *        reduce the number of device nodes we open by checking whether the
+ *        driver is actually loaded in /proc/devices, and by counting the
+ *        of currently attached SCSI CD-ROM devices in /proc/scsi/scsi (yes,
+ *        there is a race, but it is probably not important for us).
  * @returns iprt status code
  * @param   pList      the list to append the drives found to
  * @param   isDVD      are we looking for DVD drives or for floppies?
