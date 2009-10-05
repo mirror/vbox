@@ -260,7 +260,18 @@ sf_read_super_aux (struct super_block *sb, void *data, int flags)
         sb->s_magic = 0xface;
         sb->s_blocksize = 1024;
 #if LINUX_VERSION_CODE >= KERNEL_VERSION (2, 4, 3)
-        sb->s_maxbytes = ~0ULL; /* seek */
+        /* Required for seek/sendfile.
+         *
+         * Must by less than or equal to INT64_MAX despite the fact that the
+         * declaration of this variable is unsigned long long. See determination
+         * of 'loff_t max' in fs/read_write.c / do_sendfile(). I don't know the
+         * correct limit but MAX_LFS_FILESIZE (8TB-1 on 32-bit boxes) takes the
+         * page cache into account and is the suggested limit. */
+# if defined MAX_LFS_FILESIZE
+        sb->s_maxbytes = MAX_LFS_FILESIZE;
+# else
+        sb->s_maxbytes = 0x7fffffffffffffffULL;
+# endif
 #endif
         sb->s_op = &sf_super_ops;
 
