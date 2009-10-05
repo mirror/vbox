@@ -47,11 +47,7 @@
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
 /** Saved state data unit version. */
-#ifdef VBOX_WITH_LIVE_MIGRATION
-# define PGM_SAVED_STATE_VERSION                10
-#else
-# define PGM_SAVED_STATE_VERSION                9
-#endif
+#define PGM_SAVED_STATE_VERSION                 10
 /** Saved state data unit version for 3.0. (pre live migration) */
 #define PGM_SAVED_STATE_VERSION_3_0_0           9
 /** Saved state data unit version for 2.2.2 and later. */
@@ -1720,68 +1716,6 @@ static DECLCALLBACK(int)  pgmR3LiveVote(PVM pVM, PSSMHANDLE pSSM)
     return VINF_SSM_VOTE_FOR_ANOTHER_PASS;
 }
 
-#ifndef VBOX_WITH_LIVE_MIGRATION
-
-/**
- * Save zero indicator + bits for the specified page.
- *
- * @returns VBox status code, errors are logged/asserted before returning.
- * @param   pVM         The VM handle.
- * @param   pSSH        The saved state handle.
- * @param   pPage       The page to save.
- * @param   GCPhys      The address of the page.
- * @param   pRam        The ram range (for error logging).
- */
-static int pgmR3SavePage(PVM pVM, PSSMHANDLE pSSM, PPGMPAGE pPage, RTGCPHYS GCPhys, PPGMRAMRANGE pRam)
-{
-    int rc;
-    if (PGM_PAGE_IS_ZERO(pPage))
-        rc = SSMR3PutU8(pSSM, 0);
-    else
-    {
-        void const *pvPage;
-        rc = pgmPhysGCPhys2CCPtrInternalReadOnly(pVM, pPage, GCPhys, &pvPage);
-        AssertLogRelMsgRCReturn(rc, ("pPage=%R[pgmpage] GCPhys=%#x %s\n", pPage, GCPhys, pRam->pszDesc), rc);
-
-        SSMR3PutU8(pSSM, 1);
-        rc = SSMR3PutMem(pSSM, pvPage, PAGE_SIZE);
-    }
-    return rc;
-}
-
-
-/**
- * Save a shadowed ROM page.
- *
- * Format: Type, protection, and two pages with zero indicators.
- *
- * @returns VBox status code, errors are logged/asserted before returning.
- * @param   pVM         The VM handle.
- * @param   pSSH        The saved state handle.
- * @param   pPage       The page to save.
- * @param   GCPhys      The address of the page.
- * @param   pRam        The ram range (for error logging).
- */
-static int pgmR3SaveShadowedRomPage(PVM pVM, PSSMHANDLE pSSM, PPGMPAGE pPage, RTGCPHYS GCPhys, PPGMRAMRANGE pRam)
-{
-    /* Need to save both pages and the current state. */
-    PPGMROMPAGE pRomPage = pgmR3GetRomPage(pVM, GCPhys);
-    AssertLogRelMsgReturn(pRomPage, ("GCPhys=%RGp %s\n", GCPhys, pRam->pszDesc), VERR_INTERNAL_ERROR);
-
-    SSMR3PutU8(pSSM, PGMPAGETYPE_ROM_SHADOW);
-    SSMR3PutU8(pSSM, pRomPage->enmProt);
-
-    int rc = pgmR3SavePage(pVM, pSSM, pPage, GCPhys, pRam);
-    if (RT_SUCCESS(rc))
-    {
-        PPGMPAGE pPagePassive = PGMROMPROT_IS_ROM(pRomPage->enmProt) ? &pRomPage->Shadow : &pRomPage->Virgin;
-        rc = pgmR3SavePage(pVM, pSSM, pPagePassive, GCPhys, pRam);
-    }
-    return rc;
-}
-
-#endif /* !VBOX_WITH_LIVE_MIGRATION */
-
 
 /**
  * Prepare for a live save operation.
@@ -1877,7 +1811,6 @@ static DECLCALLBACK(int) pgmR3SaveExec(PVM pVM, PSSMHANDLE pSSM)
     }
     rc = SSMR3PutU32(pSSM, ~0); /* terminator. */
 
-#ifdef VBOX_WITH_LIVE_MIGRATION
     /*
      * Save the (remainder of the) memory.
      */
@@ -1911,56 +1844,6 @@ static DECLCALLBACK(int) pgmR3SaveExec(PVM pVM, PSSMHANDLE pSSM)
         }
         SSMR3PutU8(pSSM, PGM_STATE_REC_END);    /* (Ignore the rc, SSM takes of it.) */
     }
-
-#else /* !VBOX_WITH_LIVE_MIGRATION */
-    /*
-     * Ram ranges and the memory they describe.
-     */
-    i = 0;
-    for (PPGMRAMRANGE pRam = pPGM->pRamRangesR3; pRam; pRam = pRam->pNextR3, i++)
-    {
-        /*
-         * Save the ram range details.
-         */
-        SSMR3PutU32(pSSM,       i);
-        SSMR3PutGCPhys(pSSM,    pRam->GCPhys);
-        SSMR3PutGCPhys(pSSM,    pRam->GCPhysLast);
-        SSMR3PutGCPhys(pSSM,    pRam->cb);
-        SSMR3PutU8(pSSM,        !!pRam->pvR3);      /* Boolean indicating memory or not. */
-        SSMR3PutStrZ(pSSM,      pRam->pszDesc);     /* This is the best unique id we have... */
-
-        /*
-         * Iterate the pages, only two special case.
-         */
-        uint32_t const cPages = pRam->cb >> PAGE_SHIFT;
-        for (uint32_t iPage = 0; iPage < cPages; iPage++)
-        {
-            RTGCPHYS GCPhysPage = pRam->GCPhys + ((RTGCPHYS)iPage << PAGE_SHIFT);
-            PPGMPAGE pPage      = &pRam->aPages[iPage];
-            uint8_t  uType      = PGM_PAGE_GET_TYPE(pPage);
-
-            if (uType == PGMPAGETYPE_ROM_SHADOW) /** @todo This isn't right, but it doesn't currently matter. */
-                rc = pgmR3SaveShadowedRomPage(pVM, pSSM, pPage, GCPhysPage, pRam);
-            else if (uType == PGMPAGETYPE_MMIO2_ALIAS_MMIO)
-            {
-                /* MMIO2 alias -> MMIO; the device will just have to deal with this. */
-                SSMR3PutU8(pSSM, PGMPAGETYPE_MMIO);
-                rc = SSMR3PutU8(pSSM, 0 /* ZERO */);
-            }
-            else
-            {
-                SSMR3PutU8(pSSM, uType);
-                rc = pgmR3SavePage(pVM, pSSM, pPage, GCPhysPage, pRam);
-            }
-            if (RT_FAILURE(rc))
-                break;
-        }
-        if (RT_FAILURE(rc))
-            break;
-    }
-
-    rc = SSMR3PutU32(pSSM, ~0); /* terminator. */
-#endif /* !VBOX_WITH_LIVE_MIGRATION */
 
     pgmUnlock(pVM);
     return rc;
