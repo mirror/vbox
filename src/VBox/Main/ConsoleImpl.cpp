@@ -2491,14 +2491,6 @@ STDMETHODIMP Console::TakeSnapshot(IN_BSTR aName,
         pTask->lastMachineState = mMachineState;
         pTask->fTakingSnapshotOnline = fTakingSnapshotOnline;
 
-#ifndef VBOX_WITH_LIVE_MIGRATION /** @todo update the API docs. */
-        if (mMachineState == MachineState_Running)
-        {
-            rc = Pause();
-            if (FAILED(rc)) throw rc;
-        }
-#endif
-
         int vrc = RTThreadCreate(NULL,
                                  Console::fntTakeSnapshotWorker,
                                  (void*)pTask,

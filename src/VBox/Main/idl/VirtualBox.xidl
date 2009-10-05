@@ -6439,7 +6439,8 @@
         This method can be called for a PoweredOff, Saved (see
         <link to="#saveState"/>), Running or
         Paused virtual machine. When the machine is PoweredOff, an
-        offline snapshot is created, an online snapshot otherwise.
+        offline snapshot is created. When the machine is Running a live
+        snapshot is created, and an online snapshot is is created when Paused.
 
         The taken snapshot is always based on the
         <link to="IMachine::currentSnapshot">current snapshot</link>

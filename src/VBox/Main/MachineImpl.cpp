@@ -8290,14 +8290,9 @@ STDMETHODIMP SessionMachine::BeginTakingSnapshot(IConsole *aInitiator,
     /* saveSettings() needs mParent lock */
     AutoMultiWriteLock2 alock(mParent, this);
 
-#ifdef VBOX_WITH_LIVE_MIGRATION
     AssertReturn(    !Global::IsOnlineOrTransient(mData->mMachineState)
                   || mData->mMachineState == MachineState_Running
                   || mData->mMachineState == MachineState_Paused, E_FAIL);
-#else
-    AssertReturn(    !Global::IsOnlineOrTransient(mData->mMachineState)
-                  || mData->mMachineState == MachineState_Paused, E_FAIL);
-#endif
     AssertReturn(mSnapshotData.mLastState == MachineState_Null, E_FAIL);
     AssertReturn(mSnapshotData.mSnapshot.isNull(), E_FAIL);
 
