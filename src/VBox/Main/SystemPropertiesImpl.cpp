@@ -468,6 +468,32 @@ STDMETHODIMP SystemProperties::GetMaxPortCountForStorageBus (StorageBus_T aBus, 
     return S_OK;
 }
 
+STDMETHODIMP SystemProperties::GetMaxInstancesOfStorageBus(StorageBus_T aBus, ULONG *aMaxInstances)
+{
+    CheckComArgOutPointerValid(aMaxInstances);
+
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
+
+    /* no need to lock, this is const */
+    switch (aBus)
+    {
+        case StorageBus_SATA:
+        case StorageBus_SCSI:
+        case StorageBus_IDE:
+        case StorageBus_Floppy:
+        {
+            /** @todo raise the limits ASAP, per bus type */
+            *aMaxInstances = 1;
+            break;
+        }
+        default:
+            AssertMsgFailed(("Invalid bus type %d\n", aBus));
+    }
+
+    return S_OK;
+}
+
 STDMETHODIMP SystemProperties::COMGETTER(DefaultMachineFolder) (BSTR *aDefaultMachineFolder)
 {
     CheckComArgOutPointerValid(aDefaultMachineFolder);
