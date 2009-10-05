@@ -689,8 +689,8 @@ static void vboxVHWAGlInit(const QGLContext * pContext)
 
     g_vboxVHWAGlSupportInitialized = true;
 
-    if (!QGLContext(QGLFormat::defaultFormat()).isValid())
-        return;
+//    if (!QGLContext(QGLFormat::defaultFormat()).isValid())
+//        return;
 
     static QGLWidget *pTmpContextHolder = NULL;
     const bool bHasGlContext = (pContext != NULL);
@@ -5460,7 +5460,7 @@ bool VBoxQGLOverlay::vboxSynchGl()
             mContainer->width(),
             mContainer->height());
 
-    mpOverlayWidget->vboxResizeEvent(&re);
+    mpOverlayWidget->vboxDoResize(&re);
     return true;
 }
 
