@@ -745,7 +745,7 @@ static int hwaccmR0DisableCpu(RTCPUID idCpu)
     Assert(!pCpu->fConfigured || pCpu->pMemObj);
 
     if (!pCpu->pMemObj)
-        return VERR_NO_MEMORY;
+        return (pCpu->fConfigured) ? VERR_NO_MEMORY : VINF_SUCCESS /* not initialized. */;
 
     pvPageCpu    = RTR0MemObjAddress(pCpu->pMemObj);
     pPageCpuPhys = RTR0MemObjGetPagePhysAddr(pCpu->pMemObj, 0);
