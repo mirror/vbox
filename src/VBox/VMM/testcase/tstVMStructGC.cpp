@@ -147,9 +147,6 @@ int main()
     GEN_CHECK_OFF(EMCPU, pStatsRC);
     GEN_CHECK_OFF(EMCPU, pCliStatTree);
 
-    GEN_CHECK_SIZE(HWACCM);
-    GEN_CHECK_SIZE(HWACCMCPU);
-
     GEN_CHECK_SIZE(IOM);
     GEN_CHECK_OFF(IOM, pTreesRC);
     GEN_CHECK_OFF(IOM, pTreesR3);
