@@ -106,6 +106,7 @@ AS86="as86"
 XSLTPROC="xsltproc"
 GENISOIMAGE="genisoimage"
 MKISOFS="mkisofs"
+INCCRYPTO=""
 LIBCRYPTO="-lcrypto"
 LIBPTHREAD="-lpthread"
 LIBCAP="-lcap"
@@ -817,18 +818,18 @@ check_ssl()
 extern "C" int main(void)
 {
   printf("found version %s", OPENSSL_VERSION_TEXT);
-#if OPENSSL_VERSION_NUMBER >= 0x0090700
+#if OPENSSL_VERSION_NUMBER >= 0x0090800
   printf(", OK.\n");
   return 0;
 #else
-  printf(", expected version 0.9.7 or higher\n");
+  printf(", expected version 0.9.8 or higher\n");
   return 1;
 #endif
 }
 EOF
-    if test_compile $LIBCRYPTO libcrypto openssl; then
+    if test_compile "$INCCRYPTO $LIBCRYPTO" libcrypto openssl; then
       if test_execute nofatal; then
-        cnf_append "SDK_VBOX_OPENSSL_INCS" ""
+        cnf_append "SDK_VBOX_OPENSSL_INCS" "`strip_I "$INCCRYPTO"`"
         cnf_append "SDK_VBOX_OPENSSL_LIBS" "`strip_l "$LIBCRYPTO"`"
       fi
     fi
@@ -2066,6 +2067,11 @@ for option in $*; do
     --with-qt-dir=*|--with-qt4-dir=*)
       QT4DIR=`echo $option | cut -d'=' -f2`
       QT4DIR_PKGCONFIG=0
+      ;;
+    --with-openssl-dir=*)
+      OPENSSLDIR=`echo $option | cut -d'=' -f2`
+      INCCRYPTO="-I${OPENSSLDIR}/include"
+      LIBCRYPTO="${OPENSSLDIR}/lib/libcrypto.a"
       ;;
     --with-gsoap-dir=*)
       GSOAP=`echo $option | cut -d'=' -f2`
