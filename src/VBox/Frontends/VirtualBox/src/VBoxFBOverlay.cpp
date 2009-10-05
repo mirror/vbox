@@ -2319,17 +2319,24 @@ void VBoxVHWATextureNP2RectPBO::load()
 {
     VBoxVHWATextureNP2Rect::load();
 
-    vboxglBindBuffer(GL_PIXEL_UNPACK_BUFFER, mPBO);
+    VBOXQGL_CHECKERR(
+            vboxglBindBuffer(GL_PIXEL_UNPACK_BUFFER, mPBO);
+        );
 
-    vboxglBufferData(GL_PIXEL_UNPACK_BUFFER, memSize(), NULL, GL_STREAM_DRAW);
+    VBOXQGL_CHECKERR(
+            vboxglBufferData(GL_PIXEL_UNPACK_BUFFER, memSize(), NULL, GL_STREAM_DRAW);
+        );
 
     GLvoid *buf = vboxglMapBuffer(GL_PIXEL_UNPACK_BUFFER, GL_WRITE_ONLY);
+    Assert(buf);
+    if(buf)
+    {
+    //  updateBuffer((uchar*)buf, &mRect);
+        memcpy(buf, mAddress, memSize());
 
-//  updateBuffer((uchar*)buf, &mRect);
-    memcpy(buf, mAddress, memSize());
-
-    bool unmapped = vboxglUnmapBuffer(GL_PIXEL_UNPACK_BUFFER);
-    Assert(unmapped); NOREF(unmapped);
+        bool unmapped = vboxglUnmapBuffer(GL_PIXEL_UNPACK_BUFFER);
+        Assert(unmapped); NOREF(unmapped);
+    }
 
     vboxglBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
 }
