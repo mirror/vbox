@@ -122,7 +122,9 @@ void hwaccmMpPokeCpu(PVMCPU pVCpu, RTCPUID idHostCpu)
 {
     uint32_t cWorldSwitchExit = pVCpu->hwaccm.s.cWorldSwitchExit;
 
+    STAM_PROFILE_ADV_START(&pVCpu->hwaccm.s.StatPoke, x);
     int rc = RTMpPokeCpu(idHostCpu);
+    STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatPoke, x);
     /* Not implemented on some platforms (Darwin, Linux kernel < 2.6.19); fall back to a less efficient implementation (broadcast). */
     if (rc == VERR_NOT_SUPPORTED)
     {

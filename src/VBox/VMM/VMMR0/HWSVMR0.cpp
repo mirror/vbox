@@ -189,6 +189,7 @@ VMMR0DECL(int) SVMR0InitVM(PVM pVM)
 
         pVCpu->hwaccm.s.svm.pVMCBHost     = RTR0MemObjAddress(pVCpu->hwaccm.s.svm.pMemObjVMCBHost);
         pVCpu->hwaccm.s.svm.pVMCBHostPhys = RTR0MemObjGetPagePhysAddr(pVCpu->hwaccm.s.svm.pMemObjVMCBHost, 0);
+        Assert(pVCpu->hwaccm.s.svm.pVMCBHostPhys < _4G);
         ASMMemZeroPage(pVCpu->hwaccm.s.svm.pVMCBHost);
 
         /* Allocate one page for the VM control block (VMCB). */
@@ -198,6 +199,7 @@ VMMR0DECL(int) SVMR0InitVM(PVM pVM)
 
         pVCpu->hwaccm.s.svm.pVMCB     = RTR0MemObjAddress(pVCpu->hwaccm.s.svm.pMemObjVMCB);
         pVCpu->hwaccm.s.svm.pVMCBPhys = RTR0MemObjGetPagePhysAddr(pVCpu->hwaccm.s.svm.pMemObjVMCB, 0);
+        Assert(pVCpu->hwaccm.s.svm.pVMCBPhys < _4G);
         ASMMemZeroPage(pVCpu->hwaccm.s.svm.pVMCB);
 
         /* Allocate 8 KB for the MSR bitmap (doesn't seem to be a way to convince SVM not to use it) */
