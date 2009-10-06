@@ -45,7 +45,8 @@ WINE_DECLARE_DEBUG_CHANNEL(fps);
 #define GLINFO_LOCATION This->wineD3DDevice->adapter->gl_info
 
 /*IWineD3DSwapChain parts follow: */
-static void WINAPI IWineD3DSwapChainImpl_Destroy(IWineD3DSwapChain *iface, D3DCB_DESTROYSURFACEFN D3DCB_DestroyRenderTarget) {
+static void WINAPI IWineD3DSwapChainImpl_Destroy(IWineD3DSwapChain *iface)
+{
     IWineD3DSwapChainImpl *This = (IWineD3DSwapChainImpl *)iface;
     WINED3DDISPLAYMODE mode;
     unsigned int i;
@@ -54,23 +55,32 @@ static void WINAPI IWineD3DSwapChainImpl_Destroy(IWineD3DSwapChain *iface, D3DCB
 
     IWineD3DSwapChain_SetGammaRamp(iface, 0, &This->orig_gamma);
 
-    /* release the ref to the front and back buffer parents */
-    if(This->frontBuffer) {
+    /* Release the swapchain's draw buffers. Make sure This->backBuffer[0] is
+     * the last buffer to be destroyed, FindContext() depends on that. */
+    if (This->frontBuffer)
+    {
         IWineD3DSurface_SetContainer(This->frontBuffer, 0);
-        if(D3DCB_DestroyRenderTarget(This->frontBuffer) > 0) {
-            FIXME("(%p) Something's still holding the front buffer\n",This);
+        if (IWineD3DSurface_Release(This->frontBuffer))
+        {
+            WARN("(%p) Something's still holding the front buffer (%p).\n",
+                    This, This->frontBuffer);
         }
+        This->frontBuffer = NULL;
     }
 
-    if(This->backBuffer) {
-        UINT i;
-        for(i = 0; i < This->presentParms.BackBufferCount; i++) {
+    if (This->backBuffer)
+    {
+        UINT i = This->presentParms.BackBufferCount;
+
+        while (i--)
+        {
             IWineD3DSurface_SetContainer(This->backBuffer[i], 0);
-            if(D3DCB_DestroyRenderTarget(This->backBuffer[i]) > 0) {
-                FIXME("(%p) Something's still holding the back buffer\n",This);
-            }
+            if (IWineD3DSurface_Release(This->backBuffer[i]))
+                WARN("(%p) Something's still holding back buffer %u (%p).\n",
+                        This, i, This->backBuffer[i]);
         }
         HeapFree(GetProcessHeap(), 0, This->backBuffer);
+        This->backBuffer = NULL;
     }
 
     for (i = 0; i < This->num_contexts; ++i)
@@ -119,7 +129,8 @@ static HRESULT WINAPI IWineD3DSwapChainImpl_Present(IWineD3DSwapChain *iface, CO
         cursor.resource.ref = 1;
         cursor.resource.wineD3DDevice = This->wineD3DDevice;
         cursor.resource.pool = WINED3DPOOL_SCRATCH;
-        cursor.resource.format_desc = getFormatDescEntry(WINED3DFMT_A8R8G8B8, &This->wineD3DDevice->adapter->gl_info);
+        cursor.resource.format_desc =
+                getFormatDescEntry(WINED3DFMT_B8G8R8A8_UNORM, &This->wineD3DDevice->adapter->gl_info);
         cursor.resource.resourceType = WINED3DRTYPE_SURFACE;
         cursor.texture_name = This->wineD3DDevice->cursorTexture;
         cursor.texture_target = GL_TEXTURE_2D;

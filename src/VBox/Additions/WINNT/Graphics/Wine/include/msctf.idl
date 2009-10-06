@@ -1336,3 +1336,33 @@ interface IEnumTfDocumentMgrs : IUnknown
     HRESULT Skip(
         [in] ULONG ulCount);
 };
+
+[
+  object,
+  uuid(73131f9c-56a9-49dd-b0ee-d046633f7528),
+  pointer_default(unique)
+]
+interface ITfSourceSingle : IUnknown
+{
+    HRESULT AdviseSingleSink(
+        [in] TfClientId tid,
+        [in] REFIID riid,
+        [in, iid_is(riid)] IUnknown *punk);
+
+    HRESULT UnadviseSingleSink(
+        [in] TfClientId tid,
+        [in] REFIID riid);
+};
+
+[
+  object,
+  local,
+  uuid(c0f1db0c-3a20-405c-a303-96b6010a885f),
+  pointer_default(unique)
+]
+interface ITfThreadFocusSink : IUnknown
+{
+    HRESULT OnSetThreadFocus();
+
+    HRESULT OnKillThreadFocus();
+};

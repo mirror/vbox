@@ -152,7 +152,7 @@ typedef struct
     {
         struct { unsigned int eip, ebp, esp, eflags, cs, ss; } i386_regs;
         struct { unsigned __int64 rip, rbp, rsp;
-                 unsigned int cs, ss, flags, mxcsr; } x86_64_regs;
+                 unsigned int cs, ss, flags; } x86_64_regs;
         struct { unsigned __int64 fir;
                  unsigned int psr; } alpha_regs;
         struct { unsigned int iar, msr, ctr, lr, dar, dsisr, trap; } powerpc_regs;
@@ -218,6 +218,42 @@ struct wake_up_reply
 
 typedef __int64 timeout_t;
 #define TIMEOUT_INFINITE (((timeout_t)0x7fffffff) << 32 | 0xffffffff)
+
+
+typedef struct
+{
+    unsigned int debug_flags;
+    unsigned int console_flags;
+    obj_handle_t console;
+    obj_handle_t hstdin;
+    obj_handle_t hstdout;
+    obj_handle_t hstderr;
+    unsigned int x;
+    unsigned int y;
+    unsigned int xsize;
+    unsigned int ysize;
+    unsigned int xchars;
+    unsigned int ychars;
+    unsigned int attribute;
+    unsigned int flags;
+    unsigned int show;
+    data_size_t  curdir_len;
+    data_size_t  dllpath_len;
+    data_size_t  imagepath_len;
+    data_size_t  cmdline_len;
+    data_size_t  title_len;
+    data_size_t  desktop_len;
+    data_size_t  shellinfo_len;
+    data_size_t  runtime_len;
+
+
+
+
+
+
+
+
+} startup_info_t;
 
 
 typedef struct
@@ -544,14 +580,12 @@ struct new_process_request
     unsigned int create_flags;
     int          socket_fd;
     obj_handle_t exe_file;
-    obj_handle_t hstdin;
-    obj_handle_t hstdout;
-    obj_handle_t hstderr;
     unsigned int process_access;
     unsigned int process_attr;
     unsigned int thread_access;
     unsigned int thread_attr;
-    /* VARARG(info,startup_info); */
+    data_size_t  info_size;
+    /* VARARG(info,startup_info,info_size); */
     /* VARARG(env,unicode_str); */
 };
 struct new_process_reply
@@ -606,10 +640,8 @@ struct get_startup_info_reply
 {
     struct reply_header __header;
     obj_handle_t exe_file;
-    obj_handle_t hstdin;
-    obj_handle_t hstdout;
-    obj_handle_t hstderr;
-    /* VARARG(info,startup_info); */
+    data_size_t  info_size;
+    /* VARARG(info,startup_info,info_size); */
     /* VARARG(env,unicode_str); */
 };
 
@@ -2868,6 +2900,9 @@ struct cancel_async_request
 {
     struct request_header __header;
     obj_handle_t handle;
+    client_ptr_t iosb;
+    int          only_thread;
+    char __pad_28[4];
 };
 struct cancel_async_reply
 {
@@ -5321,6 +5356,6 @@ union generic_reply
     struct set_window_layered_info_reply set_window_layered_info_reply;
 };
 
-#define SERVER_PROTOCOL_VERSION 387
+#define SERVER_PROTOCOL_VERSION 390
 
 #endif /* __WINE_WINE_SERVER_PROTOCOL_H */

@@ -3,9 +3,7 @@
 LIBRARY wined3d.dll
 
 EXPORTS
-;  WineDirect3DCreate@8 @1
-;  WineDirect3DCreateClipper@4 @2
-;  WineDirect3DCreate@8 = WineDirect3DCreate
-;  WineDirect3DCreateClipper@4 = WineDirect3DCreateClipper
   WineDirect3DCreate
   WineDirect3DCreateClipper
+  wined3d_mutex_lock
+  wined3d_mutex_unlock

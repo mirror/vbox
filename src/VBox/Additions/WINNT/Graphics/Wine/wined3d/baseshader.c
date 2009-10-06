@@ -216,11 +216,15 @@ int shader_addline(struct wined3d_shader_buffer *buffer, const char *format, ...
     return ret;
 }
 
-void shader_init(struct IWineD3DBaseShaderClass *shader, IWineD3DDevice *device)
+void shader_init(struct IWineD3DBaseShaderClass *shader, IWineD3DDeviceImpl *device,
+        IUnknown *parent, const struct wined3d_parent_ops *parent_ops)
 {
     shader->ref = 1;
-    shader->device = device;
+    shader->device = (IWineD3DDevice *)device;
+    shader->parent = parent;
+    shader->parent_ops = parent_ops;
     list_init(&shader->linked_programs);
+    list_add_head(&device->shaders, &shader->shader_list_entry);
 }
 
 /* Convert floating point offset relative
@@ -267,12 +271,12 @@ static void shader_record_register_usage(IWineD3DBaseShaderImpl *This, struct sh
     switch (reg->type)
     {
         case WINED3DSPR_TEXTURE: /* WINED3DSPR_ADDR */
-            if (shader_type == WINED3D_SHADER_TYPE_PIXEL) reg_maps->texcoord[reg->idx] = 1;
-            else reg_maps->address[reg->idx] = 1;
+            if (shader_type == WINED3D_SHADER_TYPE_PIXEL) reg_maps->texcoord |= 1 << reg->idx;
+            else reg_maps->address |= 1 << reg->idx;
             break;
 
         case WINED3DSPR_TEMP:
-            reg_maps->temporary[reg->idx] = 1;
+            reg_maps->temporary |= 1 << reg->idx;
             break;
 
         case WINED3DSPR_INPUT:
@@ -609,7 +613,7 @@ HRESULT shader_get_registers_used(IWineD3DBaseShader *iface, const struct wined3
             struct wined3d_shader_src_param src, rel_addr;
 
             fe->shader_read_src_param(fe_data, &pToken, &src, &rel_addr);
-            reg_maps->labels[src.reg.idx] = 1;
+            reg_maps->labels |= 1 << src.reg.idx;
         }
         /* Set texture, address, temporary registers */
         else
@@ -696,16 +700,16 @@ HRESULT shader_get_registers_used(IWineD3DBaseShader *iface, const struct wined3
                     if (ins.handler_idx == WINED3DSIH_TEXBEM
                             || ins.handler_idx == WINED3DSIH_TEXBEML)
                     {
-                        reg_maps->bumpmat[sampler_code] = TRUE;
+                        reg_maps->bumpmat |= 1 << dst_param.reg.idx;
                         if (ins.handler_idx == WINED3DSIH_TEXBEML)
                         {
-                            reg_maps->luminanceparams[sampler_code] = TRUE;
+                            reg_maps->luminanceparams |= 1 << dst_param.reg.idx;
                         }
                     }
                 }
                 else if (ins.handler_idx == WINED3DSIH_BEM)
                 {
-                    reg_maps->bumpmat[dst_param.reg.idx] = TRUE;
+                    reg_maps->bumpmat |= 1 << dst_param.reg.idx;
                 }
             }
 
@@ -777,6 +781,15 @@ HRESULT shader_get_registers_used(IWineD3DBaseShader *iface, const struct wined3
     This->baseShader.functionLength = ((const char *)pToken - (const char *)byte_code);
 
     return WINED3D_OK;
+}
+
+unsigned int shader_find_free_input_register(const struct shader_reg_maps *reg_maps, unsigned int max)
+{
+    DWORD map = 1 << max;
+    map |= map - 1;
+    map &= reg_maps->shader_version.major < 3 ? ~reg_maps->texcoord : ~reg_maps->input_registers;
+
+    return wined3d_log2i(map);
 }
 
 static void shader_dump_decl_usage(const struct wined3d_shader_semantic *semantic,
