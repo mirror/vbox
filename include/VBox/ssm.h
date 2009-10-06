@@ -622,6 +622,91 @@ typedef FNSSMEXTLOADDONE *PFNSSMEXTLOADDONE;
 /** @} */
 
 
+/**
+ * SSM stream method table.
+ *
+ * This is used for live migration as well as internally in SSM.
+ */
+typedef struct SSMSTRMOPS
+{
+    /** Struct magic + version (SSMSTRMOPS_VERSION). */
+    uint32_t    u32Version;
+
+    /**
+     * Write bytes to the stream.
+     *
+     * @returns VBox status code.
+     * @param   pvUser              The user argument.
+     * @param   offStream           The stream offset we're (supposed to be) at.
+     * @param   pvBuf               Pointer to the data.
+     * @param   cbToWrite           The number of bytes to write.
+     */
+    DECLCALLBACKMEMBER(int, pfnWrite)(void *pvUser, uint64_t offStream, const void *pvBuf, size_t cbToWrite);
+
+    /**
+     * Read bytes to the stream.
+     *
+     * @returns VBox status code.
+     * @param   pvUser              The user argument.
+     * @param   offStream           The stream offset we're (supposed to be) at.
+     * @param   pvBuf               Where to return the bytes.
+     * @param   cbToRead            The number of bytes to read.
+     * @param   pcbRead             Where to return the number of bytes actually
+     *                              read.  This may differ from cbToRead when the
+     *                              end of the stream is encountered.
+     */
+    DECLCALLBACKMEMBER(int, pfnRead)(void *pvUser, uint64_t offStream, void *pvBuf, size_t cbToRead, size_t *pcbRead);
+
+    /**
+     * Seeks in the stream.
+     *
+     * @returns VBox status code.
+     * @retval  VERR_NOT_SUPPORTED if the stream doesn't support this action.
+     *
+     * @param   pvUser              The user argument.
+     * @param   offSeek             The seek offset.
+     * @param   uMethod             RTFILE_SEEK_BEGIN, RTFILE_SEEK_END or
+     *                              RTFILE_SEEK_CURRENT.
+     * @param   poffActual          Where to store the new file position. Optional.
+     */
+    DECLCALLBACKMEMBER(int, pfnSeek)(void *pvUser, int64_t offSeek, unsigned uMethod, uint64_t *poffActual);
+
+    /**
+     * Get the current stream position.
+     *
+     * @returns The correct stream position.
+     * @param   pvUser              The user argument.
+     */
+    DECLCALLBACKMEMBER(uint64_t, pfnTell)(void *pvUser);
+
+    /**
+     * Get the size/length of the stream.
+     *
+     * @returns VBox status code.
+     * @retval  VERR_NOT_SUPPORTED if the stream doesn't support this action.
+     *
+     * @param   pvUser              The user argument.
+     * @param   pcb                 Where to return the size/length.
+     */
+    DECLCALLBACKMEMBER(int, pfnSize)(void *pvUser, uint64_t *pcb);
+
+    /**
+     * Close the stream.
+     *
+     * @returns VBox status code.
+     * @param   pvUser              The user argument.
+     */
+    DECLCALLBACKMEMBER(int, pfnClose)(void *pvUser);
+
+    /** Struct magic + version (SSMSTRMOPS_VERSION). */
+    uint32_t    u32EndVersion;
+} SSMSTRMOPS;
+/** Pointer to a const SSM stream method table. */
+typedef SSMSTRMOPS const *PCSSMSTRMOPS;
+/** Struct magic + version (SSMSTRMOPS_VERSION). */
+#define SSMSTRMOPS_VERSION  UINT32_C(0x55aa0001)
+
+
 VMMR3_INT_DECL(void)    SSMR3Term(PVM pVM);
 VMMR3DECL(int)          SSMR3RegisterDevice(PVM pVM, PPDMDEVINS pDevIns, const char *pszName, uint32_t uInstance, uint32_t uVersion, size_t cbGuess, const char *pszBefore,
                                             PFNSSMDEVLIVEPREP pfnLivePrep, PFNSSMDEVLIVEEXEC pfnLiveExec, PFNSSMDEVLIVEVOTE pfnLiveVote,

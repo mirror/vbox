@@ -352,6 +352,7 @@ typedef enum SSMSTATE
     SSMSTATE_END
 } SSMSTATE;
 
+
 /** Pointer to a SSM stream buffer. */
 typedef struct SSMSTRMBUF *PSSMSTRMBUF;
 /**
@@ -380,8 +381,11 @@ typedef struct SSMSTRMBUF
  */
 typedef struct SSMSTRM
 {
-    /** The file handle. */
-    RTFILE                  hFile;
+    /** The stream method table. */
+    PCSSMSTRMOPS            pOps;
+    /** The user argument for the stream methods.
+     * For file based streams, this is the file handle and not a pointer. */
+    void                   *pvUser;
 
     /** Write (set) or read (clear) stream. */
     bool                    fWrite;
@@ -1626,6 +1630,78 @@ static void ssmR3StrmDelete(PSSMSTRM pStrm)
 
 
 /**
+ * @copydoc SSMSTRMOPS::pfnWrite
+ */
+static DECLCALLBACK(int) ssmR3FileWrite(void *pvUser, uint64_t offStream, const void *pvBuf, size_t cbToWrite)
+{
+    Assert(RTFileTell((RTFILE)(uintptr_t)pvUser) == offStream); NOREF(offStream);
+    return RTFileWriteAt((RTFILE)(uintptr_t)pvUser, offStream, pvBuf, cbToWrite, NULL); /** @todo use RTFileWrite */
+}
+
+
+/**
+ * @copydoc SSMSTRMOPS::pfnRead
+ */
+static DECLCALLBACK(int) ssmR3FileRead(void *pvUser, uint64_t offStream, void *pvBuf, size_t cbToRead, size_t *pcbRead)
+{
+    Assert(RTFileTell((RTFILE)(uintptr_t)pvUser) == offStream); NOREF(offStream);
+    return RTFileRead((RTFILE)(uintptr_t)pvUser, pvBuf, cbToRead, pcbRead);
+}
+
+
+/**
+ * @copydoc SSMSTRMOPS::pfnSeek
+ */
+static DECLCALLBACK(int) ssmR3FileSeek(void *pvUser, int64_t offSeek, unsigned uMethod, uint64_t *poffActual)
+{
+    return RTFileSeek((RTFILE)(uintptr_t)pvUser, offSeek, uMethod, poffActual);
+}
+
+
+/**
+ * @copydoc SSMSTRMOPS::pfnTell
+ */
+static DECLCALLBACK(uint64_t) ssmR3FileTell(void *pvUser)
+{
+    return RTFileTell((RTFILE)(uintptr_t)pvUser);
+}
+
+
+/**
+ * @copydoc SSMSTRMOPS::pfnSize
+ */
+static DECLCALLBACK(int) ssmR3FileSize(void *pvUser, uint64_t *pcb)
+{
+    return RTFileGetSize((RTFILE)(uintptr_t)pvUser, pcb);
+}
+
+
+/**
+ * @copydoc SSMSTRMOPS::pfnClose
+ */
+static DECLCALLBACK(int) ssmR3FileClose(void *pvUser)
+{
+    return RTFileClose((RTFILE)(uintptr_t)pvUser);
+}
+
+
+/**
+ * Method table for a file based stream.
+ */
+static SSMSTRMOPS const g_ssmR3FileOps =
+{
+    SSMSTRMOPS_VERSION,
+    ssmR3FileWrite,
+    ssmR3FileRead,
+    ssmR3FileSeek,
+    ssmR3FileTell,
+    ssmR3FileSize,
+    ssmR3FileClose,
+    SSMSTRMOPS_VERSION
+};
+
+
+/**
  * Opens a file stream.
  *
  * @returns VBox status code.
@@ -1644,9 +1720,12 @@ static int ssmR3StrmOpenFile(PSSMSTRM pStrm, const char *pszFilename, bool fWrit
         uint32_t fFlags = fWrite
                         ? RTFILE_O_READWRITE | RTFILE_O_CREATE_REPLACE | RTFILE_O_DENY_WRITE
                         : RTFILE_O_READ      | RTFILE_O_OPEN           | RTFILE_O_DENY_WRITE;
-        rc = RTFileOpen(&pStrm->hFile, pszFilename, fFlags);
+        RTFILE hFile;
+        rc = RTFileOpen(&hFile, pszFilename, fFlags);
         if (RT_SUCCESS(rc))
         {
+            pStrm->pOps   = &g_ssmR3FileOps;
+            pStrm->pvUser = (void *)(uintptr_t)hFile;
             pStrm->fWrite = fWrite;
             return VINF_SUCCESS;
         }
@@ -1917,7 +1996,7 @@ static int ssmR3StrmWriteBuffers(PSSMSTRM pStrm)
         pHead = pCur->pNext;
 
         /* flush */
-        int rc = RTFileWriteAt(pStrm->hFile, pCur->offStream, &pCur->abData[0], pCur->cb, NULL);
+        int rc = pStrm->pOps->pfnWrite(pStrm->pvUser, pCur->offStream, &pCur->abData[0], pCur->cb);
         if (    RT_FAILURE(rc)
             &&  ssmR3StrmSetError(pStrm, rc))
             LogRel(("ssmR3StrmWriteBuffers: RTFileWriteAt failed with rc=%Rrc at offStream=%#llx\n", rc, pCur->offStream));
@@ -1962,10 +2041,11 @@ static int ssmR3StrmClose(PSSMSTRM pStrm)
         pStrm->hIoThread = NIL_RTTHREAD;
     }
 
-    int rc = RTFileClose(pStrm->hFile);
+    int rc = pStrm->pOps->pfnClose(pStrm->pvUser);
     if (RT_FAILURE(rc))
         ssmR3StrmSetError(pStrm, rc);
-    pStrm->hFile = NIL_RTFILE;
+    pStrm->pOps   = NULL;
+    pStrm->pvUser = NULL;
 
     rc = pStrm->rc;
     ssmR3StrmDelete(pStrm);
@@ -2151,7 +2231,7 @@ static int ssmR3StrmReadMore(PSSMSTRM pStrm)
      */
     if (pStrm->fNeedSeek)
     {
-        rc = RTFileSeek(pStrm->hFile, pStrm->offNeedSeekTo, RTFILE_SEEK_BEGIN, NULL);
+        rc = pStrm->pOps->pfnSeek(pStrm->pvUser, pStrm->offNeedSeekTo, RTFILE_SEEK_BEGIN, NULL);
         if (RT_FAILURE(rc))
         {
             if (ssmR3StrmSetError(pStrm, rc))
@@ -2169,9 +2249,9 @@ static int ssmR3StrmReadMore(PSSMSTRM pStrm)
     if (!pBuf)
         return pStrm->rc;
 
-    pBuf->offStream = RTFileTell(pStrm->hFile);
+    pBuf->offStream = pStrm->pOps->pfnTell(pStrm->pvUser);
     size_t cbRead   = sizeof(pBuf->abData);
-    rc = RTFileRead(pStrm->hFile, &pBuf->abData[0], cbRead, &cbRead);
+    rc = pStrm->pOps->pfnRead(pStrm->pvUser, pBuf->offStream, &pBuf->abData[0], cbRead, &cbRead);
     if (    RT_SUCCESS(rc)
         &&  cbRead > 0)
     {
@@ -2405,7 +2485,7 @@ static int ssmR3StrmSeek(PSSMSTRM pStrm, int64_t off, uint32_t uMethod, uint32_t
     AssertReturn(pStrm->hIoThread == NIL_RTTHREAD, VERR_WRONG_ORDER);
 
     uint64_t offStream;
-    int rc = RTFileSeek(pStrm->hFile, off, uMethod, &offStream);
+    int rc = pStrm->pOps->pfnSeek(pStrm->pvUser, off, uMethod, &offStream);
     if (RT_SUCCESS(rc))
     {
         pStrm->fNeedSeek    = false;
@@ -2465,7 +2545,7 @@ static int ssmR3StrmSkipTo(PSSMSTRM pStrm, uint64_t offDst)
 static uint64_t ssmR3StrmGetSize(PSSMSTRM pStrm)
 {
     uint64_t cbFile;
-    int rc = RTFileGetSize(pStrm->hFile, &cbFile);
+    int rc = pStrm->pOps->pfnSize(pStrm->pvUser, &cbFile);
     AssertLogRelRCReturn(rc, UINT64_MAX);
     return cbFile;
 }
@@ -2479,7 +2559,7 @@ static uint64_t ssmR3StrmGetSize(PSSMSTRM pStrm)
  */
 static bool ssmR3StrmIsFile(PSSMSTRM pStrm)
 {
-    return pStrm->hFile != NIL_RTFILE;
+    return pStrm->pOps == &g_ssmR3FileOps;
 }
 
 
@@ -2500,7 +2580,7 @@ static bool ssmR3StrmIsFile(PSSMSTRM pStrm)
  */
 static int ssmR3StrmPeekAt(PSSMSTRM pStrm, RTFOFF off, void *pvBuf, size_t cbToRead, uint64_t *poff)
 {
-    AssertReturn(!pStrm->fWrite && pStrm->hFile != NIL_RTFILE, VERR_NOT_SUPPORTED);
+    AssertReturn(!pStrm->fWrite, VERR_NOT_SUPPORTED);
     AssertReturn(pStrm->hIoThread == NIL_RTTHREAD, VERR_WRONG_ORDER);
 
     if (!pStrm->fNeedSeek)
@@ -2508,10 +2588,14 @@ static int ssmR3StrmPeekAt(PSSMSTRM pStrm, RTFOFF off, void *pvBuf, size_t cbToR
         pStrm->fNeedSeek     = true;
         pStrm->offNeedSeekTo = pStrm->offCurStream + (pStrm->pCur ? pStrm->pCur->cb : 0);
     }
-
-    int rc = RTFileSeek(pStrm->hFile, off, off >= 0 ? RTFILE_SEEK_BEGIN : RTFILE_SEEK_END, poff);
+    uint64_t offActual;
+    int rc = pStrm->pOps->pfnSeek(pStrm->pvUser, off, off >= 0 ? RTFILE_SEEK_BEGIN : RTFILE_SEEK_END, &offActual);
     if (RT_SUCCESS(rc))
-        rc = RTFileRead(pStrm->hFile, pvBuf, cbToRead, NULL);
+    {
+        if (poff)
+            *poff = offActual;
+        rc = pStrm->pOps->pfnRead(pStrm->pvUser, offActual, pvBuf, cbToRead, NULL);
+    }
 
     return rc;
 }
