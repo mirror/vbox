@@ -77,18 +77,53 @@ int handleSnapshot(HandlerArg *a)
                 break;
             }
             Bstr name(a->argv[2]);
-            if ((a->argc > 3) && (   (a->argc != 5)
-                                  || (   strcmp(a->argv[3], "--description")
-                                      && strcmp(a->argv[3], "-description")
-                                      && strcmp(a->argv[3], "-desc"))))
-            {
-                errorSyntax(USAGE_SNAPSHOT, "Incorrect description format");
-                rc = E_FAIL;
-                break;
-            }
+
+            /* parse the optional arguments */
             Bstr desc;
-            if (a->argc == 5)
-                desc = a->argv[4];
+            bool fPause = false;
+            static const RTGETOPTDEF s_aTakeOptions[] =
+            {
+                { "--description", 'd', RTGETOPT_REQ_STRING },
+                { "-description",  'd', RTGETOPT_REQ_STRING },
+                { "-desc",         'd', RTGETOPT_REQ_STRING },
+                { "--pause",       'p', RTGETOPT_REQ_NOTHING }
+            };
+            RTGETOPTSTATE GetOptState;
+            RTGetOptInit(&GetOptState, a->argc, a->argv, s_aTakeOptions, RT_ELEMENTS(s_aTakeOptions), 3, 0 /*fFlags*/);
+            int ch;
+            RTGETOPTUNION Value;
+            while (   SUCCEEDED(rc)
+                   && (ch = RTGetOpt(&GetOptState, &Value)))
+            {
+                switch (ch)
+                {
+                    case 'p':
+                        fPause = true;
+                        break;
+
+                    case 'd':
+                        desc = Value.psz;
+                        break;
+
+                    default:
+                        errorGetOpt(USAGE_SNAPSHOT, ch, &Value);
+                        rc = E_FAIL;
+                        break;
+                }
+            }
+            if (FAILED(rc))
+                break;
+
+            if (fPause)
+            {
+                MachineState_T machineState;
+                CHECK_ERROR_BREAK(console, COMGETTER(State)(&machineState));
+                if (machineState == MachineState_Running)
+                    CHECK_ERROR_BREAK(console, Pause());
+                else
+                    fPause = false;
+            }
+
             ComPtr<IProgress> progress;
             CHECK_ERROR_BREAK(console, TakeSnapshot(name, desc, progress.asOutParam()));
 
@@ -103,6 +138,19 @@ int handleSnapshot(HandlerArg *a)
                     RTPrintf("Error: failed to take snapshot. Error message: %lS\n", info.getText().raw());
                 else
                     RTPrintf("Error: failed to take snapshot. No error message available!\n");
+            }
+
+            if (fPause)
+            {
+                MachineState_T machineState;
+                CHECK_ERROR_BREAK(console, COMGETTER(State)(&machineState));
+                if (machineState == MachineState_Paused)
+                {
+                    if (SUCCEEDED(rc))
+                        CHECK_ERROR_BREAK(console, Resume());
+                    else
+                        console->Pause();
+                }
             }
         }
         else if (!strcmp(a->argv[1], "discard"))
