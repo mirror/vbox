@@ -57,8 +57,8 @@ void context_bind_fbo(struct wined3d_context *context, GLenum target, GLuint *fb
     {
         if (!*fbo)
         {
-            GL_EXTCALL(glGenFramebuffersEXT(1, fbo));
-            checkGLcall("glGenFramebuffersEXT()");
+            gl_info->fbo_ops.glGenFramebuffers(1, fbo);
+            checkGLcall("glGenFramebuffers()");
             TRACE("Created FBO %u.\n", *fbo);
         }
         f = *fbo;
@@ -66,17 +66,17 @@ void context_bind_fbo(struct wined3d_context *context, GLenum target, GLuint *fb
 
     switch (target)
     {
-        case GL_READ_FRAMEBUFFER_EXT:
+        case GL_READ_FRAMEBUFFER:
             if (context->fbo_read_binding == f) return;
             context->fbo_read_binding = f;
             break;
 
-        case GL_DRAW_FRAMEBUFFER_EXT:
+        case GL_DRAW_FRAMEBUFFER:
             if (context->fbo_draw_binding == f) return;
             context->fbo_draw_binding = f;
             break;
 
-        case GL_FRAMEBUFFER_EXT:
+        case GL_FRAMEBUFFER:
             if (context->fbo_read_binding == f
                     && context->fbo_draw_binding == f) return;
             context->fbo_read_binding = f;
@@ -88,7 +88,7 @@ void context_bind_fbo(struct wined3d_context *context, GLenum target, GLuint *fb
             break;
     }
 
-    GL_EXTCALL(glBindFramebufferEXT(target, f));
+    gl_info->fbo_ops.glBindFramebuffer(target, f);
     checkGLcall("glBindFramebuffer()");
 }
 
@@ -99,13 +99,13 @@ static void context_clean_fbo_attachments(const struct wined3d_gl_info *gl_info)
 
     for (i = 0; i < GL_LIMITS(buffers); ++i)
     {
-        GL_EXTCALL(glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT + i, GL_TEXTURE_2D, 0, 0));
+        gl_info->fbo_ops.glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, GL_TEXTURE_2D, 0, 0);
         checkGLcall("glFramebufferTexture2D()");
     }
-    GL_EXTCALL(glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_DEPTH_ATTACHMENT_EXT, GL_TEXTURE_2D, 0, 0));
+    gl_info->fbo_ops.glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, 0, 0);
     checkGLcall("glFramebufferTexture2D()");
 
-    GL_EXTCALL(glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_STENCIL_ATTACHMENT_EXT, GL_TEXTURE_2D, 0, 0));
+    gl_info->fbo_ops.glFramebufferTexture2D(GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_TEXTURE_2D, 0, 0);
     checkGLcall("glFramebufferTexture2D()");
 }
 
@@ -114,11 +114,11 @@ static void context_destroy_fbo(struct wined3d_context *context, GLuint *fbo)
 {
     const struct wined3d_gl_info *gl_info = context->gl_info;
 
-    context_bind_fbo(context, GL_FRAMEBUFFER_EXT, fbo);
+    context_bind_fbo(context, GL_FRAMEBUFFER, fbo);
     context_clean_fbo_attachments(gl_info);
-    context_bind_fbo(context, GL_FRAMEBUFFER_EXT, NULL);
+    context_bind_fbo(context, GL_FRAMEBUFFER, NULL);
 
-    GL_EXTCALL(glDeleteFramebuffersEXT(1, fbo));
+    gl_info->fbo_ops.glDeleteFramebuffers(1, fbo);
     checkGLcall("glDeleteFramebuffers()");
 }
 
@@ -134,17 +134,17 @@ static void context_apply_attachment_filter_states(IWineD3DSurface *surface, BOO
     /* Update base texture states array */
     if (SUCCEEDED(IWineD3DSurface_GetContainer(surface, &IID_IWineD3DBaseTexture, (void **)&texture_impl)))
     {
-        if (texture_impl->baseTexture.states[WINED3DTEXSTA_MINFILTER] != WINED3DTEXF_POINT
-            || texture_impl->baseTexture.states[WINED3DTEXSTA_MIPFILTER] != WINED3DTEXF_NONE)
+        if (texture_impl->baseTexture.texture_rgb.states[WINED3DTEXSTA_MINFILTER] != WINED3DTEXF_POINT
+            || texture_impl->baseTexture.texture_rgb.states[WINED3DTEXSTA_MIPFILTER] != WINED3DTEXF_NONE)
         {
-            texture_impl->baseTexture.states[WINED3DTEXSTA_MINFILTER] = WINED3DTEXF_POINT;
-            texture_impl->baseTexture.states[WINED3DTEXSTA_MIPFILTER] = WINED3DTEXF_NONE;
+            texture_impl->baseTexture.texture_rgb.states[WINED3DTEXSTA_MINFILTER] = WINED3DTEXF_POINT;
+            texture_impl->baseTexture.texture_rgb.states[WINED3DTEXSTA_MIPFILTER] = WINED3DTEXF_NONE;
             update_minfilter = TRUE;
         }
 
-        if (texture_impl->baseTexture.states[WINED3DTEXSTA_MAGFILTER] != WINED3DTEXF_POINT)
+        if (texture_impl->baseTexture.texture_rgb.states[WINED3DTEXSTA_MAGFILTER] != WINED3DTEXF_POINT)
         {
-            texture_impl->baseTexture.states[WINED3DTEXSTA_MAGFILTER] = WINED3DTEXF_POINT;
+            texture_impl->baseTexture.texture_rgb.states[WINED3DTEXSTA_MAGFILTER] = WINED3DTEXF_POINT;
             update_magfilter = TRUE;
         }
 
@@ -203,16 +203,16 @@ void context_attach_depth_stencil_fbo(struct wined3d_context *context,
         {
             if (format_flags & WINED3DFMT_FLAG_DEPTH)
             {
-                GL_EXTCALL(glFramebufferRenderbufferEXT(fbo_target, GL_DEPTH_ATTACHMENT_EXT,
-                        GL_RENDERBUFFER_EXT, depth_stencil_impl->current_renderbuffer->id));
-                checkGLcall("glFramebufferRenderbufferEXT()");
+                gl_info->fbo_ops.glFramebufferRenderbuffer(fbo_target, GL_DEPTH_ATTACHMENT,
+                        GL_RENDERBUFFER, depth_stencil_impl->current_renderbuffer->id);
+                checkGLcall("glFramebufferRenderbuffer()");
             }
 
             if (format_flags & WINED3DFMT_FLAG_STENCIL)
             {
-                GL_EXTCALL(glFramebufferRenderbufferEXT(fbo_target, GL_STENCIL_ATTACHMENT_EXT,
-                        GL_RENDERBUFFER_EXT, depth_stencil_impl->current_renderbuffer->id));
-                checkGLcall("glFramebufferRenderbufferEXT()");
+                gl_info->fbo_ops.glFramebufferRenderbuffer(fbo_target, GL_STENCIL_ATTACHMENT,
+                        GL_RENDERBUFFER, depth_stencil_impl->current_renderbuffer->id);
+                checkGLcall("glFramebufferRenderbuffer()");
             }
         }
         else
@@ -221,40 +221,40 @@ void context_attach_depth_stencil_fbo(struct wined3d_context *context,
 
             if (format_flags & WINED3DFMT_FLAG_DEPTH)
             {
-                GL_EXTCALL(glFramebufferTexture2DEXT(fbo_target, GL_DEPTH_ATTACHMENT_EXT,
+                gl_info->fbo_ops.glFramebufferTexture2D(fbo_target, GL_DEPTH_ATTACHMENT,
                         depth_stencil_impl->texture_target, depth_stencil_impl->texture_name,
-                        depth_stencil_impl->texture_level));
-                checkGLcall("glFramebufferTexture2DEXT()");
+                        depth_stencil_impl->texture_level);
+                checkGLcall("glFramebufferTexture2D()");
             }
 
             if (format_flags & WINED3DFMT_FLAG_STENCIL)
             {
-                GL_EXTCALL(glFramebufferTexture2DEXT(fbo_target, GL_STENCIL_ATTACHMENT_EXT,
+                gl_info->fbo_ops.glFramebufferTexture2D(fbo_target, GL_STENCIL_ATTACHMENT,
                         depth_stencil_impl->texture_target, depth_stencil_impl->texture_name,
-                        depth_stencil_impl->texture_level));
-                checkGLcall("glFramebufferTexture2DEXT()");
+                        depth_stencil_impl->texture_level);
+                checkGLcall("glFramebufferTexture2D()");
             }
         }
 
         if (!(format_flags & WINED3DFMT_FLAG_DEPTH))
         {
-            GL_EXTCALL(glFramebufferTexture2DEXT(fbo_target, GL_DEPTH_ATTACHMENT_EXT, GL_TEXTURE_2D, 0, 0));
-            checkGLcall("glFramebufferTexture2DEXT()");
+            gl_info->fbo_ops.glFramebufferTexture2D(fbo_target, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, 0, 0);
+            checkGLcall("glFramebufferTexture2D()");
         }
 
         if (!(format_flags & WINED3DFMT_FLAG_STENCIL))
         {
-            GL_EXTCALL(glFramebufferTexture2DEXT(fbo_target, GL_STENCIL_ATTACHMENT_EXT, GL_TEXTURE_2D, 0, 0));
-            checkGLcall("glFramebufferTexture2DEXT()");
+            gl_info->fbo_ops.glFramebufferTexture2D(fbo_target, GL_STENCIL_ATTACHMENT, GL_TEXTURE_2D, 0, 0);
+            checkGLcall("glFramebufferTexture2D()");
         }
     }
     else
     {
-        GL_EXTCALL(glFramebufferTexture2DEXT(fbo_target, GL_DEPTH_ATTACHMENT_EXT, GL_TEXTURE_2D, 0, 0));
-        checkGLcall("glFramebufferTexture2DEXT()");
+        gl_info->fbo_ops.glFramebufferTexture2D(fbo_target, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, 0, 0);
+        checkGLcall("glFramebufferTexture2D()");
 
-        GL_EXTCALL(glFramebufferTexture2DEXT(fbo_target, GL_STENCIL_ATTACHMENT_EXT, GL_TEXTURE_2D, 0, 0));
-        checkGLcall("glFramebufferTexture2DEXT()");
+        gl_info->fbo_ops.glFramebufferTexture2D(fbo_target, GL_STENCIL_ATTACHMENT, GL_TEXTURE_2D, 0, 0);
+        checkGLcall("glFramebufferTexture2D()");
     }
 }
 
@@ -271,12 +271,14 @@ void context_attach_surface_fbo(const struct wined3d_context *context,
     {
         context_apply_attachment_filter_states(surface, TRUE);
 
-        GL_EXTCALL(glFramebufferTexture2DEXT(fbo_target, GL_COLOR_ATTACHMENT0_EXT + idx, surface_impl->texture_target,
-                surface_impl->texture_name, surface_impl->texture_level));
-        checkGLcall("glFramebufferTexture2DEXT()");
-    } else {
-        GL_EXTCALL(glFramebufferTexture2DEXT(fbo_target, GL_COLOR_ATTACHMENT0_EXT + idx, GL_TEXTURE_2D, 0, 0));
-        checkGLcall("glFramebufferTexture2DEXT()");
+        gl_info->fbo_ops.glFramebufferTexture2D(fbo_target, GL_COLOR_ATTACHMENT0 + idx, surface_impl->texture_target,
+                surface_impl->texture_name, surface_impl->texture_level);
+        checkGLcall("glFramebufferTexture2D()");
+    }
+    else
+    {
+        gl_info->fbo_ops.glFramebufferTexture2D(fbo_target, GL_COLOR_ATTACHMENT0 + idx, GL_TEXTURE_2D, 0, 0);
+        checkGLcall("glFramebufferTexture2D()");
     }
 }
 
@@ -286,15 +288,14 @@ static void context_check_fbo_status(struct wined3d_context *context)
     const struct wined3d_gl_info *gl_info = context->gl_info;
     GLenum status;
 
-    status = GL_EXTCALL(glCheckFramebufferStatusEXT(GL_FRAMEBUFFER_EXT));
-    if (status == GL_FRAMEBUFFER_COMPLETE_EXT)
+    status = gl_info->fbo_ops.glCheckFramebufferStatus(GL_FRAMEBUFFER);
+    if (status == GL_FRAMEBUFFER_COMPLETE)
     {
         TRACE("FBO complete\n");
     } else {
         IWineD3DSurfaceImpl *attachment;
         unsigned int i;
         FIXME("FBO status %s (%#x)\n", debug_fbostatus(status), status);
-
 
         if (context->current_fbo)
         {
@@ -307,7 +308,6 @@ static void context_check_fbo_status(struct wined3d_context *context)
                     FIXME("\tColor attachment %d: (%p) %s %ux%u\n",
                             i, attachment, debug_d3dformat(attachment->resource.format_desc->format),
                             attachment->pow2Width, attachment->pow2Height);
-        
                 }
             }
             attachment = (IWineD3DSurfaceImpl *)context->current_fbo->depth_stencil;
@@ -343,7 +343,7 @@ static void context_reuse_fbo_entry(struct wined3d_context *context, struct fbo_
     IWineD3DDeviceImpl *device = ((IWineD3DSurfaceImpl *)context->surface)->resource.wineD3DDevice;
     const struct wined3d_gl_info *gl_info = context->gl_info;
 
-    context_bind_fbo(context, GL_FRAMEBUFFER_EXT, &entry->id);
+    context_bind_fbo(context, GL_FRAMEBUFFER, &entry->id);
     context_clean_fbo_attachments(gl_info);
 
     memcpy(entry->render_targets, device->render_targets, GL_LIMITS(buffers) * sizeof(*entry->render_targets));
@@ -408,7 +408,7 @@ static void context_apply_fbo_entry(struct wined3d_context *context, struct fbo_
     const struct wined3d_gl_info *gl_info = context->gl_info;
     unsigned int i;
 
-    context_bind_fbo(context, GL_FRAMEBUFFER_EXT, &entry->id);
+    context_bind_fbo(context, GL_FRAMEBUFFER, &entry->id);
 
     if (!entry->attached)
     {
@@ -416,7 +416,7 @@ static void context_apply_fbo_entry(struct wined3d_context *context, struct fbo_
         for (i = 0; i < GL_LIMITS(buffers); ++i)
         {
             IWineD3DSurface *render_target = device->render_targets[i];
-            context_attach_surface_fbo(context, GL_FRAMEBUFFER_EXT, i, render_target);
+            context_attach_surface_fbo(context, GL_FRAMEBUFFER, i, render_target);
         }
 
         /* Apply depth targets */
@@ -427,7 +427,7 @@ static void context_apply_fbo_entry(struct wined3d_context *context, struct fbo_
 
             surface_set_compatible_renderbuffer(device->stencilBufferTarget, w, h);
         }
-        context_attach_depth_stencil_fbo(context, GL_FRAMEBUFFER_EXT, device->stencilBufferTarget, TRUE);
+        context_attach_depth_stencil_fbo(context, GL_FRAMEBUFFER, device->stencilBufferTarget, TRUE);
 
         entry->attached = TRUE;
     } else {
@@ -443,7 +443,7 @@ static void context_apply_fbo_entry(struct wined3d_context *context, struct fbo_
     for (i = 0; i < GL_LIMITS(buffers); ++i)
     {
         if (device->render_targets[i])
-            device->draw_buffers[i] = GL_COLOR_ATTACHMENT0_EXT + i;
+            device->draw_buffers[i] = GL_COLOR_ATTACHMENT0 + i;
         else
             device->draw_buffers[i] = GL_NONE;
     }
@@ -458,7 +458,7 @@ static void context_apply_fbo_state(struct wined3d_context *context)
         context_apply_fbo_entry(context, context->current_fbo);
     } else {
         context->current_fbo = NULL;
-        context_bind_fbo(context, GL_FRAMEBUFFER_EXT, NULL);
+        context_bind_fbo(context, GL_FRAMEBUFFER, NULL);
     }
 
     context_check_fbo_status(context);
@@ -689,7 +689,8 @@ static void context_destroy_gl_resources(struct wined3d_context *context)
             GL_EXTCALL(glDeleteProgramsARB(1, &context->dummy_arbfp_prog));
         }
 
-        GL_EXTCALL(glDeleteQueriesARB(context->free_occlusion_query_count, context->free_occlusion_queries));
+        if (GL_SUPPORT(ARB_OCCLUSION_QUERY))
+            GL_EXTCALL(glDeleteQueriesARB(context->free_occlusion_query_count, context->free_occlusion_queries));
 
         if (GL_SUPPORT(APPLE_FENCE))
             GL_EXTCALL(glDeleteFencesAPPLE(context->free_event_query_count, context->free_event_queries));
@@ -770,18 +771,21 @@ BOOL context_set_current(struct wined3d_context *ctx)
         TRACE("Switching to D3D context %p, GL context %p, device context %p.\n", ctx, ctx->glCtx, ctx->hdc);
         if (!pwglMakeCurrent(ctx->hdc, ctx->glCtx))
         {
-            ERR("Failed to make GL context %p current on device context %p.\n", ctx->glCtx, ctx->hdc);
+            DWORD err = GetLastError();
+            ERR("Failed to make GL context %p current on device context %p, last error %#x.\n",
+                    ctx->glCtx, ctx->hdc, err);
+            TlsSetValue(wined3d_context_tls_idx, NULL);
             return FALSE;
         }
         ctx->current = 1;
     }
-    else
+    else if(pwglGetCurrentContext())
     {
         TRACE("Clearing current D3D context.\n");
         if (!pwglMakeCurrent(NULL, NULL))
         {
-            ERR("Failed to clear current GL context.\n");
-            /*In case of failure, wglMakeCurrent makes current GLRC not current anyway.*/
+            DWORD err = GetLastError();
+            ERR("Failed to clear current GL context, last error %#x.\n", err);
             TlsSetValue(wined3d_context_tls_idx, NULL);
             return FALSE;
         }
@@ -809,7 +813,7 @@ static void Context_MarkStateDirty(struct wined3d_context *context, DWORD state,
     DWORD idx;
     BYTE shift;
 
-    if(!rep || isStateDirty(context, rep)) return;
+    if (isStateDirty(context, rep)) return;
 
     context->dirtyArray[context->numDirtyEntries++] = rep;
     idx = rep >> 5;
@@ -866,7 +870,8 @@ static struct wined3d_context *AddContextToArray(IWineD3DDeviceImpl *This,
     /* Mark all states dirty to force a proper initialization of the states on the first use of the context
      */
     for(state = 0; state <= STATE_HIGHEST; state++) {
-        Context_MarkStateDirty(This->contexts[This->numContexts], state, This->StateTable);
+        if (This->StateTable[state].representative)
+            Context_MarkStateDirty(This->contexts[This->numContexts], state, This->StateTable);
     }
 
     This->numContexts++;
@@ -929,10 +934,10 @@ static int WineD3D_ChoosePixelFormat(IWineD3DDeviceImpl *This, HDC hdc,
      * Likely a lot of other new bugs will be exposed. For that reason request a depth stencil surface all the
      * time. It can cause a slight performance hit but fixes a lot of regressions. A fixme reminds of that this
      * issue needs to be fixed. */
-    if (ds_format_desc->format != WINED3DFMT_D24S8)
+    if (ds_format_desc->format != WINED3DFMT_S8_UINT_D24_UNORM)
     {
         FIXME("Add OpenGL context recreation support to SetDepthStencilSurface\n");
-        ds_format_desc = getFormatDescEntry(WINED3DFMT_D24S8, &This->adapter->gl_info);
+        ds_format_desc = getFormatDescEntry(WINED3DFMT_S8_UINT_D24_UNORM, &This->adapter->gl_info);
     }
 
     getDepthStencilBits(ds_format_desc, &depthBits, &stencilBits);
@@ -1144,18 +1149,18 @@ struct wined3d_context *CreateContext(IWineD3DDeviceImpl *This, IWineD3DSurfaceI
         if(wined3d_settings.offscreen_rendering_mode == ORM_BACKBUFFER) {
             auxBuffers = TRUE;
 
-            if (color_format_desc->format == WINED3DFMT_X4R4G4B4)
-                color_format_desc = getFormatDescEntry(WINED3DFMT_A4R4G4B4, &This->adapter->gl_info);
-            else if (color_format_desc->format == WINED3DFMT_X8R8G8B8)
-                color_format_desc = getFormatDescEntry(WINED3DFMT_A8R8G8B8, &This->adapter->gl_info);
+            if (color_format_desc->format == WINED3DFMT_B4G4R4X4_UNORM)
+                color_format_desc = getFormatDescEntry(WINED3DFMT_B4G4R4A4_UNORM, &This->adapter->gl_info);
+            else if (color_format_desc->format == WINED3DFMT_B8G8R8X8_UNORM)
+                color_format_desc = getFormatDescEntry(WINED3DFMT_B8G8R8A8_UNORM, &This->adapter->gl_info);
         }
 
         /* DirectDraw supports 8bit paletted render targets and these are used by old games like Starcraft and C&C.
          * Most modern hardware doesn't support 8bit natively so we perform some form of 8bit -> 32bit conversion.
          * The conversion (ab)uses the alpha component for storing the palette index. For this reason we require
          * a format with 8bit alpha, so request A8R8G8B8. */
-        if (color_format_desc->format == WINED3DFMT_P8)
-            color_format_desc = getFormatDescEntry(WINED3DFMT_A8R8G8B8, &This->adapter->gl_info);
+        if (color_format_desc->format == WINED3DFMT_P8_UINT)
+            color_format_desc = getFormatDescEntry(WINED3DFMT_B8G8R8A8_UNORM, &This->adapter->gl_info);
 
         /* Retrieve the depth stencil format from the present parameters.
          * The choice of the proper format can give a nice performance boost
@@ -1373,6 +1378,16 @@ struct wined3d_context *CreateContext(IWineD3DDeviceImpl *This, IWineD3DSurfaceI
         glTexEnvi(GL_POINT_SPRITE_ARB, GL_COORD_REPLACE_ARB, GL_TRUE);
         checkGLcall("glTexEnvi(GL_POINT_SPRITE_ARB, GL_COORD_REPLACE_ARB, GL_TRUE)");
     }
+
+    if (GL_SUPPORT(ARB_PROVOKING_VERTEX))
+    {
+        GL_EXTCALL(glProvokingVertex(GL_FIRST_VERTEX_CONVENTION));
+    }
+    else if (GL_SUPPORT(EXT_PROVOKING_VERTEX))
+    {
+        GL_EXTCALL(glProvokingVertexEXT(GL_FIRST_VERTEX_CONVENTION_EXT));
+    }
+
     LEAVE_GL();
 
     This->frag_pipe->enable_extension((IWineD3DDevice *) This, TRUE);
@@ -1523,9 +1538,10 @@ static inline void set_blit_dimension(UINT width, UINT height) {
 /* Context activation is done by the caller. */
 static inline void SetupForBlit(IWineD3DDeviceImpl *This, struct wined3d_context *context, UINT width, UINT height)
 {
-    int i, sampler;
+    int i;
     const struct StateEntry *StateTable = This->StateTable;
     const struct wined3d_gl_info *gl_info = context->gl_info;
+    DWORD sampler;
 
     TRACE("Setting up context %p for blitting\n", context);
     if(context->last_was_blit) {
@@ -1588,7 +1604,8 @@ static inline void SetupForBlit(IWineD3DDeviceImpl *This, struct wined3d_context
         glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
         checkGLcall("glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);");
 
-        if (sampler != -1) {
+        if (sampler != WINED3D_UNMAPPED_STAGE)
+        {
             if (sampler < MAX_TEXTURES) {
                 Context_MarkStateDirty(context, STATE_TEXTURESTAGE(sampler, WINED3DTSS_COLOROP), StateTable);
             }
@@ -1627,7 +1644,8 @@ static inline void SetupForBlit(IWineD3DDeviceImpl *This, struct wined3d_context
         checkGLcall("glTexEnvi GL_TEXTURE_LOD_BIAS_EXT ...");
     }
 
-    if (sampler != -1) {
+    if (sampler != WINED3D_UNMAPPED_STAGE)
+    {
         if (sampler < MAX_TEXTURES) {
             Context_MarkStateDirty(context, STATE_TRANSFORM(WINED3DTS_TEXTURE0 + sampler), StateTable);
             Context_MarkStateDirty(context, STATE_TEXTURESTAGE(sampler, WINED3DTSS_COLOROP), StateTable);
@@ -1855,7 +1873,7 @@ retry:
 
     if (context->render_offscreen != old_render_offscreen)
     {
-        Context_MarkStateDirty(context, WINED3DTS_PROJECTION, StateTable);
+        Context_MarkStateDirty(context, STATE_TRANSFORM(WINED3DTS_PROJECTION), StateTable);
         Context_MarkStateDirty(context, STATE_VDECL, StateTable);
         Context_MarkStateDirty(context, STATE_VIEWPORT, StateTable);
         Context_MarkStateDirty(context, STATE_SCISSORRECT, StateTable);
@@ -1963,7 +1981,7 @@ static void context_apply_draw_buffer(struct wined3d_context *context, BOOL blit
                     checkGLcall("glDrawBuffer()");
                 }
             } else {
-                glDrawBuffer(GL_COLOR_ATTACHMENT0_EXT);
+                glDrawBuffer(GL_COLOR_ATTACHMENT0);
                 checkGLcall("glDrawBuffer()");
             }
         }
@@ -2045,13 +2063,13 @@ struct wined3d_context *ActivateContext(IWineD3DDeviceImpl *This, IWineD3DSurfac
                 {
                     FIXME("Activating for CTXUSAGE_BLIT for an offscreen target with ORM_FBO. This should be avoided.\n");
                     ENTER_GL();
-                    context_bind_fbo(context, GL_FRAMEBUFFER_EXT, &context->dst_fbo);
-                    context_attach_surface_fbo(context, GL_FRAMEBUFFER_EXT, 0, target);
-                    context_attach_depth_stencil_fbo(context, GL_FRAMEBUFFER_EXT, NULL, FALSE);
+                    context_bind_fbo(context, GL_FRAMEBUFFER, &context->dst_fbo);
+                    context_attach_surface_fbo(context, GL_FRAMEBUFFER, 0, target);
+                    context_attach_depth_stencil_fbo(context, GL_FRAMEBUFFER, NULL, FALSE);
                     LEAVE_GL();
                 } else {
                     ENTER_GL();
-                    context_bind_fbo(context, GL_FRAMEBUFFER_EXT, NULL);
+                    context_bind_fbo(context, GL_FRAMEBUFFER, NULL);
                     LEAVE_GL();
                 }
                 context->draw_buffer_dirty = TRUE;

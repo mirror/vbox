@@ -5,6 +5,7 @@
  * Copyright 2002-2003 Raphael Junqueira
  * Copyright 2004      Jason Edmeades
  * Copyright 2007-2008 Stefan Dösinger for CodeWeavers
+ * Copyright 2009 Henri Verbeet for CodeWeavers
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -41,17 +42,25 @@ int num_lock = 0;
 void (*CDECL wine_tsx11_lock_ptr)(void) = NULL;
 void (*CDECL wine_tsx11_unlock_ptr)(void) = NULL;
 
+static CRITICAL_SECTION wined3d_cs;
+static CRITICAL_SECTION_DEBUG wined3d_cs_debug =
+{
+    0, 0, &wined3d_cs,
+    {&wined3d_cs_debug.ProcessLocksList,
+    &wined3d_cs_debug.ProcessLocksList},
+    0, 0, {(DWORD_PTR)(__FILE__ ": wined3d_cs")}
+};
+static CRITICAL_SECTION wined3d_cs = {&wined3d_cs_debug, -1, 0, 0, 0, 0};
 
 /* When updating default value here, make sure to update winecfg as well,
  * where appropriate. */
-wined3d_settings_t wined3d_settings = 
+wined3d_settings_t wined3d_settings =
 {
     VS_HW,          /* Hardware by default */
     PS_HW,          /* Hardware by default */
-    VBO_HW,         /* Hardware by default */
     TRUE,           /* Use of GLSL enabled by default */
     ORM_FBO,        /* Use FBOs to do offscreen rendering */
-    RTL_AUTO,       /* Automatically determine best locking method */
+    RTL_READTEX,    /* Default render target locking method */
     PCI_VENDOR_NONE,/* PCI Vendor ID */
     PCI_DEVICE_NONE,/* PCI Device ID */
     0,              /* The default of memory is set in FillGLCaps */
@@ -205,19 +214,6 @@ static BOOL wined3d_init(HINSTANCE hInstDLL)
                 wined3d_settings.ps_mode = PS_NONE;
             }
         }
-        if ( !get_config_key( hkey, appkey, "VertexBufferMode", buffer, size) )
-        {
-            if (!strcmp(buffer,"none"))
-            {
-                TRACE("Disable Vertex Buffer Hardware support\n");
-                wined3d_settings.vbo_mode = VBO_NONE;
-            }
-            else if (!strcmp(buffer,"hardware"))
-            {
-                TRACE("Allow Vertex Buffer Hardware support\n");
-                wined3d_settings.vbo_mode = VBO_HW;
-            }
-        }
         if ( !get_config_key( hkey, appkey, "UseGLSL", buffer, size) )
         {
             if (!strcmp(buffer,"disabled"))
@@ -260,16 +256,6 @@ static BOOL wined3d_init(HINSTANCE hInstDLL)
             {
                 TRACE("Using glReadPixels for render target reading and textures for writing\n");
                 wined3d_settings.rendertargetlock_mode = RTL_READTEX;
-            }
-            else if (!strcmp(buffer,"texdraw"))
-            {
-                TRACE("Using textures for render target reading and glDrawPixels for writing\n");
-                wined3d_settings.rendertargetlock_mode = RTL_TEXDRAW;
-            }
-            else if (!strcmp(buffer,"textex"))
-            {
-                TRACE("Reading render targets via textures and writing via textures\n");
-                wined3d_settings.rendertargetlock_mode = RTL_TEXTEX;
             }
         }
         if ( !get_config_key_dword( hkey, appkey, "VideoPciDeviceID", &tmpvalue) )
@@ -317,8 +303,11 @@ static BOOL wined3d_init(HINSTANCE hInstDLL)
         }
         if ( !get_config_key( hkey, appkey, "WineLogo", buffer, size) )
         {
-            wined3d_settings.logo = HeapAlloc(GetProcessHeap(), 0, strlen(buffer) + 1);
-            if(wined3d_settings.logo) strcpy(wined3d_settings.logo, buffer);
+            size_t len = strlen(buffer) + 1;
+
+            wined3d_settings.logo = HeapAlloc(GetProcessHeap(), 0, len);
+            if (!wined3d_settings.logo) ERR("Failed to allocate logo path memory.\n");
+            else memcpy(wined3d_settings.logo, buffer, len);
         }
         if ( !get_config_key( hkey, appkey, "Multisampling", buffer, size) )
         {
@@ -333,8 +322,6 @@ static BOOL wined3d_init(HINSTANCE hInstDLL)
         TRACE("Allow HW vertex shaders\n");
     if (wined3d_settings.ps_mode == PS_NONE)
         TRACE("Disable pixel shaders\n");
-    if (wined3d_settings.vbo_mode == VBO_NONE)
-        TRACE("Disable Vertex Buffer Hardware support\n");
     if (wined3d_settings.glslRequested)
         TRACE("If supported by your system, GL Shading Language will be used\n");
 
@@ -358,6 +345,16 @@ static BOOL wined3d_destroy(HINSTANCE hInstDLL)
     UnregisterClassA(WINED3D_OPENGL_WINDOW_CLASS_NAME, hInstDLL);
 
     return TRUE;
+}
+
+void WINAPI wined3d_mutex_lock(void)
+{
+    EnterCriticalSection(&wined3d_cs);
+}
+
+void WINAPI wined3d_mutex_unlock(void)
+{
+    LeaveCriticalSection(&wined3d_cs);
 }
 
 /* At process attach */

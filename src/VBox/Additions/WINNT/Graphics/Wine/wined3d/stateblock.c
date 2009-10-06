@@ -40,11 +40,11 @@ WINE_DEFAULT_DEBUG_CHANNEL(d3d);
  * Stateblock helper functions follow
  **************************************/
 
-/** Allocates the correct amount of space for pixel and vertex shader constants, 
+/* Allocates the correct amount of space for pixel and vertex shader constants,
  * along with their set/changed flags on the given stateblock object
  */
-HRESULT allocate_shader_constants(IWineD3DStateBlockImpl* object) {
-    
+HRESULT allocate_shader_constants(IWineD3DStateBlockImpl* object)
+{
     IWineD3DStateBlockImpl *This = object;
 
     /* Allocate space for floating point constants */
@@ -122,11 +122,8 @@ static inline void stateblock_set_bits(DWORD *map, UINT map_size)
 }
 
 /** Set all members of a stateblock savedstate to the given value */
-void stateblock_savedstates_set(
-    IWineD3DStateBlock* iface,
-    SAVEDSTATES* states,
-    BOOL value) {
-    
+void stateblock_savedstates_set(IWineD3DStateBlock *iface, SAVEDSTATES *states, BOOL value)
+{
     IWineD3DStateBlockImpl *This = (IWineD3DStateBlockImpl *)iface;
     unsigned bsize = sizeof(BOOL);
 
@@ -237,7 +234,7 @@ void stateblock_copy(
     memcpy(Dest->vertexShaderConstantI, This->vertexShaderConstantI, sizeof(INT) * MAX_CONST_I * 4);
     memcpy(Dest->pixelShaderConstantB, This->pixelShaderConstantB, sizeof(BOOL) * MAX_CONST_B);
     memcpy(Dest->pixelShaderConstantI, This->pixelShaderConstantI, sizeof(INT) * MAX_CONST_I * 4);
-    
+
     memcpy(Dest->streamStride, This->streamStride, sizeof(UINT) * MAX_STREAMS);
     memcpy(Dest->streamOffset, This->streamOffset, sizeof(UINT) * MAX_STREAMS);
     memcpy(Dest->streamSource, This->streamSource, sizeof(IWineD3DBuffer *) * MAX_STREAMS);
@@ -854,8 +851,9 @@ should really perform a delta so that only the changes get updated*/
                 This->wineD3DDevice->updateStateBlock->gl_primitive_type = This->gl_primitive_type;
         }
 
-        if (This->changed.indices) {
-            IWineD3DDevice_SetIndices(pDevice, This->pIndexData, This->IndexFmt);
+        if (This->changed.indices)
+        {
+            IWineD3DDevice_SetIndexBuffer(pDevice, This->pIndexData, This->IndexFmt);
             IWineD3DDevice_SetBaseVertexIndex(pDevice, This->baseVertexIndex);
         }
 
@@ -1037,7 +1035,7 @@ should really perform a delta so that only the changes get updated*/
             IWineD3DDevice_SetTransform(pDevice, i, &This->transforms[i]);
         }
         This->wineD3DDevice->updateStateBlock->gl_primitive_type = This->gl_primitive_type;
-        IWineD3DDevice_SetIndices(pDevice, This->pIndexData, This->IndexFmt);
+        IWineD3DDevice_SetIndexBuffer(pDevice, This->pIndexData, This->IndexFmt);
         IWineD3DDevice_SetBaseVertexIndex(pDevice, This->baseVertexIndex);
         IWineD3DDevice_SetVertexDeclaration(pDevice, This->vertexDecl);
         IWineD3DDevice_SetMaterial(pDevice, &This->material);

@@ -56,6 +56,14 @@ static ULONG WINAPI IDirect3DTexture8Impl_AddRef(LPDIRECT3DTEXTURE8 iface) {
 
     TRACE("(%p) : AddRef from %d\n", This, ref - 1);
 
+    if (ref == 1)
+    {
+        IDirect3DDevice8_AddRef(This->parentDevice);
+        wined3d_mutex_lock();
+        IWineD3DTexture_AddRef(This->wineD3DTexture);
+        wined3d_mutex_unlock();
+    }
+
     return ref;
 }
 
@@ -66,11 +74,10 @@ static ULONG WINAPI IDirect3DTexture8Impl_Release(LPDIRECT3DTEXTURE8 iface) {
     TRACE("(%p) : ReleaseRef to %d\n", This, ref);
 
     if (ref == 0) {
-        EnterCriticalSection(&d3d8_cs);
-        IWineD3DTexture_Destroy(This->wineD3DTexture, D3D8CB_DestroySurface);
-        LeaveCriticalSection(&d3d8_cs);
-        IUnknown_Release(This->parentDevice);
-        HeapFree(GetProcessHeap(), 0, This);
+        IDirect3DDevice8_Release(This->parentDevice);
+        wined3d_mutex_lock();
+        IWineD3DTexture_Release(This->wineD3DTexture);
+        wined3d_mutex_unlock();
     }
     return ref;
 }
@@ -81,14 +88,16 @@ static HRESULT WINAPI IDirect3DTexture8Impl_GetDevice(LPDIRECT3DTEXTURE8 iface, 
     IWineD3DDevice *wined3d_device;
     HRESULT hr;
     TRACE("(%p) Relay\n", This);
-    EnterCriticalSection(&d3d8_cs);
+
+    wined3d_mutex_lock();
     hr = IWineD3DTexture_GetDevice(This->wineD3DTexture, &wined3d_device);
     if (SUCCEEDED(hr))
     {
         IWineD3DDevice_GetParent(wined3d_device, (IUnknown **)ppDevice);
         IWineD3DDevice_Release(wined3d_device);
     }
-    LeaveCriticalSection(&d3d8_cs);
+    wined3d_mutex_unlock();
+
     return hr;
 }
 
@@ -97,9 +106,10 @@ static HRESULT WINAPI IDirect3DTexture8Impl_SetPrivateData(LPDIRECT3DTEXTURE8 if
     HRESULT hr;
     TRACE("(%p) Relay\n", This);
 
-    EnterCriticalSection(&d3d8_cs);
+    wined3d_mutex_lock();
     hr = IWineD3DTexture_SetPrivateData(This->wineD3DTexture, refguid, pData, SizeOfData, Flags);
-    LeaveCriticalSection(&d3d8_cs);
+    wined3d_mutex_unlock();
+
     return hr;
 }
 
@@ -108,9 +118,10 @@ static HRESULT WINAPI IDirect3DTexture8Impl_GetPrivateData(LPDIRECT3DTEXTURE8 if
     HRESULT hr;
     TRACE("(%p) Relay\n", This);
 
-    EnterCriticalSection(&d3d8_cs);
+    wined3d_mutex_lock();
     hr = IWineD3DTexture_GetPrivateData(This->wineD3DTexture, refguid, pData, pSizeOfData);
-    LeaveCriticalSection(&d3d8_cs);
+    wined3d_mutex_unlock();
+
     return hr;
 }
 
@@ -119,9 +130,10 @@ static HRESULT WINAPI IDirect3DTexture8Impl_FreePrivateData(LPDIRECT3DTEXTURE8 i
     HRESULT hr;
     TRACE("(%p) Relay\n", This);
 
-    EnterCriticalSection(&d3d8_cs);
+    wined3d_mutex_lock();
     hr = IWineD3DTexture_FreePrivateData(This->wineD3DTexture, refguid);
-    LeaveCriticalSection(&d3d8_cs);
+    wined3d_mutex_unlock();
+
     return hr;
 }
 
@@ -130,9 +142,10 @@ static DWORD WINAPI IDirect3DTexture8Impl_SetPriority(LPDIRECT3DTEXTURE8 iface, 
     DWORD ret;
     TRACE("(%p) Relay\n", This);
 
-    EnterCriticalSection(&d3d8_cs);
+    wined3d_mutex_lock();
     ret = IWineD3DTexture_SetPriority(This->wineD3DTexture, PriorityNew);
-    LeaveCriticalSection(&d3d8_cs);
+    wined3d_mutex_unlock();
+
     return ret;
 }
 
@@ -141,9 +154,10 @@ static DWORD WINAPI IDirect3DTexture8Impl_GetPriority(LPDIRECT3DTEXTURE8 iface) 
     DWORD ret;
     TRACE("(%p) Relay\n", This);
 
-    EnterCriticalSection(&d3d8_cs);
+    wined3d_mutex_lock();
     ret = IWineD3DTexture_GetPriority(This->wineD3DTexture);
-    LeaveCriticalSection(&d3d8_cs);
+    wined3d_mutex_unlock();
+
     return ret;
 }
 
@@ -151,9 +165,9 @@ static void WINAPI IDirect3DTexture8Impl_PreLoad(LPDIRECT3DTEXTURE8 iface) {
     IDirect3DTexture8Impl *This = (IDirect3DTexture8Impl *)iface;
     TRACE("(%p) Relay\n", This);
 
-    EnterCriticalSection(&d3d8_cs);
+    wined3d_mutex_lock();
     IWineD3DTexture_PreLoad(This->wineD3DTexture);
-    LeaveCriticalSection(&d3d8_cs);
+    wined3d_mutex_unlock();
 }
 
 static D3DRESOURCETYPE WINAPI IDirect3DTexture8Impl_GetType(LPDIRECT3DTEXTURE8 iface) {
@@ -161,9 +175,10 @@ static D3DRESOURCETYPE WINAPI IDirect3DTexture8Impl_GetType(LPDIRECT3DTEXTURE8 i
     D3DRESOURCETYPE type;
     TRACE("(%p) Relay\n", This);
 
-    EnterCriticalSection(&d3d8_cs);
+    wined3d_mutex_lock();
     type = IWineD3DTexture_GetType(This->wineD3DTexture);
-    LeaveCriticalSection(&d3d8_cs);
+    wined3d_mutex_unlock();
+
     return type;
 }
 
@@ -173,9 +188,10 @@ static DWORD WINAPI IDirect3DTexture8Impl_SetLOD(LPDIRECT3DTEXTURE8 iface, DWORD
     DWORD ret;
     TRACE("(%p) Relay\n", This);
 
-    EnterCriticalSection(&d3d8_cs);
+    wined3d_mutex_lock();
     ret = IWineD3DTexture_SetLOD(This->wineD3DTexture, LODNew);
-    LeaveCriticalSection(&d3d8_cs);
+    wined3d_mutex_unlock();
+
     return ret;
 }
 
@@ -184,9 +200,10 @@ static DWORD WINAPI IDirect3DTexture8Impl_GetLOD(LPDIRECT3DTEXTURE8 iface) {
     DWORD ret;
     TRACE("(%p) Relay\n", This);
 
-    EnterCriticalSection(&d3d8_cs);
+    wined3d_mutex_lock();
     ret = IWineD3DTexture_GetLOD(This->wineD3DTexture);
-    LeaveCriticalSection(&d3d8_cs);
+    wined3d_mutex_unlock();
+
     return ret;
 }
 
@@ -195,9 +212,10 @@ static DWORD WINAPI IDirect3DTexture8Impl_GetLevelCount(LPDIRECT3DTEXTURE8 iface
     DWORD ret;
     TRACE("(%p) Relay\n", This);
 
-    EnterCriticalSection(&d3d8_cs);
+    wined3d_mutex_lock();
     ret = IWineD3DTexture_GetLevelCount(This->wineD3DTexture);
-    LeaveCriticalSection(&d3d8_cs);
+    wined3d_mutex_unlock();
+
     return ret;
 }
 
@@ -209,9 +227,9 @@ static HRESULT WINAPI IDirect3DTexture8Impl_GetLevelDesc(LPDIRECT3DTEXTURE8 ifac
     WINED3DSURFACE_DESC    wined3ddesc;
     TRACE("(%p) Relay\n", This);
 
-    EnterCriticalSection(&d3d8_cs);
+    wined3d_mutex_lock();
     hr = IWineD3DTexture_GetLevelDesc(This->wineD3DTexture, Level, &wined3ddesc);
-    LeaveCriticalSection(&d3d8_cs);
+    wined3d_mutex_unlock();
 
     if (SUCCEEDED(hr))
     {
@@ -234,13 +252,15 @@ static HRESULT WINAPI IDirect3DTexture8Impl_GetSurfaceLevel(LPDIRECT3DTEXTURE8 i
     IWineD3DSurface *mySurface = NULL;
 
     TRACE("(%p) Relay\n", This);
-    EnterCriticalSection(&d3d8_cs);
+
+    wined3d_mutex_lock();
     hrc = IWineD3DTexture_GetSurfaceLevel(This->wineD3DTexture, Level, &mySurface);
     if (hrc == D3D_OK && NULL != ppSurfaceLevel) {
        IWineD3DSurface_GetParent(mySurface, (IUnknown **)ppSurfaceLevel);
        IWineD3DSurface_Release(mySurface);
     }
-    LeaveCriticalSection(&d3d8_cs);
+    wined3d_mutex_unlock();
+
     return hrc;
 }
 
@@ -249,9 +269,10 @@ static HRESULT WINAPI IDirect3DTexture8Impl_LockRect(LPDIRECT3DTEXTURE8 iface, U
     HRESULT hr;
     TRACE("(%p) Relay\n", This);
 
-    EnterCriticalSection(&d3d8_cs);
+    wined3d_mutex_lock();
     hr = IWineD3DTexture_LockRect(This->wineD3DTexture, Level, (WINED3DLOCKED_RECT *) pLockedRect, pRect, Flags);
-    LeaveCriticalSection(&d3d8_cs);
+    wined3d_mutex_unlock();
+
     return hr;
 }
 
@@ -260,9 +281,10 @@ static HRESULT WINAPI IDirect3DTexture8Impl_UnlockRect(LPDIRECT3DTEXTURE8 iface,
     HRESULT hr;
     TRACE("(%p) Relay\n", This);
 
-    EnterCriticalSection(&d3d8_cs);
+    wined3d_mutex_lock();
     hr = IWineD3DTexture_UnlockRect(This->wineD3DTexture, Level);
-    LeaveCriticalSection(&d3d8_cs);
+    wined3d_mutex_unlock();
+
     return hr;
 }
 
@@ -271,13 +293,14 @@ static HRESULT WINAPI IDirect3DTexture8Impl_AddDirtyRect(LPDIRECT3DTEXTURE8 ifac
     HRESULT hr;
     TRACE("(%p) Relay\n", This);
 
-    EnterCriticalSection(&d3d8_cs);
+    wined3d_mutex_lock();
     hr = IWineD3DTexture_AddDirtyRect(This->wineD3DTexture, pDirtyRect);
-    LeaveCriticalSection(&d3d8_cs);
+    wined3d_mutex_unlock();
+
     return hr;
 }
 
-const IDirect3DTexture8Vtbl Direct3DTexture8_Vtbl =
+static const IDirect3DTexture8Vtbl Direct3DTexture8_Vtbl =
 {
     /* IUnknown */
     IDirect3DTexture8Impl_QueryInterface,
@@ -303,3 +326,38 @@ const IDirect3DTexture8Vtbl Direct3DTexture8_Vtbl =
     IDirect3DTexture8Impl_UnlockRect,
     IDirect3DTexture8Impl_AddDirtyRect
 };
+
+static void STDMETHODCALLTYPE d3d8_texture_wined3d_object_destroyed(void *parent)
+{
+    HeapFree(GetProcessHeap(), 0, parent);
+}
+
+static const struct wined3d_parent_ops d3d8_texture_wined3d_parent_ops =
+{
+    d3d8_texture_wined3d_object_destroyed,
+};
+
+HRESULT texture_init(IDirect3DTexture8Impl *texture, IDirect3DDevice8Impl *device,
+        UINT width, UINT height, UINT levels, DWORD usage, D3DFORMAT format, D3DPOOL pool)
+{
+    HRESULT hr;
+
+    texture->lpVtbl = &Direct3DTexture8_Vtbl;
+    texture->ref = 1;
+
+    wined3d_mutex_lock();
+    hr = IWineD3DDevice_CreateTexture(device->WineD3DDevice, width, height, levels,
+            usage & WINED3DUSAGE_MASK, wined3dformat_from_d3dformat(format), pool,
+            &texture->wineD3DTexture, (IUnknown *)texture, &d3d8_texture_wined3d_parent_ops);
+    wined3d_mutex_unlock();
+    if (FAILED(hr))
+    {
+        WARN("Failed to create wined3d texture, hr %#x.\n", hr);
+        return hr;
+    }
+
+    texture->parentDevice = (IDirect3DDevice8 *)device;
+    IDirect3DDevice8_AddRef(texture->parentDevice);
+
+    return D3D_OK;
+}
