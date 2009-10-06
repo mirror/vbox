@@ -759,6 +759,38 @@ static DECLCALLBACK(int) vpciQueryStatusLed(PPDMILEDPORTS pInterface, unsigned i
 }
 
 /**
+ * Turns on/off the write status LED.
+ *
+ * @returns VBox status code.
+ * @param   pState          Pointer to the device state structure.
+ * @param   fOn             New LED state.
+ */
+void vpciSetWriteLed(PVPCISTATE pState, bool fOn)
+{
+    LogFlow(("%s vpciSetWriteLed: %s\n", INSTANCE(pState), fOn?"on":"off"));
+    if (fOn)
+        pState->led.Asserted.s.fWriting = pState->led.Actual.s.fWriting = 1;
+    else
+        pState->led.Actual.s.fWriting = fOn;
+}
+
+/**
+ * Turns on/off the read status LED.
+ *
+ * @returns VBox status code.
+ * @param   pState          Pointer to the device state structure.
+ * @param   fOn             New LED state.
+ */
+void vpciSetReadLed(PVPCISTATE pState, bool fOn)
+{
+    LogFlow(("%s vpciSetReadLed: %s\n", INSTANCE(pState), fOn?"on":"off"));
+    if (fOn)
+        pState->led.Asserted.s.fReading = pState->led.Actual.s.fReading = 1;
+    else
+        pState->led.Actual.s.fReading = fOn;
+}
+
+/**
  * Sets 8-bit register in PCI configuration space.
  * @param   refPciDev   The PCI device.
  * @param   uOffset     The register offset.
@@ -1355,8 +1387,12 @@ static DECLCALLBACK(int) vnetReceive(PPDMINETWORKPORT pInterface, const void *pv
     if (RT_FAILURE(rc))
         return rc;
 
+    vpciSetReadLed(&pState->VPCI, true);
     if (vnetAddressFilter(pState, pvBuf, cb))
+    {
         rc = vnetHandleRxPacket(pState, pvBuf, cb);
+    }
+    vpciSetReadLed(&pState->VPCI, false);
 
     return rc;
 }
@@ -1442,6 +1478,8 @@ static DECLCALLBACK(void) vnetQueueTransmit(void *pvState, PVQUEUE pQueue)
         return;
     }
 
+    vpciSetWriteLed(&pState->VPCI, true);
+
     VQUEUEELEM elem;
     while (vqueueGet(&pState->VPCI, pQueue, &elem))
     {
@@ -1485,6 +1523,7 @@ static DECLCALLBACK(void) vnetQueueTransmit(void *pvState, PVQUEUE pQueue)
         vqueuePut(&pState->VPCI, pQueue, &elem, sizeof(VNETHDR) + uOffset);
         vqueueSync(&pState->VPCI, pQueue);
     }
+    vpciSetWriteLed(&pState->VPCI, false);
 }
 
 static DECLCALLBACK(void) vnetQueueControl(void *pvState, PVQUEUE pQueue)
