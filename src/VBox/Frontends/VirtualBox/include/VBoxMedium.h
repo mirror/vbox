@@ -185,11 +185,11 @@ public:
 
     VBoxMedium &root() const;
 
-    QString toolTip (bool aNoDiffs = false, bool aCheckRO = false) const;
+    QString toolTip (bool aNoDiffs = false, bool aCheckRO = false, bool aNullAllowed = false) const;
     QPixmap icon (bool aNoDiffs = false, bool aCheckRO = false) const;
 
     /** Shortcut to <tt>#toolTip (aNoDiffs, true)</tt>. */
-    QString toolTipCheckRO (bool aNoDiffs = false) const { return toolTip (aNoDiffs, true); }
+    QString toolTipCheckRO (bool aNoDiffs = false, bool aNullAllowed = false) const { return toolTip (aNoDiffs, true, aNullAllowed); }
 
     /** Shortcut to <tt>#icon (aNoDiffs, true)</tt>. */
     QPixmap iconCheckRO (bool aNoDiffs = false) const { return icon (aNoDiffs, true); }

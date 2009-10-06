@@ -249,17 +249,15 @@ public:
                                       const QString &aLocaiton,
                                       const CMedium &aHD,
                                       const CProgress &aProgress);
-    void cannotAttachHardDisk (QWidget *aParent, const CMachine &aMachine,
-                               const QString &aLocation, KStorageBus aBus,
-                               LONG aChannel, LONG aDevice);
-    void cannotDetachHardDisk (QWidget *aParent, const CMachine &aMachine,
-                               const QString &aLocation, KStorageBus aBus,
-                               LONG aChannel, LONG aDevice);
+    void cannotAttachDevice (QWidget *aParent, const CMachine &aMachine,
+                             VBoxDefs::MediumType aType, const QString &aLocation,
+                             KStorageBus aBus, LONG aChannel, LONG aDevice);
+    void cannotDetachDevice (QWidget *aParent, const CMachine &aMachine,
+                             VBoxDefs::MediumType aType, const QString &aLocation,
+                             KStorageBus aBus, LONG aChannel, LONG aDevice);
 
-    void cannotMountMedium (QWidget *aParent, const CMachine &aMachine,
-                            const VBoxMedium &aMedium, const COMResult &aResult);
-    void cannotUnmountMedium (QWidget *aParent, const CMachine &aMachine,
-                            const VBoxMedium &aMedium, const COMResult &aResult);
+    void cannotMountMedium (QWidget *aParent, const CMachine &aMachine, const VBoxMedium &aMedium);
+    void cannotUnmountMedium (QWidget *aParent, const CMachine &aMachine, const VBoxMedium &aMedium);
     void cannotOpenMedium (QWidget *aParent, const CVirtualBox &aVBox,
                            VBoxDefs::MediumType aType, const QString &aLocation);
     void cannotCloseMedium (QWidget *aParent, const VBoxMedium &aMedium,
@@ -357,7 +355,8 @@ public:
                            const QString &errorID,
                            const QString &errorMsg) const;
 
-    static QString toAccusative (VBoxDefs::MediumType aType);
+    static QString mediumToAccusative (VBoxDefs::MediumType aType, bool aIsHostDrive = false);
+    static QString deviceToAccusative (VBoxDefs::MediumType aType);
 
     static QString formatRC (HRESULT aRC);
 

@@ -351,6 +351,14 @@ bool VBoxNewVMWzd::constructMachine()
         usbController.SetEnabledEhci (true);
     }
 
+    /* Create default storage controllers */
+    QString ideCtrName ("IDE Controller");
+    QString floppyCtrName ("Floppy Controller");
+    KStorageBus ideBus = KStorageBus_IDE;
+    KStorageBus floppyBus = KStorageBus_Floppy;
+    mMachine.AddStorageController (ideCtrName, ideBus);
+    mMachine.AddStorageController (floppyCtrName, floppyBus);
+
     /* Register the VM prior to attaching hard disks */
     vbox.RegisterMachine (mMachine);
     if (!vbox.isOk())
@@ -359,8 +367,7 @@ bool VBoxNewVMWzd::constructMachine()
         return false;
     }
 
-    /* Boot hard disk (IDE Primary Master) */
-    if (mGbHDA->isChecked())
+    /* Attach default devices */
     {
         bool success = false;
         QString machineId = mMachine.GetId();
@@ -368,7 +375,25 @@ bool VBoxNewVMWzd::constructMachine()
         if (!session.isNull())
         {
             CMachine m = session.GetMachine();
-            m.AttachDevice ("IDE Controller", 0, 0, KDeviceType_HardDisk, mHDCombo->id());
+
+            /* Boot hard disk (IDE Primary Master) */
+            if (mGbHDA->isChecked())
+            {
+                m.AttachDevice (ideCtrName, 0, 0, KDeviceType_HardDisk, mHDCombo->id());
+                if (!m.isOk())
+                    vboxProblem().cannotAttachDevice (this, m, VBoxDefs::MediumType_HardDisk, mHDCombo->location(), ideBus, 0, 0);
+            }
+
+            /* Attach empty CD/DVD ROM Device */
+            m.AttachDevice (ideCtrName, 1, 0, KDeviceType_DVD, QString());
+            if (!m.isOk())
+                vboxProblem().cannotAttachDevice (this, m, VBoxDefs::MediumType_DVD, QString(), ideBus, 1, 0);
+
+            /* Attach empty Floppy Device */
+            m.AttachDevice (floppyCtrName, 0, 0, KDeviceType_Floppy, QString());
+            if (!m.isOk())
+                vboxProblem().cannotAttachDevice (this, m, VBoxDefs::MediumType_Floppy, QString(), floppyBus, 0, 0);
+
             if (m.isOk())
             {
                 m.SaveSettings();
@@ -377,10 +402,7 @@ bool VBoxNewVMWzd::constructMachine()
                 else
                     vboxProblem().cannotSaveMachineSettings (m, this);
             }
-            else
-                vboxProblem().cannotAttachHardDisk (this, m,
-                                                    mHDCombo->location(),
-                                                    KStorageBus_IDE, 0, 0);
+
             session.Close();
         }
         if (!success)
