@@ -43,6 +43,7 @@ public:
 
     QString id (int = -1) const;
     QString location (int = -1) const;
+    VBoxDefs::MediumType type() const { return mType; }
 
     void setCurrentItem (const QString &aItemId);
     void setType (VBoxDefs::MediumType aMediumType);

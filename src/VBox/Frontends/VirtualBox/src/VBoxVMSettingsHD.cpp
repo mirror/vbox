@@ -113,42 +113,51 @@ PixmapPool::PixmapPool (QObject *aParent)
 {
     mPool.resize (MaxIndex);
 
-    mPool [AddControllerEn]    = QPixmap (":/controller_add_16px.png");
-    mPool [AddControllerDis]   = QPixmap (":/controller_add_disabled_16px.png");
-    mPool [DelControllerEn]    = QPixmap (":/controller_remove_16px.png");
-    mPool [DelControllerDis]   = QPixmap (":/controller_remove_disabled_16px.png");
+    mPool [ControllerAddEn]          = QPixmap (":/controller_add_16px.png");
+    mPool [ControllerAddDis]         = QPixmap (":/controller_add_disabled_16px.png");
+    mPool [ControllerDelEn]          = QPixmap (":/controller_remove_16px.png");
+    mPool [ControllerDelDis]         = QPixmap (":/controller_remove_disabled_16px.png");
 
-    mPool [AddAttachmentEn]    = QPixmap (":/attachment_add_16px.png");
-    mPool [AddAttachmentDis]   = QPixmap (":/attachment_add_disabled_16px.png");
-    mPool [DelAttachmentEn]    = QPixmap (":/attachment_remove_16px.png");
-    mPool [DelAttachmentDis]   = QPixmap (":/attachment_remove_disabled_16px.png");
+    mPool [AttachmentAddEn]          = QPixmap (":/attachment_add_16px.png");
+    mPool [AttachmentAddDis]         = QPixmap (":/attachment_add_disabled_16px.png");
+    mPool [AttachmentDelEn]          = QPixmap (":/attachment_remove_16px.png");
+    mPool [AttachmentDelDis]         = QPixmap (":/attachment_remove_disabled_16px.png");
 
-    mPool [IDEController]      = QPixmap (":/ide_16px.png");
-    mPool [IDEExpand]          = QPixmap (":/ide_expand_16px.png");
-    mPool [IDECollapse]        = QPixmap (":/ide_collapse_16px.png");
-    mPool [SATAController]     = QPixmap (":/sata_16px.png");
-    mPool [SATAExpand]         = QPixmap (":/sata_expand_16px.png");
-    mPool [SATACollapse]       = QPixmap (":/sata_collapse_16px.png");
-    mPool [SCSIController]     = QPixmap (":/scsi_16px.png");
-    mPool [SCSIExpand]         = QPixmap (":/scsi_expand_16px.png");
-    mPool [SCSICollapse]       = QPixmap (":/scsi_collapse_16px.png");
-    mPool [FloppyController]   = QPixmap (":/floppy_16px.png");
-    mPool [FloppyExpand]       = QPixmap (":/floppy_expand_16px.png");
-    mPool [FloppyCollapse]     = QPixmap (":/floppy_collapse_16px.png");
+    mPool [IDEControllerNormal]      = QPixmap (":/ide_16px.png");
+    mPool [IDEControllerExpand]      = QPixmap (":/ide_expand_16px.png");
+    mPool [IDEControllerCollapse]    = QPixmap (":/ide_collapse_16px.png");
+    mPool [SATAControllerNormal]     = QPixmap (":/sata_16px.png");
+    mPool [SATAControllerExpand]     = QPixmap (":/sata_expand_16px.png");
+    mPool [SATAControllerCollapse]   = QPixmap (":/sata_collapse_16px.png");
+    mPool [SCSIControllerNormal]     = QPixmap (":/scsi_16px.png");
+    mPool [SCSIControllerExpand]     = QPixmap (":/scsi_expand_16px.png");
+    mPool [SCSIControllerCollapse]   = QPixmap (":/scsi_collapse_16px.png");
+    mPool [FloppyControllerNormal]   = QPixmap (":/floppy_16px.png");
+    mPool [FloppyControllerExpand]   = QPixmap (":/floppy_expand_16px.png");
+    mPool [FloppyControllerCollapse] = QPixmap (":/floppy_collapse_16px.png");
 
-    mPool [HDAttachmentEn]     = QPixmap (":/hd_16px.png");
-    mPool [CDAttachmentEn]     = QPixmap (":/cd_16px.png");
-    mPool [FDAttachmentEn]     = QPixmap (":/fd_16px.png");
+    mPool [IDEControllerAddEn]       = QPixmap (":/ide_add_16px.png");
+    mPool [IDEControllerAddDis]      = QPixmap (":/ide_add_disabled_16px.png");
+    mPool [SATAControllerAddEn]      = QPixmap (":/sata_add_16px.png");
+    mPool [SATAControllerAddDis]     = QPixmap (":/sata_add_disabled_16px.png");
+    mPool [SCSIControllerAddEn]      = QPixmap (":/scsi_add_16px.png");
+    mPool [SCSIControllerAddDis]     = QPixmap (":/scsi_add_disabled_16px.png");
+    mPool [FloppyControllerAddEn]    = QPixmap (":/floppy_add_16px.png");
+    mPool [FloppyControllerAddDis]   = QPixmap (":/floppy_add_disabled_16px.png");
 
-    mPool [HDAttachmentAddEn]  = QPixmap (":/hd_add_16px.png");
-    mPool [HDAttachmentAddDis] = QPixmap (":/hd_add_disabled_16px.png");
-    mPool [CDAttachmentAddEn]  = QPixmap (":/cd_add_16px.png");
-    mPool [CDAttachmentAddDis] = QPixmap (":/cd_add_disabled_16px.png");
-    mPool [FDAttachmentAddEn]  = QPixmap (":/fd_add_16px.png");
-    mPool [FDAttachmentAddDis] = QPixmap (":/fd_add_disabled_16px.png");
+    mPool [HDAttachmentNormal]       = QPixmap (":/hd_16px.png");
+    mPool [CDAttachmentNormal]       = QPixmap (":/cd_16px.png");
+    mPool [FDAttachmentNormal]       = QPixmap (":/fd_16px.png");
 
-    mPool [VMMEn]              = QPixmap (":/select_file_16px.png");
-    mPool [VMMDis]             = QPixmap (":/select_file_dis_16px.png");
+    mPool [HDAttachmentAddEn]        = QPixmap (":/hd_add_16px.png");
+    mPool [HDAttachmentAddDis]       = QPixmap (":/hd_add_disabled_16px.png");
+    mPool [CDAttachmentAddEn]        = QPixmap (":/cd_add_16px.png");
+    mPool [CDAttachmentAddDis]       = QPixmap (":/cd_add_disabled_16px.png");
+    mPool [FDAttachmentAddEn]        = QPixmap (":/fd_add_16px.png");
+    mPool [FDAttachmentAddDis]       = QPixmap (":/fd_add_disabled_16px.png");
+
+    mPool [VMMEn]                    = QPixmap (":/select_file_16px.png");
+    mPool [VMMDis]                   = QPixmap (":/select_file_dis_16px.png");
 }
 
 QPixmap PixmapPool::pixmap (PixmapType aType) const
@@ -170,16 +179,16 @@ AbstractControllerType::AbstractControllerType (KStorageBus aBusType, KStorageCo
         switch (mBusType)
         {
             case KStorageBus_IDE:
-                mPixmaps [i] = (PixmapPool::PixmapType) (PixmapPool::IDEController + i);
+                mPixmaps [i] = (PixmapPool::PixmapType) (PixmapPool::IDEControllerNormal + i);
                 break;
             case KStorageBus_SATA:
-                mPixmaps [i] = (PixmapPool::PixmapType) (PixmapPool::SATAController + i);
+                mPixmaps [i] = (PixmapPool::PixmapType) (PixmapPool::SATAControllerNormal + i);
                 break;
             case KStorageBus_SCSI:
-                mPixmaps [i] = (PixmapPool::PixmapType) (PixmapPool::SCSIController + i);
+                mPixmaps [i] = (PixmapPool::PixmapType) (PixmapPool::SCSIControllerNormal + i);
                 break;
             case KStorageBus_Floppy:
-                mPixmaps [i] = (PixmapPool::PixmapType) (PixmapPool::FloppyController + i);
+                mPixmaps [i] = (PixmapPool::PixmapType) (PixmapPool::FloppyControllerNormal + i);
                 break;
             default:
                 break;
@@ -343,6 +352,18 @@ RootItem::~RootItem()
 {
     while (!mControllers.isEmpty())
         delete mControllers.first();
+}
+
+ULONG RootItem::childCount (KStorageBus aBus) const
+{
+    ULONG result = 0;
+    foreach (AbstractItem *item, mControllers)
+    {
+        ControllerItem *ctrItem = static_cast <ControllerItem*> (item);
+        if (ctrItem->ctrBusType() == aBus)
+            ++ result;
+    }
+    return result;
 }
 
 AbstractItem::ItemType RootItem::rtti() const
@@ -816,13 +837,13 @@ QPixmap AttachmentItem::pixmap (ItemState /* aState */)
         switch (mAttDeviceType)
         {
             case KDeviceType_HardDisk:
-                mAttPixmap = PixmapPool::pool()->pixmap (PixmapPool::HDAttachmentEn);
+                mAttPixmap = PixmapPool::pool()->pixmap (PixmapPool::HDAttachmentNormal);
                 break;
             case KDeviceType_DVD:
-                mAttPixmap = PixmapPool::pool()->pixmap (PixmapPool::CDAttachmentEn);
+                mAttPixmap = PixmapPool::pool()->pixmap (PixmapPool::CDAttachmentNormal);
                 break;
             case KDeviceType_Floppy:
-                mAttPixmap = PixmapPool::pool()->pixmap (PixmapPool::FDAttachmentEn);
+                mAttPixmap = PixmapPool::pool()->pixmap (PixmapPool::FDAttachmentNormal);
                 break;
             default:
                 break;
@@ -1011,9 +1032,25 @@ QVariant StorageModel::data (const QModelIndex &aIndex, int aRole) const
         {
             return QVariant::fromValue (mToolTipType);
         }
-        case R_IsMoreControllersPossible:
+        case R_IsMoreIDEControllersPossible:
         {
-            return rowCount (root()) < 16;
+            return static_cast <RootItem*> (mRootItem)->childCount (KStorageBus_IDE) <
+                   vboxGlobal().virtualBox().GetSystemProperties().GetMaxInstancesOfStorageBus (KStorageBus_IDE);
+        }
+        case R_IsMoreSATAControllersPossible:
+        {
+            return static_cast <RootItem*> (mRootItem)->childCount (KStorageBus_SATA) <
+                   vboxGlobal().virtualBox().GetSystemProperties().GetMaxInstancesOfStorageBus (KStorageBus_SATA);
+        }
+        case R_IsMoreSCSIControllersPossible:
+        {
+            return static_cast <RootItem*> (mRootItem)->childCount (KStorageBus_SCSI) <
+                   vboxGlobal().virtualBox().GetSystemProperties().GetMaxInstancesOfStorageBus (KStorageBus_SCSI);
+        }
+        case R_IsMoreFloppyControllersPossible:
+        {
+            return static_cast <RootItem*> (mRootItem)->childCount (KStorageBus_Floppy) <
+                   vboxGlobal().virtualBox().GetSystemProperties().GetMaxInstancesOfStorageBus (KStorageBus_Floppy);
         }
         case R_IsMoreAttachmentsPossible:
         {
@@ -1180,15 +1217,15 @@ QVariant StorageModel::data (const QModelIndex &aIndex, int aRole) const
 
         case R_HDPixmapEn:
         {
-            return PixmapPool::pool()->pixmap (PixmapPool::HDAttachmentEn);
+            return PixmapPool::pool()->pixmap (PixmapPool::HDAttachmentNormal);
         }
         case R_CDPixmapEn:
         {
-            return PixmapPool::pool()->pixmap (PixmapPool::CDAttachmentEn);
+            return PixmapPool::pool()->pixmap (PixmapPool::CDAttachmentNormal);
         }
         case R_FDPixmapEn:
         {
-            return PixmapPool::pool()->pixmap (PixmapPool::FDAttachmentEn);
+            return PixmapPool::pool()->pixmap (PixmapPool::FDAttachmentNormal);
         }
 
         case R_HDPixmapAddEn:
@@ -1523,33 +1560,49 @@ VBoxVMSettingsHD::VBoxVMSettingsHD()
 
     /* Controller Actions */
     mAddCtrAction = new QAction (this);
-    mAddCtrAction->setIcon (VBoxGlobal::iconSet (PixmapPool::pool()->pixmap (PixmapPool::AddControllerEn),
-                                                 PixmapPool::pool()->pixmap (PixmapPool::AddControllerDis)));
+    mAddCtrAction->setIcon (VBoxGlobal::iconSet (PixmapPool::pool()->pixmap (PixmapPool::ControllerAddEn),
+                                                 PixmapPool::pool()->pixmap (PixmapPool::ControllerAddDis)));
 
     mAddIDECtrAction = new QAction (this);
-    mAddIDECtrAction->setIcon (VBoxGlobal::iconSet (PixmapPool::pool()->pixmap (PixmapPool::IDEController)));
+    mAddIDECtrAction->setIcon (VBoxGlobal::iconSet (PixmapPool::pool()->pixmap (PixmapPool::IDEControllerAddEn),
+                                                    PixmapPool::pool()->pixmap (PixmapPool::IDEControllerAddDis)));
 
     mAddSATACtrAction = new QAction (this);
-    mAddSATACtrAction->setIcon (VBoxGlobal::iconSet (PixmapPool::pool()->pixmap (PixmapPool::SATAController)));
+    mAddSATACtrAction->setIcon (VBoxGlobal::iconSet (PixmapPool::pool()->pixmap (PixmapPool::SATAControllerAddEn),
+                                                     PixmapPool::pool()->pixmap (PixmapPool::SATAControllerAddDis)));
 
     mAddSCSICtrAction = new QAction (this);
-    mAddSCSICtrAction->setIcon (VBoxGlobal::iconSet (PixmapPool::pool()->pixmap (PixmapPool::SCSIController)));
+    mAddSCSICtrAction->setIcon (VBoxGlobal::iconSet (PixmapPool::pool()->pixmap (PixmapPool::SCSIControllerAddEn),
+                                                     PixmapPool::pool()->pixmap (PixmapPool::SCSIControllerAddDis)));
 
     mAddFloppyCtrAction = new QAction (this);
-    mAddFloppyCtrAction->setIcon (VBoxGlobal::iconSet (PixmapPool::pool()->pixmap (PixmapPool::FloppyController)));
+    mAddFloppyCtrAction->setIcon (VBoxGlobal::iconSet (PixmapPool::pool()->pixmap (PixmapPool::FloppyControllerAddEn),
+                                                       PixmapPool::pool()->pixmap (PixmapPool::FloppyControllerAddDis)));
 
     mDelCtrAction = new QAction (this);
-    mDelCtrAction->setIcon (VBoxGlobal::iconSet (PixmapPool::pool()->pixmap (PixmapPool::DelControllerEn),
-                                                 PixmapPool::pool()->pixmap (PixmapPool::DelControllerDis)));
+    mDelCtrAction->setIcon (VBoxGlobal::iconSet (PixmapPool::pool()->pixmap (PixmapPool::ControllerDelEn),
+                                                 PixmapPool::pool()->pixmap (PixmapPool::ControllerDelDis)));
 
     /* Attachment Actions */
     mAddAttAction = new QAction (this);
-    mAddAttAction->setIcon (VBoxGlobal::iconSet (PixmapPool::pool()->pixmap (PixmapPool::AddAttachmentEn),
-                                                 PixmapPool::pool()->pixmap (PixmapPool::AddAttachmentDis)));
+    mAddAttAction->setIcon (VBoxGlobal::iconSet (PixmapPool::pool()->pixmap (PixmapPool::AttachmentAddEn),
+                                                 PixmapPool::pool()->pixmap (PixmapPool::AttachmentAddDis)));
+
+    mAddHDAttAction = new QAction (this);
+    mAddHDAttAction->setIcon (VBoxGlobal::iconSet (PixmapPool::pool()->pixmap (PixmapPool::HDAttachmentAddEn),
+                                                   PixmapPool::pool()->pixmap (PixmapPool::HDAttachmentAddDis)));
+
+    mAddCDAttAction = new QAction (this);
+    mAddCDAttAction->setIcon (VBoxGlobal::iconSet (PixmapPool::pool()->pixmap (PixmapPool::CDAttachmentAddEn),
+                                                   PixmapPool::pool()->pixmap (PixmapPool::CDAttachmentAddDis)));
+
+    mAddFDAttAction = new QAction (this);
+    mAddFDAttAction->setIcon (VBoxGlobal::iconSet (PixmapPool::pool()->pixmap (PixmapPool::FDAttachmentAddEn),
+                                                   PixmapPool::pool()->pixmap (PixmapPool::FDAttachmentAddDis)));
 
     mDelAttAction = new QAction (this);
-    mDelAttAction->setIcon (VBoxGlobal::iconSet (PixmapPool::pool()->pixmap (PixmapPool::DelAttachmentEn),
-                                                 PixmapPool::pool()->pixmap (PixmapPool::DelAttachmentDis)));
+    mDelAttAction->setIcon (VBoxGlobal::iconSet (PixmapPool::pool()->pixmap (PixmapPool::AttachmentDelEn),
+                                                 PixmapPool::pool()->pixmap (PixmapPool::AttachmentDelDis)));
 
     /* Storage Model/View */
     mStorageModel = new StorageModel (mTwStorageTree);
@@ -1604,6 +1657,9 @@ VBoxVMSettingsHD::VBoxVMSettingsHD()
     connect (mAddFloppyCtrAction, SIGNAL (triggered (bool)), this, SLOT (addFloppyController()));
     connect (mDelCtrAction, SIGNAL (triggered (bool)), this, SLOT (delController()));
     connect (mAddAttAction, SIGNAL (triggered (bool)), this, SLOT (addAttachment()));
+    connect (mAddHDAttAction, SIGNAL (triggered (bool)), this, SLOT (addHDAttachment()));
+    connect (mAddCDAttAction, SIGNAL (triggered (bool)), this, SLOT (addCDAttachment()));
+    connect (mAddFDAttAction, SIGNAL (triggered (bool)), this, SLOT (addFDAttachment()));
     connect (mDelAttAction, SIGNAL (triggered (bool)), this, SLOT (delAttachment()));
     connect (mStorageModel, SIGNAL (rowsInserted (const QModelIndex&, int, int)),
              this, SLOT (onRowInserted (const QModelIndex&, int)));
@@ -1624,7 +1680,6 @@ VBoxVMSettingsHD::VBoxVMSettingsHD()
     connect (mLeName, SIGNAL (textEdited (const QString&)), this, SLOT (setInformation()));
     connect (mCbType, SIGNAL (activated (int)), this, SLOT (setInformation()));
     connect (mCbSlot, SIGNAL (activated (int)), this, SLOT (setInformation()));
-    connect (mCbDevice, SIGNAL (activated (int)), this, SLOT (setInformation()));
     connect (mCbVdi, SIGNAL (activated (int)), this, SLOT (setInformation()));
     connect (mTbVmm, SIGNAL (clicked (bool)), this, SLOT (onVmmInvoked()));
     connect (mCbShowDiffs, SIGNAL (stateChanged (int)), this, SLOT (setInformation()));
@@ -1638,7 +1693,7 @@ VBoxVMSettingsHD::VBoxVMSettingsHD()
 
     /* Initial setup */
     setMinimumWidth (500);
-    mSplitter->setSizes (QList<int>() << 0.45 * minimumWidth() << 0.55 * minimumWidth());
+    mSplitter->setSizes (QList<int>() << (int) (0.45 * minimumWidth()) << (int) (0.55 * minimumWidth()));
 }
 
 void VBoxVMSettingsHD::getFrom (const CMachine &aMachine)
@@ -1764,6 +1819,9 @@ void VBoxVMSettingsHD::retranslateUi()
     mAddFloppyCtrAction->setText (tr ("Add Floppy Controller"));
     mDelCtrAction->setText (tr ("Remove Controller"));
     mAddAttAction->setText (tr ("Add Attachment"));
+    mAddHDAttAction->setText (tr ("Add Hard Disk"));
+    mAddCDAttAction->setText (tr ("Add CD/DVD Device"));
+    mAddFDAttAction->setText (tr ("Add Floppy Device"));
     mDelAttAction->setText (tr ("Remove Attachment"));
 
     mAddCtrAction->setWhatsThis (tr ("Adds a new controller to the end of Storage Tree."));
@@ -1796,10 +1854,10 @@ void VBoxVMSettingsHD::showEvent (QShowEvent *aEvent)
         mLtEmpty->setColumnMinimumWidth (0, 10);
         mLtController->setColumnMinimumWidth (0, 10);
         mLtAttachment->setColumnMinimumWidth (0, 10);
-
+#if 0
         /* Second column indent minimum width */
         QList <QLabel*> labelsList;
-        labelsList << mLbSlot << mLbDevice << mLbVdi
+        labelsList << mLbSlot << mLbVdi
                    << mLbHDVirtualSize << mLbHDActualSize << mLbSize
                    << mLbLocation << mLbHDFormat << mLbUsage;
         int maxWidth = 0;
@@ -1810,6 +1868,7 @@ void VBoxVMSettingsHD::showEvent (QShowEvent *aEvent)
             maxWidth = width > maxWidth ? width : maxWidth;
         }
         mLtAttachment->setColumnMinimumWidth (1, maxWidth);
+#endif
     }
     VBoxSettingsPage::showEvent (aEvent);
 }
@@ -1864,30 +1923,22 @@ void VBoxVMSettingsHD::addController()
 
 void VBoxVMSettingsHD::addIDEController()
 {
-    mStorageModel->addController (generateUniqueName (tr ("IDE Controller")),
-                                  KStorageBus_IDE, KStorageControllerType_PIIX4);
-    emit storageChanged();
+    addControllerWrapper (generateUniqueName (tr ("IDE Controller")), KStorageBus_IDE, KStorageControllerType_PIIX4);
 }
 
 void VBoxVMSettingsHD::addSATAController()
 {
-    mStorageModel->addController (generateUniqueName (tr ("SATA Controller")),
-                                  KStorageBus_SATA, KStorageControllerType_IntelAhci);
-    emit storageChanged();
+    addControllerWrapper (generateUniqueName (tr ("SATA Controller")), KStorageBus_SATA, KStorageControllerType_IntelAhci);
 }
 
 void VBoxVMSettingsHD::addSCSIController()
 {
-    mStorageModel->addController (generateUniqueName (tr ("SCSI Controller")),
-                                  KStorageBus_SCSI, KStorageControllerType_LsiLogic);
-    emit storageChanged();
+    addControllerWrapper (generateUniqueName (tr ("SCSI Controller")), KStorageBus_SCSI, KStorageControllerType_LsiLogic);
 }
 
 void VBoxVMSettingsHD::addFloppyController()
 {
-    mStorageModel->addController (generateUniqueName (tr ("Floppy Controller")),
-                                  KStorageBus_Floppy, KStorageControllerType_I82078);
-    emit storageChanged();
+    addControllerWrapper (generateUniqueName (tr ("Floppy Controller")), KStorageBus_Floppy, KStorageControllerType_I82078);
 }
 
 void VBoxVMSettingsHD::delController()
@@ -1900,17 +1951,38 @@ void VBoxVMSettingsHD::delController()
     mValidator->revalidate();
 }
 
-void VBoxVMSettingsHD::addAttachment (KDeviceType aDeviceType)
+void VBoxVMSettingsHD::addAttachment()
 {
     QModelIndex index = mTwStorageTree->currentIndex();
-    if (!mStorageModel->data (index, StorageModel::R_IsController).toBool()) return;
+    Assert (mStorageModel->data (index, StorageModel::R_IsController).toBool());
 
-    if (aDeviceType == KDeviceType_Null)
-        aDeviceType = mStorageModel->data (index, StorageModel::R_CtrDevices).value <DeviceTypeList>() [0];
+    if (mStorageModel->data (index, StorageModel::R_CtrBusType).value <KStorageBus>() == KStorageBus_Floppy)
+    {
+        Assert (mAddFDAttAction->isEnabled());
+        mAddFDAttAction->trigger();
+    }
+    else
+    {
+        QMenu menu;
+        menu.addAction (mAddHDAttAction);
+        menu.addAction (mAddCDAttAction);
+        menu.exec (QCursor::pos());
+    }
+}
 
-    mStorageModel->addAttachment (QUuid (mStorageModel->data (index, StorageModel::R_ItemId).toString()), aDeviceType);
-    emit storageChanged();
-    mValidator->revalidate();
+void VBoxVMSettingsHD::addHDAttachment()
+{
+    addAttachmentWrapper (KDeviceType_HardDisk);
+}
+
+void VBoxVMSettingsHD::addCDAttachment()
+{
+    addAttachmentWrapper (KDeviceType_DVD);
+}
+
+void VBoxVMSettingsHD::addFDAttachment()
+{
+    addAttachmentWrapper (KDeviceType_Floppy);
 }
 
 void VBoxVMSettingsHD::delAttachment()
@@ -1971,20 +2043,26 @@ void VBoxVMSettingsHD::getInformation()
                 int attSlotPos = mCbSlot->findText (vboxGlobal().toString (slt));
                 mCbSlot->setCurrentIndex (attSlotPos == -1 ? 0 : attSlotPos);
 
-                /* Getting Attachment Device */
-                mCbDevice->clear();
-                DeviceTypeList deviceTypeList (mStorageModel->data (index, StorageModel::R_AttDevices).value <DeviceTypeList>());
-                for (int i = 0; i < deviceTypeList.size(); ++ i)
-                    mCbDevice->insertItem (mCbDevice->count(), vboxGlobal().toString (deviceTypeList [i]));
-                KDeviceType device = mStorageModel->data (index, StorageModel::R_AttDevice).value <KDeviceType>();
-                int attDevicePos = mCbDevice->findText (vboxGlobal().toString (device));
-                mCbDevice->setCurrentIndex (attDevicePos == -1 ? 0 : attDevicePos);
-
                 /* Getting Show Diffs state */
                 bool isShowDiffs = mStorageModel->data (index, StorageModel::R_AttIsShowDiffs).toBool();
                 mCbShowDiffs->setChecked (isShowDiffs);
 
                 /* Getting Attachment Medium */
+                KDeviceType device = mStorageModel->data (index, StorageModel::R_AttDevice).value <KDeviceType>();
+                switch (device)
+                {
+                    case KDeviceType_HardDisk:
+                        mLbVdi->setText (tr ("Hard &Disk:"));
+                        break;
+                    case KDeviceType_DVD:
+                        mLbVdi->setText (tr ("&CD/DVD Device:"));
+                        break;
+                    case KDeviceType_Floppy:
+                        mLbVdi->setText (tr ("&Floppy Device:"));
+                        break;
+                    default:
+                        break;
+                }
                 mCbVdi->setType (typeToLocal (device));
                 mCbVdi->setShowDiffs (isShowDiffs);
                 mCbVdi->setCurrentItem (mStorageModel->data (index, StorageModel::R_AttMediumId).toString());
@@ -2045,15 +2123,6 @@ void VBoxVMSettingsHD::setInformation()
             if (sdr == mCbSlot)
                 mStorageModel->setData (index, QVariant::fromValue (vboxGlobal().toStorageSlot (mCbSlot->currentText())),
                                         StorageModel::R_AttSlot);
-            /* Setting Attachment Device-Type */
-            else if (sdr == mCbDevice)
-            {
-                KDeviceType device = vboxGlobal().toDeviceType (mCbDevice->currentText());
-                mStorageModel->setData (index, QVariant::fromValue (device), StorageModel::R_AttDevice);
-                mCbVdi->setType (typeToLocal (device));
-                mCbVdi->setShowDiffs (mCbShowDiffs->isChecked());
-                mCbVdi->refresh();
-            }
             /* Setting Attachment Medium */
             else if (sdr == mCbVdi)
                 mStorageModel->setData (index, mCbVdi->id(), StorageModel::R_AttMediumId);
@@ -2076,7 +2145,7 @@ void VBoxVMSettingsHD::setInformation()
 
 void VBoxVMSettingsHD::onVmmInvoked()
 {
-    QString id = getWithMediaManager (typeToLocal (vboxGlobal().toDeviceType (mCbDevice->currentText())));
+    QString id = getWithMediaManager (mCbVdi->type());
     if (!id.isNull())
         mCbVdi->setCurrentItem (id);
 }
@@ -2085,16 +2154,28 @@ void VBoxVMSettingsHD::updateActionsState()
 {
     QModelIndex index = mTwStorageTree->currentIndex();
 
-    mAddCtrAction->setEnabled (mStorageModel->data (index, StorageModel::R_IsMoreControllersPossible).toBool());
-    mAddIDECtrAction->setEnabled (mStorageModel->data (index, StorageModel::R_IsMoreControllersPossible).toBool());
-    mAddSATACtrAction->setEnabled (mStorageModel->data (index, StorageModel::R_IsMoreControllersPossible).toBool());
-    mAddSCSICtrAction->setEnabled (mStorageModel->data (index, StorageModel::R_IsMoreControllersPossible).toBool());
-    mAddFloppyCtrAction->setEnabled (mStorageModel->data (index, StorageModel::R_IsMoreControllersPossible).toBool());
-    mAddAttAction->setEnabled (mStorageModel->data (index, StorageModel::R_IsController).toBool() &&
-                               mStorageModel->data (index, StorageModel::R_IsMoreAttachmentsPossible).toBool());
+    bool isIDEPossible = mStorageModel->data (index, StorageModel::R_IsMoreIDEControllersPossible).toBool();
+    bool isSATAPossible = mStorageModel->data (index, StorageModel::R_IsMoreSATAControllersPossible).toBool();
+    bool isSCSIPossible = mStorageModel->data (index, StorageModel::R_IsMoreSCSIControllersPossible).toBool();
+    bool isFloppyPossible = mStorageModel->data (index, StorageModel::R_IsMoreFloppyControllersPossible).toBool();
 
-    mDelCtrAction->setEnabled (mStorageModel->data (index, StorageModel::R_IsController).toBool());
-    mDelAttAction->setEnabled (mStorageModel->data (index, StorageModel::R_IsAttachment).toBool());
+    bool isController = mStorageModel->data (index, StorageModel::R_IsController).toBool();
+    bool isAttachment = mStorageModel->data (index, StorageModel::R_IsAttachment).toBool();
+    bool isAttachmentsPossible = mStorageModel->data (index, StorageModel::R_IsMoreAttachmentsPossible).toBool();
+
+    mAddCtrAction->setEnabled (isIDEPossible || isSATAPossible || isSCSIPossible || isFloppyPossible);
+    mAddIDECtrAction->setEnabled (isIDEPossible);
+    mAddSATACtrAction->setEnabled (isSATAPossible);
+    mAddSCSICtrAction->setEnabled (isSCSIPossible);
+    mAddFloppyCtrAction->setEnabled (isFloppyPossible);
+
+    mAddAttAction->setEnabled (isController && isAttachmentsPossible);
+    mAddHDAttAction->setEnabled (isController && isAttachmentsPossible);
+    mAddCDAttAction->setEnabled (isController && isAttachmentsPossible);
+    mAddFDAttAction->setEnabled (isController && isAttachmentsPossible);
+
+    mDelCtrAction->setEnabled (isController);
+    mDelAttAction->setEnabled (isAttachment);
 }
 
 void VBoxVMSettingsHD::onRowInserted (const QModelIndex &aParent, int aPosition)
@@ -2139,6 +2220,9 @@ void VBoxVMSettingsHD::onRowInserted (const QModelIndex &aParent, int aPosition)
 
 void VBoxVMSettingsHD::onRowRemoved()
 {
+    if (mStorageModel->rowCount (mStorageModel->root()) == 0)
+        mTwStorageTree->setCurrentIndex (mStorageModel->root());
+
     updateActionsState();
     getInformation();
 }
@@ -2159,7 +2243,24 @@ void VBoxVMSettingsHD::onContextMenuRequested (const QPoint &aPosition)
     {
         case AbstractItem::Type_ControllerItem:
         {
-            menu.addAction (mAddAttAction);
+            DeviceTypeList deviceTypeList (mStorageModel->data (index, StorageModel::R_CtrDevices).value <DeviceTypeList>());
+            foreach (KDeviceType deviceType, deviceTypeList)
+            {
+                switch (deviceType)
+                {
+                    case KDeviceType_HardDisk:
+                        menu.addAction (mAddHDAttAction);
+                        break;
+                    case KDeviceType_DVD:
+                        menu.addAction (mAddCDAttAction);
+                        break;
+                    case KDeviceType_Floppy:
+                        menu.addAction (mAddFDAttAction);
+                        break;
+                    default:
+                        break;
+                }
+            }
             menu.addAction (mDelCtrAction);
             break;
         }
@@ -2340,11 +2441,47 @@ void VBoxVMSettingsHD::onMouseClicked (QMouseEvent *aEvent)
             {
                 aEvent->setAccepted (true);
                 if (mAddAttAction->isEnabled())
-                    addAttachment (deviceType);
+                    addAttachmentWrapper (deviceType);
                 return;
             }
         }
     }
+}
+
+void VBoxVMSettingsHD::addControllerWrapper (const QString &aName, KStorageBus aBus, KStorageControllerType aType)
+{
+    QModelIndex index = mTwStorageTree->currentIndex();
+    switch (aBus)
+    {
+        case KStorageBus_IDE:
+            Assert (mStorageModel->data (index, StorageModel::R_IsMoreIDEControllersPossible).toBool());
+            break;
+        case KStorageBus_SATA:
+            Assert (mStorageModel->data (index, StorageModel::R_IsMoreSATAControllersPossible).toBool());
+            break;
+        case KStorageBus_SCSI:
+            Assert (mStorageModel->data (index, StorageModel::R_IsMoreSCSIControllersPossible).toBool());
+            break;
+        case KStorageBus_Floppy:
+            Assert (mStorageModel->data (index, StorageModel::R_IsMoreFloppyControllersPossible).toBool());
+            break;
+        default:
+            break;
+    }
+
+    mStorageModel->addController (aName, aBus, aType);
+    emit storageChanged();
+}
+
+void VBoxVMSettingsHD::addAttachmentWrapper (KDeviceType aDevice)
+{
+    QModelIndex index = mTwStorageTree->currentIndex();
+    Assert (mStorageModel->data (index, StorageModel::R_IsController).toBool());
+    Assert (mStorageModel->data (index, StorageModel::R_IsMoreAttachmentsPossible).toBool());
+
+    mStorageModel->addAttachment (QUuid (mStorageModel->data (index, StorageModel::R_ItemId).toString()), aDevice);
+    emit storageChanged();
+    mValidator->revalidate();
 }
 
 QString VBoxVMSettingsHD::getWithNewHDWizard()
