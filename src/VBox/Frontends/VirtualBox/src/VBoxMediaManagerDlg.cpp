@@ -1270,9 +1270,9 @@ bool VBoxMediaManagerDlg::releaseMediumFrom (const VBoxMedium &aMedium,
                     {
                         CStorageController ctl = machine.GetStorageControllerByName(hda.GetController());
 
-                        vboxProblem().cannotDetachHardDisk (
-                            this, machine, aMedium.location(), ctl.GetBus(),
-                            hda.GetPort(), hda.GetDevice());
+                        vboxProblem().cannotDetachDevice (this, machine,
+                            VBoxDefs::MediumType_HardDisk, aMedium.location(),
+                            ctl.GetBus(), hda.GetPort(), hda.GetDevice());
                         success = false;
                         break;
                     }
@@ -1285,8 +1285,7 @@ bool VBoxMediaManagerDlg::releaseMediumFrom (const VBoxMedium &aMedium,
             machine.MountMedium ("IDE Controller", 1, 0, NULL);
             if (!machine.isOk())
             {
-                vboxProblem().cannotUnmountMedium (this, machine, aMedium,
-                                                   COMResult (machine));
+                vboxProblem().cannotUnmountMedium (this, machine, aMedium);
                 success = false;
             }
             break;
@@ -1296,8 +1295,7 @@ bool VBoxMediaManagerDlg::releaseMediumFrom (const VBoxMedium &aMedium,
             machine.MountMedium ("Floppy Controller", 0, 0, NULL);
             if (!machine.isOk())
             {
-                vboxProblem().cannotUnmountMedium (this, machine, aMedium,
-                                                   COMResult (machine));
+                vboxProblem().cannotUnmountMedium (this, machine, aMedium);
                 success = false;
             }
             break;

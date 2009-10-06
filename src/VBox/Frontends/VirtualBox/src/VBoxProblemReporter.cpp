@@ -992,7 +992,7 @@ bool VBoxProblemReporter::confirmReleaseMedium (QWidget *aParent,
             "<nobr><b>%2</b></nobr>?</p>"
             "<p>This will detach it from the "
             "following virtual machine(s): <b>%3</b>.</p>")
-            .arg (toAccusative (aMedium.type()))
+            .arg (mediumToAccusative (aMedium.type()))
             .arg (aMedium.location())
             .arg (aUsage),
         0 /* aAutoConfirmId */,
@@ -1007,7 +1007,7 @@ bool VBoxProblemReporter::confirmRemoveMedium (QWidget *aParent,
     QString msg =
         tr ("<p>Are you sure you want to remove the %1 "
             "<nobr><b>%2</b></nobr> from the list of known media?</p>")
-            .arg (toAccusative (aMedium.type()))
+            .arg (mediumToAccusative (aMedium.type()))
             .arg (aMedium.location());
 
     if (aMedium.type() == VBoxDefs::MediumType_HardDisk)
@@ -1152,60 +1152,64 @@ void VBoxProblemReporter::cannotCreateHardDiskStorage (
         formatErrorInfo (aProgress.GetErrorInfo()));
 }
 
-void VBoxProblemReporter::cannotAttachHardDisk (
-    QWidget *aParent, const CMachine &aMachine, const QString &aLocation,
-    KStorageBus aBus, LONG aChannel, LONG aDevice)
+void VBoxProblemReporter::cannotAttachDevice (QWidget *aParent, const CMachine &aMachine,
+                                              VBoxDefs::MediumType aType, const QString &aLocation,
+                                              KStorageBus aBus, LONG aChannel, LONG aDevice)
 {
+    QString what (deviceToAccusative (aType));
+    if (!aLocation.isNull())
+        what += QString (" (<nobr><b>%1</b></nobr>)").arg (aLocation);
+
     message (aParent, Error,
-        tr ("Failed to attach the hard disk <nobr><b>%1</b></nobr> "
-            "to the slot <i>%2</i> of the machine <b>%3</b>.")
-            .arg (aLocation)
-            .arg (vboxGlobal().toString (StorageSlot (aBus, aChannel, aDevice)))
-            .arg (CMachine (aMachine).GetName()),
-        formatErrorInfo (aMachine));
+             tr ("Failed to attach the %1 to the slot <i>%2</i> of the machine <b>%3</b>.")
+                 .arg (what)
+                 .arg (vboxGlobal().toString (StorageSlot (aBus, aChannel, aDevice)))
+                 .arg (CMachine (aMachine).GetName()),
+             formatErrorInfo (aMachine));
 }
 
-void VBoxProblemReporter::cannotDetachHardDisk (
-    QWidget *aParent, const CMachine &aMachine, const QString &aLocation,
-    KStorageBus aBus, LONG aChannel, LONG aDevice)
+void VBoxProblemReporter::cannotDetachDevice (QWidget *aParent, const CMachine &aMachine,
+                                              VBoxDefs::MediumType aType, const QString &aLocation,
+                                              KStorageBus aBus, LONG aChannel, LONG aDevice)
 {
+    QString what (deviceToAccusative (aType));
+    if (!aLocation.isNull())
+        what += QString (" (<nobr><b>%1</b></nobr>)").arg (aLocation);
+
     message (aParent, Error,
-        tr ("Failed to detach the hard disk <nobr><b>%1</b></nobr> "
-            "from the slot <i>%2</i> of the machine <b>%3</b>.")
-            .arg (aLocation)
-            .arg (vboxGlobal().toString (StorageSlot (aBus, aChannel, aDevice)))
-            .arg (CMachine (aMachine).GetName()),
-         formatErrorInfo (aMachine));
+             tr ("Failed to detach the $1 from the slot <i>%2</i> of the machine <b>%3</b>.")
+                 .arg (what)
+                 .arg (vboxGlobal().toString (StorageSlot (aBus, aChannel, aDevice)))
+                 .arg (CMachine (aMachine).GetName()),
+             formatErrorInfo (aMachine));
 }
 
-void VBoxProblemReporter::
-cannotMountMedium (QWidget *aParent, const CMachine &aMachine,
-                   const VBoxMedium &aMedium, const COMResult &aResult)
+void VBoxProblemReporter::cannotMountMedium (QWidget *aParent, const CMachine &aMachine,
+                                             const VBoxMedium &aMedium)
 {
     /** @todo (translation-related): the gender of "the" in translations
      * will depend on the gender of aMedium.type(). */
     message (aParent, Error,
-        tr ("Failed to mount the %1 <nobr><b>%2</b></nobr> "
-            "to the machine <b>%3</b>.")
-            .arg (toAccusative (aMedium.type()))
-            .arg (aMedium.location())
-            .arg (CMachine (aMachine).GetName()),
-      formatErrorInfo (aResult));
+             tr ("Failed to mount the %1 <nobr><b>%2</b></nobr> "
+                 "to the machine <b>%3</b>.")
+                 .arg (mediumToAccusative (aMedium.type(), aMedium.isHostDrive()))
+                 .arg (aMedium.isHostDrive() ? aMedium.name() : aMedium.location())
+                 .arg (CMachine (aMachine).GetName()),
+             formatErrorInfo (aMachine));
 }
 
-void VBoxProblemReporter::
-cannotUnmountMedium (QWidget *aParent, const CMachine &aMachine,
-                     const VBoxMedium &aMedium, const COMResult &aResult)
+void VBoxProblemReporter::cannotUnmountMedium (QWidget *aParent, const CMachine &aMachine,
+                                               const VBoxMedium &aMedium)
 {
     /** @todo (translation-related): the gender of "the" in translations
      * will depend on the gender of aMedium.type(). */
     message (aParent, Error,
-        tr ("Failed to unmount the %1 <nobr><b>%2</b></nobr> "
-            "from the machine <b>%3</b>.")
-            .arg (toAccusative (aMedium.type()))
-            .arg (aMedium.location())
-            .arg (CMachine (aMachine).GetName()),
-      formatErrorInfo (aResult));
+             tr ("Failed to unmount the %1 <nobr><b>%2</b></nobr> "
+                 "from the machine <b>%3</b>.")
+                 .arg (mediumToAccusative (aMedium.type(), aMedium.isHostDrive()))
+                 .arg (aMedium.isHostDrive() ? aMedium.name() : aMedium.location())
+                 .arg (CMachine (aMachine).GetName()),
+             formatErrorInfo (aMachine));
 }
 
 void VBoxProblemReporter::cannotOpenMedium (
@@ -1216,7 +1220,7 @@ void VBoxProblemReporter::cannotOpenMedium (
      * will depend on the gender of aMedium.type(). */
     message (aParent, Error,
         tr ("Failed to open the %1 <nobr><b>%2</b></nobr>.")
-            .arg (toAccusative (aType))
+            .arg (mediumToAccusative (aType))
             .arg (aLocation),
         formatErrorInfo (aVBox));
 }
@@ -1228,7 +1232,7 @@ void VBoxProblemReporter::cannotCloseMedium (
      * will depend on the gender of aMedium.type(). */
     message (aParent, Error,
         tr ("Failed to close the %1 <nobr><b>%2</b></nobr>.")
-            .arg (toAccusative (aMedium.type()))
+            .arg (mediumToAccusative (aMedium.type()))
             .arg (aMedium.location()),
         formatErrorInfo (aResult));
 }
@@ -2186,15 +2190,35 @@ void VBoxProblemReporter::showRuntimeError (const CConsole &aConsole, bool fatal
 }
 
 /* static */
-QString VBoxProblemReporter::toAccusative (VBoxDefs::MediumType aType)
+QString VBoxProblemReporter::mediumToAccusative (VBoxDefs::MediumType aType, bool aIsHostDrive /* = false */)
 {
     QString type =
         aType == VBoxDefs::MediumType_HardDisk ?
-            tr ("hard disk", "failed to close ...") :
+            tr ("hard disk", "failed to mount ...") :
+        aType == VBoxDefs::MediumType_DVD && aIsHostDrive ?
+            tr ("CD/DVD", "failed to mount ... host-drive") :
+        aType == VBoxDefs::MediumType_DVD && !aIsHostDrive ?
+            tr ("CD/DVD image", "failed to mount ...") :
+        aType == VBoxDefs::MediumType_Floppy && aIsHostDrive ?
+            tr ("floppy", "failed to mount ... host-drive") :
+        aType == VBoxDefs::MediumType_Floppy && !aIsHostDrive ?
+            tr ("floppy image", "failed to mount ...") :
+        QString::null;
+
+    Assert (!type.isNull());
+    return type;
+}
+
+/* static */
+QString VBoxProblemReporter::deviceToAccusative (VBoxDefs::MediumType aType)
+{
+    QString type =
+        aType == VBoxDefs::MediumType_HardDisk ?
+            tr ("hard disk", "failed to attach ...") :
         aType == VBoxDefs::MediumType_DVD ?
-            tr ("CD/DVD image", "failed to close ...") :
+            tr ("CD/DVD device", "failed to attach ...") :
         aType == VBoxDefs::MediumType_Floppy ?
-            tr ("floppy image", "failed to close ...") :
+            tr ("floppy device", "failed to close ...") :
         QString::null;
 
     Assert (!type.isNull());

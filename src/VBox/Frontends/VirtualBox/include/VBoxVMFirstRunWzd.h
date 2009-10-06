@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2006-2008 Sun Microsystems, Inc.
+ * Copyright (C) 2008-2009 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -23,13 +23,16 @@
 #ifndef __VBoxVMFirstRunWzd_h__
 #define __VBoxVMFirstRunWzd_h__
 
+/* Local includes */
 #include "QIAbstractWizard.h"
 #include "VBoxVMFirstRunWzd.gen.h"
 #include "COMDefs.h"
-#include "QIWidgetValidator.h"
 #include "QIWithRetranslateUI.h"
 
-class VBoxVMFirstRunWzd : public QIWithRetranslateUI<QIAbstractWizard>,
+/* Local forwardes */
+class QIWidgetValidator;
+
+class VBoxVMFirstRunWzd : public QIWithRetranslateUI <QIAbstractWizard>,
                           public Ui::VBoxVMFirstRunWzd
 {
     Q_OBJECT;
@@ -45,19 +48,16 @@ protected:
 private slots:
 
     void accept();
-    void revalidate (QIWidgetValidator *aWval);
+    void revalidate (QIWidgetValidator *aValidator);
     void mediaTypeChanged();
-    void mediaSourceChanged();
     void openMediaManager();
-    void enableNext (const QIWidgetValidator *aWval);
+    void enableNext (const QIWidgetValidator *aValidator);
     void onPageShow();
 
 private:
 
-    QIWidgetValidator         *mWvalType;
-    CMachine                   mMachine;
-    QVector <CMedium>          mHostDVDs;
-    QVector <CMedium>          mHostFloppys;
+    QIWidgetValidator *mValidator;
+    CMachine           mMachine;
 };
 
 #endif // __VBoxVMFirstRunWzd_h__

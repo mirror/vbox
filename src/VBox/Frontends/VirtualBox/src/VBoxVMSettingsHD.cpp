@@ -777,7 +777,7 @@ void AttachmentItem::cache()
 
     /* Cache medium information */
     mAttName = medium.name (!mAttIsShowDiffs);
-    mAttTip = medium.toolTipCheckRO (!mAttIsShowDiffs);
+    mAttTip = medium.toolTipCheckRO (!mAttIsShowDiffs, mAttDeviceType != KDeviceType_HardDisk);
     mAttPixmap = medium.iconCheckRO (!mAttIsShowDiffs);
     mAttIsHostDrive = medium.isHostDrive();
 

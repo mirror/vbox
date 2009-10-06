@@ -2,7 +2,7 @@
  <comment>
  VBox frontends: Qt4 GUI ("VirtualBox"):
 
- Copyright (C) 2008 Sun Microsystems, Inc.
+ Copyright (C) 2008-2009 Sun Microsystems, Inc.
 
  This file is part of VirtualBox Open Source Edition (OSE), as
  available from http://www.virtualbox.org. This file is free software;
@@ -438,61 +438,19 @@
              <property name="title" >
               <string>Media Source</string>
              </property>
-             <layout class="QVBoxLayout" >
+             <layout class="QHBoxLayout" >
               <property name="topMargin" >
                <number>4</number>
               </property>
               <item>
-               <layout class="QHBoxLayout" >
-                <item>
-                 <widget class="QRadioButton" name="mRbHost" >
-                  <property name="text" >
-                   <string>&amp;Host Drive</string>
-                  </property>
-                 </widget>
-                </item>
-                <item>
-                 <widget class="QComboBox" name="mCbHost" >
-                  <property name="sizeAdjustPolicy" >
-                   <enum>QComboBox::AdjustToContentsOnFirstShow</enum>
-                  </property>
-                 </widget>
-                </item>
-                <item>
-                 <spacer>
-                  <property name="orientation" >
-                   <enum>Qt::Horizontal</enum>
-                  </property>
-                  <property name="sizeHint" >
-                   <size>
-                    <width>40</width>
-                    <height>5</height>
-                   </size>
-                  </property>
-                 </spacer>
-                </item>
-               </layout>
+               <widget class="VBoxMediaComboBox" name="mCbMedia" />
               </item>
               <item>
-               <widget class="QRadioButton" name="mRbImage" >
-                <property name="text" >
-                 <string>&amp;Image File</string>
+               <widget class="QToolButton" name="mTbVmm" >
+                <property name="icon" >
+                 <iconset resource="../VirtualBox1.qrc" >:/select_file_16px.png</iconset>
                 </property>
                </widget>
-              </item>
-              <item>
-               <layout class="QHBoxLayout" >
-                <item>
-                 <widget class="VBoxMediaComboBox" name="mCbImage" />
-                </item>
-                <item>
-                 <widget class="QToolButton" name="mTbVmm" >
-                  <property name="icon" >
-                   <iconset resource="../VirtualBox1.qrc" >:/select_file_16px.png</iconset>
-                  </property>
-                 </widget>
-                </item>
-               </layout>
               </item>
              </layout>
             </widget>
@@ -720,12 +678,7 @@
               </size>
              </property>
              <property name="text" >
-              <string>&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
-p, li { white-space: pre-wrap; }
-&lt;/style>&lt;/head>&lt;body style=" font-family:'Arial'; font-size:9pt; font-weight:400; font-style:normal;">
-&lt;p style=" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">If the above is correct, press the &lt;span style=" font-weight:600;">Finish&lt;/span> button. Once you press it, the selected media will be temporarily mounted on the virtual machine and the machine will start execution.&lt;/p>
-&lt;p style=" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">Please note that when you close the virtual machine, the specified media will be automatically unmounted and the boot device will be set back to the first hard disk.&lt;/p>
-&lt;p style=" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">Depending on the type of the setup program, you may need to manually unmount (eject) the media after the setup program reboots the virtual machine, to prevent the installation process from starting again. You can do this by selecting the corresponding &lt;span style=" font-weight:600;">Unmount...&lt;/span> action in the &lt;span style=" font-weight:600;">Devices&lt;/span> menu&lt;span style=" font-weight:600;">.&lt;/span>&lt;/p>&lt;/body>&lt;/html></string>
+              <string>&lt;p>If the above is correct, press the &lt;b>Finish&lt;/b> button. Once you press it, the selected media will be temporarily mounted on the virtual machine and the machine will start execution.&lt;/p>&lt;p>Please note that when you close the virtual machine, the specified media will be automatically unmounted and the boot device will be set back to the first hard disk.&lt;/p>&lt;p>Depending on the type of the setup program, you may need to manually unmount (eject) the media after the setup program reboots the virtual machine, to prevent the installation process from starting again. You can do this by selecting the corresponding &lt;b>Unmount...&lt;/b> action in the &lt;b>Devices&lt;/b> menu.&lt;/p></string>
              </property>
              <property name="alignment" >
               <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>

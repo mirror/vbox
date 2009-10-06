@@ -78,7 +78,7 @@ void VBoxMedium::refresh()
 
     mIsHostDrive = mMedium.isNull() ? false : mMedium.GetHostDrive();
 
-    mName = mMedium.isNull() ? VBoxGlobal::tr ("Not Set", "medium") :
+    mName = mMedium.isNull() ? VBoxGlobal::tr ("Empty", "medium") :
             !mIsHostDrive ? mMedium.GetName() :
             VBoxGlobal::tr ("Host Drive '%1'", "medium").arg (QDir::toNativeSeparators (mMedium.GetLocation()));
 
@@ -194,12 +194,7 @@ void VBoxMedium::refresh()
     }
 
     /* Compose the tooltip */
-    if (mMedium.isNull())
-    {
-        mToolTip = VBoxGlobal::tr ("<nobr><b>No&nbsp;Medium&nbsp;Available</b></nobr><br>"
-                                   "Use the Virtual Media Manager to add medium of the corresponding type.");
-    }
-    else
+    if (!mMedium.isNull())
     {
         mToolTip = QString ("<nobr><b>%1</b></nobr>").arg (mIsHostDrive ? mName : mLocation);
 
@@ -273,17 +268,28 @@ VBoxMedium &VBoxMedium::root() const
  * @param aCheckRO  @c true to perform the #readOnly() check and add a notice
  *                  accordingly.
  */
-QString VBoxMedium::toolTip (bool aNoDiffs /*= false*/, bool aCheckRO /*= false*/) const
+QString VBoxMedium::toolTip (bool aNoDiffs /*= false*/, bool aCheckRO /*= false*/, bool aNullAllowed /*= false*/) const
 {
-    unconst (this)->checkNoDiffs (aNoDiffs);
+    QString tip;
 
-    QString tip = aNoDiffs ? mNoDiffs.toolTip : mToolTip;
+    if (mMedium.isNull())
+    {
+        tip = aNullAllowed ? VBoxGlobal::tr ("<nobr><b>Not&nbsp;Set</b></nobr><br>"
+                                             "Required virtual image or host-drive could be mounted at runtime.") :
+                             VBoxGlobal::tr ("<nobr><b>Not&nbsp;Available</b></nobr><br>"
+                                             "Use the Virtual Media Manager to add image of the corresponding type.");
+    }
+    else
+    {
+        unconst (this)->checkNoDiffs (aNoDiffs);
 
-    if (aCheckRO && mIsReadOnly)
-        tip += VBoxGlobal::tr (
-            "<hr><img src=%1/>&nbsp;Attaching this hard disk will "
-            "be performed indirectly using a newly created "
-            "differencing hard disk.", "medium").arg (":/new_16px.png");
+        tip = aNoDiffs ? mNoDiffs.toolTip : mToolTip;
+
+        if (aCheckRO && mIsReadOnly)
+            tip += VBoxGlobal::tr ("<hr><img src=%1/>&nbsp;Attaching this hard disk will "
+                                   "be performed indirectly using a newly created "
+                                   "differencing hard disk.", "medium").arg (":/new_16px.png");
+    }
 
     return tip;
 }

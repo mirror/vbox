@@ -514,16 +514,6 @@ HRESULT Machine::init(VirtualBox *aParent,
                     for (ULONG slot = 0; slot < RT_ELEMENTS (mSerialPorts); ++slot)
                         mSerialPorts [slot]->applyDefaults (aOsType);
                 }
-
-                /* The default is that the VM has at least one IDE controller. */
-                /** @todo does this forced IDE controller make sense any more? */
-                ComPtr<IStorageController> pController;
-                rc = AddStorageController(Bstr("IDE Controller"), StorageBus_IDE, pController.asOutParam());
-                CheckComRCReturnRC(rc);
-                ComObjPtr<StorageController> ctl;
-                rc = getStorageControllerByName(Bstr("IDE Controller"), ctl, true);
-                CheckComRCReturnRC(rc);
-                ctl->COMSETTER(ControllerType)(StorageControllerType_PIIX4);
             }
 
             /* commit all changes made during the initialization */

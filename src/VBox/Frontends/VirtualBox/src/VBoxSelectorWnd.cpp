@@ -916,7 +916,7 @@ void VBoxSelectorWnd::vmDelete (const QString &aUuid /*= QUuid_null*/)
                 if (!machine.isOk())
                 {
                     CStorageController ctl = machine.GetStorageControllerByName(ctlName);
-                    vboxProblem().cannotDetachHardDisk (this, machine,
+                    vboxProblem().cannotDetachDevice (this, machine, VBoxDefs::MediumType_HardDisk,
                         vboxGlobal().getMedium (CMedium (hda.GetMedium())).location(),
                         ctl.GetBus(), hda.GetPort(), hda.GetDevice());
                 }

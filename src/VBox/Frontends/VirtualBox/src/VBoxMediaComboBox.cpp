@@ -294,7 +294,7 @@ void VBoxMediaComboBox::appendItem (const VBoxMedium &aMedium)
     }
 
     mMedia.append (Medium (aMedium.id(), aMedium.location(),
-                           aMedium.toolTipCheckRO (!mShowDiffs)));
+                           aMedium.toolTipCheckRO (!mShowDiffs, mShowNullItem && mType != VBoxDefs::MediumType_HardDisk)));
 
     insertItem (count(), aMedium.iconCheckRO (!mShowDiffs),
                 aMedium.details (!mShowDiffs));
@@ -306,7 +306,7 @@ void VBoxMediaComboBox::replaceItem (int aIndex, const VBoxMedium &aMedium)
 
     mMedia [aIndex].id = aMedium.id();
     mMedia [aIndex].location = aMedium.location();
-    mMedia [aIndex].toolTip = aMedium.toolTipCheckRO (!mShowDiffs);
+    mMedia [aIndex].toolTip = aMedium.toolTipCheckRO (!mShowDiffs, mShowNullItem && mType != VBoxDefs::MediumType_HardDisk);
 
     setItemText (aIndex, aMedium.details (!mShowDiffs));
     setItemIcon (aIndex, aMedium.iconCheckRO (!mShowDiffs));
