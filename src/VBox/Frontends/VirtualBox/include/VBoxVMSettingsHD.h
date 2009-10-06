@@ -61,44 +61,53 @@ public:
 
     enum PixmapType
     {
-        InvalidPixmap      = -1,
+        InvalidPixmap            = -1,
 
-        AddControllerEn    =  0,
-        AddControllerDis   =  1,
-        DelControllerEn    =  2,
-        DelControllerDis   =  3,
+        ControllerAddEn          =  0,
+        ControllerAddDis         =  1,
+        ControllerDelEn          =  2,
+        ControllerDelDis         =  3,
 
-        AddAttachmentEn    =  4,
-        AddAttachmentDis   =  5,
-        DelAttachmentEn    =  6,
-        DelAttachmentDis   =  7,
+        AttachmentAddEn          =  4,
+        AttachmentAddDis         =  5,
+        AttachmentDelEn          =  6,
+        AttachmentDelDis         =  7,
 
-        IDEController      =  8,
-        IDEExpand          =  9,
-        IDECollapse        = 10,
-        SATAController     = 11,
-        SATAExpand         = 12,
-        SATACollapse       = 13,
-        SCSIController     = 14,
-        SCSIExpand         = 15,
-        SCSICollapse       = 16,
-        FloppyController   = 17,
-        FloppyExpand       = 18,
-        FloppyCollapse     = 19,
+        IDEControllerNormal      =  8,
+        IDEControllerExpand      =  9,
+        IDEControllerCollapse    = 10,
+        SATAControllerNormal     = 11,
+        SATAControllerExpand     = 12,
+        SATAControllerCollapse   = 13,
+        SCSIControllerNormal     = 14,
+        SCSIControllerExpand     = 15,
+        SCSIControllerCollapse   = 16,
+        FloppyControllerNormal   = 17,
+        FloppyControllerExpand   = 18,
+        FloppyControllerCollapse = 19,
 
-        HDAttachmentEn     = 20,
-        CDAttachmentEn     = 21,
-        FDAttachmentEn     = 22,
+        IDEControllerAddEn       = 20,
+        IDEControllerAddDis      = 21,
+        SATAControllerAddEn      = 22,
+        SATAControllerAddDis     = 23,
+        SCSIControllerAddEn      = 24,
+        SCSIControllerAddDis     = 25,
+        FloppyControllerAddEn    = 26,
+        FloppyControllerAddDis   = 27,
 
-        HDAttachmentAddEn  = 23,
-        HDAttachmentAddDis = 24,
-        CDAttachmentAddEn  = 25,
-        CDAttachmentAddDis = 26,
-        FDAttachmentAddEn  = 27,
-        FDAttachmentAddDis = 28,
+        HDAttachmentNormal       = 28,
+        CDAttachmentNormal       = 29,
+        FDAttachmentNormal       = 30,
 
-        VMMEn              = 29,
-        VMMDis             = 30,
+        HDAttachmentAddEn        = 31,
+        HDAttachmentAddDis       = 32,
+        CDAttachmentAddEn        = 33,
+        CDAttachmentAddDis       = 34,
+        FDAttachmentAddEn        = 35,
+        FDAttachmentAddDis       = 36,
+
+        VMMEn                    = 37,
+        VMMDis                   = 38,
 
         MaxIndex
     };
@@ -255,6 +264,8 @@ public:
     RootItem();
    ~RootItem();
 
+    ULONG childCount (KStorageBus aBus) const;
+
 private:
 
     ItemType rtti() const;
@@ -394,7 +405,10 @@ public:
         R_IsAttachment,
 
         R_ToolTipType,
-        R_IsMoreControllersPossible,
+        R_IsMoreIDEControllersPossible,
+        R_IsMoreSATAControllersPossible,
+        R_IsMoreSCSIControllersPossible,
+        R_IsMoreFloppyControllersPossible,
         R_IsMoreAttachmentsPossible,
 
         R_CtrName,
@@ -537,7 +551,10 @@ private slots:
     void addFloppyController();
     void delController();
 
-    void addAttachment (KDeviceType aDeviceType = KDeviceType_Null);
+    void addAttachment();
+    void addHDAttachment();
+    void addCDAttachment();
+    void addFDAttachment();
     void delAttachment();
 
     void getInformation();
@@ -561,6 +578,9 @@ private slots:
 
 private:
 
+    void addControllerWrapper (const QString &aName, KStorageBus aBus, KStorageControllerType aType);
+    void addAttachmentWrapper (KDeviceType aDevice);
+
     QString getWithNewHDWizard();
     QString getWithMediaManager (VBoxDefs::MediumType aMediumType);
 
@@ -580,6 +600,9 @@ private:
     QAction *mAddFloppyCtrAction;
     QAction *mDelCtrAction;
     QAction *mAddAttAction;
+    QAction *mAddHDAttAction;
+    QAction *mAddCDAttAction;
+    QAction *mAddFDAttAction;
     QAction *mDelAttAction;
 
     bool mIsLoadingInProgress;
