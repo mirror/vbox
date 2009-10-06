@@ -149,7 +149,7 @@ int handleSnapshot(HandlerArg *a)
                     if (SUCCEEDED(rc))
                         CHECK_ERROR_BREAK(console, Resume());
                     else
-                        console->Pause();
+                        console->Resume();
                 }
             }
         }
