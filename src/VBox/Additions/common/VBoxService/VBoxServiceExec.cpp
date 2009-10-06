@@ -136,8 +136,15 @@ static int VBoxServiceExecReadHostProp(const char *pszPropName, char **ppszValue
     size_t  cbBuf = _1K;
     void   *pvBuf = NULL;
     int     rc;
-
     *ppszValue = NULL;
+
+    char *pszPropNameUTF8;
+    rc = RTStrCurrentCPToUtf8(&pszPropNameUTF8, pszPropName);
+    if (RT_FAILURE(rc))
+    {
+        VBoxServiceError("Exec: Failed to convert property name \"%s\" to UTF-8!\n", pszPropName);
+        return rc;
+    }
 
     for (unsigned cTries = 0; cTries < 10; cTries++)
     {
@@ -155,7 +162,7 @@ static int VBoxServiceExecReadHostProp(const char *pszPropName, char **ppszValue
         char    *pszValue;
         char    *pszFlags;
         uint64_t uTimestamp;
-        rc = VbglR3GuestPropRead(g_uExecGuestPropSvcClientID, pszPropName,
+        rc = VbglR3GuestPropRead(g_uExecGuestPropSvcClientID, pszPropNameUTF8,
                                  pvBuf, cbBuf,
                                  &pszValue, &uTimestamp, &pszFlags, NULL);
         if (RT_FAILURE(rc))
@@ -199,8 +206,8 @@ static int VBoxServiceExecReadHostProp(const char *pszPropName, char **ppszValue
             *puTimestamp = uTimestamp;
         break; /* done */
     }
-
     RTMemFree(pvBuf);
+    RTStrFree(pszPropNameUTF8);
     return rc;
 }
 
@@ -398,9 +405,9 @@ DECLCALLBACK(int) VBoxServiceExecWorker(bool volatile *pfShutdown)
                                     /*
                                      * Store the result in Set return value so the host knows what happend.
                                      */
-                                    rc = VbglR3GuestPropWriteValueF(g_uExecGuestPropSvcClientID,
-                                                                    "/VirtualBox/HostGuest/SysprepRet",
-                                                                    "%d", Status.iStatus);
+                                    rc = VBoxServiceWritePropF(g_uExecGuestPropSvcClientID,
+                                                               "/VirtualBox/HostGuest/SysprepRet",
+                                                               "%d", Status.iStatus);
                                     if (RT_FAILURE(rc))
                                         VBoxServiceError("Exec: Failed to write SysprepRet: rc=%Rrc\n", rc);
                                 }
@@ -445,7 +452,7 @@ DECLCALLBACK(int) VBoxServiceExecWorker(bool volatile *pfShutdown)
              */
             if (rc != VERR_NOT_FOUND)
             {
-                rc = VbglR3GuestPropWriteValueF(g_uExecGuestPropSvcClientID, "/VirtualBox/HostGuest/SysprepVBoxRC", "%d", rc);
+                rc = VBoxServiceWritePropF(g_uExecGuestPropSvcClientID, "/VirtualBox/HostGuest/SysprepVBoxRC", "%d", rc);
                 if (RT_FAILURE(rc))
                     VBoxServiceError("Exec: Failed to write SysprepVBoxRC: rc=%Rrc\n", rc);
             }

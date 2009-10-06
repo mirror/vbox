@@ -147,12 +147,12 @@ extern int VBoxServiceWinInstall(void);
 extern int VBoxServiceWinUninstall(void);
 #ifdef VBOX_WITH_GUEST_PROPS
 /** Detects wheter a user is logged on based on the enumerated processes. */
-extern BOOL VboxServiceVMInfoWinIsLoggedIn(VBOXSERVICEVMINFOUSER* a_pUserInfo,
+extern BOOL VBoxServiceVMInfoWinIsLoggedIn(VBOXSERVICEVMINFOUSER* a_pUserInfo,
                                            PLUID a_pSession,
                                            PLUID a_pLuid,
                                            DWORD a_dwNumOfProcLUIDs);
 /** Gets logon user IDs from enumerated processes. */
-extern DWORD VboxServiceVMInfoWinGetLUIDsFromProcesses(PLUID *ppLuid);
+extern DWORD VBoxServiceVMInfoWinGetLUIDsFromProcesses(PLUID *ppLuid);
 #endif /* VBOX_WITH_GUEST_PROPS */
 #endif /* RT_OS_WINDOWS */
 
