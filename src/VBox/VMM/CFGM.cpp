@@ -339,6 +339,34 @@ VMMR3DECL(size_t) CFGMR3GetNameLen(PCFGMNODE pCur)
 
 
 /**
+ * Compares two names.
+ *
+ * @returns Similar to memcpy.
+ * @param   pszName1            The first name.
+ * @param   cchName1            The length of the first name.
+ * @param   pszName2            The second name.
+ * @param   cchName2            The length of the second name.
+ */
+DECLINLINE(int) cfgmR3CompareNames(const char *pszName1, size_t cchName1, const char *pszName2, size_t cchName2)
+{
+    int iDiff;
+    if (cchName1 <= cchName2)
+    {
+        iDiff = memcmp(pszName1, pszName2, cchName1);
+        if (!iDiff && cchName1 < cchName2)
+            iDiff = -1;
+    }
+    else
+    {
+        iDiff = memcmp(pszName1, pszName2, cchName2);
+        if (!iDiff)
+            iDiff = 1;
+    }
+    return iDiff;
+}
+
+
+/**
  * Validates that the child nodes are within a set of valid names.
  *
  * @returns true if all names are found in pszzAllowed.
@@ -1030,7 +1058,7 @@ static int cfgmR3ResolveNode(PCFGMNODE pNode, const char *pszPath, PCFGMNODE *pp
                 pszNext = strchr(pszPath,  '\0');
             RTUINT cchName = pszNext - pszPath;
 
-            /* search child list. */
+            /* search child list. */ /** @todo the list is ordered now, consider optimizing the search. */
             pChild = pNode->pFirstChild;
             for ( ; pChild; pChild = pChild->pNext)
                 if (    pChild->cchName == cchName
@@ -1070,6 +1098,7 @@ static int cfgmR3ResolveLeaf(PCFGMNODE pNode, const char *pszName, PCFGMLEAF *pp
         PCFGMLEAF   pLeaf = pNode->pFirstLeaf;
         while (pLeaf)
         {
+            /** @todo the list is ordered now, consider optimizing the search. */
             if (    cchName == pLeaf->cchName
                 && !memcmp(pszName, pLeaf->szName, cchName) )
             {
@@ -1251,17 +1280,20 @@ VMMR3DECL(int) CFGMR3InsertNode(PCFGMNODE pNode, const char *pszName, PCFGMNODE 
             /*
              * Check if already exists and find last node in chain.
              */
-            size_t cchName = strlen(pszName);
-            PCFGMNODE pPrev = pNode->pFirstChild;
-            if (pPrev)
+            size_t    cchName = strlen(pszName);
+            PCFGMNODE pPrev   = NULL;
+            PCFGMNODE pNext   = pNode->pFirstChild;
+            if (pNext)
             {
-                for (;; pPrev = pPrev->pNext)
+                for (; pNext; pPrev = pNext, pNext = pNext->pNext)
                 {
-                    if (    cchName == pPrev->cchName
-                        &&  !memcmp(pszName, pPrev->szName, cchName))
-                        return VERR_CFGM_NODE_EXISTS;
-                    if (!pPrev->pNext)
+                    int iDiff = cfgmR3CompareNames(pszName, cchName, pNext->szName, pNext->cchName);
+                    if (iDiff <= 0)
+                    {
+                        if (!iDiff)
+                            return VERR_CFGM_NODE_EXISTS;
                         break;
+                    }
                 }
             }
 
@@ -1282,12 +1314,15 @@ VMMR3DECL(int) CFGMR3InsertNode(PCFGMNODE pNode, const char *pszName, PCFGMNODE 
                 /*
                  * Insert into child list.
                  */
-                pNew->pNext         = NULL;
                 pNew->pPrev         = pPrev;
                 if (pPrev)
                     pPrev->pNext    = pNew;
                 else
                     pNode->pFirstChild = pNew;
+                pNew->pNext         = pNext;
+                if (pNext)
+                    pNext->pPrev    = pNew;
+
                 if (ppChild)
                     *ppChild = pNew;
                 rc = VINF_SUCCESS;
@@ -1387,17 +1422,20 @@ static int cfgmR3InsertLeaf(PCFGMNODE pNode, const char *pszName, PCFGMLEAF *ppL
             /*
              * Check if already exists and find last node in chain.
              */
-            size_t cchName = strlen(pszName);
-            PCFGMLEAF pPrev = pNode->pFirstLeaf;
-            if (pPrev)
+            size_t    cchName  = strlen(pszName);
+            PCFGMLEAF pPrev    = NULL;
+            PCFGMLEAF pNext    = pNode->pFirstLeaf;
+            if (pNext)
             {
-                for (;; pPrev = pPrev->pNext)
+                for (; pNext; pPrev = pNext, pNext = pNext->pNext)
                 {
-                    if (    cchName == pPrev->cchName
-                        &&  !memcmp(pszName, pPrev->szName, cchName))
-                        return VERR_CFGM_LEAF_EXISTS;
-                    if (!pPrev->pNext)
+                    int iDiff = cfgmR3CompareNames(pszName, cchName, pNext->szName, pNext->cchName);
+                    if (iDiff <= 0)
+                    {
+                        if (!iDiff)
+                            return VERR_CFGM_LEAF_EXISTS;
                         break;
+                    }
                 }
             }
 
@@ -1413,12 +1451,15 @@ static int cfgmR3InsertLeaf(PCFGMNODE pNode, const char *pszName, PCFGMLEAF *ppL
                 /*
                  * Insert into child list.
                  */
-                pNew->pNext         = NULL;
                 pNew->pPrev         = pPrev;
                 if (pPrev)
                     pPrev->pNext    = pNew;
                 else
                     pNode->pFirstLeaf = pNew;
+                pNew->pNext         = pNext;
+                if (pNext)
+                    pNext->pPrev    = pNew;
+
                 *ppLeaf = pNew;
                 rc = VINF_SUCCESS;
             }
