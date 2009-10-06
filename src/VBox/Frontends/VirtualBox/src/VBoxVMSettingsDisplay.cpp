@@ -163,6 +163,10 @@ void VBoxVMSettingsDisplay::setValidator (QIWidgetValidator *aVal)
     mValidator = aVal;
     connect (mCb3D, SIGNAL (stateChanged (int)),
              mValidator, SLOT (revalidate()));
+#ifdef VBOX_WITH_VIDEOHWACCEL
+    connect (mCb2DVideo, SIGNAL (stateChanged (int)),
+             mValidator, SLOT (revalidate()));
+#endif
     connect (mCbVRDP, SIGNAL (toggled (bool)),
              mValidator, SLOT (revalidate()));
     connect (mLeVRDPPort, SIGNAL (textChanged (const QString&)),
@@ -184,6 +188,20 @@ bool VBoxVMSettingsDisplay::revalidate (QString &aWarning, QString & /* aTitle *
             .arg (vboxGlobal().formatSize (needBytes, 0, VBoxDefs::FormatSize_RoundUp));
         return true;
     }
+#ifdef VBOX_WITH_VIDEOHWACCEL
+    if (mCb2DVideo->isChecked())
+    {
+        quint64 needBytesWith2D = needBytes + VBoxGlobal::required2DOffscreenVideoMemory();
+        if ((quint64) mSlMemory->value() * _1M < needBytesWith2D)
+        {
+            aWarning = tr (
+                "you have assigned less than <b>%1</b> for video memory which is "
+                "the minimum amount required for the HD Video to be played efficiently.")
+                .arg (vboxGlobal().formatSize (needBytesWith2D, 0, VBoxDefs::FormatSize_RoundUp));
+            return true;
+        }
+    }
+#endif
 
     /* 3D Acceleration support test */
     // TODO : W8 for NaN //

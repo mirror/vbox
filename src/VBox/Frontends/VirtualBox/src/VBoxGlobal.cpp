@@ -4149,6 +4149,15 @@ bool VBoxGlobal::isAcceleration2DVideoAvailable()
 {
     return VBoxQGLOverlay::isAcceleration2DVideoAvailable();
 }
+
+/** additional video memory required for the best 2D support performance
+ *  total amount of VRAM required is thus calculated as requiredVideoMemory + required2DOffscreenVideoMemory  */
+/* static */
+quint64 VBoxGlobal::required2DOffscreenVideoMemory()
+{
+    return VBoxQGLOverlay::required2DOffscreenVideoMemory();
+}
+
 #endif
 
 // Public slots
