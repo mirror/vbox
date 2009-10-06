@@ -772,13 +772,10 @@ public:
 
 #ifdef VBOX_WITH_VIDEOHWACCEL
     static bool isAcceleration2DVideoAvailable();
-//    VBoxDefs::RenderMode vmAcceleration2DVideoRenderMode() {
-//#if 0
-//        return VBoxDefs::QGLOverlayMode;
-//#else
-//        return VBoxDefs::QGLMode;
-//#endif
-//        }
+
+    /** additional video memory required for the best 2D support performance
+     *  total amount of VRAM required is thus calculated as requiredVideoMemory + required2DOffscreenVideoMemory  */
+    static quint64 required2DOffscreenVideoMemory();
 #endif
 
 signals:

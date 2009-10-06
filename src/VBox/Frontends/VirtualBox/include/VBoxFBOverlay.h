@@ -1235,6 +1235,10 @@ public:
 
     static bool isAcceleration2DVideoAvailable();
 
+    /** additional video memory required for the best 2D support performance
+     *  total amount of VRAM required is thus calculated as requiredVideoMemory + required2DOffscreenVideoMemory  */
+    static quint64 required2DOffscreenVideoMemory();
+
     /* not supposed to be called by clients */
     int vhwaLoadExec(struct SSMHANDLE * pSSM, uint32_t u32Version);
     void vhwaSaveExec(struct SSMHANDLE * pSSM);

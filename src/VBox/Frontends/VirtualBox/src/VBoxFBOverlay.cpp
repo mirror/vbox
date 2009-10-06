@@ -5792,6 +5792,18 @@ bool VBoxQGLOverlay::isAcceleration2DVideoAvailable()
     return vboxVHWASupportedInternal();
 }
 
+/** additional video memory required for the best 2D support performance
+ *  total amount of VRAM required is thus calculated as requiredVideoMemory + required2DOffscreenVideoMemory  */
+/* static */
+quint64 VBoxQGLOverlay::required2DOffscreenVideoMemory()
+{
+    /* HDTV == 1920x1080 ~ 2M
+     * for the 4:2:2 formats each pixel is 2Bytes
+     * so each frame may be 4MB
+     * so for triple-buffering we would need 12 MB */
+    return _1M * 12;
+}
+
 VBoxVHWACommandElement * VBoxQGLOverlay::processCmdList(VBoxVHWACommandElement * pCmd)
 {
     VBoxVHWACommandElement * pCur;
