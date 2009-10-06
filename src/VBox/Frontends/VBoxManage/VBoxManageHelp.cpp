@@ -19,8 +19,9 @@
  * additional information or have any questions.
  */
 
-#include <iprt/stream.h>
+#include <iprt/ctype.h>
 #include <iprt/getopt.h>
+#include <iprt/stream.h>
 
 #include "VBoxManage.h"
 
@@ -334,7 +335,7 @@ void printUsage(USAGECATEGORY u64Cmd)
     if (u64Cmd & USAGE_SNAPSHOT)
     {
         RTPrintf("VBoxManage snapshot         <uuid>|<name>\n"
-                 "                            take <name> [--description <desc>] |\n"
+                 "                            take <name> [--description <desc>] [--pause] |\n"
                  "                            discard <uuid>|<name> |\n"
                  "                            discardcurrent --state|--all |\n"
                  "                            edit <uuid>|<name>|--current\n"
@@ -585,6 +586,40 @@ int errorSyntax(USAGECATEGORY u64Cmd, const char *pszFormat, ...)
              "Syntax error: %N\n", pszFormat, &args);
     va_end(args);
     return 1;
+}
+
+/**
+ * errorSyntax for RTGetOpt users.
+ *
+ * @returns 1.
+ *
+ * @param   fUsageCategory  The usage category of the command.
+ * @param   rc              The RTGetOpt return code.
+ * @param   pValueUnion     The value union.
+ */
+int errorGetOpt(USAGECATEGORY fUsageCategory, int rc, union RTGETOPTUNION const *pValueUnion)
+{
+    showLogo(); // show logo even if suppressed
+#ifndef VBOX_ONLY_DOCS
+    if (g_fInternalMode)
+        printUsageInternal(fUsageCategory);
+    else
+        printUsage(fUsageCategory);
+#endif /* !VBOX_ONLY_DOCS */
+
+    if (rc == VINF_GETOPT_NOT_OPTION)
+        return RTPrintf("error: Invalid parameter '%s'", pValueUnion->psz);
+    if (rc > 0)
+    {
+        if (RT_C_IS_PRINT(rc))
+            return RTPrintf("error: Invalid option -%c", rc);
+        return RTPrintf("error: Invalid option case %i", rc);
+    }
+    if (rc == VERR_GETOPT_UNKNOWN_OPTION)
+        return RTPrintf("error: unknown option: %s\n", pValueUnion->psz);
+    if (pValueUnion->pDef)
+        return RTPrintf("error: %s: %Rrs", pValueUnion->pDef->pszLong, rc);
+    return RTPrintf("error: %Rrs", rc);
 }
 
 /**

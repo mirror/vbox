@@ -139,6 +139,7 @@ extern bool g_fDetailedProgress;        // in VBoxManage.cpp
 /* VBoxManageHelp.cpp */
 void printUsage(USAGECATEGORY u64Cmd);
 int errorSyntax(USAGECATEGORY u64Cmd, const char *pszFormat, ...);
+int errorGetOpt(USAGECATEGORY u64Cmd, int rc, union RTGETOPTUNION const *pValueUnion);
 int errorArgument(const char *pszFormat, ...);
 
 void printUsageInternal(USAGECATEGORY u64Cmd);
