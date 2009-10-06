@@ -9500,9 +9500,10 @@ void SessionMachine::discardSnapshotHandler(DiscardSnapshotTask &aTask)
                 const Guid *pReplaceMachineId = replaceHd->getFirstMachineBackrefId();
                 Assert(pReplaceMachineId  && *pReplaceMachineId == mData->mUuid);
 
+                Guid snapshotId;
                 const Guid *pSnapshotId = replaceHd->getFirstMachineBackrefSnapshotId();
-                Assert(pSnapshotId);
-                Guid snapshotId = *pSnapshotId;
+                if (pSnapshotId)
+                    snapshotId = *pSnapshotId;
 
                 HRESULT rc2 = S_OK;
 
