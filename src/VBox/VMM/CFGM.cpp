@@ -339,34 +339,6 @@ VMMR3DECL(size_t) CFGMR3GetNameLen(PCFGMNODE pCur)
 
 
 /**
- * Compares two names.
- *
- * @returns Similar to memcpy.
- * @param   pszName1            The first name.
- * @param   cchName1            The length of the first name.
- * @param   pszName2            The second name.
- * @param   cchName2            The length of the second name.
- */
-DECLINLINE(int) cfgmR3CompareNames(const char *pszName1, size_t cchName1, const char *pszName2, size_t cchName2)
-{
-    int iDiff;
-    if (cchName1 <= cchName2)
-    {
-        iDiff = memcmp(pszName1, pszName2, cchName1);
-        if (!iDiff && cchName1 < cchName2)
-            iDiff = -1;
-    }
-    else
-    {
-        iDiff = memcmp(pszName1, pszName2, cchName2);
-        if (!iDiff)
-            iDiff = 1;
-    }
-    return iDiff;
-}
-
-
-/**
  * Validates that the child nodes are within a set of valid names.
  *
  * @returns true if all names are found in pszzAllowed.
@@ -1034,50 +1006,52 @@ VMMR3DECL(int) CFGMR3ConstructDefaultTree(PVM pVM)
  */
 static int cfgmR3ResolveNode(PCFGMNODE pNode, const char *pszPath, PCFGMNODE *ppChild)
 {
-    if (pNode)
+    if (!pNode)
+        return VERR_CFGM_NO_PARENT;
+    PCFGMNODE pChild = NULL;
+    for (;;)
     {
-        PCFGMNODE pChild = NULL;
-        for (;;)
+        /* skip leading slashes. */
+        while (*pszPath == '/')
+            pszPath++;
+
+        /* End of path? */
+        if (!*pszPath)
         {
-            /* skip leading slashes. */
-            while (*pszPath == '/')
-                pszPath++;
-
-            /* End of path? */
-            if (!*pszPath)
-            {
-                if (!pChild)
-                    return VERR_CFGM_INVALID_CHILD_PATH;
-                *ppChild = pChild;
-                return VINF_SUCCESS;
-            }
-
-            /* find end of component. */
-            const char *pszNext = strchr(pszPath, '/');
-            if (!pszNext)
-                pszNext = strchr(pszPath,  '\0');
-            RTUINT cchName = pszNext - pszPath;
-
-            /* search child list. */ /** @todo the list is ordered now, consider optimizing the search. */
-            pChild = pNode->pFirstChild;
-            for ( ; pChild; pChild = pChild->pNext)
-                if (    pChild->cchName == cchName
-                    &&  !memcmp(pszPath, pChild->szName, cchName) )
-                    break;
-
-            /* if not found, we're done. */
             if (!pChild)
-                return VERR_CFGM_CHILD_NOT_FOUND;
-
-            /* next iteration */
-            pNode = pChild;
-            pszPath = pszNext;
+                return VERR_CFGM_INVALID_CHILD_PATH;
+            *ppChild = pChild;
+            return VINF_SUCCESS;
         }
 
-        /* won't get here */
+        /* find end of component. */
+        const char *pszNext = strchr(pszPath, '/');
+        if (!pszNext)
+            pszNext = strchr(pszPath,  '\0');
+        RTUINT cchName = pszNext - pszPath;
+
+        /* search child list. */
+        pChild = pNode->pFirstChild;
+        for ( ; pChild; pChild = pChild->pNext)
+            if (pChild->cchName == cchName)
+            {
+                int iDiff = memcmp(pszPath, pChild->szName, cchName);
+                if (iDiff <= 0)
+                {
+                    if (iDiff != 0)
+                        pChild = NULL;
+                    break;
+                }
+            }
+        if (!pChild)
+            return VERR_CFGM_CHILD_NOT_FOUND;
+
+        /* next iteration */
+        pNode = pChild;
+        pszPath = pszNext;
     }
-    else
-        return VERR_CFGM_NO_PARENT;
+
+    /* won't get here */
 }
 
 
@@ -1091,29 +1065,29 @@ static int cfgmR3ResolveNode(PCFGMNODE pNode, const char *pszPath, PCFGMNODE *pp
  */
 static int cfgmR3ResolveLeaf(PCFGMNODE pNode, const char *pszName, PCFGMLEAF *ppLeaf)
 {
-    int rc;
-    if (pNode)
+    if (!pNode)
+        return VERR_CFGM_NO_PARENT;
+
+    size_t      cchName = strlen(pszName);
+    PCFGMLEAF   pLeaf   = pNode->pFirstLeaf;
+    while (pLeaf)
     {
-        size_t      cchName = strlen(pszName);
-        PCFGMLEAF   pLeaf = pNode->pFirstLeaf;
-        while (pLeaf)
+        if (cchName == pLeaf->cchName)
         {
-            /** @todo the list is ordered now, consider optimizing the search. */
-            if (    cchName == pLeaf->cchName
-                && !memcmp(pszName, pLeaf->szName, cchName) )
+            int iDiff = memcmp(pszName, pLeaf->szName, cchName);
+            if (iDiff <= 0)
             {
+                if (iDiff != 0)
+                    break;
                 *ppLeaf = pLeaf;
                 return VINF_SUCCESS;
             }
-
-            /* next */
-            pLeaf = pLeaf->pNext;
         }
-        rc = VERR_CFGM_VALUE_NOT_FOUND;
+
+        /* next */
+        pLeaf = pLeaf->pNext;
     }
-    else
-        rc = VERR_CFGM_NO_PARENT;
-    return rc;
+    return VERR_CFGM_VALUE_NOT_FOUND;
 }
 
 
@@ -1203,6 +1177,34 @@ VMMR3DECL(int) CFGMR3InsertSubTree(PCFGMNODE pNode, const char *pszName, PCFGMNO
 
 
 /**
+ * Compares two names.
+ *
+ * @returns Similar to memcpy.
+ * @param   pszName1            The first name.
+ * @param   cchName1            The length of the first name.
+ * @param   pszName2            The second name.
+ * @param   cchName2            The length of the second name.
+ */
+DECLINLINE(int) cfgmR3CompareNames(const char *pszName1, size_t cchName1, const char *pszName2, size_t cchName2)
+{
+    int iDiff;
+    if (cchName1 <= cchName2)
+    {
+        iDiff = memcmp(pszName1, pszName2, cchName1);
+        if (!iDiff && cchName1 < cchName2)
+            iDiff = -1;
+    }
+    else
+    {
+        iDiff = memcmp(pszName1, pszName2, cchName2);
+        if (!iDiff)
+            iDiff = 1;
+    }
+    return iDiff;
+}
+
+
+/**
  * Insert a node.
  *
  * @returns VBox status code.
@@ -1285,7 +1287,7 @@ VMMR3DECL(int) CFGMR3InsertNode(PCFGMNODE pNode, const char *pszName, PCFGMNODE 
             PCFGMNODE pNext   = pNode->pFirstChild;
             if (pNext)
             {
-                for (; pNext; pPrev = pNext, pNext = pNext->pNext)
+                for ( ; pNext; pPrev = pNext, pNext = pNext->pNext)
                 {
                     int iDiff = cfgmR3CompareNames(pszName, cchName, pNext->szName, pNext->cchName);
                     if (iDiff <= 0)
@@ -1427,7 +1429,7 @@ static int cfgmR3InsertLeaf(PCFGMNODE pNode, const char *pszName, PCFGMLEAF *ppL
             PCFGMLEAF pNext    = pNode->pFirstLeaf;
             if (pNext)
             {
-                for (; pNext; pPrev = pNext, pNext = pNext->pNext)
+                for ( ; pNext; pPrev = pNext, pNext = pNext->pNext)
                 {
                     int iDiff = cfgmR3CompareNames(pszName, cchName, pNext->szName, pNext->cchName);
                     if (iDiff <= 0)
