@@ -405,7 +405,7 @@ static int vboxVHWAGlParseSubver(const GLubyte * ver, const GLubyte ** pNext, bo
 
     for(;;++ver)
     {
-        if(*ver >= '0' && *ver < '9')
+        if(*ver >= '0' && *ver <= '9')
         {
             if(!val)
             {
