@@ -44,13 +44,13 @@ int VBoxServiceWritePropF(uint32_t u32ClientId, const char *pszName, const char 
     {
         if (pszValueFormat != NULL)
         {
+            VBoxServiceVerbose(3, "Writing guest property \"%s\"\n", pszNameUTF8);
             va_list va;
             va_start(va, pszValueFormat);
-            VBoxServiceVerbose(3, "Writing guest property \"%s\"=\"%s\"\n", pszNameUTF8, pszValueFormat);
             rc = VbglR3GuestPropWriteValueV(u32ClientId, pszNameUTF8, pszValueFormat, va);
-            if (RT_FAILURE(rc))
-                 VBoxServiceError("Error writing guest property \"%s\"=\"%s\" (rc=%Rrc)\n", pszNameUTF8, pszValueFormat, rc);
             va_end(va);
+            if (RT_FAILURE(rc))
+                 VBoxServiceError("Error writing guest property \"%s\" (rc=%Rrc)\n", pszNameUTF8, rc);
         }
         else
             rc = VbglR3GuestPropWriteValue(u32ClientId, pszNameUTF8, NULL);
