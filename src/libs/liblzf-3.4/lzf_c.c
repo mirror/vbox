@@ -37,6 +37,7 @@
 #include "lzfP.h"
 #ifdef VBOX
 # include "lzf.h" /* need the prototype */
+# include <iprt/types.h> /* need uintptr_t. */
 #endif
 
 #define HSIZE (1 << (HLOG))
@@ -123,10 +124,15 @@ lzf_compress (const void *const in_data, unsigned int in_len,
    * and fails to support both assumptions is windows 64 bit, we make a
    * special workaround for it.
    */
+#ifdef VBOX
+  uintptr_t off;
+#else
+# error "Build config error."
 #if defined (WIN32) && defined (_M_X64)
   unsigned _int64 off; /* workaround for missing POSIX compliance */
 #else
   unsigned long off;
+#endif
 #endif
   unsigned int hval;
   int lit;
