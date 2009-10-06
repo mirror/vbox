@@ -1724,6 +1724,10 @@ void VBoxVMSettingsHD::getFrom (const CMachine &aMachine)
             mStorageModel->setData (attIndex, attachment.GetPassthrough(), StorageModel::R_AttIsPassthrough);
         }
     }
+
+    /* Set the first controller as current if present */
+    if (mStorageModel->rowCount (mStorageModel->root()) > 0)
+        mTwStorageTree->setCurrentIndex (mStorageModel->index (0, 0, mStorageModel->root()));
 }
 
 void VBoxVMSettingsHD::putBackTo()
