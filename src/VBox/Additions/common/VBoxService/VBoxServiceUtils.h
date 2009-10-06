@@ -25,12 +25,11 @@
 #include "VBoxServiceInternal.h"
 
 #ifdef VBOX_WITH_GUEST_PROPS
-int VboxServiceWritePropInt(uint32_t uiClientID, const char *pszKey, int iValue);
-int VboxServiceWriteProp(uint32_t uiClientID, const char *pszKey, const char *pszValue);
+int VBoxServiceWritePropF(uint32_t u32ClientId, const char *pszName, const char *pszValueFormat, ...);
 #endif
 #ifdef RT_OS_WINDOWS
 /** Gets a pre-formatted version string from the VS_FIXEDFILEINFO table. */
-BOOL VboxServiceGetFileVersionString(const char* pszPath, const char* pszFileName, char* pszVersion, UINT uiSize);
+BOOL VBoxServiceGetFileVersionString(const char* pszPath, const char* pszFileName, char* pszVersion, UINT uiSize);
 #endif
 
 #endif

@@ -53,7 +53,7 @@
 
 #ifndef TARGET_NT4
 /* Function GetLUIDsFromProcesses() written by Stefan Kuhr. */
-DWORD VboxServiceVMInfoWinGetLUIDsFromProcesses(PLUID *ppLuid)
+DWORD VBoxServiceVMInfoWinGetLUIDsFromProcesses(PLUID *ppLuid)
 {
     DWORD dwSize, dwSize2, dwIndex ;
     LPDWORD lpdwPIDs ;
@@ -165,7 +165,7 @@ DWORD VboxServiceVMInfoWinGetLUIDsFromProcesses(PLUID *ppLuid)
     return dwSize2;
 }
 
-BOOL VboxServiceVMInfoWinIsLoggedIn(VBOXSERVICEVMINFOUSER* a_pUserInfo,
+BOOL VBoxServiceVMInfoWinIsLoggedIn(VBOXSERVICEVMINFOUSER* a_pUserInfo,
                                     PLUID a_pSession,
                                     PLUID a_pLuid,
                                     DWORD a_dwNumOfProcLUIDs)
@@ -329,7 +329,7 @@ BOOL VboxServiceVMInfoWinIsLoggedIn(VBOXSERVICEVMINFOUSER* a_pUserInfo,
 
 #endif /* TARGET_NT4 */
 
-int VboxServiceWinGetAddsVersion(uint32_t uiClientID)
+int VBoxServiceWinGetAddsVersion(uint32_t uiClientID)
 {
     char szInstDir[_MAX_PATH] = {0};
     char szRev[_MAX_PATH] = {0};
@@ -400,9 +400,9 @@ int VboxServiceWinGetAddsVersion(uint32_t uiClientID)
     }
 
     /* Write information to host. */
-    VboxServiceWriteProp(uiClientID, "GuestAdd/InstallDir", szInstDir);
-    VboxServiceWriteProp(uiClientID, "GuestAdd/Revision", szRev);
-    VboxServiceWriteProp(uiClientID, "GuestAdd/Version", szVer);
+    rc = VBoxServiceWritePropF(uiClientID, "/VirtualBox/GuestAdd/InstallDir", szInstDir);
+    rc = VBoxServiceWritePropF(uiClientID, "/VirtualBox/GuestAdd/Revision", szRev);
+    rc = VBoxServiceWritePropF(uiClientID, "/VirtualBox/GuestAdd/Version", szVer);
 
     if (NULL != hKey)
         RegCloseKey(hKey);
@@ -410,7 +410,7 @@ int VboxServiceWinGetAddsVersion(uint32_t uiClientID)
     return rc;
 }
 
-int VboxServiceWinGetComponentVersions(uint32_t uiClientID)
+int VBoxServiceWinGetComponentVersions(uint32_t uiClientID)
 {
     int rc;
     char szVer[_MAX_PATH] = {0};
@@ -491,9 +491,9 @@ int VboxServiceWinGetComponentVersions(uint32_t uiClientID)
     Assert(pTable);
     while (pTable->pszFileName)
     {
-        rc = VboxServiceGetFileVersionString(pTable->pszFilePath, pTable->pszFileName, szVer, sizeof(szVer));
-        RTStrPrintf(szPropPath, sizeof(szPropPath), "GuestAdd/Components/%s", pTable->pszFileName);
-        VboxServiceWriteProp(uiClientID, szPropPath, szVer);
+        rc = VBoxServiceGetFileVersionString(pTable->pszFilePath, pTable->pszFileName, szVer, sizeof(szVer));
+        RTStrPrintf(szPropPath, sizeof(szPropPath), "/VirtualBox/GuestAdd/Components/%s", pTable->pszFileName);
+        rc = VBoxServiceWritePropF(uiClientID, szPropPath, szVer);
         pTable++;
     }
 
