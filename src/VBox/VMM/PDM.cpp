@@ -659,7 +659,7 @@ static DECLCALLBACK(int) pdmR3Save(PVM pVM, PSSMHANDLE pSSM)
         SSMR3PutStrZ(pSSM, pDevIns->pDevReg->szDeviceName);
         SSMR3PutU32(pSSM, pDevIns->iInstance);
     }
-    return SSMR3PutU32(pSSM, ~0); /* terminator */
+    return SSMR3PutU32(pSSM, UINT32_MAX); /* terminator */
 }
 
 
@@ -818,26 +818,24 @@ static DECLCALLBACK(int) pdmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, 
 
     /*
      * Load the list of devices and verify that they are all there.
-     *
-     * We boldly ASSUME that the order is fixed and that it's a good, this
-     * makes it way easier to validate...
      */
-    uint32_t i = 0;
-    PPDMDEVINS pDevIns = pVM->pdm.s.pDevInstances;
-    for (;; pDevIns = pDevIns->Internal.s.pNextR3, i++)
+    for (PPDMDEVINS pDevIns = pVM->pdm.s.pDevInstances; pDevIns; pDevIns = pDevIns->Internal.s.pNextR3)
+        pDevIns->Internal.s.fIntFlags &= PDMDEVINSINT_FLAGS_FOUND;
+
+    for (uint32_t i = 0; ; i++)
     {
-        /* Get the separator / terminator. */
+        /* Get the sequence number / terminator. */
         uint32_t    u32Sep;
         int rc = SSMR3GetU32(pSSM, &u32Sep);
         if (RT_FAILURE(rc))
             return rc;
-        if (u32Sep == (uint32_t)~0)
+        if (u32Sep == UINT32_MAX)
             break;
         if (u32Sep != i)
             AssertMsgFailedReturn(("Out of seqence. u32Sep=%#x i=%#x\n", u32Sep, i), VERR_SSM_DATA_UNIT_FORMAT_CHANGED);
 
-        /* get the name and instance number. */
-        char szDeviceName[sizeof(pDevIns->pDevReg->szDeviceName)];
+        /* Get the name and instance number. */
+        char szDeviceName[RT_SIZEOFMEMB(PDMDEVREG, szDeviceName)];
         rc = SSMR3GetStrZ(pSSM, szDeviceName, sizeof(szDeviceName));
         if (RT_FAILURE(rc))
             return rc;
@@ -846,33 +844,34 @@ static DECLCALLBACK(int) pdmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, 
         if (RT_FAILURE(rc))
             return rc;
 
-        /* compare */
+        /* Try locate it. */
+        PPDMDEVINS pDevIns;
+        for (pDevIns = pVM->pdm.s.pDevInstances; pDevIns; pDevIns = pDevIns->Internal.s.pNextR3)
+            if (   !strcmp(szDeviceName, pDevIns->pDevReg->szDeviceName)
+                && pDevIns->iInstance == iInstance)
+            {
+                AssertLogRelReturn(!(pDevIns->Internal.s.fIntFlags & PDMDEVINSINT_FLAGS_FOUND), VERR_SSM_DATA_UNIT_FORMAT_CHANGED);
+                pDevIns->Internal.s.fIntFlags |= PDMDEVINSINT_FLAGS_FOUND;
+                break;
+            }
         if (!pDevIns)
         {
             LogRel(("Device '%s'/%d not found in current config\n", szDeviceName, iInstance));
-            if (SSMR3HandleGetAfter(pSSM) != SSMAFTER_DEBUG_IT)
-                AssertFailedReturn(VERR_SSM_LOAD_CONFIG_MISMATCH);
-            break;
-        }
-        if (    strcmp(szDeviceName, pDevIns->pDevReg->szDeviceName)
-            ||  pDevIns->iInstance != iInstance)
-        {
-            LogRel(("u32Sep=%d loaded '%s'/%d  configured '%s'/%d\n",
-                    u32Sep, szDeviceName, iInstance, pDevIns->pDevReg->szDeviceName, pDevIns->iInstance));
             if (SSMR3HandleGetAfter(pSSM) != SSMAFTER_DEBUG_IT)
                 AssertFailedReturn(VERR_SSM_LOAD_CONFIG_MISMATCH);
         }
     }
 
     /*
-     * Too many devices?
+     * Check that no additional devices were configured.
      */
-    if (pDevIns)
-    {
-        LogRel(("Device '%s'/%d not found in saved state\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance));
-        if (SSMR3HandleGetAfter(pSSM) != SSMAFTER_DEBUG_IT)
-            AssertFailedReturn(VERR_SSM_LOAD_CONFIG_MISMATCH);
-    }
+    for (PPDMDEVINS pDevIns = pVM->pdm.s.pDevInstances; pDevIns; pDevIns = pDevIns->Internal.s.pNextR3)
+        if (!(pDevIns->Internal.s.fIntFlags & PDMDEVINSINT_FLAGS_FOUND))
+        {
+            LogRel(("Device '%s'/%d not found in the saved state\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance));
+            if (SSMR3HandleGetAfter(pSSM) != SSMAFTER_DEBUG_IT)
+                AssertFailedReturn(VERR_SSM_LOAD_CONFIG_MISMATCH);
+        }
 
     return VINF_SUCCESS;
 }

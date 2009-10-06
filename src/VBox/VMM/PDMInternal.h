@@ -125,9 +125,16 @@ typedef struct PDMDEVINSINT
     RCPTRTYPE(struct PCIDevice *)   pPciDeviceRC;
     /** RC pointer to associated PCI bus structure. */
     RCPTRTYPE(PPDMPCIBUS)           pPciBusRC;
-    /** Alignment padding. */
-    RTRCPTR                         Alignment1;
+
+    /** Flags, see PDMDEVINSINT_FLAGS_XXX. */
+    uint32_t                        fIntFlags;
 } PDMDEVINSINT;
+
+/** @name PDMDEVINSINT::fIntFlags
+ * @{ */
+/** Used by pdmR3Load to mark device instances it found in the saved state. */
+#define PDMDEVINSINT_FLAGS_FOUND         RT_BIT_32(0)
+/** @} */
 
 
 /**
