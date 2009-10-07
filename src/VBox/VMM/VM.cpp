@@ -1561,22 +1561,27 @@ static DECLCALLBACK(int) vmR3LiveDoStep2(PVM pVM, PSSMHANDLE pSSM)
 
 
 /**
- * Worker for VMR3Save that validates the state and calls SSMR3Save.
+ * Worker for vmR3SaveMigrate that validates the state and calls SSMR3Save or
+ * SSMR3LiveSave.
  *
  * @returns VBox status code.
  *
  * @param   pVM             The VM handle.
- * @param   pszFilename     The name of the save state file.
+ * @param   pszFilename     The name of the file.  NULL if pStreamOps is used.
+ * @param   pStreamOps      The stream methods.  NULL if pszFilename is used.
+ * @param   pvStreamOpsUser The user argument to the stream methods.
  * @param   enmAfter        What to do afterwards.
  * @param   pfnProgress     Progress callback. Optional.
- * @param   pvUser          User argument for the progress callback.
+ * @param   pvProgressUser  User argument for the progress callback.
  * @param   ppSSM           Where to return the saved state handle in case of a
  *                          live snapshot scenario.
  * @thread  EMT
  */
-static DECLCALLBACK(int) vmR3Save(PVM pVM, const char *pszFilename, SSMAFTER enmAfter, PFNVMPROGRESS pfnProgress, void *pvUser, PSSMHANDLE *ppSSM)
+static DECLCALLBACK(int) vmR3Save(PVM pVM, const char *pszFilename, PCSSMSTRMOPS pStreamOps, void *pvStreamOpsUser,
+                                  SSMAFTER enmAfter, PFNVMPROGRESS pfnProgress, void *pvProgressUser, PSSMHANDLE *ppSSM)
 {
-    LogFlow(("vmR3Save: pVM=%p pszFilename=%p:{%s} enmAfter=%d pfnProgress=%p pvUser=%p ppSSM=%p\n", pVM, pszFilename, pszFilename, enmAfter, pfnProgress, pvUser, ppSSM));
+    LogFlow(("vmR3Save: pVM=%p pszFilename=%p:{%s} pStreamOps=%p pvStreamOpsUser=%p enmAfter=%d pfnProgress=%p pvProgressUser=%p ppSSM=%p\n",
+             pVM, pszFilename, pszFilename, pStreamOps, pvStreamOpsUser, enmAfter, pfnProgress, pvProgressUser, ppSSM));
 
     /*
      * Validate input.
@@ -1595,17 +1600,85 @@ static DECLCALLBACK(int) vmR3Save(PVM pVM, const char *pszFilename, SSMAFTER enm
                              VMSTATE_RUNNING_LS, VMSTATE_RUNNING);
     if (rc == 1)
     {
-        rc = SSMR3Save(pVM, pszFilename, enmAfter, pfnProgress, pvUser);
+        rc = SSMR3Save(pVM, pszFilename, enmAfter, pfnProgress, pvProgressUser);
         vmR3SetState(pVM, VMSTATE_SUSPENDED, VMSTATE_SAVING);
     }
     else if (rc == 2)
     {
-        rc = SSMR3LiveSave(pVM, pszFilename, NULL /*pStreamOps*/, NULL /*pvStreamOpsUser*/,
-                           enmAfter, pfnProgress, pvUser, ppSSM);
+        rc = SSMR3LiveSave(pVM, pszFilename, pStreamOps, pvStreamOpsUser,
+                           enmAfter, pfnProgress, pvProgressUser, ppSSM);
         /* (We're not subject to cancellation just yet.) */
     }
     else
         Assert(RT_FAILURE(rc));
+    return rc;
+}
+
+
+/**
+ * Commmon worker for VMR3Save and VMR3Migrate.
+ *
+ * @returns VBox status code.
+ *
+ * @param   pVM             The VM handle.
+ * @param   pszFilename     The name of the file.  NULL if pStreamOps is used.
+ * @param   pStreamOps      The stream methods.  NULL if pszFilename is used.
+ * @param   pvStreamOpsUser The user argument to the stream methods.
+ * @param   enmAfter        What to do afterwards.
+ * @param   pfnProgress     Progress callback. Optional.
+ * @param   pvProgressUser  User argument for the progress callback.
+ *
+ * @thread  Non-EMT
+ */
+static int vmR3SaveMigrate(PVM pVM, const char *pszFilename, PCSSMSTRMOPS pStreamOps, void *pvStreamOpsUser,
+                           SSMAFTER enmAfter, PFNVMPROGRESS pfnProgress, void *pvProgressUser)
+{
+    /*
+     * Request the operation in EMT(0).
+     */
+    PSSMHANDLE pSSM;
+    int rc = VMR3ReqCallWaitU(pVM->pUVM, 0 /*idDstCpu*/,
+                              (PFNRT)vmR3Save, 8, pVM, pszFilename, pStreamOps, pvStreamOpsUser,
+                              enmAfter, pfnProgress, pvProgressUser, &pSSM);
+    if (    RT_SUCCESS(rc)
+        &&  pSSM)
+    {
+        /*
+         * Live snapshot.
+         *
+         * The state handling here is kind of tricky, doing it on EMT(0) helps
+         * a bit. See the VMSTATE diagram for details.
+         */
+        rc = SSMR3LiveDoStep1(pSSM);
+        if (RT_SUCCESS(rc))
+        {
+            for (;;)
+            {
+                /* Try suspend the VM. */
+                rc = VMMR3EmtRendezvous(pVM, VMMEMTRENDEZVOUS_FLAGS_TYPE_DESCENDING | VMMEMTRENDEZVOUS_FLAGS_STOP_ON_ERROR,
+                                        vmR3LiveDoSuspend, NULL);
+                if (rc != VERR_TRY_AGAIN)
+                    break;
+
+                /* Wait for the state to change. */
+                RTThreadSleep(250); /** @todo LS: fix this polling wait by some smart use of multiple release event  semaphores.. */
+            }
+            if (RT_SUCCESS(rc))
+                rc = VMR3ReqCallWaitU(pVM->pUVM, 0 /*idDstCpu*/, (PFNRT)vmR3LiveDoStep2, 2, pVM, pSSM);
+            else
+                SSMR3LiveDone(pSSM);
+        }
+        else
+        {
+            int rc2 = SSMR3LiveDone(pSSM);
+            AssertMsg(rc2 == rc, ("%Rrc != %Rrc\n", rc2, rc));
+
+            rc2 = VMMR3EmtRendezvous(pVM, VMMEMTRENDEZVOUS_FLAGS_TYPE_ONCE, vmR3LiveDoStep1Cleanup, NULL);
+            if (RT_FAILURE(rc2) && rc == VERR_SSM_CANCELLED)
+                rc = rc2;
+        }
+    }
+
     return rc;
 }
 
@@ -1650,78 +1723,83 @@ VMMR3DECL(int) VMR3Save(PVM pVM, const char *pszFilename, bool fContinueAfterwar
     AssertPtrNullReturn(pfnProgress, VERR_INVALID_POINTER);
 
     /*
-     * Request the operation in EMT(0).
+     * Join paths with VMR3Migrate.
      */
-    SSMAFTER    enmAfter = fContinueAfterwards ? SSMAFTER_CONTINUE : SSMAFTER_DESTROY;
-    PSSMHANDLE  pSSM;
-    int rc = VMR3ReqCallWaitU(pVM->pUVM, 0 /*idDstCpu*/,
-                              (PFNRT)vmR3Save, 6, pVM, pszFilename, enmAfter, pfnProgress, pvUser, &pSSM);
-    if (    RT_SUCCESS(rc)
-        &&  pSSM)
-    {
-        /*
-         * Live snapshot.
-         *
-         * The state handling here is kind of tricky, doing it on EMT(0) helps
-         * a bit. See the VMSTATE diagram for details.
-         */
-        rc = SSMR3LiveDoStep1(pSSM);
-        if (RT_SUCCESS(rc))
-        {
-            for (;;)
-            {
-                /* Try suspend the VM. */
-                rc = VMMR3EmtRendezvous(pVM, VMMEMTRENDEZVOUS_FLAGS_TYPE_DESCENDING | VMMEMTRENDEZVOUS_FLAGS_STOP_ON_ERROR,
-                                        vmR3LiveDoSuspend, NULL);
-                if (rc != VERR_TRY_AGAIN)
-                    break;
-
-                /* Wait for the state to change. */
-                RTThreadSleep(250); /** @todo LS: fix this polling wait by some smart use of multiple release event  semaphores.. */
-            }
-            if (RT_SUCCESS(rc))
-                rc = VMR3ReqCallWaitU(pVM->pUVM, 0 /*idDstCpu*/, (PFNRT)vmR3LiveDoStep2, 2, pVM, pSSM);
-            else
-                SSMR3LiveDone(pSSM);
-        }
-        else
-        {
-            int rc2 = SSMR3LiveDone(pSSM);
-            AssertMsg(rc2 == rc, ("%Rrc != %Rrc\n", rc2, rc));
-
-            rc2 = VMMR3EmtRendezvous(pVM, VMMEMTRENDEZVOUS_FLAGS_TYPE_ONCE, vmR3LiveDoStep1Cleanup, NULL);
-            if (RT_FAILURE(rc2) && rc == VERR_SSM_CANCELLED)
-                rc = rc2;
-        }
-    }
-
+    SSMAFTER enmAfter = fContinueAfterwards ? SSMAFTER_CONTINUE : SSMAFTER_DESTROY;
+    int rc = vmR3SaveMigrate(pVM, pszFilename, NULL /*pStreamOps*/, NULL /*pvStreamOpsUser*/,
+                             enmAfter, pfnProgress, pvUser);
     LogFlow(("VMR3Save: returns %Rrc\n", rc));
     return rc;
 }
 
 
 /**
- * Loads a new VM state.
- *
- * To restore a saved state on VM startup, call this function and then
- * resume the VM instead of powering it on.
+ * Migrate the VM.
  *
  * @returns VBox status code.
+ *
+ * @param   pVM                 The VM which state should be saved.
+ * @param   pStreamOps          The stream methods.
+ * @param   pvStreamOpsUser     The user argument to the stream methods.
+ * @param   pfnProgress         Progress callback. Optional.
+ * @param   pvProgressUser      User argument for the progress callback.
+ *
+ * @thread      Non-EMT.
+ * @vmstate     Suspended or Running
+ * @vmstateto   Saving+Suspended or
+ *              RunningLS+SuspeningLS+SuspendedLS+Saving+Suspended.
+ */
+VMMR3DECL(int) VMR3Migrate(PVM pVM, PCSSMSTRMOPS pStreamOps, void *pvStreamOpsUser, PFNVMPROGRESS pfnProgress, void *pvProgressUser)
+{
+    LogFlow(("VMR3Migrate: pVM=%p pStreamOps=%p pvStreamOps=%p pfnProgress=%p pvProgressUser=%p\n",
+             pVM, pStreamOps, pvStreamOpsUser, pfnProgress, pvProgressUser));
+
+    /*
+     * Validate input.
+     */
+    VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
+    VM_ASSERT_OTHER_THREAD(pVM);
+    AssertPtrReturn(pStreamOps, VERR_INVALID_POINTER);
+    AssertPtrNullReturn(pfnProgress, VERR_INVALID_POINTER);
+
+    /*
+     * Join paths with VMR3Save.
+     */
+    int rc = vmR3SaveMigrate(pVM, NULL /*pszFilename*/, pStreamOps, pvStreamOpsUser,
+                             SSMAFTER_MIGRATE, pfnProgress, pvProgressUser);
+    LogFlow(("VMR3Migrate: returns %Rrc\n", rc));
+    return rc;
+}
+
+
+
+/**
+ * EMT(0) worker for VMR3LoadFromFile and VMR3LoadFromStream.
+ *
+ * @returns VBox status code.
+ *
  * @param   pVM             The VM handle.
- * @param   pszFilename     The name of the save state file.
+ * @param   pszFilename     The name of the file.  NULL if pStreamOps is used.
+ * @param   pStreamOps      The stream methods.  NULL if pszFilename is used.
+ * @param   pvStreamOpsUser The user argument to the stream methods.
  * @param   pfnProgress     Progress callback. Optional.
  * @param   pvUser          User argument for the progress callback.
+ *
  * @thread  EMT.
  */
-static DECLCALLBACK(int) vmR3Load(PVM pVM, const char *pszFilename, PFNVMPROGRESS pfnProgress, void *pvUser)
+static DECLCALLBACK(int) vmR3Load(PVM pVM, const char *pszFilename, PCSSMSTRMOPS pStreamOps, void *pvStreamOpsUser,
+                                  PFNVMPROGRESS pfnProgress, void *pvProgressUser)
 {
-    LogFlow(("vmR3Load: pVM=%p pszFilename=%p:{%s} pfnProgress=%p pvUser=%p\n", pVM, pszFilename, pszFilename, pfnProgress, pvUser));
+    LogFlow(("vmR3Load: pVM=%p pszFilename=%p:{%s} pStreamOps=%p pvStreamOpsUser=%p pfnProgress=%p pvProgressUser=%p\n",
+             pVM, pszFilename, pszFilename, pStreamOps, pvStreamOpsUser, pfnProgress, pvProgressUser));
 
     /*
      * Validate input (paranoia).
      */
     AssertPtr(pVM);
-    AssertPtr(pszFilename);
+    AssertPtrNull(pszFilename);
+    AssertPtrNull(pStreamOps);
+    AssertPtrNull(pfnProgress);
 
     /*
      * Change the state and perform the load.
@@ -1735,7 +1813,7 @@ static DECLCALLBACK(int) vmR3Load(PVM pVM, const char *pszFilename, PFNVMPROGRES
     if (RT_FAILURE(rc))
         return rc;
 
-    rc = SSMR3Load(pVM, pszFilename, NULL /*pStreamOps*/, NULL /*pStreamOpsUser*/, SSMAFTER_RESUME, pfnProgress, pvUser);
+    rc = SSMR3Load(pVM, pszFilename, pStreamOps, pvStreamOpsUser, SSMAFTER_RESUME, pfnProgress, pvProgressUser);
     if (RT_SUCCESS(rc))
     {
         VMR3Relocate(pVM, 0 /*offDelta*/);
@@ -1770,9 +1848,10 @@ static DECLCALLBACK(int) vmR3Load(PVM pVM, const char *pszFilename, PFNVMPROGRES
  * @vmstate     Created, Suspended
  * @vmstateto   Loading+Suspended
  */
-VMMR3DECL(int) VMR3Load(PVM pVM, const char *pszFilename, PFNVMPROGRESS pfnProgress, void *pvUser)
+VMMR3DECL(int) VMR3LoadFromFile(PVM pVM, const char *pszFilename, PFNVMPROGRESS pfnProgress, void *pvUser)
 {
-    LogFlow(("VMR3Load: pVM=%p pszFilename=%p:{%s} pfnProgress=%p pvUser=%p\n", pVM, pszFilename, pszFilename, pfnProgress, pvUser));
+    LogFlow(("VMR3LoadFromFile: pVM=%p pszFilename=%p:{%s} pfnProgress=%p pvUser=%p\n",
+             pVM, pszFilename, pszFilename, pfnProgress, pvUser));
 
     /*
      * Validate input.
@@ -1784,9 +1863,47 @@ VMMR3DECL(int) VMR3Load(PVM pVM, const char *pszFilename, PFNVMPROGRESS pfnProgr
      * Forward the request to EMT(0).  No need to setup a rendezvous here
      * since there is no execution taking place when this call is allowed.
      */
-    int rc = VMR3ReqCallWaitU(pVM->pUVM, 0 /*idDstCpu*/,
-                              (PFNRT)vmR3Load, 4, pVM, pszFilename, pfnProgress, pvUser);
-    LogFlow(("VMR3Load: returns %Rrc\n", rc));
+    int rc = VMR3ReqCallWaitU(pVM->pUVM, 0 /*idDstCpu*/, (PFNRT)vmR3Load, 6,
+                              pVM, pszFilename, NULL /*pStreamOps*/, NULL /*pvStreamOpsUser*/, pfnProgress, pvUser);
+    LogFlow(("VMR3LoadFromFile: returns %Rrc\n", rc));
+    return rc;
+}
+
+
+/**
+ * VMR3LoadFromFile for arbritrary file streams.
+ *
+ * @returns VBox status code.
+ *
+ * @param   pVM             The VM handle.
+ * @param   pStreamOps      The stream methods.
+ * @param   pvStreamOpsUser The user argument to the stream methods.
+ * @param   pfnProgress     Progress callback. Optional.
+ * @param   pvProgressUser  User argument for the progress callback.
+ *
+ * @thread      Any thread.
+ * @vmstate     Created, Suspended
+ * @vmstateto   Loading+Suspended
+ */
+VMMR3DECL(int) VMR3LoadFromStream(PVM pVM, PCSSMSTRMOPS pStreamOps, void *pvStreamOpsUser,
+                                  PFNVMPROGRESS pfnProgress, void *pvProgressUser)
+{
+    LogFlow(("VMR3LoadFromStream: pVM=%p pStreamOps=%p pvStreamOpsUser=%p pfnProgress=%p pvProgressUser=%p\n",
+             pVM, pStreamOps, pvStreamOpsUser, pfnProgress, pvProgressUser));
+
+    /*
+     * Validate input.
+     */
+    VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
+    AssertPtrReturn(pStreamOps, VERR_INVALID_POINTER);
+
+    /*
+     * Forward the request to EMT(0).  No need to setup a rendezvous here
+     * since there is no execution taking place when this call is allowed.
+     */
+    int rc = VMR3ReqCallWaitU(pVM->pUVM, 0 /*idDstCpu*/, (PFNRT)vmR3Load, 6,
+                              pVM, NULL /*pszFilename*/, pStreamOps, pvStreamOpsUser, pfnProgress, pvProgressUser);
+    LogFlow(("VMR3LoadFromStream: returns %Rrc\n", rc));
     return rc;
 }
 

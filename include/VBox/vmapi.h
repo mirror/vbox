@@ -336,7 +336,10 @@ typedef DECLCALLBACK(int) FNVMPROGRESS(PVM pVM, unsigned uPercent, void *pvUser)
 typedef FNVMPROGRESS *PFNVMPROGRESS;
 
 VMMR3DECL(int)  VMR3Save(PVM pVM, const char *pszFilename, bool fContinueAfterwards, PFNVMPROGRESS pfnProgress, void *pvUser);
-VMMR3DECL(int)  VMR3Load(PVM pVM, const char *pszFilename, PFNVMPROGRESS pfnProgress, void *pvUser);
+VMMR3DECL(int)  VMR3Migrate(PVM pVM, PCSSMSTRMOPS pStreamOps, void *pvStreamOpsUser, PFNVMPROGRESS pfnProgress, void *pvProgressUser);
+VMMR3DECL(int)  VMR3LoadFromFile(PVM pVM, const char *pszFilename, PFNVMPROGRESS pfnProgress, void *pvUser);
+VMMR3DECL(int)  VMR3LoadFromStream(PVM pVM, PCSSMSTRMOPS pStreamOps, void *pvStreamOpsUser,
+                                   PFNVMPROGRESS pfnProgress, void *pvProgressUser);
 VMMR3DECL(int)  VMR3PowerOff(PVM pVM);
 VMMR3DECL(int)  VMR3Destroy(PVM pVM);
 VMMR3DECL(void) VMR3Relocate(PVM pVM, RTGCINTPTR offDelta);

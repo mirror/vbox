@@ -54,7 +54,7 @@ extern const char *g_pszProgressString;
 extern unsigned    g_uProgressPercent;
 
 void   startProgressInfo(const char *pszStr);
-void   callProgressInfo(PVM pVM, unsigned uPercent, void *pvUser);
+int    callProgressInfo(PVM pVM, unsigned uPercent, void *pvUser);
 void   endProgressInfo();
 bool   fActivateHGCM();
 

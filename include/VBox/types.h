@@ -372,6 +372,8 @@ typedef PTMTIMER              *PPTMTIMER;
 
 /** SSM Operation handle. */
 typedef struct SSMHANDLE *PSSMHANDLE;
+/** Pointer to a const SSM stream method table. */
+typedef struct SSMSTRMOPS const *PCSSMSTRMOPS;
 
 /** Pointer to a CPUMCTX. */
 typedef struct CPUMCTX *PCPUMCTX;

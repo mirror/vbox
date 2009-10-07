@@ -701,10 +701,8 @@ typedef struct SSMSTRMOPS
     /** Struct magic + version (SSMSTRMOPS_VERSION). */
     uint32_t    u32EndVersion;
 } SSMSTRMOPS;
-/** Pointer to a const SSM stream method table. */
-typedef SSMSTRMOPS const *PCSSMSTRMOPS;
 /** Struct magic + version (SSMSTRMOPS_VERSION). */
-#define SSMSTRMOPS_VERSION  UINT32_C(0x55aa0001)
+#define SSMSTRMOPS_VERSION      UINT32_C(0x55aa0001)
 
 
 VMMR3_INT_DECL(void)    SSMR3Term(PVM pVM);
