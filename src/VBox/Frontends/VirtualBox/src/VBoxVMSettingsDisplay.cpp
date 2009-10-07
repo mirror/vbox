@@ -196,7 +196,7 @@ bool VBoxVMSettingsDisplay::revalidate (QString &aWarning, QString & /* aTitle *
         {
             aWarning = tr (
                 "you have assigned less than <b>%1</b> for video memory which is "
-                "the minimum amount required for the HD Video to be played efficiently.")
+                "the minimum amount required for HD Video to be played efficiently.")
                 .arg (vboxGlobal().formatSize (needBytesWith2D, 0, VBoxDefs::FormatSize_RoundUp));
             return true;
         }
