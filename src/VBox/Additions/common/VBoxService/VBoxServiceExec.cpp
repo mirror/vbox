@@ -388,25 +388,8 @@ DECLCALLBACK(int) VBoxServiceExecWorker(bool volatile *pfShutdown)
                             for (size_t i = 0; papszArgs[i]; i++)
                                 VBoxServiceVerbose(3, "Exec: sysprep argv[%u]: \"%s\"\n", i, papszArgs[i]);
 
-                            /*
-                             * Status reporting via SysprepVBoxRC is required here in order to make a host program wait for it
-                             * in any case (here, yet before the execution or down below if something failed). If no SysprepVBoxRC
-                             * would be updated here the host wouldn't know if he now has to wait for SysprepRet (all succeded) or
-                             * SysprepRC (something failed):
-                             *
-                             * 1. Host sets SysprepArgs
-                             * 2. Host waits for a changing SysprepRC (this could be either here or in step 5)
-                             * 3. If SysprepRC is successful go to 4, otherwise exit
-                             * 4. Host waits for a changing SysprepRet (result of sysprep.exe execution)
-                             * 5. Host waits for a changing SysprepRC (final result of operation)
-                             */
-                            rc = VBoxServiceWritePropF(g_uExecGuestPropSvcClientID, "/VirtualBox/HostGuest/SysprepVBoxRC", "%d", rc);
-                            if (RT_FAILURE(rc))
-                                VBoxServiceError("Exec: Failed to write SysprepVBoxRC while setting up: rc=%Rrc\n", rc);
-
                             RTPROCESS pid;
-                            if (RT_SUCCESS(rc))
-                                rc = RTProcCreate(pszSysprepExec, papszArgs, RTENV_DEFAULT, 0 /*fFlags*/, &pid);
+                            rc = RTProcCreate(pszSysprepExec, papszArgs, RTENV_DEFAULT, 0 /*fFlags*/, &pid);
                             if (RT_SUCCESS(rc))
                             {
                                 RTPROCSTATUS Status;
@@ -471,7 +454,7 @@ DECLCALLBACK(int) VBoxServiceExecWorker(bool volatile *pfShutdown)
             {
                 rc = VBoxServiceWritePropF(g_uExecGuestPropSvcClientID, "/VirtualBox/HostGuest/SysprepVBoxRC", "%d", rc);
                 if (RT_FAILURE(rc))
-                    VBoxServiceError("Exec: Failed to write final SysprepVBoxRC: rc=%Rrc\n", rc);
+                    VBoxServiceError("Exec: Failed to write SysprepVBoxRC: rc=%Rrc\n", rc);
             }
         }
 
