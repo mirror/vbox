@@ -6691,7 +6691,7 @@
       <param name="hostname" type="wstring" dir="in">
         <desc>The name or IP of the host to migrate to.</desc>
       </param>
-      <param name="port" type="unsigned long" dir="in">
+      <param name="tcpport" type="unsigned long" dir="in">
         <desc>The TCP port to connect to (1..65535).</desc>
       </param>
       <param name="password" type="wstring" dir="in">
