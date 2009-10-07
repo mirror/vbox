@@ -231,7 +231,7 @@ static void pdmacFileAioMgrNormalBalanceLoad(PPDMACEPFILEMGR pAioMgr)
                 else
                 {
                     /* Move to other endpoint. */
-                    Log(("Moving endpoint %#p{%s} with %u reqs/s to other manager\n", pCurr->Core.pszUri, pCurr->AioMgr.cReqsPerSec));
+                    Log(("Moving endpoint %#p{%s} with %u reqs/s to other manager\n", pCurr, pCurr->Core.pszUri, pCurr->AioMgr.cReqsPerSec));
                     cReqsOther += pCurr->AioMgr.cReqsPerSec;
 
                     PPDMASYNCCOMPLETIONENDPOINTFILE pMove = pCurr;
@@ -342,6 +342,9 @@ static int pdmacFileAioMgrNormalReqsEnqueue(PPDMACEPFILEMGR pAioMgr,
     pAioMgr->cRequestsActive += cReqs;
     pEndpoint->AioMgr.cRequestsActive += cReqs;
 
+    LogFlow(("Enqueuing %d requests. I/O manager has a total of %d active requests now\n", cReqs, pAioMgr->cRequestsActive));
+    LogFlow(("Endpoint has a total of %d active requests now\n", pEndpoint->AioMgr.cRequestsActive));
+
     rc = RTFileAioCtxSubmit(pAioMgr->hAioCtx, pahReqs, cReqs);
     if (RT_FAILURE(rc))
     {
@@ -381,6 +384,8 @@ static int pdmacFileAioMgrNormalReqsEnqueue(PPDMACEPFILEMGR pAioMgr,
                     pEndpoint->AioMgr.cRequestsActive--;
                 }
             }
+            LogFlow(("Removed requests. I/O manager has a total of %d active requests now\n", pAioMgr->cRequestsActive));
+            LogFlow(("Endpoint has a total of %d active requests now\n", pEndpoint->AioMgr.cRequestsActive));
         }
         else
             AssertMsgFailed(("Unexpected return code rc=%Rrc\n", rc));
@@ -403,7 +408,10 @@ static int pdmacFileAioMgrNormalProcessTaskList(PPDMACTASKFILE pTaskHead,
               ("Trying to process request lists of a non active endpoint!\n"));
 
     /* Go through the list and queue the requests until we get a flush request */
-    while (pTaskHead && !pEndpoint->pFlushReq && (cMaxRequests > 0))
+    while (   pTaskHead
+           && !pEndpoint->pFlushReq
+           && (cMaxRequests > 0)
+           && RT_SUCCESS(rc))
     {
         PPDMACTASKFILE pCurr = pTaskHead;
 
@@ -427,9 +435,6 @@ static int pdmacFileAioMgrNormalProcessTaskList(PPDMACTASKFILE pTaskHead,
                 else
                 {
                     pEndpoint->pFlushReq = pCurr;
-
-                    /* Do not process the task list further until the flush finished. */
-                    pdmacFileAioMgrEpAddTaskList(pEndpoint, pTaskHead);
                 }
                 break;
             }
@@ -532,11 +537,8 @@ static int pdmacFileAioMgrNormalProcessTaskList(PPDMACTASKFILE pTaskHead,
                 {
                     rc = pdmacFileAioMgrNormalReqsEnqueue(pAioMgr, pEndpoint, apReqs, cRequests);
                     cRequests = 0;
-                    if (RT_FAILURE(rc))
-                    {
-                        AssertMsg(rc == VERR_FILE_AIO_INSUFFICIENT_RESSOURCES, ("Unexpected return code\n"));
-                        break;
-                    }
+                    AssertMsg(RT_SUCCESS(rc) || (rc == VERR_FILE_AIO_INSUFFICIENT_RESSOURCES),
+                              ("Unexpected return code\n"));
                 }
                 break;
             }
@@ -556,7 +558,6 @@ static int pdmacFileAioMgrNormalProcessTaskList(PPDMACTASKFILE pTaskHead,
     {
         /* Add the rest of the tasks to the pending list */
         pdmacFileAioMgrEpAddTaskList(pEndpoint, pTaskHead);
-
 
         if (RT_UNLIKELY(!cMaxRequests && !pEndpoint->pFlushReq))
         {
@@ -599,6 +600,8 @@ static int pdmacFileAioMgrNormalQueueReqs(PPDMACEPFILEMGR pAioMgr,
     /* Check the pending list first */
     if (pEndpoint->AioMgr.pReqsPendingHead)
     {
+        LogFlow(("Queuing pending requests first\n"));
+
         pTasksHead = pEndpoint->AioMgr.pReqsPendingHead;
         /*
          * Clear the list as the processing routine will insert them into the list
@@ -628,6 +631,8 @@ static int pdmacFileAioMgrNormalProcessBlockingEvent(PPDMACEPFILEMGR pAioMgr)
 {
     int rc = VINF_SUCCESS;
     bool fNotifyWaiter = false;
+
+    LogFlowFunc((": Enter\n"));
 
     Assert(pAioMgr->fBlockingEventPending);
 
@@ -665,6 +670,8 @@ static int pdmacFileAioMgrNormalProcessBlockingEvent(PPDMACEPFILEMGR pAioMgr)
         {
             PPDMASYNCCOMPLETIONENDPOINTFILE pEndpointClose = (PPDMASYNCCOMPLETIONENDPOINTFILE)ASMAtomicReadPtr((void * volatile *)&pAioMgr->BlockingEventData.CloseEndpoint.pEndpoint);
             AssertMsg(VALID_PTR(pEndpointClose), ("Close endpoint event without a endpoint to close\n"));
+
+            LogFlowFunc((": Closing endpoint %#p{%s}\n", pEndpointClose, pEndpointClose->Core.pszUri));
 
             /* Make sure all tasks finished. Process the queues a last time first. */
             rc = pdmacFileAioMgrNormalQueueReqs(pAioMgr, pEndpointClose);
@@ -705,6 +712,57 @@ static int pdmacFileAioMgrNormalProcessBlockingEvent(PPDMACEPFILEMGR pAioMgr)
         LogFlow(("Signalling waiter\n"));
         rc = RTSemEventSignal(pAioMgr->EventSemBlock);
         AssertRC(rc);
+    }
+
+    LogFlowFunc((": Leave\n"));
+    return rc;
+}
+
+/**
+ * Checks all endpoints for pending events or new requests.
+ *
+ * @returns VBox status code.
+ * @param   pAioMgr    The I/O manager handle.
+ */
+static int pdmacFileAioMgrNormalCheckEndpoints(PPDMACEPFILEMGR pAioMgr)
+{
+    /* Check the assigned endpoints for new tasks if there isn't a flush request active at the moment. */
+    int rc = VINF_SUCCESS;
+    PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint = pAioMgr->pEndpointsHead;
+
+    while (pEndpoint)
+    {
+        if (!pEndpoint->pFlushReq && (pEndpoint->enmState == PDMASYNCCOMPLETIONENDPOINTFILESTATE_ACTIVE))
+        {
+            rc = pdmacFileAioMgrNormalQueueReqs(pAioMgr, pEndpoint);
+            if (RT_FAILURE(rc))
+                return rc;
+        }
+        else if (!pEndpoint->AioMgr.cRequestsActive)
+        {
+            /* Reopen the file so that the new endpoint can reassociate with the file */
+            RTFileClose(pEndpoint->File);
+            rc = RTFileOpen(&pEndpoint->File, pEndpoint->Core.pszUri, pEndpoint->fFlags);
+            AssertRC(rc);
+
+            if (pEndpoint->AioMgr.fMoving)
+            {
+                pEndpoint->AioMgr.fMoving = false;
+                pdmacFileAioMgrAddEndpoint(pEndpoint->AioMgr.pAioMgrDst, pEndpoint);
+            }
+            else
+            {
+                Assert(pAioMgr->fBlockingEventPending);
+                ASMAtomicWriteBool(&pAioMgr->fBlockingEventPending, false);
+
+                /* Release the waiting thread. */
+                LogFlow(("Signalling waiter\n"));
+                rc = RTSemEventSignal(pAioMgr->EventSemBlock);
+                AssertRC(rc);    
+            }
+        }
+
+        pEndpoint = pEndpoint->AioMgr.pEndpointNext;
     }
 
     return rc;
@@ -752,19 +810,9 @@ int pdmacFileAioMgrNormal(RTTHREAD ThreadSelf, void *pvUser)
 
         if (RT_LIKELY(pAioMgr->enmState == PDMACEPFILEMGRSTATE_RUNNING))
         {
-            /* Check the assigned endpoints for new tasks if there isn't a flush request active at the moment. */
-            PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint = pAioMgr->pEndpointsHead;
-
-            while (pEndpoint)
-            {
-                if (!pEndpoint->pFlushReq && (pEndpoint->enmState == PDMASYNCCOMPLETIONENDPOINTFILESTATE_ACTIVE))
-                {
-                    rc = pdmacFileAioMgrNormalQueueReqs(pAioMgr, pEndpoint);
-                    CHECK_RC(pAioMgr, rc);
-                }
-
-                pEndpoint = pEndpoint->AioMgr.pEndpointNext;
-            }
+            /* We got woken up because an endpoint issued new requests. Queue them. */
+            rc = pdmacFileAioMgrNormalCheckEndpoints(pAioMgr);
+            CHECK_RC(pAioMgr, rc);
 
             while (pAioMgr->cRequestsActive)
             {
@@ -777,6 +825,8 @@ int pdmacFileAioMgrNormal(RTTHREAD ThreadSelf, void *pvUser)
                 else
                     cReqsWait = pAioMgr->cRequestsActive;
 
+                LogFlow(("Waiting for %d of %d tasks to complete\n", pAioMgr->cRequestsActive, cReqsWait));
+
                 rc = RTFileAioCtxWait(pAioMgr->hAioCtx,
                                       cReqsWait,
                                       RT_INDEFINITE_WAIT, apReqs,
@@ -784,8 +834,11 @@ int pdmacFileAioMgrNormal(RTTHREAD ThreadSelf, void *pvUser)
                 if (RT_FAILURE(rc) && (rc != VERR_INTERRUPTED))
                     CHECK_RC(pAioMgr, rc);
 
+                LogFlow(("%d tasks completed\n", cReqsCompleted));
+
                 for (uint32_t i = 0; i < cReqsCompleted; i++)
                 {
+                    PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint;
                     size_t cbTransfered  = 0;
                     int rcReq            = RTFileAioReqGetRC(apReqs[i], &cbTransfered);
                     PPDMACTASKFILE pTask = (PPDMACTASKFILE)RTFileAioReqGetUser(apReqs[i]);
@@ -865,39 +918,6 @@ int pdmacFileAioMgrNormal(RTTHREAD ThreadSelf, void *pvUser)
                             pdmacFileTaskFree(pEndpoint, pTask);
                         }
                     }
-
-                    if (pEndpoint->enmState == PDMASYNCCOMPLETIONENDPOINTFILESTATE_ACTIVE)
-                    {
-                        if (!pEndpoint->pFlushReq)
-                        {
-                            /* Check if there are events on the endpoint. */
-                            rc = pdmacFileAioMgrNormalQueueReqs(pAioMgr, pEndpoint);
-                            CHECK_RC(pAioMgr, rc);
-                        }
-                    }
-                    else if (!pEndpoint->AioMgr.cRequestsActive)
-                    {
-                        /* Reopen the file so that the new endpoint can reassociate with the file */
-                        RTFileClose(pEndpoint->File);
-                        rc = RTFileOpen(&pEndpoint->File, pEndpoint->Core.pszUri, pEndpoint->fFlags);
-                        AssertRC(rc);
-
-                        if (pEndpoint->AioMgr.fMoving)
-                        {
-                            pEndpoint->AioMgr.fMoving = false;
-                            pdmacFileAioMgrAddEndpoint(pEndpoint->AioMgr.pAioMgrDst, pEndpoint);
-                        }
-                        else
-                        {
-                            Assert(pAioMgr->fBlockingEventPending);
-                            ASMAtomicWriteBool(&pAioMgr->fBlockingEventPending, false);
-
-                            /* Release the waiting thread. */
-                            LogFlow(("Signalling waiter\n"));
-                            rc = RTSemEventSignal(pAioMgr->EventSemBlock);
-                            AssertRC(rc);
-                        }
-                    }
                 }
 
                 /* Check for an external blocking event before we go to sleep again. */
@@ -926,9 +946,13 @@ int pdmacFileAioMgrNormal(RTTHREAD ThreadSelf, void *pvUser)
                     /* Set new update interval */
                     uMillisEnd = RTTimeMilliTS() + PDMACEPFILEMGR_LOAD_UPDATE_PERIOD;
                 }
-            }
-        }
-    }
+
+                /* Check endpoints for new requests. */
+                rc = pdmacFileAioMgrNormalCheckEndpoints(pAioMgr);
+                CHECK_RC(pAioMgr, rc);
+            } /* while requests are active. */
+        } /* if still running */
+    } /* while running */
 
     return rc;
 }
