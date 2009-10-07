@@ -146,6 +146,7 @@ public:
     STDMETHOD(DiscardSnapshot) (IN_BSTR aId, IProgress **aProgress);
     STDMETHOD(DiscardCurrentState) (IProgress **aProgress);
     STDMETHOD(DiscardCurrentSnapshotAndState) (IProgress **aProgress);
+    STDMETHOD(Migrate)(IN_BSTR aHostname, ULONG aPort, IN_BSTR aPassword, IProgress **aProgress);
     STDMETHOD(RegisterCallback) (IConsoleCallback *aCallback);
     STDMETHOD(UnregisterCallback)(IConsoleCallback *aCallback);
 
