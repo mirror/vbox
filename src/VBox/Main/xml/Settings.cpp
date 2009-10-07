@@ -2191,6 +2191,13 @@ void MachineConfigFile::readMachine(const xml::ElementNode &elmMachine)
             parseTimestamp(timeLastStateChange, str);
             // constructor has called RTTimeNow(&timeLastStateChange) before
 
+        if (!elmMachine.getAttributeValue("liveMigrationTarget", fLiveMigrationTarget))
+            fLiveMigrationTarget = false;
+        if (!elmMachine.getAttributeValue("liveMigrationPort", uLiveMigrationPort))
+            uLiveMigrationPort = 0;
+        if (!elmMachine.getAttributeValue("liveMigrationPassword", strLiveMigrationPassword))
+            strLiveMigrationPassword = "";
+
         // parse Hardware before the other elements because other things depend on it
         const xml::ElementNode *pelmHardware;
         if (!(pelmHardware = elmMachine.findChildElement("Hardware")))
@@ -2254,6 +2261,8 @@ void MachineConfigFile::readMachine(const xml::ElementNode &elmMachine)
 MachineConfigFile::MachineConfigFile(const Utf8Str *pstrFilename)
     : ConfigFileBase(pstrFilename),
       fNameSync(true),
+      fLiveMigrationTarget(false),
+      uLiveMigrationPort(0),
       fCurrentStateModified(true),
       fAborted(false)
 {
@@ -2886,6 +2895,14 @@ void MachineConfigFile::write(const com::Utf8Str &strFilename)
         pelmMachine->setAttribute("lastStateChange", makeString(timeLastStateChange));
         if (fAborted)
             pelmMachine->setAttribute("aborted", fAborted);
+#ifdef VBOX_WITH_LIVE_MIGRATION /** @todo LiveMigration: Checkout how the file format versioning is done. */
+        if (fLiveMigrationTarget)
+            pelmMachine->setAttribute("liveMigrationTarget", true);
+        if (uLiveMigrationPort)
+            pelmMachine->setAttribute("liveMigrationPort", uLiveMigrationPort);
+        if (!strLiveMigrationPassword.isEmpty())
+            pelmMachine->setAttribute("liveMigrationPassword", strLiveMigrationPassword);
+#endif
 
         writeExtraData(*pelmMachine, mapExtraDataItems);
 

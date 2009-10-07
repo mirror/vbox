@@ -553,6 +553,9 @@ public:
     com::Utf8Str            strStateFile;
     com::Guid               uuidCurrentSnapshot;
     com::Utf8Str            strSnapshotFolder;
+    bool                    fLiveMigrationTarget;
+    uint32_t                uLiveMigrationPort;
+    com::Utf8Str            strLiveMigrationPassword;
 
     bool                    fCurrentStateModified;      // optional, default is true
     RTTIMESPEC              timeLastStateChange;        // optional, defaults to now
