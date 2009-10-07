@@ -86,6 +86,7 @@ int main(int argc, char *argv[])
         unsigned long cbWritten = 0;
         unsigned long cIfNesting = 0;
         unsigned long cBraceNesting = 0;
+        unsigned long cLinesSinceStaticMap = ~0UL / 2;
         bool fJustZero = false;
 
         do
@@ -114,6 +115,7 @@ int main(int argc, char *argv[])
 #endif /* !RT_OS_WINDOWS */
                            );
                 uLimit += cbChunk;
+                cLinesSinceStaticMap = ~0UL / 2;
             }
 
             /* find begin of next line and print current line */
@@ -158,13 +160,23 @@ int main(int argc, char *argv[])
                 }
             }
 
+            /* look for static variables used for enum conversion. */
+            if (!strncmp(pLine, "static const struct soap_code_map", sizeof("static const struct soap_code_map") - 1))
+                cLinesSinceStaticMap = 0;
+            else
+                cLinesSinceStaticMap++;
+
             /* start a new output file if necessary and possible */
-            if (cbWritten >= uLimit && cIfNesting == 0 && fJustZero && cFiles < cChunk)
+            if (   cbWritten >= uLimit
+                && cIfNesting == 0
+                && fJustZero
+                && cFiles < cChunk
+                && cLinesSinceStaticMap > 150 /*hack!*/)
             {
                 fclose(pFileOut);
                 pFileOut = NULL;
             }
-                
+
             if (rc)
                 break;
 
