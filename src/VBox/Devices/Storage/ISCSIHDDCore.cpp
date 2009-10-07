@@ -107,7 +107,8 @@ typedef enum SCSIDEVTYPE
 #define SCSI_DEVTYPE_MASK 0x1f
 
 
-/** Maximum PDU payload size we can handle in one piece. */
+/** Maximum PDU payload size we can handle in one piece. Greater or equal than
+ * s_iscsiConfigDefaultWriteSplit. */
 #define ISCSI_DATA_LENGTH_MAX _256K
 
 /** Maximum PDU size we can handle in one piece. */
@@ -279,6 +280,10 @@ typedef struct ISCSIIMAGE
     uint8_t             *pbTargetSecret;
     /** Length of the secret for authenticating the Initiator. */
     size_t              cbTargetSecret;
+    /** Limit for iSCSI writes, essentially limiting the amount of data
+     * written in a single write. This is negotiated with the target, so
+     * the actual size might be smaller. */
+    uint32_t            cbWriteSplit;
     /** Initiator session identifier. */
     uint64_t            ISID;
     /** SCSI Logical Unit Number. */
@@ -423,6 +428,9 @@ static const char *s_iscsiConfigDefaultInitiatorName = "iqn.2009-08.com.sun.virt
 /** Default timeout, 10 seconds. */
 static const char *s_iscsiConfigDefaultTimeout = "10000";
 
+/** Default write split value, less or equal to ISCSI_DATA_LENGTH_MAX. */
+static const char *s_iscsiConfigDefaultWriteSplit = "262144";
+
 /** Default host IP stack. */
 static const char *s_iscsiConfigDefaultHostIPStack = "1";
 
@@ -438,6 +446,7 @@ static const VDCONFIGINFO s_iscsiConfigInfo[] =
     { "InitiatorSecret",    NULL,                               VDCFGVALUETYPE_BYTES,   0 },
     { "TargetUsername",     NULL,                               VDCFGVALUETYPE_STRING,  VD_CFGKEY_EXPERT },
     { "TargetSecret",       NULL,                               VDCFGVALUETYPE_BYTES,   VD_CFGKEY_EXPERT },
+    { "WriteSplit",         s_iscsiConfigDefaultWriteSplit,     VDCFGVALUETYPE_INTEGER, VD_CFGKEY_EXPERT },
     { "Timeout",            s_iscsiConfigDefaultTimeout,        VDCFGVALUETYPE_INTEGER, VD_CFGKEY_EXPERT },
     { "HostIPStack",        s_iscsiConfigDefaultHostIPStack,    VDCFGVALUETYPE_INTEGER, VD_CFGKEY_EXPERT },
     { NULL,                 NULL,                               VDCFGVALUETYPE_INTEGER, 0 }
@@ -837,7 +846,7 @@ static int iscsiAttach(PISCSIIMAGE pImage)
 
     bool fParameterNeg = true;;
     pImage->cbRecvDataLength = ISCSI_DATA_LENGTH_MAX;
-    pImage->cbSendDataLength = ISCSI_DATA_LENGTH_MAX;
+    pImage->cbSendDataLength = RT_MIN(ISCSI_DATA_LENGTH_MAX, pImage->cbWriteSplit);
     char szMaxDataLength[16];
     RTStrPrintf(szMaxDataLength, sizeof(szMaxDataLength), "%u", ISCSI_DATA_LENGTH_MAX);
     ISCSIPARAMETER aParameterNeg[] =
@@ -2214,9 +2223,12 @@ static int iscsiOpenImage(PISCSIIMAGE pImage, unsigned uOpenFlags)
     int rc;
     char *pszLUN = NULL, *pszLUNInitial = NULL;
     bool fLunEncoded = false;
+    uint32_t uWriteSplitDef = 0;
     uint32_t uTimeoutDef = 0;
     uint64_t uHostIPTmp = 0;
     bool fHostIPDef = 0;
+    rc = RTStrToUInt32Full(s_iscsiConfigDefaultWriteSplit, 0, &uWriteSplitDef);
+    AssertRC(rc);
     rc = RTStrToUInt32Full(s_iscsiConfigDefaultTimeout, 0, &uTimeoutDef);
     AssertRC(rc);
     rc = RTStrToUInt64Full(s_iscsiConfigDefaultHostIPStack, 0, &uHostIPTmp);
@@ -2270,7 +2282,7 @@ static int iscsiOpenImage(PISCSIIMAGE pImage, unsigned uOpenFlags)
     /* Validate configuration, detect unknown keys. */
     if (!VDCFGAreKeysValid(pImage->pInterfaceConfigCallbacks,
                            pImage->pInterfaceConfig->pvUser,
-                           "TargetName\0InitiatorName\0LUN\0TargetAddress\0InitiatorUsername\0InitiatorSecret\0TargetUsername\0TargetSecret\0Timeout\0HostIPStack\0"))
+                           "TargetName\0InitiatorName\0LUN\0TargetAddress\0InitiatorUsername\0InitiatorSecret\0TargetUsername\0TargetSecret\0WriteSplit\0Timeout\0HostIPStack\0"))
     {
         rc = iscsiError(pImage, VERR_VD_ISCSI_UNKNOWN_CFG_VALUES, RT_SRC_POS, N_("iSCSI: configuration error: unknown configuration keys present"));
         goto out;
@@ -2388,6 +2400,15 @@ static int iscsiOpenImage(PISCSIIMAGE pImage, unsigned uOpenFlags)
     if (RT_FAILURE(rc))
     {
         rc = iscsiError(pImage, rc, RT_SRC_POS, N_("iSCSI: configuration error: failed to read TargetSecret as byte string"));
+        goto out;
+    }
+    rc = VDCFGQueryU32Def(pImage->pInterfaceConfigCallbacks,
+                          pImage->pInterfaceConfig->pvUser,
+                          "WriteSplit", &pImage->cbWriteSplit,
+                          uWriteSplitDef);
+    if (RT_FAILURE(rc))
+    {
+        rc = iscsiError(pImage, rc, RT_SRC_POS, N_("iSCSI: configuration error: failed to read WriteSplit as U32"));
         goto out;
     }
 
