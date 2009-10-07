@@ -836,7 +836,9 @@ int main(int argc, char **argv)
         if (FileRawMem != NIL_RTFILE)
             rc = VMR3ReqCallWait(pVM, VMCPUID_ANY, (PFNRT)loadMem, 3, pVM, FileRawMem, &offRawMem);
         else
-            rc = VMR3ReqCallWait(pVM, VMCPUID_ANY, (PFNRT)SSMR3Load, 4, pVM, pszSavedState, SSMAFTER_DEBUG_IT, NULL, NULL);
+            rc = VMR3ReqCallWait(pVM, VMCPUID_ANY, (PFNRT)SSMR3Load,
+                                 7, pVM, pszSavedState, NULL /*pStreamOps*/, NULL /*pvUser*/,
+                                 SSMAFTER_DEBUG_IT, NULL /*pfnProgress*/, NULL /*pvProgressUser*/);
         if (RT_SUCCESS(rc))
         {
             /*

@@ -537,6 +537,8 @@ typedef struct SSMHANDLE
             uint32_t        u32SvnRev;
             /** 32 or 64 depending on the host. */
             uint8_t         cHostBits;
+            /** Whether the stream is checksummed (SSMFILEHDR_FLAGS_STREAM_CRC32). */
+            bool            fStreamCrc32;
             /** The CRC of the loaded file. */
             uint32_t        u32LoadCRC;
             /** The size of the load file. */
@@ -1523,7 +1525,7 @@ VMMR3DECL(int) SSMR3DeregisterExternal(PVM pVM, const char *pszName)
  *                          written/read.
  * @param   cBuffers        The number of buffers.
  */
-static int ssmR3StrmInit(PSSMSTRM pStrm, bool fChecksummed, uint32_t cBuffers)
+static int ssmR3StrmInitInternal(PSSMSTRM pStrm, bool fChecksummed, uint32_t cBuffers)
 {
     Assert(cBuffers > 0);
 
@@ -1605,8 +1607,8 @@ static void ssmR3StrmDestroyBufList(PSSMSTRMBUF pHead)
 
 
 /**
- * Cleans up a stream after ssmR3StrmInit has been called (regardless of it
- * succeeded or not).
+ * Cleans up a stream after ssmR3StrmInitInternal has been called (regardless of
+ * it succeeded or not).
  *
  * @param   pStrm           The stream handle.
  */
@@ -1626,6 +1628,35 @@ static void ssmR3StrmDelete(PSSMSTRM pStrm)
 
     RTSemEventDestroy(pStrm->hEvtFree);
     pStrm->hEvtFree = NIL_RTSEMEVENT;
+}
+
+
+/**
+ * Initializes a stream that uses a method table.
+ *
+ * @returns VBox status code.
+ * @param   pStrm           The stream manager structure.
+ * @param   pStreamOps      The stream method table.
+ * @param   pvUser          The user argument for the stream methods.
+ * @param   fWrite          Whether to open for writing or reading.
+ * @param   fChecksummed    Whether the stream is to be checksummed while
+ *                          written/read.
+ * @param   cBuffers        The number of buffers.
+ */
+static int ssmR3StrmInit(PSSMSTRM pStrm, PCSSMSTRMOPS pStreamOps, void *pvUser, bool fWrite, bool fChecksummed, uint32_t cBuffers)
+{
+    int rc = ssmR3StrmInitInternal(pStrm, fChecksummed, cBuffers);
+    if (RT_SUCCESS(rc))
+    {
+        pStrm->pOps   = pStreamOps;
+        pStrm->pvUser = pvUser;
+        pStrm->fWrite = fWrite;
+        return VINF_SUCCESS;
+    }
+
+    ssmR3StrmDelete(pStrm);
+    pStrm->rc = rc;
+    return rc;
 }
 
 
@@ -1714,7 +1745,7 @@ static SSMSTRMOPS const g_ssmR3FileOps =
  */
 static int ssmR3StrmOpenFile(PSSMSTRM pStrm, const char *pszFilename, bool fWrite, bool fChecksummed, uint32_t cBuffers)
 {
-    int rc = ssmR3StrmInit(pStrm, fChecksummed, cBuffers);
+    int rc = ssmR3StrmInitInternal(pStrm, fChecksummed, cBuffers);
     if (RT_SUCCESS(rc))
     {
         uint32_t fFlags = fWrite
@@ -3686,6 +3717,7 @@ static int ssmR3WriteDirectory(PVM pVM, PSSMHANDLE pSSM, uint32_t *pcEntries)
         {
             PSSMFILEDIRENTRY pEntry = &pDir->aEntries[pDir->cEntries++];
             Assert(pDir->cEntries <= pVM->ssm.s.cUnits);
+            Assert(pUnit->offStream >= (RTFOFF)sizeof(SSMFILEHDR));
             pEntry->off         = pUnit->offStream;
             pEntry->u32Instance = pUnit->u32Instance;
             pEntry->u32NameCRC  = RTCrc32(pUnit->szName, pUnit->cchName);
@@ -4067,7 +4099,7 @@ static int ssmR3WriteHeaderAndClearPerUnitData(PVM pVM, PSSMHANDLE pSSM)
     FileHdr.u32CRC       = 0;
     FileHdr.u32CRC       = RTCrc32(&FileHdr, sizeof(FileHdr));
     int rc = ssmR3StrmWrite(&pSSM->Strm, &FileHdr, sizeof(FileHdr));
-    if (RT_SUCCESS(rc))
+    if (RT_FAILURE(rc))
         return rc;
 
     /*
@@ -6062,6 +6094,60 @@ static int ssmR3CalcChecksum(PSSMSTRM pStrm, uint64_t off, uint64_t cb, uint32_t
 
 
 /**
+ * Validates a version 2 footer.
+ *
+ * @returns VBox status code.
+ *
+ * @param   pFooter             The footer.
+ * @param   offFooter           The stream offset of the footer.
+ * @param   cDirEntries         The number of directory entries. UINT32_MAX if
+ *                              unknown.
+ * @param   fStreamCrc32        Whether the stream is checksummed using CRC-32.
+ * @param   u32StreamCRC        The stream checksum.
+ */
+static int ssmR3ValidateFooter(PSSMFILEFTR pFooter, uint64_t offFooter, uint32_t cDirEntries, bool fStreamCrc32, uint32_t u32StreamCRC)
+{
+    if (memcmp(pFooter->szMagic, SSMFILEFTR_MAGIC, sizeof(pFooter->szMagic)))
+    {
+        LogRel(("SSM: Bad footer magic: %.*Rhxs\n", sizeof(pFooter->szMagic), &pFooter->szMagic[0]));
+        return VERR_SSM_INTEGRITY_FOOTER;
+    }
+    SSM_CHECK_CRC32_RET(pFooter, sizeof(*pFooter), ("Footer CRC mismatch: %08x, correct is %08x\n", u32CRC, u32ActualCRC));
+    if (pFooter->offStream != offFooter)
+    {
+        LogRel(("SSM: SSMFILEFTR::offStream is wrong: %llx, expected %llx\n", pFooter->offStream, offFooter));
+        return VERR_SSM_INTEGRITY_FOOTER;
+    }
+    if (pFooter->u32Reserved)
+    {
+        LogRel(("SSM: Reserved footer field isn't zero: %08x\n", pFooter->u32Reserved));
+        return VERR_SSM_INTEGRITY_FOOTER;
+    }
+    if (cDirEntries != UINT32_MAX)
+        AssertLogRelMsgReturn(pFooter->cDirEntries == cDirEntries,
+                              ("Footer: cDirEntries=%#x, expected %#x\n", pFooter->cDirEntries, cDirEntries),
+                              VERR_SSM_INTEGRITY_FOOTER);
+    else
+        AssertLogRelMsgReturn(pFooter->cDirEntries < _64K,
+                              ("Footer: cDirEntries=%#x\n", pFooter->cDirEntries),
+                              VERR_SSM_INTEGRITY_FOOTER);
+    if (    !fStreamCrc32
+        &&  pFooter->u32StreamCRC)
+    {
+        LogRel(("SSM: u32StreamCRC field isn't zero, but header says stream checksumming is disabled.\n"));
+        return VERR_SSM_INTEGRITY_FOOTER;
+    }
+    if (    fStreamCrc32
+        &&  pFooter->u32StreamCRC != u32StreamCRC)
+    {
+        LogRel(("SSM: Bad stream CRC: %#x, expected %#x.\n", pFooter->u32StreamCRC, u32StreamCRC));
+        return VERR_SSM_INTEGRITY_CRC;
+    }
+    return VINF_SUCCESS;
+}
+
+
+/**
  * Validates the header information stored in the handle.
  *
  * @returns VBox status code.
@@ -6207,7 +6293,6 @@ static int ssmR3HeaderAndValidate(PSSMHANDLE pSSM, bool fChecksumIt, bool fCheck
         /*
          * Version 2.0 and later.
          */
-        bool fChecksummed;
         if (pSSM->u.Read.uFmtVerMinor == 0)
         {
             /* validate the header. */
@@ -6239,12 +6324,12 @@ static int ssmR3HeaderAndValidate(PSSMHANDLE pSSM, bool fChecksumIt, bool fCheck
             pSSM->u.Read.cbGCPhys       = uHdr.v2_0.cbGCPhys;
             pSSM->u.Read.cbGCPtr        = uHdr.v2_0.cbGCPtr;
             pSSM->u.Read.fFixedGCPtrSize= true;
-            fChecksummed = !!(uHdr.v2_0.fFlags & SSMFILEHDR_FLAGS_STREAM_CRC32);
+            pSSM->u.Read.fStreamCrc32   = !!(uHdr.v2_0.fFlags & SSMFILEHDR_FLAGS_STREAM_CRC32);
             pSSM->fLiveSave             = !!(uHdr.v2_0.fFlags & SSMFILEHDR_FLAGS_STREAM_LIVE_SAVE);
         }
         else
             AssertFailedReturn(VERR_INTERNAL_ERROR);
-        if (!fChecksummed)
+        if (!pSSM->u.Read.fStreamCrc32)
             ssmR3StrmDisableChecksumming(&pSSM->Strm);
 
         /*
@@ -6256,28 +6341,10 @@ static int ssmR3HeaderAndValidate(PSSMHANDLE pSSM, bool fChecksumIt, bool fCheck
             uint64_t    offFooter;
             rc = ssmR3StrmPeekAt(&pSSM->Strm, -(RTFOFF)sizeof(SSMFILEFTR), &Footer, sizeof(Footer), &offFooter);
             AssertLogRelRCReturn(rc, rc);
-            if (memcmp(Footer.szMagic, SSMFILEFTR_MAGIC, sizeof(Footer.szMagic)))
-            {
-                LogRel(("SSM: Bad footer magic: %.*Rhxs\n", sizeof(Footer.szMagic), &Footer.szMagic[0]));
-                return VERR_SSM_INTEGRITY_FOOTER;
-            }
-            SSM_CHECK_CRC32_RET(&Footer, sizeof(Footer), ("Footer CRC mismatch: %08x, correct is %08x\n", u32CRC, u32ActualCRC));
-            if (Footer.offStream != offFooter)
-            {
-                LogRel(("SSM: SSMFILEFTR::offStream is wrong: %llx, expected %llx\n", Footer.offStream, offFooter));
-                return VERR_SSM_INTEGRITY_FOOTER;
-            }
-            if (Footer.u32Reserved)
-            {
-                LogRel(("SSM: Reserved footer field isn't zero: %08x\n", Footer.u32Reserved));
-                return VERR_SSM_INTEGRITY_FOOTER;
-            }
-            if (    !fChecksummed
-                &&  Footer.u32StreamCRC)
-            {
-                LogRel(("SSM: u32StreamCRC field isn't zero, but header says stream checksumming is disabled.\n"));
-                return VERR_SSM_INTEGRITY_FOOTER;
-            }
+
+            rc = ssmR3ValidateFooter(&Footer, offFooter, UINT32_MAX, pSSM->u.Read.fStreamCrc32, Footer.u32StreamCRC);
+            if (RT_FAILURE(rc))
+                return rc;
 
             pSSM->u.Read.cbLoadFile = offFooter + sizeof(Footer);
             pSSM->u.Read.u32LoadCRC = Footer.u32StreamCRC;
@@ -6298,7 +6365,7 @@ static int ssmR3HeaderAndValidate(PSSMHANDLE pSSM, bool fChecksumIt, bool fCheck
         /*
          * Check the checksum if that's called for and possible.
          */
-        if (    fChecksummed
+        if (    pSSM->u.Read.fStreamCrc32
             &&  fChecksumIt
             &&  !fChecksumOnRead
             &&  ssmR3StrmIsFile(&pSSM->Strm))
@@ -6336,6 +6403,7 @@ static int ssmR3HeaderAndValidate(PSSMHANDLE pSSM, bool fChecksumIt, bool fCheck
             pSSM->u.Read.cbGCPhys       = sizeof(RTGCPHYS);
             pSSM->u.Read.cbGCPtr        = sizeof(RTGCPTR);
             pSSM->u.Read.fFixedGCPtrSize = false; /* settable */
+            pSSM->u.Read.fStreamCrc32   = false;
 
             MachineUuidFromHdr  = uHdr.v1_1.MachineUuid;
             fHaveHostBits       = false;
@@ -6352,6 +6420,7 @@ static int ssmR3HeaderAndValidate(PSSMHANDLE pSSM, bool fChecksumIt, bool fCheck
             pSSM->u.Read.cbGCPhys       = uHdr.v1_2.cbGCPhys;
             pSSM->u.Read.cbGCPtr        = uHdr.v1_2.cbGCPtr;
             pSSM->u.Read.fFixedGCPtrSize = true;
+            pSSM->u.Read.fStreamCrc32   = false;
 
             MachineUuidFromHdr  = uHdr.v1_2.MachineUuid;
             fHaveVersion        = true;
@@ -6422,7 +6491,10 @@ static int ssmR3HeaderAndValidate(PSSMHANDLE pSSM, bool fChecksumIt, bool fCheck
  * @returns VBox status code.
  *
  * @param   pVM                 The VM handle.
- * @param   pszFilename         The filename.
+ * @param   pszFilename         The filename. NULL if pStreamOps is used.
+ * @param   pStreamOps          The stream method table. NULL if pszFilename is
+ *                              used.
+ * @param   pvUser              The user argument to the stream methods.
  * @param   fChecksumIt         Check the checksum for the entire file.
  * @param   fChecksumOnRead     Whether to validate the checksum while reading
  *                              the stream instead of up front. If not possible,
@@ -6431,8 +6503,8 @@ static int ssmR3HeaderAndValidate(PSSMHANDLE pSSM, bool fChecksumIt, bool fCheck
  *                              completely initialized on success.
  * @param   cBuffers            The number of stream buffers.
  */
-static int ssmR3OpenFile(PVM pVM, const char *pszFilename, bool fChecksumIt, bool fChecksumOnRead,
-                         uint32_t cBuffers, PSSMHANDLE pSSM)
+static int ssmR3OpenFile(PVM pVM, const char *pszFilename, PCSSMSTRMOPS pStreamOps, void *pvUser,
+                         bool fChecksumIt, bool fChecksumOnRead, uint32_t cBuffers, PSSMHANDLE pSSM)
 {
     /*
      * Initialize the handle.
@@ -6479,7 +6551,11 @@ static int ssmR3OpenFile(PVM pVM, const char *pszFilename, bool fChecksumIt, boo
     /*
      * Try open and validate the file.
      */
-    int rc = ssmR3StrmOpenFile(&pSSM->Strm, pszFilename, false /*fWrite*/, fChecksumOnRead, cBuffers);
+    int rc;
+    if (pStreamOps)
+        rc = ssmR3StrmInit(&pSSM->Strm, pStreamOps, pvUser, false /*fWrite*/, fChecksumOnRead, cBuffers);
+    else
+        rc = ssmR3StrmOpenFile(&pSSM->Strm, pszFilename, false /*fWrite*/, fChecksumOnRead, cBuffers);
     if (RT_SUCCESS(rc))
     {
         rc = ssmR3HeaderAndValidate(pSSM, fChecksumIt, fChecksumOnRead);
@@ -6707,6 +6783,93 @@ static int ssmR3LoadExecV1(PVM pVM, PSSMHANDLE pSSM)
 
 
 /**
+ * Verifies the directory.
+ *
+ * @returns VBox status code.
+ *
+ * @param   pDir        The full directory.
+ * @param   cbDir       The size of the directory.
+ * @param   offDir      The directory stream offset.
+ * @param   cDirEntries The directory entry count from the footer.
+ * @param   cbHdr       The header size.
+ * @param   uSvnRev     The SVN revision that saved the state. Bug detection.
+ */
+static int ssmR3ValidateDirectory(PSSMFILEDIR pDir, size_t cbDir, uint64_t offDir, uint32_t cDirEntries,
+                                  uint32_t cbHdr, uint32_t uSvnRev)
+{
+    AssertLogRelReturn(!memcmp(pDir->szMagic, SSMFILEDIR_MAGIC, sizeof(pDir->szMagic)), VERR_SSM_INTEGRITY_DIR_MAGIC);
+    SSM_CHECK_CRC32_RET(pDir, cbDir, ("Bad directory CRC: %08x, actual %08x\n", u32CRC, u32ActualCRC));
+    AssertLogRelMsgReturn(pDir->cEntries == cDirEntries,
+                          ("Bad directory entry count: %#x, expected %#x (from the footer)\n", pDir->cEntries, cDirEntries),
+                           VERR_SSM_INTEGRITY_DIR);
+    AssertLogRelReturn(RT_UOFFSETOF(SSMFILEDIR, aEntries[pDir->cEntries]) == cbDir, VERR_SSM_INTEGRITY_DIR);
+
+    for (uint32_t i = 0; i < pDir->cEntries; i++)
+    {
+        AssertLogRelMsgReturn(  (   pDir->aEntries[i].off >= cbHdr
+                                 && pDir->aEntries[i].off <  offDir)
+                              || (   pDir->aEntries[i].off == 0 /* bug in unreleased code */
+                                  && uSvnRev < 53365),
+                              ("off=%#llx cbHdr=%#x offDir=%#llx\n", pDir->aEntries[i].off, cbHdr, offDir),
+                              VERR_SSM_INTEGRITY_DIR);
+    }
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Reads and verifies the directory and footer.
+ *
+ * @returns VBox status code.
+ * @param   pSSM                The saved state handle.
+ */
+static int ssmR3LoadDirectoryAndFooter(PSSMHANDLE pSSM)
+{
+    /*
+     * The directory.
+     *
+     * Get the header containing the number of entries first.  Then read the
+     * entries and pass the combined block to the validation function.
+     */
+    uint64_t        off      = ssmR3StrmTell(&pSSM->Strm);
+    size_t const    cbDirHdr = RT_OFFSETOF(SSMFILEDIR, aEntries);
+    SSMFILEDIR      DirHdr;
+    int rc = ssmR3StrmRead(&pSSM->Strm, &DirHdr, cbDirHdr);
+    if (RT_FAILURE(rc))
+        return rc;
+    AssertLogRelMsgReturn(!memcmp(DirHdr.szMagic, SSMFILEDIR_MAGIC, sizeof(DirHdr.szMagic)),
+                          ("Invalid directory magic at %#llx (%lld): %.*Rhxs\n", off, off, sizeof(DirHdr.szMagic), DirHdr.szMagic),
+                          VERR_SSM_INTEGRITY_DIR_MAGIC);
+    AssertLogRelMsgReturn(DirHdr.cEntries < _64K,
+                          ("Too many directory entries at %#llx (%lld): %#x\n", off, off, DirHdr.cEntries),
+                          VERR_SSM_INTEGRITY_DIR);
+
+    size_t      cbDir = RT_OFFSETOF(SSMFILEDIR, aEntries[DirHdr.cEntries]);
+    PSSMFILEDIR pDir  = (PSSMFILEDIR)RTMemTmpAlloc(cbDir);
+    if (!pDir)
+        return VERR_NO_TMP_MEMORY;
+    memcpy(pDir, &DirHdr, cbDirHdr);
+    rc = ssmR3StrmRead(&pSSM->Strm, (uint8_t *)pDir + cbDirHdr, cbDir - cbDirHdr);
+    if (RT_SUCCESS(rc))
+        rc = ssmR3ValidateDirectory(pDir, cbDir, off, DirHdr.cEntries, pSSM->u.Read.cbFileHdr, pSSM->u.Read.u32SvnRev);
+    RTMemTmpFree(pDir);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    /*
+     * Read and validate the footer.
+     */
+    off = ssmR3StrmTell(&pSSM->Strm);
+    uint32_t    u32StreamCRC = ssmR3StrmFinalCRC(&pSSM->Strm);
+    SSMFILEFTR  Footer;
+    rc = ssmR3StrmRead(&pSSM->Strm, &Footer, sizeof(Footer));
+    if (RT_FAILURE(rc))
+        return rc;
+    return ssmR3ValidateFooter(&Footer, off, DirHdr.cEntries, pSSM->u.Read.fStreamCrc32, u32StreamCRC);
+}
+
+
+/**
  * Executes the loading of a V2.X file.
  *
  * @returns VBox status code.
@@ -6773,7 +6936,8 @@ static int ssmR3LoadExecV2(PVM pVM, PSSMHANDLE pSSM)
              */
             Log(("SSM: Unit at %#9llx: END UNIT\n", offUnit));
             ssmR3Progress(pSSM, pSSM->cbEstTotal - pSSM->offEst);
-            return VINF_SUCCESS;
+
+            return ssmR3LoadDirectoryAndFooter(pSSM);
         }
         AssertLogRelMsgReturn(UnitHdr.cbName > 1, ("Unit at %#llx (%lld): No name\n", offUnit, offUnit), VERR_SSM_INTEGRITY);
 
@@ -6860,7 +7024,11 @@ static int ssmR3LoadExecV2(PVM pVM, PSSMHANDLE pSSM)
  * @returns VBox status.
  *
  * @param   pVM             The VM handle.
- * @param   pszFilename     Name of the file to save the state in.
+ * @param   pszFilename     The name of the saved state file. NULL if pStreamOps
+ *                          is used.
+ * @param   pStreamOps      The stream method table. NULL if pszFilename is
+ *                          used.
+ * @param   pStreamOpsUser  The user argument for the stream methods.
  * @param   enmAfter        What is planned after a successful load operation.
  *                          Only acceptable values are SSMAFTER_RESUME and SSMAFTER_DEBUG_IT.
  * @param   pfnProgress     Progress callback. Optional.
@@ -6868,9 +7036,11 @@ static int ssmR3LoadExecV2(PVM pVM, PSSMHANDLE pSSM)
  *
  * @thread  EMT
  */
-VMMR3DECL(int) SSMR3Load(PVM pVM, const char *pszFilename, SSMAFTER enmAfter, PFNVMPROGRESS pfnProgress, void *pvUser)
+VMMR3DECL(int) SSMR3Load(PVM pVM, const char *pszFilename, PCSSMSTRMOPS pStreamOps, void *pvStreamOpsUser,
+                         SSMAFTER enmAfter, PFNVMPROGRESS pfnProgress, void *pvProgressUser)
 {
-    LogFlow(("SSMR3Load: pszFilename=%p:{%s} enmAfter=%d pfnProgress=%p pvUser=%p\n", pszFilename, pszFilename, enmAfter, pfnProgress, pvUser));
+    LogFlow(("SSMR3Load: pszFilename=%p:{%s} pStreamOps=%p pvStreamOpsUser=%p enmAfter=%d pfnProgress=%p pvProgressUser=%p\n",
+             pszFilename, pszFilename, pStreamOps, pvStreamOpsUser, enmAfter, pfnProgress, pvProgressUser));
     VM_ASSERT_EMT0(pVM);
 
     /*
@@ -6881,12 +7051,25 @@ VMMR3DECL(int) SSMR3Load(PVM pVM, const char *pszFilename, SSMAFTER enmAfter, PF
                     || enmAfter == SSMAFTER_DEBUG_IT,
                     ("%d\n", enmAfter),
                     VERR_INVALID_PARAMETER);
+    AssertReturn(!pszFilename != !pStreamOps, VERR_INVALID_PARAMETER);
+    if (pStreamOps)
+    {
+        AssertReturn(pStreamOps->u32Version == SSMSTRMOPS_VERSION, VERR_INVALID_MAGIC);
+        AssertReturn(pStreamOps->u32EndVersion == SSMSTRMOPS_VERSION, VERR_INVALID_MAGIC);
+        AssertReturn(pStreamOps->pfnWrite, VERR_INVALID_PARAMETER);
+        AssertReturn(pStreamOps->pfnRead, VERR_INVALID_PARAMETER);
+        AssertReturn(pStreamOps->pfnSeek, VERR_INVALID_PARAMETER);
+        AssertReturn(pStreamOps->pfnTell, VERR_INVALID_PARAMETER);
+        AssertReturn(pStreamOps->pfnSize, VERR_INVALID_PARAMETER);
+        AssertReturn(pStreamOps->pfnClose, VERR_INVALID_PARAMETER);
+    }
 
     /*
      * Create the handle and open the file.
      */
     SSMHANDLE Handle;
-    int rc = ssmR3OpenFile(pVM, pszFilename, false /* fChecksumIt */, true /* fChecksumOnRead */, 8 /*cBuffers*/, &Handle);
+    int rc = ssmR3OpenFile(pVM, pszFilename, pStreamOps, pvStreamOpsUser, false /* fChecksumIt */,
+                           true /* fChecksumOnRead */, 8 /*cBuffers*/, &Handle);
     if (RT_SUCCESS(rc))
     {
         ssmR3StrmStartIoThread(&Handle.Strm);
@@ -6894,7 +7077,7 @@ VMMR3DECL(int) SSMR3Load(PVM pVM, const char *pszFilename, SSMAFTER enmAfter, PF
 
         Handle.enmAfter     = enmAfter;
         Handle.pfnProgress  = pfnProgress;
-        Handle.pvUser       = pvUser;
+        Handle.pvUser       = pvProgressUser;
 
         if (Handle.u.Read.u16VerMajor)
             LogRel(("SSM: File header: Format %u.%u, VirtualBox Version %u.%u.%u r%u, %u-bit host, cbGCPhys=%u, cbGCPtr=%u\n",
@@ -6907,7 +7090,7 @@ VMMR3DECL(int) SSMR3Load(PVM pVM, const char *pszFilename, SSMAFTER enmAfter, PF
                     Handle.u.Read.cHostBits, Handle.u.Read.cbGCPhys, Handle.u.Read.cbGCPtr));
 
         if (pfnProgress)
-            pfnProgress(pVM, Handle.uPercent, pvUser);
+            pfnProgress(pVM, Handle.uPercent, pvProgressUser);
 
         /*
          * Clear the per unit flags.
@@ -6958,7 +7141,7 @@ VMMR3DECL(int) SSMR3Load(PVM pVM, const char *pszFilename, SSMAFTER enmAfter, PF
 
         /* pending 2% */
         if (pfnProgress)
-            pfnProgress(pVM, Handle.uPercentPrepare-1, pvUser);
+            pfnProgress(pVM, Handle.uPercentPrepare-1, pvProgressUser);
         Handle.uPercent      = Handle.uPercentPrepare;
         Handle.cbEstTotal    = Handle.u.Read.cbLoadFile;
         Handle.offEstUnitEnd = Handle.u.Read.cbLoadFile;
@@ -6972,8 +7155,11 @@ VMMR3DECL(int) SSMR3Load(PVM pVM, const char *pszFilename, SSMAFTER enmAfter, PF
                 rc = ssmR3LoadExecV2(pVM, &Handle);
             else
                 rc = ssmR3LoadExecV1(pVM, &Handle);
+
             /* (progress should be pending 99% now) */
-            AssertMsg(RT_FAILURE(rc) || Handle.uPercent == (101-Handle.uPercentDone), ("%d\n", Handle.uPercent));
+            AssertMsg(   Handle.fLiveSave
+                      || RT_FAILURE(rc)
+                      || Handle.uPercent == (101-Handle.uPercentDone), ("%d\n", Handle.uPercent));
         }
 
         /*
@@ -7022,7 +7208,7 @@ VMMR3DECL(int) SSMR3Load(PVM pVM, const char *pszFilename, SSMAFTER enmAfter, PF
 
         /* progress */
         if (pfnProgress)
-            pfnProgress(pVM, 99, pvUser);
+            pfnProgress(pVM, 99, pvProgressUser);
 
         ssmR3SetCancellable(pVM, &Handle, false);
         ssmR3StrmClose(&Handle.Strm);
@@ -7035,7 +7221,7 @@ VMMR3DECL(int) SSMR3Load(PVM pVM, const char *pszFilename, SSMAFTER enmAfter, PF
     {
         /* progress */
         if (pfnProgress)
-            pfnProgress(pVM, 100, pvUser);
+            pfnProgress(pVM, 100, pvProgressUser);
         Log(("SSM: Load of '%s' completed!\n", pszFilename));
     }
     return rc;
@@ -7064,7 +7250,8 @@ VMMR3DECL(int) SSMR3ValidateFile(const char *pszFilename, bool fChecksumIt)
      * Try open the file and validate it.
      */
     SSMHANDLE Handle;
-    int rc = ssmR3OpenFile(NULL, pszFilename, fChecksumIt, false /*fChecksumOnRead*/, 1 /*cBuffers*/, &Handle);
+    int rc = ssmR3OpenFile(NULL, pszFilename, NULL /*pStreamOps*/, NULL /*pvUser*/, fChecksumIt,
+                           false /*fChecksumOnRead*/, 1 /*cBuffers*/, &Handle);
     if (RT_SUCCESS(rc))
         ssmR3StrmClose(&Handle.Strm);
     else
@@ -7104,7 +7291,8 @@ VMMR3DECL(int) SSMR3Open(const char *pszFilename, unsigned fFlags, PSSMHANDLE *p
     /*
      * Try open the file and validate it.
      */
-    int rc = ssmR3OpenFile(NULL, pszFilename, false /*fChecksumIt*/, true /*fChecksumOnRead*/, 1 /*cBuffers*/, pSSM);
+    int rc = ssmR3OpenFile(NULL, pszFilename, NULL /*pStreamOps*/, NULL /*pvUser*/, false /*fChecksumIt*/,
+                           true /*fChecksumOnRead*/, 1 /*cBuffers*/, pSSM);
     if (RT_SUCCESS(rc))
     {
         pSSM->enmAfter = SSMAFTER_OPENED;
@@ -7241,15 +7429,9 @@ static int ssmR3FileSeekSubV2(PSSMHANDLE pSSM, PSSMFILEDIR pDir, size_t cbDir, u
      */
     int rc = ssmR3StrmPeekAt(&pSSM->Strm, offDir, pDir, cbDir, NULL);
     AssertLogRelRCReturn(rc, rc);
-    AssertLogRelReturn(!memcmp(pDir->szMagic, SSMFILEDIR_MAGIC, sizeof(pDir->szMagic)), VERR_SSM_INTEGRITY_DIR_MAGIC);
-    SSM_CHECK_CRC32_RET(pDir, cbDir, ("Bad directory CRC: %08x, actual %08x\n", u32CRC, u32ActualCRC));
-    AssertLogRelMsgReturn(pDir->cEntries == cDirEntries,
-                          ("Bad directory entry count: %#x, expected %#x (from the footer)\n", pDir->cEntries, cDirEntries),
-                           VERR_SSM_INTEGRITY_DIR);
-    for (uint32_t i = 0; i < cDirEntries; i++)
-        AssertLogRelMsgReturn(pDir->aEntries[i].off < offDir,
-                              ("i=%u off=%lld offDir=%lld\n", i, pDir->aEntries[i].off, offDir),
-                              VERR_SSM_INTEGRITY_DIR);
+    rc = ssmR3ValidateDirectory(pDir, cbDir, offDir, cDirEntries, pSSM->u.Read.cbFileHdr, pSSM->u.Read.u32SvnRev);
+    if (RT_FAILURE(rc))
+        return rc;
 
     /*
      * Search the directory.
@@ -7259,7 +7441,9 @@ static int ssmR3FileSeekSubV2(PSSMHANDLE pSSM, PSSMFILEDIR pDir, size_t cbDir, u
     for (uint32_t i = 0; i < cDirEntries; i++)
     {
         if (    pDir->aEntries[i].u32NameCRC  == u32NameCRC
-            &&  pDir->aEntries[i].u32Instance == iInstance)
+            &&  pDir->aEntries[i].u32Instance == iInstance
+            &&  pDir->aEntries[i].u32Instance != 0 /* bug in unreleased code */
+           )
         {
             /*
              * Read and validate the unit header.

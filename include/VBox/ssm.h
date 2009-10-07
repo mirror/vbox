@@ -734,7 +734,8 @@ VMMR3_INT_DECL(int)     SSMR3LiveToFile(PVM pVM, const char *pszFilename, SSMAFT
 VMMR3_INT_DECL(int)     SSMR3LiveDoStep1(PSSMHANDLE pSSM);
 VMMR3_INT_DECL(int)     SSMR3LiveDoStep2(PSSMHANDLE pSSM);
 VMMR3_INT_DECL(int)     SSMR3LiveDone(PSSMHANDLE pSSM);
-VMMR3DECL(int)          SSMR3Load(PVM pVM, const char *pszFilename, SSMAFTER enmAfter, PFNVMPROGRESS pfnProgress, void *pvUser);
+VMMR3DECL(int)          SSMR3Load(PVM pVM, const char *pszFilename, PCSSMSTRMOPS pStreamOps, void *pvStreamOpsUser,
+                                  SSMAFTER enmAfter, PFNVMPROGRESS pfnProgress, void *pvProgressUser);
 VMMR3DECL(int)          SSMR3ValidateFile(const char *pszFilename, bool fChecksumIt);
 VMMR3DECL(int)          SSMR3Open(const char *pszFilename, unsigned fFlags, PSSMHANDLE *ppSSM);
 VMMR3DECL(int)          SSMR3Close(PSSMHANDLE pSSM);

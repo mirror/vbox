@@ -770,7 +770,8 @@ int main(int argc, char **argv)
      * Attempt a load.
      */
     u64Start = RTTimeNanoTS();
-    rc = SSMR3Load(pVM, pszFilename, SSMAFTER_RESUME, NULL, NULL);
+    rc = SSMR3Load(pVM, pszFilename, NULL /*pStreamOps*/, NULL /*pStreamOpsUser*/,
+                   SSMAFTER_RESUME, NULL /*pfnProgress*/, NULL /*pvProgressUser*/);
     if (RT_FAILURE(rc))
     {
         RTPrintf("SSMR3Load #1 -> %Rrc\n", rc);
