@@ -1091,7 +1091,7 @@ Console::loadStateFileExec(PSSMHANDLE pSSM, void *pvUser, uint32_t uVersion, uin
     Console *that = static_cast<Console *>(pvUser);
     AssertReturn(that, VERR_INVALID_PARAMETER);
 
-    /* Currently, nothing to do when we've been called from VMR3Load. */
+    /* Currently, nothing to do when we've been called from VMR3Load*. */
     return SSMR3SkipToEndOfUnit(pSSM);
 }
 
@@ -6166,7 +6166,8 @@ HRESULT Console::powerDownHostInterfaces()
 
 
 /**
- * Process callback handler for VMR3Load and VMR3Save.
+ * Process callback handler for VMR3LoadFromFile, VMR3LoadFromStream, VMR3Save
+ * and VMR3Migrate.
  *
  * @param   pVM         The VM handle.
  * @param   uPercent    Completetion precentage (0-100).
@@ -6688,10 +6689,10 @@ DECLCALLBACK(int) Console::powerUpThread(RTTHREAD Thread, void *pvUser)
                     LogFlowFunc(("Restoring saved state from '%s'...\n",
                                  task->mSavedStateFile.raw()));
 
-                    vrc = VMR3Load(pVM,
-                                   task->mSavedStateFile.c_str(),
-                                   Console::stateProgressCallback,
-                                   static_cast<VMProgressTask*>(task.get()));
+                    vrc = VMR3LoadFromFile(pVM,
+                                           task->mSavedStateFile.c_str(),
+                                           Console::stateProgressCallback,
+                                           static_cast<VMProgressTask*>(task.get()));
 
                     if (RT_SUCCESS(vrc))
                     {

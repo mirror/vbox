@@ -332,10 +332,11 @@ void startProgressInfo(const char *pszStr)
 /**
  * Update progress display.
  */
-void callProgressInfo(PVM pVM, unsigned uPercent, void *pvUser)
+int callProgressInfo(PVM pVM, unsigned uPercent, void *pvUser)
 {
     if (gConsole)
         gConsole->progressInfo(pVM, uPercent, pvUser);
+    return VINF_SUCCESS;
 }
 
 /**
@@ -964,7 +965,7 @@ leave:
         if (machineState != VMSTATE_OFF)
         {
             /* Power off VM */
-            rc = VMR3ReqCallWait(pVM, VMCPUID_ANY, (PFNRT)VMR3PowerOff, 1, pVM);
+            rc = VMR3PowerOff(pVM);
             AssertRC(rc);
         }
 
@@ -1275,21 +1276,20 @@ DECLCALLBACK(int) VMPowerUpThread(RTTHREAD Thread, void *pvUser)
             && RTPathExists(g_pszStateFile))
         {
             startProgressInfo("Restoring");
-            rc = VMR3ReqCallWait(pVM, VMCPUID_ANY,
-                             (PFNRT)VMR3Load, 4, pVM, g_pszStateFile, &callProgressInfo, (uintptr_t)NULL);
+            rc = VMR3LoadFromFile(pVM, g_pszStateFile, callProgressInfo, (uintptr_t)NULL);
             endProgressInfo();
             if (RT_SUCCESS(rc))
             {
-                rc = VMR3ReqCallWait(pVM, VMCPUID_ANY, (PFNRT)VMR3Resume, 1, pVM);
+                rc = VMR3Resume(pVM);
                 AssertRC(rc);
                 gDisplay->setRunning();
             }
             else
-                AssertMsgFailed(("VMR3Load failed, rc=%Rrc\n", rc));
+                AssertMsgFailed(("VMR3LoadFromFile failed, rc=%Rrc\n", rc));
         }
         else
         {
-            rc = VMR3ReqCallWait(pVM, VMCPUID_ANY, (PFNRT)VMR3PowerOn, 1, pVM);
+            rc = VMR3PowerOn(pVM);
             if (RT_FAILURE(rc))
                 AssertMsgFailed(("VMR3PowerOn failed, rc=%Rrc\n", rc));
         }
