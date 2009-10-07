@@ -94,6 +94,7 @@ struct Medium::Data
           queryInfoCallers(0),
           accessibleInLock(false),
           type(MediumType_Normal),
+          devType(DeviceType_HardDisk),
           logicalSize(0),
           hddOpenMode(OpenReadWrite),
           autoReset(false),
@@ -127,6 +128,7 @@ struct Medium::Data
     ComObjPtr<MediumFormat> formatObj;
 
     MediumType_T type;
+    DeviceType_T devType;
     uint64_t logicalSize;   /*< In MBytes. */
 
     HDDOpenMode hddOpenMode;
@@ -1046,14 +1048,14 @@ HRESULT Medium::init(VirtualBox *aVirtualBox,
  *
  * @param aVirtualBox   VirtualBox object.
  * @param aParent       Parent medium disk or NULL for a root (base) medium.
- * @param aType         Device type of the medium.
+ * @param aDeviceType   Device type of the medium.
  * @param aNode         Configuration settings.
  *
  * @note Locks VirtualBox lock for writing, treeLock() for writing.
  */
 HRESULT Medium::init(VirtualBox *aVirtualBox,
                      Medium *aParent,
-                     DeviceType_T aType,
+                     DeviceType_T aDeviceType,
                      const settings::Medium &data)
 {
     using namespace settings;
@@ -1097,7 +1099,7 @@ HRESULT Medium::init(VirtualBox *aVirtualBox,
     m->description = data.strDescription;
 
     /* required */
-    if (aType == DeviceType_HardDisk)
+    if (aDeviceType == DeviceType_HardDisk)
     {
         AssertReturn(!data.strFormat.isEmpty(), E_FAIL);
         rc = setFormat(Bstr(data.strFormat));
@@ -1136,7 +1138,7 @@ HRESULT Medium::init(VirtualBox *aVirtualBox,
     rc = setLocation(data.strLocation);
     CheckComRCReturnRC(rc);
 
-    if (aType == DeviceType_HardDisk)
+    if (aDeviceType == DeviceType_HardDisk)
     {
         /* type is only for base hard disks */
         if (mParent.isNull())
@@ -1144,6 +1146,9 @@ HRESULT Medium::init(VirtualBox *aVirtualBox,
     }
     else
         m->type = MediumType_Writethrough;
+
+    /* remember device type for correct unregistering later */
+    m->devType = aDeviceType;
 
     LogFlowThisFunc(("m->locationFull='%ls', m->format=%ls, m->id={%RTuuid}\n",
                      m->locationFull.raw(), m->format.raw(), m->id.raw()));
@@ -1165,7 +1170,7 @@ HRESULT Medium::init(VirtualBox *aVirtualBox,
         pHD.createObject();
         rc = pHD->init(aVirtualBox,
                        this,            // parent
-                       aType,
+                       aDeviceType,
                        m);              // child data
         CheckComRCBreakRC(rc);
 
@@ -1189,18 +1194,18 @@ HRESULT Medium::init(VirtualBox *aVirtualBox,
  * a particular host drive has its own instance.
  *
  * @param aVirtualBox   VirtualBox object.
- * @param aType         Device type of the medium.
+ * @param aDeviceType   Device type of the medium.
  * @param aLocation     Location of the host drive.
  * @param aDescription  Comment for this host drive.
  *
  * @note Locks VirtualBox lock for writing, treeLock() for writing.
  */
 HRESULT Medium::init(VirtualBox *aVirtualBox,
-                     DeviceType_T aType,
+                     DeviceType_T aDeviceType,
                      CBSTR aLocation,
                      CBSTR aDescription)
 {
-    ComAssertRet(aType == DeviceType_DVD || aType == DeviceType_Floppy, E_INVALIDARG);
+    ComAssertRet(aDeviceType == DeviceType_DVD || aDeviceType == DeviceType_Floppy, E_INVALIDARG);
     ComAssertRet(aLocation, E_INVALIDARG);
 
     /* Enclose the state transition NotReady->InInit->Ready */
@@ -1214,7 +1219,7 @@ HRESULT Medium::init(VirtualBox *aVirtualBox,
     /* fake up a UUID which is unique, but also reproducible */
     RTUUID uuid;
     RTUuidClear(&uuid);
-    if (aType == DeviceType_DVD)
+    if (aDeviceType == DeviceType_DVD)
         memcpy(&uuid.au8[0], "DVD", 3);
     else
         memcpy(&uuid.au8[0], "FD", 2);
@@ -1228,6 +1233,7 @@ HRESULT Medium::init(VirtualBox *aVirtualBox,
     unconst(m->id) = uuid;
 
     m->type = MediumType_Writethrough;
+    m->devType = aDeviceType;
     m->state = MediumState_Created;
     m->hostDrive = true;
     HRESULT rc = setFormat(Bstr("RAW"));
@@ -4689,7 +4695,21 @@ HRESULT Medium::unregisterWithVirtualBox()
         mParent.setNull();
     }
 
-    HRESULT rc = mVirtualBox->unregisterHardDisk(this);
+    HRESULT rc = E_FAIL;
+    switch (m->devType)
+    {
+        case DeviceType_DVD:
+            rc = mVirtualBox->unregisterDVDImage(this);
+            break;
+        case DeviceType_Floppy:
+            rc = mVirtualBox->unregisterFloppyImage(this);
+            break;
+        case DeviceType_HardDisk:
+            rc = mVirtualBox->unregisterHardDisk(this);
+            break;
+        default:
+            break;
+    }
 
     if (FAILED(rc))
     {
