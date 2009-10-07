@@ -500,12 +500,14 @@ int rtR0MemObjNativeEnterPhys(PPRTR0MEMOBJINTERNAL ppMem, RTHCPHYS Phys, size_t 
  *
  * @return IPRT status code.
  *
- * @param ppMem     Where to store the memory object pointer.
- * @param pv        First page.
- * @param cb        Number of bytes.
- * @param R0Process The process \a pv and \a cb refers to.
+ * @param   ppMem           Where to store the memory object pointer.
+ * @param   pv              First page.
+ * @param   cb              Number of bytes.
+ * @param   fAccess         The desired access, a combination of RTMEM_PROT_READ
+ *                          and RTMEM_PROT_WRITE.
+ * @param   R0Process       The process \a pv and \a cb refers to.
  */
-static int rtR0MemObjNtLock(PPRTR0MEMOBJINTERNAL ppMem, void *pv, size_t cb, RTR0PROCESS R0Process)
+static int rtR0MemObjNtLock(PPRTR0MEMOBJINTERNAL ppMem, void *pv, size_t cb, uint32_t fAccess, RTR0PROCESS R0Process)
 {
     /*
      * Calc the number of MDLs we need and allocate the memory object structure.
@@ -548,7 +550,13 @@ static int rtR0MemObjNtLock(PPRTR0MEMOBJINTERNAL ppMem, void *pv, size_t cb, RTR
          */
         __try
         {
-            MmProbeAndLockPages(pMdl, R0Process == NIL_RTR0PROCESS ? KernelMode : UserMode, IoModifyAccess);
+            MmProbeAndLockPages(pMdl,
+                                R0Process == NIL_RTR0PROCESS ? KernelMode : UserMode,
+                                fAccess == RTMEM_PROT_READ
+                                ? IoReadAccess
+                                : fAccess == RTMEM_PROT_WRITE
+                                ? IoWriteAccess
+                                : IoModifyAccess);
 
             pMemNt->apMdls[iMdl] = pMdl;
             pMemNt->cMdls++;
@@ -560,10 +568,13 @@ static int rtR0MemObjNtLock(PPRTR0MEMOBJINTERNAL ppMem, void *pv, size_t cb, RTR
             break;
         }
 
-        if (R0Process != NIL_RTR0PROCESS )
+        if (R0Process != NIL_RTR0PROCESS)
         {
             /* Make sure the user process can't change the allocation. */
-            pMemNt->pvSecureMem = MmSecureVirtualMemory(pv, cb, PAGE_READWRITE);
+            pMemNt->pvSecureMem = MmSecureVirtualMemory(pv, cb,
+                                                        fAccess & RTMEM_PROT_WRITE
+                                                        ? PAGE_READWRITE
+                                                        : PAGE_READONLY);
             if (!pMemNt->pvSecureMem)
             {
                 rc = VERR_NO_MEMORY;
@@ -603,17 +614,17 @@ static int rtR0MemObjNtLock(PPRTR0MEMOBJINTERNAL ppMem, void *pv, size_t cb, RTR
 }
 
 
-int rtR0MemObjNativeLockUser(PPRTR0MEMOBJINTERNAL ppMem, RTR3PTR R3Ptr, size_t cb, RTR0PROCESS R0Process)
+int rtR0MemObjNativeLockUser(PPRTR0MEMOBJINTERNAL ppMem, RTR3PTR R3Ptr, size_t cb, uint32_t fAccess, RTR0PROCESS R0Process)
 {
     AssertMsgReturn(R0Process == RTR0ProcHandleSelf(), ("%p != %p\n", R0Process, RTR0ProcHandleSelf()), VERR_NOT_SUPPORTED);
     /* (Can use MmProbeAndLockProcessPages if we need to mess with other processes later.) */
-    return rtR0MemObjNtLock(ppMem, (void *)R3Ptr, cb, R0Process);
+    return rtR0MemObjNtLock(ppMem, (void *)R3Ptr, cb, fAccess, R0Process);
 }
 
 
-int rtR0MemObjNativeLockKernel(PPRTR0MEMOBJINTERNAL ppMem, void *pv, size_t cb)
+int rtR0MemObjNativeLockKernel(PPRTR0MEMOBJINTERNAL ppMem, void *pv, size_t cb, uint32_t fAccess)
 {
-    return rtR0MemObjNtLock(ppMem, pv, cb, NIL_RTR0PROCESS);
+    return rtR0MemObjNtLock(ppMem, pv, cb, fAccess, NIL_RTR0PROCESS);
 }
 
 

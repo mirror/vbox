@@ -3104,7 +3104,7 @@ GMMR0DECL(int) GMMR0SeedChunk(PVM pVM, VMCPUID idCpu, RTR3PTR pvR3)
      * Lock the memory before taking the semaphore.
      */
     RTR0MEMOBJ MemObj;
-    rc = RTR0MemObjLockUser(&MemObj, pvR3, GMM_CHUNK_SIZE, NIL_RTR0PROCESS);
+    rc = RTR0MemObjLockUser(&MemObj, pvR3, GMM_CHUNK_SIZE, RTMEM_PROT_READ | RTMEM_PROT_WRITE, NIL_RTR0PROCESS);
     if (RT_SUCCESS(rc))
     {
         /*

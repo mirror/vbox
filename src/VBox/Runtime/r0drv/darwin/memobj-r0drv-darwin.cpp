@@ -654,13 +654,16 @@ int rtR0MemObjNativeEnterPhys(PPRTR0MEMOBJINTERNAL ppMem, RTHCPHYS Phys, size_t 
  *
  * @return IPRT status code.
  *
- * @param ppMem     Where to store the memory object pointer.
- * @param pv        First page.
- * @param cb        Number of bytes.
- * @param Task      The task \a pv and \a cb refers to.
+ * @param   ppMem           Where to store the memory object pointer.
+ * @param   pv              First page.
+ * @param   cb              Number of bytes.
+ * @param   fAccess         The desired access, a combination of RTMEM_PROT_READ
+ *                          and RTMEM_PROT_WRITE.
+ * @param   Task            The task \a pv and \a cb refers to.
  */
-static int rtR0MemObjNativeLock(PPRTR0MEMOBJINTERNAL ppMem, void *pv, size_t cb, task_t Task)
+static int rtR0MemObjNativeLock(PPRTR0MEMOBJINTERNAL ppMem, void *pv, size_t cb, uint32_t fAccess, task_t Task)
 {
+    NOREF(fAccess);
 #ifdef USE_VM_MAP_WIRE
     vm_map_t Map = get_task_map(Task);
     Assert(Map);
@@ -728,15 +731,15 @@ static int rtR0MemObjNativeLock(PPRTR0MEMOBJINTERNAL ppMem, void *pv, size_t cb,
 }
 
 
-int rtR0MemObjNativeLockUser(PPRTR0MEMOBJINTERNAL ppMem, RTR3PTR R3Ptr, size_t cb, RTR0PROCESS R0Process)
+int rtR0MemObjNativeLockUser(PPRTR0MEMOBJINTERNAL ppMem, RTR3PTR R3Ptr, size_t cb, uint32_t fAccess, RTR0PROCESS R0Process)
 {
-    return rtR0MemObjNativeLock(ppMem, (void *)R3Ptr, cb, (task_t)R0Process);
+    return rtR0MemObjNativeLock(ppMem, (void *)R3Ptr, cb, fAccess, (task_t)R0Process);
 }
 
 
-int rtR0MemObjNativeLockKernel(PPRTR0MEMOBJINTERNAL ppMem, void *pv, size_t cb)
+int rtR0MemObjNativeLockKernel(PPRTR0MEMOBJINTERNAL ppMem, void *pv, size_t cb, uint32_t fAccess)
 {
-    return rtR0MemObjNativeLock(ppMem, pv, cb, kernel_task);
+    return rtR0MemObjNativeLock(ppMem, pv, cb, fAccess, kernel_task);
 }
 
 

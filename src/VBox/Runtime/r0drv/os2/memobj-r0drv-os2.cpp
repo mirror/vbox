@@ -241,7 +241,7 @@ int rtR0MemObjNativeEnterPhys(PPRTR0MEMOBJINTERNAL ppMem, RTHCPHYS Phys, size_t 
 }
 
 
-int rtR0MemObjNativeLockUser(PPRTR0MEMOBJINTERNAL ppMem, RTR3PTR R3Ptr, size_t cb, RTR0PROCESS R0Process)
+int rtR0MemObjNativeLockUser(PPRTR0MEMOBJINTERNAL ppMem, RTR3PTR R3Ptr, size_t cb, uint32_t fAccess, RTR0PROCESS R0Process)
 {
     AssertMsgReturn(R0Process == RTR0ProcHandleSelf(), ("%p != %p\n", R0Process, RTR0ProcHandleSelf()), VERR_NOT_SUPPORTED);
 
@@ -253,7 +253,8 @@ int rtR0MemObjNativeLockUser(PPRTR0MEMOBJINTERNAL ppMem, RTR3PTR R3Ptr, size_t c
 
     /* lock it. */
     ULONG cPagesRet = cPages;
-    int rc = KernVMLock(VMDHL_LONG | VMDHL_WRITE, (void *)R3Ptr, cb, &pMemOs2->Lock, &pMemOs2->aPages[0], &cPagesRet);
+    int rc = KernVMLock(VMDHL_LONG | (fAccess & RTMEM_PROT_WRITE ? VMDHL_WRITE : 0),
+                        (void *)R3Ptr, cb, &pMemOs2->Lock, &pMemOs2->aPages[0], &cPagesRet);
     if (!rc)
     {
         rtR0MemObjFixPageList(&pMemOs2->aPages[0], cPages, cPagesRet);
@@ -268,7 +269,7 @@ int rtR0MemObjNativeLockUser(PPRTR0MEMOBJINTERNAL ppMem, RTR3PTR R3Ptr, size_t c
 }
 
 
-int rtR0MemObjNativeLockKernel(PPRTR0MEMOBJINTERNAL ppMem, void *pv, size_t cb)
+int rtR0MemObjNativeLockKernel(PPRTR0MEMOBJINTERNAL ppMem, void *pv, size_t cb, uint32_t fAccess)
 {
     /* create the object. */
     const ULONG cPages = cb >> PAGE_SHIFT;
@@ -278,7 +279,8 @@ int rtR0MemObjNativeLockKernel(PPRTR0MEMOBJINTERNAL ppMem, void *pv, size_t cb)
 
     /* lock it. */
     ULONG cPagesRet = cPages;
-    int rc = KernVMLock(VMDHL_LONG | VMDHL_WRITE, pv, cb, &pMemOs2->Lock, &pMemOs2->aPages[0], &cPagesRet);
+    int rc = KernVMLock(VMDHL_LONG | (fAccess & RTMEM_PROT_WRITE ? VMDHL_WRITE : 0),
+                        pv, cb, &pMemOs2->Lock, &pMemOs2->aPages[0], &cPagesRet);
     if (!rc)
     {
         rtR0MemObjFixPageList(&pMemOs2->aPages[0], cPages, cPagesRet);

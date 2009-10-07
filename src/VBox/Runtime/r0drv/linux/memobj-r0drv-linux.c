@@ -733,13 +733,14 @@ int rtR0MemObjNativeEnterPhys(PPRTR0MEMOBJINTERNAL ppMem, RTHCPHYS Phys, size_t 
 }
 
 
-int rtR0MemObjNativeLockUser(PPRTR0MEMOBJINTERNAL ppMem, RTR3PTR R3Ptr, size_t cb, RTR0PROCESS R0Process)
+int rtR0MemObjNativeLockUser(PPRTR0MEMOBJINTERNAL ppMem, RTR3PTR R3Ptr, size_t cb, uint32_t fAccess, RTR0PROCESS R0Process)
 {
     const int cPages = cb >> PAGE_SHIFT;
     struct task_struct *pTask = rtR0ProcessToLinuxTask(R0Process);
     struct vm_area_struct **papVMAs;
     PRTR0MEMOBJLNX pMemLnx;
     int rc = VERR_NO_MEMORY;
+    NOREF(fAccess);
 
     /*
      * Check for valid task and size overflows.
@@ -829,7 +830,7 @@ int rtR0MemObjNativeLockUser(PPRTR0MEMOBJINTERNAL ppMem, RTR3PTR R3Ptr, size_t c
 }
 
 
-int rtR0MemObjNativeLockKernel(PPRTR0MEMOBJINTERNAL ppMem, void *pv, size_t cb)
+int rtR0MemObjNativeLockKernel(PPRTR0MEMOBJINTERNAL ppMem, void *pv, size_t cb, uint32_t fFlags)
 {
     void           *pvLast = (uint8_t *)pv + cb - 1;
     size_t const    cPages = cb >> PAGE_SHIFT;
@@ -838,6 +839,7 @@ int rtR0MemObjNativeLockKernel(PPRTR0MEMOBJINTERNAL ppMem, void *pv, size_t cb)
     int             rc;
     uint8_t        *pbPage;
     size_t          iPage;
+    NOREF(fAccess);
 
     /*
      * Classify the memory and check that we can deal with it.
