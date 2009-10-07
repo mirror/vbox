@@ -87,11 +87,11 @@ public:
     // initializer used when loading settings
     HRESULT init(VirtualBox *aVirtualBox,
                  Medium *aParent,
-                 DeviceType_T aType,
+                 DeviceType_T aDeviceType,
                  const settings::Medium &data);
     // initializer for host floppy/DVD
     HRESULT init(VirtualBox *aVirtualBox,
-                 DeviceType_T aType,
+                 DeviceType_T aDeviceType,
                  CBSTR aLocation,
                  CBSTR aDescription = NULL);
     void uninit();
