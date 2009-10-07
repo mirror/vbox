@@ -1419,8 +1419,13 @@ flushPage:
      * the reuse detection must be fixed.
      */
     rc = pgmPoolAccessHandlerFlush(pVM, pVCpu, pPool, pPage, pDis, pRegFrame, GCPhysFault, pvFault);
-    if (rc == VINF_EM_RAW_EMULATE_INSTR && fReused)
-        rc = VINF_SUCCESS;
+    if (    rc == VINF_EM_RAW_EMULATE_INSTR 
+        &&  fReused)
+    {
+        /* Make sure that the current instruction still has shadow page backing, otherwise we'll end up in a loop. */
+        if (PGMShwGetPage(pVCpu, pRegFrame->rip, NULL, NULL) == VINF_SUCCESS)
+            rc = VINF_SUCCESS;  /* safe to restart the instruction. */
+    }
     STAM_PROFILE_STOP_EX(&pVM->pgm.s.CTX_SUFF(pPool)->CTX_SUFF_Z(StatMonitor), &pPool->CTX_MID_Z(StatMonitor,FlushPage), a);
     pgmUnlock(pVM);
     return rc;
