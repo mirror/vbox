@@ -1734,7 +1734,7 @@ static DECLCALLBACK(int) vmR3Load(PVM pVM, const char *pszFilename, PFNVMPROGRES
     if (RT_FAILURE(rc))
         return rc;
 
-    rc = SSMR3Load(pVM, pszFilename, SSMAFTER_RESUME, pfnProgress,  pvUser);
+    rc = SSMR3Load(pVM, pszFilename, NULL /*pStreamOps*/, NULL /*pStreamOpsUser*/, SSMAFTER_RESUME, pfnProgress, pvUser);
     if (RT_SUCCESS(rc))
     {
         VMR3Relocate(pVM, 0 /*offDelta*/);
