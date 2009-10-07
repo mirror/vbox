@@ -729,8 +729,8 @@ VMMR3_INT_DECL(int)     SSMR3DeregisterDriver(PVM pVM, PPDMDRVINS pDrvIns, const
 VMMR3DECL(int)          SSMR3DeregisterInternal(PVM pVM, const char *pszName);
 VMMR3DECL(int)          SSMR3DeregisterExternal(PVM pVM, const char *pszName);
 VMMR3DECL(int)          SSMR3Save(PVM pVM, const char *pszFilename, SSMAFTER enmAfter, PFNVMPROGRESS pfnProgress, void *pvUser);
-VMMR3_INT_DECL(int)     SSMR3LiveToFile(PVM pVM, const char *pszFilename, SSMAFTER enmAfter,
-                                        PFNVMPROGRESS pfnProgress, void *pvUser, PSSMHANDLE *ppSSM);
+VMMR3_INT_DECL(int)     SSMR3LiveSave(PVM pVM, const char *pszFilename, PCSSMSTRMOPS pStreamOps, void *pvStreamOps,
+                                      SSMAFTER enmAfter, PFNVMPROGRESS pfnProgress, void *pvProgressUser, PSSMHANDLE *ppSSM);
 VMMR3_INT_DECL(int)     SSMR3LiveDoStep1(PSSMHANDLE pSSM);
 VMMR3_INT_DECL(int)     SSMR3LiveDoStep2(PSSMHANDLE pSSM);
 VMMR3_INT_DECL(int)     SSMR3LiveDone(PSSMHANDLE pSSM);

@@ -62,7 +62,7 @@
  *
  * The live saving sequence is something like this:
  *
- *      -# SSMR3LiveToFile is called on EMT0.  It returns a saved state
+ *      -# SSMR3LiveSave is called on EMT0.  It returns a saved state
  *         handle.
  *      -# SSMR3LiveDoStep1 is called on a non-EMT.  This will save the major
  *         parts of the state while the VM may still be running.
@@ -3591,13 +3591,11 @@ static int ssmR3SaveDoClose(PVM pVM, PSSMHANDLE pSSM)
 /**
  * Closes the SSM handle.
  *
- * This must always be called on a handled returned by SSMR3LiveToFile or
- * SSMR3LiveToRemote.
+ * This must always be called on a handled returned by SSMR3LiveSave.
  *
  * @returns VBox status.
  *
- * @param   pSSM            The SSM handle returned by SSMR3LiveToFile or
- *                          SSMR3LiveToRemote.
+ * @param   pSSM            The SSM handle returned by SSMR3LiveSave.
  *
  * @thread  EMT(0).
  */
@@ -4003,7 +4001,7 @@ static int ssmR3SaveDoPrepRun(PVM pVM, PSSMHANDLE pSSM)
 
 
 /**
- * Common worker for SSMR3Save and SSMR3Migrate.
+ * Common worker for SSMR3Save and SSMR3LiveSave.
  *
  * @returns VBox status code (no need to check pSSM->rc).
  * @param   pVM                 The VM handle.
@@ -4039,8 +4037,7 @@ static int ssmR3SaveDoCommon(PVM pVM, PSSMHANDLE pSSM)
  *
  * @returns VBox status.
  *
- * @param   pSSM            The SSM handle returned by SSMR3LiveToFile or
- *                          SSMR3LiveToRemote.
+ * @param   pSSM            The SSM handle returned by SSMR3LiveSave.
  *
  * @thread  Non-EMT thread. Will involve the EMT at the end of the operation.
  */
@@ -4120,7 +4117,11 @@ static int ssmR3WriteHeaderAndClearPerUnitData(PVM pVM, PSSMHANDLE pSSM)
  *
  * @returns VBox status code.
  * @param   pVM                 The VM handle.
- * @param   pszFilename         The name of the file.
+ * @param   pszFilename         The name of the file.  NULL if pStreamOps is
+ *                              used.
+ * @param   pStreamOps          The stream methods.  NULL if pszFilename is
+ *                              used.
+ * @param   pvStreamOpsUser     The user argument to the stream methods.
  * @param   enmAfter            What to do afterwards.
  * @param   pfnProgress         The progress callback.
  * @param   pvUser              The progress callback user argument.
@@ -4128,8 +4129,8 @@ static int ssmR3WriteHeaderAndClearPerUnitData(PVM pVM, PSSMHANDLE pSSM)
  *                              handle upon successful return.  Free it using
  *                              RTMemFree after closing the stream.
  */
-static int ssmR3SaveDoCreateFile(PVM pVM, const char *pszFilename, SSMAFTER enmAfter,
-                                 PFNVMPROGRESS pfnProgress, void *pvUser, PSSMHANDLE *ppSSM)
+static int ssmR3SaveDoCreateFile(PVM pVM, const char *pszFilename, PCSSMSTRMOPS pStreamOps, void *pvStreamOpsUser,
+                                 SSMAFTER enmAfter, PFNVMPROGRESS pfnProgress, void *pvUser, PSSMHANDLE *ppSSM)
 {
     PSSMHANDLE pSSM = (PSSMHANDLE)RTMemAllocZ(sizeof(*pSSM));
     if (!pSSM)
@@ -4155,7 +4156,11 @@ static int ssmR3SaveDoCreateFile(PVM pVM, const char *pszFilename, SSMAFTER enmA
     pSSM->pszFilename           = pszFilename;
     pSSM->u.Write.offDataBuffer = 0;
 
-    int rc = ssmR3StrmOpenFile(&pSSM->Strm, pszFilename, true /*fWrite*/, true /*fChecksummed*/, 8 /*cBuffers*/);
+    int rc;
+    if (pStreamOps)
+        rc = ssmR3StrmInit(&pSSM->Strm, pStreamOps, pvStreamOpsUser, true /*fWrite*/, true /*fChecksummed*/, 8 /*cBuffers*/);
+    else
+        rc = ssmR3StrmOpenFile(&pSSM->Strm, pszFilename,             true /*fWrite*/, true /*fChecksummed*/, 8 /*cBuffers*/);
     if (RT_FAILURE(rc))
     {
         LogRel(("SSM: Failed to create save state file '%s', rc=%Rrc.\n",  pszFilename, rc));
@@ -4201,7 +4206,8 @@ VMMR3DECL(int) SSMR3Save(PVM pVM, const char *pszFilename, SSMAFTER enmAfter, PF
      * so we reserve 20% for the 'Done' period.
      */
     PSSMHANDLE pSSM;
-    int rc = ssmR3SaveDoCreateFile(pVM, pszFilename, enmAfter, pfnProgress, pvUser, &pSSM);
+    int rc = ssmR3SaveDoCreateFile(pVM, pszFilename, NULL /*pStreamOps*/, NULL /*pvStreamOpsUser*/,
+                                   enmAfter, pfnProgress, pvUser, &pSSM);
     if (RT_FAILURE(rc))
         return rc;
     pSSM->uPercentPrepare = 20;
@@ -4421,8 +4427,7 @@ static int ssmR3LiveDoExecRun(PVM pVM, PSSMHANDLE pSSM, uint32_t uPass)
  *
  * @returns VBox status.
  *
- * @param   pSSM            The SSM handle returned by SSMR3LiveToFile or
- *                          SSMR3LiveToRemote.
+ * @param   pSSM            The SSM handle returned by SSMR3LiveSave.
  *
  * @thread  Non-EMT thread. Will involve the EMT at the end of the operation.
  */
@@ -4606,7 +4611,7 @@ static int ssmR3DoLivePrepRun(PVM pVM, PSSMHANDLE pSSM)
 
 
 /**
- * Start saving the live state to a file.
+ * Start saving the live state.
  *
  * Call SSMR3LiveDoStep1, SSMR3LiveDoStep2 and finally SSMR3LiveDone on success.
  * SSMR3LiveDone should be called even if SSMR3LiveDoStep1 or SSMR3LiveDoStep2
@@ -4623,10 +4628,11 @@ static int ssmR3DoLivePrepRun(PVM pVM, PSSMHANDLE pSSM)
  *
  * @thread  EMT0
  */
-VMMR3_INT_DECL(int) SSMR3LiveToFile(PVM pVM, const char *pszFilename, SSMAFTER enmAfter,
-                                    PFNVMPROGRESS pfnProgress, void *pvUser, PSSMHANDLE *ppSSM)
+VMMR3_INT_DECL(int) SSMR3LiveSave(PVM pVM, const char *pszFilename, PCSSMSTRMOPS pStreamOps, void *pvStreamOpsUser,
+                                  SSMAFTER enmAfter, PFNVMPROGRESS pfnProgress, void *pvProgressUser, PSSMHANDLE *ppSSM)
 {
-    LogFlow(("SSMR3LiveToFile: pszFilename=%p:{%s} enmAfter=%d pfnProgress=%p pvUser=%p\n", pszFilename, pszFilename, enmAfter, pfnProgress, pvUser));
+    LogFlow(("SSMR3LiveSave: pszFilename=%p:{%s} pStreamOps=%p pvStreamOpsUser=%p enmAfter=%d pfnProgress=%p pvProgressUser=%p\n",
+             pszFilename, pszFilename, pStreamOps, pvStreamOpsUser, enmAfter, pfnProgress, pvProgressUser));
     VM_ASSERT_EMT0(pVM);
 
     /*
@@ -4636,6 +4642,18 @@ VMMR3_INT_DECL(int) SSMR3LiveToFile(PVM pVM, const char *pszFilename, SSMAFTER e
                     || enmAfter == SSMAFTER_CONTINUE,
                     ("%d\n", enmAfter),
                     VERR_INVALID_PARAMETER);
+    AssertReturn(!pszFilename != !pStreamOps, VERR_INVALID_PARAMETER);
+    if (pStreamOps)
+    {
+        AssertReturn(pStreamOps->u32Version == SSMSTRMOPS_VERSION, VERR_INVALID_MAGIC);
+        AssertReturn(pStreamOps->u32EndVersion == SSMSTRMOPS_VERSION, VERR_INVALID_MAGIC);
+        AssertReturn(pStreamOps->pfnWrite, VERR_INVALID_PARAMETER);
+        AssertReturn(pStreamOps->pfnRead, VERR_INVALID_PARAMETER);
+        AssertReturn(pStreamOps->pfnSeek, VERR_INVALID_PARAMETER);
+        AssertReturn(pStreamOps->pfnTell, VERR_INVALID_PARAMETER);
+        AssertReturn(pStreamOps->pfnSize, VERR_INVALID_PARAMETER);
+        AssertReturn(pStreamOps->pfnClose, VERR_INVALID_PARAMETER);
+    }
 
     /*
      * Create the saved state file and handle.
@@ -4644,7 +4662,8 @@ VMMR3_INT_DECL(int) SSMR3LiveToFile(PVM pVM, const char *pszFilename, SSMAFTER e
      * so we reserve 20% for the 'Done' period.
      */
     PSSMHANDLE pSSM;
-    int rc = ssmR3SaveDoCreateFile(pVM, pszFilename, enmAfter, pfnProgress, pvUser, &pSSM);
+    int rc = ssmR3SaveDoCreateFile(pVM, pszFilename, pStreamOps, pvStreamOpsUser,
+                                   enmAfter, pfnProgress, pvProgressUser, &pSSM);
     if (RT_FAILURE(rc))
         return rc;
     pSSM->uPercentPrepare = 20; /** @todo fix these. */
