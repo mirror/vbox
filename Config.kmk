@@ -419,6 +419,10 @@ VBOX_WITH_HPET = 1
 VBOX_WITH_LPC = 1
 # Enable EFI support
 VBOX_WITH_EFI = 1
+# Fetch EFI firmware image from the build server  
+# VBOX_WITH_EFI_FIRMWARE_SERVER = 1
+# Revision of EFI firmware to use, need VBOX_WITH_EFI_FIRMWARE_SERVER enabled
+# VBOX_EFI_FW_REV=9330
 # Enable SCSI drivers
 VBOX_WITH_SCSI = 1
 # Enable changing network attachments dynamically.
