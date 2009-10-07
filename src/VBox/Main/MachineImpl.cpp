@@ -154,6 +154,8 @@ Machine::UserData::UserData()
     /* default values for a newly created machine */
 
     mNameSync = TRUE;
+    mLiveMigrationTarget = FALSE;
+    mLiveMigrationPort = 0;
 
     /* mName, mOSTypeId, mSnapshotFolder, mSnapshotFolderFull are initialized in
      * Machine::init() */
@@ -1816,7 +1818,7 @@ Machine::COMGETTER(GuestPropertyNotificationPatterns) (BSTR *aPatterns)
 
     mHWData->mGuestPropertyNotificationPatterns.cloneTo(aPatterns);
 
-    return RT_LIKELY (aPatterns != NULL) ? S_OK : E_OUTOFMEMORY;
+    return RT_LIKELY (aPatterns != NULL) ? S_OK : E_OUTOFMEMORY; /** @todo r=bird: this is wrong... :-) */
 }
 
 STDMETHODIMP
@@ -1853,6 +1855,114 @@ Machine::COMGETTER(StorageControllers) (ComSafeArrayOut(IStorageController *, aS
 
     return S_OK;
 }
+
+STDMETHODIMP
+Machine::COMGETTER(LiveMigrationTarget)(BOOL *aEnabled)
+{
+    CheckComArgOutPointerValid(aEnabled);
+
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
+
+    AutoReadLock alock(this);
+
+    *aEnabled = mUserData->mLiveMigrationTarget;
+
+    return S_OK;
+}
+
+STDMETHODIMP
+Machine::COMSETTER(LiveMigrationTarget)(BOOL aEnabled)
+{
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
+
+    AutoWriteLock alock(this);
+
+    /* Only allow it to be set to true when PoweredOff.
+       (Clearing it is always permitted.) */
+    if (    aEnabled
+        &&  mData->mRegistered
+        &&  (   mType != IsSessionMachine
+             || mData->mMachineState > MachineState_PoweredOff)
+       )
+        return setError(VBOX_E_INVALID_VM_STATE,
+                        tr("The machine is not powered off (state is %d)"),
+                        mData->mMachineState);
+
+    mUserData.backup();
+    mUserData->mLiveMigrationTarget = aEnabled;
+
+    return S_OK;
+}
+
+STDMETHODIMP
+Machine::COMGETTER(LiveMigrationPort)(ULONG *aPort)
+{
+    CheckComArgOutPointerValid(aPort);
+
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
+
+    AutoReadLock alock(this);
+
+    *aPort = mUserData->mLiveMigrationPort;
+
+    return S_OK;
+}
+
+STDMETHODIMP
+Machine::COMSETTER(LiveMigrationPort)(ULONG aPort)
+{
+    if (aPort >= _64K)
+        return setError(E_INVALIDARG, tr("Invalid port number %d"), aPort);
+
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
+
+    AutoWriteLock alock(this);
+
+    HRESULT rc = checkStateDependency(MutableStateDep);
+    CheckComRCReturnRC(rc);
+
+    mUserData.backup();
+    mUserData->mLiveMigrationPort = aPort;
+
+    return S_OK;
+}
+
+STDMETHODIMP
+Machine::COMGETTER(LiveMigrationPassword)(BSTR *aPassword)
+{
+    CheckComArgOutPointerValid(aPassword);
+
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
+
+    AutoReadLock alock(this);
+
+    mUserData->mLiveMigrationPassword.cloneTo(aPassword);
+
+    return S_OK;
+}
+
+STDMETHODIMP
+Machine::COMSETTER(LiveMigrationPassword)(IN_BSTR aPassword)
+{
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
+
+    AutoWriteLock alock(this);
+
+    HRESULT rc = checkStateDependency(MutableStateDep);
+    CheckComRCReturnRC(rc);
+
+    mUserData.backup();
+    mUserData->mLiveMigrationPassword = aPassword;
+
+    return S_OK;
+}
+
 
 // IMachine methods
 /////////////////////////////////////////////////////////////////////////////
@@ -4921,6 +5031,7 @@ HRESULT Machine::loadSettings(bool aRegistered)
 
         mData->mLastStateChange = mData->m_pMachineConfigFile->timeLastStateChange;
 
+/** @todo LiveMigration: Load LiveMigration properties here. */
         /*
          *  note: all mUserData members must be assigned prior this point because
          *  we need to commit changes in order to let mUserData be shared by all
@@ -5910,6 +6021,7 @@ HRESULT Machine::saveSettings(int aFlags /*= 0*/)
         mData->m_pMachineConfigFile->fCurrentStateModified = !!currentStateModified;
         mData->m_pMachineConfigFile->timeLastStateChange = mData->mLastStateChange;
         mData->m_pMachineConfigFile->fAborted = (mData->mMachineState == MachineState_Aborted);
+/** @todo LiveMigration: Save LiveMigration properties here. */
 
         rc = saveHardware(mData->m_pMachineConfigFile->hardwareMachine);
         CheckComRCThrowRC(rc);

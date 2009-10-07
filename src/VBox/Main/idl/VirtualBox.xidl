@@ -4001,7 +4001,7 @@
 
   <interface
      name="IMachine" extends="$unknown"
-     uuid="445ecfcc-8ebd-a2a5-459c-4d21ae0b206b"
+     uuid="160b0ccc-c3d6-4c1b-bbe9-39b1a732f833"
      wsmap="managed"
      >
     <desc>
@@ -4487,6 +4487,34 @@
         A comma-separated list of simple glob patterns.  Changes to guest
         properties whose name matches one of the patterns will generate an
         <link to="IVirtualBoxCallback::onGuestPropertyChange"/> signal.
+      </desc>
+    </attribute>
+
+    <attribute name="liveMigrationTarget" type="boolean">
+      <desc>
+        When set to @a true, the virtual machine becomes a live migration
+        target.  This can only set to @a true when the VM is in the @a
+        PoweredOff state.
+
+        This property is automatically set to @a false when the VM is powered
+        on.
+      </desc>
+    </attribute>
+
+    <attribute name="liveMigrationPort" type="unsigned long">
+      <desc>
+        The TCP port used for live migration.  This can only be set when the
+        VM is in the @a PoweredOff state.
+
+        0 means the port is automatically selected and the source machine will
+        have to be told where to connected after the destination has been
+        started.
+      </desc>
+    </attribute>
+
+    <attribute name="liveMigrationPassword" type="wstring">
+      <desc>
+        The password the live migration target will check for.
       </desc>
     </attribute>
 
@@ -5912,7 +5940,7 @@
 
   <interface
      name="IConsole" extends="$unknown"
-     uuid="0a51994b-cbc6-4686-94eb-d4e4023280e2"
+     uuid="c47486e1-3d99-4212-b1c5-86451978999d"
      wsmap="managed"
      >
     <desc>
@@ -6645,6 +6673,30 @@
           Virtual machine is running.
         </result>
       </desc>
+      <param name="progress" type="IProgress" dir="return">
+        <desc>Progress object to track the operation completion.</desc>
+      </param>
+    </method>
+
+    <method name="migrate">
+      <desc>
+        Migrate the VM to a different host machine.
+
+        TODO explain the details.
+
+        <result name="VBOX_E_INVALID_VM_STATE">
+          Virtual machine not running or paused.
+        </result>
+      </desc>
+      <param name="hostname" type="wstring" dir="in">
+        <desc>The name or IP of the host to migrate to.</desc>
+      </param>
+      <param name="port" type="unsigned long" dir="in">
+        <desc>The TCP port to connect to (1..65535).</desc>
+      </param>
+      <param name="password" type="wstring" dir="in">
+        <desc>The password.</desc>
+      </param>
       <param name="progress" type="IProgress" dir="return">
         <desc>Progress object to track the operation completion.</desc>
       </param>

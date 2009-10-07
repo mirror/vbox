@@ -597,6 +597,7 @@ VBoxC_SOURCES = \
 	VirtualBoxCallbackImpl.cpp \
 	ConsoleImpl.cpp \
 	ConsoleImpl2.cpp \
+	ConsoleImpl-LiveMigration.cpp \
 	ConsoleVRDPServer.cpp \
 	GuestImpl.cpp \
 	KeyboardImpl.cpp \
