@@ -417,6 +417,8 @@ static void pdmacFileCacheUpdate(PPDMACFILECACHEGLOBAL pCache, PPDMACFILECACHEEN
  */
 static void pdmacFileCacheReadFromEndpoint(PPDMACFILECACHEENTRY pEntry)
 {
+    LogFlowFunc((": Reading data into cache entry %#p\n", pEntry));
+
     /* Make sure no one evicts the entry while it is accessed. */
     pEntry->fFlags |= PDMACFILECACHE_ENTRY_IO_IN_PROGRESS;
 
@@ -445,6 +447,8 @@ static void pdmacFileCacheReadFromEndpoint(PPDMACFILECACHEENTRY pEntry)
  */
 static void pdmacFileCacheWriteToEndpoint(PPDMACFILECACHEENTRY pEntry)
 {
+    LogFlowFunc((": Writing data from cache entry %#p\n", pEntry));
+
     /* Make sure no one evicts the entry while it is accessed. */
     pEntry->fFlags |= PDMACFILECACHE_ENTRY_IO_IN_PROGRESS;
 
@@ -903,6 +907,8 @@ int pdmacFileEpCacheRead(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint, PPDMASYNCCOM
             if (   (pEntry->pList == &pCache->LruRecentlyUsed)
                 || (pEntry->pList == &pCache->LruFrequentlyUsed))
             {
+                LogFlow(("Fetching data for ghost entry %#p from file\n", pEntry));
+
                 if (   (pEntry->fFlags & PDMACFILECACHE_ENTRY_IO_IN_PROGRESS)
                     && !(pEntry->fFlags & PDMACFILECACHE_ENTRY_IS_DIRTY))
                 {
