@@ -99,11 +99,12 @@ int vbglLockLinear (void **ppvCtx, void *pv, uint32_t u32Size, bool fWriteAccess
      *       we lock both kernel pages on all systems, even those where we
      *       know they aren't pagable.
      */
-    RTR0MEMOBJ MemObj = NIL_RTR0MEMOBJ;
+    RTR0MEMOBJ  MemObj = NIL_RTR0MEMOBJ;
+    uint32_t    fAccess = RTMEM_PROT_READ | (fWriteAccess ? RTMEM_PROT_WRITE : 0);
     if ((fFlags & VBGLR0_HGCMCALL_F_MODE_MASK) == VBGLR0_HGCMCALL_F_USER)
-        rc = RTR0MemObjLockUser(&MemObj, (RTR3PTR)pv, u32Size, NIL_RTR0PROCESS);
+        rc = RTR0MemObjLockUser(&MemObj, (RTR3PTR)pv, u32Size, fAccess, NIL_RTR0PROCESS);
     else
-        rc = RTR0MemObjLockKernel(&MemObj, pv, u32Size);
+        rc = RTR0MemObjLockKernel(&MemObj, pv, u32Size, fAccess);
     if (RT_SUCCESS(rc))
         *ppvCtx = MemObj;
     else

@@ -334,9 +334,11 @@ int rtR0MemObjNativeAllocCont(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, bool fExecu
  * @param   ppMem           Where to store the ring-0 memory object handle.
  * @param   R3Ptr           User virtual address, page aligned.
  * @param   cb              Number of bytes to lock, page aligned.
+ * @param   fAccess         The desired access, a combination of RTMEM_PROT_READ
+ *                          and RTMEM_PROT_WRITE.
  * @param   R0Process       The process to lock pages in.
  */
-int rtR0MemObjNativeLockUser(PPRTR0MEMOBJINTERNAL ppMem, RTR3PTR R3Ptr, size_t cb, RTR0PROCESS R0Process);
+int rtR0MemObjNativeLockUser(PPRTR0MEMOBJINTERNAL ppMem, RTR3PTR R3Ptr, size_t cb, uint32_t fAccess, RTR0PROCESS R0Process);
 
 /**
  * Locks a range of kernel virtual memory.
@@ -345,8 +347,10 @@ int rtR0MemObjNativeLockUser(PPRTR0MEMOBJINTERNAL ppMem, RTR3PTR R3Ptr, size_t c
  * @param   ppMem           Where to store the ring-0 memory object handle.
  * @param   pv              Kernel virtual address, page aligned.
  * @param   cb              Number of bytes to lock, page aligned.
+ * @param   fAccess         The desired access, a combination of RTMEM_PROT_READ
+ *                          and RTMEM_PROT_WRITE.
  */
-int rtR0MemObjNativeLockKernel(PPRTR0MEMOBJINTERNAL ppMem, void *pv, size_t cb);
+int rtR0MemObjNativeLockKernel(PPRTR0MEMOBJINTERNAL ppMem, void *pv, size_t cb, uint32_t fAccess);
 
 /**
  * Allocates contiguous page aligned physical memory without (necessarily) any kernel mapping.

@@ -145,18 +145,24 @@ RTR0DECL(int) RTR0MemObjAllocCont(PRTR0MEMOBJ pMemObj, size_t cb, bool fExecutab
  *
  * @returns IPRT status code.
  * @param   pMemObj         Where to store the ring-0 memory object handle.
- * @param   R3Ptr           User virtual address. This is rounded down to a page boundrary.
- * @param   cb              Number of bytes to lock. This is rounded up to nearest page boundrary.
- * @param   R0Process       The process to lock pages in. NIL_R0PROCESS is an alias for the current one.
+ * @param   R3Ptr           User virtual address. This is rounded down to a page
+ *                          boundrary.
+ * @param   cb              Number of bytes to lock. This is rounded up to
+ *                          nearest page boundrary.
+ * @param   fAccess         The desired access, a combination of RTMEM_PROT_READ
+ *                          and RTMEM_PROT_WRITE.
+ * @param   R0Process       The process to lock pages in. NIL_R0PROCESS is an
+ *                          alias for the current one.
  *
- * @remarks RTR0MemGetAddressR3() and RTR0MemGetAddress() will return the rounded
+ * @remarks RTR0MemGetAddressR3() and RTR0MemGetAddress() will return therounded
  *          down address.
+ *
  * @remarks Linux: This API requires that the memory begin locked is in a memory
  *          mapping that is not required in any forked off child process. This
  *          is not intented as permanent restriction, feel free to help out
  *          lifting it.
  */
-RTR0DECL(int) RTR0MemObjLockUser(PRTR0MEMOBJ pMemObj, RTR3PTR R3Ptr, size_t cb, RTR0PROCESS R0Process);
+RTR0DECL(int) RTR0MemObjLockUser(PRTR0MEMOBJ pMemObj, RTR3PTR R3Ptr, size_t cb, uint32_t fAccess, RTR0PROCESS R0Process);
 
 /**
  * Locks a range of kernel virtual memory.
@@ -165,10 +171,12 @@ RTR0DECL(int) RTR0MemObjLockUser(PRTR0MEMOBJ pMemObj, RTR3PTR R3Ptr, size_t cb, 
  * @param   pMemObj         Where to store the ring-0 memory object handle.
  * @param   pv              Kernel virtual address. This is rounded down to a page boundrary.
  * @param   cb              Number of bytes to lock. This is rounded up to nearest page boundrary.
+ * @param   fAccess         The desired access, a combination of RTMEM_PROT_READ
+ *                          and RTMEM_PROT_WRITE.
  *
  * @remark  RTR0MemGetAddress() will return the rounded down address.
  */
-RTR0DECL(int) RTR0MemObjLockKernel(PRTR0MEMOBJ pMemObj, void *pv, size_t cb);
+RTR0DECL(int) RTR0MemObjLockKernel(PRTR0MEMOBJ pMemObj, void *pv, size_t cb, uint32_t fAccess);
 
 /**
  * Allocates contiguous page aligned physical memory without (necessarily) any kernel mapping.

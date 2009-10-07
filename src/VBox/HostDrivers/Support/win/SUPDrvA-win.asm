@@ -98,7 +98,7 @@ NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, RTR0MemObjAllocPhys
 NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, RTR0MemObjAllocPhysNC
 NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, RTR0MemObjAllocCont
 NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, RTR0MemObjEnterPhys
-NtWrapDyn2DrvFunctionWithAllRegParams  supdrvNtWrap, RTR0MemObjLockUser
+NtWrapDyn2DrvFunctionWith5Params       supdrvNtWrap, RTR0MemObjLockUser
 NtWrapDyn2DrvFunctionWith5Params       supdrvNtWrap, RTR0MemObjMapKernel
 NtWrapDyn2DrvFunctionWith7Params       supdrvNtWrap, RTR0MemObjMapKernelEx
 NtWrapDyn2DrvFunctionWith6Params       supdrvNtWrap, RTR0MemObjMapUser
