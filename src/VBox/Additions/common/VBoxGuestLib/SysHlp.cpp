@@ -31,6 +31,7 @@
 
 #if !defined (RT_OS_WINDOWS)
 # include <iprt/memobj.h>
+# include <iprt/mem.h>
 #endif
 
 
