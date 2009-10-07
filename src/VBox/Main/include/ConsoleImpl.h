@@ -511,6 +511,11 @@ private:
     void updateGuestPropertiesVRDPDisconnect (uint32_t u32ClientId);
 #endif
 
+    /** @name Live migration support
+     * @{ */
+    int migrationLoadRemote(PVM pVM, IMachine *pMachine);
+    /** @} */
+
     bool mSavedStateDataLoaded : 1;
 
     const ComPtr<IMachine> mMachine;

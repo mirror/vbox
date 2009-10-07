@@ -226,7 +226,8 @@ struct VMPowerUpTask : public VMProgressTask
         : VMProgressTask(aConsole, aProgress, false /* aUsesVMPtr */),
           mSetVMErrorCallback(NULL),
           mConfigConstructor(NULL),
-          mStartPaused(false)
+          mStartPaused(false),
+          mLiveMigrationTarget(FALSE)
     {}
 
     PFNVMATERROR mSetVMErrorCallback;
@@ -234,6 +235,7 @@ struct VMPowerUpTask : public VMProgressTask
     Utf8Str mSavedStateFile;
     Console::SharedFolderDataMap mSharedFolders;
     bool mStartPaused;
+    BOOL mLiveMigrationTarget;
 
     typedef std::list< ComPtr<IMedium> > HardDiskList;
     HardDiskList hardDisks;
@@ -4621,6 +4623,15 @@ HRESULT Console::powerUp(IProgress **aProgress, bool aPaused)
     if (mMachineState == MachineState_Saved)
         task->mSavedStateFile = savedStateFile;
 
+    /* test and clear the LiveMigrationTarget property  */
+    rc = mMachine->COMGETTER(LiveMigrationTarget)(&task->mLiveMigrationTarget);
+    CheckComRCReturnRC(rc);
+    if (task->mLiveMigrationTarget)
+    {
+        rc = mMachine->COMSETTER(LiveMigrationTarget)(FALSE);
+        CheckComRCReturnRC(rc);
+    }
+
     /* Reset differencing hard disks for which autoReset is true */
     {
         com::SafeIfaceArray<IMediumAttachment> atts;
@@ -6714,6 +6725,9 @@ DECLCALLBACK(int) Console::powerUpThread(RTTHREAD Thread, void *pvUser)
                         AssertRC(vrc2);
                     }
                 }
+                else if (task->mLiveMigrationTarget)
+                    /* -> ConsoleImpl-LiveMigration.cpp */
+                    vrc = console->migrationLoadRemote(pVM, pMachine);
                 else if (task->mStartPaused)
                     /* done */
                     console->setMachineState(MachineState_Paused);

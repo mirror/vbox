@@ -38,4 +38,29 @@ Console::Migrate(IN_BSTR aHostname, ULONG aPort, IN_BSTR aPassword, IProgress **
     return E_FAIL;
 }
 
+int
+Console::migrationLoadRemote(PVM pVM, IMachine *pMachine)
+{
+    /*
+     * Get the config.
+     */
+    ULONG uPort;
+    HRESULT hrc = pMachine->COMGETTER(LiveMigrationPort)(&uPort);
+    if (FAILED(hrc))
+        return VERR_GENERAL_FAILURE;
+
+    Bstr bstrPassword;
+    hrc = pMachine->COMGETTER(LiveMigrationPassword)(bstrPassword.asOutParam());
+    if (FAILED(hrc))
+        return VERR_GENERAL_FAILURE;
+    Utf8Str strPassword(bstrPassword);
+
+    /*
+     * Create the TCP server.
+     */
+    //RTTcpServerCreateEx(NULL,
+
+
+    return VERR_NOT_IMPLEMENTED;
+}
 
