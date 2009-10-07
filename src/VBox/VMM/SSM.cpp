@@ -4124,13 +4124,13 @@ static int ssmR3WriteHeaderAndClearPerUnitData(PVM pVM, PSSMHANDLE pSSM)
  * @param   pvStreamOpsUser     The user argument to the stream methods.
  * @param   enmAfter            What to do afterwards.
  * @param   pfnProgress         The progress callback.
- * @param   pvUser              The progress callback user argument.
+ * @param   pvProgressUser      The progress callback user argument.
  * @param   ppSSM               Where to return the pointer to the saved state
  *                              handle upon successful return.  Free it using
  *                              RTMemFree after closing the stream.
  */
 static int ssmR3SaveDoCreateFile(PVM pVM, const char *pszFilename, PCSSMSTRMOPS pStreamOps, void *pvStreamOpsUser,
-                                 SSMAFTER enmAfter, PFNVMPROGRESS pfnProgress, void *pvUser, PSSMHANDLE *ppSSM)
+                                 SSMAFTER enmAfter, PFNVMPROGRESS pfnProgress, void *pvProgressUser, PSSMHANDLE *ppSSM)
 {
     PSSMHANDLE pSSM = (PSSMHANDLE)RTMemAllocZ(sizeof(*pSSM));
     if (!pSSM)
@@ -4145,7 +4145,7 @@ static int ssmR3SaveDoCreateFile(PVM pVM, const char *pszFilename, PCSSMSTRMOPS 
     pSSM->offUnit               = UINT64_MAX;
     pSSM->fLiveSave             = false;
     pSSM->pfnProgress           = pfnProgress;
-    pSSM->pvUser                = pvUser;
+    pSSM->pvUser                = pvProgressUser;
     pSSM->uPercent              = 0;
     pSSM->offEstProgress        = 0;
     pSSM->cbEstTotal            = 0;
@@ -4620,11 +4620,15 @@ static int ssmR3DoLivePrepRun(PVM pVM, PSSMHANDLE pSSM)
  * @returns VBox status.
  *
  * @param   pVM             The VM handle.
- * @param   pszFilename     Name of the file to save the state in.  This string
+ * @param   pszFilename     Name of the file to save the state in. This string
  *                          must remain valid until SSMR3LiveDone is called.
+ *                          Must be NULL if pStreamOps is used.
+ * @param   pStreamOps      The stream method table. NULL if pszFilename is
+ *                          used.
+ * @param   pvStreamOpsUser The user argument to the stream methods.
  * @param   enmAfter        What is planned after a successful save operation.
  * @param   pfnProgress     Progress callback. Optional.
- * @param   pvUser          User argument for the progress callback.
+ * @param   pvProgressUser  User argument for the progress callback.
  *
  * @thread  EMT0
  */
@@ -7047,11 +7051,11 @@ static int ssmR3LoadExecV2(PVM pVM, PSSMHANDLE pSSM)
  *                          is used.
  * @param   pStreamOps      The stream method table. NULL if pszFilename is
  *                          used.
- * @param   pStreamOpsUser  The user argument for the stream methods.
+ * @param   pvStreamOpsUser The user argument for the stream methods.
  * @param   enmAfter        What is planned after a successful load operation.
  *                          Only acceptable values are SSMAFTER_RESUME and SSMAFTER_DEBUG_IT.
  * @param   pfnProgress     Progress callback. Optional.
- * @param   pvUser          User argument for the progress callback.
+ * @param   pvProgressUser  User argument for the progress callback.
  *
  * @thread  EMT
  */
