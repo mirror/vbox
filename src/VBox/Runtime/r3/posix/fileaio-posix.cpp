@@ -276,6 +276,7 @@ static int rtFileAioCtxProcessEvents(PRTFILEAIOCTXINTERNAL pCtxInt)
             }
 
             ASMAtomicDecS32(&pCtxInt->cRequests);
+            AssertMsg(pCtxInt->cRequests >= 0, ("Canceled request not which is not in this context\n"));
             RTSemEventSignal(pCtxInt->SemEventCancel);
         }
     }
@@ -649,13 +650,15 @@ RTDECL(int) RTFileAioCtxSubmit(RTFILEAIOCTX hAioCtx, PRTFILEAIOREQ pahReqs, size
             rcPosix = lio_listio(LIO_NOWAIT, (struct aiocb **)pahReqs, cReqsSubmit, NULL);
             if (RT_UNLIKELY(rcPosix < 0))
             {
+                size_t cReqsSubmitted = cReqsSubmit;
+
                 if (errno == EAGAIN)
                     rc = VERR_FILE_AIO_INSUFFICIENT_RESSOURCES;
                 else
                     rc = RTErrConvertFromErrno(errno);
 
                 /* Check which ones were not submitted. */
-                for (i = 0; i < cReqs; i++)
+                for (i = 0; i < cReqsSubmit; i++)
                 {
                     pReqInt = pahReqs[i];
 
@@ -663,7 +666,7 @@ RTDECL(int) RTFileAioCtxSubmit(RTFILEAIOCTX hAioCtx, PRTFILEAIOREQ pahReqs, size
 
                     if ((rcPosix != EINPROGRESS) && (rcPosix != 0))
                     {
-                        cReqsSubmit--;
+                        cReqsSubmitted--;
 
 #if defined(RT_OS_DARWIN) || defined(RT_OS_FREEBSD)
                         if (errno == EINVAL)
@@ -702,13 +705,18 @@ RTDECL(int) RTFileAioCtxSubmit(RTFILEAIOCTX hAioCtx, PRTFILEAIOREQ pahReqs, size
                             pPrev->pNext = pNext;
                         else
                             pHead = pNext;
+
+                        pReqInt->pNext = NULL;
+                        pReqInt->pPrev = NULL;
                     }
                 }
-
+                ASMAtomicAddS32(&pCtxInt->cRequests, cReqsSubmitted);
+                AssertMsg(pCtxInt->cRequests > 0, ("Adding requests resulted in overflow\n"));
                 break;
             }
 
             ASMAtomicAddS32(&pCtxInt->cRequests, cReqsSubmit);
+            AssertMsg(pCtxInt->cRequests > 0, ("Adding requests resulted in overflow\n"));
             cReqs   -= cReqsSubmit;
             pahReqs += cReqsSubmit;
         }
@@ -719,11 +727,10 @@ RTDECL(int) RTFileAioCtxSubmit(RTFILEAIOCTX hAioCtx, PRTFILEAIOREQ pahReqs, size
          * and will continue submitting requests
          * above.
          */
-        if (cReqs)
+        if (cReqs && RT_SUCCESS_NP(rc))
         {
             pReqInt = pahReqs[0];
             RTFILEAIOREQ_VALID_RETURN(pReqInt);
-
 
             if (pReqInt->fFlush)
             {
@@ -753,11 +760,13 @@ RTDECL(int) RTFileAioCtxSubmit(RTFILEAIOCTX hAioCtx, PRTFILEAIOREQ pahReqs, size
                 }
 
                 ASMAtomicIncS32(&pCtxInt->cRequests);
+                AssertMsg(pCtxInt->cRequests > 0, ("Adding requests resulted in overflow\n"));
                 cReqs--;
                 pahReqs++;
             }
         }
-    } while (cReqs);
+    } while (   cReqs
+             && RT_SUCCESS_NP(rc));
 
     if (pHead)
     {
@@ -814,8 +823,13 @@ RTDECL(int) RTFileAioCtxWait(RTFILEAIOCTX hAioCtx, size_t cMinReqs, unsigned cMi
     AssertReturn(cReqs != 0, VERR_INVALID_PARAMETER);
     AssertReturn(cReqs >= cMinReqs, VERR_OUT_OF_RANGE);
 
-    if (RT_UNLIKELY(ASMAtomicReadS32(&pCtxInt->cRequests) == 0))
+    int32_t cRequestsWaiting = ASMAtomicReadS32(&pCtxInt->cRequests);
+
+    if (RT_UNLIKELY(cRequestsWaiting == 0))
         return VERR_FILE_AIO_NO_REQUEST;
+
+    if (RT_UNLIKELY(cMinReqs > cRequestsWaiting))
+        return VERR_INVALID_PARAMETER;
 
     if (cMillisTimeout != RT_INDEFINITE_WAIT)
     {
@@ -943,6 +957,8 @@ RTDECL(int) RTFileAioCtxWait(RTFILEAIOCTX hAioCtx, size_t cMinReqs, unsigned cMi
             cReqs    -= cDone;
             cMinReqs  = RT_MAX(cMinReqs, cDone) - cDone;
             ASMAtomicSubS32(&pCtxInt->cRequests, cDone);
+
+            AssertMsg(pCtxInt->cRequests >= 0, ("Finished more requests than currently active\n"));
 
             if (!cMinReqs)
                 break;
