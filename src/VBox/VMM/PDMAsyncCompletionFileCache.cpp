@@ -817,6 +817,45 @@ static void pdmacFileEpCacheInsertEntry(PPDMACFILEENDPOINTCACHE pEndpointCache, 
 }
 
 /**
+ * Allocates and initializes a new entry for the cache.
+ * The entry has a reference count of 1.
+ *
+ * @returns Pointer to the new cache entry or NULL if out of memory.
+ * @param   pCache    The cache the entry belongs to.
+ * @param   pEndoint  The endpoint the entry holds data for.
+ * @param   off       Start offset.
+ * @param   cbData    Size of the cache entry.
+ */
+static PPDMACFILECACHEENTRY pdmacFileCacheEntryAlloc(PPDMACFILECACHEGLOBAL pCache,
+                                                     PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint,
+                                                     RTFOFF off, size_t cbData)
+{
+    PPDMACFILECACHEENTRY pEntryNew = (PPDMACFILECACHEENTRY)RTMemAllocZ(sizeof(PDMACFILECACHEENTRY));
+
+    if (RT_UNLIKELY(!pEntryNew))
+        return NULL;
+
+    pEntryNew->Core.Key     = off;
+    pEntryNew->Core.KeyLast = off + cbData - 1;
+    pEntryNew->pEndpoint    = pEndpoint;
+    pEntryNew->pCache       = pCache;
+    pEntryNew->fFlags       = 0;
+    pEntryNew->cRefs        = 1; /* We are using it now. */
+    pEntryNew->pList        = NULL;
+    pEntryNew->cbData       = cbData;
+    pEntryNew->pHead        = NULL;
+    pEntryNew->pbData       = (uint8_t *)RTMemPageAlloc(cbData);
+
+    if (RT_UNLIKELY(!pEntryNew->pbData))
+    {
+        RTMemFree(pEntryNew);
+        return NULL;
+    }
+
+    return pEntryNew;
+}
+
+/**
  * Advances the current segment buffer by the number of bytes transfered
  * or gets the next segment.
  */
@@ -1026,6 +1065,7 @@ int pdmacFileEpCacheRead(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint, PPDMASYNCCOM
         else
         {
             /* No entry found for this offset. Get best fit entry and fetch the data to the cache. */
+            size_t cbToReadAligned;
             PPDMACFILECACHEENTRY pEntryBestFit = pdmacFileEpCacheGetCacheBestFitEntryByOffset(pEndpointCache, off);
 
             LogFlow(("%sbest fit entry for off=%RTfoff (BestFit=%RTfoff BestFitEnd=%RTfoff BestFitSize=%u)\n",
@@ -1039,9 +1079,24 @@ int pdmacFileEpCacheRead(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint, PPDMASYNCCOM
             {
                 cbToRead = pEntryBestFit->Core.Key - off;
                 pdmacFileEpCacheEntryRelease(pEntryBestFit);
+                cbToReadAligned = cbToRead;
             }
             else
-                cbToRead = cbRead;
+            {
+                /*
+                 * Align the size to a 4KB boundary.
+                 * Memory size is aligned to a page boundary
+                 * and memory is wasted if the size is rahter small.
+                 * (For example reads with a size of 512 bytes.
+                 */
+                cbToRead = cbRead; 
+                cbToReadAligned = RT_ALIGN_Z(cbRead, PAGE_SIZE);
+
+                /* Clip read to file size */
+                cbToReadAligned = RT_MIN(pEndpoint->cbFile - off, cbToReadAligned);
+                if (pEntryBestFit)
+                    cbToReadAligned = RT_MIN(cbToReadAligned, pEntryBestFit->Core.Key - off);
+            }
 
             cbRead -= cbToRead;
 
@@ -1051,26 +1106,14 @@ int pdmacFileEpCacheRead(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint, PPDMASYNCCOM
                 STAM_COUNTER_INC(&pCache->cPartialHits);
 
             RTCritSectEnter(&pCache->CritSect);
-            size_t cbRemoved = pdmacFileCacheEvict(pCache, cbToRead);
+            size_t cbRemoved = pdmacFileCacheEvict(pCache, cbToReadAligned);
             RTCritSectLeave(&pCache->CritSect);
 
             if (cbRemoved >= cbToRead)
             {
-                LogFlow(("Evicted %u bytes (%u requested). Creating new cache entry\n", cbRemoved, cbToRead));
-                PPDMACFILECACHEENTRY pEntryNew = (PPDMACFILECACHEENTRY)RTMemAllocZ(sizeof(PDMACFILECACHEENTRY));
+                LogFlow(("Evicted %u bytes (%u requested). Creating new cache entry\n", cbRemoved, cbToReadAligned));
+                PPDMACFILECACHEENTRY pEntryNew = pdmacFileCacheEntryAlloc(pCache, pEndpoint, off, cbToReadAligned);
                 AssertPtr(pEntryNew);
-
-                pEntryNew->Core.Key     = off;
-                pEntryNew->Core.KeyLast = off + cbToRead - 1;
-                pEntryNew->pEndpoint    = pEndpoint;
-                pEntryNew->pCache       = pCache;
-                pEntryNew->fFlags       = 0;
-                pEntryNew->cRefs        = 1; /* We are using it now. */
-                pEntryNew->pList        = NULL;
-                pEntryNew->cbData       = cbToRead;
-                pEntryNew->pHead        = NULL;
-                pEntryNew->pbData       = (uint8_t *)RTMemPageAlloc(cbToRead);
-                AssertPtr(pEntryNew->pbData);
 
                 RTCritSectEnter(&pCache->CritSect);
                 pdmacFileCacheEntryAddToList(&pCache->LruRecentlyUsed, pEntryNew);
@@ -1079,7 +1122,7 @@ int pdmacFileEpCacheRead(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint, PPDMASYNCCOM
                 pdmacFileEpCacheInsertEntry(pEndpointCache, pEntryNew);
                 uint32_t uBufOffset = 0;
 
-                pCache->cbCached += cbToRead;
+                pCache->cbCached += cbToReadAligned;
 
                 while (cbToRead)
                 {
