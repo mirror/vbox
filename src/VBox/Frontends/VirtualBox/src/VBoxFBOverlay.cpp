@@ -3072,9 +3072,30 @@ bool VBoxVHWASurfaceBase::performDisplay(VBoxVHWASurfaceBase *pPrimary, bool bFo
     return true;
 }
 
+class VBoxGLContext : public QGLContext
+{
+public:
+    VBoxGLContext (const QGLFormat & format ) :
+        QGLContext(format),
+        mAllowDoneCurrent(true)
+    {
+    }
+
+    void doneCurrent()
+    {
+        if(!mAllowDoneCurrent)
+            return;
+        QGLContext::doneCurrent();
+    }
+
+    bool isDoneCurrentAllowed() { return mAllowDoneCurrent; }
+    void allowDoneCurrent(bool bAllow) { mAllowDoneCurrent = bAllow; }
+private:
+    bool mAllowDoneCurrent;
+};
 
 VBoxGLWidget::VBoxGLWidget (VBoxConsoleView *aView, QWidget *aParent)
-    : QGLWidget (VBoxGLWidget::vboxGLFormat(), aParent),
+    : QGLWidget (new VBoxGLContext(VBoxGLWidget::vboxGLFormat()), aParent),
     mSurfHandleTable(128), /* 128 should be enough */
     mpfnOp(NULL),
     mOpContext(NULL),
@@ -5281,6 +5302,10 @@ VBoxQGLOverlay::VBoxQGLOverlay (VBoxConsoleView *aView, VBoxFrameBuffer * aConta
       mCmdPipe(aView)
 {
     mpOverlayWidget = new VBoxGLWidget (aView, aView->viewport());
+
+    VBoxGLContext *pc = (VBoxGLContext*)mpOverlayWidget->context();
+    pc->allowDoneCurrent(false);
+
     mOverlayWidgetVisible = true; /* to ensure it is set hidden with vboxShowOverlay */
     vboxShowOverlay(false);
 
