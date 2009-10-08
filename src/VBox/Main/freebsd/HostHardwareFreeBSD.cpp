@@ -288,23 +288,15 @@ static int getDVDInfoFromCAM(DriveInfoList *pList, bool *pfSuccess)
                             RTStrPrintf(szPath, sizeof(szPath), "/dev/%s%d",
                                         pPeriphResult->periph_name, pPeriphResult->unit_number);
 
-                            /* We found a device */
-                            if (pDevResult->protocol == PROTO_SCSI)
-                            {
-                                /* Remove trailing white space. */
-                                strLenRemoveTrailingWhiteSpace(pDevResult->inq_data.vendor,
-                                                               sizeof(pDevResult->inq_data.vendor));
-                                strLenRemoveTrailingWhiteSpace(pDevResult->inq_data.product,
-                                                               sizeof(pDevResult->inq_data.product));
+                            /* Remove trailing white space. */
+                            strLenRemoveTrailingWhiteSpace(pDevResult->inq_data.vendor,
+                                                            sizeof(pDevResult->inq_data.vendor));
+                            strLenRemoveTrailingWhiteSpace(pDevResult->inq_data.product,
+                                                            sizeof(pDevResult->inq_data.product));
 
-                                dvdCreateDeviceString(pDevResult->inq_data.vendor,
-                                                      pDevResult->inq_data.product,
-                                                      szDesc, sizeof(szDesc));
-                            }
-                            else if (   (pDevResult->protocol == PROTO_ATA)
-                                     || (pDevResult->protocol == PROTO_SATAPM))
-                                dvdCreateDeviceString("", (const char *)pDevResult->ident_data.model,
-                                                      szDesc, sizeof(szDesc));
+                            dvdCreateDeviceString(pDevResult->inq_data.vendor,
+                                                    pDevResult->inq_data.product,
+                                                    szDesc, sizeof(szDesc));
 
                             pList->push_back(DriveInfo(szPath, NULL, szDesc));
                             if (pfSuccess)
