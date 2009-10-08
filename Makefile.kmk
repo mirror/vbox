@@ -703,6 +703,18 @@ additions-packing:
 
 
 #
+# Build the EFI firmware, all of it.
+#
+# Mainly hooks right now, maybe we need them later.
+#
+efi-fetch:
+
+efi-build: $(VBOX_VERSION_HEADER)
+	$(PATH_ROOT)/webtools/tinderbox/client/efi-build.sh
+
+efi-packing:
+
+#
 # Generate VirtualBox-OSE-x.x.x.tar.bz2 (OSE) tarballs for distribution
 # - includes kBuild
 # - must be executed on an OSE checkout
