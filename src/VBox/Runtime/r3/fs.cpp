@@ -35,6 +35,7 @@
 #ifndef RT_OS_WINDOWS
 # define RTTIME_INCL_TIMESPEC
 # include <sys/time.h>
+# include <sys/param.h>
 #endif
 
 #include <iprt/fs.h>
@@ -195,7 +196,7 @@ bool rtFsModeIsValidPermissions(RTFMODE fMode)
 void rtFsConvertStatToObjInfo(PRTFSOBJINFO pObjInfo, const struct stat *pStat, const char *pszName, unsigned cbName)
 {
     pObjInfo->cbObject    = pStat->st_size;
-    pObjInfo->cbAllocated = pStat->st_blocks * 512;
+    pObjInfo->cbAllocated = pStat->st_blocks * DEV_BSIZE;
 
 #ifdef HAVE_STAT_NSEC
     RTTimeSpecAddNano(RTTimeSpecSetSeconds(&pObjInfo->AccessTime,       pStat->st_atime),     pStat->st_atimensec);
