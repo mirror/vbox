@@ -195,7 +195,7 @@ bool rtFsModeIsValidPermissions(RTFMODE fMode)
 void rtFsConvertStatToObjInfo(PRTFSOBJINFO pObjInfo, const struct stat *pStat, const char *pszName, unsigned cbName)
 {
     pObjInfo->cbObject    = pStat->st_size;
-    pObjInfo->cbAllocated = pStat->st_size;
+    pObjInfo->cbAllocated = pStat->st_blocks * 512;
 
 #ifdef HAVE_STAT_NSEC
     RTTimeSpecAddNano(RTTimeSpecSetSeconds(&pObjInfo->AccessTime,       pStat->st_atime),     pStat->st_atimensec);
