@@ -6727,7 +6727,7 @@ DECLCALLBACK(int) Console::powerUpThread(RTTHREAD Thread, void *pvUser)
                 }
                 else if (task->mLiveMigrationTarget)
                     /* -> ConsoleImpl-LiveMigration.cpp */
-                    vrc = console->migrationLoadRemote(pVM, pMachine);
+                    vrc = console->migrationLoadRemote(pVM, pMachine, static_cast<VMProgressTask*>(task.get()));
                 else if (task->mStartPaused)
                     /* done */
                     console->setMachineState(MachineState_Paused);
