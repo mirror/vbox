@@ -114,8 +114,8 @@ DECLEXPORT(void) crFree( void *ptr )
 
 DECLEXPORT(void) crMemcpy( void *dst, const void *src, unsigned int bytes )
 {
-	CRASSERT(dst);
-	CRASSERT(src);
+	CRASSERT(dst || 0==bytes);
+	CRASSERT(src || 0==bytes);
 	(void) memcpy( dst, src, bytes );
 }
 
