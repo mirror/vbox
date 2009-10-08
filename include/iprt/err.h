@@ -929,6 +929,12 @@ RTDECL(PCRTCOMERRMSG) RTErrCOMGet(uint32_t rc);
 #define VERR_TCP_SERVER_STOP                    (-500)
 /** The server was stopped. */
 #define VINF_TCP_SERVER_STOP                    500
+/** The TCP server was shut down using RTTcpServerShutdown. */
+#define VERR_TCP_SERVER_SHUTDOWN                (-501)
+/** The TCP server was destroyed. */
+#define VERR_TCP_SERVER_DESTROYED               (-502)
+/** The TCP server has no client associated with it. */
+#define VINF_TCP_SERVER_NO_CLIENT               503
 /** @} */
 
 

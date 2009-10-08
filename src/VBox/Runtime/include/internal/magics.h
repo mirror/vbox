@@ -104,6 +104,8 @@
 #define RTSTRCACHE_MAGIC_DEAD       0x20080319
 /** The value of RTSTREAM::u32Magic for a valid stream. */
 #define RTSTREAM_MAGIC              0xe44e44ee
+/** Magic value for RTTCPSERVER::u32Magic. (Jan Garbarek) */
+#define RTTCPSERVER_MAGIC           0x19540304
 /** RTTESTINT::u32Magic value. (Daniel Kehlmann) */
 #define RTTESTINT_MAGIC             0x19750113
 /** RTTHREADINT::u32Magic value. (Gilbert Keith Chesterton) */
@@ -115,9 +117,9 @@
 /** Magic number for timer low resolution handles. (Saki Hiwatari) */
 #define RTTIMERLR_MAGIC             0x19610715
 /** The value of RTS3::u32Magic. (Edgar Wallace) */
-#define RTS3_MAGIC                 0x18750401
+#define RTS3_MAGIC                  0x18750401
 /** The value of RTS3::u32Magic after RTS3Destroy().  */
-#define RTS3_MAGIC_DEAD            0x19320210
+#define RTS3_MAGIC_DEAD             0x19320210
 
 /** @} */
 
