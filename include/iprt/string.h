@@ -38,6 +38,15 @@
 # include <linux/string.h>
 #elif defined(RT_OS_FREEBSD) && defined(_KERNEL)
 # include <sys/libkern.h>
+# if __FreeBSD_version >= 702000
+#  include <sys/systm.h> /* memmove */
+# else
+  /*
+   * No memmove on versions < 7.2
+   * Defining a macro using bcopy here
+   */
+#  define memmove(dst, src, size) bcopy(src, dst, size)
+# endif
 #elif defined(RT_OS_SOLARIS) && defined(_KERNEL)
   /*
    * Same case as with FreeBSD kernel:
