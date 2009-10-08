@@ -513,7 +513,8 @@ private:
 
     /** @name Live migration support
      * @{ */
-    int migrationLoadRemote(PVM pVM, IMachine *pMachine);
+    int                         migrationLoadRemote(PVM pVM, IMachine *pMachine);
+    static DECLCALLBACK(int)    migrationServeConnection(RTSOCKET Sock, void *pvUser);
     /** @} */
 
     bool mSavedStateDataLoaded : 1;
