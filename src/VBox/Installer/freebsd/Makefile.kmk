@@ -50,12 +50,9 @@ PACKING  += $(PATH_BIN)/$(VBOX_FBSD_PACKAGE_NAME)
 
 OTHER_CLEAN   += \
 	$(addprefix $(VBOX_FBSD_INST_STAGE_DIR)/,\
-		postinstall.sh \
-		uninstall.sh \
+		pkg_plist \
 		LICENSE) \
-	$(wildcard $(VBOX_FBSD_INST_OUT_DIR)/VirtualBox-*) \
-	$(addprefix $(VBOX_FBSD_INST_OUT_DIR)/,\
-		postinstall.sh)
+	$(wildcard $(VBOX_FBSD_INST_OUT_DIR)/VirtualBox-*)
 
 #
 # FreeBSD installs.
@@ -112,6 +109,7 @@ VBOX_FBSD_STRIP_BIN = \
 		VBoxOGLhostcrutil.so \
 		VBoxOGLhosterrorspu.so \
 		VBoxOGLrenderspu.so \
+		VBoxTestOGL \
 		VBoxSharedCrOpenGL.so,) \
 	$(if $(VBOX_WITH_PYTHON),VBoxPython.so,)
 
@@ -239,6 +237,7 @@ $(PATH_BIN)/vboxdrv.tar.gz: \
 #
 $(PATH_BIN)/$(VBOX_FBSD_PACKAGE_NAME): \
 		$(VBOX_VERSION_STAMP) \
+		$(VBOX_FBSD_INST_OUT_DIR)/pkg_plist \
 		$(addprefix $(VBOX_FBSD_INST_LIBVBOX_DIR)/,$(VBOX_FBSD_ARCH_FILES)) \
 		$(addprefix $(VBOX_FBSD_INST_BIN_DIR)/,$(VBOX_FBSD_SYMLINKS)) \
 		$(if $(VBOX_OSE),,$(VBOX_BRAND_LICENSE_TXT)) \
@@ -253,7 +252,7 @@ $(PATH_BIN)/$(VBOX_FBSD_PACKAGE_NAME): \
 		-K $(VBOX_PATH_FBSD_INST_SRC)/postdeinstall.sh \
 		-c $(VBOX_PATH_FBSD_INST_SRC)/pkg-comment \
 		-d $(VBOX_PATH_FBSD_INST_SRC)/pkg-descr \
-		-f $(VBOX_PATH_FBSD_INST_SRC)/pkg_plist \
+		-f $(VBOX_FBSD_INST_OUT_DIR)/pkg_plist \
 		-p /usr/local \
 		-s $(VBOX_FBSD_INST_STAGE_DIR) \
 		$@
@@ -309,6 +308,17 @@ $(addprefix $(VBOX_FBSD_INST_SHAREICON_DIR)/,$(VBOX_FBSD_ICON_FILE)): \
 	$(QUIET)$(INSTALL) -d $(dir $@)
 	$(QUIET)$(RM) -f $@
 	$(QUIET)$(INSTALL) -m 0644 $< $@
+
+# Create pkg_plist
+$(VBOX_FBSD_INST_OUT_DIR)/pkg_plist: \
+		$(VBOX_PATH_FBSD_INST_SRC)/pkg_plist
+	$(call MSG_INST_FILE,$<,$@)
+	$(QUIET)$(INSTALL) -d $(dir $@)
+	$(QUIET)$(SED) \
+		-e "s;_VBOX_REM_32BIT_MODULE_;$(if $(eq $(KBUILD_TARGET_ARCH),x86),VBoxREM32.so,);g" \
+		-e "s;_VBOX_REM_64BIT_MODULE_;$(if $(eq $(KBUILD_TARGET_ARCH),x86),VBoxREM64.so,);g" \
+		--output $@ \
+		$<
 
 include $(KBUILD_PATH)/subfooter.kmk
 
