@@ -82,10 +82,10 @@ void VBoxMedium::refresh()
         mName = VBoxGlobal::tr ("Empty", "medium");
     else if (!mIsHostDrive)
         mName = mMedium.GetName();
-    else if (mMedium.GetDescription().isNull())
+    else if (mMedium.GetDescription().isEmpty())
         mName = VBoxGlobal::tr ("Host Drive '%1'", "medium").arg (QDir::toNativeSeparators (mMedium.GetLocation()));
     else
-        mName = VBoxGlobal::tr ("Host Drive %1 (%2)", "medium").arg (mMedium.GetDescription(), mMedium.GetName());
+        mName = VBoxGlobal::tr ("Host Drive %1 (%2)", "medium").arg (mMedium.GetDescription(), QDir::toNativeSeparators (mMedium.GetLocation()));
 
     mLocation = mMedium.isNull() || mIsHostDrive ? QString ("--") :
                 QDir::toNativeSeparators (mMedium.GetLocation());
