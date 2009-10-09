@@ -321,7 +321,7 @@ $$(buildserver-efifw_0_OUTDIR)/VBoxEfiFirmware.zip: $(VBOX_SVN_REV_KMK) $(PATH_D
 
  ifeq ($(KBUILD_HOST),win)
 buildserver-efifw-affinity-hack:
-	$(SHELL) $(PATH_DEVTOOLS)/bin/efi_firmware.sh --cmd fetch --filename $(buildserver-efifw_0_OUTDIR)/VBoxEfiFirmware.zip
+	$(SHELL) $(PATH_DEVTOOLS)/bin/efi_firmware.sh --cmd fetch --filename $(buildserver-efifw_0_OUTDIR)/VBoxEfiFirmware.zip.tmp
  endif
 endif # VBOX_WITH_EFIFW_FROM_BUILD_SERVER
 
