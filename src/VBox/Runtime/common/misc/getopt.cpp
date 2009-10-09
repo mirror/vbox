@@ -191,15 +191,40 @@ static PCRTGETOPTDEF rtGetOptSearchLong(const char *pszOption, PCRTGETOPTDEF paO
                 /*
                  * A value is required with the argument. We're trying to be very
                  * understanding here and will permit any of the following:
-                 *      --long:value,  --long=value, --long value,
-                 *      --long: value, --long= value
+                 *      --long12:value,  --long12=value, --long12 value,
+                 *      --long:value,    --long=value,   --long value,
+                 *      --long: value,   --long= value
+                 *
+                 * If the option is index, then all trailing chars must be
+                 * digits.  For error reporting reasons we also match where
+                 * there is no index.
                  */
                 size_t cchLong = strlen(pOpt->pszLong);
-                if (    !strncmp(pszOption, pOpt->pszLong, cchLong)
-                    && (   pszOption[cchLong] == '\0'
+                if (!strncmp(pszOption, pOpt->pszLong, cchLong))
+                {
+                    if (pOpt->fFlags & RTGETOPT_FLAG_INDEX)
+                        while (RT_C_IS_DIGIT(pszOption[cchLong]))
+                            cchLong++;
+                    if (   pszOption[cchLong] == '\0'
                         || pszOption[cchLong] == ':'
-                        || pszOption[cchLong] == '='))
-                    return pOpt;
+                        || pszOption[cchLong] == '=')
+                        return pOpt;
+                }
+            }
+            else if (pOpt->fFlags & RTGETOPT_FLAG_INDEX)
+            {
+                /*
+                 * The option takes an index but no value.
+                 * As above, we also match where there is no index.
+                 */
+                size_t cchLong = strlen(pOpt->pszLong);
+                if (!strncmp(pszOption, pOpt->pszLong, cchLong))
+                {
+                    while (RT_C_IS_DIGIT(pszOption[cchLong]))
+                        cchLong++;
+                    if (pszOption[cchLong] == '\0')
+                        return pOpt;
+                }
             }
             else if (!strcmp(pszOption, pOpt->pszLong))
                 return pOpt;
@@ -233,7 +258,12 @@ static PCRTGETOPTDEF rtGetOptSearchShort(int chOption, PCRTGETOPTDEF paOptions, 
 
 RTDECL(int) RTGetOpt(PRTGETOPTSTATE pState, PRTGETOPTUNION pValueUnion)
 {
+    /*
+     * Reset the variables kept in state.
+     */
     pState->pDef = NULL;
+    pState->uIndex = UINT64_MAX;
+
     /*
      * Make sure the union is completely cleared out, whatever happens below.
      */
@@ -337,16 +367,47 @@ RTDECL(int) RTGetOpt(PRTGETOPTSTATE pState, PRTGETOPTUNION pValueUnion)
             else
             {
                 size_t cchLong = strlen(pOpt->pszLong);
-                if (    pszArgThis[cchLong]     == '\0'
-                    ||  pszArgThis[cchLong + 1] == '\0')
+                if (pOpt->fFlags & RTGETOPT_FLAG_INDEX)
                 {
-                    if (iThis + 1 >= pState->argc)
-                        return VERR_GETOPT_REQUIRED_ARGUMENT_MISSING;
-                    pszValue = pState->argv[iThis + 1];
-                    pState->iNext++;
+
+                    if (pszArgThis[cchLong] == '\0')
+                        return VERR_GETOPT_INDEX_MISSING;
+
+                    uint64_t uIndex;
+                    char *pszRet = NULL;
+                    int rc = RTStrToUInt64Ex(&pszArgThis[cchLong], &pszRet, 10, &uIndex);
+                    if (rc == VWRN_TRAILING_CHARS)
+                    {
+                        if (   pszRet[0] != ':'
+                            && pszRet[0] != '=')
+                            return VERR_GETOPT_INVALID_ARGUMENT_FORMAT;
+                        pState->uIndex = uIndex;
+                        pszValue = pszRet + 1;
+                    }
+                    else if (rc == VINF_SUCCESS)
+                    {
+                        if (iThis + 1 >= pState->argc)
+                            return VERR_GETOPT_REQUIRED_ARGUMENT_MISSING;
+                        pState->uIndex = uIndex;
+                        pszValue = pState->argv[iThis + 1];
+                        pState->iNext++;
+                    }
+                    else
+                        AssertMsgFailedReturn(("%s\n", pszArgThis), VERR_GETOPT_INVALID_ARGUMENT_FORMAT); /* search bug */
                 }
-                else /* same argument. */
-                    pszValue = &pszArgThis[cchLong + 1];
+                else
+                {
+                    if (    pszArgThis[cchLong]     == '\0'
+                        ||  pszArgThis[cchLong + 1] == '\0')
+                    {
+                        if (iThis + 1 >= pState->argc)
+                            return VERR_GETOPT_REQUIRED_ARGUMENT_MISSING;
+                        pszValue = pState->argv[iThis + 1];
+                        pState->iNext++;
+                    }
+                    else /* same argument. */
+                        pszValue = &pszArgThis[cchLong + 1];
+                }
             }
 
             /*
@@ -355,7 +416,10 @@ RTDECL(int) RTGetOpt(PRTGETOPTSTATE pState, PRTGETOPTUNION pValueUnion)
              * try a 16 based conversion. We will not interpret any of the
              * generic ints as octals.
              */
-            switch (pOpt->fFlags & (RTGETOPT_REQ_MASK | RTGETOPT_FLAG_HEX | RTGETOPT_FLAG_OCT | RTGETOPT_FLAG_DEC))
+            switch (pOpt->fFlags & (  RTGETOPT_REQ_MASK
+                                    | RTGETOPT_FLAG_HEX
+                                    | RTGETOPT_FLAG_DEC
+                                    | RTGETOPT_FLAG_OCT))
             {
                 case RTGETOPT_REQ_STRING:
                     pValueUnion->psz = pszValue;
@@ -478,6 +542,19 @@ RTDECL(int) RTGetOpt(PRTGETOPTSTATE pState, PRTGETOPTUNION pValueUnion)
                 pState->pszNextShort = NULL;
                 pState->iNext++;
             }
+        }
+        else if (pOpt->fFlags & RTGETOPT_FLAG_INDEX)
+        {
+            size_t cchLong = strlen(pOpt->pszLong);
+            if (pszArgThis[cchLong] == '\0')
+                return VERR_GETOPT_INDEX_MISSING;
+
+            uint64_t uIndex;
+            char *pszRet = NULL;
+            if (RTStrToUInt64Full(&pszArgThis[cchLong], 10, &uIndex) == VINF_SUCCESS)
+                pState->uIndex = uIndex;
+            else
+                AssertMsgFailedReturn(("%s\n", pszArgThis), VERR_GETOPT_INVALID_ARGUMENT_FORMAT); /* search bug */
         }
 
         pState->pDef = pOpt;

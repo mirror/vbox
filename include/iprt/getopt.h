@@ -91,8 +91,14 @@ RT_C_DECLS_BEGIN
 #define RTGETOPT_FLAG_OCT                       RT_BIT(17)
 /** Treat the value as decimal - only applicable with the RTGETOPT_REQ_*INT*. */
 #define RTGETOPT_FLAG_DEC                       RT_BIT(18)
+/** The index value is attached to the argument - only valid for long arguments. */
+#define RTGETOPT_FLAG_INDEX                     RT_BIT(19)
 /** Mask of valid bits - for validation. */
-#define RTGETOPT_VALID_MASK                     ( RTGETOPT_REQ_MASK | RTGETOPT_FLAG_HEX | RTGETOPT_FLAG_OCT | RTGETOPT_FLAG_DEC )
+#define RTGETOPT_VALID_MASK                     (  RTGETOPT_REQ_MASK \
+                                                 | RTGETOPT_FLAG_HEX \
+                                                 | RTGETOPT_FLAG_OCT \
+                                                 | RTGETOPT_FLAG_DEC \
+                                                 | RTGETOPT_FLAG_INDEX)
 /** @} */
 
 /**
@@ -192,6 +198,8 @@ typedef struct RTGETOPTSTATE
     const char     *pszNextShort;
     /** The option definition which matched. NULL otherwise. */
     PCRTGETOPTDEF   pDef;
+    /** The index of an index option, otherwise UINT64_MAX. */
+    uint64_t        uIndex;
     /* More members will be added later for dealing with initial
        call, optional sorting, '--' and so on. */
 } RTGETOPTSTATE;
