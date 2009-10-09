@@ -1145,14 +1145,16 @@ RTDECL(PCRTCOMERRMSG) RTErrCOMGet(uint32_t rc);
 
 /** @name RTGetOpt status codes
  * @{ */
-/** RTGetOpt: command line option not recognized. */
+/** RTGetOpt: Command line option not recognized. */
 #define VERR_GETOPT_UNKNOWN_OPTION              (-825)
-/** RTGetOpt: command line option needs argument. */
+/** RTGetOpt: Command line option needs argument. */
 #define VERR_GETOPT_REQUIRED_ARGUMENT_MISSING   (-826)
-/** RTGetOpt: command line option has argument with bad format. */
+/** RTGetOpt: Command line option has argument with bad format. */
 #define VERR_GETOPT_INVALID_ARGUMENT_FORMAT     (-827)
 /** RTGetOpt: Not an option. */
 #define VINF_GETOPT_NOT_OPTION                  828
+/** RTGetOpt: Command line option needs an index. */
+#define VERR_GETOPT_INDEX_MISSING               (-829)
 /** @} */
 
 /** @name RTCache status codes
