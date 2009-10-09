@@ -229,6 +229,15 @@ STDMETHODIMP CallbackWrapper::OnParallelPortChange(IParallelPort *aParallelPort)
 
     return mConsoleCallback->OnParallelPortChange(aParallelPort);
 }
+
+STDMETHODIMP CallbackWrapper::OnRemoteDisplayInfoChange()
+{
+    if (mConsoleCallback.isNull())
+        return S_OK;
+
+    return mConsoleCallback->OnRemoteDisplayInfoChange();
+}
+
 STDMETHODIMP CallbackWrapper::OnVRDPServerChange()
 {
     if (mConsoleCallback.isNull())

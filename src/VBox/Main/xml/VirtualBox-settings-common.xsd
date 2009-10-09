@@ -505,7 +505,7 @@
 
 <xsd:complexType name="TRemoteDisplay">
   <xsd:attribute name="enabled" type="xsd:boolean" use="required"/>
-  <xsd:attribute name="port" type="xsd:unsignedInt" default="0"/>
+  <xsd:attribute name="port" type="xsd:token" default="0"/>
   <xsd:attribute name="netAddress" type="xsd:token" default=""/>
   <xsd:attribute name="authType" type="TVRDPAuthType" default="Null"/>
   <xsd:attribute name="authTimeout" type="xsd:unsignedInt" default="5000"/>

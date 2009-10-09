@@ -184,6 +184,8 @@ private:
     IConsoleCallback *mConsoleCallback;
 
     VRDPInputSynch m_InputSynch;
+
+    int32_t mVRDPBindPort;
 #endif /* VBOX_WITH_VRDP */
 
     RTCRITSECT mCritSect;
@@ -263,6 +265,7 @@ public:
     /* IRemoteDisplayInfo properties */
     #define DECL_GETTER(_aType, _aName) STDMETHOD(COMGETTER(_aName)) (_aType *a##_aName)
         DECL_GETTER (BOOL,    Active);
+        DECL_GETTER (LONG,    Port);
         DECL_GETTER (ULONG,   NumberOfClients);
         DECL_GETTER (LONG64,  BeginTime);
         DECL_GETTER (LONG64,  EndTime);

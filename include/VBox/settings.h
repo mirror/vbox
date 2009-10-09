@@ -233,7 +233,6 @@ struct VRDPSettings
 {
     VRDPSettings()
         : fEnabled(true),
-          ulPort(0),
           authType(VRDPAuthType_Null),
           ulAuthTimeout(5000),
           fAllowMultiConnection(false),
@@ -241,7 +240,7 @@ struct VRDPSettings
     {}
 
     bool            fEnabled;
-    uint32_t        ulPort;
+    com::Utf8Str    strPort;
     com::Utf8Str    strNetAddress;
     VRDPAuthType_T  authType;
     uint32_t        ulAuthTimeout;

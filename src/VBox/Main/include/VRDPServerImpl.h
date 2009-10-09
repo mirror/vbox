@@ -49,7 +49,7 @@ public:
         {
             return this == &that ||
                    (mEnabled == that.mEnabled &&
-                    mVRDPPort == that.mVRDPPort &&
+                    mVRDPPorts == that.mVRDPPorts &&
                     mVRDPAddress == that.mVRDPAddress &&
                     mAuthType == that.mAuthType &&
                     mAuthTimeout == that.mAuthTimeout &&
@@ -58,7 +58,7 @@ public:
         }
 
         BOOL mEnabled;
-        ULONG mVRDPPort;
+        Bstr mVRDPPorts;
         Bstr mVRDPAddress;
         VRDPAuthType_T mAuthType;
         ULONG mAuthTimeout;
@@ -92,8 +92,8 @@ public:
     // IVRDPServer properties
     STDMETHOD(COMGETTER(Enabled)) (BOOL *aEnabled);
     STDMETHOD(COMSETTER(Enabled)) (BOOL aEnable);
-    STDMETHOD(COMGETTER(Port)) (ULONG *aPort);
-    STDMETHOD(COMSETTER(Port)) (ULONG aPort);
+    STDMETHOD(COMGETTER(Ports)) (BSTR *aPorts);
+    STDMETHOD(COMSETTER(Ports)) (IN_BSTR aPorts);
     STDMETHOD(COMGETTER(NetAddress)) (BSTR *aAddress);
     STDMETHOD(COMSETTER(NetAddress)) (IN_BSTR aAddress);
     STDMETHOD(COMGETTER(AuthType)) (VRDPAuthType_T *aType);
