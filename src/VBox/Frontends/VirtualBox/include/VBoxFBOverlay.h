@@ -585,8 +585,8 @@ private:
     void initDisplay(VBoxVHWASurfaceBase *pPrimary);
     void deleteDisplay();
 
-    int createDisplay(VBoxVHWASurfaceBase *pPrimary, GLuint *pDisplay);
-    void doDisplay(VBoxVHWASurfaceBase *pPrimary, VBoxVHWAGlProgramVHWA * pProgram, bool bBindDst);
+    int createDisplay(VBoxVHWASurfaceBase *pPrimary, GLuint *pDisplay, class VBoxVHWAGlProgram ** ppProgram);
+    void doDisplay(VBoxVHWASurfaceBase *pPrimary, bool bProgram, bool bBindDst);
     bool synchTexMem(const QRect * aRect);
 
     int performBlt(const QRect * pDstRect, VBoxVHWASurfaceBase * pSrcSurface, const QRect * pSrcRect, const VBoxVHWAColorKey * pDstCKey, const VBoxVHWAColorKey * pSrcCKey, bool blt);
@@ -604,6 +604,7 @@ private:
     QRect mVisibleSrcRect;
 
     GLuint mVisibleDisplay;
+    class VBoxVHWAGlProgram * mpProgram;
 
     bool mVisibleDisplayInitialized;
 
