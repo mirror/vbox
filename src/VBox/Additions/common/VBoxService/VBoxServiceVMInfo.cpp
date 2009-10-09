@@ -158,16 +158,16 @@ DECLCALLBACK(int) VBoxServiceVMInfoWorker(bool volatile *pfShutdown)
     /* First get information that won't change while the OS is running. */
     char szInfo[256] = {0};
     rc = RTSystemQueryOSInfo(RTSYSOSINFO_PRODUCT, szInfo, sizeof(szInfo));
-    VBoxServiceWritePropF(g_VMInfoGuestPropSvcClientID, "/VirtualBox/GuestInfo/OS/Product", szInfo);
+    VBoxServiceWritePropF(g_VMInfoGuestPropSvcClientID, "/VirtualBox/GuestInfo/OS/Product", "%s", szInfo);
 
     rc = RTSystemQueryOSInfo(RTSYSOSINFO_RELEASE, szInfo, sizeof(szInfo));
-    VBoxServiceWritePropF(g_VMInfoGuestPropSvcClientID, "/VirtualBox/GuestInfo/OS/Release", szInfo);
+    VBoxServiceWritePropF(g_VMInfoGuestPropSvcClientID, "/VirtualBox/GuestInfo/OS/Release", "%s", szInfo);
 
     rc = RTSystemQueryOSInfo(RTSYSOSINFO_VERSION, szInfo, sizeof(szInfo));
-    VBoxServiceWritePropF(g_VMInfoGuestPropSvcClientID, "/VirtualBox/GuestInfo/OS/Version", szInfo);
+    VBoxServiceWritePropF(g_VMInfoGuestPropSvcClientID, "/VirtualBox/GuestInfo/OS/Version", "%s", szInfo);
 
     rc = RTSystemQueryOSInfo(RTSYSOSINFO_SERVICE_PACK, szInfo, sizeof(szInfo));
-    VBoxServiceWritePropF(g_VMInfoGuestPropSvcClientID, "/VirtualBox/GuestInfo/OS/ServicePack", szInfo);
+    VBoxServiceWritePropF(g_VMInfoGuestPropSvcClientID, "/VirtualBox/GuestInfo/OS/ServicePack", "%s", szInfo);
 
     /* Retrieve version information about Guest Additions and installed files (components). */
 #ifdef RT_OS_WINDOWS
@@ -175,11 +175,11 @@ DECLCALLBACK(int) VBoxServiceVMInfoWorker(bool volatile *pfShutdown)
     rc = VBoxServiceWinGetComponentVersions(g_VMInfoGuestPropSvcClientID);
 #else
     /* VBoxServiceGetAddsVersion !RT_OS_WINDOWS */
-    VBoxServiceWritePropF(g_VMInfoGuestPropSvcClientID, "/VirtualBox/GuestAdd/Version", VBOX_VERSION_STRING);
+    VBoxServiceWritePropF(g_VMInfoGuestPropSvcClientID, "/VirtualBox/GuestAdd/Version", "%s", VBOX_VERSION_STRING);
 
     char szRevision[32];
     RTStrPrintf(szRevision, sizeof(szRevision), "%u", VBOX_SVN_REV);
-    VBoxServiceWritePropF(g_VMInfoGuestPropSvcClientID, "/VirtualBox/GuestAdd/Revision", szRevision);
+    VBoxServiceWritePropF(g_VMInfoGuestPropSvcClientID, "/VirtualBox/GuestAdd/Revision", "%s", szRevision);
 #endif
 
     /* Now enter the loop retrieving runtime data continuously. */
@@ -262,7 +262,10 @@ DECLCALLBACK(int) VBoxServiceVMInfoWorker(bool volatile *pfShutdown)
         endutent();
 #endif /* !RT_OS_WINDOWS */
 
-        VBoxServiceWritePropF(g_VMInfoGuestPropSvcClientID, "/VirtualBox/GuestInfo/OS/LoggedInUsersList", (uiUserCount > 0) ? szUserList : NULL);
+        if (uiUserCount > 0)
+            VBoxServiceWritePropF(g_VMInfoGuestPropSvcClientID, "/VirtualBox/GuestInfo/OS/LoggedInUsersList", "%s", szUserList);
+        else
+            VBoxServiceWritePropF(g_VMInfoGuestPropSvcClientID, "/VirtualBox/GuestInfo/OS/LoggedInUsersList", NULL);
         VBoxServiceWritePropF(g_VMInfoGuestPropSvcClientID, "/VirtualBox/GuestInfo/OS/LoggedInUsers", "%u", uiUserCount);
         if (g_VMInfoLoggedInUsers != uiUserCount || g_VMInfoLoggedInUsers == UINT32_MAX)
         {
@@ -330,7 +333,8 @@ DECLCALLBACK(int) VBoxServiceVMInfoWorker(bool volatile *pfShutdown)
         char szTemp [FILENAME_MAX];
         int iCurIface = 0;
 
-        VBoxServiceWritePropF(g_VMInfoGuestPropSvcClientID, "/VirtualBox/GuestInfo/Net/Count", "%d", (nNumInterfaces > 1 ? nNumInterfaces-1 : 0));
+        VBoxServiceWritePropF(g_VMInfoGuestPropSvcClientID, "/VirtualBox/GuestInfo/Net/Count", "%d",
+                              nNumInterfaces > 1 ? nNumInterfaces-1 : 0);
 
         /** @todo Use GetAdaptersInfo() and GetAdapterAddresses (IPv4 + IPv6) for more information. */
         for (int i = 0; i < nNumInterfaces; ++i)
@@ -368,7 +372,7 @@ DECLCALLBACK(int) VBoxServiceVMInfoWorker(bool volatile *pfShutdown)
             pAddress = (sockaddr_in *)&ifrequest[i].ifr_broadaddr;
 #endif
             RTStrPrintf(szPropPath, sizeof(szPropPath), "/VirtualBox/GuestInfo/Net/%d/V4/Broadcast", iCurIface);
-            VBoxServiceWritePropF(g_VMInfoGuestPropSvcClientID, szPropPath, inet_ntoa(pAddress->sin_addr));
+            VBoxServiceWritePropF(g_VMInfoGuestPropSvcClientID, szPropPath, "%s", inet_ntoa(pAddress->sin_addr));
 
 #ifdef RT_OS_WINDOWS
             pAddress = (sockaddr_in *)&(InterfaceList[i].iiNetmask);
@@ -386,15 +390,11 @@ DECLCALLBACK(int) VBoxServiceVMInfoWorker(bool volatile *pfShutdown)
 
 #endif
             RTStrPrintf(szPropPath, sizeof(szPropPath), "/VirtualBox/GuestInfo/Net/%d/V4/Netmask", iCurIface);
-            VBoxServiceWritePropF(g_VMInfoGuestPropSvcClientID, szPropPath, inet_ntoa(pAddress->sin_addr));
-
-             if (nFlags & IFF_UP)
-                RTStrPrintf(szTemp, sizeof(szTemp), "Up");
-            else
-                RTStrPrintf(szTemp, sizeof(szTemp), "Down");
+            VBoxServiceWritePropF(g_VMInfoGuestPropSvcClientID, szPropPath, "%s", inet_ntoa(pAddress->sin_addr));
 
             RTStrPrintf(szPropPath, sizeof(szPropPath), "/VirtualBox/GuestInfo/Net/%d/Status", iCurIface);
-            VBoxServiceWritePropF(g_VMInfoGuestPropSvcClientID, szPropPath, szTemp);
+            VBoxServiceWritePropF(g_VMInfoGuestPropSvcClientID, szPropPath,
+                                  nFlags & IFF_UP ? "Up" : "Down");
 
             iCurIface++;
         }

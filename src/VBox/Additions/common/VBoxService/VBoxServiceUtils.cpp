@@ -36,11 +36,25 @@
 
 
 #ifdef VBOX_WITH_GUEST_PROPS
+/**
+ * Wrapper around VbglR3GuestPropWriteValue that does value formatting and
+ * logging.
+ *
+ * @returns VBox status code. Errors will be logged.
+ *
+ * @param   u32ClientId     The HGCM client ID for the guest property session.
+ * @param   pszName         The property name.
+ * @param   pszValueFormat  The property format string.  If this is NULL then
+ *                          the property will be removed.
+ * @param   ...             Format arguments.
+ */
 int VBoxServiceWritePropF(uint32_t u32ClientId, const char *pszName, const char *pszValueFormat, ...)
 {
     int rc;
     if (pszValueFormat != NULL)
     {
+        /** @todo Log the value as well? just copy the guts of
+         *        VbglR3GuestPropWriteValueV. */
         VBoxServiceVerbose(3, "Writing guest property \"%s\"\n", pszName);
         va_list va;
         va_start(va, pszValueFormat);
@@ -50,7 +64,11 @@ int VBoxServiceWritePropF(uint32_t u32ClientId, const char *pszName, const char 
              VBoxServiceError("Error writing guest property \"%s\" (rc=%Rrc)\n", pszName, rc);
     }
     else
+    {
         rc = VbglR3GuestPropWriteValue(u32ClientId, pszName, NULL);
+        if (RT_FAILURE(rc))
+            VBoxServiceError("Error removing guest property \"%s\" (rc=%Rrc)\n", pszName, rc);
+    }
     return rc;
 }
 #endif /* VBOX_WITH_GUEST_PROPS */
