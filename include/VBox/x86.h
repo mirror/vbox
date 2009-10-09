@@ -1,4 +1,4 @@
-/** @file
+00/** @file
  * X86 (and AMD64) Structures and Definitions (VMM,++).
  *
  * x86.mac is generated from this file by running 'kmk incs' in the root.
@@ -915,6 +915,8 @@ typedef const X86CPUIDFEATEDX *PCX86CPUIDFEATEDX;
 #define MSR_K7_PERFCTR1                     0xc0010005
 #define MSR_K7_PERFCTR2                     0xc0010006
 #define MSR_K7_PERFCTR3                     0xc0010007
+
+#define MSR_K8_HWCR                         0xc0010015
 
 /** K8 LSTAR - Long mode SYSCALL target (RIP). */
 #define MSR_K8_LSTAR                        0xc0000082
