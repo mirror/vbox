@@ -52,7 +52,6 @@ EfiThunk_ASFLAGS      = -f bin -a x86 --force-strict
 EfiThunk_INCS         = ../Firmware2/VBoxPkg/Include
 EfiThunk_SOURCES      = EfiThunk.asm
 
-
 #
 # Used by EfiThunk. Promote to Config.kmk if needed else where.
 #
@@ -60,20 +59,6 @@ TOOL_VBoxDummyObjLdTool = Dummy Obj LD tool that just copies the object without 
 define TOOL_VBoxDummyObjLdTool_LINK_MISCBIN_CMDS
 	$(CP) -vf $(objs) $(out)
 endef
-
-ifdef VBOX_WITH_EFI_FIRMWARE_SERVER
-#
-# Installation firmware from server
-#
-INSTALLS += vboxefi.fv
-vboxefi.fv_MODE = 755
-vboxefi.fv_INST = $(INST_BIN)/vboxefi.fv
-vboxefi.fv_SOURCES = $(PATH_DEVTOOLS)/common/VBoxEfiFirmware/$(VBOX_EFI_REV)/FV/VBOX.fd
-
-$$(PATH_vboxefi.fv)/vboxefi.fv: $(PATH_DEVTOOLS)/common/VBoxEfiFirmware/$(VBOX_EFI_REV)/FV/VBOX.fd
-	$(CP) -v $< $@
-endif
-
 
 include $(KBUILD_PATH)/subfooter.kmk
 
