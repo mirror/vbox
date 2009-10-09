@@ -26,6 +26,7 @@
 #include "Global.h"
 
 #include <iprt/assert.h>
+#include <iprt/string.h>
 
 /* static */
 const Global::OSType Global::sOSTypes[SchemaDefs::OSTypeId_COUNT] =
@@ -167,15 +168,45 @@ const Global::OSType Global::sOSTypes[SchemaDefs::OSTypeId_COUNT] =
  * (VirtualBoxImpl::COMGETTER(GuestOSTypes)) collection.
  */
 /* static */
-const char *Global::OSTypeId (VBOXOSTYPE aOSType)
+const char *Global::OSTypeId(VBOXOSTYPE aOSType)
 {
-    for (size_t i = 0; i < RT_ELEMENTS (sOSTypes); ++ i)
+    for (size_t i = 0; i < RT_ELEMENTS(sOSTypes); ++i)
     {
-        if (sOSTypes [i].osType == aOSType)
-            return sOSTypes [i].id;
+        if (sOSTypes[i].osType == aOSType)
+            return sOSTypes[i].id;
     }
 
-    AssertMsgFailed (("No record for VBOXOSTYPE %d\n", aOSType));
-    return sOSTypes [0].id;
+    AssertMsgFailed(("No record for VBOXOSTYPE %d\n", aOSType));
+    return sOSTypes[0].id;
 }
+
+/*static*/ const char *
+Global::stringifyMachineState(MachineState_T aState)
+{
+    switch (aState)
+    {
+        case MachineState_Null:         return "Null";
+        case MachineState_PoweredOff:   return "PoweredOff";
+        case MachineState_Saved:        return "Saved";
+        case MachineState_Aborted:      return "Aborted";
+        case MachineState_Running:      return "Running";
+        case MachineState_Paused:       return "Paused";
+        case MachineState_Stuck:        return "GuruMeditation";
+        case MachineState_Starting:     return "Starting";
+        case MachineState_Stopping:     return "Stopping";
+        case MachineState_Saving:       return "Saving";
+        case MachineState_Restoring:    return "Restoring";
+        case MachineState_Discarding:   return "Discarding";
+        case MachineState_SettingUp:    return "SettingUp";
+        default:
+        {
+            AssertMsgFailed(("%d (%#x)\n", aState, aState));
+            static char s_szMsg[48];
+            RTStrPrintf(s_szMsg, sizeof(s_szMsg), "InvalidState-0x%08x\n", aState);
+            return s_szMsg;
+        }
+
+    }
+}
+
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */

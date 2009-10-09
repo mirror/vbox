@@ -63,9 +63,9 @@ public:
         const uint32_t              numSerialEnabled;
     };
 
-    static const OSType sOSTypes [SchemaDefs::OSTypeId_COUNT];
+    static const OSType sOSTypes[SchemaDefs::OSTypeId_COUNT];
 
-    static const char *OSTypeId (VBOXOSTYPE aOSType);
+    static const char *OSTypeId(VBOXOSTYPE aOSType);
 
     /**
      * Returns @c true if the given machine state is an online state. This is a
@@ -73,7 +73,7 @@ public:
      * dedicated process) or not. Note that some online states are also
      * transitional states (see #IsTransitional()).
      */
-    static bool IsOnline (MachineState_T aState)
+    static bool IsOnline(MachineState_T aState)
     {
         return aState >= MachineState_FirstOnline &&
                aState <= MachineState_LastOnline;
@@ -86,7 +86,7 @@ public:
      * snapshot, etc.). Note some (but not all) transitional states are also
      * online states (see #IsOnline()).
      */
-    static bool IsTransient (MachineState_T aState)
+    static bool IsTransient(MachineState_T aState)
     {
         return aState >= MachineState_FirstTransient &&
                aState <= MachineState_LastTransient;
@@ -97,9 +97,9 @@ public:
      * returns @false, the VM is turned off (no VM process) and not busy with
      * another exclusive operation.
      */
-    static bool IsOnlineOrTransient (MachineState_T aState)
+    static bool IsOnlineOrTransient(MachineState_T aState)
     {
-        return IsOnline (aState) || IsTransient (aState);
+        return IsOnline(aState) || IsTransient(aState);
     }
 
     /**
@@ -109,11 +109,19 @@ public:
      * then either the VM is not online or the emulation thread is being started
      * or stopped, etc.
      */
-    static bool IsActive (MachineState_T aState)
+    static bool IsActive(MachineState_T aState)
     {
-        return IsOnline (aState) && !IsTransient (aState);
+        return IsOnline(aState) && !IsTransient(aState);
     }
+
+    /**
+     * Stringify a machine state.
+     *
+     * @returns Pointer to a read only string.
+     * @param   aState      Valid machine state.
+     */
+    static const char *stringifyMachineState(MachineState_T aState);
 };
 
-#endif /* ____H_GLOBAL */
+#endif /* !____H_GLOBAL */
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */
