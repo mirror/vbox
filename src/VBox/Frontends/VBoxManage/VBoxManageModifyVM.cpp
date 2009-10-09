@@ -2031,12 +2031,14 @@ int handleModifyVM(HandlerArg *a)
                 if (!fScsiLsiLogic)
                 {
                     CHECK_ERROR(machine, AddStorageController(Bstr("BusLogic"), StorageBus_SCSI, ctl.asOutParam()));
-                    CHECK_ERROR(ctl, COMSETTER(ControllerType)(StorageControllerType_BusLogic));
+                    if (SUCCEEDED(rc))
+                        CHECK_ERROR(ctl, COMSETTER(ControllerType)(StorageControllerType_BusLogic));
                 }
                 else /* LsiLogic is default */
                 {
                     CHECK_ERROR(machine, AddStorageController(Bstr("LsiLogic"), StorageBus_SCSI, ctl.asOutParam()));
-                    CHECK_ERROR(ctl, COMSETTER(ControllerType)(StorageControllerType_LsiLogic));
+                    if (SUCCEEDED(rc))
+                        CHECK_ERROR(ctl, COMSETTER(ControllerType)(StorageControllerType_LsiLogic));
                 }
             }
             else
