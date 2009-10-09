@@ -288,6 +288,28 @@ buildserver-documentation-affinity-hack:
 endif # VBOX_WITH_DOCS_FROM_BUILD_SERVER
 
 
+ifdef VBOX_WITH_EFIFW_FROM_BUILD_SERVER
+include $(KBUILD_PATH)/tools/TAR.kmk
+
+VBOX_FW_BASE=$(PATH_TARGET)/EfiFw
+
+BLDDIRS += $(VBOX_FW_BASE)
+
+buildserver-efifw_INST = $(INST_BIN)
+buildserver-efifw_MODE = 0644
+buildserver-efifw_SOURCES = \
+      $(VBOX_FW_BASE)/FV/VBOX.fd=>vboxefi.fv
+buildserver-efifw_CLEANS = $(VBOX_FW_BASE)
+
+$$(VBOX_FW_BASE)/VBoxEfiFirmware.tar.bz2: $(VBOX_SVN_REV_KMK) $(PATH_DEVTOOLS)/bin/efi_firmware.sh | $$(dir $$@)
+	$(RM) -f $(VBOX_FW_BASE)/VBoxEfiFirmware.tar.bz2.tmp
+	$(SHELL) $(PATH_DEVTOOLS)/bin/efi_firmware.sh --cmd fetch --filename $(VBOX_FW_BASE)/VBoxEfiFirmware.tar.bz2.tmp
+	$(MV) $(VBOX_FW_BASE)/VBoxEfiFirmware.tar.bz2.tmp $(VBOX_FW_BASE)/VBoxEfiFirmware.tar.bz2
+
+$$(VBOX_FW_BASE)/FV/VBOX.fd: $(VBOX_FW_BASE)/VBoxEfiFirmware.tar.bz2
+	$(TOOL_TAR_UNPACK) xjf $< -C $(VBOX_FW_BASE)
+endif
+
 #
 # Install staged binaries on platforms where we can't cross
 # compile things.
