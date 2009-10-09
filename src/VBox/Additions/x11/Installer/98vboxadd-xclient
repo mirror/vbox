@@ -17,6 +17,15 @@
 # additional information or have any questions.
 #
 
+# It can happen that pidfiles from a sudo session can land in the user's
+# home directory and prevent new ones from being created.  This is not really
+# our fault, but the user may not quite appreciate that...
+for i in $HOME/.vboxclient-*.pid; do
+  if test -r $i && ! ps -e | grep `cat $i`; then
+    rm -f $i
+  fi
+done
+
 /usr/bin/VBoxClient --clipboard
 /usr/bin/VBoxClient --display
 /usr/bin/VBoxClient --seamless
