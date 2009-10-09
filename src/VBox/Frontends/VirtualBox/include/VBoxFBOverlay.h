@@ -90,8 +90,22 @@ private:
 };
 
 #define VBOXQGLLOG_METHODTIME(_m) VBoxVHWADbgTimeCounter _dbgTimeCounter(_m)
+
+#define VBOXQG_CHECKCONTEXT() \
+        { \
+            const GLubyte * str; \
+            VBOXQGL_CHECKERR(   \
+                    str = glGetString(GL_VERSION); \
+            ); \
+            Assert(str); \
+            if(str) \
+            { \
+                Assert(str[0]); \
+            } \
+        }
 #else
 #define VBOXQGLLOG_METHODTIME(_m)
+#define VBOXQG_CHECKCONTEXT() do{}while(0)
 #endif
 
 #define VBOXQGLLOG_QRECT(_p, _pr, _s) do{\

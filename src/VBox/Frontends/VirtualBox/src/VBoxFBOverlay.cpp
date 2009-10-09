@@ -5572,6 +5572,9 @@ void VBoxQGLOverlay::vboxDoCheckUpdateViewport()
         vboxCheckUpdateOverlay(rect);
 
         vboxShowOverlay(true);
+
+        /* workaround for linux ATI issue: need to update gl viewport after widget becomes visible */
+        mpOverlayWidget->vboxDoUpdateViewport(overVp);
     }
 }
 
