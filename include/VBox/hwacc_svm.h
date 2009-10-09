@@ -48,6 +48,7 @@
 #define AMD_CPUID_SVM_FEATURE_EDX_SVM_LOCK                  RT_BIT(2)
 #define AMD_CPUID_SVM_FEATURE_EDX_NRIP_SAVE                 RT_BIT(3)
 #define AMD_CPUID_SVM_FEATURE_EDX_SSE_3_5_DISABLE           RT_BIT(9)
+#define AMD_CPUID_SVM_FEATURE_EDX_PAUSE_FILTER              RT_BIT(10)
 /** @} */
 
 
