@@ -988,8 +988,9 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
         vrdpServer->COMGETTER(Enabled)(&fEnabled);
         if (fEnabled)
         {
-            ULONG port;
-            vrdpServer->COMGETTER(Port)(&port);
+            LONG vrdpPort = -1;
+            Bstr ports;
+            vrdpServer->COMGETTER(Ports)(ports.asOutParam());
             Bstr address;
             vrdpServer->COMGETTER(NetAddress)(address.asOutParam());
             BOOL fMultiCon;
@@ -1014,10 +1015,27 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
                     strAuthType = "unknown";
                     break;
             }
+            if (console)
+            {
+                ComPtr<IRemoteDisplayInfo> remoteDisplayInfo;
+                CHECK_ERROR_RET(console, COMGETTER(RemoteDisplayInfo)(remoteDisplayInfo.asOutParam()), rc);
+                rc = remoteDisplayInfo->COMGETTER(Port)(&vrdpPort);
+                if (rc == E_ACCESSDENIED)
+                {
+                    vrdpPort = -1; /* VM not powered up */
+                }
+                if (FAILED(rc))
+                {
+                    com::ErrorInfo info (remoteDisplayInfo);
+                    GluePrintErrorInfo(info);
+                    return rc;
+                }
+            }
             if (details == VMINFO_MACHINEREADABLE)
             {
                 RTPrintf("vrdp=\"on\"\n");
-                RTPrintf("vrdpport=%d\n", port);
+                RTPrintf("vrdpport=%d\n", vrdpPort);
+                RTPrintf("vrdpports=\"%lS\"\n", ports.raw());
                 RTPrintf("vrdpaddress=\"%lS\"\n", address.raw());
                 RTPrintf("vrdpauthtype=\"%s\"\n", strAuthType);
                 RTPrintf("vrdpmulticon=\"%s\"\n", fMultiCon ? "on" : "off");
@@ -1027,7 +1045,9 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
             {
                 if (address.isEmpty())
                     address = "0.0.0.0";
-                RTPrintf("VRDP:            enabled (Address %lS, Port %d, MultiConn: %s, ReuseSingleConn: %s, Authentication type: %s)\n", address.raw(), port, fMultiCon ? "on" : "off", fReuseCon ? "on" : "off", strAuthType);
+                RTPrintf("VRDP:            enabled (Address %lS, Ports %lS, MultiConn: %s, ReuseSingleConn: %s, Authentication type: %s)\n", address.raw(), ports.raw(), fMultiCon ? "on" : "off", fReuseCon ? "on" : "off", strAuthType);
+                if (console && vrdpPort != -1 && vrdpPort != 0)
+                   RTPrintf("VRDP port:       %d\n", vrdpPort);
             }
         }
         else

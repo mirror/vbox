@@ -3584,6 +3584,23 @@ HRESULT Console::onVRDPServerChange()
 }
 
 /**
+ * @note Locks this object for reading.
+ */
+void Console::onRemoteDisplayInfoChange()
+{
+    AutoCaller autoCaller(this);
+    AssertComRCReturnVoid(autoCaller.rc());
+
+    AutoReadLock alock(this);
+
+    CallbackList::iterator it = mCallbacks.begin();
+    while (it != mCallbacks.end())
+        (*it++)->OnRemoteDisplayInfoChange();
+}
+
+
+
+/**
  * Called by IInternalSessionControl::OnUSBControllerChange().
  *
  * @note Locks this object for writing.
@@ -6580,10 +6597,11 @@ DECLCALLBACK(int) Console::powerUpThread(RTTHREAD Thread, void *pvUser)
         if (vrc == VERR_NET_ADDRESS_IN_USE)
         {
             Utf8Str errMsg;
-            ULONG port = 0;
-            console->mVRDPServer->COMGETTER(Port)(&port);
-            errMsg = Utf8StrFmt(tr("VRDP server port %d is already in use"),
-                                port);
+            Bstr bstr;
+            console->mVRDPServer->COMGETTER(Ports)(bstr.asOutParam());
+            Utf8Str ports = bstr;
+            errMsg = Utf8StrFmt(tr("VRDP server can't bind to a port: %s"),
+                                ports.raw());
             LogRel(("Warning: failed to launch VRDP server (%Rrc): '%s'\n",
                     vrc, errMsg.raw()));
         }

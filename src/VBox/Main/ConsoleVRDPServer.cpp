@@ -146,6 +146,11 @@ public:
         return S_OK;
     }
 
+    STDMETHOD(OnRemoteDisplayInfoChange)()
+    {
+        return S_OK;
+    }
+
     STDMETHOD(OnUSBControllerChange)()
     {
         return S_OK;
@@ -621,12 +626,8 @@ DECLCALLBACK(int)  ConsoleVRDPServer::VRDPCallbackQueryProperty (void *pvCallbac
     {
         case VRDP_QP_NETWORK_PORT:
         {
+            /* This is obsolete, the VRDP server uses VRDP_QP_NETWORK_PORT_RANGE instead. */
             ULONG port = 0;
-            server->mConsole->getVRDPServer ()->COMGETTER(Port) (&port);
-            if (port == 0)
-            {
-                port = VRDP_DEFAULT_PORT;
-            }
 
             if (cbBuffer >= sizeof (uint32_t))
             {
@@ -706,9 +707,18 @@ DECLCALLBACK(int)  ConsoleVRDPServer::VRDPCallbackQueryProperty (void *pvCallbac
         {
             com::Bstr bstr;
             HRESULT hrc = server->mConsole->machine ()->GetExtraData(Bstr("VBoxInternal2/VRDPPortRange"), bstr.asOutParam());
+            if (hrc != S_OK || bstr == "")
+            {
+                hrc = server->mConsole->getVRDPServer ()->COMGETTER(Ports) (bstr.asOutParam());
+            }
             if (hrc != S_OK)
             {
                 bstr = "";
+            }
+
+            if (bstr == "0")
+            {
+                bstr = "3389";
             }
 
             /* The server expects UTF8. */
@@ -757,6 +767,8 @@ DECLCALLBACK(int)  ConsoleVRDPServer::VRDPCallbackQueryProperty (void *pvCallbac
             }
 
             ULONG port = *(uint32_t *)pvBuffer;
+            
+            server->mVRDPBindPort = port;
 
             com::Bstr bstr = Utf8StrFmt("%d", port);
 
@@ -768,6 +780,8 @@ DECLCALLBACK(int)  ConsoleVRDPServer::VRDPCallbackQueryProperty (void *pvCallbac
             {
                 *pcbOut = sizeof (uint32_t);
             }
+
+            server->mConsole->onRemoteDisplayInfoChange ();
         } break;
 
         default:
@@ -1129,6 +1143,7 @@ ConsoleVRDPServer::ConsoleVRDPServer (Console *console)
     console->RegisterCallback(mConsoleCallback);
 
     mConsole->machine ()->SetExtraData(Bstr("VBoxInternal2/VRDPPortRange"), Bstr(""));
+    mVRDPBindPort = -1;
 #endif /* VBOX_WITH_VRDP */
 
     mAuthLibrary = 0;
@@ -2018,7 +2033,17 @@ void ConsoleVRDPServer::SendUSBRequest (uint32_t u32ClientId, void *pvParms, uin
 void ConsoleVRDPServer::QueryInfo (uint32_t index, void *pvBuffer, uint32_t cbBuffer, uint32_t *pcbOut) const
 {
 #ifdef VBOX_WITH_VRDP
-    if (mpEntryPoints && mhServer)
+    if (index == VRDP_QI_PORT)
+    {
+        uint32_t cbOut = sizeof (int32_t);
+
+        if (cbBuffer >= cbOut)
+        {
+            *pcbOut = cbOut;
+            *(int32_t *)pvBuffer = (int32_t)mVRDPBindPort;
+        }
+    }
+    else if (mpEntryPoints && mhServer)
     {
         mpEntryPoints->VRDPQueryInfo (mhServer, index, pvBuffer, cbBuffer, pcbOut);
     }
@@ -2241,6 +2266,7 @@ void RemoteDisplayInfo::uninit()
     }
 
 IMPL_GETTER_BOOL   (BOOL,    Active,             VRDP_QI_ACTIVE);
+IMPL_GETTER_SCALAR (LONG,    Port,               VRDP_QI_PORT);
 IMPL_GETTER_SCALAR (ULONG,   NumberOfClients,    VRDP_QI_NUMBER_OF_CLIENTS);
 IMPL_GETTER_SCALAR (LONG64,  BeginTime,          VRDP_QI_BEGIN_TIME);
 IMPL_GETTER_SCALAR (LONG64,  EndTime,            VRDP_QI_END_TIME);

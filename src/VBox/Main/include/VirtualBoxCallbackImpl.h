@@ -86,6 +86,7 @@ public:
     STDMETHOD(OnSerialPortChange) (ISerialPort *aSerialPort);
     STDMETHOD(OnParallelPortChange) (IParallelPort *aParallelPort);
     STDMETHOD(OnVRDPServerChange)();
+    STDMETHOD(OnRemoteDisplayInfoChange)();
     STDMETHOD(OnUSBControllerChange)();
     STDMETHOD(OnUSBDeviceStateChange) (IUSBDevice *aDevice, BOOL aAttached,
                                        IVirtualBoxErrorInfo *aError);

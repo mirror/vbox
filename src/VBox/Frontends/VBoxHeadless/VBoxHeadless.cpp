@@ -198,6 +198,27 @@ public:
         return S_OK;
     }
 
+    STDMETHOD(OnRemoteDisplayInfoChange)()
+    {
+#ifdef VBOX_WITH_VRDP
+        if (gConsole)
+        {
+            ComPtr<IRemoteDisplayInfo> info;
+            gConsole->COMGETTER(RemoteDisplayInfo)(info.asOutParam());
+            if (info)
+            {
+                LONG port;
+                info->COMGETTER(Port)(&port);
+                if (port != 0)
+                    RTPrintf("Listening on port %d\n", port);
+                else
+                    RTPrintf("VRDP server failed to start\n");
+            }
+        }
+#endif
+        return S_OK;
+    }
+
     STDMETHOD(OnUSBControllerChange)()
     {
         return S_OK;
@@ -397,7 +418,7 @@ static void parse_environ(unsigned long *pulFrameWidth, unsigned long *pulFrameH
 extern "C" DECLEXPORT (int) TrustedMain (int argc, char **argv, char **envp)
 {
 #ifdef VBOX_WITH_VRDP
-    ULONG vrdpPort = ~0U;
+    const char *vrdpPort = NULL;
     const char *vrdpAddress = NULL;
     const char *vrdpEnabled = NULL;
 #endif
@@ -504,7 +525,7 @@ extern "C" DECLEXPORT (int) TrustedMain (int argc, char **argv, char **envp)
                 break;
 #ifdef VBOX_WITH_VRDP
             case 'p':
-                vrdpPort = ValueUnion.u32;
+                vrdpPort = ValueUnion.psz;
                 break;
             case 'a':
                 vrdpAddress = ValueUnion.psz;
@@ -849,10 +870,11 @@ extern "C" DECLEXPORT (int) TrustedMain (int argc, char **argv, char **envp)
             Log (("VBoxHeadless: Enabling VRDP server...\n"));
 
             /* set VRDP port if requested by the user */
-            if (vrdpPort != ~0U)
-                CHECK_ERROR_BREAK(vrdpServer, COMSETTER(Port)(vrdpPort));
-            else
-                CHECK_ERROR_BREAK(vrdpServer, COMGETTER(Port)(&vrdpPort));
+            if (vrdpPort != NULL)
+            {
+                Bstr bstr = vrdpPort;
+                CHECK_ERROR_BREAK(vrdpServer, COMSETTER(Ports)(bstr));
+            }
             /* set VRDP address if requested by the user */
             if (vrdpAddress != NULL)
             {
@@ -874,10 +896,6 @@ extern "C" DECLEXPORT (int) TrustedMain (int argc, char **argv, char **envp)
         }
 #endif
         Log (("VBoxHeadless: Powering up the machine...\n"));
-#ifdef VBOX_WITH_VRDP
-        if (fVRDPEnable)
-            RTPrintf("Listening on port %d\n", !vrdpPort ? VRDP_DEFAULT_PORT : vrdpPort);
-#endif
 
         ComPtr <IProgress> progress;
         CHECK_ERROR_BREAK(console, PowerUp (progress.asOutParam()));

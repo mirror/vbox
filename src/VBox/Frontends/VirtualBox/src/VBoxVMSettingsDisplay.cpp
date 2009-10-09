@@ -57,7 +57,7 @@ VBoxVMSettingsDisplay::VBoxVMSettingsDisplay()
 
     /* Setup validators */
     mLeMemory->setValidator (new QIntValidator (MinVRAM, MaxVRAM, this));
-    mLeVRDPPort->setValidator (new QIntValidator (0, 0xFFFF, this));
+    mLeVRDPPort->setValidator (new QRegExpValidator (QRegExp ("(([0-9]{1,5}(\\-[0-9]{1,5}){0,1}),)*([0-9]{1,5}(\\-[0-9]{1,5}){0,1})"), this));
     mLeVRDPTimeout->setValidator (new QIntValidator (this));
 
     /* Setup connections */
@@ -122,7 +122,7 @@ void VBoxVMSettingsDisplay::getFrom (const CMachine &aMachine)
     if (!vrdp.isNull())
     {
         mCbVRDP->setChecked (vrdp.GetEnabled());
-        mLeVRDPPort->setText (QString::number (vrdp.GetPort()));
+        mLeVRDPPort->setText (vrdp.GetPorts());
         mCbVRDPMethod->setCurrentIndex (mCbVRDPMethod->
                                         findText (vboxGlobal().toString (vrdp.GetAuthType())));
         mLeVRDPTimeout->setText (QString::number (vrdp.GetAuthTimeout()));
@@ -152,7 +152,7 @@ void VBoxVMSettingsDisplay::putBackTo()
     if (!vrdp.isNull())
     {
         vrdp.SetEnabled (mCbVRDP->isChecked());
-        vrdp.SetPort (mLeVRDPPort->text().toULong());
+        vrdp.SetPorts (mLeVRDPPort->text());
         vrdp.SetAuthType (vboxGlobal().toVRDPAuthType (mCbVRDPMethod->currentText()));
         vrdp.SetAuthTimeout (mLeVRDPTimeout->text().toULong());
     }

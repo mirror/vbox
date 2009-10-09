@@ -512,6 +512,11 @@ public:
         return S_OK;
     }
 
+    STDMETHOD(OnRemoteDisplayInfoChange)()
+    {
+        return S_OK;
+    }
+
     STDMETHOD(OnUSBControllerChange)()
     {
         return S_OK;
@@ -864,7 +869,7 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
     char *cdromFile = NULL;
     char *fdaFile   = NULL;
 #ifdef VBOX_WITH_VRDP
-    int portVRDP = ~0;
+    char *portVRDP = NULL;
 #endif
     bool fDiscardState = false;
 #ifdef VBOX_SECURELABEL
@@ -1272,19 +1277,14 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
                  || !strcmp(argv[curArg], "-vrdp"))
         {
             // start with the standard VRDP port
-            portVRDP = 0;
+            portVRDP = "0";
 
             // is there another argument
             if (argc > (curArg + 1))
             {
-                // check if the next argument is a number
-                int port = atoi(argv[curArg + 1]);
-                if (port > 0)
-                {
-                    curArg++;
-                    portVRDP = port;
-                    LogFlow(("Using non standard VRDP port %d\n", portVRDP));
-                }
+                curArg++;
+                portVRDP = argv[curArg];
+                LogFlow(("Using non standard VRDP port %s\n", portVRDP));
             }
         }
 #endif /* VBOX_WITH_VRDP */
@@ -1837,7 +1837,7 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
     cbConsoleImpl->ignorePowerOffEvents(true);
 
 #ifdef VBOX_WITH_VRDP
-    if (portVRDP != ~0)
+    if (portVRDP)
     {
         rc = gMachine->COMGETTER(VRDPServer)(gVrdpServer.asOutParam());
         AssertMsg((rc == S_OK) && gVrdpServer, ("Could not get VRDP Server! rc = 0x%x\n", rc));
@@ -1846,7 +1846,8 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
             // has a non standard VRDP port been requested?
             if (portVRDP > 0)
             {
-                rc = gVrdpServer->COMSETTER(Port)(portVRDP);
+                Bstr bstr = portVRDP;
+                rc = gVrdpServer->COMSETTER(Ports)(bstr);
                 if (rc != S_OK)
                 {
                     RTPrintf("Error: could not set VRDP port! rc = 0x%x\n", rc);

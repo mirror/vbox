@@ -92,7 +92,7 @@ int handleModifyVM(HandlerArg *a)
     char *firmware = NULL;
 #ifdef VBOX_WITH_VRDP
     char *vrdp = NULL;
-    uint16_t vrdpport = UINT16_MAX;
+    char *vrdpport = NULL;
     char *vrdpaddress = NULL;
     char *vrdpauthtype = NULL;
     char *vrdpmulticon = NULL;
@@ -608,9 +608,9 @@ int handleModifyVM(HandlerArg *a)
                 return errorArgument("Missing argument to '%s'", a->argv[i]);
             i++;
             if (!strcmp(a->argv[i], "default"))
-                vrdpport = 0;
+                vrdpport = "0";
             else
-                vrdpport = RTStrToUInt16(a->argv[i]);
+                vrdpport = a->argv[i];
         }
         else if (   !strcmp(a->argv[i], "--vrdpaddress")
                  || !strcmp(a->argv[i], "-vrdpaddress"))
@@ -1811,7 +1811,7 @@ int handleModifyVM(HandlerArg *a)
             break;
 
 #ifdef VBOX_WITH_VRDP
-        if (vrdp || (vrdpport != UINT16_MAX) || vrdpaddress || vrdpauthtype || vrdpmulticon || vrdpreusecon)
+        if (vrdp || vrdpport || vrdpaddress || vrdpauthtype || vrdpmulticon || vrdpreusecon)
         {
             ComPtr<IVRDPServer> vrdpServer;
             machine->COMGETTER(VRDPServer)(vrdpServer.asOutParam());
@@ -1835,9 +1835,9 @@ int handleModifyVM(HandlerArg *a)
                         break;
                     }
                 }
-                if (vrdpport != UINT16_MAX)
+                if (vrdpport)
                 {
-                    CHECK_ERROR(vrdpServer, COMSETTER(Port)(vrdpport));
+                    CHECK_ERROR(vrdpServer, COMSETTER(Ports)(Bstr(vrdpport)));
                 }
                 if (vrdpaddress)
                 {

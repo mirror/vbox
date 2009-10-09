@@ -1544,7 +1544,7 @@ void MachineConfigFile::readHardware(const xml::ElementNode &elmHardware,
         else if (pelmHwChild->nameEquals("RemoteDisplay"))
         {
             pelmHwChild->getAttributeValue("enabled", hw.vrdpSettings.fEnabled);
-            pelmHwChild->getAttributeValue("port", hw.vrdpSettings.ulPort);
+            pelmHwChild->getAttributeValue("port", hw.vrdpSettings.strPort);
             pelmHwChild->getAttributeValue("netAddress", hw.vrdpSettings.strNetAddress);
 
             Utf8Str strAuthType;
@@ -2356,7 +2356,7 @@ void MachineConfigFile::writeHardware(xml::ElementNode &elmParent,
 
     xml::ElementNode *pelmVRDP = pelmHardware->createChild("RemoteDisplay");
     pelmVRDP->setAttribute("enabled", hw.vrdpSettings.fEnabled);
-    pelmVRDP->setAttribute("port", hw.vrdpSettings.ulPort);
+    pelmVRDP->setAttribute("port", hw.vrdpSettings.strPort);
     if (hw.vrdpSettings.strNetAddress.length())
         pelmVRDP->setAttribute("netAddress", hw.vrdpSettings.strNetAddress);
     const char *pcszAuthType;

@@ -5440,7 +5440,7 @@
 
   <interface
      name="IConsoleCallback" extends="$unknown"
-     uuid="db67f6e5-799d-474c-8452-b10d7736a412"
+     uuid="d6239535-bda2-4ef7-83f4-f4722e4a3b2c"
      wsmap="suppress"
      >
 
@@ -5624,6 +5624,14 @@
         <link to="IMachine::VRDPServer">VRDP server</link> changes.
         Interested callees should use IVRDPServer methods and attributes to
         find out what has changed.
+      </desc>
+    </method>
+
+    <method name="onRemoteDisplayInfoChange">
+      <desc>
+        Notification when the status of the VRDP server changes. Interested callees
+        should use <link to="IConsole::RemoteDisplayInfo">IRemoteDisplayInfo</link>
+        attributes to find out what is the current status.
       </desc>
     </method>
 
@@ -5841,7 +5849,7 @@
 
   <interface
      name="IRemoteDisplayInfo" extends="$unknown"
-     uuid="550104cd-2dfd-4a6c-857d-f6f8e088e62c"
+     uuid="b3741084-806f-4c3b-8c42-ebad1a81e45a"
      wsmap="struct"
      >
      <desc>
@@ -5852,6 +5860,15 @@
     <attribute name="active" type="boolean" readonly="yes">
       <desc>
         Whether the remote display connection is active.
+      </desc>
+    </attribute>
+
+    <attribute name="port" type="long" readonly="yes">
+      <desc>
+        VRDP server port number. If this property is equal to <tt>0</tt>, then
+        the VRDP server failed to start, usually because there are no free TCP
+        ports to bind to. If this property is equal to <tt>-1</tt>, then the VRDP
+        server has not yet been started.
       </desc>
     </attribute>
 
@@ -11788,22 +11805,20 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
      name="IVRDPServer" extends="$unknown"
-     uuid="f4584ae7-6bce-474b-83d6-17d235e6aa89"
+     uuid="72e671bc-1712-4052-ad6b-e45e76d9d3e4"
      wsmap="managed"
      >
     <attribute name="enabled" type="boolean">
       <desc>VRDP server status.</desc>
     </attribute>
 
-    <attribute name="port" type="unsigned long">
+    <attribute name="ports" type="wstring">
       <desc>
-        VRDP server port number.
+        VRDP server port numbers.
         <note>
-          Setting the value of this property to <tt>0</tt> will reset the port
-          number to the default value which is
-          currently <tt>3389</tt>. Reading this property will always return a
-          real port number, even after it has been set to <tt>0</tt> (in which
-          case the default port is returned).
+          This is a string of comma separated TCP port numbers or port number ranges.
+          The server will try to bind to one of ports from the list. Example
+          <tt>3000,3010-3012,3015</tt>
         </note>
       </desc>
     </attribute>

@@ -1695,7 +1695,7 @@ QString VBoxGlobal::detailsReport (const CMachine &aMachine, bool aWithLinks)
             if (srv.GetEnabled())
                 item += QString (sSectionItemTpl2)
                         .arg (tr ("Remote Display Server Port", "details report (VRDP Server)"))
-                        .arg (srv.GetPort());
+                        .arg (srv.GetPorts());
             else
                 item += QString (sSectionItemTpl2)
                         .arg (tr ("Remote Display Server", "details report (VRDP Server)"))

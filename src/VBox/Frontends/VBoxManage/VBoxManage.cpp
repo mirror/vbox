@@ -1017,32 +1017,14 @@ static int handleControlVM(HandlerArg *a)
             ASSERT(vrdpServer);
             if (vrdpServer)
             {
-                uint16_t vrdpport;
+                Bstr vrdpports;
 
                 if (!strcmp(a->argv[2], "default"))
-                {
-                    vrdpport = 0;
-                }
+                    vrdpports = "0";
                 else
-                {
-                    int vrc = RTStrToUInt16Full(a->argv[2], 0, &vrdpport);
+                    vrdpports = a->argv [2];
 
-                    if (vrc != VINF_SUCCESS)
-                    {
-                        vrdpport = UINT16_MAX;
-                    }
-                }
-
-                if (vrdpport != UINT16_MAX)
-                {
-                    CHECK_ERROR_BREAK(vrdpServer, COMSETTER(Port)(vrdpport));
-                }
-                else
-                {
-                    errorArgument("Invalid vrdp server port '%s'", Utf8Str(a->argv[2]).raw());
-                    rc = E_FAIL;
-                    break;
-                }
+                CHECK_ERROR_BREAK(vrdpServer, COMSETTER(Ports)(vrdpports));
             }
         }
 #endif /* VBOX_WITH_VRDP */

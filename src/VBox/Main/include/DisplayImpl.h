@@ -197,6 +197,11 @@ public:
         return S_OK;
     }
 
+    STDMETHOD(OnRemoteDisplayInfoChange)()
+    {
+        return S_OK;
+    }
+
     STDMETHOD(OnUSBControllerChange)()
     {
         return S_OK;

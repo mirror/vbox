@@ -213,6 +213,7 @@ public:
                                  IVirtualBoxErrorInfo *aError);
     void onRuntimeError (BOOL aFatal, IN_BSTR aErrorID, IN_BSTR aMessage);
     HRESULT onShowWindow (BOOL aCheck, BOOL *aCanShow, ULONG64 *aWinId);
+    void onRemoteDisplayInfoChange();
 
     static const PDMDRVREG DrvStatusReg;
 
