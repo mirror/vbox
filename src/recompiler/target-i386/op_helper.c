@@ -269,10 +269,9 @@ DECLINLINE(void) load_seg_vm(int seg, int selector)
 {
     selector &= 0xffff;
 #ifdef VBOX
-    unsigned flags = DESC_P_MASK | DESC_S_MASK | DESC_W_MASK;
-
-    if (seg == R_CS)
-        flags |= DESC_CS_MASK;
+    /* flags must be 0xf3; expand-up read/write accessed data segment with DPL=3. (VT-x) */
+    unsigned flags = DESC_P_MASK | DESC_S_MASK | DESC_W_MASK | DESC_A_MASK;
+    flags |= (3 << DESC_DPL_SHIFT);
 
     cpu_x86_load_seg_cache(env, seg, selector,
                            (selector << 4), 0xffff, flags);
