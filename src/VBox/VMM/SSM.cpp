@@ -7465,7 +7465,7 @@ static int ssmR3FileSeekSubV2(PSSMHANDLE pSSM, PSSMFILEDIR pDir, size_t cbDir, u
     {
         if (    pDir->aEntries[i].u32NameCRC  == u32NameCRC
             &&  pDir->aEntries[i].u32Instance == iInstance
-            &&  pDir->aEntries[i].u32Instance != 0 /* bug in unreleased code */
+            &&  pDir->aEntries[i].off != 0 /* bug in unreleased code */
            )
         {
             /*
