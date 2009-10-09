@@ -307,7 +307,8 @@ $$(VBOX_FW_BASE)/VBoxEfiFirmware.tar.bz2: $(VBOX_SVN_REV_KMK) $(PATH_DEVTOOLS)/b
 	$(MV) $(VBOX_FW_BASE)/VBoxEfiFirmware.tar.bz2.tmp $(VBOX_FW_BASE)/VBoxEfiFirmware.tar.bz2
 
 $$(VBOX_FW_BASE)/FV/VBOX.fd: $(VBOX_FW_BASE)/VBoxEfiFirmware.tar.bz2
-	$(TOOL_TAR_UNPACK) xjf $< -C $(VBOX_FW_BASE)
+	bzip2 -d $(VBOX_FW_BASE)/VBoxEfiFirmware.tar.bz2
+	$(TOOL_TAR_UNPACK) xf $(VBOX_FW_BASE)/VBoxEfiFirmware.tar -C $(VBOX_FW_BASE)
 endif
 
 #
