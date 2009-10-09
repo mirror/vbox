@@ -379,7 +379,7 @@ int VBoxServiceWinGetAddsVersion(uint32_t uiClientID)
         if ((rc != ERROR_SUCCESS) && (rc != ERROR_FILE_NOT_FOUND))
         {
             VBoxServiceError("Failed to query registry key (install directory)! Error: %Rrc\n", rc);
-        }    
+        }
         else
         {
             /* Flip slashes. */
@@ -400,9 +400,9 @@ int VBoxServiceWinGetAddsVersion(uint32_t uiClientID)
     }
 
     /* Write information to host. */
-    rc = VBoxServiceWritePropF(uiClientID, "/VirtualBox/GuestAdd/InstallDir", szInstDir);
-    rc = VBoxServiceWritePropF(uiClientID, "/VirtualBox/GuestAdd/Revision", szRev);
-    rc = VBoxServiceWritePropF(uiClientID, "/VirtualBox/GuestAdd/Version", szVer);
+    rc = VBoxServiceWritePropF(uiClientID, "/VirtualBox/GuestAdd/InstallDir", "%s", szInstDir);
+    rc = VBoxServiceWritePropF(uiClientID, "/VirtualBox/GuestAdd/Revision", "%s", szRev);
+    rc = VBoxServiceWritePropF(uiClientID, "/VirtualBox/GuestAdd/Version", "%s", szVer);
 
     if (NULL != hKey)
         RegCloseKey(hKey);
@@ -493,7 +493,7 @@ int VBoxServiceWinGetComponentVersions(uint32_t uiClientID)
     {
         rc = VBoxServiceGetFileVersionString(pTable->pszFilePath, pTable->pszFileName, szVer, sizeof(szVer));
         RTStrPrintf(szPropPath, sizeof(szPropPath), "/VirtualBox/GuestAdd/Components/%s", pTable->pszFileName);
-        rc = VBoxServiceWritePropF(uiClientID, szPropPath, szVer);
+        rc = VBoxServiceWritePropF(uiClientID, szPropPath, "%s", szVer);
         pTable++;
     }
 
