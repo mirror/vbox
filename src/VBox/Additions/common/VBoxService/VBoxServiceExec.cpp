@@ -138,14 +138,6 @@ static int VBoxServiceExecReadHostProp(const char *pszPropName, char **ppszValue
     int     rc;
     *ppszValue = NULL;
 
-    char *pszPropNameUTF8;
-    rc = RTStrCurrentCPToUtf8(&pszPropNameUTF8, pszPropName);
-    if (RT_FAILURE(rc))
-    {
-        VBoxServiceError("Exec: Failed to convert property name \"%s\" to UTF-8!\n", pszPropName);
-        return rc;
-    }
-
     for (unsigned cTries = 0; cTries < 10; cTries++)
     {
         /*
@@ -162,7 +154,7 @@ static int VBoxServiceExecReadHostProp(const char *pszPropName, char **ppszValue
         char    *pszValue;
         char    *pszFlags;
         uint64_t uTimestamp;
-        rc = VbglR3GuestPropRead(g_uExecGuestPropSvcClientID, pszPropNameUTF8,
+        rc = VbglR3GuestPropRead(g_uExecGuestPropSvcClientID, pszPropName,
                                  pvBuf, cbBuf,
                                  &pszValue, &uTimestamp, &pszFlags, NULL);
         if (RT_FAILURE(rc))
@@ -207,7 +199,6 @@ static int VBoxServiceExecReadHostProp(const char *pszPropName, char **ppszValue
         break; /* done */
     }
     RTMemFree(pvBuf);
-    RTStrFree(pszPropNameUTF8);
     return rc;
 }
 

@@ -38,24 +38,19 @@
 #ifdef VBOX_WITH_GUEST_PROPS
 int VBoxServiceWritePropF(uint32_t u32ClientId, const char *pszName, const char *pszValueFormat, ...)
 {
-    char *pszNameUTF8;
-    int rc = RTStrCurrentCPToUtf8(&pszNameUTF8, pszName);
-    if (RT_SUCCESS(rc))
+    int rc;
+    if (pszValueFormat != NULL)
     {
-        if (pszValueFormat != NULL)
-        {
-            VBoxServiceVerbose(3, "Writing guest property \"%s\"\n", pszNameUTF8);
-            va_list va;
-            va_start(va, pszValueFormat);
-            rc = VbglR3GuestPropWriteValueV(u32ClientId, pszNameUTF8, pszValueFormat, va);
-            va_end(va);
-            if (RT_FAILURE(rc))
-                 VBoxServiceError("Error writing guest property \"%s\" (rc=%Rrc)\n", pszNameUTF8, rc);
-        }
-        else
-            rc = VbglR3GuestPropWriteValue(u32ClientId, pszNameUTF8, NULL);
-        RTStrFree(pszNameUTF8);
+        VBoxServiceVerbose(3, "Writing guest property \"%s\"\n", pszName);
+        va_list va;
+        va_start(va, pszValueFormat);
+        rc = VbglR3GuestPropWriteValueV(u32ClientId, pszName, pszValueFormat, va);
+        va_end(va);
+        if (RT_FAILURE(rc))
+             VBoxServiceError("Error writing guest property \"%s\" (rc=%Rrc)\n", pszName, rc);
     }
+    else
+        rc = VbglR3GuestPropWriteValue(u32ClientId, pszName, NULL);
     return rc;
 }
 #endif /* VBOX_WITH_GUEST_PROPS */
