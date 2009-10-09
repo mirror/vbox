@@ -1,4 +1,4 @@
-00/** @file
+/** @file
  * X86 (and AMD64) Structures and Definitions (VMM,++).
  *
  * x86.mac is generated from this file by running 'kmk incs' in the root.
