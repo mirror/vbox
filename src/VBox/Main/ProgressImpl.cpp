@@ -746,7 +746,7 @@ STDMETHODIMP Progress::WaitForCompletion (LONG aTimeout)
     if (!mCompleted)
     {
         RTTIMESPEC time;
-        RTTimeNow (&time);
+        RTTimeNow (&time); /** @todo r=bird: Use monotonic time (RTTimeMilliTS()) here because of daylight saving and things like that. */
 
         int vrc = VINF_SUCCESS;
         bool fForever = aTimeout < 0;
