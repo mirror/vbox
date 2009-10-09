@@ -481,7 +481,7 @@ void VBoxVMInformationDlg::refreshStatistics()
         result += formatValue (VBoxGlobal::tr ("Nested Paging", "details report"), nested, maxLength);
         result += formatValue (tr ("Guest Additions"), addVerisonStr, maxLength);
         result += formatValue (tr ("Guest OS Type"), osType, maxLength);
-        result += formatValue (tr ("Remote Display Server Port"), vrdpInfo, maxLength);
+        result += formatValue (VBoxGlobal::tr ("Remote Display Server Port", "details report (VRDP Server)"), vrdpInfo, maxLength);
         result += paragraph;
     }
 
