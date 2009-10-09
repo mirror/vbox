@@ -1374,18 +1374,24 @@ BOOLEAN VBoxVideoInterrupt(PVOID  HwDeviceExtension)
 {
     PDEVICE_EXTENSION devExt = (PDEVICE_EXTENSION)HwDeviceExtension;
     PDEVICE_EXTENSION PrimaryExtension = devExt->pPrimary;
-    uint32_t flags = PrimaryExtension->u.primary.pHostFlags->u32HostFlags;
-    if((flags & HGSMIHOSTFLAGS_IRQ) != 0)
+    if (PrimaryExtension)
     {
-        if((flags & HGSMIHOSTFLAGS_COMMANDS_PENDING) != 0)
+        if (PrimaryExtension->u.primary.pHostFlags) /* If HGSMI is enabled at all. */
         {
-            /* schedule a DPC*/
-            BOOLEAN bResult = PrimaryExtension->u.primary.VideoPortProcs.pfnQueueDpc(PrimaryExtension, VBoxVideoHGSMIDpc, (PVOID)1);
-            Assert(bResult);
+            uint32_t flags = PrimaryExtension->u.primary.pHostFlags->u32HostFlags;
+            if((flags & HGSMIHOSTFLAGS_IRQ) != 0)
+            {
+                if((flags & HGSMIHOSTFLAGS_COMMANDS_PENDING) != 0)
+                {
+                    /* schedule a DPC*/
+                    BOOLEAN bResult = PrimaryExtension->u.primary.VideoPortProcs.pfnQueueDpc(PrimaryExtension, VBoxVideoHGSMIDpc, (PVOID)1);
+                    Assert(bResult);
+                }
+                /* clear the IRQ */
+                HGSMIClearIrq (PrimaryExtension);
+                return TRUE;
+            }
         }
-        /* clear the IRQ */
-        HGSMIClearIrq (PrimaryExtension);
-        return TRUE;
     }
     return FALSE;
 }
