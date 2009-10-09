@@ -137,14 +137,14 @@ public:
  *  @param   expr    Expression which should be true.
  */
 #if defined (DEBUG)
-#define ComAssert(expr)    Assert (expr)
+#define ComAssert(expr)    Assert(expr)
 #else
 #define ComAssert(expr)    \
     do { \
-        if (!(expr)) \
-            setError (E_FAIL, "Assertion failed: [%s] at '%s' (%d) in %s.\n" \
-                              "Please contact the product vendor!", \
-                      #expr, __FILE__, __LINE__, __PRETTY_FUNCTION__); \
+        if (RT_UNLIKELY(!(expr))) \
+            setError(E_FAIL, "Assertion failed: [%s] at '%s' (%d) in %s.\n" \
+                             "Please contact the product vendor!", \
+                     #expr, __FILE__, __LINE__, __PRETTY_FUNCTION__); \
     } while (0)
 #endif
 
@@ -158,15 +158,15 @@ public:
  *  @param   a       printf argument list (in parenthesis).
  */
 #if defined (DEBUG)
-#define ComAssertMsg(expr, a)  AssertMsg (expr, a)
+#define ComAssertMsg(expr, a)  AssertMsg(expr, a)
 #else
 #define ComAssertMsg(expr, a)  \
     do { \
-        if (!(expr)) \
-            setError (E_FAIL, "Assertion failed: [%s] at '%s' (%d) in %s.\n" \
-                              "%s.\n" \
-                              "Please contact the product vendor!", \
-                      #expr, __FILE__, __LINE__, __PRETTY_FUNCTION__, Utf8StrFmt a .raw()); \
+        if (RT_UNLIKELY(!(expr))) \
+            setError(E_FAIL, "Assertion failed: [%s] at '%s' (%d) in %s.\n" \
+                             "%s.\n" \
+                             "Please contact the product vendor!", \
+                     #expr, __FILE__, __LINE__, __PRETTY_FUNCTION__, Utf8StrFmt a .raw()); \
     } while (0)
 #endif
 
@@ -179,9 +179,9 @@ public:
  * @param   vrc     VBox status code.
  */
 #if defined (DEBUG)
-#define ComAssertRC(vrc)    AssertRC (vrc)
+#define ComAssertRC(vrc)    AssertRC(vrc)
 #else
-#define ComAssertRC(vrc)    ComAssertMsgRC (vrc, ("%Rra", vrc))
+#define ComAssertRC(vrc)    ComAssertMsgRC(vrc, ("%Rra", vrc))
 #endif
 
 /**
@@ -194,9 +194,9 @@ public:
  *  @param   msg    printf argument list (in parenthesis).
  */
 #if defined (DEBUG)
-#define ComAssertMsgRC(vrc, msg)    AssertMsgRC (vrc, msg)
+#define ComAssertMsgRC(vrc, msg)    AssertMsgRC(vrc, msg)
 #else
-#define ComAssertMsgRC(vrc, msg)    ComAssertMsg (RT_SUCCESS (vrc), msg)
+#define ComAssertMsgRC(vrc, msg)    ComAssertMsg(RT_SUCCESS(vrc), msg)
 #endif
 
 
@@ -211,9 +211,9 @@ public:
 #else
 #define ComAssertFailed()   \
     do { \
-        setError (E_FAIL, "Assertion failed at '%s' (%d) in %s.\n" \
-                          "Please contact the product vendor!", \
-                  __FILE__, __LINE__, __PRETTY_FUNCTION__); \
+        setError(E_FAIL, "Assertion failed at '%s' (%d) in %s.\n" \
+                         "Please contact the product vendor!", \
+                 __FILE__, __LINE__, __PRETTY_FUNCTION__); \
     } while (0)
 #endif
 
@@ -230,10 +230,10 @@ public:
 #else
 #define ComAssertMsgFailed(a)   \
     do { \
-        setError (E_FAIL, "Assertion failed at '%s' (%d) in %s.\n" \
-                          "%s.\n" \
-                          "Please contact the product vendor!", \
-                  __FILE__, __LINE__, __PRETTY_FUNCTION__, Utf8StrFmt a .raw()); \
+        setError(E_FAIL, "Assertion failed at '%s' (%d) in %s.\n" \
+                         "%s.\n" \
+                         "Please contact the product vendor!", \
+                 __FILE__, __LINE__, __PRETTY_FUNCTION__, Utf8StrFmt a .raw()); \
     } while (0)
 #endif
 
@@ -248,18 +248,18 @@ public:
 #if defined (DEBUG)
 #define ComAssertMsgFailedPos(a, file, line, func)              \
     do {                                                        \
-        AssertMsg1 ((const char *) 0, line, file, func);        \
+        AssertMsg1((const char *)0, line, file, func);          \
         AssertMsg2 a;                                           \
         AssertBreakpoint();                                     \
     } while (0)
 #else
 #define ComAssertMsgFailedPos(a, file, line, func)              \
     do {                                                        \
-        setError (E_FAIL,                                       \
-                  "Assertion failed at '%s' (%d) in %s.\n"      \
-                  "%s.\n"                                       \
-                  "Please contact the product vendor!",         \
-                  file, line, func, Utf8StrFmt a .raw());       \
+        setError(E_FAIL,                                        \
+                 "Assertion failed at '%s' (%d) in %s.\n"       \
+                 "%s.\n"                                        \
+                 "Please contact the product vendor!",          \
+                 file, line, func, Utf8StrFmt a .raw());        \
     } while (0)
 #endif
 
@@ -272,50 +272,50 @@ public:
  *  @param rc   COM result code
  */
 #if defined (DEBUG)
-#define ComAssertComRC(rc)  AssertComRC (rc)
+#define ComAssertComRC(rc)  AssertComRC(rc)
 #else
-#define ComAssertComRC(rc)  ComAssertMsg (SUCCEEDED (rc), ("COM RC = %Rhrc (0x%08X)", (rc), (rc)))
+#define ComAssertComRC(rc)  ComAssertMsg(SUCCEEDED(rc), ("COM RC = %Rhrc (0x%08X)", (rc), (rc)))
 #endif
 
 
 /** Special version of ComAssert that returns ret if expr fails */
 #define ComAssertRet(expr, ret)             \
-    do { ComAssert (expr); if (!(expr)) return (ret); } while (0)
+    do { ComAssert(expr); if (!(expr)) return (ret); } while (0)
 /** Special version of ComAssertMsg that returns ret if expr fails */
 #define ComAssertMsgRet(expr, a, ret)       \
-    do { ComAssertMsg (expr, a); if (!(expr)) return (ret); } while (0)
+    do { ComAssertMsg(expr, a); if (!(expr)) return (ret); } while (0)
 /** Special version of ComAssertRC that returns ret if vrc does not succeed */
 #define ComAssertRCRet(vrc, ret)            \
-    do { ComAssertRC (vrc); if (!RT_SUCCESS (vrc)) return (ret); } while (0)
+    do { ComAssertRC(vrc); if (!RT_SUCCESS(vrc)) return (ret); } while (0)
 /** Special version of ComAssertMsgRC that returns ret if vrc does not succeed */
 #define ComAssertMsgRCRet(vrc, msg, ret)    \
-    do { ComAssertMsgRC (vrc, msg); if (!RT_SUCCESS (vrc)) return (ret); } while (0)
+    do { ComAssertMsgRC(vrc, msg); if (!RT_SUCCESS(vrc)) return (ret); } while (0)
 /** Special version of ComAssertFailed that returns ret */
 #define ComAssertFailedRet(ret)             \
     do { ComAssertFailed(); return (ret); } while (0)
 /** Special version of ComAssertMsgFailed that returns ret */
 #define ComAssertMsgFailedRet(msg, ret)     \
-    do { ComAssertMsgFailed (msg); return (ret); } while (0)
+    do { ComAssertMsgFailed(msg); return (ret); } while (0)
 /** Special version of ComAssertComRC that returns ret if rc does not succeed */
 #define ComAssertComRCRet(rc, ret)          \
-    do { ComAssertComRC (rc); if (!SUCCEEDED (rc)) return (ret); } while (0)
+    do { ComAssertComRC(rc); if (!SUCCEEDED(rc)) return (ret); } while (0)
 /** Special version of ComAssertComRC that returns rc if rc does not succeed */
 #define ComAssertComRCRetRC(rc)             \
-    do { ComAssertComRC (rc); if (!SUCCEEDED (rc)) return (rc); } while (0)
+    do { ComAssertComRC(rc); if (!SUCCEEDED(rc)) return (rc); } while (0)
 
 
 /** Special version of ComAssert that evaluates eval and breaks if expr fails */
 #define ComAssertBreak(expr, eval)                \
-    if (1) { ComAssert (expr); if (!(expr)) { eval; break; } } else do {} while (0)
+    if (1) { ComAssert(expr); if (!(expr)) { eval; break; } } else do {} while (0)
 /** Special version of ComAssertMsg that evaluates eval and breaks if expr fails */
 #define ComAssertMsgBreak(expr, a, eval)          \
-    if (1)  { ComAssertMsg (expr, a); if (!(expr)) { eval; break; } } else do {} while (0)
+    if (1)  { ComAssertMsg(expr, a); if (!(expr)) { eval; break; } } else do {} while (0)
 /** Special version of ComAssertRC that evaluates eval and breaks if vrc does not succeed */
 #define ComAssertRCBreak(vrc, eval)               \
-    if (1)  { ComAssertRC (vrc); if (!RT_SUCCESS (vrc)) { eval; break; } } else do {} while (0)
+    if (1)  { ComAssertRC(vrc); if (!RT_SUCCESS(vrc)) { eval; break; } } else do {} while (0)
 /** Special version of ComAssertMsgRC that evaluates eval and breaks if vrc does not succeed */
 #define ComAssertMsgRCBreak(vrc, msg, eval)       \
-    if (1)  { ComAssertMsgRC (vrc, msg); if (!RT_SUCCESS (vrc)) { eval; break; } } else do {} while (0)
+    if (1)  { ComAssertMsgRC(vrc, msg); if (!RT_SUCCESS(vrc)) { eval; break; } } else do {} while (0)
 /** Special version of ComAssertFailed that evaluates eval and breaks */
 #define ComAssertFailedBreak(eval)                \
     if (1)  { ComAssertFailed(); { eval; break; } } else do {} while (0)
@@ -324,24 +324,24 @@ public:
     if (1)  { ComAssertMsgFailed (msg); { eval; break; } } else do {} while (0)
 /** Special version of ComAssertComRC that evaluates eval and breaks if rc does not succeed */
 #define ComAssertComRCBreak(rc, eval)             \
-    if (1)  { ComAssertComRC (rc); if (!SUCCEEDED (rc)) { eval; break; } } else do {} while (0)
+    if (1)  { ComAssertComRC(rc); if (!SUCCEEDED(rc)) { eval; break; } } else do {} while (0)
 /** Special version of ComAssertComRC that just breaks if rc does not succeed */
 #define ComAssertComRCBreakRC(rc)                 \
-    if (1)  { ComAssertComRC (rc); if (!SUCCEEDED (rc)) { break; } } else do {} while (0)
+    if (1)  { ComAssertComRC(rc); if (!SUCCEEDED(rc)) { break; } } else do {} while (0)
 
 
 /** Special version of ComAssert that evaluates eval and throws it if expr fails */
 #define ComAssertThrow(expr, eval)                \
-    if (1) { ComAssert (expr); if (!(expr)) { throw (eval); } } else do {} while (0)
+    if (1) { ComAssert(expr); if (!(expr)) { throw (eval); } } else do {} while (0)
 /** Special version of ComAssertMsg that evaluates eval and throws it if expr fails */
 #define ComAssertMsgThrow(expr, a, eval)          \
-    if (1)  { ComAssertMsg (expr, a); if (!(expr)) { throw (eval); } } else do {} while (0)
+    if (1)  { ComAssertMsg(expr, a); if (!(expr)) { throw (eval); } } else do {} while (0)
 /** Special version of ComAssertRC that evaluates eval and throws it if vrc does not succeed */
 #define ComAssertRCThrow(vrc, eval)               \
-    if (1)  { ComAssertRC (vrc); if (!RT_SUCCESS (vrc)) { throw (eval); } } else do {} while (0)
+    if (1)  { ComAssertRC(vrc); if (!RT_SUCCESS(vrc)) { throw (eval); } } else do {} while (0)
 /** Special version of ComAssertMsgRC that evaluates eval and throws it if vrc does not succeed */
 #define ComAssertMsgRCThrow(vrc, msg, eval)       \
-    if (1)  { ComAssertMsgRC (vrc, msg); if (!RT_SUCCESS (vrc)) { throw (eval); } } else do {} while (0)
+    if (1)  { ComAssertMsgRC(vrc, msg); if (!RT_SUCCESS(vrc)) { throw (eval); } } else do {} while (0)
 /** Special version of ComAssertFailed that evaluates eval and throws it */
 #define ComAssertFailedThrow(eval)                \
     if (1)  { ComAssertFailed(); { throw (eval); } } else do {} while (0)
@@ -350,10 +350,10 @@ public:
     if (1)  { ComAssertMsgFailed (msg); { throw (eval); } } else do {} while (0)
 /** Special version of ComAssertComRC that evaluates eval and throws it if rc does not succeed */
 #define ComAssertComRCThrow(rc, eval)             \
-    if (1)  { ComAssertComRC (rc); if (!SUCCEEDED (rc)) { throw (eval); } } else do {} while (0)
+    if (1)  { ComAssertComRC(rc); if (!SUCCEEDED(rc)) { throw (eval); } } else do {} while (0)
 /** Special version of ComAssertComRC that just throws rc if rc does not succeed */
 #define ComAssertComRCThrowRC(rc)                 \
-    if (1)  { ComAssertComRC (rc); if (!SUCCEEDED (rc)) { throw rc; } } else do {} while (0)
+    if (1)  { ComAssertComRC(rc); if (!SUCCEEDED(rc)) { throw rc; } } else do {} while (0)
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -364,8 +364,8 @@ public:
  */
 #define CheckComArgNotNull(arg) \
     do { \
-        if ((arg) == NULL) \
-            return setError (E_INVALIDARG, tr ("Argument %s is NULL"), #arg); \
+        if (RT_UNLIKELY((arg) == NULL)) \
+            return setError(E_INVALIDARG, tr("Argument %s is NULL"), #arg); \
     } while (0)
 
 /**
@@ -375,8 +375,8 @@ public:
  */
 #define CheckComArgSafeArrayNotNull(arg) \
     do { \
-        if (ComSafeArrayInIsNull (arg)) \
-            return setError (E_INVALIDARG, tr ("Argument %s is NULL"), #arg); \
+        if (RT_UNLIKELY(ComSafeArrayInIsNull(arg))) \
+            return setError(E_INVALIDARG, tr("Argument %s is NULL"), #arg); \
     } while (0)
 
 /**
@@ -386,9 +386,9 @@ public:
  */
 #define CheckComArgStrNotEmptyOrNull(arg) \
     do { \
-        if ((arg) == NULL || *(arg) == '\0') \
-            return setError (E_INVALIDARG, \
-                tr ("Argument %s is empty or NULL"), #arg); \
+        if (RT_UNLIKELY((arg) == NULL || *(arg) == '\0')) \
+            return setError(E_INVALIDARG, \
+                tr("Argument %s is empty or NULL"), #arg); \
     } while (0)
 
 /**
@@ -399,9 +399,9 @@ public:
  */
 #define CheckComArgExpr(arg, expr) \
     do { \
-        if (!(expr)) \
-            return setError (E_INVALIDARG, \
-                tr ("Argument %s is invalid (must be %s)"), #arg, #expr); \
+        if (RT_UNLIKELY(!(expr))) \
+            return setError(E_INVALIDARG, \
+                tr("Argument %s is invalid (must be %s)"), #arg, #expr); \
     } while (0)
 
 /**
@@ -415,9 +415,9 @@ public:
  */
 #define CheckComArgExprMsg(arg, expr, msg) \
     do { \
-        if (!(expr)) \
-            return setError (E_INVALIDARG, tr ("Argument %s %s"), \
-                             #arg, Utf8StrFmt msg .raw()); \
+        if (RT_UNLIKELY(!(expr))) \
+            return setError(E_INVALIDARG, tr ("Argument %s %s"), \
+                            #arg, Utf8StrFmt msg .raw()); \
     } while (0)
 
 /**
@@ -427,9 +427,9 @@ public:
  */
 #define CheckComArgOutPointerValid(arg) \
     do { \
-        if (!VALID_PTR (arg)) \
-            return setError (E_POINTER, \
-                tr ("Output argument %s points to invalid memory location (%p)"), \
+        if (RT_UNLIKELY(!VALID_PTR(arg))) \
+            return setError(E_POINTER, \
+                tr("Output argument %s points to invalid memory location (%p)"), \
                 #arg, (void *) (arg)); \
     } while (0)
 
@@ -440,9 +440,9 @@ public:
  */
 #define CheckComArgOutSafeArrayPointerValid(arg) \
     do { \
-        if (ComSafeArrayOutIsNull (arg)) \
-            return setError (E_POINTER, \
-                tr ("Output argument %s points to invalid memory location (%p)"), \
+        if (RT_UNLIKELY(ComSafeArrayOutIsNull(arg))) \
+            return setError(E_POINTER, \
+                tr("Output argument %s points to invalid memory location (%p)"), \
                 #arg, (void *) (arg)); \
     } while (0)
 
@@ -451,7 +451,7 @@ public:
  */
 #define ReturnComNotImplemented() \
     do { \
-        return setError (E_NOTIMPL, tr ("Method %s is not implemented"), __FUNCTION__); \
+        return setError(E_NOTIMPL, tr("Method %s is not implemented"), __FUNCTION__); \
     } while (0)
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -583,7 +583,7 @@ public:
      */
     virtual void uninit() {}
 
-    virtual HRESULT addCaller (State *aState = NULL, bool aLimited = false);
+    virtual HRESULT addCaller(State *aState = NULL, bool aLimited = false);
     virtual void releaseCaller();
 
     /**
@@ -591,9 +591,9 @@ public:
      * <tt>addCaller (aState, true)</tt>, but it is preferred because provides
      * better self-descriptiveness. See #addCaller() for more info.
      */
-    HRESULT addLimitedCaller (State *aState = NULL)
+    HRESULT addLimitedCaller(State *aState = NULL)
     {
-        return addCaller (aState, true /* aLimited */);
+        return addCaller(aState, true /* aLimited */);
     }
 
     /**
@@ -618,7 +618,7 @@ public:
      *       classes than specify the @a aLimited argument, for better
      *       self-descriptiveness.
      */
-    template <bool aLimited>
+    template<bool aLimited>
     class AutoCallerBase
     {
     public:
@@ -632,13 +632,13 @@ public:
          *                  rc() will return S_OK and state() will be
          *                  NotReady).
          */
-        AutoCallerBase (VirtualBoxBaseProto *aObj)
-            : mObj (aObj)
-            , mRC (S_OK)
-            , mState (NotReady)
+        AutoCallerBase(VirtualBoxBaseProto *aObj)
+            : mObj(aObj)
+            , mRC(S_OK)
+            , mState(NotReady)
         {
             if (mObj)
-                mRC =  mObj->addCaller (&mState, aLimited);
+                mRC = mObj->addCaller(&mState, aLimited);
         }
 
         /**
@@ -647,7 +647,7 @@ public:
          */
         ~AutoCallerBase()
         {
-            if (mObj && SUCCEEDED (mRC))
+            if (mObj && SUCCEEDED(mRC))
                 mObj->releaseCaller();
         }
 
@@ -662,7 +662,7 @@ public:
          * Returns |true| if |SUCCEEDED (rc())| is |true|, for convenience.
          * |true| means the number of callers was successfully increased.
          */
-        bool isOk() const { return SUCCEEDED (mRC); }
+        bool isOk() const { return SUCCEEDED(mRC); }
 
         /**
          * Stores the object state returned by VirtualBoxBase::addCaller() after
@@ -677,8 +677,8 @@ public:
          */
         void release()
         {
-            Assert (SUCCEEDED (mRC));
-            if (SUCCEEDED (mRC))
+            Assert(SUCCEEDED(mRC));
+            if (SUCCEEDED(mRC))
             {
                 if (mObj)
                     mObj->releaseCaller();
@@ -692,9 +692,9 @@ public:
          */
         void add()
         {
-            Assert (!SUCCEEDED (mRC));
-            if (mObj && !SUCCEEDED (mRC))
-                mRC = mObj->addCaller (&mState, aLimited);
+            Assert(!SUCCEEDED(mRC));
+            if (mObj && !SUCCEEDED(mRC))
+                mRC = mObj->addCaller(&mState, aLimited);
         }
 
         /**
@@ -703,12 +703,12 @@ public:
          *
          * @param aObj  New object to attach, may be @c NULL.
          */
-        void attach (VirtualBoxBaseProto *aObj)
+        void attach(VirtualBoxBaseProto *aObj)
         {
             /* detect simple self-reattachment */
             if (mObj != aObj)
             {
-                if (mObj && SUCCEEDED (mRC))
+                if (mObj && SUCCEEDED(mRC))
                     release();
                 mObj = aObj;
                 add();
@@ -716,12 +716,12 @@ public:
         }
 
         /** Verbose equivalent to <tt>attach (NULL)</tt>. */
-        void detach() { attach (NULL); }
+        void detach() { attach(NULL); }
 
     private:
 
-        DECLARE_CLS_COPY_CTOR_ASSIGN_NOOP (AutoCallerBase)
-        DECLARE_CLS_NEW_DELETE_NOOP (AutoCallerBase)
+        DECLARE_CLS_COPY_CTOR_ASSIGN_NOOP(AutoCallerBase)
+        DECLARE_CLS_NEW_DELETE_NOOP(AutoCallerBase)
 
         VirtualBoxBaseProto *mObj;
         HRESULT mRC;
@@ -751,7 +751,7 @@ public:
      *
      * See AutoCallerBase for more information about auto caller functionality.
      */
-    typedef AutoCallerBase <false> AutoCaller;
+    typedef AutoCallerBase<false> AutoCaller;
 
     /**
      * Smart class that automatically increases the number of limited callers of
@@ -776,7 +776,7 @@ public:
      *
      * See AutoCallerBase for more information about auto caller functionality.
      */
-    typedef AutoCallerBase <true> AutoLimitedCaller;
+    typedef AutoCallerBase<true> AutoLimitedCaller;
 
 protected:
 
@@ -835,7 +835,7 @@ protected:
 
         enum Result { Failed = 0x0, Succeeded = 0x1, Limited = 0x2 };
 
-        AutoInitSpan (VirtualBoxBaseProto *aObj, Result aResult = Failed);
+        AutoInitSpan(VirtualBoxBaseProto *aObj, Result aResult = Failed);
         ~AutoInitSpan();
 
         /**
@@ -872,8 +872,8 @@ protected:
 
     private:
 
-        DECLARE_CLS_COPY_CTOR_ASSIGN_NOOP (AutoInitSpan)
-        DECLARE_CLS_NEW_DELETE_NOOP (AutoInitSpan)
+        DECLARE_CLS_COPY_CTOR_ASSIGN_NOOP(AutoInitSpan)
+        DECLARE_CLS_NEW_DELETE_NOOP(AutoInitSpan)
 
         VirtualBoxBaseProto *mObj;
         Result mResult : 3; // must be at least total number of bits + 1 (sign)
@@ -929,7 +929,7 @@ protected:
     {
     public:
 
-        AutoReinitSpan (VirtualBoxBaseProto *aObj);
+        AutoReinitSpan(VirtualBoxBaseProto *aObj);
         ~AutoReinitSpan();
 
         /**
@@ -947,8 +947,8 @@ protected:
 
     private:
 
-        DECLARE_CLS_COPY_CTOR_ASSIGN_NOOP (AutoReinitSpan)
-        DECLARE_CLS_NEW_DELETE_NOOP (AutoReinitSpan)
+        DECLARE_CLS_COPY_CTOR_ASSIGN_NOOP(AutoReinitSpan)
+        DECLARE_CLS_NEW_DELETE_NOOP(AutoReinitSpan)
 
         VirtualBoxBaseProto *mObj;
         bool mSucceeded : 1;
@@ -998,7 +998,7 @@ protected:
     {
     public:
 
-        AutoUninitSpan (VirtualBoxBaseProto *aObj);
+        AutoUninitSpan(VirtualBoxBaseProto *aObj);
         ~AutoUninitSpan();
 
         /** |true| when uninit() is called as a result of init() failure */
@@ -1009,8 +1009,8 @@ protected:
 
     private:
 
-        DECLARE_CLS_COPY_CTOR_ASSIGN_NOOP (AutoUninitSpan)
-        DECLARE_CLS_NEW_DELETE_NOOP (AutoUninitSpan)
+        DECLARE_CLS_COPY_CTOR_ASSIGN_NOOP(AutoUninitSpan)
+        DECLARE_CLS_NEW_DELETE_NOOP(AutoUninitSpan)
 
         VirtualBoxBaseProto *mObj;
         bool mInitFailed : 1;
@@ -1069,7 +1069,7 @@ protected:
     {
     public:
 
-        AutoMayUninitSpan (VirtualBoxBaseProto *aObj);
+        AutoMayUninitSpan(VirtualBoxBaseProto *aObj);
         ~AutoMayUninitSpan();
 
         /**
@@ -1094,8 +1094,8 @@ protected:
 
     private:
 
-        DECLARE_CLS_COPY_CTOR_ASSIGN_NOOP (AutoMayUninitSpan)
-        DECLARE_CLS_NEW_DELETE_NOOP (AutoMayUninitSpan)
+        DECLARE_CLS_COPY_CTOR_ASSIGN_NOOP(AutoMayUninitSpan)
+        DECLARE_CLS_NEW_DELETE_NOOP(AutoMayUninitSpan)
 
         VirtualBoxBaseProto *mObj;
 
@@ -1114,9 +1114,9 @@ protected:
 
 private:
 
-    void setState (State aState)
+    void setState(State aState)
     {
-        Assert (mState != aState);
+        Assert(mState != aState);
         mState = aState;
         mStateChangeThread = RTThreadSelf();
     }
@@ -1159,17 +1159,17 @@ private:
  *  @param C    VirtualBoxBase subclass to add the error info support to
  */
 #define VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT(C) \
-    virtual HRESULT addCaller (VirtualBoxBaseProto::State *aState = NULL, \
-                               bool aLimited = false) \
+    virtual HRESULT addCaller(VirtualBoxBaseProto::State *aState = NULL, \
+                              bool aLimited = false) \
     { \
         VirtualBoxBaseProto::State state; \
-        HRESULT rc = VirtualBoxBaseProto::addCaller (&state, aLimited); \
-        if (FAILED (rc)) \
+        HRESULT rc = VirtualBoxBaseProto::addCaller(&state, aLimited); \
+        if (FAILED(rc)) \
         { \
             if (state == VirtualBoxBaseProto::Limited) \
-                rc = setError (rc, tr ("The object functionality is limited")); \
+                rc = setError(rc, tr("The object functionality is limited")); \
             else \
-                rc = setError (rc, tr ("The object is not ready")); \
+                rc = setError(rc, tr("The object is not ready")); \
         } \
         if (aState) \
             *aState = state; \
@@ -1180,7 +1180,7 @@ private:
 
 class ATL_NO_VTABLE VirtualBoxBase
     : virtual public VirtualBoxBaseProto
-    , public CComObjectRootEx <CComMultiThreadModel>
+    , public CComObjectRootEx<CComMultiThreadModel>
 {
 
 public:
@@ -1200,8 +1200,8 @@ public:
     virtual void uninit()
     {}
 
-    static const char *translate (const char *context, const char *sourceText,
-                                  const char *comment = 0);
+    static const char *translate(const char *context, const char *sourceText,
+                                 const char *comment = 0);
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -1210,7 +1210,7 @@ public:
 class VirtualBoxSupportTranslationBase
 {
 protected:
-    static bool cutClassNameFrom__PRETTY_FUNCTION__ (char *aPrettyFunctionName);
+    static bool cutClassNameFrom__PRETTY_FUNCTION__(char *aPrettyFunctionName);
 };
 
 /**
@@ -1235,7 +1235,7 @@ protected:
  *       of its base classes also inherits from this template (to resolve the
  *       ambiguity of the #tr() function).
  */
-template <class C>
+template<class C>
 class VirtualBoxSupportTranslation : virtual protected VirtualBoxSupportTranslationBase
 {
 public:
@@ -1253,21 +1253,21 @@ public:
      *      the source string itself if the translation is not found in the
      *      specified context.
      */
-    inline static const char *tr (const char *aSourceText,
-                                  const char *aComment = NULL)
+    inline static const char *tr(const char *aSourceText,
+                                 const char *aComment = NULL)
     {
-        return VirtualBoxBase::translate (className(), aSourceText, aComment);
+        return VirtualBoxBase::translate(className(), aSourceText, aComment);
     }
 
 protected:
 
     static const char *className()
     {
-        static char fn [sizeof (__PRETTY_FUNCTION__) + 1];
+        static char fn[sizeof(__PRETTY_FUNCTION__) + 1];
         if (!sClassName)
         {
-            strcpy (fn, __PRETTY_FUNCTION__);
-            cutClassNameFrom__PRETTY_FUNCTION__ (fn);
+            strcpy(fn, __PRETTY_FUNCTION__);
+            cutClassNameFrom__PRETTY_FUNCTION__(fn);
             sClassName = fn;
         }
         return sClassName;
@@ -1278,7 +1278,7 @@ private:
     static const char *sClassName;
 };
 
-template <class C>
+template<class C>
 const char *VirtualBoxSupportTranslation<C>::sClassName = NULL;
 
 /**
@@ -1291,10 +1291,10 @@ const char *VirtualBoxSupportTranslation<C>::sClassName = NULL;
  *              more than once (through its other base clases).
  */
 #define VIRTUALBOXSUPPORTTRANSLATION_OVERRIDE(C) \
-    inline static const char *tr (const char *aSourceText, \
-                                  const char *aComment = NULL) \
+    inline static const char *tr(const char *aSourceText, \
+                                 const char *aComment = NULL) \
     { \
-        return VirtualBoxSupportTranslation<C>::tr (aSourceText, aComment); \
+        return VirtualBoxSupportTranslation<C>::tr(aSourceText, aComment); \
     }
 
 /**
@@ -1313,9 +1313,9 @@ const char *VirtualBoxSupportTranslation<C>::sClassName = NULL;
 /// @todo switch to com::SupportErrorInfo* and remove
 class VirtualBoxSupportErrorInfoImplBase
 {
-    static HRESULT setErrorInternal (HRESULT aResultCode, const GUID &aIID,
-                                     const Bstr &aComponent, const Bstr &aText,
-                                     bool aWarning, bool aLogIt);
+    static HRESULT setErrorInternal(HRESULT aResultCode, const GUID &aIID,
+                                    const Bstr &aComponent, const Bstr &aText,
+                                    bool aWarning, bool aLogIt);
 
 protected:
 
@@ -1400,9 +1400,9 @@ protected:
         /**
          * @copydoc com::FWResult::FWResult().
          */
-        MultiResult (HRESULT aRC = E_FAIL) : FWResult (aRC) { init(); }
+        MultiResult(HRESULT aRC = E_FAIL) : FWResult(aRC) { init(); }
 
-        MultiResult (const MultiResult &aThat) : FWResult (aThat)
+        MultiResult(const MultiResult &aThat) : FWResult(aThat)
         {
             /* We need this copy constructor only for GCC that wants to have
              * it in case of expressions like |MultiResult rc = E_FAIL;|. But
@@ -1414,26 +1414,26 @@ protected:
 
         ~MultiResult();
 
-        MultiResult &operator= (HRESULT aRC)
+        MultiResult &operator=(HRESULT aRC)
         {
-            com::FWResult::operator= (aRC);
+            com::FWResult::operator=(aRC);
             return *this;
         }
 
-        MultiResult &operator= (const MultiResult &aThat)
+        MultiResult &operator=(const MultiResult &aThat)
         {
             /* We need this copy constructor only for GCC that wants to have
              * it in case of expressions like |MultiResult rc = E_FAIL;|. But
              * we assert since the optimizer should actually avoid the
              * temporary and call the other constructor directly instead. */
             AssertFailed();
-            com::FWResult::operator= (aThat);
+            com::FWResult::operator=(aThat);
             return *this;
         }
 
     private:
 
-        DECLARE_CLS_NEW_DELETE_NOOP (MultiResult)
+        DECLARE_CLS_NEW_DELETE_NOOP(MultiResult)
 
         void init();
 
@@ -1442,39 +1442,39 @@ protected:
         friend class VirtualBoxSupportErrorInfoImplBase;
     };
 
-    static HRESULT setError (HRESULT aResultCode, const GUID &aIID,
-                             const Bstr &aComponent,
-                             const Bstr &aText,
-                             bool aLogIt = true)
+    static HRESULT setError(HRESULT aResultCode, const GUID &aIID,
+                            const Bstr &aComponent,
+                            const Bstr &aText,
+                            bool aLogIt = true)
     {
-        return setErrorInternal (aResultCode, aIID, aComponent, aText,
-                                 false /* aWarning */, aLogIt);
+        return setErrorInternal(aResultCode, aIID, aComponent, aText,
+                                false /* aWarning */, aLogIt);
     }
 
-    static HRESULT setWarning (HRESULT aResultCode, const GUID &aIID,
-                               const Bstr &aComponent,
-                               const Bstr &aText)
+    static HRESULT setWarning(HRESULT aResultCode, const GUID &aIID,
+                              const Bstr &aComponent,
+                              const Bstr &aText)
     {
-        return setErrorInternal (aResultCode, aIID, aComponent, aText,
-                                 true /* aWarning */, true /* aLogIt */);
+        return setErrorInternal(aResultCode, aIID, aComponent, aText,
+                                true /* aWarning */, true /* aLogIt */);
     }
 
-    static HRESULT setError (HRESULT aResultCode, const GUID &aIID,
-                             const Bstr &aComponent,
-                             const char *aText, va_list aArgs, bool aLogIt = true)
+    static HRESULT setError(HRESULT aResultCode, const GUID &aIID,
+                            const Bstr &aComponent,
+                            const char *aText, va_list aArgs, bool aLogIt = true)
     {
-        return setErrorInternal (aResultCode, aIID, aComponent,
-                                 Utf8StrFmtVA (aText, aArgs),
-                                 false /* aWarning */, aLogIt);
+        return setErrorInternal(aResultCode, aIID, aComponent,
+                                Utf8StrFmtVA (aText, aArgs),
+                                false /* aWarning */, aLogIt);
     }
 
-    static HRESULT setWarning (HRESULT aResultCode, const GUID &aIID,
-                               const Bstr &aComponent,
-                               const char *aText, va_list aArgs)
+    static HRESULT setWarning(HRESULT aResultCode, const GUID &aIID,
+                              const Bstr &aComponent,
+                              const char *aText, va_list aArgs)
     {
-        return setErrorInternal (aResultCode, aIID, aComponent,
-                                 Utf8StrFmtVA (aText, aArgs),
-                                 true /* aWarning */, true /* aLogIt */);
+        return setErrorInternal(aResultCode, aIID, aComponent,
+                                Utf8StrFmtVA (aText, aArgs),
+                                true /* aWarning */, true /* aLogIt */);
     }
 };
 
@@ -1502,7 +1502,7 @@ protected:
  *      by the shortest form of #setError, for convenience.
  */
 /// @todo switch to com::SupportErrorInfo* and remove
-template <class C, class I>
+template<class C, class I>
 class ATL_NO_VTABLE VirtualBoxSupportErrorInfoImpl
     : protected VirtualBoxSupportErrorInfoImplBase
 #if !defined (VBOX_WITH_XPCOM)
@@ -1513,10 +1513,10 @@ class ATL_NO_VTABLE VirtualBoxSupportErrorInfoImpl
 public:
 
 #if !defined (VBOX_WITH_XPCOM)
-    STDMETHOD(InterfaceSupportsErrorInfo) (REFIID riid)
+    STDMETHOD(InterfaceSupportsErrorInfo)(REFIID riid)
     {
         const _ATL_INTMAP_ENTRY* pEntries = C::_GetEntries();
-        Assert (pEntries);
+        Assert(pEntries);
         if (!pEntries)
             return S_FALSE;
 
@@ -1529,17 +1529,17 @@ public:
             {
                 // skip the com map entries until ISupportErrorInfo is found
                 bISupportErrorInfoFound =
-                    InlineIsEqualGUID (*(pEntries->piid), IID_ISupportErrorInfo);
+                    InlineIsEqualGUID(*(pEntries->piid), IID_ISupportErrorInfo);
             }
             else
             {
                 // look for the requested interface in the rest of the com map
-                bSupports = InlineIsEqualGUID (*(pEntries->piid), riid);
+                bSupports = InlineIsEqualGUID(*(pEntries->piid), riid);
             }
             pEntries++;
         }
 
-        Assert (bISupportErrorInfoFound);
+        Assert(bISupportErrorInfoFound);
 
         return bSupports ? S_OK : S_FALSE;
     }
@@ -1587,15 +1587,15 @@ protected:
      *      creating error info itself, that error is returned instead of the
      *      error argument.
      */
-    static HRESULT setError (HRESULT aResultCode, const GUID &aIID,
-                             const wchar_t *aComponent,
-                             const char *aText, ...)
+    static HRESULT setError(HRESULT aResultCode, const GUID &aIID,
+                            const wchar_t *aComponent,
+                            const char *aText, ...)
     {
         va_list args;
-        va_start (args, aText);
-        HRESULT rc = VirtualBoxSupportErrorInfoImplBase::setError
-            (aResultCode, aIID, aComponent, aText, args, true /* aLogIt */);
-        va_end (args);
+        va_start(args, aText);
+        HRESULT rc = VirtualBoxSupportErrorInfoImplBase::setError(
+            aResultCode, aIID, aComponent, aText, args, true /* aLogIt */);
+        va_end(args);
         return rc;
     }
 
@@ -1608,15 +1608,15 @@ protected:
      *  use ordinary E_XXX result code constants, for convenience. However, this
      *  behavior may be non-standard on some COM platforms.
      */
-    static HRESULT setWarning (HRESULT aResultCode, const GUID &aIID,
-                               const wchar_t *aComponent,
-                               const char *aText, ...)
+    static HRESULT setWarning(HRESULT aResultCode, const GUID &aIID,
+                              const wchar_t *aComponent,
+                              const char *aText, ...)
     {
         va_list args;
-        va_start (args, aText);
-        HRESULT rc = VirtualBoxSupportErrorInfoImplBase::setWarning
-            (aResultCode, aIID, aComponent, aText, args);
-        va_end (args);
+        va_start(args, aText);
+        HRESULT rc = VirtualBoxSupportErrorInfoImplBase::setWarning(
+            aResultCode, aIID, aComponent, aText, args);
+        va_end(args);
         return rc;
     }
 
@@ -1643,13 +1643,13 @@ protected:
      *      return rc;
      *  </code>
      */
-    static HRESULT setError (HRESULT aResultCode, const char *aText, ...)
+    static HRESULT setError(HRESULT aResultCode, const char *aText, ...)
     {
         va_list args;
-        va_start (args, aText);
-        HRESULT rc = VirtualBoxSupportErrorInfoImplBase::setError
-            (aResultCode, COM_IIDOF(I), C::getComponentName(), aText, args, true /* aLogIt */);
-        va_end (args);
+        va_start(args, aText);
+        HRESULT rc = VirtualBoxSupportErrorInfoImplBase::setError(
+            aResultCode, COM_IIDOF(I), C::getComponentName(), aText, args, true /* aLogIt */);
+        va_end(args);
         return rc;
     }
 
@@ -1662,13 +1662,13 @@ protected:
      *  use ordinary E_XXX result code constants, for convenience. However, this
      *  behavior may be non-standard on some COM platforms.
      */
-    static HRESULT setWarning (HRESULT aResultCode, const char *aText, ...)
+    static HRESULT setWarning(HRESULT aResultCode, const char *aText, ...)
     {
         va_list args;
-        va_start (args, aText);
-        HRESULT rc = VirtualBoxSupportErrorInfoImplBase::setWarning
-            (aResultCode, COM_IIDOF(I), C::getComponentName(), aText, args);
-        va_end (args);
+        va_start(args, aText);
+        HRESULT rc = VirtualBoxSupportErrorInfoImplBase::setWarning(
+            aResultCode, COM_IIDOF(I), C::getComponentName(), aText, args);
+        va_end(args);
         return rc;
     }
 
@@ -1681,11 +1681,11 @@ protected:
      *  See #setError (HRESULT, const GUID &, const wchar_t *, const char *text, ...)
      *  and #setError (HRESULT, const char *, ...)  for details.
      */
-    static HRESULT setErrorV (HRESULT aResultCode, const char *aText,
-                              va_list aArgs)
+    static HRESULT setErrorV(HRESULT aResultCode, const char *aText,
+                             va_list aArgs)
     {
-        HRESULT rc = VirtualBoxSupportErrorInfoImplBase::setError
-            (aResultCode, COM_IIDOF(I), C::getComponentName(), aText, aArgs, true /* aLogIt */);
+        HRESULT rc = VirtualBoxSupportErrorInfoImplBase::setError(
+            aResultCode, COM_IIDOF(I), C::getComponentName(), aText, aArgs, true /* aLogIt */);
         return rc;
     }
 
@@ -1698,11 +1698,11 @@ protected:
      *  use ordinary E_XXX result code constants, for convenience. However, this
      *  behavior may be non-standard on some COM platforms.
      */
-    static HRESULT setWarningV (HRESULT aResultCode, const char *aText,
-                                va_list aArgs)
+    static HRESULT setWarningV(HRESULT aResultCode, const char *aText,
+                               va_list aArgs)
     {
-        HRESULT rc = VirtualBoxSupportErrorInfoImplBase::setWarning
-            (aResultCode, COM_IIDOF(I), C::getComponentName(), aText, aArgs);
+        HRESULT rc = VirtualBoxSupportErrorInfoImplBase::setWarning(
+            aResultCode, COM_IIDOF(I), C::getComponentName(), aText, aArgs);
         return rc;
     }
 
@@ -1718,10 +1718,10 @@ protected:
      *  See #setError (HRESULT, const GUID &, const wchar_t *, const char *text, ...)
      *  and #setError (HRESULT, const char *, ...)  for details.
      */
-    static HRESULT setErrorBstr (HRESULT aResultCode, const Bstr &aText)
+    static HRESULT setErrorBstr(HRESULT aResultCode, const Bstr &aText)
     {
-        HRESULT rc = VirtualBoxSupportErrorInfoImplBase::setError
-            (aResultCode, COM_IIDOF(I), C::getComponentName(), aText, true /* aLogIt */);
+        HRESULT rc = VirtualBoxSupportErrorInfoImplBase::setError(
+            aResultCode, COM_IIDOF(I), C::getComponentName(), aText, true /* aLogIt */);
         return rc;
     }
 
@@ -1734,10 +1734,10 @@ protected:
      *  use ordinary E_XXX result code constants, for convenience. However, this
      *  behavior may be non-standard on some COM platforms.
      */
-    static HRESULT setWarningBstr (HRESULT aResultCode, const Bstr &aText)
+    static HRESULT setWarningBstr(HRESULT aResultCode, const Bstr &aText)
     {
-        HRESULT rc = VirtualBoxSupportErrorInfoImplBase::setWarning
-            (aResultCode, COM_IIDOF(I), C::getComponentName(), aText);
+        HRESULT rc = VirtualBoxSupportErrorInfoImplBase::setWarning(
+            aResultCode, COM_IIDOF(I), C::getComponentName(), aText);
         return rc;
     }
 
@@ -1750,14 +1750,14 @@ protected:
      *  See #setError (HRESULT, const GUID &, const wchar_t *, const char *text, ...)
      *  for details.
      */
-    static HRESULT setError (HRESULT aResultCode, const GUID &aIID,
-                             const char *aText, ...)
+    static HRESULT setError(HRESULT aResultCode, const GUID &aIID,
+                            const char *aText, ...)
     {
         va_list args;
-        va_start (args, aText);
-        HRESULT rc = VirtualBoxSupportErrorInfoImplBase::setError
-            (aResultCode, aIID, C::getComponentName(), aText, args, true /* aLogIt */);
-        va_end (args);
+        va_start(args, aText);
+        HRESULT rc = VirtualBoxSupportErrorInfoImplBase::setError(
+            aResultCode, aIID, C::getComponentName(), aText, args, true /* aLogIt */);
+        va_end(args);
         return rc;
     }
 
@@ -1770,14 +1770,14 @@ protected:
      *  use ordinary E_XXX result code constants, for convenience. However, this
      *  behavior may be non-standard on some COM platforms.
      */
-    static HRESULT setWarning (HRESULT aResultCode, const GUID &aIID,
-                               const char *aText, ...)
+    static HRESULT setWarning(HRESULT aResultCode, const GUID &aIID,
+                              const char *aText, ...)
     {
         va_list args;
-        va_start (args, aText);
-        HRESULT rc = VirtualBoxSupportErrorInfoImplBase::setWarning
-            (aResultCode, aIID, C::getComponentName(), aText, args);
-        va_end (args);
+        va_start(args, aText);
+        HRESULT rc = VirtualBoxSupportErrorInfoImplBase::setWarning(
+            aResultCode, aIID, C::getComponentName(), aText, args);
+        va_end(args);
         return rc;
     }
 
@@ -1788,13 +1788,13 @@ protected:
      *
      *  It is otherwise identical to #setError (HRESULT, const char *text, ...).
      */
-    static HRESULT setErrorNoLog (HRESULT aResultCode, const char *aText, ...)
+    static HRESULT setErrorNoLog(HRESULT aResultCode, const char *aText, ...)
     {
         va_list args;
-        va_start (args, aText);
-        HRESULT rc = VirtualBoxSupportErrorInfoImplBase::setError
-            (aResultCode, COM_IIDOF(I), C::getComponentName(), aText, args, false /* aLogIt */);
-        va_end (args);
+        va_start(args, aText);
+        HRESULT rc = VirtualBoxSupportErrorInfoImplBase::setError(
+            aResultCode, COM_IIDOF(I), C::getComponentName(), aText, args, false /* aLogIt */);
+        va_end(args);
         return rc;
     }
 
@@ -1900,22 +1900,22 @@ public:
      *
      * @note Locks #childrenLock() for writing.
      */
-    template <class C>
-    void addDependentChild (C *aChild)
+    template<class C>
+    void addDependentChild(C *aChild)
     {
-        AssertReturnVoid (aChild != NULL);
-        doAddDependentChild (ComPtr<IUnknown> (aChild), aChild);
+        AssertReturnVoid(aChild != NULL);
+        doAddDependentChild(ComPtr<IUnknown>(aChild), aChild);
     }
 
     /**
      * Equivalent to template <class C> void addDependentChild (C *aChild)
      * but takes a ComObjPtr<C> argument.
      */
-    template <class C>
-    void addDependentChild (const ComObjPtr<C> &aChild)
+    template<class C>
+    void addDependentChild(const ComObjPtr<C> &aChild)
     {
-        AssertReturnVoid (!aChild.isNull());
-        doAddDependentChild (ComPtr<IUnknown> (static_cast <C *> (aChild)), aChild);
+        AssertReturnVoid(!aChild.isNull());
+        doAddDependentChild(ComPtr<IUnknown>(static_cast<C *>(aChild)), aChild);
     }
 
     /**
@@ -1945,22 +1945,22 @@ public:
      *
      * @note Locks #childrenLock() for writing.
      */
-    template <class C>
-    void removeDependentChild (C *aChild)
+    template<class C>
+    void removeDependentChild(C *aChild)
     {
-        AssertReturnVoid (aChild != NULL);
-        doRemoveDependentChild (ComPtr<IUnknown> (aChild));
+        AssertReturnVoid(aChild != NULL);
+        doRemoveDependentChild(ComPtr<IUnknown>(aChild));
     }
 
     /**
      * Equivalent to template <class C> void removeDependentChild (C *aChild)
      * but takes a ComObjPtr<C> argument.
      */
-    template <class C>
-    void removeDependentChild (const ComObjPtr<C> &aChild)
+    template<class C>
+    void removeDependentChild(const ComObjPtr<C> &aChild)
     {
-        AssertReturnVoid (!aChild.isNull());
-        doRemoveDependentChild (ComPtr<IUnknown> (static_cast <C *> (aChild)));
+        AssertReturnVoid(!aChild.isNull());
+        doRemoveDependentChild(ComPtr<IUnknown>(static_cast<C *>(aChild)));
     }
 
 protected:
@@ -1971,7 +1971,7 @@ protected:
 
 private:
     void doAddDependentChild(IUnknown *aUnk, VirtualBoxBase *aChild);
-    void doRemoveDependentChild (IUnknown *aUnk);
+    void doRemoveDependentChild(IUnknown *aUnk);
 
     typedef std::map<IUnknown*, VirtualBoxBase*> DependentChildren;
     DependentChildren mDependentChildren;
@@ -2006,12 +2006,12 @@ private:
  *       VirtualBoxBaseWithChildren after the old VirtualBoxBase implementation
  *       has gone.
  */
-template <class C>
+template<class C>
 class VirtualBoxBaseWithTypedChildren : public VirtualBoxBase
 {
 public:
 
-    typedef std::list <ComObjPtr<C> > DependentChildren;
+    typedef std::list<ComObjPtr<C> > DependentChildren;
 
     VirtualBoxBaseWithTypedChildren()
     {}
@@ -2049,19 +2049,19 @@ public:
      *
      * @note Locks #childrenLock() for writing.
      */
-    void addDependentChild (C *aChild)
+    void addDependentChild(C *aChild)
     {
-        AssertReturnVoid (aChild != NULL);
+        AssertReturnVoid(aChild != NULL);
 
-        AutoCaller autoCaller (this);
+        AutoCaller autoCaller(this);
 
         /* sanity */
-        AssertReturnVoid (autoCaller.state() == InInit ||
-                          autoCaller.state() == Ready ||
-                          autoCaller.state() == Limited);
+        AssertReturnVoid(autoCaller.state() == InInit ||
+                         autoCaller.state() == Ready ||
+                         autoCaller.state() == Limited);
 
-        AutoWriteLock chLock (childrenLock());
-        mDependentChildren.push_back (aChild);
+        AutoWriteLock chLock(childrenLock());
+        mDependentChildren.push_back(aChild);
     }
 
     /**
@@ -2089,17 +2089,17 @@ public:
      *
      * @note Locks #childrenLock() for writing.
      */
-    void removeDependentChild (C *aChild)
+    void removeDependentChild(C *aChild)
     {
-        AssertReturnVoid (aChild);
+        AssertReturnVoid(aChild);
 
-        AutoCaller autoCaller (this);
+        AutoCaller autoCaller(this);
 
         /* sanity */
-        AssertReturnVoid (autoCaller.state() == InUninit ||
-                          autoCaller.state() == InInit ||
-                          autoCaller.state() == Ready ||
-                          autoCaller.state() == Limited);
+        AssertReturnVoid(autoCaller.state() == InUninit ||
+                         autoCaller.state() == InInit ||
+                         autoCaller.state() == Ready ||
+                         autoCaller.state() == Limited);
 
         /* return shortly; we are strongly referenced so the object won't get
          * deleted if it calls init() before uninitDependentChildren() does
@@ -2108,8 +2108,8 @@ public:
         if (autoCaller.state() == InUninit)
             return;
 
-        AutoWriteLock chLock (childrenLock());
-        mDependentChildren.remove (aChild);
+        AutoWriteLock chLock(childrenLock());
+        mDependentChildren.remove(aChild);
     }
 
 protected:
@@ -2140,7 +2140,7 @@ protected:
      */
     void uninitDependentChildren()
     {
-        AutoCaller autoCaller (this);
+        AutoCaller autoCaller(this);
 
         /* We don't want to hold the childrenLock() write lock here (necessary
          * to protect mDependentChildren) when uninitializing children because
@@ -2159,8 +2159,8 @@ protected:
          * from outside. Therefore, we assert. Note that InInit is also fine
          * since no any object may access us by that time.
          */
-        AssertReturnVoid (autoCaller.state() == InUninit ||
-                          autoCaller.state() == InInit);
+        AssertReturnVoid(autoCaller.state() == InUninit ||
+                         autoCaller.state() == InInit);
 
         if (mDependentChildren.size())
         {
@@ -2168,7 +2168,7 @@ protected:
                  it != mDependentChildren.end(); ++ it)
             {
                 C *child = (*it);
-                Assert (child);
+                Assert(child);
 
                 /* Note that if child->uninit() happens to be called on another
                  * thread right before us and is not yet finished, the second
@@ -2195,7 +2195,7 @@ protected:
      */
     void removeDependentChildren()
     {
-        AutoWriteLock chLock (childrenLock());
+        AutoWriteLock chLock(childrenLock());
         mDependentChildren.clear();
     }
 
@@ -2218,10 +2218,10 @@ class Shareable
 {
 public:
 
-    Shareable() : mData (NULL), mIsShared (FALSE) {}
+    Shareable() : mData (NULL), mIsShared(FALSE) {}
     ~Shareable() { free(); }
 
-    void allocate() { attach (new D); }
+    void allocate() { attach(new D); }
 
     virtual void free() {
         if (mData) {
@@ -2232,8 +2232,8 @@ public:
         }
     }
 
-    void attach (D *data) {
-        AssertMsg (data, ("new data must not be NULL"));
+    void attach(D *data) {
+        AssertMsg(data, ("new data must not be NULL"));
         if (data && mData != data) {
             if (mData && !mIsShared)
                 delete mData;
@@ -2242,8 +2242,8 @@ public:
         }
     }
 
-    void attach (Shareable &data) {
-        AssertMsg (
+    void attach(Shareable &data) {
+        AssertMsg(
             data.mData == mData || !data.mIsShared,
             ("new data must not be shared")
         );
@@ -2253,8 +2253,8 @@ public:
         }
     }
 
-    void share (D *data) {
-        AssertMsg (data, ("new data must not be NULL"));
+    void share(D *data) {
+        AssertMsg(data, ("new data must not be NULL"));
         if (mData != data) {
             if (mData && !mIsShared)
                 delete mData;
@@ -2263,16 +2263,16 @@ public:
         }
     }
 
-    void share (const Shareable &data) { share (data.mData); }
+    void share(const Shareable &data) { share (data.mData); }
 
-    void attachCopy (const D *data) {
-        AssertMsg (data, ("data to copy must not be NULL"));
+    void attachCopy(const D *data) {
+        AssertMsg(data, ("data to copy must not be NULL"));
         if (data)
-            attach (new D (*data));
+            attach(new D (*data));
     }
 
-    void attachCopy (const Shareable &data) {
-        attachCopy (data.mData);
+    void attachCopy(const Shareable &data) {
+        attachCopy(data.mData);
     }
 
     virtual D *detach() {
@@ -2287,7 +2287,7 @@ public:
     }
 
     D *operator->() const {
-        AssertMsg (mData, ("data must not be NULL"));
+        AssertMsg(mData, ("data must not be NULL"));
         return mData;
     }
 
@@ -2308,32 +2308,32 @@ protected:
  *  backup/rollback/commit (using the copy constructor of the managed data
  *  structure).
  */
-template <class D>
-class Backupable : public Shareable <D>
+template<class D>
+class Backupable : public Shareable<D>
 {
 public:
 
-    Backupable() : Shareable <D> (), mBackupData (NULL) {}
+    Backupable() : Shareable<D> (), mBackupData(NULL) {}
 
     void free()
     {
-        AssertMsg (this->mData || !mBackupData, ("backup must be NULL if data is NULL"));
+        AssertMsg(this->mData || !mBackupData, ("backup must be NULL if data is NULL"));
         rollback();
-        Shareable <D>::free();
+        Shareable<D>::free();
     }
 
     D *detach()
     {
-        AssertMsg (this->mData || !mBackupData, ("backup must be NULL if data is NULL"));
+        AssertMsg(this->mData || !mBackupData, ("backup must be NULL if data is NULL"));
         rollback();
-        return Shareable <D>::detach();
+        return Shareable<D>::detach();
     }
 
-    void share (const Backupable &data)
+    void share(const Backupable &data)
     {
-        AssertMsg (!data.isBackedUp(), ("data to share must not be backed up"));
+        AssertMsg(!data.isBackedUp(), ("data to share must not be backed up"));
         if (!data.isBackedUp())
-            Shareable <D>::share (data.mData);
+            Shareable<D>::share(data.mData);
     }
 
     /**
@@ -2342,11 +2342,11 @@ public:
      */
     void backup()
     {
-        AssertMsg (this->mData, ("data must not be NULL"));
+        AssertMsg(this->mData, ("data must not be NULL"));
         if (this->mData && !mBackupData)
         {
             mBackupData = this->mData;
-            this->mData = new D (*mBackupData);
+            this->mData = new D(*mBackupData);
         }
     }
 
@@ -2408,10 +2408,10 @@ public:
         }
     }
 
-    void assignCopy (const D *data)
+    void assignCopy(const D *data)
     {
-        AssertMsg (this->mData, ("data must not be NULL"));
-        AssertMsg (data, ("data to copy must not be NULL"));
+        AssertMsg(this->mData, ("data must not be NULL"));
+        AssertMsg(data, ("data to copy must not be NULL"));
         if (this->mData && data)
         {
             if (!mBackupData)
@@ -2424,9 +2424,9 @@ public:
         }
     }
 
-    void assignCopy (const Backupable &data)
+    void assignCopy(const Backupable &data)
     {
-        assignCopy (data.mData);
+        assignCopy(data.mData);
     }
 
     bool isBackedUp() const
@@ -2436,7 +2436,7 @@ public:
 
     bool hasActualChanges() const
     {
-        AssertMsg (this->mData, ("data must not be NULL"));
+        AssertMsg(this->mData, ("data must not be NULL"));
         return this->mData != NULL && mBackupData != NULL &&
                !(*this->mData == *mBackupData);
     }
@@ -2451,5 +2451,5 @@ protected:
     D *mBackupData;
 };
 
-#endif // ____H_VIRTUALBOXBASEIMPL
+#endif // !____H_VIRTUALBOXBASEIMPL
 
