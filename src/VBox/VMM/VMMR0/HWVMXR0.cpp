@@ -3844,8 +3844,7 @@ ResumeExecution:
             rc = TRPMAssertTrap(pVCpu, VMX_EXIT_INTERRUPTION_INFO_VECTOR(pVCpu->hwaccm.s.Event.intInfo), TRPM_HARDWARE_INT);
             AssertRC(rc);
         }
-        else
-            /* Exceptions and software interrupts can just be restarted. */
+        /* else Exceptions and software interrupts can just be restarted. */
         rc = VERR_EM_INTERPRETER;
         break;
 
