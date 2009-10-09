@@ -357,6 +357,13 @@ ifdef VBOX_WITH_ADDITIONS_PACKING
  	additions/VBoxGuestAdditions.iso
 endif
 
+
+# EFI firmware
+ifdef VBOX_WITH_EFIFW_FROM_BUILD_SERVER
+  SOLARIS_COMMON += \
+	vboxefi.fv
+endif
+
 SOLARIS_ARCH_FILES := \
 	$(SOLARIS_STRIP_EXES) \
 	$(SOLARIS_DRIVER_BINS) \

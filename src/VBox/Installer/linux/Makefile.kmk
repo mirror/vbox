@@ -236,6 +236,12 @@ ifdef VBOX_WITH_WEBSERVICES
 	webtest
 endif
 
+# EFI firmware
+ifdef VBOX_WITH_EFIFW_FROM_BUILD_SERVER
+  VBOX_LNX_NO_STRIP += \
+	vboxefi.fv
+endif
+
 #
 # All the bin files that goes into the archives.
 #
