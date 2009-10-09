@@ -241,8 +241,6 @@ endif
 #
 #
 # Install documentation files (at the moment the .chm) from the build server.
-# The $(CP)/$(RM) stuff can be replaced by a simple $(TOUCH) once that has
-# been added to kBuild.
 #
 ifdef VBOX_WITH_DOCS_FROM_BUILD_SERVER
 ## @todo r=bird: Too much mess now for $(PATH_TARGET); move to doc/manual/.
@@ -280,6 +278,7 @@ $$(buildserver-docs_0_OUTDIR)/VBoxDocumentation.zip: $(VBOX_SVN_REV_KMK) $(PATH_
  endif
 	$(CP) -f $@.tmp $@
 	$(RM) -f $@.tmp
+## @todo kBuild: The $(CP)/$(RM) stuff can be replaced by a simple $(TOUCH) once that has been added to kBuild.
 
  ifeq ($(KBUILD_HOST),win)
 buildserver-documentation-affinity-hack:
@@ -288,28 +287,44 @@ buildserver-documentation-affinity-hack:
 endif # VBOX_WITH_DOCS_FROM_BUILD_SERVER
 
 
+#
+# Install EFI firmware image from the build server.
+#
 ifdef VBOX_WITH_EFIFW_FROM_BUILD_SERVER
-include $(KBUILD_PATH)/tools/ZIP.kmk
-
-VBOX_FW_BASE=$(PATH_TARGET)/EfiFw
-
-BLDDIRS += $(VBOX_FW_BASE)
-
+INSTALLS += buildserver-efifw
 buildserver-efifw_INST = $(INST_BIN)
 buildserver-efifw_MODE = 0644
 buildserver-efifw_SOURCES = \
-      $(VBOX_FW_BASE)/FV/VBOX.fd=>vboxefi.fv
-buildserver-efifw_CLEANS = $(INST_BIN)/vboxefi.fv
+	$(buildserver-efifw_0_OUTDIR)/FV/VBOX.fd=>vboxefi.fv
+buildserver-efifw_CLEANS = \
+	$(buildserver-efifw_0_OUTDIR)/FV/VBOX.fd \
+	$(buildserver-efifw_0_OUTDIR)/VBoxEfiFirmware.zip \
+	$(buildserver-efifw_0_OUTDIR)/VBoxEfiFirmware.zip.tmp
+## @todo rainy day: cleanup the output directory (zip contains lots more)
 
-$$(VBOX_FW_BASE)/VBoxEfiFirmware.zip: $(VBOX_SVN_REV_KMK) $(PATH_DEVTOOLS)/bin/efi_firmware.sh | $$(dir $$@)
-	$(RM) -f $(VBOX_FW_BASE)/VBoxEfiFirmware.zip.tmp
-	$(SHELL) $(PATH_DEVTOOLS)/bin/efi_firmware.sh --cmd fetch --filename $(VBOX_FW_BASE)/VBoxEfiFirmware.zip.tmp
-	$(MV) $(VBOX_FW_BASE)/VBoxEfiFirmware.zip.tmp $(VBOX_FW_BASE)/VBoxEfiFirmware.zip
+## @todo Hack to get at TOOL_ZIP_UNPACK; see if this can be integrated somehow...
+include $(KBUILD_PATH)/tools/ZIP.kmk
 
-$$(VBOX_FW_BASE)/FV/VBOX.fd: $(VBOX_FW_BASE)/VBoxEfiFirmware.zip
-	$(QUIET)$(TOOL_ZIP_UNPACK) $(TOOL_ZIP_UNPACKFLAGS) -o $< -d $(VBOX_FW_BASE)
+$$(buildserver-efifw_0_OUTDIR)/FV/VBOX.fd: $$(buildserver-efifw_0_OUTDIR)/VBoxEfiFirmware.zip
+	$(QUIET)$(TOOL_ZIP_UNPACK) $(TOOL_ZIP_UNPACKFLAGS) -o $< -d $(buildserver-efifw_0_OUTDIR)
 
-endif
+$$(buildserver-efifw_0_OUTDIR)/VBoxEfiFirmware.zip: $(VBOX_SVN_REV_KMK) $(PATH_DEVTOOLS)/bin/efi_firmware.sh | $$(dir $$@)
+	$(RM) -f $@.tmp $@.tmp
+ ifneq ($(KBUILD_HOST),win)
+	$(SHELL) $(PATH_DEVTOOLS)/bin/efi_firmware.sh --cmd fetch --filename $@.tmp
+ else
+	$(KMK) --affinity 1 -f $(MAKEFILE) VBOX_SINGLE_MAKEFILE= buildserver-efifw-affinity-hack
+ endif
+	$(CP) -f $@.tmp $@
+	$(RM) -f $@.tmp
+## @todo kBuild: The $(CP)/$(RM) stuff can be replaced by a simple $(TOUCH) once that has been added to kBuild.
+
+ ifeq ($(KBUILD_HOST),win)
+buildserver-efifw-affinity-hack:
+	$(SHELL) $(PATH_DEVTOOLS)/bin/efi_firmware.sh --cmd fetch --filename $(buildserver-efifw_0_OUTDIR)/VBoxEfiFirmware.zip
+ endif
+endif # VBOX_WITH_EFIFW_FROM_BUILD_SERVER
+
 
 #
 # Install staged binaries on platforms where we can't cross
