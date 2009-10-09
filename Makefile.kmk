@@ -309,7 +309,7 @@ $$(buildserver-efifw_0_OUTDIR)/FV/VBOX.fd: $$(buildserver-efifw_0_OUTDIR)/VBoxEf
 	$(QUIET)$(TOOL_ZIP_UNPACK) $(TOOL_ZIP_UNPACKFLAGS) -o $< -d $(buildserver-efifw_0_OUTDIR)
 
 $$(buildserver-efifw_0_OUTDIR)/VBoxEfiFirmware.zip: $(VBOX_SVN_REV_KMK) $(PATH_DEVTOOLS)/bin/efi_firmware.sh | $$(dir $$@)
-	$(RM) -f $@.tmp $@.tmp
+	$(RM) -f $@ $@.tmp
  ifneq ($(KBUILD_HOST),win)
 	$(SHELL) $(PATH_DEVTOOLS)/bin/efi_firmware.sh --cmd fetch --filename $@.tmp
  else
