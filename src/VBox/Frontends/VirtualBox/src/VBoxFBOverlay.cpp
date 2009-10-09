@@ -1827,6 +1827,7 @@ VBoxVHWASurfaceBase::VBoxVHWASurfaceBase(class VBoxGLWidget *aWidget,
                     VBoxVHWAColorKey * pSrcOverlayCKey, VBoxVHWAColorKey * pDstOverlayCKey,
                     bool bVGA) :
                 mRect(0,0,aSize.width(),aSize.height()),
+                mpProgram(NULL),
                 mVisibleDisplayInitialized(false),
                 mAddress(NULL),
                 mColorFormat(aColorFormat),
@@ -2823,17 +2824,21 @@ void VBoxVHWASurfaceBase::deleteDisplay(
         {
             glDeleteLists(mVisibleDisplay, 1);
         }
+        if(mpProgram)
+        {
+            mpProgram = NULL;
+        }
         mVisibleDisplayInitialized = false;
     }
 }
 
-void VBoxVHWASurfaceBase::doDisplay(VBoxVHWASurfaceBase *pPrimary, VBoxVHWAGlProgramVHWA * pProgram, bool bBindDst)
+void VBoxVHWASurfaceBase::doDisplay(VBoxVHWASurfaceBase *pPrimary, bool bProgram, bool bBindDst)
 {
     bool bInvokeMultiTex2 = false;
 
-    if(pProgram)
+    if(bProgram)
     {
-        pProgram->start();
+//        pProgram->start();
 
 //            if(pSrcCKey != NULL)
 //            {
@@ -2901,13 +2906,13 @@ void VBoxVHWASurfaceBase::doDisplay(VBoxVHWASurfaceBase *pPrimary, VBoxVHWAGlPro
         }
     }
 
-    if(pProgram)
-    {
-        pProgram->stop();
-    }
+//    if(pProgram)
+//    {
+//        pProgram->stop();
+//    }
 }
 
-int VBoxVHWASurfaceBase::createDisplay(VBoxVHWASurfaceBase *pPrimary, GLuint *pDisplay)
+int VBoxVHWASurfaceBase::createDisplay(VBoxVHWASurfaceBase *pPrimary, GLuint *pDisplay, class VBoxVHWAGlProgram ** ppProgram)
 {
     if(mVisibleTargRect.isEmpty())
     {
@@ -2967,11 +2972,12 @@ int VBoxVHWASurfaceBase::createDisplay(VBoxVHWASurfaceBase *pPrimary, GLuint *pD
         {
             glNewList(display, GL_COMPILE);
 
-            doDisplay(pPrimary, pProgram, pDstCKey != NULL);
+            doDisplay(pPrimary, pProgram != 0, pDstCKey != NULL);
 
             glEndList();
             VBOXQGL_ASSERTNOERR();
             *pDisplay = display;
+            *ppProgram = pProgram;
             return VINF_SUCCESS;
         }
     }
@@ -2988,10 +2994,14 @@ void VBoxVHWASurfaceBase::initDisplay(VBoxVHWASurfaceBase *pPrimary)
 {
     deleteDisplay();
 
-    int rc = createDisplay(pPrimary, &mVisibleDisplay);
+    int rc = createDisplay(pPrimary, &mVisibleDisplay, &mpProgram);
     if(RT_SUCCESS(rc))
     {
         mVisibleDisplayInitialized = true;
+    }
+    else
+    {
+        mVisibleDisplayInitialized = false;
     }
 }
 
@@ -3057,15 +3067,25 @@ bool VBoxVHWASurfaceBase::performDisplay(VBoxVHWASurfaceBase *pPrimary, bool bFo
             pProgram = mWidget->vboxVHWAGetGlProgramMngr()->getProgram(pDstCKey != NULL, pSrcCKey != NULL, &colorFormat(), &pPrimary->colorFormat());
         }
 
-        doDisplay(pPrimary, pProgram, pDstCKey != NULL);
+        if(pProgram)
+            pProgram->start();
+        doDisplay(pPrimary, pProgram != 0, pDstCKey != NULL);
+        if(pProgram)
+            pProgram->stop();
+
 
 //        doDisplay(pPrimary, NULL, false);
     }
     else
     {
+        if(mpProgram)
+            mpProgram->start();
         VBOXQGL_CHECKERR(
                 glCallList(mVisibleDisplay);
                 );
+        if(mpProgram)
+            mpProgram->stop();
+
     }
 
     Assert(bForce);
