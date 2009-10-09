@@ -33,6 +33,7 @@ class Keyboard;
 class Mouse;
 class Display;
 class MachineDebugger;
+class MigrationStateSrc;
 class OUSBDevice;
 class RemoteUSBDevice;
 class SharedFolder;
@@ -514,8 +515,12 @@ private:
 
     /** @name Live migration support
      * @{ */
-    int                         migrationLoadRemote(PVM pVM, IMachine *pMachine, void *pvVMCallbackTask);
-    static DECLCALLBACK(int)    migrationServeConnection(RTSOCKET Sock, void *pvUser);
+    static DECLCALLBACK(int)    migrationSrcThreadWrapper(RTTHREAD hThread, void *pvUser);
+    HRESULT                     migrationSrc(MigrationStateSrc *pState);
+    HRESULT                     migrationSrcReadACK(MigrationStateSrc *pState);
+    HRESULT                     migrationSrcSubmitCommand(MigrationStateSrc *pState, const char *pszCommand);
+    int                         migrationDst(PVM pVM, IMachine *pMachine, void *pvVMCallbackTask);
+    static DECLCALLBACK(int)    migrationDstServeConnection(RTSOCKET Sock, void *pvUser);
     /** @} */
 
     bool mSavedStateDataLoaded : 1;
