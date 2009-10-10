@@ -10410,7 +10410,12 @@ HRESULT SessionMachine::setMachineState (MachineState_T aMachineState)
         }
     }
 
+#ifdef VBOX_WITH_LIVE_MIGRATION /** @todo fix this properly... a new state for indicating migration? */
+    if (   deleteSavedState
+        && !mSSData->mStateFilePath.isNull())
+#else
     if (deleteSavedState)
+#endif
     {
         if (mRemoveSavedState)
         {
