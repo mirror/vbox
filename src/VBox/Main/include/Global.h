@@ -128,7 +128,7 @@ public:
      * @returns Pointer to a read only string.
      * @param   aState      Valid session state.
      */
-    static const char *stringifySessionState(MachineState_T aState);
+    static const char *stringifySessionState(SessionState_T aState);
 };
 
 #endif /* !____H_GLOBAL */
