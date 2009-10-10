@@ -437,10 +437,12 @@ RTR3DECL(int) RTTcpServerCreateEx(const char *pszAddress, uint32_t uPort, PPRTTC
                     if (pServer)
                     {
                         pServer->u32Magic   = RTTCPSERVER_MAGIC;
+                        pServer->enmState   = RTTCPSERVERSTATE_CREATED;
+                        pServer->Thread     = NIL_RTTHREAD;
                         pServer->SockServer = WaitSock;
                         pServer->SockClient = NIL_RTSOCKET;
-                        pServer->Thread     = NIL_RTTHREAD;
-                        pServer->enmState   = RTTCPSERVERSTATE_CREATED;
+                        pServer->pfnServe   = NULL;
+                        pServer->pvUser     = NULL;
                         *ppServer = pServer;
                         return VINF_SUCCESS;
                     }
