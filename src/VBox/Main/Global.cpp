@@ -209,4 +209,25 @@ Global::stringifyMachineState(MachineState_T aState)
     }
 }
 
+/*static*/ const char *
+Global::stringifySessionState(SessionState_T aState)
+{
+    switch (aState)
+    {
+        case SessionState_Null:         return "Null";
+        case SessionState_Closed:       return "Closed";
+        case SessionState_Open:         return "Open";
+        case SessionState_Spawning:     return "Spawning";
+        case SessionState_Closing:      return "Closing";
+        default:
+        {
+            AssertMsgFailed(("%d (%#x)\n", aState, aState));
+            static char s_szMsg[48];
+            RTStrPrintf(s_szMsg, sizeof(s_szMsg), "InvalidState-0x%08x\n", aState);
+            return s_szMsg;
+        }
+
+    }
+}
+
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */

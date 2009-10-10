@@ -3033,8 +3033,8 @@ STDMETHODIMP Machine::CanShowConsoleWindow (BOOL *aCanShow)
 
         if (mData->mSession.mState != SessionState_Open)
             return setError(VBOX_E_INVALID_VM_STATE,
-                            tr("Machine session is not open (session state: %d)"),
-                            mData->mSession.mState);
+                            tr("Machine session is not open (session state: %s)"),
+                            Global::stringifySessionState(mData->mSession.mState));
 
         directControl = mData->mSession.mDirectControl;
     }
@@ -3060,8 +3060,8 @@ STDMETHODIMP Machine::ShowConsoleWindow (ULONG64 *aWinId)
 
         if (mData->mSession.mState != SessionState_Open)
             return setError(E_FAIL,
-                            tr("Machine session is not open (session state: %d)"),
-                            mData->mSession.mState);
+                            tr("Machine session is not open (session state: %s)"),
+                            Global::stringifySessionState(mData->mSession.mState));
 
         directControl = mData->mSession.mDirectControl;
     }
@@ -3671,7 +3671,7 @@ HRESULT Machine::openSession(IInternalSessionControl *aControl)
                         tr("The machine '%ls' is not registered"),
                         mUserData->mName.raw());
 
-    LogFlowThisFunc(("mSession.mState=%d\n", mData->mSession.mState));
+    LogFlowThisFunc(("mSession.mState=%s\n", Global::stringifySessionState(mData->mSession.mState)));
 
     if (mData->mSession.mState == SessionState_Open ||
         mData->mSession.mState == SessionState_Closing)
@@ -3888,7 +3888,7 @@ HRESULT Machine::openRemoteSession(IInternalSessionControl *aControl,
                         tr("The machine '%ls' is not registered"),
                         mUserData->mName.raw());
 
-    LogFlowThisFunc(("mSession.mState=%d\n", mData->mSession.mState));
+    LogFlowThisFunc(("mSession.mState=%s\n", Global::stringifySessionState(mData->mSession.mState)));
 
     if (mData->mSession.mState == SessionState_Open ||
         mData->mSession.mState == SessionState_Spawning ||
@@ -4125,7 +4125,7 @@ HRESULT Machine::openExistingSession (IInternalSessionControl *aControl)
         return setError (E_UNEXPECTED,
             tr ("The machine '%ls' is not registered"), mUserData->mName.raw());
 
-    LogFlowThisFunc(("mSession.state=%d\n", mData->mSession.mState));
+    LogFlowThisFunc(("mSession.state=%s\n", Global::stringifySessionState(mData->mSession.mState)));
 
     if (mData->mSession.mState != SessionState_Open)
         return setError (VBOX_E_INVALID_SESSION_STATE,
