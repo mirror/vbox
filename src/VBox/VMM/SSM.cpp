@@ -2065,16 +2065,30 @@ static int ssmR3StrmClose(PSSMSTRM pStrm)
     }
 
     if (pStrm->hIoThread != NIL_RTTHREAD)
-    {
         ASMAtomicWriteBool(&pStrm->fTerminating, true);
-        int rc2 = RTSemEventSignal(pStrm->fWrite ? pStrm->hEvtHead : pStrm->hEvtFree); AssertLogRelRC(rc2);
-        int rc3 = RTThreadWait(pStrm->hIoThread, RT_INDEFINITE_WAIT, NULL);            AssertLogRelRC(rc3);
+
+    int rc;
+    if (pStrm->fWrite)
+    {
+        int rc2 = RTSemEventSignal(pStrm->hEvtHead);                            AssertLogRelRC(rc2);
+        int rc3 = RTThreadWait(pStrm->hIoThread, RT_INDEFINITE_WAIT, NULL);     AssertLogRelRC(rc3);
+        pStrm->hIoThread = NIL_RTTHREAD;
+
+        rc = pStrm->pOps->pfnClose(pStrm->pvUser);
+        if (RT_FAILURE(rc))
+            ssmR3StrmSetError(pStrm, rc);
+    }
+    else
+    {
+        rc = pStrm->pOps->pfnClose(pStrm->pvUser);
+        if (RT_FAILURE(rc))
+            ssmR3StrmSetError(pStrm, rc);
+
+        int rc2 = RTSemEventSignal(pStrm->hEvtFree);                            AssertLogRelRC(rc2);
+        int rc3 = RTThreadWait(pStrm->hIoThread, RT_INDEFINITE_WAIT, NULL);     AssertLogRelRC(rc3);
         pStrm->hIoThread = NIL_RTTHREAD;
     }
 
-    int rc = pStrm->pOps->pfnClose(pStrm->pvUser);
-    if (RT_FAILURE(rc))
-        ssmR3StrmSetError(pStrm, rc);
     pStrm->pOps   = NULL;
     pStrm->pvUser = NULL;
 
@@ -3611,7 +3625,8 @@ VMMR3_INT_DECL(int) SSMR3LiveDone(PSSMHANDLE pSSM)
     VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
     VM_ASSERT_EMT0(pVM);
     AssertMsgReturn(   pSSM->enmAfter == SSMAFTER_DESTROY
-                    || pSSM->enmAfter == SSMAFTER_CONTINUE,
+                    || pSSM->enmAfter == SSMAFTER_CONTINUE
+                    || pSSM->enmAfter == SSMAFTER_MIGRATE,
                     ("%d\n", pSSM->enmAfter),
                     VERR_INVALID_PARAMETER);
     AssertMsgReturn(    pSSM->enmOp >= SSMSTATE_LIVE_PREP
@@ -4053,7 +4068,8 @@ VMMR3_INT_DECL(int) SSMR3LiveDoStep2(PSSMHANDLE pSSM)
     VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
     VM_ASSERT_EMT0(pVM);
     AssertMsgReturn(   pSSM->enmAfter == SSMAFTER_DESTROY
-                    || pSSM->enmAfter == SSMAFTER_CONTINUE,
+                    || pSSM->enmAfter == SSMAFTER_CONTINUE
+                    || pSSM->enmAfter == SSMAFTER_MIGRATE,
                     ("%d\n", pSSM->enmAfter),
                     VERR_INVALID_PARAMETER);
     AssertMsgReturn(pSSM->enmOp == SSMSTATE_LIVE_STEP2, ("%d\n", pSSM->enmOp), VERR_INVALID_STATE);
@@ -4443,7 +4459,8 @@ VMMR3_INT_DECL(int) SSMR3LiveDoStep1(PSSMHANDLE pSSM)
     VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
     VM_ASSERT_OTHER_THREAD(pVM);
     AssertMsgReturn(   pSSM->enmAfter == SSMAFTER_DESTROY
-                    || pSSM->enmAfter == SSMAFTER_CONTINUE,
+                    || pSSM->enmAfter == SSMAFTER_CONTINUE
+                    || pSSM->enmAfter == SSMAFTER_MIGRATE,
                     ("%d\n", pSSM->enmAfter),
                     VERR_INVALID_PARAMETER);
     AssertMsgReturn(pSSM->enmOp == SSMSTATE_LIVE_STEP1, ("%d\n", pSSM->enmOp), VERR_INVALID_STATE);
@@ -4643,7 +4660,8 @@ VMMR3_INT_DECL(int) SSMR3LiveSave(PVM pVM, const char *pszFilename, PCSSMSTRMOPS
      * Validate input.
      */
     AssertMsgReturn(   enmAfter == SSMAFTER_DESTROY
-                    || enmAfter == SSMAFTER_CONTINUE,
+                    || enmAfter == SSMAFTER_CONTINUE
+                    || enmAfter == SSMAFTER_MIGRATE,
                     ("%d\n", enmAfter),
                     VERR_INVALID_PARAMETER);
     AssertReturn(!pszFilename != !pStreamOps, VERR_INVALID_PARAMETER);
