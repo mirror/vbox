@@ -799,10 +799,19 @@ RTR3DECL(int) RTTcpRead(RTSOCKET Sock, void *pvBuffer, size_t cbBuffer, size_t *
     {
         rtTcpErrorReset();
         ssize_t cbBytesRead = recv(Sock, (char *)pvBuffer + cbRead, cbToRead, MSG_NOSIGNAL);
-        if (cbBytesRead < 0)
-            return rtTcpError();
-        if (cbBytesRead == 0 && rtTcpError())
-            return rtTcpError();
+        if (cbBytesRead <= 0)
+        {
+            int rc = rtTcpError();
+            Assert(RT_FAILURE_NP(rc) || cbBytesRead == 0);
+            if (RT_FAILURE_NP(rc))
+                return rc;
+            if (pcbRead)
+            {
+                *pcbRead = 0;
+                return VINF_SUCCESS;
+            }
+            return VERR_NET_SHUTDOWN;
+        }
         if (pcbRead)
         {
             /* return partial data */
