@@ -1290,6 +1290,53 @@ static int handleControlVM(HandlerArg *a)
             if (SUCCEEDED(rc))
                 CHECK_ERROR(guest, COMSETTER(StatisticsUpdateInterval)(uVal));
         }
+        else if (!strcmp(a->argv[1], "migrate"))
+        {
+            Bstr        bstrHostname;
+            uint32_t    uPort = UINT32_MAX;
+            Bstr        bstrPassword("");
+            static const RTGETOPTDEF s_aMigrateOptions[] =
+            {
+                { "--hostname",    'h', RTGETOPT_REQ_STRING }, /** @todo RTGETOPT_FLAG_MANDATORY */
+                { "--port",        'p', RTGETOPT_REQ_UINT32 }, /** @todo RTGETOPT_FLAG_MANDATORY */
+                { "--password",    'P', RTGETOPT_REQ_STRING }
+            };
+            RTGETOPTSTATE GetOptState;
+            RTGetOptInit(&GetOptState, a->argc, a->argv, s_aMigrateOptions, RT_ELEMENTS(s_aMigrateOptions), 2, 0 /*fFlags*/);
+            int ch;
+            RTGETOPTUNION Value;
+            while (   SUCCEEDED(rc)
+                   && (ch = RTGetOpt(&GetOptState, &Value)))
+            {
+                switch (ch)
+                {
+                    case 'h': bstrHostname  = Value.psz; break;
+                    case 'p': uPort         = Value.u32; break;
+                    case 'P': bstrPassword  = Value.psz; break;
+                    default:
+                        errorGetOpt(USAGE_SNAPSHOT, ch, &Value);
+                        rc = E_FAIL;
+                        break;
+                }
+            }
+            if (FAILED(rc))
+                break;
+
+            ComPtr<IProgress> progress;
+            CHECK_ERROR_BREAK(console, Migrate(bstrHostname, uPort, bstrPassword, progress.asOutParam()));
+            showProgress(progress);
+
+            LONG iRc;
+            CHECK_ERROR_BREAK(progress, COMGETTER(ResultCode)(&iRc));
+            if (FAILED(iRc))
+            {
+                com::ProgressErrorInfo info(progress);
+                if (info.isBasicAvailable())
+                    RTPrintf("Error: live migration failed. Error message: %lS\n", info.getText().raw());
+                else
+                    RTPrintf("Error: live migration failed. No error message available!\n");
+            }
+        }
         else
         {
             errorSyntax(USAGE_CONTROLVM, "Invalid parameter '%s'", Utf8Str(a->argv[1]).raw());

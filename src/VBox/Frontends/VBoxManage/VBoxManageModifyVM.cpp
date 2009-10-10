@@ -108,6 +108,9 @@ int handleModifyVM(HandlerArg *a)
     int   fScsiLsiLogic = -1;
     int   sataPortCount = -1;
     int   sataBootDevices[4] = {-1,-1,-1,-1};
+    int         fLiveMigrationTarget = -1;
+    uint32_t    uLiveMigrationPort = UINT32_MAX;
+    const char *pszLiveMigrationPassword = NULL;
 
     /* VM ID + at least one parameter. Parameter arguments are checked
      * individually. */
@@ -869,6 +872,34 @@ int handleModifyVM(HandlerArg *a)
             else
                 return errorArgument("Invalid --scsitype argument '%s'", a->argv[i]);
         }
+        else if (!strcmp(a->argv[i], "--livemigrationtarget"))
+        {
+            if (a->argc <= i + 1)
+                return errorArgument("Missing argument to '%s'", a->argv[i]);
+            i++;
+            if (!strcmp(a->argv[i], "on"))
+                fLiveMigrationTarget = 1;
+            else if (!strcmp(a->argv[i], "off"))
+                fLiveMigrationTarget = 0;
+            else
+                return errorArgument("Invalid --livemigrationtarget value '%s'", a->argv[i]);
+        }
+        else if (!strcmp(a->argv[i], "--livemigrationport"))
+        {
+            if (a->argc <= i + 1)
+                return errorArgument("Missing argument to '%s'", a->argv[i]);
+            i++;
+            int vrc = RTStrToUInt32Ex(a->argv[i], NULL, 0, &uLiveMigrationPort);
+            if (vrc != VINF_SUCCESS)
+                return errorArgument("Invalid --livemigrationport value '%s'", a->argv[i]);
+        }
+        else if (!strcmp(a->argv[i], "--livemigrationpassword"))
+        {
+            if (a->argc <= i + 1)
+                return errorArgument("Missing argument to '%s'", a->argv[i]);
+            i++;
+            pszLiveMigrationPassword = a->argv[i];
+        }
         else
             return errorSyntax(USAGE_MODIFYVM, "Invalid parameter '%s'", Utf8Str(a->argv[i]).raw());
     }
@@ -902,6 +933,10 @@ int handleModifyVM(HandlerArg *a)
 
         if (name)
             CHECK_ERROR(machine, COMSETTER(Name)(name));
+/** @todo r=bird: What's the story on not reporting error some places
+ *        (CHECK_ERROR) and immediately returning in other cases
+ *        (CHECK_ERROR_RET)?  If there is a logic, a comment why would be
+ *        nice... */
         if (ostype)
         {
             ComPtr<IGuestOSType> guestOSType;
@@ -2089,6 +2124,16 @@ int handleModifyVM(HandlerArg *a)
                 }
             }
         }
+
+        /*
+         * Live Migration.
+         */
+        if (pszLiveMigrationPassword)
+            CHECK_ERROR_RET(machine, COMSETTER(LiveMigrationPassword)(Bstr(pszLiveMigrationPassword)), 1);
+        if (uLiveMigrationPort != UINT32_MAX)
+            CHECK_ERROR_RET(machine, COMSETTER(LiveMigrationPort)(uLiveMigrationPort), 1);
+        if (fLiveMigrationTarget != -1)
+            CHECK_ERROR_RET(machine, COMSETTER(LiveMigrationTarget)(fLiveMigrationTarget), 1);
 
         /* commit changes */
         CHECK_ERROR(machine, SaveSettings());
