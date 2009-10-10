@@ -3033,8 +3033,8 @@ STDMETHODIMP Machine::CanShowConsoleWindow (BOOL *aCanShow)
 
         if (mData->mSession.mState != SessionState_Open)
             return setError(VBOX_E_INVALID_VM_STATE,
-                            tr("Machine session is not open (session state: %s)"),
-                            Global::stringifyMachineState(mData->mSession.mState));
+                            tr("Machine session is not open (session state: %d)"),
+                            mData->mSession.mState);
 
         directControl = mData->mSession.mDirectControl;
     }
