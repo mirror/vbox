@@ -29,6 +29,7 @@
 
 #include "SessionImpl.h"
 #include "ConsoleImpl.h"
+#include "Global.h"
 
 #include "Logging.h"
 
@@ -49,7 +50,8 @@ static DECLCALLBACK(int) IPCMutexHolderThread (RTTHREAD Thread, void *pvUser);
     do { \
         if (mState != SessionState_Open) \
             return setError (E_UNEXPECTED, \
-                tr ("The session is not open")); \
+                tr ("The session is not open (session state: %s)"), \
+                Global::stringifySessionState(mState)); \
     } while (0)
 
 // constructor / destructor
@@ -465,7 +467,7 @@ STDMETHODIMP Session::Uninitialize()
         /* close() needs write lock */
         AutoWriteLock alock(this);
 
-        LogFlowThisFunc(("mState=%d, mType=%d\n", mState, mType));
+        LogFlowThisFunc(("mState=%s, mType=%d\n", Global::stringifySessionState(mState), mType));
 
         if (mState == SessionState_Closing)
         {
@@ -674,8 +676,8 @@ STDMETHODIMP Session::AccessGuestProperty (IN_BSTR aName, IN_BSTR aValue, IN_BST
 
     if (mState != SessionState_Open)
         return setError (VBOX_E_INVALID_VM_STATE,
-            tr ("Machine session is not open (session state: %d)."),
-            mState);
+            tr ("Machine session is not open (session state: %s)."),
+            Global::stringifySessionState(mState));
     AssertReturn(mType == SessionType_Direct, VBOX_E_INVALID_OBJECT_STATE);
     CheckComArgNotNull(aName);
     if (!aIsSetter && !VALID_PTR (aRetValue))
@@ -711,8 +713,8 @@ STDMETHODIMP Session::EnumerateGuestProperties (IN_BSTR aPatterns,
 
     if (mState != SessionState_Open)
         return setError (VBOX_E_INVALID_VM_STATE,
-            tr ("Machine session is not open (session state: %d)."),
-            mState);
+            tr ("Machine session is not open (session state: %s)."),
+            Global::stringifySessionState(mState));
     AssertReturn(mType == SessionType_Direct, VBOX_E_INVALID_OBJECT_STATE);
     if (!VALID_PTR (aPatterns) && (aPatterns != NULL))
         return E_POINTER;
@@ -757,7 +759,7 @@ HRESULT Session::close (bool aFinalRelease, bool aFromServer)
 
     AutoWriteLock alock(this);
 
-    LogFlowThisFunc(("mState=%d, mType=%d\n", mState, mType));
+    LogFlowThisFunc(("mState=%s, mType=%d\n", Global::stringifySessionState(mState), mType));
 
     if (mState != SessionState_Open)
     {
