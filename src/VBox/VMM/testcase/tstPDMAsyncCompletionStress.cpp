@@ -51,6 +51,7 @@
 
 #define TESTCASE "tstPDMAsyncCompletionStress"
 
+#if 0
 /** Number of simultaneous open endpoints for reading and writing. */
 #define NR_OPEN_ENDPOINTS 10
 /** Test pattern size. */
@@ -67,6 +68,24 @@
 #define TASK_ACTIVE_MAX (1024)
 /** Maximum size of a transfer. */
 #define TASK_TRANSFER_SIZE_MAX (10*_1M)
+#else
+/** Number of simultaneous open endpoints for reading and writing. */
+#define NR_OPEN_ENDPOINTS 5
+/** Test pattern size. */
+#define TEST_PATTERN_SIZE (10*_1M)
+/** Minimum file size. */
+#define FILE_SIZE_MIN (100 * _1M)
+/** Maximum file size. */
+#define FILE_SIZE_MAX (1000UL * _1M)
+/** Minimum segment size. */
+#define SEGMENT_SIZE_MIN (512)
+/** Maximum segment size. */
+#define SEGMENT_SIZE_MAX (TEST_PATTERN_SIZE)
+/** Maximum number of active tasks. */
+#define TASK_ACTIVE_MAX (512)
+/** Maximum size of a transfer. */
+#define TASK_TRANSFER_SIZE_MAX (_1M)
+#endif
 
 /**
  * Structure defining a file segment.
@@ -209,7 +228,7 @@ static int tstPDMACStressTestFileWrite(PPDMACTESTFILE pTestFile, PPDMACTESTFILET
     {
         offMax =   (pTestFile->cbFileMax - pTestFile->cbFileCurr) < pTestTask->DataSeg.cbSeg
                  ? pTestFile->cbFileCurr + pTestTask->DataSeg.cbSeg
-                 : pTestFile->cbFileMax - pTestTask->DataSeg.cbSeg;
+                 : pTestFile->cbFileCurr;
     }
     else
         offMax = pTestFile->cbFileMax - pTestTask->DataSeg.cbSeg;
@@ -222,7 +241,7 @@ static int tstPDMACStressTestFileWrite(PPDMACTESTFILE pTestFile, PPDMACTESTFILET
 
     /* Allocate data buffer. */
     pTestTask->DataSeg.pvSeg = RTMemAlloc(pTestTask->DataSeg.cbSeg);
-    if (pTestTask->DataSeg.pvSeg)
+    if (!pTestTask->DataSeg.pvSeg)
         return VERR_NO_MEMORY;
 
     /* Fill data into buffer. */
