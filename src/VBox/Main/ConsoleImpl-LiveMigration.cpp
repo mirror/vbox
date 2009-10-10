@@ -375,7 +375,7 @@ Console::migrationSrc(MigrationStateSrc *pState)
     vrc = RTTcpRead(pState->mhSocket, szLine, sizeof(g_szWelcome) - 1, NULL);
     if (RT_FAILURE(vrc))
         return setError(E_FAIL, tr("Failed to read welcome message: %Rrc"), vrc);
-    if (!strcmp(szLine, g_szWelcome))
+    if (strcmp(szLine, g_szWelcome))
         return setError(E_FAIL, tr("Unexpected welcome '%s'"), szLine);
 
     /* password */
@@ -433,35 +433,43 @@ Console::migrationSrcThreadWrapper(RTTHREAD hThread, void *pvUser)
     HRESULT hrc = pState->mptrConsole->migrationSrc(pState);
     pState->mptrProgress->notifyComplete(hrc);
 
-    if (    FAILED(hrc)
-        &&  pState->mptrConsole->mMachineState == MachineState_Saving)
+    AutoWriteLock autoLock(pState->mptrConsole);
+    if (pState->mptrConsole->mMachineState == MachineState_Saving)
     {
         VMSTATE enmVMState = VMR3GetState(pState->mpVM);
-        switch (enmVMState)
+        if (SUCCEEDED(hrc))
         {
-            case VMSTATE_RUNNING:
-            case VMSTATE_RUNNING_LS:
-            case VMSTATE_DEBUGGING:
-            case VMSTATE_DEBUGGING_LS:
-            case VMSTATE_POWERING_OFF:
-            case VMSTATE_POWERING_OFF_LS:
-            case VMSTATE_RESETTING:
-            case VMSTATE_RESETTING_LS:
-                pState->mptrConsole->setMachineState(MachineState_Running);
-                break;
-            case VMSTATE_GURU_MEDITATION:
-            case VMSTATE_GURU_MEDITATION_LS:
-                pState->mptrConsole->setMachineState(MachineState_Stuck);
-                break;
-            default:
-                AssertMsgFailed(("%s\n", VMR3GetStateName(enmVMState)));
-            case VMSTATE_SUSPENDED:
-            case VMSTATE_SUSPENDED_LS:
-            case VMSTATE_SUSPENDING:
-            case VMSTATE_SUSPENDING_LS:
-            case VMSTATE_SUSPENDING_EXT_LS:
+            if (enmVMState == VMSTATE_SUSPENDED)
                 pState->mptrConsole->setMachineState(MachineState_Paused);
-                break;
+        }
+        else
+        {
+            switch (enmVMState)
+            {
+                case VMSTATE_RUNNING:
+                case VMSTATE_RUNNING_LS:
+                case VMSTATE_DEBUGGING:
+                case VMSTATE_DEBUGGING_LS:
+                case VMSTATE_POWERING_OFF:
+                case VMSTATE_POWERING_OFF_LS:
+                case VMSTATE_RESETTING:
+                case VMSTATE_RESETTING_LS:
+                    pState->mptrConsole->setMachineState(MachineState_Running);
+                    break;
+                case VMSTATE_GURU_MEDITATION:
+                case VMSTATE_GURU_MEDITATION_LS:
+                    pState->mptrConsole->setMachineState(MachineState_Stuck);
+                    break;
+                default:
+                    AssertMsgFailed(("%s\n", VMR3GetStateName(enmVMState)));
+                case VMSTATE_SUSPENDED:
+                case VMSTATE_SUSPENDED_LS:
+                case VMSTATE_SUSPENDING:
+                case VMSTATE_SUSPENDING_LS:
+                case VMSTATE_SUSPENDING_EXT_LS:
+                    pState->mptrConsole->setMachineState(MachineState_Paused);
+                    break;
+            }
         }
     }
 
