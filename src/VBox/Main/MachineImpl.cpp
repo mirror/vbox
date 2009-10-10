@@ -1887,8 +1887,8 @@ Machine::COMSETTER(LiveMigrationTarget)(BOOL aEnabled)
              || mData->mMachineState > MachineState_PoweredOff)
        )
         return setError(VBOX_E_INVALID_VM_STATE,
-                        tr("The machine is not powered off (state is %d)"),
-                        mData->mMachineState);
+                        tr("The machine is not powered off (state is %s)"),
+                        Global::stringifyMachineState(mData->mMachineState));
 
     mUserData.backup();
     mUserData->mLiveMigrationTarget = aEnabled;
@@ -2039,8 +2039,8 @@ STDMETHODIMP Machine::AttachDevice(IN_BSTR aControllerName,
 
     if (Global::IsOnlineOrTransient(mData->mMachineState))
         return setError(VBOX_E_INVALID_VM_STATE,
-                        tr("Invalid machine state: %d"),
-                        mData->mMachineState);
+                        tr("Invalid machine state: %s"),
+                        Global::stringifyMachineState(mData->mMachineState));
 
     /* Check for an existing controller. */
     ComObjPtr<StorageController> ctl;
@@ -2441,7 +2441,8 @@ STDMETHODIMP Machine::DetachDevice(IN_BSTR aControllerName, LONG aControllerPort
 
     if (Global::IsOnlineOrTransient(mData->mMachineState))
         return setError(VBOX_E_INVALID_VM_STATE,
-                        tr("Invalid machine state: %d"), mData->mMachineState);
+                        tr("Invalid machine state: %s"),
+                        Global::stringifyMachineState(mData->mMachineState));
 
     MediumAttachment *pAttach = findAttachment(mMediaData->mAttachments,
                                                aControllerName,
@@ -3032,8 +3033,8 @@ STDMETHODIMP Machine::CanShowConsoleWindow (BOOL *aCanShow)
 
         if (mData->mSession.mState != SessionState_Open)
             return setError(VBOX_E_INVALID_VM_STATE,
-                            tr("Machine session is not open (session state: %d)"),
-                            mData->mSession.mState);
+                            tr("Machine session is not open (session state: %s)"),
+                            Global::stringifyMachineState(mData->mSession.mState));
 
         directControl = mData->mSession.mDirectControl;
     }
@@ -4627,8 +4628,8 @@ HRESULT Machine::checkStateDependency(StateDependency aDepType)
                  mData->mMachineState > MachineState_Paused ||
                  mData->mMachineState == MachineState_Saved))
                 return setError(VBOX_E_INVALID_VM_STATE,
-                                tr("The machine is not mutable (state is %d)"),
-                                mData->mMachineState);
+                                tr("The machine is not mutable (state is %s)"),
+                                Global::stringifyMachineState(mData->mMachineState));
             break;
         }
         case MutableOrSavedStateDep:
@@ -4637,8 +4638,8 @@ HRESULT Machine::checkStateDependency(StateDependency aDepType)
                 (mType != IsSessionMachine ||
                  mData->mMachineState > MachineState_Paused))
                 return setError(VBOX_E_INVALID_VM_STATE,
-                                tr("The machine is not mutable (state is %d)"),
-                                mData->mMachineState);
+                                tr("The machine is not mutable (state is %s)"),
+                                Global::stringifyMachineState(mData->mMachineState));
             break;
         }
     }

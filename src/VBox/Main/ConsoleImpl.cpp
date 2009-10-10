@@ -1510,8 +1510,8 @@ STDMETHODIMP Console::PowerDown(IProgress **aProgress)
                 tr("Virtual machine is being powered down."));
         else
             return setError(VBOX_E_INVALID_VM_STATE,
-                tr("Invalid machine state: %d (must be Running, Paused or Stuck)"),
-                mMachineState);
+                tr("Invalid machine state: %s (must be Running, Paused or Stuck)"),
+                Global::stringifyMachineState(mMachineState));
     }
 
     LogFlowThisFunc(("Initiating SHUTDOWN request...\n"));
@@ -1561,8 +1561,8 @@ STDMETHODIMP Console::Reset()
 
     if (mMachineState != MachineState_Running)
         return setError(VBOX_E_INVALID_VM_STATE,
-            tr("Invalid machine state: %d"),
-            mMachineState);
+            tr("Invalid machine state: %s"),
+            Global::stringifyMachineState(mMachineState));
 
     /* protect mpVM */
     AutoVMCaller autoVMCaller(this);
@@ -1594,8 +1594,8 @@ STDMETHODIMP Console::Pause()
 
     if (mMachineState != MachineState_Running)
         return setError(VBOX_E_INVALID_VM_STATE,
-            tr("Invalid machine state: %d)"),
-            mMachineState);
+            tr("Invalid machine state: %s"),
+            Global::stringifyMachineState(mMachineState));
 
     /* protect mpVM */
     AutoVMCaller autoVMCaller(this);
@@ -1629,8 +1629,8 @@ STDMETHODIMP Console::Resume()
 
     if (mMachineState != MachineState_Paused)
         return setError(VBOX_E_INVALID_VM_STATE,
-            tr("Cannot resume the machine as it is not paused (machine state: %d)"),
-            mMachineState);
+            tr("Cannot resume the machine as it is not paused (machine state: %s)"),
+            Global::stringifyMachineState(mMachineState));
 
     /* protect mpVM */
     AutoVMCaller autoVMCaller(this);
@@ -1668,8 +1668,8 @@ STDMETHODIMP Console::PowerButton()
 
     if (mMachineState != MachineState_Running)
         return setError(VBOX_E_INVALID_VM_STATE,
-            tr("Invalid machine state: %d)"),
-            mMachineState);
+            tr("Invalid machine state: %s"),
+            Global::stringifyMachineState(mMachineState));
 
     /* protect mpVM */
     AutoVMCaller autoVMCaller(this);
@@ -1709,8 +1709,8 @@ STDMETHODIMP Console::GetPowerButtonHandled(BOOL *aHandled)
 
     if (mMachineState != MachineState_Running)
         return setError(VBOX_E_INVALID_VM_STATE,
-            tr("Invalid machine state: %d)"),
-            mMachineState);
+            tr("Invalid machine state: %s"),
+            Global::stringifyMachineState(mMachineState));
 
     /* protect mpVM */
     AutoVMCaller autoVMCaller(this);
@@ -1753,8 +1753,8 @@ STDMETHODIMP Console::GetGuestEnteredACPIMode(BOOL *aEntered)
 
     if (mMachineState != MachineState_Running)
         return setError(VBOX_E_INVALID_VM_STATE,
-            tr("Invalid machine state %d when checking if the guest entered the ACPI mode)"),
-            mMachineState);
+            tr("Invalid machine state %s when checking if the guest entered the ACPI mode)"),
+            Global::stringifyMachineState(mMachineState));
 
     /* protect mpVM */
     AutoVMCaller autoVMCaller(this);
@@ -1788,8 +1788,8 @@ STDMETHODIMP Console::SleepButton()
 
     if (mMachineState != MachineState_Running)
         return setError(VBOX_E_INVALID_VM_STATE,
-            tr("Invalid machine state: %d)"),
-            mMachineState);
+            tr("Invalid machine state: %s)"),
+            Global::stringifyMachineState(mMachineState));
 
     /* protect mpVM */
     AutoVMCaller autoVMCaller(this);
@@ -1831,8 +1831,8 @@ STDMETHODIMP Console::SaveState(IProgress **aProgress)
         mMachineState != MachineState_Paused)
     {
         return setError(VBOX_E_INVALID_VM_STATE,
-            tr("Cannot save the execution state as the machine is not running or paused (machine state: %d)"),
-            mMachineState);
+            tr("Cannot save the execution state as the machine is not running or paused (machine state: %s)"),
+            Global::stringifyMachineState(mMachineState));
     }
 
     /* memorize the current machine state */
@@ -1968,8 +1968,8 @@ STDMETHODIMP Console::AdoptSavedState(IN_BSTR aSavedStateFile)
     if (mMachineState != MachineState_PoweredOff &&
         mMachineState != MachineState_Aborted)
         return setError(VBOX_E_INVALID_VM_STATE,
-            tr("Cannot adopt the saved machine state as the machine is not in Powered Off or Aborted state (machine state: %d)"),
-            mMachineState);
+            tr("Cannot adopt the saved machine state as the machine is not in Powered Off or Aborted state (machine state: %s)"),
+            Global::stringifyMachineState(mMachineState));
 
     return mControl->AdoptSavedState(aSavedStateFile);
 }
@@ -1983,8 +1983,8 @@ STDMETHODIMP Console::ForgetSavedState(BOOL aRemove)
 
     if (mMachineState != MachineState_Saved)
         return setError(VBOX_E_INVALID_VM_STATE,
-            tr("Cannot discard the machine state as the machine is not in the saved state (machine state: %d)"),
-            mMachineState);
+            tr("Cannot discard the machine state as the machine is not in the saved state (machine state: %s)"),
+            Global::stringifyMachineState(mMachineState));
 
     HRESULT rc = S_OK;
 
@@ -2107,8 +2107,8 @@ STDMETHODIMP Console::AttachUSBDevice(IN_BSTR aId)
     if (mMachineState != MachineState_Running &&
         mMachineState != MachineState_Paused)
         return setError(VBOX_E_INVALID_VM_STATE,
-            tr("Cannot attach a USB device to the machine which is not running or paused (machine state: %d)"),
-            mMachineState);
+            tr("Cannot attach a USB device to the machine which is not running or paused (machine state: %s)"),
+            Global::stringifyMachineState(mMachineState));
 
     /* protect mpVM */
     AutoVMCaller autoVMCaller(this);
@@ -2285,8 +2285,8 @@ Console::CreateSharedFolder(IN_BSTR aName, IN_BSTR aHostPath, BOOL aWritable)
             tr("Cannot create a transient shared folder on the machine in the saved state"));
     if (mMachineState > MachineState_Paused)
         return setError(VBOX_E_INVALID_VM_STATE,
-            tr("Cannot create a transient shared folder on the machine while it is changing the state (machine state: %d)"),
-            mMachineState);
+            tr("Cannot create a transient shared folder on the machine while it is changing the state (machine state: %s)"),
+            Global::stringifyMachineState(mMachineState));
 
     ComObjPtr<SharedFolder> sharedFolder;
     HRESULT rc = findSharedFolder(aName, sharedFolder, false /* aSetError */);
@@ -2347,8 +2347,8 @@ STDMETHODIMP Console::RemoveSharedFolder(IN_BSTR aName)
             tr("Cannot remove a transient shared folder from the machine in the saved state"));
     if (mMachineState > MachineState_Paused)
         return setError(VBOX_E_INVALID_VM_STATE,
-            tr("Cannot remove a transient shared folder from the machine while it is changing the state (machine state: %d)"),
-            mMachineState);
+            tr("Cannot remove a transient shared folder from the machine while it is changing the state (machine state: %s)"),
+            Global::stringifyMachineState(mMachineState));
 
     ComObjPtr<SharedFolder> sharedFolder;
     HRESULT rc = findSharedFolder(aName, sharedFolder, true /* aSetError */);
@@ -2405,8 +2405,8 @@ STDMETHODIMP Console::TakeSnapshot(IN_BSTR aName,
 
     if (Global::IsTransient(mMachineState))
         return setError(VBOX_E_INVALID_VM_STATE,
-                        tr("Cannot take a snapshot of the machine while it is changing the state (machine state: %d)"),
-                        mMachineState);
+                        tr("Cannot take a snapshot of the machine while it is changing the state (machine state: %s)"),
+                        Global::stringifyMachineState(mMachineState));
 
     HRESULT rc = S_OK;
 
@@ -2417,9 +2417,7 @@ STDMETHODIMP Console::TakeSnapshot(IN_BSTR aName,
     SafeIfaceArray<IMediumAttachment> aMediumAttachments;
     rc = mMachine->COMGETTER(MediumAttachments)(ComSafeArrayAsOutParam(aMediumAttachments));
     if (FAILED(rc))
-        return setError(VBOX_E_INVALID_VM_STATE,
-                        tr("Cannot get medium attachments of the machine"),
-                        mMachineState);
+        return setError(rc, tr("Cannot get medium attachments of the machine"));
 
     ULONG ulMemSize;
     rc = mMachine->COMGETTER(MemorySize)(&ulMemSize);
@@ -2529,8 +2527,8 @@ STDMETHODIMP Console::DiscardSnapshot(IN_BSTR aId, IProgress **aProgress)
 
     if (Global::IsOnlineOrTransient(mMachineState))
         return setError(VBOX_E_INVALID_VM_STATE,
-            tr("Cannot discard a snapshot of the running machine (machine state: %d)"),
-            mMachineState);
+            tr("Cannot discard a snapshot of the running machine (machine state: %s)"),
+            Global::stringifyMachineState(mMachineState));
 
     MachineState_T machineState = MachineState_Null;
     HRESULT rc = mControl->DiscardSnapshot(this, aId, &machineState, aProgress);
@@ -2549,8 +2547,8 @@ STDMETHODIMP Console::DiscardCurrentState(IProgress **aProgress)
 
     if (Global::IsOnlineOrTransient(mMachineState))
         return setError(VBOX_E_INVALID_VM_STATE,
-            tr("Cannot discard the current state of the running machine (machine state: %d)"),
-            mMachineState);
+            tr("Cannot discard the current state of the running machine (machine state: %s)"),
+            Global::stringifyMachineState(mMachineState));
 
     MachineState_T machineState = MachineState_Null;
     HRESULT rc = mControl->DiscardCurrentState(this, &machineState, aProgress);
@@ -2569,8 +2567,8 @@ STDMETHODIMP Console::DiscardCurrentSnapshotAndState(IProgress **aProgress)
 
     if (Global::IsOnlineOrTransient(mMachineState))
         return setError(VBOX_E_INVALID_VM_STATE,
-            tr("Cannot discard the current snapshot and state of the running machine (machine state: %d)"),
-            mMachineState);
+            tr("Cannot discard the current snapshot and state of the running machine (machine state: %s)"),
+            Global::stringifyMachineState(mMachineState));
 
     MachineState_T machineState = MachineState_Null;
     HRESULT rc =
@@ -4526,8 +4524,8 @@ HRESULT Console::powerUp(IProgress **aProgress, bool aPaused)
 
     if (Global::IsOnlineOrTransient(mMachineState))
         return setError(VBOX_E_INVALID_VM_STATE,
-            tr("Virtual machine is already running or busy (machine state: %d)"),
-            mMachineState);
+            tr("Virtual machine is already running or busy (machine state: %s)"),
+            Global::stringifyMachineState(mMachineState));
 
     HRESULT rc = S_OK;
 
@@ -4795,7 +4793,7 @@ HRESULT Console::powerDown(Progress *aProgress /*= NULL*/)
               mMachineState == MachineState_Starting ||
               mMachineState == MachineState_Restoring ||
               mMachineState == MachineState_Stopping,
-              ("Invalid machine state: %d\n", mMachineState));
+              ("Invalid machine state: %s\n", Global::stringifyMachineState(mMachineState)));
 
     LogRel(("Console::powerDown(): A request to power off the VM has been issued (mMachineState=%d, InUninit=%d)\n",
              mMachineState, autoCaller.state() == InUninit));
