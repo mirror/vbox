@@ -4613,12 +4613,24 @@ HRESULT Console::powerUp(IProgress **aProgress, bool aPaused)
                             savedStateFile.raw(), vrc);
     }
 
+    /* test and clear the LiveMigrationTarget property  */
+    BOOL fLiveMigrationTarget;
+    rc = mMachine->COMGETTER(LiveMigrationTarget)(&fLiveMigrationTarget);
+    CheckComRCReturnRC(rc);
+    if (fLiveMigrationTarget)
+    {
+        rc = mMachine->COMSETTER(LiveMigrationTarget)(FALSE);
+        CheckComRCReturnRC(rc);
+    }
+
     /* create a progress object to track progress of this operation */
     ComObjPtr<Progress> powerupProgress;
     powerupProgress.createObject();
     Bstr progressDesc;
     if (mMachineState == MachineState_Saved)
         progressDesc = tr("Restoring virtual machine");
+    else if (fLiveMigrationTarget)
+        progressDesc = tr("Migrating virtual machine");
     else
         progressDesc = tr("Starting virtual machine");
     rc = powerupProgress->init(static_cast<IConsole *>(this),
@@ -4637,15 +4649,7 @@ HRESULT Console::powerUp(IProgress **aProgress, bool aPaused)
     task->mStartPaused = aPaused;
     if (mMachineState == MachineState_Saved)
         task->mSavedStateFile = savedStateFile;
-
-    /* test and clear the LiveMigrationTarget property  */
-    rc = mMachine->COMGETTER(LiveMigrationTarget)(&task->mLiveMigrationTarget);
-    CheckComRCReturnRC(rc);
-    if (task->mLiveMigrationTarget)
-    {
-        rc = mMachine->COMSETTER(LiveMigrationTarget)(FALSE);
-        CheckComRCReturnRC(rc);
-    }
+    task->mLiveMigrationTarget = fLiveMigrationTarget;
 
     /* Reset differencing hard disks for which autoReset is true */
     {
@@ -4725,7 +4729,8 @@ HRESULT Console::powerUp(IProgress **aProgress, bool aPaused)
      * since we've already started the thread and it is now responsible for
      * any error reporting and appropriate state change! */
 
-    if (mMachineState == MachineState_Saved)
+    if (   mMachineState == MachineState_Saved
+        || fLiveMigrationTarget)
         setMachineState(MachineState_Restoring);
     else
         setMachineState(MachineState_Starting);
@@ -6742,8 +6747,13 @@ DECLCALLBACK(int) Console::powerUpThread(RTTHREAD Thread, void *pvUser)
                     }
                 }
                 else if (task->mLiveMigrationTarget)
+                {
                     /* -> ConsoleImpl-LiveMigration.cpp */
-                    vrc = console->migrationDst(pVM, pMachine, static_cast<VMProgressTask*>(task.get()));
+                    vrc = console->migrationDst(pVM, pMachine, task->mStartPaused,
+                                                static_cast<VMProgressTask*>(task.get()));
+                    if (RT_FAILURE(vrc))
+                        VMR3PowerOff(pVM);
+                }
                 else if (task->mStartPaused)
                     /* done */
                     console->setMachineState(MachineState_Paused);

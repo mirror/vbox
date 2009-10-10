@@ -517,9 +517,9 @@ private:
      * @{ */
     static DECLCALLBACK(int)    migrationSrcThreadWrapper(RTTHREAD hThread, void *pvUser);
     HRESULT                     migrationSrc(MigrationStateSrc *pState);
-    HRESULT                     migrationSrcReadACK(MigrationStateSrc *pState);
+    HRESULT                     migrationSrcReadACK(MigrationStateSrc *pState, const char *pszNAckMsg = NULL);
     HRESULT                     migrationSrcSubmitCommand(MigrationStateSrc *pState, const char *pszCommand);
-    int                         migrationDst(PVM pVM, IMachine *pMachine, void *pvVMCallbackTask);
+    int                         migrationDst(PVM pVM, IMachine *pMachine, bool fStartPaused, void *pvVMCallbackTask);
     static DECLCALLBACK(int)    migrationDstServeConnection(RTSOCKET Sock, void *pvUser);
     /** @} */
 
