@@ -1586,9 +1586,12 @@ static DECLCALLBACK(int) vmR3Save(PVM pVM, const char *pszFilename, PCSSMSTRMOPS
     /*
      * Validate input.
      */
-    AssertPtr(pszFilename);
+    AssertPtrNull(pszFilename);
+    AssertPtrNull(pStreamOps);
     AssertPtr(pVM);
-    Assert(enmAfter == SSMAFTER_DESTROY || enmAfter == SSMAFTER_CONTINUE);
+    Assert(   enmAfter == SSMAFTER_DESTROY
+           || enmAfter == SSMAFTER_CONTINUE
+           || enmAfter == SSMAFTER_MIGRATE);
     AssertPtr(ppSSM);
     *ppSSM = NULL;
 
