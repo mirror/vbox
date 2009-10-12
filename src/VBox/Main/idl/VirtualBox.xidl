@@ -971,7 +971,7 @@
 
   <enum
     name="ProcessorFeature"
-    uuid="b8353b35-705d-4796-9967-ebfb7ba54af4"
+    uuid="64c38e6b-8bcf-45ad-ac03-9b406287c5bf"
   >
     <desc>
       CPU features.
@@ -980,6 +980,7 @@
     <const name="HWVirtEx"        value="0"/>
     <const name="PAE"             value="1"/>
     <const name="LongMode"        value="2"/>
+    <const name="NestedPaging"    value="3"/>
   </enum>
 
    <enum

@@ -166,9 +166,10 @@ struct Host::Data
     VBoxMainDriveInfo       hostDrives;
 #endif
     /* Features that can be queried with GetProcessorFeature */
-    BOOL                    fVTxAMDVSupported,
+    BOOL                    fVTSupported,
                             fLongModeSupported,
-                            fPAESupported;
+                            fPAESupported,
+                            fNestedPagingSupported;
 
     /* 3D hardware acceleration supported? */
     BOOL                    f3DAccelerationSupported;
@@ -246,9 +247,10 @@ HRESULT Host::init(VirtualBox *aParent)
 #endif
 
     /* Cache the features reported by GetProcessorFeature. */
-    m->fVTxAMDVSupported = false;
+    m->fVTSupported = false;
     m->fLongModeSupported = false;
     m->fPAESupported = false;
+    m->fNestedPagingSupported = false;
 
     if (ASMHasCpuId())
     {
@@ -277,7 +279,7 @@ HRESULT Host::init(VirtualBox *aParent)
             {
                 int rc = SUPR3QueryVTxSupported();
                 if (RT_SUCCESS(rc))
-                    m->fVTxAMDVSupported = true;
+                    m->fVTSupported = true;
             }
         }
         else
@@ -290,9 +292,24 @@ HRESULT Host::init(VirtualBox *aParent)
                 && (u32FeaturesEDX & X86_CPUID_FEATURE_EDX_MSR)
                 && (u32FeaturesEDX & X86_CPUID_FEATURE_EDX_FXSR)
                )
-                m->fVTxAMDVSupported = true;
+                m->fVTSupported = true;
         }
     }
+
+#if 0 /* needs testing */
+    if (m->fVTSupported)
+    {
+        uint32_t u32Caps = 0;
+
+        int rc = SUPR3QueryVTCaps(&u32Caps);
+        if (VBOX_SUCCESS(rc))
+        {
+            if (u32Caps & SUPVTCAPS_NESTED_PAGING)
+                m->fNestedPagingSupported = true;
+        }
+        /* else @todo; report BIOS trouble in some way. */
+    }
+#endif
 
     /* Test for 3D hardware acceleration support */
     m->f3DAccelerationSupported = false;
@@ -1024,7 +1041,7 @@ STDMETHODIMP Host::GetProcessorFeature(ProcessorFeature_T aFeature, BOOL *aSuppo
     switch (aFeature)
     {
         case ProcessorFeature_HWVirtEx:
-            *aSupported = m->fVTxAMDVSupported;
+            *aSupported = m->fVTSupported;
             break;
 
         case ProcessorFeature_PAE:
@@ -1033,6 +1050,10 @@ STDMETHODIMP Host::GetProcessorFeature(ProcessorFeature_T aFeature, BOOL *aSuppo
 
         case ProcessorFeature_LongMode:
             *aSupported = m->fLongModeSupported;
+            break;
+
+        case ProcessorFeature_NestedPaging:
+            *aSupported = m->fNestedPagingSupported;
             break;
 
         default:
