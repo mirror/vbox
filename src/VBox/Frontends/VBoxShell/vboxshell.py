@@ -454,6 +454,7 @@ def infoCmd(ctx,args):
     print "  Name [name]: %s" %(mach.name)
     print "  ID [n/a]: %s" %(mach.id)
     print "  OS Type [n/a]: %s" %(os.description)
+    print "  Firmware [firmwareType]: %s" %(mach.firmwareType)
     print
     print "  CPUs [CPUCount]: %d" %(mach.CPUCount)
     print "  RAM [memorySize]: %dM" %(mach.memorySize)
@@ -470,6 +471,7 @@ def infoCmd(ctx,args):
     print "  Hardware virtualization [HWVirtExEnabled]: " + asState(mach.HWVirtExEnabled)
     print "  VPID support [HWVirtExVPIDEnabled]: " + asState(mach.HWVirtExVPIDEnabled)
     print "  Hardware 3d acceleration[accelerate3DEnabled]: " + asState(mach.accelerate3DEnabled)
+    print "  Hardware 2d video acceleration[accelerate2DVideoEnabled]: " + asState(mach.accelerate2DVideoEnabled)
     print "  Nested paging [HWVirtExNestedPagingEnabled]: " + asState(mach.HWVirtExNestedPagingEnabled)
     print "  Last changed [n/a]: " + time.asctime(time.localtime(long(mach.lastStateChange)/1000))
     print "  VRDP server [VRDPServer.enabled]: %s" %(asState(mach.VRDPServer.enabled))
@@ -481,47 +483,33 @@ def infoCmd(ctx,args):
     for controller in controllers:
         print "    %s %s bus: %d" % (controller.name, getControllerType(controller.controllerType), controller.bus)
 
-    disks = ctx['global'].getArray(mach, 'hardDiskAttachments')
-    if disks:
+    attaches = ctx['global'].getArray(mach, 'mediumAttachments')
+    if attaches:
         print
-        print "  Hard disk(s):"
-    for disk in disks:
-        print "    Controller: %s port: %d device: %d:" % (disk.controller, disk.port, disk.device)
-        hd = disk.hardDisk
-        print "    id: %s" %(hd.id)
-        print "    location: %s" %(hd.location)
-        print "    name: %s"  %(hd.name)
-        print "    format: %s"  %(hd.format)
-        print
+        print "  Mediums:"
+    for a in attaches:
+        print "   Controller: %s port: %d device: %d type: %s:" % (a.controller, a.port, a.device, a.type)
+        m = a.medium
+        if a.type == ctx['global'].constants.DeviceType_HardDisk:
+            print "   HDD:"
+            print "    id: %s" %(m.id)
+            print "    location: %s" %(m.location)
+            print "    name: %s"  %(m.name)
+            print "    format: %s"  %(m.format)
 
-    dvd = mach.DVDDrive
-    if dvd.getHostDrive():
-        hdvd = dvd.getHostDrive()
-        print "  DVD:"
-        print "    Host disk: %s" %(hdvd.name)
-        print
+        if a.type == ctx['global'].constants.DeviceType_DVD:
+            print "   DVD:"
+            if m:
+                print "    Image at: %s" %(m.location)
+                print "    Size: %s" %(m.size)
+                print "    Id: %s" %(m.id)
 
-    if dvd.getImage():
-        vdvd = dvd.getImage()
-        print "  DVD:"
-        print "    Image at: %s" %(vdvd.location)
-        print "    Size: %s" %(vdvd.size)
-        print "    Id: %s" %(vdvd.id)
-        print
-
-    floppy = mach.floppyDrive
-    if floppy.getHostDrive():
-        hfloppy = floppy.getHostDrive()
-        print "  Floppy:"
-        print "    Host disk: %s" %(hfloppy.name)
-        print
-
-    if floppy.getImage():
-        vfloppy = floppy.getImage()
-        print "  Floppy:"
-        print "    Image at: %s" %(vfloppy.location)
-        print "    Size: %s" %(vfloppy.size)
-        print
+        if a.type == ctx['global'].constants.DeviceType_Floppy:
+            print "   Floppy:"
+            if m:
+                print "    Name: %s" %(m.name)
+                print "    Image at: %s" %(m.location)
+                print "    Size: %s" %(m.size)
 
     return 0
 
