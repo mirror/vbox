@@ -108,13 +108,15 @@ public:
     IMachine           *mpMachine;
     void               *mpvVMCallbackTask;
     PRTTCPSERVER        mhServer;
+    PRTTIMERLR          mphTimerLR;
     int                 mRc;
 
-    MigrationStateDst(Console *pConsole, PVM pVM, IMachine *pMachine)
+    MigrationStateDst(Console *pConsole, PVM pVM, IMachine *pMachine, PRTTIMERLR phTimerLR)
         : MigrationState(pConsole, pVM, false /*fIsSource*/)
         , mpMachine(pMachine)
         , mpvVMCallbackTask(NULL)
         , mhServer(NULL)
+        , mphTimerLR(phTimerLR)
         , mRc(VINF_SUCCESS)
     {
     }
@@ -189,26 +191,6 @@ static int migrationTcpReadLine(MigrationState *pState, char *pszBuf, size_t cch
 }
 
 
-static int migrationTcpWriteACK(MigrationState *pState)
-{
-    int rc = RTTcpWrite(pState->mhSocket, "ACK\n", sizeof("ACK\n") - 1);
-    if (RT_FAILURE(rc))
-        LogRel(("Migration: RTTcpWrite(,ACK,) -> %Rrc\n", rc));
-    RTTcpFlush(pState->mhSocket);
-    return rc;
-}
-
-
-static int migrationTcpWriteNACK(MigrationState *pState)
-{
-    int rc = RTTcpWrite(pState->mhSocket, "NACK\n", sizeof("NACK\n") - 1);
-    if (RT_FAILURE(rc))
-        LogRel(("Migration: RTTcpWrite(,NACK,) -> %Rrc\n", rc));
-    RTTcpFlush(pState->mhSocket);
-    return rc;
-}
-
-
 /**
  * Reads an ACK or NACK.
  *
@@ -227,8 +209,20 @@ Console::migrationSrcReadACK(MigrationStateSrc *pState, const char *pszNAckMsg /
         return setError(E_FAIL, tr("Failed reading ACK: %Rrc"), vrc);
     if (strcmp(szMsg, "ACK"))
     {
-        if (!strcmp(szMsg, "NACK"))
-            return setError(E_FAIL, pszNAckMsg ? pszNAckMsg : "NACK");
+        if (!strncmp(szMsg, "NACK=", sizeof("NACK=") - 1))
+        {
+            int32_t vrc2;
+            vrc = RTStrToInt32Full(&szMsg[sizeof("NACK=") - 1], 10, &vrc2);
+            if (vrc == VINF_SUCCESS)
+            {
+                if (pszNAckMsg)
+                {
+                    LogRel(("Migration: NACK=%Rrc (%d)\n", vrc2, vrc2));
+                    return setError(E_FAIL, pszNAckMsg);
+                }
+                return setError(E_FAIL, "NACK - %Rrc (%d)", vrc2, vrc2);
+            }
+        }
         return setError(E_FAIL, tr("Expected ACK or NACK, got '%s'"), szMsg);
     }
     return S_OK;
@@ -808,7 +802,7 @@ Console::migrationDst(PVM pVM, IMachine *pMachine, bool fStartPaused, void *pvVM
             /*
              * Do the job, when it returns we're done.
              */
-            MigrationStateDst State(this, pVM, pMachine);
+            MigrationStateDst State(this, pVM, pMachine, &hTimerLR);
             State.mstrPassword      = strPassword;
             State.mhServer          = hServer;
             State.mpvVMCallbackTask = pvVMCallbackTask;
@@ -834,6 +828,28 @@ Console::migrationDst(PVM pVM, IMachine *pMachine, bool fStartPaused, void *pvVM
     RTTcpServerDestroy(hServer);
 
     return vrc;
+}
+
+
+static int migrationTcpWriteACK(MigrationStateDst *pState)
+{
+    int rc = RTTcpWrite(pState->mhSocket, "ACK\n", sizeof("ACK\n") - 1);
+    if (RT_FAILURE(rc))
+        LogRel(("Migration: RTTcpWrite(,ACK,) -> %Rrc\n", rc));
+    RTTcpFlush(pState->mhSocket);
+    return rc;
+}
+
+
+static int migrationTcpWriteNACK(MigrationStateDst *pState, int32_t rc2)
+{
+    char    szMsg[64];
+    size_t  cch = RTStrPrintf(szMsg, sizeof(szMsg), "NACK=%d\n", rc2);
+    int rc = RTTcpWrite(pState->mhSocket, szMsg, cch);
+    if (RT_FAILURE(rc))
+        LogRel(("Migration: RTTcpWrite(,%s,%zu) -> %Rrc\n", szMsg, cch, rc));
+    RTTcpFlush(pState->mhSocket);
+    return rc;
 }
 
 
@@ -874,7 +890,7 @@ Console::migrationDstServeConnection(RTSOCKET Sock, void *pvUser)
                 LogRel(("Migration: Password read failure (off=%u): %Rrc\n", off, vrc));
             else
                 LogRel(("Migration: Invalid password (off=%u)\n", off));
-            migrationTcpWriteNACK(pState);
+            migrationTcpWriteNACK(pState, VERR_AUTHENTICATION_FAILURE);
             return VINF_SUCCESS;
         }
         off++;
@@ -882,7 +898,10 @@ Console::migrationDstServeConnection(RTSOCKET Sock, void *pvUser)
     vrc = migrationTcpWriteACK(pState);
     if (RT_FAILURE(vrc))
         return vrc;
+
     RTTcpServerShutdown(pState->mhServer);
+    RTTimerLRDestroy(*pState->mphTimerLR);
+    *pState->mphTimerLR = NIL_RTTIMERLR;
 
     /*
      * Command processing loop.
@@ -907,6 +926,7 @@ Console::migrationDstServeConnection(RTSOCKET Sock, void *pvUser)
             if (RT_FAILURE(vrc))
             {
                 LogRel(("Migration: VMR3LoadFromStream -> %Rrc\n", vrc));
+                migrationTcpWriteNACK(pState, vrc);
                 break;
             }
 
@@ -918,7 +938,7 @@ Console::migrationDstServeConnection(RTSOCKET Sock, void *pvUser)
          *        maybe leave part of these to the saved state machinery? */
         else if (!strcmp(szCmd, "done"))
         {
-            migrationTcpWriteACK(pState);
+            vrc = migrationTcpWriteACK(pState);
             break;
         }
         else
@@ -928,7 +948,9 @@ Console::migrationDstServeConnection(RTSOCKET Sock, void *pvUser)
         }
     }
 
+    pState->mRc = vrc;
     pState->mhSocket = NIL_RTSOCKET;
+    LogFlowFunc(("returns mRc=%Rrc\n", vrc));
     return VERR_TCP_SERVER_STOP;
 }
 
