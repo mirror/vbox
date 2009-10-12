@@ -398,6 +398,22 @@ typedef const VMXMSR *PCVMXMSR;
 /** @} */
 
 
+/** @name VT-x capability qword
+ * @{
+ */
+#pragma pack(1)
+typedef union
+{
+    struct
+    {
+        uint32_t        disallowed0;
+        uint32_t        allowed1;
+    } n;
+    uint64_t            u;
+} VMX_CAPABILITY;
+#pragma pack()
+/** @} */
+
 /** @name VMX Basic Exit Reasons.
  * @{
  */

@@ -271,8 +271,8 @@ SUPR3DECL(int) SUPR3Init(PSUPDRVSESSION *ppSession)
         CookieReq.Hdr.rc = VERR_INTERNAL_ERROR;
         strcpy(CookieReq.u.In.szMagic, SUPCOOKIE_MAGIC);
         CookieReq.u.In.u32ReqVersion = SUPDRV_IOC_VERSION;
-        const uint32_t uMinVersion = (SUPDRV_IOC_VERSION & 0xffff0000) == 0x00100000
-                                   ?  0x00100000
+        const uint32_t uMinVersion = (SUPDRV_IOC_VERSION & 0xffff0000) == 0x00100001
+                                   ?  0x00100001
                                    :  SUPDRV_IOC_VERSION & 0xffff0000;
         CookieReq.u.In.u32MinVersion = uMinVersion;
         rc = suplibOsIOCtl(&g_supLibData, SUP_IOCTL_COOKIE, &CookieReq, SUP_IOCTL_COOKIE_SIZE);
@@ -2064,3 +2064,35 @@ SUPR3DECL(int) SUPR3QueryVTxSupported(void)
     return VINF_SUCCESS;
 #endif
 }
+
+SUPR3DECL(int) SUPR3QueryVTCaps(uint32_t *pCaps)
+{
+    AssertPtrReturn(pCaps, VERR_INVALID_POINTER);
+
+    *pCaps = 0;
+
+    /* fake */
+    if (RT_UNLIKELY(g_u32FakeMode))
+        return VINF_SUCCESS;
+
+    /*
+     * Issue IOCtl to the SUPDRV kernel module.
+     */
+    SUPVTCAPS Req;
+    Req.Hdr.u32Cookie = g_u32Cookie;
+    Req.Hdr.u32SessionCookie = g_u32SessionCookie;
+    Req.Hdr.cbIn = SUP_IOCTL_VT_CAPS_SIZE_IN;
+    Req.Hdr.cbOut = SUP_IOCTL_VT_CAPS_SIZE_OUT;
+    Req.Hdr.fFlags = SUPREQHDR_FLAGS_DEFAULT;
+    Req.Hdr.rc = VERR_INTERNAL_ERROR;
+    Req.u.Out.Caps = 0;
+    int rc = suplibOsIOCtl(&g_supLibData, SUP_IOCTL_VT_CAPS, &Req, SUP_IOCTL_VT_CAPS_SIZE);
+    if (RT_SUCCESS(rc))
+    {
+        rc = Req.Hdr.rc;
+        if (RT_SUCCESS(rc)
+            *pCaps = Req.u.Out.Caps;
+    }
+    return rc;
+}
+
