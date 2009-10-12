@@ -692,26 +692,13 @@ static void vboxVHWAGlInit(const QGLContext * pContext)
 //    if (!QGLContext(QGLFormat::defaultFormat()).isValid())
 //        return;
 
-    static QGLWidget *pTmpContextHolder = NULL;
-    const bool bHasGlContext = (pContext != NULL);
+    QGLWidget *pTmpWidget = NULL;
 
     if(!pContext)
     {
-        if(!pTmpContextHolder)
-        {
-            QGLWidget *pWidget = new QGLWidget();
-            pWidget->makeCurrent();
-            pContext = pWidget->context();
-            pTmpContextHolder = pWidget;
-        }
-
-//        QGLContext * pTmpContext = new QGLContext(QGLFormat::defaultFormat());
-//        bool bCreated = pTmpContext->create();
-//        Assert(pTmpContext);
-//        Assert(pTmpContext->isValid());
-//
-//        pTmpContext->makeCurrent();
-//        pTmpContextHolder = pTmpContext;
+        QGLWidget *pTmpWidget = new QGLWidget();
+        pTmpWidget->makeCurrent();
+        pContext = pTmpWidget->context();
     }
 
     const GLubyte * str;
@@ -719,67 +706,69 @@ static void vboxVHWAGlInit(const QGLContext * pContext)
             str = glGetString(GL_VERSION);
             );
 
-    if(!str)
+    if(str)
     {
-        VBOXQGLLOGREL (("failed to make the context current, treating as unsupported\n"));
-        return;
-    }
+        VBOXQGLLOGREL (("gl version string: 0%s\n", str));
 
-    VBOXQGLLOGREL (("gl version string: 0%s\n", str));
+        g_vboxVHWAGlVersion = vboxVHWAGlParseVersion(str);
+        Assert(g_vboxVHWAGlVersion > 0);
+        if(g_vboxVHWAGlVersion < 0)
+        {
+            g_vboxVHWAGlVersion = 0;
+        }
+        else
+        {
+            VBOXQGLLOGREL (("gl version: 0x%x\n", g_vboxVHWAGlVersion));
+            VBOXQGL_CHECKERR(
+                    str = glGetString(GL_EXTENSIONS);
+                    );
 
-    g_vboxVHWAGlVersion = vboxVHWAGlParseVersion(str);
-    Assert(g_vboxVHWAGlVersion > 0);
-    if(g_vboxVHWAGlVersion < 0)
-    {
-        g_vboxVHWAGlVersion = 0;
+            const char * pos = strstr((const char *)str, "GL_ARB_multitexture");
+            g_GL_ARB_multitexture = pos != NULL;
+            VBOXQGLLOGREL (("GL_ARB_multitexture: %d\n", g_GL_ARB_multitexture));
+
+            pos = strstr((const char *)str, "GL_ARB_shader_objects");
+            g_GL_ARB_shader_objects = pos != NULL;
+            VBOXQGLLOGREL (("GL_ARB_shader_objects: %d\n", g_GL_ARB_shader_objects));
+
+            pos = strstr((const char *)str, "GL_ARB_fragment_shader");
+            g_GL_ARB_fragment_shader = pos != NULL;
+            VBOXQGLLOGREL (("GL_ARB_fragment_shader: %d\n", g_GL_ARB_fragment_shader));
+
+            pos = strstr((const char *)str, "GL_ARB_pixel_buffer_object");
+            g_GL_ARB_pixel_buffer_object = pos != NULL;
+            VBOXQGLLOGREL (("GL_ARB_pixel_buffer_object: %d\n", g_GL_ARB_pixel_buffer_object));
+
+            pos = strstr((const char *)str, "GL_ARB_texture_rectangle");
+            g_GL_ARB_texture_rectangle = pos != NULL;
+            VBOXQGLLOGREL (("GL_ARB_texture_rectangle: %d\n", g_GL_ARB_texture_rectangle));
+
+            pos = strstr((const char *)str, "GL_EXT_texture_rectangle");
+            g_GL_EXT_texture_rectangle = pos != NULL;
+            VBOXQGLLOGREL (("GL_EXT_texture_rectangle: %d\n", g_GL_EXT_texture_rectangle));
+
+            pos = strstr((const char *)str, "GL_NV_texture_rectangle");
+            g_GL_NV_texture_rectangle = pos != NULL;
+            VBOXQGLLOGREL (("GL_NV_texture_rectangle: %d\n", g_GL_NV_texture_rectangle));
+
+            pos = strstr((const char *)str, "GL_ARB_texture_non_power_of_two");
+            g_GL_ARB_texture_non_power_of_two = pos != NULL;
+            VBOXQGLLOGREL (("GL_ARB_texture_non_power_of_two: %d\n", g_GL_ARB_texture_non_power_of_two));
+
+            vboxVHWAGlInitExtSupport(*pContext);
+
+            vboxVHWAGlInitFeatureSupport();
+        }
     }
     else
     {
-        VBOXQGLLOGREL (("gl version: 0x%x\n", g_vboxVHWAGlVersion));
-        VBOXQGL_CHECKERR(
-                str = glGetString(GL_EXTENSIONS);
-                );
-
-        const char * pos = strstr((const char *)str, "GL_ARB_multitexture");
-        g_GL_ARB_multitexture = pos != NULL;
-        VBOXQGLLOGREL (("GL_ARB_multitexture: %d\n", g_GL_ARB_multitexture));
-
-        pos = strstr((const char *)str, "GL_ARB_shader_objects");
-        g_GL_ARB_shader_objects = pos != NULL;
-        VBOXQGLLOGREL (("GL_ARB_shader_objects: %d\n", g_GL_ARB_shader_objects));
-
-        pos = strstr((const char *)str, "GL_ARB_fragment_shader");
-        g_GL_ARB_fragment_shader = pos != NULL;
-        VBOXQGLLOGREL (("GL_ARB_fragment_shader: %d\n", g_GL_ARB_fragment_shader));
-
-        pos = strstr((const char *)str, "GL_ARB_pixel_buffer_object");
-        g_GL_ARB_pixel_buffer_object = pos != NULL;
-        VBOXQGLLOGREL (("GL_ARB_pixel_buffer_object: %d\n", g_GL_ARB_pixel_buffer_object));
-
-        pos = strstr((const char *)str, "GL_ARB_texture_rectangle");
-        g_GL_ARB_texture_rectangle = pos != NULL;
-        VBOXQGLLOGREL (("GL_ARB_texture_rectangle: %d\n", g_GL_ARB_texture_rectangle));
-
-        pos = strstr((const char *)str, "GL_EXT_texture_rectangle");
-        g_GL_EXT_texture_rectangle = pos != NULL;
-        VBOXQGLLOGREL (("GL_EXT_texture_rectangle: %d\n", g_GL_EXT_texture_rectangle));
-
-        pos = strstr((const char *)str, "GL_NV_texture_rectangle");
-        g_GL_NV_texture_rectangle = pos != NULL;
-        VBOXQGLLOGREL (("GL_NV_texture_rectangle: %d\n", g_GL_NV_texture_rectangle));
-
-        pos = strstr((const char *)str, "GL_ARB_texture_non_power_of_two");
-        g_GL_ARB_texture_non_power_of_two = pos != NULL;
-        VBOXQGLLOGREL (("GL_ARB_texture_non_power_of_two: %d\n", g_GL_ARB_texture_non_power_of_two));
-
-        vboxVHWAGlInitExtSupport(*pContext);
-
-        vboxVHWAGlInitFeatureSupport();
+        VBOXQGLLOGREL (("failed to make the context current, treating as unsupported\n"));
     }
 
-    if(!bHasGlContext)
+
+    if(pTmpWidget)
     {
-        pTmpContextHolder->doneCurrent();
+        delete pTmpWidget;
     }
 }
 
