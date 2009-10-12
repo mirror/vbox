@@ -406,14 +406,12 @@ void VBoxVMSettingsDlg::putBackTo()
 
 #ifdef VBOX_WITH_VIDEOHWACCEL
     /* Disable 2D Video Acceleration for non-Windows guests */
-    if(!generalPage->isWindowsOSTypeSelected())
+    if (generalPage && !generalPage->isWindowsOSTypeSelected())
     {
         VBoxVMSettingsDisplay *displayPage =
             qobject_cast <VBoxVMSettingsDisplay*> (mSelector->idToPage (DisplayId));
-        if(displayPage->isAcceleration2DVideoSelected())
-        {
-            mMachine.SetAccelerate2DVideoEnabled(false);
-        }
+        if (displayPage && displayPage->isAcceleration2DVideoSelected())
+            mMachine.SetAccelerate2DVideoEnabled (false);
     }
 #endif
 
@@ -549,7 +547,8 @@ bool VBoxVMSettingsDlg::correlate (QWidget *aPage, QString &aWarning)
             qobject_cast <VBoxVMSettingsGeneral*> (mSelector->idToPage (GeneralId));
         VBoxVMSettingsDisplay *displayPage =
             qobject_cast <VBoxVMSettingsDisplay*> (mSelector->idToPage (DisplayId));
-        if(displayPage->isAcceleration2DVideoSelected() && !generalPage->isWindowsOSTypeSelected())
+        if (generalPage && displayPage &&
+            displayPage->isAcceleration2DVideoSelected() && !generalPage->isWindowsOSTypeSelected())
         {
             aWarning = tr (
                 "you have Video 2D Acceleration enabled. As Video 2D Acceleration "
