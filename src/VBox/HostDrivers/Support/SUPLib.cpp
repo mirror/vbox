@@ -468,6 +468,7 @@ static int supInitFake(PSUPDRVSESSION *ppSession)
         { "RTAssertMsg1",                           0xefef0043 },
         { "RTAssertMsg2",                           0xefef0044 },
         { "RTAssertMsg2V",                          0xefef0045 },
+        { "SUPR0QueryVTCaps",                       0xefef0046 },
     };
 
     /* fake r0 functions. */
