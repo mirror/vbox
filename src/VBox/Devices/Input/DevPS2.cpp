@@ -677,13 +677,11 @@ static void pc_kbd_mouse_event(void *opaque,
     s->mouse_dy -= dy;
     s->mouse_dz += dz;
     s->mouse_dw += dw;
-    /* The issue described above does not affect VBox, and under some
-     * circumstances (which?) we may even wish to send null events to make
-     * mouse integration work. */
     /* In horizontal reporting mode, we may need to send an additional packet
      * for the forth and fifth buttons, as they can't share a packet with a
      * horizontal scroll delta. */
-    if ((s->mouse_buttons & 0x18) != (buttons_state & 0x18))
+    if (   s->mouse_type == 4
+        && (s->mouse_buttons & 0x18) != (buttons_state & 0x18))
         s->mouse_flags |= MOUSE_OUTSTANDING_CLICK;
     s->mouse_buttons = buttons_state;
 
