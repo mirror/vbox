@@ -397,6 +397,12 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
         case MachineState_Restoring:
             pszState = "restoring";
             break;
+        case MachineState_MigratingFrom:
+            if (details == VMINFO_MACHINEREADABLE)
+                pszState = "migratingfrom";
+            else
+                pszState = "migrating from";
+            break;
         default:
             pszState = "unknown";
             break;

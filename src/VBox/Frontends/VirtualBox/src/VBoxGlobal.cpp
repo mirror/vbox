@@ -2641,6 +2641,7 @@ void VBoxGlobal::retranslateUi()
     mMachineStates [KMachineState_Stopping] =   tr ("Stopping", "MachineState");
     mMachineStates [KMachineState_Saving] =     tr ("Saving", "MachineState");
     mMachineStates [KMachineState_Restoring] =  tr ("Restoring", "MachineState");
+    mMachineStates [KMachineState_MigratingFrom] = tr ("Migrating From", "MachineState");
     mMachineStates [KMachineState_Discarding] = tr ("Discarding", "MachineState");
     mMachineStates [KMachineState_SettingUp] =  tr ("Setting Up", "MachineState");
 
@@ -4610,6 +4611,7 @@ void VBoxGlobal::init()
         {KMachineState_Stopping, ":/state_running_16px.png"}, /// @todo (dmik) separate icon?
         {KMachineState_Saving, ":/state_saving_16px.png"},
         {KMachineState_Restoring, ":/state_restoring_16px.png"},
+        {KMachineState_MigratingFrom, ":/state_restoring_16px.png"}, /** @todo Live Migration: New icon? (not really important) */
         {KMachineState_Discarding, ":/state_discarding_16px.png"},
         {KMachineState_SettingUp, ":/settings_16px.png"},
     };
@@ -4631,6 +4633,7 @@ void VBoxGlobal::init()
     mVMStateColors.insert (KMachineState_Stopping,      new QColor (Qt::green));
     mVMStateColors.insert (KMachineState_Saving,        new QColor (Qt::green));
     mVMStateColors.insert (KMachineState_Restoring,     new QColor (Qt::green));
+    mVMStateColors.insert (KMachineState_MigratingFrom, new QColor (Qt::green));
     mVMStateColors.insert (KMachineState_Discarding,    new QColor (Qt::green));
     mVMStateColors.insert (KMachineState_SettingUp,     new QColor (Qt::green));
 

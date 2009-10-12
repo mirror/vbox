@@ -6001,12 +6001,7 @@ HRESULT Machine::saveSettings(int aFlags /*= 0*/)
         mData->m_pMachineConfigFile->strOsType = mUserData->mOSTypeId;
 
         if (    mData->mMachineState == MachineState_Saved
-#ifdef VBOX_WITH_LIVE_MIGRATION /** @todo fix this properly... a new state for indicating migration? */
-             || (   mData->mMachineState == MachineState_Restoring
-                 && !mSSData->mStateFilePath.isEmpty() )
-#else
              || mData->mMachineState == MachineState_Restoring
-#endif
            )
         {
             Assert(!mSSData->mStateFilePath.isEmpty());
@@ -9273,6 +9268,7 @@ bool SessionMachine::hasMatchingUSBFilter (const ComObjPtr<HostUSBDevice> &aDevi
     {
         case MachineState_Starting:
         case MachineState_Restoring:
+        case MachineState_MigratingFrom:
         case MachineState_Paused:
         case MachineState_Running:
             return mUSBController->hasMatchingFilter (aDevice, aMaskedIfs);
@@ -10146,8 +10142,9 @@ HRESULT SessionMachine::lockMedia()
 
     AutoWriteLock alock(this);
 
-    AssertReturn(mData->mMachineState == MachineState_Starting ||
-                  mData->mMachineState == MachineState_Restoring, E_FAIL);
+    AssertReturn(   mData->mMachineState == MachineState_Starting
+                 || mData->mMachineState == MachineState_Restoring
+                 || mData->mMachineState == MachineState_MigratingFrom, E_FAIL);
 
     typedef std::list <ComPtr<IMedium> > MediaList;
     MediaList mediaToCheck;
@@ -10332,10 +10329,13 @@ HRESULT SessionMachine::setMachineState (MachineState_T aMachineState)
 
     /* detect some state transitions */
 
-    if ((oldMachineState == MachineState_Saved &&
-           aMachineState == MachineState_Restoring) ||
-        (oldMachineState < MachineState_Running /* any other OFF state */ &&
-           aMachineState == MachineState_Starting))
+    if (   (   oldMachineState == MachineState_Saved
+            && aMachineState   == MachineState_Restoring)
+        || (   oldMachineState == MachineState_PoweredOff
+            && aMachineState   == MachineState_MigratingFrom)
+        || (   oldMachineState <  MachineState_Running /* any other OFF state */
+            && aMachineState   == MachineState_Starting)
+       )
     {
         /* The EMT thread is about to start */
 
@@ -10344,15 +10344,15 @@ HRESULT SessionMachine::setMachineState (MachineState_T aMachineState)
         /// @todo NEWMEDIA don't let mDVDDrive and other children
         /// change anything when in the Starting/Restoring state
     }
-    else
-    if (oldMachineState >= MachineState_Running &&
-        oldMachineState != MachineState_Discarding &&
-        oldMachineState != MachineState_SettingUp &&
-        aMachineState < MachineState_Running &&
-        /* ignore PoweredOff->Saving->PoweredOff transition when taking a
-         * snapshot */
-        (mSnapshotData.mSnapshot.isNull() ||
-         mSnapshotData.mLastState >= MachineState_Running))
+    else if (   oldMachineState >= MachineState_Running
+             && oldMachineState != MachineState_Discarding
+             && oldMachineState != MachineState_SettingUp
+             && aMachineState < MachineState_Running
+             /* ignore PoweredOff->Saving->PoweredOff transition when taking a
+              * snapshot */
+             && (   mSnapshotData.mSnapshot.isNull()
+                 || mSnapshotData.mLastState >= MachineState_Running)
+            )
     {
         /* The EMT thread has just stopped, unlock attached media. Note that as
          * opposed to locking that is done from Console, we do unlocking here
@@ -10376,10 +10376,10 @@ HRESULT SessionMachine::setMachineState (MachineState_T aMachineState)
             deleteSavedState = true;
         }
     }
-    else
-    if (oldMachineState == MachineState_Saved &&
-        (aMachineState == MachineState_PoweredOff ||
-         aMachineState == MachineState_Aborted))
+    else if (   oldMachineState == MachineState_Saved
+             && (   aMachineState == MachineState_PoweredOff
+                 || aMachineState == MachineState_Aborted)
+            )
     {
         /*
          *  delete the saved state after Console::DiscardSavedState() is called
@@ -10402,8 +10402,10 @@ HRESULT SessionMachine::setMachineState (MachineState_T aMachineState)
         stsFlags |= SaveSTS_CurStateModified;
     }
 
-    if (aMachineState == MachineState_Starting ||
-        aMachineState == MachineState_Restoring)
+    if (   aMachineState == MachineState_Starting
+        || aMachineState == MachineState_Restoring
+        || aMachineState == MachineState_MigratingFrom
+       )
     {
         /* set the current state modified flag to indicate that the current
          * state is no more identical to the state in the
@@ -10415,12 +10417,7 @@ HRESULT SessionMachine::setMachineState (MachineState_T aMachineState)
         }
     }
 
-#ifdef VBOX_WITH_LIVE_MIGRATION /** @todo fix this properly... a new state for indicating migration? */
-    if (   deleteSavedState
-        && !mSSData->mStateFilePath.isNull())
-#else
     if (deleteSavedState)
-#endif
     {
         if (mRemoveSavedState)
         {

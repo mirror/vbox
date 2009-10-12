@@ -4729,9 +4729,10 @@ HRESULT Console::powerUp(IProgress **aProgress, bool aPaused)
      * since we've already started the thread and it is now responsible for
      * any error reporting and appropriate state change! */
 
-    if (   mMachineState == MachineState_Saved
-        || fLiveMigrationTarget)
+    if (mMachineState == MachineState_Saved)
         setMachineState(MachineState_Restoring);
+    else if (fLiveMigrationTarget)
+        setMachineState(MachineState_MigratingFrom);
     else
         setMachineState(MachineState_Starting);
 
@@ -4797,6 +4798,7 @@ HRESULT Console::powerDown(Progress *aProgress /*= NULL*/)
               mMachineState == MachineState_Saving ||
               mMachineState == MachineState_Starting ||
               mMachineState == MachineState_Restoring ||
+              mMachineState == MachineState_MigratingFrom || /** @todo LiveMigration ???*/
               mMachineState == MachineState_Stopping,
               ("Invalid machine state: %s\n", Global::stringifyMachineState(mMachineState)));
 
@@ -4808,9 +4810,11 @@ HRESULT Console::powerDown(Progress *aProgress /*= NULL*/)
      * notifying Console about that. In case of Starting or Restoring,
      * powerUpThread() is calling us on failure, so the VM is already off at
      * that point. */
-    if (!mVMPoweredOff &&
-        (mMachineState == MachineState_Starting ||
-         mMachineState == MachineState_Restoring))
+    if (   !mVMPoweredOff
+        && (   mMachineState == MachineState_Starting
+            || mMachineState == MachineState_Restoring
+            || mMachineState == MachineState_MigratingFrom)
+       )
         mVMPoweredOff = true;
 
     /* go to Stopping state if not already there. Note that we don't go from
@@ -4818,9 +4822,11 @@ HRESULT Console::powerDown(Progress *aProgress /*= NULL*/)
      * set the state to Saved on VMSTATE_TERMINATED. In terms of protecting from
      * inappropriate operations while leaving the lock below, Saving or
      * Restoring should be fine too */
-    if (mMachineState != MachineState_Saving &&
-        mMachineState != MachineState_Restoring &&
-        mMachineState != MachineState_Stopping)
+    if (   mMachineState != MachineState_Saving
+        && mMachineState != MachineState_Restoring
+        && mMachineState != MachineState_MigratingFrom
+        && mMachineState != MachineState_Stopping
+       )
         setMachineState(MachineState_Stopping);
 
     /* ----------------------------------------------------------------------
@@ -5503,7 +5509,9 @@ DECLCALLBACK(void) Console::vmstateChangeCallback(PVM aVM,
              */
             if (   that->mMachineState != MachineState_Stopping
                 && that->mMachineState != MachineState_Saving
-                && that->mMachineState != MachineState_Restoring)
+                && that->mMachineState != MachineState_Restoring
+                && that->mMachineState != MachineState_MigratingFrom
+               )
             {
                 LogFlowFunc(("VM has powered itself off but Console still thinks it is running. Notifying.\n"));
 
@@ -5597,6 +5605,10 @@ DECLCALLBACK(void) Console::vmstateChangeCallback(PVM aVM,
                      * back to Saved (to preserve the saved state file) */
                     that->setMachineState(MachineState_Saved);
                     break;
+                case MachineState_MigratingFrom:
+                    /* Migration failed or was cancelled.  Back to powered off. */
+                    that->setMachineState(MachineState_PoweredOff);
+                    break;
             }
             break;
         }
@@ -5634,6 +5646,7 @@ DECLCALLBACK(void) Console::vmstateChangeCallback(PVM aVM,
                                || that->mMachineState == MachineState_Paused)
                            && aOldState == VMSTATE_POWERING_ON)
                        || (   (   that->mMachineState == MachineState_Restoring
+                               || that->mMachineState == MachineState_MigratingFrom
                                || that->mMachineState == MachineState_Paused)
                            && aOldState == VMSTATE_RESUMING));
 
@@ -6827,8 +6840,10 @@ DECLCALLBACK(int) Console::powerUpThread(RTTHREAD Thread, void *pvUser)
     }
     catch (HRESULT aRC) { rc = aRC; }
 
-    if (console->mMachineState == MachineState_Starting ||
-        console->mMachineState == MachineState_Restoring)
+    if (   console->mMachineState == MachineState_Starting
+        || console->mMachineState == MachineState_Restoring
+        || console->mMachineState == MachineState_MigratingFrom
+       )
     {
         /* We are still in the Starting/Restoring state. This means one of:
          *
