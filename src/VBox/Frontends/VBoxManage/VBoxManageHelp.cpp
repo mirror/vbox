@@ -614,18 +614,18 @@ int errorGetOpt(USAGECATEGORY fUsageCategory, int rc, union RTGETOPTUNION const 
 #endif /* !VBOX_ONLY_DOCS */
 
     if (rc == VINF_GETOPT_NOT_OPTION)
-        return RTPrintf("error: Invalid parameter '%s'", pValueUnion->psz);
+        return RTPrintf("error: Invalid parameter '%s'\n", pValueUnion->psz);
     if (rc > 0)
     {
         if (RT_C_IS_PRINT(rc))
-            return RTPrintf("error: Invalid option -%c", rc);
-        return RTPrintf("error: Invalid option case %i", rc);
+            return RTPrintf("error: Invalid option -%c\n", rc);
+        return RTPrintf("error: Invalid option case %i\n", rc);
     }
     if (rc == VERR_GETOPT_UNKNOWN_OPTION)
         return RTPrintf("error: unknown option: %s\n", pValueUnion->psz);
     if (pValueUnion->pDef)
-        return RTPrintf("error: %s: %Rrs", pValueUnion->pDef->pszLong, rc);
-    return RTPrintf("error: %Rrs", rc);
+        return RTPrintf("error: %s: %Rrs\n", pValueUnion->pDef->pszLong, rc);
+    return RTPrintf("error: %Rrs\n", rc);
 }
 
 /**
