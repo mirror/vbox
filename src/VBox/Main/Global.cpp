@@ -196,6 +196,7 @@ Global::stringifyMachineState(MachineState_T aState)
         case MachineState_Stopping:     return "Stopping";
         case MachineState_Saving:       return "Saving";
         case MachineState_Restoring:    return "Restoring";
+        case MachineState_MigratingFrom:return "MigratingFrom";
         case MachineState_Discarding:   return "Discarding";
         case MachineState_SettingUp:    return "SettingUp";
         default:

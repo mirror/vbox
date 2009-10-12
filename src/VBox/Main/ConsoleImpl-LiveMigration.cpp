@@ -173,19 +173,23 @@ static int migrationTcpReadLine(MigrationState *pState, char *pszBuf, size_t cch
         int rc = RTTcpRead(Sock, &ch, sizeof(ch), NULL);
         if (RT_FAILURE(rc))
         {
+            *pszBuf = '\0';
             LogRel(("Migration: RTTcpRead -> %Rrc while reading string ('%s')\n", rc, pszStart));
             return rc;
         }
         if (    ch == '\n'
             ||  ch == '\0')
+        {
+            *pszBuf = '\0';
             return VINF_SUCCESS;
+        }
         if (cchBuf <= 1)
         {
+            *pszBuf = '\0';
             LogRel(("Migration: String buffer overflow: '%s'\n", pszStart));
             return VERR_BUFFER_OVERFLOW;
         }
         *pszBuf++ = ch;
-        *pszBuf   = '\0';
         cchBuf--;
     }
 }
@@ -196,17 +200,19 @@ static int migrationTcpReadLine(MigrationState *pState, char *pszBuf, size_t cch
  *
  * @returns S_OK on ACK, E_FAIL+setError() on failure or NACK.
  * @param   pState              The live migration source state.
+ * @param   pszWhich            Which ACK is this this?
  * @param   pszNAckMsg          Optional NACK message.
  *
  * @remarks the setError laziness forces this to be a Console member.
  */
 HRESULT
-Console::migrationSrcReadACK(MigrationStateSrc *pState, const char *pszNAckMsg /*= NULL*/)
+Console::migrationSrcReadACK(MigrationStateSrc *pState, const char *pszWhich,
+                             const char *pszNAckMsg /*= NULL*/)
 {
     char szMsg[128];
     int vrc = migrationTcpReadLine(pState, szMsg, sizeof(szMsg));
     if (RT_FAILURE(vrc))
-        return setError(E_FAIL, tr("Failed reading ACK: %Rrc"), vrc);
+        return setError(E_FAIL, tr("Failed reading ACK(%s): %Rrc"), pszWhich, vrc);
     if (strcmp(szMsg, "ACK"))
     {
         if (!strncmp(szMsg, "NACK=", sizeof("NACK=") - 1))
@@ -217,13 +223,13 @@ Console::migrationSrcReadACK(MigrationStateSrc *pState, const char *pszNAckMsg /
             {
                 if (pszNAckMsg)
                 {
-                    LogRel(("Migration: NACK=%Rrc (%d)\n", vrc2, vrc2));
+                    LogRel(("Migration: %s: NACK=%Rrc (%d)\n", pszWhich, vrc2, vrc2));
                     return setError(E_FAIL, pszNAckMsg);
                 }
-                return setError(E_FAIL, "NACK - %Rrc (%d)", vrc2, vrc2);
+                return setError(E_FAIL, "NACK(%s) - %Rrc (%d)", pszWhich, vrc2, vrc2);
             }
         }
-        return setError(E_FAIL, tr("Expected ACK or NACK, got '%s'"), szMsg);
+        return setError(E_FAIL, tr("%s: Expected ACK or NACK, got '%s'"), pszWhich, szMsg);
     }
     return S_OK;
 }
@@ -246,9 +252,11 @@ Console::migrationSrcSubmitCommand(MigrationStateSrc *pState, const char *pszCom
     int vrc = RTTcpWrite(pState->mhSocket, pszCommand, cchCommand);
     if (RT_SUCCESS(vrc))
         vrc = RTTcpWrite(pState->mhSocket, "\n", sizeof("\n") - 1);
+    if (RT_SUCCESS(vrc))
+        vrc = RTTcpFlush(pState->mhSocket);
     if (RT_FAILURE(vrc))
         return setError(E_FAIL, tr("Failed writing command '%s': %Rrc"), pszCommand, vrc);
-    return migrationSrcReadACK(pState);
+    return migrationSrcReadACK(pState, pszCommand);
 }
 
 
@@ -455,6 +463,8 @@ static DECLCALLBACK(int) migrationTcpOpClose(void *pvUser)
     {
         MIGRATIONTCPHDR EofHdr = { MIGRATIONTCPHDR_MAGIC, 0 };
         int rc = RTTcpWrite(pState->mhSocket, &EofHdr, sizeof(EofHdr));
+        if (RT_SUCCESS(rc))
+            rc = RTTcpFlush(pState->mhSocket);
         if (RT_FAILURE(rc))
         {
             LogRel(("Migration/TCP: EOF Header write error: %Rrc\n", rc));
@@ -545,7 +555,7 @@ Console::migrationSrc(MigrationStateSrc *pState)
         return setError(E_FAIL, tr("Failed to send password: %Rrc"), vrc);
 
     /* ACK */
-    hrc = migrationSrcReadACK(pState, tr("Invalid password"));
+    hrc = migrationSrcReadACK(pState, "password", tr("Invalid password"));
     if (FAILED(hrc))
         return hrc;
 
@@ -566,13 +576,16 @@ Console::migrationSrc(MigrationStateSrc *pState)
     if (vrc)
         return setError(E_FAIL, tr("VMR3Migrate -> %Rrc"), vrc);
 
-    hrc = migrationSrcReadACK(pState);
+    hrc = migrationSrcReadACK(pState, "load-complete");
     if (FAILED(hrc))
         return hrc;
 
     /*
      * State fun? Automatic power off?
      */
+    hrc = migrationSrcSubmitCommand(pState, "done");
+    if (FAILED(hrc))
+        return hrc;
 
     return S_OK;
 }
@@ -590,7 +603,12 @@ Console::migrationSrcThreadWrapper(RTTHREAD hThread, void *pvUser)
 {
     MigrationStateSrc *pState = (MigrationStateSrc *)pvUser;
 
-    HRESULT hrc = pState->mptrConsole->migrationSrc(pState);
+    AutoVMCaller autoVMCaller(pState->mptrConsole);
+    HRESULT hrc = autoVMCaller.rc();
+
+    if (SUCCEEDED(hrc))
+        hrc = pState->mptrConsole->migrationSrc(pState);
+
     pState->mptrProgress->notifyComplete(hrc);
 
     AutoWriteLock autoLock(pState->mptrConsole);
@@ -628,8 +646,9 @@ Console::migrationSrcThreadWrapper(RTTHREAD hThread, void *pvUser)
                 case VMSTATE_SUSPENDING_LS:
                 case VMSTATE_SUSPENDING_EXT_LS:
                     pState->mptrConsole->setMachineState(MachineState_Paused);
-                    pState->mptrConsole->Resume(); /** @todo somehow make the VMM report back external pause even on error. */
-                    autoLock.unlock();
+                    /** @todo somehow make the VMM report back external pause even on error. */
+                    autoLock.leave();
+                    VMR3Resume(pState->mpVM);
                     break;
             }
         }
@@ -945,7 +964,9 @@ Console::migrationDstServeConnection(RTSOCKET Sock, void *pvUser)
         }
         else
         {
-            LogRel(("Migration: Unknown command '%s'\n", szCmd));
+            LogRel(("Migration: Unknown command '%s' (%.*Rxs)\n", szCmd, strlen(szCmd), szCmd));
+            vrc = VERR_NOT_IMPLEMENTED;
+            migrationTcpWriteNACK(pState, vrc);
             break;
         }
     }

@@ -1512,6 +1512,7 @@ void VBoxMediaManagerDlg::machineStateChanged (const VBoxMachineStateChangeEvent
         case KMachineState_Saved:
         case KMachineState_Starting:
         case KMachineState_Restoring:
+        case KMachineState_MigratingFrom:
         {
             refreshAll();
             break;

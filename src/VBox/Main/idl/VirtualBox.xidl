@@ -472,7 +472,7 @@
 
   <enum
     name="MachineState"
-    uuid="73bf04d0-7c4f-4684-9abf-d65a9ad74343"
+    uuid="f532545d-9ae7-4402-8b5f-1ea7d778cfc7"
   >
     <desc>
       Virtual machine execution state.
@@ -672,12 +672,17 @@
         after powering it on from the saved execution state.
       </desc>
     </const>
-    <const name="Discarding"            value="11">
+    <const name="MigratingFrom"         value="11">
+      <desc>
+        Migrating the machine state from another host or process.
+      </desc>
+    </const>
+    <const name="Discarding"            value="12">
       <desc>
         Snapshot of the machine is being discarded.
       </desc>
     </const>
-    <const name="SettingUp"             value="12">
+    <const name="SettingUp"             value="13">
       <desc>
         Lengthy setup operation is in progress.
       </desc>
@@ -688,7 +693,7 @@
         Pseudo-state: first online state (for use in relational expressions).
       </desc>
     </const>
-    <const name="LastOnline"  value="10" wsmap="suppress"> <!-- Restoring -->
+    <const name="LastOnline"  value="11" wsmap="suppress"> <!-- Restoring -->
       <desc>
         Pseudo-state: last online state (for use in relational expressions).
       </desc>
@@ -699,7 +704,7 @@
         Pseudo-state: first transient state (for use in relational expressions).
       </desc>
     </const>
-    <const name="LastTransient"  value="12" wsmap="suppress"> <!-- SettingUp -->
+    <const name="LastTransient"  value="13" wsmap="suppress"> <!-- SettingUp -->
       <desc>
         Pseudo-state: last transient state (for use in relational expressions).
       </desc>
