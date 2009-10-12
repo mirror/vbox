@@ -4259,12 +4259,14 @@ VMMR3DECL(int) SSMR3Save(PVM pVM, const char *pszFilename, SSMAFTER enmAfter, PF
  */
 static int ssmR3LiveDoVoteRun(PVM pVM, PSSMHANDLE pSSM, uint32_t uPass)
 {
+    int rcRet = VINF_SUCCESS;
     AssertRC(pSSM->rc);
     pSSM->rc = VINF_SUCCESS;
     pSSM->enmOp = SSMSTATE_LIVE_VOTE;
     for (PSSMUNIT pUnit = pVM->ssm.s.pHead; pUnit; pUnit = pUnit->pNext)
     {
-        if (pUnit->u.Common.pfnLiveVote)
+        if (    pUnit->u.Common.pfnLiveVote
+            &&  !pUnit->fDoneLive)
         {
             int rc;
             switch (pUnit->enmType)
@@ -4292,23 +4294,30 @@ static int ssmR3LiveDoVoteRun(PVM pVM, PSSMHANDLE pSSM, uint32_t uPass)
                 if (rc == VINF_SSM_VOTE_FOR_ANOTHER_PASS)
                 {
                     Log(("ssmR3DoLiveVoteRun: '%s'/#%u -> VINF_SSM_VOTE_FOR_ANOTHER_PASS (pass=%u)\n", pUnit->szName, pUnit->u32Instance, uPass));
-                    return VINF_SSM_VOTE_FOR_ANOTHER_PASS;
+                    rcRet = VINF_SSM_VOTE_FOR_ANOTHER_PASS;
                 }
-
-                /*
-                 * rc is usually VERR_SSM_VOTE_FOR_GIVING_UP here, but we allow
-                 * other status codes for better user feed back.  However, no
-                 * other non-error status is allowed.
-                 */
-                LogRel(("SSM: Error - '%s'/#%u voted %Rrc! (pass=%u)\n", pUnit->szName, pUnit->u32Instance, rc, uPass));
-                AssertMsgReturn(RT_FAILURE(rc), ("%Rrc; '%s'\n", rc, pUnit->szName), pSSM->rc = VERR_IPE_UNEXPECTED_INFO_STATUS);
-                return pSSM->rc = rc;
+                else if (rc == VINF_SSM_VOTE_DONE_DONT_CALL_AGAIN)
+                {
+                    pUnit->fDoneLive = true;
+                    Log(("ssmR3DoLiveVoteRun: '%s'/#%u -> VINF_SSM_VOTE_DONE_DONT_CALL_AGAIN (pass=%u)\n", pUnit->szName, pUnit->u32Instance, uPass));
+                }
+                else
+                {
+                    /*
+                     * rc is usually VERR_SSM_VOTE_FOR_GIVING_UP here, but we allow
+                     * other status codes for better user feed back.  However, no
+                     * other non-error status is allowed.
+                     */
+                    LogRel(("SSM: Error - '%s'/#%u voted %Rrc! (pass=%u)\n", pUnit->szName, pUnit->u32Instance, rc, uPass));
+                    AssertMsgReturn(RT_FAILURE(rc), ("%Rrc; '%s'\n", rc, pUnit->szName), pSSM->rc = VERR_IPE_UNEXPECTED_INFO_STATUS);
+                    return pSSM->rc = rc;
+                }
             }
         }
     }
-
-    LogRel(("SSM: Step 1 completed after pass %u.\n", uPass));
-    return VINF_SUCCESS;
+    if (rcRet == VINF_SUCCESS)
+        LogRel(("SSM: Step 1 completed after pass %u.\n", uPass));
+    return rcRet;
 }
 
 
@@ -4333,7 +4342,8 @@ static int ssmR3LiveDoExecRun(PVM pVM, PSSMHANDLE pSSM, uint32_t uPass)
         /*
          * Skip units without a callback (this is most).
          */
-        if (!pUnit->u.Common.pfnLiveExec)
+        if (   !pUnit->u.Common.pfnLiveExec
+            || pUnit->fDoneLive)
             continue;
         pUnit->offStream = ssmR3StrmTell(&pSSM->Strm);
 
