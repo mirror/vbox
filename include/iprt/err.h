@@ -602,6 +602,8 @@ RTDECL(PCRTCOMERRMSG) RTErrCOMGet(uint32_t rc);
 #define VERR_CALLBACK_RETURN                (-88)
 /** Return instigated by a callback or similar. */
 #define VINF_CALLBACK_RETURN                88
+/** Authentication failure. */
+#define VERR_AUTHENTICATION_FAILURE         (-89)
 /** @} */
 
 
