@@ -196,7 +196,7 @@ typedef SUPREQHDR *PSUPREQHDR;
  * @todo Pending work on next major version change:
  *          - Nothing.
  */
-#define SUPDRV_IOC_VERSION                              0x00100000
+#define SUPDRV_IOC_VERSION                              0x00100001
 
 /** SUP_IOCTL_COOKIE. */
 typedef struct SUPCOOKIE
@@ -1079,6 +1079,28 @@ typedef struct SUPSEMOP
 
 /** @} */
 
+/** @name SUP_IOCTL_VT_CAPS Input.
+ * @{
+ */
+/** Free contious memory. */
+#define SUP_IOCTL_VT_CAPS                               SUP_CTL_CODE_SIZE(26, SUP_IOCTL_VT_CAPS_SIZE)
+#define SUP_IOCTL_VT_CAPS_SIZE                          sizeof(SUPVTCAPS)
+#define SUP_IOCTL_VT_CAPS_SIZE_IN                       sizeof(SUPREQHDR)
+#define SUP_IOCTL_VT_CAPS_SIZE_OUT                      sizeof(SUPVTCAPS)
+typedef struct SUPVTCAPS
+{
+    /** The header. */
+    SUPREQHDR               Hdr;
+    union
+    {
+        struct
+        {
+            /** The VT capability dword. */
+            uint32_t        Caps;
+        } Out;
+    } u;
+} SUPVTCAPS, *PSUPVTCAPS;
+/** @} */
 
 #pragma pack()                          /* paranoia */
 

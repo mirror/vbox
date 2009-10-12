@@ -49,6 +49,8 @@
 #include <VBox/param.h>
 #include <VBox/log.h>
 #include <VBox/err.h>
+#include <VBox/hwacc_svm.h>
+#include <VBox/hwacc_vmx.h>
 #if defined(RT_OS_DARWIN) || defined(RT_OS_SOLARIS) || defined(RT_OS_FREEBSD)
 # include <iprt/crc32.h>
 # include <iprt/net.h>
@@ -1732,6 +1734,20 @@ int VBOXCALL supdrvIOCtl(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION
                     pReq->Hdr.rc = VERR_INVALID_PARAMETER;
                     break;
             }
+            return 0;
+        }
+
+        case SUP_CTL_CODE_NO_SIZE(SUP_IOCTL_VT_CAPS):
+        {
+            /* validate */
+            PSUPVTCAPS pReq = (PSUPVTCAPS)pReqHdr;
+            REQ_CHECK_SIZES(SUP_IOCTL_VT_CAPS);
+            REQ_CHECK_EXPR(SUP_IOCTL_VT_CAPS, pReq->Hdr.cbIn <= SUP_IOCTL_VT_CAPS_SIZE_IN);
+
+            /* execute */
+            pReq->Hdr.rc = SUPR0QueryVTCaps(pSession, &pReq->u.Out.Caps);
+            if (RT_FAILURE(pReq->Hdr.rc))
+                pReq->Hdr.cbOut = sizeof(pReq->Hdr);
             return 0;
         }
 
@@ -3659,6 +3675,103 @@ SUPDECL(int) SUPSemEventMultiWaitNoResume(PSUPDRVSESSION pSession, SUPSEMEVENTMU
 
     SUPR0ObjRelease(pObj, pSession);
     return rc;
+}
+
+
+SUPR0DECL(int) SUPR0QueryVTCaps(PSUPDRVSESSION pSession, uint32_t *pCaps)
+{
+    /*
+     * Input validation.
+     */
+    AssertReturn(SUP_IS_SESSION_VALID(pSession), VERR_INVALID_PARAMETER);
+    AssertReturn(pCaps, VERR_INVALID_POINTER);
+
+    *pCaps = 0;
+
+    if (ASMHasCpuId())
+    {
+        uint32_t u32FeaturesECX;
+        uint32_t u32Dummy;
+        uint32_t u32FeaturesEDX;
+        uint32_t u32VendorEBX, u32VendorECX, u32VendorEDX, u32AMDFeatureEDX, u32AMDFeatureECX;
+        uint64_t val;
+
+        ASMCpuId(0, &u32Dummy, &u32VendorEBX, &u32VendorECX, &u32VendorEDX);
+        ASMCpuId(1, &u32Dummy, &u32Dummy, &u32FeaturesECX, &u32FeaturesEDX);
+        /* Query AMD features. */
+        ASMCpuId(0x80000001, &u32Dummy, &u32Dummy, &u32AMDFeatureECX, &u32AMDFeatureEDX);
+
+        if (    u32VendorEBX == X86_CPUID_VENDOR_INTEL_EBX
+            &&  u32VendorECX == X86_CPUID_VENDOR_INTEL_ECX
+            &&  u32VendorEDX == X86_CPUID_VENDOR_INTEL_EDX
+           )
+        {
+            if (    (u32FeaturesECX & X86_CPUID_FEATURE_ECX_VMX)
+                 && (u32FeaturesEDX & X86_CPUID_FEATURE_EDX_MSR)
+                 && (u32FeaturesEDX & X86_CPUID_FEATURE_EDX_FXSR)
+               )
+            {
+                val = ASMRdMsr(MSR_IA32_FEATURE_CONTROL);
+                /*
+                 * Both the LOCK and VMXON bit must be set; otherwise VMXON will generate a #GP.
+                 * Once the lock bit is set, this MSR can no longer be modified.
+                 */
+                if (   (val & (MSR_IA32_FEATURE_CONTROL_VMXON|MSR_IA32_FEATURE_CONTROL_LOCK))
+                           == (MSR_IA32_FEATURE_CONTROL_VMXON|MSR_IA32_FEATURE_CONTROL_LOCK) /* enabled and locked */
+                    ||  !(val & MSR_IA32_FEATURE_CONTROL_LOCK) /* not enabled, but not locked either */)
+                {
+                    VMX_CAPABILITY vtCaps;
+
+                    *pCaps |= SUPVTCAPS_VT_X;
+
+                    vtCaps.u = ASMRdMsr(MSR_IA32_VMX_PROCBASED_CTLS);
+                    if (vtCaps.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC_USE_SECONDARY_EXEC_CTRL)
+                    {
+                        vtCaps.u = ASMRdMsr(MSR_IA32_VMX_PROCBASED_CTLS2);
+                        if (vtCaps.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC2_EPT)
+                            *pCaps |= SUPVTCAPS_NESTED_PAGING;
+                    }
+                    return VINF_SUCCESS;
+                }
+                else
+                    return VERR_VMX_MSR_LOCKED_OR_DISABLED;
+            }
+            else 
+                return VERR_VMX_NO_VMX;
+        }
+        else
+        if (    u32VendorEBX == X86_CPUID_VENDOR_AMD_EBX
+            &&  u32VendorECX == X86_CPUID_VENDOR_AMD_ECX
+            &&  u32VendorEDX == X86_CPUID_VENDOR_AMD_EDX
+           )
+        {
+            if (   (u32AMDFeatureECX & X86_CPUID_AMD_FEATURE_ECX_SVM)
+                && (u32FeaturesEDX & X86_CPUID_FEATURE_EDX_MSR)
+                && (u32FeaturesEDX & X86_CPUID_FEATURE_EDX_FXSR)
+               )
+            {
+                /* Check if SVM is disabled */
+                val = ASMRdMsr(MSR_K8_VM_CR);
+                if (!(val & MSR_K8_VM_CR_SVM_DISABLE))
+                {
+                    *pCaps |= SUPVTCAPS_AMD_V;
+
+                    /* Query AMD features. */
+                    ASMCpuId(0x8000000A, &u32Dummy, &u32Dummy, &u32Dummy, &u32FeaturesEDX);
+
+                    if (u32FeaturesEDX & AMD_CPUID_SVM_FEATURE_EDX_NESTED_PAGING)
+                        *pCaps |= SUPVTCAPS_NESTED_PAGING;
+
+                    return VINF_SUCCESS;
+                }
+                else
+                    return VERR_SVM_DISABLED;
+            }
+            else
+                return VERR_SVM_NO_SVM;
+        }
+    }
+    return VERR_UNSUPPORTED_CPU;
 }
 
 

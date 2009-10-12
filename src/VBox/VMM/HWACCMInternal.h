@@ -178,17 +178,6 @@ typedef struct
 } HWACCM_CPUINFO;
 typedef HWACCM_CPUINFO *PHWACCM_CPUINFO;
 
-/* VT-x capability qword. */
-typedef union
-{
-    struct
-    {
-        uint32_t        disallowed0;
-        uint32_t        allowed1;
-    } n;
-    uint64_t            u;
-} VMX_CAPABILITY;
-
 typedef enum
 {
     HWACCMPENDINGIO_INVALID = 0,

@@ -292,6 +292,13 @@ typedef SUPVMMR0REQHDR *PSUPVMMR0REQHDR;
 #define SUP_VMMR0_DO_NOP        2
 /** @} */
 
+/** SUPR3QueryVTCaps capability flags
+ * @{
+ */
+#define SUPVTCAPS_AMD_V             RT_BIT(0)
+#define SUPVTCAPS_VT_X              RT_BIT(1)
+#define SUPVTCAPS_NESTED_PAGING     RT_BIT(2)
+/** @} */
 
 /**
  * Request for generic FNSUPR0SERVICEREQHANDLER calls.
@@ -934,6 +941,14 @@ SUPR3DECL(int) SUPR3HardenedLdrLoadAppPriv(const char *pszFilename, PRTLDRMOD ph
 SUPR3DECL(int) SUPR3QueryVTxSupported(void);
 
 
+/**
+ * Return VT-x/AMD-V capabilities
+ *    
+ * @returns VINF_SUCCESS if supported, error code indicating why if not. 
+ * @param   pCaps       Pointer to capability dword (out)
+ */
+SUPR3DECL(int) SUPR3QueryVTCaps(uint32_t *pCaps);
+
 /** @} */
 #endif /* IN_RING3 */
 
@@ -999,6 +1014,7 @@ SUPR0DECL(int) SUPR0PageMapKernel(PSUPDRVSESSION pSession, RTR3PTR pvR3, uint32_
 SUPR0DECL(int) SUPR0PageProtect(PSUPDRVSESSION pSession, RTR3PTR pvR3, RTR0PTR pvR0, uint32_t offSub, uint32_t cbSub, uint32_t fProt);
 SUPR0DECL(int) SUPR0PageFree(PSUPDRVSESSION pSession, RTR3PTR pvR3);
 SUPR0DECL(int) SUPR0GipMap(PSUPDRVSESSION pSession, PRTR3PTR ppGipR3, PRTHCPHYS pHCPhysGip);
+SUPR0DECL(int) SUPR0QueryVTCaps(PSUPDRVSESSION pSession, uint32_t *pCaps);
 SUPR0DECL(int) SUPR0GipUnmap(PSUPDRVSESSION pSession);
 SUPR0DECL(int) SUPR0Printf(const char *pszFormat, ...);
 SUPR0DECL(SUPPAGINGMODE) SUPR0GetPagingMode(void);
