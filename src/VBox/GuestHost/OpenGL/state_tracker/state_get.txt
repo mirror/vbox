@@ -301,7 +301,8 @@ GLint GL_FEEDBACK_BUFFER_TYPE g->feedback.type
 GLint GL_SELECTION_BUFFER_SIZE g->selection.bufferSize
 
 # FBO
-GLint GL_FRAMEBUFFER_BINDING_EXT (g->framebufferobject.framebuffer?g->framebufferobject.framebuffer->id:0)
+GLint GL_FRAMEBUFFER_BINDING_EXT (g->framebufferobject.drawFB?g->framebufferobject.drawFB->id:0)
+GLint GL_READ_FRAMEBUFFER_BINDING (g->framebufferobject.readFB?g->framebufferobject.readFB->id:0)
 GLint GL_RENDERBUFFER_BINDING_EXT (g->framebufferobject.renderbuffer?g->framebufferobject.renderbuffer->id:0)
 
 #CVA

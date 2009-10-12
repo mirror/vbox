@@ -50,6 +50,9 @@ typedef struct {
     GLenum                  readbuffer;
     /*@todo: we don't support drawbufferS yet, so it's a stub*/
     GLenum                  drawbuffer[1];
+#ifdef IN_GUEST
+    GLenum                  status;
+#endif
 } CRFramebufferObject;
 
 typedef struct {
@@ -60,7 +63,7 @@ typedef struct {
 } CRRenderbufferObject;
 
 typedef struct {
-    CRFramebufferObject     *framebuffer;
+    CRFramebufferObject     *readFB, *drawFB;
     CRRenderbufferObject    *renderbuffer;
     CRHashTable             *framebuffers;
     CRHashTable             *renderbuffers;
@@ -87,6 +90,11 @@ DECLEXPORT(void) STATE_APIENTRY crStateFramebufferTexture3DEXT(GLenum target, GL
 DECLEXPORT(void) STATE_APIENTRY crStateFramebufferRenderbufferEXT(GLenum target, GLenum attachment, GLenum renderbuffertarget, GLuint renderbuffer);
 DECLEXPORT(void) STATE_APIENTRY crStateGetFramebufferAttachmentParameterivEXT(GLenum target, GLenum attachment, GLenum pname, GLint *params);
 DECLEXPORT(void) STATE_APIENTRY crStateGenerateMipmapEXT(GLenum target);
+
+#ifdef IN_GUEST
+DECLEXPORT(GLenum) STATE_APIENTRY crStateCheckFramebufferStatusEXT(GLenum target);
+DECLEXPORT(GLenum) STATE_APIENTRY crStateSetFramebufferStatus(GLenum target, GLenum status);
+#endif
 
 #ifdef __cplusplus
 }

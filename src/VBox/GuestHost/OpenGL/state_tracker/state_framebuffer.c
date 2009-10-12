@@ -37,7 +37,8 @@ crStateFramebufferObjectInit(CRContext *ctx)
 {
     CRFramebufferObjectState *fbo = &ctx->framebufferobject;
 
-    fbo->framebuffer = NULL;
+    fbo->readFB = NULL;
+    fbo->drawFB = NULL;
     fbo->renderbuffer = NULL;
     fbo->framebuffers = crAllocHashtable();
     fbo->renderbuffers = crAllocHashtable();
@@ -77,7 +78,8 @@ crStateFramebufferObjectDestroy(CRContext *ctx)
 {
     CRFramebufferObjectState *fbo = &ctx->framebufferobject;
 
-    fbo->framebuffer = NULL;
+    fbo->readFB = NULL;
+    fbo->drawFB = NULL;
     fbo->renderbuffer = NULL;
 
     crFreeHashtable(fbo->framebuffers, crStateFreeFBO);
@@ -109,6 +111,44 @@ crStateBindRenderbufferEXT(GLenum target, GLuint renderbuffer)
     else fbo->renderbuffer = NULL;
 }
 
+static void crStateCheckFBOAttachments(CRFramebufferObject *pFBO, GLuint rbo, GLenum target)
+{
+    CRFBOAttachmentPoint *ap;
+    int u;
+
+    if (!pFBO) 
+        return;
+
+    for (u=0; u<CR_MAX_COLOR_ATTACHMENTS; ++u)
+    {
+        ap = &pFBO->color[u];
+        if (ap->type==GL_RENDERBUFFER_EXT && ap->name==rbo)
+        {
+            crStateFramebufferRenderbufferEXT(target, u+GL_COLOR_ATTACHMENT0_EXT, 0, 0);
+#ifdef IN_GUEST
+            pFBO->status = GL_FRAMEBUFFER_UNDEFINED;
+#endif
+        }
+    }
+
+    ap = &pFBO->depth;
+    if (ap->type==GL_RENDERBUFFER_EXT && ap->name==rbo)
+    {
+        crStateFramebufferRenderbufferEXT(target, GL_DEPTH_ATTACHMENT_EXT, 0, 0);
+#ifdef IN_GUEST
+        pFBO->status = GL_FRAMEBUFFER_UNDEFINED;
+#endif
+    }
+    ap = &pFBO->stencil;
+    if (ap->type==GL_RENDERBUFFER_EXT && ap->name==rbo)
+    {
+        crStateFramebufferRenderbufferEXT(target, GL_STENCIL_ATTACHMENT_EXT, 0, 0);
+#ifdef IN_GUEST
+        pFBO->status = GL_FRAMEBUFFER_UNDEFINED;
+#endif
+    }
+}
+
 DECLEXPORT(void) STATE_APIENTRY
 crStateDeleteRenderbuffersEXT(GLsizei n, const GLuint *renderbuffers)
 {
@@ -132,32 +172,9 @@ crStateDeleteRenderbuffersEXT(GLsizei n, const GLuint *renderbuffers)
                     fbo->renderbuffer = NULL;
                 }
 
-                /* check the attachments of current framebuffer */
-                if (fbo->framebuffer)
-                {
-                    CRFBOAttachmentPoint *ap;
-                    int u;
-
-                    for (u=0; u<CR_MAX_COLOR_ATTACHMENTS; ++u)
-                    {
-                        ap = &fbo->framebuffer->color[u];
-                        if (ap->type==GL_RENDERBUFFER_EXT && ap->name==renderbuffers[i])
-                        {
-                            crStateFramebufferRenderbufferEXT(GL_FRAMEBUFFER_EXT, u+GL_COLOR_ATTACHMENT0_EXT, 0, 0);
-                        }
-                    }
-
-                    ap = &fbo->framebuffer->depth;
-                    if (ap->type==GL_RENDERBUFFER_EXT && ap->name==renderbuffers[i])
-                    {
-                        crStateFramebufferRenderbufferEXT(GL_FRAMEBUFFER_EXT, GL_DEPTH_ATTACHMENT_EXT, 0, 0);
-                    }
-                    ap = &g->framebufferobject.framebuffer->stencil;
-                    if (ap->type==GL_RENDERBUFFER_EXT && ap->name==renderbuffers[i])
-                    {
-                        crStateFramebufferRenderbufferEXT(GL_FRAMEBUFFER_EXT, GL_STENCIL_ATTACHMENT_EXT, 0, 0);
-                    }
-                }
+                /* check the attachments of current framebuffers */
+                crStateCheckFBOAttachments(fbo->readFB, renderbuffers[i], GL_READ_FRAMEBUFFER);
+                crStateCheckFBOAttachments(fbo->drawFB, renderbuffers[i], GL_DRAW_FRAMEBUFFER);
 
                 crHashtableDelete(fbo->renderbuffers, renderbuffers[i], crStateFreeRBO);
             }
@@ -237,6 +254,10 @@ static void crStateInitFrameBuffer(CRFramebufferObject *fbo)
 
     fbo->readbuffer = GL_COLOR_ATTACHMENT0_EXT;
     fbo->drawbuffer[0] = GL_COLOR_ATTACHMENT0_EXT;
+
+#ifdef IN_GUEST
+    fbo->status = GL_FRAMEBUFFER_UNDEFINED;
+#endif
 }
 
 static GLboolean crStateGetFBOAttachmentPoint(CRFramebufferObject *fb, GLenum attachment, CRFBOAttachmentPoint **ap)
@@ -265,24 +286,44 @@ crStateBindFramebufferEXT(GLenum target, GLuint framebuffer)
 {
     CRContext *g = GetCurrentContext();
     CRFramebufferObjectState *fbo = &g->framebufferobject;
+    CRFramebufferObject *pFBO=NULL;
 
     CRSTATE_FBO_CHECKERR(g->current.inBeginEnd, GL_INVALID_OPERATION, "called in begin/end");
-    CRSTATE_FBO_CHECKERR(target!=GL_FRAMEBUFFER_EXT, GL_INVALID_ENUM, "invalid target");
+    CRSTATE_FBO_CHECKERR(((target!=GL_FRAMEBUFFER_EXT) && (target!=GL_READ_FRAMEBUFFER) && (target!=GL_DRAW_FRAMEBUFFER)),
+                         GL_INVALID_ENUM, "invalid target");
 
     if (framebuffer)
     {
-        fbo->framebuffer = (CRFramebufferObject*) crHashtableSearch(fbo->framebuffers, framebuffer);
-        if (!fbo->framebuffer)
+        pFBO = (CRFramebufferObject*) crHashtableSearch(fbo->framebuffers, framebuffer);
+        if (!pFBO)
         {
-            fbo->framebuffer = (CRFramebufferObject*) crCalloc(sizeof(CRFramebufferObject));
-            CRSTATE_FBO_CHECKERR(!fbo->framebuffer, GL_OUT_OF_MEMORY, "glBindFramebufferEXT");
-            fbo->framebuffer->id = framebuffer;
-            fbo->framebuffer->hwid = framebuffer;
-            crStateInitFrameBuffer(fbo->framebuffer);
-            crHashtableAdd(fbo->framebuffers, framebuffer, fbo->framebuffer);
+            pFBO = (CRFramebufferObject*) crCalloc(sizeof(CRFramebufferObject));
+            CRSTATE_FBO_CHECKERR(!pFBO, GL_OUT_OF_MEMORY, "glBindFramebufferEXT");
+            pFBO->id = framebuffer;
+            pFBO->hwid = framebuffer;
+            crStateInitFrameBuffer(pFBO);
+            crHashtableAdd(fbo->framebuffers, framebuffer, pFBO);
         }
     }
-    else fbo->framebuffer = NULL;
+
+    /* @todo: http://www.opengl.org/registry/specs/ARB/framebuffer_object.txt 
+     * FBO status might change when binding a different FBO here...but I doubt it happens.
+     * So no status reset here until a proper check.
+     */
+
+    switch (target)
+    {
+        case GL_FRAMEBUFFER_EXT:
+            fbo->readFB = pFBO;
+            fbo->drawFB = pFBO;
+            break;
+        case GL_READ_FRAMEBUFFER:
+            fbo->readFB = pFBO;
+            break;
+        case GL_DRAW_FRAMEBUFFER:
+            fbo->drawFB = pFBO;
+            break;
+    }
 }
 
 DECLEXPORT(void) STATE_APIENTRY
@@ -303,9 +344,13 @@ crStateDeleteFramebuffersEXT(GLsizei n, const GLuint *framebuffers)
             fb = (CRFramebufferObject*) crHashtableSearch(fbo->framebuffers, framebuffers[i]);
             if (fb)
             {
-                if (fbo->framebuffer==fb)
+                if (fbo->readFB==fb)
                 {
-                    fbo->framebuffer = NULL;
+                    fbo->readFB = NULL;
+                }
+                if (fbo->drawFB==fb)
+                {
+                    fbo->drawFB = NULL;
                 }
                 crHashtableDelete(fbo->framebuffers, framebuffers[i], crStateFreeFBO);
             }
@@ -335,14 +380,17 @@ static void crStateFramebufferTextureCheck(GLenum target, GLenum attachment, GLe
 {
     CRContext *g = GetCurrentContext();
     CRFramebufferObjectState *fbo = &g->framebufferobject;
+    CRFramebufferObject *pFBO;
     GLuint maxtexsizelog2;
 
     *failed = GL_TRUE;
 
     CRSTATE_FBO_CHECKERR(g->current.inBeginEnd, GL_INVALID_OPERATION, "called in begin/end");
-    CRSTATE_FBO_CHECKERR(target!=GL_FRAMEBUFFER_EXT, GL_INVALID_ENUM, "invalid target");
-    CRSTATE_FBO_CHECKERR(!fbo->framebuffer, GL_INVALID_OPERATION, "no fbo bound");
-    CRSTATE_FBO_CHECKERR(!crStateGetFBOAttachmentPoint(fbo->framebuffer, attachment, ap), GL_INVALID_ENUM, "invalid attachment");
+    CRSTATE_FBO_CHECKERR(((target!=GL_FRAMEBUFFER_EXT) && (target!=GL_READ_FRAMEBUFFER) && (target!=GL_DRAW_FRAMEBUFFER)),
+                         GL_INVALID_ENUM, "invalid target");
+    pFBO = GL_READ_FRAMEBUFFER==target ? fbo->readFB : fbo->drawFB;
+    CRSTATE_FBO_CHECKERR(!pFBO, GL_INVALID_OPERATION, "no fbo bound");
+    CRSTATE_FBO_CHECKERR(!crStateGetFBOAttachmentPoint(pFBO, attachment, ap), GL_INVALID_ENUM, "invalid attachment");
 
     if (!texture)
     {
@@ -389,6 +437,13 @@ static void crStateFramebufferTextureCheck(GLenum target, GLenum attachment, GLe
     CRSTATE_FBO_CHECKERR(level>maxtexsizelog2, GL_INVALID_VALUE, "level too big");
 
     *failed = GL_FALSE;
+
+#ifdef IN_GUEST
+    if ((*ap)->type!=GL_TEXTURE || (*ap)->name!=texture || (*ap)->level!=level)
+    {
+        pFBO->status = GL_FRAMEBUFFER_UNDEFINED;
+    }
+#endif
 }
 
 DECLEXPORT(void) STATE_APIENTRY
@@ -480,16 +535,25 @@ crStateFramebufferRenderbufferEXT(GLenum target, GLenum attachment, GLenum rende
 {
     CRContext *g = GetCurrentContext();
     CRFramebufferObjectState *fbo = &g->framebufferobject;
+    CRFramebufferObject *pFBO;
     CRFBOAttachmentPoint *ap;
     CRRenderbufferObject *rb;
 
     CRSTATE_FBO_CHECKERR(g->current.inBeginEnd, GL_INVALID_OPERATION, "called in begin/end");
-    CRSTATE_FBO_CHECKERR(target!=GL_FRAMEBUFFER_EXT, GL_INVALID_ENUM, "invalid target");
-    CRSTATE_FBO_CHECKERR(!fbo->framebuffer, GL_INVALID_OPERATION, "no fbo bound");
-    CRSTATE_FBO_CHECKERR(!crStateGetFBOAttachmentPoint(fbo->framebuffer, attachment, &ap), GL_INVALID_ENUM, "invalid attachment");
+    CRSTATE_FBO_CHECKERR(((target!=GL_FRAMEBUFFER_EXT) && (target!=GL_READ_FRAMEBUFFER) && (target!=GL_DRAW_FRAMEBUFFER)),
+                         GL_INVALID_ENUM, "invalid target");
+    pFBO = GL_READ_FRAMEBUFFER==target ? fbo->readFB : fbo->drawFB;
+    CRSTATE_FBO_CHECKERR(!pFBO, GL_INVALID_OPERATION, "no fbo bound");
+    CRSTATE_FBO_CHECKERR(!crStateGetFBOAttachmentPoint(pFBO, attachment, &ap), GL_INVALID_ENUM, "invalid attachment");
 
     if (!renderbuffer)
     {
+#ifdef IN_GUEST
+        if (ap->type!=GL_NONE)
+        {
+            pFBO->status = GL_FRAMEBUFFER_UNDEFINED;
+        }
+#endif
         crStateInitFBOAttachmentPoint(ap);
         return;
     }
@@ -497,6 +561,12 @@ crStateFramebufferRenderbufferEXT(GLenum target, GLenum attachment, GLenum rende
     rb = (CRRenderbufferObject*) crHashtableSearch(fbo->renderbuffers, renderbuffer);
     CRSTATE_FBO_CHECKERR(!rb, GL_INVALID_OPERATION, "rb doesn't exist");
 
+#ifdef IN_GUEST
+        if (ap->type!=GL_RENDERBUFFER_EXT || ap->name!=renderbuffer)
+        {
+            pFBO->status = GL_FRAMEBUFFER_UNDEFINED;
+        }
+#endif
     crStateInitFBOAttachmentPoint(ap);
     ap->type = GL_RENDERBUFFER_EXT;
     ap->name = renderbuffer;
@@ -507,12 +577,15 @@ crStateGetFramebufferAttachmentParameterivEXT(GLenum target, GLenum attachment, 
 {
     CRContext *g = GetCurrentContext();
     CRFramebufferObjectState *fbo = &g->framebufferobject;
+    CRFramebufferObject *pFBO;
     CRFBOAttachmentPoint *ap;
 
     CRSTATE_FBO_CHECKERR(g->current.inBeginEnd, GL_INVALID_OPERATION, "called in begin/end");
-    CRSTATE_FBO_CHECKERR(target!=GL_FRAMEBUFFER_EXT, GL_INVALID_ENUM, "invalid target");
-    CRSTATE_FBO_CHECKERR(!fbo->framebuffer, GL_INVALID_OPERATION, "no fbo bound");
-    CRSTATE_FBO_CHECKERR(!crStateGetFBOAttachmentPoint(fbo->framebuffer, attachment, &ap), GL_INVALID_ENUM, "invalid attachment");
+    CRSTATE_FBO_CHECKERR(((target!=GL_FRAMEBUFFER_EXT) && (target!=GL_READ_FRAMEBUFFER) && (target!=GL_DRAW_FRAMEBUFFER)),
+                         GL_INVALID_ENUM, "invalid target");
+    pFBO = GL_READ_FRAMEBUFFER==target ? fbo->readFB : fbo->drawFB;
+    CRSTATE_FBO_CHECKERR(!pFBO, GL_INVALID_OPERATION, "no fbo bound");
+    CRSTATE_FBO_CHECKERR(!crStateGetFBOAttachmentPoint(pFBO, attachment, &ap), GL_INVALID_ENUM, "invalid attachment");
 
     switch (pname)
     {
@@ -633,18 +706,41 @@ crStateFramebufferObjectSwitch(CRContext *from, CRContext *to)
         crHashtableWalk(to->framebufferobject.renderbuffers, crStateSyncRenderbuffersCB, NULL);
         crHashtableWalk(to->framebufferobject.framebuffers, crStateSyncFramebuffersCB, to);
 
-        diff_api.BindFramebufferEXT(GL_FRAMEBUFFER_EXT, to->framebufferobject.framebuffer?
-            to->framebufferobject.framebuffer->hwid:0);
+        if (to->framebufferobject.drawFB==to->framebufferobject.readFB)
+        {
+            diff_api.BindFramebufferEXT(GL_FRAMEBUFFER_EXT, to->framebufferobject.drawFB?
+                to->framebufferobject.drawFB->hwid:0);
+        }
+        else
+        {
+            diff_api.BindFramebufferEXT(GL_DRAW_FRAMEBUFFER, to->framebufferobject.drawFB?
+                to->framebufferobject.drawFB->hwid:0);
+
+            diff_api.BindFramebufferEXT(GL_READ_FRAMEBUFFER, to->framebufferobject.readFB?
+                to->framebufferobject.readFB->hwid:0);
+        }
 
         diff_api.BindRenderbufferEXT(GL_RENDERBUFFER_EXT, to->framebufferobject.renderbuffer?
             to->framebufferobject.renderbuffer->hwid:0);
     } 
     else 
     {
-        if (to->framebufferobject.framebuffer!=from->framebufferobject.framebuffer)
+        if (to->framebufferobject.drawFB!=from->framebufferobject.drawFB
+            || to->framebufferobject.readFB!=from->framebufferobject.readFB)
         {
-            diff_api.BindFramebufferEXT(GL_FRAMEBUFFER_EXT, to->framebufferobject.framebuffer?
-                to->framebufferobject.framebuffer->hwid:0);
+            if (to->framebufferobject.drawFB==to->framebufferobject.readFB)
+            {
+                diff_api.BindFramebufferEXT(GL_FRAMEBUFFER_EXT, to->framebufferobject.drawFB?
+                    to->framebufferobject.drawFB->hwid:0);
+            }
+            else
+            {
+                diff_api.BindFramebufferEXT(GL_DRAW_FRAMEBUFFER, to->framebufferobject.drawFB?
+                    to->framebufferobject.drawFB->hwid:0);
+
+                diff_api.BindFramebufferEXT(GL_READ_FRAMEBUFFER, to->framebufferobject.readFB?
+                    to->framebufferobject.readFB->hwid:0);
+            }
         }
 
         if (to->framebufferobject.renderbuffer!=from->framebufferobject.renderbuffer)
@@ -670,3 +766,52 @@ DECLEXPORT(GLuint) STATE_APIENTRY crStateGetRenderbufferHWID(GLuint id)
 
     return pRBO ? pRBO->hwid : 0;
 }
+
+#ifdef IN_GUEST
+DECLEXPORT(GLenum) STATE_APIENTRY crStateCheckFramebufferStatusEXT(GLenum target)
+{
+    GLenum status = GL_FRAMEBUFFER_UNDEFINED;
+    CRContext *g = GetCurrentContext();
+    CRFramebufferObjectState *fbo = &g->framebufferobject;
+    CRFramebufferObject *pFBO=NULL;
+
+    switch (target)
+    {
+        case GL_FRAMEBUFFER_EXT:
+            pFBO = fbo->drawFB;
+            break;
+        case GL_READ_FRAMEBUFFER:
+            pFBO = fbo->readFB;
+            break;
+        case GL_DRAW_FRAMEBUFFER:
+            pFBO = fbo->drawFB;
+            break;
+    }
+
+    if (pFBO) status = pFBO->status;
+
+    return status;
+}
+
+DECLEXPORT(GLenum) STATE_APIENTRY crStateSetFramebufferStatus(GLenum target, GLenum status)
+{
+    CRContext *g = GetCurrentContext();
+    CRFramebufferObjectState *fbo = &g->framebufferobject;
+    CRFramebufferObject *pFBO=NULL;
+
+    switch (target)
+    {
+        case GL_FRAMEBUFFER_EXT:
+            pFBO = fbo->drawFB;
+            break;
+        case GL_READ_FRAMEBUFFER:
+            pFBO = fbo->readFB;
+            break;
+        case GL_DRAW_FRAMEBUFFER:
+            pFBO = fbo->drawFB;
+            break;
+    }
+
+    if (pFBO) pFBO->status = status;
+}
+#endif

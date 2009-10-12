@@ -1027,7 +1027,9 @@ int32_t crStateSaveContext(CRContext *pContext, PSSMHANDLE pSSM)
     rc = SSMR3PutU32(pSSM, ui32);
     AssertRCReturn(rc, rc);
     crHashtableWalk(pContext->framebufferobject.renderbuffers, crStateSaveRenderbuffersCB, pSSM);
-    rc = SSMR3PutU32(pSSM, pContext->framebufferobject.framebuffer?pContext->framebufferobject.framebuffer->id:0);
+    rc = SSMR3PutU32(pSSM, pContext->framebufferobject.drawFB?pContext->framebufferobject.drawFB->id:0);
+    AssertRCReturn(rc, rc);
+    rc = SSMR3PutU32(pSSM, pContext->framebufferobject.readFB?pContext->framebufferobject.readFB->id:0);
     AssertRCReturn(rc, rc);
     rc = SSMR3PutU32(pSSM, pContext->framebufferobject.renderbuffer?pContext->framebufferobject.renderbuffer->id:0);
     AssertRCReturn(rc, rc);
@@ -1554,8 +1556,13 @@ int32_t crStateLoadContext(CRContext *pContext, PSSMHANDLE pSSM)
 
     rc = SSMR3GetU32(pSSM, &ui);
     AssertRCReturn(rc, rc);
-    pContext->framebufferobject.framebuffer = ui==0 ? NULL 
-                                                    : crHashtableSearch(pContext->framebufferobject.framebuffers, ui);
+    pContext->framebufferobject.drawFB = ui==0 ? NULL 
+                                               : crHashtableSearch(pContext->framebufferobject.framebuffers, ui);
+
+    rc = SSMR3GetU32(pSSM, &ui);
+    AssertRCReturn(rc, rc);
+    pContext->framebufferobject.readFB = ui==0 ? NULL 
+                                               : crHashtableSearch(pContext->framebufferobject.framebuffers, ui);
 
     rc = SSMR3GetU32(pSSM, &ui);
     AssertRCReturn(rc, rc);

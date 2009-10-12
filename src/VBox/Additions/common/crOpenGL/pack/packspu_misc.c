@@ -230,10 +230,3 @@ packspu_AreProgramsResidentNV( GLsizei n, const GLuint * ids,
 
     return return_val;
 }
-
-void PACKSPU_APIENTRY
-packspu_BindFramebufferEXT(GLenum target, GLuint framebuffer)
-{
-    crStateBindFramebufferEXT(target, framebuffer);
-    crPackBindFramebufferEXT(target, framebuffer);
-}
