@@ -848,7 +848,7 @@ int pdmacFileAioMgrNormal(RTTHREAD ThreadSelf, void *pvUser)
                     AssertMsg(   RT_SUCCESS(rcReq)
                               && (   (cbTransfered == pTask->DataSeg.cbSeg)
                                   || (pTask->fBounceBuffer)),
-                              ("Task didn't completed successfully (rc=%Rrc) or was incomplete (cbTransfered=%u)\n", rc, cbTransfered));
+                              ("Task didn't completed successfully (rc=%Rrc) or was incomplete (cbTransfered=%u)\n", rcReq, cbTransfered));
 
                     if (pTask->fPrefetch)
                     {
