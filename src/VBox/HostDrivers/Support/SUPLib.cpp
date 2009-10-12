@@ -2090,7 +2090,7 @@ SUPR3DECL(int) SUPR3QueryVTCaps(uint32_t *pCaps)
     if (RT_SUCCESS(rc))
     {
         rc = Req.Hdr.rc;
-        if (RT_SUCCESS(rc)
+        if (RT_SUCCESS(rc))
             *pCaps = Req.u.Out.Caps;
     }
     return rc;
