@@ -404,6 +404,19 @@ void VBoxVMSettingsDlg::putBackTo()
         generalPage->is64BitOSTypeSelected() && !systemPage->isHWVirtExEnabled())
         mMachine.SetHWVirtExEnabled (true);
 
+#ifdef VBOX_WITH_VIDEOHWACCEL
+    /* Disable 2D Video Acceleration for non-Windows guests */
+    if(!generalPage->isWindowsOSTypeSelected())
+    {
+        VBoxVMSettingsDisplay *displayPage =
+            qobject_cast <VBoxVMSettingsDisplay*> (mSelector->idToPage (DisplayId));
+        if(displayPage->isAcceleration2DVideoSelected())
+        {
+            mMachine.SetAccelerate2DVideoEnabled(false);
+        }
+    }
+#endif
+
     /* Clear the "GUI_FirstRun" extra data key in case if the boot order
      * and/or disk configuration were changed */
     if (mResetFirstRunFlag)
@@ -527,6 +540,24 @@ bool VBoxVMSettingsDlg::correlate (QWidget *aPage, QString &aWarning)
         }
 #endif
     }
+
+#ifdef VBOX_WITH_VIDEOHWACCEL
+    /* 2D Video Acceleration is available for Windows guests only */
+    if (aPage == mSelector->idToPage (DisplayId))
+    {
+        VBoxVMSettingsGeneral *generalPage =
+            qobject_cast <VBoxVMSettingsGeneral*> (mSelector->idToPage (GeneralId));
+        VBoxVMSettingsDisplay *displayPage =
+            qobject_cast <VBoxVMSettingsDisplay*> (mSelector->idToPage (DisplayId));
+        if(displayPage->isAcceleration2DVideoSelected() && !generalPage->isWindowsOSTypeSelected())
+        {
+            aWarning = tr (
+                "you have Video 2D Acceleration enabled. As Video 2D Acceleration "
+                "is supported for Windows guests only, this feature will be disabled.");
+            return true;
+        }
+    }
+#endif
 
     return true;
 }

@@ -38,6 +38,10 @@ public:
 
     bool is64BitOSTypeSelected() const;
 
+#ifdef VBOX_WITH_VIDEOHWACCEL
+    bool isWindowsOSTypeSelected() const;
+#endif
+
 protected:
 
     void getFrom (const CMachine &aMachine);

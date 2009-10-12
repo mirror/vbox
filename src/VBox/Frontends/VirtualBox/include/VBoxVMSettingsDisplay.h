@@ -36,6 +36,10 @@ public:
 
     VBoxVMSettingsDisplay();
 
+#ifdef VBOX_WITH_VIDEOHWACCEL
+    bool isAcceleration2DVideoSelected() const;
+#endif
+
 protected:
 
     void getFrom (const CMachine &aMachine);

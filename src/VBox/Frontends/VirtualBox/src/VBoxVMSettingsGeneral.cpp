@@ -55,6 +55,13 @@ bool VBoxVMSettingsGeneral::is64BitOSTypeSelected() const
     return mOSTypeSelector->type().GetIs64Bit();
 }
 
+#ifdef VBOX_WITH_VIDEOHWACCEL
+bool VBoxVMSettingsGeneral::isWindowsOSTypeSelected() const
+{
+    return mOSTypeSelector->type().GetFamilyId() == "Windows";
+}
+#endif
+
 void VBoxVMSettingsGeneral::getFrom (const CMachine &aMachine)
 {
     mMachine = aMachine;
