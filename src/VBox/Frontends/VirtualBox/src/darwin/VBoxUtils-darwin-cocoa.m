@@ -35,7 +35,7 @@ NativeWindowRef darwinToNativeWindowImpl (NativeViewRef aView)
     NativeWindowRef window = NULL;
     if (aView)
         window = [aView window];
-    
+
     [pool release];
     return window;
 }
@@ -46,7 +46,7 @@ NativeViewRef darwinToNativeViewImpl (NativeWindowRef aWindow)
 
     NativeViewRef view = NULL;
     if (aWindow)
-        view = [aWindow contentView];   
+        view = [aWindow contentView];
 
     [pool release];
     return view;
