@@ -628,6 +628,8 @@ Console::migrationSrcThreadWrapper(RTTHREAD hThread, void *pvUser)
                 case VMSTATE_SUSPENDING_LS:
                 case VMSTATE_SUSPENDING_EXT_LS:
                     pState->mptrConsole->setMachineState(MachineState_Paused);
+                    pState->mptrConsole->Resume(); /** @todo somehow make the VMM report back external pause even on error. */
+                    autoLock.unlock();
                     break;
             }
         }
