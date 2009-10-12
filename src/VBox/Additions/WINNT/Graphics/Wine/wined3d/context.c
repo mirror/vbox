@@ -461,7 +461,7 @@ static void context_apply_fbo_state(struct wined3d_context *context)
         context_bind_fbo(context, GL_FRAMEBUFFER, NULL);
     }
 
-    context_check_fbo_status(context);
+    /*context_check_fbo_status(context);*/
 }
 
 /* Context activation is done by the caller. */
