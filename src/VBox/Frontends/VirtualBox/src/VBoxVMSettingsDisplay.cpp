@@ -99,6 +99,13 @@ VBoxVMSettingsDisplay::VBoxVMSettingsDisplay()
     retranslateUi();
 }
 
+#ifdef VBOX_WITH_VIDEOHWACCEL
+bool VBoxVMSettingsDisplay::isAcceleration2DVideoSelected() const
+{
+    return mCb2DVideo->isChecked();
+}
+#endif
+
 void VBoxVMSettingsDisplay::getFrom (const CMachine &aMachine)
 {
     mMachine = aMachine;
