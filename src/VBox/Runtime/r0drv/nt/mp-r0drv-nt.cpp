@@ -350,7 +350,8 @@ static VOID rtMpNtPokeCpuDummy(IN PKDPC Dpc, IN PVOID DeferredContext, IN PVOID 
 #ifndef IPRT_TARGET_NT4
 int rtMpSendIpiVista(RTCPUID idCpu)
 {
-    g_pfnrtNtHalRequestIpi(1 << idCpu);
+    g_pfnrtKeIpiGenericCall(rtMpIpiGenericCall, 0);
+////    g_pfnrtNtHalRequestIpi(1 << idCpu);
     return VINF_SUCCESS;
 }
 
