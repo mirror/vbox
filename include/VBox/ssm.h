@@ -169,6 +169,8 @@ typedef FNSSMDEVLIVEEXEC *PFNSSMDEVLIVEEXEC;
  * @returns VBox status code.
  * @retval  VINF_SUCCESS if done.
  * @retval  VINF_SSM_VOTE_FOR_ANOTHER_PASS if another pass is needed.
+ * @retval  VINF_SSM_VOTE_DONE_DONT_CALL_AGAIN if the live saving of the unit is
+ *          done and there is not need calling it again before the final pass.
  * @retval  VERR_SSM_VOTE_FOR_GIVING_UP if its time to give up.
  *
  * @param   pDevIns         Device instance of the device which registered the data unit.
@@ -294,6 +296,8 @@ typedef FNSSMDRVLIVEEXEC *PFNSSMDRVLIVEEXEC;
  * @returns VBox status code.
  * @retval  VINF_SUCCESS if done.
  * @retval  VINF_SSM_VOTE_FOR_ANOTHER_PASS if another pass is needed.
+ * @retval  VINF_SSM_VOTE_DONE_DONT_CALL_AGAIN if the live saving of the unit is
+ *          done and there is not need calling it again before the final pass.
  * @retval  VERR_SSM_VOTE_FOR_GIVING_UP if its time to give up.
  *
  * @param   pDrvIns         Driver instance of the device which registered the
@@ -420,6 +424,8 @@ typedef FNSSMINTLIVEEXEC *PFNSSMINTLIVEEXEC;
  * @returns VBox status code.
  * @retval  VINF_SUCCESS if done.
  * @retval  VINF_SSM_VOTE_FOR_ANOTHER_PASS if another pass is needed.
+ * @retval  VINF_SSM_VOTE_DONE_DONT_CALL_AGAIN if the live saving of the unit is
+ *          done and there is not need calling it again before the final pass.
  * @retval  VERR_SSM_VOTE_FOR_GIVING_UP if its time to give up.
  *
  * @param   pVM             VM Handle.
@@ -540,7 +546,13 @@ typedef FNSSMEXTLIVEEXEC *PFNSSMEXTLIVEEXEC;
  * The vote stops once a unit has vetoed the decision, so don't rely upon this
  * being called every time.
  *
- * @returns true if done, false if there is more that needs to be saved first.
+ * @returns VBox status code.
+ * @retval  VINF_SUCCESS if done.
+ * @retval  VINF_SSM_VOTE_FOR_ANOTHER_PASS if another pass is needed.
+ * @retval  VINF_SSM_VOTE_DONE_DONT_CALL_AGAIN if the live saving of the unit is
+ *          done and there is not need calling it again before the final pass.
+ * @retval  VERR_SSM_VOTE_FOR_GIVING_UP if its time to give up.
+ *
  * @param   pSSM            SSM operation handle.
  * @param   pvUser          User argument.
  * @thread  Any.

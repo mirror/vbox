@@ -66,6 +66,9 @@ typedef struct SSMUNIT
      * The flag is used to determin whether there is need for a call to
      * done or not. */
     bool                    fCalled;
+    /** Finished its live part.
+     * This is used to handle VERR_SSM_VOTE_FOR_GIVING_UP.  */
+    bool                    fDoneLive;
     /** Callback interface type. */
     SSMUNITTYPE             enmType;
     /** Type specific data. */

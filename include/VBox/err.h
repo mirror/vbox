@@ -568,31 +568,33 @@
 #define VERR_SSM_GCPTR_OVERFLOW                 (-1850)
 /** Vote for another pass.  */
 #define VINF_SSM_VOTE_FOR_ANOTHER_PASS          1851
+/** Vote for done tell SSM not to call again until the final pass. */
+#define VINF_SSM_VOTE_DONE_DONT_CALL_AGAIN      1852
 /** Vote for giving up.  */
-#define VERR_SSM_VOTE_FOR_GIVING_UP             (-1852)
+#define VERR_SSM_VOTE_FOR_GIVING_UP             (-1853)
 /** Giving up a live snapshot/migration attempt because of too many passes. */
-#define VERR_SSM_TOO_MANY_PASSES                (-1853)
+#define VERR_SSM_TOO_MANY_PASSES                (-1854)
 /** Giving up a live snapshot/migration attempt because the state grew to
  * big. */
-#define VERR_SSM_STATE_GREW_TOO_BIG             (-1854)
+#define VERR_SSM_STATE_GREW_TOO_BIG             (-1855)
 /** Giving up a live snapshot attempt because we're low on disk space.  */
-#define VERR_SSM_LOW_ON_DISK_SPACE              (-1855)
+#define VERR_SSM_LOW_ON_DISK_SPACE              (-1856)
 /** The operation was cancelled. */
-#define VERR_SSM_CANCELLED                      (-1856)
+#define VERR_SSM_CANCELLED                      (-1857)
 /** Nothing that can be cancelled.  */
-#define VERR_SSM_NO_PENDING_OPERATION           (-1857)
+#define VERR_SSM_NO_PENDING_OPERATION           (-1858)
 /** The operation has already been cancelled. */
-#define VERR_SSM_ALREADY_CANCELLED              (-1858)
+#define VERR_SSM_ALREADY_CANCELLED              (-1859)
 /** The machine was powered off while saving. */
-#define VERR_SSM_LIVE_POWERED_OFF               (-1859)
+#define VERR_SSM_LIVE_POWERED_OFF               (-1860)
 /** The live snapshot/migration operation was aborted because of a guru
  *  meditation. */
-#define VERR_SSM_LIVE_GURU_MEDITATION           (-1860)
+#define VERR_SSM_LIVE_GURU_MEDITATION           (-1861)
 /** The live snapshot/migration operation was aborted because of a fatal runtime
  *  error. */
-#define VERR_SSM_LIVE_FATAL_ERROR               (-1861)
+#define VERR_SSM_LIVE_FATAL_ERROR               (-1862)
 /** The VM was suspended while saving, don't resume execution. */
-#define VINF_SSM_LIVE_SUSPENDED                  1862
+#define VINF_SSM_LIVE_SUSPENDED                  1863
 /** @} */
 
 
