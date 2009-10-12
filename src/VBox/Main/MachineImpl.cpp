@@ -6001,7 +6001,12 @@ HRESULT Machine::saveSettings(int aFlags /*= 0*/)
         mData->m_pMachineConfigFile->strOsType = mUserData->mOSTypeId;
 
         if (    mData->mMachineState == MachineState_Saved
+#ifdef VBOX_WITH_LIVE_MIGRATION /** @todo fix this properly... a new state for indicating migration? */
+             || (   mData->mMachineState == MachineState_Restoring
+                 && !mSSData->mStateFilePath.isEmpty() )
+#else
              || mData->mMachineState == MachineState_Restoring
+#endif
            )
         {
             Assert(!mSSData->mStateFilePath.isEmpty());
