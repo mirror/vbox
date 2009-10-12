@@ -19,6 +19,7 @@
  * additional information or have any questions.
  */
 
+
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
@@ -39,7 +40,6 @@
 #include <VBox/com/string.h>
 
 
-
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
 *******************************************************************************/
@@ -54,20 +54,28 @@ public:
     ComPtr<Console>     mptrConsole;
     PVM                 mpVM;
     Utf8Str             mstrPassword;
+    bool const          mfIsSource;
 
     /** @name stream stuff
      * @{  */
     RTSOCKET            mhSocket;
     uint64_t            moffStream;
+    uint32_t            mcbReadBlock;
     bool volatile       mfStopReading;
+    bool volatile       mfEndOfStream;
+    bool volatile       mfIOError;
     /** @} */
 
-    MigrationState(Console *pConsole, PVM pVM)
+    MigrationState(Console *pConsole, PVM pVM, bool fIsSource)
         : mptrConsole(pConsole)
         , mpVM(pVM)
+        , mfIsSource(fIsSource)
         , mhSocket(NIL_RTSOCKET)
         , moffStream(UINT64_MAX / 2)
+        , mcbReadBlock(0)
         , mfStopReading(false)
+        , mfEndOfStream(false)
+        , mfIOError(false)
     {
     }
 };
@@ -84,7 +92,7 @@ public:
     uint32_t            muPort;
 
     MigrationStateSrc(Console *pConsole, PVM pVM)
-        : MigrationState(pConsole, pVM)
+        : MigrationState(pConsole, pVM, true /*fIsSource*/)
         , muPort(UINT32_MAX)
     {
     }
@@ -103,7 +111,7 @@ public:
     int                 mRc;
 
     MigrationStateDst(Console *pConsole, PVM pVM, IMachine *pMachine)
-        : MigrationState(pConsole, pVM)
+        : MigrationState(pConsole, pVM, false /*fIsSource*/)
         , mpMachine(pMachine)
         , mpvVMCallbackTask(NULL)
         , mhServer(NULL)
@@ -112,6 +120,25 @@ public:
     }
 };
 
+
+/**
+ * TCP stream header.
+ *
+ * This is an extra layer for fixing the problem with figuring out when the SSM
+ * stream ends.
+ */
+typedef struct MIGRATIONTCPHDR
+{
+    /** Magic value. */
+    uint32_t    u32Magic;
+    /** The size of the data block following this header.
+     * 0 indicates the end of the stream. */
+    uint32_t    cb;
+} MIGRATIONTCPHDR;
+/** Magic value for MIGRATIONTCPHDR::u32Magic. (Egberto Gismonti Amin) */
+#define MIGRATIONTCPHDR_MAGIC       UINT32_C(0x19471205)
+/** The max block size. */
+#define MIGRATIONTCPHDR_MAX_SIZE    UINT32_C(0x00fffff8)
 
 
 /*******************************************************************************
@@ -207,6 +234,7 @@ Console::migrationSrcReadACK(MigrationStateSrc *pState, const char *pszNAckMsg /
     return S_OK;
 }
 
+
 /**
  * Submitts a command to the destination and waits for the ACK.
  *
@@ -236,12 +264,70 @@ Console::migrationSrcSubmitCommand(MigrationStateSrc *pState, const char *pszCom
 static DECLCALLBACK(int) migrationTcpOpWrite(void *pvUser, uint64_t offStream, const void *pvBuf, size_t cbToWrite)
 {
     MigrationState *pState = (MigrationState *)pvUser;
-    int rc = RTTcpWrite(pState->mhSocket, pvBuf, cbToWrite);
-    if (RT_SUCCESS(rc))
+
+    AssertReturn(cbToWrite > 0, VINF_SUCCESS);
+    AssertReturn(pState->mfIsSource, VERR_INVALID_HANDLE);
+
+    for (;;)
     {
-        pState->moffStream += cbToWrite;
-        return VINF_SUCCESS;
+        /* Write block header. */
+        MIGRATIONTCPHDR Hdr;
+        Hdr.u32Magic = MIGRATIONTCPHDR_MAGIC;
+        Hdr.cb       = RT_MIN(cbToWrite, MIGRATIONTCPHDR_MAX_SIZE);
+        int rc = RTTcpWrite(pState->mhSocket, &Hdr, sizeof(Hdr));
+        if (RT_FAILURE(rc))
+        {
+            LogRel(("Migration/TCP: Header write error: %Rrc\n", rc));
+            return rc;
+        }
+
+        /* Write the data. */
+        rc = RTTcpWrite(pState->mhSocket, pvBuf, Hdr.cb);
+        if (RT_FAILURE(rc))
+        {
+            LogRel(("Migration/TCP: Data write error: %Rrc (cb=%#x)\n", rc, Hdr.cb));
+            return rc;
+        }
+        pState->moffStream += Hdr.cb;
+        if (Hdr.cb == cbToWrite)
+            return VINF_SUCCESS;
+
+        /* advance */
+        cbToWrite -= Hdr.cb;
+        pvBuf = (uint8_t const *)pvBuf + Hdr.cb;
     }
+}
+
+
+/**
+ * Selects and poll for close condition.
+ *
+ * We can use a relatively high poll timeout here since it's only used to get
+ * us out of error paths.  In the normal cause of events, we'll get a
+ * end-of-stream header.
+ *
+ * @returns VBox status code.
+ *
+ * @param   pState          The migration state data.
+ */
+static int migrationTcpReadSelect(MigrationState *pState)
+{
+    int rc;
+    do
+    {
+        rc = RTTcpSelectOne(pState->mhSocket, 1000);
+        if (RT_FAILURE(rc) && rc != VERR_TIMEOUT)
+        {
+            pState->mfIOError = true;
+            LogRel(("Migration/TCP: Header select error: %Rrc\n", rc));
+            break;
+        }
+        if (pState->mfStopReading)
+        {
+            rc = VERR_EOF;
+            break;
+        }
+    } while (rc == VERR_TIMEOUT);
     return rc;
 }
 
@@ -252,22 +338,86 @@ static DECLCALLBACK(int) migrationTcpOpWrite(void *pvUser, uint64_t offStream, c
 static DECLCALLBACK(int) migrationTcpOpRead(void *pvUser, uint64_t offStream, void *pvBuf, size_t cbToRead, size_t *pcbRead)
 {
     MigrationState *pState = (MigrationState *)pvUser;
+    AssertReturn(!pState->mfIsSource, VERR_INVALID_HANDLE);
 
     for (;;)
     {
-        int rc = RTTcpSelectOne(pState->mhSocket, 30); /** @todo fix this polling mess. */
-        if (RT_SUCCESS(rc))
-        {
-            rc = RTTcpRead(pState->mhSocket, pvBuf, cbToRead, pcbRead);
-            if (RT_FAILURE(rc))
-                return rc;
-            pState->moffStream += pcbRead ? *pcbRead : cbToRead;
-            return VINF_SUCCESS;
-        }
-        if (rc != VERR_TIMEOUT)
-            return rc;
+        int rc;
+
+        /*
+         * Check for various conditions and may have been signalled.
+         */
+        if (pState->mfEndOfStream)
+            return VERR_EOF;
         if (pState->mfStopReading)
             return VERR_EOF;
+        if (pState->mfIOError)
+            return VERR_IO_GEN_FAILURE;
+
+        /*
+         * If there is no more data in the current block, read the next
+         * block header.
+         */
+        if (!pState->mcbReadBlock)
+        {
+            rc = migrationTcpReadSelect(pState);
+            if (RT_FAILURE(rc))
+                return rc;
+            MIGRATIONTCPHDR Hdr;
+            rc = RTTcpRead(pState->mhSocket, &Hdr, sizeof(Hdr), NULL);
+            if (RT_FAILURE(rc))
+            {
+                pState->mfIOError = true;
+                LogRel(("Migration/TCP: Header read error: %Rrc\n", rc));
+                return rc;
+            }
+            if (   Hdr.u32Magic != MIGRATIONTCPHDR_MAGIC
+                || Hdr.cb > MIGRATIONTCPHDR_MAX_SIZE)
+            {
+                pState->mfIOError = true;
+                LogRel(("Migration/TCP: Invalid block: u32Magic=%#x cb=%#x\n", Hdr.u32Magic, Hdr.cb));
+                return VERR_IO_GEN_FAILURE;
+            }
+
+            pState->mcbReadBlock = Hdr.cb;
+            if (!Hdr.cb)
+            {
+                pState->mfEndOfStream = true;
+                return VERR_EOF;
+            }
+
+            if (pState->mfStopReading)
+                return VERR_EOF;
+        }
+
+        /*
+         * Read more data.
+         */
+        rc = migrationTcpReadSelect(pState);
+        if (RT_FAILURE(rc))
+            return rc;
+        size_t cb = RT_MIN(pState->mcbReadBlock, cbToRead);
+        rc = RTTcpRead(pState->mhSocket, pvBuf, cb, pcbRead);
+        if (RT_FAILURE(rc))
+        {
+            pState->mfIOError = true;
+            LogRel(("Migration/TCP: Data read error: %Rrc (cb=%#x)\n", rc, cb));
+            return rc;
+        }
+        if (pcbRead)
+        {
+            pState->moffStream   += *pcbRead;
+            pState->mcbReadBlock -= *pcbRead;
+            return VINF_SUCCESS;
+        }
+        pState->moffStream   += cb;
+        pState->mcbReadBlock -= cb;
+        if (cbToRead == cb)
+            return VINF_SUCCESS;
+
+        /* Advance to the next block. */
+        cbToRead -= cb;
+        pvBuf = (uint8_t *)pvBuf + cb;
     }
 }
 
@@ -306,7 +456,23 @@ static DECLCALLBACK(int) migrationTcpOpSize(void *pvUser, uint64_t *pcb)
 static DECLCALLBACK(int) migrationTcpOpClose(void *pvUser)
 {
     MigrationState *pState = (MigrationState *)pvUser;
-    ASMAtomicWriteBool(&pState->mfStopReading, true);
+
+    if (pState->mfIsSource)
+    {
+        MIGRATIONTCPHDR EofHdr = { MIGRATIONTCPHDR_MAGIC, 0 };
+        int rc = RTTcpWrite(pState->mhSocket, &EofHdr, sizeof(EofHdr));
+        if (RT_FAILURE(rc))
+        {
+            LogRel(("Migration/TCP: EOF Header write error: %Rrc\n", rc));
+            return rc;
+        }
+    }
+    else
+    {
+        ASMAtomicWriteBool(&pState->mfStopReading, true);
+        RTTcpFlush(pState->mhSocket);
+    }
+
     return VINF_SUCCESS;
 }
 
