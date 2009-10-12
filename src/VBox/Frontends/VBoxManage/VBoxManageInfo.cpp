@@ -447,7 +447,7 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
     if (details == VMINFO_MACHINEREADABLE)
         RTPrintf("livemigrationtarget=\"%s\"\n", liveMigrationTarget ? "on" : "off");
     else
-        RTPrintf("Live Migration Target: %s\n", accelerate2dVideo ? "on" : "off");
+        RTPrintf("Live Migration Target: %s\n", liveMigrationTarget ? "on" : "off");
 
     ULONG liveMigrationPort;
     machine->COMGETTER(LiveMigrationPort)(&liveMigrationPort);
