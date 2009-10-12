@@ -21,8 +21,8 @@
  * additional information or have any questions.
  */
 
-#ifndef __VBoxUtils_darwin_h
-#define __VBoxUtils_darwin_h
+#ifndef ___VBoxUtils_darwin_h
+#define ___VBoxUtils_darwin_h
 
 /*
  * Here is some really magic in. The "OS System native" methods are implemented
@@ -253,5 +253,5 @@ void darwinDebugPrintEvent (const char *aPrefix, EventRef aEvent);
 
 #endif /* !__OBJC__ */
 
-#endif /* __VBoxUtils_darwin_h */
+#endif /* !___VBoxUtils_darwin_h */
 
