@@ -591,7 +591,7 @@ int pdmacFileCacheInit(PPDMASYNCCOMPLETIONEPCLASSFILE pClassFile, PCFGMNODE pCfg
 
     pCache->cbCached  = 0;
     pCache->uAdaptVal = 0;
-    LogFlowFunc((": Maximum number of bytes cached %u\n", pCache->cbCached));
+    LogFlowFunc((": Maximum number of bytes cached %u\n", pCache->cbMax));
 
     STAMR3Register(pClassFile->Core.pVM, &pCache->cbMax,
                    STAMTYPE_U32, STAMVISIBILITY_ALWAYS,
