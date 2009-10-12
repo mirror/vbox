@@ -719,6 +719,12 @@ static void vboxVHWAGlInit(const QGLContext * pContext)
             str = glGetString(GL_VERSION);
             );
 
+    if(!str)
+    {
+        VBOXQGLLOGREL (("failed to make the context current, treating as unsupported\n"));
+        return;
+    }
+
     VBOXQGLLOGREL (("gl version string: 0%s\n", str));
 
     g_vboxVHWAGlVersion = vboxVHWAGlParseVersion(str);
