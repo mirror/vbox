@@ -272,7 +272,7 @@ static int tstPDMACStressTestFileRead(PPDMACTESTFILE pTestFile, PPDMACTESTFILETA
 
     /* Allocate data buffer. */
     pTestTask->DataSeg.pvSeg = RTMemAlloc(pTestTask->DataSeg.cbSeg);
-    if (pTestTask->DataSeg.pvSeg)
+    if (!pTestTask->DataSeg.pvSeg)
         return VERR_NO_MEMORY;
 
     /* Engage */
@@ -304,6 +304,9 @@ static int tstPDMACTestFileThread(PVM pVM, PPDMTHREAD pThread)
     int iWriteChance = 100; /* Chance to get a write task in percent. */
     uint32_t cTasksStarted = 0;
     int rc = VINF_SUCCESS;
+
+    if (pThread->enmState == PDMTHREADSTATE_INITIALIZING)
+        return VINF_SUCCESS;
 
     while (pTestFile->fRunning)
     {
@@ -451,6 +454,9 @@ static int tstPDMACStressTestFileOpen(PVM pVM, PPDMACTESTFILE pTestFile, unsigne
                                                NULL, 0, RTTHREADTYPE_IO, szThreadDesc);
                         if (RT_SUCCESS(rc))
                         {
+                            rc = PDMR3ThreadResume(pTestFile->hThread);
+                            AssertRC(rc);
+
                             RTPrintf(TESTCASE ": Created test file %s cbFileMax=%llu cbFileSegment=%u cSegments=%u cTasksActiveMax=%u\n",
                                      szFile, pTestFile->cbFileMax, pTestFile->cbFileSegment, pTestFile->cSegments, pTestFile->cTasksActiveMax);
                             return VINF_SUCCESS;
