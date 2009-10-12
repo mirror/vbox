@@ -348,16 +348,17 @@ static VOID rtMpNtPokeCpuDummy(IN PKDPC Dpc, IN PVOID DeferredContext, IN PVOID 
 }
 
 #ifndef IPRT_TARGET_NT4
+
+ULONG_PTR rtMpIpiGenericCall(ULONG_PTR  Argument)
+{
+    return 0;
+}
+
 int rtMpSendIpiVista(RTCPUID idCpu)
 {
     g_pfnrtKeIpiGenericCall(rtMpIpiGenericCall, 0);
 ////    g_pfnrtNtHalRequestIpi(1 << idCpu);
     return VINF_SUCCESS;
-}
-
-ULONG_PTR rtMpIpiGenericCall(ULONG_PTR  Argument)
-{
-    return 0;
 }
 
 int rtMpSendIpiWin7(RTCPUID idCpu)
