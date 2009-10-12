@@ -489,7 +489,7 @@ void STATE_APIENTRY crStateDrawBuffer (GLenum mode)
         case GL_AUX1:
         case GL_AUX2:
         case GL_AUX3:
-            if (g->framebufferobject.framebuffer)
+            if (g->framebufferobject.drawFB)
             {
                 crStateError(__LINE__, __FILE__, GL_INVALID_OPERATION, "glDrawBuffer invalud mode while fbo is active");
                 return;
@@ -498,7 +498,7 @@ void STATE_APIENTRY crStateDrawBuffer (GLenum mode)
         default:
             if (mode>=GL_COLOR_ATTACHMENT0_EXT && mode<=GL_COLOR_ATTACHMENT15_EXT)
             {
-                if (!g->framebufferobject.framebuffer)
+                if (!g->framebufferobject.drawFB)
                 {
                     crStateError(__LINE__, __FILE__, GL_INVALID_OPERATION, "glDrawBuffer invalud mode while fbo is inactive");
                     return;
@@ -511,9 +511,9 @@ void STATE_APIENTRY crStateDrawBuffer (GLenum mode)
             }
     }
 
-    if (g->framebufferobject.framebuffer)
+    if (g->framebufferobject.drawFB)
     {
-        g->framebufferobject.framebuffer->drawbuffer[0] = mode;
+        g->framebufferobject.drawFB->drawbuffer[0] = mode;
     }
     else
     {
@@ -554,7 +554,7 @@ void STATE_APIENTRY crStateReadBuffer (GLenum mode)
         case GL_AUX1:
         case GL_AUX2:
         case GL_AUX3:
-            if (g->framebufferobject.framebuffer)
+            if (g->framebufferobject.readFB)
             {
                 crStateError(__LINE__, __FILE__, GL_INVALID_OPERATION, "glReadBuffer invalud mode while fbo is active");
                 return;
@@ -563,7 +563,7 @@ void STATE_APIENTRY crStateReadBuffer (GLenum mode)
         default:
             if (mode>=GL_COLOR_ATTACHMENT0_EXT && mode<=GL_COLOR_ATTACHMENT15_EXT)
             {
-                if (!g->framebufferobject.framebuffer)
+                if (!g->framebufferobject.readFB)
                 {
                     crStateError(__LINE__, __FILE__, GL_INVALID_OPERATION, "glReadBuffer invalud mode while fbo is inactive");
                     return;
@@ -580,9 +580,9 @@ void STATE_APIENTRY crStateReadBuffer (GLenum mode)
             }
     }
 
-    if (g->framebufferobject.framebuffer)
+    if (g->framebufferobject.readFB)
     {
-        g->framebufferobject.framebuffer->readbuffer = mode;
+        g->framebufferobject.readFB->readbuffer = mode;
     }
     else
     {

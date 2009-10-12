@@ -133,12 +133,12 @@ static GLint __clampf_to_int( GLfloat f )
 
 static GLenum __getDrawBuffer(CRContext *g)
 {
-    return g->framebufferobject.framebuffer ? g->framebufferobject.framebuffer->drawbuffer[0] : g->buffer.drawBuffer;
+    return g->framebufferobject.drawFB ? g->framebufferobject.drawFB->drawbuffer[0] : g->buffer.drawBuffer;
 }
 
 static GLenum __getReadBuffer(CRContext *g)
 {
-    return g->framebufferobject.framebuffer ? g->framebufferobject.framebuffer->readbuffer : g->buffer.readBuffer;
+    return g->framebufferobject.readFB ? g->framebufferobject.readFB->readbuffer : g->buffer.readBuffer;
 }
 """
 
