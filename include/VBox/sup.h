@@ -934,20 +934,20 @@ SUPR3DECL(int) SUPR3HardenedLdrLoadAppPriv(const char *pszFilename, PRTLDRMOD ph
 
 
 /**
- * Check if the host kernel can run in VMX root mode. 
- *    
- * @returns VINF_SUCCESS if supported, error code indicating why if not. 
+ * Check if the host kernel can run in VMX root mode.
+ *
+ * @returns VINF_SUCCESS if supported, error code indicating why if not.
  */
 SUPR3DECL(int) SUPR3QueryVTxSupported(void);
 
 
 /**
- * Return VT-x/AMD-V capabilities
- *    
- * @returns VINF_SUCCESS if supported, error code indicating why if not. 
- * @param   pCaps       Pointer to capability dword (out)
+ * Return VT-x/AMD-V capabilities.
+ *
+ * @returns VINF_SUCCESS if supported, error code indicating why if not.
+ * @param   pfCaps      Pointer to capability dword (out).
  */
-SUPR3DECL(int) SUPR3QueryVTCaps(uint32_t *pCaps);
+SUPR3DECL(int) SUPR3QueryVTCaps(uint32_t *pfCaps);
 
 /** @} */
 #endif /* IN_RING3 */
@@ -1014,7 +1014,7 @@ SUPR0DECL(int) SUPR0PageMapKernel(PSUPDRVSESSION pSession, RTR3PTR pvR3, uint32_
 SUPR0DECL(int) SUPR0PageProtect(PSUPDRVSESSION pSession, RTR3PTR pvR3, RTR0PTR pvR0, uint32_t offSub, uint32_t cbSub, uint32_t fProt);
 SUPR0DECL(int) SUPR0PageFree(PSUPDRVSESSION pSession, RTR3PTR pvR3);
 SUPR0DECL(int) SUPR0GipMap(PSUPDRVSESSION pSession, PRTR3PTR ppGipR3, PRTHCPHYS pHCPhysGip);
-SUPR0DECL(int) SUPR0QueryVTCaps(PSUPDRVSESSION pSession, uint32_t *pCaps);
+SUPR0DECL(int) SUPR0QueryVTCaps(PSUPDRVSESSION pSession, uint32_t *pfCaps);
 SUPR0DECL(int) SUPR0GipUnmap(PSUPDRVSESSION pSession);
 SUPR0DECL(int) SUPR0Printf(const char *pszFormat, ...);
 SUPR0DECL(SUPPAGINGMODE) SUPR0GetPagingMode(void);

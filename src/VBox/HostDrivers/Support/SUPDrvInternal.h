@@ -46,8 +46,10 @@
 #include <iprt/string.h>
 #include <iprt/err.h>
 
+#ifdef SUPDRV_AGNOSTIC
+/* do nothing */
 
-#if defined(RT_OS_WINDOWS)
+#elif defined(RT_OS_WINDOWS)
     RT_C_DECLS_BEGIN
 #   if (_MSC_VER >= 1400) && !defined(VBOX_WITH_PATCHED_DDK)
 #       define _InterlockedExchange           _InterlockedExchange_StupidDDKVsCompilerCrap
@@ -185,9 +187,11 @@
 #elif defined(RT_OS_LINUX)
 
 /* check kernel version */
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 0)
-# error Unsupported kernel version!
-#endif
+# ifndef SUPDRV_AGNOSTIC
+#  if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 0)
+#   error Unsupported kernel version!
+#  endif
+# endif
 
 RT_C_DECLS_BEGIN
 int  linux_dprintf(const char *format, ...);
@@ -530,21 +534,23 @@ typedef struct SUPDRVSESSION
     /** Which process this session is associated with.
      * This is NIL_RTR0PROCESS for kernel sessions and valid for user ones. */
     RTR0PROCESS                     R0Process;
-#if defined(RT_OS_DARWIN)
+#ifndef SUPDRV_AGNOSTIC
+# if defined(RT_OS_DARWIN)
     /** Pointer to the associated org_virtualbox_SupDrvClient object. */
     void                           *pvSupDrvClient;
     /** Whether this session has been opened or not. */
     bool                            fOpened;
-#endif
-#if defined(RT_OS_OS2)
+# endif
+# if defined(RT_OS_OS2)
     /** The system file number of this session. */
     uint16_t                        sfn;
     uint16_t                        Alignment; /**< Alignment */
-#endif
-#if defined(RT_OS_DARWIN) || defined(RT_OS_OS2) || defined(RT_OS_SOLARIS)
+# endif
+# if defined(RT_OS_DARWIN) || defined(RT_OS_OS2) || defined(RT_OS_SOLARIS)
     /** Pointer to the next session with the same hash. */
     PSUPDRVSESSION                  pNextHash;
-#endif
+# endif
+#endif /* !SUPDRV_AGNOSTIC */
 } SUPDRVSESSION;
 
 
@@ -606,18 +612,20 @@ typedef struct SUPDRVDEVEXT
      * This CPU is responsible for the updating the common GIP data. */
     RTCPUID volatile                idGipMaster;
 
-#ifdef RT_OS_WINDOWS
-    /* Callback object returned by ExCreateCallback. */
-    PCALLBACK_OBJECT                pObjPowerCallback;
-    /* Callback handle returned by ExRegisterCallback. */
-    PVOID                           hPowerCallback;
-#endif
-
     /** Component factory mutex.
      * This protects pComponentFactoryHead and component factory querying. */
     RTSEMFASTMUTEX                  mtxComponentFactory;
     /** The head of the list of registered component factories. */
     PSUPDRVFACTORYREG               pComponentFactoryHead;
+
+#ifndef SUPDRV_AGNOSTIC
+# ifdef RT_OS_WINDOWS
+    /* Callback object returned by ExCreateCallback. */
+    PCALLBACK_OBJECT                pObjPowerCallback;
+    /* Callback handle returned by ExRegisterCallback. */
+    PVOID                           hPowerCallback;
+# endif
+#endif
 } SUPDRVDEVEXT;
 
 
@@ -631,9 +639,11 @@ bool VBOXCALL   supdrvOSObjCanAccess(PSUPDRVOBJ pObj, PSUPDRVSESSION pSession, c
 bool VBOXCALL   supdrvOSGetForcedAsyncTscMode(PSUPDRVDEVEXT pDevExt);
 int  VBOXCALL   supdrvOSEnableVTx(bool fEnabled);
 
+
 /*******************************************************************************
 *   Shared Functions                                                           *
 *******************************************************************************/
+/* SUPDrv.c */
 int  VBOXCALL   supdrvIOCtl(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, PSUPREQHDR pReqHdr);
 int  VBOXCALL   supdrvIOCtlFast(uintptr_t uIOCtl, VMCPUID idCpu, PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession);
 int  VBOXCALL   supdrvIDC(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, PSUPDRVIDCREQHDR pReqHdr);
@@ -647,6 +657,9 @@ void VBOXCALL   supdrvGipTerm(PSUPGLOBALINFOPAGE pGip);
 void VBOXCALL   supdrvGipUpdate(PSUPGLOBALINFOPAGE pGip, uint64_t u64NanoTS, uint64_t u64TSC);
 void VBOXCALL   supdrvGipUpdatePerCpu(PSUPGLOBALINFOPAGE pGip, uint64_t u64NanoTS, uint64_t u64TSC, unsigned iCpu);
 bool VBOXCALL   supdrvDetermineAsyncTsc(uint64_t *pu64DiffCores);
+
+/* SUPDrvAgnostic.c */
+int  VBOXCALL   supR0QueryVTCaps(uint32_t *pfCaps);
 
 RT_C_DECLS_END
 
