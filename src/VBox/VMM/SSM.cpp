@@ -898,8 +898,14 @@ static int ssmR3LazyInit(PVM pVM)
 static DECLCALLBACK(int) ssmR3SelfLiveExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uPass)
 {
     if (uPass == 0)
-        return ssmR3SelfSaveExec(pVM, pSSM);
-    return VINF_SUCCESS;
+    {
+        int rc = ssmR3SelfSaveExec(pVM, pSSM);
+        if (RT_SUCCESS(rc))
+            rc = VINF_SSM_DONT_CALL_AGAIN;
+        return rc;
+    }
+    AssertFailed();
+    return VERR_INTERNAL_ERROR_3;
 }
 
 
@@ -4407,7 +4413,11 @@ static int ssmR3LiveDoExecRun(PVM pVM, PSSMHANDLE pSSM, uint32_t uPass)
         if (RT_FAILURE(rc) && RT_SUCCESS_NP(pSSM->rc))
             pSSM->rc = rc;
         else
+        {
+            if (rc == VINF_SSM_DONT_CALL_AGAIN)
+                pUnit->fDoneLive = true;
             rc = ssmR3DataFlushBuffer(pSSM); /* will return SSMHANDLE::rc if it is set */
+        }
         if (RT_FAILURE(rc))
         {
             LogRel(("SSM: Execute save failed with rc=%Rrc for data unit '%s'/#%u.\n", rc, pUnit->szName, pUnit->u32Instance));
