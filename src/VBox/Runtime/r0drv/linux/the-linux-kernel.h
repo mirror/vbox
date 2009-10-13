@@ -81,6 +81,7 @@
 #include <linux/pagemap.h>
 #include <linux/slab.h>
 #include <linux/time.h>
+#include <linux/sched.h>
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 7)
 # include <linux/jiffies.h>
 #endif
