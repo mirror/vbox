@@ -56,14 +56,6 @@
 # include <iprt/rand.h>
 # include <iprt/path.h>
 #endif
-/* VBox/x86.h not compatible with the Linux kernel sources */
-#ifdef RT_OS_LINUX
-# define X86_CPUID_VENDOR_AMD_EBX       0x68747541
-# define X86_CPUID_VENDOR_AMD_ECX       0x444d4163
-# define X86_CPUID_VENDOR_AMD_EDX       0x69746e65
-#else
-# include <VBox/x86.h>
-#endif
 
 /*
  * Logging assignments:
@@ -83,46 +75,16 @@
 /*******************************************************************************
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
-/* from x86.h - clashes with linux thus this duplication */
-#undef X86_CR0_PG
-#define X86_CR0_PG                          RT_BIT(31)
-#undef X86_CR0_PE
-#define X86_CR0_PE                          RT_BIT(0)
-#undef X86_CPUID_AMD_FEATURE_EDX_NX
-#define X86_CPUID_AMD_FEATURE_EDX_NX        RT_BIT(20)
-#undef MSR_K6_EFER
-#define MSR_K6_EFER                         0xc0000080
-#undef MSR_K6_EFER_NXE
-#define MSR_K6_EFER_NXE                     RT_BIT(11)
-#undef MSR_K6_EFER_LMA
-#define  MSR_K6_EFER_LMA                    RT_BIT(10)
-#undef X86_CR4_PGE
-#define X86_CR4_PGE                         RT_BIT(7)
-#undef X86_CR4_PAE
-#define X86_CR4_PAE                         RT_BIT(5)
-#undef X86_CPUID_AMD_FEATURE_EDX_LONG_MODE
-#define X86_CPUID_AMD_FEATURE_EDX_LONG_MODE RT_BIT(29)
-
-
 /** The frequency by which we recalculate the u32UpdateHz and
  * u32UpdateIntervalNS GIP members. The value must be a power of 2. */
 #define GIP_UPDATEHZ_RECALC_FREQ            0x800
-
-/**
- * Validates a session pointer.
- *
- * @returns true/false accordingly.
- * @param   pSession    The session.
- */
-#define SUP_IS_SESSION_VALID(pSession)  \
-    (   VALID_PTR(pSession) \
-     && pSession->u32Cookie == BIRD_INV)
 
 /** @def VBOX_SVN_REV
  * The makefile should define this if it can. */
 #ifndef VBOX_SVN_REV
 # define VBOX_SVN_REV 0
 #endif
+
 
 /*******************************************************************************
 *   Internal Functions                                                         *
@@ -142,7 +104,6 @@ static int      supdrvLdrAddUsage(PSUPDRVSESSION pSession, PSUPDRVLDRIMAGE pImag
 static void     supdrvLdrFree(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage);
 static int      supdrvIOCtl_CallServiceModule(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, PSUPCALLSERVICE pReq);
 static int      supdrvIOCtl_LoggerSettings(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, PSUPLOGGERSETTINGS pReq);
-static SUPGIPMODE supdrvGipDeterminTscMode(PSUPDRVDEVEXT pDevExt);
 static int      supdrvGipCreate(PSUPDRVDEVEXT pDevExt);
 static void     supdrvGipDestroy(PSUPDRVDEVEXT pDevExt);
 static DECLCALLBACK(void) supdrvGipSyncTimer(PRTTIMER pTimer, void *pvUser, uint64_t iTick);
@@ -3676,18 +3637,6 @@ SUPDECL(int) SUPSemEventMultiWaitNoResume(PSUPDRVSESSION pSession, SUPSEMEVENTMU
 }
 
 
-SUPR0DECL(int) SUPR0QueryVTCaps(PSUPDRVSESSION pSession, uint32_t *pfCaps)
-{
-    /*
-     * Input validation.
-     */
-    AssertReturn(SUP_IS_SESSION_VALID(pSession), VERR_INVALID_PARAMETER);
-    AssertPtrReturn(pfCaps, VERR_INVALID_POINTER);
-
-    return supR0QueryVTCaps(pfCaps);
-}
-
-
 /**
  * Adds a memory object to the session.
  *
@@ -4719,106 +4668,6 @@ static int supdrvIOCtl_LoggerSettings(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSes
 
 
 /**
- * Gets the paging mode of the current CPU.
- *
- * @returns Paging mode, SUPPAGEINGMODE_INVALID on error.
- */
-SUPR0DECL(SUPPAGINGMODE) SUPR0GetPagingMode(void)
-{
-    SUPPAGINGMODE enmMode;
-
-    RTR0UINTREG cr0 = ASMGetCR0();
-    if ((cr0 & (X86_CR0_PG | X86_CR0_PE)) != (X86_CR0_PG | X86_CR0_PE))
-        enmMode = SUPPAGINGMODE_INVALID;
-    else
-    {
-        RTR0UINTREG cr4 = ASMGetCR4();
-        uint32_t fNXEPlusLMA = 0;
-        if (cr4 & X86_CR4_PAE)
-        {
-            uint32_t fAmdFeatures = ASMCpuId_EDX(0x80000001);
-            if (fAmdFeatures & (X86_CPUID_AMD_FEATURE_EDX_NX | X86_CPUID_AMD_FEATURE_EDX_LONG_MODE))
-            {
-                uint64_t efer = ASMRdMsr(MSR_K6_EFER);
-                if ((fAmdFeatures & X86_CPUID_AMD_FEATURE_EDX_NX)        && (efer & MSR_K6_EFER_NXE))
-                    fNXEPlusLMA |= RT_BIT(0);
-                if ((fAmdFeatures & X86_CPUID_AMD_FEATURE_EDX_LONG_MODE) && (efer & MSR_K6_EFER_LMA))
-                    fNXEPlusLMA |= RT_BIT(1);
-            }
-        }
-
-        switch ((cr4 & (X86_CR4_PAE | X86_CR4_PGE)) | fNXEPlusLMA)
-        {
-            case 0:
-                enmMode = SUPPAGINGMODE_32_BIT;
-                break;
-
-            case X86_CR4_PGE:
-                enmMode = SUPPAGINGMODE_32_BIT_GLOBAL;
-                break;
-
-            case X86_CR4_PAE:
-                enmMode = SUPPAGINGMODE_PAE;
-                break;
-
-            case X86_CR4_PAE | RT_BIT(0):
-                enmMode = SUPPAGINGMODE_PAE_NX;
-                break;
-
-            case X86_CR4_PAE | X86_CR4_PGE:
-                enmMode = SUPPAGINGMODE_PAE_GLOBAL;
-                break;
-
-            case X86_CR4_PAE | X86_CR4_PGE | RT_BIT(0):
-                enmMode = SUPPAGINGMODE_PAE_GLOBAL;
-                break;
-
-            case RT_BIT(1) | X86_CR4_PAE:
-                enmMode = SUPPAGINGMODE_AMD64;
-                break;
-
-            case RT_BIT(1) | X86_CR4_PAE | RT_BIT(0):
-                enmMode = SUPPAGINGMODE_AMD64_NX;
-                break;
-
-            case RT_BIT(1) | X86_CR4_PAE | X86_CR4_PGE:
-                enmMode = SUPPAGINGMODE_AMD64_GLOBAL;
-                break;
-
-            case RT_BIT(1) | X86_CR4_PAE | X86_CR4_PGE | RT_BIT(0):
-                enmMode = SUPPAGINGMODE_AMD64_GLOBAL_NX;
-                break;
-
-            default:
-                AssertMsgFailed(("Cannot happen! cr4=%#x fNXEPlusLMA=%d\n", cr4, fNXEPlusLMA));
-                enmMode = SUPPAGINGMODE_INVALID;
-                break;
-        }
-    }
-    return enmMode;
-}
-
-
-/**
- * Enables or disabled hardware virtualization extensions using native OS APIs.
- *
- * @returns VBox status code.
- * @retval  VINF_SUCCESS on success.
- * @retval  VERR_NOT_SUPPORTED if not supported by the native OS.
- *
- * @param   fEnable         Whether to enable or disable.
- */
-SUPR0DECL(int) SUPR0EnableVTx(bool fEnable)
-{
-#ifdef RT_OS_DARWIN
-    return supdrvOSEnableVTx(fEnable);
-#else
-    return VERR_NOT_SUPPORTED;
-#endif
-}
-
-
-/**
  * Creates the GIP.
  *
  * @returns VBox status code.
@@ -5220,64 +5069,6 @@ bool VBOXCALL supdrvDetermineAsyncTsc(uint64_t *poffMin)
     OSDBGPRINT(("vboxdrv: fAsync=%d offMin=%#lx offMax=%#lx\n", fAsync, (long)offMin, (long)offMax));
 #endif
     return fAsync;
-}
-
-
-/**
- * Determin the GIP TSC mode.
- *
- * @returns The most suitable TSC mode.
- * @param   pDevExt     Pointer to the device instance data.
- */
-static SUPGIPMODE supdrvGipDeterminTscMode(PSUPDRVDEVEXT pDevExt)
-{
-    /*
-     * On SMP we're faced with two problems:
-     *      (1) There might be a skew between the CPU, so that cpu0
-     *          returns a TSC that is sligtly different from cpu1.
-     *      (2) Power management (and other things) may cause the TSC
-     *          to run at a non-constant speed, and cause the speed
-     *          to be different on the cpus. This will result in (1).
-     *
-     * So, on SMP systems we'll have to select the ASYNC update method
-     * if there are symphoms of these problems.
-     */
-    if (RTMpGetCount() > 1)
-    {
-        uint32_t uEAX, uEBX, uECX, uEDX;
-        uint64_t u64DiffCoresIgnored;
-
-        /* Permit the user and/or the OS specfic bits to force async mode. */
-        if (supdrvOSGetForcedAsyncTscMode(pDevExt))
-            return SUPGIPMODE_ASYNC_TSC;
-
-        /* Try check for current differences between the cpus. */
-        if (supdrvDetermineAsyncTsc(&u64DiffCoresIgnored))
-            return SUPGIPMODE_ASYNC_TSC;
-
-        /*
-         * If the CPU supports power management and is an AMD one we
-         * won't trust it unless it has the TscInvariant bit is set.
-         */
-        /* Check for "AuthenticAMD" */
-        ASMCpuId(0, &uEAX, &uEBX, &uECX, &uEDX);
-        if (    uEAX >= 1
-            &&  uEBX == X86_CPUID_VENDOR_AMD_EBX
-            &&  uECX == X86_CPUID_VENDOR_AMD_ECX
-            &&  uEDX == X86_CPUID_VENDOR_AMD_EDX)
-        {
-            /* Check for APM support and that TscInvariant is cleared. */
-            ASMCpuId(0x80000000, &uEAX, &uEBX, &uECX, &uEDX);
-            if (uEAX >= 0x80000007)
-            {
-                ASMCpuId(0x80000007, &uEAX, &uEBX, &uECX, &uEDX);
-                if (    !(uEDX & RT_BIT(8))/* TscInvariant */
-                    &&  (uEDX & 0x3e))  /* STC|TM|THERMTRIP|VID|FID. Ignore TS. */
-                    return SUPGIPMODE_ASYNC_TSC;
-            }
-        }
-    }
-    return SUPGIPMODE_SYNC_TSC;
 }
 
 

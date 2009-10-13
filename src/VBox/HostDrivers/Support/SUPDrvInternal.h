@@ -322,6 +322,17 @@ RT_C_DECLS_END
 /** @} */
 
 
+/**
+ * Validates a session pointer.
+ *
+ * @returns true/false accordingly.
+ * @param   pSession    The session.
+ */
+#define SUP_IS_SESSION_VALID(pSession)  \
+    (   VALID_PTR(pSession) \
+     && pSession->u32Cookie == BIRD_INV)
+
+
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
 *******************************************************************************/
@@ -659,7 +670,7 @@ void VBOXCALL   supdrvGipUpdatePerCpu(PSUPGLOBALINFOPAGE pGip, uint64_t u64NanoT
 bool VBOXCALL   supdrvDetermineAsyncTsc(uint64_t *pu64DiffCores);
 
 /* SUPDrvAgnostic.c */
-int  VBOXCALL   supR0QueryVTCaps(uint32_t *pfCaps);
+SUPGIPMODE VBOXCALL supdrvGipDeterminTscMode(PSUPDRVDEVEXT pDevExt);
 
 RT_C_DECLS_END
 

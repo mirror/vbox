@@ -56,15 +56,115 @@
 #include <VBox/x86.h>
 
 
+/**
+ * Gets the paging mode of the current CPU.
+ *
+ * @returns Paging mode, SUPPAGEINGMODE_INVALID on error.
+ */
+SUPR0DECL(SUPPAGINGMODE) SUPR0GetPagingMode(void)
+{
+    SUPPAGINGMODE enmMode;
+
+    RTR0UINTREG cr0 = ASMGetCR0();
+    if ((cr0 & (X86_CR0_PG | X86_CR0_PE)) != (X86_CR0_PG | X86_CR0_PE))
+        enmMode = SUPPAGINGMODE_INVALID;
+    else
+    {
+        RTR0UINTREG cr4 = ASMGetCR4();
+        uint32_t fNXEPlusLMA = 0;
+        if (cr4 & X86_CR4_PAE)
+        {
+            uint32_t fAmdFeatures = ASMCpuId_EDX(0x80000001);
+            if (fAmdFeatures & (X86_CPUID_AMD_FEATURE_EDX_NX | X86_CPUID_AMD_FEATURE_EDX_LONG_MODE))
+            {
+                uint64_t efer = ASMRdMsr(MSR_K6_EFER);
+                if ((fAmdFeatures & X86_CPUID_AMD_FEATURE_EDX_NX)        && (efer & MSR_K6_EFER_NXE))
+                    fNXEPlusLMA |= RT_BIT(0);
+                if ((fAmdFeatures & X86_CPUID_AMD_FEATURE_EDX_LONG_MODE) && (efer & MSR_K6_EFER_LMA))
+                    fNXEPlusLMA |= RT_BIT(1);
+            }
+        }
+
+        switch ((cr4 & (X86_CR4_PAE | X86_CR4_PGE)) | fNXEPlusLMA)
+        {
+            case 0:
+                enmMode = SUPPAGINGMODE_32_BIT;
+                break;
+
+            case X86_CR4_PGE:
+                enmMode = SUPPAGINGMODE_32_BIT_GLOBAL;
+                break;
+
+            case X86_CR4_PAE:
+                enmMode = SUPPAGINGMODE_PAE;
+                break;
+
+            case X86_CR4_PAE | RT_BIT(0):
+                enmMode = SUPPAGINGMODE_PAE_NX;
+                break;
+
+            case X86_CR4_PAE | X86_CR4_PGE:
+                enmMode = SUPPAGINGMODE_PAE_GLOBAL;
+                break;
+
+            case X86_CR4_PAE | X86_CR4_PGE | RT_BIT(0):
+                enmMode = SUPPAGINGMODE_PAE_GLOBAL;
+                break;
+
+            case RT_BIT(1) | X86_CR4_PAE:
+                enmMode = SUPPAGINGMODE_AMD64;
+                break;
+
+            case RT_BIT(1) | X86_CR4_PAE | RT_BIT(0):
+                enmMode = SUPPAGINGMODE_AMD64_NX;
+                break;
+
+            case RT_BIT(1) | X86_CR4_PAE | X86_CR4_PGE:
+                enmMode = SUPPAGINGMODE_AMD64_GLOBAL;
+                break;
+
+            case RT_BIT(1) | X86_CR4_PAE | X86_CR4_PGE | RT_BIT(0):
+                enmMode = SUPPAGINGMODE_AMD64_GLOBAL_NX;
+                break;
+
+            default:
+                AssertMsgFailed(("Cannot happen! cr4=%#x fNXEPlusLMA=%d\n", cr4, fNXEPlusLMA));
+                enmMode = SUPPAGINGMODE_INVALID;
+                break;
+        }
+    }
+    return enmMode;
+}
+
 
 /**
- * Internal worker for SUPR0QueryVTCaps.
+ * Enables or disabled hardware virtualization extensions using native OS APIs.
  *
- * @returns See QUPR0QueryVTCaps.
- * @param   pfCaps              See QUPR0QueryVTCaps
+ * @returns VBox status code.
+ * @retval  VINF_SUCCESS on success.
+ * @retval  VERR_NOT_SUPPORTED if not supported by the native OS.
+ *
+ * @param   fEnable         Whether to enable or disable.
  */
-int VBOXCALL supR0QueryVTCaps(uint32_t *pfCaps)
+SUPR0DECL(int) SUPR0EnableVTx(bool fEnable)
 {
+#ifdef RT_OS_DARWIN
+    return supdrvOSEnableVTx(fEnable);
+#else
+    return VERR_NOT_SUPPORTED;
+#endif
+}
+
+
+
+SUPR0DECL(int) SUPR0QueryVTCaps(PSUPDRVSESSION pSession, uint32_t *pfCaps)
+{
+    /*
+     * Input validation.
+     */
+    AssertReturn(SUP_IS_SESSION_VALID(pSession), VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pfCaps, VERR_INVALID_POINTER);
+
     *pfCaps = 0;
 
     if (ASMHasCpuId())
@@ -149,5 +249,63 @@ int VBOXCALL supR0QueryVTCaps(uint32_t *pfCaps)
     }
 
     return VERR_UNSUPPORTED_CPU;
+}
+
+
+/**
+ * Determin the GIP TSC mode.
+ *
+ * @returns The most suitable TSC mode.
+ * @param   pDevExt     Pointer to the device instance data.
+ */
+SUPGIPMODE VBOXCALL supdrvGipDeterminTscMode(PSUPDRVDEVEXT pDevExt)
+{
+    /*
+     * On SMP we're faced with two problems:
+     *      (1) There might be a skew between the CPU, so that cpu0
+     *          returns a TSC that is sligtly different from cpu1.
+     *      (2) Power management (and other things) may cause the TSC
+     *          to run at a non-constant speed, and cause the speed
+     *          to be different on the cpus. This will result in (1).
+     *
+     * So, on SMP systems we'll have to select the ASYNC update method
+     * if there are symphoms of these problems.
+     */
+    if (RTMpGetCount() > 1)
+    {
+        uint32_t uEAX, uEBX, uECX, uEDX;
+        uint64_t u64DiffCoresIgnored;
+
+        /* Permit the user and/or the OS specfic bits to force async mode. */
+        if (supdrvOSGetForcedAsyncTscMode(pDevExt))
+            return SUPGIPMODE_ASYNC_TSC;
+
+        /* Try check for current differences between the cpus. */
+        if (supdrvDetermineAsyncTsc(&u64DiffCoresIgnored))
+            return SUPGIPMODE_ASYNC_TSC;
+
+        /*
+         * If the CPU supports power management and is an AMD one we
+         * won't trust it unless it has the TscInvariant bit is set.
+         */
+        /* Check for "AuthenticAMD" */
+        ASMCpuId(0, &uEAX, &uEBX, &uECX, &uEDX);
+        if (    uEAX >= 1
+            &&  uEBX == X86_CPUID_VENDOR_AMD_EBX
+            &&  uECX == X86_CPUID_VENDOR_AMD_ECX
+            &&  uEDX == X86_CPUID_VENDOR_AMD_EDX)
+        {
+            /* Check for APM support and that TscInvariant is cleared. */
+            ASMCpuId(0x80000000, &uEAX, &uEBX, &uECX, &uEDX);
+            if (uEAX >= 0x80000007)
+            {
+                ASMCpuId(0x80000007, &uEAX, &uEBX, &uECX, &uEDX);
+                if (    !(uEDX & RT_BIT(8))/* TscInvariant */
+                    &&  (uEDX & 0x3e))  /* STC|TM|THERMTRIP|VID|FID. Ignore TS. */
+                    return SUPGIPMODE_ASYNC_TSC;
+            }
+        }
+    }
+    return SUPGIPMODE_SYNC_TSC;
 }
 
