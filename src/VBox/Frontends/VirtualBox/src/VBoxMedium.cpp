@@ -242,6 +242,8 @@ void VBoxMedium::refresh()
             default:
                 break;
         }
+
+        mToolTip = QString ("<p style='white-space:pre'>%1</p>").arg (mToolTip);
     }
 
     /* reset mNoDiffs */
