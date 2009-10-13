@@ -65,6 +65,7 @@ enum enOptionCodes
     MODIFYVMIOAPIC,
     MODIFYVMPAE,
     MODIFYVMHWVIRTEX,
+    MODIFYVMHWVIRTEXEXCLUSIVE,
     MODIFYVMNESTEDPAGING,
     MODIFYVMVTXVPID,
     MODIFYVMCPUS,
@@ -136,6 +137,7 @@ static const RTGETOPTDEF g_aModifyVMOptions[] =
     { "--ioapic",                  MODIFYVMIOAPIC,                  RTGETOPT_REQ_STRING },
     { "--pae",                     MODIFYVMPAE,                     RTGETOPT_REQ_STRING },
     { "--hwvirtex",                MODIFYVMHWVIRTEX,                RTGETOPT_REQ_STRING },
+    { "--hwvirtexexcl",            MODIFYVMHWVIRTEXEXCLUSIVE,       RTGETOPT_REQ_STRING },
     { "--nestedpaging",            MODIFYVMNESTEDPAGING,            RTGETOPT_REQ_STRING },
     { "--vtxvpid",                 MODIFYVMVTXVPID,                 RTGETOPT_REQ_STRING },
     { "--cpus",                    MODIFYVMCPUS,                    RTGETOPT_REQ_UINT32 },
@@ -383,11 +385,32 @@ int handleModifyVM(HandlerArg *a)
                 {
                     if (!strcmp(pValueUnion.psz, "on"))
                     {
-                        CHECK_ERROR (machine, COMSETTER(HWVirtExEnabled)(TRUE));
+                        CHECK_ERROR (machine, SetHWVirtExProperty(HWVirtExPropertyType_Enabled, TRUE));
                     }
                     else if (!strcmp(pValueUnion.psz, "off"))
                     {
-                        CHECK_ERROR (machine, COMSETTER(HWVirtExEnabled)(FALSE));
+                        CHECK_ERROR (machine, SetHWVirtExProperty(HWVirtExPropertyType_Enabled, FALSE));
+                    }
+                    else
+                    {
+                        errorArgument("Invalid --hwvirtex argument '%s'", pValueUnion.psz);
+                        rc = E_FAIL;
+                    }
+                }
+                break;
+            }
+
+            case MODIFYVMHWVIRTEXEXCLUSIVE:
+            {
+                if (pValueUnion.psz)
+                {
+                    if (!strcmp(pValueUnion.psz, "on"))
+                    {
+                        CHECK_ERROR (machine, SetHWVirtExProperty(HWVirtExPropertyType_Exclusive, TRUE));
+                    }
+                    else if (!strcmp(pValueUnion.psz, "off"))
+                    {
+                        CHECK_ERROR (machine, SetHWVirtExProperty(HWVirtExPropertyType_Exclusive, FALSE));
                     }
                     else
                     {
@@ -404,11 +427,11 @@ int handleModifyVM(HandlerArg *a)
                 {
                     if (!strcmp(pValueUnion.psz, "on"))
                     {
-                        CHECK_ERROR (machine, COMSETTER(HWVirtExNestedPagingEnabled)(true));
+                        CHECK_ERROR (machine, SetHWVirtExProperty(HWVirtExPropertyType_NestedPagingEnabled, TRUE));
                     }
                     else if (!strcmp(pValueUnion.psz, "off"))
                     {
-                        CHECK_ERROR (machine, COMSETTER(HWVirtExNestedPagingEnabled)(false));
+                        CHECK_ERROR (machine, SetHWVirtExProperty(HWVirtExPropertyType_NestedPagingEnabled, FALSE));
                     }
                     else
                     {
@@ -425,11 +448,11 @@ int handleModifyVM(HandlerArg *a)
                 {
                     if (!strcmp(pValueUnion.psz, "on"))
                     {
-                        CHECK_ERROR (machine, COMSETTER(HWVirtExVPIDEnabled)(true));
+                        CHECK_ERROR (machine, SetHWVirtExProperty(HWVirtExPropertyType_VPIDEnabled, TRUE));
                     }
                     else if (!strcmp(pValueUnion.psz, "off"))
                     {
-                        CHECK_ERROR (machine, COMSETTER(HWVirtExVPIDEnabled)(false));
+                        CHECK_ERROR (machine, SetHWVirtExProperty(HWVirtExPropertyType_VPIDEnabled, FALSE));
                     }
                     else
                     {

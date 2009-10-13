@@ -258,7 +258,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
 
     /* hardware virtualization extensions */
     BOOL fHWVirtExEnabled;
-    hrc = pMachine->COMGETTER(HWVirtExEnabled)(&fHWVirtExEnabled);                  H();
+    hrc = pMachine->GetHWVirtExProperty(HWVirtExPropertyType_Enabled, &fHWVirtExEnabled);                  H();
     if (cCpus > 1) /** @todo SMP: This isn't nice, but things won't work on mac otherwise. */
         fHWVirtExEnabled = TRUE;
 
@@ -325,15 +325,20 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
         }
     }
 
+    /* HWVirtEx exclusive mode */
+    BOOL fHWVirtExExclusive = true;
+    hrc = pMachine->GetHWVirtExProperty(HWVirtExPropertyType_Exclusive, &fHWVirtExExclusive);                   H();
+    rc = CFGMR3InsertInteger(pHWVirtExt, "Exclusive", fHWVirtExExclusive);                     RC_CHECK();
+
     /* Nested paging (VT-x/AMD-V) */
     BOOL fEnableNestedPaging = false;
-    hrc = pMachine->COMGETTER(HWVirtExNestedPagingEnabled)(&fEnableNestedPaging);   H();
-    rc = CFGMR3InsertInteger(pRoot, "EnableNestedPaging", fEnableNestedPaging);     RC_CHECK();
+    hrc = pMachine->GetHWVirtExProperty(HWVirtExPropertyType_NestedPagingEnabled, &fEnableNestedPaging);   H();
+    rc = CFGMR3InsertInteger(pHWVirtExt, "EnableNestedPaging", fEnableNestedPaging);     RC_CHECK();
 
     /* VPID (VT-x) */
     BOOL fEnableVPID = false;
-    hrc = pMachine->COMGETTER(HWVirtExVPIDEnabled)(&fEnableVPID);                   H();
-    rc = CFGMR3InsertInteger(pRoot, "EnableVPID", fEnableVPID);                     RC_CHECK();
+    hrc = pMachine->GetHWVirtExProperty(HWVirtExPropertyType_VPIDEnabled, &fEnableVPID);                   H();
+    rc = CFGMR3InsertInteger(pHWVirtExt, "EnableVPID", fEnableVPID);                     RC_CHECK();
 
     /* Physical Address Extension (PAE) */
     BOOL fEnablePAE = false;

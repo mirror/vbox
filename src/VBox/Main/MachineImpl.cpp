@@ -1296,105 +1296,6 @@ STDMETHODIMP Machine::COMGETTER(BIOSSettings)(IBIOSSettings **biosSettings)
     return S_OK;
 }
 
-STDMETHODIMP Machine::COMGETTER(HWVirtExEnabled)(BOOL *enabled)
-{
-    if (!enabled)
-        return E_POINTER;
-
-    AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
-
-    AutoReadLock alock(this);
-
-    *enabled = mHWData->mHWVirtExEnabled;
-
-    return S_OK;
-}
-
-STDMETHODIMP Machine::COMSETTER(HWVirtExEnabled)(BOOL enable)
-{
-    AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
-
-    AutoWriteLock alock(this);
-
-    HRESULT rc = checkStateDependency(MutableStateDep);
-    CheckComRCReturnRC(rc);
-
-    /** @todo check validity! */
-
-    mHWData.backup();
-    mHWData->mHWVirtExEnabled = enable;
-
-    return S_OK;
-}
-
-STDMETHODIMP Machine::COMGETTER(HWVirtExNestedPagingEnabled)(BOOL *enabled)
-{
-    if (!enabled)
-        return E_POINTER;
-
-    AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
-
-    AutoReadLock alock(this);
-
-    *enabled = mHWData->mHWVirtExNestedPagingEnabled;
-
-    return S_OK;
-}
-
-STDMETHODIMP Machine::COMSETTER(HWVirtExNestedPagingEnabled)(BOOL enable)
-{
-    AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
-
-    AutoWriteLock alock(this);
-
-    HRESULT rc = checkStateDependency(MutableStateDep);
-    CheckComRCReturnRC(rc);
-
-    /** @todo check validity! */
-
-    mHWData.backup();
-    mHWData->mHWVirtExNestedPagingEnabled = enable;
-
-    return S_OK;
-}
-
-STDMETHODIMP Machine::COMGETTER(HWVirtExVPIDEnabled)(BOOL *enabled)
-{
-    if (!enabled)
-        return E_POINTER;
-
-    AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
-
-    AutoReadLock alock(this);
-
-    *enabled = mHWData->mHWVirtExVPIDEnabled;
-
-    return S_OK;
-}
-
-STDMETHODIMP Machine::COMSETTER(HWVirtExVPIDEnabled)(BOOL enable)
-{
-    AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
-
-    AutoWriteLock alock(this);
-
-    HRESULT rc = checkStateDependency(MutableStateDep);
-    CheckComRCReturnRC(rc);
-
-    /** @todo check validity! */
-
-    mHWData.backup();
-    mHWData->mHWVirtExVPIDEnabled = enable;
-
-    return S_OK;
-}
-
 STDMETHODIMP Machine::GetHWVirtExProperty(HWVirtExPropertyType_T property, BOOL *aVal)
 {
     if (!aVal)
@@ -1433,6 +1334,9 @@ STDMETHODIMP Machine::SetHWVirtExProperty(HWVirtExPropertyType_T property, BOOL 
     CheckComRCReturnRC(autoCaller.rc());
 
     AutoWriteLock alock(this);
+
+    HRESULT rc = checkStateDependency(MutableStateDep);
+    CheckComRCReturnRC(rc);
 
     switch(property)
     {

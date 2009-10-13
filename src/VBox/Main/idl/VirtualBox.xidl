@@ -769,7 +769,8 @@
     </const>
     <const name="Enabled"             value="1">
       <desc>
-        HWVirtEx (VT-x/AMD-V) boolean property.
+        HWVirtEx (VT-x/AMD-V) boolean property. Note that in case such extensions are not available,
+        they will not be used.
       </desc>
     </const>
     <const name="Exclusive"           value="2">
@@ -780,12 +781,14 @@
     </const>
     <const name="VPIDEnabled"         value="3">
       <desc>
-        VT-x VPID boolean property.
+        VT-x VPID boolean property. Note that in case this extension is not available,
+        it will not be used.
       </desc>
     </const>
     <const name="NestedPagingEnabled" value="4">
       <desc>
-        Nested Paging boolean property.
+        Nested Paging boolean property. Note that in case this extension is not available,
+        it will not be used.
       </desc>
     </const>
   </enum>
@@ -4041,7 +4044,7 @@
 
   <interface
      name="IMachine" extends="$unknown"
-     uuid="160b0ccc-c3d6-4c1b-bbe9-39b1a732f833"
+     uuid="ff5155a9-da1e-4225-8829-2f9f105d4db2"
      wsmap="managed"
      >
     <desc>
@@ -4267,31 +4270,6 @@
      <attribute name="firmwareType" type="FirmwareType">
       <desc>Type of firmware (such as legacy BIOS or EFI), used for initial
        bootstrap in this VM.</desc>
-    </attribute>
-
-    <attribute name="HWVirtExEnabled" type="boolean">
-      <desc>
-        This setting determines whether VirtualBox will try to make use of
-        the host CPU's hardware virtualization extensions such as Intel VT-x
-        and AMD-V. Note that in case such extensions are not available,
-        they will not be used.
-      </desc>
-    </attribute>
-
-    <attribute name="HWVirtExNestedPagingEnabled" type="boolean" default="false">
-      <desc>
-        This setting determines whether VirtualBox will try to make use of
-        the nested paging extension of Intel VT-x and AMD-V. Note that in case
-        such extensions are not available, they will not be used.
-      </desc>
-    </attribute>
-
-    <attribute name="HWVirtExVPIDEnabled" type="boolean" default="false">
-      <desc>
-        This setting determines whether VirtualBox will try to make use of
-        the VPID extension of Intel VT-x. Note that in case such extensions are
-        not available, they will not be used.
-      </desc>
     </attribute>
 
     <attribute name="PAEEnabled" type="boolean" default="false">
