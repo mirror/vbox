@@ -184,6 +184,7 @@ Machine::HWData::HWData()
     mHWVirtExEnabled = true;
     mHWVirtExNestedPagingEnabled = false;
     mHWVirtExVPIDEnabled = false;
+    mHWVirtExExclusive = true;
     mPAEEnabled = false;
     mPropertyServiceActive = false;
 
@@ -221,6 +222,7 @@ bool Machine::HWData::operator==(const HWData &that) const
         mHWVirtExEnabled != that.mHWVirtExEnabled ||
         mHWVirtExNestedPagingEnabled != that.mHWVirtExNestedPagingEnabled ||
         mHWVirtExVPIDEnabled != that.mHWVirtExVPIDEnabled ||
+        mHWVirtExExclusive != that.mHWVirtExExclusive ||
         mPAEEnabled != that.mPAEEnabled ||
         mCPUCount != that.mCPUCount ||
         mClipboardMode != that.mClipboardMode)
@@ -1390,6 +1392,73 @@ STDMETHODIMP Machine::COMSETTER(HWVirtExVPIDEnabled)(BOOL enable)
     mHWData.backup();
     mHWData->mHWVirtExVPIDEnabled = enable;
 
+    return S_OK;
+}
+
+STDMETHODIMP Machine::GetHWVirtExProperty(HWVirtExPropertyType_T property, BOOL *aVal)
+{
+    if (!aVal)
+        return E_POINTER;
+
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
+
+    switch(property)
+    {
+    case HWVirtExPropertyType_Enabled:
+        *aVal = mHWData->mHWVirtExEnabled;
+        break;
+
+    case HWVirtExPropertyType_Exclusive:
+        *aVal = mHWData->mHWVirtExExclusive;
+        break;
+
+    case HWVirtExPropertyType_VPIDEnabled:
+        *aVal = mHWData->mHWVirtExVPIDEnabled;
+        break;
+
+    case HWVirtExPropertyType_NestedPagingEnabled:
+        *aVal = mHWData->mHWVirtExNestedPagingEnabled;
+        break;
+
+    default:
+        return E_INVALIDARG;
+    }
+    return S_OK;
+}
+
+STDMETHODIMP Machine::SetHWVirtExProperty(HWVirtExPropertyType_T property, BOOL aVal)
+{
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
+
+    AutoWriteLock alock(this);
+
+    switch(property)
+    {
+    case HWVirtExPropertyType_Enabled:
+        mHWData.backup();
+        mHWData->mHWVirtExEnabled = aVal;
+        break;
+
+    case HWVirtExPropertyType_Exclusive:
+        mHWData.backup();
+        mHWData->mHWVirtExExclusive = aVal;
+        break;
+
+    case HWVirtExPropertyType_VPIDEnabled:
+        mHWData.backup();
+        mHWData->mHWVirtExVPIDEnabled = aVal;
+        break;
+
+    case HWVirtExPropertyType_NestedPagingEnabled:
+        mHWData.backup();
+        mHWData->mHWVirtExNestedPagingEnabled = aVal;
+        break;
+
+    default:
+        return E_INVALIDARG;
+    }
     return S_OK;
 }
 
@@ -5194,6 +5263,7 @@ HRESULT Machine::loadHardware(const settings::Hardware &data)
         mHWData->mHWVersion = data.strVersion;
 
         mHWData->mHWVirtExEnabled             = data.fHardwareVirt;
+        mHWData->mHWVirtExExclusive           = data.fHardwareVirtExclusive;
         mHWData->mHWVirtExNestedPagingEnabled = data.fNestedPaging;
         mHWData->mHWVirtExVPIDEnabled         = data.fVPID;
         mHWData->mPAEEnabled                  = data.fPAE;
@@ -6140,10 +6210,11 @@ HRESULT Machine::saveHardware(settings::Hardware &data)
         data.strVersion = mHWData->mHWVersion;
 
         // CPU
-        data.fHardwareVirt = !!mHWData->mHWVirtExEnabled;
-        data.fNestedPaging = !!mHWData->mHWVirtExNestedPagingEnabled;
-        data.fVPID = !!mHWData->mHWVirtExVPIDEnabled;
-        data.fPAE = !!mHWData->mPAEEnabled;
+        data.fHardwareVirt          = !!mHWData->mHWVirtExEnabled;
+        data.fHardwareVirtExclusive = !!mHWData->mHWVirtExExclusive;
+        data.fNestedPaging          = !!mHWData->mHWVirtExNestedPagingEnabled;
+        data.fVPID                  = !!mHWData->mHWVirtExVPIDEnabled;
+        data.fPAE                   = !!mHWData->mPAEEnabled;
 
         data.cCPUs = mHWData->mCPUCount;
 

@@ -433,19 +433,20 @@
 </xsd:complexType>
 
 <xsd:complexType name="THWVirtExType">
-  <xsd:attribute name="enabled" type="TTriStateBoolType" default="default"/>
+  <xsd:attribute name="enabled" type="TTriStateBoolType"/>
+  <xsd:attribute name="exclusive" type="xsd:boolean"/>
 </xsd:complexType>
 
 <xsd:complexType name="THWVirtExNestedPagingType">
-  <xsd:attribute name="enabled" type="xsd:boolean" default="false"/>
+  <xsd:attribute name="enabled" type="xsd:boolean"/>
 </xsd:complexType>
 
 <xsd:complexType name="THWVirtExVPIDType">
-  <xsd:attribute name="enabled" type="xsd:boolean" default="false"/>
+  <xsd:attribute name="enabled" type="xsd:boolean"/>
 </xsd:complexType>
 
 <xsd:complexType name="TPAEType">
-  <xsd:attribute name="enabled" type="xsd:boolean" default="false"/>
+  <xsd:attribute name="enabled" type="xsd:boolean"/>
 </xsd:complexType>
 
 <xsd:simpleType name="TCPUCount">

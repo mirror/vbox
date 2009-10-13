@@ -398,6 +398,7 @@ struct Hardware
     com::Utf8Str        strVersion;             // hardware version, optional
 
     bool                fHardwareVirt,
+                        fHardwareVirtExclusive,
                         fNestedPaging,
                         fVPID,
                         fPAE;
