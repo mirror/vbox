@@ -252,12 +252,6 @@ int handleModifyVM(HandlerArg *a)
     while (   SUCCEEDED (rc)
            && (c = RTGetOpt(&pGetState, &pValueUnion)))
     {
-#if 0
-        RTPrintf("Arguments(%d) '%s' : '%lu' :'%s - %u'\n", c,
-                 pGetState.pDef ? pGetState.pDef->pszLong : "NULL",
-                 pGetState.uIndex, pValueUnion.psz, pValueUnion.u32);
-#endif
-
         switch (c)
         {
             case MODIFYVMNAME:
