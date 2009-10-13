@@ -26,95 +26,14 @@
 //#define VBOXQGL_PROF_BASE 1
 //#define VBOXQGL_DBG_SURF 1
 
-#include "COMDefs.h"
+//#include "COMDefs.h"
 #include <QGLWidget>
 #include <iprt/assert.h>
 #include <iprt/critsect.h>
 
+#include "VBoxGLSupportInfo.h"
+
 #define VBOXVHWA_ALLOW_PRIMARY_AND_OVERLAY_ONLY 1
-
-#if defined(DEBUG) && !defined(DEBUG_sandervl)
-# include "iprt/stream.h"
-# define VBOXQGLLOG(_m) RTPrintf _m
-# define VBOXQGLLOGREL(_m) do { RTPrintf _m ; LogRel( _m ); } while(0)
-#else
-# define VBOXQGLLOG(_m)    do {}while(0)
-# define VBOXQGLLOGREL(_m) LogRel( _m )
-#endif
-#define VBOXQGLLOG_ENTER(_m)
-//do{VBOXQGLLOG(("==>[%s]:", __FUNCTION__)); VBOXQGLLOG(_m);}while(0)
-#define VBOXQGLLOG_EXIT(_m)
-//do{VBOXQGLLOG(("<==[%s]:", __FUNCTION__)); VBOXQGLLOG(_m);}while(0)
-#ifdef DEBUG
- #define VBOXQGL_ASSERTNOERR() \
-    do { GLenum err = glGetError(); \
-        if(err != GL_NO_ERROR) VBOXQGLLOG(("gl error ocured (0x%x)\n", err)); \
-        Assert(err == GL_NO_ERROR); \
-    }while(0)
-
- #define VBOXQGL_CHECKERR(_op) \
-    do { \
-        glGetError(); \
-        _op \
-        VBOXQGL_ASSERTNOERR(); \
-    }while(0)
-#else
- #define VBOXQGL_ASSERTNOERR() \
-    do {}while(0)
-
- #define VBOXQGL_CHECKERR(_op) \
-    do { \
-        _op \
-    }while(0)
-#endif
-
-#ifdef DEBUG
-#include <iprt/time.h>
-
-#define VBOXGETTIME() RTTimeNanoTS()
-
-#define VBOXPRINTDIF(_nano, _m) do{\
-        uint64_t cur = VBOXGETTIME(); \
-        VBOXQGLLOG(_m); \
-        VBOXQGLLOG(("(%Lu)\n", cur - (_nano))); \
-    }while(0)
-
-class VBoxVHWADbgTimeCounter
-{
-public:
-    VBoxVHWADbgTimeCounter(const char* msg) {mTime = VBOXGETTIME(); mMsg=msg;}
-    ~VBoxVHWADbgTimeCounter() {VBOXPRINTDIF(mTime, (mMsg));}
-private:
-    uint64_t mTime;
-    const char* mMsg;
-};
-
-#define VBOXQGLLOG_METHODTIME(_m) VBoxVHWADbgTimeCounter _dbgTimeCounter(_m)
-
-#define VBOXQG_CHECKCONTEXT() \
-        { \
-            const GLubyte * str; \
-            VBOXQGL_CHECKERR(   \
-                    str = glGetString(GL_VERSION); \
-            ); \
-            Assert(str); \
-            if(str) \
-            { \
-                Assert(str[0]); \
-            } \
-        }
-#else
-#define VBOXQGLLOG_METHODTIME(_m)
-#define VBOXQG_CHECKCONTEXT() do{}while(0)
-#endif
-
-#define VBOXQGLLOG_QRECT(_p, _pr, _s) do{\
-    VBOXQGLLOG((_p " x(%d), y(%d), w(%d), h(%d)" _s, (_pr)->x(), (_pr)->y(), (_pr)->width(), (_pr)->height()));\
-    }while(0)
-
-#define VBOXQGLLOG_CKEY(_p, _pck, _s) do{\
-    VBOXQGLLOG((_p " l(0x%x), u(0x%x)" _s, (_pck)->lower(), (_pck)->upper()));\
-    }while(0)
 
 class VBoxVHWADirtyRect
 {
