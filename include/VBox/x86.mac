@@ -276,6 +276,7 @@
 %define MSR_K7_PERFCTR1                     0xc0010005
 %define MSR_K7_PERFCTR2                     0xc0010006
 %define MSR_K7_PERFCTR3                     0xc0010007
+%define MSR_K8_HWCR                         0xc0010015
 %define MSR_K8_LSTAR                        0xc0000082
 %define MSR_K8_CSTAR                        0xc0000083
 %define MSR_K8_SF_MASK                      0xc0000084
