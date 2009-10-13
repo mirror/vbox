@@ -314,12 +314,10 @@ RTDECL(int) RTCritSectEnterDebug(PRTCRITSECT pCritSect, const char *pszFile, uns
                 pCritSect->cNestings++;
                 return VINF_SUCCESS;
             }
-            else
-            {
-                AssertMsgFailed(("Nested entry of critsect %p\n", pCritSect));
-                ASMAtomicDecS32(&pCritSect->cLockers);
-                return VERR_SEM_NESTED;
-            }
+
+            AssertBreakpoint(); /* don't do normal assertion here, the logger uses this code too. */
+            ASMAtomicDecS32(&pCritSect->cLockers);
+            return VERR_SEM_NESTED;
         }
 
         for (;;)
