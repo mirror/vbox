@@ -42,6 +42,7 @@
 #include "QIHttp.h"
 #include "QIStateIndicator.h"
 #include "QIStatusBar.h"
+#include "QIWidgetValidator.h"
 #include "VBoxConsoleWnd.h"
 #include "VBoxConsoleView.h"
 #include "VBoxCloseVMDlg.h"
@@ -3412,6 +3413,7 @@ void VBoxConsoleWnd::dbgAdjustRelativePos()
 VBoxStorageDialog::VBoxStorageDialog (QWidget *aParent, CSession &aSession)
     : QIWithRetranslateUI <QDialog> (aParent)
     , mSettings (0)
+    , mButtonBox (0)
     , mSession (aSession)
 {
     setModal (true);
@@ -3430,13 +3432,21 @@ VBoxStorageDialog::VBoxStorageDialog (QWidget *aParent, CSession &aSession)
     mainLayout->addWidget (mSettings);
     mSettings->getFrom (aSession.GetMachine());
 
-    /* Setup button's layout */
-    QIDialogButtonBox *buttonBox = new QIDialogButtonBox (QDialogButtonBox::Ok | QDialogButtonBox::Cancel | QDialogButtonBox::Help);
+    /* Setup validation */
+    QIWidgetValidator *validator = new QIWidgetValidator (mSettings, this);
+    mSettings->setValidator (validator);
 
-    connect (buttonBox, SIGNAL (helpRequested()), &vboxProblem(), SLOT (showHelpHelpDialog()));
-    connect (buttonBox, SIGNAL (accepted()), this, SLOT (accept()));
-    connect (buttonBox, SIGNAL (rejected()), this, SLOT (reject()));
-    mainLayout->addWidget (buttonBox);
+    /* Setup button's layout */
+    mButtonBox = new QIDialogButtonBox (QDialogButtonBox::Ok | QDialogButtonBox::Cancel | QDialogButtonBox::Help);
+    mainLayout->addWidget (mButtonBox);
+
+    connect (mButtonBox, SIGNAL (helpRequested()), &vboxProblem(), SLOT (showHelpHelpDialog()));
+    connect (mButtonBox, SIGNAL (accepted()), this, SLOT (accept()));
+    connect (mButtonBox, SIGNAL (rejected()), this, SLOT (reject()));
+    connect (validator, SIGNAL (isValidRequested (QIWidgetValidator*)),
+             this, SLOT (revalidate (QIWidgetValidator*)));
+    connect (validator, SIGNAL (validityChanged (const QIWidgetValidator*)),
+             this, SLOT (enableOk (const QIWidgetValidator*)));
 
     retranslateUi();
 }
@@ -3454,6 +3464,18 @@ void VBoxStorageDialog::accept()
     if (!machine.isOk())
         vboxProblem().cannotSaveMachineSettings (machine);
     QDialog::accept();
+}
+
+void VBoxStorageDialog::revalidate (QIWidgetValidator *aValidator)
+{
+    QString warning, title;
+    bool valid = mSettings->revalidate (warning, title);
+    aValidator->setOtherValid (valid);
+}
+
+void VBoxStorageDialog::enableOk (const QIWidgetValidator *aValidator)
+{
+    mButtonBox->button (QDialogButtonBox::Ok)->setEnabled (aValidator->isValid());
 }
 
 void VBoxStorageDialog::showEvent (QShowEvent *aEvent)

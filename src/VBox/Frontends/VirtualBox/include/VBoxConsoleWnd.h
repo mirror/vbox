@@ -52,6 +52,7 @@ class QAction;
 class QActionGroup;
 class QLabel;
 class QSpacerItem;
+class QIWidgetValidator;
 
 /* Local forwards */
 class QIMenu;
@@ -393,6 +394,9 @@ protected slots:
 
     virtual void accept();
 
+    void revalidate (QIWidgetValidator *aValidator);
+    void enableOk (const QIWidgetValidator *aValidator);
+
 protected:
 
     void showEvent (QShowEvent *aEvent);
@@ -400,6 +404,7 @@ protected:
 private:
 
     VBoxSettingsPage *mSettings;
+    QIDialogButtonBox *mButtonBox;
     CSession &mSession;
 };
 
