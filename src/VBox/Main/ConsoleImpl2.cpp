@@ -1925,6 +1925,16 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
     return rc;
 }
 
+/**
+ * Ellipsis to va_list wrapper for calling setVMRuntimeErrorCallback.
+ */
+/*static*/ void Console::setVMRuntimeErrorCallbackF(PVM pVM, void *pvConsole, uint32_t fFlags, const char *pszErrorId, const char *pszFormat, ...)
+{
+    va_list va;
+    va_start(va, pszFormat);
+    setVMRuntimeErrorCallback(pVM, pvConsole, fFlags, pszErrorId, pszFormat, va);
+    va_end(va);
+}
 
 /**
  *  Construct the Network configuration tree
@@ -2293,6 +2303,25 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
 # elif defined(RT_OS_LINUX) || defined(RT_OS_FREEBSD)
             /** @todo Check for malformed names. */
             const char *pszTrunk = pszHifName;
+
+            /* Issue a warning if the interface is down */
+            {
+                int iSock = socket(AF_INET, SOCK_DGRAM, 0);
+                if (iSock >= 0)
+                {
+                    struct ifreq Req;
+
+                    memset(&Req, 0, sizeof(Req));
+                    strncpy(Req.ifr_name, pszHifName, sizeof(Req.ifr_name) - 1);
+                    if (ioctl(iSock, SIOCGIFFLAGS, &Req) >= 0)
+                        if ((Req.ifr_flags & IFF_UP) == 0)
+                        {
+                            setVMRuntimeErrorCallbackF(pVM, pThis, 0, "BridgedInterfaceDown", "Bridged interface %s is down. Guest will not be able to use this interface", pszHifName);
+                        }
+
+                    close(iSock);
+                }
+            }
 
 # else
 #  error "PORTME (VBOX_WITH_NETFLT)"
