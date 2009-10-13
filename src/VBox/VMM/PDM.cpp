@@ -286,8 +286,9 @@
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
-static DECLCALLBACK(int) pdmR3Save(PVM pVM, PSSMHANDLE pSSM);
-static DECLCALLBACK(int) pdmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass);
+static DECLCALLBACK(int) pdmR3LiveExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uPass);
+static DECLCALLBACK(int) pdmR3SaveExec(PVM pVM, PSSMHANDLE pSSM);
+static DECLCALLBACK(int) pdmR3LoadExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass);
 static DECLCALLBACK(int) pdmR3LoadPrep(PVM pVM, PSSMHANDLE pSSM);
 
 
@@ -356,9 +357,9 @@ VMMR3DECL(int) PDMR3Init(PVM pVM)
          * Register the saved state data unit.
          */
         rc = SSMR3RegisterInternal(pVM, "pdm", 1, PDM_SAVED_STATE_VERSION, 128,
-                                   NULL, NULL, NULL,
-                                   NULL, pdmR3Save, NULL,
-                                   pdmR3LoadPrep, pdmR3Load, NULL);
+                                   NULL, pdmR3LiveExec, NULL,
+                                   NULL, pdmR3SaveExec, NULL,
+                                   pdmR3LoadPrep, pdmR3LoadExec, NULL);
         if (RT_SUCCESS(rc))
         {
             LogFlow(("PDM: Successfully initialized\n"));
@@ -619,19 +620,56 @@ VMMR3DECL(void) PDMR3TermUVM(PUVM pUVM)
 }
 
 
+/**
+ * Bits that are saved in pass 0 and in the final pass.
+ *
+ * @param   pVM             The VM handle.
+ * @param   pSSM            The saved state handle.
+ */
+static void pdmR3SaveBoth(PVM pVM, PSSMHANDLE pSSM)
+{
+    /*
+     * Save the list of device instances so we can check that they're all still
+     * there when we load the state and that nothing new has been added.
+     */
+    uint32_t i = 0;
+    for (PPDMDEVINS pDevIns = pVM->pdm.s.pDevInstances; pDevIns; pDevIns = pDevIns->Internal.s.pNextR3, i++)
+    {
+        SSMR3PutU32(pSSM, i);
+        SSMR3PutStrZ(pSSM, pDevIns->pDevReg->szDeviceName);
+        SSMR3PutU32(pSSM, pDevIns->iInstance);
+    }
+    SSMR3PutU32(pSSM, UINT32_MAX); /* terminator */
+}
 
+
+/**
+ * Live save.
+ *
+ * @returns VBox status code.
+ * @param   pVM             The VM handle.
+ * @param   pSSM            The saved state handle.
+ * @param   uPass           The pass.
+ */
+static DECLCALLBACK(int) pdmR3LiveExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uPass)
+{
+    LogFlow(("pdmR3LiveExec:\n"));
+    AssertReturn(uPass == 0, VERR_INTERNAL_ERROR_4);
+    pdmR3SaveBoth(pVM, pSSM);
+    return VINF_SSM_DONT_CALL_AGAIN;
+}
 
 
 /**
  * Execute state save operation.
  *
  * @returns VBox status code.
- * @param   pVM             VM Handle.
- * @param   pSSM            SSM operation handle.
+ * @param   pVM             The VM handle.
+ * @param   pSSM            The saved state handle.
  */
-static DECLCALLBACK(int) pdmR3Save(PVM pVM, PSSMHANDLE pSSM)
+static DECLCALLBACK(int) pdmR3SaveExec(PVM pVM, PSSMHANDLE pSSM)
 {
-    LogFlow(("pdmR3Save:\n"));
+    LogFlow(("pdmR3SaveExec:\n"));
 
     /*
      * Save interrupt and DMA states.
@@ -646,20 +684,8 @@ static DECLCALLBACK(int) pdmR3Save(PVM pVM, PSSMHANDLE pSSM)
     }
     SSMR3PutUInt(pSSM, VM_FF_ISSET(pVM, VM_FF_PDM_DMA));
 
-    /*
-     * Save the list of device instances so we can check that
-     * they're all still there when we load the state and that
-     * nothing new have been added.
-     */
-    /** @todo We might have to filter out some device classes, like USB attached devices. */
-    uint32_t i = 0;
-    for (PPDMDEVINS pDevIns = pVM->pdm.s.pDevInstances; pDevIns; pDevIns = pDevIns->Internal.s.pNextR3, i++)
-    {
-        SSMR3PutU32(pSSM, i);
-        SSMR3PutStrZ(pSSM, pDevIns->pDevReg->szDeviceName);
-        SSMR3PutU32(pSSM, pDevIns->iInstance);
-    }
-    return SSMR3PutU32(pSSM, UINT32_MAX); /* terminator */
+    pdmR3SaveBoth(pVM, pSSM);
+    return VINF_SUCCESS;
 }
 
 
@@ -718,12 +744,11 @@ static DECLCALLBACK(int) pdmR3LoadPrep(PVM pVM, PSSMHANDLE pSSM)
  * @param   uVersion        Data layout version.
  * @param   uPass           The data pass.
  */
-static DECLCALLBACK(int) pdmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
+static DECLCALLBACK(int) pdmR3LoadExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
 {
     int rc;
 
-    LogFlow(("pdmR3Load:\n"));
-    Assert(uPass == SSM_PASS_FINAL); NOREF(uPass);
+    LogFlow(("pdmR3LoadExec: uPass=%#x\n", uPass));
 
     /*
      * Validate version.
@@ -731,96 +756,99 @@ static DECLCALLBACK(int) pdmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, 
     if (    uVersion != PDM_SAVED_STATE_VERSION
         &&  uVersion != PDM_SAVED_STATE_VERSION_PRE_NMI_FF)
     {
-        AssertMsgFailed(("pdmR3Load: Invalid version uVersion=%d!\n", uVersion));
+        AssertMsgFailed(("Invalid version uVersion=%d!\n", uVersion));
         return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
     }
 
-    /*
-     * Load the interrupt and DMA states.
-     */
-    for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
+    if (uPass == SSM_PASS_FINAL)
     {
-        PVMCPU pVCpu = &pVM->aCpus[idCpu];
-
-        /* APIC interrupt */
-        RTUINT fInterruptPending = 0;
-        rc = SSMR3GetUInt(pSSM, &fInterruptPending);
-        if (RT_FAILURE(rc))
-            return rc;
-        if (fInterruptPending & ~1)
+        /*
+         * Load the interrupt and DMA states.
+         */
+        for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
         {
-            AssertMsgFailed(("fInterruptPending=%#x (APIC)\n", fInterruptPending));
-            return VERR_SSM_DATA_UNIT_FORMAT_CHANGED;
-        }
-        AssertRelease(!VMCPU_FF_ISSET(pVCpu, VMCPU_FF_INTERRUPT_APIC));
-        if (fInterruptPending)
-            VMCPU_FF_SET(pVCpu, VMCPU_FF_INTERRUPT_APIC);
+            PVMCPU pVCpu = &pVM->aCpus[idCpu];
 
-        /* PIC interrupt */
-        fInterruptPending = 0;
-        rc = SSMR3GetUInt(pSSM, &fInterruptPending);
-        if (RT_FAILURE(rc))
-            return rc;
-        if (fInterruptPending & ~1)
-        {
-            AssertMsgFailed(("fInterruptPending=%#x (PIC)\n", fInterruptPending));
-            return VERR_SSM_DATA_UNIT_FORMAT_CHANGED;
-        }
-        AssertRelease(!VMCPU_FF_ISSET(pVCpu, VMCPU_FF_INTERRUPT_PIC));
-        if (fInterruptPending)
-            VMCPU_FF_SET(pVCpu, VMCPU_FF_INTERRUPT_PIC);
-
-        if (uVersion > PDM_SAVED_STATE_VERSION_PRE_NMI_FF)
-        {
-            /* NMI interrupt */
+            /* APIC interrupt */
             RTUINT fInterruptPending = 0;
             rc = SSMR3GetUInt(pSSM, &fInterruptPending);
             if (RT_FAILURE(rc))
                 return rc;
             if (fInterruptPending & ~1)
             {
-                AssertMsgFailed(("fInterruptPending=%#x (NMI)\n", fInterruptPending));
+                AssertMsgFailed(("fInterruptPending=%#x (APIC)\n", fInterruptPending));
                 return VERR_SSM_DATA_UNIT_FORMAT_CHANGED;
             }
-            AssertRelease(!VMCPU_FF_ISSET(pVCpu, VMCPU_FF_INTERRUPT_NMI));
+            AssertRelease(!VMCPU_FF_ISSET(pVCpu, VMCPU_FF_INTERRUPT_APIC));
             if (fInterruptPending)
-                VMCPU_FF_SET(pVCpu, VMCPU_FF_INTERRUPT_NMI);
+                VMCPU_FF_SET(pVCpu, VMCPU_FF_INTERRUPT_APIC);
 
-            /* SMI interrupt */
+            /* PIC interrupt */
             fInterruptPending = 0;
             rc = SSMR3GetUInt(pSSM, &fInterruptPending);
             if (RT_FAILURE(rc))
                 return rc;
             if (fInterruptPending & ~1)
             {
-                AssertMsgFailed(("fInterruptPending=%#x (SMI)\n", fInterruptPending));
+                AssertMsgFailed(("fInterruptPending=%#x (PIC)\n", fInterruptPending));
                 return VERR_SSM_DATA_UNIT_FORMAT_CHANGED;
             }
-            AssertRelease(!VMCPU_FF_ISSET(pVCpu, VMCPU_FF_INTERRUPT_SMI));
+            AssertRelease(!VMCPU_FF_ISSET(pVCpu, VMCPU_FF_INTERRUPT_PIC));
             if (fInterruptPending)
-                VMCPU_FF_SET(pVCpu, VMCPU_FF_INTERRUPT_SMI);
-        }
-    }
+                VMCPU_FF_SET(pVCpu, VMCPU_FF_INTERRUPT_PIC);
 
-    /* DMA pending */
-    RTUINT fDMAPending = 0;
-    rc = SSMR3GetUInt(pSSM, &fDMAPending);
-    if (RT_FAILURE(rc))
-        return rc;
-    if (fDMAPending & ~1)
-    {
-        AssertMsgFailed(("fDMAPending=%#x\n", fDMAPending));
-        return VERR_SSM_DATA_UNIT_FORMAT_CHANGED;
+            if (uVersion > PDM_SAVED_STATE_VERSION_PRE_NMI_FF)
+            {
+                /* NMI interrupt */
+                RTUINT fInterruptPending = 0;
+                rc = SSMR3GetUInt(pSSM, &fInterruptPending);
+                if (RT_FAILURE(rc))
+                    return rc;
+                if (fInterruptPending & ~1)
+                {
+                    AssertMsgFailed(("fInterruptPending=%#x (NMI)\n", fInterruptPending));
+                    return VERR_SSM_DATA_UNIT_FORMAT_CHANGED;
+                }
+                AssertRelease(!VMCPU_FF_ISSET(pVCpu, VMCPU_FF_INTERRUPT_NMI));
+                if (fInterruptPending)
+                    VMCPU_FF_SET(pVCpu, VMCPU_FF_INTERRUPT_NMI);
+
+                /* SMI interrupt */
+                fInterruptPending = 0;
+                rc = SSMR3GetUInt(pSSM, &fInterruptPending);
+                if (RT_FAILURE(rc))
+                    return rc;
+                if (fInterruptPending & ~1)
+                {
+                    AssertMsgFailed(("fInterruptPending=%#x (SMI)\n", fInterruptPending));
+                    return VERR_SSM_DATA_UNIT_FORMAT_CHANGED;
+                }
+                AssertRelease(!VMCPU_FF_ISSET(pVCpu, VMCPU_FF_INTERRUPT_SMI));
+                if (fInterruptPending)
+                    VMCPU_FF_SET(pVCpu, VMCPU_FF_INTERRUPT_SMI);
+            }
+        }
+
+        /* DMA pending */
+        RTUINT fDMAPending = 0;
+        rc = SSMR3GetUInt(pSSM, &fDMAPending);
+        if (RT_FAILURE(rc))
+            return rc;
+        if (fDMAPending & ~1)
+        {
+            AssertMsgFailed(("fDMAPending=%#x\n", fDMAPending));
+            return VERR_SSM_DATA_UNIT_FORMAT_CHANGED;
+        }
+        if (fDMAPending)
+            VM_FF_SET(pVM, VM_FF_PDM_DMA);
+        Log(("pdmR3LoadExec: VM_FF_PDM_DMA=%RTbool\n", VM_FF_ISSET(pVM, VM_FF_PDM_DMA)));
     }
-    if (fDMAPending)
-        VM_FF_SET(pVM, VM_FF_PDM_DMA);
-    Log(("pdmR3Load: VM_FF_PDM_DMA=%RTbool\n", VM_FF_ISSET(pVM, VM_FF_PDM_DMA)));
 
     /*
      * Load the list of devices and verify that they are all there.
      */
     for (PPDMDEVINS pDevIns = pVM->pdm.s.pDevInstances; pDevIns; pDevIns = pDevIns->Internal.s.pNextR3)
-        pDevIns->Internal.s.fIntFlags &= PDMDEVINSINT_FLAGS_FOUND;
+        pDevIns->Internal.s.fIntFlags &= ~PDMDEVINSINT_FLAGS_FOUND;
 
     for (uint32_t i = 0; ; i++)
     {
@@ -850,7 +878,9 @@ static DECLCALLBACK(int) pdmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, 
             if (   !strcmp(szDeviceName, pDevIns->pDevReg->szDeviceName)
                 && pDevIns->iInstance == iInstance)
             {
-                AssertLogRelReturn(!(pDevIns->Internal.s.fIntFlags & PDMDEVINSINT_FLAGS_FOUND), VERR_SSM_DATA_UNIT_FORMAT_CHANGED);
+                AssertLogRelMsgReturn(!(pDevIns->Internal.s.fIntFlags & PDMDEVINSINT_FLAGS_FOUND),
+                                      ("%s/#%u\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance),
+                                      VERR_SSM_DATA_UNIT_FORMAT_CHANGED);
                 pDevIns->Internal.s.fIntFlags |= PDMDEVINSINT_FLAGS_FOUND;
                 break;
             }
