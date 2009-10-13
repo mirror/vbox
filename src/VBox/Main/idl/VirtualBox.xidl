@@ -757,6 +757,40 @@
   </enum>
 
   <enum
+    name="HWVirtExPropertyType"
+    uuid="843794f2-f392-46a7-8ff4-a0857a9b4b32"
+  >
+    <desc>
+      HWVirtEx property type. This enumeration represents possible values of the
+      IMachine get- and setHWVirtExProperty methods.
+    </desc>
+    <const name="Null"                  value="0">
+      <desc>Null value (never used by the API).</desc>
+    </const>
+    <const name="Enabled"             value="1">
+      <desc>
+        HWVirtEx (VT-x/AMD-V) boolean property.
+      </desc>
+    </const>
+    <const name="Exclusive"           value="2">
+      <desc>
+        Exclusive use of the VT extensions boolean property. When enabled VirtualBox assumes it can acquire full and exclusive access
+        to the VT-x or AMD-V feature of the host. To share these with other hypervisors you must disable this property.
+      </desc>
+    </const>
+    <const name="VPIDEnabled"         value="3">
+      <desc>
+        VT-x VPID boolean property.
+      </desc>
+    </const>
+    <const name="NestedPagingEnabled" value="4">
+      <desc>
+        Nested Paging boolean property.
+      </desc>
+    </const>
+  </enum>
+  
+  <enum
     name="SessionType"
     uuid="A13C02CB-0C2C-421E-8317-AC0E8AAA153A"
   >
@@ -4998,6 +5032,48 @@
       </param>
       <param name="value" type="wstring" dir="in">
         <desc>Value to assign to the key.</desc>
+      </param>
+    </method>
+
+    <method name="getHWVirtExProperty" const="yes">
+      <desc>
+        Returns the HWVirtEx boolean value of the specified property.
+
+        <result name="E_INVALIDARG">
+          Invalid property.
+        </result>
+
+      </desc>
+      <param name="property" type="HWVirtExPropertyType" dir="in">
+        <desc>
+          Property type to query.
+        </desc>
+      </param>
+      <param name="value" type="boolean" dir="return">
+        <desc>
+          Property value.
+        </desc>
+      </param>
+    </method>
+
+    <method name="setHWVirtExProperty">
+      <desc>
+        Sets the HWVirtEx boolean value of the specified property.
+
+        <result name="E_INVALIDARG">
+          Invalid property.
+        </result>
+
+      </desc>
+      <param name="property" type="HWVirtExPropertyType" dir="in">
+        <desc>
+          Property type to query.
+        </desc>
+      </param>
+      <param name="value" type="boolean" dir="in">
+        <desc>
+          Property value.
+        </desc>
       </param>
     </method>
 

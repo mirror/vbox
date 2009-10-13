@@ -1201,6 +1201,11 @@ void MainConfigFile::write(const com::Utf8Str strFilename)
 Hardware::Hardware()
         : strVersion("2"),
           fHardwareVirt(true),
+#if defined(RT_OS_DARWIN) || defined(RT_OS_WINDOWS)
+          fHardwareVirtExclusive(false),
+#else
+          fHardwareVirtExclusive(true),
+#endif
           fNestedPaging(false),
           fVPID(false),
           fPAE(false),
@@ -1456,7 +1461,10 @@ void MachineConfigFile::readHardware(const xml::ElementNode &elmHardware,
 
             const xml::ElementNode *pelmCPUChild;
             if ((pelmCPUChild = pelmHwChild->findChildElement("HardwareVirtEx")))
+            {
                 pelmCPUChild->getAttributeValue("enabled", hw.fHardwareVirt);
+                pelmCPUChild->getAttributeValue("exclusive", hw.fHardwareVirtExclusive);
+            }
             if ((pelmCPUChild = pelmHwChild->findChildElement("HardwareVirtExNestedPaging")))
                 pelmCPUChild->getAttributeValue("enabled", hw.fNestedPaging);
             if ((pelmCPUChild = pelmHwChild->findChildElement("HardwareVirtExVPID")))
@@ -2301,8 +2309,10 @@ void MachineConfigFile::writeHardware(xml::ElementNode &elmParent,
     if (hw.strVersion != "2")
         pelmHardware->setAttribute("version", hw.strVersion);
 
-    xml::ElementNode *pelmCPU = pelmHardware->createChild("CPU");
-    pelmCPU->createChild("HardwareVirtEx")->setAttribute("enabled", hw.fHardwareVirt);
+    xml::ElementNode *pelmCPU      = pelmHardware->createChild("CPU");
+    xml::ElementNode *pelmHwVirtEx = pelmCPU->createChild("HardwareVirtEx");
+    pelmHwVirtEx->setAttribute("enabled", hw.fHardwareVirt);
+    pelmHwVirtEx->setAttribute("exclusive", hw.fHardwareVirtExclusive);
     if (hw.fNestedPaging)
         pelmCPU->createChild("HardwareVirtExNestedPaging")->setAttribute("enabled", hw.fNestedPaging);
     if (hw.fVPID)

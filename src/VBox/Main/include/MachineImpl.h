@@ -285,6 +285,7 @@ public:
         ULONG          mVRAMSize;
         ULONG          mMonitorCount;
         BOOL           mHWVirtExEnabled;
+        BOOL           mHWVirtExExclusive;
         BOOL           mHWVirtExNestedPagingEnabled;
         BOOL           mHWVirtExVPIDEnabled;
         BOOL           mAccelerate2DVideoEnabled;
@@ -588,6 +589,8 @@ public:
     STDMETHOD(GetExtraDataKeys)(ComSafeArrayOut(BSTR, aKeys));
     STDMETHOD(GetExtraData)(IN_BSTR aKey, BSTR *aValue);
     STDMETHOD(SetExtraData)(IN_BSTR aKey, IN_BSTR aValue);
+    STDMETHOD(GetHWVirtExProperty)(HWVirtExPropertyType_T property, BOOL *aVal);
+    STDMETHOD(SetHWVirtExProperty)(HWVirtExPropertyType_T property, BOOL aVal);
     STDMETHOD(SaveSettings)();
     STDMETHOD(DiscardSettings)();
     STDMETHOD(DeleteSettings)();
