@@ -534,16 +534,44 @@ endif
 #
 # Generate the COM wrappers.
 #
+## @todo This needs some cleaning up perhaps...
+## @todo kBuild: Non-existing +| targets should be tried remade or what?
 VirtualBox_BLDDIRS       += $(PATH_VirtualBox)/include
 VirtualBox_INTERMEDIATES += $(PATH_VirtualBox)/include/COMWrappers.h
-VirtualBox_CLEAN         += $(PATH_VirtualBox)/include/COMWrappers.h
+VirtualBox_CLEAN         += \
+	$(PATH_VirtualBox)/include/COMWrappers \
+	$(PATH_VirtualBox)/include/COMWrappers.tmp \
+	$(PATH_VirtualBox)/include/COMWrappers.h \
+	$(PATH_VirtualBox)/include/COMWrappers.cpp
+VirtualBox_SOURCES       += $(PATH_VirtualBox)/include/COMWrappers.cpp
 
-$$(PATH_VirtualBox)/include/COMWrappers.h: \
+$$(PATH_VirtualBox)/include/COMWrappers \
++| $$(PATH_VirtualBox)/include/COMWrappers.h \
++| $$(PATH_VirtualBox)/include/COMWrappers.cpp: \
 		$(VBOX_XIDL_FILE) \
 		$(VBOX_VIRTUALBOX4_SRC)/include/COMWrappers.xsl \
 		| $$(dir $$@)
 	$(call MSG_GENERATE,VirtualBox,$<,$@)
+	$(RM) -f $@ $@.tmp $@.h $@.cpp
 	$(QUIET)$(VBOX_XSLTPROC) -o $@ $(VBOX_VIRTUALBOX4_SRC)/include/COMWrappers.xsl $<
+
+	$(SED) -e '1,/\/\/ wrapper definitions/ !d' \
+		--output $@.tmp $@
+	$(CP) --changed $@.tmp $@.h
+
+	$(APPEND) -t -n $@.tmp \
+		'/*' \
+		' * DO NOT EDIT! This is a generated file, see COMWrappers.h for details.' \
+		' */' \
+		'' \
+		'#include "VBoxGlobal.h"' \
+		''
+	$(SED) -e '/\/\/ wrapper definitions/,9999999 !d' \
+		-e 's/^inline //' \
+		--append $@.tmp $@
+	$(CP) --changed $@.tmp $@.cpp
+	$(RM) -f $@.tmp
+
 
 # alias for generating the COM Wrappers file.
 testwrappers:: $$(PATH_VirtualBox)/include/COMWrappers.h
