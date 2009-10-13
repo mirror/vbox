@@ -1083,12 +1083,12 @@ static int drvHostBaseReopen(PDRVHOSTBASE pThis)
     if (pThis->FileRawDevice != NIL_RTFILE)
     {
         RTFileClose(pThis->FileRawDevice);
-        pThis->FileDevice = NIL_RTFILE;
+        pThis->FileRawDevice = NIL_RTFILE;
     }
     if (pThis->FileDevice != NIL_RTFILE)
     {
         RTFileClose(pThis->FileDevice);
-        pThis->FileRawDevice = NIL_RTFILE;
+        pThis->FileDevice = NIL_RTFILE;
     }
     RTFILE FileRawDevice;
     int rc = drvHostBaseOpen(pThis, &FileDevice, &FileRawDevice, pThis->fReadOnlyConfig);
@@ -1432,7 +1432,7 @@ int DRVHostBaseMediaPresent(PDRVHOSTBASE pThis)
         return rc;
 
     /*
-     * Determin the size.
+     * Determine the size.
      */
     uint64_t cb;
     rc = pThis->pfnGetMediaSize(pThis, &cb);

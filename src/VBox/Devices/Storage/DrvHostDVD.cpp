@@ -341,7 +341,7 @@ DECLCALLBACK(int) drvHostDvdPoll(PDRVHOSTBASE pThis)
     {
         fMediaPresent = false;
         fMediaChanged = true;
-        /** @todo check this media chance stuff on Darwin. */
+        /** @todo check this media change stuff on Darwin. */
     }
 
 #elif defined(RT_OS_LINUX)
