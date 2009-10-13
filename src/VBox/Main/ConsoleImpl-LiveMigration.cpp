@@ -965,7 +965,7 @@ Console::migrationDstServeConnection(RTSOCKET Sock, void *pvUser)
         }
         else
         {
-            LogRel(("Migration: Unknown command '%s' (%.*Rxs)\n", szCmd, strlen(szCmd), szCmd));
+            LogRel(("Migration: Unknown command '%s' (%.*Rhxs)\n", szCmd, strlen(szCmd), szCmd));
             vrc = VERR_NOT_IMPLEMENTED;
             migrationTcpWriteNACK(pState, vrc);
             break;
