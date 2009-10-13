@@ -21,7 +21,7 @@
  */
 #ifndef __VBoxGLSupportInfo_h__
 #define __VBoxGLSupportInfo_h__
-#include <QGLWidget>
+
 #include <iprt/types.h>
 
 #if defined(DEBUG) && !defined(DEBUG_sandervl)
