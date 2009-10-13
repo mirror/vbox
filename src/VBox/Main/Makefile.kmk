@@ -466,6 +466,9 @@ if defined(VBOX_WITH_CROGL) || defined(VBOX_WITH_VIDEOHWACCEL)
   #
   # VBoxTestOGL - OpenGL support test app.
   #
+  ifdef VBOX_WITH_VIDEOHWACCEL
+   USES += qt4
+  endif
   PROGRAMS += VBoxTestOGL
   VBoxTestOGL_TEMPLATE = $(if $(VBOX_WITH_VIDEOHWACCEL),$(if $(VBOX_WITH_HARDENING),VBOXQT4GUI,VBOXQT4GUIEXE),VBOXMAINEXE)
   VBoxTestOGL_SOURCES = generic/OpenGLTestApp.cpp
