@@ -178,6 +178,7 @@ VBoxDrv_SOURCES       = \
 	win/SUPDrv-win.cpp \
 	win/SUPDrvA-win.asm \
 	SUPDrv.c \
+	SUPDrvAgnostic.c \
 	win/VBoxDrv.rc
 VBoxDrv_LDFLAGS.x86   = -Entry:DriverEntry@8
 VBoxDrv_LDFLAGS.amd64 = -Entry:DriverEntry
@@ -233,7 +234,8 @@ vboxdrv_LIBS          = $(PATH_LIB)/RuntimeR0Drv$(VBOX_SUFF_LIB)
 vboxdrv_LIBS.debug    = $(vboxdrv_LIBS) $(VBOX_GCC_LIBGCC)
 vboxdrv_SOURCES       = \
 	$(KBUILD_TARGET)/SUPDrv-$(KBUILD_TARGET).c \
-	SUPDrv.c
+	SUPDrv.c \
+	SUPDrvAgnostic.c
 ifndef VBOX_LINUX_VERSION_2_4
 vboxdrv_SOURCES      += \
 	$(KBUILD_TARGET)/SUPDrv-$(KBUILD_TARGET).mod.c
@@ -317,6 +319,7 @@ VBoxDrvTiger_LIBS        = $(PATH_LIB)/RuntimeR0Drv$(VBOX_SUFF_LIB)
 VBoxDrvTiger_LDFLAGS     = -v -Wl,-whyload -Wl,-v -Wl,-whatsloaded
 VBoxDrvTiger_SOURCES     = \
 	SUPDrv.c \
+	SUPDrvAgnostic.c \
 	$(KBUILD_TARGET)/SUPDrv-$(KBUILD_TARGET).cpp
 
 INSTALLS += VBoxDrvTiger.kext
@@ -396,7 +399,8 @@ VBoxDrvLib_INCS      := \
 	$(PATH_ROOT)/src/VBox/Runtime/include
 VBoxDrvLib_SOURCES    = \
 	os2/SUPDrv-os2.cpp \
-	SUPDrv.c
+	SUPDrv.c \
+	SUPDrvAgnostic.c
 
 endif # os2
 ifeq ($(KBUILD_TARGET),freebsd)
@@ -411,7 +415,8 @@ vboxdrv_LIBS          = $(PATH_LIB)/RuntimeR0Drv$(VBOX_SUFF_LIB)
 vboxdrv_SOURCES      := \
 	$(KBUILD_TARGET)/SUPDrv-$(KBUILD_TARGET).c \
 	$(PATH_SUB_CURRENT)/$(KBUILD_TARGET)/SUPDrv-$(KBUILD_TARGET).def \
-	SUPDrv.c
+	SUPDrv.c \
+	SUPDrvAgnostic.c
 ## @todo the SUPDrv-freebsd.def is most probably gonna break it and require build system hacking...
 
 #
@@ -453,7 +458,8 @@ vboxdrv_INCS         := $(PATH_SUB_CURRENT)
 vboxdrv_LIBS          = $(PATH_LIB)/RuntimeR0Drv$(VBOX_SUFF_LIB)
 vboxdrv_SOURCES       = \
 	$(KBUILD_TARGET)/SUPDrv-$(KBUILD_TARGET).c \
-	SUPDrv.c
+	SUPDrv.c \
+	SUPDrvAgnostic.c
 
 endif # solaris
 

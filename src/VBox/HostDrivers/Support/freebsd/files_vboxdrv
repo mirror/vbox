@@ -75,6 +75,7 @@ FILES_VBOXDRV_NOBIN=" \
     ${PATH_ROOT}/include/VBox/x86.h=>include/VBox/x86.h \
     ${PATH_ROOT}/src/VBox/HostDrivers/Support/freebsd/SUPDrv-freebsd.c=>freebsd/SUPDrv-freebsd.c \
     ${PATH_ROOT}/src/VBox/HostDrivers/Support/SUPDrv.c=>SUPDrv.c \
+    ${PATH_ROOT}/src/VBox/HostDrivers/Support/SUPDrvAgnostic.c=>SUPDrvAgnostic.c \
     ${PATH_ROOT}/src/VBox/HostDrivers/Support/SUPDrvIDC.h=>SUPDrvIDC.h \
     ${PATH_ROOT}/src/VBox/HostDrivers/Support/SUPDrvIOC.h=>SUPDrvIOC.h \
     ${PATH_ROOT}/src/VBox/HostDrivers/Support/SUPDrvInternal.h=>SUPDrvInternal.h \

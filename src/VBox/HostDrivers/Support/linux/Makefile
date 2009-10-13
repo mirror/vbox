@@ -76,6 +76,7 @@ override MODULE = vboxdrv
 OBJS   = \
 	linux/SUPDrv-linux.o \
 	SUPDrv.o \
+	SUPDrvAgnostic.o \
 	r0drv/alloc-r0drv.o \
 	r0drv/initterm-r0drv.o \
 	r0drv/memobj-r0drv.o \
