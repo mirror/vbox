@@ -470,6 +470,9 @@ private:
     static DECLCALLBACK(void)   setVMErrorCallback(PVM pVM, void *pvUser, int rc, RT_SRC_POS_DECL,
                                                    const char *pszFormat, va_list args);
 
+    static DECLCALLBACK(void) setVMRuntimeErrorCallbackF (PVM pVM, void *pvUser, uint32_t fFatal,
+                               const char *pszErrorId,
+                               const char *pszFormat, ...);
     static DECLCALLBACK(void) setVMRuntimeErrorCallback (PVM pVM, void *pvUser, uint32_t fFatal,
                                const char *pszErrorId,
                                const char *pszFormat, va_list va);
