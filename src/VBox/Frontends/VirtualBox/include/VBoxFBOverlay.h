@@ -26,7 +26,7 @@
 //#define VBOXQGL_PROF_BASE 1
 //#define VBOXQGL_DBG_SURF 1
 
-//#include "COMDefs.h"
+#include "COMDefs.h"
 #include <QGLWidget>
 #include <iprt/assert.h>
 #include <iprt/critsect.h>
