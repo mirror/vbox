@@ -165,31 +165,28 @@ static int migrationTcpReadLine(MigrationState *pState, char *pszBuf, size_t cch
     RTSOCKET    Sock     = pState->mhSocket;
 
     AssertReturn(cchBuf > 1, VERR_INTERNAL_ERROR);
+    *pszBuf = '\0';
 
-    /* dead simple (stupid) approach. */
+    /* dead simple approach. */
     for (;;)
     {
         char ch;
         int rc = RTTcpRead(Sock, &ch, sizeof(ch), NULL);
         if (RT_FAILURE(rc))
         {
-            *pszBuf = '\0';
             LogRel(("Migration: RTTcpRead -> %Rrc while reading string ('%s')\n", rc, pszStart));
             return rc;
         }
         if (    ch == '\n'
             ||  ch == '\0')
-        {
-            *pszBuf = '\0';
             return VINF_SUCCESS;
-        }
         if (cchBuf <= 1)
         {
-            *pszBuf = '\0';
             LogRel(("Migration: String buffer overflow: '%s'\n", pszStart));
             return VERR_BUFFER_OVERFLOW;
         }
         *pszBuf++ = ch;
+        *pszBuf = '\0';
         cchBuf--;
     }
 }
@@ -948,6 +945,17 @@ Console::migrationDstServeConnection(RTSOCKET Sock, void *pvUser)
             if (RT_FAILURE(vrc))
             {
                 LogRel(("Migration: VMR3LoadFromStream -> %Rrc\n", vrc));
+                migrationTcpWriteNACK(pState, vrc);
+                break;
+            }
+
+            /* The EOS might not have been read, make sure it is. */
+            pState->mfStopReading = false;
+            size_t cbRead;
+            vrc = migrationTcpOpRead(pvUser, pState->moffStream, szCmd, 1, &cbRead);
+            if (vrc != VERR_EOF)
+            {
+                LogRel(("Migration: Draining migrationTcpOpRead -> %Rrc\n", vrc));
                 migrationTcpWriteNACK(pState, vrc);
                 break;
             }
