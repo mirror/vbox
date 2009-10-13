@@ -547,7 +547,7 @@ bool VBoxVHWAInfo::isVHWASupported() const
 /* static */
 bool VBoxVHWAInfo::checkVHWASupport()
 {
-#if defined(RT_OS_WINDOWS)
+#if defined(RT_OS_WINDOWS) || defined(RT_OS_LINUX)
     static char pszVBoxPath[RTPATH_MAX];
     const char *papszArgs[] = { NULL, "-test", "2D", NULL};
     int rc;
