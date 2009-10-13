@@ -483,8 +483,9 @@ endif
 
 if defined(VBOX_WITH_VIDEOHWACCEL) || defined(VBOX_GUI_USE_QGL)
  VirtualBox_SOURCES += \
- 	src/VBoxFBQGL.cpp \
- 	src/VBoxFBOverlay.cpp
+    src/VBoxFBQGL.cpp \
+    src/VBoxFBOverlay.cpp \
+    src/VBoxGLSupportInfo.cpp
 endif
 # The Qt modules we're using.
 # (The include directory and lib/framework for each module will be added by the Qt4 unit.)
@@ -644,6 +645,23 @@ $$(PATH_VirtualBoxVM.app)/VM-Info.plist: $(PATH_SUB_CURRENT)/src/darwin/VM-Info.
 		--output $@ $<
 endif # darwin
 
+#
+# App for testing GL support
+#
+if defined(VBOX_WITH_VIDEOHWACCEL)
+ if1of ($(KBUILD_TARGET), win linux)
+  PROGRAMS += VBoxTestOGL2D
+  VBoxTestOGL2D_TEMPLATE := $(if $(VBOX_WITH_HARDENING),VBOXQT4GUI,VBOXQT4GUIEXE)
+  VBoxTestOGL2D_SOURCES = \
+      src/VBoxTestQGLApp.cpp \
+      src/VBoxGLSupportInfo.cpp
+  VBoxTestOGL2D_QT_MODULES = Core Gui OpenGL
+  VBoxTestOGL2D_INCS = include
+  VBoxTestOGL2D_LDFLAGS.darwin += -framework OpenGL
+  VBoxTestOGL2D_LIBS.win     += $(PATH_SDK_WINPSDK_LIB)/Opengl32.lib
+  VBoxTestOGL2D_LIBS.solaris += GL
+ endif 
+endif
 
 #
 # Testcase for the darwin keyboard routines.

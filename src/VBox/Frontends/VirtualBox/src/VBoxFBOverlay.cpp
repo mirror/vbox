@@ -28,6 +28,8 @@
 #include "VBoxProblemReporter.h"
 #include "VBoxGlobal.h"
 
+#include "VBoxGLSupportInfo.h"
+
 /* Qt includes */
 #include <QGLWidget>
 
@@ -126,679 +128,30 @@
 
 #endif
 
-#define VBOXQGL_MAKEFOURCC(ch0, ch1, ch2, ch3)                              \
-                ((uint32_t)(uint8_t)(ch0) | ((uint32_t)(uint8_t)(ch1) << 8) |       \
-                ((uint32_t)(uint8_t)(ch2) << 16) | ((uint32_t)(uint8_t)(ch3) << 24 ))
+static VBoxVHWAInfo g_VBoxVHWASupportInfo;
+static bool g_bVBoxVHWAChecked = false;
+static bool g_bVBoxVHWASupported = false;
 
-#define FOURCC_AYUV VBOXQGL_MAKEFOURCC('A', 'Y', 'U', 'V')
-#define FOURCC_UYVY VBOXQGL_MAKEFOURCC('U', 'Y', 'V', 'Y')
-#define FOURCC_YUY2 VBOXQGL_MAKEFOURCC('Y', 'U', 'Y', '2')
-#define FOURCC_YV12 VBOXQGL_MAKEFOURCC('Y', 'V', '1', '2')
-#define VBOXVHWA_NUMFOURCC 4
-
-typedef char GLchar;
-
-#ifndef GL_COMPILE_STATUS
-# define GL_COMPILE_STATUS 0x8b81
-#endif
-#ifndef GL_LINK_STATUS
-# define GL_LINK_STATUS    0x8b82
-#endif
-#ifndef GL_FRAGMENT_SHADER
-# define GL_FRAGMENT_SHADER 0x8b30
-#endif
-#ifndef GL_VERTEX_SHADER
-# define GL_VERTEX_SHADER 0x8b31
-#endif
-
-/* GL_ARB_multitexture */
-#ifndef GL_TEXTURE0
-# define GL_TEXTURE0                    0x84c0
-#endif
-#ifndef GL_TEXTURE1
-# define GL_TEXTURE1                    0x84c1
-#endif
-#ifndef GL_MAX_TEXTURE_COORDS
-# define GL_MAX_TEXTURE_COORDS          0x8871
-#endif
-#ifndef GL_MAX_TEXTURE_IMAGE_UNITS
-# define GL_MAX_TEXTURE_IMAGE_UNITS     0x8872
-#endif
-
-#ifndef APIENTRY
-# define APIENTRY
-#endif
-
-typedef GLvoid (APIENTRY *PFNVBOXVHWA_ACTIVE_TEXTURE) (GLenum texture);
-typedef GLvoid (APIENTRY *PFNVBOXVHWA_MULTI_TEX_COORD2I) (GLenum texture, GLint v0, GLint v1);
-typedef GLvoid (APIENTRY *PFNVBOXVHWA_MULTI_TEX_COORD2F) (GLenum texture, GLfloat v0, GLfloat v1);
-typedef GLvoid (APIENTRY *PFNVBOXVHWA_MULTI_TEX_COORD2D) (GLenum texture, GLdouble v0, GLdouble v1);
-
-/* GL_ARB_texture_rectangle */
-#ifndef GL_TEXTURE_RECTANGLE
-# define GL_TEXTURE_RECTANGLE 0x84F5
-#endif
-
-/* GL_ARB_shader_objects */
-/* GL_ARB_fragment_shader */
-
-typedef GLuint (APIENTRY *PFNVBOXVHWA_CREATE_SHADER)  (GLenum type);
-typedef GLvoid (APIENTRY *PFNVBOXVHWA_SHADER_SOURCE)  (GLuint shader, GLsizei count, const GLchar **string, const GLint *length);
-typedef GLvoid (APIENTRY *PFNVBOXVHWA_COMPILE_SHADER) (GLuint shader);
-typedef GLvoid (APIENTRY *PFNVBOXVHWA_DELETE_SHADER)  (GLuint shader);
-
-typedef GLuint (APIENTRY *PFNVBOXVHWA_CREATE_PROGRAM) ();
-typedef GLvoid (APIENTRY *PFNVBOXVHWA_ATTACH_SHADER)  (GLuint program, GLuint shader);
-typedef GLvoid (APIENTRY *PFNVBOXVHWA_DETACH_SHADER)  (GLuint program, GLuint shader);
-typedef GLvoid (APIENTRY *PFNVBOXVHWA_LINK_PROGRAM)   (GLuint program);
-typedef GLvoid (APIENTRY *PFNVBOXVHWA_USE_PROGRAM)    (GLuint program);
-typedef GLvoid (APIENTRY *PFNVBOXVHWA_DELETE_PROGRAM) (GLuint program);
-
-typedef GLboolean (APIENTRY *PFNVBOXVHWA_IS_SHADER)   (GLuint shader);
-typedef GLvoid (APIENTRY *PFNVBOXVHWA_GET_SHADERIV)   (GLuint shader, GLenum pname, GLint *params);
-typedef GLboolean (APIENTRY *PFNVBOXVHWA_IS_PROGRAM)  (GLuint program);
-typedef GLvoid (APIENTRY *PFNVBOXVHWA_GET_PROGRAMIV)  (GLuint program, GLenum pname, GLint *params);
-typedef GLvoid (APIENTRY *PFNVBOXVHWA_GET_ATTACHED_SHADERS) (GLuint program, GLsizei maxCount, GLsizei *count, GLuint *shaders);
-typedef GLvoid (APIENTRY *PFNVBOXVHWA_GET_SHADER_INFO_LOG)  (GLuint shader, GLsizei bufSize, GLsizei *length, GLchar *infoLog);
-typedef GLvoid (APIENTRY *PFNVBOXVHWA_GET_PROGRAM_INFO_LOG) (GLuint program, GLsizei bufSize, GLsizei *length, GLchar *infoLog);
-typedef GLint (APIENTRY *PFNVBOXVHWA_GET_UNIFORM_LOCATION) (GLint programObj, const GLchar *name);
-
-typedef GLvoid (APIENTRY *PFNVBOXVHWA_UNIFORM1F)(GLint location, GLfloat v0);
-typedef GLvoid (APIENTRY *PFNVBOXVHWA_UNIFORM2F)(GLint location, GLfloat v0, GLfloat v1);
-typedef GLvoid (APIENTRY *PFNVBOXVHWA_UNIFORM3F)(GLint location, GLfloat v0, GLfloat v1, GLfloat v2);
-typedef GLvoid (APIENTRY *PFNVBOXVHWA_UNIFORM4F)(GLint location, GLfloat v0, GLfloat v1, GLfloat v2, GLfloat v3);
-
-typedef GLvoid (APIENTRY *PFNVBOXVHWA_UNIFORM1I)(GLint location, GLint v0);
-typedef GLvoid (APIENTRY *PFNVBOXVHWA_UNIFORM2I)(GLint location, GLint v0, GLint v1);
-typedef GLvoid (APIENTRY *PFNVBOXVHWA_UNIFORM3I)(GLint location, GLint v0, GLint v1, GLint v2);
-typedef GLvoid (APIENTRY *PFNVBOXVHWA_UNIFORM4I)(GLint location, GLint v0, GLint v1, GLint v2, GLint v3);
-
-/* GL_ARB_pixel_buffer_object*/
-#ifndef Q_WS_MAC
-/* apears to be defined on mac */
-typedef ptrdiff_t GLsizeiptr;
-#endif
-
-#ifndef GL_READ_ONLY
-# define GL_READ_ONLY                   0x88B8
-#endif
-#ifndef GL_WRITE_ONLY
-# define GL_WRITE_ONLY                  0x88B9
-#endif
-#ifndef GL_READ_WRITE
-# define GL_READ_WRITE                  0x88BA
-#endif
-#ifndef GL_STREAM_DRAW
-# define GL_STREAM_DRAW                 0x88E0
-#endif
-#ifndef GL_STREAM_READ
-# define GL_STREAM_READ                 0x88E1
-#endif
-#ifndef GL_STREAM_COPY
-# define GL_STREAM_COPY                 0x88E2
-#endif
-
-#ifndef GL_PIXEL_PACK_BUFFER
-# define GL_PIXEL_PACK_BUFFER           0x88EB
-#endif
-#ifndef GL_PIXEL_UNPACK_BUFFER
-# define GL_PIXEL_UNPACK_BUFFER         0x88EC
-#endif
-#ifndef GL_PIXEL_PACK_BUFFER_BINDING
-# define GL_PIXEL_PACK_BUFFER_BINDING   0x88ED
-#endif
-#ifndef GL_PIXEL_UNPACK_BUFFER_BINDING
-# define GL_PIXEL_UNPACK_BUFFER_BINDING 0x88EF
-#endif
-
-typedef GLvoid (APIENTRY *PFNVBOXVHWA_GEN_BUFFERS)(GLsizei n, GLuint *buffers);
-typedef GLvoid (APIENTRY *PFNVBOXVHWA_DELETE_BUFFERS)(GLsizei n, const GLuint *buffers);
-typedef GLvoid (APIENTRY *PFNVBOXVHWA_BIND_BUFFER)(GLenum target, GLuint buffer);
-typedef GLvoid (APIENTRY *PFNVBOXVHWA_BUFFER_DATA)(GLenum target, GLsizeiptr size, const GLvoid *data, GLenum usage);
-typedef GLvoid* (APIENTRY *PFNVBOXVHWA_MAP_BUFFER)(GLenum target, GLenum access);
-typedef GLboolean (APIENTRY *PFNVBOXVHWA_UNMAP_BUFFER)(GLenum target);
-
-/*****************/
-
-/* functions */
-
-PFNVBOXVHWA_ACTIVE_TEXTURE vboxglActiveTexture = NULL;
-PFNVBOXVHWA_MULTI_TEX_COORD2I vboxglMultiTexCoord2i = NULL;
-PFNVBOXVHWA_MULTI_TEX_COORD2D vboxglMultiTexCoord2d = NULL;
-PFNVBOXVHWA_MULTI_TEX_COORD2F vboxglMultiTexCoord2f = NULL;
-
-
-PFNVBOXVHWA_CREATE_SHADER   vboxglCreateShader  = NULL;
-PFNVBOXVHWA_SHADER_SOURCE   vboxglShaderSource  = NULL;
-PFNVBOXVHWA_COMPILE_SHADER  vboxglCompileShader = NULL;
-PFNVBOXVHWA_DELETE_SHADER   vboxglDeleteShader  = NULL;
-
-PFNVBOXVHWA_CREATE_PROGRAM  vboxglCreateProgram = NULL;
-PFNVBOXVHWA_ATTACH_SHADER   vboxglAttachShader  = NULL;
-PFNVBOXVHWA_DETACH_SHADER   vboxglDetachShader  = NULL;
-PFNVBOXVHWA_LINK_PROGRAM    vboxglLinkProgram   = NULL;
-PFNVBOXVHWA_USE_PROGRAM     vboxglUseProgram    = NULL;
-PFNVBOXVHWA_DELETE_PROGRAM  vboxglDeleteProgram = NULL;
-
-PFNVBOXVHWA_IS_SHADER       vboxglIsShader      = NULL;
-PFNVBOXVHWA_GET_SHADERIV    vboxglGetShaderiv   = NULL;
-PFNVBOXVHWA_IS_PROGRAM      vboxglIsProgram     = NULL;
-PFNVBOXVHWA_GET_PROGRAMIV   vboxglGetProgramiv  = NULL;
-PFNVBOXVHWA_GET_ATTACHED_SHADERS vboxglGetAttachedShaders = NULL;
-PFNVBOXVHWA_GET_SHADER_INFO_LOG  vboxglGetShaderInfoLog   = NULL;
-PFNVBOXVHWA_GET_PROGRAM_INFO_LOG vboxglGetProgramInfoLog  = NULL;
-
-PFNVBOXVHWA_GET_UNIFORM_LOCATION vboxglGetUniformLocation = NULL;
-
-PFNVBOXVHWA_UNIFORM1F vboxglUniform1f;
-PFNVBOXVHWA_UNIFORM2F vboxglUniform2f;
-PFNVBOXVHWA_UNIFORM3F vboxglUniform3f;
-PFNVBOXVHWA_UNIFORM4F vboxglUniform4f;
-
-PFNVBOXVHWA_UNIFORM1I vboxglUniform1i;
-PFNVBOXVHWA_UNIFORM2I vboxglUniform2i;
-PFNVBOXVHWA_UNIFORM3I vboxglUniform3i;
-PFNVBOXVHWA_UNIFORM4I vboxglUniform4i;
-
-PFNVBOXVHWA_GEN_BUFFERS vboxglGenBuffers = NULL;
-PFNVBOXVHWA_DELETE_BUFFERS vboxglDeleteBuffers = NULL;
-PFNVBOXVHWA_BIND_BUFFER vboxglBindBuffer = NULL;
-PFNVBOXVHWA_BUFFER_DATA vboxglBufferData = NULL;
-PFNVBOXVHWA_MAP_BUFFER vboxglMapBuffer = NULL;
-PFNVBOXVHWA_UNMAP_BUFFER vboxglUnmapBuffer = NULL;
-
-#if 0
-#if defined Q_WS_WIN
-#define VBOXVHWA_GETPROCADDRESS(_t, _n) (_t)wglGetProcAddress(_n)
-#elif defined Q_WS_X11
-#include <GL/glx.h>
-#define VBOXVHWA_GETPROCADDRESS(_t, _n) (_t)glXGetProcAddress((const GLubyte *)(_n))
-#else
-#error "Port me!!!"
-#endif
-#endif
-
-#define VBOXVHWA_GETPROCADDRESS(_c, _t, _n) ((_t)(_c).getProcAddress(QString(_n)))
-
-#define VBOXVHWA_PFNINIT_SAME(_c, _t, _v, _rc) \
-    do { \
-        if((vboxgl##_v = VBOXVHWA_GETPROCADDRESS(_c, _t, "gl"#_v)) == NULL) \
-        { \
-            VBOXQGLLOG(("ERROR: '%s' function is not found\n", "gl"#_v));\
-            AssertBreakpoint(); \
-            if((vboxgl##_v = VBOXVHWA_GETPROCADDRESS(_c, _t, "gl"#_v"ARB")) == NULL) \
-            { \
-                VBOXQGLLOG(("ERROR: '%s' function is not found\n", "gl"#_v"ARB"));\
-                AssertBreakpoint(); \
-                if((vboxgl##_v = VBOXVHWA_GETPROCADDRESS(_c, _t, "gl"#_v"EXT")) == NULL) \
-                { \
-                    VBOXQGLLOG(("ERROR: '%s' function is not found\n", "gl"#_v"EXT"));\
-                    AssertBreakpoint(); \
-                    (_rc)++; \
-                } \
-            } \
-        } \
-    }while(0)
-
-#define VBOXVHWA_PFNINIT(_c, _t, _v, _f,_rc) \
-    do { \
-        if((vboxgl##_v = VBOXVHWA_GETPROCADDRESS(_c, _t, "gl"#_f)) == NULL) \
-        { \
-            VBOXQGLLOG(("ERROR: '%s' function is not found\n", "gl"#_f));\
-            AssertBreakpoint(); \
-            (_rc)++; \
-        } \
-    }while(0)
-
-//#define VBOXVHWA_PFNINIT_OBJECT_ARB(_t, _v, _rc) VBOXVHWA_PFNINIT(_t, _v, #_v"ObjectARB" ,_rc)
-#define VBOXVHWA_PFNINIT_OBJECT_ARB(_c, _t, _v, _rc) \
-        do { \
-            if((vboxgl##_v = VBOXVHWA_GETPROCADDRESS(_c, _t, "gl"#_v"ObjectARB")) == NULL) \
-            { \
-                VBOXQGLLOG(("ERROR: '%s' function is not found\n", "gl"#_v"ObjectARB"));\
-                AssertBreakpoint(); \
-                (_rc)++; \
-            } \
-        }while(0)
-
-//#define VBOXVHWA_PFNINIT_ARB(_t, _v, _rc) VBOXVHWA_PFNINIT(_t, _v, #_v"ARB" ,_rc)
-#define VBOXVHWA_PFNINIT_ARB(_c, _t, _v, _rc) \
-        do { \
-            if((vboxgl##_v = VBOXVHWA_GETPROCADDRESS(_c, _t, "gl"#_v"ARB")) == NULL) \
-            { \
-                VBOXQGLLOG(("ERROR: '%s' function is not found\n", "gl"#_v"ARB"));\
-                AssertBreakpoint(); \
-                (_rc)++; \
-            } \
-        }while(0)
-
-
-static bool g_vboxVHWAGlSupportInitialized = false;
-/* vbox version in the format 0x00mjmnbl
- * in case of a failure contains -1 (0xffffffff) */
-static int g_vboxVHWAGlVersion = 0;
-
-static bool g_GL_ARB_multitexture        = false;
-static bool g_GL_ARB_shader_objects      = false;
-static bool g_GL_ARB_fragment_shader     = false;
-static bool g_GL_ARB_pixel_buffer_object = false;
-static bool g_GL_ARB_texture_rectangle   = false;
-static bool g_GL_EXT_texture_rectangle   = false;
-static bool g_GL_NV_texture_rectangle         = false;
-static bool g_GL_ARB_texture_non_power_of_two = false;
-
-/* gl features supported */
-static bool g_vboxVHWAGlShaderSupported = false;
-static bool g_vboxVHWAGlTextureRectangleSupported = false;
-static bool g_vboxVHWAGlTextureNP2Supported = false;
-static bool g_vboxVHWAGlPBOSupported = false;
-static int g_vboxVHWAGlMultiTexNumSupported = 1; /* 1 would mean it is not supported */
-
-/* vhwa features supported */
-static uint32_t g_vboxVHWAFourccSupportedList[VBOXVHWA_NUMFOURCC];
-static uint32_t g_vboxVHWAFourccSupportedCount = 0;
-
-
-static int vboxVHWAGlParseSubver(const GLubyte * ver, const GLubyte ** pNext, bool bSpacePrefixAllowed)
+static const VBoxVHWAInfo & vboxVHWAGetSupportInfo(const QGLContext *pContext)
 {
-    int val = 0;
-
-    for(;;++ver)
+    if(!g_VBoxVHWASupportInfo.isInitialized())
     {
-        if(*ver >= '0' && *ver <= '9')
+        if(pContext)
         {
-            if(!val)
-            {
-                if(*ver == '0')
-                    continue;
-            }
-            else
-            {
-                val *= 10;
-            }
-            val += *ver - '0';
-        }
-        else if(*ver == '.')
-        {
-            *pNext = ver+1;
-            break;
-        }
-        else if(*ver == '\0')
-        {
-            *pNext = NULL;
-            break;
-        }
-        else if(*ver == ' ' || *ver == '\t' ||  *ver == 0x0d || *ver == 0x0a)
-        {
-            if(bSpacePrefixAllowed)
-            {
-                if(!val)
-                {
-                    continue;
-                }
-            }
-
-            /* treat this as the end ov version string */
-            *pNext = NULL;
-            break;
+            g_VBoxVHWASupportInfo.init(pContext);
         }
         else
         {
-            Assert(0);
-            val = -1;
-            break;
-        }
-    }
-
-    return val;
-}
-
-static int vboxVHWAGlParseVersion(const GLubyte * ver)
-{
-    int iVer = vboxVHWAGlParseSubver(ver, &ver, true);
-    if(iVer)
-    {
-        iVer <<= 16;
-        if(ver)
-        {
-            int tmp = vboxVHWAGlParseSubver(ver, &ver, false);
-            if(tmp >= 0)
+            VBoxGLTmpContext ctx;
+            const QGLContext *pContext = ctx.makeCurrent();
+            Assert(pContext);
+            if(pContext)
             {
-                iVer |= tmp << 8;
-                if(ver)
-                {
-                    tmp = vboxVHWAGlParseSubver(ver, &ver, false);
-                    if(tmp >= 0)
-                    {
-                        iVer |= tmp;
-                    }
-                    else
-                    {
-                        Assert(0);
-                        iVer = -1;
-                    }
-                }
-            }
-            else
-            {
-                Assert(0);
-                iVer = -1;
+                g_VBoxVHWASupportInfo.init(pContext);
             }
         }
     }
-    return iVer;
-}
-
-static void vboxVHWAGlInitExtSupport(const QGLContext & context)
-{
-    int rc = 0;
-    do
-    {
-        rc = 0;
-        g_vboxVHWAGlMultiTexNumSupported = 1; /* default, 1 means not supported */
-        if(g_vboxVHWAGlVersion >= 0x010201) /* ogl >= 1.2.1 */
-        {
-            VBOXVHWA_PFNINIT_SAME(context, PFNVBOXVHWA_ACTIVE_TEXTURE, ActiveTexture, rc);
-            VBOXVHWA_PFNINIT_SAME(context, PFNVBOXVHWA_MULTI_TEX_COORD2I, MultiTexCoord2i, rc);
-            VBOXVHWA_PFNINIT_SAME(context, PFNVBOXVHWA_MULTI_TEX_COORD2D, MultiTexCoord2d, rc);
-            VBOXVHWA_PFNINIT_SAME(context, PFNVBOXVHWA_MULTI_TEX_COORD2F, MultiTexCoord2f, rc);
-        }
-        else if(g_GL_ARB_multitexture)
-        {
-            VBOXVHWA_PFNINIT_ARB(context, PFNVBOXVHWA_ACTIVE_TEXTURE, ActiveTexture, rc);
-            VBOXVHWA_PFNINIT_ARB(context, PFNVBOXVHWA_MULTI_TEX_COORD2I, MultiTexCoord2i, rc);
-            VBOXVHWA_PFNINIT_ARB(context, PFNVBOXVHWA_MULTI_TEX_COORD2D, MultiTexCoord2d, rc);
-            VBOXVHWA_PFNINIT_ARB(context, PFNVBOXVHWA_MULTI_TEX_COORD2F, MultiTexCoord2f, rc);
-        }
-        else
-        {
-            break;
-        }
-
-        if(RT_FAILURE(rc))
-            break;
-
-        GLint maxCoords, maxUnits;
-        glGetIntegerv(GL_MAX_TEXTURE_COORDS, &maxCoords);
-        glGetIntegerv(GL_MAX_TEXTURE_IMAGE_UNITS, &maxUnits);
-
-        VBOXQGLLOGREL(("Max Tex Coords (%d), Img Units (%d)\n", maxCoords, maxUnits));
-        /* take the minimum of those */
-        if(maxUnits < maxCoords)
-            maxCoords = maxUnits;
-        if(maxUnits < 2)
-        {
-            VBOXQGLLOGREL(("Max Tex Coord or Img Units < 2 disabling MultiTex support\n"));
-            break;
-        }
-
-        g_vboxVHWAGlMultiTexNumSupported = maxUnits;
-    }while(0);
-
-
-    do
-    {
-        rc = 0;
-        g_vboxVHWAGlPBOSupported = false;
-
-        if(g_GL_ARB_pixel_buffer_object)
-        {
-            VBOXVHWA_PFNINIT_ARB(context, PFNVBOXVHWA_GEN_BUFFERS, GenBuffers, rc);
-            VBOXVHWA_PFNINIT_ARB(context, PFNVBOXVHWA_DELETE_BUFFERS, DeleteBuffers, rc);
-            VBOXVHWA_PFNINIT_ARB(context, PFNVBOXVHWA_BIND_BUFFER, BindBuffer, rc);
-            VBOXVHWA_PFNINIT_ARB(context, PFNVBOXVHWA_BUFFER_DATA, BufferData, rc);
-            VBOXVHWA_PFNINIT_ARB(context, PFNVBOXVHWA_MAP_BUFFER, MapBuffer, rc);
-            VBOXVHWA_PFNINIT_ARB(context, PFNVBOXVHWA_UNMAP_BUFFER, UnmapBuffer, rc);
-        }
-        else
-        {
-            break;
-        }
-
-        if(RT_FAILURE(rc))
-            break;
-
-        g_vboxVHWAGlPBOSupported = true;
-    } while(0);
-
-    do
-    {
-        rc = 0;
-        g_vboxVHWAGlShaderSupported = false;
-
-        if(g_vboxVHWAGlVersion >= 0x020000)  /* if ogl >= 2.0*/
-        {
-            VBOXVHWA_PFNINIT_SAME(context, PFNVBOXVHWA_CREATE_SHADER, CreateShader, rc);
-            VBOXVHWA_PFNINIT_SAME(context, PFNVBOXVHWA_SHADER_SOURCE, ShaderSource, rc);
-            VBOXVHWA_PFNINIT_SAME(context, PFNVBOXVHWA_COMPILE_SHADER, CompileShader, rc);
-            VBOXVHWA_PFNINIT_SAME(context, PFNVBOXVHWA_DELETE_SHADER, DeleteShader, rc);
-
-            VBOXVHWA_PFNINIT_SAME(context, PFNVBOXVHWA_CREATE_PROGRAM, CreateProgram, rc);
-            VBOXVHWA_PFNINIT_SAME(context, PFNVBOXVHWA_ATTACH_SHADER, AttachShader, rc);
-            VBOXVHWA_PFNINIT_SAME(context, PFNVBOXVHWA_DETACH_SHADER, DetachShader, rc);
-            VBOXVHWA_PFNINIT_SAME(context, PFNVBOXVHWA_LINK_PROGRAM, LinkProgram, rc);
-            VBOXVHWA_PFNINIT_SAME(context, PFNVBOXVHWA_USE_PROGRAM, UseProgram, rc);
-            VBOXVHWA_PFNINIT_SAME(context, PFNVBOXVHWA_DELETE_PROGRAM, DeleteProgram, rc);
-
-            VBOXVHWA_PFNINIT_SAME(context, PFNVBOXVHWA_IS_SHADER, IsShader, rc);
-            VBOXVHWA_PFNINIT_SAME(context, PFNVBOXVHWA_GET_SHADERIV, GetShaderiv, rc);
-            VBOXVHWA_PFNINIT_SAME(context, PFNVBOXVHWA_IS_PROGRAM, IsProgram, rc);
-            VBOXVHWA_PFNINIT_SAME(context, PFNVBOXVHWA_GET_PROGRAMIV, GetProgramiv, rc);
-            VBOXVHWA_PFNINIT_SAME(context, PFNVBOXVHWA_GET_ATTACHED_SHADERS, GetAttachedShaders,  rc);
-            VBOXVHWA_PFNINIT_SAME(context, PFNVBOXVHWA_GET_SHADER_INFO_LOG, GetShaderInfoLog, rc);
-            VBOXVHWA_PFNINIT_SAME(context, PFNVBOXVHWA_GET_PROGRAM_INFO_LOG, GetProgramInfoLog, rc);
-
-            VBOXVHWA_PFNINIT_SAME(context, PFNVBOXVHWA_GET_UNIFORM_LOCATION, GetUniformLocation, rc);
-
-            VBOXVHWA_PFNINIT_SAME(context, PFNVBOXVHWA_UNIFORM1F, Uniform1f, rc);
-            VBOXVHWA_PFNINIT_SAME(context, PFNVBOXVHWA_UNIFORM2F, Uniform2f, rc);
-            VBOXVHWA_PFNINIT_SAME(context, PFNVBOXVHWA_UNIFORM3F, Uniform3f, rc);
-            VBOXVHWA_PFNINIT_SAME(context, PFNVBOXVHWA_UNIFORM4F, Uniform4f, rc);
-
-            VBOXVHWA_PFNINIT_SAME(context, PFNVBOXVHWA_UNIFORM1I, Uniform1i, rc);
-            VBOXVHWA_PFNINIT_SAME(context, PFNVBOXVHWA_UNIFORM2I, Uniform2i, rc);
-            VBOXVHWA_PFNINIT_SAME(context, PFNVBOXVHWA_UNIFORM3I, Uniform3i, rc);
-            VBOXVHWA_PFNINIT_SAME(context, PFNVBOXVHWA_UNIFORM4I, Uniform4i, rc);
-        }
-        else if(g_GL_ARB_shader_objects && g_GL_ARB_fragment_shader)
-        {
-            VBOXVHWA_PFNINIT_OBJECT_ARB(context, PFNVBOXVHWA_CREATE_SHADER, CreateShader, rc);
-            VBOXVHWA_PFNINIT_ARB(context, PFNVBOXVHWA_SHADER_SOURCE, ShaderSource, rc);
-            VBOXVHWA_PFNINIT_ARB(context, PFNVBOXVHWA_COMPILE_SHADER, CompileShader, rc);
-            VBOXVHWA_PFNINIT(context, PFNVBOXVHWA_DELETE_SHADER, DeleteShader, DeleteObjectARB, rc);
-
-            VBOXVHWA_PFNINIT_OBJECT_ARB(context, PFNVBOXVHWA_CREATE_PROGRAM, CreateProgram, rc);
-            VBOXVHWA_PFNINIT(context, PFNVBOXVHWA_ATTACH_SHADER, AttachShader, AttachObjectARB, rc);
-            VBOXVHWA_PFNINIT(context, PFNVBOXVHWA_DETACH_SHADER, DetachShader, DetachObjectARB, rc);
-            VBOXVHWA_PFNINIT_ARB(context, PFNVBOXVHWA_LINK_PROGRAM, LinkProgram, rc);
-            VBOXVHWA_PFNINIT_OBJECT_ARB(context, PFNVBOXVHWA_USE_PROGRAM, UseProgram, rc);
-            VBOXVHWA_PFNINIT(context, PFNVBOXVHWA_DELETE_PROGRAM, DeleteProgram, DeleteObjectARB, rc);
-
-        //TODO:    VBOXVHWA_PFNINIT(PFNVBOXVHWA_IS_SHADER, IsShader, rc);
-            VBOXVHWA_PFNINIT(context, PFNVBOXVHWA_GET_SHADERIV, GetShaderiv, GetObjectParameterivARB, rc);
-        //TODO:    VBOXVHWA_PFNINIT(PFNVBOXVHWA_IS_PROGRAM, IsProgram, rc);
-            VBOXVHWA_PFNINIT(context, PFNVBOXVHWA_GET_PROGRAMIV, GetProgramiv, GetObjectParameterivARB, rc);
-            VBOXVHWA_PFNINIT(context, PFNVBOXVHWA_GET_ATTACHED_SHADERS, GetAttachedShaders, GetAttachedObjectsARB, rc);
-            VBOXVHWA_PFNINIT(context, PFNVBOXVHWA_GET_SHADER_INFO_LOG, GetShaderInfoLog, GetInfoLogARB, rc);
-            VBOXVHWA_PFNINIT(context, PFNVBOXVHWA_GET_PROGRAM_INFO_LOG, GetProgramInfoLog, GetInfoLogARB, rc);
-
-            VBOXVHWA_PFNINIT_ARB(context, PFNVBOXVHWA_GET_UNIFORM_LOCATION, GetUniformLocation, rc);
-
-            VBOXVHWA_PFNINIT_ARB(context, PFNVBOXVHWA_UNIFORM1F, Uniform1f, rc);
-            VBOXVHWA_PFNINIT_ARB(context, PFNVBOXVHWA_UNIFORM2F, Uniform2f, rc);
-            VBOXVHWA_PFNINIT_ARB(context, PFNVBOXVHWA_UNIFORM3F, Uniform3f, rc);
-            VBOXVHWA_PFNINIT_ARB(context, PFNVBOXVHWA_UNIFORM4F, Uniform4f, rc);
-
-            VBOXVHWA_PFNINIT_ARB(context, PFNVBOXVHWA_UNIFORM1I, Uniform1i, rc);
-            VBOXVHWA_PFNINIT_ARB(context, PFNVBOXVHWA_UNIFORM2I, Uniform2i, rc);
-            VBOXVHWA_PFNINIT_ARB(context, PFNVBOXVHWA_UNIFORM3I, Uniform3i, rc);
-            VBOXVHWA_PFNINIT_ARB(context, PFNVBOXVHWA_UNIFORM4I, Uniform4i, rc);
-        }
-        else
-        {
-            break;
-        }
-
-        if(RT_FAILURE(rc))
-            break;
-
-        g_vboxVHWAGlShaderSupported = true;
-    } while(0);
-
-    if(g_GL_ARB_texture_rectangle || g_GL_EXT_texture_rectangle || g_GL_NV_texture_rectangle)
-    {
-        g_vboxVHWAGlTextureRectangleSupported = true;
-    }
-    else
-    {
-        g_vboxVHWAGlTextureRectangleSupported = false;
-    }
-
-    g_vboxVHWAGlTextureNP2Supported = g_GL_ARB_texture_non_power_of_two;
-}
-
-static void vboxVHWAGlInitFeatureSupport()
-{
-    if(g_vboxVHWAGlShaderSupported && g_vboxVHWAGlTextureRectangleSupported)
-    {
-        uint32_t num = 0;
-        g_vboxVHWAFourccSupportedList[num++] = FOURCC_AYUV;
-        g_vboxVHWAFourccSupportedList[num++] = FOURCC_UYVY;
-        g_vboxVHWAFourccSupportedList[num++] = FOURCC_YUY2;
-        if(g_vboxVHWAGlMultiTexNumSupported >= 4)
-        {
-            /* YV12 currently requires 3 units (for each color component)
-             * + 1 unit for dst texture for color-keying + 3 units for each color component
-             * TODO: we could store YV12 data in one texture to eliminate this requirement*/
-            g_vboxVHWAFourccSupportedList[num++] = FOURCC_YV12;
-        }
-
-        Assert(num <= VBOXVHWA_NUMFOURCC);
-        g_vboxVHWAFourccSupportedCount = num;
-    }
-    else
-    {
-        g_vboxVHWAFourccSupportedCount = 0;
-    }
-}
-
-static void vboxVHWAGlInit(const QGLContext * pContext)
-{
-    if(g_vboxVHWAGlSupportInitialized)
-        return;
-
-    g_vboxVHWAGlSupportInitialized = true;
-
-    if (!QGLFormat::hasOpenGL())
-    {
-        VBOXQGLLOGREL (("no gl support available\n"));
-        return;
-    }
-
-    QGLWidget *pTmpWidget = NULL;
-
-    if(!pContext)
-    {
-        QGLWidget *pTmpWidget = new QGLWidget();
-        pTmpWidget->makeCurrent();
-        pContext = pTmpWidget->context();
-    }
-
-    const GLubyte * str;
-    VBOXQGL_CHECKERR(
-            str = glGetString(GL_VERSION);
-            );
-
-    if(str)
-    {
-        VBOXQGLLOGREL (("gl version string: 0%s\n", str));
-
-        g_vboxVHWAGlVersion = vboxVHWAGlParseVersion(str);
-        Assert(g_vboxVHWAGlVersion > 0);
-        if(g_vboxVHWAGlVersion < 0)
-        {
-            g_vboxVHWAGlVersion = 0;
-        }
-        else
-        {
-            VBOXQGLLOGREL (("gl version: 0x%x\n", g_vboxVHWAGlVersion));
-            VBOXQGL_CHECKERR(
-                    str = glGetString(GL_EXTENSIONS);
-                    );
-
-            const char * pos = strstr((const char *)str, "GL_ARB_multitexture");
-            g_GL_ARB_multitexture = pos != NULL;
-            VBOXQGLLOGREL (("GL_ARB_multitexture: %d\n", g_GL_ARB_multitexture));
-
-            pos = strstr((const char *)str, "GL_ARB_shader_objects");
-            g_GL_ARB_shader_objects = pos != NULL;
-            VBOXQGLLOGREL (("GL_ARB_shader_objects: %d\n", g_GL_ARB_shader_objects));
-
-            pos = strstr((const char *)str, "GL_ARB_fragment_shader");
-            g_GL_ARB_fragment_shader = pos != NULL;
-            VBOXQGLLOGREL (("GL_ARB_fragment_shader: %d\n", g_GL_ARB_fragment_shader));
-
-            pos = strstr((const char *)str, "GL_ARB_pixel_buffer_object");
-            g_GL_ARB_pixel_buffer_object = pos != NULL;
-            VBOXQGLLOGREL (("GL_ARB_pixel_buffer_object: %d\n", g_GL_ARB_pixel_buffer_object));
-
-            pos = strstr((const char *)str, "GL_ARB_texture_rectangle");
-            g_GL_ARB_texture_rectangle = pos != NULL;
-            VBOXQGLLOGREL (("GL_ARB_texture_rectangle: %d\n", g_GL_ARB_texture_rectangle));
-
-            pos = strstr((const char *)str, "GL_EXT_texture_rectangle");
-            g_GL_EXT_texture_rectangle = pos != NULL;
-            VBOXQGLLOGREL (("GL_EXT_texture_rectangle: %d\n", g_GL_EXT_texture_rectangle));
-
-            pos = strstr((const char *)str, "GL_NV_texture_rectangle");
-            g_GL_NV_texture_rectangle = pos != NULL;
-            VBOXQGLLOGREL (("GL_NV_texture_rectangle: %d\n", g_GL_NV_texture_rectangle));
-
-            pos = strstr((const char *)str, "GL_ARB_texture_non_power_of_two");
-            g_GL_ARB_texture_non_power_of_two = pos != NULL;
-            VBOXQGLLOGREL (("GL_ARB_texture_non_power_of_two: %d\n", g_GL_ARB_texture_non_power_of_two));
-
-            vboxVHWAGlInitExtSupport(*pContext);
-
-            vboxVHWAGlInitFeatureSupport();
-        }
-    }
-    else
-    {
-        VBOXQGLLOGREL (("failed to make the context current, treating as unsupported\n"));
-    }
-
-
-    if(pTmpWidget)
-    {
-        delete pTmpWidget;
-    }
-}
-
-static bool vboxVHWASupportedInternal()
-{
-    if(g_vboxVHWAGlVersion <= 0)
-    {
-        /* error occurred while gl info initialization */
-        return false;
-    }
-
-#ifndef DEBUGVHWASTRICT
-    /* in case we do not support shaders & multitexturing we can not supprt dst colorkey,
-     * no sense to report Video Acceleration supported */
-    if(!g_vboxVHWAGlShaderSupported)
-        return false;
-#endif
-    if(g_vboxVHWAGlMultiTexNumSupported < 2)
-        return false;
-
-    /* color conversion now supported only GL_TEXTURE_RECTANGLE
-     * in this case only stretching is accelerated
-     * report as unsupported, TODO: probably should report as supported for stretch acceleration */
-    if(!g_vboxVHWAGlTextureRectangleSupported)
-        return false;
-
-    return true;
+    return g_VBoxVHWASupportInfo;
 }
 
 class VBoxVHWACommandProcessEvent : public QEvent
@@ -912,19 +265,21 @@ void VBoxVHWAHandleTable::doRemove(uint32_t h)
     --mcUsage;
 }
 
-static VBoxVHWATexture* vboxVHWATextureCreate(const QRect & aRect, const VBoxVHWAColorFormat & aFormat, bool bVGA)
+static VBoxVHWATexture* vboxVHWATextureCreate(const QGLContext * pContext, const QRect & aRect, const VBoxVHWAColorFormat & aFormat, bool bVGA)
 {
-    if(!bVGA && g_GL_ARB_pixel_buffer_object)
+    const VBoxVHWAInfo & info = vboxVHWAGetSupportInfo(pContext);
+
+    if(!bVGA && info.getGlInfo().isPBOSupported())
     {
         VBOXQGLLOG(("VBoxVHWATextureNP2RectPBO\n"));
         return new VBoxVHWATextureNP2RectPBO(aRect, aFormat);
     }
-    else if(g_vboxVHWAGlTextureRectangleSupported)
+    else if(info.getGlInfo().isTextureRectangleSupported())
     {
         VBOXQGLLOG(("VBoxVHWATextureNP2Rect\n"));
         return new VBoxVHWATextureNP2Rect(aRect, aFormat);
     }
-    else if(g_GL_ARB_texture_non_power_of_two)
+    else if(info.getGlInfo().isTextureNP2Supported())
     {
         VBOXQGLLOG(("VBoxVHWATextureNP2\n"));
         return new VBoxVHWATextureNP2(aRect, aFormat);
@@ -1855,12 +1210,12 @@ VBoxVHWASurfaceBase::VBoxVHWASurfaceBase(class VBoxGLWidget *aWidget,
     setDefaultSrcOverlayCKey(pSrcOverlayCKey);
     resetDefaultSrcOverlayCKey();
 
-    mpTex[0] = vboxVHWATextureCreate(QRect(0,0,aSize.width(),aSize.height()), mColorFormat, bVGA);
+    mpTex[0] = vboxVHWATextureCreate(mWidget->context(), QRect(0,0,aSize.width(),aSize.height()), mColorFormat, bVGA);
     if(mColorFormat.fourcc() == FOURCC_YV12)
     {
         QRect rect(0,0,aSize.width()/2,aSize.height()/2);
-        mpTex[1] = vboxVHWATextureCreate(rect, mColorFormat, bVGA);
-        mpTex[2] = vboxVHWATextureCreate(rect, mColorFormat, bVGA);
+        mpTex[1] = vboxVHWATextureCreate(mWidget->context(), rect, mColorFormat, bVGA);
+        mpTex[2] = vboxVHWATextureCreate(mWidget->context(), rect, mColorFormat, bVGA);
     }
 
     doSetRectValuesInternal(aTargRect, aSrcRect, aVisTargRect);
@@ -3349,6 +2704,8 @@ int VBoxGLWidget::vhwaSurfaceCanCreate(struct _VBOXVHWACMD_SURF_CANCREATE *pCmd)
 {
     VBOXQGLLOG_ENTER(("\n"));
 
+    const VBoxVHWAInfo & info = vboxVHWAGetSupportInfo(context());
+
     if(!(pCmd->SurfInfo.flags & VBOXVHWA_SD_CAPS))
     {
         Assert(0);
@@ -3416,9 +2773,9 @@ int VBoxGLWidget::vhwaSurfaceCanCreate(struct _VBOXVHWACMD_SURF_CANCREATE *pCmd)
         {
             /* detect whether we support this format */
             bool bFound = false;
-            for(uint32_t i = 0; i < g_vboxVHWAFourccSupportedCount; i++)
+            for(int i = 0; i < info.getFourccSupportedCount(); i++)
             {
-                if(g_vboxVHWAFourccSupportedList[i] == pCmd->SurfInfo.PixelFormat.fourCC)
+                if(info.getFourccSupportedList()[i] == pCmd->SurfInfo.PixelFormat.fourCC)
                 {
                     bFound = true;
                     break;
@@ -4082,7 +3439,8 @@ int VBoxGLWidget::vhwaQueryInfo1(struct _VBOXVHWACMD_QUERYINFO1 *pCmd)
 {
     VBOXQGLLOG_ENTER(("\n"));
     bool bEnabled = false;
-    if(vboxVHWASupportedInternal())
+    const VBoxVHWAInfo & info = vboxVHWAGetSupportInfo(context());
+    if(info.isVHWASupported())
     {
         Assert(pCmd->u.in.guestVersion.maj == VBOXVHWA_VERSION_MAJ);
         if(pCmd->u.in.guestVersion.maj == VBOXVHWA_VERSION_MAJ)
@@ -4141,7 +3499,7 @@ int VBoxGLWidget::vhwaQueryInfo1(struct _VBOXVHWACMD_QUERYINFO1 *pCmd)
                     //        | VBOXVHWA_SCAPS_VISIBLE
                             ;
 
-        if(g_vboxVHWAGlShaderSupported && g_vboxVHWAGlMultiTexNumSupported >= 2)
+        if(info.getGlInfo().isFragmentShaderSupported() && info.getGlInfo().getMultiTexNumSupported() >= 2)
         {
             pCmd->u.out.caps |= VBOXVHWA_CAPS_COLORKEY
                             | VBOXVHWA_CAPS_COLORKEYHWASSIST
@@ -4154,7 +3512,7 @@ int VBoxGLWidget::vhwaQueryInfo1(struct _VBOXVHWACMD_QUERYINFO1 *pCmd)
                             VBOXVHWA_CKEYCAPS_DESTOVERLAYONEACTIVE;
                             ;
 
-            if(g_vboxVHWAGlTextureRectangleSupported)
+            if(info.getGlInfo().isTextureRectangleSupported())
             {
                 pCmd->u.out.caps |= VBOXVHWA_CAPS_OVERLAYFOURCC
 //                              | VBOXVHWA_CAPS_BLTFOURCC
@@ -4167,7 +3525,7 @@ int VBoxGLWidget::vhwaQueryInfo1(struct _VBOXVHWACMD_QUERYINFO1 *pCmd)
 
 //              pCmd->u.out.caps2 |= VBOXVHWA_CAPS2_COPYFOURCC;
 
-                pCmd->u.out.numFourCC = g_vboxVHWAFourccSupportedCount;
+                pCmd->u.out.numFourCC = info.getFourccSupportedCount();
             }
         }
     }
@@ -4179,14 +3537,16 @@ int VBoxGLWidget::vhwaQueryInfo2(struct _VBOXVHWACMD_QUERYINFO2 *pCmd)
 {
     VBOXQGLLOG_ENTER(("\n"));
 
-    Assert(pCmd->numFourCC >= g_vboxVHWAFourccSupportedCount);
-    if(pCmd->numFourCC < g_vboxVHWAFourccSupportedCount)
+    const VBoxVHWAInfo & info = vboxVHWAGetSupportInfo(context());
+
+    Assert(pCmd->numFourCC >= (uint32_t)info.getFourccSupportedCount());
+    if(pCmd->numFourCC < (uint32_t)info.getFourccSupportedCount())
         return VERR_GENERAL_FAILURE;
 
-    pCmd->numFourCC = g_vboxVHWAFourccSupportedCount;
-    for(uint32_t i = 0; i < g_vboxVHWAFourccSupportedCount; i++)
+    pCmd->numFourCC = (uint32_t)info.getFourccSupportedCount();
+    for(int i = 0; i < info.getFourccSupportedCount(); i++)
     {
-        pCmd->FourCC[i] = g_vboxVHWAFourccSupportedList[i];
+        pCmd->FourCC[i] = info.getFourccSupportedList()[i];
     }
     return VINF_SUCCESS;
 }
@@ -4707,7 +4067,7 @@ uint64_t VBoxGLWidget::vboxVRAMOffset(VBoxVHWASurfaceBase * pSurf)
 
 void VBoxGLWidget::initializeGL()
 {
-    vboxVHWAGlInit(context());
+    vboxVHWAGetSupportInfo(context());
     VBoxVHWASurfaceBase::globalInit();
 }
 
@@ -5834,8 +5194,14 @@ int VBoxQGLOverlay::vhwaConstruct(struct _VBOXVHWACMD_HH_CONSTRUCT *pCmd)
 /* static */
 bool VBoxQGLOverlay::isAcceleration2DVideoAvailable()
 {
-    vboxVHWAGlInit(NULL);
-    return vboxVHWASupportedInternal();
+    static bool g_bVBoxVHWAChecked = false;
+    static bool g_bVBoxVHWASupported = false;
+    if(!g_bVBoxVHWAChecked)
+    {
+        g_bVBoxVHWAChecked = true;
+        g_bVBoxVHWASupported = VBoxVHWAInfo::checkVHWASupport();
+    }
+    return g_bVBoxVHWASupported;
 }
 
 /** additional video memory required for the best 2D support performance
