@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2009 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -23,20 +23,19 @@
 #ifndef __VBoxConsoleWnd_h__
 #define __VBoxConsoleWnd_h__
 
-#include "COMDefs.h"
-
-#include "QIWithRetranslateUI.h"
-
-#include "VBoxProblemReporter.h"
-#include "VBoxHelpActions.h"
-
-/* Qt includes */
-#include <QMainWindow>
-#include <QMap>
+/* Global includes */
 #include <QColor>
 #include <QDialog>
+#include <QMainWindow>
+#include <QMap>
 #include <QMenu>
 #include <QPointer>
+
+/* Local includes */
+#include "COMDefs.h"
+#include "QIWithRetranslateUI.h"
+#include "VBoxProblemReporter.h"
+#include "VBoxHelpActions.h"
 
 #ifdef VBOX_WITH_DEBUGGER_GUI
 # include <VBox/dbggui.h>
@@ -48,20 +47,318 @@
 # endif /* !QT_MAC_USE_COCOA */
 #endif
 
+/* Global forwards */
 class QAction;
 class QActionGroup;
 class QLabel;
 class QSpacerItem;
 
-class VBoxConsoleView;
+/* Local forwards */
+class QIMenu;
 class QIStateIndicator;
-
-class VBoxUSBMenu;
-class VBoxSwitchMenu;
-
 class VBoxChangeDockIconUpdateEvent;
-
+class VBoxConsoleView;
 class VBoxMiniToolBar;
+class VBoxSwitchMenu;
+class VBoxUSBMenu;
+
+class VBoxConsoleWnd : public QIWithRetranslateUI2 <QMainWindow>
+{
+    Q_OBJECT;
+
+public:
+
+    VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent = 0, Qt::WindowFlags aFlags = Qt::Window);
+    virtual ~VBoxConsoleWnd();
+
+    bool isWindowMaximized() const
+    {
+#ifdef Q_WS_MAC
+        /* On Mac OS X we didn't really jump to the fullscreen mode but
+         * maximize the window. This situation has to be considered when
+         * checking for maximized or fullscreen mode. */
+        return !isTrueSeamless() && QMainWindow::isMaximized();
+#else /* Q_WS_MAC */
+        return QMainWindow::isMaximized();
+#endif /* Q_WS_MAC */
+    }
+    bool isWindowFullScreen() const
+    {
+#ifdef Q_WS_MAC
+        /* On Mac OS X we didn't really jump to the fullscreen mode but
+         * maximize the window. This situation has to be considered when
+         * checking for maximized or fullscreen mode. */
+        return isTrueFullscreen() || isTrueSeamless();
+#else /* Q_WS_MAC */
+        return QMainWindow::isFullScreen();
+#endif /* Q_WS_MAC */
+    }
+    bool isTrueFullscreen() const { return mIsFullscreen; }
+    bool isTrueSeamless() const { return mIsSeamless; }
+
+    KMachineState machineState() const { return mMachineState; }
+
+    bool openView (const CSession &aSession);
+
+    void setMouseIntegrationLocked (bool aDisabled);
+
+    void popupMainMenu (bool aCenter);
+
+    void installGuestAdditionsFrom (const QString &aSource);
+
+    void setMask (const QRegion &aRegion);
+    void clearMask();
+
+signals:
+
+    void closing();
+
+protected:
+
+    bool event (QEvent *aEvent);
+    void closeEvent (QCloseEvent *aEvent);
+#ifdef Q_WS_X11
+    bool x11Event (XEvent *aEvent);
+#endif
+
+    void retranslateUi();
+
+private slots:
+
+    void finalizeOpenView();
+    void tryClose();
+
+    void vmFullscreen (bool aOn);
+    void vmSeamless (bool aOn);
+    void vmAutoresizeGuest (bool aOn);
+    void vmAdjustWindow();
+    void vmDisableMouseIntegration (bool aOff);
+    void vmTypeCAD();
+#ifdef Q_WS_X11
+    void vmTypeCABS();
+#endif
+    void vmTakeSnapshot();
+    void vmShowInfoDialog();
+    void vmReset();
+    void vmPause (bool aOn);
+    void vmACPIShutdown();
+    void vmClose();
+
+    void devicesSwitchVrdp (bool aOn);
+    void devicesOpenStorageDialog();
+    void devicesOpenNetworkDialog();
+    void devicesOpenSFDialog();
+    void devicesInstallGuestAdditions();
+
+    void prepareStorageMenu();
+    void prepareNetworkMenu();
+    void prepareSFMenu();
+
+    void switchUSB (QAction *aAction);
+
+    void showIndicatorContextMenu (QIStateIndicator *aInd, QContextMenuEvent *aEvent);
+
+    void updateDeviceLights();
+    void updateMachineState (KMachineState aState);
+    void updateMouseState (int aState);
+    void updateAdditionsState (const QString &aVersion, bool aActive,
+                               bool aSeamlessSupported, bool aGraphicsSupported);
+    void updateNetworkAdaptersState();
+    void updateUsbState();
+    void updateMediaDriveState (VBoxDefs::MediumType aType);
+    void updateSharedFoldersState();
+
+    void onExitFullscreen();
+    void unlockActionsSwitch();
+
+    void mtExitMode();
+    void mtCloseVM();
+    void mtMaskUpdate();
+
+    void changeDockIconUpdate (const VBoxChangeDockIconUpdateEvent &aEvent);
+    void processGlobalSettingChange (const char *aPublicName, const char *aName);
+
+#ifdef VBOX_WITH_DEBUGGER_GUI
+    void dbgPrepareDebugMenu();
+    void dbgShowStatistics();
+    void dbgShowCommandLine();
+    void dbgLoggingToggled (bool aBool);
+#endif
+
+private:
+
+    enum /* Stuff */
+    {
+        HardDiskStuff               = 0x01,
+        DVDStuff                    = 0x02,
+        FloppyStuff                 = 0x04,
+        PauseAction                 = 0x08,
+        NetworkStuff                = 0x10,
+        DisableMouseIntegrAction    = 0x20,
+        Caption                     = 0x40,
+        USBStuff                    = 0x80,
+        VRDPStuff                   = 0x100,
+        SharedFolderStuff           = 0x200,
+        VirtualizationStuff         = 0x400,
+        AllStuff                    = 0xFFFF,
+    };
+
+    void checkRequiredFeatures();
+    void activateUICustomizations();
+
+    void updateAppearanceOf (int aElement);
+
+    bool toggleFullscreenMode (bool aOn, bool aSeamless);
+    void switchToFullscreen (bool aOn, bool aSeamless);
+    void setViewInSeamlessMode (const QRect &aTargetRect);
+
+    void closeView();
+
+#ifdef VBOX_WITH_DEBUGGER_GUI
+    bool dbgCreated();
+    void dbgDestroy();
+    void dbgAdjustRelativePos();
+#endif
+
+    /* COM Variables */
+    CSession mSession;
+
+    /* Machine State */
+    KMachineState mMachineState;
+
+    /* Window Variables */
+    QString mCaptionPrefix;
+    int mConsoleStyle;
+
+    /* Menu items */
+    QIMenu *mMainMenu;
+    QMenu *mVMMenu;
+    QMenu *mVMMenuMini;
+    QMenu *mDevicesMenu;
+    QMenu *mDevicesStorageMenu;
+    QMenu *mDevicesNetworkMenu;
+    QMenu *mDevicesSFMenu;
+    VBoxUSBMenu *mDevicesUSBMenu;
+    VBoxSwitchMenu *mVmDisMouseIntegrMenu;
+#if 0 /* todo: allow to setup */
+    VBoxSwitchMenu *mDevicesVRDPMenu;
+    VBoxSwitchMenu *mVmAutoresizeMenu;
+#endif
+#ifdef VBOX_WITH_DEBUGGER_GUI
+    QMenu *mDbgMenu;
+#endif
+    QMenu *mHelpMenu;
+
+    QActionGroup *mRunningActions;
+    QActionGroup *mRunningOrPausedActions;
+
+    /* Machine actions */
+    QAction *mVmFullscreenAction;
+    QAction *mVmSeamlessAction;
+    QAction *mVmAutoresizeGuestAction;
+    QAction *mVmAdjustWindowAction;
+    QAction *mVmDisableMouseIntegrAction;
+    QAction *mVmTypeCADAction;
+#ifdef Q_WS_X11
+    QAction *mVmTypeCABSAction;
+#endif
+    QAction *mVmTakeSnapshotAction;
+    QAction *mVmShowInformationDlgAction;
+    QAction *mVmResetAction;
+    QAction *mVmPauseAction;
+    QAction *mVmACPIShutdownAction;
+    QAction *mVmCloseAction;
+
+    /* Devices actions */
+    QAction *mDevicesStorageDialogAction;
+    QAction *mDevicesNetworkDialogAction;
+    QAction *mDevicesSFDialogAction;
+    QAction *mDevicesSwitchVrdpSeparator;
+    QAction *mDevicesSwitchVrdpAction;
+    QAction *mDevicesInstallGuestToolsAction;
+
+#ifdef VBOX_WITH_DEBUGGER_GUI
+    /* Debugger actions */
+    QAction *mDbgStatisticsAction;
+    QAction *mDbgCommandLineAction;
+    QAction *mDbgLoggingAction;
+#endif
+
+    /* Help actions */
+    VBoxHelpActions mHelpActions;
+
+    /* Widgets */
+    VBoxConsoleView *mConsole;
+    VBoxMiniToolBar *mMiniToolBar;
+#ifdef VBOX_WITH_DEBUGGER_GUI
+    /** The handle to the debugger gui. */
+    PDBGGUI mDbgGui;
+    /** The virtual method table for the debugger GUI. */
+    PCDBGGUIVT mDbgGuiVT;
+#endif
+
+    /* Timer to update LEDs */
+    QTimer *mIdleTimer;
+
+    /* LEDs */
+    QIStateIndicator *mHDLed;
+    QIStateIndicator *mCDLed;
+#if 0 /* todo: allow to setup */
+    QIStateIndicator *mFDLed;
+#endif
+    QIStateIndicator *mNetLed;
+    QIStateIndicator *mUSBLed;
+    QIStateIndicator *mSFLed;
+    QIStateIndicator *mVirtLed;
+    QIStateIndicator *mMouseLed;
+    QIStateIndicator *mHostkeyLed;
+    QWidget *mHostkeyLedContainer;
+    QLabel *mHostkeyName;
+#if 0 /* todo: allow to setup */
+    QIStateIndicator *mVrdpLed;
+    QIStateIndicator *mAutoresizeLed;
+#endif
+
+    /* Normal Mode */
+    QRect mNormalGeo;
+
+    /* Fullscreen/Seamless Mode */
+    QList < QPointer <QWidget> > mHiddenChildren;
+    QSpacerItem *mShiftingSpacerLeft;
+    QSpacerItem *mShiftingSpacerTop;
+    QSpacerItem *mShiftingSpacerRight;
+    QSpacerItem *mShiftingSpacerBottom;
+    QPalette mErasePalette;
+    QSize mPrevMinSize;
+    QSize mMaskShift;
+    QRegion mStrictedRegion;
+#ifdef Q_WS_WIN
+    QRegion mPrevRegion;
+#endif
+#ifdef Q_WS_MAC
+    //QRegion mCurrRegion;
+# ifndef QT_MAC_USE_COCOA
+    //EventHandlerRef mDarwinRegionEventHandlerRef;
+# endif
+    /* For seamless maximizing */
+    QRect mNormalGeometry;
+    Qt::WindowFlags mSavedFlags;
+    /* For the fade effect if the the window goes fullscreen */
+    CGDisplayFadeReservationToken mFadeToken;
+#endif
+
+    /* Different bool flags */
+    bool mIsOpenViewFinished : 1;
+    bool mIsFirstTimeStarted : 1;
+    bool mIsAutoSaveMedia : 1;
+    bool mNoAutoClose : 1;
+    bool mIsFullscreen : 1;
+    bool mIsSeamless : 1;
+    bool mIsSeamlessSupported : 1;
+    bool mIsGraphicsSupported : 1;
+    bool mIsWaitingModeResize : 1;
+    bool mWasMax : 1;
+};
 
 /* We want to make the first action highlighted but not
  * selected, but Qt makes the both or neither one of this,
@@ -79,333 +376,33 @@ public:
     void selectFirstAction() { QMenu::focusNextChild(); }
 };
 
-class VBoxConsoleWnd : public QIWithRetranslateUI2<QMainWindow>
+class VBoxSettingsPage;
+class VBoxStorageDialog : public QIWithRetranslateUI <QDialog>
 {
     Q_OBJECT;
 
 public:
 
-    VBoxConsoleWnd (VBoxConsoleWnd **aSelf,
-                     QWidget* aParent = 0,
-                     Qt::WindowFlags aFlags = Qt::Window);
-    virtual ~VBoxConsoleWnd();
-
-    bool openView (const CSession &session);
-
-    void refreshView();
-
-    bool isWindowMaximized() const
-    {
-#ifdef Q_WS_MAC
-        /* On Mac OS X we didn't really jump to the fullscreen mode but
-         * maximize the window. This situation has to be considered when
-         * checking for maximized or fullscreen mode. */
-        return !(isTrueSeamless()) && QMainWindow::isMaximized();
-#else /* Q_WS_MAC */
-        return QMainWindow::isMaximized();
-#endif /* Q_WS_MAC */
-    }
-    bool isWindowFullScreen() const
-    {
-#ifdef Q_WS_MAC
-        /* On Mac OS X we didn't really jump to the fullscreen mode but
-         * maximize the window. This situation has to be considered when
-         * checking for maximized or fullscreen mode. */
-        return isTrueFullscreen() || isTrueSeamless();
-#else /* Q_WS_MAC */
-        return QMainWindow::isFullScreen();
-#endif /* Q_WS_MAC */
-    }
-
-    bool isTrueFullscreen() const { return mIsFullscreen; }
-
-    bool isTrueSeamless() const { return mIsSeamless; }
-
-    void setMouseIntegrationLocked (bool aDisabled);
-
-    void popupMainMenu (bool aCenter);
-
-    void installGuestAdditionsFrom (const QString &aSource);
-
-    void setMask (const QRegion &aRegion);
-
-    void clearMask();
-
-    KMachineState machineState() const { return machine_state; }
-
-public slots:
-
-    void changeDockIconUpdate (const VBoxChangeDockIconUpdateEvent &e);
-
-signals:
-
-    void closing();
+    VBoxStorageDialog (QWidget *aParent, CSession &aSession);
 
 protected:
 
-    // events
-    bool event (QEvent *e);
-    void closeEvent (QCloseEvent *e);
-#if defined(Q_WS_X11)
-    bool x11Event (XEvent *event);
-#endif
-
     void retranslateUi();
-
-#ifdef VBOX_WITH_DEBUGGER_GUI
-    bool dbgCreated();
-    void dbgDestroy();
-    void dbgAdjustRelativePos();
-#endif
 
 protected slots:
 
-    void closeView();
+    virtual void accept();
+
+protected:
+
+    void showEvent (QShowEvent *aEvent);
 
 private:
 
-    enum /* Stuff */
-    {
-        FloppyStuff                 = 0x01,
-        DVDStuff                    = 0x02,
-        HardDiskStuff               = 0x04,
-        PauseAction                 = 0x08,
-        NetworkStuff                = 0x10,
-        DisableMouseIntegrAction    = 0x20,
-        Caption                     = 0x40,
-        USBStuff                    = 0x80,
-        VRDPStuff                   = 0x100,
-        SharedFolderStuff           = 0x200,
-        VirtualizationStuff         = 0x400,
-        AllStuff                    = 0xFFFF,
-    };
-
-    void updateAppearanceOf (int element);
-
-    bool toggleFullscreenMode (bool, bool);
-
-    void checkRequiredFeatures();
-
-private slots:
-
-    void finalizeOpenView();
-
-    void activateUICustomizations();
-
-    void vmFullscreen (bool on);
-    void vmSeamless (bool on);
-    void vmAutoresizeGuest (bool on);
-    void vmAdjustWindow();
-
-    void vmTypeCAD();
-    void vmTypeCABS();
-    void vmReset();
-    void vmPause(bool);
-    void vmACPIShutdown();
-    void vmClose();
-    void vmTakeSnapshot();
-    void vmShowInfoDialog();
-    void vmDisableMouseIntegr (bool);
-
-    void devicesMountFloppyImage();
-    void devicesUnmountFloppy();
-    void devicesMountDVDImage();
-    void devicesUnmountDVD();
-    void devicesSwitchVrdp (bool);
-    void devicesOpenNetworkDialog();
-    void devicesOpenSFDialog();
-    void devicesInstallGuestAdditions();
-
-    void prepareFloppyMenu();
-    void prepareDVDMenu();
-    void prepareNetworkMenu();
-    void prepareSFMenu();
-
-    void captureFloppy (QAction *aAction);
-    void captureDVD (QAction *aAction);
-    void switchUSB (QAction *aAction);
-
-    void statusTipChanged (const QString &);
-    void clearStatusBar();
-
-    void showIndicatorContextMenu (QIStateIndicator *ind, QContextMenuEvent *e);
-
-    void updateDeviceLights();
-    void updateMachineState (KMachineState state);
-    void updateMouseState (int state);
-    void updateAdditionsState (const QString&, bool, bool, bool);
-    void updateNetworkAdaptersState();
-    void updateUsbState();
-    void updateMediaDriveState (VBoxDefs::MediumType aType);
-    void updateSharedFoldersState();
-
-    void tryClose();
-
-    void processGlobalSettingChange (const char *publicName, const char *name);
-
-    void dbgPrepareDebugMenu();
-    void dbgShowStatistics();
-    void dbgShowCommandLine();
-    void dbgLoggingToggled(bool aBool);
-
-    void onExitFullscreen();
-    void unlockActionsSwitch();
-
-    void switchToFullscreen (bool aOn, bool aSeamless);
-    void setViewInSeamlessMode (const QRect &aTargetRect);
-
-    void mtExitMode();
-    void mtCloseVM();
-    void mtMaskUpdate();
-
-private:
-
-    /** Popup version of the main menu */
-    QIMenu *mMainMenu;
-
-    QActionGroup *mRunningActions;
-    QActionGroup *mRunningOrPausedActions;
-
-    /* Machine actions */
-    QAction *mVmFullscreenAction;
-    QAction *mVmSeamlessAction;
-    QAction *mVmAutoresizeGuestAction;
-    QAction *mVmAdjustWindowAction;
-    QAction *mVmTypeCADAction;
-#if defined(Q_WS_X11)
-    QAction *mVmTypeCABSAction;
-#endif
-    QAction *mVmResetAction;
-    QAction *mVmPauseAction;
-    QAction *mVmACPIShutdownAction;
-    QAction *mVmCloseAction;
-    QAction *mVmTakeSnapshotAction;
-    QAction *mVmDisableMouseIntegrAction;
-    QAction *mVmShowInformationDlgAction;
-
-    /* Devices actions */
-    QAction *mDevicesMountFloppyImageAction;
-    QAction *mDevicesUnmountFloppyAction;
-    QAction *mDevicesMountDVDImageAction;
-    QAction *mDevicesUnmountDVDAction;
-    QAction *mDevicesSwitchVrdpAction;
-    QAction *mDevicesNetworkDialogAction;
-    QAction *mDevicesSFDialogAction;
-    QAction *mDevicesInstallGuestToolsAction;
-
-#ifdef VBOX_WITH_DEBUGGER_GUI
-    /* Debugger actions */
-    QAction *mDbgStatisticsAction;
-    QAction *mDbgCommandLineAction;
-    QAction *mDbgLoggingAction;
-#endif
-
-    /* Help actions */
-    VBoxHelpActions mHelpActions;
-
-    /* Machine popup menus */
-    VBoxSwitchMenu *mVmAutoresizeMenu;
-    VBoxSwitchMenu *mVmDisMouseIntegrMenu;
-
-    /* Devices popup menus */
-    bool mWaitForStatusBarChange : 1;
-    bool mStatusBarChangedInside : 1;
-
-    QAction *mDevicesUSBMenuSeparator;
-    QAction *mDevicesVRDPMenuSeparator;
-    QAction *mDevicesSFMenuSeparator;
-
-    QMenu *mVMMenu;
-    QMenu *mMiniVMMenu;
-    QMenu *mDevicesMenu;
-    QMenu *mDevicesMountFloppyMenu;
-    QMenu *mDevicesMountDVDMenu;
-    QMenu *mDevicesSFMenu;
-    QMenu *mDevicesNetworkMenu;
-    VBoxUSBMenu *mDevicesUSBMenu;
-    /* VBoxSwitchMenu *mDevicesVRDPMenu; */
-#ifdef VBOX_WITH_DEBUGGER_GUI
-    // Debugger popup menu
-    QMenu *mDbgMenu;
-#endif
-    QMenu *mHelpMenu;
-
-    QSpacerItem *mShiftingSpacerLeft;
-    QSpacerItem *mShiftingSpacerTop;
-    QSpacerItem *mShiftingSpacerRight;
-    QSpacerItem *mShiftingSpacerBottom;
-    QSize mMaskShift;
-
-    CSession csession;
-
-    // widgets
-    VBoxConsoleView *console;
-    QIStateIndicator *hd_light, *cd_light, *fd_light, *net_light, *usb_light, *sf_light;
-    QIStateIndicator *mVirtLed;
-    QIStateIndicator *mouse_state, *hostkey_state;
-    QIStateIndicator *autoresize_state;
-    QIStateIndicator *vrdp_state;
-    QWidget *hostkey_hbox;
-    QLabel *hostkey_name;
-
-    QTimer *idle_timer;
-    KMachineState machine_state;
-    QString caption_prefix;
-
-    bool no_auto_close : 1;
-
-    QMap <QAction *, CMedium> hostDVDMap;
-    QMap <QAction *, CMedium> hostFloppyMap;
-
-    QRect mNormalGeo;
-    QSize prev_min_size;
-
-#ifdef Q_WS_WIN
-    QRegion mPrevRegion;
-#endif
-
-#ifdef Q_WS_MAC
-    QRegion mCurrRegion;
-# ifndef QT_MAC_USE_COCOA
-    EventHandlerRef mDarwinRegionEventHandlerRef;
-# endif
-#endif
-
-    // variables for dealing with true fullscreen
-    QRegion mStrictedRegion;
-    bool mIsFullscreen : 1;
-    bool mIsSeamless : 1;
-    bool mIsSeamlessSupported : 1;
-    bool mIsGraphicsSupported : 1;
-    bool mIsWaitingModeResize : 1;
-    bool was_max : 1;
-    QList < QPointer <QWidget> > mHiddenChildren;
-    int console_style;
-    QPalette mErasePalette;
-
-    bool mIsOpenViewFinished : 1;
-    bool mIsFirstTimeStarted : 1;
-    bool mIsAutoSaveMedia : 1;
-
-#ifdef VBOX_WITH_DEBUGGER_GUI
-    /** The handle to the debugger gui. */
-    PDBGGUI mDbgGui;
-    /** The virtual method table for the debugger GUI. */
-    PCDBGGUIVT mDbgGuiVT;
-#endif
-
-#ifdef Q_WS_MAC
-    /* For seamless maximizing */
-    QRect mNormalGeometry;
-    Qt::WindowFlags mSavedFlags;
-    /* For the fade effect if the the window goes fullscreen */
-    CGDisplayFadeReservationToken mFadeToken;
-#endif
-
-    VBoxMiniToolBar *mMiniToolBar;
+    VBoxSettingsPage *mSettings;
+    CSession &mSession;
 };
 
-class VBoxSettingsPage;
 class VBoxNetworkDialog : public QIWithRetranslateUI <QDialog>
 {
     Q_OBJECT;

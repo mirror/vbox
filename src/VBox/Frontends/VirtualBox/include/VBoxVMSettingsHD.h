@@ -503,11 +503,13 @@ class StorageDelegate : public QItemDelegate
 
 public:
 
-    StorageDelegate (QObject *aParent);
+    StorageDelegate (QObject *aParent, bool aDisableStaticControls);
 
 private:
 
     void paint (QPainter *aPainter, const QStyleOptionViewItem &aOption, const QModelIndex &aIndex) const;
+
+    bool mDisableStaticControls;
 };
 
 /**
@@ -521,7 +523,7 @@ class VBoxVMSettingsHD : public VBoxSettingsPage,
 
 public:
 
-    VBoxVMSettingsHD();
+    VBoxVMSettingsHD (bool aDisableStaticControls = false);
 
 signals:
 
@@ -607,6 +609,7 @@ private:
 
     bool mIsLoadingInProgress;
     bool mIsPolished;
+    bool mDisableStaticControls;
 };
 
 #endif // __VBoxVMSettingsHD_h__

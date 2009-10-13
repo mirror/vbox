@@ -1435,8 +1435,9 @@ Qt::ItemFlags StorageModel::flags (const QModelIndex &aIndex) const
 }
 
 /* Storage Delegate */
-StorageDelegate::StorageDelegate (QObject *aParent)
+StorageDelegate::StorageDelegate (QObject *aParent, bool aDisableStaticControls)
     : QItemDelegate (aParent)
+    , mDisableStaticControls (aDisableStaticControls)
 {
 }
 
@@ -1493,7 +1494,7 @@ void StorageDelegate::paint (QPainter *aPainter, const QStyleOptionViewItem &aOp
     aPainter->drawText (textPosition, shortText);
 
     /* Draw Controller Additions */
-    if (model->data (aIndex, StorageModel::R_IsController).toBool() && state & QStyle::State_Selected)
+    if (!mDisableStaticControls && model->data (aIndex, StorageModel::R_IsController).toBool() && state & QStyle::State_Selected)
     {
         DeviceTypeList devicesList (model->data (aIndex, StorageModel::R_CtrDevices).value <DeviceTypeList>());
         for (int i = 0; i < devicesList.size(); ++ i)
@@ -1545,9 +1546,10 @@ void StorageDelegate::paint (QPainter *aPainter, const QStyleOptionViewItem &aOp
  * QWidget class reimplementation.
  * Used as HD Settings widget.
  */
-VBoxVMSettingsHD::VBoxVMSettingsHD()
+VBoxVMSettingsHD::VBoxVMSettingsHD (bool aDisableStaticControls /* = false */)
     : mValidator (0)
     , mIsPolished (false)
+    , mDisableStaticControls (aDisableStaticControls)
 {
     /* Apply UI decorations */
     Ui::VBoxVMSettingsHD::setupUi (this);
@@ -1606,7 +1608,7 @@ VBoxVMSettingsHD::VBoxVMSettingsHD()
 
     /* Storage Model/View */
     mStorageModel = new StorageModel (mTwStorageTree);
-    StorageDelegate *storageDelegate = new StorageDelegate (mTwStorageTree);
+    StorageDelegate *storageDelegate = new StorageDelegate (mTwStorageTree, mDisableStaticControls);
     mTwStorageTree->setMouseTracking (true);
     mTwStorageTree->setContextMenuPolicy (Qt::CustomContextMenu);
     mTwStorageTree->setModel (mStorageModel);
@@ -1620,6 +1622,7 @@ VBoxVMSettingsHD::VBoxVMSettingsHD()
     mTbStorageBar->addAction (mDelAttAction);
     mTbStorageBar->addAction (mAddCtrAction);
     mTbStorageBar->addAction (mDelCtrAction);
+    mTbStorageBar->setHidden (mDisableStaticControls);
 
 #ifdef Q_WS_MAC
     /* We need a little more space for the focus rect. */
@@ -1732,37 +1735,62 @@ void VBoxVMSettingsHD::getFrom (const CMachine &aMachine)
 
 void VBoxVMSettingsHD::putBackTo()
 {
-    /* Remove currently present controllers & attachments */
-    CStorageControllerVector controllers = mMachine.GetStorageControllers();
-    foreach (const CStorageController &controller, controllers)
+    if (mDisableStaticControls)
     {
-        QString controllerName (controller.GetName());
-        CMediumAttachmentVector attachments = mMachine.GetMediumAttachmentsOfController (controllerName);
-        foreach (const CMediumAttachment &attachment, attachments)
-            mMachine.DetachDevice (controllerName, attachment.GetPort(), attachment.GetDevice());
-        mMachine.RemoveStorageController (controllerName);
-    }
-
-    /* Save created controllers & attachments */
-    QModelIndex rootIndex = mStorageModel->root();
-    for (int i = 0; i < mStorageModel->rowCount (rootIndex); ++ i)
-    {
-        QModelIndex ctrIndex = rootIndex.child (i, 0);
-        QString ctrName = mStorageModel->data (ctrIndex, StorageModel::R_CtrName).toString();
-        KStorageBus ctrBusType = mStorageModel->data (ctrIndex, StorageModel::R_CtrBusType).value <KStorageBus>();
-        KStorageControllerType ctrType = mStorageModel->data (ctrIndex, StorageModel::R_CtrType).value <KStorageControllerType>();
-        CStorageController ctr = mMachine.AddStorageController (ctrName, ctrBusType);
-        ctr.SetControllerType (ctrType);
-        for (int j = 0; j < mStorageModel->rowCount (ctrIndex); ++ j)
+        /* Just search for the currently present CD/DVD & Floppy devices to update */
+        QModelIndex rootIndex = mStorageModel->root();
+        for (int i = 0; i < mStorageModel->rowCount (rootIndex); ++ i)
         {
-            QModelIndex attIndex = ctrIndex.child (j, 0);
-            StorageSlot attStorageSlot = mStorageModel->data (attIndex, StorageModel::R_AttSlot).value <StorageSlot>();
-            KDeviceType attDeviceType = mStorageModel->data (attIndex, StorageModel::R_AttDevice).value <KDeviceType>();
-            QString attMediumId = mStorageModel->data (attIndex, StorageModel::R_AttMediumId).toString();
-            mMachine.AttachDevice (ctrName, attStorageSlot.port, attStorageSlot.device, attDeviceType, attMediumId);
-            CMediumAttachment attachment = mMachine.GetMediumAttachment (ctrName, attStorageSlot.port, attStorageSlot.device);
-            attachment.SetPassthrough (mStorageModel->data (attIndex, StorageModel::R_AttIsHostDrive).toBool() &&
-                                       mStorageModel->data (attIndex, StorageModel::R_AttIsPassthrough).toBool());
+            QModelIndex ctrIndex = rootIndex.child (i, 0);
+            QString ctrName = mStorageModel->data (ctrIndex, StorageModel::R_CtrName).toString();
+            for (int j = 0; j < mStorageModel->rowCount (ctrIndex); ++ j)
+            {
+                QModelIndex attIndex = ctrIndex.child (j, 0);
+                KDeviceType attDeviceType = mStorageModel->data (attIndex, StorageModel::R_AttDevice).value <KDeviceType>();
+                if (attDeviceType != KDeviceType_DVD && attDeviceType != KDeviceType_Floppy) continue;
+                StorageSlot attStorageSlot = mStorageModel->data (attIndex, StorageModel::R_AttSlot).value <StorageSlot>();
+                QString attMediumId = mStorageModel->data (attIndex, StorageModel::R_AttMediumId).toString();
+                const CMedium &medium = mMachine.GetMedium (ctrName, attStorageSlot.port, attStorageSlot.device);
+                if ((medium.isNull() && !QUuid (attMediumId).isNull()) ||
+                    (!medium.isNull() && medium.GetId() != attMediumId))
+                    mMachine.MountMedium (ctrName, attStorageSlot.port, attStorageSlot.device, attMediumId);
+            }
+        }
+    }
+    else
+    {
+        /* Remove currently present controllers & attachments */
+        CStorageControllerVector controllers = mMachine.GetStorageControllers();
+        foreach (const CStorageController &controller, controllers)
+        {
+            QString controllerName (controller.GetName());
+            CMediumAttachmentVector attachments = mMachine.GetMediumAttachmentsOfController (controllerName);
+            foreach (const CMediumAttachment &attachment, attachments)
+                mMachine.DetachDevice (controllerName, attachment.GetPort(), attachment.GetDevice());
+            mMachine.RemoveStorageController (controllerName);
+        }
+
+        /* Save created controllers & attachments */
+        QModelIndex rootIndex = mStorageModel->root();
+        for (int i = 0; i < mStorageModel->rowCount (rootIndex); ++ i)
+        {
+            QModelIndex ctrIndex = rootIndex.child (i, 0);
+            QString ctrName = mStorageModel->data (ctrIndex, StorageModel::R_CtrName).toString();
+            KStorageBus ctrBusType = mStorageModel->data (ctrIndex, StorageModel::R_CtrBusType).value <KStorageBus>();
+            KStorageControllerType ctrType = mStorageModel->data (ctrIndex, StorageModel::R_CtrType).value <KStorageControllerType>();
+            CStorageController ctr = mMachine.AddStorageController (ctrName, ctrBusType);
+            ctr.SetControllerType (ctrType);
+            for (int j = 0; j < mStorageModel->rowCount (ctrIndex); ++ j)
+            {
+                QModelIndex attIndex = ctrIndex.child (j, 0);
+                StorageSlot attStorageSlot = mStorageModel->data (attIndex, StorageModel::R_AttSlot).value <StorageSlot>();
+                KDeviceType attDeviceType = mStorageModel->data (attIndex, StorageModel::R_AttDevice).value <KDeviceType>();
+                QString attMediumId = mStorageModel->data (attIndex, StorageModel::R_AttMediumId).toString();
+                mMachine.AttachDevice (ctrName, attStorageSlot.port, attStorageSlot.device, attDeviceType, attMediumId);
+                CMediumAttachment attachment = mMachine.GetMediumAttachment (ctrName, attStorageSlot.port, attStorageSlot.device);
+                attachment.SetPassthrough (mStorageModel->data (attIndex, StorageModel::R_AttIsHostDrive).toBool() &&
+                                           mStorageModel->data (attIndex, StorageModel::R_AttIsPassthrough).toBool());
+            }
         }
     }
 }
@@ -1890,7 +1918,7 @@ void VBoxVMSettingsHD::mediumUpdated (const VBoxMedium &aMedium)
             if (attMediumId == aMedium.id())
             {
                 mStorageModel->setData (attIndex, attMediumId, StorageModel::R_AttMediumId);
-                mValidator->revalidate();
+                if (mValidator) mValidator->revalidate();
             }
         }
     }
@@ -1909,7 +1937,7 @@ void VBoxVMSettingsHD::mediumRemoved (VBoxDefs::MediumType /* aType */, const QS
             if (attMediumId == aMediumId)
             {
                 mStorageModel->setData (attIndex, firstAvailableId, StorageModel::R_AttMediumId);
-                mValidator->revalidate();
+                if (mValidator) mValidator->revalidate();
             }
         }
     }
@@ -1952,7 +1980,7 @@ void VBoxVMSettingsHD::delController()
 
     mStorageModel->delController (QUuid (mStorageModel->data (index, StorageModel::R_ItemId).toString()));
     emit storageChanged();
-    mValidator->revalidate();
+    if (mValidator) mValidator->revalidate();
 }
 
 void VBoxVMSettingsHD::addAttachment()
@@ -2001,7 +2029,7 @@ void VBoxVMSettingsHD::delAttachment()
     mStorageModel->delAttachment (QUuid (mStorageModel->data (parent, StorageModel::R_ItemId).toString()),
                                   QUuid (mStorageModel->data (index, StorageModel::R_ItemId).toString()));
     emit storageChanged();
-    mValidator->revalidate();
+    if (mValidator) mValidator->revalidate();
 }
 
 void VBoxVMSettingsHD::getInformation()
@@ -2022,6 +2050,8 @@ void VBoxVMSettingsHD::getInformation()
             {
                 /* Getting Controller Name */
                 mLeName->setText (mStorageModel->data (index, StorageModel::R_CtrName).toString());
+                mLbName->setEnabled (!mDisableStaticControls);
+                mLeName->setEnabled (!mDisableStaticControls);
 
                 /* Getting Controller Sub type */
                 mCbType->clear();
@@ -2031,6 +2061,8 @@ void VBoxVMSettingsHD::getInformation()
                 KStorageControllerType type = mStorageModel->data (index, StorageModel::R_CtrType).value <KStorageControllerType>();
                 int ctrPos = mCbType->findText (vboxGlobal().toString (type));
                 mCbType->setCurrentIndex (ctrPos == -1 ? 0 : ctrPos);
+                mLbType->setEnabled (!mDisableStaticControls);
+                mCbType->setEnabled (!mDisableStaticControls);
 
                 /* Showing Controller Page */
                 mSwRightPane->setCurrentIndex (1);
@@ -2046,10 +2078,13 @@ void VBoxVMSettingsHD::getInformation()
                 StorageSlot slt = mStorageModel->data (index, StorageModel::R_AttSlot).value <StorageSlot>();
                 int attSlotPos = mCbSlot->findText (vboxGlobal().toString (slt));
                 mCbSlot->setCurrentIndex (attSlotPos == -1 ? 0 : attSlotPos);
+                mLbSlot->setEnabled (!mDisableStaticControls);
+                mCbSlot->setEnabled (!mDisableStaticControls);
 
                 /* Getting Show Diffs state */
                 bool isShowDiffs = mStorageModel->data (index, StorageModel::R_AttIsShowDiffs).toBool();
                 mCbShowDiffs->setChecked (isShowDiffs);
+                mCbShowDiffs->setEnabled (!mDisableStaticControls);
 
                 /* Getting Attachment Medium */
                 KDeviceType device = mStorageModel->data (index, StorageModel::R_AttDevice).value <KDeviceType>();
@@ -2057,12 +2092,21 @@ void VBoxVMSettingsHD::getInformation()
                 {
                     case KDeviceType_HardDisk:
                         mLbVdi->setText (tr ("Hard &Disk:"));
+                        mLbVdi->setEnabled (!mDisableStaticControls);
+                        mCbVdi->setEnabled (!mDisableStaticControls);
+                        mTbVmm->setEnabled (!mDisableStaticControls);
                         break;
                     case KDeviceType_DVD:
                         mLbVdi->setText (tr ("&CD/DVD Device:"));
+                        mLbVdi->setEnabled (true);
+                        mCbVdi->setEnabled (true);
+                        mTbVmm->setEnabled (true);
                         break;
                     case KDeviceType_Floppy:
                         mLbVdi->setText (tr ("&Floppy Device:"));
+                        mLbVdi->setEnabled (true);
+                        mCbVdi->setEnabled (true);
+                        mTbVmm->setEnabled (true);
                         break;
                     default:
                         break;
@@ -2074,7 +2118,7 @@ void VBoxVMSettingsHD::getInformation()
 
                 /* Getting Passthrough state */
                 bool isHostDrive = mStorageModel->data (index, StorageModel::R_AttIsHostDrive).toBool();
-                mCbPassthrough->setEnabled (isHostDrive);
+                mCbPassthrough->setEnabled (!mDisableStaticControls && isHostDrive);
                 mCbPassthrough->setChecked (isHostDrive && mStorageModel->data (index, StorageModel::R_AttIsPassthrough).toBool());
 
                 /* Update optional widgets visibility */
@@ -2097,7 +2141,7 @@ void VBoxVMSettingsHD::getInformation()
         }
     }
 
-    mValidator->revalidate();
+    if (mValidator) mValidator->revalidate();
 
     mIsLoadingInProgress = false;
 }
@@ -2167,19 +2211,19 @@ void VBoxVMSettingsHD::updateActionsState()
     bool isAttachment = mStorageModel->data (index, StorageModel::R_IsAttachment).toBool();
     bool isAttachmentsPossible = mStorageModel->data (index, StorageModel::R_IsMoreAttachmentsPossible).toBool();
 
-    mAddCtrAction->setEnabled (isIDEPossible || isSATAPossible || isSCSIPossible || isFloppyPossible);
-    mAddIDECtrAction->setEnabled (isIDEPossible);
-    mAddSATACtrAction->setEnabled (isSATAPossible);
-    mAddSCSICtrAction->setEnabled (isSCSIPossible);
-    mAddFloppyCtrAction->setEnabled (isFloppyPossible);
+    mAddCtrAction->setEnabled (!mDisableStaticControls && (isIDEPossible || isSATAPossible || isSCSIPossible || isFloppyPossible));
+    mAddIDECtrAction->setEnabled (!mDisableStaticControls && isIDEPossible);
+    mAddSATACtrAction->setEnabled (!mDisableStaticControls && isSATAPossible);
+    mAddSCSICtrAction->setEnabled (!mDisableStaticControls && isSCSIPossible);
+    mAddFloppyCtrAction->setEnabled (!mDisableStaticControls && isFloppyPossible);
 
-    mAddAttAction->setEnabled (isController && isAttachmentsPossible);
-    mAddHDAttAction->setEnabled (isController && isAttachmentsPossible);
-    mAddCDAttAction->setEnabled (isController && isAttachmentsPossible);
-    mAddFDAttAction->setEnabled (isController && isAttachmentsPossible);
+    mAddAttAction->setEnabled (!mDisableStaticControls && isController && isAttachmentsPossible);
+    mAddHDAttAction->setEnabled (!mDisableStaticControls && isController && isAttachmentsPossible);
+    mAddCDAttAction->setEnabled (!mDisableStaticControls && isController && isAttachmentsPossible);
+    mAddFDAttAction->setEnabled (!mDisableStaticControls && isController && isAttachmentsPossible);
 
-    mDelCtrAction->setEnabled (isController);
-    mDelAttAction->setEnabled (isAttachment);
+    mDelCtrAction->setEnabled (!mDisableStaticControls && isController);
+    mDelAttAction->setEnabled (!mDisableStaticControls && isAttachment);
 }
 
 void VBoxVMSettingsHD::onRowInserted (const QModelIndex &aParent, int aPosition)
@@ -2485,7 +2529,7 @@ void VBoxVMSettingsHD::addAttachmentWrapper (KDeviceType aDevice)
 
     mStorageModel->addAttachment (QUuid (mStorageModel->data (index, StorageModel::R_ItemId).toString()), aDevice);
     emit storageChanged();
-    mValidator->revalidate();
+    if (mValidator) mValidator->revalidate();
 }
 
 QString VBoxVMSettingsHD::getWithNewHDWizard()
