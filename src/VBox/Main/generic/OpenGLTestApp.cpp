@@ -27,6 +27,8 @@
 #include <Windows.h>
 #endif
 
+#include <string>
+
 #ifdef VBOX_WITH_CROGL
 
 extern "C" {
