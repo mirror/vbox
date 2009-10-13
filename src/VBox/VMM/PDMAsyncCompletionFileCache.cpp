@@ -1310,26 +1310,83 @@ int pdmacFileEpCacheWrite(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint, PPDMASYNCCO
                 }
                 else
                 {
-                    AssertMsg(!(pEntry->fFlags & PDMACFILECACHE_ENTRY_IO_IN_PROGRESS),
-                              ("Entry is not dirty but in progress\n"));
-
-                    /* Write as much as we can into the entry and update the file. */
-                    while (cbToWrite)
+                    /*
+                     * Check if a read is in progress for this entry.
+                     * We have to defer processing in that case.
+                     */
+                    if (pEntry->fFlags & PDMACFILECACHE_ENTRY_IO_IN_PROGRESS)
                     {
-                        size_t cbCopy = RT_MIN(cbSegLeft, cbToWrite);
+                        RTSemRWRequestWrite(pEndpointCache->SemRWEntries, RT_INDEFINITE_WAIT);
 
-                        memcpy(pEntry->pbData + OffDiff, pbSegBuf, cbCopy);
+                        /* Check again. The completion callback might have raced us. */
+                        if (pEntry->fFlags & PDMACFILECACHE_ENTRY_IO_IN_PROGRESS)
+                        {
 
-                        ADVANCE_SEGMENT_BUFFER(cbCopy);
+                            while (cbToWrite)
+                            {
+                                PPDMACFILETASKSEG pSeg = (PPDMACFILETASKSEG)RTMemAllocZ(sizeof(PDMACFILETASKSEG));
 
-                        cbToWrite-= cbCopy;
-                        off      += cbCopy;
-                        OffDiff  += cbCopy;
-                        ASMAtomicSubS32(&pTask->cbTransferLeft, cbCopy);
+                                pSeg->pTask      = pTask;
+                                pSeg->uBufOffset = OffDiff;
+                                pSeg->cbTransfer = RT_MIN(cbToWrite, cbSegLeft);
+                                pSeg->pvBuf      = pbSegBuf;
+                                pSeg->fWrite     = true;
+
+                                ADVANCE_SEGMENT_BUFFER(pSeg->cbTransfer);
+
+                                pSeg->pNext = pEntry->pHead;
+                                pEntry->pHead = pSeg;
+
+                                off       += pSeg->cbTransfer;
+                                OffDiff   += pSeg->cbTransfer;
+                                cbToWrite -= pSeg->cbTransfer;
+                            }
+
+                            RTSemRWReleaseWrite(pEndpointCache->SemRWEntries);
+                        }
+                        else
+                        {
+                            RTSemRWReleaseWrite(pEndpointCache->SemRWEntries);
+
+                            /* Write as much as we can into the entry and update the file. */
+                            while (cbToWrite)
+                            {
+                                size_t cbCopy = RT_MIN(cbSegLeft, cbToWrite);
+
+                                memcpy(pEntry->pbData + OffDiff, pbSegBuf, cbCopy);
+
+                                ADVANCE_SEGMENT_BUFFER(cbCopy);
+
+                                cbToWrite-= cbCopy;
+                                off      += cbCopy;
+                                OffDiff  += cbCopy;
+                                ASMAtomicSubS32(&pTask->cbTransferLeft, cbCopy);
+                            }
+
+                            pEntry->fFlags |= PDMACFILECACHE_ENTRY_IS_DIRTY;
+                            pdmacFileCacheWriteToEndpoint(pEntry);
+                        }
                     }
+                    else
+                    {
+                        /* Write as much as we can into the entry and update the file. */
+                        while (cbToWrite)
+                        {
+                            size_t cbCopy = RT_MIN(cbSegLeft, cbToWrite);
 
-                    pEntry->fFlags |= PDMACFILECACHE_ENTRY_IS_DIRTY;
-                    pdmacFileCacheWriteToEndpoint(pEntry);
+                            memcpy(pEntry->pbData + OffDiff, pbSegBuf, cbCopy);
+
+                            ADVANCE_SEGMENT_BUFFER(cbCopy);
+
+                            cbToWrite-= cbCopy;
+                            off      += cbCopy;
+                            OffDiff  += cbCopy;
+                            ASMAtomicSubS32(&pTask->cbTransferLeft, cbCopy);
+                        }
+
+                        pEntry->fFlags |= PDMACFILECACHE_ENTRY_IS_DIRTY;
+                        pdmacFileCacheWriteToEndpoint(pEntry);
+                    }
                 }
 
                 /* Move this entry to the top position */
