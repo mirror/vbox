@@ -1244,7 +1244,7 @@ int Appliance::importFS(TaskImportOVF *pTask)
             /* We need HWVirt & IO-APIC if more than one CPU is requested */
             if (tmpCount > 1)
             {
-                rc = pNewMachine->COMSETTER(HWVirtExEnabled)(TRUE);
+                rc = pNewMachine->SetHWVirtExProperty(HWVirtExPropertyType_Enabled, TRUE);
                 if (FAILED(rc)) throw rc;
 
                 fEnableIOApic = true;

@@ -343,20 +343,28 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
         RTPrintf("Time offset:     %lld ms\n", timeOffset);
 
     BOOL hwVirtExEnabled;
-    machine->COMGETTER(HWVirtExEnabled)(&hwVirtExEnabled);
+    machine->GetHWVirtExProperty(HWVirtExPropertyType_Enabled, &hwVirtExEnabled);
     if (details == VMINFO_MACHINEREADABLE)
         RTPrintf("hwvirtex=\"%s\"\n", hwVirtExEnabled ? "on" : "off");
     else
         RTPrintf("Hardw. virt.ext: %s\n", hwVirtExEnabled ? "on" : "off");
+
+    BOOL hwVirtExExclusive;
+    machine->GetHWVirtExProperty(HWVirtExPropertyType_Exclusive, &hwVirtExExclusive);
+    if (details == VMINFO_MACHINEREADABLE)
+        RTPrintf("hwvirtexexcl=\"%s\"\n", hwVirtExExclusive ? "on" : "off");
+    else
+        RTPrintf("Hardw. virt.ext exclusive: %s\n", hwVirtExExclusive ? "on" : "off");
+
     BOOL HWVirtExNestedPagingEnabled;
-    machine->COMGETTER(HWVirtExNestedPagingEnabled)(&HWVirtExNestedPagingEnabled);
+    machine->GetHWVirtExProperty(HWVirtExPropertyType_NestedPagingEnabled, &HWVirtExNestedPagingEnabled);
     if (details == VMINFO_MACHINEREADABLE)
         RTPrintf("nestedpaging=\"%s\"\n", HWVirtExNestedPagingEnabled ? "on" : "off");
     else
         RTPrintf("Nested Paging:   %s\n", HWVirtExNestedPagingEnabled ? "on" : "off");
 
     BOOL HWVirtExVPIDEnabled;
-    machine->COMGETTER(HWVirtExVPIDEnabled)(&HWVirtExVPIDEnabled);
+    machine->GetHWVirtExProperty(HWVirtExPropertyType_VPIDEnabled, &HWVirtExVPIDEnabled);
     if (details == VMINFO_MACHINEREADABLE)
         RTPrintf("vtxvpid=\"%s\"\n", HWVirtExVPIDEnabled ? "on" : "off");
     else

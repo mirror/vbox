@@ -1622,12 +1622,12 @@ QString VBoxGlobal::detailsReport (const CMachine &aMachine, bool aWithLinks)
 #endif /* VBOX_WITH_FULL_DETAILS_REPORT */
 
         /* VT-x/AMD-V */
-        QString virt = aMachine.GetHWVirtExEnabled()
+        QString virt = aMachine.GetHWVirtExProperty(KHWVirtExPropertyType_Enabled)
             ? tr ("Enabled", "details report (VT-x/AMD-V)")
             : tr ("Disabled", "details report (VT-x/AMD-V)");
 
         /* Nested Paging */
-        QString nested = aMachine.GetHWVirtExNestedPagingEnabled()
+        QString nested = aMachine.GetHWVirtExProperty(KHWVirtExPropertyType_NestedPagingEnabled)
             ? tr ("Enabled", "details report (Nested Paging)")
             : tr ("Disabled", "details report (Nested Paging)");
 

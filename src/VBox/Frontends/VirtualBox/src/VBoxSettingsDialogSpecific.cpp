@@ -402,7 +402,7 @@ void VBoxVMSettingsDlg::putBackTo()
         qobject_cast <VBoxVMSettingsSystem*> (mSelector->idToPage (SystemId));
     if (generalPage && systemPage &&
         generalPage->is64BitOSTypeSelected() && !systemPage->isHWVirtExEnabled())
-        mMachine.SetHWVirtExEnabled (true);
+        mMachine.SetHWVirtExProperty(KHWVirtExPropertyType_Enabled, true);
 
 #ifdef VBOX_WITH_VIDEOHWACCEL
     /* Disable 2D Video Acceleration for non-Windows guests */
