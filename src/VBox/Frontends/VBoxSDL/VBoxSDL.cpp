@@ -1906,7 +1906,7 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
     }
     if (fHWVirt != ~0U)
     {
-        gMachine->COMSETTER(HWVirtExEnabled)(fHWVirt);
+        gMachine->SetHWVirtExProperty(HWVirtExPropertyType_Enabled, fHWVirt);
     }
     if (u32WarpDrive != 0)
     {
