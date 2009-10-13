@@ -66,8 +66,15 @@
 /*******************************************************************************
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
-/** The saved state version. */
+/** The current saved state version. */
+#ifdef VBOX_WITH_LIVE_MIGRATION
+#define CPUM_SAVED_STATE_VERSION                11
+#else
 #define CPUM_SAVED_STATE_VERSION                10
+#endif
+/** The saved state version of 3.0 and 3.1 trunk before the live migration
+ * changes. */
+#define CPUM_SAVED_STATE_VERSION_VER3_0         10
 /** The saved state version for the 2.1 trunk before the MSR changes. */
 #define CPUM_SAVED_STATE_VERSION_VER2_1_NOMSR   9
 /** The saved state version of 2.0, used for backwards compatibility. */
@@ -88,7 +95,6 @@ typedef enum CPUMDUMPTYPE
     CPUMDUMPTYPE_TERSE,
     CPUMDUMPTYPE_DEFAULT,
     CPUMDUMPTYPE_VERBOSE
-
 } CPUMDUMPTYPE;
 /** Pointer to a cpu info dump type. */
 typedef CPUMDUMPTYPE *PCPUMDUMPTYPE;
@@ -98,8 +104,11 @@ typedef CPUMDUMPTYPE *PCPUMDUMPTYPE;
 *   Internal Functions                                                         *
 *******************************************************************************/
 static int cpumR3CpuIdInit(PVM pVM);
-static DECLCALLBACK(int)  cpumR3Save(PVM pVM, PSSMHANDLE pSSM);
-static DECLCALLBACK(int)  cpumR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass);
+#ifdef VBOX_WITH_LIVE_MIGRATION
+static DECLCALLBACK(int)  cpumR3LiveExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uPass);
+#endif
+static DECLCALLBACK(int)  cpumR3SaveExec(PVM pVM, PSSMHANDLE pSSM);
+static DECLCALLBACK(int)  cpumR3LoadExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass);
 static DECLCALLBACK(void) cpumR3InfoAll(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs);
 static DECLCALLBACK(void) cpumR3InfoGuest(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs);
 static DECLCALLBACK(void) cpumR3InfoGuestInstr(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs);
@@ -197,10 +206,17 @@ VMMR3DECL(int) CPUMR3Init(PVM pVM)
     /*
      * Register saved state data item.
      */
+#ifdef VBOX_WITH_LIVE_MIGRATION
+    int rc = SSMR3RegisterInternal(pVM, "cpum", 1, CPUM_SAVED_STATE_VERSION, sizeof(CPUM),
+                                   NULL, cpumR3LiveExec, NULL,
+                                   NULL, cpumR3SaveExec, NULL,
+                                   NULL, cpumR3LoadExec, NULL);
+#else
     int rc = SSMR3RegisterInternal(pVM, "cpum", 1, CPUM_SAVED_STATE_VERSION, sizeof(CPUM),
                                    NULL, NULL, NULL,
-                                   NULL, cpumR3Save, NULL,
-                                   NULL, cpumR3Load, NULL);
+                                   NULL, cpumR3SaveExec, NULL,
+                                   NULL, cpumR3LoadExec, NULL);
+#endif
     if (RT_FAILURE(rc))
         return rc;
 
@@ -839,6 +855,169 @@ VMMR3DECL(void) CPUMR3Reset(PVM pVM)
     }
 }
 
+#ifdef VBOX_WITH_LIVE_MIGRATION
+
+/**
+ * Called both in pass 0 and the final pass.
+ *
+ * @param   pVM                 The VM handle.
+ * @param   pSSM                The saved state handle.
+ */
+static void cpumR3SaveCpuId(PVM pVM, PSSMHANDLE pSSM)
+{
+    /*
+     * Save all the CPU ID leafs here so we can check them for compatability
+     * upon loading.
+     */
+    SSMR3PutU32(pSSM, RT_ELEMENTS(pVM->cpum.s.aGuestCpuIdStd));
+    SSMR3PutMem(pSSM, &pVM->cpum.s.aGuestCpuIdStd[0], sizeof(pVM->cpum.s.aGuestCpuIdStd));
+
+    SSMR3PutU32(pSSM, RT_ELEMENTS(pVM->cpum.s.aGuestCpuIdExt));
+    SSMR3PutMem(pSSM, &pVM->cpum.s.aGuestCpuIdExt[0], sizeof(pVM->cpum.s.aGuestCpuIdExt));
+
+    SSMR3PutU32(pSSM, RT_ELEMENTS(pVM->cpum.s.aGuestCpuIdCentaur));
+    SSMR3PutMem(pSSM, &pVM->cpum.s.aGuestCpuIdCentaur[0], sizeof(pVM->cpum.s.aGuestCpuIdCentaur));
+
+    SSMR3PutMem(pSSM, &pVM->cpum.s.GuestCpuIdDef, sizeof(pVM->cpum.s.GuestCpuIdDef));
+
+    /*
+     * Save a good portion of the raw CPU IDs as well as they may come in
+     * handy when validating features for raw mode.
+     */
+    CPUMCPUID   aRawStd[8];
+    for (unsigned i = 0; i < RT_ELEMENTS(aRawStd); i++)
+        ASMCpuId(i, &aRawStd[i].eax, &aRawStd[i].ebx, &aRawStd[i].ecx, &aRawStd[i].edx);
+    SSMR3PutU32(pSSM, RT_ELEMENTS(aRawStd));
+    SSMR3PutMem(pSSM, &aRawStd[0], sizeof(aRawStd));
+
+    CPUMCPUID   aRawExt[16];
+    for (unsigned i = 0; i < RT_ELEMENTS(aRawExt); i++)
+        ASMCpuId(i | UINT32_C(0x80000000), &aRawExt[i].eax, &aRawExt[i].ebx, &aRawExt[i].ecx, &aRawExt[i].edx);
+    SSMR3PutU32(pSSM, RT_ELEMENTS(aRawExt));
+    SSMR3PutMem(pSSM, &aRawExt[0], sizeof(aRawExt));
+}
+
+
+/**
+ * Loads the CPU ID leafs saved by pass 0.
+ *
+ * @returns VBox status code.
+ * @param   pVM                 The VM handle.
+ * @param   pSSM                The saved state handle.
+ * @param   uVersion            The format version.
+ */
+static int cpumR3LoadCpuId(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion)
+{
+    AssertMsgReturn(uVersion >= CPUM_SAVED_STATE_VERSION, ("%u\n", uVersion), VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION);
+
+    /*
+     * Load them into stack buffers first.
+     */
+    CPUMCPUID   aGuestCpuIdStd[RT_ELEMENTS(pVM->cpum.s.aGuestCpuIdStd)];
+    uint32_t    cGuestCpuIdStd;
+    int rc = SSMR3GetU32(pSSM, &cGuestCpuIdStd); AssertRCReturn(rc, rc);
+    if (cGuestCpuIdStd > RT_ELEMENTS(aGuestCpuIdStd))
+        return VERR_SSM_DATA_UNIT_FORMAT_CHANGED;
+    SSMR3GetMem(pSSM, &aGuestCpuIdStd[0], cGuestCpuIdStd * sizeof(aGuestCpuIdStd[0]));
+
+    CPUMCPUID   aGuestCpuIdExt[RT_ELEMENTS(pVM->cpum.s.aGuestCpuIdExt)];
+    uint32_t    cGuestCpuIdExt;
+    rc = SSMR3GetU32(pSSM, &cGuestCpuIdExt); AssertRCReturn(rc, rc);
+    if (cGuestCpuIdExt > RT_ELEMENTS(aGuestCpuIdExt))
+        return VERR_SSM_DATA_UNIT_FORMAT_CHANGED;
+    SSMR3GetMem(pSSM, &aGuestCpuIdExt[0], cGuestCpuIdExt * sizeof(aGuestCpuIdExt[0]));
+
+    CPUMCPUID   aGuestCpuIdCentaur[RT_ELEMENTS(pVM->cpum.s.aGuestCpuIdCentaur)];
+    uint32_t    cGuestCpuIdCentaur;
+    rc = SSMR3GetU32(pSSM, &cGuestCpuIdCentaur); AssertRCReturn(rc, rc);
+    if (cGuestCpuIdCentaur > RT_ELEMENTS(aGuestCpuIdCentaur))
+        return VERR_SSM_DATA_UNIT_FORMAT_CHANGED;
+    SSMR3GetMem(pSSM, &aGuestCpuIdCentaur[0], cGuestCpuIdCentaur * sizeof(aGuestCpuIdCentaur[0]));
+
+    CPUMCPUID   GuestCpuIdDef;
+    rc = SSMR3GetMem(pSSM, &pVM->cpum.s.GuestCpuIdDef, sizeof(pVM->cpum.s.GuestCpuIdDef));
+    AssertRCReturn(rc, rc);
+
+    CPUMCPUID   aRawStd[8];
+    uint32_t    cRawStd;
+    rc = SSMR3GetU32(pSSM, &cRawStd); AssertRCReturn(rc, rc);
+    if (cRawStd > RT_ELEMENTS(aRawStd))
+        return VERR_SSM_DATA_UNIT_FORMAT_CHANGED;
+    SSMR3GetMem(pSSM, &aRawStd[0], cRawStd * sizeof(aRawStd[0]));
+
+    CPUMCPUID   aRawExt[16];
+    uint32_t    cRawExt;
+    rc = SSMR3GetU32(pSSM, &cRawExt); AssertRCReturn(rc, rc);
+    if (cRawExt > RT_ELEMENTS(aRawExt))
+        return VERR_SSM_DATA_UNIT_FORMAT_CHANGED;
+    rc = SSMR3GetMem(pSSM, &aRawExt[0], cRawExt * sizeof(aRawExt[0]));
+    AssertRCReturn(rc, rc);
+
+    /*
+     * Note that we support restoring less than the current amount of standard
+     * leaves because we've been allowed more is newer version of VBox.
+     *
+     * So, pad new entries with the default.
+     */
+    for (uint32_t i = cGuestCpuIdStd; i < RT_ELEMENTS(aGuestCpuIdStd); i++)
+        aGuestCpuIdStd[i] = GuestCpuIdDef;
+
+    for (uint32_t i = cGuestCpuIdExt; i < RT_ELEMENTS(aGuestCpuIdExt); i++)
+        aGuestCpuIdExt[i] = GuestCpuIdDef;
+
+    for (uint32_t i = cGuestCpuIdCentaur; i < RT_ELEMENTS(aGuestCpuIdCentaur); i++)
+        aGuestCpuIdCentaur[i] = GuestCpuIdDef;
+
+    for (uint32_t i = cRawStd; i < RT_ELEMENTS(aRawStd); i++)
+        ASMCpuId(i, &aRawStd[i].eax, &aRawStd[i].ebx, &aRawStd[i].ecx, &aRawStd[i].edx);
+
+    for (uint32_t i = cRawExt; i < RT_ELEMENTS(aRawExt); i++)
+        ASMCpuId(i | UINT32_C(0x80000000), &aRawExt[i].eax, &aRawExt[i].ebx, &aRawExt[i].ecx, &aRawExt[i].edx);
+
+    /*
+     * Get the raw CPU IDs for the current host.
+     */
+    CPUMCPUID   aHostRawStd[8];
+    for (unsigned i = 0; i < RT_ELEMENTS(aHostRawStd); i++)
+        ASMCpuId(i, &aHostRawStd[i].eax, &aHostRawStd[i].ebx, &aHostRawStd[i].ecx, &aHostRawStd[i].edx);
+
+    CPUMCPUID   aHostRawExt[16];
+    for (unsigned i = 0; i < RT_ELEMENTS(aHostRawExt); i++)
+        ASMCpuId(i | UINT32_C(0x80000000), &aHostRawExt[i].eax, &aHostRawExt[i].ebx, &aHostRawExt[i].ecx, &aHostRawExt[i].edx);
+
+    /*
+     * Now for the fun part...
+     */
+
+
+    /*
+     * We're good, commit the CPU ID leafs.
+     */
+    memcmp(&pVM->cpum.s.aGuestCpuIdStd[0],     &aGuestCpuIdStd[0],     sizeof(aGuestCpuIdStd));
+    memcmp(&pVM->cpum.s.aGuestCpuIdExt[0],     &aGuestCpuIdExt[0],     sizeof(aGuestCpuIdExt));
+    memcmp(&pVM->cpum.s.aGuestCpuIdCentaur[0], &aGuestCpuIdCentaur[0], sizeof(aGuestCpuIdCentaur));
+    pVM->cpum.s.GuestCpuIdDef = GuestCpuIdDef;
+
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Pass 0 live exec callback.
+ *
+ * @returns VINF_SSM_DONT_CALL_AGAIN.
+ * @param   pVM                 The VM handle.
+ * @param   pSSM                The saved state handle.
+ * @param   uPass               The pass (0).
+ */
+static DECLCALLBACK(int) cpumR3LiveExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uPass)
+{
+    AssertReturn(uPass == 0, VERR_INTERNAL_ERROR_4);
+    cpumR3SaveCpuId(pVM, pSSM);
+    return VINF_SSM_DONT_CALL_AGAIN;
+}
+
+#endif /* VBOX_WITH_LIVE_MIGRATION */
 
 /**
  * Execute state save operation.
@@ -847,7 +1026,7 @@ VMMR3DECL(void) CPUMR3Reset(PVM pVM)
  * @param   pVM             VM Handle.
  * @param   pSSM            SSM operation handle.
  */
-static DECLCALLBACK(int) cpumR3Save(PVM pVM, PSSMHANDLE pSSM)
+static DECLCALLBACK(int) cpumR3SaveExec(PVM pVM, PSSMHANDLE pSSM)
 {
     /*
      * Save.
@@ -870,6 +1049,11 @@ static DECLCALLBACK(int) cpumR3Save(PVM pVM, PSSMHANDLE pSSM)
         SSMR3PutMem(pSSM, &pVCpu->cpum.s.GuestMsr, sizeof(pVCpu->cpum.s.GuestMsr));
     }
 
+#ifdef VBOX_WITH_LIVE_MIGRATION
+    cpumR3SaveCpuId(pVM, pSSM);
+    return VINF_SUCCESS;
+#else
+
     SSMR3PutU32(pSSM, RT_ELEMENTS(pVM->cpum.s.aGuestCpuIdStd));
     SSMR3PutMem(pSSM, &pVM->cpum.s.aGuestCpuIdStd[0], sizeof(pVM->cpum.s.aGuestCpuIdStd));
 
@@ -886,6 +1070,7 @@ static DECLCALLBACK(int) cpumR3Save(PVM pVM, PSSMHANDLE pSSM)
     ASMCpuId(0, &au32CpuId[0], &au32CpuId[1], &au32CpuId[2], &au32CpuId[3]);
     ASMCpuId(1, &au32CpuId[4], &au32CpuId[5], &au32CpuId[6], &au32CpuId[7]);
     return SSMR3PutMem(pSSM, &au32CpuId[0], sizeof(au32CpuId));
+#endif
 }
 
 
@@ -993,77 +1178,90 @@ static void cpumR3LoadCPUM1_6(PVM pVM, CPUMCTX_VER1_6 *pCpumctx16)
  * @param   uVersion        Data layout version.
  * @param   uPass           The data pass.
  */
-static DECLCALLBACK(int) cpumR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
+static DECLCALLBACK(int) cpumR3LoadExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
 {
-    Assert(uPass == SSM_PASS_FINAL); NOREF(uPass);
-
     /*
      * Validate version.
      */
     if (    uVersion != CPUM_SAVED_STATE_VERSION
+        &&  uVersion != CPUM_SAVED_STATE_VERSION_VER3_0
         &&  uVersion != CPUM_SAVED_STATE_VERSION_VER2_1_NOMSR
         &&  uVersion != CPUM_SAVED_STATE_VERSION_VER2_0
         &&  uVersion != CPUM_SAVED_STATE_VERSION_VER1_6)
     {
-        AssertMsgFailed(("cpuR3Load: Invalid version uVersion=%d!\n", uVersion));
+        AssertMsgFailed(("cpumR3LoadExec: Invalid version uVersion=%d!\n", uVersion));
         return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
     }
 
-    /* Set the size of RTGCPTR for SSMR3GetGCPtr. */
-    if (uVersion == CPUM_SAVED_STATE_VERSION_VER1_6)
-        SSMR3SetGCPtrSize(pSSM, sizeof(RTGCPTR32));
-    else if (uVersion <= CPUM_SAVED_STATE_VERSION)
-        SSMR3SetGCPtrSize(pSSM, HC_ARCH_BITS == 32 ? sizeof(RTGCPTR32) : sizeof(RTGCPTR));
-
-    /*
-     * Restore.
-     */
-    for (VMCPUID i = 0; i < pVM->cCpus; i++)
+    if (uPass == SSM_PASS_FINAL)
     {
-        PVMCPU   pVCpu = &pVM->aCpus[i];
-        uint32_t uCR3  = pVCpu->cpum.s.Hyper.cr3;
-        uint32_t uESP  = pVCpu->cpum.s.Hyper.esp; /* see VMMR3Relocate(). */
+        /*
+         * Set the size of RTGCPTR for SSMR3GetGCPtr. (Only necessary for
+         * really old SSM file versions.)
+         */
+        if (uVersion == CPUM_SAVED_STATE_VERSION_VER1_6)
+            SSMR3SetGCPtrSize(pSSM, sizeof(RTGCPTR32));
+        else if (uVersion <= CPUM_SAVED_STATE_VERSION_VER3_0)
+            SSMR3SetGCPtrSize(pSSM, HC_ARCH_BITS == 32 ? sizeof(RTGCPTR32) : sizeof(RTGCPTR));
 
-        SSMR3GetMem(pSSM, &pVCpu->cpum.s.Hyper, sizeof(pVCpu->cpum.s.Hyper));
-        pVCpu->cpum.s.Hyper.cr3 = uCR3;
-        pVCpu->cpum.s.Hyper.esp = uESP;
-    }
-
-    if (uVersion == CPUM_SAVED_STATE_VERSION_VER1_6)
-    {
-        CPUMCTX_VER1_6 cpumctx16;
-        memset(&pVM->aCpus[0].cpum.s.Guest, 0, sizeof(pVM->aCpus[0].cpum.s.Guest));
-        SSMR3GetMem(pSSM, &cpumctx16, sizeof(cpumctx16));
-
-        /* Save the old cpumctx state into the new one. */
-        cpumR3LoadCPUM1_6(pVM, &cpumctx16);
-
-        SSMR3GetU32(pSSM, &pVM->aCpus[0].cpum.s.fUseFlags);
-        SSMR3GetU32(pSSM, &pVM->aCpus[0].cpum.s.fChanged);
-    }
-    else
-    {
-        if (uVersion >= CPUM_SAVED_STATE_VERSION_VER2_1_NOMSR)
-        {
-            uint32_t cCpus;
-            int rc = SSMR3GetU32(pSSM, &cCpus); AssertRCReturn(rc, rc);
-            AssertLogRelMsgReturn(cCpus == pVM->cCpus, ("Mismatching CPU counts: saved: %u; configured: %u \n", cCpus, pVM->cCpus),
-                                  VERR_SSM_UNEXPECTED_DATA);
-        }
-        AssertLogRelMsgReturn(   uVersion != CPUM_SAVED_STATE_VERSION_VER2_0
-                              || pVM->cCpus == 1,
-                              ("cCpus=%u\n", pVM->cCpus),
-                              VERR_SSM_UNEXPECTED_DATA);
-
+        /*
+         * Restore.
+         */
         for (VMCPUID i = 0; i < pVM->cCpus; i++)
         {
-            SSMR3GetMem(pSSM, &pVM->aCpus[i].cpum.s.Guest, sizeof(pVM->aCpus[i].cpum.s.Guest));
-            SSMR3GetU32(pSSM, &pVM->aCpus[i].cpum.s.fUseFlags);
-            SSMR3GetU32(pSSM, &pVM->aCpus[i].cpum.s.fChanged);
-            if (uVersion == CPUM_SAVED_STATE_VERSION)
-                SSMR3GetMem(pSSM, &pVM->aCpus[i].cpum.s.GuestMsr, sizeof(pVM->aCpus[i].cpum.s.GuestMsr));
+            PVMCPU   pVCpu = &pVM->aCpus[i];
+            uint32_t uCR3  = pVCpu->cpum.s.Hyper.cr3;
+            uint32_t uESP  = pVCpu->cpum.s.Hyper.esp; /* see VMMR3Relocate(). */
+
+            SSMR3GetMem(pSSM, &pVCpu->cpum.s.Hyper, sizeof(pVCpu->cpum.s.Hyper));
+            pVCpu->cpum.s.Hyper.cr3 = uCR3;
+            pVCpu->cpum.s.Hyper.esp = uESP;
+        }
+
+        if (uVersion == CPUM_SAVED_STATE_VERSION_VER1_6)
+        {
+            CPUMCTX_VER1_6 cpumctx16;
+            memset(&pVM->aCpus[0].cpum.s.Guest, 0, sizeof(pVM->aCpus[0].cpum.s.Guest));
+            SSMR3GetMem(pSSM, &cpumctx16, sizeof(cpumctx16));
+
+            /* Save the old cpumctx state into the new one. */
+            cpumR3LoadCPUM1_6(pVM, &cpumctx16);
+
+            SSMR3GetU32(pSSM, &pVM->aCpus[0].cpum.s.fUseFlags);
+            SSMR3GetU32(pSSM, &pVM->aCpus[0].cpum.s.fChanged);
+        }
+        else
+        {
+            if (uVersion >= CPUM_SAVED_STATE_VERSION_VER2_1_NOMSR)
+            {
+                uint32_t cCpus;
+                int rc = SSMR3GetU32(pSSM, &cCpus); AssertRCReturn(rc, rc);
+                AssertLogRelMsgReturn(cCpus == pVM->cCpus, ("Mismatching CPU counts: saved: %u; configured: %u \n", cCpus, pVM->cCpus),
+                                      VERR_SSM_UNEXPECTED_DATA);
+            }
+            AssertLogRelMsgReturn(   uVersion != CPUM_SAVED_STATE_VERSION_VER2_0
+                                  || pVM->cCpus == 1,
+                                  ("cCpus=%u\n", pVM->cCpus),
+                                  VERR_SSM_UNEXPECTED_DATA);
+
+            for (VMCPUID i = 0; i < pVM->cCpus; i++)
+            {
+                SSMR3GetMem(pSSM, &pVM->aCpus[i].cpum.s.Guest, sizeof(pVM->aCpus[i].cpum.s.Guest));
+                SSMR3GetU32(pSSM, &pVM->aCpus[i].cpum.s.fUseFlags);
+                SSMR3GetU32(pSSM, &pVM->aCpus[i].cpum.s.fChanged);
+                if (uVersion >= CPUM_SAVED_STATE_VERSION_VER3_0)
+                    SSMR3GetMem(pSSM, &pVM->aCpus[i].cpum.s.GuestMsr, sizeof(pVM->aCpus[i].cpum.s.GuestMsr));
+            }
         }
     }
+
+#ifdef VBOX_WITH_LIVE_MIGRATION
+    if (uVersion > CPUM_SAVED_STATE_VERSION_VER3_0)
+        return cpumR3LoadCpuId(pVM, pSSM, uVersion);
+
+    /** @todo Merge the code below into cpumR3LoadCpuId when we've found out what is
+     *        actually required. */
+#endif
 
     /*
      * Restore the CPUID leaves.
@@ -1091,8 +1289,8 @@ static DECLCALLBACK(int) cpumR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion,
 
     /*
      * Check that the basic cpuid id information is unchanged.
-     * @todo we should check the 64 bits capabilities too!
      */
+    /** @todo we should check the 64 bits capabilities too! */
     uint32_t au32CpuId[8] = {0};
     ASMCpuId(0, &au32CpuId[0], &au32CpuId[1], &au32CpuId[2], &au32CpuId[3]);
     ASMCpuId(1, &au32CpuId[4], &au32CpuId[5], &au32CpuId[6], &au32CpuId[7]);
@@ -1155,14 +1353,14 @@ static DECLCALLBACK(int) cpumR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion,
         if (memcmp(au32CpuIdSaved, au32CpuId, sizeof(au32CpuIdSaved)))
         {
             if (SSMR3HandleGetAfter(pSSM) == SSMAFTER_DEBUG_IT)
-                LogRel(("cpumR3Load: CpuId mismatch! (ignored due to SSMAFTER_DEBUG_IT)\n"
+                LogRel(("cpumR3LoadExec: CpuId mismatch! (ignored due to SSMAFTER_DEBUG_IT)\n"
                         "Saved=%.*Rhxs\n"
                         "Real =%.*Rhxs\n",
                         sizeof(au32CpuIdSaved), au32CpuIdSaved,
                         sizeof(au32CpuId), au32CpuId));
             else
             {
-                LogRel(("cpumR3Load: CpuId mismatch!\n"
+                LogRel(("cpumR3LoadExec: CpuId mismatch!\n"
                         "Saved=%.*Rhxs\n"
                         "Real =%.*Rhxs\n",
                         sizeof(au32CpuIdSaved), au32CpuIdSaved,
