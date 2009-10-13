@@ -99,7 +99,9 @@
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
 /** The saved state version. */
-#define VMM_SAVED_STATE_VERSION     3
+#define VMM_SAVED_STATE_VERSION     4
+/** The saved state version used by v3.0 and earlier. (Live migration.) */
+#define VMM_SAVED_STATE_VERSION_3_0 3
 
 
 /*******************************************************************************
@@ -923,24 +925,13 @@ static DECLCALLBACK(int) vmmR3Save(PVM pVM, PSSMHANDLE pSSM)
     LogFlow(("vmmR3Save:\n"));
 
     /*
-     * The hypervisor stack.
-     * Note! See note in vmmR3Load (remove this on version change).
-     */
-    PVMCPU pVCpu0 = &pVM->aCpus[0];
-    SSMR3PutRCPtr(pSSM, pVCpu0->vmm.s.pbEMTStackBottomRC);
-    RTRCPTR RCPtrESP = CPUMGetHyperESP(pVCpu0);
-    AssertMsg(pVCpu0->vmm.s.pbEMTStackBottomRC - RCPtrESP <= VMM_STACK_SIZE, ("Bottom %RRv ESP=%RRv\n", pVCpu0->vmm.s.pbEMTStackBottomRC, RCPtrESP));
-    SSMR3PutRCPtr(pSSM, RCPtrESP);
-    SSMR3PutMem(pSSM, pVCpu0->vmm.s.pbEMTStackR3, VMM_STACK_SIZE);
-
-    /*
      * Save the started/stopped state of all CPUs except 0 as it will always
      * be running. This avoids breaking the saved state version. :-)
      */
     for (VMCPUID i = 1; i < pVM->cCpus; i++)
         SSMR3PutBool(pSSM, VMCPUSTATE_IS_STARTED(VMCPU_GET_STATE(&pVM->aCpus[i])));
 
-    return SSMR3PutU32(pSSM, ~0); /* terminator */
+    return SSMR3PutU32(pSSM, UINT32_MAX); /* terminator */
 }
 
 
@@ -961,33 +952,30 @@ static DECLCALLBACK(int) vmmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, 
     /*
      * Validate version.
      */
-    if (uVersion != VMM_SAVED_STATE_VERSION)
+    if (    uVersion != VMM_SAVED_STATE_VERSION
+        &&  uVersion != VMM_SAVED_STATE_VERSION_3_0)
     {
-        AssertMsgFailed(("vmmR3Load: Invalid version uVersion=%d!\n", uVersion));
+        AssertMsgFailed(("vmmR3Load: Invalid version uVersion=%u!\n", uVersion));
         return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
     }
 
-    /*
-     * Check that the stack is in the same place, or that it's fearly empty.
-     *
-     * Note! This can be skipped next time we update saved state as we will
-     *       never be in a R0/RC -> ring-3 call when saving the state. The
-     *       stack and the two associated pointers are not required.
-     */
-    RTRCPTR RCPtrStackBottom;
-    SSMR3GetRCPtr(pSSM, &RCPtrStackBottom);
-    RTRCPTR RCPtrESP;
-    int rc = SSMR3GetRCPtr(pSSM, &RCPtrESP);
-    if (RT_FAILURE(rc))
-        return rc;
-    SSMR3GetMem(pSSM, pVM->aCpus[0].vmm.s.pbEMTStackR3, VMM_STACK_SIZE);
+    if (uVersion <= VMM_SAVED_STATE_VERSION_3_0)
+    {
+        /* Ignore the stack bottom, stack pointer and stack bits. */
+        RTRCPTR RCPtrIgnored;
+        SSMR3GetRCPtr(pSSM, &RCPtrIgnored);
+        SSMR3GetRCPtr(pSSM, &RCPtrIgnored);
+        SSMR3Skip(pSSM, VMM_STACK_SIZE);
+    }
 
-    /* Restore the VMCPU states. VCPU 0 is always started. */
+    /*
+     * Restore the VMCPU states. VCPU 0 is always started.
+     */
     VMCPU_SET_STATE(&pVM->aCpus[0], VMCPUSTATE_STARTED);
     for (VMCPUID i = 1; i < pVM->cCpus; i++)
     {
         bool fStarted;
-        rc = SSMR3GetBool(pSSM, &fStarted);
+        int rc = SSMR3GetBool(pSSM, &fStarted);
         if (RT_FAILURE(rc))
             return rc;
         VMCPU_SET_STATE(&pVM->aCpus[i], fStarted ? VMCPUSTATE_STARTED : VMCPUSTATE_STOPPED);
@@ -995,10 +983,10 @@ static DECLCALLBACK(int) vmmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, 
 
     /* terminator */
     uint32_t u32;
-    rc = SSMR3GetU32(pSSM, &u32);
+    int rc = SSMR3GetU32(pSSM, &u32);
     if (RT_FAILURE(rc))
         return rc;
-    if (u32 != ~0U)
+    if (u32 != UINT32_MAX)
     {
         AssertMsgFailed(("u32=%#x\n", u32));
         return VERR_SSM_DATA_UNIT_FORMAT_CHANGED;
