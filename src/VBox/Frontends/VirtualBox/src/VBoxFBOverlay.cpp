@@ -28,7 +28,7 @@
 #include "VBoxProblemReporter.h"
 #include "VBoxGlobal.h"
 
-#include "VBoxGLSupportInfo.h"
+#include <VBox/VBoxGL2D.h>
 
 /* Qt includes */
 #include <QGLWidget>
@@ -5196,7 +5196,9 @@ bool VBoxQGLOverlay::isAcceleration2DVideoAvailable()
 {
     static bool g_bVBoxVHWAChecked = false;
     static bool g_bVBoxVHWASupported = false;
+#ifndef DEBUG_misha
     if(!g_bVBoxVHWAChecked)
+#endif
     {
         g_bVBoxVHWAChecked = true;
         g_bVBoxVHWASupported = VBoxVHWAInfo::checkVHWASupport();

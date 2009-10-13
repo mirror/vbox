@@ -19,8 +19,6 @@
  * Clara, CA 95054 USA or visit http://www.sun.com if you need
  * additional information or have any questions.
  */
-#include "VBoxGLSupportInfo.h"
-
 #include <iprt/assert.h>
 #include <iprt/log.h>
 #include <iprt/err.h>
@@ -34,6 +32,8 @@
 
 #include <QGLWidget>
 #include <QGLContext>
+
+#include <VBox/VBoxGL2D.h>
 
 /*****************/
 
@@ -549,7 +549,7 @@ bool VBoxVHWAInfo::checkVHWASupport()
 {
 #if defined(RT_OS_WINDOWS)
     static char pszVBoxPath[RTPATH_MAX];
-    const char *papszArgs[3] = { NULL, "-test", NULL};
+    const char *papszArgs[] = { NULL, "-test", "2D", NULL};
     int rc;
     RTPROCESS Process;
     RTPROCSTATUS ProcStatus;
@@ -557,9 +557,9 @@ bool VBoxVHWAInfo::checkVHWASupport()
 
     rc = RTPathExecDir(pszVBoxPath, RTPATH_MAX); AssertRCReturn(rc, false);
 #if defined(RT_OS_WINDOWS) || defined(RT_OS_OS2)
-    rc = RTPathAppend(pszVBoxPath, RTPATH_MAX, "VBoxTestOGL2D.exe");
+    rc = RTPathAppend(pszVBoxPath, RTPATH_MAX, "VBoxTestOGL.exe");
 #else
-    rc = RTPathAppend(pszVBoxPath, RTPATH_MAX, "VBoxTestOGL2D");
+    rc = RTPathAppend(pszVBoxPath, RTPATH_MAX, "VBoxTestOGL");
 #endif
     AssertRCReturn(rc, false);
     papszArgs[0] = pszVBoxPath;         /* argv[0] */

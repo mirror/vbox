@@ -31,7 +31,7 @@
 #include <iprt/assert.h>
 #include <iprt/critsect.h>
 
-#include "VBoxGLSupportInfo.h"
+#include <VBox/VBoxGL2D.h>
 
 #define VBOXVHWA_ALLOW_PRIMARY_AND_OVERLAY_ONLY 1
 
