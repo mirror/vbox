@@ -2076,9 +2076,14 @@ static int ssmR3StrmClose(PSSMSTRM pStrm)
     int rc;
     if (pStrm->fWrite)
     {
-        int rc2 = RTSemEventSignal(pStrm->hEvtHead);                            AssertLogRelRC(rc2);
-        int rc3 = RTThreadWait(pStrm->hIoThread, RT_INDEFINITE_WAIT, NULL);     AssertLogRelRC(rc3);
-        pStrm->hIoThread = NIL_RTTHREAD;
+        if (pStrm->hIoThread != NIL_RTTHREAD)
+        {
+            int rc2 = RTSemEventSignal(pStrm->hEvtHead);
+            AssertLogRelRC(rc2);
+            int rc3 = RTThreadWait(pStrm->hIoThread, RT_INDEFINITE_WAIT, NULL);
+            AssertLogRelRC(rc3);
+            pStrm->hIoThread = NIL_RTTHREAD;
+        }
 
         rc = pStrm->pOps->pfnClose(pStrm->pvUser);
         if (RT_FAILURE(rc))
@@ -2090,9 +2095,14 @@ static int ssmR3StrmClose(PSSMSTRM pStrm)
         if (RT_FAILURE(rc))
             ssmR3StrmSetError(pStrm, rc);
 
-        int rc2 = RTSemEventSignal(pStrm->hEvtFree);                            AssertLogRelRC(rc2);
-        int rc3 = RTThreadWait(pStrm->hIoThread, RT_INDEFINITE_WAIT, NULL);     AssertLogRelRC(rc3);
-        pStrm->hIoThread = NIL_RTTHREAD;
+        if (pStrm->hIoThread != NIL_RTTHREAD)
+        {
+            int rc2 = RTSemEventSignal(pStrm->hEvtHead);
+            AssertLogRelRC(rc2);
+            int rc3 = RTThreadWait(pStrm->hIoThread, RT_INDEFINITE_WAIT, NULL);
+            AssertLogRelRC(rc3);
+            pStrm->hIoThread = NIL_RTTHREAD;
+        }
     }
 
     pStrm->pOps   = NULL;
