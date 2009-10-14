@@ -1182,6 +1182,7 @@ VBoxVHWASurfaceBase::VBoxVHWASurfaceBase(class VBoxGLWidget *aWidget,
                 mRect(0,0,aSize.width(),aSize.height()),
                 mpProgram(NULL),
                 mVisibleDisplayInitialized(false),
+                mNeedVisibilityReinit(true),
                 mAddress(NULL),
                 mColorFormat(aColorFormat),
                 mpSrcBltCKey(NULL),
@@ -1218,7 +1219,8 @@ VBoxVHWASurfaceBase::VBoxVHWASurfaceBase(class VBoxGLWidget *aWidget,
         mpTex[2] = vboxVHWATextureCreate(mWidget->context(), rect, mColorFormat, bVGA);
     }
 
-    doSetRectValuesInternal(aTargRect, aSrcRect, aVisTargRect);
+    setRectValues(aTargRect, aSrcRect);
+    setVisibleRectValues(aVisTargRect);
 //    mTargSize = QRect(0, 0, aTargSize->width(), aTargSize->height());
 
 //    mBytesPerPixel = calcBytesPerPixel(mColorFormat.format(), mColorFormat.type());
@@ -2102,11 +2104,15 @@ int VBoxVHWASurfaceBase::unlock()
     return VINF_SUCCESS;
 }
 
-void VBoxVHWASurfaceBase::doSetRectValuesInternal(const QRect & aTargRect, const QRect & aSrcRect, const QRect & aVisTargRect)
+void VBoxVHWASurfaceBase::setRectValues (const QRect & aTargRect, const QRect & aSrcRect)
 {
-    mVisibleTargRect = aVisTargRect.intersected(aTargRect);
     mTargRect = aTargRect;
     mSrcRect = aSrcRect;
+}
+
+void VBoxVHWASurfaceBase::setVisibleRectValues (const QRect & aVisTargRect)
+{
+    mVisibleTargRect = aVisTargRect.intersected(mTargRect);
     if(mVisibleTargRect.isEmpty() || mTargRect.isEmpty())
     {
         mVisibleSrcRect.setSize(QSize(0, 0));
@@ -2139,32 +2145,31 @@ void VBoxVHWASurfaceBase::doSetRectValuesInternal(const QRect & aTargRect, const
     }
 }
 
-void VBoxVHWASurfaceBase::setRects(VBoxVHWASurfaceBase *pPrimary, const QRect & aTargRect, const QRect & aSrcRect, const QRect & aVisTargRect, bool bForceReinit)
+
+void VBoxVHWASurfaceBase::setRects(const QRect & aTargRect, const QRect & aSrcRect)
 {
-    QRect aVisibleTargRect = aVisTargRect.intersected(mTargRect);
-
-    if(mTargRect != aTargRect || mSrcRect != aSrcRect || mVisibleTargRect != aVisibleTargRect)
+    if(mTargRect != aTargRect || mSrcRect != aSrcRect)
     {
-        doSetRectValuesInternal(aTargRect, aSrcRect, aVisTargRect);
-        bForceReinit = true;
-    }
-
-    if(bForceReinit)
-    {
-        initDisplay(pPrimary);
+        setRectValues(aTargRect, aSrcRect);
+        mNeedVisibilityReinit = true;
     }
 }
 
-void VBoxVHWASurfaceBase::setTargRectPosition(VBoxVHWASurfaceBase *pPrimary, const QPoint & aPoint, const QRect & aVisibleTargRect)
+void VBoxVHWASurfaceBase::setTargRectPosition(const QPoint & aPoint)
 {
     QRect tRect = targRect();
     tRect.moveTopLeft(aPoint);
-    setRects(pPrimary, tRect, srcRect(), aVisibleTargRect, false);
+    setRects(tRect, srcRect());
 }
 
-void VBoxVHWASurfaceBase::updateVisibleTargRect(VBoxVHWASurfaceBase *pPrimary, const QRect & aVisibleTargRect)
+void VBoxVHWASurfaceBase::updateVisibility (VBoxVHWASurfaceBase *pPrimary, const QRect & aVisibleTargRect, bool bForce)
 {
-    setRects(pPrimary, targRect(), srcRect(), aVisibleTargRect, false);
+    if(mNeedVisibilityReinit || bForce || aVisibleTargRect.intersected(mTargRect) != mVisibleTargRect)
+    {
+        setVisibleRectValues(aVisibleTargRect);
+        initDisplay(pPrimary);
+        mNeedVisibilityReinit = false;
+    }
 }
 
 void VBoxVHWASurfaceBase::deleteDisplay(
@@ -3301,7 +3306,8 @@ void VBoxGLWidget::vhwaDoSurfaceOverlayUpdate(VBoxVHWASurfaceBase *pDstSurf, VBo
             pProgram->stop();
         }
 
-        pSrcSurf->setRects(pDstSurf, dstRect, srcRect, mViewport, true);
+        pSrcSurf->setRects(dstRect, srcRect);
+        pSrcSurf->setVisibilityReinitFlag();
     }
 }
 
@@ -3345,12 +3351,12 @@ int VBoxGLWidget::vhwaSurfaceOverlayUpdate(struct _VBOXVHWACMD_SURF_OVERLAY_UPDA
 
     if(pCmd->u.in.flags & VBOXVHWA_OVER_HIDE)
     {
-        VBOXQGLLOG(("hide"));
+        VBOXQGLLOG(("hide\n"));
         pList->setCurrentVisible(NULL);
     }
     else if(pCmd->u.in.flags & VBOXVHWA_OVER_SHOW)
     {
-        VBOXQGLLOG(("show"));
+        VBOXQGLLOG(("show\n"));
         pList->setCurrentVisible(pSrcSurf);
     }
 
@@ -3394,7 +3400,7 @@ int VBoxGLWidget::vhwaSurfaceOverlaySetPosition(struct _VBOXVHWACMD_SURF_OVERLAY
              it != surfaces.end(); ++ it)
     {
         VBoxVHWASurfaceBase *pCurSrcSurf = (*it);
-        pCurSrcSurf->setTargRectPosition(pDstSurf, pos, mViewport);
+        pCurSrcSurf->setTargRectPosition(pos);
     }
 
     return VINF_SUCCESS;
@@ -4136,7 +4142,7 @@ void VBoxGLWidget::vboxDoUpdateViewport(const QRect & aRect)
          pr != primaryList.end(); ++ pr)
     {
         VBoxVHWASurfaceBase *pSurf = *pr;
-        pSurf->updateVisibleTargRect(NULL, aRect);
+        pSurf->updateVisibility(NULL, aRect, false);
     }
 
     const OverlayList & overlays = mDisplay.overlays();
@@ -4150,7 +4156,7 @@ void VBoxGLWidget::vboxDoUpdateViewport(const QRect & aRect)
              sit != surfaces.end(); ++ sit)
         {
             VBoxVHWASurfaceBase *pSurf = *sit;
-            pSurf->updateVisibleTargRect(mDisplay.getPrimary(), aRect);
+            pSurf->updateVisibility(mDisplay.getPrimary(), aRect, false);
         }
     }
 }
@@ -4677,6 +4683,7 @@ VBoxQGLOverlay::VBoxQGLOverlay (VBoxConsoleView *aView, VBoxFrameBuffer * aConta
       mGlCurrent(false),
       mProcessingCommands(false),
       mNeedOverlayRepaint(false),
+      mNeedSetVisible(false),
       mCmdPipe(aView)
 {
     mpOverlayWidget = new VBoxGLWidget (aView, aView->viewport());
@@ -4960,15 +4967,21 @@ void VBoxQGLOverlay::vboxShowOverlay(bool show)
 
 void VBoxQGLOverlay::vboxCheckUpdateOverlay(const QRect & rect)
 {
-    QRect overRect = mpOverlayWidget->rect();
+    QRect overRect(mpOverlayWidget->pos(), mpOverlayWidget->size());
     if(overRect.x() != rect.x() || overRect.y() != rect.y())
     {
+        mpOverlayWidget->setVisible(false);
+        mNeedSetVisible = true;
+        VBOXQGLLOG_QRECT("moving wgt to " , &rect, "\n");
         mpOverlayWidget->move(rect.x(), rect.y());
         mGlCurrent = false;
     }
 
     if(overRect.width() != rect.width() || overRect.height() != rect.height())
     {
+        mpOverlayWidget->setVisible(false);
+        mNeedSetVisible = true;
+        VBOXQGLLOG(("resizing wgt to w(%d) ,h(%d)\n" , rect.width(), rect.height()));
         mpOverlayWidget->resize(rect.width(), rect.height());
         mGlCurrent = false;
     }

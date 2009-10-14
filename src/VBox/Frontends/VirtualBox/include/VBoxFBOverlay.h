@@ -372,9 +372,10 @@ public:
 
     bool performDisplay(VBoxVHWASurfaceBase *pPrimary, bool bForce);
 
-    void setRects(VBoxVHWASurfaceBase *pPrimary, const QRect & aTargRect, const QRect & aSrcRect, const QRect & aVisibleTargRect, bool bForceReinit);
-    void setTargRectPosition(VBoxVHWASurfaceBase *pPrimary, const QPoint & aPoint, const QRect & aVisibleTargRect);
-    void updateVisibleTargRect(VBoxVHWASurfaceBase *pPrimary, const QRect & aVisibleTargRect);
+    void setRects (const QRect & aTargRect, const QRect & aSrcRect);
+    void setTargRectPosition (const QPoint & aPoint);
+    void setVisibilityReinitFlag() { mNeedVisibilityReinit = true; }
+    void updateVisibility (VBoxVHWASurfaceBase *pPrimary, const QRect & aVisibleTargRect, bool bForce);
 
     static ulong calcBytesPerPixel(GLenum format, GLenum type);
 
@@ -513,7 +514,8 @@ public:
 
     const VBoxVHWADirtyRect & getDirtyRect() { return mUpdateMem2TexRect; }
 private:
-    void doSetRectValuesInternal(const QRect & aTargRect, const QRect & aSrcRect, const QRect & aVisTargRect);
+    void setRectValues (const QRect & aTargRect, const QRect & aSrcRect);
+    void setVisibleRectValues (const QRect & aVisTargRect);
 
     void setComplexList(VBoxVHWASurfList *aComplexList) { mComplexList = aComplexList; }
     void initDisplay(VBoxVHWASurfaceBase *pPrimary);
@@ -541,6 +543,7 @@ private:
     class VBoxVHWAGlProgram * mpProgram;
 
     bool mVisibleDisplayInitialized;
+    bool mNeedVisibilityReinit;
 
     uchar * mAddress;
     VBoxVHWATexture *mpTex[3];
@@ -1019,6 +1022,7 @@ protected:
             (this->*mpfnOp)(mOpContext);
             mpfnOp = NULL;
         }
+        VBOXQGLLOG(("paintGL\n"));
 //        else
 //        {
             mDisplay.performDisplay(true);
@@ -1188,6 +1192,11 @@ private:
             mNeedOverlayRepaint = false;
             performDisplayOverlay();
         }
+        if(mNeedSetVisible)
+        {
+            mNeedSetVisible = false;
+            mpOverlayWidget->setVisible(true);
+        }
     }
     void repaint()
     {
@@ -1247,6 +1256,7 @@ private:
     bool mGlCurrent;
     bool mProcessingCommands;
     bool mNeedOverlayRepaint;
+    bool mNeedSetVisible;
     QRect mOverlayViewport;
     VBoxVHWADirtyRect mMainDirtyRect;
 
