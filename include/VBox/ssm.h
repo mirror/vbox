@@ -175,9 +175,8 @@ typedef struct SSMFIELD
  * rules as SSMFIELD_ENTRY_IGNORE. */
 #define SSMFIELD_ENTRY_HCPTR(Type, Field)   SSMFIELD_ENTRY_INT(Type, Field, SSMFIELDTRANS_HCPTR)
 /** Emit a SSMFIELD array entry for a field that can be ignored.
- * It is stored if SSMSTRUCT_FLAGS_DONT_IGNORE is specified to SSMR3PutStructEx.
- * It is skipped if SSMSTRUCT_FLAGS_DONT_IGNORE is specified to
- * SSMR3GetStructEx, the structure member is never touched on restore. */
+ * It is stored as zeros if SSMSTRUCT_FLAGS_DONT_IGNORE is specified to
+ * SSMR3PutStructEx.  The member is never touched upon restore. */
 #define SSMFIELD_ENTRY_IGNORE(Type, Field)  SSMFIELD_ENTRY_INT(Type, Field, SSMFIELDTRANS_IGNORE)
 /** Emit a SSMFIELD array entry for a field with a custom callback. */
 #define SSMFIELD_ENTRY_CALLBACK(Type, Field, pfnGetPut) \
@@ -190,10 +189,14 @@ typedef struct SSMFIELD
  * @{ */
 /** The field descriptors must exactly cover the entire struct, A to Z. */
 #define SSMSTRUCT_FLAGS_FULL_STRUCT         RT_BIT_32(0)
+/** No start and end markers, just the raw bits. */
+#define SSMSTRUCT_FLAGS_NO_MARKERS          RT_BIT_32(1)
 /** Do not ignore any ignorable fields. */
-#define SSMSTRUCT_FLAGS_DONT_IGNORE         RT_BIT_32(1)
+#define SSMSTRUCT_FLAGS_DONT_IGNORE         RT_BIT_32(2)
 /** Band-aid for old SSMR3PutMem/SSMR3GetMem of structurs with host pointers. */
-#define SSMSTRUCT_FLAGS_MEM_BAND_AID        (SSMSTRUCT_FLAGS_DONT_IGNORE | SSMSTRUCT_FLAGS_FULL_STRUCT)
+#define SSMSTRUCT_FLAGS_MEM_BAND_AID        (SSMSTRUCT_FLAGS_DONT_IGNORE | SSMSTRUCT_FLAGS_FULL_STRUCT | SSMSTRUCT_FLAGS_NO_MARKERS)
+/** Mask of the valid bits. */
+#define SSMSTRUCT_FLAGS_VALID_MASK          UINT32_C(0x00000007)
 /** @} */
 
 
