@@ -165,7 +165,11 @@ typedef enum SSMFIELDTRANS
     /** Automatic compiler padding that may differ between 32-bit and
      * 64-bit hosts. SSMFIELD::cb has the same format as for
      * SSMFIELDTRANS_PAD_HC. */
-    SSMFIELDTRANS_PAD_HC_AUTO
+    SSMFIELDTRANS_PAD_HC_AUTO,
+    /** Automatic compiler padding specific to the 32-bit Microsoft C
+     * compiler.
+     * SSMFIELD::cb has the same format as for SSMFIELDTRANS_PAD_HC. */
+    SSMFIELDTRANS_PAD_MSC32_AUTO
 } SSMFIELDTRANS;
 
 /** Tests if it's a padding field with the special SSMFIELD::cb format.
@@ -173,7 +177,7 @@ typedef enum SSMFIELDTRANS
  * @param   pfn     The SSMFIELD::pfnGetPutOrTransformer value.
  */
 #define SSMFIELDTRANS_IS_PADDING(pfn)   \
-    (   (uintptr_t)(pfn) >= SSMFIELDTRANS_PAD_HC && (uintptr_t)(pfn) <= SSMFIELDTRANS_PAD_HC_AUTO )
+    (   (uintptr_t)(pfn) >= SSMFIELDTRANS_PAD_HC && (uintptr_t)(pfn) <= SSMFIELDTRANS_PAD_MSC32_AUTO )
 
 /**
  * A structure field description.
@@ -266,17 +270,29 @@ typedef struct SSMFIELD
 # define SSMFIELD_ENTRY_PAD_HC_AUTO(cb32, cb64) \
     { \
         (PFNSSMFIELDGETPUT)(uintptr_t)(SSMFIELDTRANS_PAD_HC_AUTO), \
-        UINT32_MAX / 2, \
-        (cb64 << 16) | (cb32) | ((cb64) << 8), \
-        "<compiler-padding>" \
+        UINT32_MAX / 2,  (cb64 << 16) | (cb32) | ((cb64) << 8),  "<compiler-padding>" \
     }
 #else
 # define SSMFIELD_ENTRY_PAD_HC_AUTO(cb32, cb64) \
     { \
         (PFNSSMFIELDGETPUT)(uintptr_t)(SSMFIELDTRANS_PAD_HC_AUTO), \
-        UINT32_MAX / 2, \
-        (cb32 << 16) | (cb32) | ((cb64) << 8), \
-        "<compiler-padding>" \
+        UINT32_MAX / 2,  (cb32 << 16) | (cb32) | ((cb64) << 8),  "<compiler-padding>" \
+    }
+#endif
+/** Emit a SSMFIELD array entry for an automatic compiler padding that is unique
+ * to the 32-bit microsoft compiler.  This is usually used together with
+ * SSMFIELD_ENTRY_PAD_HC*. */
+#if HC_ARCH_BITS == 32 && defined(_MSC_VER)
+# define SSMFIELD_ENTRY_PAD_MSC32_AUTO(cb) \
+    { \
+        (PFNSSMFIELDGETPUT)(uintptr_t)(SSMFIELDTRANS_PAD_MSC32_AUTO), \
+        UINT32_MAX / 2, ((cb) << 16 | (cb), "<msc32-padding>" \
+    }
+#else
+# define SSMFIELD_ENTRY_PAD_MSC32_AUTO(cb) \
+    { \
+        (PFNSSMFIELDGETPUT)(uintptr_t)(SSMFIELDTRANS_PAD_MSC32_AUTO), \
+        UINT32_MAX / 2, (cb), "<msc32-padding>" \
     }
 #endif
 

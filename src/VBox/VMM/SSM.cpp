@@ -330,6 +330,17 @@ AssertCompile(SSM_ZIP_BLOCK_SIZE / _1K * _1K == SSM_ZIP_BLOCK_SIZE);
     } while (0)
 
 
+/** @def SSM_HOST_IS_MSC_32
+ * Set to 1 if the host is 32-bit MSC, otherwise set to 0.
+ *   */
+#if defined(_MSC_VER) && HC_ARCH_BITS == 32
+# define SSM_HOST_IS_MSC_32     1
+#else
+# define SSM_HOST_IS_MSC_32     0
+#endif
+
+
+
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
 *******************************************************************************/
@@ -522,6 +533,8 @@ typedef struct SSMHANDLE
             /** Whether cbGCPtr is fixed or settable. */
             bool            fFixedGCPtrSize;
 
+            /** 32-bit MSC saved this? */
+            bool            fIsHostMsc32;
 
             /** @name Header info (set by ssmR3ValidateFile)
              * @{ */
@@ -972,6 +985,19 @@ static DECLCALLBACK(int) ssmR3SelfLoadExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uV
             if (i == 0)
                 LogRel(("SSM: Saved state info:\n"));
             LogRel(("SSM:   %s: %s\n", szVar, szValue));
+
+            /*
+             * Detect 32-bit MSC for handling SSMFIELD_ENTRY_PAD_MSC32_AUTO.
+             */
+            if (!strcmp(szVar, "Host OS"))
+            {
+                bool fIsHostMsc32 = !strcmp(szValue, "win.x86");
+                if (fIsHostMsc32 != pSSM->u.Read.fIsHostMsc32)
+                {
+                    LogRel(("SSM: (fIsHostMsc32 %RTbool => %RTbool)\n", pSSM->u.Read.fIsHostMsc32, fIsHostMsc32));
+                    pSSM->u.Read.fIsHostMsc32 = fIsHostMsc32;
+                }
+            }
         }
     }
     return VINF_SUCCESS;
@@ -2817,7 +2843,7 @@ static void ssmR3SetCancellable(PVM pVM, PSSMHANDLE pSSM, bool fCancellable)
 
 
 /**
- * Gets the host bit count.
+ * Gets the host bit count of the saved state.
  *
  * Works for on both save and load handles.
  *
@@ -2833,6 +2859,26 @@ DECLINLINE(uint32_t) ssmR3GetHostBits(PSSMHANDLE pSSM)
             return cBits;
     }
     return HC_ARCH_BITS;
+}
+
+
+/**
+ * Saved state origins on a host using 32-bit MSC?
+ *
+ * Works for on both save and load handles.
+ *
+ * @returns true/false.
+ * @param   pSSM                The saved state handle.
+ */
+DECLINLINE(bool) ssmR3IsHostMsc32(PSSMHANDLE pSSM)
+{
+    if (pSSM->enmOp >= SSMSTATE_LOAD_PREP)
+    {
+        uint32_t cBits = pSSM->u.Read.cHostBits;
+        if (cBits)
+            return cBits;
+    }
+    return SSM_HOST_IS_MSC_32;
 }
 
 
@@ -3292,7 +3338,7 @@ VMMR3DECL(int) SSMR3PutStructEx(PSSMHANDLE pSSM, const void *pvStruct, size_t cb
     /*
      * Put the fields
      */
-    uint32_t off = 0;
+    uint32_t    off          = 0;
     for (PCSSMFIELD pCur = paFields;
          pCur->cb != UINT32_MAX && pCur->off != UINT32_MAX;
          pCur++)
@@ -3380,18 +3426,29 @@ VMMR3DECL(int) SSMR3PutStructEx(PSSMHANDLE pSSM, const void *pvStruct, size_t cb
             case SSMFIELDTRANS_PAD_HC32:
             case SSMFIELDTRANS_PAD_HC64:
             case SSMFIELDTRANS_PAD_HC_AUTO:
+            case SSMFIELDTRANS_PAD_MSC32_AUTO:
             {
                 uint32_t cb32    = RT_BYTE1(pCur->cb);
                 uint32_t cb64    = RT_BYTE2(pCur->cb);
-                uint32_t cbCtx   = HC_ARCH_BITS           == 64 ? cb64 : cb32;
-                uint32_t cbSaved = ssmR3GetHostBits(pSSM) == 64 ? cb64 : cb32;
+                uint32_t cbCtx   =    HC_ARCH_BITS == 64
+                                   || (   (uintptr_t)pCur->pfnGetPutOrTransformer == SSMFIELDTRANS_PAD_MSC32_AUTO
+                                       && SSM_HOST_IS_MSC_32)
+                                 ? cb64 : cb32;
+                uint32_t cbSaved =    ssmR3GetHostBits(pSSM) == 64
+                                   || (   (uintptr_t)pCur->pfnGetPutOrTransformer == SSMFIELDTRANS_PAD_MSC32_AUTO
+                                       && ssmR3IsHostMsc32(pSSM))
+                                 ? cb64 : cb32;
                 AssertMsgReturn(    cbField == cbCtx
                                 &&  (   (   pCur->off == UINT32_MAX / 2
                                          && (   cbField == 0
-                                             || (uintptr_t)pCur->pfnGetPutOrTransformer == SSMFIELDTRANS_PAD_HC_AUTO))
-                                     || (pCur->off != UINT32_MAX / 2 && cbField != 0)),
-                                ("cbField=%#x cb32=%#x cb64=%#x HC_ARCH_BITS=%u cbCtx=%#x cbSaved=%#x off=%#x\n",
-                                 cbField, cb32, cb64, HC_ARCH_BITS, cbCtx, cbSaved, pCur->off),
+                                             || (uintptr_t)pCur->pfnGetPutOrTransformer == SSMFIELDTRANS_PAD_HC_AUTO
+                                             || (uintptr_t)pCur->pfnGetPutOrTransformer == SSMFIELDTRANS_PAD_MSC32_AUTO
+                                            )
+                                        )
+                                     || (pCur->off != UINT32_MAX / 2 && cbField != 0)
+                                     )
+                                , ("cbField=%#x cb32=%#x cb64=%#x HC_ARCH_BITS=%u cbCtx=%#x cbSaved=%#x off=%#x\n",
+                                   cbField, cb32, cb64, HC_ARCH_BITS, cbCtx, cbSaved, pCur->off),
                                 VERR_SSM_FIELD_INVALID_PADDING_SIZE);
                 if (fFlags & SSMSTRUCT_FLAGS_DONT_IGNORE)
                 {
@@ -5991,18 +6048,29 @@ VMMR3DECL(int) SSMR3GetStructEx(PSSMHANDLE pSSM, void *pvStruct, size_t cbStruct
             case SSMFIELDTRANS_PAD_HC32:
             case SSMFIELDTRANS_PAD_HC64:
             case SSMFIELDTRANS_PAD_HC_AUTO:
+            case SSMFIELDTRANS_PAD_MSC32_AUTO:
             {
                 uint32_t cb32    = RT_BYTE1(pCur->cb);
                 uint32_t cb64    = RT_BYTE2(pCur->cb);
-                uint32_t cbCtx   = HC_ARCH_BITS           == 64 ? cb64 : cb32;
-                uint32_t cbSaved = ssmR3GetHostBits(pSSM) == 64 ? cb64 : cb32;
+                uint32_t cbCtx   =    HC_ARCH_BITS == 64
+                                   || (   (uintptr_t)pCur->pfnGetPutOrTransformer == SSMFIELDTRANS_PAD_MSC32_AUTO
+                                       && SSM_HOST_IS_MSC_32)
+                                 ? cb64 : cb32;
+                uint32_t cbSaved =    ssmR3GetHostBits(pSSM) == 64
+                                   || (   (uintptr_t)pCur->pfnGetPutOrTransformer == SSMFIELDTRANS_PAD_MSC32_AUTO
+                                       && ssmR3IsHostMsc32(pSSM))
+                                 ? cb64 : cb32;
                 AssertMsgReturn(    cbField == cbCtx
                                 &&  (   (   pCur->off == UINT32_MAX / 2
                                          && (   cbField == 0
-                                             || (uintptr_t)pCur->pfnGetPutOrTransformer == SSMFIELDTRANS_PAD_HC_AUTO))
-                                     || (pCur->off != UINT32_MAX / 2 && cbField != 0)),
-                                ("cbField=%#x cb32=%#x cb64=%#x HC_ARCH_BITS=%u cbCtx=%#x cbSaved=%#x off=%#x\n",
-                                 cbField, cb32, cb64, HC_ARCH_BITS, cbCtx, cbSaved, pCur->off),
+                                             || (uintptr_t)pCur->pfnGetPutOrTransformer == SSMFIELDTRANS_PAD_HC_AUTO
+                                             || (uintptr_t)pCur->pfnGetPutOrTransformer == SSMFIELDTRANS_PAD_MSC32_AUTO
+                                            )
+                                        )
+                                     || (pCur->off != UINT32_MAX / 2 && cbField != 0)
+                                     )
+                                , ("cbField=%#x cb32=%#x cb64=%#x HC_ARCH_BITS=%u cbCtx=%#x cbSaved=%#x off=%#x\n",
+                                   cbField, cb32, cb64, HC_ARCH_BITS, cbCtx, cbSaved, pCur->off),
                                 VERR_SSM_FIELD_INVALID_PADDING_SIZE);
                 if (fFlags & SSMSTRUCT_FLAGS_DONT_IGNORE)
                     rc = SSMR3Skip(pSSM, cbSaved);
@@ -7115,6 +7183,7 @@ static int ssmR3OpenFile(PVM pVM, const char *pszFilename, PCSSMSTRMOPS pStreamO
     pSSM->u.Read.cbGCPhys       = UINT8_MAX;
     pSSM->u.Read.cbGCPtr        = UINT8_MAX;
     pSSM->u.Read.fFixedGCPtrSize= false;
+    pSSM->u.Read.fIsHostMsc32   = SSM_HOST_IS_MSC_32;
     pSSM->u.Read.u16VerMajor    = UINT16_MAX;
     pSSM->u.Read.u16VerMinor    = UINT16_MAX;
     pSSM->u.Read.u32VerBuild    = UINT32_MAX;
