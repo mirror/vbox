@@ -3403,6 +3403,15 @@ VMMR3DECL(int) SSMR3PutStructEx(PSSMHANDLE pSSM, const void *pvStruct, size_t cb
                 break;
             }
 
+            case SSMFIELDTRANS_HCPTR_HACK_U32:
+                AssertMsgReturn(cbField == sizeof(void *), ("%#x (%s)\n", cbField, pCur->pszName), VERR_SSM_FIELD_INVALID_SIZE);
+                AssertMsgReturn(*(uintptr_t *)pbField <= UINT32_MAX, ("%p (%s)\n", *(uintptr_t *)pbField, pCur->pszName), VERR_SSM_FIELD_INVALID_VALUE);
+                rc = ssmR3DataWrite(pSSM, pbField, sizeof(uint32_t));
+                if ((fFlags & SSMSTRUCT_FLAGS_DONT_IGNORE) && sizeof(void *) != sizeof(uint32_t))
+                    rc = ssmR3DataWrite(pSSM, s_abZero, sizeof(uint32_t));
+                break;
+
+
             case SSMFIELDTRANS_IGNORE:
                 if (fFlags & SSMSTRUCT_FLAGS_DONT_IGNORE)
                 {
@@ -3438,6 +3447,7 @@ VMMR3DECL(int) SSMR3PutStructEx(PSSMHANDLE pSSM, const void *pvStruct, size_t cb
                 if (fFlags & SSMSTRUCT_FLAGS_DONT_IGNORE)
                     rc = ssmR3DataWrite(pSSM, s_abZero, sizeof(void *));
                 break;
+
 
             case SSMFIELDTRANS_PAD_HC:
             case SSMFIELDTRANS_PAD_HC32:
@@ -6053,6 +6063,19 @@ VMMR3DECL(int) SSMR3GetStructEx(PSSMHANDLE pSSM, void *pvStruct, size_t cbStruct
                 break;
             }
 
+            case SSMFIELDTRANS_HCPTR_HACK_U32:
+                AssertMsgReturn(cbField == sizeof(void *), ("%#x (%s)\n", cbField, pCur->pszName), VERR_SSM_FIELD_INVALID_SIZE);
+                *(uintptr_t *)pbField = 0;
+                rc = ssmR3DataRead(pSSM, pbField, sizeof(uint32_t));
+                if ((fFlags & SSMSTRUCT_FLAGS_DONT_IGNORE) && ssmR3GetHostBits(pSSM) == 64)
+                {
+                    uint32_t u32;
+                    rc = ssmR3DataRead(pSSM, &u32, sizeof(uint32_t));
+                    AssertMsgReturn(u32 == 0 || RT_FAILURE(rc), ("%#x\n", u32), VERR_SSM_FIELD_INVALID_VALUE);
+                }
+                break;
+
+
             case SSMFIELDTRANS_IGNORE:
                 if (fFlags & SSMSTRUCT_FLAGS_DONT_IGNORE)
                     rc = SSMR3Skip(pSSM, cbField);
@@ -6081,6 +6104,7 @@ VMMR3DECL(int) SSMR3GetStructEx(PSSMHANDLE pSSM, void *pvStruct, size_t cbStruct
                 if (fFlags & SSMSTRUCT_FLAGS_DONT_IGNORE)
                     rc = SSMR3Skip(pSSM, ssmR3GetHostBits(pSSM) / 8);
                 break;
+
 
             case SSMFIELDTRANS_PAD_HC:
             case SSMFIELDTRANS_PAD_HC32:

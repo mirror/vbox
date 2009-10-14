@@ -146,6 +146,8 @@ typedef enum SSMFIELDTRANS
     SSMFIELDTRANS_HCPTR_NI,
     /** Array of SSMFIELDTRANS_HCPTR_NI. */
     SSMFIELDTRANS_HCPTR_NI_ARRAY,
+    /** Host context (HC) virtual address used to hold a unsigned 32-bit value. */
+    SSMFIELDTRANS_HCPTR_HACK_U32,
 
     /** Ignorable field. See SSMFIELD_ENTRY_IGNORE. */
     SSMFIELDTRANS_IGNORE,
@@ -249,6 +251,9 @@ typedef struct SSMFIELD
 #define SSMFIELD_ENTRY_HCPTR_NI(Type, Field)        SSMFIELD_ENTRY_INT(Type, Field, SSMFIELDTRANS_HCPTR_NI)
 /** Same as SSMFIELD_ENTRY_HCPTR_NI, except it's an array of the buggers. */
 #define SSMFIELD_ENTRY_HCPTR_NI_ARRAY(Type, Field)  SSMFIELD_ENTRY_INT(Type, Field, SSMFIELDTRANS_HCPTR_NI_ARRAY)
+/** Emit a SSMFIELD array entry for a ring-0 or ring-3 pointer type that has
+ * been hacked such that it will never exceed 32-bit.  No sign extenending. */
+#define SSMFIELD_ENTRY_HCPTR_HACK_U32(Type, Field)  SSMFIELD_ENTRY_INT(Type, Field, SSMFIELDTRANS_HCPTR_HACK_U32)
 
 /** Emit a SSMFIELD array entry for a field that can be ignored.
  * It is stored as zeros if SSMSTRUCT_FLAGS_DONT_IGNORE is specified to
