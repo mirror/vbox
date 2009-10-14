@@ -297,7 +297,6 @@ static int cpumR3CpuIdInit(PVM pVM)
                  &pCPUM->aGuestCpuIdCentaur[i].eax, &pCPUM->aGuestCpuIdCentaur[i].ebx,
                  &pCPUM->aGuestCpuIdCentaur[i].ecx, &pCPUM->aGuestCpuIdCentaur[i].edx);
 
-
     /*
      * Only report features we can support.
      */
@@ -396,6 +395,16 @@ static int cpumR3CpuIdInit(PVM pVM)
                                        //| X86_CPUID_AMD_FEATURE_ECX_SKINIT
                                        //| X86_CPUID_AMD_FEATURE_ECX_WDT
                                        | 0;
+
+    CFGMR3QueryBoolDef(CFGMR3GetChild(CFGMR3GetRoot(pVM), "CPUM"), "SyntheticCpu", &pCPUM->fSyntheticCpu, false);
+    if (pCPUM->fSyntheticCpu)
+    {
+        /* AMD only; shared feature bits are set dynamically. */
+        pCPUM->aGuestCpuIdExt[1].edx = 0;
+        pCPUM->aGuestCpuIdExt[1].ecx = 0;
+
+        /** @todo fill in the rest of the cpu leaves. */
+    }
 
     /*
      * Hide HTT, multicode, SMP, whatever.
