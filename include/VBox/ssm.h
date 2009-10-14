@@ -149,7 +149,13 @@ typedef enum SSMFIELDTRANS
 
     /** Ignorable field. See SSMFIELD_ENTRY_IGNORE. */
     SSMFIELDTRANS_IGNORE,
-    /** Ignorable Host context (HC) virtual address. See SSMFIELD_ENTRY_HCPTR. */
+    /** Ignorable guest context (GC) virtual address. */
+    SSMFIELDTRANS_IGN_GCPTR,
+    /** Ignorable guest context (GC) physical address. */
+    SSMFIELDTRANS_IGN_GCPHYS,
+    /** Ignorable raw-mode context (RC) virtual address. */
+    SSMFIELDTRANS_IGN_RCPTR,
+    /** Ignorable host context (HC) virtual address.  */
     SSMFIELDTRANS_IGN_HCPTR,
 
     /** Padding that differs between 32-bit and 64-bit hosts.
@@ -248,9 +254,13 @@ typedef struct SSMFIELD
  * It is stored as zeros if SSMSTRUCT_FLAGS_DONT_IGNORE is specified to
  * SSMR3PutStructEx.  The member is never touched upon restore. */
 #define SSMFIELD_ENTRY_IGNORE(Type, Field)          SSMFIELD_ENTRY_INT(Type, Field, SSMFIELDTRANS_IGNORE)
-/** Emit a SSMFIELD array entry for a ring-0 or ring-3 pointer type that is
- * of no real interest to the saved state.  It follows the same save and restore
- * rules as SSMFIELD_ENTRY_IGNORE. */
+/** Emit a SSMFIELD array entry for an ignorable RTGCPHYS type. */
+#define SSMFIELD_ENTRY_IGN_GCPHYS(Type, Field)      SSMFIELD_ENTRY_INT(Type, Field, SSMFIELDTRANS_IGN_GCPHYS)
+/** Emit a SSMFIELD array entry for an ignorable RTGCPHYS type. */
+#define SSMFIELD_ENTRY_IGN_GCPTR(Type, Field)       SSMFIELD_ENTRY_INT(Type, Field, SSMFIELDTRANS_IGN_GCPTR)
+/** Emit a SSMFIELD array entry for an ignorable raw-mode context pointer. */
+#define SSMFIELD_ENTRY_IGN_RCPTR(Type, Field)       SSMFIELD_ENTRY_INT(Type, Field, SSMFIELDTRANS_IGN_RCPTR)
+/** Emit a SSMFIELD array entry for an ignorable ring-3 or/and ring-0 pointer. */
 #define SSMFIELD_ENTRY_IGN_HCPTR(Type, Field)       SSMFIELD_ENTRY_INT(Type, Field, SSMFIELDTRANS_IGN_HCPTR)
 
 /** Emit a SSMFIELD array entry for a padding that differs in size between
