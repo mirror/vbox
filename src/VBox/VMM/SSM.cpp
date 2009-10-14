@@ -3152,6 +3152,11 @@ DECLINLINE(int) ssmR3DataWrite(PSSMHANDLE pSSM, const void *pvBuf, size_t cbBuf)
  */
 VMMR3DECL(int) SSMR3PutStruct(PSSMHANDLE pSSM, const void *pvStruct, PCSSMFIELD paFields)
 {
+    SSM_ASSERT_WRITEABLE_RET(pSSM);
+    SSM_CHECK_CANCELLED_RET(pSSM);
+    AssertPtr(pvStruct);
+    AssertPtr(paFields);
+
     /* begin marker. */
     int rc = SSMR3PutU32(pSSM, SSMR3STRUCT_BEGIN);
     if (RT_FAILURE(rc))
@@ -3213,6 +3218,8 @@ VMMR3DECL(int) SSMR3PutStructEx(PSSMHANDLE pSSM, const void *pvStruct, size_t cb
     /*
      * Validation.
      */
+    SSM_ASSERT_WRITEABLE_RET(pSSM);
+    SSM_CHECK_CANCELLED_RET(pSSM);
     AssertMsgReturn(!(fFlags & ~SSMSTRUCT_FLAGS_VALID_MASK), ("%#x\n", fFlags), VERR_INVALID_PARAMETER);
     AssertPtr(pvStruct);
     AssertPtr(paFields);
@@ -5640,6 +5647,11 @@ DECLINLINE(int) ssmR3DataRead(PSSMHANDLE pSSM, void *pvBuf, size_t cbBuf)
  */
 VMMR3DECL(int) SSMR3GetStruct(PSSMHANDLE pSSM, void *pvStruct, PCSSMFIELD paFields)
 {
+    SSM_ASSERT_READABLE_RET(pSSM);
+    SSM_CHECK_CANCELLED_RET(pSSM);
+    AssertPtr(pvStruct);
+    AssertPtr(paFields);
+
     /* begin marker. */
     uint32_t u32Magic;
     int rc = SSMR3GetU32(pSSM, &u32Magic);
@@ -5707,10 +5719,11 @@ VMMR3DECL(int) SSMR3GetStructEx(PSSMHANDLE pSSM, void *pvStruct, size_t cbStruct
     /*
      * Validation.
      */
+    SSM_ASSERT_READABLE_RET(pSSM);
+    SSM_CHECK_CANCELLED_RET(pSSM);
     AssertMsgReturn(!(fFlags & ~SSMSTRUCT_FLAGS_VALID_MASK), ("%#x\n", fFlags), VERR_INVALID_PARAMETER);
     AssertPtr(pvStruct);
     AssertPtr(paFields);
-
 
     /*
      * Begin marker.
