@@ -610,6 +610,8 @@
 #define VERR_SSM_FIELD_INVALID_CALLBACK         (-1868)
 /** The field contains an invalid padding size. */
 #define VERR_SSM_FIELD_INVALID_PADDING_SIZE     (-1869)
+/** The field contains a value that is out of range. */
+#define VERR_SSM_FIELD_INVALID_VALUE            (-1870)
 /** @} */
 
 
