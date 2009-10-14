@@ -242,6 +242,43 @@ static SSMFIELD const g_aPatmPatchRecFields[] =
     SSMFIELD_ENTRY_TERM()
 };
 
+/**
+ * SSM descriptor table for the RELOCREC structure.
+ */
+static SSMFIELD const g_aPatmRelocRec[] =
+{
+    SSMFIELD_ENTRY_HCPTR_HACK_U32(  RELOCREC, Core.Key),        // Used to store the relocation type
+    SSMFIELD_ENTRY_IGN_HCPTR(       RELOCREC, Core.pLeft),
+    SSMFIELD_ENTRY_IGN_HCPTR(       RELOCREC, Core.pRight),
+    SSMFIELD_ENTRY_IGNORE(          RELOCREC, Core.uchHeight),
+    SSMFIELD_ENTRY_PAD_HC_AUTO(     3, 7),
+    SSMFIELD_ENTRY(                 RELOCREC, uType),
+    SSMFIELD_ENTRY_PAD_HC_AUTO(     0, 4),
+    SSMFIELD_ENTRY_HCPTR_HACK_U32(  RELOCREC, pRelocPos),       // converted to a patch member offset.
+    SSMFIELD_ENTRY_RCPTR(           RELOCREC, pSource),
+    SSMFIELD_ENTRY_RCPTR(           RELOCREC, pDest),
+    SSMFIELD_ENTRY_TERM()
+};
+
+/**
+ * SSM descriptor table for the RECPATCHTOGUEST structure.
+ */
+static SSMFIELD const g_aPatmRecPatchToGuest[] =
+{
+    SSMFIELD_ENTRY(                 RECPATCHTOGUEST, Core.Key),
+    SSMFIELD_ENTRY_IGN_HCPTR(       RECPATCHTOGUEST, Core.pLeft),
+    SSMFIELD_ENTRY_IGN_HCPTR(       RECPATCHTOGUEST, Core.pRight),
+    SSMFIELD_ENTRY_IGNORE(          RECPATCHTOGUEST, Core.uchHeight),
+    SSMFIELD_ENTRY_PAD_HC_AUTO(     3, 3),
+    SSMFIELD_ENTRY_RCPTR(           RECPATCHTOGUEST, pOrgInstrGC),
+    SSMFIELD_ENTRY(                 RECPATCHTOGUEST, enmType),
+    SSMFIELD_ENTRY(                 RECPATCHTOGUEST, fDirty),
+    SSMFIELD_ENTRY(                 RECPATCHTOGUEST, fJumpTarget),
+    SSMFIELD_ENTRY(                 RECPATCHTOGUEST, u8DirtyOpcode),
+    SSMFIELD_ENTRY_PAD_HC_AUTO(     1, 1),
+    SSMFIELD_ENTRY_TERM()
+};
+
 
 #ifdef VBOX_STRICT
 /**
@@ -767,7 +804,7 @@ DECLCALLBACK(int) patmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32
     {
         PATMPATCHREC patch, *pPatchRec;
 
-#if 0  /** @todo LiveMigration */
+#if 0
         rc = SSMR3GetMem(pSSM, &patch, sizeof(patch));
 #else
         RT_ZERO(patch);
@@ -821,7 +858,7 @@ DECLCALLBACK(int) patmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32
             int32_t offset;
             RTRCPTR *pFixup;
 
-#if 1  /** @todo LiveMigration */
+#if 0
             rc = SSMR3GetMem(pSSM, &rec, sizeof(rec));
 #else
             RT_ZERO(rec);
@@ -871,7 +908,7 @@ DECLCALLBACK(int) patmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32
             pPatchRec->patch.nrPatch2GuestRecs = 0;    /* incremented by patmr3AddP2GLookupRecord */
             for (uint32_t i=0;i<nrPatch2GuestRecs;i++)
             {
-#if 1  /** @todo LiveMigration */
+#if 0
                 rc = SSMR3GetMem(pSSM, &rec, sizeof(rec));
 #else
                 RT_ZERO(rec);
