@@ -70,10 +70,12 @@ typedef struct DRVCHAR
     uint32_t                    iSendQueueHead;
     uint32_t                    iSendQueueTail;
 
+    uintptr_t                   AlignmentPadding;
     /** Read/write statistics */
     STAMCOUNTER                 StatBytesRead;
     STAMCOUNTER                 StatBytesWritten;
 } DRVCHAR, *PDRVCHAR;
+AssertCompileMemberAlignment(DRVCHAR, StatBytesRead, 8);
 
 
 /** Converts a pointer to DRVCHAR::IChar to a PDRVCHAR. */
