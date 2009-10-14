@@ -500,7 +500,7 @@ void VBoxVMInformationDlg::refreshStatistics()
             CMediumAttachmentVector attachments = mSession.GetMachine().GetMediumAttachmentsOfController (ctrName);
             if (!attachments.isEmpty() && busType != KStorageBus_Floppy)
             {
-                QString header = "<tr><td></td><td colspan=2><nobr><u>%1</u></nobr></td></tr>";
+                QString header = "<tr><td></td><td colspan=2><nobr>%1</nobr></td></tr>";
                 storageStat += header.arg (ctrName);
                 int scsiIndex = 0;
                 foreach (const CMediumAttachment &attachment, attachments)
@@ -625,7 +625,7 @@ QString VBoxVMInformationDlg::formatMedium (const QString &aCtrName,
     if (mSession.isNull())
         return QString::null;
 
-    QString header = "<tr><td></td><td colspan=2><nobr>&nbsp;%1:</nobr></td></tr>";
+    QString header = "<tr><td></td><td colspan=2><nobr>&nbsp;&nbsp;%1:</nobr></td></tr>";
     CStorageController ctr = mSession.GetMachine().GetStorageControllerByName (aCtrName);
     QString name = vboxGlobal().toString (StorageSlot (ctr.GetBus(), aPort, aDevice));
     return header.arg (name) + composeArticle (aBelongsTo, 2);
@@ -637,7 +637,7 @@ QString VBoxVMInformationDlg::formatAdapter (ULONG aSlot,
     if (mSession.isNull())
         return QString::null;
 
-    QString header = "<tr><td></td><td colspan=2><nobr><u>%1</u></nobr></td></tr>";
+    QString header = "<tr><td></td><td colspan=2><nobr>%1</nobr></td></tr>";
     QString name = VBoxGlobal::tr ("Adapter %1", "details report (network)").arg (aSlot + 1);
     return header.arg (name) + composeArticle (aBelongsTo, 1);
 }
@@ -648,7 +648,7 @@ QString VBoxVMInformationDlg::composeArticle (const QString &aBelongsTo, int aSp
                    "<td align=right><nobr>%3%4</nobr></td></tr>";
     QString indent;
     for (int i = 0; i < aSpacesCount; ++ i)
-        indent += "&nbsp;";
+        indent += "&nbsp;&nbsp;";
     body = body.arg (indent);
 
     QString result;
