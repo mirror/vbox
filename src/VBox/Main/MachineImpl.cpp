@@ -5583,10 +5583,13 @@ HRESULT Machine::loadStorageDevices(StorageController *aStorageController,
         CheckComRCBreakRC(rc);
 
         /* associate the medium with this machine and snapshot */
-        if (mType == IsSnapshotMachine)
-            rc = medium->attachTo(mData->mUuid, *aSnapshotId);
-        else
-            rc = medium->attachTo(mData->mUuid);
+        if (!medium.isNull())
+        {
+            if (mType == IsSnapshotMachine)
+                rc = medium->attachTo(mData->mUuid, *aSnapshotId);
+            else
+                rc = medium->attachTo(mData->mUuid);
+        }
         AssertComRCBreakRC (rc);
 
         /* backup mMediaData to let registeredInit() properly rollback on failure
