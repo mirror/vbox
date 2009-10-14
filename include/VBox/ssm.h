@@ -95,37 +95,106 @@ typedef enum SSMAFTER
 } SSMAFTER;
 
 
+/** Pointer to a structure field description. */
+typedef struct SSMFIELD *PSSMFIELD;
+/** Pointer to a const  structure field description. */
+typedef const struct SSMFIELD *PCSSMFIELD;
+
+/**
+ * SSMFIELD Get/Put callback function.
+ *
+ * This is call for getting and putting the field it is associated with.  It's
+ * up to the callback to work the saved state correctly.
+ *
+ * @returns VBox status code.
+ *
+ * @param   pSSM            The saved state handle.
+ * @param   pField          The field that is being processed.
+ * @param   pvStruct        Pointer to the structure.
+ * @param   fFlags          SSMSTRUCT_FLAGS_XXX.
+ * @param   fGetOrPut       True if getting, false if putting.
+ * @param   pvUser          The user argument specified to SSMR3GetStructEx or
+ *                          SSMR3PutStructEx.
+ */
+typedef DECLCALLBACK(int) FNSSMFIELDGETPUT(PSSMHANDLE pSSM, const struct SSMFIELD *pField, void *pvStruct,
+                                           uint32_t fFlags, bool fGetOrPut, void *pvUser);
+/** Pointer to a SSMFIELD Get/Put callback. */
+typedef FNSSMFIELDGETPUT *PFNSSMFIELDGETPUT;
+
+/**
+ * SSM field transformers.
+ *
+ * These are stored in the SSMFIELD::pfnGetPutOrTransformer and must therefore
+ * have values outside the valid pointer range.
+ */
+typedef enum SSMFIELDTRANS
+{
+    /** Invalid. */
+    SSMFIELDTRANS_INVALID = 0,
+    /** No transformation. */
+    SSMFIELDTRANS_NO_TRANSFORMATION,
+    /** Guest context (GC) virtual address. */
+    SSMFIELDTRANS_GCPTR,
+    /** Guest context (GC) physical address. */
+    SSMFIELDTRANS_GCPHYS,
+    /** Ignorable Host context (HC) virtual address. See SSMFIELD_ENTRY_HCPTR. */
+    SSMFIELDTRANS_HCPTR,
+    /** Ignorable field. See SSMFIELD_ENTRY_IGNORE. */
+    SSMFIELDTRANS_IGNORE
+} SSMFIELDTRANS;
+
 /**
  * A structure field description.
- *
- * @todo Add an type field here for recording what's a GCPtr, GCPhys or anything
- *       else that may change and is expected to continue to work.
- * @todo Later we need to add load transformations to this structure. I think a
- *       callback with a number of default transformations in SIG_DEF style
- *       would be good enough. The callback would take a user context from a new
- *       SSMR3GetStruct parameter or something.
  */
 typedef struct SSMFIELD
 {
+    /** Getter and putter callback or transformer index. */
+    PFNSSMFIELDGETPUT   pfnGetPutOrTransformer;
     /** Field offset into the structure. */
-    uint32_t    off;
+    uint32_t            off;
     /** The size of the field. */
-    uint32_t    cb;
+    uint32_t            cb;
 } SSMFIELD;
-/** Pointer to a structure field description. */
-typedef SSMFIELD *PSSMFIELD;
-/** Pointer to a const  structure field description. */
-typedef const SSMFIELD *PCSSMFIELD;
 
+/** Emit a SSMFIELD array entry.
+ * @internal  */
+#define SSMFIELD_ENTRY_INT(Type, Field, enmTransformer) \
+    { \
+        (PFNSSMFIELDGETPUT)(uintptr_t)(enmTransformer), \
+        RT_OFFSETOF(Type, Field), \
+        RT_SIZEOFMEMB(Type, Field) \
+    }
 /** Emit a SSMFIELD array entry. */
-#define SSMFIELD_ENTRY(Type, Field)         { RT_OFFSETOF(Type, Field), RT_SIZEOFMEMB(Type, Field) }
+#define SSMFIELD_ENTRY(Type, Field)         SSMFIELD_ENTRY_INT(Type, Field, SSMFIELDTRANS_NO_TRANSFORMATION)
 /** Emit a SSMFIELD array entry for a RTGCPTR type. */
-#define SSMFIELD_ENTRY_GCPTR(Type, Field)   SSMFIELD_ENTRY(Type, Field)
+#define SSMFIELD_ENTRY_GCPTR(Type, Field)   SSMFIELD_ENTRY_INT(Type, Field, SSMFIELDTRANS_GCPTR)
 /** Emit a SSMFIELD array entry for a RTGCPHYS type. */
-#define SSMFIELD_ENTRY_GCPHYS(Type, Field)  SSMFIELD_ENTRY(Type, Field)
+#define SSMFIELD_ENTRY_GCPHYS(Type, Field)  SSMFIELD_ENTRY_INT(Type, Field, SSMFIELDTRANS_GCPHYS)
+/** Emit a SSMFIELD array entry for a ring-0 or ring-3 pointer type that is
+ * of no real interest to the saved state.  It follows the same save and restore
+ * rules as SSMFIELD_ENTRY_IGNORE. */
+#define SSMFIELD_ENTRY_HCPTR(Type, Field)   SSMFIELD_ENTRY_INT(Type, Field, SSMFIELDTRANS_HCPTR)
+/** Emit a SSMFIELD array entry for a field that can be ignored.
+ * It is stored if SSMSTRUCT_FLAGS_DONT_IGNORE is specified to SSMR3PutStructEx.
+ * It is skipped if SSMSTRUCT_FLAGS_DONT_IGNORE is specified to
+ * SSMR3GetStructEx, the structure member is never touched on restore. */
+#define SSMFIELD_ENTRY_IGNORE(Type, Field)  SSMFIELD_ENTRY_INT(Type, Field, SSMFIELDTRANS_IGNORE)
+/** Emit a SSMFIELD array entry for a field with a custom callback. */
+#define SSMFIELD_ENTRY_CALLBACK(Type, Field, pfnGetPut) \
+    { (pfnGetPut), RT_OFFSETOF(Type, Field), RT_SIZEOFMEMB(Type, Field) }
 /** Emit the terminating entry of a SSMFIELD array. */
-#define SSMFIELD_ENTRY_TERM()               { UINT32_MAX, UINT32_MAX }
+#define SSMFIELD_ENTRY_TERM()               { (PFNSSMFIELDGETPUT)(uintptr_t)SSMFIELDTRANS_INVALID, UINT32_MAX, UINT32_MAX }
 
+
+/** @name SSMR3GetStructEx and SSMR3PutStructEx flags.
+ * @{ */
+/** The field descriptors must exactly cover the entire struct, A to Z. */
+#define SSMSTRUCT_FLAGS_FULL_STRUCT         RT_BIT_32(0)
+/** Do not ignore any ignorable fields. */
+#define SSMSTRUCT_FLAGS_DONT_IGNORE         RT_BIT_32(1)
+/** Band-aid for old SSMR3PutMem/SSMR3GetMem of structurs with host pointers. */
+#define SSMSTRUCT_FLAGS_MEM_BAND_AID        (SSMSTRUCT_FLAGS_DONT_IGNORE | SSMSTRUCT_FLAGS_FULL_STRUCT)
+/** @} */
 
 
 /** The PDM Device callback variants.
@@ -762,6 +831,7 @@ VMMR3DECL(int)          SSMR3Cancel(PVM pVM);
  * @{
  */
 VMMR3DECL(int) SSMR3PutStruct(PSSMHANDLE pSSM, const void *pvStruct, PCSSMFIELD paFields);
+VMMR3DECL(int) SSMR3PutStructEx(PSSMHANDLE pSSM, const void *pvStruct, size_t cbStruct, uint32_t fFlags, PCSSMFIELD paFields, void *pvUser);
 VMMR3DECL(int) SSMR3PutBool(PSSMHANDLE pSSM, bool fBool);
 VMMR3DECL(int) SSMR3PutU8(PSSMHANDLE pSSM, uint8_t u8);
 VMMR3DECL(int) SSMR3PutS8(PSSMHANDLE pSSM, int8_t i8);
@@ -795,6 +865,7 @@ VMMR3DECL(int) SSMR3PutStrZ(PSSMHANDLE pSSM, const char *psz);
  * @{
  */
 VMMR3DECL(int) SSMR3GetStruct(PSSMHANDLE pSSM, void *pvStruct, PCSSMFIELD paFields);
+VMMR3DECL(int) SSMR3GetStructEx(PSSMHANDLE pSSM, void *pvStruct, size_t cbStruct, uint32_t fFlags, PCSSMFIELD paFields, void *pvUser);
 VMMR3DECL(int) SSMR3GetBool(PSSMHANDLE pSSM, bool *pfBool);
 VMMR3DECL(int) SSMR3GetU8(PSSMHANDLE pSSM, uint8_t *pu8);
 VMMR3DECL(int) SSMR3GetS8(PSSMHANDLE pSSM, int8_t *pi8);
