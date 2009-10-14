@@ -21,7 +21,7 @@
  */
 #ifndef __VBoxFBOverlay_h__
 #define __VBoxFBOverlay_h__
-#if defined (VBOX_GUI_USE_QGL)
+#if defined (VBOX_GUI_USE_QGL) || defined(VBOX_WITH_VIDEOHWACCEL)
 
 //#define VBOXQGL_PROF_BASE 1
 //#define VBOXQGL_DBG_SURF 1
@@ -32,6 +32,7 @@
 #include <iprt/critsect.h>
 
 #include <VBox/VBoxGL2D.h>
+#include "VBoxFBOverlayCommon.h"
 
 #define VBOXVHWA_ALLOW_PRIMARY_AND_OVERLAY_ONLY 1
 

@@ -34,6 +34,7 @@
 #include <QGLContext>
 
 #include <VBox/VBoxGL2D.h>
+#include "VBoxFBOverlayCommon.h"
 
 /*****************/
 
