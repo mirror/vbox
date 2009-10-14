@@ -146,10 +146,12 @@ typedef enum SSMFIELDTRANS
     SSMFIELDTRANS_HCPTR_NI,
     /** Array of SSMFIELDTRANS_HCPTR_NI. */
     SSMFIELDTRANS_HCPTR_NI_ARRAY,
-    /** Ignorable Host context (HC) virtual address. See SSMFIELD_ENTRY_HCPTR. */
-    SSMFIELDTRANS_HCPTR,
+
     /** Ignorable field. See SSMFIELD_ENTRY_IGNORE. */
     SSMFIELDTRANS_IGNORE,
+    /** Ignorable Host context (HC) virtual address. See SSMFIELD_ENTRY_HCPTR. */
+    SSMFIELDTRANS_IGN_HCPTR,
+
     /** Padding that differs between 32-bit and 64-bit hosts.
      * The first  byte of SSMFIELD::cb contains the size for 32-bit hosts.
      * The second byte of SSMFIELD::cb contains the size for 64-bit hosts.
@@ -241,14 +243,16 @@ typedef struct SSMFIELD
 #define SSMFIELD_ENTRY_HCPTR_NI(Type, Field)        SSMFIELD_ENTRY_INT(Type, Field, SSMFIELDTRANS_HCPTR_NI)
 /** Same as SSMFIELD_ENTRY_HCPTR_NI, except it's an array of the buggers. */
 #define SSMFIELD_ENTRY_HCPTR_NI_ARRAY(Type, Field)  SSMFIELD_ENTRY_INT(Type, Field, SSMFIELDTRANS_HCPTR_NI_ARRAY)
-/** Emit a SSMFIELD array entry for a ring-0 or ring-3 pointer type that is
- * of no real interest to the saved state.  It follows the same save and restore
- * rules as SSMFIELD_ENTRY_IGNORE. */
-#define SSMFIELD_ENTRY_HCPTR(Type, Field)           SSMFIELD_ENTRY_INT(Type, Field, SSMFIELDTRANS_HCPTR)
+
 /** Emit a SSMFIELD array entry for a field that can be ignored.
  * It is stored as zeros if SSMSTRUCT_FLAGS_DONT_IGNORE is specified to
  * SSMR3PutStructEx.  The member is never touched upon restore. */
 #define SSMFIELD_ENTRY_IGNORE(Type, Field)          SSMFIELD_ENTRY_INT(Type, Field, SSMFIELDTRANS_IGNORE)
+/** Emit a SSMFIELD array entry for a ring-0 or ring-3 pointer type that is
+ * of no real interest to the saved state.  It follows the same save and restore
+ * rules as SSMFIELD_ENTRY_IGNORE. */
+#define SSMFIELD_ENTRY_IGN_HCPTR(Type, Field)       SSMFIELD_ENTRY_INT(Type, Field, SSMFIELDTRANS_IGN_HCPTR)
+
 /** Emit a SSMFIELD array entry for a padding that differs in size between
  * 64-bit and 32-bit hosts. */
 #define SSMFIELD_ENTRY_PAD_HC(Type, Field, cb32, cb64) SSMFIELD_ENTRY_PAD_INT(   Type, Field, cb32, cb64, SSMFIELDTRANS_PAD_HC)

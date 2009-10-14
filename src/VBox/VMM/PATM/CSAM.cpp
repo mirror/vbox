@@ -108,15 +108,15 @@ static const SSMFIELD g_aCsamFields[] =
 {
     SSMFIELD_ENTRY_IGNORE(      CSAM, offVM),
     SSMFIELD_ENTRY_PAD_HC64(    CSAM, Alignment0, sizeof(uint32_t)),
-    SSMFIELD_ENTRY_HCPTR(       CSAM, pPageTree),
+    SSMFIELD_ENTRY_IGN_HCPTR(   CSAM, pPageTree),
     SSMFIELD_ENTRY(             CSAM, aDangerousInstr),
     SSMFIELD_ENTRY(             CSAM, cDangerousInstr),
     SSMFIELD_ENTRY(             CSAM, iDangerousInstr),
     SSMFIELD_ENTRY_RCPTR(       CSAM, pPDBitmapGC),
     SSMFIELD_ENTRY_RCPTR(       CSAM, pPDHCBitmapGC),
-    SSMFIELD_ENTRY_HCPTR(       CSAM, pPDBitmapHC),
-    SSMFIELD_ENTRY_HCPTR(       CSAM, pPDGCBitmapHC),
-    SSMFIELD_ENTRY_HCPTR(       CSAM, savedstate.pSSM),
+    SSMFIELD_ENTRY_IGN_HCPTR(   CSAM, pPDBitmapHC),
+    SSMFIELD_ENTRY_IGN_HCPTR(   CSAM, pPDGCBitmapHC),
+    SSMFIELD_ENTRY_IGN_HCPTR(   CSAM, savedstate.pSSM),
     SSMFIELD_ENTRY(             CSAM, savedstate.cPageRecords),
     SSMFIELD_ENTRY(             CSAM, savedstate.cPatchPageRecords),
     SSMFIELD_ENTRY(             CSAM, cDirtyPages),
@@ -186,9 +186,9 @@ static SSMFIELD const g_aCsamPDBitmapArray[] =
  */
 static const SSMFIELD g_aCsamPageRecFields[] =
 {
-    SSMFIELD_ENTRY_HCPTR(       CSAMPAGEREC, Core.Key),
-    SSMFIELD_ENTRY_HCPTR(       CSAMPAGEREC, Core.pLeft),
-    SSMFIELD_ENTRY_HCPTR(       CSAMPAGEREC, Core.pRight),
+    SSMFIELD_ENTRY_IGN_HCPTR(   CSAMPAGEREC, Core.Key),
+    SSMFIELD_ENTRY_IGN_HCPTR(   CSAMPAGEREC, Core.pLeft),
+    SSMFIELD_ENTRY_IGN_HCPTR(   CSAMPAGEREC, Core.pRight),
     SSMFIELD_ENTRY_IGNORE(      CSAMPAGEREC, Core.uchHeight),
     SSMFIELD_ENTRY_PAD_HC_AUTO( 3, 7),
     SSMFIELD_ENTRY_RCPTR(       CSAMPAGEREC, page.pPageGC),

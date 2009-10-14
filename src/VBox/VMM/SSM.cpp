@@ -3403,12 +3403,6 @@ VMMR3DECL(int) SSMR3PutStructEx(PSSMHANDLE pSSM, const void *pvStruct, size_t cb
                 break;
             }
 
-            case SSMFIELDTRANS_HCPTR:
-                AssertMsgReturn(cbField == sizeof(void *), ("%#x (%s)\n", cbField, pCur->pszName), VERR_SSM_FIELD_INVALID_SIZE);
-                if (fFlags & SSMSTRUCT_FLAGS_DONT_IGNORE)
-                    rc = ssmR3DataWrite(pSSM, s_abZero, sizeof(void *));
-                break;
-
             case SSMFIELDTRANS_IGNORE:
                 if (fFlags & SSMSTRUCT_FLAGS_DONT_IGNORE)
                 {
@@ -3420,6 +3414,13 @@ VMMR3DECL(int) SSMR3PutStructEx(PSSMHANDLE pSSM, const void *pvStruct, size_t cb
                     }
                 }
                 break;
+
+            case SSMFIELDTRANS_IGN_HCPTR:
+                AssertMsgReturn(cbField == sizeof(void *), ("%#x (%s)\n", cbField, pCur->pszName), VERR_SSM_FIELD_INVALID_SIZE);
+                if (fFlags & SSMSTRUCT_FLAGS_DONT_IGNORE)
+                    rc = ssmR3DataWrite(pSSM, s_abZero, sizeof(void *));
+                break;
+
 
             case SSMFIELDTRANS_PAD_HC:
             case SSMFIELDTRANS_PAD_HC32:
@@ -6035,15 +6036,15 @@ VMMR3DECL(int) SSMR3GetStructEx(PSSMHANDLE pSSM, void *pvStruct, size_t cbStruct
                 break;
             }
 
-            case SSMFIELDTRANS_HCPTR:
-                AssertMsgReturn(cbField == sizeof(void *), ("%#x (%s)\n", cbField, pCur->pszName), VERR_SSM_FIELD_INVALID_SIZE);
-                if (fFlags & SSMSTRUCT_FLAGS_DONT_IGNORE)
-                    rc = SSMR3Skip(pSSM, ssmR3GetHostBits(pSSM) / 8);
-                break;
-
             case SSMFIELDTRANS_IGNORE:
                 if (fFlags & SSMSTRUCT_FLAGS_DONT_IGNORE)
                     rc = SSMR3Skip(pSSM, cbField);
+                break;
+
+            case SSMFIELDTRANS_IGN_HCPTR:
+                AssertMsgReturn(cbField == sizeof(void *), ("%#x (%s)\n", cbField, pCur->pszName), VERR_SSM_FIELD_INVALID_SIZE);
+                if (fFlags & SSMSTRUCT_FLAGS_DONT_IGNORE)
+                    rc = SSMR3Skip(pSSM, ssmR3GetHostBits(pSSM) / 8);
                 break;
 
             case SSMFIELDTRANS_PAD_HC:
