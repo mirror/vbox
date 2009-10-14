@@ -70,10 +70,11 @@ struc CPUM
     .CR4.OrMask           resd    1
     ; entered rawmode?
     .fRawEntered          resb    1
+    .fSyntheticCpu        resb    1
 %if RTHCPTR_CB == 8
-    .abPadding            resb    7
+    .abPadding            resb    6
 %else
-    .abPadding            resb    3
+    .abPadding            resb    2
 %endif
 
     ; CPUID leafs
