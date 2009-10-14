@@ -2873,11 +2873,7 @@ DECLINLINE(uint32_t) ssmR3GetHostBits(PSSMHANDLE pSSM)
 DECLINLINE(bool) ssmR3IsHostMsc32(PSSMHANDLE pSSM)
 {
     if (pSSM->enmOp >= SSMSTATE_LOAD_PREP)
-    {
-        uint32_t cBits = pSSM->u.Read.cHostBits;
-        if (cBits)
-            return cBits;
-    }
+        return pSSM->u.Read.fIsHostMsc32;
     return SSM_HOST_IS_MSC_32;
 }
 
