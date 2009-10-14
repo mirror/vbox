@@ -597,6 +597,11 @@
 #define VERR_SSM_LIVE_FATAL_ERROR               (-1863)
 /** The VM was suspended while saving, don't resume execution. */
 #define VINF_SSM_LIVE_SUSPENDED                  1864
+/** Complex SSM field fed to SSMR3PutStruct or SSMR3GetStruct.  Use the
+ * extended API. */
+#define VERR_SSM_COMPLEX_FIELD                  (-1864)
+/** Invalid size of a SSM field with the specified transformation. */
+#define VERR_SSM_INVALID_FIELD_SIZE             (-1865)
 /** @} */
 
 

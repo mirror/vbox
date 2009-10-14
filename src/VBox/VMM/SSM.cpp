@@ -3162,9 +3162,26 @@ VMMR3DECL(int) SSMR3PutStruct(PSSMHANDLE pSSM, const void *pvStruct, PCSSMFIELD 
          pCur->cb != UINT32_MAX && pCur->off != UINT32_MAX;
          pCur++)
     {
-        rc = ssmR3DataWrite(pSSM, (uint8_t *)pvStruct + pCur->off, pCur->cb);
-        if (RT_FAILURE(rc))
-            return rc;
+        uint8_t const *pbField = (uint8_t const *)pvStruct + pCur->off;
+        switch ((uintptr_t)pCur->pfnGetPutOrTransformer)
+        {
+            case SSMFIELDTRANS_NO_TRANSFORMATION:
+                rc = ssmR3DataWrite(pSSM, pbField, pCur->cb);
+                break;
+
+            case SSMFIELDTRANS_GCPTR:
+                AssertMsgReturn(pCur->cb == sizeof(RTGCPTR), ("%#x\n", pCur->cb), VERR_SSM_INVALID_FIELD_SIZE);
+                rc = SSMR3PutGCPtr(pSSM, *(PRTGCPTR)pbField);
+                break;
+
+            case SSMFIELDTRANS_GCPHYS:
+                AssertMsgReturn(pCur->cb == sizeof(RTGCPHYS), ("%#x\n", pCur->cb), VERR_SSM_INVALID_FIELD_SIZE);
+                rc = SSMR3PutGCPhys(pSSM, *(PRTGCPHYS)pbField);
+                break;
+
+            default:
+                AssertMsgFailedReturn(("%#x\n", pCur->pfnGetPutOrTransformer), VERR_SSM_COMPLEX_FIELD);
+        }
     }
 
     /* end marker */
@@ -5510,14 +5527,31 @@ VMMR3DECL(int) SSMR3GetStruct(PSSMHANDLE pSSM, void *pvStruct, PCSSMFIELD paFiel
     if (u32Magic != SSMR3STRUCT_BEGIN)
         AssertMsgFailedReturn(("u32Magic=%#RX32\n", u32Magic), VERR_SSM_STRUCTURE_MAGIC);
 
-    /* put the fields */
+    /* get the fields */
     for (PCSSMFIELD pCur = paFields;
          pCur->cb != UINT32_MAX && pCur->off != UINT32_MAX;
          pCur++)
     {
-        rc = ssmR3DataRead(pSSM, (uint8_t *)pvStruct + pCur->off, pCur->cb);
-        if (RT_FAILURE(rc))
-            return rc;
+        uint8_t *pbField = (uint8_t *)pvStruct + pCur->off;
+        switch ((uintptr_t)pCur->pfnGetPutOrTransformer)
+        {
+            case SSMFIELDTRANS_NO_TRANSFORMATION:
+                rc = ssmR3DataRead(pSSM, pbField, pCur->cb);
+                break;
+
+            case SSMFIELDTRANS_GCPTR:
+                AssertMsgReturn(pCur->cb == sizeof(RTGCPTR), ("%#x\n", pCur->cb), VERR_SSM_INVALID_FIELD_SIZE);
+                rc = SSMR3GetGCPtr(pSSM, (PRTGCPTR)pbField);
+                break;
+
+            case SSMFIELDTRANS_GCPHYS:
+                AssertMsgReturn(pCur->cb == sizeof(RTGCPHYS), ("%#x\n", pCur->cb), VERR_SSM_INVALID_FIELD_SIZE);
+                rc = SSMR3GetGCPhys(pSSM, (PRTGCPHYS)pbField);
+                break;
+
+            default:
+                AssertMsgFailedReturn(("%#x\n", pCur->pfnGetPutOrTransformer), VERR_SSM_COMPLEX_FIELD);
+        }
     }
 
     /* end marker */
