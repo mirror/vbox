@@ -483,9 +483,9 @@ endif
 
 if defined(VBOX_WITH_VIDEOHWACCEL) || defined(VBOX_GUI_USE_QGL)
  VirtualBox_SOURCES += \
-    src/VBoxFBQGL.cpp \
-    src/VBoxFBOverlay.cpp \
-    src/VBoxGLSupportInfo.cpp
+ 	src/VBoxFBQGL.cpp \
+ 	src/VBoxFBOverlay.cpp \
+ 	src/VBoxGLSupportInfo.cpp
 endif
 # The Qt modules we're using.
 # (The include directory and lib/framework for each module will be added by the Qt4 unit.)
@@ -690,9 +690,9 @@ if defined(VBOX_WITH_VIDEOHWACCEL)
   VBoxOGL2D_DEFS = IN_RING3 QT_NO_DEBUG QT_THREAD_SUPPORT QT_SHARED HAVE_CONFIG_H $(ARCH_BITS_DEFS) VBOX_WITH_VIDEOHWACCEL VBOX_GUI_USE_QGL
   VBoxOGL2D_QT_MODULES += OpenGL
   VBoxOGL2D_SOURCES = \
-      src/VBoxGLSupportInfo.cpp
+  	src/VBoxGLSupportInfo.cpp
   VBoxOGL2D_INCS = include
- endif 
+ endif
 endif
 
 #
