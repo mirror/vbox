@@ -401,6 +401,7 @@ struct Hardware
                         fHardwareVirtExclusive,
                         fNestedPaging,
                         fVPID,
+                        fSyntheticCpu,
                         fPAE;
     uint32_t            cCPUs;
 
