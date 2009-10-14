@@ -137,11 +137,43 @@ typedef enum SSMFIELDTRANS
     SSMFIELDTRANS_GCPTR,
     /** Guest context (GC) physical address. */
     SSMFIELDTRANS_GCPHYS,
+    /** Raw-mode context (RC) virtual address. */
+    SSMFIELDTRANS_RCPTR,
+    /** Array of raw-mode context (RC) virtual addresses. */
+    SSMFIELDTRANS_RCPTR_ARRAY,
+    /** Host context (HC) virtual address used as a NULL indicator. See
+     * SSMFIELD_ENTRY_HCPTR_NI. */
+    SSMFIELDTRANS_HCPTR_NI,
+    /** Array of SSMFIELDTRANS_HCPTR_NI. */
+    SSMFIELDTRANS_HCPTR_NI_ARRAY,
     /** Ignorable Host context (HC) virtual address. See SSMFIELD_ENTRY_HCPTR. */
     SSMFIELDTRANS_HCPTR,
     /** Ignorable field. See SSMFIELD_ENTRY_IGNORE. */
-    SSMFIELDTRANS_IGNORE
+    SSMFIELDTRANS_IGNORE,
+    /** Padding that differs between 32-bit and 64-bit hosts.
+     * The first  byte of SSMFIELD::cb contains the size for 32-bit hosts.
+     * The second byte of SSMFIELD::cb contains the size for 64-bit hosts.
+     * The upper  word of SSMFIELD::cb contains the actual field size.
+     */
+    SSMFIELDTRANS_PAD_HC,
+    /** Padding for 32-bit hosts only.
+     * SSMFIELD::cb has the same format as for SSMFIELDTRANS_PAD_HC. */
+    SSMFIELDTRANS_PAD_HC32,
+    /** Padding for 64-bit hosts only.
+     * SSMFIELD::cb has the same format as for SSMFIELDTRANS_PAD_HC. */
+    SSMFIELDTRANS_PAD_HC64,
+    /** Automatic compiler padding that may differ between 32-bit and
+     * 64-bit hosts. SSMFIELD::cb has the same format as for
+     * SSMFIELDTRANS_PAD_HC. */
+    SSMFIELDTRANS_PAD_HC_AUTO
 } SSMFIELDTRANS;
+
+/** Tests if it's a padding field with the special SSMFIELD::cb format.
+ * @returns true / false.
+ * @param   pfn     The SSMFIELD::pfnGetPutOrTransformer value.
+ */
+#define SSMFIELDTRANS_IS_PADDING(pfn)   \
+    (   (uintptr_t)(pfn) >= SSMFIELDTRANS_PAD_HC && (uintptr_t)(pfn) <= SSMFIELDTRANS_PAD_HC_AUTO )
 
 /**
  * A structure field description.
@@ -154,6 +186,8 @@ typedef struct SSMFIELD
     uint32_t            off;
     /** The size of the field. */
     uint32_t            cb;
+    /** Field name. */
+    const char         *pszName;
 } SSMFIELD;
 
 /** Emit a SSMFIELD array entry.
@@ -162,27 +196,95 @@ typedef struct SSMFIELD
     { \
         (PFNSSMFIELDGETPUT)(uintptr_t)(enmTransformer), \
         RT_OFFSETOF(Type, Field), \
-        RT_SIZEOFMEMB(Type, Field) \
+        RT_SIZEOFMEMB(Type, Field), \
+        #Type "::" #Field \
     }
+/** Emit a SSMFIELD array entry for an alignment padding.
+ * @internal  */
+#define SSMFIELD_ENTRY_PAD_INT(Type, Field, cb32, cb64, enmTransformer) \
+    { \
+        (PFNSSMFIELDGETPUT)(uintptr_t)(enmTransformer), \
+        RT_OFFSETOF(Type, Field), \
+        (RT_SIZEOFMEMB(Type, Field) << 16) | (cb32) | ((cb64) << 8), \
+        #Type "::" #Field \
+    }
+/** Emit a SSMFIELD array entry for an alignment padding.
+ * @internal  */
+#define SSMFIELD_ENTRY_PAD_OTHER_INT(Type, Field, cb32, cb64, enmTransformer) \
+    { \
+        (PFNSSMFIELDGETPUT)(uintptr_t)(enmTransformer), \
+        UINT32_MAX / 2, \
+        (0 | (cb32) | ((cb64) << 8), \
+        #Type "::" #Field \
+    }
+
 /** Emit a SSMFIELD array entry. */
-#define SSMFIELD_ENTRY(Type, Field)         SSMFIELD_ENTRY_INT(Type, Field, SSMFIELDTRANS_NO_TRANSFORMATION)
+#define SSMFIELD_ENTRY(Type, Field)                 SSMFIELD_ENTRY_INT(Type, Field, SSMFIELDTRANS_NO_TRANSFORMATION)
 /** Emit a SSMFIELD array entry for a RTGCPTR type. */
-#define SSMFIELD_ENTRY_GCPTR(Type, Field)   SSMFIELD_ENTRY_INT(Type, Field, SSMFIELDTRANS_GCPTR)
+#define SSMFIELD_ENTRY_GCPTR(Type, Field)           SSMFIELD_ENTRY_INT(Type, Field, SSMFIELDTRANS_GCPTR)
 /** Emit a SSMFIELD array entry for a RTGCPHYS type. */
-#define SSMFIELD_ENTRY_GCPHYS(Type, Field)  SSMFIELD_ENTRY_INT(Type, Field, SSMFIELDTRANS_GCPHYS)
+#define SSMFIELD_ENTRY_GCPHYS(Type, Field)          SSMFIELD_ENTRY_INT(Type, Field, SSMFIELDTRANS_GCPHYS)
+/** Emit a SSMFIELD array entry for a raw-mode context pointer. */
+#define SSMFIELD_ENTRY_RCPTR(Type, Field)           SSMFIELD_ENTRY_INT(Type, Field, SSMFIELDTRANS_RCPTR)
+/** Emit a SSMFIELD array entry for a raw-mode context pointer. */
+#define SSMFIELD_ENTRY_RCPTR_ARRAY(Type, Field)     SSMFIELD_ENTRY_INT(Type, Field, SSMFIELDTRANS_RCPTR_ARRAY)
+/** Emit a SSMFIELD array entry for a ring-0 or ring-3 pointer type that is only
+ * of interest as a NULL indicator.
+ *
+ * This is always restored as a 0 (NULL) or 1 value.  When
+ * SSMSTRUCT_FLAGS_DONT_IGNORE is set, the pointer will be saved in its
+ * entirety, when clear it will be saved as a boolean. */
+#define SSMFIELD_ENTRY_HCPTR_NI(Type, Field)        SSMFIELD_ENTRY_INT(Type, Field, SSMFIELDTRANS_HCPTR_NI)
+/** Same as SSMFIELD_ENTRY_HCPTR_NI, except it's an array of the buggers. */
+#define SSMFIELD_ENTRY_HCPTR_NI_ARRAY(Type, Field)  SSMFIELD_ENTRY_INT(Type, Field, SSMFIELDTRANS_HCPTR_NI_ARRAY)
 /** Emit a SSMFIELD array entry for a ring-0 or ring-3 pointer type that is
  * of no real interest to the saved state.  It follows the same save and restore
  * rules as SSMFIELD_ENTRY_IGNORE. */
-#define SSMFIELD_ENTRY_HCPTR(Type, Field)   SSMFIELD_ENTRY_INT(Type, Field, SSMFIELDTRANS_HCPTR)
+#define SSMFIELD_ENTRY_HCPTR(Type, Field)           SSMFIELD_ENTRY_INT(Type, Field, SSMFIELDTRANS_HCPTR)
 /** Emit a SSMFIELD array entry for a field that can be ignored.
  * It is stored as zeros if SSMSTRUCT_FLAGS_DONT_IGNORE is specified to
  * SSMR3PutStructEx.  The member is never touched upon restore. */
-#define SSMFIELD_ENTRY_IGNORE(Type, Field)  SSMFIELD_ENTRY_INT(Type, Field, SSMFIELDTRANS_IGNORE)
+#define SSMFIELD_ENTRY_IGNORE(Type, Field)          SSMFIELD_ENTRY_INT(Type, Field, SSMFIELDTRANS_IGNORE)
+/** Emit a SSMFIELD array entry for a padding that differs in size between
+ * 64-bit and 32-bit hosts. */
+#define SSMFIELD_ENTRY_PAD_HC(Type, Field, cb32, cb64) SSMFIELD_ENTRY_PAD_INT(   Type, Field, cb32, cb64, SSMFIELDTRANS_PAD_HC)
+/** Emit a SSMFIELD array entry for a padding that is exclusive to 64-bit hosts. */
+#if HC_ARCH_BITS == 64
+# define SSMFIELD_ENTRY_PAD_HC64(Type, Field, cb)   SSMFIELD_ENTRY_PAD_INT(      Type, Field, 0, cb, SSMFIELDTRANS_PAD_HC64)
+#else
+# define SSMFIELD_ENTRY_PAD_HC64(Type, Field, cb)   SSMFIELD_ENTRY_PAD_OTHER_INT(Type, Field, 0, cb, SSMFIELDTRANS_PAD_HC64)
+#endif
+/** Emit a SSMFIELD array entry for a 32-bit padding for on 64-bits hosts.  */
+#if HC_ARCH_BITS == 32
+# define SSMFIELD_ENTRY_PAD_HC32(Type, Field, cb)   SSMFIELD_ENTRY_PAD_INT(      Type, Field, cb, 0, SSMFIELDTRANS_PAD_HC32)
+#else
+# define SSMFIELD_ENTRY_PAD_HC32(Type, Field, cb)   SSMFIELD_ENTRY_PAD_OTHER_INT(Type, Field, cb, 0, SSMFIELDTRANS_PAD_HC32)
+#endif
+/** Emit a SSMFIELD array entry for an automatic compiler padding that may
+ * differ in size between 64-bit and 32-bit hosts. */
+#if HC_ARCH_BITS == 64
+# define SSMFIELD_ENTRY_PAD_HC_AUTO(cb32, cb64) \
+    { \
+        (PFNSSMFIELDGETPUT)(uintptr_t)(SSMFIELDTRANS_PAD_HC_AUTO), \
+        UINT32_MAX / 2, \
+        (cb64 << 16) | (cb32) | ((cb64) << 8), \
+        "<compiler-padding>" \
+    }
+#else
+# define SSMFIELD_ENTRY_PAD_HC_AUTO(cb32, cb64) \
+    { \
+        (PFNSSMFIELDGETPUT)(uintptr_t)(SSMFIELDTRANS_PAD_HC_AUTO), \
+        UINT32_MAX / 2, \
+        (cb32 << 16) | (cb32) | ((cb64) << 8), \
+        "<compiler-padding>" \
+    }
+#endif
+
 /** Emit a SSMFIELD array entry for a field with a custom callback. */
 #define SSMFIELD_ENTRY_CALLBACK(Type, Field, pfnGetPut) \
-    { (pfnGetPut), RT_OFFSETOF(Type, Field), RT_SIZEOFMEMB(Type, Field) }
+    { (pfnGetPut), RT_OFFSETOF(Type, Field), RT_SIZEOFMEMB(Type, Field), #Type "::" #Field }
 /** Emit the terminating entry of a SSMFIELD array. */
-#define SSMFIELD_ENTRY_TERM()               { (PFNSSMFIELDGETPUT)(uintptr_t)SSMFIELDTRANS_INVALID, UINT32_MAX, UINT32_MAX }
+#define SSMFIELD_ENTRY_TERM()               { (PFNSSMFIELDGETPUT)(uintptr_t)SSMFIELDTRANS_INVALID, UINT32_MAX, UINT32_MAX, NULL }
 
 
 /** @name SSMR3GetStructEx and SSMR3PutStructEx flags.
@@ -826,6 +928,7 @@ VMMR3DECL(int)          SSMR3HandleGetStatus(PSSMHANDLE pSSM);
 VMMR3DECL(int)          SSMR3HandleSetStatus(PSSMHANDLE pSSM, int iStatus);
 VMMR3DECL(SSMAFTER)     SSMR3HandleGetAfter(PSSMHANDLE pSSM);
 VMMR3DECL(bool)         SSMR3HandleIsLiveSave(PSSMHANDLE pSSM);
+VMMR3DECL(uint32_t)     SSMR3HandleHostBits(PSSMHANDLE pSSM);
 VMMR3_INT_DECL(int)     SSMR3SetGCPtrSize(PSSMHANDLE pSSM, unsigned cbGCPtr);
 VMMR3DECL(int)          SSMR3Cancel(PVM pVM);
 

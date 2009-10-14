@@ -2078,7 +2078,7 @@ static int ssmR3StrmClose(PSSMSTRM pStrm)
     {
         if (pStrm->hIoThread != NIL_RTTHREAD)
         {
-            int rc2 = RTSemEventSignal(pStrm->hEvtHead);
+            int rc2 = RTSemEventSignal(pStrm->hEvtFree);
             AssertLogRelRC(rc2);
             int rc3 = RTThreadWait(pStrm->hIoThread, RT_INDEFINITE_WAIT, NULL);
             AssertLogRelRC(rc3);
@@ -2817,11 +2817,31 @@ static void ssmR3SetCancellable(PVM pVM, PSSMHANDLE pSSM, bool fCancellable)
 
 
 /**
+ * Gets the host bit count.
+ *
+ * Works for on both save and load handles.
+ *
+ * @returns 32 or 64.
+ * @param   pSSM                The saved state handle.
+ */
+DECLINLINE(uint32_t) ssmR3GetHostBits(PSSMHANDLE pSSM)
+{
+    if (pSSM->enmOp >= SSMSTATE_LOAD_PREP)
+    {
+        uint32_t cBits = pSSM->u.Read.cHostBits;
+        if (cBits)
+            return cBits;
+    }
+    return HC_ARCH_BITS;
+}
+
+
+/**
  * Finishes a data unit.
  * All buffers and compressor instances are flushed and destroyed.
  *
  * @returns VBox status.
- * @param   pSSM            SSM operation handle.
+ * @param   pSSM            The saved state handle.
  */
 static int ssmR3DataWriteFinish(PSSMHANDLE pSSM)
 {
@@ -3175,14 +3195,28 @@ VMMR3DECL(int) SSMR3PutStruct(PSSMHANDLE pSSM, const void *pvStruct, PCSSMFIELD 
                 break;
 
             case SSMFIELDTRANS_GCPTR:
-                AssertMsgReturn(pCur->cb == sizeof(RTGCPTR), ("%#x\n", pCur->cb), VERR_SSM_FIELD_INVALID_SIZE);
+                AssertMsgReturn(pCur->cb == sizeof(RTGCPTR), ("%#x (%s)\n", pCur->cb, pCur->pszName), VERR_SSM_FIELD_INVALID_SIZE);
                 rc = SSMR3PutGCPtr(pSSM, *(PRTGCPTR)pbField);
                 break;
 
             case SSMFIELDTRANS_GCPHYS:
-                AssertMsgReturn(pCur->cb == sizeof(RTGCPHYS), ("%#x\n", pCur->cb), VERR_SSM_FIELD_INVALID_SIZE);
+                AssertMsgReturn(pCur->cb == sizeof(RTGCPHYS), ("%#x (%s)\n", pCur->cb, pCur->pszName), VERR_SSM_FIELD_INVALID_SIZE);
                 rc = SSMR3PutGCPhys(pSSM, *(PRTGCPHYS)pbField);
                 break;
+
+            case SSMFIELDTRANS_RCPTR:
+                AssertMsgReturn(pCur->cb == sizeof(RTRCPTR), ("%#x (%s)\n", pCur->cb, pCur->pszName), VERR_SSM_FIELD_INVALID_SIZE);
+                rc = SSMR3PutRCPtr(pSSM, *(PRTRCPTR)pbField);
+                break;
+
+            case SSMFIELDTRANS_RCPTR_ARRAY:
+            {
+                uint32_t const cEntries = pCur->cb / sizeof(RTRCPTR);
+                AssertMsgReturn(pCur->cb == cEntries * sizeof(RTRCPTR), ("%#x (%s)\n", pCur->cb, pCur->pszName), VERR_SSM_FIELD_INVALID_SIZE);
+                for (uint32_t i = 0; i < cEntries && RT_SUCCESS(rc); i++)
+                    rc = SSMR3PutRCPtr(pSSM, ((PRTRCPTR)pbField)[i]);
+                break;
+            }
 
             default:
                 AssertMsgFailedReturn(("%#x\n", pCur->pfnGetPutOrTransformer), VERR_SSM_FIELD_COMPLEX);
@@ -3193,6 +3227,26 @@ VMMR3DECL(int) SSMR3PutStruct(PSSMHANDLE pSSM, const void *pvStruct, PCSSMFIELD 
 
     /* end marker */
     return SSMR3PutU32(pSSM, SSMR3STRUCT_END);
+}
+
+
+/**
+ * SSMR3PutStructEx helper that puts a HCPTR that is used as a NULL indicator.
+ *
+ * @returns VBox status code.
+ *
+ * @param   pSSM            The saved state handle.
+ * @param   pv              The value to put.
+ * @param   fFlags          SSMSTRUCT_FLAGS_XXX.
+ */
+DECLINLINE(int) ssmR3PutHCPtrNI(PSSMHANDLE pSSM, void *pv, uint32_t fFlags)
+{
+    int rc;
+    if (fFlags & SSMSTRUCT_FLAGS_DONT_IGNORE)
+        rc = ssmR3DataWrite(pSSM, &pv, sizeof(void *));
+    else
+        rc = SSMR3PutBool(pSSM, pv != NULL);
+    return rc;
 }
 
 
@@ -3243,35 +3297,69 @@ VMMR3DECL(int) SSMR3PutStructEx(PSSMHANDLE pSSM, const void *pvStruct, size_t cb
          pCur->cb != UINT32_MAX && pCur->off != UINT32_MAX;
          pCur++)
     {
-        AssertMsgReturn(   pCur->cb             <= cbStruct
-                        && pCur->off + pCur->cb <= cbStruct
-                        && pCur->off + pCur->cb >  pCur->off,
-                        ("off=%#x cb=%#x cbStruct=%#x\n", pCur->cb, pCur->off, cbStruct),
+        uint32_t const offField = !SSMFIELDTRANS_IS_PADDING(pCur->pfnGetPutOrTransformer) || pCur->off != UINT32_MAX / 2
+                                ? pCur->off
+                                : off;
+        uint32_t const cbField  = !SSMFIELDTRANS_IS_PADDING(pCur->pfnGetPutOrTransformer)
+                                ? pCur->cb
+                                : RT_HIWORD(pCur->cb);
+        AssertMsgReturn(   cbField            <= cbStruct
+                        && offField + cbField <= cbStruct
+                        && offField + cbField >= offField,
+                        ("off=%#x cb=%#x cbStruct=%#x (%s)\n", cbField, offField, cbStruct, pCur->pszName),
                         VERR_SSM_FIELD_OUT_OF_BOUNDS);
         AssertMsgReturn(    !(fFlags & SSMSTRUCT_FLAGS_FULL_STRUCT)
-                        || off == pCur->off,
-                        ("off=%#x pCur->off=%#x\n", off, pCur->off),
+                        || off == offField,
+                        ("off=%#x offField=%#x (%s)\n", off, offField, pCur->pszName),
                         VERR_SSM_FIELD_NOT_CONSECUTIVE);
 
-        uint8_t const *pbField = (uint8_t const *)pvStruct + pCur->off;
+        uint8_t const *pbField = (uint8_t const *)pvStruct + offField;
         switch ((uintptr_t)pCur->pfnGetPutOrTransformer)
         {
             case SSMFIELDTRANS_NO_TRANSFORMATION:
-                rc = ssmR3DataWrite(pSSM, pbField, pCur->cb);
+                rc = ssmR3DataWrite(pSSM, pbField, cbField);
                 break;
 
             case SSMFIELDTRANS_GCPTR:
-                AssertMsgReturn(pCur->cb == sizeof(RTGCPTR), ("%#x\n", pCur->cb), VERR_SSM_FIELD_INVALID_SIZE);
+                AssertMsgReturn(cbField == sizeof(RTGCPTR), ("%#x (%s)\n", cbField, pCur->pszName), VERR_SSM_FIELD_INVALID_SIZE);
                 rc = SSMR3PutGCPtr(pSSM, *(PRTGCPTR)pbField);
                 break;
 
             case SSMFIELDTRANS_GCPHYS:
-                AssertMsgReturn(pCur->cb == sizeof(RTGCPHYS), ("%#x\n", pCur->cb), VERR_SSM_FIELD_INVALID_SIZE);
+                AssertMsgReturn(cbField == sizeof(RTGCPHYS), ("%#x (%s)\n", cbField, pCur->pszName), VERR_SSM_FIELD_INVALID_SIZE);
                 rc = SSMR3PutGCPhys(pSSM, *(PRTGCPHYS)pbField);
                 break;
 
+            case SSMFIELDTRANS_RCPTR:
+                AssertMsgReturn(cbField == sizeof(RTRCPTR), ("%#x (%s)\n", cbField, pCur->pszName), VERR_SSM_FIELD_INVALID_SIZE);
+                rc = SSMR3PutRCPtr(pSSM, *(PRTRCPTR)pbField);
+                break;
+
+            case SSMFIELDTRANS_RCPTR_ARRAY:
+            {
+                uint32_t const cEntries = cbField / sizeof(RTRCPTR);
+                AssertMsgReturn(cbField == cEntries * sizeof(RTRCPTR), ("%#x (%s)\n", cbField, pCur->pszName), VERR_SSM_FIELD_INVALID_SIZE);
+                for (uint32_t i = 0; i < cEntries && RT_SUCCESS(rc); i++)
+                    rc = SSMR3PutRCPtr(pSSM, ((PRTRCPTR)pbField)[i]);
+                break;
+            }
+
+            case SSMFIELDTRANS_HCPTR_NI:
+                AssertMsgReturn(cbField == sizeof(void *), ("%#x (%s)\n", cbField, pCur->pszName), VERR_SSM_FIELD_INVALID_SIZE);
+                rc = ssmR3PutHCPtrNI(pSSM, *(void * const *)pbField, fFlags);
+                break;
+
+            case SSMFIELDTRANS_HCPTR_NI_ARRAY:
+            {
+                uint32_t const cEntries = cbField / sizeof(void *);
+                AssertMsgReturn(cbField == cEntries * sizeof(void *), ("%#x (%s)\n", cbField, pCur->pszName), VERR_SSM_FIELD_INVALID_SIZE);
+                for (uint32_t i = 0; i < cEntries && RT_SUCCESS(rc); i++)
+                    rc = ssmR3PutHCPtrNI(pSSM, ((void * const *)pbField)[i], fFlags);
+                break;
+            }
+
             case SSMFIELDTRANS_HCPTR:
-                AssertMsgReturn(pCur->cb == sizeof(void *), ("%#x\n", pCur->cb), VERR_SSM_FIELD_INVALID_SIZE);
+                AssertMsgReturn(cbField == sizeof(void *), ("%#x (%s)\n", cbField, pCur->pszName), VERR_SSM_FIELD_INVALID_SIZE);
                 if (fFlags & SSMSTRUCT_FLAGS_DONT_IGNORE)
                     rc = ssmR3DataWrite(pSSM, s_abZero, sizeof(void *));
                 break;
@@ -3280,13 +3368,42 @@ VMMR3DECL(int) SSMR3PutStructEx(PSSMHANDLE pSSM, const void *pvStruct, size_t cb
                 if (fFlags & SSMSTRUCT_FLAGS_DONT_IGNORE)
                 {
                     uint32_t cb;
-                    for (uint32_t cbLeft = pCur->cb; cbLeft > 0 && RT_SUCCESS(rc); cbLeft -= cb)
+                    for (uint32_t cbLeft = cbField; cbLeft > 0 && RT_SUCCESS(rc); cbLeft -= cb)
                     {
                         cb = RT_MIN(sizeof(s_abZero), cbLeft);
                         rc = ssmR3DataWrite(pSSM, s_abZero, cb);
                     }
                 }
                 break;
+
+            case SSMFIELDTRANS_PAD_HC:
+            case SSMFIELDTRANS_PAD_HC32:
+            case SSMFIELDTRANS_PAD_HC64:
+            case SSMFIELDTRANS_PAD_HC_AUTO:
+            {
+                uint32_t cb32    = RT_BYTE1(pCur->cb);
+                uint32_t cb64    = RT_BYTE2(pCur->cb);
+                uint32_t cbCtx   = HC_ARCH_BITS           == 64 ? cb64 : cb32;
+                uint32_t cbSaved = ssmR3GetHostBits(pSSM) == 64 ? cb64 : cb32;
+                AssertMsgReturn(    cbField == cbCtx
+                                &&  (   (   pCur->off == UINT32_MAX / 2
+                                         && (   cbField == 0
+                                             || (uintptr_t)pCur->pfnGetPutOrTransformer == SSMFIELDTRANS_PAD_HC_AUTO))
+                                     || (pCur->off != UINT32_MAX / 2 && cbField != 0)),
+                                ("cbField=%#x cb32=%#x cb64=%#x HC_ARCH_BITS=%u cbCtx=%#x cbSaved=%#x off=%#x\n",
+                                 cbField, cb32, cb64, HC_ARCH_BITS, cbCtx, cbSaved, pCur->off),
+                                VERR_SSM_FIELD_INVALID_PADDING_SIZE);
+                if (fFlags & SSMSTRUCT_FLAGS_DONT_IGNORE)
+                {
+                    uint32_t cb;
+                    for (uint32_t cbLeft = cbSaved; cbLeft > 0 && RT_SUCCESS(rc); cbLeft -= cb)
+                    {
+                        cb = RT_MIN(sizeof(s_abZero), cbLeft);
+                        rc = ssmR3DataWrite(pSSM, s_abZero, cb);
+                    }
+                }
+                break;
+            }
 
             default:
                 AssertPtrReturn(pCur->pfnGetPutOrTransformer, VERR_SSM_FIELD_INVALID_CALLBACK);
@@ -3296,7 +3413,7 @@ VMMR3DECL(int) SSMR3PutStructEx(PSSMHANDLE pSSM, const void *pvStruct, size_t cb
         if (RT_FAILURE(rc))
             return rc;
 
-        off = pCur->off + pCur->cb;
+        off = offField + cbField;
     }
     AssertMsgReturn(    !(fFlags & SSMSTRUCT_FLAGS_FULL_STRUCT)
                     || off == cbStruct,
@@ -3321,7 +3438,7 @@ VMMR3DECL(int) SSMR3PutStructEx(PSSMHANDLE pSSM, const void *pvStruct, size_t cb
  * Saves a boolean item to the current data unit.
  *
  * @returns VBox status.
- * @param   pSSM            SSM operation handle.
+ * @param   pSSM            The saved state handle.
  * @param   fBool           Item to save.
  */
 VMMR3DECL(int) SSMR3PutBool(PSSMHANDLE pSSM, bool fBool)
@@ -3337,7 +3454,7 @@ VMMR3DECL(int) SSMR3PutBool(PSSMHANDLE pSSM, bool fBool)
  * Saves a 8-bit unsigned integer item to the current data unit.
  *
  * @returns VBox status.
- * @param   pSSM            SSM operation handle.
+ * @param   pSSM            The saved state handle.
  * @param   u8              Item to save.
  */
 VMMR3DECL(int) SSMR3PutU8(PSSMHANDLE pSSM, uint8_t u8)
@@ -3352,7 +3469,7 @@ VMMR3DECL(int) SSMR3PutU8(PSSMHANDLE pSSM, uint8_t u8)
  * Saves a 8-bit signed integer item to the current data unit.
  *
  * @returns VBox status.
- * @param   pSSM            SSM operation handle.
+ * @param   pSSM            The saved state handle.
  * @param   i8              Item to save.
  */
 VMMR3DECL(int) SSMR3PutS8(PSSMHANDLE pSSM, int8_t i8)
@@ -3367,7 +3484,7 @@ VMMR3DECL(int) SSMR3PutS8(PSSMHANDLE pSSM, int8_t i8)
  * Saves a 16-bit unsigned integer item to the current data unit.
  *
  * @returns VBox status.
- * @param   pSSM            SSM operation handle.
+ * @param   pSSM            The saved state handle.
  * @param   u16             Item to save.
  */
 VMMR3DECL(int) SSMR3PutU16(PSSMHANDLE pSSM, uint16_t u16)
@@ -3382,7 +3499,7 @@ VMMR3DECL(int) SSMR3PutU16(PSSMHANDLE pSSM, uint16_t u16)
  * Saves a 16-bit signed integer item to the current data unit.
  *
  * @returns VBox status.
- * @param   pSSM            SSM operation handle.
+ * @param   pSSM            The saved state handle.
  * @param   i16             Item to save.
  */
 VMMR3DECL(int) SSMR3PutS16(PSSMHANDLE pSSM, int16_t i16)
@@ -3397,7 +3514,7 @@ VMMR3DECL(int) SSMR3PutS16(PSSMHANDLE pSSM, int16_t i16)
  * Saves a 32-bit unsigned integer item to the current data unit.
  *
  * @returns VBox status.
- * @param   pSSM            SSM operation handle.
+ * @param   pSSM            The saved state handle.
  * @param   u32             Item to save.
  */
 VMMR3DECL(int) SSMR3PutU32(PSSMHANDLE pSSM, uint32_t u32)
@@ -3412,7 +3529,7 @@ VMMR3DECL(int) SSMR3PutU32(PSSMHANDLE pSSM, uint32_t u32)
  * Saves a 32-bit signed integer item to the current data unit.
  *
  * @returns VBox status.
- * @param   pSSM            SSM operation handle.
+ * @param   pSSM            The saved state handle.
  * @param   i32             Item to save.
  */
 VMMR3DECL(int) SSMR3PutS32(PSSMHANDLE pSSM, int32_t i32)
@@ -3427,7 +3544,7 @@ VMMR3DECL(int) SSMR3PutS32(PSSMHANDLE pSSM, int32_t i32)
  * Saves a 64-bit unsigned integer item to the current data unit.
  *
  * @returns VBox status.
- * @param   pSSM            SSM operation handle.
+ * @param   pSSM            The saved state handle.
  * @param   u64             Item to save.
  */
 VMMR3DECL(int) SSMR3PutU64(PSSMHANDLE pSSM, uint64_t u64)
@@ -3442,7 +3559,7 @@ VMMR3DECL(int) SSMR3PutU64(PSSMHANDLE pSSM, uint64_t u64)
  * Saves a 64-bit signed integer item to the current data unit.
  *
  * @returns VBox status.
- * @param   pSSM            SSM operation handle.
+ * @param   pSSM            The saved state handle.
  * @param   i64             Item to save.
  */
 VMMR3DECL(int) SSMR3PutS64(PSSMHANDLE pSSM, int64_t i64)
@@ -3457,7 +3574,7 @@ VMMR3DECL(int) SSMR3PutS64(PSSMHANDLE pSSM, int64_t i64)
  * Saves a 128-bit unsigned integer item to the current data unit.
  *
  * @returns VBox status.
- * @param   pSSM            SSM operation handle.
+ * @param   pSSM            The saved state handle.
  * @param   u128            Item to save.
  */
 VMMR3DECL(int) SSMR3PutU128(PSSMHANDLE pSSM, uint128_t u128)
@@ -3472,7 +3589,7 @@ VMMR3DECL(int) SSMR3PutU128(PSSMHANDLE pSSM, uint128_t u128)
  * Saves a 128-bit signed integer item to the current data unit.
  *
  * @returns VBox status.
- * @param   pSSM            SSM operation handle.
+ * @param   pSSM            The saved state handle.
  * @param   i128            Item to save.
  */
 VMMR3DECL(int) SSMR3PutS128(PSSMHANDLE pSSM, int128_t i128)
@@ -3487,7 +3604,7 @@ VMMR3DECL(int) SSMR3PutS128(PSSMHANDLE pSSM, int128_t i128)
  * Saves a VBox unsigned integer item to the current data unit.
  *
  * @returns VBox status.
- * @param   pSSM            SSM operation handle.
+ * @param   pSSM            The saved state handle.
  * @param   u               Item to save.
  */
 VMMR3DECL(int) SSMR3PutUInt(PSSMHANDLE pSSM, RTUINT u)
@@ -3502,7 +3619,7 @@ VMMR3DECL(int) SSMR3PutUInt(PSSMHANDLE pSSM, RTUINT u)
  * Saves a VBox signed integer item to the current data unit.
  *
  * @returns VBox status.
- * @param   pSSM            SSM operation handle.
+ * @param   pSSM            The saved state handle.
  * @param   i               Item to save.
  */
 VMMR3DECL(int) SSMR3PutSInt(PSSMHANDLE pSSM, RTINT i)
@@ -3517,7 +3634,7 @@ VMMR3DECL(int) SSMR3PutSInt(PSSMHANDLE pSSM, RTINT i)
  * Saves a GC natural unsigned integer item to the current data unit.
  *
  * @returns VBox status.
- * @param   pSSM            SSM operation handle.
+ * @param   pSSM            The saved state handle.
  * @param   u               Item to save.
  *
  * @deprecated Silly type, don't use it.
@@ -3534,7 +3651,7 @@ VMMR3DECL(int) SSMR3PutGCUInt(PSSMHANDLE pSSM, RTGCUINT u)
  * Saves a GC unsigned integer register item to the current data unit.
  *
  * @returns VBox status.
- * @param   pSSM            SSM operation handle.
+ * @param   pSSM            The saved state handle.
  * @param   u               Item to save.
  */
 VMMR3DECL(int) SSMR3PutGCUIntReg(PSSMHANDLE pSSM, RTGCUINTREG u)
@@ -3549,7 +3666,7 @@ VMMR3DECL(int) SSMR3PutGCUIntReg(PSSMHANDLE pSSM, RTGCUINTREG u)
  * Saves a 32 bits GC physical address item to the current data unit.
  *
  * @returns VBox status.
- * @param   pSSM            SSM operation handle.
+ * @param   pSSM            The saved state handle.
  * @param   GCPhys          The item to save
  */
 VMMR3DECL(int) SSMR3PutGCPhys32(PSSMHANDLE pSSM, RTGCPHYS32 GCPhys)
@@ -3564,7 +3681,7 @@ VMMR3DECL(int) SSMR3PutGCPhys32(PSSMHANDLE pSSM, RTGCPHYS32 GCPhys)
  * Saves a 64 bits GC physical address item to the current data unit.
  *
  * @returns VBox status.
- * @param   pSSM            SSM operation handle.
+ * @param   pSSM            The saved state handle.
  * @param   GCPhys          The item to save
  */
 VMMR3DECL(int) SSMR3PutGCPhys64(PSSMHANDLE pSSM, RTGCPHYS64 GCPhys)
@@ -3579,7 +3696,7 @@ VMMR3DECL(int) SSMR3PutGCPhys64(PSSMHANDLE pSSM, RTGCPHYS64 GCPhys)
  * Saves a GC physical address item to the current data unit.
  *
  * @returns VBox status.
- * @param   pSSM            SSM operation handle.
+ * @param   pSSM            The saved state handle.
  * @param   GCPhys          The item to save
  */
 VMMR3DECL(int) SSMR3PutGCPhys(PSSMHANDLE pSSM, RTGCPHYS GCPhys)
@@ -3594,7 +3711,7 @@ VMMR3DECL(int) SSMR3PutGCPhys(PSSMHANDLE pSSM, RTGCPHYS GCPhys)
  * Saves a GC virtual address item to the current data unit.
  *
  * @returns VBox status.
- * @param   pSSM            SSM operation handle.
+ * @param   pSSM            The saved state handle.
  * @param   GCPtr           The item to save.
  */
 VMMR3DECL(int) SSMR3PutGCPtr(PSSMHANDLE pSSM, RTGCPTR GCPtr)
@@ -3609,7 +3726,7 @@ VMMR3DECL(int) SSMR3PutGCPtr(PSSMHANDLE pSSM, RTGCPTR GCPtr)
  * Saves an RC virtual address item to the current data unit.
  *
  * @returns VBox status.
- * @param   pSSM            SSM operation handle.
+ * @param   pSSM            The saved state handle.
  * @param   RCPtr           The item to save.
  */
 VMMR3DECL(int) SSMR3PutRCPtr(PSSMHANDLE pSSM, RTRCPTR RCPtr)
@@ -3624,7 +3741,7 @@ VMMR3DECL(int) SSMR3PutRCPtr(PSSMHANDLE pSSM, RTRCPTR RCPtr)
  * Saves a GC virtual address (represented as an unsigned integer) item to the current data unit.
  *
  * @returns VBox status.
- * @param   pSSM            SSM operation handle.
+ * @param   pSSM            The saved state handle.
  * @param   GCPtr           The item to save.
  */
 VMMR3DECL(int) SSMR3PutGCUIntPtr(PSSMHANDLE pSSM, RTGCUINTPTR GCPtr)
@@ -3639,7 +3756,7 @@ VMMR3DECL(int) SSMR3PutGCUIntPtr(PSSMHANDLE pSSM, RTGCUINTPTR GCPtr)
  * Saves a I/O port address item to the current data unit.
  *
  * @returns VBox status.
- * @param   pSSM            SSM operation handle.
+ * @param   pSSM            The saved state handle.
  * @param   IOPort          The item to save.
  */
 VMMR3DECL(int) SSMR3PutIOPort(PSSMHANDLE pSSM, RTIOPORT IOPort)
@@ -3654,7 +3771,7 @@ VMMR3DECL(int) SSMR3PutIOPort(PSSMHANDLE pSSM, RTIOPORT IOPort)
  * Saves a selector item to the current data unit.
  *
  * @returns VBox status.
- * @param   pSSM            SSM operation handle.
+ * @param   pSSM            The saved state handle.
  * @param   Sel             The item to save.
  */
 VMMR3DECL(int) SSMR3PutSel(PSSMHANDLE pSSM, RTSEL Sel)
@@ -3669,7 +3786,7 @@ VMMR3DECL(int) SSMR3PutSel(PSSMHANDLE pSSM, RTSEL Sel)
  * Saves a memory item to the current data unit.
  *
  * @returns VBox status.
- * @param   pSSM            SSM operation handle.
+ * @param   pSSM            The saved state handle.
  * @param   pv              Item to save.
  * @param   cb              Size of the item.
  */
@@ -3685,7 +3802,7 @@ VMMR3DECL(int) SSMR3PutMem(PSSMHANDLE pSSM, const void *pv, size_t cb)
  * Saves a zero terminated string item to the current data unit.
  *
  * @returns VBox status.
- * @param   pSSM            SSM operation handle.
+ * @param   pSSM            The saved state handle.
  * @param   psz             Item to save.
  */
 VMMR3DECL(int) SSMR3PutStrZ(PSSMHANDLE pSSM, const char *psz)
@@ -4930,7 +5047,7 @@ VMMR3DECL(int) SSMR3LiveToRemote(PVM pVM, PFNVMPROGRESS pfnProgress, void *pvUse
  * Closes the decompressor of a data unit.
  *
  * @returns pSSM->rc.
- * @param   pSSM            SSM operation handle.
+ * @param   pSSM            The saved state handle.
  */
 static int ssmR3DataReadFinishV1(PSSMHANDLE pSSM)
 {
@@ -4984,7 +5101,7 @@ static DECLCALLBACK(int) ssmR3ReadInV1(void *pvSSM, void *pvBuf, size_t cbBuf, s
 /**
  * Internal read worker for reading data from a version 1 unit.
  *
- * @param   pSSM            SSM operation handle.
+ * @param   pSSM            The saved state handle.
  * @param   pvBuf           Where to store the read data.
  * @param   cbBuf           Number of bytes to read.
  */
@@ -5020,7 +5137,7 @@ static int ssmR3DataReadV1(PSSMHANDLE pSSM, void *pvBuf, size_t cbBuf)
  *
  * pSSM->rc will be set on error.
  *
- * @param   pSSM            SSM operation handle.
+ * @param   pSSM            The saved state handle.
  */
 static void ssmR3DataReadBeginV2(PSSMHANDLE pSSM)
 {
@@ -5042,7 +5159,7 @@ static void ssmR3DataReadBeginV2(PSSMHANDLE pSSM)
  * pSSM->rc will be set on error.
  *
  * @returns pSSM->rc.
- * @param   pSSM            SSM operation handle.
+ * @param   pSSM            The saved state handle.
  */
 static int ssmR3DataReadFinishV2(PSSMHANDLE pSSM)
 {
@@ -5374,7 +5491,7 @@ static int ssmR3DataReadRecHdrV2(PSSMHANDLE pSSM)
 /**
  * Buffer miss, do an unbuffered read.
  *
- * @param   pSSM            SSM operation handle.
+ * @param   pSSM            The saved state handle.
  * @param   pvBuf           Where to store the read data.
  * @param   cbBuf           Number of bytes to read.
  */
@@ -5491,7 +5608,7 @@ static int ssmR3DataReadUnbufferedV2(PSSMHANDLE pSSM, void *pvBuf, size_t cbBuf)
 /**
  * Buffer miss, do a buffered read.
  *
- * @param   pSSM            SSM operation handle.
+ * @param   pSSM            The saved state handle.
  * @param   pvBuf           Where to store the read data.
  * @param   cbBuf           Number of bytes to read.
  */
@@ -5598,7 +5715,7 @@ static int ssmR3DataReadBufferedV2(PSSMHANDLE pSSM, void *pvBuf, size_t cbBuf)
 /**
  * Inlined worker that handles format checks and buffered reads.
  *
- * @param   pSSM            SSM operation handle.
+ * @param   pSSM            The saved state handle.
  * @param   pvBuf           Where to store the read data.
  * @param   cbBuf           Number of bytes to read.
  */
@@ -5672,14 +5789,28 @@ VMMR3DECL(int) SSMR3GetStruct(PSSMHANDLE pSSM, void *pvStruct, PCSSMFIELD paFiel
                 break;
 
             case SSMFIELDTRANS_GCPTR:
-                AssertMsgReturn(pCur->cb == sizeof(RTGCPTR), ("%#x\n", pCur->cb), VERR_SSM_FIELD_INVALID_SIZE);
+                AssertMsgReturn(pCur->cb == sizeof(RTGCPTR), ("%#x (%s)\n", pCur->cb, pCur->pszName), VERR_SSM_FIELD_INVALID_SIZE);
                 rc = SSMR3GetGCPtr(pSSM, (PRTGCPTR)pbField);
                 break;
 
             case SSMFIELDTRANS_GCPHYS:
-                AssertMsgReturn(pCur->cb == sizeof(RTGCPHYS), ("%#x\n", pCur->cb), VERR_SSM_FIELD_INVALID_SIZE);
+                AssertMsgReturn(pCur->cb == sizeof(RTGCPHYS), ("%#x (%s)\n", pCur->cb, pCur->pszName), VERR_SSM_FIELD_INVALID_SIZE);
                 rc = SSMR3GetGCPhys(pSSM, (PRTGCPHYS)pbField);
                 break;
+
+            case SSMFIELDTRANS_RCPTR:
+                AssertMsgReturn(pCur->cb == sizeof(RTRCPTR), ("%#x (%s)\n", pCur->cb, pCur->pszName), VERR_SSM_FIELD_INVALID_SIZE);
+                rc = SSMR3GetRCPtr(pSSM, (PRTRCPTR)pbField);
+                break;
+
+            case SSMFIELDTRANS_RCPTR_ARRAY:
+            {
+                uint32_t const cEntries = pCur->cb / sizeof(RTRCPTR);
+                AssertMsgReturn(pCur->cb == cEntries * sizeof(RTRCPTR), ("%#x (%s)\n", pCur->cb, pCur->pszName), VERR_SSM_FIELD_INVALID_SIZE);
+                for (uint32_t i = 0; i < cEntries && RT_SUCCESS(rc); i++)
+                    rc = SSMR3GetRCPtr(pSSM, &((PRTRCPTR)pbField)[i]);
+                break;
+            }
 
             default:
                 AssertMsgFailedReturn(("%#x\n", pCur->pfnGetPutOrTransformer), VERR_SSM_FIELD_COMPLEX);
@@ -5693,6 +5824,46 @@ VMMR3DECL(int) SSMR3GetStruct(PSSMHANDLE pSSM, void *pvStruct, PCSSMFIELD paFiel
     if (RT_FAILURE(rc))
         return rc;
     AssertMsgReturn(u32Magic == SSMR3STRUCT_END, ("u32Magic=%#RX32\n", u32Magic), VERR_SSM_STRUCTURE_MAGIC);
+    return rc;
+}
+
+
+/**
+ * SSMR3GetStructEx helper that gets a HCPTR that is used as a NULL indicator.
+ *
+ * @returns VBox status code.
+ *
+ * @param   pSSM            The saved state handle.
+ * @param   ppv             Where to return the value (0/1).
+ * @param   fFlags          SSMSTRUCT_FLAGS_XXX.
+ */
+DECLINLINE(int) ssmR3GetHCPtrNI(PSSMHANDLE pSSM, void **ppv, uint32_t fFlags)
+{
+    int rc;
+    if (fFlags & SSMSTRUCT_FLAGS_DONT_IGNORE)
+    {
+        if (ssmR3GetHostBits(pSSM) == 64)
+        {
+            uint64_t u;
+            rc = ssmR3DataRead(pSSM, &u, sizeof(u));
+            if (RT_SUCCESS(rc))
+                *ppv = (void *)(u ? 1 : 0);
+        }
+        else
+        {
+            uint32_t u;
+            rc = ssmR3DataRead(pSSM, &u, sizeof(u));
+            if (RT_SUCCESS(rc))
+                *ppv = (void *)(u ? 1 : 0);
+        }
+    }
+    else
+    {
+        bool f;
+        rc = SSMR3GetBool(pSSM, &f);
+        if (RT_SUCCESS(rc))
+            *ppv = (void *)(f ? 1 : 0);
+    }
     return rc;
 }
 
@@ -5744,43 +5915,99 @@ VMMR3DECL(int) SSMR3GetStructEx(PSSMHANDLE pSSM, void *pvStruct, size_t cbStruct
          pCur->cb != UINT32_MAX && pCur->off != UINT32_MAX;
          pCur++)
     {
-        AssertMsgReturn(   pCur->cb             <= cbStruct
-                        && pCur->off + pCur->cb <= cbStruct
-                        && pCur->off + pCur->cb >  pCur->off,
-                        ("off=%#x cb=%#x cbStruct=%#x\n", pCur->cb, pCur->off, cbStruct),
+        uint32_t const offField = !SSMFIELDTRANS_IS_PADDING(pCur->pfnGetPutOrTransformer) || pCur->off != UINT32_MAX / 2
+                                ? pCur->off
+                                : off;
+        uint32_t const cbField  = !SSMFIELDTRANS_IS_PADDING(pCur->pfnGetPutOrTransformer)
+                                ? pCur->cb
+                                : RT_HIWORD(pCur->cb);
+        AssertMsgReturn(   cbField            <= cbStruct
+                        && offField + cbField <= cbStruct
+                        && offField + cbField >= offField,
+                        ("off=%#x cb=%#x cbStruct=%#x (%s)\n", cbField, offField, cbStruct, pCur->pszName),
                         VERR_SSM_FIELD_OUT_OF_BOUNDS);
         AssertMsgReturn(    !(fFlags & SSMSTRUCT_FLAGS_FULL_STRUCT)
-                        || off == pCur->off,
-                        ("off=%#x pCur->off=%#x\n", off, pCur->off),
+                        || off == offField,
+                        ("off=%#x offField=%#x (%s)\n", off, offField, pCur->pszName),
                         VERR_SSM_FIELD_NOT_CONSECUTIVE);
 
-        uint8_t *pbField = (uint8_t *)pvStruct + pCur->off;
+        uint8_t       *pbField  = (uint8_t *)pvStruct + offField;
         switch ((uintptr_t)pCur->pfnGetPutOrTransformer)
         {
             case SSMFIELDTRANS_NO_TRANSFORMATION:
-                rc = ssmR3DataRead(pSSM, pbField, pCur->cb);
+                rc = ssmR3DataRead(pSSM, pbField, cbField);
                 break;
 
             case SSMFIELDTRANS_GCPTR:
-                AssertMsgReturn(pCur->cb == sizeof(RTGCPTR), ("%#x\n", pCur->cb), VERR_SSM_FIELD_INVALID_SIZE);
+                AssertMsgReturn(cbField == sizeof(RTGCPTR), ("%#x (%s)\n", cbField, pCur->pszName), VERR_SSM_FIELD_INVALID_SIZE);
                 rc = SSMR3GetGCPtr(pSSM, (PRTGCPTR)pbField);
                 break;
 
             case SSMFIELDTRANS_GCPHYS:
-                AssertMsgReturn(pCur->cb == sizeof(RTGCPHYS), ("%#x\n", pCur->cb), VERR_SSM_FIELD_INVALID_SIZE);
+                AssertMsgReturn(cbField == sizeof(RTGCPHYS), ("%#x (%s)\n", cbField, pCur->pszName), VERR_SSM_FIELD_INVALID_SIZE);
                 rc = SSMR3GetGCPhys(pSSM, (PRTGCPHYS)pbField);
                 break;
 
+            case SSMFIELDTRANS_RCPTR:
+                AssertMsgReturn(cbField == sizeof(RTRCPTR), ("%#x (%s)\n", cbField, pCur->pszName), VERR_SSM_FIELD_INVALID_SIZE);
+                rc = SSMR3GetRCPtr(pSSM, (PRTRCPTR)pbField);
+                break;
+
+            case SSMFIELDTRANS_RCPTR_ARRAY:
+            {
+                uint32_t const cEntries = cbField / sizeof(RTRCPTR);
+                AssertMsgReturn(cbField == cEntries * sizeof(RTRCPTR), ("%#x (%s)\n", cbField, pCur->pszName), VERR_SSM_FIELD_INVALID_SIZE);
+                for (uint32_t i = 0; i < cEntries && RT_SUCCESS(rc); i++)
+                    rc = SSMR3GetRCPtr(pSSM, &((PRTRCPTR)pbField)[i]);
+                break;
+            }
+
+            case SSMFIELDTRANS_HCPTR_NI:
+                AssertMsgReturn(cbField == sizeof(void *), ("%#x (%s)\n", cbField, pCur->pszName), VERR_SSM_FIELD_INVALID_SIZE);
+                rc = ssmR3GetHCPtrNI(pSSM, (void **)pbField, fFlags);
+                break;
+
+            case SSMFIELDTRANS_HCPTR_NI_ARRAY:
+            {
+                uint32_t const cEntries = cbField / sizeof(void *);
+                AssertMsgReturn(cbField == cEntries * sizeof(void *), ("%#x (%s)\n", cbField, pCur->pszName), VERR_SSM_FIELD_INVALID_SIZE);
+                for (uint32_t i = 0; i < cEntries && RT_SUCCESS(rc); i++)
+                    rc = ssmR3GetHCPtrNI(pSSM, &((void **)pbField)[i], fFlags);
+                break;
+            }
+
             case SSMFIELDTRANS_HCPTR:
-                AssertMsgReturn(pCur->cb == sizeof(void *), ("%#x\n", pCur->cb), VERR_SSM_FIELD_INVALID_SIZE);
+                AssertMsgReturn(cbField == sizeof(void *), ("%#x (%s)\n", cbField, pCur->pszName), VERR_SSM_FIELD_INVALID_SIZE);
                 if (fFlags & SSMSTRUCT_FLAGS_DONT_IGNORE)
-                    rc = SSMR3Skip(pSSM, pSSM->u.Read.cHostBits / 8);
+                    rc = SSMR3Skip(pSSM, ssmR3GetHostBits(pSSM) / 8);
                 break;
 
             case SSMFIELDTRANS_IGNORE:
                 if (fFlags & SSMSTRUCT_FLAGS_DONT_IGNORE)
-                    rc = SSMR3Skip(pSSM, pCur->cb);
+                    rc = SSMR3Skip(pSSM, cbField);
                 break;
+
+            case SSMFIELDTRANS_PAD_HC:
+            case SSMFIELDTRANS_PAD_HC32:
+            case SSMFIELDTRANS_PAD_HC64:
+            case SSMFIELDTRANS_PAD_HC_AUTO:
+            {
+                uint32_t cb32    = RT_BYTE1(pCur->cb);
+                uint32_t cb64    = RT_BYTE2(pCur->cb);
+                uint32_t cbCtx   = HC_ARCH_BITS           == 64 ? cb64 : cb32;
+                uint32_t cbSaved = ssmR3GetHostBits(pSSM) == 64 ? cb64 : cb32;
+                AssertMsgReturn(    cbField == cbCtx
+                                &&  (   (   pCur->off == UINT32_MAX / 2
+                                         && (   cbField == 0
+                                             || (uintptr_t)pCur->pfnGetPutOrTransformer == SSMFIELDTRANS_PAD_HC_AUTO))
+                                     || (pCur->off != UINT32_MAX / 2 && cbField != 0)),
+                                ("cbField=%#x cb32=%#x cb64=%#x HC_ARCH_BITS=%u cbCtx=%#x cbSaved=%#x off=%#x\n",
+                                 cbField, cb32, cb64, HC_ARCH_BITS, cbCtx, cbSaved, pCur->off),
+                                VERR_SSM_FIELD_INVALID_PADDING_SIZE);
+                if (fFlags & SSMSTRUCT_FLAGS_DONT_IGNORE)
+                    rc = SSMR3Skip(pSSM, cbSaved);
+                break;
+            }
 
             default:
                 AssertPtrReturn(pCur->pfnGetPutOrTransformer, VERR_SSM_FIELD_INVALID_CALLBACK);
@@ -5790,7 +6017,7 @@ VMMR3DECL(int) SSMR3GetStructEx(PSSMHANDLE pSSM, void *pvStruct, size_t cbStruct
         if (RT_FAILURE(rc))
             return rc;
 
-        off = pCur->off + pCur->cb;
+        off = offField + cbField;
     }
     AssertMsgReturn(    !(fFlags & SSMSTRUCT_FLAGS_FULL_STRUCT)
                     || off == cbStruct,
@@ -5816,7 +6043,7 @@ VMMR3DECL(int) SSMR3GetStructEx(PSSMHANDLE pSSM, void *pvStruct, size_t cbStruct
  * Loads a boolean item from the current data unit.
  *
  * @returns VBox status.
- * @param   pSSM            SSM operation handle.
+ * @param   pSSM            The saved state handle.
  * @param   pfBool          Where to store the item.
  */
 VMMR3DECL(int) SSMR3GetBool(PSSMHANDLE pSSM, bool *pfBool)
@@ -5838,7 +6065,7 @@ VMMR3DECL(int) SSMR3GetBool(PSSMHANDLE pSSM, bool *pfBool)
  * Loads a 8-bit unsigned integer item from the current data unit.
  *
  * @returns VBox status.
- * @param   pSSM            SSM operation handle.
+ * @param   pSSM            The saved state handle.
  * @param   pu8             Where to store the item.
  */
 VMMR3DECL(int) SSMR3GetU8(PSSMHANDLE pSSM, uint8_t *pu8)
@@ -5853,7 +6080,7 @@ VMMR3DECL(int) SSMR3GetU8(PSSMHANDLE pSSM, uint8_t *pu8)
  * Loads a 8-bit signed integer item from the current data unit.
  *
  * @returns VBox status.
- * @param   pSSM            SSM operation handle.
+ * @param   pSSM            The saved state handle.
  * @param   pi8             Where to store the item.
  */
 VMMR3DECL(int) SSMR3GetS8(PSSMHANDLE pSSM, int8_t *pi8)
@@ -5868,7 +6095,7 @@ VMMR3DECL(int) SSMR3GetS8(PSSMHANDLE pSSM, int8_t *pi8)
  * Loads a 16-bit unsigned integer item from the current data unit.
  *
  * @returns VBox status.
- * @param   pSSM            SSM operation handle.
+ * @param   pSSM            The saved state handle.
  * @param   pu16            Where to store the item.
  */
 VMMR3DECL(int) SSMR3GetU16(PSSMHANDLE pSSM, uint16_t *pu16)
@@ -5883,7 +6110,7 @@ VMMR3DECL(int) SSMR3GetU16(PSSMHANDLE pSSM, uint16_t *pu16)
  * Loads a 16-bit signed integer item from the current data unit.
  *
  * @returns VBox status.
- * @param   pSSM            SSM operation handle.
+ * @param   pSSM            The saved state handle.
  * @param   pi16            Where to store the item.
  */
 VMMR3DECL(int) SSMR3GetS16(PSSMHANDLE pSSM, int16_t *pi16)
@@ -5898,7 +6125,7 @@ VMMR3DECL(int) SSMR3GetS16(PSSMHANDLE pSSM, int16_t *pi16)
  * Loads a 32-bit unsigned integer item from the current data unit.
  *
  * @returns VBox status.
- * @param   pSSM            SSM operation handle.
+ * @param   pSSM            The saved state handle.
  * @param   pu32            Where to store the item.
  */
 VMMR3DECL(int) SSMR3GetU32(PSSMHANDLE pSSM, uint32_t *pu32)
@@ -5913,7 +6140,7 @@ VMMR3DECL(int) SSMR3GetU32(PSSMHANDLE pSSM, uint32_t *pu32)
  * Loads a 32-bit signed integer item from the current data unit.
  *
  * @returns VBox status.
- * @param   pSSM            SSM operation handle.
+ * @param   pSSM            The saved state handle.
  * @param   pi32            Where to store the item.
  */
 VMMR3DECL(int) SSMR3GetS32(PSSMHANDLE pSSM, int32_t *pi32)
@@ -5928,7 +6155,7 @@ VMMR3DECL(int) SSMR3GetS32(PSSMHANDLE pSSM, int32_t *pi32)
  * Loads a 64-bit unsigned integer item from the current data unit.
  *
  * @returns VBox status.
- * @param   pSSM            SSM operation handle.
+ * @param   pSSM            The saved state handle.
  * @param   pu64            Where to store the item.
  */
 VMMR3DECL(int) SSMR3GetU64(PSSMHANDLE pSSM, uint64_t *pu64)
@@ -5943,7 +6170,7 @@ VMMR3DECL(int) SSMR3GetU64(PSSMHANDLE pSSM, uint64_t *pu64)
  * Loads a 64-bit signed integer item from the current data unit.
  *
  * @returns VBox status.
- * @param   pSSM            SSM operation handle.
+ * @param   pSSM            The saved state handle.
  * @param   pi64            Where to store the item.
  */
 VMMR3DECL(int) SSMR3GetS64(PSSMHANDLE pSSM, int64_t *pi64)
@@ -5958,7 +6185,7 @@ VMMR3DECL(int) SSMR3GetS64(PSSMHANDLE pSSM, int64_t *pi64)
  * Loads a 128-bit unsigned integer item from the current data unit.
  *
  * @returns VBox status.
- * @param   pSSM            SSM operation handle.
+ * @param   pSSM            The saved state handle.
  * @param   pu128           Where to store the item.
  */
 VMMR3DECL(int) SSMR3GetU128(PSSMHANDLE pSSM, uint128_t *pu128)
@@ -5973,7 +6200,7 @@ VMMR3DECL(int) SSMR3GetU128(PSSMHANDLE pSSM, uint128_t *pu128)
  * Loads a 128-bit signed integer item from the current data unit.
  *
  * @returns VBox status.
- * @param   pSSM            SSM operation handle.
+ * @param   pSSM            The saved state handle.
  * @param   pi128           Where to store the item.
  */
 VMMR3DECL(int) SSMR3GetS128(PSSMHANDLE pSSM, int128_t *pi128)
@@ -5988,7 +6215,7 @@ VMMR3DECL(int) SSMR3GetS128(PSSMHANDLE pSSM, int128_t *pi128)
  * Loads a VBox unsigned integer item from the current data unit.
  *
  * @returns VBox status.
- * @param   pSSM            SSM operation handle.
+ * @param   pSSM            The saved state handle.
  * @param   pu              Where to store the integer.
  */
 VMMR3DECL(int) SSMR3GetUInt(PSSMHANDLE pSSM, PRTUINT pu)
@@ -6003,7 +6230,7 @@ VMMR3DECL(int) SSMR3GetUInt(PSSMHANDLE pSSM, PRTUINT pu)
  * Loads a VBox signed integer item from the current data unit.
  *
  * @returns VBox status.
- * @param   pSSM            SSM operation handle.
+ * @param   pSSM            The saved state handle.
  * @param   pi              Where to store the integer.
  */
 VMMR3DECL(int) SSMR3GetSInt(PSSMHANDLE pSSM, PRTINT pi)
@@ -6018,7 +6245,7 @@ VMMR3DECL(int) SSMR3GetSInt(PSSMHANDLE pSSM, PRTINT pi)
  * Loads a GC natural unsigned integer item from the current data unit.
  *
  * @returns VBox status.
- * @param   pSSM            SSM operation handle.
+ * @param   pSSM            The saved state handle.
  * @param   pu              Where to store the integer.
  *
  * @deprecated Silly type with an incorrect size, don't use it.
@@ -6034,7 +6261,7 @@ VMMR3DECL(int) SSMR3GetGCUInt(PSSMHANDLE pSSM, PRTGCUINT pu)
  * Loads a GC unsigned integer register item from the current data unit.
  *
  * @returns VBox status.
- * @param   pSSM            SSM operation handle.
+ * @param   pSSM            The saved state handle.
  * @param   pu              Where to store the integer.
  */
 VMMR3DECL(int) SSMR3GetGCUIntReg(PSSMHANDLE pSSM, PRTGCUINTREG pu)
@@ -6048,7 +6275,7 @@ VMMR3DECL(int) SSMR3GetGCUIntReg(PSSMHANDLE pSSM, PRTGCUINTREG pu)
  * Loads a 32 bits GC physical address item from the current data unit.
  *
  * @returns VBox status.
- * @param   pSSM            SSM operation handle.
+ * @param   pSSM            The saved state handle.
  * @param   pGCPhys         Where to store the GC physical address.
  */
 VMMR3DECL(int) SSMR3GetGCPhys32(PSSMHANDLE pSSM, PRTGCPHYS32 pGCPhys)
@@ -6063,7 +6290,7 @@ VMMR3DECL(int) SSMR3GetGCPhys32(PSSMHANDLE pSSM, PRTGCPHYS32 pGCPhys)
  * Loads a 64 bits GC physical address item from the current data unit.
  *
  * @returns VBox status.
- * @param   pSSM            SSM operation handle.
+ * @param   pSSM            The saved state handle.
  * @param   pGCPhys         Where to store the GC physical address.
  */
 VMMR3DECL(int) SSMR3GetGCPhys64(PSSMHANDLE pSSM, PRTGCPHYS64 pGCPhys)
@@ -6078,7 +6305,7 @@ VMMR3DECL(int) SSMR3GetGCPhys64(PSSMHANDLE pSSM, PRTGCPHYS64 pGCPhys)
  * Loads a GC physical address item from the current data unit.
  *
  * @returns VBox status.
- * @param   pSSM            SSM operation handle.
+ * @param   pSSM            The saved state handle.
  * @param   pGCPhys         Where to store the GC physical address.
  */
 VMMR3DECL(int) SSMR3GetGCPhys(PSSMHANDLE pSSM, PRTGCPHYS pGCPhys)
@@ -6128,7 +6355,7 @@ VMMR3DECL(int) SSMR3GetGCPhys(PSSMHANDLE pSSM, PRTGCPHYS pGCPhys)
  * Put functions are not affected.
  *
  * @returns VBox status.
- * @param   pSSM            SSM operation handle.
+ * @param   pSSM            The saved state handle.
  * @param   cbGCPtr         Size of RTGCPTR
  *
  * @remarks This interface only works with saved state version 1.1, if the
@@ -6156,7 +6383,7 @@ VMMR3_INT_DECL(int) SSMR3SetGCPtrSize(PSSMHANDLE pSSM, unsigned cbGCPtr)
  * Loads a GC virtual address item from the current data unit.
  *
  * @returns VBox status.
- * @param   pSSM            SSM operation handle.
+ * @param   pSSM            The saved state handle.
  * @param   pGCPtr          Where to store the GC virtual address.
  */
 VMMR3DECL(int) SSMR3GetGCPtr(PSSMHANDLE pSSM, PRTGCPTR pGCPtr)
@@ -6198,7 +6425,7 @@ VMMR3DECL(int) SSMR3GetGCPtr(PSSMHANDLE pSSM, PRTGCPTR pGCPtr)
  * Loads a GC virtual address (represented as unsigned integer) item from the current data unit.
  *
  * @returns VBox status.
- * @param   pSSM            SSM operation handle.
+ * @param   pSSM            The saved state handle.
  * @param   pGCPtr          Where to store the GC virtual address.
  */
 VMMR3DECL(int) SSMR3GetGCUIntPtr(PSSMHANDLE pSSM, PRTGCUINTPTR pGCPtr)
@@ -6212,7 +6439,7 @@ VMMR3DECL(int) SSMR3GetGCUIntPtr(PSSMHANDLE pSSM, PRTGCUINTPTR pGCPtr)
  * Loads an RC virtual address item from the current data unit.
  *
  * @returns VBox status.
- * @param   pSSM            SSM operation handle.
+ * @param   pSSM            The saved state handle.
  * @param   pRCPtr          Where to store the RC virtual address.
  */
 VMMR3DECL(int) SSMR3GetRCPtr(PSSMHANDLE pSSM, PRTRCPTR pRCPtr)
@@ -6227,7 +6454,7 @@ VMMR3DECL(int) SSMR3GetRCPtr(PSSMHANDLE pSSM, PRTRCPTR pRCPtr)
  * Loads a I/O port address item from the current data unit.
  *
  * @returns VBox status.
- * @param   pSSM            SSM operation handle.
+ * @param   pSSM            The saved state handle.
  * @param   pIOPort         Where to store the I/O port address.
  */
 VMMR3DECL(int) SSMR3GetIOPort(PSSMHANDLE pSSM, PRTIOPORT pIOPort)
@@ -6242,7 +6469,7 @@ VMMR3DECL(int) SSMR3GetIOPort(PSSMHANDLE pSSM, PRTIOPORT pIOPort)
  * Loads a selector item from the current data unit.
  *
  * @returns VBox status.
- * @param   pSSM            SSM operation handle.
+ * @param   pSSM            The saved state handle.
  * @param   pSel            Where to store the selector.
  */
 VMMR3DECL(int) SSMR3GetSel(PSSMHANDLE pSSM, PRTSEL pSel)
@@ -6257,7 +6484,7 @@ VMMR3DECL(int) SSMR3GetSel(PSSMHANDLE pSSM, PRTSEL pSel)
  * Loads a memory item from the current data unit.
  *
  * @returns VBox status.
- * @param   pSSM            SSM operation handle.
+ * @param   pSSM            The saved state handle.
  * @param   pv              Where to store the item.
  * @param   cb              Size of the item.
  */
@@ -6273,7 +6500,7 @@ VMMR3DECL(int) SSMR3GetMem(PSSMHANDLE pSSM, void *pv, size_t cb)
  * Loads a string item from the current data unit.
  *
  * @returns VBox status.
- * @param   pSSM            SSM operation handle.
+ * @param   pSSM            The saved state handle.
  * @param   psz             Where to store the item.
  * @param   cbMax           Max size of the item (including '\\0').
  */
@@ -6287,7 +6514,7 @@ VMMR3DECL(int) SSMR3GetStrZ(PSSMHANDLE pSSM, char *psz, size_t cbMax)
  * Loads a string item from the current data unit.
  *
  * @returns VBox status.
- * @param   pSSM            SSM operation handle.
+ * @param   pSSM            The saved state handle.
  * @param   psz             Where to store the item.
  * @param   cbMax           Max size of the item (including '\\0').
  * @param   pcbStr          The length of the loaded string excluding the '\\0'. (optional)
@@ -7961,7 +8188,7 @@ VMMR3DECL(int) SSMR3Seek(PSSMHANDLE pSSM, const char *pszUnit, uint32_t iInstanc
  * been made.
  *
  * @returns SSMAFTER enum value.
- * @param   pSSM            SSM operation handle.
+ * @param   pSSM            The saved state handle.
  */
 VMMR3DECL(int) SSMR3HandleGetStatus(PSSMHANDLE pSSM)
 {
@@ -7978,7 +8205,7 @@ VMMR3DECL(int) SSMR3HandleGetStatus(PSSMHANDLE pSSM)
  * to SSM.
  *
  * @returns VBox status code of the handle, or VERR_INVALID_PARAMETER.
- * @param   pSSM            SSM operation handle.
+ * @param   pSSM            The saved state handle.
  * @param   iStatus         Failure status code. This MUST be a VERR_*.
  */
 VMMR3DECL(int) SSMR3HandleSetStatus(PSSMHANDLE pSSM, int iStatus)
@@ -8001,7 +8228,7 @@ VMMR3DECL(int) SSMR3HandleSetStatus(PSSMHANDLE pSSM, int iStatus)
  * Get what to do after this operation.
  *
  * @returns SSMAFTER enum value.
- * @param   pSSM            SSM operation handle.
+ * @param   pSSM            The saved state handle.
  */
 VMMR3DECL(SSMAFTER) SSMR3HandleGetAfter(PSSMHANDLE pSSM)
 {
@@ -8014,12 +8241,25 @@ VMMR3DECL(SSMAFTER) SSMR3HandleGetAfter(PSSMHANDLE pSSM)
  * Checks if it is a live save operation or not.
  *
  * @returns True if it is, false if it isn't.
- * @param   pSSM            SSM operation handle.
+ * @param   pSSM            The saved state handle.
  */
 VMMR3DECL(bool) SSMR3HandleIsLiveSave(PSSMHANDLE pSSM)
 {
     SSM_ASSERT_VALID_HANDLE(pSSM);
     return pSSM->fLiveSave;
+}
+
+
+/**
+ * Gets the host bit count of a saved state.
+ *
+ * @returns 32 or 64. If pSSM is invalid, 0 is returned.
+ * @param   pSSM            The saved state handle.
+ */
+VMMR3DECL(uint32_t) SSMR3HandleHostBits(PSSMHANDLE pSSM)
+{
+    SSM_ASSERT_VALID_HANDLE(pSSM);
+    return ssmR3GetHostBits(pSSM);
 }
 
 
