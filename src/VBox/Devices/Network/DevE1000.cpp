@@ -47,6 +47,7 @@
 
 #include <iprt/crc32.h>
 #include <iprt/ctype.h>
+#include <iprt/net.h>
 #include <iprt/semaphore.h>
 #include <iprt/string.h>
 #include <VBox/pdmdev.h>
@@ -1800,6 +1801,48 @@ DECLINLINE(bool) e1kIsMulticast(const void *pvBuf)
 }
 
 /**
+ * Set IXSM, IPCS and TCPCS flags according to the packet type.
+ *
+ * @remarks We emulate checksum offloading for major packets types only.
+ *
+ * @returns VBox status code.
+ * @param   pState          The device state structure.
+ * @param   pFrame          The available data.
+ * @param   cb              Number of bytes available in the buffer.
+ * @param   status          Bit fields containing status info.
+ */
+static int e1kRxChecksumOffload(E1KSTATE* pState, const uint8_t *pFrame, size_t cb, E1KRXDST *pStatus)
+{
+    uint16_t uEtherType = ntohs(*(uint16_t*)(pFrame + 12));
+    PRTNETIPV4 pIpHdr4;
+
+    E1kLog2(("%s e1kRxChecksumOffload: EtherType=%x\n", INSTANCE(pState), uEtherType));
+
+    //pStatus->fIPE   = false;
+    //pStatus->fTCPE  = false;
+    switch (uEtherType)
+    {
+        case 0x800: /* IPv4 */
+            pStatus->fIXSM  = false;
+            pStatus->fIPCS  = true;
+            pIpHdr4 = (PRTNETIPV4)(pFrame + 14);
+            /* TCP/UDP checksum offloading works with TCP and UDP only */
+            pStatus->fTCPCS = pIpHdr4->ip_p == 6 || pIpHdr4->ip_p == 17;
+            break;
+        case 0x86DD: /* IPv6 */
+            pStatus->fIXSM = false;
+            pStatus->fIPCS  = false;
+            pStatus->fTCPCS = true;
+            break;
+        default: /* ARP, VLAN, etc. */
+            pStatus->fIXSM = true;
+            break;
+    }
+
+    return VINF_SUCCESS;
+}
+
+/**
  * Pad and store received packet.
  *
  * @remarks Make sure that the packet appears to upper layer as one coming
@@ -1847,6 +1890,7 @@ static int e1kHandleRxPacket(E1KSTATE* pState, const void *pvBuf, size_t cb, E1K
     }
     /* Compute checksum of complete packet */
     uint16_t checksum = e1kCSum16(rxPacket + GET_BITS(RXCSUM, PCSS), cb);
+    e1kRxChecksumOffload(pState, rxPacket, cb, &status);
 
     /* Update stats */
     E1K_INC_CNT32(GPRC);
@@ -1889,11 +1933,7 @@ static int e1kHandleRxPacket(E1KSTATE* pState, const void *pvBuf, size_t cb, E1K
             desc.status        = status;
             desc.u16Checksum   = checksum;
             desc.status.fDD    = true;
-            //desc.fIXSM       = true;
-            desc.status.fIPCS  = true;
-            desc.status.fTCPCS = true;
-            //desc.status.fIPE   = false;
-            //desc.status.fTCPE  = false;
+
             /*
              * We need to leave Rx critical section here or we risk deadlocking
              * with EMT in e1kRegWriteRDT when the write is to an unallocated
@@ -2214,7 +2254,12 @@ static int e1kRegReadICR(E1KSTATE* pState, uint32_t offset, uint32_t index, uint
     {
         if (value)
         {
-            if (IMS)
+            /*
+             * Not clearing ICR causes QNX to hang as it reads ICR in a loop
+             * with disabled interrupts.
+             */
+            //if (IMS)
+            if (1)
             {
                 /*
                  * Interrupts were enabled -- we are supposedly at the very
