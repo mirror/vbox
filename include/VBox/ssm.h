@@ -286,7 +286,7 @@ typedef struct SSMFIELD
 # define SSMFIELD_ENTRY_PAD_MSC32_AUTO(cb) \
     { \
         (PFNSSMFIELDGETPUT)(uintptr_t)(SSMFIELDTRANS_PAD_MSC32_AUTO), \
-        UINT32_MAX / 2, ((cb) << 16 | (cb), "<msc32-padding>" \
+        UINT32_MAX / 2, ((cb) << 16) | (cb), "<msc32-padding>" \
     }
 #else
 # define SSMFIELD_ENTRY_PAD_MSC32_AUTO(cb) \
