@@ -517,6 +517,7 @@ DECLCALLBACK(int) patmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32
 #if 0
         rc = SSMR3GetMem(pSSM, &patmInfo, sizeof(patmInfo));
 #else
+        RT_ZERO(patmInfo);
         rc = SSMR3GetStructEx(pSSM, &patmInfo, sizeof(patmInfo), SSMSTRUCT_FLAGS_MEM_BAND_AID, &g_aPatmFields[0], NULL);
 #endif
         AssertRCReturn(rc, rc);
@@ -675,6 +676,7 @@ DECLCALLBACK(int) patmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32
 #if 0
         rc = SSMR3GetMem(pSSM, pVM->patm.s.pGCStateHC, sizeof(PATMGCSTATE));
 #else
+        RT_BZERO(pVM->patm.s.pGCStateHC, sizeof(PATMGCSTATE));
         rc = SSMR3GetStructEx(pSSM, pVM->patm.s.pGCStateHC, sizeof(PATMGCSTATE), SSMSTRUCT_FLAGS_MEM_BAND_AID, &g_aPatmGCStateFields[0], NULL);
 #endif
         AssertRCReturn(rc, rc);
@@ -768,6 +770,7 @@ DECLCALLBACK(int) patmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32
 #if 0  /** @todo LiveMigration */
         rc = SSMR3GetMem(pSSM, &patch, sizeof(patch));
 #else
+        RT_ZERO(patch);
         rc = SSMR3GetStructEx(pSSM, &patch, sizeof(patch), SSMSTRUCT_FLAGS_MEM_BAND_AID, &g_aPatmPatchRecFields[0], NULL);
 #endif
         AssertRCReturn(rc, rc);
@@ -821,6 +824,7 @@ DECLCALLBACK(int) patmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32
 #if 1  /** @todo LiveMigration */
             rc = SSMR3GetMem(pSSM, &rec, sizeof(rec));
 #else
+            RT_ZERO(rec);
             rc = SSMR3GetStructEx(pSSM, &rec, sizeof(rec), SSMSTRUCT_FLAGS_MEM_BAND_AID, &g_aPatmRelocRec[0], NULL);
 #endif
             AssertRCReturn(rc, rc);
@@ -870,6 +874,7 @@ DECLCALLBACK(int) patmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32
 #if 1  /** @todo LiveMigration */
                 rc = SSMR3GetMem(pSSM, &rec, sizeof(rec));
 #else
+                RT_ZERO(rec);
                 rc = SSMR3GetStructEx(pSSM, &rec, sizeof(rec), SSMSTRUCT_FLAGS_MEM_BAND_AID, &g_aPatmRecPatchToGuest[0], NULL);
 #endif
 
