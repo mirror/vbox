@@ -781,8 +781,8 @@
       </desc>
     </const>
   </enum>
- 
- 
+
+
   <enum
     name="HWVirtExPropertyType"
     uuid="ce81dfdd-d2b8-4a90-bbea-40ee8b7ffcee"
@@ -819,7 +819,7 @@
       </desc>
     </const>
   </enum>
-  
+
   <enum
     name="SessionType"
     uuid="A13C02CB-0C2C-421E-8317-AC0E8AAA153A"
