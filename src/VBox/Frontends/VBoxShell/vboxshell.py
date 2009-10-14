@@ -467,12 +467,16 @@ def infoCmd(ctx,args):
     bios = mach.BIOSSettings
     print "  ACPI [BIOSSettings.ACPIEnabled]: %s" %(asState(bios.ACPIEnabled))
     print "  APIC [BIOSSettings.IOAPICEnabled]: %s" %(asState(bios.IOAPICEnabled))
-    print "  PAE [PAEEnabled]: %s" %(asState(int(mach.PAEEnabled)))
-    print "  Hardware virtualization [HWVirtExEnabled]: " + asState(mach.HWVirtExEnabled)
-    print "  VPID support [HWVirtExVPIDEnabled]: " + asState(mach.HWVirtExVPIDEnabled)
+    hwVirtEnabled = mach.getHWVirtExProperty(ctx['global'].constants.HWVirtExPropertyType_Enabled)
+    print "  Hardware virtualization [mach.setHWVirtExProperty(ctx['global'].constants.HWVirtExPropertyType_Enabled,value)]: " + asState(hwVirtEnabled)
+    hwVirtVPID = mach.getHWVirtExProperty(ctx['global'].constants.HWVirtExPropertyType_VPID)
+    print "  VPID support [mach.setHWVirtExProperty(ctx['global'].constants.HWVirtExPropertyType_VPID,value)]: " + asState(hwVirtVPID)
+    hwVirtNestedPaging = mach.getHWVirtExProperty(ctx['global'].constants.HWVirtExPropertyType_NestedPaging)
+    print "  Nested paging [mach.setHWVirtExProperty(ctx['global'].constants.HWVirtExPropertyType_NestedPaging,value)]: " + asState(hwVirtNestedPaging)
+
     print "  Hardware 3d acceleration[accelerate3DEnabled]: " + asState(mach.accelerate3DEnabled)
     print "  Hardware 2d video acceleration[accelerate2DVideoEnabled]: " + asState(mach.accelerate2DVideoEnabled)
-    print "  Nested paging [HWVirtExNestedPagingEnabled]: " + asState(mach.HWVirtExNestedPagingEnabled)
+
     print "  Last changed [n/a]: " + time.asctime(time.localtime(long(mach.lastStateChange)/1000))
     print "  VRDP server [VRDPServer.enabled]: %s" %(asState(mach.VRDPServer.enabled))
 
@@ -492,24 +496,34 @@ def infoCmd(ctx,args):
         m = a.medium
         if a.type == ctx['global'].constants.DeviceType_HardDisk:
             print "   HDD:"
-            print "    id: %s" %(m.id)
-            print "    location: %s" %(m.location)
-            print "    name: %s"  %(m.name)
-            print "    format: %s"  %(m.format)
+            print "    Id: %s" %(m.id)
+            print "    Location: %s" %(m.location)
+            print "    Name: %s"  %(m.name)
+            print "    Format: %s"  %(m.format)
 
         if a.type == ctx['global'].constants.DeviceType_DVD:
             print "   DVD:"
             if m:
-                print "    Image at: %s" %(m.location)
-                print "    Size: %s" %(m.size)
                 print "    Id: %s" %(m.id)
+                print "    Name: %s" %(m.name)
+                if m.hostDrive:
+                    print "    Host DVD %s" %(m.location)
+                    if a.passthrough:
+                         print "    [passthrough mode]"
+                else:
+                    print "    Virtual image at %s" %(m.location)
+                    print "    Size: %s" %(m.size)
 
         if a.type == ctx['global'].constants.DeviceType_Floppy:
             print "   Floppy:"
             if m:
+                print "    Id: %s" %(m.id)
                 print "    Name: %s" %(m.name)
-                print "    Image at: %s" %(m.location)
-                print "    Size: %s" %(m.size)
+                if m.hostDrive:
+                    print "    Host floppy %s" %(m.location)
+                else:
+                    print "    Virtual image at %s" %(m.location)
+                    print "    Size: %s" %(m.size)
 
     return 0
 
