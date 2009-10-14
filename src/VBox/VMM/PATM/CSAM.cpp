@@ -101,6 +101,116 @@ static const DBGCCMD    g_aCmds[] =
 };
 #endif
 
+/**
+ * SSM descriptor table for the CSAM structure.
+ */
+static const SSMFIELD g_aCsamFields[] =
+{
+    SSMFIELD_ENTRY_IGNORE(      CSAM, offVM),
+    SSMFIELD_ENTRY_PAD_HC64(    CSAM, Alignment0, sizeof(uint32_t)),
+    SSMFIELD_ENTRY_HCPTR(       CSAM, pPageTree),
+    SSMFIELD_ENTRY(             CSAM, aDangerousInstr),
+    SSMFIELD_ENTRY(             CSAM, cDangerousInstr),
+    SSMFIELD_ENTRY(             CSAM, iDangerousInstr),
+    SSMFIELD_ENTRY_RCPTR(       CSAM, pPDBitmapGC),
+    SSMFIELD_ENTRY_RCPTR(       CSAM, pPDHCBitmapGC),
+    SSMFIELD_ENTRY_HCPTR(       CSAM, pPDBitmapHC),
+    SSMFIELD_ENTRY_HCPTR(       CSAM, pPDGCBitmapHC),
+    SSMFIELD_ENTRY_HCPTR(       CSAM, savedstate.pSSM),
+    SSMFIELD_ENTRY(             CSAM, savedstate.cPageRecords),
+    SSMFIELD_ENTRY(             CSAM, savedstate.cPatchPageRecords),
+    SSMFIELD_ENTRY(             CSAM, cDirtyPages),
+    SSMFIELD_ENTRY_RCPTR_ARRAY( CSAM, pvDirtyBasePage),
+    SSMFIELD_ENTRY_RCPTR_ARRAY( CSAM, pvDirtyFaultPage),
+    SSMFIELD_ENTRY(             CSAM, cPossibleCodePages),
+    SSMFIELD_ENTRY_RCPTR_ARRAY( CSAM, pvPossibleCodePage),
+    SSMFIELD_ENTRY_RCPTR_ARRAY( CSAM, pvCallInstruction),
+    SSMFIELD_ENTRY(             CSAM, iCallInstruction),
+    SSMFIELD_ENTRY(             CSAM, fScanningStarted),
+    SSMFIELD_ENTRY(             CSAM, fGatesChecked),
+    SSMFIELD_ENTRY_PAD_HC(      CSAM, Alignment1, 4, 2),
+    SSMFIELD_ENTRY_IGNORE(      CSAM, StatNrTraps),
+    SSMFIELD_ENTRY_IGNORE(      CSAM, StatNrPages),
+    SSMFIELD_ENTRY_IGNORE(      CSAM, StatNrPagesInv),
+    SSMFIELD_ENTRY_IGNORE(      CSAM, StatNrRemovedPages),
+    SSMFIELD_ENTRY_IGNORE(      CSAM, StatNrPatchPages),
+    SSMFIELD_ENTRY_IGNORE(      CSAM, StatNrPageNPHC),
+    SSMFIELD_ENTRY_IGNORE(      CSAM, StatNrPageNPGC),
+    SSMFIELD_ENTRY_IGNORE(      CSAM, StatNrFlushes),
+    SSMFIELD_ENTRY_IGNORE(      CSAM, StatNrFlushesSkipped),
+    SSMFIELD_ENTRY_IGNORE(      CSAM, StatNrKnownPagesHC),
+    SSMFIELD_ENTRY_IGNORE(      CSAM, StatNrKnownPagesGC),
+    SSMFIELD_ENTRY_IGNORE(      CSAM, StatNrInstr),
+    SSMFIELD_ENTRY_IGNORE(      CSAM, StatNrBytesRead),
+    SSMFIELD_ENTRY_IGNORE(      CSAM, StatNrOpcodeRead),
+    SSMFIELD_ENTRY_IGNORE(      CSAM, StatTime),
+    SSMFIELD_ENTRY_IGNORE(      CSAM, StatTimeCheckAddr),
+    SSMFIELD_ENTRY_IGNORE(      CSAM, StatTimeAddrConv),
+    SSMFIELD_ENTRY_IGNORE(      CSAM, StatTimeFlushPage),
+    SSMFIELD_ENTRY_IGNORE(      CSAM, StatTimeDisasm),
+    SSMFIELD_ENTRY_IGNORE(      CSAM, StatFlushDirtyPages),
+    SSMFIELD_ENTRY_IGNORE(      CSAM, StatCheckGates),
+    SSMFIELD_ENTRY_IGNORE(      CSAM, StatCodePageModified),
+    SSMFIELD_ENTRY_IGNORE(      CSAM, StatDangerousWrite),
+    SSMFIELD_ENTRY_IGNORE(      CSAM, StatInstrCacheHit),
+    SSMFIELD_ENTRY_IGNORE(      CSAM, StatInstrCacheMiss),
+    SSMFIELD_ENTRY_IGNORE(      CSAM, StatPagePATM),
+    SSMFIELD_ENTRY_IGNORE(      CSAM, StatPageCSAM),
+    SSMFIELD_ENTRY_IGNORE(      CSAM, StatPageREM),
+    SSMFIELD_ENTRY_IGNORE(      CSAM, StatNrUserPages),
+    SSMFIELD_ENTRY_IGNORE(      CSAM, StatPageMonitor),
+    SSMFIELD_ENTRY_IGNORE(      CSAM, StatPageRemoveREMFlush),
+    SSMFIELD_ENTRY_IGNORE(      CSAM, StatBitmapAlloc),
+    SSMFIELD_ENTRY_IGNORE(      CSAM, StatScanNextFunction),
+    SSMFIELD_ENTRY_IGNORE(      CSAM, StatScanNextFunctionFailed),
+    SSMFIELD_ENTRY_TERM()
+};
+
+/** Fake type to simplify g_aCsamPDBitmapArray construction. */
+typedef struct
+{
+    uint8_t *a[CSAM_PGDIRBMP_CHUNKS];
+} CSAMPDBITMAPARRAY;
+
+/**
+ * SSM descriptor table for the CSAM::pPDBitmapHC array.
+ */
+static SSMFIELD const g_aCsamPDBitmapArray[] =
+{
+    SSMFIELD_ENTRY_HCPTR_NI_ARRAY(CSAMPDBITMAPARRAY, a),
+    SSMFIELD_ENTRY_TERM()
+};
+
+/**
+ * SSM descriptor table for the CSAMPAGEREC structure.
+ */
+static const SSMFIELD g_aCsamPageRecFields[] =
+{
+    SSMFIELD_ENTRY_HCPTR(       CSAMPAGEREC, Core.Key),
+    SSMFIELD_ENTRY_HCPTR(       CSAMPAGEREC, Core.pLeft),
+    SSMFIELD_ENTRY_HCPTR(       CSAMPAGEREC, Core.pRight),
+    SSMFIELD_ENTRY_IGNORE(      CSAMPAGEREC, Core.uchHeight),
+    SSMFIELD_ENTRY_PAD_HC_AUTO( 3, 7),
+    SSMFIELD_ENTRY_RCPTR(       CSAMPAGEREC, page.pPageGC),
+#ifdef _MSC_VER /** @todo check/fix this! */
+    SSMFIELD_ENTRY_PAD_HC_AUTO( 4, 4),
+#else
+    SSMFIELD_ENTRY_PAD_HC_AUTO( 0, 4),
+#endif
+    SSMFIELD_ENTRY_GCPHYS(      CSAMPAGEREC, page.GCPhys),
+    SSMFIELD_ENTRY(             CSAMPAGEREC, page.fFlags),
+    SSMFIELD_ENTRY(             CSAMPAGEREC, page.uSize),
+    SSMFIELD_ENTRY_PAD_HC_AUTO( 0, 4),
+    SSMFIELD_ENTRY_HCPTR_NI(    CSAMPAGEREC, page.pBitmap),
+    SSMFIELD_ENTRY(             CSAMPAGEREC, page.fCode32),
+    SSMFIELD_ENTRY(             CSAMPAGEREC, page.fMonitorActive),
+    SSMFIELD_ENTRY(             CSAMPAGEREC, page.fMonitorInvalidation),
+    SSMFIELD_ENTRY_PAD_HC_AUTO( 1, 1),
+    SSMFIELD_ENTRY(             CSAMPAGEREC, page.enmTag),
+    SSMFIELD_ENTRY(             CSAMPAGEREC, page.u64Hash),
+    SSMFIELD_ENTRY_TERM()
+};
+
 
 /**
  * Initializes the CSAM.
@@ -460,7 +570,12 @@ static DECLCALLBACK(int) csamr3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion,
     /*
      * Restore CSAM structure
      */
+#if 0
     rc = SSMR3GetMem(pSSM, &csamInfo, sizeof(csamInfo));
+#else
+    RT_ZERO(csamInfo);
+    rc = SSMR3GetStructEx(pSSM, &csamInfo, sizeof(csamInfo), SSMSTRUCT_FLAGS_MEM_BAND_AID, &g_aCsamFields[0], NULL);
+#endif
     AssertRCReturn(rc, rc);
 
     pVM->csam.s.fGatesChecked    = csamInfo.fGatesChecked;
@@ -476,7 +591,12 @@ static DECLCALLBACK(int) csamr3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion,
     memcpy(pVM->csam.s.pvPossibleCodePage,  csamInfo.pvPossibleCodePage, sizeof(pVM->csam.s.pvPossibleCodePage));
 
     /* Restore pgdir bitmap (we'll change the pointers next). */
+#if 0
     rc = SSMR3GetMem(pSSM, pVM->csam.s.pPDBitmapHC, CSAM_PGDIRBMP_CHUNKS*sizeof(RTHCPTR));
+#else
+    rc = SSMR3GetStructEx(pSSM, pVM->csam.s.pPDBitmapHC, sizeof(uint8_t *) * CSAM_PGDIRBMP_CHUNKS,
+                          SSMSTRUCT_FLAGS_MEM_BAND_AID, &g_aCsamPDBitmapArray[0], NULL);
+#endif
     AssertRCReturn(rc, rc);
 
     /*
@@ -515,7 +635,12 @@ static DECLCALLBACK(int) csamr3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion,
         CSAMPAGEREC  page;
         PCSAMPAGE    pPage;
 
+#if 0
         rc = SSMR3GetMem(pSSM, &page, sizeof(page));
+#else
+        RT_ZERO(page);
+        rc = SSMR3GetStructEx(pSSM, &page, sizeof(page), SSMSTRUCT_FLAGS_MEM_BAND_AID, &g_aCsamPageRecFields[0], NULL);
+#endif
         AssertRCReturn(rc, rc);
 
         /*
@@ -540,7 +665,7 @@ static DECLCALLBACK(int) csamr3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion,
         }
     }
 
-    /** @note we don't restore aDangerousInstr; it will be recreated automatically. */
+    /* Note: we don't restore aDangerousInstr; it will be recreated automatically. */
     memset(&pVM->csam.s.aDangerousInstr, 0, sizeof(pVM->csam.s.aDangerousInstr));
     pVM->csam.s.cDangerousInstr = 0;
     pVM->csam.s.iDangerousInstr  = 0;
