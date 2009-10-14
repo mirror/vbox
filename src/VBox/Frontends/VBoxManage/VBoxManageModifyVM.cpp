@@ -1078,7 +1078,8 @@ int handleModifyVM(HandlerArg *a)
                 /** @todo generalize this, allow arbitrary number of DVD drives
                  * and as a consequence multiple attachments and different
                  * storage controllers. */
-                dvdMedium->COMGETTER(Id)(uuid.asOutParam());
+                if (dvdMedium)
+                    dvdMedium->COMGETTER(Id)(uuid.asOutParam());
                 CHECK_ERROR (machine, MountMedium(Bstr("IDE Controller"), 1, 0, uuid));
                 break;
             }
