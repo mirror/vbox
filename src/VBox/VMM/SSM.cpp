@@ -3431,11 +3431,11 @@ VMMR3DECL(int) SSMR3PutStructEx(PSSMHANDLE pSSM, const void *pvStruct, size_t cb
                 uint32_t cb64    = RT_BYTE2(pCur->cb);
                 uint32_t cbCtx   =    HC_ARCH_BITS == 64
                                    || (   (uintptr_t)pCur->pfnGetPutOrTransformer == SSMFIELDTRANS_PAD_MSC32_AUTO
-                                       && SSM_HOST_IS_MSC_32)
+                                       && !SSM_HOST_IS_MSC_32)
                                  ? cb64 : cb32;
                 uint32_t cbSaved =    ssmR3GetHostBits(pSSM) == 64
                                    || (   (uintptr_t)pCur->pfnGetPutOrTransformer == SSMFIELDTRANS_PAD_MSC32_AUTO
-                                       && ssmR3IsHostMsc32(pSSM))
+                                       && !ssmR3IsHostMsc32(pSSM))
                                  ? cb64 : cb32;
                 AssertMsgReturn(    cbField == cbCtx
                                 &&  (   (   pCur->off == UINT32_MAX / 2
@@ -6056,11 +6056,11 @@ VMMR3DECL(int) SSMR3GetStructEx(PSSMHANDLE pSSM, void *pvStruct, size_t cbStruct
                 uint32_t cb64    = RT_BYTE2(pCur->cb);
                 uint32_t cbCtx   =    HC_ARCH_BITS == 64
                                    || (   (uintptr_t)pCur->pfnGetPutOrTransformer == SSMFIELDTRANS_PAD_MSC32_AUTO
-                                       && SSM_HOST_IS_MSC_32)
+                                       && !SSM_HOST_IS_MSC_32)
                                  ? cb64 : cb32;
                 uint32_t cbSaved =    ssmR3GetHostBits(pSSM) == 64
                                    || (   (uintptr_t)pCur->pfnGetPutOrTransformer == SSMFIELDTRANS_PAD_MSC32_AUTO
-                                       && ssmR3IsHostMsc32(pSSM))
+                                       && !ssmR3IsHostMsc32(pSSM))
                                  ? cb64 : cb32;
                 AssertMsgReturn(    cbField == cbCtx
                                 &&  (   (   pCur->off == UINT32_MAX / 2
