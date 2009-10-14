@@ -106,14 +106,15 @@ static const DBGCCMD    g_aCmds[] =
  */
 static const SSMFIELD g_aCsamFields[] =
 {
+    /** @todo there are more fields that can be ignored here. */
     SSMFIELD_ENTRY_IGNORE(      CSAM, offVM),
     SSMFIELD_ENTRY_PAD_HC64(    CSAM, Alignment0, sizeof(uint32_t)),
     SSMFIELD_ENTRY_IGN_HCPTR(   CSAM, pPageTree),
     SSMFIELD_ENTRY(             CSAM, aDangerousInstr),
     SSMFIELD_ENTRY(             CSAM, cDangerousInstr),
     SSMFIELD_ENTRY(             CSAM, iDangerousInstr),
-    SSMFIELD_ENTRY_RCPTR(       CSAM, pPDBitmapGC),
-    SSMFIELD_ENTRY_RCPTR(       CSAM, pPDHCBitmapGC),
+    SSMFIELD_ENTRY_RCPTR(       CSAM, pPDBitmapGC),   /// @todo ignore this?
+    SSMFIELD_ENTRY_RCPTR(       CSAM, pPDHCBitmapGC), /// @todo ignore this?
     SSMFIELD_ENTRY_IGN_HCPTR(   CSAM, pPDBitmapHC),
     SSMFIELD_ENTRY_IGN_HCPTR(   CSAM, pPDGCBitmapHC),
     SSMFIELD_ENTRY_IGN_HCPTR(   CSAM, savedstate.pSSM),
