@@ -1279,7 +1279,6 @@ bool VBoxMediaManagerDlg::releaseMediumFrom (const VBoxMedium &aMedium,
         }
         case VBoxDefs::MediumType_DVD:
         {
-            Assert (0);
             CMediumAttachmentVector attachments = machine.GetMediumAttachments();
             foreach (const CMediumAttachment &attachment, attachments)
             {
@@ -1302,7 +1301,6 @@ bool VBoxMediaManagerDlg::releaseMediumFrom (const VBoxMedium &aMedium,
         }
         case VBoxDefs::MediumType_Floppy:
         {
-            Assert (0);
             CMediumAttachmentVector attachments = machine.GetMediumAttachments();
             foreach (const CMediumAttachment &attachment, attachments)
             {
