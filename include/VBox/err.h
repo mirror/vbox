@@ -599,9 +599,15 @@
 #define VINF_SSM_LIVE_SUSPENDED                  1864
 /** Complex SSM field fed to SSMR3PutStruct or SSMR3GetStruct.  Use the
  * extended API. */
-#define VERR_SSM_COMPLEX_FIELD                  (-1864)
+#define VERR_SSM_FIELD_COMPLEX                  (-1864)
 /** Invalid size of a SSM field with the specified transformation. */
-#define VERR_SSM_INVALID_FIELD_SIZE             (-1865)
+#define VERR_SSM_FIELD_INVALID_SIZE             (-1865)
+/** The specified field is outside the structure.  */
+#define VERR_SSM_FIELD_OUT_OF_BOUNDS            (-1866)
+/** The field does not follow immediately the previous one. */
+#define VERR_SSM_FIELD_NOT_CONSECUTIVE          (-1867)
+/** The field contains an invalid callback or transformation index. */
+#define VERR_SSM_FIELD_INVALID_CALLBACK         (-1868)
 /** @} */
 
 
