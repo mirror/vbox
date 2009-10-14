@@ -128,7 +128,7 @@ static const SSMFIELD g_aCsamFields[] =
     SSMFIELD_ENTRY(             CSAM, iCallInstruction),
     SSMFIELD_ENTRY(             CSAM, fScanningStarted),
     SSMFIELD_ENTRY(             CSAM, fGatesChecked),
-    SSMFIELD_ENTRY_PAD_HC(      CSAM, Alignment1, 4, 2),
+    SSMFIELD_ENTRY_PAD_HC(      CSAM, Alignment1, 4, 4),
     SSMFIELD_ENTRY_IGNORE(      CSAM, StatNrTraps),
     SSMFIELD_ENTRY_IGNORE(      CSAM, StatNrPages),
     SSMFIELD_ENTRY_IGNORE(      CSAM, StatNrPagesInv),
