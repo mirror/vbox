@@ -1564,6 +1564,8 @@ QString VBoxGlobal::detailsReport (const CMachine &aMachine, bool aWithLinks)
         "<tr><td width=40%><nobr><i>%1</i></nobr></td><td/><td/></tr>";
     static const char *sSectionItemTpl2 =
         "<tr><td width=40%><nobr>%1:</nobr></td><td/><td>%2</td></tr>";
+    static const char *sSectionItemTpl3 =
+        "<tr><td width=40%><nobr>%1</nobr></td><td/><td/></tr>";
 
     const QString &sectionTpl = aWithLinks ? sSectionHrefTpl : sSectionBoldTpl;
 
@@ -1718,28 +1720,26 @@ QString VBoxGlobal::detailsReport (const CMachine &aMachine, bool aWithLinks)
 
         QString item;
 
-        CMediumAttachmentVector vec = aMachine.GetMediumAttachments();
-        for (int i = 0; i < vec.size(); ++ i)
+        CStorageControllerVector controllers = aMachine.GetStorageControllers();
+        foreach (const CStorageController &controller, controllers)
         {
-            CMediumAttachment ma = vec [i];
-            CMedium medium = ma.GetMedium();
+            item += QString (sSectionItemTpl3).arg (controller.GetName());
+            ++ rows;
 
-            /// @todo for the explaination of the below isOk() checks, see ***
-            /// in VBoxMedium::details().
-            if (ma.isOk())
+            CMediumAttachmentVector attachments = aMachine.GetMediumAttachmentsOfController (controller.GetName());
+            foreach (const CMediumAttachment &attachment, attachments)
             {
-                const QString controller = ma.GetController();
-                KStorageBus bus;
-
-                CStorageController ctrl = aMachine.GetStorageControllerByName (controller);
-                bus = ctrl.GetBus();
-
-                LONG port   = ma.GetPort();
-                LONG device = ma.GetDevice();
-                item += QString (sSectionItemTpl2)
-                        .arg (toString (StorageSlot (bus, port, device)))
-                        .arg (details (medium, false));
-                ++ rows;
+                CMedium medium = attachment.GetMedium();
+                if (attachment.isOk())
+                {
+                    item += QString (sSectionItemTpl2)
+                            .arg (QString ("&nbsp;&nbsp;") +
+                                  toString (StorageSlot (controller.GetBus(),
+                                                         attachment.GetPort(),
+                                                         attachment.GetDevice())))
+                            .arg (details (medium, false));
+                    ++ rows;
+                }
             }
         }
 
