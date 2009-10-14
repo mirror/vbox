@@ -3254,7 +3254,8 @@ VMMR3DECL(int) SSMR3PutStruct(PSSMHANDLE pSSM, const void *pvStruct, PCSSMFIELD 
             case SSMFIELDTRANS_RCPTR_ARRAY:
             {
                 uint32_t const cEntries = pCur->cb / sizeof(RTRCPTR);
-                AssertMsgReturn(pCur->cb == cEntries * sizeof(RTRCPTR), ("%#x (%s)\n", pCur->cb, pCur->pszName), VERR_SSM_FIELD_INVALID_SIZE);
+                AssertMsgReturn(pCur->cb == cEntries * sizeof(RTRCPTR) && cEntries, ("%#x (%s)\n", pCur->cb, pCur->pszName), VERR_SSM_FIELD_INVALID_SIZE);
+                rc = VINF_SUCCESS;
                 for (uint32_t i = 0; i < cEntries && RT_SUCCESS(rc); i++)
                     rc = SSMR3PutRCPtr(pSSM, ((PRTRCPTR)pbField)[i]);
                 break;
@@ -3380,7 +3381,8 @@ VMMR3DECL(int) SSMR3PutStructEx(PSSMHANDLE pSSM, const void *pvStruct, size_t cb
             case SSMFIELDTRANS_RCPTR_ARRAY:
             {
                 uint32_t const cEntries = cbField / sizeof(RTRCPTR);
-                AssertMsgReturn(cbField == cEntries * sizeof(RTRCPTR), ("%#x (%s)\n", cbField, pCur->pszName), VERR_SSM_FIELD_INVALID_SIZE);
+                AssertMsgReturn(cbField == cEntries * sizeof(RTRCPTR) && cEntries, ("%#x (%s)\n", cbField, pCur->pszName), VERR_SSM_FIELD_INVALID_SIZE);
+                rc = VINF_SUCCESS;
                 for (uint32_t i = 0; i < cEntries && RT_SUCCESS(rc); i++)
                     rc = SSMR3PutRCPtr(pSSM, ((PRTRCPTR)pbField)[i]);
                 break;
@@ -3394,7 +3396,8 @@ VMMR3DECL(int) SSMR3PutStructEx(PSSMHANDLE pSSM, const void *pvStruct, size_t cb
             case SSMFIELDTRANS_HCPTR_NI_ARRAY:
             {
                 uint32_t const cEntries = cbField / sizeof(void *);
-                AssertMsgReturn(cbField == cEntries * sizeof(void *), ("%#x (%s)\n", cbField, pCur->pszName), VERR_SSM_FIELD_INVALID_SIZE);
+                AssertMsgReturn(cbField == cEntries * sizeof(void *) && cEntries, ("%#x (%s)\n", cbField, pCur->pszName), VERR_SSM_FIELD_INVALID_SIZE);
+                rc = VINF_SUCCESS;
                 for (uint32_t i = 0; i < cEntries && RT_SUCCESS(rc); i++)
                     rc = ssmR3PutHCPtrNI(pSSM, ((void * const *)pbField)[i], fFlags);
                 break;
@@ -5859,7 +5862,8 @@ VMMR3DECL(int) SSMR3GetStruct(PSSMHANDLE pSSM, void *pvStruct, PCSSMFIELD paFiel
             case SSMFIELDTRANS_RCPTR_ARRAY:
             {
                 uint32_t const cEntries = pCur->cb / sizeof(RTRCPTR);
-                AssertMsgReturn(pCur->cb == cEntries * sizeof(RTRCPTR), ("%#x (%s)\n", pCur->cb, pCur->pszName), VERR_SSM_FIELD_INVALID_SIZE);
+                AssertMsgReturn(pCur->cb == cEntries * sizeof(RTRCPTR) && cEntries, ("%#x (%s)\n", pCur->cb, pCur->pszName), VERR_SSM_FIELD_INVALID_SIZE);
+                rc = VINF_SUCCESS;
                 for (uint32_t i = 0; i < cEntries && RT_SUCCESS(rc); i++)
                     rc = SSMR3GetRCPtr(pSSM, &((PRTRCPTR)pbField)[i]);
                 break;
@@ -6009,7 +6013,8 @@ VMMR3DECL(int) SSMR3GetStructEx(PSSMHANDLE pSSM, void *pvStruct, size_t cbStruct
             case SSMFIELDTRANS_RCPTR_ARRAY:
             {
                 uint32_t const cEntries = cbField / sizeof(RTRCPTR);
-                AssertMsgReturn(cbField == cEntries * sizeof(RTRCPTR), ("%#x (%s)\n", cbField, pCur->pszName), VERR_SSM_FIELD_INVALID_SIZE);
+                AssertMsgReturn(cbField == cEntries * sizeof(RTRCPTR) && cEntries, ("%#x (%s)\n", cbField, pCur->pszName), VERR_SSM_FIELD_INVALID_SIZE);
+                rc = VINF_SUCCESS;
                 for (uint32_t i = 0; i < cEntries && RT_SUCCESS(rc); i++)
                     rc = SSMR3GetRCPtr(pSSM, &((PRTRCPTR)pbField)[i]);
                 break;
@@ -6023,7 +6028,8 @@ VMMR3DECL(int) SSMR3GetStructEx(PSSMHANDLE pSSM, void *pvStruct, size_t cbStruct
             case SSMFIELDTRANS_HCPTR_NI_ARRAY:
             {
                 uint32_t const cEntries = cbField / sizeof(void *);
-                AssertMsgReturn(cbField == cEntries * sizeof(void *), ("%#x (%s)\n", cbField, pCur->pszName), VERR_SSM_FIELD_INVALID_SIZE);
+                AssertMsgReturn(cbField == cEntries * sizeof(void *) && cEntries, ("%#x (%s)\n", cbField, pCur->pszName), VERR_SSM_FIELD_INVALID_SIZE);
+                rc = VINF_SUCCESS;
                 for (uint32_t i = 0; i < cEntries && RT_SUCCESS(rc); i++)
                     rc = ssmR3GetHCPtrNI(pSSM, &((void **)pbField)[i], fFlags);
                 break;
