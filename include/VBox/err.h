@@ -608,6 +608,8 @@
 #define VERR_SSM_FIELD_NOT_CONSECUTIVE          (-1867)
 /** The field contains an invalid callback or transformation index. */
 #define VERR_SSM_FIELD_INVALID_CALLBACK         (-1868)
+/** The field contains an invalid padding size. */
+#define VERR_SSM_FIELD_INVALID_PADDING_SIZE     (-1869)
 /** @} */
 
 
