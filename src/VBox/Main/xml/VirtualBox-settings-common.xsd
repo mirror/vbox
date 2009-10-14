@@ -445,6 +445,10 @@
   <xsd:attribute name="enabled" type="xsd:boolean"/>
 </xsd:complexType>
 
+<xsd:complexType name="TSyntheticCpuType">
+  <xsd:attribute name="enabled" type="xsd:boolean"/>
+</xsd:complexType>
+
 <xsd:complexType name="TPAEType">
   <xsd:attribute name="enabled" type="xsd:boolean"/>
 </xsd:complexType>
@@ -462,6 +466,7 @@
     <xsd:element name="HardwareVirtExNestedPaging" type="THWVirtExNestedPagingType" minOccurs="0"/>
     <xsd:element name="HardwareVirtExVPID" type="THWVirtExVPIDType" minOccurs="0"/>
     <xsd:element name="PAE" type="TPAEType" minOccurs="0"/>
+    <xsd:element name="SyntheticCpu" type="TSyntheticCpuType" minOccurs="0"/>
   </xsd:sequence>
   <xsd:attribute name="count" type="TCPUCount" default="1"/>
 </xsd:complexType>

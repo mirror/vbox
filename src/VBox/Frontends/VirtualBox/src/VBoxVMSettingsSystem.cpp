@@ -173,7 +173,7 @@ void VBoxVMSettingsSystem::getFrom (const CMachine &aMachine)
     bool fPAESupported = vboxGlobal().virtualBox().GetHost()
                          .GetProcessorFeature (KProcessorFeature_PAE);
     mCbPae->setEnabled (fPAESupported);
-    mCbPae->setChecked (aMachine.GetPAEEnabled());
+    mCbPae->setChecked (aMachine.GetCpuProperty(KCpuPropertyType_PAE));
 
     /* VT-x/AMD-V */
     mCbVirt->setEnabled (fVTxAMDVSupported);
@@ -182,7 +182,7 @@ void VBoxVMSettingsSystem::getFrom (const CMachine &aMachine)
     /* Nested Paging */
     mCbNestedPaging->setEnabled (fVTxAMDVSupported &&
                                  aMachine.GetHWVirtExProperty(KHWVirtExPropertyType_Enabled));
-    mCbNestedPaging->setChecked (aMachine.GetHWVirtExProperty(KHWVirtExPropertyType_NestedPagingEnabled));
+    mCbNestedPaging->setChecked (aMachine.GetHWVirtExProperty(KHWVirtExPropertyType_NestedPaging));
 
     if (mValidator)
         mValidator->revalidate();
@@ -227,14 +227,14 @@ void VBoxVMSettingsSystem::putBackTo()
     mMachine.SetCPUCount (mSlCPU->value());
 
     /* PAE/NX */
-    mMachine.SetPAEEnabled (mCbPae->isChecked());
+    mMachine.SetCpuProperty(KCpuPropertyType_PAE, mCbPae->isChecked());
 
     /* VT-x/AMD-V */
     mMachine.SetHWVirtExProperty(KHWVirtExPropertyType_Enabled,
                                  mCbVirt->checkState() == Qt::Checked || mSlCPU->value() > 1);
 
     /* Nested Paging */
-    mMachine.SetHWVirtExProperty(KHWVirtExPropertyType_NestedPagingEnabled, mCbNestedPaging->isChecked());
+    mMachine.SetHWVirtExProperty(KHWVirtExPropertyType_NestedPaging, mCbNestedPaging->isChecked());
 }
 
 void VBoxVMSettingsSystem::setValidator (QIWidgetValidator *aVal)

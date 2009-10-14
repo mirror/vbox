@@ -227,6 +227,13 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
     else
         RTPrintf("Number of CPUs:  %u\n", numCpus);
 
+    BOOL fSyntheticCpu;
+    machine->GetCpuProperty(CpuPropertyType_Synthetic, &fSyntheticCpu);
+    if (details == VMINFO_MACHINEREADABLE)
+        RTPrintf("synthcpu=\"%s\"\n", fSyntheticCpu ? "on" : "off");
+    else
+        RTPrintf("Synthetic Cpu:   %s\n", fSyntheticCpu ? "on" : "off");
+
     ComPtr <IBIOSSettings> biosSettings;
     machine->COMGETTER(BIOSSettings)(biosSettings.asOutParam());
 
@@ -329,7 +336,7 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
         RTPrintf("IOAPIC:          %s\n", ioapicEnabled ? "on" : "off");
 
     BOOL PAEEnabled;
-    machine->COMGETTER(PAEEnabled)(&PAEEnabled);
+    machine->GetCpuProperty(CpuPropertyType_PAE, &PAEEnabled);
     if (details == VMINFO_MACHINEREADABLE)
         RTPrintf("pae=\"%s\"\n", PAEEnabled ? "on" : "off");
     else
@@ -357,14 +364,14 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
         RTPrintf("Hardw. virt.ext exclusive: %s\n", hwVirtExExclusive ? "on" : "off");
 
     BOOL HWVirtExNestedPagingEnabled;
-    machine->GetHWVirtExProperty(HWVirtExPropertyType_NestedPagingEnabled, &HWVirtExNestedPagingEnabled);
+    machine->GetHWVirtExProperty(HWVirtExPropertyType_NestedPaging, &HWVirtExNestedPagingEnabled);
     if (details == VMINFO_MACHINEREADABLE)
         RTPrintf("nestedpaging=\"%s\"\n", HWVirtExNestedPagingEnabled ? "on" : "off");
     else
         RTPrintf("Nested Paging:   %s\n", HWVirtExNestedPagingEnabled ? "on" : "off");
 
     BOOL HWVirtExVPIDEnabled;
-    machine->GetHWVirtExProperty(HWVirtExPropertyType_VPIDEnabled, &HWVirtExVPIDEnabled);
+    machine->GetHWVirtExProperty(HWVirtExPropertyType_VPID, &HWVirtExVPIDEnabled);
     if (details == VMINFO_MACHINEREADABLE)
         RTPrintf("vtxvpid=\"%s\"\n", HWVirtExVPIDEnabled ? "on" : "off");
     else

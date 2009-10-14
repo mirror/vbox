@@ -290,6 +290,7 @@ public:
         BOOL           mHWVirtExVPIDEnabled;
         BOOL           mAccelerate2DVideoEnabled;
         BOOL           mPAEEnabled;
+        BOOL           mSyntheticCpu;
         ULONG          mCPUCount;
         BOOL           mAccelerate3DEnabled;
 
@@ -534,8 +535,6 @@ public:
     STDMETHOD(COMGETTER(Accelerate2DVideoEnabled))(BOOL *enabled);
     STDMETHOD(COMSETTER(Accelerate2DVideoEnabled))(BOOL enabled);
     STDMETHOD(COMGETTER(BIOSSettings))(IBIOSSettings **biosSettings);
-    STDMETHOD(COMGETTER(PAEEnabled))(BOOL *enabled);
-    STDMETHOD(COMSETTER(PAEEnabled))(BOOL enabled);
     STDMETHOD(COMGETTER(SnapshotFolder))(BSTR *aSavedStateFolder);
     STDMETHOD(COMSETTER(SnapshotFolder))(IN_BSTR aSavedStateFolder);
     STDMETHOD(COMGETTER(MediumAttachments))(ComSafeArrayOut(IMediumAttachment *, aAttachments));
@@ -583,6 +582,8 @@ public:
     STDMETHOD(GetExtraDataKeys)(ComSafeArrayOut(BSTR, aKeys));
     STDMETHOD(GetExtraData)(IN_BSTR aKey, BSTR *aValue);
     STDMETHOD(SetExtraData)(IN_BSTR aKey, IN_BSTR aValue);
+    STDMETHOD(GetCpuProperty)(CpuPropertyType_T property, BOOL *aVal);
+    STDMETHOD(SetCpuProperty)(CpuPropertyType_T property, BOOL aVal);
     STDMETHOD(GetHWVirtExProperty)(HWVirtExPropertyType_T property, BOOL *aVal);
     STDMETHOD(SetHWVirtExProperty)(HWVirtExPropertyType_T property, BOOL aVal);
     STDMETHOD(SaveSettings)();
