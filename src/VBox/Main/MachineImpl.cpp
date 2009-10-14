@@ -2452,7 +2452,6 @@ STDMETHODIMP Machine::DetachDevice(IN_BSTR aControllerName, LONG aControllerPort
                         tr("No storage device attached to device slot %d on port %d of controller '%ls'"),
                         aDevice, aControllerPort, aControllerName);
 
-    ComObjPtr<Medium> hd = pAttach->medium();
 
     if (pAttach->isImplicit())
     {
@@ -2471,6 +2470,7 @@ STDMETHODIMP Machine::DetachDevice(IN_BSTR aControllerName, LONG aControllerPort
 
         alock.leave();
 
+        ComObjPtr<Medium> hd = pAttach->medium();
         rc = hd->deleteStorageAndWait();
 
         alock.enter();
@@ -2577,7 +2577,17 @@ STDMETHODIMP Machine::MountMedium(IN_BSTR aControllerName,
 
     if (SUCCEEDED(rc))
     {
+
+        mMediaData.backup();
+        /* The backup operation makes the pAttach reference point to the
+         * old settings. Re-get the correct reference. */
+        pAttach = findAttachment(mMediaData->mAttachments,
+                                 aControllerName,
+                                 aControllerPort,
+                                 aDevice);
         AutoWriteLock attLock(pAttach);
+        if (!medium.isNull())
+            medium->attachTo(mData->mUuid);
         pAttach->updateMedium(medium, false /* aImplicit */);
     }
 
@@ -5572,15 +5582,12 @@ HRESULT Machine::loadStorageDevices(StorageController *aStorageController,
                                dev.deviceType);
         CheckComRCBreakRC(rc);
 
-        if (dev.deviceType == DeviceType_HardDisk)
-        {
-            /* associate the hard disk with this machine and snapshot */
-            if (mType == IsSnapshotMachine)
-                rc = medium->attachTo(mData->mUuid, *aSnapshotId);
-            else
-                rc = medium->attachTo(mData->mUuid);
-            AssertComRCBreakRC (rc);
-        }
+        /* associate the medium with this machine and snapshot */
+        if (mType == IsSnapshotMachine)
+            rc = medium->attachTo(mData->mUuid, *aSnapshotId);
+        else
+            rc = medium->attachTo(mData->mUuid);
+        AssertComRCBreakRC (rc);
 
         /* backup mMediaData to let registeredInit() properly rollback on failure
          * (= limited accessibility) */
