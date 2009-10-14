@@ -327,23 +327,28 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
 
     /* HWVirtEx exclusive mode */
     BOOL fHWVirtExExclusive = true;
-    hrc = pMachine->GetHWVirtExProperty(HWVirtExPropertyType_Exclusive, &fHWVirtExExclusive);                   H();
+    hrc = pMachine->GetHWVirtExProperty(HWVirtExPropertyType_Exclusive, &fHWVirtExExclusive);  H();
     rc = CFGMR3InsertInteger(pHWVirtExt, "Exclusive", fHWVirtExExclusive);                     RC_CHECK();
 
     /* Nested paging (VT-x/AMD-V) */
     BOOL fEnableNestedPaging = false;
-    hrc = pMachine->GetHWVirtExProperty(HWVirtExPropertyType_NestedPagingEnabled, &fEnableNestedPaging);   H();
+    hrc = pMachine->GetHWVirtExProperty(HWVirtExPropertyType_NestedPaging, &fEnableNestedPaging);   H();
     rc = CFGMR3InsertInteger(pHWVirtExt, "EnableNestedPaging", fEnableNestedPaging);     RC_CHECK();
 
     /* VPID (VT-x) */
     BOOL fEnableVPID = false;
-    hrc = pMachine->GetHWVirtExProperty(HWVirtExPropertyType_VPIDEnabled, &fEnableVPID);                   H();
+    hrc = pMachine->GetHWVirtExProperty(HWVirtExPropertyType_VPID, &fEnableVPID);        H();
     rc = CFGMR3InsertInteger(pHWVirtExt, "EnableVPID", fEnableVPID);                     RC_CHECK();
 
     /* Physical Address Extension (PAE) */
     BOOL fEnablePAE = false;
-    hrc = pMachine->COMGETTER(PAEEnabled)(&fEnablePAE);                             H();
+    hrc = pMachine->GetCpuProperty(CpuPropertyType_PAE, &fEnablePAE);               H();
     rc = CFGMR3InsertInteger(pRoot, "EnablePAE", fEnablePAE);                       RC_CHECK();
+
+    /* Synthetic CPU */
+    BOOL fSyntheticCpu = false;
+    hrc = pMachine->GetCpuProperty(CpuPropertyType_Synthetic, &fSyntheticCpu);      H();
+    rc = CFGMR3InsertInteger(pRoot, "SyntheticCpu", fSyntheticCpu);                 RC_CHECK();
 
     BOOL fPXEDebug;
     hrc = biosSettings->COMGETTER(PXEDebugEnabled)(&fPXEDebug);                      H();

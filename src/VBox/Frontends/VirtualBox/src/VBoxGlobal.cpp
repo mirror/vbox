@@ -1616,7 +1616,7 @@ QString VBoxGlobal::detailsReport (const CMachine &aMachine, bool aWithLinks)
             : tr ("Disabled", "details report (IO APIC)");
 
         /* PAE/NX */
-        QString pae = aMachine.GetPAEEnabled()
+        QString pae = aMachine.GetCpuProperty(KCpuPropertyType_PAE)
             ? tr ("Enabled", "details report (PAE/NX)")
             : tr ("Disabled", "details report (PAE/NX)");
 #endif /* VBOX_WITH_FULL_DETAILS_REPORT */
@@ -1627,7 +1627,7 @@ QString VBoxGlobal::detailsReport (const CMachine &aMachine, bool aWithLinks)
             : tr ("Disabled", "details report (VT-x/AMD-V)");
 
         /* Nested Paging */
-        QString nested = aMachine.GetHWVirtExProperty(KHWVirtExPropertyType_NestedPagingEnabled)
+        QString nested = aMachine.GetHWVirtExProperty(KHWVirtExPropertyType_NestedPaging)
             ? tr ("Enabled", "details report (Nested Paging)")
             : tr ("Disabled", "details report (Nested Paging)");
 

@@ -1209,6 +1209,7 @@ Hardware::Hardware()
           fNestedPaging(false),
           fVPID(false),
           fPAE(false),
+          fSyntheticCpu(false),
           cCPUs(1),
           ulMemorySizeMB((uint32_t)-1),
           ulVRAMSizeMB(8),
@@ -1471,6 +1472,8 @@ void MachineConfigFile::readHardware(const xml::ElementNode &elmHardware,
                 pelmCPUChild->getAttributeValue("enabled", hw.fVPID);
             if ((pelmCPUChild = pelmHwChild->findChildElement("PAE")))
                 pelmCPUChild->getAttributeValue("enabled", hw.fPAE);
+            if ((pelmCPUChild = pelmHwChild->findChildElement("SyntheticCpu")))
+                pelmCPUChild->getAttributeValue("enabled", hw.fSyntheticCpu);            
         }
         else if (pelmHwChild->nameEquals("Memory"))
             pelmHwChild->getAttributeValue("RAMSize", hw.ulMemorySizeMB);
@@ -2319,6 +2322,8 @@ void MachineConfigFile::writeHardware(xml::ElementNode &elmParent,
         pelmCPU->createChild("HardwareVirtExVPID")->setAttribute("enabled", hw.fVPID);
     if (hw.fPAE)
         pelmCPU->createChild("PAE")->setAttribute("enabled", hw.fPAE);
+    if (hw.fSyntheticCpu)
+        pelmCPU->createChild("SyntheticCpu")->setAttribute("enabled", hw.fSyntheticCpu);
     pelmCPU->setAttribute("count", hw.cCPUs);
 
     xml::ElementNode *pelmMemory = pelmHardware->createChild("Memory");

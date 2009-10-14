@@ -186,6 +186,7 @@ Machine::HWData::HWData()
     mHWVirtExVPIDEnabled = false;
     mHWVirtExExclusive = true;
     mPAEEnabled = false;
+    mSyntheticCpu = false;
     mPropertyServiceActive = false;
 
     /* default boot order: floppy - DVD - HDD */
@@ -224,6 +225,7 @@ bool Machine::HWData::operator==(const HWData &that) const
         mHWVirtExVPIDEnabled != that.mHWVirtExVPIDEnabled ||
         mHWVirtExExclusive != that.mHWVirtExExclusive ||
         mPAEEnabled != that.mPAEEnabled ||
+        mSyntheticCpu != that.mSyntheticCpu ||
         mCPUCount != that.mCPUCount ||
         mClipboardMode != that.mClipboardMode)
         return false;
@@ -1296,6 +1298,61 @@ STDMETHODIMP Machine::COMGETTER(BIOSSettings)(IBIOSSettings **biosSettings)
     return S_OK;
 }
 
+STDMETHODIMP Machine::GetCpuProperty(CpuPropertyType_T property, BOOL *aVal)
+{
+    if (!aVal)
+        return E_POINTER;
+
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
+
+    AutoReadLock alock(this);
+
+    switch(property)
+    {
+    case CpuPropertyType_PAE:
+        *aVal = mHWData->mPAEEnabled;
+        break;
+
+    case CpuPropertyType_Synthetic:
+        *aVal = mHWData->mSyntheticCpu;
+        break;
+
+    default:
+        return E_INVALIDARG;
+    }
+    return S_OK;
+}
+
+STDMETHODIMP Machine::SetCpuProperty(CpuPropertyType_T property, BOOL aVal)
+{
+    if (!aVal)
+        return E_POINTER;
+
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
+
+    AutoWriteLock alock(this);
+
+    HRESULT rc = checkStateDependency(MutableStateDep);
+    CheckComRCReturnRC(rc);
+
+    switch(property)
+    {
+    case CpuPropertyType_PAE:
+        mHWData->mPAEEnabled = !!aVal;
+        break;
+
+    case CpuPropertyType_Synthetic:
+        mHWData->mSyntheticCpu = !!aVal;
+        break;
+
+    default:
+        return E_INVALIDARG;
+    }
+    return S_OK;
+}
+
 STDMETHODIMP Machine::GetHWVirtExProperty(HWVirtExPropertyType_T property, BOOL *aVal)
 {
     if (!aVal)
@@ -1303,6 +1360,8 @@ STDMETHODIMP Machine::GetHWVirtExProperty(HWVirtExPropertyType_T property, BOOL 
 
     AutoCaller autoCaller(this);
     CheckComRCReturnRC(autoCaller.rc());
+
+    AutoReadLock alock(this);
 
     switch(property)
     {
@@ -1314,11 +1373,11 @@ STDMETHODIMP Machine::GetHWVirtExProperty(HWVirtExPropertyType_T property, BOOL 
         *aVal = mHWData->mHWVirtExExclusive;
         break;
 
-    case HWVirtExPropertyType_VPIDEnabled:
+    case HWVirtExPropertyType_VPID:
         *aVal = mHWData->mHWVirtExVPIDEnabled;
         break;
 
-    case HWVirtExPropertyType_NestedPagingEnabled:
+    case HWVirtExPropertyType_NestedPaging:
         *aVal = mHWData->mHWVirtExNestedPagingEnabled;
         break;
 
@@ -1342,60 +1401,27 @@ STDMETHODIMP Machine::SetHWVirtExProperty(HWVirtExPropertyType_T property, BOOL 
     {
     case HWVirtExPropertyType_Enabled:
         mHWData.backup();
-        mHWData->mHWVirtExEnabled = aVal;
+        mHWData->mHWVirtExEnabled = !!aVal;
         break;
 
     case HWVirtExPropertyType_Exclusive:
         mHWData.backup();
-        mHWData->mHWVirtExExclusive = aVal;
+        mHWData->mHWVirtExExclusive = !!aVal;
         break;
 
-    case HWVirtExPropertyType_VPIDEnabled:
+    case HWVirtExPropertyType_VPID:
         mHWData.backup();
-        mHWData->mHWVirtExVPIDEnabled = aVal;
+        mHWData->mHWVirtExVPIDEnabled = !!aVal;
         break;
 
-    case HWVirtExPropertyType_NestedPagingEnabled:
+    case HWVirtExPropertyType_NestedPaging:
         mHWData.backup();
-        mHWData->mHWVirtExNestedPagingEnabled = aVal;
+        mHWData->mHWVirtExNestedPagingEnabled = !!aVal;
         break;
 
     default:
         return E_INVALIDARG;
     }
-    return S_OK;
-}
-
-STDMETHODIMP Machine::COMGETTER(PAEEnabled)(BOOL *enabled)
-{
-    if (!enabled)
-        return E_POINTER;
-
-    AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
-
-    AutoReadLock alock(this);
-
-    *enabled = mHWData->mPAEEnabled;
-
-    return S_OK;
-}
-
-STDMETHODIMP Machine::COMSETTER(PAEEnabled)(BOOL enable)
-{
-    AutoCaller autoCaller(this);
-    CheckComRCReturnRC(autoCaller.rc());
-
-    AutoWriteLock alock(this);
-
-    HRESULT rc = checkStateDependency(MutableStateDep);
-    CheckComRCReturnRC(rc);
-
-    /** @todo check validity! */
-
-    mHWData.backup();
-    mHWData->mPAEEnabled = enable;
-
     return S_OK;
 }
 
@@ -5171,6 +5197,7 @@ HRESULT Machine::loadHardware(const settings::Hardware &data)
         mHWData->mHWVirtExNestedPagingEnabled = data.fNestedPaging;
         mHWData->mHWVirtExVPIDEnabled         = data.fVPID;
         mHWData->mPAEEnabled                  = data.fPAE;
+        mHWData->mSyntheticCpu                = data.fSyntheticCpu;
 
         mHWData->mCPUCount = data.cCPUs;
 
@@ -6119,6 +6146,7 @@ HRESULT Machine::saveHardware(settings::Hardware &data)
         data.fNestedPaging          = !!mHWData->mHWVirtExNestedPagingEnabled;
         data.fVPID                  = !!mHWData->mHWVirtExVPIDEnabled;
         data.fPAE                   = !!mHWData->mPAEEnabled;
+        data.fSyntheticCpu          = !!mHWData->mSyntheticCpu;
 
         data.cCPUs = mHWData->mCPUCount;
 
