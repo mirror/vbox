@@ -214,7 +214,7 @@ typedef struct SSMFIELD
     { \
         (PFNSSMFIELDGETPUT)(uintptr_t)(enmTransformer), \
         UINT32_MAX / 2, \
-        (0 | (cb32) | ((cb64) << 8), \
+        0 | (cb32) | ((cb64) << 8), \
         #Type "::" #Field \
     }
 
