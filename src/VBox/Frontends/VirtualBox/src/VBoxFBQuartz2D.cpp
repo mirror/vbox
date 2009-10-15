@@ -51,8 +51,10 @@ VBoxQuartz2DFrameBuffer::VBoxQuartz2DFrameBuffer (VBoxConsoleView *aView) :
     mRegionUnused (NULL)
 {
     Log (("Quartz2D: Creating\n"));
-    resizeEvent (new VBoxResizeEvent (FramebufferPixelFormat_Opaque,
-                                      NULL, 0, 0, 640, 480));
+
+    VBoxResizeEvent event(FramebufferPixelFormat_Opaque,
+                          NULL, 0, 0, 640, 480);
+    resizeEvent (&event);
 }
 
 VBoxQuartz2DFrameBuffer::~VBoxQuartz2DFrameBuffer()
@@ -178,7 +180,11 @@ void VBoxQuartz2DFrameBuffer::paintEvent (QPaintEvent *aEvent)
          * Currently this subimage is the whole screen. */
         CGImageRef subImage;
         if (!mView->pauseShot().isNull())
-            subImage = CGImageCreateWithImageInRect (::darwinToCGImageRef (&mView->pauseShot()), CGRectMake (mView->contentsX(), mView->contentsY(), mView->visibleWidth(), mView->visibleHeight()));
+        {
+            CGImageRef pauseImg = ::darwinToCGImageRef (&mView->pauseShot());
+            subImage = CGImageCreateWithImageInRect (pauseImg, CGRectMake (mView->contentsX(), mView->contentsY(), mView->visibleWidth(), mView->visibleHeight()));
+            CGImageRelease (pauseImg);
+        }
         else
             subImage = CGImageCreateWithImageInRect (mImage, CGRectMake (mView->contentsX(), mView->contentsY(), mView->visibleWidth(), mView->visibleHeight()));
         Assert (VALID_PTR (subImage));
@@ -214,6 +220,7 @@ void VBoxQuartz2DFrameBuffer::paintEvent (QPaintEvent *aEvent)
 #ifdef COMP_WITH_SHADOW
         CGContextEndTransparencyLayer (ctx);
 #endif
+        CGImageRelease (subImage);
     }
     else
     {
@@ -225,7 +232,11 @@ void VBoxQuartz2DFrameBuffer::paintEvent (QPaintEvent *aEvent)
         QRect is = QRect (ir.x() + mView->contentsX(), ir.y() + mView->contentsY(), ir.width(), ir.height());
         CGImageRef subImage;
         if (!mView->pauseShot().isNull())
-            subImage = CGImageCreateWithImageInRect (::darwinToCGImageRef (&mView->pauseShot()), ::darwinToCGRect (is));
+        {
+            CGImageRef pauseImg = ::darwinToCGImageRef (&mView->pauseShot());
+            subImage = CGImageCreateWithImageInRect (pauseImg, ::darwinToCGRect (is));
+            CGImageRelease (pauseImg);
+        }
         else
             subImage = CGImageCreateWithImageInRect (mImage, ::darwinToCGRect (is));
         Assert (VALID_PTR (subImage));
@@ -246,6 +257,8 @@ void VBoxQuartz2DFrameBuffer::paintEvent (QPaintEvent *aEvent)
         CGContextClipToRect (ctx, viewRect);
         /* At this point draw the real vm image */
         CGContextDrawImage (ctx, ::darwinFlipCGRect (::darwinToCGRect (ir), viewRect.size.height), subImage);
+
+        CGImageRelease (subImage);
     }
 }
 
@@ -275,7 +288,6 @@ void VBoxQuartz2DFrameBuffer::resizeEvent (VBoxResizeEvent *aEvent)
         && aEvent->bitsPerPixel() == 32)
     {
 //        printf ("VRAM\n");
-        CGColorSpaceRef cs = CGColorSpaceCreateDeviceRGB();
         /* Create the image copy of the framebuffer */
         CGDataProviderRef dp = CGDataProviderCreateWithData (NULL, aEvent->VRAM(), aEvent->bitsPerPixel() / 8 * mWdt * mHgt, NULL);
         mImage = CGImageCreate (mWdt, mHgt, 8, aEvent->bitsPerPixel(), aEvent->bytesPerLine(), cs,
