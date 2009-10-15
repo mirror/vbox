@@ -109,6 +109,7 @@ static SSMFIELD const g_aPatmFields[] =
     SSMFIELD_ENTRY_IGN_RCPTR(       PATM, mmio.Alignment0),
     SSMFIELD_ENTRY_IGN_HCPTR(       PATM, savedstate.pSSM),
     SSMFIELD_ENTRY(                 PATM, savedstate.cPatches),
+    SSMFIELD_ENTRY_IGNORE(          PATM, savedstate.Alignment0),
     SSMFIELD_ENTRY_IGNORE(          PATM, StatNrOpcodeRead),
     SSMFIELD_ENTRY_IGNORE(          PATM, StatDisabled),
     SSMFIELD_ENTRY_IGNORE(          PATM, StatUnusable),
