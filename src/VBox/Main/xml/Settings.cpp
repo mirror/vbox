@@ -2202,12 +2202,17 @@ void MachineConfigFile::readMachine(const xml::ElementNode &elmMachine)
             parseTimestamp(timeLastStateChange, str);
             // constructor has called RTTimeNow(&timeLastStateChange) before
 
-        if (!elmMachine.getAttributeValue("liveMigrationTarget", fLiveMigrationTarget))
-            fLiveMigrationTarget = false;
-        if (!elmMachine.getAttributeValue("liveMigrationPort", uLiveMigrationPort))
-            uLiveMigrationPort = 0;
-        if (!elmMachine.getAttributeValue("liveMigrationPassword", strLiveMigrationPassword))
-            strLiveMigrationPassword = "";
+        if (!elmMachine.getAttributeValue("teleporterEnabled", fTeleporterEnabled) /** @todo Teleportation: remove liveMigration* in a couple of days. */
+         && !elmMachine.getAttributeValue("liveMigrationTarget", fTeleporterEnabled))
+            fTeleporterEnabled = false;
+        if (!elmMachine.getAttributeValue("teleporterPort", uTeleporterPort)
+         && !elmMachine.getAttributeValue("liveMigrationPort", uTeleporterPort))
+            uTeleporterPort = 0;
+        if (!elmMachine.getAttributeValue("teleporterAddress", strTeleporterAddress))
+            strTeleporterAddress = "";
+        if (!elmMachine.getAttributeValue("teleporterPassword", strTeleporterPassword)
+         && !elmMachine.getAttributeValue("liveMigrationPassword", strTeleporterPassword))
+            strTeleporterPassword = "";
 
         // parse Hardware before the other elements because other things depend on it
         const xml::ElementNode *pelmHardware;
@@ -2272,8 +2277,8 @@ void MachineConfigFile::readMachine(const xml::ElementNode &elmMachine)
 MachineConfigFile::MachineConfigFile(const Utf8Str *pstrFilename)
     : ConfigFileBase(pstrFilename),
       fNameSync(true),
-      fLiveMigrationTarget(false),
-      uLiveMigrationPort(0),
+      fTeleporterEnabled(false),
+      uTeleporterPort(0),
       fCurrentStateModified(true),
       fAborted(false)
 {
@@ -2872,15 +2877,14 @@ void MachineConfigFile::bumpSettingsVersionIfNeeded()
         m->sv = SettingsVersion_v1_9;
     }
 
-#ifdef VBOX_WITH_LIVE_MIGRATION
     if (    m->sv < SettingsVersion_v1_9
-        &&  (   fLiveMigrationTarget
-             || uLiveMigrationPort
-             || !strLiveMigrationPassword.isEmpty()
+        &&  (   fTeleporterEnabled
+             || uTeleporterPort
+             || !strTeleporterAddress.isEmpty()
+             || !strTeleporterPassword.isEmpty()
             )
        )
         m->sv = SettingsVersion_v1_9;
-#endif
 }
 
 /**
@@ -2920,15 +2924,17 @@ void MachineConfigFile::write(const com::Utf8Str &strFilename)
         pelmMachine->setAttribute("lastStateChange", makeString(timeLastStateChange));
         if (fAborted)
             pelmMachine->setAttribute("aborted", fAborted);
-#ifdef VBOX_WITH_LIVE_MIGRATION /** @todo LiveMigration: Checkout how the file format versioning is done. */
+#ifdef VBOX_WITH_LIVE_MIGRATION /** @todo Teleportation: Enable in a bit. */
         if (m->sv >= SettingsVersion_v1_9)
         {
-            if (fLiveMigrationTarget)
-                pelmMachine->setAttribute("liveMigrationTarget", true);
-            if (uLiveMigrationPort)
-                pelmMachine->setAttribute("liveMigrationPort", uLiveMigrationPort);
-            if (!strLiveMigrationPassword.isEmpty())
-                pelmMachine->setAttribute("liveMigrationPassword", strLiveMigrationPassword);
+            if (fTeleporterEnabled)
+                pelmMachine->setAttribute("teleporterEnabled", true);
+            if (uTeleporterPort)
+                pelmMachine->setAttribute("teleporterPort", uTeleporterPort);
+            if (!strTeleporterAddress.isEmpty())
+                pelmMachine->setAttribute("teleporterAddress", strTeleporterAddress);
+            if (!strTeleporterPassword.isEmpty())
+                pelmMachine->setAttribute("teleporterPassword", strTeleporterPassword);
         }
 #endif
 

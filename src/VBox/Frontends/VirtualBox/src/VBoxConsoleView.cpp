@@ -4193,7 +4193,7 @@ void VBoxConsoleView::updateDockOverlay()
         (mLastState == KMachineState_Running ||
          mLastState == KMachineState_Paused ||
          mLastState == KMachineState_Restoring ||
-         mLastState == KMachineState_MigratingFrom ||
+         mLastState == KMachineState_TeleportingFrom ||
          mLastState == KMachineState_Saving))
         updateDockIcon();
     else

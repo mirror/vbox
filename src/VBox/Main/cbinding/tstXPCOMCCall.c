@@ -83,7 +83,7 @@ static const char *GetStateName(PRUint32 machineState)
         case MachineState_Stopping:            return "Stopping";
         case MachineState_Saving:              return "Saving";
         case MachineState_Restoring:           return "Restoring";
-        case MachineState_MigratingFrom:       return "MigratingFrom";
+        case MachineState_TeleportingFrom:     return "TeleportingFrom";
         case MachineState_Discarding:          return "Discarding";
         case MachineState_SettingUp:           return "SettingUp";
         default:                               return "no idea";

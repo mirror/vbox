@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Console COM Class implementation, The Live Migration Part.
+ * VBox Console COM Class implementation, The Teleporter Part.
  */
 
 /*
@@ -44,11 +44,11 @@
 *   Structures and Typedefs                                                    *
 *******************************************************************************/
 /**
- * Base class for the migration state.
+ * Base class for the teleporter state.
  *
  * These classes are used as advanced structs, not as proper classes.
  */
-class MigrationState
+class TeleporterState
 {
 public:
     ComPtr<Console>     mptrConsole;
@@ -66,7 +66,7 @@ public:
     bool volatile       mfIOError;
     /** @} */
 
-    MigrationState(Console *pConsole, PVM pVM, bool fIsSource)
+    TeleporterState(Console *pConsole, PVM pVM, bool fIsSource)
         : mptrConsole(pConsole)
         , mpVM(pVM)
         , mfIsSource(fIsSource)
@@ -82,17 +82,17 @@ public:
 
 
 /**
- * Migration state used by the source side.
+ * Teleporter state used by the source side.
  */
-class MigrationStateSrc : public MigrationState
+class TeleporterStateSrc : public TeleporterState
 {
 public:
     ComPtr<Progress>    mptrProgress;
     Utf8Str             mstrHostname;
     uint32_t            muPort;
 
-    MigrationStateSrc(Console *pConsole, PVM pVM)
-        : MigrationState(pConsole, pVM, true /*fIsSource*/)
+    TeleporterStateSrc(Console *pConsole, PVM pVM)
+        : TeleporterState(pConsole, pVM, true /*fIsSource*/)
         , muPort(UINT32_MAX)
     {
     }
@@ -100,9 +100,9 @@ public:
 
 
 /**
- * Migration state used by the destiation side.
+ * Teleporter state used by the destiation side.
  */
-class MigrationStateDst : public MigrationState
+class TeleporterStateTrg : public TeleporterState
 {
 public:
     IMachine           *mpMachine;
@@ -111,8 +111,8 @@ public:
     PRTTIMERLR          mphTimerLR;
     int                 mRc;
 
-    MigrationStateDst(Console *pConsole, PVM pVM, IMachine *pMachine, PRTTIMERLR phTimerLR)
-        : MigrationState(pConsole, pVM, false /*fIsSource*/)
+    TeleporterStateTrg(Console *pConsole, PVM pVM, IMachine *pMachine, PRTTIMERLR phTimerLR)
+        : TeleporterState(pConsole, pVM, false /*fIsSource*/)
         , mpMachine(pMachine)
         , mpvVMCallbackTask(NULL)
         , mhServer(NULL)
@@ -129,24 +129,24 @@ public:
  * This is an extra layer for fixing the problem with figuring out when the SSM
  * stream ends.
  */
-typedef struct MIGRATIONTCPHDR
+typedef struct TELEPORTERTCPHDR
 {
     /** Magic value. */
     uint32_t    u32Magic;
     /** The size of the data block following this header.
      * 0 indicates the end of the stream. */
     uint32_t    cb;
-} MIGRATIONTCPHDR;
-/** Magic value for MIGRATIONTCPHDR::u32Magic. (Egberto Gismonti Amin) */
-#define MIGRATIONTCPHDR_MAGIC       UINT32_C(0x19471205)
+} TELEPORTERTCPHDR;
+/** Magic value for TELEPORTERTCPHDR::u32Magic. (Egberto Gismonti Amin) */
+#define TELEPORTERTCPHDR_MAGIC       UINT32_C(0x19471205)
 /** The max block size. */
-#define MIGRATIONTCPHDR_MAX_SIZE    UINT32_C(0x00fffff8)
+#define TELEPORTERTCPHDR_MAX_SIZE    UINT32_C(0x00fffff8)
 
 
 /*******************************************************************************
 *   Global Variables                                                           *
 *******************************************************************************/
-static const char g_szWelcome[] = "VirtualBox-LiveMigration-1.0\n";
+static const char g_szWelcome[] = "VirtualBox-Teleporter-1.0\n";
 
 
 /**
@@ -154,12 +154,12 @@ static const char g_szWelcome[] = "VirtualBox-LiveMigration-1.0\n";
  *
  * @returns VBox status code.
  *
- * @param   pState      The live migration state structure.
+ * @param   pState      The teleporter state structure.
  * @param   pszBuf      The output buffer.
  * @param   cchBuf      The size of the output buffer.
  *
  */
-static int migrationTcpReadLine(MigrationState *pState, char *pszBuf, size_t cchBuf)
+static int teleporterTcpReadLine(TeleporterState *pState, char *pszBuf, size_t cchBuf)
 {
     char       *pszStart = pszBuf;
     RTSOCKET    Sock     = pState->mhSocket;
@@ -174,7 +174,7 @@ static int migrationTcpReadLine(MigrationState *pState, char *pszBuf, size_t cch
         int rc = RTTcpRead(Sock, &ch, sizeof(ch), NULL);
         if (RT_FAILURE(rc))
         {
-            LogRel(("Migration: RTTcpRead -> %Rrc while reading string ('%s')\n", rc, pszStart));
+            LogRel(("Teleporter: RTTcpRead -> %Rrc while reading string ('%s')\n", rc, pszStart));
             return rc;
         }
         if (    ch == '\n'
@@ -182,7 +182,7 @@ static int migrationTcpReadLine(MigrationState *pState, char *pszBuf, size_t cch
             return VINF_SUCCESS;
         if (cchBuf <= 1)
         {
-            LogRel(("Migration: String buffer overflow: '%s'\n", pszStart));
+            LogRel(("Teleporter: String buffer overflow: '%s'\n", pszStart));
             return VERR_BUFFER_OVERFLOW;
         }
         *pszBuf++ = ch;
@@ -196,18 +196,18 @@ static int migrationTcpReadLine(MigrationState *pState, char *pszBuf, size_t cch
  * Reads an ACK or NACK.
  *
  * @returns S_OK on ACK, E_FAIL+setError() on failure or NACK.
- * @param   pState              The live migration source state.
+ * @param   pState              The teleporter source state.
  * @param   pszWhich            Which ACK is this this?
  * @param   pszNAckMsg          Optional NACK message.
  *
  * @remarks the setError laziness forces this to be a Console member.
  */
 HRESULT
-Console::migrationSrcReadACK(MigrationStateSrc *pState, const char *pszWhich,
+Console::teleporterSrcReadACK(TeleporterStateSrc *pState, const char *pszWhich,
                              const char *pszNAckMsg /*= NULL*/)
 {
     char szMsg[128];
-    int vrc = migrationTcpReadLine(pState, szMsg, sizeof(szMsg));
+    int vrc = teleporterTcpReadLine(pState, szMsg, sizeof(szMsg));
     if (RT_FAILURE(vrc))
         return setError(E_FAIL, tr("Failed reading ACK(%s): %Rrc"), pszWhich, vrc);
     if (strcmp(szMsg, "ACK"))
@@ -220,7 +220,7 @@ Console::migrationSrcReadACK(MigrationStateSrc *pState, const char *pszWhich,
             {
                 if (pszNAckMsg)
                 {
-                    LogRel(("Migration: %s: NACK=%Rrc (%d)\n", pszWhich, vrc2, vrc2));
+                    LogRel(("Teleporter: %s: NACK=%Rrc (%d)\n", pszWhich, vrc2, vrc2));
                     return setError(E_FAIL, pszNAckMsg);
                 }
                 return setError(E_FAIL, "NACK(%s) - %Rrc (%d)", pszWhich, vrc2, vrc2);
@@ -237,13 +237,13 @@ Console::migrationSrcReadACK(MigrationStateSrc *pState, const char *pszWhich,
  *
  * @returns S_OK on ACKed command, E_FAIL+setError() on failure.
  *
- * @param   pState              The live migration source state.
+ * @param   pState              The teleporter source state.
  * @param   pszCommand          The command.
  *
  * @remarks the setError laziness forces this to be a Console member.
  */
 HRESULT
-Console::migrationSrcSubmitCommand(MigrationStateSrc *pState, const char *pszCommand)
+Console::teleporterSrcSubmitCommand(TeleporterStateSrc *pState, const char *pszCommand)
 {
     size_t cchCommand = strlen(pszCommand);
     int vrc = RTTcpWrite(pState->mhSocket, pszCommand, cchCommand);
@@ -253,16 +253,16 @@ Console::migrationSrcSubmitCommand(MigrationStateSrc *pState, const char *pszCom
         vrc = RTTcpFlush(pState->mhSocket);
     if (RT_FAILURE(vrc))
         return setError(E_FAIL, tr("Failed writing command '%s': %Rrc"), pszCommand, vrc);
-    return migrationSrcReadACK(pState, pszCommand);
+    return teleporterSrcReadACK(pState, pszCommand);
 }
 
 
 /**
  * @copydoc SSMSTRMOPS::pfnWrite
  */
-static DECLCALLBACK(int) migrationTcpOpWrite(void *pvUser, uint64_t offStream, const void *pvBuf, size_t cbToWrite)
+static DECLCALLBACK(int) teleporterTcpOpWrite(void *pvUser, uint64_t offStream, const void *pvBuf, size_t cbToWrite)
 {
-    MigrationState *pState = (MigrationState *)pvUser;
+    TeleporterState *pState = (TeleporterState *)pvUser;
 
     AssertReturn(cbToWrite > 0, VINF_SUCCESS);
     AssertReturn(pState->mfIsSource, VERR_INVALID_HANDLE);
@@ -270,13 +270,13 @@ static DECLCALLBACK(int) migrationTcpOpWrite(void *pvUser, uint64_t offStream, c
     for (;;)
     {
         /* Write block header. */
-        MIGRATIONTCPHDR Hdr;
-        Hdr.u32Magic = MIGRATIONTCPHDR_MAGIC;
-        Hdr.cb       = RT_MIN(cbToWrite, MIGRATIONTCPHDR_MAX_SIZE);
+        TELEPORTERTCPHDR Hdr;
+        Hdr.u32Magic = TELEPORTERTCPHDR_MAGIC;
+        Hdr.cb       = RT_MIN(cbToWrite, TELEPORTERTCPHDR_MAX_SIZE);
         int rc = RTTcpWrite(pState->mhSocket, &Hdr, sizeof(Hdr));
         if (RT_FAILURE(rc))
         {
-            LogRel(("Migration/TCP: Header write error: %Rrc\n", rc));
+            LogRel(("Teleporter/TCP: Header write error: %Rrc\n", rc));
             return rc;
         }
 
@@ -284,7 +284,7 @@ static DECLCALLBACK(int) migrationTcpOpWrite(void *pvUser, uint64_t offStream, c
         rc = RTTcpWrite(pState->mhSocket, pvBuf, Hdr.cb);
         if (RT_FAILURE(rc))
         {
-            LogRel(("Migration/TCP: Data write error: %Rrc (cb=%#x)\n", rc, Hdr.cb));
+            LogRel(("Teleporter/TCP: Data write error: %Rrc (cb=%#x)\n", rc, Hdr.cb));
             return rc;
         }
         pState->moffStream += Hdr.cb;
@@ -307,9 +307,9 @@ static DECLCALLBACK(int) migrationTcpOpWrite(void *pvUser, uint64_t offStream, c
  *
  * @returns VBox status code.
  *
- * @param   pState          The migration state data.
+ * @param   pState          The teleporter state data.
  */
-static int migrationTcpReadSelect(MigrationState *pState)
+static int teleporterTcpReadSelect(TeleporterState *pState)
 {
     int rc;
     do
@@ -318,7 +318,7 @@ static int migrationTcpReadSelect(MigrationState *pState)
         if (RT_FAILURE(rc) && rc != VERR_TIMEOUT)
         {
             pState->mfIOError = true;
-            LogRel(("Migration/TCP: Header select error: %Rrc\n", rc));
+            LogRel(("Teleporter/TCP: Header select error: %Rrc\n", rc));
             break;
         }
         if (pState->mfStopReading)
@@ -334,9 +334,9 @@ static int migrationTcpReadSelect(MigrationState *pState)
 /**
  * @copydoc SSMSTRMOPS::pfnRead
  */
-static DECLCALLBACK(int) migrationTcpOpRead(void *pvUser, uint64_t offStream, void *pvBuf, size_t cbToRead, size_t *pcbRead)
+static DECLCALLBACK(int) teleporterTcpOpRead(void *pvUser, uint64_t offStream, void *pvBuf, size_t cbToRead, size_t *pcbRead)
 {
-    MigrationState *pState = (MigrationState *)pvUser;
+    TeleporterState *pState = (TeleporterState *)pvUser;
     AssertReturn(!pState->mfIsSource, VERR_INVALID_HANDLE);
 
     for (;;)
@@ -359,22 +359,22 @@ static DECLCALLBACK(int) migrationTcpOpRead(void *pvUser, uint64_t offStream, vo
          */
         if (!pState->mcbReadBlock)
         {
-            rc = migrationTcpReadSelect(pState);
+            rc = teleporterTcpReadSelect(pState);
             if (RT_FAILURE(rc))
                 return rc;
-            MIGRATIONTCPHDR Hdr;
+            TELEPORTERTCPHDR Hdr;
             rc = RTTcpRead(pState->mhSocket, &Hdr, sizeof(Hdr), NULL);
             if (RT_FAILURE(rc))
             {
                 pState->mfIOError = true;
-                LogRel(("Migration/TCP: Header read error: %Rrc\n", rc));
+                LogRel(("Teleporter/TCP: Header read error: %Rrc\n", rc));
                 return rc;
             }
-            if (   Hdr.u32Magic != MIGRATIONTCPHDR_MAGIC
-                || Hdr.cb > MIGRATIONTCPHDR_MAX_SIZE)
+            if (   Hdr.u32Magic != TELEPORTERTCPHDR_MAGIC
+                || Hdr.cb > TELEPORTERTCPHDR_MAX_SIZE)
             {
                 pState->mfIOError = true;
-                LogRel(("Migration/TCP: Invalid block: u32Magic=%#x cb=%#x\n", Hdr.u32Magic, Hdr.cb));
+                LogRel(("Teleporter/TCP: Invalid block: u32Magic=%#x cb=%#x\n", Hdr.u32Magic, Hdr.cb));
                 return VERR_IO_GEN_FAILURE;
             }
 
@@ -392,7 +392,7 @@ static DECLCALLBACK(int) migrationTcpOpRead(void *pvUser, uint64_t offStream, vo
         /*
          * Read more data.
          */
-        rc = migrationTcpReadSelect(pState);
+        rc = teleporterTcpReadSelect(pState);
         if (RT_FAILURE(rc))
             return rc;
         size_t cb = RT_MIN(pState->mcbReadBlock, cbToRead);
@@ -400,7 +400,7 @@ static DECLCALLBACK(int) migrationTcpOpRead(void *pvUser, uint64_t offStream, vo
         if (RT_FAILURE(rc))
         {
             pState->mfIOError = true;
-            LogRel(("Migration/TCP: Data read error: %Rrc (cb=%#x)\n", rc, cb));
+            LogRel(("Teleporter/TCP: Data read error: %Rrc (cb=%#x)\n", rc, cb));
             return rc;
         }
         if (pcbRead)
@@ -424,7 +424,7 @@ static DECLCALLBACK(int) migrationTcpOpRead(void *pvUser, uint64_t offStream, vo
 /**
  * @copydoc SSMSTRMOPS::pfnSeek
  */
-static DECLCALLBACK(int) migrationTcpOpSeek(void *pvUser, int64_t offSeek, unsigned uMethod, uint64_t *poffActual)
+static DECLCALLBACK(int) teleporterTcpOpSeek(void *pvUser, int64_t offSeek, unsigned uMethod, uint64_t *poffActual)
 {
     return VERR_NOT_SUPPORTED;
 }
@@ -433,9 +433,9 @@ static DECLCALLBACK(int) migrationTcpOpSeek(void *pvUser, int64_t offSeek, unsig
 /**
  * @copydoc SSMSTRMOPS::pfnTell
  */
-static DECLCALLBACK(uint64_t) migrationTcpOpTell(void *pvUser)
+static DECLCALLBACK(uint64_t) teleporterTcpOpTell(void *pvUser)
 {
-    MigrationState *pState = (MigrationState *)pvUser;
+    TeleporterState *pState = (TeleporterState *)pvUser;
     return pState->moffStream;
 }
 
@@ -443,7 +443,7 @@ static DECLCALLBACK(uint64_t) migrationTcpOpTell(void *pvUser)
 /**
  * @copydoc SSMSTRMOPS::pfnSize
  */
-static DECLCALLBACK(int) migrationTcpOpSize(void *pvUser, uint64_t *pcb)
+static DECLCALLBACK(int) teleporterTcpOpSize(void *pvUser, uint64_t *pcb)
 {
     return VERR_NOT_SUPPORTED;
 }
@@ -452,19 +452,19 @@ static DECLCALLBACK(int) migrationTcpOpSize(void *pvUser, uint64_t *pcb)
 /**
  * @copydoc SSMSTRMOPS::pfnClose
  */
-static DECLCALLBACK(int) migrationTcpOpClose(void *pvUser)
+static DECLCALLBACK(int) teleporterTcpOpClose(void *pvUser)
 {
-    MigrationState *pState = (MigrationState *)pvUser;
+    TeleporterState *pState = (TeleporterState *)pvUser;
 
     if (pState->mfIsSource)
     {
-        MIGRATIONTCPHDR EofHdr = { MIGRATIONTCPHDR_MAGIC, 0 };
+        TELEPORTERTCPHDR EofHdr = { TELEPORTERTCPHDR_MAGIC, 0 };
         int rc = RTTcpWrite(pState->mhSocket, &EofHdr, sizeof(EofHdr));
         if (RT_SUCCESS(rc))
             rc = RTTcpFlush(pState->mhSocket);
         if (RT_FAILURE(rc))
         {
-            LogRel(("Migration/TCP: EOF Header write error: %Rrc\n", rc));
+            LogRel(("Teleporter/TCP: EOF Header write error: %Rrc\n", rc));
             return rc;
         }
     }
@@ -481,15 +481,15 @@ static DECLCALLBACK(int) migrationTcpOpClose(void *pvUser)
 /**
  * Method table for a TCP based stream.
  */
-static SSMSTRMOPS const g_migrationTcpOps =
+static SSMSTRMOPS const g_teleporterTcpOps =
 {
     SSMSTRMOPS_VERSION,
-    migrationTcpOpWrite,
-    migrationTcpOpRead,
-    migrationTcpOpSeek,
-    migrationTcpOpTell,
-    migrationTcpOpSize,
-    migrationTcpOpClose,
+    teleporterTcpOpWrite,
+    teleporterTcpOpRead,
+    teleporterTcpOpSeek,
+    teleporterTcpOpTell,
+    teleporterTcpOpSize,
+    teleporterTcpOpClose,
     SSMSTRMOPS_VERSION
 };
 
@@ -497,7 +497,7 @@ static SSMSTRMOPS const g_migrationTcpOps =
 /**
  * @copydoc FNRTTIMERLR
  */
-static DECLCALLBACK(void) migrationTimeout(RTTIMERLR hTimerLR, void *pvUser, uint64_t iTick)
+static DECLCALLBACK(void) teleporterTimeout(RTTIMERLR hTimerLR, void *pvUser, uint64_t iTick)
 {
     /* This is harmless for any open connections. */
     RTTcpServerShutdown((PRTTCPSERVER)pvUser);
@@ -505,19 +505,19 @@ static DECLCALLBACK(void) migrationTimeout(RTTIMERLR hTimerLR, void *pvUser, uin
 
 
 /**
- * Do the live migration.
+ * Do the teleporter.
  *
  * @returns VBox status code.
- * @param   pState              The migration state.
+ * @param   pState              The teleporter state.
  */
 HRESULT
-Console::migrationSrc(MigrationStateSrc *pState)
+Console::teleporterSrc(TeleporterStateSrc *pState)
 {
     AutoCaller autoCaller(this);
     CheckComRCReturnRC(autoCaller.rc());
 
     /*
-     * Wait for Console::Migrate to change the state.
+     * Wait for Console::Teleport to change the state.
      */
     { AutoWriteLock autoLock(); }
 
@@ -553,7 +553,7 @@ Console::migrationSrc(MigrationStateSrc *pState)
         return setError(E_FAIL, tr("Failed to send password: %Rrc"), vrc);
 
     /* ACK */
-    hrc = migrationSrcReadACK(pState, "password", tr("Invalid password"));
+    hrc = teleporterSrcReadACK(pState, "password", tr("Invalid password"));
     if (FAILED(hrc))
         return hrc;
 
@@ -565,23 +565,23 @@ Console::migrationSrc(MigrationStateSrc *pState)
     /*
      * Start loading the state.
      */
-    hrc = migrationSrcSubmitCommand(pState, "load");
+    hrc = teleporterSrcSubmitCommand(pState, "load");
     if (FAILED(hrc))
         return hrc;
 
-    void *pvUser = static_cast<void *>(static_cast<MigrationState *>(pState));
-    vrc = VMR3Migrate(pState->mpVM, &g_migrationTcpOps, pvUser, NULL/** @todo progress*/, pvUser);
+    void *pvUser = static_cast<void *>(static_cast<TeleporterState *>(pState));
+    vrc = VMR3Teleport(pState->mpVM, &g_teleporterTcpOps, pvUser, NULL/** @todo progress*/, pvUser);
     if (vrc)
-        return setError(E_FAIL, tr("VMR3Migrate -> %Rrc"), vrc);
+        return setError(E_FAIL, tr("VMR3Teleport -> %Rrc"), vrc);
 
-    hrc = migrationSrcReadACK(pState, "load-complete");
+    hrc = teleporterSrcReadACK(pState, "load-complete");
     if (FAILED(hrc))
         return hrc;
 
     /*
      * State fun? Automatic power off?
      */
-    hrc = migrationSrcSubmitCommand(pState, "done");
+    hrc = teleporterSrcSubmitCommand(pState, "done");
     if (FAILED(hrc))
         return hrc;
 
@@ -594,18 +594,18 @@ Console::migrationSrc(MigrationStateSrc *pState)
  *
  * @returns VINF_SUCCESS (ignored).
  * @param   hThread             The thread.
- * @param   pvUser              Pointer to a MigrationStateSrc instance.
+ * @param   pvUser              Pointer to a TeleporterStateSrc instance.
  */
 /*static*/ DECLCALLBACK(int)
-Console::migrationSrcThreadWrapper(RTTHREAD hThread, void *pvUser)
+Console::teleporterSrcThreadWrapper(RTTHREAD hThread, void *pvUser)
 {
-    MigrationStateSrc *pState = (MigrationStateSrc *)pvUser;
+    TeleporterStateSrc *pState = (TeleporterStateSrc *)pvUser;
 
     AutoVMCaller autoVMCaller(pState->mptrConsole);
     HRESULT hrc = autoVMCaller.rc();
 
     if (SUCCEEDED(hrc))
-        hrc = pState->mptrConsole->migrationSrc(pState);
+        hrc = pState->mptrConsole->teleporterSrc(pState);
 
     pState->mptrProgress->notifyComplete(hrc);
 
@@ -664,7 +664,7 @@ Console::migrationSrcThreadWrapper(RTTHREAD hThread, void *pvUser)
 
 
 /**
- * Start live migration to the specified target.
+ * Start teleporter to the specified target.
  *
  * @returns COM status code.
  *
@@ -674,7 +674,7 @@ Console::migrationSrcThreadWrapper(RTTHREAD hThread, void *pvUser)
  * @param   aProgress   Where to return the progress object.
  */
 STDMETHODIMP
-Console::Migrate(IN_BSTR aHostname, ULONG aPort, IN_BSTR aPassword, IProgress **aProgress)
+Console::Teleport(IN_BSTR aHostname, ULONG aPort, IN_BSTR aPassword, IProgress **aProgress)
 {
     /*
      * Validate parameters, check+hold object status, write lock the object
@@ -708,31 +708,31 @@ Console::Migrate(IN_BSTR aHostname, ULONG aPort, IN_BSTR aPassword, IProgress **
      * Create a progress object, spawn a worker thread and change the state.
      * Note! The thread won't start working until we release the lock.
      */
-    LogFlowThisFunc(("Initiating LIVE MIGRATION request...\n"));
+    LogFlowThisFunc(("Initiating TELEPORTER request...\n"));
 
-    ComObjPtr<Progress> ptrMigrateProgress;
-    HRESULT hrc = ptrMigrateProgress.createObject();
+    ComObjPtr<Progress> ptrTelportationProgress;
+    HRESULT hrc = ptrTelportationProgress.createObject();
     CheckComRCReturnRC(hrc);
-    hrc = ptrMigrateProgress->init(static_cast<IConsole *>(this),
-                                   Bstr(tr("Live Migration")),
-                                   TRUE /*aCancelable*/);
+    hrc = ptrTelportationProgress->init(static_cast<IConsole *>(this),
+                                        Bstr(tr("Teleporter")),
+                                        TRUE /*aCancelable*/);
     CheckComRCReturnRC(hrc);
 
-    MigrationStateSrc *pState = new MigrationStateSrc(this, mpVM);
+    TeleporterStateSrc *pState = new TeleporterStateSrc(this, mpVM);
     pState->mstrPassword = aPassword;
     pState->mstrHostname = aHostname;
     pState->muPort       = aPort;
-    pState->mptrProgress = ptrMigrateProgress;
+    pState->mptrProgress = ptrTelportationProgress;
 
-    int vrc = RTThreadCreate(NULL, Console::migrationSrcThreadWrapper, (void *)pState, 0 /*cbStack*/,
-                             RTTHREADTYPE_EMULATION, 0 /*fFlags*/, "Migrate");
+    int vrc = RTThreadCreate(NULL, Console::teleporterSrcThreadWrapper, (void *)pState, 0 /*cbStack*/,
+                             RTTHREADTYPE_EMULATION, 0 /*fFlags*/, "Teleport");
     if (RT_SUCCESS(vrc))
     {
         hrc = setMachineState(MachineState_Saving);
         if (SUCCEEDED(hrc))
-            ptrMigrateProgress.queryInterfaceTo(aProgress);
+            ptrTelportationProgress.queryInterfaceTo(aProgress);
         else
-            ptrMigrateProgress->Cancel();
+            ptrTelportationProgress->Cancel();
     }
     else
     {
@@ -746,7 +746,7 @@ Console::Migrate(IN_BSTR aHostname, ULONG aPort, IN_BSTR aPassword, IProgress **
 
 /**
  * Creates a TCP server that listens for the source machine and passes control
- * over to Console::migrationDstServeConnection().
+ * over to Console::teleporterTrgServeConnection().
  *
  * @returns VBox status code.
  * @param   pVM                 The VM handle
@@ -757,27 +757,29 @@ Console::Migrate(IN_BSTR aHostname, ULONG aPort, IN_BSTR aPassword, IProgress **
  *                              stateProgressCallback().
  */
 int
-Console::migrationDst(PVM pVM, IMachine *pMachine, bool fStartPaused, void *pvVMCallbackTask)
+Console::teleporterTrg(PVM pVM, IMachine *pMachine, bool fStartPaused, void *pvVMCallbackTask)
 {
     /*
      * Get the config.
      */
     ULONG uPort;
-    HRESULT hrc = pMachine->COMGETTER(LiveMigrationPort)(&uPort);
+    HRESULT hrc = pMachine->COMGETTER(TeleporterPort)(&uPort);
     if (FAILED(hrc))
         return VERR_GENERAL_FAILURE;
 
+    Bstr bstrAddress;
+    hrc = pMachine->COMGETTER(TeleporterAddress)(bstrAddress.asOutParam());
+    if (FAILED(hrc))
+        return VERR_GENERAL_FAILURE;
+    Utf8Str strAddress(bstrAddress);
+    const char *pszAddress = strAddress.isEmpty() ? NULL : strAddress.c_str();
+
     Bstr bstrPassword;
-    hrc = pMachine->COMGETTER(LiveMigrationPassword)(bstrPassword.asOutParam());
+    hrc = pMachine->COMGETTER(TeleporterPassword)(bstrPassword.asOutParam());
     if (FAILED(hrc))
         return VERR_GENERAL_FAILURE;
     Utf8Str strPassword(bstrPassword);
     strPassword.append('\n');           /* To simplify password checking. */
-
-    Utf8Str strBind("");
-    /** @todo Add a bind address property. */
-    const char *pszBindAddress = strBind.isEmpty() ? NULL : strBind.c_str();
-
 
     /*
      * Create the TCP server.
@@ -785,24 +787,25 @@ Console::migrationDst(PVM pVM, IMachine *pMachine, bool fStartPaused, void *pvVM
     int vrc;
     PRTTCPSERVER hServer;
     if (uPort)
-        vrc = RTTcpServerCreateEx(pszBindAddress, uPort, &hServer);
+        vrc = RTTcpServerCreateEx(pszAddress, uPort, &hServer);
     else
     {
         for (int cTries = 10240; cTries > 0; cTries--)
         {
             uPort = RTRandU32Ex(cTries >= 8192 ? 49152 : 1024, 65534);
-            vrc = RTTcpServerCreateEx(pszBindAddress, uPort, &hServer);
+            vrc = RTTcpServerCreateEx(pszAddress, uPort, &hServer);
             if (vrc != VERR_NET_ADDRESS_IN_USE)
                 break;
         }
         if (RT_SUCCESS(vrc))
         {
-            HRESULT hrc = pMachine->COMSETTER(LiveMigrationPort)(uPort);
+            HRESULT hrc = pMachine->COMSETTER(TeleporterPort)(uPort);
             if (FAILED(hrc))
             {
                 RTTcpServerDestroy(hServer);
                 return VERR_GENERAL_FAILURE;
             }
+/** @todo Should undo this upon return. */
         }
     }
     if (RT_FAILURE(vrc))
@@ -812,7 +815,7 @@ Console::migrationDst(PVM pVM, IMachine *pMachine, bool fStartPaused, void *pvVM
      * Create a one-shot timer for timing out after 5 mins.
      */
     RTTIMERLR hTimerLR;
-    vrc = RTTimerLRCreateEx(&hTimerLR, 0 /*ns*/, RTTIMER_FLAGS_CPU_ANY, migrationTimeout, hServer);
+    vrc = RTTimerLRCreateEx(&hTimerLR, 0 /*ns*/, RTTIMER_FLAGS_CPU_ANY, teleporterTimeout, hServer);
     if (RT_SUCCESS(vrc))
     {
         vrc = RTTimerLRStart(hTimerLR, 5*60*UINT64_C(1000000000) /*ns*/);
@@ -821,12 +824,12 @@ Console::migrationDst(PVM pVM, IMachine *pMachine, bool fStartPaused, void *pvVM
             /*
              * Do the job, when it returns we're done.
              */
-            MigrationStateDst State(this, pVM, pMachine, &hTimerLR);
+            TeleporterStateTrg State(this, pVM, pMachine, &hTimerLR);
             State.mstrPassword      = strPassword;
             State.mhServer          = hServer;
             State.mpvVMCallbackTask = pvVMCallbackTask;
 
-            vrc = RTTcpServerListen(hServer, Console::migrationDstServeConnection, &State);
+            vrc = RTTcpServerListen(hServer, Console::teleporterTrgServeConnection, &State);
             if (vrc == VERR_TCP_SERVER_STOP)
                 vrc = State.mRc;
             if (RT_SUCCESS(vrc))
@@ -838,7 +841,7 @@ Console::migrationDst(PVM pVM, IMachine *pMachine, bool fStartPaused, void *pvVM
             }
             else
             {
-                LogRel(("Migration: RTTcpServerListen -> %Rrc\n", vrc));
+                LogRel(("Teleporter: RTTcpServerListen -> %Rrc\n", vrc));
             }
         }
 
@@ -850,23 +853,23 @@ Console::migrationDst(PVM pVM, IMachine *pMachine, bool fStartPaused, void *pvVM
 }
 
 
-static int migrationTcpWriteACK(MigrationStateDst *pState)
+static int teleporterTcpWriteACK(TeleporterStateTrg *pState)
 {
     int rc = RTTcpWrite(pState->mhSocket, "ACK\n", sizeof("ACK\n") - 1);
     if (RT_FAILURE(rc))
-        LogRel(("Migration: RTTcpWrite(,ACK,) -> %Rrc\n", rc));
+        LogRel(("Teleporter: RTTcpWrite(,ACK,) -> %Rrc\n", rc));
     RTTcpFlush(pState->mhSocket);
     return rc;
 }
 
 
-static int migrationTcpWriteNACK(MigrationStateDst *pState, int32_t rc2)
+static int teleporterTcpWriteNACK(TeleporterStateTrg *pState, int32_t rc2)
 {
     char    szMsg[64];
     size_t  cch = RTStrPrintf(szMsg, sizeof(szMsg), "NACK=%d\n", rc2);
     int rc = RTTcpWrite(pState->mhSocket, szMsg, cch);
     if (RT_FAILURE(rc))
-        LogRel(("Migration: RTTcpWrite(,%s,%zu) -> %Rrc\n", szMsg, cch, rc));
+        LogRel(("Teleporter: RTTcpWrite(,%s,%zu) -> %Rrc\n", szMsg, cch, rc));
     RTTcpFlush(pState->mhSocket);
     return rc;
 }
@@ -876,9 +879,9 @@ static int migrationTcpWriteNACK(MigrationStateDst *pState, int32_t rc2)
  * @copydoc FNRTTCPSERVE
  */
 /*static*/ DECLCALLBACK(int)
-Console::migrationDstServeConnection(RTSOCKET Sock, void *pvUser)
+Console::teleporterTrgServeConnection(RTSOCKET Sock, void *pvUser)
 {
-    MigrationStateDst *pState = (MigrationStateDst *)pvUser;
+    TeleporterStateTrg *pState = (TeleporterStateTrg *)pvUser;
     pState->mhSocket = Sock;
 
     /*
@@ -887,12 +890,12 @@ Console::migrationDstServeConnection(RTSOCKET Sock, void *pvUser)
     int vrc = RTTcpWrite(Sock, g_szWelcome, sizeof(g_szWelcome) - 1);
     if (RT_FAILURE(vrc))
     {
-        LogRel(("Migration: Failed to write welcome message: %Rrc\n", vrc));
+        LogRel(("Teleporter: Failed to write welcome message: %Rrc\n", vrc));
         return VINF_SUCCESS;
     }
 
     /*
-     * Password (includes '\n', see migrationDst).  If it's right, tell
+     * Password (includes '\n', see teleporterTrg).  If it's right, tell
      * the TCP server to stop listening (frees up host resources and makes sure
      * this is the last connection attempt).
      */
@@ -906,15 +909,15 @@ Console::migrationDstServeConnection(RTSOCKET Sock, void *pvUser)
             ||  pszPassword[off] != ch)
         {
             if (RT_FAILURE(vrc))
-                LogRel(("Migration: Password read failure (off=%u): %Rrc\n", off, vrc));
+                LogRel(("Teleporter: Password read failure (off=%u): %Rrc\n", off, vrc));
             else
-                LogRel(("Migration: Invalid password (off=%u)\n", off));
-            migrationTcpWriteNACK(pState, VERR_AUTHENTICATION_FAILURE);
+                LogRel(("Teleporter: Invalid password (off=%u)\n", off));
+            teleporterTcpWriteNACK(pState, VERR_AUTHENTICATION_FAILURE);
             return VINF_SUCCESS;
         }
         off++;
     }
-    vrc = migrationTcpWriteACK(pState);
+    vrc = teleporterTcpWriteACK(pState);
     if (RT_FAILURE(vrc))
         return vrc;
 
@@ -928,39 +931,39 @@ Console::migrationDstServeConnection(RTSOCKET Sock, void *pvUser)
     for (;;)
     {
         char szCmd[128];
-        vrc = migrationTcpReadLine(pState, szCmd, sizeof(szCmd));
+        vrc = teleporterTcpReadLine(pState, szCmd, sizeof(szCmd));
         if (RT_FAILURE(vrc))
             break;
 
         if (!strcmp(szCmd, "load"))
         {
-            vrc = migrationTcpWriteACK(pState);
+            vrc = teleporterTcpWriteACK(pState);
             if (RT_FAILURE(vrc))
                 break;
 
             pState->moffStream = 0;
-            void *pvUser = static_cast<void *>(static_cast<MigrationState *>(pState));
-            vrc = VMR3LoadFromStream(pState->mpVM, &g_migrationTcpOps, pvUser,
+            void *pvUser = static_cast<void *>(static_cast<TeleporterState *>(pState));
+            vrc = VMR3LoadFromStream(pState->mpVM, &g_teleporterTcpOps, pvUser,
                                      Console::stateProgressCallback, pState->mpvVMCallbackTask);
             if (RT_FAILURE(vrc))
             {
-                LogRel(("Migration: VMR3LoadFromStream -> %Rrc\n", vrc));
-                migrationTcpWriteNACK(pState, vrc);
+                LogRel(("Teleporter: VMR3LoadFromStream -> %Rrc\n", vrc));
+                teleporterTcpWriteNACK(pState, vrc);
                 break;
             }
 
             /* The EOS might not have been read, make sure it is. */
             pState->mfStopReading = false;
             size_t cbRead;
-            vrc = migrationTcpOpRead(pvUser, pState->moffStream, szCmd, 1, &cbRead);
+            vrc = teleporterTcpOpRead(pvUser, pState->moffStream, szCmd, 1, &cbRead);
             if (vrc != VERR_EOF)
             {
-                LogRel(("Migration: Draining migrationTcpOpRead -> %Rrc\n", vrc));
-                migrationTcpWriteNACK(pState, vrc);
+                LogRel(("Teleporter: Draining teleporterTcpOpRead -> %Rrc\n", vrc));
+                teleporterTcpWriteNACK(pState, vrc);
                 break;
             }
 
-            vrc = migrationTcpWriteACK(pState);
+            vrc = teleporterTcpWriteACK(pState);
             if (RT_FAILURE(vrc))
                 break;
         }
@@ -968,14 +971,14 @@ Console::migrationDstServeConnection(RTSOCKET Sock, void *pvUser)
          *        maybe leave part of these to the saved state machinery? */
         else if (!strcmp(szCmd, "done"))
         {
-            vrc = migrationTcpWriteACK(pState);
+            vrc = teleporterTcpWriteACK(pState);
             break;
         }
         else
         {
-            LogRel(("Migration: Unknown command '%s' (%.*Rhxs)\n", szCmd, strlen(szCmd), szCmd));
+            LogRel(("Teleporter: Unknown command '%s' (%.*Rhxs)\n", szCmd, strlen(szCmd), szCmd));
             vrc = VERR_NOT_IMPLEMENTED;
-            migrationTcpWriteNACK(pState, vrc);
+            teleporterTcpWriteNACK(pState, vrc);
             break;
         }
     }

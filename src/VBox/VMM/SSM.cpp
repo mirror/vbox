@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2009 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -41,9 +41,9 @@
  *
  * @section sec_ssm_live_snapshots  Live Snapshots
  *
- * The live snapshots feature (LS) is similar to live migration (LM) and was a
- * natural first step when implementing LM.  The main differences between LS and
- * LM are that after a live snapshot we will have a saved state file, disk image
+ * The live snapshots feature (LS) is similar to teleportation (TP) and was a
+ * natural first step when implementing TP.  The main differences between LS and
+ * TP are that after a live snapshot we will have a saved state file, disk image
  * snapshots, and the VM will still be running.
  *
  * Compared to normal saved stated and snapshots, the difference is in that the
@@ -55,9 +55,9 @@
  * starve or lose in scheduling questions (note: not implemented yet). The final
  * pass is done on EMT(0).
  *
- * There are a couple of common reasons why LS and LM will fail:
+ * There are a couple of common reasons why LS and TP will fail:
  *   - Memory configuration changed (PCI memory mappings).
- *   - Takes too long (LM) / Too much output (LS).
+ *   - Takes too long (TP) / Too much output (LS).
  *
  *
  * The live saving sequence is something like this:
@@ -75,7 +75,7 @@
  *      -# The VM is resumed or powered off and destroyed.
  *
  *
- * @section sec_ssm_live_migration  Live Migration
+ * @section sec_ssm_teleportation   Teleportation
  *
  * As mentioned in the previous section, the main differences between this and
  * live snapshots are in where the saved state is written and what state the
@@ -84,7 +84,7 @@
  * machine, cloning the VM config on it and doing lowlevel saved state data
  * transfer - is taken care of by layer above the VMM (i.e.  Main).
  *
- * The SSM data format was made streamable for the purpose of live migration
+ * The SSM data format was made streamable for the purpose of teleportation
  * (v1.2 was the last non-streamable version).
  *
  *
@@ -4023,7 +4023,7 @@ VMMR3_INT_DECL(int) SSMR3LiveDone(PSSMHANDLE pSSM)
     VM_ASSERT_EMT0(pVM);
     AssertMsgReturn(   pSSM->enmAfter == SSMAFTER_DESTROY
                     || pSSM->enmAfter == SSMAFTER_CONTINUE
-                    || pSSM->enmAfter == SSMAFTER_MIGRATE,
+                    || pSSM->enmAfter == SSMAFTER_TELEPORT,
                     ("%d\n", pSSM->enmAfter),
                     VERR_INVALID_PARAMETER);
     AssertMsgReturn(    pSSM->enmOp >= SSMSTATE_LIVE_PREP
@@ -4466,7 +4466,7 @@ VMMR3_INT_DECL(int) SSMR3LiveDoStep2(PSSMHANDLE pSSM)
     VM_ASSERT_EMT0(pVM);
     AssertMsgReturn(   pSSM->enmAfter == SSMAFTER_DESTROY
                     || pSSM->enmAfter == SSMAFTER_CONTINUE
-                    || pSSM->enmAfter == SSMAFTER_MIGRATE,
+                    || pSSM->enmAfter == SSMAFTER_TELEPORT,
                     ("%d\n", pSSM->enmAfter),
                     VERR_INVALID_PARAMETER);
     AssertMsgReturn(pSSM->enmOp == SSMSTATE_LIVE_STEP2, ("%d\n", pSSM->enmOp), VERR_INVALID_STATE);
@@ -4871,7 +4871,7 @@ VMMR3_INT_DECL(int) SSMR3LiveDoStep1(PSSMHANDLE pSSM)
     VM_ASSERT_OTHER_THREAD(pVM);
     AssertMsgReturn(   pSSM->enmAfter == SSMAFTER_DESTROY
                     || pSSM->enmAfter == SSMAFTER_CONTINUE
-                    || pSSM->enmAfter == SSMAFTER_MIGRATE,
+                    || pSSM->enmAfter == SSMAFTER_TELEPORT,
                     ("%d\n", pSSM->enmAfter),
                     VERR_INVALID_PARAMETER);
     AssertMsgReturn(pSSM->enmOp == SSMSTATE_LIVE_STEP1, ("%d\n", pSSM->enmOp), VERR_INVALID_STATE);
@@ -5072,7 +5072,7 @@ VMMR3_INT_DECL(int) SSMR3LiveSave(PVM pVM, const char *pszFilename, PCSSMSTRMOPS
      */
     AssertMsgReturn(   enmAfter == SSMAFTER_DESTROY
                     || enmAfter == SSMAFTER_CONTINUE
-                    || enmAfter == SSMAFTER_MIGRATE,
+                    || enmAfter == SSMAFTER_TELEPORT,
                     ("%d\n", enmAfter),
                     VERR_INVALID_PARAMETER);
     AssertReturn(!pszFilename != !pStreamOps, VERR_INVALID_PARAMETER);
@@ -7821,7 +7821,7 @@ VMMR3DECL(int) SSMR3Load(PVM pVM, const char *pszFilename, PCSSMSTRMOPS pStreamO
      * Validate input.
      */
     AssertMsgReturn(   enmAfter == SSMAFTER_RESUME
-                    || enmAfter == SSMAFTER_MIGRATE
+                    || enmAfter == SSMAFTER_TELEPORT
                     || enmAfter == SSMAFTER_DEBUG_IT,
                     ("%d\n", enmAfter),
                     VERR_INVALID_PARAMETER);

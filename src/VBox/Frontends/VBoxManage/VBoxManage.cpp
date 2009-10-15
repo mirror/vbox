@@ -1290,19 +1290,19 @@ static int handleControlVM(HandlerArg *a)
             if (SUCCEEDED(rc))
                 CHECK_ERROR(guest, COMSETTER(StatisticsUpdateInterval)(uVal));
         }
-        else if (!strcmp(a->argv[1], "migrate"))
+        else if (!strcmp(a->argv[1], "teleport"))
         {
             Bstr        bstrHostname;
             uint32_t    uPort = UINT32_MAX;
             Bstr        bstrPassword("");
-            static const RTGETOPTDEF s_aMigrateOptions[] =
+            static const RTGETOPTDEF s_aTeleportOptions[] =
             {
                 { "--hostname",    'h', RTGETOPT_REQ_STRING }, /** @todo RTGETOPT_FLAG_MANDATORY */
                 { "--port",        'p', RTGETOPT_REQ_UINT32 }, /** @todo RTGETOPT_FLAG_MANDATORY */
                 { "--password",    'P', RTGETOPT_REQ_STRING }
             };
             RTGETOPTSTATE GetOptState;
-            RTGetOptInit(&GetOptState, a->argc, a->argv, s_aMigrateOptions, RT_ELEMENTS(s_aMigrateOptions), 2, 0 /*fFlags*/);
+            RTGetOptInit(&GetOptState, a->argc, a->argv, s_aTeleportOptions, RT_ELEMENTS(s_aTeleportOptions), 2, 0 /*fFlags*/);
             int ch;
             RTGETOPTUNION Value;
             while (   SUCCEEDED(rc)
@@ -1323,7 +1323,7 @@ static int handleControlVM(HandlerArg *a)
                 break;
 
             ComPtr<IProgress> progress;
-            CHECK_ERROR_BREAK(console, Migrate(bstrHostname, uPort, bstrPassword, progress.asOutParam()));
+            CHECK_ERROR_BREAK(console, Teleport(bstrHostname, uPort, bstrPassword, progress.asOutParam()));
             showProgress(progress);
 
             LONG iRc;
@@ -1332,9 +1332,9 @@ static int handleControlVM(HandlerArg *a)
             {
                 com::ProgressErrorInfo info(progress);
                 if (info.isBasicAvailable())
-                    RTPrintf("Error: live migration failed. Error message: %lS\n", info.getText().raw());
+                    RTPrintf("Error: teleportation failed. Error message: %lS\n", info.getText().raw());
                 else
-                    RTPrintf("Error: live migration failed. No error message available!\n");
+                    RTPrintf("Error: teleportation failed. No error message available!\n");
             }
         }
         else

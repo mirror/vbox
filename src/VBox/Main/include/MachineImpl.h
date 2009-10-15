@@ -227,15 +227,16 @@ public:
 
         bool operator==(const UserData &that) const
         {
-            return this == &that ||
-                   (mName == that.mName &&
-                    mNameSync == that.mNameSync &&
-                    mDescription == that.mDescription &&
-                    mOSTypeId == that.mOSTypeId &&
-                    mSnapshotFolderFull == that.mSnapshotFolderFull &&
-                    mLiveMigrationTarget == that.mLiveMigrationTarget &&
-                    mLiveMigrationPort == that.mLiveMigrationPort &&
-                    mLiveMigrationPassword == that.mLiveMigrationPassword);
+            return this == &that
+                || (   mName                 == that.mName
+                    && mNameSync             == that.mNameSync
+                    && mDescription          == that.mDescription
+                    && mOSTypeId             == that.mOSTypeId
+                    && mSnapshotFolderFull   == that.mSnapshotFolderFull
+                    && mTeleporterEnabled    == that.mTeleporterEnabled
+                    && mTeleporterPort       == that.mTeleporterPort
+                    && mTeleporterAddress    == that.mTeleporterAddress
+                    && mTeleporterPassword   == that.mTeleporterPassword);
         }
 
         Bstr    mName;
@@ -244,9 +245,10 @@ public:
         Bstr    mOSTypeId;
         Bstr    mSnapshotFolder;
         Bstr    mSnapshotFolderFull;
-        BOOL    mLiveMigrationTarget;
-        ULONG   mLiveMigrationPort;
-        Bstr    mLiveMigrationPassword;
+        BOOL    mTeleporterEnabled;
+        ULONG   mTeleporterPort;
+        Bstr    mTeleporterAddress;
+        Bstr    mTeleporterPassword;
     };
 
     /**
@@ -559,12 +561,14 @@ public:
     STDMETHOD(COMGETTER(GuestPropertyNotificationPatterns))(BSTR *aPattern);
     STDMETHOD(COMSETTER(GuestPropertyNotificationPatterns))(IN_BSTR aPattern);
     STDMETHOD(COMGETTER(StorageControllers))(ComSafeArrayOut(IStorageController *, aStorageControllers));
-    STDMETHOD(COMGETTER(LiveMigrationTarget))(BOOL *aEnabled);
-    STDMETHOD(COMSETTER(LiveMigrationTarget))(BOOL aEnabled);
-    STDMETHOD(COMGETTER(LiveMigrationPort))(ULONG *aPort);
-    STDMETHOD(COMSETTER(LiveMigrationPort))(ULONG aPort);
-    STDMETHOD(COMGETTER(LiveMigrationPassword))(BSTR *aPassword);
-    STDMETHOD(COMSETTER(LiveMigrationPassword))(IN_BSTR aPassword);
+    STDMETHOD(COMGETTER(TeleporterEnabled))(BOOL *aEnabled);
+    STDMETHOD(COMSETTER(TeleporterEnabled))(BOOL aEnabled);
+    STDMETHOD(COMGETTER(TeleporterPort))(ULONG *aPort);
+    STDMETHOD(COMSETTER(TeleporterPort))(ULONG aPort);
+    STDMETHOD(COMGETTER(TeleporterAddress))(BSTR *aAddress);
+    STDMETHOD(COMSETTER(TeleporterAddress))(IN_BSTR aAddress);
+    STDMETHOD(COMGETTER(TeleporterPassword))(BSTR *aPassword);
+    STDMETHOD(COMSETTER(TeleporterPassword))(IN_BSTR aPassword);
 
     // IMachine methods
     STDMETHOD(SetBootOrder)(ULONG aPosition, DeviceType_T aDevice);

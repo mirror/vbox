@@ -412,11 +412,11 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
         case MachineState_Restoring:
             pszState = "restoring";
             break;
-        case MachineState_MigratingFrom:
+        case MachineState_TeleportingFrom:
             if (details == VMINFO_MACHINEREADABLE)
-                pszState = "migratingfrom";
+                pszState = "teleportingfrom";
             else
-                pszState = "migrating from";
+                pszState = "teleporting from";
             break;
         default:
             pszState = "unknown";
@@ -463,26 +463,33 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
         RTPrintf("2D Video Acceleration: %s\n", accelerate2dVideo ? "on" : "off");
 #endif
 
-    BOOL liveMigrationTarget;
-    machine->COMGETTER(LiveMigrationTarget)(&liveMigrationTarget);
+    BOOL teleporterEnabled;
+    machine->COMGETTER(TeleporterEnabled)(&teleporterEnabled);
     if (details == VMINFO_MACHINEREADABLE)
-        RTPrintf("livemigrationtarget=\"%s\"\n", liveMigrationTarget ? "on" : "off");
+        RTPrintf("teleporterenabled=\"%s\"\n", teleporterEnabled ? "on" : "off");
     else
-        RTPrintf("Live Migration Target: %s\n", liveMigrationTarget ? "on" : "off");
+        RTPrintf("Teleporter Enabled: %s\n", teleporterEnabled ? "on" : "off");
 
-    ULONG liveMigrationPort;
-    machine->COMGETTER(LiveMigrationPort)(&liveMigrationPort);
+    ULONG teleporterPort;
+    machine->COMGETTER(TeleporterPort)(&teleporterPort);
     if (details == VMINFO_MACHINEREADABLE)
-        RTPrintf("livemigrationport=%u\n", liveMigrationPort);
+        RTPrintf("teleporterport=%u\n", teleporterPort);
     else
-        RTPrintf("Live Migration Port: %u\n", liveMigrationPort);
+        RTPrintf("Teleporter Port: %u\n", teleporterPort);
 
-    Bstr liveMigrationPassword;
-    machine->COMGETTER(LiveMigrationPassword)(liveMigrationPassword.asOutParam());
+    Bstr teleporterAddress;
+    machine->COMGETTER(TeleporterAddress)(teleporterAddress.asOutParam());
     if (details == VMINFO_MACHINEREADABLE)
-        RTPrintf("livemigrationpassword=\"%lS\"\n", liveMigrationPassword.raw());
+        RTPrintf("teleporteraddress=\"%lS\"\n", teleporterAddress.raw());
     else
-        RTPrintf("Live Migration Password: %lS\n", liveMigrationPassword.raw());
+        RTPrintf("Teleporter Address: %lS\n", teleporterAddress.raw());
+
+    Bstr teleporterPassword;
+    machine->COMGETTER(TeleporterPassword)(teleporterPassword.asOutParam());
+    if (details == VMINFO_MACHINEREADABLE)
+        RTPrintf("teleporterpassword=\"%lS\"\n", teleporterPassword.raw());
+    else
+        RTPrintf("Teleporter Password: %lS\n", teleporterPassword.raw());
 
     /*
      * Storage Controllers and their attached Mediums.

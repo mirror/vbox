@@ -72,7 +72,7 @@
 #else
 #define CPUM_SAVED_STATE_VERSION                10
 #endif
-/** The saved state version of 3.0 and 3.1 trunk before the live migration
+/** The saved state version of 3.0 and 3.1 trunk before the teleportation
  * changes. */
 #define CPUM_SAVED_STATE_VERSION_VER3_0         10
 /** The saved state version for the 2.1 trunk before the MSR changes. */
@@ -391,7 +391,7 @@ static int cpumR3CpuIdInit(PVM pVM)
                                        //| X86_CPUID_AMD_FEATURE_ECX_CMPL
                                        //| X86_CPUID_AMD_FEATURE_ECX_SVM    - not virtualized.
                                        //| X86_CPUID_AMD_FEATURE_ECX_EXT_APIC
-                                       /** Note: This could prevent migration from AMD to Intel CPUs! */
+                                       /* Note: This could prevent teleporting from AMD to Intel CPUs! */
                                        | X86_CPUID_AMD_FEATURE_ECX_CR8L         /* expose lock mov cr0 = mov cr8 hack for guests that can use this feature to access the TPR. */
                                        //| X86_CPUID_AMD_FEATURE_ECX_ABM
                                        //| X86_CPUID_AMD_FEATURE_ECX_SSE4A

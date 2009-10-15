@@ -100,7 +100,7 @@
 *******************************************************************************/
 /** The saved state version. */
 #define VMM_SAVED_STATE_VERSION     4
-/** The saved state version used by v3.0 and earlier. (Live migration.) */
+/** The saved state version used by v3.0 and earlier. (Teleportation) */
 #define VMM_SAVED_STATE_VERSION_3_0 3
 
 

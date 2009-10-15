@@ -227,7 +227,7 @@ struct VMPowerUpTask : public VMProgressTask
           mSetVMErrorCallback(NULL),
           mConfigConstructor(NULL),
           mStartPaused(false),
-          mLiveMigrationTarget(FALSE)
+          mTeleporterEnabled(FALSE)
     {}
 
     PFNVMATERROR mSetVMErrorCallback;
@@ -235,7 +235,7 @@ struct VMPowerUpTask : public VMProgressTask
     Utf8Str mSavedStateFile;
     Console::SharedFolderDataMap mSharedFolders;
     bool mStartPaused;
-    BOOL mLiveMigrationTarget;
+    BOOL mTeleporterEnabled;
 
     typedef std::list< ComPtr<IMedium> > HardDiskList;
     HardDiskList hardDisks;
@@ -4613,13 +4613,13 @@ HRESULT Console::powerUp(IProgress **aProgress, bool aPaused)
                             savedStateFile.raw(), vrc);
     }
 
-    /* test and clear the LiveMigrationTarget property  */
-    BOOL fLiveMigrationTarget;
-    rc = mMachine->COMGETTER(LiveMigrationTarget)(&fLiveMigrationTarget);
+    /* test and clear the TeleporterEnabled property  */
+    BOOL fTeleporterEnabled;
+    rc = mMachine->COMGETTER(TeleporterEnabled)(&fTeleporterEnabled);
     CheckComRCReturnRC(rc);
-    if (fLiveMigrationTarget)
+    if (fTeleporterEnabled)
     {
-        rc = mMachine->COMSETTER(LiveMigrationTarget)(FALSE);
+        rc = mMachine->COMSETTER(TeleporterEnabled)(FALSE);
         CheckComRCReturnRC(rc);
     }
 
@@ -4629,8 +4629,8 @@ HRESULT Console::powerUp(IProgress **aProgress, bool aPaused)
     Bstr progressDesc;
     if (mMachineState == MachineState_Saved)
         progressDesc = tr("Restoring virtual machine");
-    else if (fLiveMigrationTarget)
-        progressDesc = tr("Migrating virtual machine");
+    else if (fTeleporterEnabled)
+        progressDesc = tr("Teleporting virtual machine");
     else
         progressDesc = tr("Starting virtual machine");
     rc = powerupProgress->init(static_cast<IConsole *>(this),
@@ -4649,7 +4649,7 @@ HRESULT Console::powerUp(IProgress **aProgress, bool aPaused)
     task->mStartPaused = aPaused;
     if (mMachineState == MachineState_Saved)
         task->mSavedStateFile = savedStateFile;
-    task->mLiveMigrationTarget = fLiveMigrationTarget;
+    task->mTeleporterEnabled = fTeleporterEnabled;
 
     /* Reset differencing hard disks for which autoReset is true */
     {
@@ -4731,8 +4731,8 @@ HRESULT Console::powerUp(IProgress **aProgress, bool aPaused)
 
     if (mMachineState == MachineState_Saved)
         setMachineState(MachineState_Restoring);
-    else if (fLiveMigrationTarget)
-        setMachineState(MachineState_MigratingFrom);
+    else if (fTeleporterEnabled)
+        setMachineState(MachineState_TeleportingFrom);
     else
         setMachineState(MachineState_Starting);
 
@@ -4798,7 +4798,7 @@ HRESULT Console::powerDown(Progress *aProgress /*= NULL*/)
               mMachineState == MachineState_Saving ||
               mMachineState == MachineState_Starting ||
               mMachineState == MachineState_Restoring ||
-              mMachineState == MachineState_MigratingFrom || /** @todo LiveMigration ???*/
+              mMachineState == MachineState_TeleportingFrom || /** @todo Teleportation ???*/
               mMachineState == MachineState_Stopping,
               ("Invalid machine state: %s\n", Global::stringifyMachineState(mMachineState)));
 
@@ -4813,7 +4813,7 @@ HRESULT Console::powerDown(Progress *aProgress /*= NULL*/)
     if (   !mVMPoweredOff
         && (   mMachineState == MachineState_Starting
             || mMachineState == MachineState_Restoring
-            || mMachineState == MachineState_MigratingFrom)
+            || mMachineState == MachineState_TeleportingFrom)
        )
         mVMPoweredOff = true;
 
@@ -4824,7 +4824,7 @@ HRESULT Console::powerDown(Progress *aProgress /*= NULL*/)
      * Restoring should be fine too */
     if (   mMachineState != MachineState_Saving
         && mMachineState != MachineState_Restoring
-        && mMachineState != MachineState_MigratingFrom
+        && mMachineState != MachineState_TeleportingFrom
         && mMachineState != MachineState_Stopping
        )
         setMachineState(MachineState_Stopping);
@@ -5510,7 +5510,7 @@ DECLCALLBACK(void) Console::vmstateChangeCallback(PVM aVM,
             if (   that->mMachineState != MachineState_Stopping
                 && that->mMachineState != MachineState_Saving
                 && that->mMachineState != MachineState_Restoring
-                && that->mMachineState != MachineState_MigratingFrom
+                && that->mMachineState != MachineState_TeleportingFrom
                )
             {
                 LogFlowFunc(("VM has powered itself off but Console still thinks it is running. Notifying.\n"));
@@ -5605,8 +5605,8 @@ DECLCALLBACK(void) Console::vmstateChangeCallback(PVM aVM,
                      * back to Saved (to preserve the saved state file) */
                     that->setMachineState(MachineState_Saved);
                     break;
-                case MachineState_MigratingFrom:
-                    /* Migration failed or was cancelled.  Back to powered off. */
+                case MachineState_TeleportingFrom:
+                    /* Teleportation failed or was cancelled.  Back to powered off. */
                     that->setMachineState(MachineState_PoweredOff);
                     break;
             }
@@ -5616,7 +5616,7 @@ DECLCALLBACK(void) Console::vmstateChangeCallback(PVM aVM,
         case VMSTATE_SUSPENDED:
         {
             /** @todo state/live VMSTATE_SUSPENDING_LS. */
-            if ( aOldState == VMSTATE_SUSPENDING)
+            if (aOldState == VMSTATE_SUSPENDING)
             {
                 AutoWriteLock alock(that);
 
@@ -5646,7 +5646,7 @@ DECLCALLBACK(void) Console::vmstateChangeCallback(PVM aVM,
                                || that->mMachineState == MachineState_Paused)
                            && aOldState == VMSTATE_POWERING_ON)
                        || (   (   that->mMachineState == MachineState_Restoring
-                               || that->mMachineState == MachineState_MigratingFrom
+                               || that->mMachineState == MachineState_TeleportingFrom
                                || that->mMachineState == MachineState_Paused)
                            && aOldState == VMSTATE_RESUMING));
 
@@ -6211,7 +6211,7 @@ HRESULT Console::powerDownHostInterfaces()
 
 /**
  * Process callback handler for VMR3LoadFromFile, VMR3LoadFromStream, VMR3Save
- * and VMR3Migrate.
+ * and VMR3Teleport.
  *
  * @param   pVM         The VM handle.
  * @param   uPercent    Completetion precentage (0-100).
@@ -6759,11 +6759,11 @@ DECLCALLBACK(int) Console::powerUpThread(RTTHREAD Thread, void *pvUser)
                         AssertRC(vrc2);
                     }
                 }
-                else if (task->mLiveMigrationTarget)
+                else if (task->mTeleporterEnabled)
                 {
-                    /* -> ConsoleImpl-LiveMigration.cpp */
-                    vrc = console->migrationDst(pVM, pMachine, task->mStartPaused,
-                                                static_cast<VMProgressTask*>(task.get()));
+                    /* -> ConsoleImplTeleporter.cpp */
+                    vrc = console->teleporterTrg(pVM, pMachine, task->mStartPaused,
+                                                 static_cast<VMProgressTask*>(task.get()));
                     if (RT_FAILURE(vrc))
                         VMR3PowerOff(pVM);
                 }
@@ -6842,7 +6842,7 @@ DECLCALLBACK(int) Console::powerUpThread(RTTHREAD Thread, void *pvUser)
 
     if (   console->mMachineState == MachineState_Starting
         || console->mMachineState == MachineState_Restoring
-        || console->mMachineState == MachineState_MigratingFrom
+        || console->mMachineState == MachineState_TeleportingFrom
        )
     {
         /* We are still in the Starting/Restoring state. This means one of:

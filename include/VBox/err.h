@@ -574,9 +574,10 @@
 #define VERR_SSM_VOTE_FOR_GIVING_UP             (-1853)
 /** Don't call again until the final pass. */
 #define VINF_SSM_DONT_CALL_AGAIN                1854
-/** Giving up a live snapshot/migration attempt because of too many passes. */
+/** Giving up a live snapshot/teleportation attempt because of too many
+ * passes. */
 #define VERR_SSM_TOO_MANY_PASSES                (-1855)
-/** Giving up a live snapshot/migration attempt because the state grew to
+/** Giving up a live snapshot/teleportation attempt because the state grew to
  * big. */
 #define VERR_SSM_STATE_GREW_TOO_BIG             (-1856)
 /** Giving up a live snapshot attempt because we're low on disk space.  */
@@ -589,11 +590,11 @@
 #define VERR_SSM_ALREADY_CANCELLED              (-1860)
 /** The machine was powered off while saving. */
 #define VERR_SSM_LIVE_POWERED_OFF               (-1861)
-/** The live snapshot/migration operation was aborted because of a guru
+/** The live snapshot/teleportation operation was aborted because of a guru
  *  meditation. */
 #define VERR_SSM_LIVE_GURU_MEDITATION           (-1862)
-/** The live snapshot/migration operation was aborted because of a fatal runtime
- *  error. */
+/** The live snapshot/teleportation operation was aborted because of a fatal
+ *  runtime error. */
 #define VERR_SSM_LIVE_FATAL_ERROR               (-1863)
 /** The VM was suspended while saving, don't resume execution. */
 #define VINF_SSM_LIVE_SUSPENDED                  1864
