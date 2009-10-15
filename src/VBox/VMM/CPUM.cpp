@@ -410,12 +410,33 @@ static int cpumR3CpuIdInit(PVM pVM)
 
         pCPUM->enmGuestCpuVendor = CPUMCPUVENDOR_SYNTHETIC;
 
-        /* Vendor */
+        /* Limit the nr of standard leaves; 5 for monitor/mwait */
+        pCPUM->aGuestCpuIdStd[0].eax = RT_MIN(pCPUM->aGuestCpuIdStd[0].eax, 5);
+
+        /* 0: Vendor */
         pCPUM->aGuestCpuIdStd[0].ebx = pCPUM->aGuestCpuIdExt[0].ebx = ((uint32_t *)szVendor)[0];
         pCPUM->aGuestCpuIdStd[0].ecx = pCPUM->aGuestCpuIdExt[0].ecx = ((uint32_t *)szVendor)[2];
         pCPUM->aGuestCpuIdStd[0].edx = pCPUM->aGuestCpuIdExt[0].edx = ((uint32_t *)szVendor)[1];
 
-        /* Processor Name String Identifier. */
+        /* 1.eax: Version information.  family : model : stepping */
+        pCPUM->aGuestCpuIdStd[0].eax = (0xf << 8) + (0x1 << 4) + 1;
+
+        /* Leaves 2 - 4 are Intel only - zero them out */
+        memset(&pCPUM->aGuestCpuIdStd[2], 0, sizeof(pCPUM->aGuestCpuIdStd[2]));
+        memset(&pCPUM->aGuestCpuIdStd[3], 0, sizeof(pCPUM->aGuestCpuIdStd[3]));
+        memset(&pCPUM->aGuestCpuIdStd[4], 0, sizeof(pCPUM->aGuestCpuIdStd[4]));
+
+        /* Leaf 5 = monitor/mwait */
+
+        /* Limit the nr of extended leaves: 0x80000008 to include the max virtual and physical address size (64 bits guests). */
+        pCPUM->aGuestCpuIdExt[0].eax = RT_MIN(pCPUM->aGuestCpuIdExt[0].eax, 0x80000008);
+        /* AMD only - set to zero. */
+        pCPUM->aGuestCpuIdExt[0].ebx = pCPUM->aGuestCpuIdExt[0].ecx = pCPUM->aGuestCpuIdExt[0].edx = 0;
+
+        /* 0x800000001: AMD only; shared feature bits are set dynamically. */
+        memset(&pCPUM->aGuestCpuIdExt[1], 0, sizeof(pCPUM->aGuestCpuIdExt[1]));
+
+        /* 0x800000002-4: Processor Name String Identifier. */
         pCPUM->aGuestCpuIdExt[2].eax = ((uint32_t *)szProcessor)[0];
         pCPUM->aGuestCpuIdExt[2].ebx = ((uint32_t *)szProcessor)[1];
         pCPUM->aGuestCpuIdExt[2].ecx = ((uint32_t *)szProcessor)[2];
@@ -429,9 +450,13 @@ static int cpumR3CpuIdInit(PVM pVM)
         pCPUM->aGuestCpuIdExt[4].ecx = ((uint32_t *)szProcessor)[10];
         pCPUM->aGuestCpuIdExt[4].edx = ((uint32_t *)szProcessor)[11];
 
-        /* AMD only; shared feature bits are set dynamically. */
-        pCPUM->aGuestCpuIdExt[1].edx = 0;
-        pCPUM->aGuestCpuIdExt[1].ecx = 0;
+        /* 0x800000005-7 - reserved -> zero */
+        memset(&pCPUM->aGuestCpuIdExt[5], 0, sizeof(pCPUM->aGuestCpuIdExt[5]));
+        memset(&pCPUM->aGuestCpuIdExt[6], 0, sizeof(pCPUM->aGuestCpuIdExt[6]));
+        memset(&pCPUM->aGuestCpuIdExt[7], 0, sizeof(pCPUM->aGuestCpuIdExt[7]));
+
+        /* 0x800000008: only the max virtual and physical address size. */
+        pCPUM->aGuestCpuIdExt[8].ecx = pCPUM->aGuestCpuIdExt[8].ebx = pCPUM->aGuestCpuIdExt[8].edx = 0;  /* reserved */
 
         /** @todo fill in the rest of the cpu leaves. */
     }
@@ -442,7 +467,8 @@ static int cpumR3CpuIdInit(PVM pVM)
      */
     pCPUM->aGuestCpuIdStd[1].ebx &= 0x0000ffff;
 #ifdef VBOX_WITH_MULTI_CORE
-    if (pVM->cCpus > 1)
+    if (    pVM->cCpus > 1
+        &&  pCPUM->enmGuestCpuVendor != CPUMCPUVENDOR_SYNTHETIC)
     {
         /* If CPUID Fn0000_0001_EDX[HTT] = 1 then LogicalProcessorCount is the number of threads per CPU core times the number of CPU cores per processor */
         pCPUM->aGuestCpuIdStd[1].ebx |= (pVM->cCpus << 16);
@@ -583,15 +609,14 @@ static int cpumR3CpuIdInit(PVM pVM)
     }
 
     /** @cfgm{/CPUM/NT4LeafLimit, boolean, false}
-     * Limit the number of standard CPUID leafs to 0..2 to prevent NT4 from
+     * Limit the number of standard CPUID leaves to 0..3 to prevent NT4 from
      * bugchecking with MULTIPROCESSOR_CONFIGURATION_NOT_SUPPORTED (0x3e).
      * This option corrsponds somewhat to IA32_MISC_ENABLES.BOOT_NT4[bit 22].
-     * @todo r=bird: The intel docs states that leafs 3 is included, why don't we?
      */
     bool fNt4LeafLimit;
     CFGMR3QueryBoolDef(CFGMR3GetChild(CFGMR3GetRoot(pVM), "CPUM"), "NT4LeafLimit", &fNt4LeafLimit, false);
     if (fNt4LeafLimit)
-        pCPUM->aGuestCpuIdStd[0].eax = 2;
+        pCPUM->aGuestCpuIdStd[0].eax = 3;
 
     /*
      * Limit it the number of entries and fill the remaining with the defaults.
@@ -905,7 +930,7 @@ VMMR3DECL(void) CPUMR3Reset(PVM pVM)
 static void cpumR3SaveCpuId(PVM pVM, PSSMHANDLE pSSM)
 {
     /*
-     * Save all the CPU ID leafs here so we can check them for compatability
+     * Save all the CPU ID leaves here so we can check them for compatability
      * upon loading.
      */
     SSMR3PutU32(pSSM, RT_ELEMENTS(pVM->cpum.s.aGuestCpuIdStd));
@@ -938,7 +963,7 @@ static void cpumR3SaveCpuId(PVM pVM, PSSMHANDLE pSSM)
 
 
 /**
- * Loads the CPU ID leafs saved by pass 0.
+ * Loads the CPU ID leaves saved by pass 0.
  *
  * @returns VBox status code.
  * @param   pVM                 The VM handle.
@@ -1030,7 +1055,7 @@ static int cpumR3LoadCpuId(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion)
 
 
     /*
-     * We're good, commit the CPU ID leafs.
+     * We're good, commit the CPU ID leaves.
      */
     memcmp(&pVM->cpum.s.aGuestCpuIdStd[0],     &aGuestCpuIdStd[0],     sizeof(aGuestCpuIdStd));
     memcmp(&pVM->cpum.s.aGuestCpuIdExt[0],     &aGuestCpuIdExt[0],     sizeof(aGuestCpuIdExt));
@@ -2782,11 +2807,11 @@ VMMR3DECL(int) CPUMR3SetCR4Feature(PVM pVM, RTHCUINTREG fOr, RTHCUINTREG fAnd)
 
 
 /**
- * Gets a pointer to the array of standard CPUID leafs.
+ * Gets a pointer to the array of standard CPUID leaves.
  *
  * CPUMR3GetGuestCpuIdStdMax() give the size of the array.
  *
- * @returns Pointer to the standard CPUID leafs (read-only).
+ * @returns Pointer to the standard CPUID leaves (read-only).
  * @param   pVM         The VM handle.
  * @remark  Intended for PATM.
  */
@@ -2797,11 +2822,11 @@ VMMR3DECL(RCPTRTYPE(PCCPUMCPUID)) CPUMR3GetGuestCpuIdStdRCPtr(PVM pVM)
 
 
 /**
- * Gets a pointer to the array of extended CPUID leafs.
+ * Gets a pointer to the array of extended CPUID leaves.
  *
  * CPUMGetGuestCpuIdExtMax() give the size of the array.
  *
- * @returns Pointer to the extended CPUID leafs (read-only).
+ * @returns Pointer to the extended CPUID leaves (read-only).
  * @param   pVM         The VM handle.
  * @remark  Intended for PATM.
  */
@@ -2812,11 +2837,11 @@ VMMR3DECL(RCPTRTYPE(PCCPUMCPUID)) CPUMR3GetGuestCpuIdExtRCPtr(PVM pVM)
 
 
 /**
- * Gets a pointer to the array of centaur CPUID leafs.
+ * Gets a pointer to the array of centaur CPUID leaves.
  *
  * CPUMGetGuestCpuIdCentaurMax() give the size of the array.
  *
- * @returns Pointer to the centaur CPUID leafs (read-only).
+ * @returns Pointer to the centaur CPUID leaves (read-only).
  * @param   pVM         The VM handle.
  * @remark  Intended for PATM.
  */
