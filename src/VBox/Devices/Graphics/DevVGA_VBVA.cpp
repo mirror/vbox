@@ -1061,10 +1061,10 @@ int vbvaVHWACommandCompleteAsynch(PPDMDDISPLAYVBVACALLBACKS pInterface, PVBOXVHW
  *
  * New VBVA uses a new interface id: #define VBE_DISPI_ID_VBOX_VIDEO         0xBE01
  *
- * VBVA uses two 32 bits PCI IO ports to write VRAM offsets of shared memory blocks for commands.
- * IOPortBase+                     Read                        Write
- * VGA_PORT_OFF_HGSMI_GUEST        control value?              to process
- * VGA_PORT_OFF_HGSMI_HOST         to process                  completed
+ * VBVA uses two 32 bits IO ports to write VRAM offsets of shared memory blocks for commands.
+ *                                 Read                        Write
+ * Host port 0x3b0                 to process                  completed
+ * Guest port 0x3d0                control value?              to process
  *
  */
 

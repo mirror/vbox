@@ -46,9 +46,6 @@
 
 #ifdef VBOX_WITH_HGSMI
 #include "HGSMI/HGSMIHost.h"
-
-#define VGA_PORT_OFF_HGSMI_HOST  0
-#define VGA_PORT_OFF_HGSMI_GUEST 4
 #endif /* VBOX_WITH_HGSMI */
 
 #ifdef VBOX_WITH_HGSMI
