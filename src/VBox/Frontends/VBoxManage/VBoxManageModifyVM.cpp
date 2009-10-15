@@ -81,20 +81,20 @@ enum
     MODIFYVM_BIOSSYSTEMTIMEOFFSET,
     MODIFYVM_BIOSPXEDEBUG,
     MODIFYVM_BOOT,
-    MODIFYVM_HDA,
-    MODIFYVM_HDB,
-    MODIFYVM_HDD,
-    MODIFYVM_IDECONTROLLER,
-    MODIFYVM_SATAIDEEMULATION,
-    MODIFYVM_SATAPORTCOUNT,
-    MODIFYVM_SATAPORT,
-    MODIFYVM_SATA,
-    MODIFYVM_SCSIPORT,
-    MODIFYVM_SCSITYPE,
-    MODIFYVM_SCSI,
-    MODIFYVM_DVDPASSTHROUGH,
-    MODIFYVM_DVD,
-    MODIFYVM_FLOPPY,
+    MODIFYVM_HDA,                // deprecated
+    MODIFYVM_HDB,                // deprecated
+    MODIFYVM_HDD,                // deprecated
+    MODIFYVM_IDECONTROLLER,      // deprecated
+    MODIFYVM_SATAIDEEMULATION,   // deprecated
+    MODIFYVM_SATAPORTCOUNT,      // deprecated
+    MODIFYVM_SATAPORT,           // deprecated
+    MODIFYVM_SATA,               // deprecated
+    MODIFYVM_SCSIPORT,           // deprecated
+    MODIFYVM_SCSITYPE,           // deprecated
+    MODIFYVM_SCSI,               // deprecated
+    MODIFYVM_DVDPASSTHROUGH,     // deprecated
+    MODIFYVM_DVD,                // deprecated
+    MODIFYVM_FLOPPY,             // deprecated
     MODIFYVM_NICTRACEFILE,
     MODIFYVM_NICTRACE,
     MODIFYVM_NICTYPE,
@@ -681,7 +681,7 @@ int handleModifyVM(HandlerArg *a)
                 break;
             }
 
-            case MODIFYVM_HDA:
+            case MODIFYVM_HDA: // deprecated
             {
                 if (!strcmp(pValueUnion.psz, "none"))
                 {
@@ -717,7 +717,7 @@ int handleModifyVM(HandlerArg *a)
                 break;
             }
 
-            case MODIFYVM_HDB:
+            case MODIFYVM_HDB: // deprecated
             {
                 if (!strcmp(pValueUnion.psz, "none"))
                 {
@@ -753,7 +753,7 @@ int handleModifyVM(HandlerArg *a)
                 break;
             }
 
-            case MODIFYVM_HDD:
+            case MODIFYVM_HDD: // deprecated
             {
                 if (!strcmp(pValueUnion.psz, "none"))
                 {
@@ -789,7 +789,7 @@ int handleModifyVM(HandlerArg *a)
                 break;
             }
 
-            case MODIFYVM_IDECONTROLLER:
+            case MODIFYVM_IDECONTROLLER: // deprecated
             {
                 ComPtr<IStorageController> storageController;
                 CHECK_ERROR (machine, GetStorageControllerByName(Bstr("IDE Controller"),
@@ -815,7 +815,7 @@ int handleModifyVM(HandlerArg *a)
                 break;
             }
 
-            case MODIFYVM_SATAIDEEMULATION:
+            case MODIFYVM_SATAIDEEMULATION: // deprecated
             {
                 ComPtr<IStorageController> SataCtl;
                 CHECK_ERROR (machine, GetStorageControllerByName(Bstr("SATA"), SataCtl.asOutParam()));
@@ -836,7 +836,7 @@ int handleModifyVM(HandlerArg *a)
                 break;
             }
 
-            case MODIFYVM_SATAPORTCOUNT:
+            case MODIFYVM_SATAPORTCOUNT: // deprecated
             {
                 ComPtr<IStorageController> SataCtl;
                 CHECK_ERROR (machine, GetStorageControllerByName(Bstr("SATA"), SataCtl.asOutParam()));
@@ -847,7 +847,7 @@ int handleModifyVM(HandlerArg *a)
                 break;
             }
 
-            case MODIFYVM_SATAPORT:
+            case MODIFYVM_SATAPORT: // deprecated
             {
                 if ((pGetState.uIndex < 1) && (pGetState.uIndex > 30))
                     return errorSyntax(USAGE_MODIFYVM,
@@ -890,7 +890,7 @@ int handleModifyVM(HandlerArg *a)
                 break;
             }
 
-            case MODIFYVM_SATA:
+            case MODIFYVM_SATA: // deprecated
             {
                 if (!strcmp(pValueUnion.psz, "on") || !strcmp(pValueUnion.psz, "enable"))
                 {
@@ -905,7 +905,7 @@ int handleModifyVM(HandlerArg *a)
                 break;
             }
 
-            case MODIFYVM_SCSIPORT:
+            case MODIFYVM_SCSIPORT: // deprecated
             {
                 if ((pGetState.uIndex < 1) && (pGetState.uIndex > 16))
                     return errorSyntax(USAGE_MODIFYVM,
@@ -953,7 +953,7 @@ int handleModifyVM(HandlerArg *a)
                 break;
             }
 
-            case MODIFYVM_SCSITYPE:
+            case MODIFYVM_SCSITYPE: // deprecated
             {
                 ComPtr<IStorageController> ctl;
 
@@ -990,7 +990,7 @@ int handleModifyVM(HandlerArg *a)
                 break;
             }
 
-            case MODIFYVM_SCSI:
+            case MODIFYVM_SCSI: // deprecated
             {
                 if (!strcmp(pValueUnion.psz, "on") || !strcmp(pValueUnion.psz, "enable"))
                 {
@@ -1009,7 +1009,7 @@ int handleModifyVM(HandlerArg *a)
                 break;
             }
 
-            case MODIFYVM_DVDPASSTHROUGH:
+            case MODIFYVM_DVDPASSTHROUGH: // deprecated
             {
                 ComPtr<IMediumAttachment> dvdAttachment;
                 machine->GetMediumAttachment(Bstr("IDE Controller"), 1, 0, dvdAttachment.asOutParam());
@@ -1019,7 +1019,7 @@ int handleModifyVM(HandlerArg *a)
                 break;
             }
 
-            case MODIFYVM_DVD:
+            case MODIFYVM_DVD: // deprecated
             {
                 ComPtr<IMedium> dvdMedium;
                 Bstr uuid(pValueUnion.psz);
@@ -1086,7 +1086,7 @@ int handleModifyVM(HandlerArg *a)
                 break;
             }
 
-            case MODIFYVM_FLOPPY:
+            case MODIFYVM_FLOPPY: // deprecated
             {
                 Bstr uuid(pValueUnion.psz);
                 ComPtr<IMedium> floppyMedium;

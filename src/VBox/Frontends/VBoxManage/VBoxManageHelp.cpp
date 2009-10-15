@@ -150,23 +150,6 @@ void printUsage(USAGECATEGORY u64Cmd)
                  "                            [--biossystemtimeoffset <msec>]\n"
                  "                            [--biospxedebug on|off]\n"
                  "                            [--boot<1-4> none|floppy|dvd|disk|net>]\n"
-                 "                            [--hd<a|b|d> none|<uuid>|<filename>]\n"
-                 "                            [--idecontroller PIIX3|PIIX4]\n"
-#ifdef VBOX_WITH_AHCI
-                 "                            [--sata on|off]\n"
-                 "                            [--sataportcount <1-30>]\n"
-                 "                            [--sataport<1-30> none|<uuid>|<filename>]\n"
-                 "                            [--sataideemulation<1-4> <1-30>]\n"
-#endif
-#ifdef VBOX_WITH_SCSI
-                 "                            [--scsi on|off]\n"
-                 "                            [--scsiport<1-16> none|<uuid>|<filename>]\n"
-                 "                            [--scsitype LsiLogic|BusLogic]\n"
-#endif
-                 "                            [--dvd none|<uuid>|<filename>|host:<drive>]\n"
-                 "                            [--dvdpassthrough on|off]\n"
-                 "                            [--floppy disabled|none|<uuid>|\n"
-                 "                                      <filename>|host:<drive>]\n"
 #if defined(VBOX_WITH_NETFLT)
                  "                            [--nic<1-N> none|null|nat|bridged|intnet|hostonly]\n"
 #else /* !RT_OS_LINUX && !RT_OS_DARWIN */
