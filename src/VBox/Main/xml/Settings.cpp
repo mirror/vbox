@@ -1208,8 +1208,8 @@ Hardware::Hardware()
 #endif
           fNestedPaging(false),
           fVPID(false),
-          fPAE(false),
           fSyntheticCpu(false),
+          fPAE(false),
           cCPUs(1),
           ulMemorySizeMB((uint32_t)-1),
           ulVRAMSizeMB(8),
@@ -1473,7 +1473,7 @@ void MachineConfigFile::readHardware(const xml::ElementNode &elmHardware,
             if ((pelmCPUChild = pelmHwChild->findChildElement("PAE")))
                 pelmCPUChild->getAttributeValue("enabled", hw.fPAE);
             if ((pelmCPUChild = pelmHwChild->findChildElement("SyntheticCpu")))
-                pelmCPUChild->getAttributeValue("enabled", hw.fSyntheticCpu);            
+                pelmCPUChild->getAttributeValue("enabled", hw.fSyntheticCpu);
         }
         else if (pelmHwChild->nameEquals("Memory"))
             pelmHwChild->getAttributeValue("RAMSize", hw.ulMemorySizeMB);
@@ -2871,6 +2871,16 @@ void MachineConfigFile::bumpSettingsVersionIfNeeded()
     {
         m->sv = SettingsVersion_v1_9;
     }
+
+#ifdef VBOX_WITH_LIVE_MIGRATION
+    if (    m->sv < SettingsVersion_v1_9
+        &&  (   fLiveMigrationTarget
+             || uLiveMigrationPort
+             || !strLiveMigrationPassword.isEmpty()
+            )
+       )
+        m->sv = SettingsVersion_v1_9;
+#endif
 }
 
 /**
@@ -2911,12 +2921,15 @@ void MachineConfigFile::write(const com::Utf8Str &strFilename)
         if (fAborted)
             pelmMachine->setAttribute("aborted", fAborted);
 #ifdef VBOX_WITH_LIVE_MIGRATION /** @todo LiveMigration: Checkout how the file format versioning is done. */
-        if (fLiveMigrationTarget)
-            pelmMachine->setAttribute("liveMigrationTarget", true);
-        if (uLiveMigrationPort)
-            pelmMachine->setAttribute("liveMigrationPort", uLiveMigrationPort);
-        if (!strLiveMigrationPassword.isEmpty())
-            pelmMachine->setAttribute("liveMigrationPassword", strLiveMigrationPassword);
+        if (m->sv >= SettingsVersion_v1_9)
+        {
+            if (fLiveMigrationTarget)
+                pelmMachine->setAttribute("liveMigrationTarget", true);
+            if (uLiveMigrationPort)
+                pelmMachine->setAttribute("liveMigrationPort", uLiveMigrationPort);
+            if (!strLiveMigrationPassword.isEmpty())
+                pelmMachine->setAttribute("liveMigrationPassword", strLiveMigrationPassword);
+        }
 #endif
 
         writeExtraData(*pelmMachine, mapExtraDataItems);
