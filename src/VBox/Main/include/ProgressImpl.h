@@ -85,6 +85,8 @@ public:
     // public methods only for internal purposes
 
     static HRESULT setErrorInfoOnThread (IProgress *aProgress);
+    void setCancelCallback(void (*pfnCallback)(void *), void *pvUser);
+
 
     // unsafe inline public methods for internal purposes only (ensure there is
     // a caller and a read lock before calling them!)
@@ -106,6 +108,9 @@ protected:
     const Bstr mDescription;
 
     uint64_t m_ullTimestamp;                        // progress object creation timestamp, for ETA computation
+
+    void (*m_pfnCancelCallback)(void *);
+    void *m_pvCancelUserArg;
 
     /* The fields below are to be properly initalized by subclasses */
 

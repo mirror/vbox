@@ -53,6 +53,7 @@ class TeleporterState
 public:
     ComPtr<Console>     mptrConsole;
     PVM                 mpVM;
+    ComObjPtr<Progress> mptrProgress;
     Utf8Str             mstrPassword;
     bool const          mfIsSource;
 
@@ -66,9 +67,10 @@ public:
     bool volatile       mfIOError;
     /** @} */
 
-    TeleporterState(Console *pConsole, PVM pVM, bool fIsSource)
+    TeleporterState(Console *pConsole, PVM pVM, Progress *pProgress, bool fIsSource)
         : mptrConsole(pConsole)
         , mpVM(pVM)
+        , mptrProgress(pProgress)
         , mfIsSource(fIsSource)
         , mhSocket(NIL_RTSOCKET)
         , moffStream(UINT64_MAX / 2)
@@ -87,12 +89,11 @@ public:
 class TeleporterStateSrc : public TeleporterState
 {
 public:
-    ComPtr<Progress>    mptrProgress;
     Utf8Str             mstrHostname;
     uint32_t            muPort;
 
-    TeleporterStateSrc(Console *pConsole, PVM pVM)
-        : TeleporterState(pConsole, pVM, true /*fIsSource*/)
+    TeleporterStateSrc(Console *pConsole, PVM pVM, Progress *pProgress)
+        : TeleporterState(pConsole, pVM, pProgress, true /*fIsSource*/)
         , muPort(UINT32_MAX)
     {
     }
@@ -106,15 +107,14 @@ class TeleporterStateTrg : public TeleporterState
 {
 public:
     IMachine           *mpMachine;
-    void               *mpvVMCallbackTask;
     PRTTCPSERVER        mhServer;
     PRTTIMERLR          mphTimerLR;
     int                 mRc;
 
-    TeleporterStateTrg(Console *pConsole, PVM pVM, IMachine *pMachine, PRTTIMERLR phTimerLR)
-        : TeleporterState(pConsole, pVM, false /*fIsSource*/)
+    TeleporterStateTrg(Console *pConsole, PVM pVM, Progress *pProgress,
+                       IMachine *pMachine, PRTTIMERLR phTimerLR)
+        : TeleporterState(pConsole, pVM, pProgress, false /*fIsSource*/)
         , mpMachine(pMachine)
-        , mpvVMCallbackTask(NULL)
         , mhServer(NULL)
         , mphTimerLR(phTimerLR)
         , mRc(VINF_SUCCESS)
@@ -495,9 +495,49 @@ static SSMSTRMOPS const g_teleporterTcpOps =
 
 
 /**
+ * Progress cancelation callback.
+ */
+static void teleporterProgressCancelCallback(void *pvUser)
+{
+    TeleporterState *pState = (TeleporterState *)pvUser;
+    SSMR3Cancel(pState->mpVM);
+    if (!pState->mfIsSource)
+    {
+        TeleporterStateTrg *pStateTrg = (TeleporterStateTrg *)pState;
+        RTTcpServerShutdown(pStateTrg->mhServer);
+    }
+}
+
+/**
+ * @copydoc PFNVMPROGRESS
+ */
+static DECLCALLBACK(int) teleporterProgressCallback(PVM pVM, unsigned uPercent, void *pvUser)
+{
+    TeleporterState *pState = (TeleporterState *)pvUser;
+    if (pState->mptrProgress)
+    {
+        HRESULT hrc = pState->mptrProgress->SetCurrentOperationProgress(uPercent);
+        if (FAILED(hrc))
+        {
+            /* check if the failure was caused by cancellation. */
+            BOOL fCanceled;
+            hrc = pState->mptrProgress->COMGETTER(Canceled)(&fCanceled);
+            if (SUCCEEDED(hrc) && fCanceled)
+            {
+                SSMR3Cancel(pState->mpVM);
+                return VERR_SSM_CANCELLED;
+            }
+        }
+    }
+
+    return VINF_SUCCESS;
+}
+
+
+/**
  * @copydoc FNRTTIMERLR
  */
-static DECLCALLBACK(void) teleporterTimeout(RTTIMERLR hTimerLR, void *pvUser, uint64_t iTick)
+static DECLCALLBACK(void) teleporterDstTimeout(RTTIMERLR hTimerLR, void *pvUser, uint64_t iTick)
 {
     /* This is harmless for any open connections. */
     RTTcpServerShutdown((PRTTCPSERVER)pvUser);
@@ -572,7 +612,7 @@ Console::teleporterSrc(TeleporterStateSrc *pState)
         return hrc;
 
     void *pvUser = static_cast<void *>(static_cast<TeleporterState *>(pState));
-    vrc = VMR3Teleport(pState->mpVM, &g_teleporterTcpOps, pvUser, NULL/** @todo progress*/, pvUser);
+    vrc = VMR3Teleport(pState->mpVM, &g_teleporterTcpOps, pvUser, teleporterProgressCallback, pvUser);
     if (vrc)
         return setError(E_FAIL, tr("VMR3Teleport -> %Rrc"), vrc);
 
@@ -659,6 +699,8 @@ Console::teleporterSrcThreadWrapper(RTTHREAD hThread, void *pvUser)
         RTTcpClientClose(pState->mhSocket);
         pState->mhSocket = NIL_RTSOCKET;
     }
+
+    pState->mptrProgress->setCancelCallback(NULL, NULL);
     delete pState;
 
     return VINF_SUCCESS;
@@ -712,19 +754,21 @@ Console::Teleport(IN_BSTR aHostname, ULONG aPort, IN_BSTR aPassword, IProgress *
      */
     LogFlowThisFunc(("Initiating TELEPORTER request...\n"));
 
-    ComObjPtr<Progress> ptrTelportationProgress;
-    HRESULT hrc = ptrTelportationProgress.createObject();
+    ComObjPtr<Progress> ptrProgress;
+    HRESULT hrc = ptrProgress.createObject();
     CheckComRCReturnRC(hrc);
-    hrc = ptrTelportationProgress->init(static_cast<IConsole *>(this),
+    hrc = ptrProgress->init(static_cast<IConsole *>(this),
                                         Bstr(tr("Teleporter")),
                                         TRUE /*aCancelable*/);
     CheckComRCReturnRC(hrc);
 
-    TeleporterStateSrc *pState = new TeleporterStateSrc(this, mpVM);
+    TeleporterStateSrc *pState = new TeleporterStateSrc(this, mpVM, ptrProgress);
     pState->mstrPassword = aPassword;
     pState->mstrHostname = aHostname;
     pState->muPort       = aPort;
-    pState->mptrProgress = ptrTelportationProgress;
+
+    void *pvUser = static_cast<void *>(static_cast<TeleporterState *>(pState));
+    ptrProgress->setCancelCallback(teleporterProgressCancelCallback, pvUser);
 
     int vrc = RTThreadCreate(NULL, Console::teleporterSrcThreadWrapper, (void *)pState, 0 /*cbStack*/,
                              RTTHREADTYPE_EMULATION, 0 /*fFlags*/, "Teleport");
@@ -732,12 +776,13 @@ Console::Teleport(IN_BSTR aHostname, ULONG aPort, IN_BSTR aPassword, IProgress *
     {
         hrc = setMachineState(MachineState_Saving);
         if (SUCCEEDED(hrc))
-            ptrTelportationProgress.queryInterfaceTo(aProgress);
+            ptrProgress.queryInterfaceTo(aProgress);
         else
-            ptrTelportationProgress->Cancel();
+            ptrProgress->Cancel();
     }
     else
     {
+        ptrProgress->setCancelCallback(NULL, NULL);
         delete pState;
         hrc = setError(E_FAIL, tr("RTThreadCreate -> %Rrc"), vrc);
     }
@@ -755,11 +800,10 @@ Console::Teleport(IN_BSTR aHostname, ULONG aPort, IN_BSTR aPassword, IProgress *
  * @param   pMachine            The IMachine for the virtual machine.
  * @param   fStartPaused        Whether to start it in the Paused (true) or
  *                              Running (false) state,
- * @param   pvVMCallbackTask    The callback task pointer for
- *                              stateProgressCallback().
+ * @param   pProgress           Pointer to the progress object.
  */
 int
-Console::teleporterTrg(PVM pVM, IMachine *pMachine, bool fStartPaused, void *pvVMCallbackTask)
+Console::teleporterTrg(PVM pVM, IMachine *pMachine, bool fStartPaused, Progress *pProgress)
 {
     /*
      * Get the config.
@@ -817,7 +861,7 @@ Console::teleporterTrg(PVM pVM, IMachine *pMachine, bool fStartPaused, void *pvV
      * Create a one-shot timer for timing out after 5 mins.
      */
     RTTIMERLR hTimerLR;
-    vrc = RTTimerLRCreateEx(&hTimerLR, 0 /*ns*/, RTTIMER_FLAGS_CPU_ANY, teleporterTimeout, hServer);
+    vrc = RTTimerLRCreateEx(&hTimerLR, 0 /*ns*/, RTTIMER_FLAGS_CPU_ANY, teleporterDstTimeout, hServer);
     if (RT_SUCCESS(vrc))
     {
         vrc = RTTimerLRStart(hTimerLR, 5*60*UINT64_C(1000000000) /*ns*/);
@@ -826,10 +870,12 @@ Console::teleporterTrg(PVM pVM, IMachine *pMachine, bool fStartPaused, void *pvV
             /*
              * Do the job, when it returns we're done.
              */
-            TeleporterStateTrg State(this, pVM, pMachine, &hTimerLR);
+            TeleporterStateTrg State(this, pVM, pProgress, pMachine, &hTimerLR);
             State.mstrPassword      = strPassword;
             State.mhServer          = hServer;
-            State.mpvVMCallbackTask = pvVMCallbackTask;
+
+            void *pvUser = static_cast<void *>(static_cast<TeleporterState *>(&State));
+            pProgress->setCancelCallback(teleporterProgressCancelCallback, pvUser);
 
             vrc = RTTcpServerListen(hServer, Console::teleporterTrgServeConnection, &State);
             if (vrc == VERR_TCP_SERVER_STOP)
@@ -845,6 +891,8 @@ Console::teleporterTrg(PVM pVM, IMachine *pMachine, bool fStartPaused, void *pvV
             {
                 LogRel(("Teleporter: RTTcpServerListen -> %Rrc\n", vrc));
             }
+
+            pProgress->setCancelCallback(NULL, NULL);
         }
 
         RTTimerLRDestroy(hTimerLR);
@@ -953,7 +1001,7 @@ Console::teleporterTrgServeConnection(RTSOCKET Sock, void *pvUser)
             pState->moffStream = 0;
             void *pvUser = static_cast<void *>(static_cast<TeleporterState *>(pState));
             vrc = VMR3LoadFromStream(pState->mpVM, &g_teleporterTcpOps, pvUser,
-                                     Console::stateProgressCallback, pState->mpvVMCallbackTask);
+                                     teleporterProgressCallback, pvUser);
             if (RT_FAILURE(vrc))
             {
                 LogRel(("Teleporter: VMR3LoadFromStream -> %Rrc\n", vrc));
@@ -977,7 +1025,8 @@ Console::teleporterTrgServeConnection(RTSOCKET Sock, void *pvUser)
                 break;
         }
         /** @todo implement config verification and hardware compatability checks. Or
-         *        maybe leave part of these to the saved state machinery? */
+         *        maybe leave part of these to the saved state machinery?
+         * Update: We're doing as much as possible in the first SSM pass. */
         else if (!strcmp(szCmd, "done"))
         {
             vrc = teleporterTcpWriteACK(pState);
