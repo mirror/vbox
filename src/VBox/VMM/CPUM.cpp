@@ -403,6 +403,7 @@ static int cpumR3CpuIdInit(PVM pVM)
                                        | 0;
 
     CFGMR3QueryBoolDef(CFGMR3GetChild(CFGMR3GetRoot(pVM), "CPUM"), "SyntheticCpu", &pCPUM->fSyntheticCpu, false);
+pCPUM->fSyntheticCpu = true;
     if (pCPUM->fSyntheticCpu)
     {
         const char szVendor[13]    = "VirtualBox  ";
@@ -419,7 +420,7 @@ static int cpumR3CpuIdInit(PVM pVM)
         pCPUM->aGuestCpuIdStd[0].edx = pCPUM->aGuestCpuIdExt[0].edx = ((uint32_t *)szVendor)[1];
 
         /* 1.eax: Version information.  family : model : stepping */
-        pCPUM->aGuestCpuIdStd[0].eax = (0xf << 8) + (0x1 << 4) + 1;
+        pCPUM->aGuestCpuIdStd[1].eax = (0xf << 8) + (0x1 << 4) + 1;
 
         /* Leaves 2 - 4 are Intel only - zero them out */
         memset(&pCPUM->aGuestCpuIdStd[2], 0, sizeof(pCPUM->aGuestCpuIdStd[2]));
