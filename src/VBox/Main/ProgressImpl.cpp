@@ -69,6 +69,9 @@ HRESULT ProgressBase::FinalConstruct()
     // get creation timestamp
     m_ullTimestamp = RTTimeMilliTS();
 
+    m_pfnCancelCallback = NULL;
+    m_pvCancelUserArg = NULL;
+
     return S_OK;
 }
 
@@ -509,6 +512,24 @@ HRESULT ProgressBase::setErrorInfoOnThread (IProgress *aProgress)
     return resultCode;
 }
 
+/**
+ * Sets the cancellation callback.
+ *
+ * @param   pfnCallback     The function to be called upon cancelation.
+ * @param   pvUser          The callback argument.
+ */
+void ProgressBase::setCancelCallback(void (*pfnCallback)(void *), void *pvUser)
+{
+    AutoCaller autoCaller(this);
+    AssertComRCReturnVoid(autoCaller.rc());
+
+    AutoWriteLock alock(this);
+
+    m_pvCancelUserArg   = pvUser;
+    m_pfnCancelCallback = pfnCallback;
+}
+
+
 ////////////////////////////////////////////////////////////////////////////////
 // Progress class
 ////////////////////////////////////////////////////////////////////////////////
@@ -866,7 +887,13 @@ STDMETHODIMP Progress::Cancel()
         return setError(VBOX_E_INVALID_OBJECT_STATE,
                         tr("Operation cannot be canceled"));
 
-    mCanceled = TRUE;
+    if (!mCanceled)
+    {
+        mCanceled = TRUE;
+        if (m_pfnCancelCallback)
+            m_pfnCancelCallback(m_pvCancelUserArg);
+
+    }
     return S_OK;
 }
 
@@ -1565,7 +1592,17 @@ STDMETHODIMP CombinedProgress::Cancel()
     if (!mCancelable)
         return setError (E_FAIL, tr ("Operation cannot be cancelled"));
 
-    mCanceled = TRUE;
+    if (!mCanceled)
+    {
+        mCanceled = TRUE;
+/** @todo Teleportation: Shouldn't this be propagated to mProgresses? If
+ *        powerUp creates passes a combined progress object to the client, I
+ *        won't get called back since I'm only getting the powerupProgress ...
+ *        Or what? */
+        if (m_pfnCancelCallback)
+            m_pfnCancelCallback(m_pvCancelUserArg);
+
+    }
     return S_OK;
 }
 

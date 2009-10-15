@@ -522,7 +522,7 @@ private:
     HRESULT                     teleporterSrc(TeleporterStateSrc *pState);
     HRESULT                     teleporterSrcReadACK(TeleporterStateSrc *pState, const char *pszWhich, const char *pszNAckMsg = NULL);
     HRESULT                     teleporterSrcSubmitCommand(TeleporterStateSrc *pState, const char *pszCommand);
-    int                         teleporterTrg(PVM pVM, IMachine *pMachine, bool fStartPaused, void *pvVMCallbackTask);
+    int                         teleporterTrg(PVM pVM, IMachine *pMachine, bool fStartPaused, Progress *pProgress);
     static DECLCALLBACK(int)    teleporterTrgServeConnection(RTSOCKET Sock, void *pvUser);
     /** @} */
 
