@@ -560,7 +560,9 @@ Console::teleporterSrc(TeleporterStateSrc *pState)
     /*
      * Do compatability checks of the VM config and the host hardware.
      */
-    /** @todo later */
+    /** @todo later
+     * Update: As much as possible will be taken care of by the first snapshot
+     *         pass. */
 
     /*
      * Start loading the state.
