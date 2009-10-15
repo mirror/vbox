@@ -2202,7 +2202,8 @@ void MachineConfigFile::readMachine(const xml::ElementNode &elmMachine)
             parseTimestamp(timeLastStateChange, str);
             // constructor has called RTTimeNow(&timeLastStateChange) before
 
-        if (!elmMachine.getAttributeValue("teleporterEnabled", fTeleporterEnabled) /** @todo Teleportation: remove liveMigration* in a couple of days. */
+#if 1 /** @todo Teleportation: Obsolete. Remove in a couple of days. */
+        if (!elmMachine.getAttributeValue("teleporterEnabled", fTeleporterEnabled)
          && !elmMachine.getAttributeValue("liveMigrationTarget", fTeleporterEnabled))
             fTeleporterEnabled = false;
         if (!elmMachine.getAttributeValue("teleporterPort", uTeleporterPort)
@@ -2213,6 +2214,7 @@ void MachineConfigFile::readMachine(const xml::ElementNode &elmMachine)
         if (!elmMachine.getAttributeValue("teleporterPassword", strTeleporterPassword)
          && !elmMachine.getAttributeValue("liveMigrationPassword", strTeleporterPassword))
             strTeleporterPassword = "";
+#endif
 
         // parse Hardware before the other elements because other things depend on it
         const xml::ElementNode *pelmHardware;
@@ -2244,6 +2246,17 @@ void MachineConfigFile::readMachine(const xml::ElementNode &elmMachine)
             }
             else if (pelmMachineChild->nameEquals("Description"))
                 strDescription = pelmMachineChild->getValue();
+            else if (pelmMachineChild->nameEquals("Teleporter"))
+            {
+                if (!pelmMachineChild->getAttributeValue("enabled", fTeleporterEnabled))
+                    fTeleporterEnabled = false;
+                if (!pelmMachineChild->getAttributeValue("port", uTeleporterPort))
+                    uTeleporterPort = 0;
+                if (!pelmMachineChild->getAttributeValue("address", strTeleporterAddress))
+                    strTeleporterAddress = "";
+                if (!pelmMachineChild->getAttributeValue("password", strTeleporterPassword))
+                    strTeleporterPassword = "";
+            }
         }
 
         if (m->sv < SettingsVersion_v1_9)
@@ -2924,19 +2937,20 @@ void MachineConfigFile::write(const com::Utf8Str &strFilename)
         pelmMachine->setAttribute("lastStateChange", makeString(timeLastStateChange));
         if (fAborted)
             pelmMachine->setAttribute("aborted", fAborted);
-#ifdef VBOX_WITH_LIVE_MIGRATION /** @todo Teleportation: Enable in a bit. */
-        if (m->sv >= SettingsVersion_v1_9)
+        if (    m->sv >= SettingsVersion_v1_9
+            &&  (   fTeleporterEnabled
+                 || uTeleporterPort
+                 || !strTeleporterAddress.isEmpty()
+                 || !strTeleporterPassword.isEmpty()
+                )
+           )
         {
-            if (fTeleporterEnabled)
-                pelmMachine->setAttribute("teleporterEnabled", true);
-            if (uTeleporterPort)
-                pelmMachine->setAttribute("teleporterPort", uTeleporterPort);
-            if (!strTeleporterAddress.isEmpty())
-                pelmMachine->setAttribute("teleporterAddress", strTeleporterAddress);
-            if (!strTeleporterPassword.isEmpty())
-                pelmMachine->setAttribute("teleporterPassword", strTeleporterPassword);
+           xml::ElementNode *pelmTeleporter = pelmMachine->createChild("Teleporter");
+           pelmTeleporter->setAttribute("enabled", fTeleporterEnabled);
+           pelmTeleporter->setAttribute("port", uTeleporterPort);
+           pelmTeleporter->setAttribute("address", strTeleporterAddress);
+           pelmTeleporter->setAttribute("password", strTeleporterPassword);
         }
-#endif
 
         writeExtraData(*pelmMachine, mapExtraDataItems);
 
