@@ -82,7 +82,7 @@
 /** Maximum segment size. */
 #define SEGMENT_SIZE_MAX (TEST_PATTERN_SIZE)
 /** Maximum number of active tasks. */
-#define TASK_ACTIVE_MAX (512)
+#define TASK_ACTIVE_MAX (1)
 /** Maximum size of a transfer. */
 #define TASK_TRANSFER_SIZE_MAX (_1M)
 #endif
@@ -167,7 +167,7 @@ static void tstPDMACStressTestFileVerify(PPDMACTESTFILE pTestFile, PPDMACTESTFIL
     while (cbLeft)
     {
         size_t cbCompare; 
-        unsigned iSeg = off / pTestFile->cbFileSegment;;
+        unsigned iSeg = off / pTestFile->cbFileSegment;
         PPDMACTESTFILESEG pSeg = &pTestFile->paSegs[iSeg];
         uint8_t *pbTestPattern;
         unsigned offSeg = off - pSeg->off;
@@ -195,7 +195,7 @@ static void tstPDMACStressTestFileFillBuffer(PPDMACTESTFILE pTestFile, PPDMACTES
     while (cbLeft)
     {
         size_t cbFill; 
-        unsigned iSeg = off / pTestFile->cbFileSegment;;
+        unsigned iSeg = off / pTestFile->cbFileSegment;
         PPDMACTESTFILESEG pSeg = &pTestFile->paSegs[iSeg];
         uint8_t *pbTestPattern;
         unsigned offSeg = off - pSeg->off;
@@ -227,17 +227,34 @@ static int tstPDMACStressTestFileWrite(PPDMACTESTFILE pTestFile, PPDMACTESTFILET
     if (pTestFile->cbFileCurr < pTestFile->cbFileMax)
     {
         offMax =   (pTestFile->cbFileMax - pTestFile->cbFileCurr) < pTestTask->DataSeg.cbSeg
-                 ? pTestFile->cbFileCurr + pTestTask->DataSeg.cbSeg
+                 ? pTestFile->cbFileMax - pTestTask->DataSeg.cbSeg
                  : pTestFile->cbFileCurr;
     }
     else
         offMax = pTestFile->cbFileMax - pTestTask->DataSeg.cbSeg;
 
-    pTestTask->off = RTRandU64Ex(0, offMax) & ~511;
+    uint64_t offMin;
+
+    /*
+     * If we reached the maximum file size write in the whole file
+     * otherwise we will enforce the range for random offsets to let it grow
+     * more quickly.
+     */
+    if (pTestFile->cbFileCurr == pTestFile->cbFileMax)
+        offMin = 0;
+    else
+	offMin = (offMax - pTestTask->DataSeg.cbSeg) < 0 ? 0 : (offMax - pTestTask->DataSeg.cbSeg);
+
+
+    pTestTask->off = RTRandU64Ex(offMin, offMax) & ~511;
 
     /* Set new file size of required */
     if ((uint64_t)pTestTask->off + pTestTask->DataSeg.cbSeg > pTestFile->cbFileCurr)
         pTestFile->cbFileCurr = pTestTask->off + pTestTask->DataSeg.cbSeg; 
+
+    AssertMsg(pTestFile->cbFileCurr <= pTestFile->cbFileMax,
+              ("Current file size (%llu) exceeds final size (%llu)\n",
+              pTestFile->cbFileCurr, pTestFile->cbFileMax));
 
     /* Allocate data buffer. */
     pTestTask->DataSeg.pvSeg = RTMemAlloc(pTestTask->DataSeg.cbSeg);
@@ -343,11 +360,11 @@ static int tstPDMACTestFileThread(PVM pVM, PPDMTHREAD pThread)
          * Recalc write chance. The bigger the file the lower the chance to have a write.
          * The minimum chance is 33 percent.
          */
-        iWriteChance = (int)(((float)100.0 / pTestFile->cbFileMax) * (float)pTestFile->cbFileCurr);
+        iWriteChance = 100 - (int)(((float)100.0 / pTestFile->cbFileMax) * (float)pTestFile->cbFileCurr);
         iWriteChance = RT_MAX(33, iWriteChance);
 
-        /* Wait a random amount of time. (1ms - 10s) */
-        RTThreadSleep(RTRandU32Ex(1, 10000));
+        /* Wait a random amount of time. (1ms - 100ms) */
+        RTThreadSleep(RTRandU32Ex(1, 100));
     }
 
     /* Wait for the rest to complete. */
