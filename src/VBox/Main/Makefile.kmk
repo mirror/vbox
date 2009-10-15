@@ -461,7 +461,7 @@ $(VBOX_XML_SCHEMADEFS_CPP): $(VBOX_XML_SCHEMADEFS_XSL) $(VBOX_XML_SCHEMA.$(KBUIL
 OTHER_CLEAN += $(VBOX_XML_SCHEMADEFS_H) $(VBOX_XML_SCHEMADEFS_CPP)
 
 
-if defined(VBOX_WITH_CROGL) || defined(VBOX_WITH_VIDEOHWACCEL) 
+if defined(VBOX_WITH_CROGL) || defined(VBOX_WITH_VIDEOHWACCEL)
  ifneq ($(KBUILD_TARGET),darwin)
   #
   # VBoxTestOGL - OpenGL support test app.
@@ -612,7 +612,7 @@ VBoxC_SOURCES = \
 	VirtualBoxCallbackImpl.cpp \
 	ConsoleImpl.cpp \
 	ConsoleImpl2.cpp \
-	ConsoleImpl-LiveMigration.cpp \
+	ConsoleImplTeleporter.cpp \
 	ConsoleVRDPServer.cpp \
 	GuestImpl.cpp \
 	KeyboardImpl.cpp \

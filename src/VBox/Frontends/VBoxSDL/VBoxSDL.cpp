@@ -604,7 +604,7 @@ public:
             case MachineState_Null:                return "<null>";
             case MachineState_Running:             return "Running";
             case MachineState_Restoring:           return "Restoring";
-            case MachineState_MigratingFrom:       return "MigratingFrom";
+            case MachineState_TeleportingFrom:     return "TeleportingFrom";
             case MachineState_Starting:            return "Starting";
             case MachineState_PoweredOff:          return "PoweredOff";
             case MachineState_Saved:               return "Saved";
@@ -2018,7 +2018,7 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         if (    rc == S_OK
             &&  (   machineState == MachineState_Starting
                  || machineState == MachineState_Restoring
-                 || machineState == MachineState_MigratingFrom)
+                 || machineState == MachineState_TeleportingFrom)
             )
         {
             /*
@@ -2114,7 +2114,7 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
     } while (   rc == S_OK
              && (   machineState == MachineState_Starting
                  || machineState == MachineState_Restoring
-                 || machineState == MachineState_MigratingFrom)
+                 || machineState == MachineState_TeleportingFrom)
             );
 
     /* kill the timer again */
@@ -4213,16 +4213,16 @@ static void UpdateTitlebar(TitlebarMode mode, uint32_t u32User)
                     RTStrPrintf(szTitle + strlen(szTitle), sizeof(szTitle) - strlen(szTitle),
                                 " - Restoring...");
             }
-            else if (machineState == MachineState_MigratingFrom)
+            else if (machineState == MachineState_TeleportingFrom)
             {
                 ULONG cPercentNow;
                 HRESULT rc = gProgress->COMGETTER(Percent)(&cPercentNow);
                 if (SUCCEEDED(rc))
                     RTStrPrintf(szTitle + strlen(szTitle), sizeof(szTitle) - strlen(szTitle),
-                                " - Migrating %d%%...", (int)cPercentNow);
+                                " - Teleporting %d%%...", (int)cPercentNow);
                 else
                     RTStrPrintf(szTitle + strlen(szTitle), sizeof(szTitle) - strlen(szTitle),
-                                " - Migrating...");
+                                " - Teleporting...");
             }
             /* ignore other states, we could already be in running or aborted state */
             break;

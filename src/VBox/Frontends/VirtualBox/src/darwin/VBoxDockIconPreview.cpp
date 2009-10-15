@@ -119,7 +119,7 @@ CGImageRef VBoxDockIconPreview::stateImage() const
     if (mMainWnd->machineState() == KMachineState_Paused)
         img = mStatePaused;
     else if (   mMainWnd->machineState() == KMachineState_Restoring
-             || mMainWnd->machineState() == KMachineState_MigratingFrom)
+             || mMainWnd->machineState() == KMachineState_TeleportingFrom)
         img = mStateRestoring;
     else if (mMainWnd->machineState() == KMachineState_Saving)
         img = mStateSaving;

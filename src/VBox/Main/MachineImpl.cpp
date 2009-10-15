@@ -154,8 +154,8 @@ Machine::UserData::UserData()
     /* default values for a newly created machine */
 
     mNameSync = TRUE;
-    mLiveMigrationTarget = FALSE;
-    mLiveMigrationPort = 0;
+    mTeleporterEnabled = FALSE;
+    mTeleporterPort = 0;
 
     /* mName, mOSTypeId, mSnapshotFolder, mSnapshotFolderFull are initialized in
      * Machine::init() */
@@ -1856,7 +1856,7 @@ Machine::COMGETTER(StorageControllers) (ComSafeArrayOut(IStorageController *, aS
 }
 
 STDMETHODIMP
-Machine::COMGETTER(LiveMigrationTarget)(BOOL *aEnabled)
+Machine::COMGETTER(TeleporterEnabled)(BOOL *aEnabled)
 {
     CheckComArgOutPointerValid(aEnabled);
 
@@ -1865,13 +1865,13 @@ Machine::COMGETTER(LiveMigrationTarget)(BOOL *aEnabled)
 
     AutoReadLock alock(this);
 
-    *aEnabled = mUserData->mLiveMigrationTarget;
+    *aEnabled = mUserData->mTeleporterEnabled;
 
     return S_OK;
 }
 
 STDMETHODIMP
-Machine::COMSETTER(LiveMigrationTarget)(BOOL aEnabled)
+Machine::COMSETTER(TeleporterEnabled)(BOOL aEnabled)
 {
     AutoCaller autoCaller(this);
     CheckComRCReturnRC(autoCaller.rc());
@@ -1892,13 +1892,13 @@ Machine::COMSETTER(LiveMigrationTarget)(BOOL aEnabled)
                         Global::stringifyMachineState(mData->mMachineState));
 
     mUserData.backup();
-    mUserData->mLiveMigrationTarget = aEnabled;
+    mUserData->mTeleporterEnabled = aEnabled;
 
     return S_OK;
 }
 
 STDMETHODIMP
-Machine::COMGETTER(LiveMigrationPort)(ULONG *aPort)
+Machine::COMGETTER(TeleporterPort)(ULONG *aPort)
 {
     CheckComArgOutPointerValid(aPort);
 
@@ -1907,13 +1907,13 @@ Machine::COMGETTER(LiveMigrationPort)(ULONG *aPort)
 
     AutoReadLock alock(this);
 
-    *aPort = mUserData->mLiveMigrationPort;
+    *aPort = mUserData->mTeleporterPort;
 
     return S_OK;
 }
 
 STDMETHODIMP
-Machine::COMSETTER(LiveMigrationPort)(ULONG aPort)
+Machine::COMSETTER(TeleporterPort)(ULONG aPort)
 {
     if (aPort >= _64K)
         return setError(E_INVALIDARG, tr("Invalid port number %d"), aPort);
@@ -1927,28 +1927,28 @@ Machine::COMSETTER(LiveMigrationPort)(ULONG aPort)
     CheckComRCReturnRC(rc);
 
     mUserData.backup();
-    mUserData->mLiveMigrationPort = aPort;
+    mUserData->mTeleporterPort = aPort;
 
     return S_OK;
 }
 
 STDMETHODIMP
-Machine::COMGETTER(LiveMigrationPassword)(BSTR *aPassword)
+Machine::COMGETTER(TeleporterAddress)(BSTR *aAddress)
 {
-    CheckComArgOutPointerValid(aPassword);
+    CheckComArgOutPointerValid(aAddress);
 
     AutoCaller autoCaller(this);
     CheckComRCReturnRC(autoCaller.rc());
 
     AutoReadLock alock(this);
 
-    mUserData->mLiveMigrationPassword.cloneTo(aPassword);
+    mUserData->mTeleporterAddress.cloneTo(aAddress);
 
     return S_OK;
 }
 
 STDMETHODIMP
-Machine::COMSETTER(LiveMigrationPassword)(IN_BSTR aPassword)
+Machine::COMSETTER(TeleporterAddress)(IN_BSTR aAddress)
 {
     AutoCaller autoCaller(this);
     CheckComRCReturnRC(autoCaller.rc());
@@ -1959,7 +1959,39 @@ Machine::COMSETTER(LiveMigrationPassword)(IN_BSTR aPassword)
     CheckComRCReturnRC(rc);
 
     mUserData.backup();
-    mUserData->mLiveMigrationPassword = aPassword;
+    mUserData->mTeleporterAddress = aAddress;
+
+    return S_OK;
+}
+
+STDMETHODIMP
+Machine::COMGETTER(TeleporterPassword)(BSTR *aPassword)
+{
+    CheckComArgOutPointerValid(aPassword);
+
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
+
+    AutoReadLock alock(this);
+
+    mUserData->mTeleporterPassword.cloneTo(aPassword);
+
+    return S_OK;
+}
+
+STDMETHODIMP
+Machine::COMSETTER(TeleporterPassword)(IN_BSTR aPassword)
+{
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
+
+    AutoWriteLock alock(this);
+
+    HRESULT rc = checkStateDependency(MutableStateDep);
+    CheckComRCReturnRC(rc);
+
+    mUserData.backup();
+    mUserData->mTeleporterPassword = aPassword;
 
     return S_OK;
 }
@@ -5043,10 +5075,11 @@ HRESULT Machine::loadSettings(bool aRegistered)
 
         mData->mLastStateChange = mData->m_pMachineConfigFile->timeLastStateChange;
 
-        /* Live migration */
-        mUserData->mLiveMigrationTarget = mData->m_pMachineConfigFile->fLiveMigrationTarget;
-        mUserData->mLiveMigrationPort = mData->m_pMachineConfigFile->uLiveMigrationPort;
-        mUserData->mLiveMigrationPassword = mData->m_pMachineConfigFile->strLiveMigrationPassword;
+        /* teleportation */
+        mUserData->mTeleporterEnabled  = mData->m_pMachineConfigFile->fTeleporterEnabled;
+        mUserData->mTeleporterPort     = mData->m_pMachineConfigFile->uTeleporterPort;
+        mUserData->mTeleporterAddress  = mData->m_pMachineConfigFile->strTeleporterAddress;
+        mUserData->mTeleporterPassword = mData->m_pMachineConfigFile->strTeleporterPassword;
 
         /*
          *  note: all mUserData members must be assigned prior this point because
@@ -6040,9 +6073,10 @@ HRESULT Machine::saveSettings(int aFlags /*= 0*/)
         mData->m_pMachineConfigFile->timeLastStateChange = mData->mLastStateChange;
         mData->m_pMachineConfigFile->fAborted = (mData->mMachineState == MachineState_Aborted);
 
-        mData->m_pMachineConfigFile->fLiveMigrationTarget = !!mUserData->mLiveMigrationTarget;
-        mData->m_pMachineConfigFile->uLiveMigrationPort = mUserData->mLiveMigrationPort;
-        mData->m_pMachineConfigFile->strLiveMigrationPassword = mUserData->mLiveMigrationPassword;
+        mData->m_pMachineConfigFile->fTeleporterEnabled    = !!mUserData->mTeleporterEnabled;
+        mData->m_pMachineConfigFile->uTeleporterPort       = mUserData->mTeleporterPort;
+        mData->m_pMachineConfigFile->strTeleporterAddress  = mUserData->mTeleporterAddress;
+        mData->m_pMachineConfigFile->strTeleporterPassword = mUserData->mTeleporterPassword;
 
         rc = saveHardware(mData->m_pMachineConfigFile->hardwareMachine);
         CheckComRCThrowRC(rc);
@@ -9283,7 +9317,7 @@ bool SessionMachine::hasMatchingUSBFilter (const ComObjPtr<HostUSBDevice> &aDevi
     {
         case MachineState_Starting:
         case MachineState_Restoring:
-        case MachineState_MigratingFrom:
+        case MachineState_TeleportingFrom:
         case MachineState_Paused:
         case MachineState_Running:
             return mUSBController->hasMatchingFilter (aDevice, aMaskedIfs);
@@ -10159,7 +10193,7 @@ HRESULT SessionMachine::lockMedia()
 
     AssertReturn(   mData->mMachineState == MachineState_Starting
                  || mData->mMachineState == MachineState_Restoring
-                 || mData->mMachineState == MachineState_MigratingFrom, E_FAIL);
+                 || mData->mMachineState == MachineState_TeleportingFrom, E_FAIL);
 
     typedef std::list <ComPtr<IMedium> > MediaList;
     MediaList mediaToCheck;
@@ -10347,7 +10381,7 @@ HRESULT SessionMachine::setMachineState (MachineState_T aMachineState)
     if (   (   oldMachineState == MachineState_Saved
             && aMachineState   == MachineState_Restoring)
         || (   oldMachineState == MachineState_PoweredOff
-            && aMachineState   == MachineState_MigratingFrom)
+            && aMachineState   == MachineState_TeleportingFrom)
         || (   oldMachineState <  MachineState_Running /* any other OFF state */
             && aMachineState   == MachineState_Starting)
        )
@@ -10419,7 +10453,7 @@ HRESULT SessionMachine::setMachineState (MachineState_T aMachineState)
 
     if (   aMachineState == MachineState_Starting
         || aMachineState == MachineState_Restoring
-        || aMachineState == MachineState_MigratingFrom
+        || aMachineState == MachineState_TeleportingFrom
        )
     {
         /* set the current state modified flag to indicate that the current

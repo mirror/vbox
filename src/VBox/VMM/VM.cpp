@@ -1380,8 +1380,8 @@ VMMR3DECL(int) VMR3Resume(PVM pVM)
 
 
 /**
- * EMT rendezvous worker for VMR3Save and VMR3Migrate that suspends the VM after
- * the live step has been completed.
+ * EMT rendezvous worker for VMR3Save and VMR3Teleport that suspends the VM
+ * after the live step has been completed.
  *
  * @returns VERR_VM_INVALID_VM_STATE or VINF_EM_RESUME. (This is a strict
  *          return code, see FNVMMEMTRENDEZVOUS.)
@@ -1475,7 +1475,7 @@ static DECLCALLBACK(VBOXSTRICTRC) vmR3LiveDoSuspend(PVM pVM, PVMCPU pVCpu, void 
 
 
 /**
- * EMT rendezvous worker that VMR3Save and VMR3Migrate uses to clean up a
+ * EMT rendezvous worker that VMR3Save and VMR3Teleport uses to clean up a
  * SSMR3LiveDoStep1 failure.
  *
  * Doing this as a rendezvous operation avoids all annoying transition
@@ -1513,7 +1513,7 @@ static DECLCALLBACK(VBOXSTRICTRC) vmR3LiveDoStep1Cleanup(PVM pVM, PVMCPU pVCpu, 
 
 
 /**
- * EMT(0) worker for VMR3Save and VMR3Migrate that completes the live save.
+ * EMT(0) worker for VMR3Save and VMR3Teleport that completes the live save.
  *
  * @returns VBox status code.
  * @retval  VINF_SSM_LIVE_SUSPENDED if VMR3Suspend was called.
@@ -1561,7 +1561,7 @@ static DECLCALLBACK(int) vmR3LiveDoStep2(PVM pVM, PSSMHANDLE pSSM)
 
 
 /**
- * Worker for vmR3SaveMigrate that validates the state and calls SSMR3Save or
+ * Worker for vmR3SaveTeleport that validates the state and calls SSMR3Save or
  * SSMR3LiveSave.
  *
  * @returns VBox status code.
@@ -1591,7 +1591,7 @@ static DECLCALLBACK(int) vmR3Save(PVM pVM, const char *pszFilename, PCSSMSTRMOPS
     AssertPtr(pVM);
     Assert(   enmAfter == SSMAFTER_DESTROY
            || enmAfter == SSMAFTER_CONTINUE
-           || enmAfter == SSMAFTER_MIGRATE);
+           || enmAfter == SSMAFTER_TELEPORT);
     AssertPtr(ppSSM);
     *ppSSM = NULL;
 
@@ -1619,7 +1619,7 @@ static DECLCALLBACK(int) vmR3Save(PVM pVM, const char *pszFilename, PCSSMSTRMOPS
 
 
 /**
- * Commmon worker for VMR3Save and VMR3Migrate.
+ * Commmon worker for VMR3Save and VMR3Teleport.
  *
  * @returns VBox status code.
  *
@@ -1633,8 +1633,8 @@ static DECLCALLBACK(int) vmR3Save(PVM pVM, const char *pszFilename, PCSSMSTRMOPS
  *
  * @thread  Non-EMT
  */
-static int vmR3SaveMigrate(PVM pVM, const char *pszFilename, PCSSMSTRMOPS pStreamOps, void *pvStreamOpsUser,
-                           SSMAFTER enmAfter, PFNVMPROGRESS pfnProgress, void *pvProgressUser)
+static int vmR3SaveTeleport(PVM pVM, const char *pszFilename, PCSSMSTRMOPS pStreamOps, void *pvStreamOpsUser,
+                            SSMAFTER enmAfter, PFNVMPROGRESS pfnProgress, void *pvProgressUser)
 {
     /*
      * Request the operation in EMT(0).
@@ -1726,18 +1726,18 @@ VMMR3DECL(int) VMR3Save(PVM pVM, const char *pszFilename, bool fContinueAfterwar
     AssertPtrNullReturn(pfnProgress, VERR_INVALID_POINTER);
 
     /*
-     * Join paths with VMR3Migrate.
+     * Join paths with VMR3Teleport.
      */
     SSMAFTER enmAfter = fContinueAfterwards ? SSMAFTER_CONTINUE : SSMAFTER_DESTROY;
-    int rc = vmR3SaveMigrate(pVM, pszFilename, NULL /*pStreamOps*/, NULL /*pvStreamOpsUser*/,
-                             enmAfter, pfnProgress, pvUser);
+    int rc = vmR3SaveTeleport(pVM, pszFilename, NULL /*pStreamOps*/, NULL /*pvStreamOpsUser*/,
+                              enmAfter, pfnProgress, pvUser);
     LogFlow(("VMR3Save: returns %Rrc\n", rc));
     return rc;
 }
 
 
 /**
- * Migrate the VM.
+ * Teleport the VM (aka live migration).
  *
  * @returns VBox status code.
  *
@@ -1752,9 +1752,9 @@ VMMR3DECL(int) VMR3Save(PVM pVM, const char *pszFilename, bool fContinueAfterwar
  * @vmstateto   Saving+Suspended or
  *              RunningLS+SuspeningLS+SuspendedLS+Saving+Suspended.
  */
-VMMR3DECL(int) VMR3Migrate(PVM pVM, PCSSMSTRMOPS pStreamOps, void *pvStreamOpsUser, PFNVMPROGRESS pfnProgress, void *pvProgressUser)
+VMMR3DECL(int) VMR3Teleport(PVM pVM, PCSSMSTRMOPS pStreamOps, void *pvStreamOpsUser, PFNVMPROGRESS pfnProgress, void *pvProgressUser)
 {
-    LogFlow(("VMR3Migrate: pVM=%p pStreamOps=%p pvStreamOps=%p pfnProgress=%p pvProgressUser=%p\n",
+    LogFlow(("VMR3Teleport: pVM=%p pStreamOps=%p pvStreamOps=%p pfnProgress=%p pvProgressUser=%p\n",
              pVM, pStreamOps, pvStreamOpsUser, pfnProgress, pvProgressUser));
 
     /*
@@ -1768,9 +1768,9 @@ VMMR3DECL(int) VMR3Migrate(PVM pVM, PCSSMSTRMOPS pStreamOps, void *pvStreamOpsUs
     /*
      * Join paths with VMR3Save.
      */
-    int rc = vmR3SaveMigrate(pVM, NULL /*pszFilename*/, pStreamOps, pvStreamOpsUser,
-                             SSMAFTER_MIGRATE, pfnProgress, pvProgressUser);
-    LogFlow(("VMR3Migrate: returns %Rrc\n", rc));
+    int rc = vmR3SaveTeleport(pVM, NULL /*pszFilename*/, pStreamOps, pvStreamOpsUser,
+                              SSMAFTER_TELEPORT, pfnProgress, pvProgressUser);
+    LogFlow(("VMR3Teleport: returns %Rrc\n", rc));
     return rc;
 }
 

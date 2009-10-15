@@ -472,7 +472,7 @@
 
   <enum
     name="MachineState"
-    uuid="f532545d-9ae7-4402-8b5f-1ea7d778cfc7"
+    uuid="0f4cc50c-e1cc-4cde-ae7a-e6164bac5ba2"
   >
     <desc>
       Virtual machine execution state.
@@ -672,9 +672,9 @@
         after powering it on from the saved execution state.
       </desc>
     </const>
-    <const name="MigratingFrom"         value="11">
+    <const name="TeleportingFrom"       value="11">
       <desc>
-        Migrating the machine state from another host or process.
+        Teleporting the machine state from another host or process.
       </desc>
     </const>
     <const name="Discarding"            value="12">
@@ -777,7 +777,7 @@
     <const name="Synthetic"             value="2">
       <desc>
         This setting determines whether VirtualBox will expose a synthetic CPU to the guest to allow
-        live migration between host systems that differ significantly.
+        teleporting between host systems that differ significantly.
       </desc>
     </const>
   </enum>
@@ -4071,7 +4071,7 @@
 
   <interface
      name="IMachine" extends="$unknown"
-     uuid="e8e1c6a9-679e-4a73-a1e5-d9a81027fbda"
+     uuid="d867a463-0f78-4ec7-a876-8da001464537"
      wsmap="managed"
      >
     <desc>
@@ -4527,31 +4527,40 @@
       </desc>
     </attribute>
 
-    <attribute name="liveMigrationTarget" type="boolean">
+    <attribute name="teleporterEnabled" type="boolean">
       <desc>
-        When set to @a true, the virtual machine becomes a live migration
-        target.  This can only set to @a true when the VM is in the @a
-        PoweredOff or @a Aborted state.
+        When set to @a true, the virtual machine becomes a target teleporter
+        the next time it is powered on.  This can only set to @a true when the
+        VM is in the @a PoweredOff or @a Aborted state.
 
         This property is automatically set to @a false when the VM is powered
         on.
       </desc>
     </attribute>
 
-    <attribute name="liveMigrationPort" type="unsigned long">
+    <attribute name="teleporterPort" type="unsigned long">
       <desc>
-        The TCP port used for live migration.  This can only be set when the
-        VM is in the @a PoweredOff state.
+        The TCP port the target teleporter will listen for incoming
+        teleportations on.
 
-        0 means the port is automatically selected and the source machine will
-        have to be told where to connected after the destination has been
-        started.
+        0 means the port is automatically selected upon power on.  The actual
+        value can be read from this property while the machine is waiting for
+        incoming teleportations.
       </desc>
     </attribute>
 
-    <attribute name="liveMigrationPassword" type="wstring">
+    <attribute name="teleporterAddress" type="wstring">
       <desc>
-        The password the live migration target will check for.
+        The address the target teleporter will listen on.  If set to an empty
+        string, it will listen on all addresses.
+      </desc>
+    </attribute>
+
+    <attribute name="teleporterPassword" type="wstring">
+      <desc>
+        The password the to check for on the target teleporter.  This is just a
+        very basic measure to prevent simple hacks and operators accidentally
+        beaming a virtual machine to the wrong place.
       </desc>
     </attribute>
 
@@ -6078,7 +6087,7 @@
 
   <interface
      name="IConsole" extends="$unknown"
-     uuid="c47486e1-3d99-4212-b1c5-86451978999d"
+     uuid="03312360-0364-4b7a-ad71-1a8450133774"
      wsmap="managed"
      >
     <desc>
@@ -6816,9 +6825,9 @@
       </param>
     </method>
 
-    <method name="migrate">
+    <method name="teleport">
       <desc>
-        Migrate the VM to a different host machine.
+        Teleport the VM to a different host machine or process.
 
         TODO explain the details.
 
@@ -6827,7 +6836,7 @@
         </result>
       </desc>
       <param name="hostname" type="wstring" dir="in">
-        <desc>The name or IP of the host to migrate to.</desc>
+        <desc>The name or IP of the host to teleport to.</desc>
       </param>
       <param name="tcpport" type="unsigned long" dir="in">
         <desc>The TCP port to connect to (1..65535).</desc>

@@ -33,7 +33,7 @@ class Keyboard;
 class Mouse;
 class Display;
 class MachineDebugger;
-class MigrationStateSrc;
+class TeleporterStateSrc;
 class OUSBDevice;
 class RemoteUSBDevice;
 class SharedFolder;
@@ -147,7 +147,7 @@ public:
     STDMETHOD(DiscardSnapshot) (IN_BSTR aId, IProgress **aProgress);
     STDMETHOD(DiscardCurrentState) (IProgress **aProgress);
     STDMETHOD(DiscardCurrentSnapshotAndState) (IProgress **aProgress);
-    STDMETHOD(Migrate)(IN_BSTR aHostname, ULONG aPort, IN_BSTR aPassword, IProgress **aProgress);
+    STDMETHOD(Teleport)(IN_BSTR aHostname, ULONG aPort, IN_BSTR aPassword, IProgress **aProgress);
     STDMETHOD(RegisterCallback) (IConsoleCallback *aCallback);
     STDMETHOD(UnregisterCallback)(IConsoleCallback *aCallback);
 
@@ -516,14 +516,14 @@ private:
     void updateGuestPropertiesVRDPDisconnect (uint32_t u32ClientId);
 #endif
 
-    /** @name Live migration support
+    /** @name Teleporter support
      * @{ */
-    static DECLCALLBACK(int)    migrationSrcThreadWrapper(RTTHREAD hThread, void *pvUser);
-    HRESULT                     migrationSrc(MigrationStateSrc *pState);
-    HRESULT                     migrationSrcReadACK(MigrationStateSrc *pState, const char *pszWhich, const char *pszNAckMsg = NULL);
-    HRESULT                     migrationSrcSubmitCommand(MigrationStateSrc *pState, const char *pszCommand);
-    int                         migrationDst(PVM pVM, IMachine *pMachine, bool fStartPaused, void *pvVMCallbackTask);
-    static DECLCALLBACK(int)    migrationDstServeConnection(RTSOCKET Sock, void *pvUser);
+    static DECLCALLBACK(int)    teleporterSrcThreadWrapper(RTTHREAD hThread, void *pvUser);
+    HRESULT                     teleporterSrc(TeleporterStateSrc *pState);
+    HRESULT                     teleporterSrcReadACK(TeleporterStateSrc *pState, const char *pszWhich, const char *pszNAckMsg = NULL);
+    HRESULT                     teleporterSrcSubmitCommand(TeleporterStateSrc *pState, const char *pszCommand);
+    int                         teleporterTrg(PVM pVM, IMachine *pMachine, bool fStartPaused, void *pvVMCallbackTask);
+    static DECLCALLBACK(int)    teleporterTrgServeConnection(RTSOCKET Sock, void *pvUser);
     /** @} */
 
     bool mSavedStateDataLoaded : 1;
@@ -631,5 +631,5 @@ private:
     friend struct VMTask;
 };
 
-#endif // ____H_CONSOLEIMPL
+#endif // !____H_CONSOLEIMPL
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */

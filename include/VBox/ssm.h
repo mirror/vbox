@@ -82,10 +82,10 @@ typedef enum SSMAFTER
     SSMAFTER_DESTROY,
     /** Will continue execution after saving the VM. */
     SSMAFTER_CONTINUE,
-    /** Will migrate the VM.
+    /** Will teleport the VM.
      * The source VM will be destroyed (then one saving), the destination VM
      * will continue execution. */
-    SSMAFTER_MIGRATE,
+    SSMAFTER_TELEPORT,
     /** Will debug the saved state.
      * This is used to drop some of the stricter consitentcy checks so it'll
      * load fine in the debugger or animator. */
@@ -888,7 +888,9 @@ typedef FNSSMEXTLOADDONE *PFNSSMEXTLOADDONE;
 /**
  * SSM stream method table.
  *
- * This is used for live migration as well as internally in SSM.
+ * This is used by external parties for teleporting over TCP or any other media.
+ * SSM also uses this internally for file access, thus the 2-3 file centric
+ * methods.
  */
 typedef struct SSMSTRMOPS
 {

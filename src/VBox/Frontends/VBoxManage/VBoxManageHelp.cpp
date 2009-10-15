@@ -250,9 +250,10 @@ void printUsage(USAGECATEGORY u64Cmd)
         RTPrintf("                            [--usb on|off]\n"
                  "                            [--usbehci on|off]\n"
                  "                            [--snapshotfolder default|<path>]\n"
-                 "                            [--livemigrationtarget on|off]\n"
-                 "                            [--livemigrationport <port>]\n"
-                 "                            [--livemigrationpassword <password>]\n");
+                 "                            [--teleporterenabled on|off]\n"
+                 "                            [--teleporterport <port>]\n"
+                 "                            [--teleporteraddress <address|empty>\n"
+                 "                            [--teleporterpassword <password>]\n");
         RTPrintf("\n");
     }
 
@@ -321,7 +322,7 @@ void printUsage(USAGECATEGORY u64Cmd)
         RTPrintf("                            setvideomodehint <xres> <yres> <bpp> [display] |\n"
                  "                            setcredentials <username> <password> <domain>\n"
                  "                                           [--allowlocallogon <yes|no>] |\n"
-                 "                            migrate --hostname <name> --port <port>\n"
+                 "                            teleport --hostname <name> --port <port>\n"
                  "                                   [--password password]\n"
                  "\n");
     }

@@ -54,150 +54,152 @@ using namespace com;
 # pragma optimize("g", off)
 #endif
 
-enum enOptionCodes
+enum
 {
-    MODIFYVMNAME = 1000,
-    MODIFYVMOSTYPE,
-    MODIFYVMMEMORY,
-    MODIFYVMVRAM,
-    MODIFYVMFIRMWARE,
-    MODIFYVMACPI,
-    MODIFYVMIOAPIC,
-    MODIFYVMPAE,
-    MODIFYVMSYNTHCPU,
-    MODIFYVMHWVIRTEX,
-    MODIFYVMHWVIRTEXEXCLUSIVE,
-    MODIFYVMNESTEDPAGING,
-    MODIFYVMVTXVPID,
-    MODIFYVMCPUS,
-    MODIFYVMMONITORCOUNT,
-    MODIFYVMACCELERATE3D,
-    MODIFYVMACCELERATE2DVIDEO,
-    MODIFYVMBIOSLOGOFADEIN,
-    MODIFYVMBIOSLOGOFADEOUT,
-    MODIFYVMBIOSLOGODISPLAYTIME,
-    MODIFYVMBIOSLOGOIMAGEPATH,
-    MODIFYVMBIOSBOOTMENU,
-    MODIFYVMBIOSSYSTEMTIMEOFFSET,
-    MODIFYVMBIOSPXEDEBUG,
-    MODIFYVMBOOT,
-    MODIFYVMHDA,
-    MODIFYVMHDB,
-    MODIFYVMHDD,
-    MODIFYVMIDECONTROLLER,
-    MODIFYVMSATAIDEEMULATION,
-    MODIFYVMSATAPORTCOUNT,
-    MODIFYVMSATAPORT,
-    MODIFYVMSATA,
-    MODIFYVMSCSIPORT,
-    MODIFYVMSCSITYPE,
-    MODIFYVMSCSI,
-    MODIFYVMDVDPASSTHROUGH,
-    MODIFYVMDVD,
-    MODIFYVMFLOPPY,
-    MODIFYVMNICTRACEFILE,
-    MODIFYVMNICTRACE,
-    MODIFYVMNICTYPE,
-    MODIFYVMNICSPEED,
-    MODIFYVMNIC,
-    MODIFYVMCABLECONNECTED,
-    MODIFYVMBRIDGEADAPTER,
-    MODIFYVMHOSTONLYADAPTER,
-    MODIFYVMINTNET,
-    MODIFYVMNATNET,
-    MODIFYVMMACADDRESS,
-    MODIFYVMUARTMODE,
-    MODIFYVMUART,
-    MODIFYVMGUESTSTATISTICSINTERVAL,
-    MODIFYVMGUESTMEMORYBALLOON,
-    MODIFYVMAUDIOCONTROLLER,
-    MODIFYVMAUDIO,
-    MODIFYVMCLIPBOARD,
-    MODIFYVMVRDPPORT,
-    MODIFYVMVRDPADDRESS,
-    MODIFYVMVRDPAUTHTYPE,
-    MODIFYVMVRDPMULTICON,
-    MODIFYVMVRDPREUSECON,
-    MODIFYVMVRDP,
-    MODIFYVMUSBEHCI,
-    MODIFYVMUSB,
-    MODIFYVMSNAPSHOTFOLDER,
-    MODIFYVMLIVEMIGRATIONTARGET,
-    MODIFYVMLIVEMIGRATIONPORT,
-    MODIFYVMLIVEMIGRATIONPASSWORD,
+    MODIFYVM_NAME = 1000,
+    MODIFYVM_OSTYPE,
+    MODIFYVM_MEMORY,
+    MODIFYVM_VRAM,
+    MODIFYVM_FIRMWARE,
+    MODIFYVM_ACPI,
+    MODIFYVM_IOAPIC,
+    MODIFYVM_PAE,
+    MODIFYVM_SYNTHCPU,
+    MODIFYVM_HWVIRTEX,
+    MODIFYVM_HWVIRTEXEXCLUSIVE,
+    MODIFYVM_NESTEDPAGING,
+    MODIFYVM_VTXVPID,
+    MODIFYVM_CPUS,
+    MODIFYVM_MONITORCOUNT,
+    MODIFYVM_ACCELERATE3D,
+    MODIFYVM_ACCELERATE2DVIDEO,
+    MODIFYVM_BIOSLOGOFADEIN,
+    MODIFYVM_BIOSLOGOFADEOUT,
+    MODIFYVM_BIOSLOGODISPLAYTIME,
+    MODIFYVM_BIOSLOGOIMAGEPATH,
+    MODIFYVM_BIOSBOOTMENU,
+    MODIFYVM_BIOSSYSTEMTIMEOFFSET,
+    MODIFYVM_BIOSPXEDEBUG,
+    MODIFYVM_BOOT,
+    MODIFYVM_HDA,
+    MODIFYVM_HDB,
+    MODIFYVM_HDD,
+    MODIFYVM_IDECONTROLLER,
+    MODIFYVM_SATAIDEEMULATION,
+    MODIFYVM_SATAPORTCOUNT,
+    MODIFYVM_SATAPORT,
+    MODIFYVM_SATA,
+    MODIFYVM_SCSIPORT,
+    MODIFYVM_SCSITYPE,
+    MODIFYVM_SCSI,
+    MODIFYVM_DVDPASSTHROUGH,
+    MODIFYVM_DVD,
+    MODIFYVM_FLOPPY,
+    MODIFYVM_NICTRACEFILE,
+    MODIFYVM_NICTRACE,
+    MODIFYVM_NICTYPE,
+    MODIFYVM_NICSPEED,
+    MODIFYVM_NIC,
+    MODIFYVM_CABLECONNECTED,
+    MODIFYVM_BRIDGEADAPTER,
+    MODIFYVM_HOSTONLYADAPTER,
+    MODIFYVM_INTNET,
+    MODIFYVM_NATNET,
+    MODIFYVM_MACADDRESS,
+    MODIFYVM_UARTMODE,
+    MODIFYVM_UART,
+    MODIFYVM_GUESTSTATISTICSINTERVAL,
+    MODIFYVM_GUESTMEMORYBALLOON,
+    MODIFYVM_AUDIOCONTROLLER,
+    MODIFYVM_AUDIO,
+    MODIFYVM_CLIPBOARD,
+    MODIFYVM_VRDPPORT,
+    MODIFYVM_VRDPADDRESS,
+    MODIFYVM_VRDPAUTHTYPE,
+    MODIFYVM_VRDPMULTICON,
+    MODIFYVM_VRDPREUSECON,
+    MODIFYVM_VRDP,
+    MODIFYVM_USBEHCI,
+    MODIFYVM_USB,
+    MODIFYVM_SNAPSHOTFOLDER,
+    MODIFYVM_TELEPORTER_ENABLED,
+    MODIFYVM_TELEPORTER_PORT,
+    MODIFYVM_TELEPORTER_ADDRESS,
+    MODIFYVM_TELEPORTER_PASSWORD
 };
 
 static const RTGETOPTDEF g_aModifyVMOptions[] =
 {
-    { "--name",                    MODIFYVMNAME,                    RTGETOPT_REQ_STRING },
-    { "--ostype",                  MODIFYVMOSTYPE,                  RTGETOPT_REQ_STRING },
-    { "--memory",                  MODIFYVMMEMORY,                  RTGETOPT_REQ_UINT32 },
-    { "--vram",                    MODIFYVMVRAM,                    RTGETOPT_REQ_UINT32 },
-    { "--firmware",                MODIFYVMFIRMWARE,                RTGETOPT_REQ_STRING },
-    { "--acpi",                    MODIFYVMACPI,                    RTGETOPT_REQ_STRING },
-    { "--ioapic",                  MODIFYVMIOAPIC,                  RTGETOPT_REQ_STRING },
-    { "--pae",                     MODIFYVMPAE,                     RTGETOPT_REQ_STRING },
-    { "--synthcpu",                MODIFYVMSYNTHCPU,                RTGETOPT_REQ_STRING },
-    { "--hwvirtex",                MODIFYVMHWVIRTEX,                RTGETOPT_REQ_STRING },
-    { "--hwvirtexexcl",            MODIFYVMHWVIRTEXEXCLUSIVE,       RTGETOPT_REQ_STRING },
-    { "--nestedpaging",            MODIFYVMNESTEDPAGING,            RTGETOPT_REQ_STRING },
-    { "--vtxvpid",                 MODIFYVMVTXVPID,                 RTGETOPT_REQ_STRING },
-    { "--cpus",                    MODIFYVMCPUS,                    RTGETOPT_REQ_UINT32 },
-    { "--monitorcount",            MODIFYVMMONITORCOUNT,            RTGETOPT_REQ_UINT32 },
-    { "--accelerate3d",            MODIFYVMACCELERATE3D,            RTGETOPT_REQ_STRING },
-    { "--accelerate2dvideo",       MODIFYVMACCELERATE2DVIDEO,       RTGETOPT_REQ_STRING },
-    { "--bioslogofadein",          MODIFYVMBIOSLOGOFADEIN,          RTGETOPT_REQ_STRING },
-    { "--bioslogofadeout",         MODIFYVMBIOSLOGOFADEOUT,         RTGETOPT_REQ_STRING },
-    { "--bioslogodisplaytime",     MODIFYVMBIOSLOGODISPLAYTIME,     RTGETOPT_REQ_UINT64 },
-    { "--bioslogoimagepath",       MODIFYVMBIOSLOGOIMAGEPATH,       RTGETOPT_REQ_STRING },
-    { "--biosbootmenu",            MODIFYVMBIOSBOOTMENU,            RTGETOPT_REQ_STRING },
-    { "--biossystemtimeoffset",    MODIFYVMBIOSSYSTEMTIMEOFFSET,    RTGETOPT_REQ_UINT64 },
-    { "--biospxedebug",            MODIFYVMBIOSPXEDEBUG,            RTGETOPT_REQ_STRING },
-    { "--boot",                    MODIFYVMBOOT,                    RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX },
-    { "--hda",                     MODIFYVMHDA,                     RTGETOPT_REQ_STRING },
-    { "--hdb",                     MODIFYVMHDB,                     RTGETOPT_REQ_STRING },
-    { "--hdd",                     MODIFYVMHDD,                     RTGETOPT_REQ_STRING },
-    { "--idecontroller",           MODIFYVMIDECONTROLLER,           RTGETOPT_REQ_STRING },
-    { "--sataideemulation",        MODIFYVMSATAIDEEMULATION,        RTGETOPT_REQ_UINT32 | RTGETOPT_FLAG_INDEX },
-    { "--sataportcount",           MODIFYVMSATAPORTCOUNT,           RTGETOPT_REQ_UINT32 },
-    { "--sataport",                MODIFYVMSATAPORT,                RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX },
-    { "--sata",                    MODIFYVMSATA,                    RTGETOPT_REQ_STRING },
-    { "--scsiport",                MODIFYVMSCSIPORT,                RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX },
-    { "--scsitype",                MODIFYVMSCSITYPE,                RTGETOPT_REQ_STRING },
-    { "--scsi",                    MODIFYVMSCSI,                    RTGETOPT_REQ_STRING },
-    { "--dvdpassthrough",          MODIFYVMDVDPASSTHROUGH,          RTGETOPT_REQ_STRING },
-    { "--dvd",                     MODIFYVMDVD,                     RTGETOPT_REQ_STRING },
-    { "--floppy",                  MODIFYVMFLOPPY,                  RTGETOPT_REQ_STRING },
-    { "--nictracefile",            MODIFYVMNICTRACEFILE,            RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX },
-    { "--nictrace",                MODIFYVMNICTRACE,                RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX },
-    { "--nictype",                 MODIFYVMNICTYPE,                 RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX },
-    { "--nicspeed",                MODIFYVMNICSPEED,                RTGETOPT_REQ_UINT32 | RTGETOPT_FLAG_INDEX },
-    { "--nic",                     MODIFYVMNIC,                     RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX },
-    { "--cableconnected",          MODIFYVMCABLECONNECTED,          RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX },
-    { "--bridgeadapter",           MODIFYVMBRIDGEADAPTER,           RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX },
-    { "--hostonlyadapter",         MODIFYVMHOSTONLYADAPTER,         RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX },
-    { "--intnet",                  MODIFYVMINTNET,                  RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX },
-    { "--natnet",                  MODIFYVMNATNET,                  RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX },
-    { "--macaddress",              MODIFYVMMACADDRESS,              RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX },
-    { "--uartmode",                MODIFYVMUARTMODE,                RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX },
-    { "--uart",                    MODIFYVMUART,                    RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX },
-    { "--gueststatisticsinterval", MODIFYVMGUESTSTATISTICSINTERVAL, RTGETOPT_REQ_UINT32 },
-    { "--guestmemoryballoon",      MODIFYVMGUESTMEMORYBALLOON,      RTGETOPT_REQ_UINT32 },
-    { "--audiocontroller",         MODIFYVMAUDIOCONTROLLER,         RTGETOPT_REQ_STRING },
-    { "--audio",                   MODIFYVMAUDIO,                   RTGETOPT_REQ_STRING },
-    { "--clipboard",               MODIFYVMCLIPBOARD,               RTGETOPT_REQ_STRING },
-    { "--vrdpport",                MODIFYVMVRDPPORT,                RTGETOPT_REQ_STRING },
-    { "--vrdpaddress",             MODIFYVMVRDPADDRESS,             RTGETOPT_REQ_STRING },
-    { "--vrdpauthtype",            MODIFYVMVRDPAUTHTYPE,            RTGETOPT_REQ_STRING },
-    { "--vrdpmulticon",            MODIFYVMVRDPMULTICON,            RTGETOPT_REQ_STRING },
-    { "--vrdpreusecon",            MODIFYVMVRDPREUSECON,            RTGETOPT_REQ_STRING },
-    { "--vrdp",                    MODIFYVMVRDP,                    RTGETOPT_REQ_STRING },
-    { "--usbehci",                 MODIFYVMUSBEHCI,                 RTGETOPT_REQ_STRING },
-    { "--usb",                     MODIFYVMUSB,                     RTGETOPT_REQ_STRING },
-    { "--snapshotfolder",          MODIFYVMSNAPSHOTFOLDER,          RTGETOPT_REQ_STRING },
-    { "--livemigrationtarget",     MODIFYVMLIVEMIGRATIONTARGET,     RTGETOPT_REQ_STRING },
-    { "--livemigrationport",       MODIFYVMLIVEMIGRATIONPORT,       RTGETOPT_REQ_UINT32 },
-    { "--livemigrationpassword",   MODIFYVMLIVEMIGRATIONPASSWORD,   RTGETOPT_REQ_STRING },
+    { "--name",                     MODIFYVM_NAME,                      RTGETOPT_REQ_STRING },
+    { "--ostype",                   MODIFYVM_OSTYPE,                    RTGETOPT_REQ_STRING },
+    { "--memory",                   MODIFYVM_MEMORY,                    RTGETOPT_REQ_UINT32 },
+    { "--vram",                     MODIFYVM_VRAM,                      RTGETOPT_REQ_UINT32 },
+    { "--firmware",                 MODIFYVM_FIRMWARE,                  RTGETOPT_REQ_STRING },
+    { "--acpi",                     MODIFYVM_ACPI,                      RTGETOPT_REQ_STRING },
+    { "--ioapic",                   MODIFYVM_IOAPIC,                    RTGETOPT_REQ_STRING },
+    { "--pae",                      MODIFYVM_PAE,                       RTGETOPT_REQ_STRING },
+    { "--synthcpu",                 MODIFYVM_SYNTHCPU,                  RTGETOPT_REQ_STRING },
+    { "--hwvirtex",                 MODIFYVM_HWVIRTEX,                  RTGETOPT_REQ_STRING },
+    { "--hwvirtexexcl",             MODIFYVM_HWVIRTEXEXCLUSIVE,         RTGETOPT_REQ_STRING },
+    { "--nestedpaging",             MODIFYVM_NESTEDPAGING,              RTGETOPT_REQ_STRING },
+    { "--vtxvpid",                  MODIFYVM_VTXVPID,                   RTGETOPT_REQ_STRING },
+    { "--cpus",                     MODIFYVM_CPUS,                      RTGETOPT_REQ_UINT32 },
+    { "--monitorcount",             MODIFYVM_MONITORCOUNT,              RTGETOPT_REQ_UINT32 },
+    { "--accelerate3d",             MODIFYVM_ACCELERATE3D,              RTGETOPT_REQ_STRING },
+    { "--accelerate2dvideo",        MODIFYVM_ACCELERATE2DVIDEO,         RTGETOPT_REQ_STRING },
+    { "--bioslogofadein",           MODIFYVM_BIOSLOGOFADEIN,            RTGETOPT_REQ_STRING },
+    { "--bioslogofadeout",          MODIFYVM_BIOSLOGOFADEOUT,           RTGETOPT_REQ_STRING },
+    { "--bioslogodisplaytime",      MODIFYVM_BIOSLOGODISPLAYTIME,       RTGETOPT_REQ_UINT64 },
+    { "--bioslogoimagepath",        MODIFYVM_BIOSLOGOIMAGEPATH,         RTGETOPT_REQ_STRING },
+    { "--biosbootmenu",             MODIFYVM_BIOSBOOTMENU,              RTGETOPT_REQ_STRING },
+    { "--biossystemtimeoffset",     MODIFYVM_BIOSSYSTEMTIMEOFFSET,      RTGETOPT_REQ_UINT64 },
+    { "--biospxedebug",             MODIFYVM_BIOSPXEDEBUG,              RTGETOPT_REQ_STRING },
+    { "--boot",                     MODIFYVM_BOOT,                      RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX },
+    { "--hda",                      MODIFYVM_HDA,                       RTGETOPT_REQ_STRING },
+    { "--hdb",                      MODIFYVM_HDB,                       RTGETOPT_REQ_STRING },
+    { "--hdd",                      MODIFYVM_HDD,                       RTGETOPT_REQ_STRING },
+    { "--idecontroller",            MODIFYVM_IDECONTROLLER,             RTGETOPT_REQ_STRING },
+    { "--sataideemulation",         MODIFYVM_SATAIDEEMULATION,          RTGETOPT_REQ_UINT32 | RTGETOPT_FLAG_INDEX },
+    { "--sataportcount",            MODIFYVM_SATAPORTCOUNT,             RTGETOPT_REQ_UINT32 },
+    { "--sataport",                 MODIFYVM_SATAPORT,                  RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX },
+    { "--sata",                     MODIFYVM_SATA,                      RTGETOPT_REQ_STRING },
+    { "--scsiport",                 MODIFYVM_SCSIPORT,                  RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX },
+    { "--scsitype",                 MODIFYVM_SCSITYPE,                  RTGETOPT_REQ_STRING },
+    { "--scsi",                     MODIFYVM_SCSI,                      RTGETOPT_REQ_STRING },
+    { "--dvdpassthrough",           MODIFYVM_DVDPASSTHROUGH,            RTGETOPT_REQ_STRING },
+    { "--dvd",                      MODIFYVM_DVD,                       RTGETOPT_REQ_STRING },
+    { "--floppy",                   MODIFYVM_FLOPPY,                    RTGETOPT_REQ_STRING },
+    { "--nictracefile",             MODIFYVM_NICTRACEFILE,              RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX },
+    { "--nictrace",                 MODIFYVM_NICTRACE,                  RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX },
+    { "--nictype",                  MODIFYVM_NICTYPE,                   RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX },
+    { "--nicspeed",                 MODIFYVM_NICSPEED,                  RTGETOPT_REQ_UINT32 | RTGETOPT_FLAG_INDEX },
+    { "--nic",                      MODIFYVM_NIC,                       RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX },
+    { "--cableconnected",           MODIFYVM_CABLECONNECTED,            RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX },
+    { "--bridgeadapter",            MODIFYVM_BRIDGEADAPTER,             RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX },
+    { "--hostonlyadapter",          MODIFYVM_HOSTONLYADAPTER,           RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX },
+    { "--intnet",                   MODIFYVM_INTNET,                    RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX },
+    { "--natnet",                   MODIFYVM_NATNET,                    RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX },
+    { "--macaddress",               MODIFYVM_MACADDRESS,                RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX },
+    { "--uartmode",                 MODIFYVM_UARTMODE,                  RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX },
+    { "--uart",                     MODIFYVM_UART,                      RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX },
+    { "--gueststatisticsinterval",  MODIFYVM_GUESTSTATISTICSINTERVAL,   RTGETOPT_REQ_UINT32 },
+    { "--guestmemoryballoon",       MODIFYVM_GUESTMEMORYBALLOON,        RTGETOPT_REQ_UINT32 },
+    { "--audiocontroller",          MODIFYVM_AUDIOCONTROLLER,           RTGETOPT_REQ_STRING },
+    { "--audio",                    MODIFYVM_AUDIO,                     RTGETOPT_REQ_STRING },
+    { "--clipboard",                MODIFYVM_CLIPBOARD,                 RTGETOPT_REQ_STRING },
+    { "--vrdpport",                 MODIFYVM_VRDPPORT,                  RTGETOPT_REQ_STRING },
+    { "--vrdpaddress",              MODIFYVM_VRDPADDRESS,               RTGETOPT_REQ_STRING },
+    { "--vrdpauthtype",             MODIFYVM_VRDPAUTHTYPE,              RTGETOPT_REQ_STRING },
+    { "--vrdpmulticon",             MODIFYVM_VRDPMULTICON,              RTGETOPT_REQ_STRING },
+    { "--vrdpreusecon",             MODIFYVM_VRDPREUSECON,              RTGETOPT_REQ_STRING },
+    { "--vrdp",                     MODIFYVM_VRDP,                      RTGETOPT_REQ_STRING },
+    { "--usbehci",                  MODIFYVM_USBEHCI,                   RTGETOPT_REQ_STRING },
+    { "--usb",                      MODIFYVM_USB,                       RTGETOPT_REQ_STRING },
+    { "--snapshotfolder",           MODIFYVM_SNAPSHOTFOLDER,            RTGETOPT_REQ_STRING },
+    { "--teleporterenabled",        MODIFYVM_TELEPORTER_ENABLED,        RTGETOPT_REQ_STRING },
+    { "--teleporterport",           MODIFYVM_TELEPORTER_PORT,           RTGETOPT_REQ_UINT32 },
+    { "--teleporteraddress",        MODIFYVM_TELEPORTER_ADDRESS,        RTGETOPT_REQ_STRING },
+    { "--teleporterpassword",       MODIFYVM_TELEPORTER_PASSWORD,       RTGETOPT_REQ_STRING },
 };
 
 int handleModifyVM(HandlerArg *a)
@@ -256,13 +258,13 @@ int handleModifyVM(HandlerArg *a)
     {
         switch (c)
         {
-            case MODIFYVMNAME:
+            case MODIFYVM_NAME:
             {
                 if (pValueUnion.psz)
                     CHECK_ERROR (machine, COMSETTER(Name)(Bstr(pValueUnion.psz)));
                 break;
             }
-            case MODIFYVMOSTYPE:
+            case MODIFYVM_OSTYPE:
             {
                 if (pValueUnion.psz)
                 {
@@ -281,21 +283,21 @@ int handleModifyVM(HandlerArg *a)
                 break;
             }
 
-            case MODIFYVMMEMORY:
+            case MODIFYVM_MEMORY:
             {
                 if (pValueUnion.u32 > 0)
                     CHECK_ERROR (machine, COMSETTER(MemorySize)(pValueUnion.u32));
                 break;
             }
 
-            case MODIFYVMVRAM:
+            case MODIFYVM_VRAM:
             {
                 if (pValueUnion.u32 > 0)
                     CHECK_ERROR (machine, COMSETTER(VRAMSize)(pValueUnion.u32));
                 break;
             }
 
-            case MODIFYVMFIRMWARE:
+            case MODIFYVM_FIRMWARE:
             {
                 if (pValueUnion.psz)
                 {
@@ -316,7 +318,7 @@ int handleModifyVM(HandlerArg *a)
                 break;
             }
 
-            case MODIFYVMACPI:
+            case MODIFYVM_ACPI:
             {
                 if (pValueUnion.psz)
                 {
@@ -337,7 +339,7 @@ int handleModifyVM(HandlerArg *a)
                 break;
             }
 
-            case MODIFYVMIOAPIC:
+            case MODIFYVM_IOAPIC:
             {
                 if (pValueUnion.psz)
                 {
@@ -358,7 +360,7 @@ int handleModifyVM(HandlerArg *a)
                 break;
             }
 
-            case MODIFYVMPAE:
+            case MODIFYVM_PAE:
             {
                 if (pValueUnion.psz)
                 {
@@ -379,7 +381,7 @@ int handleModifyVM(HandlerArg *a)
                 break;
             }
 
-            case MODIFYVMSYNTHCPU:
+            case MODIFYVM_SYNTHCPU:
             {
                 if (pValueUnion.psz)
                 {
@@ -400,7 +402,7 @@ int handleModifyVM(HandlerArg *a)
                 break;
             }
 
-            case MODIFYVMHWVIRTEX:
+            case MODIFYVM_HWVIRTEX:
             {
                 if (pValueUnion.psz)
                 {
@@ -421,7 +423,7 @@ int handleModifyVM(HandlerArg *a)
                 break;
             }
 
-            case MODIFYVMHWVIRTEXEXCLUSIVE:
+            case MODIFYVM_HWVIRTEXEXCLUSIVE:
             {
                 if (pValueUnion.psz)
                 {
@@ -442,7 +444,7 @@ int handleModifyVM(HandlerArg *a)
                 break;
             }
 
-            case MODIFYVMNESTEDPAGING:
+            case MODIFYVM_NESTEDPAGING:
             {
                 if (pValueUnion.psz)
                 {
@@ -463,7 +465,7 @@ int handleModifyVM(HandlerArg *a)
                 break;
             }
 
-            case MODIFYVMVTXVPID:
+            case MODIFYVM_VTXVPID:
             {
                 if (pValueUnion.psz)
                 {
@@ -484,21 +486,21 @@ int handleModifyVM(HandlerArg *a)
                 break;
             }
 
-            case MODIFYVMCPUS:
+            case MODIFYVM_CPUS:
             {
                 if (pValueUnion.u32 > 0)
                     CHECK_ERROR (machine, COMSETTER(CPUCount)(pValueUnion.u32));
                 break;
             }
 
-            case MODIFYVMMONITORCOUNT:
+            case MODIFYVM_MONITORCOUNT:
             {
                 if (pValueUnion.u32 > 0)
                     CHECK_ERROR (machine, COMSETTER(MonitorCount)(pValueUnion.u32));
                 break;
             }
 
-            case MODIFYVMACCELERATE3D:
+            case MODIFYVM_ACCELERATE3D:
             {
                 if (pValueUnion.psz)
                 {
@@ -519,7 +521,7 @@ int handleModifyVM(HandlerArg *a)
                 break;
             }
 
-            case MODIFYVMACCELERATE2DVIDEO:
+            case MODIFYVM_ACCELERATE2DVIDEO:
             {
 #ifdef VBOX_WITH_VIDEOHWACCEL
                 if (pValueUnion.psz)
@@ -542,7 +544,7 @@ int handleModifyVM(HandlerArg *a)
                 break;
             }
 
-            case MODIFYVMBIOSLOGOFADEIN:
+            case MODIFYVM_BIOSLOGOFADEIN:
             {
                 if (pValueUnion.psz)
                 {
@@ -563,7 +565,7 @@ int handleModifyVM(HandlerArg *a)
                 break;
             }
 
-            case MODIFYVMBIOSLOGOFADEOUT:
+            case MODIFYVM_BIOSLOGOFADEOUT:
             {
                 if (pValueUnion.psz)
                 {
@@ -585,21 +587,21 @@ int handleModifyVM(HandlerArg *a)
                 break;
             }
 
-            case MODIFYVMBIOSLOGODISPLAYTIME:
+            case MODIFYVM_BIOSLOGODISPLAYTIME:
             {
                 if (pValueUnion.u64 > 0)
                     CHECK_ERROR (biosSettings, COMSETTER(LogoDisplayTime)(pValueUnion.u64));
                 break;
             }
 
-            case MODIFYVMBIOSLOGOIMAGEPATH:
+            case MODIFYVM_BIOSLOGOIMAGEPATH:
             {
                 if (pValueUnion.psz)
                     CHECK_ERROR (biosSettings, COMSETTER(LogoImagePath)(Bstr(pValueUnion.psz)));
                 break;
             }
 
-            case MODIFYVMBIOSBOOTMENU:
+            case MODIFYVM_BIOSBOOTMENU:
             {
                 if (pValueUnion.psz)
                 {
@@ -618,14 +620,14 @@ int handleModifyVM(HandlerArg *a)
                 break;
             }
 
-            case MODIFYVMBIOSSYSTEMTIMEOFFSET:
+            case MODIFYVM_BIOSSYSTEMTIMEOFFSET:
             {
                 if (pValueUnion.u64 > 0)
                     CHECK_ERROR (biosSettings, COMSETTER(TimeOffset)(pValueUnion.u64));
                 break;
             }
 
-            case MODIFYVMBIOSPXEDEBUG:
+            case MODIFYVM_BIOSPXEDEBUG:
             {
                 if (pValueUnion.psz)
                 {
@@ -646,7 +648,7 @@ int handleModifyVM(HandlerArg *a)
                 break;
             }
 
-            case MODIFYVMBOOT:
+            case MODIFYVM_BOOT:
             {
                 if ((pGetState.uIndex < 1) && (pGetState.uIndex > 4))
                     return errorSyntax(USAGE_MODIFYVM,
@@ -679,7 +681,7 @@ int handleModifyVM(HandlerArg *a)
                 break;
             }
 
-            case MODIFYVMHDA:
+            case MODIFYVM_HDA:
             {
                 if (!strcmp(pValueUnion.psz, "none"))
                 {
@@ -715,7 +717,7 @@ int handleModifyVM(HandlerArg *a)
                 break;
             }
 
-            case MODIFYVMHDB:
+            case MODIFYVM_HDB:
             {
                 if (!strcmp(pValueUnion.psz, "none"))
                 {
@@ -751,7 +753,7 @@ int handleModifyVM(HandlerArg *a)
                 break;
             }
 
-            case MODIFYVMHDD:
+            case MODIFYVM_HDD:
             {
                 if (!strcmp(pValueUnion.psz, "none"))
                 {
@@ -787,7 +789,7 @@ int handleModifyVM(HandlerArg *a)
                 break;
             }
 
-            case MODIFYVMIDECONTROLLER:
+            case MODIFYVM_IDECONTROLLER:
             {
                 ComPtr<IStorageController> storageController;
                 CHECK_ERROR (machine, GetStorageControllerByName(Bstr("IDE Controller"),
@@ -813,7 +815,7 @@ int handleModifyVM(HandlerArg *a)
                 break;
             }
 
-            case MODIFYVMSATAIDEEMULATION:
+            case MODIFYVM_SATAIDEEMULATION:
             {
                 ComPtr<IStorageController> SataCtl;
                 CHECK_ERROR (machine, GetStorageControllerByName(Bstr("SATA"), SataCtl.asOutParam()));
@@ -834,7 +836,7 @@ int handleModifyVM(HandlerArg *a)
                 break;
             }
 
-            case MODIFYVMSATAPORTCOUNT:
+            case MODIFYVM_SATAPORTCOUNT:
             {
                 ComPtr<IStorageController> SataCtl;
                 CHECK_ERROR (machine, GetStorageControllerByName(Bstr("SATA"), SataCtl.asOutParam()));
@@ -845,7 +847,7 @@ int handleModifyVM(HandlerArg *a)
                 break;
             }
 
-            case MODIFYVMSATAPORT:
+            case MODIFYVM_SATAPORT:
             {
                 if ((pGetState.uIndex < 1) && (pGetState.uIndex > 30))
                     return errorSyntax(USAGE_MODIFYVM,
@@ -888,7 +890,7 @@ int handleModifyVM(HandlerArg *a)
                 break;
             }
 
-            case MODIFYVMSATA:
+            case MODIFYVM_SATA:
             {
                 if (!strcmp(pValueUnion.psz, "on") || !strcmp(pValueUnion.psz, "enable"))
                 {
@@ -903,7 +905,7 @@ int handleModifyVM(HandlerArg *a)
                 break;
             }
 
-            case MODIFYVMSCSIPORT:
+            case MODIFYVM_SCSIPORT:
             {
                 if ((pGetState.uIndex < 1) && (pGetState.uIndex > 16))
                     return errorSyntax(USAGE_MODIFYVM,
@@ -951,7 +953,7 @@ int handleModifyVM(HandlerArg *a)
                 break;
             }
 
-            case MODIFYVMSCSITYPE:
+            case MODIFYVM_SCSITYPE:
             {
                 ComPtr<IStorageController> ctl;
 
@@ -988,7 +990,7 @@ int handleModifyVM(HandlerArg *a)
                 break;
             }
 
-            case MODIFYVMSCSI:
+            case MODIFYVM_SCSI:
             {
                 if (!strcmp(pValueUnion.psz, "on") || !strcmp(pValueUnion.psz, "enable"))
                 {
@@ -1007,7 +1009,7 @@ int handleModifyVM(HandlerArg *a)
                 break;
             }
 
-            case MODIFYVMDVDPASSTHROUGH:
+            case MODIFYVM_DVDPASSTHROUGH:
             {
                 ComPtr<IMediumAttachment> dvdAttachment;
                 machine->GetMediumAttachment(Bstr("IDE Controller"), 1, 0, dvdAttachment.asOutParam());
@@ -1017,7 +1019,7 @@ int handleModifyVM(HandlerArg *a)
                 break;
             }
 
-            case MODIFYVMDVD:
+            case MODIFYVM_DVD:
             {
                 ComPtr<IMedium> dvdMedium;
                 Bstr uuid(pValueUnion.psz);
@@ -1084,7 +1086,7 @@ int handleModifyVM(HandlerArg *a)
                 break;
             }
 
-            case MODIFYVMFLOPPY:
+            case MODIFYVM_FLOPPY:
             {
                 Bstr uuid(pValueUnion.psz);
                 ComPtr<IMedium> floppyMedium;
@@ -1153,7 +1155,7 @@ int handleModifyVM(HandlerArg *a)
                 break;
             }
 
-            case MODIFYVMNICTRACEFILE:
+            case MODIFYVM_NICTRACEFILE:
             {
                 ComPtr<INetworkAdapter> nic;
 
@@ -1169,7 +1171,7 @@ int handleModifyVM(HandlerArg *a)
                 break;
             }
 
-            case MODIFYVMNICTRACE:
+            case MODIFYVM_NICTRACE:
             {
                 ComPtr<INetworkAdapter> nic;
 
@@ -1197,7 +1199,7 @@ int handleModifyVM(HandlerArg *a)
                 break;
             }
 
-            case MODIFYVMNICTYPE:
+            case MODIFYVM_NICTYPE:
             {
                 ComPtr<INetworkAdapter> nic;
 
@@ -1245,7 +1247,7 @@ int handleModifyVM(HandlerArg *a)
                 break;
             }
 
-            case MODIFYVMNICSPEED:
+            case MODIFYVM_NICSPEED:
             {
                 ComPtr<INetworkAdapter> nic;
 
@@ -1268,7 +1270,7 @@ int handleModifyVM(HandlerArg *a)
                 break;
             }
 
-            case MODIFYVMNIC:
+            case MODIFYVM_NIC:
             {
                 ComPtr<INetworkAdapter> nic;
 
@@ -1321,7 +1323,7 @@ int handleModifyVM(HandlerArg *a)
                 break;
             }
 
-            case MODIFYVMCABLECONNECTED:
+            case MODIFYVM_CABLECONNECTED:
             {
                 ComPtr<INetworkAdapter> nic;
 
@@ -1349,8 +1351,8 @@ int handleModifyVM(HandlerArg *a)
                 break;
             }
 
-            case MODIFYVMBRIDGEADAPTER:
-            case MODIFYVMHOSTONLYADAPTER:
+            case MODIFYVM_BRIDGEADAPTER:
+            case MODIFYVM_HOSTONLYADAPTER:
             {
                 ComPtr<INetworkAdapter> nic;
 
@@ -1374,7 +1376,7 @@ int handleModifyVM(HandlerArg *a)
                 break;
             }
 
-            case MODIFYVMINTNET:
+            case MODIFYVM_INTNET:
             {
                 ComPtr<INetworkAdapter> nic;
 
@@ -1398,7 +1400,7 @@ int handleModifyVM(HandlerArg *a)
                 break;
             }
 
-            case MODIFYVMNATNET:
+            case MODIFYVM_NATNET:
             {
                 ComPtr<INetworkAdapter> nic;
 
@@ -1415,7 +1417,7 @@ int handleModifyVM(HandlerArg *a)
                 break;
             }
 
-            case MODIFYVMMACADDRESS:
+            case MODIFYVM_MACADDRESS:
             {
                 ComPtr<INetworkAdapter> nic;
 
@@ -1439,7 +1441,7 @@ int handleModifyVM(HandlerArg *a)
                 break;
             }
 
-            case MODIFYVMUARTMODE:
+            case MODIFYVM_UARTMODE:
             {
                 ComPtr<ISerialPort> uart;
                 char *pszIRQ = NULL;
@@ -1500,7 +1502,7 @@ int handleModifyVM(HandlerArg *a)
                 break;
             }
 
-            case MODIFYVMUART:
+            case MODIFYVM_UART:
             {
                 ComPtr<ISerialPort> uart;
 
@@ -1549,7 +1551,7 @@ int handleModifyVM(HandlerArg *a)
                 break;
             }
 
-            case MODIFYVMGUESTSTATISTICSINTERVAL:
+            case MODIFYVM_GUESTSTATISTICSINTERVAL:
             {
                 if (pValueUnion.u32 > 0)
                     CHECK_ERROR (machine, COMSETTER(StatisticsUpdateInterval)(pValueUnion.u32));
@@ -1557,7 +1559,7 @@ int handleModifyVM(HandlerArg *a)
             }
 
 #ifdef VBOX_WITH_MEM_BALLOONING
-            case MODIFYVMGUESTMEMORYBALLOON:
+            case MODIFYVM_GUESTMEMORYBALLOON:
             {
                 if (pValueUnion.u32 > 0)
                     CHECK_ERROR (machine, COMSETTER(MemoryBalloonSize)(pValueUnion.u32));
@@ -1565,7 +1567,7 @@ int handleModifyVM(HandlerArg *a)
             }
 #endif
 
-            case MODIFYVMAUDIOCONTROLLER:
+            case MODIFYVM_AUDIOCONTROLLER:
             {
                 if (pValueUnion.psz)
                 {
@@ -1586,7 +1588,7 @@ int handleModifyVM(HandlerArg *a)
                 break;
             }
 
-            case MODIFYVMAUDIO:
+            case MODIFYVM_AUDIO:
             {
                 if (pValueUnion.psz)
                 {
@@ -1672,7 +1674,7 @@ int handleModifyVM(HandlerArg *a)
                 break;
             }
 
-            case MODIFYVMCLIPBOARD:
+            case MODIFYVM_CLIPBOARD:
             {
                 if (pValueUnion.psz)
                 {
@@ -1702,7 +1704,7 @@ int handleModifyVM(HandlerArg *a)
             }
 
 #ifdef VBOX_WITH_VRDP
-            case MODIFYVMVRDPPORT:
+            case MODIFYVM_VRDPPORT:
             {
                 if (pValueUnion.psz)
                 {
@@ -1718,7 +1720,7 @@ int handleModifyVM(HandlerArg *a)
                 break;
             }
 
-            case MODIFYVMVRDPADDRESS:
+            case MODIFYVM_VRDPADDRESS:
             {
                 if (pValueUnion.psz)
                 {
@@ -1731,7 +1733,7 @@ int handleModifyVM(HandlerArg *a)
                 break;
             }
 
-            case MODIFYVMVRDPAUTHTYPE:
+            case MODIFYVM_VRDPAUTHTYPE:
             {
                 if (pValueUnion.psz)
                 {
@@ -1760,7 +1762,7 @@ int handleModifyVM(HandlerArg *a)
                 break;
             }
 
-            case MODIFYVMVRDPMULTICON:
+            case MODIFYVM_VRDPMULTICON:
             {
                 if (pValueUnion.psz)
                 {
@@ -1785,7 +1787,7 @@ int handleModifyVM(HandlerArg *a)
                 break;
             }
 
-            case MODIFYVMVRDPREUSECON:
+            case MODIFYVM_VRDPREUSECON:
             {
                 if (pValueUnion.psz)
                 {
@@ -1810,7 +1812,7 @@ int handleModifyVM(HandlerArg *a)
                 break;
             }
 
-            case MODIFYVMVRDP:
+            case MODIFYVM_VRDP:
             {
                 if (pValueUnion.psz)
                 {
@@ -1836,7 +1838,7 @@ int handleModifyVM(HandlerArg *a)
             }
 #endif /* VBOX_WITH_VRDP */
 
-            case MODIFYVMUSBEHCI:
+            case MODIFYVM_USBEHCI:
             {
                 if (pValueUnion.psz)
                 {
@@ -1855,7 +1857,7 @@ int handleModifyVM(HandlerArg *a)
                 break;
             }
 
-            case MODIFYVMUSB:
+            case MODIFYVM_USB:
             {
                 if (pValueUnion.psz)
                 {
@@ -1874,7 +1876,7 @@ int handleModifyVM(HandlerArg *a)
                 break;
             }
 
-            case MODIFYVMSNAPSHOTFOLDER:
+            case MODIFYVM_SNAPSHOTFOLDER:
             {
                 if (pValueUnion.psz)
                 {
@@ -1886,31 +1888,38 @@ int handleModifyVM(HandlerArg *a)
                 break;
             }
 
-            case MODIFYVMLIVEMIGRATIONTARGET:
+            case MODIFYVM_TELEPORTER_ENABLED:
             {
                 if (pValueUnion.psz)
                 {
                     if (!strcmp(pValueUnion.psz, "on"))
-                        CHECK_ERROR (machine, COMSETTER(LiveMigrationTarget)(1));
+                        CHECK_ERROR (machine, COMSETTER(TeleporterEnabled)(1));
                     else if (!strcmp(pValueUnion.psz, "off"))
-                        CHECK_ERROR (machine, COMSETTER(LiveMigrationTarget)(0));
+                        CHECK_ERROR (machine, COMSETTER(TeleporterEnabled)(0));
                     else
-                        return errorArgument("Invalid --livemigrationtarget value '%s'", pValueUnion.psz);
+                        return errorArgument("Invalid --teleporterenabled value '%s'", pValueUnion.psz);
                 }
                 break;
             }
 
-            case MODIFYVMLIVEMIGRATIONPORT:
+            case MODIFYVM_TELEPORTER_PORT:
             {
                 if (pValueUnion.u32 > 0)
-                    CHECK_ERROR (machine, COMSETTER(LiveMigrationPort)(pValueUnion.u32));
+                    CHECK_ERROR(machine, COMSETTER(TeleporterPort)(pValueUnion.u32));
                 break;
             }
 
-            case MODIFYVMLIVEMIGRATIONPASSWORD:
+            case MODIFYVM_TELEPORTER_ADDRESS:
             {
                 if (pValueUnion.psz)
-                    CHECK_ERROR (machine, COMSETTER(LiveMigrationPassword)(Bstr(pValueUnion.psz)));
+                    CHECK_ERROR(machine, COMSETTER(TeleporterAddress)(Bstr(pValueUnion.psz)));
+                break;
+            }
+
+            case MODIFYVM_TELEPORTER_PASSWORD:
+            {
+                if (pValueUnion.psz)
+                    CHECK_ERROR(machine, COMSETTER(TeleporterPassword)(Bstr(pValueUnion.psz)));
                 break;
             }
 
