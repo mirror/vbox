@@ -1207,9 +1207,8 @@ VP_STATUS VBoxVideoFindAdapter(IN PVOID HwDeviceExtension,
       {
           dprintf(("VBoxVideo::VBoxVideoFindAdapter: calling VideoPortGetAccessRanges\n"));
 
-          /* Ports not yet found. */
-          ((PDEVICE_EXTENSION)HwDeviceExtension)->u.primary.IOPortHost = 0;
-          ((PDEVICE_EXTENSION)HwDeviceExtension)->u.primary.IOPortGuest = 0;
+          ((PDEVICE_EXTENSION)HwDeviceExtension)->u.primary.IOPortHost = (RTIOPORT)VGA_PORT_HGSMI_HOST;
+          ((PDEVICE_EXTENSION)HwDeviceExtension)->u.primary.IOPortGuest = (RTIOPORT)VGA_PORT_HGSMI_GUEST;
 
           VIDEO_ACCESS_RANGE tmpRanges[4];
           ULONG slot = 0;
@@ -1246,35 +1245,6 @@ VP_STATUS VBoxVideoFindAdapter(IN PVOID HwDeviceExtension,
                                                 &slot);
           }
           dprintf(("VBoxVideo::VBoxVideoFindAdapter: VideoPortGetAccessRanges status 0x%x\n", status));
-          if (status == NO_ERROR)
-          {
-              ULONG iRange = 0;
-              for (; iRange < sizeof (tmpRanges)/sizeof (tmpRanges[0]); iRange++)
-              {
-                  dprintf(("VBoxVideo::VBoxVideoFindAdapter: range[%i]:\n"
-                           "    RangeStart = 0x%llx\n"
-                           "    RangeLength = %d\n"
-                           "    RangeInIoSpace = %d\n"
-                           "    RangeVisible = %d\n"
-                           "    RangeShareable = %d\n"
-                           "    RangePassive = %d\n",
-                           iRange,
-                           tmpRanges[iRange].RangeStart.QuadPart,
-                           tmpRanges[iRange].RangeLength,
-                           tmpRanges[iRange].RangeInIoSpace,
-                           tmpRanges[iRange].RangeVisible,
-                           tmpRanges[iRange].RangeShareable,
-                           tmpRanges[iRange].RangePassive));
-                   if (tmpRanges[iRange].RangeInIoSpace)
-                   {
-                       PVOID ioBase = VideoPortGetDeviceBase(HwDeviceExtension, tmpRanges[iRange].RangeStart, 8, VIDEO_MEMORY_SPACE_IO);
-                       dprintf (("ioBase %p\n", ioBase));
-
-                       ((PDEVICE_EXTENSION)HwDeviceExtension)->u.primary.IOPortHost = (RTIOPORT)ioBase + VGA_PORT_OFF_HGSMI_HOST;
-                       ((PDEVICE_EXTENSION)HwDeviceExtension)->u.primary.IOPortGuest = (RTIOPORT)ioBase + VGA_PORT_OFF_HGSMI_GUEST;
-                   }
-              }
-          }
 
           /* no matter what we get with VideoPortGetAccessRanges, we assert the default ranges */
       }
