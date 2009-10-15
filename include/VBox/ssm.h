@@ -288,27 +288,27 @@ typedef struct SSMFIELD
 /** Emit a SSMFIELD array entry for a field that can be ignored.
  * It is stored as zeros if SSMSTRUCT_FLAGS_DONT_IGNORE is specified to
  * SSMR3PutStructEx.  The member is never touched upon restore. */
-#define SSMFIELD_ENTRY_IGNORE(Type, Field)          SSMFIELD_ENTRY_INT(Type, Field, SSMFIELDTRANS_OLD)
+#define SSMFIELD_ENTRY_IGNORE(Type, Field)          SSMFIELD_ENTRY_INT(Type, Field, SSMFIELDTRANS_IGNORE)
 /** Emit a SSMFIELD array entry for an ignorable RTGCPHYS type. */
-#define SSMFIELD_ENTRY_IGN_GCPHYS(Type, Field)      SSMFIELD_ENTRY_INT(Type, Field, SSMFIELDTRANS_OLD_GCPHYS)
+#define SSMFIELD_ENTRY_IGN_GCPHYS(Type, Field)      SSMFIELD_ENTRY_INT(Type, Field, SSMFIELDTRANS_IGN_GCPHYS)
 /** Emit a SSMFIELD array entry for an ignorable RTGCPHYS type. */
-#define SSMFIELD_ENTRY_IGN_GCPTR(Type, Field)       SSMFIELD_ENTRY_INT(Type, Field, SSMFIELDTRANS_OLD_GCPTR)
+#define SSMFIELD_ENTRY_IGN_GCPTR(Type, Field)       SSMFIELD_ENTRY_INT(Type, Field, SSMFIELDTRANS_IGN_GCPTR)
 /** Emit a SSMFIELD array entry for an ignorable raw-mode context pointer. */
-#define SSMFIELD_ENTRY_IGN_RCPTR(Type, Field)       SSMFIELD_ENTRY_INT(Type, Field, SSMFIELDTRANS_OLD_RCPTR)
+#define SSMFIELD_ENTRY_IGN_RCPTR(Type, Field)       SSMFIELD_ENTRY_INT(Type, Field, SSMFIELDTRANS_IGN_RCPTR)
 /** Emit a SSMFIELD array entry for an ignorable ring-3 or/and ring-0 pointer. */
-#define SSMFIELD_ENTRY_IGN_HCPTR(Type, Field)       SSMFIELD_ENTRY_INT(Type, Field, SSMFIELDTRANS_OLD_HCPTR)
+#define SSMFIELD_ENTRY_IGN_HCPTR(Type, Field)       SSMFIELD_ENTRY_INT(Type, Field, SSMFIELDTRANS_IGN_HCPTR)
 
 /** Emit a SSMFIELD array entry for an old field that should be ignored now.
  * It is stored as zeros and skipped on load. */
-#define SSMFIELD_ENTRY_OLD(cb)                      SSMFIELD_ENTRY_OLD_INT(cb, SSMFIELDTRANS_IGNORE)
+#define SSMFIELD_ENTRY_OLD(cb)                      SSMFIELD_ENTRY_OLD_INT(cb,               SSMFIELDTRANS_OLD)
 /** Same as SSMFIELD_ENTRY_IGN_GCPHYS, except there is no structure field. */
-#define SSMFIELD_ENTRY_OLD_GCPHYS()                 SSMFIELD_ENTRY_OLD_INT(sizeof(RTGCPHYS), SSMFIELDTRANS_IGN_GCPHYS)
+#define SSMFIELD_ENTRY_OLD_GCPHYS()                 SSMFIELD_ENTRY_OLD_INT(sizeof(RTGCPHYS), SSMFIELDTRANS_OLD_GCPHYS)
 /** Same as SSMFIELD_ENTRY_IGN_GCPTR, except there is no structure field. */
-#define SSMFIELD_ENTRY_OLD_GCPTR()                  SSMFIELD_ENTRY_OLD_INT(sizeof(RTGCPTR), SSMFIELDTRANS_IGN_GCPTR)
+#define SSMFIELD_ENTRY_OLD_GCPTR()                  SSMFIELD_ENTRY_OLD_INT(sizeof(RTGCPTR),  SSMFIELDTRANS_OLD_GCPTR)
 /** Same as SSMFIELD_ENTRY_IGN_RCPTR, except there is no structure field. */
-#define SSMFIELD_ENTRY_OLD_RCPTR()                  SSMFIELD_ENTRY_OLD_INT(sizeof(RTRCPTR), SSMFIELDTRANS_IGN_RCPTR)
+#define SSMFIELD_ENTRY_OLD_RCPTR()                  SSMFIELD_ENTRY_OLD_INT(sizeof(RTRCPTR),  SSMFIELDTRANS_OLD_RCPTR)
 /** Same as SSMFIELD_ENTRY_IGN_HCPTR, except there is no structure field. */
-#define SSMFIELD_ENTRY_OLD_HCPTR()                  SSMFIELD_ENTRY_OLD_INT(sizeof(RTHCPTR), SSMFIELDTRANS_IGN_HCPTR)
+#define SSMFIELD_ENTRY_OLD_HCPTR()                  SSMFIELD_ENTRY_OLD_INT(sizeof(RTHCPTR),  SSMFIELDTRANS_OLD_HCPTR)
 
 /** Emit a SSMFIELD array entry for a padding that differs in size between
  * 64-bit and 32-bit hosts. */
