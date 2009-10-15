@@ -64,6 +64,7 @@ else # !VBOX_ONLY_DOCS
  	VBoxManageMetrics.cpp \
  	VBoxManageList.cpp \
  	VBoxManageDisk.cpp \
+ 	VBoxManageStorageController.cpp \
  	VBoxManageSnapshot.cpp \
  	VBoxManageUSB.cpp \
  	VBoxInternalManage.cpp \
