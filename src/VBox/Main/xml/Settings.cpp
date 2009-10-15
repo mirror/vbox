@@ -2740,6 +2740,11 @@ void MachineConfigFile::writeStorageControllers(xml::ElementNode &elmParent,
         {
             const AttachedDevice &att = *it2;
 
+            /* DVD/Floppy is handled already for settings version before 1.8 */
+            if (    att.deviceType == DeviceType_DVD
+                &&  m->sv <= SettingsVersion_v1_8)
+                continue;
+
             xml::ElementNode *pelmDevice = pelmController->createChild("AttachedDevice");
 
             pcszType = NULL;
@@ -2750,35 +2755,28 @@ void MachineConfigFile::writeStorageControllers(xml::ElementNode &elmParent,
                     pcszType = "HardDisk";
                 break;
 
-                case DeviceType_DVD:            // settings format 1.9
-                    if (m->sv >= SettingsVersion_v1_9)
-                    {
-                        pcszType = "DVD";
-                        if (att.fPassThrough)
-                            pelmDevice->setAttribute("passthrough", att.fPassThrough);
-                    }
+                case DeviceType_DVD:
+                    pcszType = "DVD";
+                    if (att.fPassThrough)
+                        pelmDevice->setAttribute("passthrough", att.fPassThrough);
                 break;
 
                 case DeviceType_Floppy:
-                    if (m->sv >= SettingsVersion_v1_9)
-                        pcszType = "Floppy";
+                    pcszType = "Floppy";
                 break;
             }
 
-            if (pcszType)       // can be NULL for pre-1.9 settings that shouldn't be written here
-            {
-                pelmDevice->setAttribute("type", pcszType);
+            pelmDevice->setAttribute("type", pcszType);
 
-                pelmDevice->setAttribute("port", att.lPort);
-                pelmDevice->setAttribute("device", att.lDevice);
+            pelmDevice->setAttribute("port", att.lPort);
+            pelmDevice->setAttribute("device", att.lDevice);
 
-                if (!att.uuid.isEmpty())
-                    pelmDevice->createChild("Image")->setAttribute("uuid", makeString(att.uuid));
-                else if (    (m->sv >= SettingsVersion_v1_9)
-                          && (att.strHostDriveSrc.length())
-                        )
-                    pelmDevice->createChild("HostDrive")->setAttribute("src", att.strHostDriveSrc);
-            }
+            if (!att.uuid.isEmpty())
+                pelmDevice->createChild("Image")->setAttribute("uuid", makeString(att.uuid));
+            else if (    (m->sv >= SettingsVersion_v1_9)
+                      && (att.strHostDriveSrc.length())
+                    )
+                pelmDevice->createChild("HostDrive")->setAttribute("src", att.strHostDriveSrc);
         }
     }
 }
