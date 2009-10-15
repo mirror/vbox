@@ -4531,7 +4531,7 @@
       <desc>
         When set to @a true, the virtual machine becomes a live migration
         target.  This can only set to @a true when the VM is in the @a
-        PoweredOff state.
+        PoweredOff or @a Aborted state.
 
         This property is automatically set to @a false when the VM is powered
         on.
