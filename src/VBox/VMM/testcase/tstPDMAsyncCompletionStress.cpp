@@ -221,7 +221,7 @@ static int tstPDMACStressTestFileWrite(PPDMACTESTFILE pTestFile, PPDMACTESTFILET
     pTestTask->fWrite        = true;
     pTestTask->DataSeg.cbSeg = RTRandU32Ex(512, TASK_TRANSFER_SIZE_MAX) & ~511;
 
-    RTFOFF offMax;
+    uint64_t offMax;
 
     /* Did we reached the maximum file size */
     if (pTestFile->cbFileCurr < pTestFile->cbFileMax)
@@ -243,7 +243,7 @@ static int tstPDMACStressTestFileWrite(PPDMACTESTFILE pTestFile, PPDMACTESTFILET
     if (pTestFile->cbFileCurr == pTestFile->cbFileMax)
         offMin = 0;
     else
-	offMin = (offMax - pTestTask->DataSeg.cbSeg) < 0 ? 0 : (offMax - pTestTask->DataSeg.cbSeg);
+        offMin = RT_MIN(pTestFile->cbFileCurr, offMax);
 
 
     pTestTask->off = RTRandU64Ex(offMin, offMax) & ~511;
