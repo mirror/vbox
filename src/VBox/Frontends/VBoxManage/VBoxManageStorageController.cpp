@@ -84,7 +84,7 @@ int handleAttachDisk(HandlerArg *a)
     {
         switch (c)
         {
-            case 't':   // type <dvd|hdd|floppy>
+            case 't':   // type <dvd|hdd|fdd>
             {
                 if (ValueUnion.psz)
                     pszType = ValueUnion.psz;
@@ -329,7 +329,7 @@ int handleAttachDisk(HandlerArg *a)
                 rc = E_FAIL;
         }
     }
-    else if (!RTStrICmp(pszType, "floppy"))
+    else if (!RTStrICmp(pszType, "fdd"))
     {
         ComPtr<IMediumAttachment> floppyAttachment;
         machine->GetMediumAttachment(Bstr(pszCtl), port, device, floppyAttachment.asOutParam());
@@ -418,9 +418,9 @@ int handleAttachDisk(HandlerArg *a)
 
 static const RTGETOPTDEF g_aStorageControllerOptions[] =
 {
-    { "--storagectl",       's', RTGETOPT_REQ_STRING },
+    { "--name",             'n', RTGETOPT_REQ_STRING },
     { "--add",              'a', RTGETOPT_REQ_STRING },
-    { "--type",             't', RTGETOPT_REQ_STRING },
+    { "--controller",       't', RTGETOPT_REQ_STRING },
     { "--port",             'p', RTGETOPT_REQ_UINT32 },
     { "--device",           'd', RTGETOPT_REQ_UINT32 },
     { "--passthrough",      'h', RTGETOPT_REQ_STRING },
@@ -460,7 +460,7 @@ int handleStorageController(HandlerArg *a)
     {
         switch (c)
         {
-            case 's':   // controller name
+            case 'n':   // controller name
             {
                 if (ValueUnion.psz)
                     pszCtl = ValueUnion.psz;
@@ -478,7 +478,7 @@ int handleStorageController(HandlerArg *a)
                 break;
             }
 
-            case 't':   // type <lsilogic/buslogic/intelahci/piix3/piix4/ich6/i82078>
+            case 't':   // controller <lsilogic/buslogic/intelahci/piix3/piix4/ich6/i82078>
             {
                 if (ValueUnion.psz)
                     pszCtlType = ValueUnion.psz;
