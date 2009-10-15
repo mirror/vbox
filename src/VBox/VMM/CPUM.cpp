@@ -227,14 +227,20 @@ VMMR3DECL(int) CPUMR3Init(PVM pVM)
         &&  uEBX == X86_CPUID_VENDOR_AMD_EBX
         &&  uECX == X86_CPUID_VENDOR_AMD_ECX
         &&  uEDX == X86_CPUID_VENDOR_AMD_EDX)
-        pVM->cpum.s.enmCPUVendor = CPUMCPUVENDOR_AMD;
+    {
+        pVM->cpum.s.enmGuestCpuVendor = pVM->cpum.s.enmHostCpuVendor = CPUMCPUVENDOR_AMD;
+    }
     else if (    uEAX >= 1
              &&  uEBX == X86_CPUID_VENDOR_INTEL_EBX
              &&  uECX == X86_CPUID_VENDOR_INTEL_ECX
              &&  uEDX == X86_CPUID_VENDOR_INTEL_EDX)
-        pVM->cpum.s.enmCPUVendor = CPUMCPUVENDOR_INTEL;
+    {
+        pVM->cpum.s.enmGuestCpuVendor = pVM->cpum.s.enmHostCpuVendor = CPUMCPUVENDOR_INTEL;
+    }
     else /** @todo Via */
-        pVM->cpum.s.enmCPUVendor = CPUMCPUVENDOR_UNKNOWN;
+    {
+        pVM->cpum.s.enmGuestCpuVendor = pVM->cpum.s.enmHostCpuVendor = CPUMCPUVENDOR_UNKNOWN;
+    }
 
     /*
      * Register info handlers.
@@ -399,6 +405,30 @@ static int cpumR3CpuIdInit(PVM pVM)
     CFGMR3QueryBoolDef(CFGMR3GetChild(CFGMR3GetRoot(pVM), "CPUM"), "SyntheticCpu", &pCPUM->fSyntheticCpu, false);
     if (pCPUM->fSyntheticCpu)
     {
+        const char szVendor[13]    = "VirtualBox  ";
+        const char szProcessor[48] = "VirtualBox SPARCx86 Processor v1000            "; /* includes null terminator */
+
+        pCPUM->enmGuestCpuVendor = CPUMCPUVENDOR_SYNTHETIC;
+
+        /* Vendor */
+        pCPUM->aGuestCpuIdStd[0].ebx = pCPUM->aGuestCpuIdExt[0].ebx = ((uint32_t *)szVendor)[0];
+        pCPUM->aGuestCpuIdStd[0].ecx = pCPUM->aGuestCpuIdExt[0].ecx = ((uint32_t *)szVendor)[2];
+        pCPUM->aGuestCpuIdStd[0].edx = pCPUM->aGuestCpuIdExt[0].edx = ((uint32_t *)szVendor)[1];
+
+        /* Processor Name String Identifier. */
+        pCPUM->aGuestCpuIdExt[2].eax = ((uint32_t *)szProcessor)[0];
+        pCPUM->aGuestCpuIdExt[2].ebx = ((uint32_t *)szProcessor)[1];
+        pCPUM->aGuestCpuIdExt[2].ecx = ((uint32_t *)szProcessor)[2];
+        pCPUM->aGuestCpuIdExt[2].edx = ((uint32_t *)szProcessor)[3];
+        pCPUM->aGuestCpuIdExt[3].eax = ((uint32_t *)szProcessor)[4];
+        pCPUM->aGuestCpuIdExt[3].ebx = ((uint32_t *)szProcessor)[5];
+        pCPUM->aGuestCpuIdExt[3].ecx = ((uint32_t *)szProcessor)[6];
+        pCPUM->aGuestCpuIdExt[3].edx = ((uint32_t *)szProcessor)[7];
+        pCPUM->aGuestCpuIdExt[4].eax = ((uint32_t *)szProcessor)[8];
+        pCPUM->aGuestCpuIdExt[4].ebx = ((uint32_t *)szProcessor)[9];
+        pCPUM->aGuestCpuIdExt[4].ecx = ((uint32_t *)szProcessor)[10];
+        pCPUM->aGuestCpuIdExt[4].edx = ((uint32_t *)szProcessor)[11];
+
         /* AMD only; shared feature bits are set dynamically. */
         pCPUM->aGuestCpuIdExt[1].edx = 0;
         pCPUM->aGuestCpuIdExt[1].ecx = 0;
@@ -448,7 +478,7 @@ static int cpumR3CpuIdInit(PVM pVM)
     pCPUM->aGuestCpuIdStd[4].eax = pCPUM->aGuestCpuIdStd[4].ebx = 0;
 #ifdef VBOX_WITH_MULTI_CORE
     if (    pVM->cCpus > 1
-        &&  pVM->cpum.s.enmCPUVendor == CPUMCPUVENDOR_INTEL)
+        &&  pVM->cpum.s.enmGuestCpuVendor == CPUMCPUVENDOR_INTEL)
     {
         AssertReturn(pVM->cCpus <= 64, VERR_TOO_MANY_CPUS);
         /* One logical processor with possibly multiple cores. */
@@ -497,11 +527,11 @@ static int cpumR3CpuIdInit(PVM pVM)
      */
     if (pCPUM->aGuestCpuIdExt[0].eax >= UINT32_C(0x80000007))
     {
-        Assert(pVM->cpum.s.enmCPUVendor != CPUMCPUVENDOR_INVALID);
+        Assert(pVM->cpum.s.enmGuestCpuVendor != CPUMCPUVENDOR_INVALID);
 
         pCPUM->aGuestCpuIdExt[7].eax = pCPUM->aGuestCpuIdExt[7].ebx = pCPUM->aGuestCpuIdExt[7].ecx = 0;
 
-        if (pVM->cpum.s.enmCPUVendor == CPUMCPUVENDOR_AMD)
+        if (pVM->cpum.s.enmGuestCpuVendor == CPUMCPUVENDOR_AMD)
         {
             /* Only expose the TSC invariant capability bit to the guest. */
             pCPUM->aGuestCpuIdExt[7].edx    &= 0
@@ -542,7 +572,7 @@ static int cpumR3CpuIdInit(PVM pVM)
         pCPUM->aGuestCpuIdExt[8].ecx = 0;
 #ifdef VBOX_WITH_MULTI_CORE
         if (    pVM->cCpus > 1
-            &&  pVM->cpum.s.enmCPUVendor == CPUMCPUVENDOR_AMD)
+            &&  pVM->cpum.s.enmGuestCpuVendor == CPUMCPUVENDOR_AMD)
         {
             /* Legacy method to determine the number of cores. */
             pCPUM->aGuestCpuIdExt[1].ecx |= X86_CPUID_AMD_FEATURE_ECX_CMPL;

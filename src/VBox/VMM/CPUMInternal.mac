@@ -63,7 +63,8 @@ struc CPUM
     .CPUFeaturesExt.edx   resd    1
     .CPUFeaturesExt.ecx   resd    1
 
-    .enmCPUVendor         resd    1
+    .enmHostCpuVendor     resd    1
+    .enmGuestCpuVendor    resd    1
 
     ; CR4 masks
     .CR4.AndMask          resd    1

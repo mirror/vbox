@@ -1558,7 +1558,7 @@ VMMR3DECL(int)  HWACMMR3EnablePatching(PVM pVM, RTGCPTR pPatchMem, unsigned cbPa
     /* Current TPR patching only applies to AMD cpus.
      * Needs to be extended to Intel CPUs without the APIC TPR hardware optimization.
      */
-    if (CPUMGetCPUVendor(pVM) != CPUMCPUVENDOR_AMD)
+    if (CPUMGetHostCpuVendor(pVM) != CPUMCPUVENDOR_AMD)
         return VERR_NOT_SUPPORTED;
 
     if (pVM->cCpus > 1)
