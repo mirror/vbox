@@ -462,8 +462,8 @@ static int pdmacFileAioMgrNormalProcessTaskList(PPDMACTASKFILE pTaskHead,
                 /* Check if the alignment requirements are met.
                  * Offset, transfer size and buffer address
                  * need to be on a 512 boundary. */
-                size_t cbToTransfer = RT_ALIGN_Z(pCurr->DataSeg.cbSeg, 512);
                 RTFOFF offStart = pCurr->Off & ~(RTFOFF)(512-1);
+                size_t cbToTransfer = RT_ALIGN_Z(pCurr->DataSeg.cbSeg + (pCurr->Off - offStart), 512);
                 PDMACTASKFILETRANSFER enmTransferType = pCurr->enmTransferType;
 
                 AssertMsg(   pCurr->enmTransferType == PDMACTASKFILETRANSFER_WRITE
@@ -477,6 +477,9 @@ static int pdmacFileAioMgrNormalProcessTaskList(PPDMACTASKFILE pTaskHead,
                     || RT_UNLIKELY(offStart != pCurr->Off)
                     || ((pEpClassFile->uBitmaskAlignment & (RTR3UINTPTR)pvBuf) != (RTR3UINTPTR)pvBuf))
                 {
+                    LogFlow(("Using bounce buffer for task %#p cbToTransfer=%zd cbSeg=%zd offStart=%RTfoff off=%RTfoff\n",
+                             pCurr, cbToTransfer, pCurr->DataSeg.cbSeg, offStart, pCurr->Off));
+
                     /* Create bounce buffer. */
                     pCurr->fBounceBuffer = true;
 
@@ -499,6 +502,7 @@ static int pdmacFileAioMgrNormalProcessTaskList(PPDMACTASKFILE pTaskHead,
                             || RT_UNLIKELY(offStart != pCurr->Off))
                         {
                             /* We have to fill the buffer first before we can update the data. */
+                            LogFlow(("Prefetching data for task %#p\n", pCurr));
                             pCurr->fPrefetch = true;
                             enmTransferType = PDMACTASKFILETRANSFER_READ;
                         }
