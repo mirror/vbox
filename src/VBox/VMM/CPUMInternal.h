@@ -285,8 +285,10 @@ typedef struct CPUM
         uint32_t            ecx;
     } CPUFeaturesExt;
 
-    /* CPU manufacturer. */
-    CPUMCPUVENDOR           enmCPUVendor;
+    /* Host CPU manufacturer. */
+    CPUMCPUVENDOR           enmHostCpuVendor;
+    /* Guest CPU manufacturer. */
+    CPUMCPUVENDOR           enmGuestCpuVendor;
 
     /** CR4 mask */
     struct
@@ -310,8 +312,10 @@ typedef struct CPUM
     /** The default set of CpuId leafs. */
     CPUMCPUID               GuestCpuIdDef;
 
+#if HC_ARCH_BITS == 32
     /** Align the next member, and thereby the structure, on a 64-byte boundrary. */
-    uint8_t                 abPadding2[HC_ARCH_BITS == 32 ? 8 : 4];
+    uint8_t                 abPadding2[4];
+#endif
 
     /**
      * Guest context on raw mode entry.
