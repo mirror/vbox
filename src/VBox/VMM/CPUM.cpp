@@ -403,7 +403,6 @@ static int cpumR3CpuIdInit(PVM pVM)
                                        | 0;
 
     CFGMR3QueryBoolDef(CFGMR3GetChild(CFGMR3GetRoot(pVM), "CPUM"), "SyntheticCpu", &pCPUM->fSyntheticCpu, false);
-pCPUM->fSyntheticCpu = true;
     if (pCPUM->fSyntheticCpu)
     {
         const char szVendor[13]    = "VirtualBox  ";
