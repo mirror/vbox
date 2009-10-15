@@ -1878,12 +1878,14 @@ Machine::COMSETTER(LiveMigrationTarget)(BOOL aEnabled)
 
     AutoWriteLock alock(this);
 
-    /* Only allow it to be set to true when PoweredOff.
+    /* Only allow it to be set to true when PoweredOff or Aborted.
        (Clearing it is always permitted.) */
     if (    aEnabled
         &&  mData->mRegistered
         &&  (   mType != IsSessionMachine
-             || mData->mMachineState > MachineState_PoweredOff)
+             || (   mData->mMachineState != MachineState_PoweredOff
+                 && mData->mMachineState != MachineState_Aborted)
+            )
        )
         return setError(VBOX_E_INVALID_VM_STATE,
                         tr("The machine is not powered off (state is %s)"),
