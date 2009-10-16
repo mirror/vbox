@@ -45,6 +45,7 @@ public:
 extern Service *GetClipboardService();
 extern Service *GetSeamlessService();
 extern Service *GetDisplayService();
+extern Service *GetHostVersionService();
 
 extern void CleanUp();
 

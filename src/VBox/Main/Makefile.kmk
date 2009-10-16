@@ -43,7 +43,7 @@ ifdef VBOX_ONLY_SDK
  BLDDIRS        += $(PATH_VBoxCOM) $(PATH_BIN)/components
  # I'm Evil! Dr. Evil.
  include $(KBUILD_PATH)/tools/VCC70.kmk
- include $(KBUILD_PATH)/sdks/WINPSDK.kmk
+ include $(KBUILD_PATH)/sdks/WINPSDK.kmk/
 endif #!VBOX_ONLY_SDK
 
 
@@ -334,10 +334,6 @@ VBoxSVC_SOURCES.win = \
 
 VBoxSVC_SOURCES.linux = \
 	linux/HostHardwareLinux.cpp
-
-ifdef VBOX_WITH_DBUS
- VBoxSVC_SOURCES.linux += linux/vbox-dbus.cpp
-endif
 
 VBoxSVC_SOURCES.solaris = \
 	linux/vbox-libhal.cpp \

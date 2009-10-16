@@ -135,6 +135,7 @@ void vboxClientUsage(const char *pcszFileName)
     RTPrintf("Usage: %s --clipboard|--display|--seamless [-d|--nodaemon]\n", pcszFileName);
     RTPrintf("Start the VirtualBox X Window System guest services.\n\n");
     RTPrintf("Options:\n");
+    RTPrintf("  --checkhostversion      checks for a new VirtualBox host version\n");
     RTPrintf("  --clipboard      start the shared clipboard service\n");
     RTPrintf("  --display     start the display management service\n");
     RTPrintf("  --seamless       start the seamless windows service\n");
@@ -189,6 +190,13 @@ int main(int argc, char *argv[])
             else
                 fSuccess = false;
         }
+        else if (!strcmp(argv[i], "--checkhostversion"))
+        {
+            if (g_pService == NULL)
+                g_pService = VBoxClient::GetHostVersionService();
+            else
+                fSuccess = false;
+        }
         else if (!strcmp(argv[i], "-h") || !strcmp(argv[i], "--help"))
         {
             vboxClientUsage(pszFileName);
@@ -234,12 +242,12 @@ int main(int argc, char *argv[])
         return 1;
     }
     /* Initialise the guest library. */
-    if (RT_FAILURE(VbglR3InitUser()))
+ /*   if (RT_FAILURE(VbglR3InitUser()))
     {
         RTPrintf("Failed to connect to the VirtualBox kernel service\n");
         Log(("Failed to connect to the VirtualBox kernel service\n"));
         return 1;
-    }
+    }*/
     if (g_pszPidFile && RT_FAILURE(VbglR3PidFile(g_pszPidFile, &g_hPidFile)))
     {
         RTPrintf("Failed to create a pidfile.  Exiting.\n");
