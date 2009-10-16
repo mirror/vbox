@@ -29,28 +29,28 @@
 
 int VBoxCheckHostVersion ()
 {
-	int rc;
-	char *pszHostVersion;
-	char *pszGuestVersion;
-	rc = VbglR3HostVersionCheckForUpdate(&pszHostVersion, &pszGuestVersion);
-	if (RT_SUCCESS(rc))
-	{
-		char szMsg[256]; /* Sizes according to MSDN. */
-		char szTitle[64];
+    int rc;
+    char *pszHostVersion;
+    char *pszGuestVersion;
+    rc = VbglR3HostVersionCheckForUpdate(&pszHostVersion, &pszGuestVersion);
+    if (RT_SUCCESS(rc))
+    {
+        char szMsg[256]; /* Sizes according to MSDN. */
+        char szTitle[64];
 
-		/** @todo add some translation macros here */
-		_snprintf(szTitle, sizeof(szTitle), "VirtualBox Guest Additions update available!");
-		_snprintf(szMsg, sizeof(szMsg), "Your guest is currently running the Guest Additions version %s. "
-										"We recommend updating to the latest version (%s) by choosing the "
-										"install option from the Devices menu.", pszGuestVersion, pszHostVersion);
+        /** @todo add some translation macros here */
+        _snprintf(szTitle, sizeof(szTitle), "VirtualBox Guest Additions update available!");
+        _snprintf(szMsg, sizeof(szMsg), "Your guest is currently running the Guest Additions version %s. "
+                                        "We recommend updating to the latest version (%s) by choosing the "
+                                        "install option from the Devices menu.", pszGuestVersion, pszHostVersion);
 
-		rc = showBalloonTip(gInstance, gToolWindow, ID_TRAYICON, szMsg, szTitle, 5000, 0);
+        rc = showBalloonTip(gInstance, gToolWindow, ID_TRAYICON, szMsg, szTitle, 5000, 0);
         if (RT_FAILURE(rc))
             Log(("VBoxTray: Could not show version notifier balloon tooltip! rc = %d\n", rc));
 
-		VbglR3GuestPropReadValueFree(pszHostVersion);
-		VbglR3GuestPropReadValueFree(pszGuestVersion);
-	}
+        VbglR3GuestPropReadValueFree(pszHostVersion);
+        VbglR3GuestPropReadValueFree(pszGuestVersion);
+    }
 
     /* If we didn't have to check for the host version then this is not an error */
     if (rc == VERR_NOT_SUPPORTED)
