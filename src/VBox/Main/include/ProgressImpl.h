@@ -85,7 +85,7 @@ public:
     // public methods only for internal purposes
 
     static HRESULT setErrorInfoOnThread (IProgress *aProgress);
-    void setCancelCallback(void (*pfnCallback)(void *), void *pvUser);
+    bool setCancelCallback(void (*pfnCallback)(void *), void *pvUser);
 
 
     // unsafe inline public methods for internal purposes only (ensure there is
@@ -265,6 +265,7 @@ public:
                            const GUID &aIID,
                            const Bstr &aComponent,
                            const char *aText, ...);
+    bool notifyPointOfNoReturn(void);
 
     /** For com::SupportErrorInfoImpl. */
     static const char *ComponentName() { return "Progress"; }
