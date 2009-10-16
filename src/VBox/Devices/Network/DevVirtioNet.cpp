@@ -51,7 +51,8 @@
 
 //- TODO: Move to Virtio.h ----------------------------------------------------
 
-#define VPCI_F_NOTIFY_ON_EMPTY 0x1000000
+#define VPCI_F_NOTIFY_ON_EMPTY 0x01000000
+#define VPCI_F_BAD_FEATURE     0x40000000
 
 #define VRINGDESC_MAX_SIZE (2 * 1024 * 1024)
 #define VRINGDESC_F_NEXT   0x01
@@ -67,7 +68,7 @@ struct VRingDesc
 typedef struct VRingDesc VRINGDESC;
 typedef VRINGDESC *PVRINGDESC;
 
-#define VRINGAVAIL_F_NO_NOTIFY 0x01
+#define VRINGAVAIL_F_NO_INTERRUPT 0x01
 
 struct VRingAvail
 {
@@ -84,7 +85,7 @@ struct VRingUsedElem
 };
 typedef struct VRingUsedElem VRINGUSEDELEM;
 
-#define VRINGUSED_F_NO_INTERRUPT 0x01
+#define VRINGUSED_F_NO_NOTIFY 0x01
 
 struct VRingUsed
 {
@@ -190,6 +191,8 @@ typedef VPCISTATE *PVPCISTATE;
 /*****************************************************************************/
 RT_C_DECLS_BEGIN
 PDMBOTHCBDECL(uint32_t) vnetGetHostFeatures(void *pState);
+PDMBOTHCBDECL(uint32_t) vnetGetHostMinimalFeatures(void *pState);
+PDMBOTHCBDECL(void)     vnetSetHostFeatures(void *pState, uint32_t uFeatures);
 PDMBOTHCBDECL(int)      vnetGetConfig(void *pState, uint32_t port, uint32_t cb, void *data);
 PDMBOTHCBDECL(int)      vnetSetConfig(void *pState, uint32_t port, uint32_t cb, void *data);
 PDMBOTHCBDECL(void)     vnetReset(void *pState);
@@ -211,6 +214,8 @@ struct VirtioPCIDevices
     const char *pcszName;
     const char *pcszNameFmt;
     uint32_t  (*pfnGetHostFeatures)(void *pvState);
+    uint32_t  (*pfnGetHostMinimalFeatures)(void *pvState);
+    void      (*pfnSetHostFeatures)(void *pvState, uint32_t uFeatures);
     int       (*pfnGetConfig)(void *pvState, uint32_t port, uint32_t cb, void *data);
     int       (*pfnSetConfig)(void *pvState, uint32_t port, uint32_t cb, void *data);
     void      (*pfnReset)(void *pvState);
@@ -222,14 +227,15 @@ struct VirtioPCIDevices
     /*  Vendor  Device SSVendor SubSys             Class   NQ Name          Instance */
     { /* Virtio Network Device */
         0x1AF4, 0x1000, 0x1AF4, 1 + VIRTIO_NET_ID, 0x0200, 3, "virtio-net", "vnet%d",
-        vnetGetHostFeatures, vnetGetConfig, vnetSetConfig, vnetReset
+        vnetGetHostFeatures, vnetGetHostMinimalFeatures, vnetSetHostFeatures, 
+        vnetGetConfig, vnetSetConfig, vnetReset
 #ifdef DEBUG
         , vnetGetQueueName
 #endif /* DEBUG */
     }, 
     { /* Virtio Block Device */
         0x1AF4, 0x1001, 0x1AF4, 1 + VIRTIO_BLK_ID, 0x0180, 2, "virtio-blk", "vblk%d",
-        NULL, NULL, NULL, NULL
+        NULL, NULL, NULL, NULL, NULL, NULL
 #ifdef DEBUG
         , NULL
 #endif /* DEBUG */
@@ -277,6 +283,7 @@ static void vqueueReset(PVQUEUE pQueue)
     pQueue->VRing.addrUsed        = 0;
     pQueue->uNextAvailIndex       = 0;
     pQueue->uNextUsedIndex        = 0;
+    pQueue->uPageNumber           = 0;
 }
 
 static void vqueueInit(PVQUEUE pQueue, uint32_t uPageNumber)
@@ -323,7 +330,7 @@ void vringReadDesc(PVPCISTATE pState, PVRING pVRing, uint32_t uIndex, PVRINGDESC
                       pDesc, sizeof(VRINGDESC));
 }
 
-static uint16_t vringReadAvail(PVPCISTATE pState, PVRING pVRing, uint32_t uIndex)
+uint16_t vringReadAvail(PVPCISTATE pState, PVRING pVRing, uint32_t uIndex)
 {
     uint16_t tmp;
     
@@ -331,6 +338,34 @@ static uint16_t vringReadAvail(PVPCISTATE pState, PVRING pVRing, uint32_t uIndex
                       pVRing->addrAvail + RT_OFFSETOF(VRINGAVAIL, auRing[uIndex % pVRing->uSize]),
                       &tmp, sizeof(tmp));
     return tmp;
+}
+
+uint16_t vringReadAvailFlags(PVPCISTATE pState, PVRING pVRing)
+{
+    uint16_t tmp;
+    
+    PDMDevHlpPhysRead(pState->CTX_SUFF(pDevIns),
+                      pVRing->addrAvail + RT_OFFSETOF(VRINGAVAIL, uFlags),
+                      &tmp, sizeof(tmp));
+    return tmp;
+}
+
+DECLINLINE(void) vringSetNotification(PVPCISTATE pState, PVRING pVRing, bool fEnabled)
+{
+    uint16_t tmp;
+    
+    PDMDevHlpPhysRead(pState->CTX_SUFF(pDevIns),
+                      pVRing->addrUsed + RT_OFFSETOF(VRINGUSED, uFlags),
+                      &tmp, sizeof(tmp));
+
+    if (fEnabled)
+        tmp &= ~ VRINGUSED_F_NO_NOTIFY;
+    else
+        tmp |= VRINGUSED_F_NO_NOTIFY;
+
+    PDMDevHlpPhysWrite(pState->CTX_SUFF(pDevIns),
+                       pVRing->addrUsed + RT_OFFSETOF(VRINGUSED, uFlags),
+                       &tmp, sizeof(tmp));
 }
 
 bool vqueueGet(PVPCISTATE pState, PVQUEUE pQueue, PVQUEUEELEM pElem)
@@ -429,9 +464,17 @@ void vqueuePut(PVPCISTATE pState, PVQUEUE pQueue, PVQUEUEELEM pElem, uint32_t uL
 
 void vqueueNotify(PVPCISTATE pState, PVQUEUE pQueue)
 {
-    int rc = vpciRaiseInterrupt(pState, VERR_INTERNAL_ERROR, VPCI_ISR_QUEUE);
-    if (RT_FAILURE(rc))
-        Log(("%s vqueueNotify: Failed to raise an interrupt (%Vrc).\n", INSTANCE(pState), rc));
+    LogFlow(("%s vqueueNotify: %s availFlags=%x guestFeatures=%x vqueue is %sempty\n",
+             INSTANCE(pState), QUEUENAME(pState, pQueue),
+             vringReadAvailFlags(pState, &pQueue->VRing),
+             pState->uGuestFeatures, vqueueIsEmpty(pState, pQueue)?"":"not "));
+    if (!(vringReadAvailFlags(pState, &pQueue->VRing) & VRINGAVAIL_F_NO_INTERRUPT)
+        || ((pState->uGuestFeatures & VPCI_F_NOTIFY_ON_EMPTY) && vqueueIsEmpty(pState, pQueue)))
+    {
+        int rc = vpciRaiseInterrupt(pState, VERR_INTERNAL_ERROR, VPCI_ISR_QUEUE);
+        if (RT_FAILURE(rc))
+            Log(("%s vqueueNotify: Failed to raise an interrupt (%Vrc).\n", INSTANCE(pState), rc));
+    }
 }
 
 void vqueueSync(PVPCISTATE pState, PVQUEUE pQueue)
@@ -492,6 +535,9 @@ PDMBOTHCBDECL(int) vpciRaiseInterrupt(VPCISTATE *pState, int rcBusy, uint8_t u8I
     if (RT_UNLIKELY(rc != VINF_SUCCESS))
         return rc;
 
+    LogFlow(("%s vpciRaiseInterrupt: u8IntCause=%x\n",
+             INSTANCE(pState), u8IntCause));
+
     pState->uISR |= u8IntCause;
     PDMDevHlpPCISetIrq(pState->CTX_SUFF(pDevIns), 0, 1);
     vpciCsLeave(pState);
@@ -505,7 +551,14 @@ PDMBOTHCBDECL(int) vpciRaiseInterrupt(VPCISTATE *pState, int rcBusy, uint8_t u8I
  */
 PDMBOTHCBDECL(void) vpciLowerInterrupt(VPCISTATE *pState)
 {
+    LogFlow(("%s vpciLowerInterrupt\n", INSTANCE(pState)));
     PDMDevHlpPCISetIrq(pState->CTX_SUFF(pDevIns), 0, 0);
+}
+
+DECLINLINE(uint32_t) vpciGetHostFeatures(PVPCISTATE pState)
+{
+    return g_VPCIDevices[pState->enmDevType].pfnGetHostFeatures(pState)
+        | VPCI_F_NOTIFY_ON_EMPTY;
 }
 
 /**
@@ -533,7 +586,7 @@ PDMBOTHCBDECL(int) vpciIOPortIn(PPDMDEVINS pDevIns, void *pvUser,
     {
         case VPCI_HOST_FEATURES:
             /* Tell the guest what features we support. */
-            *pu32 = g_VPCIDevices[pState->enmDevType].pfnGetHostFeatures(pState);
+            *pu32 = vpciGetHostFeatures(pState) | VPCI_F_BAD_FEATURE;
             break;
 
         case VPCI_GUEST_FEATURES:
@@ -608,9 +661,23 @@ PDMBOTHCBDECL(int) vpciIOPortOut(PPDMDEVINS pDevIns, void *pvUser,
     switch (port)
     {
         case VPCI_GUEST_FEATURES:
-            // TODO: Feature negotiation code goes here.
-            // The guest may potentially desire features we don't support!
-            pState->uGuestFeatures = u32;
+            /* Check if the guest negotiates properly, fall back to basics if it does not. */
+            if (VPCI_F_BAD_FEATURE & u32)
+            {
+                Log(("%s Guest failed to negotiate properly! (guest=%x)\n",
+                     INSTANCE(pState), u32));
+                pState->uGuestFeatures = g_VPCIDevices[pState->enmDevType].pfnGetHostMinimalFeatures(pState);
+            }
+            /* The guest may potentially desire features we don't support! */
+            else if (~vpciGetHostFeatures(pState) & u32)
+            {
+                Log(("%s Guest asked for features host does not support! (host=%x guest=%x)\n",
+                     INSTANCE(pState), vpciGetHostFeatures(pState), u32));
+                pState->uGuestFeatures = vpciGetHostFeatures(pState);
+            }
+            else
+                pState->uGuestFeatures = u32;
+            g_VPCIDevices[pState->enmDevType].pfnSetHostFeatures(pState, pState->uGuestFeatures);
             break;
 
         case VPCI_QUEUE_PFN:
@@ -1126,6 +1193,18 @@ PDMBOTHCBDECL(uint32_t) vnetGetHostFeatures(void *pvState)
     return VNET_F_MAC | VNET_F_STATUS;
 }
 
+PDMBOTHCBDECL(uint32_t) vnetGetHostMinimalFeatures(void *pvState)
+{
+    return VNET_F_MAC;
+}
+
+PDMBOTHCBDECL(void) vnetSetHostFeatures(void *pvState, uint32_t uFeatures)
+{
+    // TODO: Nothing to do here yet
+    VNETSTATE *pState = (VNETSTATE *)pvState;
+    LogFlow(("%s vnetSetHostFeatures: uFeatures=%x\n", INSTANCE(pState), uFeatures));
+}
+
 PDMBOTHCBDECL(int) vnetGetConfig(void *pvState, uint32_t port, uint32_t cb, void *data)
 {
     VNETSTATE *pState = (VNETSTATE *)pvState;
@@ -1216,17 +1295,34 @@ static DECLCALLBACK(bool) vnetCanRxQueueConsumer(PPDMDEVINS pDevIns, PPDMQUEUEIT
  * Check if the device can receive data now.
  * This must be called before the pfnRecieve() method is called.
  *
+ * @remarks As a side effect this function enables queue notification
+ *          if it cannot receive because the queue is empty.
+ *          It disables notification if it can receive.
+ *
  * @returns VERR_NET_NO_BUFFER_SPACE if it cannot.
  * @param   pInterface      Pointer to the interface structure containing the called function pointer.
  * @thread  EMT
  */
 static int vnetCanReceive(VNETSTATE *pState)
 {
+    int rc;
     LogFlow(("%s vnetCanReceive\n", INSTANCE(pState)));
-    int rc = (vqueueIsReady(&pState->VPCI, pState->pRxQueue)
-            && !vqueueIsEmpty(&pState->VPCI, pState->pRxQueue))
-        ? VINF_SUCCESS : VERR_NET_NO_BUFFER_SPACE;
-    LogFlow(("%s vnetCanReceive -> %d\n", INSTANCE(pState), rc));
+    if (!(pState->VPCI.uStatus & VPCI_STATUS_DRV_OK))
+        rc = VERR_NET_NO_BUFFER_SPACE;
+    else if (!vqueueIsReady(&pState->VPCI, pState->pRxQueue))
+        rc = VERR_NET_NO_BUFFER_SPACE;
+    else if (vqueueIsEmpty(&pState->VPCI, pState->pRxQueue))
+    {
+        vringSetNotification(&pState->VPCI, &pState->pRxQueue->VRing, true);
+        rc = VERR_NET_NO_BUFFER_SPACE;
+    }
+    else
+    {
+        vringSetNotification(&pState->VPCI, &pState->pRxQueue->VRing, false);
+        rc = VINF_SUCCESS;
+    }
+
+    LogFlow(("%s vnetCanReceive -> %Vrc\n", INSTANCE(pState), rc));
     return rc;
 }
 
