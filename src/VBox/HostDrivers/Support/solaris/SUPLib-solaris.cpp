@@ -175,7 +175,7 @@ int suplibOsPageAlloc(PSUPLIBDATA pThis, size_t cPages, void **ppvPages)
                      MAP_PRIVATE | MAP_ANON, -1, 0);
     if (*ppvPages != (void *)-1)
         return VINF_SUCCESS;
-    if (error == EAGAIN)
+    if (errno == EAGAIN)
         return VERR_NO_MEMORY;
     return RTErrConvertFromErrno(errno);
 }
