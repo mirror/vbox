@@ -239,11 +239,12 @@ Console::teleporterSrcReadACK(TeleporterStateSrc *pState, const char *pszWhich,
  *
  * @param   pState              The teleporter source state.
  * @param   pszCommand          The command.
+ * @param   fWaitForAck         Whether to wait for the ACK.
  *
  * @remarks the setError laziness forces this to be a Console member.
  */
 HRESULT
-Console::teleporterSrcSubmitCommand(TeleporterStateSrc *pState, const char *pszCommand)
+Console::teleporterSrcSubmitCommand(TeleporterStateSrc *pState, const char *pszCommand, bool fWaitForAck /*= true*/)
 {
     size_t cchCommand = strlen(pszCommand);
     int vrc = RTTcpWrite(pState->mhSocket, pszCommand, cchCommand);
@@ -253,6 +254,8 @@ Console::teleporterSrcSubmitCommand(TeleporterStateSrc *pState, const char *pszC
         vrc = RTTcpFlush(pState->mhSocket);
     if (RT_FAILURE(vrc))
         return setError(E_FAIL, tr("Failed writing command '%s': %Rrc"), pszCommand, vrc);
+    if (!fWaitForAck)
+        return S_OK;
     return teleporterSrcReadACK(pState, pszCommand);
 }
 
@@ -520,9 +523,9 @@ static DECLCALLBACK(int) teleporterProgressCallback(PVM pVM, unsigned uPercent, 
         if (FAILED(hrc))
         {
             /* check if the failure was caused by cancellation. */
-            BOOL fCanceled;
-            hrc = pState->mptrProgress->COMGETTER(Canceled)(&fCanceled);
-            if (SUCCEEDED(hrc) && fCanceled)
+            BOOL fCancelled;
+            hrc = pState->mptrProgress->COMGETTER(Canceled)(&fCancelled);
+            if (SUCCEEDED(hrc) && fCancelled)
             {
                 SSMR3Cancel(pState->mpVM);
                 return VERR_SSM_CANCELLED;
@@ -561,12 +564,12 @@ Console::teleporterSrc(TeleporterStateSrc *pState)
      */
     { AutoWriteLock autoLock(); }
 
-    BOOL fCanceled = TRUE;
-    HRESULT hrc = pState->mptrProgress->COMGETTER(Canceled)(&fCanceled);
+    BOOL fCancelled = TRUE;
+    HRESULT hrc = pState->mptrProgress->COMGETTER(Canceled)(&fCancelled);
     if (FAILED(hrc))
         return hrc;
-    if (fCanceled)
-        return setError(E_FAIL, tr("canceled"));
+    if (fCancelled)
+        return setError(E_FAIL, tr("cancelled"));
 
     /*
      * Try connect to the destination machine.
@@ -623,6 +626,11 @@ Console::teleporterSrc(TeleporterStateSrc *pState)
     /*
      * State fun? Automatic power off?
      */
+    if (!pState->mptrProgress->notifyPointOfNoReturn())
+    {
+        teleporterSrcSubmitCommand(pState, "cancel", false /*fWaitForAck*/);
+        return E_FAIL;
+    }
     hrc = teleporterSrcSubmitCommand(pState, "done");
     if (FAILED(hrc))
         return hrc;
@@ -649,8 +657,13 @@ Console::teleporterSrcThreadWrapper(RTTHREAD hThread, void *pvUser)
     if (SUCCEEDED(hrc))
         hrc = pState->mptrConsole->teleporterSrc(pState);
 
+    /* (Ignore the return here as teleporterSrc deals with cancellation.) */
     pState->mptrProgress->notifyComplete(hrc);
+    pState->mptrProgress->setCancelCallback(NULL, NULL);
 
+    /*
+     * Deal with the state machinery after taking the console object lock.
+     */
     AutoWriteLock autoLock(pState->mptrConsole);
     if (pState->mptrConsole->mMachineState == MachineState_Saving)
     {
@@ -694,16 +707,17 @@ Console::teleporterSrcThreadWrapper(RTTHREAD hThread, void *pvUser)
         }
     }
 
+    /*
+     * Cleanup.
+     */
     if (pState->mhSocket != NIL_RTSOCKET)
     {
         RTTcpClientClose(pState->mhSocket);
         pState->mhSocket = NIL_RTSOCKET;
     }
-
-    pState->mptrProgress->setCancelCallback(NULL, NULL);
     delete pState;
 
-    return VINF_SUCCESS;
+    return VINF_SUCCESS; /* ignored */
 }
 
 
@@ -846,7 +860,7 @@ Console::teleporterTrg(PVM pVM, IMachine *pMachine, bool fStartPaused, Progress 
         }
         if (RT_SUCCESS(vrc))
         {
-            HRESULT hrc = pMachine->COMSETTER(TeleporterPort)(uPort);
+            hrc = pMachine->COMSETTER(TeleporterPort)(uPort);
             if (FAILED(hrc))
             {
                 RTTcpServerDestroy(hServer);
@@ -875,24 +889,66 @@ Console::teleporterTrg(PVM pVM, IMachine *pMachine, bool fStartPaused, Progress 
             State.mhServer          = hServer;
 
             void *pvUser = static_cast<void *>(static_cast<TeleporterState *>(&State));
-            pProgress->setCancelCallback(teleporterProgressCancelCallback, pvUser);
-
-            vrc = RTTcpServerListen(hServer, Console::teleporterTrgServeConnection, &State);
-            if (vrc == VERR_TCP_SERVER_STOP)
-                vrc = State.mRc;
-            if (RT_SUCCESS(vrc))
+            if (pProgress->setCancelCallback(teleporterProgressCancelCallback, pvUser))
             {
-                if (fStartPaused)
-                    setMachineState(MachineState_Paused);
+                vrc = RTTcpServerListen(hServer, Console::teleporterTrgServeConnection, &State);
+                pProgress->setCancelCallback(NULL, NULL);
+
+                bool fPowerOff = false;
+                if (vrc == VERR_TCP_SERVER_STOP)
+                {
+                    vrc = State.mRc;
+                    if (RT_SUCCESS(vrc))
+                    {
+                        if (fStartPaused)
+                            setMachineState(MachineState_Paused);
+                        else
+                            vrc = VMR3Resume(pVM);
+                    }
+                    /* Power off the VM on failure unless the state callback
+                       already did that. */
+                    else
+                    {
+                        VMSTATE enmVMState = VMR3GetState(pVM);
+                        if (    enmVMState != VMSTATE_OFF
+                            &&  enmVMState != VMSTATE_POWERING_OFF)
+                            fPowerOff = true;
+                    }
+                }
+                else if (vrc == VERR_TCP_SERVER_SHUTDOWN)
+                {
+                    /** @todo this crap isn't work right wrt error info. Aaaarrrg! */
+                    BOOL fCancelled = TRUE;
+                    hrc = pProgress->COMGETTER(Canceled)(&fCancelled);
+                    if (FAILED(hrc) || fCancelled)
+                    {
+                        setError(E_FAIL, tr("Teleporting canceled"));
+                        vrc = VERR_SSM_CANCELLED;
+                    }
+                    else
+                    {
+                        setError(E_FAIL, tr("Teleporter timed out waiting for incoming connection"));
+                        vrc = VERR_TIMEOUT;
+                    }
+                    pProgress->setResultCode(E_FAIL); /* ugly! */
+                    LogRel(("Teleporter: RTTcpServerListen aborted - %Rrc\n", vrc));
+                    fPowerOff = true;
+                }
                 else
-                    vrc = VMR3Resume(pVM);
+                {
+                    LogRel(("Teleporter: Unexpected RTTcpServerListen rc: %Rrc\n", vrc));
+                    vrc = VERR_IPE_UNEXPECTED_STATUS;
+                    fPowerOff = true;
+                }
+
+                if (fPowerOff)
+                {
+                    int vrc2 = VMR3PowerOff(pVM);
+                    AssertRC(vrc2);
+                }
             }
             else
-            {
-                LogRel(("Teleporter: RTTcpServerListen -> %Rrc\n", vrc));
-            }
-
-            pProgress->setCancelCallback(NULL, NULL);
+                vrc = VERR_SSM_CANCELLED;
         }
 
         RTTimerLRDestroy(hTimerLR);
@@ -934,6 +990,8 @@ static int teleporterTcpWriteNACK(TeleporterStateTrg *pState, int32_t rc2)
 
 /**
  * @copydoc FNRTTCPSERVE
+ *
+ * @returns VINF_SUCCESS or VERR_TCP_SERVER_STOP.
  */
 /*static*/ DECLCALLBACK(int)
 Console::teleporterTrgServeConnection(RTSOCKET Sock, void *pvUser)
@@ -952,9 +1010,7 @@ Console::teleporterTrgServeConnection(RTSOCKET Sock, void *pvUser)
     }
 
     /*
-     * Password (includes '\n', see teleporterTrg).  If it's right, tell
-     * the TCP server to stop listening (frees up host resources and makes sure
-     * this is the last connection attempt).
+     * Password (includes '\n', see teleporterTrg).
      */
     const char *pszPassword = pState->mstrPassword.c_str();
     unsigned    off = 0;
@@ -976,8 +1032,14 @@ Console::teleporterTrgServeConnection(RTSOCKET Sock, void *pvUser)
     }
     vrc = teleporterTcpWriteACK(pState);
     if (RT_FAILURE(vrc))
-        return vrc;
+        return VINF_SUCCESS;
 
+    /*
+     * Stop the server and cancel the timeout timer.
+     *
+     * Note! After this point we must return VERR_TCP_SERVER_STOP, while prior
+     *       to it we must not return that value!
+     */
     RTTcpServerShutdown(pState->mhServer);
     RTTimerLRDestroy(*pState->mphTimerLR);
     *pState->mphTimerLR = NIL_RTTIMERLR;
@@ -1027,9 +1089,24 @@ Console::teleporterTrgServeConnection(RTSOCKET Sock, void *pvUser)
         /** @todo implement config verification and hardware compatability checks. Or
          *        maybe leave part of these to the saved state machinery?
          * Update: We're doing as much as possible in the first SSM pass. */
+        else if (!strcmp(szCmd, "cancel"))
+        {
+            /* Don't ACK this. */
+            LogRel(("Teleporter: Received cancel command.\n"));
+            vrc = VERR_SSM_CANCELLED;
+        }
         else if (!strcmp(szCmd, "done"))
         {
-            vrc = teleporterTcpWriteACK(pState);
+            /*
+             * The ACK is the point of no return.
+             */
+            if (pState->mptrProgress->notifyPointOfNoReturn())
+                vrc = teleporterTcpWriteACK(pState);
+            else
+            {
+                vrc = VERR_SSM_CANCELLED;
+                teleporterTcpWriteNACK(pState, vrc);
+            }
             break;
         }
         else

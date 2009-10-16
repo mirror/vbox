@@ -513,22 +513,30 @@ HRESULT ProgressBase::setErrorInfoOnThread (IProgress *aProgress)
 }
 
 /**
- * Sets the cancellation callback.
+ * Sets the cancelation callback, checking for cancelation first.
+ *
+ * @returns Success indicator.
+ * @retval  true on success.
+ * @retval  false if the progress object has already been canceled or is in an
+ *          invalid state
  *
  * @param   pfnCallback     The function to be called upon cancelation.
  * @param   pvUser          The callback argument.
  */
-void ProgressBase::setCancelCallback(void (*pfnCallback)(void *), void *pvUser)
+bool ProgressBase::setCancelCallback(void (*pfnCallback)(void *), void *pvUser)
 {
     AutoCaller autoCaller(this);
-    AssertComRCReturnVoid(autoCaller.rc());
+    AssertComRCReturn(autoCaller.rc(), false);
 
     AutoWriteLock alock(this);
 
+    if (mCanceled)
+        return false;
+
     m_pvCancelUserArg   = pvUser;
     m_pfnCancelCallback = pfnCallback;
+    return true;
 }
-
 
 ////////////////////////////////////////////////////////////////////////////////
 // Progress class
@@ -1140,6 +1148,34 @@ HRESULT Progress::notifyComplete(HRESULT aResultCode,
     return rc;
 }
 
+/**
+ * Notify the progress object that we're almost at the point of no return.
+ *
+ * This atomically checks for and disables cancelation.  Calls to
+ * IProgress::Cancel() made after a successfull call to this method will fail
+ * and the user can be told.  While this isn't entirely clean behavior, it
+ * prevents issues with an irreversible actually operation succeeding while the
+ * user belive it was rolled back.
+ *
+ * @returns Success indicator.
+ * @retval  true on success.
+ * @retval  false if the progress object has already been canceled or is in an
+ *          invalid state
+ */
+bool Progress::notifyPointOfNoReturn(void)
+{
+    AutoCaller autoCaller(this);
+    AssertComRCReturn(autoCaller.rc(), false);
+
+    AutoWriteLock alock(this);
+
+    if (mCanceled)
+        return false;
+
+    mCancelable = FALSE;
+    return true;
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // CombinedProgress class
 ////////////////////////////////////////////////////////////////////////////////
@@ -1590,7 +1626,7 @@ STDMETHODIMP CombinedProgress::Cancel()
     AutoWriteLock alock(this);
 
     if (!mCancelable)
-        return setError (E_FAIL, tr ("Operation cannot be cancelled"));
+        return setError (E_FAIL, tr ("Operation cannot be canceled"));
 
     if (!mCanceled)
     {
