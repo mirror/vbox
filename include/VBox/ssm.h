@@ -372,10 +372,13 @@ typedef struct SSMFIELD
 #define SSMSTRUCT_FLAGS_NO_MARKERS          RT_BIT_32(1)
 /** Do not ignore any ignorable fields. */
 #define SSMSTRUCT_FLAGS_DONT_IGNORE         RT_BIT_32(2)
+/** Saved using SSMR3PutMem, don't be too strict. */
+#define SSMSTRUCT_FLAGS_SAVED_AS_MEM        RT_BIT_32(3)
 /** Band-aid for old SSMR3PutMem/SSMR3GetMem of structurs with host pointers. */
-#define SSMSTRUCT_FLAGS_MEM_BAND_AID        (SSMSTRUCT_FLAGS_DONT_IGNORE | SSMSTRUCT_FLAGS_FULL_STRUCT | SSMSTRUCT_FLAGS_NO_MARKERS)
+#define SSMSTRUCT_FLAGS_MEM_BAND_AID        (  SSMSTRUCT_FLAGS_DONT_IGNORE | SSMSTRUCT_FLAGS_FULL_STRUCT \
+                                             | SSMSTRUCT_FLAGS_NO_MARKERS  | SSMSTRUCT_FLAGS_SAVED_AS_MEM)
 /** Mask of the valid bits. */
-#define SSMSTRUCT_FLAGS_VALID_MASK          UINT32_C(0x00000007)
+#define SSMSTRUCT_FLAGS_VALID_MASK          UINT32_C(0x0000000f)
 /** @} */
 
 
