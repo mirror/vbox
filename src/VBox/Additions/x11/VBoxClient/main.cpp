@@ -242,12 +242,12 @@ int main(int argc, char *argv[])
         return 1;
     }
     /* Initialise the guest library. */
- /*   if (RT_FAILURE(VbglR3InitUser()))
+    if (RT_FAILURE(VbglR3InitUser()))
     {
         RTPrintf("Failed to connect to the VirtualBox kernel service\n");
         Log(("Failed to connect to the VirtualBox kernel service\n"));
         return 1;
-    }*/
+    }
     if (g_pszPidFile && RT_FAILURE(VbglR3PidFile(g_pszPidFile, &g_hPidFile)))
     {
         RTPrintf("Failed to create a pidfile.  Exiting.\n");
