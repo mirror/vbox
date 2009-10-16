@@ -267,16 +267,17 @@ static SSMFIELD const g_aPatmRelocRec[] =
 static SSMFIELD const g_aPatmRecPatchToGuest[] =
 {
     SSMFIELD_ENTRY(                 RECPATCHTOGUEST, Core.Key),
+    SSMFIELD_ENTRY_PAD_HC_AUTO(     0, 4),
     SSMFIELD_ENTRY_IGN_HCPTR(       RECPATCHTOGUEST, Core.pLeft),
     SSMFIELD_ENTRY_IGN_HCPTR(       RECPATCHTOGUEST, Core.pRight),
     SSMFIELD_ENTRY_IGNORE(          RECPATCHTOGUEST, Core.uchHeight),
-    SSMFIELD_ENTRY_PAD_HC_AUTO(     3, 3),
+    SSMFIELD_ENTRY_PAD_HC_AUTO(     3, 7),
     SSMFIELD_ENTRY_RCPTR(           RECPATCHTOGUEST, pOrgInstrGC),
     SSMFIELD_ENTRY(                 RECPATCHTOGUEST, enmType),
     SSMFIELD_ENTRY(                 RECPATCHTOGUEST, fDirty),
     SSMFIELD_ENTRY(                 RECPATCHTOGUEST, fJumpTarget),
     SSMFIELD_ENTRY(                 RECPATCHTOGUEST, u8DirtyOpcode),
-    SSMFIELD_ENTRY_PAD_HC_AUTO(     1, 1),
+    SSMFIELD_ENTRY_PAD_HC_AUTO(     1, 5),
     SSMFIELD_ENTRY_TERM()
 };
 
