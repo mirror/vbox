@@ -8476,7 +8476,7 @@
 
   <interface
     name="IMedium" extends="$unknown"
-    uuid="62551115-83b8-4d20-925f-79e9d3c00f96"
+    uuid="ad3cdc5b-28ce-4390-8273-ca2068a217c5"
     wsmap="managed"
   >
     <desc>
@@ -8918,6 +8918,11 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         attribute will not necessary be unique for a list of media of the
         given type and format.
       </desc>
+    </attribute>
+
+    <attribute name="deviceType" type="DeviceType" readonly="yes">
+      <desc>Kind of device (DVD/Floppy/HardDisk) which is applicable to this
+        medium.</desc>
     </attribute>
 
     <attribute name="hostDrive" type="boolean" readonly="yes">

@@ -1433,6 +1433,20 @@ STDMETHODIMP Medium::COMGETTER(Name)(BSTR *aName)
     return S_OK;
 }
 
+STDMETHODIMP Medium::COMGETTER(DeviceType)(DeviceType_T *aDeviceType)
+{
+    CheckComArgOutPointerValid(aDeviceType);
+
+    AutoCaller autoCaller(this);
+    CheckComRCReturnRC(autoCaller.rc());
+
+    AutoReadLock alock(this);
+
+    *aDeviceType = m->devType;
+
+    return S_OK;
+}
+
 STDMETHODIMP Medium::COMGETTER(HostDrive)(BOOL *aHostDrive)
 {
     CheckComArgOutPointerValid(aHostDrive);
@@ -3343,7 +3357,7 @@ Utf8Str Medium::name()
  * '{<uuid>}.<ext>' where <uuid> is a fresh UUID that this method will generate
  * and assign to this medium, and <ext> is the default extension for this
  * medium's storage format. Note that this procedure requires the media state to
- * be NotCreated and will return a faiulre otherwise.
+ * be NotCreated and will return a failure otherwise.
  *
  * @param aLocation Location of the storage unit. If the location is a FS-path,
  *                  then it can be relative to the VirtualBox home directory.
@@ -3367,7 +3381,7 @@ HRESULT Medium::setLocation(const Utf8Str &aLocation, const Utf8Str &aFormat)
                   m->format.isNull() && m->formatObj.isNull()),
                  E_FAIL);
 
-    /* are we dealing with a new hard disk constructed using the existing
+    /* are we dealing with a new medium constructed using the existing
      * location? */
     bool isImport = m->format.isNull();
 
@@ -3418,7 +3432,7 @@ HRESULT Medium::setLocation(const Utf8Str &aLocation, const Utf8Str &aFormat)
         int vrc = mVirtualBox->calculateFullPath(location, locationFull);
         if (RT_FAILURE(vrc))
             return setError(VBOX_E_FILE_ERROR,
-                            tr("Invalid hard disk storage file location '%s' (%Rrc)"),
+                            tr("Invalid medium storage file location '%s' (%Rrc)"),
                             location.raw(), vrc);
 
         /* detect the backend from the storage unit if importing */
@@ -3448,11 +3462,11 @@ HRESULT Medium::setLocation(const Utf8Str &aLocation, const Utf8Str &aFormat)
             {
                 if (vrc == VERR_FILE_NOT_FOUND || vrc == VERR_PATH_NOT_FOUND)
                     return setError(VBOX_E_FILE_ERROR,
-                                    tr("Could not find file for the hard disk '%s' (%Rrc)"),
+                                    tr("Could not find file for the medium '%s' (%Rrc)"),
                                     locationFull.raw(), vrc);
                 else if (aFormat.isEmpty())
                     return setError(VBOX_E_IPRT_ERROR,
-                                    tr("Could not get the storage format of the hard disk '%s' (%Rrc)"),
+                                    tr("Could not get the storage format of the medium '%s' (%Rrc)"),
                                     locationFull.raw(), vrc);
                 else
                 {
@@ -3591,7 +3605,7 @@ HRESULT Medium::queryInfo()
             throw S_OK;
         }
 
-        /* are we dealing with a new hard disk constructed using the existing
+        /* are we dealing with a new medium constructed using the existing
          * location? */
         bool isImport = m->id.isEmpty();
 
@@ -3604,8 +3618,8 @@ HRESULT Medium::queryInfo()
             unsigned flags = VD_OPEN_FLAGS_INFO;
 
             /* Note that we don't use VD_OPEN_FLAGS_READONLY when opening new
-             * hard disks because that would prevent necessary modifications
-             * when opening hard disks of some third-party formats for the first
+             * media because that would prevent necessary modifications
+             * when opening media of some third-party formats for the first
              * time in VirtualBox (such as VMDK for which VDOpen() needs to
              * generate an UUID if it is missing) */
             if (    (m->hddOpenMode == OpenReadOnly)
@@ -3622,7 +3636,7 @@ HRESULT Medium::queryInfo()
                          m->vdDiskIfaces);
             if (RT_FAILURE(vrc))
             {
-                lastAccessError = Utf8StrFmt(tr("Could not open the hard disk '%ls'%s"),
+                lastAccessError = Utf8StrFmt(tr("Could not open the medium '%ls'%s"),
                                              m->locationFull.raw(), vdError(vrc).raw());
                 throw S_OK;
             }
@@ -3666,7 +3680,7 @@ HRESULT Medium::queryInfo()
                     if (m->id != uuid)
                     {
                         lastAccessError = Utf8StrFmt(
-                            tr("UUID {%RTuuid} of the hard disk '%ls' does not match the value {%RTuuid} stored in the media registry ('%ls')"),
+                            tr("UUID {%RTuuid} of the medium '%ls' does not match the value {%RTuuid} stored in the media registry ('%ls')"),
                             &uuid, m->locationFull.raw(), m->id.raw(),
                             mVirtualBox->settingsFilePath().raw());
                         throw S_OK;
@@ -3678,7 +3692,7 @@ HRESULT Medium::queryInfo()
                 /* the backend does not support storing UUIDs within the
                  * underlying storage so use what we store in XML */
 
-                /* generate an UUID for an imported UUID-less hard disk */
+                /* generate an UUID for an imported UUID-less medium */
                 if (isImport)
                 {
                     if (m->setImageId)
