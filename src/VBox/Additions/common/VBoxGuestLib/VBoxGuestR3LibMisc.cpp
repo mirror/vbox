@@ -25,6 +25,10 @@
 *******************************************************************************/
 #include <iprt/mem.h>
 #include <VBox/log.h>
+#ifdef RT_OS_WINDOWS
+ #define WIN32_LEAN_AND_MEAN
+ #include <windows.h>
+#endif
 
 #include "VBGLR3Internal.h"
 
@@ -193,3 +197,56 @@ VBGLR3DECL(int) VbglR3SetGuestCaps(uint32_t fOr, uint32_t fNot)
     return rc;
 }
 
+
+/** @todo Docs */
+VBGLR3DECL(int) VbglR3GetAdditionsVersion(char **ppszVer, char **ppszRev)
+{
+    int rc;
+#ifdef RT_OS_WINDOWS
+    HKEY hKey;
+
+	/* Check the new path first. */
+    rc = RegOpenKeyEx(HKEY_LOCAL_MACHINE, "SOFTWARE\\Sun\\VirtualBox Guest Additions", 0, KEY_READ, &hKey);
+#ifdef RT_ARCH_AMD64
+    if (rc != ERROR_SUCCESS)
+    {
+        /* Check Wow6432Node (for new entries). */
+        rc = RegOpenKeyEx(HKEY_LOCAL_MACHINE, "SOFTWARE\\Wow6432Node\\Sun\\VirtualBox Guest Additions", 0, KEY_READ, &hKey);
+    }
+#endif
+
+    /* Still no luck? Then try the old xVM paths ... */
+    if (RT_FAILURE(rc))
+    {
+        rc = RegOpenKeyEx(HKEY_LOCAL_MACHINE, "SOFTWARE\\Sun\\xVM VirtualBox Guest Additions", 0, KEY_READ, &hKey);
+#ifdef RT_ARCH_AMD64
+        if (rc != ERROR_SUCCESS)
+        {
+            /* Check Wow6432Node (for new entries). */
+            rc = RegOpenKeyEx(HKEY_LOCAL_MACHINE, "SOFTWARE\\Wow6432Node\\Sun\\xVM VirtualBox Guest Additions", 0, KEY_READ, &hKey);
+        }
+#endif
+    }
+
+    /* Did we get something worth looking at? */
+    if (RT_SUCCESS(rc))
+    {
+        /* Version. */
+        dwSize = 32;
+        pszVer = (char*)RTMemAlloc(dwSize);
+        rc = RegQueryValueEx(hKey, "Version", NULL, &dwType, (BYTE*)(LPCTSTR)*ppszVer, &dwSize);
+        /* Revision. */
+        if (ppszRev)
+        {
+			dwSize = 32;
+			ppszRev = (char*)RTMemAlloc(dwSize);
+			rc = RegQueryValueEx(hKey, "Revision", NULL, &dwType, (BYTE*)(LPCTSTR)*ppszRev, &dwSize);
+		}
+    }
+
+    if (NULL != hKey)
+        RegCloseKey(hKey);
+#else
+#endif /* RT_OS_WINDOWS */
+    return rc;
+}

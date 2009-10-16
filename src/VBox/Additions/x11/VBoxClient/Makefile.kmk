@@ -60,12 +60,14 @@ ifdef VBOX_X11_SEAMLESS_GUEST
 	seamless-host.cpp \
 	seamless-x11.cpp \
 	thread.cpp \
-	display.cpp \
-	hostversion.cpp
+	display.cpp
  VBoxClient_LIBS += \
 	Xext Xmu
 endif
-
+ifdef VBOX_WITH_GUEST_PROPS
+ VBoxClient_SOURCES += hostversion.cpp
+ VBoxClient_DEFS += VBOX_WITH_GUEST_PROPS
+endif
 #
 # Link aginst libstdc++.a. (http://www.trilithium.com/johan/2005/06/static-libstdc/).
 # (It would've been preferred to avoid features depending on libstdc++, of course...)
