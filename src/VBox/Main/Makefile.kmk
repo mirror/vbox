@@ -43,7 +43,7 @@ ifdef VBOX_ONLY_SDK
  BLDDIRS        += $(PATH_VBoxCOM) $(PATH_BIN)/components
  # I'm Evil! Dr. Evil.
  include $(KBUILD_PATH)/tools/VCC70.kmk
- include $(KBUILD_PATH)/sdks/WINPSDK.kmk/
+ include $(KBUILD_PATH)/sdks/WINPSDK.kmk
 endif #!VBOX_ONLY_SDK
 
 
