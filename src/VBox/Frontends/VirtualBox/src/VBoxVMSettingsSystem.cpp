@@ -162,6 +162,9 @@ void VBoxVMSettingsSystem::getFrom (const CMachine &aMachine)
     /* IO APIC */
     mCbApic->setChecked (biosSettings.GetIOAPICEnabled());
 
+    /* EFI */
+    mCbEFI->setChecked (mMachine.GetFirmwareType() == KFirmwareType_EFI);
+
     /* CPU count */
     bool fVTxAMDVSupported = vboxGlobal().virtualBox().GetHost()
                              .GetProcessorFeature (KProcessorFeature_HWVirtEx);
@@ -222,6 +225,9 @@ void VBoxVMSettingsSystem::putBackTo()
     /* IO APIC */
     biosSettings.SetIOAPICEnabled (mCbApic->isChecked() ||
                                    mSlCPU->value() > 1);
+
+    /* EFI */
+    mMachine.SetFirmwareType (mCbEFI->isChecked() ? KFirmwareType_EFI : KFirmwareType_BIOS);
 
     /* RAM size */
     mMachine.SetCPUCount (mSlCPU->value());
@@ -324,8 +330,9 @@ void VBoxVMSettingsSystem::setOrderAfter (QWidget *aWidget)
     setTabOrder (mTwBootOrder, mTbBootItemUp);
     setTabOrder (mTbBootItemUp, mTbBootItemDown);
     setTabOrder (mTbBootItemDown, mCbApic);
+    setTabOrder (mCbApic, mCbEFI);
 
-    setTabOrder (mCbApic, mSlCPU);
+    setTabOrder (mCbEFI, mSlCPU);
     setTabOrder (mSlCPU, mLeCPU);
     setTabOrder (mLeCPU, mCbPae);
 

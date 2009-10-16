@@ -326,6 +326,22 @@
          </property>
         </widget>
        </item>
+       <item row="5" column="1" colspan="2">
+        <widget class="QCheckBox" name="mCbEFI">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="whatsThis">
+          <string>When checked, activates support for Extended Firmware Interface (EFI), can be used to boot certain guest OS. Activate only if fully understand consequences.</string>
+         </property>
+         <property name="text">
+          <string>Enable &amp;EFI (special OSes only)</string>
+         </property>
+        </widget>
+       </item>
        <item row="6" column="0" colspan="3">
         <spacer name="mSpVer1">
          <property name="orientation">
