@@ -870,7 +870,7 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
     char *cdromFile = NULL;
     char *fdaFile   = NULL;
 #ifdef VBOX_WITH_VRDP
-    char *portVRDP = NULL;
+    const char *portVRDP = NULL;
 #endif
     bool fDiscardState = false;
 #ifdef VBOX_SECURELABEL
@@ -1518,7 +1518,7 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         /*
          * Strategy: iterate through all registered hard disk
          * and see if one of them points to the same file. If
-         * so, assign it. If not, register a new image and assing
+         * so, assign it. If not, register a new image and assign
          * it to the VM.
          */
         Bstr hdaFileBstr = hdaFile;
@@ -1537,9 +1537,43 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
              * Go and attach it!
              */
             Bstr uuid;
+            Bstr storageCtlName;
             hardDisk->COMGETTER(Id)(uuid.asOutParam());
-            gMachine->DetachDevice(Bstr("IDE Controller"), 0, 0);
-            gMachine->AttachDevice(Bstr("IDE Controller"), 0, 0, DeviceType_HardDisk, uuid);
+
+            /* get the first IDE controller to attach the harddisk to
+             * and if there is none, add one temporarily
+             */
+            {
+                ComPtr<IStorageController> storageCtl;
+                com::SafeIfaceArray<IStorageController> aStorageControllers;
+                CHECK_ERROR (gMachine, COMGETTER(StorageControllers)(ComSafeArrayAsOutParam(aStorageControllers)));
+                for (size_t i = 0; i < aStorageControllers.size(); ++ i)
+                {
+                    StorageBus_T storageBus = StorageBus_Null;
+
+                    CHECK_ERROR (aStorageControllers[i], COMGETTER(Bus)(&storageBus));
+                    if (storageBus == StorageBus_IDE)
+                    {
+                        storageCtl = aStorageControllers[i];
+                        break;
+                    }
+                }
+
+                if (storageCtl)
+                {
+                    CHECK_ERROR (storageCtl, COMGETTER(Name)(storageCtlName.asOutParam()));
+                    gMachine->DetachDevice(storageCtlName, 0, 0);
+                }
+                else
+                {
+                    storageCtlName = "IDE Controller";
+                    CHECK_ERROR (gMachine, AddStorageController(storageCtlName,
+                                                                StorageBus_IDE,
+                                                                storageCtl.asOutParam()));
+                }
+            }
+
+            gMachine->AttachDevice(storageCtlName, 0, 0, DeviceType_HardDisk, uuid);
             /// @todo why is this attachment saved?
         }
         else
@@ -1583,9 +1617,52 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
                 }
             }
         }
+
         Bstr id;
+        Bstr storageCtlName;
         floppyMedium->COMGETTER(Id)(id.asOutParam());
-        CHECK_ERROR(gMachine, MountMedium(Bstr("Floppy Controller"), 0, 0, id));
+
+        /* get the first floppy controller to attach the floppy to
+         * and if there is none, add one temporarily
+         */
+        {
+            ComPtr<IStorageController> storageCtl;
+            com::SafeIfaceArray<IStorageController> aStorageControllers;
+            CHECK_ERROR (gMachine, COMGETTER(StorageControllers)(ComSafeArrayAsOutParam(aStorageControllers)));
+            for (size_t i = 0; i < aStorageControllers.size(); ++ i)
+            {
+                StorageBus_T storageBus = StorageBus_Null;
+
+                CHECK_ERROR (aStorageControllers[i], COMGETTER(Bus)(&storageBus));
+                if (storageBus == StorageBus_Floppy)
+                {
+                    storageCtl = aStorageControllers[i];
+                    break;
+                }
+            }
+
+            if (storageCtl)
+            {
+                ComPtr<IMediumAttachment> floppyAttachment;
+
+                CHECK_ERROR (storageCtl, COMGETTER(Name)(storageCtlName.asOutParam()));
+                rc = gMachine->GetMediumAttachment(storageCtlName, 0, 0, floppyAttachment.asOutParam());
+                if (FAILED(rc))
+                    CHECK_ERROR (gMachine, AttachDevice(storageCtlName, 0, 0,
+                                                        DeviceType_Floppy, NULL));
+            }
+            else
+            {
+                storageCtlName = "Floppy Controller";
+                CHECK_ERROR (gMachine, AddStorageController(storageCtlName,
+                                                            StorageBus_Floppy,
+                                                            storageCtl.asOutParam()));
+                CHECK_ERROR (gMachine, AttachDevice(storageCtlName, 0, 0,
+                                                    DeviceType_Floppy, NULL));
+            }
+        }
+
+        CHECK_ERROR (gMachine, MountMedium(storageCtlName, 0, 0, id));
     }
     while (0);
     if (FAILED(rc))
@@ -1625,9 +1702,51 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
                 }
             }
         }
+
         Bstr id;
+        Bstr storageCtlName;
         dvdMedium->COMGETTER(Id)(id.asOutParam());
-        CHECK_ERROR(gMachine, MountMedium(Bstr("IDE Controller"), 1, 0, id));
+
+        /* get the first IDE controller to attach the DVD Drive to
+         * and if there is none, add one temporarily
+         */
+        {
+            ComPtr<IStorageController> storageCtl;
+            com::SafeIfaceArray<IStorageController> aStorageControllers;
+            CHECK_ERROR (gMachine, COMGETTER(StorageControllers)(ComSafeArrayAsOutParam(aStorageControllers)));
+            for (size_t i = 0; i < aStorageControllers.size(); ++ i)
+            {
+                StorageBus_T storageBus = StorageBus_Null;
+
+                CHECK_ERROR (aStorageControllers[i], COMGETTER(Bus)(&storageBus));
+                if (storageBus == StorageBus_IDE)
+                {
+                    storageCtl = aStorageControllers[i];
+                    break;
+                }
+            }
+
+            if (storageCtl)
+            {
+                ComPtr<IMediumAttachment> dvdAttachment;
+
+                CHECK_ERROR (storageCtl, COMGETTER(Name)(storageCtlName.asOutParam()));
+                gMachine->DetachDevice(storageCtlName, 1, 0);
+                CHECK_ERROR (gMachine, AttachDevice(storageCtlName, 1, 0,
+                                                    DeviceType_DVD, NULL));
+            }
+            else
+            {
+                storageCtlName = "IDE Controller";
+                CHECK_ERROR (gMachine, AddStorageController(storageCtlName,
+                                                            StorageBus_IDE,
+                                                            storageCtl.asOutParam()));
+                CHECK_ERROR (gMachine, AttachDevice(storageCtlName, 1, 0,
+                                                    DeviceType_DVD, NULL));
+            }
+        }
+
+        CHECK_ERROR(gMachine, MountMedium(storageCtlName, 1, 0, id));
     }
     while (0);
     if (FAILED(rc))
