@@ -197,7 +197,7 @@ VBGLR3DECL(int) VbglR3HostVersionStore(const char* pszVer)
 	    LogFlow(("Could not open registry key! Error = %ld\n", lRet));
 
 	if (lRet != ERROR_SUCCESS)
-		rc = RTErrConvertFromWin32(lRet);
+	    rc = RTErrConvertFromWin32(lRet);
 #else
 #endif
     }
