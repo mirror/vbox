@@ -815,6 +815,9 @@ Console::Teleport(IN_BSTR aHostname, ULONG aPort, IN_BSTR aPassword, IProgress *
  * @param   fStartPaused        Whether to start it in the Paused (true) or
  *                              Running (false) state,
  * @param   pProgress           Pointer to the progress object.
+ *
+ * @remarks The caller expects error information to be set on failure.
+ * @todo    Check that all the possible failure paths sets error info...
  */
 int
 Console::teleporterTrg(PVM pVM, IMachine *pMachine, bool fStartPaused, Progress *pProgress)
@@ -917,7 +920,6 @@ Console::teleporterTrg(PVM pVM, IMachine *pMachine, bool fStartPaused, Progress 
                 }
                 else if (vrc == VERR_TCP_SERVER_SHUTDOWN)
                 {
-                    /** @todo this crap isn't work right wrt error info. Aaaarrrg! */
                     BOOL fCancelled = TRUE;
                     hrc = pProgress->COMGETTER(Canceled)(&fCancelled);
                     if (FAILED(hrc) || fCancelled)
@@ -930,7 +932,6 @@ Console::teleporterTrg(PVM pVM, IMachine *pMachine, bool fStartPaused, Progress 
                         setError(E_FAIL, tr("Teleporter timed out waiting for incoming connection"));
                         vrc = VERR_TIMEOUT;
                     }
-                    pProgress->setResultCode(E_FAIL); /* ugly! */
                     LogRel(("Teleporter: RTTcpServerListen aborted - %Rrc\n", vrc));
                     fPowerOff = true;
                 }
