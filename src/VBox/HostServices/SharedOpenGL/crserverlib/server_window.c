@@ -118,14 +118,6 @@ crServerDispatchWindowCreateEx(const char *dpyName, GLint visBits, GLint preload
     return windowID;
 }
 
-void crServerCheckCurrentCtxWindowCB(unsigned long key, void *data1, void *data2)
-{
-    CRContext *crCtx = (CRContext *) data1;
-    GLint window = *(GLint*)data2;
-
-    (void) key;
-}
-
 void SERVER_DISPATCH_APIENTRY
 crServerDispatchWindowDestroy( GLint window )
 {
@@ -193,11 +185,9 @@ crServerDispatchWindowDestroy( GLint window )
         cr_server.currentWindow = -1;
     }
 
-    crHashtableWalk(cr_server.contextTable, crServerCheckCurrentCtxWindowCB, &window);
     crHashtableDelete(cr_server.pWindowCreateInfoTable, window, crServerCreateInfoDeleteCB);
     crHashtableDelete(cr_server.muralTable, window, crFree);
 }
-
 
 void SERVER_DISPATCH_APIENTRY
 crServerDispatchWindowSize( GLint window, GLint width, GLint height )
