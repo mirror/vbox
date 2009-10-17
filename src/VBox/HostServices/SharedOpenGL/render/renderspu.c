@@ -337,11 +337,24 @@ renderspuWindowCreate( const char *dpyName, GLint visBits )
     return window->id;
 }
 
+static void renderspuCheckCurrentCtxWindowCB(unsigned long key, void *data1, void *data2)
+{
+    ContextInfo *pCtx = (ContextInfo *) data1;
+    WindowInfo *pWindow = data2;
+    (void) key;
+
+    if (pCtx->currentWindow==pWindow)
+    {
+        renderspuMakeCurrent(0, 0, pCtx->id);
+    }    
+}
 
 static void
 RENDER_APIENTRY renderspuWindowDestroy( GLint win )
 {
     WindowInfo *window;
+    GET_CONTEXT(pOldCtx);
+
     CRASSERT(win >= 0);
     window = (WindowInfo *) crHashtableSearch(render_spu.windowTable, win);
     if (window) {
@@ -349,6 +362,19 @@ RENDER_APIENTRY renderspuWindowDestroy( GLint win )
         renderspu_SystemDestroyWindow( window );
         /* remove window info from hash table, and free it */
         crHashtableDelete(render_spu.windowTable, win, crFree);
+
+        /* check if this window is bound to some ctx. Note: window pointer is already freed here */
+        crHashtableWalk(render_spu.contextTable, renderspuCheckCurrentCtxWindowCB, window);
+
+        /* restore current context */
+        {
+            GET_CONTEXT(pNewCtx);
+            if (pNewCtx!=pOldCtx)
+            {
+                renderspuMakeCurrent(pOldCtx&&pOldCtx->currentWindow ? pOldCtx->currentWindow->id:0, 0, 
+                                     pOldCtx ? pOldCtx->id:0);
+            }
+        }
     }
     else {
         crDebug("Render SPU: Attempt to destroy invalid window (%d)", win);
