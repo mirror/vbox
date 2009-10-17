@@ -234,15 +234,15 @@ VBGLR3DECL(int) VbglR3GetAdditionsVersion(char **ppszVer, char **ppszRev)
         if (pszVer)
         {
             if (ERROR_SUCCESS == RegQueryValueEx(hKey, "Version", NULL, &dwType, (BYTE*)(LPCTSTR)pszVer, &dwSize))
-                ppszVer = pszVer;
+                *ppszVer = pszVer;
         }
         /* Revision. */
         if (ppszRev)
         {
             dwSize = 32;
-            char pszRev = (char*)RTMemAlloc(dwSize);
+            char *pszRev = (char*)RTMemAlloc(dwSize);
             if (ERROR_SUCCESS == RegQueryValueEx(hKey, "Revision", NULL, &dwType, (BYTE*)(LPCTSTR)pszRev, &dwSize))
-                ppszRev = pszRev;
+                *ppszRev = pszRev;
         }
     }
     rc = RTErrConvertFromWin32(r);

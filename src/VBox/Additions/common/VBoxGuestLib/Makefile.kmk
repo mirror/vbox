@@ -97,7 +97,9 @@ ifeq ($(KBUILD_TARGET),win) ## @todo get rid of this hack (as soon as it's all i
  VBoxGuestR3Lib_SOURCES   = \
 	VBoxGuestR3Lib.cpp \
 	VBoxGuestR3LibGR.cpp \
-	$(if $(VBOX_WITH_GUEST_PROPS),VBoxGuestR3LibGuestProp.cpp,) \
+	$(if $(VBOX_WITH_GUEST_PROPS), \
+		VBoxGuestR3LibGuestProp.cpp \
+		VBoxGuestR3LibHostVersion.cpp,) \
 	VBoxGuestR3LibMisc.cpp \
 	VBoxGuestR3LibTime.cpp
 endif

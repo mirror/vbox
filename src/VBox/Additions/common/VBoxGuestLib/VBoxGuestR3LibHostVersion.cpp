@@ -40,7 +40,7 @@
  *
  * @returns 0 if equal, 1 if Ver1 is greater, 2 if Ver2 is greater.
  *
- * @param   pszVer1		First version string to compare.
+ * @param   pszVer1     First version string to compare.
  * @param   pszVer2     First version string to compare.
  *
  */
@@ -145,17 +145,17 @@ VBGLR3DECL(bool) VbglR3HostVersionCheckForUpdate(char **ppszHostVersion, char **
                 {
                     LogFlow(("Update found."));
                 }
-		else rc = VERR_VERSION_MISMATCH; /* No update found. */
+                else rc = VERR_VERSION_MISMATCH; /* No update found */
             }
         }
     }
 
     if (RT_FAILURE(rc))
     {
-	if (*ppszHostVersion)
-	    VbglR3GuestPropReadValueFree(*ppszHostVersion);
-	if (*ppszGuestVersion)
-	    VbglR3GuestPropReadValueFree(*ppszGuestVersion);
+        if (*ppszHostVersion)
+            VbglR3GuestPropReadValueFree(*ppszHostVersion);
+        if (*ppszGuestVersion)
+            VbglR3GuestPropReadValueFree(*ppszGuestVersion);
     }
     return rc == VINF_SUCCESS ? true : false;
 }
@@ -170,34 +170,34 @@ VBGLR3DECL(int) VbglR3HostVersionStore(const char* pszVer)
     rc = VbglR3GuestPropConnect(&uGuestPropSvcClientID);
     if (RT_FAILURE(rc))
     {
-    LogFlow(("Failed to connect to the guest property service! Error: %d\n", rc));
+        LogFlow(("Failed to connect to the guest property service! Error: %d\n", rc));
     }
     else
     {
 #ifdef RT_OS_WINDOWS
-	HKEY hKey;
-	long lRet;
-	lRet = RegCreateKeyEx (HKEY_LOCAL_MACHINE,
-						   "SOFTWARE\\Sun\\VirtualBox Guest Additions",
-						   0,           /* Reserved */
-						   NULL,        /* lpClass [in, optional] */
-						   0,           /* dwOptions [in] */
-						   KEY_WRITE,
-						   NULL,        /* lpSecurityAttributes [in, optional] */
-						   &hKey,
-						   NULL);       /* lpdwDisposition [out, optional] */
-	if (lRet == ERROR_SUCCESS)
-	{
-	    lRet = RegSetValueEx(hKey, "HostVerLastChecked", 0, REG_SZ, (BYTE*)pszVBoxHostVer, (DWORD)(strlen(pszVBoxHostVer)*sizeof(char)));
-	    if (lRet != ERROR_SUCCESS)
-		    LogFlow(("Could not write HostVerLastChecked! Error = %ld\n", lRet));
-	    RegCloseKey(hKey);
-	}
-	else
-	    LogFlow(("Could not open registry key! Error = %ld\n", lRet));
-
-	if (lRet != ERROR_SUCCESS)
-	    rc = RTErrConvertFromWin32(lRet);
+        HKEY hKey;
+        long lRet;
+        lRet = RegCreateKeyEx (HKEY_LOCAL_MACHINE,
+                               "SOFTWARE\\Sun\\VirtualBox Guest Additions",
+                               0,           /* Reserved */
+                               NULL,        /* lpClass [in, optional] */
+                               0,           /* dwOptions [in] */
+                               KEY_WRITE,
+                               NULL,        /* lpSecurityAttributes [in, optional] */
+                               &hKey,
+                               NULL);       /* lpdwDisposition [out, optional] */
+        if (lRet == ERROR_SUCCESS)
+        {
+            lRet = RegSetValueEx(hKey, "HostVerLastChecked", 0, REG_SZ, (BYTE*)pszVer, (DWORD)(strlen(pszVer)*sizeof(char)));
+            if (lRet != ERROR_SUCCESS)
+                LogFlow(("Could not write HostVerLastChecked! Error = %ld\n", lRet));
+            RegCloseKey(hKey);
+        }
+        else
+            LogFlow(("Could not open registry key! Error = %ld\n", lRet));
+    
+        if (lRet != ERROR_SUCCESS)
+            rc = RTErrConvertFromWin32(lRet);
 #else
 #endif
     }
