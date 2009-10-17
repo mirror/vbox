@@ -6761,8 +6761,12 @@ DECLCALLBACK(int) Console::powerUpThread(RTTHREAD Thread, void *pvUser)
                     }
                 }
                 else if (task->mTeleporterEnabled)
+                {
                     /* -> ConsoleImplTeleporter.cpp */
                     vrc = console->teleporterTrg(pVM, pMachine, task->mStartPaused, task->mProgress);
+                    if (RT_FAILURE(vrc))
+                        rc = E_FAIL;    /* Avoid the "Missing error message..." assertion. */
+                }
                 else if (task->mStartPaused)
                     /* done */
                     console->setMachineState(MachineState_Paused);
@@ -6820,7 +6824,7 @@ DECLCALLBACK(int) Console::powerUpThread(RTTHREAD Thread, void *pvUser)
             if (!task->mErrorMsg.length())
             {
                 /* If the error message is not set but we've got a failure,
-                 * convert the VBox status code into a meaningfulerror message.
+                 * convert the VBox status code into a meaningful error message.
                  * This becomes unused once all the sources of errors set the
                  * appropriate error message themselves.
                  */
