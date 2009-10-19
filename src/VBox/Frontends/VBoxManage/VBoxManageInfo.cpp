@@ -1844,7 +1844,7 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
     if (SUCCEEDED(rc) && snapshot)
     {
         ComPtr<ISnapshot> currentSnapshot;
-        rc = machine->GetCurrentSnapshot(currentSnapshot.asOutParam());
+        rc = machine->COMGETTER(CurrentSnapshot)(currentSnapshot.asOutParam());
         if (SUCCEEDED(rc))
         {
             if (details != VMINFO_MACHINEREADABLE)
