@@ -3666,7 +3666,7 @@ DECLINLINE(int) pgmR0DynMapHCPageInlined(PPGM pPGM, RTHCPHYS HCPhys, void **ppv)
  *
  * @returns See PGMDynMapGCPage.
  * @param   pPGM        Pointer to the PVM instance data.
- * @param   HCPhys      The physical address of the page.
+ * @param   GCPhys      The guest physical address of the page.
  * @param   ppv         Where to store the mapping address.
  */
 DECLINLINE(int) pgmR0DynMapGCPageInlined(PPGM pPGM, RTGCPHYS GCPhys, void **ppv)
