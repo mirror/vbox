@@ -24,3 +24,4 @@
 int VBoxCheckHostVersion();
 
 #endif /* !___VBoxHostVersion_h */
+

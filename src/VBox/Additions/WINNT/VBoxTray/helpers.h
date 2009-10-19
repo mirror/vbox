@@ -32,6 +32,7 @@
 
 void resizeRect(RECTL *paRects, unsigned nRects, unsigned iPrimary, unsigned iResized, int NewWidth, int NewHeight);
 int showBalloonTip (HINSTANCE hInst, HWND hWnd, UINT uID, const char *pszMsg, const char *pszTitle, UINT uTimeout, DWORD dwInfoFlags);
+int getAdditionsVersion(char *pszVer, size_t cbSizeVer, char *pszRev, size_t cbSizeRev);
 
 #endif /* !___VBOXTRAY_HELPERS_H */
 

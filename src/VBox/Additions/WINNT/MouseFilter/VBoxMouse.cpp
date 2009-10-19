@@ -82,7 +82,7 @@ Routine Description:
     DriverObject->DriverUnload = VBoxMouse_Unload;
     DriverObject->DriverExtension->AddDevice = VBoxMouse_AddDevice;
 
-    dprintf(("leaving DriverEntry with success\n"));
+    dprintf(("VBoxMouse::DriverEntry: Leaving DriverEntry with success\n"));
     return STATUS_SUCCESS;
 }
 

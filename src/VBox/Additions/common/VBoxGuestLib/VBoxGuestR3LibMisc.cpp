@@ -25,6 +25,7 @@
 *******************************************************************************/
 #include <iprt/mem.h>
 #include <VBox/log.h>
+
 #include "VBGLR3Internal.h"
 
 
@@ -192,65 +193,3 @@ VBGLR3DECL(int) VbglR3SetGuestCaps(uint32_t fOr, uint32_t fNot)
     return rc;
 }
 
-
-/** @todo Docs */
-VBGLR3DECL(int) VbglR3GetAdditionsVersion(char **ppszVer, char **ppszRev)
-{
-    int rc;
-#ifdef RT_OS_WINDOWS
-    HKEY hKey;
-    LONG r;
-
-    /* Check the new path first. */
-    r = RegOpenKeyEx(HKEY_LOCAL_MACHINE, "SOFTWARE\\Sun\\VirtualBox Guest Additions", 0, KEY_READ, &hKey);
-# ifdef RT_ARCH_AMD64
-    if (r != ERROR_SUCCESS)
-    {
-        /* Check Wow6432Node (for new entries). */
-        r = RegOpenKeyEx(HKEY_LOCAL_MACHINE, "SOFTWARE\\Wow6432Node\\Sun\\VirtualBox Guest Additions", 0, KEY_READ, &hKey);
-    }
-# endif
-
-    /* Still no luck? Then try the old xVM paths ... */
-    if (FAILED(r))
-    {
-        r = RegOpenKeyEx(HKEY_LOCAL_MACHINE, "SOFTWARE\\Sun\\xVM VirtualBox Guest Additions", 0, KEY_READ, &hKey);
-# ifdef RT_ARCH_AMD64
-        if (r != ERROR_SUCCESS)
-        {
-            /* Check Wow6432Node (for new entries). */
-            r = RegOpenKeyEx(HKEY_LOCAL_MACHINE, "SOFTWARE\\Wow6432Node\\Sun\\xVM VirtualBox Guest Additions", 0, KEY_READ, &hKey);
-        }
-# endif
-    }
-
-    /* Did we get something worth looking at? */
-    if (SUCCEEDED(r))
-    {
-        /* Version. */
-        DWORD dwType;
-        DWORD dwSize = 32;
-        char *pszVer = (char*)RTMemAlloc(dwSize);
-        if (pszVer)
-        {
-            if (ERROR_SUCCESS == RegQueryValueEx(hKey, "Version", NULL, &dwType, (BYTE*)(LPCTSTR)pszVer, &dwSize))
-                *ppszVer = pszVer;
-        }
-        /* Revision. */
-        if (ppszRev)
-        {
-            dwSize = 32;
-            char *pszRev = (char*)RTMemAlloc(dwSize);
-            if (ERROR_SUCCESS == RegQueryValueEx(hKey, "Revision", NULL, &dwType, (BYTE*)(LPCTSTR)pszRev, &dwSize))
-                *ppszRev = pszRev;
-        }
-    }
-    rc = RTErrConvertFromWin32(r);
-
-    if (NULL != hKey)
-        RegCloseKey(hKey);
-#else
-    rc = VERR_NOT_IMPLEMENTED;
-#endif /* RT_OS_WINDOWS */
-    return rc;
-}
