@@ -189,6 +189,15 @@ int main(int argc, char *argv[])
             else
                 fSuccess = false;
         }
+#ifdef VBOX_WITH_GUEST_PROPS
+        else if (!strcmp(argv[i], "--checkhostversion"))
+        {
+            if (g_pService == NULL)
+                g_pService = VBoxClient::GetHostVersionService();
+            else
+                fSuccess = false;
+        }
+#endif
         else if (!strcmp(argv[i], "-h") || !strcmp(argv[i], "--help"))
         {
             vboxClientUsage(pszFileName);
